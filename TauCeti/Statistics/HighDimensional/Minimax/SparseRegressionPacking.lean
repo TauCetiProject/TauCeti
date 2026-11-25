@@ -44,9 +44,8 @@ theorem exists_sparse_image_packing (X : EuclideanSpace ℝ ι →ₗ[ℝ] E)
       (fun b b' ↦ lower ^ 2 * a ^ 2 * D < ‖X b - X b'‖ ^ 2) := by
     intro b hb b' hb' hbb'
     have hwt : hammingNorm (WithLp.ofLp (b - b')) ≤ 2 * D := by
-      rw [WithLp.ofLp_sub, ← TauCeti.hammingDist_eq_hammingNorm_sub, two_mul]
-      simpa [(hmem b hb).1, (hmem b' hb').1] using
-        hammingDist_triangle (WithLp.ofLp b) 0 (WithLp.ofLp b')
+      rw [WithLp.ofLp_sub, two_mul]
+      exact (TauCeti.hammingNorm_sub_le _ _).trans_eq (by rw [(hmem b hb).1, (hmem b' hb').1])
     have hle := hmin (b - b') hwt
     rw [map_sub] at hle
     calc

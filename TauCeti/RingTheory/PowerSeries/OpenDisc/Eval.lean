@@ -124,9 +124,8 @@ theorem OnOpenDisc.evalAt_add (hf : f.OnOpenDisc R₀) (hg : g.OnOpenDisc R₀) 
 /-- Evaluation at a point of norm less than `R₀` commutes with scalar multiplication of series on
 the open disc of radius `R₀`. -/
 theorem OnOpenDisc.evalAt_smul (hf : f.OnOpenDisc R₀) (c : R) (hb : ‖b‖ < R₀) :
-    (c • f).evalAt b = c • f.evalAt b := by
-  rw [evalAt_def]
-  exact HasSum.tsum_eq (by simpa [mul_smul] using (hf.hasSum_evalAt hb).const_smul c)
+    (c • f).evalAt b = c • f.evalAt b :=
+  evalAt_smul_of_summable (hf.hasSum_evalAt hb).summable c
 
 /-- Evaluation at a point of norm less than `R₀` is multiplicative on series on the open disc of
 radius `R₀`. -/

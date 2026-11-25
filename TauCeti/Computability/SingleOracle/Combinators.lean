@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.SingleOracle.Recursion
-import TauCeti.Data.List.TakeDrop
+import Mathlib.Data.List.TakeDrop
+import Mathlib.Logic.Function.Iterate
 import TauCeti.Data.PFun.Basic
 
 /-!
@@ -192,6 +193,60 @@ theorem eval_iterCode {O : ℕ →. ℕ} {init step : Code} {g₀ g : ℕ → �
     simpa [hstep] using
       (Function.iterate_succ_apply' g d (g₀ a)).symm.trans (Function.iterate_succ_apply g d (g₀ a))
 
+private def splitStep {α β : Type*} (f : α → β) : List β × List α → List β × List α
+  | (rl, []) => (rl, [])
+  | (rl, a :: l) => (f a :: rl, l)
+
+@[simp]
+private theorem splitStep_nil {α β : Type*} (f : α → β) (rl : List β) :
+    splitStep f (rl, []) = (rl, []) := (rfl)
+
+@[simp]
+private theorem splitStep_cons {α β : Type*} (f : α → β) (rl : List β) (a : α) (l : List α) :
+    splitStep f (rl, a :: l) = (f a :: rl, l) := (rfl)
+
+private theorem splitStep_iterate {α β : Type*} (f : α → β) (d : ℕ) (rl : List β) (l : List α) :
+    (splitStep f)^[d] (rl, l) = (((l.take d).map f).reverseAux rl, l.drop d) := by
+  induction d generalizing rl l with
+  | zero => simp
+  | succ d ih =>
+    cases l with
+    | nil =>
+      rw [Function.iterate_succ_apply, splitStep_nil]
+      simpa using ih rl []
+    | cons a l' =>
+      rw [Function.iterate_succ_apply, splitStep_cons, ih]
+      simp [List.take_succ_cons]
+
+private def reverseStep {α : Type*} : List α × List α → List α × List α
+  | ([], l) => ([], l)
+  | (b :: rl, l) => (rl, b :: l)
+
+@[simp]
+private theorem reverseStep_nil {α : Type*} (l : List α) : reverseStep ([], l) = ([], l) := (rfl)
+
+@[simp]
+private theorem reverseStep_cons {α : Type*} (b : α) (rl l : List α) :
+    reverseStep (b :: rl, l) = (rl, b :: l) := (rfl)
+
+private theorem reverseStep_iterate {α : Type*} (d : ℕ) (rl l : List α) :
+    reverseStep^[d] (rl, l) = (rl.drop d, (rl.take d).reverseAux l) := by
+  induction d generalizing rl l with
+  | zero => simp
+  | succ d ih =>
+    cases rl with
+    | nil =>
+      rw [Function.iterate_succ_apply, reverseStep_nil]
+      simpa using ih [] l
+    | cons b rl' =>
+      rw [Function.iterate_succ_apply, reverseStep_cons, ih]
+      simp [List.take_succ_cons]
+
+private theorem reverseStep_iterate_of_length_le {α : Type*} {d : ℕ} {rl : List α}
+    (hd : rl.length ≤ d) (l : List α) :
+    reverseStep^[d] (rl, l) = ([], rl.reverseAux l) := by
+  rw [reverseStep_iterate, List.drop_eq_nil_of_le hd, List.take_of_length_le hd]
+
 private def stepSplit (proj : Code) : Code :=
   ifZeroCode (pair idCode zero)
     (pair
@@ -211,8 +266,8 @@ private theorem eval_stepSplit {O : ℕ →. ℕ} {proj : Code} {f : ℕ → ℕ
     (hproj : ∀ y, eval O proj y = Part.some (f y)) (s : ℕ) :
     eval O (stepSplit proj) s =
       Part.some (Nat.pair
-        (encode (List.splitStep f (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).1)
-        (encode (List.splitStep f (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).2)) := by
+        (encode (splitStep f (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).1)
+        (encode (splitStep f (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).2)) := by
   have hc₀ : ∀ a, ∃ y, eval O (pair idCode zero) a = Part.some y := fun a =>
     ⟨Nat.pair a 0, by simp [eval_idCode, Seq.seq]⟩
   have hc₁ : ∀ a m, ∃ y, eval O
@@ -246,8 +301,8 @@ private def stepRev : Code :=
 private theorem eval_stepRev (O : ℕ →. ℕ) (s : ℕ) :
     eval O stepRev s =
       Part.some (Nat.pair
-        (encode (List.reverseStep (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).1)
-        (encode (List.reverseStep (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).2)) := by
+        (encode (reverseStep (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).1)
+        (encode (reverseStep (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).2)) := by
   have hc₀ : ∀ a, ∃ y, eval O (pair zero idCode) a = Part.some y := fun a =>
     ⟨Nat.pair 0 a, by simp [eval_idCode, Seq.seq]⟩
   have hc₁ : ∀ a m, ∃ y, eval O
@@ -306,40 +361,40 @@ theorem eval_mapTakeCode {O : ℕ →. ℕ} {proj : Code} {f : ℕ → ℕ}
   have hiter1 := eval_iterCode hinit1 (eval_stepSplit hproj)
     (g₀ := fun a => Nat.pair (encode ([] : List ℕ)) (encode (ofNat (List ℕ) a)))
     (g := fun s => Nat.pair
-      (encode (List.splitStep f (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).1)
-      (encode (List.splitStep f (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).2))
+      (encode (splitStep f (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).1)
+      (encode (splitStep f (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).2))
   have hstep1 (k : ℕ) (p₁ p₂ : List ℕ) :
       (fun s => Nat.pair
-        (encode (List.splitStep f (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).1)
-        (encode (List.splitStep f (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).2))^[k]
+        (encode (splitStep f (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).1)
+        (encode (splitStep f (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).2))^[k]
           (Nat.pair (encode p₁) (encode p₂)) =
-      Nat.pair (encode ((List.splitStep f)^[k] (p₁, p₂)).1)
-        (encode ((List.splitStep f)^[k] (p₁, p₂)).2) := by
+      Nat.pair (encode ((splitStep f)^[k] (p₁, p₂)).1)
+        (encode ((splitStep f)^[k] (p₁, p₂)).2) := by
     induction k generalizing p₁ p₂ with
     | zero => rfl
     | succ k ih =>
       rw [Function.iterate_succ_apply, Function.iterate_succ_apply]
       simpa [Nat.unpair_pair, ofNat_encode] using
-        ih (List.splitStep f (p₁, p₂)).1 (List.splitStep f (p₁, p₂)).2
+        ih (splitStep f (p₁, p₂)).1 (splitStep f (p₁, p₂)).2
   have hinit2 : ∀ a, eval O idCode a = Part.some a := eval_idCode O
   have hiter2 := eval_iterCode hinit2 (eval_stepRev O)
     (g₀ := id)
     (g := fun s => Nat.pair
-      (encode (List.reverseStep (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).1)
-      (encode (List.reverseStep (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).2))
+      (encode (reverseStep (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).1)
+      (encode (reverseStep (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).2))
   have hstep2 (k : ℕ) (p₁ p₂ : List ℕ) :
       (fun s => Nat.pair
-        (encode (List.reverseStep (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).1)
-        (encode (List.reverseStep (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).2))^[k]
+        (encode (reverseStep (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).1)
+        (encode (reverseStep (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).2))^[k]
           (Nat.pair (encode p₁) (encode p₂)) =
-      Nat.pair (encode (List.reverseStep^[k] (p₁, p₂)).1)
-        (encode (List.reverseStep^[k] (p₁, p₂)).2) := by
+      Nat.pair (encode (reverseStep^[k] (p₁, p₂)).1)
+        (encode (reverseStep^[k] (p₁, p₂)).2) := by
     induction k generalizing p₁ p₂ with
     | zero => rfl
     | succ k ih =>
       rw [Function.iterate_succ_apply, Function.iterate_succ_apply]
       simpa [Nat.unpair_pair, ofNat_encode] using
-        ih (List.reverseStep (p₁, p₂)).1 (List.reverseStep (p₁, p₂)).2
+        ih (reverseStep (p₁, p₂)).1 (reverseStep (p₁, p₂)).2
   have hphase1 :
       eval O (comp (iterCode (pair zero idCode) (stepSplit proj))
           (pair right left)) (Nat.pair d (encode l)) =
@@ -349,7 +404,7 @@ theorem eval_mapTakeCode {O : ℕ →. ℕ} {proj : Code} {f : ℕ → ℕ}
     have hswap : eval O (pair right left) (Nat.pair d (encode l)) =
         Part.some (Nat.pair (encode l) d) := by
       simp [Seq.seq]
-    rw [hswap, PFun.some_bind, hiter1, ofNat_encode, hstep1, List.splitStep_iterate]
+    rw [hswap, PFun.some_bind, hiter1, ofNat_encode, hstep1, splitStep_iterate]
   have hlen : (((l.take d).map f).reverseAux []).length ≤ d := by
     simp
   rw [mapTakeCode, eval_comp, eval_comp]
@@ -362,7 +417,7 @@ theorem eval_mapTakeCode {O : ℕ →. ℕ} {proj : Code} {f : ℕ → ℕ}
           (Nat.pair (encode (((l.take d).map f).reverseAux [])) (encode (l.drop d))) d) := by
     simp [eval_pair, hphase1, Seq.seq]
   rw [hpair2, PFun.some_bind, hiter2, PFun.some_bind, id_eq, hstep2,
-    List.reverseStep_iterate_of_length_le hlen]
+    reverseStep_iterate_of_length_le hlen]
   simp
 
 /-! ### Auxiliary query-free programs -/

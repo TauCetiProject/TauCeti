@@ -106,6 +106,12 @@ theorem fin_tail {n : ℕ} : Primrec (Fin.tail : (Fin (n + 1) → α) → Fin n 
   (vector_get'.comp (vector_tail.comp vector_ofFn')).of_eq fun _ =>
     funext fun _ => by simp [Fin.tail]
 
+/-- Looking up an entry of a `List (Option α)` and flattening the nested option is primitive
+recursive. -/
+theorem list_getElem?_bind_id :
+    Primrec₂ fun (l : List (Option α)) (z : ℕ) => l[z]?.bind id :=
+  (option_bind₁ Primrec.id).comp list_getElem?
+
 end Primrec
 
 namespace PrimrecRel

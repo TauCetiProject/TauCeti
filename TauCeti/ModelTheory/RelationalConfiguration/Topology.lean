@@ -9,6 +9,7 @@ public import TauCeti.ModelTheory.RelationalConfiguration.Basic
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import Mathlib.SetTheory.Cardinal.Continuum
 public import TauCeti.Topology.Algebra.Group.Perm
+public import TauCeti.MeasureTheory.Constructions.BorelSpace.Perm
 
 /-!
 # Topology of relational configurations
@@ -22,7 +23,11 @@ The same construction handles finite and empty carriers.
 
 For a discrete carrier, the *logic action* of its permutation group, with the topology of
 pointwise convergence, is jointly continuous, for every language, so stabilizers of
-configurations are closed subgroups (`TauCeti.isClosed_stabilizer`).
+configurations are closed subgroups (`TauCeti.isClosed_stabilizer`). On a countable discrete
+carrier in a countable relational vocabulary both spaces are second countable and carry their
+Borel σ-algebras, so the action is jointly measurable (Mathlib's instance
+`ContinuousSMul.measurableSMul₂`): the coding space on `ℕ` is a Borel `S∞`-space, whose orbit
+relation is isomorphism (`TauCeti.RelationalConfiguration.isoSetoid_eq_orbitRel`).
 
 These are the usual spaces of structures used for the logic action; see Gao,
 *Invariant Descriptive Set Theory*. The measurable coordinates and encoding of structures are
@@ -58,6 +63,14 @@ theorem continuous_iff {X : Type*} [TopologicalSpace X] {f : X → RelationalCon
     Continuous f ↔ ∀ a, Continuous (fun x => (f x).eval a) := by
   simp only [eval_def]
   exact continuous_pi_iff
+
+/-- Convergence of configurations is convergence of every atom coordinate. -/
+theorem tendsto_nhds_iff {ι : Type*} {l : Filter ι} {f : ι → RelationalConfiguration L V}
+    {c : RelationalConfiguration L V} :
+    Filter.Tendsto f l (nhds c) ↔
+      ∀ a, Filter.Tendsto (fun i => (f i).eval a) l (nhds (c.eval a)) := by
+  simp only [eval_def]
+  exact tendsto_pi_nhds
 
 /-- Building a configuration from its atom values is continuous. -/
 @[fun_prop]
