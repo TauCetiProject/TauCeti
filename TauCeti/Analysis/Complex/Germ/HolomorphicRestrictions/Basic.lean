@@ -114,8 +114,7 @@ theorem toContinuousMap_injective (hs : Preperfect s) : Function.Injective (toCo
   obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq g
   have h0 : ∀ y ∈ s, f y = 0 := fun y hy ↦ by
     simpa using DFunLike.congr_fun hg ⟨y, hy⟩
-  rw [← map_zero (algebraMap ℂ (holomorphicGerms s)), ← ofFun_const,
-    ofFun_eq_iff hf analyticOnNhd_const]
+  rw [ofFun_eq_zero_iff hf]
   exact eventually_nhdsSet_iff_forall.mpr fun x hx ↦
     (hf x hx).frequently_zero_iff_eventually_zero.mp
       ((accPt_iff_frequently_nhdsNE.mp (hs x hx)).mono h0)
@@ -155,8 +154,7 @@ private theorem exists_ne_zero_of_not_accPt {x : ℂ} (hx : x ∈ s) (hacc : ¬A
       have := hfar y hy hyx
       rw [Metric.mem_ball] at hyb
       linarith
-  · rw [← map_zero (algebraMap ℂ (holomorphicGerms s)), ← ofFun_const,
-      ofFun_eq_iff hf analyticOnNhd_const] at h0
+  · rw [ofFun_eq_zero_iff hf] at h0
     -- Near `x` the function would be both `z - x` and `0`, forcing every nearby point to be `x`.
     have hx0 : ∀ᶠ z in 𝓝 x, z = x := by
       filter_upwards [hnear, h0.filter_mono (nhds_le_nhdsSet hx)] with z hz hz0
