@@ -427,13 +427,13 @@ theorem image_subset_connectedComponentIn [PreconnectedSpace N] (h : IsBicollar 
 private theorem disjoint_image_of_notMem_isClopen [PreconnectedSpace N] (h : IsBicollar f b)
     (a : N) {s : Set ↥((range f)ᶜ)} (hs : IsClopen s) {r : Set ℝ}
     (hr : IsPreconnected r) (hr0 : (0 : ℝ) ∉ r) {t : ℝ} (ht : t ∈ r)
-    (hnt : (⟨b (a, t), fun hf ↦ hr0 ((h.apply_mem_range_iff.mp hf) ▸ ht)⟩ :
+    (hnt : (⟨b (a, t), h.apply_mem_compl_range a (ne_of_mem_of_not_mem ht hr0)⟩ :
       ↥((range f)ᶜ)) ∉ s) :
     Disjoint (b '' (univ ×ˢ r)) (Subtype.val '' s) := by
   refine disjoint_left.mpr ?_
   rintro _ hz ⟨q, hq, rfl⟩
   have hC := h.image_subset_connectedComponentIn hr hr0 a ht hz
-  have hbt : b (a, t) ∈ (range f)ᶜ := fun hf ↦ hr0 ((h.apply_mem_range_iff.mp hf) ▸ ht)
+  have hbt : b (a, t) ∈ (range f)ᶜ := h.apply_mem_compl_range a (ne_of_mem_of_not_mem ht hr0)
   rw [connectedComponentIn_eq_image hbt] at hC
   obtain ⟨q', hq', heq⟩ := hC
   have hEq : q' = q := Subtype.ext heq
@@ -442,8 +442,8 @@ private theorem disjoint_image_of_notMem_isClopen [PreconnectedSpace N] (h : IsB
 /-- A nonempty relatively clopen part of the complement must contain a collar side point. -/
 private theorem mem_or_mem_of_isClopen [PreconnectedSpace M] [PreconnectedSpace N]
     (h : IsBicollar f b) (a : N) (s : Set ↥((range f)ᶜ)) (hs : IsClopen s) (hne : s.Nonempty) :
-    (⟨b (a, 1), by simp [h.apply_mem_range_iff]⟩ : ↥((range f)ᶜ)) ∈ s ∨
-      (⟨b (a, -1), by simp [h.apply_mem_range_iff]⟩ : ↥((range f)ᶜ)) ∈ s := by
+    (⟨b (a, 1), h.apply_mem_compl_range a one_ne_zero⟩ : ↥((range f)ᶜ)) ∈ s ∨
+      (⟨b (a, -1), h.apply_mem_compl_range a (neg_ne_zero.2 one_ne_zero)⟩ : ↥((range f)ᶜ)) ∈ s := by
   by_contra! hn
   let B : Set M := Subtype.val '' s
   have hBsub : B ⊆ (range f)ᶜ := by
@@ -468,9 +468,8 @@ private theorem mem_or_mem_of_isClopen [PreconnectedSpace M] [PreconnectedSpace 
     obtain ⟨z, hzO, hzside⟩ := mem_closure_iff.mp
       (h.apply_mem_closure_image (s := Ioi 0) (by simp) u) O hO hzO
     exact hp.le_bot ⟨hzside, ⟨⟨z, by
-      rintro hf
       obtain ⟨⟨v, t⟩, ht, rfl⟩ := hzside
-      exact (ne_of_gt ht.2) (h.apply_mem_range_iff.mp hf)⟩, by rw [← hOs]; exact hzO, rfl⟩⟩
+      exact h.apply_mem_compl_range v (ne_of_gt ht.2)⟩, by rw [← hOs]; exact hzO, rfl⟩⟩
   have hBO : B = O := by
     ext z
     constructor
@@ -497,8 +496,8 @@ theorem connectedComponentIn_compl_range_eq_or_eq [PreconnectedSpace M] [Preconn
     (h : IsBicollar f b) {x : M} (hx : x ∈ (range f)ᶜ) (a : N) :
     connectedComponentIn (range f)ᶜ x = connectedComponentIn (range f)ᶜ (b (a, 1)) ∨
       connectedComponentIn (range f)ᶜ x = connectedComponentIn (range f)ᶜ (b (a, -1)) := by
-  have hp : b (a, 1) ∈ (range f)ᶜ := by simp [h.apply_mem_range_iff]
-  have hm : b (a, -1) ∈ (range f)ᶜ := by simp [h.apply_mem_range_iff]
+  have hp : b (a, 1) ∈ (range f)ᶜ := h.apply_mem_compl_range a one_ne_zero
+  have hm : b (a, -1) ∈ (range f)ᶜ := h.apply_mem_compl_range a (neg_ne_zero.2 one_ne_zero)
   rcases connectedComponent_eq_or_eq_of_forall_isClopen
       (⟨b (a, 1), hp⟩ : ↥((range f)ᶜ)) ⟨b (a, -1), hm⟩ ⟨x, hx⟩
       (h.mem_or_mem_of_isClopen a) with hpos | hneg
@@ -527,10 +526,8 @@ theorem isPreconnected_compl_range_iff [PreconnectedSpace M] [PreconnectedSpace 
     IsPreconnected (range f)ᶜ ↔
       connectedComponentIn (range f)ᶜ (b (a, 1)) = connectedComponentIn (range f)ᶜ (b (a, -1)) := by
   refine ⟨fun hc ↦ ?_, fun heq ↦ ?_⟩
-  · rw [hc.connectedComponentIn (by
-      simpa only [mem_compl_iff, h.apply_mem_range_iff] using one_ne_zero),
-      hc.connectedComponentIn (by
-        simpa only [mem_compl_iff, h.apply_mem_range_iff] using neg_ne_zero.2 one_ne_zero)]
+  · rw [hc.connectedComponentIn (h.apply_mem_compl_range a one_ne_zero),
+      hc.connectedComponentIn (h.apply_mem_compl_range a (neg_ne_zero.2 one_ne_zero))]
   · rw [h.compl_range_eq_union_connectedComponentIn a, heq, union_self]
     exact isPreconnected_connectedComponentIn
 

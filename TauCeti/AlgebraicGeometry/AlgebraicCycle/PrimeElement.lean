@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AlgebraicCycle.Principal
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
-import TauCeti.AlgebraicGeometry.StructureSheaf.Stalk
+import TauCeti.AlgebraicGeometry.StructureSheaf.Stalk.Basic
 
 /-!
 # The principal cycle of a prime element

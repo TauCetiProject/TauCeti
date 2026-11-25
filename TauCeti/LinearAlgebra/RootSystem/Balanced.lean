@@ -5,33 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
 public import Mathlib.LinearAlgebra.RootSystem.Hom
+public import TauCeti.LinearAlgebra.RootSystem.RootSpanProj
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
-# Balanced root pairings and coroot-kernel projection
+# Balanced root pairings and coroot-kernel projection lemmas
 
-In a balanced root pairing `P : RootPairing ι R M N`, `P.rootSpan R` and the common coroot kernel
-`⨅ i, LinearMap.ker (P.coroot' i)` are complementary
-(`RootPairing.isCompl_rootSpan_iInf_ker_coroot'`), giving a `P.Aut`-equivariant linear projection
-`RootPairing.rootSpanProj : M →ₗ[R] P.rootSpan R`. This file also establishes balancedness for
-finite crystallographic root pairings over characteristic-zero fields
-(`RootPairing.instIsBalancedOfIsCrystallographic`).
-
-## Main definitions
-
-* `RootPairing.rootSpanProj`: linear projection `M →ₗ[R] P.rootSpan R` along the coroot kernel.
+This file establishes balancedness for finite crystallographic root pairings over
+characteristic-zero fields (`RootPairing.instIsBalancedOfIsCrystallographic`), together with
+supplementary `simp` and `P.Aut`-equivariance lemmas for `RootPairing.rootSpanProj` (defined in
+`TauCeti.LinearAlgebra.RootSystem.RootSpanProj`).
 
 ## Main results
 
 * `RootPairing.instIsBalancedOfIsCrystallographic`: finite crystallographic pairings over
   characteristic-zero fields are balanced.
-* `RootPairing.isCompl_rootSpan_iInf_ker_coroot'`,
+* `RootPairing.rootSpanProj_apply_coe`, `RootPairing.rootSpanProj_eq_zero_iff`,
   `RootPairing.toLinearMap_coe_rootSpanProj_coroot`, `RootPairing.coe_rootSpanProj_smul`, and
-  `RootPairing.restrictScalars'_coroot'_rootSpanProj`: complementarity, coroot preservation, and
-  `P.Aut`-equivariance of `rootSpanProj`.
+  `RootPairing.restrictScalars'_coroot'_rootSpanProj`: supplementary properties, coroot
+  preservation, and `P.Aut`-equivariance of `rootSpanProj`.
 
 ## References
 
@@ -57,41 +51,21 @@ instance instIsBalancedOfIsCrystallographic {K : Type*} [Field K] [CharZero K]
 
 variable [P.IsBalanced]
 
-/-- **In a balanced root pairing, `P.rootSpan R` and the common coroot kernel
-`⨅ i, LinearMap.ker (P.coroot' i)` are complementary submodules of `M`.** -/
-theorem isCompl_rootSpan_iInf_ker_coroot' :
-    IsCompl (P.rootSpan R) (⨅ i, LinearMap.ker (P.coroot' i)) :=
-  P.corootSpan_dualAnnihilator_map_eq_iInf_ker_coroot' ▸ IsBalanced.isPerfectCompl.isCompl_left
-
-/-- **Linear projection onto `P.rootSpan R` along the common coroot kernel
-`⨅ i, LinearMap.ker (P.coroot' i)`.** -/
-noncomputable def rootSpanProj : M →ₗ[R] P.rootSpan R :=
-  (P.rootSpan R).projectionOnto (⨅ i, LinearMap.ker (P.coroot' i))
-    P.isCompl_rootSpan_iInf_ker_coroot'
-
 /-- `P.rootSpanProj` acts as the identity on `P.rootSpan R`. -/
 @[simp] theorem rootSpanProj_apply_coe (x : P.rootSpan R) : P.rootSpanProj x = x :=
-  Submodule.projectionOnto_apply_left _ x
-
-/-- The kernel of `P.rootSpanProj` is `⨅ i, LinearMap.ker (P.coroot' i)`. -/
-@[simp] theorem ker_rootSpanProj :
-    LinearMap.ker P.rootSpanProj = ⨅ i, LinearMap.ker (P.coroot' i) :=
-  Submodule.ker_projectionOnto _
+  P.rootSpanProj_apply_of_mem x.property
 
 /-- `P.rootSpanProj x = 0` if and only if every coroot functional vanishes on `x`. -/
 @[simp] theorem rootSpanProj_eq_zero_iff {x : M} :
     P.rootSpanProj x = 0 ↔ ∀ i, P.coroot' i x = 0 := by
-  rw [rootSpanProj, Submodule.projectionOnto_apply_eq_zero_iff, Submodule.mem_iInf]
+  rw [← LinearMap.mem_ker, ker_rootSpanProj, Submodule.mem_iInf]
   exact forall_congr' fun _ ↦ LinearMap.mem_ker
 
 /-- Projecting to `P.rootSpan R` along the common coroot kernel preserves pairing with every
 coroot. -/
 @[simp] theorem toLinearMap_coe_rootSpanProj_coroot (x : M) (i : ι) :
-    P.toLinearMap (P.rootSpanProj x : M) (P.coroot i) = P.toLinearMap x (P.coroot i) := by
-  have hi : P.coroot' i (x - (P.rootSpanProj x : M)) = 0 :=
-    LinearMap.mem_ker.mp ((Submodule.mem_iInf _).mp
-      (Submodule.sub_projection_mem P.isCompl_rootSpan_iInf_ker_coroot' x) i)
-  rwa [map_sub, sub_eq_zero, eq_comm] at hi
+    P.toLinearMap (P.rootSpanProj x : M) (P.coroot i) = P.toLinearMap x (P.coroot i) :=
+  P.coroot'_rootSpanProj i x
 
 /-- `P.rootSpanProj` is equivariant for the weight action of `P.Aut`. -/
 theorem coe_rootSpanProj_smul (g : P.Aut) (x : M) :

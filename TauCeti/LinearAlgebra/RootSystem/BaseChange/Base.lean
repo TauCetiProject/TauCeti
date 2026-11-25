@@ -11,7 +11,7 @@ public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Basic
 import TauCeti.Algebra.Group.Submonoid.Closure
 
 /-!
-# Pullback, scalar restriction, and scalar extension of root-pairing bases
+# Pullback and scalar extension of root-pairing bases
 
 This file provides foundational transport operations for `RootPairing.Base` without depending on
 automorphism or Weyl-group theory:
@@ -19,9 +19,6 @@ automorphism or Weyl-group theory:
 * Pulling back a base `b : P.Base` along injective `R`-linear maps `fM : M₀ →ₗ[R] M` and
   `fN : N₀ →ₗ[R] N` compatible with roots and coroots over a faithful `R`-algebra `S`
   (`RootPairing.Base.comapOfInjective`).
-* Restricting a base `b : P.Base` of a balanced, `K`-valued root pairing `P` over a field `L`
-  along Mathlib's `RootPairing.restrictScalars' K`
-  (`Mathlib/LinearAlgebra/RootSystem/BaseChange.lean`, giving `RootPairing.Base.restrictScalars'`).
 * Extending scalars of a base `b : P.Base` along `RootPairing.baseChange`
   (`TauCeti/LinearAlgebra/RootSystem/BaseChange/Basic.lean`) for a faithful flat `R`-algebra `S`
   and a finite free coweight module `N` (`RootPairing.Base.baseChange`), together with invariance of
@@ -32,14 +29,12 @@ automorphism or Weyl-group theory:
 
 * `RootPairing.Base.comapOfInjective`: pullback of a base along injective `R`-linear maps over a
   faithful `R`-algebra.
-* `RootPairing.Base.restrictScalars'`: restriction of scalars of a base along
-  `RootPairing.restrictScalars'`.
 * `RootPairing.Base.baseChange`: scalar extension of a base along `RootPairing.baseChange`.
 
 ## Main results
 
-* `RootPairing.Base.support_comapOfInjective`, `RootPairing.Base.support_restrictScalars'`, and
-  `RootPairing.Base.support_baseChange`: base transport leaves `support` unchanged.
+* `RootPairing.Base.support_comapOfInjective` and `RootPairing.Base.support_baseChange`: base
+  transport leaves `support` unchanged.
 * `RootPairing.Base.cartanMatrixIn_baseChange_apply` and
   `RootPairing.Base.cartanMatrix_baseChange_apply`: scalar extension preserves every entry of the
   `T`-valued and integral Cartan matrices.
@@ -90,25 +85,6 @@ noncomputable def Base.comapOfInjective : P₀.Base where
     (b.comapOfInjective fM fN hfM hfN hroot hcoroot).support = b.support := (rfl)
 
 end BaseComap
-
-section RestrictScalarsBase
-
-variable {ι L M N : Type*} [Field L] [AddCommGroup M] [Module L M] [AddCommGroup N] [Module L N]
-  {P : RootPairing ι L M N} (b : P.Base) (K : Type*) [Field K] [Algebra K L]
-  [Module K M] [Module K N] [IsScalarTower K L M] [IsScalarTower K L N]
-  [P.IsBalanced] [P.IsValuedIn K]
-
-/-- **Restriction of scalars of a base** along `RootPairing.restrictScalars'`, keeping the same
-simple indices `b.support`. -/
-noncomputable def Base.restrictScalars' : (P.restrictScalars' K).Base :=
-  b.comapOfInjective (Submodule.span K (range P.root)).subtype
-    (Submodule.span K (range P.coroot)).subtype Subtype.val_injective Subtype.val_injective
-    (P.restrictScalars_coe_root K) (P.restrictScalars_coe_coroot K)
-
-/-- `Base.restrictScalars'` leaves `support` unchanged. -/
-@[simp] theorem Base.support_restrictScalars' : (b.restrictScalars' K).support = b.support := (rfl)
-
-end RestrictScalarsBase
 
 section BaseBaseChange
 
