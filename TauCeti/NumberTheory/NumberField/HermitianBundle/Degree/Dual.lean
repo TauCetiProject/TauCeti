@@ -60,13 +60,15 @@ theorem sectionDegree_dual_tmul_eq_zero [Module.Invertible (𝓞 K) E] {s : E}
   have hE := Module.Invertible.finrank_eq_one K (K ⊗[𝓞 K] E)
   set e := Module.Invertible.linearEquiv (𝓞 K) E
   have he : e (f ⊗ₜ s) = f s := by simp [e, Module.Invertible.linearEquiv]
+  have hcard : Submodule.cardQuot (Submodule.span (𝓞 K) {f ⊗ₜ[𝓞 K] s}) =
+      (Submodule.span (𝓞 K) {f s}).cardQuot := by
+    rw [← Submodule.cardQuot_map_equiv e, Submodule.map_span, Set.image_singleton,
+      LinearEquiv.coe_coe, he]
+  have hnorm (σ : K →+* ℂ) :
+      (h.dual.tmul h).norm σ (1 ⊗ₜ (f ⊗ₜ s)) = (trivial K).norm σ (1 ⊗ₜ f s) := by
+    rw [norm_tmul_tmul, h.norm_dual_one_tmul_mul_norm σ hE s, norm_trivial_tmul]
   have key : (h.dual.tmul h).sectionDegree (f ⊗ₜ s) = (trivial K).sectionDegree (f s) := by
-    rw [sectionDegree_def, sectionDegree_def]
-    congr 3
-    · rw [← he, ← Submodule.cardQuot_map_equiv e, Submodule.map_span, Set.image_singleton]
-      rfl
-    · ext σ
-      rw [norm_tmul_tmul, h.norm_dual_one_tmul_mul_norm σ hE s, norm_trivial_tmul]
+    simp only [sectionDegree_def, hcard, hnorm]
   rw [key]
   exact HermitianBundle.sectionDegree_trivial hfs
 
@@ -75,12 +77,10 @@ theorem sectionDegree_dual_tmul_eq_zero [Module.Invertible (𝓞 K) E] {s : E}
 theorem sectionDegree_dual_add_sectionDegree [Module.Invertible (𝓞 K) E] {s : E}
     {f : Module.Dual (𝓞 K) E} (hfs : f s ≠ 0) :
     h.dual.sectionDegree f + h.sectionDegree s = 0 := by
-  have hs : s ≠ 0 := by
-    rintro rfl
-    exact hfs (map_zero f)
+  have hs : s ≠ 0 := ne_zero_of_map hfs
   have hf : f ≠ 0 := by
     rintro rfl
-    exact hfs rfl
+    exact hfs (LinearMap.zero_apply s)
   have : Finite (Module.Dual (𝓞 K) E ⧸ Submodule.span (𝓞 K) {f}) :=
     Module.finite_quotient_span_singleton_of_finrank_eq_one (F := K)
       (Module.Invertible.finrank_eq_one K (K ⊗[𝓞 K] Module.Dual (𝓞 K) E)) hf

@@ -26,9 +26,7 @@ namespace TauCeti.HermitianDualDegreeChecks
 `f s ≠ 0`. -/
 example (a : ℝ) {s : 𝓞 ℚ} {f : Module.Dual (𝓞 ℚ) (𝓞 ℚ)} (hfs : f s ≠ 0) :
     ((HermitianMetric.trivial ℚ).rescale a).dual.sectionDegree f = -a := by
-  have hs : s ≠ 0 := by
-    rintro rfl
-    exact hfs (map_zero f)
+  have hs : s ≠ 0 := ne_zero_of_map hfs
   have h0 : (HermitianMetric.trivial ℚ).sectionDegree s = 0 :=
     HermitianBundle.sectionDegree_trivial hs
   rw [HermitianMetric.sectionDegree_dual_eq_neg _ hfs,
