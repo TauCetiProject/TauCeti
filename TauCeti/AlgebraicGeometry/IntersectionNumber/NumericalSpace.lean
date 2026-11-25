@@ -80,6 +80,16 @@ noncomputable section
 
 namespace TauCeti.AlgebraicGeometry.LineBundleClass
 
+/-- The base change of a quotient map `G ⟶ G ⧸ N` of commutative groups, viewed as a `ℤ`-linear
+map of additive groups, is surjective. -/
+private theorem baseChange_mk'_toIntLinearMap_surjective (A : Type*) [CommRing A] {G : Type*}
+    [CommGroup G] (N : Subgroup G) :
+    Function.Surjective
+      (LinearMap.baseChange A (QuotientGroup.mk' N).toAdditive.toIntLinearMap) := by
+  refine LinearMap.baseChange_surjective A fun α ↦ ?_
+  obtain ⟨a, ha⟩ := QuotientGroup.mk'_surjective N α.toMul
+  exact ⟨.ofMul a, by simp [ha]⟩
+
 section Absolute
 
 variable (k : Type u) [Field k] {X : Scheme.{u}} (x : X ⟶ Spec (.of k)) [IsProper x]
@@ -200,11 +210,8 @@ theorem picToRatNumericalClasses_tmul (q : ℚ) (a : Additive (LineBundleClass X
 variable (k) in
 /-- The map `Pic(X) ⊗ ℚ ⟶ N¹(X/k)_ℚ` is surjective. -/
 theorem picToRatNumericalClasses_surjective :
-    Function.Surjective (picToRatNumericalClasses k x) := by
-  rw [picToRatNumericalClasses, LinearMap.baseChange_eq_lTensor]
-  exact LinearMap.lTensor_surjective _ fun α ↦
-    ⟨Additive.ofMul (QuotientGroup.mk_surjective α.toMul).choose,
-      congrArg Additive.ofMul (QuotientGroup.mk_surjective α.toMul).choose_spec⟩
+    Function.Surjective (picToRatNumericalClasses k x) :=
+  baseChange_mk'_toIntLinearMap_surjective ℚ _
 
 /-- The intersection number `Pic(X) ⊗ ℚ ⟶ ℚ` with an integral closed curve `C ⊆ X`: the
 `ℚ`-linear degree pairing of `Pic(X) ⊗ ℚ` with `C`. -/
@@ -406,11 +413,8 @@ theorem picToRelRatNumericalClasses_tmul (q : ℚ) (a : Additive (LineBundleClas
 variable (f) in
 /-- The map `Pic(X) ⊗ ℚ ⟶ N¹(X/S)_ℚ` is surjective. -/
 theorem picToRelRatNumericalClasses_surjective :
-    Function.Surjective (picToRelRatNumericalClasses f) := by
-  rw [picToRelRatNumericalClasses, LinearMap.baseChange_eq_lTensor]
-  exact LinearMap.lTensor_surjective _ fun α ↦
-    ⟨Additive.ofMul (QuotientGroup.mk_surjective α.toMul).choose,
-      congrArg Additive.ofMul (QuotientGroup.mk_surjective α.toMul).choose_spec⟩
+    Function.Surjective (picToRelRatNumericalClasses f) :=
+  baseChange_mk'_toIntLinearMap_surjective ℚ _
 
 /-- The relative intersection number `Pic(X) ⊗ ℚ ⟶ ℚ` with an integral curve `C` in a fibre of
 `f`: the `ℚ`-linear degree pairing of `Pic(X) ⊗ ℚ` with `C`. -/
