@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.TensorProduct
-public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import Mathlib.Topology.Algebra.LinearMapCompletion
 public import TauCeti.Analysis.InnerProductSpace.Completion
 public import TauCeti.Analysis.InnerProductSpace.HilbertSum
@@ -833,7 +832,14 @@ theorem ext_iff_completion_inner_tmul_left {u v : Completion (E ⊗[𝕜] F)} :
 /-- `Completion (E ⊗[𝕜] F)` is nontrivial if and only if both `E` and `F` are nontrivial. -/
 theorem nontrivial_completion_iff :
     Nontrivial (Completion (E ⊗[𝕜] F)) ↔ Nontrivial E ∧ Nontrivial F := by
-  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨_, _⟩ ↦ inferInstance⟩ <;> (contrapose! h; exact inferInstance)
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨_, _⟩ ↦ ?_⟩
+  · contrapose! h; infer_instance
+  · contrapose! h; infer_instance
+  · obtain ⟨x, hx⟩ := exists_ne (0 : E)
+    obtain ⟨y, hy⟩ := exists_ne (0 : F)
+    have : Nontrivial (E ⊗[𝕜] F) :=
+      nontrivial_of_ne (x ⊗ₜ[𝕜] y) 0 (norm_ne_zero_iff.mp <| by simp [hx, hy])
+    infer_instance
 
 variable (𝕜 E F) in
 /-- The canonical bounded bilinear map `(x, y) ↦ ↑(x ⊗ₜ[𝕜] y)` into `Completion (E ⊗[𝕜] F)`. -/
