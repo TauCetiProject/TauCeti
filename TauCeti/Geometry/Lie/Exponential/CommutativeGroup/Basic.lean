@@ -219,8 +219,6 @@ omit [IsTopologicalGroup G] in
 /-- **The exponential lattice of a commutative Lie group is finitely generated**, being discrete
 in the finite-dimensional Lie algebra. -/
 instance finite_lieExpLattice : Module.Finite ℤ (lieExpLattice (I := I) (G := G)) :=
-  have : DiscreteTopology (lieExpLattice (I := I) (G := G)) :=
-    inferInstanceAs (DiscreteTopology (lieExpAddMonoidHom (I := I) (G := G)).ker)
   instModuleFinite_of_discrete_submodule _
 
 section Preconnected

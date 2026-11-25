@@ -32,6 +32,8 @@ These are the inverse limits of the level-`n` torsion isomorphisms `TauCeti.lieE
   `pⁿ X = λ ∈ Λ`, the `n`-th component of the image of `x` is the class of `λ`.
 * `TauCeti.proj_lieExpTateModuleEquiv_symm`: the `n`-th level of the point with `n`-th component
   `[λ]` is `exp(λ / pⁿ)`.
+* `TauCeti.lieExpTateModulePadicEquiv_symm_apply`: the inverse of the `ℤ_[p]`-linear form passes
+  through the `p`-adic completion of `Λ`.
 
 The Check for the circle is in `TauCeti.Examples.Geometry.Lie.Exponential.CircleTorsion`.
 -/
@@ -129,6 +131,14 @@ theorem tensorAdicCompletionEquiv_lieExpTateModulePadicEquiv (x : TateModule p (
     PadicInt.tensorAdicCompletionEquiv p _ (lieExpTateModulePadicEquiv I G p x) =
       lieExpTateModuleEquiv I G p (Fact.out : p.Prime).ne_zero x :=
   tensorAdicCompletionEquiv_tateModuleδPadicEquiv p _ _ _ _ x
+
+/-- The inverse equivalence is `PadicInt.tensorAdicCompletionEquiv` followed by the inverse of
+`TauCeti.lieExpTateModuleEquiv`. -/
+theorem lieExpTateModulePadicEquiv_symm_apply (t : ℤ_[p] ⊗[ℤ] lieExpLattice (I := I) (G := G)) :
+    (lieExpTateModulePadicEquiv I G p).symm t =
+      (lieExpTateModuleEquiv I G p (Fact.out : p.Prime).ne_zero).symm
+        (PadicInt.tensorAdicCompletionEquiv p _ t) :=
+  tateModuleδPadicEquiv_symm_apply p _ _ _ _ t
 
 end Padic
 

@@ -129,6 +129,7 @@ theorem tensorAdicCompletionEquiv_tmul (M : Type) [AddCommGroup M] [Module.Finit
 
 /-- `tensorAdicCompletionEquiv p M` is semilinear along `adicCompletionRingEquiv p`: it sends
 `a • t` to `adicCompletionRingEquiv p a • tensorAdicCompletionEquiv p M t`. -/
+@[simp]
 theorem tensorAdicCompletionEquiv_smul (M : Type) [AddCommGroup M] [Module.Finite ℤ M]
     (a : ℤ_[p]) (t : ℤ_[p] ⊗[ℤ] M) :
     tensorAdicCompletionEquiv p M (a • t) =

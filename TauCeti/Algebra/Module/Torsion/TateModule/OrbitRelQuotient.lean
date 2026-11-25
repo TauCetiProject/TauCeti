@@ -184,6 +184,15 @@ theorem tensorAdicCompletionEquiv_orbitRelQuotientTateModuleδPadicEquiv
       f.orbitRelQuotientTateModuleδEquiv hf p hp x :=
   tensorAdicCompletionEquiv_tateModuleδPadicEquiv p _ hf _ hp x
 
+/-- The inverse equivalence is `PadicInt.tensorAdicCompletionEquiv` followed by the inverse of
+`LinearMap.orbitRelQuotientTateModuleδEquiv`. -/
+theorem orbitRelQuotientTateModuleδPadicEquiv_symm_apply (hp : Bijective fun v : E ↦ (p : ℤ) • v)
+    (t : ℤ_[p] ⊗[ℤ] Λ) :
+    (f.orbitRelQuotientTateModuleδPadicEquiv hf p hp).symm t =
+      (f.orbitRelQuotientTateModuleδEquiv hf p hp).symm
+        (PadicInt.tensorAdicCompletionEquiv p Λ t) :=
+  tateModuleδPadicEquiv_symm_apply p _ hf _ hp t
+
 end Finite
 
 end LinearMap

@@ -206,13 +206,13 @@ variable (p : ℕ) [Fact p.Prime] {M₁ M₂ M₃ : Type*} [AddCommGroup M₁] [
 /-- **The map to the completion is `ℤ_[p]`-semilinear.** It sends `a • x` to `a • δ x`, where
 `a ∈ ℤ_[p]` acts on the `p`-adic completion of `M₁` through `ℤ_[p] ≃ ℤ^_p`
 (`PadicInt.adicCompletionRingEquiv`). -/
+@[simp]
 theorem tateModuleδ_smul (a : ℤ_[p]) (x : TateModule p M₃) :
     tateModuleδ p hfg hf hg (a • x) =
       PadicInt.adicCompletionRingEquiv p a • tateModuleδ p hfg hf hg x := by
   refine AdicCompletion.ext fun n ↦ ?_
-  rw [tateModuleδ_apply_val, TateModule.proj_smul, AdicCompletion.smul_eval,
-    AdicCompletion.val_smul_eq_evalₐ_smul, PadicInt.evalₐ_adicCompletionRingEquiv,
-    tateModuleδ_apply_val]
+  simp only [tateModuleδ_apply_val, TateModule.proj_smul, AdicCompletion.smul_eval,
+    AdicCompletion.val_smul_eq_evalₐ_smul, PadicInt.evalₐ_adicCompletionRingEquiv]
   generalize PadicInt.toZModPow n a = c
   rw [← ZMod.intCast_zmod_cast c, map_intCast, Int.cast_smul_eq_zsmul, map_zsmul]
   -- the integer `c.cast` acts on `M₁ ⧸ (p)ⁿM₁` through its residue in `ℤ ⧸ (p)ⁿ`
@@ -238,7 +238,7 @@ def tateModuleδPadicEquiv (hp : Bijective fun x : M₂ ↦ (p : ℤ) • x) :
   ((tateModuleδEquiv p hfg hf hg hp).trans
       (PadicInt.tensorAdicCompletionEquiv p M₁).toAddEquiv.symm).toLinearEquiv
     fun a x ↦ (PadicInt.tensorAdicCompletionEquiv p M₁).injective <| by
-      simp [PadicInt.tensorAdicCompletionEquiv_smul, tateModuleδ_smul]
+      simp
 
 /-- `PadicInt.tensorAdicCompletionEquiv` turns the tensor form back into the `p`-adic completion
 form of the equivalence. -/
@@ -248,6 +248,16 @@ theorem tensorAdicCompletionEquiv_tateModuleδPadicEquiv (hp : Bijective fun x :
     PadicInt.tensorAdicCompletionEquiv p M₁ (tateModuleδPadicEquiv p hfg hf hg hp x) =
       tateModuleδEquiv p hfg hf hg hp x :=
   (PadicInt.tensorAdicCompletionEquiv p M₁).apply_symm_apply _
+
+/-- The inverse equivalence is `PadicInt.tensorAdicCompletionEquiv` followed by the inverse of
+`TauCeti.tateModuleδEquiv`. -/
+theorem tateModuleδPadicEquiv_symm_apply (hp : Bijective fun x : M₂ ↦ (p : ℤ) • x)
+    (t : ℤ_[p] ⊗[ℤ] M₁) :
+    (tateModuleδPadicEquiv p hfg hf hg hp).symm t =
+      (tateModuleδEquiv p hfg hf hg hp).symm (PadicInt.tensorAdicCompletionEquiv p M₁ t) := by
+  rw [LinearEquiv.symm_apply_eq]
+  apply (PadicInt.tensorAdicCompletionEquiv p M₁).injective
+  simp
 
 end PadicFinite
 

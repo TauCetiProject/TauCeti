@@ -53,7 +53,8 @@ theorem toMul_proj_lieExpTateModuleEquiv_symm_of_two_pi_smul_circleExpGenerator 
     Additive.toMul (TateModule.proj n ((lieExpTateModuleEquiv (𝓡 1) Circle p hp).symm
       (AdicCompletion.of _ _ ⟨_, two_pi_smul_circleExpGenerator_mem_lieExpLattice⟩)) :
         Additive Circle) = Circle.exp (2 * π / (p ^ n : ℕ)) := by
-  rw [proj_lieExpTateModuleEquiv_symm p hp _ rfl, toMul_ofMul, smul_smul,
-    lieExp_circleExpGenerator, inv_mul_eq_div]
+  rw [proj_lieExpTateModuleEquiv_symm p hp _
+      (by rw [AdicCompletion.of_apply, Submodule.mkQ_apply]),
+    toMul_ofMul, smul_smul, lieExp_circleExpGenerator, inv_mul_eq_div]
 
 end TauCeti
