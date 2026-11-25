@@ -675,6 +675,13 @@ theorem exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank (s : Finset E
   exact ⟨(‖e‖⁻¹ : 𝕜) • e, norm_smul_inv_norm he₀, fun u hu ↦ by
     rw [inner_smul_right, he u hu, mul_zero]⟩
 
+/-- In dimension at least two, the orthogonal complement of any vector contains a unit vector. -/
+theorem exists_norm_eq_one_mem_orthogonal_singleton (e : E) (hE : 2 ≤ Module.finrank 𝕜 E) :
+    ∃ w : (𝕜 ∙ e)ᗮ, ‖(w : E)‖ = 1 := by
+  obtain ⟨w, hw, horth⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank
+    (𝕜 := 𝕜) ({e} : Finset E) (by simp; omega)
+  exact ⟨⟨w, Submodule.mem_orthogonal_singleton_iff_inner_right.2 (horth e (by simp))⟩, hw⟩
+
 /-- A vector orthogonal to a nonzero vector `b` is not `-b`. -/
 theorem ne_neg_of_inner_eq_zero {a b : E} (hb : b ≠ 0) (hab : ⟪a, b⟫_𝕜 = 0) : a ≠ -b := by
   rintro rfl
