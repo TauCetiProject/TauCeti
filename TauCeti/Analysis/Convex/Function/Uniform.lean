@@ -41,7 +41,8 @@ theorem UniformConvexOn.add_le_of_isMinOn (hf : UniformConvexOn s φ f) (hx : x 
   exact ((isMinOn_iff.mp hmin) _ (hf.1.lineMap_mem hx hy (Ioo_subset_Icc_self ht))).trans
     (hf.map_lineMap_le hx hy (Ioo_subset_Icc_self ht))
 
-/-- A strongly convex function grows at least quadratically away from a constrained minimizer. -/
+/-- At a constrained minimizer `x`, the objective gap `f y - f x` for any feasible `y` is at least
+`μ / 2 * ‖x - y‖ ^ 2`. This gives quadratic growth when `0 < μ`. -/
 theorem StrongConvexOn.mul_norm_sub_sq_le_sub_of_isMinOn (hf : StrongConvexOn s μ f)
     (hx : x ∈ s) (hmin : IsMinOn f s x) (hy : y ∈ s) :
     μ / 2 * ‖x - y‖ ^ 2 ≤ f y - f x :=
