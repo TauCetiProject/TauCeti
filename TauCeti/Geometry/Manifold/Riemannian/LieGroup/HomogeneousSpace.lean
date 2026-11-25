@@ -374,19 +374,6 @@ theorem horizontalEquivOne_apply :
   rw [horizontalEquivOne, LinearEquiv.trans_apply, LinearEquiv.ofTop_apply,
     LinearMap.kerComplementEquivRange_apply_coe, ContinuousLinearMap.coe_coe]
 
-/-- The restriction of `dπ_1` to the orthogonal complement of its kernel is bijective, being the
-forward map of `Subgroup.horizontalEquivOne`. -/
-theorem bijective_mfderiv_quotientMk_one_orthogonal :
-    letI := quotientChartedSpaceOfIsClosed I hK
-    Bijective ((mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K)
-      1).toLinearMap ∘ₗ (mfderiv I 𝓘(ℝ, QuotientModelSpace I K)
-        (QuotientGroup.mk : G → G ⧸ K) 1).kerᗮ.subtype) := by
-  let _ := quotientChartedSpaceOfIsClosed I hK
-  convert (horizontalEquivOne I K hK).bijective using 1
-  ext a
-  rw [horizontalEquivOne_apply, LinearMap.comp_apply, Submodule.subtype_apply,
-    ContinuousLinearMap.coe_coe]
-
 variable (I K) in
 /-- **The horizontal lift at the identity.** The inverse of the restriction of `dπ_1` to the
 orthogonal complement `𝔪 = 𝔨^⊥` of its kernel `𝔨`, where `π` is the projection `G → G ⧸ K`:
