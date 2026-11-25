@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Trace
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor.Trace
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor.SMul
+import TauCeti.Topology.Algebra.Module.BilinearForm
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.ContractedBianchi
 
 /-!
@@ -227,10 +228,12 @@ private theorem traceCLM_inverse_deriv_ricciTensor_eq_laplaceBeltrami
   calc
     -- The tangent fibre and model give the same fixed-space contraction.
     _ = traceCLM ℝ (TangentSpace I x) ((g.metric t x).inverse ∘L Kx) := rfl
-    _ = bilinFormTrace Kx.toBilinForm :=
-      TauCeti.traceCLM_inverse_comp_eq_bilinFormTrace (g.metric t x)
+    _ = LinearMap.BilinMap.metricTrace Kx.toBilinForm :=
+      ContinuousLinearMap.traceCLM_inverse_comp_eq_metricTrace (g.metric t x)
         (fun u v ↦ by simpa only [metric_apply] using hg x u v) Kx
-    _ = ∑ j, Kx (e j) (e j) := bilinFormTrace_eq_sum _ e
+    _ = ∑ j, Kx (e j) (e j) := by
+      simpa only [ContinuousLinearMap.toBilinForm_apply] using
+        LinearMap.BilinMap.metricTrace_eq_sum Kx.toBilinForm e
     _ = ∑ j, ∑ i, inner ℝ (e i)
         ((cov t).hom ((cov t).hom (cov t)) C x (e i) (e j) (e j) -
           (cov t).hom ((cov t).hom (cov t)) C x (e j) (e j) (e i)) := by
@@ -333,10 +336,10 @@ theorem hasDerivAt_scalarCurvature_of_ricciFlow
     -- Trace is independent of reading the fixed tangent fibre as its model space.
     change traceCLM ℝ (TangentSpace I y)
       ((g.metric t y).inverse ∘L ((cov t).ricciTensor y).toContinuousBilinearMap) = _
-    rw [TauCeti.traceCLM_inverse_comp_eq_bilinFormTrace (g.metric t y)
+    rw [ContinuousLinearMap.traceCLM_inverse_comp_eq_metricTrace (g.metric t y)
       (fun u v ↦ by simpa only [metric_apply] using hg y u v),
+      LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap,
       CovariantDerivative.scalarCurvature_apply]
-    rfl
   have hd := g.hasDerivAt_trace_ricciTensor_of_ricciFlow hcov hg hflow x
   rw [← hcurv] at hd
   exact hd.congr_of_eventuallyEq (Filter.Eventually.of_forall fun s ↦ hscalar s x)
@@ -357,7 +360,7 @@ theorem hasDerivAt_scalarCurvature_sum_of_ricciFlow
         2 * ∑ i, ∑ j, ((cov t).ricciTensor x (b i) (b j)) ^ 2) t := by
   have hLC := ((g.metric t).isLeviCivitaConnection_iff_of_apply_eq_inner
       (fun y u v ↦ by simpa only [metric_apply] using hg y u v)).mp (hcov t)
-  have hsq := TauCeti.traceCLM_inverse_comp_self_eq_sum_sq (g.metric t x)
+  have hsq := ContinuousLinearMap.traceCLM_inverse_comp_self_eq_sum_sq (g.metric t x)
         (fun u v ↦ by simpa only [metric_apply] using hg x u v)
     ((cov t).ricciTensor x).toContinuousBilinearMap
     (fun u v ↦ CovariantDerivative.IsMetricCompatible.ricciTensor_comm (cov := cov t)

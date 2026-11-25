@@ -174,10 +174,10 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_sublevel_homeomorph_closedBa
     by_contra! hy
     exact hy.ne (congrArg f (hmin y hy.le))
   have hidx := manifoldMorseIndex_eq_zero_of_isLocalMin
-    ((hf.self_of_nhds).of_le (by norm_cast)) hlocal
+    ((hf.self_of_nhds).of_le (by norm_cast)) BoundarylessManifold.isInteriorPoint hlocal
   obtain ⟨U, hU, hxU, R, hR, he⟩ := h.exists_local_sublevel_homeomorph_closedBall hf hidx
   obtain ⟨ε, hε, hεU⟩ := exists_pos_sublevel_subset_of_unique_min hcompact hcont
-    ha hmin hU hxU
+    ha hmin (hU.mem_nhds hxU)
   refine ⟨min R (Real.sqrt ε), lt_min hR (Real.sqrt_pos.mpr hε), fun r hr hrR ↦ ?_⟩
   have hrR' : r < R := lt_of_lt_of_le hrR (min_le_left _ _)
   have hrε : r ^ 2 ≤ ε := by

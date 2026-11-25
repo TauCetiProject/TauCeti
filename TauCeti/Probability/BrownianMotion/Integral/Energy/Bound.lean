@@ -94,6 +94,24 @@ theorem elementaryEnergy_nonneg (hτ : MonotoneOn τ (Iic n)) (ω : Ω) :
     0 ≤ elementaryEnergy τ a n ω := by
   simpa using monotoneOn_elementaryEnergy (a := a) hτ ω (by simp) (by simp) (Nat.zero_le n)
 
+/-- A common bound on the heights bounds the energy by its square times elapsed time.
+The bound need hold only on the intervals actually used. -/
+theorem elementaryEnergy_le_of_bound (hτ : MonotoneOn τ (Iic n)) {C : ℝ} (ω : Ω)
+    (ha : ∀ i < n, |a i ω| ≤ C) :
+    elementaryEnergy τ a n ω ≤ C ^ 2 * ((τ n : ℝ) - τ 0) := by
+  rw [elementaryEnergy_def]
+  calc
+    _ ≤ ∑ i ∈ range n, C ^ 2 * ((τ (i + 1) : ℝ) - τ i) := by
+      apply sum_le_sum
+      intro i hi
+      have hin : i < n := mem_range.mp hi
+      have hs : a i ω ^ 2 ≤ C ^ 2 :=
+        sq_le_sq.mpr ((ha i hin).trans (le_abs_self C))
+      apply mul_le_mul_of_nonneg_right hs
+      exact sub_nonneg.mpr (NNReal.coe_le_coe.mpr
+        (hτ (mem_Iic.mpr hin.le) (mem_Iic.mpr hin) (Nat.le_succ i)))
+    _ = _ := by rw [← mul_sum, sum_range_sub (fun i ↦ (τ i : ℝ))]
+
 variable {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
 variable {P : Measure Ω} {W : ℝ≥0 → Ω → ℝ}
 
@@ -101,6 +119,22 @@ variable {P : Measure Ω} {W : ℝ≥0 → Ω → ℝ}
 theorem integrable_elementaryEnergy (ha₂ : ∀ i < n, MemLp (a i) 2 P) :
     Integrable (elementaryEnergy τ a n) P := by
   exact integrable_finsetSum _ fun i hi ↦ ((ha₂ i (mem_range.mp hi)).integrable_sq).mul_const _
+
+/-- Heights in `L^{2p}` give finite-grid energy in `L^p`, without any ordering
+assumption on the dates. -/
+theorem memLp_elementaryEnergy {p : ℝ≥0∞} (ha : ∀ i < n, MemLp (a i) (2 * p) P) :
+    MemLp (elementaryEnergy τ a n) p P := by
+  let : ENNReal.HolderTriple (2 * p) (2 * p) p := ⟨by
+    rw [ENNReal.mul_inv (.inl two_ne_zero) (.inl ENNReal.ofNat_ne_top),
+      mul_comm (2⁻¹ : ℝ≥0∞), ← div_eq_mul_inv, ENNReal.add_halves]⟩
+  have hs (i : ℕ) (hi : i ∈ range n) :
+      MemLp (fun ω ↦ a i ω ^ 2 * ((τ (i + 1) : ℝ) - τ i)) p P := by
+    simpa only [pow_two, Pi.mul_apply] using
+      ((ha i (mem_range.mp hi)).mul (ha i (mem_range.mp hi))).mul_const
+        ((τ (i + 1) : ℝ) - τ i)
+  convert memLp_finsetSum (range n) hs using 1
+  ext ω
+  exact elementaryEnergy_def τ a n ω
 
 /-- The elementary Brownian isometry expressed as expected pathwise energy. -/
 theorem IsFilteredPreBrownianReal.integral_sq_sum_mul_sub_eq_integral_elementaryEnergy
@@ -233,11 +267,10 @@ private theorem measure_abs_sum_mul_sub_energyCutoff_ge_le
   have hb₂ (i : ℕ) (hi : i < n) : MemLp (b i) 2 P :=
     memLp_energyCutoff hτ ha δ hi
   have hsecond := integral_sq_sum_mul_sub_energyCutoff_le hW hτ ha hδ
-  have hcheb := TauCeti.meas_ge_le_integral_norm_sq_div_sq
-    (Y := fun ω ↦ ∑ i ∈ range n, b i ω * (W (τ (i + 1)) ω - W (τ i) ω))
-    (by simpa only [Real.norm_eq_abs, sq_abs] using
-      (hW.memLp_sum_mul_sub hτ hb hb₂).integrable_sq) hε
-  simp only [Real.norm_eq_abs, sq_abs] at hcheb
+  have hcheb := TauCeti.meas_ge_le_integral_sq_div_sq
+    (Y := fun ω ↦ |∑ i ∈ range n, b i ω * (W (τ (i + 1)) ω - W (τ i) ω)|)
+    (by simpa only [sq_abs] using (hW.memLp_sum_mul_sub hτ hb hb₂).integrable_sq) hε
+  simp only [sq_abs] at hcheb
   exact hcheb.trans
     (ENNReal.ofReal_le_ofReal (div_le_div_of_nonneg_right hsecond (sq_nonneg ε)))
 

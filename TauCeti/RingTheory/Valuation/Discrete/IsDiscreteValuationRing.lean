@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 public import Mathlib.RingTheory.Valuation.ValuativeRel.Basic
 public import TauCeti.RingTheory.Valuation.ValuationRing
+import TauCeti.Algebra.GroupWithZero.Range
 
 /-!
 # The valuation of a discrete valuation ring on its own elements
@@ -23,6 +24,10 @@ It also compares the valuation of a discrete valuation ring `S` with that of a v
 whose valuation ring maps to `S` through a local homomorphism: the valuation of `S`, restricted
 along `K → Frac(S)`, is equivalent to the valuation of `K`.
 
+Finally, the valuation ring of a surjective valuation from a field into a linearly ordered
+commutative group with zero is a discrete valuation ring once the units of the target form a
+nontrivial cyclic group, as for a normalized `ℤᵐ⁰`-valuation.
+
 ## Main results
 
 * `TauCeti.IsDiscreteValuationRing.valuation_algebraMap_lt_one_iff_mem`: `v r < 1` exactly when
@@ -36,6 +41,9 @@ along `K → Frac(S)`, is equivalent to the valuation of `K`.
   when `ϖ ∣ r`, and `v r = 1` exactly when `ϖ ∤ r`.
 * `TauCeti.isEquiv_comap_valuation_maximalIdeal_of_isLocalHom`: a discrete valuation ring
   dominating the valuation ring of `K` restricts to the valuation class of `K`.
+* `Valuation.valuationSubring_isDiscreteValuationRing_of_surjective`: for a surjective valuation
+  from a field into a linearly ordered commutative group with zero `Γ₀` with `Γ₀ˣ` nontrivial and
+  cyclic, the valuation ring is a discrete valuation ring.
 -/
 
 public section
@@ -132,3 +140,17 @@ theorem isEquiv_comap_valuation_maximalIdeal_of_isLocalHom
     exact valuation_le_one _ _
 
 end TauCeti
+
+namespace Valuation
+
+variable {K : Type*} [Field K] {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
+
+/-- The valuation ring of a surjective valuation is a discrete valuation ring once `Γ₀ˣ` is
+nontrivial and cyclic. -/
+theorem valuationSubring_isDiscreteValuationRing_of_surjective [IsCyclic Γ₀ˣ] [Nontrivial Γ₀ˣ]
+    (v : Valuation K Γ₀) (hv : Function.Surjective v) :
+    _root_.IsDiscreteValuationRing v.valuationSubring :=
+  have := v.nontrivial_valueGroup_of_surjective hv
+  valuationSubring_isDiscreteValuationRing v
+
+end Valuation

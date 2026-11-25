@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.Data.Matrix.Mul
 
 /-!
-# Matrix products: positivity of powers and nonvanishing of factors
+# Matrix products: positivity of powers, nonvanishing of factors and opposite rings
 
 Over a strictly ordered semiring, once some power `A ^ k` with `k > 0` of an entrywise nonnegative
 square matrix `A` is strictly positive, every later power is strictly positive too: each row of `A`
@@ -27,6 +28,12 @@ Submatrices of an outer product `vecMulVec u v` are outer products of the reinde
 A scalar acting on the right factor of an outer product `vecMulVec (Pi.single i 1) v` may be pulled
 out to the left without any commutativity, since the left factor has entries `0` and `1` only.
 
+Transposing a product of rectangular matrices and passing to the opposite ring reverses the
+factors; transposition with `MulOpposite.op` and with `MulOpposite.unop` are mutually inverse.
+
+Sandwiching a matrix over an `R`-algebra between two matrices with entries in `R` gives entries that
+are `R`-linear combinations of the entries of the middle factor.
+
 ## Main results
 
 * `Matrix.pow_apply_pos_of_le`: if `A` is entrywise nonnegative and `A ^ k` is strictly positive
@@ -36,6 +43,8 @@ out to the left without any commutativity, since the left factor has entries `0`
   is nonempty and neither factor is zero.
 * `Matrix.submatrix_mul_of_injective`: a submatrix of a product is the product of submatrices
   through an injective inner reindexing whose range carries the relevant rows of the left factor.
+* `Matrix.submatrix_val_mul_of_forall`: the same through the inclusions of subtypes, when the
+  relevant rows of the left factor vanish off the inner subtype.
 * `Matrix.eq_of_mul_apply_ne_zero`: a product of degree-preserving matrices is degree-preserving.
 * `Matrix.eq_of_one_apply_ne_zero`: the identity matrix is degree-preserving.
 * `Matrix.mul_mul_eq_mul_mul_of_mul_eq_mul`: if `D₁ * X = X * D₂` and `D₂ * Y = Y * D₃`, then
@@ -44,6 +53,10 @@ out to the left without any commutativity, since the left factor has entries `0`
   (Pi.single i 1) v`, for any scalar action, unlike `Matrix.vecMulVec_smul`.
 * `Matrix.submatrix_vecMulVec`: a submatrix of an outer product is the outer product of the
   reindexed vectors.
+* `Matrix.transpose_mul_map_op`: transposing a product and passing to the opposite ring reverses
+  the factors, `(M * N)ᵀ.map op = Nᵀ.map op * Mᵀ.map op`, for rectangular `M` and `N`.
+* `Matrix.map_algebraMap_mul_mul_map_algebraMap_apply`: the entries of `F * u * G`, for `F` and
+  `G` with entries in `R` and `u` over an `R`-algebra, are `∑ q, ∑ p, (F i p * G q j) • u p q`.
 -/
 
 public section
@@ -108,6 +121,17 @@ theorem submatrix_mul_of_injective {l o q : Type*} [Fintype o] (A : Matrix m n K
   ext fun i k ↦ (Fintype.sum_of_injective e₂ he₂ _ _
     (fun j hj ↦ by simp [not_ne_iff.mp (mt (hA i j) hj)]) fun _ ↦ rfl).symm
 
+/-- The rows satisfying `r` of a matrix product can be computed through the inner indices
+satisfying `s` alone, when the rows satisfying `r` of the left factor vanish at the inner indices
+not satisfying `s`. This is `Matrix.submatrix_mul_of_injective` for the inclusions of subtypes. -/
+theorem submatrix_val_mul_of_forall {l : Type*} {r : m → Prop} {s : n → Prop}
+    [Fintype {j // s j}] (A : Matrix m n K) (B : Matrix n p K) (e : l → p)
+    (hA : ∀ i j, r i → ¬s j → A i j = 0) :
+    (A * B).submatrix (Subtype.val : {i // r i} → m) e =
+      A.submatrix Subtype.val (Subtype.val : {j // s j} → n) * B.submatrix Subtype.val e :=
+  submatrix_mul_of_injective A B _ _ e Subtype.val_injective fun i j hij ↦
+    ⟨⟨j, by_contra fun hj ↦ hij (hA i j i.property hj)⟩, rfl⟩
+
 /-- **Products preserve degrees.** If the nonzero entries `A i j` and `B j k` of two matrices
 only join indices of the same degree, so do the nonzero entries of `A * B`. -/
 theorem eq_of_mul_apply_ne_zero {G : Type*} {g₁ : m → G} {g₂ : n → G} {g₃ : p → G}
@@ -171,5 +195,43 @@ theorem submatrix_vecMulVec {α l m n o : Type*} [Mul α] (u : m → α) (v : n 
     (g : o → n) : (vecMulVec u v).submatrix f g = vecMulVec (u ∘ f) (v ∘ g) := by
   ext
   simp [vecMulVec_apply]
+
+section MulOpposite
+
+variable {α m n p : Type*}
+
+/-- Transposing a matrix and passing to the opposite ring, then transposing back and returning to
+the ring, gives the original matrix. -/
+@[simp]
+theorem transpose_map_op_transpose_map_unop (M : Matrix m n α) :
+    (Mᵀ.map MulOpposite.op)ᵀ.map MulOpposite.unop = M :=
+  rfl
+
+/-- Transposing a matrix over the opposite ring and returning to the ring, then transposing back
+and passing to the opposite ring, gives the original matrix. -/
+@[simp]
+theorem transpose_map_unop_transpose_map_op (M : Matrix m n αᵐᵒᵖ) :
+    (Mᵀ.map MulOpposite.unop)ᵀ.map MulOpposite.op = M :=
+  rfl
+
+/-- Transposing a product of matrices and passing to the opposite ring reverses the factors. -/
+theorem transpose_mul_map_op [Mul α] [AddCommMonoid α] [Fintype n] (M : Matrix m n α)
+    (N : Matrix n p α) :
+    (M * N)ᵀ.map MulOpposite.op = Nᵀ.map MulOpposite.op * Mᵀ.map MulOpposite.op := by
+  ext i j
+  simp [Matrix.mul_apply]
+
+end MulOpposite
+
+/-- The entries of a matrix over an `R`-algebra `A` sandwiched between two matrices over `R` are
+`R`-linear combinations of its entries. -/
+theorem map_algebraMap_mul_mul_map_algebraMap_apply {R A l m n o : Type*} [CommSemiring R]
+    [Semiring A] [Algebra R A] [Fintype m] [Fintype n] (F : Matrix l m R) (u : Matrix m n A)
+    (G : Matrix n o R) (i : l) (j : o) :
+    (F.map (algebraMap R A) * u * G.map (algebraMap R A)) i j =
+      ∑ q, ∑ p, (F i p * G q j) • u p q := by
+  simp only [Matrix.mul_apply, map_apply, Finset.sum_mul, Algebra.smul_def, map_mul]
+  refine Finset.sum_congr rfl fun q _ ↦ Finset.sum_congr rfl fun p _ ↦ ?_
+  rw [mul_assoc, ← Algebra.commutes (G q j), ← mul_assoc]
 
 end Matrix
