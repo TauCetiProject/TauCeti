@@ -62,17 +62,12 @@ open TauCeti
 
 namespace Ideal
 
-section PreValuationRing
-
-variable {R S : Type*} [CommRing R] [CommRing S]
-
 /-- For a ring homomorphism `f` into a valuation ring, an element lies in the extension
 `I.map f` of an ideal `I` if and only if it is divisible by `f a` for some `a ∈ I`. -/
-theorem mem_map_iff_exists_dvd [PreValuationRing S] (f : R →+* S) {I : Ideal R} {x : S} :
+theorem mem_map_iff_exists_dvd {R S : Type*} [CommSemiring R] [CommSemiring S]
+    [PreValuationRing S] (f : R →+* S) {I : Ideal R} {x : S} :
     x ∈ I.map f ↔ ∃ a ∈ I, f a ∣ x :=
   mem_map_iff_exists_dvd_of_dvd_total f fun _ _ _ _ ↦ ValuationRing.dvd_total _ _
-
-end PreValuationRing
 
 variable {V W : Type*} [CommRing V] [CommRing W] (f : V →+* W)
 

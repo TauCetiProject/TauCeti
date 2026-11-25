@@ -76,8 +76,8 @@ namespace Ideal
 contracting into the maximal ideal of the source. For instance, if `V` is a field inside a
 local domain `W` and `p = 0`, then `p.map f = 0` while the greatest ideal of `W` contracting into
 `p` is the maximal ideal of `W`. -/
-theorem isGreatest_comap_le_maximalIdeal {V W : Type*} [CommRing V] [CommRing W] (f : V →+* W)
-    [IsLocalRing V] [IsLocalRing W] :
+theorem isGreatest_comap_le_maximalIdeal {V W : Type*} [CommSemiring V] [CommSemiring W]
+    (f : V →+* W) [IsLocalRing V] [IsLocalRing W] :
     IsGreatest {J : Ideal W | J.comap f ≤ IsLocalRing.maximalIdeal V}
       (IsLocalRing.maximalIdeal W) :=
   ⟨IsLocalRing.le_maximalIdeal (comap_ne_top f (IsLocalRing.maximalIdeal.isMaximal W).ne_top),

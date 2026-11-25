@@ -259,7 +259,7 @@ end ValuationRing
 end TauCeti
 
 /-- In a valuation ring a proper radical ideal is prime. -/
-theorem Ideal.IsRadical.isPrime_of_ne_top {S : Type*} [CommRing S] [PreValuationRing S]
+theorem Ideal.IsRadical.isPrime_of_ne_top {S : Type*} [CommSemiring S] [PreValuationRing S]
     {I : Ideal S} (hI : I.IsRadical) (htop : I ≠ ⊤) : I.IsPrime := by
   refine ⟨htop, fun {x y} hxy ↦ ?_⟩
   -- One of `x` and `y` divides the other, and then the square of the multiple lies in `I`.
