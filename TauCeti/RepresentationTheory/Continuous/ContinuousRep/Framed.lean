@@ -29,8 +29,10 @@ functorially in `f`.
 
 ## Main definitions
 
+* `Representation.ofGL ρ`: the linear representation on `n → A` of a homomorphism
+  `ρ : Γ →* GL_n(A)`.
 * `TauCeti.ContinuousRep.ofFramed ρ`: the continuous representation on `n → A` of a framed
-  representation `ρ : Γ →ₜ* GL_n(A)`.
+  representation `ρ : Γ →ₜ* GL_n(A)`, with underlying linear representation `Representation.ofGL ρ`.
 * `TauCeti.ContinuousRep.frame b ρ`: the frame of a continuous representation in a basis `b`.
 * `TauCeti.ContinuousRep.ofFramedFrameIso b ρ`: `ofFramed (frame b ρ) ≅ ρ`.
 * `TauCeti.ContinuousRep.framedMap f hf ρ`: entrywise coefficient change along a continuous
@@ -59,6 +61,21 @@ noncomputable section
 
 open Matrix
 
+namespace Representation
+
+variable {Γ A : Type*} [Monoid Γ] [CommRing A] {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- The linear representation on `n → A` of a homomorphism `Γ →* GL_n(A)`, by matrix
+multiplication. -/
+def ofGL (ρ : Γ →* GL n A) : Representation A Γ (n → A) :=
+  (Matrix.toLinAlgEquiv'.toMonoidHom.comp (Units.coeHom (Matrix n n A))).comp ρ
+
+@[simp]
+theorem ofGL_apply (ρ : Γ →* GL n A) (g : Γ) : ofGL ρ g = Matrix.toLin' (ρ g : Matrix n n A) :=
+  (rfl)
+
+end Representation
+
 namespace TauCeti.ContinuousRep
 
 variable {Γ A : Type*} [Monoid Γ] [TopologicalSpace Γ] [CommRing A] [TopologicalSpace A]
@@ -66,24 +83,14 @@ variable {Γ A : Type*} [Monoid Γ] [TopologicalSpace Γ] [CommRing A] [Topologi
 
 section ofFramed
 
-/-- The linear representation on `n → A` of a homomorphism `Γ →* GL_n(A)`, by matrix
-multiplication. -/
-def framedRepresentation (ρ : Γ →* GL n A) : Representation A Γ (n → A) :=
-  (Matrix.toLinAlgEquiv'.toMonoidHom.comp (Units.coeHom (Matrix n n A))).comp ρ
-
-omit [TopologicalSpace Γ] [TopologicalSpace A] [IsTopologicalRing A] in
-theorem framedRepresentation_apply (ρ : Γ →* GL n A) (g : Γ) :
-    framedRepresentation ρ g = Matrix.toLin' (ρ g : Matrix n n A) :=
-  (rfl)
-
 /-- **The continuous representation of a framed representation** `ρ : Γ →ₜ* GL_n(A)`: `g` acts
 on `n → A` by the matrix `ρ g`. Joint continuity is continuity of the matrix entries. -/
 def ofFramed (ρ : Γ →ₜ* GL n A) : ContinuousRep Γ A (n → A) where
-  toRepresentation := framedRepresentation (ρ : Γ →* GL n A)
+  toRepresentation := Representation.ofGL (ρ : Γ →* GL n A)
   continuous_action := by
     refine (TauCeti.ModuleTopology.continuous_linearMap_apply_iff_continuous_toMatrix
       (Pi.basisFun A n) (Pi.basisFun A n) _).2 ?_
-    simp only [LinearMap.toMatrix_eq_toMatrix', framedRepresentation_apply,
+    simp only [LinearMap.toMatrix_eq_toMatrix', Representation.ofGL_apply,
       LinearMap.toMatrix'_toLin']
     exact Units.continuous_val.comp ρ.continuous
 
@@ -158,8 +165,9 @@ theorem frame_pi_basisFun_ofFramed (ρ : Γ →ₜ* GL n A) : frame (Pi.basisFun
 
 /-- **Change of basis for frames**: `frame b' ρ = (b'.toMatrix b) (frame b ρ) (b.toMatrix b')`,
 where `b'.toMatrix b` and `b.toMatrix b'` are inverse matrices. -/
-theorem frame_eq_mul_mul (b b' : Module.Basis n A M) (ρ : ContinuousRep Γ A M) (g : Γ) :
-    (frame b' ρ g : Matrix n n A) =
+theorem frame_eq_mul_mul {n' : Type*} [Fintype n'] [DecidableEq n'] (b : Module.Basis n A M)
+    (b' : Module.Basis n' A M) (ρ : ContinuousRep Γ A M) (g : Γ) :
+    (frame b' ρ g : Matrix n' n' A) =
       b'.toMatrix b * (frame b ρ g : Matrix n n A) * b.toMatrix b' := by
   simp
 

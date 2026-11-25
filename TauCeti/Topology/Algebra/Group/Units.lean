@@ -27,7 +27,7 @@ file records consequences of that definition.
 * In a group with zero with continuous inversion away from zero, the coercion `G₀ˣ → G₀` is a
   topological embedding, so a preconnected set of nonzero elements pulls back to a preconnected
   set of units.
-* A homomorphism from a monoid with continuous inversion into `Mˣ` is continuous exactly when its
+* A homomorphism from a group with continuous inversion into `Mˣ` is continuous exactly when its
   values in `M` are, since its inverses are its values at inverses.
 
 ## Main results
