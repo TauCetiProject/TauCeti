@@ -22,7 +22,10 @@ linear trivialization also induces the original fibre equivalence at the image p
 `Bundle.Trivialization.continuousLinearEquivAt_pullback` and
 `Bundle.Trivialization.continuousLinearMapAt_pullback`), and reads coordinates back into the fibre
 as the original one does (`Bundle.Trivialization.symm_pullback`,
-`Bundle.Trivialization.pullback_symmL_apply`). Hom coordinates between
+`Bundle.Trivialization.pullback_symmL_apply`). Restricting a chart whose source lies in the base
+set of a trivialization to an open subset gives a chart whose source lies in the base set of the
+trivialization pulled back along the inclusion
+(`Bundle.Trivialization.subtypeRestr_source_subset_pullback_baseSet`). Hom coordinates between
 pullbacks by two different base maps agree with the original source and target coordinates
 (`ContinuousLinearMap.inCoordinates_pullback_of_mem`).
 -/
@@ -163,6 +166,22 @@ bundle. -/
 instance memTrivializationAtlas_pullback (e : Trivialization F (π F V))
     [MemTrivializationAtlas e] (f : C(B', B)) : MemTrivializationAtlas (e.pullback f) :=
   ⟨e, inferInstance, rfl⟩
+
+end Bundle.Trivialization
+
+namespace Bundle.Trivialization
+
+/-- If the source of a chart `c` lies in the base set of a frame `t`, the source of its
+restriction `c|_U` lies in the base set of the pullback of `t` along the inclusion `U → M`. -/
+theorem subtypeRestr_source_subset_pullback_baseSet {E M F : Type*} [TopologicalSpace E]
+    [TopologicalSpace M] [TopologicalSpace F]
+    {V : M → Type*} [∀ x, Nonempty (V x)] [TopologicalSpace (TotalSpace F V)]
+    (t : Trivialization F (π F V)) {c : OpenPartialHomeomorph M E} {U : TopologicalSpace.Opens M}
+    (hU : Nonempty U) (hct : c.source ⊆ t.baseSet) :
+    (c.subtypeRestr hU).source ⊆
+      (t.pullback (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M))).baseSet := by
+  rw [OpenPartialHomeomorph.subtypeRestr_source, pullback_baseSet]
+  exact Set.preimage_mono hct
 
 end Bundle.Trivialization
 

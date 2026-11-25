@@ -72,18 +72,6 @@ namespace Bundle.Trivialization
 
 open TauCeti
 
-/-- If the source of a chart `c` lies in the base set of a frame `t`, the source of its
-restriction `c|_U` lies in the base set of the pullback of `t` along the inclusion `U → M`. -/
-theorem subtypeRestr_source_subset_pullback_baseSet {E M F : Type*} [TopologicalSpace E]
-    [TopologicalSpace M] [TopologicalSpace F]
-    {V : M → Type*} [∀ x, Nonempty (V x)] [TopologicalSpace (TotalSpace F V)]
-    (t : Trivialization F (π F V)) {c : OpenPartialHomeomorph M E} {U : Opens M}
-    (hU : Nonempty U) (hct : c.source ⊆ t.baseSet) :
-    (c.subtypeRestr hU).source ⊆
-      (t.pullback (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M))).baseSet := by
-  rw [OpenPartialHomeomorph.subtypeRestr_source, pullback_baseSet]
-  exact preimage_mono hct
-
 section ChartTest
 
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
