@@ -55,7 +55,11 @@ and quasi-coherent `M`, the sections of the transposed base change map are pullb
 under the identifications of sections of higher direct images with cohomology
 (`TauCeti.AlgebraicGeometry.higherDirectImageBaseChangeTranspose_app_sectionsAddEquiv`). At
 `V = ⊤` this is the map `Scheme.Hom.cohomologyPullback` whose linear extension is the flat base
-change map `TauCeti.AlgebraicGeometry.cohomologyBaseChange` over an affine base.
+change map `TauCeti.AlgebraicGeometry.cohomologyBaseChange` over an affine base. Similarly, on an
+affine open `V'` of `Y'` lying over an affine open `V` of `Y`, the base change map itself sends
+the pullback of the section defined by a class in `H^q(f⁻¹ V, M)` to the section defined by its
+pullback to `H^q(f'⁻¹ V', g'^* M)`
+(`higherDirectImageBaseChange_app_app_pullbackSectionsLE_sectionsAddEquiv`).
 
 ## Main declarations
 
@@ -65,7 +69,10 @@ change map `TauCeti.AlgebraicGeometry.cohomologyBaseChange` over an affine base.
   `R^q f_* M ⟶ g_* R^q f'_* g'^* M`;
 * `TauCeti.AlgebraicGeometry.higherDirectImageBaseChangeTranspose_app_app_presheafToSheaf` and
   `TauCeti.AlgebraicGeometry.higherDirectImageBaseChangeTranspose_app_sectionsAddEquiv`:
-  its sections are pullback on cohomology.
+  its sections are pullback on cohomology;
+* `higherDirectImageBaseChange_app_app_pullbackSectionsLE_sectionsAddEquiv`:
+  the same for the base change map itself, on pullbacks of sections to an affine open `V` of `Y'`
+  lying over an affine open `U` of `Y`, with `g⁻¹ U` arbitrary.
 
 ## References
 
@@ -355,6 +362,52 @@ theorem higherDirectImageBaseChangeTranspose_app_sectionsAddEquiv
   rw [higherDirectImageSectionsAddEquiv_eq_presheafToSheaf,
     higherDirectImageSectionsAddEquiv_eq_presheafToSheaf]
   exact higherDirectImageBaseChangeTranspose_app_app_presheafToSheaf h q M V c
+
+/-- **Sections of the base change map on pulled-back sections.** For opens `U` of `Y` and
+`V ≤ g⁻¹ U` of `Y'`, the base change map `g^* R^q f_* M ⟶ R^q f'_* g'^* M` sends the pullback to
+`V` of a section `s` of `R^q f_* M` over `U` to the restriction to `V` of the image of `s` under
+the transposed map `R^q f_* M ⟶ g_* R^q f'_* g'^* M`. -/
+lemma higherDirectImageBaseChange_app_app_pullbackSectionsLE (M : X.Modules) (U : Y.Opens)
+    (V : Y'.Opens) (hVU : V ≤ g ⁻¹ᵁ U) (s : Γ((f.higherDirectImage q).obj M, U)) :
+    ((higherDirectImageBaseChange h q).app M).app V (g.pullbackSectionsLE _ U V hVU s) =
+      ((f'.higherDirectImage q).obj ((Scheme.Modules.pullback g').obj M)).presheaf.map
+        (homOfLE hVU).op (((higherDirectImageBaseChangeTranspose h q).app M).app U s) := by
+  rw [pullbackSectionsLE_apply, ← homEquiv_higherDirectImageBaseChange_app,
+    pullbackPushforwardAdjunction_homEquiv_app_apply]
+  exact PresheafOfModules.naturality_apply ((higherDirectImageBaseChange h q).app M).val
+    (homOfLE hVU).op _
+
+/-- **Sections of the base change map over affine opens.** For quasi-compact quasi-separated `f`
+and `f'`, quasi-coherent `M`, affine opens `U` of `Y` and `V ≤ g⁻¹ U` of `Y'`, the base change map
+sends the pullback to `V` of the section of `R^q f_* M` over `U` defined by a class
+`c ∈ H^q(f⁻¹ U, M)` to the section of `R^q f'_* g'^* M` over `V` defined by the restriction of the
+pullback of `c` to `H^q(f'⁻¹ V, g'^* M)`. Unlike
+`higherDirectImageBaseChangeTranspose_app_sectionsAddEquiv`, the inverse image `g⁻¹ U` need not be
+affine. -/
+theorem higherDirectImageBaseChange_app_app_pullbackSectionsLE_sectionsAddEquiv [QuasiCompact f]
+    [QuasiSeparated f] [QuasiCompact f'] [QuasiSeparated f'] (M : X.Modules) [M.IsQuasicoherent]
+    {U : Y.Opens} (hU : IsAffineOpen U) {V : Y'.Opens} (hV : IsAffineOpen V) (hVU : V ≤ g ⁻¹ᵁ U)
+    (c : cohomologyOn M q (f ⁻¹ᵁ U)) :
+    ((higherDirectImageBaseChange h q).app M).app V
+        (g.pullbackSectionsLE _ U V hVU (f.higherDirectImageSectionsAddEquiv M q hU c)) =
+      f'.higherDirectImageSectionsAddEquiv _ q hV
+        (cohomologyOnRes _ q ((f'.preimage_mono hVU).trans (preimage_preimage_eq_of_comp_eq h U).le)
+          (g'.cohomologyOnPullback M q (f ⁻¹ᵁ U) c)) := by
+  rw [higherDirectImageBaseChange_app_app_pullbackSectionsLE,
+    higherDirectImageSectionsAddEquiv_eq_presheafToSheaf,
+    higherDirectImageBaseChangeTranspose_app_app_presheafToSheaf,
+    higherDirectImageSectionsAddEquiv_eq_presheafToSheaf]
+  -- Restriction from `g⁻¹ U` to `V` commutes with the passage from cohomology to sections of the
+  -- sheafification.
+  have h₁ := PresheafOfModules.naturality_apply
+    ((f'.higherDirectImagePresheafToSheaf q).app ((Scheme.Modules.pullback g').obj M))
+    (homOfLE hVU).op
+  have h₂ := NatTrans.naturality_apply
+    (f'.higherDirectImagePresheafToPresheafIso ((Scheme.Modules.pullback g').obj M) q).inv
+    (homOfLE hVU).op
+  rw [← cohomologyOnRes_comp _ q (f'.preimage_mono hVU) (preimage_preimage_eq_of_comp_eq h U).le,
+    ConcreteCategory.comp_apply]
+  exact ((congrArg _ (h₂ _)).trans (h₁ _)).symm
 
 end BaseChange
 
