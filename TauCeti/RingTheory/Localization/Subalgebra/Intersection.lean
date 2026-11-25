@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Localization.SubalgebraMembership
+public import TauCeti.RingTheory.Localization.Subalgebra.Membership
 public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 public import Mathlib.RingTheory.Coprime.Basic
 import Mathlib.Data.Bool.Set
