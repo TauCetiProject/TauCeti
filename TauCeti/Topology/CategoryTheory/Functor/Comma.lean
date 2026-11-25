@@ -295,7 +295,8 @@ def preLeftHomeomorph {C : Type u₄} [Category.{v₄} C] [TopologicalSpace C]
     ((continuous_left (L := F ⋙ L) (R := R)).prodMk
       ((continuous_iff (L := L) (R := R)).mpr
         ⟨hF.comp (continuous_left (L := F ⋙ L) (R := R)),
-          by convert continuous_totalHom (L := F ⋙ L) (R := R) using 1; rfl,
+          by simpa only [preLeft_obj_left, preLeft_obj_right, preLeft_obj_hom, Functor.comp_obj]
+            using continuous_totalHom (L := F ⋙ L) (R := R),
           continuous_right (L := F ⋙ L) (R := R)⟩)).subtype_mk fun _ ↦ rfl
   continuous_invFun := by
     refine (continuous_iff (L := F ⋙ L) (R := R)).mpr
@@ -324,7 +325,8 @@ def preRightHomeomorph {C : Type u₄} [Category.{v₄} C] [TopologicalSpace C]
     ((continuous_right (L := L) (R := F ⋙ R)).prodMk
       ((continuous_iff (L := L) (R := R)).mpr
         ⟨continuous_left (L := L) (R := F ⋙ R),
-          by convert continuous_totalHom (L := L) (R := F ⋙ R) using 1; rfl,
+          by simpa only [preRight_obj_left, preRight_obj_right, preRight_obj_hom, Functor.comp_obj]
+            using continuous_totalHom (L := L) (R := F ⋙ R),
           hF.comp (continuous_right (L := L) (R := F ⋙ R))⟩)).subtype_mk fun _ ↦ rfl
   continuous_invFun := by
     refine (continuous_iff (L := L) (R := F ⋙ R)).mpr

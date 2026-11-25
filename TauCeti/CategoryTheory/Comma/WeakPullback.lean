@@ -21,8 +21,8 @@ retaining a single morphism `h` in its object carrier.
 
 This module develops the 2-categorical universal property and base-change calculus of `Comma L R`:
 `objectEquiv` identifies objects with the fiber product of `Prod.map L.obj R.obj` and
-`(left, right) : Quiver.Total T → T × T`; `Comma.lift`, `natTransMk`, `natIsoMk`, and `liftNatIso`
-establish the 2-categorical universal property up to unique natural isomorphism; and
+`(left, right) : Quiver.Total T → T × T`; `Comma.lift`, `natTransMk`, `natTrans_ext`, and
+`natIsoMk` establish the 2-categorical universal property up to unique natural isomorphism; and
 `flipEquivalence`, `idLeftEquivalence`, `idRightEquivalence`, `assocEquivalence`,
 `pastingRightEquivalence`, and `pastingLeftEquivalence` supply symmetry, identity pullbacks,
 associativity, and pasting of weak pullback squares.
@@ -171,36 +171,6 @@ def natIsoMk : H₁ ≅ H₂ :=
 
 end NatIsoMk
 
-section LiftNatIso
-
-variable {F : D ⥤ A} {G : D ⥤ B} (α : F ⋙ L ⟶ G ⋙ R) (H : D ⥤ Comma L R)
-  (e₁ : H ⋙ fst L R ≅ F) (e₂ : H ⋙ snd L R ≅ G)
-  (hw : ∀ d, L.map (e₁.hom.app d) ≫ α.app d = (H.obj d).hom ≫ R.map (e₂.hom.app d))
-
-/-- **2-categorical uniqueness of lifts up to natural isomorphism.** Any functor `H : D ⥤ Comma L R`
-equipped with natural isomorphisms `e₁ : H ⋙ fst L R ≅ F` and `e₂ : H ⋙ snd L R ≅ G` compatible
-with `α : F ⋙ L ⟶ G ⋙ R` is naturally isomorphic to `Comma.lift F G α`. -/
-def liftNatIso : H ≅ Comma.lift F G α :=
-  natIsoMk e₁ e₂ hw
-
-@[simp] theorem liftNatIso_hom_app_left (d : D) :
-    ((liftNatIso α H e₁ e₂ hw).hom.app d).left = e₁.hom.app d := (rfl)
-
-@[simp] theorem liftNatIso_hom_app_right (d : D) :
-    ((liftNatIso α H e₁ e₂ hw).hom.app d).right = e₂.hom.app d := (rfl)
-
-/-- The natural isomorphism `liftNatIso` is the unique natural isomorphism `H ≅ Comma.lift F G α`
-inducing `e₁` and `e₂` on the two projections. -/
-theorem eq_liftNatIso (e : H ≅ Comma.lift F G α)
-    (h₁ : Functor.whiskerRight e.hom (fst L R) = e₁.hom)
-    (h₂ : Functor.whiskerRight e.hom (snd L R) = e₂.hom) :
-    e = liftNatIso α H e₁ e₂ hw := by
-  ext d
-  · exact NatTrans.congr_app h₁ d
-  · exact NatTrans.congr_app h₂ d
-
-end LiftNatIso
-
 end UniversalProperty
 
 section CategoricalPullback
@@ -210,8 +180,7 @@ variable {A : Type u₁} [Category.{v₁} A] {B : Type u₂} [Category.{v₂} B]
 
 open scoped CategoricalPullback
 
-/-- Forgetting the inverse of the structural isomorphism embeds the categorical pullback `L ⊡ R`
-fully and faithfully into `Comma L R`. -/
+/-- The functor `(L ⊡ R) ⥤ Comma L R` forgetting the inverse of the structural isomorphism. -/
 @[expose, implicit_reducible, simps!]
 def fromCategoricalPullback (L : A ⥤ T) (R : B ⥤ T) : (L ⊡ R) ⥤ Comma L R where
   obj X := ⟨X.fst, X.snd, X.iso.hom⟩
@@ -258,8 +227,7 @@ gives a functor `Comma L R ⥤ Comma R L`. -/
 noncomputable def flipFunctor (L : A ⥤ T) (R : B ⥤ T) [IsGroupoid T] :
     Comma L R ⥤ Comma R L where
   obj X := ⟨X.right, X.left, inv X.hom⟩
-  map f := ⟨f.right, f.left, by
-    dsimp only; rw [IsIso.comp_inv_eq, assoc, f.w, IsIso.inv_hom_id_assoc]⟩
+  map f := ⟨f.right, f.left, by dsimp; rw [IsIso.comp_inv_eq]; simp⟩
 
 /-- Over a groupoid `T`, weak fiber products are symmetric up to canonical equivalence:
 `Comma L R ≌ Comma R L`. -/
@@ -325,9 +293,7 @@ noncomputable def idRightEquivalence (L : A ⥤ T) [IsGroupoid T] :
     (fun {X Y} f ↦ by
       dsimp; ext
       · simp
-      · simp only [comp_right, isoMk_hom_right, Iso.symm_hom, asIso_inv, fromLeft_map_right]
-        have hw : L.map f.left ≫ Y.hom = X.hom ≫ f.right := f.w
-        rw [IsIso.comp_inv_eq, assoc, hw, IsIso.inv_hom_id_assoc])
+      · rw [← cancel_mono Y.hom]; simp)
   counitIso := NatIso.ofComponents (fun _ ↦ Iso.refl _) (fun _ ↦ by dsimp; simp)
   functor_unitIso_comp _ := by dsimp; simp
 
@@ -380,10 +346,9 @@ def assocEquivalence (L : A ⥤ T) (F : B ⥤ T) (G : B ⥤ S) (M : C ⥤ S) :
 def pastingRightFunctor (L : A ⥤ T) (R : B ⥤ T) (M : C ⥤ B) :
     Comma (snd L R) M ⥤ Comma L (M ⋙ R) where
   obj P := ⟨P.left.left, P.right, P.left.hom ≫ R.map P.hom⟩
-  map {P P'} φ := ⟨φ.left.left, φ.right, by
-    dsimp only
-    have hw : φ.left.right ≫ P'.hom = P.hom ≫ M.map φ.right := φ.w
-    rw [← assoc, φ.left.w, assoc, ← R.map_comp, hw, R.map_comp, Functor.comp_map, assoc]⟩
+  map φ := ⟨φ.left.left, φ.right, by
+    dsimp; simp only [CommaMorphism.w_assoc, ← Functor.map_comp, assoc]
+    exact whisker_eq _ (R.congr_map (by simpa using φ.w))⟩
 
 /-- The canonical section `Comma L (M ⋙ R) ⥤ Comma (snd L R) M` inserting an identity morphism in
 `B`. -/
@@ -424,9 +389,7 @@ noncomputable def pastingRightEquivalence (L : A ⥤ T) (R : B ⥤ T) (M : C ⥤
 def pastingLeftFunctor (N : C ⥤ A) (L : A ⥤ T) (R : B ⥤ T) :
     Comma N (fst L R) ⥤ Comma (N ⋙ L) R where
   obj P := ⟨P.left, P.right.right, L.map P.hom ≫ P.right.hom⟩
-  map φ := ⟨φ.left, φ.right.right, by
-    dsimp only [Functor.comp_obj, Functor.comp_map]
-    rw [← assoc, ← L.map_comp, φ.w, fst_map, L.map_comp, assoc, φ.right.w, assoc]⟩
+  map φ := ⟨φ.left, φ.right.right, by dsimp; simp [← Functor.map_comp_assoc]⟩
 
 /-- The canonical section `Comma (N ⋙ L) R ⥤ Comma N (fst L R)` inserting an identity morphism in
 `A`. -/
@@ -445,18 +408,12 @@ noncomputable def pastingLeftEquivalence (N : C ⥤ A) (L : A ⥤ T) (R : B ⥤ 
   inverse := pastingLeftInverse N L R
   unitIso := NatIso.ofComponents
     (fun P ↦ isoMk (Iso.refl P.left)
-      (isoMk (asIso P.hom).symm (Iso.refl P.right.right) (by
-        dsimp
-        rw [Functor.map_id, comp_id, ← Functor.map_comp_assoc, IsIso.inv_hom_id,
-          Functor.map_id, id_comp]))
+      (isoMk (asIso P.hom).symm (Iso.refl P.right.right) (by dsimp; simp))
       (by dsimp; simp))
     (fun {P P'} φ ↦ by
       dsimp; ext
       · simp
-      · simp only [comp_right, comp_left, isoMk_hom_right, isoMk_hom_left, Iso.symm_hom, asIso_inv,
-          pastingLeftInverse_map_right_left, pastingLeftFunctor_map_left]
-        have hw : N.map φ.left ≫ P'.hom = P.hom ≫ φ.right.left := φ.w
-        rw [IsIso.comp_inv_eq, assoc, hw, IsIso.inv_hom_id_assoc]
+      · rw [← cancel_mono P'.hom]; simp
       · simp)
   counitIso := NatIso.ofComponents
     (fun Q ↦ isoMk (Iso.refl Q.left) (Iso.refl Q.right) (by dsimp; simp))
