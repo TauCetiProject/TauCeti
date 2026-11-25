@@ -262,6 +262,7 @@ theorem finite_fieldAlgebra {m n : ℕ} [NeZero m] [NeZero n] (h : m ∣ n) :
 
 /-- Along the inclusion algebra `K(ζ_m) → K(ζ_n)`, for `m ∣ n`, the image of `ζ_m` is
 `ζ_n ^ (n / m)`. -/
+@[simp]
 theorem algebraMap_zeta {m n : ℕ} [NeZero m] [NeZero n] (h : m ∣ n) :
     letI := T.fieldAlgebra K h
     algebraMap (T.field K m) (T.field K n) (T.zeta K m) = T.zeta K n ^ (n / m) :=
