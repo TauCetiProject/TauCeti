@@ -75,10 +75,10 @@ example (n : ℕ) :
 theorem Examples.SmoothDual.isCompact_padicIntOpenSubgroup :
     IsCompact (padicIntOpenSubgroup p : Set (Multiplicative ℚ_[p])) := by
   have : (padicIntOpenSubgroup p : Set (Multiplicative ℚ_[p])) =
-      Multiplicative.toAdd ⁻¹' Metric.closedBall (0 : ℚ_[p]) 1 :=
+      Multiplicative.ofAdd '' Metric.closedBall (0 : ℚ_[p]) 1 :=
     Set.ext fun x ↦ by simp [mem_padicIntOpenSubgroup_iff]
   rw [this]
-  exact isCompact_closedBall (0 : ℚ_[p]) 1
+  exact (isCompact_closedBall (0 : ℚ_[p]) 1).image continuous_ofAdd
 
 open Examples.SmoothDual in
 /-- **`ℚ[ℚ_p ⧸ ℤ_p]` is smooth and finitely generated, but not admissible**: the compact open
@@ -113,7 +113,7 @@ example : (∀ U : OpenSubgroup (Multiplicative (ℕ → ℚ_[p])),
     intro hc
     have hU : Multiplicative.ofAdd ⁻¹' (U : Set (Multiplicative (ℕ → ℚ_[p]))) ∈
         nhds (0 : ℕ → ℚ_[p]) :=
-      U.mem_nhds_one
+      continuous_ofAdd.continuousAt.preimage_mem_nhds (by rw [ofAdd_zero]; exact U.mem_nhds_one)
     rw [nhds_pi, Filter.mem_pi'] at hU
     obtain ⟨I, t, ht, hsub⟩ := hU
     obtain ⟨j, hj⟩ := Infinite.exists_notMem_finset I
