@@ -927,12 +927,17 @@ Lefschetz fixed-point formula. -/
 noncomputable def fixedPointSign (f : M → M) (x : M) : ℤ :=
   if 0 < fixedPointDet I f x then 1 else -1
 
+/-- `fixedPointSign I f x` is `1` when `fixedPointDet I f x` is positive and `-1` otherwise. -/
+theorem fixedPointSign_def (f : M → M) (x : M) :
+    fixedPointSign I f x = if 0 < fixedPointDet I f x then 1 else -1 :=
+  (rfl)
+
 theorem fixedPointSign_eq_one_iff : fixedPointSign I f x = 1 ↔ 0 < fixedPointDet I f x := by
-  unfold fixedPointSign
+  rw [fixedPointSign_def]
   split_ifs with h <;> simp [h]
 
 theorem fixedPointSign_eq_neg_one_iff : fixedPointSign I f x = -1 ↔ fixedPointDet I f x ≤ 0 := by
-  unfold fixedPointSign
+  rw [fixedPointSign_def]
   split_ifs with h
   · simp [h.not_ge]
   · simp [not_lt.mp h]
@@ -940,7 +945,7 @@ theorem fixedPointSign_eq_neg_one_iff : fixedPointSign I f x = -1 ↔ fixedPoint
 /-- Where `fixedPointDet I f x ≠ 0`, the Lefschetz sign is the sign of `fixedPointDet I f x`. -/
 theorem fixedPointSign_eq_sign (h : fixedPointDet I f x ≠ 0) :
     fixedPointSign I f x = SignType.sign (fixedPointDet I f x) := by
-  unfold fixedPointSign
+  rw [fixedPointSign_def]
   split_ifs with hpos
   · simp [hpos]
   · simp [sign_neg (lt_of_le_of_ne (not_lt.mp hpos) h)]
@@ -963,7 +968,7 @@ theorem _root_.Diffeomorph.fixedPointSign_eq_of_semiconj {F H' N : Type*}
     [TopologicalSpace N] [ChartedSpace H' N] {n : ℕ∞ω} (Φ : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {g : N → N}
     (h : Semiconj Φ f g) (hx : IsFixedPt f x) :
     fixedPointSign J g (Φ x) = fixedPointSign I f x := by
-  rw [fixedPointSign, fixedPointSign, Φ.fixedPointDet_eq_of_semiconj hn h hx]
+  rw [fixedPointSign_def, fixedPointSign_def, Φ.fixedPointDet_eq_of_semiconj hn h hx]
 
 /-- **The Lefschetz sign is constant along a periodic orbit.** If `x` is a periodic point of period
 `n` of a map `f` differentiable at every point of the orbit of `x`, then all points `f^[j] x` of
@@ -971,7 +976,7 @@ the orbit have the same Lefschetz sign as fixed points of `f^[n]`. -/
 theorem fixedPointSign_iterate_apply_iterate [FiniteDimensional ℝ E] {n : ℕ}
     (hx : IsPeriodicPt f n x) (hf : ∀ m, MDifferentiableAt I I f (f^[m] x)) (j : ℕ) :
     fixedPointSign I f^[n] (f^[j] x) = fixedPointSign I f^[n] x := by
-  rw [fixedPointSign, fixedPointSign, fixedPointDet_iterate_apply_iterate hx hf j]
+  rw [fixedPointSign_def, fixedPointSign_def, fixedPointDet_iterate_apply_iterate hx hf j]
 
 /-- **The Lefschetz signs of the iterates form a geometric sequence.** Let `x` be a fixed point of
 `f`, at which `f` is differentiable with fixed-point derivative `D`, and suppose `x` is a
