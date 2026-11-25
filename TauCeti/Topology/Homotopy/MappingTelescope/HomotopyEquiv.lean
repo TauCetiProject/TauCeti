@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Functor.OfSequence
 public import TauCeti.Topology.Homotopy.Extension.Tower
 public import TauCeti.Topology.Homotopy.MappingTelescope.Stage
 
@@ -198,7 +197,7 @@ private def mapCylHomotopy (g : ∀ n, C(X n, Y n))
     (H : ∀ n, ((f' n).comp (g n)).Homotopy ((g (n + 1)).comp (f n))) (n : ℕ) :
     ((incl f' n).comp (g n)).Homotopy ((incl f' (n + 1)).comp ((g (n + 1)).comp (f n))) :=
   ((inclHomotopy f' n).compContinuousMap (g n)).trans
-    (((ContinuousMap.Homotopy.refl (incl f' (n + 1))).comp (H n)).cast rfl rfl)
+    ((ContinuousMap.Homotopy.refl (incl f' (n + 1))).comp (H n))
 
 /-- **Homotopy-coherent functoriality of the mapping telescope.** Given maps `g : ∀ n, C(X n, Y n)`
 and homotopies `H n` from `(f' n).comp (g n)` to `(g (n + 1)).comp (f n)`, there is a canonical
@@ -207,19 +206,20 @@ induced map `C(MappingTelescope f, MappingTelescope f')` extending `g n` on ever
 def mapOfHomotopy (g : ∀ n, C(X n, Y n))
     (H : ∀ n, ((f' n).comp (g n)).Homotopy ((g (n + 1)).comp (f n))) :
     C(MappingTelescope f, MappingTelescope f') :=
-  lift (fun n => (mapCylHomotopy g H n).toContinuousMap) fun n x => by
-    simp
-
-private lemma mapOfHomotopy_mkCyl (g : ∀ n, C(X n, Y n))
-    (H : ∀ n, ((f' n).comp (g n)).Homotopy ((g (n + 1)).comp (f n))) (n : ℕ) (p : I × X n) :
-    mapOfHomotopy g H (mkCyl f n p) = mapCylHomotopy g H n p :=
-  lift_mkCyl _ n p
+  lift (fun n => (mapCylHomotopy g H n).toContinuousMap) fun n x => by simp
 
 @[simp]
+theorem mapOfHomotopy_mkCyl (g : ∀ n, C(X n, Y n))
+    (H : ∀ n, ((f' n).comp (g n)).Homotopy ((g (n + 1)).comp (f n))) (n : ℕ) (p : I × X n) :
+    mapOfHomotopy g H (mkCyl f n p) =
+      (((inclHomotopy f' n).compContinuousMap (g n)).trans
+        ((ContinuousMap.Homotopy.refl (incl f' (n + 1))).comp (H n))) p :=
+  lift_mkCyl _ n p
+
 theorem mapOfHomotopy_mkCyl_zero (g : ∀ n, C(X n, Y n))
     (H : ∀ n, ((f' n).comp (g n)).Homotopy ((g (n + 1)).comp (f n))) (n : ℕ) (x : X n) :
     mapOfHomotopy g H (mkCyl f n (0, x)) = mkCyl f' n (0, g n x) := by
-  rw [mapOfHomotopy_mkCyl, ContinuousMap.Homotopy.apply_zero, ContinuousMap.comp_apply, incl_apply]
+  simp [incl_apply]
 
 theorem mapOfHomotopy_incl (g : ∀ n, C(X n, Y n))
     (H : ∀ n, ((f' n).comp (g n)).Homotopy ((g (n + 1)).comp (f n))) (n : ℕ) (x : X n) :
@@ -240,14 +240,11 @@ theorem mapsTo_mapOfHomotopy_stage (g : ∀ n, C(X n, Y n))
   | cyl m p =>
     obtain ⟨s, x⟩ := p
     rcases mkCyl_mem_stage_iff.1 hz with hmn | ⟨rfl, rfl⟩
-    · rw [mapOfHomotopy_mkCyl]
-      unfold mapCylHomotopy
-      rw [ContinuousMap.Homotopy.trans_apply]
+    · rw [mapOfHomotopy_mkCyl, ContinuousMap.Homotopy.trans_apply]
       split_ifs
       · simp only [ContinuousMap.Homotopy.compContinuousMap_apply, inclHomotopy_apply]
         exact mkCyl_mem_stage_iff.2 (Or.inl hmn)
-      · simp only [ContinuousMap.Homotopy.cast_apply, ContinuousMap.Homotopy.comp_apply,
-          ContinuousMap.Homotopy.refl_apply]
+      · simp only [ContinuousMap.Homotopy.comp_apply, ContinuousMap.Homotopy.refl_apply]
         exact incl_mem_stage_iff.2 (Nat.succ_le_of_lt hmn)
     · rw [← incl_apply, mapOfHomotopy_incl]
       exact incl_mem_stage_iff.2 le_rfl
@@ -288,16 +285,16 @@ def subsequenceIncl {φ : ℕ → ℕ} (hφ : Monotone φ) :
     (fun n => (inclHomotopyOfLE f (hφ n.le_succ)).toContinuousMap) fun n x => by
       simp [subsequence]
 
-private lemma subsequenceIncl_mkCyl {φ : ℕ → ℕ} (hφ : Monotone φ) (n : ℕ) (p : I × X (φ n)) :
+@[simp]
+theorem subsequenceIncl_mkCyl {φ : ℕ → ℕ} (hφ : Monotone φ) (n : ℕ) (p : I × X (φ n)) :
     subsequenceIncl f hφ (mkCyl (X := fun k => X (φ k)) (subsequence f hφ) n p) =
       inclHomotopyOfLE f (hφ n.le_succ) p :=
   lift_mkCyl (X := fun k => X (φ k)) (f := subsequence f hφ) _ n p
 
-@[simp]
 theorem subsequenceIncl_mkCyl_zero {φ : ℕ → ℕ} (hφ : Monotone φ) (n : ℕ) (x : X (φ n)) :
     subsequenceIncl f hφ (mkCyl (X := fun k => X (φ k)) (subsequence f hφ) n (0, x)) =
       mkCyl f (φ n) (0, x) := by
-  rw [subsequenceIncl_mkCyl, ContinuousMap.Homotopy.apply_zero, incl_apply]
+  simp [incl_apply]
 
 theorem subsequenceIncl_incl {φ : ℕ → ℕ} (hφ : Monotone φ) (n : ℕ) (x : X (φ n)) :
     subsequenceIncl f hφ (incl (X := fun k => X (φ k)) (subsequence f hφ) n x) =
@@ -479,13 +476,13 @@ def toUnion {Y : Type u} [TopologicalSpace Y] {A : ℕ → Set Y} (hA : Monotone
 theorem toUnion_mkCyl {Y : Type u} [TopologicalSpace Y] {A : ℕ → Set Y} (hA : Monotone A)
     (n : ℕ) (p : I × A n) :
     toUnion hA (mkCyl (X := fun k => A k)
-      (fun k => ⟨Set.inclusion (hA k.le_succ), continuous_inclusion _⟩) n p) = p.2.1 :=
+      (fun k => ⟨Set.inclusion (hA k.le_succ), continuous_inclusion _⟩) n p) = p.2.val :=
   toCocone_mkCyl (TopCat.subspaceCocone hA) n p
 
 theorem toUnion_incl {Y : Type u} [TopologicalSpace Y] {A : ℕ → Set Y} (hA : Monotone A)
     (n : ℕ) (x : A n) :
     toUnion hA (incl (X := fun k => A k)
-      (fun k => ⟨Set.inclusion (hA k.le_succ), continuous_inclusion _⟩) n x) = x.1 :=
+      (fun k => ⟨Set.inclusion (hA k.le_succ), continuous_inclusion _⟩) n x) = x.val :=
   toCocone_incl (TopCat.subspaceCocone hA) n x
 
 @[simp]
@@ -493,7 +490,7 @@ theorem toUnion_comp_incl {Y : Type u} [TopologicalSpace Y] {A : ℕ → Set Y} 
     (n : ℕ) :
     (toUnion hA).comp (incl (X := fun k => A k)
       (fun k => ⟨Set.inclusion (hA k.le_succ), continuous_inclusion _⟩) n) =
-      ⟨Subtype.val, continuous_subtype_val⟩ :=
+      ⟨Subtype.val, continuous_subtypeVal⟩ :=
   ContinuousMap.ext (toUnion_incl hA n)
 
 /-- **Comparison between the mapping telescope and a coherent union of cofibrations.** Let `Y` be

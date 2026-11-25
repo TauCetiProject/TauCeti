@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Functor.OfSequence
 public import Mathlib.Topology.Compactness.CompactlyGeneratedSpace
 public import TauCeti.Topology.Homotopy.MappingCylinder
 
@@ -132,61 +133,40 @@ lemma mkCyl_eq_mkCyl_iff {m n : ℕ} {s t : I} {x : X m} {y : X n} :
   rw [mkCyl_eq_mkCyl_iff']
   simp only [telescopeNormalize]
   split_ifs with hs ht ht
-  · constructor
-    · intro h
-      obtain ⟨hm, hxy⟩ := Sigma.mk.inj_iff.1 h
+  · refine ⟨fun h => ?_, ?_⟩
+    · obtain ⟨hm, hxy⟩ := Sigma.mk.inj_iff.1 h
       obtain rfl : m = n := by omega
-      simp only [Prod.mk.injEq, true_and, heq_eq_eq] at hxy
-      exact Or.inr (Or.inl ⟨rfl, hs, ht, hxy⟩)
+      exact Or.inr (Or.inl ⟨rfl, hs, ht, by simpa using hxy⟩)
     · rintro (⟨rfl, -, rfl⟩ | ⟨rfl, -, -, hxy⟩ | ⟨rfl, -, ht0, -⟩ | ⟨rfl, hs0, -, -⟩)
       · rfl
       · exact Sigma.ext rfl (heq_of_eq (Prod.ext rfl hxy))
       · exact absurd (ht.symm.trans ht0) one_ne_zero
       · exact absurd (hs.symm.trans hs0) one_ne_zero
-  · constructor
-    · intro h
-      obtain ⟨rfl, hxy⟩ := Sigma.mk.inj_iff.1 h
-      simp only [heq_eq_eq, Prod.mk.injEq] at hxy
-      exact Or.inr (Or.inr (Or.inl ⟨rfl, hs, hxy.1.symm, hxy.2⟩))
+  · refine ⟨fun h => ?_, ?_⟩
+    · obtain ⟨rfl, hxy⟩ := Sigma.mk.inj_iff.1 h
+      obtain ⟨ht0, hfy⟩ := Prod.mk.inj (eq_of_heq hxy)
+      exact Or.inr (Or.inr (Or.inl ⟨rfl, hs, ht0.symm, hfy⟩))
     · rintro (⟨rfl, hst, -⟩ | ⟨-, -, ht1, -⟩ | ⟨rfl, -, rfl, rfl⟩ | ⟨rfl, _, ht1, -⟩)
-      · exact absurd (hst.symm.trans hs) ht
-      · exact absurd ht1 ht
-      · rfl
-      · exact absurd ht1 ht
-  · constructor
-    · intro h
-      obtain ⟨rfl, hxy⟩ := Sigma.mk.inj_iff.1 h
-      simp only [heq_eq_eq, Prod.mk.injEq] at hxy
-      exact Or.inr (Or.inr (Or.inr ⟨rfl, hxy.1, ht, hxy.2⟩))
+      exacts [absurd (hst.symm.trans hs) ht, absurd ht1 ht, rfl, absurd ht1 ht]
+  · refine ⟨fun h => ?_, ?_⟩
+    · obtain ⟨rfl, hxy⟩ := Sigma.mk.inj_iff.1 h
+      obtain ⟨hs0, hfy⟩ := Prod.mk.inj (eq_of_heq hxy)
+      exact Or.inr (Or.inr (Or.inr ⟨rfl, hs0, ht, hfy⟩))
     · rintro (⟨rfl, hst, -⟩ | ⟨-, hs1, -, -⟩ | ⟨rfl, hs1, -, -⟩ | ⟨rfl, rfl, -, rfl⟩)
-      · exact absurd (hst.trans ht) hs
-      · exact absurd hs1 hs
-      · exact absurd hs1 hs
-      · rfl
-  · constructor
-    · intro h
-      obtain ⟨rfl, hxy⟩ := Sigma.mk.inj_iff.1 h
-      simp only [heq_eq_eq, Prod.mk.injEq] at hxy
-      exact Or.inl ⟨rfl, hxy.1, hxy.2⟩
+      exacts [absurd (hst.trans ht) hs, absurd hs1 hs, absurd hs1 hs, rfl]
+  · refine ⟨fun h => ?_, ?_⟩
+    · obtain ⟨rfl, hxy⟩ := Sigma.mk.inj_iff.1 h
+      obtain ⟨hst, hxy⟩ := Prod.mk.inj (eq_of_heq hxy)
+      exact Or.inl ⟨rfl, hst, hxy⟩
     · rintro (⟨rfl, rfl, rfl⟩ | ⟨-, hs1, -⟩ | ⟨-, hs1, -⟩ | ⟨-, -, ht1, -⟩)
-      · rfl
-      · exact absurd hs1 hs
-      · exact absurd hs1 hs
-      · exact absurd ht1 ht
+      exacts [rfl, absurd hs1 hs, absurd hs1 hs, absurd ht1 ht]
 
 lemma mkCyl_eq_mkCyl_same_iff {n : ℕ} {s t : I} {x y : X n} :
     mkCyl f n (s, x) = mkCyl f n (t, y) ↔
       (s = t ∧ x = y) ∨ (s = 1 ∧ t = 1 ∧ f n x = f n y) := by
-  rw [mkCyl_eq_mkCyl_iff]
-  constructor
-  · rintro (⟨_, hst, hxy⟩ | ⟨_, hs, ht, hxy⟩ | ⟨h, -⟩ | ⟨h, -⟩)
-    · exact Or.inl ⟨hst, by simpa using hxy⟩
-    · exact Or.inr ⟨hs, ht, by simpa using hxy⟩
-    · omega
-    · omega
-  · rintro (⟨hst, hxy⟩ | ⟨hs, ht, hxy⟩)
-    · exact Or.inl ⟨rfl, hst, hxy⟩
-    · exact Or.inr (Or.inl ⟨rfl, hs, ht, hxy⟩)
+  rw [mkCyl_eq_mkCyl_iff']
+  simp only [telescopeNormalize]
+  split_ifs with hs ht ht <;> simp_all [Prod.ext_iff, eq_comm]
 
 lemma incl_inj {n : ℕ} {x y : X n} : incl f n x = incl f n y ↔ x = y := by
   simp [incl_apply]
@@ -248,12 +228,8 @@ private lemma sigma_telescopeNormalize (hg : ∀ n x, g n (1, x) = g (n + 1) (0,
   obtain ⟨n, s, x⟩ := a
   by_cases hs : s = 1
   · subst hs
-    have hnorm : telescopeNormalize f ⟨n, (1, x)⟩ = ⟨n + 1, (0, f n x)⟩ := by
-      simp [telescopeNormalize]
-    rw [hnorm, hg]
-  · have hnorm : telescopeNormalize f ⟨n, (s, x)⟩ = ⟨n, (s, x)⟩ := by
-      simp [telescopeNormalize, hs]
-    rw [hnorm]
+    rw [show telescopeNormalize f ⟨n, 1, x⟩ = ⟨n + 1, 0, f n x⟩ by simp [telescopeNormalize], hg]
+  · rw [show telescopeNormalize f ⟨n, s, x⟩ = ⟨n, s, x⟩ by simp [telescopeNormalize, hs]]
 
 /-- **Universal property of the mapping telescope.** A family of continuous maps on the cylinders
 `I × X n` that agree along each gluing `g n (1, x) = g (n + 1) (0, f n x)` descends to a continuous
@@ -294,75 +270,25 @@ theorem continuous_prod_iff {Z W : Type*} [TopologicalSpace Z] [LocallyCompactSp
     Continuous g ↔ ∀ n, Continuous fun q : Z × (I × X n) => g (q.1, mkCyl f n q.2) := by
   refine ⟨fun hg n => hg.comp (by fun_prop), fun h =>
     isQuotientMap_sigma_mkCyl.continuous_lift_prod_right ?_⟩
-  -- Distribute `Z × Σ n, I × X n` into `Σ n, (I × X n) × Z`.
   rw [← ((Homeomorph.prodComm Z (Σ n, I × X n)).trans
     Homeomorph.sigmaProdDistrib).symm.comp_continuous_iff', continuous_sigma_iff]
-  intro n
-  exact (h n).comp continuous_swap
+  exact fun n => (h n).comp continuous_swap
 
-section Embeddings
-
-private lemma preimage_mkCyl_image_incl (n m : ℕ) (K : Set (X n)) :
-    mkCyl f m ⁻¹' (incl f n '' K) =
-      if h : m = n then {p : I × X m | p.1 = 0 ∧ h ▸ p.2 ∈ K}
-      else if h' : m + 1 = n then {p : I × X m | p.1 = 1 ∧ h' ▸ f m p.2 ∈ K}
-      else ∅ := by
-  ext ⟨s, y⟩
-  simp only [mem_preimage, mem_image, incl_apply]
-  split_ifs with h h'
-  · subst h
-    rw [mem_ofPred_eq]
-    constructor
-    · rintro ⟨x, hx, heq⟩
-      rcases mkCyl_eq_mkCyl_same_iff.1 heq with ⟨rfl, rfl⟩ | ⟨h01, -⟩
-      · exact ⟨rfl, hx⟩
-      · exact absurd h01 zero_ne_one
-    · rintro ⟨rfl, hy⟩
-      exact ⟨y, hy, rfl⟩
-  · subst h'
-    rw [mem_ofPred_eq]
-    constructor
-    · rintro ⟨x, hx, heq⟩
-      rcases mkCyl_eq_mkCyl_iff.1 heq with
-        ⟨h1, -⟩ | ⟨h1, -⟩ | ⟨h1, -⟩ | ⟨_, _, hs1, rfl⟩
-      · omega
-      · omega
-      · omega
-      · exact ⟨hs1, hx⟩
-    · rintro ⟨rfl, hy⟩
-      exact ⟨f m y, hy, (mkCyl_one m y).symm⟩
-  · simp only [mem_empty_iff_false, iff_false, not_exists, not_and]
-    intro x _ heq
-    rcases mkCyl_eq_mkCyl_iff.1 heq with ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨_, h01, -⟩ | ⟨rfl, -⟩
-    · exact h rfl
-    · exact h rfl
-    · exact zero_ne_one h01
-    · exact h' rfl
-
-/-- **Every stage `X n` embeds as a closed subspace of the mapping telescope.** -/
-theorem isClosedEmbedding_incl (n : ℕ) : IsClosedEmbedding (incl f n) := by
-  refine .of_continuous_injective_isClosedMap (incl f n).continuous (incl_injective n) fun K hK =>
-    isClosed_iff.2 fun m => ?_
-  rw [preimage_mkCyl_image_incl]
-  split_ifs with h h'
-  · subst h
-    exact (isClosed_singleton.preimage continuous_fst).inter (hK.preimage continuous_snd)
-  · subst h'
-    exact (isClosed_singleton.preimage continuous_fst).inter
-      (hK.preimage ((f m).continuous.comp continuous_snd))
-  · exact isClosed_empty
-
-/-- The image of `X n` in the mapping telescope is closed. -/
-theorem isClosed_range_incl (n : ℕ) : IsClosed (Set.range (incl f n)) :=
-  (isClosedEmbedding_incl n).isClosed_range
-
-/-- Each stage `X n` is homeomorphic to its image in the mapping telescope. -/
-def inclHomeomorph (f : ∀ n, C(X n, X (n + 1))) (n : ℕ) : X n ≃ₜ Set.range (incl f n) :=
-  (isClosedEmbedding_incl (f := f) n).isEmbedding.toHomeomorph
+/-- The canonical real-valued height function on `MappingTelescope f`, sending `mkCyl f n (s, x)`
+to `(n : ℝ) + s`. -/
+def height (f : ∀ n, C(X n, X (n + 1))) : C(MappingTelescope f, ℝ) :=
+  lift (fun n => ⟨fun p => (n : ℝ) + (p.1 : ℝ), continuous_const.add
+    (continuous_subtypeVal.comp continuous_fst)⟩) fun n _ => by simp [add_assoc]
 
 @[simp]
-lemma inclHomeomorph_apply_coe (n : ℕ) (x : X n) :
-    (inclHomeomorph f n x : MappingTelescope f) = incl f n x := (rfl)
+theorem height_mkCyl (n : ℕ) (p : I × X n) :
+    height f (mkCyl f n p) = (n : ℝ) + (p.1 : ℝ) :=
+  lift_mkCyl _ n p
+
+theorem height_incl (n : ℕ) (x : X n) : height f (incl f n x) = n := by
+  simp [incl_apply]
+
+section Embeddings
 
 /-- The canonical map from the individual mapping cylinder `MappingCylinder (f n)` into the
 mapping telescope, embedding the `n`-th cylinder and its glued base `X (n + 1)`. -/
@@ -394,37 +320,29 @@ lemma fromMappingCylinder_comp_mkBase (n : ℕ) :
     (fromMappingCylinder f n).comp (MappingCylinder.mkBase (f n)) = incl f (n + 1) :=
   ContinuousMap.ext (fromMappingCylinder_mkBase n)
 
+private lemma eq_mkBase_of_mkCyl_eq_incl {n : ℕ} {s : I} {x : X n} {y : X (n + 1)}
+    (h : mkCyl f n (s, x) = incl f (n + 1) y) :
+    MappingCylinder.mkCyl (f n) (s, x) = MappingCylinder.mkBase (f n) y := by
+  rw [incl_apply, mkCyl_eq_mkCyl_iff] at h
+  rcases h with ⟨h, -⟩ | ⟨h, -⟩ | ⟨_, rfl, _, rfl⟩ | ⟨h, -⟩
+  exacts [by omega, by omega, MappingCylinder.mkCyl_one x, by omega]
+
 lemma fromMappingCylinder_injective (n : ℕ) : Function.Injective (fromMappingCylinder f n) := by
   intro a b hab
   induction a using MappingCylinder.ind with
   | cyl p =>
-    obtain ⟨ps, px⟩ := p
     induction b using MappingCylinder.ind with
     | cyl q =>
-      obtain ⟨qs, qx⟩ := q
       rw [fromMappingCylinder_mkCyl, fromMappingCylinder_mkCyl, mkCyl_eq_mkCyl_same_iff] at hab
       exact MappingCylinder.mkCyl_eq_mkCyl_iff.2 hab
     | base y =>
-      rw [fromMappingCylinder_mkCyl, fromMappingCylinder_mkBase, incl_apply,
-        mkCyl_eq_mkCyl_iff] at hab
-      rcases hab with ⟨h, -⟩ | ⟨h, -⟩ | ⟨_, hs, _, rfl⟩ | ⟨h, -⟩
-      · omega
-      · omega
-      · subst hs
-        exact MappingCylinder.mkCyl_one px
-      · omega
+      rw [fromMappingCylinder_mkCyl, fromMappingCylinder_mkBase] at hab
+      exact eq_mkBase_of_mkCyl_eq_incl hab
   | base y =>
     induction b using MappingCylinder.ind with
     | cyl q =>
-      obtain ⟨qs, qx⟩ := q
-      rw [fromMappingCylinder_mkBase, fromMappingCylinder_mkCyl, incl_apply,
-        mkCyl_eq_mkCyl_iff] at hab
-      rcases hab with ⟨h, -⟩ | ⟨h, -⟩ | ⟨h, -⟩ | ⟨_, _, ht, rfl⟩
-      · omega
-      · omega
-      · omega
-      · subst ht
-        exact (MappingCylinder.mkCyl_one qx).symm
+      rw [fromMappingCylinder_mkBase, fromMappingCylinder_mkCyl] at hab
+      exact (eq_mkBase_of_mkCyl_eq_incl hab.symm).symm
     | base z =>
       rw [fromMappingCylinder_mkBase, fromMappingCylinder_mkBase, incl_inj] at hab
       exact congrArg _ hab
@@ -433,52 +351,35 @@ private lemma mem_image_fromMappingCylinder_succ {n : ℕ} {K : Set (MappingCyli
     {s : I} {y : X (n + 1)} :
     mkCyl f (n + 1) (s, y) ∈ fromMappingCylinder f n '' K ↔
       s = 0 ∧ MappingCylinder.mkBase (f n) y ∈ K := by
-  simp only [mem_image]
-  constructor
-  · rintro ⟨w, hwK, hw⟩
-    induction w using MappingCylinder.ind with
-    | cyl q =>
-      obtain ⟨qt, qx⟩ := q
-      rw [fromMappingCylinder_mkCyl, mkCyl_eq_mkCyl_iff] at hw
-      rcases hw with ⟨h', -⟩ | ⟨h', -⟩ | ⟨_, hq1, hs0, hy⟩ | ⟨h', -⟩
-      · omega
-      · omega
-      · subst hq1 hy
-        rw [MappingCylinder.mkCyl_one] at hwK
-        exact ⟨hs0, hwK⟩
-      · omega
-    | base z =>
-      rw [fromMappingCylinder_mkBase, incl_apply, mkCyl_eq_mkCyl_same_iff] at hw
-      rcases hw with ⟨hs0, hzy⟩ | ⟨h01, -⟩
-      · exact ⟨hs0.symm, hzy ▸ hwK⟩
-      · exact absurd h01 zero_ne_one
-  · rintro ⟨rfl, hyK⟩
-    exact ⟨MappingCylinder.mkBase (f n) y, hyK, by simp⟩
+  refine ⟨?_, fun ⟨hs, hyK⟩ => ⟨MappingCylinder.mkBase (f n) y, hyK, by simp [hs]⟩⟩
+  rintro ⟨w, hwK, hw⟩
+  induction w using MappingCylinder.ind with
+  | cyl q =>
+    rw [fromMappingCylinder_mkCyl, mkCyl_eq_mkCyl_iff] at hw
+    rcases hw with ⟨h, -⟩ | ⟨h, -⟩ | ⟨_, hq1, hs0, rfl⟩ | ⟨h, -⟩
+    exacts [by omega, by omega, ⟨hs0, by rwa [← q.eta, hq1, MappingCylinder.mkCyl_one] at hwK⟩,
+      by omega]
+  | base z =>
+    rw [fromMappingCylinder_mkBase, incl_apply, mkCyl_eq_mkCyl_same_iff] at hw
+    rcases hw with ⟨hs0, hzy⟩ | ⟨h01, -⟩
+    exacts [⟨hs0.symm, hzy ▸ hwK⟩, absurd h01 zero_ne_one]
 
 private lemma mem_image_fromMappingCylinder_pred {m : ℕ} {K : Set (MappingCylinder (f (m + 1)))}
     {s : I} {y : X m} :
     mkCyl f m (s, y) ∈ fromMappingCylinder f (m + 1) '' K ↔
       s = 1 ∧ MappingCylinder.incl (f (m + 1)) (f m y) ∈ K := by
-  simp only [mem_image]
-  constructor
-  · rintro ⟨w, hwK, hw⟩
-    induction w using MappingCylinder.ind with
-    | cyl q =>
-      obtain ⟨qt, qx⟩ := q
-      rw [fromMappingCylinder_mkCyl, mkCyl_eq_mkCyl_iff] at hw
-      rcases hw with ⟨h', -⟩ | ⟨h', -⟩ | ⟨h', -⟩ | ⟨_, hq0, hs1, hq2⟩
-      · omega
-      · omega
-      · omega
-      · subst hq0 hq2
-        rw [← MappingCylinder.incl_apply] at hwK
-        exact ⟨hs1, by simpa using hwK⟩
-    | base z =>
-      rw [fromMappingCylinder_mkBase, incl_apply, mkCyl_eq_mkCyl_iff] at hw
-      rcases hw with ⟨h', -⟩ | ⟨h', -⟩ | ⟨h', -⟩ | ⟨h', -⟩ <;> omega
-  · rintro ⟨rfl, hyK⟩
-    exact ⟨MappingCylinder.incl (f (m + 1)) (f m y), hyK, by
-      rw [fromMappingCylinder_incl, incl_apply, mkCyl_one]⟩
+  refine ⟨?_, fun ⟨hs, hyK⟩ => ⟨MappingCylinder.incl (f (m + 1)) (f m y), hyK, by
+    rw [hs, fromMappingCylinder_incl, incl_apply, mkCyl_one]⟩⟩
+  rintro ⟨w, hwK, hw⟩
+  induction w using MappingCylinder.ind with
+  | cyl q =>
+    rw [fromMappingCylinder_mkCyl, mkCyl_eq_mkCyl_iff] at hw
+    rcases hw with ⟨h, -⟩ | ⟨h, -⟩ | ⟨h, -⟩ | ⟨_, hq0, hs1, hq2⟩
+    exacts [by omega, by omega, by omega,
+      ⟨hs1, by rwa [← q.eta, hq0, hq2, ← MappingCylinder.incl_apply] at hwK⟩]
+  | base z =>
+    rw [fromMappingCylinder_mkBase, incl_apply, mkCyl_eq_mkCyl_iff] at hw
+    rcases hw with ⟨h, -⟩ | ⟨h, -⟩ | ⟨h, -⟩ | ⟨h, -⟩ <;> omega
 
 private lemma preimage_mkCyl_image_fromMappingCylinder (n m : ℕ)
     (K : Set (MappingCylinder (f n))) :
@@ -503,20 +404,13 @@ private lemma preimage_mkCyl_image_fromMappingCylinder (n m : ℕ)
     intro w _ hw
     induction w using MappingCylinder.ind with
     | cyl q =>
-      obtain ⟨qt, qx⟩ := q
       rw [fromMappingCylinder_mkCyl, mkCyl_eq_mkCyl_iff] at hw
       rcases hw with ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩
-      · exact h rfl
-      · exact h rfl
-      · exact h1 rfl
-      · exact h0 rfl
+      exacts [h rfl, h rfl, h1 rfl, h0 rfl]
     | base z =>
       rw [fromMappingCylinder_mkBase, incl_apply, mkCyl_eq_mkCyl_iff] at hw
       rcases hw with ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨_, h01, -⟩ | ⟨h', -⟩
-      · exact h1 rfl
-      · exact h1 rfl
-      · exact zero_ne_one h01
-      · omega
+      exacts [h1 rfl, h1 rfl, zero_ne_one h01, by omega]
 
 /-- **Each individual mapping cylinder `MappingCylinder (f n)` embeds as a closed subspace of the
 mapping telescope.** -/
@@ -543,7 +437,7 @@ theorem range_fromMappingCylinder (n : ℕ) :
     Set.range (fromMappingCylinder f n) = Set.range (mkCyl f n) ∪ Set.range (incl f (n + 1)) := by
   ext z
   simp only [mem_range, mem_union]
-  constructor
+  refine ⟨?_, ?_⟩
   · rintro ⟨w, rfl⟩
     induction w using MappingCylinder.ind with
     | cyl p => exact Or.inl ⟨p, (fromMappingCylinder_mkCyl n p).symm⟩
@@ -551,6 +445,23 @@ theorem range_fromMappingCylinder (n : ℕ) :
   · rintro (⟨p, rfl⟩ | ⟨y, rfl⟩)
     · exact ⟨MappingCylinder.mkCyl (f n) p, fromMappingCylinder_mkCyl n p⟩
     · exact ⟨MappingCylinder.mkBase (f n) y, fromMappingCylinder_mkBase n y⟩
+
+/-- **Every stage `X n` embeds as a closed subspace of the mapping telescope.** -/
+theorem isClosedEmbedding_incl (n : ℕ) : IsClosedEmbedding (incl f n) := by
+  rw [← fromMappingCylinder_comp_incl, ContinuousMap.coe_comp]
+  exact (isClosedEmbedding_fromMappingCylinder n).comp MappingCylinder.isClosedEmbedding_incl
+
+/-- The image of `X n` in the mapping telescope is closed. -/
+theorem isClosed_range_incl (n : ℕ) : IsClosed (Set.range (incl f n)) :=
+  (isClosedEmbedding_incl n).isClosed_range
+
+/-- Each stage `X n` is homeomorphic to its image in the mapping telescope. -/
+def inclHomeomorph (f : ∀ n, C(X n, X (n + 1))) (n : ℕ) : X n ≃ₜ Set.range (incl f n) :=
+  (isClosedEmbedding_incl (f := f) n).isEmbedding.toHomeomorph
+
+@[simp]
+lemma inclHomeomorph_apply_coe (n : ℕ) (x : X n) :
+    (inclHomeomorph f n x : MappingTelescope f) = incl f n x := (rfl)
 
 end Embeddings
 
@@ -568,309 +479,153 @@ instance [∀ n, T1Space (X n)] : T1Space (MappingTelescope f) where
       · refine isClosed_iff.2 fun m => ?_
         by_cases hmn : m = n
         · subst hmn
-          have hpre : mkCyl f m ⁻¹' {mkCyl f m (s, x)} = {(s, x)} := by
-            ext ⟨t, y⟩
-            simp only [mem_preimage, mem_singleton_iff, mkCyl_eq_mkCyl_same_iff, Prod.mk.injEq]
-            exact ⟨by rintro (h | ⟨-, ht1, -⟩); exacts [h, absurd ht1 hs], Or.inl⟩
-          rw [hpre]
-          exact isClosed_singleton
-        · have hpre : mkCyl f m ⁻¹' {mkCyl f n (s, x)} = ∅ := by
-            ext ⟨t, y⟩
-            simp only [mem_preimage, mem_singleton_iff, mem_empty_iff_false, iff_false]
-            intro heq
-            rcases mkCyl_eq_mkCyl_iff.1 heq with
-              ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨_, -, h0, -⟩ | ⟨_, -, ht1, -⟩
-            · exact hmn rfl
-            · exact hmn rfl
-            · exact hs0 h0
-            · exact hs ht1
-          rw [hpre]
-          exact isClosed_empty
+          convert isClosed_singleton (x := (s, x)) using 1
+          ext ⟨t, y⟩
+          simp only [mem_preimage, mem_singleton_iff, mkCyl_eq_mkCyl_same_iff, Prod.mk.injEq]
+          exact ⟨by rintro (h | ⟨-, ht1, -⟩); exacts [h, absurd ht1 hs], Or.inl⟩
+        · convert isClosed_empty using 1
+          ext ⟨t, y⟩
+          simp only [mem_preimage, mem_singleton_iff, mem_empty_iff_false, iff_false]
+          intro heq
+          rcases mkCyl_eq_mkCyl_iff.1 heq with
+            ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨_, -, h0, -⟩ | ⟨_, -, ht1, -⟩
+          exacts [hmn rfl, hmn rfl, hs0 h0, hs ht1]
 
-/-- An open subset inside the interior `(0, 1) × X n` of a single cylinder, saturated for the
-telescope quotient because it avoids both `0` and `1`. -/
-private def interiorCylSet (f : ∀ n, C(X n, X (n + 1))) (n : ℕ) (V : Set I) (U : Set (X n)) :
+private def cylPred (n : ℕ) (U : Set (X n)) : (Σ m, I × X m) → Prop
+  | ⟨m, s, y⟩ => ∃ h : m = n, s ∈ Set.Ioo (0 : I) 1 ∧ h ▸ y ∈ U
+
+private lemma cylPred_telescopeNormalize (n : ℕ) (U : Set (X n)) (a : Σ m, I × X m) :
+    cylPred n U (telescopeNormalize f a) = cylPred n U a := by
+  obtain ⟨m, s, y⟩ := a
+  unfold telescopeNormalize
+  dsimp only
+  split_ifs with hs
+  · subst hs
+    simp [cylPred]
+  · rfl
+
+/-- Open saturated subset `(0, 1) × U` inside the interior of the `n`-th cylinder. -/
+private def cylSet (f : ∀ k, C(X k, X (k + 1))) (n : ℕ) (U : Set (X n)) :
     Set (MappingTelescope f) :=
-  mkCyl f n '' (V ×ˢ U)
+  {z | Quotient.lift (s := Setoid.ker (telescopeNormalize f)) (cylPred n U)
+    (fun a b hab => by
+      rw [← cylPred_telescopeNormalize n U a, ← cylPred_telescopeNormalize n U b, hab]) z}
 
-private lemma mem_interiorCylSet_iff {n m : ℕ} {V : Set I} {U : Set (X n)}
-    (hV0 : (0 : I) ∉ V) (hV1 : (1 : I) ∉ V) {t : I} {y : X m} :
-    mkCyl f m (t, y) ∈ interiorCylSet f n V U ↔ ∃ h : m = n, t ∈ V ∧ h ▸ y ∈ U := by
-  simp only [interiorCylSet, mem_image, Prod.exists, mem_prod]
-  constructor
-  · rintro ⟨s, x, ⟨hsV, hxU⟩, heq⟩
-    rcases mkCyl_eq_mkCyl_iff.1 heq with
-      ⟨rfl, rfl, rfl⟩ | ⟨-, hs1, -⟩ | ⟨-, hs1, -⟩ | ⟨-, hs0, -⟩
-    · exact ⟨rfl, hsV, hxU⟩
-    · exact absurd (hs1 ▸ hsV) hV1
-    · exact absurd (hs1 ▸ hsV) hV1
-    · exact absurd (hs0 ▸ hsV) hV0
-  · rintro ⟨rfl, htV, hyU⟩
-    exact ⟨t, y, ⟨htV, hyU⟩, rfl⟩
-
-private lemma isOpen_interiorCylSet {n : ℕ} {V : Set I} {U : Set (X n)}
-    (hV : IsOpen V) (hU : IsOpen U) (hV0 : (0 : I) ∉ V) (hV1 : (1 : I) ∉ V) :
-    IsOpen (interiorCylSet f n V U) := by
+private lemma isOpen_cylSet {n : ℕ} {U : Set (X n)} (hU : IsOpen U) : IsOpen (cylSet f n U) := by
   refine isOpen_iff.2 fun m => ?_
-  by_cases hmn : m = n
-  · subst hmn
-    have hpre : mkCyl f m ⁻¹' interiorCylSet f m V U = V ×ˢ U := by
-      ext ⟨t, y⟩
-      rw [mem_preimage, mem_interiorCylSet_iff hV0 hV1, mem_prod]
-      exact ⟨by rintro ⟨_, ht, hy⟩; exact ⟨ht, by simpa using hy⟩,
-        fun ⟨ht, hy⟩ => ⟨rfl, ht, hy⟩⟩
-    rw [hpre]
-    exact hV.prod hU
+  by_cases h : m = n
+  · subst h
+    convert (isOpen_Ioo (a := (0 : I)) (b := 1)).prod hU using 1
+    ext ⟨s, y⟩
+    exact ⟨fun ⟨_, hs, hy⟩ => ⟨hs, hy⟩, fun ⟨hs, hy⟩ => ⟨rfl, hs, hy⟩⟩
   · convert isOpen_empty using 1
-    ext ⟨t, y⟩
-    simp [mem_interiorCylSet_iff (f := f) hV0 hV1, hmn]
+    ext ⟨s, y⟩
+    exact iff_false_intro fun ⟨hm, _⟩ => h hm
 
-/-- An open collar neighbourhood around `{0} × U` at stage `n`, extending by `< ε` into cylinder
-`n` and by `> 1 - ε` into cylinder `n - 1` along `(f (n - 1))⁻¹(U)`. -/
-private def seamSet (f : ∀ n, C(X n, X (n + 1))) (n : ℕ) (ε : ℝ) (U : Set (X n)) :
+private def seamPred (f : ∀ k, C(X k, X (k + 1))) (n : ℕ) (U : Set (X n)) :
+    (Σ m, I × X m) → Prop
+  | ⟨m, s, y⟩ =>
+    (∃ h : m = n, (s : ℝ) < 1 / 2 ∧ h ▸ y ∈ U) ∨
+    (∃ h : m + 1 = n, (1 / 2 : ℝ) < s ∧ h ▸ f m y ∈ U)
+
+private lemma seamPred_telescopeNormalize (n : ℕ) (U : Set (X n)) (a : Σ m, I × X m) :
+    seamPred f n U (telescopeNormalize f a) = seamPred f n U a := by
+  obtain ⟨m, s, y⟩ := a
+  unfold telescopeNormalize
+  dsimp only
+  split_ifs with hs
+  · subst hs
+    simp only [seamPred, Set.Icc.coe_zero, Set.Icc.coe_one]
+    norm_num
+  · rfl
+
+/-- Open collar neighbourhood around `{0} × U` at stage `n`. -/
+private def seamSet (f : ∀ k, C(X k, X (k + 1))) (n : ℕ) (U : Set (X n)) :
     Set (MappingTelescope f) :=
-  mkCyl f n '' ({t : I | (t : ℝ) < ε} ×ˢ U) ∪
-    {z | ∃ (m : ℕ) (hm : m + 1 = n) (t : I) (y : X m),
-      1 - ε < (t : ℝ) ∧ hm ▸ f m y ∈ U ∧ z = mkCyl f m (t, y)}
+  {z | Quotient.lift (s := Setoid.ker (telescopeNormalize f)) (seamPred f n U)
+    (fun a b hab => by
+      rw [← seamPred_telescopeNormalize n U a, ← seamPred_telescopeNormalize n U b, hab]) z}
 
-private lemma mem_seamSet_same {n : ℕ} {ε : ℝ} (hε1 : ε < 1) {U : Set (X n)} {s : I} {y : X n} :
-    mkCyl f n (s, y) ∈ seamSet f n ε U ↔ (s : ℝ) < ε ∧ y ∈ U := by
-  simp only [seamSet, mem_union, mem_image, Prod.exists, mem_prod, mem_ofPred_eq]
-  constructor
-  · rintro (⟨t, x, ⟨ht, hx⟩, heq⟩ | ⟨k, hk, t, x, ht, hx, heq⟩)
-    · rcases mkCyl_eq_mkCyl_same_iff.1 heq.symm with ⟨rfl, rfl⟩ | ⟨_, ht1, -⟩
-      · exact ⟨ht, hx⟩
-      · subst ht1
-        rw [Set.Icc.coe_one] at ht
-        linarith
-    · subst hk
-      rcases mkCyl_eq_mkCyl_iff.1 heq with
-        ⟨h1, -⟩ | ⟨h1, -⟩ | ⟨h1, -⟩ | ⟨_, hs0, _, rfl⟩
-      · omega
-      · omega
-      · omega
-      · subst hs0
-        exact ⟨by rw [Set.Icc.coe_zero]; linarith [t.2.2], hx⟩
-  · rintro ⟨hs, hy⟩
-    exact Or.inl ⟨s, y, ⟨hs, hy⟩, rfl⟩
-
-private lemma mem_seamSet_pred {m : ℕ} {ε : ℝ} {U : Set (X (m + 1))} {s : I} {y : X m} :
-    mkCyl f m (s, y) ∈ seamSet f (m + 1) ε U ↔ 1 - ε < (s : ℝ) ∧ f m y ∈ U := by
-  simp only [seamSet, mem_union, mem_image, Prod.exists, mem_prod, mem_ofPred_eq]
-  constructor
-  · rintro (⟨t, x, ⟨ht, hx⟩, heq⟩ | ⟨k, hk, t, x, ht, hx, heq⟩)
-    · rcases mkCyl_eq_mkCyl_iff.1 heq with
-        ⟨h1, -⟩ | ⟨h1, -⟩ | ⟨h1, -⟩ | ⟨_, ht0, hs1, rfl⟩
-      · omega
-      · omega
-      · omega
-      · subst ht0 hs1
-        rw [Set.Icc.coe_zero] at ht
-        exact ⟨by rw [Set.Icc.coe_one]; linarith, hx⟩
-    · obtain rfl : k = m := by omega
-      rcases mkCyl_eq_mkCyl_same_iff.1 heq with ⟨rfl, rfl⟩ | ⟨ht1, hs1, hfy⟩
-      · exact ⟨ht, hx⟩
-      · subst ht1 hs1
-        exact ⟨ht, hfy ▸ hx⟩
-  · rintro ⟨hs, hy⟩
-    exact Or.inr ⟨m, rfl, s, y, hs, hy, rfl⟩
-
-private lemma preimage_mkCyl_seamSet {n m : ℕ} {ε : ℝ} (hε1 : ε < 1) (U : Set (X n)) :
-    mkCyl f m ⁻¹' seamSet f n ε U =
-      if h : m = n then {p : I × X m | (p.1 : ℝ) < ε ∧ h ▸ p.2 ∈ U}
-      else if h' : m + 1 = n then {p : I × X m | 1 - ε < (p.1 : ℝ) ∧ h' ▸ f m p.2 ∈ U}
-      else ∅ := by
-  ext ⟨s, y⟩
-  simp only [mem_preimage]
-  split_ifs with h h'
-  · subst h
-    exact mem_seamSet_same hε1
-  · subst h'
-    exact mem_seamSet_pred
-  · simp only [seamSet, mem_union, mem_image, Prod.exists, mem_prod, mem_ofPred_eq,
-      mem_empty_iff_false, iff_false]
-    rintro (⟨t, x, ⟨ht, _⟩, heq⟩ | ⟨k, hk, t, x, ht, _, heq⟩)
-    · rcases mkCyl_eq_mkCyl_iff.1 heq with
-        ⟨hnm, -⟩ | ⟨hnm, -⟩ | ⟨_, ht1, -⟩ | ⟨hm1n, -⟩
-      · exact h hnm.symm
-      · exact h hnm.symm
-      · subst ht1
-        rw [Set.Icc.coe_one] at ht
-        linarith
-      · exact h' hm1n
-    · subst hk
-      rcases mkCyl_eq_mkCyl_iff.1 heq with
-        ⟨hmk, -⟩ | ⟨hmk, -⟩ | ⟨_, _, ht0, -⟩ | ⟨hk1m, -⟩
-      · exact h' (congrArg (· + 1) hmk)
-      · exact h' (congrArg (· + 1) hmk)
-      · subst ht0
-        rw [Set.Icc.coe_zero] at ht
-        linarith
-      · exact h hk1m.symm
-
-private lemma isOpen_seamSet {n : ℕ} {ε : ℝ} (hε1 : ε < 1) {U : Set (X n)} (hU : IsOpen U) :
-    IsOpen (seamSet f n ε U) := by
+private lemma isOpen_seamSet {n : ℕ} {U : Set (X n)} (hU : IsOpen U) : IsOpen (seamSet f n U) := by
   refine isOpen_iff.2 fun m => ?_
-  rw [preimage_mkCyl_seamSet hε1]
-  split_ifs with h h'
+  by_cases h : m = n
   · subst h
-    exact (isOpen_lt (continuous_subtype_val.comp continuous_fst) continuous_const).inter
-      (hU.preimage continuous_snd)
-  · subst h'
-    exact (isOpen_lt continuous_const (continuous_subtype_val.comp continuous_fst)).inter
-      (hU.preimage ((f m).continuous.comp continuous_snd))
-  · exact isOpen_empty
+    convert (isOpen_lt (continuous_subtypeVal.comp continuous_fst)
+      (continuous_const (y := (1 / 2 : ℝ)))).inter (hU.preimage continuous_snd) using 1
+    ext ⟨s, y⟩
+    exact ⟨by rintro (⟨_, hs, hy⟩ | ⟨hm, -⟩); exacts [⟨hs, hy⟩, by omega],
+      fun ⟨hs, hy⟩ => Or.inl ⟨rfl, hs, hy⟩⟩
+  · by_cases h' : m + 1 = n
+    · subst h'
+      convert (isOpen_lt (continuous_const (y := (1 / 2 : ℝ)))
+        (continuous_subtypeVal.comp continuous_fst)).inter
+        (hU.preimage ((f m).continuous.comp continuous_snd)) using 1
+      ext ⟨s, y⟩
+      exact ⟨by rintro (⟨hm, -⟩ | ⟨_, hs, hy⟩); exacts [absurd hm h, ⟨hs, hy⟩],
+        fun ⟨hs, hy⟩ => Or.inr ⟨rfl, hs, hy⟩⟩
+    · convert isOpen_empty using 1
+      ext ⟨s, y⟩
+      exact iff_false_intro (by rintro (⟨hm, -⟩ | ⟨hm, -⟩); exacts [h hm, h' hm])
 
-private lemma exists_disjoint_interiorCylSet {n₁ n₂ : ℕ} [T2Space (X n₁)] {t₁ t₂ : I}
-    {x₁ : X n₁} {x₂ : X n₂} (hmem₁ : t₁ ∈ Set.Ioo (0 : I) 1) (hmem₂ : t₂ ∈ Set.Ioo (0 : I) 1)
-    (hne : mkCyl f n₁ (t₁, x₁) ≠ mkCyl f n₂ (t₂, x₂)) :
-    ∃ (V₁ : Set I) (U₁ : Set (X n₁)) (V₂ : Set I) (U₂ : Set (X n₂)),
-      IsOpen (interiorCylSet f n₁ V₁ U₁) ∧ IsOpen (interiorCylSet f n₂ V₂ U₂) ∧
-      mkCyl f n₁ (t₁, x₁) ∈ interiorCylSet f n₁ V₁ U₁ ∧
-      mkCyl f n₂ (t₂, x₂) ∈ interiorCylSet f n₂ V₂ U₂ ∧
-      Disjoint (interiorCylSet f n₁ V₁ U₁) (interiorCylSet f n₂ V₂ U₂) := by
-  have hIoo : IsOpen (Set.Ioo (0 : I) 1) := isOpen_Ioo
-  by_cases hn : n₁ = n₂
-  · subst hn
-    have hpx : (t₁, x₁) ≠ (t₂, x₂) := fun h => hne (congrArg _ h)
-    obtain ⟨W₁, W₂, hW₁, hW₂, hp₁, hp₂, hdisj⟩ := t2_separation hpx
-    rcases isOpen_prod_iff.1 hW₁ t₁ x₁ hp₁ with ⟨V₁, U₁, hV₁, hU₁, htV₁, hxU₁, hsub₁⟩
-    rcases isOpen_prod_iff.1 hW₂ t₂ x₂ hp₂ with ⟨V₂, U₂, hV₂, hU₂, htV₂, hxU₂, hsub₂⟩
-    refine ⟨V₁ ∩ Set.Ioo 0 1, U₁, V₂ ∩ Set.Ioo 0 1, U₂,
-      isOpen_interiorCylSet (hV₁.inter hIoo) hU₁ (by simp) (by simp),
-      isOpen_interiorCylSet (hV₂.inter hIoo) hU₂ (by simp) (by simp),
-      ⟨(t₁, x₁), ⟨⟨htV₁, hmem₁⟩, hxU₁⟩, rfl⟩,
-      ⟨(t₂, x₂), ⟨⟨htV₂, hmem₂⟩, hxU₂⟩, rfl⟩,
-      Set.disjoint_left.2 fun z hz₁ hz₂ => ?_⟩
-    induction z using ind with
-    | cyl m q =>
-      obtain ⟨rfl, hq₁, hqU₁⟩ := (mem_interiorCylSet_iff (by simp) (by simp)).1 hz₁
-      obtain ⟨_, hq₂, hqU₂⟩ := (mem_interiorCylSet_iff (by simp) (by simp)).1 hz₂
-      exact Set.disjoint_left.1 hdisj (hsub₁ ⟨hq₁.1, hqU₁⟩) (hsub₂ ⟨hq₂.1, hqU₂⟩)
-  · refine ⟨Set.Ioo 0 1, Set.univ, Set.Ioo 0 1, Set.univ,
-      isOpen_interiorCylSet hIoo isOpen_univ (by simp) (by simp),
-      isOpen_interiorCylSet hIoo isOpen_univ (by simp) (by simp),
-      ⟨(t₁, x₁), ⟨hmem₁, trivial⟩, rfl⟩,
-      ⟨(t₂, x₂), ⟨hmem₂, trivial⟩, rfl⟩,
-      Set.disjoint_left.2 fun z hz₁ hz₂ => ?_⟩
-    induction z using ind with
-    | cyl m q =>
-      obtain ⟨rfl, -⟩ := (mem_interiorCylSet_iff (by simp) (by simp)).1 hz₁
-      obtain ⟨rfl, -⟩ := (mem_interiorCylSet_iff (by simp) (by simp)).1 hz₂
-      exact hn rfl
+private lemma eq_of_height_eq {n₁ n₂ : ℕ} {t₁ t₂ : I} (ht₁ : t₁ ≠ 1) (ht₂ : t₂ ≠ 1)
+    {x₁ : X n₁} {x₂ : X n₂}
+    (h : height f (mkCyl f n₁ (t₁, x₁)) = height f (mkCyl f n₂ (t₂, x₂))) :
+    n₁ = n₂ ∧ t₁ = t₂ := by
+  rw [height_mkCyl, height_mkCyl] at h
+  have ht₁1 : (t₁ : ℝ) < 1 := lt_of_le_of_ne t₁.property.2 (Subtype.coe_ne_coe.2 ht₁)
+  have ht₂1 : (t₂ : ℝ) < 1 := lt_of_le_of_ne t₂.property.2 (Subtype.coe_ne_coe.2 ht₂)
+  have hn₁₂ : ¬ n₁ < n₂ := fun hlt => by
+    have : (n₁ : ℝ) + 1 ≤ n₂ := by exact_mod_cast Nat.succ_le_of_lt hlt
+    linarith [t₂.property.1]
+  have hn₂₁ : ¬ n₂ < n₁ := fun hlt => by
+    have : (n₂ : ℝ) + 1 ≤ n₁ := by exact_mod_cast Nat.succ_le_of_lt hlt
+    linarith [t₁.property.1]
+  obtain rfl : n₁ = n₂ := le_antisymm (not_lt.1 hn₂₁) (not_lt.1 hn₁₂)
+  exact ⟨rfl, Subtype.ext (by linarith)⟩
 
-private lemma t2_sep_zero_pos {n₁ n₂ : ℕ} {t₂ : I} (x₁ : X n₁) (x₂ : X n₂)
-    (ht₂ : t₂ ≠ 0) (ht₂' : t₂ ≠ 1) :
+private lemma t2_sep_same {n : ℕ} [T2Space (X n)] {t : I} (ht : t ≠ 1) {x₁ x₂ : X n}
+    (hne : mkCyl f n (t, x₁) ≠ mkCyl f n (t, x₂)) :
     ∃ U₁ U₂ : Set (MappingTelescope f), IsOpen U₁ ∧ IsOpen U₂ ∧
-      mkCyl f n₁ (0, x₁) ∈ U₁ ∧ mkCyl f n₂ (t₂, x₂) ∈ U₂ ∧ Disjoint U₁ U₂ := by
-  have ht0 : (0 : ℝ) < t₂ := lt_of_le_of_ne t₂.2.1 (Subtype.coe_ne_coe.2 ht₂.symm)
-  have ht1 : (t₂ : ℝ) < 1 := lt_of_le_of_ne t₂.2.2 (Subtype.coe_ne_coe.2 ht₂')
-  let ε : ℝ := min (t₂ : ℝ) (1 - t₂) / 2
-  have hε_eq : ε = min (t₂ : ℝ) (1 - t₂) / 2 := rfl
-  have hε0 : 0 < ε := by positivity
-  have hε_lt_t : ε < t₂ := by
-    have : min (t₂ : ℝ) (1 - t₂) ≤ t₂ := min_le_left _ _
-    linarith
-  have ht_lt_one_sub : (t₂ : ℝ) < 1 - ε := by
-    have : min (t₂ : ℝ) (1 - t₂) ≤ 1 - t₂ := min_le_right _ _
-    linarith
-  have hε1 : ε < 1 := by linarith
-  let V : Set I := {t : I | ε < (t : ℝ) ∧ (t : ℝ) < 1 - ε}
-  have hV : IsOpen V := (isOpen_lt continuous_const continuous_subtype_val).inter
-    (isOpen_lt continuous_subtype_val continuous_const)
-  have hV0 : (0 : I) ∉ V := by
-    rintro ⟨h, -⟩
-    rw [Set.Icc.coe_zero] at h
-    linarith
-  have hV1 : (1 : I) ∉ V := by
-    rintro ⟨-, h⟩
-    rw [Set.Icc.coe_one] at h
-    linarith
-  refine ⟨seamSet f n₁ ε Set.univ, interiorCylSet f n₂ V Set.univ,
-    isOpen_seamSet hε1 isOpen_univ, isOpen_interiorCylSet hV isOpen_univ hV0 hV1,
-    Or.inl ⟨(0, x₁), ⟨by simp [hε0], trivial⟩, rfl⟩,
-    ⟨(t₂, x₂), ⟨⟨hε_lt_t, ht_lt_one_sub⟩, trivial⟩, rfl⟩,
-    Set.disjoint_left.2 fun z hz₁ hz₂ => ?_⟩
-  induction z using ind with
-  | cyl m q =>
-    obtain ⟨rfl, ⟨hqε, hq1⟩, -⟩ := (mem_interiorCylSet_iff hV0 hV1).1 hz₂
-    have hpre := preimage_mkCyl_seamSet (f := f) (n := n₁) (m := m) hε1 Set.univ
-    have hzm : q ∈ mkCyl f m ⁻¹' seamSet f n₁ ε Set.univ := hz₁
-    rw [hpre] at hzm
-    split_ifs at hzm with hm hm'
-    · linarith [hzm.1]
-    · linarith [hzm.1]
-    · exact hzm
-
-private lemma t2_sep_zero_zero {n₁ n₂ : ℕ} [T2Space (X n₁)] {x₁ : X n₁} {x₂ : X n₂}
-    (hne : mkCyl f n₁ (0, x₁) ≠ mkCyl f n₂ (0, x₂)) :
-    ∃ U₁ U₂ : Set (MappingTelescope f), IsOpen U₁ ∧ IsOpen U₂ ∧
-      mkCyl f n₁ (0, x₁) ∈ U₁ ∧ mkCyl f n₂ (0, x₂) ∈ U₂ ∧ Disjoint U₁ U₂ := by
-  have hhalf1 : (1 / 2 : ℝ) < 1 := by norm_num
-  by_cases hn : n₁ = n₂
-  · subst hn
-    have hx : x₁ ≠ x₂ := fun h => hne (congrArg _ (Prod.ext rfl h))
-    obtain ⟨U₁, U₂, hU₁, hU₂, hx₁, hx₂, hdisj⟩ := t2_separation hx
-    refine ⟨seamSet f n₁ (1 / 2) U₁, seamSet f n₁ (1 / 2) U₂,
-      isOpen_seamSet hhalf1 hU₁, isOpen_seamSet hhalf1 hU₂,
-      Or.inl ⟨(0, x₁), ⟨by simp, hx₁⟩, rfl⟩,
-      Or.inl ⟨(0, x₂), ⟨by simp, hx₂⟩, rfl⟩,
-      Set.disjoint_left.2 fun z hz₁ hz₂ => ?_⟩
+      mkCyl f n (t, x₁) ∈ U₁ ∧ mkCyl f n (t, x₂) ∈ U₂ ∧ Disjoint U₁ U₂ := by
+  obtain ⟨U₁, U₂, hU₁, hU₂, hx₁, hx₂, hdisj⟩ :=
+    t2_separation (fun h : x₁ = x₂ => hne (congrArg _ (Prod.ext rfl h)))
+  by_cases ht0 : t = 0
+  · subst ht0
+    refine ⟨seamSet f n U₁, seamSet f n U₂, isOpen_seamSet hU₁, isOpen_seamSet hU₂,
+      Or.inl ⟨rfl, by simp, hx₁⟩, Or.inl ⟨rfl, by simp, hx₂⟩,
+      Set.disjoint_left.2 fun z => ?_⟩
     induction z using ind with
     | cyl m q =>
-      have h₁ : q ∈ mkCyl f m ⁻¹' seamSet f n₁ (1 / 2) U₁ := hz₁
-      have h₂ : q ∈ mkCyl f m ⁻¹' seamSet f n₁ (1 / 2) U₂ := hz₂
-      rw [preimage_mkCyl_seamSet hhalf1] at h₁ h₂
-      split_ifs at h₁ h₂ with hm hm'
-      · subst hm
-        exact Set.disjoint_left.1 hdisj h₁.2 h₂.2
-      · subst hm'
-        exact Set.disjoint_left.1 hdisj h₁.2 h₂.2
-      · exact h₁
-  · refine ⟨seamSet f n₁ (1 / 2) Set.univ, seamSet f n₂ (1 / 2) Set.univ,
-      isOpen_seamSet hhalf1 isOpen_univ,
-      isOpen_seamSet hhalf1 isOpen_univ,
-      Or.inl ⟨(0, x₁), ⟨by simp, trivial⟩, rfl⟩,
-      Or.inl ⟨(0, x₂), ⟨by simp, trivial⟩, rfl⟩,
-      Set.disjoint_left.2 fun z hz₁ hz₂ => ?_⟩
+      rintro (⟨h₁, -, hy₁⟩ | ⟨h₁, -, hy₁⟩) (⟨h₂, -, hy₂⟩ | ⟨h₂, -, hy₂⟩)
+      · subst h₁
+        exact Set.disjoint_left.1 hdisj hy₁ hy₂
+      · omega
+      · omega
+      · subst h₁
+        exact Set.disjoint_left.1 hdisj hy₁ hy₂
+  · have hmem : t ∈ Set.Ioo (0 : I) 1 :=
+      ⟨lt_of_le_of_ne t.property.1 (Ne.symm ht0), lt_of_le_of_ne t.property.2 ht⟩
+    refine ⟨cylSet f n U₁, cylSet f n U₂, isOpen_cylSet hU₁, isOpen_cylSet hU₂,
+      ⟨rfl, hmem, hx₁⟩, ⟨rfl, hmem, hx₂⟩, Set.disjoint_left.2 fun z => ?_⟩
     induction z using ind with
     | cyl m q =>
-      have h₁ : q ∈ mkCyl f m ⁻¹' seamSet f n₁ (1 / 2) Set.univ := hz₁
-      have h₂ : q ∈ mkCyl f m ⁻¹' seamSet f n₂ (1 / 2) Set.univ := hz₂
-      rw [preimage_mkCyl_seamSet hhalf1] at h₁ h₂
-      split_ifs at h₁ with hm₁ hm₁' <;> split_ifs at h₂ with hm₂ hm₂'
-      · exact hn (hm₁.symm.trans hm₂)
-      · linarith [h₁.1, h₂.1]
-      · exact h₂
-      · linarith [h₁.1, h₂.1]
-      · exact hn (hm₁'.symm.trans hm₂')
-      · exact h₂
-      · exact h₁
-      · exact h₁
-      · exact h₁
+      rintro ⟨rfl, -, h₁⟩ ⟨_, -, h₂⟩
+      exact Set.disjoint_left.1 hdisj h₁ h₂
 
 /-- **If every stage `X n` is Hausdorff, then so is the mapping telescope.** -/
 instance [∀ n, T2Space (X n)] : T2Space (MappingTelescope f) where
   t2 z₁ z₂ hne := by
-    induction z₁ using ind_ne_one with
-    | cyl n₁ t₁ x₁ ht₁' =>
-      induction z₂ using ind_ne_one with
-      | cyl n₂ t₂ x₂ ht₂' =>
-        by_cases ht₁ : t₁ = 0
-        · subst ht₁
-          by_cases ht₂ : t₂ = 0
-          · subst ht₂
-            exact t2_sep_zero_zero hne
-          · exact t2_sep_zero_pos x₁ x₂ ht₂ ht₂'
-        · by_cases ht₂ : t₂ = 0
-          · subst ht₂
-            obtain ⟨U₂, U₁, hU₂, hU₁, hz₂, hz₁, hdisj⟩ := t2_sep_zero_pos x₂ x₁ ht₁ ht₁'
-            exact ⟨U₁, U₂, hU₁, hU₂, hz₁, hz₂, hdisj.symm⟩
-          · obtain ⟨V₁, U₁, V₂, U₂, hO₁, hO₂, hz₁, hz₂, hd⟩ :=
-              exists_disjoint_interiorCylSet
-                ⟨lt_of_le_of_ne t₁.2.1 (Ne.symm ht₁), lt_of_le_of_ne t₁.2.2 ht₁'⟩
-                ⟨lt_of_le_of_ne t₂.2.1 (Ne.symm ht₂), lt_of_le_of_ne t₂.2.2 ht₂'⟩ hne
-            exact ⟨_, _, hO₁, hO₂, hz₁, hz₂, hd⟩
+    by_cases hh : height f z₁ = height f z₂
+    · induction z₁ using ind_ne_one with
+      | cyl n₁ t₁ x₁ ht₁ =>
+        induction z₂ using ind_ne_one with
+        | cyl n₂ t₂ x₂ ht₂ =>
+          obtain ⟨rfl, rfl⟩ := eq_of_height_eq ht₁ ht₂ hh
+          exact t2_sep_same ht₁ hne
+    · obtain ⟨V₁, V₂, hV₁, hV₂, hz₁, hz₂, hdisj⟩ := t2_separation hh
+      exact ⟨height f ⁻¹' V₁, height f ⁻¹' V₂,
+        hV₁.preimage (height f).continuous, hV₂.preimage (height f).continuous,
+        hz₁, hz₂, hdisj.preimage (height f)⟩
 
 /-- **If every stage `X n` is compactly generated, then so is the mapping telescope.** Since
 `CompactlyGeneratedSpace` abbreviates `UCompactlyGeneratedSpace.{u}`, this covers both
@@ -899,32 +654,28 @@ end SeparationAndCompactGeneration
 section BondingAndHomotopies
 
 /-- The composite bonding map `X m → X n` along `f` for `m ≤ n`. -/
-def bondOfLE (f : ∀ n, C(X n, X (n + 1))) : ∀ {m n : ℕ}, m ≤ n → C(X m, X n)
-  | m, 0, h => Nat.eq_zero_of_le_zero h ▸ ContinuousMap.id (X m)
-  | m, k + 1, h =>
-    if hmn : m = k + 1 then hmn ▸ ContinuousMap.id (X m)
-    else (f k).comp (bondOfLE f (Nat.le_of_lt_succ (lt_of_le_of_ne h hmn)))
+@[expose]
+def bondOfLE (f : ∀ n, C(X n, X (n + 1))) {m n : ℕ} (h : m ≤ n) : C(X m, X n) :=
+  (CategoryTheory.Functor.OfSequence.map (X := fun k => TopCat.of (X k))
+    (fun k => TopCat.ofHom (f k)) m n h).hom
 
 @[simp]
-theorem bondOfLE_refl (m : ℕ) : bondOfLE f (le_refl m) = ContinuousMap.id (X m) := by
-  cases m <;> simp [bondOfLE]
-
-theorem bondOfLE_step {m k : ℕ} (h : m ≤ k) :
-    bondOfLE f (Nat.le_succ_of_le h) = (f k).comp (bondOfLE f h) := by
-  have hne : m ≠ k + 1 := by omega
-  simp [bondOfLE, hne]
+theorem bondOfLE_refl (m : ℕ) : bondOfLE f (le_refl m) = ContinuousMap.id (X m) :=
+  congrArg TopCat.Hom.hom (CategoryTheory.Functor.OfSequence.map_id _ m)
 
 @[simp]
-theorem bondOfLE_succ (m : ℕ) : bondOfLE f m.le_succ = f m := by
-  rw [bondOfLE_step (le_refl m), bondOfLE_refl, ContinuousMap.comp_id]
+theorem bondOfLE_succ (m : ℕ) : bondOfLE f m.le_succ = f m :=
+  congrArg TopCat.Hom.hom (CategoryTheory.Functor.OfSequence.map_le_succ _ m)
 
 @[simp]
 theorem bondOfLE_comp_bondOfLE {k m n : ℕ} (hkm : k ≤ m) (hmn : m ≤ n) :
-    (bondOfLE f hmn).comp (bondOfLE f hkm) = bondOfLE f (hkm.trans hmn) := by
-  induction n, hmn using Nat.le_induction with
-  | base => rw [bondOfLE_refl, ContinuousMap.id_comp]
-  | succ n hmn ih =>
-    rw [bondOfLE_step hmn, bondOfLE_step (hkm.trans hmn), ContinuousMap.comp_assoc, ih]
+    (bondOfLE f hmn).comp (bondOfLE f hkm) = bondOfLE f (hkm.trans hmn) :=
+  (congrArg TopCat.Hom.hom
+    (CategoryTheory.Functor.OfSequence.map_comp _ k m n hkm hmn)).symm
+
+theorem bondOfLE_step {m k : ℕ} (h : m ≤ k) :
+    bondOfLE f (Nat.le_succ_of_le h) = (f k).comp (bondOfLE f h) := by
+  rw [← bondOfLE_comp_bondOfLE h k.le_succ, bondOfLE_succ]
 
 @[simp]
 theorem bondOfLE_apply_bondOfLE {k m n : ℕ} (hkm : k ≤ m) (hmn : m ≤ n) (x : X k) :
@@ -949,14 +700,12 @@ def inclHomotopyOfLE (f : ∀ n, C(X n, X (n + 1))) :
     ∀ {m n : ℕ} (h : m ≤ n), (incl f m).Homotopy ((incl f n).comp (bondOfLE f h))
   | m, 0, h =>
     match m, Nat.eq_zero_of_le_zero h with
-    | 0, rfl =>
-      (ContinuousMap.Homotopy.refl (incl f 0)).cast rfl
+    | 0, rfl => (ContinuousMap.Homotopy.refl (incl f 0)).cast rfl
         (by rw [bondOfLE_refl, ContinuousMap.comp_id])
   | m, k + 1, h =>
     if hmn : m = k + 1 then
       match m, hmn with
-      | _, rfl =>
-        (ContinuousMap.Homotopy.refl (incl f (k + 1))).cast rfl
+      | _, rfl => (ContinuousMap.Homotopy.refl (incl f (k + 1))).cast rfl
           (by rw [bondOfLE_refl, ContinuousMap.comp_id])
     else
       let hk' : m ≤ k := Nat.le_of_lt_succ (lt_of_le_of_ne h hmn)
@@ -990,21 +739,6 @@ theorem incl_homotopic_comp_bondOfLE {m n : ℕ} (h : m ≤ n) :
 theorem joined_incl_bondOfLE {m n : ℕ} (h : m ≤ n) (x : X m) :
     Joined (incl f m x) (incl f n (bondOfLE f h x)) :=
   ⟨(inclHomotopyOfLE f h).evalAt x⟩
-
-/-- The canonical real-valued height function on `MappingTelescope f`, sending `mkCyl f n (s, x)`
-to `(n : ℝ) + s`. -/
-def height (f : ∀ n, C(X n, X (n + 1))) : C(MappingTelescope f, ℝ) :=
-  lift (fun n => ⟨fun p => (n : ℝ) + (p.1 : ℝ), continuous_const.add
-    (continuous_subtype_val.comp continuous_fst)⟩) fun n _ => by
-      simp [add_assoc]
-
-@[simp]
-theorem height_mkCyl (n : ℕ) (p : I × X n) :
-    height f (mkCyl f n p) = (n : ℝ) + (p.1 : ℝ) :=
-  lift_mkCyl _ n p
-
-theorem height_incl (n : ℕ) (x : X n) : height f (incl f n x) = n := by
-  simp [incl_apply]
 
 end BondingAndHomotopies
 
