@@ -35,6 +35,10 @@ In the namespace `TauCeti.AlgebraicGeometry.PointedPrestableFamily`:
   carries a component of the blowup to its image under the induced isomorphism of blowups.
 * `image_blowupToBase_comp_dualGraphIsoOfIso_vertexEquiv`: it therefore matches the images of
   the components in the curves.
+* `dualGraphEdgeEquiv_dualGraphIsoOfIso_edgeEquiv`: the isomorphism of dual graphs carries a node
+  to its image under the map of total spaces.
+* `dualGraphIsoOfIso_refl`, `dualGraphIsoOfIso_symm` and `dualGraphIsoOfIso_trans`: the
+  construction is compatible with identities, inverses and composites.
 -/
 
 public section
@@ -100,6 +104,38 @@ theorem image_blowupToBase_comp_dualGraphIsoOfIso_vertexEquiv [IsSepClosed K]
       ((P.total.singularLocus K).blowupToBase ≫ e.hom.hom ≫ f) ''
         (P.total.dualGraphVertexEquiv P.markingPoint v : Set (P.total.singularLocus K).blowup) :=
   Scheme.image_blowupToBase_comp_dualGraphIsoOfIso_vertexEquiv ..
+
+/-- The isomorphism of dual graphs carries a node of the total space of `P` to its image under the
+map of total spaces `e.hom.hom`. -/
+@[simp]
+theorem dualGraphEdgeEquiv_dualGraphIsoOfIso_edgeEquiv [IsSepClosed K]
+    {P Q : PointedPrestableFamily (Spec (.of K)) n} (e : P ≅ Q) (x : P.dualGraph.Edge) :
+    (Q.total.dualGraphEdgeEquiv Q.markingPoint ((dualGraphIsoOfIso e).edgeEquiv x) : Q.total) =
+      e.hom.hom (P.total.dualGraphEdgeEquiv P.markingPoint x) :=
+  Scheme.dualGraphEdgeEquiv_dualGraphIsoOfIso_edgeEquiv ..
+
+/-- The isomorphism of dual graphs induced by the identity is the identity. -/
+@[simp]
+theorem dualGraphIsoOfIso_refl [IsSepClosed K] :
+    dualGraphIsoOfIso (Iso.refl P) = DualGraph.Iso.refl _ :=
+  Scheme.dualGraphIsoOfIso_refl ..
+
+/-- The isomorphism of dual graphs induced by the inverse isomorphism is the inverse. -/
+theorem dualGraphIsoOfIso_symm [IsSepClosed K] {P Q : PointedPrestableFamily (Spec (.of K)) n}
+    (e : P ≅ Q) : dualGraphIsoOfIso e.symm = (dualGraphIsoOfIso e).symm :=
+  Scheme.dualGraphIsoOfIso_symm (K := K) (X := P.total) (Y := Q.total)
+    ((Over.forget _).mapIso (toOver.mapIso e))
+    (Over.w (toOver.map e.hom)) _ _ e.hom.hom_markingPoint
+
+/-- The isomorphism of dual graphs induced by a composite of isomorphisms is the composite. -/
+theorem dualGraphIsoOfIso_trans [IsSepClosed K] {P Q R : PointedPrestableFamily (Spec (.of K)) n}
+    (e : P ≅ Q) (e' : Q ≅ R) :
+    dualGraphIsoOfIso (e ≪≫ e') = (dualGraphIsoOfIso e).trans (dualGraphIsoOfIso e') :=
+  Scheme.dualGraphIsoOfIso_trans (K := K) (X := P.total) (Y := Q.total) (Z := R.total)
+    ((Over.forget _).mapIso (toOver.mapIso e))
+    (Over.w (toOver.map e.hom)) _ _ e.hom.hom_markingPoint
+    ((Over.forget _).mapIso (toOver.mapIso e')) (Over.w (toOver.map e'.hom)) _
+    e'.hom.hom_markingPoint
 
 end PointedPrestableFamily
 
