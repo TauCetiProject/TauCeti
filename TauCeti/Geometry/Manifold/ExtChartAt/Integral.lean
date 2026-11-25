@@ -25,7 +25,7 @@ measurable structure. The coefficients take values in any real normed space.
 
 A coefficient in a preferred chart is integrable when it vanishes off the chart target and at the
 coordinates of the points outside a compact set, and is integrable on the coordinate images of the
-pieces of an open cover of that set (`TauCeti.integrable_of_isCompact_of_open_cover`).
+pieces of an open cover of that set (`TauCeti.integrable_of_isCompact_of_open_cover_extChartAt`).
 
 A finite open chart cover of a set, `TauCeti.ChartCover`, is chosen for each compact set by
 `TauCeti.chooseChartCover`; the integrals of top forms and of densities are defined through it.
@@ -97,9 +97,9 @@ omit [NormedSpace ℝ F] in
 /-- A coefficient in the preferred chart at `α` is integrable when it vanishes off the chart
 target and at the coordinates of the points outside a compact set `S`, and is integrable on the
 coordinate images of the parts in the chart source of the sets of an open cover of `S`. -/
-theorem integrable_of_isCompact_of_open_cover [MeasurableSpace E] {ν : Measure E} {g : E → F}
-    (α : M) {S : Set M} (hS : IsCompact S) {J : Type*} (u : J → Set M) (hu : ∀ i, IsOpen (u i))
-    (hcover : S ⊆ ⋃ i, u i)
+theorem integrable_of_isCompact_of_open_cover_extChartAt [MeasurableSpace E] {ν : Measure E}
+    {g : E → F} (α : M) {S : Set M} (hS : IsCompact S) {J : Type*} (u : J → Set M)
+    (hu : ∀ i, IsOpen (u i)) (hcover : S ⊆ ⋃ i, u i)
     (hpiece : ∀ i, IntegrableOn g ((extChartAt I α) '' ((extChartAt I α).source ∩ u i)) ν)
     (hz : ∀ y, g y ≠ 0 → y ∈ (extChartAt I α).target ∧ (extChartAt I α).symm y ∈ S) :
     Integrable g ν := by

@@ -233,7 +233,7 @@ variable [MeasurableSpace E] [BorelSpace E]
 
 /-- Chart integrals of a density, and their integrability, agree on an actual chart overlap,
 by the absolute Jacobian change-of-variables formula. No orientation or sign data enter. -/
-theorem integral_inChartAt_changeChart [IsManifold I 1 M] (μ : RoughDensity I M m)
+theorem setIntegral_inChartAt_changeChart [IsManifold I 1 M] (μ : RoughDensity I M m)
     (b : Basis (Fin m) ℝ E) (α β : M) {s : Set M}
     (hsub : s ⊆ (extChartAt I α).source ∩ (extChartAt I β).source)
     (hs : MeasurableSet ((extChartAt I α) '' s)) (ν : Measure E) [ν.IsAddHaarMeasure] :
@@ -318,12 +318,12 @@ theorem RoughDensity.integrableDensity_of_open_cover {J : Type*} (μ : RoughDens
     IntegrableDensity μ := by
   have : FiniteDimensional ℝ E := Module.Finite.of_basis b
   refine integrableDensity_of_basis hc b fun α ↦
-    integrable_of_isCompact_of_open_cover (I := I) α hc u hu hcover (fun i ↦ ?_)
+    integrable_of_isCompact_of_open_cover_extChartAt (I := I) α hc u hu hcover (fun i ↦ ?_)
       fun y hy ↦ ?_
   · have hsub : (extChartAt I α).source ∩ u i ⊆
         (extChartAt I α).source ∩ (extChartAt I (β i)).source := fun x hx ↦
       ⟨hx.1, by simpa only [extChartAt_source] using hsource i hx.2⟩
-    apply (μ.integral_inChartAt_changeChart b α (β i) hsub
+    apply (μ.setIntegral_inChartAt_changeChart b α (β i) hsub
       ((hu i).measurableSet_image_extChartAt_source_inter α) b.addHaar).2.mpr
     exact (hlocal i).mono_set (image_mono inter_subset_right)
   · by_cases hyt : y ∈ (extChartAt I α).target
@@ -507,7 +507,7 @@ theorem integralDensity_eq_sum_disjointed_chart_integrals [IsManifold I 1 M]
     rw [RoughDensity.inChartAt_of_mem_target μ b β ((extChartAt I β).map_source hx), hμ,
       Density.zero_apply]
   exact sum_setIntegral_image_extChartAt_disjointed_eq hz
-    (fun β γ _ hsub hm ↦ (μ.integral_inChartAt_changeChart b β γ hsub
+    (fun β γ _ hsub hm ↦ (μ.setIntegral_inChartAt_changeChart b β γ hsub
       (hm.image_extChartAt β (hsub.trans inter_subset_left)) b.addHaar).1)
     c.center c.domain (fun i ↦ (c.isOpen_domain i).isChartMeasurable) c.domain_subset
     (fun x hx ↦ c.covers (subset_closure hx)) (fun _ ↦ hint _ _)

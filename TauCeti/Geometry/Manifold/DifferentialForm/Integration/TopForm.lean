@@ -84,7 +84,7 @@ public theorem RoughForm.integrableTopForm_of_open_cover {J : Type*}
   -- The basis of `Fin k` makes the model space finite-dimensional.
   have : FiniteDimensional ℝ E := Module.Finite.of_basis b
   have hcoef (α : M) : Integrable (φ.signedInChartAt b α (fun _ ↦ 1)) b.addHaar := by
-    refine integrable_of_isCompact_of_open_cover (I := I) α hc u hu hcover (fun i ↦ ?_)
+    refine integrable_of_isCompact_of_open_cover_extChartAt (I := I) α hc u hu hcover (fun i ↦ ?_)
       fun y hy ↦ ?_
     · have hsub : (extChartAt I α).source ∩ u i ⊆
           (extChartAt I α).source ∩ (extChartAt I (β i)).source := fun x hx ↦
