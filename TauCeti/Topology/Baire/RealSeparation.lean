@@ -22,8 +22,8 @@ either side, by a segment contained in `N`, and symmetrically, then `T` misses `
 (`TauCeti.disjoint_or_disjoint_of_isPreconnected_of_closed_covers`). The proof applies the Baire
 category theorem to the `G_δ` set of points of `T` in the closures of both `P` and `N`, which is
 completely metrizable: one closed piece has nonempty interior there, and from a point of that
-interior one walks along the line to the last point of the closure of `P`
-(`TauCeti.exists_mem_closure_inter_closure_Ioc_subset`).
+interior one walks along the line to a point of the closures of `P` and `N` followed by a segment
+in `N` (`TauCeti.exists_mem_closure_inter_closure_Ioc_subset`).
 
 ## Main results
 

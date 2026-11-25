@@ -32,8 +32,8 @@ uniform order statements:
 A continuous function on `Ioo a b` which lies above `c` just to the right of `a` and is at most
 `c` somewhere in `Ioo a b` has a least such point, `ContinuousOn.exists_mem_Ioo_le_and_forall_gt`.
 
-If `[a, b]` is covered by `P ∪ N`, `a` is adherent to `P` and `b` is not, then the last point of
-`[a, b)` adherent to `P` is adherent to `N` too and is followed by a segment contained in `N`,
+If `[a, b]` is covered by `P ∪ N`, `a` is adherent to `P` and `b` is not, then some point of
+`[a, b)` adherent to both `P` and `N` is followed by a segment contained in `N`,
 `TauCeti.exists_mem_closure_inter_closure_Ioc_subset`; the mirror image is
 `TauCeti.exists_mem_closure_inter_closure_Ico_subset`.
 
@@ -215,8 +215,8 @@ theorem Function.Antiperiodic.exists_mem_uIcc_eq_zero [ConditionallyCompleteLine
 
 namespace TauCeti
 
-/-- If `[a, b]` is covered by `P ∪ N`, `a` is adherent to `P` and `b` is not, then the last point
-`c ∈ [a, b)` adherent to `P` is also adherent to `N`, and `(c, b]` lies in `N`. -/
+/-- If `[a, b]` is covered by `P ∪ N`, `a` is adherent to `P` and `b` is not, then some point
+`c ∈ [a, b)` is adherent to both `P` and `N`, and `(c, b]` lies in `N`. -/
 theorem exists_mem_closure_inter_closure_Ioc_subset [ConditionallyCompleteLinearOrder X]
     [OrderTopology X] [DenselyOrdered X] {P N : Set X} {a b : X} (hab : a < b)
     (ha : a ∈ closure P) (hb : b ∉ closure P) (hcover : Icc a b ⊆ P ∪ N) :
@@ -236,9 +236,9 @@ theorem exists_mem_closure_inter_closure_Ioc_subset [ConditionallyCompleteLinear
     exact left_mem_Icc.2 hcb.le
   exact ⟨sSup K, ⟨hcK.2.1, hcb⟩, ⟨hcK.1, closure_mono (Ioo_subset_Ioc_self.trans hN) hcl⟩, hN⟩
 
-/-- If `[a, b]` is covered by `P ∪ N`, `b` is adherent to `P` and `a` is not, then the first point
-`c ∈ (a, b]` adherent to `P` is also adherent to `N`, and `[a, c)` lies in `N`. This is the mirror
-image of `exists_mem_closure_inter_closure_Ioc_subset`. -/
+/-- If `[a, b]` is covered by `P ∪ N`, `b` is adherent to `P` and `a` is not, then some point
+`c ∈ (a, b]` is adherent to both `P` and `N`, and `[a, c)` lies in `N`. This is the mirror image
+of `exists_mem_closure_inter_closure_Ioc_subset`. -/
 theorem exists_mem_closure_inter_closure_Ico_subset [ConditionallyCompleteLinearOrder X]
     [OrderTopology X] [DenselyOrdered X] {P N : Set X} {a b : X} (hab : a < b)
     (hb : b ∈ closure P) (ha : a ∉ closure P) (hcover : Icc a b ⊆ P ∪ N) :
