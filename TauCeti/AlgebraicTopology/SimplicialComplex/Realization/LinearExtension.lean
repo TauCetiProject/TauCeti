@@ -46,6 +46,8 @@ geometric complex to its ambient space, where `p` is the inclusion of the vertic
   every closed simplex, with the same vertex values as `f`, is the secant map of `f`.
 * `AbstractSimplicialComplex.secantMap_eq_self_iff`: a map is its own secant map exactly when it is
   linear in barycentric coordinates on every closed simplex.
+* `AbstractSimplicialComplex.lineMap_secantMap_faceInclusion_eq_sum`: interpolating a map with its
+  secant map by a cut-off gives a map linear on every closed simplex on which the cut-off is one.
 
 Naturality under simplicial maps is proved in
 `TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Map`.
@@ -207,5 +209,19 @@ theorem secantMap_eq_self_iff {g : Realization K → E} :
     conv_lhs => rw [← h]
     exact secantMap_faceInclusion g σ x,
    fun hg => (eq_secantMap hg fun _ => rfl).symm⟩
+
+/-- Interpolating a map `f` with its secant map by a function `φ`, as
+`AffineMap.lineMap (f x) (K.secantMap f x) (φ x)`, gives a map which is linear in barycentric
+coordinates on every closed simplex on which `φ = 1`: there it is the secant map. -/
+theorem lineMap_secantMap_faceInclusion_eq_sum {E : Type*} [AddCommGroup E] [Module ℝ E]
+    {f : Realization K → E} {φ : Realization K → ℝ} (σ : Face K)
+    (hφ : ∀ y ∈ range (faceInclusion K σ), φ y = 1) (x : StandardSimplex σ.val) :
+    AffineMap.lineMap (f (faceInclusion K σ x)) (K.secantMap f (faceInclusion K σ x))
+        (φ (faceInclusion K σ x)) =
+      ∑ a : σ.val, x.val a •
+        AffineMap.lineMap (f (vertex K a)) (K.secantMap f (vertex K a)) (φ (vertex K a)) := by
+  have hv (a : σ.val) : φ (vertex K a) = 1 :=
+    hφ _ ((mem_range_faceInclusion_iff K σ _).mpr (by simp))
+  simp [hφ _ (mem_range_self x), hv, secantMap_faceInclusion]
 
 end AbstractSimplicialComplex

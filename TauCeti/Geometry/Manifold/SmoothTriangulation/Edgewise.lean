@@ -9,6 +9,8 @@ public import Mathlib.Order.Filter.AtTopBot.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Edgewise.Homeomorph
 public import TauCeti.Geometry.Manifold.SmoothTriangulation.Secant
 
+import Mathlib.Topology.UniformSpace.HeineCantor
+import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
 import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Edgewise.Approximation
 import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Edgewise.Fatness
 
@@ -60,6 +62,8 @@ fat.
   points `edgewisePoint u` of its vertices, placed in a face of `K` by `edgewiseVertexPoint`.
 * `Continuous.eventually_norm_secantMap_sub_lt_edgewiseSubdivision`: on a finite complex, the
   secant maps of a continuous map on fine edgewise subdivisions converge to it uniformly.
+* `Continuous.eventually_norm_sub_lt_edgewiseSubdivision`: on a finite vertex type, a continuous
+  map varies arbitrarily little on the closed simplices of fine edgewise subdivisions.
 
 ## References
 
@@ -270,5 +274,33 @@ theorem eventually_norm_secantMap_sub_lt_edgewiseSubdivision {f : Realization K 
       ?_
   rw [edgewiseSubdivisionFaceMap_apply]
   exact (Finset.sum_coe_sort ρ.val fun a => y.val a * edgewisePoint a.val i).symm
+
+
+omit [NormedSpace ℝ E] in
+/-- **The simplices of fine edgewise subdivisions have small images.** Let `f` be a continuous map
+of the realization of a complex on a finite vertex type into a normed space. For all sufficiently
+large `k`, `f` varies by less than `ε` on the image in `|K|` of every closed simplex of the `k`-th
+edgewise subdivision of `K`. -/
+theorem eventually_norm_sub_lt_edgewiseSubdivision [Finite ι] {f : Realization K → E}
+    (hf : Continuous f) {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ k in atTop, ∀ (ρ : Face (K.edgewiseSubdivision k)) (x y : StandardSimplex ρ.val),
+      ‖f (edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)) -
+        f (edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ y))‖ < ε := by
+  have := Fintype.ofFinite ι
+  -- In barycentric coordinates `|K|` is compact, so `f` is uniformly continuous there, and the
+  -- simplices of the `k`-th edgewise subdivision have diameter at most `1 / k`.
+  let e := K.realizationHomeomorphRange (Set.toFinite K.faces)
+  have : CompactSpace (Set.range fun x : Realization K => (x.val : ι → ℝ)) := e.compactSpace
+  obtain ⟨η, hη, hfη⟩ := Metric.uniformContinuous_iff.mp
+    (CompactSpace.uniformContinuous_of_continuous (hf.comp e.symm.continuous)) ε hε
+  obtain ⟨N, hN⟩ := exists_nat_gt η⁻¹
+  filter_upwards [eventually_ge_atTop N] with k hk ρ x y
+  have hkη : (k : ℝ)⁻¹ < η := inv_lt_of_inv_lt₀ hη (hN.trans_le (Nat.cast_le.mpr hk))
+  have hxy := @hfη (e (edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)))
+    (e (edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ y))) (by
+      rw [Subtype.dist_eq, dist_eq_norm, coe_realizationHomeomorphRange_apply,
+        coe_realizationHomeomorphRange_apply]
+      exact (norm_edgewiseSubdivisionRealizationMap_faceInclusion_sub_le ρ x y).trans_lt hkη)
+  simpa only [Function.comp_apply, Homeomorph.symm_apply_apply, dist_eq_norm] using hxy
 
 end Continuous
