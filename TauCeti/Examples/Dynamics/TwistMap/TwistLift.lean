@@ -71,8 +71,8 @@ example :
 example (p : ℝ × Icc (0 : ℝ) 1) :
     stripFiberConj (iccReflect 0 1) shear p = (p.1 + 1 - p.2, p.2) := by
   ext
-  · simp [stripFiberConj_apply]; ring
-  · simp [stripFiberConj_apply]
+  · simp; ring
+  · simp
 
 /-- The conjugate of the shear by the reflection `y ↦ 1 - y` is a negative twist lift. -/
 example : IsTwistLift 1 (stripFiberConj (iccReflect 0 1) shear).symm :=

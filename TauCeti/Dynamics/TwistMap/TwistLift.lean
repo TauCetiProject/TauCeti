@@ -8,7 +8,7 @@ module
 public import TauCeti.Topology.Instances.AddCircle.Annulus
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Algebra.Order.Archimedean.Basic
-import TauCeti.Order.Monotone.Basic
+import TauCeti.Topology.Homeomorph.Order
 
 /-!
 # Twist lifts of the annulus
@@ -282,6 +282,7 @@ theorem stripFiberMap_symm (r : Y ≃ₜ Y) : (stripFiberMap r).symm = stripFibe
 def stripFiberConj (r : Y ≃ₜ Y) (F : ℝ × Y ≃ₜ ℝ × Y) : ℝ × Y ≃ₜ ℝ × Y :=
   (stripFiberMap r.symm).trans (F.trans (stripFiberMap r))
 
+@[simp]
 theorem stripFiberConj_apply (r : Y ≃ₜ Y) (F : ℝ × Y ≃ₜ ℝ × Y) (p : ℝ × Y) :
     stripFiberConj r F p = ((F (p.1, r.symm p.2)).1, r (F (p.1, r.symm p.2)).2) :=
   (rfl)
@@ -296,7 +297,7 @@ theorem stripFiberConj_symm (r : Y ≃ₜ Y) (F : ℝ × Y ≃ₜ ℝ × Y) :
 @[simp]
 theorem stripFiberConj_symm_stripFiberConj (r : Y ≃ₜ Y) (F : ℝ × Y ≃ₜ ℝ × Y) :
     stripFiberConj r.symm (stripFiberConj r F) = F := by
-  ext p <;> simp [stripFiberConj_apply]
+  ext p <;> simp
 
 /-- Conjugation by a fibre reversal keeps the deck condition and the invariance of the two
 boundary lines: the reversal exchanges the two lines, and so does its inverse. -/
@@ -308,7 +309,7 @@ private theorem stripFiberConj_data {r : Icc a b ≃ₜ Icc a b} (hr : StrictAnt
         ((stripFiberConj r F p).1 + ℓ, (stripFiberConj r F p).2)) ∧
       (∀ p : ℝ × Icc a b, (p.2 : ℝ) = a → ((stripFiberConj r F p).2 : ℝ) = a) ∧
       (∀ p : ℝ × Icc a b, (p.2 : ℝ) = b → ((stripFiberConj r F p).2 : ℝ) = b) := by
-  have hrs : StrictAnti r.symm := Equiv.strictAnti_symm (e := r.toEquiv) hr
+  have hrs : StrictAnti r.symm := Homeomorph.strictAnti_symm hr
   refine ⟨fun p => ?_, fun p hp => ?_, fun p hp => ?_⟩
   · simp only [stripFiberConj_apply, hd (p.1, r.symm p.2)]
   · rw [stripFiberConj_apply]
@@ -325,8 +326,8 @@ along each vertical. -/
 theorem IsTwistLift.strictAnti_fst_stripFiberConj_apply (hF : IsTwistLift ℓ F)
     {r : Icc a b ≃ₜ Icc a b} (hr : StrictAnti r) (x : ℝ) :
     StrictAnti fun y : Icc a b => (stripFiberConj r F (x, y)).1 := by
-  simpa [stripFiberConj_apply, Function.comp_def] using StrictMono.comp_strictAnti
-    (hF.strictMono_fst_apply x) (Equiv.strictAnti_symm (e := r.toEquiv) hr)
+  simpa [Function.comp_def] using StrictMono.comp_strictAnti
+    (hF.strictMono_fst_apply x) (Homeomorph.strictAnti_symm hr)
 
 /-- **Conjugation by a fibre reversal exchanges positive and negative twist lifts.** For a nonzero
 period and a strictly decreasing homeomorphism `r` of `[a, b]`, the conjugate of `F` by
@@ -336,11 +337,11 @@ theorem isTwistLift_symm_stripFiberConj_iff (hℓ : ℓ ≠ 0) {r : Icc a b ≃�
     (hr : StrictAnti r) : IsTwistLift ℓ (stripFiberConj r F).symm ↔ IsTwistLift ℓ F := by
   refine ⟨fun h => ?_, fun h => (isTwistLift_symm_iff hℓ).2 ?_⟩
   · obtain ⟨hd, hl, hr', hanti⟩ := (isTwistLift_symm_iff hℓ).1 h
-    have hrs : StrictAnti r.symm := Equiv.strictAnti_symm (e := r.toEquiv) hr
+    have hrs : StrictAnti r.symm := Homeomorph.strictAnti_symm hr
     obtain ⟨hd', hl', hr''⟩ := stripFiberConj_data hrs hd hl hr'
     rw [stripFiberConj_symm_stripFiberConj] at hd' hl' hr''
     refine ⟨hd', hl', hr'', fun x => ?_⟩
-    simpa [stripFiberConj_apply, Function.comp_def] using StrictAnti.comp (hanti x) hr
+    simpa [Function.comp_def] using StrictAnti.comp (hanti x) hr
   · obtain ⟨hd, hl, hr'⟩ :=
       stripFiberConj_data hr h.apply_add_period h.snd_apply_of_eq_left h.snd_apply_of_eq_right
     exact ⟨hd, hl, hr', h.strictAnti_fst_stripFiberConj_apply hr⟩
