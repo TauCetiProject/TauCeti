@@ -111,6 +111,14 @@ private theorem exists_locallyConstant_apply_ne (hH : Subsingleton (deRhamCohomo
   -- negative side; it is `g - k` for locally constant `g` on `A` and `k` on `B`.
   obtain ⟨g, k, hg⟩ :=
     deRhamCohomology.exists_locallyConstant_eq_inclusion_sub_inclusion hH' φ
+  have hφS : ∀ x ∈ S, φ x = 0 := fun x hx ↦ by
+    have : LocallyConstant.ofIsClopen hS x = 0 := by
+      rwa [← mem_singleton_iff, ← mem_preimage, LocallyConstant.ofIsClopen_fiber_zero]
+    simp [φ, this]
+  have hφSc : ∀ x ∉ S, φ x = 1 := fun x hx ↦ by
+    have : LocallyConstant.ofIsClopen hS x = 1 := by
+      rwa [← mem_singleton_iff, ← mem_preimage, LocallyConstant.ofIsClopen_fiber_one]
+    simp [φ, this]
   have hmem : ∀ t : ℝ, t ≠ 0 → b (a, t) ∈ (A ⊓ B : Opens M) := fun t ht ↦
     ⟨h.apply_mem_compl_range a ht, mem_range_self _⟩
   have h1 : (b (a, 1)) ∈ P := mem_image_of_mem b ⟨mem_univ _, mem_Ioi.2 one_pos⟩
@@ -118,12 +126,10 @@ private theorem exists_locallyConstant_apply_ne (hH : Subsingleton (deRhamCohomo
     disjoint_left.1 h.disjoint_image_Ioi_Iio hP'
       (mem_image_of_mem b ⟨mem_univ _, mem_Iio.2 (by norm_num)⟩)
   have hpos : (0 : ℝ) = g ⟨b (a, 1), (hmem 1 one_ne_zero).1⟩ - k ⟨b (a, 1), mem_range_self _⟩ := by
-    rw [← hg ⟨b (a, 1), hmem 1 one_ne_zero⟩]
-    simp [φ, LocallyConstant.ofIsClopen, S, h1]
+    rw [← hg ⟨b (a, 1), hmem 1 one_ne_zero⟩, hφS _ h1]
   have hneg : (1 : ℝ) =
       g ⟨b (a, -1), (hmem (-1) (by norm_num)).1⟩ - k ⟨b (a, -1), mem_range_self _⟩ := by
-    rw [← hg ⟨b (a, -1), hmem (-1) (by norm_num)⟩]
-    simp [φ, LocallyConstant.ofIsClopen, S, h2]
+    rw [← hg ⟨b (a, -1), hmem (-1) (by norm_num)⟩, hφSc _ h2]
   -- `k` is constant along the line `t ↦ b (a, t)` in `B`.
   have hk : k ⟨b (a, 1), mem_range_self _⟩ = k ⟨b (a, -1), mem_range_self _⟩ :=
     k.apply_eq_of_isPreconnected (isPreconnected_range (f := fun t : ℝ ↦
