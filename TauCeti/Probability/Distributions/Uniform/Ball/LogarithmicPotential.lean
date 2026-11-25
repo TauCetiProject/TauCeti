@@ -7,14 +7,15 @@ module
 
 public import TauCeti.MeasureTheory.Measure.LogarithmicPotential.Basic
 public import TauCeti.Probability.Distributions.Uniform.Ball.Basic
-import Mathlib.Analysis.SpecialFunctions.Integrals.PosLog
 import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 import TauCeti.Analysis.SpecialFunctions.Integrability.Log
 import TauCeti.Analysis.SpecialFunctions.Integrals.LogPower
+import TauCeti.Analysis.SpecialFunctions.Integrals.PosLog
 import TauCeti.MeasureTheory.Integral.Circle.Average
 import TauCeti.MeasureTheory.Integral.PolarCoord
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.Probability.ConditionalProbability
 
 /-!
 # The logarithmic potential of the uniform law on a disc
@@ -43,7 +44,8 @@ distributions are compared to prove weak convergence to it.
 ## Implementation notes
 
 The computation uses polar coordinates about `c`. By Jensen's formula, the average of
-`log ‖z - w‖` over the circle of radius `ρ` about `c` is `log (max ρ ‖z - c‖)`; this is Mathlib's
+`log ‖z - w‖` over the circle of radius `ρ` about `c` is `log (max ρ ‖z - c‖)`; this is
+`TauCeti.circleAverage_log_norm_sub_const_eq_log_max`, a form of Mathlib's
 `circleAverage_log_norm_sub_const_eq_log_radius_add_posLog`. What remains is the radial integral
 `2 / r ^ 2 * ∫ ρ in 0..r, ρ * log (max ρ ‖z - c‖)`.
 
@@ -62,19 +64,6 @@ open scoped ENNReal
 
 namespace TauCeti.Probability
 
-/-- The logarithmic kernel `w ↦ log ‖z - w‖` is integrable on every closed disc. -/
-private theorem integrableOn_closedBall_log_norm_sub (c z : ℂ) (r : ℝ) :
-    IntegrableOn (fun w ↦ log ‖z - w‖) (closedBall c r) := by
-  -- The kernel is a reflected translate of the locally integrable `log ‖·‖`.
-  have hK : IntegrableOn (fun x : ℂ ↦ log ‖x‖) (closedBall (z - c) r) :=
-    locallyIntegrable_log_norm.integrableOn_isCompact (isCompact_closedBall _ _)
-  have hpre : (fun w ↦ z - w) ⁻¹' closedBall (z - c) r = closedBall c r := by
-    ext w
-    simp [dist_eq_norm, norm_sub_rev]
-  rw [← hpre]
-  exact ((volume.measurePreserving_sub_left z).integrableOn_comp_preimage
-    (Homeomorph.subLeft z).measurableEmbedding).2 hK
-
 /-- For every `z : ℂ`, the logarithmic kernel `w ↦ log ‖z - w‖` is integrable against the uniform
 law on a disc of any radius, so the logarithmic potential of the law is a genuine integral at every
 point. -/
@@ -84,7 +73,8 @@ theorem integrable_log_norm_sub_uniformBallMeasure (c z : ℂ) (r : ℝ) :
   · simp [uniformBallMeasure_of_neg hr]
   · simpa using integrable_dirac (f := fun w ↦ log ‖z - w‖) (by simp)
   rw [uniformBallMeasure_of_ne_zero hr.ne', ProbabilityTheory.cond]
-  exact ((integrableOn_closedBall_log_norm_sub c z r).mono_set ball_subset_closedBall).smul_measure
+  exact ((locallyIntegrable_log_norm_sub z).integrableOn_isCompact
+    (isCompact_closedBall c r) |>.mono_set ball_subset_closedBall).smul_measure
     (ENNReal.inv_ne_top.2 (measure_ball_pos volume c hr).ne')
 
 /-- The logarithmic potential of the uniform law on a disc of radius `r > 0` as the radial
@@ -97,7 +87,7 @@ private theorem logarithmicPotential_uniformBallMeasure_eq_integral (c z : ℂ) 
     ext w
     simp [dist_eq_norm]
   have hcl : IntegrableOn (fun w ↦ log ‖z - w‖) {w : ℂ | 0 ≤ ‖w - c‖ ∧ ‖w - c‖ ≤ r} :=
-    hset ▸ integrableOn_closedBall_log_norm_sub c z r
+    hset ▸ (locallyIntegrable_log_norm_sub z).integrableOn_isCompact (isCompact_closedBall c r)
   -- Integrate over the closed disc in polar coordinates about `c`.
   have hpolar : ∫ w in ball c r, log ‖z - w‖ =
       2 * π * ∫ ρ in 0..r, ρ * log (max ρ ‖z - c‖) := by
@@ -105,24 +95,19 @@ private theorem logarithmicPotential_uniformBallMeasure_eq_integral (c z : ℂ) 
       integral_annulus_eq_integral_circleMap le_rfl hr.le hcl,
       ← intervalIntegral.integral_const_mul]
     refine intervalIntegral.integral_congr fun ρ hρ ↦ ?_
-    rcases (uIcc_of_le hr.le ▸ hρ).1.eq_or_lt with rfl | hρ0
-    · simp
     -- Jensen's formula for the circle average, written over the polar angles `[-π, π]`.
-    have havg := circleAverage_log_norm_sub_const_eq_log_radius_add_posLog (c := c) (a := z)
-      hρ0.ne'
-    rw [circleAverage_eq_integral_neg_pi_pi, smul_eq_mul] at havg
-    have hcircle : ∫ θ in -π..π, log ‖z - circleMap c ρ θ‖ =
-        2 * π * (log ρ + log⁺ (ρ⁻¹ * ‖c - z‖)) := by
-      rw [← havg, ← mul_assoc, mul_inv_cancel₀ (by positivity), one_mul]
-      simp_rw [norm_sub_rev z]
-    have hmax : log ρ + log⁺ (ρ⁻¹ * ‖c - z‖) = log (max ρ ‖z - c‖) := by
-      rw [posLog_eq_log_max_one (by positivity), ← log_mul hρ0.ne' (by positivity),
-        mul_max_of_nonneg _ _ hρ0.le, mul_one, mul_inv_cancel_left₀ hρ0.ne', norm_sub_rev]
-    rw [hcircle, hmax, smul_eq_mul]
+    have havg := circleAverage_log_norm_sub_const_eq_log_max (a := z) (c := c) (R := ρ)
+    rw [circleAverage_eq_integral_neg_pi_pi, inv_smul_eq_iff₀ (by positivity),
+      abs_of_nonneg (uIcc_of_le hr.le ▸ hρ).1] at havg
+    simp_rw [norm_sub_rev z, havg, smul_eq_mul]
     ring
+  -- Normalize by the area `π r ^ 2` of the disc.
+  have hcond := volume.toNNReal_smul_integral_cond_eq_setIntegral (ball c r)
+    (fun w ↦ log ‖z - w‖) measure_ball_lt_top.ne
+  rw [hpolar, NNReal.smul_def, ENNReal.coe_toNNReal_eq_toReal, ← measureReal_def,
+    Complex.volume_real_ball c hr.le, smul_eq_mul] at hcond
   rw [Measure.logarithmicPotential_def, uniformBallMeasure_of_ne_zero hr.ne',
-    ProbabilityTheory.cond, integral_smul_measure, hpolar, ENNReal.toReal_inv, ← measureReal_def,
-    Complex.volume_real_ball c hr.le, smul_eq_mul]
+    ← mul_right_inj' (by positivity : π * r ^ 2 ≠ 0), hcond]
   field_simp
 
 /-- **The logarithmic potential of the uniform law on a disc, outside the disc.** For a radius

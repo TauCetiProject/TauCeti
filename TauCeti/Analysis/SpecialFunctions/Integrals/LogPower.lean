@@ -194,11 +194,8 @@ theorem integral_mul_log (a b : ℝ) :
   rw [integral_eq_of_hasDerivAt_off_countable _ _ (countable_singleton 0) hF.continuousOn
     (fun t ht ↦ ?_) (continuous_mul_log.intervalIntegrable a b)]
   · ring
-  · have ht0 : t ≠ 0 := ht.2
-    convert (((hasDerivAt_id' t).mul ((hasDerivAt_id' t).mul (hasDerivAt_log ht0))).div_const
-      2).sub ((hasDerivAt_pow 2 t).div_const 4) using 1
-    simp only [Pi.mul_apply]
-    field_simp
+  · convert (((hasDerivAt_id' t).mul (hasDerivAt_mul_log ht.2)).div_const 2).sub
+      ((hasDerivAt_pow 2 t).div_const 4) using 1
     ring
 
 end TauCeti
