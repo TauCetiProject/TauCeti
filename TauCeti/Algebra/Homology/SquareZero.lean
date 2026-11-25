@@ -650,6 +650,12 @@ variable {S M : Type*} [CommRing S] [AddCommGroup M] [Module S M] (d : M →ₗ[
 
 open TensorProduct
 
+/-- Tensoring with any `w` sends the kernel of a linear map `f` into the kernel of `f ⊗ 1`. -/
+theorem tmul_mem_ker_rTensor {R P N W : Type*} [CommSemiring R] [AddCommMonoid P] [Module R P]
+    [AddCommMonoid N] [Module R N] [AddCommMonoid W] [Module R W] {f : P →ₗ[R] N} {x : P}
+    (hx : x ∈ ker f) (w : W) : x ⊗ₜ w ∈ ker (f.rTensor W) := by
+  rw [mem_ker, rTensor_tmul, mem_ker.mp hx, zero_tmul]
+
 /-- Tensoring a square-zero endomorphism with the identity of a module `W` gives a square-zero
 endomorphism `d ⊗ 1` of `M ⊗ W`. -/
 theorem rTensor_comp_rTensor_eq_zero (W : Type*) [AddCommGroup W] [Module S W]
@@ -670,7 +676,7 @@ noncomputable def homologyRTensorProdEquiv (hd : d ∘ₗ d = 0) :
 @[simp]
 theorem homologyRTensorProdEquiv_symm_mk_tmul (hd : d ∘ₗ d = 0) (z : ker d) (w : S × S) :
     (d.homologyRTensorProdEquiv hd).symm (Submodule.Quotient.mk z ⊗ₜ w) =
-      Submodule.Quotient.mk ⟨(z : M) ⊗ₜ w, by simp [mem_ker.mp z.property]⟩ := by
+      Submodule.Quotient.mk ⟨(z : M) ⊗ₜ w, tmul_mem_ker_rTensor z.property w⟩ := by
   rw [LinearEquiv.symm_apply_eq, homologyRTensorProdEquiv, LinearEquiv.trans_apply,
     LinearEquiv.homologyEquiv_mk, LinearEquiv.trans_apply, homologyProdEquiv_mk,
     LinearEquiv.eq_symm_apply, prodScalarRight_tmul]

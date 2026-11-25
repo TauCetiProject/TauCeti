@@ -73,6 +73,8 @@ space diagram with `p = 1`, of class `[𝔽, 1]`, which differs from that of `S�
 * `TauCeti.stableClass_tensorProduct_prod`: the generating move `(V ⊗ W, b + 1) ~ (V, b)`.
 * `TauCeti.stableClass_tensorProduct_piTensorProduct`: its `k`-fold iterate
   `(V ⊗ W^{⊗ k}, b + k) ~ (V, b)`.
+* `TauCeti.finrank_tensorProduct_piTensorProduct_prod`: the dimension of `V ⊗ W^{⊗ k}` is
+  `dim V * 2 ^ k`.
 * `TauCeti.stableClass_eq_stableClass_add_iff`: equal classes are related by one move.
 * `TauCeti.stableClass_eq_stableClass_iff`: two pairs have the same class exactly when
   `dim V * 2 ^ b' = dim V' * 2 ^ b`.
@@ -139,13 +141,16 @@ theorem stableClass_tensorProduct_prod (b : ℕ) :
   rw [stableClass_eq_stableClass_iff, finrank_tensorProduct, finrank_prod, finrank_self, pow_succ]
   ring
 
+/-- The dimension of `V ⊗ W^{⊗ k}` with `W = K × K` is `dim V * 2 ^ k`. -/
+theorem finrank_tensorProduct_piTensorProduct_prod (k : ℕ) :
+    finrank K (V ⊗[K] (⨂[K] _ : Fin k, K × K)) = finrank K V * 2 ^ k := by
+  simp [finrank_tensorProduct, finrank_piTensorProduct]
+
 /-- The `k`-fold **generating move** `(V ⊗ W^{⊗ k}, b + k) ~ (V, b)` with `W = K × K`. -/
 @[simp]
 theorem stableClass_tensorProduct_piTensorProduct (b k : ℕ) :
     stableClass K (V ⊗[K] (⨂[K] _ : Fin k, K × K)) (b + k) = stableClass K V b := by
-  rw [stableClass_eq_stableClass_iff, finrank_tensorProduct, finrank_piTensorProduct,
-    Finset.prod_const, finrank_prod, finrank_self, one_add_one_eq_two, Finset.card_univ,
-    Fintype.card_fin, pow_add]
+  rw [stableClass_eq_stableClass_iff, finrank_tensorProduct_piTensorProduct_prod, pow_add]
   ring
 
 variable {K V}
@@ -162,8 +167,7 @@ theorem stableClass_eq_stableClass_add_iff [FiniteDimensional K V] [FiniteDimens
   · intro h
     refine ⟨LinearEquiv.ofFinrankEq _ _ ?_⟩
     rw [stableClass_eq_stableClass_iff, pow_add] at h
-    rw [finrank_tensorProduct, finrank_piTensorProduct, Finset.prod_const, finrank_prod,
-      finrank_self, one_add_one_eq_two, Finset.card_univ, Fintype.card_fin]
+    rw [finrank_tensorProduct_piTensorProduct_prod]
     exact (Nat.eq_of_mul_eq_mul_right (pow_pos two_pos b) (by linarith)).symm
   · rintro ⟨e⟩
     rw [e.stableClass_eq, stableClass_tensorProduct_piTensorProduct]
@@ -308,6 +312,17 @@ theorem addBasepointProdEquiv_comp_hatDifferential (hr₀ : r₀ ∈ Set.range H
   | tmul c w => simp
   | add a b ha hb => simp only [map_add, ha, hb]
 
+/-- The inverse of `TauCeti.HeegaardRegionSystem.addBasepointProdEquiv` carries `∂ ⊗ 1` to the
+hat differential of the diagram with a basepoint added in a region containing a basepoint. -/
+theorem hatDifferential_comp_addBasepointProdEquiv_symm (hr₀ : r₀ ∈ Set.range H.basepoint) :
+    (H.addBasepoint r₀).hatDifferential (addBasepointEuler χ r₀) ∘ₗ
+        (H.addBasepointProdEquiv r₀).symm.toLinearMap =
+      (H.addBasepointProdEquiv r₀).symm.toLinearMap ∘ₗ
+        (H.hatDifferential χ).rTensor (ZMod 2 × ZMod 2) := by
+  rw [LinearEquiv.eq_toLinearMap_symm_comp, ← LinearMap.comp_assoc,
+    addBasepointProdEquiv_comp_hatDifferential hr₀]
+  exact (LinearEquiv.comp_toLinearMap_symm_eq _ _).mpr rfl
+
 /-- The hat differential of the diagram with a basepoint added in a region containing a basepoint
 squares to zero when that of the original diagram does. -/
 theorem hatDifferential_comp_self_addBasepoint (hr₀ : r₀ ∈ Set.range H.basepoint)
@@ -340,11 +355,9 @@ theorem hatHomologyAddBasepointEquiv_symm_mk_tmul (hr₀ : r₀ ∈ Set.range H.
     (w : ZMod 2 × ZMod 2) :
     (H.hatHomologyAddBasepointEquiv hr₀ hd).symm (Submodule.Quotient.mk z ⊗ₜ w) =
       Submodule.Quotient.mk ⟨(H.addBasepointProdEquiv r₀).symm ((z : H.Generator →₀ ZMod 2) ⊗ₜ w),
-        LinearMap.mem_ker.mpr <| (H.addBasepointProdEquiv r₀).map_eq_zero_iff.mp <| by
-          simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply,
-            LinearMap.rTensor_tmul, LinearMap.mem_ker.mp z.property, TensorProduct.zero_tmul] using
-            congr($(addBasepointProdEquiv_comp_hatDifferential (χ := χ) hr₀)
-              ((H.addBasepointProdEquiv r₀).symm ((z : H.Generator →₀ ZMod 2) ⊗ₜ w)))⟩ := by
+        LinearMap.map_mem_ker_of_comp_eq (H.addBasepointProdEquiv r₀).symm.toLinearMap
+          (H.hatDifferential_comp_addBasepointProdEquiv_symm hr₀).symm
+          (LinearMap.tmul_mem_ker_rTensor z.property w)⟩ := by
   rw [LinearEquiv.symm_apply_eq, hatHomologyAddBasepointEquiv, LinearEquiv.trans_apply,
     LinearEquiv.homologyEquiv_mk]
   refine (LinearEquiv.symm_apply_eq _).mp ?_
