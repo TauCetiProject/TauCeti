@@ -28,6 +28,16 @@ coefficient of degree `k` contains the sign `(-1) ^ k`.
 These estimates are the pole case of Darboux's method (F. W. J. Olver, *Asymptotics and
 Special Functions*, Chapter 8, §9). They give the coefficient lower bounds needed to
 compare a meromorphic Laplace transform with an upper bound coming from its input.
+A simple pole is the case `m = 0` of the order-`m + 1` statements.
+
+## References
+
+* F. W. J. Olver, *Asymptotics and Special Functions*, Chapter 8, section 9 (Darboux's method).
+* L. Alpöge, Lean formalization of the Riemann hypothesis for Dirichlet L-functions
+  (<https://github.com/leanprover-community/riemann-hypothesis>), `Deduction.landau_pole_asym` in
+  `Development/AutomorphicArithmetic/DedekindLFunctions/LandauTheorems/LandauPoleAsym.lean`: the
+  simple-pole case of the comparison bound `M / r' ^ k` and of the two lower bounds with the
+  factor `1 / 2`.
 -/
 
 public section
@@ -39,10 +49,11 @@ namespace TauCeti.Complex
 
 /-- Subtracting the contribution of a finite principal part leaves Taylor coefficients bounded
 by `M / r' ^ k` on any smaller circle of radius `r'`. The coefficient `c i` multiplies the
-pole term of order `i + 1`. -/
+pole term of order `i + 1`. Continuity of the remainder `g` at `ρ` suffices: off `ρ` it agrees
+with `f` minus the principal part, so a pole inside the disc leaves a removable singularity. -/
 theorem exists_norm_neg_one_pow_mul_iteratedDeriv_div_factorial_sub_laurent_le
     {f g : ℂ → ℂ} {z ρ : ℂ} {r r' : ℝ} {n : ℕ} {c : Fin n → ℂ}
-    (hf : DifferentiableOn ℂ f (ball z r \ {ρ})) (hg : AnalyticAt ℂ g ρ)
+    (hf : DifferentiableOn ℂ f (ball z r \ {ρ})) (hg : ContinuousAt g ρ)
     (heq : ∀ᶠ s in 𝓝[≠] ρ, f s = g s + ∑ i, c i / (s - ρ) ^ (i.val + 1))
     (hzρ : z ≠ ρ) (hr' : 0 < r') (hrr : r' < r) :
     ∃ M : ℝ, ∀ k : ℕ,
@@ -59,9 +70,20 @@ theorem exists_norm_neg_one_pow_mul_iteratedDeriv_div_factorial_sub_laurent_le
     (compl_singleton_mem_codiscreteWithin ρ) (f := fun s ↦ f s - P s)
     (hf.sub fun s hs ↦ (hP hs.2).differentiableAt.differentiableWithinAt)
     (by
-      rintro a ⟨_, ha⟩
-      obtain rfl : a = ρ := ha
-      exact ⟨g, hg, heq.mono fun s hs ↦ sub_eq_of_eq_add hs⟩)
+      rintro a ⟨ha, ha'⟩
+      obtain rfl : a = ρ := ha'
+      -- The remainder `g` agrees with `f - P` off `ρ`, so it is holomorphic on a punctured
+      -- neighbourhood of `ρ`; continuity at `ρ` makes the singularity removable.
+      have hfg : (fun s ↦ f s - P s) =ᶠ[𝓝[≠] a] g := heq.mono fun s hs ↦ sub_eq_of_eq_add hs
+      refine ⟨g, _root_.Complex.analyticAt_of_differentiable_on_punctured_nhds_of_continuousAt
+        ?_ hg, hfg⟩
+      filter_upwards [eventually_eventually_nhdsWithin.mpr hfg,
+        mem_nhdsWithin_of_mem_nhds (isOpen_ball.mem_nhds ha), self_mem_nhdsWithin]
+        with s hs hsb hsa
+      rw [isOpen_compl_singleton.nhdsWithin_eq hsa] at hs
+      exact ((hf.sub fun w hw ↦ (hP hw.2).differentiableAt.differentiableWithinAt) s
+        ⟨hsb, hsa⟩).differentiableAt ((isOpen_ball.sdiff isClosed_singleton).mem_nhds
+          ⟨hsb, hsa⟩) |>.congr_of_eventuallyEq (hs.mono fun _ h ↦ h.symm))
   have hloc : f =ᶠ[𝓝 z] fun s ↦ G s + P s := by
     filter_upwards [(isOpen_ball.sdiff isClosed_singleton).mem_nhds
       ⟨mem_ball_self (hr'.trans hrr), hzρ⟩] with s hs
@@ -131,7 +153,7 @@ private theorem tendsto_normalized_laurent_sum {m : ℕ} (c : Fin (m + 1) → �
 highest pole term, of order `m + 1`. -/
 theorem tendsto_normalized_iteratedDeriv_of_laurent
     {f g : ℂ → ℂ} {z ρ : ℂ} {r : ℝ} {m : ℕ} {c : Fin (m + 1) → ℂ}
-    (hf : DifferentiableOn ℂ f (ball z r \ {ρ})) (hg : AnalyticAt ℂ g ρ)
+    (hf : DifferentiableOn ℂ f (ball z r \ {ρ})) (hg : ContinuousAt g ρ)
     (heq : ∀ᶠ s in 𝓝[≠] ρ, f s = g s + ∑ i, c i / (s - ρ) ^ (i.val + 1))
     (hzρ : z ≠ ρ) (hd : ‖z - ρ‖ < r) :
     Tendsto (fun k : ℕ ↦ ((z - ρ) ^ (k + m + 1) / (↑((k + m).choose m) : ℂ)) *
@@ -181,7 +203,7 @@ theorem eventually_le_norm_iteratedDeriv_div_factorial_of_pole
   · refine .of_forall fun k ↦ ?_
     simpa only [hc0, norm_zero, zero_div] using
       norm_nonneg (iteratedDeriv k f z / (k.factorial : ℂ))
-  have ht := (tendsto_normalized_iteratedDeriv_of_laurent hf hg heq hzρ hd).norm
+  have ht := (tendsto_normalized_iteratedDeriv_of_laurent hf hg.continuousAt heq hzρ hd).norm
   rw [hc] at ht
   filter_upwards [ht.eventually_const_lt (half_lt_self (norm_pos_iff.mpr hc0))] with k hk
   simp only [norm_mul, norm_div (a := (z - ρ) ^ _), norm_pow, _root_.Complex.norm_natCast,
@@ -212,7 +234,7 @@ theorem eventually_le_re_neg_one_pow_mul_iteratedDeriv_div_factorial_of_pole
     simpa only [← _root_.Complex.ofReal_sub, _root_.Complex.norm_real, Real.norm_eq_abs,
       abs_of_pos (sub_pos.mpr hyx)] using hd
   have ht := _root_.Complex.continuous_re.continuousAt.tendsto.comp
-    (tendsto_normalized_iteratedDeriv_of_laurent hf hg heq hxy hd')
+    (tendsto_normalized_iteratedDeriv_of_laurent hf hg.continuousAt heq hxy hd')
   rw [hlead] at ht
   filter_upwards [ht.eventually_const_lt (half_lt_self hc)] with k hk
   let A := (-1 : ℂ) ^ k * (iteratedDeriv k f x / (k.factorial : ℂ))
