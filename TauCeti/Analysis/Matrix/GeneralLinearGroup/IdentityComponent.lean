@@ -31,7 +31,8 @@ applies to `GL n A`:
 The last statement is the lifting property of identity components along surjections used to
 compare algebraic `K₁` of a Banach algebra with the stable group of components of its general
 linear groups. Generation of `GLₙ(A)₀` by the ball about `1` holds for any Banach algebra norm
-on `Matrix n n A`, by `TauCeti.closure_setOf_norm_sub_one_lt_eq_connectedComponentOfOne`.
+on `Matrix n n A` inducing the entrywise topology, by
+`TauCeti.closure_setOf_norm_sub_one_lt_eq_connectedComponentOfOne`.
 
 ## Main results
 
