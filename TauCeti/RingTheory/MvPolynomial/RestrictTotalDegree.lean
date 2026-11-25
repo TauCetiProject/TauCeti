@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.MvPolynomial.Degrees
 public import TauCeti.Data.Finsupp.Weight
 public import Mathlib.Algebra.Module.Submodule.Bilinear
 public import Mathlib.Algebra.MvPolynomial.Funext
