@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.Alternating.Curry
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import TauCeti.Topology.Algebra.Module.Alternating.Curry
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
+import TauCeti.Topology.Algebra.Module.Alternating.Basic
 
 /-!
 # Comparing normed and topological interior products
@@ -58,11 +59,8 @@ theorem norm_curryLeft_compContinuousLinearMap_compContinuousLinearMap_le {𝕜 
     (B : Y →L[𝕜] X) :
     ‖((α.compContinuousLinearMap A).curryLeft v).compContinuousLinearMap B‖ ≤
       ‖α‖ * ‖A v‖ * ‖A.comp B‖ ^ n := by
-  rw [curryLeft_compContinuousLinearMap]
-  -- Pulling back along `A` and then along `B` is pulling back along `A ∘ B`: on vectors `u`,
-  -- both sides evaluate to `α.curryLeft (A v) (A ∘ B ∘ u)`.
-  calc _ = ‖(α.curryLeft (A v)).compContinuousLinearMap (A.comp B)‖ := by congr 1
-    _ ≤ ‖α.curryLeft (A v)‖ * ‖A.comp B‖ ^ n :=
+  rw [curryLeft_compContinuousLinearMap, compContinuousLinearMap_compContinuousLinearMap]
+  calc _ ≤ ‖α.curryLeft (A v)‖ * ‖A.comp B‖ ^ n :=
         (norm_compContinuousLinearMap_le _ _).trans_eq (by simp)
     _ ≤ ‖α‖ * ‖A v‖ * ‖A.comp B‖ ^ n := by
         gcongr
