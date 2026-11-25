@@ -24,6 +24,8 @@ The general statements specialize, with their explicit indices, to the recipes
 * On the first page `r = 2` of the recipe `coreE₂Cohomological`, the formulas give `Z_2 = ⊤` and
   `B_2 = ⊥`: the target `H^{n+1}(q ≤ q)` of the first `δ` and the source `H^{n-1}(q + 1 ≤ q + 1)` of
   the second are `0`.
+* Replacing the target `H^{n+1}(q - r + 2 ≤ q)` of `δ` by `H^{n+1}(⊥ ≤ q)` gives a subobject
+  contained in every `Z_r` (`SpectralObject.kernelSubobject_δ_le_cyclesSubobject_spectralSequence`).
 * Naturality of the towers in the spectral object is the naturality of the towers of any spectral
   sequence (`CategoryTheory.SpectralSequence.cyclesSubobject_le_pullback`), applied to the induced
   morphism `spectralSequenceMap data φ`.
@@ -105,5 +107,17 @@ example {ι κ : Type*} [Preorder ι] {X Y : SpectralObject C ι} (φ : X ⟶ Y)
         ((Y.spectralSequence data).cyclesSubobject pq r hr) := by
   simpa using (X.spectralSequence data).cyclesSubobject_le_pullback pq
     (spectralSequenceMap data φ) r hr
+
+-- Contained in every cycle subobject: replacing the target `H^{n+1}(q - r + 2 ≤ q)` of `δ` by
+-- `H^{n+1}(⊥ ≤ q)` gives a subobject contained in every `Z_r`.
+example (X : SpectralObject C EInt) [X.HasSpectralSequence coreE₂Cohomological] (p q r : ℤ)
+    (hr : 2 ≤ r) :
+    kernelSubobject ((X.spectralSequenceFirstPageXIso coreE₂Cohomological (p, q) q
+          ((q + 1 : ℤ) : EInt) rfl rfl (p + q) rfl).hom ≫
+        X.δ (homOfLE bot_le : (⊥ : EInt) ⟶ (q : EInt))
+          (homOfLE (by simp) : (q : EInt) ⟶ ((q + 1 : ℤ) : EInt)) (p + q) (p + q + 1)) ≤
+      (X.spectralSequence coreE₂Cohomological).cyclesSubobject (p, q) r hr :=
+  X.kernelSubobject_δ_le_cyclesSubobject_spectralSequence coreE₂Cohomological (p, q) r hr ⊥ _ _
+    bot_le rfl rfl _ rfl
 
 end TauCeti.Examples
