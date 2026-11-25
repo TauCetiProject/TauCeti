@@ -35,7 +35,8 @@ Every ordered monomial is a word, so `Q_k ≤ P_k`
 * `TauCeti.BoundedWord ι k`: the words in `ι` of length at most `k`.
 * `TauCeti.monomialWord α`: the word `1^{α₁} ⋯ m^{α_m}` of an exponent vector.
 * `TauCeti.SobolevIndex m k`: the exponent vectors `α : Fin m → ℕ` with `|α| ≤ k`.
-* `ContRepresentation.wordAction I π X w`: the operator `dπ(X_w)` of a word `w`.
+* `ContRepresentation.wordAction I π X w`: the operator `dπ(X_w)` of a word `w`, for a
+  representation over any ring.
 * `ContRepresentation.wordSeminorm I π X k`: the word seminorm `P_k`.
 * `ContRepresentation.sobolevSeminorm I π X k`: the Sobolev seminorm `Q_k`.
 
@@ -136,15 +137,20 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   [LieGroup I ∞ G] [T2Space G] [BoundarylessManifold I G]
-  {𝕜 V : Type*} [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V]
-  (π : ContRepresentation 𝕜 G V)
+  {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
-variable {I π}
+variable {I}
 
-/-! ### The word seminorms -/
+/-! ### The operators of words -/
+
+section WordAction
+
+variable {R : Type*} [Ring R] [Module R V] [SMulCommClass ℝ R V] [ContinuousConstSMul R V]
+  (π : ContRepresentation R G V)
+
+variable {π}
 
 variable {ι : Type*}
 
@@ -152,7 +158,7 @@ variable (I π) in
 /-- The operator `dπ(X_w) = dπ(X_{i₁}) ∘ ⋯ ∘ dπ(X_{iₙ})` on smooth vectors attached to a word
 `w = [i₁, …, iₙ]`. -/
 def wordAction (X : ι → LeftInvariantDerivation I G) (w : List ι) :
-    Module.End 𝕜 (lieSmoothVectors I π) :=
+    Module.End R (lieSmoothVectors I π) :=
   (w.map fun i ↦ lieSmoothVectorsDerivative I π (X i)).prod
 
 /-- The empty word acts as the identity. -/
@@ -177,6 +183,17 @@ theorem wordAction_singleton (X : ι → LeftInvariantDerivation I G) (i : ι) :
 theorem wordAction_append (X : ι → LeftInvariantDerivation I G) (w₁ w₂ : List ι) :
     wordAction I π X (w₁ ++ w₂) = wordAction I π X w₁ * wordAction I π X w₂ := by
   simp [wordAction]
+
+end WordAction
+
+variable {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 V] [SMulCommClass ℝ 𝕜 V]
+  (π : ContRepresentation 𝕜 G V)
+
+variable {π}
+
+/-! ### The word seminorms -/
+
+variable {ι : Type*}
 
 variable [Fintype ι]
 
