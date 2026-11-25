@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.CartanInvolution.Decomposition
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
+import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.Algebra.Lie.InvariantForm.Positive
 import TauCeti.Algebra.Lie.Killing.Basic
 
@@ -125,6 +126,13 @@ theorem killingForm_apply_self_pos_of_mem_cartanP (hθ : θ.IsCartanInvolution) 
   have := hθ.killingForm_apply_apply_neg hx₀
   rwa [mem_cartanP.mp hx, map_neg, neg_lt_zero] at this
 
+/-- The Killing form restricted to a subspace of `𝔭` is positive definite. -/
+theorem killingForm_restrict_pos (hθ : θ.IsCartanInvolution) {𝔞 : Submodule K L}
+    (h𝔞 : 𝔞 ≤ θ.cartanP) (H : 𝔞) (hH : H ≠ 0) : 0 < (killingForm K L).restrict 𝔞 H H := by
+  rw [LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply]
+  exact hθ.killingForm_apply_self_pos_of_mem_cartanP (h𝔞 H.property)
+    (Submodule.coe_eq_zero.not.mpr hH)
+
 /-- A Lie algebra with a Cartan involution has nondegenerate Killing form. -/
 theorem isKilling (hθ : θ.IsCartanInvolution) : IsKilling K L := by
   refine ⟨(LieSubmodule.toSubmodule_eq_bot _).mp <|
@@ -139,6 +147,15 @@ nondegenerate. -/
 theorem finiteDimensional (hθ : θ.IsCartanInvolution) : FiniteDimensional K L :=
   have := hθ.isKilling
   TauCeti.finite_of_isKilling
+
+/-- The Killing form restricted to a subspace of `𝔭` is nondegenerate. -/
+theorem nondegenerate_killingForm_restrict (hθ : θ.IsCartanInvolution) {𝔞 : Submodule K L}
+    (h𝔞 : 𝔞 ≤ θ.cartanP) : ((killingForm K L).restrict 𝔞).Nondegenerate :=
+  have := hθ.finiteDimensional
+  LinearMap.BilinForm.Nondegenerate.ofSeparatingLeft
+    (LinearMap.BilinForm.separatingLeft_of_anisotropic fun H hH ↦ by
+      by_contra hne
+      exact (hθ.killingForm_restrict_pos h𝔞 H hne).ne' hH)
 
 /-- A Lie algebra with a Cartan involution is semisimple. -/
 theorem isSemisimple (hθ : θ.IsCartanInvolution) : IsSemisimple K L :=
