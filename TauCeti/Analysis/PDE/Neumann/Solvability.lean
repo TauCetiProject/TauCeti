@@ -50,7 +50,10 @@ On a bounded Lipschitz domain the compactness hypothesis is Rellich–Kondrachov
 the product `ℝ × E` of their boundary charts while the energy form lives on `EuclideanSpace ℝ ι`;
 as in `TauCeti/Analysis/PDE/DirichletProblem/Trace.lean` the two are matched by an affine
 isometry, along which compactness transfers
-(`TauCeti.W1p.isCompactOperator_valueL_of_affineIsometryEquiv`).
+(`TauCeti.W1p.isCompactOperator_valueL_of_affineIsometryEquiv`). For a domain of
+`EuclideanSpace ℝ ι` satisfying the intrinsic predicate `Set.IsLipschitzDomain`, Rellich
+compactness holds for every additive Haar measure
+(`TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomain`).
 
 Connectedness cannot be dropped: on `Ω = (0, 1) ∪ (2, 3)` the function equal to `0` on the first
 interval and `1` on the second solves the homogeneous problem, so solutions are not unique up to
@@ -69,6 +72,8 @@ one constant, and the datum `f` equal to `1` on the first interval and `-1` on t
   solvable exactly when `∫_Ω f = 0`.
 * `TauCeti.PDE.exists_forall_energyFormH1_eq_setIntegral_iff_of_isLipschitzDomainWith`: the same
   on a bounded connected Lipschitz domain.
+* `TauCeti.PDE.exists_forall_energyFormH1_eq_setIntegral_iff_of_isLipschitzDomain`: the same for
+  the intrinsic predicate `Set.IsLipschitzDomain` and any additive Haar measure.
 * `TauCeti.PDE.exists_forall_energyFormH1_eq_setIntegral_add_frontierTrace_iff`: with a boundary
   datum `h` for the conormal derivative, the condition is `∫_Ω f + ∫_{∂Ω} h = 0`.
 
@@ -381,6 +386,40 @@ theorem exists_forall_energyFormH1_eq_setIntegral_add_frontierTrace_iff
   simpa only [hℓ] using key
 
 end LipschitzDomain
+
+section IntrinsicLipschitzDomain
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- **The Neumann problem on a bounded Lipschitz domain, for any Haar measure.** Let
+`Ω ⊆ EuclideanSpace ℝ ι` be bounded, connected and a Lipschitz domain in the intrinsic sense
+`Set.IsLipschitzDomain`, with boundary charts modelled on any normed space `E`, and let `μ` be any
+additive Haar measure. Let `a` have essentially bounded energy density and satisfy
+`λ‖ξ‖² ≤ ξ ⬝ a(x) ξ` almost everywhere on `Ω`, with `λ > 0`. For `f ∈ L²(Ω)` the weak Neumann
+problem
+
+`∫_Ω ⟨a ∇u, ∇v⟩ = ∫_Ω f v` for every `v ∈ H¹(Ω)`
+
+has a solution `u ∈ H¹(Ω)` exactly when `∫_Ω f = 0`. Unlike
+`TauCeti.PDE.exists_forall_energyFormH1_eq_setIntegral_iff_of_isLipschitzDomainWith`, no affine
+isometry onto a chart domain is supplied: Rellich compactness comes from
+`TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomain`. -/
+theorem exists_forall_energyFormH1_eq_setIntegral_iff_of_isLipschitzDomain
+    (hΩ : (Omega : Set (EuclideanSpace ℝ ι)).IsLipschitzDomain E)
+    (hb : IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
+    (hconn : IsPreconnected (Omega : Set (EuclideanSpace ℝ ι)))
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega)) (hlam : 0 < lam)
+    (ha : ∀ᵐ x ∂mu.restrict Omega, ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (a x *ᵥ ξ))
+    (f : Lp ℝ 2 (mu.restrict Omega)) :
+    (∃ u : W1p mu Omega 2, ∀ v : W1p mu Omega 2,
+        energyFormH1 a 0 0 u v = ∫ x in Omega, f x * W1p.value v x ∂mu) ↔
+      ∫ x in Omega, f x ∂mu = 0 := by
+  have : IsFiniteMeasure (mu.restrict (Omega : Set (EuclideanSpace ℝ ι))) :=
+    isFiniteMeasure_restrict.2 hb.measure_lt_top.ne
+  exact exists_forall_energyFormH1_eq_setIntegral_iff
+    (W1p.isCompactOperator_valueL_of_isLipschitzDomain hΩ hb) hconn hcoeff hlam ha f
+
+end IntrinsicLipschitzDomain
 
 end PDE
 
