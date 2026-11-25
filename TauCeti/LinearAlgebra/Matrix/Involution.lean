@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 public import Mathlib.LinearAlgebra.SymplecticGroup
 import Mathlib.Data.Fintype.Prod
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
-import TauCeti.LinearAlgebra.Matrix.Alternating
+import TauCeti.LinearAlgebra.Matrix.Alternating.Basic
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InnerAut
 
 /-!

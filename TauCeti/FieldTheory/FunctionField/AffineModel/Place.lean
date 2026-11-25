@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.OrderOfVanishing.Noetherian
 public import Mathlib.RingTheory.Valuation.Integral
 public import TauCeti.FieldTheory.FunctionField.Place.Adic
 
@@ -39,6 +40,8 @@ integrally closed, then swallows everything integral over `k[x]`.
   with the maximal ideal of `𝒪_P`, `TauCeti.Place.center_injective` showing that a place finite on a
   model is determined by its centre, and `TauCeti.Place.comap_center_asIdeal` showing that the
   centre on a larger model contracts to the centre on a smaller one.
+* `TauCeti.Place.ordFrac_integers`: Mathlib's order of vanishing `Ring.ordFrac` along `𝒪_P` is the
+  inverse of the valuation of the place.
 * `TauCeti.Place.existsUnique_valuation_eq`: the uniqueness statement,
   `TauCeti.Place.valuationSubringAtPrime_eq_integers`, and
   `TauCeti.Place.isLocalization_integers_center`: the valuation ring of the place is the
@@ -213,6 +216,14 @@ theorem center_integers_asIdeal (hC : ∀ c : P.integers, algebraMap P.integers 
     (P.center hC).asIdeal = IsLocalRing.maximalIdeal P.integers := by
   ext x
   rw [mem_center_asIdeal, ValuationSubring.algebraMap_apply, mem_maximalIdeal_iff_valuation_lt_one]
+
+/-- The order of vanishing along the valuation ring of a place, Mathlib's `Ring.ordFrac`, is the
+inverse of the valuation of the place. -/
+theorem ordFrac_integers (x : F) : Ring.ordFrac P.integers x = (P.valuation x)⁻¹ := by
+  have hR : ∀ r : P.integers, algebraMap P.integers F r ∈ P.integers := fun r ↦ r.property
+  have h : IsDiscreteValuationRing.maximalIdeal P.integers = P.center hR :=
+    HeightOneSpectrum.ext (P.center_integers_asIdeal hR).symm
+  rw [Ring.ordFrac_eq_valuation_inv, h, valuation_center]
 
 variable [IsDedekindDomain R]
 

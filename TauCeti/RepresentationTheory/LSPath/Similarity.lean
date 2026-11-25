@@ -9,7 +9,6 @@ public import TauCeti.RepresentationTheory.Crystal.Similarity
 public import TauCeti.RepresentationTheory.LSPath.CappedReflection
 public import TauCeti.RepresentationTheory.LSPath.Crystal.Operations
 public import TauCeti.RepresentationTheory.LSPath.RationalChain
-public import TauCeti.RepresentationTheory.LSPath.Word
 import TauCeti.Data.Option.Basic
 
 /-!
