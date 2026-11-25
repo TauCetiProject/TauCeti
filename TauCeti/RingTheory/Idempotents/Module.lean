@@ -530,15 +530,14 @@ variable {S M A : Type*} [Semiring S] [Ring A] [AddCommMonoid M] [Module S M] [M
 /-- **An idempotent splits a module in two**: `M` is the direct sum of `e • M` and `(1 - e) • M`. -/
 theorem isCompl_smul_top_one_sub_smul_top (he : IsIdempotentElem e) :
     IsCompl (e • (⊤ : Submodule S M)) ((1 - e) • (⊤ : Submodule S M)) := by
-  refine ⟨?_, Submodule.codisjoint_iff_exists_add_eq.2 fun x ↦
-    ⟨e • x, (1 - e) • x, Submodule.smul_mem_pointwise_smul x e ⊤ trivial,
-      Submodule.smul_mem_pointwise_smul x (1 - e) ⊤ trivial, by
-        rw [← add_smul, add_sub_cancel, one_smul]⟩⟩
-  have h := (iSupIndep_pair (t := fun i ↦ ![e, 1 - e] i • (⊤ : Submodule S M))
-    zero_ne_one fun k ↦ by fin_cases k <;> simp).1
-    (TauCeti.iSupIndep_smul_top
-      (CompleteOrthogonalIdempotents.of_isIdempotentElem he).toOrthogonalIdempotents)
-  simpa using h
+  refine ⟨Submodule.disjoint_def.2 fun x hx hx' ↦ ?_,
+    Submodule.codisjoint_iff_exists_add_eq.2 fun x ↦
+      ⟨e • x, (1 - e) • x, Submodule.smul_mem_pointwise_smul x e ⊤ trivial,
+        Submodule.smul_mem_pointwise_smul x (1 - e) ⊤ trivial, by
+          rw [← add_smul, add_sub_cancel, one_smul]⟩⟩
+  -- `x = e • (1 - e) • x`, and `e (1 - e) = 0`.
+  rw [← he.smul_eq_self_of_mem_smul_top hx, ← he.one_sub.smul_eq_self_of_mem_smul_top hx',
+    smul_smul, he.mul_one_sub_self, zero_smul]
 
 end IsCompl
 

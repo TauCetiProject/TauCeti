@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 public import TauCeti.RingTheory.Spectrum.Prime.LocallyConstant
 import Mathlib.RingTheory.Support
+import TauCeti.RingTheory.Idempotents.Prime
+import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 
 /-!
 # The rank decomposition of a finite projective module
@@ -81,18 +83,6 @@ private theorem subsingleton_localizedModule_smul_top (he : IsIdempotentElem e)
   refine fun x ↦ ⟨1 - e, (he.one_sub_mem_iff_notMem.not.2 (not_not.2 hp)), Subtype.ext ?_⟩
   simp [sub_smul, he.smul_eq_self_of_mem_smul_top x.property]
 
-/-- Adding a module whose localization at `p` vanishes does not change the rank at `p`. -/
-private theorem rankAtStalk_prod_of_subsingleton {N : Type*} [AddCommGroup N] [Module R N]
-    {p : PrimeSpectrum R} [Subsingleton (LocalizedModule p.asIdeal.primeCompl N)] :
-    rankAtStalk (R := R) (M × N) p = rankAtStalk M p := by
-  have : Unique (LocalizedModule p.asIdeal.primeCompl N) := uniqueOfSubsingleton 0
-  let e : LocalizedModule p.asIdeal.primeCompl (M × N) ≃ₗ[Localization.AtPrime p.asIdeal]
-      LocalizedModule p.asIdeal.primeCompl M × LocalizedModule p.asIdeal.primeCompl N :=
-    IsLocalizedModule.linearEquiv p.asIdeal.primeCompl (LocalizedModule.mkLinearMap _ _)
-      (.prodMap (LocalizedModule.mkLinearMap _ M) (LocalizedModule.mkLinearMap _ N))
-      |>.extendScalarsOfIsLocalization p.asIdeal.primeCompl _
-  exact (e ≪≫ₗ LinearEquiv.prodUnique).finrank_eq
-
 open scoped Classical in
 /-- **The rank of the piece cut out by an idempotent**: at a prime `p`, the piece `e • M` has the
 rank of `M` if `e ∉ p`, that is on the basic open set of `e`, and rank `0` otherwise. -/
@@ -108,15 +98,6 @@ theorem rankAtStalk_smul_top (he : IsIdempotentElem e) (p : PrimeSpectrum R) :
   rw [← congrFun (rankAtStalk_eq_of_equiv (Submodule.prodEquivOfIsCompl _ _
     (he.isCompl_smul_top_one_sub_smul_top (S := R) (M := M)))) p,
     rankAtStalk_prod_of_subsingleton]
-
-open scoped Classical in
-/-- **The principal ideal of an idempotent has rank the indicator of its basic open set**: for an
-idempotent `e`, the module `R e = e • R` has rank `1` at the primes not containing `e` and rank `0`
-at the others. -/
-theorem rankAtStalk_smul_top_self (he : IsIdempotentElem e) (p : PrimeSpectrum R) :
-    rankAtStalk (R := R) ↥(e • (⊤ : Submodule R R)) p = if e ∈ p.asIdeal then 0 else 1 := by
-  have : Nontrivial R := PrimeSpectrum.nonempty_iff_nontrivial.mp ⟨p⟩
-  rw [rankAtStalk_smul_top he, rankAtStalk_self, Pi.one_apply]
 
 end Piece
 
@@ -174,7 +155,7 @@ theorem connectedSpace_iff_forall_exists_rankAtStalk_eq [Nontrivial R] :
   have := he.projective_smul_top (S := R) (M := R)
   obtain ⟨n, hn⟩ := h ↥(e • (⊤ : Submodule R R))
   have key (p : PrimeSpectrum R) : p ∈ (basicOpen e : Set (PrimeSpectrum R)) ↔ n = 1 := by
-    have := (hn p).symm.trans (Module.rankAtStalk_smul_top_self he p)
+    have := (hn p).symm.trans (Module.rankAtStalk_smul_top he p)
     rw [SetLike.mem_coe, mem_basicOpen]
     split_ifs at this <;> simp_all
   by_cases hn1 : n = 1
@@ -196,10 +177,8 @@ variable (f : LocallyConstant (PrimeSpectrum R) ℕ)
 
 /-- The clopen-glued module is projective: each factor `R eₙ` is a direct summand of `R`. It is
 finite as a finite product of cyclic modules. -/
-instance projective_clopenGlued : Module.Projective R (clopenGlued f) := by
-  have (n : ℕ) := (isIdempotentElem_fiberIdempotent f.isLocallyConstant n).projective_smul_top
-    (S := R) (M := R)
-  infer_instance
+instance projective_clopenGlued : Module.Projective R (clopenGlued f) :=
+  inferInstance
 
 /-- **Every locally constant rank is realized**: the clopen-glued module of a locally constant
 function `f : Spec R → ℕ` has rank `f`. -/
@@ -207,11 +186,10 @@ function `f : Spec R → ℕ` has rank `f`. -/
 theorem rankAtStalk_clopenGlued : Module.rankAtStalk (R := R) (clopenGlued f) = f := by
   classical
   ext p
-  have (n : ℕ) := (isIdempotentElem_fiberIdempotent f.isLocallyConstant n).projective_smul_top
-    (S := R) (M := R)
+  have : Nontrivial R := nonempty_iff_nontrivial.mp ⟨p⟩
   simp_rw [Module.rankAtStalk_pi, finsum_eq_sum_of_fintype,
-    Module.rankAtStalk_smul_top_self (isIdempotentElem_fiberIdempotent _ _),
-    fiberIdempotent_mem_iff]
+    Module.rankAtStalk_smul_top (isIdempotentElem_fiberIdempotent _ _), Module.rankAtStalk_self,
+    Pi.one_apply, fiberIdempotent_mem_iff]
   have hp : f p ∈ f.range_finite.toFinset := by simp
   rw [Finset.sum_eq_single_of_mem ⟨f p, hp⟩ (Finset.mem_univ _) fun n _ hn ↦ by
     simp [Ne.symm (Subtype.coe_injective.ne hn)]]

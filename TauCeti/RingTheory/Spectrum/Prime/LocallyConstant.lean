@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.RingTheory.Idempotents.Module
+import TauCeti.RingTheory.Idempotents.Prime
 
 /-!
 # Fibre idempotents of locally constant functions on a prime spectrum
@@ -28,17 +29,20 @@ split `M` into pieces of constant rank; see
 
 ## Main declarations
 
-* `IsIdempotentElem.one_sub_mem_iff_notMem`: a prime ideal contains exactly one of `e` and
-  `1 - e`.
+* `PrimeSpectrum.basicOpen_eq_bot_iff_of_isIdempotentElem`: an idempotent has empty basic open
+  set exactly when it is zero.
 * `PrimeSpectrum.fiberIdempotent hf a`: the idempotent whose basic open set is `f ⁻¹' {a}`.
 * `PrimeSpectrum.eq_fiberIdempotent_iff`: it is the only idempotent with this basic open set.
-* `PrimeSpectrum.fiberIdempotent_mem_iff`: a prime `p` contains it exactly when `f p ≠ a`.
+* `PrimeSpectrum.mem_basicOpen_fiberIdempotent`, `PrimeSpectrum.fiberIdempotent_mem_iff`: a prime
+  `p` lies in its basic open set exactly when `f p = a`, and contains it exactly when `f p ≠ a`.
 * `PrimeSpectrum.fiberIdempotent_eq_zero_iff`, `PrimeSpectrum.fiberIdempotent_eq_one_iff`: it
   vanishes exactly off the range of `f`, and is `1` exactly when `f` is constantly `a`.
 * `PrimeSpectrum.completeOrthogonalIdempotents_fiberIdempotent`: the fibre idempotents of a finite
   set of values containing the range of `f` form a complete orthogonal family.
 * `PrimeSpectrum.isInternal_smul_top_fiberIdempotent`: the resulting decomposition
   `M = ⨁ₐ eₐ • M` of an arbitrary `R`-module.
+* `PrimeSpectrum.projective_smul_top_fiberIdempotent`: each piece `eₐ • M` of a projective module
+  is projective.
 
 ## References
 
@@ -51,15 +55,13 @@ open scoped Pointwise
 
 open TopologicalSpace
 
-/-- A prime ideal contains exactly one of an idempotent `e` and its complement `1 - e`. -/
-theorem IsIdempotentElem.one_sub_mem_iff_notMem {R : Type*} [Ring R] {e : R}
-    (he : IsIdempotentElem e) {P : Ideal R} [hP : P.IsPrime] : 1 - e ∈ P ↔ e ∉ P := by
-  refine ⟨fun h he' ↦ hP.ne_top ((Ideal.eq_top_iff_one _).2 (by simpa using P.add_mem he' h)),
-    fun h ↦ (hP.mem_or_mem ?_).resolve_left h⟩
-  rw [he.mul_one_sub_self]
-  exact P.zero_mem
-
 namespace PrimeSpectrum
+
+/-- An idempotent has empty basic open set exactly when it is zero: an idempotent lying in every
+prime ideal is nilpotent, hence zero. -/
+theorem basicOpen_eq_bot_iff_of_isIdempotentElem {R : Type*} [CommSemiring R] {e : R}
+    (he : IsIdempotentElem e) : basicOpen e = ⊥ ↔ e = 0 :=
+  (basicOpen_eq_bot_iff e).trans ⟨he.eq_zero_of_isNilpotent, fun h ↦ h ▸ .zero⟩
 
 variable {R : Type*} [CommRing R] {α : Type*} {f : PrimeSpectrum R → α}
 
@@ -80,13 +82,18 @@ theorem coe_basicOpen_fiberIdempotent (a : α) :
     (basicOpen (fiberIdempotent hf a) : Set (PrimeSpectrum R)) = f ⁻¹' {a} :=
   congrArg SetLike.coe (basicOpen_isIdempotentElemEquivClopens_symm _)
 
+/-- A prime lies in the basic open set of the fibre idempotent at `a` exactly when `f` takes the
+value `a` there. -/
+theorem mem_basicOpen_fiberIdempotent {a : α} {p : PrimeSpectrum R} :
+    p ∈ basicOpen (fiberIdempotent hf a) ↔ f p = a :=
+  Set.ext_iff.1 (coe_basicOpen_fiberIdempotent hf a) p
+
 /-- A prime contains the fibre idempotent at `a` exactly when `f` does not take the value `a`
 there. -/
 @[simp]
 theorem fiberIdempotent_mem_iff {a : α} {p : PrimeSpectrum R} :
     fiberIdempotent hf a ∈ p.asIdeal ↔ f p ≠ a := by
-  rw [← not_iff_not, not_not, ← mem_basicOpen, ← SetLike.mem_coe,
-    coe_basicOpen_fiberIdempotent, Set.mem_preimage, Set.mem_singleton_iff]
+  simpa using (mem_basicOpen_fiberIdempotent hf (a := a) (p := p)).not
 
 /-- **Characterization of the fibre idempotent**: an idempotent equals the fibre idempotent at `a`
 exactly when its basic open set is the fibre of `f` over `a`. -/
@@ -100,31 +107,26 @@ theorem eq_fiberIdempotent_iff {e : R} (he : IsIdempotentElem e) {a : α} :
         coe_basicOpen_fiberIdempotent, h]))
   exact congrArg Subtype.val this
 
-/-- An idempotent lies in every prime ideal only if it is zero. -/
-private theorem eq_zero_of_basicOpen_eq_empty {e : R} (he : IsIdempotentElem e)
-    (h : (basicOpen e : Set (PrimeSpectrum R)) = ∅) : e = 0 :=
-  he.eq_zero_of_isNilpotent <| (basicOpen_eq_bot_iff e).1 <| SetLike.coe_injective h
-
 /-- The fibre idempotent at `a` vanishes exactly when `a` is not a value of `f`. -/
 @[simp]
 theorem fiberIdempotent_eq_zero_iff {a : α} : fiberIdempotent hf a = 0 ↔ a ∉ Set.range f := by
-  rw [eq_comm, eq_fiberIdempotent_iff hf .zero, basicOpen_zero, Opens.coe_bot, eq_comm,
-    Set.preimage_singleton_eq_empty]
+  simp [← basicOpen_eq_bot_iff_of_isIdempotentElem (isIdempotentElem_fiberIdempotent hf a),
+    SetLike.ext_iff]
 
 /-- The fibre idempotent at `a` is `1` exactly when `f` is constantly `a`. -/
 @[simp]
 theorem fiberIdempotent_eq_one_iff {a : α} : fiberIdempotent hf a = 1 ↔ ∀ p, f p = a := by
-  rw [eq_comm, eq_fiberIdempotent_iff hf .one, basicOpen_one, Opens.coe_top, eq_comm,
-    Set.eq_univ_iff_forall]
-  simp only [Set.mem_preimage, Set.mem_singleton_iff]
+  rw [eq_comm, eq_fiberIdempotent_iff hf .one]
+  simp [Set.ext_iff]
 
 /-- Fibre idempotents at distinct values are orthogonal. -/
 theorem fiberIdempotent_mul_fiberIdempotent_of_ne {a b : α} (hab : a ≠ b) :
     fiberIdempotent hf a * fiberIdempotent hf b = 0 := by
-  refine eq_zero_of_basicOpen_eq_empty
-    ((isIdempotentElem_fiberIdempotent hf a).mul (isIdempotentElem_fiberIdempotent hf b)) ?_
-  rw [basicOpen_mul, Opens.coe_inf, coe_basicOpen_fiberIdempotent, coe_basicOpen_fiberIdempotent,
-    ← Set.preimage_inter, Set.singleton_inter_eq_empty.2 hab, Set.preimage_empty]
+  refine (basicOpen_eq_bot_iff_of_isIdempotentElem
+    ((isIdempotentElem_fiberIdempotent hf a).mul (isIdempotentElem_fiberIdempotent hf b))).1
+    (eq_bot_iff.2 fun p hp ↦ hab ?_)
+  simp only [basicOpen_mul, Opens.mem_inf, mem_basicOpen_fiberIdempotent] at hp
+  exact hp.1.symm.trans hp.2
 
 /-- **The fibre idempotents form a complete orthogonal family**: over a finite set `s` of values
 containing the range of `f`, the fibre idempotents are orthogonal and add up to `1`. -/
@@ -135,8 +137,8 @@ theorem completeOrthogonalIdempotents_fiberIdempotent {s : Finset α}
   have ho : OrthogonalIdempotents fun a : s ↦ fiberIdempotent hf a :=
     ⟨fun a ↦ isIdempotentElem_fiberIdempotent hf a,
       fun a b hab ↦ fiberIdempotent_mul_fiberIdempotent_of_ne hf (Subtype.coe_injective.ne hab)⟩
-  refine ⟨ho, (sub_eq_zero.1 (eq_zero_of_basicOpen_eq_empty ho.isIdempotentElem_sum.one_sub
-    (Set.eq_empty_of_forall_notMem fun p hp ↦ hp ?_))).symm⟩
+  refine ⟨ho, (sub_eq_zero.1 ((basicOpen_eq_bot_iff_of_isIdempotentElem
+    ho.isIdempotentElem_sum.one_sub).1 (eq_bot_iff.2 fun p hp ↦ (hp ?_).elim))).symm⟩
   -- At a prime `p`, the term at the value `f p` is `1` modulo `p` and every other term lies in `p`.
   let b : s := ⟨f p, hs ⟨p, rfl⟩⟩
   have hb' : 1 - fiberIdempotent hf (f p) ∈ p.asIdeal :=
@@ -150,9 +152,17 @@ theorem completeOrthogonalIdempotents_fiberIdempotent {s : Finset α}
 set `s` of values containing the range of `f`, every `R`-module `M` is the internal direct sum of
 the pieces `eₐ • M` cut out by the fibre idempotents. The component of `x` at `a` is `eₐ • x`
 (`TauCeti.coe_ofBijective_coeLinearMap_symm_apply_smul_top`). -/
-theorem isInternal_smul_top_fiberIdempotent [DecidableEq α] (M : Type*) [AddCommGroup M]
+theorem isInternal_smul_top_fiberIdempotent [DecidableEq α] (M : Type*) [AddCommMonoid M]
     [Module R M] {s : Finset α} (hs : Set.range f ⊆ s) :
     DirectSum.IsInternal fun a : s ↦ fiberIdempotent hf a • (⊤ : Submodule R M) :=
   TauCeti.isInternal_smul_top (completeOrthogonalIdempotents_fiberIdempotent hf hs)
+
+variable {hf} in
+/-- Each piece `eₐ • M` cut out by a fibre idempotent of a projective module is projective: it is
+a direct summand of `M`. -/
+instance projective_smul_top_fiberIdempotent {M : Type*} [AddCommMonoid M] [Module R M]
+    [Module.Projective R M] {a : α} :
+    Module.Projective R ↥(fiberIdempotent hf a • (⊤ : Submodule R M)) :=
+  (isIdempotentElem_fiberIdempotent hf a).projective_smul_top
 
 end PrimeSpectrum
