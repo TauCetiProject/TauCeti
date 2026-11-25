@@ -376,10 +376,8 @@ theorem posIdeal_ne_top [Nontrivial R] : posIdeal R N ≠ ⊤ := fun h => by
 /-- Over a nontrivial coefficient ring, no element of `posIdeal R N` is a unit of
 `nonnegSubring R N`. -/
 theorem not_isUnit_of_mem_posIdeal [Nontrivial R] {a : nonnegSubring R N}
-    (ha : a ∈ posIdeal R N) : ¬ IsUnit a := by
-  rintro ⟨u, rfl⟩
-  exact posIdeal_ne_top <| (posIdeal R N).eq_top_iff_one.2 <| by
-    simpa using (posIdeal R N).mul_mem_left (↑u⁻¹) ha
+    (ha : a ∈ posIdeal R N) : ¬ IsUnit a :=
+  fun hu => posIdeal_ne_top ((posIdeal R N).eq_top_of_isUnit_mem ha hu)
 
 /-- Over a nontrivial coefficient ring, a monomial of strictly positive period is not a unit of
 `nonnegSubring R N`. -/
@@ -570,7 +568,7 @@ theorem single_mul_mem_periodFiltration_iff (g : H) (u : Rˣ) {C : ℝ}
   refine ⟨fun ha => ?_, mul_mem_periodFiltration (single_mem_periodFiltration g _)⟩
   refine mem_periodFiltration.2 fun h hh => ?_
   have hzero := mem_periodFiltration.1 ha (g + h) (by simpa using add_lt_add_left hh (N g))
-  simpa only [coeff_single_mul_add, Units.mul_right_eq_zero] using hzero
+  simpa only [coeff_single_mul_add (.all g), Units.mul_right_eq_zero] using hzero
 
 end IsLeftCancelAdd
 

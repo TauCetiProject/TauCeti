@@ -36,13 +36,13 @@ this file develops:
   (`TauCeti.NovikovSeries.iSup_nonnegGradeBy_coprodId_ne_top`); for an additive degree map
   `μ : G →+ B` into an additive monoid, `DirectSum.coeAlgHom` is therefore dense but not
   surjective (`TauCeti.NovikovSeries.not_surjective_coeAlgHom_nonnegGradeBy_coprodId`).
-* **Action specialization**: pushing forward along `E.coprod (AddMonoidHom.id ℝ)` and a ring
-  homomorphism `ρ : R →+* k` defines the continuous action specialization
-  `TauCeti.NovikovSeries.actionSpecialization ρ E` into `NovikovSeries k ℝ (AddMonoidHom.id ℝ)`,
-  restricting to `TauCeti.NovikovSeries.nonnegActionSpecialization ρ E`, mapping the nonnegative
-  action-monomial submonoid onto the nonnegative real-monomial submonoid, and extending uniquely
-  from `nonnegSubring` to the localized ring
-  (`TauCeti.NovikovSeries.eq_actionSpecialization_of_comp_nonneg`).
+* **Action specialization**: specializing `TauCeti.NovikovSeries.periodSpecialization` and
+  `TauCeti.NovikovSeries.nonnegPeriodSpecialization` (from
+  `TauCeti.RingTheory.NovikovSeries.Functoriality`) to `E.coprod (AddMonoidHom.id ℝ)` sends `T^r`
+  to `single r 1`, maps the nonnegative action-monomial submonoid onto the nonnegative real-monomial
+  submonoid (`TauCeti.NovikovSeries.map_monomialSubmonoid_nonnegPeriodSpecialization_coprodId`), and
+  extends uniquely from `nonnegSubring` to the localized ring
+  (`TauCeti.NovikovSeries.eq_periodSpecialization_coprodId_of_comp_nonneg`).
 
 ## References
 
@@ -121,39 +121,28 @@ theorem single_mul_actionMonomial (E : G →+ ℝ) (p : G × ℝ) (c : R) (r : �
 theorem coeff_actionMonomial_mul (E : G →+ ℝ) (r : ℝ)
     (a : NovikovSeries R (G × ℝ) (E.coprod (AddMonoidHom.id ℝ))) (p : G × ℝ) :
     (actionMonomial R E r * a).coeff p = a.coeff (p.1, p.2 - r) := by
-  rw [actionMonomial_def, coeff_mul_eq_sum (s := {((0, r), (p.1, p.2 - r))})
-      (fun _ hq => by rw [Finset.mem_singleton.1 hq]; ext <;> simp)
-      fun u v huv hu _ => ?_, Finset.sum_singleton, coeff_single_same, one_mul]
-  obtain rfl : u = (0, r) := by_contra fun hne => hu (coeff_single_of_ne hne 1)
-  rw [Finset.mem_singleton]
-  exact Prod.ext rfl (Prod.ext (by simpa using congrArg Prod.fst huv)
-    (eq_sub_of_add_eq' (congrArg Prod.snd huv)))
+  have hp : p = (0, r) + (p.1, p.2 - r) :=
+    Prod.ext (zero_add p.1).symm (add_sub_cancel r p.2).symm
+  have hreg : IsAddLeftRegular ((0 : G), r) := fun _ _ h =>
+    Prod.ext (by simpa using congrArg Prod.fst h) (add_left_cancel (congrArg Prod.snd h))
+  conv_lhs => rw [hp]
+  rw [actionMonomial_def, coeff_single_mul_add hreg, one_mul]
 
 /-- Multiplying on the right by the action monomial `T^r` shifts the real coordinate by `r`. -/
 theorem coeff_mul_actionMonomial (E : G →+ ℝ)
     (a : NovikovSeries R (G × ℝ) (E.coprod (AddMonoidHom.id ℝ))) (r : ℝ) (p : G × ℝ) :
     (a * actionMonomial R E r).coeff p = a.coeff (p.1, p.2 - r) := by
-  rw [actionMonomial_def, coeff_mul_eq_sum (s := {((p.1, p.2 - r), (0, r))})
-      (fun _ hq => by rw [Finset.mem_singleton.1 hq]; ext <;> simp)
-      fun u v huv _ hv => ?_, Finset.sum_singleton, coeff_single_same, mul_one]
-  obtain rfl : v = (0, r) := by_contra fun hne => hv (coeff_single_of_ne hne 1)
-  rw [Finset.mem_singleton]
-  exact Prod.ext (Prod.ext (by simpa using congrArg Prod.fst huv)
-    (eq_sub_of_add_eq (congrArg Prod.snd huv))) rfl
-
-theorem actionMonomial_mul_actionMonomial_neg (E : G →+ ℝ) (r : ℝ) :
-    actionMonomial R E r * actionMonomial R E (-r) = 1 := by
-  rw [actionMonomial_mul, add_neg_cancel, actionMonomial_zero]
-
-theorem actionMonomial_neg_mul_actionMonomial (E : G →+ ℝ) (r : ℝ) :
-    actionMonomial R E (-r) * actionMonomial R E r = 1 := by
-  rw [actionMonomial_mul, neg_add_cancel, actionMonomial_zero]
+  have hp : p = (p.1, p.2 - r) + (0, r) :=
+    Prod.ext (add_zero p.1).symm (sub_add_cancel p.2 r).symm
+  have hreg : IsAddRightRegular ((0 : G), r) := fun _ _ h =>
+    Prod.ext (by simpa using congrArg Prod.fst h) (add_right_cancel (congrArg Prod.snd h))
+  conv_lhs => rw [hp]
+  rw [actionMonomial_def, coeff_mul_single_add _ hreg, mul_one]
 
 /-- Every real action monomial `T^r` is a unit of
 `NovikovSeries R (G × ℝ) (E.coprod (AddMonoidHom.id ℝ))`, with inverse `T^(-r)`. -/
 theorem isUnit_actionMonomial (E : G →+ ℝ) (r : ℝ) : IsUnit (actionMonomial R E r) :=
-  isUnit_iff_exists.2 ⟨actionMonomial R E (-r),
-    actionMonomial_mul_actionMonomial_neg E r, actionMonomial_neg_mul_actionMonomial E r⟩
+  isUnit_iff_exists.2 ⟨actionMonomial R E (-r), by simp, by simp⟩
 
 /-- Every real action monomial `T^r` is homogeneous of degree `μ 0` for any first-coordinate degree
 map `μ : G → B`. -/
@@ -179,17 +168,6 @@ theorem actionMonomial_mul_mem_gradeBy [AddMonoid B] (E : G →+ ℝ) (μ : G �
 
 end Semiring
 
-/-- Classes distinguished by any map `μ : G → B` remain distinct monomials in
-`NovikovSeries R (G × ℝ) (E.coprod (AddMonoidHom.id ℝ))`, even when their energies `E g₁` and
-`E g₂` coincide. -/
-theorem single_coprodId_ne_of_apply_ne [Zero R] [AddMonoid G] (E : G →+ ℝ) (μ : G → B)
-    {g₁ g₂ : G} (hμ : μ g₁ ≠ μ g₂) (r₁ r₂ : ℝ) {c₁ c₂ : R} (hc₁ : c₁ ≠ 0) :
-    (single (g₁, r₁) c₁ : NovikovSeries R (G × ℝ) (E.coprod (AddMonoidHom.id ℝ))) ≠
-      single (g₂, r₂) c₂ := by
-  intro heq
-  have hp : (g₁, r₁) ≠ (g₂, r₂) := fun h => hμ (congrArg (μ ∘ Prod.fst) h)
-  exact hc₁ <| by simpa [coeff_single_of_ne hp] using congrArg (·.coeff (g₁, r₁)) heq
-
 section Ring
 
 variable [Ring R] [AddMonoid G]
@@ -206,7 +184,8 @@ theorem actionMonomial_mul_mem_periodFiltration_iff (E : G →+ ℝ) (r C : ℝ)
       single_mem_periodFiltration (R := R) (N := E.coprod (AddMonoidHom.id ℝ)) ((0 : G), s) (1 : R)
   refine ⟨fun ha => ?_, fun ha => mul_mem_periodFiltration (hT r) ha⟩
   have hmul := mul_mem_periodFiltration (hT (-r)) ha
-  rwa [← mul_assoc, actionMonomial_neg_mul_actionMonomial, one_mul, neg_add_cancel_left] at hmul
+  rwa [← mul_assoc, actionMonomial_mul, neg_add_cancel, actionMonomial_zero, one_mul,
+    neg_add_cancel_left] at hmul
 
 variable (R) in
 /-- The nonnegative action monomial `T^r` (`0 ≤ r`) in
@@ -428,114 +407,28 @@ section ActionSpecialization
 
 variable {R k G : Type*}
 
-private theorem exists_period_rescale_coprodId [AddZeroClass G] (E : G →+ ℝ) :
-    ∃ c > 0, ∀ p : G × ℝ,
-      AddMonoidHom.id ℝ (E.coprod (AddMonoidHom.id ℝ) p) = c * E.coprod (AddMonoidHom.id ℝ) p :=
-  ⟨1, one_pos, fun _ => (one_mul _).symm⟩
-
-section Semiring
-
-variable [Semiring R] [Semiring k] [AddMonoid G]
-
-/-- **Action specialization.** Pushforward of action-weighted Novikov series along
-`E.coprod (AddMonoidHom.id ℝ) : G × ℝ →+ ℝ` and a unital coefficient homomorphism `ρ : R →+* k`,
-summing the mapped coefficients along each constant-energy slice `E g + r = t`. -/
-def actionSpecialization (ρ : R →+* k) (E : G →+ ℝ) :
-    NovikovSeries R (G × ℝ) (E.coprod (AddMonoidHom.id ℝ)) →+*
-      NovikovSeries k ℝ (AddMonoidHom.id ℝ) :=
-  mapRingHom ρ (E.coprod (AddMonoidHom.id ℝ)) (exists_period_rescale_coprodId E)
-
-/-- `actionSpecialization` is the pushforward `mapRingHom` along `E.coprod (AddMonoidHom.id ℝ)`. -/
-theorem actionSpecialization_eq_mapRingHom (ρ : R →+* k) (E : G →+ ℝ)
-    (h : ∃ c > 0, ∀ p : G × ℝ,
-      AddMonoidHom.id ℝ (E.coprod (AddMonoidHom.id ℝ) p) = c * E.coprod (AddMonoidHom.id ℝ) p) :
-    actionSpecialization ρ E = mapRingHom ρ (E.coprod (AddMonoidHom.id ℝ)) h :=
-  (rfl)
-
-theorem coeff_actionSpecialization (ρ : R →+* k) (E : G →+ ℝ)
-    (a : NovikovSeries R (G × ℝ) (E.coprod (AddMonoidHom.id ℝ))) (t : ℝ) :
-    (actionSpecialization ρ E a).coeff t =
-      ∑ᶠ p ∈ E.coprod (AddMonoidHom.id ℝ) ⁻¹' {t}, ρ (a.coeff p) := by
-  rw [actionSpecialization_eq_mapRingHom ρ E (exists_period_rescale_coprodId E), mapRingHom_apply,
-    coeff_map]
-  simp only [AddMonoidHom.coe_ofClass]
-
 @[simp]
-theorem actionSpecialization_single (ρ : R →+* k) (E : G →+ ℝ) (p : G × ℝ) (c : R) :
-    actionSpecialization ρ E (single p c) = single (E p.1 + p.2) (ρ c) := by
-  simp [actionSpecialization_eq_mapRingHom ρ E (exists_period_rescale_coprodId E)]
-
-@[simp]
-theorem actionSpecialization_actionMonomial (ρ : R →+* k) (E : G →+ ℝ) (r : ℝ) :
-    actionSpecialization ρ E (actionMonomial R E r) = single r 1 := by
+theorem periodSpecialization_actionMonomial [Semiring R] [Semiring k] [AddMonoid G] (ρ : R →+* k)
+    (E : G →+ ℝ) (r : ℝ) :
+    periodSpecialization ρ (E.coprod (AddMonoidHom.id ℝ)) (actionMonomial R E r) = single r 1 := by
   simp [actionMonomial_def]
-
-end Semiring
 
 section Ring
 
 variable [Ring R] [Ring k] [AddMonoid G]
 
-@[fun_prop]
-theorem continuous_actionSpecialization (ρ : R →+* k) (E : G →+ ℝ) :
-    Continuous (actionSpecialization ρ E) :=
-  continuous_mapRingHom _ _ _
-
-/-- The action specialization sends the period neighbourhood `U_C` into `U'_C`. -/
-theorem actionSpecialization_mem_periodFiltration (ρ : R →+* k) (E : G →+ ℝ) {C : ℝ}
-    {a : NovikovSeries R (G × ℝ) (E.coprod (AddMonoidHom.id ℝ))}
-    (ha : a ∈ periodFiltration R (E.coprod (AddMonoidHom.id ℝ)) C) :
-    actionSpecialization ρ E a ∈ periodFiltration k (AddMonoidHom.id ℝ) C := by
-  rw [actionSpecialization_eq_mapRingHom ρ E (exists_period_rescale_coprodId E), mapRingHom_apply]
-  simpa using map_mem_periodFiltration (ρ : R →+ k) (E.coprod (AddMonoidHom.id ℝ))
-    (exists_period_rescale_coprodId E) zero_le_one (fun _ => (one_mul _).symm) ha
-
-/-- The restriction of `actionSpecialization` to the nonnegative subrings. -/
-def nonnegActionSpecialization (ρ : R →+* k) (E : G →+ ℝ) :
-    nonnegSubring R (E.coprod (AddMonoidHom.id ℝ)) →+* nonnegSubring k (AddMonoidHom.id ℝ) :=
-  mapNonnegSubring ρ (E.coprod (AddMonoidHom.id ℝ)) (exists_period_rescale_coprodId E)
-
-/-- `nonnegActionSpecialization` is the pushforward `mapNonnegSubring` along
-`E.coprod (AddMonoidHom.id ℝ)`. -/
-theorem nonnegActionSpecialization_eq_mapNonnegSubring (ρ : R →+* k) (E : G →+ ℝ)
-    (h : ∃ c > 0, ∀ p : G × ℝ,
-      AddMonoidHom.id ℝ (E.coprod (AddMonoidHom.id ℝ) p) = c * E.coprod (AddMonoidHom.id ℝ) p) :
-    nonnegActionSpecialization ρ E = mapNonnegSubring ρ (E.coprod (AddMonoidHom.id ℝ)) h :=
-  (rfl)
-
 @[simp]
-theorem coe_nonnegActionSpecialization (ρ : R →+* k) (E : G →+ ℝ)
-    (a : nonnegSubring R (E.coprod (AddMonoidHom.id ℝ))) :
-    (nonnegActionSpecialization ρ E a : NovikovSeries k ℝ (AddMonoidHom.id ℝ)) =
-      actionSpecialization ρ E a := by
-  rw [nonnegActionSpecialization_eq_mapNonnegSubring ρ E (exists_period_rescale_coprodId E),
-    coe_mapNonnegSubring,
-    actionSpecialization_eq_mapRingHom ρ E (exists_period_rescale_coprodId E), mapRingHom_apply]
-
-@[fun_prop]
-theorem continuous_nonnegActionSpecialization (ρ : R →+* k) (E : G →+ ℝ) :
-    Continuous (nonnegActionSpecialization ρ E) :=
-  continuous_mapNonnegSubring _ _ _
-
-/-- `nonnegActionSpecialization` maps the positive ideal into the positive ideal. -/
-theorem nonnegActionSpecialization_mem_posIdeal (ρ : R →+* k) (E : G →+ ℝ)
-    {a : nonnegSubring R (E.coprod (AddMonoidHom.id ℝ))}
-    (ha : a ∈ posIdeal R (E.coprod (AddMonoidHom.id ℝ))) :
-    nonnegActionSpecialization ρ E a ∈ posIdeal k (AddMonoidHom.id ℝ) :=
-  mapNonnegSubring_mem_posIdeal _ _ _ ha
-
-@[simp]
-theorem nonnegActionSpecialization_nonnegActionMonomial (ρ : R →+* k) (E : G →+ ℝ) {r : ℝ}
+theorem nonnegPeriodSpecialization_nonnegActionMonomial (ρ : R →+* k) (E : G →+ ℝ) {r : ℝ}
     (hr : 0 ≤ r) :
-    nonnegActionSpecialization ρ E (nonnegActionMonomial R E hr) =
+    nonnegPeriodSpecialization ρ (E.coprod (AddMonoidHom.id ℝ)) (nonnegActionMonomial R E hr) =
       ⟨single r 1, single_mem_nonnegSubring hr 1⟩ :=
   Subtype.ext <| by simp
 
-/-- The image of the nonnegative action-monomial submonoid under `nonnegActionSpecialization ρ E` is
-the submonoid `monomialSubmonoid k (AddMonoidHom.id ℝ) (AddSubmonoid.nonneg ℝ)` of nonnegative real
-monomials. -/
-theorem map_monomialSubmonoid_nonnegActionSpecialization (ρ : R →+* k) (E : G →+ ℝ) :
-    Submonoid.map (nonnegActionSpecialization ρ E).toMonoidHom
+/-- The image of the nonnegative action-monomial submonoid under
+`nonnegPeriodSpecialization ρ (E.coprod (AddMonoidHom.id ℝ))` is the submonoid
+`monomialSubmonoid k (AddMonoidHom.id ℝ) (AddSubmonoid.nonneg ℝ)` of nonnegative real monomials. -/
+theorem map_monomialSubmonoid_nonnegPeriodSpecialization_coprodId (ρ : R →+* k) (E : G →+ ℝ) :
+    Submonoid.map (nonnegPeriodSpecialization ρ (E.coprod (AddMonoidHom.id ℝ))).toMonoidHom
       (monomialSubmonoid R (E.coprod (AddMonoidHom.id ℝ))
         ((AddSubmonoid.nonneg ℝ).map (AddMonoidHom.inr G ℝ))) =
       monomialSubmonoid k (AddMonoidHom.id ℝ) (AddSubmonoid.nonneg ℝ) := by
@@ -546,29 +439,30 @@ theorem map_monomialSubmonoid_nonnegActionSpecialization (ρ : R →+* k) (E : G
   · rintro ⟨a, ⟨_, ⟨r, hr, rfl⟩, ha⟩, rfl⟩
     have ha' : a = nonnegActionMonomial R E hr :=
       Subtype.ext (ha.trans (actionMonomial_def E r).symm)
-    exact ⟨r, hr, by rw [ha', coe_nonnegActionSpecialization, coe_nonnegActionMonomial,
-      actionSpecialization_actionMonomial]⟩
+    exact ⟨r, hr, by rw [ha', coe_nonnegPeriodSpecialization, coe_nonnegActionMonomial,
+      periodSpecialization_actionMonomial]⟩
   · refine ⟨nonnegActionMonomial R E hr, ⟨(0, r), ⟨r, hr, rfl⟩, actionMonomial_def E r⟩,
       Subtype.ext ?_⟩
-    rw [coe_nonnegActionSpecialization, coe_nonnegActionMonomial,
-      actionSpecialization_actionMonomial, hb]
+    rw [coe_nonnegPeriodSpecialization, coe_nonnegActionMonomial,
+      periodSpecialization_actionMonomial, hb]
 
 end Ring
 
-/-- `actionSpecialization ρ E` is the unique ring homomorphism out of the localized ring
-`NovikovSeries R (G × ℝ) (E.coprod (AddMonoidHom.id ℝ))` extending
-`nonnegActionSpecialization ρ E`. -/
-theorem eq_actionSpecialization_of_comp_nonneg [AddCommMonoid G] [CommRing R] [Ring k]
+/-- `periodSpecialization ρ (E.coprod (AddMonoidHom.id ℝ))` is the unique ring homomorphism out of
+the localized ring `NovikovSeries R (G × ℝ) (E.coprod (AddMonoidHom.id ℝ))` extending
+`nonnegPeriodSpecialization ρ (E.coprod (AddMonoidHom.id ℝ))`. -/
+theorem eq_periodSpecialization_coprodId_of_comp_nonneg [AddCommMonoid G] [CommRing R] [Ring k]
     (ρ : R →+* k) (E : G →+ ℝ)
     {φ : NovikovSeries R (G × ℝ) (E.coprod (AddMonoidHom.id ℝ)) →+*
       NovikovSeries k ℝ (AddMonoidHom.id ℝ)}
     (hφ : ∀ a : nonnegSubring R (E.coprod (AddMonoidHom.id ℝ)),
-      φ a = nonnegActionSpecialization ρ E a) :
-    φ = actionSpecialization ρ E :=
+      φ a = nonnegPeriodSpecialization ρ (E.coprod (AddMonoidHom.id ℝ)) a) :
+    φ = periodSpecialization ρ (E.coprod (AddMonoidHom.id ℝ)) :=
   IsLocalization.ringHom_ext
     (monomialSubmonoid R (E.coprod (AddMonoidHom.id ℝ))
       ((AddSubmonoid.nonneg ℝ).map (AddMonoidHom.inr G ℝ))) <|
-    RingHom.ext fun a => (hφ a).trans (coe_nonnegActionSpecialization ρ E a)
+    RingHom.ext fun a => (hφ a).trans
+      (coe_nonnegPeriodSpecialization ρ (E.coprod (AddMonoidHom.id ℝ)) a)
 
 end ActionSpecialization
 

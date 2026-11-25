@@ -314,29 +314,28 @@ instance : IsLocalHom (Ideal.Quotient.mk (posIdeal R N)) where
 
 section Injective
 
-/-- When the period homomorphism `N` is injective, its monoid kernel `mker N` is a subsingleton. -/
-theorem subsingleton_mker (hN : Injective N) : Subsingleton (mker N) :=
-  ⟨fun a b => Subtype.ext <| hN <| (mem_mker.1 a.property).trans (mem_mker.1 b.property).symm⟩
-
 variable (R) in
 /-- When the period homomorphism `N` is injective, the residue ring
 `nonnegSubring R N ⧸ posIdeal R N` is canonically isomorphic to `R` via the constant coefficient at
 `0`. -/
 def residueEquivOfInjective (hN : Injective N) : nonnegSubring R N ⧸ posIdeal R N ≃+* R :=
-  letI := subsingleton_mker hN
+  letI : Subsingleton (mker N) :=
+    AddMonoidHom.comap_bot' N ▸ (N.addSubmonoidComap_injective ⊥ hN).subsingleton
   (residueEquiv R N).trans (AddMonoidAlgebra.uniqueRingEquiv (mker N))
 
 @[simp]
 theorem residueEquivOfInjective_mk (hN : Injective N) (a : nonnegSubring R N) :
     residueEquivOfInjective R hN (Ideal.Quotient.mk _ a) = (a : NovikovSeries R H N).coeff 0 := by
-  let := subsingleton_mker hN
+  have : Subsingleton (mker N) :=
+    AddMonoidHom.comap_bot' N ▸ (N.addSubmonoidComap_injective ⊥ hN).subsingleton
   simp [residueEquivOfInjective]
 
 @[simp]
 theorem residueEquivOfInjective_symm_apply (hN : Injective N) (r : R) :
     (residueEquivOfInjective R hN).symm r =
       Ideal.Quotient.mk _ ⟨single 0 r, single_mem_nonnegSubring (map_zero N).ge r⟩ := by
-  let := subsingleton_mker hN
+  have : Subsingleton (mker N) :=
+    AddMonoidHom.comap_bot' N ▸ (N.addSubmonoidComap_injective ⊥ hN).subsingleton
   simp only [residueEquivOfInjective, RingEquiv.symm_trans_apply,
     AddMonoidAlgebra.uniqueRingEquiv_symm_apply, residueEquiv_symm_apply]
   congr 1

@@ -259,6 +259,18 @@ theorem nonnegGradeProj_mem_nonnegGradeBy (f : H → ι) (i : ι) (a : nonnegSub
   rw [← coe_mem_gradeBy_iff (S := S), coe_nonnegGradeProj]
   exact gradeProj_mem_gradeBy f i (a : NovikovSeries R H N)
 
+/-- A nonnegative series of degree `i` is its own homogeneous component of degree `i`. -/
+@[simp]
+theorem nonnegGradeProj_eq_self_of_mem_nonnegGradeBy {f : H → ι} {i : ι} {a : nonnegSubring R N}
+    (ha : a ∈ nonnegGradeBy S R N f i) : nonnegGradeProj S R N f i a = a :=
+  Subtype.ext <| gradeProj_eq_self_of_mem_gradeBy (coe_mem_gradeBy_iff.2 ha)
+
+/-- A nonnegative series of degree `j` has zero homogeneous component in any distinct degree `i`. -/
+theorem nonnegGradeProj_eq_zero_of_mem_nonnegGradeBy {f : H → ι} {i j : ι} (hij : j ≠ i)
+    {a : nonnegSubring R N} (ha : a ∈ nonnegGradeBy S R N f j) :
+    nonnegGradeProj S R N f i a = 0 :=
+  Subtype.ext <| gradeProj_eq_zero_of_mem_gradeBy hij (coe_mem_gradeBy_iff.2 ha)
+
 @[fun_prop]
 theorem continuous_nonnegGradeProj (f : H → ι) (i : ι) :
     Continuous (nonnegGradeProj S R N f i) :=
@@ -284,13 +296,9 @@ theorem nonnegGradeProj_coeAlgHom [AddMonoid ι] (f : H →+ ι)
     rw [DirectSum.coeAlgHom_of]
     by_cases hji : j = i
     · subst hji
-      exact Subtype.ext <| by
-        rw [DirectSum.of_eq_same, coe_nonnegGradeProj,
-          gradeProj_eq_self_of_mem_gradeBy (coe_mem_gradeBy_iff.2 y.property)]
-    · exact Subtype.ext <| by
-        rw [DirectSum.of_eq_of_ne _ _ _ (Ne.symm hji), coe_nonnegGradeProj,
-          gradeProj_eq_zero_of_mem_gradeBy hji (coe_mem_gradeBy_iff.2 y.property)]
-        simp only [ZeroMemClass.coe_zero]
+      rw [DirectSum.of_eq_same, nonnegGradeProj_eq_self_of_mem_nonnegGradeBy y.property]
+    · rw [DirectSum.of_eq_of_ne _ _ _ (Ne.symm hji),
+        nonnegGradeProj_eq_zero_of_mem_nonnegGradeBy hji y.property, ZeroMemClass.coe_zero]
   | add x y hx hy => simp only [map_add, hx, hy, DirectSum.add_apply, AddMemClass.coe_add]
 
 end NonnegProj
