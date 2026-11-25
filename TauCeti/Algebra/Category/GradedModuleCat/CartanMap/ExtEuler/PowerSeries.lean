@@ -297,20 +297,16 @@ private theorem cartan_eulerPowerSeries_eq_diagonal_aux
     have := GradedModuleCat.projective_ofIdeal_span_singleton (he i) (hI i)
     rw [hbP i, gradedCartanMap_of, shiftSliceExtEulerHom_of, extEuler_projective,
       (GradedModuleCat.homShiftPowEquiv 𝒜 _ (S j).obj (a : ℤ)).finrank_eq,
-      (GradedModuleCat.ofIdealSpanSingletonHomEquiv (he i) (he₀ i) (hI i) _).finrank_eq,
-      InternalGrading.shift_piece]
+      GradedModuleCat.finrank_hom_ofIdeal_span_singleton_shiftObj (he i) (he₀ i) (hI i)]
     rcases eq_or_ne a 0 with rfl | ha0
-    · rw [Nat.cast_zero, neg_zero, add_zero]
+    · rw [Nat.cast_zero, neg_zero]
       simp only [Matrix.diagonal_apply]
       split_ifs with hij
       · subst hij
         simp
-      · rw [map_zero]
-        have h0 := congrArg (fun f : LaurentPolynomial ℤ ↦ f.coeff 0) (hne hij)
-        rwa [GradedModuleCat.coeff_smulGradedDimension, AddMonoidAlgebra.coeff_zero,
-          Finsupp.zero_apply] at h0
-    · rw [hconc j _ (by omega), Submodule.smul_bot', Module.finrank_zero_of_subsingleton,
-        Nat.cast_zero]
+      · rw [hne hij, AddMonoidAlgebra.coeff_zero, Finsupp.zero_apply, map_zero]
+    · rw [GradedModuleCat.coeff_smulGradedDimension, hconc j _ (by omega), Submodule.smul_bot',
+        Module.finrank_zero_of_subsingleton, Nat.cast_zero]
       simp only [Matrix.diagonal_apply]
       split_ifs with hij
       · rw [PowerSeries.coeff_C, ite_eq_right ha0]

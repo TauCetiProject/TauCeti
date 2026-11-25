@@ -36,8 +36,8 @@ is an isomorphism in degree zero, so the division-endomorphism dimensions cancel
 The two bases are also the input of the projective/simple duality and of the relation between the
 graded Cartan matrix and the q-Euler matrix: `TauCeti.gradedIdempotentProjectiveBasis_apply`
 supplies the hypothesis, that the projective basis vectors are the classes `[A eᵢ]`, of
-`TauCeti.gradedCartanMatrix_map_invert_transpose_mul_gradedExtEulerMatrix_eq_one` and
-`TauCeti.gradedProjectiveExtEuler_basis_eq_dualBasis`.
+`TauCeti.gradedCartanMatrix_map_invert_transpose_mul_gradedExtEulerMatrix_eq_one` and rewrites
+the basis vectors into `TauCeti.gradedProjectiveExtEuler_basis_eq_dualBasis`.
 
 ## Main results
 

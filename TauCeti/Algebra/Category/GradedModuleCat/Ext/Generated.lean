@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.Abelian
+public import TauCeti.Algebra.Category.GradedModuleCat.Concentrated
 public import TauCeti.Algebra.Category.GradedModuleCat.Shift
-public import TauCeti.Algebra.Module.GradedModule.Generated
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Basic
 
 /-!
@@ -57,14 +57,7 @@ theorem gradedExtEuler_eq_C_mul_T_of_isGeneratedInDegree
   · subst p
     rw [neg_neg]
     simp
-  · have hpiece : (N.shiftObj (-p)).grading.piece d = ⊥ := by
-      simpa [sub_eq_add_neg] using hN (d + p) (by omega)
-    have hzero (f : P ⟶ N.shiftObj (-p)) : f = 0 := by
-      apply hom_ext
-      rw [hom_zero]
-      exact P.grading.linearMap_eq_zero_of_isGeneratedInDegree hP f.isHomogeneous
-        (by simpa only [add_zero] using hpiece)
-    let _ : Subsingleton (P ⟶ N.shiftObj (-p)) := subsingleton_of_forall_eq 0 hzero
+  · let _ := subsingleton_hom_shiftObj_of_isGeneratedInDegree hP hN (by omega : -p ≠ d)
     simp [Ne.symm hp, Module.finrank_zero_of_subsingleton]
 
 end TauCeti.GradedModuleCat

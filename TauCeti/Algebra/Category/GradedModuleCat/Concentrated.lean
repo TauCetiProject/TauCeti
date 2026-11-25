@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.Basic
+public import TauCeti.Algebra.Module.GradedModule.Generated
 public import Mathlib.Algebra.Algebra.Operations
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 
@@ -56,6 +57,26 @@ theorem shiftObj_piece_eq_bot_of_concentrated {N : GradedModuleCat.{v} 𝒜} {p 
     (hN : ∀ q, q ≠ p → N.grading.piece q = ⊥) (j : ℤ) :
     ∀ q, q ≠ p + j → (N.shiftObj j).grading.piece q = ⊥ := fun q hq ↦ by
   simpa [sub_eq_add_neg] using hN (q - j) (by omega)
+
+/-- A graded map out of a module generated in degree `d` vanishes whenever the target has zero
+degree-`d` piece. -/
+theorem hom_eq_zero_of_isGeneratedInDegree {P N : GradedModuleCat.{v} 𝒜} {d : ℤ}
+    (hP : P.grading.IsGeneratedInDegree A d) (hN : N.grading.piece d = ⊥) (f : P ⟶ N) :
+    f = 0 := by
+  apply hom_ext
+  rw [hom_zero]
+  exact P.grading.linearMap_eq_zero_of_isGeneratedInDegree hP f.isHomogeneous
+    (by simpa only [add_zero] using hN)
+
+/-- A graded module generated in degree `d` has no nonzero graded maps into `N{j}` for `j ≠ d`
+when `N` is concentrated in degree zero. -/
+theorem subsingleton_hom_shiftObj_of_isGeneratedInDegree {P N : GradedModuleCat.{v} 𝒜}
+    {d j : ℤ} (hP : P.grading.IsGeneratedInDegree A d)
+    (hN : ∀ p, p ≠ 0 → N.grading.piece p = ⊥) (hj : j ≠ d) :
+    Subsingleton (P ⟶ N.shiftObj j) :=
+  subsingleton_of_forall_eq 0 fun f =>
+    hom_eq_zero_of_isGeneratedInDegree hP
+      (shiftObj_piece_eq_bot_of_concentrated hN j d (by omega)) f
 
 /-- Positive-degree scalars annihilate any module concentrated in one internal degree. -/
 theorem positive_smul_top_eq_bot_of_concentrated (N : GradedModuleCat.{v} 𝒜) (p : ℤ)

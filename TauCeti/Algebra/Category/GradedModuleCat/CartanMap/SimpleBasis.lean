@@ -212,6 +212,26 @@ theorem gradedIdempotentCoordinate_eq_mul_gradedSimpleClassBasisOfNeZero_repr
     exact (mul_one _).symm
   · exact (hne (Ne.symm hji)).trans (mul_zero _).symm
 
+include he he₀ hne hself hS in
+/-- Over a finite-dimensional graded algebra, an exhaustive simple family cut out by degree-zero
+idempotents with nonzero diagonal graded dimensions has a finite index type. -/
+theorem finite_of_smulGradedDimension_ne_zero [DirectSum.Decomposition 𝒜] [SetLike.GradedMul 𝒜] :
+    Finite I := by
+  let bS := gradedSimpleClassBasisOfNeZero S he he₀ hne hself hS
+  let reg : (gradedFiniteModules 𝒜).FullSubcategory :=
+    ⟨GradedModuleCat.regular (𝒜 := 𝒜), gradedFiniteModules_iff.mpr inferInstance⟩
+  have hmem (i : I) : i ∈ (bS.repr (LaurentK0.of.{uA} _ reg)).support := by
+    rw [Finsupp.mem_support_iff]
+    intro hi
+    have hei : e i ≠ 0 :=
+      fun h0 => hself i (by rw [h0, GradedModuleCat.smulGradedDimension_zero])
+    have hcoord := gradedIdempotentCoordinate_eq_mul_gradedSimpleClassBasisOfNeZero_repr
+      S he he₀ hne hself hS (LaurentK0.of.{uA} _ reg) i
+    rw [gradedIdempotentCoordinate_of, hi, mul_zero] at hcoord
+    exact GradedModuleCat.smulGradedDimension_regular_ne_zero hei hcoord
+  exact Finite.of_injective (fun i => (⟨i, hmem i⟩ : (bS.repr (LaurentK0.of.{uA} _ reg)).support))
+    (fun _ _ h => congrArg Subtype.val h)
+
 end NeZero
 
 variable (hself : ∀ i, (S i).obj.smulGradedDimension (e i) = 1)
