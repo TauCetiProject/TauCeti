@@ -7,6 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Realization
 public import TauCeti.Algebra.Lie.SkewAdjoint
+public import TauCeti.LinearAlgebra.ExteriorAlgebra.Derivation.OfEnd
+import TauCeti.LinearAlgebra.CliffordAlgebra.Derivation
 
 /-!
 # Lie representations induced from Clifford modules
@@ -27,6 +29,11 @@ Clifford action makes the target Clifford module a module for the original Lie a
 * `CliffordAlgebra.cliffordDerivationRep`: the induced representation on the Clifford
   algebra by inner derivations.
 * `CliffordAlgebra.cliffordDerivationRep_apply`: its defining commutator equation.
+* `CliffordAlgebra.equivExterior_cliffordDerivationRep` and
+  `CliffordAlgebra.cliffordDerivationRep_equivExterior_symm`: the identification
+  `CliffordAlgebra.equivExterior Q` with the exterior algebra, and its inverse the quantization
+  map, intertwine this representation with the derivations `ExteriorAlgebra.derivationOfEnd` of the
+  exterior algebra extending the skew-adjoint action.
 * `CliffordAlgebra.adjointCliffordHom`: the quadratic lift of the adjoint representation
   for a Killing-semisimple Lie algebra.
 * `CliffordAlgebra.adjointCliffordHom_lie_ι`: the lift acts on Clifford generators by the
@@ -136,6 +143,40 @@ theorem cliffordDerivationRep_apply {K : Type u} [Field K]
     cliffordDerivationRep Q hQ θ y c =
       ⁅(soEquivQuadratic Q hQ (θ y) : CliffordAlgebra Q), c⁆ := by
   rfl
+
+/-- **The identification with the exterior algebra is equivariant**: `CliffordAlgebra.equivExterior`
+carries the commutator action `CliffordAlgebra.cliffordDerivationRep Q hQ θ y` to the derivation
+`ExteriorAlgebra.derivationOfEnd K V (θ y)` of the exterior algebra extending `θ y`.
+
+Not a `simp` lemma: `simp` unfolds `CliffordAlgebra.equivExterior` to the underlying
+`CliffordAlgebra.changeFormEquiv`, so the left-hand side is not in simp-normal form. -/
+theorem equivExterior_cliffordDerivationRep {K : Type u} [Field K]
+    {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+    [Invertible (2 : K)] (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
+    {L : Type w} [LieRing L] [LieAlgebra K L]
+    (θ : L →ₗ⁅K⁆ skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q))
+    (y : L) (c : CliffordAlgebra Q) :
+    equivExterior Q (cliffordDerivationRep Q hQ θ y c) =
+      (ExteriorAlgebra.derivationOfEnd K V (θ y : Module.End K V) :
+          Module.End K (ExteriorAlgebra K V)) (equivExterior Q c) := by
+  rw [cliffordDerivationRep_apply]
+  exact equivExterior_lie (soEquivQuadratic_lie_ι Q hQ (θ y)) c
+
+/-- **The quantization map is equivariant**: the inverse of `CliffordAlgebra.equivExterior Q`
+carries the derivation `ExteriorAlgebra.derivationOfEnd K V (θ y)` of the exterior algebra to the
+commutator action `CliffordAlgebra.cliffordDerivationRep Q hQ θ y`. -/
+theorem cliffordDerivationRep_equivExterior_symm {K : Type u} [Field K]
+    {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+    [Invertible (2 : K)] (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
+    {L : Type w} [LieRing L] [LieAlgebra K L]
+    (θ : L →ₗ⁅K⁆ skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q))
+    (y : L) (w : ExteriorAlgebra K V) :
+    cliffordDerivationRep Q hQ θ y ((equivExterior Q).symm w) =
+      (equivExterior Q).symm
+        ((ExteriorAlgebra.derivationOfEnd K V (θ y : Module.End K V) :
+          Module.End K (ExteriorAlgebra K V)) w) := by
+  rw [cliffordDerivationRep_apply]
+  exact lie_equivExterior_symm (soEquivQuadratic_lie_ι Q hQ (θ y)) w
 
 /-- The quadratic lift of the adjoint representation of a Killing-semisimple Lie algebra into the
 Clifford algebra of its Killing quadratic form. -/

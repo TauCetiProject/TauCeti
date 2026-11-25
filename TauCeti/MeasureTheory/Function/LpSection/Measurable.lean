@@ -166,6 +166,16 @@ theorem AEStronglyMeasurableSection.sub (hs : AEStronglyMeasurableSection 𝕜 F
     AEStronglyMeasurableSection 𝕜 F μ (fun x ↦ s x - t x) :=
   fun e _ ↦ ((hs e).sub (ht e)).congr (.of_forall fun x ↦ by simp)
 
+/-- The section equal to `s` on a measurable set `A` and to `t` off it is a.e.-strongly measurable
+when `s` and `t` are. -/
+theorem AEStronglyMeasurableSection.piecewise {A : Set B} [DecidablePred (· ∈ A)]
+    (hA : MeasurableSet A) (hs : AEStronglyMeasurableSection 𝕜 F μ s)
+    (ht : AEStronglyMeasurableSection 𝕜 F μ t) :
+    AEStronglyMeasurableSection 𝕜 F μ (A.piecewise s t) :=
+  fun e _ ↦ (((hs e).restrict (s := A)).piecewise hA.nullMeasurableSet
+    ((ht e).restrict (s := Aᶜ))).congr (.of_forall fun x ↦ by
+      by_cases hx : x ∈ A <;> simp [hx])
+
 variable [OpensMeasurableSpace B]
 
 /-- The coordinates of a measurable section in an atlas chart, read through the chart itself, are

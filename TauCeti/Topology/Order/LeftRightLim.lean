@@ -9,13 +9,14 @@ public import Mathlib.Topology.Algebra.Group.Order
 public import Mathlib.Topology.Order.LeftRightLim
 
 /-!
-# One-sided limits under homeomorphisms and reflection
+# One-sided limits under homeomorphisms, reflection, and right convergence
 
 Mathlib's `Function.leftLim f a` is the limit of `f` strictly to the left of `a`, with the
 fallback value `f a` when `a` is isolated on the left or no such limit exists, and
 `Function.rightLim` is its mirror image. This file records how both behave under post-composition
-with a homeomorphism and under the reflection `t ↦ -t` of an ordered additive group. Both
-identities hold unconditionally: the fallback cases match on the two sides.
+with a homeomorphism, under the reflection `t ↦ -t` of an ordered additive group, along a right
+limit in a regular space, and under upper bounds on `(-∞, t]` or `(-∞, T]`. All identities hold
+unconditionally: the fallback cases match and no càdlàg hypothesis is required.
 
 ## Main results
 
@@ -23,6 +24,11 @@ identities hold unconditionally: the fallback cases match on the two sides.
   post-composition by a homeomorphism.
 * `TauCeti.leftLim_comp_neg` and `TauCeti.rightLim_comp_neg`: reflecting the variable exchanges
   the left and right limits.
+* `Filter.Tendsto.leftLim_nhdsGT`: if `f` converges from the right at `x` in a regular space, its
+  strict left limit also converges from the right to the same limit.
+* `TauCeti.leftLim_le_of_forall_le` and `TauCeti.upperBounds_image_Iic_subset_leftLim`: upper bounds
+  on `(-∞, t]` or `(-∞, T]` are preserved by `Function.leftLim` in any preorder with closed lower
+  rays.
 -/
 
 public section
@@ -99,3 +105,54 @@ theorem rightLim_comp_neg (f : H → β) (a : H) :
   simpa only [neg_neg] using (leftLim_comp_neg (fun t => f (-t)) (-a)).symm
 
 end TauCeti
+
+section RightConvergence
+
+open Set
+
+/-- Along times approaching `x` strictly from the right, if `f` converges to `y` in a regular
+space, then its strict left limit `f.leftLim` also converges to `y`. -/
+theorem Filter.Tendsto.leftLim_nhdsGT {X Y : Type*} [LinearOrder X] [TopologicalSpace X]
+    [OrderTopology X] [TopologicalSpace Y] [RegularSpace Y] {f : X → Y} {x : X} {y : Y}
+    (h : Tendsto f (𝓝[>] x) (𝓝 y)) :
+    Tendsto f.leftLim (𝓝[>] x) (𝓝 y) := by
+  rcases eq_or_neBot (𝓝[>] x) with hbot | _
+  · simp [hbot]
+  apply (closed_nhds_basis y).tendsto_right_iff.2
+  rintro V ⟨hV_mem, hV_closed⟩
+  obtain ⟨b, hb⟩ : (Ioi x).Nonempty := nonempty_of_mem (self_mem_nhdsWithin (a := x))
+  obtain ⟨u, hxu, hu⟩ : ∃ u, x < u ∧ Ioo x u ⊆ {t | f t ∈ V} := by
+    have hpre := (closed_nhds_basis y).tendsto_right_iff.1 h V ⟨hV_mem, hV_closed⟩
+    simpa using (mem_nhdsGT_iff_exists_Ioo_subset' hb).1 hpre
+  filter_upwards [Ioo_mem_nhdsGT hxu] with r hr
+  rcases eq_or_neBot (𝓝[<] r) with hr_bot | _
+  · simpa [leftLim_eq_of_eq_bot f hr_bot] using hu hr
+  by_cases hr_lim : ∃ l, Tendsto f (𝓝[<] r) (𝓝 l)
+  · apply hV_closed.mem_of_tendsto (tendsto_leftLim_of_tendsto hr_lim)
+    filter_upwards [Ioo_mem_nhdsLT hr.1] with s hs
+    exact hu ⟨hs.1, hs.2.trans hr.2⟩
+  · simpa [leftLim_eq_of_not_tendsto f hr_lim] using hu hr
+
+namespace TauCeti
+
+/-- An upper bound on `g` over `(-∞, t]` is preserved by its strict left limit at `t`, in any
+preorder with closed lower rays. No càdlàg hypothesis is required. -/
+theorem leftLim_le_of_forall_le {X α : Type*} [LinearOrder X] [TopologicalSpace X]
+    [OrderTopology X] [Preorder α] [TopologicalSpace α] [ClosedIicTopology α]
+    {g : X → α} {t : X} {c : α} (hg : ∀ s ≤ t, g s ≤ c) :
+    g.leftLim t ≤ c :=
+  isClosed_Iic.mem_of_mapClusterPt (mapClusterPt_leftLim g t) <|
+    eventually_nhdsWithin_of_forall hg
+
+/-- Every upper bound of `g` on `(-∞, T]` is also an upper bound of `g.leftLim` on `(-∞, T]`, in
+any preorder with closed lower rays. No càdlàg hypothesis is required. -/
+theorem upperBounds_image_Iic_subset_leftLim {X α : Type*} [LinearOrder X] [TopologicalSpace X]
+    [OrderTopology X] [Preorder α] [TopologicalSpace α] [ClosedIicTopology α]
+    (g : X → α) (T : X) :
+    upperBounds (g '' Iic T) ⊆ upperBounds (g.leftLim '' Iic T) := by
+  rintro c hc _ ⟨t, ht, rfl⟩
+  exact leftLim_le_of_forall_le fun s hs => hc ⟨s, hs.trans ht, rfl⟩
+
+end TauCeti
+
+end RightConvergence

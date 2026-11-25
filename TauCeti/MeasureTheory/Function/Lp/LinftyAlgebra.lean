@@ -42,6 +42,8 @@ almost everywhere equalities in place of pointwise ones.
 * `MeasureTheory.Lp.coeFn_mul`: the product is pointwise almost everywhere.
 * `MeasureTheory.Lp.sum_mul_eq_of_ae_eq`: an almost everywhere identity `∑ₖ aₖ aⱼ = aⱼ` of
   representatives gives the same identity in `Lp R ∞ μ`.
+* `MeasureTheory.Lp.smul_star_ae_eq_mul_star`: the Hölder product `g • star g` of a class
+  almost everywhere equal to `f` is almost everywhere `f * star f`.
 * `MeasureTheory.Lp.coeFn_algebraMap`: scalars act as almost everywhere constant classes.
 * `MeasureTheory.Lp.lpSMul_mul_assoc` and `MeasureTheory.Lp.mul_lpSMul_comm`: heterogeneous `L∞`
   scalar multiplication associates and commutes with multiplication in `Lp R ∞ μ`.
@@ -198,6 +200,13 @@ instance inftyStarRing : StarRing (Lp R ∞ μ) where
     filter_upwards [coeFn_star (f * g), coeFn_mul f g, coeFn_mul (star g) (star f),
       coeFn_star f, coeFn_star g] with x h₁ h₂ h₃ h₄ h₅
     simp [h₁, h₂, h₃, h₄, h₅]
+
+/-- If `g ∈ L∞(μ, R)` is almost everywhere `f`, then the Hölder product `g • star g` is almost
+everywhere the pointwise product `f * star f`. -/
+theorem smul_star_ae_eq_mul_star {f : α → R} {g : Lp R ∞ μ} (hg : g =ᵐ[μ] f) :
+    (g • star g : Lp R ∞ μ) =ᵐ[μ] fun x ↦ f x * star (f x) := by
+  filter_upwards [coeFn_lpSMul (r := ∞) g (star g), coeFn_star g, hg] with x h₁ h₂ h₃
+  rw [h₁, Pi.smul_apply', h₂, Pi.star_apply, h₃, smul_eq_mul]
 
 /-- `L∞(μ, R)` satisfies the C⋆-identity `‖star f * f‖ = ‖f‖ * ‖f‖` when `R` does. -/
 instance inftyCStarRing [CStarRing R] : CStarRing (Lp R ∞ μ) where

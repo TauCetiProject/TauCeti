@@ -152,7 +152,6 @@ theorem algebraMap_baseFieldAlgEquivOfFinite (x : D) :
   rw [← baseFieldAlgEquivOfFinite_symm_apply, AlgEquiv.symm_apply_apply]
 
 /-- A finite central division algebra over a field is one-dimensional over it. -/
-@[simp]
 theorem finrank_eq_one_of_finite : Module.finrank K D = 1 := by
   rw [(baseFieldAlgEquivOfFinite K D).toLinearEquiv.finrank_eq, Module.finrank_self]
 
