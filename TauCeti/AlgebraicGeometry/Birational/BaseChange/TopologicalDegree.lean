@@ -28,9 +28,6 @@ which `K(X)` is infinite-dimensional over `f^*K(Y)` and both degrees are the jun
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.topologicalKrullDim_eq_of_isPullback_Spec_map_of_field`: a base
-  change `X'` of a scheme `X` locally of finite type over `K` along `Spec K' ⟶ Spec K`, given by a
-  cartesian square, has the dimension of `X`.
 * `AlgebraicGeometry.Scheme.RationalMap.topologicalDegree_eq_zero_iff_of_isPullback`:
   `e(f') = 0 ↔ e(f) = 0`.
 * `AlgebraicGeometry.Scheme.RationalMap.topologicalDegree_eq_of_isPullback_of_ne`:
@@ -42,23 +39,6 @@ public section
 open CategoryTheory Limits
 
 universe u
-
-namespace TauCeti.AlgebraicGeometry
-
-open _root_.AlgebraicGeometry
-
-/-- **Dimension under extension of the base field, for a cartesian square.** If `X'` is the base
-change of a scheme `X` locally of finite type over a field `K` along `Spec K' ⟶ Spec K`, then
-`X'` has the Krull dimension of `X`. -/
-theorem topologicalKrullDim_eq_of_isPullback_Spec_map_of_field {K K' : Type u} [Field K]
-    [Field K'] [Algebra K K'] {X X' : Scheme.{u}} {πX : X' ⟶ X} {sX' : X' ⟶ Spec (.of K')}
-    {sX : X ⟶ Spec (.of K)} [LocallyOfFiniteType sX]
-    (h : IsPullback πX sX' sX (Spec.map (CommRingCat.ofHom (algebraMap K K')))) :
-    topologicalKrullDim X' = topologicalKrullDim X := by
-  rw [h.isoPullback.hom.homeomorph.isHomeomorph.topologicalKrullDim_eq,
-    topologicalKrullDim_pullback_Spec_map_of_field]
-
-end TauCeti.AlgebraicGeometry
 
 namespace AlgebraicGeometry.Scheme
 
