@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.DifferentialOperator.Section
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 import TauCeti.Geometry.Manifold.VectorField.CoordinateFrame
 import TauCeti.Topology.Algebra.Module.FiniteDimension
