@@ -33,7 +33,8 @@ treated in `TauCeti.Geometry.Symplectic.Floer.Continuation.SobolevRealization`.
 * `TauCeti.SymplecticForm.floerJetCoeff` is the coefficient field of `D_u` on jets:
   `(v, v_s, v_t) ↦ v_s + J(z, u z) v_t + A(z) v`, so that on the jet `(ξ, ∂s ξ, ∂t ξ)` of a section
   it gives `D_u ξ` (`TauCeti.SymplecticForm.floerJetCoeff_jet`). At `z` it depends on the data only
-  through their values at `z` (`TauCeti.SymplecticForm.floerJetCoeff_congr_data`); for a constant
+  through their values at `z` (`TauCeti.SymplecticForm.floerJetCoeff_congr_data`), and it
+  translates with the data (`TauCeti.SymplecticForm.floerJetCoeff_comp_add_right`); for a constant
   complex structure `J₀` it is that of `∂s + J₀ ∂t - dX_{K_s}(u) - J₀ dX_{K_t}(u)`
   (`TauCeti.SymplecticForm.floerJetCoeff_const`); it is
   continuous for data that are `C¹` (with `C²` Hamiltonians `K_s`, `K_t`) along the graph of `u`
@@ -223,6 +224,16 @@ theorem floerJetCoeff_congr_data (ω : SymplecticForm V) {J J' : ℝ × ℝ → 
     ω.floerJetCoeff J Ks Kt u z = ω.floerJetCoeff J' Ks' Kt' u z :=
   ContinuousLinearMap.ext fun v ↦ by
     simp only [floerJetCoeff_apply, floerLinearizationCoeff_apply, hJ, hKs, hKt]
+
+/-- **The coefficient field of a translate.** The coefficient field on jets of the data
+`w ↦ (J, K_s, K_t, u) (w + v)` at `z` is that of the data `(J, K_s, K_t, u)` at `z + v`. -/
+theorem floerJetCoeff_comp_add_right (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
+    (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (v z : ℝ × ℝ) :
+    ω.floerJetCoeff (fun w ↦ J (w + v)) (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v))
+        (fun w ↦ u (w + v)) z =
+      ω.floerJetCoeff J Ks Kt u (z + v) :=
+  ContinuousLinearMap.ext fun x ↦ by
+    simp only [floerJetCoeff_apply, floerLinearizationCoeff_apply, fderiv_comp_add_right]
 
 /-- For a constant complex structure `J₀`, the coefficient field of the linearized Floer operator
 is that of `∂s + J₀ ∂t - dX_{K_s}(u) - J₀ dX_{K_t}(u)`: the term in the derivative of the complex

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Topology.Algebra.Module.Submodule
 
 /-!
@@ -21,6 +22,12 @@ No norm, separation, or completeness assumptions are needed.
 
 Likewise, a continuous semilinear map sending a generating set into a closed submodule sends the
 closure of its span there (`Continuous.apply_mem_of_mem_topologicalClosure_span`).
+
+Over a complete nontrivially normed field, a closed subspace `S` of finite codimension together
+with the span of a set `s` spans a dense subspace only if `S` and finitely many vectors of `s` span
+the whole space (`Submodule.exists_finset_subset_sup_span_eq_top_of_dense`). This is how a
+Fredholm operator is made surjective by adjoining finitely many directions from a prescribed
+family, as in transversality arguments.
 -/
 
 public section
@@ -88,3 +95,30 @@ theorem DenseRange.topologicalClosure_span_iUnion_range_comp_eq {R α ι X Y : T
   refine (S.isClosed_topologicalClosure.preimage (hL x)).closure_subset_iff.2 ?_ (hg a)
   rintro _ ⟨i, rfl⟩
   exact Submodule.le_topologicalClosure S (Submodule.subset_span (Set.mem_iUnion.2 ⟨i, x, rfl⟩))
+
+namespace Submodule
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [AddCommGroup E]
+  [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E]
+  {S : Submodule 𝕜 E}
+
+/-- If a closed subspace `S` of finite codimension and the span of a set `s` together span a dense
+subspace, then `S` and finitely many vectors of `s` already span the whole space. -/
+theorem exists_finset_subset_sup_span_eq_top_of_dense (hS : IsClosed (S : Set E))
+    [FiniteDimensional 𝕜 (E ⧸ S)] {s : Set E}
+    (hs : Dense ((S ⊔ span 𝕜 s : Submodule 𝕜 E) : Set E)) :
+    ∃ t : Finset E, ↑t ⊆ s ∧ S ⊔ span 𝕜 (t : Set E) = ⊤ := by
+  have htop : S ⊔ span 𝕜 s = ⊤ := by
+    simpa only [← sup_assoc, sup_idem] using sup_eq_top_of_dense hS hs
+  -- The images of `s` span the finite-dimensional quotient `E ⧸ S`, so finitely many of them do.
+  have hq : span 𝕜 (S.mkQ '' s) = ⊤ := by
+    rw [← map_span, ← comap_injective_of_surjective S.mkQ_surjective |>.eq_iff, comap_map_mkQ,
+      htop, comap_top]
+  obtain ⟨t', ht's, -, ht', -⟩ := exists_finset_span_eq_linearIndepOn 𝕜 (S.mkQ '' s)
+  obtain ⟨u, hus, hu, hut'⟩ :=
+    (Set.exists_subset_image_finite_and (p := fun v ↦ v = (t' : Set (E ⧸ S)))).1
+      ⟨_, ht's, t'.finite_toSet, rfl⟩
+  refine ⟨hu.toFinset, by simpa using hus, ?_⟩
+  rw [← comap_map_mkQ, map_span, Set.Finite.coe_toFinset, hut', ht', hq, comap_top]
+
+end Submodule
