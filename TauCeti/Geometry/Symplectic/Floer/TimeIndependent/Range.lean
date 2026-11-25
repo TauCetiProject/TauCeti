@@ -278,9 +278,8 @@ private theorem exists_eq_of_sliceAverageLp_eq_zero_of_segment
     exact ((continuous_const (y := T 0)).add
       ((continuous_id (X := ℝ)).smul (continuous_const (y := T 1 - T 0)))).continuousOn
   -- Each `T τ` is injective with closed range, and `T 0` is onto.
-  have hH1 : IsClosed (H1 V : Set (Lp (V × V × V) 2 stripMeasure)) := by
-    rw [coe_jetClosure]
-    exact isClosed_closure
+  have hH1 : IsClosed (H1 V : Set (Lp (V × V × V) 2 stripMeasure)) :=
+    coe_jetClosure (testSection V) ▸ isClosed_closure
   have : CompleteSpace E := (hH1.inter (isClosed_ker _)).completeSpace_coe
   have hK (τ : ℝ) (hτ : τ ∈ Icc (0 : ℝ) 1) (x : E) : ‖x‖ ≤ c⁻¹ * ‖T τ x‖ := by
     rw [le_inv_mul_iff₀ hc]
@@ -295,8 +294,7 @@ private theorem exists_eq_of_sliceAverageLp_eq_zero_of_segment
   have hsurj0 : Function.Surjective (T 0) := fun z ↦ by
     obtain ⟨x, hx, hDx⟩ := h₀ z z.property
     refine ⟨⟨x, Submodule.mem_inf.2 ⟨x.property, LinearMap.mem_ker.2 ?_⟩⟩, Subtype.ext hDx⟩
-    rw [ContinuousLinearMap.coe_coe, ← coe_sliceAverageL, hx]
-    rfl
+    rw [ContinuousLinearMap.coe_coe, ← coe_sliceAverageL, hx, Submodule.coe_zero]
   obtain ⟨x, hx⟩ := hcont.surjective_of_isPreconnected hinj hclosed isPreconnected_Icc
     (left_mem_Icc.2 zero_le_one) hsurj0 (right_mem_Icc.2 zero_le_one) ⟨y, hy⟩
   exact ⟨ι x, hι x, congrArg Subtype.val hx⟩
