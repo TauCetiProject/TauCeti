@@ -20,11 +20,11 @@ scheme `O(q)` (`TauCeti.QuadraticOrthogonal.groupScheme`) isomorphically onto `O
 The identity `q'(P x) = q(x)` over `R` propagates to every commutative `R`-algebra `A`: the matrix
 `Pᵀ M' P - M`, for the coefficient matrices `M`, `M'` of `q`, `q'`, has vanishing quadratic
 expression, so it is alternating (`Matrix.isAltMod_bot_iff`), and stays alternating over `A`
-(`TauCeti.QuadraticOrthogonal.baseChangeForm_map_mulVec`). This uses nothing about `2`, so it holds
-in characteristic two, where `q` is not determined by its polar form.
+(`QuadraticForm.baseChangeForm_map_mulVec`). This uses nothing about `2`, so it holds in
+characteristic two, where `q` is not determined by its polar form.
 
 In coordinates, the coordinate automorphism `GeneralLinear.conjCoordinateIso Q` of conjugation by
-`Q` pulls the defining Hopf ideal of `O(q')` back to that of `O(q)` when `q'(Q x) = q(x)`
+`Q` pulls the defining Hopf ideal of `O(q)` back to that of `O(q')` when `q'(Q x) = q(x)`
 (`TauCeti.QuadraticOrthogonal.definingHopfIdeal_comapOfSurjective_conjCoordinateIso`), as in
 `TauCeti.ConstantForm.groupSchemeCongr` for constant matrices.
 
@@ -34,8 +34,12 @@ In coordinates, the coordinate automorphism `GeneralLinear.conjCoordinateIso Q` 
   the coordinate Hopf algebras of `O(q)` and `O(q')` are isomorphic, through conjugation by `P⁻¹`
   on `GLₙ`.
 * `TauCeti.QuadraticOrthogonal.groupSchemeCongr`: the isomorphism `O(q) ≅ O(q')`.
-* `TauCeti.QuadraticOrthogonal.pointsMulEquiv_coordinateHopfAlgebraCongr`: on points, the
-  isomorphism is `g ↦ P g P⁻¹`.
+* `TauCeti.QuadraticOrthogonal.pointsMulEquiv_mapPointsFunctor_coordinateHopfAlgebraCongr` and
+  `TauCeti.QuadraticOrthogonal.pointsMulEquiv_mapPointsFunctor_coordinateHopfAlgebraCongr_inv`: on
+  points, the coordinate isomorphism sends `g ∈ O(q')(A)` to `P⁻¹ g P`, and its inverse sends
+  `g ∈ O(q)(A)` to `P g P⁻¹`.
+* `TauCeti.QuadraticOrthogonal.groupSchemeCongr_hom_comp_inclusion`: inside `GLₙ`, the isomorphism
+  `O(q) ≅ O(q')` is conjugation by `P`.
 
 ## References
 
@@ -46,7 +50,7 @@ In coordinates, the coordinate automorphism `GeneralLinear.conjCoordinateIso Q` 
 public section
 
 open CategoryTheory Matrix WithConv
-open QuadraticForm (coefficientMatrix baseChangeForm baseChangeForm_apply)
+open QuadraticForm (baseChangeForm baseChangeForm_map_mulVec)
 
 namespace TauCeti.QuadraticOrthogonal
 
@@ -54,29 +58,7 @@ universe u v
 
 variable {R : Type u} [CommRing R] {n : ℕ} {q q' : QuadraticForm R (Fin n → R)}
 
-/-! ### Isometries over every algebra -/
-
-/-- **An isometry over `R` is an isometry over every `R`-algebra.** If `q'(P x) = q(x)` for every
-`x ∈ Rⁿ`, then `q'_A(P x) = q_A(x)` for every `x ∈ Aⁿ`, with `P` read in `A`. -/
-theorem baseChangeForm_map_mulVec {P : Matrix (Fin n) (Fin n) R} (hP : ∀ x, q' (P *ᵥ x) = q x)
-    (A : Type*) [CommRing A] [Algebra R A] (x : Fin n → A) :
-    baseChangeForm q' A (P.map (algebraMap R A) *ᵥ x) = baseChangeForm q A x := by
-  set M := coefficientMatrix q (Pi.basisFun R (Fin n))
-  set M' := coefficientMatrix q' (Pi.basisFun R (Fin n))
-  have hR : IsAltMod ⊥ (Pᵀ * M' * P - M) := by
-    rw [isAltMod_bot_iff]
-    intro y
-    have h1 := hP y
-    rw [← QuadraticForm.baseChangeForm_self q', ← QuadraticForm.baseChangeForm_self q,
-      baseChangeForm_apply, baseChangeForm_apply] at h1
-    simp only [Algebra.algebraMap_self, RingHom.coe_id, Matrix.map_id] at h1
-    rw [sub_mulVec, dotProduct_sub, dotProduct_transpose_mul_mul_mulVec, h1, sub_self]
-  have hA := (isAltMod_bot_iff _).mp
-    (hR.map (algebraMap R A) (by rw [Ideal.map_bot])) x
-  rw [Matrix.map_sub _ (map_sub (algebraMap R A)), Matrix.map_mul, Matrix.map_mul, transpose_map,
-    sub_mulVec, dotProduct_sub, dotProduct_transpose_mul_mul_mulVec, sub_eq_zero] at hA
-  rw [baseChangeForm_apply, baseChangeForm_apply]
-  exact hA
+/-! ### Points -/
 
 /-- Conjugating by an isometry over `A` carries `O(q)(A)` onto `O(q')(A)`. -/
 theorem conj_mem_pointsSubgroup_iff {A : Type*} [CommRing A] [Algebra R A] (Q : GL (Fin n) A)
@@ -93,21 +75,9 @@ theorem conj_mem_pointsSubgroup_iff {A : Type*} [CommRing A] [Algebra R A] (Q : 
   · rw [← mulVec_mulVec, ← mulVec_mulVec, hQ, h]
     conv_rhs => rw [← one_mulVec y, ← Units.mul_inv Q, ← mulVec_mulVec, hQ]
 
-variable (A : Type v) [CommRing A] [Algebra R A]
-
-/-- Membership in the subgroup of points cut out by the defining Hopf ideal of `O(q)`. -/
-theorem mem_quotientPointsSubgroup_iff
-    (x : HopfAlgebra.points (R := R) (H := GeneralLinear.coordinateHopfAlgebra R n)
-      (CommAlgCat.of R A)) :
-    x ∈ CommHopfAlgCat.quotientPointsSubgroup (GeneralLinear.coordinateHopfAlgebra R n)
-        (definingHopfIdeal R n q) (CommAlgCat.of R A) ↔
-      GeneralLinear.pointsMulEquiv n x ∈ pointsSubgroup R n q A := by
-  rw [← hopfIdealPointsSubgroup_definingHopfIdeal, GeneralLinear.mem_hopfIdealPointsSubgroup_iff,
-    MulEquiv.symm_apply_apply, CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
-
 /-! ### The defining Hopf ideals -/
 
-/-- **Conjugation pulls the Hopf ideal of `O(q')` back to that of `O(q)`.** If `q'(Q x) = q(x)`
+/-- **Conjugation pulls the Hopf ideal of `O(q)` back to that of `O(q')`.** If `q'(Q x) = q(x)`
 for every `x`, the coordinate automorphism of conjugation by `Q` on `GLₙ` pulls the defining Hopf
 ideal of `O(q)` back to that of `O(q')`: a matrix `g` preserves `q'` exactly when `Q⁻¹ g Q`
 preserves `q`. -/
@@ -119,8 +89,8 @@ theorem definingHopfIdeal_comapOfSurjective_conjCoordinateIso (Q : GL (Fin n) R)
   rw [GeneralLinear.comapOfSurjective_conjCoordinateIso_eq_conjugate]
   refine (HopfIdeal.eq_conjugate_of_forall_mem_iff _ fun A x => ?_).symm
   obtain ⟨A⟩ := A
-  refine (mem_quotientPointsSubgroup_iff A _).trans
-    (Iff.trans ?_ (mem_quotientPointsSubgroup_iff A x).symm)
+  refine (mem_definingPointsSubgroup_iff R n _ A _).trans
+    (Iff.trans ?_ (mem_definingPointsSubgroup_iff R n _ A x).symm)
   rw [map_mul, map_mul, map_inv, GeneralLinear.pointsMulEquiv_mapValue, MulEquiv.apply_symm_apply,
     Algebra.toRingHom_ofId]
   refine conj_mem_pointsSubgroup_iff _ (fun y ↦ ?_) _
@@ -173,33 +143,53 @@ theorem mkQuotient_comp_coordinateHopfAlgebraCongr_hom (P : GL (Fin n) R)
           (definingHopfIdeal R n q') := by
   rw [coordinateHopfAlgebraCongr, CommHopfAlgCat.mkQuotient_comp_quotientIsoOfComapEq_hom]
 
-/-- **On points, the isomorphism `O(q) ≅ O(q')` is conjugation by `P`.** Precomposing with the
-inverse coordinate isomorphism sends an `A`-valued point of `O(q)` with matrix `g` to the point of
-`O(q')` with matrix `P g P⁻¹`. -/
-theorem pointsMulEquiv_coordinateHopfAlgebraCongr (P : GL (Fin n) R)
+/-- The inverse coordinate isomorphism of isometric forms is induced by conjugation by `P` on the
+coordinates of `GLₙ`. -/
+theorem mkQuotient_comp_coordinateHopfAlgebraCongr_inv (P : GL (Fin n) R)
+    (hP : ∀ x, q' ((P : Matrix (Fin n) (Fin n) R) *ᵥ x) = q x) :
+    CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra R n)
+        (definingHopfIdeal R n q') ≫ (coordinateHopfAlgebraCongr P hP).inv =
+      (GeneralLinear.conjCoordinateIso P).hom ≫
+        CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra R n)
+          (definingHopfIdeal R n q) := by
+  rw [Iso.comp_inv_eq, Category.assoc, mkQuotient_comp_coordinateHopfAlgebraCongr_hom,
+    GeneralLinear.conjCoordinateIso_inv, Iso.symm_hom, Iso.hom_inv_id_assoc]
+
+variable (A : Type v) [CommRing A] [Algebra R A]
+
+/-- **On points, the coordinate isomorphism of isometric forms is conjugation by `P⁻¹`.**
+Precomposing with `coordinateHopfAlgebraCongr P hP` sends an `A`-valued point of `O(q')` with
+matrix `g` to the point of `O(q)` with matrix `P⁻¹ g P`. -/
+theorem pointsMulEquiv_mapPointsFunctor_coordinateHopfAlgebraCongr (P : GL (Fin n) R)
+    (hP : ∀ x, q' ((P : Matrix (Fin n) (Fin n) R) *ᵥ x) = q x)
+    (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n q') (CommAlgCat.of R A)) :
+    (pointsMulEquiv R n q A ((CommHopfAlgCat.Hom.mapPointsFunctor
+        (coordinateHopfAlgebraCongr P hP).hom).app (CommAlgCat.of R A) f) : GL (Fin n) A) =
+      GeneralLinearGroup.map (algebraMap R A) P⁻¹ * (pointsMulEquiv R n q' A f : GL (Fin n) A) *
+        (GeneralLinearGroup.map (algebraMap R A) P⁻¹)⁻¹ := by
+  rw [← pointsMulEquiv_coe]
+  refine (pointsMulEquiv_coe R n q A _).symm.trans ?_
+  rw [← CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp _ _ _
+      (mkQuotient_comp_coordinateHopfAlgebraCongr_hom P hP),
+    CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply, CommHopfAlgCat.quotientPointsHom]
+  exact GeneralLinear.pointsMulEquiv_mapPointsFunctor_conjCoordinateIso P⁻¹ _ _
+
+/-- **On points, the inverse coordinate isomorphism of isometric forms is conjugation by `P`.**
+Precomposing with the inverse of `coordinateHopfAlgebraCongr P hP` sends an `A`-valued point of
+`O(q)` with matrix `g` to the point of `O(q')` with matrix `P g P⁻¹`. -/
+theorem pointsMulEquiv_mapPointsFunctor_coordinateHopfAlgebraCongr_inv (P : GL (Fin n) R)
     (hP : ∀ x, q' ((P : Matrix (Fin n) (Fin n) R) *ᵥ x) = q x)
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n q) (CommAlgCat.of R A)) :
     (pointsMulEquiv R n q' A ((CommHopfAlgCat.Hom.mapPointsFunctor
         (coordinateHopfAlgebraCongr P hP).inv).app (CommAlgCat.of R A) f) : GL (Fin n) A) =
       GeneralLinearGroup.map (algebraMap R A) P * (pointsMulEquiv R n q A f : GL (Fin n) A) *
         (GeneralLinearGroup.map (algebraMap R A) P)⁻¹ := by
-  have hinv : CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra R n)
-        (definingHopfIdeal R n q') ≫ (coordinateHopfAlgebraCongr P hP).inv =
-      (GeneralLinear.conjCoordinateIso P).hom ≫
-        CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra R n)
-          (definingHopfIdeal R n q) := by
-    rw [Iso.comp_inv_eq, Category.assoc, mkQuotient_comp_coordinateHopfAlgebraCongr_hom,
-      GeneralLinear.conjCoordinateIso_inv, Iso.symm_hom, Iso.hom_inv_id_assoc]
-  have h1 := CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply
-    (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n q'))
-    (coordinateHopfAlgebraCongr P hP).inv (CommAlgCat.of R A) f
-  rw [hinv, CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply] at h1
-  refine (pointsMulEquiv_coe R n q' A _).symm.trans ?_
-  refine (congrArg (GeneralLinear.pointsMulEquiv n) h1.symm).trans ?_
-  refine (GeneralLinear.pointsMulEquiv_mapPointsFunctor_conjCoordinateIso P
-    (CommAlgCat.of R A) _).trans ?_
   rw [← pointsMulEquiv_coe]
-  rfl
+  refine (pointsMulEquiv_coe R n q' A _).symm.trans ?_
+  rw [← CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp _ _ _
+      (mkQuotient_comp_coordinateHopfAlgebraCongr_inv P hP),
+    CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply, CommHopfAlgCat.quotientPointsHom]
+  exact GeneralLinear.pointsMulEquiv_mapPointsFunctor_conjCoordinateIso P _ _
 
 /-- **Isometric forms have isomorphic orthogonal group schemes.** If `q'(P x) = q(x)` for every
 `x`, conjugation by `P` is an isomorphism `O(q) ≅ O(q')` of group schemes over `R`. -/
@@ -214,5 +204,23 @@ theorem groupSchemeCongr_def (P : GL (Fin n) R)
     groupSchemeCongr P hP = (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).mapIso
       (coordinateHopfAlgebraCongr P hP).op.symm :=
   (rfl)
+
+/-- **The isomorphism of orthogonal group schemes is conjugation by `P` on `GLₙ`.** Followed by
+the inclusion into `GLₙ`, the isomorphism `groupSchemeCongr P hP` is the inclusion of `O(q)`
+followed by the automorphism of `GLₙ` induced by `GeneralLinear.conjCoordinateIso P`. -/
+theorem groupSchemeCongr_hom_comp_inclusion (P : GL (Fin n) R)
+    (hP : ∀ x, q' ((P : Matrix (Fin n) (Fin n) R) *ᵥ x) = q x) :
+    (groupSchemeCongr P hP).hom ≫ inclusion R n q' =
+      inclusion R n q ≫ eqToHom (GeneralLinear.groupScheme_def R n) ≫
+        (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
+          (GeneralLinear.conjCoordinateIso P).hom.op ≫
+        eqToHom (GeneralLinear.groupScheme_def R n).symm := by
+  rw [groupSchemeCongr_def, inclusion_def, inclusion_def, GeneralLinear.hopfIdealInclusion_def,
+    GeneralLinear.hopfIdealInclusion_def, CommHopfAlgCat.quotientSpecι_def,
+    CommHopfAlgCat.quotientSpecι_def]
+  simp only [Functor.mapIso_hom, Iso.symm_hom, Iso.op_inv, ← Functor.map_comp_assoc, ← op_comp,
+    mkQuotient_comp_coordinateHopfAlgebraCongr_inv]
+  simp only [op_comp, Functor.map_comp, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
+    Category.id_comp]
 
 end TauCeti.QuadraticOrthogonal
