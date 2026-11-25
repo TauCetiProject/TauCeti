@@ -67,7 +67,7 @@ exactly the tangent range. -/
 private theorem orthogonalProjectionOnto_orthogonalNormalSpace_eq_zero_iff
     (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) (v : TangentSpace J (f x)) :
     (orthogonalNormalSpace I J f x).orthogonalProjectionOnto v = 0 ↔
-      v ∈ f.tangentRange x hn := by
+      v ∈ f.isImmersion.tangentRange x hn := by
   rw [Submodule.orthogonalProjectionOnto_eq_zero_iff,
     ← orthogonal_tangentRange_eq_orthogonalNormalSpace f x hn, Submodule.orthogonal_orthogonal]
 
@@ -86,7 +86,7 @@ def orthogonalNormalBundleDiffeomorph {r : ℕ} (f : SmoothEmbedding I J n M N) 
     letI := orthogonalNormalFiberBundle f.contMDiff (f.isImmersion.mfderiv_injective hn) hm hr
     letI := f.normalSpaceFiberBundle (P := P) hn (by omega)
     TotalSpace (Fin r → ℝ) (fun x ↦ orthogonalNormalSpace I J f x) ≃ₘ^m⟮I.prod 𝓘(ℝ, Fin r → ℝ),
-      I.prod 𝓘(ℝ, P)⟯ TotalSpace P (fun x ↦ f.NormalSpace x hn) :=
+      I.prod 𝓘(ℝ, P)⟯ TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn) :=
   haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   letI := orthogonalNormalFiberBundle f.contMDiff (f.isImmersion.mfderiv_injective hn) hm hr
   letI := orthogonalNormalVectorBundle f.contMDiff (f.isImmersion.mfderiv_injective hn) hm hr
@@ -111,14 +111,14 @@ theorem orthogonalNormalBundleDiffeomorph_apply {r : ℕ} (f : SmoothEmbedding I
     letI := orthogonalNormalFiberBundle f.contMDiff (f.isImmersion.mfderiv_injective hn) hm hr
     letI := f.normalSpaceFiberBundle (P := P) hn (by omega)
     f.orthogonalNormalBundleDiffeomorph hn hm hr hP p =
-      ⟨p.proj, f.normalClass p.proj hn p.snd⟩ := by
+      ⟨p.proj, f.isImmersion.normalClass p.proj hn p.snd⟩ := by
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   let := orthogonalNormalFiberBundle f.contMDiff (f.isImmersion.mfderiv_injective hn) hm hr
   let := orthogonalNormalVectorBundle f.contMDiff (f.isImmersion.mfderiv_injective hn) hm hr
   rw [orthogonalNormalBundleDiffeomorph, normalBundleDiffeomorphOfKer_symm_apply]
   refine congrArg (TotalSpace.mk p.proj) ?_
   conv_lhs => rw [← Submodule.orthogonalProjectionOnto_mem_subspace_eq_self p.snd]
-  exact normalSpaceEquivOfKer_symm_apply ..
+  exact IsImmersion.normalSpaceEquivOfKer_symm_apply ..
 
 /-- The inverse comparison diffeomorphism takes a normal class to its orthogonal representative,
 over the same base point. -/
@@ -126,7 +126,7 @@ over the same base point. -/
 theorem orthogonalNormalBundleDiffeomorph_symm_apply {r : ℕ} (f : SmoothEmbedding I J n M N)
     (hn : n ≠ 0) (hm : m + 1 ≤ n) (hr : finrank ℝ V = finrank ℝ E + r)
     (hP : finrank ℝ P = r)
-    (p : TotalSpace P (fun x ↦ f.NormalSpace x hn)) :
+    (p : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn)) :
     haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
     letI := orthogonalNormalFiberBundle f.contMDiff (f.isImmersion.mfderiv_injective hn) hm hr
     letI := f.normalSpaceFiberBundle (P := P) hn (by omega)
@@ -138,11 +138,11 @@ theorem orthogonalNormalBundleDiffeomorph_symm_apply {r : ℕ} (f : SmoothEmbedd
   let := orthogonalNormalFiberBundle f.contMDiff (f.isImmersion.mfderiv_injective hn) hm hr
   let := orthogonalNormalVectorBundle f.contMDiff (f.isImmersion.mfderiv_injective hn) hm hr
   obtain ⟨x, w⟩ := p
-  obtain ⟨v, rfl⟩ := f.normalClass_surjective x hn w
+  obtain ⟨v, rfl⟩ := f.isImmersion.normalClass_surjective x hn w
   rw [orthogonalNormalBundleDiffeomorph]
   -- The double inverse of a diffeomorphism is the diffeomorphism itself, by structure eta.
   refine (normalBundleDiffeomorphOfKer_apply ..).trans (congrArg (TotalSpace.mk x) (Subtype.ext ?_))
-  rw [normalSpaceEquivOfKer_normalClass, Submodule.coe_orthogonalProjectionOnto_apply]
+  rw [IsImmersion.normalSpaceEquivOfKer_normalClass, Submodule.coe_orthogonalProjectionOnto_apply]
   exact (normalRepresentative_normalClass_eq_starProjection_orthogonalNormalSpace f x hn v).symm
 
 end SmoothEmbedding

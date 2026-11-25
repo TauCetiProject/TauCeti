@@ -55,6 +55,9 @@ is nonzero; this is not formalized here.
 * `TauCeti.coeff_mapDomainRingHom_brauerProjection`: pushed forward to `R[G]`, `Br_P(x)` keeps
   the coefficients of `x` on `C_G(P)`.
 * `TauCeti.brauerProjection_eq_zero_iff`: `Br_P(x) = 0` exactly when `x` vanishes on `C_G(P)`.
+* `TauCeti.brauerProjection_mapRingHom`: `Br_P` commutes with a change of coefficients
+  `f : R →+* S`, and `TauCeti.brauerProjection_mapRingHom_eq_zero_iff`: for injective `f`,
+  `Br_P(f x) = 0 ↔ Br_P(x) = 0`.
 * `TauCeti.brauerProjection_sSup_ne_zero_of_directedOn`: if `Br_Q(x) ≠ 0` for every `Q` in a
   nonempty directed family `c`, then `Br_{sSup c}(x) ≠ 0`.
 * `TauCeti.brauerProjection_conj_eq_zero_iff`: `Br_{gPg⁻¹}(g x g⁻¹) = 0 ↔ Br_P(x) = 0`.
@@ -119,6 +122,20 @@ theorem brauerProjection_eq_zero_iff {P : Subgroup G} {x : MonoidAlgebra R G} :
   · intro h
     ext c
     simpa using h c c.property
+
+/-- The Brauer projection commutes with a change of coefficients: `Br_P(f x) = f(Br_P(x))`. -/
+@[simp]
+theorem brauerProjection_mapRingHom {S : Type*} [CommSemiring S] (f : R →+* S) (P : Subgroup G)
+    (x : MonoidAlgebra R G) :
+    brauerProjection P (mapRingHom G f x) = mapRingHom _ f (brauerProjection P x) := by
+  ext c
+  simp
+
+/-- For injective `f`, `Br_P(f x) = 0` exactly when `Br_P(x) = 0`. -/
+theorem brauerProjection_mapRingHom_eq_zero_iff {S : Type*} [CommSemiring S] {f : R →+* S}
+    (hf : Function.Injective f) {P : Subgroup G} {x : MonoidAlgebra R G} :
+    brauerProjection P (mapRingHom G f x) = 0 ↔ brauerProjection P x = 0 := by
+  simp only [brauerProjection_eq_zero_iff, coeff_mapRingHom, map_eq_zero_iff f hf]
 
 /-- `Br_1(x) = 0` exactly when `x = 0`, since the trivial subgroup is centralized by all of `G`. -/
 theorem brauerProjection_bot_eq_zero_iff {x : MonoidAlgebra R G} :
