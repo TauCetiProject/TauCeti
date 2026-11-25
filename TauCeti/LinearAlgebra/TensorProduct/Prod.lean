@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Prod
+public import TauCeti.Algebra.Algebra.Prod
 
 /-!
 # Tensor products with binary products
@@ -26,8 +27,6 @@ the product of its base changes to `A` and to `B`.
 
 ## Main declarations
 
-* `Algebra.linearEquivProdOfBijective`: if `R → A × B` is bijective, the `R`-linear equivalence
-  `R ≃ A × B`.
 * `TensorProduct.prodRightRid`: the identification `M₁ ⊗[R] (M₂ × R) ≃ (M₁ ⊗[R] M₂) × M₁`.
 * `TensorProduct.prodRightRid_tmul` and `TensorProduct.prodRightRid_symm_apply`: its values on
   pure tensors and its inverse.
@@ -43,40 +42,6 @@ the product of its base changes to `A` and to `B`.
 public section
 
 open scoped TensorProduct
-
-namespace Algebra
-
-variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [CommSemiring B] [Algebra R A]
-  [Algebra R B]
-
-/-- If `R → A × B` is surjective, then so is the structure map `R → A`. -/
-theorem algebraMap_surjective_fst_of_surjective_prod
-    (h : Function.Surjective ((algebraMap R A).prod (algebraMap R B))) :
-    Function.Surjective (algebraMap R A) :=
-  Prod.fst_surjective.comp h
-
-/-- If `R → A × B` is surjective, then so is the structure map `R → B`. -/
-theorem algebraMap_surjective_snd_of_surjective_prod
-    (h : Function.Surjective ((algebraMap R A).prod (algebraMap R B))) :
-    Function.Surjective (algebraMap R B) :=
-  Prod.snd_surjective.comp h
-
-/-- If `R → A × B` is bijective, it is an `R`-linear equivalence `R ≃ A × B`. -/
-noncomputable def linearEquivProdOfBijective
-    (h : Function.Bijective ((algebraMap R A).prod (algebraMap R B))) : R ≃ₗ[R] A × B :=
-  .ofBijective ((Algebra.linearMap R A).prod (Algebra.linearMap R B)) <| by
-    have hf : ⇑((Algebra.linearMap R A).prod (Algebra.linearMap R B)) =
-        ⇑((algebraMap R A).prod (algebraMap R B)) :=
-      funext fun r ↦ by simp [RingHom.prod_apply]
-    rwa [hf]
-
-@[simp]
-theorem linearEquivProdOfBijective_apply
-    (h : Function.Bijective ((algebraMap R A).prod (algebraMap R B))) (r : R) :
-    linearEquivProdOfBijective h r = (algebraMap R A r, algebraMap R B r) := by
-  simp [linearEquivProdOfBijective, LinearEquiv.ofBijective_apply]
-
-end Algebra
 
 namespace TensorProduct
 

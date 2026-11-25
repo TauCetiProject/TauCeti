@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Algebra.Algebra.NonUnitalHom
 public import Mathlib.Algebra.Algebra.Prod
+public import Mathlib.LinearAlgebra.Prod
 
 /-!
-# Algebra maps out of a product that factor through a coordinate
+# Algebra maps into and out of a binary product
 
 An algebra map `φ : A × C →ₐ[F] B` does not restrict to the first factor on the nose, because
 `a ↦ (a, 0)` is not unital and so is not an algebra map.  It does restrict once `φ (1, 0) = 1`:
@@ -19,6 +20,10 @@ that hypothesis supplies exactly the missing unitality, and `a ↦ φ (a, 0)` is
 This is why there is no `AlgHom.inl` upstream to compose with, and what
 `AlgHom.prodFirst` provides instead.
 
+In the other direction, when the structure maps of two `R`-algebras `A` and `B` make
+`R → A × B` surjective, each structure map is surjective, and when `R → A × B` is bijective it is
+an `R`-linear equivalence `R ≃ A × B`.
+
 ## Main declarations
 
 * `AlgHom.map_eq_map_fst`: a `φ` with `φ (1, 0) = 1` ignores its second argument.
@@ -27,6 +32,11 @@ This is why there is no `AlgHom.inl` upstream to compose with, and what
 * `AlgHom.prodFirst_comp_fst`: the coordinate map is a factorisation -- precomposing with the first
   projection returns `φ`.
 * `AlgHom.prodFirst_surjective_iff`: it is surjective exactly when `φ` is.
+* `Algebra.algebraMap_surjective_fst_of_surjective_prod` and
+  `Algebra.algebraMap_surjective_snd_of_surjective_prod`: if `R → A × B` is surjective, so are
+  `R → A` and `R → B`.
+* `Algebra.linearEquivProdOfBijective`: if `R → A × B` is bijective, the `R`-linear equivalence
+  `R ≃ A × B`.
 -/
 
 public section
@@ -89,3 +99,37 @@ theorem prodFirst_surjective_iff (φ : (A × C) →ₐ[F] B) (hu : φ (1, 0) = 1
 end Semiring
 
 end AlgHom
+
+namespace Algebra
+
+variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [CommSemiring B] [Algebra R A]
+  [Algebra R B]
+
+/-- If `R → A × B` is surjective, then so is the structure map `R → A`. -/
+theorem algebraMap_surjective_fst_of_surjective_prod
+    (h : Function.Surjective ((algebraMap R A).prod (algebraMap R B))) :
+    Function.Surjective (algebraMap R A) :=
+  Prod.fst_surjective.comp h
+
+/-- If `R → A × B` is surjective, then so is the structure map `R → B`. -/
+theorem algebraMap_surjective_snd_of_surjective_prod
+    (h : Function.Surjective ((algebraMap R A).prod (algebraMap R B))) :
+    Function.Surjective (algebraMap R B) :=
+  Prod.snd_surjective.comp h
+
+/-- If `R → A × B` is bijective, it is an `R`-linear equivalence `R ≃ A × B`. -/
+noncomputable def linearEquivProdOfBijective
+    (h : Function.Bijective ((algebraMap R A).prod (algebraMap R B))) : R ≃ₗ[R] A × B :=
+  .ofBijective ((Algebra.linearMap R A).prod (Algebra.linearMap R B)) <| by
+    have hf : ⇑((Algebra.linearMap R A).prod (Algebra.linearMap R B)) =
+        ⇑((algebraMap R A).prod (algebraMap R B)) :=
+      funext fun r ↦ by simp [RingHom.prod_apply]
+    rwa [hf]
+
+@[simp]
+theorem linearEquivProdOfBijective_apply
+    (h : Function.Bijective ((algebraMap R A).prod (algebraMap R B))) (r : R) :
+    linearEquivProdOfBijective h r = (algebraMap R A r, algebraMap R B r) := by
+  simp [linearEquivProdOfBijective, LinearEquiv.ofBijective_apply]
+
+end Algebra
