@@ -113,6 +113,11 @@ over `[0, π]`. -/
 def shearedTorusShear (A θ : ℝ) : ℝ :=
   A * (expNegInvGlue (sin θ - 2⁻¹) / ∫ s in (0 : ℝ)..π, expNegInvGlue (sin s - 2⁻¹))
 
+/-- The value of the shear profile: the normalized bump `expNegInvGlue (sin θ - 1/2)`. -/
+theorem shearedTorusShear_apply (A θ : ℝ) : shearedTorusShear A θ =
+    A * (expNegInvGlue (sin θ - 2⁻¹) / ∫ s in (0 : ℝ)..π, expNegInvGlue (sin s - 2⁻¹)) := by
+  rw [shearedTorusShear]
+
 /-- The shear profile is smooth. -/
 theorem contDiff_shearedTorusShear (A : ℝ) : ContDiff ℝ ∞ (shearedTorusShear A) :=
   contDiff_const.mul ((expNegInvGlue.contDiff.comp (contDiff_sin.sub contDiff_const)).div_const _)
@@ -181,6 +186,14 @@ coordinates of the two critical circles of `cos θ`. -/
 def shearedTorusCoeff (θ : ℝ) : ℝ :=
   ((1 + cos θ) * coeffCutoff θ + (1 - cos θ) * (1 - coeffCutoff θ)) / 4
 
+/-- The value of the coefficient: the interpolation through the cutoff
+`smoothTransition ((cos θ + 9/10) · 5/9)`, which is `1` where `cos θ ≥ 9/10` and `0` where
+`cos θ ≤ -9/10`. -/
+theorem shearedTorusCoeff_apply (θ : ℝ) : shearedTorusCoeff θ =
+    ((1 + cos θ) * smoothTransition ((cos θ + 9 / 10) * (5 / 9)) +
+      (1 - cos θ) * (1 - smoothTransition ((cos θ + 9 / 10) * (5 / 9)))) / 4 := by
+  rw [shearedTorusCoeff, coeffCutoff]
+
 /-- The coefficient is a smooth function of `cos θ`. -/
 private theorem shearedTorusCoeff_eq_comp_cos :
     shearedTorusCoeff = (fun c ↦ ((1 + c) * smoothTransition ((c + 9 / 10) * (5 / 9)) +
@@ -224,16 +237,26 @@ theorem shearedTorusCoeff_pos (θ : ℝ) : 0 < shearedTorusCoeff θ := by
   nlinarith [mul_nonneg (by linarith : 0 ≤ 1 + cos θ) h0,
     mul_nonneg (by linarith : 0 ≤ 1 - cos θ) (sub_nonneg.2 h1)]
 
+/-- The half-angle identity `cos² (θ/2) = (1 + cos θ) / 2`. -/
+private theorem cos_half_sq (θ : ℝ) : cos (θ / 2) ^ 2 = (1 + cos θ) / 2 := by
+  rw [cos_sq, show 2 * (θ / 2) = θ by ring]
+  ring
+
+/-- The half-angle identity `sin² (θ/2) = (1 - cos θ) / 2`. -/
+private theorem sin_half_sq (θ : ℝ) : sin (θ / 2) ^ 2 = (1 - cos θ) / 2 := by
+  rw [sin_sq, cos_half_sq]
+  ring
+
 /-- Near the maximum circle, where `cos θ ≥ 9/10`, the coefficient is `cos² (θ/2) / 2`. -/
 theorem shearedTorusCoeff_of_le_cos {θ : ℝ} (hθ : 9 / 10 ≤ cos θ) :
     shearedTorusCoeff θ = cos (θ / 2) ^ 2 / 2 := by
-  rw [shearedTorusCoeff, coeffCutoff_of_le_cos hθ, cos_sq, show 2 * (θ / 2) = θ by ring]
+  rw [shearedTorusCoeff, coeffCutoff_of_le_cos hθ, cos_half_sq]
   ring
 
 /-- Near the minimum circle, where `cos θ ≤ -9/10`, the coefficient is `sin² (θ/2) / 2`. -/
 theorem shearedTorusCoeff_of_cos_le {θ : ℝ} (hθ : cos θ ≤ -(9 / 10)) :
     shearedTorusCoeff θ = sin (θ / 2) ^ 2 / 2 := by
-  rw [shearedTorusCoeff, coeffCutoff_of_cos_le hθ, sin_sq, cos_sq, show 2 * (θ / 2) = θ by ring]
+  rw [shearedTorusCoeff, coeffCutoff_of_cos_le hθ, sin_half_sq]
   ring
 
 /-! ### Signed Morse coordinates near the critical circles -/
@@ -246,17 +269,32 @@ def shearedTorusMaxCoord (θ : ℝ) : ℝ := √2 * sin (θ / 2)
 `cos θ = y² - 1` (`TauCeti.cos_eq_shearedTorusMinCoord_sq_sub_one`). -/
 def shearedTorusMinCoord (θ : ℝ) : ℝ := √2 * cos (θ / 2)
 
+/-- The value of the coordinate `x` near the maximum circle. -/
+theorem shearedTorusMaxCoord_apply (θ : ℝ) : shearedTorusMaxCoord θ = √2 * sin (θ / 2) := by
+  rw [shearedTorusMaxCoord]
+
+/-- The value of the coordinate `y` near the minimum circle. -/
+theorem shearedTorusMinCoord_apply (θ : ℝ) : shearedTorusMinCoord θ = √2 * cos (θ / 2) := by
+  rw [shearedTorusMinCoord]
+
+/-- `√2 ^ 2 = 2`. -/
+private theorem sqrt_two_sq : √2 ^ 2 = 2 :=
+  sq_sqrt zero_le_two
+
+/-- `(x / √2) ^ 2 = x ^ 2 / 2`. -/
+private theorem div_sqrt_two_sq (x : ℝ) : (x / √2) ^ 2 = x ^ 2 / 2 := by
+  rw [div_pow, sqrt_two_sq]
+
 /-- Near the maximum circle, `cos θ = 1 - x²`. -/
 theorem cos_eq_one_sub_shearedTorusMaxCoord_sq (θ : ℝ) :
     cos θ = 1 - shearedTorusMaxCoord θ ^ 2 := by
-  rw [shearedTorusMaxCoord, mul_pow, sq_sqrt zero_le_two, sin_sq, cos_sq,
-    show 2 * (θ / 2) = θ by ring]
+  rw [shearedTorusMaxCoord, mul_pow, sqrt_two_sq, sin_half_sq]
   ring
 
 /-- Near the minimum circle, `cos θ = y² - 1`. -/
 theorem cos_eq_shearedTorusMinCoord_sq_sub_one (θ : ℝ) :
     cos θ = shearedTorusMinCoord θ ^ 2 - 1 := by
-  rw [shearedTorusMinCoord, mul_pow, sq_sqrt zero_le_two, cos_sq, show 2 * (θ / 2) = θ by ring]
+  rw [shearedTorusMinCoord, mul_pow, sqrt_two_sq, cos_half_sq]
   ring
 
 /-- The derivative of the coordinate `x = √2 sin (θ/2)` is `cos (θ/2) / √2`. -/
@@ -264,15 +302,16 @@ theorem hasDerivAt_shearedTorusMaxCoord (θ : ℝ) :
     HasDerivAt shearedTorusMaxCoord (cos (θ / 2) / √2) θ := by
   have h := (((hasDerivAt_id' θ).div_const 2).sin).const_mul √2
   rwa [show √2 * (cos (θ / 2) * (1 / 2)) = cos (θ / 2) / √2 by
-    rw [eq_div_iff (sqrt_ne_zero'.2 two_pos)]; ring_nf; rw [sq_sqrt zero_le_two]; ring] at h
+    rw [eq_div_iff (sqrt_ne_zero'.2 two_pos)]; linear_combination cos (θ / 2) / 2 * sqrt_two_sq]
+    at h
 
 /-- The derivative of the coordinate `y = √2 cos (θ/2)` is `-sin (θ/2) / √2`. -/
 theorem hasDerivAt_shearedTorusMinCoord (θ : ℝ) :
     HasDerivAt shearedTorusMinCoord (-(sin (θ / 2) / √2)) θ := by
   have h := (((hasDerivAt_id' θ).div_const 2).cos).const_mul √2
   rwa [show √2 * (-sin (θ / 2) * (1 / 2)) = -(sin (θ / 2) / √2) by
-    rw [neg_div', eq_div_iff (sqrt_ne_zero'.2 two_pos)]; ring_nf; rw [sq_sqrt zero_le_two]; ring]
-    at h
+    rw [neg_div', eq_div_iff (sqrt_ne_zero'.2 two_pos)]
+    linear_combination -sin (θ / 2) / 2 * sqrt_two_sq] at h
 
 /-- The coordinate `x` is strictly increasing on `[-π, π]`, so it is a coordinate on the
 neighbourhood `(-π, π)` of the maximum circle. -/
@@ -293,16 +332,16 @@ theorem strictAntiOn_shearedTorusMinCoord : StrictAntiOn shearedTorusMinCoord (I
 /-- Where `cos θ ≥ 9/10`, `cos (θ/2) ≠ 0`. -/
 private theorem cos_half_ne_zero_of_le_cos {θ : ℝ} (hθ : 9 / 10 ≤ cos θ) : cos (θ / 2) ≠ 0 := by
   intro h
-  have := cos_sq (θ / 2)
-  rw [h, show 2 * (θ / 2) = θ by ring] at this
+  have := cos_half_sq θ
+  rw [h, zero_pow two_ne_zero] at this
   linarith
 
 /-- Where `cos θ ≤ -9/10`, `sin (θ/2) ≠ 0`. -/
 private theorem sin_half_ne_zero_of_cos_le {θ : ℝ} (hθ : cos θ ≤ -(9 / 10)) :
     sin (θ / 2) ≠ 0 := by
   intro h
-  have := sin_sq (θ / 2)
-  rw [h, cos_sq, show 2 * (θ / 2) = θ by ring] at this
+  have := sin_half_sq θ
+  rw [h, zero_pow two_ne_zero] at this
   linarith
 
 variable {a : ℝ → ℝ}
@@ -315,9 +354,7 @@ theorem shearedTorusMetric_shearedTorusCoeff_of_le_cos {θ : ℝ} (hθ : 9 / 10 
     shearedTorusMetric shearedTorusCoeff a θ v w =
       cos (θ / 2) / √2 * v.1 * (cos (θ / 2) / √2 * w.1) + v.2 * w.2 := by
   rw [shearedTorusMetric_apply, shearedTorusCoeff_of_le_cos hθ, ha]
-  field_simp
-  rw [sq_sqrt zero_le_two]
-  ring
+  linear_combination -(v.1 * w.1) * div_sqrt_two_sq (cos (θ / 2))
 
 /-- **The metric is Euclidean near the minimum circle.** Where `cos θ ≤ -9/10` and the shear
 vanishes, the sheared metric for the coefficient `TauCeti.shearedTorusCoeff` is `dy² + dφ²` in the
@@ -327,9 +364,7 @@ theorem shearedTorusMetric_shearedTorusCoeff_of_cos_le {θ : ℝ} (hθ : cos θ 
     shearedTorusMetric shearedTorusCoeff a θ v w =
       -(sin (θ / 2) / √2) * v.1 * (-(sin (θ / 2) / √2) * w.1) + v.2 * w.2 := by
   rw [shearedTorusMetric_apply, shearedTorusCoeff_of_cos_le hθ, ha]
-  field_simp
-  rw [sq_sqrt zero_le_two]
-  ring
+  linear_combination -(v.1 * w.1) * div_sqrt_two_sq (sin (θ / 2))
 
 /-- Where `cos θ ≥ 9/10`, the `θ`-component of the negative gradient, read in the coordinate
 `x`, is `2 x`. -/
@@ -341,7 +376,7 @@ private theorem mul_shearedTorusField_fst_of_le_cos {θ : ℝ} (hθ : 9 / 10 ≤
   rw [shearedTorusField_apply, hp, shearedTorusCoeff_of_le_cos hθ, shearedTorusMaxCoord,
     show sin θ = sin (2 * (θ / 2)) by ring_nf, sin_two_mul]
   field_simp
-  rw [sq_sqrt zero_le_two]
+  linear_combination -sin (θ / 2) * sqrt_two_sq
 
 /-- Where `cos θ ≤ -9/10`, the `θ`-component of the negative gradient, read in the coordinate
 `y`, is `-2 y`. -/
@@ -353,7 +388,7 @@ private theorem mul_shearedTorusField_fst_of_cos_le {θ : ℝ} (hθ : cos θ ≤
   rw [shearedTorusField_apply, hp, shearedTorusCoeff_of_cos_le hθ, shearedTorusMinCoord,
     show sin θ = sin (2 * (θ / 2)) by ring_nf, sin_two_mul]
   field_simp
-  rw [sq_sqrt zero_le_two]
+  linear_combination cos (θ / 2) * sqrt_two_sq
 
 /-- **The negative gradient is linear near the maximum circle.** Where `cos θ ≥ 9/10` and the
 shear vanishes, the negative gradient of `cos θ` for the coefficient `TauCeti.shearedTorusCoeff`,
@@ -377,27 +412,22 @@ theorem shearedTorusField_shearedTorusCoeff_of_cos_le {θ : ℝ} (hθ : cos θ �
 
 variable {γ : ℝ → ℝ × ℝ}
 
-/-- A function whose derivative is `k` times itself at the times between `0` and `t` is
-`e^{k t}` times its initial value at time `t`. -/
-private theorem eq_exp_mul_of_hasDerivAt {u : ℝ → ℝ} {k t : ℝ}
-    (hu : ∀ s ∈ uIcc 0 t, HasDerivAt u (k * u s) s) : u t = exp (k * t) * u 0 := by
-  have h := eq_exp_integral_smul_of_hasDerivWithinAt_smul ordConnected_uIcc continuousOn_const
-    (fun s hs ↦ (hu s hs).hasDerivWithinAt) left_mem_uIcc right_mem_uIcc
-  rwa [intervalIntegral.integral_const, sub_zero, smul_eq_mul, smul_eq_mul, mul_comm t] at h
-
 /-- **The linear flow near the maximum circle.** If an integral curve of the negative gradient
 for the coefficient `TauCeti.shearedTorusCoeff` stays where `cos θ ≥ 9/10` between the times `0`
 and `t`, then its coordinate `x` is multiplied by `e^{2t}`. -/
 theorem shearedTorusMaxCoord_eq_exp_mul_of_hasDerivAt
     (hγ : ∀ t, HasDerivAt γ (shearedTorusField shearedTorusCoeff a (γ t)) t) {t : ℝ}
     (hθ : ∀ s ∈ uIcc 0 t, 9 / 10 ≤ cos (γ s).1) :
-    shearedTorusMaxCoord (γ t).1 = exp (2 * t) * shearedTorusMaxCoord (γ 0).1 :=
-  eq_exp_mul_of_hasDerivAt (u := fun s ↦ shearedTorusMaxCoord (γ s).1) fun s hs ↦ by
+    shearedTorusMaxCoord (γ t).1 = exp (2 * t) * shearedTorusMaxCoord (γ 0).1 := by
+  have h := eq_exp_smul_of_hasDerivAt_smul (v := fun s ↦ shearedTorusMaxCoord (γ s).1) (c := 2)
+    (s := 0) (t := t) fun s hs ↦ by
     have hd := (hasDerivAt_shearedTorusMaxCoord (γ s).1).comp s
       (hasDerivAt_fst_of_hasDerivAt_shearedTorusField hγ s)
     exact hd.congr_deriv (by
+      rw [smul_eq_mul]
       simpa only [shearedTorusField_apply] using
         mul_shearedTorusField_fst_of_le_cos (a := a) (hθ s hs) (γ s) rfl)
+  rwa [sub_zero, smul_eq_mul] at h
 
 /-- **The linear flow near the minimum circle.** If an integral curve of the negative gradient
 for the coefficient `TauCeti.shearedTorusCoeff` stays where `cos θ ≤ -9/10` between the times `0`
@@ -405,14 +435,16 @@ and `t`, then its coordinate `y` is multiplied by `e^{-2t}`. -/
 theorem shearedTorusMinCoord_eq_exp_neg_mul_of_hasDerivAt
     (hγ : ∀ t, HasDerivAt γ (shearedTorusField shearedTorusCoeff a (γ t)) t) {t : ℝ}
     (hθ : ∀ s ∈ uIcc 0 t, cos (γ s).1 ≤ -(9 / 10)) :
-    shearedTorusMinCoord (γ t).1 = exp (-2 * t) * shearedTorusMinCoord (γ 0).1 :=
-  eq_exp_mul_of_hasDerivAt (u := fun s ↦ shearedTorusMinCoord (γ s).1) fun s hs ↦ by
+    shearedTorusMinCoord (γ t).1 = exp (-2 * t) * shearedTorusMinCoord (γ 0).1 := by
+  have h := eq_exp_smul_of_hasDerivAt_smul (v := fun s ↦ shearedTorusMinCoord (γ s).1) (c := -2)
+    (s := 0) (t := t) fun s hs ↦ by
     have hd := (hasDerivAt_shearedTorusMinCoord (γ s).1).comp s
       (hasDerivAt_fst_of_hasDerivAt_shearedTorusField hγ s)
     exact hd.congr_deriv (by
-      rw [neg_mul (2 : ℝ)]
+      rw [smul_eq_mul, neg_mul (2 : ℝ)]
       simpa only [shearedTorusField_apply] using
         mul_shearedTorusField_fst_of_cos_le (a := a) (hθ s hs) (γ s) rfl)
+  rwa [sub_zero, smul_eq_mul] at h
 
 /-! ### The endpoint maps of the two families of trajectories -/
 
