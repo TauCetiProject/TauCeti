@@ -128,8 +128,7 @@ theorem totalSpaceIhomHomEquiv_comp_map_pre_app {E E' : FiniteLocallyFreeSheaf X
   apply curry'_injective
   rw [curry'_uncurry', ← curry'_pre_app, curry'_uncurry']
   exact (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·)
-    (congrArg (fun s ↦ s.app F.obj)
-      (Functor.ihomComparison_whiskerLeft (Scheme.Modules.pullback T.hom) a.hom).symm)).trans
+    ((Scheme.Modules.pullback T.hom).map_pre_app_comp_ihomComparison_app a.hom F.obj)).trans
       (Category.assoc _ _ _).symm)
 
 /-- **Sections of the internal-Hom bundle are bundle maps.** Sections of

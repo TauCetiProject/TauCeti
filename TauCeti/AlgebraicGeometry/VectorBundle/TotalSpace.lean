@@ -183,9 +183,6 @@ theorem totalSpaceHomEquiv_comp_map {E F : FiniteLocallyFreeSheaf X} (a : E ⟶ 
       ((toQuasicoherent X).map (dualFunctor.map a.op)) T t
   -- The base-change isomorphism of duals is natural, so the pulled-back dual map becomes the
   -- dual map of `q^* a`.
-  have hpre := congrArg (fun s ↦ s.app (𝟙_ X.Modules))
-    (Functor.ihomComparison_whiskerLeft (Scheme.Modules.pullback T.hom) a.hom).symm
-  simp only [TwoSquare.whiskerTop_app, TwoSquare.whiskerBottom_app] at hpre
   have hdual : (Scheme.Modules.pullback T.hom).map ((pre a.hom).app (𝟙_ X.Modules)) ≫
         ((Scheme.Modules.pullback T.hom).ihomComparison E.obj).app (𝟙_ X.Modules) ≫
           (ihom ((Scheme.Modules.pullback T.hom).obj E.obj)).map
@@ -194,7 +191,8 @@ theorem totalSpaceHomEquiv_comp_map {E F : FiniteLocallyFreeSheaf X} (a : E ⟶ 
           (ihom ((Scheme.Modules.pullback T.hom).obj F.obj)).map
             (Scheme.Modules.pullbackObjUnitIso T.hom).hom) ≫
         (pre ((Scheme.Modules.pullback T.hom).map a.hom)).app (𝟙_ T.left.Modules) :=
-    ((reassoc_of% hpre) _).trans ((congrArg (_ ≫ ·)
+    ((Scheme.Modules.pullback T.hom).map_pre_app_comp_ihomComparison_app_assoc a.hom
+      (𝟙_ X.Modules) _).trans ((congrArg (_ ≫ ·)
       ((pre ((Scheme.Modules.pullback T.hom).map a.hom)).naturality
         (Scheme.Modules.pullbackObjUnitIso T.hom).hom).symm).trans (Category.assoc _ _ _).symm)
   have hinv := (IsIso.inv_comp_eq _).2

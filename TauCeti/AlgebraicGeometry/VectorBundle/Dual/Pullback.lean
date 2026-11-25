@@ -85,10 +85,8 @@ theorem pullbackDualIso_naturality {F : FiniteLocallyFreeSheaf Y} (g : E ⟶ F) 
     simp only [ObjectProperty.FullSubcategory.comp_hom, pullback_map_hom,
       ObjectProperty.homMk_hom, pullbackDualIso_hom_hom, pre_map, NatTrans.comp_app,
       pre_eqToHom_app, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, Category.assoc]
-    have hpre := congrArg (fun s ↦ s.app (𝟙_ Y.Modules))
-      (Functor.ihomComparison_whiskerLeft (Scheme.Modules.pullback f) g.hom).symm
-    simp only [TwoSquare.whiskerTop_app, TwoSquare.whiskerBottom_app] at hpre
-    rw [reassoc_of% hpre, NatTrans.naturality_assoc]
+    rw [(Scheme.Modules.pullback f).map_pre_app_comp_ihomComparison_app_assoc g.hom
+      (𝟙_ Y.Modules), NatTrans.naturality_assoc]
   exact h
 
 /-- Pulling back duals of finite locally free sheaves is naturally isomorphic to dualizing
