@@ -961,10 +961,11 @@ variable (B : Type*) [CommRing B] [TopologicalSpace B] [IsTopologicalSemiring B]
 
 /-- The image `χ_B : Γ →ₜ* Bˣ` of a continuous character `χ : Γ →ₜ* Aˣ` under the coefficient
 map `A → B`. -/
-abbrev unitsMapCharacter (χ : Γ →ₜ* Aˣ) : Γ →ₜ* Bˣ :=
+@[expose] def unitsMapCharacter (χ : Γ →ₜ* Aˣ) : Γ →ₜ* Bˣ :=
   (ContinuousMonoidHom.unitsMap ⟨(algebraMap A B : A →* B), continuous_algebraMap A B⟩).comp χ
 
 omit [IsTopologicalSemiring B] in
+@[simp]
 theorem coe_unitsMapCharacter_apply (χ : Γ →ₜ* Aˣ) (g : Γ) :
     (unitsMapCharacter B χ g : B) = algebraMap A B (χ g) :=
   ContinuousMonoidHom.coe_unitsMap_apply _ _
@@ -978,7 +979,7 @@ def baseChangeOfCharacterIso (χ : Γ →ₜ* Aˣ) :
     Iso ((ofCharacter χ).baseChange B) (ofCharacter (unitsMapCharacter B χ)) :=
   .ofEquiv (.mk (TensorProduct.AlgebraTensorModule.rid A B B) fun g => by
     ext
-    simpa [Algebra.smul_def] using (coe_unitsMapCharacter_apply B χ g).symm)
+    simp [Algebra.smul_def])
 
 @[simp]
 theorem baseChangeOfCharacterIso_tmul (χ : Γ →ₜ* Aˣ) (b : B) (a : A) :

@@ -96,7 +96,7 @@ theorem baseChange_twist (ρ : ContinuousRep Γ A M) (χ : Γ →ₜ* Aˣ) :
   refine ext fun g x ↦ ?_
   induction x using TensorProduct.inductionOn with
   | tmul b x =>
-    rw [twist_apply, coe_unitsMapCharacter_apply]
+    rw [twist_apply]
     simp [baseChange_apply, TensorProduct.tmul_smul, Algebra.smul_def, TensorProduct.smul_tmul']
   | add x y hx hy => rw [map_add, hx, hy, map_add]
 
