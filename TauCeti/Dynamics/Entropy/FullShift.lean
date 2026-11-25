@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.ENNRealLog
 public import Mathlib.Dynamics.SymbolicDynamics.Basic
 public import Mathlib.Dynamics.TopologicalEntropy.CoverEntropy
-public import Mathlib.Topology.UniformSpace.DiscreteUniformity
-public import Mathlib.Topology.UniformSpace.Pi
+public import TauCeti.Dynamics.SymbolicDynamics.Shift
+public import TauCeti.Topology.UniformSpace.DiscreteUniformity
 import Mathlib.Analysis.Asymptotics.ExpGrowth
 
 /-!
@@ -51,28 +51,17 @@ private lemma agreeOn_anti {S S' : Set G} (h : S ⊆ S') :
     (agreeOn S' : SetRel (G → α) (G → α)) ⊆ agreeOn S :=
   fun _ hp i hi ↦ hp i (h hi)
 
-section Uniformity
+private lemma hasBasis_agreeOn [UniformSpace α] [DiscreteUniformity α] :
+    (𝓤 (G → α)).HasBasis Set.Finite (agreeOn : Set G → SetRel (G → α) (G → α)) :=
+  Pi.hasBasis_uniformity_of_discreteUniformity
 
-variable [UniformSpace α] [DiscreteUniformity α]
+/-- Extend a word on `S` to a configuration, by an arbitrary symbol off `S`. -/
+private noncomputable def extendWord [Nonempty α] (S : Finset G) (w : S → α) : G → α :=
+  open Classical in fun i ↦ if h : i ∈ S then w ⟨i, h⟩ else Classical.arbitrary α
 
-private lemma agreeOn_mem_uniformity {S : Set G} (hS : S.Finite) :
-    (agreeOn S : SetRel (G → α) (G → α)) ∈ 𝓤 (G → α) := by
-  have : (agreeOn S : SetRel (G → α) (G → α)) =
-      ⋂ i ∈ S, {p : (G → α) × (G → α) | (p.1 i, p.2 i) ∈ (SetRel.id : SetRel α α)} := by
-    ext p; simp [agreeOn]
-  rw [this]
-  exact (biInter_mem hS).2 fun i _ ↦ uniformContinuous_def.1 (Pi.uniformContinuous_proj _ i) _
-    (DiscreteUniformity.relId_mem_uniformity α)
-
-private lemma exists_agreeOn_subset {U : SetRel (G → α) (G → α)} (hU : U ∈ 𝓤 (G → α)) :
-    ∃ S : Set G, S.Finite ∧ agreeOn S ⊆ U := by
-  rw [Pi.uniformity, DiscreteUniformity.eq_principal_setRelId] at hU
-  obtain ⟨I, hI, V, hV, rfl⟩ := mem_iInf.1 hU
-  refine ⟨I, hI, fun p hp ↦ mem_iInter.2 fun i ↦ ?_⟩
-  obtain ⟨t, ht, htV⟩ := mem_comap.1 (hV i)
-  exact htV (ht (show p.1 i = p.2 i from hp i i.property))
-
-end Uniformity
+private lemma extendWord_of_mem [Nonempty α] {S : Finset G} (w : S → α) {i : G} (hi : i ∈ S) :
+    extendWord S w i = w ⟨i, hi⟩ := by
+  simp [extendWord, hi]
 
 section Counting
 
@@ -83,10 +72,9 @@ private lemma exists_finset_agreeOn [Nonempty α] (S : Finset G) :
     ∃ s : Finset (G → α), s.card ≤ Fintype.card α ^ S.card ∧
       ∀ x, ∃ y ∈ s, (x, y) ∈ (agreeOn (S : Set G) : SetRel (G → α) (G → α)) := by
   classical
-  let ext : (S → α) → G → α := fun w i ↦
-    if h : i ∈ S then w ⟨i, h⟩ else Classical.arbitrary α
-  refine ⟨Finset.univ.image ext, ?_, fun x ↦ ⟨ext fun i ↦ x i, Finset.mem_image_of_mem _
-    (Finset.mem_univ _), fun i hi ↦ by simp [ext, Finset.mem_coe.1 hi]⟩⟩
+  refine ⟨Finset.univ.image (extendWord S), ?_, fun x ↦ ⟨extendWord S fun i ↦ x i,
+    Finset.mem_image_of_mem _ (Finset.mem_univ _), fun i hi ↦
+      (extendWord_of_mem (fun i : S ↦ x i) (Finset.mem_coe.1 hi)).symm⟩⟩
   refine Finset.card_image_le.trans_eq ?_
   simp
 
@@ -98,12 +86,9 @@ private lemma card_le_of_agreeOn [Nonempty α] (S : Finset G) (s : Finset (G →
   let r : (G → α) → (S → α) := fun y i ↦ y i
   have hsurj : (Finset.univ : Finset (S → α)) ⊆ s.image r := by
     intro w _
-    obtain ⟨y, hy, hxy⟩ := hs fun i ↦ if h : i ∈ S then w ⟨i, h⟩ else
-      Classical.arbitrary α
+    obtain ⟨y, hy, hxy⟩ := hs (extendWord S w)
     refine Finset.mem_image.2 ⟨y, hy, funext fun i ↦ ?_⟩
-    have := hxy i i.property
-    simp only [i.property, dite_true] at this
-    exact this.symm
+    exact (hxy i i.property).symm.trans (extendWord_of_mem w i.property)
   calc Fintype.card α ^ S.card = (Finset.univ : Finset (S → α)).card := by
         simp
     _ ≤ (s.image r).card := Finset.card_le_card hsurj
@@ -115,17 +100,12 @@ section Shift
 
 variable [AddMonoidWithOne G]
 
-private lemma iterate_shift_one (k : ℕ) (x : G → α) : (shift (1 : G))^[k] x = shift (k : G) x := by
-  induction k with
-  | zero => simp
-  | succ k ih => rw [Function.iterate_succ_apply', ih, ← shift_add, Nat.cast_succ]
-
 /-- Agreeing on `S` for `n` steps of the shift is agreeing on the translates `k + S`, `k < n`. -/
 private lemma dynEntourage_shift_agreeOn (S : Set G) (n : ℕ) :
     dynEntourage (shift (1 : G)) (agreeOn S : SetRel (G → α) (G → α)) n =
       agreeOn (⋃ k < n, (fun i ↦ (k : G) + i) '' S) := by
   ext ⟨x, y⟩
-  simp only [mem_dynEntourage, iterate_shift_one, agreeOn, mem_ofPred_eq, shift_apply,
+  simp only [mem_dynEntourage, shift_iterate, nsmul_one, agreeOn, mem_ofPred_eq, shift_apply,
     mem_iUnion, mem_image]
   constructor
   · rintro h _ ⟨k, hk, i, hi, rfl⟩
@@ -188,8 +168,7 @@ coordinates, and into which `ℕ` embeds, has topological entropy `log (card α)
 private lemma coverEntropy_shift_of_window [UniformSpace α] [DiscreteUniformity α]
     (hG : Function.Injective (Nat.cast : ℕ → G))
     (hwin : ∀ S : Set G, S.Finite → ∃ a : G, ∃ c : ℕ, S ⊆ (fun j : ℕ ↦ (j : G) + a) '' Iio c) :
-    coverEntropy (shift (1 : G)) (univ : Set (G → α)) = ENNReal.log (Fintype.card α) ∧
-      coverEntropyInf (shift (1 : G)) (univ : Set (G → α)) = ENNReal.log (Fintype.card α) := by
+    coverEntropy (shift (1 : G)) (univ : Set (G → α)) = ENNReal.log (Fintype.card α) := by
   have hupper : ∀ S : Set G, S.Finite → coverEntropyEntourage (shift (1 : G))
       (univ : Set (G → α)) (agreeOn S) ≤ ENNReal.log (Fintype.card α) := by
     intro S hS
@@ -202,16 +181,10 @@ private lemma coverEntropy_shift_of_window [UniformSpace α] [DiscreteUniformity
       (univ : Set (G → α)) (agreeOn {0}) := by
     rw [← expGrowthInf_pow]
     exact expGrowthInf_monotone fun n ↦ pow_le_coverMincard_shift hG n
-  have hmem := agreeOn_mem_uniformity (α := α) (finite_singleton (0 : G))
-  have hle : coverEntropy (shift (1 : G)) (univ : Set (G → α)) ≤ ENNReal.log (Fintype.card α) :=
-    iSup₂_le fun U hU ↦ by
-      obtain ⟨S, hS, hSU⟩ := exists_agreeOn_subset hU
-      exact (coverEntropyEntourage_antitone _ _ hSU).trans (hupper S hS)
-  have hge : ENNReal.log (Fintype.card α) ≤
-      coverEntropyInf (shift (1 : G)) (univ : Set (G → α)) :=
-    hlower.trans (coverEntropyInfEntourage_le_coverEntropyInf _ _ hmem)
-  exact ⟨hle.antisymm (hge.trans (coverEntropyInf_le_coverEntropy _ _)),
-    ((coverEntropyInf_le_coverEntropy _ _).trans hle).antisymm hge⟩
+  rw [coverEntropy_eq_iSup_basis hasBasis_agreeOn]
+  exact (iSup₂_le hupper).antisymm <| hlower.trans <|
+    (coverEntropyInfEntourage_le_coverEntropyEntourage _ _ _).trans <|
+      le_iSup₂_of_le {0} (finite_singleton 0) le_rfl
 
 end Shift
 
@@ -220,9 +193,8 @@ variable [Fintype α] [UniformSpace α] [DiscreteUniformity α]
 omit [DiscreteUniformity α] in
 /-- Over an empty alphabet the configuration space is empty and both sides are `⊥`. -/
 private lemma coverEntropy_shift_of_isEmpty [AddMonoidWithOne G] [IsEmpty α] :
-    coverEntropy (shift (1 : G)) (univ : Set (G → α)) = ENNReal.log (Fintype.card α) ∧
-      coverEntropyInf (shift (1 : G)) (univ : Set (G → α)) = ENNReal.log (Fintype.card α) := by
-  simp [univ_eq_empty_iff.2 inferInstance, coverEntropy_empty, coverEntropyInf_empty]
+    coverEntropy (shift (1 : G)) (univ : Set (G → α)) = ENNReal.log (Fintype.card α) := by
+  simp [univ_eq_empty_iff.2 inferInstance, coverEntropy_empty]
 
 private lemma window_nat (S : Set ℕ) (hS : S.Finite) :
     ∃ a : ℕ, ∃ c : ℕ, S ⊆ (fun j : ℕ ↦ (j : ℕ) + a) '' Iio c := by
@@ -243,26 +215,24 @@ private lemma window_int (S : Set ℤ) (hS : S.Finite) :
 `log (card α)`. -/
 theorem coverEntropy_shift_nat :
     coverEntropy (shift (1 : ℕ)) (univ : Set (ℕ → α)) = ENNReal.log (Fintype.card α) :=
-  (isEmpty_or_nonempty α).elim (fun _ ↦ coverEntropy_shift_of_isEmpty.1)
-    fun _ ↦ (coverEntropy_shift_of_window Nat.cast_injective window_nat).1
+  (isEmpty_or_nonempty α).elim (fun _ ↦ coverEntropy_shift_of_isEmpty)
+    fun _ ↦ coverEntropy_shift_of_window Nat.cast_injective window_nat
 
 /-- The `liminf` topological entropy of the one-sided full shift is `log (card α)`. -/
 theorem coverEntropyInf_shift_nat :
     coverEntropyInf (shift (1 : ℕ)) (univ : Set (ℕ → α)) = ENNReal.log (Fintype.card α) :=
-  (isEmpty_or_nonempty α).elim (fun _ ↦ coverEntropy_shift_of_isEmpty.2)
-    fun _ ↦ (coverEntropy_shift_of_window Nat.cast_injective window_nat).2
+  (coverEntropyInf_eq_coverEntropy _ (mapsTo_univ _ _)).trans coverEntropy_shift_nat
 
 /-- The two-sided full shift on a finite discrete alphabet `α` has topological entropy
 `log (card α)`. -/
 theorem coverEntropy_shift_int :
     coverEntropy (shift (1 : ℤ)) (univ : Set (ℤ → α)) = ENNReal.log (Fintype.card α) :=
-  (isEmpty_or_nonempty α).elim (fun _ ↦ coverEntropy_shift_of_isEmpty.1)
-    fun _ ↦ (coverEntropy_shift_of_window Nat.cast_injective window_int).1
+  (isEmpty_or_nonempty α).elim (fun _ ↦ coverEntropy_shift_of_isEmpty)
+    fun _ ↦ coverEntropy_shift_of_window Nat.cast_injective window_int
 
 /-- The `liminf` topological entropy of the two-sided full shift is `log (card α)`. -/
 theorem coverEntropyInf_shift_int :
     coverEntropyInf (shift (1 : ℤ)) (univ : Set (ℤ → α)) = ENNReal.log (Fintype.card α) :=
-  (isEmpty_or_nonempty α).elim (fun _ ↦ coverEntropy_shift_of_isEmpty.2)
-    fun _ ↦ (coverEntropy_shift_of_window Nat.cast_injective window_int).2
+  (coverEntropyInf_eq_coverEntropy _ (mapsTo_univ _ _)).trans coverEntropy_shift_int
 
 end TauCeti
