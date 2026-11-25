@@ -58,8 +58,9 @@ operator norm of `C` is `‖C(iα)‖ = √2 ‖α‖` on self-dual forms.
   `TauCeti.SeibergWitten.trace_cliffordRestriction`,
   `TauCeti.SeibergWitten.cliffordRestriction_mem_traceFreeSelfAdjoint`: `C(iα)` is self-adjoint and
   trace free.
-* `TauCeti.SeibergWitten.cliffordRestriction_eq_zero_of_hodgeStar_eq_neg`: anti-self-dual forms
-  act by zero on `W⁺`.
+* `TauCeti.SeibergWitten.cliffordRestriction_hodgeStar`: `C(i ⋆α) = C(iα)`, so anti-self-dual
+  forms act by zero on `W⁺`
+  (`TauCeti.SeibergWitten.cliffordRestriction_eq_zero_of_hodgeStar_eq_neg`).
 * `TauCeti.SeibergWitten.coe_cliffordRestriction_ιMulti_apply_of_inner_eq_zero`:
   `C(i (a ∧ b)) = i c(a) c(b)` on `W⁺` for orthogonal `a` and `b`.
 * `TauCeti.SeibergWitten.cliffordRestriction_mul_add_swap`: the Clifford relation of `C`.
@@ -234,16 +235,24 @@ theorem trace_cliffordRestriction_mul (hkl : 2 + 2 = finrank ℝ V) (x y : ⋀[�
   push_cast at h ⊢
   linear_combination h / 2
 
+/-- Only the self-dual part of a two-form acts on `W⁺`, so `α` and `⋆α` act alike:
+`C(i ⋆α) = C(iα)`. -/
+@[simp]
+theorem cliffordRestriction_hodgeStar (hkl : 2 + 2 = finrank ℝ V) (x : ⋀[ℝ]^2 V) :
+    cliffordRestriction o ρ (o.hodgeStar hkl x) = cliffordRestriction o ρ x := by
+  -- `c₂(⋆α) = Γ c₂(α) = c₂(α) Γ`, and `Γ` fixes `W⁺`.
+  ext ψ
+  have hψ := mem_positiveHalfSpinors.1 ψ.property
+  rw [coe_cliffordRestriction_apply, coe_cliffordRestriction_apply,
+    bivectorExterior_hodgeStar o hQ hkl, (commute_chirality_bivectorExterior o x).eq, map_mul,
+    mul_apply_eq_comp, hψ]
+
 /-- Anti-self-dual two-forms act by zero on `W⁺`: `C(iα) = 0` when `⋆α = -α`. -/
 theorem cliffordRestriction_eq_zero_of_hodgeStar_eq_neg (hkl : 2 + 2 = finrank ℝ V)
     {x : ⋀[ℝ]^2 V} (hx : o.hodgeStar hkl x = -x) : cliffordRestriction o ρ x = 0 := by
-  ext ψ
-  have hψ := mem_positiveHalfSpinors.1 ψ.property
-  have h : ρ (bivectorExterior Q x) ψ = -ρ (bivectorExterior Q x) ψ := by
-    conv_lhs => rw [← hψ, ← mul_apply_eq_comp, ← map_mul,
-      bivectorExterior_mul_chirality_of_hodgeStar_eq_neg o hQ hkl hx, map_neg, LinearMap.neg_apply]
-  rw [eq_neg_iff_add_eq_zero, ← two_smul ℂ, smul_eq_zero] at h
-  simp [h.resolve_left two_ne_zero]
+  have h := cliffordRestriction_hodgeStar o ρ hQ hkl x
+  rw [hx, map_neg, neg_eq_iff_add_eq_zero, ← two_smul ℂ, smul_eq_zero] at h
+  exact h.resolve_left two_ne_zero
 
 /-- A self-dual two-form squares to `2 ‖α‖²` under the Clifford map: `C(iα)² = 2 ‖α‖²`. -/
 theorem cliffordRestriction_mul_self_of_hodgeStar_eq_self (hkl : 2 + 2 = finrank ℝ V)

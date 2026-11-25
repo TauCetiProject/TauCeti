@@ -32,7 +32,8 @@ unbounded domain. Finite unit slopes before a finite face are strictly less than
 on the face they equal its slope, and after it they are strictly greater. Consequently, on a
 domain with a first finite index, a finite face's left and right endpoints count the unit
 slopes respectively below and at most the face slope, and the unit edges of the face slope are
-exactly those inside the face, so their number is its width. These absolute endpoints are the
+exactly those inside the face, so their number is its width. If moreover `h 0 ≤ a`, the height
+at the number `N` of unit slopes at most `σ` is at most `a + σ N`. These absolute endpoints are the
 geometric interface later used to identify extremal coefficients and count slope multiplicities.
 A sequence lying above a line of slope `τ` meets every line of smaller slope only finitely often,
 which bounds the supporting faces of smaller slope.
@@ -475,6 +476,24 @@ theorem finite_setOf_unitSlope_le (hf : IsFiniteFace h σ l u) (hh : IsConvexSeq
     {i | i ∈ finiteEdges h ∧ unitSlope h i ≤ σ}.Finite :=
   (Set.finite_Iio u).subset fun _ hi ↦ Set.mem_Iio.mpr <| lt_of_not_ge fun hui ↦
     (hf.lt_unitSlope hh hi.1 hui).not_ge hi.2
+
+/-- **Slope counts lie under the line of slope `σ` through `(0, a)`.** If `h 0 ≤ a` and `h` has
+a finite face of slope `σ`, let `N` be the number of finite unit edges of slope at most `σ`. Then
+`h N ≤ a + σ N`: these edges are the first `N` edges, and their slopes are at most `σ`. -/
+theorem apply_ncard_setOf_unitSlope_le_le (hf : IsFiniteFace h σ l u) (hh : IsConvexSeq h)
+    {a : ℝ} (h0 : h 0 ≤ a) :
+    h {i | i ∈ finiteEdges h ∧ unitSlope h i ≤ σ}.ncard ≤
+      ((a + σ * {i | i ∈ finiteEdges h ∧ unitSlope h i ≤ σ}.ncard : ℝ) : WithTop ℝ) := by
+  -- The right endpoint of the face is the number of these edges.
+  have hu := hf.right_eq_start_add_ncard_unitSlope_le hh (a := 0)
+    (ne_top_of_le_ne_top WithTop.coe_ne_top h0) fun n _ ↦ n.zero_le
+  rw [zero_add] at hu
+  rw [← hu, ← WithTop.coe_untop₀_of_ne_top hf.right_ne_top, WithTop.coe_le_coe]
+  -- The line of slope `σ` through the right endpoint supports `h`, in particular at `0`.
+  have h0' := (hf.isSupportingLine_untop₀_sub (Set.right_mem_Icc.mpr hf.left_le_right) 0).trans h0
+  rw [WithTop.coe_le_coe] at h0'
+  push_cast at h0'
+  linarith
 
 end IsFiniteFace
 

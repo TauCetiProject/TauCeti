@@ -50,6 +50,8 @@ bound. The uniformity in `c` is what lets exponent families that move with `Q` b
 ## Main results
 
 * `TauCeti.NumberField.le_prod_successiveMinimum_approx`: the lower bound on `∏ l, μ l ^ d`.
+* `TauCeti.NumberField.exists_pos_mul_rpow_le_successiveMinimum_pow`: when every minimum but the
+  last is at most `1`, the lower bound holds for the `d`-th power of the last one alone.
 * `TauCeti.NumberField.prod_successiveMinimum_approx_le`: the upper bound on `∏ l, μ l ^ d`.
 * `TauCeti.NumberField.exists_pos_forall_rpow_le_successiveMinimum`: every minimum is at least
   `Q ^ (-B)` for `Q ≥ Q₀`, uniformly in the exponents of absolute weight at most `A`.
@@ -123,6 +125,35 @@ theorem le_prod_successiveMinimum_approx {S₀ : Finset (FinitePlace K)}
         simp only [A]
         ring
     _ ≤ P := (div_le_iff₀ (mul_pos hconst hQw)).2 hA
+
+/-- **The last minimum of a domain controls its weight.** For forms independent at the infinite
+places and at `S₀` there is `A > 0` such that for all exponents `c` and levels `0 < Q`, if every
+successive minimum over `K` of `approxDomain S₀ L c Q` but the last is at most `1`, then the
+`[K : ℚ]`-th power of the last is at least `A · Q ^ (-approxWeight S₀ c)`. -/
+theorem exists_pos_mul_rpow_le_successiveMinimum_pow {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) (hι : 0 < Fintype.card ι) :
+    ∃ A : ℝ, 0 < A ∧ ∀ (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ}, 0 < Q →
+      (∀ l < Fintype.card ι - 1,
+        (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l ≤ 1) →
+      A * Q ^ (-approxWeight S₀ c) ≤
+        (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
+          (Fintype.card ι - 1) ^ finrank ℚ K := by
+  classical
+  have := approxConst_pos hLinf hLfin
+  have := zero_lt_one.trans_le (one_le_integralBasisHouse (K := K))
+  refine ⟨_, by positivity, fun c Q hQ h₁ ↦
+    (le_prod_successiveMinimum_approx hLinf hLfin c hQ).trans ?_⟩
+  -- Split off the last factor; the others are at most `1`.
+  let l₀ : Fin (Fintype.card ι) := ⟨Fintype.card ι - 1, by omega⟩
+  rw [← Finset.mul_prod_erase _ _ (Finset.mem_univ l₀)]
+  refine mul_le_of_le_one_right (pow_nonneg (Submodule.successiveMinimum_nonneg _ _ _) _)
+    (Finset.prod_le_one₀ (fun _ _ ↦ pow_nonneg (Submodule.successiveMinimum_nonneg _ _ _) _)
+      fun l hl ↦ pow_le_one₀ (Submodule.successiveMinimum_nonneg _ _ _) (h₁ l ?_))
+  have hl' : l ≠ l₀ := Finset.ne_of_mem_erase hl
+  have : (l : ℕ) ≠ Fintype.card ι - 1 := fun h ↦ hl' (Fin.ext h)
+  omega
 
 /-- **The successive minima of an approximation domain, upper bound** (Bombieri–Gubler, Theorem
 C.2.11 with Corollary 7.5.8): for `0 < Q` and linearly independent forms at the infinite places and

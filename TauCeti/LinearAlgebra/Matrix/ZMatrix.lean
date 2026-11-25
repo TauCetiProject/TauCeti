@@ -35,6 +35,8 @@ vector of a singular positive semidefinite generalized Cartan matrix is found.
 
 ## Main results
 
+* `Matrix.PosDef.exists_mulVec_pos`: a positive definite matrix sends a nonzero nonnegative vector
+  to a vector with a positive coordinate, so it admits no such `δ`.
 * `Matrix.posPart_dotProduct_mulVec_negPart_nonpos`: with nonpositive off-diagonal entries, the
   positive and negative parts of a vector pair nonpositively.
 * `Matrix.abs_dotProduct_mulVec_abs_le`: the quadratic form of a Z-matrix does not increase when a
@@ -110,6 +112,17 @@ theorem PosSemidef.mulVec_abs_eq_zero {R : Type*} [CommRing R] [LinearOrder R]
   rw [← hA.dotProduct_mulVec_zero_iff, star_trivial]
   refine le_antisymm ?_ (by simpa using hA.dotProduct_mulVec_nonneg fun i ↦ |x i|)
   simpa [hx] using abs_dotProduct_mulVec_abs_le hoff x
+
+/-- **A positive definite matrix is somewhere positive on each nonzero nonnegative vector.** If
+`M` is positive definite over a linearly ordered ring with trivial star, then for every nonzero
+vector `x` with nonnegative entries some coordinate of `M x` is positive. -/
+theorem PosDef.exists_mulVec_pos {R : Type*} [Ring R] [LinearOrder R] [IsOrderedAddMonoid R]
+    [PosMulMono R] [StarRing R] [TrivialStar R] {M : Matrix n n R} (hM : M.PosDef) {x : n → R}
+    (hx0 : 0 ≤ x) (hx : x ≠ 0) : ∃ i, 0 < (M *ᵥ x) i := by
+  by_contra! h
+  have hpos := hM.dotProduct_mulVec_pos hx
+  rw [star_trivial] at hpos
+  exact hpos.not_ge (sum_nonpos fun i _ ↦ mul_nonpos_of_nonneg_of_nonpos (hx0 i) (h i))
 
 /-- **A symmetric Z-matrix with a nonpositive value of its form is nonpositive on a nonnegative
 vector.**
