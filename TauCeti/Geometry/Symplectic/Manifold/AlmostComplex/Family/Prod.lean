@@ -96,6 +96,7 @@ variable (J : ContMDiffAlmostComplexStructureFamily I M IP P n)
   (K : ContMDiffAlmostComplexStructureFamily I' N IP P n)
 
 /-- The product acts by the block map of the two factors. -/
+@[simp]
 theorem prod_toEndomorphism_apply (q : P × (M × N)) :
     (J.prod K).toEndomorphism q =
       (J.tangentEndomorphism (q.1, q.2.1)).prodMap (K.tangentEndomorphism (q.1, q.2.2)) := by
@@ -111,6 +112,7 @@ theorem prod_apply (q : P × (M × N)) (v : TangentSpace (I.prod I') q.2) :
   exact DFunLike.congr_fun (prod_toEndomorphism_apply J K q) v
 
 /-- The product, read on the original tangent spaces, is the block map of the two factors. -/
+@[simp]
 theorem prod_tangentEndomorphism (q : P × (M × N)) :
     (J.prod K).tangentEndomorphism q =
       (J.tangentEndomorphism (q.1, q.2.1)).prodMap (K.tangentEndomorphism (q.1, q.2.2)) := by
@@ -125,7 +127,10 @@ theorem freeze_prod (p : P) : (J.prod K).freeze p = (J.freeze p).prod (K.freeze 
   rw [freeze_apply, ContMDiffAlmostComplexStructure.prod_apply, freeze_apply, freeze_apply,
     prod_tangentEndomorphism]
   simp only [Manifold.tangentSpaceProdEquiv_apply, Manifold.tangentSpaceProdEquiv_symm_apply]
-  rfl
+  -- The product tangent fibre is the product of the factor fibres, on which `prodMap` acts
+  -- componentwise; `simp` cannot rewrite under the fibre type synonym.
+  exact congrFun (ContinuousLinearMap.coe_prodMap' (J.tangentEndomorphism (p, x.1))
+    (K.tangentEndomorphism (p, x.2))) v
 
 /-- The product of domain-independent families is the domain-independent product family. -/
 @[simp]

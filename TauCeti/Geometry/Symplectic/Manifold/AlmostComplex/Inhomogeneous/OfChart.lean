@@ -28,6 +28,11 @@ domain of the product defines a term there.
 ## Main declarations
 
 * `TauCeti.DomainDependentHomSection.ofChart`: the Hom section defined by a coordinate map.
+* `TauCeti.DomainDependentHomSection.inCoordinates_ofChart_tangentHom`: read in the tangent
+  coordinates at the centre of the chart sources, the section is the coordinate map.
+* `TauCeti.ContMDiffAlmostComplexStructure.inChart_chartSource`,
+  `TauCeti.ContMDiffAlmostComplexStructureFamily.inChart_chartSourceCentre`: on chart sources, the
+  coordinate expressions at the centre are conjugation by the tangent frames.
 * `TauCeti.DomainDependentHomSection.ofChart_mem_inhomogeneousTerms`: an antilinear coordinate map
   defines an antilinear Hom section.
 * `TauCeti.InhomogeneousTerm.ofChart`: the inhomogeneous term defined by an antilinear coordinate
@@ -111,6 +116,9 @@ private theorem contMDiff_ofChartField (q : P × M) (A : EP × E → EP →L[ℝ
     fun w ↦ (chartFrame (I := I) q.2).mem_source.2 (hmM _)).2
       ⟨contMDiff_snd.comp hbase, (hAg.clm_apply hcoord).congr fun w ↦ ?_⟩
   rw [← Trivialization.continuousLinearMapAt_apply_of_mem ℝ _ (hmM _)]
+  -- The vertical lift of a point of the pulled-back bundle has the same fibre value, and the
+  -- horizontal fibre at `w.proj` is the tangent space of `U` at `w.proj.1`; these are type
+  -- synonyms, which `rw` cannot see through, so restate the goal with the field unfolded.
   change (chartFrame (I := I) q.2).continuousLinearMapAt ℝ w.proj.2
       ((chartFrame (I := I) q.2).symmL ℝ w.proj.2
         (A (extChartAt (IP.prod I) q ((w.proj.1 : P), (w.proj.2 : M)))
@@ -140,7 +148,63 @@ theorem ofChart_tangentHom (q : P × M) (A : EP × E → EP →L[ℝ] E)
   rw [tangentHom_apply]
   rfl
 
+/-- **Reading back the coordinate map.** In the tangent coordinates at the centre of the chart
+sources, the section defined by a coordinate map `A` is `A` at the chart value. -/
+theorem inCoordinates_ofChart_tangentHom (q : P × M) (A : EP × E → EP →L[ℝ] E)
+    (hA : ContDiffOn ℝ n A (extChartAt (IP.prod I) q).target)
+    (r : chartSource (H := HP) q.1 × chartSource (H := H) q.2) :
+    ContinuousLinearMap.inCoordinates EP (TangentSpace IP) E (TangentSpace I)
+        (chartSourceCentre (H := HP) (H' := H) q).1 r.1
+        (chartSourceCentre (H := HP) (H' := H) q).2 r.2 ((ofChart q A hA).tangentHom r) =
+      A (extChartAt (IP.prod I) q ((r.1 : P), (r.2 : M))) := by
+  have hP : r.1 ∈ (chartFrame (I := IP) q.1).baseSet :=
+    (TangentBundle.trivializationAt_chartSource_baseSet (I := IP) q.1).symm ▸ Set.mem_univ _
+  have hM : r.2 ∈ (chartFrame (I := I) q.2).baseSet :=
+    (TangentBundle.trivializationAt_chartSource_baseSet (I := I) q.2).symm ▸ Set.mem_univ _
+  ext v
+  simp only [ContinuousLinearMap.inCoordinates, ofChart_tangentHom,
+    ContinuousLinearMap.comp_apply]
+  rw [(chartFrame (I := I) q.2).continuousLinearMapAt_symmL hM,
+    (chartFrame (I := IP) q.1).continuousLinearMapAt_symmL hP]
+
 end DomainDependentHomSection
+
+omit [FiniteDimensional ℝ EP] in
+/-- On a chart source, a `Cⁿ` almost complex structure read in the chart at the centre is the
+structure conjugated by the tangent frame of the chart source. -/
+theorem ContMDiffAlmostComplexStructure.inChart_chartSource (x : P)
+    (j : ContMDiffAlmostComplexStructure IP n (chartSource (H := HP) x))
+    (y : chartSource (H := HP) x) :
+    j.inChart ⟨x, mem_chart_source HP x⟩ (extChartAt IP ⟨x, mem_chart_source HP x⟩ y) =
+      ((chartFrame (I := IP) x).continuousLinearMapAt ℝ y).comp
+        ((j.toEndomorphism y).comp ((chartFrame (I := IP) x).symmL ℝ y)) := by
+  have hy : y ∈ (extChartAt IP (⟨x, mem_chart_source HP x⟩ : chartSource (H := HP) x)).source := by
+    rw [extChartAt_source]
+    simp only [TopologicalSpace.Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_source,
+      Set.mem_preimage]
+    exact y.property
+  rw [inChart_def, (extChartAt IP _).left_inv hy, ContinuousLinearMap.inCoordinates]
+
+omit [FiniteDimensional ℝ EP] [IsManifold IP ∞ P] in
+/-- On a product of chart sources, a domain-dependent structure read in the product chart at the
+centre is the structure conjugated by the tangent frame of the target chart source. -/
+theorem ContMDiffAlmostComplexStructureFamily.inChart_chartSourceCentre (q : P × M)
+    (J : ContMDiffAlmostComplexStructureFamily I (chartSource (H := H) q.2) IP
+      (chartSource (H := HP) q.1) n)
+    (r : chartSource (H := HP) q.1 × chartSource (H := H) q.2) :
+    J.inChart (chartSourceCentre (H := HP) (H' := H) q)
+        (extChartAt (IP.prod I) (chartSourceCentre (H := HP) (H' := H) q) r) =
+      ((chartFrame (I := I) q.2).continuousLinearMapAt ℝ r.2).comp
+        ((J.tangentEndomorphism r).comp ((chartFrame (I := I) q.2).symmL ℝ r.2)) := by
+  rw [extChartAt_prod_apply, inChart_mk, (extChartAt IP _).left_inv,
+    ContMDiffAlmostComplexStructure.inChart_chartSource, freeze_toEndomorphism_apply]
+  · congr 2
+    ext v
+    exact (tangentEndomorphism_apply J r v).symm
+  · rw [extChartAt_source]
+    simp only [TopologicalSpace.Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_source,
+      Set.mem_preimage]
+    exact r.1.property
 
 namespace InhomogeneousTerm
 
@@ -167,24 +231,14 @@ theorem _root_.TauCeti.DomainDependentHomSection.ofChart_mem_inhomogeneousTerms 
     (TangentBundle.trivializationAt_chartSource_baseSet (I := IP) q.1).symm ▸ Set.mem_univ _
   have hM : r.2 ∈ (chartFrame (I := I) q.2).baseSet :=
     (TangentBundle.trivializationAt_chartSource_baseSet (I := I) q.2).symm ▸ Set.mem_univ _
-  have hsrc := mem_extChartAt_chartSourceCentre_source (I := IP) (I' := I) q r
-  rw [extChartAt_prod, PartialEquiv.prod_source] at hsrc
   have h := hAj r ((chartFrame (I := IP) q.1).continuousLinearMapAt ℝ r.1 v)
-  rw [ContMDiffAlmostComplexStructure.inChart_def,
-    (extChartAt IP (chartSourceCentre (H := HP) (H' := H) q).1).left_inv hsrc.1,
-    extChartAt_prod_apply (chartSourceCentre (H := HP) (H' := H) q) r,
-    ContMDiffAlmostComplexStructureFamily.inChart_mk,
-    (extChartAt IP (chartSourceCentre (H := HP) (H' := H) q).1).left_inv hsrc.1,
-    ContMDiffAlmostComplexStructure.inChart_def,
-    (extChartAt I (chartSourceCentre (H := HP) (H' := H) q).2).left_inv hsrc.2,
-    ContMDiffAlmostComplexStructureFamily.freeze_toEndomorphism_apply] at h
-  simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply] at h
-  rw [(chartFrame (I := IP) q.1).symmL_continuousLinearMapAt hP] at h
-  rw [DomainDependentHomSection.ofChart_tangentHom,
-    ContMDiffAlmostComplexStructureFamily.tangentEndomorphism_apply]
-  simp only [ContinuousLinearMap.comp_apply] at h ⊢
+  rw [ContMDiffAlmostComplexStructure.inChart_chartSource,
+    ContMDiffAlmostComplexStructureFamily.inChart_chartSourceCentre] at h
+  simp only [ContinuousLinearMap.comp_apply,
+    (chartFrame (I := IP) q.1).symmL_continuousLinearMapAt hP] at h
   have h' := congrArg ((chartFrame (I := I) q.2).symmL ℝ r.2) h
   rw [map_neg, (chartFrame (I := I) q.2).symmL_continuousLinearMapAt hM] at h'
+  rw [DomainDependentHomSection.ofChart_tangentHom]
   exact h'
 
 /-- **Inhomogeneous terms from coordinate expressions.** Let `j` be a `Cⁿ` almost complex
@@ -199,6 +253,17 @@ def ofChart : InhomogeneousTerm j J :=
 @[simp]
 theorem ofChart_val : (ofChart q j J A hA hAj).val = DomainDependentHomSection.ofChart q A hA :=
   (rfl)
+
+/-- In the tangent coordinates at the centre of the chart sources, the term defined by a
+coordinate map `A` is `A` at the chart value. -/
+theorem inCoordinates_ofChart_val_tangentHom
+    (r : chartSource (H := HP) q.1 × chartSource (H := H) q.2) :
+    ContinuousLinearMap.inCoordinates EP (TangentSpace IP) E (TangentSpace I)
+        (chartSourceCentre (H := HP) (H' := H) q).1 r.1
+        (chartSourceCentre (H := HP) (H' := H) q).2 r.2
+        ((ofChart q j J A hA hAj).val.tangentHom r) =
+      A (extChartAt (IP.prod I) q ((r.1 : P), (r.2 : M))) :=
+  DomainDependentHomSection.inCoordinates_ofChart_tangentHom q A hA r
 
 end InhomogeneousTerm
 

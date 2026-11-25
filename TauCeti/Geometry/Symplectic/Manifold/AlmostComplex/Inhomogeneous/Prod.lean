@@ -26,6 +26,8 @@ product of terms is additive and real-homogeneous in the pair of factors.
 ## Main declarations
 
 * `TauCeti.DomainDependentHomSection.prod`: the product of two domain-dependent Hom sections.
+* `TauCeti.DomainDependentHomSection.ext_tangentHom`: Hom sections are equal when their readings
+  in the tangent spaces agree.
 * `TauCeti.InhomogeneousTerm.prod`: the product of two inhomogeneous terms.
 
 ## References
@@ -123,30 +125,65 @@ theorem tangentHom_prod (A : DomainDependentHomSection I M IP P n)
   rw [tangentHom_apply]
   rfl
 
+omit [FiniteDimensional ℝ EP] in
+/-- Domain-dependent Hom sections are equal when their readings in the tangent spaces agree. -/
+theorem ext_tangentHom {A B : DomainDependentHomSection I M IP P n}
+    (h : ∀ q, A.tangentHom q = B.tangentHom q) : A = B :=
+  ContMDiffSection.ext fun q ↦ ContinuousLinearMap.ext fun v ↦
+    (tangentHom_apply A q v).symm.trans
+      ((DFunLike.congr_fun (h q) v).trans (tangentHom_apply B q v))
+
 /-- The product of the zero sections is zero. -/
 @[simp]
 theorem prod_zero_zero :
     (0 : DomainDependentHomSection I M IP P n).prod (0 : DomainDependentHomSection I' N IP P n) =
-      0 := by
-  ext q v
-  erw [← tangentHom_apply, tangentHom_prod, tangentHom_zero, tangentHom_zero]
-  rfl
+      0 :=
+  ext_tangentHom fun q ↦ by
+    simp only [tangentHom_prod, tangentHom_zero]
+    -- `ContinuousLinearMap.prod` is the linear equivalence `ContinuousLinearMap.prodₗ`.
+    exact (ContinuousLinearMap.prodₗ ℝ).map_zero
 
 /-- The product of sections is additive in the pair of factors. -/
+@[simp]
 theorem prod_add (A A' : DomainDependentHomSection I M IP P n)
     (B B' : DomainDependentHomSection I' N IP P n) :
-    (A + A').prod (B + B') = A.prod B + A'.prod B' := by
-  ext q v
-  erw [← tangentHom_apply, tangentHom_prod, tangentHom_add, tangentHom_add]
-  rfl
+    (A + A').prod (B + B') = A.prod B + A'.prod B' :=
+  ext_tangentHom fun q ↦ by
+    simp only [tangentHom_prod, tangentHom_add]
+    -- `ContinuousLinearMap.prod` is the linear equivalence `ContinuousLinearMap.prodₗ`.
+    exact (ContinuousLinearMap.prodₗ ℝ).map_add (A.tangentHom _, B.tangentHom _)
+      (A'.tangentHom _, B'.tangentHom _)
 
 /-- The product of sections is real-homogeneous in the pair of factors. -/
+@[simp]
 theorem prod_smul (c : ℝ) (A : DomainDependentHomSection I M IP P n)
     (B : DomainDependentHomSection I' N IP P n) :
-    (c • A).prod (c • B) = c • A.prod B := by
-  ext q v
-  erw [← tangentHom_apply, tangentHom_prod, tangentHom_smul, tangentHom_smul]
-  rfl
+    (c • A).prod (c • B) = c • A.prod B :=
+  ext_tangentHom fun q ↦ by
+    simp only [tangentHom_prod, tangentHom_smul]
+    -- `ContinuousLinearMap.prod` is the linear equivalence `ContinuousLinearMap.prodₗ`.
+    exact (ContinuousLinearMap.prodₗ ℝ).map_smul c (A.tangentHom _, B.tangentHom _)
+
+/-- Negating both factors negates the product of sections. -/
+@[simp]
+theorem prod_neg (A : DomainDependentHomSection I M IP P n)
+    (B : DomainDependentHomSection I' N IP P n) :
+    (-A).prod (-B) = -A.prod B :=
+  ext_tangentHom fun q ↦ by
+    simp only [tangentHom_prod, tangentHom_neg]
+    -- `ContinuousLinearMap.prod` is the linear equivalence `ContinuousLinearMap.prodₗ`.
+    exact (ContinuousLinearMap.prodₗ ℝ).map_neg (A.tangentHom _, B.tangentHom _)
+
+/-- The product of sections commutes with subtraction in the pair of factors. -/
+@[simp]
+theorem prod_sub (A A' : DomainDependentHomSection I M IP P n)
+    (B B' : DomainDependentHomSection I' N IP P n) :
+    (A - A').prod (B - B') = A.prod B - A'.prod B' :=
+  ext_tangentHom fun q ↦ by
+    simp only [tangentHom_prod, tangentHom_sub]
+    -- `ContinuousLinearMap.prod` is the linear equivalence `ContinuousLinearMap.prodₗ`.
+    exact (ContinuousLinearMap.prodₗ ℝ).map_sub (A.tangentHom _, B.tangentHom _)
+      (A'.tangentHom _, B'.tangentHom _)
 
 end DomainDependentHomSection
 
@@ -185,14 +222,28 @@ theorem prod_zero_zero : (0 : InhomogeneousTerm j J).prod (0 : InhomogeneousTerm
   Subtype.ext DomainDependentHomSection.prod_zero_zero
 
 /-- The product of terms is additive in the pair of factors. -/
+@[simp]
 theorem prod_add (ν ν' : InhomogeneousTerm j J) (μ μ' : InhomogeneousTerm j K) :
     (ν + ν').prod (μ + μ') = ν.prod μ + ν'.prod μ' :=
   Subtype.ext (DomainDependentHomSection.prod_add _ _ _ _)
 
 /-- The product of terms is real-homogeneous in the pair of factors. -/
+@[simp]
 theorem prod_smul (c : ℝ) (ν : InhomogeneousTerm j J) (μ : InhomogeneousTerm j K) :
     (c • ν).prod (c • μ) = c • ν.prod μ :=
   Subtype.ext (DomainDependentHomSection.prod_smul _ _ _)
+
+/-- Negating both factors negates the product of terms. -/
+@[simp]
+theorem prod_neg (ν : InhomogeneousTerm j J) (μ : InhomogeneousTerm j K) :
+    (-ν).prod (-μ) = -ν.prod μ :=
+  Subtype.ext (DomainDependentHomSection.prod_neg _ _)
+
+/-- The product of terms commutes with subtraction in the pair of factors. -/
+@[simp]
+theorem prod_sub (ν ν' : InhomogeneousTerm j J) (μ μ' : InhomogeneousTerm j K) :
+    (ν - ν').prod (μ - μ') = ν.prod μ - ν'.prod μ' :=
+  Subtype.ext (DomainDependentHomSection.prod_sub _ _ _ _)
 
 end InhomogeneousTerm
 
