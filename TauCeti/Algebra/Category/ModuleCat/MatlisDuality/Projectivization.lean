@@ -60,11 +60,13 @@ theorem _root_.ModuleCat.finite_projective_end_op_matlisDual_of_additiveClosure 
         (LinearEquiv.arrowCongrAddEquiv (LinearEquiv.refl A M) e).trans
           equivLinearMapDualRegular.symm.toAddEquiv with
       map_smul' g f := by
-        apply (equivLinearMapDualRegular (A := A)).injective
         -- The right action of `Γ` on `D_R M` is dualization of endomorphisms
-        -- (`end_op_smul_eq_map`), which the adjunction turns into precomposition.
-        ext x
-        simp [End.smul_left, σ] }
+        -- (`end_op_smul_eq_map`), which the inverse adjunction turns into precomposition
+        -- (`equivLinearMapDualRegular_symm_comp`).
+        change equivLinearMapDualRegular.symm
+          ((e.toLinearMap ∘ₗ f.hom) ∘ₗ ModuleCat.endRingEquiv M g.unop) = _
+        rw [end_op_smul_eq_map, equivLinearMapDualRegular_symm_comp]
+        rfl }
   exact ⟨.of_surjective e'.toLinearMap e'.surjective, .of_equiv e'⟩
 
 end TauCeti
