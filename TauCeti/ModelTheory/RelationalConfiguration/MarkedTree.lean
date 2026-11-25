@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.MeasurableSpace.SimpleGraph
 public import TauCeti.ModelTheory.RelationalConfiguration.OrderClass
+public import TauCeti.Order.RelCovBy
 
 /-!
 # Marked trees and the cover graph of a coded tree
@@ -39,6 +40,9 @@ so it sends isomorphic codes to isomorphic codes.
 
 ## Main results
 
+* `TauCeti.RelationalConfiguration.Atom.induction_markedGraph`,
+  `TauCeti.RelationalConfiguration.ext_markedGraph`: atoms are adjacency or marking atoms, so a
+  code is determined by its relation and its marked vertices.
 * `TauCeti.RelationalConfiguration.isomorphismInvariant_markedTreeClass`,
   `TauCeti.RelationalConfiguration.measurableSet_markedTreeClass`: the class is invariant Borel.
 * `TauCeti.RelationalConfiguration.measurable_coverGraphCode`: the cover-graph map is measurable.
@@ -158,6 +162,39 @@ theorem markedGraphIsoPermSmul_symm_apply (σ : Equiv.Perm V)
     (markedGraphIsoPermSmul σ c).symm v = σ.symm v :=
   (rfl)
 
+/-- Every atom of the language of marked graphs is an adjacency atom `adj(u, v)` or a marking
+atom `mark(v)`. -/
+@[elab_as_elim]
+theorem Atom.induction_markedGraph {motive : Atom markedGraphLanguage V → Prop}
+    (adj : ∀ u v : V, motive (atom adjSymb ![u, v])) (mark : ∀ v : V, motive (atom markSymb ![v]))
+    (a : Atom markedGraphLanguage V) : motive a := by
+  induction a using Atom.induction_atom with
+  | h R x =>
+    cases R with
+    | adj =>
+      have hx : x = ![x 0, x 1] := by
+        funext i
+        fin_cases i <;> rfl
+      rw [hx]
+      exact adj (x 0) (x 1)
+    | mark =>
+      have hx : x = ![x 0] := by
+        funext i
+        fin_cases i
+        rfl
+      rw [hx]
+      exact mark (x 0)
+
+/-- Two codes of the language of marked graphs are equal when they have the same relation and
+mark the same vertices. -/
+theorem ext_markedGraph {c d : RelationalConfiguration markedGraphLanguage V}
+    (hadj : ∀ u v, codeRel adjSymb c u v ↔ codeRel adjSymb d u v)
+    (hmark : ∀ v, IsMarked c v ↔ IsMarked d v) : c = d := by
+  refine ext fun a => ?_
+  induction a using Atom.induction_markedGraph with
+  | adj u v => rw [Bool.eq_iff_iff, ← codeRel_iff, ← codeRel_iff, hadj]
+  | mark v => rw [Bool.eq_iff_iff, ← isMarked_iff, ← isMarked_iff, hmark]
+
 /-! ### Marked trees -/
 
 /-- The **marked trees**: the codes whose relation is symmetric and irreflexive, whose graph is a
@@ -236,23 +273,6 @@ end Measurable
 
 /-! ### The cover graph of a coded order -/
 
-/-- In a relation `r` read as a non-strict order, `u` **is covered by** `v` (Mathlib's `CovBy`,
-`u ⋖ v`, for the relation `r`): `u < v`, and no `w` satisfies `u < w < v`, where `a < b` means
-`r a b` and not `r b a`. -/
-def RelCovBy (r : V → V → Prop) (u v : V) : Prop :=
-  (r u v ∧ ¬ r v u) ∧ ∀ w, ¬ ((r u w ∧ ¬ r w u) ∧ (r w v ∧ ¬ r v w))
-
-/-- Unfolding lemma for `RelCovBy`. -/
-theorem relCovBy_iff {r : V → V → Prop} {u v : V} :
-    RelCovBy r u v ↔ (r u v ∧ ¬ r v u) ∧ ∀ w, ¬ ((r u w ∧ ¬ r w u) ∧ (r w v ∧ ¬ r v w)) :=
-  Iff.rfl
-
-/-- For the order of a preorder, `RelCovBy` is Mathlib's `CovBy`. -/
-@[simp]
-theorem relCovBy_le_iff_covBy {α : Type*} [Preorder α] {u v : α} :
-    RelCovBy (· ≤ ·) u v ↔ u ⋖ v := by
-  simp only [relCovBy_iff, ← lt_iff_le_not_ge, CovBy, not_and]
-
 /-- In the code of a preorder, `RelCovBy` for the relation of `leSymb` is Mathlib's `CovBy`. -/
 theorem relCovBy_codeRel_leSymb_ofStructure_orderStructure {α : Type*} [Preorder α] {u v : α} :
     RelCovBy (codeRel leSymb (@ofStructure Language.order α (orderStructure α))) u v ↔ u ⋖ v := by
@@ -301,15 +321,6 @@ theorem isMarked_coverGraphCode (c : RelationalConfiguration Language.order V) (
   rw [isMarked_iff, coverGraphCode, @eval_ofStructure _ _ (coverStructure _), decide_eq_true_iff,
     coverStructure_relMap_mark, Matrix.cons_val_fin_one]
 
-/-- Every atom of the language of marked graphs is an adjacency atom or a marking atom. -/
-private theorem atom_cases (a : Atom markedGraphLanguage V) :
-    (∃ x y, a = atom adjSymb ![x, y]) ∨ ∃ x, a = atom markSymb ![x] := by
-  induction a using Atom.induction_atom with
-  | h R x =>
-    cases R with
-    | adj => exact .inl ⟨x 0, x 1, by congr 1; ext i; fin_cases i <;> rfl⟩
-    | mark => exact .inr ⟨x 0, by congr 1; ext i; fin_cases i; rfl⟩
-
 /-- **The cover-graph map is measurable** on a countable carrier: each adjacency coordinate is
 the indicator of a closed set of codes, a countable intersection of conditions on finitely many
 coordinates, and so is each marking coordinate. -/
@@ -325,19 +336,19 @@ theorem measurable_coverGraphCode [Countable V] :
     simp only [relCovBy_iff, ofPred_and, ofPred_forall]
     exact (hlt x y).inter (MeasurableSet.iInter fun w => ((hlt x w).inter (hlt w y)).compl)
   refine measurable_iff.2 fun a => measurable_to_bool ?_
-  rcases atom_cases a with ⟨x, y, rfl⟩ | ⟨x, rfl⟩
-  · simp only [preimage, mem_singleton_iff, ← codeRel_iff, codeRel_coverGraphCode, ofPred_or]
+  induction a using Atom.induction_markedGraph with
+  | adj x y =>
+    simp only [preimage, mem_singleton_iff, ← codeRel_iff, codeRel_coverGraphCode, ofPred_or]
     exact (hC x y).union (hC y x)
-  · simp only [preimage, mem_singleton_iff, ← isMarked_iff, isMarked_coverGraphCode, ofPred_forall]
+  | mark x =>
+    simp only [preimage, mem_singleton_iff, ← isMarked_iff, isMarked_coverGraphCode, ofPred_forall]
     exact MeasurableSet.iInter fun w => hE x w
 
 /-- **The cover-graph map commutes with relabelling.** -/
 theorem coverGraphCode_perm_smul (σ : Equiv.Perm V) (c : RelationalConfiguration Language.order V) :
     coverGraphCode (σ • c) = σ • coverGraphCode c := by
-  refine ext fun a => ?_
-  rcases atom_cases a with ⟨x, y, rfl⟩ | ⟨x, rfl⟩
-  · rw [Bool.eq_iff_iff, ← codeRel_iff, ← codeRel_iff, codeRel_perm_smul, codeRel_coverGraphCode,
-      codeRel_coverGraphCode]
+  refine ext_markedGraph (fun x y => ?_) fun x => ?_
+  · rw [codeRel_perm_smul, codeRel_coverGraphCode, codeRel_coverGraphCode]
     simp only [relCovBy_iff, codeRel_perm_smul]
     refine or_congr (and_congr Iff.rfl ⟨fun h w => ?_, fun h w => ?_⟩)
       (and_congr Iff.rfl ⟨fun h w => ?_, fun h w => ?_⟩)
@@ -345,8 +356,7 @@ theorem coverGraphCode_perm_smul (σ : Equiv.Perm V) (c : RelationalConfiguratio
     · simpa using h (σ.symm w)
     · simpa using h (σ w)
     · simpa using h (σ.symm w)
-  · rw [Bool.eq_iff_iff, ← isMarked_iff, ← isMarked_iff, isMarked_perm_smul,
-      isMarked_coverGraphCode, isMarked_coverGraphCode]
+  · rw [isMarked_perm_smul, isMarked_coverGraphCode, isMarked_coverGraphCode]
     simp only [codeRel_perm_smul]
     exact ⟨fun h w => by simpa using h (σ w), fun h w => h (σ.symm w)⟩
 
