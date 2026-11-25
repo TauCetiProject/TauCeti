@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.RepresentationTheory.Rep.Basic
 public import TauCeti.Algebra.BigOperators.AlternatingSum
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
+public import TauCeti.LinearAlgebra.Matrix.RowCol
 public import TauCeti.RepresentationTheory.Rep.OfMulAction
 public import TauCeti.RepresentationTheory.Rep.TensorShortExact
 public import TauCeti.RingTheory.StableRange
@@ -370,19 +371,20 @@ theorem mem_affineFrameSystem_carrier_iff {p : ℕ} {A : Matrix (m ⊕ Unit) (Fi
 
 /-! ### Exactness in low degrees -/
 
-omit [Ring R] [Fintype m] [DecidableEq m] in
-/-- A matrix with one column is the matrix whose single column is its column `0`. -/
-theorem _root_.Matrix.eq_transpose_of_cons (A : Matrix m (Fin 1) R) :
-    A = (of ![fun r => A r 0])ᵀ := by
-  ext r c
-  fin_cases c
-  rfl
-
 omit [DecidableEq m] in
 /-- A vector `v` with `b ⬝ᵥ v = 1` for some functional `b` is a unimodular `1`-frame. -/
 theorem transpose_of_cons_mem_unimodularFrames {v : m → R} (b : m → R)
     (hb : b ⬝ᵥ v = 1) : (of ![v])ᵀ ∈ unimodularFrames R m 1 :=
   ⟨of ![b], by ext i j; fin_cases i; fin_cases j; rw [mul_apply', one_apply_eq]; exact hb⟩
+
+omit [DecidableEq m] in
+/-- A vector `v` is a unimodular `1`-frame exactly when `b ⬝ᵥ v = 1` for some functional `b`. -/
+theorem transpose_of_cons_mem_unimodularFrames_iff {v : m → R} :
+    (of ![v])ᵀ ∈ unimodularFrames R m 1 ↔ ∃ b : m → R, b ⬝ᵥ v = 1 := by
+  refine ⟨fun ⟨B, hB⟩ => ⟨fun r => B 0 r, ?_⟩,
+    fun ⟨b, hb⟩ => transpose_of_cons_mem_unimodularFrames b hb⟩
+  have h := congrFun (congrFun hB 0) 0
+  rwa [mul_apply', one_apply_eq] at h
 
 omit [DecidableEq m] in
 /-- Two vectors `v, w` with a dual pair of functionals `r₁, r₂` form a unimodular `2`-frame. -/
@@ -438,7 +440,7 @@ theorem affineFrameSystem_chainComplex_exactAt_one (hm : 1 < Fintype.card m) :
   refine F.chainComplex_exactAt_one k ⟨_, hvert 0⟩ fun ⟨A, hA⟩ => ?_
   set u : m → R := fun r => A (.inl r) 0
   have hA' : A = (of ![Sum.elim u 1])ᵀ := by
-    rw [Matrix.eq_transpose_of_cons A]
+    rw [Matrix.eq_transpose_of_fin_one A]
     congr 3
     ext (r | r)
     · rfl
@@ -470,12 +472,8 @@ theorem frameSystem_chainComplex_exactAt_one {R : Type u} [CommRing R] {s : ℕ}
   refine F.chainComplex_exactAt_one k ⟨_, hvert (Pi.single i₀ 1) (Pi.single i₀ 1) (by simp)⟩
     fun ⟨A, hA⟩ => ?_
   set v : m → R := fun r => A r 0
-  have hA' : A = (of ![v])ᵀ := Matrix.eq_transpose_of_cons A
-  obtain ⟨B, hB⟩ := id hA
-  have hb : (fun r => B 0 r) ⬝ᵥ v = 1 := by
-    have h := congrFun (congrFun hB 0) 0
-    rw [Matrix.mul_apply, one_apply_eq] at h
-    simpa only [dotProduct, v] using h
+  have hA' : A = (of ![v])ᵀ := Matrix.eq_transpose_of_fin_one A
+  obtain ⟨b, hb⟩ := transpose_of_cons_mem_unimodularFrames_iff.mp (hA' ▸ hA)
   rw [show (⟨A, hA⟩ : F.carrier 1) = ⟨_, hvert _ _ hb⟩ from Subtype.ext hA']
   by_cases hj : ∃ j, j ≠ i₀
   · obtain ⟨j, hj⟩ := hj
