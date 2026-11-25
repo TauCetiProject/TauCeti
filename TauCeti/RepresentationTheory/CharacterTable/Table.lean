@@ -245,6 +245,14 @@ theorem exists_irreducibleCharacter_eq {f : G → k} (hf : f ∈ irreducibleChar
   ⟨(finEquivIrreducibleCharacters k G).symm ⟨f, hf⟩,
     congrArg Subtype.val ((finEquivIrreducibleCharacters k G).apply_symm_apply ⟨f, hf⟩)⟩
 
+variable {k} in
+/-- The enumerated irreducible characters exhaust the irreducible characters. -/
+theorem range_irreducibleCharacter :
+    Set.range (irreducibleCharacter (G := G) k) = irreducibleCharacters k G := by
+  ext f
+  exact ⟨by rintro ⟨i, rfl⟩; exact irreducibleCharacter_mem k i,
+    fun hf => exists_irreducibleCharacter_eq k hf⟩
+
 variable (G) in
 /-- **The trivial character is a row of the character table**: some enumerated irreducible
 character of `G` is the constant function `1`, the character of the trivial one-dimensional
