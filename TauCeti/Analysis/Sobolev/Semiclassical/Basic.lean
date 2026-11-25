@@ -12,6 +12,7 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.Analysis.Calculus.BumpFunction.Translates
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
+import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
 # Semiclassical Sobolev norms on the whole space
@@ -402,12 +403,12 @@ private theorem memLp_and_semiclassicalSobolevNorm_smul_le {G : Type*} [NormedAd
       hΨm.of_le ((hgf.continuous_iteratedFDeriv (by exact_mod_cast hn)).const_smul _
         |>.aestronglyMeasurable) (.of_forall fun x ↦ (hle' x).trans (le_abs_self _))
     refine ⟨by simpa [(pow_pos hh n).ne'] using hm.const_smul (h ^ n)⁻¹, ?_⟩
-    rw [← Real.norm_of_nonneg (pow_nonneg hh.le n), ← coe_nnNorm, ← lpNorm_const_smul]
+    rw [← lpNorm_const_smul_of_nonneg (pow_nonneg hh.le n)]
     refine (lpNorm_mono_real hΨm hle').trans ?_
-    rw [hΨ, lpNorm_const_smul, coe_nnNorm, Real.norm_of_nonneg (by positivity)]
+    rw [hΨ, lpNorm_const_smul_of_nonneg (by positivity)]
     refine mul_le_mul_of_nonneg_left ((lpNorm_sum_le (fun j hj ↦ (hum' j hj).const_smul _)
       one_le_two).trans (Finset.sum_le_sum fun j _ ↦ ?_)) (by positivity)
-    rw [lpNorm_const_smul, coe_nnNorm, Real.norm_of_nonneg (pow_nonneg hh.le j)]
+    rw [lpNorm_const_smul_of_nonneg (pow_nonneg hh.le j)]
   refine ⟨fun i hi ↦ (key i hi).1, ?_⟩
   have hsum : ∑ j ∈ Finset.range (k + 1), h ^ j * lpNorm (fun x ↦ ‖iteratedFDeriv ℝ j u x‖) 2
       volume = ∑ j ∈ Finset.range (k + 1), h ^ j * lpNorm (iteratedFDeriv ℝ j u) 2 volume :=
