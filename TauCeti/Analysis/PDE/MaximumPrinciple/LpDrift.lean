@@ -355,9 +355,7 @@ theorem UniformlyEllipticOn.value_le_const_of_memLp_drift_of_forall_eLpNorm_le
       (by simpa using hconst.add hdrift) (fun _ ↦ zero_le) fun j ↦ ?_
     calc eLpNorm ((Γ j).indicator fun x ↦ C + ‖d x‖) p μ
         = eLpNorm (((Γ j).indicator fun _ ↦ C) + (Γ j).indicator fun x ↦ ‖d x‖) p μ := by
-          congr 1
-          ext x
-          by_cases hx : x ∈ Γ j <;> simp [hx]
+          rw [← Set.indicator_add']; rfl
       _ ≤ eLpNorm ((Γ j).indicator fun _ ↦ C) p μ +
             eLpNorm ((Γ j).indicator fun x ↦ ‖d x‖) p μ := eLpNorm_add_le hp1
   simpa using ENNReal.Tendsto.const_mul hsum (Or.inr ENNReal.coe_ne_top)
