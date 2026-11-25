@@ -13,7 +13,7 @@ public import TauCeti.RingTheory.NovikovSeries.ActionField
 
 For torsors under the action-weighted exponent group `G × ℝ`, with period
 `E_R (g, r) = E g + r`, chosen lifts `r i` identify each orbit with a copy of `ℝ` through
-`p ↦ E_R (p -ᵥ r i)`. The pushforward `TauCeti.NovikovModule.map` along these maps
+`p ↦ E_R (p -ᵥ r i)`. The pushforward `TauCeti.NovikovModule.pushforward` along these maps
 (`TauCeti.NovikovModule.actionFieldMap`) is a completed combination over the Novikov series
 `Nov(k, ℝ, id)`, with one generator for each energy in each orbit. Its coordinates are the
 images of the coordinates under the action-field map of Novikov series
@@ -31,6 +31,8 @@ which is the Novikov field when `k` is a field.
 
 ## Main results
 
+* `TauCeti.NovikovModule.actionFieldMap_single`: the specialization of point masses.
+* `TauCeti.NovikovModule.continuous_actionFieldMap`: the specialization is continuous.
 * `TauCeti.NovikovModule.coordinates_actionFieldMap`: the specialization in lift coordinates.
 * `TauCeti.NovikovModule.actionFieldMap_smul`: semilinearity over the action-field map of
   Novikov rings.
@@ -108,15 +110,24 @@ completed combinations of the generators `Σ _ : ι, ℝ` with the potential
 `TauCeti.NovikovModule.actionFieldPotential F r`. -/
 def actionFieldMap (r : ∀ i, P i) :
     NovikovModule R F →ₛₗ[ρ] NovikovModule k (actionFieldPotential F r) :=
-  map ρ (Sigma.map id fun i p => E.coprod (AddMonoidHom.id ℝ) (p -ᵥ r i))
+  pushforward ρ (Sigma.map id fun i p => E.coprod (AddMonoidHom.id ℝ) (p -ᵥ r i))
     (actionFieldPotential_energy hF r)
 
 /-- The action-field specialization is the pushforward along the energy maps of the orbits. -/
 theorem actionFieldMap_apply (r : ∀ i, P i) (a : NovikovModule R F) :
     actionFieldMap hF ρ r a =
-      map ρ (Sigma.map id fun i p => E.coprod (AddMonoidHom.id ℝ) (p -ᵥ r i))
+      pushforward ρ (Sigma.map id fun i p => E.coprod (AddMonoidHom.id ℝ) (p -ᵥ r i))
         (actionFieldPotential_energy hF r) a :=
   (rfl)
+
+/-- The action-field specialization sends the point mass `c` at `p` in the orbit `i` to the point
+mass `ρ c` at the energy `E_R (p -ᵥ r i)` in the orbit `i`. -/
+@[simp]
+theorem actionFieldMap_single [DecidableEq (Σ i, P i)] [DecidableEq (Σ _ : ι, ℝ)] (r : ∀ i, P i)
+    (i : ι) (p : P i) (c : R) :
+    actionFieldMap hF ρ r (single ⟨i, p⟩ c) =
+      single ⟨i, E.coprod (AddMonoidHom.id ℝ) (p -ᵥ r i)⟩ (ρ c) :=
+  pushforward_single _ ρ _ c
 
 variable [Finite ι]
 
@@ -127,7 +138,7 @@ action-field map `TauCeti.NovikovSeries.actionFieldMap E ρ` of Novikov series i
 theorem coordinates_actionFieldMap (r : ∀ i, P i) (a : NovikovModule R F) (i : ι) :
     coordinates (actionFieldPotential_vadd F r) (fun _ => 0) (actionFieldMap hF ρ r a) i =
       NovikovSeries.actionFieldMap E ρ (coordinates hF r a i) := by
-  have h := coordinates_map hF (actionFieldPotential_vadd F r) ρ
+  have h := coordinates_pushforward hF (actionFieldPotential_vadd F r) ρ
     (NovikovSeries.exists_period_rescale_coprod_id E) (vadd_vsub_energy r)
     (actionFieldPotential_energy hF r) r a i
   simp only [vsub_self, map_zero] at h
@@ -142,10 +153,20 @@ theorem actionFieldMap_smul (r : ∀ i, P i)
     actionFieldMap hF ρ r (β • a) =
       NovikovSeries.actionFieldMap E ρ β • actionFieldMap hF ρ r a := by
   rw [actionFieldMap_apply, actionFieldMap_apply, NovikovSeries.actionFieldMap_eq_mapRingHom]
-  exact map_smul_novikov hF (actionFieldPotential_vadd F r) ρ
+  exact pushforward_smul_novikov hF (actionFieldPotential_vadd F r) ρ
     (NovikovSeries.exists_period_rescale_coprod_id E) (vadd_vsub_energy r) _ β a
 
 end Semiring
+
+section Ring
+
+variable [Ring R] [Ring k] (ρ : R →+* k)
+
+/-- The action-field specialization is continuous for the potential-cutoff topologies. -/
+theorem continuous_actionFieldMap (r : ∀ i, P i) : Continuous (actionFieldMap hF ρ r) :=
+  continuous_pushforward _ ρ
+
+end Ring
 
 section CommSemiring
 
