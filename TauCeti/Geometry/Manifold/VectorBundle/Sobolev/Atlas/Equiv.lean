@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ChartData.ChangeAtlas
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Atlas.ChartData
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ContMDiffSection
 import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Measure
 
@@ -25,7 +25,7 @@ of the other atlas with the same section is a continuous linear map
 are isomorphic Banach spaces (`TauCeti.SobolevSection.atlasEquiv`), so their norms are equivalent.
 
 The construction is the change of chart data `TauCeti.SectionChartData.changeAtlas` of
-`TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ChartData.ChangeAtlas`, which also serves bases with
+`TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Atlas.ChartData`, which also serves bases with
 boundary. What it needs here is that the chart data of `A'` are read off from those of `A`
 (`TauCeti.FiniteBundleAtlas.readsFrom_sectionChartData`): on the part of the image of a chart of
 `A'` lying over the domain of a chart of `A`, the reading of a section is the coordinate change of

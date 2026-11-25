@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Hom
 public import TauCeti.Analysis.Sobolev.Wkp.Restriction
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Basic
-import Mathlib.MeasureTheory.Function.Jacobian
+import TauCeti.MeasureTheory.Function.Jacobian
 import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
@@ -258,14 +258,9 @@ theorem aeTransition_of_differentiableOn {μ : Measure E} [μ.IsAddHaarMeasure]
     (hinv : ∀ i i', ∀ y ∈ C.overlap i i', C.transition i' i (C.transition i i' y) = y) :
     C.AETransition μ := by
   refine C.aeTransition_iff.2 fun i i' P h ↦ ?_
-  have hN : μ ({z | ¬P z} ∩ C.overlap i' i) = 0 := by
-    rw [ae_iff, Measure.restrict_apply' (C.image i).isOpen.measurableSet] at h
-    exact measure_mono_null (inter_subset_inter_right _ (C.overlap_subset_image i' i)) h
-  have himage := addHaar_image_eq_zero_of_differentiableOn_of_addHaar_eq_zero μ
-    ((hd i' i).mono inter_subset_right) hN
-  rw [ae_iff, Measure.restrict_apply' (C.isOpen_overlap i i').measurableSet]
-  refine measure_mono_null (fun y hy ↦ ?_) himage
-  exact ⟨C.transition i i' y, ⟨hy.1, hmaps i i' hy.2⟩, hinv i i' y hy.2⟩
+  exact ae_restrict_comp_of_leftInvOn μ (C.isOpen_overlap i i').measurableSet
+    (C.isOpen_overlap i' i).measurableSet (hd i' i) (hmaps i i') (hinv i i')
+    (ae_restrict_of_ae_restrict_of_subset (C.overlap_subset_image i' i) h)
 
 end Transition
 

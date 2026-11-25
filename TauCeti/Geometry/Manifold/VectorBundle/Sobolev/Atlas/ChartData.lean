@@ -129,7 +129,7 @@ theorem readsFrom_refl : C.ReadsFrom C μ :=
       · exact ae_of_all _ fun _ hy ↦ absurd hy hii)
     fun i i' s ↦ ae_of_all _ fun _ hy ↦ by
       obtain rfl : i = i' := hy
-      rfl
+      simp
 
 variable {C C' μ}
 

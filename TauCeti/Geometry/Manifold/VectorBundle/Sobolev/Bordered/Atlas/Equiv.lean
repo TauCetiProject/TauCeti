@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ChartData.ChangeAtlas
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Atlas.ChartData
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic
 
 /-!
@@ -25,8 +25,9 @@ two spaces are isomorphic Banach spaces (`TauCeti.BorderedSobolevSection.atlasEq
 norms are equivalent (`TauCeti.BorderedSobolevSection.exists_norm_changeAtlas_le`).
 
 The construction is the change of chart data `TauCeti.SectionChartData.changeAtlas` of
-`TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Atlas.Equiv`, which also gives the boundaryless
-`TauCeti.SobolevSection.changeAtlas`. What it needs here is that the chart data of `A'` are read off
+`TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Atlas.ChartData`; the boundaryless
+`TauCeti.SobolevSection.changeAtlas` of `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Atlas.Equiv`
+is another instance of it. What it needs here is that the chart data of `A'` are read off
 from those of `A` (`TauCeti.FiniteBundleAtlas.readsFrom_halfSectionChartData`): on the part of the
 interior of the image of a chart of `A'` lying over the domain of a chart of `A`, the reading of a
 section is the coordinate change of the bundle applied to its reading in the chart of `A`

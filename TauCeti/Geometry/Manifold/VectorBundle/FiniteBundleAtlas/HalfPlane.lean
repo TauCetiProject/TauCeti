@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.Complex.ClosedUpperHalfPlane
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Basic
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
-import Mathlib.MeasureTheory.Function.Jacobian
+import TauCeti.MeasureTheory.Function.Jacobian
 import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.Sobolev.Local.Basic
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
@@ -469,6 +469,14 @@ theorem differentiableOn_halfTransition (i i' : Fin A.n) :
   rw [halfTransition_eq]
   exact (A.differentiableOn_coe_chart_chart_symm A i' i).mono (A.halfOverlap_subset i i')
 
+omit [IsManifold closedUpperHalfPlaneModel 1 M] in
+/-- The interior points of the image of chart `i` lying over an open set of `M` form an open set. -/
+private theorem isOpen_halfImage_inter_preimage (i : Fin A.n) {D : Set M} (hD : IsOpen D) :
+    IsOpen ((A.halfImage i : Set ℂ) ∩
+      {y | (A.chart i).symm (closedUpperHalfPlaneModel.symm y) ∈ D}) :=
+  ((A.continuousOn_chart_symm i).comp closedUpperHalfPlaneModel.continuous_symm.continuousOn
+    fun _ hy ↦ (A.mem_halfImage.1 hy).1).isOpen_inter_preimage (A.halfImage i).isOpen hD
+
 /-- **Change of atlas preserves null sets, chartwise.** If a property `P` of points of `ℂ` holds
 almost everywhere on the interior of the image of chart `i` of `A`, then almost everywhere on the
 interior of the image of chart `i'` of `A'` it holds at the reading in chart `i` of the
@@ -481,26 +489,29 @@ theorem ae_restrict_halfImage_chart_symm (A' : FiniteBundleAtlas ClosedUpperHalf
     ∀ᵐ y ∂volume.restrict (A'.halfImage i' : Set ℂ),
       (A'.chart i').symm (closedUpperHalfPlaneModel.symm y) ∈ A.dom i →
         P (A.chart i ((A'.chart i').symm (closedUpperHalfPlaneModel.symm y)) : ℂ) := by
-  have hN : volume ({z | ¬P z} ∩ ((A.halfImage i : Set ℂ) ∩
-      {z | (A.chart i).symm (closedUpperHalfPlaneModel.symm z) ∈ A'.dom i'})) = 0 := by
-    rw [ae_iff, Measure.restrict_apply' (A.halfImage i).isOpen.measurableSet] at h
-    exact measure_mono_null (inter_subset_inter_right _ inter_subset_left) h
-  have himage := addHaar_image_eq_zero_of_differentiableOn_of_addHaar_eq_zero volume
-    ((A.differentiableOn_coe_chart_chart_symm A' i i').mono inter_subset_right) hN
-  rw [ae_iff, Measure.restrict_apply' (A'.halfImage i').isOpen.measurableSet]
-  refine measure_mono_null (fun y hy ↦ ?_) himage
-  simp only [mem_inter_iff, mem_ofPred_eq, not_imp] at hy
-  obtain ⟨⟨hdom, hP⟩, hyU⟩ := hy
-  obtain ⟨hyU', hy0⟩ := A'.mem_halfImage.1 hyU
-  have hleft : (A.chart i).symm (closedUpperHalfPlaneModel.symm
-      (A.chart i ((A'.chart i').symm (closedUpperHalfPlaneModel.symm y)) : ℂ)) =
-        (A'.chart i').symm (closedUpperHalfPlaneModel.symm y) := by
+  -- Pull back along the chart transition from chart `i'` of `A'` to chart `i` of `A`, whose left
+  -- inverse is the transition back, on the open sets of interior points lying over the domain of
+  -- the other chart.
+  have hleft {y : ℂ} (hdom : (A'.chart i').symm (closedUpperHalfPlaneModel.symm y) ∈ A.dom i) :
+      (A.chart i).symm (closedUpperHalfPlaneModel.symm
+        (A.chart i ((A'.chart i').symm (closedUpperHalfPlaneModel.symm y)) : ℂ)) =
+          (A'.chart i').symm (closedUpperHalfPlaneModel.symm y) := by
     rw [closedUpperHalfPlaneModel_symm_coe, (A.chart i).left_inv (A.dom_subset_chart_source i hdom)]
-  refine ⟨_, ⟨hP, A.coe_chart_mem_halfImage A' hyU hdom, ?_⟩, ?_⟩
-  · rw [mem_ofPred_eq, hleft]
-    exact A'.symm_mem_dom hyU'
-  · simp only [hleft, (A'.chart i').right_inv (A'.closure_image_subset_target i'
-      (subset_closure hyU')), coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hy0.le]
+  have hs := A'.isOpen_halfImage_inter_preimage i' (A.isOpen_dom i)
+  have hpull := ae_restrict_comp_of_leftInvOn volume
+    (f := fun y ↦ (A.chart i ((A'.chart i').symm (closedUpperHalfPlaneModel.symm y)) : ℂ))
+    hs.measurableSet (A.isOpen_halfImage_inter_preimage i (A'.isOpen_dom i')).measurableSet
+    (A.differentiableOn_coe_chart_chart_symm A' i i')
+    (fun y hy ↦ ⟨A.coe_chart_mem_halfImage A' hy.1 hy.2, by
+      rw [mem_ofPred_eq, hleft hy.2]; exact A'.symm_mem_dom (A'.mem_halfImage.1 hy.1).1⟩)
+    (fun y hy ↦ by
+      obtain ⟨hyU', hy0⟩ := A'.mem_halfImage.1 hy.1
+      simp only [hleft hy.2, (A'.chart i').right_inv (A'.closure_image_subset_target i'
+        (subset_closure hyU')), coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hy0.le])
+    (ae_restrict_of_ae_restrict_of_subset inter_subset_left h)
+  rw [ae_restrict_iff' hs.measurableSet] at hpull
+  rw [ae_restrict_iff' (A'.halfImage i').isOpen.measurableSet]
+  filter_upwards [hpull] with y hy hyU hdom using hy ⟨hyU, hdom⟩
 
 end FiniteBundleAtlas
 
