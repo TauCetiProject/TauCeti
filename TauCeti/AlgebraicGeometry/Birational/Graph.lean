@@ -191,6 +191,14 @@ section Base
 
 variable (sX : X ⟶ S) (sY : Y ⟶ S)
 
+/-- The kernel of `h.imageι ≫ pullbackToProd sX sY` is that of `h ≫ pullbackToProd sX sY`. This is
+Mathlib's `IdealSheafData.map_ker`, whose left side `h.ker.map (pullbackToProd sX sY)` is by
+definition of `IdealSheafData.map` the kernel of `h.imageι ≫ pullbackToProd sX sY`, since
+`h.imageι` is `h.ker.subschemeι`. -/
+private theorem ker_imageι_comp_pullbackToProd_eq {Z : Scheme.{u}} (h : Z ⟶ pullback sX sY) :
+    (h.imageι ≫ pullbackToProd sX sY).ker = (h ≫ pullbackToProd sX sY).ker :=
+  IdealSheafData.map_ker h (pullbackToProd sX sY)
+
 /-- **The second projection of the graph of a dominant rational map is surjective** when `X` is
 proper over a base `S` over which `f` is defined. -/
 theorem surjective_graphSnd [f.IsOver sX sY] [IsProper sX] [f.IsDominant] :
@@ -207,8 +215,7 @@ theorem surjective_graphSnd [f.IsOver sX sY] [IsProper sX] [f.IsDominant] :
   have e : h ≫ pullbackToProd sX sY = X.homOfLE hgV ≫ graphLift f := by
     apply pullback.hom_ext <;> simp [h, hg, Scheme.homOfLE_ι]
   have H : (graphι f).ker ≤ (h.imageι ≫ pullbackToProd sX sY).ker := by
-    rw [show (h.imageι ≫ pullbackToProd sX sY).ker = _ from
-      IdealSheafData.map_ker h (pullbackToProd sX sY), e, IdealSheafData.ker_subschemeι]
+    rw [ker_imageι_comp_pullbackToProd_eq, e, IdealSheafData.ker_subschemeι]
     exact Scheme.Hom.le_ker_comp _ _
   have e' : IsClosedImmersion.lift _ _ H ≫ graphSnd f =
       graphClosureSnd sX sY g.domain g.hom (g.over sX sY) := by
@@ -230,8 +237,7 @@ variable [IsReduced X] [Y.IsSeparated] [S.IsSeparated] [f.IsOver sX sY]
 private theorem ker_imageι_comp_pullbackToProd :
     ((opensGraph sX sY f.toPartialMap.domain f.toPartialMap.hom
       (f.toPartialMap.over sX sY)).imageι ≫ pullbackToProd sX sY).ker = (graphι f).ker := by
-  rw [show (Scheme.Hom.imageι _ ≫ pullbackToProd sX sY).ker = _ from
-      IdealSheafData.map_ker _ (pullbackToProd sX sY), IdealSheafData.ker_subschemeι,
+  rw [ker_imageι_comp_pullbackToProd_eq, IdealSheafData.ker_subschemeι,
     ← ker_opensGraph_eq_ker_graphLift f f.toPartialMap f.toRationalMap_toPartialMap]
   congr 1
   apply pullback.hom_ext <;> simp
