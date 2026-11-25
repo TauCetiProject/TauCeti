@@ -14,14 +14,20 @@ This file proves that normalization is continuous away from the origin, in the f
 `Filter.Tendsto.normalize`, and packages pointwise normalization of a continuous nowhere-zero
 map as a continuous map to the unit sphere. It also defines the direction map
 `sphereDirection e`, which sends a nonzero vector `x` to `‖x‖⁻¹ • x` and the origin to an assigned
-point `e` of the unit sphere.
+point `e` of the unit sphere. Normalization at most doubles distances to points of the unit
+sphere, which moves nets built from arbitrary approximants onto the sphere.
 
 ## Main results
 
 * `Filter.Tendsto.normalize`: normalization preserves limits with a nonzero limit.
 * `NormedSpace.isClosed_setOf_eq_zero_or_normalize_mem`: the cone `{0} ∪ {x ≠ 0 | x / ‖x‖ ∈ S}`
   over a closed set `S` of directions is closed.
+* `NormedSpace.normalize_apply_normalize`: a map commuting with nonnegative dilations commutes
+  with normalization up to normalization.
+* `NormedSpace.dist_normalize_le_two_mul_dist`: `dist x (normalize y) ≤ 2 * dist x y` for a unit
+  vector `x`.
 * `TauCeti.continuousAt_sphereDirection`: the direction map is continuous away from the origin.
+* `TauCeti.norm_mul_dist_sphereDirection_le`: `‖y‖ dist (x / ‖x‖, y / ‖y‖) ≤ 2 ‖x - y‖`.
 
 ## Main definitions
 
@@ -58,6 +64,35 @@ theorem _root_.NormedSpace.isClosed_setOf_eq_zero_or_normalize_mem {S : Set E} (
   exact ContinuousOn.isOpen_inter_preimage
     (fun x hx ↦ ContinuousAt.continuousWithinAt (tendsto_id.normalize hx)) isOpen_ne
     hS.isOpen_compl
+
+/-- A map commuting with dilations by nonnegative scalars commutes with normalization up to
+normalization: `normalize (g (normalize z)) = normalize (g z)`. -/
+theorem _root_.NormedSpace.normalize_apply_normalize {g : E → E}
+    (hg : ∀ c : ℝ, 0 ≤ c → ∀ y, g (c • y) = c • g y) (z : E) :
+    normalize (g (normalize z)) = normalize (g z) := by
+  rcases eq_or_ne z 0 with rfl | hz
+  · simp
+  -- `normalize z` is the positive multiple `‖z‖⁻¹ • z` of `z`.
+  have hz' : normalize z = ‖z‖⁻¹ • z := (rfl)
+  rw [hz', hg _ (inv_nonneg.2 (norm_nonneg z)),
+    normalize_smul_of_pos (inv_pos.2 (norm_pos_iff.2 hz))]
+
+/-- Normalizing `y` at most doubles its distance to a unit vector `x`. This includes `y = 0`,
+whose normalization is `0`. -/
+theorem _root_.NormedSpace.dist_normalize_le_two_mul_dist {x : E} (hx : ‖x‖ = 1) (y : E) :
+    dist x (normalize y) ≤ 2 * dist x y := by
+  rcases eq_or_ne y 0 with rfl | hy
+  · norm_num [hx]
+  have hyu : dist y (normalize y) = |‖y‖ - 1| := by
+    rw [dist_eq_norm]
+    calc
+      ‖y - normalize y‖ = ‖(‖y‖ - 1) • normalize y‖ := by
+        rw [sub_smul, one_smul, norm_smul_normalize]
+      _ = |‖y‖ - 1| := by rw [norm_smul, Real.norm_eq_abs, norm_normalize hy, mul_one]
+  have hnorm : |‖y‖ - 1| ≤ dist x y := by
+    rw [← hx, dist_comm, dist_eq_norm]
+    exact abs_norm_sub_norm_le y x
+  linarith [dist_triangle x y (normalize y)]
 
 /-- Radial projection sends a continuous nowhere-zero map into a real normed space continuously
 to its unit sphere. -/
@@ -123,6 +158,24 @@ theorem continuousAt_sphereDirection (hx : x ≠ 0) : ContinuousAt (sphereDirect
     coe_sphereDirection_of_ne_zero e hx]
   exact (tendsto_id.normalize hx).congr' <| Filter.mem_of_superset (isOpen_ne.mem_nhds hx)
     fun y hy ↦ (coe_sphereDirection_of_ne_zero e hy).symm
+
+/-- Directions of two vectors are at distance at most `2 ‖x - y‖ / ‖y‖`, in the multiplied-out
+form `‖y‖ dist (x / ‖x‖, y / ‖y‖) ≤ 2 ‖x - y‖`, which also holds when either vector vanishes. -/
+theorem norm_mul_dist_sphereDirection_le (x y : E) :
+    ‖y‖ * dist (sphereDirection e x) (sphereDirection e y) ≤ 2 * ‖x - y‖ := by
+  set u : E := (sphereDirection e x : E)
+  have hu : ‖u‖ = 1 := norm_eq_of_mem_sphere (sphereDirection e x)
+  -- `‖y‖ • (u - v) = (‖y‖ - ‖x‖) • u + (x - y)`, using `‖x‖ • u = x` and `‖y‖ • v = y`.
+  have hdecomp : ‖y‖ • (u - sphereDirection e y) = (‖y‖ - ‖x‖) • u + (x - y) := by
+    rw [smul_sub, norm_smul_sphereDirection, sub_smul, norm_smul_sphereDirection]
+    abel
+  calc ‖y‖ * dist (sphereDirection e x) (sphereDirection e y)
+      = ‖(‖y‖ - ‖x‖) • u + (x - y)‖ := by
+        rw [Subtype.dist_eq, dist_eq_norm, ← hdecomp, norm_smul, norm_norm]
+    _ ≤ |‖y‖ - ‖x‖| + ‖x - y‖ := by
+        simpa [norm_smul, hu] using norm_add_le ((‖y‖ - ‖x‖) • u) (x - y)
+    _ ≤ 2 * ‖x - y‖ := by
+        linarith [abs_norm_sub_norm_le y x, norm_sub_rev y x]
 
 end Direction
 

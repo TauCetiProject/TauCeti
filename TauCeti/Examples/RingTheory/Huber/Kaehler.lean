@@ -30,10 +30,7 @@ variable (A : Type*) [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [Nonarc
   [CompleteSpace A] [T0Space A] [IsHuberRing A]
 
 -- `Ωᶜ[A⁄A] = 0`: the identity is surjective.
-example :
-    haveI : IsAdicHom (algebraMap A A) := IsAdicHom.id
-    Subsingleton (ContinuousKaehlerDifferential A A) :=
-  haveI : IsAdicHom (algebraMap A A) := IsAdicHom.id
+example : Subsingleton (ContinuousKaehlerDifferential A A) :=
   ContinuousKaehlerDifferential.subsingleton_of_surjective Function.surjective_id
 
 end Self

@@ -15,15 +15,17 @@ public import TauCeti.RingTheory.Localization.DenIdeal
 Mathlib's `Localization.subalgebra.ofField K S hS` is the localization of a ring `A` at a
 submonoid `S` of non-zero-divisors, realized as the `A`-subalgebra of the fraction field `K` of
 `A` consisting of the quotients `a / s` with `a ∈ A` and `s ∈ S`. This file adds the membership
-tests that make it usable as a subring of `K`: an element `z : K` lies in it exactly when some
-`s ∈ S` clears its denominator (`s ∈ Algebra.denIdeal K z`), and for `S = powers x` exactly when
-`x` lies in the radical of `Algebra.denIdeal K z`. Intersecting over a family of principal
-localizations `A[1 / a_i]` therefore tests whether the span of the `a_i` lies in that radical.
-It also records that inverting a finite product inverts each factor, and that the localization of
-a Dedekind domain, so realized, is again a Dedekind domain.
+tests that make it usable as a subring of `K`: an element `z : K` lies in it exactly when it is
+a quotient `a / s` with `s ∈ S`, when some `s ∈ S` clears its denominator (`s * z ∈ A`, i.e.
+`s ∈ Algebra.denIdeal K z`), and for `S = powers x` when some power of `x` does so (`x` lies in
+the radical of `Algebra.denIdeal K z`). Intersecting over a family of principal localizations
+`A[1 / a_i]` therefore tests whether the span of the `a_i` lies in that radical. It also records
+that inverting a finite product inverts each factor, and that the localization of a Dedekind
+domain, so realized, is again a Dedekind domain.
 
 ## Main results
 
+* `Localization.subalgebra.mem_ofField_iff`: membership in `A[S⁻¹] ⊆ K` as a quotient `a / s`.
 * `Localization.subalgebra.mem_ofField_iff_exists_mul_mem_range`,
   `Localization.subalgebra.mem_ofField_iff_exists_mem_denIdeal`,
   `Localization.subalgebra.mem_ofField_powers_iff`, and
@@ -48,6 +50,13 @@ variable {A K : Type*} [CommRing A] [Field K] [Algebra A K] [IsFractionRing A K]
 section Submonoid
 
 variable (S : Submonoid A) (hS : S ≤ A⁰)
+
+/-- **Membership in `A[S⁻¹] ⊆ K` as a fraction**: `z` lies in the localization exactly when it is
+a quotient `a / s` with `a ∈ A` and `s ∈ S`. -/
+theorem mem_ofField_iff {z : K} :
+    z ∈ ofField K S hS ↔ ∃ a, ∃ s ∈ S, z = algebraMap A K a * (algebraMap A K s)⁻¹ := by
+  rw [ofField, ← SetLike.mem_coe, Subalgebra.coe_copy, Set.mem_ofPred_eq]
+  simp only [exists_prop]
 
 /-- **Membership in `A[S⁻¹] ⊆ K` by clearing denominators**: `z` lies in the localization exactly
 when some `s ∈ S` has `s * z ∈ A`. -/

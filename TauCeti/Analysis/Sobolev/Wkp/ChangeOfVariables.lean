@@ -88,6 +88,8 @@ uniqueness of weak derivatives gives the chain rule for the weak Hessian.
   norm bound for left-invertible `Cᵏ` maps across all orders `k : ℕ` and exponents `1 ≤ p ≤ ∞`.
 * `TauCeti.Wkp.IsChangeOfVariables.w1pCompL`: the first-order change of variables
   `TauCeti.W1p.compL` along a change of variables of order at least one.
+* `TauCeti.Wkp.IsChangeOfVariables.w1pCompL_restrictL_eq_restrictL_w1pCompL`: the first-order
+  change of variables commutes with restriction to open subdomains.
 * `TauCeti.Wkp.IsChangeOfVariables.abs_det_fderiv_eq_one`: mutually inverse changes of variables
   with Jacobian determinants at least one in absolute value have Jacobian determinants of absolute
   value one.
@@ -1073,6 +1075,24 @@ theorem IsChangeOfVariables.w1pCompL_mem_w1p0Submodule_of_leftInvOn
     h.w1pCompL hp u ∈ w1p0Submodule mu U p :=
   W1p.compL_mem_w1p0Submodule_of_leftInvOn Φ hp h.differentiableOn h.injOn h.mapsTo
     h.norm_fderiv_le h.pos h.le_abs_det hΨ hΨmaps hΨΦ hu
+
+/-- The first-order change of variables commutes with restriction: for `u ∈ W^{1,p}(W)`, flattening
+the restriction of `u` to `V₁` along `Φ : U₁ → V₁` agrees with flattening its restriction to `V`
+along `Φ : U → V` and then restricting to the open subset `U₁ ⊆ U`. -/
+theorem IsChangeOfVariables.w1pCompL_restrictL_eq_restrictL_w1pCompL {U₁ V₁ : Opens E} {m : ℕ}
+    (h : IsChangeOfVariables (k + 1) U V Φ L c) (h₁ : IsChangeOfVariables (m + 1) U₁ V₁ Φ L' c')
+    (hU₁ : U₁ ≤ U) (hp : p ≠ ⊤) (hVW : V ≤ W) (hV₁W : V₁ ≤ W) (u : W1p mu W p) :
+    h₁.w1pCompL hp (W1p.restrictL hV₁W u) =
+      W1p.restrictL hU₁ (h.w1pCompL hp (W1p.restrictL hVW u)) := by
+  refine W1p.ext_value (Lp.ext ?_)
+  have hU₁U : (U₁ : Set E) ⊆ U := SetLike.coe_subset_coe.mpr hU₁
+  filter_upwards [h₁.value_w1pCompL_ae hp (W1p.restrictL hV₁W u),
+    h₁.ae_comp (W1p.value_restrictL_ae hV₁W u),
+    W1p.value_restrictL_ae hU₁ (h.w1pCompL hp (W1p.restrictL hVW u)),
+    ae_restrict_of_ae_restrict_of_subset hU₁U (h.value_w1pCompL_ae hp (W1p.restrictL hVW u)),
+    ae_restrict_of_ae_restrict_of_subset hU₁U (h.ae_comp (W1p.value_restrictL_ae hVW u))]
+    with y h1 h2 h3 h4 h5
+  rw [h1, h2, h3, h4, h5]
 
 /-- Precomposition commutes with restriction to open subdomains. -/
 theorem restrictL_compL {U' V' : Opens E} (h : IsChangeOfVariables k U V Φ L c)

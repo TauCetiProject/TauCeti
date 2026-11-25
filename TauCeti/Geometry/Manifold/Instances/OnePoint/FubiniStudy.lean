@@ -47,8 +47,9 @@ integrates to `1` over the affine chart
 (`OnePoint.integral_fubiniStudyDensity`), which is the whole sphere except the point `∞`. The area
 `π` of the unit disc and the polar integral `∫₀^∞ 2r / (1 + r²)² dr = 1` give this value. The
 integral of the form itself over the sphere with its complex orientation is then `1`
-(`OnePoint.integralTopForm_fubiniStudyForm`, in
-`TauCeti.Geometry.Manifold.DifferentialForm.Integration.RiemannSphere`).
+(`OnePoint.integralTopForm_fubiniStudyForm`), and its measure `|ω_FS|` gives the sphere total mass
+one (`OnePoint.measure_fubiniStudyForm_univ`), both in
+`TauCeti.Geometry.Manifold.DifferentialForm.Integration.RiemannSphere`.
 
 This is the area form with which symplectic and holomorphic-curve arguments on the sphere are
 normalized; other areas are obtained by scaling it.

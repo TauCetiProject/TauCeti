@@ -313,8 +313,7 @@ theorem hasDerivWithinAt_apply_alongCurveWithin
         (fun r ↦ β.coord i (sectionCoord ℝ (F := E) γ a (γ t) r)) s t :=
     (LinearMap.toContinuousLinearMap (β.coord i)).differentiableAt.comp_differentiableWithinAt t ha
   have hframe (i : Fin (Module.finrank ℝ E)) : MDiffAt (T% (e.localFrame β i)) (γ t) :=
-    (((e.isLocalFrameOn_localFrame_baseSet I 1 β).contMDiffOn i).mdifferentiableOn
-      one_ne_zero).mdifferentiableAt (e.open_baseSet.mem_nhds hbase)
+    (contMDiffAt_localFrame_of_mem 1 _ β i hbase).mdifferentiableAt one_ne_zero
   have hcoordX (i : Fin (Module.finrank ℝ E)) : DifferentiableWithinAt ℝ
       (sectionCoord ℝ (F := E) γ (fun r ↦ e.localFrame β i (γ r)) (γ t)) s t :=
     differentiableWithinAt_sectionCoord γ (fun r ↦ e.localFrame β i (γ r))
@@ -362,8 +361,7 @@ theorem IsMetricCompatible.hasDerivWithinAt_inner_alongCurveWithin
           innerSL ℝ (cov Y (γ t) v) (Z (γ t)) + innerSL ℝ (Y (γ t)) (cov Z (γ t) v) := by
     intro Y Z hY hZ v
     simp only [innerSL_apply_apply]
-    simpa only [FiberBundle.extend_apply_self] using
-      hcov.mvfderiv_inner_eq (FiberBundle.extend E v) hY hZ
+    exact hcov.mvfderiv_inner_eq (fun _ ↦ v) hY hZ
   -- `innerSL ℝ v w` unfolds to `inner ℝ v w` (`innerSL_apply_apply` is proved by `rfl`), but
   -- `simp` does not rewrite it under the instances found for `TangentSpace I (γ r)`.
   exact hasDerivWithinAt_apply_alongCurveWithin hdiff hcompat hγ hV hW

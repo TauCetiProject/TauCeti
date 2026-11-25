@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.Ring.Constructions
 public import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 public import Mathlib.RingTheory.LocalRing.Pullback
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import TauCeti.RingTheory.Pullback
 
 /-!
 # When is the quotient square of a ring map cartesian?
@@ -77,37 +78,37 @@ variable {A B : Type*} [Ring A] [Ring B] (f : A →+* B) {I : Ideal A} (J : Idea
   [I.IsTwoSided] [J.IsTwoSided] (hIJ : I ≤ J.comap f)
 
 /-- The comparison map `a ↦ (f a, [a])` from `A` to the fibre product `B ×_{B/J} A/I` of the
-quotient square of `f` along ideals `I` and `J` with `I ≤ J.comap f`. -/
+quotient square of `f` along ideals `I` and `J` with `I ≤ J.comap f`: the `RingHom.pullbackLift`
+of `f` and the quotient map `A →+* A/I`. -/
 def toQuotientPullback :
     A →+* (Ideal.Quotient.mk J).pullback (Ideal.quotientMap J f hIJ) :=
-  (f.prod (Ideal.Quotient.mk I)).codRestrict _ fun a ↦ by simp
+  (Ideal.Quotient.mk J).pullbackLift (Ideal.quotientMap J f hIJ) f (Ideal.Quotient.mk I)
+    (RingHom.ext fun _ ↦ by simp)
 
 @[simp]
 theorem coe_toQuotientPullback_apply (a : A) :
     (f.toQuotientPullback J hIJ a : B × A ⧸ I) = (f a, Ideal.Quotient.mk I a) :=
-  (rfl)
+  coe_pullbackLift_apply _ _ _ a
 
 /-- The `B`-coordinate of the comparison map is `f`. -/
 @[simp]
 theorem pullbackFst_comp_toQuotientPullback :
     (pullbackFst _ _).comp (f.toQuotientPullback J hIJ) = f :=
-  (rfl)
+  pullbackFst_comp_pullbackLift _ _ _
 
 /-- The `A/I`-coordinate of the comparison map is the quotient map. -/
 @[simp]
 theorem pullbackSnd_comp_toQuotientPullback :
     (pullbackSnd _ _).comp (f.toQuotientPullback J hIJ) = Ideal.Quotient.mk I :=
-  (rfl)
+  pullbackSnd_comp_pullbackLift _ _ _
 
 /-- The comparison map is the only ring map to the fibre product whose coordinates are `f` and
 the quotient map. -/
 theorem eq_toQuotientPullback
     {g : A →+* (Ideal.Quotient.mk J).pullback (Ideal.quotientMap J f hIJ)}
     (h₁ : (pullbackFst _ _).comp g = f) (h₂ : (pullbackSnd _ _).comp g = Ideal.Quotient.mk I) :
-    g = f.toQuotientPullback J hIJ := by
-  ext a
-  · exact congr($h₁ a)
-  · exact congr($h₂ a)
+    g = f.toQuotientPullback J hIJ :=
+  eq_pullbackLift _ h₁ h₂
 
 /-- The kernel of the comparison map is `ker f ⊓ I`. -/
 @[simp]

@@ -70,6 +70,8 @@ this file are the bundle-level input to that comparison.
 
 ## Main results
 
+* `TauCeti.pointTwistMul_eq_zero_iff` and `TauCeti.pointTwistDiv_eq_zero_iff`: the zeros of the
+  fibre maps.
 * `TauCeti.signedPointTwistCore.isContMDiff`: the point twist of a `C^n` bundle, of either sign, is
   a `C^n` bundle; for `n = ∞` over `𝓘(ℂ)` this is its holomorphic structure.
 * `TauCeti.continuous_pointTwistMul_section` and `TauCeti.contMDiff_pointTwistMul_section`:
@@ -248,6 +250,19 @@ theorem signedPointTwistFactor_mul {x z : X} {s b b' b'' : Bool} (hb : z ∈ poi
   · rw [mul_comm]
     exact pointTwistFactor_mul hb'' hb' hb
   · exact pointTwistFactor_mul hb hb' hb''
+
+/-- The signed scalar transition function with the opposite sign is the reversed one. -/
+@[simp] theorem signedPointTwistFactor_not (x : X) (s b b' : Bool) :
+    signedPointTwistFactor x (!s) b b' = signedPointTwistFactor x s b' b := by
+  cases s <;> simp only [Bool.not_false, Bool.not_true, signedPointTwistFactor_true,
+    signedPointTwistFactor_false]
+
+/-- The signed scalar transition functions in the two directions between two pieces containing
+`z` are inverse to each other. -/
+theorem signedPointTwistFactor_mul_swap {x z : X} {s b b' : Bool}
+    (hb : z ∈ pointTwistBaseSet x b) (hb' : z ∈ pointTwistBaseSet x b') :
+    signedPointTwistFactor x s b' b z * signedPointTwistFactor x s b b' z = 1 := by
+  rw [signedPointTwistFactor_mul hb hb' hb, signedPointTwistFactor_self]
 
 variable {n : ℕ∞ω} [IsManifold 𝓘(ℂ) n X] in
 theorem contMDiffOn_signedPointTwistFactor (x : X) (s b b' : Bool) :
@@ -562,6 +577,16 @@ theorem pointTwistMul_eq_zero_iff_of_ne {x z : X} (h : z ≠ x) (v : E z) :
     simp
   · rw [pointTwistMul_eq_zero_iff_of_ne h]
     simp [h]
+
+/-- The vector `pointTwistDiv F E x z w` of `E` vanishes exactly at `x` and where `w` does: off `x`
+`pointTwistDiv` is an isomorphism, and at `x` it is zero. -/
+@[simp] theorem pointTwistDiv_eq_zero_iff {x z : X} (w : F) :
+    pointTwistDiv F E x z w = 0 ↔ z = x ∨ w = 0 := by
+  by_cases h : z = x
+  · subst h
+    simp
+  · simp only [h, false_or]
+    exact map_eq_zero_iff _ (pointTwistDiv_bijective_of_ne h).1
 
 /-- The fibres of the signed point twist are real vector spaces through the model fibre. -/
 instance signedPointTwistCore.moduleRealFiber [NormedSpace ℝ F] (x : X) (s : Bool) (z : X) :
