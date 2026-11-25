@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.VectorField.Pullback
 public import Mathlib.LinearAlgebra.Determinant
 import Mathlib.Geometry.Manifold.MFDeriv.Tangent
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -207,18 +208,12 @@ theorem det_fderiv_mpullback_extChartAt_symm_of_eq_zero
         (fderiv 𝕜 (mpullback 𝓘(𝕜, E) I (extChartAt I x').symm V) (extChartAt I x' x) :
           E →ₗ[𝕜] E) =
       LinearMap.det (vectorFieldChartDerivative I V x) := by
-  have hmem : x ∈ (extChartAt I x').source ∩ (extChartAt I x).source ∩ (extChartAt I x').source :=
-    ⟨⟨hx, mem_extChartAt_source x⟩, hx⟩
-  have hmem' : x ∈ (extChartAt I x).source ∩ (extChartAt I x').source ∩ (extChartAt I x).source :=
-    ⟨⟨mem_extChartAt_source x, hx⟩, mem_extChartAt_source x⟩
-  -- The derivatives of the two transition maps at `x` are mutually inverse.
-  let e : E ≃ₗ[𝕜] E := LinearEquiv.ofLinearMap (f := (tangentCoordChange I x x' x : E →ₗ[𝕜] E))
-    (g := (tangentCoordChange I x' x x : E →ₗ[𝕜] E))
-    (LinearMap.ext fun v ↦ (tangentCoordChange_comp hmem).trans (tangentCoordChange_self hx))
-    (LinearMap.ext fun v ↦ (tangentCoordChange_comp hmem').trans
-      (tangentCoordChange_self (mem_extChartAt_source x)))
   rw [fderiv_mpullback_extChartAt_symm_of_eq_zero hV hV₀ hx, vectorFieldChartDerivative_def]
-  exact LinearMap.det_conj _ e
+  -- The derivatives of the two transition maps at `x` are mutually inverse.
+  set e := tangentCoordChangeEquiv (mem_extChartAt_source x) hx
+  refine (congrArg LinearMap.det ?_).trans (LinearMap.det_conj _ e.toLinearEquiv)
+  ext v
+  simp [e]
 
 end Boundaryless
 

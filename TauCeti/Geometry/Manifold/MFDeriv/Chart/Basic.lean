@@ -88,6 +88,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
     `TauCeti.mfderivWithin_extChartAt_symm_of_subset`, and
     `TauCeti.tangentCoordChange_tangentCoordChange`: derivatives of coordinate changes, inverse
     charts on subsets, and inverse tangent coordinate changes.
+  - `TauCeti.tangentCoordChangeEquiv`: a tangent coordinate change as a continuous linear
+    equivalence.
   - `TauCeti.mfderiv_eq_fderiv_comp_mfderiv_extChartAt`,
     `TauCeti.fderiv_comp_extChartAt_symm_injective`,
     `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero`,
@@ -655,6 +657,29 @@ theorem tangentCoordChange_tangentCoordChange {x y z : M} (hx : z ∈ (extChartA
     (hy : z ∈ (extChartAt I y).source) (v : E) :
     tangentCoordChange I y x z (tangentCoordChange I x y z v) = v := by
   rw [tangentCoordChange_comp ⟨⟨hx, hy⟩, hx⟩, tangentCoordChange_self hx]
+
+/-- At a point `z` of the sources of the charts at `x` and `y`, the tangent coordinate change from
+the chart at `x` to the chart at `y`, as a continuous linear equivalence whose inverse is the
+tangent coordinate change back. -/
+noncomputable def tangentCoordChangeEquiv {x y z : M} (hx : z ∈ (extChartAt I x).source)
+    (hy : z ∈ (extChartAt I y).source) : E ≃L[𝕜] E :=
+  .ofContinuousLinearMap (tangentCoordChange I x y z) (tangentCoordChange I y x z)
+    (ContinuousLinearMap.ext (tangentCoordChange_tangentCoordChange hy hx))
+    (ContinuousLinearMap.ext (tangentCoordChange_tangentCoordChange hx hy))
+
+/-- The equivalence `TauCeti.tangentCoordChangeEquiv` applies the tangent coordinate change. -/
+@[simp]
+theorem tangentCoordChangeEquiv_apply {x y z : M} (hx : z ∈ (extChartAt I x).source)
+    (hy : z ∈ (extChartAt I y).source) (v : E) :
+    tangentCoordChangeEquiv hx hy v = tangentCoordChange I x y z v :=
+  (rfl)
+
+/-- The inverse of `TauCeti.tangentCoordChangeEquiv` applies the tangent coordinate change back. -/
+@[simp]
+theorem tangentCoordChangeEquiv_symm_apply {x y z : M} (hx : z ∈ (extChartAt I x).source)
+    (hy : z ∈ (extChartAt I y).source) (v : E) :
+    (tangentCoordChangeEquiv hx hy).symm v = tangentCoordChange I y x z v :=
+  (rfl)
 
 end TauCeti
 

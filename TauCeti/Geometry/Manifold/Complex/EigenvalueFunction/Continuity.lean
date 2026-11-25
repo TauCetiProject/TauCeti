@@ -7,12 +7,12 @@ module
 
 public import TauCeti.Geometry.Manifold.Complex.EigenvalueFunction
 public import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
-import Mathlib.Geometry.Manifold.MFDeriv.Tangent
 import TauCeti.Analysis.InnerProductSpace.RelativeEigenvalues.Continuity
 import TauCeti.Analysis.InnerProductSpace.RelativeEigenvalues.LinearEquiv
+import TauCeti.Geometry.Manifold.Complex.LeviForm
 import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.Tangent.CoordChange
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
-import TauCeti.Topology.VectorBundle.Trivialization
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.CoordChange
 
 /-!
 # Continuity of the eigenvalue function on a Hermitian manifold
@@ -30,10 +30,11 @@ holomorphic. Relative eigenvalues do not change under the complex linear equival
 (`TauCeti.relEigenvalueVector_comp_linearEquiv`). In these coordinates:
 
 * the Hermitian forms `H_κ(x)` and `H_α(x)` converge, by continuity of the forms evaluated along
-  converging tangent vectors (`TauCeti.IsSmoothForm.tendsto_apply`);
-* the Levi form of `φ` at `x` is the Levi form at the chart image of `x` of the coordinate
-  expression of `φ` in the chart at `x₀` (`TauCeti.leviForm_comp_symm_apply_of_mem_maximalAtlas`),
-  which is continuous because it is built from the second derivative of a `C²` function.
+  converging tangent vectors (`TauCeti.IsSmoothForm.tendsto_apply`,
+  `TangentBundle.tendsto_mk_tangentCoordChange`);
+* the Levi form of `φ` converges (`TauCeti.tendsto_manifoldLeviForm_tangentCoordChange`): it is
+  the Levi form of the coordinate expression of `φ` in the chart at `x₀`, which is continuous
+  because it is built from the second derivative of a `C²` function.
 
 The sorted eigenvalue vector depends continuously on the pair of forms at a positive definite
 reference form (`TauCeti.tendsto_relEigenvalueVector`), which concludes.
@@ -51,58 +52,6 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {X : Type*} [TopologicalSpace X] [ChartedSpace E X] [IsManifold 𝓘(ℂ, E) ∞ X]
 
-/-- The real tangent coordinate changes of a complex manifold are the complex ones. -/
-theorem tangentCoordChange_real_eq_complex {x y z : X}
-    (h : z ∈ (chartAt E x).source ∩ (chartAt E y).source) (v : E) :
-    tangentCoordChange 𝓘(ℝ, E) x y z v = tangentCoordChange 𝓘(ℂ, E) x y z v := by
-  simpa only [modelWithCornersSelf_restrictScalars, ContinuousLinearMap.coe_restrictScalars'] using
-    congrArg (fun L : E →L[ℝ] E ↦ L v) (𝓘(ℂ, E).tangentCoordChange_restrictScalars ℝ h)
-
-/-- On the chart at `x₀`, the complex tangent coordinate change from the chart at `x` back to the
-chart at `x₀` undoes the one from the chart at `x₀` to the chart at `x`. -/
-theorem tangentCoordChange_tangentCoordChange_self {x₀ x : X}
-    (hx : x ∈ (chartAt E x₀).source) (v : E) :
-    tangentCoordChange 𝓘(ℂ, E) x x₀ x (tangentCoordChange 𝓘(ℂ, E) x₀ x x v) = v := by
-  rw [tangentCoordChange_comp (I := 𝓘(ℂ, E)) ⟨⟨by simpa using hx, by simp⟩, by simpa using hx⟩,
-    tangentCoordChange_self (I := 𝓘(ℂ, E)) (by simpa using hx)]
-
-/-- On the chart at `x₀`, the complex tangent coordinate change from the chart at `x₀` to the
-chart at `x` undoes the one from the chart at `x` to the chart at `x₀`. -/
-theorem tangentCoordChange_tangentCoordChange_self' {x₀ x : X}
-    (hx : x ∈ (chartAt E x₀).source) (v : E) :
-    tangentCoordChange 𝓘(ℂ, E) x₀ x x (tangentCoordChange 𝓘(ℂ, E) x x₀ x v) = v := by
-  rw [tangentCoordChange_comp (I := 𝓘(ℂ, E)) ⟨⟨by simp, by simpa using hx⟩, by simp⟩,
-    tangentCoordChange_self (I := 𝓘(ℂ, E)) (by simp)]
-
-/-- On the chart at `x₀`, the complex tangent coordinate change from the chart at `x₀` to the
-chart at `x`, as a linear equivalence. -/
-def tangentCoordChangeEquiv {x₀ x : X} (hx : x ∈ (chartAt E x₀).source) : E ≃ₗ[ℂ] E where
-  toFun := tangentCoordChange 𝓘(ℂ, E) x₀ x x
-  invFun := tangentCoordChange 𝓘(ℂ, E) x x₀ x
-  map_add' := map_add _
-  map_smul' := map_smul _
-  left_inv := tangentCoordChange_tangentCoordChange_self hx
-  right_inv := tangentCoordChange_tangentCoordChange_self' hx
-
-/-- **Tangent vectors with constant coordinates in the chart at `x₀`** converge in the tangent
-bundle: `(x, B x u) → (x₀, u)` as `x → x₀`, where `B x` is the tangent coordinate change from the
-chart at `x₀` to the chart at `x`. -/
-theorem tendsto_mk_tangentCoordChange (x₀ : X) (u : E) :
-    Tendsto (fun x ↦ (⟨x, tangentCoordChange 𝓘(ℂ, E) x₀ x x u⟩ : TangentBundle 𝓘(ℝ, E) X))
-      (𝓝 x₀) (𝓝 ⟨x₀, u⟩) := by
-  set T := trivializationAt E (TangentSpace 𝓘(ℝ, E)) x₀
-  have hx₀ : x₀ ∈ T.baseSet := FiberBundle.mem_baseSet_trivializationAt E _ x₀
-  have hcoord {x : X} (hx : x ∈ (chartAt E x₀).source) (v : E) :
-      T.continuousLinearMapAt ℝ x v = tangentCoordChange 𝓘(ℂ, E) x x₀ x v := by
-    rw [TangentBundle.continuousLinearMapAt_trivializationAt_eq_core hx,
-      ← tangentCoordChange_real_eq_complex ⟨mem_chart_source E x, hx⟩]
-    rfl
-  refine (T.tendsto_mk_nhds_mk_iff ℝ hx₀).2 ⟨tendsto_id, ?_⟩
-  rw [hcoord (mem_chart_source E x₀), tangentCoordChange_self (I := 𝓘(ℂ, E)) (by simp)]
-  refine tendsto_const_nhds.congr' ?_
-  filter_upwards [(chartAt E x₀).open_source.mem_nhds (mem_chart_source E x₀)] with x hx
-  rw [hcoord hx, tangentCoordChange_tangentCoordChange_self hx]
-
 /-- **The Hermitian form of a continuous two-form, read in the chart at `x₀`, is continuous at
 `x₀`**: `H_α(x)(B x u, B x v) → H_α(x₀)(u, v)`. -/
 theorem IsSmoothForm.tendsto_twoFormHermitianForm_tangentCoordChange
@@ -112,60 +61,23 @@ theorem IsSmoothForm.tendsto_twoFormHermitianForm_tangentCoordChange
   have hvec (w w' : E) : ∀ j, Tendsto (fun x ↦ (⟨x, ![tangentCoordChange 𝓘(ℂ, E) x₀ x x w,
       tangentCoordChange 𝓘(ℂ, E) x₀ x x w'] j⟩ : TangentBundle 𝓘(ℝ, E) X)) (𝓝 x₀)
       (𝓝 ⟨x₀, ![w, w'] j⟩) := by
+    -- The real and complex tangent coordinate changes agree on the chart at `x₀`.
+    have hB (w : E) : Tendsto (fun x ↦ (⟨x, tangentCoordChange 𝓘(ℂ, E) x₀ x x w⟩ :
+        TangentBundle 𝓘(ℝ, E) X)) (𝓝 x₀) (𝓝 ⟨x₀, w⟩) := by
+      refine (TangentBundle.tendsto_mk_tangentCoordChange x₀ w).congr' ?_
+      filter_upwards [(chartAt E x₀).open_source.mem_nhds (mem_chart_source E x₀)] with x hx
+      rw [tangentCoordChange_modelWithCornersSelf_restrictScalars_apply ℝ (𝕜' := ℂ)
+        ⟨hx, mem_chart_source E x⟩]
     intro j
     fin_cases j
-    · exact tendsto_mk_tangentCoordChange x₀ w
-    · exact tendsto_mk_tangentCoordChange x₀ w'
+    · exact hB w
+    · exact hB w'
   have hre := hα.tendsto_apply tendsto_id (hvec u (I • v))
   have him := hα.tendsto_apply tendsto_id (hvec u v)
   simp only [map_smul, id] at hre
   simp only [twoFormHermitianForm_def, Complex.mk_eq_add_mul_I]
   exact ((continuous_ofReal.tendsto _).comp hre).add
     (((continuous_ofReal.tendsto _).comp him).mul_const I)
-
-/-- **The Levi form, read in the chart at `x₀`, is continuous at `x₀`** for a function that is
-`C²` at `x₀`: `L_φ(x)(B x u, B x v) → L_φ(x₀)(u, v)`. -/
-theorem tendsto_manifoldLeviForm_tangentCoordChange {φ : X → ℝ} {x₀ : X}
-    (hφ : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 φ x₀) (u v : E) :
-    Tendsto (fun x ↦ manifoldLeviForm E φ x (tangentCoordChange 𝓘(ℂ, E) x₀ x x u)
-      (tangentCoordChange 𝓘(ℂ, E) x₀ x x v)) (𝓝 x₀) (𝓝 (manifoldLeviForm E φ x₀ u v)) := by
-  set e := chartAt E x₀
-  set f := φ ∘ e.symm
-  -- In the chart at `x₀`, the Levi form is that of the coordinate expression `f`.
-  have hL : ∀ᶠ x in 𝓝 x₀, manifoldLeviForm E φ x (tangentCoordChange 𝓘(ℂ, E) x₀ x x u)
-      (tangentCoordChange 𝓘(ℂ, E) x₀ x x v) = leviForm f (e x) u v := by
-    filter_upwards [e.open_source.mem_nhds (mem_chart_source E x₀),
-      (contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hφ] with x hx hφx
-    have hD : ∀ w, mfderiv 𝓘(ℂ, E) 𝓘(ℂ, E) e x (tangentCoordChange 𝓘(ℂ, E) x₀ x x w) = w :=
-      fun w ↦ by
-        rw [mfderiv_chartAt_eq_tangentCoordChange (I := 𝓘(ℂ, E)) hx]
-        exact tangentCoordChange_tangentCoordChange_self hx w
-    have he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, E) 2 X := IsManifold.chart_mem_maximalAtlas x₀
-    rw [← leviForm_comp_symm_apply_of_mem_maximalAtlas he hx hφx, hD, hD]
-  -- The Levi form of the `C²` function `f` is continuous, as its second derivative is.
-  have hf : ContDiffAt ℝ 2 f (e x₀) := hφ.contDiffAt_comp_chartAt_symm
-  have hD2 : ContinuousAt (fderiv ℝ (fderiv ℝ f)) (e x₀) :=
-    ((hf.fderiv_right (m := 1) (by norm_num)).fderiv_right (m := 0) (by norm_num)).continuousAt
-  have he : ContinuousAt e x₀ := e.continuousAt (mem_chart_source E x₀)
-  have hc : ContinuousAt (fun z ↦ leviForm f z u v) (e x₀) := by
-    have hre : ContinuousAt (fun z ↦ (leviForm f z u v).re) (e x₀) := by
-      simp only [re_leviForm_apply]
-      exact ((hD2.clm_apply continuousAt_const).clm_apply continuousAt_const |>.add
-        ((hD2.clm_apply continuousAt_const).clm_apply continuousAt_const)).div_const _
-    have him : ContinuousAt (fun z ↦ (leviForm f z u v).im) (e x₀) := by
-      simp only [im_leviForm_apply]
-      exact ((hD2.clm_apply continuousAt_const).clm_apply continuousAt_const |>.sub
-        ((hD2.clm_apply continuousAt_const).clm_apply continuousAt_const)).div_const _
-    have h := (continuous_ofReal.continuousAt.comp hre).add
-      ((continuous_ofReal.continuousAt.comp him).mul
-      (continuousAt_const : ContinuousAt (fun _ : E ↦ I) (e x₀)))
-    have hfun : (fun z ↦ leviForm f z u v) =
-        fun z ↦ ((leviForm f z u v).re : ℂ) + (leviForm f z u v).im * I :=
-      funext fun z ↦ (Complex.re_add_im _).symm
-    rw [hfun]
-    exact h
-  rw [manifoldLeviForm_def]
-  exact (hc.tendsto.comp he.tendsto).congr' (hL.mono fun x hx ↦ hx.symm)
 
 namespace SmoothTwoForm
 
@@ -199,8 +111,12 @@ theorem Compatible.continuousAt_relEigenvalueFunction {κ : SmoothTwoForm 𝓘(�
     filter_upwards [hsrc] with x hx
     simp only [hH, hA]
     rw [relEigenvalueFunction_def]
-    exact relEigenvalueVector_comp_linearEquiv (tangentCoordChangeEquiv hx)
-      (twoFormHermitianForm E κ.val x) (ddbarHermitianForm E α φ x)
+    have h := relEigenvalueVector_comp_linearEquiv
+        (tangentCoordChangeEquiv (I := 𝓘(ℂ, E)) (by simpa using hx)
+          (mem_extChartAt_source x)).toLinearEquiv
+        (twoFormHermitianForm E κ.val x) (ddbarHermitianForm E α φ x)
+    simp only [ContinuousLinearEquiv.coe_toLinearEquiv, tangentCoordChangeEquiv_apply] at h
+    exact h
   have hlim : Tendsto (fun x ↦ relEigenvalueVector (H x · ·) (A x · ·)) (𝓝 x₀)
       (𝓝 (relEigenvalueVector (twoFormSesqForm E κ.val x₀ (hκx x₀) · ·)
         (ddbarSesqForm E φ (hα x₀) · ·))) := by

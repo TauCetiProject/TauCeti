@@ -40,12 +40,6 @@ open Classical in
 theorem relEigenvalueVector_comp_linearEquiv (B : E ≃ₗ[𝕜] E) (h a : E → E → 𝕜) :
     relEigenvalueVector (fun u v ↦ h (B u) (B v)) (fun u v ↦ a (B u) (B v)) =
       relEigenvalueVector h a := by
-  have hP : (fun μ ↦ Antitone μ ∧
-      IsRelEigenvalueVector (fun u v ↦ h (B u) (B v)) (fun u v ↦ a (B u) (B v)) μ) =
-      fun μ ↦ Antitone μ ∧ IsRelEigenvalueVector h a μ :=
-    funext fun μ ↦ propext (and_congr_right fun _ ↦ isRelEigenvalueVector_comp_linearEquiv_iff B)
-  rw [relEigenvalueVector_def, relEigenvalueVector_def]
-  exact congrArg (fun P : (Fin (finrank 𝕜 E) → ℝ) → Prop ↦
-    if hμ : ∃ μ, P μ then hμ.choose else 0) hP
+  simp only [relEigenvalueVector_def, isRelEigenvalueVector_comp_linearEquiv_iff]
 
 end TauCeti
