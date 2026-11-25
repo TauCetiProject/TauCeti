@@ -34,14 +34,9 @@ G-function lie in a common number field, while the geometric modulus bound `‖a
 implies that `PowerSeries.mk a` has convergence radius at least `C⁻¹`
 (`PowerSeries.inv_le_radius_of_norm_coeff_le_mul_pow`), hence positive radius
 (`TauCeti.IsGFunction.radius_pos`), and represents an analytic function on a disc around `0`.
-G-functions are closed under addition, finite sums, finitely supported algebraic sequences and
-polynomials over `algebraicClosure ℚ ℂ` (`TauCeti.IsGFunction.sum`,
-`TauCeti.IsGFunction.of_eventually_eq_zero`, `TauCeti.isGFunction_coeff`), scalar multiplication,
-shifts (`TauCeti.IsGFunction.shift`, `TauCeti.IsGFunction.comp_add_right`), prepending an algebraic
-constant (`TauCeti.IsGFunction.cons`), rescaling, ring endomorphisms of `ℂ`, intrinsic Galois
-conjugation by `Gal(algebraicClosure ℚ ℂ/ℚ)` (`TauCeti.IsGFunction.galoisConj`), Hurwitz
-convolution (`TauCeti.IsGFunction.hurwitzMul`), formal differentiation, and Cauchy convolution
-(`TauCeti.IsGFunction.sum_antidiagonal_mul`).
+G-functions are closed under addition, scalar multiplication, shifts
+(`TauCeti.IsGFunction.shift`, `TauCeti.IsGFunction.comp_add_right`), rescaling, Galois conjugation,
+formal differentiation, and Cauchy convolution (`TauCeti.IsGFunction.sum_antidiagonal_mul`).
 
 ## Main definitions
 
@@ -54,12 +49,9 @@ convolution (`TauCeti.IsGFunction.hurwitzMul`), formal differentiation, and Cauc
 * `TauCeti.IsGFunction.radius_pos`, `TauCeti.IsGFunction.hasFPowerSeriesOnBall`,
   `TauCeti.IsGFunction.exists_hasFPowerSeriesOnBall`, `TauCeti.IsGFunction.exists_summable`:
   positive convergence radius and analyticity around `0`.
-* `TauCeti.IsGFunction.add`, `TauCeti.IsGFunction.sum`,
-  `TauCeti.IsGFunction.of_eventually_eq_zero`, `TauCeti.isGFunction_coeff`,
-  `TauCeti.IsGFunction.comp_add_right`, `TauCeti.IsGFunction.cons`,
-  `TauCeti.IsGFunction.galoisConj`, `TauCeti.IsGFunction.hurwitzMul`,
-  `TauCeti.IsGFunction.sum_antidiagonal_mul`, `TauCeti.IsGFunction.derivative`: algebraic,
-  differential, and Galois closure of G-functions.
+* `TauCeti.IsGFunction.add`, `TauCeti.IsGFunction.comp_add_right`,
+  `TauCeti.IsGFunction.sum_antidiagonal_mul`, `TauCeti.IsGFunction.derivative`: closure under sums,
+  shifts, Cauchy products, and formal differentiation.
 * `TauCeti.isGFunction_const_one`, `TauCeti.isGFunction_one_div_natCast`,
   `TauCeti.not_isGFunction_one_div_factorial`: `1 / (1 - z)` and `-log (1 - z)` are G-functions
   (the latter via Chebyshev's bound on `lcm {1, …, n}`), whereas `exp z = ∑ zⁿ / n!` is not.
@@ -213,10 +205,6 @@ theorem isGFunction_single (k : ℕ) {c : ℂ} (hc : IsAlgebraic ℚ c) :
 theorem isGFunction_const_one : IsGFunction (fun _ ↦ 1) :=
   isEFunction_const_one.isGFunction
 
-/-- Constant algebraic data `fun _ ↦ c` (representing `c / (1 - z)`) define a G-function. -/
-theorem isGFunction_const {c : ℂ} (hc : IsAlgebraic ℚ c) : IsGFunction fun _ ↦ c :=
-  (isEFunction_const hc).isGFunction
-
 /-- The geometric sequence `n ↦ α ^ n` is a G-function for algebraic `α`. -/
 theorem isGFunction_pow {α : ℂ} (hα : IsAlgebraic ℚ α) : IsGFunction (α ^ ·) :=
   (isEFunction_pow hα).isGFunction
@@ -232,16 +220,6 @@ protected theorem add {a b : ℕ → ℂ} (ha : IsGFunction a) (hb : IsGFunction
     IsGFunction (a + b) :=
   (ha.isEFunction.add hb.isEFunction).isGFunction
 
-/-- Finite sums of G-functions are G-functions. -/
-protected theorem sum {ι : Type*} (s : Finset ι) {f : ι → ℕ → ℂ}
-    (hf : ∀ i ∈ s, IsGFunction (f i)) : IsGFunction (∑ i ∈ s, f i) :=
-  (IsEFunction.sum s fun i hi ↦ (hf i hi).isEFunction).isGFunction
-
-/-- Every finitely supported sequence of `ℚ`-algebraic numbers defines a G-function. -/
-theorem of_eventually_eq_zero {a : ℕ → ℂ} (halg : ∀ n, IsAlgebraic ℚ (a n))
-    {N : ℕ} (hN : ∀ n ≥ N, a n = 0) : IsGFunction a :=
-  (IsEFunction.of_eventually_eq_zero halg hN).isGFunction
-
 /-- Differences of G-functions are G-functions. -/
 protected theorem sub {a b : ℕ → ℂ} (ha : IsGFunction a) (hb : IsGFunction b) :
     IsGFunction (a - b) :=
@@ -251,11 +229,6 @@ protected theorem sub {a b : ℕ → ℂ} (ha : IsGFunction a) (hb : IsGFunction
 protected theorem smul {c : ℂ} (hc : IsAlgebraic ℚ c) {a : ℕ → ℂ} (ha : IsGFunction a) :
     IsGFunction (c • a) :=
   (ha.isEFunction.smul hc).isGFunction
-
-/-- Hurwitz (binomial) convolution preserves G-functions. -/
-protected theorem hurwitzMul {a b : ℕ → ℂ} (ha : IsGFunction a) (hb : IsGFunction b) :
-    IsGFunction (TauCeti.hurwitzMul a b) :=
-  (ha.isEFunction.hurwitzMul hb.isEFunction).isGFunction
 
 /-- Shifting the coefficient sequence (`aₙ ↦ a_{n + 1}`) preserves G-functions. -/
 protected theorem shift {a : ℕ → ℂ} (ha : IsGFunction a) :
@@ -267,12 +240,6 @@ protected theorem comp_add_right {a : ℕ → ℂ} (ha : IsGFunction a) (m : ℕ
     IsGFunction fun n ↦ a (n + m) :=
   (ha.isEFunction.comp_add_right m).isGFunction
 
-/-- Prepending an algebraic constant `c` at `n = 0` (`n + 1 ↦ a n`) preserves `IsGFunction`,
-corresponding to `C c + X * PowerSeries.mk a`. -/
-protected theorem cons {c : ℂ} (hc : IsAlgebraic ℚ c) {a : ℕ → ℂ} (ha : IsGFunction a) :
-    IsGFunction fun n ↦ if n = 0 then c else a (n - 1) :=
-  (ha.isEFunction.integrate hc).isGFunction
-
 /-- Rescaling by an algebraic number `α` (`aₙ ↦ αⁿ aₙ`) preserves G-functions. -/
 protected theorem rescale {α : ℂ} (hα : IsAlgebraic ℚ α) {a : ℕ → ℂ} (ha : IsGFunction a) :
     IsGFunction fun n ↦ α ^ n * a n :=
@@ -282,15 +249,6 @@ protected theorem rescale {α : ℂ} (hα : IsAlgebraic ℚ α) {a : ℕ → ℂ
 protected theorem comp_ringHom {a : ℕ → ℂ} (ha : IsGFunction a) (σ : ℂ →+* ℂ) :
     IsGFunction (σ ∘ a) :=
   (ha.isEFunction.comp_ringHom σ).isGFunction
-
-/-- **Intrinsic Galois conjugation of G-functions.** Any Galois automorphism
-`τ ∈ Gal(algebraicClosure ℚ ℂ/ℚ)` acts directly on the algebraic coefficients of a G-function `a`
-and produces a G-function. -/
-protected theorem galoisConj (τ : Gal(algebraicClosure ℚ ℂ/ℚ)) {a : ℕ → ℂ}
-    (ha : IsGFunction a) :
-    IsGFunction fun n ↦
-      (τ ⟨a n, mem_algebraicClosure_iff.mpr (ha.isAlgebraic n)⟩ : ℂ) :=
-  (ha.isEFunction.galoisConj τ).isGFunction
 
 private theorem house_sum_antidiagonal_mul_le {a b : ℕ → ℂ} {C₁ C₂ : ℝ} (hC₁ : 0 < C₁)
     (hC₂ : 0 < C₂) (halg_a : ∀ n, IsAlgebraic ℚ (a n)) (halg_b : ∀ n, IsAlgebraic ℚ (b n))
@@ -387,13 +345,6 @@ protected theorem derivative {a : ℕ → ℂ} (ha : IsGFunction a) :
     exact (isIntegral_natCast (m + 1)).mul ((hd n).2.2 m hm)
 
 end IsGFunction
-
-/-- The coefficient sequence `n ↦ P.coeff n` of any polynomial `P : ℂ[X]` with `ℚ`-algebraic
-coefficients is a G-function. -/
-theorem isGFunction_coeff {P : ℂ[X]} (hP : ∀ n, IsAlgebraic ℚ (P.coeff n)) :
-    IsGFunction fun n ↦ P.coeff n :=
-  IsGFunction.of_eventually_eq_zero hP fun _ hn ↦
-    Polynomial.coeff_eq_zero_of_natDegree_lt (Nat.lt_of_succ_le hn)
 
 /-! ### Concrete examples and non-examples of G-functions -/
 

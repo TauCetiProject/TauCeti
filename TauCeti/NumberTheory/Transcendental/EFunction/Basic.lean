@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.PowerSeries.DFinite.Algebraic
 public import TauCeti.RingTheory.PowerSeries.DFinite.Borel
 import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 import TauCeti.Algebra.Order.GroupWithZero.Pow
+import TauCeti.FieldTheory.Normal.Closure
 
 /-!
 # Siegel's E-functions
@@ -39,19 +40,25 @@ satisfies four arithmetic-differential conditions:
    algebraic integer for all `m ≤ n`.
 
 All coefficients of an E-function lie in a single number field
-(`TauCeti.IsEFunction.exists_numberField`), `eFun a` is an entire analytic function on `ℂ`, and the
-class of E-functions is closed under sums (including finite sums, finitely supported algebraic
-sequences, and polynomials over `algebraicClosure ℚ ℂ`), differences, algebraic scalar multiples,
-Hurwitz products (analytic multiplication), forward shifts (analytic differentiation), prepending
-an algebraic constant (analytic integration), algebraic rescaling `z ↦ α z`, coefficientwise ring
-endomorphisms of `ℂ`, and intrinsic Galois conjugation by `Gal(algebraicClosure ℚ ℂ/ℚ)`.
+(`TauCeti.IsEFunction.exists_numberField`) and hence in a single finite Galois number field over
+`ℚ` (`TauCeti.IsEFunction.exists_isGalois_numberField`), `eFun a` is an entire analytic function on
+`ℂ`, and the class of E-functions is closed under sums, differences, algebraic scalar multiples,
+binary and finite Hurwitz products (analytic multiplication), forward shifts (analytic
+differentiation), algebraic rescaling `z ↦ α z`, coefficientwise ring endomorphisms of `ℂ`,
+intrinsic Galois conjugation by `Gal(algebraicClosure ℚ ℂ/ℚ)`, and `ℚ`-embeddings of algebraic
+coefficient fields.
 
 When an E-function `a` vanishes at `1` (`eFun a 1 = 0`), the general quotient sequence
 `divOneSubSeq a` defined in `TauCeti.NumberTheory.Transcendental.EFunction.Series` satisfies the
 analytic quotient identity `(1 - z) * eFun (divOneSubSeq a) z = eFun a z`
 (`TauCeti.IsEFunction.one_sub_mul_eFun_divOneSubSeq`). When `a` also has rational coefficients,
-`divOneSubSeq a` is itself an E-function (`TauCeti.IsEFunction.divOneSubSeq`), providing the base
-case for factoring out linear divisors at nonzero algebraic zeros in Beukers's proof of the refined
+`divOneSubSeq a` is itself an E-function (`TauCeti.IsEFunction.divOneSubSeq`). For an arbitrary
+nonzero E-function, forming the Hurwitz product of all Galois conjugates over a finite Galois
+coefficient field produces a nonzero rational-coefficient E-function multiple
+(`TauCeti.IsEFunction.fold_hurwitzMul_gal`, `TauCeti.exists_rat_fold_hurwitzMul_gal`,
+`TauCeti.IsEFunction.exists_rat_isEFunction_hurwitzMul`) whose `(1 - z)`-quotient at `1` is again
+an E-function (`TauCeti.IsEFunction.divOneSubSeq_fold_hurwitzMul_gal`), reducing vanishing at
+arbitrary algebraic zeros to the rational-coefficient base case in Beukers's proof of the refined
 Siegel–Shidlovskii theorem.
 
 ## Main definitions
@@ -60,27 +67,29 @@ Siegel–Shidlovskii theorem.
 
 ## Main results
 
-* `TauCeti.IsEFunction.exists_numberField`: all coefficients of an E-function lie in a common
-  number field.
-* `TauCeti.IsEFunction.add`, `TauCeti.IsEFunction.sum`, `TauCeti.IsEFunction.of_eventually_eq_zero`,
-  `TauCeti.isEFunction_coeff_mul_factorial`, `TauCeti.IsEFunction.sub`,
-  `TauCeti.IsEFunction.hurwitzMul`, `TauCeti.IsEFunction.shift`,
-  `TauCeti.IsEFunction.comp_add_right`, `TauCeti.IsEFunction.integrate`,
-  `TauCeti.IsEFunction.rescale`, `TauCeti.IsEFunction.comp_ringHom`,
-  `TauCeti.IsEFunction.galoisConj`: differential-algebra and Galois closure of E-functions.
-* `TauCeti.IsEFunction.one_sub_mul_eFun_divOneSubSeq`, `TauCeti.IsEFunction.divOneSubSeq`:
-  E-function specializations for the quotient by `1 - z` at a zero at `1`.
-* `TauCeti.isEFunction_const_one`, `TauCeti.isEFunction_natCast`,
-  `TauCeti.isEFunction_natCast_sub_one`, `TauCeti.not_isEFunction_factorial`,
-  `TauCeti.not_exists_isEFunction_eFun_eq_exp_sq`: concrete examples and non-examples (`exp z`,
-  `z exp z`, and `(z - 1) exp z` are E-functions; `1 / (1 - z)` and `exp (z ^ 2)` are not).
+* `TauCeti.IsEFunction.exists_numberField`, `TauCeti.IsEFunction.exists_isGalois_numberField`: all
+  coefficients of an E-function lie in a common (finite Galois) number field.
+* `TauCeti.IsEFunction.add`, `TauCeti.IsEFunction.sub`, `TauCeti.IsEFunction.hurwitzMul`,
+  `TauCeti.IsEFunction.fold_hurwitzMul`, `TauCeti.IsEFunction.shift`,
+  `TauCeti.IsEFunction.comp_add_right`, `TauCeti.IsEFunction.rescale`,
+  `TauCeti.IsEFunction.comp_ringHom`, `TauCeti.IsEFunction.galoisConj`,
+  `TauCeti.IsEFunction.comp_algHom`: closure of E-functions.
+* `TauCeti.IsEFunction.one_sub_mul_eFun_divOneSubSeq`, `TauCeti.IsEFunction.divOneSubSeq`,
+  `TauCeti.IsEFunction.fold_hurwitzMul_gal`, `TauCeti.exists_rat_fold_hurwitzMul_gal`,
+  `TauCeti.IsEFunction.divOneSubSeq_fold_hurwitzMul_gal`,
+  `TauCeti.IsEFunction.exists_rat_isEFunction_hurwitzMul`: quotient by `1 - z` at `1` and
+  rational-coefficient Galois-conjugate Hurwitz products.
+* `TauCeti.isEFunction_const_one`, `TauCeti.isEFunction_natCast_sub_one`,
+  `TauCeti.not_isEFunction_factorial`, `TauCeti.not_exists_isEFunction_eFun_eq_exp_sq`: concrete
+  examples and non-examples (`exp z` and `(z - 1) exp z` are E-functions; `1 / (1 - z)` and
+  `exp (z ^ 2)` are not).
 
 ## References
 
 * C. L. Siegel, *Über einige Anwendungen diophantischer Approximationen*, Abh. Preuß. Akad. Wiss.,
   Phys.-Math. Kl. 1929, Nr. 1.
 * F. Beukers, *A refined version of the Siegel–Shidlovskii theorem*, Ann. of Math. (2) **163**
-  (2006), 369–379, §1–2, Corollary 2.2.
+  (2006), 369–379, §1–2, Corollary 2.2, Lemma 2.4, Theorem 2.5.
 * F. Beukers, *E-functions and G-functions*, lecture notes, Arizona Winter School, 2008, §3.1–3.4,
   Proposition 3.2.1, Corollary 3.4.2.
 * S. Fischler and T. Rivoal, *On Siegel's problem for E-functions*, Math. Z. **301** (2022),
@@ -149,6 +158,13 @@ theorem exists_numberField {a : ℕ → ℂ} (ha : IsEFunction a) :
   simpa using
     ((isDFinite_ePowerSeries_iff (k := algebraicClosure ℚ ℂ) a).mp ha.isDFinite).exists_numberField
       (by simpa using ha.isAlgebraic)
+
+/-- All coefficients of an E-function lie in a single finite Galois number field inside `ℂ`. -/
+theorem exists_isGalois_numberField {a : ℕ → ℂ} (ha : IsEFunction a) :
+    ∃ (L : IntermediateField ℚ ℂ) (_ : NumberField L) (_ : IsGalois ℚ L), ∀ n, a n ∈ L := by
+  obtain ⟨K, _, hK⟩ := ha.exists_numberField
+  let L : IntermediateField ℚ ℂ := IntermediateField.normalClosure ℚ K ℂ
+  exact ⟨L, {}, inferInstance, fun n ↦ IntermediateField.le_normalClosure K (hK n)⟩
 
 /-- The formal series `ePowerSeries a` of an E-function has infinite convergence radius. -/
 theorem radius_ePowerSeries {a : ℕ → ℂ} (ha : IsEFunction a) :
@@ -338,43 +354,6 @@ protected theorem add {a b : ℕ → ℂ} (ha : IsEFunction a) (hb : IsEFunction
       exact ((isIntegral_natCast _).mul ((hd₁ n).2.2 m hm)).add
         ((isIntegral_natCast _).mul ((hd₂ n).2.2 m hm))
 
-/-- Finite sums of E-functions are E-functions. -/
-protected theorem sum {ι : Type*} (s : Finset ι) {f : ι → ℕ → ℂ}
-    (hf : ∀ i ∈ s, IsEFunction (f i)) : IsEFunction (∑ i ∈ s, f i) := by
-  induction s using Finset.cons_induction with
-  | empty => simp
-  | cons i s _ ih =>
-    rw [Finset.sum_cons]
-    exact (hf i (Finset.mem_cons_self i s)).add
-      (ih fun j hj ↦ hf j (Finset.mem_cons_of_mem hj))
-
-/-- Evaluating `eFun` on a finite sum of E-functions distributes over the sum. -/
-theorem eFun_sum {ι : Type*} (s : Finset ι) {f : ι → ℕ → ℂ}
-    (hf : ∀ i ∈ s, IsEFunction (f i)) (z : ℂ) :
-    eFun (∑ i ∈ s, f i) z = ∑ i ∈ s, eFun (f i) z := by
-  induction s using Finset.cons_induction with
-  | empty => simp
-  | cons i s _ ih =>
-    have hs : ∀ j ∈ s, IsEFunction (f j) := fun j hj ↦ hf j (Finset.mem_cons_of_mem hj)
-    rw [Finset.sum_cons, Finset.sum_cons,
-      (hf i (Finset.mem_cons_self i s)).eFun_add (IsEFunction.sum s hs) z, ih hs]
-
-/-- Every finitely supported sequence of `ℚ`-algebraic numbers defines an E-function. -/
-theorem of_eventually_eq_zero {a : ℕ → ℂ} (halg : ∀ n, IsAlgebraic ℚ (a n))
-    {N : ℕ} (hN : ∀ n ≥ N, a n = 0) : IsEFunction a := by
-  have ha : a = ∑ k ∈ Finset.range N, Pi.single k (a k) := by
-    ext n
-    rw [Finset.sum_apply]
-    by_cases hn : n < N
-    · rw [Finset.sum_eq_single n (fun _ _ hkn ↦ Pi.single_eq_of_ne hkn.symm _)
-        (fun hn' ↦ absurd (Finset.mem_range.mpr hn) hn')]
-      simp
-    · rw [hN n (Nat.le_of_not_lt hn), Finset.sum_eq_zero fun k hk ↦ ?_]
-      have := Finset.mem_range.mp hk
-      exact Pi.single_eq_of_ne (by omega) _
-  rw [ha]
-  exact IsEFunction.sum (Finset.range N) fun k _ ↦ isEFunction_single k (halg k)
-
 /-- Differences of E-functions are E-functions. -/
 protected theorem sub {a b : ℕ → ℂ} (ha : IsEFunction a) (hb : IsEFunction b) :
     IsEFunction (a - b) := by
@@ -487,6 +466,29 @@ protected theorem hurwitzMul {a b : ℕ → ℂ} (ha : IsEFunction a) (hb : IsEF
     exact (isIntegral_natCast _).mul (((hd₁ n).2.2 k (hkm.trans hm)).mul
       ((hd₂ n).2.2 (m - k) ((Nat.sub_le m k).trans hm)))
 
+/-- Finite Hurwitz products of E-functions are E-functions. -/
+theorem fold_hurwitzMul {ι : Type*} (s : Finset ι) {f : ι → ℕ → ℂ}
+    (hf : ∀ i ∈ s, IsEFunction (f i)) :
+    IsEFunction (s.fold TauCeti.hurwitzMul (Pi.single 0 1) f) := by
+  induction s using Finset.cons_induction with
+  | empty => simpa using isEFunction_single_zero isAlgebraic_one
+  | cons i s hi ih =>
+    rw [Finset.fold_cons hi]
+    exact (hf i (Finset.mem_cons_self i s)).hurwitzMul
+      (ih fun j hj ↦ hf j (Finset.mem_cons_of_mem hj))
+
+/-- Evaluating `eFun` on a finite Hurwitz product of E-functions gives the pointwise product of
+their `eFun` evaluations. -/
+theorem eFun_fold_hurwitzMul {ι : Type*} (s : Finset ι) {f : ι → ℕ → ℂ}
+    (hf : ∀ i ∈ s, IsEFunction (f i)) (z : ℂ) :
+    eFun (s.fold TauCeti.hurwitzMul (Pi.single 0 1) f) z = ∏ i ∈ s, eFun (f i) z := by
+  induction s using Finset.cons_induction with
+  | empty => simp
+  | cons i s hi ih =>
+    have hs : ∀ j ∈ s, IsEFunction (f j) := fun j hj ↦ hf j (Finset.mem_cons_of_mem hj)
+    rw [Finset.fold_cons hi, Finset.prod_cons,
+      (hf i (Finset.mem_cons_self i s)).eFun_hurwitzMul (fold_hurwitzMul s hs) z, ih hs]
+
 /-- **Derivatives of E-functions are E-functions.** Shifting the coefficient sequence by `1`
 preserves `IsEFunction`. -/
 protected theorem shift {a : ℕ → ℂ} (ha : IsEFunction a) :
@@ -568,63 +570,11 @@ protected theorem comp_ringHom {a : ℕ → ℂ} (ha : IsEFunction a) (σ : ℂ 
   rw [Function.comp_apply, himg]
   exact ((hd n).2.2 m hm).map σ.toIntAlgHom
 
-/-- **Integration of E-functions.** Prepending an algebraic constant `c` at `n = 0` (`n + 1 ↦ a n`)
-preserves `IsEFunction`; its formal Borel series has constant term `c` and derivative
-`ePowerSeries a`. -/
-protected theorem integrate {c : ℂ} (hc : IsAlgebraic ℚ c) {a : ℕ → ℂ} (ha : IsEFunction a) :
-    IsEFunction fun n ↦ if n = 0 then c else a (n - 1) := by
-  have hsplit : (fun n ↦ if n = 0 then c else a (n - 1)) =
-      Pi.single 0 c + fun n ↦ if n = 0 then 0 else a (n - 1) := by
-    ext (_ | n) <;> simp
-  rw [hsplit]
-  refine (isEFunction_single_zero hc).add ?_
-  obtain ⟨C, hC, hha⟩ := ha.exists_house_le
-  obtain ⟨D, hD, d, hd⟩ := ha.den_le
-  refine of_house_le
-    (fun n ↦ by cases n <;> simp [isAlgebraic_zero, ha.isAlgebraic])
-    (by
-      rw [← PowerSeries.isDFinite_derivative_iff, derivative_ePowerSeries]
-      simpa using ha.isDFinite)
-    ⟨max 1 C, by positivity, fun n ↦ ?_⟩
-    ⟨max 1 D, by positivity, fun n ↦ if n = 0 then 1 else d (n - 1), fun n ↦ ?_⟩
-  · cases n with
-    | zero => simp
-    | succ n =>
-      simpa using (hha n).trans <|
-        (pow_le_pow_left₀ hC.le (le_max_right 1 C) (n + 1)).trans
-          (pow_le_pow_right₀ (le_max_left 1 C) (Nat.le_succ (n + 1)))
-  · cases n with
-    | zero =>
-      refine ⟨le_rfl, by simp, fun m hm ↦ ?_⟩
-      obtain rfl : m = 0 := Nat.le_zero.mp hm
-      simp [isIntegral_zero]
-    | succ n =>
-      obtain ⟨hd1, hd_le, hd_int⟩ := hd n
-      refine ⟨by simpa using hd1, ?_, fun m hm ↦ ?_⟩
-      · simpa using hd_le.trans <|
-          (pow_le_pow_left₀ hD.le (le_max_right 1 D) (n + 1)).trans
-            (pow_le_pow_right₀ (le_max_left 1 D) (Nat.le_succ (n + 1)))
-      · cases m with
-        | zero => simp [isIntegral_zero]
-        | succ m => simpa using hd_int m (Nat.le_of_succ_le_succ hm)
-
-/-- The integrated E-function `fun n ↦ if n = 0 then c else a (n - 1)` has complex derivative
-`eFun a z` at every `z : ℂ` (and value `c` at `0`). -/
-theorem hasDerivAt_eFun_integrate {c : ℂ} (hc : IsAlgebraic ℚ c) {a : ℕ → ℂ}
-    (ha : IsEFunction a) (z : ℂ) :
-    HasDerivAt (eFun fun n ↦ if n = 0 then c else a (n - 1)) (eFun a z) z := by
-  simpa using (ha.integrate hc).hasDerivAt_eFun z
-
-/-- Differentiating `eFun (fun n ↦ if n = 0 then c else a (n - 1))` recovers `eFun a`. -/
-theorem deriv_eFun_integrate {c : ℂ} (hc : IsAlgebraic ℚ c) {a : ℕ → ℂ} (ha : IsEFunction a) :
-    deriv (eFun fun n ↦ if n = 0 then c else a (n - 1)) = eFun a :=
-  _root_.funext fun z ↦ (ha.hasDerivAt_eFun_integrate hc z).deriv
-
 /-- **Intrinsic Galois conjugation of E-functions.** Any Galois automorphism
 `τ ∈ Gal(algebraicClosure ℚ ℂ/ℚ)` acts directly on the algebraic coefficients of an E-function `a`
 (without extending `τ` to an endomorphism of `ℂ`) and produces an E-function. -/
-protected theorem galoisConj (τ : Gal(algebraicClosure ℚ ℂ/ℚ)) {a : ℕ → ℂ}
-    (ha : IsEFunction a) :
+protected theorem galoisConj {a : ℕ → ℂ} (ha : IsEFunction a)
+    (τ : Gal(algebraicClosure ℚ ℂ/ℚ)) :
     IsEFunction fun n ↦
       (τ ⟨a n, mem_algebraicClosure_iff.mpr (ha.isAlgebraic n)⟩ : ℂ) := by
   obtain ⟨C, hC, hha⟩ := ha.exists_house_le
@@ -632,19 +582,23 @@ protected theorem galoisConj (τ : Gal(algebraicClosure ℚ ℂ/ℚ)) {a : ℕ �
   set a₀ : ℕ → algebraicClosure ℚ ℂ := fun n ↦
     ⟨a n, mem_algebraicClosure_iff.mpr (ha.isAlgebraic n)⟩
   set ι : algebraicClosure ℚ ℂ →+* ℂ := algebraMap (algebraicClosure ℚ ℂ) ℂ
+  have hι_a₀ : ι ∘ a₀ = a := by
+    ext n; simp [ι, a₀, IntermediateField.algebraMap_apply]
   have hdf₀ : PowerSeries.IsDFinite (algebraicClosure ℚ ℂ) (ePowerSeries a₀) := by
     refine (PowerSeries.isDFinite_map_iff (RingEquiv.refl (algebraicClosure ℚ ℂ)) ι.injective
-      (fun _ ↦ rfl)).mp ?_
-    rw [map_ePowerSeries]
+      (fun _ ↦ by simp [ι, IntermediateField.algebraMap_apply])).mp ?_
+    rw [map_ePowerSeries, hι_a₀]
     exact ha.isDFinite
   refine of_house_le
     (fun n ↦ mem_algebraicClosure_iff.mp (τ (a₀ n)).property)
     (?_)
     ⟨C, hC, fun n ↦ ?_⟩
     ⟨D, hD, d, fun n ↦ ?_⟩
-  · have hcomp : (fun n ↦ (τ (a₀ n) : ℂ)) = (ι.comp τ.toRingHom) ∘ a₀ := funext fun _ ↦ rfl
+  · have hcomp : (fun n ↦ (τ (a₀ n) : ℂ)) = (ι.comp τ.toRingHom) ∘ a₀ := by
+      ext n; simp [ι, IntermediateField.algebraMap_apply]
     rw [hcomp, ← map_ePowerSeries]
-    exact hdf₀.map τ.toRingHom (ι.comp τ.toRingHom) fun _ ↦ rfl
+    exact hdf₀.map τ.toRingHom (ι.comp τ.toRingHom)
+      fun _ ↦ by simp [ι, IntermediateField.algebraMap_apply]
   · calc house (ι (τ (a₀ n)))
         = house (τ.toRingHom (a₀ n)) := house_map ι _
       _ = house (a₀ n) := house_map τ.toRingHom (a₀ n)
@@ -654,30 +608,55 @@ protected theorem galoisConj (τ : Gal(algebraicClosure ℚ ℂ/ℚ)) {a : ℕ �
     refine ⟨hd1, hd_le, fun m hm ↦ ?_⟩
     have hint₀ : IsIntegral ℤ ((d n : algebraicClosure ℚ ℂ) * a₀ m) := by
       rw [← isIntegral_algHom_iff ι.toIntAlgHom ι.injective]
-      exact hd_int m hm
+      simpa [ι, a₀, IntermediateField.algebraMap_apply] using hd_int m hm
     have hint_τ : IsIntegral ℤ (τ ((d n : algebraicClosure ℚ ℂ) * a₀ m)) :=
       hint₀.map (τ.toAlgHom.restrictScalars ℤ)
     simpa only [map_mul, map_natCast, RingHom.toIntAlgHom_apply, ι, a₀,
       IntermediateField.algebraMap_apply] using hint_τ.map ι.toIntAlgHom
 
-end IsEFunction
+/-- If `a : ℕ → K` takes values in an algebraic extension `K / ℚ` embedded in `ℂ` and
+`algebraMap K ℂ ∘ a` is an E-function, then `φ ∘ a` is an E-function for every `ℚ`-embedding
+`φ : K →ₐ[ℚ] ℂ`. -/
+protected theorem comp_algHom {K : Type*} [Field K] [Algebra ℚ K] [Algebra.IsAlgebraic ℚ K]
+    [Algebra K ℂ] [IsScalarTower ℚ K ℂ] {a : ℕ → K}
+    (ha : IsEFunction (algebraMap K ℂ ∘ a)) (φ : K →ₐ[ℚ] ℂ) :
+    IsEFunction (φ ∘ a) := by
+  have hι (x : K) : IsScalarTower.toAlgHom ℚ K ℂ x ∈ (algebraicClosure ℚ ℂ).toSubalgebra :=
+    mem_algebraicClosure_iff.mpr
+      ((Algebra.IsAlgebraic.isAlgebraic x).algHom (IsScalarTower.toAlgHom ℚ K ℂ))
+  have hφ (x : K) : φ x ∈ (algebraicClosure ℚ ℂ).toSubalgebra :=
+    mem_algebraicClosure_iff.mpr ((Algebra.IsAlgebraic.isAlgebraic x).algHom φ)
+  let ι₀ : K →ₐ[ℚ] algebraicClosure ℚ ℂ :=
+    (IsScalarTower.toAlgHom ℚ K ℂ).codRestrict (algebraicClosure ℚ ℂ).toSubalgebra hι
+  let φ₀ : K →ₐ[ℚ] algebraicClosure ℚ ℂ :=
+    φ.codRestrict (algebraicClosure ℚ ℂ).toSubalgebra hφ
+  let _ : Algebra K (algebraicClosure ℚ ℂ) := ι₀.toRingHom.toAlgebra
+  have : IsScalarTower ℚ K (algebraicClosure ℚ ℂ) :=
+    IsScalarTower.of_algebraMap_eq' ι₀.comp_algebraMap.symm
+  let τ : Gal(algebraicClosure ℚ ℂ/ℚ) :=
+    AlgEquiv.ofBijective (φ₀.liftNormal (algebraicClosure ℚ ℂ))
+      (AlgHom.normal_bijective ℚ (algebraicClosure ℚ ℂ) (algebraicClosure ℚ ℂ) _)
+  have hτ : (fun n ↦ (τ ⟨(algebraMap K ℂ ∘ a) n,
+        mem_algebraicClosure_iff.mpr (ha.isAlgebraic n)⟩ : ℂ)) = φ ∘ a := by
+    ext n
+    have hcomm := φ₀.liftNormal_commutes (algebraicClosure ℚ ℂ) (a n)
+    have hsub : (⟨(algebraMap K ℂ ∘ a) n, mem_algebraicClosure_iff.mpr (ha.isAlgebraic n)⟩ :
+        algebraicClosure ℚ ℂ) = algebraMap K (algebraicClosure ℚ ℂ) (a n) := by
+      ext
+      simpa [ι₀, RingHom.algebraMap_toAlgebra] using
+        (AlgHom.coe_codRestrict (IsScalarTower.toAlgHom ℚ K ℂ)
+          (algebraicClosure ℚ ℂ).toSubalgebra hι (a n)).symm
+    rw [hsub]
+    have hval := congrArg Subtype.val hcomm
+    simpa [τ, φ₀] using hval.trans
+      (AlgHom.coe_codRestrict φ (algebraicClosure ℚ ℂ).toSubalgebra hφ (a n))
+  exact hτ ▸ ha.galoisConj τ
 
-/-- A constant algebraic sequence `fun _ ↦ c` (representing `z ↦ c * exp z`) is an E-function. -/
-theorem isEFunction_const {c : ℂ} (hc : IsAlgebraic ℚ c) : IsEFunction fun _ ↦ c := by
-  simpa only [Pi.smul_def, smul_eq_mul, mul_one] using isEFunction_const_one.smul hc
+end IsEFunction
 
 /-- The sequence `n ↦ α ^ n` (representing `z ↦ exp (α z)`) is an E-function for algebraic `α`. -/
 theorem isEFunction_pow {α : ℂ} (hα : IsAlgebraic ℚ α) : IsEFunction (α ^ ·) := by
   simpa using isEFunction_const_one.rescale hα
-
-/-- For any polynomial `P : ℂ[X]` with `ℚ`-algebraic coefficients, `n ↦ P.coeff n * n!` is an
-E-function (evaluating under `eFun` to `z ↦ P.eval z` by `eFun_coeff_mul_factorial`). -/
-theorem isEFunction_coeff_mul_factorial {P : ℂ[X]} (hP : ∀ n, IsAlgebraic ℚ (P.coeff n)) :
-    IsEFunction fun n ↦ P.coeff n * n.factorial :=
-  IsEFunction.of_eventually_eq_zero
-    (fun n ↦ (hP n).mul (isAlgebraic_natCast n.factorial))
-    fun n (hn : P.natDegree + 1 ≤ n) ↦ by
-      simp [Polynomial.coeff_eq_zero_of_natDegree_lt (Nat.lt_of_succ_le hn)]
 
 /-! ### Division by `1 - z` at a zero at `1` -/
 
@@ -723,34 +702,126 @@ theorem IsEFunction.one_sub_mul_eFun_divOneSubSeq {a : ℕ → ℂ} (ha : IsEFun
   obtain ⟨_, _, hnorm⟩ := ha.exists_norm_le
   exact one_sub_mul_eFun_divOneSubSeq_of_norm_le hnorm hz z
 
+/-! ### Galois-conjugate Hurwitz products -/
+
+/-- For a finite Galois extension `K / ℚ` embedded in `ℂ`, every coefficient of the Galois-orbit
+Hurwitz product of `a : ℕ → K` is rational. -/
+theorem exists_rat_fold_hurwitzMul_gal {K : Type*} [Field K] [Algebra ℚ K]
+    [FiniteDimensional ℚ K] [IsGalois ℚ K] [Algebra K ℂ] [IsScalarTower ℚ K ℂ]
+    (a : ℕ → K) (n : ℕ) :
+    ∃ q : ℚ,
+      (Finset.univ : Finset Gal(K/ℚ)).fold hurwitzMul (Pi.single 0 1)
+        (fun σ ↦ algebraMap K ℂ ∘ (σ • a)) n = q := by
+  obtain ⟨q, hq⟩ := (IsGalois.mem_range_algebraMap_iff_fixed (F := ℚ) (E := K) _).mpr fun τ ↦
+    congrFun (smul_fold_hurwitzMul_univ τ a) n
+  refine ⟨q, ?_⟩
+  rw [← congrFun (comp_fold_hurwitzMul (algebraMap K ℂ) Finset.univ fun σ : Gal(K/ℚ) ↦ σ • a) n,
+    Function.comp_apply, ← hq, ← IsScalarTower.algebraMap_apply ℚ K ℂ, eq_ratCast]
+
+namespace IsEFunction
+
+/-- **Galois-conjugate Hurwitz product of an E-function.** For a finite Galois extension `K / ℚ`
+embedded in `ℂ` and `a : ℕ → K` defining an E-function, the Hurwitz product of all `Gal(K/ℚ)`
+conjugates of `a` is an E-function. -/
+theorem fold_hurwitzMul_gal {K : Type*} [Field K] [Algebra ℚ K]
+    [FiniteDimensional ℚ K] [IsGalois ℚ K] [Algebra K ℂ] [IsScalarTower ℚ K ℂ]
+    {a : ℕ → K} (ha : IsEFunction (algebraMap K ℂ ∘ a)) :
+    IsEFunction ((Finset.univ : Finset Gal(K/ℚ)).fold TauCeti.hurwitzMul (Pi.single 0 1)
+      fun σ ↦ algebraMap K ℂ ∘ (σ • a)) :=
+  fold_hurwitzMul Finset.univ fun σ _ ↦
+    ha.comp_algHom ((IsScalarTower.toAlgHom ℚ K ℂ).comp σ.toAlgHom)
+
+/-- Evaluating `eFun` on the Galois-conjugate Hurwitz product over `Gal(K/ℚ)` gives the product of
+the `eFun` evaluations of all conjugates. -/
+theorem eFun_fold_hurwitzMul_gal {K : Type*} [Field K] [Algebra ℚ K]
+    [FiniteDimensional ℚ K] [IsGalois ℚ K] [Algebra K ℂ] [IsScalarTower ℚ K ℂ]
+    {a : ℕ → K} (ha : IsEFunction (algebraMap K ℂ ∘ a)) (z : ℂ) :
+    eFun ((Finset.univ : Finset Gal(K/ℚ)).fold TauCeti.hurwitzMul (Pi.single 0 1)
+      fun σ ↦ algebraMap K ℂ ∘ (σ • a)) z =
+      ∏ σ : Gal(K/ℚ), eFun (algebraMap K ℂ ∘ (σ • a)) z :=
+  eFun_fold_hurwitzMul Finset.univ
+    (fun σ _ ↦ ha.comp_algHom ((IsScalarTower.toAlgHom ℚ K ℂ).comp σ.toAlgHom)) z
+
+/-- When an E-function `algebraMap K ℂ ∘ a` over a finite Galois extension `K / ℚ` vanishes at `1`,
+the `(1 - z)`-quotient `divOneSubSeq` of its Galois-conjugate Hurwitz product is an E-function. -/
+theorem divOneSubSeq_fold_hurwitzMul_gal {K : Type*} [Field K] [Algebra ℚ K]
+    [FiniteDimensional ℚ K] [IsGalois ℚ K] [Algebra K ℂ] [IsScalarTower ℚ K ℂ]
+    {a : ℕ → K} (ha : IsEFunction (algebraMap K ℂ ∘ a))
+    (hz : eFun (algebraMap K ℂ ∘ a) 1 = 0) :
+    IsEFunction (TauCeti.divOneSubSeq
+      ((Finset.univ : Finset Gal(K/ℚ)).fold TauCeti.hurwitzMul (Pi.single 0 1)
+        fun σ ↦ algebraMap K ℂ ∘ (σ • a))) := by
+  refine ha.fold_hurwitzMul_gal.divOneSubSeq (exists_rat_fold_hurwitzMul_gal a) ?_
+  rw [ha.eFun_fold_hurwitzMul_gal 1]
+  exact Finset.prod_eq_zero (Finset.mem_univ (1 : Gal(K/ℚ))) (by simpa using hz)
+
+/-- **Nonzero rational-coefficient Galois-conjugate multiple of an E-function.** Every nonzero
+E-function `a` admits an E-function cofactor `c` (the Hurwitz product of the nontrivial Galois
+conjugates of `a` over a finite Galois coefficient field) such that `hurwitzMul a c` is a nonzero
+E-function with rational coefficients. -/
+theorem exists_rat_isEFunction_hurwitzMul {a : ℕ → ℂ} (ha : IsEFunction a) (ha0 : a ≠ 0) :
+    ∃ c : ℕ → ℂ, IsEFunction c ∧ IsEFunction (TauCeti.hurwitzMul a c) ∧
+      TauCeti.hurwitzMul a c ≠ 0 ∧ ∀ n, ∃ q : ℚ, TauCeti.hurwitzMul a c n = q := by
+  classical
+  obtain ⟨L, _, _, hL⟩ := ha.exists_isGalois_numberField
+  let a₀ : ℕ → L := fun n ↦ ⟨a n, hL n⟩
+  have ha₀_eq : algebraMap L ℂ ∘ a₀ = a := by
+    ext n; simp [a₀, IntermediateField.algebraMap_apply]
+  have ha₀ : IsEFunction (algebraMap L ℂ ∘ a₀) := ha₀_eq.symm ▸ ha
+  have ha₀_ne : a₀ ≠ 0 := fun h0 ↦ ha0 (by simp [← ha₀_eq, h0])
+  let g : Gal(L/ℚ) → ℕ → ℂ := fun σ ↦ algebraMap L ℂ ∘ (σ • a₀)
+  let b : ℕ → ℂ := (Finset.univ : Finset Gal(L/ℚ)).fold TauCeti.hurwitzMul (Pi.single 0 1) g
+  let c : ℕ → ℂ :=
+    ((Finset.univ : Finset Gal(L/ℚ)).erase 1).fold TauCeti.hurwitzMul (Pi.single 0 1) g
+  have hbc : b = TauCeti.hurwitzMul a c := by
+    have hg1 : g 1 = a := by simp [g, one_smul, ha₀_eq]
+    calc b = (insert (1 : Gal(L/ℚ)) (Finset.univ.erase 1)).fold
+              TauCeti.hurwitzMul (Pi.single 0 1) g := by
+            rw [Finset.insert_erase (Finset.mem_univ _)]
+      _ = TauCeti.hurwitzMul (g 1) c := Finset.fold_insert (Finset.notMem_erase _ _)
+      _ = TauCeti.hurwitzMul a c := by rw [hg1]
+  have hb_ne : b ≠ 0 := by
+    intro hb0
+    have hb_map : b = algebraMap L ℂ ∘
+        (Finset.univ : Finset Gal(L/ℚ)).fold TauCeti.hurwitzMul (Pi.single 0 1)
+          (fun σ ↦ σ • a₀) :=
+      (comp_fold_hurwitzMul (algebraMap L ℂ) Finset.univ fun σ : Gal(L/ℚ) ↦ σ • a₀).symm
+    have hfold0 : ((Finset.univ : Finset Gal(L/ℚ)).fold TauCeti.hurwitzMul (Pi.single 0 1)
+        fun σ ↦ σ • a₀) = 0 :=
+      funext fun n ↦ (algebraMap L ℂ).injective (by simpa [hb_map] using congrFun hb0 n)
+    exact ha₀_ne (fold_hurwitzMul_smul_univ_eq_zero_iff.mp hfold0)
+  refine ⟨c,
+    fold_hurwitzMul _ fun σ _ ↦ ha₀.comp_algHom ((IsScalarTower.toAlgHom ℚ L ℂ).comp σ.toAlgHom),
+    hbc ▸ ha₀.fold_hurwitzMul_gal, hbc ▸ hb_ne, hbc ▸ exists_rat_fold_hurwitzMul_gal a₀⟩
+
+end IsEFunction
+
 /-! ### Concrete examples and non-examples -/
 
-private theorem natCast_eq_hurwitzMul :
-    (fun n : ℕ ↦ (n : ℂ)) = hurwitzMul (Pi.single 1 1) (fun _ ↦ 1) := by
-  ext (_ | n) <;> simp [hurwitzMul_single_left]
-
-/-- The sequence `n ↦ (n : ℂ)` (representing `z ↦ z * Complex.exp z`) is an E-function. -/
-theorem isEFunction_natCast : IsEFunction fun n : ℕ ↦ (n : ℂ) := by
-  rw [natCast_eq_hurwitzMul]
-  exact (isEFunction_single 1 isAlgebraic_one).hurwitzMul isEFunction_const_one
-
-/-- Analytic evaluation of `n ↦ (n : ℂ)` under `eFun` gives `z ↦ z * Complex.exp z`. -/
-@[simp]
-theorem eFun_natCast (z : ℂ) : eFun (fun n : ℕ ↦ (n : ℂ)) z = z * Complex.exp z := by
-  rw [natCast_eq_hurwitzMul,
-    (isEFunction_single 1 isAlgebraic_one).eFun_hurwitzMul isEFunction_const_one z,
-    eFun_single_one, one_mul, eFun_const_one]
+private theorem natCast_sub_one_eq_hurwitzMul :
+    (fun n : ℕ ↦ (n : ℂ) - 1) = hurwitzMul (Pi.single 1 1 - Pi.single 0 1) (fun _ ↦ 1) := by
+  ext n
+  rw [hurwitzMul_sub_left]
+  cases n with
+  | zero => simp
+  | succ n => simp [hurwitzMul_single_left]
 
 /-- The sequence `n ↦ (n : ℂ) - 1` evaluates under `eFun` to `(z - 1) * Complex.exp z`. -/
 theorem eFun_natCast_sub_one (z : ℂ) :
     eFun (fun n ↦ (n : ℂ) - 1) z = (z - 1) * Complex.exp z := by
-  have hsub : (fun n : ℕ ↦ (n : ℂ) - 1) = (fun n : ℕ ↦ (n : ℂ)) - fun _ ↦ (1 : ℂ) := rfl
-  rw [hsub, isEFunction_natCast.eFun_sub isEFunction_const_one z, eFun_natCast, eFun_const_one,
-    sub_mul, one_mul]
+  have hp1 : IsEFunction (Pi.single 1 (1 : ℂ) - Pi.single 0 1) :=
+    (isEFunction_single 1 isAlgebraic_one).sub (isEFunction_single_zero isAlgebraic_one)
+  have hp1_eval : eFun (Pi.single 1 (1 : ℂ) - Pi.single 0 1) z = z - 1 := by
+    simpa using (isEFunction_single 1 isAlgebraic_one).eFun_sub
+      (isEFunction_single_zero isAlgebraic_one) z
+  rw [natCast_sub_one_eq_hurwitzMul, hp1.eFun_hurwitzMul isEFunction_const_one z, hp1_eval,
+    eFun_const_one]
 
 /-- The sequence `n ↦ (n : ℂ) - 1` (representing `(z - 1) * exp z`) is an E-function. -/
-theorem isEFunction_natCast_sub_one : IsEFunction fun n ↦ (n : ℂ) - 1 :=
-  isEFunction_natCast.sub isEFunction_const_one
+theorem isEFunction_natCast_sub_one : IsEFunction fun n ↦ (n : ℂ) - 1 := by
+  rw [natCast_sub_one_eq_hurwitzMul]
+  exact ((isEFunction_single 1 isAlgebraic_one).sub
+    (isEFunction_single_zero isAlgebraic_one)).hurwitzMul isEFunction_const_one
 
 /-- The factorial sequence `n ↦ (n! : ℂ)` (the normalized E-coefficients of `1 / (1 - z)`) is not an
 E-function. -/

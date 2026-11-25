@@ -51,8 +51,7 @@ geometric modulus bound (`TauCeti.norm_divOneSubSeq_le`) and satisfies the analy
 
 ## Main results
 
-* `TauCeti.eFun_eq_evalAt_ePowerSeries`, `TauCeti.eFun_coeff_mul_factorial`: `eFun a z` agrees with
-  `(ePowerSeries a).evalAt z`, and evaluates `n ↦ P.coeff n * n!` to `P.eval z`.
+* `TauCeti.eFun_eq_evalAt_ePowerSeries`: `eFun a z = (ePowerSeries a).evalAt z`.
 * `TauCeti.radius_ePowerSeries_of_norm_le`, `TauCeti.isEntire_ePowerSeries_of_norm_le`,
   `TauCeti.hasFPowerSeriesOnBall_eFun_of_norm_le`, `TauCeti.analyticOnNhd_eFun_of_norm_le`:
   infinite convergence radius and entireness under `‖aₙ‖ ≤ C ^ (n + 1)`.
@@ -134,19 +133,6 @@ theorem eFun_neg (a : ℕ → ℂ) (z : ℂ) : eFun (-a) z = -eFun a z := by
 @[simp]
 theorem eFun_smul (c : ℂ) (a : ℕ → ℂ) (z : ℂ) : eFun (c • a) z = c * eFun a z := by
   simp only [eFun_def, Pi.smul_apply, smul_eq_mul, mul_assoc, mul_div_assoc, tsum_mul_left]
-
-/-- A constant sequence `c` sums to `c * Complex.exp z`. -/
-theorem eFun_const (c z : ℂ) : eFun (fun _ ↦ c) z = c * Complex.exp z := by
-  have h : (fun _ : ℕ ↦ c) = c • fun _ ↦ (1 : ℂ) := by ext; simp
-  rw [h, eFun_smul, eFun_const_one]
-
-/-- For any polynomial `P : Polynomial ℂ`, `eFun (fun n ↦ P.coeff n * n!)` evaluates at `z` to
-`P.eval z`. -/
-@[simp]
-theorem eFun_coeff_mul_factorial (P : Polynomial ℂ) (z : ℂ) :
-    eFun (fun n ↦ P.coeff n * n.factorial) z = P.eval z := by
-  rw [eFun_eq_evalAt_ePowerSeries, ePowerSeries_coeff_mul_factorial, PowerSeries.evalAt_coe]
-  simp
 
 /-- Rescaling `a n` by `α ^ n` evaluates `eFun a` at `α * z`. -/
 theorem eFun_rescale (α : ℂ) (a : ℕ → ℂ) (z : ℂ) :
