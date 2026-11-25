@@ -182,27 +182,26 @@ variable {k' S' : Type*} [CommRing k'] [CommRing S']
 
 /-- Base change of the circle coordinate ring along a ring homomorphism `f : k' →+* S'`. -/
 noncomputable def map (f : k' →+* S') : CircleRing k' →+* CircleRing S' :=
-  letI : Algebra k' (CircleRing S') := RingHom.toAlgebra ((algebraMap S' (CircleRing S')).comp f)
-  (lift (x : CircleRing S') y x_sq_add_y_sq).toRingHom
+  Ideal.Quotient.lift _
+    (MvPolynomial.eval₂Hom ((algebraMap S' (CircleRing S')).comp f) ![x, y]) fun p hp => by
+      obtain ⟨q, rfl⟩ := Ideal.mem_span_singleton'.mp hp
+      simp [x_sq_add_y_sq]
 
 /-- Base change on `CircleRing` preserves `x`. -/
 @[simp]
-theorem map_x (f : k' →+* S') : map f (x : CircleRing k') = x := by
-  let _ : Algebra k' (CircleRing S') := RingHom.toAlgebra ((algebraMap S' (CircleRing S')).comp f)
-  exact lift_x ..
+theorem map_x (f : k' →+* S') : map f (x : CircleRing k') = x :=
+  (Ideal.Quotient.lift_mk _ _ _).trans (by simp)
 
 /-- Base change on `CircleRing` preserves `y`. -/
 @[simp]
-theorem map_y (f : k' →+* S') : map f (y : CircleRing k') = y := by
-  let _ : Algebra k' (CircleRing S') := RingHom.toAlgebra ((algebraMap S' (CircleRing S')).comp f)
-  exact lift_y ..
+theorem map_y (f : k' →+* S') : map f (y : CircleRing k') = y :=
+  (Ideal.Quotient.lift_mk _ _ _).trans (by simp)
 
 /-- Base change on `CircleRing` acts on scalars via `f`. -/
 @[simp]
 theorem map_algebraMap (f : k' →+* S') (a : k') :
-    map f (algebraMap k' (CircleRing k') a) = algebraMap S' (CircleRing S') (f a) := by
-  let _ : Algebra k' (CircleRing S') := RingHom.toAlgebra ((algebraMap S' (CircleRing S')).comp f)
-  exact (lift (x : CircleRing S') y x_sq_add_y_sq).commutes a
+    map f (algebraMap k' (CircleRing k') a) = algebraMap S' (CircleRing S') (f a) :=
+  (Ideal.Quotient.lift_mk _ _ _).trans (by simp)
 
 end Map
 

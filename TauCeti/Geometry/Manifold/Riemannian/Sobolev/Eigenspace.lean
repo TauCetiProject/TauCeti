@@ -38,7 +38,8 @@ from the `(-μ)`-eigenspace of the Laplace–Beltrami operator `Δ = div grad` o
 
 * `TauCeti.Manifold.SobolevH1.weakEigenspace`: the weak eigenspaces of `Δ⁺` in `H¹(M)`, with
   `mem_weakEigenspace_iff` and `mem_weakEigenspace_iff_forall_ofSmooth`.
-* `TauCeti.Manifold.SobolevH1.nonneg_of_mem_weakEigenspace`: weak eigenvalues are nonnegative.
+* `TauCeti.Manifold.SobolevH1.nonneg_of_mem_weakEigenspace_of_toLp_ne_zero`,
+  `TauCeti.Manifold.SobolevH1.nonneg_of_mem_weakEigenspace`: weak eigenvalues are nonnegative.
 * `TauCeti.Manifold.SobolevH1.ofSmooth_mem_weakEigenspace_iff`: a smooth function is a weak
   eigenfunction exactly when it is a classical one.
 * `TauCeti.Manifold.SobolevH1.weakEigenspaceEquiv`: for a smooth metric, every weak eigenfunction
@@ -93,6 +94,15 @@ theorem mem_weakEigenspace_iff_forall_ofSmooth {μ : ℝ} {w : SobolevH1 I M} :
   | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
   | h φ => exact h φ
 
+/-- **Weak eigenvalues are nonnegative.** If `w ∈ H¹(M)` has nonzero value in `L²(M)` and satisfies
+`D(w, v) = μ ⟪w, v⟫_{L²}` for every `v`, then `μ ≥ 0`, since `μ ‖w‖²_{L²} = D(w, w) ≥ 0`. -/
+theorem nonneg_of_mem_weakEigenspace_of_toLp_ne_zero {μ : ℝ} {w : SobolevH1 I M}
+    (hw : w ∈ weakEigenspace I M μ) (hw₀ : toLp w ≠ 0) : 0 ≤ μ := by
+  have h := mem_weakEigenspace_iff.1 hw w
+  rw [real_inner_self_eq_norm_sq] at h
+  have hpos : 0 < ‖toLp w‖ ^ 2 := by positivity
+  nlinarith [dirichletForm_self_nonneg w]
+
 end WeakEigenspace
 
 section Regularity
@@ -112,13 +122,8 @@ attribute [local instance] instIsContinuousRiemannianBundleOfContMDiffOne
 /-- **Weak eigenvalues are nonnegative.** On a closed manifold with a `C¹` metric, if a nonzero
 `w ∈ H¹(M)` satisfies `D(w, v) = μ ⟪w, v⟫_{L²}` for every `v`, then `μ ≥ 0`. -/
 theorem nonneg_of_mem_weakEigenspace {μ : ℝ} {w : SobolevH1 I M}
-    (hw : w ∈ weakEigenspace I M μ) (hw₀ : w ≠ 0) : 0 ≤ μ := by
-  have h := mem_weakEigenspace_iff.1 hw w
-  rw [real_inner_self_eq_norm_sq] at h
-  have hpos : 0 < ‖toLp w‖ ^ 2 := by
-    have : toLp w ≠ 0 := fun h₀ ↦ hw₀ (toLp_injective (by rw [h₀, map_zero]))
-    positivity
-  nlinarith [dirichletForm_self_nonneg w]
+    (hw : w ∈ weakEigenspace I M μ) (hw₀ : w ≠ 0) : 0 ≤ μ :=
+  nonneg_of_mem_weakEigenspace_of_toLp_ne_zero hw (toLp_eq_zero_iff.not.2 hw₀)
 
 /-- **Smooth weak eigenfunctions are classical eigenfunctions.** On a closed manifold with a `C¹`
 metric, a smooth function `u` lies in the weak `μ`-eigenspace of `Δ⁺` exactly when

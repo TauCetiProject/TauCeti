@@ -289,6 +289,17 @@ theorem commutatorElement_transvectionUnit_reverse
       rw [commutatorElement_transvectionUnit hki hij hkj]
     _ = transvectionUnit hkj (-(d * c)) := transvectionUnit_inv hkj (d * c)
 
+/-- The commutator of opposite transvections `xᵢₖ(c)` and `xₖᵢ(d)` with `d * c = 0` is the
+matrix `1 + (c * d) Eᵢᵢ`, which differs from the identity only in the diagonal entry `(i, i)`. -/
+theorem coe_commutatorElement_transvectionUnit_of_mul_eq_zero (hik : i ≠ k) {c d : A}
+    (hdc : d * c = 0) :
+    (⁅transvectionUnit hik c, transvectionUnit hik.symm d⁆ : GL n A) =
+      (1 : Matrix n n A) + single i i (c * d) := by
+  simp only [commutatorElement_def, Units.val_mul, transvectionUnit_inv,
+    coe_transvectionUnit_eq_one_add_single]
+  simp [add_mul, mul_add, hik, hik.symm, single_mul_single_same, hdc, mul_assoc, ← single_neg]
+  abel
+
 /-! ## Weyl elements -/
 
 /-- The standard representative in `GL n A` of the Weyl-group transposition exchanging `i` and

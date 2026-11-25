@@ -35,13 +35,14 @@ around `ω` sends punctured neighbourhoods of `0` to punctured neighbourhoods of
 
 * `TauCeti.expCircle`: the additive character `r mod ℤ ↦ e^{2πi r}` of `AddCircle (1 : ℚ)`.
 * `TauCeti.expCircle_coe`: its value on the class of a rational number.
-* `TauCeti.expCircle_eq_one_iff`: it is faithful.
+* `TauCeti.expCircle_eq_one_iff` and `TauCeti.expCircle_injective`: it is faithful.
 * `TauCeti.expCircle_neg`: its value at `-x` is the complex conjugate of its value at `x`.
 * `TauCeti.norm_expCircle`: its values have norm one.
 * `TauCeti.expCircle_one_div_two` and `TauCeti.expCircle_one_div_four`: `e^{2πi/2} = -1` and
   `e^{2πi/4} = i`.
 * `TauCeti.isPrimitiveRoot_expCircle`: its value at the class of `1 / n` is a primitive `n`-th
-  root of unity.
+  root of unity; more generally, by `TauCeti.isPrimitiveRoot_expCircle_addOrderOf`, its value at
+  a class of additive order `n` is.
 * `CharacterModule.sum_expCircle`: the orthogonality relation
   `∑ m, e^{2πi χ(m)} = if χ = 0 then #M else 0` for a `ℚ/ℤ`-valued character `χ` of a finite
   abelian group `M`.
@@ -96,6 +97,10 @@ theorem expCircle_eq_one_iff {x : AddCircle (1 : ℚ)} : expCircle x = 1 ↔ x =
   · rw [← hn, zsmul_eq_mul, mul_one, Rat.cast_intCast]
     ring
 
+/-- `expCircle` is injective. -/
+theorem expCircle_injective : Function.Injective expCircle :=
+  AddChar.injective_iff.mpr fun _ ↦ expCircle_eq_one_iff.mp
+
 /-- `expCircle` takes values on the unit circle: its value at `-x` is the complex conjugate of its
 value at `x`. -/
 @[simp]
@@ -133,6 +138,16 @@ theorem isPrimitiveRoot_expCircle (n : ℕ) (hn : n ≠ 0) :
   convert Complex.isPrimitiveRoot_exp n hn using 2
   push_cast
   ring
+
+/-- The value of `expCircle` at a class of additive order `n` is a primitive `n`-th root of
+unity. -/
+theorem isPrimitiveRoot_expCircle_addOrderOf (x : AddCircle (1 : ℚ)) :
+    IsPrimitiveRoot (expCircle x) (addOrderOf x) := by
+  induction x using QuotientAddGroup.induction_on with | H r =>
+  have h := AddCircle.addOrderOf_coe_rat (p := (1 : ℚ)) (q := r)
+  rw [Rat.cast_id, mul_one] at h
+  rw [expCircle_coe, h]
+  exact Complex.isPrimitiveRoot_exp_rat r
 
 end TauCeti
 

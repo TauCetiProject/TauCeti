@@ -19,8 +19,11 @@ which they agree to first order on the contact hyperplanes: at each `x ∈ K`, `
 `α₁ x = α₀ x`, and `dα₁ x` agrees with `dα₀ x` on `ker α₀ x × ker α₀ x`. Then every form of the
 linear interpolation `α₀ + s (α₁ - α₀)`, `s ∈ [0, 1]`, takes the value `α₀ x` at `x ∈ K`, and its
 exterior derivative agrees with `dα₀ x` on `ker α₀ x`, so it is contact at `x`
-(`TauCeti.SmoothForm.isContactFormAt_add_smul_sub`). The contact condition is open, and `[0, 1]` is
-compact, so the whole interpolation is contact on an open neighbourhood of `K`
+(`TauCeti.SmoothForm.isContactFormAt_add_smul_sub`). This persists when the exterior derivatives
+agree only on pairs with one vector in a subspace `W ⊆ ker α₀ x` containing its own
+`dα₀ x`-orthogonal in `ker α₀ x`, such as the tangent space of a Legendrian submanifold
+(`TauCeti.SmoothForm.isContactFormAt_add_smul_sub_of_mextDeriv_eq_on`). The contact condition is
+open, and `[0, 1]` is compact, so the whole interpolation is contact on an open neighbourhood of `K`
 (`TauCeti.SmoothForm.exists_isOpen_forall_isContactFormAt_add_smul_sub`). Openness is read off the
 contact flat map `v ↦ ι_v dα + α(v) α`: its invertibility is an open condition, and in odd
 dimension it is equivalent to contactness
@@ -41,8 +44,14 @@ the submanifold have been identified.
 ## Main results
 
 * `TauCeti.SmoothForm.isContactFormAt_add_smul_sub`: the interpolations are contact along `K`.
-* `TauCeti.SmoothForm.exists_isOpen_forall_isContactFormAt_add_smul_sub`: the interpolations
-  `α₀ + s (α₁ - α₀)`, `s ∈ [0, 1]`, are contact on an open neighbourhood of `K`.
+* `TauCeti.SmoothForm.isContactFormAt_add_smul_sub_of_mextDeriv_eq_on`: the same when the exterior
+  derivatives only agree on pairs with one vector in a coisotropic subspace of `ker α₀`, such as the
+  tangent space of a Legendrian submanifold.
+* `TauCeti.SmoothForm.exists_isOpen_forall_isContactFormAt_add_smul_sub_of_isContactFormAt`: if
+  the interpolations `α₀ + s (α₁ - α₀)`, `s ∈ [0, 1]`, are contact along `K`, they are contact on an
+  open neighbourhood of `K`.
+* `TauCeti.SmoothForm.exists_isOpen_forall_isContactFormAt_add_smul_sub`: this holds for forms
+  agreeing to first order along `K`.
 * `TauCeti.SmoothForm.exists_partialDiffeomorph_mpullback_eq_smul_of_forall_isContactFormAt`:
   relative Gray stability for two forms joined by a segment of contact forms.
 * `TauCeti.SmoothForm.exists_partialDiffeomorph_mpullback_eq_smul_of_apply_eq`: relative Gray
@@ -86,6 +95,40 @@ private theorem contMDiff_contactFlat_add_smul_sub (α₀ α₁ : SmoothForm I M
 
 /-! ### The interpolation is contact near the set of agreement -/
 
+/-- **Interpolations of forms agreeing along a coisotropic subspace are contact.** Let `α₀` be
+contact at `x` and `α₁ x = α₀ x`, and let `W ⊆ ker α₀ x` be a subspace containing every vector of
+`ker α₀ x` that is `dα₀ x`-orthogonal to `W`. If `dα₁ x (w, v) = dα₀ x (w, v)` for `w ∈ W` and
+`v ∈ ker α₀ x`, then every form `α₀ + s (α₁ - α₀)` is contact at `x`. The exterior derivatives may
+differ on pairs of vectors outside `W`; for the tangent space `W` of a Legendrian submanifold
+through `x` this asks only for agreement on pairs with one vector tangent to the submanifold. -/
+theorem isContactFormAt_add_smul_sub_of_mextDeriv_eq_on {x : M} (hc : IsContactFormAt α₀.val x)
+    (hval : α₁.val x = α₀.val x) {W : Submodule ℝ (TangentSpace I x)}
+    (hWk : ∀ w ∈ W, w ∈ RoughForm.ker α₀.val x)
+    (hW : ∀ v ∈ RoughForm.ker α₀.val x, (∀ w ∈ W, mextDeriv α₀.val x ![w, v] = 0) → v ∈ W)
+    (hd : ∀ w ∈ W, ∀ v ∈ RoughForm.ker α₀.val x,
+      mextDeriv α₁.val x ![w, v] = mextDeriv α₀.val x ![w, v]) (s : ℝ) :
+    IsContactFormAt (α₀ + s • (α₁ - α₀)).val x := by
+  have hval' : (α₀ + s • (α₁ - α₀)).val x = α₀.val x := by simp [hval]
+  -- On `W × ker α₀ x`, the exterior derivative of the interpolation is that of `α₀`.
+  have hdW (w : TangentSpace I x) (hw : w ∈ W) (v : TangentSpace I x)
+      (hv : v ∈ RoughForm.ker α₀.val x) :
+      mextDeriv (α₀ + s • (α₁ - α₀)).val x ![w, v] = mextDeriv α₀.val x ![w, v] := by
+    rw [← mextDerivₗ_apply I 1 (α₀ + s • (α₁ - α₀)), map_add, map_smul, map_sub]
+    simp [hd w hw v hv]
+  have hswap (β : RoughForm I M ℝ 1) (v w : TangentSpace I x) :
+      mextDeriv β x ![v, w] = -mextDeriv β x ![w, v] := by
+    simpa using (mextDeriv β x).apply_vecCons_swap w v
+  have hker {u : TangentSpace I x} :
+      u ∈ RoughForm.ker (α₀ + s • (α₁ - α₀)).val x ↔ u ∈ RoughForm.ker α₀.val x := by
+    rw [RoughForm.mem_ker, RoughForm.mem_ker, hval']
+  refine ⟨hval'.symm ▸ hc.ne_zero, fun v hv hvw ↦ ?_⟩
+  rw [hker] at hv
+  -- A vector of `ker α₀ x` in the kernel of the interpolated form is orthogonal to `W`, so it
+  -- lies in `W`; there its pairings are those of `dα₀ x`, so it vanishes.
+  have hvW : v ∈ W := hW v hv fun w hw ↦ by
+    rw [← hdW w hw v hv, hswap, hvw w (hker.2 (hWk w hw)), neg_zero]
+  exact hc.nondegenerate v hv fun w hw ↦ by rw [← hdW v hvW w hw, hvw w (hker.2 hw)]
+
 /-- **Interpolations of forms agreeing to first order at a contact point are contact there.** If
 `α₀` is contact at `x`, `α₁ x = α₀ x`, and `dα₁ x` agrees with `dα₀ x` on the hyperplane
 `ker α₀ x`, then every form `α₀ + s (α₁ - α₀)` is contact at `x`. -/
@@ -93,29 +136,25 @@ theorem isContactFormAt_add_smul_sub {x : M} (hc : IsContactFormAt α₀.val x)
     (hval : α₁.val x = α₀.val x)
     (hd : ∀ v ∈ RoughForm.ker α₀.val x, ∀ w ∈ RoughForm.ker α₀.val x,
       mextDeriv α₁.val x ![v, w] = mextDeriv α₀.val x ![v, w]) (s : ℝ) :
-    IsContactFormAt (α₀ + s • (α₁ - α₀)).val x := by
-  refine (isContactFormAt_congr ?_ fun v hv w hw ↦ ?_).2 hc
-  · simp [hval]
-  · rw [← mextDerivₗ_apply I 1 (α₀ + s • (α₁ - α₀)), map_add, map_smul, map_sub]
-    simp [hd v hv w hw]
+    IsContactFormAt (α₀ + s • (α₁ - α₀)).val x :=
+  isContactFormAt_add_smul_sub_of_mextDeriv_eq_on (W := RoughForm.ker α₀.val x) hc hval
+    (fun _ h ↦ h) (fun _ hv _ ↦ hv) hd s
 
 variable [FiniteDimensional ℝ E]
 
-/-- **The interpolation is contact near the set of first-order agreement.** Let `α₀` be contact at
-every point of `K`, and let `α₁` agree with `α₀` at the points of `K`, with `dα₁` agreeing with
-`dα₀` on the hyperplanes `ker α₀`. Then there is an open neighbourhood of `K` on which every
-interpolation `α₀ + s (α₁ - α₀)`, `s ∈ [0, 1]`, is contact. The set `K` need not be compact. -/
-theorem exists_isOpen_forall_isContactFormAt_add_smul_sub {K : Set M}
-    (hc : ∀ x ∈ K, IsContactFormAt α₀.val x) (hval : ∀ x ∈ K, α₁.val x = α₀.val x)
-    (hd : ∀ x ∈ K, ∀ v ∈ RoughForm.ker α₀.val x, ∀ w ∈ RoughForm.ker α₀.val x,
-      mextDeriv α₁.val x ![v, w] = mextDeriv α₀.val x ![v, w]) :
+/-- **The interpolation is contact near a set where it is contact.** If every interpolation
+`α₀ + s (α₁ - α₀)`, `s ∈ [0, 1]`, is contact at the points of `K`, then there is an open
+neighbourhood of `K` on which all of them are contact. The set `K` need not be compact. -/
+theorem exists_isOpen_forall_isContactFormAt_add_smul_sub_of_isContactFormAt {K : Set M}
+    (hcK : ∀ x ∈ K, ∀ s ∈ Icc (0 : ℝ) 1, IsContactFormAt (α₀ + s • (α₁ - α₀)).val x) :
     ∃ N, IsOpen N ∧ K ⊆ N ∧ ∀ x ∈ N, ∀ s ∈ Icc (0 : ℝ) 1,
       IsContactFormAt (α₀ + s • (α₁ - α₀)).val x := by
   rcases K.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
   · exact ⟨∅, isOpen_empty, empty_subset _, by simp⟩
   -- A contact point makes the model space odd-dimensional.
   have hodd : Odd (finrank ℝ E) :=
-    (isContactFormAt_iff_isContact.1 (hc x₀ hx₀)).odd_finrank (isAlt_bilinFormAt _ x₀)
+    (isContactFormAt_iff_isContact.1 (hcK x₀ hx₀ 0 ⟨le_rfl, zero_le_one⟩)).odd_finrank
+      (isAlt_bilinFormAt _ x₀)
   -- The contact flat maps of the interpolations are invertible on an open set `O ⊆ ℝ × M`.
   set O := {p : ℝ × M | ((α₀ + p.1 • (α₁ - α₀)).contactFlat p.2).IsInvertible}
   -- The bundles and the base map are given explicitly: unification would otherwise read the
@@ -128,9 +167,21 @@ theorem exists_isOpen_forall_isContactFormAt_add_smul_sub {K : Set M}
   refine ⟨{x | ∀ s ∈ Icc (0 : ℝ) 1, (s, x) ∈ O},
     isOpen_iff_mem_nhds.2 fun x hx ↦ isCompact_Icc.eventually_forall_of_forall_eventually
       fun s hs ↦ (hO.preimage continuous_swap).mem_nhds (hx s hs),
-    fun x hx s _ ↦ isInvertible_contactFlat_of_isContactFormAt
-      (isContactFormAt_add_smul_sub (hc x hx) (hval x hx) (hd x hx) s),
+    fun x hx s hs ↦ isInvertible_contactFlat_of_isContactFormAt (hcK x hx s hs),
     fun x hx s hs ↦ isContactFormAt_of_isInvertible_contactFlat hodd (hx s hs)⟩
+
+/-- **The interpolation is contact near the set of first-order agreement.** Let `α₀` be contact at
+every point of `K`, and let `α₁` agree with `α₀` at the points of `K`, with `dα₁` agreeing with
+`dα₀` on the hyperplanes `ker α₀`. Then there is an open neighbourhood of `K` on which every
+interpolation `α₀ + s (α₁ - α₀)`, `s ∈ [0, 1]`, is contact. The set `K` need not be compact. -/
+theorem exists_isOpen_forall_isContactFormAt_add_smul_sub {K : Set M}
+    (hc : ∀ x ∈ K, IsContactFormAt α₀.val x) (hval : ∀ x ∈ K, α₁.val x = α₀.val x)
+    (hd : ∀ x ∈ K, ∀ v ∈ RoughForm.ker α₀.val x, ∀ w ∈ RoughForm.ker α₀.val x,
+      mextDeriv α₁.val x ![v, w] = mextDeriv α₀.val x ![v, w]) :
+    ∃ N, IsOpen N ∧ K ⊆ N ∧ ∀ x ∈ N, ∀ s ∈ Icc (0 : ℝ) 1,
+      IsContactFormAt (α₀ + s • (α₁ - α₀)).val x :=
+  exists_isOpen_forall_isContactFormAt_add_smul_sub_of_isContactFormAt fun x hx s _ ↦
+    isContactFormAt_add_smul_sub (hc x hx) (hval x hx) (hd x hx) s
 
 /-! ### Relative Gray stability for two contact forms -/
 

@@ -6,352 +6,147 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Group.Matrix
-public import Mathlib.Topology.ContinuousMap.Algebra
-public import Mathlib.Topology.Homotopy.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
-
-import TauCeti.Topology.Homotopy.Homotopic.Group
+public import TauCeti.Topology.Homotopy.HomotopyClassGroup.Basic
 
 /-!
-# Continuity and nullhomotopy of elementary matrices with continuous entries
+# Elementary matrices of continuous functions are nullhomotopic
 
-For a topological ring `𝕜` in which `0` and `1` are joined by a path (`Joined (0 : 𝕜) 1`) and a
-ring homomorphism `f : A →+* C(X, 𝕜)`, entrywise evaluation along `f` defines a group
-homomorphism `RingHom.mapGLContinuousMap f : GL n A →* C(X, GL n 𝕜)`, and over commutative
-rings a group homomorphism `RingHom.mapSLContinuousMap f : SL n R →* C(X, SL n 𝕜)`.
+Let `R` be a topological ring and `X` a topological space. An invertible matrix `g` over the ring
+`C(X, R)` of continuous functions is a family of invertible matrices over `R` depending
+continuously on a point of `X`: evaluating its entries at `x` gives the continuous map
+`ContinuousMap.evalGL g : C(X, GL n R)`, and `ContinuousMap.evalGL` is a group homomorphism.
 
-Every elementary matrix `1 + a Eᵢⱼ` (`i ≠ j`) deforms continuously to the identity along a path
-`γ : Path (0 : 𝕜) 1` via `t ↦ 1 + (γ t * f a x) Eᵢⱼ`. Because homotopies in a topological group
-are closed under pointwise multiplication and inversion, every matrix in the elementary subgroup
-`TauCeti.elementarySubgroup n A` maps to a nullhomotopic continuous map `X → GL n 𝕜` (and
-`X → SL n 𝕜` in the commutative case). When the matrix evaluates to the identity at a basepoint
-`x₀ : X`, basepoint correction in the topological group upgrades this to a homotopy relative to
-`{x₀}`.
+When `R` is a topological real vector space, as for `ℝ` or `ℂ`, scaling the coefficient of an
+elementary matrix `1 + a Eᵢⱼ` gives the homotopy `(t, x) ↦ 1 + (1 - t) a(x) Eᵢⱼ` from its
+evaluation to the constant map `1`. Since pointwise products and inverses of nullhomotopic maps
+into the topological group `GL n R` are nullhomotopic, the evaluation of every matrix in the
+elementary subgroup `E n C(X, R)` is nullhomotopic. Since ring maps carry elementary matrices to
+elementary matrices, the same holds for elementary matrices over any ring mapping to `C(X, R)`.
+If moreover the evaluation equals `1` at a basepoint `x₀`, the nullhomotopy can be chosen
+relative to `x₀`.
+
+Contrapositively, an invertible matrix over a ring of continuous functions whose evaluation is not
+nullhomotopic is not elementary. For `X` the circle this is how loops of matrices detect
+nontrivial classes in algebraic `K₁`, as for the rotation matrix over the coordinate ring of the
+real circle.
 
 ## Main definitions
 
-* `RingHom.mapGLContinuousMap`: the group homomorphism `GL n A →* C(X, GL n 𝕜)` induced by a
-  ring homomorphism `A →+* C(X, 𝕜)`.
-* `RingHom.mapSLContinuousMap`: the corresponding homomorphism `SL n R →* C(X, SL n 𝕜)` over
-  commutative rings.
+* `ContinuousMap.evalGL`: the homomorphism `GL n C(X, R) →* C(X, GL n R)` evaluating the entries
+  pointwise.
 
 ## Main results
 
-* `TauCeti.continuous_transvectionUnit`, `Matrix.SpecialLinearGroup.continuous_transvection`:
-  transvections depend continuously on their off-diagonal entry.
-* `RingHom.homotopic_one_mapGLContinuousMap_of_mem_elementarySubgroup`,
-  `RingHom.homotopicRel_one_mapGLContinuousMap_of_mem_elementarySubgroup`: elementary matrices
-  map to (pointed) nullhomotopic maps into `GL n 𝕜`.
-* `RingHom.homotopic_one_mapSLContinuousMap_of_toGL_mem_elementarySubgroup`,
-  `RingHom.homotopicRel_one_mapSLContinuousMap_of_toGL_mem_elementarySubgroup`: the same in
-  `SL n 𝕜`.
+* `TauCeti.continuous_transvectionUnit`: the elementary matrix `1 + a Eᵢⱼ` depends continuously
+  on `a`.
+* `ContinuousMap.evalGL_homotopic_one_of_mem_elementarySubgroup`: the evaluation of an elementary
+  matrix over `C(X, R)` is homotopic to the constant map `1`.
+* `ContinuousMap.evalGL_homotopicRel_one_of_mem_elementarySubgroup`: if moreover it equals `1`
+  at `x₀`, it is homotopic to `1` relative to `x₀`.
+
+## References
+
+* C. A. Weibel, *The K-book: An Introduction to Algebraic K-Theory*, Graduate Studies in
+  Mathematics 145 (2013), Chapter III, Example 1.5.4.
 -/
 
 public section
 
 open Matrix
-open scoped unitInterval
 
 namespace TauCeti
 
-variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n]
+variable {n R : Type*} [Fintype n] [DecidableEq n] [Ring R] [TopologicalSpace R] [ContinuousNeg R]
 
-omit [Fintype n] in
-private theorem continuous_one_add_single [NonAssocSemiring 𝕜] [TopologicalSpace 𝕜]
-    {i j : n} (hij : i ≠ j) :
-    Continuous fun c : 𝕜 ↦ (1 : Matrix n n 𝕜) + Matrix.single i j c := by
-  refine continuous_matrix fun p q ↦ ?_
-  simp only [Matrix.add_apply, Matrix.single_apply]
-  by_cases h : i = p ∧ j = q
-  · rcases h with ⟨rfl, rfl⟩
-    simpa [Matrix.one_apply, hij] using continuous_id'
-  · simp only [h, ↓reduceIte, add_zero]
-    exact continuous_const
-
-/-- A transvection `1 + c Eᵢⱼ` in `GL n 𝕜` varies continuously in its parameter `c`. -/
+/-- The elementary matrix `1 + a Eᵢⱼ` depends continuously on its coefficient `a`. -/
 @[fun_prop]
-theorem continuous_transvectionUnit [Ring 𝕜] [TopologicalSpace 𝕜]
-    [ContinuousNeg 𝕜] {i j : n} (hij : i ≠ j) :
-    Continuous (transvectionUnit hij : 𝕜 → GL n 𝕜) := by
-  rw [Units.continuous_iff]
-  constructor
-  · have hval :
-        (Units.val ∘ (transvectionUnit hij : 𝕜 → GL n 𝕜)) = fun a : 𝕜 ↦ 1 + single i j a := by
-      funext a
-      exact coe_transvectionUnit_eq_one_add_single hij a
-    rw [hval]
-    exact continuous_one_add_single (𝕜 := 𝕜) hij
-  · have hinv :
-        (fun a : 𝕜 ↦ (↑(transvectionUnit hij a)⁻¹ : Matrix n n 𝕜)) =
-          fun a : 𝕜 ↦ 1 + single i j (-a) := by
-      funext a
-      rw [transvectionUnit_inv, coe_transvectionUnit_eq_one_add_single]
-    rw [hinv]
-    exact (continuous_one_add_single (𝕜 := 𝕜) hij).comp (continuous_neg (G := 𝕜))
+theorem continuous_transvectionUnit {i j : n} (hij : i ≠ j) :
+    Continuous (transvectionUnit hij : R → GL n R) := by
+  -- every entry of `1 ± a Eᵢⱼ` is constant, `a` or `-a`
+  refine Units.continuous_iff.2
+    ⟨continuous_matrix fun k l ↦ ?_, continuous_matrix fun k l ↦ ?_⟩ <;>
+  · simp only [Function.comp_def, transvectionUnit_inv, coe_transvectionUnit_eq_one_add_single,
+      Matrix.add_apply, Matrix.one_apply, Matrix.single_apply]
+    by_cases h : i = k ∧ j = l
+    · obtain ⟨rfl, rfl⟩ := h
+      simp only [hij, ite_false, and_self, ite_true, zero_add]
+      fun_prop
+    · simp only [h, ite_false, add_zero]
+      fun_prop
 
 end TauCeti
 
-namespace Matrix.SpecialLinearGroup
-
-variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n]
-
-/-- A transvection `1 + c Eᵢⱼ` in `SL n 𝕜` varies continuously in its parameter `c`. -/
-@[fun_prop]
-theorem continuous_transvection [CommRing 𝕜] [TopologicalSpace 𝕜]
-    {i j : n} (hij : i ≠ j) :
-    Continuous (transvection hij : 𝕜 → SpecialLinearGroup n 𝕜) := by
-  have hcont : Continuous fun a : 𝕜 ↦ (transvection hij a : Matrix n n 𝕜) := by
-    simpa only [transvection_coe] using TauCeti.continuous_one_add_single (𝕜 := 𝕜) hij
-  exact hcont.subtype_mk fun a ↦ (transvection hij a).property
-
-end Matrix.SpecialLinearGroup
-
-namespace RingHom
+namespace ContinuousMap
 
 open TauCeti
 
-private theorem homotopic_one_of_mem_closure {X A G : Type*} [TopologicalSpace X]
-    [Group A] [TopologicalSpace G] [Group G] [IsTopologicalGroup G]
-    (φ : A →* C(X, G)) {S : Set A}
-    (hS : ∀ s ∈ S, ContinuousMap.Homotopic (1 : C(X, G)) (φ s))
-    {a : A} (ha : a ∈ Subgroup.closure S) :
-    ContinuousMap.Homotopic (1 : C(X, G)) (φ a) := by
-  let H : Subgroup A :=
-    { carrier := {u | ContinuousMap.Homotopic (1 : C(X, G)) (φ u)}
-      one_mem' := by
-        rw [Set.mem_ofPred_eq, map_one]
-      mul_mem' := fun {u v} hu hv ↦ by
-        rw [Set.mem_ofPred_eq, map_mul, ← one_mul (1 : C(X, G))]
-        exact hu.mul hv
-      inv_mem' := fun {u} hu ↦ by
-        rw [Set.mem_ofPred_eq, map_inv, ← inv_one (G := C(X, G))]
-        exact hu.inv }
-  exact (Subgroup.closure_le H).2 hS ha
+variable {X R n : Type*} [Fintype n] [DecidableEq n] [TopologicalSpace X] [Ring R]
+  [TopologicalSpace R] [IsTopologicalRing R]
 
-private theorem homotopic_one_of_continuous_family {X 𝕜 G : Type*} [TopologicalSpace X]
-    [MulZeroOneClass 𝕜] [TopologicalSpace 𝕜] [ContinuousMul 𝕜] [TopologicalSpace G] [One G]
-    (h : Joined (0 : 𝕜) 1) (gen : 𝕜 → G) (hgen : Continuous gen) (h0 : gen 0 = 1)
-    (c : C(X, 𝕜)) {g : C(X, G)} (hg : ∀ x, g x = gen (c x)) :
-    ContinuousMap.Homotopic (1 : C(X, G)) g :=
-  ⟨{ toFun := fun p : I × X ↦ gen (h.somePath p.1 * c p.2)
-     continuous_toFun :=
-       hgen.comp ((h.somePath.continuous.comp continuous_fst).mul
-         (c.continuous.comp continuous_snd))
-     map_zero_left := fun x ↦ by simp [h0]
-     map_one_left := fun x ↦ by simp [hg x] }⟩
-
-section GeneralLinear
-
-section Evaluation
-
-variable {X A 𝕜 n : Type*} [TopologicalSpace X] [Semiring A] [Semiring 𝕜] [TopologicalSpace 𝕜]
-  [IsTopologicalSemiring 𝕜] [Fintype n] [DecidableEq n]
-
-private def evalPointwiseRingHom (f : A →+* C(X, 𝕜)) (x : X) : A →+* 𝕜 :=
-  ((Pi.evalRingHom (fun _ : X ↦ 𝕜) x).comp ContinuousMap.coeFnRingHom).comp f
-
-private theorem evalPointwiseRingHom_apply (f : A →+* C(X, 𝕜)) (x : X) (a : A) :
-    evalPointwiseRingHom f x a = f a x := by
-  simp [evalPointwiseRingHom]
-
-private theorem coe_unitsMap_evalPointwiseRingHom (f : A →+* C(X, 𝕜)) (g : GL n A) (x : X)
-    (i j : n) :
-    ((Units.map ((evalPointwiseRingHom f x).mapMatrix (m := n)).toMonoidHom g : GL n 𝕜) :
-        Matrix n n 𝕜) i j =
-      f ((g : Matrix n n A) i j) x := by
-  simp only [Units.coe_map, toMonoidHom_eq_coe, MonoidHom.coe_ofClass, mapMatrix_apply,
-    Matrix.map_apply, evalPointwiseRingHom_apply]
-
-private theorem coe_inv_unitsMap_evalPointwiseRingHom (f : A →+* C(X, 𝕜)) (g : GL n A)
-    (x : X) (i j : n) :
-    (↑(Units.map ((evalPointwiseRingHom f x).mapMatrix (m := n)).toMonoidHom g)⁻¹ :
-        Matrix n n 𝕜) i j =
-      f ((↑g⁻¹ : Matrix n n A) i j) x := by
-  rw [← map_inv]
-  exact coe_unitsMap_evalPointwiseRingHom f g⁻¹ x i j
-
-/-- The group homomorphism `GL n A →* C(X, GL n 𝕜)` induced by a ring homomorphism
-`f : A →+* C(X, 𝕜)`, applying `f · x` entrywise at each point `x : X`. -/
-def mapGLContinuousMap (f : A →+* C(X, 𝕜)) : GL n A →* C(X, GL n 𝕜) where
+/-- An invertible matrix of continuous functions on `X` evaluates to a continuous map from `X` to
+invertible matrices: its value at `x` is obtained by evaluating every entry at `x`. This is a
+homomorphism for pointwise multiplication of maps into `GL n R`. -/
+def evalGL : GL n C(X, R) →* C(X, GL n R) where
   toFun g :=
-    { toFun := fun x ↦
-        Units.map ((evalPointwiseRingHom f x).mapMatrix (m := n)).toMonoidHom g
-      continuous_toFun := by
-        rw [Units.continuous_iff]
-        constructor
-        · refine continuous_matrix fun i j ↦ ?_
-          dsimp only [Function.comp_def]
-          simp_rw [coe_unitsMap_evalPointwiseRingHom]
-          exact (f ((g : Matrix n n A) i j)).continuous
-        · refine continuous_matrix fun i j ↦ ?_
-          simp_rw [coe_inv_unitsMap_evalPointwiseRingHom]
-          exact (f ((↑g⁻¹ : Matrix n n A) i j)).continuous }
-  map_one' := by
-    ext x i j
-    simp
-  map_mul' g₁ g₂ := by
-    ext x i j
-    simp [map_mul]
+    { toFun x := Units.map ((Pi.evalRingHom _ x).comp coeFnRingHom).mapMatrix.toMonoidHom g
+      continuous_toFun := Units.continuous_iff.2
+        ⟨continuous_matrix fun i j ↦ by simpa using (g.val i j).continuous,
+          continuous_matrix fun i j ↦ by simpa using (g⁻¹.val i j).continuous⟩ }
+  map_one' := by ext; simp
+  map_mul' g h := by ext; simp
 
-/-- Evaluating `f.mapGLContinuousMap g` at `x : X` is entrywise base change along the evaluation
-ring homomorphism `a ↦ f a x`. -/
-theorem mapGLContinuousMap_apply (f : A →+* C(X, 𝕜)) (g : GL n A) (x : X) :
-    f.mapGLContinuousMap g x =
-      Units.map
-        ((((Pi.evalRingHom (fun _ : X ↦ 𝕜) x).comp ContinuousMap.coeFnRingHom).comp f).mapMatrix
-          (m := n)).toMonoidHom g :=
+/-- The entries of the evaluation of an invertible matrix of continuous functions are the values
+of its entries. -/
+@[simp]
+theorem coe_evalGL_apply (g : GL n C(X, R)) (x : X) (i j : n) :
+    (evalGL g x : Matrix n n R) i j = (g : Matrix n n C(X, R)) i j x :=
   (rfl)
 
-/-- The `(i, j)` entry of `f.mapGLContinuousMap g x` is `f (g i j) x`. -/
+/-- The entries of the inverse of the evaluation are the values of the entries of the inverse. -/
 @[simp]
-theorem coe_mapGLContinuousMap_apply (f : A →+* C(X, 𝕜)) (g : GL n A) (x : X) (i j : n) :
-    ((f.mapGLContinuousMap g x : GL n 𝕜) : Matrix n n 𝕜) i j = f ((g : Matrix n n A) i j) x :=
-  coe_unitsMap_evalPointwiseRingHom f g x i j
+theorem coe_inv_evalGL_apply (g : GL n C(X, R)) (x : X) (i j : n) :
+    (((evalGL g x)⁻¹ : GL n R) : Matrix n n R) i j =
+      ((g⁻¹ : GL n C(X, R)) : Matrix n n C(X, R)) i j x :=
+  (rfl)
 
-end Evaluation
-
-section Nullhomotopy
-
-variable {X A 𝕜 n : Type*} [TopologicalSpace X] [Ring A] [Ring 𝕜] [TopologicalSpace 𝕜]
-  [IsTopologicalRing 𝕜] [Fintype n] [DecidableEq n]
-
-/-- Evaluating `f.mapGLContinuousMap` on a transvection evaluates its parameter along `f`. -/
+/-- An elementary matrix of continuous functions evaluates to the elementary matrix of the value
+of its coefficient. -/
 @[simp]
-theorem mapGLContinuousMap_transvectionUnit (f : A →+* C(X, 𝕜)) {i j : n} (hij : i ≠ j)
-    (a : A) (x : X) :
-    f.mapGLContinuousMap (transvectionUnit hij a) x = transvectionUnit hij (f a x) := by
-  ext p q
-  simp only [coe_mapGLContinuousMap_apply, coe_transvectionUnit_eq_one_add_single,
-    Matrix.add_apply, Matrix.one_apply, Matrix.single_apply, map_add, ContinuousMap.add_apply]
+theorem evalGL_transvectionUnit_apply {i j : n} (hij : i ≠ j) (a : C(X, R)) (x : X) :
+    -- the ascription avoids a slow unification of the unknown coefficient ring
+    evalGL (transvectionUnit hij a : GL n C(X, R)) x = transvectionUnit hij (a x) := by
+  ext k l
+  rw [coe_evalGL_apply]
+  simp only [coe_transvectionUnit_eq_one_add_single, Matrix.add_apply, ContinuousMap.add_apply,
+    Matrix.one_apply, Matrix.single_apply]
   split_ifs <;> simp
 
-/-- **Elementary matrices map to nullhomotopic maps into `GL n 𝕜`.** When `0` and `1` are joined
-by a path in `𝕜`, transporting the parameters of elementary generators along `h.somePath`
-contracts the evaluated map of every element of `TauCeti.elementarySubgroup n A` to the constant
-identity map. -/
-theorem homotopic_one_mapGLContinuousMap_of_mem_elementarySubgroup
-    (f : A →+* C(X, 𝕜)) (h : Joined (0 : 𝕜) 1) {g : GL n A}
-    (hg : g ∈ elementarySubgroup n A) :
-    ContinuousMap.Homotopic (1 : C(X, GL n 𝕜)) (f.mapGLContinuousMap g) := by
+/-- **Elementary matrices of continuous functions are nullhomotopic.** If `R` is a topological
+real vector space, the evaluation of a matrix in the elementary subgroup of `GL n C(X, R)` is
+homotopic to the constant map `1`. -/
+theorem evalGL_homotopic_one_of_mem_elementarySubgroup [Module ℝ R] [ContinuousSMul ℝ R]
+    {g : GL n C(X, R)} (hg : g ∈ elementarySubgroup n C(X, R)) : (evalGL g).Homotopic 1 := by
   rw [elementarySubgroup_def] at hg
-  refine homotopic_one_of_mem_closure f.mapGLContinuousMap ?_ hg
-  rintro _ ⟨i, j, hij, a, rfl⟩
-  exact homotopic_one_of_continuous_family h (transvectionUnit hij)
-    (continuous_transvectionUnit hij) (transvectionUnit_zero hij) (f a)
-    (f.mapGLContinuousMap_transvectionUnit hij a)
+  induction hg using Subgroup.closure_induction with
+  | mem g hg =>
+    obtain ⟨i, j, hij, a, rfl⟩ := hg
+    -- shrink the coefficient: `(t, x) ↦ 1 + (1 - t) a(x) Eᵢⱼ`
+    exact ⟨{ toFun := fun p ↦ transvectionUnit hij ((1 - (p.1 : ℝ)) • a p.2)
+             continuous_toFun := by fun_prop
+             map_zero_left := fun x ↦ by simp
+             map_one_left := fun x ↦ by simp }⟩
+  | one => simpa using Homotopic.refl 1
+  | mul g h _ _ hg hh => simpa using hg.mul hh
+  | inv g _ hg => simpa using hg.inv
 
-/-- **Based nullhomotopy of elementary matrices in `GL n 𝕜`.** If an elementary matrix evaluates
-to the identity at `x₀ : X`, its evaluated map is homotopic to the constant identity map relative
-to `{x₀}`. -/
-theorem homotopicRel_one_mapGLContinuousMap_of_mem_elementarySubgroup
-    (f : A →+* C(X, 𝕜)) (h : Joined (0 : 𝕜) 1) {g : GL n A}
-    (hg : g ∈ elementarySubgroup n A) {x₀ : X} (hx₀ : f.mapGLContinuousMap g x₀ = 1) :
-    ContinuousMap.HomotopicRel (1 : C(X, GL n 𝕜)) (f.mapGLContinuousMap g) {x₀} :=
-  (f.homotopic_one_mapGLContinuousMap_of_mem_elementarySubgroup h hg).homotopicRel_singleton
-    (by simp [hx₀])
+/-- **Elementary loops of continuous functions are based nullhomotopic.** If `R` is a topological
+real vector space and the evaluation of a matrix in the elementary subgroup of `GL n C(X, R)` is
+`1` at `x₀`, then it is homotopic to the constant map `1` relative to `x₀`. -/
+theorem evalGL_homotopicRel_one_of_mem_elementarySubgroup [Module ℝ R] [ContinuousSMul ℝ R]
+    {g : GL n C(X, R)} (hg : g ∈ elementarySubgroup n C(X, R)) {x₀ : X}
+    (hx₀ : evalGL g x₀ = 1) : (evalGL g).HomotopicRel 1 {x₀} :=
+  (homotopicRel_singleton_iff_homotopic_of_apply_eq hx₀).2 <|
+    evalGL_homotopic_one_of_mem_elementarySubgroup hg
 
-end Nullhomotopy
-
-end GeneralLinear
-
-section SpecialLinear
-
-variable {X R 𝕜 n : Type*} [TopologicalSpace X] [CommRing R] [CommRing 𝕜]
-  [TopologicalSpace 𝕜] [IsTopologicalRing 𝕜] [Fintype n] [DecidableEq n]
-
-private theorem coe_specialLinearGroup_map_evalAlgHom (f : R →+* C(X, 𝕜))
-    (g : SpecialLinearGroup n R) (x : X) (i j : n) :
-    (SpecialLinearGroup.map ((ContinuousMap.evalAlgHom 𝕜 𝕜 x).toRingHom.comp f) g :
-        Matrix n n 𝕜) i j =
-      f ((g : Matrix n n R) i j) x := by
-  rw [SpecialLinearGroup.map_apply_coe, Matrix.map_apply, RingHom.comp_apply,
-    AlgHom.toRingHom_eq_coe, RingHom.coe_coe, ContinuousMap.evalAlgHom_apply]
-
-/-- The group homomorphism `SL n R →* C(X, SL n 𝕜)` induced by a ring homomorphism
-`f : R →+* C(X, 𝕜)`, applying `f · x` entrywise at each point `x : X`. -/
-def mapSLContinuousMap (f : R →+* C(X, 𝕜)) :
-    SpecialLinearGroup n R →* C(X, SpecialLinearGroup n 𝕜) where
-  toFun g :=
-    { toFun := fun x ↦
-        SpecialLinearGroup.map ((ContinuousMap.evalAlgHom 𝕜 𝕜 x).toRingHom.comp f) g
-      continuous_toFun := by
-        have hcont : Continuous fun x : X ↦
-            (SpecialLinearGroup.map ((ContinuousMap.evalAlgHom 𝕜 𝕜 x).toRingHom.comp f) g :
-              Matrix n n 𝕜) := by
-          refine continuous_matrix fun i j ↦ ?_
-          simp_rw [coe_specialLinearGroup_map_evalAlgHom]
-          exact (f ((g : Matrix n n R) i j)).continuous
-        exact hcont.subtype_mk fun x ↦
-          (SpecialLinearGroup.map ((ContinuousMap.evalAlgHom 𝕜 𝕜 x).toRingHom.comp f) g).property }
-  map_one' := by
-    ext x i j
-    simp
-  map_mul' g₁ g₂ := by
-    ext x i j
-    simp [map_mul]
-
-/-- Evaluating `f.mapSLContinuousMap g` at `x : X` is entrywise base change along the evaluation
-ring homomorphism `a ↦ f a x`. -/
-theorem mapSLContinuousMap_apply (f : R →+* C(X, 𝕜)) (g : SpecialLinearGroup n R) (x : X) :
-    f.mapSLContinuousMap g x =
-      SpecialLinearGroup.map ((ContinuousMap.evalAlgHom 𝕜 𝕜 x).toRingHom.comp f) g :=
-  (rfl)
-
-/-- The `(i, j)` entry of `f.mapSLContinuousMap g x` is `f (g i j) x`. -/
-@[simp]
-theorem coe_mapSLContinuousMap_apply (f : R →+* C(X, 𝕜)) (g : SpecialLinearGroup n R)
-    (x : X) (i j : n) :
-    (f.mapSLContinuousMap g x : Matrix n n 𝕜) i j = f ((g : Matrix n n R) i j) x :=
-  coe_specialLinearGroup_map_evalAlgHom f g x i j
-
-/-- Viewing `f.mapSLContinuousMap g x` in `GL n 𝕜` agrees with
-`f.mapGLContinuousMap (toGL g) x`. -/
-@[simp]
-theorem toGL_mapSLContinuousMap_apply (f : R →+* C(X, 𝕜)) (g : SpecialLinearGroup n R)
-    (x : X) :
-    SpecialLinearGroup.toGL (f.mapSLContinuousMap g x) =
-      f.mapGLContinuousMap (SpecialLinearGroup.toGL g) x := by
-  ext i j
-  simp
-
-/-- Evaluating `f.mapSLContinuousMap` on a transvection evaluates its parameter along `f`. -/
-@[simp]
-theorem mapSLContinuousMap_transvection (f : R →+* C(X, 𝕜)) {i j : n} (hij : i ≠ j)
-    (a : R) (x : X) :
-    f.mapSLContinuousMap (SpecialLinearGroup.transvection hij a) x =
-      SpecialLinearGroup.transvection hij (f a x) := by
-  apply SpecialLinearGroup.toGL_injective
-  rw [toGL_mapSLContinuousMap_apply, toGL_transvection_eq_transvectionUnit,
-    toGL_transvection_eq_transvectionUnit, mapGLContinuousMap_transvectionUnit]
-
-/-- **Elementary determinant-one matrices map to nullhomotopic maps into `SL n 𝕜`.** -/
-theorem homotopic_one_mapSLContinuousMap_of_toGL_mem_elementarySubgroup
-    (f : R →+* C(X, 𝕜)) (h : Joined (0 : 𝕜) 1)
-    {g : SpecialLinearGroup n R}
-    (hg : SpecialLinearGroup.toGL g ∈ elementarySubgroup n R) :
-    ContinuousMap.Homotopic (1 : C(X, SpecialLinearGroup n 𝕜)) (f.mapSLContinuousMap g) := by
-  rw [elementarySubgroup_eq_map_closure_range_toSpecialLinearGroup] at hg
-  obtain ⟨u, hu, hug⟩ := hg
-  have hgu : g = u := SpecialLinearGroup.toGL_injective hug.symm
-  refine hgu ▸ homotopic_one_of_mem_closure f.mapSLContinuousMap ?_ hu
-  rintro _ ⟨t, rfl⟩
-  exact homotopic_one_of_continuous_family h (SpecialLinearGroup.transvection t.hij)
-    (SpecialLinearGroup.continuous_transvection t.hij)
-    (by simp) (f t.c) (f.mapSLContinuousMap_transvection t.hij t.c)
-
-/-- **Based nullhomotopy of elementary determinant-one matrices in `SL n 𝕜`.** If a
-determinant-one matrix is elementary and evaluates to the identity at `x₀ : X`, its evaluated map
-is homotopic to the constant identity map in `SL n 𝕜` relative to `{x₀}`. -/
-theorem homotopicRel_one_mapSLContinuousMap_of_toGL_mem_elementarySubgroup
-    (f : R →+* C(X, 𝕜)) (h : Joined (0 : 𝕜) 1)
-    {g : SpecialLinearGroup n R}
-    (hg : SpecialLinearGroup.toGL g ∈ elementarySubgroup n R) {x₀ : X}
-    (hx₀ : f.mapSLContinuousMap g x₀ = 1) :
-    ContinuousMap.HomotopicRel
-      (1 : C(X, SpecialLinearGroup n 𝕜)) (f.mapSLContinuousMap g) {x₀} :=
-  (f.homotopic_one_mapSLContinuousMap_of_toGL_mem_elementarySubgroup h hg).homotopicRel_singleton
-    (by simp [hx₀])
-
-end SpecialLinear
-
-end RingHom
+end ContinuousMap

@@ -11,9 +11,11 @@ public import TauCeti.NumberTheory.Padics.PrincipalUnits
 import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
 import TauCeti.NumberTheory.LocalField.DeepUnits.Basic
 import TauCeti.NumberTheory.Padics.DyadicUnits
-import TauCeti.NumberTheory.Padics.Exp.Log
 import TauCeti.NumberTheory.Padics.Exp.Disc
+import TauCeti.NumberTheory.Padics.UnitFiltration
 import TauCeti.NumberTheory.Padics.UnitsDecomposition.Basic
+import TauCeti.Topology.Algebra.Group.Generation
+import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.Basic
 
 /-!
 # The logarithmic decomposition `ℤ_pˣ ≃ (ℤ/qℤ)ˣ × ℤ_p`
@@ -48,7 +50,8 @@ At `p = 2` the modulus `q = 4` cannot be lowered to `2`: `-1` has order two, so
 * `TauCeti.padicUnitsDepth p`: the exponent `k` with `q = p ^ k`.
 * `TauCeti.unitsPrincipalLogEquiv p`: the logarithm `1 + qℤ_p ≃ₜ* ℤ_p`, `u ↦ log u / q`.
 * `TauCeti.padicUnitsGenerator p`: the unit `γ = exp q`, with
-  `TauCeti.topologicalClosure_zpowers_padicUnitsGenerator` and
+  `TauCeti.topologicalClosure_zpowers_padicUnitsGenerator`,
+  `TauCeti.topologicallyGenerates_padicUnitsGenerator` (inside the subgroup `1 + qℤ_p`),
   `TauCeti.coe_padicUnitsGenerator_zpow`, `γ ^ k = exp (q k)`,
   `TauCeti.coe_padicUnitsGenerator_pow_prime_pow`, `γ ^ (p ^ j) = exp (p ^ (k + j))`, and
   `TauCeti.not_isOfFinOrder_padicUnitsGenerator`.
@@ -275,6 +278,13 @@ theorem unitsPrincipalLogEquiv_padicUnitsGenerator :
       .ofAdd 1 :=
   (unitsPrincipalLogEquiv p).apply_symm_apply _
 
+-- Not a `simp` lemma: it would loop with unfolding `padicUnitsGenerator`.
+/-- The inverse logarithm sends `1 ∈ ℤ_p` to `γ = exp q`, as an element of `1 + qℤ_p`. -/
+theorem unitsPrincipalLogEquiv_symm_ofAdd_one :
+    (unitsPrincipalLogEquiv p).symm (.ofAdd 1) =
+      ⟨padicUnitsGenerator p, padicUnitsGenerator_mem_unitsPrincipal⟩ :=
+  (unitsPrincipalLogEquiv p).symm_apply_eq.mpr unitsPrincipalLogEquiv_padicUnitsGenerator.symm
+
 /-- The powers of `γ = exp q` are `γ ^ k = exp (q k)`, for `k ∈ ℤ`. -/
 theorem coe_padicUnitsGenerator_zpow (k : ℤ) :
     (((padicUnitsGenerator p ^ k : ℤ_[p]ˣ) : ℤ_[p]) : ℚ_[p]) =
@@ -333,6 +343,18 @@ theorem topologicalClosure_zpowers_padicUnitsGenerator :
       unitsPrincipal p (padicUnitsDepth p) := by
   simpa [padicUnitsGenerator] using
     topologicalClosure_zpowers_unitsPrincipalLogEquiv_symm (1 : ℤ_[p]ˣ)
+
+/-- **The generator `γ = exp q` topologically generates the principal units `1 + qℤ_p`**, as an
+element of the subgroup `unitsPrincipal p (padicUnitsDepth p)` of `ℤ_pˣ`: it is the image of the
+topological generator `1` of `ℤ_p` under the logarithmic isomorphism `unitsPrincipalLogEquiv`. -/
+theorem topologicallyGenerates_padicUnitsGenerator :
+    (Subgroup.closure ({⟨padicUnitsGenerator p, padicUnitsGenerator_mem_unitsPrincipal⟩} :
+      Set (unitsPrincipal p (padicUnitsDepth p)))).topologicalClosure = ⊤ := by
+  let e := (unitsPrincipalLogEquiv p).symm
+  have h := topologicalClosure_closure_image_eq_top (topologicallyGenerates_ofAdd_one_padicInt p)
+    (f := (e : Multiplicative ℤ_[p] →* unitsPrincipal p (padicUnitsDepth p))) e.continuous
+    e.surjective.denseRange
+  rwa [Set.image_singleton, MonoidHom.coe_ofClass, unitsPrincipalLogEquiv_symm_ofAdd_one] at h
 
 /-! ### The section `ω` of reduction modulo `q` -/
 
