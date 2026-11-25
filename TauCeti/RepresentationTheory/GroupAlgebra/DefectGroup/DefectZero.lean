@@ -15,9 +15,10 @@ For a block idempotent `e` of `k[G]`, `k` of characteristic `p`, the trivial sub
 group exactly when `e = Tr_1^G(a) = ∑_g g a g⁻¹` for some `a`
 (`TauCeti.IsBlockIdempotent.isDefectGroup_bot_iff`, from the characterization of defect groups as
 minimal trace subgroups). Since `e` then acts as the identity on every module of the block, the
-averaging results of `TauCeti.RepresentationTheory.GroupAlgebra.TraceSplit` apply: over a field,
-a block of defect group `1` has every module on which `e` acts as the identity projective and
-semisimple, and its block algebra `e k[G]` is semisimple as a left `k[G]`-module (Webb,
+averaging results of `TauCeti.RepresentationTheory.GroupAlgebra.TraceSplit` apply: for a block
+of defect group `1`, every module on which `e` acts as the identity is projective over `k[G]` if it
+is projective over `k`; over a field it is also semisimple, and the block algebra `e k[G]` is
+semisimple as a left `k[G]`-module (Webb,
 Corollary 12.4.8, p. 242, with Proposition 11.3.4, pp. 198–199, for `H = 1`).
 
 ## Main results
@@ -27,8 +28,8 @@ Corollary 12.4.8, p. 242, with Proposition 11.3.4, pp. 198–199, for `H = 1`).
 * `TauCeti.IsBlockIdempotent.moduleProjective_of_isDefectGroup_bot`,
   `TauCeti.IsBlockIdempotent.isSemisimpleModule_of_isDefectGroup_bot`,
   `TauCeti.IsBlockIdempotent.isSemisimpleModule_span_of_isDefectGroup_bot`: for a block of defect
-  group `1`, modules on which `e` acts as the identity are projective and semisimple, and so is
-  the left ideal `k[G] e`.
+  group `1`, modules on which `e` acts as the identity are projective (given projectivity over
+  `k`) and, over a field, semisimple; so is the left ideal `k[G] e`.
 
 ## References
 
@@ -66,21 +67,30 @@ theorem isDefectGroup_bot_iff (hb : IsBlockIdempotent b) :
 
 end DefectGroup
 
+section Projective
+
+variable {R G : Type*} [CommRing R] [IsArtinianRing R] [Group G] [Finite G] {p : ℕ}
+  [Fact p.Prime] [CharP R p] {b : Subalgebra.center R (MonoidAlgebra R G)}
+  {V : Type*} [AddCommGroup V] [Module R V] [Module (MonoidAlgebra R G) V]
+  [IsScalarTower R (MonoidAlgebra R G) V] [Module.Projective R V]
+
+/-- **Modules in a block of defect zero are projective.** If `1` is a defect group of a block
+idempotent `e` of `R[G]`, `R` an Artinian ring of characteristic `p`, then every `R[G]`-module
+that is projective over `R` and on which `e` acts as the identity is projective over `R[G]`. -/
+theorem moduleProjective_of_isDefectGroup_bot (hb : IsBlockIdempotent b)
+    (hD : IsDefectGroup R p (b : MonoidAlgebra R G) ⊥)
+    (hV : ∀ v : V, (b : MonoidAlgebra R G) • v = v) :
+    Module.Projective (MonoidAlgebra R G) V := by
+  have := Fintype.ofFinite G
+  obtain ⟨a, ha⟩ := hb.isDefectGroup_bot_iff.1 hD
+  exact moduleProjective_of_forall_sum_conj_smul_eq (a := a) (by rwa [ha])
+
+end Projective
+
 variable {k G : Type*} [Field k] [Group G] [Finite G] {p : ℕ} [Fact p.Prime] [CharP k p]
   {b : Subalgebra.center k (MonoidAlgebra k G)}
   {V : Type*} [AddCommGroup V] [Module k V] [Module (MonoidAlgebra k G) V]
   [IsScalarTower k (MonoidAlgebra k G) V]
-
-/-- **Modules in a block of defect zero are projective.** If `1` is a defect group of a block
-idempotent `e` of `k[G]`, `k` a field of characteristic `p`, then every `k[G]`-module on which `e`
-acts as the identity is projective. -/
-theorem moduleProjective_of_isDefectGroup_bot (hb : IsBlockIdempotent b)
-    (hD : IsDefectGroup k p (b : MonoidAlgebra k G) ⊥)
-    (hV : ∀ v : V, (b : MonoidAlgebra k G) • v = v) :
-    Module.Projective (MonoidAlgebra k G) V := by
-  have := Fintype.ofFinite G
-  obtain ⟨a, ha⟩ := hb.isDefectGroup_bot_iff.1 hD
-  exact moduleProjective_of_forall_sum_conj_smul_eq (a := a) (by rwa [ha])
 
 /-- **Modules in a block of defect zero are semisimple.** If `1` is a defect group of a block
 idempotent `e` of `k[G]`, `k` a field of characteristic `p`, then every `k[G]`-module on which `e`
