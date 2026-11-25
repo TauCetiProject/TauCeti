@@ -38,8 +38,7 @@ the remainder is `-log X - γ` and is bounded by elementary inequalities for the
 
 ## Main results
 
-* `TauCeti.tendsto_harmonic_sub_log_sub_eulerMascheroniConstant`: `R₁(n) → 0` along the
-  natural numbers.
+* `TauCeti.tendsto_harmonicRemainder_natCast`: `R₁(n) → 0` along the natural numbers.
 * `TauCeti.harmonic_sub_log_sub_eulerMascheroniConstant_le`: `R₁(n) ≤ 1 / (2n)`.
 * `TauCeti.one_div_two_mul_add_le_harmonic_sub_log_sub_eulerMascheroniConstant`:
   `1 / (2n + 2/5) ≤ R₁(n)` for `n ≥ 1`.
@@ -115,9 +114,9 @@ theorem harmonicRemainder_eq_harmonicRemainder_floor_sub_log {X : ℝ} (hX : 1 �
 /-! ### Bounds at the integers -/
 
 /-- The harmonic remainder at the integers tends to zero. -/
-theorem tendsto_harmonic_sub_log_sub_eulerMascheroniConstant :
-    Tendsto (fun n : ℕ ↦ (harmonic n : ℝ) - log n - eulerMascheroniConstant) atTop (𝓝 0) := by
-  simpa using tendsto_harmonic_sub_log.sub_const eulerMascheroniConstant
+theorem tendsto_harmonicRemainder_natCast :
+    Tendsto (fun n : ℕ ↦ harmonicRemainder n) atTop (𝓝 0) := by
+  simpa using tendsto_sub_nhds_zero_iff.mpr tendsto_harmonic_sub_log
 
 /-- The decrement of the harmonic remainder between consecutive positive integers. -/
 private theorem harmonic_sub_log_sub_succ {n : ℕ} (hn : n ≠ 0) :
@@ -137,7 +136,7 @@ theorem harmonic_sub_log_sub_eulerMascheroniConstant_le (n : ℕ) :
   rcases eq_or_ne n 0 with rfl | hn
   · simpa using one_half_lt_eulerMascheroniConstant.le.trans' (by norm_num)
   refine le_of_tendsto_of_sub_succ_le (g := fun n : ℕ ↦ 1 / (2 * (n : ℝ)))
-    tendsto_harmonic_sub_log_sub_eulerMascheroniConstant ?_ fun k hk ↦ ?_
+    (tendsto_sub_nhds_zero_iff.mpr tendsto_harmonic_sub_log) ?_ fun k hk ↦ ?_
   · simp only [one_div]
     exact (tendsto_natCast_atTop_atTop.const_mul_atTop (two_pos : (0 : ℝ) < 2)).inv_tendsto_atTop
   · have hk' : (0 : ℝ) < k := by exact_mod_cast hn.bot_lt.trans_le hk
@@ -165,7 +164,7 @@ private theorem natCast_mul_harmonicRemainder_natCast_le (n : ℕ) :
 theorem one_div_two_mul_add_le_harmonic_sub_log_sub_eulerMascheroniConstant {n : ℕ} (hn : n ≠ 0) :
     1 / (2 * n + 2 / 5) ≤ (harmonic n : ℝ) - log n - eulerMascheroniConstant := by
   refine le_of_tendsto_of_sub_succ_le (f := fun n : ℕ ↦ 1 / (2 * (n : ℝ) + 2 / 5)) ?_
-    tendsto_harmonic_sub_log_sub_eulerMascheroniConstant fun k hk ↦ ?_
+    (tendsto_sub_nhds_zero_iff.mpr tendsto_harmonic_sub_log) fun k hk ↦ ?_
   · simp only [one_div]
     exact ((tendsto_natCast_atTop_atTop.const_mul_atTop (two_pos : (0 : ℝ) < 2)).atTop_add
       tendsto_const_nhds).inv_tendsto_atTop
