@@ -16,7 +16,7 @@ public import TauCeti.Topology.VectorBundle.Orientation.SectionIndex.WeakCauchyR
 
 Let `M` be a closed complex curve and `V → M` a complex vector bundle with a finite bundle atlas
 `A`. Let `D₀` be a smooth real Cauchy–Riemann operator on `V` and `α` a zeroth-order term of class
-`Lᵖ`, `p > 2`, and let `ξ ∈ W^{1,q}(Σ, V)`, `2 < q ≤ p`, lie in the kernel of the realization of
+`Lᵖ`, `p > 2`, and let `ξ ∈ W^{1,q}(M, V)`, `2 < q ≤ p`, lie in the kernel of the realization of
 `D₀ + α` (`TauCeti.IsRealCauchyRiemannOperator.perturbedSobolevL`). By Morrey's embedding `ξ` has a
 continuous representative `s` (`TauCeti.SobolevSection.toSection`), which is in general not `C¹`,
 since `α` is only `Lᵖ`.
@@ -41,8 +41,9 @@ of the zero count for sections solving a weak Cauchy–Riemann inequality
 for `C¹` kernel elements of operators with continuous coefficients
 (`TauCeti.IsRealCauchyRiemannOperator.ncard_le_evalFundamentalClass_complexEulerClass`), the
 holomorphic charts and the complex-linear trivializations carry the complex orientations of `X`
-and `L` to that of `ℂ`. So if `s` is not identically zero it has finitely many zeros, at most
-`c₁(L)[X]` of them, and if `c₁(L)[X] < 0` the kernel is zero.
+and `L` to that of `ℂ`. So if `X` is connected (`[ConnectedSpace X]`) and `s` is not identically
+zero, it has finitely many zeros; if it has finitely many zeros, it has at most `c₁(L)[X]` of them;
+and if `X` is connected and `c₁(L)[X] < 0`, the kernel is zero.
 
 Kernel elements of the realization of a smooth operator are smooth
 (`TauCeti.IsRealCauchyRiemannOperator.exists_contMDiff_of_sobolevL_eq_zero`), so for `α = 0` the
@@ -103,6 +104,13 @@ variable (A : FiniteBundleAtlas ℂ M F V) [ContMDiffVectorBundle ∞ F V 𝓘(�
   (hDs : ContMDiffCovariantDerivativeOn F ∞ D univ)
   {p q : ℝ≥0} [Fact (1 ≤ (p : ℝ≥0∞))] [Fact (1 ≤ (q : ℝ≥0∞))]
 
+omit [T2Space M] [∀ x, IsTopologicalAddGroup (V x)]
+  [∀ x, ContinuousSMul ℝ (V x)] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
+/-- For `q > 2`, the elements of `W^{1,q}` have continuous representatives. -/
+private theorem hasContinuousRepresentatives (hq : 2 < q) :
+    SobolevSection.HasContinuousRepresentatives A volume q 1 :=
+  .of_two_lt_mul (by rw [Nat.cast_one, one_mul]; exact_mod_cast hq)
+
 include hD hDs in
 /-- **A kernel element solves a weak Cauchy–Riemann inequality in every chart.** Let `D₀` be a
 smooth real Cauchy–Riemann operator, `α` an `Lᵖ` zeroth-order term, `p > 2`, and `ξ ∈ W^{1,q}`,
@@ -120,8 +128,7 @@ theorem exists_hasWeakFDerivOn_coord_toSection_of_perturbedSobolevL_eq_zero
       HasWeakFDerivOn volume (A.image i) (A.coord i (SobolevSection.toSection ξ)) Du ∧
       MemLpLoc p (A.image i) g ∧ ∀ᵐ y ∂volume.restrict (A.image i),
         ‖complexAntilinearPartL (Du y)‖ ≤ g y * ‖A.coord i (SobolevSection.toSection ξ) y‖ := by
-  have hrep : SobolevSection.HasContinuousRepresentatives A volume q 1 :=
-    .of_two_lt_mul (by rw [Nat.cast_one, one_mul]; exact_mod_cast hq)
+  have hrep := hasContinuousRepresentatives A hq
   have hae := SobolevSection.chartValueL_ae_eq_coord_toSection hrep ξ i
   have hDu := A.sectionChartData.hasWeakFDerivOn_chartValueL volume q i ξ
   -- The chart data of `α`, an `Lᵖ` function on the chart image.
@@ -137,17 +144,11 @@ theorem exists_hasWeakFDerivOn_coord_toSection_of_perturbedSobolevL_eq_zero
     simpa only [Pi.add_def] using (memLpLoc_const C).add (ha.norm.const_mul c₀).memLpLoc
   refine ⟨_, _, hDu.congr_ae hae, hg, ?_⟩
   -- The chart formula, for the kernel element: `\bar∂ uᵢ + Zᵢ uᵢ + (αᵢ uᵢ)^{0,1} = 0`.
-  have h0 : A.tangentHom.sectionChartData.chartValueL volume q 0 i
-      (((0 : zeroOneSobolevSections A volume q 0) : SobolevSection A.tangentHom volume q 0) :
-        A.tangentHom.sectionChartData.SobolevData volume q 0)
-      =ᵐ[volume.restrict (A.image i)] 0 := by
-    simp only [ZeroMemClass.coe_zero, map_zero]
-    exact (FiniteBundleAtlas.ae_image_tangentHom_iff A volume i).1 (Lp.coeFn_zero (ℂ →L[ℝ] F)
-      q (volume.restrict (A.tangentHom.sectionChartData.image i : Set ℂ)))
   have hchart := hD.chartValueL_perturbedSobolevL_ae A hDs volume hp hqp α ξ hDu
   rw [hξ] at hchart
-  filter_upwards [hchart, h0, hae, ae_restrict_mem (A.image i).isOpen.measurableSet]
-    with y h₁ h₂ h₃ hy
+  filter_upwards [hchart,
+    chartValueL_zero_zeroOneSobolevSections_ae (μ := volume) (p := q) (k := 0) i, hae,
+    ae_restrict_mem (A.image i).isOpen.measurableSet] with y h₁ h₂ h₃ hy
   have h := h₁.symm.trans h₂
   rw [h₃, Pi.zero_apply, add_assoc, add_eq_zero_iff_eq_neg] at h
   rw [h, norm_neg]
@@ -182,28 +183,19 @@ variable (A : FiniteBundleAtlas ℂ X ℂ L) [ContMDiffVectorBundle ∞ ℂ L �
   (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p 0)
   {ξ : SobolevSection A volume q 1}
 
-/-- The reading of a section `s` in the preferred chart of `X` and the preferred trivialization of
-`L` at `c`: the function `y ↦ (e_c (s (φ_c⁻¹ y))).2` on the chart target. -/
-private abbrev chartReading (s : Π x, L x) (c : X) (y : ℂ) : ℂ :=
-  (trivializationAt ℂ L c (TotalSpace.mk' ℂ ((chartAt ℂ c).symm y) (s ((chartAt ℂ c).symm y)))).2
-
 include hD hDs hq in
 /-- In every chart of `A`, the reading of the continuous representative of a kernel element is
 continuous, with a weak conjugate Wirtinger derivative bounded by an `Lᵖ_loc` multiple of it. -/
 private theorem exists_weakChartData (hξ : hD.perturbedSobolevL A hDs volume hp hqp α ξ = 0) :
     ∃ (g : Fin A.n → ℂ → ℝ) (G : Fin A.n → ℂ → ℂ), ∀ j,
-      ContinuousOn (chartReading (SobolevSection.toSection ξ) (A.center j)) (A.image j) ∧
+      ContinuousOn (preferredChartReading (E := ℂ) (F := ℂ) ξ.toSection (A.center j)) (A.image j) ∧
       MemLpLoc p (A.image j) (g j) ∧
       HasWeakConjWirtingerDerivOn volume (A.image j)
-        (chartReading (SobolevSection.toSection ξ) (A.center j)) (G j) ∧
-      ∀ᵐ y ∂volume.restrict (A.image j),
-        ‖G j y‖ ≤ g j y * ‖chartReading (SobolevSection.toSection ξ) (A.center j) y‖ := by
-  have hrep : SobolevSection.HasContinuousRepresentatives A volume q 1 :=
-    .of_two_lt_mul (by rw [Nat.cast_one, one_mul]; exact_mod_cast hq)
-  have hc (j : Fin A.n) : chartReading (SobolevSection.toSection ξ) (A.center j) =
-      A.coord j (SobolevSection.toSection ξ) :=
-    funext fun y ↦ (A.coord_def j _ y).symm
-  simp only [hc]
+        (preferredChartReading (E := ℂ) (F := ℂ) ξ.toSection (A.center j)) (G j) ∧
+      ∀ᵐ y ∂volume.restrict (A.image j), ‖G j y‖ ≤
+        g j y * ‖preferredChartReading (E := ℂ) (F := ℂ) ξ.toSection (A.center j) y‖ := by
+  have hrep := hasContinuousRepresentatives A hq
+  simp only [A.preferredChartReading_center]
   choose Du g hDu hg hle using fun j ↦
     exists_hasWeakFDerivOn_coord_toSection_of_perturbedSobolevL_eq_zero A hD hDs hp hq hqp α hξ j
   refine ⟨g, fun j y ↦ (2 : ℂ)⁻¹ • (Du j y 1 + Complex.I • Du j y Complex.I), fun j ↦
@@ -211,24 +203,13 @@ private theorem exists_weakChartData (hξ : hD.perturbedSobolevL A hDs volume hp
       (hDu j).hasWeakConjWirtingerDerivOn, ?_⟩⟩
   filter_upwards [hle j] with y hy
   -- On `ℂ`, the weak conjugate Wirtinger derivative is the value on `1` of `\bar∂`.
-  rw [hc j]
+  rw [A.preferredChartReading_center]
   refine le_trans ?_ hy
   rw [show (2 : ℂ)⁻¹ • (Du j y 1 + Complex.I • Du j y Complex.I) =
       complexAntilinearPartL (Du j y) 1 by
     simp only [ContinuousLinearMap.complexAntilinearPartL_apply_apply, smul_eq_mul, mul_one,
       Complex.real_smul, Complex.ofReal_inv, Complex.ofReal_ofNat]]
   simpa using (complexAntilinearPartL (Du j y)).le_opNorm 1
-
-omit [T2Space X] [∀ x, IsTopologicalAddGroup (L x)] [∀ x, ContinuousSMul ℝ (L x)]
-  [ContMDiffVectorBundle ∞ ℂ L 𝓘(ℝ, ℂ)] in
-/-- The continuous representative of a nonzero element of `W^{1,q}`, `q > 2`, is nonzero. -/
-private theorem exists_toSection_ne_zero (hq : 2 < q) (hne : ξ ≠ 0) :
-    ∃ x, SobolevSection.toSection ξ x ≠ 0 := by
-  have hrep : SobolevSection.HasContinuousRepresentatives A volume q 1 :=
-    .of_two_lt_mul (by rw [Nat.cast_one, one_mul]; exact_mod_cast hq)
-  by_contra! h
-  exact hne (SobolevSection.toSection_injective hrep
-    ((funext h).trans (SobolevSection.toSection_zero hrep).symm))
 
 include hD hDs hq in
 /-- **The zeros of a nonzero kernel element are finite in number.** On a connected compact Riemann
@@ -247,7 +228,9 @@ theorem finite_setOf_toSection_eq_zero_of_perturbedSobolevL_eq_zero [ConnectedSp
     (fun z ↦ A.dom_subset_chart_source _ (hi z)) (fun z ↦ A.dom_subset_baseSet _ (hi z))
     (by exact_mod_cast hp) (fun z ↦ A.image (i z)) (fun z ↦ A.mem_image.2 ⟨z, hi z, rfl⟩)
     (fun z ↦ g (i z)) (fun z ↦ (h (i z)).2.1) (fun z ↦ G (i z)) (fun z ↦ (h (i z)).1)
-    (fun z ↦ (h (i z)).2.2.1) (fun z ↦ (h (i z)).2.2.2) (exists_toSection_ne_zero A hq hne)
+    (fun z ↦ (h (i z)).2.2.1) (fun z ↦ (h (i z)).2.2.2)
+    (Function.ne_iff.1 ((SobolevSection.toSection_eq_zero_iff
+      (hasContinuousRepresentatives A hq)).not.2 hne))
 
 include hD hDs hq in
 /-- **The zero count.** On a compact Riemann surface `X`, let `ξ ∈ W^{1,q}(X, L)`, `2 < q ≤ p`,
@@ -262,8 +245,7 @@ theorem ncard_le_evalFundamentalClass_complexEulerClass_of_perturbedSobolevL_eq_
       ((complexHomologicalOrientation X).evalFundamentalClass Complex.finrank_real_complex
         (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.id X)
         (complexEulerClass ℂ L (r := 0) (finrank_self ℂ))).down := by
-  have hrep : SobolevSection.HasContinuousRepresentatives A volume q 1 :=
-    .of_two_lt_mul (by rw [Nat.cast_one, one_mul]; exact_mod_cast hq)
+  have hrep := hasContinuousRepresentatives A hq
   obtain ⟨g, G, h⟩ := exists_weakChartData A hD hDs hp hq hqp α hξ
   choose i hi using A.exists_mem_dom
   rw [complexEulerClass_def]
