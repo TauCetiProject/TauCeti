@@ -26,11 +26,11 @@ applies it to the staircase threshold at `q * (2 * t + 1)` vertices:
   `Finset.ciInf₂_sum_distErr_mul_inv_eq_ciInf_sum_movedNorm_div_of_le`,
   `TauCeti.Cochain.card_div_add_one_le_costErr_of_ne`,
   `TauCeti.Cochain.gaugeDistErr_eq_ciInf_sum_edgeCost_div_of_le`, and
-  `TauCeti.Cochain.gaugeDistErr_eq_gaugeDist_div_of_le`): on any two-complex `X` (without
-  requiring `V` to be finite or ordered), if the equal-degree `movedNorm (Fin n)` unoriented
-  edge-cost infimum (`2 ≤ n`) is at most `n * #X.edges / (n + 1)` (`3 * #X.edges / 4` when
-  `n = 3`), then `α.gaugeDistErr` equals `1 / n` times that infimum (and
-  `α.gaugeDist (movedNorm (Fin n)) / n` when `[Fintype V] [LinearOrder V]`).
+  `TauCeti.Cochain.gaugeDistErr_eq_gaugeDist_div_of_le`): on any two-complex `X` over `[Fintype V]`
+  and `[LinearOrder V]`, if the equal-degree `movedNorm (Fin n)` unoriented edge-cost infimum (or
+  `α.gaugeDist (movedNorm (Fin n))`) for `2 ≤ n` is at most `n * #X.edges / (n + 1)`
+  (`3 * #X.edges / 4` when `n = 3`), then `α.gaugeDistErr` equals `1 / n` times that infimum
+  (`α.gaugeDist (movedNorm (Fin n)) / n`).
 * **Staircase threshold comparison at `Fintype.card V = q * (2 * t + 1)`**
   (`TauCeti.mul_two_mul_add_one_choose_two_div_four_sub`,
   `TauCeti.sq_mul_mul_add_one_div_three_lt_choose_two_div_four`,
@@ -167,6 +167,14 @@ theorem sq_mul_mul_add_one_div_three_le_choose_two_div_four (q t : ℕ) :
   exact (sq_mul_mul_add_one_div_three_lt_choose_two_div_four
     (Nat.pos_of_ne_zero hq0) (Nat.pos_of_ne_zero ht0)).le
 
+/-- For all `q, t : ℕ`, the explicit threshold `q ^ 2 * t * (t + 1)` is at most
+`3 * (q * (2 * t + 1)).choose 2 / (3 + 1)`. -/
+private theorem sq_mul_mul_add_one_le_three_mul_choose_two_div_four (q t : ℕ) :
+    (q : ℝ) ^ 2 * t * (t + 1) ≤ (3 : ℕ) * ((q * (2 * t + 1)).choose 2 : ℝ) / ((3 : ℕ) + 1) := by
+  have hbase := sq_mul_mul_add_one_div_three_le_choose_two_div_four q t
+  rw [Nat.cast_ofNat]
+  linarith
+
 section StaircaseGraph
 
 variable {V : Type*} [Fintype V] [LinearOrder V] {q t m : ℕ}
@@ -213,12 +221,11 @@ theorem ciInf₂_sum_distErr_three_eq_ciInf_sum_movedNorm_div_three_of_card_eq
       (⨅ β : V → Perm (Fin 3),
         ∑ e : V × V with e.1 < e.2, movedNorm (Fin 3) ((β e.1)⁻¹ * α e.1 e.2 * β e.2)) / 3 := by
   have h := (univ.filter fun p : V × V => p.1 < p.2
-    ).ciInf₂_sum_distErr_mul_inv_eq_ciInf_sum_movedNorm_div_of_le α (by decide) ?_
-  · simpa only [Nat.cast_ofNat] using h
-  · rw [Fintype.card_product_filter_lt, hcard]
-    have hbase := sq_mul_mul_add_one_div_three_le_choose_two_div_four q t
-    rw [Nat.cast_ofNat]
-    linarith
+    ).ciInf₂_sum_distErr_mul_inv_eq_ciInf_sum_movedNorm_div_of_le α (by decide)
+      (hle.trans (by
+        rw [Fintype.card_product_filter_lt, hcard]
+        exact sq_mul_mul_add_one_le_three_mul_choose_two_div_four q t))
+  simpa only [Nat.cast_ofNat] using h
 
 end StaircaseGraph
 
@@ -228,30 +235,30 @@ namespace Cochain
 
 section CochainThreshold
 
-variable {V : Type*} {X : TwoComplex V} {n m : ℕ}
+variable {V : Type*} [Fintype V] [LinearOrder V] {X : TwoComplex V} {n m : ℕ}
+
+private theorem card_filter_lt_mem_edges_eq (X : TwoComplex V) :
+    (#(univ.filter fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges) : ℝ) =
+      #X.edges := by
+  simpa using X.sum_filter_lt_mem_edges (fun _ => (1 : ℝ))
 
 /-- Every gauge of unequal degree `m ≠ n` against a degree-`n` cochain on `X` incurs `costErr` at
 least `#X.edges / (n + 1)`. -/
 theorem card_div_add_one_le_costErr_of_ne (α : Cochain X (Perm (Fin n)))
     (β : V → Perm (Fin m)) (hm : m ≠ n) :
     (#X.edges : ℝ) / (n + 1) ≤ α.costErr β := by
-  have hsum : (#X.edges : ℝ) / ((n : ℝ) + 1) = ∑ _ ∈ X.edges, (1 : ℝ) / ((n : ℝ) + 1) := by
-    simpa [nsmul_eq_mul] using (mul_one_div (#X.edges : ℝ) ((n : ℝ) + 1)).symm
-  rw [hsum, costErr_def]
-  refine sum_le_sum fun e he => ?_
-  let p := X.edgePair ⟨e, he⟩
-  rw [α.edgeCostErr_of_mem_edges β he (X.edgePair_ne ⟨e, he⟩)
-    (X.edgePair_fst_mem ⟨e, he⟩) (X.edgePair_snd_mem ⟨e, he⟩)]
-  exact one_div_add_one_le_distErr_of_ne (α p.1 p.2) (β p.1 * (β p.2)⁻¹) hm.symm
+  rw [← card_filter_lt_mem_edges_eq X]
+  exact α.card_div_add_one_le_costErr β hm.symm
 
 /-- Whenever the equal-degree `costErr` infimum on `X` is at most `#X.edges / (n + 1)`, it is a
 lower bound for the degree-`m` `costErr` infimum in every degree `m : ℕ`. -/
 theorem ciInf_costErr_le_of_le_card_div_add_one (α : Cochain X (Perm (Fin n)))
     (hle : (⨅ β : V → Perm (Fin n), α.costErr β) ≤ (#X.edges : ℝ) / (n + 1)) (m : ℕ) :
     (⨅ β : V → Perm (Fin n), α.costErr β) ≤ ⨅ β : V → Perm (Fin m), α.costErr β := by
-  rcases eq_or_ne m n with rfl | hmn
-  · exact le_rfl
-  · exact le_ciInf fun β => hle.trans (α.card_div_add_one_le_costErr_of_ne β hmn)
+  set E := univ.filter fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges
+  simp_rw [costErr_def] at hle ⊢
+  rw [← card_filter_lt_mem_edges_eq X] at hle
+  exact E.ciInf_sum_distErr_mul_inv_le_of_le_card_div_add_one α hle m
 
 /-- When `2 ≤ n` and the equal-degree `costErr` infimum on `X` is at most `#X.edges / (n + 1)`,
 `α.gaugeDistErr` equals the equal-degree `costErr` infimum. -/
@@ -272,27 +279,25 @@ theorem gaugeDistErr_eq_ciInf_sum_edgeCost_div_of_le (α : Cochain X (Perm (Fin 
   have : NeZero n := ⟨by omega⟩
   have hn_pos : (0 : ℝ) < n := by positivity
   have hle' : (⨅ β : V → Perm (Fin n), α.costErr β) ≤ (#X.edges : ℝ) / (n + 1) := by
-    rw [α.ciInf_costErr_eq_ciInf_sum_edgeCost_div, div_le_iff₀ hn_pos]
+    rw [α.ciInf_costErr_eq_gaugeDist_div, α.gaugeDist_eq_ciInf_sum_edgeCost, div_le_iff₀ hn_pos]
     exact hle.trans_eq (by ring)
-  rw [α.gaugeDistErr_eq_ciInf_costErr_of_le hn hle', α.ciInf_costErr_eq_ciInf_sum_edgeCost_div]
+  rw [α.gaugeDistErr_eq_ciInf_costErr_of_le hn hle', α.ciInf_costErr_eq_gaugeDist_div,
+    α.gaugeDist_eq_ciInf_sum_edgeCost]
 
 /-- When `2 ≤ n` and `α.gaugeDist (movedNorm (Fin n)) ≤ n * #X.edges / (n + 1)`,
 `α.gaugeDistErr` equals `α.gaugeDist (movedNorm (Fin n)) / n`. -/
-theorem gaugeDistErr_eq_gaugeDist_div_of_le [Fintype V] [LinearOrder V]
+theorem gaugeDistErr_eq_gaugeDist_div_of_le
     (α : Cochain X (Perm (Fin n))) (hn : 2 ≤ n)
     (hle : α.gaugeDist (movedNorm (Fin n)) ≤ (n : ℝ) * #X.edges / (n + 1)) :
     α.gaugeDistErr = α.gaugeDist (movedNorm (Fin n)) / n := by
-  have hle' : (⨅ β : V → Perm (Fin n), ∑ e ∈ X.edges, α.edgeCost (movedNorm (Fin n)) β e) ≤
-      (n : ℝ) * #X.edges / (n + 1) := by
-    simpa only [← α.cost_eq_sum_edges (movedNorm (Fin n)), ← gaugeDist_def] using hle
-  simpa only [← α.cost_eq_sum_edges (movedNorm (Fin n)), ← gaugeDist_def] using
-    α.gaugeDistErr_eq_ciInf_sum_edgeCost_div_of_le hn hle'
+  rw [α.gaugeDist_eq_ciInf_sum_edgeCost (movedNorm (Fin n))] at hle ⊢
+  exact α.gaugeDistErr_eq_ciInf_sum_edgeCost_div_of_le hn hle
 
 end CochainThreshold
 
 section CochainStaircase
 
-variable {V : Type*} [Fintype V] {q t m : ℕ}
+variable {V : Type*} [Fintype V] [LinearOrder V] {q t m : ℕ}
 
 /-- On `Fintype.card V = q * (2 * t + 1)` vertices with `1 ≤ q` and `1 ≤ t`, the degree-`m`
 (`m ≠ 3`) `costErr` infimum of any degree-`3` cochain on `complete V` strictly exceeds
@@ -301,24 +306,21 @@ theorem sq_mul_mul_add_one_div_three_lt_ciInf_costErr_three_of_ne
     (hcard : Fintype.card V = q * (2 * t + 1)) (hq : 1 ≤ q) (ht : 1 ≤ t)
     (α : Cochain (complete V) (Perm (Fin 3))) (hm : m ≠ 3) :
     (q : ℝ) ^ 2 * t * (t + 1) / 3 < ⨅ β : V → Perm (Fin m), α.costErr β := by
-  let _ : LinearOrder V :=
-    LinearOrder.lift' (Fintype.equivFin V) (Fintype.equivFin V).injective
   simp_rw [costErr_complete]
   exact sq_mul_mul_add_one_div_three_lt_ciInf_sum_distErr_three_of_ne hcard hq ht α hm
 
 /-- For every `q, t : ℕ`, if `Fintype.card V = q * (2 * t + 1)` and `α` is a degree-`3` cochain on
 `complete V` with `α.gaugeDist (movedNorm (Fin 3)) ≤ q ^ 2 * t * (t + 1)`, then
 `α.gaugeDistErr = α.gaugeDist (movedNorm (Fin 3)) / 3`. -/
-theorem gaugeDistErr_eq_gaugeDist_div_three_of_card_eq [LinearOrder V]
+theorem gaugeDistErr_eq_gaugeDist_div_three_of_card_eq
     (hcard : Fintype.card V = q * (2 * t + 1)) (α : Cochain (complete V) (Perm (Fin 3)))
     (hle : α.gaugeDist (movedNorm (Fin 3)) ≤ (q : ℝ) ^ 2 * t * (t + 1)) :
     α.gaugeDistErr = α.gaugeDist (movedNorm (Fin 3)) / 3 := by
-  have h := α.gaugeDistErr_eq_gaugeDist_div_of_le (by decide) ?_
-  · simpa only [Nat.cast_ofNat] using h
-  · rw [card_edges_complete, hcard]
-    have hbase := sq_mul_mul_add_one_div_three_le_choose_two_div_four q t
-    rw [Nat.cast_ofNat]
-    linarith
+  have h := α.gaugeDistErr_eq_gaugeDist_div_of_le (by decide)
+    (hle.trans (by
+      rw [card_edges_complete, hcard]
+      exact sq_mul_mul_add_one_le_three_mul_choose_two_div_four q t))
+  simpa only [Nat.cast_ofNat] using h
 
 end CochainStaircase
 

@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Meromorphic.NormalForm
 public import TauCeti.Analysis.Complex.GrowthOrder
+import TauCeti.Analysis.Meromorphic.Order
 
 /-!
 # Functions of finite order
@@ -19,7 +21,8 @@ a nonzero polynomial and invertible affine substitution preserve it in both dire
 These equivalences allow pole-clearing polynomials and changes of variable to be removed
 from growth hypotheses. For continuous functions, finite order is equivalent to a global
 bound by `C * exp (‖z‖ ^ A)` with positive constants. The exponential has finite order,
-whereas its self-composition does not.
+whereas its self-composition does not. A function in meromorphic normal form of finite order has
+no poles outside a bounded set, since it is bounded near every point there.
 
 ## References
 
@@ -28,7 +31,7 @@ whereas its self-composition does not.
 
 public section
 
-open Complex Filter Asymptotics Bornology
+open Complex Filter Asymptotics Bornology Topology
 
 namespace TauCeti
 
@@ -88,14 +91,23 @@ theorem isFiniteOrder_const (c : ℂ) : IsFiniteOrder (fun _ ↦ c) :=
 theorem _root_.Polynomial.isFiniteOrder_eval (p : Polynomial ℂ) : IsFiniteOrder p.eval :=
   p.orderLE_eval.isFiniteOrder
 
+/-- Multiplication by a nonzero polynomial preserves an order bound `A ≥ 0` in both directions.
+For `A < 0` the reverse direction fails: `1` has order at most `-1`, but `z` does not. -/
+@[simp]
+theorem orderLE_polynomial_mul_iff {p : Polynomial ℂ} (hp : p ≠ 0) (hA : 0 ≤ A) :
+    OrderLE (fun z ↦ p.eval z * f z) A ↔ OrderLE f A := by
+  refine ⟨fun h ↦ IsBigO.orderLE ?_ h, fun h ↦ (p.orderLE_eval.mono hA).mul h⟩
+  have hpoly := Polynomial.isBigO_cobounded_of_degree_le
+    (P := (1 : Polynomial ℂ)) (Q := p) (by simpa using Polynomial.zero_le_degree_iff.mpr hp)
+  simpa using hpoly.mul (isBigO_refl f (cobounded ℂ))
+
 /-- Multiplication by a nonzero polynomial preserves finite order in both directions. -/
 @[simp]
 theorem isFiniteOrder_polynomial_mul_iff {p : Polynomial ℂ} (hp : p ≠ 0) :
     IsFiniteOrder (fun z ↦ p.eval z * f z) ↔ IsFiniteOrder f := by
-  refine ⟨fun h ↦ h.of_isBigO ?_, fun h ↦ p.isFiniteOrder_eval.mul h⟩
-  have hpoly := Polynomial.isBigO_cobounded_of_degree_le
-    (P := (1 : Polynomial ℂ)) (Q := p) (by simpa using Polynomial.zero_le_degree_iff.mpr hp)
-  simpa using hpoly.mul (isBigO_refl f (cobounded ℂ))
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩ <;> obtain ⟨B, hB0, hB⟩ := h.exists_nonneg
+  exacts [((orderLE_polynomial_mul_iff hp hB0).mp hB).isFiniteOrder,
+    ((orderLE_polynomial_mul_iff hp hB0).mpr hB).isFiniteOrder]
 
 /-- A nonconstant affine change of variable preserves finite order in both directions. -/
 @[simp]
@@ -149,5 +161,24 @@ theorem not_isFiniteOrder_cexp_cexp : ¬ IsFiniteOrder (fun z ↦ cexp (cexp z))
     filter_upwards [eventually_ge_atTop 0] with x hx
     simp [abs_of_nonneg hx]
   exact not_isBoundedUnder_of_tendsto_atTop hl hO
+
+/-- **A function of finite order has no poles outside a bounded set.** If `f` is in meromorphic
+normal form everywhere and has order at most `A`, then it is analytic outside a bounded set: near
+each point there, `f` is bounded by the continuous function `C * exp (‖z‖ ^ B)`, `B > max A 0`. -/
+theorem OrderLE.eventually_analyticAt_cobounded (hf : ∀ z, MeromorphicNFAt f z)
+    (hA : OrderLE f A) : ∀ᶠ z in cobounded ℂ, AnalyticAt ℂ f z := by
+  set B := max A 0 + 1
+  obtain ⟨c, hc⟩ := (hA.isBigO (show A < B by have := le_max_left A 0; linarith)).bound
+  rw [Metric.cobounded_eq_cocompact] at hc ⊢
+  obtain ⟨K, hK, hKc⟩ := hasBasis_cocompact.eventually_iff.mp hc
+  filter_upwards [hK.compl_mem_cocompact] with z hz
+  refine (hf z).meromorphicOrderAt_nonneg_iff_analyticAt.mp
+    (BoundedAtFilter.meromorphicOrderAt_nonneg ?_)
+  have hg : ContinuousAt (fun w : ℂ ↦ Real.exp (‖w‖ ^ B)) z :=
+    Real.continuous_exp.continuousAt.comp
+      (continuous_norm.continuousAt.rpow_const (Or.inr (by positivity)))
+  have hfg : f =O[𝓝 z] fun w ↦ Real.exp (‖w‖ ^ B) :=
+    IsBigO.of_bound c (eventually_of_mem (hK.isClosed.isOpen_compl.mem_nhds hz) fun _ hw ↦ hKc hw)
+  exact (hfg.trans (hg.tendsto.isBigO_one ℝ)).mono nhdsWithin_le_nhds
 
 end TauCeti

@@ -55,11 +55,11 @@ namespace Cochain
 
 section CochainReplication
 
-variable {V ι : Type*} [Fintype V] [Fintype ι] {n m : ℕ}
+variable {V ι : Type*} [Fintype V] [Fintype ι] [LinearOrder V] [LinearOrder ι] {n m : ℕ}
 
 /-- Fixed-gauge `costErr` formula for the balanced replication `α.replicate ι` on
 `complete (V ×ₗ ι)` under linear orders on `V` and `ι`. -/
-theorem costErr_replicate [LinearOrder V] [LinearOrder ι]
+theorem costErr_replicate
     (α : Cochain (complete V) (Perm (Fin n))) (β : (V ×ₗ ι) → Perm (Fin m)) :
     (α.replicate ι).costErr β =
       ∑ p : (V ×ₗ ι) × (V ×ₗ ι) with p.1 < p.2,
@@ -76,10 +76,6 @@ theorem ciInf_costErr_replicate
     (⨅ β : (V ×ₗ ι) → Perm (Fin m), (α.replicate ι).costErr β) =
       (Fintype.card V * (Fintype.card ι).choose 2 : ℕ) * (1 - (min n m : ℝ) / max n m) +
         (Fintype.card ι : ℝ) ^ 2 * ⨅ β₀ : V → Perm (Fin m), α.costErr β₀ := by
-  let _ : LinearOrder V :=
-    LinearOrder.lift' (Fintype.equivFin V) (Fintype.equivFin V).injective
-  let _ : LinearOrder ι :=
-    LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
   simp_rw [costErr_replicate, costErr_complete]
   exact ciInf_sum_distErr_lex (V := V) (ι := ι) α m
 
@@ -133,6 +129,17 @@ theorem ciInf_costErr_fin_four_of_eq_setOf_isSwap
     (⨅ β : Fin 4 → Perm (Fin m), α.costErr β) = 6 - ((4 * min 3 m : ℕ) : ℝ) / max 3 m := by
   simp_rw [costErr_complete]
   exact TauCeti.ciInf_sum_distErr_fin_four_of_eq_setOf_isSwap α h0 hswaps m
+
+/-- Degree-`m` (`m ≥ 2`) `costErr` infimum lower bound `2` for a three-transposition cochain on
+`complete (Fin 4)`. -/
+theorem two_le_ciInf_costErr_fin_four_of_eq_setOf_isSwap
+    (α : Cochain (complete (Fin 4)) (Perm (Fin 3)))
+    (h0 : ∀ v : Fin 4, 0 < v → α 0 v = 1)
+    (hswaps : ({α 1 2, α 1 3, α 2 3} : Set (Perm (Fin 3))) = {σ | σ.IsSwap})
+    (m : ℕ) :
+    2 ≤ ⨅ β : Fin 4 → Perm (Fin (m + 2)), α.costErr β := by
+  simp_rw [costErr_complete]
+  exact le_ciInf (two_le_sum_distErr_fin_four_of_eq_setOf_isSwap α h0 hswaps)
 
 /-- A three-transposition cochain on `complete (Fin 4)` has cross-degree gauge distance `2`. -/
 theorem gaugeDistErr_fin_four_of_eq_setOf_isSwap
@@ -201,6 +208,8 @@ theorem ciInf_sum_filter_lt_distErr_prod {V U ι : Type*} [Fintype V] [LinearOrd
         (Fintype.card ι : ℝ) ^ 2 *
           ⨅ β₀ : U → Perm (Fin m),
             ∑ p : U × U with p.1 < p.2, distErr (α p.1 p.2) (β₀ p.1 * (β₀ p.2)⁻¹) := by
+  let _ : LinearOrder ι :=
+    LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
   let base : Cochain (TwoComplex.complete U) (Perm (Fin n)) :=
     Cochain.ofFn (TwoComplex.complete U) α fun u v huv =>
       hα u v ((TwoComplex.adj_complete u v).mp huv)
@@ -228,6 +237,8 @@ theorem ciInf₂_sum_filter_lt_distErr_prod_eq_card_sq_mul_ciInf_of_le_of_forall
       (Fintype.card ι : ℝ) ^ 2 *
         ⨅ β₀ : U → Perm (Fin n),
           ∑ p : U × U with p.1 < p.2, distErr (α p.1 p.2) (β₀ p.1 * (β₀ p.2)⁻¹) := by
+  let _ : LinearOrder ι :=
+    LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
   let base : Cochain (TwoComplex.complete U) (Perm (Fin n)) :=
     Cochain.ofFn (TwoComplex.complete U) α fun u v huv =>
       hα u v ((TwoComplex.adj_complete u v).mp huv)
@@ -262,6 +273,8 @@ theorem ciInf₂_sum_filter_lt_distErr_fin_four_prod_of_eq_setOf_isSwap
   have : Finite ι :=
     Finite.of_injective (fun i : ι => ((0 : Fin 4), i)) fun _ _ h => (Prod.mk.inj h).2
   let _ : Fintype ι := Fintype.ofFinite ι
+  let _ : LinearOrder ι :=
+    LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
   let base : Cochain (TwoComplex.complete (Fin 4)) (Perm (Fin 3)) :=
     Cochain.ofFn (TwoComplex.complete (Fin 4)) α fun u v huv =>
       hα u v ((TwoComplex.adj_complete u v).mp huv)
@@ -281,11 +294,9 @@ theorem ciInf₂_sum_filter_lt_distErr_fin_four_prod_of_eq_setOf_isSwap
       (⨅ β₀ : Fin 4 → Perm (Fin 3), base.costErr β₀) ≤
         ⨅ β₀ : Fin 4 → Perm (Fin (m + 2)), base.costErr β₀ := by
     intro m
+    refine le_trans ?_ (Cochain.two_le_ciInf_costErr_fin_four_of_eq_setOf_isSwap base h0' hswaps' m)
     rw [Cochain.ciInf_costErr_fin_four_of_eq_setOf_isSwap base h0' hswaps' 3]
-    simp only [min_self, max_self, Nat.cast_ofNat]
     norm_num
-    simp_rw [Cochain.costErr_complete]
-    exact le_ciInf (two_le_sum_distErr_fin_four_of_eq_setOf_isSwap base h0' hswaps')
   have hcard : Fintype.card V = 4 * Fintype.card ι := by
     simpa [Fintype.card_prod] using Fintype.card_congr e
   simp_rw [← costErr_relabelComplete_replicate e α hα]

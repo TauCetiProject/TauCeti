@@ -5,202 +5,309 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.CoboundaryExpansion.CrossDegree.Cochain
+public import TauCeti.Combinatorics.CoboundaryExpansion.CheegerConstant
+public import TauCeti.GroupTheory.Perm.DistErr.Invariance
+import TauCeti.Combinatorics.CoboundaryExpansion.StarBound
+import Mathlib.Tactic.Linarith
 
 /-!
-# The Chapman–Lubotzky cross-degree Cheeger constant `h1Err`
+# The cross-degree coboundary Cheeger constant
 
-This file defines the Chapman–Lubotzky cross-degree coboundary Cheeger constant `TauCeti.h1Err`
-for any `TwoComplex V`, without ambient `Fintype` or `LinearOrder` assumptions on `V`:
+Chapman and Lubotzky compare a permutation cochain of degree `n` with coboundaries of any degree
+`m`, measuring each edge by the distance with errors `Equiv.Perm.distErr`. For a cochain
+`α : Cochain X (Equiv.Perm (Fin n))` on a two-complex `X` over a finite linearly ordered `V`:
 
-* `TauCeti.h1Err`: the infimum over all cochain degrees `n + 2 ≥ 2` and all cochains `α` with
-  `0 < α.gaugeDistErr` of
-  `(∑ t ∈ X.triangles, α.triangleDefect (movedNorm (Fin (n + 2))) t) / (n + 2) / α.gaugeDistErr`.
-* **Existence of positive-distance cochains** (`TauCeti.exists_gaugeDistErr_pos_complete`): on
-  `complete V` with `3 ≤ Fintype.card V` and `2 ≤ n`, some degree-`n` cochain has strictly
-  positive cross-degree gauge distance.
-* **Relabelling invariance and basic bounds** (`TauCeti.h1Err_nonneg`, `TauCeti.h1Err_le_div`,
-  `TauCeti.le_h1Err_iff`, `TauCeti.h1Err_lt_iff`, `TauCeti.h1Err_relabel`,
-  `TauCeti.h1Err_complete_congr`, and `TauCeti.h1Err_complete_eq_of_card_eq`).
-* **Ordered-defect comparison** (`TauCeti.h1Err_eq_sInf_defect`, `TauCeti.h1Err_le_defect_div`,
-  `TauCeti.le_h1Err_iff_defect`, `TauCeti.h1Err_lt_iff_defect`, and
-  `TauCeti.le_h1Err_of_forall_defect`): whenever `[Fintype V]` and `[LinearOrder V]` are present,
-  `h1Err X` agrees with the infimum using ordered `Cochain.defect`.
+* `Cochain.costErr α β` is the cross-degree cost of a gauge `β : V → Equiv.Perm (Fin m)`, the sum
+  of `distErr (α u v) (β u * (β v)⁻¹)` over the edges `u < v` of `X`;
+* `Cochain.gaugeDistErr α` is its infimum over all gauge degrees `m ≥ 2` and all gauges of that
+  degree;
+* `h1Err X` is the infimum, over cochain degrees `n ≥ 2` and cochains with positive
+  `gaugeDistErr`, of `(α.defect (movedNorm (Fin n)) / n) / α.gaugeDistErr`. As for `h1`, an empty
+  ratio set gives `0`.
+
+In equal degree the cross-degree cost is the moved-point cost divided by the degree
+(`Cochain.mul_costErr_eq_cost`), so `n * gaugeDistErr α ≤ gaugeDist α`. In unequal degree each
+edge costs at least `1 / (n + 1)`. Hence, for `n ≥ 2`, `gaugeDistErr α` is positive exactly when
+`α` is not a coboundary (`Cochain.gaugeDistErr_pos_iff_not_isCoboundary`).
+
+The star gauges of a cochain have the cochain's own degree, so the star bound
+`card_mul_gaugeDist_le` carries over: `card V * gaugeDistErr α ≤ 3 * (defect α / n)` on
+`complete V` (`card_mul_gaugeDistErr_le`). Hence `card V / 3 ≤ h1Err (complete V)` whenever some
+cochain has positive cross-degree gauge distance (`card_div_three_le_h1Err`), which holds as soon
+as `3 ≤ card V` (`card_div_three_le_h1Err_of_three_le_card`).
 
 ## References
 
 * M. Chapman and A. Lubotzky, *Stability of homomorphisms, coverings and cocycles II: examples,
-  applications and open problems*, arXiv:2311.06706v3, Adv. Math. 463 (2025), 110117, §2.2,
-  equations (2.8)–(2.9) and the display after (2.9), pp. 6–7.
-* J. Beasley, *The Permutation Coboundary Constant of the Complete Complex Is k/3 for Every k≥4*,
-  version 7, Zenodo, doi:10.5281/zenodo.23245792, Section 2 and Proposition 10.
+  applications and open problems*, arXiv:2311.06706v3, Adv. Math. 463 (2025), 110117,
+  equations (2.8) and (2.9) and Proposition 3.2.
+* Jeromie Beasley, *The Permutation Coboundary Constant of the Complete Complex Is k/3 for Every
+  k≥4*, Zenodo, doi:10.5281/zenodo.23245792, version 7, Proposition 10.
 -/
 
 public section
 
-open Finset
+open Finset Equiv Equiv.Perm
 
 namespace TauCeti
 
-open Equiv Equiv.Perm TwoComplex
+open TwoComplex
 
-section CrossDegreeCheeger
+namespace Cochain
 
-variable {V W : Type*}
+variable {V : Type*} [Fintype V] [LinearOrder V] {X : TwoComplex V} {n : ℕ}
 
-/-- On `complete V` with `3 ≤ Fintype.card V` and `2 ≤ n`, some degree-`n` cochain has strictly
-positive cross-degree gauge distance. -/
-theorem exists_gaugeDistErr_pos_complete [Fintype V] (hV : 3 ≤ Fintype.card V)
-    {n : ℕ} (hn : 2 ≤ n) :
-    ∃ α : Cochain (complete V) (Perm (Fin n)), 0 < α.gaugeDistErr := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
-  obtain ⟨α, hα⟩ := exists_not_isCoboundary_complete (V := V) (G := Perm (Fin (k + 2))) hV
-  exact ⟨α, (α.gaugeDistErr_pos_iff_not_isCoboundary hn).mpr hα⟩
+/-! ### The cross-degree cost -/
 
-/-- The Chapman–Lubotzky cross-degree Cheeger constant of `X`: the infimum over all cochain degrees
-`n + 2 ≥ 2` and all cochains `α` with `0 < α.gaugeDistErr` of
-`(∑ t ∈ X.triangles, α.triangleDefect (movedNorm (Fin (n + 2))) t) / (n + 2) / α.gaugeDistErr`.
--/
+/-- The cross-degree cost of a gauge `β` of degree `m` against a cochain `α` of degree `n`: the
+sum of `distErr (α u v) (β u * (β v)⁻¹)` over the edges `u < v` of `X`. -/
+noncomputable def costErr {m : ℕ} (α : Cochain X (Perm (Fin n))) (β : V → Perm (Fin m)) : ℝ :=
+  ∑ p ∈ univ.filter (fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges),
+    distErr (α p.1 p.2) (β p.1 * (β p.2)⁻¹)
+
+theorem costErr_def {m : ℕ} (α : Cochain X (Perm (Fin n))) (β : V → Perm (Fin m)) :
+    α.costErr β =
+      ∑ p ∈ univ.filter (fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges),
+        distErr (α p.1 p.2) (β p.1 * (β p.2)⁻¹) := (rfl)
+
+/-- On the complete complex, `costErr` sums over all strictly increasing vertex pairs. -/
+theorem costErr_complete {m : ℕ} (α : Cochain (complete V) (Perm (Fin n)))
+    (β : V → Perm (Fin m)) :
+    α.costErr β =
+      ∑ p ∈ univ.filter (fun p : V × V => p.1 < p.2), distErr (α p.1 p.2) (β p.1 * (β p.2)⁻¹) := by
+  rw [costErr_def]
+  refine sum_congr ?_ fun _ _ => rfl
+  ext p
+  simp only [mem_filter, mem_univ, true_and, mem_edges_complete, card_pair_eq_two_iff,
+    and_iff_left_iff_imp]
+  exact LT.lt.ne
+
+theorem costErr_nonneg {m : ℕ} (α : Cochain X (Perm (Fin n))) (β : V → Perm (Fin m)) :
+    0 ≤ α.costErr β :=
+  sum_nonneg fun _ _ => distErr_nonneg _ _
+
+/-- In equal degree, `n` times the cross-degree cost is the moved-point cost. -/
+theorem mul_costErr_eq_cost (α : Cochain X (Perm (Fin n))) (β : V → Perm (Fin n)) :
+    (n : ℝ) * α.costErr β = α.cost (movedNorm (Fin n)) β := by
+  rw [costErr_def, cost_def, mul_sum]
+  exact sum_congr rfl fun p _ => mul_distErr_mul_inv_eq_movedNorm _ _ _
+
+/-- In unequal degree, every edge `u < v` of `X` costs at least `1 / (n + 1)`. -/
+theorem card_div_add_one_le_costErr {m : ℕ} (α : Cochain X (Perm (Fin n)))
+    (β : V → Perm (Fin m)) (hnm : n ≠ m) :
+    (#(univ.filter fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges) : ℝ) /
+      ((n : ℝ) + 1) ≤ α.costErr β :=
+  card_div_add_one_le_sum_distErr_of_ne _ _ _ hnm
+
+/-! ### The cross-degree gauge distance -/
+
+/-- The cross-degree gauge distance of `α`: the infimum of `α.costErr β` over all gauge degrees
+`m + 2 ≥ 2` and all gauges `β` of that degree. -/
+noncomputable def gaugeDistErr (α : Cochain X (Perm (Fin n))) : ℝ :=
+  ⨅ (m : ℕ) (β : V → Perm (Fin (m + 2))), α.costErr β
+
+theorem gaugeDistErr_def (α : Cochain X (Perm (Fin n))) :
+    α.gaugeDistErr = ⨅ (m : ℕ) (β : V → Perm (Fin (m + 2))), α.costErr β := (rfl)
+
+private theorem bddBelow_range_iInf_costErr (α : Cochain X (Perm (Fin n))) :
+    BddBelow (Set.range fun m : ℕ => ⨅ β : V → Perm (Fin (m + 2)), α.costErr β) :=
+  ⟨0, by rintro _ ⟨m, rfl⟩; exact Real.iInf_nonneg fun β => α.costErr_nonneg β⟩
+
+private theorem bddBelow_range_costErr {m : ℕ} (α : Cochain X (Perm (Fin n))) :
+    BddBelow (Set.range fun β : V → Perm (Fin m) => α.costErr β) :=
+  ⟨0, by rintro _ ⟨β, rfl⟩; exact α.costErr_nonneg β⟩
+
+theorem gaugeDistErr_nonneg (α : Cochain X (Perm (Fin n))) : 0 ≤ α.gaugeDistErr :=
+  Real.iInf_nonneg fun _ => Real.iInf_nonneg fun β => α.costErr_nonneg β
+
+/-- `c ≤ α.gaugeDistErr` if and only if every gauge of every degree `m + 2 ≥ 2` costs at
+least `c`. -/
+theorem le_gaugeDistErr_iff (α : Cochain X (Perm (Fin n))) {c : ℝ} :
+    c ≤ α.gaugeDistErr ↔ ∀ (m : ℕ) (β : V → Perm (Fin (m + 2))), c ≤ α.costErr β := by
+  rw [gaugeDistErr_def, le_ciInf_iff (α.bddBelow_range_iInf_costErr)]
+  exact forall_congr' fun m => le_ciInf_iff α.bddBelow_range_costErr
+
+/-- `α.gaugeDistErr < c` if and only if some gauge of some degree `m + 2 ≥ 2` costs less
+than `c`. -/
+theorem gaugeDistErr_lt_iff (α : Cochain X (Perm (Fin n))) {c : ℝ} :
+    α.gaugeDistErr < c ↔ ∃ (m : ℕ) (β : V → Perm (Fin (m + 2))), α.costErr β < c := by
+  simpa only [not_le, not_forall, exists_prop] using (α.le_gaugeDistErr_iff (c := c)).not
+
+/-- Every gauge of degree at least `2` bounds the cross-degree gauge distance from above. -/
+theorem gaugeDistErr_le_costErr (α : Cochain X (Perm (Fin n))) {m : ℕ} (hm : 2 ≤ m)
+    (β : V → Perm (Fin m)) : α.gaugeDistErr ≤ α.costErr β := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hm
+  exact (ciInf_le α.bddBelow_range_iInf_costErr k).trans (ciInf_le α.bddBelow_range_costErr β)
+
+/-- For a cochain of degree `n ≥ 2`, `n * α.gaugeDistErr ≤ α.gaugeDist (movedNorm (Fin n))`:
+gauges of the cochain's own degree are among those admitted by `gaugeDistErr`. -/
+theorem mul_gaugeDistErr_le_gaugeDist (hn : 2 ≤ n) (α : Cochain X (Perm (Fin n))) :
+    (n : ℝ) * α.gaugeDistErr ≤ α.gaugeDist (movedNorm (Fin n)) := by
+  refine (α.le_gaugeDist_iff _).mpr fun β => ?_
+  rw [← α.mul_costErr_eq_cost β]
+  exact mul_le_mul_of_nonneg_left (α.gaugeDistErr_le_costErr hn β) (Nat.cast_nonneg n)
+
+/-- A coboundary of degree `n ≥ 2` has cross-degree gauge distance zero. -/
+theorem IsCoboundary.gaugeDistErr_eq_zero {α : Cochain X (Perm (Fin n))} (hα : α.IsCoboundary)
+    (hn : 2 ≤ n) : α.gaugeDistErr = 0 := by
+  have hn' : (0 : ℝ) < n := by exact_mod_cast (by omega : 0 < n)
+  have h := α.mul_gaugeDistErr_le_gaugeDist hn
+  rw [hα.gaugeDist_eq_zero] at h
+  exact le_antisymm (by nlinarith [α.gaugeDistErr_nonneg]) α.gaugeDistErr_nonneg
+
+/-- A cochain that is not a coboundary has positive cross-degree gauge distance: gauges of the
+cochain's own degree cost at least `gaugeDist / n`, and gauges of any other degree cost at least
+`1 / (n + 1)` on each edge. -/
+theorem gaugeDistErr_pos_of_not_isCoboundary {α : Cochain X (Perm (Fin n))}
+    (hα : ¬ α.IsCoboundary) : 0 < α.gaugeDistErr := by
+  set E := univ.filter fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges
+  have hgd : 0 < α.gaugeDist (movedNorm (Fin n)) :=
+    (α.gaugeDist_pos_iff_not_isCoboundary _).mpr hα
+  have hE : (0 : ℝ) < #E := by
+    have h := hgd.trans_le (α.gaugeDist_le_cost _ 1)
+    rw [cost_def] at h
+    exact_mod_cast card_pos.mpr (nonempty_of_sum_ne_zero h.ne')
+  have hn : (0 : ℝ) < (n : ℝ) + 1 := by positivity
+  refine (div_pos (lt_min hgd hE) hn).trans_le ((α.le_gaugeDistErr_iff).mpr fun m β => ?_)
+  rw [div_le_iff₀ hn]
+  by_cases hnm : n = m + 2
+  · subst hnm
+    have h := (α.gaugeDist_le_cost _ β).trans_eq (α.mul_costErr_eq_cost β).symm
+    nlinarith [min_le_left (α.gaugeDist (movedNorm (Fin (m + 2)))) (#E : ℝ), α.costErr_nonneg β]
+  · have h := α.card_div_add_one_le_costErr β hnm
+    rw [div_le_iff₀ hn] at h
+    exact (min_le_right _ _).trans h
+
+/-- For a cochain of degree `n ≥ 2`, positive cross-degree gauge distance characterizes the
+non-coboundaries. -/
+theorem gaugeDistErr_pos_iff_not_isCoboundary (hn : 2 ≤ n) (α : Cochain X (Perm (Fin n))) :
+    0 < α.gaugeDistErr ↔ ¬ α.IsCoboundary :=
+  ⟨fun h hα => h.ne' (hα.gaugeDistErr_eq_zero hn), gaugeDistErr_pos_of_not_isCoboundary⟩
+
+/-- For a cochain of degree `n ≥ 2`, the cross-degree gauge distance vanishes exactly on
+coboundaries. -/
+theorem gaugeDistErr_eq_zero_iff_isCoboundary (hn : 2 ≤ n) (α : Cochain X (Perm (Fin n))) :
+    α.gaugeDistErr = 0 ↔ α.IsCoboundary :=
+  ⟨fun h => by_contra fun hα => (gaugeDistErr_pos_of_not_isCoboundary hα).ne' h,
+    fun hα => hα.gaugeDistErr_eq_zero hn⟩
+
+end Cochain
+
+/-! ### The cross-degree Cheeger constant -/
+
+section Constant
+
+variable {V : Type*} [Fintype V] [LinearOrder V]
+
+/-- The cross-degree first coboundary Cheeger constant of `X` (Chapman–Lubotzky II, (2.8)–(2.9)),
+in the counting convention: the infimum of
+`(α.defect (movedNorm (Fin n)) / n) / α.gaugeDistErr` over cochain degrees `n ≥ 2` and cochains
+`α` of degree `n` at positive cross-degree gauge distance. -/
 noncomputable def h1Err (X : TwoComplex V) : ℝ :=
   sInf {r : ℝ | ∃ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr ∧
-    r = (∑ t ∈ X.triangles, α.triangleDefect (movedNorm (Fin (n + 2))) t) / (n + 2 : ℕ) /
-      α.gaugeDistErr}
+    r = α.defect (movedNorm (Fin (n + 2))) / ((n + 2 : ℕ) : ℝ) / α.gaugeDistErr}
 
 theorem h1Err_def (X : TwoComplex V) :
-    h1Err X = sInf {r : ℝ | ∃ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr ∧
-      r = (∑ t ∈ X.triangles, α.triangleDefect (movedNorm (Fin (n + 2))) t) / (n + 2 : ℕ) /
-        α.gaugeDistErr} := (rfl)
+    h1Err X =
+      sInf {r : ℝ | ∃ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr ∧
+        r = α.defect (movedNorm (Fin (n + 2))) / ((n + 2 : ℕ) : ℝ) / α.gaugeDistErr} :=
+  (rfl)
 
-private theorem bddBelow_setOf_triangleDefect_div_gaugeDistErr (X : TwoComplex V) :
+private theorem bddBelow_setOf_h1Err (X : TwoComplex V) :
     BddBelow {r : ℝ | ∃ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr ∧
-      r = (∑ t ∈ X.triangles, α.triangleDefect (movedNorm (Fin (n + 2))) t) / (n + 2 : ℕ) /
-        α.gaugeDistErr} :=
+      r = α.defect (movedNorm (Fin (n + 2))) / ((n + 2 : ℕ) : ℝ) / α.gaugeDistErr} :=
   ⟨0, by
     rintro r ⟨n, α, hα, rfl⟩
-    exact div_nonneg
-      (div_nonneg (sum_nonneg fun t _ => α.triangleDefect_nonneg _ t) (Nat.cast_nonneg _))
-      hα.le⟩
+    exact div_nonneg (div_nonneg (α.defect_nonneg _) (Nat.cast_nonneg _)) hα.le⟩
 
 /-- The cross-degree Cheeger constant is nonnegative. -/
 theorem h1Err_nonneg (X : TwoComplex V) : 0 ≤ h1Err X :=
   Real.sInf_nonneg fun _ ⟨_, α, hα, hr⟩ =>
-    hr ▸ div_nonneg
-      (div_nonneg (sum_nonneg fun t _ => α.triangleDefect_nonneg _ t) (Nat.cast_nonneg _))
-      hα.le
+    hr ▸ div_nonneg (div_nonneg (α.defect_nonneg _) (Nat.cast_nonneg _)) hα.le
 
-/-- Every cochain of degree `n + 2 ≥ 2` at positive `gaugeDistErr` gives an upper bound on
-`h1Err X`. -/
+/-- Every cochain of degree `n + 2` at positive cross-degree gauge distance gives an upper bound
+on `h1Err X`. -/
 theorem h1Err_le_div {X : TwoComplex V} {n : ℕ} {α : Cochain X (Perm (Fin (n + 2)))}
     (hα : 0 < α.gaugeDistErr) :
-    h1Err X ≤
-      (∑ t ∈ X.triangles, α.triangleDefect (movedNorm (Fin (n + 2))) t) / (n + 2 : ℕ) /
-        α.gaugeDistErr :=
-  csInf_le (bddBelow_setOf_triangleDefect_div_gaugeDistErr X) ⟨n, α, hα, rfl⟩
+    h1Err X ≤ α.defect (movedNorm (Fin (n + 2))) / ((n + 2 : ℕ) : ℝ) / α.gaugeDistErr :=
+  csInf_le (bddBelow_setOf_h1Err X) ⟨n, α, hα, rfl⟩
 
-/-- When some cochain of degree `n + 2 ≥ 2` has positive `gaugeDistErr`, `c ≤ h1Err X` holds iff
-`c` bounds every cross-degree expansion ratio from below. -/
+/-- When some cochain has positive cross-degree gauge distance, `c ≤ h1Err X` holds iff `c`
+bounds every cross-degree expansion ratio from below. -/
 theorem le_h1Err_iff {X : TwoComplex V}
     (hne : ∃ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr) {c : ℝ} :
-    c ≤ h1Err X ↔
-      ∀ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr →
-        c ≤ (∑ t ∈ X.triangles, α.triangleDefect (movedNorm (Fin (n + 2))) t) / (n + 2 : ℕ) /
-          α.gaugeDistErr := by
+    c ≤ h1Err X ↔ ∀ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr →
+      c ≤ α.defect (movedNorm (Fin (n + 2))) / ((n + 2 : ℕ) : ℝ) / α.gaugeDistErr := by
   obtain ⟨n₀, α₀, hα₀⟩ := hne
-  rw [h1Err_def, le_csInf_iff (bddBelow_setOf_triangleDefect_div_gaugeDistErr X)
-    ⟨_, n₀, α₀, hα₀, rfl⟩]
+  rw [h1Err_def, le_csInf_iff (bddBelow_setOf_h1Err X) ⟨_, n₀, α₀, hα₀, rfl⟩]
   exact ⟨fun h n α hα => h _ ⟨n, α, hα, rfl⟩, fun h _ ⟨n, α, hα, hr⟩ => hr ▸ h n α hα⟩
 
-/-- When some cochain of degree `n + 2 ≥ 2` has positive `gaugeDistErr`, `h1Err X < c` holds iff
-some admissible cochain has cross-degree expansion ratio strictly below `c`. -/
+/-- When some cochain has positive cross-degree gauge distance, `h1Err X < c` holds iff some
+such cochain has cross-degree expansion ratio strictly below `c`. -/
 theorem h1Err_lt_iff {X : TwoComplex V}
     (hne : ∃ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr) {c : ℝ} :
-    h1Err X < c ↔
-      ∃ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr ∧
-        (∑ t ∈ X.triangles, α.triangleDefect (movedNorm (Fin (n + 2))) t) / (n + 2 : ℕ) /
-          α.gaugeDistErr < c := by
-  obtain ⟨n₀, α₀, hα₀⟩ := hne
-  rw [h1Err_def, csInf_lt_iff (bddBelow_setOf_triangleDefect_div_gaugeDistErr X)
-    ⟨_, n₀, α₀, hα₀, rfl⟩]
-  exact ⟨fun ⟨_, ⟨n, α, hα, hr⟩, hlt⟩ => ⟨n, α, hα, hr ▸ hlt⟩,
-    fun ⟨n, α, hα, hlt⟩ => ⟨_, ⟨n, α, hα, rfl⟩, hlt⟩⟩
+    h1Err X < c ↔ ∃ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr ∧
+      α.defect (movedNorm (Fin (n + 2))) / ((n + 2 : ℕ) : ℝ) / α.gaugeDistErr < c := by
+  simpa only [not_le, not_forall, exists_prop] using (le_h1Err_iff hne (c := c)).not
 
-/-- Lower-bound criterion for `h1Err X` in the presence of a cochain at positive `gaugeDistErr`. -/
-theorem le_h1Err_of_forall {X : TwoComplex V}
-    (hne : ∃ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr) {c : ℝ}
-    (hc : ∀ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr →
-      c ≤ (∑ t ∈ X.triangles, α.triangleDefect (movedNorm (Fin (n + 2))) t) / (n + 2 : ℕ) /
-        α.gaugeDistErr) :
-    c ≤ h1Err X :=
-  (le_h1Err_iff hne).mpr hc
+/-- When every cochain of every degree `n + 2 ≥ 2` has cross-degree gauge distance zero, the
+ratio set is empty and `h1Err X = 0`. -/
+theorem h1Err_eq_zero_of_forall_gaugeDistErr_eq_zero {X : TwoComplex V}
+    (h : ∀ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), α.gaugeDistErr = 0) : h1Err X = 0 := by
+  simp [h1Err_def, h]
 
-/-- Relabelling `X` along `e : V ≃ W` preserves `h1Err`. -/
-@[simp] theorem h1Err_relabel (X : TwoComplex V) (e : V ≃ W) : h1Err (X.relabel e) = h1Err X := by
-  rw [h1Err_def, h1Err_def]; congr 1; ext r
-  refine exists_congr fun n => ?_
-  exact ((Cochain.relabelEquiv X e).exists_congr fun α => by
-    rw [Cochain.relabelEquiv_apply, α.gaugeDistErr_relabel e, X.sum_triangles_relabel e]
-    simp_rw [α.triangleDefect_relabel_map isConjInvariant_movedNorm e]).symm
+end Constant
 
-/-- `h1Err` on the complete complex is preserved along any bijection `V ≃ W`. -/
-theorem h1Err_complete_congr [Fintype V] [Fintype W]
-    (e : V ≃ W) : h1Err (complete V) = h1Err (complete W) := by
-  rw [← relabel_complete e, h1Err_relabel (complete V) e]
+/-! ### The star bound in the cross-degree convention -/
 
-/-- `h1Err (complete V)` depends on `V` only through `Fintype.card V`. -/
-theorem h1Err_complete_eq_of_card_eq [Fintype V] [Fintype W]
-    (hcard : Fintype.card V = Fintype.card W) : h1Err (complete V) = h1Err (complete W) :=
-  h1Err_complete_congr (Fintype.equivOfCardEq hcard)
+section StarBound
 
-section OrderedComparison
+variable {V : Type*} [Fintype V] [LinearOrder V] {n : ℕ}
 
-variable [Fintype V] [LinearOrder V]
+/-- The star bound in the cross-degree convention: for a cochain of degree `n ≥ 2` on
+`complete V`, `card V * gaugeDistErr α ≤ 3 * (defect α / n)`. The star gauges have the cochain's
+own degree, where the cross-degree cost is the moved-point cost divided by `n`. -/
+theorem card_mul_gaugeDistErr_le (hn : 2 ≤ n) (α : Cochain (complete V) (Perm (Fin n))) :
+    (Fintype.card V : ℝ) * α.gaugeDistErr ≤ 3 * (α.defect (movedNorm (Fin n)) / n) := by
+  have hn' : (0 : ℝ) < n := by exact_mod_cast (by omega : 0 < n)
+  rw [mul_div_assoc', le_div_iff₀ hn']
+  calc (Fintype.card V : ℝ) * α.gaugeDistErr * n
+      = (Fintype.card V : ℝ) * (n * α.gaugeDistErr) := by ring
+    _ ≤ (Fintype.card V : ℝ) * α.gaugeDist (movedNorm (Fin n)) :=
+        mul_le_mul_of_nonneg_left (α.mul_gaugeDistErr_le_gaugeDist hn) (Nat.cast_nonneg _)
+    _ ≤ 3 * α.defect (movedNorm (Fin n)) := card_mul_gaugeDist_le _ isConjInvariant_movedNorm α
 
-/-- With `[Fintype V]` and `[LinearOrder V]`, `h1Err X` agrees with the infimum using ordered
-`Cochain.defect`. -/
-theorem h1Err_eq_sInf_defect (X : TwoComplex V) :
-    h1Err X = sInf {r : ℝ | ∃ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr ∧
-      r = α.defect (movedNorm (Fin (n + 2))) / (n + 2 : ℕ) / α.gaugeDistErr} := by
-  rw [h1Err_def]
-  congr 1; ext r
-  exact exists_congr fun n => exists_congr fun α => by
-    rw [Cochain.defect_eq_sum_triangles isConjInvariant_movedNorm α]
+/-- Pointwise ratio form of the cross-degree star bound for a cochain of degree `n ≥ 2` at
+positive cross-degree gauge distance. -/
+theorem Cochain.card_div_three_le_defect_div_div_gaugeDistErr (hn : 2 ≤ n)
+    {α : Cochain (complete V) (Perm (Fin n))} (hα : 0 < α.gaugeDistErr) :
+    (Fintype.card V : ℝ) / 3 ≤ α.defect (movedNorm (Fin n)) / n / α.gaugeDistErr := by
+  rw [div_le_div_iff₀ (by norm_num : (0 : ℝ) < 3) hα, mul_comm _ (3 : ℝ)]
+  exact card_mul_gaugeDistErr_le hn α
 
-/-- Ordered-`defect` upper bound on `h1Err X`. -/
-theorem h1Err_le_defect_div {X : TwoComplex V} {n : ℕ} {α : Cochain X (Perm (Fin (n + 2)))}
-    (hα : 0 < α.gaugeDistErr) :
-    h1Err X ≤ α.defect (movedNorm (Fin (n + 2))) / (n + 2 : ℕ) / α.gaugeDistErr := by
-  rw [Cochain.defect_eq_sum_triangles isConjInvariant_movedNorm α]
-  exact h1Err_le_div hα
+/-- The cross-degree star bound as a lower bound on `h1Err (complete V)`, whenever some cochain
+of degree at least `2` has positive cross-degree gauge distance. -/
+theorem card_div_three_le_h1Err
+    (hne : ∃ (n : ℕ) (α : Cochain (complete V) (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr) :
+    (Fintype.card V : ℝ) / 3 ≤ h1Err (complete V) :=
+  (le_h1Err_iff hne).mpr fun n _ hα =>
+    Cochain.card_div_three_le_defect_div_div_gaugeDistErr (by omega) hα
 
-/-- Ordered-`defect` iff characterization of `c ≤ h1Err X`. -/
-theorem le_h1Err_iff_defect {X : TwoComplex V}
-    (hne : ∃ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr) {c : ℝ} :
-    c ≤ h1Err X ↔
-      ∀ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr →
-        c ≤ α.defect (movedNorm (Fin (n + 2))) / (n + 2 : ℕ) / α.gaugeDistErr := by
-  simp_rw [Cochain.defect_eq_sum_triangles isConjInvariant_movedNorm]
-  exact le_h1Err_iff hne
+/-- On `complete V` with `3 ≤ card V`, some `Perm (Fin 2)`-valued cochain has positive
+cross-degree gauge distance. -/
+theorem exists_gaugeDistErr_pos_complete (hV : 3 ≤ Fintype.card V) :
+    ∃ α : Cochain (complete V) (Perm (Fin 2)), 0 < α.gaugeDistErr := by
+  obtain ⟨α, hα⟩ := exists_not_isCoboundary_complete (G := Perm (Fin 2)) hV
+  exact ⟨α, Cochain.gaugeDistErr_pos_of_not_isCoboundary hα⟩
 
-/-- Ordered-`defect` iff characterization of `h1Err X < c`. -/
-theorem h1Err_lt_iff_defect {X : TwoComplex V}
-    (hne : ∃ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr) {c : ℝ} :
-    h1Err X < c ↔
-      ∃ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr ∧
-        α.defect (movedNorm (Fin (n + 2))) / (n + 2 : ℕ) / α.gaugeDistErr < c := by
-  simp_rw [Cochain.defect_eq_sum_triangles isConjInvariant_movedNorm]
-  exact h1Err_lt_iff hne
+/-- For `3 ≤ card V`, the cross-degree Cheeger constant of the complete complex is at least
+`card V / 3`. -/
+theorem card_div_three_le_h1Err_of_three_le_card (hV : 3 ≤ Fintype.card V) :
+    (Fintype.card V : ℝ) / 3 ≤ h1Err (complete V) := by
+  obtain ⟨α, hα⟩ := exists_gaugeDistErr_pos_complete hV
+  exact card_div_three_le_h1Err ⟨0, α, hα⟩
 
-/-- Ordered-`defect` lower-bound criterion for `h1Err X`. -/
-theorem le_h1Err_of_forall_defect {X : TwoComplex V}
-    (hne : ∃ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr) {c : ℝ}
-    (hc : ∀ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr →
-      c ≤ α.defect (movedNorm (Fin (n + 2))) / (n + 2 : ℕ) / α.gaugeDistErr) :
-    c ≤ h1Err X :=
-  (le_h1Err_iff_defect hne).mpr hc
-
-end OrderedComparison
-
-end CrossDegreeCheeger
+end StarBound
 
 end TauCeti
 
