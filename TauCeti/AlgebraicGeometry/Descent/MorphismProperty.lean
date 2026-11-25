@@ -10,7 +10,6 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatDescent
 public import Mathlib.RingTheory.Finiteness.Descent
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Descent
-public import Mathlib.Tactic.Observe
 public import TauCeti.AlgebraicGeometry.Descent.Affine
 public import TauCeti.AlgebraicGeometry.Descent.AffineMorphism
 import TauCeti.AlgebraicGeometry.Morphisms.Affine.TargetLocal
