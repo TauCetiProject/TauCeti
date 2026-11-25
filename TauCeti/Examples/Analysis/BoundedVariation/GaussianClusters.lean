@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.BoundedVariation.Weighted.Cluster
 public import TauCeti.Analysis.BoundedVariation.Weighted.Gaussian
 public import TauCeti.Analysis.BoundedVariation.Weighted.HalfSpace
-public import TauCeti.Probability.Distributions.Gaussian.OrthogonalSplitting
+public import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # Checks for Gaussian clusters
@@ -39,29 +39,6 @@ namespace TauCeti.Examples.GaussianClusters
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
-/-- The measure of the Gaussian weight is the standard Gaussian measure. -/
-theorem weightedMeasure_gaussianWeight :
-    weightedMeasure (gaussianWeight E) = stdGaussian E := by
-  rw [weightedMeasure_def, withDensity_exp_neg_gaussianWeight]
-
-/-- A hyperplane `{⟪x, ν⟫ = s}` with `ν` a unit vector is Lebesgue-null: its open and closed
-half-spaces have the same Gaussian measure `Φ(s)`. -/
-theorem volume_setOf_inner_eq {ν : E} (hν : ‖ν‖ = 1) (s : ℝ) :
-    volume {x : E | ⟪x, ν⟫ = s} = 0 := by
-  have hc : Continuous fun x : E => ⟪x, ν⟫ := continuous_id.inner continuous_const
-  have hγ : stdGaussian E {x : E | ⟪x, ν⟫ = s} = 0 := by
-    have hsub : {x : E | ⟪x, ν⟫ = s} = {x | ⟪x, ν⟫ ≤ s} \ {x | ⟪x, ν⟫ < s} := by
-      ext x
-      simp only [mem_ofPred_eq, mem_sdiff, not_lt]
-      exact ⟨fun h => ⟨h.le, h.ge⟩, fun h => le_antisymm h.1 h.2⟩
-    rw [← measureReal_eq_zero_iff, hsub,
-      measureReal_sdiff (fun x hx => le_of_lt hx) (isOpen_lt hc continuous_const).measurableSet,
-      Probability.measureReal_stdGaussian_setOf_inner_le hν,
-      Probability.measureReal_stdGaussian_setOf_inner_lt hν, sub_self]
-  rw [← weightedMeasure_gaussianWeight] at hγ
-  exact volume_absolutelyContinuous_weightedMeasure
-    (contDiff_gaussianWeight (n := 0)).continuous.measurable.aemeasurable hγ
-
 /-- **The two half-spaces form a `2`-cluster.** For a unit vector `ν` and a real `s`, the cells
 `{⟪x, ν⟫ < s}` and `{⟪x, ν⟫ > s}` form a `2`-cluster for the Gaussian weight. -/
 def halfSpaces {ν : E} (hν : ‖ν‖ = 1) (s : ℝ) : Cluster (gaussianWeight E) 2 where
@@ -78,7 +55,8 @@ def halfSpaces {ν : E} (hν : ‖ν‖ = 1) (s : ℝ) : Cluster (gaussianWeight
     · exact disjoint_left.2 fun x (h1 : s < ⟪x, ν⟫) (h2 : ⟪x, ν⟫ < s) => lt_asymm h1 h2
     · exact (hij rfl).elim
   volume_compl_iUnion := by
-    refine measure_mono_null (fun x hx => ?_) (volume_setOf_inner_eq hν s)
+    refine measure_mono_null (fun x hx => ?_) (Measure.addHaar_setOf_inner_eq volume
+      (norm_ne_zero_iff.1 (by rw [hν]; exact one_ne_zero)) s)
     simp only [mem_compl_iff, mem_iUnion, not_exists, Fin.forall_fin_two, Matrix.cons_val_zero,
       Matrix.cons_val_one, mem_ofPred_eq, not_lt] at hx
     exact le_antisymm hx.2 hx.1
@@ -129,7 +107,7 @@ theorem perimeter_univEmpty : (univEmpty (E := E)).perimeter = 0 := by
 theorem weightedMeasure_univEmpty_cell :
     (fun i => weightedMeasure (gaussianWeight E) ((univEmpty (E := E)).cell i)) = ![1, 0] := by
   ext i
-  fin_cases i <;> simp [univEmpty, weightedMeasure_gaussianWeight]
+  fin_cases i <;> simp [univEmpty, weightedMeasure_def, withDensity_exp_neg_gaussianWeight]
 
 /-- The `1`-cluster `(E)` has total perimeter `0` and measure vector `(1)`. -/
 theorem perimeter_univ_and_weightedMeasure_cell :
@@ -137,7 +115,7 @@ theorem perimeter_univ_and_weightedMeasure_cell :
       ∀ i, weightedMeasure (gaussianWeight E) ((Cluster.univ (contDiff_gaussianWeight
         (E := E))).cell i) = 1 :=
   ⟨Cluster.perimeter_eq_zero_of_one contDiff_gaussianWeight _, fun i => by
-    simp [Cluster.univ_cell, weightedMeasure_gaussianWeight]⟩
+    simp [Cluster.univ_cell, weightedMeasure_def, withDensity_exp_neg_gaussianWeight]⟩
 
 /-- **A half-space is not a `1`-cluster.** No `1`-cluster for the Gaussian weight has the
 half-space `{⟪x, ν⟫ < 0}` as its cell: the set `{⟪x, ν⟫ ≥ 0}`, which has positive volume, would be
