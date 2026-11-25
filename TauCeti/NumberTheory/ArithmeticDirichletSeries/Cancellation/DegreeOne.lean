@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Cancellation
 import TauCeti.Analysis.Asymptotics.Sum.Periodic
-import TauCeti.NumberTheory.LSeries.Twist
 
 /-!
 # Norm-twist cancellation for periodic weights in degree one
@@ -24,7 +23,7 @@ identifies `normCoeff K χ.toIdealArithmeticFunction k` with `χ((k : 𝓞 K))`
 (`TauCeti.UnitaryIdealWeight.normCoeff_toIdealArithmeticFunction_of_finrank_eq_one`). Boundedness of
 the untwisted partial sums (`HasCancellation χ`) then forces the period sum `∑ k ∈ Icc 1 N, a k` to
 vanish (`TauCeti.sum_Icc_eq_zero_of_periodic_of_isBigO_one`), and second-order summation by parts
-(`TauCeti.LSeries.exists_norm_sum_Icc_mul_natCast_cpow_neg_le`) bounds the twisted partial sums
+(`TauCeti.exists_norm_sum_Icc_mul_natCast_cpow_neg_le`) bounds the twisted partial sums
 uniformly by `O(1)`. Together with `HasCancellation.normTwist` in higher degree, this removes the
 degree restriction altogether for periodic weights
 (`TauCeti.HasCancellation.normTwist_of_periodic_span_natCast`).
@@ -83,7 +82,7 @@ theorem HasCancellation.normTwist_of_finrank_eq_one {χ : UnitaryIdealWeight K}
         normCoeff K χ.toIdealArithmeticFunction k := fun k hk ↦ by
     rw [UnitaryIdealWeight.normCoeff_toIdealArithmeticFunction_of_finrank_eq_one hK,
       UnitaryIdealWeight.normCoeff_toIdealArithmeticFunction_of_finrank_eq_one hK, hper k hk]
-  obtain ⟨C, hC⟩ := LSeries.exists_norm_sum_Icc_mul_natCast_cpow_neg_le hN hper_coeff hsum
+  obtain ⟨C, hC⟩ := exists_norm_sum_Icc_mul_natCast_cpow_neg_le hN hper_coeff hsum
     (z := z) (by simp [hz])
   rw [hasCancellation_iff_isBigO]
   refine IsBigO.of_bound C ?_
