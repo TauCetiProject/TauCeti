@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.LinearChange
 public import TauCeti.Analysis.Pseudodifferential.Quantization
 import TauCeti.Analysis.Distribution.SchwartzSpace.Conjugation
+import TauCeti.Analysis.InnerProductSpace.Adjoint.Scalar
 
 /-!
 # Complex conjugation of quantizations
@@ -52,17 +53,6 @@ noncomputable section
 
 namespace TauCeti
 
-/-- The adjoint of a scalar operator `T : ℂ →L[ℂ] ℂ` is its conjugate,
-`T† w = conj (T (conj w))`. -/
-private theorem adjoint_apply_eq_conj (T : ℂ →L[ℂ] ℂ) (w : ℂ) :
-    ContinuousLinearMap.adjoint T w = conj (T (conj w)) := by
-  have h := ContinuousLinearMap.adjoint_inner_left T 1 w
-  simp only [RCLike.inner_apply, one_mul] at h
-  have hT : T (conj w) = conj w * T 1 := by
-    rw [← smul_eq_mul, ← map_smul, smul_eq_mul, mul_one]
-  rw [hT, map_mul, Complex.conj_conj, ← Complex.conj_conj (ContinuousLinearMap.adjoint T w), h,
-    map_mul, Complex.conj_conj, mul_comm]
-
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
@@ -78,7 +68,8 @@ theorem quantizeSchwartzValue_conjCLM (a : E × E → ℂ →L[ℂ] ℂ) (u : �
     ← integral_neg_eq_self]
   congr 1
   ext ζ
-  rw [SchwartzMap.fourier_conjCLM_apply, adjoint_apply_eq_conj, Complex.conj_conj,
+  rw [SchwartzMap.fourier_conjCLM_apply, ContinuousLinearMap.adjoint_apply_eq_star_apply_star,
+    Complex.star_def, Complex.conj_conj,
     SchwartzMap.fourierInv_coe, Real.fourierInv_eq_fourier_neg, ← SchwartzMap.fourier_coe]
   simp only [Circle.smul_def, smul_eq_mul, map_mul, smul_neg, Real.fourierChar_apply,
     inner_neg_left, ← Complex.exp_conj]
@@ -115,7 +106,8 @@ theorem coefficient_principal_pointwiseAdjoint_compProdMap_neg (a : ClassicalSym
     (x ξ : CoordinateSpace n) :
     (compProdMap (.id ℝ _) (.neg ℝ) a).pointwiseAdjoint.principal.coefficient (x, ξ) 1 =
       conj (a.principal.coefficient (x, -ξ) 1) := by
-  simp [adjoint_apply_eq_conj, principal_compProdMap, HomogeneousSymbol.coefficient_compProdMap]
+  simp [ContinuousLinearMap.adjoint_apply_eq_star_apply_star, principal_compProdMap,
+    HomogeneousSymbol.coefficient_compProdMap]
 
 end ClassicalSymbol
 
