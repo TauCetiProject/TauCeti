@@ -8,11 +8,11 @@ module
 public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 public import Mathlib.NumberTheory.ZetaValues
 public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Data.Nat.Cast.SetInterval
 import Mathlib.MeasureTheory.Function.Floor
 import Mathlib.NumberTheory.Harmonic.Bounds
 import TauCeti.Analysis.Asymptotics.Sum.EulerMaclaurin
+import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.NumberTheory.Bernoulli.Values
 import TauCeti.NumberTheory.ZetaValues
 
@@ -98,13 +98,7 @@ private theorem bernoulli_div_factorial_mul_sub_eq {s : ℕ} (hs : 2 ≤ s) (y :
     ring
   have : (s : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
   have : ((s - 1)! : ℝ) ≠ 0 := by positivity
-  rcases eq_or_ne y 0 with rfl | hy
-  · simp [zero_pow (by omega : s ≠ 0)]
-    field_simp
-    rw [hB, hsign, hfac]
-    ring
-  rw [hs1, hB, hfac, hsign, inv_pow]
-  have : y ^ s ≠ 0 := pow_ne_zero _ hy
+  rw [hs1, div_eq_mul_inv _ (y ^ s), ← inv_pow, hB, hfac, hsign]
   field_simp
   ring
 
@@ -139,9 +133,11 @@ private theorem sum_Ico_inv_eq_log_add_sum_sub_intervalIntegral {k : ℕ} (hk : 
         (bernoulliFun k (Int.fract x) * ((-1) ^ k * (k ! : ℝ) / x ^ (k + 1))) =
       ∫ x in (1 : ℝ)..n, bernoulliFun k (Int.fract x) / x ^ (k + 1) := by
     refine intervalIntegral.integral_congr fun x _ => ?_
-    have : (k ! : ℝ) ≠ 0 := by positivity
-    field_simp
-    rw [← pow_mul, mul_comm k 2, pow_mul, neg_one_sq, one_pow, one_mul]
+    have hk! : (k ! : ℝ) ≠ 0 := by positivity
+    have hsq : ((-1 : ℝ) ^ k) * (-1) ^ k = 1 := by rw [← mul_pow]; norm_num
+    calc _ = ((-1) ^ k * (-1) ^ k) * ((k ! : ℝ) / k !) *
+          (bernoulliFun k (Int.fract x) / x ^ (k + 1)) := by ring
+      _ = _ := by rw [hsq, div_self hk!, one_mul, one_mul]
   have hIcc : ∑ j ∈ Icc 1 n, (j : ℝ)⁻¹ = ∑ j ∈ Ico 1 n, (j : ℝ)⁻¹ + (n : ℝ)⁻¹ := by
     rw [← Finset.Ico_add_one_right_eq_Icc, sum_Ico_succ_top hn]
   rw [hR, hIcc] at hEM
@@ -150,39 +146,15 @@ private theorem sum_Ico_inv_eq_log_add_sum_sub_intervalIntegral {k : ℕ} (hk : 
   push_cast
   linarith
 
-private theorem eqOn_rpow_neg_inv_pow (k : ℕ) {c : ℝ} (hc : 0 < c) :
-    Set.EqOn (fun x : ℝ => x ^ (-(k + 1 : ℝ))) (fun x => (x ^ (k + 1))⁻¹) (Set.Ioi c) :=
-  fun x (hx : c < x) => by
-    simp only
-    rw [Real.rpow_neg (hc.trans hx).le, ← Nat.cast_one, ← Nat.cast_add, Real.rpow_natCast]
-
-/-- `∫_c^∞ x^{-(k+1)} dx = 1/(k c^k)`, from `integral_Ioi_rpow_of_lt`. -/
-private theorem integral_Ioi_inv_pow_succ {k : ℕ} (hk : 1 ≤ k) {c : ℝ} (hc : 0 < c) :
-    ∫ x in Set.Ioi c, (x ^ (k + 1))⁻¹ = (k * c ^ k)⁻¹ := by
-  have hk' : (1 : ℝ) ≤ k := by exact_mod_cast hk
-  have h := integral_Ioi_rpow_of_lt (a := -(k + 1 : ℝ)) (by linarith) hc
-  rw [show -(k + 1 : ℝ) + 1 = -(k : ℝ) by ring, Real.rpow_neg hc.le, Real.rpow_natCast,
-    setIntegral_congr_fun measurableSet_Ioi (eqOn_rpow_neg_inv_pow k hc)] at h
-  rw [h]
-  field_simp
-
-/-- `x^{-(k+1)}` is integrable on `(c, ∞)`, from `integrableOn_Ioi_rpow_of_lt`. -/
-private theorem integrableOn_Ioi_inv_pow_succ {k : ℕ} (hk : 1 ≤ k) {c : ℝ} (hc : 0 < c) :
-    IntegrableOn (fun x : ℝ => (x ^ (k + 1))⁻¹) (Set.Ioi c) := by
-  have hk' : (1 : ℝ) ≤ k := by exact_mod_cast hk
-  exact (integrableOn_Ioi_rpow_of_lt (by linarith) hc).congr_fun (eqOn_rpow_neg_inv_pow k hc)
-    measurableSet_Ioi
-
 /-- For `k ≥ 1` and `c > 0`, the remainder integrand `Bₖ({x}) / x^(k+1)` of the harmonic sums is
 integrable on `(c, ∞)`, where `Bₖ({x})` is the periodic Bernoulli function. -/
 theorem integrableOn_Ioi_bernoulliFun_fract_div_pow {k : ℕ} (hk : 1 ≤ k) {c : ℝ} (hc : 0 < c) :
     IntegrableOn (fun x => bernoulliFun k (Int.fract x) / x ^ (k + 1)) (Set.Ioi c) := by
-  obtain ⟨M, hM⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_bound_of_continuousOn
-    (continuous_bernoulliFun k).continuousOn
+  obtain ⟨M, hM⟩ := exists_norm_bernoulliFun_fract_le k
   simp only [div_eq_mul_inv]
   exact (integrableOn_Ioi_inv_pow_succ hk hc).bdd_mul
     ((continuous_bernoulliFun k).measurable.comp measurable_fract).aestronglyMeasurable
-    (Eventually.of_forall fun x => hM _ ⟨Int.fract_nonneg x, (Int.fract_lt_one x).le⟩)
+    (Eventually.of_forall hM)
 
 /-- **The harmonic sums by the Euler–Maclaurin formula.** For `k ≥ 1` and `n ≥ 1`,
 `∑_{j=1}^{n-1} 1/j = log n + γ - ∑_{s=1}^k B'_s / s · n^{-s} + ∫_n^∞ Bₖ({x}) / x^(k+1) dx`,
@@ -233,8 +205,7 @@ as `n → ∞`: it is at most `M / (k n^k)` when `|Bₖ| ≤ M` on `[0, 1]`. -/
 theorem isBigO_integral_Ioi_bernoulliFun_fract_div_pow {k : ℕ} (hk : 1 ≤ k) :
     (fun n : ℕ => ∫ x in Set.Ioi (n : ℝ), bernoulliFun k (Int.fract x) / x ^ (k + 1)) =O[atTop]
       fun n : ℕ => (n : ℝ)⁻¹ ^ k := by
-  obtain ⟨M, hM⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_bound_of_continuousOn
-    (continuous_bernoulliFun k).continuousOn
+  obtain ⟨M, hM⟩ := exists_norm_bernoulliFun_fract_le k
   refine IsBigO.of_bound (M / k) ?_
   filter_upwards [eventually_ge_atTop 1] with n hn
   have hn0 : (0 : ℝ) < n := by exact_mod_cast hn
@@ -244,8 +215,7 @@ theorem isBigO_integral_Ioi_bernoulliFun_fract_div_pow {k : ℕ} (hk : 1 ≤ k) 
     ((ae_restrict_iff' measurableSet_Ioi).mpr (Eventually.of_forall fun x (hx : (n : ℝ) < x) => by
       have hx0 : 0 < x ^ (k + 1) := pow_pos (hn0.trans hx) _
       rw [norm_div, Real.norm_of_nonneg hx0.le, ← div_eq_mul_inv]
-      exact div_le_div_of_nonneg_right (hM _ ⟨Int.fract_nonneg x, (Int.fract_lt_one x).le⟩)
-        hx0.le))
+      exact div_le_div_of_nonneg_right (hM x) hx0.le))
   rw [integral_const_mul, integral_Ioi_inv_pow_succ hk hn0, mul_inv, ← mul_assoc,
     ← div_eq_mul_inv] at h
   rwa [norm_pow, norm_inv, Real.norm_natCast, inv_pow]
@@ -275,24 +245,6 @@ theorem hasAsymptoticExpansion_sum_Ico_inv_sub_log_sub_eulerMascheroniConstant :
     mul_neg, sum_neg_distrib]
   simp only [mul_comm ((n : ℝ)⁻¹ ^ _)]
   ring
-
-/-- The odd-order sum `∑_{s=1}^{2m} B'ₛ/s · y^s` collapses to
-`y/2 + ∑_{s=1}^m B_{2s}/(2s) · y^{2s}`, since `B'₁ = 1/2` and `B'ₛ = 0` for odd `s ≥ 3`. -/
-private theorem sum_Icc_two_mul_bernoulli'_div_mul_pow {m : ℕ} (hm : 1 ≤ m) (y : ℝ) :
-    ∑ s ∈ Icc 1 (2 * m), (bernoulli' s / s : ℝ) * y ^ s =
-      y / 2 + ∑ s ∈ Icc 1 m, (bernoulli (2 * s) / (2 * s) : ℝ) * y ^ (2 * s) := by
-  induction m, hm using Nat.le_induction with
-  | base =>
-    simp [Finset.sum_Icc_succ_top, bernoulli'_two, bernoulli_two]
-    ring
-  | succ m hm ih =>
-    rw [show 2 * (m + 1) = 2 * m + 1 + 1 by ring, sum_Icc_succ_top (by omega),
-      sum_Icc_succ_top (by omega), ih, sum_Icc_succ_top (by omega),
-      bernoulli'_eq_zero_of_odd ⟨m, rfl⟩ (by omega),
-      bernoulli_eq_bernoulli'_of_ne_one (by omega : 2 * (m + 1) ≠ 1)]
-    rw [show 2 * m + 1 + 1 = 2 * (m + 1) by ring]
-    push_cast
-    ring
 
 /-- DLMF 2.10.8 truncated after `m` even terms, with its exact remainder:
 `∑_{j=1}^{n-1} 1/j = log n + γ - 1/(2n) - ∑_{s=1}^{m-1} B_{2s}/(2s) · n^{-2s}
