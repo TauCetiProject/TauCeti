@@ -163,9 +163,12 @@ theorem nonempty_isometryEquiv_tmul_hermitianMetric (D D' : ArakelovDivisor K) :
         Submodule (𝓞 K) K))
       (y : (((D'.finitePart⁻¹ : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) :
         Submodule (𝓞 K) K)) :
-      (ψ (x ⊗ₜ y) : K) = x * y :=
-    -- `LinearEquiv.ofEq` leaves the underlying element of `K` unchanged.
-    Submodule.coe_tensorEquivMul_tmul I J x y
+      (ψ (x ⊗ₜ y) : K) = x * y := by
+    -- Unfold `ψ` as a composite (`LinearEquiv.trans`); `ofEq` keeps the element of `K`.
+    change (LinearEquiv.ofEq _ _ hL (Submodule.tensorEquivMul I J (x ⊗ₜ y)) : K) = x * y
+    rw [LinearEquiv.coe_ofEq_apply]
+    -- `x ∈ I` and `y ∈ J` by `FractionalIdeal.coe_unitsMulEquivSubmodule`.
+    exact Submodule.coe_tensorEquivMul_tmul I J x y
   let g := D.hermitianMetric.tmul D'.hermitianMetric
   obtain ⟨x, hxI, hx⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
     ((FractionalIdeal.coeToSubmodule_ne_bot).mpr (Units.ne_zero (D.finitePart⁻¹)))
@@ -187,7 +190,8 @@ theorem nonempty_isometryEquiv_tmul_hermitianMetric (D D' : ArakelovDivisor K) :
     simp only [HermitianMetric.placeNorm_comap, x₀, LinearEquiv.coe_coe,
       LinearEquiv.symm_apply_apply, g, HermitianMetric.placeNorm_tmul, placeNorm_hermitianMetric,
       hψ, map_mul, infinitePart_add, Pi.add_apply]
-    simp [Real.log_mul, hvx.ne', hvy.ne']
+    simp only [ne_eq, hvx.ne', not_false_eq_true, hvy.ne', Real.log_mul, mul_eq_zero,
+      Real.exp_ne_zero, or_self, Real.log_exp]
     field_simp
     ring
   exact ⟨hg ▸ g.isometryEquivComap ψ.symm⟩
