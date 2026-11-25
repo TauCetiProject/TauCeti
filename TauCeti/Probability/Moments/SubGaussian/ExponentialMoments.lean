@@ -124,8 +124,9 @@ theorem integral_pow_four_le (h : HasSubgaussianMGF X c μ) :
   have hs0 : 0 < (4 * (c : ℝ))⁻¹ := inv_pos.2 (mul_pos four_pos hc')
   have hs : 2 * (c : ℝ) * (4 * (c : ℝ))⁻¹ = 1 / 2 := by field_simp; norm_num
   have hexp := h.integral_exp_mul_sq_le hs0.le (by rw [hs]; norm_num)
-  rw [hs, (by norm_num : (1 : ℝ) - 1 / 2 = 2⁻¹), Real.inv_rpow (by norm_num),
-    ← Real.rpow_neg (by norm_num), neg_div, neg_neg, ← Real.sqrt_eq_rpow] at hexp
+  have hsqrt : (1 - 2 * (c : ℝ) * (4 * (c : ℝ))⁻¹) ^ (-1 / 2 : ℝ) = √2 := by
+    rw [hs]; norm_num [Real.sqrt_eq_rpow, Real.rpow_neg, Real.div_rpow]
+  rw [hsqrt] at hexp
   set s := (4 * (c : ℝ))⁻¹
   -- Pointwise, `X⁴ ≤ (2 / s²) exp (s X²)`, since `(s X²)² / 2 ≤ exp (s X²)`.
   have hpt (ω : Ω) : X ω ^ 4 ≤ 2 / s ^ 2 * exp (s * X ω ^ 2) := by
@@ -133,11 +134,10 @@ theorem integral_pow_four_le (h : HasSubgaussianMGF X c μ) :
     rw [div_mul_eq_mul_div, le_div_iff₀ (by positivity)]
     norm_num [Nat.factorial] at this
     nlinarith
-  have hX4 : Integrable (fun ω ↦ X ω ^ 4) μ := by
-    simpa [Real.norm_eq_abs, Even.pow_abs ⟨2, rfl⟩] using
-      (h.memLp 4).integrable_norm_pow (p := 4) (by norm_num)
+  -- Only the dominating side needs to be integrable, since `X⁴ ≥ 0`.
   calc ∫ ω, X ω ^ 4 ∂μ ≤ ∫ ω, 2 / s ^ 2 * exp (s * X ω ^ 2) ∂μ :=
-        integral_mono hX4 ((h.integrable_exp_mul_sq (by rw [hs]; norm_num)).const_mul _) hpt
+        integral_mono_of_nonneg (.of_forall fun ω ↦ by positivity)
+          ((h.integrable_exp_mul_sq (by rw [hs]; norm_num)).const_mul _) (.of_forall hpt)
     _ = 2 / s ^ 2 * ∫ ω, exp (s * X ω ^ 2) ∂μ := integral_const_mul _ _
     _ ≤ 2 / s ^ 2 * √2 := mul_le_mul_of_nonneg_left hexp (by positivity)
     _ = 32 * √2 * (c : ℝ) ^ 2 := by simp only [s]; field_simp; ring

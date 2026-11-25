@@ -215,18 +215,40 @@ private theorem measureReal_exists_leastCommonDenominator_mem_Ico_toEuclideanLin
     _ = N.card * q ^ Fintype.card ι := by simp
     _ ≤ _ := mul_le_mul_of_nonneg_right hcard (by positivity)
 
+/-- The constants of the structure theorem, for the compressibility constants `δ` and `ρ`, the
+anti-concentration level `b` and the operator-norm level `M`: `η` from the union bound over the
+level sets, `μ` from the approximation by nets, and `c₁` from the exponential threshold. The
+lemmas below take this bundle instead of threading the inequalities one by one. -/
+private structure IsLCDConstants (δ ρ b M η μ c₁ : ℝ) : Prop where
+  δ_pos : 0 < δ
+  ρ_pos : 0 < ρ
+  b_pos : 0 < b
+  η_pos : 0 < η
+  η_eq : 8 * exp 1 * (16 * π / (ρ * √b)) * η = (exp 4 * (2 / √δ + 3 * √π))⁻¹ ^ 2
+  μ_pos : 0 < μ
+  μ_le : μ ≤ √δ / 2
+  c₁_pos : 0 < c₁
+  c₁_le_b : c₁ ≤ μ ^ 2 * b / 2
+  c₁_le_K₁ : 4 * exp 1 * c₁ ≤ 16 * π / (ρ * √b) * η
+  c₁_le_δ : c₁ ≤ √δ / 2
+  c₁_le_one : c₁ ≤ 1
+  M_mul_μ_le : 9 * M * μ ≤ η
 
-/-- The net factor of a level set: for `D ≥ √(δ N) / 2` and `μ ≤ √δ / 2`, the base
+/-- The factor `K₁ = 16 π / (ρ √b)` of the single-vector bound is positive. -/
+private theorem IsLCDConstants.K₁_pos {δ ρ b M η μ c₁ : ℝ} (h : IsLCDConstants δ ρ b M η μ c₁) :
+    0 < 16 * π / (ρ * √b) :=
+  div_pos (by positivity) (mul_pos h.ρ_pos (Real.sqrt_pos.2 h.b_pos))
+
+/-- The net factor of a level set: for `D ≥ √δ √N / 2` and `μ ≤ √δ / 2`, the base
 `e (1 + √π (2 D + μ √N) / √N)` of the net cardinality is at most `e C₀ D / √N`, where
 `C₀ = 2 / √δ + 3 √π`. -/
 private theorem exp_one_mul_one_add_div_le {N : ℕ} {δ μ D : ℝ} (hN : 0 < (N : ℝ)) (hδ : 0 < δ)
-    (hμδ : μ ≤ √δ / 2) (hD₀ : √(δ * N) / 2 ≤ D) :
+    (hμδ : μ ≤ √δ / 2) (hD₀ : √δ / 2 * √N ≤ D) :
     exp 1 * (1 + √π * (2 * D + μ * √N) / √N) ≤ exp 1 * (2 / √δ + 3 * √π) * (D / √N) := by
   have hs : 0 < √(N : ℝ) := Real.sqrt_pos.2 hN
-  have hsδ : √(δ * N) / 2 = √δ / 2 * √N := by rw [Real.sqrt_mul hδ.le]; ring
   have h1 : 1 ≤ 2 / √δ * (D / √N) := by
-    rw [div_mul_div_comm, le_div_iff₀ (by positivity)]
-    nlinarith [hsδ, Real.sqrt_pos.2 hδ]
+    rw [div_mul_div_comm, le_div_iff₀ (mul_pos (Real.sqrt_pos.2 hδ) hs)]
+    linarith
   have h2 : μ * √N ≤ D := by nlinarith [mul_le_mul_of_nonneg_right hμδ hs.le]
   rw [mul_assoc]
   refine mul_le_mul_of_nonneg_left ?_ (exp_pos 1).le
@@ -237,26 +259,24 @@ private theorem exp_one_mul_one_add_div_le {N : ℕ} {δ μ D : ℝ} (hN : 0 < (
 /-- The single-vector factor of a level set: at the radius `t = η √N / D`, with `η √N ≥ 1`,
 both error terms of the single-vector small-ball bound are dominated by `K₁ t`, where
 `K₁ = 16 π / (ρ √b)`, as long as `D` is below the exponential threshold. -/
-private theorem two_mul_exp_one_mul_add_le {N R : ℕ} {ρ b μ η c₁ D : ℝ} (hRN : R < N)
-    (hηN : 1 ≤ η * √N) (hc₁ : 0 < c₁) (hc₁b : c₁ ≤ μ ^ 2 * b / 2)
-    (hc₁K : 4 * exp 1 * c₁ ≤ 16 * π / (ρ * √b) * η) (hD : 0 < D)
+private theorem two_mul_exp_one_mul_add_le {N R : ℕ} {δ ρ b M η μ c₁ D : ℝ}
+    (h : IsLCDConstants δ ρ b M η μ c₁) (hRN : R < N) (hηN : 1 ≤ η * √N) (hD : 0 < D)
     (hDL : D < c₁ * √N * exp (c₁ * N / (N - R : ℕ))) :
     2 * exp 1 * (16 * π * (2 * (η * √N / D) + D⁻¹) / (ρ * √b) +
       4 * exp (1 - (μ * √N) ^ 2 * b / 2)) ≤ 8 * exp 1 * (16 * π / (ρ * √b)) * η * (√N / D) := by
+  have hK₁ := h.K₁_pos
+  have hc₁K := h.c₁_le_K₁
   set K₁ := 16 * π / (ρ * √b)
   have hN : 0 < (N : ℝ) := by exact_mod_cast (Nat.zero_le R).trans_lt hRN
-  have hηpos : 0 < η := by
-    by_contra! h; nlinarith [mul_nonpos_of_nonpos_of_nonneg h (Real.sqrt_nonneg (N : ℝ))]
-  have hK₁ : 0 < K₁ := by
-    by_contra! h; nlinarith [mul_nonpos_of_nonpos_of_nonneg h hηpos.le, exp_pos 1]
   have ht : D⁻¹ ≤ η * √N / D := by rw [inv_eq_one_div]; gcongr
   have hd : (1 : ℝ) ≤ (N - R : ℕ) := by exact_mod_cast Nat.sub_pos_of_lt hRN
   -- `4 exp (1 - μ² N b / 2) ≤ 4 e exp (-c₁ N / d)`, and `D exp (-c₁ N / d) < c₁ √N`.
   have hexp : 4 * exp (1 - (μ * √N) ^ 2 * b / 2) ≤ K₁ * (η * √N / D) := by
     have he1 : exp (1 - (μ * √N) ^ 2 * b / 2) ≤ exp 1 * exp (-(c₁ * N / (N - R : ℕ))) := by
       rw [← exp_add, exp_le_exp, mul_pow, Real.sq_sqrt hN.le]
-      have : c₁ * N / (N - R : ℕ) ≤ c₁ * N := div_le_self (by positivity) hd
-      nlinarith
+      have : c₁ * N / (N - R : ℕ) ≤ c₁ * N :=
+        div_le_self (mul_nonneg h.c₁_pos.le hN.le) hd
+      nlinarith [mul_le_mul_of_nonneg_right h.c₁_le_b hN.le]
     rw [mul_div_assoc', le_div_iff₀ hD]
     calc 4 * exp (1 - (μ * √N) ^ 2 * b / 2) * D
         ≤ 4 * (exp 1 * exp (-(c₁ * N / (N - R : ℕ)))) *
@@ -303,43 +323,33 @@ private theorem mul_pow_mul_pow_le_exp {N R : ℕ} {C₀ u c₁ : ℝ} (hNR : N 
 
 /-- The union bound over one level set is exponentially small: with the constants of the
 structure theorem, the product of the net cardinality and the single-vector bound is at most
-`exp (-2 N)` for every level `D` between `√(δ N) / 2` and the exponential threshold. -/
-private theorem pow_mul_pow_le_exp_neg_two_mul {N R : ℕ} {δ ρ b μ η c₁ D : ℝ}
-    (hNR : N ≤ 2 * R) (hδ : 0 < δ)
-    (hη : 8 * exp 1 * (16 * π / (ρ * √b)) * η = (exp 4 * (2 / √δ + 3 * √π))⁻¹ ^ 2)
-    (hηN : 1 ≤ η * √N) (hμ : 0 ≤ μ) (hμδ : μ ≤ √δ / 2) (hc₁ : 0 < c₁)
-    (hc₁b : c₁ ≤ μ ^ 2 * b / 2) (hc₁K : 4 * exp 1 * c₁ ≤ 16 * π / (ρ * √b) * η)
-    (hc₁δ : c₁ ≤ √δ / 2) (hc₁1 : c₁ ≤ 1)
-    (hD₀ : √(δ * N) / 2 ≤ D) (hDL : D < c₁ * √N * exp (c₁ * N / (N - R : ℕ))) :
+`exp (-2 N)` for every level `D` between `√δ √N / 2` and the exponential threshold. -/
+private theorem pow_mul_pow_le_exp_neg_two_mul {N R : ℕ} {δ ρ b M η μ c₁ D : ℝ}
+    (h : IsLCDConstants δ ρ b M η μ c₁) (hNR : N ≤ 2 * R) (hηN : 1 ≤ η * √N)
+    (hD₀ : √δ / 2 * √N ≤ D) (hDL : D < c₁ * √N * exp (c₁ * N / (N - R : ℕ))) :
     (exp 1 * (1 + √π * (2 * D + μ * √N) / √N)) ^ N *
       (2 * exp 1 * (16 * π * (2 * (η * √N / D) + D⁻¹) / (ρ * √b) +
         4 * exp (1 - (μ * √N) ^ 2 * b / 2))) ^ R ≤ exp (-(2 * N)) := by
   have hN : 0 < (N : ℝ) := by
-    rcases Nat.eq_zero_or_pos N with h | h
-    · simp [h] at hηN; linarith
-    · exact_mod_cast h
+    rcases Nat.eq_zero_or_pos N with hN0 | hN0
+    · simp [hN0] at hηN; linarith
+    · exact_mod_cast hN0
   have hs : 0 < √(N : ℝ) := Real.sqrt_pos.2 hN
-  have hD : 0 < D := lt_of_lt_of_le (by positivity) hD₀
-  have hηpos : 0 < η := by
-    by_contra! h; nlinarith [mul_nonpos_of_nonpos_of_nonneg h hs.le]
-  have hK₁ : 0 < 16 * π / (ρ * √b) := by
-    by_contra! h; nlinarith [mul_nonpos_of_nonpos_of_nonneg h hηpos.le, exp_pos 1]
-  -- The codimension `N - R` is positive, since otherwise the threshold is below `√(δ N) / 2`.
+  have hD : 0 < D := (mul_pos (div_pos (Real.sqrt_pos.2 h.δ_pos) two_pos) hs).trans_le hD₀
+  have hη := h.η_pos
+  have hμ := h.μ_pos
+  have hρ := h.ρ_pos
+  -- The codimension `N - R` is positive, since otherwise the threshold is below `√δ √N / 2`.
   have hRN : R < N := by
-    by_contra! h
-    rw [Nat.sub_eq_zero_of_le h, Nat.cast_zero, div_zero, exp_zero, mul_one] at hDL
-    have hsδ : √(δ * N) / 2 = √δ / 2 * √N := by rw [Real.sqrt_mul hδ.le]; ring
-    nlinarith [mul_le_mul_of_nonneg_right hc₁δ hs.le]
-  have hS2 := two_mul_exp_one_mul_add_le hRN hηN hc₁ hc₁b hc₁K hD hDL
+    by_contra! hRN
+    rw [Nat.sub_eq_zero_of_le hRN, Nat.cast_zero, div_zero, exp_zero, mul_one] at hDL
+    nlinarith [mul_le_mul_of_nonneg_right h.c₁_le_δ hs.le]
+  have hS2 := two_mul_exp_one_mul_add_le h hRN hηN hD hDL
+  have hw := h.η_eq
   set C₀ := 2 / √δ + 3 * √π
-  set K₁ := 16 * π / (ρ * √b)
-  set w := 8 * exp 1 * K₁ * η
+  set w := 8 * exp 1 * (16 * π / (ρ * √b)) * η
   have hbase : 0 ≤ 2 * exp 1 * (16 * π * (2 * (η * √N / D) + D⁻¹) / (ρ * √b) +
-      4 * exp (1 - (μ * √N) ^ 2 * b / 2)) := by
-    have hK : 16 * π * (2 * (η * √N / D) + D⁻¹) / (ρ * √b) = K₁ * (2 * (η * √N / D) + D⁻¹) := by
-      simp only [K₁]; ring
-    rw [hK]
-    positivity
+      4 * exp (1 - (μ * √N) ^ 2 * b / 2)) := by positivity
   have hC₀ : 1 ≤ C₀ := by
     nlinarith [Real.sqrt_le_sqrt (by linarith [two_le_pi] : (1 : ℝ) ≤ π), Real.sqrt_one,
       (by positivity : (0 : ℝ) ≤ 2 / √δ)]
@@ -348,18 +358,19 @@ private theorem pow_mul_pow_le_exp_neg_two_mul {N R : ℕ} {δ ρ b μ η c₁ D
     have hd : (0 : ℝ) < (N - R : ℕ) := by exact_mod_cast Nat.sub_pos_of_lt hRN
     have h1 : D / √N ≤ exp (c₁ * N / (N - R : ℕ)) := by
       rw [div_le_iff₀ hs]
-      nlinarith [exp_pos (c₁ * N / (N - R : ℕ))]
+      nlinarith [mul_le_mul_of_nonneg_right h.c₁_le_one
+        (mul_pos hs (exp_pos (c₁ * N / (N - R : ℕ)))).le]
     calc (D / √N) ^ (N - R) ≤ exp (c₁ * N / (N - R : ℕ)) ^ (N - R) :=
           pow_le_pow_left₀ (div_pos hD hs).le h1 _
       _ = exp (c₁ * N) := by rw [← exp_natCast_mul, mul_div_cancel₀ _ hd.ne']
   calc _ ≤ (exp 1 * C₀ * (D / √N)) ^ N * (w * (D / √N)⁻¹) ^ R := by
         rw [inv_div]
         exact mul_le_mul
-          (pow_le_pow_left₀ (by positivity) (exp_one_mul_one_add_div_le hN hδ hμδ hD₀) N)
+          (pow_le_pow_left₀ (by positivity) (exp_one_mul_one_add_div_le hN h.δ_pos h.μ_le hD₀) N)
           (pow_le_pow_left₀ hbase hS2 R) (by positivity) (by positivity)
     _ ≤ exp (-(2 * N)) := by
-        rw [(hη : w = (exp 4 * C₀)⁻¹ ^ 2)]
-        exact mul_pow_mul_pow_le_exp hNR hRN.le hC₀ (div_pos hD hs) hud hc₁1
+        rw [hw]
+        exact mul_pow_mul_pow_le_exp hNR hRN.le hC₀ (div_pos hD hs) hud h.c₁_le_one
 
 /-- The exceptional event of the structure theorem, for the kernel of a matrix, is covered by
 the compressible event, the event of a large operator norm, and the dyadic level sets of the LCD
@@ -403,19 +414,15 @@ private theorem setOf_exists_leastCommonDenominator_lt_subset {Ω ι m : Type*} 
 
 /-- One dyadic level set of the LCD: outside an event of probability `exp (-2 N)`, a matrix of
 operator norm at most `M √R` annihilates no unit vector whose LCD lies in `[D, 2 D)`, for every
-level `D` between `√(δ N) / 2` and the exponential threshold. -/
+level `D` between `√δ √N / 2` and the exponential threshold. -/
 private theorem measureReal_exists_leastCommonDenominator_mem_Ico_le_exp {Ω ι m : Type*}
     [MeasurableSpace Ω] [Fintype ι] [Fintype m] [DecidableEq m] {P : Measure Ω}
     {B : Ω → Matrix ι m ℝ}
     (hind : iIndepFun (fun jr : ι × m ↦ fun ω ↦ B ω jr.1 jr.2) P)
     {ν : ι → Measure ℝ} (hν : ∀ j r, HasLaw (fun ω ↦ B ω j r) (ν j) P) {b : ℝ}
     (hb : ∀ j v, (ν j).real (ball v 1) ≤ 1 - b) (hNR : Fintype.card m ≤ 2 * Fintype.card ι)
-    {δ ρ μ η c₁ M D : ℝ} (hδ : 0 < δ)
-    (hη : 8 * exp 1 * (16 * π / (ρ * √b)) * η = (exp 4 * (2 / √δ + 3 * √π))⁻¹ ^ 2)
-    (hηN : 1 ≤ η * √(Fintype.card m)) (hμ : 0 ≤ μ) (hμδ : μ ≤ √δ / 2) (hc₁ : 0 < c₁)
-    (hc₁b : c₁ ≤ μ ^ 2 * b / 2) (hc₁K : 4 * exp 1 * c₁ ≤ 16 * π / (ρ * √b) * η)
-    (hc₁δ : c₁ ≤ √δ / 2) (hc₁1 : c₁ ≤ 1) (hμM : 9 * M * μ ≤ η)
-    (hD₀ : √(δ * Fintype.card m) / 2 ≤ D)
+    {δ ρ M η μ c₁ D : ℝ} (h : IsLCDConstants δ ρ b M η μ c₁)
+    (hηN : 1 ≤ η * √(Fintype.card m)) (hD₀ : √δ / 2 * √(Fintype.card m) ≤ D)
     (hDL : D < c₁ * √(Fintype.card m) *
       exp (c₁ * Fintype.card m / (Fintype.card m - Fintype.card ι : ℕ))) :
     P.real {ω | ‖B ω‖ ≤ M * √(Fintype.card ι) ∧ ∃ x : EuclideanSpace ℝ m, ‖x‖ = 1 ∧
@@ -425,52 +432,46 @@ private theorem measureReal_exists_leastCommonDenominator_mem_Ico_le_exp {Ω ι 
   have := hind.isProbabilityMeasure
   set N := Fintype.card m
   set R := Fintype.card ι
-  have hN0 : 0 < N := Nat.pos_of_ne_zero fun h ↦ by
-    rw [h, Nat.cast_zero, Real.sqrt_zero, mul_zero] at hηN; linarith
+  have hN0 : 0 < N := Nat.pos_of_ne_zero fun h0 ↦ by
+    rw [h0, Nat.cast_zero, Real.sqrt_zero, mul_zero] at hηN; linarith
   have hs : 0 < √(N : ℝ) := Real.sqrt_pos.2 (Nat.cast_pos.2 hN0)
-  have hD : 0 < D :=
-    lt_of_lt_of_le (div_pos (Real.sqrt_pos.2 (mul_pos hδ (Nat.cast_pos.2 hN0))) two_pos) hD₀
-  have hηpos : 0 < η := by
-    by_contra! h; nlinarith [mul_nonpos_of_nonpos_of_nonneg h hs.le]
-  have hρb : 0 < ρ * √b := by
-    by_contra! h
-    have : 16 * π / (ρ * √b) ≤ 0 := div_nonpos_of_nonneg_of_nonpos (by positivity) h
-    nlinarith [mul_nonpos_of_nonpos_of_nonneg this hηpos.le, exp_pos 1]
-  have hρ : 0 < ρ := pos_of_mul_pos_left hρb (Real.sqrt_nonneg b)
+  have hD : 0 < D := (mul_pos (div_pos (Real.sqrt_pos.2 h.δ_pos) two_pos) hs).trans_le hD₀
+  have hη := h.η_pos
   have hR : 0 < √(R : ℝ) := Real.sqrt_pos.2 (Nat.cast_pos.2 (by omega))
+  -- The net lemma takes the tolerance `μ √N` and the level `D` in `ℝ≥0`; name them there, with
+  -- their coercions to `ℝ` and `ℝ≥0∞` as explicit equations.
+  obtain ⟨α, hα⟩ : ∃ α : ℝ≥0, (α : ℝ) = μ * √N :=
+    ⟨(μ * √N).toNNReal, Real.coe_toNNReal _ (mul_pos h.μ_pos hs).le⟩
+  obtain ⟨E, hE⟩ : ∃ E : ℝ≥0, (E : ℝ) = D := ⟨D.toNNReal, Real.coe_toNNReal _ hD.le⟩
+  have hEe : (E : ℝ≥0∞) = ENNReal.ofReal D := by rw [← hE, ENNReal.ofReal_coe_nnreal]
   -- The approximation radius `M √R (4 μ √N / D)` is below `t √R` for `t = η √N / D`.
-  have happrox : M * √(R : ℝ) * (4 * (⟨μ * √N, by positivity⟩ : ℝ≥0) / (⟨D, hD.le⟩ : ℝ≥0)) <
-      η * √N / D * √R := by
-    rw [(by ring : M * √(R : ℝ) * (4 * (μ * √N) / D) = 4 * (M * μ) * (√N * √R) / D),
+  have happrox : M * √(R : ℝ) * (4 * α / E) < η * √N / D * √R := by
+    rw [hα, hE, (by ring : M * √(R : ℝ) * (4 * (μ * √N) / D) = 4 * (M * μ) * (√N * √R) / D),
       (by ring : η * √N / D * √R = η * (√N * √R) / D)]
     gcongr
-    have : 9 * (M * μ) ≤ η := by rw [← mul_assoc]; exact hμM
+    have : 9 * (M * μ) ≤ η := by rw [← mul_assoc]; exact h.M_mul_μ_le
     linarith
   have hunion := measureReal_exists_leastCommonDenominator_mem_Ico_toEuclideanLin_eq_zero_le
-    hind hν hb hρ (D := ⟨D, hD.le⟩) (NNReal.coe_pos.1 hD) (by positivity) happrox
-  refine (measureReal_mono (fun ω hω ↦ ?_) (measure_ne_top _ _)).trans (hunion.trans
-    (pow_mul_pow_le_exp_neg_two_mul hNR hδ hη hηN hμ hμδ hc₁ hc₁b hc₁K hc₁δ hc₁1 hD₀ hDL))
-  obtain ⟨hB, x, hx1, hxD, hx0⟩ := hω
-  refine ⟨hB, x, hx1, ?_, hx0⟩
-  rwa [← ENNReal.ofReal_coe_nnreal (p := ⟨D, hD.le⟩)]
+    hind hν hb h.ρ_pos (by rw [← NNReal.coe_pos, hE]; exact hD) (by positivity) happrox
+  rw [hEe, hα, hE] at hunion
+  exact hunion.trans (pow_mul_pow_le_exp_neg_two_mul h hNR hηN hD₀ hDL)
 
-/-- The number of dyadic levels: with `D₀ ≥ √(δ N) / 2` and `c₁ ≤ min (√δ / 2) 1`, the
+/-- The number of dyadic levels: with `D₀ ≥ √δ √N / 2` and `c₁ ≤ min (√δ / 2) 1`, the
 `⌈L / D₀⌉₊` levels below the threshold `L = c₁ √N exp (c₁ N / (N - R))` contribute at most
 `2 exp (-N)` when each has probability at most `exp (-2 N)`. -/
-private theorem natCeil_mul_exp_le {N R : ℕ} {δ c₁ D₀ : ℝ} (hδ : 0 < δ) (hc₁ : 0 < c₁)
-    (hc₁δ : c₁ ≤ √δ / 2) (hc₁1 : c₁ ≤ 1) (hD₀ : √(δ * N) / 2 ≤ D₀) :
+private theorem natCeil_mul_exp_le {N R : ℕ} {δ c₁ D₀ : ℝ} (hc₁ : 0 < c₁)
+    (hc₁δ : c₁ ≤ √δ / 2) (hc₁1 : c₁ ≤ 1) (hD₀ : √δ / 2 * √N ≤ D₀) :
     (⌈c₁ * √N * exp (c₁ * N / (N - R : ℕ)) / D₀⌉₊ : ℝ) * exp (-(2 * N)) ≤
       2 * exp (-(N : ℝ)) := by
   have hN : 0 ≤ (N : ℝ) := Nat.cast_nonneg N
-  rcases ((by positivity : (0 : ℝ) ≤ √(δ * N) / 2).trans hD₀).eq_or_lt with h | hD₀pos
-  · rw [← h, div_zero, Nat.ceil_zero, Nat.cast_zero, zero_mul]; positivity
+  rcases ((by positivity : (0 : ℝ) ≤ √δ / 2 * √N).trans hD₀).eq_or_lt with h0 | hD₀pos
+  · rw [← h0, div_zero, Nat.ceil_zero, Nat.cast_zero, zero_mul]; positivity
   have hdiv : c₁ * N / (N - R : ℕ) ≤ c₁ * N := by
-    rcases Nat.eq_zero_or_pos (N - R) with h | h
-    · rw [h, Nat.cast_zero, div_zero]; positivity
-    · exact div_le_self (by positivity) (by exact_mod_cast h)
+    rcases Nat.eq_zero_or_pos (N - R) with hNR | hNR
+    · rw [hNR, Nat.cast_zero, div_zero]; positivity
+    · exact div_le_self (by positivity) (by exact_mod_cast hNR)
   have hLt : c₁ * √N * exp (c₁ * N / (N - R : ℕ)) / D₀ ≤ exp (c₁ * N) := by
     rw [div_le_iff₀ hD₀pos]
-    have hsδ : √(δ * N) / 2 = √δ / 2 * √N := by rw [Real.sqrt_mul hδ.le]; ring
     calc c₁ * √N * exp (c₁ * N / (N - R : ℕ)) ≤ √δ / 2 * √N * exp (c₁ * N) := by gcongr
       _ ≤ exp (c₁ * N) * D₀ := by nlinarith [exp_pos (c₁ * N)]
   calc (⌈c₁ * √N * exp (c₁ * N / (N - R : ℕ)) / D₀⌉₊ : ℝ) * exp (-(2 * N))
@@ -492,11 +493,9 @@ private theorem measureReal_exists_toEuclideanLin_eq_zero_leastCommonDenominator
     {ν : ι → Measure ℝ} (hν : ∀ j r, HasLaw (fun ω ↦ B ω j r) (ν j) P) {b : ℝ}
     (hb : ∀ j v, (ν j).real (ball v 1) ≤ 1 - b) {c₀ : ℝ≥0}
     (hB : ∀ j r, HasSubgaussianMGF (fun ω ↦ B ω j r) c₀ P)
-    (hNR : Fintype.card m ≤ 2 * Fintype.card ι) {δ ρ μ η c₁ M : ℝ} (hδ : 0 < δ)
-    (hη : 8 * exp 1 * (16 * π / (ρ * √b)) * η = (exp 4 * (2 / √δ + 3 * √π))⁻¹ ^ 2)
-    (hηN : 1 ≤ η * √(Fintype.card m)) (hμ : 0 ≤ μ) (hμδ : μ ≤ √δ / 2) (hc₁ : 0 < c₁)
-    (hc₁b : c₁ ≤ μ ^ 2 * b / 2) (hc₁K : 4 * exp 1 * c₁ ≤ 16 * π / (ρ * √b) * η)
-    (hc₁δ : c₁ ≤ √δ / 2) (hc₁1 : c₁ ≤ 1) (hM : 28 * √(c₀ : ℝ) ≤ M) (hμM : 9 * M * μ ≤ η) :
+    (hNR : Fintype.card m ≤ 2 * Fintype.card ι) {δ ρ M η μ c₁ : ℝ}
+    (h : IsLCDConstants δ ρ b M η μ c₁) (hηN : 1 ≤ η * √(Fintype.card m))
+    (hM : 28 * √(c₀ : ℝ) ≤ M) :
     P.real {ω | ∃ x, toEuclideanLin (B ω) x = 0 ∧ ‖x‖ = 1 ∧
         leastCommonDenominator (μ * √(Fintype.card m)) ρ x <
           ENNReal.ofReal (c₁ * √(Fintype.card m) *
@@ -508,7 +507,8 @@ private theorem measureReal_exists_toEuclideanLin_eq_zero_leastCommonDenominator
   set N := Fintype.card m
   set R := Fintype.card ι
   set Lt := c₁ * √N * exp (c₁ * N / (N - R : ℕ))
-  have hD₀ : √(δ * N) / 2 ≤ √((⌊δ * N⌋₊ : ℝ) + 1) / 2 := by
+  have hD₀ : √δ / 2 * √N ≤ √((⌊δ * N⌋₊ : ℝ) + 1) / 2 := by
+    rw [div_mul_eq_mul_div, ← Real.sqrt_mul h.δ_pos.le]
     gcongr
     exact (Nat.lt_floor_add_one _).le
   set D₀ := √((⌊δ * N⌋₊ : ℝ) + 1) / 2
@@ -520,13 +520,12 @@ private theorem measureReal_exists_toEuclideanLin_eq_zero_leastCommonDenominator
           toEuclideanLin (B ω) x = 0} ≤ exp (-(2 * N)) := by
     by_cases hj : 2 ^ j * D₀ < Lt
     · refine (measureReal_mono (fun ω hω ↦ ?_) (measure_ne_top _ _)).trans
-        (measureReal_exists_leastCommonDenominator_mem_Ico_le_exp hind hν hb hNR hδ hη hηN hμ hμδ
-          hc₁ hc₁b hc₁K hc₁δ hc₁1 hμM
+        (measureReal_exists_leastCommonDenominator_mem_Ico_le_exp hind hν hb hNR h hηN
           (hD₀.trans (le_mul_of_one_le_left hD₀pos.le (one_le_pow₀ one_le_two))) hj)
       exact hω.2
     · simp only [hj, false_and, Set.ofPred_false, measureReal_empty]
       positivity
-  have hcount := natCeil_mul_exp_le hδ hc₁ hc₁δ hc₁1 (R := R) hD₀
+  have hcount := natCeil_mul_exp_le h.c₁_pos h.c₁_le_δ h.c₁_le_one (R := R) hD₀
   have h28 : 28 * (NNReal.sqrt c₀ : ℝ) * √R ≤ M * √R := by rw [Real.coe_sqrt]; gcongr
   have hnorm : P.real {ω | M * √R < ‖B ω‖} ≤ 2 * exp (-(R : ℝ)) :=
     (measureReal_mono (fun ω hω ↦ lt_of_le_of_lt h28 hω) (measure_ne_top _ _)).trans
@@ -551,11 +550,8 @@ private theorem measureReal_exists_mem_orthogonal_span_ne_leastCommonDenominator
     (hA : ∀ i j, HasSubgaussianMGF (fun ω ↦ A ω i j) K P)
     (hmom : ∀ i j, 1 ≤ ∫ ω, (A ω i j) ^ 2 ∂P) (hν : ∀ i j, HasLaw (fun ω ↦ A ω i j) (ν j) P)
     (hdim : Fintype.card m ≤ 2 * (Fintype.card n - 1)) (i : n) {b δ ρ μ η c₁ M : ℝ}
-    (hbK : b ≤ 9 / (4096 * √2 * ((K : ℝ) + 1) ^ 2)) (hδ : 0 < δ)
-    (hη : 8 * exp 1 * (16 * π / (ρ * √b)) * η = (exp 4 * (2 / √δ + 3 * √π))⁻¹ ^ 2)
-    (hηN : 1 ≤ η * √(Fintype.card m)) (hμ : 0 ≤ μ) (hμδ : μ ≤ √δ / 2) (hc₁ : 0 < c₁)
-    (hc₁b : c₁ ≤ μ ^ 2 * b / 2) (hc₁K : 4 * exp 1 * c₁ ≤ 16 * π / (ρ * √b) * η)
-    (hc₁δ : c₁ ≤ √δ / 2) (hc₁1 : c₁ ≤ 1) (hM : 56 * √(K : ℝ) ≤ M) (hμM : 9 * M * μ ≤ η) :
+    (hbK : b ≤ 9 / (4096 * √2 * ((K : ℝ) + 1) ^ 2)) (h : IsLCDConstants δ ρ b M η μ c₁)
+    (hηN : 1 ≤ η * √(Fintype.card m)) (hM : 56 * √(K : ℝ) ≤ M) :
     P.real {ω | ∃ x ∈ (Submodule.span ℝ (range fun j : {j // j ≠ i} ↦
         (WithLp.toLp 2 fun r ↦ A ω r j : EuclideanSpace ℝ m)))ᗮ, ‖x‖ = 1 ∧
       leastCommonDenominator (μ * √(Fintype.card m)) ρ x <
@@ -603,8 +599,8 @@ private theorem measureReal_exists_mem_orthogonal_span_ne_leastCommonDenominator
       (c₀ : ℝ) = 2 ^ 2 * K := ⟨_, fun j r ↦ ((hA r j).const_mul 2).congr
         (ae_of_all _ fun ω ↦ (hBe ω j r).symm), NNReal.coe_mul _ _⟩
   have hcore := measureReal_exists_toEuclideanLin_eq_zero_leastCommonDenominator_lt_le hBind hBν
-    hBb hBsub (by rw [hcard]; exact hdim) hδ hη hηN hμ hμδ hc₁ hc₁b hc₁K hc₁δ hc₁1
-    (by rw [hc₀, Real.sqrt_mul (by positivity), Real.sqrt_sq two_pos.le]; linarith) hμM
+    hBb hBsub (by rw [hcard]; exact hdim) h hηN
+    (by rw [hc₀, Real.sqrt_mul (by positivity), Real.sqrt_sq two_pos.le]; linarith)
   rw [hcard] at hcore
   refine (measureReal_mono (fun ω hω ↦ ?_) (measure_ne_top _ _)).trans (hcore.trans_eq ?_)
   · obtain ⟨x, hx, hx1, hxL⟩ := hω
@@ -628,27 +624,26 @@ private theorem four_mul_exp_add_two_mul_exp_add_two_mul_exp_le {N n : ℕ} {a c
   linarith
 
 /-- The constants of the structure theorem, chosen from the variance proxy `K` and the
-compressibility constants `δ` and `ρ`: `b` from anti-concentration, `η` from the union bound over
-the level sets, `μ` from the approximation by nets, and `c₁` from the exponential threshold. -/
+compressibility constants `δ` and `ρ`: `b` from anti-concentration, `M` from the operator norm,
+and `η`, `μ` and `c₁` satisfying `IsLCDConstants`. -/
 private theorem exists_structure_constants (K : ℝ≥0) {δ ρ : ℝ} (hδ : 0 < δ) (hρ : 0 < ρ) :
-    ∃ b η μ c₁ M : ℝ, b ≤ 9 / (4096 * √2 * ((K : ℝ) + 1) ^ 2) ∧ 0 < η ∧
-      8 * exp 1 * (16 * π / (ρ * √b)) * η = (exp 4 * (2 / √δ + 3 * √π))⁻¹ ^ 2 ∧ 0 < μ ∧
-      μ ≤ √δ / 2 ∧ 0 < c₁ ∧ c₁ ≤ μ ^ 2 * b / 2 ∧ 4 * exp 1 * c₁ ≤ 16 * π / (ρ * √b) * η ∧
-      c₁ ≤ √δ / 2 ∧ c₁ ≤ 1 ∧ 56 * √(K : ℝ) ≤ M ∧ 9 * M * μ ≤ η := by
+    ∃ b η μ c₁ M : ℝ, b ≤ 9 / (4096 * √2 * ((K : ℝ) + 1) ^ 2) ∧ 56 * √(K : ℝ) ≤ M ∧
+      IsLCDConstants δ ρ b M η μ c₁ := by
   set b : ℝ := 9 / (4096 * √2 * ((K : ℝ) + 1) ^ 2)
   set K₁ : ℝ := 16 * π / (ρ * √b)
   set η : ℝ := (exp 4 * (2 / √δ + 3 * √π))⁻¹ ^ 2 / (8 * exp 1 * K₁)
   set M : ℝ := 56 * √(K : ℝ) + 1
   set μ : ℝ := min (η / (9 * M)) (√δ / 2)
-  have hsb : 0 < √b := Real.sqrt_pos.2 (by positivity)
-  have hK₁ : 0 < K₁ := div_pos (by positivity) (mul_pos hρ hsb)
+  have hb : 0 < b := by positivity
+  have hK₁ : 0 < K₁ := div_pos (by positivity) (mul_pos hρ (Real.sqrt_pos.2 hb))
   have hη : 0 < η := div_pos (by positivity) (mul_pos (by positivity) hK₁)
   have hμ : 0 < μ := lt_min (by positivity) (by positivity)
   refine ⟨b, η, μ, min (min (μ ^ 2 * b / 2) (K₁ * η / (4 * exp 1))) (min (√δ / 2) 1), M, le_rfl,
-    hη, by simp only [η, K₁]; field_simp, hμ, min_le_right _ _,
+    le_add_of_nonneg_right zero_le_one, ⟨hδ, hρ, hb, hη, by simp only [η, K₁]; field_simp, hμ,
+    min_le_right _ _,
     lt_min (lt_min (by positivity) (by positivity)) (lt_min (by positivity) one_pos),
     (min_le_left _ _).trans (min_le_left _ _), ?_, (min_le_right _ _).trans (min_le_left _ _),
-    (min_le_right _ _).trans (min_le_right _ _), le_add_of_nonneg_right zero_le_one, ?_⟩
+    (min_le_right _ _).trans (min_le_right _ _), ?_⟩⟩
   · have h : min (min (μ ^ 2 * b / 2) (K₁ * η / (4 * exp 1))) (min (√δ / 2) 1) ≤
         K₁ * η / (4 * exp 1) := (min_le_left _ _).trans (min_le_right _ _)
     rw [le_div_iff₀ (by positivity)] at h; linarith
@@ -697,10 +692,9 @@ theorem exists_measureReal_exists_mem_orthogonal_span_ne_leastCommonDenominator_
           C * exp (-c * Fintype.card m) := by
   obtain ⟨δ, hδ, -, ρ, hρ, -, a, ha, hcomp⟩ :=
     exists_measureReal_exists_mem_orthogonal_span_ne_isCompressibleVector_le K
-  obtain ⟨b, η, μ, c₁, M, hbK, hη, hηK, hμ, hμδ, hc₁, hc₁b, hc₁K, hc₁δ, hc₁1, hM, hμM⟩ :=
-    exists_structure_constants K hδ (NNReal.coe_pos.2 hρ)
+  obtain ⟨b, η, μ, c₁, M, hbK, hM, hC⟩ := exists_structure_constants K hδ (NNReal.coe_pos.2 hρ)
   set c : ℝ := min (min c₁ μ) (min (ρ : ℝ) (min a 1 / 2))
-  have hc : 0 < c := lt_min (lt_min hc₁ hμ) (lt_min hρ (by positivity))
+  have hc : 0 < c := lt_min (lt_min hC.c₁_pos hC.μ_pos) (lt_min hρ (by positivity))
   refine ⟨c, 8 * exp (η⁻¹ ^ 2), hc, by positivity, ?_⟩
   intro Ω m n _ _ _ P A ν hind hA hmom hν hdim i
   have := hind.isProbabilityMeasure
@@ -709,14 +703,15 @@ theorem exists_measureReal_exists_mem_orthogonal_span_ne_leastCommonDenominator_
   · -- In small dimensions, `N < η⁻²`, the bound is at least one.
     have hc1 : c ≤ 1 := (min_le_right _ _).trans ((min_le_right _ _).trans
       ((div_le_div_of_nonneg_right (min_le_right _ _) zero_le_two).trans (by norm_num)))
-    exact measureReal_le_one.trans (one_le_mul_exp_inv_sq_mul_exp hη hc1 hηN)
+    exact measureReal_le_one.trans (one_le_mul_exp_inv_sq_mul_exp hC.η_pos hc1 hηN)
   -- Smaller tolerances and a larger threshold reduce to the version with explicit constants.
   refine (measureReal_mono (fun ω hω ↦ ?_) (measure_ne_top _ _)).trans
     ((measureReal_exists_mem_orthogonal_span_ne_leastCommonDenominator_lt_le_add hind hA hmom hν
-      hdim i (ρ := ρ) hbK hδ hηK hηN hμ.le hμδ hc₁ hc₁b hc₁K hc₁δ hc₁1 hM hμM).trans ?_)
+      hdim i hbK hC hηN hM).trans ?_)
   · obtain ⟨x, hx, hx1, hxL⟩ := hω
     have hcc₁ : c ≤ c₁ := (min_le_left _ _).trans (min_le_left _ _)
     have hcμ : c ≤ μ := (min_le_left _ _).trans (min_le_right _ _)
+    have hc₁ := hC.c₁_pos
     refine ⟨x, hx, hx1, lt_of_le_of_lt (leastCommonDenominator_anti (by gcongr)
       ((min_le_right _ _).trans (min_le_left _ _))) (hxL.trans_le (ENNReal.ofReal_le_ofReal ?_))⟩
     gcongr

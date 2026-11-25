@@ -104,7 +104,9 @@ theorem measureReal_norm_toEuclideanLin_lt_mul_sqrt_le_of_ofReal_le_leastCommonD
       ((hrow.measureReal_abs_sum_mul_sub_le_le_of_ofReal_le_leastCommonDenominator (hμ i)
         (hb i) hx hγ hL hLx 0 (ht.trans hr)).trans_eq ?_)
     · rw [Set.mem_ofPred_eq] at hω ⊢
-      simpa [dotProduct, mul_comm, Real.norm_eq_abs] using hω.le
+      rw [dotProduct_comm, Real.norm_eq_abs] at hω
+      rw [sub_zero]
+      exact hω.le
     · ring
   have hrows := hind.matrix_row fun i j ↦ (hμ i j).aemeasurable
   refine (hrows.measureReal_norm_toEuclideanLin_lt_mul_sqrt_le x ht hsmall).trans_eq ?_

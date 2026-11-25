@@ -25,10 +25,10 @@ fourth moment is not concentrated near any point: for `|r| ≤ 1` and every `v`,
 
 `P(|X - v| ≤ r) ≤ 1 - (1 - r²)² / (8 B)` whenever `E X⁴ ≤ B`
 
-(`TauCeti.measureReal_abs_sub_le_le_one_sub_div`). Bounds of this kind on the concentration
-function `sup_v P(|X - v| ≤ r)` of the entries are the input of small-ball estimates for sums of
-independent random variables, and so of lower bounds for the least singular value of random
-matrices. The radius must be below `1` for the bound to be informative: a variable equal to
+(`MeasureTheory.MemLp.measureReal_abs_sub_le_le_one_sub_div`). Bounds of this kind on the
+concentration function `sup_v P(|X - v| ≤ r)` of the entries are the input of small-ball estimates
+for sums of independent random variables, and so of lower bounds for the least singular value of
+random matrices. The radius must be below `1` for the bound to be informative: a variable equal to
 `±(1 - δ)` with probability close to `1` has `E X² ≥ 1` for a suitable small mass far away,
 yet puts almost all of its mass in the open interval of radius `1` around `0`.
 
@@ -87,6 +87,12 @@ theorem one_sub_sq_mul_sq_integral_le_integral_sq_mul_measureReal_lt
         (setIntegral_le_integral hZ.integrable_sq (.of_forall fun _ ↦ sq_nonneg _))
         measureReal_nonneg
     _ = _ := mul_comm _ _
+
+end TauCeti
+
+namespace MeasureTheory.MemLp
+
+variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
 
 /-- The moments of `Z = (X - v)²` for a centred `X` with `E X² ≥ 1` and `E X⁴ ≤ B`: the bound
 `B` is at least `1`, and `Z` is square integrable with `E Z = E X² + v²` and
@@ -151,7 +157,7 @@ theorem measureReal_abs_sub_le_le_one_sub_div [IsProbabilityMeasure μ] {X : Ω 
   rw [hE] at hEZ
   have hE1 : 1 + v ^ 2 ≤ E := by rw [hEZ]; linarith
   have hEpos : 0 < E := by nlinarith [sq_nonneg v, hE1]
-  have hpz := one_sub_sq_mul_sq_integral_le_integral_sq_mul_measureReal_lt
+  have hpz := TauCeti.one_sub_sq_mul_sq_integral_le_integral_sq_mul_measureReal_lt
     (.of_forall fun _ ↦ sq_nonneg _) hZ measure_univ.le (θ := r ^ 2 / E) (by positivity)
     ((div_le_one hEpos).2 (by linarith [sq_nonneg v, hE1]))
   have hset : {ω | r ^ 2 / E * E < (X ω - v) ^ 2} = {ω | |X ω - v| ≤ r}ᶜ := by
@@ -179,4 +185,4 @@ theorem measureReal_abs_sub_le_le_one_sub_div [IsProbabilityMeasure μ] {X : Ω 
   rw [le_sub_comm, div_le_iff₀ (by positivity)]
   linarith
 
-end TauCeti
+end MeasureTheory.MemLp
