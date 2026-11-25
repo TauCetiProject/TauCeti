@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.RelativeEigenvalues.Sorted
+import TauCeti.Analysis.Matrix.PosDef
 import TauCeti.LinearAlgebra.Dimension.CardEqFinrank
 
 /-!
@@ -18,8 +19,10 @@ then `λ_{h_i}[a_i] → λ_{h₀}[a₀]` (`TauCeti.tendsto_relEigenvalueVector`)
 (`LinearMap.IsSymm.abs_relEigenvalues_sub_le_opNorm`) covers a fixed reference inner product only;
 here the reference form moves, as a Hermitian metric does from point to point.
 
-The proof is a compactness argument in the coordinates of a basis. Near `h₀`, the forms `h_i` are
-bounded below by a fixed multiple of the squared coordinate norm, so the `h_i`-orthonormal
+The proof is a compactness argument on the Gram matrices (`LinearMap.toMatrix₂`) of the forms in a
+basis. Positivity of the real part of a matrix form on nonzero vectors is an open condition
+(`TauCeti.isOpen_setOfPred_re_dotProduct_pos`), so near `h₀` the forms `h_i` still dominate a fixed
+multiple of the squared coordinates and fixed multiples of `± a_i`. Hence the `h_i`-orthonormal
 eigenvector families of the `a_i` and the eigenvalue vectors stay bounded. Along any ultrafilter on
 which the eigenvalue vectors converge to some `μ`, the eigenvector families have a limit point,
 which shows that `μ` is an antitone eigenvalue vector of `a₀` relative to `h₀`, so `μ = λ_{h₀}[a₀]`
@@ -35,7 +38,7 @@ by uniqueness (`TauCeti.IsRelEigenvalueVector.eq_of_antitone`).
 
 public section
 
-open Filter Module Metric Topology
+open Filter Matrix Module Metric Topology
 
 noncomputable section
 
@@ -47,111 +50,101 @@ section Coordinates
 
 variable {m : ℕ}
 
-/-- The sesquilinear form with Gram matrix `G`, in coordinates. -/
-private def coordForm (G : Fin m → Fin m → 𝕜) (p q : Fin m → 𝕜) : 𝕜 :=
-  ∑ k, ∑ l, starRingEnd 𝕜 (p k) * q l * G k l
+/-- A sesquilinear form in the coordinates of a basis, through its Gram matrix. -/
+private theorem apply_eq_star_dotProduct_toMatrix₂_mulVec (b : Basis (Fin m) 𝕜 E)
+    (s : E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜) (u v : E) :
+    s u v = star (b.equivFun u) ⬝ᵥ LinearMap.toMatrix₂ b b s *ᵥ b.equivFun v :=
+  apply_eq_dotProduct_toMatrix₂_mulVec b b s u v
 
-private theorem apply_eq_coordForm (b : Basis (Fin m) 𝕜 E) (s : E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜)
-    (u v : E) : s u v = coordForm (fun k l ↦ s (b k) (b l)) (b.equivFun u) (b.equivFun v) := by
-  conv_lhs => rw [← b.sum_equivFun u, ← b.sum_equivFun v]
-  simp only [coordForm, map_sum, LinearMap.sum_apply, map_smulₛₗ, LinearMap.smul_apply,
-    smul_eq_mul, Finset.mul_sum, RingHom.id_apply]
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ ?_
-  ring
+/-- Positivity of the real part of a form on nonzero vectors, read on its Gram matrix. -/
+private theorem forall_re_pos_iff_toMatrix₂ (b : Basis (Fin m) 𝕜 E) (s : E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜) :
+    (∀ v, v ≠ 0 → 0 < RCLike.re (s v v)) ↔
+      ∀ p, p ≠ 0 → 0 < RCLike.re (star p ⬝ᵥ LinearMap.toMatrix₂ b b s *ᵥ p) := by
+  refine ⟨fun hs p hp ↦ ?_, fun hs v hv ↦ ?_⟩
+  · simpa only [apply_eq_star_dotProduct_toMatrix₂_mulVec b, LinearEquiv.apply_symm_apply] using
+      hs _ (b.equivFun.symm.map_ne_zero_iff.2 hp)
+  · rw [apply_eq_star_dotProduct_toMatrix₂_mulVec b]
+    exact hs _ (by simpa using hv)
 
-private theorem coordForm_sub (G G' : Fin m → Fin m → 𝕜) (p : Fin m → 𝕜) :
-    coordForm (G - G') p p = coordForm G p p - coordForm G' p p := by
-  simp only [coordForm, Pi.sub_apply, mul_sub, Finset.sum_sub_distrib]
+/-- Pointwise convergence of forms gives convergence of their Gram matrices. -/
+private theorem tendsto_toMatrix₂ {ι : Type*} {l : Filter ι} (b : Basis (Fin m) 𝕜 E)
+    {s : ι → E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜} {s₀ : E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜}
+    (hs : ∀ u v, Tendsto (fun i ↦ s i u v) l (𝓝 (s₀ u v))) :
+    Tendsto (fun i ↦ LinearMap.toMatrix₂ b b (s i)) l (𝓝 (LinearMap.toMatrix₂ b b s₀)) :=
+  tendsto_pi_nhds.2 fun k ↦ tendsto_pi_nhds.2 fun k' ↦ by
+    simpa only [LinearMap.toMatrix₂_apply] using hs (b k) (b k')
 
-private theorem coordForm_smul (G : Fin m → Fin m → 𝕜) (t : 𝕜) (p : Fin m → 𝕜) :
-    coordForm G (t • p) (t • p) = (starRingEnd 𝕜 t * t) * coordForm G p p := by
-  simp only [coordForm, Pi.smul_apply, smul_eq_mul, map_mul, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ ?_
-  ring
+/-- If the form of `G₀` has positive real part on nonzero vectors, and `G i → G₀`, `D i → D₀`,
+then so has the form of `G i + t • D i`, eventually, for one `t > 0`. -/
+private theorem exists_pos_eventually_re_add_smul_pos {ι : Type*} {l : Filter ι}
+    {G D : ι → Matrix (Fin m) (Fin m) 𝕜} {G₀ D₀ : Matrix (Fin m) (Fin m) 𝕜}
+    (hG : Tendsto G l (𝓝 G₀)) (hD : Tendsto D l (𝓝 D₀))
+    (hG₀ : ∀ p, p ≠ 0 → 0 < RCLike.re (star p ⬝ᵥ G₀ *ᵥ p)) :
+    ∃ t > (0 : ℝ), ∀ᶠ i in l, ∀ p, p ≠ 0 →
+      0 < RCLike.re (star p ⬝ᵥ G i *ᵥ p) + t * RCLike.re (star p ⬝ᵥ D i *ᵥ p) := by
+  have hφ : Tendsto (fun x : ℝ × ι ↦ G x.2 + x.1 • D x.2) (𝓝 0 ×ˢ l) (𝓝 G₀) := by
+    simpa using (hG.comp tendsto_snd).add
+      ((tendsto_fst : Tendsto (fun x : ℝ × ι ↦ x.1) _ (𝓝 0)).smul (hD.comp tendsto_snd))
+  obtain ⟨T, hT, L, hL, hTL⟩ := eventually_prod_iff.1
+    (hφ.eventually (isOpen_setOfPred_re_dotProduct_pos.mem_nhds hG₀))
+  obtain ⟨t, hTt, ht⟩ :=
+    ((hT.filter_mono nhdsWithin_le_nhds).and (self_mem_nhdsWithin (s := Set.Ioi (0 : ℝ)))).exists
+  refine ⟨t, ht, hL.mono fun i hi p hp ↦ ?_⟩
+  have := hTL hTt hi p hp
+  simpa only [add_mulVec, smul_mulVec, dotProduct_add, dotProduct_smul, map_add,
+    RCLike.smul_re] using this
 
-private theorem norm_coordForm_le (G : Fin m → Fin m → 𝕜) (p : Fin m → 𝕜) :
-    ‖coordForm G p p‖ ≤ (∑ k, ∑ l, ‖G k l‖) * ‖p‖ ^ 2 := by
-  refine (norm_sum_le _ _).trans ?_
-  rw [Finset.sum_mul]
-  refine Finset.sum_le_sum fun k _ ↦ (norm_sum_le _ _).trans ?_
-  rw [Finset.sum_mul]
-  refine Finset.sum_le_sum fun l _ ↦ ?_
-  rw [norm_mul, norm_mul, RCLike.norm_conj, sq]
-  have hk := norm_le_pi_norm p k
-  have hl := norm_le_pi_norm p l
-  have := mul_le_mul hk hl (norm_nonneg _) (norm_nonneg _)
-  nlinarith [norm_nonneg (G k l)]
+/-- The real part of `star p ⬝ᵥ p` bounds the square of each coordinate of `p`. -/
+private theorem norm_sq_le_re_star_dotProduct_self (p : Fin m → 𝕜) (k : Fin m) :
+    ‖p k‖ ^ 2 ≤ RCLike.re (star p ⬝ᵥ p) := by
+  have : RCLike.re (star p ⬝ᵥ p) = ∑ l, ‖p l‖ ^ 2 := by
+    simp [dotProduct, RCLike.conj_mul]
+  rw [this]
+  exact Finset.single_le_sum (f := fun l ↦ ‖p l‖ ^ 2) (fun _ _ ↦ sq_nonneg _)
+    (Finset.mem_univ k)
 
-private theorem tendsto_coordForm {ι : Type*} {l : Filter ι} {G : ι → Fin m → Fin m → 𝕜}
-    {G₀ : Fin m → Fin m → 𝕜} {p q : ι → Fin m → 𝕜} {p₀ q₀ : Fin m → 𝕜}
-    (hG : ∀ k k', Tendsto (fun i ↦ G i k k') l (𝓝 (G₀ k k'))) (hp : Tendsto p l (𝓝 p₀))
-    (hq : Tendsto q l (𝓝 q₀)) :
-    Tendsto (fun i ↦ coordForm (G i) (p i) (q i)) l (𝓝 (coordForm G₀ p₀ q₀)) :=
-  tendsto_finsetSum _ fun k _ ↦ tendsto_finsetSum _ fun k' _ ↦
-    ((((RCLike.continuous_conj.tendsto _).comp (((continuous_apply k).tendsto _).comp hp)).mul
-      (((continuous_apply k').tendsto _).comp hq))).mul (hG k k')
+/-- A vector `q` with `star q ⬝ᵥ G *ᵥ q = 1` has norm at most `1 + c⁻¹` when `G - c • 1` still has
+a form with positive real part on nonzero vectors. -/
+private theorem norm_le_of_star_dotProduct_mulVec_eq_one {G : Matrix (Fin m) (Fin m) 𝕜} {c : ℝ}
+    (hc : 0 < c) (hG : ∀ p, p ≠ 0 →
+      0 < RCLike.re (star p ⬝ᵥ G *ᵥ p) + c * RCLike.re (star p ⬝ᵥ (-1 : Matrix _ _ 𝕜) *ᵥ p))
+    {q : Fin m → 𝕜} (hq : star q ⬝ᵥ G *ᵥ q = 1) : ‖q‖ ≤ 1 + c⁻¹ := by
+  have h1 := hG q (by rintro rfl; simp at hq)
+  simp only [neg_mulVec, one_mulVec, dotProduct_neg, map_neg, hq, RCLike.one_re] at h1
+  refine (pi_norm_le_iff_of_nonneg (by positivity)).2 fun k ↦ ?_
+  have h2 := norm_sq_le_re_star_dotProduct_self q k
+  have h3 : ‖q k‖ ^ 2 ≤ c⁻¹ := by
+    rw [← one_div, le_div_iff₀ hc]
+    nlinarith [mul_le_mul_of_nonneg_right h2 hc.le]
+  nlinarith [norm_nonneg (q k)]
 
-private theorem continuous_coordForm (G : Fin m → Fin m → 𝕜) :
-    Continuous fun p ↦ coordForm G p p :=
-  continuous_iff_continuousAt.2 fun _ ↦
-    tendsto_coordForm (fun _ _ ↦ tendsto_const_nhds) tendsto_id tendsto_id
-
-/-- A positive definite form is bounded below on coordinates by a multiple of the squared norm. -/
-private theorem exists_pos_mul_sq_le_re_coordForm {G : Fin m → Fin m → 𝕜}
-    (hG : ∀ p, p ≠ 0 → 0 < RCLike.re (coordForm G p p)) :
-    ∃ c > 0, ∀ p, c * ‖p‖ ^ 2 ≤ RCLike.re (coordForm G p p) := by
-  -- the scaling `p = ‖p‖ • (‖p‖⁻¹ • p)` reduces the bound to the unit sphere
-  have hscale (p : Fin m → 𝕜) (hp : p ≠ 0) :
-      RCLike.re (coordForm G p p) =
-        ‖p‖ ^ 2 * RCLike.re (coordForm G (((‖p‖⁻¹ : ℝ) : 𝕜) • p) (((‖p‖⁻¹ : ℝ) : 𝕜) • p)) := by
-    rw [coordForm_smul, RCLike.conj_ofReal, ← RCLike.ofReal_mul, RCLike.re_ofReal_mul]
-    field_simp
-  have hsphere (p : Fin m → 𝕜) (hp : p ≠ 0) : ((‖p‖⁻¹ : ℝ) : 𝕜) • p ∈ sphere 0 1 := by
-    rw [mem_sphere_zero_iff_norm, norm_smul, RCLike.norm_ofReal, abs_inv, abs_norm,
-      inv_mul_cancel₀ (norm_ne_zero_iff.2 hp)]
-  rcases (sphere (0 : Fin m → 𝕜) 1).eq_empty_or_nonempty with hS | hS
-  · refine ⟨1, one_pos, fun p ↦ ?_⟩
-    rcases eq_or_ne p 0 with rfl | hp
-    · simp [coordForm]
-    · exact absurd (hS ▸ hsphere p hp) (Set.notMem_empty _)
-  obtain ⟨p₀, hp₀, hmin⟩ := (isCompact_sphere (0 : Fin m → 𝕜) 1).exists_isMinOn hS
-    (RCLike.continuous_re.comp (continuous_coordForm G)).continuousOn
-  have hp₀0 : p₀ ≠ 0 := ne_zero_of_mem_unit_sphere ⟨p₀, hp₀⟩
-  refine ⟨_, hG p₀ hp₀0, fun p ↦ ?_⟩
-  rcases eq_or_ne p 0 with rfl | hp
-  · simp [coordForm]
-  rw [hscale p hp, mul_comm]
-  exact mul_le_mul_of_nonneg_left (hmin (hsphere p hp)) (sq_nonneg _)
+/-- If `star q ⬝ᵥ G *ᵥ q = 1` and `star q ⬝ᵥ A *ᵥ q = x`, then `‖x‖ ≤ t⁻¹ + t'⁻¹`
+when `G + t • A` and `G - t' • A` still have forms with positive real part on nonzero vectors. -/
+private theorem norm_le_of_star_dotProduct_mulVec_eq {G A : Matrix (Fin m) (Fin m) 𝕜}
+    {t t' : ℝ} (ht : 0 < t) (ht' : 0 < t')
+    (hup : ∀ p, p ≠ 0 → 0 < RCLike.re (star p ⬝ᵥ G *ᵥ p) + t * RCLike.re (star p ⬝ᵥ A *ᵥ p))
+    (hdown : ∀ p, p ≠ 0 → 0 < RCLike.re (star p ⬝ᵥ G *ᵥ p) + t' * RCLike.re (star p ⬝ᵥ -A *ᵥ p))
+    {q : Fin m → 𝕜} (hq : star q ⬝ᵥ G *ᵥ q = 1) {x : ℝ} (hx : star q ⬝ᵥ A *ᵥ q = x) :
+    ‖x‖ ≤ t⁻¹ + t'⁻¹ := by
+  have hq0 : q ≠ 0 := by rintro rfl; simp at hq
+  have h1 := hup q hq0
+  have h2 := hdown q hq0
+  simp only [neg_mulVec, dotProduct_neg, map_neg, hq, hx, RCLike.one_re, RCLike.ofReal_re]
+    at h1 h2
+  have h3 : -x < t⁻¹ := by
+    rw [← one_div, lt_div_iff₀ ht]
+    linarith
+  have h4 : x < t'⁻¹ := by
+    rw [← one_div, lt_div_iff₀ ht']
+    linarith
+  rw [Real.norm_eq_abs, abs_le]
+  constructor <;> linarith [inv_pos.2 ht, inv_pos.2 ht']
 
 end Coordinates
 
 section Limits
 
 variable {ι : Type*} {h a : ι → E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜} {h₀ a₀ : E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜}
-
-/-- Near a positive definite `h₀`, the forms `h i` are bounded below on coordinates by a fixed
-multiple of the squared norm. -/
-private theorem exists_eventually_le_re_coordForm {m : ℕ} {l : Filter ι} (b : Basis (Fin m) 𝕜 E)
-    (hpos₀ : ∀ v, v ≠ 0 → 0 < RCLike.re (h₀ v v))
-    (hhl : ∀ u v, Tendsto (fun i ↦ h i u v) l (𝓝 (h₀ u v))) :
-    ∃ c > 0, ∀ᶠ i in l, ∀ p, c * ‖p‖ ^ 2 ≤
-      RCLike.re (coordForm (fun k k' ↦ h i (b k) (b k')) p p) := by
-  set G : ι → Fin m → Fin m → 𝕜 := fun i k k' ↦ h i (b k) (b k')
-  set G₀ : Fin m → Fin m → 𝕜 := fun k k' ↦ h₀ (b k) (b k')
-  obtain ⟨c, hc, hc₀⟩ := exists_pos_mul_sq_le_re_coordForm (G := G₀) fun p hp ↦ by
-    have := hpos₀ _ (b.equivFun.symm.map_ne_zero_iff.2 hp)
-    rwa [apply_eq_coordForm b, LinearEquiv.apply_symm_apply] at this
-  have hdist : Tendsto (fun i ↦ ∑ k, ∑ k', ‖(G i - G₀) k k'‖) l (𝓝 0) := by
-    have := tendsto_finsetSum Finset.univ fun k _ ↦ tendsto_finsetSum Finset.univ fun k' _ ↦
-      ((hhl (b k) (b k')).sub_const (G₀ k k')).norm
-    simpa [G, G₀] using this
-  refine ⟨c / 2, half_pos hc, ?_⟩
-  filter_upwards [hdist.eventually (gt_mem_nhds (half_pos hc))] with i hi p
-  have h1 := (RCLike.abs_re_le_norm (coordForm (G i - G₀) p p)).trans
-    ((norm_coordForm_le _ p).trans (mul_le_mul_of_nonneg_right hi.le (sq_nonneg _)))
-  rw [coordForm_sub, map_sub] at h1
-  linarith [hc₀ p, (abs_le.1 h1).1]
 
 /-- **The eigenvalue-vector relation is closed.** If `h i`-orthonormal families `B i`
 diagonalizing `a i` with diagonal `M i` have converging coordinates, and `M i → μ`, then `μ` is an
@@ -173,10 +166,12 @@ private theorem isRelEigenvalueVector_of_tendsto {F : Filter ι} [F.NeBot]
   have hlim (s : ι → E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜) (s₀ : E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜)
       (hs : ∀ u v, Tendsto (fun i ↦ s i u v) F (𝓝 (s₀ u v))) (k k') :
       Tendsto (fun i ↦ s i (B i k) (B i k')) F (𝓝 (s₀ (B₀ k) (B₀ k'))) := by
-    rw [apply_eq_coordForm b s₀ (B₀ k) (B₀ k')]
-    refine (tendsto_coordForm (G := fun i k k' ↦ s i (b k) (b k'))
-      (fun _ _ ↦ hs _ _) (hcoord k) (hcoord k')).congr fun i ↦ ?_
-    exact (apply_eq_coordForm b (s i) _ _).symm
+    rw [apply_eq_star_dotProduct_toMatrix₂_mulVec b s₀]
+    refine (((by fun_prop : Continuous fun z : Matrix (Fin (finrank 𝕜 E)) (Fin (finrank 𝕜 E)) 𝕜 ×
+      (Fin (finrank 𝕜 E) → 𝕜) × (Fin (finrank 𝕜 E) → 𝕜) ↦ star z.2.1 ⬝ᵥ z.1 *ᵥ z.2.2).tendsto
+        _).comp ((tendsto_toMatrix₂ b hs).prodMk_nhds ((hcoord k).prodMk_nhds (hcoord k')))).congr
+      fun i ↦ ?_
+    exact (apply_eq_star_dotProduct_toMatrix₂_mulVec b (s i) _ _).symm
   refine (isRelEigenvalueVector_def _ _ _).2 ⟨B₀, fun k k' ↦ ⟨?_, ?_⟩⟩
   · refine tendsto_nhds_unique (hlim h h₀ hhl k k') (tendsto_const_nhds.congr' ?_)
     filter_upwards [hB] with i hi using ((hi k k').1).symm
@@ -231,16 +226,18 @@ theorem tendsto_relEigenvalueVector {l : Filter ι}
   set n := finrank 𝕜 E
   set b := Module.finBasis 𝕜 E
   set M := fun i ↦ relEigenvalueVector (h i · ·) (a i · ·)
-  obtain ⟨c, hc, hlow⟩ := exists_eventually_le_re_coordForm b hpos₀ hhl
-  -- eventually `a i` is bounded above by `K` on coordinates
-  set K := ∑ k, ∑ k', ‖a₀ (b k) (b k')‖ + 1
-  have hK : ∀ᶠ i in l, ∑ k, ∑ k', ‖a i (b k) (b k')‖ < K :=
-    (tendsto_finsetSum Finset.univ fun k _ ↦ tendsto_finsetSum Finset.univ fun k' _ ↦
-      (hal (b k) (b k')).norm).eventually (gt_mem_nhds (lt_add_one _))
-  have hpos : ∀ᶠ i in l, ∀ v, v ≠ 0 → 0 < RCLike.re (h i v v) := by
-    filter_upwards [hlow] with i hi v hv
-    rw [apply_eq_coordForm b]
-    exact (mul_pos hc (pow_pos (norm_pos_iff.2 (by simpa using hv)) 2)).trans_le (hi _)
+  -- Gram matrices of the forms in the basis `b`
+  have hG := tendsto_toMatrix₂ b hhl
+  have hA := tendsto_toMatrix₂ b hal
+  have hG₀ := (forall_re_pos_iff_toMatrix₂ b h₀).1 hpos₀
+  -- eventually `h i` dominates `c` times the coordinate form and `t`, `t'` times `± a i`
+  obtain ⟨c, hc, hlow⟩ := exists_pos_eventually_re_add_smul_pos hG
+    (tendsto_const_nhds (x := -1)) hG₀
+  obtain ⟨t, ht, hup⟩ := exists_pos_eventually_re_add_smul_pos hG hA hG₀
+  obtain ⟨t', ht', hdown⟩ := exists_pos_eventually_re_add_smul_pos hG hA.neg hG₀
+  have hpos : ∀ᶠ i in l, ∀ v, v ≠ 0 → 0 < RCLike.re (h i v v) :=
+    (hG.eventually (isOpen_setOfPred_re_dotProduct_pos.mem_nhds hG₀)).mono fun i hi ↦
+      (forall_re_pos_iff_toMatrix₂ b (h i)).2 hi
   -- eigenvector families `B i` of `a i` relative to `h i`, with coordinates `Q i`
   set P : ι → (Fin n → E) → Prop := fun i B ↦ ∀ k k',
     h i (B k) (B k') = (if k = k' then 1 else 0) ∧
@@ -251,24 +248,19 @@ theorem tendsto_relEigenvalueVector {l : Filter ι}
     exact Classical.epsilon_spec ((isRelEigenvalueVector_def _ _ _).1
       (isRelEigenvalueVector_relEigenvalueVector hhi hposi hai))
   set Q : ι → Fin n → Fin n → 𝕜 := fun i k ↦ b.equivFun (B i k)
-  have hQsq : ∀ᶠ i in l, ∀ k, ‖Q i k‖ ^ 2 ≤ c⁻¹ := by
-    filter_upwards [hB, hlow] with i hBi hlowi k
-    have h1 := hlowi (Q i k)
-    rw [show coordForm _ (Q i k) (Q i k) = 1 by
-      rw [← apply_eq_coordForm b]; simpa using (hBi k k).1, RCLike.one_re] at h1
-    rwa [← le_div_iff₀' hc, one_div] at h1
+  have hQ1 : ∀ᶠ i in l, ∀ k, star (Q i k) ⬝ᵥ LinearMap.toMatrix₂ b b (h i) *ᵥ Q i k = 1 ∧
+      star (Q i k) ⬝ᵥ LinearMap.toMatrix₂ b b (a i) *ᵥ Q i k = M i k := by
+    filter_upwards [hB] with i hBi k
+    simp only [Q, ← apply_eq_star_dotProduct_toMatrix₂_mulVec b]
+    simpa using hBi k k
   have hQ : ∀ᶠ i in l, Q i ∈ closedBall 0 (1 + c⁻¹) := by
-    filter_upwards [hQsq] with i hi
+    filter_upwards [hlow, hQ1] with i hlowi hQi
     rw [mem_closedBall_zero_iff, pi_norm_le_iff_of_nonneg (by positivity)]
-    exact fun k ↦ by nlinarith [hi k, norm_nonneg (Q i k)]
-  have hM : ∀ᶠ i in l, M i ∈ closedBall 0 (K * c⁻¹) := by
-    filter_upwards [hB, hQsq, hK] with i hBi hQi hKi
+    exact fun k ↦ norm_le_of_star_dotProduct_mulVec_eq_one hc hlowi (hQi k).1
+  have hM : ∀ᶠ i in l, M i ∈ closedBall 0 (t⁻¹ + t'⁻¹) := by
+    filter_upwards [hup, hdown, hQ1] with i hupi hdowni hQi
     rw [mem_closedBall_zero_iff, pi_norm_le_iff_of_nonneg (by positivity)]
-    intro k
-    have h1 : (M i k : 𝕜) = coordForm (fun k k' ↦ a i (b k) (b k')) (Q i k) (Q i k) := by
-      rw [← apply_eq_coordForm b]; simpa using ((hBi k k).2).symm
-    rw [Real.norm_eq_abs, ← RCLike.norm_ofReal (K := 𝕜), h1]
-    exact (norm_coordForm_le _ _).trans (mul_le_mul hKi.le (hQi k) (sq_nonneg _) (by positivity))
+    exact fun k ↦ norm_le_of_star_dotProduct_mulVec_eq ht ht' hupi hdowni (hQi k).1 (hQi k).2
   -- every cluster point of the eigenvalue vectors is `λ_{h₀}[a₀]`
   exact (isCompact_closedBall _ _).tendsto_nhds_of_unique_mapClusterPt hM fun μ _ hμ ↦
     eq_relEigenvalueVector_of_mapClusterPt b hB hQ hμ hhl hal
