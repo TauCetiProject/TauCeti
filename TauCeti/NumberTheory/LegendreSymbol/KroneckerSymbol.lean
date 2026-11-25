@@ -303,6 +303,10 @@ theorem kroneckerSym_sq_one {a b : ℤ} (h : a.gcd b = 1) : kroneckerSym (a ^ 2)
   · simp [h1]
   · simp [h1]
 
+/-- `(a / b) ^ 2 = 1` when `a` and `b` are coprime: the symbol is then `±1`. -/
+theorem sq_kroneckerSym_eq_one {a b : ℤ} (h : a.gcd b = 1) : kroneckerSym a b ^ 2 = 1 := by
+  rw [← kroneckerSym_pow_left, kroneckerSym_sq_one h]
+
 /-- For a square integer `a` coprime to `b`, `(a / b) = 1`. -/
 theorem kroneckerSym_eq_one_of_isSquare {a b : ℤ} (ha : IsSquare a) (h : a.gcd b = 1) :
     kroneckerSym a b = 1 := by

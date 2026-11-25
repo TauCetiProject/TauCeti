@@ -39,7 +39,11 @@ set, which is the form
 that Rellich--Kondrachov for `W^{1,p}_0(Ω)` consumes: extending by zero makes a function vanish off
 `Ω`, and its translation increments are controlled by `‖h‖ ‖∇u‖_p` through
 `TauCeti.W1p.eLpNorm_value_comp_add_sub_value_le_mul_enorm_gradient`. The corresponding theorem for
-`W^{1,p}(Ω)` additionally needs an extension operator and boundary regularity.
+`W^{1,p}(Ω)` additionally needs an extension operator and boundary regularity. For `C¹`
+functions the translation increments are controlled in the same way by the `Lᵖ` norm of the
+derivative (`ContDiff.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv`), so `C¹` functions vanishing
+off a fixed bounded set with uniformly bounded values and derivatives in `Lᵖ` form a totally
+bounded family (`TauCeti.totallyBounded_of_contDiff_of_eLpNorm_fderiv_le`).
 
 ## The proof
 
@@ -299,12 +303,12 @@ theorem totallyBounded_of_comp_add_sub_of_unifTight (hp' : p ≠ ∞)
   have hgB : ∀ i : S, ∀ x : E,
       ballAverage mu r ⇑(i : Lp F p mu) x ∈ closedBall (0 : F) Bₑ.toReal := fun i x => by
     rw [mem_closedBall, dist_zero_right]
-    have h := (enorm_ballAverage_le (r := r) hp hp' x).trans
+    have h := (enorm_ballAverage_le (r := r) hp x).trans
       (mul_le_mul' le_rfl (hbdd _ i.property))
     simpa [Bₑ, V] using ENNReal.toReal_mono hBₑt h
   -- The uniform equicontinuity of the ball averages, at the fixed scale `r`.
   have hequi : UniformEquicontinuous fun i : S => ballAverage mu r ⇑(i : Lp F p mu) :=
-    uniformEquicontinuous_ballAverage hp hp' (fun i => Lp.memLp (i : Lp F p mu))
+    uniformEquicontinuous_ballAverage hp (fun i => Lp.memLp (i : Lp F p mu))
       fun c hc => by
         obtain ⟨δ, hδ, hδS⟩ := htrans c hc
         exact ⟨δ, hδ, fun i => hδS _ i.property⟩

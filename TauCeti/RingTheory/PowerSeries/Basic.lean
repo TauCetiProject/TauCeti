@@ -12,7 +12,8 @@ public import Mathlib.RingTheory.PowerSeries.Basic
 
 Mathlib's `PowerSeries.constantCoeff` is the constant coefficient `S⟦X⟧ → S` as a ring
 homomorphism. This file records it as a homomorphism of `A`-algebras for any commutative semiring
-`A` over which `S` is an algebra: evaluation at `X = 0`.
+`A` over which `S` is an algebra: evaluation at `X = 0`. It also records how a change of
+coefficients `map f` acts on the constant coefficient.
 
 ## Main definitions
 
@@ -22,6 +23,10 @@ homomorphism. This file records it as a homomorphism of `A`-algebras for any com
 
 * `PowerSeries.constantCoeffAlgHom_comp_toAlgHom`: evaluation at `X = 0` is a retraction of the
   inclusion of constants.
+* `PowerSeries.constantCoeff_map`: a change of coefficients `map f` acts on the constant
+  coefficient by `f`, as `MvPowerSeries.constantCoeff_map` does for multivariate power series.
+* `PowerSeries.coeff_mul_of_ne_zero`: for `k ≠ 0`, the `Xᵏ`-coefficient of `f * g` is
+  `f₀ * gₖ + fₖ * g₀ + Σ_{0 < i < k} fᵢ * g_{k - i}`.
 -/
 
 public section
@@ -58,5 +63,32 @@ theorem constantCoeffAlgHom_comp_toAlgHom {S : Type*} [CommSemiring S] [Algebra 
   AlgHom.ext fun s ↦ by simp
 
 end ConstantCoeff
+
+section Map
+
+variable {R S : Type*} [Semiring R] [Semiring S]
+
+/-- A change of coefficients `map f` acts on the constant coefficient by `f`. -/
+@[simp]
+theorem constantCoeff_map (f : R →+* S) (φ : R⟦X⟧) :
+    constantCoeff (map f φ) = f (constantCoeff φ) := by
+  rw [← coeff_zero_eq_constantCoeff_apply, coeff_map, coeff_zero_eq_constantCoeff_apply]
+
+end Map
+
+section Coeff
+
+variable {R : Type*} [Semiring R]
+
+/-- For `k ≠ 0`, the `Xᵏ`-coefficient of `f * g` splits into the two end terms `f₀ * gₖ` and
+`fₖ * g₀` and the terms `fᵢ * g_{k - i}` with `0 < i < k`. -/
+theorem coeff_mul_of_ne_zero (f g : R⟦X⟧) {k : ℕ} (hk : k ≠ 0) :
+    coeff k (f * g) = constantCoeff f * coeff k g + coeff k f * constantCoeff g +
+      ∑ i ∈ Finset.Ioo 0 k, coeff i f * coeff (k - i) g := by
+  rw [coeff_mul, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk, Finset.sum_range_succ,
+    Finset.sum_range_eq_add_Ico _ (Nat.pos_of_ne_zero hk), ← Finset.Ico_add_one_left_eq_Ioo]
+  simp [add_right_comm]
+
+end Coeff
 
 end PowerSeries

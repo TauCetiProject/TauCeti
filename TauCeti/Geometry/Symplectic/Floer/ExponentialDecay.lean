@@ -12,12 +12,11 @@ import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
-import TauCeti.MeasureTheory.Integral.Bochner.Set
-import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
+import TauCeti.Analysis.SpecificLimits.ShiftDoubling
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
+import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.FiniteDimensional
-import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
 # Exponential decay and exponential convergence at a nondegenerate end
@@ -63,10 +62,17 @@ converge to `x` exponentially fast: eventually `‖u(s, t) - x(t)‖ ≤ C exp (
 uniformly within a constant times the square root of the energy of its slice
 (`TauCeti.SymplecticForm.exists_forall_norm_sub_le_mul_sqrt_setIntegral_floerEnergyDensity`), by
 the estimate for loops near a nondegenerate orbit and the Cauchy–Schwarz inequality. Over
-`[s, s + h] × [0, 1]` the energy is at most `C exp (-κ s)`, so some slice `σ ∈ [s, s + h]` has
-energy at most `C exp (-κ s) / h`, and the bound on `∂_s u` moves this estimate from `σ` back to
-`s` at a cost of `L h`. The step `h = exp (-κ s / 3)` balances the two terms and gives the rate
-`κ / 3`.
+`[s, s + h] × [0, 1]` the energy `W` is at most `C exp (-κ s)`, so some slice `σ ∈ [s, s + h]` has
+energy at most `W / h`
+(`TauCeti.SymplecticForm.exists_mem_Icc_mul_setIntegral_floerEnergyDensity_le`), and the bound on
+`∂_s u` moves the estimate from `σ` back to `s` at a cost of `L h`
+(`SymplecticForm.exists_forall_norm_sub_le_mul_add_mul_sqrt_setIntegral_floerEnergyDensity`).
+The step `h = exp (-κ s / 3)` balances the two terms and gives the rate `κ / 3`.
+
+The constants in these slice estimates depend only on `ω`, `H`, `x` and the tameness constants, not
+on the solution, and the estimates hold for solutions on any open set containing the relevant
+lines, so they also apply on finite necks
+(`TauCeti.Geometry.Symplectic.Floer.ExponentialDecay.Neck`).
 
 **Exponential decay of the derivatives.** For a `C³` Hamiltonian and a `C²` family `J_t(x)` tamed
 on a compact set containing the image of `u`, `∂ₛu` decays exponentially too: eventually
@@ -106,7 +112,10 @@ not treated here.
   difference near a nondegenerate orbit is bounded by the squared `L²` norm of the defect.
 * `TauCeti.SymplecticForm.exists_abs_hamiltonianAction_sub_le_mul_setIntegral_floerEnergyDensity`:
   the action defect of a loop of a Floer solution near a nondegenerate orbit is bounded by the
-  energy of its slice.
+  energy of its slice, with constants independent of the solution.
+* `SymplecticForm.exists_forall_norm_sub_le_mul_add_mul_sqrt_setIntegral_floerEnergyDensity`: a
+  loop of a Floer solution near a nondegenerate orbit is close to it in terms of the energy of a
+  window `[s, s + h]` and a bound on `∂_s u`.
 * `TauCeti.SymplecticForm.exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp`: the
   energy of a finite-energy Floer half-cylinder asymptotic to a nondegenerate orbit decays
   exponentially.
@@ -317,86 +326,85 @@ theorem exists_abs_hamiltonianAction_sub_le_of_nondegenerate (hH : ContDiff ℝ 
     _ = (B * C₀ / 2 + 3 / 2 * B * |L| * C₀ ^ 2) * N ^ 2 := by ring
     _ ≤ _ := mul_le_mul_of_nonneg_left hN2 (by positivity)
 
-variable {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V} {a c M : ℝ}
+variable {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V} {U : Set (ℝ × ℝ)} {a c M s : ℝ}
 
-/-- On a slice `s > a` of a `C¹` Floer solution with uniformly tame `J`, the squared `L²` norm of
-the defect `∂_t u - X_{H_t}(u)` is at most `(1 + M²) / c` times the energy of the slice. -/
+/-- On the slice at `s` of a `C¹` Floer solution with uniformly tame `J`, defined on an open set
+containing the line `{s} × ℝ`, the squared `L²` norm of the defect `∂_t u - X_{H_t}(u)` is at most
+`(1 + M²) / c` times the energy of the slice. -/
 private theorem integral_norm_sq_sub_le_mul_setIntegral_floerEnergyDensity
-    (hH : ContDiff ℝ 2 (uncurry H)) (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ))
-    (hc : 0 < c) (hJc : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v))
-    (hJM : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ∀ v, ‖J z v‖ ≤ M * ‖v‖)
-    (hfloer : ∀ z ∈ Ioi a ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
-      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
-    {s : ℝ} (hsa : a < s) :
+    (hH : ContDiff ℝ 2 (uncurry H)) (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U)
+    (hsU : ∀ t, (s, t) ∈ U) (hc : 0 < c)
+    (hJc : ∀ t ∈ Icc (0 : ℝ) 1, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J (s, t) v))
+    (hJM : ∀ t ∈ Icc (0 : ℝ) 1, ∀ v, ‖J (s, t) v‖ ≤ M * ‖v‖)
+    (hfloer : ∀ t ∈ Icc (0 : ℝ) 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J (s, t))
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u (s, t) : ℝ × ℝ →ₗ[ℝ] V)) :
     ∫ t in (0 : ℝ)..1, ‖fderiv ℝ u (s, t) (0, 1) -
       ω.hamiltonianVectorField (H t) (u (s, t))‖ ^ 2 ≤
       (1 + M ^ 2) / c *
         ∫ t in Icc (0 : ℝ) 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (s, t) := by
   set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u
-  have hmem (t : ℝ) : (s, t) ∈ Ioi a ×ˢ (univ : Set ℝ) := ⟨hsa, mem_univ t⟩
-  -- The energy density controls the defect of the loops pointwise.
-  have hdef (z : ℝ × ℝ) (hz : z ∈ Ioi a ×ˢ Icc 0 1) :
-      ‖fderiv ℝ u z (0, 1) - ω.hamiltonianVectorField (H z.2) (u z)‖ ^ 2 ≤
-        (1 + M ^ 2) / c * e z := by
+  -- The energy density controls the defect of the loop pointwise.
+  have hdef (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) :
+      ‖fderiv ℝ u (s, t) (0, 1) - ω.hamiltonianVectorField (H t) (u (s, t))‖ ^ 2 ≤
+        (1 + M ^ 2) / c * e (s, t) := by
     have h := ω.mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity hc.le
-      (hJc z hz) (hJM z hz) (hfloer z hz)
+      (hJc t ht) (hJM t ht) (hfloer t ht)
     rw [← sliceDefect_hamiltonianVectorField, sliceDefect_def] at h
     rw [div_mul_eq_mul_div, le_div_iff₀ hc]
     nlinarith
   have hslicec : Continuous fun t ↦ e (s, t) :=
-    (ω.continuousOn_floerEnergyDensity (isOpen_Ioi.prod isOpen_univ) hu contDiffOn_const
-      (contDiff_uncurry_cylindrical (hH.of_le (by norm_num))).contDiffOn).comp_continuous
-      (continuous_const.prodMk continuous_id) hmem
+    continuous_slice_of_continuousOn (ω.continuousOn_floerEnergyDensity hU hu contDiffOn_const
+      (contDiff_uncurry_cylindrical (hH.of_le (by norm_num))).contDiffOn) hsU
+  have hdefc : Continuous fun t ↦
+      ‖fderiv ℝ u (s, t) (0, 1) - ω.hamiltonianVectorField (H t) (u (s, t))‖ ^ 2 :=
+    (continuous_norm_sliceDefect_sq (X := fun t ↦ ω.hamiltonianVectorField (H t)) hU hu
+      (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous hsU).congr fun t ↦ by
+        rw [sliceDefect_def]
   rw [integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le zero_le_one,
     ← intervalIntegral.integral_const_mul]
-  refine integral_mono_on zero_le_one ?_
-    ((continuous_const.mul hslicec).intervalIntegrable _ _)
-    fun t ht ↦ hdef (s, t) ⟨hsa, ht⟩
-  exact ((continuous_norm_sliceDefect_sq (X := fun t ↦ ω.hamiltonianVectorField (H t)) hu
-    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous hsa).congr fun t ↦ by
-      rw [sliceDefect_def]).intervalIntegrable _ _
+  exact integral_mono_on zero_le_one (hdefc.intervalIntegrable _ _)
+    ((continuous_const.mul hslicec).intervalIntegrable _ _) hdef
 
 /-- **The action defect of a Floer slice near a nondegenerate orbit.** Let `H` be a `C²`
 Hamiltonian and let `x` be a nondegenerate orbit as in
-`TauCeti.SymplecticForm.exists_abs_hamiltonianAction_sub_le_of_nondegenerate`, and let
-`0 < c` and `M` be tameness constants. Then there are `δ > 0` and `K > 0`, depending only on `H`,
-`x`, `c` and `M`, with the following property. Let `u` be a `C¹` solution of the Floer equation
-`∂_s u + J (∂_t u - X_{H_t}(u)) = 0` on a half-cylinder `s > a`, with `1`-periodic loops and almost
-complex structures satisfying `c ‖v‖² ≤ ω(v, J z v)` and `‖J z v‖ ≤ M ‖v‖`. Then every loop
-`u(s, ·)` which is `δ`-close to `x` on `[0, 1]` has action within `K` times the energy of its
-slice: `|A_H(u(s, ·)) - A_H(x)| ≤ K ∫₀¹ e(s, t) dt`. -/
+`TauCeti.SymplecticForm.exists_abs_hamiltonianAction_sub_le_of_nondegenerate`, and let `c > 0` and
+`M` be tameness constants. Then there are `δ > 0` and `K > 0` with the following property. Let
+`u` be `C¹` on an open set containing the line `{s} × ℝ`, with `u(s, 1) = u(s, 0)`, solving the
+Floer equation `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` along the loop at `s` for almost complex
+structures satisfying `c ‖v‖² ≤ ω(v, J z v)` and `‖J z v‖ ≤ M ‖v‖` there. If the loop `u(s, ·)` is
+`δ`-close to `x` on `[0, 1]`, its action is within `K` times the energy of its slice:
+`|A_H(u(s, ·)) - A_H(x)| ≤ K ∫₀¹ e(s, t) dt`. The constants depend only on `ω`, `H`, `x`, `c` and
+`M`, not on `u`, `J` or `s`. -/
 theorem exists_abs_hamiltonianAction_sub_le_mul_setIntegral_floerEnergyDensity
-    (hH : ContDiff ℝ 2 (uncurry H)) (hc : 0 < c) (M : ℝ)
+    (hH : ContDiff ℝ 2 (uncurry H))
     (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hx1 : x 1 = x 0)
     (hnd : ∀ v, dysonSeriesLeft (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 v = v →
-      v = 0) :
-    ∃ δ > 0, ∃ K, 0 < K ∧ ∀ {a : ℝ} {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V},
-      ContDiffOn ℝ 1 u (Ioi a ×ˢ univ) → (∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1) →
-      (∀ z ∈ Ioi a ×ˢ Icc 0 1, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v)) →
-      (∀ z ∈ Ioi a ×ˢ Icc 0 1, ∀ v, ‖J z v‖ ≤ M * ‖v‖) →
-      (∀ z ∈ Ioi a ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
-        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V)) →
-      ∀ s, a < s → (∀ t ∈ Icc (0 : ℝ) 1, ‖u (s, t) - x t‖ ≤ δ) →
+      v = 0) (c M : ℝ) (hc : 0 < c) :
+    ∃ δ > 0, ∃ K, 0 < K ∧ ∀ {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V}
+      {U : Set (ℝ × ℝ)} {s : ℝ}, IsOpen U → ContDiffOn ℝ 1 u U → (∀ t, (s, t) ∈ U) →
+      u (s, 1) = u (s, 0) → (∀ t ∈ Icc (0 : ℝ) 1, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J (s, t) v)) →
+      (∀ t ∈ Icc (0 : ℝ) 1, ∀ v, ‖J (s, t) v‖ ≤ M * ‖v‖) →
+      (∀ t ∈ Icc (0 : ℝ) 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J (s, t))
+        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u (s, t) : ℝ × ℝ →ₗ[ℝ] V)) →
+      (∀ t ∈ Icc (0 : ℝ) 1, ‖u (s, t) - x t‖ ≤ δ) →
       |ω.hamiltonianAction H (fun t ↦ u (s, t)) - ω.hamiltonianAction H x| ≤
         K * ∫ t in Icc (0 : ℝ) 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (s, t) := by
   obtain ⟨δ, hδ, C₁, hC₁, hB⟩ := exists_abs_hamiltonianAction_sub_le_of_nondegenerate hH hx hx1 hnd
   refine ⟨δ, hδ, C₁ * ((1 + M ^ 2) / c) + 1, by positivity,
-    fun {a u J} hu hper hJc hJM hfloer s hsa hclose ↦ ?_⟩
+    fun {u J U s} hU hu hsU hu1 hJc hJM hfloer hclose ↦ ?_⟩
   set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u
   have hγ' : Continuous fun t ↦ fderiv ℝ u (s, t) (0, 1) :=
-    continuous_slice_of_continuousOn ((hu.continuousOn_fderiv_of_isOpen
-      (isOpen_Ioi.prod isOpen_univ) le_rfl).clm_apply continuousOn_const) hsa
+    continuous_slice_of_continuousOn
+      ((hu.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const) hsU
   have hγ (t : ℝ) : HasDerivAt (fun t ↦ u (s, t)) (fderiv ℝ u (s, t) (0, 1)) t :=
     hasDerivAt_slice_right ((hu.differentiableOn one_ne_zero).differentiableAt
-      ((isOpen_Ioi.prod isOpen_univ).mem_nhds ⟨hsa, mem_univ t⟩))
-  have hact := hB hγ' hγ (by simpa using hper s hsa 0) hclose
-  have hint := integral_norm_sq_sub_le_mul_setIntegral_floerEnergyDensity hH hu hc hJc hJM hfloer
-    hsa
-  have hJ (z : ℝ × ℝ) (hz : z ∈ Ioi a ×ˢ Icc 0 1) : ω.Tames (J z) :=
-    tames_of_mul_norm_sq_le hc (hJc z hz)
+      (hU.mem_nhds (hsU t)))
+  have hact := hB hγ' hγ hu1 hclose
+  have hint := integral_norm_sq_sub_le_mul_setIntegral_floerEnergyDensity hH hU hu hsU hc hJc hJM
+    hfloer
   have hg0 : 0 ≤ ∫ t in Icc (0 : ℝ) 1, e (s, t) :=
     setIntegral_nonneg measurableSet_Icc fun t ht ↦
-      ω.floerEnergyDensity_nonneg (hJ (s, t) ⟨hsa, ht⟩) (hfloer (s, t) ⟨hsa, ht⟩)
+      ω.floerEnergyDensity_nonneg (tames_of_mul_norm_sq_le hc (hJc t ht)) (hfloer t ht)
   calc _ ≤ C₁ * ((1 + M ^ 2) / c * ∫ t in Icc (0 : ℝ) 1, e (s, t)) :=
         hact.trans (mul_le_mul_of_nonneg_left hint hC₁)
     _ ≤ (C₁ * ((1 + M ^ 2) / c) + 1) * ∫ t in Icc (0 : ℝ) 1, e (s, t) := by
@@ -405,48 +413,106 @@ theorem exists_abs_hamiltonianAction_sub_le_mul_setIntegral_floerEnergyDensity
 
 /-- **A Floer slice near a nondegenerate orbit.** Under the hypotheses of
 `TauCeti.SymplecticForm.exists_abs_hamiltonianAction_sub_le_mul_setIntegral_floerEnergyDensity`,
-there are `δ > 0` and `K ≥ 0` such that every loop `u(s, ·)` which is `δ`-close to `x` on `[0, 1]`
-is uniformly within `K` times the square root of the energy of its slice:
-`‖u(s, t) - x(t)‖ ≤ K √(∫₀¹ e(s, t) dt)` for `t ∈ [0, 1]`. -/
+there are `δ > 0` and `K ≥ 0`, depending only on `ω`, `H`, `x`, `c` and `M`, such that every loop
+`u(s, ·)` of a Floer solution which is `δ`-close to `x` on `[0, 1]` is uniformly within `K` times
+the square root of the energy of its slice: `‖u(s, t) - x(t)‖ ≤ K √(∫₀¹ e(s, t) dt)` for
+`t ∈ [0, 1]`. -/
 theorem exists_forall_norm_sub_le_mul_sqrt_setIntegral_floerEnergyDensity
-    (hH : ContDiff ℝ 2 (uncurry H)) (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ))
-    (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1)
-    (hc : 0 < c) (hJc : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v))
-    (hJM : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ∀ v, ‖J z v‖ ≤ M * ‖v‖)
-    (hfloer : ∀ z ∈ Ioi a ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
-      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hH : ContDiff ℝ 2 (uncurry H))
     (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hx1 : x 1 = x 0)
     (hnd : ∀ v, dysonSeriesLeft (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 v = v →
-      v = 0) :
-    ∃ δ > 0, ∃ K, 0 ≤ K ∧ ∀ s, a < s → (∀ t ∈ Icc (0 : ℝ) 1, ‖u (s, t) - x t‖ ≤ δ) →
+      v = 0) (c M : ℝ) (hc : 0 < c) :
+    ∃ δ > 0, ∃ K, 0 ≤ K ∧ ∀ {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V}
+      {U : Set (ℝ × ℝ)} {s : ℝ}, IsOpen U → ContDiffOn ℝ 1 u U → (∀ t, (s, t) ∈ U) →
+      u (s, 1) = u (s, 0) → (∀ t ∈ Icc (0 : ℝ) 1, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J (s, t) v)) →
+      (∀ t ∈ Icc (0 : ℝ) 1, ∀ v, ‖J (s, t) v‖ ≤ M * ‖v‖) →
+      (∀ t ∈ Icc (0 : ℝ) 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J (s, t))
+        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u (s, t) : ℝ × ℝ →ₗ[ℝ] V)) →
+      (∀ t ∈ Icc (0 : ℝ) 1, ‖u (s, t) - x t‖ ≤ δ) →
       ∀ t ∈ Icc (0 : ℝ) 1, ‖u (s, t) - x t‖ ≤ K *
         √(∫ t in Icc (0 : ℝ) 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (s, t)) := by
   obtain ⟨δ, hδ, C, hC, hB⟩ := exists_forall_norm_sub_le_mul_integral_of_nondegenerate hH hx hx1 hnd
-  refine ⟨δ, hδ, C * √((1 + M ^ 2) / c), by positivity, fun s hsa hclose t ht ↦ ?_⟩
+  refine ⟨δ, hδ, C * √((1 + M ^ 2) / c), by positivity,
+    fun {u J U s} hU hu hsU hu1 hJc hJM hfloer hclose t ht ↦ ?_⟩
   set η : ℝ → ℝ := fun t ↦ ‖fderiv ℝ u (s, t) (0, 1) - ω.hamiltonianVectorField (H t) (u (s, t))‖
   have hγ' : Continuous fun t ↦ fderiv ℝ u (s, t) (0, 1) :=
-    continuous_slice_of_continuousOn ((hu.continuousOn_fderiv_of_isOpen
-      (isOpen_Ioi.prod isOpen_univ) le_rfl).clm_apply continuousOn_const) hsa
+    continuous_slice_of_continuousOn
+      ((hu.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const) hsU
   have hγ (t : ℝ) : HasDerivAt (fun t ↦ u (s, t)) (fderiv ℝ u (s, t) (0, 1)) t :=
     hasDerivAt_slice_right ((hu.differentiableOn one_ne_zero).differentiableAt
-      ((isOpen_Ioi.prod isOpen_univ).mem_nhds ⟨hsa, mem_univ t⟩))
+      (hU.mem_nhds (hsU t)))
   have hηc : Continuous η :=
-    (continuous_sliceDefect_slice (X := fun t ↦ ω.hamiltonianVectorField (H t)) hu
-      (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous hsa).norm.congr fun t ↦ by
+    (continuous_sliceDefect_slice (X := fun t ↦ ω.hamiltonianVectorField (H t)) hU hu
+      (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous hsU).norm.congr fun t ↦ by
         rw [sliceDefect_def]
   -- By Cauchy–Schwarz, the `L¹` norm of the defect is at most its `L²` norm.
   have hCS := integral_le_sqrt_mul_sqrt_integral_sq zero_le_one
     ((hηc.pow 2).intervalIntegrable 0 1)
   rw [sub_zero, Real.sqrt_one, one_mul] at hCS
-  have hint := integral_norm_sq_sub_le_mul_setIntegral_floerEnergyDensity hH hu hc hJc hJM hfloer
-    hsa
-  calc ‖u (s, t) - x t‖ ≤ C * ∫ t in (0 : ℝ)..1, η t :=
-        hB hγ' hγ (by simpa using hper s hsa 0) hclose t ht
+  have hint := integral_norm_sq_sub_le_mul_setIntegral_floerEnergyDensity hH hU hu hsU hc hJc hJM
+    hfloer
+  calc ‖u (s, t) - x t‖ ≤ C * ∫ t in (0 : ℝ)..1, η t := hB hγ' hγ hu1 hclose t ht
     _ ≤ C * √((1 + M ^ 2) / c * ∫ t in Icc (0 : ℝ) 1,
           ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (s, t)) :=
         mul_le_mul_of_nonneg_left (hCS.trans (Real.sqrt_le_sqrt hint)) hC
     _ = _ := by
         rw [Real.sqrt_mul (by positivity), mul_assoc]
+
+/-- **A loop near a nondegenerate orbit from the energy of a window.** Let `H` be a `C²`
+Hamiltonian, `x` a nondegenerate orbit as in
+`TauCeti.SymplecticForm.exists_abs_hamiltonianAction_sub_le_of_nondegenerate`, and `c > 0` and `M`
+tameness constants. There are `δ > 0` and `K ≥ 0`, depending only on `ω`, `H`, `x`, `c` and `M`,
+with the following property. Let `u` be `C¹` on an open set containing `[s, s + h] × ℝ`, `h > 0`,
+with `u(r, 1) = u(r, 0)` for `r ∈ [s, s + h]`, solving the Floer equation
+`∂_s u + J (∂_t u - X_{H_t}(u)) = 0` on `[s, s + h] × [0, 1]` for almost complex structures
+satisfying `c ‖v‖² ≤ ω(v, J z v)` and `‖J z v‖ ≤ M ‖v‖` there, `δ`-close to `x` there, and with
+`‖∂_s u‖ ≤ L` there. Then for `t ∈ [0, 1]`, `‖u(s, t) - x(t)‖ ≤ L h + K √(W / h)`, where `W` is the
+energy of `u` over `[s, s + h] × [0, 1]`. -/
+theorem exists_forall_norm_sub_le_mul_add_mul_sqrt_setIntegral_floerEnergyDensity
+    (hH : ContDiff ℝ 2 (uncurry H))
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hx1 : x 1 = x 0)
+    (hnd : ∀ v, dysonSeriesLeft (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 v = v →
+      v = 0) (c M : ℝ) (hc : 0 < c) :
+    ∃ δ > 0, ∃ K, 0 ≤ K ∧ ∀ {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V}
+      {U : Set (ℝ × ℝ)} {s h L : ℝ}, IsOpen U → ContDiffOn ℝ 1 u U →
+      Icc s (s + h) ×ˢ univ ⊆ U → 0 < h → (∀ r ∈ Icc s (s + h), u (r, 1) = u (r, 0)) →
+      (∀ z ∈ Icc s (s + h) ×ˢ Icc 0 1, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v)) →
+      (∀ z ∈ Icc s (s + h) ×ˢ Icc 0 1, ∀ v, ‖J z v‖ ≤ M * ‖v‖) →
+      (∀ z ∈ Icc s (s + h) ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V)) →
+      (∀ z ∈ Icc s (s + h) ×ˢ Icc 0 1, ‖u z - x z.2‖ ≤ δ) →
+      (∀ z ∈ Icc s (s + h) ×ˢ Icc 0 1, ‖fderiv ℝ u z (1, 0)‖ ≤ L) →
+      ∀ t ∈ Icc (0 : ℝ) 1, ‖u (s, t) - x t‖ ≤ L * h + K * √((∫ z in Icc s (s + h) ×ˢ Icc 0 1,
+        ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) / h) := by
+  obtain ⟨δ, hδ, K, hK, hnear⟩ :=
+    exists_forall_norm_sub_le_mul_sqrt_setIntegral_floerEnergyDensity hH hx hx1 hnd c M hc
+  refine ⟨δ, hδ, K, hK, fun {u J U s h L} hU hu hR hh hper hJc hJM hfloer hclose hL t ht ↦ ?_⟩
+  have hRU : Icc s (s + h) ×ˢ Icc (0 : ℝ) 1 ⊆ U :=
+    fun z hz ↦ hR ⟨hz.1, mem_univ _⟩
+  obtain ⟨σ, hσ, hσle⟩ := ω.exists_mem_Icc_mul_setIntegral_floerEnergyDensity_le
+    (Ks := fun _ _ ↦ 0) hU hu contDiffOn_const
+    (contDiff_uncurry_cylindrical (hH.of_le (by norm_num))).contDiffOn hh hRU
+  -- The slice at `σ` has energy at most `W / h`, so it is uniformly close to `x`.
+  have hσx := hnear hU hu (fun t ↦ hR ⟨hσ, mem_univ t⟩) (hper σ hσ)
+    (fun t ht ↦ hJc _ ⟨hσ, ht⟩) (fun t ht ↦ hJM _ ⟨hσ, ht⟩) (fun t ht ↦ hfloer _ ⟨hσ, ht⟩)
+    (fun t ht ↦ hclose _ ⟨hσ, ht⟩) t ht
+  -- Along `[s, σ]` the loop moves by at most `L (σ - s) ≤ L h`.
+  have hL0 : 0 ≤ L := (norm_nonneg _).trans (hL (s, t) ⟨⟨le_rfl, by linarith⟩, ht⟩)
+  have hmv : ‖u (σ, t) - u (s, t)‖ ≤ L * h := by
+    have hd (r : ℝ) (hr : r ∈ Icc s σ) :
+        HasDerivAt (fun r ↦ u (r, t)) (fderiv ℝ u (r, t) (1, 0)) r :=
+      hasDerivAt_slice_left ((hu.differentiableOn one_ne_zero).differentiableAt
+        (hU.mem_nhds (hR ⟨⟨hr.1, hr.2.trans hσ.2⟩, mem_univ t⟩)))
+    have h' := norm_image_sub_le_of_norm_deriv_le_segment' (f := fun r ↦ u (r, t))
+      (fun r hr ↦ (hd r hr).hasDerivWithinAt)
+      (fun r hr ↦ hL (r, t) ⟨⟨hr.1, hr.2.le.trans hσ.2⟩, ht⟩) σ ⟨hσ.1, le_rfl⟩
+    exact h'.trans (mul_le_mul_of_nonneg_left (by linarith [hσ.2]) hL0)
+  calc ‖u (s, t) - x t‖ ≤ ‖u (s, t) - u (σ, t)‖ + ‖u (σ, t) - x t‖ :=
+        norm_sub_le_norm_sub_add_norm_sub _ _ _
+    _ ≤ L * h + K * √((∫ z in Icc s (s + h) ×ˢ Icc 0 1,
+          ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) / h) :=
+        add_le_add (by rwa [norm_sub_rev]) (hσx.trans (mul_le_mul_of_nonneg_left
+          (Real.sqrt_le_sqrt ((le_div_iff₀' hh).2 hσle)) hK))
 
 /-- **Exponential decay of the energy at a nondegenerate end.** Let `H` be a `C²` Hamiltonian,
 `1`-periodic in time, and let `u` be a `C²` solution of the Floer equation
@@ -472,17 +538,16 @@ theorem exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp
     ∃ κ > 0, ∃ C, ∀ᶠ s in atTop, ∫⁻ z in Ici s ×ˢ Icc 0 1,
       ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≤
         ENNReal.ofReal (C * Real.exp (-(κ * s))) := by
-  set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u with he
+  set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u
   set A : ℝ → ℝ := fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))
   have hH1 : ContDiff ℝ 1 (uncurry H) := hH.of_le (by norm_num)
   have hopen : IsOpen (Ioi a ×ˢ (univ : Set ℝ)) := isOpen_Ioi.prod isOpen_univ
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
   have hJ : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz ↦
     tames_of_mul_norm_sq_le hc (hJc z hz)
-  obtain ⟨δ, hδ, K, hKpos, hslice₀⟩ :=
-    exists_abs_hamiltonianAction_sub_le_mul_setIntegral_floerEnergyDensity hH hc M hx
-      (by simpa using hxper 0) hnd
-  have hslice := hslice₀ (hu.of_le (by norm_num)) hper hJc hJM hfloer
+  obtain ⟨δ, hδ, K, hKpos, hslice⟩ :=
+    exists_abs_hamiltonianAction_sub_le_mul_setIntegral_floerEnergyDensity hH hx
+      (by simpa using hxper 0) hnd c M hc
   -- Eventually the loops are `min δ 1`-close to `x`.
   obtain ⟨s₁, hs₁⟩ := eventually_atTop.1
     (Metric.tendstoUniformly_iff.1 hux (min δ 1) (lt_min hδ one_pos))
@@ -516,23 +581,22 @@ theorem exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp
       hmono hs (hs.trans_le h) h))
   have hfanti : AntitoneOn f (Ici s₀) := fun s hs s' hs' h ↦
     sub_le_sub_left (hmono (hs₀a.trans_le hs) (hs₀a.trans_le hs') h) _
-  have hfle (s : ℝ) (hs : s₀ ≤ s) : f s ≤ K * ∫ t in Icc (0 : ℝ) 1, e (s, t) := by
-    refine le_trans ?_ (hslice s (hs₀a.trans_le hs) fun t _ ↦
-      (hclose s hs t).trans (min_le_left _ _))
-    rw [abs_sub_comm]
-    exact le_abs_self _
-  -- Over a step of length `K` the action defect drops by half: integrating `f ≤ K ∫ e(r, ·)` over
-  -- `r ∈ [s, s + K]` gives `K f (s + K) ≤ K (f s - f (s + K))`.
-  have hstep (s : ℝ) (hs : s₀ ≤ s) : f (s + K) ≤ 1 / 2 * f s := by
+  have hfle (s : ℝ) (hs : s₀ ≤ s) :
+      |A s - ω.hamiltonianAction H x| ≤ K * ∫ t in Icc (0 : ℝ) 1, e (s, t) := by
     have hsa : a < s := hs₀a.trans_le hs
-    obtain ⟨hgint, hdiff⟩ := ω.integrableOn_and_integral_setIntegral_floerEnergyDensity_eq hH1
-      hopen hu (by linarith : s ≤ s + K) (prod_mono (fun r hr ↦ hsa.trans_le hr.1) (subset_univ _))
-      fun r hr ↦ by simpa using hper r (hsa.trans_le hr.1) 0
-    rw [← he] at hgint hdiff
-    have hlow := le_setIntegral_Icc_add_of_le_mul hKpos hgint fun r hr ↦
-      (hfanti (mem_Ici.2 (hs.trans hr.1)) (mem_Ici.2 (by linarith)) hr.2).trans
-        (hfle r (hs.trans hr.1))
-    have : f s - f (s + K) = A (s + K) - A s := by simp only [hfdef]; ring
+    exact hslice hopen (hu.of_le (by norm_num)) (fun t ↦ ⟨hsa, mem_univ t⟩)
+      (by simpa using hper s hsa 0) (fun t ht ↦ hJc _ ⟨hsa, ht⟩) (fun t ht ↦ hJM _ ⟨hsa, ht⟩)
+      (fun t ht ↦ hfloer _ ⟨hsa, ht⟩) fun t _ ↦ (hclose s hs t).trans (min_le_left _ _)
+  -- Over a step of length `K` the action defect drops by half: by the energy identity in slices,
+  -- the negative part of `A - A_H(x)` doubles backwards.
+  have hstep (s : ℝ) (hs : s₀ ≤ s) : f (s + K) ≤ 1 / 2 * f s := by
+    have hIcc : Icc s (s + K) ⊆ Ioi a := fun r hr ↦ (hs₀a.trans_le hs).trans_le hr.1
+    obtain ⟨hint, heq⟩ := ω.integrableOn_and_integral_setIntegral_floerEnergyDensity_eq hH1 hopen
+      hu (by linarith : s ≤ s + K) (prod_mono hIcc (subset_univ _)) fun r hr ↦ by
+        simpa using hper r (hIcc hr) 0
+    have h := (two_mul_sub_le_and_sub_le_two_mul_of_abs_sub_le_mul hKpos (hmono.mono hIcc)
+      (fun r hr ↦ hfle r (hs.trans hr.1)) hint heq).2
+    simp only [hfdef]
     linarith
   -- Halving over every step of length `K` is exponential decay at the rate `log 2 / K`.
   obtain hdecay := fun s (hs : s₀ ≤ s) ↦ le_div_mul_exp_of_antitoneOn (by norm_num)
@@ -574,18 +638,18 @@ theorem exists_pos_eventually_norm_sub_le_exp {L : ℝ}
   have hopen : IsOpen (Ioi a ×ˢ (univ : Set ℝ)) := isOpen_Ioi.prod isOpen_univ
   obtain ⟨κ₀, hκ₀, C₀, hdecay⟩ := exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp
     hH hHper hu hper hc hJc hJM hfloer hE hxper hx hnd hux
-  obtain ⟨δ, hδ, K, hK, hnear⟩ := exists_forall_norm_sub_le_mul_sqrt_setIntegral_floerEnergyDensity
-    hH hu1 hper hc hJc hJM hfloer hx (by simpa using hxper 0) hnd
+  obtain ⟨δ, hδ, K, hK, hwin⟩ :=
+    exists_forall_norm_sub_le_mul_add_mul_sqrt_setIntegral_floerEnergyDensity hH hx
+      (by simpa using hxper 0) hnd c M hc
   have hclose : ∀ᶠ s in atTop, ∀ t, ‖u (s, t) - x t‖ ≤ δ :=
     (Metric.tendstoUniformly_iff.1 hux δ hδ).mono fun s hs t ↦ by
       rw [← dist_eq_norm, dist_comm]
       exact (hs t).le
   obtain ⟨s₀, hs₀⟩ := eventually_atTop.1 (hdecay.and (hclose.and (eventually_gt_atTop a)))
-  have hL0 : 0 ≤ L := (norm_nonneg _).trans (hL (s₀, 0) ⟨(hs₀ s₀ le_rfl).2.2, by simp⟩)
   set C₁ := max C₀ 0
   refine ⟨κ₀ / 3, by positivity, K * √C₁ + L, (eventually_ge_atTop s₀).mono fun s hs ↦ ?_⟩
   obtain ⟨hdec, -, hsa⟩ := hs₀ s hs
-  -- Compare with a slice `σ ∈ [s, s + h]` of small energy, for the step `h = exp (-κ₀ s / 3)`.
+  -- Compare with the energy of the window `[s, s + h]`, for the step `h = exp (-κ₀ s / 3)`.
   set h := Real.exp (-(κ₀ / 3 * s)) with hhdef
   have hh : 0 < h := Real.exp_pos _
   have hh3 : Real.exp (-(κ₀ * s)) = h * h ^ 2 := by
@@ -593,12 +657,13 @@ theorem exists_pos_eventually_norm_sub_le_exp {L : ℝ}
     congr 1
     push_cast
     ring
-  have hR : Icc s (s + h) ×ˢ Icc (0 : ℝ) 1 ⊆ Ioi a ×ˢ univ :=
-    prod_mono (fun r hr ↦ hsa.trans_le hr.1) (subset_univ _)
+  have hR : Icc s (s + h) ×ˢ (univ : Set ℝ) ⊆ Ioi a ×ˢ univ :=
+    prod_mono (fun r hr ↦ hsa.trans_le hr.1) le_rfl
   have hRint : IntegrableOn e (Icc s (s + h) ×ˢ Icc (0 : ℝ) 1) :=
     ((ω.continuousOn_floerEnergyDensity hopen hu1 contDiffOn_const
       (contDiff_uncurry_cylindrical (hH.of_le (by norm_num))).contDiffOn).mono
-      hR).integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
+      ((prod_mono le_rfl (subset_univ _)).trans hR)).integrableOn_compact
+      (isCompact_Icc.prod isCompact_Icc)
   have hJ (z : ℝ × ℝ) (hz : z ∈ Ioi a ×ˢ Icc 0 1) : ω.Tames (J z) :=
     tames_of_mul_norm_sq_le hc (hJc z hz)
   -- The energy over `[s, s + h] × [0, 1]` is at most the energy beyond `s`.
@@ -611,43 +676,26 @@ theorem exists_pos_eventually_norm_sub_le_exp {L : ℝ}
     refine (lintegral_mono_set (Set.prod_mono Icc_subset_Ici_self le_rfl)).trans (hdec.trans ?_)
     exact ENNReal.ofReal_le_ofReal
       (mul_le_mul_of_nonneg_right (le_max_left _ _) (Real.exp_pos _).le)
-  have hgint : IntegrableOn (fun r ↦ ∫ t in Icc (0 : ℝ) 1, e (r, t)) (Icc s (s + h)) :=
-    (ω.integrableOn_and_integral_setIntegral_floerEnergyDensity_eq (hH.of_le (by norm_num)) hopen
-      hu (by linarith : s ≤ s + h) hR fun r hr ↦ by simpa using hper r (hsa.trans_le hr.1) 0).1
-  obtain ⟨σ, hσ, hσle⟩ := exists_le_setAverage (by simpa using hh)
-    (by simp) hgint
-  rw [setAverage_eq, Real.volume_real_Icc_of_le (by linarith), add_sub_cancel_left, smul_eq_mul,
-    ← setIntegral_prod e (by rwa [Measure.volume_eq_prod] at hRint),
-    ← Measure.volume_eq_prod] at hσle
-  have hgσ : ∫ t in Icc (0 : ℝ) 1, e (σ, t) ≤ C₁ * h ^ 2 := by
-    refine hσle.trans ?_
-    rw [inv_mul_le_iff₀ hh, ← mul_assoc, mul_comm h C₁, mul_assoc, ← hh3]
-    exact hRle
-  have hσa : a < σ := hsa.trans_le hσ.1
+  have hWh : (∫ z in Icc s (s + h) ×ˢ Icc (0 : ℝ) 1, e z) / h ≤ C₁ * h ^ 2 := by
+    rw [div_le_iff₀ hh]
+    exact hRle.trans_eq (by rw [hh3]; ring)
   -- Reduce to `t ∈ [0, 1)` by periodicity.
   intro t
   obtain ⟨t', ht', heq⟩ := ((hper s hsa).sub hxper).exists_mem_Ico₀ one_pos t
   simp only [Pi.sub_apply] at heq
   rw [heq]
-  have ht'I : t' ∈ Icc (0 : ℝ) 1 := Ico_subset_Icc_self ht'
-  -- Along `[s, σ]` the loop moves by at most `L (σ - s) ≤ L h`.
-  have hmv : ‖u (σ, t') - u (s, t')‖ ≤ L * h := by
-    have hd (r : ℝ) (hr : a < r) :
-        HasDerivAt (fun r ↦ u (r, t')) (fderiv ℝ u (r, t') (1, 0)) r :=
-      hasDerivAt_slice_left ((hu1.differentiableOn one_ne_zero).differentiableAt
-        (hopen.mem_nhds (mk_mem_prod hr (mem_univ t'))))
-    have h' := norm_image_sub_le_of_norm_deriv_le_segment' (f := fun r ↦ u (r, t'))
-      (fun r hr ↦ (hd r (hsa.trans_le hr.1)).hasDerivWithinAt)
-      (fun r hr ↦ hL (r, t') ⟨hsa.trans_le hr.1, ht'I⟩) σ ⟨hσ.1, le_rfl⟩
-    exact h'.trans (mul_le_mul_of_nonneg_left (by linarith [hσ.2]) hL0)
-  have hσx : ‖u (σ, t') - x t'‖ ≤ K * √C₁ * h := by
-    refine (hnear σ hσa (fun t _ ↦ (hs₀ σ (hs.trans hσ.1)).2.1 t) t' ht'I).trans ?_
-    rw [mul_assoc, ← Real.sqrt_sq hh.le, ← Real.sqrt_mul (le_max_right _ _)]
-    exact mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt hgσ) hK
-  calc ‖u (s, t') - x t'‖ ≤ ‖u (s, t') - u (σ, t')‖ + ‖u (σ, t') - x t'‖ :=
-        norm_sub_le_norm_sub_add_norm_sub _ _ _
-    _ ≤ L * h + K * √C₁ * h := add_le_add (by rwa [norm_sub_rev]) hσx
-    _ = (K * √C₁ + L) * Real.exp (-(κ₀ / 3 * s)) := by ring
+  have hmem (z : ℝ × ℝ) (hz : z ∈ Icc s (s + h) ×ˢ Icc 0 1) : z ∈ Ioi a ×ˢ Icc 0 1 :=
+    ⟨hsa.trans_le hz.1.1, hz.2⟩
+  refine (hwin hopen hu1 hR hh (fun r hr ↦ by simpa using hper r (hsa.trans_le hr.1) 0)
+    (fun z hz ↦ hJc z (hmem z hz)) (fun z hz ↦ hJM z (hmem z hz))
+    (fun z hz ↦ hfloer z (hmem z hz)) (fun z hz ↦ (hs₀ z.1 (hs.trans hz.1.1)).2.1 z.2)
+    (fun z hz ↦ hL z (hmem z hz)) t' (Ico_subset_Icc_self ht')).trans ?_
+  calc L * h + K * √((∫ z in Icc s (s + h) ×ˢ Icc (0 : ℝ) 1, e z) / h) ≤
+        L * h + K * √(C₁ * h ^ 2) :=
+        add_le_add_right (mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt hWh) hK) _
+    _ = (K * √C₁ + L) * Real.exp (-(κ₀ / 3 * s)) := by
+        rw [Real.sqrt_mul (le_max_right _ _), Real.sqrt_sq hh.le]
+        ring
 
 end TauCeti.SymplecticForm
 

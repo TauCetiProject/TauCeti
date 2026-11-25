@@ -55,7 +55,7 @@ The normal form `Θ` is the Morse–Bott lemma on the normal bundle
 Writing a normal vector as `v = u + w` with `u ∈ ν⁻` and `w ∈ ν⁺`, the two parts are orthogonal
 for the normal Hessian, so `f ∘ Θ = c - s + t` with `s = -½ Hessₛ (u, u) ≥ 0` and
 `t = ½ Hessₛ (w, w) ≥ 0`. These are smooth on the total space, since the projections onto `ν⁻`
-and `ν⁺` are (`IsNondegenerateCriticalSubmanifold.contMDiff_projection_negativeNormalSpace`) and so
+and `ν⁺` are (`IsNondegenerateCriticalSubmanifold.contMDiff_negativeNormalProjection`) and so
 is the quadratic form of the normal Hessian
 (`TauCeti.SmoothEmbedding.IsCriticalSubmanifold.contMDiff_normalHessian_apply_self`); rescaling
 `(u, w) ↦ (a u, b w)` multiplies `s` by `a²` and `t` by `b²`. The attachment theorem for normal
@@ -89,6 +89,8 @@ In the namespace `TauCeti.SmoothEmbedding`:
 * `IsNondegenerateCriticalSubmanifold.isCompact_negativeDiscBundle` and
   `IsNondegenerateCriticalSubmanifold.isCompact_negativeSphereBundle`: over a compact Morse–Bott
   submanifold the negative disc and sphere bundles of every size are compact.
+* `IsNondegenerateCriticalSubmanifold.exists_pos_negativeDiscBundle_subset`: small negative disc
+  bundles lie in any open neighbourhood of the zero section.
 
 In the namespace `TauCeti.IsMorseBottFamily`:
 
@@ -196,137 +198,98 @@ namespace IsNondegenerateCriticalSubmanifold
 variable [FiniteDimensional ℝ E] (h : i.IsNondegenerateCriticalSubmanifold f)
   (g : RiemannianMetric fun s ↦ i.NormalSpace s hn)
 
-/-- The part of a normal vector in the negative normal space, along the positive one. -/
-private def negPart (s : S) : i.NormalSpace s hn →ₗ[ℝ] i.NormalSpace s hn :=
-  (h.negativeNormalSpace hn g s).projection (h.positiveNormalSpace hn g s)
-    (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g s)
-
-/-- The part of a normal vector in the positive normal space, along the negative one. -/
-private def posPart (s : S) : i.NormalSpace s hn →ₗ[ℝ] i.NormalSpace s hn :=
-  (h.positiveNormalSpace hn g s).projection (h.negativeNormalSpace hn g s)
-    (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g s).symm
-
 /-- Minus half the normal Hessian of the negative part of a normal vector. -/
 private def negSq (x : TotalSpace P fun s ↦ i.NormalSpace s hn) : ℝ :=
-  -(2⁻¹ * h.normalHessian hn x.proj (h.negPart hn g x.proj x.snd) (h.negPart hn g x.proj x.snd))
+  -(2⁻¹ * h.normalHessian hn x.proj (h.negativeNormalProjection hn g x.proj x.snd)
+    (h.negativeNormalProjection hn g x.proj x.snd))
 
 /-- Half the normal Hessian of the positive part of a normal vector. -/
 private def posSq (x : TotalSpace P fun s ↦ i.NormalSpace s hn) : ℝ :=
-  2⁻¹ * h.normalHessian hn x.proj (h.posPart hn g x.proj x.snd) (h.posPart hn g x.proj x.snd)
+  2⁻¹ * h.normalHessian hn x.proj (x.snd - h.negativeNormalProjection hn g x.proj x.snd)
+    (x.snd - h.negativeNormalProjection hn g x.proj x.snd)
 
 /-- Rescale the negative part of a normal vector by `a` and its positive part by `b`. -/
 private def rescale (a b : ℝ) (x : TotalSpace P fun s ↦ i.NormalSpace s hn) :
     TotalSpace P fun s ↦ i.NormalSpace s hn :=
-  ⟨x.proj, a • h.negPart hn g x.proj x.snd + b • h.posPart hn g x.proj x.snd⟩
+  ⟨x.proj, a • h.negativeNormalProjection hn g x.proj x.snd +
+    b • (x.snd - h.negativeNormalProjection hn g x.proj x.snd)⟩
 
 variable {s : S} (v : i.NormalSpace s hn) (x : TotalSpace P fun s ↦ i.NormalSpace s hn)
 
 private theorem negSq_mk : h.negSq hn g (⟨s, v⟩ : TotalSpace P fun s ↦ i.NormalSpace s hn) =
-    -(2⁻¹ * h.normalHessian hn s (h.negPart hn g s v) (h.negPart hn g s v)) :=
+    -(2⁻¹ * h.normalHessian hn s (h.negativeNormalProjection hn g s v)
+      (h.negativeNormalProjection hn g s v)) :=
   rfl
 
 private theorem posSq_mk : h.posSq hn g (⟨s, v⟩ : TotalSpace P fun s ↦ i.NormalSpace s hn) =
-    2⁻¹ * h.normalHessian hn s (h.posPart hn g s v) (h.posPart hn g s v) :=
+    2⁻¹ * h.normalHessian hn s (v - h.negativeNormalProjection hn g s v)
+      (v - h.negativeNormalProjection hn g s v) :=
   rfl
 
 private theorem rescale_def (a b : ℝ) : h.rescale hn g a b x =
-    ⟨x.proj, a • h.negPart hn g x.proj x.snd + b • h.posPart hn g x.proj x.snd⟩ :=
+    ⟨x.proj, a • h.negativeNormalProjection hn g x.proj x.snd +
+      b • (x.snd - h.negativeNormalProjection hn g x.proj x.snd)⟩ :=
   rfl
-
-private theorem negPart_mem : h.negPart hn g s v ∈ h.negativeNormalSpace hn g s :=
-  Submodule.projection_apply_mem _ v
-
-private theorem posPart_mem : h.posPart hn g s v ∈ h.positiveNormalSpace hn g s :=
-  Submodule.projection_apply_mem _ v
-
-private theorem negPart_add_posPart : h.negPart hn g s v + h.posPart hn g s v = v :=
-  Submodule.projection_add_projection_eq_self _ v
-
-private theorem posPart_eq_zero_iff : h.posPart hn g s v = 0 ↔ v ∈ h.negativeNormalSpace hn g s :=
-  Submodule.projection_apply_eq_zero_iff _
-
-/-- The normal Hessian of a normal vector is the sum of its values on the two parts, which are
-orthogonal for it. -/
-private theorem normalHessian_eq_add :
-    h.normalHessian hn s v v = h.normalHessian hn s (h.negPart hn g s v) (h.negPart hn g s v) +
-      h.normalHessian hn s (h.posPart hn g s v) (h.posPart hn g s v) := by
-  have h0 := h.normalHessian_eq_zero_of_mem_negativeNormalSpace hn g (h.negPart_mem hn g v)
-    (h.posPart_mem hn g v)
-  have h0' : h.normalHessian hn s (h.posPart hn g s v) (h.negPart hn g s v) = 0 := by
-    rw [(h.isSymm_normalHessian hn s).eq, h0]
-  conv_lhs => rw [← h.negPart_add_posPart hn g v]
-  simp only [map_add, LinearMap.add_apply, h0, h0']
-  ring
 
 private theorem negSq_nonneg : 0 ≤ h.negSq hn g x := by
   have := h.normalHessian_apply_self_nonpos_of_mem_negativeNormalSpace hn g
-      (h.negPart_mem hn g x.snd)
+      (h.negativeNormalProjection_apply_mem hn g x.snd)
   simp only [negSq]
   linarith
 
 private theorem posSq_nonneg : 0 ≤ h.posSq hn g x := by
   have := h.normalHessian_apply_self_nonneg_of_mem_positiveNormalSpace hn g
-      (h.posPart_mem hn g x.snd)
+      (h.sub_negativeNormalProjection_apply_mem hn g x.snd)
   simp only [posSq]
   linarith
 
-private theorem negPart_eq_zero (hx : h.negSq hn g x = 0) : h.negPart hn g x.proj x.snd = 0 := by
+private theorem negativeNormalProjection_eq_zero_of_negSq_eq_zero (hx : h.negSq hn g x = 0) :
+    h.negativeNormalProjection hn g x.proj x.snd = 0 := by
   by_contra hne
   have := h.normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn g
-    (h.negPart_mem hn g x.snd) hne
+    (h.negativeNormalProjection_apply_mem hn g x.snd) hne
   simp only [negSq] at hx
   linarith
 
-private theorem posPart_eq_zero (hx : h.posSq hn g x = 0) : h.posPart hn g x.proj x.snd = 0 := by
+private theorem sub_negativeNormalProjection_eq_zero_of_posSq_eq_zero
+    (hx : h.posSq hn g x = 0) : x.snd - h.negativeNormalProjection hn g x.proj x.snd = 0 := by
   by_contra hne
   have := h.normalHessian_apply_self_pos_of_mem_positiveNormalSpace hn g
-    (h.posPart_mem hn g x.snd) hne
+    (h.sub_negativeNormalProjection_apply_mem hn g x.snd) hne
   simp only [posSq] at hx
   linarith
 
 /-- Half the normal Hessian is `-negSq + posSq`. -/
 private theorem two_inv_mul_normalHessian :
     2⁻¹ * h.normalHessian hn x.proj x.snd x.snd = -h.negSq hn g x + h.posSq hn g x := by
-  rw [negSq, posSq, h.normalHessian_eq_add hn g x.snd]
+  rw [negSq, posSq,
+    h.normalHessian_apply_eq_normalHessian_negativeNormalProjection_add hn g x.snd x.snd]
   ring
-
-private theorem negPart_smul_add_smul (a b : ℝ) :
-    h.negPart hn g s (a • h.negPart hn g s v + b • h.posPart hn g s v) =
-      a • h.negPart hn g s v := by
-  have h₁ : h.negPart hn g s (h.negPart hn g s v) = h.negPart hn g s v :=
-    Submodule.projection_apply_of_mem_left _ (h.negPart_mem hn g v)
-  have h₂ : h.negPart hn g s (h.posPart hn g s v) = 0 :=
-    Submodule.projection_apply_of_mem_right _ (h.posPart_mem hn g v)
-  rw [map_add, map_smul, map_smul, h₁, h₂, smul_zero, add_zero]
-
-private theorem posPart_smul_add_smul (a b : ℝ) :
-    h.posPart hn g s (a • h.negPart hn g s v + b • h.posPart hn g s v) =
-      b • h.posPart hn g s v := by
-  have h₁ : h.posPart hn g s (h.negPart hn g s v) = 0 :=
-    Submodule.projection_apply_of_mem_right _ (h.negPart_mem hn g v)
-  have h₂ : h.posPart hn g s (h.posPart hn g s v) = h.posPart hn g s v :=
-    Submodule.projection_apply_of_mem_left _ (h.posPart_mem hn g v)
-  rw [map_add, map_smul, map_smul, h₁, h₂, smul_zero, zero_add]
 
 private theorem negSq_rescale (a b : ℝ) :
     h.negSq hn g (h.rescale hn g a b x) = a ^ 2 * h.negSq hn g x := by
-  rw [rescale_def, negSq_mk, h.negPart_smul_add_smul, negSq]
-  simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
+  rw [rescale_def, negSq_mk, negSq]
+  simp only [map_add, map_smul, map_sub,
+    h.negativeNormalProjection_apply_of_mem hn g (h.negativeNormalProjection_apply_mem hn g _),
+    sub_self, smul_zero, add_zero, LinearMap.smul_apply, smul_eq_mul]
   ring
 
 private theorem posSq_rescale (a b : ℝ) :
     h.posSq hn g (h.rescale hn g a b x) = b ^ 2 * h.posSq hn g x := by
-  rw [rescale_def, posSq_mk, h.posPart_smul_add_smul, posSq]
-  simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
+  rw [rescale_def, posSq_mk, posSq]
+  simp only [map_add, map_smul, map_sub,
+    h.negativeNormalProjection_apply_of_mem hn g (h.negativeNormalProjection_apply_mem hn g _),
+    sub_self, smul_zero, add_zero, add_sub_cancel_left, LinearMap.smul_apply, smul_eq_mul]
   ring
 
 private theorem rescale_one_one : h.rescale hn g 1 1 x = x := by
-  simp only [rescale, one_smul, h.negPart_add_posPart]
+  simp only [rescale, one_smul, add_sub_cancel]
 
 private theorem rescale_one_of_posSq_eq_zero (b : ℝ) (hx : h.posSq hn g x = 0) :
     h.rescale hn g 1 b x = x := by
   conv_rhs => rw [← h.rescale_one_one hn g x]
-  simp only [rescale, h.posPart_eq_zero hn g x hx, smul_zero]
+  simp only [rescale, h.sub_negativeNormalProjection_eq_zero_of_posSq_eq_zero hn g x hx,
+    smul_zero]
 
 private theorem rescale_zero_zero :
     h.rescale hn g 0 0 x = zeroSection P (fun s ↦ i.NormalSpace s hn) x.proj := by
@@ -336,7 +299,8 @@ private theorem eq_zeroSection_of_negSq_eq_zero (hs : h.negSq hn g x = 0)
     (ht : h.posSq hn g x = 0) : zeroSection P (fun s ↦ i.NormalSpace s hn) x.proj = x := by
   rw [← h.rescale_zero_zero hn g x]
   conv_rhs => rw [← h.rescale_one_one hn g x]
-  simp only [rescale, h.negPart_eq_zero hn g x hs, h.posPart_eq_zero hn g x ht, smul_zero]
+  simp only [rescale, h.sub_negativeNormalProjection_eq_zero_of_posSq_eq_zero hn g x ht]
+  simp only [h.negativeNormalProjection_eq_zero_of_negSq_eq_zero hn g x hs, smul_zero]
 
 private theorem negSq_zeroSection (s : S) :
     h.negSq hn g (zeroSection P (fun s ↦ i.NormalSpace s hn) s) = 0 := by
@@ -344,18 +308,20 @@ private theorem negSq_zeroSection (s : S) :
 
 private theorem posSq_zeroSection (s : S) :
     h.posSq hn g (zeroSection P (fun s ↦ i.NormalSpace s hn) s) = 0 := by
-  rw [zeroSection, posSq_mk, map_zero, map_zero, mul_zero]
+  rw [zeroSection, posSq_mk, map_zero, sub_self, map_zero, mul_zero]
 
 /-- The disc bundle `{t = 0, s ≤ ε}` of the normal form is the negative disc bundle. -/
 private theorem setOf_posSq_eq_zero_and_negSq_le (ε : ℝ) :
     {x | h.posSq hn g x = 0 ∧ h.negSq hn g x ≤ ε} = h.negativeDiscBundle hn P g ε := by
   ext x
-  rw [IsCriticalSubmanifold.mem_negativeDiscBundle, ← h.posPart_eq_zero_iff hn g]
-  have hH (hp : h.posPart hn g x.proj x.snd = 0) :
+  rw [IsCriticalSubmanifold.mem_negativeDiscBundle,
+    ← h.sub_negativeNormalProjection_apply_eq_zero_iff hn g]
+  have hH (hp : x.snd - h.negativeNormalProjection hn g x.proj x.snd = 0) :
       -(2⁻¹ * h.normalHessian hn x.proj x.snd x.snd) = h.negSq hn g x := by
     rw [h.two_inv_mul_normalHessian hn g x, posSq, hp]
     simp
-  refine ⟨fun ⟨ht, hs⟩ ↦ ⟨h.posPart_eq_zero hn g x ht, by rwa [hH (h.posPart_eq_zero hn g x ht)]⟩,
+  have hp := h.sub_negativeNormalProjection_eq_zero_of_posSq_eq_zero hn g x
+  refine ⟨fun ⟨ht, hs⟩ ↦ ⟨hp ht, by rwa [hH (hp ht)]⟩,
     fun ⟨hp, hs⟩ ↦ ⟨by simp [posSq, hp], by rwa [hH hp] at hs⟩⟩
 
 /-- The sphere bundle `{t = 0, s = ε}` of the normal form is the negative sphere bundle. -/
@@ -373,8 +339,7 @@ private theorem setOf_posSq_eq_zero_and_negSq_eq (ε : ℝ) :
 
 private theorem rescale_rescale (a b a' b' : ℝ) :
     h.rescale hn g a b (h.rescale hn g a' b' x) = h.rescale hn g (a * a') (b * b') x := by
-  rw [rescale_def, rescale_def, h.negPart_smul_add_smul, h.posPart_smul_add_smul, smul_smul,
-    smul_smul, rescale_def]
+  simp [rescale_def, smul_smul]
 
 end IsNondegenerateCriticalSubmanifold
 
@@ -414,8 +379,8 @@ private theorem contMDiff_negSq_posSq_rescale (h : i.IsNondegenerateCriticalSubm
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
   set X := TotalSpace P fun s ↦ i.NormalSpace s hn
-  have hneg := h.contMDiff_projection_negativeNormalSpace hn hk hf2 hdim g
-  have hpos := h.contMDiff_projection_positiveNormalSpace hn hk hf2 hdim g
+  have hneg := h.contMDiff_negativeNormalProjection hn hk hf2 hdim g
+  have hpos := h.contMDiff_sub_negativeNormalProjection hn hk hf2 hdim g
   have hH := h.toIsCriticalSubmanifold.contMDiff_normalHessian_apply_self hn hk hf2 hdim
   refine ⟨(contMDiff_const.mul (hH.comp hneg)).neg, contMDiff_const.mul (hH.comp hpos),
     fun p₀ ↦ ?_⟩
@@ -440,7 +405,7 @@ private theorem contMDiff_negSq_posSq_rescale (h : i.IsNondegenerateCriticalSubm
       (trivializationAt P (fun s ↦ i.NormalSpace s hn) p₀.2.proj ⟨p.2.proj, v⟩).2 =
         (trivializationAt P (fun s ↦ i.NormalSpace s hn) p₀.2.proj).linearMapAt ℝ p.2.proj v := by
     rw [Trivialization.coe_linearMapAt_of_mem _ hp]
-  simp only [rescale, negPart, posPart, TotalSpace.mk', Pi.add_apply, Pi.smul_apply', comp_apply,
+  simp only [rescale, TotalSpace.mk', Pi.add_apply, Pi.smul_apply', comp_apply,
     hlin, map_add, map_smul]
 
 end IsNondegenerateCriticalSubmanifold
@@ -513,10 +478,6 @@ theorem exists_sublevel_union_iUnion_negativeDiscBundle_deformation [T2Space M]
     fun a ↦ (i a).normalSpaceFiberBundle hn (hdim a)
   let : ∀ a, VectorBundle ℝ (P a) fun s ↦ (i a).NormalSpace s hn :=
     fun a ↦ (i a).normalSpaceVectorBundle hn (hdim a)
-  have (a : ι) : LocallyCompactSpace (ModelProd (H' a) (P a)) :=
-    ((J a).prod 𝓘(ℝ, P a)).locallyCompactSpace
-  have (a : ι) : LocallyCompactSpace (TotalSpace (P a) fun s ↦ (i a).NormalSpace s hn) :=
-    ChartedSpace.locallyCompactSpace (ModelProd (H' a) (P a)) _
   -- The Morse–Bott lemma on each normal bundle.
   have hΘ := fun a ↦ (h a).exists_morseBott_partialDiffeomorph_normalBundle hn
     (k := ⊤) (by simp) (hdim a) isOpen_univ (subset_univ _) (hfs.contMDiffOn.of_le (by simp))
@@ -638,9 +599,6 @@ theorem isCompact_negativeDiscBundle [T2Space S] [CompactSpace S]
     IsCompact (h.negativeDiscBundle hn P g.toRiemannianMetric ε) := by
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
-  have : LocallyCompactSpace (ModelProd H' P) := (J.prod 𝓘(ℝ, P)).locallyCompactSpace
-  have : LocallyCompactSpace (TotalSpace P fun s ↦ i.NormalSpace s hn) :=
-    ChartedSpace.locallyCompactSpace (ModelProd H' P) _
   obtain ⟨hs, ht, hσ⟩ := h.contMDiff_negSq_posSq_rescale hn hfs hdim g
   set gR := g.toRiemannianMetric
   -- The rays `a ↦ (a u, a w)`, `a ∈ [0, 1]`, join each normal vector to the compact zero section.
@@ -709,6 +667,50 @@ theorem isCompact_negativeSphereBundle [T2Space S] [CompactSpace S]
   rw [← h.setOf_posSq_eq_zero_and_negSq_eq hn g.toRiemannianMetric ε]
   exact (isClosed_eq ht.continuous continuous_const).inter
     (isClosed_eq hs.continuous continuous_const)
+
+/-- **Small negative disc bundles lie in any neighbourhood of the zero section.** Under the
+hypotheses of `IsNondegenerateCriticalSubmanifold.isCompact_negativeDiscBundle`, every open subset
+of the total space of the normal bundle containing the zero section contains the negative disc
+bundle `D_δ` for some `δ > 0`, hence every `D_ε` with `ε ≤ δ`. -/
+theorem exists_pos_negativeDiscBundle_subset [T2Space S] [CompactSpace S]
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
+    (g : letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn)
+    {V : Set (TotalSpace P fun s ↦ i.NormalSpace s hn)} (hV : IsOpen V)
+    (hzV : ∀ s, zeroSection P (fun s ↦ i.NormalSpace s hn) s ∈ V) :
+    letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    ∃ δ > 0, h.negativeDiscBundle hn P g.toRiemannianMetric δ ⊆ V := by
+  let := i.normalSpaceFiberBundle hn hdim
+  let := i.normalSpaceVectorBundle hn hdim
+  have : Nonempty (Ioo (0 : ℝ) 1) := ⟨⟨2⁻¹, by norm_num, by norm_num⟩⟩
+  -- A vector in all the disc bundles of sizes in `(0, 1)` is zero, since the normal Hessian is
+  -- negative definite on the negative normal spaces.
+  have hZ : ⋂ δ : Ioo (0 : ℝ) 1, h.negativeDiscBundle hn P g.toRiemannianMetric δ ⊆ V := by
+    rintro ⟨b, v⟩ hx
+    have hx' (δ : ℝ) (hδ : δ ∈ Ioo (0 : ℝ) 1) :=
+      (IsCriticalSubmanifold.mem_negativeDiscBundle hn).1 (mem_iInter.1 hx ⟨δ, hδ⟩)
+    obtain rfl : v = 0 := by
+      by_contra hv
+      have hneg := h.normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn _
+        (hx' 2⁻¹ ⟨by norm_num, by norm_num⟩).1 hv
+      set q := -(2⁻¹ * h.normalHessian hn b v v)
+      have hq : 0 < q := by simp only [q]; linarith
+      have := (hx' (min (q / 2) 2⁻¹) ⟨lt_min (half_pos hq) (by norm_num),
+        (min_le_right _ _).trans_lt (by norm_num)⟩).2
+      linarith [min_le_left (q / 2) 2⁻¹]
+    exact hzV b
+  -- These disc bundles are compact and decrease with the size.
+  obtain ⟨⟨δ, hδ⟩, hδV⟩ := exists_subset_nhds_of_isCompact (ι := Ioo (0 : ℝ) 1)
+    (V := fun δ ↦ h.negativeDiscBundle hn P g.toRiemannianMetric δ)
+    (fun δ δ' ↦ ⟨⟨min δ δ', lt_min δ.property.1 δ'.property.1,
+        (min_le_left _ _).trans_lt δ.property.2⟩,
+      h.negativeDiscBundle_mono hn P _ (min_le_left _ _),
+      h.negativeDiscBundle_mono hn P _ (min_le_right _ _)⟩)
+    (fun δ ↦ h.isCompact_negativeDiscBundle hn hfs hdim g δ) (hV.mem_nhdsSet.2 hZ)
+  exact ⟨δ, hδ.1, hδV⟩
 
 end IsNondegenerateCriticalSubmanifold
 
@@ -786,9 +788,8 @@ theorem exists_sublevel_union_iUnion_negativeDiscBundle_deformation_of_isCompact
     exact ⟨by linarith, by linarith⟩
   have (a : ι) : Nonempty (S a) := h.nonempty a
   have : Finite {a // ∀ s, f (i a s) = c} :=
-    ((h.locallyFinite_range.finite_nonempty_inter_compact hcompact).subset
-      (t := {a | ∀ s, f (i a s) = c})
-      fun a ha ↦ (range_nonempty (i a)).mono (subset_inter subset_rfl (hsub ⟨a, ha⟩))).to_subtype
+    ((h.finite_setOf_range_subset hcompact).subset (t := {a | ∀ s, f (i a s) = c})
+      fun a ha ↦ hsub ⟨a, ha⟩).to_subtype
   have (a : {a // ∀ s, f (i a s) = c}) : CompactSpace (S a) :=
     h.compactSpace_of_range_subset hcompact (hsub a)
   obtain ⟨Θ, hΘz, hΘi, hΘf, ε₀, hε₀, hmain⟩ :=

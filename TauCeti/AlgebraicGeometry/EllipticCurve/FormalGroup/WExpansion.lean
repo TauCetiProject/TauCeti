@@ -262,11 +262,13 @@ theorem formalW_eq_X_pow_mul_formalU : formalW W = PowerSeries.X ^ 3 * formalU W
   · rw [coeff_formalU, formalUCoeff_apply, Nat.sub_add_cancel h]
   · exact formalWCoeff_eq_zero_of_lt W (by omega)
 
-/-- Over a nontrivial semiring, the `w`-expansion `w(z) = z ^ 3 + ⋯` is nonzero. -/
+/-- The `w`-expansion is nonzero over any nontrivial ring, since its `z ^ 3` coefficient is `1`. -/
 @[simp]
 theorem formalW_ne_zero [Nontrivial R] : formalW W ≠ 0 := by
   intro h
-  simpa [h] using coeff_formalW W 3
+  have h3 := congrArg (PowerSeries.coeff 3) h
+  rw [coeff_formalW, formalWCoeff_three, map_zero] at h3
+  exact one_ne_zero h3
 
 /-! ### The `w`-equation -/
 

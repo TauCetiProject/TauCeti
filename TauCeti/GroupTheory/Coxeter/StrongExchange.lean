@@ -69,7 +69,7 @@ sequence of a reduced word for `w` consists of all of the inversions of `w`; tha
 `CoxeterSystem.mem_leftInvSeq_iff_isLeftInversion` below. The root-system-level statement for a
 Weyl group, proved from the geometry of the positive roots rather than from the reflection cocycle
 used here, is
-`TauCeti.exists_wordProd_eraseIdx_eq_mul_ofIdx` in
+`RootPairing.exists_wordProd_drop_apply_eq_and_wordProd_eraseIdx_eq_mul_ofIdx` in
 `TauCeti/LinearAlgebra/RootSystem/Inversions/StrongExchange.lean`; it does not imply the present
 one, which is about an arbitrary Coxeter system.
 
