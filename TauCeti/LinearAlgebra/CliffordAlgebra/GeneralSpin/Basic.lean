@@ -6,15 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Submonoid.Units
-public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Grading
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Star
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VectorNormalizer.Action
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
-import TauCeti.RingTheory.GradedAlgebra.Basic
 
 /-!
 # Clifford groups, general spin groups and their norms over a commutative ring
@@ -56,8 +55,6 @@ and `spinGroup` (over a field of characteristic not two) are in
 
 ## Main declarations
 
-* `CliffordAlgebra.mem_evenOdd_of_mul_eq_algebraMap`, `CliffordAlgebra.coe_inv_mem_evenOdd`: an
-  inverse of a homogeneous element is homogeneous of the same parity.
 * `CliffordAlgebra.IsLocallyHomogeneous`, `CliffordAlgebra.locallyHomogeneousUnits`,
   `CliffordAlgebra.evenUnits`: locally homogeneous and even Clifford units.
 * `CliffordAlgebra.gpinGroup`, `CliffordAlgebra.gspinGroup`: the Clifford and general spin groups.
@@ -90,37 +87,6 @@ variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
 section Homogeneous
 
 variable {Q}
-
-/-- In a `ℤ/2`-grading, a two-sided inverse of a homogeneous element modulo a scalar `f` that
-fixes it is homogeneous of the same parity. -/
-theorem mem_evenOdd_of_mul_eq_algebraMap {i : ZMod 2} {a b : CliffordAlgebra Q} {f : R}
-    (ha : a ∈ evenOdd Q i) (hb : f • b = b) (hab : a * b = algebraMap R _ f)
-    (hba : b * a = algebraMap R _ f) : b ∈ evenOdd Q i := by
-  classical
-  have hne : (0 : ZMod 2) ≠ i + (i + 1) := (by decide : ∀ i : ZMod 2, 0 ≠ i + (i + 1)) i
-  have hz : a * (DirectSum.decompose (evenOdd Q) b (i + 1) : CliffordAlgebra Q) = 0 := by
-    rw [← DirectSum.coe_decompose_mul_add_of_left_mem (evenOdd Q) ha, hab]
-    exact DirectSum.decompose_of_mem_ne _ (SetLike.algebraMap_mem_graded _ f) hne
-  have hfz : f • (DirectSum.decompose (evenOdd Q) b (i + 1) : CliffordAlgebra Q) =
-      DirectSum.decompose (evenOdd Q) b (i + 1) := by
-    conv_rhs => rw [← hb, DirectSum.decompose_smul, DirectSum.smul_apply, Submodule.coe_smul]
-  have hzero : (DirectSum.decompose (evenOdd Q) b (i + 1) : CliffordAlgebra Q) = 0 := by
-    rw [← hfz, Algebra.smul_def, ← hba, mul_assoc, hz, mul_zero]
-  rw [← DirectSum.sum_support_decompose (evenOdd Q) b]
-  refine Submodule.sum_mem _ fun j _ => ?_
-  obtain rfl | rfl : j = i ∨ j = i + 1 := (by decide : ∀ i j : ZMod 2, j = i ∨ j = i + 1) i j
-  · exact SetLike.coe_mem _
-  · rw [hzero]
-    exact Submodule.zero_mem _
-
-/-- **The inverse of a homogeneous unit is homogeneous** of the same parity. -/
-theorem coe_inv_mem_evenOdd {i : ZMod 2} {x : (CliffordAlgebra Q)ˣ}
-    (hx : (x : CliffordAlgebra Q) ∈ evenOdd Q i) :
-    ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ evenOdd Q i := by
-  refine TauCeti.GradedAlgebra.mem_of_mul_mem_add_of_isLeftRegular (evenOdd Q) hx
-    x.isUnit.isRegular.left ?_
-  rw [Units.mul_inv, (by decide : ∀ j : ZMod 2, j + j = 0) i]
-  exact SetLike.one_mem_graded _
 
 /-- A Clifford element is **locally homogeneous** when, for some idempotent `e` of the base ring,
 it is even over `e` and odd over `1 - e`: Zariski-locally on `Spec R` it is even or odd. -/
@@ -217,11 +183,11 @@ variable (Q) in
 @[simp]
 theorem mem_evenUnits_iff {x : (CliffordAlgebra Q)ˣ} :
     x ∈ evenUnits Q ↔ (x : CliffordAlgebra Q) ∈ even Q := by
-  rw [evenUnits, Submonoid.mem_units_iff, Subsemiring.mem_toSubmonoid,
-    Subsemiring.mem_toSubmonoid, Subalgebra.mem_toSubsemiring, Subalgebra.mem_toSubsemiring,
-    and_iff_left_iff_imp, ← Subalgebra.mem_toSubmodule, ← Subalgebra.mem_toSubmodule,
-    even_toSubmodule]
-  exact coe_inv_mem_evenOdd
+  simp only [evenUnits, Submonoid.mem_units_iff, Subsemiring.mem_toSubmonoid,
+    Subalgebra.mem_toSubsemiring, and_iff_left_iff_imp]
+  intro hx
+  rw [← Subalgebra.mem_toSubmodule, even_toSubmodule] at hx ⊢
+  exact coe_inv_mem_evenOdd hx
 
 variable (Q) in
 /-- Even units are locally homogeneous. -/

@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Conjugation
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 import Mathlib.Tactic.LinearCombination
+import TauCeti.RingTheory.GradedAlgebra.Basic
 
 /-!
 # Reading the `ℤ/2`-grading: base cases, exterior bases, and ordered products
@@ -58,6 +59,8 @@ belongs to the grading API independently of any spin representation.
   with every vector intertwines Clifford multiplication with the grade involution.
 * `CliffordAlgebra.involute_eq_self_iff` and `CliffordAlgebra.involute_eq_neg_iff`: with `2`
   invertible, the even and odd parts are the `±1`-eigenspaces of the grade involution.
+* `CliffordAlgebra.mem_evenOdd_of_mul_eq_algebraMap` and `CliffordAlgebra.coe_inv_mem_evenOdd`:
+  an inverse of a homogeneous element is homogeneous of the same parity.
 * `Module.Basis.exteriorAlgebra_mem_evenOdd_card`: an exterior coordinate-basis vector is
   homogeneous of degree given by the cardinality of its index set, and
   `Module.Basis.exteriorAlgebra_mem_evenOdd_iff` says that this is the only degree it has.
@@ -167,6 +170,39 @@ theorem involute_eq_neg_iff {x : CliffordAlgebra Q} : involute x = -x ↔ x ∈ 
   simpa [(isUnit_of_invertible (2 : R)).smul_eq_zero.mp h2] using ho
 
 end Involute
+
+/-! ### Inverses of homogeneous elements -/
+
+/-- In a `ℤ/2`-grading, a two-sided inverse of a homogeneous element modulo a scalar `f` that
+fixes it is homogeneous of the same parity. -/
+theorem mem_evenOdd_of_mul_eq_algebraMap {i : ZMod 2} {a b : CliffordAlgebra Q} {f : R}
+    (ha : a ∈ evenOdd Q i) (hb : f • b = b) (hab : a * b = algebraMap R _ f)
+    (hba : b * a = algebraMap R _ f) : b ∈ evenOdd Q i := by
+  classical
+  have hne : (0 : ZMod 2) ≠ i + (i + 1) := (by decide : ∀ i : ZMod 2, 0 ≠ i + (i + 1)) i
+  have hz : a * (DirectSum.decompose (evenOdd Q) b (i + 1) : CliffordAlgebra Q) = 0 := by
+    rw [← DirectSum.coe_decompose_mul_add_of_left_mem (evenOdd Q) ha, hab]
+    exact DirectSum.decompose_of_mem_ne _ (SetLike.algebraMap_mem_graded _ f) hne
+  have hfz : f • (DirectSum.decompose (evenOdd Q) b (i + 1) : CliffordAlgebra Q) =
+      DirectSum.decompose (evenOdd Q) b (i + 1) := by
+    conv_rhs => rw [← hb, DirectSum.decompose_smul, DirectSum.smul_apply, Submodule.coe_smul]
+  have hzero : (DirectSum.decompose (evenOdd Q) b (i + 1) : CliffordAlgebra Q) = 0 := by
+    rw [← hfz, Algebra.smul_def, ← hba, mul_assoc, hz, mul_zero]
+  rw [← DirectSum.sum_support_decompose (evenOdd Q) b]
+  refine Submodule.sum_mem _ fun j _ => ?_
+  obtain rfl | rfl : j = i ∨ j = i + 1 := (by decide : ∀ i j : ZMod 2, j = i ∨ j = i + 1) i j
+  · exact SetLike.coe_mem _
+  · rw [hzero]
+    exact Submodule.zero_mem _
+
+/-- **The inverse of a homogeneous unit is homogeneous** of the same parity. -/
+theorem coe_inv_mem_evenOdd {i : ZMod 2} {x : (CliffordAlgebra Q)ˣ}
+    (hx : (x : CliffordAlgebra Q) ∈ evenOdd Q i) :
+    ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ evenOdd Q i := by
+  refine TauCeti.GradedAlgebra.mem_of_mul_mem_add_of_isLeftRegular (evenOdd Q) hx
+    x.isUnit.isRegular.left ?_
+  rw [Units.mul_inv, (by decide : ∀ j : ZMod 2, j + j = 0) i]
+  exact SetLike.one_mem_graded _
 
 end CliffordAlgebra
 

@@ -9,7 +9,8 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 public import Mathlib.LinearAlgebra.CliffordAlgebra.SpinGroup
--- Private: injectivity of the scalars is used only inside the form-preservation proof.
+-- Private: the form-preservation proof uses injectivity of the scalars and the shared
+-- calculation `algebraMap_apply_eq_of_ι_eq_involute_mul_ι_mul_inv`.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 
 /-!
@@ -174,38 +175,10 @@ scalar `Q m`. -/
 theorem vectorMap_map_app_of_involute_act_ι_mem_range_ι {x : (CliffordAlgebra Q)ˣ}
     (hx : ∀ m, involute (Q := Q) (x : CliffordAlgebra Q) * ι Q m *
       ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ LinearMap.range (ι Q)) (m : M) :
-    Q (vectorMap Q x m) = Q m := by
-  have hg : ι Q (vectorMap Q x m) =
-      involute (Q := Q) (x : CliffordAlgebra Q) * ι Q m *
-        ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) :=
-    ι_vectorMap_apply_of_mem_range_ι Q (hx m)
-  -- Applying the grade involution gives the other spelling of the twisted conjugate.
-  have hg' : ι Q (vectorMap Q x m) =
-      (x : CliffordAlgebra Q) * ι Q m *
-        involute (Q := Q) ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
-    have h := congrArg (involute (Q := Q)) hg
-    simpa only [involute_ι, map_mul, involute_involute, mul_neg, neg_mul, neg_inj] using h
-  -- The scalar `Q m` commutes past `involute x`, which then cancels `involute x⁻¹`.
-  have hscalar : involute (Q := Q) (x : CliffordAlgebra Q) * algebraMap R _ (Q m) *
-      involute (Q := Q) ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
-      algebraMap R (CliffordAlgebra Q) (Q m) := by
-    rw [← Algebra.commutes, mul_assoc, ← map_mul, Units.mul_inv, map_one, mul_one]
-  apply algebraMap_injective Q
-  calc algebraMap R (CliffordAlgebra Q) (Q (vectorMap Q x m))
-      = ι Q (vectorMap Q x m) * ι Q (vectorMap Q x m) := (ι_sq_scalar Q _).symm
-    _ = (involute (Q := Q) (x : CliffordAlgebra Q) * ι Q m *
-          ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) *
-        ((x : CliffordAlgebra Q) * ι Q m *
-          involute (Q := Q) ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) :=
-        congrArg₂ (· * ·) hg hg'
-    _ = involute (Q := Q) (x : CliffordAlgebra Q) *
-          (ι Q m * (((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) * x) * ι Q m) *
-        involute (Q := Q) ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
-        simp only [mul_assoc]
-    _ = involute (Q := Q) (x : CliffordAlgebra Q) * algebraMap R _ (Q m) *
-        involute (Q := Q) ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
-        rw [Units.inv_mul, mul_one, ι_sq_scalar]
-    _ = algebraMap R (CliffordAlgebra Q) (Q m) := hscalar
+    Q (vectorMap Q x m) = Q m :=
+  algebraMap_injective Q
+    (algebraMap_apply_eq_of_ι_eq_involute_mul_ι_mul_inv
+      (ι_vectorMap_apply_of_mem_range_ι Q (hx m)))
 
 private theorem vectorMap_one : vectorMap Q 1 = LinearMap.id := by
   ext m

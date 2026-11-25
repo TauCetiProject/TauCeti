@@ -70,15 +70,15 @@ theorem lipschitzGroup_le_locallyHomogeneousUnits :
 
 /-- **The Lipschitz group lies in the Clifford group** when `Q(m)` is a unit for every
 invertible vector `ι(m)`. The twisted conjugation by an invertible vector `ι(a)` is the reflection
-`ι(b) ↦ ι(b - Q(a)⁻¹ polar(a, b) a)`, read off from the Clifford relations. The proof adapts
-Mathlib's `lipschitzGroup.involute_act_ι_mem_range_ι`, replacing `invertibleOfInvertibleι` by the
-hypothesis `hQ`. -/
+`ι(b) ↦ ι(b - Q(a)⁻¹ polar(a, b) a)`, read off from the Clifford relations. -/
 theorem lipschitzGroup_le_gpinGroup_of_isUnit (hQ : ∀ m, IsUnit (ι Q m) → IsUnit (Q m)) :
     lipschitzGroup Q ≤ gpinGroup Q := by
   rw [gpinGroup_def]
   refine le_inf ?_ (lipschitzGroup_le_locallyHomogeneousUnits Q)
   rw [lipschitzGroup, Subgroup.closure_le]
   rintro x ⟨a, ha⟩
+  -- As in Mathlib's `lipschitzGroup.involute_act_ι_mem_range_ι`, with `hQ` in place of
+  -- `invertibleOfInvertibleι`.
   let := x.invertible
   let : Invertible (ι Q a) := by rwa [ha]
   let : Invertible (Q a) := (hQ a (by rw [ha]; exact x.isUnit)).invertible
