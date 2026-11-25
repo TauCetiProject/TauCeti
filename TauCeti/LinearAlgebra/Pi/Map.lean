@@ -94,12 +94,13 @@ the class of `y` goes to the family of the classes of the `y i` (`LinearMap.coke
 noncomputable def cokerPiMapEquiv : ((∀ i, N i) ⧸ range (piMap f)) ≃ₗ[R] ∀ i, N i ⧸ range (f i) :=
   Submodule.quotEquivOfEq _ _ (by simp only [range_piMap, ker_piMap, Submodule.ker_mkQ]) ≪≫ₗ
     (piMap fun i ↦ (range (f i)).mkQ).quotKerEquivOfSurjective
-      (Function.Surjective.piMap fun i ↦ Submodule.mkQ_surjective _)
+      (by simpa using Function.Surjective.piMap fun i ↦ (range (f i)).mkQ_surjective)
 
 @[simp]
 theorem cokerPiMapEquiv_mk (y : ∀ i, N i) :
-    cokerPiMapEquiv f (Submodule.Quotient.mk y) = fun i ↦ Submodule.Quotient.mk (y i) :=
-  (rfl)
+    cokerPiMapEquiv f (Submodule.Quotient.mk y) = fun i ↦ Submodule.Quotient.mk (y i) := by
+  funext i
+  simp [cokerPiMapEquiv]
 
 @[simp]
 theorem cokerPiMapEquiv_symm_apply (y : ∀ i, N i) :

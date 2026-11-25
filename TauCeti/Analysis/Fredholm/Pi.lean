@@ -98,8 +98,12 @@ theorem IsFredholm.of_piMap {T : ∀ i, E i →L[𝕜] F i}
       (ContinuousLinearEquiv.sumPiEquivProdPi 𝕜 _ _ _)
   have hcomm : (eF : (∀ j, F j) →L[𝕜] _) ∘L ContinuousLinearMap.piMap T =
       ((ContinuousLinearMap.piMap fun j : {j // j = i} ↦ T j).prodMap
-        (ContinuousLinearMap.piMap fun j : {j // ¬j = i} ↦ T j)) ∘L (eE : (∀ j, E j) →L[𝕜] _) :=
-    (rfl)
+        (ContinuousLinearMap.piMap fun j : {j // ¬j = i} ↦ T j)) ∘L (eE : (∀ j, E j) →L[𝕜] _) := by
+    -- reindexing along `Equiv.sumCompl` commutes with `piMap`; `sumPiEquivProdPi` then reads the
+    -- coordinates at `Sum.inl j` and `Sum.inr j` (`ContinuousLinearEquiv.sumPiEquivProdPi_apply`)
+    have h := piCongrLeft_symm_comp_piMap (Equiv.sumCompl (· = i)) T
+    ext x j
+    exacts [congr($h x (.inl j)), congr($h x (.inr j))]
   exact (isFredholm_piMap_iff _).1 ((isFredholm_iff_of_comp_eq _ _ hcomm).1 h).of_prodMap_left
     ⟨i, rfl⟩
 
