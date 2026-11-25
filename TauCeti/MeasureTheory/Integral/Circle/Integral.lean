@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.MeasureTheory.Integral.CircleAverage
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # Circle integrals: linear maps, the angle interval and the radius
@@ -25,6 +26,8 @@ any parameter interval `[a, a + 2π]`.
 
 * `ContinuousLinearMap.circleIntegral_comp_comm`: continuous linear maps commute with circle
   integrals.
+* `circleIntegral.integral_of_not_completeSpace`: in an incomplete codomain every circle integral
+  is `0`.
 * `TauCeti.circleIntegral_eq_intervalIntegral_add_two_pi`: a circle integral may be computed over
   any parameter interval of length `2π`.
 * `TauCeti.integral_neg_pi_pi_eq_circleIntegral`: a circle integral as an integral over
@@ -53,6 +56,11 @@ theorem ContinuousLinearMap.circleIntegral_comp_comm [CompleteSpace E] [Complete
     ∮ z in C(c, R), L (f z) = L (∮ z in C(c, R), f z) := by
   rw [circleIntegral, circleIntegral, ← L.intervalIntegral_comp_comm hf.out]
   simp only [map_smul]
+
+/-- In an incomplete codomain every circle integral is `0`. -/
+theorem circleIntegral.integral_of_not_completeSpace (hE : ¬CompleteSpace E) (f : ℂ → E) (c : ℂ)
+    (R : ℝ) : ∮ z in C(c, R), f z = 0 := by
+  rw [circleIntegral, intervalIntegral.integral_of_not_completeSpace hE]
 
 open Complex Filter Metric Set
 open scoped Real Topology

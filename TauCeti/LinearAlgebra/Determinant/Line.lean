@@ -77,6 +77,9 @@ the linear algebra itself is standard.
   is not finite, by the `finrank = 0` convention).
 * `TauCeti.instInvertibleDetLine`: the determinant line of a finite free module is an invertible
   module.
+* `TauCeti.exteriorPower.alternatingMapLinearEquiv_bijective`: over a field, a nonzero alternating
+  `n`-form on an `n`-dimensional space with values in a line induces an isomorphism of the top
+  exterior power onto the line.
 * `LinearEquiv.detLineCongr_refl`, `LinearEquiv.detLineCongr_trans`,
   `LinearEquiv.detLineCongr_symm`: the induced isomorphisms are functorial.
 * `LinearEquiv.detLineCongr_apply_eq_det_smul`: an automorphism acts on the determinant line by
@@ -98,6 +101,8 @@ the linear algebra itself is standard.
 * `LinearMap.detLineCongrOfEq_rfl`, `LinearMap.detLineCongrOfEq_trans` and
   `LinearMap.detLineCongrOfEq_symm`: the identifications of the determinant lines of equal maps are
   functorial.
+* `LinearMap.detLineEquivOfBijective_detLineCongrOfEq`: for equal bijective maps, that
+  identification commutes with the identifications of the determinant lines with the scalars.
 * `LinearMap.detLineCongr_apply_eq_det_smul`: automorphisms of source and target act on the
   determinant line by the determinant on the kernel times the inverse determinant on the cokernel.
 * `LinearMap.detLineCongr_apply_of_forall_eq_smul`: multiplication by a unit `c` on source and
@@ -153,6 +158,29 @@ instance instInvertibleDetLine [Module.Free R V] [Module.Finite R V] :
     Module.Invertible R (detLine R V) :=
   exteriorPower.invertible_of_rankAtStalk_eq fun p ↦ by simp
 
+namespace exteriorPower
+
+variable {K : Type*} [Field K] {V W : Type*} [AddCommGroup V] [Module K V]
+  [AddCommGroup W] [Module K W]
+
+/-- **The top exterior power of a space.** Over a field, a nonzero alternating `n`-form `η` on an
+`n`-dimensional space `V` with values in a line `W` induces a bijection from `⋀ⁿ V` onto `W`. -/
+theorem alternatingMapLinearEquiv_bijective {n : ℕ} (hV : finrank K V = n)
+    (hW : finrank K W = 1) {η : V [⋀^Fin n]→ₗ[K] W} (hη : η ≠ 0) :
+    Function.Bijective (_root_.exteriorPower.alternatingMapLinearEquiv η) := by
+  have hdom : finrank K (⋀[K]^n V) = 1 := by
+    subst hV
+    exact finrank_detLine K V
+  have : FiniteDimensional K (⋀[K]^n V) := Module.finite_of_finrank_eq_succ hdom
+  have : FiniteDimensional K W := Module.finite_of_finrank_eq_succ hW
+  have hsurj : Function.Surjective (_root_.exteriorPower.alternatingMapLinearEquiv η) :=
+    surjective_of_ne_zero_of_finrank_eq_one hW
+      (_root_.exteriorPower.alternatingMapLinearEquiv.map_ne_zero_iff.2 hη)
+  exact ⟨(LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+    (hdom.trans hW.symm)).2 hsurj, hsurj⟩
+
+end exteriorPower
+
 end TauCeti
 
 namespace LinearEquiv
@@ -181,6 +209,15 @@ theorem coe_detLineCongr (e : V ≃ₗ[R] W) (x : detLine R V) :
     (detLineCongr e x : ExteriorAlgebra R W) = ExteriorAlgebra.map e.toLinearMap x := by
   rw [detLineCongr, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
   exact exteriorPower.coe_map _ x
+
+/-- An isomorphism `e` sends an element of a determinant line that is the exterior product of a
+family `v` to the exterior product of the image of `v`. Unlike `LinearEquiv.detLineCongr_ιMulti`,
+the element is given by its value in the exterior algebra, so `v` may have any length and no
+`Fin.cast` renumbering appears. -/
+theorem coe_detLineCongr_of_coe_eq_ιMulti (e : V ≃ₗ[R] W) {x : detLine R V} {n : ℕ}
+    {v : Fin n → V} (hx : (x : ExteriorAlgebra R V) = ExteriorAlgebra.ιMulti R n v) :
+    (detLineCongr e x : ExteriorAlgebra R W) = ExteriorAlgebra.ιMulti R n (e ∘ v) := by
+  rw [coe_detLineCongr, hx, ExteriorAlgebra.map_apply_ιMulti, LinearEquiv.coe_coe]
 
 @[simp]
 theorem detLineCongr_refl : detLineCongr (LinearEquiv.refl R V) = LinearEquiv.refl R _ := by
@@ -602,6 +639,15 @@ theorem detLineCongrOfEq_symm {g : M →ₗ[R] N} (h : f = g) :
     (detLineCongrOfEq h).symm = detLineCongrOfEq h.symm := by
   subst h
   simp only [detLineCongrOfEq_rfl, LinearEquiv.refl_symm]
+
+/-- The identification of the determinant lines of equal bijective maps commutes with their
+identifications with the scalars. -/
+@[simp]
+theorem detLineEquivOfBijective_detLineCongrOfEq [Nontrivial R] {g : M →ₗ[R] N} (h : f = g)
+    (hg : Function.Bijective g) (z : f.detLine) :
+    detLineEquivOfBijective hg (detLineCongrOfEq h z) = detLineEquivOfBijective (h ▸ hg) z := by
+  subst h
+  simp only [detLineCongrOfEq_rfl, LinearEquiv.refl_apply]
 
 /-- Transport along a commuting square of automorphisms `e₁` of `M` and `e₂` of `N` multiplies the
 determinant line of `f` by `det k₁ * (det k₂)⁻¹`, where `k₁` and `k₂` are the automorphisms that
