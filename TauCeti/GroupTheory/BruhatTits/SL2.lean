@@ -89,81 +89,6 @@ variable {K : Type*} [Field K] {a b : Fin 2}
 private lemma fin_two_cases (hab : a ≠ b) : (a = 0 ∧ b = 1) ∨ (a = 1 ∧ b = 0) := by
   fin_cases a <;> fin_cases b <;> simp_all
 
-/-- The Bruhat factorization in rank one: for `c ≠ 0`, the product
-`(1 - c⁻¹ E_{a b}) (1 + c E_{b a}) (1 - c⁻¹ E_{a b})` is antidiagonal. -/
-private lemma bruhat_apply (hab : a ≠ b) {c : K} (hc : c ≠ 0) :
-    ((transvection hab (-c⁻¹) * transvection hab.symm c * transvection hab (-c⁻¹) :
-      SL(2, K)) : Matrix (Fin 2) (Fin 2) K) 0 0 = 0 ∧
-    ((transvection hab (-c⁻¹) * transvection hab.symm c * transvection hab (-c⁻¹) :
-      SL(2, K)) : Matrix (Fin 2) (Fin 2) K) 1 1 = 0 := by
-  rcases fin_two_cases hab with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
-    simp [transvection_coe, Matrix.mul_apply, Fin.sum_univ_two, hc]
-
-private lemma transvection_mul_mul_apply (hab : a ≠ b) (c d e : K) :
-    ((transvection hab.symm d * transvection hab c * transvection hab.symm e : SL(2, K)) :
-      Matrix (Fin 2) (Fin 2) K) b b = 1 + d * c := by
-  rcases fin_two_cases hab with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-  · simp [transvection_coe, Matrix.mul_apply, Fin.sum_univ_two]
-    ring
-  · simp [transvection_coe, Matrix.mul_apply, Fin.sum_univ_two]
-
-/-- The antidiagonal elements of `SL₂(K)` form the right coset `T S` of the diagonal torus. -/
-private lemma mem_reflectionCoset_iff {g : SL(2, K)} :
-    ((g : Matrix (Fin 2) (Fin 2) K) 0 0 = 0 ∧ (g : Matrix (Fin 2) (Fin 2) K) 1 1 = 0) ↔
-      g ∈ MulOpposite.op ((ModularGroup.S : SL(2, ℤ)) : SL(2, K)) •
-        (SpecialLinearGroup.diagonalTorus K 2 : Set SL(2, K)) := by
-  rw [Set.mem_smul_set]
-  have hS := TauCeti.Matrix.SpecialLinearGroup.coe_modularGroup_S (R := K)
-  constructor
-  · rintro ⟨h0, h1⟩
-    refine ⟨g * ((ModularGroup.S : SL(2, ℤ)) : SL(2, K))⁻¹, ?_, by simp⟩
-    rw [SetLike.mem_coe, _root_.Matrix.SpecialLinearGroup.mem_diagonalTorus_iff,
-      _root_.Matrix.SpecialLinearGroup.coe_mul, _root_.Matrix.SpecialLinearGroup.coe_inv, hS,
-      adjugate_fin_two]
-    intro i j hij
-    fin_cases i <;> fin_cases j <;> simp_all [Matrix.mul_apply, Fin.sum_univ_two]
-  · rintro ⟨t, ht, rfl⟩
-    rw [SetLike.mem_coe, _root_.Matrix.SpecialLinearGroup.mem_diagonalTorus_iff] at ht
-    have h01 : (t : Matrix (Fin 2) (Fin 2) K) 0 1 = 0 := ht (by decide)
-    have h10 : (t : Matrix (Fin 2) (Fin 2) K) 1 0 = 0 := ht (by decide)
-    simp [MulOpposite.smul_eq_mul_unop, Matrix.mul_apply, Fin.sum_univ_two, hS, h01, h10]
-
-private lemma transvection_mem_mul_mul (hab : a ≠ b) {c : K} (hc : c ≠ 0) :
-    transvection hab.symm c ∈ ((transvectionHom (A := K) hab).range : Set SL(2, K)) *
-      {g : SL(2, K) | (g : Matrix (Fin 2) (Fin 2) K) 0 0 = 0 ∧
-        (g : Matrix (Fin 2) (Fin 2) K) 1 1 = 0} * (transvectionHom (A := K) hab).range := by
-  have hx : transvection hab c⁻¹ ∈ (transvectionHom hab).range :=
-    ⟨Multiplicative.ofAdd c⁻¹, transvectionHom_apply _ _⟩
-  refine Set.mem_mul.mpr ⟨_, Set.mem_mul.mpr ⟨_, hx, _, bruhat_apply hab hc, rfl⟩, _, hx, ?_⟩
-  rw [← transvection_inv]
-  group
-
-private lemma conjAct_smul_range_transvectionHom (hab : a ≠ b) {m : SL(2, K)}
-    (h0 : (m : Matrix (Fin 2) (Fin 2) K) 0 0 = 0) (h1 : (m : Matrix (Fin 2) (Fin 2) K) 1 1 = 0) :
-    ConjAct.toConjAct m • (transvectionHom (A := K) hab).range =
-      (transvectionHom hab.symm).range := by
-  have hdet := fin_two_mul_sub_mul_eq_one m
-  rw [h0, h1] at hdet
-  have hm : (m : Matrix (Fin 2) (Fin 2) K) b a ≠ 0 := by
-    rcases fin_two_cases hab with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> rintro h <;> simp [h] at hdet
-  have key (c : K) : m⁻¹ * transvection hab.symm (-((m : Matrix (Fin 2) (Fin 2) K) b a) ^ 2 * c) *
-      m = transvection hab c := by
-    rw [mul_assoc, inv_mul_eq_iff_eq_mul, antidiagonal_mul_transvection hab h0 h1]
-  ext g
-  rw [Subgroup.mem_conjAct_smul_iff]
-  constructor
-  · rintro ⟨c, hc⟩
-    refine ⟨Multiplicative.ofAdd (-((m : Matrix (Fin 2) (Fin 2) K) b a) ^ 2 * c.toAdd), ?_⟩
-    rw [transvectionHom_apply] at hc ⊢
-    have := key c.toAdd
-    rw [hc] at this
-    simpa using this
-  · rintro ⟨d, rfl⟩
-    refine ⟨Multiplicative.ofAdd (-d.toAdd / ((m : Matrix (Fin 2) (Fin 2) K) b a) ^ 2), ?_⟩
-    rw [transvectionHom_apply, transvectionHom_apply, ← key, toAdd_ofAdd]
-    congr 2
-    field_simp
-
 /-- The conjugation constant of (V2): conjugation by an antidiagonal `m` sends `1 + d E_{b a}` to
 an element of the root subgroup of `e_a - e_b` whose value is `ω d + 2 ω (m_{a b})`, so `ω d` is
 that value plus the constant `-2 ω (m_{a b})`. -/
@@ -199,7 +124,7 @@ private lemma apply_eq_neg_of_mul_mul_mem (ω : AddValuation K (WithTop ℝ)) (h
       SL(2, K)) : Matrix (Fin 2) (Fin 2) K) b b = 0 := by
     rcases fin_two_cases hab with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
     exacts [h.2, h.1]
-  rw [transvection_mul_mul_apply] at hbb
+  rw [transvection_mul_transvection_mul_transvection_apply_self] at hbb
   have hc : c ≠ 0 := by
     rintro rfl
     simp at hbb
@@ -348,7 +273,9 @@ noncomputable def RootDatum.sl2 (R : Type*) [Field R] [LinearOrder R] [IsStrictO
     exact bot_le
   le_of_root_eq_two_smul i j h := absurd h (root_ne_two_smul i j)
   ne_of_root_eq_two_smul i j h := absurd h (root_ne_two_smul i j)
-  reflectionCoset_eq _ := ⟨_, Set.ext fun _ ↦ mem_reflectionCoset_iff⟩
+  reflectionCoset_eq _ :=
+    ⟨_, Set.ext fun _ ↦
+      TauCeti.Matrix.SpecialLinearGroup.mem_op_modularGroup_S_smul_diagonalTorus_iff.symm⟩
   bruhat i := by
     obtain ⟨⟨⟨a, b⟩, hab⟩, hp⟩ : ∃ p, (typeAIndexEquiv 1).symm i = p := ⟨_, rfl⟩
     have hi : ((typeAIndexEquiv 1).symm i).val = (a, b) := by rw [hp]
@@ -357,7 +284,7 @@ noncomputable def RootDatum.sl2 (R : Type*) [Field R] [LinearOrder R] [IsStrictO
     rw [range_transvectionHom_eq hab hi, range_transvectionHom_eq hab.symm hi']
     rintro _ ⟨⟨c, rfl⟩, hc⟩
     rw [transvectionHom_apply] at hc ⊢
-    refine transvection_mem_mul_mul hab fun h ↦ hc ?_
+    refine transvection_mem_range_mul_antidiagonal_mul_range hab fun h ↦ hc ?_
     rw [h, transvection_coeff_zero]
     exact Set.mem_singleton 1
   reflection_conjugates i m hm j := by
@@ -366,7 +293,7 @@ noncomputable def RootDatum.sl2 (R : Type*) [Field R] [LinearOrder R] [IsStrictO
     have hj' : ((typeAIndexEquiv 1).symm ((sl2RootPairing R).reflectionPerm i j)).val = (b, a) := by
       rw [typeAIndexEquiv_symm_sl2RootPairing_reflectionPerm, hj]
     rw [range_transvectionHom_eq hab hj, range_transvectionHom_eq hab.symm hj']
-    exact conjAct_smul_range_transvectionHom hab hm.1 hm.2
+    exact conjAct_smul_range_transvectionHom_of_antidiagonal hab hm.1 hm.2
   positiveVector_regular i := by
     rw [sl2RootPairing_root'_apply]
     split_ifs <;> norm_num
@@ -664,15 +591,6 @@ theorem sl2TorusValuationMap_apply (ω : AddValuation K (WithTop ℝ)) (z : (Roo
     sl2TorusValuationMap ω z j = -(ω (((z : SL(2, K)) : Matrix (Fin 2) (Fin 2) K) 0 0)).untop₀ :=
   (rfl)
 
-/-- The first diagonal entry of an element of the diagonal torus of `SL₂(K)` is nonzero. -/
-private lemma SL2.apply_zero_zero_ne_zero_of_mem {z : SL(2, K)}
-    (hz : z ∈ SpecialLinearGroup.diagonalTorus K 2) :
-    (z : Matrix (Fin 2) (Fin 2) K) 0 0 ≠ 0 := by
-  have hz' := _root_.Matrix.SpecialLinearGroup.mem_diagonalTorus_iff.mp hz
-  have hdet := fin_two_mul_sub_mul_eq_one z
-  rw [hz' (by decide : (1 : Fin 2) ≠ 0), mul_zero, sub_zero] at hdet
-  exact left_ne_zero_of_mul_eq_one hdet
-
 /-- Read in `WithTop ℝ`, the valuation map of the diagonal torus sends `diag(t, t⁻¹)` to
 `-ω t`. -/
 theorem coe_sl2TorusValuationMap_apply (ω : AddValuation K (WithTop ℝ))
@@ -681,7 +599,7 @@ theorem coe_sl2TorusValuationMap_apply (ω : AddValuation K (WithTop ℝ))
       -ω (((z : SL(2, K)) : Matrix (Fin 2) (Fin 2) K) 0 0) := by
   rw [sl2TorusValuationMap_apply, WithTop.LinearOrderedAddCommGroup.coe_neg,
     WithTop.coe_untop₀_of_ne_top
-      ((ω.ne_top_iff).mpr (SL2.apply_zero_zero_ne_zero_of_mem z.property))]
+      ((ω.ne_top_iff).mpr (apply_self_ne_zero_of_mem_diagonalTorus z.property 0))]
 
 /-- The valuation map of the diagonal torus sends `1` to `0`. -/
 @[simp]
@@ -703,8 +621,8 @@ theorem sl2TorusValuationMap_mul (ω : AddValuation K (WithTop ℝ)) (z w : (Roo
       Fin.sum_univ_two, hz (by decide : (0 : Fin 2) ≠ 1), zero_mul, add_zero]
   rw [Pi.add_apply, sl2TorusValuationMap_apply, sl2TorusValuationMap_apply,
     sl2TorusValuationMap_apply, h, AddValuation.map_mul,
-    WithTop.untop₀_add ((ω.ne_top_iff).mpr (SL2.apply_zero_zero_ne_zero_of_mem z.property))
-      ((ω.ne_top_iff).mpr (SL2.apply_zero_zero_ne_zero_of_mem w.property)), neg_add]
+    WithTop.untop₀_add ((ω.ne_top_iff).mpr (apply_self_ne_zero_of_mem_diagonalTorus z.property 0))
+      ((ω.ne_top_iff).mpr (apply_self_ne_zero_of_mem_diagonalTorus w.property 0)), neg_add]
 
 /-- The valuation map of the diagonal torus sends inverses to negatives. -/
 @[simp]
