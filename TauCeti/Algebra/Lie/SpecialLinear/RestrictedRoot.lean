@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.CartanInvolution.RestrictedRoot.Basic
 public import TauCeti.Algebra.Lie.SpecialLinear.Cartan
 public import TauCeti.Algebra.Lie.SpecialLinear.Character
-import TauCeti.Algebra.Lie.SpecialLinear.Root.Base
+public import TauCeti.Algebra.Lie.SpecialLinear.Root.Base
 
 /-!
 # Restricted roots of `𝔰𝔩_n(ℝ)`
@@ -25,6 +25,15 @@ has `(k, l)` entry `(H k k - H l l) X k l` (`TauCeti.lie_apply_of_mem_specialLin
 
 This is the split case of the restricted root decomposition: `𝔞` is a Cartan subalgebra, every
 restricted root space is a line, and `𝔪 = 0`.
+
+## Main results
+
+* `TauCeti.slRestrictedRoot`: the functional `e_i - e_j` on `𝔞`.
+* `TauCeti.isMaximalAbelianInP_specialLinearDiagonal`: `𝔞` is maximal abelian in `𝔭`.
+* `TauCeti.restrictedRootSpace_zero_inf_fixedSubalgebra_specialLinearDiagonal`: `𝔪 = 0`.
+* `TauCeti.restrictedRootSpace_slRestrictedRoot`: the root space of `e_i - e_j` is `ℝ E_ij`.
+* `TauCeti.mem_restrictedRoots_specialLinearDiagonal_iff`: the restricted roots are the
+  `e_i - e_j` with `i ≠ j`.
 
 ## References
 
@@ -62,6 +71,23 @@ theorem slRestrictedRoot_apply (i j : Fin (r + 1)) (H : specialLinearDiagonal r 
   rw [slRestrictedRoot, LinearMap.comp_apply, LinearMap.sub_apply, specialLinearEpsilon_apply,
     specialLinearEpsilon_apply, LinearEquiv.coe_coe, LinearEquiv.coe_ofEq_apply]
 
+/-- On `H ∈ specialLinearDiagonalCartan r A`, the functional `e_i - e_j` is `εᵢ - εⱼ`. -/
+theorem slRestrictedRoot_apply_mk (i j : Fin (r + 1)) (H : specialLinearDiagonalCartan r A) :
+    slRestrictedRoot r A i j
+        ⟨H, mem_specialLinearDiagonalCartan_iff_mem_specialLinearDiagonal.mp H.property⟩ =
+      (specialLinearEpsilon r A i - specialLinearEpsilon r A j) H := by
+  rw [slRestrictedRoot, LinearMap.comp_apply, LinearEquiv.coe_coe]
+  exact congrArg _ (Subtype.ext (LinearEquiv.coe_ofEq_apply _ _))
+
+/-- On `H ∈ specialLinearDiagonalCartan r K`, the functional `e_i - e_j` with `i ≠ j` is the root
+`εᵢ - εⱼ` (`TauCeti.specialLinearRoot`). -/
+theorem slRestrictedRoot_apply_mk_eq_specialLinearRoot {K : Type*} [Field K] {i j : Fin (r + 1)}
+    (hij : i ≠ j) (H : specialLinearDiagonalCartan r K) :
+    slRestrictedRoot r K i j
+        ⟨H, mem_specialLinearDiagonalCartan_iff_mem_specialLinearDiagonal.mp H.property⟩ =
+      specialLinearRoot r K i j hij H := by
+  rw [slRestrictedRoot_apply_mk, specialLinearRoot_apply, LinearMap.sub_apply]
+
 /-- `e_k - e_k = 0`. -/
 @[simp]
 theorem slRestrictedRoot_self (k : Fin (r + 1)) : slRestrictedRoot r A k k = 0 :=
@@ -75,16 +101,15 @@ theorem slRestrictedRoot_self (k : Fin (r + 1)) : slRestrictedRoot r A k k = 0 :
 theorem slRestrictedRoot_eq_iff {i j k l : Fin (r + 1)} (hij : i ≠ j) :
     slRestrictedRoot r ℝ k l = slRestrictedRoot r ℝ i j ↔ k = i ∧ l = j := by
   refine ⟨fun h ↦ ?_, fun ⟨hki, hlj⟩ ↦ hki ▸ hlj ▸ rfl⟩
-  have hH (H : specialLinearDiagonalCartan r ℝ) : (H : sl (Fin (r + 1)) ℝ) ∈
-      specialLinearDiagonal r ℝ :=
-    mem_specialLinearDiagonalCartan_iff_mem_specialLinearDiagonal.mp H.property
   by_cases hkl : k = l
   · subst hkl
     rw [slRestrictedRoot_self] at h
-    exact absurd (funext fun H ↦ by simpa using (LinearMap.congr_fun h ⟨H, hH H⟩).symm)
-      (specialLinearRoot_isNonZero hij)
-  · exact (specialLinearRoot_inj hkl hij).mp
-      (LieModule.Weight.ext fun H ↦ by simpa using LinearMap.congr_fun h ⟨H, hH H⟩)
+    refine absurd (funext fun H ↦ ?_) (specialLinearRoot_isNonZero (K := ℝ) hij)
+    rw [Pi.zero_apply, ← slRestrictedRoot_apply_mk_eq_specialLinearRoot hij, ← h,
+      LinearMap.zero_apply]
+  · refine (specialLinearRoot_inj (K := ℝ) hkl hij).mp (LieModule.Weight.ext fun H ↦ ?_)
+    rw [← slRestrictedRoot_apply_mk_eq_specialLinearRoot hkl, h,
+      slRestrictedRoot_apply_mk_eq_specialLinearRoot hij]
 
 /-- `X ∈ 𝔤_μ` exactly when `(H k k - H l l - μ H) X k l = 0` for every `H ∈ 𝔞` and every entry. -/
 theorem mem_restrictedRootSpace_specialLinearDiagonal_iff {μ : Dual A (specialLinearDiagonal r A)}
@@ -165,11 +190,11 @@ theorem restrictedRootSpace_slRestrictedRoot {i j : Fin (r + 1)} (hij : i ≠ j)
       exact (mul_eq_zero.mp (h H k l)).resolve_left (sub_ne_zero.mpr hH)
   · rintro ⟨c, rfl⟩
     refine mem_restrictedRootSpace.mpr fun H ↦ ?_
-    have hH : (H : sl (Fin (r + 1)) ℝ) ∈ specialLinearDiagonalCartan r ℝ :=
-      mem_specialLinearDiagonalCartan_iff_mem_specialLinearDiagonal.mpr H.property
-    rw [slRestrictedRoot_apply, ← map_smul, smul_eq_mul, mul_one]
-    simpa only [LieSubalgebra.coe_bracket_of_module, LinearMap.sub_apply,
-      specialLinearEpsilon_apply] using lie_specialLinearDiagonalCartan_single ⟨H, hH⟩ hij c
+    have := lie_specialLinearDiagonalCartan_single
+      ⟨H, mem_specialLinearDiagonalCartan_iff_mem_specialLinearDiagonal.mpr H.property⟩ hij c
+    rw [LieSubalgebra.coe_bracket_of_module, ← slRestrictedRoot_apply_mk] at this
+    rw [← map_smul, smul_eq_mul, mul_one]
+    exact this
 
 /-- **The restricted roots of `𝔰𝔩_{r+1}(ℝ)` are the `e_i - e_j` with `i ≠ j`.** -/
 theorem mem_restrictedRoots_specialLinearDiagonal_iff {μ : Dual ℝ (specialLinearDiagonal r ℝ)} :
