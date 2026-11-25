@@ -30,6 +30,7 @@ theorem finset_inf_mem {S : ι → Sieve X} {t : Finset ι} (h : ∀ i ∈ t, S 
 
 /-- The intersection of finitely many sieves is a covering sieve if and only if each of them is
 a covering sieve. -/
+@[simp]
 theorem finset_inf_mem_iff {S : ι → Sieve X} {t : Finset ι} :
     t.inf S ∈ J X ↔ ∀ i ∈ t, S i ∈ J X :=
   ⟨fun h _ hi ↦ J.superset_covering (Finset.inf_le hi) h, J.finset_inf_mem⟩

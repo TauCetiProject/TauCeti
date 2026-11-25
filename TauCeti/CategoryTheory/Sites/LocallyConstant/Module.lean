@@ -256,12 +256,13 @@ end Constant
 
 section Closure
 
-variable [HasSheafify J (ModuleCat.{w} Λ)] [J.WEqualsLocallyBijective (ModuleCat.{w} Λ)]
+variable [J.WEqualsLocallyBijective (ModuleCat.{w} Λ)]
 
 /-- **Kernels of locally constant sheaves.** Over a Noetherian ring `Λ`, the kernel of a morphism
 between sheaves of `Λ`-modules that are locally constant of finite type is locally constant of
 finite type. -/
-theorem IsLocallyConstantIn.kernel [IsNoetherianRing Λ] {F G : Sheaf J (ModuleCat.{w} Λ)}
+theorem IsLocallyConstantIn.kernel [HasSheafify J (ModuleCat.{w} Λ)] [IsNoetherianRing Λ]
+    {F G : Sheaf J (ModuleCat.{w} Λ)}
     (hF : F.IsLocallyConstantIn J fun M : ModuleCat.{w} Λ ↦ Module.Finite Λ M)
     (hG : G.IsLocallyConstantIn J fun M : ModuleCat.{w} Λ ↦ Module.Finite Λ M) (φ : F ⟶ G) :
     (kernel φ).IsLocallyConstantIn J fun M : ModuleCat.{w} Λ ↦ Module.Finite Λ M := by
@@ -278,12 +279,15 @@ theorem IsLocallyConstantIn.kernel [IsNoetherianRing Λ] {F G : Sheaf J (ModuleC
 /-- **Cokernels of locally constant sheaves.** If restricting sheaves to the slices `Over Y`
 preserves cokernels, the cokernel of a morphism between sheaves of `Λ`-modules that are locally
 constant of finite type is locally constant of finite type. -/
-theorem IsLocallyConstantIn.cokernel
+theorem IsLocallyConstantIn.cokernel [HasWeakSheafify J (ModuleCat.{w} Λ)]
     [∀ Y : C, PreservesColimitsOfShape WalkingParallelPair (J.overPullback (ModuleCat.{w} Λ) Y)]
     {F G : Sheaf J (ModuleCat.{w} Λ)}
     (hF : F.IsLocallyConstantIn J fun M : ModuleCat.{w} Λ ↦ Module.Finite Λ M)
     (hG : G.IsLocallyConstantIn J fun M : ModuleCat.{w} Λ ↦ Module.Finite Λ M) (φ : F ⟶ G) :
     (cokernel φ).IsLocallyConstantIn J fun M : ModuleCat.{w} Λ ↦ Module.Finite Λ M := by
+  -- `constantSheaf` is the constant presheaf functor followed by sheafification, a left adjoint.
+  have : (constantSheaf J (ModuleCat.{w} Λ)).PreservesZeroMorphisms :=
+    inferInstanceAs (Functor.const Cᵒᵖ ⋙ presheafToSheaf J _).PreservesZeroMorphisms
   refine (isLocallyConstantIn_iff _ _).2 fun X ↦
     J.superset_covering (fun Y f hf ↦ ?_) (hF.locallyConstantMapSieve_mem hG φ X)
   obtain ⟨M, N, -, hN, g, eF, eG, w⟩ := hf
