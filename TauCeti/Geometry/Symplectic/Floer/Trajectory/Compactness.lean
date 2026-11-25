@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 import TauCeti.MeasureTheory.Group.Integral
+import TauCeti.MeasureTheory.Group.Measure
 import TauCeti.MeasureTheory.Integral.Bochner.PeriodicStrip
 import TauCeti.Order.Filter.AtTopBot
 import TauCeti.Topology.MetricSpace.Pseudo.Prod
@@ -109,10 +110,6 @@ private lemma exists_pos_forall_subseq_ball_add_int (ω : SymplecticForm V) {K :
     (subset_univ _) fun z _ x hx ↦ hJt z x hx
   refine ⟨δ, hδ, fun u E hu hfl huK hE m n ↦ ?_⟩
   set c : ℝ × ℝ := ((m : ℝ), (n : ℝ))
-  -- Lebesgue measure on the plane is the product measure, which is translation invariant.
-  have : (volume : Measure (ℝ × ℝ)).IsAddRightInvariant := by
-    rw [Measure.volume_eq_prod]
-    infer_instance
   -- The window `z ↦ u k (z + c)` solves the Floer equation, and its energy density is a translate.
   have hKs' : (fun z ↦ Ks (z + c)) = Ks := funext (hKsper m n)
   have hKt' : (fun z ↦ Kt (z + c)) = Kt := funext (hKtper m n)

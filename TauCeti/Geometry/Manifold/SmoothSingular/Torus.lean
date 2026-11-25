@@ -47,6 +47,9 @@ the fundamental rectangle `[0, p] × [0, q]` gives the integral of `φ` over the
 
 * `TauCeti.closedFormHomologyPeriod_addCircleProdFundamentalClass`: the period of a closed
   two-form on the class of the torus is its integral over the torus.
+* `TauCeti.closedFormHomologyPeriod_singularHomologyMap_addCircleProdFundamentalClass`: the
+  period of a closed two-form on the image of the class of the torus under a smooth map is the
+  integral of its pullback over the torus.
 
 ## References
 
@@ -340,5 +343,24 @@ theorem closedFormHomologyPeriod_addCircleProdFundamentalClass
           (φ.val.isSmoothForm.integrableTopForm
             (isCompact_univ.of_isClosed_subset (isClosed_tsupport _) (subset_univ _))
             (Module.Basis.finTwoProd ℝ)) 0 0, zero_add, zero_add]
+
+variable {p q} in
+/-- **The period of a closed two-form on the image of the torus class is an integral.** For a
+smooth map `f` from the torus `ℝ / pℤ × ℝ / qℤ` to a manifold `N` and a closed two-form `φ` on `N`,
+the period of `φ` on the image `f_*[T]` of the class of the torus is the integral of `f^* φ` over
+the torus, oriented as the product of the positive orientations of the two circles. -/
+theorem closedFormHomologyPeriod_singularHomologyMap_addCircleProdFundamentalClass
+    {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+    [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} {N : Type} [TopologicalSpace N]
+    [ChartedSpace H' N] [T2Space N] [SigmaCompactSpace N] [IsManifold J ∞ N]
+    {f : AddCircle p × AddCircle q → N} (hf : ContMDiff (𝓘(ℝ).prod 𝓘(ℝ)) J ∞ f)
+    (φ : closedForms J N 2) :
+    closedFormHomologyPeriod φ
+        (ContinuousMap.singularHomologyMap ℤ 2 ⟨f, hf.continuous⟩
+          (addCircleProdFundamentalClass p q)) =
+      integralTopForm ((AddCircle.orientation p).prod (AddCircle.orientation q))
+        (SmoothForm.mpullback f hf φ.val).val := by
+  rw [← closedFormHomologyPeriod_mpullback hf,
+    closedFormHomologyPeriod_addCircleProdFundamentalClass, closedForms.coe_mpullback]
 
 end TauCeti
