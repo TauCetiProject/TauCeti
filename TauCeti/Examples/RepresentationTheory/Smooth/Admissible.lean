@@ -71,15 +71,6 @@ example (n : ℕ) :
     (Multiplicative ℤ_[p] ⧸ (padicIntLevel p n).toSubgroup)) := ⟨⟦1⟧⟩
   exact Nat.card_eq_one_iff_unique.2 ⟨inferInstance, inferInstance⟩
 
-/-- `ℤ_p` is a compact open subgroup of `ℚ_p`, written multiplicatively. -/
-theorem Examples.SmoothDual.isCompact_padicIntOpenSubgroup :
-    IsCompact (padicIntOpenSubgroup p : Set (Multiplicative ℚ_[p])) := by
-  have : (padicIntOpenSubgroup p : Set (Multiplicative ℚ_[p])) =
-      Multiplicative.ofAdd '' Metric.closedBall (0 : ℚ_[p]) 1 :=
-    Set.ext fun x ↦ by simp [mem_padicIntOpenSubgroup_iff]
-  rw [this]
-  exact (isCompact_closedBall (0 : ℚ_[p]) 1).image continuous_ofAdd
-
 open Examples.SmoothDual in
 /-- **`ℚ[ℚ_p ⧸ ℤ_p]` is smooth and finitely generated, but not admissible**: the compact open
 subgroup `ℤ_p` acts trivially on it, and `ℚ_p ⧸ ℤ_p` is infinite. -/

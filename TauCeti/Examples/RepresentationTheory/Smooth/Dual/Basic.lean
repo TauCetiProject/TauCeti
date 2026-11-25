@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Smooth.Dual.Basic
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 import Mathlib.LinearAlgebra.Dimension.Finite
+import Mathlib.NumberTheory.Padics.ProperSpace
 
 /-!
 # Examples of smooth duals
@@ -16,9 +17,9 @@ The smooth dual of the zero representation is zero, and the smooth dual of a tri
 representation, or of a smooth representation on a finitely generated module such as `A[G ⧸ U]`
 for an open subgroup `U` of finite index, is the whole algebraic dual.
 
-For `G = ℚ_[p]` and `V = ℚ[ℚ_[p] ⧸ ℤ_[p]]`, the open subgroup `ℤ_[p]` acts trivially, so every
-linear form on `V` and on its smooth dual is smooth. Since `ℚ_[p] ⧸ ℤ_[p]` is infinite, `V` is
-infinite-dimensional and the evaluation map `V → V^∨∨` is not surjective.
+For `G = ℚ_[p]` and `V = ℚ[ℚ_[p] ⧸ ℤ_[p]]`, the compact open subgroup `ℤ_[p]` acts trivially, so
+every linear form on `V` and on its smooth dual is smooth. Since `ℚ_[p] ⧸ ℤ_[p]` is infinite, `V`
+is infinite-dimensional and the evaluation map `V → V^∨∨` is not surjective.
 -/
 
 public section
@@ -72,6 +73,15 @@ abbrev PadicQuotient : Type :=
 theorem mem_padicIntOpenSubgroup_iff {x : Multiplicative ℚ_[p]} :
     x ∈ padicIntOpenSubgroup p ↔ ‖x.toAdd‖ ≤ 1 :=
   Iff.rfl
+
+/-- `ℤ_[p]` is a compact open subgroup of `ℚ_[p]`, written multiplicatively. -/
+theorem isCompact_padicIntOpenSubgroup :
+    IsCompact (padicIntOpenSubgroup p : Set (Multiplicative ℚ_[p])) := by
+  have : (padicIntOpenSubgroup p : Set (Multiplicative ℚ_[p])) =
+      Multiplicative.ofAdd '' Metric.closedBall (0 : ℚ_[p]) 1 :=
+    Set.ext fun x ↦ by simp [mem_padicIntOpenSubgroup_iff]
+  rw [this]
+  exact (isCompact_closedBall (0 : ℚ_[p]) 1).image continuous_ofAdd
 
 /-- The open subgroup `ℤ_[p]` fixes every point of `ℚ_[p] ⧸ ℤ_[p]`. -/
 theorem smul_eq_of_mem_padicIntOpenSubgroup {g : Multiplicative ℚ_[p]}
