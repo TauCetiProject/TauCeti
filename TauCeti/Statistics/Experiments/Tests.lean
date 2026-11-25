@@ -333,10 +333,12 @@ theorem isStatisticalTest_thresholdTest [TopologicalSpace α] [OrderClosedTopolo
 
 /-- **The integral of a threshold test.** For a measure `P` under which the rejection region
 `{T > c}` and the boundary `{T = c}` are null-measurable sets of finite measure, the integral of
-`thresholdTest T c γ` is `P(T > c) + γ P(T = c)`. For an almost everywhere measurable `T` and a
-finite `P` these hypotheses hold. When moreover `P` is a probability law, `T` is measurable and
-`γ ∈ [0, 1]`, the threshold test is a test (`TauCeti.isStatisticalTest_thresholdTest`) and this
-integral is its rejection probability under `P`. -/
+`thresholdTest T c γ` is `P(T > c) + γ P(T = c)`. When `α` carries a measurable structure in
+which `Ioi c` and `{c}` are measurable (such as the Borel σ-algebra of an order-closed topology),
+an almost everywhere measurable `T` and a finite `P` satisfy these hypotheses. When moreover `P`
+is a probability law, `T` is measurable and `γ ∈ [0, 1]`, the threshold test is a test
+(`TauCeti.isStatisticalTest_thresholdTest`) and this integral is its rejection probability under
+`P`. -/
 @[simp]
 theorem integral_thresholdTest {P : Measure X} {T : X → α} {c : α}
     (hs : NullMeasurableSet (T ⁻¹' Ioi c) P) (ht : NullMeasurableSet (T ⁻¹' {c}) P)
