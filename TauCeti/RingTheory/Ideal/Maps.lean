@@ -113,7 +113,7 @@ theorem map_eq_span_singleton_of_isUnit {B B' F : Type*} [CommSemiring B] [Semir
 /-- If the images under `f` of any two elements of an ideal `I` are comparable for divisibility,
 then an element lies in the extension `I.map f` if and only if it is divisible by `f a` for some
 `a ∈ I`. This holds when the source or the target of `f` is a valuation ring. -/
-theorem mem_map_iff_exists_dvd_of_dvd_total {R S : Type*} [CommRing R] [CommRing S]
+theorem mem_map_iff_exists_dvd_of_dvd_total {R S : Type*} [CommSemiring R] [CommSemiring S]
     (f : R →+* S) {I : Ideal R} (h : ∀ a ∈ I, ∀ b ∈ I, f a ∣ f b ∨ f b ∣ f a) {x : S} :
     x ∈ I.map f ↔ ∃ a ∈ I, f a ∣ x := by
   refine ⟨fun hx ↦ ?_, fun ⟨a, ha, hax⟩ ↦ mem_of_dvd _ hax (mem_map_of_mem f ha)⟩
@@ -134,8 +134,9 @@ theorem mem_map_iff_exists_dvd_of_dvd_total {R S : Type*} [CommRing R] [CommRing
 
 /-- The greatest ideal of `W` whose contraction along `f : V →+* W` is contained in a prime `p`
 of `V` is prime. -/
-theorem isPrime_of_isGreatest_comap_le {V W : Type*} [CommRing V] [CommRing W] (f : V →+* W)
-    {p : Ideal V} [p.IsPrime] {q : Ideal W} (hq : IsGreatest {J : Ideal W | J.comap f ≤ p} q) :
+theorem isPrime_of_isGreatest_comap_le {V W : Type*} [CommSemiring V] [CommSemiring W]
+    (f : V →+* W) {p : Ideal V} [p.IsPrime] {q : Ideal W}
+    (hq : IsGreatest {J : Ideal W | J.comap f ≤ p} q) :
     q.IsPrime :=
   isPrime_of_maximally_disjoint q (p.primeCompl.map f)
     (disjoint_map_primeCompl_iff_comap_le.mpr hq.1)

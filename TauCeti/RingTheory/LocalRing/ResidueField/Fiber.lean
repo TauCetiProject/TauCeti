@@ -33,7 +33,8 @@ of `R \ p` is the localization of `B` at `q`
 * `Ideal.Fiber.map_le_maximalIdeal`: the ideal `p B_q` lies in the maximal ideal of `B_q`.
 * `Ideal.Fiber.isNoetherianRing`: if `B` is Noetherian, so is the fibre ring `κ(p) ⊗[R] B`.
 * `Ideal.Fiber.algEquivQuotientLocalizationAtPrime`: for the greatest ideal `q` of `B`
-  contracting into `p`, the fibre ring `κ(p) ⊗[R] B` is isomorphic to `B_q ⧸ p B_q`.
+  contracting into `p`, the fibre ring `κ(p) ⊗[R] B` is isomorphic to `B_q ⧸ p B_q`; it sends
+  `1 ⊗ b` to the class of `b` (`Ideal.Fiber.algEquivQuotientLocalizationAtPrime_one_tmul`).
 -/
 
 public section
@@ -128,5 +129,17 @@ noncomputable def Fiber.algEquivQuotientLocalizationAtPrime
       congr 1
       ext
       simp
+
+/-- The isomorphism `κ(p) ⊗[R] B ≃ B_q ⧸ p B_q` of
+`Ideal.Fiber.algEquivQuotientLocalizationAtPrime` sends `1 ⊗ b` to the class of `b`. -/
+@[simp]
+theorem Fiber.algEquivQuotientLocalizationAtPrime_one_tmul
+    (hq : IsGreatest {J : Ideal B | J.comap (algebraMap R B) ≤ p} q) (b : B) :
+    Fiber.algEquivQuotientLocalizationAtPrime p hq ((1 : p.ResidueField) ⊗ₜ[R] b) =
+      algebraMap B (Localization.AtPrime q ⧸
+        (p.map (algebraMap R B)).map (algebraMap B (Localization.AtPrime q))) b :=
+  -- `1 ⊗ b` is the image of `b` under the `B`-algebra structure `rightAlgebra`.
+  letI : Algebra B (p.Fiber B) := Algebra.TensorProduct.rightAlgebra
+  (Fiber.algEquivQuotientLocalizationAtPrime p hq).commutes b
 
 end Ideal
