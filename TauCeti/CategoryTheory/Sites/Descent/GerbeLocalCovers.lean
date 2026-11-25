@@ -23,9 +23,8 @@ sieves behind the locality conditions of a gerbe (Stacks, Definition 8.11.1 (06N
 
 They are sieves for any pseudofunctor; the transport along composites uses the comparison
 isomorphisms `F.mapComp'`, so `F` need not be strict. They are stable under pullback, and
-when `F` is a gerbe for `J` they are `J`-covering, as are their intersections with any covering
-sieve. The covering conclusion for `objectCover` does not produce an object over `U`: if `F(U)` is
-empty, the identity of `U` is not in it.
+when `F` is a gerbe for `J` they are `J`-covering. The covering conclusion for `objectCover`
+does not produce an object over `U`: if `F(U)` is empty, the identity of `U` is not in it.
 
 These covers are where the local objects of a gerbe live: two local objects over different bases
 are compared on their overlap cover.
@@ -35,11 +34,10 @@ are compared on their overlap cover.
 In the namespace `CategoryTheory.Pseudofunctor.GerbeLocalCovers`:
 
 * `objectCover`, `objectCover_eq_top_iff`, `objectCover_eq_bot_iff`, `pullback_objectCover`,
-  `objectCover_mem`, `inf_objectCover_mem`, `id_notMem_objectCover`.
-* `isomCover`, `isomCover_comm`, `isomCover_eq_top_of_iso`, `isomCover_self`, `pullback_isomCover`,
-  `isomCover_mem`, `inf_isomCover_mem`.
-* `overlapCover`, `overlapCover_comm`, `pullback_overlapCover`, `overlapCover_mem`,
-  `pullback_overlapCover_mem`.
+  `objectCover_mem`, `id_notMem_objectCover`.
+* `isomCover`, `isomCover_comm`, `isomCover_congr`, `isomCover_self`, `isomCover_eq_top_of_iso`,
+  `pullback_isomCover`, `isomCover_mem`.
+* `overlapCover`, `overlapCover_comm`, `pullback_overlapCover`, `overlapCover_mem`.
 
 ## References
 
@@ -80,7 +78,7 @@ theorem objectCover_eq_top_iff {U : C} : objectCover F U = ⊤ ↔ Nonempty (F.o
 empty. -/
 theorem objectCover_eq_bot_iff {U : C} :
     objectCover F U = ⊥ ↔ ∀ ⦃V : C⦄ (_ : V ⟶ U), IsEmpty (F.obj (.mk (op V))) :=
-  ⟨fun h _ f ↦ ⟨fun x ↦ by simpa [h] using (show objectCover F U f from ⟨x⟩)⟩,
+  ⟨fun h _ f ↦ ⟨fun x ↦ by simpa [h] using (mem_objectCover_iff f).2 ⟨x⟩⟩,
     fun h ↦ eq_bot_iff.2 fun _ f ⟨x⟩ ↦ (h f).false x⟩
 
 /-- The pullback of the object cover of `U` along `f : V ⟶ U` is the object cover of `V`. -/
@@ -93,12 +91,6 @@ theorem pullback_objectCover {U V : C} (f : V ⟶ U) :
 theorem objectCover_mem [F.IsGerbe J] (U : C) : objectCover F U ∈ J U := by
   obtain ⟨R, hR, h⟩ := IsGerbe.exists_covering_nonempty (F := F) (J := J) U
   exact J.superset_covering (fun _ f hf ↦ h f hf) hR
-
-/-- For a gerbe, the intersection of a covering sieve with the object cover is covering; each of
-its members has a nonempty source fibre. -/
-theorem inf_objectCover_mem [F.IsGerbe J] {U : C} {R : Sieve U} (hR : R ∈ J U) :
-    R ⊓ objectCover F U ∈ J U :=
-  J.intersection_covering hR (objectCover_mem U)
 
 /-- If the fibre over `U` is empty, the identity of `U` is not in the object cover. -/
 theorem id_notMem_objectCover {U : C} (h : IsEmpty (F.obj (.mk (op U)))) :
@@ -126,15 +118,23 @@ theorem mem_isomCover_iff {U V : C} (x y : F.obj (.mk (op U))) (f : V ⟶ U) :
 theorem isomCover_comm {U : C} (x y : F.obj (.mk (op U))) : isomCover F x y = isomCover F y x :=
   Sieve.ext fun _ _ ↦ ⟨fun ⟨e⟩ ↦ ⟨e.symm⟩, fun ⟨e⟩ ↦ ⟨e.symm⟩⟩
 
-/-- The isomorphism cover of isomorphic objects is the maximal sieve, for any pseudofunctor. -/
-theorem isomCover_eq_top_of_iso {U : C} {x y : F.obj (.mk (op U))} (e : x ≅ y) :
-    isomCover F x y = ⊤ :=
-  eq_top_iff.2 fun _ f _ ↦ ⟨(F.map f.op.toLoc).toFunctor.mapIso e⟩
+/-- The isomorphism cover is unchanged when its two objects are replaced by isomorphic ones. -/
+theorem isomCover_congr {U : C} {x x' y y' : F.obj (.mk (op U))} (e : x ≅ x') (e' : y ≅ y') :
+    isomCover F x y = isomCover F x' y' :=
+  Sieve.ext fun _ f ↦
+    let m := (F.map f.op.toLoc).toFunctor
+    ⟨fun ⟨g⟩ ↦ ⟨m.mapIso e.symm ≪≫ g ≪≫ m.mapIso e'⟩,
+      fun ⟨g⟩ ↦ ⟨m.mapIso e ≪≫ g ≪≫ m.mapIso e'.symm⟩⟩
 
 /-- The isomorphism cover of an object with itself is the maximal sieve, for any pseudofunctor. -/
 @[simp]
 theorem isomCover_self {U : C} (x : F.obj (.mk (op U))) : isomCover F x x = ⊤ :=
-  isomCover_eq_top_of_iso (Iso.refl x)
+  eq_top_iff.2 fun _ _ _ ↦ ⟨Iso.refl _⟩
+
+/-- The isomorphism cover of isomorphic objects is the maximal sieve, for any pseudofunctor. -/
+theorem isomCover_eq_top_of_iso {U : C} {x y : F.obj (.mk (op U))} (e : x ≅ y) :
+    isomCover F x y = ⊤ :=
+  (isomCover_congr (Iso.refl x) e.symm).trans (isomCover_self x)
 
 /-- The pullback of the isomorphism cover of `x` and `y` along `f : V ⟶ U` is the isomorphism
 cover of their pullbacks. -/
@@ -152,11 +152,6 @@ theorem isomCover_mem [F.IsGerbe J] {U : C} (x y : F.obj (.mk (op U))) :
     isomCover F x y ∈ J U := by
   obtain ⟨R, hR, h⟩ := IsGerbe.exists_covering_iso (J := J) x y
   exact J.superset_covering (fun _ f hf ↦ h f hf) hR
-
-/-- For a gerbe, the intersection of a covering sieve with an isomorphism cover is covering. -/
-theorem inf_isomCover_mem [F.IsGerbe J] {U : C} {R : Sieve U} (hR : R ∈ J U)
-    (x y : F.obj (.mk (op U))) : R ⊓ isomCover F x y ∈ J U :=
-  J.intersection_covering hR (isomCover_mem x y)
 
 /-! ### The overlap cover -/
 
@@ -187,24 +182,14 @@ charts `q ≫ i` and `q ≫ j`. -/
 theorem pullback_overlapCover {S T V W : C} (i : T ⟶ V) (j : T ⟶ W) (x : F.obj (.mk (op V)))
     (y : F.obj (.mk (op W))) (q : S ⟶ T) :
     (overlapCover F i j x y).pullback q = overlapCover F (q ≫ i) (q ≫ j) x y :=
-  Sieve.ext fun _ g ↦
-    let c := Cat.Hom.toNatIso (F.mapComp' q.op.toLoc g.op.toLoc (g ≫ q).op.toLoc)
-    let a := c.app _ ≪≫ (F.map g.op.toLoc).toFunctor.mapIso
-      ((Cat.Hom.toNatIso (F.mapComp' i.op.toLoc q.op.toLoc (q ≫ i).op.toLoc)).app x).symm
-    let b := c.app _ ≪≫ (F.map g.op.toLoc).toFunctor.mapIso
-      ((Cat.Hom.toNatIso (F.mapComp' j.op.toLoc q.op.toLoc (q ≫ j).op.toLoc)).app y).symm
-    ⟨fun ⟨e⟩ ↦ ⟨a.symm ≪≫ e ≪≫ b⟩, fun ⟨e⟩ ↦ ⟨a ≪≫ e ≪≫ b.symm⟩⟩
+  (pullback_isomCover _ _ q).trans <| isomCover_congr
+    ((Cat.Hom.toNatIso (F.mapComp' i.op.toLoc q.op.toLoc (q ≫ i).op.toLoc)).app x).symm
+    ((Cat.Hom.toNatIso (F.mapComp' j.op.toLoc q.op.toLoc (q ≫ j).op.toLoc)).app y).symm
 
 /-- For a gerbe, every overlap cover is covering, even when the local objects lie over different
 bases. -/
 theorem overlapCover_mem [F.IsGerbe J] {T V W : C} (i : T ⟶ V) (j : T ⟶ W)
     (x : F.obj (.mk (op V))) (y : F.obj (.mk (op W))) : overlapCover F i j x y ∈ J T :=
   isomCover_mem _ _
-
-/-- For a gerbe, the pullback of an overlap cover along any `q : S ⟶ T` is covering. -/
-theorem pullback_overlapCover_mem [F.IsGerbe J] {S T V W : C} (i : T ⟶ V) (j : T ⟶ W)
-    (x : F.obj (.mk (op V))) (y : F.obj (.mk (op W))) (q : S ⟶ T) :
-    (overlapCover F i j x y).pullback q ∈ J S :=
-  J.pullback_stable q (overlapCover_mem i j x y)
 
 end CategoryTheory.Pseudofunctor.GerbeLocalCovers
