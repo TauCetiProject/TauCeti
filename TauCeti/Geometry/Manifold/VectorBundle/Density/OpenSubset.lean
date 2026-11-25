@@ -174,105 +174,88 @@ private abbrev openPullbackHomBundle := fun x : U ↦
   ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V) x →L[ℝ]
     pullbackAmbientDensity (I := I) (U := U) x
 
-/-- Post-composition with the density comparison is smooth on total spaces. -/
-private theorem contMDiff_openEquiv_comp :
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] in
+/-- Post-composition with a smooth family of fibrewise maps between real line bundles over `U`
+is smooth on the total spaces of the bundle-dual Hom bundles. -/
+private theorem contMDiff_postcomp {E₂ E₃ : U → Type*}
+    [∀ x, AddCommGroup (E₂ x)] [∀ x, Module ℝ (E₂ x)] [∀ x, TopologicalSpace (E₂ x)]
+    [TopologicalSpace (TotalSpace ℝ E₂)] [FiberBundle ℝ E₂] [VectorBundle ℝ ℝ E₂]
+    [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul ℝ (E₂ x)]
+    [∀ x, AddCommGroup (E₃ x)] [∀ x, Module ℝ (E₃ x)] [∀ x, TopologicalSpace (E₃ x)]
+    [TopologicalSpace (TotalSpace ℝ E₃)] [FiberBundle ℝ E₃] [VectorBundle ℝ ℝ E₃]
+    [∀ x, IsTopologicalAddGroup (E₃ x)] [∀ x, ContinuousSMul ℝ (E₃ x)]
+    (φ : ∀ x, E₂ x →L[ℝ] E₃ x)
+    (hφ : ContMDiff (I.prod 𝓘(ℝ)) (I.prod 𝓘(ℝ)) ∞
+      (fun p : TotalSpace ℝ E₂ ↦ TotalSpace.mk' ℝ (E := E₃) p.proj (φ p.proj p.snd))) :
     ContMDiff (I.prod 𝓘(ℝ, F →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, F →L[ℝ] ℝ)) ∞
-      (fun p : TotalSpace (F →L[ℝ] ℝ) (openHomBundle (I := I) (V := V) (U := U)) ↦
-        TotalSpace.mk' (F →L[ℝ] ℝ) (E := openPullbackHomBundle (I := I) (V := V) (U := U))
-          p.proj ((openEquiv (I := I) p.proj).toContinuousLinearMap.comp p.snd)) := by
-  have hA := (TauCeti.contMDiff_hom_bundle_iff (IB := I) (n := ∞)
-    (E₂ := pullbackAmbientDensity (I := I) (U := U))
-    (fun x : U ↦ (openEquiv (I := I) x).toContinuousLinearMap)).2
-    contMDiff_openEquiv_pullback
-  have hA' : ContMDiff (I.prod 𝓘(ℝ, F →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, ℝ →L[ℝ] ℝ)) ∞
-      (fun p : TotalSpace (F →L[ℝ] ℝ) (openHomBundle (I := I) (V := V) (U := U)) ↦
-        TotalSpace.mk' (ℝ →L[ℝ] ℝ) (E := fun y : U ↦ TauCeti.DensityBundle I U y →L[ℝ]
-          pullbackAmbientDensity (I := I) (U := U) y) p.proj
-          ((openEquiv (I := I) p.proj).toContinuousLinearMap)) :=
-    -- The composite with the projection is this map read pointwise.
-    hA.comp (contMDiff_proj (F := F →L[ℝ] ℝ) _)
+      (fun p : TotalSpace (F →L[ℝ] ℝ)
+          (fun x : U ↦ ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V) x →L[ℝ] E₂ x) ↦
+        TotalSpace.mk' (F →L[ℝ] ℝ)
+          (E := fun x : U ↦ ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V) x →L[ℝ] E₃ x)
+          p.proj ((φ p.proj).comp p.snd)) := by
+  have hA : ContMDiff (I.prod 𝓘(ℝ, F →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, ℝ →L[ℝ] ℝ)) ∞
+      (fun p : TotalSpace (F →L[ℝ] ℝ)
+          (fun x : U ↦ ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V) x →L[ℝ] E₂ x) ↦
+        TotalSpace.mk' (ℝ →L[ℝ] ℝ) (E := fun y ↦ E₂ y →L[ℝ] E₃ y) p.proj (φ p.proj)) :=
+    -- The Hom field of `φ`, read along the projection.
+    ((TauCeti.contMDiff_hom_bundle_iff (IB := I) φ).2 hφ).comp (contMDiff_proj (F := F →L[ℝ] ℝ) _)
   have hC : ContMDiff (I.prod 𝓘(ℝ, F →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, F →L[ℝ] ℝ)) ∞
-      (fun p : TotalSpace (F →L[ℝ] ℝ) (openHomBundle (I := I) (V := V) (U := U)) ↦
-        TotalSpace.mk' (F →L[ℝ] ℝ) (E := openHomBundle (I := I) (V := V) (U := U))
+      (fun p : TotalSpace (F →L[ℝ] ℝ)
+          (fun x : U ↦ ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V) x →L[ℝ] E₂ x) ↦
+        TotalSpace.mk' (F →L[ℝ] ℝ)
+          (E := fun x : U ↦ ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V) x →L[ℝ] E₂ x)
           p.proj p.snd) :=
     contMDiff_id
-  exact hA'.clm_bundle_comp (F₃ := ℝ) (V₃ := pullbackAmbientDensity (I := I) (U := U)) hC
+  exact hA.clm_bundle_comp (F₃ := ℝ) (V₃ := E₃) hC
 
-/-- Post-composition with the inverse density comparison is smooth on total spaces. -/
-private theorem contMDiff_openEquiv_symm_comp :
-    ContMDiff (I.prod 𝓘(ℝ, F →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, F →L[ℝ] ℝ)) ∞
-      (fun p : TotalSpace (F →L[ℝ] ℝ) (openPullbackHomBundle (I := I) (V := V) (U := U)) ↦
-        TotalSpace.mk' (F →L[ℝ] ℝ) (E := openHomBundle (I := I) (V := V) (U := U))
-          p.proj ((openEquiv (I := I) p.proj).symm.toContinuousLinearMap.comp p.snd)) := by
-  have hA := (TauCeti.contMDiff_hom_bundle_iff (IB := I) (n := ∞)
-    (E₁ := pullbackAmbientDensity (I := I) (U := U))
-    (fun x : U ↦ (openEquiv (I := I) x).symm.toContinuousLinearMap)).2
+/-- Post-composition with the density comparison identifies intrinsic bundle-dual densities with
+duals valued in the pulled-back ambient densities. -/
+private def openPostcompDiffeomorph :
+    TotalSpace (F →L[ℝ] ℝ) (openHomBundle (I := I) (V := V) (U := U))
+      ≃ₘ^∞⟮I.prod 𝓘(ℝ, F →L[ℝ] ℝ), I.prod 𝓘(ℝ, F →L[ℝ] ℝ)⟯
+      TotalSpace (F →L[ℝ] ℝ) (openPullbackHomBundle (I := I) (V := V) (U := U)) where
+  toFun p := ⟨p.proj, (openEquiv (I := I) p.proj).toContinuousLinearMap.comp p.snd⟩
+  invFun p := ⟨p.proj, (openEquiv (I := I) p.proj).symm.toContinuousLinearMap.comp p.snd⟩
+  -- `openEquiv` is the identity on underlying densities.
+  left_inv p := by cases p; rfl
+  right_inv p := by cases p; rfl
+  contMDiff_toFun := contMDiff_postcomp (E₃ := pullbackAmbientDensity (I := I) (U := U))
+    (fun x ↦ (openEquiv (I := I) x).toContinuousLinearMap) contMDiff_openEquiv_pullback
+  contMDiff_invFun := contMDiff_postcomp (E₂ := pullbackAmbientDensity (I := I) (U := U))
+    (fun x ↦ (openEquiv (I := I) x).symm.toContinuousLinearMap)
     ((openDiffeomorph (I := I) (U := U)).symm.contMDiff.congr fun p ↦
       (openDiffeomorph_symm_apply p).symm)
-  have hA' : ContMDiff (I.prod 𝓘(ℝ, F →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, ℝ →L[ℝ] ℝ)) ∞
-      (fun p : TotalSpace (F →L[ℝ] ℝ) (openPullbackHomBundle (I := I) (V := V) (U := U)) ↦
-        TotalSpace.mk' (ℝ →L[ℝ] ℝ)
-          (E := fun y : U ↦ pullbackAmbientDensity (I := I) (U := U) y →L[ℝ]
-            TauCeti.DensityBundle I U y) p.proj
-          ((openEquiv (I := I) p.proj).symm.toContinuousLinearMap)) :=
-    -- The composite with the projection is this map read pointwise.
-    hA.comp (contMDiff_proj (F := F →L[ℝ] ℝ) _)
-  have hC : ContMDiff (I.prod 𝓘(ℝ, F →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, F →L[ℝ] ℝ)) ∞
-      (fun p : TotalSpace (F →L[ℝ] ℝ) (openPullbackHomBundle (I := I) (V := V) (U := U)) ↦
-        TotalSpace.mk' (F →L[ℝ] ℝ) (E := openPullbackHomBundle (I := I) (V := V) (U := U))
-          p.proj p.snd) :=
-    contMDiff_id
-  exact hA'.clm_bundle_comp (F₃ := ℝ) (V₃ := TauCeti.DensityBundle I U) hC
 
-private theorem contMDiff_openHomEquiv :
-    ContMDiff (I.prod 𝓘(ℝ, F →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, F →L[ℝ] ℝ)) ∞
-      (fun p : TotalSpace (F →L[ℝ] ℝ) (openHomBundle (I := I) (V := V) (U := U)) ↦
-        TotalSpace.mk' (F →L[ℝ] ℝ) (E := pullbackAmbientHomBundle (I := I) (V := V) (U := U))
-          p.proj (openHomEquiv p.proj p.snd)) := by
-  refine ((Bundle.Pullback.contMDiff_homEquiv (E₁ := V) (E₂ := TauCeti.DensityBundle I M) _
-    contMDiff_subtypeVal_continuousMap).comp contMDiff_openEquiv_comp).congr fun p ↦ ?_
-  simp only [Function.comp_apply, Bundle.Pullback.homEquiv_apply]
-  -- `openHomEquiv` is post-composition with `openEquiv` (`arrowCongr` with the identity source).
-  rfl
-
-private theorem contMDiff_openHomEquiv_symm :
-    ContMDiff (I.prod 𝓘(ℝ, F →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, F →L[ℝ] ℝ)) ∞
-      (fun p : TotalSpace (F →L[ℝ] ℝ) (pullbackAmbientHomBundle (I := I) (V := V) (U := U)) ↦
-        TotalSpace.mk' (F →L[ℝ] ℝ) (E := openHomBundle (I := I) (V := V) (U := U))
-          p.proj ((openHomEquiv p.proj).symm p.snd)) := by
-  refine (contMDiff_openEquiv_symm_comp.comp (Bundle.Pullback.contMDiff_homEquiv_symm
-    (E₁ := V) (E₂ := TauCeti.DensityBundle I M) _ contMDiff_subtypeVal_continuousMap)).congr
-    fun p ↦ ?_
-  simp only [Function.comp_apply, Bundle.Pullback.homEquiv_symm_apply]
-  -- The inverse of `openHomEquiv` is post-composition with the inverse of `openEquiv`.
-  rfl
-
-/-- Intrinsic real bundle-dual densities are diffeomorphic to the ambient pullback. -/
+/-- Intrinsic real bundle-dual densities are diffeomorphic to the ambient pullback: post-compose
+with the density comparison, then identify the Hom bundle of pullbacks with the pullback of the
+Hom bundle. -/
 def openHomDiffeomorph :
     TotalSpace (F →L[ℝ] ℝ) (openHomBundle (I := I) (V := V) (U := U))
       ≃ₘ^∞⟮I.prod 𝓘(ℝ, F →L[ℝ] ℝ), I.prod 𝓘(ℝ, F →L[ℝ] ℝ)⟯
-      TotalSpace (F →L[ℝ] ℝ) (pullbackAmbientHomBundle (I := I) (V := V) (U := U)) where
-  toFun p := ⟨p.proj, openHomEquiv p.proj p.snd⟩
-  invFun p := ⟨p.proj, (openHomEquiv p.proj).symm p.snd⟩
-  -- The fibre comparison is the identity on underlying functionals.
-  left_inv p := by cases p; rfl
-  right_inv p := by cases p; rfl
-  contMDiff_toFun := contMDiff_openHomEquiv
-  contMDiff_invFun := contMDiff_openHomEquiv_symm
+      TotalSpace (F →L[ℝ] ℝ) (pullbackAmbientHomBundle (I := I) (V := V) (U := U)) :=
+  openPostcompDiffeomorph.trans (Bundle.Pullback.homDiffeomorph (E₁ := V)
+    (E₂ := TauCeti.DensityBundle I M) _ contMDiff_subtypeVal_continuousMap)
 
 /-- The dual-density diffeomorphism acts by the fibre comparison over the same base point. -/
 @[simp]
 theorem openHomDiffeomorph_apply
     (p : TotalSpace (F →L[ℝ] ℝ) (openHomBundle (I := I) (V := V) (U := U))) :
-    openHomDiffeomorph (I := I) (F := F) (V := V) p = ⟨p.proj, openHomEquiv p.proj p.snd⟩ :=
-  (rfl)
+    openHomDiffeomorph (I := I) (F := F) (V := V) p = ⟨p.proj, openHomEquiv p.proj p.snd⟩ := by
+  simp only [openHomDiffeomorph, Diffeomorph.coe_trans, Function.comp_apply,
+    Bundle.Pullback.homDiffeomorph_apply, Bundle.Pullback.homEquiv_apply]
+  -- `openHomEquiv` is post-composition with `openEquiv` (`arrowCongr` with the identity source).
+  rfl
 
 /-- The inverse dual-density diffeomorphism acts by the inverse fibre comparison. -/
 @[simp]
 theorem openHomDiffeomorph_symm_apply
     (p : TotalSpace (F →L[ℝ] ℝ) (pullbackAmbientHomBundle (I := I) (V := V) (U := U))) :
     (openHomDiffeomorph (I := I) (F := F) (V := V)).symm p =
-      ⟨p.proj, (openHomEquiv p.proj).symm p.snd⟩ :=
-  (rfl)
+      ⟨p.proj, (openHomEquiv p.proj).symm p.snd⟩ := by
+  simp only [openHomDiffeomorph, Diffeomorph.symm_trans', Diffeomorph.coe_trans,
+    Function.comp_apply, Bundle.Pullback.homDiffeomorph_symm_apply,
+    Bundle.Pullback.homEquiv_symm_apply]
+  -- The inverse of `openHomEquiv` is post-composition with the inverse of `openEquiv`.
+  rfl
 
 end TauCeti.DensityBundle
