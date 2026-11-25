@@ -374,9 +374,10 @@ theorem stabilisingLinearMap_apply_of_mem_filtration {φ : ℕ → (ReducedTenso
     induction m, hjm using Nat.le_induction with
     | base => intro _ _; rfl
     | succ m hjm ih => intro w hw; rw [hφ m w (filtration_monotone R M hjm hw), ih w hw]
-  refine (show filtration R M n ≤ LinearMap.eqLocus (stabilisingLinearMap φ) (φ n) from ?_) hz
-  rw [filtration_le_iff]; rintro k hk _ ⟨x, rfl⟩
-  rw [LinearMap.mem_eqLocus, stabilisingLinearMap_of, hle hk _ (of_mem_filtration R M le_rfl x)]
+  have h : filtration R M n ≤ LinearMap.eqLocus (stabilisingLinearMap φ) (φ n) := by
+    rw [filtration_le_iff]; rintro k hk _ ⟨x, rfl⟩
+    rw [LinearMap.mem_eqLocus, stabilisingLinearMap_of, hle hk _ (of_mem_filtration R M le_rfl x)]
+  exact h hz
 
 /-- If each `φ n` is homogeneous of degree `r` and `φ` stabilises along `filtration`, then
 `stabilisingLinearMap φ` is homogeneous of degree `r`. -/

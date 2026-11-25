@@ -166,16 +166,17 @@ private theorem isCoderiv_vogtErrS (hR : Homotopy (f.comp g) (AInfinityHom.id BB
     (isGradedCoderivationAlong_gradedCoderivAlong (AA.grading.shift 1) 1
       (g.comp f).isCoalgHom_barMap (isCoalgHom_id A) ξ)
   have h₃ := (isGradedCoderivationAlong_gradedCoderivAlong (AA.grading.shift 1) 0
-    (f.isCoalgHom_barMap.comp (g.comp f).isCoalgHom_barMap) f.isCoalgHom_barMap μ
-    ).comp_sub_negOnePow_smul_comp (isHomogeneous_vogtBarM hμ)
+    (f.isCoalgHom_barMap.comp (g.comp f).isCoalgHom_barMap) f.isCoalgHom_barMap
+    μ).comp_sub_negOnePow_smul_comp (isHomogeneous_vogtBarM hμ)
       AA.isGradedCoderivation_barDifferential AA.isHomogeneous_barDifferential (by decide)
       BB.isGradedCoderivation_barDifferential
       (add_zero (0 : ℤ) ▸ f.isHomogeneous_barMap.comp (g.comp f).isHomogeneous_barMap)
       (by rw [← LinearMap.comp_assoc, f.barDifferential_comp_barMap, LinearMap.comp_assoc,
         (g.comp f).barDifferential_comp_barMap, LinearMap.comp_assoc])
       f.barDifferential_comp_barMap
-  exact (h₁.sub h₂).sub (by simpa only [zero_add, show (1 * (-2) : ℤ).negOnePow = 1 by decide,
-    Units.val_one, Int.cast_one, one_smul] using h₃)
+  have hpow : (1 * (-2) : ℤ).negOnePow = 1 := by decide
+  exact (h₁.sub h₂).sub
+    (by simpa only [zero_add, hpow, Units.val_one, Int.cast_one, one_smul] using h₃)
 end PrivateHelpers
 
 private structure VogtStep {f : AInfinityHom AA BB} {g : AInfinityHom BB AA}
@@ -211,28 +212,29 @@ private theorem errS_apply_ofLetter {z} (hz : z ∈ filtration R A (k + 1)) :
     (fun _ ↦ V.topS_eq_zero) hz
 private theorem topQ_closed {z} (hz : z ∈ filtration R A (k + 1)) :
     AA.differential (V.topQ z) = V.topQ (AA.unaryBarDifferential z) := by
-  have h := congrArg (letter R A) (show AA.barDifferential (V.errQ z) =
-      V.errQ (AA.barDifferential z) by
+  have herr : AA.barDifferential (V.errQ z) = V.errQ (AA.barDifferential z) := by
     have h₁ := LinearMap.congr_fun AA.barDifferential_sq (vogtBarHA f g V.ξ z)
     have h₂ := LinearMap.congr_fun AA.barDifferential_sq z
     simp only [vogtErrQ, LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply,
       LinearMap.id_apply, LinearMap.zero_apply, map_sub, map_add] at h₁ h₂ ⊢
-    rw [h₁, h₂, map_zero, (g.comp f).barDifferential_barMap]; abel)
+    rw [h₁, h₂, map_zero, (g.comp f).barDifferential_barMap]; abel
+  have h := congrArg (letter R A) herr
   rwa [V.errQ_apply_ofLetter hz, AInfinityAlgebra.barDifferential_ofLetter,
     ← AInfinityAlgebra.differential_apply, letter_ofLetter,
     AA.barDifferential_eq_unary_add_higher, LinearMap.add_apply, map_add,
     V.vanishes_Q _ (AA.higherBarDifferential_filtration k ⟨z, hz, rfl⟩), add_zero] at h
 private theorem topS_diff_eq {z} (hz : z ∈ filtration R A (k + 1)) :
     BB.differential (V.topS z) + V.topS (AA.unaryBarDifferential z) = f.linearPart (V.topQ z) := by
-  have h := congrArg (letter R B) (show BB.barDifferential (V.errS z) +
-      V.errS (AA.barDifferential z) = f.barMap (V.errQ z) by
+  have herr : BB.barDifferential (V.errS z) + V.errS (AA.barDifferential z) =
+      f.barMap (V.errQ z) := by
     have hRz := hR.barMap_sub_barMap_apply (f.barMap z)
     have h₁ := LinearMap.congr_fun BB.barDifferential_sq (vogtBarM f g V.μ z)
     have h₂ := LinearMap.congr_fun AA.barDifferential_sq z
     simp only [vogtErrS, vogtErrQ, barMap_comp, barMap_id, LinearMap.sub_apply,
       LinearMap.add_apply, LinearMap.comp_apply, LinearMap.id_apply, LinearMap.zero_apply,
       map_sub, map_add, ← f.barDifferential_barMap] at hRz h₁ h₂ ⊢
-    rw [h₁, h₂, map_zero]; exact sub_eq_zero.1 (Eq.trans (by abel) (sub_eq_zero.2 hRz.symm)))
+    rw [h₁, h₂, map_zero]; exact sub_eq_zero.1 (Eq.trans (by abel) (sub_eq_zero.2 hRz.symm))
+  have h := congrArg (letter R B) herr
   rwa [map_add, V.errS_apply_ofLetter hz, V.errQ_apply_ofLetter hz, f.barMap_ofLetter,
     AInfinityAlgebra.barDifferential_ofLetter, ← AInfinityAlgebra.differential_apply,
     letter_ofLetter, letter_ofLetter, AA.barDifferential_eq_unary_add_higher, LinearMap.add_apply,

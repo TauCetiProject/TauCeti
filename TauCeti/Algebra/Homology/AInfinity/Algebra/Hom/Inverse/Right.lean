@@ -129,12 +129,12 @@ private theorem errH_apply_ofLetter {z} (hz : z ∈ filtration R B (k + 1)) :
     (fun _ _ ↦ rfl) S.homotopy_eq hz
 private theorem obsE_cocycle {z} (hz : z ∈ filtration R B (k + 1)) :
     AA.differential (S.obsE z) + S.obsE (BB.unaryBarDifferential z) = 0 := by
-  have h := congrArg (letter R A) (show AA.barDifferential (S.errG z) +
-      S.errG (BB.barDifferential z) = 0 by
+  have herr : AA.barDifferential (S.errG z) + S.errG (BB.barDifferential z) = 0 := by
     have hAA := LinearMap.congr_fun AA.barDifferential_sq (S.barG z)
     have hBB := LinearMap.congr_fun BB.barDifferential_sq z
     simp only [errG, LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.zero_apply, map_sub]
-      at hAA hBB ⊢; rw [hAA, hBB, map_zero]; abel)
+      at hAA hBB ⊢; rw [hAA, hBB, map_zero]; abel
+  have h := congrArg (letter R A) herr
   have hhi : S.errG (BB.higherBarDifferential z) = 0 :=
     sub_eq_zero.2 (S.intertwines _ (BB.higherBarDifferential_filtration k ⟨z, hz, rfl⟩))
   rwa [map_add, map_zero, S.errG_apply_ofLetter hz, AInfinityAlgebra.barDifferential_ofLetter,
@@ -142,13 +142,14 @@ private theorem obsE_cocycle {z} (hz : z ∈ filtration R B (k + 1)) :
     LinearMap.add_apply, map_add, hhi, add_zero] at h
 private theorem obsR_diff_eq {z} (hz : z ∈ filtration R B (k + 1)) :
     BB.differential (S.obsR z) - S.obsR (BB.unaryBarDifferential z) = f.linearPart (S.obsE z) := by
-  have h := congrArg (letter R B) (show BB.barDifferential (S.errH z) -
-      S.errH (BB.barDifferential z) = f.barMap (S.errG z) by
+  have herr : BB.barDifferential (S.errH z) - S.errH (BB.barDifferential z) =
+      f.barMap (S.errG z) := by
     have h₁ := LinearMap.congr_fun BB.barDifferential_sq (S.barH z)
     have h₂ := LinearMap.congr_fun BB.barDifferential_sq z
     simp only [rightErrH, errG, LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply,
       LinearMap.id_apply, LinearMap.zero_apply, map_sub, map_add] at h₁ h₂ ⊢
-    rw [h₁, h₂, map_zero, f.barDifferential_barMap]; abel)
+    rw [h₁, h₂, map_zero, f.barDifferential_barMap]; abel
+  have h := congrArg (letter R B) herr
   rwa [map_sub, S.errH_apply_ofLetter hz, S.errG_apply_ofLetter hz, f.barMap_ofLetter,
     AInfinityAlgebra.barDifferential_ofLetter, ← AInfinityAlgebra.differential_apply,
     letter_ofLetter, letter_ofLetter, BB.barDifferential_eq_unary_add_higher, LinearMap.add_apply,
