@@ -40,6 +40,10 @@ be finite, and the bound is localised:
 * `TauCeti.exists_mul_volume_lt_nontangentialMaximalFunction_upperHalfPlanePoissonLIntegral_le`:
   the local weak type bound for functions in `L¹(Π)`.
 
+Each of these has a counterpart, named with `upperHalfPlanePoissonIntegral` in place of
+`upperHalfPlanePoissonLIntegral`, for the Poisson integral `P[‖g‖ dx]`, whose norm is at most the
+extended Poisson integral on the closed upper half-plane.
+
 ## References
 
 * J. B. Garnett, *Bounded Analytic Functions*, revised 1st ed., Springer (2007), Chapter I, §4.
@@ -56,6 +60,15 @@ namespace TauCeti
 open Complex MeasureTheory Set
 
 open scoped Real ENNReal
+
+/-- The nontangential maximal function of the Poisson integral is at most that of the extended
+Poisson integral. -/
+private theorem nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le_lIntegral (α : ℝ)
+    (h : ℝ≥0∞) (ν : Measure ℝ) (x : ℝ) :
+    nontangentialMaximalFunction α h (upperHalfPlanePoissonIntegral ν) x ≤
+      nontangentialMaximalFunction α h (upperHalfPlanePoissonLIntegral ν) x :=
+  nontangentialMaximalFunction_mono_fun fun z hz => by
+    simpa using enorm_upperHalfPlanePoissonIntegral_le ν (mem_nontangentialCone.1 hz).1.le
 
 section Global
 
@@ -85,6 +98,20 @@ theorem lintegral_rpow_nontangentialMaximalFunction_upperHalfPlanePoissonLIntegr
         simpa using lintegral_rpow_maximalFunction_le volume hg hp
     _ = C ^ p * maximalFunctionConst 1 p * ∫⁻ x, ‖g x‖ₑ ^ p := (mul_assoc _ _ _).symm
 
+/-- **The strong type bound for the nontangential maximal function.** For `1 < p`,
+`∫ (M^α_h P[‖g‖ dx]) ^ p ≤ C ^ p K_p ∫ |g| ^ p` with `C = max 2 (1 + 2 α ^ 2)` and `K_p` the
+constant of the strong type bound for the Hardy–Littlewood maximal function on `ℝ`. -/
+theorem lintegral_rpow_nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le (α : ℝ)
+    (h : ℝ≥0∞) {g : ℝ → F} (hg : AEMeasurable (fun x => ‖g x‖ₑ)) {p : ℝ} (hp : 1 < p) :
+    ∫⁻ x, nontangentialMaximalFunction α h
+        (upperHalfPlanePoissonIntegral (volume.withDensity fun s => ‖g s‖ₑ)) x ^ p ≤
+      ENNReal.ofReal (max 2 (1 + 2 * α ^ 2)) ^ p * maximalFunctionConst 1 p *
+        ∫⁻ x, ‖g x‖ₑ ^ p :=
+  (lintegral_mono fun x => ENNReal.rpow_le_rpow
+    (nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le_lIntegral α h _ x)
+    (by linarith)).trans
+    (lintegral_rpow_nontangentialMaximalFunction_upperHalfPlanePoissonLIntegral_le α h hg hp)
+
 /-- **The strong type bound for aperture one.** For `1 < p`,
 `∫ (M_h P[|g| dx]) ^ p ≤ 3 ^ p K_p ∫ |g| ^ p`. -/
 theorem lintegral_rpow_nontangentialMaximalFunction_one_upperHalfPlanePoissonLIntegral_le
@@ -95,6 +122,17 @@ theorem lintegral_rpow_nontangentialMaximalFunction_one_upperHalfPlanePoissonLIn
   have h3 : ENNReal.ofReal (max 2 (1 + 2 * (1 : ℝ) ^ 2)) = 3 := by norm_num
   simpa only [h3] using
     lintegral_rpow_nontangentialMaximalFunction_upperHalfPlanePoissonLIntegral_le 1 h hg hp
+
+/-- **The strong type bound for aperture one.** For `1 < p`,
+`∫ (M_h P[‖g‖ dx]) ^ p ≤ 3 ^ p K_p ∫ |g| ^ p`. -/
+theorem lintegral_rpow_nontangentialMaximalFunction_one_upperHalfPlanePoissonIntegral_le
+    (h : ℝ≥0∞) {g : ℝ → F} (hg : AEMeasurable (fun x => ‖g x‖ₑ)) {p : ℝ} (hp : 1 < p) :
+    ∫⁻ x, nontangentialMaximalFunction 1 h
+        (upperHalfPlanePoissonIntegral (volume.withDensity fun s => ‖g s‖ₑ)) x ^ p ≤
+      3 ^ p * maximalFunctionConst 1 p * ∫⁻ x, ‖g x‖ₑ ^ p := by
+  have h3 : ENNReal.ofReal (max 2 (1 + 2 * (1 : ℝ) ^ 2)) = 3 := by norm_num
+  simpa only [h3] using
+    lintegral_rpow_nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le 1 h hg hp
 
 /-- **The weak type bound for the nontangential maximal function.**
 `t |{M^α_h P[|g| dx] > t}| ≤ 4 C ∫ |g|` with `C = max 2 (1 + 2 α ^ 2)`. -/
@@ -122,6 +160,17 @@ theorem mul_volume_lt_nontangentialMaximalFunction_upperHalfPlanePoissonLIntegra
         refine mul_le_mul' le_rfl ?_
         simpa using mul_measure_lt_maximalFunction_le volume g (t / C)
     _ = 4 * C * ∫⁻ x, ‖g x‖ₑ := by ring
+
+/-- **The weak type bound for the nontangential maximal function.**
+`t |{M^α_h P[‖g‖ dx] > t}| ≤ 4 C ∫ |g|` with `C = max 2 (1 + 2 α ^ 2)`. -/
+theorem mul_volume_lt_nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le (α : ℝ)
+    (h : ℝ≥0∞) (g : ℝ → F) (t : ℝ≥0∞) :
+    t * volume {x | t < nontangentialMaximalFunction α h
+        (upperHalfPlanePoissonIntegral (volume.withDensity fun s => ‖g s‖ₑ)) x} ≤
+      4 * ENNReal.ofReal (max 2 (1 + 2 * α ^ 2)) * ∫⁻ x, ‖g x‖ₑ :=
+  (mul_le_mul' le_rfl (measure_mono <| ofPred_subset_ofPred.2 fun x hx => hx.trans_le
+    (nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le_lIntegral α h _ x))).trans
+    (mul_volume_lt_nontangentialMaximalFunction_upperHalfPlanePoissonLIntegral_le α h g t)
 
 end Global
 
@@ -237,6 +286,19 @@ theorem nontangentialMaximalFunction_one_one_upperHalfPlanePoissonLIntegral_le {
   nontangentialMaximalFunction_le_iff.2 fun _ hz => by
     simpa using upperHalfPlanePoissonLIntegral_le_of_mem_nontangentialCone_one hg hx hz
 
+/-- **Localisation of the nontangential maximal function.** For `g ∈ L¹(Π)` and `|x| ≤ R`,
+`M_1 P[‖g‖ dx](x) ≤ 3 M(g 1_{[-R-2, R+2]})(x) + 2 (R + 2) ^ 2 / π · ∫ |g| dΠ`, where `M_1` is the
+nontangential maximal function over cones `Γ_1(x)` of aperture and height one. -/
+theorem nontangentialMaximalFunction_one_one_upperHalfPlanePoissonIntegral_le {g : ℝ → F}
+    (hg : AEMeasurable (fun s => ‖g s‖ₑ)) {R x : ℝ} (hx : |x| ≤ R) :
+    nontangentialMaximalFunction 1 1
+        (upperHalfPlanePoissonIntegral (volume.withDensity fun s => ‖g s‖ₑ)) x ≤
+      3 * maximalFunction volume ((Icc (-(R + 2)) (R + 2)).indicator g) x +
+        ENNReal.ofReal (2 * (R + 2) ^ 2 / π) *
+          ∫⁻ s, ‖g s‖ₑ ∂upperHalfPlanePoissonMeasure :=
+  (nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le_lIntegral 1 1 _ x).trans
+    (nontangentialMaximalFunction_one_one_upperHalfPlanePoissonLIntegral_le hg hx)
+
 /-- A point of `[-R, R]` where `M_1 P[|g| dx] > t` has `M(g 1_{[-R-2, R+2]}) > t / 2 / 3` or
 `2 (R + 2) ^ 2 / π · ∫ |g| dΠ > t / 2`. -/
 private theorem lt_maximalFunction_or_lt_of_lt {g : ℝ → F} (hg : AEMeasurable (fun s => ‖g s‖ₑ))
@@ -307,6 +369,22 @@ theorem exists_mul_volume_lt_nontangentialMaximalFunction_upperHalfPlanePoissonL
     _ = t * volume A + t * volume B := mul_add _ _ _
     _ ≤ 24 * d * N + 2 * c * volume (Icc (-R) R) * N := add_le_add hA hB
     _ = (24 * d + 2 * c * volume (Icc (-R) R)) * N := by ring
+
+/-- **The local weak type bound for functions in `L¹(Π)`.** For `R` there is a constant `C_R`,
+depending only on `R`, such that `t |{x ∈ [-R, R] : M_1 P[‖g‖ dx](x) > t}| ≤ C_R ∫ |g| dΠ` for
+every `g` with `‖g‖ₑ` a.e.-measurable and every `t`. -/
+theorem exists_mul_volume_lt_nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le
+    (R : ℝ) : ∃ C : ℝ≥0∞, C ≠ ∞ ∧ ∀ g : ℝ → F, AEMeasurable (fun s => ‖g s‖ₑ) → ∀ t : ℝ≥0∞,
+      t * volume {x ∈ Icc (-R) R | t < nontangentialMaximalFunction 1 1
+          (upperHalfPlanePoissonIntegral (volume.withDensity fun s => ‖g s‖ₑ)) x} ≤
+        C * ∫⁻ s, ‖g s‖ₑ ∂upperHalfPlanePoissonMeasure := by
+  obtain ⟨C, hC, hbound⟩ :=
+    exists_mul_volume_lt_nontangentialMaximalFunction_upperHalfPlanePoissonLIntegral_le
+      (F := F) R
+  refine ⟨C, hC, fun g hg t => (mul_le_mul' le_rfl (measure_mono <|
+    ofPred_subset_ofPred.2 fun x hx => ⟨hx.1, hx.2.trans_le
+      (nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le_lIntegral 1 1 _ x)⟩)).trans
+    (hbound g hg t)⟩
 
 end Local
 
