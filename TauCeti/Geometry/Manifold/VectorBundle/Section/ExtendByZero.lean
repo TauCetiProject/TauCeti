@@ -290,8 +290,12 @@ def extendByZeroToOpenLinearMap (h : U ≤ D) :
   intro s
   -- Codomain restriction retains the composite section; only its support membership is owed.
   change (restrictLinearMap I F n V D) (extendByZeroLinearMap s).val ∈ _
+  -- The law matches this goal only after unfolding the pullback along the bundled
+  -- inclusion (`ContinuousMap.coe_mk`), which `rw` does not do.
   erw [restrictLinearMap_apply]
   apply restrict_mem_compactlySupported (extendByZeroLinearMap s)
+  -- The law matches this goal only after unfolding the pullback along the bundled
+  -- inclusion (`ContinuousMap.coe_mk`), which `rw` does not do.
   erw [extendByZeroLinearMap_apply, tsupport_extendByZero]
   rintro _ ⟨u, _, rfl⟩
   exact h u.property
@@ -304,6 +308,8 @@ theorem extendByZeroToOpenLinearMap_val (h : U ≤ D)
     (extendByZeroToOpenLinearMap h s).val = (extendByZero s).restrict D := by
   -- Forget the codomain membership proof, then evaluate the composed linear maps.
   change (restrictLinearMap I F n V D) (extendByZeroLinearMap s).val = _
+  -- The law matches this goal only after unfolding the pullback along the bundled
+  -- inclusion (`ContinuousMap.coe_mk`), which `rw` does not do.
   erw [restrictLinearMap_apply, extendByZeroLinearMap_apply]
 
 omit [LocallyCompactSpace E] [ContMDiffVectorBundle n F V I] [IsManifold I n M]
@@ -365,6 +371,8 @@ def restrictUnivLinearMap : compactlySupported I F n V →ₗ[𝕜]
   refine L.codRestrict _ (fun s ↦ ?_)
   -- The codomain restriction asks for compact support of the ordinary restricted section.
   change (restrictLinearMap I F n V ⊤) s.val ∈ _
+  -- The law matches this goal only after unfolding the pullback along the bundled
+  -- inclusion (`ContinuousMap.coe_mk`), which `rw` does not do.
   erw [restrictLinearMap_apply]
   exact restrict_mem_compactlySupported s (U := (⊤ : Opens M)) (Set.subset_univ _)
 
@@ -375,6 +383,8 @@ theorem restrictUnivLinearMap_val (s : compactlySupported I F n V) :
     (restrictUnivLinearMap (I := I) (F := F) (n := n) s).val = s.val.restrict ⊤ := by
   -- The subtype value forgets only the compact-support proof of this restriction.
   change (restrictLinearMap I F n V ⊤) s.val = _
+  -- The law matches this goal only after unfolding the pullback along the bundled
+  -- inclusion (`ContinuousMap.coe_mk`), which `rw` does not do.
   erw [restrictLinearMap_apply]
 
 end IntermediateOpen

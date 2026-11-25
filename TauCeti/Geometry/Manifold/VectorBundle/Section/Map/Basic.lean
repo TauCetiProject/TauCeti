@@ -403,6 +403,8 @@ theorem extendByZero_mapCompactlySupported (φ : ∀ x, V x →ₗ[𝕜] W x)
   intro c hφU s
   ext x
   rw [mapLinearMap_apply]
+  -- The law matches this goal only after unfolding the pullback along the bundled
+  -- inclusion (`ContinuousMap.coe_mk`), which `rw` does not do.
   by_cases hx : x ∈ U
   · erw [extendByZero_apply_of_mem _ (⟨x, hx⟩ : U), extendByZero_apply_of_mem s (⟨x, hx⟩ : U)]
     erw [coe_mapCompactlySupported, mapLinearMap_apply]

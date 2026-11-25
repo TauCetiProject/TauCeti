@@ -41,7 +41,7 @@ theorem exists_nonzero_proper_open_extension :
   obtain ⟨s, hs⟩ := TauCeti.BundleTest.exists_apply_eq (I := 𝓘(ℝ, ℝ)) (F := ℝ)
     (V := properRealIncl *ᵖ (Bundle.Trivial ℝ ℝ)) x (1 : ℝ)
   refine ⟨s, ?_, ?_⟩
-  · erw [TauCeti.BundleTest.extendByZeroCLM_apply_of_mem s x]
+  · rw [TauCeti.BundleTest.extendByZeroCLM_apply_of_mem s x]
     exact hs
   · apply TauCeti.BundleTest.extendByZeroCLM_apply_of_notMem s
     norm_num [properRealOpen]
@@ -85,7 +85,7 @@ theorem exists_nonzero_boundary_test_extension :
     (F := ℝ)
     (V := c *ᵖ (Bundle.Trivial (EuclideanHalfSpace 1) ℝ)) x (1 : ℝ)
   refine ⟨s, ?_⟩
-  erw [TauCeti.BundleTest.extendByZeroCLM_apply_of_mem s x]
+  rw [TauCeti.BundleTest.extendByZeroCLM_apply_of_mem s x]
   exact hs
 
 end TauCeti.Examples.BundleTestOpenExtension
