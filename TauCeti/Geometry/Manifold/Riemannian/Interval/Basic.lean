@@ -32,6 +32,11 @@ reflection.
 * `TauCeti.iccEuclideanMetric`: the analytic Euclidean metric on `[a, b]`.
 * `TauCeti.instRiemannianBundleIcc`, `TauCeti.instIsContMDiffRiemannianBundleIcc` and
   `TauCeti.instIsContinuousRiemannianBundleIcc`: the corresponding instances.
+* `TauCeti.IccZeroAddOne.instRiemannianBundle`,
+  `TauCeti.IccZeroAddOne.instIsContMDiffRiemannianBundle` and
+  `TauCeti.IccZeroAddOne.instIsContinuousRiemannianBundle`: the same instances, scoped in
+  `TauCeti.IccZeroAddOne`, for the charts in the successor dimension `0 + 1` used by the boundary
+  constructions (outward unit normal, second fundamental form).
 
 ## Main statements
 
@@ -121,18 +126,38 @@ theorem mvfderiv_subtypeVal_Icc_one (x : Icc a b) :
 theorem norm_one_tangentSpace_Icc (x : Icc a b) : ‖(1 : TangentSpace (𝓡∂ 1) x)‖ = 1 := by
   simp
 
+/-! ### The Euclidean metric in the successor dimension `0 + 1` -/
+
+namespace IccZeroAddOne
+
+/-- The Euclidean metric of the interval, on the tangent spaces of the charts
+`IccZeroAddOne.instChartedSpace` used by the boundary constructions. -/
+scoped instance instRiemannianBundle :
+    RiemannianBundle (fun x : Icc a b ↦ TangentSpace (𝓡∂ (0 + 1)) x) :=
+  instRiemannianBundleIcc
+
+/-- The Euclidean metric of the interval is analytic for the charts
+`IccZeroAddOne.instChartedSpace`. -/
+scoped instance instIsContMDiffRiemannianBundle :
+    IsContMDiffRiemannianBundle (𝓡∂ (0 + 1)) ω (EuclideanSpace ℝ (Fin (0 + 1)))
+      (fun x : Icc a b ↦ TangentSpace (𝓡∂ (0 + 1)) x) :=
+  instIsContMDiffRiemannianBundleIcc
+
+/-- The Euclidean metric of the interval is continuous for the charts
+`IccZeroAddOne.instChartedSpace`. -/
+scoped instance instIsContinuousRiemannianBundle :
+    IsContinuousRiemannianBundle (EuclideanSpace ℝ (Fin (0 + 1)))
+      (fun x : Icc a b ↦ TangentSpace (𝓡∂ (0 + 1)) x) :=
+  instIsContinuousRiemannianBundleIcc
+
+end IccZeroAddOne
+
 /-! ### The outward unit normal at the endpoints -/
 
 section Endpoints
 
 open Fact.Manifold
 open scoped IccZeroAddOne
-
-/-- The Euclidean metric of the interval, on the tangent spaces of the charts
-`IccZeroAddOne.instChartedSpace`. -/
-local instance instRiemannianBundleIccZeroAddOne :
-    RiemannianBundle (fun x : Icc a b ↦ TangentSpace (𝓡∂ (0 + 1)) x) :=
-  instRiemannianBundleIcc
 
 /-- A tangent vector at a boundary point of `[a, b]` with norm one and outward is the outward
 unit normal: the boundary manifold is zero-dimensional, so orthogonality is automatic. -/
