@@ -11,7 +11,6 @@ import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Interior
 import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.PartialDerivative
 import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.Sobolev.Local.Multiplication.HalfDisc.Higher
-import TauCeti.Analysis.Sobolev.Local.HalfPlane
 import TauCeti.Analysis.Sobolev.Local.Reflection.Tangential
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
@@ -51,7 +50,7 @@ The induction instead runs through the tangential derivative `∂_s`:
   `∂_t ξ = J (∂_s ξ + S ξ - η)`, and its part `(∂_s J) J ∂_s ξ` moved into the zeroth-order
   coefficient, so that the right side is in `W^{k,q}_loc` as soon as `ξ ∈ W^{k+1,q}_loc`, also at
   `k = 0`. The equation is again of the reflected kind, with the same `J`.
-* *Normal derivative* (`TauCeti.memWkpLoc_add_two_of_ae_cauchyRiemann`). Once
+* *Normal derivative* (`TauCeti.memWkpLoc_succ_of_ae_cauchyRiemann_halfPlane`). Once
   `∂_s ξ ∈ W^{k+1,q}_loc(H)`, the equation gives `∂_t ξ = J (∂_s ξ + S ξ - η)`, using
   `J⁻¹ = -J`, which is in `W^{k+1,q}_loc(H)` by the half-disc products
   `TauCeti.MemWkpLoc.clm_apply_succ_halfPlane`.
@@ -60,7 +59,7 @@ The induction instead runs through the tangential derivative `∂_s`:
 
 * `TauCeti.IsWeakCRSolution.crReflection_partial_one`: the tangential derivative of a reflected
   solution is a reflected solution.
-* `TauCeti.memWkpLoc_add_two_of_ae_cauchyRiemann`: recovery of the normal derivative.
+* `TauCeti.memWkpLoc_succ_of_ae_cauchyRiemann_halfPlane`: recovery of the normal derivative.
 * `TauCeti.IsWeakCRSolution.memWkpLoc_succ_of_crReflection`: `W^{k+1,q}` regularity up to the
   axis for a reflected solution.
 * `TauCeti.IsWeakCRSolutionHalf.memWkpLoc_succ`: `W^{k+1,q}` regularity up to the axis for a weak
@@ -97,7 +96,7 @@ derivative `Dξ` on the open upper part and solve `∂_s ξ + J ∂_t ξ + S ξ 
 `η ∈ W^{k+1,q}_loc` up to the axis and the tangential derivative `∂_s ξ = Dξ · 1` is in
 `W^{k+1,q}_loc` up to the axis, then `ξ ∈ W^{k+2,q}_loc(Ω ∩ {0 ≤ t})`: the normal derivative is
 `∂_t ξ = J (∂_s ξ + S ξ - η)`. -/
-theorem memWkpLoc_add_two_of_ae_cauchyRiemann [FiniteDimensional ℝ V] {p q : ℝ≥0} {k : ℕ}
+theorem memWkpLoc_succ_of_ae_cauchyRiemann_halfPlane [FiniteDimensional ℝ V] {p q : ℝ≥0} {k : ℕ}
     (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p) {Dξ : ℂ → ℂ →L[ℝ] V}
     (hξ : MemWkpLoc q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) ξ)
     (hDξ : HasWeakFDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) ξ Dξ)
@@ -119,13 +118,6 @@ theorem memWkpLoc_add_two_of_ae_cauchyRiemann [FiniteDimensional ℝ V] {p q : �
   exact (h1.clm_comp _).add (hI.clm_comp _)
 
 /-! ### The tangential step on the doubled domain -/
-
-omit [CompleteSpace V] in
-/-- The reflection of a sum of zeroth-order coefficients is the sum of their reflections. -/
-theorem crReflectionZeroth_add (R : V ≃L[ℝ] V) (S M : ℂ → V →L[ℝ] V) :
-    crReflectionZeroth R (S + M) = crReflectionZeroth R S + crReflectionZeroth R M := by
-  simp only [crReflectionZeroth_def]
-  exact twistedReflection_add _ S M
 
 omit [CompleteSpace V] in
 /-- Off the real axis, the reflection of `(∂_s J) J` is the product of the reflections of `∂_s J`
@@ -333,7 +325,7 @@ theorem IsWeakCRSolution.memWkpLoc_succ_of_crReflection [FiniteDimensional ℝ V
       ⟨hc.hasWeakFDerivOn, hc.memLpLoc_coeff, hc.memLpLoc_deriv,
         (memLpLoc_crReflectionZeroth_iff hΩ).2 (hS.memLpLoc.add hM.memLpLoc)⟩
     have h1 := ih hc' hT hJ.of_succ (hS.of_succ.add hM) hη'
-    exact memWkpLoc_add_two_of_ae_cauchyRiemann hp hq hqp hξ hDξ
+    exact memWkpLoc_succ_of_ae_cauchyRiemann_halfPlane hp hq hqp hξ hDξ
       (ae_cauchyRiemann_of_crReflection hc h hpq.le ENNReal.coe_ne_top ENNReal.coe_ne_top
         hw hDξ) hJ2 hJ hS hη h1
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Local.Reflection
 public import TauCeti.Analysis.Complex.LaplaceReflection
-import TauCeti.Analysis.Sobolev.Local.HalfPlane
+import TauCeti.Analysis.Sobolev.Local.Reflection.Odd
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
@@ -53,17 +53,8 @@ theorem HasWeakLineDerivOn.indicator_setOf_im_nonneg_of_im_eq_zero {g g' : ℂ �
     HasWeakLineDerivOn volume Ω ({z : ℂ | 0 ≤ z.im}.indicator g)
       ({z : ℂ | 0 ≤ z.im}.indicator g') v := by
   have := hgW.completeSpace
-  have hH : MeasurableSet {z : ℂ | 0 ≤ z.im} := measurableSet_le measurable_const measurable_im
-  refine (hasWeakLineDerivOn_iff hg.locallyIntegrableOn_indicator_setOf_im_nonneg
-    hg'.locallyIntegrableOn_indicator_setOf_im_nonneg).2 fun φ hφ hφc hφΩ => ?_
-  have hind (a : ℂ → ℝ) (f : ℂ → F) : (fun z => a z • {z : ℂ | 0 ≤ z.im}.indicator f z) =
-      {z : ℂ | 0 ≤ z.im}.indicator fun z => a z • f z :=
-    funext fun z => (indicator_smul_apply _ _ _ _).symm
-  simp_rw [((hφ.differentiable (by simp)) _).lineDeriv_eq_fderiv]
-  rw [hind (fun z => fderiv ℝ φ z v) g, hind φ g', integral_indicator hH, integral_indicator hH,
-    setIntegral_congr_set (Complex.setOf_le_im_ae_eq 0),
-    setIntegral_congr_set (Complex.setOf_le_im_ae_eq 0)]
-  exact hgW.setIntegral_fderiv_smul_eq_neg hg hg' hφ hφc (fun z hz => hφΩ hz.1) (Or.inl hv)
+  exact hasWeakLineDerivOn_indicator_setOf_im_nonneg_of_setIntegral hg hg' fun φ hφ hφc hφΩ =>
+    hgW.setIntegral_fderiv_smul_eq_neg hg hg' hφ hφc (fun z hz => hφΩ hz.1) (Or.inl hv)
 
 /-- Off the real axis, the twisted reflection by `L` is the even reflection of `g`, plus the even
 reflection of `L ∘ g - g` cut off below the axis. -/
