@@ -153,6 +153,11 @@ instance homotopicOneSubgroup.normal : (homotopicOneSubgroup X G).Normal :=
 /-- **Free homotopies of maps into a topological group can be made relative to a point.** Two maps
 `f g : X → G` with `f q = g q` are homotopic relative to `q` exactly when they are homotopic: a
 free homotopy `H` is corrected to `(t, x) ↦ H (t, x) * (H (t, q))⁻¹ * f q`. -/
+@[to_additive homotopicRel_singleton_iff_homotopic_of_apply_eq_of_addGroup
+  /-- **Free homotopies of maps into a topological additive group can be made
+relative to a point.** Two maps `f g : X → G` with `f q = g q` are homotopic relative to `q`
+exactly when they are homotopic: a free homotopy `H` is corrected to
+`(t, x) ↦ H (t, x) + -H (t, q) + f q`. -/]
 theorem homotopicRel_singleton_iff_homotopic_of_apply_eq {f g : C(X, G)} {q : X}
     (hfg : f q = g q) : f.HomotopicRel g {q} ↔ f.Homotopic g := by
   refine ⟨HomotopicRel.homotopic, fun ⟨H⟩ ↦ ⟨

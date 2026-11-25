@@ -28,6 +28,10 @@ By Chevalley's theorem, a quasi-compact morphism locally of finite presentation 
 scheme is surjective if and only if its range contains every closed point of the target
 (`AlgebraicGeometry.Scheme.Hom.surjective_iff_closedPoints_subset_range`).
 
+A morphism `∐ᵢ Yᵢ ⟶ X` out of a coproduct is locally of finite presentation when each component is
+(`AlgebraicGeometry.locallyOfFinitePresentation_sigmaDesc`), the analogue of Mathlib's instance
+for flat morphisms.
+
 ## Main results
 
 * `AlgebraicGeometry.locallyOfFinitePresentation_of_comp`: if `f ≫ g` is locally of finite
@@ -35,6 +39,9 @@ scheme is surjective if and only if its range contains every closed point of the
 
 * `AlgebraicGeometry.locallyOfFinitePresentation_SpecMap_algebraMap`: `Spec S ⟶ Spec R` is
   locally of finite presentation for a finitely presented `R`-algebra `S`.
+
+* `AlgebraicGeometry.locallyOfFinitePresentation_sigmaDesc`: a morphism out of a coproduct whose
+  components are locally of finite presentation is locally of finite presentation.
 
 * `CommRingCat.locallyOfFinitePresentation_terminal_from_Spec_iff`: finite presentation over
   the terminal scheme for an affine scheme is equivalent to finite presentation over `ℤ`.
@@ -52,7 +59,7 @@ public section
 
 open CategoryTheory TopologicalSpace Topology
 
-universe u
+universe v u
 
 namespace AlgebraicGeometry
 
@@ -104,6 +111,19 @@ instance locallyOfFinitePresentation_SpecMap_algebraMap (R S : Type u) [CommRing
     [Algebra R S] [Algebra.FinitePresentation R S] :
     LocallyOfFinitePresentation (Spec.map (CommRingCat.ofHom (algebraMap R S))) :=
   HasRingHomProperty.Spec_iff.mpr (RingHom.finitePresentation_algebraMap.mpr inferInstance)
+
+/-- A morphism `∐ᵢ Yᵢ ⟶ X` out of a coproduct is locally of finite presentation if each of its
+components `Yᵢ ⟶ X` is. -/
+instance locallyOfFinitePresentation_sigmaDesc {X : Scheme.{u}} {ι : Type v} [Small.{u} ι]
+    {Y : ι → Scheme.{u}} {f : ∀ i, Y i ⟶ X} [∀ i, LocallyOfFinitePresentation (f i)] :
+    LocallyOfFinitePresentation (CategoryTheory.Limits.Sigma.desc f) :=
+  -- Instance search cannot apply `HasRingHomProperty.instIsZariskiLocalAtSource` here: under
+  -- instance transparency it fails to unify `@LocallyOfFinitePresentation` with the metavariable
+  -- `?P : MorphismProperty Scheme`. Mathlib's `Flat (Sigma.desc f)` instance avoids this by
+  -- relaxing the transparency option, which is not allowed here, so we supply the instance.
+  have : IsZariskiLocalAtSource @LocallyOfFinitePresentation.{u} :=
+    HasRingHomProperty.instIsZariskiLocalAtSource
+  IsZariskiLocalAtSource.sigmaDesc fun _ ↦ inferInstance
 
 end AlgebraicGeometry
 

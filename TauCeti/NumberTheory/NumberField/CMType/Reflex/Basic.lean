@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.NumberField.CMType.Basic
 import Mathlib.RingTheory.Trace.Basic
 import TauCeti.FieldTheory.IsAlgClosed.Automorphism
 import TauCeti.LinearAlgebra.LinearIndependent.MonoidHom
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Trace
 import TauCeti.RingTheory.Trace.RingHom
 
 /-!
@@ -118,9 +119,7 @@ theorem typeTrace_add_typeTrace_star_eq_trace {K : Type*} [Field K] [NumberField
     (Φ : CMType K) (a : K) :
     Φ.typeTrace a + (star Φ).typeTrace a = algebraMap ℚ ℂ (Algebra.trace ℚ K a) := by
   rw [typeTrace_add_typeTrace_star, finsum_eq_sum_of_fintype,
-    _root_.trace_eq_sum_embeddings ℂ (K := ℚ) (x := a)]
-  exact Fintype.sum_equiv (RingHom.equivRatAlgHom K ℂ) _ _ fun _ ↦ by
-    simp [RingHom.equivRatAlgHom_apply]
+    NumberField.algebraMap_trace_eq_sum_embeddings]
 
 /-! ### The reflex field -/
 
