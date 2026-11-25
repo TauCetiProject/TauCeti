@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.PathSpace.Moore.Comparison.Basic
+public import TauCeti.Topology.PathSpace.Moore
 
 /-!
 # Moore paths and Moore loops in a product
