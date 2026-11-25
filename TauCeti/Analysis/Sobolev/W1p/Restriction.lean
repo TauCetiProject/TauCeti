@@ -364,23 +364,14 @@ theorem W1p.continuous_setAverage_value (hSU : S ⊆ (U : Set E)) :
   by_cases hSfin : mu S = ∞
   · simp only [setAverage_eq, measureReal_def, hSfin, ENNReal.toReal_top, inv_zero, zero_smul]
     exact continuous_const
-  have hrs : (mu.restrict (U : Set E)).restrict S = mu.restrict S :=
-    Measure.restrict_restrict_of_subset hSU
-  have hmeas : (mu.restrict (U : Set E)) S = mu S := by
-    rw [← Measure.restrict_apply_univ, hrs, Measure.restrict_apply_univ]
-  have hEq : ∀ v : W1p mu U p, (⨍ y in S, W1p.value v y ∂mu) =
-      (mu.real S)⁻¹ * ∫ y in S, W1p.valueL v y ∂(mu.restrict (U : Set E)) := fun v => by
-    rw [setAverage_eq, smul_eq_mul, W1p.valueL_apply, hrs]
   have hSlt : (mu.restrict (U : Set E)) S < ∞ := by
-    rw [hmeas]
+    rw [Measure.restrict_eq_self _ hSU]
     exact lt_top_iff_ne_top.2 hSfin
-  have hF : Continuous fun f : Lp ℝ p (mu.restrict (U : Set E)) =>
-      ∫ y in S, f y ∂(mu.restrict (U : Set E)) :=
-    (Set.setIntegralLp (𝕜 := ℝ) (F := ℝ) (μ := mu.restrict (U : Set E)) (p := p) S
-      hSlt).continuous.congr fun f => Set.setIntegralLp_apply (𝕜 := ℝ) S hSlt f
+  have hEq : ∀ v : W1p mu U p, (⨍ y in S, W1p.value v y ∂mu) =
+      (mu.real S)⁻¹ * W1p.setIntegralL S hSlt v := fun v => by
+    rw [setAverage_eq, smul_eq_mul, W1p.setIntegralL_apply_of_subset hSlt hSU]
   simp only [hEq]
-  exact continuous_const.mul
-    (hF.comp' (W1p.valueL (mu := mu) (Omega := U) (p := p)).continuous)
+  exact continuous_const.mul (W1p.setIntegralL S hSlt).continuous
 
 omit [FiniteDimensional ℝ E] in
 /-- If Sobolev classes `a n` converge to `u`, their gradients converge in `L¹` on any open set

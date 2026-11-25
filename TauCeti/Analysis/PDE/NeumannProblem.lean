@@ -88,8 +88,7 @@ private theorem mem_ker_setIntegralL_iff {u : W1p mu Omega 2} :
     u ∈ LinearMap.ker (W1p.setIntegralL (mu := mu) (Omega := Omega) (p := 2)
       (Omega : Set (EuclideanSpace ℝ ι)) (measure_lt_top _ _) : W1p mu Omega 2 →ₗ[ℝ] ℝ) ↔
       ∫ x in Omega, W1p.value u x ∂mu = 0 := by
-  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, W1p.setIntegralL_apply,
-    Measure.restrict_restrict_of_subset subset_rfl]
+  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, W1p.setIntegralL_apply_of_subset _ subset_rfl]
 
 /-- Subtracting its mean from a function of `H¹(Ω)` leaves a function of integral zero. On a null
 set both the integral and the measure vanish, and nothing is subtracted. -/
@@ -98,12 +97,12 @@ private theorem sub_smul_const_one_mem_ker_setIntegralL (v : W1p mu Omega 2) :
         mu.real Omega) • W1p.const 1 ∈
       LinearMap.ker (W1p.setIntegralL (mu := mu) (Omega := Omega) (p := 2)
         (Omega : Set (EuclideanSpace ℝ ι)) (measure_lt_top _ _) : W1p mu Omega 2 →ₗ[ℝ] ℝ) := by
-  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, map_sub, map_smul, W1p.setIntegralL_const,
-    measureReal_restrict_apply_self, mul_one, smul_eq_mul, div_mul_cancel_of_imp, sub_self]
+  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, map_sub, map_smul,
+    W1p.setIntegralL_const_of_subset _ subset_rfl, mul_one, smul_eq_mul, div_mul_cancel_of_imp,
+    sub_self]
   intro h0
   rw [measureReal_eq_zero_iff (isFiniteMeasure_restrict.1 inferInstance)] at h0
-  rw [W1p.setIntegralL_apply, Measure.restrict_restrict_of_subset subset_rfl,
-    setIntegral_measure_zero _ h0]
+  rw [W1p.setIntegralL_apply_of_subset _ subset_rfl, setIntegral_measure_zero _ h0]
 
 /-- **Poincaré–Wirtinger for functions of integral zero.** On a connected domain with compact
 value map, the gradient controls the `H¹` norm on the functions of integral zero over `Ω`. -/

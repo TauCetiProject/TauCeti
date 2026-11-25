@@ -76,7 +76,8 @@ space. The inner product is needed to interpret the gradient as a weak derivativ
 * `TauCeti.W1p.const`: on a domain of finite measure, a constant function is an element of
   `W^{1,p}(Ω)` with weak gradient `0`.
 * `TauCeti.W1p.setIntegralL`: the integral over a set of finite measure, as a continuous linear
-  functional on `W^{1,p}(Ω)`.
+  functional on `W^{1,p}(Ω)`; over `S ⊆ Ω` it is the integral over `S` with respect to `μ`
+  (`TauCeti.W1p.setIntegralL_apply_of_subset`).
 * `TauCeti.W1p.exists_value_gradient_ae_eq_of_hasWeakFDerivOn`: an `Lᵖ` function with an `Lᵖ`
   weak derivative is an element of `W^{1,p}(Ω)` whose weak gradient is dual to that derivative.
 * `TauCeti.W1p.exists_value_gradient_ae_eq_of_contDiffOn`: a `C¹` function on `Ω` with `u` and
@@ -778,9 +779,16 @@ theorem W1p.tendsto_iff_value_gradient {I : Type*} {l : Filter I}
 def W1p.setIntegralL (S : Set E) (hS : mu.restrict Omega S < ⊤) : W1p mu Omega p →L[ℝ] ℝ :=
   (Set.setIntegralLp (𝕜 := ℝ) S hS).comp W1p.valueL
 
+@[simp]
 theorem W1p.setIntegralL_apply {S : Set E} (hS : mu.restrict Omega S < ⊤) (u : W1p mu Omega p) :
     W1p.setIntegralL S hS u = ∫ x in S, W1p.value u x ∂mu.restrict Omega := by
   rw [W1p.setIntegralL, ContinuousLinearMap.comp_apply, Set.setIntegralLp_apply, W1p.valueL_apply]
+
+/-- For `S ⊆ Ω`, the integral functional over `S` is the integral over `S` with respect to `μ`. -/
+theorem W1p.setIntegralL_apply_of_subset {S : Set E} (hS : mu.restrict Omega S < ⊤)
+    (hSΩ : S ⊆ Omega) (u : W1p mu Omega p) :
+    W1p.setIntegralL S hS u = ∫ x in S, W1p.value u x ∂mu := by
+  rw [W1p.setIntegralL_apply, Measure.restrict_restrict_of_subset hSΩ]
 
 /-! ### Identification with weak Fréchet derivatives -/
 
@@ -1003,10 +1011,17 @@ theorem W1p.value_const_ae (c : ℝ) :
   exact Lp.coeFn_const p _ c
 
 /-- The integral over `S` of the constant Sobolev function `c` is `μ(S ∩ Ω) c`. -/
+@[simp high]
 theorem W1p.setIntegralL_const {S : Set E} (hS : mu.restrict Omega S < ⊤) (c : ℝ) :
     W1p.setIntegralL S hS (W1p.const c : W1p mu Omega p) = (mu.restrict Omega).real S * c := by
   rw [W1p.setIntegralL_apply, integral_congr_ae (ae_restrict_of_ae (W1p.value_const_ae c)),
     setIntegral_const, smul_eq_mul]
+
+/-- For `S ⊆ Ω`, the integral over `S` of the constant Sobolev function `c` is `μ(S) c`. -/
+theorem W1p.setIntegralL_const_of_subset {S : Set E} (hS : mu.restrict Omega S < ⊤)
+    (hSΩ : S ⊆ Omega) (c : ℝ) :
+    W1p.setIntegralL S hS (W1p.const c : W1p mu Omega p) = mu.real S * c := by
+  rw [W1p.setIntegralL_const, measureReal_def, Measure.restrict_eq_self _ hSΩ, ← measureReal_def]
 
 /-- The weak gradient of a constant Sobolev function is `0`. -/
 @[simp]

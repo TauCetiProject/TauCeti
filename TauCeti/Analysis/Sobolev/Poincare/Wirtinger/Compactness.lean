@@ -91,8 +91,8 @@ theorem W1p.exists_pos_mul_norm_le_norm_gradient_of_isCompactOperator
     (ENNReal.toReal_pos hS0 (ne_top_of_le_ne_top hfin (measure_mono hS))).ne'
   -- The integral over `S`, as a continuous linear functional on `W^{1,p}(Ω)`.
   let ℓ : W1p mu Omega p →L[ℝ] ℝ := W1p.setIntegralL S (measure_lt_top _ S)
-  have hℓ (u : W1p mu Omega p) : ℓ u = ∫ y in S, W1p.value u y ∂mu := by
-    rw [W1p.setIntegralL_apply, Measure.restrict_restrict_of_subset hS]
+  have hℓ (u : W1p mu Omega p) : ℓ u = ∫ y in S, W1p.value u y ∂mu :=
+    W1p.setIntegralL_apply_of_subset _ hS u
   -- Its kernel meets the constants, the kernel of the gradient, only in `0`.
   have hdisj : Disjoint (W1p.gradientL (mu := mu) (Omega := Omega) (p := p)).ker ℓ.ker := by
     rw [Submodule.disjoint_def]
@@ -133,14 +133,10 @@ theorem W1p.exists_eLpNorm_value_sub_setAverage_le_of_isCompactOperator
   set a := ⨍ y in S, W1p.value u y ∂mu with ha
   set w : W1p mu Omega p := u - W1p.const a with hw
   have hw0 : ∫ y in S, W1p.value w y ∂mu = 0 := by
-    have hℓ (v : W1p mu Omega p) :=
-      W1p.setIntegralL_apply (measure_lt_top (mu.restrict (Omega : Set E)) S) v
-    have hconst :=
-      W1p.setIntegralL_const (p := p) (measure_lt_top (mu.restrict (Omega : Set E)) S) a
-    rw [measureReal_def, Measure.restrict_eq_self _ hS, ← measureReal_def] at hconst
-    rw [← Measure.restrict_restrict_of_subset hS, ← hℓ, hw, map_sub, hconst, hℓ,
-      Measure.restrict_restrict_of_subset hS, ha, setAverage_eq, smul_eq_mul,
-      mul_inv_cancel_left₀ hSreal, sub_self]
+    have hSlt := measure_lt_top (mu.restrict (Omega : Set E)) S
+    rw [← W1p.setIntegralL_apply_of_subset hSlt hS, hw, map_sub,
+      W1p.setIntegralL_const_of_subset hSlt hS, W1p.setIntegralL_apply_of_subset hSlt hS, ha,
+      setAverage_eq, smul_eq_mul, mul_inv_cancel_left₀ hSreal, sub_self]
   have hvw : W1p.value w = W1p.value u - Lp.const p (mu.restrict (Omega : Set E)) a := by
     have h := map_sub (W1p.valueL (mu := mu) (Omega := Omega) (p := p)) u (W1p.const a)
     rwa [W1p.valueL_apply, W1p.valueL_apply, W1p.valueL_apply, W1p.value_const, ← hw] at h
