@@ -10,7 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
 public import TauCeti.MeasureTheory.Function.Lp.Multiplication
 
 /-!
-# The trigonometric polynomials of bounded degree as a copy of `ℂⁿ`
+# The polynomials in `z` of degree `< n` as a copy of `ℂⁿ`
 
 The Fourier monomials `z⁰, …, z^{n-1}` are orthonormal in `L²(AddCircle T)`, so sending the `j`-th
 basis vector of `ℂⁿ` to `zʲ` is an isometric embedding `Vₙ : ℂⁿ → L²(AddCircle T)` onto
@@ -37,9 +37,9 @@ theorem orthonormal_fourierLp_fin (n : ℕ) :
     Orthonormal ℂ fun j : Fin n ↦ fourierLp (T := T) 2 (j : ℤ) :=
   orthonormal_fourier.comp _ fun i j h ↦ Fin.ext (by exact_mod_cast h)
 
-/-- The isometric embedding of `ℂⁿ` onto the trigonometric polynomials `span {z⁰, …, z^{n-1}}`
-in `L²(AddCircle T)`: the synthesis isometry of the orthonormal family `z⁰, …, z^{n-1}`, sending
-the basis vector `eⱼ` to the Fourier monomial `zʲ`. -/
+/-- The isometric embedding of `ℂⁿ` onto the polynomials in `z` of degree `< n`,
+`span {z⁰, …, z^{n-1}}`, in `L²(AddCircle T)`: the synthesis isometry of the orthonormal family
+`z⁰, …, z^{n-1}`, sending the basis vector `eⱼ` to the Fourier monomial `zʲ`. -/
 noncomputable abbrev fourierEmbedding (n : ℕ) :
     EuclideanSpace ℂ (Fin n) →L[ℂ] Lp ℂ 2 (haarAddCircle (T := T)) :=
   (orthonormal_fourierLp_fin n).synthesisMapIsometry.toContinuousLinearMap

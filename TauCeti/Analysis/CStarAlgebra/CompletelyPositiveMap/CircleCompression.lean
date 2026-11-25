@@ -8,10 +8,12 @@ module
 public import Mathlib.Algebra.Star.NonUnitalSubalgebra
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.AsymptoticDomain
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Order
-public import TauCeti.Analysis.Fourier.TrigonometricPolynomial
+public import TauCeti.Analysis.Fourier.FourierEmbedding
+
+import TauCeti.Analysis.Fourier.Monomial
 
 /-!
-# Compressions of `C(𝕋)` to trigonometric polynomials of bounded degree
+# Compressions of `C(𝕋)` to polynomials in `z` of degree `< n`
 
 Let `𝕋 = AddCircle 1` with normalized Haar measure, and let `Vₙ : ℂⁿ → L²(𝕋)` be the isometry
 onto `span {z⁰, …, z^{n-1}}` sending the `j`-th basis vector to the Fourier monomial `zʲ`
