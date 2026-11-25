@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import TauCeti.Geometry.Lie.Exponential.Circle
-public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.TorsionLattice
+public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Torsion.Lattice
 
 /-!
 # Torsion of the circle through its exponential lattice
@@ -27,14 +27,9 @@ namespace TauCeti
 open Real
 open scoped Manifold
 
-/-- The period `2π` of the circle exponential lies in the exponential lattice. -/
-theorem two_pi_smul_circleExpGenerator_mem_lieExpLattice :
-    (2 * π) • circleExpGenerator ∈ lieExpLattice (I := 𝓡 1) (G := Circle) := by
-  rw [mem_lieExpLattice, lieExp_circleExpGenerator, Circle.exp_two_pi]
-
 /-- **The circle Check**: the level-`n` torsion isomorphism of the circle sends the class of the
 period `2π` to `Circle.exp (2π / n)`, a primitive `n`-th root of unity. -/
-theorem circleLieExpTorsionEquiv_symm_mk_two_pi (n : ℤ) (hn : n ≠ 0) :
+theorem toMul_lieExpTorsionEquiv_symm_mk_two_pi_smul_circleExpGenerator (n : ℤ) (hn : n ≠ 0) :
     Additive.toMul ((lieExpTorsionEquiv (𝓡 1) Circle n hn).symm
       (Submodule.Quotient.mk ⟨_, two_pi_smul_circleExpGenerator_mem_lieExpLattice⟩) :
         Additive Circle) = Circle.exp (2 * π / n) := by

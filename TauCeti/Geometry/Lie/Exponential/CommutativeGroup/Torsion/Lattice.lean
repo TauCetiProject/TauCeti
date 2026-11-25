@@ -25,11 +25,12 @@ torsion corresponds to reduction of lattice classes from `Λ ⧸ mkΛ` to `Λ �
 
 * `TauCeti.lieExpTorsionEquiv`: the elements of `G` killed by `n ≠ 0` are `Λ ⧸ nΛ`.
 * `TauCeti.lieExpTorsionEquiv_symm_mk`: the inverse sends `[λ]` to `exp(λ / n)`.
-* `TauCeti.lieExpTorsionEquiv_smul`: multiplication by `m` on torsion is reduction of lattice
-  classes from `Λ ⧸ mkΛ` to `Λ ⧸ kΛ`.
+* `TauCeti.lieExpTorsionEquiv_apply_eq_factor_of_eq_smul`: multiplication by `m` on torsion is
+  reduction of lattice classes from `Λ ⧸ mkΛ` to `Λ ⧸ kΛ`.
 
-The Checks for `n = 1` and for the circle are in
-`TauCeti.Examples.Geometry.Lie.Exponential.CircleTorsion`.
+The exponential lattice `TauCeti.lieExpLattice` is defined in
+`TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Basic`. The Checks for `n = 1` and for the
+circle are in `TauCeti.Examples.Geometry.Lie.Exponential.CircleTorsion`.
 -/
 
 public section
@@ -48,33 +49,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
-/-- The exponential lattice `Λ = ker exp` of a commutative Lie group, as a `ℤ`-submodule of the
-Lie algebra. -/
-abbrev lieExpLattice : Submodule ℤ (LeftInvariantDerivation I G) :=
-  (lieExpAddMonoidHom (I := I) (G := G)).ker.toIntSubmodule
-
-/-- Membership in the exponential lattice. -/
-theorem mem_lieExpLattice {X : LeftInvariantDerivation I G} :
-    X ∈ lieExpLattice (I := I) (G := G) ↔ lieExp X = 1 :=
-  mem_ker_lieExpAddMonoidHom
-
-private theorem exact_lieExpLattice :
-    Function.Exact (lieExpLattice (I := I) (G := G)).subtype
-      (lieExpAddMonoidHom (I := I) (G := G)).toIntLinearMap := by
-  intro X
-  constructor
-  · intro hX
-    exact ⟨⟨X, hX⟩, rfl⟩
-  · rintro ⟨l, rfl⟩
-    exact l.property
-
 /-- The element `exp(λ / n)` is killed by `n`, for `λ ∈ Λ`. -/
 theorem lieExp_inv_smul_mem_torsionBy (n : ℤ) (hn : n ≠ 0) (l : lieExpLattice (I := I) (G := G)) :
     Additive.ofMul (lieExp ((n : ℝ)⁻¹ • (l : LeftInvariantDerivation I G))) ∈
       Submodule.torsionBy ℤ (Additive G) n := by
   rw [Submodule.mem_torsionBy_iff, ← lieExpAddMonoidHom_apply, ← map_zsmul,
     ← Int.cast_smul_eq_zsmul ℝ, smul_inv_smul₀ (Int.cast_ne_zero.mpr hn)]
-  exact l.property
+  exact AddMonoidHom.mem_ker.1 l.property
 
 variable [PreconnectedSpace G]
 
@@ -85,7 +66,10 @@ where `Λ` is the kernel of the exponential. It is the connecting isomorphism of
 (`TauCeti.lieExpTorsionEquiv_symm_mk`). -/
 def lieExpTorsionEquiv (n : ℤ) (hn : n ≠ 0) :
     Submodule.torsionBy ℤ (Additive G) n ≃ₗ[ℤ] QuotSMulTop n (lieExpLattice (I := I) (G := G)) :=
-  torsionByδEquiv n exact_lieExpLattice (lieExpLattice (I := I) (G := G)).injective_subtype
+  -- `show` states the exactness with `Λ` itself, rather than `LinearMap.ker`, as the kernel
+  torsionByδEquiv n (show Function.Exact (lieExpLattice (I := I) (G := G)).subtype
+      (lieExpAddMonoidHom (I := I) (G := G)).toIntLinearMap from LinearMap.exact_subtype_ker_map _)
+    (lieExpLattice (I := I) (G := G)).injective_subtype
     (by simpa only [Function.Surjective, AddMonoidHom.coe_toIntLinearMap] using
       lieExpAddMonoidHom_surjective_of_preconnectedSpace (I := I) (G := G)) <| by
       simpa only [← Int.cast_smul_eq_zsmul ℝ] using
@@ -98,7 +82,7 @@ theorem lieExpTorsionEquiv_eq (n : ℤ) (hn : n ≠ 0) (x : Submodule.torsionBy 
     {l : lieExpLattice (I := I) (G := G)} (hl : (l : LeftInvariantDerivation I G) = n • X) :
     lieExpTorsionEquiv I G n hn x = Submodule.Quotient.mk l := by
   rw [lieExpTorsionEquiv, torsionByδEquiv_apply]
-  exact torsionByδ_eq exact_lieExpLattice (lieExpLattice (I := I) (G := G)).injective_subtype _ x
+  exact torsionByδ_eq _ (lieExpLattice (I := I) (G := G)).injective_subtype _ x
     (y := X) (by rw [AddMonoidHom.coe_toIntLinearMap, lieExpAddMonoidHom_apply, hX]) hl
 
 /-- **The inverse of the torsion isomorphism sends `[λ]` to `exp(λ / n)`.** -/
@@ -127,25 +111,13 @@ theorem exists_lieExp_inv_smul_eq_of_zsmul_eq_zero (n : ℤ) (hn : n ≠ 0) {g :
 /-- **Transition maps.** Multiplication by `m` on the elements killed by `m * k` corresponds to
 reduction of lattice classes from `Λ ⧸ mkΛ` to `Λ ⧸ kΛ`. For `m = ℓ` and `k = ℓ ^ (r - 1)` these
 are the transition maps `[ℓ]` of the `ℓ`-adic Tate module. -/
-theorem lieExpTorsionEquiv_smul (m k : ℤ) (hmk : m * k ≠ 0)
+theorem lieExpTorsionEquiv_apply_eq_factor_of_eq_smul (m k : ℤ) (hmk : m * k ≠ 0)
     (x : Submodule.torsionBy ℤ (Additive G) (m * k)) (y : Submodule.torsionBy ℤ (Additive G) k)
     (hy : (y : Additive G) = m • (x : Additive G)) :
     lieExpTorsionEquiv I G k (right_ne_zero_of_mul hmk) y =
       Submodule.factor (by rw [mul_smul]; exact Submodule.smul_le_self_of_tower m _)
         (lieExpTorsionEquiv I G (m * k) hmk x) := by
-  have hk' : (k : ℝ) ≠ 0 := Int.cast_ne_zero.mpr (right_ne_zero_of_mul hmk)
-  have hm' : (m : ℝ) ≠ 0 := Int.cast_ne_zero.mpr (left_ne_zero_of_mul hmk)
-  obtain ⟨l, hl⟩ := Submodule.Quotient.mk_surjective _ (lieExpTorsionEquiv I G (m * k) hmk x)
-  have hx := lieExpTorsionEquiv_symm_mk (I := I) (G := G) (m * k) hmk l
-  rw [hl, LinearEquiv.symm_apply_apply] at hx
-  rw [← hl]
-  refine lieExpTorsionEquiv_eq (X := (k : ℝ)⁻¹ • (l : LeftInvariantDerivation I G)) k _ _ ?_ ?_
-  · rw [hy, hx, ← lieExpAddMonoidHom_apply, ← lieExpAddMonoidHom_apply, ← map_zsmul,
-      ← Int.cast_smul_eq_zsmul ℝ, smul_smul]
-    congr 2
-    push_cast
-    field_simp
-  · rw [← Int.cast_smul_eq_zsmul ℝ, smul_inv_smul₀ hk']
-    rfl
+  rw [lieExpTorsionEquiv, lieExpTorsionEquiv, torsionByδEquiv_apply, torsionByδEquiv_apply]
+  exact torsionByδ_apply_eq_factor_of_eq_smul _ _ _ x y hy
 
 end TauCeti
