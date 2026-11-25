@@ -271,11 +271,10 @@ theorem smoothAverage_eq_averageMap [Fintype K] [TopologicalSpace K] [Separately
     averageMap_apply, Subgroup.index_bot, Nat.card_eq_fintype_card, Ring.inverse_invertible,
     relNorm_apply]
   congr 1
-  -- The cosets of `⊥` are the elements of `K`: the quotient map `K → K ⧸ ⊥` is bijective.
-  have hmk : Function.Bijective (QuotientGroup.mk : K → K ⧸ (⊥ : Subgroup K)) :=
-    ⟨fun a b h ↦ inv_mul_eq_one.1 (Subgroup.mem_bot.1 (QuotientGroup.eq.1 h)),
-      QuotientGroup.mk_surjective⟩
-  exact (Fintype.sum_bijective _ hmk _ _ fun g ↦
-    σ.apply_eq_apply_of_quotientGroup_mk_eq hbot (QuotientGroup.out_eq' _).symm).symm
+  -- The cosets of `⊥` are the elements of `K`: reindex along `QuotientGroup.quotientBot.symm`,
+  -- which sends `g` to its coset.
+  refine (Fintype.sum_bijective _ QuotientGroup.quotientBot.symm.bijective _ _ fun g ↦ ?_).symm
+  rw [QuotientGroup.quotientBot_symm_apply]
+  exact σ.apply_eq_apply_of_quotientGroup_mk_eq hbot (QuotientGroup.out_eq' _).symm
 
 end Representation
