@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.PatchedQuantization
+import TauCeti.Algebra.GroupWithZero.Indicator
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
@@ -260,14 +261,13 @@ theorem exists_mem_classicalPseudodifferentialOperators_classicalPrincipalSymbol
   have hterm (i : Fin N) : classicalPrincipalSymbol m (Q i) y ξ =
       (chartAt (CoordinateSpace n) (c i)).cutoffPullback (IsManifold.chart_mem_maximalAtlas (c i))
         (ρ i) 1 y * s y ξ := by
-    rw [OpenPartialHomeomorph.classicalPrincipalSymbol_chartQuantization_ofHomogeneous]
-    by_cases hy : y ∈ (chartAt (CoordinateSpace n) (c i)).source
-    · simp only [OpenPartialHomeomorph.cutoffPullback_one_apply_of_mem _ _ hy]
-      by_cases hρy : ρ i (chartAt (CoordinateSpace n) (c i) y) = 0
-      · simp [hρy]
-      · rw [(hθ i).1.self_of_nhdsSet _ (subset_tsupport _ hρy)]
-        simp
-    · simp [OpenPartialHomeomorph.cutoffPullback_apply_of_notMem _ _ _ hy]
+    -- `θᵢ = 1` on the support of `ρᵢ` absorbs both outer cutoffs.
+    have h := DFunLike.congr_fun (OpenPartialHomeomorph.cutoffPullback_mul
+      (IsManifold.chart_mem_maximalAtlas (c i)) (ψ := ρ i) (χ := θ i)
+      (fun z hz ↦ (hθ i).1.self_of_nhdsSet z hz) 1 1) y
+    rw [mul_one, ContMDiffMap.coe_mul, Pi.mul_apply] at h
+    rw [OpenPartialHomeomorph.classicalPrincipalSymbol_chartQuantization_ofHomogeneous, mul_assoc,
+      ← h, ← h]
   simp_rw [hterm, ← Finset.sum_mul, ← Complex.ofReal_sum]
   by_cases hy : y ∈ K
   · rw [hρ y hy, Complex.ofReal_one, one_mul]
@@ -328,14 +328,12 @@ theorem classicalPrincipalSymbolLinearMap_surjective [SigmaCompactSpace M] :
   set r := fun i ↦ (e i).cutoffPullback (he i) (χ i) 1 y
   have hterm (i : ι) : classicalPrincipalSymbol m ((e i).chartQuantization (he i) (χ i) (χ i)
       (a i)) y ξ = ((r i ^ 2 : ℝ) : ℂ) * s y ξ := by
-    rw [OpenPartialHomeomorph.classicalPrincipalSymbol_chartQuantization_ofHomogeneous]
-    by_cases hy : y ∈ (e i).source
-    · simp only [r, OpenPartialHomeomorph.cutoffPullback_one_apply_of_mem _ _ hy]
-      by_cases hχy : χ i (e i y) = 0
-      · simp [hχy]
-      · rw [(hθ i).1.self_of_nhdsSet _ (subset_tsupport _ hχy)]
-        simp [sq]
-    · simp [r, OpenPartialHomeomorph.cutoffPullback_apply_of_notMem _ _ _ hy]
+    -- `θᵢ = 1` on the support of `χᵢ` absorbs the cutoff of the symbol.
+    have h := DFunLike.congr_fun (OpenPartialHomeomorph.cutoffPullback_mul (he i) (ψ := χ i)
+      (χ := θ i) (fun z hz ↦ (hθ i).1.self_of_nhdsSet z hz) 1 1) y
+    rw [mul_one, ContMDiffMap.coe_mul, Pi.mul_apply] at h
+    rw [OpenPartialHomeomorph.classicalPrincipalSymbol_chartQuantization_ofHomogeneous,
+      mul_comm (_ * _), ← mul_assoc, ← h, sq]
   rw [classicalPrincipalSymbol_patchedQuantization, finsum_congr hterm,
     finsum_cutoffPullback_sq_mul he hχ hsq]
 
@@ -370,10 +368,12 @@ theorem classicalPrincipalSymbol_mulLeft_comp_comp_mulLeft
       coefficient_principal_apply_eq_classicalPrincipalSymbol hP he φ ψ ha hx,
       e.complexCutoffPullback_apply_of_mem he _ _ hx,
       e.complexCutoffPullback_apply_of_mem he _ _ hx]
-    by_cases hφx : φ (e x) = 0
-    · simp [hφx]
-    · rw [hθ1 (.inl (subset_tsupport _ hφx))]
-      simp
+    -- `θ = 1` on the support of `φ`, so `θ φ = φ` absorbs the two cutoffs `θ` of the chart
+    -- quantization: `θ² φ - φ = (θ + 1) (θ φ - φ)`.
+    have hθφ : (θ (e x) : ℂ) * φ (e x) = φ (e x) := mod_cast congrFun
+      (Set.EqOn.mul_eq_right (hθ1.mono ((subset_tsupport φ).trans subset_union_left))) (e x)
+    simp only [Complex.ofReal_mul, ContMDiffMap.coe_one, Pi.one_apply, Complex.real_smul, mul_one]
+    linear_combination (θ (e x) + 1 : ℂ) * ψ (e x) * classicalPrincipalSymbol m P x ξ * hθφ
   · rw [e.classicalPrincipalSymbol_chartQuantization_of_notMem he θ θ a hx,
       e.complexCutoffPullback_apply_of_notMem he _ _ hx]
     simp
