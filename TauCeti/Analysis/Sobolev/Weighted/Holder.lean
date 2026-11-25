@@ -45,16 +45,27 @@ private theorem weight_bilin_eq [ENNReal.HolderTriple p q r]
     ‖x‖ ^ (-(δ + ε) - Module.finrank ℝ E * r⁻¹.toReal) • B u v =
       B (‖x‖ ^ (-δ - Module.finrank ℝ E * p⁻¹.toReal) • u)
         (‖x‖ ^ (-ε - Module.finrank ℝ E * q⁻¹.toReal) • v) := by
-  have hp : p ≠ 0 := ne_of_gt ((pos_iff_ne_zero.2 hr).trans_le
-    (ENNReal.HolderTriple.le p q r))
-  have hq : q ≠ 0 := ne_of_gt ((pos_iff_ne_zero.2 hr).trans_le
-    (ENNReal.HolderTriple.le q p r))
-  simp only [map_smul, smul_apply, smul_smul]
-  rw [← Real.rpow_add (norm_pos_iff.2 hx)]
-  congr 2
-  rw [ENNReal.HolderTriple.inv_eq p q r,
-    ENNReal.toReal_add (ENNReal.inv_ne_top.2 hp) (ENNReal.inv_ne_top.2 hq)]
-  ring
+  have hp : p ≠ 0 := ne_bot_of_le_ne_bot hr (ENNReal.HolderTriple.le p q r)
+  have hq : q ≠ 0 := ne_bot_of_le_ne_bot hr (ENNReal.HolderTriple.le q p r)
+  have hexp : -(δ + ε) - Module.finrank ℝ E * r⁻¹.toReal =
+      (-δ - Module.finrank ℝ E * p⁻¹.toReal) +
+        (-ε - Module.finrank ℝ E * q⁻¹.toReal) := by
+    rw [ENNReal.HolderTriple.inv_eq p q r,
+      ENNReal.toReal_add (ENNReal.inv_ne_top.2 hp) (ENNReal.inv_ne_top.2 hq)]
+    ring
+  rw [hexp, Real.rpow_add (norm_pos_iff.2 hx)]
+  simp only [map_smul, smul_apply, smul_smul, mul_comm]
+
+omit [MeasurableSpace E] [OpensMeasurableSpace E] in
+/-- Complementary radial weights cancel in a conjugate bilinear pairing. -/
+private theorem weight_bilin_eq_of_add_eq_neg_finrank [ENNReal.HolderConjugate p q]
+    (B : F →L[ℝ] G →L[ℝ] H) {δ ε : ℝ}
+    (hδε : δ + ε = -(Module.finrank ℝ E : ℝ)) {x : E} (hx : x ≠ 0) (u : F) (v : G) :
+    B (‖x‖ ^ (-δ - Module.finrank ℝ E * p⁻¹.toReal) • u)
+      (‖x‖ ^ (-ε - Module.finrank ℝ E * q⁻¹.toReal) • v) = B u v := by
+  rw [← weight_bilin_eq (r := 1) B δ ε (by simp) hx]
+  simp only [hδε, inv_one, ENNReal.toReal_one, mul_one, neg_neg, sub_self,
+    Real.rpow_zero, one_smul]
 
 /-- A bounded bilinear map satisfies Hölder's inequality with the sum of the Bartnik weights.
 The reference measure is supported away from the zero radius. -/
@@ -66,18 +77,15 @@ theorem weightedELpNorm_bilin_le [ENNReal.HolderTriple p q r]
       ‖B‖ₑ * weightedELpNorm f p δ μ * weightedELpNorm g q ε μ := by
   have hfm : AEStronglyMeasurable
       (fun x ↦ ‖x‖ ^ (-δ - Module.finrank ℝ E * p⁻¹.toReal) • f x) μ :=
-    (by fun_prop : Measurable fun x : E ↦
-      ‖x‖ ^ (-δ - Module.finrank ℝ E * p⁻¹.toReal)).aestronglyMeasurable.smul hf
+    (measurable_norm.pow_const _).aestronglyMeasurable.smul hf
   have hgm : AEStronglyMeasurable
       (fun x ↦ ‖x‖ ^ (-ε - Module.finrank ℝ E * q⁻¹.toReal) • g x) μ :=
-    (by fun_prop : Measurable fun x : E ↦
-      ‖x‖ ^ (-ε - Module.finrank ℝ E * q⁻¹.toReal)).aestronglyMeasurable.smul hg
+    (measurable_norm.pow_const _).aestronglyMeasurable.smul hg
   by_cases hr : r = 0
   · have hm : AEStronglyMeasurable
         (fun x ↦ ‖x‖ ^ (-(δ + ε) - Module.finrank ℝ E * r⁻¹.toReal) •
           B (f x) (g x)) μ :=
-      (by fun_prop : Measurable fun x : E ↦
-        ‖x‖ ^ (-(δ + ε) - Module.finrank ℝ E * r⁻¹.toReal)).aestronglyMeasurable.smul
+      (measurable_norm.pow_const _).aestronglyMeasurable.smul
           (B.continuous₂.comp_aestronglyMeasurable₂ hf hg)
     subst r
     rw [weightedELpNorm_def, eLpNorm_exponent_zero hm]
@@ -125,8 +133,7 @@ theorem MemWeightedLp.integrable_bilin [ENNReal.HolderConjugate p q]
   apply memLp_one_iff_integrable.1
   apply (memLp_congr_ae ?_).1 hmem
   filter_upwards [h0] with x hx
-  rw [← weight_bilin_eq (r := 1) B δ ε (by simp) hx]
-  simp [hδε]
+  exact weight_bilin_eq_of_add_eq_neg_finrank B hδε hx _ _
 
 omit [OpensMeasurableSpace E] in
 /-- The weighted Hölder dual pairing has norm at most the product of the weighted norms
@@ -142,8 +149,7 @@ theorem eNorm_integral_bilin_le_weightedELpNorm [ENNReal.HolderConjugate p q]
       (‖x‖ ^ (-ε - Module.finrank ℝ E * q⁻¹.toReal) • g x)) =ᵐ[μ]
       fun x ↦ B (f x) (g x) := by
     filter_upwards [h0] with x hx
-    rw [← weight_bilin_eq (r := 1) B δ ε (by simp) hx]
-    simp [hδε]
+    exact weight_bilin_eq_of_add_eq_neg_finrank B hδε hx _ _
   calc
     ‖∫ x, B (f x) (g x) ∂μ‖ₑ ≤ eLpNorm (fun x ↦ B (f x) (g x)) 1 μ := by
       rw [eLpNorm_one_eq_lintegral_eNorm (hf.integrable_bilin hg B h0 hδε).aestronglyMeasurable]
