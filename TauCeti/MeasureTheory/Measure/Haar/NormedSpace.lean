@@ -133,6 +133,9 @@ gives a set of measure one.
   `‖g‖²_{L^q(t)} |B(0, 1)|^{1 - 2/q} r^{n (1 - 2/q)}` in dimension `n`, `2 ≤ q`.
 * `ContinuousAffineMap.measurePreserving_of_abs_det_eq_one`: a continuous affine self-map whose
   linear part has `|det| = 1` preserves an additive Haar measure.
+* `ContinuousLinearEquiv.quasiMeasurePreserving_restrict`: a continuous linear automorphism mapping
+  `s` into `t` is quasi measure preserving between the restrictions of an additive Haar measure to
+  `s` and to `t`.
 * `LinearIsometryEquiv.measurePreserving_addHaar`, `LinearIsometryEquiv.map_addHaar`: a linear
   isometry self-equivalence of a finite-dimensional real normed space preserves every additive Haar
   measure.
@@ -853,6 +856,21 @@ theorem measurePreserving_of_abs_det_eq_one
     map_add_right_eq_self]
 
 end ContinuousAffineMap
+
+namespace ContinuousLinearEquiv
+
+/-- A continuous linear automorphism `e` of a finite-dimensional real normed space that maps `s`
+into `t` is quasi measure preserving between the restrictions of an additive Haar measure to `s`
+and to `t`. In particular almost-everywhere statements on `t` pull back along `e` to `e ⁻¹' t`. -/
+theorem quasiMeasurePreserving_restrict
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (e : E ≃L[ℝ] E) (μ : Measure E) [μ.IsAddHaarMeasure]
+    {s t : Set E} (hst : Set.MapsTo e s t) :
+    QuasiMeasurePreserving e (μ.restrict s) (μ.restrict t) :=
+  (Measure.ContinuousLinearMap.quasiMeasurePreserving μ (e : E →L[ℝ] E)
+    (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero).restrict hst
+
+end ContinuousLinearEquiv
 
 namespace LinearIsometryEquiv
 

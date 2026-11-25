@@ -163,6 +163,18 @@ theorem mem_standardGeometricComplex_faces_iff (K : AbstractSimplicialComplex ι
     Set.mem_image]
   aesop
 
+/-- The underlying precomplex of the standard geometric complex is the coordinate relabeling
+of the original precomplex. -/
+theorem toPreAbstractSimplicialComplex_standardGeometricComplex [DecidableEq (ι →₀ ℝ)]
+    (K : AbstractSimplicialComplex ι) :
+    K.standardGeometricComplex.toPreAbstractSimplicialComplex =
+      K.toPreAbstractSimplicialComplex.map (fun v => Finsupp.single v (1 : ℝ)) := by
+  apply SetLike.ext
+  intro τ
+  simpa only [PreAbstractSimplicialComplex.mem_faces, PreAbstractSimplicialComplex.mem_map_iff,
+    mem_toPreAbstractSimplicialComplex,
+    ← Finset.coe_inj, Finset.coe_image] using mem_standardGeometricComplex_faces_iff K τ
+
 /-- Include the realization of a face into the whole polyhedron. -/
 noncomputable def faceInclusion (K : AbstractSimplicialComplex ι) (σ : Face K) :
     StandardSimplex σ.val → Realization K :=

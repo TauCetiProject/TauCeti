@@ -54,6 +54,8 @@ Chapter V, §3, Exercise 1).
   pseudo-isomorphism.
 * `TauCeti.Iwasawa.IsPseudoIsomorphism.restrict_torsion`: over a noetherian domain, a
   pseudo-isomorphism restricts to a pseudo-isomorphism between the torsion submodules.
+* `TauCeti.Iwasawa.IsPseudoIsomorphism.isTorsion_iff`: over a domain, the source of a
+  pseudo-isomorphism is torsion iff its target is.
 * `TauCeti.Iwasawa.IsPseudoIsomorphism.finite_iff`: over a noetherian ring, the source of a
   pseudo-isomorphism is finitely generated iff its target is.
 * `TauCeti.Iwasawa.isPseudoIsomorphism_lsmul`: multiplication by `a` on a finitely generated
@@ -232,6 +234,23 @@ theorem IsPseudoIsomorphism.restrict_torsion [IsDomain A] [IsNoetherianRing A] {
     refine ⟨⟨m, (Submodule.mem_torsion_iff m).mpr ⟨b * a, ?_⟩⟩, Subtype.ext hm⟩
     rw [mul_smul]
     exact congr(($hb : M))
+
+/-- Over a domain, the source of a pseudo-isomorphism is torsion iff its target is: the kernel
+and the cokernel are pseudo-null, hence torsion. -/
+theorem IsPseudoIsomorphism.isTorsion_iff [IsDomain A] {f : M →ₗ[A] N}
+    (hf : IsPseudoIsomorphism f) : Module.IsTorsion A M ↔ Module.IsTorsion A N := by
+  refine ⟨fun hM n ↦ ?_, fun hN m ↦ ?_⟩
+  · -- Some `a` moves `n` into the range of `f`, and some `b` kills the preimage.
+    obtain ⟨a, ha⟩ := hf.isPseudoNull_coker.isTorsion (x := Submodule.Quotient.mk n)
+    rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero] at ha
+    obtain ⟨m, hm⟩ := ha
+    obtain ⟨b, hb⟩ := hM (x := m)
+    exact ⟨b * a, by rw [mul_smul, ← hm, ← LinearMap.map_smul_of_tower, hb, map_zero]⟩
+  · -- Some `a` moves `m` into the kernel of `f`, and some `b` kills it there.
+    obtain ⟨a, ha⟩ := hN (x := f m)
+    obtain ⟨b, hb⟩ := hf.isPseudoNull_ker.isTorsion (x := ⟨a • m, by
+      rw [LinearMap.mem_ker, LinearMap.map_smul_of_tower, ha]⟩)
+    exact ⟨b * a, by rw [mul_smul]; exact congr(($hb : M))⟩
 
 /-- The multiplication criterion: over a noetherian ring, multiplication by `a` on a finitely
 generated module `M` is a pseudo-isomorphism if `a` lies in no prime of height at most one in the
