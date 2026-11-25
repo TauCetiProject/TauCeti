@@ -66,7 +66,8 @@ finite type sends as many points into a set as out of it
 (`Equiv.Perm.card_filter_not_and_apply_eq`), the total decrease of a natural-number valued
 function along it equals the total increase (`Equiv.Perm.sum_tsub_comp_eq_sum_comp_tsub`), and a
 permutation fixing every point except possibly one is the identity
-(`Equiv.Perm.eq_one_of_forall_ne_apply_eq_self`).
+(`Equiv.Perm.eq_one_of_forall_ne_apply_eq_self`). A transposition is an involution
+(`Equiv.Perm.IsSwap.mul_self_eq_one`).
 -/
 
 public section
@@ -376,6 +377,12 @@ theorem eq_one_of_forall_ne_apply_eq_self (x : α) (h : ∀ y ≠ x, σ y = y) :
     by_contra hne
     exact hne (σ.injective (h (σ y) hne))
   · exact h y hy
+
+variable {σ} in
+/-- A transposition is an involution. -/
+theorem IsSwap.mul_self_eq_one [DecidableEq α] (hσ : σ.IsSwap) : σ * σ = 1 := by
+  obtain ⟨a, b, -, rfl⟩ := hσ
+  exact swap_mul_self a b
 
 end Equiv.Perm
 

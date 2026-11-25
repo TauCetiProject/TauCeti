@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Perm.MovedNorm
+import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # A nonexpanding parity retraction

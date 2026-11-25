@@ -10,6 +10,7 @@ public import TauCeti.Combinatorics.SimpleGraph.CutMinimal
 public import TauCeti.Combinatorics.SimpleGraph.OddTriangles
 import TauCeti.Algebra.BigOperators.Sym
 import TauCeti.Data.Fin.Basic
+import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.GroupTheory.Perm.ParityRetract
 import Mathlib.GroupTheory.Perm.Cycle.Basic
 import Mathlib.Tactic.Positivity

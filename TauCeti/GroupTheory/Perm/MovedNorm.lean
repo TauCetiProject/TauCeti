@@ -76,12 +76,6 @@ theorem movedNorm_eq_two_iff {σ : Perm α} : movedNorm α σ = 2 ↔ σ.IsSwap 
 theorem IsSwap.movedNorm {σ : Perm α} (hσ : σ.IsSwap) : movedNorm α σ = 2 :=
   movedNorm_eq_two_iff.mpr hσ
 
-omit [Fintype α] in
-/-- A transposition is an involution. -/
-theorem IsSwap.mul_self_eq_one {σ : Perm α} (hσ : σ.IsSwap) : σ * σ = 1 := by
-  obtain ⟨a, b, -, rfl⟩ := hσ
-  exact swap_mul_self a b
-
 /-- An odd permutation has moved-point norm at least two. -/
 theorem two_le_movedNorm_of_sign_eq_neg_one {σ : Perm α} (hσ : sign σ = -1) :
     2 ≤ movedNorm α σ := by
