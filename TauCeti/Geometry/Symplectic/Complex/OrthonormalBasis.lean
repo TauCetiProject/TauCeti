@@ -83,6 +83,9 @@ The orthogonal transformation carrying a fixed basis adapted to `J₀` to it dep
   `Q v = -‖v‖²`, the isomorphism `U(2) ≃* U(V, J)` sending a unitary matrix to the rotation acting
   as that matrix in the complex coordinates (`complexCoords_unitaryGroupFrameEquiv_apply`,
   `complexCoords_unitaryGroupFrameEquiv_symm_apply`).
+* `TauCeti.AlmostComplexStructure.exists_complexCoords_apply_eq_mulVec_of_norm_map`: a real linear
+  map preserving norms and commuting with `J` acts as a unitary matrix in the complex coordinates
+  of a unitary frame.
 * `ContinuousLinearMap.orthonormal_adaptedFourFrame`, `ContinuousLinearMap.adaptedFourBasis`: for
   an orthogonal complex structure `K`, a unit vector `a` and a vector `c` with nonzero residual
   `ContinuousLinearMap.complexLineResidual`, the vectors `(a, K a, u, K u)`, with `u` the
@@ -859,12 +862,14 @@ private noncomputable def frameRotationHom (hQ : ∀ v, Q v = -‖v‖ ^ 2) (h�
       rw [complexCoords_frameRotation_apply, complexCoords_frameRotation_apply,
         complexCoords_frameRotation_apply, Matrix.UnitaryGroup.mul_val, Matrix.mulVec_mulVec]
 
-/-- Every rotation in `U(V, J)` acts as a unitary matrix in the complex coordinates of the unitary
-frame `e`: these coordinates are `ℂ`-linear for `J` and carry `V` isometrically onto `ℂ²`. -/
-private theorem exists_complexCoords_apply_eq_mulVec (hQ : ∀ v, Q v = -‖v‖ ^ 2)
-    (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) (A : J.unitaryGroup Q) :
-    ∃ g : Matrix.unitaryGroup (Fin 2) ℂ, ∀ v, e.complexCoords 2
-        (((A : QuadraticMap.specialOrthogonalGroup Q) : V ≃ₗ[ℝ] V) v) =
+/-- **A complex linear isometry is a unitary matrix in a unitary frame.** A real linear map `A` of
+`V` preserving norms and commuting with `J` acts as a unitary matrix in the complex coordinates of
+a unitary frame `e`, `J e₀ = e₁` and `J e₂ = e₃`: these coordinates are `ℂ`-linear for `J` and
+carry `V` isometrically onto `ℂ²`. -/
+theorem exists_complexCoords_apply_eq_mulVec_of_norm_map (h₀ : J (e 0) = e 1)
+    (h₂ : J (e 2) = e 3) (A : V →ₗ[ℝ] V) (hA : ∀ v, ‖A v‖ = ‖v‖)
+    (hJA : ∀ v, A (J v) = J (A v)) :
+    ∃ g : Matrix.unitaryGroup (Fin 2) ℂ, ∀ v, e.complexCoords 2 (A v) =
       (g : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ e.complexCoords 2 v := by
   let := J.complexModule
   have := J.complexModule_isScalarTower
@@ -874,17 +879,11 @@ private theorem exists_complexCoords_apply_eq_mulVec (hQ : ∀ v, Q v = -‖v‖
     basisOfOrthonormalBasisFinFour_equivFun_apply h₀ h₂ v
   have hC (z : Fin 2 → ℂ) : ‖C.symm z‖ = ‖WithLp.toLp 2 z‖ := by
     rw [← OrthonormalBasis.norm_toLp_complexCoords (n := 2) e, ← hCv, LinearEquiv.apply_symm_apply]
-  have hA (v : V) : ‖((A : QuadraticMap.specialOrthogonalGroup Q) : V ≃ₗ[ℝ] V) v‖ = ‖v‖ := by
-    have h := QuadraticMap.map_app_of_mem_orthogonalGroup
-      (QuadraticMap.specialOrthogonalGroup_le_orthogonalGroup Q
-        (A : QuadraticMap.specialOrthogonalGroup Q).property) v
-    rw [hQ, hQ, neg_inj] at h
-    exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 h
   -- The matrix `g` is `A` read in the complex coordinates, a `ℂ`-linear isometry of `ℂ²`.
   let L : EuclideanSpace ℂ (Fin 2) →ₗᵢ[ℂ] EuclideanSpace ℂ (Fin 2) :=
     { toLinearMap := (WithLp.linearEquiv 2 ℂ (Fin 2 → ℂ)).symm.toLinearMap ∘ₗ
         C.toLinearMap ∘ₗ
-        (isComplexLinearMap_of_mem_unitaryGroup A.property).toComplexLinearMap ∘ₗ
+        ((isComplexLinearMap_iff_apply J J A).2 hJA).toComplexLinearMap ∘ₗ
         C.symm.toLinearMap ∘ₗ (WithLp.linearEquiv 2 ℂ (Fin 2 → ℂ)).toLinearMap
       norm_map' x := by
         obtain ⟨z, rfl⟩ := (WithLp.linearEquiv 2 ℂ (Fin 2 → ℂ)).symm.surjective x
@@ -904,6 +903,23 @@ private theorem exists_complexCoords_apply_eq_mulVec (hQ : ∀ v, Q v = -‖v‖
     IsComplexLinearMap.toComplexLinearMap_apply, WithLp.coe_linearEquiv,
     WithLp.coe_symm_linearEquiv, WithLp.ofLp_toLp, hCv]
   rw [← hCv v, LinearEquiv.symm_apply_apply]
+
+/-- Every rotation in `U(V, J)` acts as a unitary matrix in the complex coordinates of the unitary
+frame `e`. -/
+private theorem exists_complexCoords_apply_eq_mulVec (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+    (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) (A : J.unitaryGroup Q) :
+    ∃ g : Matrix.unitaryGroup (Fin 2) ℂ, ∀ v, e.complexCoords 2
+        (((A : QuadraticMap.specialOrthogonalGroup Q) : V ≃ₗ[ℝ] V) v) =
+      (g : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ e.complexCoords 2 v := by
+  have hA (v : V) : ‖((A : QuadraticMap.specialOrthogonalGroup Q) : V ≃ₗ[ℝ] V) v‖ = ‖v‖ := by
+    have h := QuadraticMap.map_app_of_mem_orthogonalGroup
+      (QuadraticMap.specialOrthogonalGroup_le_orthogonalGroup Q
+        (A : QuadraticMap.specialOrthogonalGroup Q).property) v
+    rw [hQ, hQ, neg_inj] at h
+    exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 h
+  exact exists_complexCoords_apply_eq_mulVec_of_norm_map h₀ h₂
+    ((A : QuadraticMap.specialOrthogonalGroup Q) : V ≃ₗ[ℝ] V).toLinearMap hA
+    (mem_unitaryGroup_iff.1 A.property)
 
 /-- **The unitary group in a unitary frame.** For a unitary frame `e`, `J e₀ = e₁` and
 `J e₂ = e₃`, of a space with `Q v = -‖v‖²`, the isomorphism `U(2) ≃* U(V, J)` sending a unitary

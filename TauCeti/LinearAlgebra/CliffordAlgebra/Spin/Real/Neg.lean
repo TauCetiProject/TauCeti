@@ -47,6 +47,7 @@ frame.
 
 * `OrthonormalBasis.realSpinGroupEquiv b hQ`: the comparison of the compact Spin group
   `spinGroup (realCliffordForm n 0)` with `spinGroup Q` along `b`.
+* `OrthonormalBasis.realSpinCGroupEquiv b hQ`: the induced isomorphism of `Spinᶜ` groups.
 
 ## Main results
 
@@ -250,5 +251,42 @@ theorem toSpecialOrthogonal_realSpinCGroupHom_apply
   obtain ⟨⟨s, z⟩, rfl⟩ := spinCGroup.mk_surjective _ hpos x
   simpa only [realSpinCGroupHom_mk, spinCGroup.toSpecialOrthogonal_mk,
     coe_spinToSpecialOrthogonal_apply] using b.spinVectorAction_realSpinGroupEquiv hQ s v
+
+/-- The inverse of the Spin frame comparison sends `-1` to `-1`. -/
+@[simp]
+theorem realSpinGroupEquiv_symm_negOne (hpos : realCliffordForm n 0 ≠ 0) (hQ₀ : Q ≠ 0) :
+    (b.realSpinGroupEquiv hQ).symm (spinGroup.negOne Q hQ₀) = spinGroup.negOne _ hpos := by
+  rw [MulEquiv.symm_apply_eq, b.realSpinGroupEquiv_negOne hQ hpos hQ₀]
+
+/-- **The Spinᶜ frame comparison is an isomorphism**: `OrthonormalBasis.realSpinCGroupHom`, with
+inverse `[s, z] ↦ [b.realSpinGroupEquiv⁻¹ s, z]`. -/
+noncomputable def realSpinCGroupEquiv (hpos : realCliffordForm n 0 ≠ 0) (hQ₀ : Q ≠ 0) :
+    spinCGroup (realCliffordForm n 0) hpos ≃* spinCGroup Q hQ₀ :=
+  MonoidHom.toMulEquiv (b.realSpinCGroupHom hQ hpos hQ₀)
+    (spinCGroup.lift Q hQ₀
+      ((spinCGroup.mk _ hpos).comp
+        ((b.realSpinGroupEquiv hQ).symm.toMonoidHom.prodMap (MonoidHom.id Circle)))
+      (by simp [b.realSpinGroupEquiv_symm_negOne hQ hpos hQ₀]))
+    (MonoidHom.ext fun x ↦ by
+      obtain ⟨p, rfl⟩ := spinCGroup.mk_surjective _ hpos x
+      simp)
+    (MonoidHom.ext fun x ↦ by
+      obtain ⟨p, rfl⟩ := spinCGroup.mk_surjective Q hQ₀ x
+      simp)
+
+/-- The Spinᶜ frame isomorphism evaluates as the Spinᶜ frame comparison. -/
+@[simp]
+theorem coe_realSpinCGroupEquiv (hpos : realCliffordForm n 0 ≠ 0) (hQ₀ : Q ≠ 0) :
+    ⇑(b.realSpinCGroupEquiv hQ hpos hQ₀) = b.realSpinCGroupHom hQ hpos hQ₀ :=
+  (rfl)
+
+/-- On representatives the inverse Spinᶜ frame isomorphism applies the inverse Spin
+comparison. -/
+@[simp]
+theorem realSpinCGroupEquiv_symm_mk (hpos : realCliffordForm n 0 ≠ 0) (hQ₀ : Q ≠ 0)
+    (p : spinGroup Q × Circle) :
+    (b.realSpinCGroupEquiv hQ hpos hQ₀).symm (spinCGroup.mk Q hQ₀ p) =
+      spinCGroup.mk _ hpos ((b.realSpinGroupEquiv hQ).symm p.1, p.2) :=
+  spinCGroup.lift_mk ..
 
 end OrthonormalBasis

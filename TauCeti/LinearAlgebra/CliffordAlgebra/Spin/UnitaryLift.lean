@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
+public import TauCeti.Analysis.Matrix.UnitaryGroup.Quaternion
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
 public import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.CircleLift
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Four
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Neg
-import TauCeti.Analysis.Matrix.UnitaryGroup.Quaternion
 import TauCeti.Analysis.Normed.Module.QuadraticMap
 
 /-!
@@ -62,8 +62,8 @@ quaternion in the complex line `ℝ ⊕ ℝ i`. The compact group `Spin(4)` is `
 `(a, c)` acting by `q ↦ a q (star c)` (`TauCeti.realSpinFourEquivQuaternionUnitaryProd_action`).
 So `(a, w)` lifts to the class `[(a, w⁻¹), w]` in `Spinᶜ(4)`, which is unchanged when `(a, w)` is
 replaced by `(-a, -w)`; its determinant character is `w² = det (w • a)`. The resulting lift on the
-compact coordinate model is transported to `V` along a reordering of the frame
-(`OrthonormalBasis.realSpinCGroupHom`).
+compact coordinate model, `TauCeti.realSpinCUnitary`, is transported to `V` along a reordering
+of the frame (`OrthonormalBasis.realSpinCGroupHom`, `OrthonormalBasis.spinCUnitary_eq_comp`).
 
 ## References
 
@@ -112,8 +112,11 @@ private theorem ker_le_ker_spinCOfPair :
       (MulEquiv.symm_apply_eq _).mpr (realSpinFourEquivQuaternionUnitaryProd_negOne _).symm
     simp [spinCOfPair_apply, hc, hs]
 
-/-- The lift `U(2) → Spinᶜ(4)` of the compact coordinate model, descended from `spinCOfPair`. -/
-private def realSpinCUnitary :
+/-- The lift `U(2) → Spinᶜ(4)` of the compact coordinate model: the class `[(a, w⁻¹), w]` of
+`w • a`, for a unit quaternion `a` and `w` in the circle
+(`TauCeti.realSpinCUnitary_unitaryProdCircleToUnitaryGroup`). Its transport along a frame is
+`OrthonormalBasis.spinCUnitary` (`OrthonormalBasis.spinCUnitary_eq_comp`). -/
+def TauCeti.realSpinCUnitary :
     unitaryGroup (Fin 2) ℂ →*
       spinCGroup (realCliffordForm 4 0) (nondegenerate_realCliffordForm 4 0).ne_zero :=
   Quaternion.unitaryProdCircleToUnitaryGroup.liftOfRightInverse _
@@ -123,6 +126,15 @@ private def realSpinCUnitary :
 private theorem realSpinCUnitary_apply (p : unitary ℍ[ℝ] × Circle) :
     realSpinCUnitary (Quaternion.unitaryProdCircleToUnitaryGroup p) = spinCOfPair p :=
   MonoidHom.liftOfRightInverse_comp_apply _ _ _ _ p
+
+/-- On `w • a`, for a unit quaternion `a` and `w` in the circle, the lift of the compact coordinate
+model is the class `[(a, w⁻¹), w]`, where `Spin(4) = Sp(1) × Sp(1)`. -/
+theorem TauCeti.realSpinCUnitary_unitaryProdCircleToUnitaryGroup (p : unitary ℍ[ℝ] × Circle) :
+    realSpinCUnitary (Quaternion.unitaryProdCircleToUnitaryGroup p) =
+      spinCGroup.mk _ _
+        (realSpinFourEquivQuaternionUnitaryProd.symm (p.1, Quaternion.circleToUnitary p.2⁻¹),
+          p.2) :=
+  realSpinCUnitary_apply p
 
 /-- The vector of the compact coordinate model whose quaternion coordinate is
 `Quaternion.ofFirstColumn z`. -/
@@ -162,9 +174,10 @@ namespace OrthonormalBasis
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   (b : OrthonormalBasis (Fin 4) ℝ V)
 
-/-- The reordered frame `(b₂, b₁, -b₀, b₃)`, along which the quaternion coordinates `coordVec` of
-the compact model become the complex coordinates `b.complexCoords 2`. -/
-private def quaternionFrame : OrthonormalBasis (Fin 4) ℝ V :=
+/-- The reordered frame `(b₂, b₁, -b₀, b₃)`, along which the quaternion coordinates of the compact
+coordinate model of `TauCeti.realSpinCUnitary` become the complex coordinates
+`b.complexCoords 2`. -/
+def quaternionFrame : OrthonormalBasis (Fin 4) ℝ V :=
   OrthonormalBasis.mk (v := ![b 2, b 1, -b 0, b 3])
     (by
       rw [orthonormal_iff_ite]
@@ -203,6 +216,14 @@ It is the only such homomorphism (`eq_spinCUnitary`). -/
 def spinCUnitary : unitaryGroup (Fin 2) ℂ →* spinCGroup Q hQ₀ :=
   (b.quaternionFrame.realSpinCGroupHom hQ (nondegenerate_realCliffordForm 4 0).ne_zero hQ₀).comp
     realSpinCUnitary
+
+/-- The lift `spinCUnitary` is the lift `TauCeti.realSpinCUnitary` of the compact coordinate model,
+transported along the reordered frame `b.quaternionFrame`. -/
+theorem spinCUnitary_eq_comp :
+    b.spinCUnitary hQ hQ₀ =
+      (b.quaternionFrame.realSpinCGroupHom hQ (nondegenerate_realCliffordForm 4 0).ne_zero
+        hQ₀).comp realSpinCUnitary :=
+  (rfl)
 
 /-- **The rotation of `spinCUnitary g` is `g`** in the complex coordinates of the frame. -/
 theorem complexCoords_toSpecialOrthogonal_spinCUnitary_apply (g : unitaryGroup (Fin 2) ℂ)
