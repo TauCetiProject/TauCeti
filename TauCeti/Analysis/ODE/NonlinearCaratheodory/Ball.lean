@@ -20,9 +20,9 @@ every `t`, and `‖F t x₀‖ ≤ m t` almost everywhere, with `L` and `m` inte
 
 then the integral equation `x t = x₀ + ∫ s in t₀..t, F s (x s)` has a solution on `[t₀, T]` with
 values in `B` (`TauCeti.exists_continuousOn_mapsTo_closedBall_forall_mem_Icc_eq_picard`), and two
-solutions with values in `B` agree there
-(`TauCeti.eqOn_of_mapsTo_closedBall_of_forall_mem_Icc_eq_picard`). If the inequality is strict,
-every continuous solution on `[t₀, T]` takes values in `B`
+solutions with values in `B` agree there, as on any interval `[a, b]` containing `t₀` on which
+the hypotheses hold (`TauCeti.eqOn_of_mapsTo_closedBall_of_forall_mem_Icc_eq_picard`). If the
+inequality is strict, every continuous solution on `[t₀, T]` takes values in `B`
 (`TauCeti.mapsTo_closedBall_of_forall_mem_Icc_eq_picard`), so any two solutions agree.
 
 The proof truncates `F` by the radial retraction `π` onto `B`
@@ -58,16 +58,18 @@ open scoped NNReal Interval
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {F : ℝ → E → E} {L : ℝ → ℝ≥0}
-  {t₀ T r : ℝ} {x₀ : E} {m : ℝ → ℝ}
+  {a b t₀ T r : ℝ} {x₀ : E} {m : ℝ → ℝ}
 
+omit [NormedSpace ℝ E] in
 /-- The bound of the a priori estimate grows with the time interval: for `t ∈ [t₀, T]`,
 `|∫ s in t₀..t, m s| exp |∫ s in t₀..t, L s| ≤ (∫ s in t₀..T, m s) exp (∫ s in t₀..T, L s)` when
-`m ≥ 0` almost everywhere. -/
+`‖F t x₀‖ ≤ m t`, so that `m ≥ 0`, almost everywhere. -/
 private theorem abs_integral_mul_exp_abs_integral_le (hm : IntegrableOn m (Icc t₀ T))
-    (hm₀ : ∀ᵐ t ∂volume.restrict (Icc t₀ T), 0 ≤ m t)
+    (hFm : ∀ᵐ t ∂volume.restrict (Icc t₀ T), ‖F t x₀‖ ≤ m t)
     (hL : IntegrableOn (fun t ↦ (L t : ℝ)) (Icc t₀ T)) {t : ℝ} (ht : t ∈ Icc t₀ T) :
     |∫ s in t₀..t, m s| * exp |∫ s in t₀..t, (L s : ℝ)| ≤
       (∫ s in t₀..T, m s) * exp (∫ s in t₀..T, (L s : ℝ)) := by
+  have hm₀ : ∀ᵐ t ∂volume.restrict (Icc t₀ T), 0 ≤ m t := hFm.mono fun _ h ↦ (norm_nonneg _).trans h
   have hT : t₀ ≤ T := ht.1.trans ht.2
   have hsub : Ι t₀ t ⊆ Ι t₀ T := uIoc_subset_uIoc_of_uIcc_subset_uIcc
     (uIcc_subset_uIcc left_mem_uIcc (by rw [uIcc_of_le hT]; exact ht))
@@ -85,23 +87,31 @@ private theorem abs_integral_mul_exp_abs_integral_le (hm : IntegrableOn m (Icc t
   exact mul_le_mul h1 (exp_le_exp.2 h2') (exp_pos _).le
     ((abs_nonneg _).trans h1)
 
+omit [NormedSpace ℝ E] in
+/-- The bound of the a priori estimate is nonnegative when `‖F t x₀‖ ≤ m t` almost everywhere. -/
+private theorem integral_mul_exp_integral_nonneg (hm : IntegrableOn m (Icc t₀ T))
+    (hFm : ∀ᵐ t ∂volume.restrict (Icc t₀ T), ‖F t x₀‖ ≤ m t)
+    (hL : IntegrableOn (fun t ↦ (L t : ℝ)) (Icc t₀ T)) (hT : t₀ ≤ T) :
+    0 ≤ (∫ t in t₀..T, m t) * exp (∫ t in t₀..T, (L t : ℝ)) :=
+  (mul_nonneg (abs_nonneg _) (exp_pos _).le).trans
+    (abs_integral_mul_exp_abs_integral_le hm hFm hL (left_mem_Icc.2 hT))
+
 /-- The truncation `G t y = F t (π y)` of a field Lipschitz on the ball, by the radial retraction
-`π` onto the ball, is Lipschitz with constant `2 L t` and satisfies the Lipschitz bound with
-constant `L t` at the centre. -/
-private theorem lipschitzWith_comp_centeredRadialRetraction (hr : 0 ≤ r)
-    (hLip : ∀ᵐ t ∂volume.restrict (Icc t₀ T), LipschitzOnWith (L t) (F t) (closedBall x₀ r)) :
-    (∀ᵐ t ∂volume.restrict (Icc t₀ T),
-      LipschitzWith (L t * 2) (fun y ↦ F t (centeredRadialRetraction x₀ r y))) ∧
-    ∀ᵐ t ∂volume.restrict (Icc t₀ T), ∀ y,
-      dist (F t (centeredRadialRetraction x₀ r y)) (F t (centeredRadialRetraction x₀ r x₀)) ≤
-        L t * dist y x₀ := by
-  refine ⟨hLip.mono fun t ht ↦ ht.comp_centeredRadialRetraction hr, hLip.mono fun t ht y ↦ ?_⟩
-  refine (ht.dist_le_mul _ (centeredRadialRetraction_mem_closedBall hr y) _
-    (centeredRadialRetraction_mem_closedBall hr x₀)).trans
-    (mul_le_mul_of_nonneg_left ?_ (L t).coe_nonneg)
-  rw [centeredRadialRetraction_of_mem_closedBall (mem_closedBall_self hr),
-    dist_centeredRadialRetraction hr]
-  exact min_le_left _ _
+`π` onto the ball, satisfies the hypotheses of the global theorem on `[a, b]`, with the Lipschitz
+constant `2 L t`. -/
+private theorem integrableOn_lipschitzWith_comp_centeredRadialRetraction (hr : 0 ≤ r)
+    (hF : ∀ x ∈ closedBall x₀ r, IntegrableOn (fun t ↦ F t x) (Icc a b))
+    (hL : IntegrableOn (fun t ↦ (L t : ℝ)) (Icc a b))
+    (hLip : ∀ᵐ t ∂volume.restrict (Icc a b), LipschitzOnWith (L t) (F t) (closedBall x₀ r)) :
+    (∀ y, IntegrableOn (fun t ↦ F t (centeredRadialRetraction x₀ r y)) (Icc a b)) ∧
+      IntegrableOn (fun t ↦ ((L t * 2 : ℝ≥0) : ℝ)) (Icc a b) ∧
+      ∀ᵐ t ∂volume.restrict (Icc a b),
+        LipschitzWith (L t * 2) (fun y ↦ F t (centeredRadialRetraction x₀ r y)) :=
+  ⟨fun y ↦ hF _ (centeredRadialRetraction_mem_closedBall hr y),
+    by
+      have h : IntegrableOn (fun t ↦ (L t : ℝ) * 2) (Icc a b) := hL.mul_const 2
+      simpa only [NNReal.coe_mul, NNReal.coe_ofNat] using h,
+    hLip.mono fun _ ht ↦ ht.comp_centeredRadialRetraction hr⟩
 
 /-- Along a curve with values in the ball on `[t₀, t]`, the integral equations of `F` and of its
 truncation `G t y = F t (π y)` agree at `t`. -/
@@ -113,6 +123,36 @@ private theorem picard_comp_centeredRadialRetraction {x : ℝ → E} {t : ℝ}
   congr 1
   exact intervalIntegral.integral_congr fun s hs ↦ by
     simp only [centeredRadialRetraction_of_mem_closedBall (hx s hs)]
+
+/-- A curve with values in the ball on `[a, b] ∋ t₀` solves the integral equation of `F` there if
+and only if it solves that of the truncation `G t y = F t (π y)`. -/
+private theorem forall_mem_Icc_eq_picard_comp_centeredRadialRetraction_iff (ht₀ : t₀ ∈ Icc a b)
+    {x : ℝ → E} (hB : MapsTo x (Icc a b) (closedBall x₀ r)) :
+    (∀ t ∈ Icc a b,
+      x t = ODE.picard (fun s y ↦ F s (centeredRadialRetraction x₀ r y)) t₀ x₀ x t) ↔
+      ∀ t ∈ Icc a b, x t = ODE.picard F t₀ x₀ x t :=
+  forall₂_congr fun _ ht ↦ by
+    rw [picard_comp_centeredRadialRetraction (F := F) fun s hs ↦ hB (uIcc_subset_Icc ht₀ ht hs)]
+
+/-- A solution on `[a, b] ∋ t₀` of the integral equation of the truncation `G t y = F t (π y)`
+satisfies the a priori bound at the initial value with the constant `L t`, because `π` moves no
+point farther from `x₀`. -/
+private theorem norm_sub_le_of_forall_mem_Icc_eq_picard_comp_centeredRadialRetraction
+    (hr : 0 ≤ r) (ht₀ : t₀ ∈ Icc a b) (hL : IntegrableOn (fun t ↦ (L t : ℝ)) (Icc a b))
+    (hLip : ∀ᵐ t ∂volume.restrict (Icc a b), LipschitzOnWith (L t) (F t) (closedBall x₀ r))
+    (hm : IntegrableOn m (Icc a b)) (hFm : ∀ᵐ t ∂volume.restrict (Icc a b), ‖F t x₀‖ ≤ m t)
+    {x : ℝ → E} (hx : ContinuousOn x (Icc a b))
+    (h : ∀ t ∈ Icc a b,
+      x t = ODE.picard (fun s y ↦ F s (centeredRadialRetraction x₀ r y)) t₀ x₀ x t)
+    {t : ℝ} (ht : t ∈ Icc a b) :
+    ‖x t - x₀‖ ≤ |∫ s in t₀..t, m s| * exp |∫ s in t₀..t, (L s : ℝ)| := by
+  have hG₀ : centeredRadialRetraction x₀ r x₀ = x₀ :=
+    centeredRadialRetraction_of_mem_closedBall (mem_closedBall_self hr)
+  have hLx₀ : ∀ᵐ t ∂volume.restrict (Icc a b), ∀ y,
+      dist (F t (centeredRadialRetraction x₀ r y)) (F t x₀) ≤ L t * dist y x₀ :=
+    hLip.mono fun _ ht ↦ ht.dist_comp_centeredRadialRetraction_le hr
+  exact norm_sub_le_mul_exp_of_forall_mem_Icc_eq_picard_of_dist_le hL ht₀ hm
+    (by simpa only [hG₀] using hFm) (by simpa only [hG₀] using hLx₀) hx h ht
 
 /-- **The nonlinear Carathéodory theorem on a ball: existence.** Let the sections `t ↦ F t x`,
 `x ∈ closedBall x₀ r`, be integrable on `[t₀, T]`, let `F t` be Lipschitz on the ball with
@@ -132,65 +172,43 @@ theorem exists_continuousOn_mapsTo_closedBall_forall_mem_Icc_eq_picard [Complete
   · exact ⟨0, by simp [Icc_eq_empty_of_lt hT], by simp [Icc_eq_empty_of_lt hT, mapsTo_empty],
       by simp [Icc_eq_empty_of_lt hT]⟩
   have ht₀ : t₀ ∈ Icc t₀ T := left_mem_Icc.2 hT
-  have hm₀ : ∀ᵐ t ∂volume.restrict (Icc t₀ T), 0 ≤ m t := hFm.mono fun _ h ↦ (norm_nonneg _).trans h
-  have hr₀ : 0 ≤ r := (mul_nonneg (abs_nonneg _) (exp_pos _).le).trans
-    ((abs_integral_mul_exp_abs_integral_le hm hm₀ hL ht₀).trans hr)
-  set G : ℝ → E → E := fun t y ↦ F t (centeredRadialRetraction x₀ r y)
-  obtain ⟨hGLip, hGx₀⟩ := lipschitzWith_comp_centeredRadialRetraction hr₀ hLip
-  have hG (y : E) : IntegrableOn (fun t ↦ G t y) (Icc t₀ T) :=
-    hF _ (centeredRadialRetraction_mem_closedBall hr₀ y)
-  have hG₀ : centeredRadialRetraction x₀ r x₀ = x₀ :=
-    centeredRadialRetraction_of_mem_closedBall (mem_closedBall_self hr₀)
-  obtain ⟨x, hx, hxe⟩ := exists_continuousOn_forall_mem_Icc_eq_picard_of_lipschitzWith (F := G)
-    hG (by
-      have h : IntegrableOn (fun t ↦ (L t : ℝ) * 2) (Icc t₀ T) := hL.mul_const 2
-      simpa only [NNReal.coe_mul, NNReal.coe_ofNat] using h) hGLip ht₀ x₀
+  have hr₀ : 0 ≤ r := (integral_mul_exp_integral_nonneg hm hFm hL hT).trans hr
+  obtain ⟨hG, hL₂, hGLip⟩ :=
+    integrableOn_lipschitzWith_comp_centeredRadialRetraction hr₀ hF hL hLip
+  obtain ⟨x, hx, hxe⟩ :=
+    exists_continuousOn_forall_mem_Icc_eq_picard_of_lipschitzWith hG hL₂ hGLip ht₀ x₀
   have hB : MapsTo x (Icc t₀ T) (closedBall x₀ r) := fun t ht ↦ by
     rw [mem_closedBall, dist_eq_norm]
-    refine (norm_sub_le_mul_exp_of_forall_mem_Icc_eq_picard_of_dist_le hL ht₀ hm
-      (by simpa only [G, hG₀] using hFm) (by simpa only [G, hG₀] using hGx₀) hx hxe ht).trans ?_
-    exact (abs_integral_mul_exp_abs_integral_le hm hm₀ hL ht).trans hr
-  refine ⟨x, hx, hB, fun t ht ↦ (hxe t ht).trans ?_⟩
-  exact picard_comp_centeredRadialRetraction fun s hs ↦
-    hB (uIcc_subset_Icc ht₀ ht hs)
+    exact (norm_sub_le_of_forall_mem_Icc_eq_picard_comp_centeredRadialRetraction hr₀ ht₀ hL hLip
+      hm hFm hx hxe ht).trans ((abs_integral_mul_exp_abs_integral_le hm hFm hL ht).trans hr)
+  exact ⟨x, hx, hB, (forall_mem_Icc_eq_picard_comp_centeredRadialRetraction_iff ht₀ hB).1 hxe⟩
 
-/-- **The nonlinear Carathéodory theorem on a ball: uniqueness.** Let the sections
-`t ↦ F t x`, `x ∈ closedBall x₀ r`, be integrable on `[t₀, T]` and let `F t` be Lipschitz on the
-ball with constant `L t` for almost every `t ∈ [t₀, T]`, with `L` integrable. Two curves continuous
-on `[t₀, T]`, with values in the ball, that solve `x t = x₀ + ∫ s in t₀..t, F s (x s)` there agree
-on `[t₀, T]`. -/
-theorem eqOn_of_mapsTo_closedBall_of_forall_mem_Icc_eq_picard
-    (hF : ∀ x ∈ closedBall x₀ r, IntegrableOn (fun t ↦ F t x) (Icc t₀ T))
-    (hL : IntegrableOn (fun t ↦ (L t : ℝ)) (Icc t₀ T))
-    (hLip : ∀ᵐ t ∂volume.restrict (Icc t₀ T), LipschitzOnWith (L t) (F t) (closedBall x₀ r))
-    {x₁ x₂ : ℝ → E} (hx₁ : ContinuousOn x₁ (Icc t₀ T)) (hx₂ : ContinuousOn x₂ (Icc t₀ T))
-    (hB₁ : MapsTo x₁ (Icc t₀ T) (closedBall x₀ r)) (hB₂ : MapsTo x₂ (Icc t₀ T) (closedBall x₀ r))
-    (h₁ : ∀ t ∈ Icc t₀ T, x₁ t = ODE.picard F t₀ x₀ x₁ t)
-    (h₂ : ∀ t ∈ Icc t₀ T, x₂ t = ODE.picard F t₀ x₀ x₂ t) :
-    EqOn x₁ x₂ (Icc t₀ T) := by
-  intro t ht
-  have ht₀ : t₀ ∈ Icc t₀ T := left_mem_Icc.2 (ht.1.trans ht.2)
+/-- **The nonlinear Carathéodory theorem on a ball: uniqueness.** Let `t₀ ∈ [a, b]`, let the
+sections `t ↦ F t x`, `x ∈ closedBall x₀ r`, be integrable on `[a, b]` and let `F t` be Lipschitz
+on the ball with constant `L t` for almost every `t ∈ [a, b]`, with `L` integrable. Two curves
+continuous on `[a, b]`, with values in the ball, that solve `x t = x₀ + ∫ s in t₀..t, F s (x s)`
+there agree on `[a, b]`. -/
+theorem eqOn_of_mapsTo_closedBall_of_forall_mem_Icc_eq_picard (ht₀ : t₀ ∈ Icc a b)
+    (hF : ∀ x ∈ closedBall x₀ r, IntegrableOn (fun t ↦ F t x) (Icc a b))
+    (hL : IntegrableOn (fun t ↦ (L t : ℝ)) (Icc a b))
+    (hLip : ∀ᵐ t ∂volume.restrict (Icc a b), LipschitzOnWith (L t) (F t) (closedBall x₀ r))
+    {x₁ x₂ : ℝ → E} (hx₁ : ContinuousOn x₁ (Icc a b)) (hx₂ : ContinuousOn x₂ (Icc a b))
+    (hB₁ : MapsTo x₁ (Icc a b) (closedBall x₀ r)) (hB₂ : MapsTo x₂ (Icc a b) (closedBall x₀ r))
+    (h₁ : ∀ t ∈ Icc a b, x₁ t = ODE.picard F t₀ x₀ x₁ t)
+    (h₂ : ∀ t ∈ Icc a b, x₂ t = ODE.picard F t₀ x₀ x₂ t) :
+    EqOn x₁ x₂ (Icc a b) := by
   have hr₀ : 0 ≤ r := dist_nonneg.trans (mem_closedBall.1 (hB₁ ht₀))
-  obtain ⟨hGLip, -⟩ := lipschitzWith_comp_centeredRadialRetraction hr₀ hLip
-  have hG (y : E) : IntegrableOn (fun t ↦ F t (centeredRadialRetraction x₀ r y)) (Icc t₀ T) :=
-    hF _ (centeredRadialRetraction_mem_closedBall hr₀ y)
-  have htrunc {x : ℝ → E} (hB : MapsTo x (Icc t₀ T) (closedBall x₀ r))
-      (h : ∀ t ∈ Icc t₀ T, x t = ODE.picard F t₀ x₀ x t) (t : ℝ) (ht : t ∈ Icc t₀ T) :
-      x t = ODE.picard (fun s y ↦ F s (centeredRadialRetraction x₀ r y)) t₀ x₀ x t :=
-    (h t ht).trans (picard_comp_centeredRadialRetraction fun s hs ↦
-      hB (uIcc_subset_Icc ht₀ ht hs)).symm
-  exact eqOn_of_forall_mem_Icc_eq_picard_of_lipschitzWith hG
-    (by
-      have h : IntegrableOn (fun t ↦ (L t : ℝ) * 2) (Icc t₀ T) := hL.mul_const 2
-      simpa only [NNReal.coe_mul, NNReal.coe_ofNat] using h) hGLip ht₀ hx₁ hx₂
-    (htrunc hB₁ h₁) (htrunc hB₂ h₂) ht
+  obtain ⟨hG, hL₂, hGLip⟩ :=
+    integrableOn_lipschitzWith_comp_centeredRadialRetraction hr₀ hF hL hLip
+  exact eqOn_of_forall_mem_Icc_eq_picard_of_lipschitzWith hG hL₂ hGLip ht₀ hx₁ hx₂
+    ((forall_mem_Icc_eq_picard_comp_centeredRadialRetraction_iff ht₀ hB₁).2 h₁)
+    ((forall_mem_Icc_eq_picard_comp_centeredRadialRetraction_iff ht₀ hB₂).2 h₂)
 
 /-- **Solutions stay in the ball under the strict inequality.** Let `F t` be Lipschitz on
 `closedBall x₀ r` with constant `L t` and `‖F t x₀‖ ≤ m t` for almost every `t ∈ [t₀, T]`, with
 `L` and `m` integrable, and let `(∫ t in t₀..T, m t) exp (∫ t in t₀..T, L t) < r`. Then every curve
-continuous on `[t₀, T]` with `x t = x₀ + ∫ s in t₀..t, F s (x s)` there takes values in the ball:
-a solution leaving it would reach the sphere at a first time `t*`, where the a priori bound on
-`[t₀, t*]` puts it strictly inside. -/
+continuous on `[t₀, T]` with `x t = x₀ + ∫ s in t₀..t, F s (x s)` there takes values in the
+ball. -/
 theorem mapsTo_closedBall_of_forall_mem_Icc_eq_picard
     (hL : IntegrableOn (fun t ↦ (L t : ℝ)) (Icc t₀ T))
     (hLip : ∀ᵐ t ∂volume.restrict (Icc t₀ T), LipschitzOnWith (L t) (F t) (closedBall x₀ r))
@@ -201,9 +219,7 @@ theorem mapsTo_closedBall_of_forall_mem_Icc_eq_picard
   by_contra hc
   obtain ⟨t₁, ht₁, ht₁B⟩ := not_forall₂.1 hc
   have ht₀ : t₀ ∈ Icc t₀ T := left_mem_Icc.2 (ht₁.1.trans ht₁.2)
-  have hm₀ : ∀ᵐ t ∂volume.restrict (Icc t₀ T), 0 ≤ m t := hFm.mono fun _ h ↦ (norm_nonneg _).trans h
-  have hr₀ : 0 < r := (mul_nonneg (abs_nonneg _) (exp_pos _).le).trans_lt
-    ((abs_integral_mul_exp_abs_integral_le hm hm₀ hL ht₀).trans_lt hr)
+  have hr₀ : 0 < r := (integral_mul_exp_integral_nonneg hm hFm hL (ht₁.1.trans ht₁.2)).trans_lt hr
   -- The first time `b` at which `x` reaches the sphere.
   set S := Icc t₀ T ∩ x ⁻¹' {y | r ≤ dist y x₀}
   have hSc : IsClosed S := hx.preimage_isClosed_of_isClosed isClosed_Icc
@@ -213,13 +229,13 @@ theorem mapsTo_closedBall_of_forall_mem_Icc_eq_picard
   have hbdd : BddBelow S := ⟨t₀, fun u hu ↦ hu.1.1⟩
   have hbS : b ∈ S := hSc.csInf_mem ⟨t₁, ht₁S⟩ hbdd
   have hbI : b ∈ Icc t₀ T := hbS.1
+  have hbr : r ≤ dist (x b) x₀ := hbS.2
   have hlt : ∀ s ∈ Ico t₀ b, dist (x s) x₀ < r := fun s hs ↦ not_le.1 fun h' ↦
     (csInf_le hbdd ⟨⟨hs.1, hs.2.le.trans hbI.2⟩, h'⟩).not_gt hs.2
   have htb : t₀ < b := lt_of_le_of_ne hbI.1 fun he ↦ by
-    have hb : r ≤ dist (x b) x₀ := hbS.2
     have hx₀ : x t₀ = x₀ := by rw [h t₀ ht₀]; simp [ODE.picard_apply]
-    rw [← he, hx₀, dist_self] at hb
-    exact hb.not_gt hr₀
+    rw [← he, hx₀, dist_self] at hbr
+    exact hbr.not_gt hr₀
   -- On `[t₀, b]` the curve stays in the ball.
   have hsub : Icc t₀ b ⊆ Icc t₀ T := Icc_subset_Icc_right hbI.2
   have hBb : MapsTo x (Icc t₀ b) (closedBall x₀ r) := fun s hs ↦ by
@@ -229,19 +245,14 @@ theorem mapsTo_closedBall_of_forall_mem_Icc_eq_picard
     refine isClosed_closedBall.closure_subset_iff.2 ?_ (hcw.mem_closure_image hcl)
     rintro _ ⟨u, hu, rfl⟩
     exact mem_closedBall.2 (hlt u hu).le
-  obtain ⟨-, hGx₀⟩ := lipschitzWith_comp_centeredRadialRetraction hr₀.le hLip
-  have hG₀ : centeredRadialRetraction x₀ r x₀ = x₀ :=
-    centeredRadialRetraction_of_mem_closedBall (mem_closedBall_self hr₀.le)
-  have hbound := norm_sub_le_mul_exp_of_forall_mem_Icc_eq_picard_of_dist_le
-    (F := fun s y ↦ F s (centeredRadialRetraction x₀ r y)) (hL.mono_set hsub)
-    (left_mem_Icc.2 htb.le) (hm.mono_set hsub)
-    (by simpa only [hG₀] using ae_restrict_of_ae_restrict_of_subset hsub hFm)
-    (by simpa only [hG₀] using ae_restrict_of_ae_restrict_of_subset hsub hGx₀)
-    (hx.mono hsub) (fun s hs ↦ (h s (hsub hs)).trans
-      (picard_comp_centeredRadialRetraction fun u hu ↦
-        hBb (uIcc_subset_Icc (left_mem_Icc.2 htb.le) hs hu)).symm) (right_mem_Icc.2 htb.le)
-  have := (hbound.trans (abs_integral_mul_exp_abs_integral_le hm hm₀ hL hbI)).trans_lt hr
+  have htb' : t₀ ∈ Icc t₀ b := left_mem_Icc.2 htb.le
+  have hbound := norm_sub_le_of_forall_mem_Icc_eq_picard_comp_centeredRadialRetraction hr₀.le
+    htb' (hL.mono_set hsub) (ae_restrict_of_ae_restrict_of_subset hsub hLip) (hm.mono_set hsub)
+    (ae_restrict_of_ae_restrict_of_subset hsub hFm) (hx.mono hsub)
+    ((forall_mem_Icc_eq_picard_comp_centeredRadialRetraction_iff htb' hBb).2
+      fun s hs ↦ h s (hsub hs)) (right_mem_Icc.2 htb.le)
+  have := (hbound.trans (abs_integral_mul_exp_abs_integral_le hm hFm hL hbI)).trans_lt hr
   rw [← dist_eq_norm] at this
-  exact this.not_ge (show r ≤ dist (x b) x₀ from hbS.2)
+  exact this.not_ge hbr
 
 end TauCeti
