@@ -28,8 +28,9 @@ companion identity `γ_{E'}(e(U)) = γ_E(U)` for the standard Gaussian measure i
   and `LinearIsometryEquiv.weightedVariation_comap`: pulling back into a smaller domain does not
   increase the weighted variation, and exact transport preserves it.
 * `LinearIsometryEquiv.weightedPerimeter_preimage_le`,
-  `LinearIsometryEquiv.weightedPerimeter_preimage`, `LinearIsometryEquiv.weightedPerimeter_comap`
-  and `LinearIsometryEquiv.weightedPerimeter_image`: the same for the weighted perimeter.
+  `LinearIsometryEquiv.weightedPerimeter_preimage`, `LinearIsometryEquiv.weightedPerimeter_comap`,
+  `LinearIsometryEquiv.weightedPerimeter_image` and
+  `LinearIsometryEquiv.weightedPerimeter_image_of_comp_eq`: the same for the weighted perimeter.
 * `LinearIsometryEquiv.gaussianPerimeter_image` and
   `LinearIsometryEquiv.gaussianPerimeter_preimage`: invariance of the Gaussian perimeter.
 
@@ -145,6 +146,15 @@ theorem weightedPerimeter_image {W : E → ℝ} (e : E ≃ₗᵢ[ℝ] E') (hVO :
     weightedPerimeter (W ∘ e.symm) Ω (e '' s) = weightedPerimeter W V s := by
   rw [e.image_eq_preimage_symm]
   exact weightedPerimeter_preimage e.symm hOV (by simpa using hVO) s
+
+/-- The image of a set under a linear isometry equivalence `e` identifying `V` with `Ω` has, in
+`Ω` and for a weight `W'` with `W' ∘ e = W`, the weighted perimeter of the original set in `V`
+for `W`. -/
+theorem weightedPerimeter_image_of_comp_eq {W : E → ℝ} {W' : E' → ℝ} (e : E ≃ₗᵢ[ℝ] E')
+    (hW : W' ∘ e = W) (hVO : MapsTo e V Ω) (hOV : MapsTo e.symm Ω V) (s : Set E) :
+    weightedPerimeter W' Ω (e '' s) = weightedPerimeter W V s := by
+  rw [← e.weightedPerimeter_image hVO hOV s, ← hW, Function.comp_assoc, e.self_comp_symm,
+    Function.comp_id]
 
 /-- **Isometry invariance of the Gaussian perimeter.** The Gaussian perimeter of the preimage of a
 set under a linear isometry equivalence is the Gaussian perimeter of the set. -/

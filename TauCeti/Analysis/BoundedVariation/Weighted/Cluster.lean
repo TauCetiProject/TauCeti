@@ -23,12 +23,14 @@ Two clusters are equivalent when corresponding cells agree up to null sets
 
 * Equivalent clusters have the same total perimeter and the same cell measures.
 * Permuting the cells gives a cluster with the same total perimeter (`TauCeti.Cluster.permute`).
-* Grouping the cells along a map `f : Fin q → Fin p` gives a `p`-cluster whose total perimeter is
-  at most that of the original one (`TauCeti.Cluster.coarsen`,
-  `TauCeti.Cluster.perimeter_coarsen_le`), by subadditivity of the weighted variation. Merging two
+* For a `C¹` weight, grouping the cells along a map `f : Fin q → Fin p` gives a `p`-cluster whose
+  total perimeter is at most that of the original one (`TauCeti.Cluster.coarsen`,
+  `TauCeti.Cluster.perimeter_coarsen_le`), by subadditivity of the weighted perimeter over disjoint
+  unions (`TauCeti.weightedPerimeter_biUnion_le`). Merging two
   cells of a `q`-cluster into a `(q − 1)`-cluster is the case of a map identifying two indices.
 * There are no `0`-clusters; up to equivalence, the only `1`-cluster is `(E)`, of total perimeter
-  `0`; and a `2`-cluster has total perimeter `P_μ(Ω_1) = P_μ(Ω_2)`, by complement invariance.
+  `0` for a `C¹` weight; and for a `C¹` weight a `2`-cluster has total perimeter
+  `P_μ(Ω_1) = P_μ(Ω_2)`, by complement invariance.
 * A linear isometry equivalence carries clusters for `W` to clusters for the transported weight
   with the same total perimeter (`TauCeti.Cluster.map`); the Gaussian weight is invariant, so
   this carries Gaussian clusters to Gaussian clusters.
@@ -55,6 +57,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 covering `E` up to a `volume`-null set, equivalently up to a null set for `e^{−W} · volume`, the
 density being positive, and each of finite weighted perimeter. Cells may be empty or
 disconnected. -/
+@[ext]
 structure Cluster (W : E → ℝ) (q : ℕ) where
   /-- The cells `Ω_1, …, Ω_q`. -/
   cell : Fin q → Set E
@@ -68,11 +71,6 @@ structure Cluster (W : E → ℝ) (q : ℕ) where
   weightedPerimeter_lt_top : ∀ i, weightedPerimeter W ⊤ (cell i) < ⊤
 
 variable {W : E → ℝ} {p q : ℕ}
-
-/-- The measure of a weight is absolutely continuous with respect to `volume`. -/
-theorem weightedMeasure_absolutelyContinuous : weightedMeasure W ≪ volume := by
-  rw [weightedMeasure_def]
-  exact withDensity_absolutelyContinuous _ _
 
 namespace Cluster
 
@@ -118,6 +116,24 @@ theorem isEquivalent_iff {Ω Ω' : Cluster W q} :
     Ω.IsEquivalent Ω' ↔ ∀ i, Ω.cell i =ᵐ[volume] Ω'.cell i :=
   (Iff.rfl)
 
+/-- Every cluster is equivalent to itself. -/
+@[refl]
+theorem IsEquivalent.refl (Ω : Cluster W q) : Ω.IsEquivalent Ω :=
+  isEquivalent_iff.2 fun _ => .rfl
+
+/-- The equivalence of clusters is symmetric. -/
+theorem IsEquivalent.symm {Ω Ω' : Cluster W q} (h : Ω.IsEquivalent Ω') : Ω'.IsEquivalent Ω :=
+  isEquivalent_iff.2 fun i => (isEquivalent_iff.1 h i).symm
+
+/-- The equivalence of clusters is transitive. -/
+theorem IsEquivalent.trans {Ω Ω' Ω'' : Cluster W q} (h : Ω.IsEquivalent Ω')
+    (h' : Ω'.IsEquivalent Ω'') : Ω.IsEquivalent Ω'' :=
+  isEquivalent_iff.2 fun i => (isEquivalent_iff.1 h i).trans (isEquivalent_iff.1 h' i)
+
+/-- The equivalence of clusters is an equivalence relation. -/
+theorem isEquivalent_equivalence : Equivalence (IsEquivalent (W := W) (q := q)) :=
+  ⟨IsEquivalent.refl, IsEquivalent.symm, IsEquivalent.trans⟩
+
 /-- Equivalent clusters have the same total perimeter. -/
 theorem IsEquivalent.perimeter_eq {Ω Ω' : Cluster W q} (h : Ω.IsEquivalent Ω') :
     Ω.perimeter = Ω'.perimeter := by
@@ -158,21 +174,6 @@ theorem perimeter_permute (Ω : Cluster W q) (σ : Equiv.Perm (Fin q)) :
   simp only [perimeter_def, permute_cell]
   rw [Equiv.sum_comp σ (fun i => weightedPerimeter W ⊤ (Ω.cell i))]
 
-/-- For a `C¹` weight, the weighted perimeter of the union of finitely many pairwise disjoint
-cells of a cluster is at most the sum of their perimeters. -/
-theorem weightedPerimeter_biUnion_le (hW : ContDiff ℝ 1 W) (Ω : Cluster W q)
-    (t : Finset (Fin q)) :
-    weightedPerimeter W ⊤ (⋃ i ∈ t, Ω.cell i) ≤ ∑ i ∈ t, weightedPerimeter W ⊤ (Ω.cell i) := by
-  have hind : (⋃ i ∈ t, Ω.cell i).indicator (1 : E → ℝ) = ∑ i ∈ t, (Ω.cell i).indicator 1 := by
-    rw [Finset.indicator_biUnion t _ fun i _ j _ hij => Ω.pairwise_disjoint hij]
-    ext x
-    simp
-  rw [weightedPerimeter_def, hind]
-  simp only [weightedPerimeter_def]
-  exact weightedVariation_sum_le hW t (f := fun i => (Ω.cell i).indicator 1) fun i _ =>
-    locallyIntegrableOn_indicator_const
-      ((Ω.nullMeasurableSet_cell i).mono Measure.restrict_le_self) 1
-
 /-- **Grouping cells.** For a `C¹` weight and a map `f : Fin q → Fin p`, the `p`-cluster whose
 `k`-th cell is the union of the cells `Ω_i` with `f i = k`. Merging two cells is the case of a map
 identifying two indices. -/
@@ -192,7 +193,9 @@ def coarsen (hW : ContDiff ℝ 1 W) (Ω : Cluster W q) (f : Fin q → Fin p) : C
       exact ⟨fun ⟨_, i, _, hx⟩ => ⟨i, hx⟩, fun ⟨i, hx⟩ => ⟨f i, i, rfl, hx⟩⟩
     rw [this]
     exact Ω.volume_compl_iUnion
-  weightedPerimeter_lt_top k := (Ω.weightedPerimeter_biUnion_le hW _).trans_lt
+  weightedPerimeter_lt_top _ := (weightedPerimeter_biUnion_le hW _
+    (fun i _ => (Ω.nullMeasurableSet_cell i).mono Measure.restrict_le_self)
+    fun _ _ _ _ hij => Ω.pairwise_disjoint hij).trans_lt
     (ENNReal.sum_lt_top.2 fun i _ => Ω.weightedPerimeter_lt_top i)
 
 /-- The cells of a grouped cluster. -/
@@ -208,7 +211,9 @@ theorem perimeter_coarsen_le (hW : ContDiff ℝ 1 W) (Ω : Cluster W q) (f : Fin
   gcongr
   calc ∑ k, weightedPerimeter W ⊤ ((Ω.coarsen hW f).cell k)
       ≤ ∑ k, ∑ i ∈ Finset.univ.filter (f · = k), weightedPerimeter W ⊤ (Ω.cell i) :=
-        Finset.sum_le_sum fun k _ => Ω.weightedPerimeter_biUnion_le hW _
+        Finset.sum_le_sum fun _ _ => weightedPerimeter_biUnion_le hW _
+          (fun i _ => (Ω.nullMeasurableSet_cell i).mono Measure.restrict_le_self)
+          fun _ _ _ _ hij => Ω.pairwise_disjoint hij
     _ = ∑ i, weightedPerimeter W ⊤ (Ω.cell i) := Finset.sum_fiberwise _ f _
 
 /-! ### One and two cells -/
@@ -220,6 +225,11 @@ def univ (hW : ContDiff ℝ 1 W) : Cluster W 1 where
   pairwise_disjoint i j h := (h (Subsingleton.elim i j)).elim
   volume_compl_iUnion := by rw [iUnion_const, compl_univ, measure_empty]
   weightedPerimeter_lt_top _ := by simp [weightedPerimeter_univ hW]
+
+/-- The cell of the whole-space `1`-cluster. -/
+@[simp]
+theorem univ_cell (hW : ContDiff ℝ 1 W) (i : Fin 1) : (Cluster.univ hW).cell i = Set.univ :=
+  (rfl)
 
 /-- The cell of a `1`-cluster is the whole space up to a null set. -/
 theorem cell_ae_eq_univ (Ω : Cluster W 1) (i : Fin 1) : Ω.cell i =ᵐ[volume] Set.univ := by
@@ -236,7 +246,7 @@ theorem isEquivalent_univ (hW : ContDiff ℝ 1 W) (Ω : Cluster W 1) :
 /-- For a `C¹` weight, every `1`-cluster has total perimeter `0`. -/
 theorem perimeter_eq_zero_of_one (hW : ContDiff ℝ 1 W) (Ω : Cluster W 1) : Ω.perimeter = 0 := by
   rw [(Ω.isEquivalent_univ hW).perimeter_eq, perimeter_def]
-  simp [Cluster.univ, weightedPerimeter_univ hW]
+  simp [weightedPerimeter_univ hW]
 
 /-- The second cell of a `2`-cluster is the complement of the first up to a null set. -/
 theorem cell_one_ae_eq_compl (Ω : Cluster W 2) : Ω.cell 1 =ᵐ[volume] (Ω.cell 0)ᶜ := by
@@ -263,16 +273,6 @@ theorem perimeter_eq_weightedPerimeter_cell_zero (hW : ContDiff ℝ 1 W) (Ω : C
 variable {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
   [MeasurableSpace E'] [BorelSpace E']
 
-/-- The weighted perimeter of the image of a set under a linear isometry equivalence `e`, for a
-weight `W'` with `W' ∘ e = W`, is the weighted perimeter of the set for `W`. -/
-private theorem weightedPerimeter_image (e : E ≃ₗᵢ[ℝ] E') {W' : E' → ℝ} (hW' : W' ∘ e = W)
-    (s : Set E) : weightedPerimeter W' ⊤ (e '' s) = weightedPerimeter W ⊤ s := by
-  subst hW'
-  have h := e.weightedPerimeter_image (W := W' ∘ e) (V := ⊤) (Ω := ⊤) (mapsTo_univ _ _)
-    (mapsTo_univ _ _) s
-  rwa [Function.comp_assoc, show (e : E → E') ∘ e.symm = id from funext e.apply_symm_apply,
-    Function.comp_id] at h
-
 /-- The image of a cluster for `W` under a linear isometry equivalence `e : E ≃ E'` is a cluster
 for the transported weight `W' = W ∘ e⁻¹`, given here through `W' ∘ e = W`. -/
 def map (e : E ≃ₗᵢ[ℝ] E') {W' : E' → ℝ} (hW' : W' ∘ e = W) (Ω : Cluster W q) :
@@ -288,7 +288,8 @@ def map (e : E ≃ₗᵢ[ℝ] E') {W' : E' → ℝ} (hW' : W' ∘ e = W) (Ω : C
         (NullMeasurableSet.iUnion Ω.nullMeasurableSet_cell).compl]
     exact Ω.volume_compl_iUnion
   weightedPerimeter_lt_top i := by
-    rw [weightedPerimeter_image e hW']
+    rw [e.weightedPerimeter_image_of_comp_eq (V := ⊤) (Ω := ⊤) hW' (mapsTo_univ _ _)
+      (mapsTo_univ _ _)]
     exact Ω.weightedPerimeter_lt_top i
 
 /-- The cells of the image of a cluster. -/
@@ -301,13 +302,21 @@ theorem map_cell (e : E ≃ₗᵢ[ℝ] E') {W' : E' → ℝ} (hW' : W' ∘ e = W
 @[simp]
 theorem perimeter_map (e : E ≃ₗᵢ[ℝ] E') {W' : E' → ℝ} (hW' : W' ∘ e = W) (Ω : Cluster W q) :
     (Ω.map e hW').perimeter = Ω.perimeter := by
-  simp only [perimeter_def, map_cell, weightedPerimeter_image e hW']
+  simp only [perimeter_def, map_cell,
+    e.weightedPerimeter_image_of_comp_eq (V := ⊤) (Ω := ⊤) hW' (mapsTo_univ _ _)
+      (mapsTo_univ _ _)]
 
 /-- A linear isometry equivalence carries Gaussian clusters to Gaussian clusters, with the same
 total perimeter. -/
 def mapGaussian (e : E ≃ₗᵢ[ℝ] E') (Ω : Cluster (gaussianWeight E) q) :
     Cluster (gaussianWeight E') q :=
   Ω.map e (e.gaussianWeight_comp)
+
+/-- The cells of the image of a Gaussian cluster. -/
+@[simp]
+theorem mapGaussian_cell (e : E ≃ₗᵢ[ℝ] E') (Ω : Cluster (gaussianWeight E) q) (i : Fin q) :
+    (Ω.mapGaussian e).cell i = e '' Ω.cell i :=
+  (rfl)
 
 /-- A linear isometry equivalence preserves the total perimeter of a Gaussian cluster. -/
 @[simp]
