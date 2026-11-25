@@ -159,25 +159,25 @@ theorem functor_map_surjective (hf : Function.Surjective f) {P N : ModuleCat.{ma
 
 end Ring
 
-section Composition
+section Congr
 
-variable {R S T : Type u₁} [Ring R] [Ring S] [Ring T]
+variable {R : Type u₁} {S : Type u₂} [Ring R] [Ring S]
 
 /-- Extension of scalars along equal ring homomorphisms gives isomorphic functors: the natural
 isomorphism whose components are `TauCeti.BalancedExtension.congrRingHom`, `s ⊗ p ↦ s ⊗ p`. -/
 noncomputable def functorCongr {f f' : R →+* S} (h : f = f') :
-    functor.{u₁, u₁, max v u₁} f ≅ functor.{u₁, u₁, max v u₁} f' :=
+    functor.{u₁, u₂, v} f ≅ functor.{u₁, u₂, v} f' :=
   NatIso.ofComponents (fun P ↦ (congrRingHom (P := P) h).toModuleIso) fun φ ↦
     ModuleCat.hom_ext (congrRingHom_comp_map h (ModuleCat.Hom.hom φ))
 
 @[simp]
-theorem functorCongr_hom_app_tmul {f f' : R →+* S} (h : f = f') (P : ModuleCat.{max v u₁} R)
+theorem functorCongr_hom_app_tmul {f f' : R →+* S} (h : f = f') (P : ModuleCat.{v} R)
     (s : S) (p : P) :
     (functorCongr h).hom.app P (tmul f s p) = tmul f' s p :=
   congrRingHom_tmul h s p
 
 @[simp]
-theorem functorCongr_inv_app_tmul {f f' : R →+* S} (h : f = f') (P : ModuleCat.{max v u₁} R)
+theorem functorCongr_inv_app_tmul {f f' : R →+* S} (h : f = f') (P : ModuleCat.{v} R)
     (s : S) (p : P) :
     (functorCongr h).inv.app P (tmul f' s p) = tmul f s p :=
   (LinearEquiv.symm_apply_eq _).2 (congrRingHom_tmul h s p).symm
@@ -185,9 +185,15 @@ theorem functorCongr_inv_app_tmul {f f' : R →+* S} (h : f = f') (P : ModuleCat
 /-- Extension of scalars along a ring homomorphism and itself: the identity. -/
 @[simp]
 theorem functorCongr_refl (f : R →+* S) :
-    functorCongr.{u₁, v} (rfl : f = f) = Iso.refl _ :=
+    functorCongr.{u₁, u₂, v} (rfl : f = f) = Iso.refl _ :=
   Iso.ext (NatTrans.ext (funext fun P ↦ ModuleCat.hom_ext (hom_ext fun p ↦
     functorCongr_hom_app_tmul rfl P 1 p)))
+
+end Congr
+
+section Composition
+
+variable {R S T : Type u₁} [Ring R] [Ring S] [Ring T]
 
 variable (f : R →+* S) (g : S →+* T)
 
