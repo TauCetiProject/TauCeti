@@ -24,18 +24,18 @@ of stacks in groupoids under products, 2-fibre products and the terminal object.
 * `TauCeti.AlgebraicGeometry.StackInGroupoids.pi X`: the product. Its underlying pseudofunctor is
   `TauCeti.Stack.pi` by definition (`pi.toSchPseudofunctor_eq`), so its projections, the morphism
   induced by a family of morphisms and its modifications are the site-level `TauCeti.Stack.pi.π`,
-  `.lift`, `.liftCompπ`, `.homMk`, `.isoMk` and `.hom_ext`.
-* `TauCeti.AlgebraicGeometry.StackInGroupoids.pi.map`: the product of a family of morphisms.
+  `.lift`, `.liftCompπ`, `.homMk`, `.isoMk` and `.hom_ext`, and the product of a family of
+  morphisms is `TauCeti.Stack.piMap`.
 * `TauCeti.AlgebraicGeometry.StackInGroupoids.terminal`: the terminal stack in groupoids, with
   `TauCeti.Stack.terminal.lift` and `TauCeti.Stack.terminal.hom_ext`.
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.StackInGroupoids.pi.isFiberwiseEquiv_map`: the product of fiberwise
+* `TauCeti.AlgebraicGeometry.StackInGroupoids.isFiberwiseEquiv_piMap`: the product of fiberwise
   equivalences is a fiberwise equivalence.
 * `TauCeti.AlgebraicGeometry.StackInGroupoids.terminal.isFiberwiseEquiv_lift`: a stack in
-  groupoids whose fibres all have exactly one object up to isomorphism is fiberwise equivalent to
-  the terminal stack.
+  groupoids whose fibres are nonempty, connected groupoids with trivial automorphism groups (that
+  is, equivalent to the point) is fiberwise equivalent to the terminal stack.
 -/
 
 public section
@@ -71,51 +71,18 @@ theorem toSchPseudofunctor_eq :
     (pi X).toSchPseudofunctor = Stack.pi.{u, u + 1, u} fun i ↦ (X i).toSchPseudofunctor :=
   (rfl)
 
-variable {X}
+end pi
 
-/-- The `i`-th projection out of the product of stacks in groupoids. -/
-noncomputable abbrev π (i : I) : (pi X).toSchPseudofunctor ⟶ (X i).toSchPseudofunctor :=
-  Stack.pi.π.{u, u + 1, u} (fun i ↦ (X i).toSchPseudofunctor) i
-
-/-- The morphism into the product of stacks in groupoids induced by a family of morphisms. -/
-noncomputable abbrev lift {K : StackInGroupoids.{u}}
-    (a : ∀ i, K.toSchPseudofunctor ⟶ (X i).toSchPseudofunctor) :
-    K.toSchPseudofunctor ⟶ (pi X).toSchPseudofunctor :=
-  Stack.pi.lift.{u, u + 1, u} a
-
-/-- The `i`-th projection of `lift a` is `a i`. -/
-noncomputable abbrev liftCompπ {K : StackInGroupoids.{u}}
-    (a : ∀ i, K.toSchPseudofunctor ⟶ (X i).toSchPseudofunctor) (i : I) :
-    lift a ≫ π i ≅ a i :=
-  Stack.pi.liftCompπ.{u, u + 1, u} a i
-
-variable {Y : I → StackInGroupoids.{u}}
-
-/-- The product `∏ X i ⟶ ∏ Y i` of a family of morphisms `f i : X i ⟶ Y i`. -/
-noncomputable abbrev map (f : ∀ i, (X i).toSchPseudofunctor ⟶ (Y i).toSchPseudofunctor) :
-    (pi X).toSchPseudofunctor ⟶ (pi Y).toSchPseudofunctor :=
-  lift fun i ↦ π i ≫ f i
-
-/-- The component of `pi.map f` over a scheme is the product of the components of the `f i`. -/
-theorem map_app_toFunctor (f : ∀ i, (X i).toSchPseudofunctor ⟶ (Y i).toSchPseudofunctor)
-    (T : Scheme.{u}) :
-    ((map f).app (.mk (op T))).toFunctor =
-      Functor.pi fun i ↦ ((f i).app (.mk (op T))).toFunctor :=
-  (rfl)
+variable {X} {Y : I → StackInGroupoids.{u}}
 
 /-- **The product of fiberwise equivalences is a fiberwise equivalence.** -/
-theorem isFiberwiseEquiv_map
+theorem isFiberwiseEquiv_piMap
     {f : ∀ i, (X i).toSchPseudofunctor ⟶ (Y i).toSchPseudofunctor}
     (hf : ∀ i, Hom.IsFiberwiseEquiv (f i)) :
-    Hom.IsFiberwiseEquiv (X := pi X) (Y := pi Y) (map f) :=
-  (Hom.isFiberwiseEquiv_iff _).mpr fun T ↦ by
+    Hom.IsFiberwiseEquiv (X := pi X) (Y := pi Y) (Stack.piMap.{u, u + 1, u} f) :=
+  (Hom.isFiberwiseEquiv_iff _).mpr fun T ↦
   have := fun i ↦ (Hom.isFiberwiseEquiv_iff _).mp (hf i) T
-  rw [map_app_toFunctor]
-  exact Functor.IsEquivalence.mk' (Functor.pi fun i ↦ ((f i).app (.mk (op T))).toFunctor.inv)
-    (NatIso.pi fun i ↦ ((f i).app (.mk (op T))).toFunctor.asEquivalence.unitIso)
-    (NatIso.pi fun i ↦ ((f i).app (.mk (op T))).toFunctor.asEquivalence.counitIso)
-
-end pi
+  Stack.isEquivalence_piMap_app.{u, u + 1, u} f (.mk (op T))
 
 end pi
 
@@ -141,22 +108,16 @@ noncomputable instance instUniqueObj (T : LocallyDiscrete Scheme.{u}ᵒᵖ) :
     Unique (terminal.{u}.toSchPseudofunctor.obj T) :=
   Stack.terminal.instUniqueObj T
 
-/-- The morphism from a stack in groupoids to the terminal stack in groupoids. -/
-noncomputable abbrev lift (K : StackInGroupoids.{u}) :
-    K.toSchPseudofunctor ⟶ terminal.{u}.toSchPseudofunctor :=
-  Stack.terminal.lift.{u + 1, u} K.toSchPseudofunctor
-
 /-- A stack in groupoids whose fibres are nonempty, connected groupoids with trivial automorphism
 groups is fiberwise equivalent to the terminal stack in groupoids. -/
 theorem isFiberwiseEquiv_lift (K : StackInGroupoids.{u})
-    [∀ T : Scheme.{u}, Nonempty (K.toSchPseudofunctor.obj (.mk (op T)))]
-    [∀ T : Scheme.{u}, Quiver.IsThin (K.toSchPseudofunctor.obj (.mk (op T)))]
-    (h : ∀ (T : Scheme.{u}) (x y : K.toSchPseudofunctor.obj (.mk (op T))), Nonempty (x ⟶ y)) :
-    Hom.IsFiberwiseEquiv (X := K) (Y := terminal) (lift K) :=
+    (hne : ∀ T : Scheme.{u}, Nonempty (K.toSchPseudofunctor.obj (.mk (op T))))
+    (hthin : ∀ T : Scheme.{u}, Quiver.IsThin (K.toSchPseudofunctor.obj (.mk (op T))))
+    (hconn : ∀ (T : Scheme.{u}) (x y : K.toSchPseudofunctor.obj (.mk (op T))), Nonempty (x ⟶ y)) :
+    Hom.IsFiberwiseEquiv (X := K) (Y := terminal)
+      (Stack.terminal.lift.{u + 1, u} K.toSchPseudofunctor) :=
   (Hom.isFiberwiseEquiv_iff _).mpr fun T ↦
-  { faithful := ⟨fun {_ _} _ _ _ ↦ Subsingleton.elim _ _⟩
-    full := ⟨fun {x y} _ ↦ ⟨(h T x y).some, funext fun i ↦ i.elim⟩⟩
-    essSurj := ⟨fun _ ↦ ⟨Classical.arbitrary _, ⟨eqToIso (Subsingleton.elim _ _)⟩⟩⟩ }
+  Stack.terminal.isEquivalence_lift_app.{u + 1, u} _ (.mk (op T)) (hne T) (hthin T) (hconn T)
 
 end terminal
 
