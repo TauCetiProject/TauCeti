@@ -11,6 +11,7 @@ import Mathlib.MeasureTheory.Integral.Layercake
 import TauCeti.Analysis.BoundedVariation.Ball
 import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Measure.Haar.Hausdorff.Frontier
 
 /-!
 # The frontier bound for the weighted perimeter, and the Gaussian perimeter of a ball
@@ -19,16 +20,17 @@ For a `C¹` weight `W` with measure `μ = e^{−W} · volume`, the codimension-o
 `μ^{n−1} = e^{−W} · μHE[n − 1]`. In dimension `n ≥ 2`, every set `s`, measurable or not, has
 `P_μ(s; Ω) ≤ μ^{n−1}(∂s ∩ Ω)` in every open set `Ω`
 (`TauCeti.weightedPerimeter_le_lintegral_frontier_inter`). If the right side is finite, the
-frontier has locally finite `μHE[n − 1]` measure, so it is Lebesgue-null and `s` agrees with its
-interior almost everywhere in `Ω`, and `s` has locally finite perimeter
-(`TauCeti.exists_perimeter_ne_top_of_euclideanHausdorffMeasure_frontier_inter_ne_top`). Then
-`P_μ(s; Ω) = ∫ e^{−W} d|D1_s|` (`TauCeti.weightedVariation_eq_lintegral_variationMeasure`), and
+frontier has locally finite `μHE[n − 1]` measure, so `s` agrees with its interior almost everywhere
+in `Ω` (`TauCeti.ae_eq_interior_of_forall_isCompact_hausdorffMeasure_frontier_inter_ne_top`), and
+the interior has locally finite perimeter
+(`TauCeti.exists_perimeter_interior_ne_top_of_euclideanHausdorffMeasure_frontier_inter_ne_top`).
+Then `P_μ(s; Ω) = ∫ e^{−W} d|D1_s|` (`TauCeti.weightedVariation_eq_lintegral_variationMeasure`), and
 the layer-cake formula compares both sides on the open superlevel sets of `e^{−W}`, where the
 Euclidean frontier bound `TauCeti.perimeter_le_euclideanHausdorffMeasure_frontier_inter` applies.
 
 The perimeter measure `|D1_s|` lives on the frontier of `s`
-(`TauCeti.perimeter_eq_zero_of_disjoint_frontier`). So if `e^{−W}` takes a constant value `a` on
-the frontier of a null-measurable set `s` in `Ω`, then `P_μ(s; Ω) = a P(s; Ω)`
+(`TauCeti.variationMeasure_indicator_compl_frontier_eq_zero`). So if `e^{−W}` takes a constant
+value `a` on the frontier of a null-measurable set `s` in `Ω`, then `P_μ(s; Ω) = a P(s; Ω)`
 (`TauCeti.weightedPerimeter_eq_ofReal_mul_perimeter`). The Gaussian density is constant on
 spheres about the origin, which gives the Gaussian perimeter of a ball in every dimension `n`:
 `P_γ(B(0, r)) = (2π)^{−n/2} e^{−r²/2} n ω_n r^{n−1}` with `ω_n` the volume of the unit ball
@@ -92,29 +94,20 @@ theorem weightedPerimeter_le_lintegral_frontier_inter (hW : ContDiff ℝ 1 W)
   have hK (K : Set E) (hK : IsCompact K) (hKΩ : K ⊆ Ω) :=
     euclideanHausdorffMeasure_frontier_inter_ne_top hW hI hK hKΩ
   -- The frontier is Lebesgue-null in `Ω`, so `s` agrees with its interior almost everywhere there.
-  have hnull : volume (frontier s ∩ Ω) = 0 := by
-    refine measure_null_of_locally_null _ fun x hx => ?_
-    obtain ⟨δ, hδ, hδΩ⟩ := Metric.isOpen_iff.1 Ω.isOpen x hx.2
-    refine ⟨frontier s ∩ Ω ∩ closedBall x (δ / 2),
-      inter_mem_nhdsWithin _ (closedBall_mem_nhds x (by positivity)),
-      measure_mono_null (show frontier s ∩ Ω ∩ closedBall x (δ / 2) ⊆
-        frontier s ∩ closedBall x (δ / 2) from fun y hy => ⟨hy.1.1, hy.2⟩) ?_⟩
-    refine volume_eq_zero_of_euclideanHausdorffMeasure_ne_top (by omega) (hK _
-      (isCompact_closedBall x _) ((closedBall_subset_ball (by linarith)).trans hδΩ))
-  have hae : s =ᵐ[volume.restrict Ω] interior s := by
-    refine (interior_ae_eq_of_null_frontier ?_).symm
-    rwa [Measure.restrict_apply' Ω.isOpen.measurableSet]
-  rw [weightedPerimeter_congr_ae hae]
+  have hH (K : Set E) (hK' : IsCompact K) (hKΩ : K ⊆ Ω) :
+      μH[((finrank ℝ E - 1 : ℕ) : ℝ)] (frontier s ∩ K) ≠ ∞ :=
+    (Measure.euclideanHausdorffMeasure_lt_top_iff.1 (lt_top_iff_ne_top.2 (hK K hK' hKΩ))).ne
+  rw [weightedPerimeter_congr_ae
+    (ae_eq_interior_of_forall_isCompact_hausdorffMeasure_frontier_inter_ne_top volume (by omega)
+      hH)]
   set t := interior s
-  have hft : frontier t ⊆ frontier s := frontier_interior_subset
   have hu : LocallyIntegrableOn (t.indicator (1 : E → ℝ)) Ω :=
     ((locallyIntegrable_const 1).indicator isOpen_interior.measurableSet).locallyIntegrableOn _
   have hfin (K : Set E) (hK' : IsCompact K) (hKΩ : K ⊆ Ω) :
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn volume U (t.indicator 1) ≠ ∞ := by
     simpa only [perimeter_def] using
-      exists_perimeter_ne_top_of_euclideanHausdorffMeasure_frontier_inter_ne_top (μ := volume)
-        (fun L hL hLΩ => ne_top_of_le_ne_top (hK L hL hLΩ)
-          (measure_mono (inter_subset_inter_left _ hft))) hK' hKΩ
+      exists_perimeter_interior_ne_top_of_euclideanHausdorffMeasure_frontier_inter_ne_top
+        (μ := volume) hK hK' hKΩ
   have hρ : Continuous fun x : E => Real.exp (-W x) := hW.continuous.neg.rexp
   rw [weightedPerimeter_def, weightedVariation_eq_lintegral_variationMeasure hW hu hfin,
     lintegral_eq_lintegral_meas_lt _ (.of_forall fun _ => (Real.exp_pos _).le)
@@ -132,7 +125,7 @@ theorem weightedPerimeter_le_lintegral_frontier_inter (hW : ContDiff ℝ 1 W)
     ← perimeter_def, Measure.restrict_apply (isOpen_lt continuous_const hρ).measurableSet]
   refine (perimeter_le_euclideanHausdorffMeasure_frontier_inter hn U t).trans
     (measure_mono fun x hx => ?_)
-  exact ⟨hx.2.1, hft hx.1, hx.2.2⟩
+  exact ⟨hx.2.1, frontier_interior_subset hx.1, hx.2.2⟩
 
 /-- **A density constant on the frontier.** For a `C¹` weight `W` and a set `s` null-measurable
 in `Ω`, if `e^{−W}` takes the constant value `a` on `∂s ∩ Ω`, then `P_μ(s; Ω) = a P(s; Ω)`: the
@@ -162,30 +155,13 @@ theorem weightedPerimeter_eq_ofReal_mul_perimeter (hW : ContDiff ℝ 1 W)
       exact ENNReal.zero_ne_top hP
     rw [hW', hP, ENNReal.mul_top (by simpa [← ha x hx] using Real.exp_pos (-W x))]
   rw [weightedPerimeter_def, weightedVariation_eq_lintegral_variationMeasure hW hu hfin]
-  -- The variation measure gives no mass to the open set `Ω ∖ ∂s`.
-  let V : Opens E := ⟨(frontier s)ᶜ ∩ Ω, isClosed_frontier.isOpen_compl.inter Ω.isOpen⟩
-  have hV : variationMeasure volume Ω (s.indicator 1) (((↑) : Ω → E) ⁻¹' (V : Set E)) = 0 := by
-    rw [variationMeasure_preimage_coe hu hfin (show V ≤ Ω from fun _ hx => hx.2),
-      ← perimeter_def]
-    exact perimeter_eq_zero_of_disjoint_frontier (disjoint_left.2 fun _ hx hxV => hxV.1 hx)
   have hae : ∀ᵐ x : Ω ∂variationMeasure volume Ω (s.indicator 1),
       ENNReal.ofReal (Real.exp (-W x)) = ENNReal.ofReal a := by
-    filter_upwards [measure_eq_zero_iff_ae_notMem.1 hV] with x hx
-    have hxf : (x : E) ∈ frontier s := by
-      by_contra h
-      exact hx ⟨h, x.property⟩
-    rw [ha x ⟨hxf, x.property⟩]
+    filter_upwards [measure_eq_zero_iff_ae_notMem.1
+      (variationMeasure_indicator_compl_frontier_eq_zero (μ := volume) (Ω := Ω) (s := s))]
+      with x hx
+    rw [ha x ⟨not_not.1 hx, x.property⟩]
   rw [lintegral_congr_ae hae, lintegral_const, variationMeasure_univ hu hfin, perimeter_def]
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The Gaussian density on the sphere of radius `r` about the origin is
-`(2π)^{−n/2} e^{−r²/2}`. -/
-theorem exp_neg_gaussianWeight_of_norm_eq {r : ℝ} {x : E} (hx : ‖x‖ = r) :
-    Real.exp (-gaussianWeight E x) =
-      (2 * Real.pi) ^ (-(finrank ℝ E : ℝ) / 2) * Real.exp (-(r ^ 2 / 2)) := by
-  rw [gaussianWeight_def, hx, Real.rpow_def_of_pos (by positivity), ← Real.exp_add]
-  congr 1
-  ring
 
 /-- **The Gaussian perimeter of a ball.** For `r > 0`, the ball of radius `r` about the origin has
 Gaussian perimeter `(2π)^{−n/2} e^{−r²/2} n ω_n r^{n−1}`, where `ω_n` is the volume of the unit

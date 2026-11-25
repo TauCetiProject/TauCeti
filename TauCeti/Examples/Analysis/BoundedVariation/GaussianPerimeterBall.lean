@@ -35,9 +35,8 @@ example : gaussianPerimeter (ball (0 : ℝ) 1) = ENNReal.ofReal (2 * gaussianPDF
   rw [← ENNReal.ofReal_mul (by positivity)]
   congr 1
   simp only [gaussianPDFReal_def, NNReal.coe_one, mul_one, sub_zero, one_pow]
-  rw [Real.sqrt_eq_rpow, ← Real.rpow_neg h2π.le]
+  rw [Real.sqrt_eq_rpow, ← Real.rpow_neg h2π.le, mul_comm]
   norm_num
-  ring
 
 /-- In `ℝ²`, the unit disc has Gaussian perimeter `e^{−1/2}`. -/
 example : gaussianPerimeter (ball (0 : EuclideanSpace ℝ (Fin 2)) 1) =
@@ -48,7 +47,7 @@ example : gaussianPerimeter (ball (0 : EuclideanSpace ℝ (Fin 2)) 1) =
   simp only [ENNReal.ofReal_one, one_pow, one_mul, mul_one]
   rw [← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_mul (by positivity)]
   congr 1
-  norm_num [Real.rpow_neg_one]
+  rw [Nat.cast_ofNat, show -(2 : ℝ) / 2 = -1 by norm_num, Real.rpow_neg_one]
   field_simp
 
 end TauCeti.Examples.GaussianPerimeterBall

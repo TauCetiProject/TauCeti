@@ -24,7 +24,8 @@ regularity assumption on the set:
   `P(s; Ω) ≤ n μ(B(0, 1)) μH[n - 1](∂s ∩ Ω)`;
 * `TauCeti.exists_perimeter_ne_top_of_euclideanHausdorffMeasure_frontier_inter_ne_top`: if
   `Hⁿ⁻¹(∂s ∩ K) < ∞` for every compact `K ⊆ Ω`, then every compact subset of `Ω` has an open
-  neighborhood in which `s` has finite perimeter;
+  neighborhood in which `s` has finite perimeter, and so does the interior of `s`
+  (`TauCeti.exists_perimeter_interior_ne_top_of_euclideanHausdorffMeasure_frontier_inter_ne_top`);
 * `TauCeti.perimeter_le_euclideanHausdorffMeasure_frontier_inter`: in dimension `n ≥ 2`, the sharp
   bound `P(s; Ω) ≤ Hⁿ⁻¹(∂s ∩ Ω)` for every set `s`, combining the criterion with De Giorgi's
   representation `P(s; Ω) = Hⁿ⁻¹(∂*s)` of the perimeter of a set of locally finite perimeter.
@@ -212,6 +213,16 @@ theorem exists_perimeter_ne_top_of_euclideanHausdorffMeasure_frontier_inter_ne_t
       (lt_top_iff_ne_top.2 (h _ hV hVΩ))).ne ?_)
   exact measure_mono (inter_subset_inter_right _ subset_closure)
 
+/-- Under the hypothesis of Federer's criterion, the interior of `s` also has locally finite
+perimeter in `Ω`, since its frontier lies in that of `s`. -/
+theorem exists_perimeter_interior_ne_top_of_euclideanHausdorffMeasure_frontier_inter_ne_top
+    (h : ∀ K, IsCompact K → K ⊆ Ω → μHE[finrank ℝ E - 1] (frontier s ∩ K) ≠ ∞) {K : Set E}
+    (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
+    ∃ U : Opens E, K ⊆ (U : Set E) ∧ perimeter μ U (interior s) ≠ ∞ :=
+  exists_perimeter_ne_top_of_euclideanHausdorffMeasure_frontier_inter_ne_top
+    (fun L hL hLΩ => ne_top_of_le_ne_top (h L hL hLΩ)
+      (measure_mono (inter_subset_inter_left _ frontier_interior_subset))) hK hKΩ
+
 /-- **The perimeter is at most the Hausdorff measure of the frontier.** In dimension `n ≥ 2`,
 every set `s`, measurable or not, has `P(s; Ω) ≤ Hⁿ⁻¹(∂s ∩ Ω)` in every open set `Ω`. -/
 theorem perimeter_le_euclideanHausdorffMeasure_frontier_inter (hn : 2 ≤ finrank ℝ E)
@@ -226,9 +237,9 @@ theorem perimeter_le_euclideanHausdorffMeasure_frontier_inter (hn : 2 ≤ finran
       ∃ U : Opens E, K ⊆ (U : Set E) ∧
         totalVariationOn volume U ((interior s).indicator 1) ≠ ∞ := by
     simpa only [perimeter_def] using
-      exists_perimeter_ne_top_of_euclideanHausdorffMeasure_frontier_inter_ne_top (fun K _ _ =>
-        ne_top_of_le_ne_top hM (measure_mono (inter_subset_inter frontier_interior_subset
-          ‹K ⊆ Ω›))) hK hKΩ
+      exists_perimeter_interior_ne_top_of_euclideanHausdorffMeasure_frontier_inter_ne_top
+        (fun K _ hKΩ => ne_top_of_le_ne_top hM (measure_mono (inter_subset_inter_right _ hKΩ)))
+        hK hKΩ
   rw [perimeter_eq_euclideanHausdorffMeasure_reducedBoundary hn
     (((locallyIntegrable_const 1).indicator isOpen_interior.measurableSet).locallyIntegrableOn _)
     hfin]

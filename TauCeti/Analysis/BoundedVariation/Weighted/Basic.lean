@@ -119,6 +119,15 @@ theorem contDiff_gaussianWeight {n : WithTop ℕ∞} : ContDiff ℝ n (gaussianW
   rw [h]
   exact ((contDiff_norm_sq ℝ).div_const _).add contDiff_const
 
+/-- The Gaussian density on the sphere of radius `r` about the origin is
+`(2π)^{−n/2} e^{−r²/2}`. -/
+theorem exp_neg_gaussianWeight_of_norm_eq {r : ℝ} {x : E} (hx : ‖x‖ = r) :
+    Real.exp (-gaussianWeight E x) =
+      (2 * Real.pi) ^ (-(Module.finrank ℝ E : ℝ) / 2) * Real.exp (-(r ^ 2 / 2)) := by
+  rw [gaussianWeight_def, hx, Real.rpow_def_of_pos (by positivity), ← Real.exp_add]
+  congr 1
+  ring
+
 /-- The Gaussian weight is invariant under linear isometry equivalences:
 `W_{E'}(e x) = W_E(x)`. -/
 @[simp]
