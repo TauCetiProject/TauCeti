@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.TranslationPerturbation
 import TauCeti.Analysis.Calculus.FDeriv.Perturbation
+import TauCeti.Dynamics.PeriodicPts.LocalPerturbation
 import TauCeti.Dynamics.PeriodicPts.Persistence
 
 /-!
@@ -39,10 +40,10 @@ The proof is a finite version of Robinson's Baire argument.
   remaining points of period `k` in `K` have least period exactly `k`.
 * A point `x` of least period exactly `k` has a ball `ball x (2 * ρ)` that every orbit starting
   in it leaves until time `k`, with a margin: `‖φ^[j] y - x‖ ≥ 3 * ρ` for
-  `y ∈ closedBall x (2 * ρ)` and `0 < j < k`. Finitely many balls `ball x ρ` cover the points
-  of period `k` of `φ` in `K` away from `L`. The margin keeps the orbit condition for every map
-  whose first `k - 1` iterates are within `ρ / 2` of those of `φ` on these balls, which holds for
-  all maps `C¹`-close enough to `φ`
+  `y ∈ closedBall x (2 * ρ)` and `0 < j < k` (`Continuous.eventually_forall_mul_le_dist_iterate`).
+  Finitely many balls `ball x ρ` cover the points of period `k` of `φ` in `K` away from `L`. The
+  margin keeps the orbit condition for every map whose first `k - 1` iterates are within `ρ / 2`
+  of those of `φ` on these balls, which holds for all maps `C¹`-close enough to `φ`
   (`IsCompact.exists_pos_forall_differentiableAt_iterate_and_norm_sub_le`). Away from the balls
   and `L`, the map `φ^[k]` moves every point of `K` by at least some `η > 0`, and so do the
   `k`-th iterates of all maps close enough to `φ`.
@@ -116,39 +117,6 @@ private theorem isPerturbation_hamiltonianFlow {H : V → ℝ} (hH : ContDiff �
   ⟨contDiff_infty.2 fun n ↦ ((ω.contDiff_hamiltonianFlow_apply H n hX (hH.of_le (by simp))
       1).of_le (by simp)), ω.apply_fderiv_hamiltonianFlow H hX (hH.of_le (by simp)) 1, S, hS, hSU,
     fun w hw ↦ (hid w fun hwW ↦ hw (hWS hwW)).eq_of_nhds⟩
-
-omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- **Balls that orbits leave with a margin.** If no iterate `φ^[j] x`, `0 < j < k`, equals `x`,
-there is `ρ > 0` with `closedBall x (2 * ρ) ⊆ U` such that `‖φ^[j] y - x‖ ≥ 3 * ρ` for all
-`y ∈ closedBall x (2 * ρ)` and `0 < j < k`. -/
-private theorem exists_pos_closedBall_subset_and_le_norm_iterate_sub {φ : V → V}
-    (hφ : Continuous φ) {U : Set V} (hU : IsOpen U) {x : V} (hxU : x ∈ U) {k : ℕ}
-    (hx : ∀ j, 0 < j → j < k → φ^[j] x ≠ x) :
-    ∃ ρ > 0, closedBall x (2 * ρ) ⊆ U ∧
-      ∀ j, 0 < j → j < k → ∀ y ∈ closedBall x (2 * ρ), 3 * ρ ≤ ‖φ^[j] y - x‖ := by
-  obtain ⟨r, hr, hrU⟩ := isOpen_iff.1 hU x hxU
-  -- For each `0 < j < k`, small radii keep `φ^[j]` within `d / 4` of `φ^[j] x`, which lies at
-  -- distance `d` from `x`.
-  have hj : ∀ j ∈ Finset.Ioo 0 k, ∀ᶠ ρ in 𝓝[>] (0 : ℝ),
-      ∀ y ∈ closedBall x (2 * ρ), 3 * ρ ≤ ‖φ^[j] y - x‖ := by
-    intro j hj
-    obtain ⟨hj0, hjk⟩ := Finset.mem_Ioo.1 hj
-    have hd : 0 < ‖φ^[j] x - x‖ := norm_pos_iff.2 (sub_ne_zero.2 (hx j hj0 hjk))
-    obtain ⟨θ, hθ, hcont⟩ := Metric.continuousAt_iff.1 ((hφ.iterate j).continuousAt (x := x))
-      _ (div_pos hd four_pos)
-    filter_upwards [Ioo_mem_nhdsGT (lt_min (half_pos hθ) (div_pos hd four_pos))]
-      with ρ hρ y hy
-    have hyx : dist y x < θ := by
-      rw [mem_closedBall] at hy
-      linarith [hρ.2.trans_le (min_le_left _ _)]
-    have h₁ := hcont hyx
-    rw [dist_eq_norm, norm_sub_rev] at h₁
-    have h₂ := norm_sub_le_norm_sub_add_norm_sub (φ^[j] x) (φ^[j] y) x
-    linarith [hρ.2.trans_le (min_le_right _ _)]
-  obtain ⟨ρ, hρ, hρr⟩ := (((eventually_all_finset _).2 hj).and
-    (Ioo_mem_nhdsGT (div_pos hr four_pos) : ∀ᶠ ρ in 𝓝[>] (0 : ℝ), ρ ∈ Ioo 0 (r / 4))).exists
-  refine ⟨ρ, hρr.1, (closedBall_subset_ball (by linarith [hρr.2])).trans hrU,
-    fun j hj0 hjk ↦ hρ j (Finset.mem_Ioo.2 ⟨hj0, hjk⟩)⟩
 
 /-- **One ball at a time.** Let the points of period `k` of `φ` in a compact set `L` be
 nondegenerate, and let `ball x (2 * ρ x)`, `x ∈ t`, be balls that every orbit of every map
@@ -230,9 +198,12 @@ private theorem exists_isPerturbation_of_forall_ne {φ : V → V} (hφ : ContDif
   -- Balls around the points of period `k`, which orbits leave with a margin, cover them.
   have hP : IsCompact (K ∩ fixedPoints φ^[k]) := hK.inter_right (isClosed_fixedPoints hφk)
   have hρ : ∀ x ∈ K ∩ fixedPoints φ^[k], ∃ ρ > 0, closedBall x (2 * ρ) ⊆ U ∧
-      ∀ j, 0 < j → j < k → ∀ y ∈ closedBall x (2 * ρ), 3 * ρ ≤ ‖φ^[j] y - x‖ := fun x hx ↦
-    exists_pos_closedBall_subset_and_le_norm_iterate_sub hφ.continuous hU (hKU hx.1)
-      (hper x hx.1 hx.2)
+      ∀ j, 0 < j → j < k → ∀ y ∈ closedBall x (2 * ρ), 3 * ρ ≤ dist (φ^[j] y) x := fun x hx ↦ by
+    obtain ⟨ρ, ⟨hρU, hρsep⟩, hρ⟩ := ((eventually_nhdsGT_zero_mul_left (two_pos : (0 : ℝ) < 2)
+      (((eventually_closedBall_subset (hU.mem_nhds (hKU hx.1))).filter_mono nhdsWithin_le_nhds).and
+        (hφ.continuous.eventually_forall_mul_le_dist_iterate (hper x hx.1 hx.2) (3 / 2)))).and
+      self_mem_nhdsWithin).exists
+    exact ⟨ρ, hρ, hρU, fun j hj hjk y hy ↦ by linarith [hρsep j hj hjk y hy]⟩
   choose! ρ hρ0 hρU hρsep using hρ
   obtain ⟨t, htP, hcover⟩ := hP.elim_nhds_subcover (fun x ↦ ball x (ρ x))
     fun x hx ↦ ball_mem_nhds x (hρ0 x hx)
@@ -253,11 +224,8 @@ private theorem exists_isPerturbation_of_forall_ne {φ : V → V} (hφ : ContDif
       ∀ x ∈ t, ∀ y ∈ ball x (2 * ρ x), ∀ j, 0 < j → j < k → g^[j] y ∉ ball x (2 * ρ x) := by
     intro g hg h₀ h₁ x hx y hy j hj hjk hgy
     have h := hδ₀ x hx j (Finset.mem_range.2 hjk) g hg h₀ h₁ y (ball_subset_closedBall hy)
-    have h' := hρsep x (htP x hx) j hj hjk y (ball_subset_closedBall hy)
-    rw [mem_ball, dist_eq_norm] at hgy
-    rw [norm_sub_rev] at h
-    have := norm_sub_le_norm_sub_add_norm_sub (φ^[j] y) (g^[j] y) x
-    linarith [hρ0 x (htP x hx)]
+    linarith [hρ0 x (htP x hx), hρsep x (htP x hx) j hj hjk y (ball_subset_closedBall hy),
+      mem_ball.1 hgy, dist_triangle (φ^[j] y) (g^[j] y) x, dist_eq_norm_sub' (φ^[j] y) (g^[j] y)]
   obtain ⟨ψ, hψ, hψ₀, hψ₁, hnd⟩ := exists_isPerturbation_of_finset ω hφ hk hL hLnd t
     (fun x hx ↦ hρ0 x (htP x hx)) (fun x hx ↦ hρU x (htP x hx)) hsep (lt_min hε hδ₀pos)
     (min_le_right _ _)
