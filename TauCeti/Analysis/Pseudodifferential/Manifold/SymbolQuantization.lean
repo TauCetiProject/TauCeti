@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Manifold.ChartQuantization
 public import TauCeti.Analysis.Pseudodifferential.Manifold.PrincipalSymbol
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
-import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
@@ -34,9 +33,9 @@ the cotangent bundle is read as the homogeneous symbol `(y, η) ↦ ρ(y) s(e⁻
 `ℝⁿ`, localized by a cutoff `ρ` (`OpenPartialHomeomorph.chartHomogeneousSymbol`). Its cut-off
 term `χ(η) ρ(y) s(e⁻¹ y, ⟪η, ·⟫ ∘ de)` is a classical symbol, and the principal symbol of its chart
 quantization is `ρ(e x) s(x, ξ)` (`OpenPartialHomeomorph.classicalPrincipalSymbol_chartQuantization`
-computes the principal symbol of every chart quantization). Summing over a finite partition of
-unity of the compact set by chart cutoffs (`IsCompact.exists_sum_cutoffPullback_eq_one`) gives
-`s`.
+computes the principal symbol of every chart quantization). Summing over finitely many chart
+cutoffs whose pullbacks sum to `1` on the compact set
+(`IsCompact.exists_sum_cutoffPullback_eq_one`) gives `s`.
 
 ## Main definitions
 
@@ -94,22 +93,20 @@ theorem classicalPrincipalSymbol_chartQuantization (φ ψ : 𝓓(⟨e.target, e.
         (InnerProductSpace.toDual ℝ (CoordinateSpace n)).symm
           (ξ.comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x).inverse)) 1 := by
   -- Compress `Op_e(a)` in the chart `e` itself, by a cutoff `χ` equal to `1` near `e x`.
-  obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (Ω := ⟨e.target, e.open_target⟩)
-    (n := ⊤) isCompact_singleton (singleton_subset_iff.2 (e.map_source hx))
-  have hχx : χ (e x) = 1 := hχ.self_of_nhdsSet _ rfl
+  obtain ⟨χ, hχ⟩ := TestFunction.exists_eventually_eq_one_nhds (Ω := ⟨e.target, e.open_target⟩)
+    (n := ⊤) (e.map_source hx)
+  have hχx : χ (e x) = 1 := hχ.self_of_nhds
   obtain ⟨b, hb, -, hop⟩ := exists_complexChartCompression_chartQuantization_eq he he φ ψ a χ χ
   have h₁ := coefficient_principal_apply_eq_classicalPrincipalSymbol
     (chartQuantization_mem_classicalPseudodifferentialOperators he φ ψ a) he χ χ hop hx ξ
-  -- The transition from `e` to itself is the identity near `e x`.
-  have hid : (e ∘ e.symm : CoordinateSpace n → CoordinateSpace n) =ᶠ[𝓝 (e x)] id := by
-    filter_upwards [e.open_target.mem_nhds (e.map_source hx)] with z hz
-    simp [e.right_inv hz]
   have h₂ := hb (e x) (by simp [e.map_source hx, e.left_inv hx, hx])
     ((InnerProductSpace.toDual ℝ (CoordinateSpace n)).symm
       (ξ.comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x).inverse))
-  rw [hid.fderiv_eq, e.left_inv hx, hχx] at h₂
+  -- The transition from `e` to itself is the identity near `e x`.
+  rw [adjoint_ringInverse_fderiv_comp_symm_eq_one (e.map_source hx), one_apply_eq_self,
+    e.left_inv hx, hχx] at h₂
   rw [h₂, hχx] at h₁
-  simpa [← ContinuousLinearMap.one_def, ContinuousLinearMap.adjoint_one] using h₁.symm
+  simpa using h₁.symm
 
 /-- Off the chart source, the principal symbol of a chart quantization vanishes. -/
 theorem classicalPrincipalSymbol_chartQuantization_of_notMem
@@ -119,9 +116,9 @@ theorem classicalPrincipalSymbol_chartQuantization_of_notMem
   -- Compress `Op_e(a)` in the preferred chart at `x`, by a cutoff `χ` equal to `1` near its image.
   set e₂ := chartAt (CoordinateSpace n) x
   have hx₂ : x ∈ e₂.source := mem_chart_source _ x
-  obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (Ω := ⟨e₂.target, e₂.open_target⟩)
-    (n := ⊤) isCompact_singleton (singleton_subset_iff.2 (e₂.map_source hx₂))
-  have hχx : χ (e₂ x) = 1 := hχ.self_of_nhdsSet _ rfl
+  obtain ⟨χ, hχ⟩ := TestFunction.exists_eventually_eq_one_nhds
+    (Ω := ⟨e₂.target, e₂.open_target⟩) (n := ⊤) (e₂.map_source hx₂)
+  have hχx : χ (e₂ x) = 1 := hχ.self_of_nhds
   obtain ⟨b, -, hb0, hop⟩ := exists_complexChartCompression_chartQuantization_eq he
     (IsManifold.chart_mem_maximalAtlas x) φ ψ a χ χ
   have h₁ := coefficient_principal_apply_eq_classicalPrincipalSymbol
@@ -202,15 +199,15 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpa
 
 /-- **Quantization of principal symbols.** Every smooth positively homogeneous function `s` of
 degree `m` on the cotangent bundle of `M` that vanishes over the complement of a compact set is
-the principal symbol of a classical pseudodifferential operator of order `m`. The operator is the
-sum of the chart quantizations of the cut-off terms of the homogeneous symbols
-`ρᵢ(y) s(eᵢ⁻¹ y, ⟪η, ·⟫ ∘ deᵢ)`, for a finite partition of unity `ρᵢ` on the compact set
-subordinate to charts `eᵢ`. -/
+the principal symbol of a classical pseudodifferential operator of order `m`. -/
 theorem exists_mem_classicalPseudodifferentialOperators_classicalPrincipalSymbol_eq
     {s : (x : M) → (TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) → ℂ}
     (hs : s ∈ homogeneousCotangentSymbols n M m) {K : Set M} (hK : IsCompact K)
     (hsK : ∀ x ∉ K, s x = 0) :
     ∃ P ∈ classicalPseudodifferentialOperators m, classicalPrincipalSymbol m P = s := by
+  -- The operator is the sum of the chart quantizations of the cut-off terms of the homogeneous
+  -- symbols `ρᵢ(y) s(eᵢ⁻¹ y, ⟪η, ·⟫ ∘ deᵢ)`, for chart cutoffs `ρᵢ` whose pullbacks sum to `1` on
+  -- the compact set.
   obtain ⟨N, c, ρ, hρ⟩ := hK.exists_sum_cutoffPullback_eq_one (E := CoordinateSpace n)
   -- For each chart, a cutoff `θᵢ` equal to `1` on the support of `ρᵢ`.
   choose θ hθ using fun i ↦ TestFunction.exists_eventually_eq_one

@@ -222,19 +222,16 @@ private theorem coefficient_principal_eq_smul_of_isChartSymbol
     (ha : IsChartSymbol P he φ ψ a) (ha' : IsChartSymbol P he φ' ψ' a')
     {y : CoordinateSpace n} (hy : y ∈ e.target) (η : CoordinateSpace n) :
     a.principal.coefficient (y, η) = (φ y * ψ y) • a'.principal.coefficient (y, η) := by
-  -- The transition from `e` to itself is the identity on the chart target.
+  -- The transition from `e` to itself is defined on the whole chart target.
   have hsource (χ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) :
       tsupport χ ⊆ (e.symm.trans e).source := fun z hz ↦ by
     have hzt := χ.tsupport_subset hz
     simpa [e.map_target hzt] using hzt
-  have hid : (e.symm.trans e : CoordinateSpace n → CoordinateSpace n) =ᶠ[𝓝 y] id := by
-    filter_upwards [e.open_target.mem_nhds hy] with z hz
-    simp [e.right_inv hz]
   have h := coefficient_principal_eq_of_isChartSymbol he he (hsource φ) (hsource ψ)
     (fun z hz ↦ by rw [e.right_inv (φ.tsupport_subset hz), hφ' z hz])
     (fun z hz ↦ by rw [e.right_inv (ψ.tsupport_subset hz), hψ' z hz]) ha ha' y η
-  rw [e.right_inv hy, hid.fderiv_eq] at h
-  simpa [← ContinuousLinearMap.one_def, ContinuousLinearMap.adjoint_one] using h
+  rwa [e.right_inv hy, OpenPartialHomeomorph.coe_trans,
+    adjoint_ringInverse_fderiv_comp_symm_eq_one hy, one_apply_eq_self] at h
 
 omit [T2Space M] in
 /-- A cutoff in the preferred chart at `x`, equal to `1` near the image of `x`. -/
@@ -242,9 +239,7 @@ private theorem exists_cutoff_chartAt (x : M) :
     ∃ χ : 𝓓(⟨(chartAt (CoordinateSpace n) x).target,
       (chartAt (CoordinateSpace n) x).open_target⟩, ℝ),
       ∀ᶠ z in 𝓝 (chartAt (CoordinateSpace n) x x), χ z = 1 :=
-  let ⟨χ, hχ, _⟩ := TestFunction.exists_eventually_eq_one isCompact_singleton
-    (singleton_subset_iff.2 (mem_chart_target (CoordinateSpace n) x))
-  ⟨χ, by simpa only [nhdsSet_singleton] using hχ⟩
+  TestFunction.exists_eventually_eq_one_nhds (mem_chart_target (CoordinateSpace n) x)
 
 /-! ### Smooth homogeneous functions on the cotangent bundle -/
 
@@ -571,9 +566,7 @@ theorem classicalPrincipalSymbol_sum {ι : Type*} (s : Finset ι)
 /-! ### The principal symbol map -/
 
 /-- **The principal symbol is smooth.** The principal symbol of order `m` of every operator is a
-smooth positively homogeneous function of degree `m` on the cotangent bundle. In a chart `e`, near
-every point of the chart target, it is the principal symbol of the symbol of a chart compression
-of `P` by cutoffs equal to `1` there, which is smooth away from the zero frequency. -/
+smooth positively homogeneous function of degree `m` on the cotangent bundle. -/
 theorem classicalPrincipalSymbol_mem_homogeneousCotangentSymbols :
     classicalPrincipalSymbol m P ∈ homogeneousCotangentSymbols n M m := by
   refine ⟨classicalPrincipalSymbol_zero_covector, fun x ξ t ht ↦
@@ -582,11 +575,13 @@ theorem classicalPrincipalSymbol_mem_homogeneousCotangentSymbols :
   swap
   · simp only [classicalPrincipalSymbol_of_notMem hP]
     exact contDiffOn_const
+  -- In a chart `e`, near every point of the chart target, the principal symbol is the principal
+  -- symbol of the symbol of a chart compression of `P` by cutoffs equal to `1` there, which is
+  -- smooth away from the zero frequency.
   rintro ⟨y, η⟩ ⟨hy, hη⟩
   -- A cutoff `χ` in `e`, equal to `1` near `y`, and the symbol `a` of the compression by `χ`.
-  obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (Ω := ⟨e.target, e.open_target⟩)
-    (n := ⊤) isCompact_singleton (singleton_subset_iff.2 hy)
-  rw [nhdsSet_singleton] at hχ
+  obtain ⟨χ, hχ⟩ := TestFunction.exists_eventually_eq_one_nhds (Ω := ⟨e.target, e.open_target⟩)
+    (n := ⊤) hy
   obtain ⟨a, ha⟩ := (mem_classicalPseudodifferentialOperators_iff.1 hP).2 e he χ χ
   -- Near `(y, η)`, the function is the value at `1` of the principal symbol of `a`.
   have hev :

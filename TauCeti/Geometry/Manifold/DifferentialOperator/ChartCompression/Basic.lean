@@ -67,8 +67,8 @@ with no continuity assumed) and computes their principal symbols:
 
 ## Main results
 
-* `IsCompact.exists_sum_cutoffPullback_eq_one`: a compact set has a finite partition of unity by
-  pullbacks of cutoffs in preferred charts, through which operators on `M` are assembled from
+* `IsCompact.exists_sum_cutoffPullback_eq_one`: a compact set has finitely many cutoffs in preferred
+  charts whose pullbacks sum to `1` on it, through which operators on `M` are assembled from
   operators in charts.
 
 ## References
@@ -453,14 +453,14 @@ end Complex
 
 end OpenPartialHomeomorph
 
-/-! ### Partitions of unity by chart cutoffs -/
+/-! ### Chart cutoffs summing to one on a compact set -/
 
 section ChartPartition
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [T2Space M] [IsManifold 𝓘(ℝ, E) ∞ M]
 
-/-- **A finite partition of unity by chart cutoffs.** A compact set `K` of a Hausdorff manifold
+/-- **Chart cutoffs summing to one on a compact set.** A compact set `K` of a Hausdorff manifold
 modelled on a finite-dimensional space has finitely many points `cᵢ` and cutoffs `ρᵢ` with compact
 supports in the targets of the preferred charts at the `cᵢ` such that the functions
 `ρᵢ ∘ chartAt cᵢ`, extended by `0` off the chart sources (`OpenPartialHomeomorph.cutoffPullback`),
