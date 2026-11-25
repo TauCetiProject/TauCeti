@@ -78,9 +78,9 @@ theorem coordinateHopfAlgebraBaseChangeIso_hom_relationMatrix
     rw [← hq, Matrix.map_map, Matrix.map_map]
     congr 1
     funext r
-    change (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n).hom.hom.toAlgHom
-        (Algebra.TensorProduct.includeRight (algebraMap R _ r)) = algebraMap K _ (algebraMap R K r)
-    rw [AlgHom.commutes, IsScalarTower.algebraMap_apply R K, AlgHom.commutes]
+    simp only [φ, Function.comp_apply, RingHom.comp_apply, AlgHom.toRingHom_eq_coe,
+      RingHom.coe_coe, AlgHom.commutes]
+    rw [IsScalarTower.algebraMap_apply R K, AlgHom.commutes]
   have hmatrix : (relationMatrix R n q).map φ = relationMatrix K n q' := by
     rw [relationMatrix_def, relationMatrix_def, Matrix.map_sub _ (map_sub φ), Matrix.map_mul,
       Matrix.map_mul, Matrix.transpose_map, hgeneric, hform]
