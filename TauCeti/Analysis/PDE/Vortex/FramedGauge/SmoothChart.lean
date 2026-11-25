@@ -110,8 +110,8 @@ private theorem exists_coulombSliceChart_apply_eq_and_contDiffAt_symm :
     _ →L[ℝ] (Fin (2 * m) → ℝ)).comp (Classical.choose hker), fun p ↦ ?_⟩,
     hf.implicitCoordSource hf' hker, hf.isOpen_implicitCoordSource hf' hker,
     hf.mem_implicitCoordSource hf' hker, fun v hv hA ↦ ?_⟩
-  · rw [levelSetChartModel_apply, levelSetChart_apply]
-    rfl
+  · rw [levelSetChartModel_apply, levelSetChart_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearEquiv.coe_coe]
   · exact contDiffAt_coe_levelSetChartModel_symm_of_mem hf hf' hker hfin hn _ hv hA
       ((contDiff_realSobolevSliceEquation hk x₀).contDiffAt.of_le le_top)
 
@@ -184,19 +184,6 @@ theorem IsSmoothVortexModuliChart.contDiffOn_trans
 end IsSmoothVortexModuliChart
 
 /-! ### Existence of smooth charts -/
-
-/-- The real coordinates, at the order `↑k + 1` of the slice equation, of the fields of
-`A_m^(k+1)`. -/
-private noncomputable def sliceCoords (hk : 2 ≤ k) :
-    SobolevFieldSpace f m (k + 1 : ℕ) ≃ₜ
-      (Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le) :=
-  (congrOrder (s := ((k + 1 : ℕ) : ℝ)) (Nat.cast_succ k)).trans
-    (realSubRefHomeomorph (by linarith [(Nat.ofNat_le_cast.2 hk : (2 : ℝ) ≤ k)]))
-
-/-- The slice coordinates of `y` are the real coordinates of `y` at the order `↑k + 1`. -/
-private theorem sliceCoords_apply (hk : 2 ≤ k) (y : SobolevFieldSpace f m (k + 1 : ℕ)) :
-    sliceCoords hk y = (congrOrder (Nat.cast_succ k) y).realSubRef _ := by
-  simp [sliceCoords]
 
 variable [Fact (1 < k + 1)] {hs : 1 < ((k + 1 : ℕ) : ℝ) + 1}
 

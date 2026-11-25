@@ -255,11 +255,9 @@ theorem continuousRepField_realSubRef (hs : 1 < s) {h : 0 ≤ s} (x : SobolevFie
 /-- The field with real coordinates `u` depends continuously on `u`, for `s > 1`. -/
 theorem continuous_ofRealSubRef (hs : 1 < s) {h : 0 ≤ s} :
     Continuous (ofRealSubRef (f := f) (m := m) hs (h := h)) := by
-  refine (isEmbedding_subRef h).continuous_iff.2 (continuous_pi fun j ↦ ?_)
-  have : (fun u ↦ subRef (ofRealSubRef (f := f) (m := m) hs u) j) =
-      fun u : Fin 4 → realSubmodule ℂ h ↦ (u j : H^{s}(ℂ)) := funext fun u ↦ by
-    rw [← coe_realSubRef h, realSubRef_ofRealSubRef]
-  exact this ▸ continuous_subtypeVal.comp (continuous_apply j)
+  refine (isEmbedding_subRef h).continuous_iff.2 ?_
+  simp_rw [Function.comp_def, subRef_ofRealSubRef]
+  exact continuous_pi fun j ↦ continuous_subtypeVal.comp (continuous_apply j)
 
 /-- **The real chart of `A_m^s`**, `s > 1`: the real coordinates of `x - x_m` identify the
 continuous fields of `A_m^s` with the real Hilbert space `(H^s_ℝ)⁴`, as topological spaces. -/
