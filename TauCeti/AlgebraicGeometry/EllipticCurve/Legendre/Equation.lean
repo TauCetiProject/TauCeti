@@ -49,6 +49,7 @@ The scaled equations serve as normal forms for elliptic curves whose cubic split
 
 * `TauCeti.legendre`: the Legendre equation `y² = x (x - 1) (x - l)`.
 * `TauCeti.scaledLegendre`: the scaled Legendre equation `y² = x (x - d) (x - d l)`.
+* `TauCeti.scaledLegendreRoots`: the ordered scalar roots of the scaled Legendre cubic.
 * `TauCeti.scaledLegendrePointEquiv`: the isomorphism of point groups between the scaled
   equations with scalars `d` and `u² d`, sending `(x, y)` to `(u² x, u³ y)`.
 
@@ -110,6 +111,13 @@ def scaledLegendre (d l : R) : WeierstrassCurve R where
   a₆ := 0
 
 variable (d l : R)
+
+/-- The roots of the scaled Legendre cubic in the order `0`, `d`, `d * l`. -/
+def scaledLegendreRoots : Fin 3 → R := ![0, d, d * l]
+
+/-- The coordinate formula for the ordered roots of the scaled Legendre cubic. -/
+theorem scaledLegendreRoots_def : scaledLegendreRoots d l = ![0, d, d * l] :=
+  (rfl)
 
 /-- The Legendre equation is in the normal form `a₁ = a₃ = 0`. -/
 instance isCharNeTwoNF_legendre : (legendre l).IsCharNeTwoNF :=
@@ -203,6 +211,22 @@ theorem scaledLegendre_c₄ : (scaledLegendre d l).c₄ = 16 * d ^ 2 * (l ^ 2 - 
 theorem scaledLegendre_Δ : (scaledLegendre d l).Δ = 16 * d ^ 6 * l ^ 2 * (1 - l) ^ 2 := by
   rw [scaledLegendre_eq_freyCurve, freyCurve_Δ]
   ring
+
+/-- A nonzero discriminant forces `2` to be nonzero and the three scaled Legendre roots to
+be pairwise distinct. -/
+theorem scaledLegendre_root_inequalities (hΔ : (scaledLegendre d l).Δ ≠ 0) :
+    (2 : R) ≠ 0 ∧ d ≠ 0 ∧ d * l ≠ 0 ∧ d ≠ d * l := by
+  rw [scaledLegendre_eq_freyCurve, freyCurve_Δ, ← sub_eq_add_neg, neg_sq,
+    show (16 : R) = 2 ^ 4 by norm_num] at hΔ
+  refine ⟨fun h ↦ hΔ (by simp [h]), fun h ↦ hΔ (by simp [h]),
+    fun h ↦ hΔ (by simp [h]), fun h ↦ hΔ (by simp [sub_eq_zero.mpr h])⟩
+
+/-- The ordered roots of a scaled Legendre cubic with nonzero discriminant are distinct. -/
+theorem scaledLegendreRoots_injective (hΔ : (scaledLegendre d l).Δ ≠ 0) :
+    Function.Injective (scaledLegendreRoots d l) := by
+  obtain ⟨_, hd, hdl, hdd⟩ := scaledLegendre_root_inequalities d l hΔ
+  simp only [scaledLegendreRoots_def, Matrix.vecCons, Fin.cons_injective_iff]
+  simp [hd.symm, hdl.symm, hdd, Function.injective_of_subsingleton]
 
 /-- The `c₄` of the Legendre equation is `16 (l² - l + 1)`. -/
 theorem legendre_c₄ : (legendre l).c₄ = 16 * (l ^ 2 - l + 1) := by
