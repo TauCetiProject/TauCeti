@@ -192,7 +192,7 @@ theorem CompactlySupported.homComplexificationEquiv_ofSupportedIn (K : Topologic
 
 /-- Multiplying compact Hom coefficients by the real quarter-turn multiplies the resulting
 complex-linear Hom value by `I`. -/
-theorem CompactlySupported.homComplexificationEquiv_smulI
+theorem CompactlySupported.homComplexificationEquiv_smulIEquiv_apply
     (s : compactlySupported I (Complexification (F →L[ℝ] G)) n
       (fun x ↦ ℂ ⊗[ℝ] (V x →L[ℝ] L x))) (x : M) :
     (CompactlySupported.homComplexificationEquiv (F := F) (G := G)
@@ -203,7 +203,7 @@ theorem CompactlySupported.homComplexificationEquiv_smulI
   exact map_smul homComplexificationLinearEquiv Complex.I _
 
 /-- Conjugating the coefficients and the input conjugates the resulting Hom value. -/
-theorem CompactlySupported.homComplexificationEquiv_conj
+theorem CompactlySupported.homComplexificationEquiv_conjEquiv_apply
     (s : compactlySupported I (Complexification (F →L[ℝ] G)) n
       (fun x ↦ ℂ ⊗[ℝ] (V x →L[ℝ] L x))) (x : M) (v : ℂ ⊗[ℝ] V x) :
     (CompactlySupported.homComplexificationEquiv (F := F) (G := G)
@@ -228,7 +228,7 @@ theorem CompactlySupported.homComplexificationEquiv_oneTmul_apply
 
 /-- Coefficients supplied by the real conjugation-fixed submodule evaluate on included real
 vectors by the original real Hom formula. -/
-theorem CompactlySupported.homComplexificationEquiv_realPoints_apply
+theorem CompactlySupported.homComplexificationEquiv_realPointsConjEquiv_apply
     (s : compactlySupported I (F →L[ℝ] G) n (fun x ↦ V x →L[ℝ] L x))
     (x : M) (v : V x) :
     (CompactlySupported.homComplexificationEquiv (F := F) (G := G)
@@ -614,15 +614,6 @@ theorem _root_.TauCeti.BundleTest.homComplexificationCLE_apply
     TauCeti.BundleTest.homComplexificationCLE (I := I) (F := F) (G := G) s x =
       bundleHomComplexificationEquiv (F := F) (G := G) (V := V) (L := L) x (s x) :=
   BundleTest.mapCLE_apply ..
-
-/-- Evaluating the native comparison on a complexified vector is the intrinsic Hom coefficient
-formula, so native bundle tests reduce to the existing algebraic comparison. -/
-theorem _root_.TauCeti.BundleTest.homComplexificationCLE_apply_apply
-    (s : BundleTest I (Complexification (F →L[ℝ] G))
-      (fun x ↦ ℂ ⊗[ℝ] (V x →L[ℝ] L x))) (x : M) (v : ℂ ⊗[ℝ] V x) :
-    TauCeti.BundleTest.homComplexificationCLE (I := I) (F := F) (G := G) s x v =
-      homComplexificationLinearEquiv (s x) v := by
-  rw [TauCeti.BundleTest.homComplexificationCLE_apply, bundleHomComplexificationEquiv_coe]
 
 /-- Native inverse evaluation is the inverse original fibrewise Hom complexification map. -/
 @[simp]

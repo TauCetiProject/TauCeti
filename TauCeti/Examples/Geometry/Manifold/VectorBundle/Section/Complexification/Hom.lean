@@ -75,7 +75,7 @@ theorem exists_nonzero_density_coefficient : ∃ s : BundleTest 𝓘(ℝ, ℝ) (
     (V := fun x : ℝ ↦ ℂ ⊗[ℝ] (Bundle.Trivial ℝ ℝ x →L[ℝ] DensityBundle 𝓘(ℝ, ℝ) ℝ x))
     0 (1 ⊗ₜ[ℝ] t)
   refine ⟨s, ?_⟩
-  rw [BundleTest.homComplexificationCLE_apply_apply, hs]
+  rw [BundleTest.homComplexificationCLE_apply, bundleHomComplexificationEquiv_coe, hs]
   rw [homComplexificationLinearEquiv_tmul_apply_tmul]
   simp only [one_mul, t, ContinuousLinearMap.toSpanSingleton_apply, one_smul]
   intro h
