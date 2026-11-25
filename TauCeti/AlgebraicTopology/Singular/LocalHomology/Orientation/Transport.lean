@@ -74,12 +74,10 @@ lemma coe_localOrientationTransport_symm {x y : FundamentalGroupoid M} (f : x �
 @[simp]
 lemma localOrientationTransport_id (x : FundamentalGroupoid M) :
     localOrientationTransport M E d (𝟙 x) = Equiv.refl _ := by
-  -- Both sides are identifications by isomorphisms; their forward maps agree by `map_id`.
-  refine Eq.trans ?_ LocalOrientation.equivOfIso_refl
-  rw [localOrientationTransport]
-  congr 1
-  ext : 1
-  exact (localHomologySystem (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) M E d).map_id x
+  apply Equiv.ext
+  intro z
+  apply Subtype.ext
+  simp
 
 /-- Transport along a composite is successive transport along its two paths. -/
 @[simp]
@@ -96,14 +94,8 @@ lemma localOrientationTransport_comp {x y z : FundamentalGroupoid M} (f : x ⟶ 
 @[simp]
 lemma localOrientationTransport_inv {x y : FundamentalGroupoid M} (f : x ⟶ y) :
     localOrientationTransport M E d (inv f) = (localOrientationTransport M E d f).symm := by
-  -- Both sides are identifications by isomorphisms; the transport along `inv f` is the inverse
-  -- of the transport isomorphism along `f`.
-  refine Eq.trans ?_ (LocalOrientation.equivOfIso_symm _).symm
-  rw [localOrientationTransport]
-  congr 1
-  ext : 1
-  exact ((localHomologySystem (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) M E
-    d).mapIso_inv (asIso f)).symm
+  ext z
+  simp
 
 /-- Transport commutes with reversal of local orientations. -/
 @[simp]
