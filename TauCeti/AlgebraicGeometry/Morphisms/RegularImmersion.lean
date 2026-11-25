@@ -87,9 +87,9 @@ theorem isRegularImmersion_zero_of_isIso (i : X ⟶ Y) [IsIso i] : i.IsRegularIm
 has empty support, so the condition is vacuous. -/
 theorem isRegularImmersion_of_isEmpty (i : X ⟶ Y) [IsImmersion i] [IsEmpty X] (d : ℕ) :
     i.IsRegularImmersion d := by
+  rw [isRegularImmersion_iff]
   refine IdealSheafData.isLocallyRegular_of_support_eq_bot ?_ d
-  refine SetLike.coe_injective ?_
-  rw [Scheme.Hom.support_ker, Set.range_eq_empty, closure_empty]
-  rfl
+  rw [← SetLike.coe_set_eq, Scheme.Hom.support_ker, Set.range_eq_empty, closure_empty,
+    TopologicalSpace.Closeds.coe_bot]
 
 end AlgebraicGeometry.Scheme.Hom
