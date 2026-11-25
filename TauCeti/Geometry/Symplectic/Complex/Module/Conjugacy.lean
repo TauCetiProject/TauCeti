@@ -8,10 +8,12 @@ module
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import TauCeti.LinearAlgebra.TotallyReal.Basic
 import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 import TauCeti.LinearAlgebra.Complex.Module
+import TauCeti.LinearAlgebra.TotallyReal.Frame
 
 /-!
 # Real-linear complex structures are conjugate to multiplication by `i`
@@ -38,6 +40,9 @@ close to `i`.
   `Φ⁻¹ A = i Φ⁻¹`.
 * `TauCeti.exists_euclideanSpace_bijective_coprod`: complex frames of a complement of a complex
   line `D (ℂ)`, for `D : ℂ → E` real-linear with `D 1 + A (D i) = 0`.
+* `TauCeti.IsMaximalTotallyReal.exists_continuousLinearEquiv_pi_comp_eq_comp_I_smul_and_mem_iff`:
+  for a maximal totally real subspace `L` of `A`, a frame `Φ : ℂⁿ → E` with `A Φ = Φ i` carrying
+  the real vectors `ℝⁿ` onto `L`.
 
 ## References
 
@@ -167,5 +172,70 @@ theorem exists_euclideanSpace_bijective_coprod {A : V →L[ℝ] V}
     simp [φ, hDα, Submodule.coe_prodEquivOfIsCompl']
   rw [hcoprod]
   exact Ψ.bijective.comp φ.bijective
+
+namespace IsMaximalTotallyReal
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {A : E →L[ℝ] E} {L : Submodule ℝ E}
+
+/-- **Complex frames adapted to a totally real subspace.** Let `A` be a complex structure on a
+finite-dimensional real normed space `E`, `A² = -1`, and `L` a maximal totally real subspace for
+`A`, so that `E = L ⊕ A L`. Some real-linear isomorphism `Φ : ℂⁿ → E` turns `A` into
+multiplication by `i`, `A Φ = Φ i`, and carries the real vectors of `ℂⁿ`, those fixed by the
+coordinatewise conjugation `star`, exactly onto `L`. It sends `v` to `x + A y`, where `x` and `y`
+are the vectors of `L` with coordinates the real and imaginary parts of `v` in a basis of `L`. -/
+theorem exists_continuousLinearEquiv_pi_comp_eq_comp_I_smul_and_mem_iff
+    (hL : IsMaximalTotallyReal (A : E →ₗ[ℝ] E) L) (hA : A ∘L A = -ContinuousLinearMap.id ℝ E) :
+    ∃ (n : ℕ) (Φ : (Fin n → ℂ) ≃L[ℝ] E),
+      A ∘L (Φ : (Fin n → ℂ) →L[ℝ] E) =
+          (Φ : (Fin n → ℂ) →L[ℝ] E) ∘L (I • ContinuousLinearMap.id ℝ (Fin n → ℂ)) ∧
+        ∀ v, Φ v ∈ L ↔ star v = v := by
+  have hA' (v : E) : A (A v) = -v := congr($hA v)
+  have hAinj : Function.Injective A := fun x y h ↦ by simpa [hA'] using congr(A $h)
+  let b := Module.finBasis ℝ L
+  -- the vectors of `L` whose coordinates are the real and the imaginary parts of `v`
+  let re' : (Fin (Module.finrank ℝ L) → ℂ) →ₗ[ℝ] L :=
+    b.equivFun.symm.toLinearMap ∘ₗ LinearMap.pi fun i ↦ Complex.reLm ∘ₗ LinearMap.proj i
+  let im' : (Fin (Module.finrank ℝ L) → ℂ) →ₗ[ℝ] L :=
+    b.equivFun.symm.toLinearMap ∘ₗ LinearMap.pi fun i ↦ Complex.imLm ∘ₗ LinearMap.proj i
+  have hre (v : Fin (Module.finrank ℝ L) → ℂ) : re' v = b.equivFun.symm fun i ↦ (v i).re := rfl
+  have him (v : Fin (Module.finrank ℝ L) → ℂ) : im' v = b.equivFun.symm fun i ↦ (v i).im := rfl
+  have hP : Function.Bijective (re'.prod im') := by
+    refine ⟨fun v w h ↦ funext fun i ↦ ?_,
+      fun xy ↦ ⟨fun i ↦ ⟨b.equivFun xy.1 i, b.equivFun xy.2 i⟩, ?_⟩⟩
+    · have h1 := congr(b.equivFun ($h).1 i)
+      have h2 := congr(b.equivFun ($h).2 i)
+      simp only [LinearMap.prod_apply, Function.prod, hre, him, LinearEquiv.apply_symm_apply]
+        at h1 h2
+      exact Complex.ext h1 h2
+    · simp [hre, him]
+  -- the doubled frame `(x, y) ↦ x + A y` of `L` is bijective
+  have hD := (by rwa [Submodule.range_subtype] :
+    IsMaximalTotallyReal (A : E →ₗ[ℝ] E) (LinearMap.range L.subtype)).bijective_coprod
+      L.injective_subtype (hAinj.comp L.injective_subtype)
+  let Φ : (Fin (Module.finrank ℝ L) → ℂ) ≃ₗ[ℝ] E :=
+    LinearEquiv.ofBijective ((L.subtype.coprod ((A : E →ₗ[ℝ] E) ∘ₗ L.subtype)) ∘ₗ re'.prod im')
+      (by rw [LinearMap.coe_comp]; exact hD.comp hP)
+  have hΦ (v : Fin (Module.finrank ℝ L) → ℂ) : Φ v = (re' v : E) + A (im' v) := rfl
+  refine ⟨Module.finrank ℝ L, Φ.toContinuousLinearEquiv, ContinuousLinearMap.ext fun v ↦ ?_,
+    fun v ↦ ?_⟩
+  · have h1 : re' (I • v) = -im' v := by rw [hre, him, ← map_neg]; congr 1; funext i; simp
+    have h2 : im' (I • v) = re' v := by rw [hre, him]; congr 1; funext i; simp
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      LinearEquiv.coe_toContinuousLinearEquiv', hΦ, map_add, hA', _root_.smul_apply,
+      ContinuousLinearMap.id_apply, h1, h2, Submodule.coe_neg]
+    abel
+  · -- `x + A y ∈ L` forces `A y ∈ L ∩ A L = 0`, that is `y = 0`
+    have hstar : star v = v ↔ im' v = 0 := by
+      rw [him, LinearEquiv.map_eq_zero_iff, funext_iff, funext_iff]
+      simp [Complex.conj_eq_iff_im]
+    simp only [LinearEquiv.coe_toContinuousLinearEquiv', hΦ, hstar]
+    rw [Submodule.add_mem_iff_right _ (re' v).property]
+    refine ⟨fun hmem ↦ ?_, fun h ↦ by simp [h]⟩
+    have h0 := Submodule.disjoint_def.1 hL.disjoint _ hmem
+      (Submodule.mem_map_of_mem (im' v).property)
+    exact Subtype.ext (hAinj (by simpa using h0))
+
+end IsMaximalTotallyReal
 
 end TauCeti
