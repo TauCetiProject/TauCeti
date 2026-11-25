@@ -83,6 +83,11 @@ setting of the linearized operators of Floer theory along Floer cylinders.
   `TauCeti.StripSobolev.finiteDimensional_ker_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le`.
   The estimate is stated in the form proved for the linearized Floer operator in
   `TauCeti.Geometry.Symplectic.Floer.SemiFredholm`.
+* **Periodization.** A `C²` map with compact support in the open strip `ℝ × (0, 1)`, read through
+  the fractional part of `t`, is a test section
+  (`TauCeti.CylinderSobolev.comp_fract_mem_testSection`) that agrees with the map near every point
+  of the open strip (`TauCeti.CylinderSobolev.comp_fract_eventuallyEq`). The open strip carries the
+  strip measure (`TauCeti.CylinderSobolev.stripMeasure_eq_restrict_univ_prod_Ioo`).
 * **Translation in `s`.** Translation in `s` commutes with a first-order operator, the coefficient
   field being translated too (`TauCeti.CylinderSobolev.translateLp_jetOperator`), so its right
   inverses on `W^{1,2}` translate with the same norm
@@ -124,6 +129,13 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 theorem stripMeasure_eq_prod :
     stripMeasure = (volume : Measure ℝ).prod (volume.restrict (Icc (0 : ℝ) 1)) := by
   rw [stripMeasure, Measure.volume_eq_prod, ← Measure.prod_restrict, Measure.restrict_univ]
+
+/-- The strip measure is Lebesgue measure on the open strip `ℝ × (0, 1)`: the two boundary lines
+are null. -/
+theorem stripMeasure_eq_restrict_univ_prod_Ioo :
+    stripMeasure = volume.restrict (univ ×ˢ Ioo (0 : ℝ) 1) := by
+  rw [stripMeasure_eq_prod, ← Measure.restrict_congr_set Ioo_ae_eq_Icc, Measure.volume_eq_prod,
+    ← Measure.prod_restrict, Measure.restrict_univ]
 
 omit [NormedSpace ℝ V] in
 /-- A section depending continuously on `t` alone is essentially bounded on the strip. -/
@@ -209,6 +221,60 @@ theorem comp_add_right_mem_testSection (hξ : ξ ∈ testSection V) (a : ℝ) :
   have := abs_add_le (s + a) (-a)
   rw [add_neg_cancel_right, abs_neg] at this
   simpa using hR (s + a) t (by linarith)
+
+omit [NormedAddCommGroup V] [NormedSpace ℝ V] in
+/-- On the open strip `ℝ × (0, 1)`, a map read through the fractional part `Int.fract` of `t`
+agrees with the map near every point. -/
+theorem comp_fract_eventuallyEq {z : ℝ × ℝ} (hz : z ∈ univ ×ˢ Ioo (0 : ℝ) 1) :
+    (fun w : ℝ × ℝ ↦ ξ (w.1, Int.fract w.2)) =ᶠ[𝓝 z] ξ := by
+  filter_upwards [(isOpen_univ.prod isOpen_Ioo).mem_nhds hz] with w hw
+  rw [Int.fract_eq_self.2 ⟨hw.2.1.le, hw.2.2⟩]
+
+/-- **Periodizing a map supported in the open strip.** A `C²` map `ξ` with compact support in the
+open strip `ℝ × (0, 1)`, read through the fractional part `Int.fract` of `t`, is a test section.
+On the open strip it agrees with `ξ` near every point
+(`TauCeti.CylinderSobolev.comp_fract_eventuallyEq`). -/
+theorem comp_fract_mem_testSection (hξ : ContDiff ℝ 2 ξ) (hξc : HasCompactSupport ξ)
+    (hξS : tsupport ξ ⊆ univ ×ˢ Ioo (0 : ℝ) 1) :
+    (fun z : ℝ × ℝ ↦ ξ (z.1, Int.fract z.2)) ∈ testSection V := by
+  -- `ξ` vanishes within `δ` of the two boundary lines of the strip, for some `0 < δ ≤ 1`.
+  obtain ⟨δ, hδ, hδS⟩ := hξc.isCompact.exists_cthickening_subset_open
+    (isOpen_univ.prod isOpen_Ioo) hξS
+  have hvan : ∀ s τ, (τ < min δ 1 ∨ 1 - min δ 1 < τ) → ξ (s, τ) = 0 := by
+    intro s τ hτ
+    by_contra hne
+    have hmem := subset_tsupport ξ hne
+    have hshift (c : ℝ) (hc : |c| ≤ δ) : τ + c ∈ Ioo (0 : ℝ) 1 :=
+      (hδS (mem_cthickening_of_dist_le (s, τ + c) (s, τ) δ _ hmem (by
+        simpa [Prod.dist_eq, Real.dist_eq] using hc))).2
+    have h₁ := hshift (-δ) (by rw [abs_neg, abs_of_pos hδ])
+    have h₂ := hshift δ (abs_of_pos hδ).le
+    rcases hτ with hτ | hτ
+    · linarith [h₁.1, min_le_left δ 1]
+    · linarith [h₂.2, min_le_left δ 1]
+  set δ' := min δ 1
+  have hδ' : 0 < δ' := lt_min hδ one_pos
+  -- Near a point with `⌊t⌋ = n`, the map is `ξ (s, t - n)`.
+  have hloc (z : ℝ × ℝ) : (fun w : ℝ × ℝ ↦ ξ (w.1, Int.fract w.2)) =ᶠ[𝓝 z]
+      fun w ↦ ξ (w.1, w.2 - ⌊z.2⌋) := by
+    set n : ℤ := ⌊z.2⌋
+    have hz : z.2 ∈ Ioo ((n : ℝ) - δ') (n + 1) :=
+      ⟨by linarith [Int.floor_le z.2], Int.lt_floor_add_one z.2⟩
+    filter_upwards [(continuous_snd.isOpen_preimage _ isOpen_Ioo).mem_nhds hz] with w hw
+    obtain ⟨hw₁, hw₂⟩ := hw
+    rcases le_or_gt (n : ℝ) w.2 with hn | hn
+    · rw [← Int.self_sub_floor, Int.floor_eq_iff.2 ⟨hn, hw₂⟩]
+    · have hfl : ⌊w.2⌋ = n - 1 := Int.floor_eq_iff.2 ⟨by push_cast; linarith [min_le_right δ 1],
+        by push_cast; linarith⟩
+      rw [hvan w.1 (w.2 - n) (Or.inl (by linarith)), ← Int.self_sub_floor, hfl,
+        hvan w.1 _ (Or.inr (by push_cast; linarith))]
+  obtain ⟨R, -, hR⟩ := hξc.exists_pos_le_norm
+  refine ⟨contDiff_iff_contDiffAt.2 fun z ↦ ?_, fun s t ↦ by simp only [Int.fract_add_one], R,
+    fun s t hs ↦ hR _ ?_⟩
+  · exact (hξ.comp (contDiff_fst.prodMk (contDiff_snd.sub contDiff_const))).contDiffAt
+      |>.congr_of_eventuallyEq (hloc z)
+  · rw [Prod.norm_def, Real.norm_eq_abs]
+    exact hs.trans (le_max_left _ _)
 
 /-- The test sections are invariant under translation in the `s` direction. -/
 instance : IsTranslationInvariant (testSection V) :=
