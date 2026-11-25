@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.Compatible
 public import TauCeti.Geometry.Symplectic.Cotangent.Liouville
-public import TauCeti.Geometry.Symplectic.Liouville.Radial
+public import TauCeti.Geometry.Symplectic.Liouville.Radial.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!

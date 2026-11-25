@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing.Basic
 public import TauCeti.Geometry.Manifold.Degree.Global
 public import TauCeti.Geometry.Symplectic.Manifold.Prod
 public import TauCeti.Geometry.Symplectic.Manifold.Torus.Basic
+import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Spherical
+import TauCeti.AlgebraicTopology.UniversalCover.Torus.HigherHomotopy
 import TauCeti.Geometry.Manifold.DeRham.SimplyConnected
 
 /-!
@@ -41,6 +43,16 @@ one-forms `dt_i` are closed, hence exact on `C`, say `w^* dt_i = d gᵢ`, so eac
 (`TauCeti.mpullback_torusSymplecticForm_mem_exactForms`), and exact top forms integrate to zero on
 a closed manifold. This replaces the homotopy-theoretic input `π₂(T) = 0` by the vanishing of
 `H¹_dR(C)`.
+
+The homotopy-theoretic form of the area gap holds for any homomorphism `ω` from the second
+integral homology group, such as integration of a closed two-form, and is proved for `Sⁿ⁺¹ × Y`
+with `Y` path-connected and `πₙ₊₁(Y)` trivial in
+`TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Spherical`: the value of `ω` on a spherical class is
+an integer multiple of `a = ω [S² × {y}]` (`TauCeti.exists_apply_eq_zsmul_apply_sphereSliceClass`),
+and if `a > 0`, every positive value of `ω` on a spherical class is at least `a`
+(`TauCeti.apply_sphereSliceClass_le`). For a product `Tᵏ` of circles both hypotheses are found by
+instance resolution, the second by `AddCircle.subsingleton_homotopyGroup_pi`, so these statements
+apply to `S² × Tᵏ` directly. The example at the end of this file checks this.
 
 ## Main results
 
@@ -184,5 +196,26 @@ theorem integralTopForm_le_integralTopForm_mpullback_prod_torusSymplecticForm
   · have hm0 : (0 : ℤ) < m := by exact_mod_cast pos_of_mul_pos_left hpos ha.le
     have hm1 : (1 : ℝ) ≤ m := by exact_mod_cast (show (1 : ℤ) ≤ m by omega)
     exact le_mul_of_one_le_left ha.le hm1
+
+end TauCeti
+
+/-! ### The homological area gap for a torus -/
+
+open CategoryTheory AlgebraicTopology Metric
+
+namespace TauCeti
+
+/-- The area gap applies to `S² × Tᵏ` for every product `Tᵏ` of circles: instance resolution
+finds that the torus is path-connected and has trivial second homotopy group. -/
+example {ι : Type} {p : ι → ℝ} {y : ∀ i, AddCircle (p i)}
+    (area : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj (ModuleCat.of ℤ ℤ)).obj
+      (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1 × ∀ i, AddCircle (p i))) →+ ℝ)
+    (ha : 0 < area (sphereSliceClass _ y 1))
+    {c : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj (ModuleCat.of ℤ ℤ)).obj
+      (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1 × ∀ i, AddCircle (p i)))}
+    (hc : c ∈ sphericalClasses (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1 × ∀ i, AddCircle (p i)) 1)
+    (hpos : 0 < area c) :
+    area (sphereSliceClass _ y 1) ≤ area c :=
+  apply_sphereSliceClass_le area ha hc hpos
 
 end TauCeti

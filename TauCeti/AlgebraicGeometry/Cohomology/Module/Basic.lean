@@ -157,14 +157,7 @@ def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyZeroLinearEquiv
         ((cohomologyFunctor X 0).map (M.globalSectionsSmul r) x) =
       r • cohomologyZeroEquiv M x
     rw [cohomologyZeroEquiv_naturality]
-    rw [globalSectionsSmul_app]
-    have h : X.presheaf.map (⊤ : X.Opens).leTop.op r = r := by
-      have hf : (⊤ : X.Opens).leTop.op = 𝟙 (Opposite.op (⊤ : X.Opens)) :=
-        Subsingleton.elim _ _
-      rw [hf]
-      exact ConcreteCategory.congr_hom (X.presheaf.map_id _) r
-    rw [h]
-    exact M.smul_apply r (cohomologyZeroEquiv M x)
+    exact M.globalSectionsSmul_app_top_apply r _
 
 @[simp]
 lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyZeroLinearEquiv_apply

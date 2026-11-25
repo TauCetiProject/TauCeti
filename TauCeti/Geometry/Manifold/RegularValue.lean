@@ -55,7 +55,8 @@ to manifolds, including manifolds with boundary or corners.
 * `TauCeti.isRegularPoint_comp_iff`: a composite of differentiable maps is regular exactly when
   the derivative of the outer map sends the tangent image of the inner map onto the target; in
   particular the outer map is then regular (`TauCeti.IsRegularPoint.of_comp`).
-* `IsLocalDiffeomorphAt.isRegularPoint`: a local diffeomorphism at a point is regular there.
+* `IsLocalDiffeomorphAt.isRegularPoint`, `IsLocalDiffeomorph.isRegularValue`: a local
+  diffeomorphism is regular at every point, so every value of a local diffeomorphism is regular.
 * `TauCeti.isRegularPoint_snd`: the second projection of a product is regular everywhere.
 * `ContinuousLinearEquiv.comp_isRegularPoint_iff`, `ContinuousLinearEquiv.comp_isRegularValue_iff`:
   postcomposing a map into a normed space with a continuous linear equivalence preserves regular
@@ -346,6 +347,12 @@ end Composition
 theorem _root_.IsLocalDiffeomorphAt.isRegularPoint {n : ℕ∞ω}
     (h : IsLocalDiffeomorphAt I J n f x) (hn : n ≠ 0) : IsRegularPoint I J f x :=
   (h.isInvertible_mfderiv hn).surjective
+
+/-- Every value of a local diffeomorphism is a regular value: its manifold derivative is invertible
+at every point. -/
+theorem _root_.IsLocalDiffeomorph.isRegularValue {n : ℕ∞ω}
+    (hf : IsLocalDiffeomorph I J n f) (hn : n ≠ 0) (y : N) : IsRegularValue I J f y :=
+  isRegularValue_iff.2 fun x _ ↦ (hf x).isRegularPoint hn
 
 /-- Every point of a product is a regular point of the second projection. -/
 theorem isRegularPoint_snd (p : M × N) : IsRegularPoint (I.prod J) J (Prod.snd : M × N → N) p := by

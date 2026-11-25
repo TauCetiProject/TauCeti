@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ClosedImmersion
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.FiniteSet
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
 
@@ -35,6 +36,9 @@ A projective scheme over `R` is proper over `R`, because closed immersions are p
 
 * `AlgebraicGeometry.Scheme.IsProjectiveOver.of_isClosedImmersion`: a closed subscheme over `R` of
   a projective scheme over `R` is projective over `R`.
+* `AlgebraicGeometry.Scheme.IsProjectiveOver.exists_isClosedImmersion_pi`: a scheme projective over
+  `R` is a closed subscheme, over `R`, of the projective space `Proj (Sym_R R^{n+2})` of positive
+  dimension `n + 1`, for some `n`.
 * the instance `(Proj (Sym_R M)).IsProjectiveOver R` for a finite `R`-module `M`.
 * the instance `IsProper (X ↘ Spec R)` for `X` projective over `R`.
 * `AlgebraicGeometry.Scheme.exists_isAffineOpen_superset_of_isProjectiveOver`: a finite set
@@ -80,6 +84,35 @@ theorem IsProjectiveOver.of_isClosedImmersion {Y : Scheme.{u}} [Y.Over (Spec (.o
     X.IsProjectiveOver R := by
   obtain ⟨M, _, _, _, g, hg, hgR⟩ := IsProjectiveOver.exists_isClosedImmersion (R := R) (X := Y)
   exact ⟨⟨M, inferInstance, inferInstance, inferInstance, f ≫ g, inferInstance, inferInstance⟩⟩
+
+/-- **A projective scheme is a closed subscheme of a projective space.** A scheme projective over
+`R` admits a closed immersion over `R` into `ℙⁿ⁺¹_R = Proj (Sym_R R^{n+2})` for some `n`. The
+finite module `M` of the definition is a quotient of some `Rⁿ`, hence of `R^{n+2}`, and the
+induced surjection `Sym_R R^{n+2} → Sym_R M` of graded algebras embeds `Proj (Sym_R M)` as a closed
+subscheme. The two extra coordinates make the projective space positive-dimensional, as the
+cohomology computations on projective space over `R` require. -/
+theorem IsProjectiveOver.exists_isClosedImmersion_pi [X.IsProjectiveOver R] :
+    ∃ (n : ℕ) (f : X ⟶ Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule R (Fin (n + 2) → R))),
+      IsClosedImmersion f ∧ f.IsOver (Spec (.of R)) := by
+  obtain ⟨M, _, _, _, f, _, _⟩ := IsProjectiveOver.exists_isClosedImmersion (R := R) (X := X)
+  obtain ⟨n, p, hp⟩ := Module.Finite.exists_fin' R M
+  -- The surjection `R^{n+2} → Rⁿ → M` forgets the last two coordinates.
+  let q : (Fin (n + 2) → R) →ₗ[R] M := p ∘ₗ LinearMap.funLeft R R (Fin.castAdd 2)
+  have hq : Function.Surjective q :=
+    hp.comp (LinearMap.funLeft_surjective_of_injective _ _ _ (Fin.castAdd_injective n 2))
+  let ι₁ : M →ₗ[R] TauCeti.SymmetricAlgebra.homogeneousSubmodule R M 1 :=
+    (SymmetricAlgebra.ι R M).codRestrict _ (TauCeti.SymmetricAlgebra.ι_mem_homogeneousSubmodule R M)
+  let g :=
+    SymmetricAlgebra.gradedLift R (TauCeti.SymmetricAlgebra.homogeneousSubmodule R M) (ι₁ ∘ₗ q)
+  have hg : Function.Surjective g := by
+    refine SymmetricAlgebra.gradedLift_surjective R _ ?_
+    -- The generators of the lift are the images `ι (q x)` of the generators of `Sym_R M`.
+    have : (fun x ↦ ((ι₁ ∘ₗ q) x : SymmetricAlgebra R M)) = SymmetricAlgebra.ι R M ∘ q :=
+      funext fun _ ↦ by simp [ι₁]
+    rw [this, hq.range_comp, SymmetricAlgebra.adjoin_range_ι]
+  have hirr := HomogeneousIdeal.irrelevant_le_map_of_surjective g hg
+  have := Proj.isClosedImmersion_map g hirr hg
+  exact ⟨n, f ≫ Proj.map g hirr, inferInstance, inferInstance⟩
 
 /-- **A projective scheme is proper**: a scheme projective over `R` is proper over `R`. -/
 instance IsProjectiveOver.isProper [X.IsProjectiveOver R] : IsProper (X ↘ Spec (.of R)) := by
