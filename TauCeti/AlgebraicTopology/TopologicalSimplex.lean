@@ -28,13 +28,17 @@ connected. Every monomorphism in `SimplexCategory` induces a closed embedding of
 simplices (`SimplexCategory.isClosedEmbedding_toTop_map_of_mono`), and every point of `Δⁿ` lies in
 the open interior (`SimplexCategory.toTopInterior`) of a unique face. The geometric realization
 `|Δ[n]|` of the standard simplicial simplex, being homeomorphic to the topological simplex, is
-contractible as well. This file also names its initial vertex, and the continuous map on the
-topological `n`-simplex that underlies a singular `n`-simplex of a space.
+compact, Hausdorff, first-countable, and contractible as well. This file also names its initial
+vertex, and the continuous map on the topological `n`-simplex that underlies a singular `n`-simplex
+of a space.
 
 ## Main declarations
 
 * `SimplexCategory.compactSpace`, `SimplexCategory.metrizableSpace`: compactness and metrizability
   instances on `SimplexCategory.toTop.obj n` (hence Hausdorffness and second-countability).
+* `SSet.stdSimplex.instCompactSpaceToTopObj`, `SSet.stdSimplex.instT2SpaceToTopObj`,
+  `SSet.stdSimplex.instFirstCountableTopologyToTopObj`: compactness, Hausdorffness, and
+  first-countability instances on `|SSet.stdSimplex.obj n|`.
 * `SimplexCategory.isClosedEmbedding_toTop_map_of_mono`, `SimplexCategory.toTopInterior`,
   `SimplexCategory.toTopBoundary`: closed face embeddings and unique open-face decomposition.
 * `SimplexCategory.toTopInitialVertex`: the initial vertex of the topological `n`-simplex, and
@@ -80,6 +84,21 @@ homeomorphic to a standard simplex on a finite nonempty type. -/
 instance contractibleSpace_toTop_stdSimplex (n : SimplexCategory) :
     ContractibleSpace |SSet.stdSimplex.{u}.obj n| :=
   n.toTopHomeo.contractibleSpace
+
+/-- The geometric realization `|Δ[n]|` of every standard simplex is compact. -/
+instance _root_.SSet.stdSimplex.instCompactSpaceToTopObj (n : SimplexCategory) :
+    CompactSpace |SSet.stdSimplex.{u}.obj n| :=
+  n.toTopHomeo.symm.compactSpace
+
+/-- The geometric realization `|Δ[n]|` of every standard simplex is Hausdorff. -/
+instance _root_.SSet.stdSimplex.instT2SpaceToTopObj (n : SimplexCategory) :
+    T2Space |SSet.stdSimplex.{u}.obj n| :=
+  n.toTopHomeo.symm.t2Space
+
+/-- The geometric realization `|Δ[n]|` of every standard simplex is first-countable. -/
+instance _root_.SSet.stdSimplex.instFirstCountableTopologyToTopObj (n : SimplexCategory) :
+    FirstCountableTopology |SSet.stdSimplex.{u}.obj n| :=
+  n.toTopHomeo.isInducing.firstCountableTopology
 
 /-- Every topological simplex is locally path connected, being a universe lift of a standard
 simplex on a finite type. -/

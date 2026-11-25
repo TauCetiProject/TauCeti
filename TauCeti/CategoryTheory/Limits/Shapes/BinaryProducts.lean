@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Limits.Shapes.BinaryProducts.BinaryProducts
+public import Mathlib.CategoryTheory.Limits.Shapes.BinaryProducts.ProdComparison
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 public import Mathlib.CategoryTheory.MorphismProperty.Limits
 
@@ -17,8 +17,9 @@ identify `⊤_ C ⨯ X` and `X ⨯ ⊤_ C` with `X` for the chosen terminal obje
 the same identifications, natural in `X`, for an arbitrary terminal object `T`.
 
 It also gives `CategoryTheory.IsPullback.of_prod_snd_with_id`, the second-factor counterpart of
-Mathlib's `CategoryTheory.IsPullback.of_prod_fst_with_id`, and deduces that `(X ⨯ -)` and `(- ⨯ X)`
-preserve epimorphisms whenever epimorphisms in `C` are stable under base change.
+Mathlib's `CategoryTheory.IsPullback.of_prod_fst_with_id`, deduces that `(X ⨯ -)` and `(- ⨯ X)`
+preserve epimorphisms whenever epimorphisms in `C` are stable under base change, and records
+symmetry of `IsIso (prodComparison F K L)` in `K` and `L`.
 
 ## Main definitions and results
 
@@ -31,6 +32,8 @@ preserve epimorphisms whenever epimorphisms in `C` are stable under base change.
 * `CategoryTheory.Limits.preservesEpimorphisms_prod_functor_obj` and
   `CategoryTheory.Limits.preservesEpimorphisms_prod_functor_flip_obj`: `(X ⨯ -)` and `(- ⨯ X)`
   preserve epimorphisms when epimorphisms are stable under base change.
+* `CategoryTheory.Limits.isIso_prodComparison_of_isIso_prodComparison_swap`: symmetry of
+  `IsIso (prodComparison F K L)` in `K` and `L`.
 -/
 
 public section
@@ -120,6 +123,18 @@ instance preservesEpimorphisms_prod_functor_flip_obj [HasBinaryProducts C]
     (prod.functor.flip.obj X).PreservesEpimorphisms where
   preserves f _ := MorphismProperty.of_isPullback (P := MorphismProperty.epimorphisms C)
     (IsPullback.of_prod_fst_with_id f X) ‹_›
+
+/-- Symmetry of `IsIso (prodComparison F K L)` in `K` and `L` for any functor between categories
+with binary products. -/
+theorem isIso_prodComparison_of_isIso_prodComparison_swap
+    {C D : Type*} [Category* C] [Category* D] [HasBinaryProducts C] [HasBinaryProducts D]
+    (F : C ⥤ D) {K L : C} [IsIso (prodComparison F L K)] :
+    IsIso (prodComparison F K L) := by
+  have hcomp : F.map (prod.braiding K L).hom ≫ prodComparison F L K ≫
+      (prod.braiding (F.obj L) (F.obj K)).hom = prodComparison F K L := by
+    rw [map_braiding_hom_comp_prodComparison_assoc, prod.symmetry, Category.comp_id]
+  rw [← hcomp]
+  infer_instance
 
 end Limits
 

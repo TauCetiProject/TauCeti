@@ -40,9 +40,12 @@ Dually, the unit of the adjunction `sSetTopAdj` gives every `n`-simplex `x` of a
 a continuous map from the standard simplex to the realization `|X|`; its value at the barycentric
 coordinates `w` is the point `SSet.toTopObjMk x w`. These points are natural in `X` and in the
 simplex, and continuous maps out of `|X|` are determined by their values on them
-(`SSet.toTop_hom_ext`). In particular, the singular simplices of the unit interval given by the
-simplices `⦋n⦌ ⟶ ⦋1⦌` of `Δ[1]` through `SSet.stdSimplex.toSSetObjI` are affine in barycentric
-coordinates (`SSet.stdSimplex.coe_homeomorph_toSSetObjEquiv_toSSetObjI_app`).
+(`SSet.toTop_hom_ext`). Under `SimplexCategory.toTopHomeo`, `SSet.toTopObjMk` acts by pushing
+barycentric coordinates forward along the simplex's vertex map
+(`SimplexCategory.toTopHomeo_toTopObjMk`, `SimplexCategory.toTopHomeo_symm_apply`). In particular,
+the singular simplices of the unit interval given by the simplices `⦋n⦌ ⟶ ⦋1⦌` of `Δ[1]` through
+`SSet.stdSimplex.toSSetObjI` are affine in barycentric coordinates
+(`SSet.stdSimplex.coe_homeomorph_toSSetObjEquiv_toSSetObjI_app`).
 -/
 
 public section
@@ -372,6 +375,37 @@ lemma stdSimplex.coe_homeomorph_toSSetObjEquiv_toSSetObjI_app {n : ℕ}
   exact StdSimplex.homeomorphI_apply_coe _
 
 end SSet
+
+namespace SimplexCategory
+
+open Opposite in
+/-- Under `SimplexCategory.toTopHomeo`, the point `SSet.toTopObjMk a w` of `|Δ[p]|` determined by an
+`n`-simplex `a` and barycentric coordinates `w` corresponds to pushing `w` forward along the vertex
+map of `a`. -/
+@[simp]
+theorem toTopHomeo_toTopObjMk {p : SimplexCategory} {n : ℕ}
+    (a : (SSet.stdSimplex.{u}.obj p) _⦋n⦌) (w : StdSimplex ℝ (Fin (n + 1))) :
+    p.toTopHomeo (SSet.toTopObjMk a w) = w.map (SSet.stdSimplex.objEquiv a) := by
+  induction p using SimplexCategory.rec with | _ p =>
+  have hunit := sSetTopAdj_unit_app_app_down Δ[p] (op ⦋n⦌) a
+  rw [SSet.yonedaEquiv.symm_apply_eq.2
+    (by rw [SSet.yonedaEquiv_map, Equiv.symm_apply_apply])] at hunit
+  -- Evaluate `hunit` at `ULift.up w` to identify `toTopObjMk a w`.
+  rw [SSet.toTopObjMk_def,
+    show TopCat.toSSetObjEquiv _ _ ((sSetTopAdj.unit.app Δ[p]).app (op ⦋n⦌) a) w =
+      SSet.toTop.map (SSet.stdSimplex.map (SSet.stdSimplex.objEquiv a)) (⦋n⦌.toTopHomeo.symm w)
+    from ConcreteCategory.congr_hom hunit (ULift.up w),
+    toTopHomeo_naturality_apply, Homeomorph.apply_symm_apply]
+
+/-- The inverse of `SimplexCategory.toTopHomeo p` sends `s` to the point of the identity simplex
+with barycentric coordinates `s`. -/
+theorem toTopHomeo_symm_apply {p : SimplexCategory} (s : StdSimplex ℝ (Fin (p.len + 1))) :
+    p.toTopHomeo.symm s = SSet.toTopObjMk (SSet.stdSimplex.objEquiv.symm (𝟙 p)) s := by
+  apply p.toTopHomeo.injective
+  rw [Homeomorph.apply_symm_apply, toTopHomeo_toTopObjMk, Equiv.apply_symm_apply]
+  exact (StdSimplex.map_id s).symm
+
+end SimplexCategory
 
 namespace Topology.IsInducing
 

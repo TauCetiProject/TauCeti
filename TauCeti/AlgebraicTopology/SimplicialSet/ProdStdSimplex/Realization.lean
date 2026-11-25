@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialSet.PrismRealization
+public import Mathlib.AlgebraicTopology.SimplicialSet.ProdStdSimplex
+public import Mathlib.CategoryTheory.Monoidal.Cartesian.Basic
+public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
+public import TauCeti.Geometry.Convex.ConvexSpace.Coupling
 
 import Mathlib.Order.Fin.Prod
 import TauCeti.AlgebraicTopology.SimplicialSet.ProdStdSimplex.Basic
+import TauCeti.Data.Set.Function
 
 /-!
 # Geometric realization of binary products of standard simplices
@@ -20,28 +24,24 @@ standard topological simplices `StdSimplex ℝ (Fin (p + 1)) × StdSimplex ℝ (
 Geometrically, the Eilenberg–Zilber shuffle simplices — the nondegenerate `(p + q)`-simplices of
 `Δ[p] ⊗ Δ[q]` — triangulate the product `StdSimplex ℝ (Fin (p + 1)) × StdSimplex ℝ (Fin (q + 1))`.
 Rather than enumerating shuffle paths directly, we describe the inverse map intrinsically via the
-comonotone (or Fréchet–Hoeffding) coupling of barycentric weight distributions:
+comonotone coupling `Convexity.StdSimplex.coupling` of barycentric weight distributions:
 
-* Given `s : StdSimplex ℝ (Fin (p + 1))` and `t : StdSimplex ℝ (Fin (q + 1))`, the weight assigned
-  to a vertex `(i, j) : Fin (p + 1) × Fin (q + 1)` is the length of the intersection of the
-  cumulative-weight intervals `[s₀ + ⋯ + s_(i-1), s₀ + ⋯ + s_i]` and
-  `[t₀ + ⋯ + t_(j-1), t₀ + ⋯ + t_j]`.
-* The sum of these weights over any lower rectangle `Finset.Iic (i, j)` telescopes to
-  `min (prefixSum (i + 1) s.weights) (prefixSum (j + 1) t.weights)`, showing both that the coupling
-  has marginals `s` and `t` and that every simplex `x` of `Δ[p] ⊗ Δ[q]` pushes any barycentric
-  weight `w` forward to the coupling of its two marginals (`map_objEquiv_eq_coupling`).
-* Because overlapping subintervals of `[0, 1]` are linearly ordered when neither can skip past the
-  other in both coordinates, the support of the coupling is a chain in
-  `Fin (p + 1) × Fin (q + 1)`, hence lies in the vertex set of a nondegenerate `(p + q)`-simplex
-  of `Δ[p] ⊗ Δ[q]` by `SSet.prodStdSimplex.exists_nonDegenerate_max_dim`.
+* Every point `SSet.toTopObjMk x w` of `|Δ[p] ⊗ Δ[q]|` is uniquely determined by the pushforward
+  `w.map (SSet.prodStdSimplex.objEquiv x)` of its barycentric coordinates to the vertices
+  `Fin (p + 1) × Fin (q + 1)` (`SSet.prodStdSimplex.toTopObjMk_eq_of_map_eq`).
+* Every simplex `x` of `Δ[p] ⊗ Δ[q]` pushes `w` forward to the comonotone coupling of its two
+  coordinate marginals (`Convexity.StdSimplex.map_prodMk_eq_coupling`).
+* Because the support of `s.coupling t` is a chain in `Fin (p + 1) × Fin (q + 1)`
+  (`Convexity.StdSimplex.isChain_support_coupling`), it lies in the vertex set of a nondegenerate
+  `(p + q)`-simplex of `Δ[p] ⊗ Δ[q]` by `SSet.prodStdSimplex.exists_nonDegenerate_max_dim`.
 * Gluing over the finitely many closed pieces indexed by the nondegenerate `(p + q)`-simplices via
   `SSet.prodStdSimplex.toTopObjMk_eq_of_map_eq` yields the continuous inverse
   `SSet.prodStdSimplex.triangulate`.
 
 ## Main declarations
 
-* `SimplexCategory.toTopHomeo_toTopObjMk`: `⦋p⦌.toTopHomeo` sends `SSet.toTopObjMk a w` to
-  `w.map (SSet.stdSimplex.objEquiv a)`.
+* `SSet.prodStdSimplex.toTopObjMk_eq_of_map_eq`: points of `|Δ[p] ⊗ Δ[q]|` are determined by their
+  barycentric coordinates on the vertices `Fin (p + 1) × Fin (q + 1)`.
 * `SSet.prodStdSimplex.triangulate`: the continuous triangulation map
   `C(StdSimplex ℝ (Fin (p + 1)) × StdSimplex ℝ (Fin (q + 1)), |Δ[p] ⊗ Δ[q]|)`.
 * `SSet.prodStdSimplex.toTopHomeo`: the homeomorphism
@@ -60,321 +60,152 @@ comonotone (or Fréchet–Hoeffding) coupling of barycentric weight distribution
 public section
 
 open CategoryTheory Limits MonoidalCategory Opposite Convexity Simplicial
-open TauCeti (prefixSum)
 
 universe u
 
-namespace SimplexCategory
-
-/-- Under `SimplexCategory.toTopHomeo`, the point `SSet.toTopObjMk a w` of `|Δ[p]|` determined by an
-`n`-simplex `a` and barycentric coordinates `w` corresponds to pushing `w` forward along the vertex
-map of `a`. -/
-@[simp]
-theorem toTopHomeo_toTopObjMk {p n : ℕ} (a : (Δ[p] : SSet.{u}) _⦋n⦌)
-    (w : StdSimplex ℝ (Fin (n + 1))) :
-    ⦋p⦌.toTopHomeo (SSet.toTopObjMk a w) = w.map (SSet.stdSimplex.objEquiv a) := by
-  have hunit := sSetTopAdj_unit_app_app_down Δ[p] (op ⦋n⦌) a
-  rw [SSet.yonedaEquiv.symm_apply_eq.2
-    (by rw [SSet.yonedaEquiv_map, Equiv.symm_apply_apply])] at hunit
-  -- Evaluate `hunit` at `ULift.up w` to identify `toTopObjMk a w`.
-  rw [SSet.toTopObjMk_def,
-    show TopCat.toSSetObjEquiv _ _ ((sSetTopAdj.unit.app Δ[p]).app (op ⦋n⦌) a) w =
-      SSet.toTop.map (SSet.stdSimplex.map (SSet.stdSimplex.objEquiv a)) (⦋n⦌.toTopHomeo.symm w)
-    from ConcreteCategory.congr_hom hunit (ULift.up w),
-    toTopHomeo_naturality_apply, Homeomorph.apply_symm_apply]
-
-/-- The inverse of `SimplexCategory.toTopHomeo ⦋p⦌` sends `s` to the point of the identity
-`p`-simplex with barycentric coordinates `s`. -/
-theorem toTopHomeo_symm_apply {p : ℕ} (s : StdSimplex ℝ (Fin (p + 1))) :
-    ⦋p⦌.toTopHomeo.symm s = SSet.toTopObjMk (SSet.stdSimplex.objEquiv.symm (𝟙 ⦋p⦌)) s := by
-  apply ⦋p⦌.toTopHomeo.injective
-  rw [Homeomorph.apply_symm_apply, toTopHomeo_toTopObjMk, Equiv.apply_symm_apply]
-  exact (StdSimplex.map_id s).symm
-
-end SimplexCategory
-
-namespace SSet
-
-/-- The geometric realization of a standard simplex is compact. -/
-instance stdSimplex.instCompactSpaceToTopObj (p : ℕ) : CompactSpace |(Δ[p] : SSet.{u})| :=
-  ⦋p⦌.toTopHomeo.symm.compactSpace
-
-/-- The geometric realization of a standard simplex is Hausdorff. -/
-instance stdSimplex.instT2SpaceToTopObj (p : ℕ) : T2Space |(Δ[p] : SSet.{u})| :=
-  ⦋p⦌.toTopHomeo.symm.t2Space
-
-namespace prodStdSimplex
+namespace SSet.prodStdSimplex
 
 variable {p q : ℕ}
 
-/-- The length of the intersection `[a, a'] ∩ [b, b']` of two intervals `a ≤ a'` and `b ≤ b'`
-equals the two-dimensional difference of `(u, v) ↦ min u v` across `[a, a'] × [b, b']`. -/
-private lemma max_zero_min_sub_max {a a' b b' : ℝ} (ha : a ≤ a') (hb : b ≤ b') :
-    max 0 (min a' b' - max a b) = min a' b' - min a b' - min a' b + min a b := by
-  rcases le_total a' b with h₁ | h₁
-  · have h₂ : a ≤ b := ha.trans h₁
-    have h₃ : a' ≤ b' := h₁.trans hb
-    have h₄ : a ≤ b' := ha.trans h₃
-    have h₅ : a' - b ≤ 0 := sub_nonpos.2 h₁
-    simp only [min_eq_left, max_eq_left, max_eq_right, h₁, h₂, h₃, h₄, h₅]
-    ring
-  · rcases le_total b' a with h₂ | h₂
-    · have h₃ : b ≤ a := hb.trans h₂
-      have h₄ : b' ≤ a' := h₂.trans ha
-      have h₅ : b ≤ a' := hb.trans h₄
-      have h₆ : b' - a ≤ 0 := sub_nonpos.2 h₂
-      simp only [min_eq_right, max_eq_left, h₂, h₃, h₄, h₅, h₆]
-      ring
-    · have hmax : 0 ≤ min a' b' - max a b := sub_nonneg.2 (max_le (le_min ha h₂) (le_min h₁ hb))
-      simp only [max_eq_right hmax, min_eq_left h₂, min_eq_right h₁]
-      linarith [min_add_max a b]
+/-- Every point of the realization of a simplex of `Δ[p] ⊗ Δ[q]` is the point, with nowhere
+vanishing coordinates, of a simplex with injective vertex map, with the same distribution of
+coordinates on the vertices. -/
+private lemma exists_injective_toTopObjMk_eq {n : ℕ} (x : (Δ[p] ⊗ Δ[q] : SSet.{u}) _⦋n⦌)
+    (w : StdSimplex ℝ (Fin (n + 1))) :
+    ∃ (r : ℕ) (y : (Δ[p] ⊗ Δ[q] : SSet.{u}) _⦋r⦌) (w' : StdSimplex ℝ (Fin (r + 1))),
+      Function.Injective (objEquiv y) ∧ (∀ j, w'.weights j ≠ 0) ∧
+      toTopObjMk x w = toTopObjMk y w' ∧
+      StdSimplex.map (objEquiv x) w = StdSimplex.map (objEquiv y) w' := by
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+  by_cases h0 : ∃ j, w.weights j = 0
+  · -- Pass to the face opposite a vertex with vanishing coordinate.
+    obtain ⟨j, hj⟩ := h0
+    obtain _ | n := n
+    · simp at hj
+    have hsupp : Set.BijOn j.succAbove (j.succAbove ⁻¹' ↑w.weights.support) ↑w.weights.support :=
+      Set.bijOn_preimage_iff.2 ⟨Fin.succAbove_right_injective.injOn, by
+        simp [Fin.range_succAbove, Set.subset_compl_singleton_iff, hj]⟩
+    obtain ⟨r, y, w'', hy, hw'', h₁, h₂⟩ :=
+      ih n (by lia) ((Δ[p] ⊗ Δ[q]).δ j x) (StdSimplex.comap w hsupp)
+    refine ⟨r, y, w'', hy, hw'', ?_, ?_⟩
+    · rw [← h₁, SimplicialObject.δ, toTopObjMk_map]
+      exact congrArg _ (StdSimplex.map_comap w hsupp).symm
+    · rw [← h₂]
+      conv_lhs => rw [← StdSimplex.map_comap w hsupp]
+      rw [StdSimplex.map_map, objEquiv_δ, Function.comp_def]
+  · push Not at h0
+    by_cases hi : Function.Injective (objEquiv x)
+    · exact ⟨n, x, w, hi, h0, rfl, rfl⟩
+    -- Pass to a degeneracy of the face opposite a repeated vertex.
+    obtain _ | n := n
+    · exact absurd (fun a b _ ↦ Fin.ext (by have := a.isLt; have := b.isLt; lia)) hi
+    obtain ⟨j, hj⟩ : ∃ j : Fin (n + 1), objEquiv x j.castSucc = objEquiv x j.succ := by
+      have h : ¬ StrictMono (objEquiv x) := fun h ↦ hi h.injective
+      rw [Fin.strictMono_iff_lt_succ] at h
+      push Not at h
+      obtain ⟨j, hj⟩ := h
+      exact ⟨j, ((objEquiv x).monotone (Fin.castSucc_le_succ j)).eq_of_not_lt hj⟩
+    have hx := (σ_δ_succ_of_eq x j hj).symm
+    obtain ⟨r, y, w'', hy, hw'', h₁, h₂⟩ :=
+      ih n (by lia) ((Δ[p] ⊗ Δ[q]).δ j.succ x) (StdSimplex.map j.predAbove w)
+    refine ⟨r, y, w'', hy, hw'', ?_, ?_⟩
+    · rw [← h₁]
+      conv_lhs => rw [hx]
+      rw [SimplicialObject.σ, toTopObjMk_map, SimplexCategory.coe_σ]
+    · rw [← h₂, StdSimplex.map_map]
+      conv_lhs => rw [hx]
+      rw [objEquiv_σ, Function.comp_def]
 
-/-- The comonotone coupling weights on `Fin (p + 1) × Fin (q + 1)` associated to barycentric
-coordinates `s` on `Fin (p + 1)` and `t` on `Fin (q + 1)`: the overlap length of the `i`th
-cumulative-weight interval of `s` with the `j`th cumulative-weight interval of `t`. -/
-private noncomputable def couplingWeights (s : StdSimplex ℝ (Fin (p + 1)))
-    (t : StdSimplex ℝ (Fin (q + 1))) (x : Fin (p + 1) × Fin (q + 1)) : ℝ :=
-  max 0 (min (prefixSum (x.1.val + 1) s.weights) (prefixSum (x.2.val + 1) t.weights) -
-    max (prefixSum x.1.val s.weights) (prefixSum x.2.val t.weights))
+/-- Two points of the realizations of simplices of `Δ[p] ⊗ Δ[q]` with injective vertex maps and
+nowhere vanishing coordinates agree if their coordinates have the same distribution on the
+vertices. -/
+private lemma toTopObjMk_eq_of_injective {r r' : ℕ} {y : (Δ[p] ⊗ Δ[q] : SSet.{u}) _⦋r⦌}
+    {y' : (Δ[p] ⊗ Δ[q] : SSet.{u}) _⦋r'⦌} {w : StdSimplex ℝ (Fin (r + 1))}
+    {w' : StdSimplex ℝ (Fin (r' + 1))} (hy : Function.Injective (objEquiv y))
+    (hy' : Function.Injective (objEquiv y')) (hw : ∀ j, w.weights j ≠ 0)
+    (hw' : ∀ j, w'.weights j ≠ 0)
+    (h : StdSimplex.map (objEquiv y) w = StdSimplex.map (objEquiv y') w') :
+    toTopObjMk y w = toTopObjMk y' w' := by
+  classical
+  have hsupp {r : ℕ} (w : StdSimplex ℝ (Fin (r + 1))) (hw : ∀ j, w.weights j ≠ 0) :
+      w.weights.support = Finset.univ :=
+    Finset.eq_univ_iff_forall.2 fun j ↦ by simpa using hw j
+  have himage : Finset.univ.image (objEquiv y) = Finset.univ.image (objEquiv y') := by
+    have := congrArg (fun w ↦ w.weights.support) h
+    simpa only [StdSimplex.weights_map, Finsupp.mapDomain_support_of_injective hy,
+      Finsupp.mapDomain_support_of_injective hy', hsupp w hw, hsupp w' hw'] using this
+  obtain rfl : r = r' := by
+    simpa [Finset.card_image_of_injective _ hy, Finset.card_image_of_injective _ hy'] using
+      congrArg Finset.card himage
+  have hmono {y : (Δ[p] ⊗ Δ[q] : SSet.{u}) _⦋r⦌} (hy : Function.Injective (objEquiv y)) :
+      StrictMono (toLex ∘ objEquiv y) :=
+    (Prod.Lex.toLex_mono.comp (objEquiv y).monotone).strictMono_of_injective
+      (toLex.injective.comp hy)
+  have hrange : Set.range (toLex ∘ objEquiv y) = Set.range (toLex ∘ objEquiv y') := by
+    have : Set.range (objEquiv y) = Set.range (objEquiv y') := by
+      rw [← Set.image_univ, ← Set.image_univ, ← Finset.coe_univ, ← Finset.coe_image,
+        ← Finset.coe_image, himage]
+    rw [Set.range_comp, Set.range_comp, this]
+  obtain rfl : y = y' := by
+    apply objEquiv.injective
+    refine OrderHom.ext _ _ (funext fun k ↦ ?_)
+    exact toLex.injective
+      (congrFun ((StrictMono.range_inj_of_wellFoundedLT (hmono hy) (hmono hy')).1 hrange) k)
+  obtain rfl : w = w' := by
+    rw [← StdSimplex.weights_inj, StdSimplex.weights_map, StdSimplex.weights_map] at h
+    exact (StdSimplex.weights_inj).1 (Finsupp.mapDomain_injective hy h)
+  rfl
 
-@[fun_prop]
-private lemma continuous_couplingWeights (x : Fin (p + 1) × Fin (q + 1)) :
-    Continuous fun z : StdSimplex ℝ (Fin (p + 1)) × StdSimplex ℝ (Fin (q + 1)) ↦
-      couplingWeights z.1 z.2 x := by
-  unfold couplingWeights
-  fun_prop
-
-private lemma couplingWeights_eq_sub (s : StdSimplex ℝ (Fin (p + 1)))
-    (t : StdSimplex ℝ (Fin (q + 1))) (i : Fin (p + 1)) (j : Fin (q + 1)) :
-    couplingWeights s t (i, j) =
-      (min (prefixSum (i.val + 1) s.weights) (prefixSum (j.val + 1) t.weights) -
-        min (prefixSum i.val s.weights) (prefixSum (j.val + 1) t.weights)) -
-      (min (prefixSum (i.val + 1) s.weights) (prefixSum j.val t.weights) -
-        min (prefixSum i.val s.weights) (prefixSum j.val t.weights)) := by
-  have h := max_zero_min_sub_max
-    (TauCeti.monotone_prefixSum s.nonneg (Nat.le_succ i.val))
-    (TauCeti.monotone_prefixSum t.nonneg (Nat.le_succ j.val))
-  unfold couplingWeights
-  linarith
-
-/-- Summing `couplingWeights s t` over a lower rectangle `{i | i < K} × {j | j < L}` telescopes in
-both coordinates to `min (prefixSum K s.weights) (prefixSum L t.weights)`. -/
-private lemma sum_couplingWeights_lt (s : StdSimplex ℝ (Fin (p + 1)))
-    (t : StdSimplex ℝ (Fin (q + 1))) (K L : ℕ) :
-    (∑ i : Fin (p + 1) with i.val < K, ∑ j : Fin (q + 1) with j.val < L,
-      couplingWeights s t (i, j)) =
-      min (prefixSum K s.weights) (prefixSum L t.weights) := by
-  have hinner (i : Fin (p + 1)) :
-      (∑ j : Fin (q + 1) with j.val < L, couplingWeights s t (i, j)) =
-        min (prefixSum (i.val + 1) s.weights) (prefixSum L t.weights) -
-          min (prefixSum i.val s.weights) (prefixSum L t.weights) := by
-    simp_rw [couplingWeights_eq_sub]
-    rw [TauCeti.sum_sub_prefixSum
-      (fun v ↦ min (prefixSum (i.val + 1) s.weights) v - min (prefixSum i.val s.weights) v)
-      L t.weights]
-    simp [min_eq_right (StdSimplex.prefixSum_weights_nonneg s _)]
-  simp_rw [hinner]
-  rw [TauCeti.sum_sub_prefixSum (fun u ↦ min u (prefixSum L t.weights)) K s.weights]
-  simp [min_eq_left (StdSimplex.prefixSum_weights_nonneg t _)]
-
-private lemma sum_couplingWeights_lt_univ_right (s : StdSimplex ℝ (Fin (p + 1)))
-    (t : StdSimplex ℝ (Fin (q + 1))) (K : ℕ) :
-    (∑ i : Fin (p + 1) with i.val < K, ∑ j : Fin (q + 1), couplingWeights s t (i, j)) =
-      prefixSum K s.weights := by
-  have h := sum_couplingWeights_lt s t K (q + 1)
-  have hj : (Finset.univ.filter fun j : Fin (q + 1) ↦ j.val < q + 1) = Finset.univ :=
-    Finset.filter_true_of_mem fun j _ ↦ j.isLt
-  simp_rw [hj] at h
-  rwa [TauCeti.prefixSum_of_le le_rfl, StdSimplex.total_of_fintype,
-    min_eq_left (StdSimplex.prefixSum_weights_le_one s K)] at h
-
-private lemma sum_couplingWeights_lt_univ_left (s : StdSimplex ℝ (Fin (p + 1)))
-    (t : StdSimplex ℝ (Fin (q + 1))) (L : ℕ) :
-    (∑ i : Fin (p + 1), ∑ j : Fin (q + 1) with j.val < L, couplingWeights s t (i, j)) =
-      prefixSum L t.weights := by
-  have h := sum_couplingWeights_lt s t (p + 1) L
-  have hi : (Finset.univ.filter fun i : Fin (p + 1) ↦ i.val < p + 1) = Finset.univ :=
-    Finset.filter_true_of_mem fun i _ ↦ i.isLt
-  simp_rw [hi] at h
-  rwa [TauCeti.prefixSum_of_le le_rfl, StdSimplex.total_of_fintype,
-    min_eq_right (StdSimplex.prefixSum_weights_le_one t L)] at h
-
-private lemma sum_couplingWeights (s : StdSimplex ℝ (Fin (p + 1)))
-    (t : StdSimplex ℝ (Fin (q + 1))) :
-    ∑ x, couplingWeights s t x = 1 := by
-  have h := sum_couplingWeights_lt_univ_right s t (p + 1)
-  have hi : (Finset.univ.filter fun i : Fin (p + 1) ↦ i.val < p + 1) = Finset.univ :=
-    Finset.filter_true_of_mem fun i _ ↦ i.isLt
-  rw [hi, TauCeti.prefixSum_of_le le_rfl, StdSimplex.total_of_fintype] at h
-  rwa [Fintype.sum_prod_type]
-
-/-- The comonotone coupling of `s : StdSimplex ℝ (Fin (p + 1))` and
-`t : StdSimplex ℝ (Fin (q + 1))` as a point of `StdSimplex ℝ (Fin (p + 1) × Fin (q + 1))`. -/
-private noncomputable def coupling (s : StdSimplex ℝ (Fin (p + 1)))
-    (t : StdSimplex ℝ (Fin (q + 1))) : StdSimplex ℝ (Fin (p + 1) × Fin (q + 1)) where
-  weights := Finsupp.equivFunOnFinite.symm (couplingWeights s t)
-  nonneg _ := le_max_left 0 _
-  total := by
-    rw [Finsupp.sum_fintype _ _ (by simp)]
-    exact sum_couplingWeights s t
-
-private lemma coupling_weights (s : StdSimplex ℝ (Fin (p + 1)))
-    (t : StdSimplex ℝ (Fin (q + 1))) (x : Fin (p + 1) × Fin (q + 1)) :
-    (coupling s t).weights x = couplingWeights s t x :=
-  (rfl)
-
-private lemma sum_Iic_coupling (s : StdSimplex ℝ (Fin (p + 1)))
-    (t : StdSimplex ℝ (Fin (q + 1))) (u : Fin (p + 1) × Fin (q + 1)) :
-    (∑ x ∈ Finset.Iic u, (coupling s t).weights x) =
-      min (prefixSum (u.1.val + 1) s.weights) (prefixSum (u.2.val + 1) t.weights) := by
-  rw [← sum_couplingWeights_lt s t (u.1.val + 1) (u.2.val + 1), ← Finset.sum_product']
-  refine Finset.sum_congr ?_ fun _ _ ↦ rfl
-  ext ⟨i, j⟩
-  simp only [Finset.mem_Iic, Prod.le_def, Finset.mem_product, Finset.mem_filter,
-    Finset.mem_univ, true_and, Fin.le_def]
-  omega
-
-/-- The first marginal of `coupling s t` is `s`. -/
-private lemma map_fst_coupling (s : StdSimplex ℝ (Fin (p + 1)))
-    (t : StdSimplex ℝ (Fin (q + 1))) :
-    (coupling s t).map Prod.fst = s := by
-  rw [← StdSimplex.weights_inj, DFunLike.ext_iff, ← funext_iff]
-  refine TauCeti.eq_of_forall_prefixSum_eq fun K ↦ ?_
-  rw [TauCeti.prefixSum_def, StdSimplex.sum_filter_weights_map Prod.fst (coupling s t)
-    (fun i ↦ i.val < K)]
-  have h : (Finset.univ.filter fun x : Fin (p + 1) × Fin (q + 1) ↦ x.1.val < K) =
-      (Finset.univ.filter fun i : Fin (p + 1) ↦ i.val < K) ×ˢ Finset.univ := by
-    ext ⟨i, j⟩
-    simp
-  rw [h, Finset.sum_product]
-  exact sum_couplingWeights_lt_univ_right s t K
-
-/-- The second marginal of `coupling s t` is `t`. -/
-private lemma map_snd_coupling (s : StdSimplex ℝ (Fin (p + 1)))
-    (t : StdSimplex ℝ (Fin (q + 1))) :
-    (coupling s t).map Prod.snd = t := by
-  rw [← StdSimplex.weights_inj, DFunLike.ext_iff, ← funext_iff]
-  refine TauCeti.eq_of_forall_prefixSum_eq fun L ↦ ?_
-  rw [TauCeti.prefixSum_def, StdSimplex.sum_filter_weights_map Prod.snd (coupling s t)
-    (fun j ↦ j.val < L)]
-  have h : (Finset.univ.filter fun x : Fin (p + 1) × Fin (q + 1) ↦ x.2.val < L) =
-      Finset.univ ×ˢ (Finset.univ.filter fun j : Fin (q + 1) ↦ j.val < L) := by
-    ext ⟨i, j⟩
-    simp
-  rw [h, Finset.sum_product]
-  exact sum_couplingWeights_lt_univ_left s t L
-
-/-- For a morphism `f : ⦋n⦌ ⟶ ⦋m⦌` in `SimplexCategory`, the preimage of `{i | i < N}` is an
-initial segment `{k | k < a}` whose prefix sum equals `prefixSum N (w.map f).weights`. -/
-private lemma exists_lt_iff_and_prefixSum_map {n m : ℕ} (f : ⦋n⦌ ⟶ ⦋m⦌)
-    (w : StdSimplex ℝ (Fin (n + 1))) (N : ℕ) :
-    ∃ a : ℕ, (∀ k : Fin (n + 1), (f k).val < N ↔ k.val < a) ∧
-      prefixSum N (w.map f).weights = prefixSum a w.weights := by
-  have hs : IsLowerSet {k | (f k).val < N} := fun _ _ h hk ↦
-    (Fin.le_def.1 (f.toOrderHom.monotone h)).trans_lt hk
-  obtain ⟨a, ha⟩ : ∃ a : ℕ, ∀ k : Fin (n + 1), (f k).val < N ↔ k.val < a := by
-    rcases hs.eq_univ_or_Iio with h | ⟨a, h⟩
-    · exact ⟨n + 1, fun k ↦ ⟨fun _ ↦ k.isLt, fun _ ↦ (Set.ext_iff.1 h k).2 (Set.mem_univ k)⟩⟩
-    · exact ⟨a, fun k ↦ (Set.ext_iff.1 h k).trans (Set.mem_Iio.trans Fin.lt_def)⟩
-  refine ⟨a, ha, ?_⟩
-  rw [TauCeti.prefixSum_def, StdSimplex.sum_filter_weights_map f w (fun i ↦ i.val < N),
-    TauCeti.prefixSum_def]
-  exact Finset.sum_congr (Finset.filter_congr fun k _ ↦ ha k) fun _ _ ↦ rfl
+/-- A point of the geometric realization of `Δ[p] ⊗ Δ[q]` is determined by the distribution of its
+barycentric coordinates on the vertices `Fin (p + 1) × Fin (q + 1)`: the points of two simplices
+agree when their coordinates push forward to the same coordinates on the vertices. -/
+theorem toTopObjMk_eq_of_map_eq {n n' : ℕ} {x : (Δ[p] ⊗ Δ[q] : SSet.{u}) _⦋n⦌}
+    {x' : (Δ[p] ⊗ Δ[q] : SSet.{u}) _⦋n'⦌} {w : StdSimplex ℝ (Fin (n + 1))}
+    {w' : StdSimplex ℝ (Fin (n' + 1))}
+    (h : StdSimplex.map (objEquiv x) w = StdSimplex.map (objEquiv x') w') :
+    toTopObjMk x w = toTopObjMk x' w' := by
+  obtain ⟨r, y, v, hy, hv, h₁, h₂⟩ := exists_injective_toTopObjMk_eq x w
+  obtain ⟨r', y', v', hy', hv', h₁', h₂'⟩ := exists_injective_toTopObjMk_eq x' w'
+  rw [h₁, h₁']
+  exact toTopObjMk_eq_of_injective hy hy' hv hv' (h₂.symm.trans (h.trans h₂'))
 
 /-- Any simplex `x` of `Δ[p] ⊗ Δ[q]` pushes barycentric weights `w` forward to the comonotone
 coupling of the two coordinate marginals of `w`. -/
 private lemma map_objEquiv_eq_coupling {n : ℕ} (x : (Δ[p] : SSet.{u}) _⦋n⦌ ⊗ Δ[q] _⦋n⦌)
     (w : StdSimplex ℝ (Fin (n + 1))) :
     w.map (objEquiv x) =
-      coupling (w.map (stdSimplex.objEquiv x.1)) (w.map (stdSimplex.objEquiv x.2)) := by
-  have hzero : (fun u ↦ (w.map (objEquiv x)).weights u -
-      (coupling (w.map (stdSimplex.objEquiv x.1)) (w.map (stdSimplex.objEquiv x.2))).weights u) =
-      0 :=
-    TauCeti.eq_zero_of_forall_sum_Iic_eq_zero fun u ↦ by
-      simp only [Finset.sum_sub_distrib, sub_eq_zero]
-      rw [sum_Iic_coupling]
-      obtain ⟨a, ha, hpa⟩ :=
-        exists_lt_iff_and_prefixSum_map (stdSimplex.objEquiv x.1) w (u.1.val + 1)
-      obtain ⟨b, hb, hpb⟩ :=
-        exists_lt_iff_and_prefixSum_map (stdSimplex.objEquiv x.2) w (u.2.val + 1)
-      have hIic :
-          Finset.Iic u = Finset.univ.filter (fun z : Fin (p + 1) × Fin (q + 1) ↦ z ≤ u) := by
-        ext z
-        simp
-      rw [hIic, StdSimplex.sum_filter_weights_map (objEquiv x) w (fun z ↦ z ≤ u), hpa, hpb,
-        ← (TauCeti.monotone_prefixSum w.nonneg).map_min, TauCeti.prefixSum_def]
-      refine Finset.sum_congr (Finset.filter_congr fun k _ ↦ ?_) fun _ _ ↦ rfl
-      simp only [Prod.le_def, objEquiv_apply_fst, objEquiv_apply_snd, Fin.le_def, lt_min_iff]
-      exact ⟨fun ⟨h₁, h₂⟩ ↦ ⟨(ha k).1 (Nat.lt_succ_of_le h₁), (hb k).1 (Nat.lt_succ_of_le h₂)⟩,
-        fun ⟨h₁, h₂⟩ ↦ ⟨Nat.le_of_lt_succ ((ha k).2 h₁), Nat.le_of_lt_succ ((hb k).2 h₂)⟩⟩
-  ext u
-  exact sub_eq_zero.1 (congrFun hzero u)
-
-/-- If two overlapping cumulative-weight intervals separate in one coordinate (`v < u`), then they
-are ordered in the same direction in the other coordinate. -/
-private lemma coord_le_of_lt {m n : ℕ} {s : StdSimplex ℝ (Fin (m + 1))}
-    {t : StdSimplex ℝ (Fin (n + 1))} {u₁ v₁ : Fin (m + 1)} {u₂ v₂ : Fin (n + 1)}
-    (hu : max (prefixSum u₁.val s.weights) (prefixSum u₂.val t.weights) <
-      min (prefixSum (u₁.val + 1) s.weights) (prefixSum (u₂.val + 1) t.weights))
-    (hv : max (prefixSum v₁.val s.weights) (prefixSum v₂.val t.weights) <
-      min (prefixSum (v₁.val + 1) s.weights) (prefixSum (v₂.val + 1) t.weights))
-    (h₁ : v₁ < u₁) : v₂ ≤ u₂ := by
-  have hstep : prefixSum (v₁.val + 1) s.weights ≤ prefixSum u₁.val s.weights :=
-    TauCeti.monotone_prefixSum s.nonneg (Nat.succ_le_of_lt h₁)
-  have hlt : prefixSum v₂.val t.weights < prefixSum (u₂.val + 1) t.weights := by
-    linarith [le_max_right (prefixSum v₁.val s.weights) (prefixSum v₂.val t.weights),
-      min_le_left (prefixSum (v₁.val + 1) s.weights) (prefixSum (v₂.val + 1) t.weights),
-      le_max_left (prefixSum u₁.val s.weights) (prefixSum u₂.val t.weights),
-      min_le_right (prefixSum (u₁.val + 1) s.weights) (prefixSum (u₂.val + 1) t.weights)]
-  by_contra! h₂
-  exact not_le_of_gt hlt (TauCeti.monotone_prefixSum t.nonneg (Nat.succ_le_of_lt h₂))
-
-/-- The support of `coupling s t` is a chain in `Fin (p + 1) × Fin (q + 1)`. -/
-private lemma isChain_support_coupling (s : StdSimplex ℝ (Fin (p + 1)))
-    (t : StdSimplex ℝ (Fin (q + 1))) :
-    IsChain (· ≤ ·) ((coupling s t).weights.support : Set (Fin (p + 1) × Fin (q + 1))) := by
-  intro u hu v hv _
-  simp only [Finset.mem_coe, Finsupp.mem_support_iff, coupling_weights] at hu hv
-  have hu' : max (prefixSum u.1.val s.weights) (prefixSum u.2.val t.weights) <
-      min (prefixSum (u.1.val + 1) s.weights) (prefixSum (u.2.val + 1) t.weights) := by
-    by_contra! h
-    exact hu (max_eq_left (sub_nonpos.2 h))
-  have hv' : max (prefixSum v.1.val s.weights) (prefixSum v.2.val t.weights) <
-      min (prefixSum (v.1.val + 1) s.weights) (prefixSum (v.2.val + 1) t.weights) := by
-    by_contra! h
-    exact hv (max_eq_left (sub_nonpos.2 h))
-  by_cases hle : u ≤ v
-  · exact Or.inl hle
-  · refine Or.inr ?_
-    rw [Prod.le_def, not_and_or] at hle
-    rcases hle with h₁ | h₂
-    · exact ⟨(not_le.1 h₁).le, coord_le_of_lt hu' hv' (not_le.1 h₁)⟩
-    · refine ⟨coord_le_of_lt (s := t) (t := s) ?_ ?_ (not_le.1 h₂), (not_le.1 h₂).le⟩
-      · rwa [max_comm, min_comm]
-      · rwa [max_comm, min_comm]
+      (w.map (stdSimplex.objEquiv x.1)).coupling (w.map (stdSimplex.objEquiv x.2)) := by
+  have hfn : ⇑(objEquiv x) =
+      fun i ↦ (stdSimplex.objEquiv x.1 i, stdSimplex.objEquiv x.2 i) :=
+    funext fun i ↦ Prod.ext (objEquiv_apply_fst x i) (objEquiv_apply_snd x i)
+  rw [hfn]
+  exact w.map_prodMk_eq_coupling
+    (stdSimplex.objEquiv x.1).toOrderHom.monotone
+    (stdSimplex.objEquiv x.2).toOrderHom.monotone
 
 /-- The closed piece of `StdSimplex ℝ (Fin (p + 1)) × StdSimplex ℝ (Fin (q + 1))` covered by a
 nondegenerate `(p + q)`-simplex `σ` of `Δ[p] ⊗ Δ[q]`. -/
 private def piece (σ : (Δ[p] ⊗ Δ[q] : SSet.{u}).nonDegenerate (p + q)) :
     Set (StdSimplex ℝ (Fin (p + 1)) × StdSimplex ℝ (Fin (q + 1))) :=
-  {z | ∀ x ∉ Set.range (objEquiv σ.val), couplingWeights z.1 z.2 x = 0}
+  {z | ∀ x ∉ Set.range (objEquiv σ.val), z.1.couplingWeights z.2 x = 0}
 
 private lemma isClosed_piece (σ : (Δ[p] ⊗ Δ[q] : SSet.{u}).nonDegenerate (p + q)) :
     IsClosed (piece σ) := by
   have h : piece σ = ⋂ (x : Fin (p + 1) × Fin (q + 1)) (_ : x ∉ Set.range (objEquiv σ.val)),
-      {z | couplingWeights z.1 z.2 x = 0} := by
+      {z | z.1.couplingWeights z.2 x = 0} := by
     ext z
     simp [piece]
   rw [h]
   exact isClosed_iInter fun x ↦ isClosed_iInter fun _ ↦
-    isClosed_eq (continuous_couplingWeights x) continuous_const
+    isClosed_eq (StdSimplex.continuous_couplingWeights x) continuous_const
 
 private lemma support_coupling_subset {σ : (Δ[p] ⊗ Δ[q] : SSet.{u}).nonDegenerate (p + q)}
     {z : StdSimplex ℝ (Fin (p + 1)) × StdSimplex ℝ (Fin (q + 1))} (hz : z ∈ piece σ) :
-    ↑(coupling z.1 z.2).weights.support ⊆ Set.range (objEquiv σ.val) := by
+    ↑(z.1.coupling z.2).weights.support ⊆ Set.range (objEquiv σ.val) := by
   intro x hx
   by_contra hnot
-  exact Finsupp.mem_support_iff.1 hx (hz x hnot)
+  exact Finsupp.mem_support_iff.1 hx ((StdSimplex.coupling_weights z.1 z.2 x).trans (hz x hnot))
 
 /-- Every point of the product of standard simplices lies in `piece σ` for some nondegenerate
 `(p + q)`-simplex `σ`. -/
@@ -382,14 +213,8 @@ private lemma exists_mem_piece
     (z : StdSimplex ℝ (Fin (p + 1)) × StdSimplex ℝ (Fin (q + 1))) :
     ∃ σ : (Δ[p] ⊗ Δ[q] : SSet.{u}).nonDegenerate (p + q), z ∈ piece σ := by
   classical
-  let S := (coupling z.1 z.2).weights.support
-  have hS : S.Nonempty := by
-    by_contra h
-    rw [Finset.not_nonempty_iff_eq_empty] at h
-    have htot := (coupling z.1 z.2).total
-    dsimp only [S] at h
-    rw [Finsupp.sum, h, Finset.sum_empty] at htot
-    exact zero_ne_one htot
+  let S := (z.1.coupling z.2).weights.support
+  have hS : S.Nonempty := (z.1.coupling z.2).support_weights_nonempty
   let S' : Finset (Lex (Fin (p + 1) × Fin (q + 1))) := S.map toLex.toEmbedding
   have hcard : S'.card = (S.card - 1) + 1 := by
     rw [Finset.card_map]
@@ -403,7 +228,7 @@ private lemma exists_mem_piece
     intro k₁ k₂ hk
     have hlex : toLex (e k₁) < toLex (e k₂) := (S'.orderEmbOfFin hcard).strictMono hk
     have hne : e k₁ ≠ e k₂ := fun h ↦ hlex.ne (congrArg toLex h)
-    rcases isChain_support_coupling z.1 z.2 (he_mem k₁) (he_mem k₂) hne with hle | hle
+    rcases z.1.isChain_support_coupling z.2 (he_mem k₁) (he_mem k₂) hne with hle | hle
     · exact lt_of_le_of_ne hle hne
     · exact absurd (Prod.Lex.toLex_mono hle) hlex.not_ge
   let x₀ : (Δ[p] ⊗ Δ[q] : SSet.{u}).nonDegenerate (S.card - 1) :=
@@ -415,7 +240,7 @@ private lemma exists_mem_piece
   refine ⟨σ, fun x hx ↦ by_contra fun hne ↦ hx (hsub ?_)⟩
   have hxS' : toLex x ∈ (S' : Set _) := by
     simp only [S', S, Finset.coe_map, Function.Embedding.coeFn_mk, Set.mem_image, Finset.mem_coe,
-      Finsupp.mem_support_iff, coupling_weights]
+      Finsupp.mem_support_iff, StdSimplex.coupling_weights]
     exact ⟨x, hne, rfl⟩
   rw [← S'.range_orderEmbOfFin hcard] at hxS'
   obtain ⟨k, hk⟩ := hxS'
@@ -433,14 +258,13 @@ private lemma injective_objEquiv_nonDegenerate
 private noncomputable def pieceWeights (σ : (Δ[p] ⊗ Δ[q] : SSet.{u}).nonDegenerate (p + q))
     (z : StdSimplex ℝ (Fin (p + 1)) × StdSimplex ℝ (Fin (q + 1))) (hz : z ∈ piece σ) :
     StdSimplex ℝ (Fin (p + q + 1)) :=
-  StdSimplex.comap (f := objEquiv σ.val) (coupling z.1 z.2)
-    ⟨Set.mapsTo_preimage _ _, (injective_objEquiv_nonDegenerate σ).injOn, fun _ hx ↦ by
-      obtain ⟨k, rfl⟩ := support_coupling_subset hz hx
-      exact ⟨k, hx, rfl⟩⟩
+  StdSimplex.comap (f := objEquiv σ.val) (z.1.coupling z.2)
+    (Set.bijOn_preimage_iff.2
+      ⟨(injective_objEquiv_nonDegenerate σ).injOn, support_coupling_subset hz⟩)
 
 private lemma map_pieceWeights (σ : (Δ[p] ⊗ Δ[q] : SSet.{u}).nonDegenerate (p + q))
     (z : StdSimplex ℝ (Fin (p + 1)) × StdSimplex ℝ (Fin (q + 1))) (hz : z ∈ piece σ) :
-    (pieceWeights σ z hz).map (objEquiv σ.val) = coupling z.1 z.2 :=
+    (pieceWeights σ z hz).map (objEquiv σ.val) = z.1.coupling z.2 :=
   StdSimplex.map_comap _ _
 
 private lemma continuous_pieceWeights (σ : (Δ[p] ⊗ Δ[q] : SSet.{u}).nonDegenerate (p + q)) :
@@ -448,10 +272,11 @@ private lemma continuous_pieceWeights (σ : (Δ[p] ⊗ Δ[q] : SSet.{u}).nonDege
   rw [(StdSimplex.isEmbedding_toFun_comp_weights ℝ (Fin (p + q + 1))).continuous_iff]
   refine continuous_pi fun k ↦ ?_
   have h : (fun z : piece σ ↦ (pieceWeights.{u} σ z.val z.property).weights k) =
-      fun z ↦ couplingWeights z.val.1 z.val.2 (objEquiv σ.val k) :=
-    funext fun z ↦ StdSimplex.weights_comap_apply _ _ k
+      fun z ↦ z.val.1.couplingWeights z.val.2 (objEquiv σ.val k) :=
+    funext fun z ↦ (StdSimplex.weights_comap_apply _ _ k).trans
+      (StdSimplex.coupling_weights z.val.1 z.val.2 _)
   simp only [Function.comp_apply, h]
-  exact (continuous_couplingWeights _).comp continuous_subtypeVal
+  exact (StdSimplex.continuous_couplingWeights _).comp continuous_subtypeVal
 
 private noncomputable def triangulateFun (p q : ℕ)
     (z : StdSimplex ℝ (Fin (p + 1)) × StdSimplex ℝ (Fin (q + 1))) :
@@ -461,7 +286,7 @@ private noncomputable def triangulateFun (p q : ℕ)
 
 private lemma triangulateFun_eq {s : StdSimplex ℝ (Fin (p + 1))} {t : StdSimplex ℝ (Fin (q + 1))}
     {n : ℕ} (x : (Δ[p] ⊗ Δ[q] : SSet.{u}) _⦋n⦌) (w : StdSimplex ℝ (Fin (n + 1)))
-    (h : w.map (objEquiv x) = coupling s t) :
+    (h : w.map (objEquiv x) = s.coupling t) :
     triangulateFun.{u} p q (s, t) = toTopObjMk x w :=
   toTopObjMk_eq_of_map_eq ((map_pieceWeights _ _ _).trans h.symm)
 
@@ -544,11 +369,11 @@ private lemma toTopProj_triangulate
   · rw [toTopProj_fst, toTop_map_toTopObjMk, SimplexCategory.toTopHomeo_toTopObjMk]
     -- On `Δ[p] ⊗ Δ[q]`, the first projection of `σ` composes `objEquiv σ` with `Prod.fst`.
     change (pieceWeights σ z hσ).map (Prod.fst ∘ ⇑(objEquiv σ₀)) = z.1
-    rw [StdSimplex.map_comp, map_pieceWeights, map_fst_coupling]
+    rw [StdSimplex.map_comp, map_pieceWeights, StdSimplex.map_fst_coupling]
   · rw [toTopProj_snd, toTop_map_toTopObjMk, SimplexCategory.toTopHomeo_toTopObjMk]
     -- On `Δ[p] ⊗ Δ[q]`, the second projection of `σ` composes `objEquiv σ` with `Prod.snd`.
     change (pieceWeights σ z hσ).map (Prod.snd ∘ ⇑(objEquiv σ₀)) = z.2
-    rw [StdSimplex.map_comp, map_pieceWeights, map_snd_coupling]
+    rw [StdSimplex.map_comp, map_pieceWeights, StdSimplex.map_snd_coupling]
 
 variable (p q) in
 /-- The geometric realization `|Δ[p] ⊗ Δ[q]|` is homeomorphic to the product of standard
@@ -565,47 +390,88 @@ noncomputable def toTopHomeo :
 @[simp]
 theorem toTopHomeo_fst (u : |(Δ[p] ⊗ Δ[q] : SSet.{u})|) :
     (toTopHomeo p q u).1 =
-      ⦋p⦌.toTopHomeo (toTop.map (CartesianMonoidalCategory.fst Δ[p] Δ[q]) u) := by
-  rfl
+      ⦋p⦌.toTopHomeo (toTop.map (CartesianMonoidalCategory.fst Δ[p] Δ[q]) u) :=
+  (rfl)
 
 @[simp]
 theorem toTopHomeo_snd (u : |(Δ[p] ⊗ Δ[q] : SSet.{u})|) :
     (toTopHomeo p q u).2 =
-      ⦋q⦌.toTopHomeo (toTop.map (CartesianMonoidalCategory.snd Δ[p] Δ[q]) u) := by
-  rfl
+      ⦋q⦌.toTopHomeo (toTop.map (CartesianMonoidalCategory.snd Δ[p] Δ[q]) u) :=
+  (rfl)
 
 @[simp]
 theorem coe_toTopHomeo_symm :
-    ⇑(toTopHomeo.{u} p q).symm = triangulate p q := by
-  rfl
+    ⇑(toTopHomeo.{u} p q).symm = triangulate p q :=
+  (rfl)
 
-variable (p q) in
-/-- The homeomorphism `|Δ[p] ⊗ Δ[q]| ≃ₜ |Δ[p]| × |Δ[q]|` whose forward map is the Cartesian
-monoidal product comparison morphism. -/
-noncomputable def toTopProdHomeo :
-    |(Δ[p] ⊗ Δ[q] : SSet.{u})| ≃ₜ |(Δ[p] : SSet.{u})| × |(Δ[q] : SSet.{u})| :=
-  (toTopHomeo p q).trans (⦋p⦌.toTopHomeo.prodCongr ⦋q⦌.toTopHomeo).symm
-
+/-- `SSet.prodStdSimplex.triangulate` is a right inverse to `SSet.prodStdSimplex.toTopHomeo`. -/
 @[simp]
-theorem toTopProdHomeo_apply (u : |(Δ[p] ⊗ Δ[q] : SSet.{u})|) :
-    toTopProdHomeo p q u =
-      (toTop.map (CartesianMonoidalCategory.fst Δ[p] Δ[q]) u,
-        toTop.map (CartesianMonoidalCategory.snd Δ[p] Δ[q]) u) := by
-  refine Prod.ext ?_ ?_ <;> simp [toTopProdHomeo]
+theorem toTopHomeo_triangulate
+    (z : StdSimplex ℝ (Fin (p + 1)) × StdSimplex ℝ (Fin (q + 1))) :
+    toTopHomeo p q (triangulate.{u} p q z) = z :=
+  toTopProj_triangulate z
+
+/-- `SSet.prodStdSimplex.triangulate` is a left inverse to `SSet.prodStdSimplex.toTopHomeo`. -/
+@[simp]
+theorem triangulate_toTopHomeo (u : |(Δ[p] ⊗ Δ[q] : SSet.{u})|) :
+    triangulate p q (toTopHomeo p q u) = u :=
+  triangulate_toTopProj u
+
+/-- Projecting `triangulate p q z` to `|Δ[p]|` recovers `⦋p⦌.toTopHomeo.symm z.1`. -/
+@[simp]
+theorem toTop_map_fst_triangulate
+    (z : StdSimplex ℝ (Fin (p + 1)) × StdSimplex ℝ (Fin (q + 1))) :
+    toTop.map (CartesianMonoidalCategory.fst Δ[p] Δ[q]) (triangulate.{u} p q z) =
+      ⦋p⦌.toTopHomeo.symm z.1 := by
+  apply ⦋p⦌.toTopHomeo.injective
+  rw [Homeomorph.apply_symm_apply, ← toTopHomeo_fst, toTopHomeo_triangulate]
+
+/-- Projecting `triangulate p q z` to `|Δ[q]|` recovers `⦋q⦌.toTopHomeo.symm z.2`. -/
+@[simp]
+theorem toTop_map_snd_triangulate
+    (z : StdSimplex ℝ (Fin (p + 1)) × StdSimplex ℝ (Fin (q + 1))) :
+    toTop.map (CartesianMonoidalCategory.snd Δ[p] Δ[q]) (triangulate.{u} p q z) =
+      ⦋q⦌.toTopHomeo.symm z.2 := by
+  apply ⦋q⦌.toTopHomeo.injective
+  rw [Homeomorph.apply_symm_apply, ← toTopHomeo_snd, toTopHomeo_triangulate]
+
+/-- `triangulate` is natural with respect to morphisms of standard simplices in both factors. -/
+theorem triangulate_naturality {m n p q : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) (g : ⦋p⦌ ⟶ ⦋q⦌)
+    (s : StdSimplex ℝ (Fin (m + 1))) (t : StdSimplex ℝ (Fin (p + 1))) :
+    toTop.map (stdSimplex.map f ⊗ₘ stdSimplex.map g) (triangulate.{u} m p (s, t)) =
+      triangulate n q (s.map f, t.map g) := by
+  apply (toTopHomeo n q).injective
+  rw [toTopHomeo_triangulate]
+  have h₁ : toTop.{u}.map (stdSimplex.map f ⊗ₘ stdSimplex.map g) ≫
+      toTop.map (CartesianMonoidalCategory.fst Δ[n] Δ[q]) =
+      toTop.map (CartesianMonoidalCategory.fst Δ[m] Δ[p]) ≫ toTop.map (stdSimplex.map f) := by
+    simp [← Functor.map_comp]
+  have h₂ : toTop.{u}.map (stdSimplex.map f ⊗ₘ stdSimplex.map g) ≫
+      toTop.map (CartesianMonoidalCategory.snd Δ[n] Δ[q]) =
+      toTop.map (CartesianMonoidalCategory.snd Δ[m] Δ[p]) ≫ toTop.map (stdSimplex.map g) := by
+    simp [← Functor.map_comp]
+  refine Prod.ext ?_ ?_
+  · rw [toTopHomeo_fst, ← ConcreteCategory.comp_apply, h₁]
+    simp [SimplexCategory.toTopHomeo_naturality_apply]
+  · rw [toTopHomeo_snd, ← ConcreteCategory.comp_apply, h₂]
+    simp [SimplexCategory.toTopHomeo_naturality_apply]
 
 /-- The Cartesian monoidal product comparison `|Δ[p] ⊗ Δ[q]| ⟶ |Δ[p]| ⊗ |Δ[q]|` is an isomorphism
 in `TopCat`. -/
 instance instIsIsoCartesianProdComparison (p q : ℕ) :
     IsIso (CartesianMonoidalCategory.prodComparison SSet.toTop.{u} Δ[p] Δ[q]) := by
+  let e : |(Δ[p] ⊗ Δ[q] : SSet.{u})| ≃ₜ |(Δ[p] : SSet.{u})| × |(Δ[q] : SSet.{u})| :=
+    (toTopHomeo p q).trans (⦋p⦌.toTopHomeo.prodCongr ⦋q⦌.toTopHomeo).symm
   have h : CartesianMonoidalCategory.prodComparison SSet.toTop.{u} Δ[p] Δ[q] =
       (TopCat.isoOfHomeo (X := |(Δ[p] ⊗ Δ[q] : SSet.{u})|)
-        (Y := |(Δ[p] : SSet.{u})| ⊗ |(Δ[q] : SSet.{u})|) (toTopProdHomeo p q)).hom :=
+        (Y := |(Δ[p] : SSet.{u})| ⊗ |(Δ[q] : SSet.{u})|) e).hom :=
     TopCat.ext fun u ↦ by
       -- In `TopCat`, `prodComparison` evaluates componentwise via `TopCat.lift_apply`.
       change CartesianMonoidalCategory.lift
         (toTop.map (CartesianMonoidalCategory.fst Δ[p] Δ[q]))
-        (toTop.map (CartesianMonoidalCategory.snd Δ[p] Δ[q])) u = toTopProdHomeo p q u
-      rw [TopCat.lift_apply, toTopProdHomeo_apply]
+        (toTop.map (CartesianMonoidalCategory.snd Δ[p] Δ[q])) u = e u
+      rw [TopCat.lift_apply]
+      refine Prod.ext ?_ ?_ <;> simp [e]
   rw [h]
   infer_instance
 
@@ -614,6 +480,4 @@ instance instPreservesLimitPairToTop (p q : ℕ) :
     PreservesLimit (Limits.pair (Δ[p] : SSet.{u}) Δ[q]) SSet.toTop.{u} :=
   CartesianMonoidalCategory.preservesLimit_pair_of_isIso_prodComparison SSet.toTop.{u} Δ[p] Δ[q]
 
-end prodStdSimplex
-
-end SSet
+end SSet.prodStdSimplex
