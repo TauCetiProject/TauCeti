@@ -156,7 +156,7 @@ private theorem exists_finiteQuotient_maximalUnramifiedFrobenius :
       (maximalUnramifiedFrobenius K Ω)) = Nat.card Gal(E/K)
     rw [orderOf_restrict_maximalUnramifiedFrobenius K Ω n hn, hcardE]
   have hgenQ : ∀ x : Q, x ∈ Subgroup.zpowers gQ :=
-    zHat.mem_zpowers_quotientGenerator H
+    zHat.mem_zpowers_mk_up_ofAdd_one H.toSubgroup
   let eE : Multiplicative (ZMod n) ≃* Gal(E/K) :=
     zmodMulEquivOfGenerator hgenE hcardE
   let eQ : Multiplicative (ZMod n) ≃* Q :=
