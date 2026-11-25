@@ -33,8 +33,8 @@ because those arguments shorten the interval by real amounts, and a half-open su
 * `TauCeti.intervalExpSum_add_adjacent`: `S_f[a, c] + S_f[c + 1, b] = S_f[a, b]` for an integer
   `c` with `a ≤ c + 1` and `c ≤ b`.
 * `TauCeti.norm_intervalExpSum_le_toNat` and `TauCeti.norm_intervalExpSum_le`: the trivial
-  bounds `‖S_f[a, b]‖ ≤ ⌊b⌋ - ⌈a⌉ + 1` (the number of integers in `[a, b]`) and
-  `‖S_f[a, b]‖ ≤ b - a + 1`.
+  bounds `‖S_f[a, b]‖ ≤ (⌊b⌋ + 1 - ⌈a⌉).toNat` (the number of integers in `[a, b]`) and
+  `‖S_f[a, b]‖ ≤ b - a + 1` for `a ≤ b + 1`.
 
 ## References
 
@@ -114,7 +114,7 @@ exponential sum only sees the phase modulo `1` at the integers. -/
 @[simp]
 theorem intervalExpSum_add_intCast_mul (f : ℝ → ℝ) (k : ℤ) (a b : ℝ) :
     intervalExpSum (fun x ↦ f x + k * x) a b = intervalExpSum f a b :=
-  intervalExpSum_add_of_forall_intCast fun n _ ↦ ⟨k * n, by push_cast; rfl⟩
+  intervalExpSum_add_of_forall_intCast fun n _ ↦ ⟨k * n, by push_cast; ring⟩
 
 /-- Negating the phase conjugates the sum. -/
 theorem intervalExpSum_neg (f : ℝ → ℝ) (a b : ℝ) :
@@ -149,18 +149,16 @@ theorem intervalExpSum_add_adjacent (f : ℝ → ℝ) {c : ℤ} (hac : a ≤ c +
   have h₂ : c + 1 ≤ ⌊b⌋ + 1 := by
     have := Int.le_floor.2 hcb
     omega
-  rw [← Int.cast_one, ← Int.cast_add, intervalExpSum_def, intervalExpSum_def, intervalExpSum_def,
-    Int.floor_intCast, Int.ceil_intCast, ← Ico_add_one_right_eq_Icc, ← Ico_add_one_right_eq_Icc,
-    ← Ico_add_one_right_eq_Icc, ← sum_union (Ico_disjoint_Ico_consecutive _ _ _),
-    Ico_union_Ico_eq_Ico h₁ h₂]
+  simp only [intervalExpSum_def, Int.ceil_add_one, Int.ceil_intCast, Int.floor_intCast,
+    ← Ico_add_one_right_eq_Icc]
+  rw [← sum_union (Ico_disjoint_Ico_consecutive _ _ _), Ico_union_Ico_eq_Ico h₁ h₂]
 
 /-- **Half-open intervals.** `S_f[⌊X⌋ + 1, b]` is the sum of `e(f(n))` over the integers
 `X < n ≤ b`, which are the elements of `Finset.Ioc ⌊X⌋ ⌊b⌋` (`Int.cast_mem_Ioc_iff`). With
 `b = X + Y` this is `∑_{X < n ≤ X + Y} e(f(n))`. -/
 theorem intervalExpSum_floor_add_one (f : ℝ → ℝ) (X b : ℝ) :
     intervalExpSum f (⌊X⌋ + 1) b = ∑ n ∈ Ioc ⌊X⌋ ⌊b⌋, expTwoPiI (f n) := by
-  rw [← Int.cast_one, ← Int.cast_add, intervalExpSum_def, Int.ceil_intCast,
-    Icc_add_one_left_eq_Ioc]
+  rw [intervalExpSum_def, Int.ceil_add_one, Int.ceil_intCast, Icc_add_one_left_eq_Ioc]
 
 /-! ### Trivial bounds -/
 
