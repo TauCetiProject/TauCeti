@@ -12,8 +12,8 @@ import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.Analysis.Normed.Affine.AddTorsorBases
 import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.Topology.Instances.Real.Lemmas
-import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.Convex.Caratheodory
+import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # The region bounded by a convex table
@@ -41,6 +41,9 @@ curve, is the tangent line at `γ s`, so `z = γ s`.
   lies in the open half-plane to the left of each tangent line.
 * `TauCeti.ConvexTable.interior_region_nonempty`: `Ω` has nonempty interior.
 * `TauCeti.ConvexTable.frontier_region`: the frontier of `Ω` is the image of the table.
+* `TauCeti.ConvexTable.interior_region`: the interior of `Ω` is `Ω` minus the image of the table.
+* `TauCeti.ConvexTable.mem_interior_region_iff`: the interior of `Ω` is the set of points strictly
+  to the left of every tangent line.
 * `TauCeti.ConvexTable.strictConvex_region`: `Ω` is strictly convex.
 * `TauCeti.ConvexTable.region_circle`: the region of the circle of radius `R` is the closed disc.
 
@@ -102,7 +105,9 @@ theorem region_ofLE {j : ℕ∞} (hj : 1 ≤ j) (hjk : j ≤ k) : (T.ofLE hj hjk
 theorem region_rigidMotion (a : Circle) (b : ℂ) :
     (T.rigidMotion a b).region = (fun z => a * z + b) '' T.region := by
   let f : ℂ →ᵃ[ℝ] ℂ := (LinearMap.mulLeft ℝ (a : ℂ)).toAffineMap + AffineMap.const ℝ ℂ b
-  have hf : ⇑f = fun z => a * z + b := rfl
+  have hf : ⇑f = fun z => a * z + b := by
+    funext z
+    simp [f]
   rw [region_def, region_def, ← hf, f.image_convexHull, ← range_comp]
   congr 2
   funext s
@@ -114,15 +119,9 @@ private theorem map_deriv_eq_zero_of_isLocalMax {f : ℂ →L[ℝ] ℝ} {s : ℝ
     (h : IsLocalMax (fun t => f (T t)) s) : f (deriv T s) = 0 :=
   h.hasDerivAt_eq_zero (f.hasFDerivAt.comp_hasDerivAt s (T.hasDerivAt s))
 
-/-- The cross product with a fixed vector, measured from a base point `p`, is affine. -/
-private theorem im_conj_mul_smul_add_smul_sub {a b : ℝ} (hab : a + b = 1) (c x y p : ℂ) :
-    (conj c * (a • x + b • y - p)).im = a * (conj c * (x - p)).im + b * (conj c * (y - p)).im := by
-  have : a • x + b • y - p = a • (x - p) + b • (y - p) := by
-    calc a • x + b • y - p = a • x + b • y - (a + b) • p := by rw [hab, one_smul]
-      _ = _ := by rw [add_smul, smul_sub, smul_sub]; abel
-  rw [this]
-  simp only [real_smul, mul_add, mul_left_comm _ (a : ℂ), mul_left_comm _ (b : ℂ), add_im,
-    im_ofReal_mul]
+/-- The unit tangent `τ(s)` satisfies `conj τ(s) * τ(s) = 1`. -/
+private theorem conj_deriv_mul_deriv (s : ℝ) : conj (deriv T s) * deriv T s = 1 := by
+  simp [conj_mul', T.norm_deriv]
 
 /-- **The region lies to the left of each tangent line.** Every point `z ≠ γ s` of the region
 satisfies `0 < τ(s) × (z − γ s)`. -/
@@ -137,7 +136,7 @@ theorem im_conj_deriv_mul_sub_pos_of_mem_region {s : ℝ} {z : ℂ} (hz : z ∈ 
       exact Or.inr rfl
     refine Or.inl ?_
     simp only [H, mem_union, mem_ofPred_eq, mem_singleton_iff] at hx hy ⊢
-    rw [im_conj_mul_smul_add_smul_sub hab]
+    rw [Complex.im_conj_mul_smul_add_smul_sub hab]
     rcases hx with hx | rfl <;> rcases hy with hy | rfl
     · positivity
     · simp only [sub_self, mul_zero, zero_im]; positivity
@@ -184,11 +183,12 @@ theorem affineSpan_range_eq_top : affineSpan ℝ (range T) = ⊤ := by
     have hpos := T.im_conj_deriv_mul_sub_pos (s := 0) (t := ℓ / 2)
       ((AddCircle.coe_eq_coe_iff_of_mem_Ico (a := 0) ⟨le_rfl, by linarith⟩
         ⟨by linarith, by linarith⟩).not.2 (by linarith))
-    have h := f.apply_eq_mul_im_conj_mul (T.norm_deriv 0) (hτ 0) (T (ℓ / 2) - T 0)
+    have h := f.apply_eq_mul_im_conj_mul (T.conj_deriv_mul_deriv 0) (hτ 0) (T (ℓ / 2) - T 0)
     rw [map_sub, hconst, sub_self] at h
     exact (mul_eq_zero.1 h.symm).resolve_right hpos.ne'
   exact hf0 (LinearMap.ext fun w => by
-    rw [f.apply_eq_mul_im_conj_mul (T.norm_deriv 0) (hτ 0), hI, zero_mul, LinearMap.zero_apply])
+    rw [f.apply_eq_mul_im_conj_mul (T.conj_deriv_mul_deriv 0) (hτ 0), hI, zero_mul,
+      LinearMap.zero_apply])
 
 /-- The region of a table has nonempty interior. -/
 theorem interior_region_nonempty : (interior T.region).Nonempty :=
@@ -201,11 +201,11 @@ private theorem sub_smul_I_mul_deriv_notMem_region (s : ℝ) {ε : ℝ} (hε : 0
   have := T.im_conj_deriv_mul_sub_pos_of_mem_region (s := s) h (by
     rw [Ne, sub_eq_self, smul_eq_zero, not_or]
     exact ⟨hε.ne', mul_ne_zero I_ne_zero (T.deriv_ne_zero s)⟩)
-  have h1 : conj (deriv T s) * deriv T s = 1 := by simp [conj_mul']
   have h2 : conj (deriv T s) * (T s - ε • (I * deriv T s) - T s) = -(ε * I) := by
     rw [sub_sub_cancel_left, real_smul]
-    linear_combination (-(ε : ℂ) * I) * h1
-  rw [h2, neg_im, mul_im, ofReal_re, ofReal_im, I_re, I_im] at this
+    linear_combination (-(ε : ℂ) * I) * T.conj_deriv_mul_deriv s
+  rw [h2] at this
+  have hneg : 0 < -ε := by simpa using this
   linarith
 
 /-- **The frontier of the region is the image of the table.** -/
@@ -230,7 +230,7 @@ theorem frontier_region : frontier T.region = range T := by
     have hτ : f (deriv T s) = 0 := T.map_deriv_eq_zero_of_isLocalMax
       (Eventually.of_forall fun t => hmax (mem_range_self t))
     have hlin (w : ℂ) : f w = f (I * deriv T s) * (conj (deriv T s) * w).im :=
-      f.toLinearMap.apply_eq_mul_im_conj_mul (T.norm_deriv s) hτ w
+      f.toLinearMap.apply_eq_mul_im_conj_mul (T.conj_deriv_mul_deriv s) hτ w
     have hfI : f (I * deriv T s) ≠ 0 := fun h0 => by
       obtain ⟨a, ha⟩ := T.interior_region_nonempty
       have := hf a ha
@@ -251,15 +251,47 @@ theorem frontier_region : frontier T.region = range T := by
       eventually_mem_nhdsWithin).exists
     exact T.sub_smul_I_mul_deriv_notMem_region s hε (interior_subset hmem)
 
+/-- **The interior of the region** is the region with the image of the table removed. -/
+theorem interior_region : interior T.region = T.region \ range T := by
+  rw [← self_sdiff_frontier, frontier_region]
+
+/-- A point lies in the interior of the region exactly when it lies strictly to the left of every
+tangent line: `0 < τ(s) × (z − γ s)` for all `s`. -/
+theorem mem_interior_region_iff {z : ℂ} :
+    z ∈ interior T.region ↔ ∀ s, 0 < (conj (deriv T s) * (z - T s)).im := by
+  rw [interior_region]
+  refine ⟨fun hz s => T.im_conj_deriv_mul_sub_pos_of_mem_region hz.1 fun h => hz.2 ⟨s, h.symm⟩,
+    fun h => ⟨by_contra fun hz => ?_, fun ⟨s, hs⟩ => by simpa [hs] using h s⟩⟩
+  -- A functional separating `z` from the region, maximal on the curve at `γ s`.
+  obtain ⟨f, u, hfu, hzu⟩ := geometric_hahn_banach_closed_point T.convex_region T.isClosed_region hz
+  obtain ⟨_, ⟨s, rfl⟩, hmax⟩ :=
+    T.isCompact_range.exists_isMaxOn (range_nonempty T) f.continuous.continuousOn
+  have hτ : f (deriv T s) = 0 := T.map_deriv_eq_zero_of_isLocalMax
+    (Eventually.of_forall fun t => hmax (mem_range_self t))
+  have hlin (w : ℂ) : f w = f (I * deriv T s) * (conj (deriv T s) * w).im :=
+    f.toLinearMap.apply_eq_mul_im_conj_mul (T.conj_deriv_mul_deriv s) hτ w
+  -- `f (i τ(s))` is positive, as `z` lies beyond `γ s`, and nonpositive, as an interior point `a`
+  -- does not.
+  have hz' : 0 < f (I * deriv T s) * (conj (deriv T s) * (z - T s)).im := by
+    rw [← hlin, map_sub]
+    linarith [hfu _ (T.apply_mem_region s)]
+  obtain ⟨a, ha⟩ := T.interior_region_nonempty
+  rw [interior_region] at ha
+  have ha' : f (I * deriv T s) * (conj (deriv T s) * (a - T s)).im ≤ 0 := by
+    rw [← hlin, map_sub, sub_nonpos]
+    exact convexHull_min (fun w hw => hmax hw) (convex_halfSpace_le f.isLinear _) ha.1
+  have hpos := T.im_conj_deriv_mul_sub_pos_of_mem_region ha.1 fun h => ha.2 ⟨s, h.symm⟩
+  nlinarith [h s, pos_of_mul_pos_left hz' (h s).le]
+
 /-- **The region of a table is strictly convex.** -/
 theorem strictConvex_region : StrictConvex ℝ T.region := by
   intro x hx y hy hxy a b ha hb hab
   have hp : a • x + b • y ∈ T.region := T.convex_region hx hy ha.le hb.le hab
   by_contra hint
   obtain ⟨s, hs⟩ : a • x + b • y ∈ range T := by
-    rw [← T.frontier_region, T.isClosed_region.frontier_eq]
-    exact ⟨hp, hint⟩
-  have hzero := im_conj_mul_smul_add_smul_sub hab (deriv T s) x y (T s)
+    by_contra hT
+    exact hint (T.interior_region ▸ ⟨hp, hT⟩)
+  have hzero := Complex.im_conj_mul_smul_add_smul_sub hab (deriv T s) x y (T s)
   rw [← hs, sub_self, mul_zero, zero_im] at hzero
   have hx' := T.im_conj_deriv_mul_sub_nonneg_of_mem_region (s := s) hx
   have hy' := T.im_conj_deriv_mul_sub_nonneg_of_mem_region (s := s) hy

@@ -24,33 +24,11 @@ Multiplication by `c : ℂ` is a similarity of ratio `‖c‖`, so precomposing 
 it multiplies the operator norm by `‖c‖`
 (`ContinuousLinearMap.norm_comp_restrictScalars_smulRight_one`).
 
-A real linear functional on `ℂ` killing a unit vector `τ` is a multiple of the cross product
-`w ↦ (conj τ * w).im` with `τ` (`LinearMap.apply_eq_mul_im_conj_mul`).
-
 The norm bounds in terms of the values on `1` and `I` hold over any `RCLike` field and live in
 `TauCeti.Analysis.RCLike.OperatorNorm`.
 -/
 
 public section
-
-open scoped ComplexConjugate
-
-namespace LinearMap
-
-/-- A real linear functional on `ℂ` killing a unit vector `τ` is a multiple of the cross product
-with `τ`: `f w = f (i τ) (τ × w)`. -/
-theorem apply_eq_mul_im_conj_mul {f : ℂ →ₗ[ℝ] ℝ} {τ : ℂ} (hτ : ‖τ‖ = 1)
-    (hf : f τ = 0) (w : ℂ) : f w = f (Complex.I * τ) * (conj τ * w).im := by
-  have hw : w = (conj τ * w).re • τ + (conj τ * w).im • (Complex.I * τ) := by
-    calc w = τ * (conj τ * w) := by rw [← mul_assoc, Complex.mul_conj', hτ]; simp
-      _ = _ := by
-        conv_lhs => rw [← Complex.re_add_im (conj τ * w)]
-        simp only [Complex.real_smul]
-        ring
-  conv_lhs => rw [hw]
-  rw [map_add, map_smul, map_smul, hf, smul_eq_mul, smul_eq_mul, mul_zero, zero_add, mul_comm]
-
-end LinearMap
 
 namespace ContinuousLinearMap
 
