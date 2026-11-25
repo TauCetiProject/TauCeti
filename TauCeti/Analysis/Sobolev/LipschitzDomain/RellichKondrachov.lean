@@ -13,7 +13,6 @@ import TauCeti.Analysis.Sobolev.LipschitzDomain.SobolevEmbedding
 import TauCeti.Analysis.Sobolev.W1p.LocalCompactness
 import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import TauCeti.Data.ENNReal.InterpolatedExponent
-import TauCeti.Logic.Equiv.Set
 
 /-!
 # Rellich–Kondrachov on bounded Lipschitz domains
@@ -103,7 +102,7 @@ theorem W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_of_affineIsometryE
     (hΩU : (Ω : Set (WithLp 2 (ℝ × E))) = e.symm ⁻¹' U) :
     IsCompactOperator (W1p.valueL (mu := volume) (Omega := U) (p := p)) :=
   W1p.isCompactOperator_valueL_of_affineIsometryEquiv e
-    (e.symm.toHomeomorph.toEquiv.eq_symm_preimage_of_eq_preimage hΩU)
+    (hΩU ▸ (e.toHomeomorph.toEquiv.preimage_symm_preimage U).symm)
     (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith hΩ hb)
 
 /-- **The Poincaré–Wirtinger inequality on bounded connected Lipschitz domains.** Let `Ω` be a

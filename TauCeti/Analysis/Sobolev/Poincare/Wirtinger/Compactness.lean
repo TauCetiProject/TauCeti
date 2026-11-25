@@ -118,8 +118,8 @@ theorem W1p.exists_eLpNorm_value_sub_setAverage_le_of_isCompactOperator
   set w : W1p mu Omega p := u - W1p.const a with hw
   have hw0 : ℓ w = 0 := by
     have hconst : ℓ (W1p.const a) = mu.real S * a := by
-      rw [hℓ, W1p.value_const, ← smul_eq_mul, ← setIntegral_const]
-      exact integral_congr_ae (ae_restrict_of_ae_restrict_of_subset hS (Lp.coeFn_const p _ a))
+      rw [hℓ, ← smul_eq_mul, ← setIntegral_const]
+      exact integral_congr_ae (ae_restrict_of_ae_restrict_of_subset hS (W1p.value_const_ae a))
     rw [hw, map_sub, hconst, hℓ, ha, setAverage_eq, smul_eq_mul, mul_inv_cancel_left₀ hSreal,
       sub_self]
   have hvw : W1p.value w = W1p.value u - Lp.const p (mu.restrict (Omega : Set E)) a := by
