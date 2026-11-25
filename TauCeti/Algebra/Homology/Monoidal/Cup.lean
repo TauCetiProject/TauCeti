@@ -260,7 +260,7 @@ variable [Abelian C] [MonoidalCategory C] [MonoidalPreadditive C] {A B E : Chain
   {S S' : ShortComplex C} (hS : S.ShortExact) (hS' : S'.ShortExact) {P P' : C} (g : P ⟶ P')
   (μ : S.X₂ ⊗ S'.X₂ ⟶ P) (μ₁₃ : S.X₁ ⊗ S'.X₃ ⟶ P') (μ₃₁ : S.X₃ ⊗ S'.X₁ ⟶ P')
 
-/-- **The cup product of two connecting morphisms of coefficient sequences.** Let
+/-- **Moving a connecting morphism across a cup product.** Let
 `0 ⟶ M₁ ⟶ M₂ ⟶ M₃ ⟶ 0` and `0 ⟶ N₁ ⟶ N₂ ⟶ N₃ ⟶ 0` be short exact sequences of coefficients, with
 connecting morphisms `δ` on the cohomology of `Hom(A, -)` and `Hom(B, -)`, whose terms are
 projective. Let `μ : M₂ ⊗ N₂ ⟶ P` be a pairing and `g : P ⟶ P'` a morphism such that, after `g`,
