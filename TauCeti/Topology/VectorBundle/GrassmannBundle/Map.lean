@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.GrassmannBundle
+public import TauCeti.Topology.VectorBundle.GrassmannBundle.Basic
+import TauCeti.Topology.VectorBundle.Hom
 import TauCeti.Topology.FiberBundle.Separation
 
 /-!
@@ -31,12 +32,12 @@ is continuous (`TauCeti.grassmannBundle.continuous_map`): in coordinates it is t
 `(e' U e⁻¹) (e P e⁻¹) (e U⁻¹ e'⁻¹)` of continuous families of operators. When moreover `f` is a
 homeomorphism, `B'` is Hausdorff and `E` has finite rank and continuous fibre norm, the map is a
 homeomorphism `G_k(E) ≃ₜ G_k(E')` (`TauCeti.grassmannBundle.mapHomeomorph`): it is a continuous
-bijection, and it is proper since its composite with the proper projection of `G_k(E')` is the
-proper map `f ∘ π`.
+bijection, and it is proper since its composite with the continuous projection of `G_k(E')` is
+`f ∘ π`, proper because `f` is a homeomorphism and the projection `π` of `G_k(E)` is proper.
 
 For the tangent bundles of Riemannian manifolds and an isometry `f`, `U_x` is the differential
 `df_x`, a linear isometry `T_xM ≃ₗᵢ[ℝ] T_{f x}M'`, and the map is
-`(x, P) ↦ (f(x), df_x P df_x⁻¹)` (Varifolds roadmap, §1.2).
+`(x, P) ↦ (f(x), df_x P df_x⁻¹)`.
 
 ## Main declarations
 
@@ -161,38 +162,31 @@ theorem continuous_map (hf : Continuous f)
     (hU' : ∀ x₀, ContinuousAt (fun x ↦ inCoordinates F' E' F E (f x₀) (f x) x₀ x
       ((U x).symm.toContinuousLinearEquiv : E' (f x) →L[ℝ] E x)) x₀) :
     Continuous (map f U : grassmannBundle F E k → grassmannBundle F' E' k) := by
-  -- The base point of a point of `G_k(E)`, continuous in the point.
-  have hπ : Continuous fun p : grassmannBundle F E k ↦ p.val.proj :=
-    (FiberBundle.continuous_proj (F →L[ℝ] F) fun b ↦ E b →L[ℝ] E b).comp continuous_subtypeVal
   refine continuous_induced_rng.2 (continuous_iff_continuousAt.2 fun p₀ ↦ ?_)
   rw [Function.comp_def, continuousAt_hom_bundle]
+  have hπ : Continuous fun p : grassmannBundle F E k ↦ p.val.proj :=
+    continuous_proj.congr proj_apply
   refine ⟨by simp only [coe_map_apply]; exact (hf.comp hπ).continuousAt, ?_⟩
-  set x₀ := p₀.val.proj
   -- The coordinates of the projection `P` itself vary continuously.
   have hP : ContinuousAt (fun p : grassmannBundle F E k ↦
-      inCoordinates F E F E x₀ p.val.proj x₀ p.val.proj p.val.snd) p₀ :=
+      inCoordinates F E F E p₀.val.proj p.val.proj p₀.val.proj p.val.proj p.val.snd) p₀ :=
     ((continuousAt_hom_bundle (f := fun p : grassmannBundle F E k ↦ p.val)).1
       continuous_subtypeVal.continuousAt).2
-  have h₁ := (hU x₀).comp (f := fun p : grassmannBundle F E k ↦ p.val.proj) hπ.continuousAt
-  have h₃ := (hU' x₀).comp (f := fun p : grassmannBundle F E k ↦ p.val.proj) hπ.continuousAt
-  refine ((h₁.clm_comp hP).clm_comp h₃).congr ?_
-  -- Near `p₀`, both base points lie in the base sets of the trivializations.
-  have hmem : ∀ᶠ p in 𝓝 p₀, p.val.proj ∈ (trivializationAt F E x₀).baseSet ∧
-      f p.val.proj ∈ (trivializationAt F' E' (f x₀)).baseSet :=
-    Filter.inter_mem (hπ.continuousAt.preimage_mem_nhds
-      ((trivializationAt F E x₀).open_baseSet.mem_nhds (mem_baseSet_trivializationAt F E x₀)))
-      ((hf.comp hπ).continuousAt.preimage_mem_nhds
-        ((trivializationAt F' E' (f x₀)).open_baseSet.mem_nhds
-          (mem_baseSet_trivializationAt F' E' (f x₀))))
-  filter_upwards [hmem] with p hp
-  obtain ⟨h₁p, h₂p⟩ := hp
-  simp only [Function.comp_apply]
-  rw [coe_map_apply f U p, coe_map_apply f U p₀]
+  have h₁ := (hU p₀.val.proj).comp (f := fun p : grassmannBundle F E k ↦ p.val.proj)
+    hπ.continuousAt
+  have h₃ := (hU' p₀.val.proj).comp (f := fun p : grassmannBundle F E k ↦ p.val.proj)
+    hπ.continuousAt
+  -- In coordinates the fibre of the map is the composite `(e' U e⁻¹) (e P e⁻¹) (e U⁻¹ e'⁻¹)`.
+  have h₂₃ := ContinuousAt.inCoordinates_clm_comp (V := E') (W := E) (U := E)
+    (b₁ := fun p : grassmannBundle F E k ↦ f p.val.proj) (b₂ := fun p ↦ p.val.proj)
+    (b₃ := fun p ↦ p.val.proj) hP h₃ hπ.continuousAt
+  have h₁₂₃ := ContinuousAt.inCoordinates_clm_comp (V := E') (W := E) (U := E')
+    (b₁ := fun p : grassmannBundle F E k ↦ f p.val.proj) (b₂ := fun p ↦ p.val.proj)
+    (b₃ := fun p ↦ f p.val.proj) h₁ h₂₃ hπ.continuousAt
+  refine h₁₂₃.congr (.of_forall fun p ↦ ?_)
   dsimp only
-  rw [inCoordinates_eq h₁p h₂p, inCoordinates_eq h₁p h₁p, inCoordinates_eq h₂p h₁p,
-    inCoordinates_eq h₂p h₂p]
-  ext v
-  simp [LinearIsometryEquiv.conjStarAlgEquiv_apply, Trivialization.symm_apply_apply_mk, h₁p]
+  rw [coe_map_apply f U p, coe_map_apply f U p₀]
+  rfl
 
 variable (k) in
 /-- **The homeomorphism of Grassmann bundles induced by a homeomorphism of the bases** covered by
