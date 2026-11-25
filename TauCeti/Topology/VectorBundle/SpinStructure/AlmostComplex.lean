@@ -45,8 +45,9 @@ determinant line with the anticanonical line `Λ²_ℂ (E, J)` as line bundles i
 
 ## Main results
 
-* `TauCeti.OrthonormalFrameBundle.toFrame_canonicalSpinCStructure_inl`: the frame of `[p, 1]` in
-  the canonical `Spinᶜ` structure is the unitary frame `p`.
+* `TauCeti.OrthonormalFrameBundle.toFrame_canonicalSpinCStructureInl`: the frame of the point
+  `[p, 1]` (`TauCeti.OrthonormalFrameBundle.canonicalSpinCStructureInl`) in the canonical `Spinᶜ`
+  structure is the unitary frame `p`.
 
 ## References
 
@@ -82,19 +83,27 @@ unitary frame bundle `unitaryFrameLift` by the lift `TauCeti.unitarySpinCLift` o
 `U(ℝ⁴, J₀) ⊆ SO(4)` to `Spinᶜ(4)`, for a unitary frame `e` of the model complex structure `J₀`. Its
 principal bundle is `P ×_σ Spinᶜ(4)` for the unitary frames `P`. The construction depends on the
 chosen `J₀` and `e`; its independence of these choices is not proved here. -/
-abbrev canonicalSpinCStructure : SpinCStructure F E 4 :=
+noncomputable def canonicalSpinCStructure : SpinCStructure F E 4 :=
   (unitaryFrameLift hJ hJ₂ hJ₀ hF).extendSpinC (unitarySpinCLift hJ₀ e h₀ h₂)
     (continuous_unitarySpinCLift hJ₀ e h₀ h₂)
     (toSpecialOrthogonal_comp_unitarySpinCLift hJ₀ e h₀ h₂)
 
+/-- The point `[p, 1]` of the principal bundle of the canonical `Spinᶜ` structure over the unitary
+frame `p`. -/
+noncomputable def canonicalSpinCStructureInl {x : X} (p : (unitaryFrameLift hJ hJ₂ hJ₀ hF).P x) :
+    (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).P x :=
+  PrincipalBundle.Extend.inl (unitarySpinCLift hJ₀ e h₀ h₂)
+    (continuous_unitarySpinCLift hJ₀ e h₀ h₂) p
+
 /-- **The frame of `[p, 1]`** in the canonical `Spinᶜ` structure is the unitary frame `p`. -/
-theorem toFrame_canonicalSpinCStructure_inl (x : X)
-    (p : (unitaryFrameLift hJ hJ₂ hJ₀ hF).P x) :
+@[simp]
+theorem toFrame_canonicalSpinCStructureInl (x : X) (p : (unitaryFrameLift hJ hJ₂ hJ₀ hF).P x) :
     (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).toFrame
-        ⟨x, PrincipalBundle.Extend.inl (unitarySpinCLift hJ₀ e h₀ h₂)
-          (continuous_unitarySpinCLift hJ₀ e h₀ h₂) p⟩ =
+        ⟨x, canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p⟩ =
       ⟨x, p.val.frame⟩ :=
-  (unitaryFrameLift hJ hJ₂ hJ₀ hF).toFrame_extendSpinC_inl _ _ _ x p
+  (unitaryFrameLift hJ hJ₂ hJ₀ hF).toFrame_extendSpinC_inl (unitarySpinCLift hJ₀ e h₀ h₂)
+    (continuous_unitarySpinCLift hJ₀ e h₀ h₂)
+    (toSpecialOrthogonal_comp_unitarySpinCLift hJ₀ e h₀ h₂) x p
 
 end OrthonormalFrameBundle
 
