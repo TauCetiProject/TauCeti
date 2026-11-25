@@ -60,6 +60,12 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {s : Set E}
 
+/-- A set whose frontier has finite `Hⁿ⁻¹` measure is null-measurable for the volume. -/
+private theorem nullMeasurableSet_of_euclideanHausdorffMeasure_frontier_ne_top
+    (hH : μHE[finrank ℝ E - 1] (frontier s) ≠ ∞) : NullMeasurableSet s volume :=
+  nullMeasurableSet_of_hausdorffMeasure_frontier_ne_top volume
+    (Measure.euclideanHausdorffMeasure_lt_top_iff.1 (lt_top_iff_ne_top.2 hH)).ne
+
 /-- **The isoperimetric inequality for the topological frontier.** In a Euclidean space of
 dimension `n ≥ 2`, every set `s` of finite volume, measurable or not, satisfies
 `nⁿ ω_n |s|ⁿ⁻¹ ≤ Hⁿ⁻¹(frontier s)ⁿ`, where `ω_n = volume (ball 0 1)` and `Hⁿ⁻¹` is the normalized
@@ -72,9 +78,8 @@ theorem finrank_pow_mul_volume_ball_mul_volume_pow_le_euclideanHausdorffMeasure_
   by_cases hH : μHE[finrank ℝ E - 1] (frontier s) = ∞
   · rw [hH, ENNReal.top_pow (by omega)]
     exact le_top
-  have hH' := (Measure.euclideanHausdorffMeasure_lt_top_iff.1 (lt_top_iff_ne_top.2 hH)).ne
-  exact ((nullMeasurableSet_of_hausdorffMeasure_frontier_ne_top volume
-    hH').finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow_of_two_le hs hn).trans
+  exact ((nullMeasurableSet_of_euclideanHausdorffMeasure_frontier_ne_top
+    hH).finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow_of_two_le hs hn).trans
     (pow_le_pow_left₀ zero_le (perimeter_le_euclideanHausdorffMeasure_frontier hn s) _)
 
 /-- **Balls attain equality in the frontier isoperimetric inequality.** In positive dimension `n`,
@@ -111,9 +116,8 @@ theorem perimeter_eq_of_euclideanHausdorffMeasure_frontier_pow_eq
   refine le_antisymm (perimeter_le_euclideanHausdorffMeasure_frontier hn s)
     ((ENNReal.pow_le_pow_left_iff (n := finrank ℝ E) (by omega)).1 ?_)
   rw [h]
-  have hH' := (Measure.euclideanHausdorffMeasure_lt_top_iff.1 (lt_top_iff_ne_top.2 hH)).ne
-  exact (nullMeasurableSet_of_hausdorffMeasure_frontier_ne_top volume
-    hH').finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow_of_two_le hs hn
+  exact (nullMeasurableSet_of_euclideanHausdorffMeasure_frontier_ne_top
+    hH).finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow_of_two_le hs hn
 
 /-- **Equality in the frontier isoperimetric inequality forces equality for the perimeter.** In a
 Euclidean space of dimension `n ≥ 2`, if a set `s` of finite volume satisfies
