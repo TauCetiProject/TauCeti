@@ -37,11 +37,11 @@ real, and Mathlib's `NumberField.IsCMField.complexConj F` if `F` is CM.
   a totally real or CM field.
 * `TauCeti.NumberField.isTotallyReal_or_isCMField_iff`: the characterization of fields that are
   totally real or CM by products of two complex conjugations.
-* `TauCeti.NumberField.isCMField_of_forall_isConj`: a field with one automorphism conjugating
-  every complex embedding, not the identity, is CM. Mathlib's
+* `TauCeti.NumberField.isCMField_of_forall_isConj`: a field algebraic over `ℚ` with one
+  automorphism conjugating every complex embedding, not the identity, is CM. Mathlib's
   `NumberField.IsCMField.of_forall_isConj` assumes that the field is Galois over `ℚ` and totally
-  complex; this criterion assumes only one automorphism, not the identity, conjugating every
-  complex embedding.
+  complex; this criterion assumes only that the field is algebraic over `ℚ` and has one
+  automorphism, not the identity, conjugating every complex embedding.
 
 ## References
 
@@ -65,10 +65,10 @@ section General
 variable {K : Type*} [Field K] [CharZero K] [Algebra.IsIntegral ℚ K]
 
 open IntermediateField in
-/-- **A field with a single nontrivial conjugation of all its complex embeddings is CM.** If one
-automorphism `σ ≠ 1` of `K` satisfies `IsConj φ σ` for every embedding `φ : K →+* ℂ`, then `K` is a
-CM field. Mathlib's `NumberField.IsCMField.of_forall_isConj` proves this for `K` Galois over `ℚ`
-and totally complex; neither assumption is needed. -/
+/-- **A field with a single nontrivial conjugation of all its complex embeddings is CM.** If `K`
+is algebraic over `ℚ` and one automorphism `σ ≠ 1` of `K` satisfies `IsConj φ σ` for every
+embedding `φ : K →+* ℂ`, then `K` is a CM field. Mathlib's `NumberField.IsCMField.of_forall_isConj`
+proves this for `K` Galois over `ℚ` and totally complex; neither assumption is needed. -/
 theorem isCMField_of_forall_isConj {σ : Gal(K/ℚ)} (hσ1 : σ ≠ 1)
     (hσ : ∀ φ : K →+* ℂ, IsConj φ σ) : IsCMField K := by
   have : IsTotallyComplex K := ⟨fun w ↦ isComplex_iff.mpr ((isConj_ne_one_iff (hσ _)).mp hσ1)⟩
@@ -119,6 +119,11 @@ theorem apply_apply_of_mem_complexConjugations {c : Gal(Ω/ℚ)} (hc : c ∈ com
   obtain ⟨ι, hι⟩ := hc
   exact isConj_apply_apply hι x
 
+/-- A complex conjugation sending `x` to `y` sends `y` back to `x`. -/
+theorem apply_eq_of_apply_eq_of_mem_complexConjugations {c : Gal(Ω/ℚ)}
+    (hc : c ∈ complexConjugations Ω) {x y : Ω} (h : c x = y) : c y = x := by
+  rw [← h, apply_apply_of_mem_complexConjugations hc]
+
 /-- The set of complex conjugations is stable under conjugation by `Gal(Ω/ℚ)`: if `c` is the
 conjugation of `ι`, then `g⁻¹ c g` is the conjugation of `ι ∘ g`. -/
 theorem inv_mul_mul_mem_complexConjugations {c : Gal(Ω/ℚ)} (hc : c ∈ complexConjugations Ω)
@@ -168,7 +173,7 @@ variable {F : Type*} [Field F] [CharZero F]
 
 /-- If every complex conjugation `d` sends `c (τ x)` back to `τ x`, then the complex conjugation
 `c` maps `τ x` into `τ(F)`. -/
-theorem apply_mem_fieldRange_of_forall_mul {τ : F →+* Ω} {c : Gal(Ω/ℚ)}
+private theorem apply_mem_fieldRange_of_forall_mul {τ : F →+* Ω} {c : Gal(Ω/ℚ)}
     (hc : c ∈ complexConjugations Ω) {x : F}
     (h : ∀ d ∈ complexConjugations Ω, d (c (τ x)) = τ x) :
     c (τ x) ∈ τ.toRatAlgHom.fieldRange := by
@@ -183,8 +188,7 @@ theorem apply_mem_fieldRange_of_forall_mul {τ : F →+* Ω} {c : Gal(Ω/ℚ)}
   -- The conjugate `g c g⁻¹` sends `τ x` to `g (c (τ x))`, and by involutivity of `g c g⁻¹` and
   -- `h` this is `c (τ x)`.
   have hcx : (g * c * g⁻¹) (τ x) = c (τ x) :=
-    ((Function.Involutive.eq_iff (apply_apply_of_mem_complexConjugations hc')).mp
-      (h _ hc')).symm
+    apply_eq_of_apply_eq_of_mem_complexConjugations hc' (h _ hc')
   calc g (c (τ x)) = (g * c * g⁻¹) (τ x) := by
         rw [AlgEquiv.mul_apply, AlgEquiv.mul_apply, hginv]
     _ = c (τ x) := hcx
@@ -250,8 +254,8 @@ theorem isTotallyReal_or_isCMField_iff (τ : F →+* Ω) :
       obtain ⟨c, hc⟩ := exists_isConj ι
       refine RingHom.ext fun x ↦ ?_
       simp only [conjugate_coe_eq, RingHom.comp_apply, RingHom.coe_coe, hs']
-      rw [((Function.Involutive.eq_iff (apply_apply_of_mem_complexConjugations hc₀)).mp
-        (h _ hc₀ _ ⟨ι, hc⟩ x)).symm, hc.eq, Complex.star_def]
+      rw [apply_eq_of_apply_eq_of_mem_complexConjugations hc₀ (h _ hc₀ _ ⟨ι, hc⟩ x), hc.eq,
+        Complex.star_def]
     by_cases hs1 : s = 1
     · left
       exact ⟨fun w ↦ isReal_iff.mpr (isConj_one_iff.mp (hs1 ▸ hs _))⟩
