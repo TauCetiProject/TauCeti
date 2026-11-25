@@ -24,14 +24,14 @@ public section
 
 open Complex NumberField
 
-namespace IsAbelianGalois
+namespace Finset
 
 open ComplexEmbedding
 
 /-- A rational sum of squared absolute values in an abelian extension of `ℚ` is independent of
 the complex embedding. No integrality of the summands is required. -/
-theorem sum_normSq_eq_ratCast_iff {K ι : Type*} [Field K] [Algebra ℚ K] [IsAbelianGalois ℚ K]
-    (s : Finset ι) (b : ι → K) (φ ψ : K →+* ℂ) (q : ℚ) :
+theorem sum_normSq_eq_ratCast_iff_of_isAbelianGalois {K ι : Type*} [Field K] [Algebra ℚ K]
+    [IsAbelianGalois ℚ K] (s : Finset ι) (b : ι → K) (φ ψ : K →+* ℂ) (q : ℚ) :
     (∑ i ∈ s, normSq (φ (b i))) = (q : ℝ) ↔ (∑ i ∈ s, normSq (ψ (b i))) = (q : ℝ) := by
   obtain ⟨c, hc⟩ := exists_comp_symm_eq_of_comp_eq (k := ℚ) φ (conjugate φ) (Subsingleton.elim _ _)
   have hcφ : IsConj φ c.symm := hc.symm
@@ -49,8 +49,8 @@ theorem sum_normSq_eq_ratCast_iff {K ι : Type*} [Field K] [Algebra ℚ K] [IsAb
 
 /-- In an abelian number field, squared absolute values of algebraic integers sum to `1`
 precisely when one entry is a root of unity and all other entries in the sum are zero. -/
-theorem sum_normSq_eq_one_iff {K ι : Type*} [Field K] [NumberField K] [IsAbelianGalois ℚ K]
-    (s : Finset ι) (b : ι → 𝓞 K) (φ : K →+* ℂ) :
+theorem sum_normSq_eq_one_iff_of_isAbelianGalois {K ι : Type*} [Field K] [NumberField K]
+    [IsAbelianGalois ℚ K] (s : Finset ι) (b : ι → 𝓞 K) (φ : K →+* ℂ) :
     (∑ i ∈ s, normSq (φ (b i))) = 1 ↔
       ∃ i ∈ s, IsOfFinOrder (b i : K) ∧ ∀ j ∈ s, j ≠ i → b j = 0 := by
   classical
@@ -63,7 +63,8 @@ theorem sum_normSq_eq_one_iff {K ι : Type*} [Field K] [NumberField K] [IsAbelia
     have hbi : (b i : K) ≠ 0 := fun hb ↦ hne (by simp [hb])
     have hbound (ψ : K →+* ℂ) : ‖ψ (b i)‖ ≤ 1 := by
       have hψ : (∑ j ∈ s, normSq (ψ (b j))) = 1 := by
-        simpa using (sum_normSq_eq_ratCast_iff s (fun j ↦ ↑(b j)) φ ψ 1).mp (by simpa using h)
+        simpa using (sum_normSq_eq_ratCast_iff_of_isAbelianGalois s (fun j ↦ ↑(b j)) φ ψ 1).mp
+          (by simpa using h)
       have hle := Finset.single_le_sum (f := fun j ↦ normSq (ψ (b j)))
         (fun j _ ↦ normSq_nonneg _) hi
       rw [hψ, normSq_eq_norm_sq] at hle
@@ -80,4 +81,4 @@ theorem sum_normSq_eq_one_iff {K ι : Type*} [Field K] [NumberField K] [IsAbelia
     rw [Finset.sum_eq_single_of_mem i hi (fun j hj hji ↦ by simp [hzero j hj hji]),
       normSq_eq_one hroot]
 
-end IsAbelianGalois
+end Finset
