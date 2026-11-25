@@ -590,6 +590,13 @@ theorem norm_component_le (w : C.sobolevSections μ p k) (i : Fin C.n) (j : Fin 
     ‖(w : C.SobolevData μ p k) i j‖ ≤ ‖w‖ :=
   (norm_le_pi_norm _ j).trans (norm_le_pi_norm (w : C.SobolevData μ p k) i)
 
+variable {C μ p k} in
+/-- The chart-`i` part of an element of the Sobolev sections has norm at most the norm of the
+element. -/
+theorem norm_apply_le (w : C.sobolevSections μ p k) (i : Fin C.n) :
+    ‖(w : C.SobolevData μ p k) i‖ ≤ ‖w‖ :=
+  norm_le_pi_norm (w : C.SobolevData μ p k) i
+
 /-- The continuous inclusion of the Sobolev sections of order `k + 1` into those of order `k`,
 forgetting the highest derivative of every component. -/
 def lowerOrderL : C.sobolevSections μ p (k + 1) →L[ℝ] C.sobolevSections μ p k :=

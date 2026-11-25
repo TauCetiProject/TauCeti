@@ -28,14 +28,14 @@ file proves the elliptic estimate at every order `k`:
 for every `ξ ∈ W^{k+1,p}(Σ, V)`, where `D ξ` is the bounded realization
 `TauCeti.IsRealCauchyRiemannOperator.sobolevSuccL : W^{k+1,p}(Σ, V) → W^{k,p}(Σ, Λ^{0,1} ⊗ V)`
 and `‖ξ‖_{Lᵖ}` is the norm of `ξ` with all derivatives forgotten
-(`TauCeti.IsRealCauchyRiemannOperator.exists_norm_le_norm_sobolevSuccL_add_norm`). The case
-`k = 0` is `TauCeti.IsRealCauchyRiemannOperator.exists_norm_le_norm_sobolevL_add_norm`.
+(`TauCeti.IsRealCauchyRiemannOperator.exists_norm_le_norm_sobolevSuccL_add_norm`). Its case
+`k = 0` gives `TauCeti.IsRealCauchyRiemannOperator.exists_norm_le_norm_sobolevL_add_norm`.
 
 ## The argument
 
 The estimate one order up, `‖ξ‖_{W^{k+1,p}} ≤ C (‖D ξ‖_{W^{k,p}} + ‖ξ‖_{W^{k,p}})`
 (`TauCeti.IsRealCauchyRiemannOperator.exists_norm_le_norm_sobolevSuccL_add_norm_lowerOrderL`),
-follows the order-one proof. A partition of unity `χᵢ` subordinate to the chart domains splits a
+is proved by localization. A partition of unity `χᵢ` subordinate to the chart domains splits a
 smooth section `s`, and `χᵢ s` is controlled by its chart-`i` components. In chart `i` the reading
 `u` of `s` satisfies `g = ∂bar u + Zᵢ u` for the reading `g` of `D s` and the zeroth-order term
 `Zᵢ`. The interior estimate for `∂bar`
@@ -181,7 +181,8 @@ theorem exists_eLpNormWkp_coord_smul_le (hp : 1 < p) (hp_top : p ≠ ⊤) (k : �
   refine ⟨((k + 1 : ℕ) + 1 : ℝ≥0) * (‖B‖₊ * ⟨c, hc0⟩ * 2 ^ (k + 1)) * C₀, fun s hs ↦ ?_⟩
   have hu : ContDiffOn ℝ (k + 1 : ℕ) (A.coord i s) O :=
     A.contDiffOn_coord (hs.of_le ENat.LEInfty.out) i
-  have hW := hC₀ _ _ hu fun _ hz ↦ coord_tangentHom_eq A hD i hs hz
+  have hW := hC₀ _ _ (hu.mono (subset_closure.trans hUO)) fun _ hz ↦
+    coord_tangentHom_eq A hD i hs hz
   -- Localize the reading of `χ s` to `W`, where the interior estimate applies.
   rw [eLpNormWkp_congr_ae (show (A.coord i fun x ↦ χ x • s x) =ᵐ[volume.restrict U]
       fun y ↦ B (χ' y) (A.coord i s y) from (ae_restrict_mem hU.measurableSet).mono
@@ -230,14 +231,11 @@ private theorem exists_eLpNormWkp_coord_le (k : ℕ) (i : Fin A.n) :
       SobolevSection.chartValueL_ofContMDiffSection_ae A volume p (k + 1) s i)
   -- The norm of the chart-`i` components is at most the norm of the tuple.
   have hDw : ‖((Dw : SobolevSection A.tangentHom volume p k) :
-      A.tangentHom.sectionChartData.SobolevData volume p k) i‖ ≤ ‖Dw‖ := by
-    rw [← Submodule.norm_coe Dw, ← Submodule.norm_coe (Dw : SobolevSection A.tangentHom volume p k)]
-    exact norm_le_pi_norm
-      ((Dw : SobolevSection A.tangentHom volume p k) :
-        A.tangentHom.sectionChartData.SobolevData volume p k) i
-  have hw₀ : ‖(w₀ : A.sectionChartData.SobolevData volume p k) i‖ ≤ ‖w₀‖ := by
-    rw [← Submodule.norm_coe w₀]
-    exact norm_le_pi_norm (w₀ : A.sectionChartData.SobolevData volume p k) i
+      A.tangentHom.sectionChartData.SobolevData volume p k) i‖ ≤ ‖Dw‖ :=
+    (SectionChartData.norm_apply_le (Dw : SobolevSection A.tangentHom volume p k) i).trans_eq
+      (Submodule.norm_coe Dw)
+  have hw₀ : ‖(w₀ : A.sectionChartData.SobolevData volume p k) i‖ ≤ ‖w₀‖ :=
+    SectionChartData.norm_apply_le w₀ i
   calc _ ≤ c₂ * ENNReal.ofReal ‖Dw‖ + c₃ * ENNReal.ofReal ‖w₀‖ :=
         add_le_add (h₂.trans (by gcongr)) (h₃.trans (by gcongr))
     _ ≤ c₂ * ENNReal.ofReal ‖Dw‖ + c₃ * ENNReal.ofReal ‖w₀‖ +

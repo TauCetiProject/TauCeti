@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Local.Norm.ContDiff
 import TauCeti.Analysis.Calculus.ContDiff.Integrable
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
-import TauCeti.MeasureTheory.Function.LpSeminorm.Indicator
+import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 
 /-!
 # The Leibniz bound for `Cᵏ` products
@@ -24,9 +24,8 @@ bounded derivatives; with a cutoff `a` that vanishes near `U \ V` it localizes t
 ## Main results
 
 * `TauCeti.eLpNormWkp_bilin_le`: the Leibniz bound.
-* `TauCeti.exists_eLpNormWkp_bilin_le`, `TauCeti.exists_eLpNormWkp_clm_apply_le`: the bound with
-  its constant chosen before the sets and functions, for a bilinear map and for a field of linear
-  maps.
+* `TauCeti.eLpNormWkp_clm_apply_le`: the bound for a field of continuous linear maps applied to a
+  function.
 -/
 
 public section
@@ -83,8 +82,9 @@ theorem eLpNormWkp_bilin_le (hp : 1 ≤ p) (B : G₁ →L[ℝ] G₂ →L[ℝ] G�
       eLpNorm (iteratedFDeriv ℝ l (fun y ↦ B (a y) (f y))) p (volume.restrict U) ≤
         M * eLpNormWkp p V k f := by
     -- The derivative vanishes on `U \ V`, so only `V` contributes.
-    rw [eLpNorm_restrict_eq_of_eqOn_zero hV.measurableSet hU.measurableSet hVU
-      fun x hx ↦ h0 x hx l hl]
+    rw [← eLpNorm_restrict_eq_of_ae_compl_eq_zero (μ := volume.restrict U) hV.nullMeasurableSet
+      ((ae_restrict_mem hU.measurableSet).mono fun x hx hxV ↦ h0 x ⟨hx, hxV⟩ l hl),
+      Measure.restrict_restrict_of_subset hVU]
     calc eLpNorm (iteratedFDeriv ℝ l (fun y ↦ B (a y) (f y))) p (volume.restrict V)
         ≤ eLpNorm ((M : ℝ) • S) p (volume.restrict V) := by
           refine eLpNorm_mono_ae_real ((hBaf.mono hVU).aestronglyMeasurable_iteratedFDeriv hV hl) ?_
@@ -103,24 +103,16 @@ theorem eLpNormWkp_bilin_le (hp : 1 ≤ p) (B : G₁ →L[ℝ] G₂ →L[ℝ] G�
         push_cast
         ring
 
-/-- The Leibniz bound `TauCeti.eLpNormWkp_bilin_le` with its constant, which depends only on `B`,
-`k` and `c`, chosen in advance. -/
-theorem exists_eLpNormWkp_bilin_le (hp : 1 ≤ p) (B : G₁ →L[ℝ] G₂ →L[ℝ] G₃) (k : ℕ) (c : ℝ≥0) :
-    ∃ C : ℝ≥0, ∀ {U V : Set ℂ} {a : ℂ → G₁} {f : ℂ → G₂}, IsOpen U → IsOpen V → V ⊆ U →
-      ContDiffOn ℝ k a U → ContDiffOn ℝ k f U →
-      (∀ x ∈ V, ∀ l ≤ k, ‖iteratedFDeriv ℝ l a x‖ ≤ c) →
-      (∀ x ∈ U \ V, ∀ l ≤ k, iteratedFDeriv ℝ l (fun y ↦ B (a y) (f y)) x = 0) →
-      eLpNormWkp p U k (fun y ↦ B (a y) (f y)) ≤ C * eLpNormWkp p V k f :=
-  ⟨_, fun hU hV hVU ha hf hc h0 ↦ eLpNormWkp_bilin_le hp B hU hV hVU ha hf hc h0⟩
-
-/-- The Leibniz bound for a field of continuous linear maps applied to a function, with its
-constant, which depends only on `k` and `c`, chosen in advance. -/
-theorem exists_eLpNormWkp_clm_apply_le (hp : 1 ≤ p) (k : ℕ) (c : ℝ≥0) :
-    ∃ C : ℝ≥0, ∀ {U V : Set ℂ} {a : ℂ → G₂ →L[ℝ] G₃} {f : ℂ → G₂}, IsOpen U → IsOpen V → V ⊆ U →
-      ContDiffOn ℝ k a U → ContDiffOn ℝ k f U →
-      (∀ x ∈ V, ∀ l ≤ k, ‖iteratedFDeriv ℝ l a x‖ ≤ c) →
-      (∀ x ∈ U \ V, ∀ l ≤ k, iteratedFDeriv ℝ l (fun y ↦ a y (f y)) x = 0) →
-      eLpNormWkp p U k (fun y ↦ a y (f y)) ≤ C * eLpNormWkp p V k f :=
-  exists_eLpNormWkp_bilin_le hp (ContinuousLinearMap.id ℝ (G₂ →L[ℝ] G₃)) k c
+/-- **The Leibniz bound for a field of continuous linear maps applied to a function.** The bound
+`TauCeti.eLpNormWkp_bilin_le` for the evaluation `(L, v) ↦ L v`, with constant `(k + 1) 2ᵏ c`. -/
+theorem eLpNormWkp_clm_apply_le (hp : 1 ≤ p) {U V : Set ℂ} (hU : IsOpen U) (hV : IsOpen V)
+    (hVU : V ⊆ U) {k : ℕ} {a : ℂ → G₂ →L[ℝ] G₃} {f : ℂ → G₂} (ha : ContDiffOn ℝ k a U)
+    (hf : ContDiffOn ℝ k f U) {c : ℝ≥0} (hc : ∀ x ∈ V, ∀ l ≤ k, ‖iteratedFDeriv ℝ l a x‖ ≤ c)
+    (h0 : ∀ x ∈ U \ V, ∀ l ≤ k, iteratedFDeriv ℝ l (fun y ↦ a y (f y)) x = 0) :
+    eLpNormWkp p U k (fun y ↦ a y (f y)) ≤ ((k + 1) * (c * 2 ^ k) : ℝ≥0) * eLpNormWkp p V k f := by
+  have h1 : ‖ContinuousLinearMap.id ℝ (G₂ →L[ℝ] G₃)‖₊ * c ≤ c :=
+    mul_le_of_le_one_left c.property ContinuousLinearMap.norm_id_le
+  exact (eLpNormWkp_bilin_le hp (ContinuousLinearMap.id ℝ (G₂ →L[ℝ] G₃)) hU hV hVU ha hf hc
+    h0).trans (by gcongr)
 
 end TauCeti
