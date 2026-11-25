@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Polynomial.RealClosed.Sign
+public import TauCeti.Data.Finset.Max
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Basic
 public import TauCeti.ModelTheory.OMinimal.Basic
 
@@ -77,33 +78,6 @@ section RealClosed
 
 variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [IsRealClosed R]
 
-omit [Field R] [IsStrictOrderedRing R] [IsRealClosed R] in
-/-- Around a point `t` outside a finite set `Z`, the open interval between the neighbours of `t`
-in `Z` contains no point of `Z` between `t` and any of its points. -/
-private theorem exists_lt_lt_forall_notMem_uIcc {Z : Finset R} {t : R} (ht : t ∉ Z) :
-    ∃ a ∈ insert ⊥ (Z.image (↑)), ∃ b ∈ insert ⊤ (Z.image (↑)),
-      a < (t : WithBot R) ∧ (t : WithTop R) < b ∧
-        ∀ u : R, a < u → (u : WithTop R) < b → ∀ z ∈ Z, z ∉ uIcc t u := by
-  classical
-  refine ⟨(Z.filter (· < t)).max, ?_, (Z.filter (t < ·)).min, ?_, ?_, ?_, ?_⟩
-  · exact Finset.insert_subset_insert _ (Finset.image_subset_image (Finset.filter_subset _ _))
-      (Finset.max_mem_insert_bot_image_coe _)
-  · exact Finset.insert_subset_insert _ (Finset.image_subset_image (Finset.filter_subset _ _))
-      (Finset.min_mem_insert_top_image_coe _)
-  · rw [Finset.max_eq_sup_coe, Finset.sup_lt_iff (WithBot.bot_lt_coe t)]
-    simp
-  · rw [Finset.min_eq_inf_withTop, Finset.lt_inf_iff (WithTop.coe_lt_top t)]
-    simp
-  · rintro u hau hub z hz hzu
-    rcases lt_trichotomy z t with hzt | rfl | hzt
-    · have hzu' : z < u :=
-        WithBot.coe_lt_coe.1 ((Finset.le_max (Finset.mem_filter.2 ⟨hz, hzt⟩)).trans_lt hau)
-      exact (mem_uIcc.1 hzu).elim (fun h => h.1.not_gt hzt) fun h => h.1.not_gt hzu'
-    · exact ht hz
-    · have huz : u < z :=
-        WithTop.coe_lt_coe.1 (hub.trans_le (Finset.min_le (Finset.mem_filter.2 ⟨hz, hzt⟩)))
-      exact (mem_uIcc.1 hzu).elim (fun h => h.2.not_gt huz) fun h => h.2.not_gt hzt
-
 /-- **Semialgebraic subsets of `R`.** Over a real closed field, a subset of `Fin 1 → R` is
 semialgebraic if and only if it is a finite union of points and open intervals with endpoints in
 `R ∪ {−∞}` and `R ∪ {+∞}`. -/
@@ -139,7 +113,7 @@ theorem isSemialgebraic_fin_one_iff {s : Set (Fin 1 → R)} :
   · intro hxs
     by_cases hZ : x 0 ∈ Z
     · exact Or.inl ⟨hZ, (hx x).symm ▸ hxs⟩
-    obtain ⟨a, ha, b, hb, hat, htb, hab⟩ := exists_lt_lt_forall_notMem_uIcc hZ
+    obtain ⟨a, ha, b, hb, hat, htb, hab⟩ := Finset.exists_lt_lt_forall_notMem_uIcc hZ
     refine Or.inr ⟨a, b, ⟨⟨ha, hb⟩, fun u hau hub => ?_⟩, hat, htb⟩
     rw [hconst, funext (hsign (hab u hau hub))]
     simpa [s, hq] using hxs
