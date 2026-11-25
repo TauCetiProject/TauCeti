@@ -123,6 +123,7 @@ vector `1` to `1 ∈ ℝ`. -/
 theorem mvfderiv_subtypeVal_Icc_one (x : Icc a b) :
     mvfderiv (𝓡∂ 1) (Subtype.val : Icc a b → ℝ) x 1 = 1 := by
   rw [mvfderiv_apply_eq_mfderiv_apply, mfderiv_subtypeVal_Icc_one]
+  -- The tangent space `TangentSpace 𝓘(ℝ, ℝ) _` is `ℝ` by definition, and its `1` is `1 : ℝ`.
   rfl
 
 /-- The unit tangent vector `1` of `[a, b]`, the image of `1 ∈ ℝ`, has norm one. -/
@@ -191,8 +192,11 @@ theorem norm_one_tangentSpace (x : Icc a b) : ‖(1 : TangentSpace (𝓡∂ (0 +
 `x`, read as the boundary constructions read it: `+1` in the translation chart and `-1` in the
 reflection chart at the right endpoint. -/
 theorem proj_one_tangentSpace (x : Icc a b) :
-    EuclideanSpace.proj 0 (1 : TangentSpace (𝓡∂ (0 + 1)) x) = if (x : ℝ) < b then 1 else -1 :=
-  one_tangentSpace_Icc_apply x 0
+    EuclideanSpace.proj 0 (1 : TangentSpace (𝓡∂ (0 + 1)) x) = if (x : ℝ) < b then 1 else -1 := by
+  rw [EuclideanSpace.coe_proj]
+  -- `Fin (0 + 1)` reduces to `Fin 1`, so the tangent spaces for the charts `𝓡∂ (0 + 1)` and
+  -- `𝓡∂ 1` and their unit vectors `1` (`instOneTangentSpace`) agree by definition.
+  exact one_tangentSpace_Icc_apply x 0
 
 end IccZeroAddOne
 
