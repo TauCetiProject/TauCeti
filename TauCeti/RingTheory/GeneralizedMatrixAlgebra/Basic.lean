@@ -26,13 +26,13 @@ although in general not a matrix algebra over `A`. The off-diagonal entries of a
 the representation is from being reducible.
 
 The matrix units `E_i^{kl} = ψᵢ⁻¹(E_{kl})` of the diagonal blocks are `E.matrixUnit i k l`. When
-every block is nonempty, the primitive idempotent of block `i` is `Eᵢ = E_i^{00}` and the *entry
-module* is `A_{ij} = Eᵢ R Eⱼ`. Multiplication in `R` restricts to bilinear maps
-`A_{ij} × A_{jk} → A_{ik}`; on `A_{ii} = A Eᵢ` it lands in the scalars, and the resulting scalar
-pairing `A_{ij} × A_{ji} → A`, which is `(x, y) ↦ T(xy)`, is symmetric because `T` is central.
+every block is nonempty, block `i` has the idempotent `Eᵢ = E_i^{00}` and the *entry module* is
+`A_{ij} = Eᵢ R Eⱼ`. Multiplication in `R` restricts to bilinear maps `A_{ij} × A_{jk} → A_{ik}`;
+on `A_{ii} = A Eᵢ` it lands in the scalars, and the resulting scalar pairing
+`A_{ij} × A_{ji} → A`, which is `(x, y) ↦ T(xy)`, is symmetric because `T` is central.
 
 The decomposition of `R` into the blocks `eᵢ R eⱼ` is the two-sided Peirce decomposition
-`CompleteOrthogonalIdempotents.isInternal_cornerSubmodule`. The primitive matrix units identify
+`CompleteOrthogonalIdempotents.isInternal_cornerSubmodule`. The matrix units identify
 each block `eᵢ R eⱼ` with the `dᵢ × dⱼ` matrices with entries in `A_{ij}`, and under this
 identification multiplication of blocks is matrix multiplication.
 
@@ -41,7 +41,7 @@ identification multiplication of blocks is matrix multiplication.
 * `TauCeti.GMAData A R d`: GMA data of block sizes `d` on the `A`-algebra `R`.
 * `TauCeti.GMAData.trace`: the trace `T(x) = ∑ᵢ tr ψᵢ(eᵢ x eᵢ)`.
 * `TauCeti.GMAData.matrixUnit`: the matrix units `E_i^{kl}` of the diagonal blocks.
-* `TauCeti.GMAData.primitiveIdempotent`: the primitive idempotent `Eᵢ = E_i^{00}` of a block.
+* `TauCeti.GMAData.primitiveIdempotent`: the idempotent `Eᵢ = E_i^{00}` of a block.
 * `TauCeti.GMAData.entry`: the entry module `A_{ij} = Eᵢ R Eⱼ`.
 * `TauCeti.GMAData.entrySelfEquiv`: the identification `A ≃ A_{ii}`, `a ↦ a Eᵢ`.
 * `TauCeti.GMAData.entryMul`: the multiplication `A_{ij} × A_{jk} → A_{ik}`.
@@ -252,11 +252,14 @@ theorem trace_matrixUnit (i : ι) (k l : Fin (d i)) :
   · rw [h, trace_single_eq_same]
   · exact trace_single_eq_of_ne _ _ _ h
 
-/-! ### Primitive idempotents and entry modules -/
+/-! ### The idempotents `Eᵢ` and entry modules -/
 
 variable [∀ i, NeZero (d i)]
 
-/-- The **primitive idempotent** `Eᵢ = E_i^{00}` of the block `i`. -/
+/-- The idempotent `Eᵢ = E_i^{00}` of the block `i`, the first diagonal matrix unit of that block.
+Its corner `Eᵢ R Eᵢ` is `A Eᵢ` (see `entrySelfEquiv`), so `Eᵢ` is a primitive idempotent of `R`
+only when `A` has no idempotents other than `0` and `1`. The name refers to `Eᵢ` being a single
+diagonal matrix unit, not to primitivity in `R`. -/
 def primitiveIdempotent (i : ι) : R :=
   E.matrixUnit i 0 0
 
@@ -272,7 +275,7 @@ theorem trace_primitiveIdempotent (i : ι) : E.trace (E.primitiveIdempotent i) =
   simp [primitiveIdempotent, trace_matrixUnit]
 
 /-- The **entry module** `A_{ij} = Eᵢ R Eⱼ` of a generalized matrix algebra, cut out by the
-primitive idempotents of the blocks `i` and `j`. -/
+idempotents `Eᵢ` and `Eⱼ` of the blocks `i` and `j`. -/
 def entry (i j : ι) : Submodule A R :=
   TauCeti.cornerSubmodule A (E.primitiveIdempotent i) (E.primitiveIdempotent j)
 

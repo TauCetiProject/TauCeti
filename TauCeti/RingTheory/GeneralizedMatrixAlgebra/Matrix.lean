@@ -27,7 +27,7 @@ which every entry module is free of rank one.
 
 * `Matrix.cornerEquiv_scalarGMAData_apply`: its corner isomorphisms read off the diagonal entry.
 * `Matrix.trace_scalarGMAData`: its trace is the matrix trace.
-* `Matrix.primitiveIdempotent_scalarGMAData`: its primitive idempotents are the `Eᵢᵢ`.
+* `Matrix.primitiveIdempotent_scalarGMAData`: its block idempotents `Eᵢ` are the `Eᵢᵢ`.
 * `Matrix.mem_entry_scalarGMAData_iff`: its entry module `A_{ij}` consists of the multiples of
   `Eᵢⱼ`.
 * `Matrix.pairing_scalarGMAData`: its scalar pairing is `φ(a Eᵢⱼ, b Eⱼᵢ) = ab`.
@@ -131,7 +131,7 @@ theorem matrixUnit_scalarGMAData (i : n) (k l : Fin 1) :
   rw [TauCeti.GMAData.matrixUnit_def, h, map_one, IsIdempotentElem.Corner.val_one,
     idempotent_scalarGMAData]
 
-/-- The primitive idempotents of the scalar-block GMA data are the diagonal matrix units. -/
+/-- The block idempotents `Eᵢ` of the scalar-block GMA data are the diagonal matrix units. -/
 @[simp]
 theorem primitiveIdempotent_scalarGMAData (i : n) :
     (scalarGMAData A n).primitiveIdempotent i = single i i 1 := by
