@@ -41,8 +41,9 @@ is smooth over `R` (`TauCeti.AntidiagonalSpecialOrthogonal.smooth_coordinateHopf
 Taking spectra gives an isomorphism of group schemes `SO_l^J ≅ SO_l`
 (`TauCeti.AntidiagonalSpecialOrthogonal.groupSchemeIsoSpecialOrthogonal`), which inside `GL_l` is
 conjugation by `P`
-(`TauCeti.AntidiagonalSpecialOrthogonal.groupSchemeIsoSpecialOrthogonal_hom_comp_inclusion`) and
-on `A`-valued points sends `M ∈ SO_l(A)` to `P⁻¹ M P`.
+(`TauCeti.AntidiagonalSpecialOrthogonal.groupSchemeIsoSpecialOrthogonal_hom_comp_inclusion`), and
+its inverse sends `M ∈ SO_l(A)` to `P⁻¹ M P` on `A`-valued points
+(`pointsMulEquiv_mapPointsFunctor_coordinateHopfAlgebraIsoSpecialOrthogonal_hom`).
 
 ## References
 

@@ -188,6 +188,9 @@ theorem inclusion_eq_eqToHom_comp_hopfSpec_map :
   rw [inclusion, coordinateMap_def]
   unfold groupSchemeι
   simp only [eqToIso.hom, CommHopfAlgCat.quotientSpecι_def]
+  -- The leading `eqToHom (groupScheme_def R n)` is the identity, since `groupScheme_def` holds by
+  -- `rfl`. It cannot be rewritten away with `eqToHom_refl`: `groupScheme` is a plain definition,
+  -- so its two sides are not reducibly equal, and the remaining goal is closed definitionally.
   rfl
 
 /-- The special orthogonal inclusion into the named general linear group scheme is a closed
