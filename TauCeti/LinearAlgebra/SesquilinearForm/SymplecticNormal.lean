@@ -7,7 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Quotient.Bilinear
-import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+public import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.Algebra.Module.Submodule.Map
 
 /-!
 # Symplectic normal spaces of forms with values in a module
@@ -125,27 +126,6 @@ variable {V' V'' Q' Q'' : Type*} [AddCommGroup V'] [Module K V'] [AddCommGroup V
   {W'' : Submodule K V''} {e : V ≃ₗ[K] V'} {e' : V' ≃ₗ[K] V''} {ℓ : Q →ₗ[K] Q'}
   {ℓ' : Q' →ₗ[K] Q''}
 
-/-- **Orthogonals under an equivalence.** If `e : V ≃ V'` carries `B` to `B'` up to an injective
-linear map `ℓ : Q → Q'` of the value modules, `B' (e u) (e v) = ℓ (B u v)`, then `e` carries the
-`B`-orthogonal of `W` onto the `B'`-orthogonal of `e(W)`. -/
-theorem _root_.Submodule.map_orthogonalBilin (W : Submodule K V) (hℓ : Function.Injective ℓ)
-    (h : ∀ u v, B' (e u) (e v) = ℓ (B u v)) :
-    (W.orthogonalBilin B).map (e : V →ₗ[K] V') = (W.map (e : V →ₗ[K] V')).orthogonalBilin B' := by
-  ext v
-  simp only [Submodule.mem_map_equiv, Submodule.mem_orthogonalBilin, Submodule.orthogonalBilin_map,
-    LinearMap.comp_apply, LinearEquiv.coe_coe]
-  -- `B w (e⁻¹ v)` vanishes exactly when its image `ℓ (B w (e⁻¹ v)) = B' (e w) v` does.
-  refine forall₂_congr fun w _ ↦ ?_
-  rw [← hℓ.eq_iff, map_zero, ← h, e.apply_symm_apply]
-
-/-- An equivalence `e` restricted to submodules `p` and `q = e(p)` carries the part of `p` lying in
-`W` onto the part of `q` lying in `W' = e(W)`. -/
-private theorem map_comap_subtype_ofSubmodules {p : Submodule K V} {q : Submodule K V'}
-    (hpq : p.map (e : V →ₗ[K] V') = q) (hW : W.map (e : V →ₗ[K] V') = W') :
-    (W.comap p.subtype).map (e.ofSubmodules p q hpq : p →ₗ[K] q) = W'.comap q.subtype := by
-  ext v
-  simp [← hW, Submodule.map_equiv_eq_comap_symm]
-
 variable (W W') in
 /-- **The symplectic normal spaces of corresponding subspaces.** An equivalence `e : V ≃ V'`
 carrying `B` to `B'` up to an injective linear map `ℓ : Q → Q'`, `B' (e u) (e v) = ℓ (B u v)`, and
@@ -157,7 +137,7 @@ def symplecticNormalCongr (e : V ≃ₗ[K] V') (hℓ : Function.Injective ℓ)
     SymplecticNormal B W ≃ₗ[K] SymplecticNormal B' W' :=
   Submodule.Quotient.equiv _ _
     (e.ofSubmodules _ _ (hW ▸ W.map_orthogonalBilin hℓ h))
-    (map_comap_subtype_ofSubmodules _ hW)
+    (e.map_comap_subtype_ofSubmodules _ hW)
 
 /-- The equivalence of symplectic normal spaces induced by `e` sends the class of `u` to the class
 of `e u`. -/

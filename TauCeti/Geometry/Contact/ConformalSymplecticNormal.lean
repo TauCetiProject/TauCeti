@@ -163,12 +163,6 @@ private theorem ofSubmodules_ofBijective_mfderiv_apply {x : M}
   Subtype.ext (by simp)
 
 omit [CompleteSpace E] [IsManifold I 2 M] [CompleteSpace E₁] [IsManifold I₁ 2 M₁] in
-/-- A map which is `C^n` at a point, for some `n ≥ 2`, is differentiable there. -/
-private theorem mdifferentiableAt_of_two_le {n : ℕ∞ω} {x : M} (hF : ContMDiffAt I I₁ n F x)
-    (hn : 2 ≤ n) : MDifferentiableAt I I₁ F x :=
-  hF.mdifferentiableAt (two_pos.trans_le hn).ne'
-
-omit [CompleteSpace E] [IsManifold I 2 M] [CompleteSpace E₁] [IsManifold I₁ 2 M₁] in
 /-- The differential of `F` carries the part of the tangent image of `f` lying in `D` onto the part
 of the tangent image of `F ∘ f` lying in `D₁`. -/
 private theorem map_comap_range_mfderiv (hFx : (mfderiv I I₁ F (f y)).IsInvertible)
@@ -210,7 +204,7 @@ def conformalSymplecticNormalEquiv {n : ℕ∞ω} (hD : IsContMDiffDistribution 
       (ofSubmodules_ofBijective_mfderiv_apply hFx hFD hmap u)
       (ofSubmodules_ofBijective_mfderiv_apply hFx hFD hmap v)).trans
       (distributionLeviForm_restrict_mfderiv hD hD₁ hF hn hFx hFD hFD' u v))
-    (map_comap_range_mfderiv hFx hmap (mdifferentiableAt_of_two_le hF hn) hf)
+    (map_comap_range_mfderiv hFx hmap (hF.mdifferentiableAt (two_pos.trans_le hn).ne') hf)
 
 /-- The isomorphism of conformal symplectic normal spaces induced by `F` sends the class of `u` to
 the class of `dF u`. -/
@@ -276,7 +270,8 @@ theorem conformalSymplecticNormalEquiv_trans {n n₁ n₂ : ℕ∞ω}
   | H u =>
     have hcomp : mfderiv I I₂ (G ∘ F) (f y) = (mfderiv I₁ I₂ G (F (f y))).comp
         (mfderiv I I₁ F (f y)) :=
-      mfderiv_comp (f y) (mdifferentiableAt_of_two_le hG hn₁) (mdifferentiableAt_of_two_le hF hn)
+      mfderiv_comp (f y) (hG.mdifferentiableAt (two_pos.trans_le hn₁).ne')
+        (hF.mdifferentiableAt (two_pos.trans_le hn).ne')
     rw [LinearEquiv.trans_apply, conformalSymplecticNormalEquiv, conformalSymplecticNormalEquiv,
       conformalSymplecticNormalEquiv]
     -- The base points `G ((F ∘ f) y)` and `(G ∘ F ∘ f) y` agree only up to unfolding `∘`, which

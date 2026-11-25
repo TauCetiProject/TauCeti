@@ -43,6 +43,8 @@ of `A`, every `A`-linear map sends the scalar product `I • ⊤` into `I • �
   inclusion.
 * `Submodule.map_equiv_eq_iff`: a semilinear equivalence carries `p` onto `q` exactly when it
   maps a vector into `q` precisely when the vector lies in `p`.
+* `LinearEquiv.map_comap_subtype_ofSubmodules`: a semilinear equivalence restricted to `p` and
+  `e(p)` carries the trace of `W` in `p` onto the trace of `e(W)` in `e(p)`.
 * `Submodule.map_mem_smul_top`: every `A`-linear map sends `I • ⊤` into `I • ⊤` for any
   `k`-submodule `I` of `A`.
 * `LinearMap.map_equivMapOfInjective_comap_subtype`: the restriction of an injective map to `B`
@@ -89,6 +91,15 @@ theorem map_equiv_eq_iff {e : M ≃ₛₗ[τ₁₂] M₂} {p : Submodule R M} {q
   rw [SetLike.ext_iff, e.surjective.forall]
   simp only [mem_map_equiv, LinearEquiv.symm_apply_apply]
   exact forall_congr' fun _ ↦ Iff.comm
+
+/-- A semilinear equivalence `e` restricted to submodules `p` and `q = e(p)` carries the trace
+`W.comap p.subtype` of `W` in `p` onto the trace of `W' = e(W)` in `q`. -/
+theorem _root_.LinearEquiv.map_comap_subtype_ofSubmodules (e : M ≃ₛₗ[τ₁₂] M₂)
+    {p W : Submodule R M} {q W' : Submodule R₂ M₂} (hpq : p.map (e : M →ₛₗ[τ₁₂] M₂) = q)
+    (hW : W.map (e : M →ₛₗ[τ₁₂] M₂) = W') :
+    (W.comap p.subtype).map (e.ofSubmodules p q hpq : p →ₛₗ[τ₁₂] q) = W'.comap q.subtype := by
+  ext v
+  simp [← hW, map_equiv_eq_comap_symm]
 
 end Equiv
 

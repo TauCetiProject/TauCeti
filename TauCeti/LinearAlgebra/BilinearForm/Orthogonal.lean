@@ -106,6 +106,8 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   `Submodule.finrank_inf_orthogonalBilin_eq_of_isometry`: a linear isomorphism of subspaces
   carrying one form to the other, up to an injective map of values, matches the radicals
   `W ∩ W^⊥` of the restricted forms.
+* `Submodule.map_orthogonalBilin`: a linear equivalence carrying one form to the other, up to an
+  injective map of values, carries orthogonals onto orthogonals.
 * `LinearMap.BilinForm.finrank_le_finrank_add_finrank_orthogonal` and
   `LinearMap.BilinForm.finrank_le_two_mul_finrank_of_orthogonal_le`: dimension lower bounds for
   orthogonal complements of an arbitrary bilinear form.
@@ -927,6 +929,20 @@ theorem finrank_inf_orthogonalBilin_eq_of_isometry (hc : Function.Injective c)
       Module.finrank R ↥(W' ⊓ W'.orthogonalBilin B') := by
   rw [← map_comap_subtype, ← map_comap_subtype, finrank_map_subtype_eq, finrank_map_subtype_eq,
     ← map_comap_orthogonalBilin_of_isometry hc L hL, LinearEquiv.finrank_map_eq]
+
+variable (W) in
+/-- **Orthogonals under an equivalence.** If `e : M ≃ M'` carries `B` to `B'` up to an injective
+linear map `c : Q → Q'` of the value modules, `B' (e u) (e v) = c (B u v)`, then `e` carries the
+`B`-orthogonal of `W` onto the `B'`-orthogonal of `e(W)`. -/
+theorem map_orthogonalBilin {e : M ≃ₗ[R] M'} (hc : Function.Injective c)
+    (h : ∀ u v, B' (e u) (e v) = c (B u v)) :
+    (W.orthogonalBilin B).map (e : M →ₗ[R] M') = (W.map (e : M →ₗ[R] M')).orthogonalBilin B' := by
+  ext v
+  simp only [mem_map_equiv, mem_orthogonalBilin, orthogonalBilin_map, LinearMap.comp_apply,
+    LinearEquiv.coe_coe]
+  -- `B w (e⁻¹ v)` vanishes exactly when its image `c (B w (e⁻¹ v)) = B' (e w) v` does.
+  refine forall₂_congr fun w _ ↦ ?_
+  rw [← hc.eq_iff, map_zero, ← h, e.apply_symm_apply]
 
 end Isometry
 
