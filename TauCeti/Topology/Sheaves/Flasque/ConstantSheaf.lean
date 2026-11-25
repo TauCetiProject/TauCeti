@@ -24,8 +24,8 @@ When `U` is irreducible, every two nonempty opens of `U` meet, so a locally cons
 `U` is constant: the canonical map `A ⟶ A_X(U)` is a bijection. In particular, on an irreducible
 space `X` every nonempty open has sections `A`, and the restriction maps between nonempty opens
 are identities under these identifications. Over the empty open the sections are a terminal
-object (a zero object when `D` has one, by `TopCat.Sheaf.isZero_obj_of_eq_bot`). Hence, when
-`D` has a zero object, the constant sheaf on an irreducible space is flasque. For sheaves of
+object (a zero object when `D` has zero morphisms). Hence, when `D` has zero morphisms, the
+constant sheaf on an irreducible space is flasque. For sheaves of
 abelian groups its cohomology therefore vanishes in positive degrees, by the instance
 `TauCeti.Topology.subsingleton_H_succ_of_isFlasque` from `TauCeti.Topology.Sheaves.Flasque.Basic`,
 which callers import themselves. This does not happen automatically:
@@ -139,21 +139,21 @@ theorem constantSheafSectionsIso_hom_comp_map
       (constantSheafSectionsIso A hV).hom := by
   rw [constantSheafSectionsIso_hom, constantSheafSectionsIso_hom, toSheafify_app_const_comp_map]
 
-/-- On an irreducible space, the constant sheaf with values in a concrete category with a zero
-object is flasque.
+/-- On an irreducible space, the constant sheaf with values in a concrete category with zero
+morphisms is flasque.
 
 This is a theorem rather than an instance, because instance search for it times out for
 `AddCommGrpCat`. To get the vanishing of positive-degree cohomology from
 `TauCeti.Topology.subsingleton_H_succ_of_isFlasque`, first bring it into scope with
 `have := isFlasque_constantSheaf A`. -/
 theorem isFlasque_constantSheaf [IrreducibleSpace X]
-    [(Opens.grothendieckTopology X).HasSheafCompose (forget D)] [HasZeroObject D] (A : D) :
+    [(Opens.grothendieckTopology X).HasSheafCompose (forget D)] [HasZeroMorphisms D] (A : D) :
     TopCat.Presheaf.IsFlasque ((constantSheaf (Opens.grothendieckTopology X) D).obj A).obj where
   epi {U V} i := by
     induction V with | op V
     let φ := toSheafify (Opens.grothendieckTopology X) ((Functor.const _).obj A)
     rcases (V : Set X).eq_empty_or_nonempty with hV | hV
-    · exact (TopCat.Sheaf.isZero_obj_of_eq_bot _ (SetLike.coe_injective hV)).epi _
+    · exact (TopCat.Sheaf.isTerminalOfEqEmpty _ (SetLike.coe_injective hV)).isZero.epi _
     · -- Both `A ⟶ A_X(V)` and `A ⟶ A_X(U)` are bijective, and they commute with restriction.
       refine ConcreteCategory.epi_of_surjective _ fun t ↦ ?_
       obtain ⟨a, rfl⟩ := (bijective_toSheafify_app_const A
