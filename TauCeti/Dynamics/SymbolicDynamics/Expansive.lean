@@ -42,7 +42,8 @@ namespace Subshift
 variable {Γ I S : Type*} [Group Γ] [MulAction Γ I] [UniformSpace S] [DiscreteUniformity S]
 
 /-- A subshift is an expansive action as soon as a finite set `F` of coordinates meets every orbit
-of `Γ` on the index set: the entourage "agree on `F`" separates orbits. -/
+of `Γ` on the index set: the entourage "agree on `F`" witnesses expansiveness, since distinct
+configurations have translates that differ somewhere on `F`. -/
 theorem isExpansiveAction (X : Subshift Γ I S) {F : Set I} (hF : F.Finite)
     (hFI : ∀ i : I, ∃ g : Γ, g • i ∈ F) : IsExpansiveAction Γ X := by
   rw [isExpansiveAction_iff]
