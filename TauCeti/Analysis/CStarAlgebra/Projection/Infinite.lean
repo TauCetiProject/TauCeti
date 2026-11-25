@@ -12,22 +12,21 @@ public import TauCeti.Algebra.Star.PartialIsometry
 /-!
 # Infinite and properly infinite projections
 
-CStarClassification CL4.2 (Rørdam, §4.1). A projection `p` of a star-ordered ring is
-**infinite** (`TauCeti.IsInfiniteProjection`) if it is Murray–von Neumann equivalent to a proper
-subprojection of itself: some `v` has `v⋆v = p`, `vv⋆ ≤ p` and `vv⋆ ≠ p`. It is **properly
-infinite** (`TauCeti.IsProperlyInfiniteProjection`) if it contains two orthogonal subprojections
-each equivalent to `p`: some `v, w` have `v⋆v = w⋆w = p`, `vv⋆ ≤ p`, `ww⋆ ≤ p` and
-`vv⋆ · ww⋆ = 0`.
+A projection `p` of a star-ordered ring is **infinite** (`TauCeti.IsInfiniteProjection`) if it
+is Murray–von Neumann equivalent to a proper subprojection of itself: some `v` has `v⋆v = p`,
+`vv⋆ ≤ p` and `vv⋆ ≠ p`. It is **properly infinite** (`TauCeti.IsProperlyInfiniteProjection`) if
+it contains two orthogonal subprojections each equivalent to `p`: some `v, w` have
+`v⋆v = w⋆w = p`, `vv⋆ ≤ p`, `ww⋆ ≤ p` and `vv⋆ · ww⋆ = 0` (Rørdam, §4.1).
 
-Nonzeroness is kept explicit, as the roadmap asks. In a ring with a proper star (for instance a
-C⋆-algebra) an infinite projection is nonzero (`TauCeti.IsInfiniteProjection.ne_zero`), while
-`p = 0` is properly infinite (`TauCeti.isProperlyInfiniteProjection_zero`) and not infinite. A
-nonzero properly infinite projection is infinite
+Nonzeroness is kept explicit: `p = 0` is properly infinite but not infinite. In a ring with a
+proper star (for instance a C⋆-algebra) an infinite projection is nonzero
+(`TauCeti.IsInfiniteProjection.ne_zero`), while `p = 0` is properly infinite
+(`TauCeti.isProperlyInfiniteProjection_zero`). A nonzero properly infinite projection is infinite
 (`TauCeti.IsProperlyInfiniteProjection.isInfiniteProjection`): if `vv⋆ = p`, then `ww⋆ ≤ p` and
 `p · ww⋆ = 0` force `ww⋆ = 0`, hence `w = 0` and `p = w⋆w = 0`.
 
-The Check that `M_n(ℂ)` has no infinite projection, by rank, is
-`TauCeti.not_isInfiniteProjection_matrix`: `p - vv⋆` is positive semidefinite with trace
+The matrix algebra `M_n(𝕜)` over `𝕜 = ℝ` or `ℂ` has no infinite projection
+(`TauCeti.not_isInfiniteProjection_matrix`): `p - vv⋆` is positive semidefinite with trace
 `tr(v⋆v) - tr(vv⋆) = 0`, so `vv⋆ = p`.
 
 ## References
@@ -40,7 +39,7 @@ public section
 
 namespace TauCeti
 
-variable {R : Type*} [Ring R] [StarRing R] [PartialOrder R]
+variable {R : Type*} [NonUnitalRing R] [StarRing R] [PartialOrder R]
 
 /-- A projection `p` is **infinite** if it is Murray–von Neumann equivalent to a proper
 subprojection: some `v` has `v⋆v = p`, `vv⋆ ≤ p` and `vv⋆ ≠ p`. -/
@@ -53,7 +52,29 @@ def IsProperlyInfiniteProjection (p : R) : Prop :=
   IsStarProjection p ∧ ∃ v w : R, star v * v = p ∧ star w * w = p ∧
     v * star v ≤ p ∧ w * star w ≤ p ∧ v * star v * (w * star w) = 0
 
+/-- Unfold the definition of an infinite projection. -/
+theorem isInfiniteProjection_iff {p : R} : IsInfiniteProjection p ↔
+    IsStarProjection p ∧ ∃ v : R, star v * v = p ∧ v * star v ≤ p ∧ v * star v ≠ p :=
+  Iff.rfl
+
+/-- Unfold the definition of a properly infinite projection. -/
+theorem isProperlyInfiniteProjection_iff {p : R} : IsProperlyInfiniteProjection p ↔
+    IsStarProjection p ∧ ∃ v w : R, star v * v = p ∧ star w * w = p ∧
+      v * star v ≤ p ∧ w * star w ≤ p ∧ v * star v * (w * star w) = 0 :=
+  Iff.rfl
+
+/-- An infinite projection is a star projection. -/
+theorem IsInfiniteProjection.isStarProjection {p : R} (hp : IsInfiniteProjection p) :
+    IsStarProjection p :=
+  hp.1
+
+/-- A properly infinite projection is a star projection. -/
+theorem IsProperlyInfiniteProjection.isStarProjection {p : R}
+    (hp : IsProperlyInfiniteProjection p) : IsStarProjection p :=
+  hp.1
+
 /-- The zero projection is properly infinite, with `v = w = 0`. -/
+@[simp]
 theorem isProperlyInfiniteProjection_zero : IsProperlyInfiniteProjection (0 : R) :=
   ⟨.zero R, 0, 0, by simp⟩
 
@@ -66,22 +87,9 @@ theorem IsInfiniteProjection.ne_zero [IsProperStar R] {p : R} (hp : IsInfinitePr
   simp [hv] at hne
 
 /-- The zero projection is not infinite, although it is properly infinite. -/
+@[simp]
 theorem not_isInfiniteProjection_zero [IsProperStar R] : ¬ IsInfiniteProjection (0 : R) :=
   fun h ↦ h.ne_zero rfl
-
-omit [PartialOrder R] in
-/-- In a ring with a proper star, `w` is a partial isometry once `w⋆w` is a projection:
-`(w - w w⋆w)⋆ (w - w w⋆w) = s - s s - s s + s s s = 0` for `s = w⋆w`. -/
-theorem IsPartialIsometry.of_isStarProjection_star_mul_self [IsProperStar R] {w : R}
-    (hw : IsStarProjection (star w * w)) : IsPartialIsometry w := by
-  have h : star w * w * (star w * w) = star w * w := hw.isIdempotentElem.eq
-  have key : star (w - w * (star w * w)) * (w - w * (star w * w)) =
-      star w * w - star w * w * (star w * w) - star w * w * (star w * w) +
-        star w * w * (star w * w) * (star w * w) := by
-    simp only [star_sub, star_mul, star_star, sub_mul, mul_sub, mul_assoc]
-    abel
-  rw [h, sub_self, zero_sub, h, neg_add_cancel, star_mul_self_eq_zero, sub_eq_zero] at key
-  rw [isPartialIsometry_iff, mul_assoc, ← key]
 
 variable [StarOrderedRing R] [IsProperStar R]
 
@@ -90,21 +98,21 @@ theorem IsProperlyInfiniteProjection.isInfiniteProjection {p : R}
     (h : IsProperlyInfiniteProjection p) (hp : p ≠ 0) : IsInfiniteProjection p := by
   obtain ⟨hpp, v, w, hv, hw, hvp, hwp, hvw⟩ := h
   refine ⟨hpp, v, hv, hvp, fun hvv ↦ hp ?_⟩
-  have hwproj :=
-    (IsPartialIsometry.of_isStarProjection_star_mul_self (hw ▸ hpp)).isStarProjection_mul_star_self
+  have hwproj := (isPartialIsometry_iff_isStarProjection_star_mul_self.mpr
+    (hw ▸ hpp)).isStarProjection_mul_star_self
   have hw0 : w * star w = 0 := by
     rw [← (hwproj.le_iff_mul_eq_right hpp).mp hwp, ← hvv, hvw]
   rw [mul_star_self_eq_zero] at hw0
   rw [← hw, hw0, star_zero, zero_mul]
 
-/-! ### The Check for matrix algebras -/
+/-! ### Matrix algebras -/
 
 open scoped MatrixOrder
 
-/-- `M_n(ℂ)` has no infinite projection: if `v⋆v = p` and `vv⋆ ≤ p`, then `p - vv⋆` is positive
-semidefinite of trace `tr(v⋆v) - tr(vv⋆) = 0`, so `vv⋆ = p`. -/
-theorem not_isInfiniteProjection_matrix {n : Type*} [Fintype n] [DecidableEq n]
-    (p : _root_.Matrix n n ℂ) : ¬ IsInfiniteProjection p := by
+/-- The matrix algebra `M_n(𝕜)` has no infinite projection. -/
+theorem not_isInfiniteProjection_matrix {𝕜 n : Type*} [RCLike 𝕜] [Fintype n]
+    (p : _root_.Matrix n n 𝕜) : ¬ IsInfiniteProjection p := by
+  -- `p - vv⋆` is positive semidefinite of trace `tr(v⋆v) - tr(vv⋆) = 0`, so `vv⋆ = p`.
   rintro ⟨-, v, hv, hle, hne⟩
   refine hne (sub_eq_zero.mp ?_).symm
   refine ((_root_.Matrix.le_iff.mp hle).trace_eq_zero_iff).mp ?_
