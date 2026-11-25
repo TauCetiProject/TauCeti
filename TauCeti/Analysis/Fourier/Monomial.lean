@@ -22,8 +22,9 @@ Mathlib's lemmas about `fourier n : C(AddCircle T, ℂ)` mostly record its behav
 `n`. This file records the facts about the dependence on the point that translation-invariant
 Fourier arguments use: the monomial turns a sum of points into a product, differentiating it
 produces the frequency factor `2πin/T` of norm `2π|n|/T`, and consequently it is Lipschitz in a
-real parameter with that constant. Integrating by parts over one period moves this frequency
-factor across a monomial reparametrized by the lift of a degree-one circle map.
+real parameter with that constant and agrees with its tangent line to second order. Integrating
+by parts over one period moves this frequency factor across a monomial reparametrized by the lift
+of a degree-one circle map.
 
 ## Main statements
 
@@ -34,6 +35,8 @@ factor across a monomial reparametrized by the lift of a degree-one circle map.
   of points into `fourier n x * fourier n y` and `fourier n x * fourier (-n) y`.
 * `TauCeti.norm_two_pi_I_mul_intCast_div`: `‖2πin/T‖ = 2π/T |n|` for `T > 0`.
 * `TauCeti.norm_fourier_coe_sub_le`: `‖e_n φ - e_n ψ‖ ≤ ‖2πin/T‖ |φ - ψ|` for real `φ, ψ`.
+* `TauCeti.norm_fourier_coe_sub_sub_le`: the second-order bound
+  `‖e_n φ - e_n ψ - (φ - ψ) (2πin/T) e_n ψ‖ ≤ ‖2πin/T‖² |φ - ψ|²`.
 * `TauCeti.norm_fourier_sub_one_le`: `‖e_n h - 1‖ ≤ ‖2πin/T‖ ‖h‖` on the circle, where `‖h‖` is
   the distance from `h` to `0`.
 * `TauCeti.one_le_norm_fourier_sub_one`: `1 ≤ ‖e_n x - 1‖` for `T / (6 |n|) ≤ x ≤ T / (3 |n|)`.
@@ -122,6 +125,33 @@ theorem norm_fourier_coe_sub_le (n : ℤ) (φ ψ : ℝ) :
     (fun y _ ↦ by rw [norm_mul, fourier_apply, Circle.norm_coe, mul_one]) (Set.mem_univ ψ)
     (Set.mem_univ φ)
   rwa [Real.norm_eq_abs] at h
+
+/-- The Fourier monomial agrees with its tangent line to second order in a real parameter:
+`‖e_n φ - e_n ψ - (φ - ψ) (2πin/T) e_n ψ‖ ≤ ‖2πin/T‖² |φ - ψ|²`. -/
+theorem norm_fourier_coe_sub_sub_le (n : ℤ) (φ ψ : ℝ) :
+    ‖fourier n (φ : AddCircle T) - fourier n (ψ : AddCircle T) -
+        (φ - ψ) * (2 * π * I * n / T * fourier n (ψ : AddCircle T))‖ ≤
+      ‖(2 * π * I * n / T : ℂ)‖ ^ 2 * |φ - ψ| ^ 2 := by
+  set c : ℂ := 2 * π * I * n / T
+  -- The error `y ↦ e_n y - e_n ψ - (y - ψ) c e_n ψ` vanishes at `ψ`, and its derivative
+  -- `c (e_n y - e_n ψ)` has norm at most `‖c‖² |φ - ψ|` between `ψ` and `φ`.
+  have h := (convex_uIcc ψ φ).norm_image_sub_le_of_norm_hasDerivWithin_le
+    (f := fun y : ℝ ↦ fourier n (y : AddCircle T) - fourier n (ψ : AddCircle T) -
+      ((y : ℂ) - ψ) * (c * fourier n (ψ : AddCircle T)))
+    (f' := fun y ↦ c * fourier n (y : AddCircle T) - c * fourier n (ψ : AddCircle T))
+    (C := ‖c‖ ^ 2 * |φ - ψ|) (fun y _ ↦ ?_) (fun y hy ↦ ?_) Set.left_mem_uIcc
+    Set.right_mem_uIcc
+  · simpa [Real.norm_eq_abs, sq, mul_assoc] using h
+  · have := ((hasDerivAt_fourier T n y).sub_const (fourier n (ψ : AddCircle T))).sub
+      (((hasDerivAt_id y).ofReal_comp.sub_const (ψ : ℂ)).mul_const
+        (c * fourier n (ψ : AddCircle T)))
+    convert this.hasDerivWithinAt using 1
+    · funext y
+      simp only [Pi.sub_apply, id]
+    · rw [Complex.ofReal_one, one_mul]
+  · rw [← mul_sub, norm_mul, sq, mul_assoc]
+    refine mul_le_mul_of_nonneg_left ((norm_fourier_coe_sub_le n y ψ).trans ?_) (norm_nonneg _)
+    exact mul_le_mul_of_nonneg_left (Set.abs_sub_left_of_mem_uIcc hy) (norm_nonneg _)
 
 /-- The Fourier monomial is Lipschitz on the circle with constant `‖2πin/T‖`, measured from `0`:
 `‖e_n h - 1‖ ≤ ‖2πin/T‖ ‖h‖`, where `‖h‖` is the distance from `h` to `0`. -/

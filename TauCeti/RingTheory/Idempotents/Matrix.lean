@@ -36,6 +36,8 @@ one nonzero row from each idempotent yields a left `K`-linearly independent fami
 ## Main results
 
 * `Matrix.isIdempotentElem_single_one`: the diagonal matrix unit `Eᵢᵢ` is idempotent.
+* `Matrix.orthogonalIdempotents_map_single`: the images of the diagonal matrix units under a
+  homomorphism out of `Mₙ(α)` are orthogonal idempotents.
 * `Matrix.single_apply_eq_of_mem_corner`: a matrix in the corner of `Eᵢᵢ` is supported on the
   entry `(i, i)`.
 * `Matrix.twoSidedIdeal_span_single_one_eq_top`: the diagonal matrix unit `Eᵢᵢ` is full.
@@ -55,6 +57,17 @@ variable {n α : Type*} [Fintype n] [DecidableEq n]
 theorem isIdempotentElem_single_one [NonAssocSemiring α] (i : n) :
     IsIdempotentElem (single i i (1 : α)) := by
   simp [IsIdempotentElem]
+
+section Map
+
+variable {B F : Type*} [NonAssocSemiring α] [FunLike F (Matrix n n α) B]
+
+/-- The images of the diagonal matrix units are orthogonal idempotents. -/
+theorem orthogonalIdempotents_map_single [Semiring B] [NonUnitalRingHomClass F (Matrix n n α) B]
+    (f : F) : OrthogonalIdempotents fun i : n => f (single i i 1) :=
+  ⟨fun i => (isIdempotentElem_single_one i).map f, fun i j hij => by simp [← map_mul, hij]⟩
+
+end Map
 
 section Semiring
 
