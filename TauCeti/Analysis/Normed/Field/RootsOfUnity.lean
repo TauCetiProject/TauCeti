@@ -104,7 +104,7 @@ theorem norm_sub_one_pow_prime_sub_one {p : ℕ} [Fact p.Prime]
 
 /-- A primitive root whose order is neither one nor a prime power lies at distance one from
 one, since the cyclotomic polynomial of such an order takes the value one at one. -/
-theorem norm_sub_one_of_not_isPrimePow (hζ : IsPrimitiveRoot ζ n) (hn1 : n ≠ 1)
+theorem norm_sub_one_eq_one_of_not_isPrimePow (hζ : IsPrimitiveRoot ζ n) (hn1 : n ≠ 1)
     (hn : ¬IsPrimePow n) : ‖ζ - 1‖ = 1 := by
   have h := hζ.norm_sub_one_pow_totient
   rw [Polynomial.eval_one_cyclotomic_not_prime_pow fun {q} hq k hk ↦ ?_, norm_one] at h
@@ -130,7 +130,7 @@ theorem norm_sub_one_eq_one_of_ne_pow {p : ℕ} (hp : p.Prime) (hpK : ‖(p : K)
     rw [IsUltrametricDist.norm_natCast_eq_one_of_coprime hpK
       ((Nat.coprime_primes hp hq').2 hqp.symm)] at h
     exact (pow_eq_one_iff_of_nonneg (norm_nonneg _) (Nat.totient_pos.2 (NeZero.pos _)).ne').1 h
-  · exact hζ.norm_sub_one_of_not_isPrimePow (fun h ↦ hn 0 (by simpa using h)) hpow
+  · exact hζ.norm_sub_one_eq_one_of_not_isPrimePow (fun h ↦ hn 0 (by simpa using h)) hpow
 
 /-- **Distance of roots of unity from one.** If a prime `p` has norm less than one, every
 primitive root of unity `ζ` of order `n ≠ 1` satisfies `‖p‖ ≤ ‖ζ - 1‖ ^ (p - 1)`. When `‖p‖ = p⁻¹`,
@@ -139,9 +139,10 @@ theorem norm_natCast_le_norm_sub_one_pow {p : ℕ} (hp : p.Prime) (hpK : ‖(p :
     (hζ : IsPrimitiveRoot ζ n) (hn1 : n ≠ 1) : ‖(p : K)‖ ≤ ‖ζ - 1‖ ^ (p - 1) := by
   by_cases hpow : ∃ k, n = p ^ k
   · obtain ⟨k, rfl⟩ := hpow
-    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (show k ≠ 0 by
+    have hk : k ≠ 0 := by
       rintro rfl
-      exact hn1 (pow_zero p))
+      exact hn1 (pow_zero p)
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk
     have : Fact p.Prime := ⟨hp⟩
     have hle : ‖ζ - 1‖ ≤ 1 := Subring.mem_unitClosedBall.1 <| sub_mem
       (Subring.mem_unitClosedBall.2 (hζ.isOfFinOrder (NeZero.ne _)).norm_eq_one.le) (one_mem _)
