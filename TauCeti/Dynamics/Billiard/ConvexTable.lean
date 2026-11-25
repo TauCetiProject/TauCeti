@@ -60,9 +60,11 @@ in this sense are the tables on which the billiard ball map of a convex billiard
 * `TauCeti.ConvexTable.curvature_circle`: the circle of radius `R` has curvature `1 / R`.
 * `TauCeti.ConvexTable.coe_ne_comp_neg`: reversing the orientation of a table never gives a
   table.
-* `TauCeti.ConvexTable.toStrictConvexBilliardTable_circle_eq_circleBilliardTable`: as a strictly
-  convex billiard table, the circle of radius `R` is the circular table
-  `Complex.orientation.circleBilliardTable 0 1 R` of `TauCeti.Dynamics.Billiard.Circle.Basic`.
+* `TauCeti.StrictConvexBilliardTable.circle_eq_circleBilliardTable`,
+  `TauCeti.ConvexTable.toStrictConvexBilliardTable_circle_eq_circleBilliardTable`: the circle
+  billiard table of radius `R`, and the convex table `circle R` regarded as a strictly convex
+  billiard table, are the circular table `Complex.orientation.circleBilliardTable 0 1 R` of
+  `TauCeti.Dynamics.Billiard.Circle.Basic`.
 
 ## References
 
@@ -332,7 +334,7 @@ theorem rigidMotion_rigidMotion (a a' : Circle) (b b' : ℂ) :
 @[simp]
 theorem rigidMotion_shift (a : Circle) (b : ℂ) (c : ℝ) :
     (T.shift c).rigidMotion a b = (T.rigidMotion a b).shift c :=
-  ext fun _ => rfl
+  ext fun s => by simp only [rigidMotion_apply, shift_apply]
 
 /-- A table of class `C^k` regarded as a table of class `C^j` for `1 ≤ j ≤ k`. -/
 def ofLE (hj : 1 ≤ j) (hjk : j ≤ k) : ConvexTable j ℓ where
@@ -349,25 +351,25 @@ theorem coe_ofLE (hj : 1 ≤ j) (hjk : j ≤ k) : ⇑(T.ofLE hj hjk) = T := (rfl
 /-- Regarding a table at its own regularity does nothing. -/
 @[simp]
 theorem ofLE_self (hk : 1 ≤ k) (hkk : k ≤ k) : T.ofLE hk hkk = T :=
-  ext fun _ => rfl
+  ext fun s => by rw [coe_ofLE]
 
 /-- Lowering the regularity twice is lowering it once. -/
 @[simp]
 theorem ofLE_ofLE {i : ℕ∞} (hj : 1 ≤ j) (hjk : j ≤ k) (hi : 1 ≤ i) (hij : i ≤ j) :
     (T.ofLE hj hjk).ofLE hi hij = T.ofLE hi (hij.trans hjk) :=
-  ext fun _ => rfl
+  ext fun s => by simp only [coe_ofLE]
 
 /-- Lowering the regularity commutes with shifting the parameter. -/
 @[simp]
 theorem shift_ofLE (hj : 1 ≤ j) (hjk : j ≤ k) (c : ℝ) :
     (T.ofLE hj hjk).shift c = (T.shift c).ofLE hj hjk :=
-  ext fun _ => rfl
+  ext fun s => by simp only [shift_apply, coe_ofLE]
 
 /-- Lowering the regularity commutes with moving the table. -/
 @[simp]
 theorem rigidMotion_ofLE (hj : 1 ≤ j) (hjk : j ≤ k) (a : Circle) (b : ℂ) :
     (T.ofLE hj hjk).rigidMotion a b = (T.rigidMotion a b).ofLE hj hjk :=
-  ext fun _ => rfl
+  ext fun s => by simp only [rigidMotion_apply, coe_ofLE]
 
 /-- Lowering the regularity of a table does not change its curvature. -/
 @[simp]
@@ -505,6 +507,28 @@ theorem isClosedEmbedding_circleParam : IsClosedEmbedding T.circleParam :=
 theorem isJordanCurve_range : IsJordanCurve (range T) :=
   T.toStrictConvexBilliardTable.isJordanCurve_range
 
+end ConvexTable
+
+namespace StrictConvexBilliardTable
+
+attribute [local instance] Complex.finrank_real_complex_fact
+
+/-- The circle billiard table of radius `R` is the circular table
+`Complex.orientation.circleBilliardTable 0 1 R` of center `0` starting at `R`, so the
+next-collision and quotient billiard formulas of `TauCeti.Dynamics.Billiard.Circle.Basic`, stated
+in every oriented Euclidean plane, apply to it. -/
+theorem circle_eq_circleBilliardTable {R : ℝ} (hR : 0 < R) :
+    circle hR = Complex.orientation.circleBilliardTable 0 1 R (by simp) hR := by
+  refine StrictConvexBilliardTable.ext (funext fun s => ?_) ?_
+  · rw [circle_apply, Orientation.coe_circleBilliardTable, Complex.orientation_circleCurve_one]
+  · rw [period_circle, Orientation.circleBilliardTable_period]
+
+end StrictConvexBilliardTable
+
+namespace ConvexTable
+
+attribute [local instance] Complex.finrank_real_complex_fact
+
 /-- The convex table `circle R` is the circle billiard table
 `TauCeti.StrictConvexBilliardTable.circle`. -/
 @[simp]
@@ -524,14 +548,9 @@ theorem toStrictConvexBilliardTable_circle_eq_circleBilliardTable (R : ℝ)
     [Fact (0 < 2 * Real.pi * R)] :
     (circle R).toStrictConvexBilliardTable =
       Complex.orientation.circleBilliardTable 0 1 R (by simp)
-        (Real.pos_of_fact_two_pi_mul_pos (R := R)) := by
-  refine StrictConvexBilliardTable.ext (funext fun s => ?_) ?_
-  · have h : Complex.orientation.circleCurve 0 1 R s = circleMap 0 R (s / R) := by
-      rw [Orientation.circleCurve_eq_add_smul_rotation, Complex.rotation]
-      simp [circleMap]
-    exact (circle_apply R s).trans
-      ((congrFun (Orientation.coe_circleBilliardTable _ _ _ _ _ _) s).trans h).symm
-  · rw [toStrictConvexBilliardTable_period, Orientation.circleBilliardTable_period]
+        (Real.pos_of_fact_two_pi_mul_pos (R := R)) :=
+  (toStrictConvexBilliardTable_circle R).trans
+    (StrictConvexBilliardTable.circle_eq_circleBilliardTable _)
 
 end ConvexTable
 
