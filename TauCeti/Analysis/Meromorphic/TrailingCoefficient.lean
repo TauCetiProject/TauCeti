@@ -56,6 +56,38 @@ theorem meromorphicTrailingCoeffAt_comp_mul_const {f : 𝕜 → E} {x c : 𝕜} 
           (g := (· * c⁻¹)) (by fun_prop)
     simp [hf, hcomp]
 
+/-- Subtracting `F` from a function analytic at `x` leaves `x` a pole exactly when it is a pole
+of `F`. -/
+theorem _root_.AnalyticAt.meromorphicOrderAt_fun_sub_nonneg_iff {P F : 𝕜 → E} {x : 𝕜}
+    (hP : AnalyticAt 𝕜 P x) (hF : MeromorphicAt F x) :
+    0 ≤ meromorphicOrderAt (fun z ↦ P z - F z) x ↔ 0 ≤ meromorphicOrderAt F x := by
+  have hsub : (fun z ↦ P z - F z) = P + fun z ↦ -F z := funext fun z ↦ sub_eq_add_neg _ _
+  rw [hsub]
+  constructor
+  · intro h
+    by_contra! hp
+    have hlt : meromorphicOrderAt (fun z ↦ -F z) x < meromorphicOrderAt P x := by
+      rw [← meromorphicOrderAt_fun_neg]
+      exact hp.trans_le hP.meromorphicOrderAt_nonneg
+    rw [meromorphicOrderAt_add_eq_right_of_lt hP.meromorphicAt hlt,
+      ← meromorphicOrderAt_fun_neg] at h
+    exact h.not_gt hp
+  · intro h
+    refine (le_min hP.meromorphicOrderAt_nonneg ?_).trans
+      (meromorphicOrderAt_add hP.meromorphicAt hF.fun_neg)
+    rwa [← meromorphicOrderAt_fun_neg]
+
+/-- At a pole `x` of `F`, subtracting `F` from a function analytic at `x` negates the trailing
+coefficient. -/
+theorem _root_.AnalyticAt.meromorphicTrailingCoeffAt_fun_sub_of_neg {P F : 𝕜 → E} {x : 𝕜}
+    (hP : AnalyticAt 𝕜 P x) (hF : meromorphicOrderAt F x < 0) :
+    meromorphicTrailingCoeffAt (fun z ↦ P z - F z) x = -meromorphicTrailingCoeffAt F x := by
+  have hlt : meromorphicOrderAt (fun z ↦ -F z) x < meromorphicOrderAt P x := by
+    rw [← meromorphicOrderAt_fun_neg]
+    exact hF.trans_le hP.meromorphicOrderAt_nonneg
+  simpa only [meromorphicTrailingCoeffAt_fun_neg, sub_eq_add_neg, add_comm (P _)] using
+    hP.meromorphicAt.meromorphicTrailingCoeffAt_fun_add_eq_left_of_lt hlt
+
 /-- At a real pole of `F`, the trailing coefficient is positive real if the values just to its
 right on the real axis are real and bounded below. -/
 theorem meromorphicTrailingCoeffAt_pos_of_eventually_real_bddBelow
@@ -77,8 +109,8 @@ theorem meromorphicTrailingCoeffAt_pos_of_eventually_real_bddBelow
   have hlim : Tendsto (fun t : ℝ ↦ (↑((t - β) ^ m) : ℂ) * F t) (𝓝[>] β)
       (𝓝 (meromorphicTrailingCoeffAt F (β : ℂ))) := by
     refine (hF.tendsto_nhds_meromorphicTrailingCoeffAt.comp ht).congr fun t ↦ ?_
-    push_cast
-    rfl
+    simp only [Function.comp_apply, smul_eq_mul, Pi.mul_apply, Pi.pow_apply, m,
+      Complex.ofReal_zpow, Complex.ofReal_sub]
   have hIm : (meromorphicTrailingCoeffAt F (β : ℂ)).im = 0 := by
     apply tendsto_nhds_unique (Complex.continuous_im.continuousAt.tendsto.comp hlim)
     refine tendsto_const_nhds.congr' ?_

@@ -180,7 +180,8 @@ theorem meromorphicTrailingCoeffAt_pos_of_ae_nonneg_of_hasLaplace
 If its Laplace transform continues meromorphically to `re s > θ`, then it is either pole-free
 there or has a rightmost pole `β ∈ (θ, A]` on the real axis with negative real trailing
 coefficient. The integral converges throughout `re s > θ` or `re s > β`, respectively. -/
-theorem rightmost_pole_real_of_le {g : ℝ → ℝ} {F : ℂ → ℂ} {A θ C u₀ : ℝ}
+theorem hasLaplace_toMeromorphicNFOn_or_exists_rightmost_real_pole_of_ae_le_exp
+    {g : ℝ → ℝ} {F : ℂ → ℂ} {A θ C u₀ : ℝ}
     (hg : ∀ᵐ u ∂volume.restrict (Ioi u₀), g u ≤ C * Real.exp (θ * u))
     (hF : MeromorphicOn F {s | θ < s.re})
     (hL : ∀ s : ℂ, A < s.re → HasLaplace (fun u ↦ (g u : ℂ)) s (F s)) :
@@ -214,25 +215,16 @@ theorem rightmost_pole_real_of_le {g : ℝ → ℝ} {F : ℂ → ℂ} {A θ C u�
       (((hPS s (hc.trans_lt hs)).sub (hl s hs)).congr_ae
         (.of_forall fun u ↦ by simp [f])).integrableOn)
   have hNo (s : ℂ) (hs : θ < s.re) :
-      0 ≤ meromorphicOrderAt H s ↔ 0 ≤ meromorphicOrderAt F s := by
-    have hneg := meromorphicOrderAt_fun_neg (x := s) (f := F)
-    have hPn := (hP s hs).meromorphicOrderAt_nonneg
-    refine ⟨fun h ↦ not_lt.mp fun hp ↦ h.not_gt ?_, fun h ↦ (le_min hPn (hneg ▸ h)).trans
-      (meromorphicOrderAt_add (hP s hs).meromorphicAt (hF s hs).neg)⟩
-    exact (meromorphicOrderAt_add_eq_right_of_lt (hP s hs).meromorphicAt
-      (hneg ▸ hp.trans_le hPn)).trans_lt (hneg ▸ hp)
+      0 ≤ meromorphicOrderAt H s ↔ 0 ≤ meromorphicOrderAt F s :=
+    (hP s hs).meromorphicOrderAt_fun_sub_nonneg_iff (hF s hs)
   have hf := hg.mono fun _ hu ↦ sub_nonneg.mpr hu
   rcases hasLaplace_toMeromorphicNFOn_or_exists_rightmost_real_pole hf hH hHS with
     ⟨hn, hl⟩ | ⟨β, hb, ha, hp, hn, hl⟩
   · exact Or.inl ⟨fun s hs ↦ (hNo s hs).mp (hn s hs), hconv le_rfl hl⟩
   have hb' : θ < (β : ℂ).re := by simpa using hb
   have hlt := not_le.mp fun h ↦ hp.not_ge ((hNo β hb').mpr h)
-  have hcoef : meromorphicTrailingCoeffAt H (β : ℂ) = -meromorphicTrailingCoeffAt F (β : ℂ) := by
-    have hlt' : meromorphicOrderAt (fun s ↦ -F s) (β : ℂ) < meromorphicOrderAt P (β : ℂ) := by
-      rw [← meromorphicOrderAt_fun_neg]
-      exact hlt.trans_le (hP β hb').meromorphicOrderAt_nonneg
-    simpa only [← meromorphicTrailingCoeffAt_fun_neg, H, sub_eq_add_neg, add_comm (P _)] using
-      (hP β hb').meromorphicAt.meromorphicTrailingCoeffAt_fun_add_eq_left_of_lt hlt'
+  have hcoef : meromorphicTrailingCoeffAt H (β : ℂ) = -meromorphicTrailingCoeffAt F (β : ℂ) :=
+    (hP β hb').meromorphicTrailingCoeffAt_fun_sub_of_neg hlt
   obtain ⟨hre, him⟩ := meromorphicTrailingCoeffAt_pos_of_ae_nonneg_of_hasLaplace
     (F := toMeromorphicNFOn H {s | θ < s.re}) (β := β) hf
     (by simpa only [meromorphicOrderAt_toMeromorphicNFOn hH hb'] using hp)
@@ -257,7 +249,8 @@ theorem hasLaplace_toMeromorphicNFOn_of_ae_le_exp
     (∀ s : ℂ, θ < s.re → 0 ≤ meromorphicOrderAt F s) ∧
     ∀ s : ℂ, θ < s.re → HasLaplace (fun u ↦ (g u : ℂ)) s
       (toMeromorphicNFOn F {z | θ < z.re} s) := by
-  rcases rightmost_pole_real_of_le hg hF hL with h | ⟨β, hθ, hA, hp, hc, _⟩
+  rcases hasLaplace_toMeromorphicNFOn_or_exists_rightmost_real_pole_of_ae_le_exp hg hF hL with
+    h | ⟨β, hθ, hA, hp, hc, _⟩
   · exact h
   · exact (hc.not_ge (hsign β ⟨hθ, hA⟩ hp)).elim
 
