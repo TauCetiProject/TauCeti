@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UnitDisc.Basic
 public import Mathlib.Topology.ContinuousMap.Basic
+import Mathlib.Analysis.Normed.Module.RCLike.Real
 
 /-!
 # Round subdiscs of the open unit disc
@@ -22,7 +23,11 @@ into `K` form a compact set (`TauCeti.Complex.UnitDisc.isCompact_subdisc_preimag
 rescaled points of `K` inside the disc, and the points of `K` in `B(c, r)` are its points at
 distance at most `r` from `c`, a compact set. This is what makes the restriction of a disc map to a
 round subdisc again a map with compact preimage of a closed set, as in the theory of positive
-cohomology assignments.
+cohomology assignments. In particular, if finitely many pairwise disjoint round discs contain a
+compact set, its preimage under each of their subdisc maps is compact
+(`TauCeti.Complex.UnitDisc.isCompact_subdisc_preimage_of_subset_iUnion`). Concentric discs
+correspond under `subdisc c r` to discs about `0`: `subdisc c r` sends `w` into `B(c, r t)` exactly
+when `‖w‖ < t` (`TauCeti.Complex.UnitDisc.coe_subdisc_mem_ball_mul_iff`).
 
 Points of a finite subset of `𝔻` can be isolated in pairwise disjoint round discs inside `𝔻`, on
 which a function continuous at these points varies arbitrarily little
@@ -199,5 +204,30 @@ theorem isCompact_subdisc_preimage {K : Set 𝔻} (hK : IsCompact K)
   rw [hKb]
   exact ((hK.image continuous_coe).inter_right isClosed_closedBall).image
     ((continuous_id.sub continuous_const).div_const _)
+
+/-- The round subdisc map `subdisc c r` sends `w` into the concentric disc of radius `r t` exactly
+when `‖w‖ < t`. -/
+theorem coe_subdisc_mem_ball_mul_iff (w : 𝔻) (t : ℝ) :
+    (subdisc c r hc hr w : ℂ) ∈ ball c (r * t) ↔ ‖(w : ℂ)‖ < t := by
+  rw [mem_ball, dist_eq_norm, coe_subdisc_apply, add_sub_cancel_left, norm_mul,
+    Complex.norm_real, Real.norm_of_nonneg hr.le, mul_lt_mul_iff_right₀ hr]
+
+/-- If finitely many pairwise disjoint round discs `B(cⱼ, rⱼ) ⊆ 𝔻` contain a compact set `K ⊆ 𝔻`,
+then the points of `𝔻` that each `subdisc cⱼ rⱼ` sends into `K` form a compact set: no point of `K`
+lies on a boundary circle. -/
+theorem isCompact_subdisc_preimage_of_subset_iUnion {ι : Type*} {c : ι → ℂ} {r : ι → ℝ}
+    (hc : ∀ i, ‖c i‖ + r i ≤ 1) (hr : ∀ i, 0 < r i)
+    (hdisj : Pairwise fun i j ↦ Disjoint (ball (c i) (r i)) (ball (c j) (r j))) {K : Set 𝔻}
+    (hK : IsCompact K) (hKc : ∀ z ∈ K, ∃ j, (z : ℂ) ∈ ball (c j) (r j)) (i : ι) :
+    IsCompact (subdisc (c i) (r i) (hc i) (hr i) ⁻¹' K) := by
+  refine isCompact_subdisc_preimage hK fun z hz hzc ↦ ?_
+  -- A point of the circle about `cᵢ` lies in the closure of `B(cᵢ, rᵢ)`, which misses `B(cⱼ, rⱼ)`.
+  obtain ⟨j, hj⟩ := hKc z hz
+  have hzi : (z : ℂ) ∈ closure (ball (c i) (r i)) := by
+    rw [closure_ball _ (hr i).ne', mem_closedBall, dist_eq_norm, hzc]
+  obtain rfl | hij := eq_or_ne i j
+  · rw [mem_ball, dist_eq_norm, hzc] at hj
+    exact lt_irrefl _ hj
+  · exact Set.disjoint_left.1 ((hdisj hij).closure_left isOpen_ball) hzi hj
 
 end TauCeti.Complex.UnitDisc
