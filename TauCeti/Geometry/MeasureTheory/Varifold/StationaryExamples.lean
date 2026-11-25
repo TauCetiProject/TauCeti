@@ -58,16 +58,6 @@ namespace Euclidean
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {k : ℕ}
 
-/-- The first variation of the image of a measure `ν` that is finite on compact sets under a proper
-map `f` is `∫ div_{(f a).2} X ((f a).1) dν(a)`. -/
-private theorem firstVariation_map_apply {α : Type*} [TopologicalSpace α] [MeasurableSpace α]
-    [OpensMeasurableSpace α] (ν : Measure α) [IsFiniteMeasureOnCompacts ν] {W : Opens E}
-    {f : α → W × grassmannian ℝ E k} (hf : IsProperMap f) (X : 𝓓^{1}(W, E)) :
-    firstVariation (ν.map f) X = ∫ a, tangentialDivergence X (f a).1 (f a).2 ∂ν := by
-  have := Measure.isFiniteMeasureOnCompacts_map_of_isProperMap ν hf
-  rw [firstVariation_apply, integral_map hf.continuous.aemeasurable (by
-    simpa using (tangentialDivergenceCc (k := k) X).continuous.aestronglyMeasurable)]
-
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- The tangential divergence along a map `P` with range in `S` is the trace on `S` of the
 derivative of `g = P ∘ X ∘ (a + ·) : S → S`. -/
@@ -80,10 +70,9 @@ private theorem tangentialDivergence_eq_traceCLM_fderiv (S : Submodule ℝ E) {P
     Q.hasFDerivAt.comp s ((hX (a + s)).hasFDerivAt.comp s (S.subtypeL.hasFDerivAt.const_add a))
   -- Cyclicity of the trace moves the inclusion `S → E` from the left to the right.
   rw [hd.fderiv, tangentialDivergence_def, TauCeti.traceCLM_apply,
-    ← P.subtypeL_comp_codRestrict S hP,
-    ContinuousLinearMap.comp_assoc, ContinuousLinearMap.toLinearMap_comp,
-    LinearMap.trace_comp_comm', ← ContinuousLinearMap.toLinearMap_comp,
-    ContinuousLinearMap.comp_assoc]
+    ← P.subtypeL_comp_codRestrict S hP]
+  simpa only [Q, ContinuousLinearMap.toLinearMap_comp, LinearMap.comp_assoc] using
+    (LinearMap.trace_comp_comm' (S.subtypeL : S →ₗ[ℝ] E) (Q ∘L fderiv ℝ X (a + s))).symm
 
 /-- **A plane field tangent to an affine plane is stationary.** For a subspace `S`, `a ∈ E`, an
 additive Haar measure `ν` on `S`, an open set `W` and a plane `P ∈ G(E, k)` contained in `S`, the
