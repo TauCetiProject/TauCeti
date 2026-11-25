@@ -48,7 +48,8 @@ an admissible `Γ` keeps its closure but destroys the chart description at the r
   frontier.
 * `Set.IsLipschitzDomain.isAdmissibleBoundaryPart_empty`,
   `Set.IsLipschitzDomain.isAdmissibleBoundaryPart_frontier`: `∅` and `frontier Ω` are admissible
-  boundary parts of every Lipschitz domain.
+  boundary parts of every Lipschitz domain, and `Set.isAdmissibleBoundaryPart_empty_iff`,
+  `Set.isAdmissibleBoundaryPart_frontier_iff` show that they are so only for Lipschitz domains.
 * `Set.isAdmissibleBoundaryPart_image_iff`, `Set.isAdmissibleBoundaryPart_smul_iff`: invariance
   under affine isometries and positive dilations of the pair `(Ω, Γ)`.
 * `Set.isAdmissibleBoundaryPart_setOf_lt_fst`: the part of a Lipschitz graph over an admissible
@@ -247,12 +248,7 @@ theorem trans_constVAdd (hc : IsBoundaryPartChart Ω Γ e γ K h r B) (p : WithL
       (fun y => γ (y + p.snd) - p.fst) K h' r' ((· + p.snd) ⁻¹' B) := by
   refine (hc.isLipschitzChart.trans_constVAdd p hh' hr' hh hr).isBoundaryPartChart_of_forall_mem_iff
     fun w hw => ?_
-  -- The translate `p + w` of a point `w` of the new cylinder lies in the old cylinder.
-  have hC : p + w ∈ normalCylinder h r := by
-    rw [mem_normalCylinder] at hw ⊢
-    simp only [WithLp.add_fst, WithLp.add_snd]
-    exact ⟨by linarith [neg_abs_le p.fst], by linarith [le_abs_self p.fst],
-      by linarith [norm_add_le p.snd w.snd]⟩
+  have hC := add_mem_normalCylinder hh hr hw
   have hsymm : (e.trans (AffineIsometryEquiv.constVAdd ℝ _ (-p))).symm w = e.symm (p + w) := by
     rw [AffineIsometryEquiv.symm_apply_eq]
     simp
@@ -367,10 +363,10 @@ part of the image. -/
 theorem image (hΓ : Ω.IsAdmissibleBoundaryPart Γ E E') (g : F ≃ᵃⁱ[ℝ] G) :
     (g '' Ω).IsAdmissibleBoundaryPart (g '' Γ) E E' where
   subset_frontier := by
-    rw [← g.coe_toHomeomorph, ← g.toHomeomorph.image_frontier]
+    rw [← g.image_frontier]
     exact image_mono hΓ.subset_frontier
   exists_isBoundaryPartChart y hy := by
-    rw [← g.coe_toHomeomorph, ← g.toHomeomorph.image_frontier, g.coe_toHomeomorph] at hy
+    rw [← g.image_frontier] at hy
     obtain ⟨x, hx, rfl⟩ := hy
     obtain ⟨e, γ, K, h, r, B, hc, hB, hex⟩ := hΓ.exists_isBoundaryPartChart x hx
     exact ⟨g.symm.trans e, γ, K, h, r, B, hc.image g, hB, by simpa using hex⟩
@@ -380,10 +376,10 @@ part of the dilated set. -/
 theorem smul (hΓ : Ω.IsAdmissibleBoundaryPart Γ E E') {c : ℝ} (hc : 0 < c) :
     (c • Ω).IsAdmissibleBoundaryPart (c • Γ) E E' where
   subset_frontier := by
-    rw [← image_smul, ← image_smul, ← (isHomeomorph_smul₀ hc.ne').image_frontier]
-    exact image_mono hΓ.subset_frontier
+    rw [frontier_smul₀ hc.ne']
+    exact smul_set_mono hΓ.subset_frontier
   exists_isBoundaryPartChart y hy := by
-    rw [← image_smul, ← (isHomeomorph_smul₀ hc.ne').image_frontier] at hy
+    rw [frontier_smul₀ hc.ne', ← image_smul] at hy
     obtain ⟨x, hx, rfl⟩ := hy
     obtain ⟨e, γ, K, h, r, B, hce, hB, hex⟩ := hΓ.exists_isBoundaryPartChart x hx
     exact ⟨dilateConj c e, _, K, _, _, _, hce.smul hc, hB.smul hc, by simp [hex]⟩
@@ -422,6 +418,21 @@ theorem isAdmissibleBoundaryPart_frontier (hΩ : Ω.IsLipschitzDomain E) :
 
 end IsLipschitzDomain
 
+/-- The empty set is an admissible boundary part of `Ω` exactly when `Ω` is a Lipschitz
+domain. -/
+@[simp]
+theorem isAdmissibleBoundaryPart_empty_iff {Ω : Set F} :
+    Ω.IsAdmissibleBoundaryPart ∅ E E' ↔ Ω.IsLipschitzDomain E :=
+  ⟨IsAdmissibleBoundaryPart.isLipschitzDomain, IsLipschitzDomain.isAdmissibleBoundaryPart_empty⟩
+
+/-- The whole frontier is an admissible boundary part of `Ω` exactly when `Ω` is a Lipschitz
+domain. -/
+@[simp]
+theorem isAdmissibleBoundaryPart_frontier_iff {Ω : Set F} :
+    Ω.IsAdmissibleBoundaryPart (frontier Ω) E E' ↔ Ω.IsLipschitzDomain E :=
+  ⟨IsAdmissibleBoundaryPart.isLipschitzDomain,
+    IsLipschitzDomain.isAdmissibleBoundaryPart_frontier⟩
+
 /-! ### The region above a Lipschitz graph -/
 
 /-- **Boundary parts of the region above a Lipschitz graph.** The part of the graph of a
@@ -439,9 +450,8 @@ theorem isAdmissibleBoundaryPart_setOf_lt_fst {γ : E → ℝ} {K : ℝ≥0} (h�
       (by positivity)).isBoundaryPartChart_of_forall_mem_iff
       -- The inverse of the affine identity reduces definitionally to the identity, so both sides
       -- of the membership condition agree.
-      fun z _ => Iff.rfl, hB, ?_⟩⟩
-  simp only [AffineIsometryEquiv.coe_refl, id_eq, mem_normalCylinder]
-  exact ⟨by linarith [neg_abs_le x.fst], by linarith [le_abs_self x.fst], by linarith⟩
+      fun z _ => Iff.rfl, hB,
+    by simpa only [AffineIsometryEquiv.coe_refl, id_eq] using mem_normalCylinder_abs_add_one x⟩⟩
 
 /-- **The model half-hyperplane.** In the half-space `{0 < t}` of `ℝ × (ℝ × E')`, the half of the
 boundary hyperplane where the next coordinate is positive is an admissible boundary part. -/

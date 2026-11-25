@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
+public import Mathlib.RingTheory.SimpleRing.Matrix
 import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.CStarAlgebra.Basic
 import TauCeti.Analysis.CStarAlgebra.Compression
@@ -48,6 +49,7 @@ multiplication and `conjTranspose` laws, and the proper-star instance
 
 * `CStarMatrix.instNonUnitalContinuousFunctionalCalculusReal`: the real continuous functional
   calculus of `CStarMatrix n n A`, which instance search does not find on its own.
+* `CStarMatrix.instIsSimpleRing`: square matrices over a simple ring form a simple ring.
 * `CStarMatrix.instSeparableSpace`: finite matrices over a separable C⋆-algebra form a separable
   space.
 * `CStarMatrix.instModuleFinite`: `CStarMatrix m n A` is a finite module over finite index
@@ -564,6 +566,12 @@ end
 end Rectangular
 
 end Algebraic
+
+/-- Square matrices over a simple ring form a simple ring: their two-sided ideals are the matrices
+over the two-sided ideals of the coefficient ring. -/
+instance instIsSimpleRing {n A : Type*} [Fintype n] [Nonempty n] [Ring A] [IsSimpleRing A] :
+    IsSimpleRing (CStarMatrix n n A) :=
+  inferInstanceAs (IsSimpleRing (Matrix n n A))
 
 /-- A matrix space over a separable C⋆-algebra with finite index types is separable. -/
 instance instSeparableSpace {m n A : Type*} [Finite m] [Finite n] [NonUnitalCStarAlgebra A]

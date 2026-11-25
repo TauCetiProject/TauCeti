@@ -50,8 +50,9 @@ smaller: over `𝔽₂` with `q = x²` the polar form is zero while `O(q)` is `�
   orthogonal group scheme and its closed immersion into `GLₙ`.
 * `TauCeti.QuadraticOrthogonal.pointsSubgroup` and `TauCeti.QuadraticOrthogonal.pointsMulEquiv`:
   the points of `O(q)` are the invertible matrices preserving `q_A`; by
-  `TauCeti.QuadraticOrthogonal.hopfIdealPointsSubgroup_definingHopfIdeal` these are the matrices
-  cut out by the defining Hopf ideal. Transporting a point along an algebra morphism applies it to
+  `TauCeti.QuadraticOrthogonal.hopfIdealPointsSubgroup_definingHopfIdeal` and
+  `TauCeti.QuadraticOrthogonal.mem_definingPointsSubgroup_iff` these are the matrices cut out by
+  the defining Hopf ideal. Transporting a point along an algebra morphism applies it to
   the entries of the matrix (`TauCeti.QuadraticOrthogonal.coe_pointsMulEquiv_mapPoints`).
 * `TauCeti.QuadraticOrthogonal.pointsMulEquivOrthogonalGroup`: the points of `O(q)` are
   `TauCeti.QuadraticMap.orthogonalGroup (QuadraticForm.baseChangeForm q A)`, a point acting on
@@ -337,6 +338,18 @@ theorem hopfIdealPointsSubgroup_definingHopfIdeal :
     AlgHom.toRingHom_eq_coe, definingHopfIdeal_toIdeal_le_ker_iff, mem_pointsSubgroup_iff_isAltMod]
   -- The matrix of the point `p` is the image of the generic matrix under `p`.
   rw [relationMatrix_map, GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear]
+
+/-- **Membership in the points cut out by the defining Hopf ideal**: an ambient point of `GLₙ`
+lies in the subgroup cut out by the Hopf ideal of `O(q)` exactly when its matrix lies in
+`O(q)(A)`. -/
+theorem mem_definingPointsSubgroup_iff
+    (g : HopfAlgebra.points (R := R) (H := GeneralLinear.coordinateHopfAlgebra R n)
+      (CommAlgCat.of R A)) :
+    g ∈ CommHopfAlgCat.quotientPointsSubgroup (GeneralLinear.coordinateHopfAlgebra R n)
+        (definingHopfIdeal R n q) (CommAlgCat.of R A) ↔
+      GeneralLinear.pointsMulEquiv n g ∈ pointsSubgroup R n q A := by
+  rw [← hopfIdealPointsSubgroup_definingHopfIdeal, GeneralLinear.mem_hopfIdealPointsSubgroup_iff,
+    MulEquiv.symm_apply_apply, CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
 
 /-- **The points identification**: the group of algebra-valued points of the coordinate Hopf
 algebra of `O(q)` is `O(q)(A)`. -/
