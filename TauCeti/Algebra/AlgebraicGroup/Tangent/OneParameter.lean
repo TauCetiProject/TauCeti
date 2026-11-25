@@ -8,8 +8,9 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Exponential.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.PolynomialCurve
 public import TauCeti.RingTheory.Derivation.Flow
-import TauCeti.Data.Nat.Choose.Cast
 import Mathlib.Algebra.Polynomial.Bivariate
+import TauCeti.Algebra.Bialgebra.CounitBaseAlgebra
+import TauCeti.Data.Nat.Choose.Cast
 
 /-!
 # One-parameter subgroups from locally nilpotent invariant vector fields
@@ -58,6 +59,28 @@ theorem coeff_expPointPolynomial (h : H) (n : ℕ) :
       Coalgebra.counit (R := R)
         ((n.factorial : ℚ)⁻¹ • (leftInvariantDerivation d)^[n] h) := by
   simp [expPointPolynomial, Polynomial.coeff_map]
+
+/-- Any iterate of the left-invariant derivation killing `h` bounds the support of
+`expPointPolynomial d hd h`. -/
+theorem support_expPointPolynomial_subset_range {h : H} {n : ℕ}
+    (hn : (leftInvariantDerivation d)^[n] h = 0) :
+    (expPointPolynomial d hd h).support ⊆ Finset.range n :=
+  (Polynomial.support_map_subset _ _).trans
+    ((leftInvariantDerivation d).support_taylorExpPolynomial_subset_range hd hn)
+
+/-- Evaluating `expPointPolynomial d hd h` at `t` truncates to `Finset.range n` whenever the `n`-th
+iterate of the left-invariant derivation kills `h`. -/
+theorem aeval_expPointPolynomial_eq_sum {B : Type*} [Semiring B] [Algebra R B] (t : B)
+    {h : H} {n : ℕ} (hn : (leftInvariantDerivation d)^[n] h = 0) :
+    aeval t (expPointPolynomial d hd h) =
+      ∑ k ∈ Finset.range n,
+        Coalgebra.counit (R := R)
+          ((k.factorial : ℚ)⁻¹ • (leftInvariantDerivation d)^[k] h) • t ^ k := by
+  rw [aeval_def, eval₂_eq_sum,
+    Polynomial.sum_eq_of_subset _ (fun _ => by rw [map_zero, zero_mul])
+      (support_expPointPolynomial_subset_range d hd hn)]
+  exact Finset.sum_congr rfl fun k _ => by
+    rw [coeff_expPointPolynomial, ← Algebra.smul_def]
 
 /-- The velocity of the exponential curve at zero is its specified tangent vector. -/
 theorem coeff_one_expPointPolynomial (h : H) :
@@ -225,8 +248,7 @@ private theorem coeff_expPointAddPolynomial (h : H) (i j : ℕ) :
 private theorem expPointAddPolynomial_eq_expPointMulPolynomial (h : H) :
     expPointAddPolynomial d hd h = expPointMulPolynomial d hd h := by
   -- The counit supplies the rational scalars needed to compare divided coefficients.
-  let : Algebra ℚ R :=
-    ((_root_.Bialgebra.counitAlgHom R H).toRingHom.comp (algebraMap ℚ H)).toAlgebra
+  let : Algebra ℚ R := counitBaseAlgebra ℚ R H
   classical
   let 𝓡 := Coalgebra.Repr.arbitrary R h
   ext j i

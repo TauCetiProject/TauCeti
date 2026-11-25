@@ -17,6 +17,8 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Differential
 public import TauCeti.Algebra.Lie.AdjointAction.ExpAdSubgroup
 import Mathlib.Algebra.Module.Rat
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Smooth.LieAlgebra
+import TauCeti.Algebra.AlgebraicGroup.Representation.Tangent
+import TauCeti.Algebra.Group.Subgroup.Closure
 import TauCeti.Algebra.Lie.Sl2.JacobsonMorozov
 import TauCeti.RepresentationTheory.Lie.AdNilpotent
 import TauCeti.RingTheory.Nilpotent.Log
@@ -428,13 +430,9 @@ theorem exists_mem_identityComponentHopfIdeal_ofLinearEquiv_basePointsAdjointLie
         ∀ y, Comodule.basePointsRepresentation 𝔤 g y = φ • y := by
   obtain ⟨g, hg, rfl⟩ :=
     intLieAlgebra_le_map_asGroupHom_closure_identityComponentHopfIdeal_isUnipotentPoint hφ
-  have hg₀ : g ∈ CommHopfAlgCat.quotientPointsSubgroup H.obj
-      (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)) (CommAlgCat.of k k) :=
-    (Subgroup.closure_le
-      (CommHopfAlgCat.quotientPointsSubgroup H.obj
-        (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)) (CommAlgCat.of k k))).mpr
-      (fun _ hu => (Set.mem_ofPred.mp hu).left) hg
-  refine ⟨g, hg, hg₀, ?_, fun _ => rfl⟩
+  refine ⟨g, hg, (CommHopfAlgCat.quotientPointsSubgroup H.obj
+      (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H))
+      (CommAlgCat.of k k)).closure_sep_le _ hg, ?_, fun _ => rfl⟩
   refine Units.ext <| LinearMap.ext fun y => ?_
   simp [Representation.asGroupHom_apply]
 

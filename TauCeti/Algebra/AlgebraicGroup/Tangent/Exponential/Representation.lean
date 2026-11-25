@@ -5,13 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Projective
 public import Mathlib.RingTheory.Nilpotent.Exp
 public import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Exponential.Comodule
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.OneParameter
-import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
-import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
+import Mathlib.Algebra.Module.Rat
+import TauCeti.Algebra.Bialgebra.CounitBaseAlgebra
 import TauCeti.RingTheory.Nilpotent.Exp.Basic
 
 /-!
@@ -22,7 +21,7 @@ tangent vector at the identity whose left-invariant derivation `D` is locally ni
 `TauCeti.Algebra.AlgebraicGroup.Tangent.Exponential.Comodule` (which treats the exponential point
 `expPoint d hd` at parameter `1`), this module describes the action of the entire polynomial
 exponential curve `t ↦ expPointAt d hd t` on scalar extensions `A ⊗[R] M` and deduces representation
-criteria for unipotence and local nilpotence:
+criteria for unipotence:
 
 * in the convolution dual of `H`, the functional `ε ∘ Dⁿ` is the `n`-th convolution power of `d`,
   so `(Comodule.differential d) ^ n` is the convolution action of `ε ∘ Dⁿ`;
@@ -32,10 +31,7 @@ criteria for unipotence and local nilpotence:
   itself at `t : R` by `IsNilpotent.exp (t • Comodule.differential d)`;
 * every point `expPointAt d hd t` (and `expPoint d hd`) is unipotent in the representation-theoretic
   sense (`HopfAlgebra.IsUnipotentPoint`) whenever `d` acts nilpotently on every finitely generated
-  `H`-comodule;
-* conversely, if `H` is projective as an `R`-module (in particular whenever `R` is a field, without
-  any finite-type assumption on `H`) and `d` acts nilpotently on every finitely generated
-  `H`-comodule, then the left-invariant derivation of `d` is locally nilpotent on `H`.
+  `H`-comodule.
 
 ## Main declarations
 
@@ -50,9 +46,6 @@ criteria for unipotence and local nilpotence:
 * `TauCeti.HopfAlgebra.isUnipotentPoint_expPointAt` and
   `TauCeti.HopfAlgebra.isUnipotentPoint_expPoint`: exponential points of tangent vectors acting
   nilpotently on every finitely generated comodule are unipotent points.
-* `Derivation.exists_iterate_leftInvariantDerivation_eq_zero_of_forall_fgComodule`: local
-  nilpotence of the left-invariant derivation on any projective bialgebra from nilpotence on all
-  finitely generated comodules.
 
 ## References
 
@@ -138,50 +131,22 @@ private theorem comm_lTensor_expPointAt_eq_sum {A : Type*} [CommRing A] [Algebra
         ∑ k ∈ Finset.range N, (k.factorial : ℚ)⁻¹ • (t ^ k •
           ((1 : A) ⊗ₜ[R] tensorComponent (Coalgebra.counit (R := R) ∘ₗ
             (Bialgebra.leftInvariantDerivation d).toLinearMap ^ k) x)) := by
-  let : Algebra ℚ R :=
-    ((Bialgebra.counitAlgHom R H).toRingHom.comp (algebraMap ℚ H)).toAlgebra
+  let : Algebra ℚ R := Bialgebra.counitBaseAlgebra ℚ R H
   let D := Bialgebra.leftInvariantDerivation d
   induction x using TensorProduct.inductionOn with
   | tmul m' h =>
     obtain ⟨n₀, hn₀⟩ := hd h
     refine ⟨n₀, fun N hN => ?_⟩
-    have hdeg : ∀ k ≥ N, (Bialgebra.expPointPolynomial d hd h).coeff k = 0 := by
-      intro k hk
-      have hk0 : D^[k] h = 0 := by
-        simpa [pow_apply_eq_iterate] using
-          Module.End.pow_map_zero_of_le (f := D.toLinearMap) (le_trans hN hk)
-            (by simpa [pow_apply_eq_iterate] using hn₀)
-      rw [Bialgebra.coeff_expPointPolynomial, hk0, smul_zero, map_zero]
-    have haeval : Polynomial.aeval t (Bialgebra.expPointPolynomial d hd h) =
-        ∑ k ∈ Finset.range N,
-          Coalgebra.counit (R := R) ((k.factorial : ℚ)⁻¹ • D^[k] h) • t ^ k := by
-      rw [Polynomial.aeval_def, Polynomial.eval₂_eq_sum, Polynomial.sum_def]
-      refine (Finset.sum_subset (fun k hk => Finset.mem_range.mpr
-        (lt_of_not_ge fun hge => Polynomial.mem_support_iff.mp hk (hdeg k hge))) ?_).trans ?_
-      · intro k _ hk
-        rw [Polynomial.notMem_support_iff.mp hk, map_zero, zero_mul]
-      · refine Finset.sum_congr rfl fun k _ => ?_
-        rw [Bialgebra.coeff_expPointPolynomial, ← Algebra.smul_def]
+    have hk0 : D^[N] h = 0 := by
+      simpa [pow_apply_eq_iterate] using
+        Module.End.pow_map_zero_of_le (f := D.toLinearMap) hN
+          (by simpa [pow_apply_eq_iterate] using hn₀)
     rw [LinearMap.lTensor_tmul, AlgHom.toLinearMap_apply, Bialgebra.expPointAt_apply,
-      TensorProduct.comm_tmul, haeval, TensorProduct.sum_tmul]
+      Bialgebra.aeval_expPointPolynomial_eq_sum d hd t hk0, TensorProduct.comm_tmul,
+      TensorProduct.sum_tmul]
     refine Finset.sum_congr rfl fun k _ => ?_
-    let c : R := Coalgebra.counit (R := R) (D^[k] h)
-    have hrat : ((k.factorial : ℚ)⁻¹ • c) • ((t ^ k) ⊗ₜ[R] m') =
-        (k.factorial : ℚ)⁻¹ • (c • ((t ^ k) ⊗ₜ[R] m')) :=
-      map_rat_smul (AddMonoidHom.mk' (fun s : R => s • ((t ^ k) ⊗ₜ[R] m'))
-        fun s₁ s₂ => add_smul s₁ s₂ _) (k.factorial : ℚ)⁻¹ c
-    have hsmul : (((k.factorial : ℚ)⁻¹ • c) • t ^ k) ⊗ₜ[R] m' =
-        (k.factorial : ℚ)⁻¹ • (t ^ k • ((1 : A) ⊗ₜ[R] (c • m'))) := by
-      calc (((k.factorial : ℚ)⁻¹ • c) • t ^ k) ⊗ₜ[R] m'
-          = ((k.factorial : ℚ)⁻¹ • c) • ((t ^ k) ⊗ₜ[R] m') := (smul_tmul' _ _ _).symm
-        _ = (k.factorial : ℚ)⁻¹ • (c • ((t ^ k) ⊗ₜ[R] m')) := hrat
-        _ = (k.factorial : ℚ)⁻¹ • ((t ^ k) ⊗ₜ[R] (c • m')) := by
-          congr 1
-          rw [smul_tmul', smul_tmul]
-        _ = (k.factorial : ℚ)⁻¹ • ((t ^ k * 1) ⊗ₜ[R] (c • m')) := by rw [mul_one]
-        _ = (k.factorial : ℚ)⁻¹ • (t ^ k • ((1 : A) ⊗ₜ[R] (c • m'))) := rfl
-    rw [map_rat_smul, hsmul]
-    simp [c, D, FunLike.coe_pow_eq_iterate]
+    rw [map_rat_smul]
+    simp [smul_tmul', ← smul_assoc, FunLike.coe_pow_eq_iterate]
   | add x y hx hy =>
     obtain ⟨N₁, hN₁⟩ := hx
     obtain ⟨N₂, hN₂⟩ := hy
@@ -231,8 +196,7 @@ theorem basePointsRepresentation_expPointAt [Module ℚ M]
     (hdiff : IsNilpotent (differential (R := R) (H := H) (M := M) d)) (t : R) :
     basePointsRepresentation (H := H) M (Bialgebra.expPointAt d hd t) =
       IsNilpotent.exp (t • differential (R := R) (H := H) (M := M) d) := by
-  let : Algebra ℚ R :=
-    ((Bialgebra.counitAlgHom R H).toRingHom.comp (algebraMap ℚ H)).toAlgebra
+  let : Algebra ℚ R := Bialgebra.counitBaseAlgebra ℚ R H
   have hrat : ∀ (q : ℚ) (x : R ⊗[R] M),
       TensorProduct.lid R M (q • x) = q • TensorProduct.lid R M x :=
     map_rat_smul (TensorProduct.lid R M).toAddMonoidHom
@@ -268,9 +232,8 @@ theorem isUnipotentPoint_expPointAt {A : Type x} [CommRing A] [Algebra R A]
       _root_.IsNilpotent (Comodule.differential (R := R) (H := H) (M := M) d))
     (t : A) :
     IsUnipotentPoint (Bialgebra.expPointAt d hd t) := by
-  let : Algebra ℚ R :=
-    ((Bialgebra.counitAlgHom R H).toRingHom.comp (algebraMap ℚ H)).toAlgebra
-  let : Algebra ℚ A := ((algebraMap R A).comp (algebraMap ℚ R)).toAlgebra
+  let : Algebra ℚ R := Bialgebra.counitBaseAlgebra ℚ R H
+  let : Algebra ℚ A := Algebra.compHom A (algebraMap ℚ R)
   rw [isUnipotentPoint_iff_forall_isNilpotent_endOfPoint_sub_one]
   intro M
   rw [Comodule.endOfPoint_expPointAt d hd (hdiff M) t]
@@ -290,38 +253,3 @@ theorem isUnipotentPoint_expPoint
   exact isUnipotentPoint_expPointAt d hd hdiff 1
 
 end TauCeti.HopfAlgebra
-
-namespace Derivation
-
-open TauCeti
-
-universe u v
-
-/-- If `H` is projective as an `R`-module (for instance whenever `R` is a field, without any
-finite-type assumption on `H`) and `d` acts nilpotently on every finitely generated `H`-comodule,
-then the left-invariant derivation of `d` is locally nilpotent on `H`. -/
-theorem exists_iterate_leftInvariantDerivation_eq_zero_of_forall_fgComodule
-    {R : Type u} {H : Type v} [CommRing R] [CommRing H] [Bialgebra R H] [Module.Projective R H]
-    (d : Derivation R H (Bialgebra.CounitAlgebra R H R))
-    (hdiff : ∀ M : FGComoduleCat.{u, v, v} R H,
-      IsNilpotent (Comodule.differential (R := R) (H := H) (M := M) d)) :
-    ∀ h : H, ∃ m, (Bialgebra.leftInvariantDerivation d)^[m] h = 0 := by
-  intro h
-  obtain ⟨W, hWfin, hh⟩ := Subcomodule.exists_finite_subcomodule_mem (R := R) (C := H) h
-  let _ : Module.Finite R W := hWfin
-  let M : FGComoduleCat.{u, v, v} R H := FGComoduleCat.of (R := R) (C := H) W
-  obtain ⟨m, hm⟩ := hdiff M
-  refine ⟨m, ?_⟩
-  let fM := @Comodule.differential R H M _ _ _ M.instAddCommGroupCarrier M.instModuleCarrier
-    M.instComoduleCarrier d
-  have hsemi : Function.Semiconj W.subtype fM (Bialgebra.leftInvariantDerivation d) := fun w => by
-    have hfw : fM w = Comodule.differential (R := R) (H := H) (M := W) d w := by
-      simp only [fM, M, Comodule.differential_apply]
-    rw [hfw, ← Derivation.coeFn_coe, Bialgebra.toLinearMap_leftInvariantDerivation,
-      ← W.subtype.map_differential d w]
-  have hm0 : (⇑fM)^[m] ⟨h, hh⟩ = 0 := by
-    simpa [fM, pow_apply_eq_iterate] using LinearMap.congr_fun hm ⟨h, hh⟩
-  rw [show h = W.subtype ⟨h, hh⟩ from (W.subtype_apply ⟨h, hh⟩).symm,
-    ← hsemi.iterate_right m ⟨h, hh⟩, hm0, map_zero]
-
-end Derivation

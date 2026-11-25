@@ -9,9 +9,11 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.Coordinate
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Differential
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.InvariantDerivation
+public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Basic
 public import TauCeti.LinearAlgebra.Matrix.Triangular
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Unipotent.Exponential
 import TauCeti.Algebra.AlgebraicGroup.Representation.Kernel
+import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
 
 /-!
 # Tangent matrices of representations
@@ -21,7 +23,9 @@ entrywise. For an upper-unitriangular coefficient matrix, the tangent matrix is 
 triangular and hence nilpotent. If the coordinate morphism is also surjective, local nilpotence
 of the invariant derivation descends from the general-linear coordinate algebra, whether nilpotence
 comes from an upper-unitriangular coefficient matrix or directly from nilpotence of the
-differentiated comodule action.
+differentiated comodule action. More generally, when the coordinate bialgebra is projective as a
+module over the base ring, nilpotence of the differentiated action on every finitely generated
+comodule suffices for local nilpotence of the left-invariant derivation.
 
 These statements work over arbitrary commutative base rings. Tangent matrix entries may take
 values in any commutative coefficient algebra. No reducedness or characteristic assumption is
@@ -29,6 +33,8 @@ needed.
 
 ## Main declarations
 
+* `TauCeti.Comodule.differential_fgComoduleCatOf`: the differentiated action on `FGComoduleCat.of M`
+  agrees with the differentiated action on `M`.
 * `Derivation.tangentMatrix_derivationComp_coordinateBialgHom_apply`: tangent matrix entries
   are derivatives of coefficient-matrix entries.
 * `tangentMatrix_derivationComp_coordinateBialgHom_apply_eq_zero_of_isUpperUnitriangular` in
@@ -41,6 +47,9 @@ needed.
 * `Derivation.exists_iterate_leftInvariantDerivation_eq_zero_of_isNilpotent_differential`:
   a surjective coordinate representation with nilpotent differentiated action makes the invariant
   derivation locally nilpotent.
+* `Derivation.exists_iterate_leftInvariantDerivation_eq_zero_of_forall_fgComodule`:
+  on a projective bialgebra, nilpotence of the differentiated action on every finitely generated
+  comodule makes the left-invariant derivation locally nilpotent.
 
 ## References
 
@@ -49,6 +58,26 @@ needed.
 -/
 
 public section
+
+namespace TauCeti.Comodule
+
+universe u v w
+
+/-- The differentiated action on `FGComoduleCat.of M` agrees as a linear endomorphism with the
+differentiated action on `M`, even though `FGComoduleCat.of M` reconstructs its additive group from
+its module structure. -/
+@[simp]
+theorem differential_fgComoduleCatOf
+    {R : Type u} {H : Type v} {M : Type w} [CommRing R] [CommRing H] [Bialgebra R H]
+    [AddCommGroup M] [Module R M] [Comodule R H M] [Module.Finite R M]
+    (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) :
+    @differential R H (FGComoduleCat.of (R := R) (C := H) M) _ _ _
+        (FGComoduleCat.instAddCommGroupCarrier _) _ _ d =
+      differential (R := R) (H := H) (M := M) d := by
+  ext m
+  simp [differential_apply]
+
+end TauCeti.Comodule
 
 namespace Derivation
 
@@ -113,6 +142,38 @@ theorem exists_iterate_leftInvariantDerivation_eq_zero_of_isUpperUnitriangular
 end Monoid
 
 section Differential
+
+section FGComodule
+
+universe u v
+
+/-- If `H` is projective as an `R`-module (for instance whenever `R` is a field, without any
+finite-type assumption on `H`) and `d` acts nilpotently on every finitely generated `H`-comodule,
+then the left-invariant derivation of `d` is locally nilpotent on `H`. -/
+theorem exists_iterate_leftInvariantDerivation_eq_zero_of_forall_fgComodule
+    {R : Type u} {H : Type v} [CommRing R] [CommRing H] [Bialgebra R H] [Module.Projective R H]
+    (d : Derivation R H (Bialgebra.CounitAlgebra R H R))
+    (hdiff : ∀ M : FGComoduleCat.{u, v, v} R H,
+      IsNilpotent (Comodule.differential (R := R) (H := H) (M := M) d)) :
+    ∀ h : H, ∃ m, (Bialgebra.leftInvariantDerivation d)^[m] h = 0 := by
+  intro h
+  obtain ⟨W, hWfin, hh⟩ := Subcomodule.exists_finite_subcomodule_mem (R := R) (C := H) h
+  let _ : Module.Finite R W := hWfin
+  have hm : IsNilpotent (Comodule.differential (R := R) (H := H) (M := W) d) := by
+    simpa using hdiff (FGComoduleCat.of (R := R) (C := H) W)
+  obtain ⟨m, hm⟩ := hm
+  refine ⟨m, ?_⟩
+  have hsemi : Function.Semiconj W.subtype
+      (Comodule.differential (R := R) (H := H) (M := W) d)
+      (Bialgebra.leftInvariantDerivation d) := fun w => by
+    rw [W.subtype.map_differential d w, ← Derivation.coeFn_coe,
+      Bialgebra.toLinearMap_leftInvariantDerivation]
+  have hm0 : (⇑(Comodule.differential (R := R) (H := H) (M := W) d))^[m] ⟨h, hh⟩ = 0 := by
+    simpa [pow_apply_eq_iterate] using LinearMap.congr_fun hm ⟨h, hh⟩
+  have hiter := (hsemi.iterate_right m ⟨h, hh⟩).symm
+  rwa [W.subtype_apply, Subtype.coe_mk, hm0, map_zero] at hiter
+
+end FGComodule
 
 variable {R H M : Type*} [CommRing R] [CommRing H] [HopfAlgebra R H]
 variable [AddCommGroup M] [Module R M] [Comodule R H M] {n : ℕ}
