@@ -254,8 +254,7 @@ theorem comap_volume_prod_circleArcLength_univ :
 
 /-- The area of a polygonal table is positive. -/
 theorem volume_carrier_pos : 0 < volume T.carrier :=
-  (measure_mono interior_subset).trans_lt' <|
-    isOpen_interior.measure_pos _ T.isConnected_interior.nonempty
+  Measure.measure_pos_of_nonempty_interior _ T.nonempty_interior
 
 /-- The area of a polygonal table is finite. -/
 theorem volume_carrier_lt_top : volume T.carrier < ∞ :=

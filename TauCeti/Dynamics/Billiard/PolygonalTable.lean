@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import TauCeti.Topology.FilledHull
 import Mathlib.Analysis.Convex.Between
 import TauCeti.Analysis.Complex.PlaneSeparation.Inside
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.Normed.Module.FilledHull
 
 /-!
@@ -196,9 +197,7 @@ theorem Side.direction_def (s : T.Side) :
 /-- The unit direction of a side is the side vector `b − a` divided by its length. -/
 theorem Side.coe_direction (s : T.Side) :
     (s.direction : ℂ) = (s.finish - s.start) / ‖s.finish - s.start‖ := by
-  have h : (‖s.finish - s.start‖ : ℂ) ≠ 0 :=
-    Complex.ofReal_ne_zero.2 (norm_ne_zero_iff.2 (sub_ne_zero.2 s.start_ne_finish.symm))
-  rw [eq_div_iff h, mul_comm, direction_def, Circle.coe_exp, Complex.norm_mul_exp_arg_mul_I]
+  rw [direction_def, Circle.coe_exp, Complex.exp_arg_mul_I (sub_ne_zero.2 s.start_ne_finish.symm)]
 
 variable (T)
 
