@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Eigs
 public import TauCeti.Analysis.Normed.Field.UnitsBall
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
-import TauCeti.Analysis.Normed.Unbundled.RootBound
+import TauCeti.Algebra.Polynomial.Eval.Nonarchimedean
 
 /-!
 # Eigenvalues of integral matrices over an ultrametric normed field
@@ -48,22 +48,19 @@ variable {n K : Type*} [Fintype n] [DecidableEq n] [NormedField K] [IsUltrametri
 lie in the closed unit ball. -/
 theorem norm_le_one_of_mem_spectrum (hA : ∀ i j, ‖A i j‖ ≤ 1) {μ : K} (hμ : μ ∈ spectrum K A) :
     ‖μ‖ ≤ 1 := by
-  -- The characteristic polynomial of `A` is the image of that of `A` viewed over the closed unit
-  -- ball, so its coefficients lie in the closed unit ball.
+  -- `μ` is a root of the characteristic polynomial of `A` viewed over the closed unit ball, which
+  -- is monic, so `μ` is integral over the closed unit ball.
   let B : Matrix n n (Subring.unitClosedBall K) :=
     of fun i j ↦ ⟨A i j, Subring.mem_unitClosedBall.2 (hA i j)⟩
   have hB : B.map (Subring.unitClosedBall K).subtype = A := by
     ext i j
     simp [B]
-  have hcoeff (i : ℕ) : ‖A.charpoly.coeff i‖ ≤ 1 := by
-    rw [← hB, charpoly_map, Polynomial.coeff_map]
-    exact Subring.mem_unitClosedBall.1 (B.charpoly.coeff i).property
-  -- A root of a monic polynomial with such coefficients has norm at most one.
-  obtain ⟨i, hi, hle⟩ := A.charpoly_monic.exists_apply_pow_le_apply_coeff_of_eval_eq_zero
-    norm_nonneg norm_mul_le (fun x m _ ↦ norm_pow x m) IsUltrametricDist.isNonarchimedean_norm
-    (mem_spectrum_iff_isRoot_charpoly.1 hμ)
-  exact (pow_le_one_iff_of_nonneg (norm_nonneg μ) (Nat.sub_ne_zero_of_lt hi)).1
-    (hle.trans (hcoeff i))
+  have hint : IsIntegral (Subring.unitClosedBall K) μ := by
+    refine ⟨B.charpoly, B.charpoly_monic, ?_⟩
+    rw [← Polynomial.eval_map, Algebra.algebraMap_ofSubring, ← charpoly_map, hB]
+    exact mem_spectrum_iff_isRoot_charpoly.1 hμ
+  exact IsUltrametricDist.isNonarchimedean_norm.apply_le_one_of_isIntegral_of_isPowMul norm_nonneg
+    norm_mul_le (fun x m _ ↦ norm_pow x m) (fun r ↦ Subring.mem_unitClosedBall.1 r.property) hint
 
 /-- **Eigenvalues of congruence matrices.** If the entries of `A` lie in the closed unit ball of
 an ultrametric normed field, every eigenvalue `ν` of `1 + c • A` satisfies `‖ν - 1‖ ≤ ‖c‖`. -/
