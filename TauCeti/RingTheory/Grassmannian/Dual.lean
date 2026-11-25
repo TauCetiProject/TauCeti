@@ -105,9 +105,8 @@ noncomputable def dualCoannihilator (h : ∀ p, rankAtStalk (R := A) P p = k + l
 theorem toSubmodule_dualCoannihilator (h : ∀ p, rankAtStalk (R := A) P p = k + l)
     (K : G(l, Module.Dual A P; A)) :
     (K.dualCoannihilator h).toSubmodule = K.toSubmodule.dualCoannihilator := by
-  rw [dualCoannihilator, LinearEquiv.toSubmodule_grassmannianCongr_apply,
-    toSubmodule_dualAnnihilator, Submodule.map_equiv_eq_comap_symm, LinearEquiv.symm_symm,
-    Submodule.dualCoannihilator, Module.evalEquiv_toLinearMap]
+  ext x
+  simp [dualCoannihilator, Submodule.mem_map_equiv, Submodule.mem_dualCoannihilator]
 
 /-- **Duality of Grassmannians.** If `P` is finite projective of constant rank `k + l`, taking
 annihilators identifies the rank-`k` quotients of `P` with the rank-`l` quotients of its dual
