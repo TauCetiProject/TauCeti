@@ -56,13 +56,6 @@ namespace PermutationHecke
 
 variable {G S : Type*} [Group G] [MulAction G S] {A : Type*} [CommRing A]
 
-/-- Swapping the coordinates maps diagonal orbits to diagonal orbits. -/
-private theorem mk_swap_eq_of_mk_eq {p q : S × S}
-    (h : Quotient.mk (orbitRel G (S × S)) p = Quotient.mk (orbitRel G (S × S)) q) :
-    Quotient.mk (orbitRel G (S × S)) p.swap = Quotient.mk (orbitRel G (S × S)) q.swap := by
-  obtain ⟨g, hg⟩ := Quotient.exact h
-  exact Quotient.sound ⟨g, by rw [← hg]; rfl⟩
-
 /-- The transpose `(x, y) ↦ h(y, x)` of an element of `Fun_G(S × S, A)` lies in
 `Fun_G(S × S, A)`. -/
 theorem transpose_mem (h : permutationHeckeModule G S A) :
@@ -71,7 +64,7 @@ theorem transpose_mem (h : permutationHeckeModule G S A) :
   refine mem_iff.2 ⟨fun g p ↦ hh.1 g p.swap, ?_⟩
   let f : Quotient (orbitRel G (S × S)) → Quotient (orbitRel G (S × S)) :=
     Quotient.lift (fun p ↦ Quotient.mk (orbitRel G (S × S)) p.swap)
-      fun _ _ hpq ↦ mk_swap_eq_of_mk_eq (Quotient.sound hpq)
+      fun _ _ hpq ↦ Quotient.sound (MulAction.swap_mem_orbit_swap_iff.2 hpq)
   refine (hh.2.image f).subset ?_
   rintro _ ⟨p, hp, rfl⟩
   exact ⟨Quotient.mk _ p.swap, ⟨p.swap, hp, rfl⟩, rfl⟩
@@ -104,21 +97,19 @@ theorem transpose_symm : (transpose G S A).symm = transpose G S A :=
 
 /-- The transpose of the indicator of the orbit of `p` is the indicator of the orbit of
 `p.swap`. -/
+@[simp]
 theorem transpose_indicator_orbit (p : S × S) :
     transpose G S A ⟨_, indicator_orbit_mem p⟩ = ⟨_, indicator_orbit_mem p.swap⟩ := by
-  refine Subtype.ext (funext fun q ↦ ?_)
-  change Set.indicator (orbit G p) 1 q.swap = Set.indicator (orbit G p.swap) 1 q
-  have hq : q.swap ∈ orbit G p ↔ q ∈ orbit G p.swap :=
-    ⟨fun ⟨g, hg⟩ ↦ ⟨g, by rw [← Prod.swap_swap q, ← hg]; rfl⟩,
-      fun ⟨g, hg⟩ ↦ ⟨g, by rw [← hg]; rfl⟩⟩
-  by_cases h : q ∈ orbit G p.swap
-  · rw [Set.indicator_of_mem (hq.2 h), Set.indicator_of_mem h]
-    rfl
-  · rw [Set.indicator_of_notMem (mt hq.1 h), Set.indicator_of_notMem h]
+  refine Subtype.ext (funext fun ⟨x, y⟩ ↦ ?_)
+  have hq := MulAction.swap_mem_orbit_swap_iff (G := G) (p := p.swap) (q := (x, y))
+  rw [Prod.swap_swap, Prod.swap_prod_mk] at hq
+  classical
+  simp only [transpose_apply, Set.indicator_apply, hq, Pi.one_apply]
 
 variable [FiniteStabilizerOrbits G S]
 
 /-- **The transpose reverses the matrix product**: `(h₁ * h₂)ᵀ = h₂ᵀ * h₁ᵀ`. -/
+@[simp]
 theorem transpose_mul (h₁ h₂ : permutationHeckeModule G S A) :
     transpose G S A (h₁ * h₂) = transpose G S A h₂ * transpose G S A h₁ := by
   refine Subtype.ext (funext fun ⟨x, z⟩ ↦ ?_)
@@ -141,12 +132,18 @@ isomorphism of `Fun_G(S × S, A)` with its opposite algebra. -/
 def transposeAlgEquiv [Finite (orbitRel.Quotient G S)] :
     permutationHeckeModule G S A ≃ₐ[A] (permutationHeckeModule G S A)ᵐᵒᵖ :=
   AlgEquiv.ofLinearEquiv ((transpose G S A).trans (MulOpposite.opLinearEquiv A))
-    (by simp) fun h₁ h₂ ↦ by simp [transpose_mul]
+    (by simp) fun h₁ h₂ ↦ by simp
 
 @[simp]
 theorem transposeAlgEquiv_apply [Finite (orbitRel.Quotient G S)]
     (h : permutationHeckeModule G S A) :
     transposeAlgEquiv G S A h = MulOpposite.op (transpose G S A h) :=
+  (rfl)
+
+@[simp]
+theorem transposeAlgEquiv_symm_apply [Finite (orbitRel.Quotient G S)]
+    (h : (permutationHeckeModule G S A)ᵐᵒᵖ) :
+    (transposeAlgEquiv G S A).symm h = transpose G S A h.unop :=
   (rfl)
 
 end PermutationHecke
@@ -162,11 +159,8 @@ theorem transpose_indicator_orbit (g : G) :
     PermutationHecke.transpose G (G ⧸ U) A
         ⟨_, PermutationHecke.indicator_orbit_mem (((1 : G) : G ⧸ U), (g : G ⧸ U))⟩ =
       ⟨_, PermutationHecke.indicator_orbit_mem (((1 : G) : G ⧸ U), ((g⁻¹ : G) : G ⧸ U))⟩ := by
-  rw [PermutationHecke.transpose_indicator_orbit]
-  refine Subtype.ext ?_
-  change Set.indicator (orbit G ((g : G ⧸ U), ((1 : G) : G ⧸ U))) 1 =
-    Set.indicator (orbit G (((1 : G) : G ⧸ U), ((g⁻¹ : G) : G ⧸ U))) 1
-  rw [← orbit_smul g⁻¹ ((g : G ⧸ U), ((1 : G) : G ⧸ U))]
+  rw [PermutationHecke.transpose_indicator_orbit, Subtype.mk.injEq, Prod.swap_prod_mk,
+    ← orbit_smul g⁻¹ ((g : G ⧸ U), ((1 : G) : G ⧸ U))]
   congr 3
   simp [Prod.smul_mk, MulAction.Quotient.smul_mk]
 

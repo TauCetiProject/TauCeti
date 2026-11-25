@@ -23,6 +23,9 @@ the inverse sends the orbit of `(x, g • y)` to the stabilizer orbit of `g⁻¹
 The diagonal action on `X × Y` is free when the action on the first factor is
 (`TauCeti.isCancelSMul_prod`).
 
+Swapping the coordinates maps diagonal orbits to diagonal orbits
+(`TauCeti.MulAction.swap_mem_orbit_swap_iff`).
+
 When every orbit of every point stabilizer on `S` is finite (`TauCeti.FiniteStabilizerOrbits`),
 injectivity of the forward map shows that each diagonal orbit of `S × S` meets every row and every
 column in finitely many points.
@@ -90,6 +93,11 @@ theorem orbitRelQuotientStabilizerEquiv_symm_mk_smul [MulAction.IsPretransitive 
       Quotient.mk'' (g⁻¹ • x) := by
   rw [Equiv.symm_apply_eq, orbitRelQuotientStabilizerEquiv_mk]
   exact Quotient.sound' ⟨g, by simp⟩
+
+/-- Swapping the coordinates maps diagonal orbits of `X × Y` to diagonal orbits of `Y × X`. -/
+theorem swap_mem_orbit_swap_iff {p q : X × Y} :
+    q.swap ∈ MulAction.orbit G p.swap ↔ q ∈ MulAction.orbit G p := by
+  simp only [MulAction.mem_orbit_iff, ← Prod.smul_swap, Prod.swap_inj]
 
 end TauCeti.MulAction
 
