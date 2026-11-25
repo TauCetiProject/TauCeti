@@ -25,10 +25,11 @@ reflexive. Over a Noetherian self-injective ring, finitely generated cohomology 
 Since the coefficient complex `R[0]` is bounded below and consists of injectives, it is
 K-injective, so this dual complex computes the derived coefficient dual.
 
-The construction uses `CochainComplex.linearHomComplexSingleKroneckerEquiv` and its
-computation on cocycle classes. The finite-module case uses
-`Module.IsReflexive.of_injective_of_finite`. This is the coefficient calculation underlying
-biduality at a geometric point in SGA 4½, [Dualité], 1.1–1.4.
+The public equivalence `CochainComplex.linearDualHomologyEquiv` and its cocycle equation
+`CochainComplex.linearDualHomologyEquiv_homologyπ` use
+`CochainComplex.linearHomComplexSingleKroneckerEquiv` and its computation on cocycle classes.
+The finite-module case uses `Module.IsReflexive.of_injective_of_finite`. This is the coefficient
+calculation underlying biduality at a geometric point in SGA 4½, [Dualité], 1.1–1.4.
 -/
 
 public section
@@ -44,23 +45,27 @@ namespace CochainComplex
 variable {R : Type u} [CommRing R] [Module.Injective R R]
   (K : CochainComplex (ModuleCat.{u} R) ℤ)
 
-private def dualHomologyEquiv (p n : ℤ) (h : p + n = 0) :
-    (linearDual R K).homology n ≃ₗ[R] Module.Dual R (K.homology p) := by
-  obtain rfl : p = -n := by omega
+/-- Over self-injective coefficients, cohomology of the dual complex in degree `n` is the
+dual of cohomology in degree `p = -n`. -/
+def linearDualHomologyEquiv (p n : ℤ) (h : p + n = 0) :
+    (linearDual R K).homology n ≃ₗ[R] Module.Dual R (K.homology p) :=
   letI := Module.injective_object_of_injective_module R R
-  exact (linearHomComplexSingleKroneckerEquiv R K (ModuleCat.of R R) n).trans
-    ModuleCat.homLinearEquiv
+  ((linearHomComplexSingleKroneckerEquiv R K (ModuleCat.of R R) n).trans
+    ModuleCat.homLinearEquiv).trans
+      (LinearEquiv.cast (M := fun p : ℤ ↦ Module.Dual R (K.homology p)) (by omega : -n = p))
 
-private lemma dualHomologyEquiv_homologyπ (p n : ℤ) (h : p + n = 0)
+/-- The dual-cohomology equivalence evaluates a cocycle class on a cocycle class by
+evaluating the underlying dual cochain on the underlying cocycle. -/
+@[simp]
+theorem linearDualHomologyEquiv_homologyπ (p n : ℤ) (h : p + n = 0)
     (φ : (linearDual R K).cycles n) (x : K.cycles p) :
-    dualHomologyEquiv K p n h ((linearDual R K).homologyπ n φ) (K.homologyπ p x) =
+    linearDualHomologyEquiv K p n h ((linearDual R K).homologyπ n φ) (K.homologyπ p x) =
       linearDualXEquiv K h ((linearDual R K).iCycles n φ) (K.iCycles p x) := by
   obtain rfl : p = -n := by omega
-  dsimp only [dualHomologyEquiv, LinearEquiv.trans_apply]
-  rw [linearHomComplexSingleKroneckerEquiv_apply]
-  -- Read the bundled categorical morphism as its underlying linear map.
-  change ((linearHomComplexSingleKronecker R K (ModuleCat.of R R) n
-    ((linearDual R K).homologyπ n φ)).hom) ((K.homologyπ (-n)).hom x) = _
+  simp only [linearDualHomologyEquiv, LinearEquiv.trans_apply, LinearEquiv.cast_apply,
+    cast_eq]
+  rw [ModuleCat.homLinearEquiv_apply, AddEquiv.toFun_eq_coe, ModuleCat.homAddEquiv_apply,
+    linearHomComplexSingleKroneckerEquiv_apply]
   simpa only [ModuleCat.hom_comp, LinearMap.comp_apply, linearDualXEquiv_apply] using
     LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
       (homologyπ_linearHomComplexSingleKronecker (k := R) K (ModuleCat.of R R) n φ)) x
@@ -70,8 +75,8 @@ bidual of the cohomology module. -/
 def bidualHomologyEquiv (i : ℤ) :
     (linearDual R (linearDual R K)).homology i ≃ₗ[R]
       Module.Dual R (Module.Dual R (K.homology i)) :=
-  (dualHomologyEquiv (linearDual R K) (-i) i (neg_add_cancel i)).trans
-    (dualHomologyEquiv K i (-i) (add_neg_cancel i)).symm.dualMap
+  (linearDualHomologyEquiv (linearDual R K) (-i) i (neg_add_cancel i)).trans
+    (linearDualHomologyEquiv K i (-i) (add_neg_cancel i)).symm.dualMap
 
 /-- The double Kronecker equivalence evaluates a bidual cocycle on a functional on
 cohomology by evaluating it on any dual cocycle representing that functional. -/
@@ -84,24 +89,24 @@ theorem bidualHomologyEquiv_homologyπ (i : ℤ)
     bidualHomologyEquiv K i ((linearDual R (linearDual R K)).homologyπ i x) f =
       linearDualXEquiv (linearDual R K) (neg_add_cancel i)
         ((linearDual R (linearDual R K)).iCycles i x) ((linearDual R K).iCycles (-i) φ) := by
-  have hφ' : dualHomologyEquiv K i (-i) (add_neg_cancel i)
+  have hφ' : linearDualHomologyEquiv K i (-i) (add_neg_cancel i)
       ((linearDual R K).homologyπ (-i) φ) = f := by
     apply K.moduleCat_linearMap_ext_homologyπ
     intro z
-    exact (dualHomologyEquiv_homologyπ K i (-i) (add_neg_cancel i) φ z).trans (hφ z)
+    exact (linearDualHomologyEquiv_homologyπ K i (-i) (add_neg_cancel i) φ z).trans (hφ z)
   simp only [bidualHomologyEquiv, LinearEquiv.trans_apply, LinearEquiv.dualMap_apply]
-  rw [← hφ', LinearEquiv.symm_apply_apply, dualHomologyEquiv_homologyπ]
+  rw [← hφ', LinearEquiv.symm_apply_apply, linearDualHomologyEquiv_homologyπ]
 
 private lemma dualHomologyEquiv_homologyMap_bidualHom (i : ℤ)
     (x : K.homology i) (φ : (linearDual R K).homology (-i)) :
-    dualHomologyEquiv (linearDual R K) (-i) i (neg_add_cancel i)
+    linearDualHomologyEquiv (linearDual R K) (-i) i (neg_add_cancel i)
         (homologyMap (bidualHom K) i x) φ =
-      i.negOnePow • dualHomologyEquiv K i (-i) (add_neg_cancel i) φ x := by
+      i.negOnePow • linearDualHomologyEquiv K i (-i) (add_neg_cancel i) φ x := by
   obtain ⟨x, rfl⟩ := K.moduleCat_homologyπ_surjective i x
   obtain ⟨φ, rfl⟩ := (linearDual R K).moduleCat_homologyπ_surjective (-i) φ
-  rw [moduleCat_homologyMap_homologyπ, dualHomologyEquiv_homologyπ,
+  rw [moduleCat_homologyMap_homologyπ, linearDualHomologyEquiv_homologyπ,
     moduleCat_iCycles_cyclesMap_apply, linearDualXEquiv_bidualHom_f_apply,
-    dualHomologyEquiv_homologyπ]
+    linearDualHomologyEquiv_homologyπ]
 
 /-- Under the double Kronecker equivalence, the map on cohomology induced by the
 chain-compatible bidual map is evaluation multiplied by `(-1)^i`. -/
