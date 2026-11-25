@@ -9,8 +9,9 @@ public import TauCeti.GroupTheory.Abelianization.WithZero
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stability
 
--- Non-public: invertible upper triangular matrices and the factorization through the rotation are
--- used only inside the proof that the `2 × 2` determinant vanishes exactly on singular matrices.
+-- Non-public: the factorization through the rotation is used to prove multiplicativity and the
+-- singularity criterion of the `2 × 2` determinant; invertible upper triangular matrices only for
+-- the latter.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Borel
 import TauCeti.LinearAlgebra.Matrix.RotationFinTwo
 
