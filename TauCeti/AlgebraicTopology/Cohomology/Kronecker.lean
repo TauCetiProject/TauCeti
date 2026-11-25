@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Relative
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Zero
 public import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
+import TauCeti.CategoryTheory.Linear.Int
 
 /-!
 # The Kronecker map of singular cohomology
@@ -37,6 +38,8 @@ the case where its `Ext¹`-term vanishes.
   `TopCat.singularKronecker_naturality` its naturality in the space and
   `TopCat.singularKronecker_singularCohomologyChainCoefficientMap` its naturality in the chain
   coefficients.
+* `TopCat.singularKronecker_instLinear`: with values in `ℤ`, the Kronecker map does not depend on
+  which of the two `ℤ`-linear structures of `ModuleCat ℤ` is used.
 * `TopCat.singularKronecker_bijective`, `TopCat.singularKroneckerEquiv`: for an injective
   coefficient object `M`, the Kronecker map is bijective, a `k`-linear equivalence.
 * `TopCat.singularKronecker_bijective_zero`: in degree zero the Kronecker map is bijective for
@@ -132,6 +135,26 @@ lemma singularKronecker_eqToHom {k : Type*} [Ring k] (L₁ L₂ : Linear k C) (h
       @TopCat.singularKronecker _ _ _ _ R M X k _ L₁ n a := by
   subst h
   simp
+
+/-- The Kronecker map of singular cohomology with values in `ℤ`, for chain coefficients in a
+`ℤ`-module `R`, is the same for the `ℤ`-linear structure `ModuleCat.instLinear` of a category of
+modules and the structure `Linear.preadditiveIntLinear` of a preadditive category. -/
+lemma singularKronecker_instLinear (R : ModuleCat.{0} ℤ) (X : TopCat.{0}) (n : ℕ)
+    (a : @TopCat.singularCohomology _ _ _ _ R ℤ _ ModuleCat.instLinear (ModuleCat.of ℤ ℤ) X n) :
+    @TopCat.singularKronecker _ _ _ _ R (ModuleCat.of ℤ ℤ) X ℤ _ ModuleCat.instLinear n a =
+      @TopCat.singularKronecker _ _ _ _ R (ModuleCat.of ℤ ℤ) X ℤ _ Linear.preadditiveIntLinear n
+        a := by
+  have h := singularKronecker_eqToHom R (ModuleCat.of ℤ ℤ) Linear.preadditiveIntLinear
+    ModuleCat.instLinear (Subsingleton.elim _ _) X n a
+  -- with values in `ℤ`, the two `ℤ`-module structures on the cochain groups `Hom(Cₙ, ℤ)` both
+  -- unfold to integer multiplication, so the two cohomology modules agree up to definitional
+  -- equality and the comparison `eqToHom` is the identity
+  have h₁ : eqToHom (congrArg (fun L : Linear ℤ (ModuleCat.{0} ℤ) ↦
+      @TopCat.singularCohomology _ _ _ _ R ℤ _ L (ModuleCat.of ℤ ℤ) X n)
+        (Subsingleton.elim Linear.preadditiveIntLinear ModuleCat.instLinear)) = 𝟙 _ :=
+    eqToHom_refl _ _
+  rw [h₁] at h
+  exact h
 
 /-- **The universal coefficient theorem for injective coefficients**: for an injective object
 `M`, the Kronecker map `Hⁿ(X; R, M) →ₗ[k] (Hₙ(X; R) ⟶ M)` of singular cohomology is bijective. -/
