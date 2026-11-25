@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.WittVector.Isocrystal
 public import TauCeti.GroupTheory.TwistedConjugacy.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Semilinear
+public import TauCeti.RingTheory.Isocrystal.Equiv
 import Mathlib.LinearAlgebra.Dimension.Constructions
 
 /-!
@@ -56,9 +56,16 @@ theorem wittGLIsocrystal_frobenius_apply (b : Matrix.GeneralLinearGroup (Fin n) 
   rw [wittGLIsocrystal_frobenius_eq_semilinearEquiv]
   exact semilinearEquiv_apply _ b x
 
--- The two isocrystal instances on the same coordinate space must be supplied separately.
-local notation "withWittGLIsocrystals(" op ", " p ", " k ", " b ", " c ")" =>
-  @op p _ k _ _ _ _ _ (wittGLIsocrystal p k b) _ _ (wittGLIsocrystal p k c)
+-- Resolve the instances while the source and target types are distinct, then specialize both
+-- types to the coordinate space. This lets each operation infer its own instance arguments.
+local macro "withWittGLIsocrystals(" op:term ", " p:term ", " k:term ", " b:term ", " c:term ")" :
+    term =>
+  `(beta% (fun {V W : Type _} [AddCommGroup V] [AddCommGroup W]
+    (source : Isocrystal $p $k V) (target : Isocrystal $p $k W) =>
+    letI := source
+    letI := target
+    $op (p := $p) (k := $k) (V := V) (V₂ := W)) (wittGLIsocrystal $p $k $b)
+      (wittGLIsocrystal $p $k $c))
 
 /-- Isomorphisms between the isocrystals of `b` and `c` are precisely the linear equivalences
 whose matrices twisted-conjugate `b` to `c`. -/
@@ -144,16 +151,16 @@ theorem wittGL_isocrystal_classes (V : Type*) [AddCommGroup V] [Isocrystal p k V
         TwistedConj.Classes.mk (mapEquiv (Fin n) (FractionRing.frobenius p k)).toMonoidHom c := by
   obtain ⟨e⟩ := FiniteDimensional.nonempty_linearEquiv_of_finrank_eq
     (R := K(p, k)) (M := Fin n → K(p, k)) (M' := V) (by simp [hdim])
-  obtain ⟨b, ⟨f, hf⟩, -⟩ := exists_wittGLIsocrystalEquiv_of_linearEquiv p k e
+  obtain ⟨b, f, -⟩ := exists_wittGLIsocrystalEquiv_of_linearEquiv p k e
   refine ⟨b, fun c => ?_⟩
-  let := wittGLIsocrystal p k c
+  let bIsocrystal := wittGLIsocrystal p k b
+  let cIsocrystal := wittGLIsocrystal p k c
   rw [eq_comm, ← nonempty_wittGLIsocrystalEquiv_iff]
   constructor
-  · rintro ⟨⟨g, hg⟩⟩
-    refine ⟨withWittGLIsocrystals(IsocrystalEquiv.mk, p, k, c, b) (g.trans f.symm) (fun x => ?_)⟩
-    apply f.injective
-    simp only [LinearEquiv.trans_apply, ← hf, f.apply_symm_apply, hg]
-  · rintro ⟨⟨g, hg⟩⟩
-    exact ⟨⟨g.trans f, fun x => by simp only [LinearEquiv.trans_apply, hf, hg]⟩⟩
+  · rintro ⟨g⟩
+    exact ⟨g.trans (source := cIsocrystal) (target := bIsocrystal)
+      (f.symm (source := bIsocrystal))⟩
+  · rintro ⟨g⟩
+    exact ⟨g.trans (source := cIsocrystal) (middle := bIsocrystal) f⟩
 
 end TauCeti
