@@ -63,7 +63,7 @@ by multiplication by the **conformal scale** `r(ζ) = 2π |φ'_q(ζ) - c_q|`
   the strip with an essentially bounded coefficient field. For the linearized Floer operator of a
   pair of pants, this coefficient field and its convergence to a model built from the stationary
   cylinder operator at the asymptotic orbit are in
-  `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.EndModel`.
+  `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.End.Model`.
 
 ## References
 
@@ -701,9 +701,7 @@ theorem jetOperator_endTransfer {W : Type*} [NormedAddCommGroup W] [NormedSpace 
         (fun ζ ↦ (M (positiveEndChart q ζ)).comp (endTransferCoeff q β ζ)) f) := by
   have hMφ : MemLp (fun ζ ↦ (M (positiveEndChart q ζ)).comp (endTransferCoeff q β ζ)) ∞
       StripSobolev.stripMeasure :=
-    (hM.comp_quasiMeasurePreserving_top (quasiMeasurePreserving_positiveEndChart q)).of_bilin
-      (fun A B ↦ A.comp B) 1 hN (ContinuousLinearMap.compL ℝ (V × V × V) (V × V × V) W).continuous₂
-      (ae_of_all _ fun _ ↦ by simpa using ContinuousLinearMap.opNNNorm_comp_le _ _)
+    (hM.comp_quasiMeasurePreserving_top (quasiMeasurePreserving_positiveEndChart q)).clm_comp ∞ hN
   refine Lp.ext ?_
   filter_upwards [coeFn_jetOperator hM (endTransfer q β f), coeFn_endTransfer q hN f,
     coeFn_positiveEndChartLp q (jetOperator StripSobolev.stripMeasure

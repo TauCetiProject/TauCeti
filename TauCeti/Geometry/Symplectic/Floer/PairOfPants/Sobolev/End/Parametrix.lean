@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.EndModel
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.End.Model
 public import TauCeti.Analysis.Sobolev.Cylinder.Parametrix
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 
@@ -15,14 +15,18 @@ import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 Let `D` be a first-order operator on the pair of pants `S = ℂ ∖ {0, 1}`, realized on
 `W^{1,2}_0(S, V)` through an essentially bounded coefficient field `M` on the conformal jets of the
 cylindrical weight, such as the linearized Floer operator
-`TauCeti.SymplecticForm.floerConformalSobolevOperator` of a pair of pants. Its kernel is finite
-dimensional and its range is closed
-(`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.SemiFredholm`); the finiteness of its
-cokernel follows from a right parametrix `P`, an operator with `D P - 1` compact
+`TauCeti.SymplecticForm.floerConformalSobolevOperator` of a pair of pants. The linearized Floer
+operator of a pair of pants has finite-dimensional kernel and closed range
+(`TauCeti.SymplecticForm.finiteDimensional_ker_floerConformalSobolevOperator_pairOfPants`,
+`TauCeti.SymplecticForm.isClosed_range_floerConformalSobolevOperator_pairOfPants`); the finiteness
+of its cokernel follows from a right parametrix `P`, an operator with `D P - 1` compact
 (`ContinuousLinearMap.cofg_range_of_isCompactOperator_comp_sub_one`). Such a parametrix is spliced
 from inverses of model operators on the cylinder. This file constructs what one end contributes:
 an inverse of the end model of `D`, transferred to `S` along the end chart with a cutoff living far
-out on the end, inverts `D` there up to a compact operator and an operator of small norm.
+out on the end, inverts `D` there up to a compact operator and an operator of small norm. The
+splicing of end inverses through cutoffs, with compact cutoff-commutator terms, follows the
+parametrix of the two-ended cylinder
+(`TauCeti.CylinderSobolev.isFredholm_jetOperator_comp_subtypeL_of_isInvertible`).
 
 * **Splitting off the cutoff.** The jet coefficient of the transfer along the end chart `φ'_q`
   with a cutoff `β` (`TauCeti.Floer.endTransferCoeff`) is `β(φ'_q)` times the jet coefficient with
@@ -178,10 +182,8 @@ private theorem memLp_comp_endTransferCutoffCoeff (q : Puncture)
     have h := hB _ (equivRealProdCLM_symm_positiveEndChart_ne_endCenter q ζ)
     rw [positiveEndChartScale_apply]
     nlinarith [Real.pi_pos]
-  exact (hM.comp_quasiMeasurePreserving_top (quasiMeasurePreserving_positiveEndChart q)).of_bilin
-    (r := ∞) (fun A B ↦ A.comp B) 1 hcut
-    (ContinuousLinearMap.compL ℝ (V × V × V) (V × V × V) W).continuous₂
-    (ae_of_all _ fun _ ↦ by simpa using ContinuousLinearMap.opNNNorm_comp_le _ _)
+  exact (hM.comp_quasiMeasurePreserving_top (quasiMeasurePreserving_positiveEndChart q)).clm_comp
+    ∞ hcut
 
 /-- Read along the end chart, the part of the coefficient field coming from the derivative of the
 cutoff gives a compact operator on `W^{1,2}` of the cylinder when the derivative of the cutoff
@@ -225,8 +227,7 @@ private theorem norm_comp_endTransferCoeff_sub_sub_smul_le (q : Puncture)
           β (positiveEndChart q ζ) • G ζ‖ ≤ B * ε := by
   rw [endTransferCoeff_eq_smul_add q β ζ, ContinuousLinearMap.comp_add,
     ContinuousLinearMap.comp_smul, add_sub_cancel_right]
-  rw [show ∀ (c : ℝ) (A A' : V × V × V →L[ℝ] W), c • A - c • A' = c • (A - A') from
-    fun c A A' ↦ (smul_sub c A A').symm, norm_smul, Real.norm_eq_abs]
+  rw [← smul_sub (A := V × V × V →L[ℝ] W), norm_smul, Real.norm_eq_abs]
   by_cases h : β (positiveEndChart q ζ) = 0
   · rwa [h, abs_zero, zero_mul]
   · exact mul_le_mul hB (hMG h) (norm_nonneg _) ((abs_nonneg _).trans hB)
@@ -249,9 +250,8 @@ private theorem jetOperator_smul_add_add_ae_eq {G C E : ℝ × ℝ → V × V ×
       jetOperator stripMeasure C (Q h)) (jetOperator stripMeasure E (Q h)),
     Lp.coeFn_add (jetOperator stripMeasure (fun ζ ↦ b ζ • G ζ) (Q h))
       (jetOperator stripMeasure C (Q h)),
-    coeFn_jetOperator hbG (Q h), coeFn_jetOperator hG (Q h)] with ζ h₁ h₂ h₃ h₄
-  rw [hQ h] at h₄
-  rw [add_apply, add_apply, h₁, Pi.add_apply, h₂, Pi.add_apply, h₃, smul_apply, ← h₄]
+    coeFn_jetOperator_smul hb hG (Q h)] with ζ h₁ h₂ h₃
+  rw [add_apply, add_apply, h₁, Pi.add_apply, h₂, Pi.add_apply, h₃, hQ h]
 
 /-- **The end contribution to a right parametrix.** Let `D` be a first-order operator on the pair
 of pants `S` with an essentially bounded coefficient field `M` on conformal jets, and let the
@@ -294,9 +294,7 @@ theorem exists_isCompactOperator_positiveEndChartLp_symm_jetOperator_endTransfer
   have hT := memLp_endTransferCoeff (V := V) q hβ hβS hB
   have hN : MemLp (fun ζ ↦ (M (positiveEndChart q ζ)).comp (endTransferCoeff q β ζ)) ∞
       stripMeasure :=
-    (hM.comp_quasiMeasurePreserving_top (quasiMeasurePreserving_positiveEndChart q)).of_bilin
-      (fun A B ↦ A.comp B) 1 hT (ContinuousLinearMap.compL ℝ (V × V × V) (V × V × V) W).continuous₂
-      (ae_of_all _ fun _ ↦ by simpa using ContinuousLinearMap.opNNNorm_comp_le _ _)
+    (hM.comp_quasiMeasurePreserving_top (quasiMeasurePreserving_positiveEndChart q)).clm_comp ∞ hT
   have hC := memLp_comp_endTransferCutoffCoeff q hM hβ fun z hz ↦ (hB z hz).2.2
   have hβφ : MemLp (fun ζ ↦ β (positiveEndChart q ζ)) ∞ stripMeasure :=
     memLp_top_of_bound (hβ.continuous.comp (contDiff_positiveEndChart q 0).continuous
@@ -422,6 +420,15 @@ private theorem memLp_endRotation (q : Puncture) {L : ℝ → AlmostComplexStruc
     (ae_restrict_of_forall_mem (MeasurableSet.univ.prod measurableSet_Icc) fun ζ hζ ↦
       (norm_endRotation_le q L hσ ζ).trans (by linarith [hC ζ.2 hζ.2]))
 
+/-- The coefficient field of the stationary cylinder operator `∂s + L_t (∂t - S_t)` followed by the
+rotation `r⁻¹ (a + b L_t)` of the end chart is essentially bounded. -/
+private theorem memLp_endRotation_comp_stationaryJetCoeff (q : Puncture)
+    {L : ℝ → AlmostComplexStructure V}
+    (hL : Continuous fun t ↦ (L t).toLinearMap.toContinuousLinearMap) {S : ℝ → V →L[ℝ] V}
+    (hS : Continuous S) :
+    MemLp (fun ζ ↦ (endRotation q L 1 ζ).comp (stationaryJetCoeff L S ζ)) ∞ stripMeasure :=
+  (memLp_endRotation q hL (by norm_num)).clm_comp ∞ (memLp_stationaryJetCoeff hL hS)
+
 /-- When the stationary cylinder operator `∂s + L_t (∂t - S_t)` is invertible on `W^{1,2}`, the
 inverse rotation followed by its inverse is a right inverse of the stationary operator followed by
 the rotation `r⁻¹ (a + b L_t)` of the end chart. -/
@@ -432,11 +439,7 @@ private theorem exists_forall_jetOperator_endRotation_comp_stationaryJetCoeff_eq
     ∃ Q : Lp V 2 stripMeasure →L[ℝ] CylinderSobolev.H1 V, ∀ h, jetOperator stripMeasure
       (fun ζ ↦ (endRotation q L 1 ζ).comp (stationaryJetCoeff L S ζ)) (Q h) = h := by
   have hstat := memLp_stationaryJetCoeff hL hS
-  have hG : MemLp (fun ζ ↦ (endRotation q L 1 ζ).comp (stationaryJetCoeff L S ζ)) ∞
-      stripMeasure :=
-    (memLp_endRotation q hL (by norm_num)).of_bilin (fun A B ↦ A.comp B) 1 hstat
-      (ContinuousLinearMap.compL ℝ (V × V × V) V V).continuous₂
-      (ae_of_all _ fun _ ↦ by simpa using ContinuousLinearMap.opNNNorm_comp_le _ _)
+  have hG := memLp_endRotation_comp_stationaryJetCoeff q hL hS
   have hR := memLp_endRotation q hL (σ := -1) (by norm_num)
   refine ⟨(stationarySobolevOperator L S).inverse.comp
     (Lp.operatorMultiplication 2 (hR.toLp (endRotation q L (-1)))), fun h ↦ Lp.ext ?_⟩
@@ -532,11 +535,7 @@ theorem exists_forall_exists_isCompactOperator_jetOperator_floerConformalJetCoef
       (contDiff_uncurry_positiveEndHamiltonian hHs))).comp (continuous_id.prodMk hxc)
   -- The end model, the stationary cylinder operator followed by the rotation of the chart, has a
   -- right inverse.
-  have hG : MemLp (fun ζ ↦ (endRotation q Jx 1 ζ).comp (stationaryJetCoeff Jx S ζ)) ∞
-      stripMeasure :=
-    (memLp_endRotation q hJx (by norm_num)).of_bilin (fun A B ↦ A.comp B) 1
-      (memLp_stationaryJetCoeff hJx hS) (ContinuousLinearMap.compL ℝ (V × V × V) V V).continuous₂
-      (ae_of_all _ fun _ ↦ by simpa using ContinuousLinearMap.opNNNorm_comp_le _ _)
+  have hG := memLp_endRotation_comp_stationaryJetCoeff q hJx hS
   obtain ⟨Q, hQ⟩ := exists_forall_jetOperator_endRotation_comp_stationaryJetCoeff_eq q hJx hS hD
   refine ⟨Q, fun ε hε ↦ ?_⟩
   -- Far out on the end, the operator read along the chart is close to the end model.
