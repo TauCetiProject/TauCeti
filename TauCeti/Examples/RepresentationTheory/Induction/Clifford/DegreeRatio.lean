@@ -27,16 +27,11 @@ open TauCeti
 
 namespace TauCeti.Examples.DegreeRatioQuaternion
 
-/-- The centre of `Q₈` lies in the rotation subgroup. -/
-theorem center_le_quaternionRotations :
-    Subgroup.center (QuaternionGroup 2) ≤ quaternionRotations 2 := by
-  rw [center_quaternionGroup_eq_zpowers (by decide), Subgroup.zpowers_le]
-  exact a_mem_quaternionRotations _
-
 /-- The faithful linear character `θ` of the centre of `Q₈`: the restriction of the rotation
 character sending `a 1` to `i`, so `θ (a 2) = -1`. -/
 noncomputable def centerChar : Subgroup.center (QuaternionGroup 2) →* ℂˣ :=
-  quaternionGroupTwoRotationChar.comp (Subgroup.inclusion center_le_quaternionRotations)
+  quaternionGroupTwoRotationChar.comp
+    (Subgroup.inclusion (center_quaternionGroup_le_quaternionRotations (by decide)))
 
 /-- The two-dimensional irreducible representation `W` of `Q₈`. -/
 noncomputable abbrev twoDimRep : FDRep ℂ (QuaternionGroup 2) :=
@@ -44,9 +39,12 @@ noncomputable abbrev twoDimRep : FDRep ℂ (QuaternionGroup 2) :=
 
 /-- `θ` is faithful: it takes the value `-1` at `a 2`. -/
 example : (centerChar ⟨QuaternionGroup.a 2, quaternionGroup_a_self_mem_center 2⟩ : ℂ) = -1 := by
-  have : (centerChar ⟨QuaternionGroup.a 2, quaternionGroup_a_self_mem_center 2⟩ : ℂ) =
-      (quaternionGroupTwoRotationChar ⟨QuaternionGroup.a 2, by simp⟩ : ℂ) := rfl
-  rw [this, coe_quaternionGroupTwoRotationChar_a, ZMod.val_two_eq_two_mod]
+  rw [centerChar, MonoidHom.comp_apply,
+    show Subgroup.inclusion (K := quaternionRotations 2) _
+        ⟨QuaternionGroup.a 2, quaternionGroup_a_self_mem_center 2⟩ =
+        ⟨QuaternionGroup.a 2, a_mem_quaternionRotations 2⟩ from
+      Subtype.ext (Subgroup.coe_inclusion _ _),
+    coe_quaternionGroupTwoRotationChar_a, ZMod.val_two_eq_two_mod]
   norm_num [Complex.I_sq]
 
 /-- `W` lies over `θ`. -/
@@ -55,7 +53,8 @@ theorem liesOver_twoDimRep : FDRep.LiesOver twoDimRep (Subgroup.center (Quaterni
   have : Nontrivial (FDRep.ofLinearCharacter (k := ℂ) quaternionGroupTwoRotationChar) :=
     Module.nontrivial_of_finrank_pos (R := ℂ) (by simp)
   have h := (FDRep.liesOver_res_self (FDRep.ofLinearCharacter quaternionGroupTwoRotationChar)
-    (Subgroup.inclusion center_le_quaternionRotations)).indFDRep
+    (Subgroup.inclusion
+      (center_quaternionGroup_le_quaternionRotations (by decide)))).indFDRep
   rw [Subgroup.subtype_comp_inclusion, FDRep.actionRes_obj_ofLinearCharacter] at h
   exact h
 
@@ -65,8 +64,7 @@ theorem inertia_centerChar :
   refine eq_top_iff.2 fun g _ => mem_inertia_iff_forall_char_conj_eq.2 fun x => ?_
   congr 1
   ext
-  change g⁻¹ * (x : QuaternionGroup 2) * g = x
-  rw [mul_assoc, ← Subgroup.mem_center_iff.1 x.property g, inv_mul_cancel_left]
+  rw [Subgroup.coe_mk, mul_assoc, ← Subgroup.mem_center_iff.1 x.property g, inv_mul_cancel_left]
 
 /-- **The degree ratio over the centre of `Q₈`** is `2`, which divides `|Q₈ : Z(Q₈)| = 4` but is
 not the index `1` of the inertia group of `θ`. -/

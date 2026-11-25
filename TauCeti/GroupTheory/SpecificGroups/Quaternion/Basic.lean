@@ -62,9 +62,11 @@ form used by its explicit Dixon-prime certificate.
   conjugates every rotation to its inverse.
 * `TauCeti.sq_eq_one_quaternionGroup_iff`, `TauCeti.orderOf_eq_two_quaternionGroup_iff`: for
   nonzero `n`, `QuaternionGroup.a n` is the unique element of order two.
-* `TauCeti.center_quaternionGroup_eq_zpowers`, `TauCeti.isMulCommutative_quaternionGroup_iff`: for
-  `n ≠ 1` the centre is `Subgroup.zpowers (QuaternionGroup.a n)` and `QuaternionGroup n` is
-  non-commutative.
+* `TauCeti.center_quaternionGroup_eq_zpowers`,
+  `TauCeti.center_quaternionGroup_le_quaternionRotations`,
+  `TauCeti.isMulCommutative_quaternionGroup_iff`: for `n ≠ 1` the centre is
+  `Subgroup.zpowers (QuaternionGroup.a n)`, it lies in the rotation subgroup, and
+  `QuaternionGroup n` is non-commutative.
 * `TauCeti.not_exists_isComplement'_zpowers_quaternionGroup_a`,
   `TauCeti.not_exists_isComplement'_center_quaternionGroup`,
   `TauCeti.not_exists_isComplement'_quaternionRotations`: for nonzero `n`, neither
@@ -381,6 +383,12 @@ theorem center_quaternionGroup_eq_zpowers {n : ℕ} (hn : n ≠ 1) :
       · have hval : i.val = n := Nat.eq_of_mul_eq_mul_left zero_lt_two hi
         rw [← i.natCast_zmod_val, hval]
         exact Subgroup.mem_zpowers _
+
+/-- For `n ≠ 1`, the centre of `QuaternionGroup n` lies in the rotation subgroup. -/
+theorem center_quaternionGroup_le_quaternionRotations {n : ℕ} (hn : n ≠ 1) :
+    Subgroup.center (QuaternionGroup n) ≤ quaternionRotations n := by
+  rw [center_quaternionGroup_eq_zpowers hn, Subgroup.zpowers_le]
+  exact a_mem_quaternionRotations _
 
 /-- `QuaternionGroup n` is commutative if and only if `n = 1` (where it is cyclic of order four). -/
 @[simp]
