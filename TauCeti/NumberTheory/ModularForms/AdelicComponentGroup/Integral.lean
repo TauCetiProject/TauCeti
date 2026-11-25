@@ -43,6 +43,7 @@ have determinant `1`, so those with integral entries are the elements of `SL₂(
 public section
 
 open IsDedekindDomain IsDedekindDomain.FiniteAdeleRing Matrix
+open scoped Pointwise
 
 namespace IsDedekindDomain.FiniteAdeleRing
 
@@ -80,7 +81,7 @@ theorem relIndex_range_mapGL_componentGroup_ne_zero
     (hU : IsCompact (U : Set (GL (Fin 2) (FiniteAdeleRing ℤ ℚ)))) :
     (SpecialLinearGroup.mapGL (n := Fin 2) (R := ℤ) ℚ).range.relIndex (componentGroup U g) ≠ 0 := by
   set φ := GeneralLinearGroup.map (n := Fin 2) (algebraMap ℚ (FiniteAdeleRing ℤ ℚ))
-  set V := U.map (MulAut.conj g).toMonoidHom
+  set V := MulAut.conj g • U
   set O := (integralGL ℚ 2 (R := ℤ)).range
   -- `GL₂(Ô)` has finite index in the compact group `gUg⁻¹`, since it is open.
   have hV : IsCompact (V : Set (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))) :=
@@ -94,8 +95,8 @@ theorem relIndex_range_mapGL_componentGroup_ne_zero
   -- The diagonal image of `Γ_{g,U}` lies in `gUg⁻¹`.
   have h2 : (componentGroup U g).map φ ≤ V := by
     rintro _ ⟨γ, hγ, rfl⟩
-    rw [Subgroup.mem_map_equiv, MulAut.conj_symm_apply]
-    exact (mem_componentGroup_iff.mp hγ).2
+    simpa [V, Subgroup.mem_pointwise_smul_iff_inv_smul_mem, MulAut.smul_def] using
+      (mem_componentGroup_iff.mp hγ).2
   have h3 : (O.comap φ ⊓ componentGroup U g).relIndex (componentGroup U g) ≠ 0 := by
     rw [Subgroup.inf_relIndex_right, Subgroup.relIndex_comap]
     exact mt (Subgroup.relIndex_eq_zero_of_le_right h2) h1
