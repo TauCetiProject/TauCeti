@@ -192,7 +192,7 @@ variable {Γ Ω : Set F} {e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {γ : E → 
 
 /-- A frontier point in the cylinder of an admissible chart lies in `Γ` exactly when its base
 coordinate lies in the base `U`. -/
-theorem mem_iff (hc : Γ.IsAdmissibleChart Ω E' e γ K h r U) {x : F} (hx : x ∈ frontier Ω)
+theorem mem_iff_snd_mem (hc : Γ.IsAdmissibleChart Ω E' e γ K h r U) {x : F} (hx : x ∈ frontier Ω)
     (hxC : e x ∈ normalCylinder h r) : x ∈ Γ ↔ (e x).snd ∈ U := by
   rw [← e.injective.mem_set_image]
   constructor
@@ -225,13 +225,7 @@ theorem trans_constVAdd (hc : Γ.IsAdmissibleChart Ω E' e γ K h r U) (p : With
   isAdmissibleBase := hc.isAdmissibleBase.preimage_add_right p.snd
   image_part_inter_normalCylinder := by
     ext w
-    -- The translate `p + w` of a point `w` of the new cylinder lies in the old cylinder.
-    have hC : w ∈ normalCylinder h' r' → p + w ∈ normalCylinder h r := by
-      intro hw
-      rw [mem_normalCylinder] at hw ⊢
-      simp only [WithLp.add_fst, WithLp.add_snd]
-      exact ⟨by linarith [neg_abs_le p.fst], by linarith [le_abs_self p.fst],
-        by linarith [norm_add_le p.snd w.snd]⟩
+    have hC := add_mem_normalCylinder (w := w) hh hr
     have key : p + w ∈ e '' Γ ∩ normalCylinder h r ↔
         p + w ∈ {z | z.fst = γ z.snd ∧ z.snd ∈ U} ∩ normalCylinder h r := by
       rw [hc.image_part_inter_normalCylinder]
@@ -350,9 +344,9 @@ theorem exists_isOpen_inter_frontier_eq (hΓ : Γ.IsAdmissibleBoundaryPart Ω E 
     refine ⟨e ⁻¹' (normalCylinder h r ∩ {z | z.snd ∈ U}),
       ((isOpen_normalCylinder h r).inter
         (hc.isAdmissibleBase.isOpen.preimage (by fun_prop))).preimage e.continuous,
-      ⟨hxC, (hc.mem_iff (hΓ.1 hx) hxC).1 hx⟩, ?_⟩
+      ⟨hxC, (hc.mem_iff_snd_mem (hΓ.1 hx) hxC).1 hx⟩, ?_⟩
     rintro y ⟨⟨hyC, hyU⟩, hyF⟩
-    exact (hc.mem_iff hyF hyC).2 hyU
+    exact (hc.mem_iff_snd_mem hyF hyC).2 hyU
   choose! W hWo hxW hWΓ using key
   refine ⟨⋃ x ∈ Γ, W x, isOpen_biUnion hWo, Subset.antisymm ?_
     fun x hx => ⟨mem_biUnion hx (hxW x hx), hΓ.1 hx⟩⟩
@@ -363,8 +357,7 @@ theorem exists_isOpen_inter_frontier_eq (hΓ : Γ.IsAdmissibleBoundaryPart Ω E 
 /-- The image of an admissible boundary part under an affine isometry is admissible. -/
 theorem image (hΓ : Γ.IsAdmissibleBoundaryPart Ω E E') (g : F ≃ᵃⁱ[ℝ] G) :
     (g '' Γ).IsAdmissibleBoundaryPart (g '' Ω) E E' := by
-  have hfr : frontier (g '' Ω) = g '' frontier Ω := by
-    rw [← g.coe_toHomeomorph, g.toHomeomorph.image_frontier]
+  have hfr : frontier (g '' Ω) = g '' frontier Ω := (g.image_frontier Ω).symm
   refine ⟨hfr ▸ image_mono hΓ.1, fun y hy => ?_⟩
   rw [hfr] at hy
   obtain ⟨x, hx, rfl⟩ := hy
@@ -374,8 +367,7 @@ theorem image (hΓ : Γ.IsAdmissibleBoundaryPart Ω E E') (g : F ≃ᵃⁱ[ℝ] 
 /-- The dilate of an admissible boundary part by a factor `c > 0` is admissible. -/
 theorem smul (hΓ : Γ.IsAdmissibleBoundaryPart Ω E E') {c : ℝ} (hc : 0 < c) :
     (c • Γ).IsAdmissibleBoundaryPart (c • Ω) E E' := by
-  have hfr : frontier (c • Ω) = c • frontier Ω := by
-    rw [← image_smul, ← image_smul, (isHomeomorph_smul₀ hc.ne').image_frontier]
+  have hfr := frontier_smul₀ hc.ne' Ω
   refine ⟨hfr ▸ smul_set_mono hΓ.1, fun y hy => ?_⟩
   rw [hfr, ← image_smul] at hy
   obtain ⟨x, hx, rfl⟩ := hy
@@ -443,7 +435,6 @@ theorem IsAdmissibleBase.isAdmissibleBoundaryPart_setOf_lt_fst {U : Set E}
   · rw [hfr] at hz
     simp only [AffineIsometryEquiv.coe_refl, id, mem_ofPred_eq] at hz ⊢
     exact and_iff_right hz
-  · simp only [AffineIsometryEquiv.coe_refl, id, mem_normalCylinder]
-    exact ⟨by linarith [neg_abs_le x.fst], by linarith [le_abs_self x.fst], by linarith⟩
+  · exact mem_normalCylinder_abs_add_one x
 
 end Set

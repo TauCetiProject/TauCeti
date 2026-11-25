@@ -32,6 +32,7 @@ the values. These are the affine forms of Mathlib's
 * `TauCeti.dilateConj_symm_apply`: the inverse of `dilateConj c e`, written out pointwise.
 * `AffineIsometryEquiv.norm_fderiv_le`: the derivative of an affine isometry equivalence has norm
   at most one.
+* `AffineIsometryEquiv.image_frontier`: an affine isometry equivalence maps frontiers to frontiers.
 * `AffineIsometryEquiv.norm_iteratedFDeriv_comp_left`,
   `AffineIsometryEquiv.norm_iteratedFDeriv_comp_right`: composition with an affine isometry
   equivalence preserves the norms of iterated derivatives.
@@ -48,6 +49,13 @@ theorem norm_fderiv_le {𝕜 W W₂ : Type*} [NontriviallyNormedField 𝕜]
     [NormedAddCommGroup W] [NormedSpace 𝕜 W] [NormedAddCommGroup W₂] [NormedSpace 𝕜 W₂]
     (e : W ≃ᵃⁱ[𝕜] W₂) (x : W) : ‖fderiv 𝕜 e x‖ ≤ 1 := by
   simpa using norm_fderiv_le_of_lipschitz 𝕜 e.lipschitzWith (x₀ := x)
+
+/-- An affine isometry equivalence maps the frontier of a set onto the frontier of its image. -/
+theorem image_frontier {𝕜 V V₂ P P₂ : Type*} [NormedField 𝕜] [SeminormedAddCommGroup V]
+    [NormedSpace 𝕜 V] [PseudoMetricSpace P] [NormedAddTorsor V P] [SeminormedAddCommGroup V₂]
+    [NormedSpace 𝕜 V₂] [PseudoMetricSpace P₂] [NormedAddTorsor V₂ P₂] (e : P ≃ᵃⁱ[𝕜] P₂)
+    (s : Set P) : e '' frontier s = frontier (e '' s) :=
+  e.toHomeomorph.image_frontier s
 
 section IteratedFDeriv
 
