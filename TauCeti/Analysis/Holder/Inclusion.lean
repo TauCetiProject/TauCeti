@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Holder.Normed
-public import TauCeti.Analysis.Holder.OpenSet
+public import TauCeti.Analysis.Holder.OpenSet.Basic
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 import TauCeti.Algebra.Order.Ring.MaxOneMul
 import TauCeti.Analysis.Normed.Operator.Compact.Basic
