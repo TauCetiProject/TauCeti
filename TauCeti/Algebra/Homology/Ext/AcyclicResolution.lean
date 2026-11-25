@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.ShortComplex.Ab
-public import Mathlib.Algebra.Homology.DerivedCategory.Ext.MapAdjunction
 public import TauCeti.Algebra.Homology.Ext.Basic
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.HomologicalComplex.Corepresentable
@@ -69,8 +68,6 @@ on `V`, whose values need not lie in the universe of the morphism groups `Hom(�
 
 * R. Hartshorne, *Algebraic Geometry*, GTM 52, Springer, 1977, Proposition III.1.2A.
 * The Stacks Project, Derived Categories, Lemma 13.15.6 (tag 05T8) and Lemma 13.16.7 (tag 015E).
-
-Resolution classes and cocycle classes also commute with exact functors and exact adjunctions.
 -/
 
 public section
@@ -532,148 +529,4 @@ end Naturality
 
 end Homology
 
-end CochainComplex
-
-/-! ### Resolution classes under exact functors and exact adjunctions -/
-
-open CategoryTheory CategoryTheory.Abelian CategoryTheory.Limits
-universe u' v' w'
-
-namespace CochainComplex
-variable {C : Type u} [Category.{v} C] [Abelian C] [HasExt.{w} C]
-  {D : Type u'} [Category.{v'} D] [Abelian D] [HasExt.{w'} D]
-  (G : C ⥤ D) [G.Additive] [PreservesFiniteLimits G] [PreservesFiniteColimits G]
-  {A : C} (K : CochainComplex C ℕ) (ι : A ⟶ K.X 0) [Mono ι]
-  (hι : ι ≫ K.d 0 1 = 0) (hι' : (ShortComplex.mk ι (K.d 0 1) hι).Exact)
-  (hK : ∀ j, K.ExactAt (j + 1))
-private abbrev mappedResolution : CochainComplex D ℕ := (G.mapHomologicalComplex (.up ℕ)).obj K
-omit [HasExt C] [HasExt D] [PreservesFiniteLimits G] [PreservesFiniteColimits G] [Mono ι] in
-include hι in
-/-- An additive functor preserves the augmentation cycle equation. -/
-lemma map_augmentation_comp_d : G.map ι ≫ ((G.mapHomologicalComplex (.up ℕ)).obj K).d 0 1 = 0 := by
-  rw [Functor.mapHomologicalComplex_obj_d, ← CategoryTheory.Functor.map_comp,
-    hι, G.map_zero]
-omit [HasExt C] [HasExt D] [Mono ι]
-  [PreservesFiniteLimits G] [PreservesFiniteColimits G] in
-include hι' in
-/-- An exact functor preserves exactness at the augmentation. -/
-lemma map_augmentation_exact [G.PreservesHomology] :
-    (ShortComplex.mk _ _ (map_augmentation_comp_d G K ι hι)).Exact :=
-  hι'.map G
-omit [HasExt C] [HasExt D] [PreservesFiniteLimits G] [PreservesFiniteColimits G] in
-include hK in
-/-- An exact functor preserves exactness in every positive resolution degree. -/
-lemma map_exactAt_succ [G.PreservesHomology] (j : ℕ) :
-    ((G.mapHomologicalComplex (.up ℕ)).obj K).ExactAt (j + 1) :=
-  (G.mapHomologicalComplex_obj_exactAt_iff K (j + 1)).2 ((hK j).map G)
-private noncomputable def mappedCyclesIso (n : ℕ) :
-    (mappedResolution G K).cycles (n + 1) ≅ G.obj (K.cycles (n + 1)) :=
-  (K.sc (n + 1)).mapCyclesIso G
-
-private lemma mappedSuccExtClass_naturality (n : ℕ) :
-    ((K.shortExact_resolution_succ hK n).extClass.mapExactFunctor G).comp
-      (Ext.mk₀ (mappedCyclesIso G K n).inv) (add_zero _) =
-    (Ext.mk₀ (mappedCyclesIso G K (n + 1)).inv).comp
-      (((mappedResolution G K).shortExact_resolution_succ
-        (map_exactAt_succ G K hK) n).extClass) (zero_add _) := by
-  rw [Ext.mapExactFunctor_extClass]
-  let S := ShortComplex.mk (K.iCycles (n + 1)) (K.toCycles (n + 1) (n + 2))
-    (K.iCycles_toCycles _ _)
-  let T := ShortComplex.mk ((mappedResolution G K).iCycles (n + 1))
-    ((mappedResolution G K).toCycles (n + 1) (n + 2)) ((mappedResolution G K).iCycles_toCycles _ _)
-  let α : S.map G ⟶ T :=
-    { τ₁ := (mappedCyclesIso G K n).inv, τ₂ := 𝟙 _,
-      τ₃ := (mappedCyclesIso G K (n + 1)).inv
-      comm₁₂ := by
-        -- These are the cycle-inclusion components of `S.map G` and `T`.
-        change (mappedCyclesIso G K n).inv ≫ (mappedResolution G K).iCycles (n + 1) =
-          G.map (K.iCycles (n + 1)) ≫ 𝟙 _
-        rw [Category.comp_id]
-        exact (K.sc (n + 1)).mapCyclesIso_inv_comp_iCycles G
-      comm₂₃ := by
-        -- The second short-complex arrows are the differential lifts to cycles.
-        change 𝟙 _ ≫ (mappedResolution G K).toCycles (n + 1) (n + 2) =
-          G.map (K.toCycles (n + 1) (n + 2)) ≫ (mappedCyclesIso G K (n + 1)).inv
-        rw [Category.id_comp]
-        exact (HomologicalComplex.map_toCycles_comp_mapCyclesIso_inv G K (n + 1) (n + 2)).symm }
-  exact ((K.shortExact_resolution_succ hK n).map_of_exact G).extClass_naturality
-    ((mappedResolution G K).shortExact_resolution_succ (map_exactAt_succ G K hK) n) α
-
-/-- Exact functors transport the extension class associated to a resolution. -/
-theorem resolutionExtClass_mapExactFunctor (n : ℕ) :
-    (K.resolutionExtClass ι hι hι' hK n).mapExactFunctor G =
-      (Ext.mk₀ ((K.sc (n + 1)).mapCyclesIso G).inv).comp
-        (CochainComplex.resolutionExtClass ((G.mapHomologicalComplex (.up ℕ)).obj K) (G.map ι)
-          (map_augmentation_comp_d G K ι hι) (hι'.map G)
-          (map_exactAt_succ G K hK) n) (zero_add _) := by
-  induction n with
-  | zero =>
-    rw [CochainComplex.resolutionExtClass_zero, Ext.mapExactFunctor_extClass,
-      CochainComplex.resolutionExtClass_zero]
-    let hS := K.shortExact_resolution_zero ι hι hι' hK
-    let hT := (mappedResolution G K).shortExact_resolution_zero (G.map ι)
-      (map_augmentation_comp_d G K ι hι) (map_augmentation_exact G K ι hι hι')
-      (map_exactAt_succ G K hK)
-    let α : (ShortComplex.mk ι (K.toCycles 0 1) (K.comp_toCycles_eq_zero 1 ι hι)).map G ⟶
-        ShortComplex.mk (G.map ι) ((mappedResolution G K).toCycles 0 1)
-          ((mappedResolution G K).comp_toCycles_eq_zero 1 (G.map ι)
-            (map_augmentation_comp_d G K ι hι)) :=
-      { τ₁ := 𝟙 _, τ₂ := 𝟙 _, τ₃ := (mappedCyclesIso G K 0).inv
-        comm₁₂ := by simp
-        comm₂₃ := by
-          -- Mapping the short complex uses identity on its middle object and the cycle isomorphism.
-          change 𝟙 _ ≫ (mappedResolution G K).toCycles 0 1 =
-            G.map (K.toCycles 0 1) ≫ (mappedCyclesIso G K 0).inv
-          rw [Category.id_comp]
-          exact (HomologicalComplex.map_toCycles_comp_mapCyclesIso_inv G K 0 1).symm }
-    have h := (hS.map_of_exact G).extClass_naturality hT α
-    simpa only [α, Ext.comp_mk₀_id, mappedCyclesIso, mappedResolution] using h
-  | succ n ih =>
-    erw [CochainComplex.resolutionExtClass_succ, Ext.mapExactFunctor_comp, ih,
-      ← Ext.comp_assoc_of_second_deg_zero, mappedSuccExtClass_naturality G K hK n]
-    rw [Ext.comp_assoc (a₂₃ := n + 2) _ _ _ _ (by omega) (by omega),
-      CochainComplex.resolutionExtClass_succ]
-    -- `mappedCyclesIso` is the cycles comparison of the degree-`n + 2` short complex.
-    rw [mappedCyclesIso]
-
-/-- Exact functors transport the extension class of a cocycle. -/
-theorem extMk_mapExactFunctor {P : C} {n : ℕ} (f : P ⟶ K.X n) (hf : f ≫ K.d n (n + 1) = 0) :
-    (K.extMk ι hι hι' hK f hf).mapExactFunctor G =
-      CochainComplex.extMk (K := ((G.mapHomologicalComplex (.up ℕ)).obj K)) (G.map ι)
-        (map_augmentation_comp_d G K ι hι)
-        (map_augmentation_exact G K ι hι hι') (map_exactAt_succ G K hK)
-        (G.map f) (by rw [Functor.mapHomologicalComplex_obj_d, ← G.map_comp, hf, G.map_zero]) := by
-  cases n with
-  | zero =>
-    rw [CochainComplex.extMk_of_deg_zero, Ext.mapExactFunctor_mk₀,
-      CochainComplex.extMk_of_deg_zero]
-    congr 1
-    apply (cancel_mono (G.map ι)).1
-    rw [← G.map_comp, ShortComplex.Exact.lift_f, ShortComplex.Exact.lift_f]
-  | succ n =>
-    have ht := resolutionExtClass_mapExactFunctor G K ι hι hι' hK n
-    rw [CochainComplex.extMk_of_deg_succ, Ext.mapExactFunctor_comp,
-      Ext.mapExactFunctor_mk₀, ht, ← Ext.comp_assoc_of_second_deg_zero,
-      Ext.mk₀_comp_mk₀, CochainComplex.extMk_of_deg_succ]
-    congr 2
-    erw [← cancel_mono ((mappedResolution G K).iCycles (n + 1)), Category.assoc,
-      ShortComplex.mapCyclesIso_inv_comp_iCycles, ← G.map_comp]
-    -- The mapped complex uses the same degreewise cycle lift under `G.map`.
-    change G.map (K.liftCycles f (n + 2) (by simp) hf ≫ K.iCycles (n + 1)) = _
-    simp only [HomologicalComplex.liftCycles_i, mappedResolution]
-
-variable (L : D ⥤ C) [L.Additive] [PreservesFiniteLimits L] [PreservesFiniteColimits L]
-  (adj : L ⊣ G)
-/-- An exact adjunction transports a cocycle class through its hom-set equivalence. -/
-theorem extEquiv_extMk {P : D} {n : ℕ} (f : L.obj P ⟶ K.X n)
-    (hf : f ≫ K.d n (n + 1) = 0) :
-    adj.extEquiv (K.extMk ι hι hι' hK f hf) =
-      CochainComplex.extMk (K := ((G.mapHomologicalComplex (.up ℕ)).obj K)) (G.map ι)
-        (map_augmentation_comp_d G K ι hι)
-        (map_augmentation_exact G K ι hι hι') (map_exactAt_succ G K hK)
-        (adj.homEquiv P (K.X n) f) (by rw [Adjunction.homEquiv_unit,
-          Functor.mapHomologicalComplex_obj_d,
-          Category.assoc, ← G.map_comp, hf, G.map_zero, comp_zero]) := by
-  rw [Adjunction.extEquiv_apply, extMk_mapExactFunctor, CochainComplex.mk₀_comp_extMk]
-  congr 1
 end CochainComplex

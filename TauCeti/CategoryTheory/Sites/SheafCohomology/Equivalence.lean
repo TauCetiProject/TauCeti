@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.AcyclicResolution
-public import Mathlib.Algebra.Homology.DerivedCategory.Ext.MapAdjunction
+public import TauCeti.Algebra.Homology.Ext.Map.AcyclicResolution
 public import TauCeti.CategoryTheory.Sites.Equivalence
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.FreeYoneda
 

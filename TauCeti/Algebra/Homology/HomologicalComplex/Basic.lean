@@ -616,19 +616,6 @@ variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
   (G : C ⥤ D) [G.Additive] [G.PreservesHomology]
   {ι : Type w} {c : ComplexShape ι} (K : HomologicalComplex C c) (i : ι)
 
-/-- An additive homology-preserving functor transports the differential's cycle lift. -/
-@[reassoc]
-lemma map_toCycles_comp_mapCyclesIso_inv (j : ι) :
-    G.map (K.toCycles i j) ≫ ((K.sc j).mapCyclesIso G).inv =
-      ((G.mapHomologicalComplex c).obj K).toCycles i j := by
-  apply (cancel_mono (((G.mapHomologicalComplex c).obj K).iCycles j)).1
-  -- The mapped complex's cycle inclusion in degree `j` is that of `(K.sc j).map G`.
-  have hi : ((K.sc j).mapCyclesIso G).inv ≫ ((G.mapHomologicalComplex c).obj K).iCycles j =
-      G.map (K.iCycles j) := (K.sc j).mapCyclesIso_inv_comp_iCycles G
-  rw [Category.assoc, hi, ← G.map_comp,
-    HomologicalComplex.toCycles_i, HomologicalComplex.toCycles_i,
-    Functor.mapHomologicalComplex_obj_d]
-
 variable {E : Type u₃} [Category.{v₃} E] [Preadditive E] [CategoryWithHomology E]
   (H : E ⥤ D) [H.Additive] [H.PreservesHomology] (L : HomologicalComplex E c)
   (φ : (G.mapHomologicalComplex c).obj K ⟶ (H.mapHomologicalComplex c).obj L)
