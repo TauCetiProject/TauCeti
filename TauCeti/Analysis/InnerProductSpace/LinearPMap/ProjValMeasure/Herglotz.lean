@@ -86,11 +86,7 @@ theorem _root_.IsSelfAdjoint.inner_spectralPVM_proj_eq_of_eq_subtractedResolvent
         (nu (ξ - ψ)).real B - I * (nu (ξ - I • ψ)).real B) := by
   have hdiag (v : H) : nu v = (A.spectralPVM hA).diag v :=
     hA.eq_spectralPVM_diag_of_eq_subtractedResolventKernel_add v (hnu v) (hrep v)
-  set P := A.spectralPVM hA
-  have hpol := LinearMap.inner_polarization (P.proj B hB) ψ ξ
-  rw [ContinuousLinearMap.coe_coe, P.inner_proj B hB (ξ + ψ), P.inner_proj B hB (ξ + I • ψ),
-    P.inner_proj B hB (ξ - ψ), P.inner_proj B hB (ξ - I • ψ)] at hpol
-  rw [← hpol]
-  simp only [hdiag, measureReal_def]
+  rw [(A.spectralPVM hA).inner_proj_eq_polarization ψ ξ B hB]
+  simp only [hdiag]
 
 end LinearPMap
