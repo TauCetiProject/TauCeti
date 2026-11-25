@@ -716,28 +716,10 @@ theorem finrank_complementSubmodule {R : Type*} [Ring R] [StrongRankCondition R]
     {I : Ideal (MvPowerSeries σ R)} (h : (ord.initialDiagram I)ᶜ.Finite) :
     Module.finrank R (ord.complementSubmodule I) = (ord.initialDiagram I)ᶜ.ncard := by
   classical
-  set S := (ord.initialDiagram I)ᶜ
   have := h.fintype
-  let φ : ord.complementSubmodule I →ₗ[R] S → R :=
-    LinearMap.pi fun α ↦ (MvPowerSeries.coeff (α : σ →₀ ℕ)).comp (Submodule.subtype _)
-  have hφ : Function.Bijective φ := by
-    refine ⟨fun f g hfg ↦ Subtype.ext <| MvPowerSeries.ext fun β ↦ ?_, fun c ↦ ?_⟩
-    · by_cases hβ : β ∈ S
-      · exact congr_fun hfg ⟨β, hβ⟩
-      · -- Outside `S`, both coefficients vanish because the supports avoid `D(I)`.
-        have hf := (ord.mem_complementSubmodule_iff.mp f.property) β
-        have hg := (ord.mem_complementSubmodule_iff.mp g.property) β
-        simp only [S, Set.mem_compl_iff, not_not] at hβ
-        rw [MvPowerSeries.mem_support, not_imp_not] at hf hg
-        rw [hf hβ, hg hβ]
-    · refine ⟨⟨∑ α : S, MvPowerSeries.monomial (α : σ →₀ ℕ) (c α),
-        Submodule.sum_mem _ fun α _ ↦ (ord.monomial_mem_complementSubmodule_iff).mpr
-          (Or.inr α.property)⟩, funext fun β ↦ ?_⟩
-      simp only [φ, LinearMap.pi_apply, LinearMap.comp_apply, Submodule.subtype_apply, map_sum,
-        MvPowerSeries.coeff_monomial]
-      simp [Subtype.coe_inj]
-  rw [(LinearEquiv.ofBijective φ hφ).finrank_eq, Module.finrank_fintype_fun_eq_card,
-    ← Nat.card_eq_fintype_card, Nat.card_coe_set_eq]
+  rw [(ord.complementSubmoduleEquivFun I).finrank_eq, Module.finrank_fintype_fun_eq_card,
+    ← Nat.card_eq_fintype_card]
+  exact Nat.card_coe_set_eq (ord.initialDiagram I)ᶜ
 
 section Field
 

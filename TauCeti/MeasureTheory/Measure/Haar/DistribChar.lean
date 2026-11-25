@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Complex.Basic
 import Mathlib.RingTheory.Complex
 import Mathlib.RingTheory.Norm.Transitivity
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
 # Change of variables along the distributive Haar character
@@ -40,6 +41,8 @@ particular the module of `ℝ` is the usual absolute value and the module of `�
 
 * `MeasureTheory.Measure.map_smul_eq_inv_distribHaarChar_smul`: pushing a Haar measure forward
   along `g • ·` divides it by `distribHaarChar A g`.
+* `MeasureTheory.Measure.map_smul_withDensity`: a measure with density `f` with respect to a Haar
+  measure is invariant under `g • ·` when `distribHaarChar A g * f (g • x) = f x`.
 * `MeasureTheory.integral_comp_smul_eq_inv_distribHaarChar_smul`: the corresponding change of
   variables for Bochner integrals.
 * `MeasureTheory.distribHaarChar_eq_nnnorm_det`: a group acting `ℝ`-linearly on a
@@ -74,6 +77,21 @@ theorem map_smul_eq_inv_distribHaarChar_smul (g : G) :
   ext s hs
   rw [map_apply (continuous_const_smul g).measurable hs, preimage_smul, smul_apply,
     ← distribHaarChar_mul, map_inv, nnreal_smul_coe_apply]
+
+/-- A measure with density `f` with respect to an additive Haar measure `μ` is invariant under
+`g • ·` when `f` scales by the inverse of the distributive Haar character of `g`:
+`distribHaarChar A g * f (g • x) = f x`. -/
+theorem map_smul_withDensity {f : A → ℝ≥0∞} (g : G)
+    (hfg : ∀ x, (distribHaarChar A g : ℝ≥0∞) * f (g • x) = f x) :
+    (μ.withDensity f).map (g • ·) = μ.withDensity f := by
+  have he : MeasurableEmbedding (g • · : A → A) := (Homeomorph.smul g).measurableEmbedding
+  -- Write `f` as the weight `distribHaarChar A g • f` pulled back along `g • ·`.
+  have hf : f = ((distribHaarChar A g : ℝ≥0∞) • f) ∘ (g • ·) := funext fun x ↦ (hfg x).symm
+  conv_lhs => rw [hf]
+  rw [he.map_withDensity_comp, map_smul_eq_inv_distribHaarChar_smul, ENNReal.smul_def,
+    withDensity_smul_measure, withDensity_smul' _ _ ENNReal.coe_ne_top, smul_smul]
+  -- The two scalars `(distribHaarChar A g)⁻¹` and `distribHaarChar A g` cancel.
+  simp [ENNReal.inv_mul_cancel, (distribHaarChar_pos (A := A)).ne']
 
 end Measure
 

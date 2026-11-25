@@ -56,7 +56,8 @@ of two rays. Finally, `c √u` tends to `0` as `u → 0` (and through positive v
 
 ## Main results
 
-* `Real.inv_sqrt_mul_sq`: `((√a)⁻¹ * x) ^ 2 = x ^ 2 / a` for `0 ≤ a`.
+* `Real.inv_sqrt_mul_sq`, `Real.div_sqrt_sq`: `((√a)⁻¹ * x) ^ 2 = x ^ 2 / a` and
+  `(x / √a) ^ 2 = x ^ 2 / a` for `0 ≤ a`.
 * `Real.sqrt_sq_mul`, `Real.sqrt_mul_sq`: `√(x ^ 2 * y) = |x| * √y` and
   `√(x * y ^ 2) = √x * |y|`.
 * `Real.sqrt_mul_eq_mul_sqrt_div`: `√(x * y) = y * √(x / y)` for `0 ≤ y`.
@@ -177,6 +178,10 @@ theorem max_sqrt_mul_sq_lt_abs_sq_sub {a r t : ℝ} (ha : 0 ≤ a) (ht : 0 ≤ t
 @[simp]
 theorem inv_sqrt_mul_sq {a : ℝ} (ha : 0 ≤ a) (x : ℝ) : ((√a)⁻¹ * x) ^ 2 = x ^ 2 / a := by
   rw [mul_pow, inv_pow, sq_sqrt ha, inv_mul_eq_div]
+
+/-- Dividing by `√a` and squaring divides the square by `a`. -/
+theorem div_sqrt_sq {a : ℝ} (ha : 0 ≤ a) (x : ℝ) : (x / √a) ^ 2 = x ^ 2 / a := by
+  rw [div_pow, sq_sqrt ha]
 
 /-- A square factor comes out of a square root as its absolute value. -/
 theorem sqrt_sq_mul (x y : ℝ) : √(x ^ 2 * y) = |x| * √y := by

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.G2.ShortRoot.Basic
-public import TauCeti.LinearAlgebra.Matrix.Alternating
+public import TauCeti.LinearAlgebra.Matrix.Alternating.Basic
 
 /-!
 # The type-G2 cross product

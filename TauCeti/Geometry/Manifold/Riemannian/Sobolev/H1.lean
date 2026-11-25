@@ -9,11 +9,12 @@ public import Mathlib.Analysis.InnerProductSpace.Completion
 public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
+public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Total
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
-import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Total
 import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.ContinuousMap
 
 /-!
@@ -49,7 +50,8 @@ against a smooth function `φ` it is `∫ w Δ⁺φ dV`, where `Δ⁺ = -Δ` is 
 
 * `TauCeti.Manifold.SobolevH1`: the Sobolev space `H¹(M)`, with
   `TauCeti.Manifold.SobolevH1.ofSmooth` the inclusion of the smooth functions (injective by
-  `TauCeti.Manifold.SobolevH1.ofSmooth_injective`),
+  `TauCeti.Manifold.SobolevH1.ofSmooth_injective`, so a smooth function vanishes in `H¹(M)` only
+  if it is zero by `TauCeti.Manifold.SobolevH1.ofSmooth_eq_zero_iff`),
   `TauCeti.Manifold.SobolevH1.inner_ofSmooth` the inner product of two smooth functions, and
   `TauCeti.Manifold.SobolevH1.subsingleton_of_isEmpty` showing `H¹(M)` is a subsingleton on an empty
   manifold, and `TauCeti.Manifold.SobolevH1.nontrivial_of_nonempty` showing it is nontrivial on a
@@ -341,14 +343,18 @@ theorem ofSmooth_injective : Function.Injective (ofSmooth (I := I) (M := M)) := 
     (riemannianVolume I M) (by simpa only [toLp_ofSmooth] using congrArg toLp huv)
   exact ContMDiffMap.ext fun x ↦ DFunLike.congr_fun h x
 
-/-- On a nonempty manifold, `H¹(M)` is nontrivial: the constant function `1` is nonzero, since its
-integral is the positive total volume. -/
+/-- A smooth function is zero in `H¹(M)` if and only if it is zero. -/
+@[simp]
+theorem ofSmooth_eq_zero_iff {u : C^∞⟮I, M; ℝ⟯} : ofSmooth u = 0 ↔ u = 0 :=
+  map_eq_zero_iff _ ofSmooth_injective
+
+/-- On a nonempty manifold, the constant function `1` is nonzero in `H¹(M)`. -/
+theorem ofSmooth_one_ne_zero [Nonempty M] : ofSmooth (1 : C^∞⟮I, M; ℝ⟯) ≠ 0 :=
+  ofSmooth_eq_zero_iff.not.2 fun h ↦ one_ne_zero (congrArg (· (Classical.arbitrary M)) h)
+
+/-- On a nonempty manifold, `H¹(M)` is nontrivial: the constant function `1` is nonzero. -/
 instance nontrivial_of_nonempty [Nonempty M] : Nontrivial (SobolevH1 I M) :=
-  nontrivial_of_ne (ofSmooth 1) 0 fun h ↦ (riemannianTotalVolume_pos (I := I) (M := M)).ne' <| by
-    have h0 := toLp_ofSmooth_ae_eq (1 : C^∞⟮I, M; ℝ⟯)
-    rw [h, map_zero] at h0
-    rw [← one_mul (riemannianTotalVolume I M), ← integral_const_riemannianVolume, ← integral_zero]
-    exact integral_congr_ae (h0.symm.trans (Lp.coeFn_zero ..))
+  nontrivial_of_ne _ _ ofSmooth_one_ne_zero
 
 /-- The `L²` inner product of the values of two smooth functions is `∫ u v dV`. -/
 theorem inner_toLp_ofSmooth (u v : C^∞⟮I, M; ℝ⟯) :
@@ -382,6 +388,17 @@ theorem inner_toLp_ofSmooth_right (w : SobolevH1 I M) (φ : C^∞⟮I, M; ℝ⟯
     ⟪toLp w, toLp (ofSmooth φ)⟫_ℝ = ∫ x, toLp w x * φ x ∂riemannianVolume I M := by
   rw [toLp_ofSmooth, L2.inner_toLp_continuousMap]
   simp only [ContinuousMap.coe_ofClass, conj_trivial, mul_comm (φ _)]
+
+/-- The integral of the square of the value of `w ∈ H¹(M)` is its squared `L²` norm. -/
+theorem integral_toLp_sq_eq_norm_sq (w : SobolevH1 I M) :
+    ∫ x, toLp w x ^ 2 ∂riemannianVolume I M = ‖toLp w‖ ^ 2 := by
+  simpa only [Real.norm_eq_abs, sq_abs] using Lp.integral_norm_sq_eq_norm_sq (toLp w)
+
+/-- The squared `L²` norm of the constant function `1` is the total volume. -/
+theorem norm_toLp_ofSmooth_one_sq :
+    ‖toLp (ofSmooth (1 : C^∞⟮I, M; ℝ⟯))‖ ^ 2 = riemannianTotalVolume I M := by
+  rw [← real_inner_self_eq_norm_sq, inner_toLp_ofSmooth]
+  simp [riemannianTotalVolume_def]
 
 /-! ### The Dirichlet form -/
 
@@ -471,6 +488,15 @@ theorem toLp_injective : Function.Injective (toLp (I := I) (M := M)) := by
   -- By Green's identity `w` is orthogonal to the dense set of smooth functions.
   refine denseRange_ofSmooth.eq_zero_of_inner_left ℝ fun φ ↦ ?_
   rw [inner_ofSmooth_right_eq_inner, hw, inner_zero_left]
+
+/-- The value of `w ∈ H¹(M)` in `L²(M)` vanishes exactly when `w` does. -/
+@[simp]
+theorem toLp_eq_zero_iff {w : SobolevH1 I M} : toLp w = 0 ↔ w = 0 :=
+  toLp_injective.eq_iff' (map_zero _)
+
+/-- The value of `w ∈ H¹(M)` has positive `L²` norm exactly when `w ≠ 0`. -/
+theorem norm_toLp_pos_iff {w : SobolevH1 I M} : 0 < ‖toLp w‖ ↔ w ≠ 0 := by
+  rw [norm_pos_iff, Ne, toLp_eq_zero_iff]
 
 /-- An element of `H¹(M)` agrees almost everywhere in `L²(M)` with a smooth function `u`
 if and only if it equals `ofSmooth u`. -/

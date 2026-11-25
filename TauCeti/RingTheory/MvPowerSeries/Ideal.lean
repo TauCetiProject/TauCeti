@@ -249,9 +249,9 @@ theorem bijective_algebraMap_residueField :
   refine ⟨(algebraMap k _).injective, fun x ↦ ?_⟩
   obtain ⟨f, rfl⟩ := IsLocalRing.residue_surjective x
   refine ⟨constantCoeff f, ?_⟩
-  rw [IsScalarTower.algebraMap_apply k (MvPowerSeries σ k), IsLocalRing.ResidueField.algebraMap_eq,
-    ← sub_eq_zero, ← map_sub, IsLocalRing.residue_eq_zero_iff, maximalIdeal_eq_ker_constantCoeff]
-  simp [← c_eq_algebraMap]
+  rw [IsScalarTower.algebraMap_apply k (MvPowerSeries σ k),
+    IsLocalRing.ResidueField.algebraMap_eq, ← c_eq_algebraMap]
+  exact residue_C_constantCoeff f
 
 /-- A formal power-series ring over a field `k` has residue field of dimension one over `k`. -/
 theorem finrank_residueField :

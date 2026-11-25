@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.FieldTheory.KummerPolynomial
 import Mathlib.RingTheory.AdjoinRoot
 import Mathlib.RingTheory.PrincipalIdealDomain
+import TauCeti.Algebra.Polynomial.XPow.SubC
 import TauCeti.RingTheory.Length
 import TauCeti.RingTheory.LocalRing.HilbertSamuel
 
@@ -34,9 +34,7 @@ example : ∃ (p : ℚ[X]) (hmax : (Ideal.span {p}).IsMaximal),
       Module.length ℚ (A ⧸ IsLocalRing.maximalIdeal A) = 2 := by
   let p : ℚ[X] := X ^ 2 + 1
   have hp_deg : p.natDegree = 2 := by simp [p]
-  have hp_irr : Irreducible p := by
-    simpa [p] using irreducible_X_pow_sub_C_of_prime Nat.prime_two (a := (-1 : ℚ))
-      fun q h ↦ by linarith [sq_nonneg q]
+  have hp_irr : Irreducible p := Polynomial.irreducible_X_sq_add_one ℚ
   have hmax : (Ideal.span {p}).IsMaximal := PrincipalIdealRing.isMaximal_of_irreducible hp_irr
   refine ⟨p, hmax, Ideal.localQuotientHilbertSamuel_bot_zero, ?_⟩
   let A := Localization.AtPrime (Ideal.span {p})

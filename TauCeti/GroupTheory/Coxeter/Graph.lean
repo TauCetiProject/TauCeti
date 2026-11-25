@@ -30,6 +30,11 @@ components of the Coxeter graph have entry `2` (`CoxeterMatrix.eq_two_of_connect
 and the Coxeter graph of the restriction of `M` to a set of indices is the induced graph
 (`CoxeterMatrix.graph_restrict`), which is connected for a connected component
 (`CoxeterMatrix.connected_graph_restrict_supp`).
+
+The two constructions are compatible with symmetries: a graph isomorphism preserves the simply
+laced Coxeter matrix (`SimpleGraph.Iso.coxeterMatrix_apply`), and a bijection of index types
+carrying one Coxeter matrix to another is an isomorphism of their Coxeter graphs
+(`CoxeterMatrix.graphIso`).
 -/
 
 public section
@@ -78,6 +83,20 @@ theorem coxeterMatrix_apply_of_not_adj {i j : V} (hij : i ≠ j) (h : ¬ G.Adj i
   classical
   simp [coxeterMatrix, hij, h]
 
+/-- **A graph isomorphism preserves the simply laced Coxeter matrix**: the entry at the images of
+two vertices is the entry at the vertices. So a graph automorphism is a diagram automorphism of the
+Coxeter matrix of the graph. -/
+@[simp]
+theorem Iso.coxeterMatrix_apply {V' : Type*} {H : SimpleGraph V'} (φ : G ≃g H) (i j : V) :
+    H.coxeterMatrix (φ i) (φ j) = G.coxeterMatrix i j := by
+  by_cases hij : i = j
+  · subst hij
+    simp
+  · by_cases h : G.Adj i j
+    · rw [coxeterMatrix_apply_of_adj _ h, coxeterMatrix_apply_of_adj _ (φ.map_adj_iff.mpr h)]
+    · rw [coxeterMatrix_apply_of_not_adj _ hij h,
+        coxeterMatrix_apply_of_not_adj _ (φ.injective.ne hij) (mt φ.map_adj_iff.mp h)]
+
 universe v
 variable {H : Type v} [Group H]
 
@@ -122,6 +141,25 @@ def graph : SimpleGraph B where
 
 @[simp]
 theorem graph_adj {i j : B} : M.graph.Adj i j ↔ i ≠ j ∧ M i j ≠ 2 := Iff.rfl
+
+/-- A bijection `e : B ≃ B'` of index types carrying the Coxeter matrix `M` to `M'`,
+`M' (e i) (e i') = M i i'`, is an isomorphism of Coxeter graphs. For `M' = M`, this is the graph
+automorphism underlying a diagram automorphism of `M`. -/
+def graphIso {B' : Type*} {M' : CoxeterMatrix B'} (e : B ≃ B')
+    (he : ∀ i i', M' (e i) (e i') = M i i') : M.graph ≃g M'.graph where
+  toEquiv := e
+  map_rel_iff' {i i'} := by
+    rw [graph_adj, graph_adj, ne_eq, ne_eq, e.injective.eq_iff, he]
+
+@[simp]
+theorem graphIso_apply {B' : Type*} {M' : CoxeterMatrix B'} (e : B ≃ B')
+    (he : ∀ i i', M' (e i) (e i') = M i i') (i : B) : M.graphIso e he i = e i :=
+  (rfl)
+
+@[simp]
+theorem graphIso_symm_apply {B' : Type*} {M' : CoxeterMatrix B'} (e : B ≃ B')
+    (he : ∀ i i', M' (e i) (e i') = M i i') (i : B') : (M.graphIso e he).symm i = e.symm i :=
+  (rfl)
 
 /-- Indices in distinct connected components of the Coxeter graph have Coxeter matrix entry `2`:
 their simple reflections commute. -/

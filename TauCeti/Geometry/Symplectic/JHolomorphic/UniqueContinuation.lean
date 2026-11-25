@@ -270,9 +270,7 @@ theorem exists_isTheta_pow_of_cauchyRiemann
     (hz₀ : z₀ ∈ Ω) (hu₀ : u z₀ = x₀) :
     ∃ m : ℕ, 0 < m ∧ (fun z ↦ u z - x₀) =Θ[𝓝 z₀] fun z ↦ (z - z₀) ^ m := by
   obtain ⟨n, Ψ, hc, hfac⟩ := exists_hasSimilarityFactorizationAt hJ hJ₀ hΩ hu hCR
-  obtain ⟨z, hz, hzne⟩ := hne
-  obtain ⟨m, hm, hθ, -⟩ := exists_analyticOrderAt_eq_of_hasSimilarityFactorizationAt hΩ hΩc hc
-    hfac ⟨z, hz, mt (symm_sub_eq_zero_iff Ψ _).1 hzne⟩ hz₀ ((symm_sub_eq_zero_iff Ψ _).2 hu₀)
-  exact ⟨m, hm, IsTheta.trans ⟨Ψ.symm.isBigO_comp_rev _ _, Ψ.symm.isBigO_comp _ _⟩ hθ⟩
+  exact exists_isTheta_pow_of_continuousLinearEquiv_of_hasSimilarityFactorizationAt Ψ.symm hΩ hΩc
+    hc hfac (hne.imp fun _ ↦ .imp_right sub_ne_zero.2) hz₀ (sub_eq_zero.2 hu₀)
 
 end TauCeti
