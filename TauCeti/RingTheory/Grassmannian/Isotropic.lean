@@ -201,8 +201,10 @@ theorem exists_mem_isometryGroup_grassmannianCongr_eq {ω : LinearMap.BilinForm 
     ∃ g ∈ LinearMap.BilinForm.isometryGroup ω, g.grassmannianCongr N = N' := by
   obtain ⟨g, hgN⟩ := hω.exists_isometryEquiv_map_eq hnd hN hN'
     (by rw [N.finrank_toSubmodule, N'.finrank_toSubmodule])
-  exact ⟨g.toLinearEquiv, LinearMap.BilinForm.mem_isometryGroup_iff.mpr fun x y ↦ g.map_app y x,
-    Module.Grassmannian.ext <| by simpa using hgN⟩
+  let g' := (LinearMap.BilinForm.isometryGroupEquivIsometryEquiv ω).symm g
+  have hg' : (g' : V ≃ₗ[K] V) = g.toLinearEquiv :=
+    DFunLike.coe_injective <| LinearMap.BilinForm.coe_isometryGroupEquivIsometryEquiv_symm ω g
+  exact ⟨g', g'.property, Module.Grassmannian.ext <| by simpa [hg'] using hgN⟩
 
 end Field
 
