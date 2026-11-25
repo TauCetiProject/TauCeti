@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Sites.Fpqc
-public import Mathlib.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
+public import Mathlib.CategoryTheory.Bicategory.FunctorBicategory.Pseudo
 public import Mathlib.CategoryTheory.Groupoid.Discrete
 public import Mathlib.CategoryTheory.Sites.Descent.IsStack
 public import TauCeti.AlgebraicGeometry.Stack.Basic
+public import TauCeti.CategoryTheory.FiberedCategory.Grothendieck
+public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
 public import TauCeti.CategoryTheory.Sites.Descent.Discrete
 
 /-!
@@ -27,6 +29,11 @@ Morphisms of stacks in groupoids are strong transformations of the underlying ps
 * `TauCeti.AlgebraicGeometry.StackInGroupoids.Hom`: morphisms of stacks in groupoids, the strong
   transformations of the underlying pseudofunctors. Identities and composites are Mathlib's
   `Pseudofunctor.StrongTrans.id` and `Pseudofunctor.StrongTrans.vcomp`.
+* `TauCeti.AlgebraicGeometry.StackInGroupoids.isGroupoid_obj`: every fibre is a groupoid, so by
+  `Pseudofunctor.isGroupoid_hom` the morphisms between two stacks in groupoids, with
+  modifications as morphisms, form a groupoid.
+* `TauCeti.AlgebraicGeometry.StackInGroupoids.isFiberedInGroupoids`: the Grothendieck construction
+  of a stack in groupoids is a category fibred in groupoids over schemes.
 * `TauCeti.AlgebraicGeometry.StackInGroupoids.Hom.IsFiberwiseEquiv`: a morphism whose component
   on every scheme is an equivalence of fibre groupoids. It holds for identities, is closed under
   composition, and satisfies two-out-of-three.
@@ -39,6 +46,7 @@ Morphisms of stacks in groupoids are strong transformations of the underlying ps
 * [Stacks Project, Definition 026F](https://stacks.math.columbia.edu/tag/026F)
 * [Stacks Project, Definition 02ZI](https://stacks.math.columbia.edu/tag/02ZI)
 * [Stacks Project, Lemma 0432](https://stacks.math.columbia.edu/tag/0432)
+* [Stacks Project, Lemma 003V](https://stacks.math.columbia.edu/tag/003V)
 -/
 
 public section
@@ -70,6 +78,22 @@ attribute [instance] StackInGroupoids.isGroupoid StackInGroupoids.isStack
 /-- Morphisms of stacks in groupoids: strong transformations of the underlying pseudofunctors. -/
 abbrev Hom (X Y : StackInGroupoids.{u}) : Type (u + 1) :=
   Pseudofunctor.StrongTrans X.toSchPseudofunctor Y.toSchPseudofunctor
+
+/-- Every fibre of a stack in groupoids is a groupoid, also over a point of
+`LocallyDiscrete Scheme.{u}ᵒᵖ` not written as `.mk (op T)`. With `Pseudofunctor.isGroupoid_hom`,
+this makes the morphisms between two stacks in groupoids, with modifications as morphisms, a
+groupoid. -/
+instance isGroupoid_obj (X : StackInGroupoids.{u}) (a : LocallyDiscrete Scheme.{u}ᵒᵖ) :
+    IsGroupoid (X.toSchPseudofunctor.obj a) :=
+  X.isGroupoid a.as.unop
+
+/-- The Grothendieck construction `∫ᶜ X` of a stack in groupoids `X`, with its projection to
+schemes, is a category fibred in groupoids (Stacks, Lemma 4.35.2 (003V)). This is not an instance:
+`inferInstance` already finds it through
+`CategoryTheory.Pseudofunctor.CoGrothendieck.isFiberedInGroupoids_forget` and `isGroupoid_obj`. -/
+theorem isFiberedInGroupoids (X : StackInGroupoids.{u}) :
+    (Pseudofunctor.CoGrothendieck.forget X.toSchPseudofunctor).IsFiberedInGroupoids :=
+  inferInstance
 
 namespace Hom
 
@@ -118,7 +142,7 @@ end Hom
 /-- The stack in setoids of an fppf sheaf of sets `F` (Stacks, Lemma 0432): the discrete
 pseudofunctor `Pseudofunctor.ofPresheaf` of `F`, whose fibre over `T` is the discrete groupoid on
 `F(T)`. -/
-@[stacks 0432]
+@[expose, stacks 0432]
 def ofSheaf (F : Sheaf Scheme.fppfTopology.{u} (Type u)) : StackInGroupoids.{u} where
   toSchPseudofunctor := Pseudofunctor.ofPresheaf.{u + 1} F.obj
   isGroupoid _ := inferInstance

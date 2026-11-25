@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
+public import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
 public import TauCeti.AlgebraicGeometry.Morphisms.UniversalHomeomorphism
 import Mathlib.RingTheory.Ideal.Quotient.PowTransition
 
@@ -50,12 +51,17 @@ module of homomorphisms into `I`.
   `TauCeti.AlgebraicGeometry.IsFirstOrderThickening.inclusion_pow_succ`: for ideal sheaves
   `I ≤ J`, the inclusion `V(J) ⟶ V(I)` is a first-order thickening if and only if `J ^ 2 ≤ I`,
   which holds in particular for successive positive powers `I ^ (n + 2) ≤ I ^ (n + 1)`.
+* `TauCeti.AlgebraicGeometry.IsThickening.ker_le_ker`: a morphism from a reduced scheme kills the
+  ideal sheaf of a thickening of its target, so it lifts along the thickening; the reduction
+  `X.nilradical.subscheme ⟶ X` is a thickening.
 * Thickenings contain the isomorphisms and are stable under composition and base change;
   first-order thickenings contain the isomorphisms, respect isomorphisms and are stable under base
   change.
 * `TauCeti.AlgebraicGeometry.IsFirstOrderThickening.isThickening`: a first-order thickening is a
   thickening, and `TauCeti.AlgebraicGeometry.IsThickening.isUniversalHomeomorphism`: a thickening
   is a universal homeomorphism.
+* `TauCeti.AlgebraicGeometry.IsFirstOrderThickening.isNilpotent_ker`: the ideal sheaf of a
+  first-order thickening is nilpotent.
 
 ## References
 
@@ -139,6 +145,15 @@ instance (priority := 100) isUniversalHomeomorphism (i : Z ⟶ X) [IsThickening 
   (isUniversalHomeomorphism_iff_isIntegralHom_universallyInjective_surjective i).2
     ⟨inferInstance, inferInstance, inferInstance⟩
 
+/-- The reduction `X.nilradical.subscheme ⟶ X` is a thickening. -/
+instance subschemeι_nilradical (X : Scheme.{u}) : IsThickening X.nilradical.subschemeι :=
+  (isThickening_iff_ker_le_nilradical _).2 (Scheme.IdealSheafData.ker_subschemeι _).le
+
+/-- A morphism from a reduced scheme kills the ideal sheaf of every thickening of its target, so it
+lifts along the thickening (`IsClosedImmersion.lift`). -/
+theorem ker_le_ker (i : Z ⟶ X) [IsThickening i] (f : Y ⟶ X) [IsReduced Y] : i.ker ≤ f.ker :=
+  ((isThickening_iff_ker_le_nilradical i).1 ‹_›).trans f.nilradical_le_ker
+
 /-- For a surjective ring map `φ : R ⟶ S`, the closed immersion `Spec S ⟶ Spec R` is a thickening
 if and only if the kernel of `φ` is a nil ideal. -/
 theorem SpecMap_iff {R S : CommRingCat.{u}} (φ : R ⟶ S) (hφ : Function.Surjective φ) :
@@ -171,6 +186,10 @@ instance (priority := 100) isThickening (i : Z ⟶ X) [IsFirstOrderThickening i]
     calc i.ker ≤ i.ker.radical := Scheme.IdealSheafData.le_radical _
       _ = (i.ker * i.ker).radical := by rw [Scheme.IdealSheafData.radical_mul, inf_idem]
       _ = X.nilradical := by rw [ker_mul_self, Scheme.IdealSheafData.radical_bot]
+
+/-- The ideal sheaf of a first-order thickening is nilpotent. -/
+theorem isNilpotent_ker (i : Z ⟶ X) [IsFirstOrderThickening i] : IsNilpotent i.ker :=
+  ⟨2, by simp [pow_two, ker_mul_self]⟩
 
 /-- An isomorphism is a first-order thickening. -/
 instance (priority := 100) of_isIso (i : Z ⟶ X) [IsIso i] : IsFirstOrderThickening i where
@@ -210,6 +229,11 @@ instance respectsIso : RespectsIso @IsFirstOrderThickening.{u} :=
 /-- First-order thickenings are stable under base change along arbitrary pullback squares. -/
 instance isStableUnderBaseChange : IsStableUnderBaseChange @IsFirstOrderThickening.{u} :=
   IsStableUnderBaseChange.mk' fun _ _ _ f i _ _ ↦ pullback_fst f i
+
+/-- The restriction of a first-order thickening over an open subset is a first-order thickening. -/
+instance morphismRestrict (i : Z ⟶ X) [IsFirstOrderThickening i] (U : X.Opens) :
+    IsFirstOrderThickening (i ∣_ U) :=
+  of_isPullback (P := @IsFirstOrderThickening) (isPullback_morphismRestrict i U).flip ‹_›
 
 /-- For a surjective ring map `φ : R ⟶ S`, the closed immersion `Spec S ⟶ Spec R` is a first-order
 thickening if and only if the kernel of `φ` has square zero. -/
@@ -292,6 +316,25 @@ theorem inclusion_pow_succ {I : X.IdealSheafData} {n : ℕ} (h : I ^ (n + 2) ≤
   (inclusion_iff h).mpr <| by
     rw [← pow_mul]
     exact pow_le_pow_of_le_one bot_le le_top (by omega)
+
+/-- The product of two sections of the ideal sheaf of a first-order thickening vanishes, over any
+open subset. -/
+theorem mul_eq_zero_of_app_eq_zero (i : Z ⟶ X) [IsFirstOrderThickening i] {U : X.Opens}
+    {s t : Γ(X, U)} (hs : i.app U s = 0) (ht : i.app U t = 0) : s * t = 0 := by
+  refine TopCat.Presheaf.section_ext X.sheaf U _ _ fun x hx ↦ ?_
+  obtain ⟨V, hV, hxV, hVU⟩ := TopologicalSpace.Opens.isBasis_iff_nbhd.mp X.isBasis_affineOpens hx
+  have hres : ∀ s : Γ(X, U), i.app U s = 0 →
+      X.presheaf.map (homOfLE hVU).op s ∈ i.ker.ideal ⟨V, hV⟩ := by
+    intro s hs
+    rw [Scheme.Hom.ker_apply, RingHom.mem_ker, ← CommRingCat.comp_apply, i.naturality,
+      CommRingCat.comp_apply, hs, map_zero]
+  have h0 : X.presheaf.map (homOfLE hVU).op (s * t) = 0 := by
+    have : _ ∈ (i.ker * i.ker).ideal ⟨V, hV⟩ := Ideal.mul_mem_mul (hres s hs) (hres t ht)
+    rw [ker_mul_self, ← map_mul] at this
+    simpa using this
+  -- `section_ext` states its goal for the presheaf of `X.sheaf`, which is `X.presheaf`.
+  change X.presheaf.germ U x hx (s * t) = X.presheaf.germ U x hx 0
+  rw [← TopCat.Presheaf.germ_res_apply X.presheaf (homOfLE hVU) x hxV, h0, map_zero, map_zero]
 
 end IsFirstOrderThickening
 

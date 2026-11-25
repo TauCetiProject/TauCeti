@@ -27,7 +27,11 @@ homotopy between the two bracketings of the product
 * `NovikovModule.coordinates_novikovTrilinearOfMatrix`: its matrix formula.
 * `NovikovModule.eq_novikovTrilinearOfMatrix`: every Novikov-trilinear map is the trilinear map
   of a family.
-* `NovikovModule.novikovTrilinearOfMatrix_mem_gradeBy`: homogeneous entries give a degree shift.
+* `NovikovModule.novikovTrilinearOfMatrix_mem_gradeBy_of_support`,
+  `NovikovModule.novikovTrilinearOfMatrix_mem_gradeBy`: pointwise support and homogeneous-entry
+  degree-shift criteria.
+* `NovikovModule.novikovTrilinearOfMatrix_vadd_single_mul`: moving the reference generators by
+  `gₗ` and multiplying the entries by `e^(g₁ + g₂ + g₃ - g₀)` gives the same trilinear map.
 -/
 
 public section
@@ -117,6 +121,76 @@ theorem eq_novikovTrilinearOfMatrix (B :
   refine (coordinates hF₀ r₀).injective (funext fun l => ?_)
   rw [coordinates_novikovTrilinearOfMatrix_basis]
 
+/-- **The trilinear map of a family does not depend on the reference generators.** Moving the
+reference generators to `g₁ i +ᵥ r₁ i`, `g₂ j +ᵥ r₂ j`, `g₃ k +ᵥ r₃ k` and `g₀ l +ᵥ r₀ l`, and
+multiplying the `(i, j, k, l)` entry by the monomial `e^(g₁ i + g₂ j + g₃ k - g₀ l)`, gives the
+same trilinear map. -/
+theorem novikovTrilinearOfMatrix_vadd_single_mul (g₁ : ι₁ → H) (g₂ : ι₂ → H) (g₃ : ι₃ → H)
+    (g₀ : ι₀ → H) :
+    novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ (fun i => g₁ i +ᵥ r₁ i) (fun j => g₂ j +ᵥ r₂ j)
+        (fun k => g₃ k +ᵥ r₃ k) (fun l => g₀ l +ᵥ r₀ l)
+        (fun i j k l => NovikovSeries.single (g₁ i + g₂ j + g₃ k - g₀ l) 1 * K i j k l) =
+      novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀ K := by
+  let := module (R := R) hF₁
+  let := module (R := R) hF₂
+  let := module (R := R) hF₃
+  let := module (R := R) hF₀
+  refine LinearMap.ext fun a => LinearMap.ext fun b => LinearMap.ext fun c =>
+    (coordinates hF₀ fun l => g₀ l +ᵥ r₀ l).injective (funext fun l => ?_)
+  rw [coordinates_novikovTrilinearOfMatrix,
+    coordinates_apply_eq_mul_single hF₀ r₀ fun l => g₀ l +ᵥ r₀ l,
+    coordinates_novikovTrilinearOfMatrix]
+  simp only [coordinates_apply_eq_mul_single hF₁ r₁ fun i => g₁ i +ᵥ r₁ i,
+    coordinates_apply_eq_mul_single hF₂ r₂ fun j => g₂ j +ᵥ r₂ j,
+    coordinates_apply_eq_mul_single hF₃ r₃ fun k => g₃ k +ᵥ r₃ k, vsub_vadd_eq_vsub_sub, vsub_self,
+    zero_sub, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ =>
+    Finset.sum_congr rfl fun k _ => ?_
+  -- The four monomials multiply to the monomial `e^(-g₀ l)` of the output coordinates.
+  have hs : (NovikovSeries.single (-g₁ i) 1 * NovikovSeries.single (-g₂ j) 1 *
+      NovikovSeries.single (-g₃ k) 1 * NovikovSeries.single (g₁ i + g₂ j + g₃ k - g₀ l) 1 :
+        NovikovSeries R H N) = NovikovSeries.single (-g₀ l) 1 := by
+    simp only [NovikovSeries.single_mul_single, mul_one]
+    congr 1
+    abel
+  rw [← hs]
+  ring
+
+/-- **Degree of the trilinear map of a family from its support.** If every support element
+`h ∈ (K i j k l).support` shifts the sum of the degrees of inputs at displacements `h₁`, `h₂`, `h₃`
+from their reference generators to the degree of the output at `h₁ + h₂ + h₃ + h` by `ε`, then the
+trilinear map sends homogeneous combinations of degrees `e₁`, `e₂`, `e₃` to a combination of degree
+`e₁ + e₂ + e₃ + ε`. -/
+theorem novikovTrilinearOfMatrix_mem_gradeBy_of_support {D : Type*} [Add D]
+    {d₁ : (Σ i, P₁ i) → D} {d₂ : (Σ j, P₂ j) → D} {d₃ : (Σ k, P₃ k) → D}
+    {d₀ : (Σ l, P₀ l) → D} {ε : D}
+    (hK : ∀ i j k l h₁ h₂ h₃, ∀ h ∈ (K i j k l).support,
+      d₀ ⟨l, (h₁ + h₂ + h₃ + h) +ᵥ r₀ l⟩ =
+        d₁ ⟨i, h₁ +ᵥ r₁ i⟩ + d₂ ⟨j, h₂ +ᵥ r₂ j⟩ + d₃ ⟨k, h₃ +ᵥ r₃ k⟩ + ε)
+    {e₁ e₂ e₃ : D} {a : NovikovModule R F₁} (ha : a ∈ gradeBy R F₁ d₁ e₁)
+    {b : NovikovModule R F₂} (hb : b ∈ gradeBy R F₂ d₂ e₂)
+    {c : NovikovModule R F₃} (hc : c ∈ gradeBy R F₃ d₃ e₃) :
+    novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀ K a b c ∈
+      gradeBy R F₀ d₀ (e₁ + e₂ + e₃ + ε) := by
+  rw [mem_gradeBy_iff]
+  rintro ⟨l, p₀⟩ hp₀
+  have hcoord : (coordinates hF₀ r₀ (novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀ K
+      a b c) l).coeff (p₀ -ᵥ r₀ l) ≠ 0 := by
+    simpa only [coordinates_coeff, vsub_vadd] using hp₀
+  rw [coordinates_novikovTrilinearOfMatrix, NovikovSeries.coeff_sum] at hcoord
+  obtain ⟨i, -, hcoord⟩ := Finset.exists_ne_zero_of_sum_ne_zero hcoord
+  rw [NovikovSeries.coeff_sum] at hcoord
+  obtain ⟨j, -, hcoord⟩ := Finset.exists_ne_zero_of_sum_ne_zero hcoord
+  rw [NovikovSeries.coeff_sum] at hcoord
+  obtain ⟨k, -, hcoord⟩ := Finset.exists_ne_zero_of_sum_ne_zero hcoord
+  obtain ⟨h₁₂₃, h, hh₀, h₁₂₃_ne, hh_ne⟩ := NovikovSeries.exists_add_eq_of_coeff_mul_ne_zero hcoord
+  obtain ⟨h₁₂, h₃, rfl, h₁₂_ne, h₃_ne⟩ := NovikovSeries.exists_add_eq_of_coeff_mul_ne_zero h₁₂₃_ne
+  obtain ⟨h₁, h₂, rfl, h₁_ne, h₂_ne⟩ := NovikovSeries.exists_add_eq_of_coeff_mul_ne_zero h₁₂_ne
+  rw [coordinates_coeff] at h₁_ne h₂_ne h₃_ne
+  have hp : p₀ = (h₁ + h₂ + h₃ + h) +ᵥ r₀ l := by rw [hh₀, vsub_vadd]
+  rw [hp, hK i j k l h₁ h₂ h₃ h (NovikovSeries.mem_support.2 hh_ne), mem_gradeBy_iff.1 ha _ h₁_ne,
+    mem_gradeBy_iff.1 hb _ h₂_ne, mem_gradeBy_iff.1 hc _ h₃_ne]
+
 /-- **Degree of the trilinear map of a family.** Let the generators be graded by functions `dₗ`
 that change by `δ h` under the translation by `h`. If every entry `Kᵢⱼₖₗ` is homogeneous of the
 degree `d₁ (r₁ i) + d₂ (r₂ j) + d₃ (r₃ k) + ε - d₀ (r₀ l)`, then the trilinear map shifts degrees
@@ -136,16 +210,10 @@ theorem novikovTrilinearOfMatrix_mem_gradeBy {D : Type*} [AddCommGroup D] (δ : 
     {c : NovikovModule R F₃} (hc : c ∈ gradeBy R F₃ d₃ e₃) :
     novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀ K a b c ∈
       gradeBy R F₀ d₀ (e₁ + e₂ + e₃ + ε) := by
-  rw [mem_gradeBy_iff_coordinates hF₁ δ hd₁ r₁] at ha
-  rw [mem_gradeBy_iff_coordinates hF₂ δ hd₂ r₂] at hb
-  rw [mem_gradeBy_iff_coordinates hF₃ δ hd₃ r₃] at hc
-  rw [mem_gradeBy_iff_coordinates hF₀ δ hd₀ r₀]
-  intro l
-  rw [coordinates_novikovTrilinearOfMatrix]
-  refine Submodule.sum_mem _ fun i _ => Submodule.sum_mem _ fun j _ =>
-    Submodule.sum_mem _ fun k _ => ?_
-  convert SetLike.mul_mem_graded (SetLike.mul_mem_graded (SetLike.mul_mem_graded (ha i) (hb j))
-    (hc k)) (hK i j k l) using 2
+  refine novikovTrilinearOfMatrix_mem_gradeBy_of_support hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀ K
+    (fun i j k l h₁ h₂ h₃ h hh => ?_) ha hb hc
+  have hδ := NovikovSeries.mem_gradeBy_iff.1 (hK i j k l) hh
+  rw [hd₀, hd₁, hd₂, hd₃, map_add, map_add, map_add, hδ]
   abel
 
 end NovikovModule

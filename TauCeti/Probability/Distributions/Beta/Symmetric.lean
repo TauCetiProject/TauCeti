@@ -134,8 +134,8 @@ theorem integral_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure (ha : 0 < a) (
   · simpa only [rpow_natCast, hn.pow_abs] using
       integral_abs_rpow_mul_one_sub_sq_rpow_map_centered_betaMeasure ha
         (by have := Nat.cast_nonneg (α := ℝ) n; linarith : (-1 : ℝ) < (n : ℝ)) hr
-  · exact integral_eq_zero_of_odd fun z ↦ by
-      simp [(Nat.not_even_iff_odd.1 hn).neg_pow, neg_mul]
+  · exact integral_eq_zero_of_odd (Filter.Eventually.of_forall fun z ↦ by
+      simp [(Nat.not_even_iff_odd.1 hn).neg_pow, neg_mul])
 
 /-- Products of weighted natural powers of independent centered symmetric Beta variables
 are integrable when every residual exponent is above its endpoint threshold. -/

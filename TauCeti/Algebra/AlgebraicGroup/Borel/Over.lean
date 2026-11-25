@@ -150,12 +150,7 @@ theorem comapOfIso_iff (e : H ≅ L) :
         (J.comapOfSurjective e.hom.hom (ConcreteCategory.bijective_of_isIso e.hom).2) ↔
       IsBorelOver R L J := by
   refine ⟨fun hJ ↦ ?_, fun hJ ↦ hJ.comapOfIso e⟩
-  have hcomap : (J.comapOfSurjective e.hom.hom
-        (ConcreteCategory.bijective_of_isIso e.hom).2).comapOfSurjective e.inv.hom
-        (ConcreteCategory.bijective_of_isIso e.inv).2 = J := by
-    ext x
-    simp
-  simpa [hcomap] using hJ.comapOfIso e.symm
+  exact CommHopfAlgCat.comapOfSurjective_inv_hom e.symm J ▸ hJ.comapOfIso e.symm
 
 end ComapOfIso
 

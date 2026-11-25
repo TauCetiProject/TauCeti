@@ -7,12 +7,10 @@ module
 
 public import Mathlib.GroupTheory.Commutator.Basic
 public import TauCeti.GroupTheory.FreeGroup.Merzljakov.Basic
-public import TauCeti.GroupTheory.FreeGroup.Merzljakov.BlockInsertion
+public import TauCeti.GroupTheory.FreeGroup.Merzljakov.Block.Insertion
 public import TauCeti.Logic.ForallExistsAlt
-import Mathlib.Algebra.Order.BigOperators.Group.List
-import Mathlib.Tactic.Group
 import TauCeti.GroupTheory.FreeGroup.Basic
-import TauCeti.GroupTheory.FreeGroup.Cancellation
+import TauCeti.GroupTheory.FreeGroup.Merzljakov.Block.InsertAll
 
 /-!
 # Merzljakov's theorem for a single equation over a free group
@@ -41,12 +39,15 @@ each factorisation has length at most `L - 1`. Across all `L` factorisations the
 `m i ∈ ms i` for each `i` whose block `b a^{m i} b` and inverse block are unsplit in every
 factorisation.
 
-Iterating `FreeGroup.blockInsert` to insert `x_i` into `b a^{m i} b` for `i = 0, …, k - 1` commutes
-with concatenation along the cancellation pieces, so the resulting words still multiply to `1` in
-`FreeGroup (Fin k ⊕ A)`. On `g i`, only step `i` acts, decomposing the result as `u_i x_i v_i` with
-`u_i, v_i ∈ FreeGroup A`; on `h j`, steps after `j` leave the word unchanged by the Merzljakov
-tuple condition, so only `x₀, …, x_j` are inserted. Applying the endomorphism sending `x_i` to
-`u_i⁻¹ x_i v_i⁻¹` and fixing `A` produces the required formal solution.
+Inserting every `x_i` into the blocks `b a^{m i} b` (`FreeGroup.blockInsertAll`) commutes with
+concatenation along the cancellation pieces, so the resulting words still multiply to `1` in
+`FreeGroup (Fin k ⊕ A)` (`FreeGroup.exists_lift_mk_blockInsertAll_eq_one`). On `g i` only the
+insertion of `x_i` acts, decomposing the result as `u_i x_i v_i` with `u_i, v_i ∈ FreeGroup A`;
+in `h j` the blocks of the variables `x_t` with `t > j` do not occur by the Merzljakov tuple
+condition, so only `x₀, …, x_j` are inserted. Applying the endomorphism sending `x_i` to
+`u_i⁻¹ x_i v_i⁻¹` and fixing `A` produces the required formal solution
+(`FreeGroup.lift_eq_one_of_translate`). These steps, shared with the form of the theorem for one
+block of quantifiers, are in `TauCeti.GroupTheory.FreeGroup.Merzljakov.Block.InsertAll`.
 
 Compared with Kharlampovich–Myasnikov (§4.4), which selects "marked" occurrences of blocks via a
 solution table over a finite alphabet, this proof replaces all occurrences of an unsplit block using
@@ -112,294 +113,44 @@ theorem forallExistsAlt_of_formalSolution (c : A → H) (w : FreeGroup ((Fin k �
 
 end Sufficiency
 
-section BlockInsertIter
+section MerzljakovTuple
 
-variable {A : Type*} {k : ℕ}
+variable {A : Type*} [DecidableEq A] {k : ℕ} {a b : A} {m : Fin k → ℕ}
 
-/-- Iterate `blockInsert` across the first `n` indices `0, …, n - 1` of `Fin k`, inserting
-`Sum.inl i` into the blocks `merzljakovBlock (Sum.inr a) (Sum.inr b) (m i)` and their formal
-inverses. -/
-private def blockInsertUpTo [DecidableEq A] (a b : A) (m : Fin k → ℕ) :
-    (n : ℕ) → n ≤ k → List ((Fin k ⊕ A) × Bool) → List ((Fin k ⊕ A) × Bool)
-  | 0, _, v => v
-  | n + 1, hn, v =>
-    blockInsert (Sum.inr a) (Sum.inr b) (Sum.inl ⟨n, hn⟩) (m ⟨n, hn⟩)
-      (blockInsertUpTo a b m n (Nat.le_of_succ_le hn) v)
-
-private theorem injective_prodMap_inr :
-    Function.Injective (Prod.map (Sum.inr : A → Fin k ⊕ A) (id : Bool → Bool)) :=
-  Sum.inr_injective.prodMap Function.injective_id
-
-private theorem fst_ne_inl_merzljakovBlock_inr (a b : A) (m : ℕ) :
-    (∀ c ∈ merzljakovBlock (Sum.inr a : Fin k ⊕ A) (Sum.inr b) m,
-        ∀ i : Fin k, c.1 ≠ Sum.inl i) ∧
-      ∀ c ∈ invRev (merzljakovBlock (Sum.inr a : Fin k ⊕ A) (Sum.inr b) m),
-        ∀ i : Fin k, c.1 ≠ Sum.inl i := by
-  have h : ∀ c ∈ merzljakovBlock (Sum.inr a : Fin k ⊕ A) (Sum.inr b) m,
-      ∀ i : Fin k, c.1 ≠ Sum.inl i := fun _ hc _ ↦ by
-    rcases fst_eq_or_eq_of_mem_merzljakovBlock hc with heq | heq <;> simp [heq]
-  exact ⟨h, fun c hc i ↦ h (c.1, !c.2) (mem_invRev_iff.1 hc) i⟩
-
-private theorem exists_mem_isUnsplit_patterns {a b : A} (hab : a ≠ b)
-    {ws : List (List (A × Bool))} {ι : Type*} (P : TauCeti.CancellationPieces ws ι)
-    {ms : List ℕ} (hnd : ms.Nodup) (hlen : ws.length * ws.length < ms.length) :
-    ∃ m ∈ ms, ∀ V ∈ P.patterns,
-      (merzljakovBlock a b m).IsUnsplit (V.map (substituteLetter P.piece)) ∧
-        (invRev (merzljakovBlock a b m)).IsUnsplit (V.map (substituteLetter P.piece)) := by
-  let Fs := P.patterns.map fun V ↦ V.map (substituteLetter P.piece)
-  suffices ∃ m ∈ ms, ∀ F ∈ Fs,
-      (merzljakovBlock a b m).IsUnsplit F ∧ (invRev (merzljakovBlock a b m)).IsUnsplit F by
-    obtain ⟨m, hm, hF⟩ := this
-    exact ⟨m, hm, fun V hV ↦ hF _ (mem_map_of_mem hV)⟩
-  refine exists_mem_forall_isUnsplit_merzljakovBlock hab hnd ?_
-  have hle : ∀ n ∈ Fs.map (fun F ↦ F.length - 1), n ≤ ws.length := by
-    intro n hn
-    obtain ⟨F, hF, rfl⟩ := mem_map.1 hn
-    obtain ⟨V, hV, rfl⟩ := mem_map.1 hF
-    have hVlen := P.length_le_of_mem_patterns hV
-    simp only [length_map] at hVlen ⊢
-    omega
-  calc (Fs.map fun F ↦ F.length - 1).sum
-    _ ≤ (Fs.map fun F ↦ F.length - 1).length • ws.length := sum_le_length_nsmul _ _ hle
-    _ = ws.length * ws.length := by simp [Fs]
-    _ < ms.length := hlen
-
-section Helpers
-
-variable [DecidableEq A] {a b : A} {m : Fin k → ℕ}
-
-private theorem blockInsertUpTo_invRev (n : ℕ) (hn : n ≤ k) (v : List ((Fin k ⊕ A) × Bool)) :
-    blockInsertUpTo a b m n hn (invRev v) = invRev (blockInsertUpTo a b m n hn v) := by
-  induction n with
-  | zero => rfl
-  | succ n ih => simp [blockInsertUpTo, blockInsert_invRev, ih]
-
-private theorem blockInsertUpTo_substituteLetter {α : Type*} (n : ℕ) (hn : n ≤ k)
-    (f : α → List ((Fin k ⊕ A) × Bool)) (z : α × Bool) :
-    blockInsertUpTo a b m n hn (substituteLetter f z) =
-      substituteLetter (fun x ↦ blockInsertUpTo a b m n hn (f x)) z := by
-  obtain ⟨x, _ | _⟩ := z <;> simp [substituteLetter, blockInsertUpTo_invRev]
-
-private theorem blockInsertUpTo_singleton (n : ℕ) (hn : n ≤ k) (c : (Fin k ⊕ A) × Bool) :
-    blockInsertUpTo a b m n hn [c] = [c] := by
-  induction n with
-  | zero => rfl
-  | succ n ih => simp [blockInsertUpTo, ih]
-
-private theorem isUnsplit_map_blockInsertUpTo {u : List ((Fin k ⊕ A) × Bool)}
-    {L : List (List ((Fin k ⊕ A) × Bool))} (n : ℕ) (hn : n ≤ k) (huL : u.IsUnsplit L)
-    (hu : ∀ c ∈ u, ∀ i : Fin k, i.val < n → c.1 ≠ Sum.inl i) :
-    u.IsUnsplit (L.map (blockInsertUpTo a b m n hn)) := by
-  induction n with
-  | zero => simpa [blockInsertUpTo] using huL
-  | succ n ih =>
-    have hmap : L.map (blockInsertUpTo a b m (n + 1) hn) =
-        (L.map (blockInsertUpTo a b m n (Nat.le_of_succ_le hn))).map
-          (blockInsert (Sum.inr a) (Sum.inr b) (Sum.inl ⟨n, hn⟩) (m ⟨n, hn⟩)) := by
-      simp [blockInsertUpTo, List.map_map, Function.comp_def]
-    rw [hmap]
-    exact isUnsplit_map_blockInsert
-      (ih (Nat.le_of_succ_le hn) fun c hc i hi ↦ hu c hc i (Nat.lt_succ_of_lt hi))
-      fun c hc ↦ hu c hc ⟨n, hn⟩ (Nat.lt_succ_self n)
-
-private theorem blockInsertUpTo_flatten {L : List (List ((Fin k ⊕ A) × Bool))} (n : ℕ) (hn : n ≤ k)
-    (h : ∀ i : Fin k, i.val < n → (merzljakovBlock (Sum.inr a) (Sum.inr b) (m i)).IsUnsplit L ∧
-      (invRev (merzljakovBlock (Sum.inr a) (Sum.inr b) (m i))).IsUnsplit L) :
-    blockInsertUpTo a b m n hn L.flatten = (L.map (blockInsertUpTo a b m n hn)).flatten := by
-  induction n with
-  | zero => simp [blockInsertUpTo]
-  | succ n ih =>
-    have hn' := Nat.le_of_succ_le hn
-    have hstep := h ⟨n, hn⟩ (Nat.lt_succ_self n)
-    have hno := fst_ne_inl_merzljakovBlock_inr (k := k) a b (m ⟨n, hn⟩)
-    rw [blockInsertUpTo, ih hn' (fun i hi ↦ h i (Nat.lt_succ_of_lt hi)),
-      blockInsert_flatten
-        (isUnsplit_map_blockInsertUpTo n hn' hstep.1 fun c hc i _ ↦ hno.1 c hc i)
-        (isUnsplit_map_blockInsertUpTo n hn' hstep.2 fun c hc i _ ↦ hno.2 c hc i)]
-    simp [blockInsertUpTo, List.map_map, Function.comp_def]
-
-private theorem isInfix_of_isInfix_blockInsertUpTo {u v : List ((Fin k ⊕ A) × Bool)}
-    (n : ℕ) (hn : n ≤ k) (h : u <:+: blockInsertUpTo a b m n hn v)
-    (hu : ∀ c ∈ u, ∀ i : Fin k, c.1 ≠ Sum.inl i) : u <:+: v := by
-  induction n with
-  | zero => exact h
-  | succ n ih =>
-    exact ih (Nat.le_of_succ_le hn)
-      (isInfix_of_isInfix_blockInsert h fun c hc ↦ hu c hc ⟨n, hn⟩)
-
-private theorem fst_mem_of_mem_blockInsertUpTo {v : List ((Fin k ⊕ A) × Bool)}
-    (hv : ∀ c ∈ v, c.1 ∈ Set.range Sum.inr) (n : ℕ) (hn : n ≤ k)
-    {c : (Fin k ⊕ A) × Bool} (hc : c ∈ blockInsertUpTo a b m n hn v) :
-    c.1 ∈ Set.range Sum.inr ∨ ∃ t : Fin k, t.val < n ∧ c.1 = Sum.inl t := by
-  induction n with
-  | zero => exact .inl (hv c hc)
-  | succ n ih =>
-    rcases fst_eq_or_mem_of_mem_blockInsert hc with heq | hc'
-    · exact .inr ⟨⟨n, hn⟩, Nat.lt_succ_self n, heq⟩
-    · rcases ih (Nat.le_of_succ_le hn) hc' with hinr | ⟨t, ht, heq⟩
-      · exact .inl hinr
-      · exact .inr ⟨t, Nat.lt_succ_of_lt ht, heq⟩
-
-private theorem blockInsertUpTo_eq_of_ge {v : List (A × Bool)} (j : ℕ) (hj : j ≤ k)
-    (n : ℕ) (hn : n ≤ k) (hjn : j ≤ n)
-    (hnot : ∀ t : Fin k, j ≤ t.val → t.val < n →
-      ¬ merzljakovBlock a b (m t) <:+: v ∧ ¬ invRev (merzljakovBlock a b (m t)) <:+: v) :
-    blockInsertUpTo a b m n hn (v.map (Prod.map Sum.inr id)) =
-      blockInsertUpTo a b m j hj (v.map (Prod.map Sum.inr id)) := by
-  induction n with
-  | zero =>
-    obtain rfl : j = 0 := Nat.eq_zero_of_le_zero hjn
-    rfl
-  | succ n ih =>
-    rcases eq_or_lt_of_le hjn with rfl | hlt
-    · rfl
-    · have hn' := Nat.le_of_succ_le hn
-      have hjn' : j ≤ n := Nat.le_of_lt_succ hlt
-      have ht := hnot ⟨n, hn⟩ hjn' (Nat.lt_succ_self n)
-      have hno := fst_ne_inl_merzljakovBlock_inr (k := k) a b (m ⟨n, hn⟩)
-      rw [blockInsertUpTo, blockInsert_eq_self,
-        ih hn' hjn' fun t hjt htn ↦ hnot t hjt (Nat.lt_succ_of_lt htn)]
-      · intro hinf
-        have hinf₀ := isInfix_of_isInfix_blockInsertUpTo n hn' hinf hno.1
-        rw [← map_prodMap_merzljakovBlock, infix_map_iff_of_injective injective_prodMap_inr]
-          at hinf₀
-        exact ht.1 hinf₀
-      · intro hinf
-        have hinf₀ := isInfix_of_isInfix_blockInsertUpTo n hn' hinf hno.2
-        rw [← map_prodMap_merzljakovBlock, ← map_prodMap_invRev,
-          infix_map_iff_of_injective injective_prodMap_inr] at hinf₀
-        exact ht.2 hinf₀
-
-private theorem map_flatMap_patterns_blockInsertUpTo {α ι : Type*} (W : List (α × Bool))
-    (U : α → List (A × Bool))
-    (P : TauCeti.CancellationPieces (W.map (substituteLetter U)) ι)
-    (hm : ∀ i : Fin k, ∀ V ∈ P.patterns,
-      (merzljakovBlock a b (m i)).IsUnsplit (V.map (substituteLetter P.piece)) ∧
-        (invRev (merzljakovBlock a b (m i))).IsUnsplit (V.map (substituteLetter P.piece))) :
-    P.patterns.map (fun V ↦ V.flatMap (substituteLetter fun q ↦
-        blockInsertUpTo a b m k le_rfl ((P.piece q).map (Prod.map Sum.inr id)))) =
-      W.map (substituteLetter fun z ↦
-        blockInsertUpTo a b m k le_rfl ((U z).map (Prod.map Sum.inr id))) := by
-  let piece₀ (q : ι) : List ((Fin k ⊕ A) × Bool) := (P.piece q).map (Prod.map Sum.inr id)
-  let piece' (q : ι) : List ((Fin k ⊕ A) × Bool) :=
-    blockInsertUpTo a b m k le_rfl (piece₀ q)
-  have hV_eq (V : List (ι × Bool)) (hV : V ∈ P.patterns) :
-      V.flatMap (substituteLetter piece') =
-        blockInsertUpTo a b m k le_rfl
-          ((V.flatMap (substituteLetter P.piece)).map (Prod.map Sum.inr id)) := by
-    let L₀ := V.map (substituteLetter piece₀)
-    have hL₀_map : L₀ = (V.map (substituteLetter P.piece)).map
-        (List.map (Prod.map Sum.inr id)) := by
-      simp only [L₀, piece₀, List.map_map, Function.comp_def, map_prodMap_substituteLetter]
-    have hL₀_unsplit (i : Fin k) (_ : i.val < k) :
-        (merzljakovBlock (Sum.inr a : Fin k ⊕ A) (Sum.inr b) (m i)).IsUnsplit L₀ ∧
-          (invRev (merzljakovBlock (Sum.inr a : Fin k ⊕ A) (Sum.inr b) (m i))).IsUnsplit L₀ := by
-      rw [hL₀_map, ← map_prodMap_merzljakovBlock, ← map_prodMap_invRev,
-        map_isUnsplit_iff injective_prodMap_inr, map_isUnsplit_iff injective_prodMap_inr]
-      exact hm i V hV
-    have hflat₀ : L₀.flatten =
-        (V.flatMap (substituteLetter P.piece)).map (Prod.map Sum.inr id) := by
-      rw [hL₀_map, ← map_flatten, flatMap_def]
-    rw [← hflat₀, blockInsertUpTo_flatten k le_rfl hL₀_unsplit]
-    simp [L₀, piece', flatMap_def, List.map_map, Function.comp_def,
-      blockInsertUpTo_substituteLetter]
-  calc P.patterns.map (fun V ↦ V.flatMap (substituteLetter piece'))
-    _ = P.patterns.map (fun V ↦ blockInsertUpTo a b m k le_rfl
-          ((V.flatMap (substituteLetter P.piece)).map (Prod.map Sum.inr id))) :=
-      map_congr_left hV_eq
-    _ = (W.map (substituteLetter U)).map
-          (fun v ↦ blockInsertUpTo a b m k le_rfl (v.map (Prod.map Sum.inr id))) := by
-      have hmap := congrArg
-        (List.map fun v ↦ blockInsertUpTo a b m k le_rfl (v.map (Prod.map Sum.inr id)))
-        P.map_flatMap_patterns
-      simpa only [List.map_map, Function.comp_def] using hmap
-    _ = _ := by
-      simp [List.map_map, Function.comp_def, blockInsertUpTo_substituteLetter]
-
-private theorem exists_mul_of_mul_blockInsertUpTo_merzljakovWord (hab : a ≠ b)
-    {ms : Fin k → List ℕ} {h : Fin k → FreeGroup A} (hms : IsMerzljakovTuple a b ms h)
-    (hm : ∀ i, m i ∈ ms i) (i : Fin k) :
-    ∃ u v : FreeGroup A,
-      mk (blockInsertUpTo a b m k le_rfl
-          ((merzljakovWord a b (ms i)).map (Prod.map Sum.inr id))) =
-        map Sum.inr u * of (Sum.inl i) * map Sum.inr v := by
-  have hab' : (Sum.inr a : Fin k ⊕ A) ≠ Sum.inr b := Sum.inr_injective.ne hab
-  -- Steps before `i` leave `merzljakovWord a b (ms i)` unchanged.
-  have hbefore : blockInsertUpTo a b m i.val i.isLt.le
-      ((merzljakovWord a b (ms i)).map (Prod.map Sum.inr id)) =
-      (merzljakovWord a b (ms i)).map (Prod.map Sum.inr id) := by
-    refine blockInsertUpTo_eq_of_ge 0 (Nat.zero_le k) i.val i.isLt.le
-        (Nat.zero_le _) fun t _ ht ↦ ?_
-    have hne : t ≠ i := fun heq ↦ ht.ne (congrArg Fin.val heq)
-    exact ⟨hms.not_merzljakovBlock_isInfix_merzljakovWord hab hne (hm t),
-      not_invRev_merzljakovBlock_isInfix_merzljakovWord a b (m t) (ms i)⟩
-  -- Steps after `i` leave the result of step `i + 1` unchanged.
-  have hafter : blockInsertUpTo a b m k le_rfl
-      ((merzljakovWord a b (ms i)).map (Prod.map Sum.inr id)) =
-      blockInsertUpTo a b m (i.val + 1) i.isLt
-        ((merzljakovWord a b (ms i)).map (Prod.map Sum.inr id)) := by
-    refine blockInsertUpTo_eq_of_ge (i.val + 1) i.isLt k le_rfl i.isLt fun t ht _ ↦ ?_
-    have hne : t ≠ i := fun heq ↦ (Nat.lt_of_succ_le ht).ne' (congrArg Fin.val heq)
-    exact ⟨hms.not_merzljakovBlock_isInfix_merzljakovWord hab hne (hm t),
-      not_invRev_merzljakovBlock_isInfix_merzljakovWord a b (m t) (ms i)⟩
-  -- Step `i` inserts `Sum.inl i` into the unique block `m i ∈ ms i`.
-  obtain ⟨ms₁, ms₂, hms_eq⟩ := append_of_mem (hm i)
-  have hnd : (ms₁ ++ m i :: ms₂).Nodup := hms_eq ▸ hms.nodup i
-  have hm₁ : m i ∉ ms₁ := fun h₁ ↦ (nodup_append.1 hnd).2.2 _ h₁ _ mem_cons_self rfl
-  have hm₂ : m i ∉ ms₂ := (nodup_cons.1 (nodup_append.1 hnd).2.1).1
-  let uWord : List (A × Bool) := merzljakovWord a b ms₁ ++ replicate (m i) (a, true)
-  let vWord : List (A × Bool) := merzljakovWord a b ms₂
-  refine ⟨mk uWord, mk vWord, ?_⟩
-  rw [hafter, blockInsertUpTo, hbefore, map_prodMap_merzljakovWord, hms_eq,
-    blockInsert_merzljakovWord hab' hm₁ hm₂]
-  have hsplit : merzljakovWord (Sum.inr a : Fin k ⊕ A) (Sum.inr b) ms₁ ++
-      (replicate (m i) (Sum.inr a, true) ++
-        (Sum.inl i, true) :: merzljakovWord (Sum.inr a) (Sum.inr b) ms₂) =
-      uWord.map (Prod.map Sum.inr id) ++ [(Sum.inl i, true)] ++
-        vWord.map (Prod.map Sum.inr id) := by
-    simp [uWord, vWord, map_prodMap_merzljakovWord, append_assoc]
-  rw [hsplit, ← mul_mk, ← mul_mk]
-  simp [Prod.map_def, map.mk, of]
-
-private theorem mk_blockInsertUpTo_toWord_mem_closure {ms : Fin k → List ℕ}
+/-- After the insertion of all the variables, the reduced word of the witness `h j` of a
+Merzljakov tuple involves only the variables `x₀, …, x_j`: the blocks of the later variables do
+not occur in it. -/
+private theorem mk_blockInsertAll_toWord_mem_closure {ms : Fin k → List ℕ}
     {h : Fin k → FreeGroup A} (hms : IsMerzljakovTuple a b ms h) (hm : ∀ i, m i ∈ ms i)
     (j : Fin k) :
-    mk (blockInsertUpTo a b m k le_rfl (((h j).toWord).map (Prod.map Sum.inr id))) ∈
+    mk (blockInsertAll a b m (finRange k) (((h j).toWord).map (Prod.map Sum.inr id))) ∈
       Subgroup.closure (Set.range (of ∘ Sum.inr) ∪ (of ∘ Sum.inl) '' Set.Iic j) := by
-  have heq : blockInsertUpTo a b m k le_rfl (((h j).toWord).map (Prod.map Sum.inr id)) =
-      blockInsertUpTo a b m (j.val + 1) j.isLt (((h j).toWord).map (Prod.map Sum.inr id)) := by
-    refine blockInsertUpTo_eq_of_ge (j.val + 1) j.isLt k le_rfl j.isLt fun t ht _ ↦ ?_
-    have hjt : j < t := Fin.lt_def.2 (Nat.lt_of_succ_le ht)
-    exact ⟨hms.not_isInfix_toWord hjt (hm t), hms.not_invRev_isInfix_toWord hjt (hm t)⟩
+  rw [← blockInsertAll_filter_map (· ≤ j) fun t _ ht ↦ by
+    have hjt : j < t := by simpa using ht
+    exact ⟨hms.not_isInfix_toWord hjt (hm t), hms.not_invRev_isInfix_toWord hjt (hm t)⟩]
   have himg : of '' (Set.range (Sum.inr : A → Fin k ⊕ A) ∪ Sum.inl '' Set.Iic j) =
       Set.range (of ∘ Sum.inr) ∪ (of ∘ Sum.inl) '' Set.Iic j := by
     simp [Set.image_union, Set.image_image, Set.range_comp]
-  rw [heq, ← lift_of_apply (mk _), ← himg]
+  rw [← lift_of_apply (mk _), ← himg]
   refine lift_mk_mem_closure_image of fun c hc ↦ ?_
-  have hv₀ : ∀ d ∈ ((h j).toWord).map (Prod.map (Sum.inr : A → Fin k ⊕ A) id),
-      d.1 ∈ Set.range Sum.inr := by
-    intro d hd
-    obtain ⟨e, _, rfl⟩ := mem_map.1 hd
-    exact ⟨e.1, rfl⟩
-  rcases fst_mem_of_mem_blockInsertUpTo hv₀ (j.val + 1) j.isLt hc with ha' | ⟨t, ht, htc⟩
-  · exact .inl ha'
-  · exact .inr ⟨t, Fin.le_iff_val_le_val.2 (Nat.le_of_lt_succ ht), htc.symm⟩
+  rcases mem_or_exists_of_mem_blockInsertAll hc with hc | ⟨t, ht, htc⟩
+  · obtain ⟨e, -, rfl⟩ := mem_map.1 hc
+    exact .inl ⟨e.1, rfl⟩
+  · exact .inr ⟨t, by simpa using (mem_filter.1 ht).2, htc.symm⟩
 
-end Helpers
-
-end BlockInsertIter
+end MerzljakovTuple
 
 /-- Given a solution `(x₀, y₀)` of `w(x, y) = 1` in `FreeGroup (Fin k ⊕ A)` where each `x₀ i` is a
 two-sided translate `u i * x_i * v i` of `x_i` by constants in `FreeGroup A` and each `y₀ j` lies
 in the subgroup generated by the constants and `x₀, …, x_j`, the endomorphism
 `x_i ↦ (u i)⁻¹ * x_i * (v i)⁻¹` produces a formal solution. -/
 private theorem exists_formalSolution_of_mul_of_mul {A : Type*} {k : ℕ}
-    (w : FreeGroup ((Fin k ⊕ Fin k) ⊕ A))
-    {x₀ y₀ : Fin k → FreeGroup (Fin k ⊕ A)} {u v : Fin k → FreeGroup A}
-    (hx₀ : ∀ i, x₀ i = map Sum.inr (u i) * of (Sum.inl i) * map Sum.inr (v i))
+    (w : FreeGroup ((Fin k ⊕ Fin k) ⊕ A)) {y₀ : Fin k → FreeGroup (Fin k ⊕ A)}
+    {u v : Fin k → FreeGroup A}
     (hy₀ : ∀ j, y₀ j ∈ Subgroup.closure
       (Set.range (of ∘ Sum.inr) ∪ (of ∘ Sum.inl) '' Set.Iic j))
-    (hw : lift (Sum.elim (Sum.elim x₀ y₀) (of ∘ Sum.inr)) w = 1) :
+    (hw : lift (Sum.elim (Sum.elim (fun i ↦ map Sum.inr (u i) * of (Sum.inl i) * map Sum.inr (v i))
+      y₀) (of ∘ Sum.inr)) w = 1) :
     ∃ y : Fin k → FreeGroup (Fin k ⊕ A),
       (∀ i, y i ∈ Subgroup.closure (Set.range (of ∘ Sum.inr) ∪ (of ∘ Sum.inl) '' Set.Iic i)) ∧
       lift (Sum.elim (Sum.elim (of ∘ Sum.inl) y) (of ∘ Sum.inr)) w = 1 := by
@@ -408,36 +159,20 @@ private theorem exists_formalSolution_of_mul_of_mul {A : Type*} {k : ℕ}
   let ψ : FreeGroup (Fin k ⊕ A) →* FreeGroup (Fin k ⊕ A) :=
     lift (Sum.elim (fun i ↦ (map Sum.inr (u i))⁻¹ * of (Sum.inl i) * (map Sum.inr (v i))⁻¹)
       (of ∘ Sum.inr))
-  have hψ_inr (q : FreeGroup A) : ψ (map Sum.inr q) = map Sum.inr q := by
-    have hcomp : ψ.comp (map Sum.inr) = map Sum.inr := by
-      ext c
-      simp [ψ]
-    exact DFunLike.congr_fun hcomp q
   have hinr_mem (j : Fin k) (q : FreeGroup A) : map Sum.inr q ∈ K j := by
     rw [map_eq_lift]
     exact range_lift_le
       (Set.range_subset_iff.2 fun c ↦ Subgroup.subset_closure (Or.inl ⟨c, rfl⟩)) ⟨q, rfl⟩
-  refine ⟨fun j ↦ ψ (y₀ j), fun j ↦ ?_, ?_⟩
-  · refine (Subgroup.closure_le (K := (K j).comap ψ)).2 ?_ (hy₀ j)
-    rintro _ (⟨c, rfl⟩ | ⟨t, htj, rfl⟩)
-    · simp only [SetLike.mem_coe, Subgroup.mem_comap, Function.comp_apply, ψ, lift_apply_of,
-        Sum.elim_inr]
-      exact Subgroup.subset_closure (Or.inl ⟨c, rfl⟩)
-    · simp only [SetLike.mem_coe, Subgroup.mem_comap, Function.comp_apply, ψ, lift_apply_of,
-        Sum.elim_inl]
-      exact mul_mem (mul_mem (inv_mem (hinr_mem j (u t)))
-        (Subgroup.subset_closure (Or.inr ⟨t, htj, rfl⟩))) (inv_mem (hinr_mem j (v t)))
-  · have hcomp : ψ.comp (lift (Sum.elim (Sum.elim x₀ y₀) (of ∘ Sum.inr))) =
-        lift (Sum.elim (Sum.elim (of ∘ Sum.inl) (fun j ↦ ψ (y₀ j))) (of ∘ Sum.inr)) := by
-      ext z
-      rcases z with (i | j) | c
-      · simp only [MonoidHom.comp_apply, lift_apply_of, Sum.elim_inl, Function.comp_apply,
-          hx₀ i, _root_.map_mul, hψ_inr]
-        simp only [ψ, lift_apply_of, Sum.elim_inl]
-        group
-      · simp
-      · simp [ψ]
-    rw [← hcomp, MonoidHom.comp_apply, hw, _root_.map_one]
+  refine ⟨fun j ↦ ψ (y₀ j), fun j ↦ ?_, lift_eq_one_of_translate w hw⟩
+  refine (Subgroup.closure_le (K := (K j).comap ψ)).2 ?_ (hy₀ j)
+  rintro _ (⟨c, rfl⟩ | ⟨t, htj, rfl⟩)
+  · simp only [SetLike.mem_coe, Subgroup.mem_comap, Function.comp_apply, ψ, lift_apply_of,
+      Sum.elim_inr]
+    exact Subgroup.subset_closure (Or.inl ⟨c, rfl⟩)
+  · simp only [SetLike.mem_coe, Subgroup.mem_comap, Function.comp_apply, ψ, lift_apply_of,
+      Sum.elim_inl]
+    exact mul_mem (mul_mem (inv_mem (hinr_mem j (u t)))
+      (Subgroup.subset_closure (Or.inr ⟨t, htj, rfl⟩))) (inv_mem (hinr_mem j (v t)))
 
 /-- **Merzljakov's theorem** (Skolem-function form): if `a ≠ b` are two distinct letters of `A`
 and `f` is a tuple of Skolem functions respecting the order of the quantifiers such that
@@ -453,56 +188,31 @@ theorem exists_formalSolution_of_skolem {A : Type*} {k : ℕ} {a b : A} (hab : a
       lift (Sum.elim (Sum.elim (of ∘ Sum.inl) y) (of ∘ Sum.inr)) w = 1 := by
   classical
   obtain ⟨W, rfl⟩ : ∃ W, mk W = w := ⟨w.toWord, mk_toWord⟩
-  let L := W.length
-  obtain ⟨ms, hlen, hms⟩ := exists_isMerzljakovTuple a b (L * L + 1) f hf
-  let g : Fin k → FreeGroup A := fun i ↦ mk (merzljakovWord a b (ms i))
-  let h : Fin k → FreeGroup A := f g
+  obtain ⟨ms, hlen, hms⟩ := exists_isMerzljakovTuple a b (W.length * W.length + 1) f hf
+  -- substitute the Merzljakov words `g i` and the witnesses `f g`, and insert the variables
+  let g (i : Fin k) : FreeGroup A := mk (merzljakovWord a b (ms i))
   let U : (Fin k ⊕ Fin k) ⊕ A → List (A × Bool) :=
-    Sum.elim (Sum.elim (fun i ↦ merzljakovWord a b (ms i)) (fun j ↦ (h j).toWord))
-      (fun c ↦ [(c, true)])
-  have hU_red (z : (Fin k ⊕ Fin k) ⊕ A) : IsReduced (U z) := by
-    rcases z with (i | j) | c
-    · exact isReduced_merzljakovWord a b (ms i)
-    · exact isReduced_toWord
-    · exact IsReduced.singleton
-  let ws : List (List (A × Bool)) := W.map (substituteLetter U)
-  have hws_red : ∀ v ∈ ws, IsReduced v := by
-    intro v hv
-    obtain ⟨⟨z, _ | _⟩, _, rfl⟩ := mem_map.1 hv
-    · exact (hU_red z).invRev
-    · exact hU_red z
-  have hws_one : mk ws.flatten = 1 := by
-    have hmkU : (fun z ↦ mk (U z)) = Sum.elim (Sum.elim g h) of := by
-      ext z
-      rcases z with (i | j) | c <;> simp [U, g, h, of, mk_toWord]
-    dsimp only [ws]
-    rw [← flatMap_def, mk_flatMap_substituteLetter, hmkU]
-    exact hw g
-  obtain ⟨p, ⟨P⟩⟩ := TauCeti.exists_cancellationPieces hws_red hws_one
-  choose m hm_mem hm_unsplit using fun i ↦
-    exists_mem_isUnsplit_patterns hab P (hms.nodup i) (by simp [ws, L, hlen i])
-  let piece' (q : Fin p) : List ((Fin k ⊕ A) × Bool) :=
-    blockInsertUpTo a b m k le_rfl ((P.piece q).map (Prod.map Sum.inr id))
-  let U' (z : (Fin k ⊕ Fin k) ⊕ A) : List ((Fin k ⊕ A) × Bool) :=
-    blockInsertUpTo a b m k le_rfl ((U z).map (Prod.map Sum.inr id))
-  have hU'_one : lift (fun z ↦ mk (U' z)) (mk W) = 1 := by
-    rw [← mk_flatMap_substituteLetter]
-    have hflat : W.flatMap (substituteLetter U') =
-        P.patterns.flatten.flatMap (substituteLetter piece') := by
-      rw [flatMap_def, ← map_flatMap_patterns_blockInsertUpTo W U P hm_unsplit]
-      simp [piece', flatMap_def, map_flatten, flatten_flatten, List.map_map, Function.comp_def]
-    rw [hflat, mk_flatMap_substituteLetter, P.mk_flatten_patterns, _root_.map_one]
-  choose u v huv using exists_mul_of_mul_blockInsertUpTo_merzljakovWord hab hms hm_mem
-  have hU'_eq : (fun z ↦ mk (U' z)) =
-      Sum.elim (Sum.elim (fun i ↦ mk (U' (Sum.inl (Sum.inl i))))
-        (fun j ↦ mk (U' (Sum.inl (Sum.inr j))))) (of ∘ Sum.inr) := by
-    ext z
-    rcases z with (i | j) | c
+    Sum.elim (Sum.elim (fun i ↦ merzljakovWord a b (ms i)) fun j ↦ (f g j).toWord)
+      fun c ↦ [(c, true)]
+  have hU : (fun z ↦ mk (U z)) = Sum.elim (Sum.elim g (f g)) of := by
+    ext ((i | j) | c) <;> simp [U, g, of, mk_toWord]
+  obtain ⟨m, hm, hU'⟩ := exists_lift_mk_blockInsertAll_eq_one hab (U := U)
+    (fun ⟨z, _⟩ _ ↦ by
+      rcases z with (i | j) | c <;> simp [U, isReduced_merzljakovWord, isReduced_toWord])
+    (hU ▸ hw g) hms.nodup (fun i ↦ by rw [hlen i]; lia) (finRange k)
+  -- the inserted Merzljakov word of `x_i` is `u i * x_i * v i`
+  choose u v _ huv using exists_mk_blockInsertAll_merzljakovWord hab hms.nodup hm
+    fun i _ i' _ _ hn hn' ↦ by_contra fun hne ↦ hms.disjoint_of_ne hne hn hn'
+  have hU'_eq : (fun z ↦ mk (blockInsertAll a b m (finRange k) ((U z).map (Prod.map Sum.inr id))))
+      = Sum.elim (Sum.elim (fun i ↦ map Sum.inr (u i) * of (Sum.inl i) * map Sum.inr (v i))
+        fun j ↦ mk (blockInsertAll a b m (finRange k) ((U (Sum.inl (Sum.inr j))).map
+          (Prod.map Sum.inr id)))) (of ∘ Sum.inr) := by
+    ext ((i | j) | c)
+    · exact huv i (mem_finRange i)
     · rfl
-    · rfl
-    · simp [U', U, blockInsertUpTo_singleton, of]
-  exact exists_formalSolution_of_mul_of_mul (mk W) huv
-    (mk_blockInsertUpTo_toWord_mem_closure hms hm_mem) (hU'_eq ▸ hU'_one)
+    · simp [U, of]
+  exact exists_formalSolution_of_mul_of_mul (mk W) (mk_blockInsertAll_toWord_mem_closure hms hm)
+    (hU'_eq ▸ hU')
 
 /-- **Merzljakov's theorem**: over an alphabet `A` with at least two letters, if the positive
 sentence `∀ x₀ ∃ y₀ … ∀ x_{k-1} ∃ y_{k-1} (w(x, y) = 1)` holds in `FreeGroup A`, then the equation

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.IdealSheaf.ReesAlgebra
+public import TauCeti.AlgebraicGeometry.IdealSheaf.ReesAlgebra.Basic
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 public import TauCeti.AlgebraicGeometry.RelativeProj.Proper
 public import Mathlib.AlgebraicGeometry.Noetherian
@@ -184,10 +184,14 @@ theorem isPullback_blowupChart {U : X.Opens} (hU : IsAffineOpen U) :
 `Spec Γ(X, U) ⟶ X`: the form of `isPullback_blowupChart` over the spectrum of the sections. -/
 theorem isPullback_blowupChart_fromSpec {U : X.Opens} (hU : IsAffineOpen U) :
     IsPullback (Proj.toSpecCoeff (reesAlgebra.grade (I.ideal ⟨U, hU⟩))) (I.blowupChart hU)
-      hU.fromSpec I.blowupToBase :=
-  (I.isPullback_blowupChart hU).of_iso (Iso.refl _) hU.isoSpec (Iso.refl _) (Iso.refl _)
-    (by simp) (by simp)
-    (by rw [← hU.isoSpec_inv_ι, Iso.hom_inv_id_assoc, Iso.refl_hom, Category.comp_id]) (by simp)
+      hU.fromSpec I.blowupToBase := by
+  refine (I.reesAlgebra.obj.isPullback_relativeProjCover_fromSpec ⟨U, hU⟩).of_iso'
+    (Proj.mapIso (I.reesAlgebraSectionsGradedHom hU) (I.reesAlgebraSectionsGradedHomInv hU)
+      (I.reesAlgebraSectionsEquiv hU).apply_symm_apply
+      (I.reesAlgebraSectionsEquiv hU).symm_apply_apply) (Iso.refl _) (Iso.refl _) (Iso.refl _)
+    ?_ (Category.comp_id _).symm (by simp) (by simp)
+  rw [Iso.refl_hom, Category.comp_id]
+  exact I.map_reesAlgebraSectionsGradedHom_toSpecCoeff hU
 
 /-- **The blowup along an ideal sheaf of finite type is proper.** If the ideal `I(U)` is finitely
 generated for every affine open `U` of `X`, then `Bl_I X ⟶ X` is proper. -/

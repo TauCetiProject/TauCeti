@@ -173,4 +173,14 @@ theorem comap_inj_of_isIso {I J : Y.IdealSheafData} (f : X ⟶ Y) [IsIso f] :
     I.comap f = J.comap f ↔ I = J :=
   (comap_injective_of_isIso f).eq_iff
 
+/-- **The inclusion of an inverse image lies over the inclusion of the closed subscheme.** For a
+commutative square `g ≫ q = q' ≫ f`, the closed subscheme of the inverse image `I.comap g`, as a
+scheme over `S'` through `q'`, maps to the closed subscheme of `I`, as a scheme over `S` through
+`q`, over `f`. The square need not be a pullback square. -/
+theorem comap_subschemeι_comp_comp {X' S S' : Scheme.{u}} (I : X.IdealSheafData) {g : X' ⟶ X}
+    {q : X ⟶ S} {q' : X' ⟶ S'} {f : S' ⟶ S} (w : g ≫ q = q' ≫ f) :
+    ((I.comap g).subschemeι ≫ q') ≫ f =
+      subschemeMap (I.comap g) I g (I.le_map_comap g) ≫ I.subschemeι ≫ q := by
+  rw [subschemeMap_subschemeι_assoc, w, Category.assoc]
+
 end AlgebraicGeometry.Scheme.IdealSheafData

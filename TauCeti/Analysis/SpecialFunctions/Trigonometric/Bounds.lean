@@ -30,11 +30,19 @@ For angles `α, β > 0` and `γ ≥ 0` with
 second hyperbolic law of cosines it is the hyperbolic cosine of the side opposite `γ` in a
 hyperbolic triangle with angles `α`, `β`, `γ`. These supply the positive sine factors and the
 hyperbolic scale in the matrix representations of triangle groups.
+A circle of positive perimeter `2πR` has positive radius `R`
+(`Real.pos_of_fact_two_pi_mul_pos`), under the instance `Fact (0 < 2 * Real.pi * R)` that makes
+`AddCircle (2 * Real.pi * R)` usable.
 -/
 
 public section
 
 open Real
+
+/-- A circle of positive perimeter `2πR` has positive radius `R`. This recovers the radius from
+the instance `Fact (0 < 2 * Real.pi * R)` that makes `AddCircle (2 * Real.pi * R)` usable. -/
+theorem Real.pos_of_fact_two_pi_mul_pos {R : ℝ} [Fact (0 < 2 * Real.pi * R)] : 0 < R :=
+  pos_of_mul_pos_right (Fact.out : 0 < 2 * Real.pi * R) Real.two_pi_pos.le
 
 namespace TauCeti
 
@@ -42,15 +50,6 @@ namespace TauCeti
 theorem mem_Icc_add_mul_sin {a b : ℝ} (hab : a ≤ b) (θ : ℝ) :
     (a + b) / 2 + (b - a) / 2 * sin θ ∈ Set.Icc a b :=
   ⟨by nlinarith [neg_one_le_sin θ], by nlinarith [sin_le_one θ]⟩
-
-/-- The denominator after a sine substitution is positive when the interval lies inside
-`(-1, 1)` and the remaining square-root root lies above the interval. -/
-theorem one_sub_sq_mul_sqrt_sub_add_mul_sin_pos {a b c : ℝ} (ha : -1 < a) (hab : a ≤ b)
-    (hb : b < 1) (hc : b < c) (θ : ℝ) :
-    0 < (1 - ((a + b) / 2 + (b - a) / 2 * sin θ) ^ 2) *
-      √(2 * (c - ((a + b) / 2 + (b - a) / 2 * sin θ))) := by
-  have hx := mem_Icc_add_mul_sin hab θ
-  exact mul_pos (by nlinarith [hx.1, hx.2]) (sqrt_pos.2 (by linarith [hx.2]))
 
 /-- Cosine is positive strictly between two angles in `[-π/2, π/2]`, in either orientation. -/
 theorem cos_pos_of_mem_uIoo {a b θ : ℝ}

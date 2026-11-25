@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Equiv
 public import Mathlib.Geometry.Manifold.ChartedSpace
 public import Mathlib.Topology.DiscreteSubset
-public import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
+public import TauCeti.Analysis.Calculus.ImplicitFunction.Basic
 public import TauCeti.Analysis.Fredholm.Criteria
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 public import TauCeti.Topology.OpenPartialHomeomorph.Constructions

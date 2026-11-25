@@ -47,7 +47,9 @@ So a trivial bundle of positive rank has zero Euler class (`TauCeti.eulerClass_t
 The projection `π : E → B` is a homotopy equivalence with homotopy inverse the zero section
 (`TauCeti.VectorBundle.totalSpaceHomotopyEquiv`), so pullback along the zero section is an
 isomorphism `Hⁿ(E) ≅ Hⁿ(B)` with inverse `π^*`
-(`TauCeti.singularCohomologyMap_zeroSectionHom_comp_singularCohomologyMap_thomPairProj`).
+(`TauCeti.singularCohomologyMap_zeroSectionHom_comp_singularCohomologyMap_thomPairProj`,
+`TauCeti.isIso_singularCohomologyMap_zeroSectionHom`,
+`TauCeti.isIso_singularCohomologyMap_thomPairProj`).
 Replacing `Hⁿ(E)` by `Hⁿ(B)` in the long exact sequence of the Thom pair gives the exact sequence
 
 `⋯ ⟶ Hᵐ(E, E₀) ⟶ Hᵐ(B) ⟶ Hᵐ(E₀) ⟶ Hᵐ⁺¹(E, E₀) ⟶ Hᵐ⁺¹(B) ⟶ ⋯`
@@ -146,6 +148,12 @@ theorem thomPairOverUnivIso_hom_fst_apply (v : π F E ⁻¹' univ) :
   TopCat.restrictPreimagePairMap_fst_apply (X := TopCat.of (TotalSpace F E)) (π F E)
     (zeroSectionCompl F E) univ v
 
+/-- On total spaces, the isomorphism `thomPairOverUnivIso` is the inclusion of the subtype. -/
+theorem thomPairOverUnivIso_hom_fst_eq :
+    (TopPair.Hom.fst (thomPairOverUnivIso F E).hom).hom =
+      ContinuousMap.subtypeVal (π F E ⁻¹' univ) :=
+  ContinuousMap.ext fun v ↦ thomPairOverUnivIso_hom_fst_apply F E v
+
 @[simp]
 theorem thomPairOverUnivIso_hom_snd_apply (v : ↥(π F E ⁻¹' univ ∩ zeroSectionCompl F E)) :
     TopPair.Hom.snd (thomPairOverUnivIso F E).hom v = ⟨v.val, v.property.2⟩ :=
@@ -240,8 +248,8 @@ end Pair
 
 section Open
 
-variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+variable {B : Type*} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : B → Type*} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
 
 variable (F) in
@@ -396,7 +404,7 @@ theorem restrictPreimagePairMap_fst_comp_thomPairProj (W : Set B) :
 
 /-- The inclusion `(E_b, E_b ∖ {0}) ⟶ (E|_W, E₀|_W)` of the fibre over a point `b ∈ W` into the
 Thom pair of the restriction to `W`. -/
-def fiberThomPairOverMap {W : Set B} {b : B} (hb : b ∈ W) :
+@[expose] def fiberThomPairOverMap {W : Set B} {b : B} (hb : b ∈ W) :
     TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b)) ⟶ thomPairOver F E W :=
   TopPair.ofHom
     (TopCat.ofHom ⟨fun x ↦ ⟨TotalSpace.mk b x, hb⟩,
@@ -524,6 +532,17 @@ end ThomClass
 
 section Pullback
 
+/-- The canonical map from the total space of a pullback bundle `f *ᵖ E` to the total space of `E`
+keeps each vector, so the nonzero vectors of `f *ᵖ E` are exactly the points sent to nonzero vectors
+of `E`. -/
+theorem preimage_pullbackLift_zeroSectionCompl {B B' : Type w} {F : Type*} {E : B → Type w}
+    [∀ b, AddCommMonoid (E b)] (f : B' → B) :
+    Pullback.lift f ⁻¹' zeroSectionCompl F E = zeroSectionCompl F (f *ᵖ E) := by
+  ext z
+  simp only [mem_preimage, mem_zeroSectionCompl, Pullback.lift_snd]
+  -- The zero of the fibre of `f *ᵖ E` over `x` is, by definition, the zero of `E (f x)`.
+  rfl
+
 variable {B : Type w} [TopologicalSpace B] (F : Type*) (E : B → Type w)
   [TopologicalSpace (TotalSpace F E)] [∀ b, Zero (E b)] {B' : Type w}
   [TopologicalSpace B'] (f : C(B', B))
@@ -542,6 +561,14 @@ theorem pullbackThomPairMap_fst_apply (v : TotalSpace F ((⇑f) *ᵖ E)) :
     TopPair.Hom.fst (pullbackThomPairMap F E f) v = Pullback.lift f v := by
   unfold pullbackThomPairMap
   exact TopPair.ofSubsetMap_fst_apply _ _ _
+
+/-- On nonzero vectors, the map of Thom pairs `(f*E, (f*E)₀) ⟶ (E, E₀)` is the canonical map of the
+pull-back. -/
+@[simp]
+theorem pullbackThomPairMap_snd_apply (v : (thomPair F ((⇑f) *ᵖ E)).snd) :
+    (TopPair.Hom.snd (pullbackThomPairMap F E f) v).val = Pullback.lift f v.val := by
+  unfold pullbackThomPairMap
+  exact TopPair.ofSubsetMap_snd_apply _ _ _
 
 variable [TopologicalSpace F] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
 
@@ -639,6 +666,41 @@ theorem singularCohomologyMap_thomPairProj_singularCohomologyMap_zeroSectionHom_
   rw [← ConcreteCategory.comp_apply,
     singularCohomologyMap_zeroSectionHom_comp_singularCohomologyMap_thomPairProj,
     ConcreteCategory.id_apply]
+
+/-- Pulling back along the projection is an isomorphism `Hⁿ(B) ≅ Hⁿ(E)`, with inverse the pull-back
+along the zero section. -/
+instance isIso_singularCohomologyMap_thomPairProj (n : ℕ) :
+    IsIso (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (thomPairProj F E) n) :=
+  ⟨_, singularCohomologyMap_thomPairProj_comp_singularCohomologyMap_zeroSectionHom R k M F E n,
+    singularCohomologyMap_zeroSectionHom_comp_singularCohomologyMap_thomPairProj R k M F E n⟩
+
+/-- Pulling back along the zero section is an isomorphism `Hⁿ(E) ≅ Hⁿ(B)`, with inverse the
+pull-back along the projection. -/
+instance isIso_singularCohomologyMap_zeroSectionHom (n : ℕ) :
+    IsIso (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (zeroSectionHom F E) n) :=
+  ⟨_, singularCohomologyMap_zeroSectionHom_comp_singularCohomologyMap_thomPairProj R k M F E n,
+    singularCohomologyMap_thomPairProj_comp_singularCohomologyMap_zeroSectionHom R k M F E n⟩
+
+@[simp]
+theorem inv_singularCohomologyMap_thomPairProj (n : ℕ) :
+    inv (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (thomPairProj F E) n) =
+      TopCat.singularCohomologyMap (zeroSectionHom F E) n :=
+  IsIso.inv_eq_of_hom_inv_id
+    (singularCohomologyMap_thomPairProj_comp_singularCohomologyMap_zeroSectionHom R k M F E n)
+
+@[simp]
+theorem inv_singularCohomologyMap_zeroSectionHom (n : ℕ) :
+    inv (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (zeroSectionHom F E) n) =
+      TopCat.singularCohomologyMap (thomPairProj F E) n :=
+  IsIso.inv_eq_of_hom_inv_id
+    (singularCohomologyMap_zeroSectionHom_comp_singularCohomologyMap_thomPairProj R k M F E n)
+
+/-- Pulling back along the projection is injective on cohomology: the zero section pulls it back. -/
+theorem singularCohomologyMap_thomPairProj_injective (n : ℕ) :
+    Function.Injective
+      (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (thomPairProj F E) n) :=
+  Function.LeftInverse.injective
+    singularCohomologyMap_zeroSectionHom_singularCohomologyMap_thomPairProj_apply
 
 /-- Fibrewise negation `v ↦ -v` of a real vector bundle, written `v ↦ (-1) • v`, as a self-map of
 its total space. -/

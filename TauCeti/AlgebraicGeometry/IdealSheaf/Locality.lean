@@ -22,7 +22,11 @@ Vanishing of the sections of an ideal sheaf under a morphism also passes to smal
 (`AlgebraicGeometry.Scheme.IdealSheafData.ideal_le_ker_appLE_of_le`), so it can be checked
 locally on an affine basis. An ideal sheaf lies in the kernel of a quasi-compact morphism as soon
 as it lies in the kernel of the morphism's restriction to each member of an open cover of the
-source (`AlgebraicGeometry.Scheme.Hom.le_ker_iff_of_openCover`).
+source (`AlgebraicGeometry.Scheme.Hom.le_ker_iff_of_openCover`). The inverse image of the kernel
+of a morphism along that morphism vanishes (`AlgebraicGeometry.Scheme.Hom.comap_ker_self`), and
+for a commutative square `φ' ≫ g = p ≫ φ`, if `φ` factors through the closed subscheme `V(D)`
+then `φ'` factors through its inverse image along `g`
+(`AlgebraicGeometry.Scheme.IdealSheafData.comap_le_ker_of_le_ker`).
 
 -/
 
@@ -153,5 +157,19 @@ theorem IdealSheafData.eq_of_forall_le_ker_iff {I J : X.IdealSheafData}
     (h : ∀ {T : Scheme.{u}} (r : T ⟶ X), I ≤ r.ker ↔ J ≤ r.ker) : I = J :=
   le_antisymm (((h _).2 J.ker_subschemeι.ge).trans J.ker_subschemeι.le)
     (((h _).1 I.ker_subschemeι.ge).trans I.ker_subschemeι.le)
+
+/-- Pulling the kernel ideal sheaf of any morphism `f` back along `f` itself gives `⊥`. -/
+@[simp]
+theorem Hom.comap_ker_self {Y : Scheme.{u}} (f : X ⟶ Y) : f.ker.comap f = ⊥ :=
+  le_bot_iff.mp (le_map_iff_comap_le.mp (map_bot f).symm.le)
+
+/-- **Factorization through a closed subscheme pulls back along commutative squares.** For a
+commutative square `φ' ≫ g = p ≫ φ`, if `φ` factors through `V(D)`, then `φ'` factors through the
+inverse image of `V(D)` along `g`. -/
+theorem IdealSheafData.comap_le_ker_of_le_ker {X' Y Y' : Scheme.{u}} {D : Y.IdealSheafData}
+    {g : Y' ⟶ Y} {p : X' ⟶ X} {φ' : X' ⟶ Y'} {φ : X ⟶ Y} (w : φ' ≫ g = p ≫ φ)
+    (hD : D ≤ φ.ker) : D.comap g ≤ φ'.ker := by
+  rw [← le_map_iff_comap_le, map_ker, w]
+  exact hD.trans (Hom.le_ker_comp _ _)
 
 end AlgebraicGeometry.Scheme

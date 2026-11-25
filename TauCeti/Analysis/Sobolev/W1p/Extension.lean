@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import TauCeti.Analysis.Distribution.TestFunction.Basic
 
 /-!
 # Extending a `W^{1,p}_0` function by zero
@@ -62,6 +63,8 @@ isometry of `Lᵖ` spaces, so the extension operator is an isometry of Sobolev s
   components of the extension are almost everywhere the indicators of those of `u`.
 * `TauCeti.W1p0.value_extendByZeroL_top_ae`, `TauCeti.W1p0.gradient_extendByZeroL_top_ae`: the
   same identities for the whole-space extension, almost everywhere for `mu` itself.
+* `TauCeti.W1p0.dense_iUnion_range_extendByZeroL`: for a directed family of open sets covering
+  `Ω`, the zero extensions of their `W^{1,p}_0` functions are dense in `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p0.hasWeakFDerivOn_indicator`: the analytic content, that the
   zero-extension of `u` is weakly differentiable on `Ω'` with the zero-extension of `∇u` as its
   weak gradient.
@@ -137,13 +140,6 @@ theorem Sobolev1JetLp.gradient_extendByZeroₗᵢ (hsub : Omega ≤ Omega')
 
 /-! ### Test functions extend to test functions -/
 
-omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] [mu.IsAddHaarMeasure] in
-/-- A test function on `Ω`, viewed on the larger open set `Ω'`, is the same function. -/
-private theorem coe_monoCLM (hsub : Omega ≤ Omega') (phi : 𝓓(Omega, ℝ)) :
-    ((TestFunction.monoCLM ℝ phi : 𝓓(Omega', ℝ)) : E → ℝ) = (phi : E → ℝ) := by
-  rw [TestFunction.monoCLM_apply]
-  simp [hsub]
-
 omit [FiniteDimensional ℝ E] in
 /-- Extending a test function's `Lᵖ` class by zero gives the class of the same test function on
 the larger open set: it already vanished outside `Ω`. -/
@@ -155,7 +151,7 @@ private theorem extendByZeroLpₗᵢ_testFunctionLp (hsub : Omega ≤ Omega') (p
     ((subset_tsupport _).trans phi.tsupport_subset) (testFunctionLp_apply_ae (mu := mu) p phi) <| by
       filter_upwards [testFunctionLp_apply_ae (mu := mu) (Omega := Omega') p
         (TestFunction.monoCLM ℝ phi)] with x hx
-      rw [hx, coe_monoCLM hsub phi]
+      rw [hx, TestFunction.coe_monoCLM_of_le le_rfl hsub phi]
 
 /-- Extending a test function's gradient by zero gives the gradient of the same test function on
 the larger open set. -/
@@ -169,7 +165,7 @@ private theorem extendByZeroLpₗᵢ_gradientTestFunctionLp (hsub : Omega ≤ Om
     (gradientTestFunctionLp_apply_ae (mu := mu) p phi) <| by
       filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) (Omega := Omega') p
         (TestFunction.monoCLM ℝ phi)] with x hx
-      rw [hx, coe_monoCLM hsub phi]
+      rw [hx, TestFunction.coe_monoCLM_of_le le_rfl hsub phi]
 
 /-- The zero-extension of a test-function jet is the jet of the same test function on the larger
 open set. -/
@@ -400,6 +396,35 @@ theorem W1p0.gradient_extendByZeroL_top_ae (u : W1p0 mu Omega p) :
     (W1p.gradient (W1p0.extendByZeroL le_top u : W1p mu ⊤ p) : E → E) =ᵐ[mu]
       (Omega : Set E).indicator (W1p.gradient (u : W1p mu Omega p) : E → E) := by
   simpa only [Opens.coe_top, Measure.restrict_univ] using W1p0.gradient_extendByZeroL_ae le_top u
+
+/-- **Zero extensions from an exhaustion are dense.** If a directed family of open sets `U k ⊆ Ω`
+covers `Ω`, then the zero extensions to `Ω` of the functions of `W^{1,p}_0(U k)`, over all `k`, are
+dense in `W^{1,p}_0(Ω)`. The compact support of a test function on `Ω` lies in a single `U k`, so
+every test function on `Ω` is such a zero extension. -/
+theorem W1p0.dense_iUnion_range_extendByZeroL {κ : Type*} [Nonempty κ] {U : κ → Opens E}
+    (hdir : Directed (· ≤ ·) U) (hU : ∀ k, U k ≤ Omega)
+    (hcover : (Omega : Set E) ⊆ ⋃ k, (U k : Set E)) :
+    Dense (⋃ k, range (W1p0.extendByZeroL (mu := mu) (p := p) (hU k))) := by
+  set D := ⋃ k, range (W1p0.extendByZeroL (mu := mu) (p := p) (hU k))
+  have htest : ∀ phi : 𝓓(Omega, ℝ),
+      W1p.ofTestFunctionₗ mu Omega p phi ∈ ((↑) '' D : Set (W1p mu Omega p)) := by
+    intro phi
+    obtain ⟨k, hk⟩ := phi.hasCompactSupport.isCompact.elim_directed_cover (fun k ↦ (U k : Set E))
+      (fun k ↦ (U k).isOpen) (phi.tsupport_subset.trans hcover)
+      (fun i j ↦ (hdir i j).imp fun _ h ↦ ⟨SetLike.coe_subset_coe.2 h.1,
+        SetLike.coe_subset_coe.2 h.2⟩)
+    let psi : 𝓓(U k, ℝ) := ⟨phi, phi.contDiff, phi.hasCompactSupport, hk⟩
+    refine ⟨W1p0.extendByZeroL (hU k) ⟨W1p.ofTestFunctionₗ mu (U k) p psi,
+      W1p.ofTestFunctionₗ_mem_w1p0Submodule psi⟩, mem_iUnion.2 ⟨k, mem_range_self _⟩, ?_⟩
+    refine Subtype.ext ?_
+    rw [W1p0.coe_extendByZeroL, Sobolev1JetLp.extendByZeroₗᵢ_ofTestFunctionₗ]
+    congr 2
+    exact TestFunction.ext fun x ↦ congrFun (TestFunction.coe_monoCLM_of_le le_rfl (hU k) psi) x
+  have hsub : (w1p0Submodule mu Omega p : Set (W1p mu Omega p)) ⊆ closure ((↑) '' D) :=
+    w1p0Submodule_subset_of_isClosed isClosed_closure fun phi ↦ subset_closure (htest phi)
+  intro u
+  rw [Topology.IsInducing.subtypeVal.closure_eq_preimage_closure_image]
+  exact hsub u.property
 
 /-- **The analytic content of the extension theorem.**  The zero-extension of `u ∈ W^{1,p}_0(Ω)`
 is weakly differentiable on the larger open set `Ω'`, with weak gradient the zero-extension of the

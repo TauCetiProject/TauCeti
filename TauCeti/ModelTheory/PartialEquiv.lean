@@ -23,6 +23,8 @@ the image under `g` of the codomain of `f`. It is monotone in both partial equiv
 * `FirstOrder.Language.PartialEquiv.toEquiv_apply_of_le`: a larger partial equivalence agrees
   with a smaller one on the smaller domain.
 * `FirstOrder.Language.PartialEquiv.mem_cod_comp`: the codomain of a composite.
+* `FirstOrder.Language.PartialEquiv.cod_comp_eq_cod_iff`: a composite has the codomain of the
+  second partial equivalence exactly when the codomain of the first is the domain of the second.
 * `FirstOrder.Language.PartialEquiv.comp_le_comp`: composition is monotone in both arguments.
 * `FirstOrder.Language.FGEquiv.exists_le_and_le_dom_of_fg`: in a family of finitely generated
   partial equivalences closed under forth extensions, every member extends to cover any finitely
@@ -43,21 +45,24 @@ theorem toEquiv_apply_of_le {f g : M ≃ₚ[L] N} (h : f ≤ g) {x : M} (hx : x 
     (g.toEquiv ⟨x, dom_le_dom h hx⟩ : N) = f.toEquiv ⟨x, hx⟩ :=
   congrArg Subtype.val (toEquiv_inclusion_apply h ⟨x, hx⟩)
 
+section comp
+
+variable (g : N ≃ₚ[L] P) (f : M ≃ₚ[L] N) (h : f.cod ≤ g.dom)
+
 /-- The composite of partial equivalences `f : M ≃ₚ[L] N` and `g : N ≃ₚ[L] P` when the codomain
 of `f` lies in the domain of `g`. It has the domain of `f`. -/
-noncomputable def comp (g : N ≃ₚ[L] P) (f : M ≃ₚ[L] N) (h : f.cod ≤ g.dom) : M ≃ₚ[L] P where
+noncomputable def comp : M ≃ₚ[L] P where
   dom := f.dom
   cod := (g.domRestrict h).cod
   toEquiv := (g.domRestrict h).toEquiv.comp f.toEquiv
 
 /-- The composite has the domain of the first partial equivalence. -/
 @[simp]
-theorem dom_comp (g : N ≃ₚ[L] P) (f : M ≃ₚ[L] N) (h : f.cod ≤ g.dom) :
-    (g.comp f h).dom = f.dom := (rfl)
+theorem dom_comp : (g.comp f h).dom = f.dom := (rfl)
 
 /-- The composite applies the first partial equivalence, then the second. -/
 @[simp]
-theorem comp_apply (g : N ≃ₚ[L] P) (f : M ≃ₚ[L] N) (h : f.cod ≤ g.dom) (x : (g.comp f h).dom) :
+theorem comp_apply (x : (g.comp f h).dom) :
     ((g.comp f h).toEquiv x : P) =
       g.toEquiv
         (Substructure.inclusion h (f.toEquiv (Substructure.inclusion (dom_comp g f h).le x))) :=
@@ -66,40 +71,41 @@ theorem comp_apply (g : N ≃ₚ[L] P) (f : M ≃ₚ[L] N) (h : f.cod ≤ g.dom)
 /-- The codomain of the composite is the image under the second partial equivalence of the
 codomain of the first. -/
 @[simp]
-theorem mem_cod_comp (g : N ≃ₚ[L] P) (f : M ≃ₚ[L] N) (h : f.cod ≤ g.dom) {p : P} :
+theorem mem_cod_comp {p : P} :
     p ∈ (g.comp f h).cod ↔ ∃ y : f.cod, (g.toEquiv (Substructure.inclusion h y) : P) = p :=
   Iff.rfl
 
 /-- The codomain of the composite lies in the codomain of the second partial equivalence. -/
-theorem cod_comp_le (g : N ≃ₚ[L] P) (f : M ≃ₚ[L] N) (h : f.cod ≤ g.dom) :
-    (g.comp f h).cod ≤ g.cod := by
-  intro p hp
-  obtain ⟨y, rfl⟩ := (mem_cod_comp g f h).1 hp
-  exact (g.toEquiv _).property
+theorem cod_comp_le : (g.comp f h).cod ≤ g.cod :=
+  -- The composite's codomain is, by definition, that of `g` restricted to `f.cod`.
+  cod_le_cod (g.domRestrict_le h)
 
-/-- When the codomain of the first partial equivalence is the domain of the second, the composite
-has the codomain of the second. -/
-theorem cod_comp_of_eq (g : N ≃ₚ[L] P) (f : M ≃ₚ[L] N) (h : f.cod ≤ g.dom) (he : f.cod = g.dom) :
-    (g.comp f h).cod = g.cod := by
-  refine le_antisymm (cod_comp_le g f h) fun p hp => (mem_cod_comp g f h).2 ?_
-  let z := g.toEquiv.symm ⟨p, hp⟩
-  exact ⟨⟨z, he.ge z.property⟩, by simp [z, Substructure.inclusion]⟩
+/-- The composite has the codomain of the second partial equivalence exactly when the codomain of
+the first is the domain of the second. -/
+@[simp]
+theorem cod_comp_eq_cod_iff : (g.comp f h).cod = g.cod ↔ f.cod = g.dom := by
+  refine ⟨fun he => h.antisymm fun n hn => ?_,
+    fun he => (cod_comp_le g f h).antisymm fun p hp => (mem_cod_comp g f h).2 ?_⟩
+  · -- `g` sends `n` into the codomain of the composite, so `n` is a value of `f`.
+    obtain ⟨y, hy⟩ := (mem_cod_comp g f h).1 (he.ge (g.toEquiv ⟨n, hn⟩).property)
+    have hyn : (y : N) = n := congrArg Subtype.val (g.toEquiv.injective (Subtype.ext hy))
+    exact hyn ▸ y.property
+  · let z := g.toEquiv.symm ⟨p, hp⟩
+    exact ⟨⟨z, he.ge z.property⟩, by simp [z, Substructure.inclusion]⟩
+
+end comp
 
 /-- Composition of partial equivalences is monotone in both arguments. -/
 theorem comp_le_comp {f f' : M ≃ₚ[L] N} {g g' : N ≃ₚ[L] P} (hf : f ≤ f') (hg : g ≤ g')
     (h : f.cod ≤ g.dom) (h' : f'.cod ≤ g'.dom) : g.comp f h ≤ g'.comp f' h' := by
-  have hdom : (g.comp f h).dom ≤ (g'.comp f' h').dom := by
-    rw [dom_comp, dom_comp]
-    exact dom_le_dom hf
-  refine (le_def _ _).2 ⟨hdom, ?_⟩
+  refine (le_def _ _).2 ⟨by simpa using dom_le_dom hf, ?_⟩
   ext ⟨x, hx⟩
   have hx' : x ∈ f.dom := (dom_comp g f h).le hx
-  have hf' := toEquiv_apply_of_le hf hx'
   simp only [Embedding.comp_apply, Equiv.coe_toEmbedding, Substructure.coe_subtype, comp_apply]
   -- Both sides apply `g'` and `g` to the same value of `f`.
   refine (congrArg (fun y : g'.dom => (g'.toEquiv y : P)) (Subtype.ext ?_)).trans
     (toEquiv_apply_of_le hg (h (f.toEquiv ⟨x, hx'⟩).property))
-  simpa using hf'
+  simpa using toEquiv_apply_of_le hf hx'
 
 end FirstOrder.Language.PartialEquiv
 

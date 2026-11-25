@@ -8,10 +8,10 @@ module
 public import Mathlib.Algebra.Lie.Sl2
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Basic
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.DiagonalCartan
-public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
+public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD.Basic
 public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
-import TauCeti.LinearAlgebra.Matrix.Alternating
+import TauCeti.LinearAlgebra.Matrix.Alternating.Basic
 import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
@@ -139,6 +139,12 @@ theorem forkLeft_ne_forkRight : forkLeft n hn ≠ forkRight n hn := by
   intro h
   have := congrArg Fin.val h
   simp [forkLeft, forkRight] at this
+  omega
+
+/-- A coordinate is the terminal one exactly when it has no successor in the chain. -/
+theorem not_add_one_lt_iff_eq_forkRight (i : Fin n) :
+    ¬(i : ℕ) + 1 < n ↔ i = forkRight n hn := by
+  rw [Fin.ext_iff, forkRight_val]
   omega
 
 /-- The penultimate fork coordinate precedes the terminal one. -/
@@ -620,10 +626,7 @@ private theorem lie_raisingMatrix_loweringMatrix_self {K : Type*} [CommRing K] (
       LieRing.of_associative_ring_bracket, Matrix.fromBlocks_multiply,
       Matrix.fromBlocks_multiply, Matrix.sub_mul, Matrix.mul_sub,
       DynkinType.typeDSimpleRoot_of_not_add_one_lt hn hi]
-    have hne : (⟨n - 2, by omega⟩ : Fin n) ≠ ⟨n - 1, by omega⟩ := by
-      intro h
-      simp [Fin.ext_iff] at h
-      omega
+    have hne : (⟨n - 2, by omega⟩ : Fin n) ≠ ⟨n - 1, by omega⟩ := forkLeft_ne_forkRight n hn
     ext (a | a) (b | b) <;>
       by_cases hab : a = b
     all_goals simp_all [Matrix.fromBlocks, typeDDiagonalMatrix_apply, Matrix.sub_mul,
@@ -634,10 +637,7 @@ private theorem lie_raisingMatrix_loweringMatrix_self {K : Type*} [CommRing K] (
 private theorem lie_raisingMatrix_loweringMatrix_chain_fork {K : Type*} [CommRing K]
     (i j : Fin n) (hi : (i : ℕ) + 1 < n) (hj : ¬(j : ℕ) + 1 < n) :
     ⁅raisingMatrix (K := K) n hn i, loweringMatrix (K := K) n hn j⁆ = 0 := by
-  have hir : i ≠ forkRight n hn := by
-    intro h
-    simp [forkRight, Fin.ext_iff] at h
-    omega
+  have hir : i ≠ forkRight n hn := fun h => (not_add_one_lt_iff_eq_forkRight n hn i).2 h hi
   by_cases hil : i = forkLeft n hn
   · subst i
     have hne := forkLeft_ne_forkRight n hn
@@ -676,10 +676,8 @@ private theorem lie_raisingMatrix_loweringMatrix_of_ne {K : Type*} [CommRing K]
       rw [Matrix.lie_transpose]
       simpa [loweringMatrix] using
         lie_raisingMatrix_loweringMatrix_chain_fork (K := K) n hn j i hj hi
-    · exfalso
-      apply hij
-      apply Fin.ext
-      omega
+    · exact absurd ((not_add_one_lt_iff_eq_forkRight n hn i).1 hi |>.trans
+        ((not_add_one_lt_iff_eq_forkRight n hn j).1 hj).symm) hij
 
 private theorem lie_raisingMatrix_raisingMatrix_chain_chain_of_cartan_eq_zero
     {K : Type*} [CommRing K] (i j : Fin n) (hi : (i : ℕ) + 1 < n)
@@ -708,10 +706,7 @@ private theorem lie_raisingMatrix_raisingMatrix_chain_fork_of_cartan_eq_zero
     (hj : ¬(j : ℕ) + 1 < n) (hij : CartanMatrix.D n i j = 0) :
     ⁅raisingMatrix (K := K) n hn i, raisingMatrix (K := K) n hn j⁆ = 0 := by
   have hne := forkLeft_ne_forkRight n hn
-  have hjfork : j = forkRight n hn := by
-    apply Fin.ext
-    simp [forkRight]
-    omega
+  have hjfork : j = forkRight n hn := (not_add_one_lt_iff_eq_forkRight n hn j).1 hj
   by_cases hil : i = forkLeft n hn
   · subst i
     rw [raisingMatrix_of_chain n hn hi, raisingMatrix_of_fork n hn hj,
@@ -752,9 +747,8 @@ private theorem lie_raisingMatrix_raisingMatrix_of_cartan_eq_zero
         exact ((CartanMatrix.D_isSymm n).apply j i).symm.trans hij
       rw [lie_raisingMatrix_raisingMatrix_chain_fork_of_cartan_eq_zero n hn j i hj hi hji,
         neg_zero]
-    · have heq : i = j := by
-        apply Fin.ext
-        omega
+    · have heq : i = j := (not_add_one_lt_iff_eq_forkRight n hn i).1 hi |>.trans
+        ((not_add_one_lt_iff_eq_forkRight n hn j).1 hj).symm
       subst j
       simp [CartanMatrix.D] at hij
 
@@ -944,10 +938,7 @@ theorem isSl2Triple_rootGenerator {K : Type*} [CommRing K] [Nontrivial K]
     · rw [DynkinType.typeDSimpleRoot_of_add_one_lt hn hi] at hentry
       have hne : i ≠ ⟨(i : ℕ) + 1, hi⟩ := by simp [Fin.ext_iff]
       simp [hne] at hentry
-    · have hi_last : i = ⟨n - 1, by omega⟩ := by
-        apply Fin.ext
-        simp
-        omega
+    · have hi_last : i = ⟨n - 1, by omega⟩ := (not_add_one_lt_iff_eq_forkRight n hn i).1 hi
       rw [hi_last, DynkinType.typeDSimpleRoot_of_not_add_one_lt hn] at hentry
       · have hne : n - 1 ≠ n - 2 := by omega
         simp [Fin.ext_iff, hne] at hentry
