@@ -262,24 +262,21 @@ theorem detLineProdMapLoopOperatorEquiv_eq_trans (hB : B.IsInvertible) :
 /-- **The asymptotic operator beside an invertible operator is Fredholm.** It is the direct sum of
 the Fredholm operator `J₀ L_S` and an invertible operator. -/
 theorem isFredholm_prodMap_loopOperator (hB : B.IsInvertible) :
-    ((I • loopOperator T S).prodMap B).IsFredholm := by
-  refine ContinuousLinearMap.IsFredholm.prodMap ?_ hB.isFredholm
-  rw [← smulIEquiv_comp, ContinuousLinearMap.isFredholm_equiv_comp]
-  exact isFredholm_loopOperator T S
+    ((I • loopOperator T S).prodMap B).IsFredholm :=
+  (isFredholm_I_smul_loopOperator T S).prodMap hB.isFredholm
 
 /-- **The asymptotic operator beside an invertible operator has index zero**: the index is additive
 under `prodMap`, `J₀ L_S` has the index zero of `L_S`, and the invertible `B` has index zero. -/
 @[simp]
 theorem index_prodMap_loopOperator (hB : B.IsInvertible) :
     ((I • loopOperator T S).prodMap B).index = 0 := by
-  have hL := (isFredholm_loopOperator T S).equiv_comp (smulIEquiv (CircleSobolev 0 F))
-  rw [smulIEquiv_comp] at hL
+  have hL := isFredholm_I_smul_loopOperator T S
   have := hL.finite_ker
   have := hL.finite_coker
   have := hB.isFredholm.finite_ker
   have := hB.isFredholm.finite_coker
   rw [ContinuousLinearMap.index_prodMap, B.index_eq_zero_of_bijective hB.bijective, add_zero,
-    ← smulIEquiv_comp, ContinuousLinearMap.index_equiv_comp, index_loopOperator]
+    index_I_smul_loopOperator]
 
 /-- For an invertible `B`, `(J₀ L_S) ⊕ B` is injective exactly when `L_S` is. -/
 theorem injective_prodMap_loopOperator_iff (hB : B.IsInvertible) :
