@@ -133,8 +133,9 @@ variable [FiniteDimensional ℝ E]
 `Δ (x ↦ x / ‖x‖²) = 2 (2 - n) ‖x‖⁻⁴ x`, where `n` is the dimension. -/
 theorem laplacian_inversion_zero_one {x : E} (hx : x ≠ 0) :
     Δ (inversion (0 : E) 1) x = (2 * (2 - finrank ℝ E) * ‖x‖ ^ (-4 : ℝ)) • x := by
-  have hid : Δ (fun y : E ↦ y) x = 0 :=
-    congrFun (laplacian_continuousLinearMap (ContinuousLinearMap.id ℝ E)) x
+  have hid : Δ (fun y : E ↦ y) x = 0 := by
+    simpa [ContinuousLinearMap.coe_id', Function.id_def] using
+      congrFun (laplacian_continuousLinearMap (ContinuousLinearMap.id ℝ E)) x
   -- The inversion is `y ↦ ‖y‖ ^ (-2) y`, including at the origin, where both sides vanish.
   have hinv : inversion (0 : E) 1 = fun y ↦ ‖y‖ ^ (-2 : ℝ) • y := by
     funext y
