@@ -29,10 +29,11 @@ Natural capacities can also be read through `Nat.cast` in any ordered additive g
 `0 ≤ 1`, such as `ℤ`, `ℚ` or `ℝ`. The flow `NatFlow.castFlow K f` over `K` is the integer flow
 `f` with its coefficients changed along the integer cast by `Flow.map`; it has the same natural
 arrow values, and its value is the cast of the value of `f`. Its range consists of the flows over
-`K` with natural arrow values, and when `1 ≠ 0` in `K` it is injective and preserves and reflects
-maximality. Changing its coefficients further along an order-preserving additive map
-`φ : K →+o L` with `φ 1 = 1`, such as `Rat.castOrderAddMonoidHom ℝ : ℚ →+o ℝ`, gives the flow
-over `L` with the same natural arrow values. A flow over `ℚ` with natural arrow values therefore
+`K` with natural arrow values. It always preserves maximality, and when `1 ≠ 0` in `K` it is
+injective and also reflects maximality. Changing its coefficients further along an
+order-preserving additive map `φ : K →+o L` with `φ 1 = 1`, such as
+`Rat.castOrderAddMonoidHom ℝ : ℚ →+o ℝ`, gives the flow over `L` with the same natural arrow
+values. A flow over `ℚ` with natural arrow values therefore
 has the same arrow values, value and maximality as the corresponding flows over `ℤ` and `ℝ`.
 Casting a maximum integer flow and its attaining natural cut gives a maximum flow over `K` with
 natural arrow values whose value is the cast of a natural cut capacity. Over linearly ordered `K`
@@ -48,8 +49,8 @@ this is the case `H = AddSubgroup.zmultiples 1` of the integrality theorem
 
 * `TauCeti.NatFlow.exists_castFlow_eq_iff`: a flow over `K` comes from an integer flow exactly
   when its arrow values are natural numbers.
-* `TauCeti.NatFlow.isMaximum_castFlow_iff`: `TauCeti.NatFlow.castFlow K` preserves and reflects
-  maximality.
+* `TauCeti.NatFlow.isMaximum_castFlow_iff`: when `1 ≠ 0` in `K`, `TauCeti.NatFlow.castFlow K`
+  preserves and reflects maximality.
 * `TauCeti.NatFlow.congr_map_castFlow`: changing coefficients along `K →+o L` takes
   `castFlow K f` to `castFlow L f`.
 * `TauCeti.Flow.exists_isMaximum_eq_natCast`: for natural capacities, some maximum flow over `K`

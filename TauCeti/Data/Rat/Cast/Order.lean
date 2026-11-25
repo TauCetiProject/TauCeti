@@ -18,8 +18,8 @@ This module complements `Mathlib.Data.Rat.Cast.Order` by generalizing `Rat.cast_
 `Rat.cast_mono` from linearly ordered fields to partially ordered strictly ordered fields with
 `PosMulReflectLT`.
 
-In a linearly ordered field, the rational cast is monotone (`Rat.cast_mono`) and additive, so
-it bundles as an order-preserving additive monoid homomorphism
+In such a field the rational cast is monotone (`Rat.cast_mono_of_partialOrder`) and additive,
+so it bundles as an order-preserving additive monoid homomorphism
 `Rat.castOrderAddMonoidHom K : ℚ →+o K`. This lets APIs that change coefficients along a map
 `K →+o L` move rational data to `K`, for example from `ℚ` to `ℝ`.
 
@@ -29,8 +29,8 @@ it bundles as an order-preserving additive monoid homomorphism
   ordered field with `PosMulReflectLT` preserves strict positivity.
 * `Rat.cast_mono_of_partialOrder`: casting from `ℚ` into a partially ordered strictly ordered
   field with `PosMulReflectLT` is monotone.
-* `Rat.castOrderAddMonoidHom`: the rational cast into a linearly ordered field, as an
-  order-preserving additive monoid homomorphism.
+* `Rat.castOrderAddMonoidHom`: the rational cast into a partially ordered strictly ordered
+  field with `PosMulReflectLT`, as an order-preserving additive monoid homomorphism.
 -/
 
 public section
@@ -58,19 +58,19 @@ theorem cast_mono_of_partialOrder {K : Type*} [Field K] [PartialOrder K]
     rw [Rat.cast_sub, sub_pos] at hpos
     exact hpos.le
 
-section LinearOrder
+section OrderAddMonoidHom
 
-variable (K : Type*) [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+variable (K : Type*) [Field K] [PartialOrder K] [IsStrictOrderedRing K] [PosMulReflectLT K]
 
-/-- The rational cast into a linearly ordered field, as an order-preserving additive monoid
-homomorphism. -/
+/-- The rational cast into a partially ordered strictly ordered field with `PosMulReflectLT`, as
+an order-preserving additive monoid homomorphism. -/
 def castOrderAddMonoidHom : ℚ →+o K :=
-  .mk' Rat.cast cast_mono cast_add
+  .mk' Rat.cast cast_mono_of_partialOrder cast_add
 
 @[simp]
 theorem coe_castOrderAddMonoidHom : ⇑(castOrderAddMonoidHom K) = Rat.cast :=
   (rfl)
 
-end LinearOrder
+end OrderAddMonoidHom
 
 end Rat
