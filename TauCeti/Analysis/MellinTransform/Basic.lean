@@ -19,8 +19,9 @@ on `Ioi a`. These identities let a Mellin transform be split into tails over `(0
 The substitution `t = e^{-u}` turns the Mellin integrand of `f` at `s` into
 `e^{-su} f(e^{-u})` on the whole real line, and the substitution `t ↦ 1/t` relates the Mellin
 transform of `t⁻¹ f(t⁻¹)` at `s` to that of `f` at `1 - s`, and exchanges the Mellin integrals
-over `(0, 1]` and `(1, ∞)`. Power bounds at `0+` and `+∞` give absolute convergence and
-holomorphy of these two partial Mellin integrals.
+over `(0, 1]` and `(1, ∞)`; the substitution `u = x t` moves their common endpoint `1` to `x`.
+Power bounds at `0+` and `+∞` give absolute convergence and holomorphy of these two partial
+Mellin integrals.
 
 The Mellin transform reads a function only on `(0, ∞)`, so functions agreeing there have the same
 transform, with the same convergence. Kernels that are extended by zero off `(0, ∞)` are compared
@@ -43,6 +44,9 @@ with their unextended forms this way.
   exchanges the Mellin integrals over `(0, 1]` and `(1, ∞)`, with their absolute convergence.
 * `TauCeti.integrableOn_Ioc_cpow_smul_cpow_smul`, `TauCeti.integral_Ioc_cpow_smul_cpow_smul`: for
   `0 < Re (z + w)`, `∫₀¹ t^{z-1} t^w c dt = c / (z + w)`, with absolute convergence.
+* `TauCeti.integral_Ioc_cpow_smul_comp_mul_left`, `TauCeti.integral_Ioi_cpow_smul_comp_mul_left`:
+  the substitution `u = x t` turns the Mellin integrals of `t ↦ g (x t)` over `(0, 1]` and
+  `(1, ∞)` into `x^{-z}` times those of `g` over `(0, x]` and `(x, ∞)`.
 * `TauCeti.integrableOn_Ioc_cpow_smul_of_isBigO`, `TauCeti.integrableOn_Ioi_cpow_smul_of_isBigO`,
   `TauCeti.differentiableAt_integral_Ioc_cpow_smul_of_isBigO`,
   `TauCeti.differentiableAt_integral_Ioi_cpow_smul_of_isBigO`: absolute convergence and
@@ -170,6 +174,39 @@ theorem integral_Ioc_cpow_smul_cpow_smul [CompleteSpace E] {z w : ℂ}
   rw [mellin_indicator_of_subset_Ioi _ measurableSet_Ioc Ioc_subset_Ioi_self] at h
   simp_rw [← smul_assoc]
   rw [integral_smul_const, h, one_div]
+
+/-- Rescaling the argument multiplies the Mellin integrand by a power: for `x > 0`,
+`t^{z-1} g(xt) = (x^{-z} x) ((xt)^{z-1} g(xt))`. -/
+private theorem cpow_smul_comp_mul_left (g : ℝ → E) (z : ℂ) {x : ℝ} (hx : 0 < x) (t : ℝ) :
+    (t : ℂ) ^ (z - 1) • g (x * t) =
+      ((x : ℂ) ^ (-z) * x) • (((x * t : ℝ) : ℂ) ^ (z - 1) • g (x * t)) := by
+  have hx0 : (x : ℂ) ≠ 0 := ofReal_ne_zero.mpr hx.ne'
+  have : (x : ℂ) ^ z ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl hx0)
+  rw [smul_smul, ofReal_mul, ofReal_mul_cpow hx.le, cpow_neg, cpow_sub _ _ hx0, cpow_one]
+  congr 1
+  field_simp
+
+/-- For `x > 0`, the Mellin integral over `(0, 1]` of `t ↦ g (x t)` is `x^{-z}` times the Mellin
+integral of `g` over `(0, x]`. -/
+theorem integral_Ioc_cpow_smul_comp_mul_left (g : ℝ → E) (z : ℂ) {x : ℝ} (hx : 0 < x) :
+    ∫ t : ℝ in Ioc 0 1, (t : ℂ) ^ (z - 1) • g (x * t) =
+      (x : ℂ) ^ (-z) • ∫ u : ℝ in Ioc 0 x, (u : ℂ) ^ (z - 1) • g u := by
+  have hx0 : (x : ℂ) ≠ 0 := ofReal_ne_zero.mpr hx.ne'
+  rw [setIntegral_congr_fun measurableSet_Ioc fun t _ ↦ cpow_smul_comp_mul_left g z hx t,
+    integral_smul, ← intervalIntegral.integral_of_le zero_le_one,
+    intervalIntegral.integral_comp_mul_left (fun u : ℝ ↦ (u : ℂ) ^ (z - 1) • g u) hx.ne',
+    mul_zero, mul_one, intervalIntegral.integral_of_le hx.le, ← Complex.coe_smul, smul_smul,
+    ofReal_inv, mul_assoc, mul_inv_cancel₀ hx0, mul_one]
+
+/-- For `x > 0`, the Mellin integral over `(1, ∞)` of `t ↦ g (x t)` is `x^{-z}` times the Mellin
+integral of `g` over `(x, ∞)`. -/
+theorem integral_Ioi_cpow_smul_comp_mul_left (g : ℝ → E) (z : ℂ) {x : ℝ} (hx : 0 < x) :
+    ∫ t : ℝ in Ioi 1, (t : ℂ) ^ (z - 1) • g (x * t) =
+      (x : ℂ) ^ (-z) • ∫ u : ℝ in Ioi x, (u : ℂ) ^ (z - 1) • g u := by
+  have hx0 : (x : ℂ) ≠ 0 := ofReal_ne_zero.mpr hx.ne'
+  rw [setIntegral_congr_fun measurableSet_Ioi fun t _ ↦ cpow_smul_comp_mul_left g z hx t,
+    integral_smul, integral_comp_mul_left_Ioi (fun u : ℝ ↦ (u : ℂ) ^ (z - 1) • g u) 1 hx,
+    mul_one, ← Complex.coe_smul, smul_smul, ofReal_inv, mul_assoc, mul_inv_cancel₀ hx0, mul_one]
 
 /-! ### Mellin integrals over `(0, 1]` and `(1, ∞)` from power bounds -/
 

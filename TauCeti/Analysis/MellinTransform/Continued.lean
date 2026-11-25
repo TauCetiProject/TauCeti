@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.MellinTransform
 public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
 import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
+import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.MellinTransform.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 
@@ -42,7 +43,10 @@ restriction on `z`: a nonzero coefficient `a_k` of an expansion with strictly in
 
 The two continuations are exchanged by the substitution `t ↦ t⁻¹`
 (`TauCeti.mellinContAtTop_eq_mellinContAtZero`), which is how the results at `+∞` are derived
-from those at `0+`.
+from those at `0+`. The split point `1` of the defining formulas may be moved to any `R > 0`, the
+explicit terms `a_k/(z + α_k)` becoming `a_k R^{z+α_k}/(z + α_k)`; with the substitution `u = x t`
+this shows that the continuation of `t ↦ f(x t)`, whose coefficients are `x^{α_k} a_k` (respectively
+`x^{-β_k} b_k`), is `x^{-z}` times that of `f`, as for the Mellin transform itself.
 
 These continuations are the analytic input of the Mellin-transform methods for the asymptotics
 of integrals `∫₀^∞ f(t) h(xt) dt` (DLMF §2.5(iii)) and of the distributional methods of DLMF §2.6.
@@ -69,6 +73,10 @@ of integrals `∫₀^∞ f(t) h(xt) dt` (DLMF §2.5(iii)) and of the distributio
   coefficient bounds the strip of absolute convergence.
 * `TauCeti.mellinContAtZero_spec`, `TauCeti.mellinContAtTop_spec`: these properties assembled
   for a continuation through an expansion with strictly increasing real parts of the exponents.
+* `TauCeti.mellinContAtZero_eq_split`, `TauCeti.mellinContAtTop_eq_split`: the defining formulas
+  with the split point `1` moved to any `R > 0`.
+* `TauCeti.mellinContAtZero_comp_mul_left`, `TauCeti.mellinContAtTop_comp_mul_left`: rescaling the
+  variable by `x > 0` multiplies the continuation by `x^{-z}`.
 
 ## References
 
@@ -94,6 +102,70 @@ private theorem locallyIntegrableOn_sum_cpow_smul (w : ℕ → ℂ) (c : ℕ →
   ContinuousOn.locallyIntegrableOn (continuousOn_finsetSum _ fun _ _ _ ht ↦
     ((continuousAt_ofReal_cpow_const _ _ (Or.inr (ne_of_gt ht))).smul
       continuousAt_const).continuousWithinAt) measurableSet_Ioi
+
+/-- The function `t ↦ t^z • g t` is locally integrable on `(0, ∞)` when `g` is. -/
+private theorem locallyIntegrableOn_cpow_smul {g : ℝ → E} (hg : LocallyIntegrableOn g (Ioi 0))
+    (z : ℂ) : LocallyIntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ z • g t) (Ioi 0) :=
+  hg.continuousOn_smul isOpen_Ioi.isLocallyClosed fun _ ht ↦
+    (continuousAt_ofReal_cpow_const _ _ (Or.inr (ne_of_gt ht))).continuousWithinAt
+
+/-! ### Moving the split point -/
+
+/-- Moving the common endpoint of `∫_{(0,1]} F + ∫_{(1,∞)} G` from `1` to `R > 0` adds
+`∫_1^R (F - G)`. -/
+private theorem integral_Ioc_add_integral_Ioi_eq {F G : ℝ → E}
+    (hF : LocallyIntegrableOn F (Ioi 0)) (hG : LocallyIntegrableOn G (Ioi 0))
+    (hF1 : IntegrableOn F (Ioc 0 1)) (hG1 : IntegrableOn G (Ioi 1)) {R : ℝ} (hR : 0 < R) :
+    (∫ t in Ioc 0 R, F t) + ∫ t in Ioi R, G t =
+      (∫ t in Ioc 0 1, F t) + (∫ t in Ioi 1, G t) + ∫ t in (1 : ℝ)..R, (F t - G t) := by
+  have hsub : uIcc 1 R ⊆ Ioi 0 := fun t ht ↦
+    (lt_min one_pos hR).trans_le (by simpa only [uIcc, mem_Icc] using ht.1)
+  have hFi := (hF.integrableOn_compact_subset hsub isCompact_uIcc).intervalIntegrable
+  have hGc := hG.integrableOn_compact_subset hsub isCompact_uIcc
+  have hGR : IntegrableOn G (Ioi R) := (hGc.union hG1).mono_set fun t ht ↦ by
+    by_cases h1 : 1 < t
+    · exact Or.inr h1
+    · exact Or.inl ⟨min_le_of_right_le (le_of_lt ht), le_max_of_le_left (not_lt.mp h1)⟩
+  rw [← intervalIntegral.integral_of_le hR.le, ← intervalIntegral.integral_of_le zero_le_one,
+    ← intervalIntegral.integral_add_adjacent_intervals
+      ((intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).mpr hF1) hFi,
+    ← intervalIntegral.integral_interval_add_Ioi' hGc.intervalIntegrable hGR,
+    intervalIntegral.integral_sub hFi hGc.intervalIntegrable]
+  abel
+
+/-- For `R > 0`, the segment between `1` and `R` avoids `0`. -/
+private theorem zero_notMem_uIcc_one {R : ℝ} (hR : 0 < R) : (0 : ℝ) ∉ uIcc 1 R := fun h ↦
+  (lt_min one_pos hR).not_ge (by simpa only [uIcc, mem_Icc] using h.1)
+
+/-- `∫_1^R t^{z-1} t^w c dt = (R^{z+w} - 1)/(z + w) c` for `R > 0` and `z + w ≠ 0`. -/
+private theorem integral_one_cpow_smul_cpow_smul [CompleteSpace E] {z w : ℂ} (hzw : z + w ≠ 0)
+    {R : ℝ} (hR : 0 < R) (c : E) :
+    ∫ t in (1 : ℝ)..R, (t : ℂ) ^ (z - 1) • ((t : ℂ) ^ w • c) =
+      ((z + w)⁻¹ * ((R : ℂ) ^ (z + w) - 1)) • c := by
+  have hcongr : EqOn (fun t : ℝ ↦ (t : ℂ) ^ (z - 1) • ((t : ℂ) ^ w • c))
+      (fun t : ℝ ↦ (t : ℂ) ^ (z + w - 1) • c) (uIcc 1 R) := fun t ht ↦ by
+    have ht0 : (t : ℂ) ≠ 0 := ofReal_ne_zero.mpr (ne_of_mem_of_not_mem ht (zero_notMem_uIcc_one hR))
+    simp only [smul_smul, ← cpow_add _ _ ht0]
+    ring_nf
+  rw [intervalIntegral.integral_congr hcongr, intervalIntegral.integral_smul_const,
+    integral_cpow (Or.inr ⟨fun h ↦ hzw (by linear_combination h), zero_notMem_uIcc_one hR⟩)]
+  simp only [sub_add_cancel, ofReal_one, one_cpow]
+  rw [div_eq_inv_mul]
+
+/-- `∫_1^R t^{z-1} ∑_{k<n} t^{w_k} c_k dt = ∑_{k<n} (R^{z+w_k} - 1)/(z + w_k) c_k`. -/
+private theorem integral_one_cpow_smul_sum [CompleteSpace E] {z : ℂ} {w : ℕ → ℂ} {n : ℕ}
+    (hzw : ∀ k < n, z + w k ≠ 0) {R : ℝ} (hR : 0 < R) (c : ℕ → E) :
+    ∫ t in (1 : ℝ)..R, (t : ℂ) ^ (z - 1) • ∑ k ∈ Finset.range n, (t : ℂ) ^ w k • c k =
+      ∑ k ∈ Finset.range n, ((z + w k)⁻¹ * ((R : ℂ) ^ (z + w k) - 1)) • c k := by
+  simp_rw [Finset.smul_sum]
+  rw [intervalIntegral.integral_finsetSum fun k _ ↦ ?_]
+  · exact Finset.sum_congr rfl fun k hk ↦
+      integral_one_cpow_smul_cpow_smul (hzw k (Finset.mem_range.mp hk)) hR (c k)
+  · refine ContinuousOn.intervalIntegrable fun t ht ↦ ?_
+    have ht0 : t ≠ 0 := ne_of_mem_of_not_mem ht (zero_notMem_uIcc_one hR)
+    exact ((continuousAt_ofReal_cpow_const _ _ (Or.inr ht0)).smul
+      ((continuousAt_ofReal_cpow_const _ _ (Or.inr ht0)).smul
+        continuousAt_const)).continuousWithinAt
 
 /-! ### Continuation through an expansion at `0+` -/
 
@@ -329,6 +401,59 @@ theorem mellinContAtZero_spec [CompleteSpace E] (hf : LocallyIntegrableOn f (Ioi
     exact mellinContAtZero_eq_mellin hexp hα
       (mellinConvergent_of_isBigO_rpow hf hb hz.2 hbot hz.1) n
 
+/-- The continuation at `0+` may be split at any `R > 0` instead of `1`:
+`∫₀^R t^{z-1} (f(t) - ∑_{k<n} a_k t^{α_k}) dt + ∑_{k<n} a_k R^{z+α_k}/(z + α_k)
+  + ∫_R^∞ t^{z-1} f(t) dt`, wherever the integrals of the defining formula converge and no
+`z + α_k` vanishes. -/
+theorem mellinContAtZero_eq_split [CompleteSpace E] (hf : LocallyIntegrableOn f (Ioi 0))
+    (h0 : IntegrableOn (fun t : ℝ ↦
+      (t : ℂ) ^ (z - 1) • (f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ α k • a k)) (Ioc 0 1))
+    (h1 : IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (z - 1) • f t) (Ioi 1))
+    (hz : ∀ k < n, z + α k ≠ 0) {R : ℝ} (hR : 0 < R) :
+    mellinContAtZero f a α n z =
+      (∫ t : ℝ in Ioc 0 R, (t : ℂ) ^ (z - 1) • (f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ α k • a k)) +
+        ∑ k ∈ Finset.range n, ((R : ℂ) ^ (z + α k) * (z + α k)⁻¹) • a k +
+        ∫ t : ℝ in Ioi R, (t : ℂ) ^ (z - 1) • f t := by
+  have h := integral_Ioc_add_integral_Ioi_eq
+    (locallyIntegrableOn_cpow_smul (hf.sub (locallyIntegrableOn_sum_cpow_smul α a n)) (z - 1))
+    (locallyIntegrableOn_cpow_smul hf (z - 1)) h0 h1 hR
+  simp only [Pi.sub_apply] at h
+  simp_rw [← smul_sub, sub_sub_cancel_left, smul_neg, intervalIntegral.integral_neg,
+    integral_one_cpow_smul_sum hz hR] at h
+  have hS : ∑ k ∈ Finset.range n, ((R : ℂ) ^ (z + α k) * (z + α k)⁻¹) • a k =
+      ∑ k ∈ Finset.range n, ((z + α k)⁻¹ * ((R : ℂ) ^ (z + α k) - 1)) • a k +
+        ∑ k ∈ Finset.range n, (z + α k)⁻¹ • a k := by
+    rw [← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun k _ ↦ by rw [← add_smul]; ring_nf
+  rw [mellinContAtZero_def, hS]
+  linear_combination (norm := module) -h
+
+/-- Rescaling the variable of the continuation at `0+`: the continuation of `t ↦ f (x t)`, whose
+expansion at `0+` has coefficients `x^{α_k} a_k`, is `x^{-z}` times that of `f`. -/
+theorem mellinContAtZero_comp_mul_left [CompleteSpace E] (hf : LocallyIntegrableOn f (Ioi 0))
+    (h0 : IntegrableOn (fun t : ℝ ↦
+      (t : ℂ) ^ (z - 1) • (f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ α k • a k)) (Ioc 0 1))
+    (h1 : IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (z - 1) • f t) (Ioi 1))
+    (hz : ∀ k < n, z + α k ≠ 0) {x : ℝ} (hx : 0 < x) :
+    mellinContAtZero (fun t ↦ f (x * t)) (fun k ↦ (x : ℂ) ^ α k • a k) α n z =
+      (x : ℂ) ^ (-z) • mellinContAtZero f a α n z := by
+  have hx0 : (x : ℂ) ≠ 0 := ofReal_ne_zero.mpr hx.ne'
+  have hsum (t : ℝ) : ∑ k ∈ Finset.range n, (t : ℂ) ^ α k • (x : ℂ) ^ α k • a k =
+      ∑ k ∈ Finset.range n, (((x * t : ℝ) : ℂ)) ^ α k • a k :=
+    Finset.sum_congr rfl fun k _ ↦ by rw [smul_smul, ofReal_mul, ofReal_mul_cpow hx.le, mul_comm]
+  have hI : ∫ t : ℝ in Ioc 0 1, (t : ℂ) ^ (z - 1) •
+      (f (x * t) - ∑ k ∈ Finset.range n, (t : ℂ) ^ α k • (x : ℂ) ^ α k • a k) =
+      (x : ℂ) ^ (-z) • ∫ u : ℝ in Ioc 0 x, (u : ℂ) ^ (z - 1) •
+        (f u - ∑ k ∈ Finset.range n, (u : ℂ) ^ α k • a k) := by
+    rw [← integral_Ioc_cpow_smul_comp_mul_left _ z hx]
+    exact setIntegral_congr_fun measurableSet_Ioc fun t _ ↦ by rw [hsum t]
+  rw [mellinContAtZero_def, hI, integral_Ioi_cpow_smul_comp_mul_left f z hx,
+    mellinContAtZero_eq_split hf h0 h1 hz hx, smul_add, smul_add, Finset.smul_sum]
+  congr 2
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [smul_smul, smul_smul, ← mul_assoc, ← cpow_add _ _ hx0, neg_add_cancel_left]
+  ring_nf
+
 end AtZero
 
 /-! ### Continuation through an expansion at `+∞` -/
@@ -512,6 +637,63 @@ theorem mellinContAtTop_spec [CompleteSpace E] (hf : LocallyIntegrableOn f (Ioi 
         isBigO_sub_sum_rpow_atTop (hexp.isBigO 0)
     exact mellinContAtTop_eq_mellin hexp hβ
       (mellinConvergent_of_isBigO_rpow hf htop hz.2 (by simpa only [neg_neg] using hc) hz.1) n
+
+/-- The continuation at `+∞` may be split at any `R > 0` instead of `1`:
+`∫₀^R t^{z-1} f(t) dt + ∫_R^∞ t^{z-1} (f(t) - ∑_{k<n} b_k t^{-β_k}) dt
+  - ∑_{k<n} b_k R^{z-β_k}/(z - β_k)`, wherever the integrals of the defining formula converge and
+no `z - β_k` vanishes. -/
+theorem mellinContAtTop_eq_split [CompleteSpace E] (hf : LocallyIntegrableOn f (Ioi 0))
+    (h0 : IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (z - 1) • f t) (Ioc 0 1))
+    (h1 : IntegrableOn (fun t : ℝ ↦
+      (t : ℂ) ^ (z - 1) • (f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-β k) • b k)) (Ioi 1))
+    (hz : ∀ k < n, z ≠ β k) {R : ℝ} (hR : 0 < R) :
+    mellinContAtTop f b β n z =
+      (∫ t : ℝ in Ioc 0 R, (t : ℂ) ^ (z - 1) • f t) +
+        (∫ t : ℝ in Ioi R, (t : ℂ) ^ (z - 1) •
+          (f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-β k) • b k)) -
+        ∑ k ∈ Finset.range n, ((R : ℂ) ^ (z - β k) * (z - β k)⁻¹) • b k := by
+  have h := integral_Ioc_add_integral_Ioi_eq (locallyIntegrableOn_cpow_smul hf (z - 1))
+    (locallyIntegrableOn_cpow_smul (hf.sub (locallyIntegrableOn_sum_cpow_smul _ b n)) (z - 1))
+    h0 h1 hR
+  simp only [Pi.sub_apply] at h
+  simp_rw [← smul_sub, sub_sub_cancel] at h
+  rw [integral_one_cpow_smul_sum (w := fun k ↦ -β k)
+    (fun k hk ↦ by rw [← sub_eq_add_neg]; exact sub_ne_zero.mpr (hz k hk)) hR] at h
+  simp only [← sub_eq_add_neg] at h
+  have hS : ∑ k ∈ Finset.range n, ((R : ℂ) ^ (z - β k) * (z - β k)⁻¹) • b k =
+      ∑ k ∈ Finset.range n, ((z - β k)⁻¹ * ((R : ℂ) ^ (z - β k) - 1)) • b k +
+        ∑ k ∈ Finset.range n, (z - β k)⁻¹ • b k := by
+    rw [← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun k _ ↦ by rw [← add_smul]; ring_nf
+  rw [mellinContAtTop_def, hS]
+  linear_combination (norm := module) -h
+
+/-- Rescaling the variable of the continuation at `+∞`: the continuation of `t ↦ f (x t)`, whose
+expansion at `+∞` has coefficients `x^{-β_k} b_k`, is `x^{-z}` times that of `f`. -/
+theorem mellinContAtTop_comp_mul_left [CompleteSpace E] (hf : LocallyIntegrableOn f (Ioi 0))
+    (h0 : IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (z - 1) • f t) (Ioc 0 1))
+    (h1 : IntegrableOn (fun t : ℝ ↦
+      (t : ℂ) ^ (z - 1) • (f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-β k) • b k)) (Ioi 1))
+    (hz : ∀ k < n, z ≠ β k) {x : ℝ} (hx : 0 < x) :
+    mellinContAtTop (fun t ↦ f (x * t)) (fun k ↦ (x : ℂ) ^ (-β k) • b k) β n z =
+      (x : ℂ) ^ (-z) • mellinContAtTop f b β n z := by
+  have hx0 : (x : ℂ) ≠ 0 := ofReal_ne_zero.mpr hx.ne'
+  have hsum (t : ℝ) :
+      ∑ k ∈ Finset.range n, (t : ℂ) ^ (-β k) • (x : ℂ) ^ (-β k) • b k =
+        ∑ k ∈ Finset.range n, (((x * t : ℝ) : ℂ)) ^ (-β k) • b k :=
+    Finset.sum_congr rfl fun k _ ↦ by rw [smul_smul, ofReal_mul, ofReal_mul_cpow hx.le, mul_comm]
+  have hI : ∫ t : ℝ in Ioi 1, (t : ℂ) ^ (z - 1) •
+      (f (x * t) - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-β k) • (x : ℂ) ^ (-β k) • b k) =
+      (x : ℂ) ^ (-z) • ∫ u : ℝ in Ioi x, (u : ℂ) ^ (z - 1) •
+        (f u - ∑ k ∈ Finset.range n, (u : ℂ) ^ (-β k) • b k) := by
+    rw [← integral_Ioi_cpow_smul_comp_mul_left _ z hx]
+    exact setIntegral_congr_fun measurableSet_Ioi fun t _ ↦ by rw [hsum t]
+  rw [mellinContAtTop_def, hI, integral_Ioc_cpow_smul_comp_mul_left f z hx,
+    mellinContAtTop_eq_split hf h0 h1 hz hx, smul_sub, smul_add, Finset.smul_sum]
+  congr 1
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [smul_smul, smul_smul, ← mul_assoc, ← cpow_add _ _ hx0]
+  ring_nf
 
 end AtTop
 
