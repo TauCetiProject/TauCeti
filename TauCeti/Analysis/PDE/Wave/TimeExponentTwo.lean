@@ -55,7 +55,9 @@ interval of times containing `0` agrees there with the free solution for `f = u(
 (`ContDiffBump.exists_eLpNorm_eLpNorm_le_tsum_of_isWaveSolutionOn_of_le_endpoint`). Together with
 the pairs with `q > 2` of `TauCeti.Analysis.PDE.Wave.HomogeneousStrichartz` and
 `TauCeti.Analysis.PDE.Wave.SobolevStrichartz`, which also treat `q = ∞`, this gives the
-homogeneous estimates of Tao's Theorem 2.6 at every wave-admissible pair in dimension `n ≥ 4`.
+homogeneous estimates of Tao's Theorem 2.6 at every wave-admissible pair with finite `r` in
+dimension `n ≥ 4`. At `r = ∞` only the forms with `\dot B^γ_{2,1}` and `\dot B^{γ - 1}_{2,1}` data
+are proved, not the `\dot H^γ × \dot H^{γ - 1}` form of Tao's theorem.
 
 At the pairs `(2, r)` with `r > r₀` the abstract endpoint theorem does not apply directly. Instead
 the estimates come from the endpoint ones by **Bernstein's inequality**: some dyadic multiplier
