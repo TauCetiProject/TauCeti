@@ -25,6 +25,9 @@ classification of its irreducible finite-dimensional continuous representations.
 
 ## Main definitions
 
+* `TauCeti.ClassFieldTheory.WeilGroupReal.compNormHomEquiv A`: precomposition with the norm
+  identifies continuous homomorphisms `ℝˣ → A` with continuous homomorphisms `W_ℝ → A`, for any
+  commutative topological group `A`.
 * `TauCeti.ClassFieldTheory.WeilGroupReal.character s ε`: the character
   `w ↦ |norm w| ^ s * sgn(norm w) ^ ε` of `W_ℝ`.
 * `TauCeti.ClassFieldTheory.WeilGroupReal.characterEquiv`: the continuous characters of `W_ℝ` are
@@ -47,15 +50,26 @@ public section
 
 namespace TauCeti.ClassFieldTheory.WeilGroupReal
 
-/-- **Continuous homomorphisms from `W_ℝ` to a commutative group factor through the norm.** The
-kernel of the norm is the commutator subgroup, which every homomorphism into a commutative group
-kills, and the norm is a quotient map. -/
+/-- **Continuous homomorphisms from `W_ℝ` to a commutative group are those of `ℝˣ`.**
+Precomposition with the norm identifies them: the kernel of the norm is the commutator subgroup,
+which every homomorphism into a commutative group kills, and the norm is a quotient map. -/
+noncomputable def compNormHomEquiv (A : Type*) [CommGroup A] [TopologicalSpace A] :
+    (ℝˣ →ₜ* A) ≃ (WeilGroupReal →ₜ* A) :=
+  (ContinuousMonoidHom.homEquivOfIsQuotientMap normHom
+      (funext normHom_apply ▸ isQuotientMap_norm)).trans <|
+    Equiv.subtypeUnivEquiv fun χ ↦ by
+      rw [toMonoidHom_normHom, ker_norm]
+      exact Group.Abelianization.commutator_le_ker _
+
+@[simp]
+theorem compNormHomEquiv_apply {A : Type*} [CommGroup A] [TopologicalSpace A] (ψ : ℝˣ →ₜ* A) :
+    compNormHomEquiv A ψ = ψ.comp normHom := by
+  simp [compNormHomEquiv]
+
+/-- **Continuous homomorphisms from `W_ℝ` to a commutative group factor through the norm.** -/
 theorem exists_eq_comp_normHom {A : Type*} [CommGroup A] [TopologicalSpace A]
-    (χ : WeilGroupReal →ₜ* A) : ∃ ψ : ℝˣ →ₜ* A, χ = ψ.comp normHom := by
-  have hker : (normHom : WeilGroupReal →* ℝˣ).ker ≤ (χ : WeilGroupReal →* A).ker :=
-    ker_norm.trans_le (Group.Abelianization.commutator_le_ker _)
-  exact ⟨.liftOfIsQuotientMap normHom isQuotientMap_norm χ hker,
-    (ContinuousMonoidHom.liftOfIsQuotientMap_comp normHom isQuotientMap_norm χ hker).symm⟩
+    (χ : WeilGroupReal →ₜ* A) : ∃ ψ : ℝˣ →ₜ* A, χ = ψ.comp normHom :=
+  ⟨(compNormHomEquiv A).symm χ, by rw [← compNormHomEquiv_apply, Equiv.apply_symm_apply]⟩
 
 /-- **The character `w ↦ |norm w| ^ s * sgn(norm w) ^ ε` of `W_ℝ`**, the pullback along the norm of
 the character `x ↦ |x| ^ s * sgn(x) ^ ε` of `ℝˣ`. Every continuous character of `W_ℝ` is one of
@@ -64,8 +78,8 @@ noncomputable def character (s : ℂ) (ε : ZMod 2) : WeilGroupReal →ₜ* ℂ�
   (realUnitsCharacter s ε).comp normHom
 
 theorem character_apply (s : ℂ) (ε : ZMod 2) (w : WeilGroupReal) :
-    character s ε w = realUnitsCharacter s ε (norm w) :=
-  (rfl)
+    character s ε w = realUnitsCharacter s ε (norm w) := by
+  rw [character, ContinuousMonoidHom.coe_comp, Function.comp_apply, normHom_apply]
 
 /-- On `z ∈ ℂˣ`, the character `character s ε` is `z ↦ |z| ^ (2 * s)`: the norm is `|z|²`, a
 positive real number. -/
@@ -86,48 +100,40 @@ theorem character_add (s t : ℂ) (ε η : ZMod 2) :
   ext w
   simp [character_apply, ContinuousMonoidHom.mul_apply]
 
-/-- **Every continuous character of `W_ℝ` is `character s ε`.** -/
-theorem exists_eq_character (χ : WeilGroupReal →ₜ* ℂˣ) :
-    ∃ (s : ℂ) (ε : ZMod 2), χ = character s ε := by
-  obtain ⟨ψ, rfl⟩ := exists_eq_comp_normHom χ
-  obtain ⟨s, ε, rfl⟩ := exists_eq_realUnitsCharacter ψ
-  exact ⟨s, ε, rfl⟩
-
-/-- The parameters of `character s ε` are determined by the character, since the norm is
-surjective. -/
-theorem character_injective2 : Function.Injective2 character := by
-  intro s t ε η h
-  refine realUnitsCharacter_injective2 (ContinuousMonoidHom.ext fun x ↦ ?_)
-  obtain ⟨w, rfl⟩ := norm_surjective x
-  exact DFunLike.congr_fun h w
-
-@[simp]
-theorem character_inj {s t : ℂ} {ε η : ZMod 2} :
-    character s ε = character t η ↔ s = t ∧ ε = η :=
-  character_injective2.eq_iff
-
 /-- **Classification of the continuous characters of `W_ℝ`.** They are exactly the characters
 `character s ε`, for unique `s : ℂ` and `ε : ZMod 2`, and multiplying characters adds their
-parameters. -/
+parameters: the classification `TauCeti.realUnitsCharacterEquiv` of the characters of `ℝˣ`,
+followed by precomposition with the norm. -/
 noncomputable def characterEquiv : Multiplicative (ℂ × ZMod 2) ≃* (WeilGroupReal →ₜ* ℂˣ) :=
-  MulEquiv.ofBijective
-    ({ toFun p := character p.toAdd.1 p.toAdd.2
-       map_one' := by
-         ext w
-         simp [character_apply]
-       map_mul' _ _ := character_add _ _ _ _ } : Multiplicative (ℂ × ZMod 2) →* _)
-    ⟨character_injective2.uncurry.comp Multiplicative.toAdd.injective, fun χ ↦
-      let ⟨s, ε, h⟩ := exists_eq_character χ
-      ⟨.ofAdd (s, ε), h.symm⟩⟩
+  realUnitsCharacterEquiv.trans <| .mk' (compNormHomEquiv ℂˣ) fun ψ φ ↦ by
+    ext w
+    simp
 
 @[simp]
 theorem characterEquiv_apply (s : ℂ) (ε : ZMod 2) :
-    characterEquiv (.ofAdd (s, ε)) = character s ε :=
-  (rfl)
+    characterEquiv (.ofAdd (s, ε)) = character s ε := by
+  rw [characterEquiv, MulEquiv.trans_apply, realUnitsCharacterEquiv_apply]
+  exact compNormHomEquiv_apply _
 
 @[simp]
 theorem characterEquiv_symm_apply (s : ℂ) (ε : ZMod 2) :
     characterEquiv.symm (character s ε) = .ofAdd (s, ε) := by
   rw [MulEquiv.symm_apply_eq, characterEquiv_apply]
+
+/-- **Every continuous character of `W_ℝ` is `character s ε`.** -/
+theorem exists_eq_character (χ : WeilGroupReal →ₜ* ℂˣ) :
+    ∃ (s : ℂ) (ε : ZMod 2), χ = character s ε := by
+  obtain ⟨p, rfl⟩ := characterEquiv.surjective χ
+  exact ⟨p.toAdd.1, p.toAdd.2, characterEquiv_apply p.toAdd.1 p.toAdd.2⟩
+
+/-- The parameters of `character s ε` are determined by the character. -/
+theorem character_injective2 : Function.Injective2 character := fun s t ε η h ↦ by
+  simpa using characterEquiv.injective <|
+    (characterEquiv_apply s ε).trans (h.trans (characterEquiv_apply t η).symm)
+
+@[simp]
+theorem character_inj {s t : ℂ} {ε η : ZMod 2} :
+    character s ε = character t η ↔ s = t ∧ ε = η :=
+  character_injective2.eq_iff
 
 end TauCeti.ClassFieldTheory.WeilGroupReal

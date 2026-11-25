@@ -406,11 +406,16 @@ theorem continuous_norm : Continuous norm := by
     ((continuous_imJ.comp h).pow 2)).sub ((continuous_imK.comp h).pow 2)
 
 /-- The norm `W_ℝ → ℝˣ`, `z ↦ |z|²`, `j ↦ -1`, as a continuous homomorphism. -/
-@[expose] def normHom : WeilGroupReal →ₜ* ℝˣ :=
+def normHom : WeilGroupReal →ₜ* ℝˣ :=
   ⟨norm, continuous_norm⟩
 
 @[simp]
 theorem normHom_apply (w : WeilGroupReal) : normHom w = norm w :=
+  (rfl)
+
+/-- The underlying homomorphism of `normHom` is `norm`. -/
+@[simp]
+theorem toMonoidHom_normHom : (normHom : WeilGroupReal →* ℝˣ) = norm :=
   (rfl)
 
 /-- **The norm is negative exactly on `jℂˣ`.** -/
