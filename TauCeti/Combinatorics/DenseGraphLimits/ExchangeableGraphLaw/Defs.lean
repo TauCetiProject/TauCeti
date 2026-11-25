@@ -5,7 +5,7 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.Combinatorics.SimpleGraph.Measurable
+public import TauCeti.Combinatorics.SimpleGraph.Measurable.Basic
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 import Mathlib.MeasureTheory.Measure.Dirac.Basic
 import TauCeti.MeasureTheory.Measure.WellFoundedOrder

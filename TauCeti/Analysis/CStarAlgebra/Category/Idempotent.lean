@@ -243,12 +243,11 @@ theorem exists_split_iff (he : e ≫ e = e) (Y : C) :
   exact ⟨v, e ≫ dagger v, by rw [reassoc_of% hve, hv], by
     rw [Category.assoc, hvp, comp_idempotentRangeProjection he]⟩
 
-/-- A C*-category is idempotent complete exactly when every self-adjoint idempotent `p : X ⟶ X`
-has a unitary splitting: an isometry `v : Y ⟶ X`, with `v ≫ dagger v = 𝟙 Y`, such that
+/-- A C*-category is idempotent complete exactly when it has unitary splittings: every self-adjoint
+idempotent `p : X ⟶ X` has an isometry `v : Y ⟶ X`, with `v ≫ dagger v = 𝟙 Y`, such that
 `dagger v ≫ v = p`. -/
-theorem isIdempotentComplete_iff : IsIdempotentComplete C ↔
-    ∀ (X : C) (p : X ⟶ X), dagger p = p → p ≫ p = p →
-      ∃ (Y : C) (v : Y ⟶ X), v ≫ dagger v = 𝟙 Y ∧ dagger v ≫ v = p := by
+theorem isIdempotentComplete_iff : IsIdempotentComplete C ↔ HasUnitarySplittings C := by
+  rw [hasUnitarySplittings_iff]
   refine ⟨fun h X p hp hpp => ?_, fun h => ⟨fun X e he => ?_⟩⟩
   · obtain ⟨Y, i, r, hir, hri⟩ := h.idempotents_split X p hpp
     obtain ⟨v, hv, hvp⟩ := exists_isometry_of_split hir hri

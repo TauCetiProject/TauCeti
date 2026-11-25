@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.AdicCompletion.Topology
 public import TauCeti.RingTheory.WittVector.Complete
-public import TauCeti.RingTheory.WittVector.TeichmullerCoeff
+public import TauCeti.RingTheory.WittVector.Teichmuller.Coeff
 public import TauCeti.RingTheory.WittVector.Units
 
 import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
@@ -39,14 +39,15 @@ nilpotent `ϖ` and every `α`, primitivity is invariant under multiplication by 
 of a primitive element that is itself distinguished is a unit multiple. Over a perfect ring, every
 primitive element is moreover a unit multiple of some `p + [ϖ] α`.
 
-Over a perfect ring `S` of characteristic `p`, let `ϖ` be a nonzerodivisor and `ξ = [ξ₀] + p u` a
-distinguished element with `ξ₀` in the radical of `(ϖ)`. Modulo `[ϖ]` the relation `ξ x = 0` reads
-`p u x = -[ξ₀] x`, and raising it to a power that puts `[ξ₀]` into `([ϖ])` shows that `[ϖ]` divides
-`x`, since `p` only shifts Teichmüller coordinates. So `ξ` is a nonzerodivisor modulo `[ϖ]`, `[ϖ]`
-is a nonzerodivisor modulo `ξ`, and, if `S` is `ϖ`-adically separated, `ξ` is a nonzerodivisor of
-`𝕎 S`. For `S = R⁺` the ring of integral elements of a perfectoid Tate ring of characteristic `p`
-and `ϖ` a pseudouniformiser, this applies to every primitive `ξ`. These are the regularity
-properties used to construct the untilt `𝕎 R⁺ ⧸ (ξ)`.
+Over a perfect ring `S` of characteristic `p`, let `ξ = [ξ₀] + p u` be a distinguished element
+with `ξ₀` in the radical of `(ϖ)`. Modulo `[ϖ]` the relation `ξ x = 0` reads `p u x = -[ξ₀] x`, and
+raising it to a power that puts `[ξ₀]` into `([ϖ])` shows that `[ϖ]` divides `x`, since `p` only
+shifts Teichmüller coordinates. So `ξ` is a nonzerodivisor modulo every power of `[ϖ]`, and, if
+`S` is `ϖ`-adically separated, `ξ` is a nonzerodivisor of `𝕎 S`; no regularity of `ϖ` is needed for
+this. If moreover `ϖ` is a nonzerodivisor, `[ϖ]` is a nonzerodivisor modulo `ξ`. For `S = R⁺`
+the ring of integral elements of a perfectoid Tate ring of characteristic `p` and `ϖ` a
+pseudouniformiser, this applies to every primitive `ξ`. These are the regularity properties used
+to construct the untilt `𝕎 R⁺ ⧸ (ξ)`.
 
 ## Main definitions
 
@@ -415,26 +416,17 @@ theorem IsDistinguished.teichmuller_pow_dvd_of_dvd_mul {ξ : 𝕎 S} (hξ : ξ.I
   exact Ideal.pow_mem_pow hN n
 
 /-- **Distinguished elements are nonzerodivisors.** Over a perfect ring `S` of characteristic `p`
-which is `ϖ`-adically separated for a nonzerodivisor `ϖ`, a distinguished Witt vector `ξ` whose
-zeroth Witt coordinate lies in the radical of `(ϖ)` is a nonzerodivisor of `𝕎 S`. Indeed, if
-`ξ x = 0`, then `[ϖ] ^ n` divides `x` for every `n`, so `x = 0` (Scholze, *Étale cohomology of
-diamonds*, Lemma 3.16; Bhatt–Morrow–Scholze, *Integral `p`-adic Hodge theory*, Lemma 3.10). -/
+which is `ϖ`-adically separated, a distinguished Witt vector `ξ` whose zeroth Witt coordinate lies
+in the radical of `(ϖ)` is a nonzerodivisor of `𝕎 S`. Indeed, if `ξ x = 0`, then `[ϖ] ^ n` divides
+`x` for every `n`, so `x = 0` (Scholze, *Étale cohomology of diamonds*, Lemma 3.16;
+Bhatt–Morrow–Scholze, *Integral `p`-adic Hodge theory*, Lemma 3.10). No regularity of `ϖ` is
+needed, so this applies over perfect rings with zero divisors. -/
 theorem IsDistinguished.mem_nonZeroDivisors {ξ : 𝕎 S} (hξ : ξ.IsDistinguished)
-    (hξ₀ : ξ.coeff 0 ∈ (Ideal.span {ϖ}).radical) (hϖ : ϖ ∈ S⁰)
-    [IsHausdorff (Ideal.span {ϖ}) S] : ξ ∈ (𝕎 S)⁰ := by
-  have hϖ' : teichmuller p ϖ ∈ (𝕎 S)⁰ := teichmuller_mem_nonZeroDivisors_iff.mpr hϖ
-  have key (n : ℕ) : ∀ x, ξ * x = 0 → teichmuller p ϖ ^ n ∣ x := by
-    induction n with
-    | zero => exact fun x _ ↦ by simp
-    | succ n ih =>
-      intro x hx
-      obtain ⟨y, rfl⟩ := hξ.teichmuller_dvd_of_dvd_mul hξ₀ (hx ▸ dvd_zero _)
-      rw [pow_succ']
-      refine mul_dvd_mul_left _ (ih y ?_)
-      rwa [← mul_left_mem_nonZeroDivisors_eq_zero_iff hϖ', mul_left_comm]
+    (hξ₀ : ξ.coeff 0 ∈ (Ideal.span {ϖ}).radical) [IsHausdorff (Ideal.span {ϖ}) S] :
+    ξ ∈ (𝕎 S)⁰ := by
   refine mem_nonZeroDivisors_iff_left.mpr fun x hx ↦
     (isHausdorff_span_p_teichmuller (p := p) ϖ).haus x fun n ↦ ?_
-  obtain ⟨y, rfl⟩ := key n x hx
+  obtain ⟨y, rfl⟩ := hξ.teichmuller_pow_dvd_of_dvd_mul hξ₀ (n := n) (hx ▸ dvd_zero _)
   rw [smul_eq_mul, Ideal.mul_top, SModEq.zero]
   exact Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow (Ideal.subset_span (by simp)) n)
 
@@ -455,19 +447,19 @@ theorem IsDistinguished.mk_teichmuller_mem_nonZeroDivisors {ξ : 𝕎 S} (hξ : 
   exact ⟨w, hz⟩
 
 /-- **Primitive elements are nonzerodivisors.** Let `S` be a perfect topological ring of
-characteristic `p` and `ϖ` a nonzerodivisor such that `S` is `ϖ`-adically separated and `(ϖ)` is a
+characteristic `p` and `ϖ` an element such that `S` is `ϖ`-adically separated and `(ϖ)` is a
 neighbourhood of `0`, for instance `S = R⁺` and `ϖ` a pseudouniformiser of a perfectoid Tate pair
 `(R, R⁺)` of characteristic `p`. Then every primitive `ξ : 𝕎 S` is a nonzerodivisor (Scholze,
 *Étale cohomology of diamonds*, Lemma 3.16). -/
 theorem IsPrimitive.mem_nonZeroDivisors [TopologicalSpace S] {ξ : 𝕎 S} (hξ : ξ.IsPrimitive)
-    (hϖ : ϖ ∈ S⁰) [IsHausdorff (Ideal.span {ϖ}) S] (hϖ₀ : (Ideal.span {ϖ} : Set S) ∈ 𝓝 0) :
+    [IsHausdorff (Ideal.span {ϖ}) S] (hϖ₀ : (Ideal.span {ϖ} : Set S) ∈ 𝓝 0) :
     ξ ∈ (𝕎 S)⁰ :=
   hξ.isDistinguished.mem_nonZeroDivisors
-    (hξ.isTopologicallyNilpotent_coeff_zero.eventually_mem hϖ₀).exists hϖ
+    (hξ.isTopologicallyNilpotent_coeff_zero.eventually_mem hϖ₀).exists
 
-/-- **`[ϖ]` is a nonzerodivisor modulo a primitive element.** Under the hypotheses of
-`WittVector.IsPrimitive.mem_nonZeroDivisors` except separatedness, the image of `[ϖ]` in
-`𝕎 S ⧸ (ξ)` is a nonzerodivisor for every primitive `ξ`. -/
+/-- **`[ϖ]` is a nonzerodivisor modulo a primitive element.** Let `S` be a perfect topological
+ring of characteristic `p`, and `ϖ` a nonzerodivisor of `S` such that `(ϖ)` is a neighbourhood of
+`0`. Then the image of `[ϖ]` in `𝕎 S ⧸ (ξ)` is a nonzerodivisor for every primitive `ξ`. -/
 theorem IsPrimitive.mk_teichmuller_mem_nonZeroDivisors [TopologicalSpace S] {ξ : 𝕎 S}
     (hξ : ξ.IsPrimitive) (hϖ : ϖ ∈ S⁰) (hϖ₀ : (Ideal.span {ϖ} : Set S) ∈ 𝓝 0) :
     Ideal.Quotient.mk (Ideal.span {ξ}) (teichmuller p ϖ) ∈ (𝕎 S ⧸ Ideal.span {ξ})⁰ :=

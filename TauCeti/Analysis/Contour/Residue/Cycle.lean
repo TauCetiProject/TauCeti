@@ -6,25 +6,31 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Contour.PolarPart.Decomposition
-public import TauCeti.Analysis.Contour.Winding.Number.Basic
-import TauCeti.Analysis.Contour.PerWindow.HigherOrder
+import TauCeti.Analysis.Contour.HigherOrder.Asymptotics
+import TauCeti.Analysis.Contour.Winding.Number.AbsolutelyContinuous
 
 /-!
 # The classical residue theorem for an arbitrary null-homologous cycle
 
-For `f` differentiable on `U ∖ S` and meromorphic at each point of the finite set `S` lying in
-`U`, and a **closed, null-homologous** piecewise-`C¹` curve `γ` in `U` that **avoids** `S`,
+For `f` differentiable on `U ∖ S`, with `U` open, and meromorphic at each point of the finite set
+`S` lying in `U`, and a **closed, null-homologous** absolutely continuous curve `γ` in `U` that
+**avoids** `S`,
 
 `∫ t in a..b, γ' t • f (γ t) = 2πi · ∑_{s ∈ S} n_s(γ) · Res_s f`,
 
 where `n_s(γ)` is the generalized winding number of `γ` about `s`. This is the general
 arbitrary-cycle form of the classical residue theorem, and it generalizes the circle theorem
-(`Contour.classicalResidueTheorem_circle`): the contour is an arbitrary
-piecewise-`C¹` loop rather than a round circle, and each pole is weighted by its winding number
-rather than by `1`. Null-homology is not decoration — on a general holomorphy domain `Ω`, a loop
-that merely avoids the poles need not integrate to the residue sum (a loop around a hole of `Ω`
-sees the function's behaviour there), so `n_w(γ) = 0` for every `w ∉ Ω` is exactly the hypothesis
-that rules this out. Its `S = ∅` case is the homology Cauchy theorem.
+(`Contour.classicalResidueTheorem_circle`): the contour is an arbitrary absolutely continuous
+loop rather than a round circle, and each pole is weighted by its winding number rather than by
+`1`. Null-homology is not decoration — on a general holomorphy domain `Ω`, a loop that merely
+avoids the poles need not integrate to the residue sum (a loop around a hole of `Ω` sees the
+function's behaviour there), so `n_w(γ) = 0` for every `w ∉ Ω` is exactly the hypothesis that
+rules this out. Its `S = ∅` case is the homology Cauchy theorem.
+
+Absolute continuity is the natural regularity for the contour integral
+`∫ t in a..b, γ' t • f (γ t)`: it makes `γ'` exist almost everywhere and be interval-integrable,
+and makes `γ` the integral of `γ'`. Every piecewise-`C¹` curve is absolutely continuous
+(`TauCeti.IsPiecewiseC1On.absolutelyContinuousOnInterval`).
 
 The proof is the classical three-line argument, over the pieces the repository already has. The
 polar-part decomposition (`Contour.PolarPartDecomposition.ofMeromorphic`) writes
@@ -42,8 +48,8 @@ Unlike the Hungerbühler–Wasem generalized residue theorem
 here needs an immersion, a principal value, or the conditions (A′)/(B): with the poles off the
 contour every integral in sight is an ordinary interval integral. Conversely this statement is
 *not* a specialization of the HW theorem, which asks for the strictly stronger
-`Contour.IsPwC1ImmersionOn` regularity, so a piecewise-`C¹` loop with a zero-speed seam is covered
-here and not there.
+`Contour.IsPwC1ImmersionOn` regularity, so an absolutely continuous loop that is not a
+piecewise-`C¹` immersion — one with a zero-speed seam, say — is covered here and not there.
 
 ## Main results
 
@@ -83,25 +89,24 @@ namespace PolarPartDecomposition
 variable {f : ℂ → ℂ} {S : Finset ℂ} {U : Set ℂ}
 
 /-- **The contour integral of a polar part is the winding-weighted residue.** Around a closed
-piecewise-`C¹` curve missing the pole `s`, the finite Laurent tail of `f` at `s` integrates to
-`2πi · n_s(γ) · Res_s f`: the simple-pole coefficient contributes the index integral, which is
-`2πi` times the generalized winding number since the principal value collapses to an ordinary
-integral off the curve, and every higher-order coefficient contributes zero
-(`Contour.integral_pow_inv_mul_deriv_eq_zero_of_closed`). -/
+absolutely continuous curve missing the pole `s`, the finite Laurent tail of `f` at `s` integrates
+to `2πi · n_s(γ) · Res_s f`. -/
 theorem intervalIntegral_deriv_smul_polarPart (decomp : PolarPartDecomposition f S U) (s : S)
-    {γ : ℝ → ℂ} {a b : ℝ} (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b)
+    {γ : ℝ → ℂ} {a b : ℝ} (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
     (h_ne : ∀ t ∈ uIcc a b, γ t ≠ (s : ℂ)) :
     ∫ t in a..b, deriv γ t • decomp.polarPart s (γ t)
       = 2 * (Real.pi : ℂ) * Complex.I * windingNumber γ a b s * residue f s := by
   classical
   have hcont : ContinuousOn γ (uIcc a b) := hγ.continuousOn
-  have hderiv : IntervalIntegrable (fun t => deriv γ t) volume a b := hγ.intervalIntegrable_deriv
+  have hderiv : IntervalIntegrable (fun t => deriv γ t) volume a b :=
+    hγ.intervalIntegrable_deriv_of_finiteDimensional
   have hne' : ∀ t ∈ uIcc a b, γ t - (s : ℂ) ≠ 0 := fun t ht => sub_ne_zero.mpr (h_ne t ht)
+  -- The simple-pole coefficient contributes the index integral, `2πi` times the winding number;
+  -- every higher-order coefficient contributes zero.
   have hindex : ∫ t in a..b, (γ t - (s : ℂ))⁻¹ * deriv γ t
       = 2 * (Real.pi : ℂ) * Complex.I * windingNumber γ a b s := by
-    rw [windingNumber_eq_integral_of_avoidance hcont h_ne
-        (intervalIntegrable_inv_sub_mul_deriv hcont h_ne hderiv), ← mul_assoc,
-      mul_inv_cancel₀ Complex.two_pi_I_ne_zero, one_mul]
+    rw [hγ.windingNumber_eq_integral fun ⟨t, ht, h⟩ ↦ h_ne t ht h,
+      mul_inv_cancel_left₀ Complex.two_pi_I_ne_zero]
   have hterm : ∀ k : Fin (decomp.order s), IntervalIntegrable
       (fun t => decomp.coeff s k / (γ t - (s : ℂ)) ^ (k.val + 1) * deriv γ t) volume a b :=
     fun k => hderiv.continuousOn_mul (continuousOn_const.div
@@ -129,9 +134,9 @@ theorem intervalIntegral_deriv_smul_polarPart (decomp : PolarPartDecomposition f
   ring
 
 /-- **Splitting the contour integral off the residue sum.** Once `f` is presented on `U` as an
-analytic remainder plus finite Laurent tails at the points of `S`, a closed piecewise-`C¹` curve in
-`U` avoiding `S` integrates to the remainder's integral plus the winding-weighted residue sum: the
-tail at `s` contributes `2πi · n_s(γ) · Res_s f` by `intervalIntegral_deriv_smul_polarPart`.
+analytic remainder plus finite Laurent tails at the points of `S`, a closed absolutely continuous
+curve in `U` avoiding `S` integrates to the remainder's integral plus the winding-weighted residue
+sum.
 
 No null-homology is assumed here, so the remainder's integral is left standing; discharging it is
 what `intervalIntegral_deriv_smul_eq_sum_windingNumber_mul_residue` does for a null-homologous
@@ -144,14 +149,15 @@ hypothesis appears, a decomposition already carrying everything the argument use
 is obtained from `ofMeromorphic`, those hypotheses were consumed there. -/
 theorem intervalIntegral_deriv_smul_eq_analyticRemainder_add_sum
     (decomp : PolarPartDecomposition f S U) {γ : ℝ → ℂ} {a b : ℝ}
-    (hγ : IsPiecewiseC1On γ a b) (hγU : ∀ t ∈ uIcc a b, γ t ∈ U) (hclosed : γ a = γ b)
-    (hoff : ∀ t ∈ uIcc a b, γ t ∉ (↑S : Set ℂ)) :
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hγU : ∀ t ∈ uIcc a b, γ t ∈ U)
+    (hclosed : γ a = γ b) (hoff : ∀ t ∈ uIcc a b, γ t ∉ (↑S : Set ℂ)) :
     ∫ t in a..b, deriv γ t • f (γ t)
       = (∫ t in a..b, deriv γ t • decomp.analyticRemainder (γ t))
         + 2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, windingNumber γ a b s * residue f s := by
   classical
   have hcont : ContinuousOn γ (uIcc a b) := hγ.continuousOn
-  have hderiv : IntervalIntegrable (fun t => deriv γ t) volume a b := hγ.intervalIntegrable_deriv
+  have hderiv : IntervalIntegrable (fun t => deriv γ t) volume a b :=
+    hγ.intervalIntegrable_deriv_of_finiteDimensional
   have hne : ∀ s : S, ∀ t ∈ uIcc a b, γ t ≠ (s : ℂ) := fun s t ht h_eq =>
     hoff t ht (h_eq ▸ Finset.mem_coe.mpr s.property)
   have hpol_cont : ∀ s : S, ContinuousOn (fun t => decomp.polarPart s (γ t)) (uIcc a b) :=
@@ -186,14 +192,12 @@ theorem intervalIntegral_deriv_smul_eq_analyticRemainder_add_sum
 
 /-- **The residue theorem for a fixed polar-part decomposition.** Once `f` is presented on `U` as
 an analytic remainder plus finite Laurent tails at the points of `S`, a closed null-homologous
-piecewise-`C¹` curve in `U` avoiding `S` integrates to the winding-weighted residue sum. This is
-the sum of the two preceding facts: the remainder contributes nothing
-(`intervalIntegral_deriv_smul_analyticRemainder_eq_zero`) and the tails contribute the residue sum
-(`intervalIntegral_deriv_smul_eq_analyticRemainder_add_sum`). -/
+absolutely continuous curve in `U` avoiding `S` integrates to the winding-weighted residue sum. -/
 theorem intervalIntegral_deriv_smul_eq_sum_windingNumber_mul_residue
     (decomp : PolarPartDecomposition f S U) (hU : IsOpen U) {γ : ℝ → ℂ} {a b : ℝ}
-    (hγ : IsPiecewiseC1On γ a b) (hγU : ∀ t ∈ uIcc a b, γ t ∈ U) (hclosed : γ a = γ b)
-    (hoff : ∀ t ∈ uIcc a b, γ t ∉ (↑S : Set ℂ)) (hnull : IsNullHomologous γ a b U) :
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hγU : ∀ t ∈ uIcc a b, γ t ∈ U)
+    (hclosed : γ a = γ b) (hoff : ∀ t ∈ uIcc a b, γ t ∉ (↑S : Set ℂ))
+    (hnull : IsNullHomologous γ a b U) :
     ∫ t in a..b, deriv γ t • f (γ t)
       = 2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, windingNumber γ a b s * residue f s := by
   rw [decomp.intervalIntegral_deriv_smul_eq_analyticRemainder_add_sum hγ hγU hclosed hoff,
@@ -203,8 +207,8 @@ end PolarPartDecomposition
 
 /-- **The classical residue theorem for an arbitrary null-homologous cycle.** Let `U` be open,
 `S` a finite set, `f` differentiable on `U ∖ S` and meromorphic at each point of `S` lying in `U`,
-and let `γ` be a closed piecewise-`C¹` curve in `U`, **null-homologous** in `U`, that **avoids**
-`S`. Then
+and let `γ` be a closed absolutely continuous curve in `U`, **null-homologous** in `U`, that
+**avoids** `S`. Then
 
 `∫ t in a..b, γ' t • f (γ t) = 2πi · ∑_{s ∈ S} n_s(γ) · Res_s f`,
 
@@ -221,7 +225,8 @@ version admitting poles *on* the curve is the Hungerbühler–Wasem theorem
 `Contour.hungerbuhlerWasem_residueTheorem`. -/
 theorem classicalResidueTheorem_nullHomologous {f : ℂ → ℂ} {S : Finset ℂ} {U : Set ℂ}
     (hU : IsOpen U) (hf : DifferentiableOn ℂ f (U \ (↑S : Set ℂ)))
-    (hmero : ∀ s ∈ S, s ∈ U → MeromorphicAt f s) {γ : ℝ → ℂ} {a b : ℝ} (hγ : IsPiecewiseC1On γ a b)
+    (hmero : ∀ s ∈ S, s ∈ U → MeromorphicAt f s) {γ : ℝ → ℂ} {a b : ℝ}
+    (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hγU : ∀ t ∈ uIcc a b, γ t ∈ U) (hclosed : γ a = γ b)
     (hoff : ∀ t ∈ uIcc a b, γ t ∉ (↑S : Set ℂ)) (hnull : IsNullHomologous γ a b U) :
     ∫ t in a..b, deriv γ t • f (γ t)

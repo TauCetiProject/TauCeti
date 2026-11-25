@@ -21,11 +21,30 @@ conditionally independent process is split into observed and unobserved coordina
 
 When one of two factors has no atoms, the two corresponding coordinates of a product sample are
 moreover almost surely different, so a sample can be used to order the indices it is attached to.
+A product law pushed forward coordinatewise by measurable maps gives the product of the
+pushed-forward marginal laws.
 -/
 
 public section
 
 open MeasureTheory ProbabilityTheory
+
+namespace ProbabilityTheory
+
+/-- Pushing a product law forward coordinatewise by measurable maps gives the product of the
+pushed-forward marginal laws. -/
+theorem HasLaw.infinitePi_map_pi
+    {Ω ι : Type*} {α β : ι → Type*} [MeasurableSpace Ω]
+    [∀ i, MeasurableSpace (α i)] [∀ i, MeasurableSpace (β i)]
+    {P : Measure Ω} {μ : ∀ i, Measure (α i)} [∀ i, IsProbabilityMeasure (μ i)]
+    {X : Ω → ∀ i, α i} (hX : HasLaw X (Measure.infinitePi μ) P)
+    {f : ∀ i, α i → β i} (hf : ∀ i, Measurable (f i)) :
+    HasLaw (fun ω i => f i (X ω i)) (Measure.infinitePi fun i => (μ i).map (f i)) P :=
+  HasLaw.fun_comp
+    ⟨(measurable_pi_iff.mpr fun i => (hf i).comp (measurable_pi_apply i)).aemeasurable,
+      Measure.infinitePi_map_pi μ hf⟩ hX
+
+end ProbabilityTheory
 
 namespace MeasureTheory.Measure
 

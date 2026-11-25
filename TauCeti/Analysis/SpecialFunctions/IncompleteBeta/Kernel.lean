@@ -50,7 +50,7 @@ Gibbs measure on lozenge tilings of slope `(s, t)`.
 public section
 
 open Complex Set
-open scoped Real ComplexConjugate
+open scoped Real ComplexConjugate Pointwise
 
 namespace TauCeti
 
@@ -236,11 +236,11 @@ theorem incompleteBetaKernel_add_right (ξ : ℂ) (v₁ v₂ w : ℤ × ℤ) :
     simp
   rw [hc]
 
-/-- The kernel through `c = 1/2` of an integrand with a primitive `F` on the slit plane, for `ξ` in
-the slit plane, is `(2πi)⁻¹ (F ξ - F (conj ξ))`: the case of
+/-- For `ξ` in the slit plane and `F` a primitive of `f` on the slit plane, the sum of the curve
+integrals of `f z dz` along the segments `conj ξ → 1/2 → ξ` is `F ξ - F (conj ξ)`: the case of
 `curveIntegral_segment_add_segment_toSpanSingleton_eq_sub` for the slit plane, star-convex at
 `1/2`. -/
-private theorem curveIntegral_conj_half_add_eq_sub {F f : ℂ → ℂ} {ξ : ℂ} (hξ : ξ ∈ slitPlane)
+theorem curveIntegral_conj_half_add_eq_sub {F f : ℂ → ℂ} {ξ : ℂ} (hξ : ξ ∈ slitPlane)
     (hF : ∀ z ∈ slitPlane, HasDerivAt F (f z) z) (hf : ContinuousOn f slitPlane) :
     (∫ᶜ z in Path.segment (conj ξ) (1 / 2 : ℂ), ContinuousLinearMap.toSpanSingleton ℂ (f z)) +
         ∫ᶜ z in Path.segment (1 / 2 : ℂ) ξ, ContinuousLinearMap.toSpanSingleton ℂ (f z) =
@@ -248,6 +248,22 @@ private theorem curveIntegral_conj_half_add_eq_sub {F f : ℂ → ℂ} {ξ : ℂ
   have hstar : StarConvex ℝ (1 / 2 : ℂ) slitPlane := by
     simpa using starConvex_ofReal_slitPlane (x := 1 / 2) (by norm_num)
   have hξ' : conj ξ ∈ slitPlane := by
+    rw [mem_slitPlane_iff] at hξ ⊢
+    simpa using hξ
+  exact curveIntegral_segment_add_segment_toSpanSingleton_eq_sub hstar hξ' hξ hF hf
+
+/-- For `ξ` off `[0, ∞)` and `F` a primitive of `f` off `[0, ∞)`, the sum of the curve integrals
+of `f z dz` along the segments `conj ξ → -1 → ξ` is `F ξ - F (conj ξ)`: the case of
+`curveIntegral_segment_add_segment_toSpanSingleton_eq_sub` for `-slitPlane = ℂ \ [0, ∞)`,
+star-convex at `-1`. -/
+theorem curveIntegral_conj_neg_one_add_eq_sub {F f : ℂ → ℂ} {ξ : ℂ} (hξ : -ξ ∈ slitPlane)
+    (hF : ∀ z, -z ∈ slitPlane → HasDerivAt F (f z) z) (hf : ContinuousOn f (-slitPlane)) :
+    (∫ᶜ z in Path.segment (conj ξ) (-1 : ℂ), ContinuousLinearMap.toSpanSingleton ℂ (f z)) +
+        ∫ᶜ z in Path.segment (-1 : ℂ) ξ, ContinuousLinearMap.toSpanSingleton ℂ (f z) =
+      F ξ - F (conj ξ) := by
+  have hstar : StarConvex ℝ (-1 : ℂ) (-slitPlane) := by
+    simpa using (starConvex_ofReal_slitPlane (x := 1) one_pos).neg
+  have hξ' : -conj ξ ∈ slitPlane := by
     rw [mem_slitPlane_iff] at hξ ⊢
     simpa using hξ
   exact curveIntegral_segment_add_segment_toSpanSingleton_eq_sub hstar hξ' hξ hF hf

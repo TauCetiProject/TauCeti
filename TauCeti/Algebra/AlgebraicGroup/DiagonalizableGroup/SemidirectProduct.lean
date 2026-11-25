@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Semidirect
 public import TauCeti.Algebra.Coalgebra.Comodule.MonoidAlgebra.OneCocycle
-public import Mathlib.GroupTheory.GroupExtension.Defs
+public import TauCeti.GroupTheory.CrossedCocycle.Splitting
 public import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
 import TauCeti.Algebra.Coalgebra.Convolution
 
@@ -128,22 +128,21 @@ variable {b : V ⊗[R] MonoidAlgebra R G}
 
 variable (A) in
 /-- The splitting of the points semidirect product `(A ⊗[R] V) ⋊ D(A)` defined by a regular
-cocycle: the section `g ↦ (b(g), g)` as a group homomorphism. -/
+cocycle: the section `g ↦ (b(g), g)` as a group homomorphism, which is
+`TauCeti.CrossedCocycle.toSplitting` of the crossed cocycle `g ↦ b(g)`. -/
 noncomputable def pointSplitting (hb : IsRegularCocycle₁ b) :
     (toGroupExtension
-      (pointsRepresentation (R := R) (H := MonoidAlgebra R G) (A := A) V).toMulAut).Splitting where
-  toFun := pointSection V A b
-  map_one' := by
-    rw [← mul_left_cancel_iff (a := pointSection V A b 1), ← (pointSection_mul_eq_iff b 1 1).2
-      (hb.pointCochain_mul 1 1), mul_one, mul_one]
-  map_mul' g h := (pointSection_mul_eq_iff b g h).2 (hb.pointCochain_mul g h)
-  rightInverse_rightHom := rightHom_pointSection b
+      (pointsRepresentation (R := R) (H := MonoidAlgebra R G) (A := A) V).toMulAut).Splitting :=
+  CrossedCocycle.toSplitting
+    { toFun g := Multiplicative.ofAdd (pointCochain V g.ofConv b)
+      map_mul' g h := by simp [hb.pointCochain_mul g h, ofAdd_add] }
 
 variable (A) in
 @[simp]
 theorem coe_pointSplitting (hb : IsRegularCocycle₁ b) :
     ⇑(hb.pointSplitting A) = pointSection V A b :=
-  (rfl)
+  funext fun g ↦ SemidirectProduct.ext
+    (Multiplicative.toAdd.injective (by simp [pointSplitting])) (by simp)
 
 /-- **Splittings by regular cocycles are conjugate to the standard splitting.** On the points
 over every commutative `R`-algebra `A`, the splitting defined by a regular cocycle `b` is the
@@ -155,7 +154,8 @@ theorem pointSplitting_apply (hb : IsRegularCocycle₁ b)
       inl (Multiplicative.ofAdd (1 ⊗ₜ[R] LinearMap.tensorComponent (monoidCoeff R G 1) b)) *
         inr g *
         (inl (Multiplicative.ofAdd (1 ⊗ₜ[R] LinearMap.tensorComponent (monoidCoeff R G 1) b)))⁻¹ :=
-  (pointSection_eq_conj_iff b _ g).2 (hb.pointCochain_eq g.ofConv)
+  (congrFun (hb.coe_pointSplitting A) g).trans <|
+    (pointSection_eq_conj_iff b _ g).2 (hb.pointCochain_eq g.ofConv)
 
 variable (A) in
 /-- On the points over every commutative `R`-algebra, the splitting defined by a regular cocycle
@@ -170,8 +170,9 @@ theorem isConj_pointSplitting (hb : IsRegularCocycle₁ b) :
 theorem pointSemidirectMap_pointSplitting (hb : IsRegularCocycle₁ b) {B : Type*} [CommRing B]
     [Algebra R B] (φ : A →ₐ[R] B) (g : WithConv (MonoidAlgebra R G →ₐ[R] A)) :
     pointSemidirectMap V φ (hb.pointSplitting A g) =
-      hb.pointSplitting B (AlgHom.mapValue φ g) :=
-  pointSemidirectMap_pointSection φ b g
+      hb.pointSplitting B (AlgHom.mapValue φ g) := by
+  rw [coe_pointSplitting, coe_pointSplitting]
+  exact pointSemidirectMap_pointSection φ b g
 
 end IsRegularCocycle₁
 
