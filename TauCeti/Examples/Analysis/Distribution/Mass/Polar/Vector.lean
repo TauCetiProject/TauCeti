@@ -24,10 +24,11 @@ Two families of examples:
   for `v = 0`, `L = 0` and `‖L‖ = 0` (`massMeasure_evalInner_zero`), so no value of `η` is
   determined.
 * `L(X) = ∫ ⟪u, X⟫ dμ` (`integralInner`): `‖L‖ = |u| μ` (`massMeasure_integralInner`) and
-  `η = u / |u|` almost everywhere (`polarVector_integralInner`). On `ℝ²` with `u = (1, 1)`,
-  `L(X) = ∫ (X¹ + X²) dy` has `‖L‖ = √2` times Lebesgue measure and `η = (e₁ + e₂) / √2`
-  (`massMeasure_integralInner_oneOne`, `polarVector_integralInner_oneOne`), not the `2 vol` that
-  a coordinatewise total variation would give.
+  `η = u / |u|` almost everywhere (`ae_polarVector_integralInner_eq`). On `ℝ²` with
+  `u = (1, 1)`, `L(X) = ∫ (X¹ + X²) dμ` has `‖L‖ = √2 μ` (for example `√2` times Lebesgue measure)
+  and `η = (e₁ + e₂) / √2` (`massMeasure_integralInner_oneOne`,
+  `ae_polarVector_integralInner_oneOne_eq`), not the `2 μ` that a coordinatewise total variation
+  would give.
 -/
 
 @[expose] public section
@@ -59,20 +60,26 @@ omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
 /-- The evaluation `⟪X(a), v⟫` is `∫ ⟪v / |v|, X⟫ d(|v| δ_a)`. -/
 private theorem evalInner_eq_integral_inner_normalize (a : Ω) (v : F) (φ : 𝓓^{n}(Ω, F)) :
     evalInner n a v φ = ∫ x, ⟪‖v‖⁻¹ • v, φ x⟫ ∂(‖v‖₊ • Measure.dirac a) := by
-  rw [integral_smul_nnreal_measure, integral_dirac, evalInner_apply, NNReal.smul_def,
-    coe_nnNorm, smul_eq_mul, real_inner_smul_left, ← mul_assoc]
   rcases eq_or_ne v 0 with rfl | hv
-  · simp
-  · rw [mul_inv_cancel₀ (norm_ne_zero_iff.2 hv), one_mul, real_inner_comm]
+  · simp [evalInner_apply]
+  · simp [integral_smul_nnreal_measure, evalInner_apply, real_inner_smul_left, NNReal.smul_def,
+      hv, real_inner_comm]
 
-/-- The functional `L(X) = ⟪X(a), v⟫` has mass measure `|v| δ_a`. -/
-theorem massMeasure_evalInner (a : Ω) (v : F) :
-    massMeasure (evalInner n a v) = ‖v‖₊ • Measure.dirac a := by
-  refine massMeasure_eq_of_apply_eq_integral_inner (η := fun _ => ‖v‖⁻¹ • v)
-    aestronglyMeasurable_const ?_ (evalInner_eq_integral_inner_normalize a v)
+omit [FiniteDimensional ℝ F] in
+/-- The unit vector `v / |v|` has norm `1` almost everywhere for the measure `|v| μ`, which is zero
+when `v = 0`. -/
+private theorem ae_norm_inv_norm_smul_eq_one {X : Type*} [MeasurableSpace X] (μ : Measure X)
+    (v : F) : ∀ᵐ _ ∂(‖v‖₊ • μ), ‖‖v‖⁻¹ • v‖ = 1 := by
   rcases eq_or_ne v 0 with rfl | hv
   · simp
   · exact Filter.Eventually.of_forall fun _ => norm_smul_inv_norm hv
+
+/-- The functional `L(X) = ⟪X(a), v⟫` has mass measure `|v| δ_a`. -/
+theorem massMeasure_evalInner (a : Ω) (v : F) :
+    massMeasure (evalInner n a v) = ‖v‖₊ • Measure.dirac a :=
+  massMeasure_eq_of_apply_eq_integral_inner (η := fun _ => ‖v‖⁻¹ • v)
+    aestronglyMeasurable_const (ae_norm_inv_norm_smul_eq_one _ v)
+    (evalInner_eq_integral_inner_normalize a v)
 
 /-- For `v ≠ 0`, the polar vector field of `L(X) = ⟪X(a), v⟫` at `a` is `v / |v|`. -/
 theorem polarVector_evalInner (a : Ω) {v : F} (hv : v ≠ 0) :
@@ -116,12 +123,11 @@ def integralInner (n : ℕ∞) (μ : Measure Ω) [IsFiniteMeasureOnCompacts μ] 
   toFun φ := ∫ x, ⟪u, φ x⟫ ∂μ
   map_add' φ ψ := by
     have := Ω.isOpen.locallyCompactSpace
+    have hint (χ : 𝓓^{n}(Ω, F)) : Integrable (fun x : Ω => ⟪u, χ x⟫) μ :=
+      (χ.integrable_inner_subtype (locallyIntegrable_const u)).congr
+        (Filter.Eventually.of_forall fun _ => real_inner_comm _ _)
     simp only [FunLike.coe_add, Pi.add_apply, inner_add_right]
-    exact integral_add
-      ((φ.integrable_inner_subtype (locallyIntegrable_const u)).congr
-        (Filter.Eventually.of_forall fun _ => real_inner_comm _ _))
-      ((ψ.integrable_inner_subtype (locallyIntegrable_const u)).congr
-        (Filter.Eventually.of_forall fun _ => real_inner_comm _ _))
+    exact integral_add (hint φ) (hint ψ)
   map_smul' c φ := by
     simp [inner_smul_right, integral_const_mul]
 
@@ -136,24 +142,21 @@ omit [BorelSpace E] [FiniteDimensional ℝ F] in
 private theorem integralInner_eq_integral_inner_normalize (μ : Measure Ω)
     [IsFiniteMeasureOnCompacts μ] (u : F) (φ : 𝓓^{n}(Ω, F)) :
     integralInner n μ u φ = ∫ x, ⟪‖u‖⁻¹ • u, φ x⟫ ∂(‖u‖₊ • μ) := by
-  rw [integral_smul_nnreal_measure, integralInner_apply, NNReal.smul_def, coe_nnNorm]
-  simp only [real_inner_smul_left, integral_const_mul, smul_eq_mul, ← mul_assoc]
   rcases eq_or_ne u 0 with rfl | hu
-  · simp
-  · rw [mul_inv_cancel₀ (norm_ne_zero_iff.2 hu), one_mul]
+  · simp [integralInner_apply]
+  · simp [integral_smul_nnreal_measure, integralInner_apply, real_inner_smul_left,
+      integral_const_mul, NNReal.smul_def, hu]
 
 /-- The functional `L(X) = ∫ ⟪u, X⟫ dμ`, for a measure `μ` finite on compact sets, has mass
 measure `|u| μ`. -/
 theorem massMeasure_integralInner (μ : Measure Ω) [IsFiniteMeasureOnCompacts μ] (u : F) :
-    massMeasure (integralInner n μ u) = ‖u‖₊ • μ := by
-  refine massMeasure_eq_of_apply_eq_integral_inner (η := fun _ => ‖u‖⁻¹ • u)
-    aestronglyMeasurable_const ?_ (integralInner_eq_integral_inner_normalize μ u)
-  rcases eq_or_ne u 0 with rfl | hu
-  · simp
-  · exact Filter.Eventually.of_forall fun _ => norm_smul_inv_norm hu
+    massMeasure (integralInner n μ u) = ‖u‖₊ • μ :=
+  massMeasure_eq_of_apply_eq_integral_inner (η := fun _ => ‖u‖⁻¹ • u)
+    aestronglyMeasurable_const (ae_norm_inv_norm_smul_eq_one μ u)
+    (integralInner_eq_integral_inner_normalize μ u)
 
 /-- The polar vector field of `L(X) = ∫ ⟪u, X⟫ dμ` is `u / |u|` at `‖L‖`-almost every point. -/
-theorem polarVector_integralInner (μ : Measure Ω) [IsFiniteMeasureOnCompacts μ] (u : F) :
+theorem ae_polarVector_integralInner_eq (μ : Measure Ω) [IsFiniteMeasureOnCompacts μ] (u : F) :
     ∀ᵐ x ∂massMeasure (integralInner n μ u),
       polarVector (integralInner n μ u) x = ‖u‖⁻¹ • u := by
   have := Ω.isOpen.locallyCompactSpace
@@ -174,7 +177,7 @@ theorem inner_oneOne (y : EuclideanSpace ℝ (Fin 2)) :
     ⟪oneOne, y⟫ = y 0 + y 1 := by
   simp [oneOne, EuclideanSpace.inner_eq_star_dotProduct, dotProduct, Fin.sum_univ_two]
 
-/-- On `ℝ²`, `L(X) = ∫ (X¹ + X²) dy` against a measure `μ` finite on compact sets has mass measure
+/-- On `ℝ²`, `L(X) = ∫ (X¹ + X²) dμ`, for a measure `μ` finite on compact sets, has mass measure
 `√2 μ`; for Lebesgue measure this is `√2` times Lebesgue measure, not `2` times it. -/
 theorem massMeasure_integralInner_oneOne {Ω : Opens (EuclideanSpace ℝ (Fin 2))}
     (μ : Measure Ω) [IsFiniteMeasureOnCompacts μ] :
@@ -184,12 +187,12 @@ theorem massMeasure_integralInner_oneOne {Ω : Opens (EuclideanSpace ℝ (Fin 2)
   ext
   simp [norm_oneOne]
 
-/-- On `ℝ²`, the polar vector field of `L(X) = ∫ (X¹ + X²) dy` is `(e₁ + e₂) / √2` almost
-everywhere. -/
-theorem polarVector_integralInner_oneOne {Ω : Opens (EuclideanSpace ℝ (Fin 2))}
+/-- On `ℝ²`, the polar vector field of `L(X) = ∫ (X¹ + X²) dμ`, for a measure `μ` finite on
+compact sets, is `(e₁ + e₂) / √2` almost everywhere. -/
+theorem ae_polarVector_integralInner_oneOne_eq {Ω : Opens (EuclideanSpace ℝ (Fin 2))}
     (μ : Measure Ω) [IsFiniteMeasureOnCompacts μ] :
     ∀ᵐ x ∂massMeasure (integralInner n μ oneOne),
       polarVector (integralInner n μ oneOne) x = (√2)⁻¹ • oneOne := by
-  simpa [norm_oneOne] using polarVector_integralInner (n := n) μ oneOne
+  simpa [norm_oneOne] using ae_polarVector_integralInner_eq (n := n) μ oneOne
 
 end TauCeti.Examples.PolarVector
