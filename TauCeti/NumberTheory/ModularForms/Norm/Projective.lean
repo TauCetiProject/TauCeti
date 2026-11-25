@@ -30,10 +30,11 @@ where `e_P` is the effective elliptic order and `ord_c f` is the geometric order
 The passage divides the whole native identity by `δ = [±Γ : Γ]`, which is `1` when `-I ∈ Γ` and
 `2` otherwise; no unconditional factor `2` enters.
 
-* **Interior.** The effective elliptic order `e_P` (`ellipticOrderOnSubgroupOrbit`) is the order of
-  the stabiliser of `P` in the image of `Γ` in `PSL(2, ℤ)`. The matrix stabiliser order is
-  `|Γ ∩ {±I}| · e_P`, and `|Γ ∩ {±I}| · δ = 2`, so the native weight `2 / |Stab_Γ P|` is
-  `δ / e_P`.
+* **Interior.** The effective elliptic order `e_P`
+  (`TauCeti.ModularGroup.ellipticOrderOnSubgroupOrbit`, defined in
+  `TauCeti.NumberTheory.Modular.Stabilizer`) is the order of the stabiliser of `P` in the image
+  of `Γ` in `PSL(2, ℤ)`. The matrix stabiliser order is `|Γ ∩ {±I}| · e_P`, and
+  `|Γ ∩ {±I}| · δ = 2`, so the native weight `2 / |Stab_Γ P|` is `δ / e_P`.
 * **Cusps.** The cusps of `Γ` are indexed by the `T`-orbits on the cosets of `±Γ`, that is by the
   double cosets `⟨±T⟩ \ SL(2, ℤ) / Γ`. At the cusp of a coset `x (±Γ)`, of geometric width `h`
   (the least `h > 0` with `x⁻¹ T ^ h x ∈ ±Γ`), the geometric order is `orderAtCusp h (f ∣[k] x⁻¹)`:
@@ -47,15 +48,10 @@ The passage divides the whole native identity by `δ = [±Γ : Γ]`, which is `1
 
 ## Main definitions
 
-* `TauCeti.ModularForm.ellipticOrderOnSubgroupOrbit`: the effective elliptic order `e_P`.
 * `TauCeti.ModularForm.geometricOrderAtCusp`: the geometric order of a form at a cusp of `Γ`.
 
 ## Main results
 
-* `TauCeti.ModularForm.cardStabilizerOnOrbit_eq_card_center_mul_ellipticOrderOnSubgroupOrbit`:
-  `|Stab_Γ P| = |Γ ∩ {±I}| · e_P`.
-* `TauCeti.ModularForm.ellipticOrderOnSubgroupOrbit_top_mk`: at level one `e_P` is the elliptic
-  order `TauCeti.ModularGroup.ellipticOrder`.
 * `TauCeti.ModularForm.weightedOrderOfVanishingOnSubgroupOrbit_eq_relIndex_mul_div`: the native
   interior weight is `[±Γ : Γ] · ord_P f / e_P`.
 * `cuspTranslationOrbitWidth_dvd_two_mul_cuspTranslationOrbitWidth_adjoinNegOne` (in
@@ -90,73 +86,7 @@ namespace ModularForm
 
 variable {Γ : Subgroup SL(2, ℤ)} {k : ℤ} {F : Type*} [FunLike F ℍ ℂ]
 
-/-! ### Effective elliptic orders -/
-
-/-- **The effective elliptic order `e_P` of a `Γ`-orbit of `ℍ`**: the order of the stabiliser of
-any point of the orbit in the image of `Γ` in `PSL(2, ℤ)`, the group acting effectively on `ℍ`.
-It is the order of the matrix stabiliser divided by `|Γ ∩ {±I}|`
-(`cardStabilizerOnOrbit_eq_card_center_mul_ellipticOrderOnSubgroupOrbit`). For `Γ = SL(2, ℤ)` it
-is the level-one elliptic order `TauCeti.ModularGroup.ellipticOrder`
-(`ellipticOrderOnSubgroupOrbit_top_mk`): `2` on the orbit of `i`, `3` on the orbit of `ρ` and `1`
-elsewhere. -/
-noncomputable def ellipticOrderOnSubgroupOrbit
-    (o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ) : ℕ :=
-  Quotient.liftOn' o
-    (fun p ↦ Nat.card (stabilizer (Γ.map (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))) p))
-    fun _ b h ↦ by
-      obtain ⟨g, rfl⟩ := h
-      obtain ⟨γ, hγ, hg⟩ := Subgroup.mem_map.mp g.property
-      refine card_stabilizer_of_orbitRel
-        (mem_orbit_iff.mpr ⟨⟨QuotientGroup.mk' _ γ, γ, hγ, rfl⟩, ?_⟩)
-      dsimp only
-      rw [Subgroup.smul_def g, ← hg, ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
-        ← ModularGroup.sl_moeb]
-      exact (Subgroup.smul_def _ _).trans (UpperHalfPlane.pslMk_smul γ b)
-
-/-- Evaluating the effective elliptic order on the orbit of `p` recovers the order of the
-stabiliser of `p` in the image of `Γ` in `PSL(2, ℤ)`. -/
-@[simp]
-theorem ellipticOrderOnSubgroupOrbit_mk (p : ℍ) :
-    ellipticOrderOnSubgroupOrbit
-        (Quotient.mk'' p : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ) =
-      Nat.card (stabilizer (Γ.map (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))) p) :=
-  (rfl)
-
-/-- **At level one the effective elliptic order is `TauCeti.ModularGroup.ellipticOrder`**: for
-`Γ = SL(2, ℤ)` the image of `Γ` in `PSL(2, ℤ)` is all of `PSL(2, ℤ)`, so the two orders agree on
-the orbit of every `p`. With `ModularGroup.ellipticOrder_I`, `ModularGroup.ellipticOrder_ρ` and
-`ModularGroup.ellipticOrder_eq_one_of_orbit_ne_I_of_orbit_ne_ρ` this gives the values `2`, `3`
-and `1`. -/
-theorem ellipticOrderOnSubgroupOrbit_top_mk (p : ℍ) :
-    ellipticOrderOnSubgroupOrbit
-        (Quotient.mk'' p :
-          orbitRel.Quotient ((⊤ : Subgroup SL(2, ℤ)) : Subgroup (GL (Fin 2) ℝ)) ℍ) =
-      ModularGroup.ellipticOrder (Quotient.mk'' p) := by
-  rw [ellipticOrderOnSubgroupOrbit_mk, ModularGroup.ellipticOrder_mk,
-    Subgroup.map_top_of_surjective _ (QuotientGroup.mk'_surjective _)]
-  exact (card_stabilizer_congr Subgroup.topEquiv (f := id) p (fun _ ↦ rfl) fun _ h ↦ h).symm
-
-/-- **The matrix stabiliser order is `|Γ ∩ {±I}|` times the effective elliptic order.** -/
-theorem cardStabilizerOnOrbit_eq_card_center_mul_ellipticOrderOnSubgroupOrbit
-    (o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ) :
-    cardStabilizerOnOrbit o =
-      Nat.card ((Subgroup.center SL(2, ℤ)).subgroupOf Γ) * ellipticOrderOnSubgroupOrbit o := by
-  induction o using Quotient.inductionOn' with
-  | h p =>
-    rw [cardStabilizerOnOrbit_mk, ellipticOrderOnSubgroupOrbit_mk,
-      ← ModularGroup.card_stabilizer_eq_card_center_mul_card_stabilizer_psl]
-    -- `Γ` and its image in `GL(2, ℝ)` act on `ℍ` through the same Möbius transformations, by
-    -- definition of the action of `SL(2, ℤ)` on `ℍ` (`ModularGroup.sl_moeb` is `rfl`)
-    exact card_stabilizer_congr
-      (Γ.equivMapOfInjective _ Matrix.SpecialLinearGroup.mapGL_injective) (f := id) p
-      (fun _ ↦ rfl) fun _ h ↦ h
-
-/-- The effective elliptic order is positive. -/
-theorem ellipticOrderOnSubgroupOrbit_pos
-    (o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ) :
-    0 < ellipticOrderOnSubgroupOrbit o :=
-  Nat.pos_of_ne_zero fun h ↦ cardStabilizerOnOrbit_ne_zero o (by
-    rw [cardStabilizerOnOrbit_eq_card_center_mul_ellipticOrderOnSubgroupOrbit, h, mul_zero])
+/-! ### Interior weights -/
 
 /-- **The native interior weight is `[±Γ : Γ] / e_P`**: the weight `2 · ord_P f / |Stab_Γ P|` of
 the general-level valence formula is `[±Γ : Γ] · ord_P f / e_P`. -/
@@ -165,9 +95,9 @@ theorem weightedOrderOfVanishingOnSubgroupOrbit_eq_relIndex_mul_div
     (o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ) :
     weightedOrderOfVanishingOnSubgroupOrbit f o =
       Γ.relIndex Γ.adjoinNegOne * (orderOfVanishingOnSubgroupOrbit f o : ℚ) /
-        ellipticOrderOnSubgroupOrbit o := by
-  have he : (ellipticOrderOnSubgroupOrbit o : ℚ) ≠ 0 := by
-    exact_mod_cast (ellipticOrderOnSubgroupOrbit_pos o).ne'
+        ModularGroup.ellipticOrderOnSubgroupOrbit o := by
+  have he : (ModularGroup.ellipticOrderOnSubgroupOrbit o : ℚ) ≠ 0 := by
+    exact_mod_cast (ModularGroup.ellipticOrderOnSubgroupOrbit_pos o).ne'
   have hc : (Nat.card ((Subgroup.center SL(2, ℤ)).subgroupOf Γ) : ℚ) *
       Γ.relIndex Γ.adjoinNegOne = 2 := by
     exact_mod_cast Γ.card_center_subgroupOf_mul_relIndex_adjoinNegOne
@@ -175,10 +105,10 @@ theorem weightedOrderOfVanishingOnSubgroupOrbit_eq_relIndex_mul_div
     rintro h
     norm_num [h] at hc
   rw [weightedOrderOfVanishingOnSubgroupOrbit_def,
-    cardStabilizerOnOrbit_eq_card_center_mul_ellipticOrderOnSubgroupOrbit, Nat.cast_mul,
-    div_eq_div_iff (mul_ne_zero hc0 he) he]
+    ModularGroup.cardStabilizerOnOrbit_eq_card_center_mul_ellipticOrderOnSubgroupOrbit,
+    Nat.cast_mul, div_eq_div_iff (mul_ne_zero hc0 he) he]
   linear_combination -(orderOfVanishingOnSubgroupOrbit f o : ℚ) *
-    (ellipticOrderOnSubgroupOrbit o : ℚ) * hc
+    (ModularGroup.ellipticOrderOnSubgroupOrbit o : ℚ) * hc
 
 /-! ### Geometric orders at the cusps -/
 
@@ -306,6 +236,12 @@ private lemma doubleWidthOrder_TSL_zpow_smul (f : F)
     ← natCast_minimalPeriod_mul_doubleWidthOrder f q] at hm
   exact mul_left_cancel₀ (mod_cast (Nat.pos_of_neZero _).ne') hm
 
+/-- Left multiplication by `-I` in `𝒮ℒ`, read in `GL(2, ℝ)`, is negation. -/
+private lemma coe_rangeRestrict_neg_one_mul (x : 𝒮ℒ) :
+    (((Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict (-1) * x : 𝒮ℒ) : GL (Fin 2) ℝ) =
+      -(x : GL (Fin 2) ℝ) := by
+  rw [Subgroup.coe_mul, Matrix.SpecialLinearGroup.coe_rangeRestrict_mapGL_neg_one, neg_one_mul]
+
 /-- `doubleWidthOrder` is unchanged by replacing the representative `x` by `-x`: the coset factor
 changes by `(-1) ^ k`. -/
 private lemma doubleWidthOrder_neg_one_mul (f : F) (x : 𝒮ℒ) :
@@ -319,8 +255,7 @@ private lemma doubleWidthOrder_neg_one_mul (f : F) (x : 𝒮ℒ) :
     rw [QuotientGroup.eq, Subgroup.mem_subgroupOf, Subgroup.map_mapGL_adjoinNegOne]
     have : ((((Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict (-1) * x)⁻¹ * x : 𝒮ℒ) :
         GL (Fin 2) ℝ) = -1 := by
-      rw [Subgroup.coe_mul, InvMemClass.coe_inv, Subgroup.coe_mul,
-        Matrix.SpecialLinearGroup.coe_rangeRestrict_mapGL_neg_one, neg_one_mul, inv_neg, neg_mul,
+      rw [Subgroup.coe_mul, InvMemClass.coe_inv, coe_rangeRestrict_neg_one_mul, inv_neg, neg_mul,
         inv_mul_cancel]
     rw [this]
     exact Subgroup.neg_one_mem_adjoinNegOne _
@@ -336,8 +271,7 @@ private lemma doubleWidthOrder_neg_one_mul (f : F) (x : 𝒮ℒ) :
   rw [doubleWidthOrder, doubleWidthOrder, Subgroup.quotientMapOfLE_apply_mk,
     Subgroup.quotientMapOfLE_apply_mk, hπ]
   rw [_root_.SlashInvariantForm.quotientFunc_mk] at hana ⊢
-  rw [_root_.SlashInvariantForm.quotientFunc_mk, Subgroup.coe_mul,
-    Matrix.SpecialLinearGroup.coe_rangeRestrict_mapGL_neg_one, neg_one_mul, inv_neg,
+  rw [_root_.SlashInvariantForm.quotientFunc_mk, coe_rangeRestrict_neg_one_mul, inv_neg,
     ModularForm.slash_neg]
   exact qExpansionOrderAtCusp_smul (zpow_ne_zero k (neg_ne_zero.mpr one_ne_zero)) hana
 
@@ -373,9 +307,7 @@ private lemma doubleWidthOrder_eq_of_mk_eq (f : F)
       rw [MulAction.Quotient.smul_mk, smul_eq_mul, eq_comm, QuotientGroup.eq,
         Subgroup.mem_subgroupOf]
       convert hgx using 1
-      rw [Subgroup.coe_mul, InvMemClass.coe_inv, Subgroup.coe_mul, Subgroup.coe_mul,
-        Matrix.SpecialLinearGroup.coe_rangeRestrict_mapGL_neg_one, neg_one_mul]
-      simp only [Subgroup.coe_mul, InvMemClass.coe_inv, mul_neg, inv_neg, neg_mul]
+      simp
     rw [hq, doubleWidthOrder_TSL_zpow_smul, doubleWidthOrder_neg_one_mul]
 
 /-- `doubleWidthOrder` is twice the geometric order at the cusp below the coset. -/
@@ -513,7 +445,7 @@ by the effective elliptic orders `e_P`, together with the geometric orders at th
 add up to `k · [SL(2, ℤ) : ±Γ] / 12`. -/
 theorem valence_formula_projective (f : F) (hf : (⇑f : ℍ → ℂ) ≠ 0) :
     (∑ᶠ o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ,
-          (orderOfVanishingOnSubgroupOrbit f o : ℚ) / ellipticOrderOnSubgroupOrbit o) +
+          (orderOfVanishingOnSubgroupOrbit f o : ℚ) / ModularGroup.ellipticOrderOnSubgroupOrbit o) +
         ∑ c : CuspTranslationOrbit (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ)),
           geometricOrderAtCusp f c =
       (k : ℚ) * Γ.projectiveIndex / 12 := by
@@ -521,7 +453,8 @@ theorem valence_formula_projective (f : F) (hf : (⇑f : ℍ → ℂ) ≠ 0) :
   have hint : ∑ᶠ o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ,
       weightedOrderOfVanishingOnSubgroupOrbit f o =
         Γ.relIndex Γ.adjoinNegOne * ∑ᶠ o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ,
-          (orderOfVanishingOnSubgroupOrbit f o : ℚ) / ellipticOrderOnSubgroupOrbit o := by
+          (orderOfVanishingOnSubgroupOrbit f o : ℚ) /
+            ModularGroup.ellipticOrderOnSubgroupOrbit o := by
     rw [mul_finsum]
     exact finsum_congr fun o ↦ by
       rw [weightedOrderOfVanishingOnSubgroupOrbit_eq_relIndex_mul_div, mul_div_assoc]
