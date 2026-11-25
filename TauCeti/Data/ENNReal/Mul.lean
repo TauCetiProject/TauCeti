@@ -22,6 +22,10 @@ This is the shape of estimates such as `‖B(f, g)‖ ≤ C ‖B‖ ‖f‖ ‖g
   and `b`.
 * `ENNReal.mul_mul_pow_le_mul_div_pow_mul`: a coefficient bound absorbs division by a finite
   positive factor in a natural power.
+* `ENNReal.eq_zero_of_forall_le_mul`: a quantity bounded by a fixed finite multiple of every
+  positive `ε` vanishes.
+* `ENNReal.add_le_coe_mul`, `ENNReal.coe_mul_le_coe_mul`, `ENNReal.le_coe_mul_of_le_mul_mul`:
+  bookkeeping for linear bounds `x ≤ c A` with coefficients in `ℝ≥0`.
 
 ## References
 
@@ -75,5 +79,36 @@ theorem mul_mul_pow_le_mul_div_pow_mul (V : ℝ≥0∞) {c a r : ℝ≥0∞} {C 
       ac_rfl
     _ = (c * (C : ℝ≥0∞) ^ n) * ((r / (C : ℝ≥0∞)) ^ n * V) := by ac_rfl
     _ ≤ _ := mul_le_mul_left hca _
+
+/-- If `x ≤ C * ε` for every nonzero `ε` and a finite constant `C`, then `x = 0`. -/
+theorem eq_zero_of_forall_le_mul {x C : ℝ≥0∞} (hC : C ≠ ∞) (h : ∀ ε ≠ 0, x ≤ C * ε) :
+    x = 0 := by
+  refine le_antisymm (le_of_forall_pos_le_add fun δ hδ _ ↦ ?_) zero_le
+  rw [zero_add]
+  rcases eq_or_ne C 0 with rfl | hC0
+  · exact (h 1 one_ne_zero).trans (by rw [zero_mul]; exact zero_le)
+  · calc x ≤ C * (δ / C) := h _ (ENNReal.div_ne_zero.2 ⟨by exact_mod_cast hδ.ne', hC⟩)
+      _ = δ := ENNReal.mul_div_cancel hC0 hC
+
+/-- Adding two linear bounds `x ≤ c A` and `y ≤ d A`, with coefficients in `ℝ≥0`. -/
+theorem add_le_coe_mul {x y A : ℝ≥0∞} {c d : ℝ≥0} (hx : x ≤ c * A) (hy : y ≤ d * A) :
+    x + y ≤ ↑(c + d) * A := by
+  rw [ENNReal.coe_add, add_mul]
+  exact add_le_add hx hy
+
+/-- Scaling a linear bound `x ≤ c A` by `d ∈ ℝ≥0`. -/
+theorem coe_mul_le_coe_mul {x A : ℝ≥0∞} {c d : ℝ≥0} (hx : x ≤ c * A) :
+    ↑d * x ≤ ↑(d * c) * A := by
+  rw [ENNReal.coe_mul, mul_assoc]
+  exact mul_le_mul_right hx _
+
+/-- Combining a product bound `x ≤ C a b` with `a ≤ M` and `b ≤ c A` into a linear bound
+`x ≤ (C M c) A`, with coefficients in `ℝ≥0`. -/
+theorem le_coe_mul_of_le_mul_mul {x a b A : ℝ≥0∞} {C M c : ℝ≥0} (h : x ≤ C * a * b)
+    (ha : a ≤ M) (hb : b ≤ c * A) : x ≤ ↑(C * M * c) * A := by
+  refine h.trans ?_
+  rw [show (↑(C * M * c) : ℝ≥0∞) * A = C * M * (c * A) by push_cast; ring]
+  gcongr
+
 
 end ENNReal

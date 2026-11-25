@@ -26,8 +26,9 @@ Hilbert-basis cardinality.
 
 The file also records elementary constructions: nonemptiness of `{f : ι → E | Orthonormal 𝕜 f}`
 in finite dimension (`TauCeti.nonempty_setOfPred_orthonormal_iff`), extracting orthonormal pairs
-(`Orthonormal.pair`), and normalized orthogonal sums from a real orthonormal four-tuple
-(`Orthonormal.inv_sqrt_two_add_pair`).
+(`Orthonormal.pair`), normalized orthogonal sums from a real orthonormal four-tuple
+(`Orthonormal.inv_sqrt_two_add_pair`), and orthonormal bases from orthonormal families of `dim E`
+vectors (`Orthonormal.exists_orthonormalBasis_coe_eq`).
 
 ## References
 
@@ -119,5 +120,14 @@ theorem inv_sqrt_two_add_pair {V : Type*} [NormedAddCommGroup V] [InnerProductSp
   rcases h with ⟨h1, ⟨h12, h13, h14⟩, h2, ⟨h23, h24⟩, h3, h34, h4⟩
   simp [-smul_add, hnorm h1 h2 h12, hnorm h3 h4 h34, inner_add_left, inner_add_right,
     real_inner_smul_left, real_inner_smul_right, h13, h14, h23, h24]
+
+/-- In a finite-dimensional inner product space, an orthonormal family with as many vectors as the
+dimension is an orthonormal basis. -/
+theorem exists_orthonormalBasis_coe_eq {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    [FiniteDimensional 𝕜 F] [Fintype ι] (card_ι : Module.finrank 𝕜 F = Fintype.card ι)
+    {b : ι → F} (hb : Orthonormal 𝕜 b) : ∃ w : OrthonormalBasis ι 𝕜 F, ⇑w = b := by
+  obtain ⟨w, hw⟩ := Orthonormal.exists_orthonormalBasis_extension_of_card_eq (s := Set.univ)
+    card_ι (hb.comp _ Subtype.val_injective)
+  exact ⟨w, funext fun i ↦ hw i (Set.mem_univ i)⟩
 
 end Orthonormal

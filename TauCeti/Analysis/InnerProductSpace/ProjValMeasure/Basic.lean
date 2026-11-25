@@ -46,8 +46,8 @@ from the structure's laws.
 * `hasSum_proj_of_pairwise_disjoint`: unconditional strong countable additivity
   (`HasSum`) on a pairwise-disjoint measurable family; `tendsto_sum_proj_of_pairwise_disjoint`
   gives convergence of the natural-order partial sums.
-* `diag`, `diag_real_univ`, `diag_univ`, `enorm_sq_proj_apply`, `diag_zero`,
-  `diag_smul`, `diag_neg`, `diag_add_le`, `diag_proj`: the finite diagonal scalar
+* `diag`, `enorm_sq_proj_apply`, `diag_real_univ`, `diag_univ`, `diag_zero`, `diag_smul`,
+  `diag_neg`, `diag_add_add_diag_sub`, `diag_add_le`, `diag_proj`: the finite diagonal scalar
   measures carried by the structure, their real/extended-real total masses, and
   their behavior under vector operations and spectral projections.
 * `ext_of_diag`, `ext`, `ext_iff_diag`, `ext_iff`: extensionality from either
@@ -280,6 +280,21 @@ lemma norm_sq_proj_apply (P : ProjValMeasure X H) (B : Set X) (hB : MeasurableSe
   rw [norm_sq_eq_re_inner (𝕜 := ℂ), h1, P.inner_proj, RCLike.re_eq_complex_re,
     Complex.ofReal_re]
 
+/-- Squared extended norm of a spectral projection equals the diagonal mass
+of the corresponding measurable set. -/
+@[simp]
+theorem enorm_sq_proj_apply (P : ProjValMeasure X H) (B : Set X)
+    (hB : MeasurableSet B) (ξ : H) :
+    ‖P.proj B hB ξ‖ₑ ^ 2 = (P.diag ξ) B := by
+  have hfin : (P.diag ξ) B ≠ ⊤ :=
+    measure_ne_top (μ := P.diag ξ) (s := B)
+  calc
+    ‖P.proj B hB ξ‖ₑ ^ 2 = ENNReal.ofReal (‖P.proj B hB ξ‖ ^ 2) := by
+      rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+    _ = ENNReal.ofReal (((P.diag ξ) B).toReal) := by
+      rw [P.norm_sq_proj_apply B hB ξ]
+    _ = (P.diag ξ) B := ENNReal.ofReal_toReal hfin
+
 /-- The total mass of the diagonal measure as a real number. -/
 @[simp]
 theorem diag_real_univ (P : ProjValMeasure X H) (ξ : H) :
@@ -301,21 +316,6 @@ theorem diag_univ (P : ProjValMeasure X H) (ξ : H) :
     _ = ‖ξ‖ₑ ^ 2 := by
       rw [ENNReal.ofReal_pow (norm_nonneg ξ), ofReal_norm]
 
-/-- Squared extended norm of a spectral projection equals the diagonal mass
-of the corresponding measurable set. -/
-@[simp]
-theorem enorm_sq_proj_apply (P : ProjValMeasure X H) (B : Set X)
-    (hB : MeasurableSet B) (ξ : H) :
-    ‖P.proj B hB ξ‖ₑ ^ 2 = (P.diag ξ) B := by
-  have hfin : (P.diag ξ) B ≠ ⊤ :=
-    measure_ne_top (μ := P.diag ξ) (s := B)
-  calc
-    ‖P.proj B hB ξ‖ₑ ^ 2 = ENNReal.ofReal (‖P.proj B hB ξ‖ ^ 2) := by
-      rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
-    _ = ENNReal.ofReal (((P.diag ξ) B).toReal) := by
-      rw [P.norm_sq_proj_apply B hB ξ]
-    _ = (P.diag ξ) B := ENNReal.ofReal_toReal hfin
-
 /-- The diagonal scalar measure of the zero vector is the zero measure. -/
 @[simp]
 theorem diag_zero (P : ProjValMeasure X H) : P.diag 0 = 0 := by
@@ -335,14 +335,22 @@ theorem diag_smul (P : ProjValMeasure X H) (c : ℂ) (ξ : H) :
 theorem diag_neg (P : ProjValMeasure X H) (ξ : H) : P.diag (-ξ) = P.diag ξ := by
   simpa using P.diag_smul (-1 : ℂ) ξ
 
+/-- **Parallelogram law for diagonal measures**: the sum of the diagonal measures of `ξ + η` and
+`ξ - η` equals twice the sum of the diagonal measures of `ξ` and `η`. -/
+theorem diag_add_add_diag_sub (P : ProjValMeasure X H) (ξ η : H) :
+    P.diag (ξ + η) + P.diag (ξ - η) = (2 : ℝ≥0∞) • P.diag ξ + (2 : ℝ≥0∞) • P.diag η := by
+  refine Measure.ext fun B hB => ?_
+  simp only [add_apply, smul_apply, smul_eq_mul, ← P.enorm_sq_proj_apply B hB,
+    map_add, map_sub, ← mul_add]
+  exact TauCeti.parallelogram_law_with_enorm ℂ (P.proj B hB ξ) (P.proj B hB η)
+
 /-- The diagonal scalar measure of a sum is bounded by twice the sum of the two diagonal
 measures. -/
 theorem diag_add_le (P : ProjValMeasure X H) (ξ η : H) :
-    P.diag (ξ + η) ≤ (2 : ℝ≥0∞) • P.diag ξ + (2 : ℝ≥0∞) • P.diag η := by
-  refine Measure.le_iff.2 fun B hB => ?_
-  simp only [add_apply, smul_apply, smul_eq_mul, ← P.enorm_sq_proj_apply B hB, map_add, ← mul_add]
-  exact le_self_add.trans_eq
-    (TauCeti.parallelogram_law_with_enorm ℂ (P.proj B hB ξ) (P.proj B hB η))
+    P.diag (ξ + η) ≤ (2 : ℝ≥0∞) • P.diag ξ + (2 : ℝ≥0∞) • P.diag η :=
+  Measure.le_iff'.mpr fun B => by
+    rw [← P.diag_add_add_diag_sub ξ η, add_apply]
+    exact le_self_add
 
 /-- Applying a measurable-set projection restricts the diagonal scalar measure to that set. -/
 @[simp]

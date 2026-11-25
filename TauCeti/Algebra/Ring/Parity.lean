@@ -13,7 +13,8 @@ public import Mathlib.Algebra.Ring.Parity
 This file records the identity `1 - (-x)^{2n+1} = 1 + x^{2n+1}` in a ring, which turns a product
 of factors `1 - (-q)^{2n+1}` into a product of factors `1 + q^{2n+1}`, and three sign cancellations
 for powers of `-1` in a monoid with a distributive negation: an even summand of the exponent can be
-dropped, two equal powers of `-1` cancel, and `(-1)^{m + i} (-1)^m = (-1)^i`. It also records that
+dropped, two equal powers of `-1` cancel (also against a further factor), and
+`(-1)^{m + i} (-1)^m = (-1)^i`. It also records that
 multiplying a sign `±1` by a power of `-1` gives a sign.
 
 Finally, it records that a nonzero even element keeps `2` nonzero: `Even.two_ne_zero_of_ne_zero`.
@@ -44,6 +45,10 @@ theorem neg_one_pow_add_two_mul (a b : ℕ) : (-1 : α) ^ (a + 2 * b) = (-1) ^ a
 theorem neg_one_pow_mul_neg_one_pow_mul (a : ℕ) (x : α) :
     (-1 : α) ^ a * ((-1) ^ a * x) = x := by
   rw [← mul_assoc, ← pow_add, ← two_mul, (even_two_mul a).neg_one_pow, one_mul]
+
+/-- Two equal powers of `-1` multiply to one: `(-1)^a * (-1)^a = 1`. -/
+theorem neg_one_pow_mul_neg_one_pow (a : ℕ) : (-1 : α) ^ a * (-1) ^ a = 1 := by
+  simpa only [mul_one] using neg_one_pow_mul_neg_one_pow_mul a (1 : α)
 
 /-- Multiplying `(-1)^{m + i}` by `(-1)^m` leaves `(-1)^i`. -/
 theorem neg_one_pow_add_mul_neg_one_pow (m i : ℕ) : (-1 : α) ^ (m + i) * (-1) ^ m = (-1) ^ i := by
