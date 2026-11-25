@@ -1324,22 +1324,11 @@ theorem exists_eLpNorm_top_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlew
     refine ⟨0, fun j m hm F _ ↦ (eLpNorm_eLpNorm_eq_zero fun t ↦ ?_).trans_le zero_le⟩
     simp_rw [ContDiffBump.fourierMultiplierCLM_littlewoodPaley_eq_zero hm, zero_apply,
       map_zero, integral_zero]
-  -- The pair `(∞, r)` is wave-admissible: `(n - 1) / r ≤ (n - 1) / 2` since `n ≥ 1`, `r ≥ 2`.
-  have hqr : 2 * ((∞ : ℝ≥0∞)⁻¹).toReal + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
-      ((Module.finrank ℝ E : ℝ) - 1) / 2 := by
-    have hn : (0 : ℝ) ≤ (Module.finrank ℝ E : ℝ) - 1 := by
-      have : (1 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hE
-      linarith
-    have hr' : (r⁻¹).toReal ≤ 2⁻¹ := by
-      rw [← ENNReal.toReal_ofNat, ← ENNReal.toReal_inv]
-      exact ENNReal.toReal_mono (by simp) (ENNReal.inv_le_inv.2 hr)
-    rw [ENNReal.inv_top, ENNReal.toReal_zero, mul_zero, zero_add, div_eq_mul_inv]
-    exact mul_le_mul_of_nonneg_left hr' hn
   -- Test against `L¹_t L^{r'}_x` with `r'` the Hölder conjugate of `r`.
   have := ENNReal.HolderConjugate.inv_one_sub_inv' (one_le_two.trans hr)
   obtain ⟨C, hC⟩ := φ.exists_enorm_integral_inner_setIntegral_Iio_waveSinPropagator_sub_le
-    (p := 1) (r' := (1 - r⁻¹)⁻¹) (p₁ := p₁) (r₁' := r₁') le_top hr hqr (by simp) hq₁ hr₁ hqr₁
-    hq₁2
+    (p := 1) (r' := (1 - r⁻¹)⁻¹) (p₁ := p₁) (r₁' := r₁') le_top hr
+    (waveAdmissible_top_of_two_le hr hE) (by simp) hq₁ hr₁ hqr₁ hq₁2
   refine ⟨C, fun j m hm F hF ↦ ?_⟩
   have hPPF := (Lp.fourierMultiplierCLM ℂ m).integrable_comp
     ((Lp.fourierMultiplierCLM ℂ m).integrable_comp hF)

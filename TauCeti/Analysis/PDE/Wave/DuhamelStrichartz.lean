@@ -35,7 +35,8 @@ homogeneous Besov spaces and forcing in the dyadic `ℓ¹` class along the secon
 
 for every forcing `G` integrable on `[0, T]`, with `C` independent of `T`, `f`, `g` and `G`
 (`ContDiffBump.exists_eLpNorm_eLpNorm_waveDuhamelSolution_le_tsum`). The same estimate holds at
-the pairs `(∞, r)`, `2 ≤ r ≤ ∞`, with `γ = n / 2 - n / r`
+the pairs `(∞, r)`, `2 ≤ r ≤ ∞`, with `γ = n / 2 - n / r`, when the forcing pair also has
+`r₁ ≥ 2`, which is automatic in dimension `n ≥ 2`
 (`ContDiffBump.exists_eLpNorm_top_eLpNorm_waveDuhamelSolution_le_tsum`); at `(∞, ∞)` it bounds the
 solution uniformly on `[0, T] × E`. Since a strong solution of the forced equation on `[0, T]` is
 given by Duhamel's formula (`TauCeti.IsWaveSolutionOn.eq_waveDuhamelSolution`), both estimates
@@ -115,23 +116,6 @@ theorem eLpNorm_eLpNorm_waveDuhamelSolution_restrict_le {q r : ℝ≥0∞} (hq :
   exact add_le_add (eLpNorm_mono_measure _ Measure.restrict_le_self)
     (eLpNorm_mono_measure _ Measure.restrict_le_self)
 
-omit [CompleteSpace F] in
-/-- For a continuous linear map `P`, the mixed norm on the whole line of `P` applied
-to a function restricted to `[0, T]` and extended by zero is its mixed norm on `[0, T]`. -/
-private theorem eLpNorm_eLpNorm_apply_indicator_Icc
-    (P : Lp F 2 (volume : Measure E) →L[ℂ] Lp F 2 (volume : Measure E))
-    (G : ℝ → Lp F 2 (volume : Measure E)) (T : ℝ) (p r : ℝ≥0∞) :
-    eLpNorm (fun s ↦ eLpNorm (P ((Set.Icc 0 T).indicator G s)) r volume) p volume =
-      eLpNorm (fun s ↦ eLpNorm (P (G s)) r volume) p (volume.restrict (Set.Icc 0 T)) := by
-  have hind : (fun s ↦ eLpNorm (P ((Set.Icc 0 T).indicator G s)) r volume) =
-      (Set.Icc 0 T).indicator fun s ↦ eLpNorm (P (G s)) r volume := by
-    funext s
-    by_cases hs : s ∈ Set.Icc 0 T
-    · simp [hs]
-    · rw [Set.indicator_of_notMem hs, Set.indicator_of_notMem hs, map_zero,
-        eLpNorm_congr_ae (Lp.coeFn_zero _ _ _), eLpNorm_zero]
-  rw [hind, eLpNorm_indicator_eq_eLpNorm_restrict measurableSet_Icc.nullMeasurableSet]
-
 /-- Let `1 ≤ q` and `1 ≤ r`. If the free solutions satisfy
 `‖cos(tD) f + D⁻¹ sin(tD) g‖_{L^q_t L^r_x} ≤ C₀ D(f, g)` and the retarded integrals of integrable
 forcing terms satisfy `‖∫_{s < t} D⁻¹ sin((t - s)D) F(s) ds‖_{L^q_t L^r_x} ≤
@@ -157,7 +141,8 @@ private theorem eLpNorm_eLpNorm_waveDuhamelSolution_restrict_le_of_le {q r p₁ 
         eLpNorm (Lp.fourierMultiplierCLM ℂ (m j) (G s)) r₁' volume) p₁
           (volume.restrict (Set.Icc 0 T))) := by
   have hret' := hret _ (hG.integrable_indicator measurableSet_Icc)
-  simp_rw [eLpNorm_eLpNorm_apply_indicator_Icc] at hret'
+  simp_rw [eLpNorm_eLpNorm_apply_indicator (map_zero _) measurableSet_Icc.nullMeasurableSet]
+    at hret'
   grw [eLpNorm_eLpNorm_waveDuhamelSolution_restrict_le hq hr f g hG.aestronglyMeasurable,
     hfree f g, hret', ENNReal.coe_add, add_mul]
   gcongr
