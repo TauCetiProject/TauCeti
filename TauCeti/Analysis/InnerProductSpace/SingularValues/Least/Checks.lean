@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.LinearDistortion.Examples
 public import TauCeti.Analysis.InnerProductSpace.SingularValues.Least
 public import TauCeti.Analysis.InnerProductSpace.SingularValues.Planar
 
@@ -57,11 +56,11 @@ example : (toLin e.toBasis e.toBasis (diagonal ![(3 : ℝ), 1 / 2])).singularVal
 
 /-- The shear `[[1, 1], [0, 1]]` has minimal stretch `(√5 - 1) / 2` and operator norm
 `(√5 + 1) / 2`: its squared singular values are `(3 ± √5) / 2`
-(`TauCeti.LinearDistortionExamples.sq_singularValues_shear`). -/
+(`Matrix.sq_singularValues_toLin_shear_fin_two`). -/
 example : (toLin e.toBasis e.toBasis !![(1 : ℝ), 1; 0, 1]).minimalStretch = (√5 - 1) / 2 ∧
     ‖toContinuousLinearMap (toLin e.toBasis e.toBasis !![(1 : ℝ), 1; 0, 1])‖ = (√5 + 1) / 2 := by
   have hE : finrank ℝ E = 2 := by rw [finrank_eq_card_basis e.toBasis, Fintype.card_fin]
-  obtain ⟨h0, h1⟩ := LinearDistortionExamples.sq_singularValues_shear e
+  obtain ⟨h0, h1⟩ := sq_singularValues_toLin_shear_fin_two e
   have h5 : √5 ^ 2 = 5 := Real.sq_sqrt (by norm_num)
   have h5' : (1 : ℝ) ≤ √5 := Real.one_le_sqrt.mpr (by norm_num)
   simp only [minimalStretch_def, hE, Nat.reduceSub,
