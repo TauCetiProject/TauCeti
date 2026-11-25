@@ -22,7 +22,8 @@ For `S` finite over `R`, `Sₚ` is the semilocal ring of `S` over `p`, and this 
 correspondence between its maximal ideals and the points of the fibre over `p`.
 
 Suppose that among the ideals of `S` contracting into `p` there is a greatest one `q`, for
-instance when `S` is a valuation ring. Then `Sₚ` is the localization of `S` at `q`
+instance when `S` is a valuation ring and the kernel of `R → S` lies in `p`
+(`Ideal.exists_isGreatest_comap_le`). Then `Sₚ` is the localization of `S` at `q`
 (`IsLocalization.isLocalization_atPrime_of_isGreatest_comap_le`); in particular so is
 `S ⊗[R] Rₚ` (`IsLocalization.isLocalization_atPrime_tensorProduct_of_isGreatest_comap_le`).
 -/

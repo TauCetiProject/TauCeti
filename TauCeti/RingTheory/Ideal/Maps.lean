@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Maps
-public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 import Mathlib.Algebra.Algebra.Tower
 
 /-!
@@ -29,9 +28,7 @@ homomorphism `f` for which `f r` is a unit.
 
 If the images of any two elements of `I` are comparable for divisibility, as when the source or
 target is a valuation ring, the extension of `I` consists of the multiples of images of elements
-of `I`. The greatest ideal whose contraction is contained in a prime `p` is prime, and for a
-homomorphism of local rings the greatest ideal contracting into the maximal ideal of the source is
-the maximal ideal of the target.
+of `I`. The greatest ideal whose contraction is contained in a prime `p` is prime.
 -/
 
 public section
@@ -143,18 +140,6 @@ theorem isPrime_of_isGreatest_comap_le {V W : Type*} [CommRing V] [CommRing W] (
   isPrime_of_maximally_disjoint q (p.primeCompl.map f)
     (disjoint_map_primeCompl_iff_comap_le.mpr hq.1)
     fun _ hJ hdisj ↦ hJ.not_ge (hq.2 (disjoint_map_primeCompl_iff_comap_le.mp hdisj))
-
-/-- For any homomorphism `f` of local rings, the maximal ideal of the target is the greatest ideal
-contracting into the maximal ideal of the source. For instance, if `V` is a field inside a
-local domain `W` and `p = 0`, then `p.map f = 0` while the greatest ideal of `W` contracting into
-`p` is the maximal ideal of `W`. -/
-theorem isGreatest_comap_le_maximalIdeal {V W : Type*} [CommRing V] [CommRing W] (f : V →+* W)
-    [IsLocalRing V] [IsLocalRing W] :
-    IsGreatest {J : Ideal W | J.comap f ≤ IsLocalRing.maximalIdeal V}
-      (IsLocalRing.maximalIdeal W) :=
-  ⟨IsLocalRing.le_maximalIdeal (comap_ne_top f (IsLocalRing.maximalIdeal.isMaximal W).ne_top),
-    fun J hJ ↦ IsLocalRing.le_maximalIdeal fun h ↦
-    (IsLocalRing.maximalIdeal.isMaximal V).ne_top (top_le_iff.mp (by simpa [h] using hJ))⟩
 
 end Ideal
 
