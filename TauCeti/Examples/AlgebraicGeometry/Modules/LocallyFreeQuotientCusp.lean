@@ -20,6 +20,9 @@ of `g` is `A dx`. Hence all quotients of the differentials isomorphic to `A` (th
 `Ω[A⁄k] → A`) have the same kernel `A dx`, as the uniqueness of locally free quotients over a
 dense smooth locus predicts. The torsion section `dx` shows that the differentials themselves are
 not locally free.
+
+The file also records the origin of the cusp, the `k`-point `cuspOrigin k` at which `x` and `y`
+vanish.
 -/
 
 public section
@@ -96,6 +99,30 @@ theorem span_D_eq_top :
     Submodule.span (CuspRing k) {D k (CuspRing k) (cuspX k), D k (CuspRing k) (cuspY k)} = ⊤ := by
   rw [← Set.image_pair]
   exact KaehlerDifferential.span_image_D_eq_top_of_adjoin_eq_top (adjoin_cuspX_cuspY_eq_top k)
+
+variable {k} in
+/-- Evaluating the cusp polynomial `y² − x³` at `(i x, a)`. -/
+theorem eval₂_cuspPolynomial {T : Type*} [CommRing T] (i : Polynomial k →+* T) (a : T) :
+    (cuspPolynomial k).eval₂ i a = a ^ 2 - i X ^ 3 := by
+  rw [cuspPolynomial, eval₂_sub, eval₂_X_pow, eval₂_C, map_pow]
+
+/-- The origin of the cusp, as a `k`-point of its coordinate ring. -/
+def cuspOrigin : CuspRing k →ₐ[k] k :=
+  AdjoinRoot.liftAlgHom _ (aeval 0) 0 (by rw [eval₂_cuspPolynomial]; simp)
+
+/-- The origin of the cusp is a prime ideal of its coordinate ring. -/
+instance isPrime_ker_cuspOrigin : (RingHom.ker (cuspOrigin k).toRingHom).IsPrime :=
+  RingHom.ker_isPrime _
+
+/-- The coordinate `x` vanishes at the origin of the cusp. -/
+@[simp]
+theorem cuspOrigin_cuspX : cuspOrigin k (cuspX k) = 0 := by
+  simp [cuspOrigin, cuspX_def]
+
+/-- The coordinate `y` vanishes at the origin of the cusp. -/
+@[simp]
+theorem cuspOrigin_cuspY : cuspOrigin k (cuspY k) = 0 := by
+  simp [cuspOrigin, cuspY_def]
 
 variable {k}
 

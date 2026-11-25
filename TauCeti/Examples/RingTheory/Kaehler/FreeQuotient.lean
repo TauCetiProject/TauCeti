@@ -8,6 +8,7 @@ module
 public import TauCeti.Examples.AlgebraicGeometry.Modules.LocallyFreeQuotientCusp
 public import TauCeti.RingTheory.Kaehler.FreeQuotient
 public import TauCeti.RingTheory.Kaehler.Localization
+public import TauCeti.RingTheory.LocalRing.Localization
 public import TauCeti.RingTheory.Node.Branches
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 public import Mathlib.RingTheory.PowerSeries.Inverse
@@ -33,7 +34,8 @@ cusp cannot be dropped.
 The non-divisibility hypotheses of `TauCeti.not_surjective_kaehlerDifferential_of_mul_eq_zero`
 and `TauCeti.not_surjective_kaehlerDifferential_of_sq_eq_pow_three` are checked by mapping the
 coordinate ring to local rings where the images of `x`, `y` are explicit: `k⟦t⟧` with
-`(x, y) ↦ (t, 0)`, `(0, t)` or `(t ^ 2, t ^ 3)`, and `k⟦t⟧ / (t ^ 3)` with `(x, y) ↦ (t, 0)`.
+`(x, y) ↦ (t, 0)`, `(0, t)` or `(t ^ 2, t ^ 3)`, and `k⟦t⟧ / (t ^ 3)` with `(x, y) ↦ (t, 0)`,
+through `TauCeti.algebraMap_notMem_span_singleton`.
 -/
 
 public section
@@ -47,41 +49,6 @@ namespace TauCeti.NodeCuspDifferentialsExample
 universe u
 
 variable {k : Type u} [Field k]
-
-/-- To see that `u ∉ (v)` in the local ring of a `k`-algebra `A` at a `k`-point `ε`, it suffices
-to send `A` to a local `k`-algebra `B` by `ψ`, with generators of `A` that vanish at `ε` going to
-the maximal ideal, so that `ψ u ∉ (ψ v)`. -/
-private lemma notMem_span_of_isLocalRing {A B : Type*} [CommRing A] [Algebra k A] [CommRing B]
-    [Algebra k B] [IsLocalRing B] {s : Set A} (hs : Algebra.adjoin k s = ⊤) (ε : A →ₐ[k] k)
-    [(RingHom.ker ε.toRingHom).IsPrime] (hε : ∀ a ∈ s, ε a = 0) (ψ : A →ₐ[k] B)
-    (hψ : ∀ a ∈ s, ψ a ∈ IsLocalRing.maximalIdeal B)
-    {u v : A} (h : ψ u ∉ Ideal.span {ψ v}) :
-    algebraMap A (Localization.AtPrime (RingHom.ker ε.toRingHom)) u ∉
-      Ideal.span {algebraMap A (Localization.AtPrime (RingHom.ker ε.toRingHom)) v} := by
-  have hm (a : A) : ψ a - algebraMap k B (ε a) ∈ IsLocalRing.maximalIdeal B := by
-    have ha : a ∈ Algebra.adjoin k s := hs ▸ Algebra.mem_top
-    induction ha using Algebra.adjoin_induction with
-    | mem a ha => simpa [hε a ha] using hψ a ha
-    | algebraMap c => simp
-    | add a b _ _ ha hb => simpa [add_sub_add_comm] using add_mem ha hb
-    | mul a b _ _ ha hb =>
-      convert add_mem (Ideal.mul_mem_right (ψ b) _ ha)
-        (Ideal.mul_mem_left _ (algebraMap k B (ε a)) hb) using 1
-      simp only [map_mul]
-      ring
-  have hM : ∀ m : (RingHom.ker ε.toRingHom).primeCompl, IsUnit ((ψ : A →+* B) m) := by
-    rintro ⟨m, hm'⟩
-    have hu : IsUnit (algebraMap k B (ε m)) :=
-      (isUnit_iff_ne_zero.mpr fun h ↦ hm' (RingHom.mem_ker.mpr h)).map _
-    by_contra hn
-    refine (IsLocalRing.mem_maximalIdeal _).mp ?_ hu
-    simpa using sub_mem ((IsLocalRing.mem_maximalIdeal _).mpr hn) (hm m)
-  let L := IsLocalization.lift (S := Localization.AtPrime (RingHom.ker ε.toRingHom)) hM
-  have hL (a : A) : L (algebraMap A _ a) = ψ a := IsLocalization.lift_eq hM a
-  intro hmem
-  obtain ⟨c, hc⟩ := Ideal.mem_span_singleton'.mp hmem
-  refine h (Ideal.mem_span_singleton'.mpr ⟨L c, ?_⟩)
-  rw [← hL, ← hL, ← hc, map_mul]
 
 section Node
 
@@ -99,8 +66,9 @@ lemma node_coord_notMem_span {i j : Fin 2} (hij : i ≠ j) :
   let p : Fin 2 → PowerSeries k := fun l ↦ if l = i then PowerSeries.X else 0
   have hp : p 0 * p 1 = algebraMap k _ 0 := by
     fin_cases i <;> simp [p]
-  refine notMem_span_of_isLocalRing (NodeAlgebra.adjoin_range_coord 0) (NodeAlgebra.origin k)
-    (by rintro _ ⟨l, rfl⟩; simp) (NodeAlgebra.lift 0 (p 0) (p 1) hp) ?_ ?_
+  refine algebraMap_notMem_span_singleton (ker_le_comap_maximalIdeal_of_adjoin_eq_top
+    (NodeAlgebra.adjoin_range_coord 0) (NodeAlgebra.origin k) (by rintro _ ⟨l, rfl⟩; simp)
+    (NodeAlgebra.lift 0 (p 0) (p 1) hp) ?_) ?_
   · rintro _ ⟨l, rfl⟩
     rw [IsLocalRing.mem_maximalIdeal, mem_nonunits_iff, PowerSeries.isUnit_iff_constantCoeff]
     fin_cases i <;> fin_cases l <;> simp [p]
@@ -124,30 +92,6 @@ end Node
 
 section Cusp
 
-/-- Evaluating the cusp polynomial `y ^ 2 - x ^ 3` at `(i x, a)`. -/
-private lemma eval₂_cuspPolynomial {T : Type*} [CommRing T] (i : Polynomial k →+* T) (a : T) :
-    (cuspPolynomial k).eval₂ i a = a ^ 2 - i Polynomial.X ^ 3 := by
-  rw [cuspPolynomial, Polynomial.eval₂_sub, Polynomial.eval₂_X_pow, Polynomial.eval₂_C, map_pow]
-
-variable (k) in
-/-- The origin of the cusp, as a `k`-point of its coordinate ring. -/
-def cuspOrigin : CuspRing k →ₐ[k] k :=
-  AdjoinRoot.liftAlgHom _ (Polynomial.aeval 0) 0 (by rw [eval₂_cuspPolynomial]; simp)
-
-/-- The origin of the cusp is a prime ideal of its coordinate ring. -/
-instance isPrime_ker_cuspOrigin : (RingHom.ker (cuspOrigin k).toRingHom).IsPrime :=
-  RingHom.ker_isPrime _
-
-/-- The coordinate `x` vanishes at the origin of the cusp. -/
-@[simp]
-lemma cuspOrigin_cuspX : cuspOrigin k (cuspX k) = 0 := by
-  simp [cuspOrigin, cuspX_def]
-
-/-- The coordinate `y` vanishes at the origin of the cusp. -/
-@[simp]
-lemma cuspOrigin_cuspY : cuspOrigin k (cuspY k) = 0 := by
-  simp [cuspOrigin, cuspY_def]
-
 variable (k) in
 /-- The local ring at the origin of the cusp `y ^ 2 = x ^ 3`. -/
 abbrev CuspLocalRing : Type u := Localization.AtPrime (RingHom.ker (cuspOrigin k).toRingHom)
@@ -162,9 +106,10 @@ abbrev yc : CuspLocalRing k := algebraMap (CuspRing k) (CuspLocalRing k) (cuspY 
 lemma yc_notMem_span_xc_sq : yc (k := k) ∉ Ideal.span {xc ^ 2} := by
   -- Map to `k⟦t⟧` by `(x, y) ↦ (t ^ 2, t ^ 3)`.
   rw [← map_pow]
-  refine notMem_span_of_isLocalRing (adjoin_cuspX_cuspY_eq_top k) (cuspOrigin k) (by simp)
+  refine algebraMap_notMem_span_singleton (ker_le_comap_maximalIdeal_of_adjoin_eq_top
+    (adjoin_cuspX_cuspY_eq_top k) (cuspOrigin k) (by simp)
     (AdjoinRoot.liftAlgHom _ (Polynomial.aeval (PowerSeries.X ^ 2 : PowerSeries k))
-      (PowerSeries.X ^ 3) (by rw [eval₂_cuspPolynomial]; simp [← pow_mul])) ?_ ?_
+      (PowerSeries.X ^ 3) (by rw [eval₂_cuspPolynomial]; simp [← pow_mul])) ?_) ?_
   · rintro a (rfl | rfl) <;>
       simp [cuspX_def, cuspY_def, PowerSeries.isUnit_iff_constantCoeff]
   · simp [cuspX_def, cuspY_def, ← pow_mul, Ideal.mem_span_singleton, PowerSeries.X_pow_dvd_iff]
@@ -178,9 +123,10 @@ lemma xc_sq_notMem_span_yc : xc (k := k) ^ 2 ∉ Ideal.span {yc} := by
   have : IsLocalRing (PowerSeries k ⧸ I) :=
     .of_surjective' (Ideal.Quotient.mk I) Ideal.Quotient.mk_surjective
   rw [← map_pow]
-  refine notMem_span_of_isLocalRing (adjoin_cuspX_cuspY_eq_top k) (cuspOrigin k) (by simp)
+  refine algebraMap_notMem_span_singleton (ker_le_comap_maximalIdeal_of_adjoin_eq_top
+    (adjoin_cuspX_cuspY_eq_top k) (cuspOrigin k) (by simp)
     (AdjoinRoot.liftAlgHom _ (Polynomial.aeval (Ideal.Quotient.mk I PowerSeries.X)) 0
-      (by rw [eval₂_cuspPolynomial]; simp [I, ← map_pow])) ?_ ?_
+      (by rw [eval₂_cuspPolynomial]; simp [I, ← map_pow])) ?_) ?_
   · rintro a (rfl | rfl)
     · simp only [cuspX_def, AdjoinRoot.liftAlgHom_of, Polynomial.aeval_X]
       refine (IsNilpotent.not_isUnit ⟨3, ?_⟩)
