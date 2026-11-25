@@ -100,22 +100,18 @@ structure GlueingPair (f : R) : Prop where
     (Submodule.torsion' R R (Submonoid.powers f))
     (Submodule.torsion' R' R' (Submonoid.powers (algebraMap R R' f)))
 
-variable (R') in
-/-- The image of `fⁿ` is divisible by `f'ⁿ`, so `R → R'` induces the canonical map
-`R ⧸ (fⁿ) → R' ⧸ (f'ⁿ)`. -/
-theorem span_pow_le_comap_span_pow (f : R) (n : ℕ) :
-    Ideal.span {f ^ n} ≤ (Ideal.span {algebraMap R R' f ^ n}).comap (algebraMap R R') := by
-  rw [Ideal.span_le, Set.singleton_subset_iff, SetLike.mem_coe, Ideal.mem_comap, map_pow]
-  exact Ideal.subset_span rfl
-
 /-- The canonical map `R ⧸ (fⁿ) → R' ⧸ (f'ⁿ)` is bijective if and only if every element of `R'`
 is congruent modulo `f'ⁿ` to the image of an element of `R` and an element of `R` whose image is
 divisible by `f'ⁿ` is divisible by `fⁿ`. -/
 theorem bijective_quotientMap_iff {f : R} {n : ℕ} :
-    Function.Bijective (Ideal.quotientMap _ (algebraMap R R') (span_pow_le_comap_span_pow R' f n)) ↔
+    Function.Bijective (Ideal.quotientMap ((Ideal.span {f ^ n}).map (algebraMap R R'))
+      (algebraMap R R') Ideal.le_comap_map) ↔
       (∀ y : R', ∃ x : R, y - algebraMap R R' x ∈ Ideal.span {algebraMap R R' f ^ n}) ∧
         (Ideal.span {algebraMap R R' f ^ n}).comap (algebraMap R R') = Ideal.span {f ^ n} := by
-  refine ⟨fun h ↦ ⟨fun y ↦ ?_, le_antisymm (fun x hx ↦ ?_) (span_pow_le_comap_span_pow R' f n)⟩,
+  have hJ : (Ideal.span {f ^ n}).map (algebraMap R R') = Ideal.span {algebraMap R R' f ^ n} := by
+    simp [Ideal.map_span]
+  rw [← hJ]
+  refine ⟨fun h ↦ ⟨fun y ↦ ?_, le_antisymm (fun x hx ↦ ?_) Ideal.le_comap_map⟩,
     fun h ↦ ⟨Ideal.quotientMap_injective' h.2.le, fun y ↦ ?_⟩⟩
   · obtain ⟨x, hx⟩ := h.2 (Ideal.Quotient.mk _ y)
     obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
@@ -131,7 +127,8 @@ theorem bijective_quotientMap_iff {f : R} {n : ℕ} :
 bijective for every `n` and `R → R'` restricts to a bijection `R[f^∞] → R'[f^∞]`. -/
 theorem glueingPair_iff {f : R} : GlueingPair R' f ↔
     (∀ n : ℕ, Function.Bijective
-      (Ideal.quotientMap _ (algebraMap R R') (span_pow_le_comap_span_pow R' f n))) ∧
+      (Ideal.quotientMap ((Ideal.span {f ^ n}).map (algebraMap R R'))
+      (algebraMap R R') Ideal.le_comap_map)) ∧
       Set.BijOn (algebraMap R R') (Submodule.torsion' R R (Submonoid.powers f))
         (Submodule.torsion' R' R' (Submonoid.powers (algebraMap R R' f))) :=
   ⟨fun h ↦ ⟨fun _ ↦ bijective_quotientMap_iff.mpr ⟨h.quotient_surjective _, h.quotient_injective _⟩,
@@ -142,7 +139,8 @@ theorem glueingPair_iff {f : R} : GlueingPair R' f ↔
 /-- A glueing pair induces isomorphisms `R ⧸ (fⁿ) ≃ R' ⧸ (f'ⁿ)` for every `n`. -/
 theorem GlueingPair.quotientMap_bijective {f : R} (h : GlueingPair R' f) (n : ℕ) :
     Function.Bijective
-      (Ideal.quotientMap _ (algebraMap R R') (span_pow_le_comap_span_pow R' f n)) :=
+      (Ideal.quotientMap ((Ideal.span {f ^ n}).map (algebraMap R R'))
+      (algebraMap R R') Ideal.le_comap_map) :=
   (glueingPair_iff.mp h).1 n
 
 end Definition
@@ -338,7 +336,9 @@ theorem glueingPair_iff_exactSquare [IsLocalization.Away f R₂]
   ⟨fun h ↦ h.exactSquare R₂ L, fun h ↦
     { quotient_surjective := quotient_surjective_of_exactSquare h
       quotient_injective := fun n ↦
-        le_antisymm (comap_span_pow_le_of_exactSquare h n) (span_pow_le_comap_span_pow R' f n)
+        le_antisymm (comap_span_pow_le_of_exactSquare h n)
+          ((Ideal.le_comap_map (f := algebraMap R R') (I := Ideal.span {f ^ n})).trans_eq
+            (by simp [Ideal.map_span]))
       torsion_bijOn := ⟨(algebraMap R R').mapsTo_torsion'_powers f,
         (injective_algebraMap_prod_iff_injOn_torsion' R' R₂).mp h.injective,
         surjOn_torsion'_of_exact h.exact⟩ }⟩
@@ -353,7 +353,7 @@ theorem GlueingPair.exists_isPrime_comap_eq (h : GlueingPair R' f) [IsLocalizati
   have hi := h.quotient_injective 1
   simp only [pow_one] at hi
   exact exists_isPrime_comap_eq_of_bijective_quotientMap (H := hi.ge)
-    (by convert h.quotientMap_bijective 1 <;> simp) p
+    (by convert h.quotientMap_bijective 1 <;> simp [Ideal.map_span]) p
 
 end ExactSquare
 

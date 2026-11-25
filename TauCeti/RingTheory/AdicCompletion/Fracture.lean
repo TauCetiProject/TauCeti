@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.AdicCompletion.Regular
 public import TauCeti.RingTheory.AdicCompletion.Iterated
 public import TauCeti.RingTheory.Regular.Pair
 public import TauCeti.RingTheory.Patching.GlueingPair
+import TauCeti.RingTheory.Localization.Away.Basic
 import Mathlib.Algebra.Module.LocalizedModule.IsLocalization
 import TauCeti.Algebra.Module.LocalizedModule.Regular
 import TauCeti.RingTheory.AdicCompletion.Exactness
@@ -72,38 +73,18 @@ namespace AdicCompletion
 
 variable {R : Type*} [CommRing R] {r : R}
 
-/-- The `(r)`-adic completion is congruent to `R` modulo every power of `r`. -/
-private theorem exists_sub_algebraMap_mem_span_pow (r : R) (n : ℕ)
-    (y : AdicCompletion (Ideal.span {r}) R) :
-    ∃ x : R, y - algebraMap R _ x ∈
-      Ideal.span {algebraMap R (AdicCompletion (Ideal.span {r}) R) r ^ n} := by
-  simpa [Ideal.span_singleton_pow, Ideal.map_span] using
-    exists_sub_algebraMap_mem_map_pow (Submodule.fg_span_singleton r) n y
-
 /-- If `f` is a nonzerodivisor of `R`, then `R` and its `(f)`-adic completion form a glueing pair
 (Stacks, Remark 15.92.7). No noetherian hypothesis is needed: the completion has the same
 quotients by the powers of `f`, and `f` stays a nonzerodivisor in it, so neither ring has
 `f`-power torsion. -/
 theorem _root_.IsRegular.glueingPair_adicCompletion {f : R} (hf : IsRegular f) :
     TauCeti.GlueingPair (AdicCompletion (Ideal.span {f}) R) f := by
-  refine ⟨exists_sub_algebraMap_mem_span_pow f, fun n ↦ ?_, ?_⟩
-  · have hI : (Ideal.span {f} ^ n).map (algebraMap R (AdicCompletion (Ideal.span {f}) R)) =
-        Ideal.span {algebraMap R (AdicCompletion (Ideal.span {f}) R) f ^ n} := by
+  refine TauCeti.glueingPair_iff.mpr ⟨fun n ↦ ?_, ?_⟩
+  · convert quotientMap_algebraMap_bijective (Submodule.fg_span_singleton f) n <;>
       simp [Ideal.span_singleton_pow, Ideal.map_span]
-    ext x
-    rw [Ideal.mem_comap, ← hI, algebraMap_mem_map_pow_iff, Ideal.span_singleton_pow]
   · rw [hf.isSMulRegular.torsion'_powers_eq_bot,
       hf.adicCompletion.isSMulRegular.torsion'_powers_eq_bot, Submodule.bot_coe, Submodule.bot_coe]
     exact Set.bijOn_singleton.mpr (_root_.map_zero _)
-
-/-- `Localization.awayMap` makes `R[1/r] → R̂[1/r]` into a scalar tower over `R`. -/
-private theorem isScalarTower_awayMap (r : R) :
-    letI := (Localization.awayMap (algebraMap R (AdicCompletion (Ideal.span {r}) R)) r).toAlgebra
-    IsScalarTower R (Localization.Away r)
-      (Localization.Away (algebraMap R (AdicCompletion (Ideal.span {r}) R) r)) :=
-  letI := (Localization.awayMap (algebraMap R (AdicCompletion (Ideal.span {r}) R)) r).toAlgebra
-  .of_algebraMap_eq fun x ↦ (IsScalarTower.algebraMap_apply R _ _ x).trans
-    (IsLocalization.map_eq (Submonoid.powers r).le_comap_map x).symm
 
 /-- The localization–completion square of a regular element is cartesian: compatible elements
 of `R[1/r]` and the `(r)`-adic completion come from a unique element of `R`. -/
@@ -115,7 +96,7 @@ theorem existsUnique_localization_lift (hr : IsRegular r)
     ∃! x : R, algebraMap R (Localization.Away r) x = a ∧
       algebraMap R (AdicCompletion (Ideal.span {r}) R) x = b := by
   let := (Localization.awayMap (algebraMap R (AdicCompletion (Ideal.span {r}) R)) r).toAlgebra
-  have := isScalarTower_awayMap r
+  have := Localization.isScalarTower_awayMap (AdicCompletion (Ideal.span {r}) R) r
   have h := hr.glueingPair_adicCompletion.exactSquare (Localization.Away r)
     (Localization.Away (algebraMap R (AdicCompletion (Ideal.span {r}) R) r))
   obtain ⟨x, hx⟩ := (h.exists_algebraMap_eq_iff b a).mpr hab.symm
@@ -132,9 +113,10 @@ theorem exists_localization_sub_completion (r : R)
         algebraMap _ (Localization.Away
           (algebraMap R (AdicCompletion (Ideal.span {r}) R) r)) b = z := by
   let := (Localization.awayMap (algebraMap R (AdicCompletion (Ideal.span {r}) R)) r).toAlgebra
-  have := isScalarTower_awayMap r
+  have := Localization.isScalarTower_awayMap (AdicCompletion (Ideal.span {r}) R) r
   obtain ⟨⟨b, a⟩, h⟩ := TauCeti.surjective_sub_of_quotient_surjective (R₂ := Localization.Away r)
-    (exists_sub_algebraMap_mem_span_pow r) (-z)
+    (fun n y ↦ by simpa [Ideal.span_singleton_pow, Ideal.map_span] using
+      exists_sub_algebraMap_mem_map_pow (Submodule.fg_span_singleton r) n y) (-z)
   exact ⟨a, b, by rw [← neg_sub, ← neg_neg z]; exact congrArg Neg.neg h⟩
 
 section Completion
