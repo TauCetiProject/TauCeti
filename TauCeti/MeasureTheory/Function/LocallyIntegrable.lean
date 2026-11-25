@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import Mathlib.MeasureTheory.Measure.Decomposition.Lebesgue
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import Mathlib.Analysis.Calculus.ContDiff.Deriv
+import Mathlib.Analysis.Calculus.Deriv.Support
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Inner
 import Mathlib.MeasureTheory.Group.Measure
 import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
@@ -145,6 +149,10 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   compact set is integrable, without a separation assumption on the domain.
 * `Continuous.integrable_norm_sq_of_hasCompactSupport`: the squared norm of a continuous
   compactly supported function is integrable.
+* `Continuous.integrable_sq_of_hasCompactSupport` and
+  `ContDiff.integrable_deriv_sq_of_hasCompactSupport`: the square of a continuous compactly
+  supported real function, and of the derivative of a `C¹` compactly supported function on `ℝ`,
+  is integrable.
 * `Continuous.integrable_sq_mul_norm_sq_of_hasCompactSupport`: the same after multiplying by
   the square of a continuous real weight.
 * `Continuous.integrable_mul_of_continuousOn`: a continuous function compactly supported in
@@ -589,6 +597,19 @@ theorem Continuous.integrable_norm_sq_of_hasCompactSupport {F : Type*}
     (hf : Continuous f) (hcf : HasCompactSupport f) : Integrable (fun x ↦ ‖f x‖ ^ 2) μ := by
   apply Continuous.integrable_of_hasCompactSupport (by fun_prop)
   exact hcf.comp_left (g := fun v ↦ ‖v‖ ^ 2) (by simp)
+
+/-- The square of a continuous compactly supported real function is integrable for any measure
+finite on compact sets. -/
+theorem Continuous.integrable_sq_of_hasCompactSupport {f : X → ℝ} (hf : Continuous f)
+    (hcf : HasCompactSupport f) : Integrable (fun x ↦ f x ^ 2) μ := by
+  simpa using hf.integrable_norm_sq_of_hasCompactSupport (μ := μ) hcf
+
+/-- The square of the derivative of a `C¹` compactly supported function on `ℝ` is integrable for
+any measure finite on compact sets. -/
+theorem ContDiff.integrable_deriv_sq_of_hasCompactSupport {μ : Measure ℝ}
+    [IsFiniteMeasureOnCompacts μ] {φ : ℝ → ℝ} {n : WithTop ℕ∞} (hφ : ContDiff ℝ n φ)
+    (hφc : HasCompactSupport φ) (hn : 1 ≤ n) : Integrable (fun s ↦ deriv φ s ^ 2) μ :=
+  (hφ.continuous_deriv hn).integrable_sq_of_hasCompactSupport hφc.deriv
 
 /-- A continuous real weight squared, times the squared norm of a continuous compactly supported
 function, is integrable for any measure finite on compact sets. The weight need not be compactly

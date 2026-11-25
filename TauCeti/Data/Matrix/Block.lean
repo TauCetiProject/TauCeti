@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.StarAlgHom
 public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Data.Matrix.Block
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
@@ -46,6 +47,8 @@ and empty blocks.
 * `Matrix.toBlocks₁₁_mul`, `Matrix.toBlocks₁₂_mul`, `Matrix.toBlocks₂₁_mul`,
   `Matrix.toBlocks₂₂_mul`: the four blocks of a product of block matrices.
 * `Matrix.fromBlocks_zero₂₁_pow`: the power formula for an upper two-block matrix.
+* `Matrix.fromBlocks₁₁NonUnitalStarAlgHom`: the corner embedding `y ↦ fromBlocks y 0 0 0` as a
+  non-unital `⋆`-algebra homomorphism.
 * `Matrix.fromBlocks_mul_sub_mul`: the four blocks of a difference of products.
 * `IsIdempotentElem.fromBlocks_zero₁₂_zero₂₁` and `IsStarProjection.fromBlocks_zero₁₂_zero₂₁`:
   the direct sum of idempotent matrices is idempotent, and that of star projections is a star
@@ -126,6 +129,25 @@ public theorem fromBlocks_zero₂₁_pow {R m n : Type*} [Semiring R]
       have := Finset.mem_range.mp hi
       omega
     rw [Matrix.mul_assoc, ← pow_succ, hidx]
+
+/-- The corner embedding `y ↦ fromBlocks y 0 0 0` of `Matrix l l α` into
+`Matrix (l ⊕ m) (l ⊕ m) α`, as a non-unital `⋆`-algebra homomorphism. -/
+public def fromBlocks₁₁NonUnitalStarAlgHom (R α l m : Type*) [Fintype l] [Fintype m]
+    [Monoid R] [NonUnitalNonAssocSemiring α] [DistribMulAction R α] [StarAddMonoid α] :
+    Matrix l l α →⋆ₙₐ[R] Matrix (l ⊕ m) (l ⊕ m) α where
+  toFun y := fromBlocks y 0 0 0
+  map_smul' c y := by simp [fromBlocks_smul]
+  map_zero' := by simp
+  map_add' y z := by simp [fromBlocks_add]
+  map_mul' y z := by simp [fromBlocks_multiply]
+  map_star' y := by simp [star_eq_conjTranspose, fromBlocks_conjTranspose]
+
+/-- The corner embedding places a matrix in the top-left block. -/
+@[simp]
+public theorem fromBlocks₁₁NonUnitalStarAlgHom_apply {R α l m : Type*} [Fintype l] [Fintype m]
+    [Monoid R] [NonUnitalNonAssocSemiring α] [DistribMulAction R α] [StarAddMonoid α]
+    (y : Matrix l l α) : fromBlocks₁₁NonUnitalStarAlgHom R α l m y = fromBlocks y 0 0 0 :=
+  (rfl)
 
 end Matrix
 

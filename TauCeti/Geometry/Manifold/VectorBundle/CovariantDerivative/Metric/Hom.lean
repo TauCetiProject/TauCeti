@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Hom
+public import TauCeti.Analysis.InnerProductSpace.HilbertSchmidt.Inner
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.RankOne
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Trace
 
 /-!
 # Induced Hom connections of metric connections
@@ -30,9 +32,18 @@ compatibility for the induced connection on `Hom(V, W)`.
   `∇(rankOne σ τ) = rankOne (∇σ) τ + rankOne σ (∇τ)`
   (`CovariantDerivative.IsMetricCompatible.hom_rankOne_apply`).
   In particular they are parallel wherever `σ` and `τ` are.
+* If the connections on the tangent bundle of a Riemannian manifold and on the Riemannian bundle
+  `V` are metric, then the Hilbert–Schmidt pairing `⟪A, B⟫ = ∑ᵢ ⟪A eᵢ, B eᵢ⟫` of sections of
+  `Hom(TM, V)` is parallel for the induced connection:
+  `d⟪A, B⟫(v) = ⟪∇_v A, B⟫ + ⟪A, ∇_v B⟫`
+  (`CovariantDerivative.IsMetricCompatible.mvfderiv_hilbertSchmidtInner`). In the chart frame `Fᵢ`
+  and its metric-dual frame `Dᵢ`, `⟪A, B⟫ = ∑ᵢ ⟪A Fᵢ, B Dᵢ⟫` near the point, and the terms
+  carrying `∇Fᵢ` and `∇Dᵢ` cancel
+  (`CovariantDerivative.IsMetricCompatible.sum_apply_chartDualFrame_cancel`).
 
-These are the comparisons for the frames induced on `Hom(V, W)` by frames parallel at a point,
-following J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapters 4–5.
+The first three items are the comparisons for the frames induced on `Hom(V, W)` by frames
+parallel at a point; the last uses the chart frame and its metric-dual frame instead. The module
+follows J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapters 4–5.
 -/
 
 public section
@@ -186,5 +197,79 @@ theorem IsMetricCompatible.hom_rankOne_eq_zero (hcov : covV.IsMetricCompatible)
   simp [hcov.hom_rankOne_apply hσ hτ, hσ₀, hτ₀]
 
 end RankOne
+
+section HilbertSchmidt
+
+open Riemannian.Tensor
+open scoped RealInnerProductSpace
+
+variable [IsManifold I 2 M] [FiniteDimensional ℝ E]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace ℝ (V x)]
+  [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle 1 F V I]
+  [IsContMDiffRiemannianBundle I 1 F V]
+  {cov : CovariantDerivative I F V}
+  {covT : CovariantDerivative I E (TangentSpace I : M → Type _)}
+
+/-- **The Hilbert–Schmidt metric is parallel.** For metric connections `∇ᵀ` on the tangent bundle
+and `∇` on `V`, and sections `A`, `B` of `Hom(TM, V)` differentiable at `x`, the derivative of their
+Hilbert–Schmidt pairing is `d⟪A, B⟫(v) = ⟪∇_v A, B⟫ + ⟪A, ∇_v B⟫`, for the connection on
+`Hom(TM, V)` induced by `∇ᵀ` and `∇`. -/
+theorem IsMetricCompatible.mvfderiv_hilbertSchmidtInner
+    (hcovT : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) covT)
+    (hcov : cov.IsMetricCompatible) {A B : Π y : M, TangentSpace I y →L[ℝ] V y} {x : M}
+    (hA : MDiffAt (fun y ↦ TotalSpace.mk' (E →L[ℝ] F)
+      (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (A y)) x)
+    (hB : MDiffAt (fun y ↦ TotalSpace.mk' (E →L[ℝ] F)
+      (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (B y)) x)
+    (v : TangentSpace I x) :
+    mvfderiv I (fun y ↦ (A y).hilbertSchmidtInner (B y)) x v =
+      (covT.hom cov A x v).hilbertSchmidtInner (B x) +
+        (A x).hilbertSchmidtInner (covT.hom cov B x v) := by
+  have hxb : x ∈ (trivializationAt E (TangentSpace I) x).baseSet :=
+    mem_baseSet_trivializationAt E _ x
+  have hxc : x ∈ (chartAt H x).source := mem_chart_source H x
+  have hF := mdifferentiableAt_chartLocalFrame (I := I) x hxb
+  have hD := mdifferentiableAt_chartDualFrame (I := I) x hxb
+  -- Near `x`, the pairing is `∑ᵢ ⟪A Fᵢ, B Dᵢ⟫` in the chart frame `Fᵢ` and its metric-dual frame
+  -- `Dᵢ`.
+  have htr : (fun y ↦ (A y).hilbertSchmidtInner (B y)) =ᶠ[𝓝 x] fun y ↦
+      ∑ i, ⟪A y (chartLocalFrame (I := I) x i y), B y (chartDualFrame (I := I) x i y)⟫ :=
+    (eventually_metricTrace_eq_sum_chartDualFrame x hxc
+      fun y ↦ (innerₗ (V y)).compl₁₂ (A y : TangentSpace I y →ₗ[ℝ] V y)
+        (B y : TangentSpace I y →ₗ[ℝ] V y)).mono fun y hy ↦ by
+      simpa only [ContinuousLinearMap.hilbertSchmidtInner_def, LinearMap.compl₁₂_apply,
+        innerₗ_apply_apply, ContinuousLinearMap.coe_coe] using hy
+  have hAF (i) : MDiffAt (T% fun y ↦ A y (chartLocalFrame (I := I) x i y)) x :=
+    hA.clm_bundle_apply (hF i)
+  have hBD (i) : MDiffAt (T% fun y ↦ B y (chartDualFrame (I := I) x i y)) x :=
+    hB.clm_bundle_apply (hD i)
+  -- Differentiate each term with the metric and the Leibniz rule for `Hom(TM, V)`; the terms
+  -- carrying `∇Fᵢ` and `∇Dᵢ` cancel in the sum, since the metric is parallel.
+  have hterm (i) : mvfderiv I (fun y ↦
+      ⟪A y (chartLocalFrame (I := I) x i y), B y (chartDualFrame (I := I) x i y)⟫) x v =
+      ⟪covT.hom cov A x v (chartLocalFrame (I := I) x i x), B x (chartDualFrame (I := I) x i x)⟫ +
+        ⟪A x (chartLocalFrame (I := I) x i x), covT.hom cov B x v (chartDualFrame (I := I) x i x)⟫ +
+        (⟪A x (covT (chartLocalFrame (I := I) x i) x v), B x (chartDualFrame (I := I) x i x)⟫ +
+          ⟪A x (chartLocalFrame (I := I) x i x),
+            B x (covT (chartDualFrame (I := I) x i) x v)⟫) := by
+    have h := hcov.mvfderiv_inner_eq (FiberBundle.extend E v) (hAF i) (hBD i)
+    simp only [FiberBundle.extend_apply_self] at h
+    rw [h, covariantDerivative_clm_apply covT cov hA (hF i),
+      covariantDerivative_clm_apply covT cov hB (hD i), inner_add_left, inner_add_right]
+    ring
+  have hcancel := hcovT.sum_apply_chartDualFrame_cancel x
+    ((innerₗ (V x)).compl₁₂ (A x : TangentSpace I x →ₗ[ℝ] V x)
+      (B x : TangentSpace I x →ₗ[ℝ] V x)) v
+  simp only [LinearMap.compl₁₂_apply, innerₗ_apply_apply, ContinuousLinearMap.coe_coe] at hcancel
+  rw [htr.mvfderiv_eq, TauCeti.mvfderiv_fun_sum fun i _ ↦ (hAF i).inner_bundle (hBD i), sum_apply]
+  simp only [hterm, Finset.sum_add_distrib, hcancel, add_neg_cancel, add_zero,
+    ContinuousLinearMap.hilbertSchmidtInner_def, metricTrace_eq_sum_chartDualFrame x hxc,
+    LinearMap.compl₁₂_apply, innerₗ_apply_apply, ContinuousLinearMap.coe_coe]
+
+end HilbertSchmidt
 
 end CovariantDerivative

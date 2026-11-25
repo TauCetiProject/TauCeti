@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Analysis.Normed.Operator.NNNorm
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # Basic facts about bounded operators
@@ -40,7 +41,9 @@ neighbourhood of `0` (`Filter.Tendsto.eventually_clm_mapsTo_of_opNorm_tendsto_ze
 
 A left inverse `S` of `T` modulo an error term gives the estimate
 `‖x‖ ≤ ‖S‖ ‖T x‖ + ‖(S ∘ T - 1) x‖`
-(`ContinuousLinearMap.norm_le_opNorm_mul_norm_add_norm_comp_sub_one`). The difference of two
+(`ContinuousLinearMap.norm_le_opNorm_mul_norm_add_norm_comp_sub_one`). For a real endomorphism
+`T` with `‖T‖ ≤ M`, `‖a v + b T v‖² ≤ (1 + M²) (a² + b²) ‖v‖²`
+(`ContinuousLinearMap.norm_smul_add_smul_apply_sq_le`). The difference of two
 compositions obeys the three-term estimate
 `‖A' ∘ B' - A ∘ B‖ ≤ ‖A' - A‖ ‖B' - B‖ + ‖A' - A‖ ‖B‖ + ‖A‖ ‖B' - B‖`
 (`ContinuousLinearMap.enorm_comp_sub_comp_le` in extended norms,
@@ -116,7 +119,8 @@ scalar multiplication by the values of a continuous semilinear map `L` costs at 
 (`ContinuousLinearMap.norm_apply_smul_le_of_support_subset_closedBall`).
 
 The identity operator `1` has operator norm at most one on every seminormed space
-(`ContinuousLinearMap.norm_one_le`).
+(`ContinuousLinearMap.norm_one_le`), and the affine map `z ↦ A z + v` given by a continuous
+semilinear map `A` is `‖A‖₊`-Lipschitz (`ContinuousLinearMap.lipschitzWith_add_const`).
 Bounded linear endomorphisms of a seminormed space act continuously on it
 (`ContinuousLinearMap.instContinuousSMul`).
 -/
@@ -229,12 +233,31 @@ noncomputable abbrev normedAddCommGroup : NormedAddCommGroup (E →SL[σ] F) :=
 
 end Semilinear
 
+/-- The affine map `z ↦ A z + v` given by a continuous semilinear map `A` between seminormed spaces
+is Lipschitz with constant `‖A‖₊`. -/
+theorem lipschitzWith_add_const {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜]
+    [NontriviallyNormedField 𝕜₂] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F] {σ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ]
+    (A : E →SL[σ] F) (v : F) : LipschitzWith ‖A‖₊ fun z ↦ A z + v := by
+  simpa using A.lipschitzWith.add (LipschitzWith.const v)
+
 /-- Right scalar multiplication `r ↦ r • e` by `e : E` under a bounded scalar action of a
 seminormed ring `R` is uniformly bounded. -/
 theorem exists_norm_toSpanSingleton_apply_le (R : Type*) {E : Type*} [SeminormedRing R]
     [SeminormedAddCommGroup E] [Module R E] [IsBoundedSMul R E] (e : E) :
     ∃ C, ∀ r : R, ‖toSpanSingleton R e r‖ ≤ C * ‖r‖ :=
   ⟨‖e‖, fun r ↦ by simpa only [toSpanSingleton_apply, mul_comm ‖e‖] using norm_smul_le r e⟩
+
+/-- Applying `a + b T`, for a real endomorphism `T` with `‖T‖ ≤ M`, scales the norm squared by at
+most `(1 + M²) (a² + b²)`. -/
+theorem norm_smul_add_smul_apply_sq_le {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+    (T : E →L[ℝ] E) {M : ℝ} (hM : ‖T‖ ≤ M) (a b : ℝ) (v : E) :
+    ‖a • v + b • T v‖ ^ 2 ≤ (1 + M ^ 2) * (a ^ 2 + b ^ 2) * ‖v‖ ^ 2 := by
+  have hTv : ‖T v‖ ≤ M * ‖v‖ := T.le_of_opNorm_le hM v
+  calc ‖a • v + b • T v‖ ^ 2 ≤ (a ^ 2 + b ^ 2) * (‖v‖ ^ 2 + ‖T v‖ ^ 2) :=
+        TauCeti.norm_smul_add_smul_sq_le a b v (T v)
+    _ ≤ (a ^ 2 + b ^ 2) * (‖v‖ ^ 2 + (M * ‖v‖) ^ 2) := by gcongr
+    _ = (1 + M ^ 2) * (a ^ 2 + b ^ 2) * ‖v‖ ^ 2 := by ring
 
 section SemilinearFamily
 
