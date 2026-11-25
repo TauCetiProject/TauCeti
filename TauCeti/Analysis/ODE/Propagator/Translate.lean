@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.Propagator
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # Translating the time variable of a propagator
@@ -23,15 +24,6 @@ open MeasureTheory Set intervalIntegral
 
 namespace TauCeti
 
-/-- A function integrable on `[a, b]` has its translate by `c` integrable on `[a - c, b - c]`. -/
-theorem integrableOn_comp_add_right_Icc {F : Type*} [NormedAddCommGroup F] {f : ℝ → F}
-    {a b : ℝ} (hf : IntegrableOn f (Icc a b)) (c : ℝ) :
-    IntegrableOn (fun u ↦ f (u + c)) (Icc (a - c) (b - c)) := by
-  have h := (measurePreserving_add_right volume c).integrableOn_comp_preimage
-    (measurableEmbedding_addRight c) (f := f) (s := Icc a b)
-  rw [preimage_add_const_Icc] at h
-  exact h.2 hf
-
 variable {𝕜 : Type*} [RCLike 𝕜] {E : Type*}
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E]
   [CompleteSpace E] {P : ℝ → E →L[𝕜] E} {a b s t : ℝ}
@@ -43,7 +35,7 @@ theorem propagator_comp_add_right (hP : IntegrableOn P (Icc a b)) {c : ℝ}
     propagator (fun u ↦ P (u + c)) t s = propagator P (t + c) (s + c) := by
   have hmem {r : ℝ} (hr : r ∈ Icc (a - c) (b - c)) : r + c ∈ Icc a b :=
     ⟨by linarith [hr.1], by linarith [hr.2]⟩
-  refine propagator_eq_of_forall_mem_Icc (integrableOn_comp_add_right_Icc hP c) hs ht
+  refine propagator_eq_of_forall_mem_Icc (hP.comp_add_right_Icc c) hs ht
     (N := fun r ↦ propagator P (r + c) (s + c)) ?_ fun r hr ↦ ?_
   · exact (continuousOn_propagator_left hP (hmem hs)).comp
       (continuous_id.add continuous_const).continuousOn fun r hr ↦ hmem hr
