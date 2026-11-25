@@ -585,6 +585,27 @@ theorem contDiff_gaugeTransform {n : WithTop ℕ∞} {u : ℂ → Circle}
     (hu.comp contDiff_snd) (hx.comp contDiff_snd)).comp
     ((contDiff_const (c := ())).prodMk contDiff_id)
 
+/-- The local form of `TauCeti.Vortex.contDiff_gaugeTransform`: a gauge that is `C^(n+1)` at `z`
+takes a field that is `C^n` at `z` to a field that is `C^n` at `z`. -/
+theorem contDiffAt_gaugeTransform {n : WithTop ℕ∞} {u : ℂ → Circle} {z : ℂ}
+    (hu : ContDiffAt ℝ (n + 1) (fun w ↦ (u w : ℂ)) z)
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiffAt ℝ n x z) :
+    ContDiffAt ℝ n (gaugeTransform u x) z := by
+  have hg : ContDiffAt ℝ n (gaugeForm u) z :=
+    contDiffAt_const.clm_comp
+      ((ContinuousLinearMap.mul ℝ ℂ).contDiff.contDiffAt.comp z
+        (conjCLE.contDiff.contDiffAt.comp z (hu.of_le le_self_add)) |>.clm_comp
+        (hu.fderiv_right le_rfl))
+  have hr := reCLM.contDiff.contDiffAt.comp z (hu.of_le le_self_add)
+  have hi := imCLM.contDiff.contDiffAt.comp z (hu.of_le le_self_add)
+  have hc (i : Fin 4) : ContDiffAt ℝ n (fun w ↦ x w i) z := (contDiffAt_piLp _).mp hx i
+  refine (contDiffAt_piLp _).mpr fun i ↦ ?_
+  fin_cases i <;> simp only [gaugeTransform, PiLp.toLp_apply]
+  · exact (hc 0).sub (hg.clm_apply contDiffAt_const)
+  · exact (hc 1).sub (hg.clm_apply contDiffAt_const)
+  · exact (hr.mul (hc 2)).sub (hi.mul (hc 3))
+  · exact (hi.mul (hc 2)).add (hr.mul (hc 3))
+
 /-- A `C¹` gauge transformation of a continuous field is continuous. -/
 theorem continuous_gaugeTransform {u : ℂ → Circle} (hu : ContDiff ℝ 1 (fun w ↦ (u w : ℂ)))
     {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Continuous x) : Continuous (gaugeTransform u x) :=

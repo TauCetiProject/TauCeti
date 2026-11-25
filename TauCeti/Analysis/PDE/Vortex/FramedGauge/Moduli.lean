@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Divisor
 public import TauCeti.Analysis.PDE.Vortex.WindingPhase
+import Mathlib.Data.Fintype.Order
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
 import TauCeti.Analysis.PDE.Vortex.Coupling
 import TauCeti.Analysis.PDE.Vortex.FramedGauge.DerivativeDecay
 
@@ -30,8 +32,10 @@ winding end trivialization such a vortex tends to the vacuum together with all i
 at every exponential rate `c < 1 / 2`
 (`TauCeti.Vortex.isBigO_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField`). Outside the cutoff
 disc, `x - x_ref` is the rotation of the section part of that difference by the winding phase,
-which equals the reference section `x_ref` uses there and has bounded derivatives. Hence every
-derivative of `x - x_ref` decays exponentially (`isBigO_iteratedFDeriv_sub_referenceField`). A
+which equals the reference section `x_ref` uses there and has bounded derivatives, so the
+derivatives of `x - x_ref` there are bounded by those of the end trivialization
+(`exists_norm_iteratedFDeriv_sub_referenceField_le_mul`). Hence every derivative of
+`x - x_ref` decays exponentially (`isBigO_iteratedFDeriv_sub_referenceField`). A
 smooth field with this decay lies in every `A_m^k`
 (`TauCeti.Vortex.mem_framedFieldSpace_of_isBigO_iteratedFDeriv_sub_referenceField`).
 
@@ -47,6 +51,9 @@ Conversely, a smooth framed gauge relating two fields of `A_m^k` lies in `G_(k+1
 
 All in the namespace `TauCeti.Vortex`:
 
+* `exists_norm_iteratedFDeriv_sub_referenceField_le_mul`: outside the cutoff disc, the
+  derivatives of `x - x_ref` of order `n` are bounded by a constant, depending only on `n`, times
+  a bound for the derivatives of order at most `n` of the end trivialization of `x`.
 * `isBigO_iteratedFDeriv_sub_referenceField`: for a smooth vortex normalized at its end, every
   derivative of `x - x_ref` is `O(exp (-c |z|))` for every `c < 1 / 2`.
 * `gaugeTransform_mem_framedFieldSpace_of_eventually_sectionValue_eq`: a smooth framed vortex
@@ -81,6 +88,71 @@ variable {f : ContDiffBump (0 : ℝ)} {m : ℕ} {x : ℂ → EuclideanSpace ℝ 
 
 /-! ### Exponential decay of all derivatives of `x - x_ref` -/
 
+/-- **`x - x_ref` from the end trivialization, pointwise.** For every order `n` there is a
+constant `C ≥ 0` with the following property. Let `z` be a point outside the cutoff disc of the
+reference field, and let `x` be a field whose end trivialization `u⁻¹ · x - (0, 1)`, `u` the
+winding phase, is `C^n` at `z`. If the derivatives of order at most `n` of the end trivialization
+at `z` have norm at most `E`, then the derivative of order `n` of `x - x_ref` at `z` has norm at
+most `C E`. -/
+theorem exists_norm_iteratedFDeriv_sub_referenceField_le_mul (f : ContDiffBump (0 : ℝ))
+    (m n : ℕ) :
+    ∃ C, 0 ≤ C ∧ ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ), f.rOut < ‖z‖ ^ 2 →
+      ContDiffAt ℝ n (fun w ↦ gaugeTransform (windingPhase m)⁻¹ x w - vacuumField w) z →
+      ∀ E : ℝ, (∀ i ≤ n, ‖iteratedFDeriv ℝ i (fun w ↦ gaugeTransform (windingPhase m)⁻¹ x w -
+        vacuumField w) z‖ ≤ E) →
+      ‖iteratedFDeriv ℝ n (x - referenceField f m) z‖ ≤ C * E := by
+  -- One bound for the derivatives of order at most `n` of the reference section.
+  choose Cs hCs using fun i : Fin (n + 1) ↦ exists_norm_iteratedFDeriv_referenceSection_le f m i
+  obtain ⟨M, hM⟩ := Finite.exists_le Cs
+  have hsM : ∀ i ≤ n, ∀ w, ‖iteratedFDeriv ℝ i (referenceSection f m) w‖ ≤ M := fun i hi w ↦
+    (hCs ⟨i, Nat.lt_succ_iff.2 hi⟩ w).trans (hM _)
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hsM 0 (Nat.zero_le n) 0)
+  -- The linear maps `P` (connection coordinates), `Q` (section coordinates as a complex number)
+  -- and `J` (a complex number as section coordinates) of `sub_referenceField_apply_eq`.
+  set P : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
+    (EuclideanSpace.proj 0).smulRight (EuclideanSpace.single 0 1) +
+      (EuclideanSpace.proj 1).smulRight (EuclideanSpace.single 1 1)
+  set Q : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℂ :=
+    (EuclideanSpace.proj 2).smulRight (1 : ℂ) + (EuclideanSpace.proj 3).smulRight I
+  set J : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
+    reCLM.smulRight (EuclideanSpace.single 2 1) + imCLM.smulRight (EuclideanSpace.single 3 1)
+  set B := ContinuousLinearMap.mul ℝ ℂ
+  refine ⟨‖P‖ + ‖J‖ * (‖B‖ * 2 ^ n * M * ‖Q‖), by positivity, fun x z hz hG E hE ↦ ?_⟩
+  set G : ℂ → EuclideanSpace ℝ (Fin 4) := fun w ↦ gaugeTransform (windingPhase m)⁻¹ x w -
+    vacuumField w
+  have hs : ContDiffAt ℝ n (referenceSection f m) z :=
+    (contDiff_referenceSection f m).contDiffAt.of_le (by exact_mod_cast le_top)
+  have hQG : ContDiffAt ℝ n (fun w ↦ Q (G w)) z := Q.contDiff.contDiffAt.comp z hG
+  -- Near `z`, `x - x_ref = P G + J (s Q G)`.
+  have heq : (x - referenceField f m) =ᶠ[𝓝 z]
+      fun w ↦ P (G w) + J (B (referenceSection f m w) (Q (G w))) := by
+    filter_upwards [(isOpen_lt continuous_const (continuous_norm.pow 2)).mem_nhds hz] with w hw
+    rw [sub_referenceField_apply_eq f hw.le (g := G w) rfl]
+    generalize referenceSection f m w = σ
+    generalize G w = v
+    ext i
+    fin_cases i <;> simp [P, Q, J, B, add_comm]
+  -- The Leibniz rule for the product of the reference section with the section part.
+  have hprod : ‖iteratedFDeriv ℝ n (fun w ↦ B (referenceSection f m w) (Q (G w))) z‖ ≤
+      ‖B‖ * 2 ^ n * M * (‖Q‖ * E) :=
+    B.norm_iteratedFDeriv_le_of_bilinear_of_forall_le hs hQG (fun i hi ↦ hsM i hi z) fun i hi ↦
+        (Q.norm_iteratedFDeriv_comp_left hG (by exact_mod_cast hi)).trans
+          (mul_le_mul_of_nonneg_left (hE i hi) (norm_nonneg _))
+  have hPG : ContDiffAt ℝ n (fun w ↦ P (G w)) z := P.contDiff.contDiffAt.comp z hG
+  have hBQG : ContDiffAt ℝ n (fun w ↦ B (referenceSection f m w) (Q (G w))) z :=
+    (B.contDiff.contDiffAt.comp z hs).clm_apply hQG
+  have hJ : ContDiffAt ℝ n (fun w ↦ J (B (referenceSection f m w) (Q (G w)))) z :=
+    J.contDiff.contDiffAt.comp z hBQG
+  rw [(heq.iteratedFDeriv ℝ n).self_of_nhds, fun_iteratedFDeriv_add_apply hPG hJ]
+  have hP := (P.norm_iteratedFDeriv_comp_left hG le_rfl).trans
+    (mul_le_mul_of_nonneg_left (hE n le_rfl) (norm_nonneg _))
+  have hJ' := (J.norm_iteratedFDeriv_comp_left
+    (f := fun w ↦ B (referenceSection f m w) (Q (G w))) hBQG le_rfl).trans
+    (mul_le_mul_of_nonneg_left hprod (norm_nonneg _))
+  calc _ ≤ ‖P‖ * E + ‖J‖ * (‖B‖ * 2 ^ n * M * (‖Q‖ * E)) :=
+        (norm_add_le _ _).trans (add_le_add hP hJ')
+    _ = _ := by ring
+
 /-- **Exponential decay of all derivatives of `x - x_ref`.** Let `x` be a plane vortex with smooth
 section and `|α| → 1` at infinity whose section is `|α|` times the winding phase `(z / |z|)^m`
 outside a compact set. Then for every order `n` and every rate `c < 1 / 2`, the `n`-th derivative
@@ -97,53 +169,21 @@ theorem isBigO_iteratedFDeriv_sub_referenceField (f : ContDiffBump (0 : ℝ))
   -- A smooth decaying `g` agreeing with the end trivialization minus the vacuum near infinity.
   obtain ⟨g, hg, hgdec, hgx⟩ :=
     exists_contDiff_isBigO_eventuallyEq_gaugeTransform_inv_sub_vacuumField hp hq hsol hlim hphase
-  have hout : ∀ᶠ z in cocompact ℂ, ∀ᶠ w in 𝓝 z, f.rOut ≤ ‖w‖ ^ 2 := by
-    filter_upwards [((tendsto_pow_atTop two_ne_zero).comp
-      tendsto_norm_cocompact_atTop).eventually_gt_atTop f.rOut] with z hz
-    filter_upwards [(isOpen_lt continuous_const (continuous_norm.pow 2)).mem_nhds hz] with w hw
-    exact hw.le
-  -- The linear maps `P` (connection coordinates), `Q` (section coordinates as a complex number)
-  -- and `J` (a complex number as section coordinates) of `sub_referenceField_apply_eq`.
-  set P : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
-    (EuclideanSpace.proj 0).smulRight (EuclideanSpace.single 0 1) +
-      (EuclideanSpace.proj 1).smulRight (EuclideanSpace.single 1 1)
-  set Q : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℂ :=
-    (EuclideanSpace.proj 2).smulRight (1 : ℂ) + (EuclideanSpace.proj 3).smulRight I
-  set J : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
-    reCLM.smulRight (EuclideanSpace.single 2 1) + imCLM.smulRight (EuclideanSpace.single 3 1)
-  have hsR : ContDiff ℝ ∞ (referenceSection f m) := contDiff_referenceSection f m
-  have hQg : ContDiff ℝ ∞ fun w ↦ Q (g w) := Q.contDiff.comp hg
-  have hprod : ContDiff ℝ ∞ fun w ↦ referenceSection f m w * Q (g w) := hsR.mul hQg
-  have hPg : ContDiff ℝ ∞ fun w ↦ P (g w) := P.contDiff.comp hg
-  have hJ : ContDiff ℝ ∞ fun w ↦ J (referenceSection f m w * Q (g w)) := J.contDiff.comp hprod
-  -- Outside a compact set, `x - x_ref = P g + J (s Q g)` near every point.
-  have hfor : ∀ᶠ z in cocompact ℂ, (x - referenceField f m) =ᶠ[𝓝 z]
-      fun w ↦ P (g w) + J (referenceSection f m w * Q (g w)) := by
-    filter_upwards [hgx, hout] with z hz hz'
-    filter_upwards [hz, hz'] with w hw hw'
-    rw [sub_referenceField_apply_eq f hw' hw]
-    generalize referenceSection f m w = σ
-    generalize g w = v
-    ext i
-    fin_cases i <;> simp [P, Q, J, add_comm]
-  -- The reference section has bounded derivatives.
-  have hsRb (i : ℕ) :
-      iteratedFDeriv ℝ i (referenceSection f m) =O[cocompact ℂ] fun _ ↦ (1 : ℝ) := by
-    obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_referenceSection_le f m i
-    exact IsBigO.of_bound C (.of_forall fun z ↦ by simpa using hC z)
-  have hprodO : iteratedFDeriv ℝ n (fun w ↦ referenceSection f m w * Q (g w)) =O[cocompact ℂ]
-      fun z ↦ Real.exp (-(c * ‖z‖)) := by
-    simpa only [one_mul, ContinuousLinearMap.mul_apply'] using
-      (ContinuousLinearMap.mul ℝ ℂ).isBigO_iteratedFDeriv_of_bilinear
-      hsR hQg (n := n) (by exact_mod_cast le_top) (fun i _ ↦ hsRb i)
-      fun i _ ↦ Q.isBigO_iteratedFDeriv_comp_left hg (by exact_mod_cast le_top) (hgdec c hc i)
-  refine (((P.isBigO_iteratedFDeriv_comp_left hg (by exact_mod_cast le_top) (hgdec c hc n)).add
-    (J.isBigO_iteratedFDeriv_comp_left hprod (by exact_mod_cast le_top) hprodO)).congr' ?_
-    EventuallyEq.rfl)
-  filter_upwards [hfor] with z hz
-  rw [← fun_iteratedFDeriv_add_apply (hPg.contDiffAt.of_le (by exact_mod_cast le_top))
-    (hJ.contDiffAt.of_le (by exact_mod_cast le_top))]
-  exact (hz.iteratedFDeriv ℝ n).eq_of_nhds.symm
+  obtain ⟨C, -, hC⟩ := exists_norm_iteratedFDeriv_sub_referenceField_le_mul f m n
+  -- One eventual bound `K exp (-c |z|)` for the derivatives of `g` of order at most `n`.
+  choose K hK using fun i : Fin (n + 1) ↦ (hgdec c hc i).bound
+  obtain ⟨K₁, hK₁⟩ := Finite.exists_le K
+  have hout : ∀ᶠ z in cocompact ℂ, f.rOut < ‖z‖ ^ 2 :=
+    ((tendsto_pow_atTop two_ne_zero).comp tendsto_norm_cocompact_atTop).eventually_gt_atTop f.rOut
+  refine IsBigO.of_bound (C * K₁) ?_
+  filter_upwards [hgx, hout, eventually_all.2 hK] with z hz hzr hKz
+  rw [Real.norm_of_nonneg (Real.exp_pos _).le, mul_assoc]
+  refine hC x z hzr ((hg.contDiffAt.congr_of_eventuallyEq hz).of_le (by exact_mod_cast le_top))
+    _ fun i hi ↦ ?_
+  rw [(hz.iteratedFDeriv ℝ i).eq_of_nhds]
+  refine (hKz ⟨i, Nat.lt_succ_iff.2 hi⟩).trans ?_
+  rw [Real.norm_of_nonneg (Real.exp_pos _).le]
+  exact mul_le_mul_of_nonneg_right (hK₁ _) (Real.exp_pos _).le
 
 /-! ### Smooth framed vortices have representatives in `A_m^s` -/
 

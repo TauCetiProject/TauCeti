@@ -314,6 +314,14 @@ theorem contDiff_coe_inv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   simpa only [Pi.inv_apply, coe_inv_eq_conj, Function.comp_def, Complex.conjCLE_apply] using
     Complex.conjCLE.contDiff.comp hu
 
+/-- The pointwise inverse of a circle-valued map that is `Cⁿ` at `z`, as a map into `ℂ`, is `Cⁿ`
+at `z`. -/
+theorem contDiffAt_coe_inv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {n : WithTop ℕ∞} {u : E → Circle} {z : E} (hu : ContDiffAt ℝ n (fun w ↦ (u w : ℂ)) z) :
+    ContDiffAt ℝ n (fun w ↦ ((u⁻¹ w : Circle) : ℂ)) z := by
+  simpa only [Pi.inv_apply, coe_inv_eq_conj, Function.comp_def, Complex.conjCLE_apply] using
+    Complex.conjCLE.contDiff.contDiffAt.comp z hu
+
 /-- The map `t ↦ exp (i t)` from the real line to the circle, as a continuous homomorphism
 from `Multiplicative ℝ`. -/
 def expContinuousMonoidHom : ContinuousMonoidHom (Multiplicative ℝ) Circle where
