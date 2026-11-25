@@ -10,7 +10,7 @@ public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 /-!
 # Contractions in a C⋆-algebra
 
-Compressing a positive contraction `p` by a positive contraction `e` of a possibly nonunital
+Compressing a self-adjoint contraction `p` by a positive contraction `e` of a possibly nonunital
 C⋆-algebra stays below `e`: `e p e ≤ e` (`CStarAlgebra.mul_mul_le_of_nonneg_of_norm_le_one`).
 
 For a contraction `a` of a unital C⋆-algebra, `1 - a⋆a` is positive
@@ -27,10 +27,10 @@ section NonUnital
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
-/-- Compressing a positive contraction `p` by a positive contraction `e` gives `e p e ≤ e`. -/
+/-- Compressing a self-adjoint contraction `p` by a positive contraction `e` gives `e p e ≤ e`. -/
 theorem CStarAlgebra.mul_mul_le_of_nonneg_of_norm_le_one {e p : A} (he0 : 0 ≤ e) (he1 : ‖e‖ ≤ 1)
-    (hp0 : 0 ≤ p) (hp1 : ‖p‖ ≤ 1) : e * p * e ≤ e := by
-  have h := CStarAlgebra.star_left_conjugate_le_norm_smul e p hp0.isSelfAdjoint
+    (hp : IsSelfAdjoint p) (hp1 : ‖p‖ ≤ 1) : e * p * e ≤ e := by
+  have h := CStarAlgebra.star_left_conjugate_le_norm_smul e p hp
   rw [he0.star_eq] at h
   exact h.trans ((smul_le_of_le_one_left he0.isSelfAdjoint.mul_self_nonneg hp1).trans
     (CStarAlgebra.mul_self_le_of_nonneg_of_norm_le_one he0 he1))

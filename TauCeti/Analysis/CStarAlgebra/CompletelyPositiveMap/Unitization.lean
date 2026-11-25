@@ -62,40 +62,6 @@ namespace TauCeti
 variable {A B : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
 
-/-- The compression `[e aᵢⱼ e + λᵢⱼ e²]` of a positive matrix `[λᵢⱼ + aᵢⱼ]` over `A⁺¹` by a
-self-adjoint `e ∈ A` is a positive matrix over `A`. -/
-private theorem compress_nonneg {n : ℕ} {M : CStarMatrix (Fin n) (Fin n) A⁺¹} (hM : 0 ≤ M)
-    {e : A} (he : star e = e) : 0 ≤ CStarMatrix.ofMatrix
-      (Matrix.of fun i j => e * (M i j).snd * e + (M i j).fst • (e * e)) := by
-  refine CStarMatrix.nonneg_iff_forall_sum_nonneg.mpr fun z => ?_
-  have h := CStarMatrix.nonneg_iff_forall_sum_nonneg.mp hM fun i => ((e * z i : A) : A⁺¹)
-  rw [← Unitization.inr_nonneg_iff ℂ]
-  convert h using 1
-  simp only [← Unitization.inrNonUnitalStarAlgHom_apply ℂ, map_sum]
-  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-  ext <;> simp [he, mul_assoc, mul_add, add_mul, smul_mul_assoc, mul_smul_comm, add_comm]
-
-/-- For a positive matrix `[λᵢⱼ + aᵢⱼ]` over `A⁺¹` and a positive `c`, the quadratic form of
-`[λᵢⱼ c]` is positive. -/
-private theorem sum_fst_smul_nonneg {n : ℕ} {M : CStarMatrix (Fin n) (Fin n) A⁺¹} (hM : 0 ≤ M)
-    {c : B⁺¹} (hc : 0 ≤ c) (w : Fin n → B⁺¹) :
-    0 ≤ ∑ i, ∑ j, star (w i) * ((M i j).fst • c) * w j := by
-  obtain ⟨R, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp hM
-  have hfst (i j : Fin n) :
-      ((star R * R) i j).fst = ∑ k, star (R k i).fst * (R k j).fst := by
-    rw [CStarMatrix.mul_apply, ← Unitization.fstHom_apply ℂ, map_sum]
-    simp [CStarMatrix.star_apply]
-  calc (0 : B⁺¹)
-      ≤ ∑ k, star (∑ i, (R k i).fst • w i) * c * ∑ j, (R k j).fst • w j :=
-        Finset.sum_nonneg fun k _ => star_left_conjugate_nonneg hc _
-    _ = ∑ k, ∑ i, ∑ j, (star (R k i).fst * (R k j).fst) • (star (w i) * c * w j) := by
-        simp_rw [star_sum, Finset.sum_mul, Finset.mul_sum]
-        simp [star_smul, smul_smul, mul_comm]
-    _ = ∑ i, ∑ j, ∑ k, (star (R k i).fst * (R k j).fst) • (star (w i) * c * w j) :=
-        Finset.sum_comm_cycle.symm
-    _ = ∑ i, ∑ j, star (w i) * (((star R * R) i j).fst • c) * w j := by
-        simp [hfst, Finset.sum_smul, Finset.mul_sum, Finset.sum_mul]
-
 /-- The extension `λ + a ↦ t λ + φ a` of an `n`-positive map `φ` with `‖φ p‖ ≤ t` for every
 positive contraction `p` is `n`-positive. -/
 theorem IsNPositive.unitizationLinearMap {n : ℕ} {φ : A →ₗ[ℂ] B} (hφ : IsNPositive n φ) {t : ℝ}
@@ -126,18 +92,25 @@ theorem IsNPositive.unitizationLinearMap {n : ℕ} {φ : A →ₗ[ℂ] B} (hφ :
     rw [sub_nonneg, hinl]
     exact (CStarAlgebra.norm_le_iff_le_algebraMap _ ((norm_nonneg _).trans h2)
       (Unitization.inr_nonneg_iff ℂ |>.mpr hee)).mp (by rwa [Unitization.norm_inr])
-  have hy := hφ.map_cstarMatrix_nonneg (compress_nonneg hM he0.star_eq)
+  have hcomp := CStarMatrix.star_left_conjugate_unitization_nonneg hM e
+  rw [he0.star_eq] at hcomp
+  have hy := hφ.map_cstarMatrix_nonneg hcomp
   have hy' := CStarMatrix.nonneg_iff_forall_sum_nonneg.mp
     (CompletelyPositiveMapClass.map_cstarMatrix_nonneg'
       (Unitization.inrNonUnitalStarAlgHom ℂ B) n _ hy) w
-  convert add_nonneg hy' (sum_fst_smul_nonneg hM hc w) using 1
+  -- the scalar matrix `[λᵢⱼ]` is the positive image of `M` under `Unitization.fstHom`
+  let fst : A⁺¹ →⋆ₐ[ℂ] ℂ := { Unitization.fstHom ℂ A with map_star' := Unitization.fst_star }
+  have hfst (x : A⁺¹) : fst x = x.fst := rfl
+  have hz := CStarMatrix.nonneg_iff_forall_sum_nonneg.mp (CStarMatrix.ofMatrix_smul_nonneg
+    (CompletelyPositiveMapClass.map_cstarMatrix_nonneg' fst n M hM) hc) w
+  convert add_nonneg hy' hz using 1
   rw [← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun j _ => ?_
   rw [← add_mul, ← mul_add]
   congr 2
-  ext <;> simp [map_add, map_smul, Unitization.inl_mul, mul_comm]
+  ext <;> simp [hfst, map_add, map_smul, Unitization.inl_mul, mul_comm]
 
 /-- A `2`-positive map with `‖φ p‖ ≤ t` for every positive contraction `p` satisfies
 `‖φ a‖ ≤ t ‖a‖`. -/
@@ -167,7 +140,7 @@ theorem IsNPositive.tendsto_norm_nhds_opNorm {ψ : A →L[ℂ] B} (hψ : IsNPosi
     simpa [hψ.toPositiveLinearMap_apply] using
       CStarAlgebra.norm_le_norm_of_le_of_nonneg
         (OrderHomClass.mono (hψ.toPositiveLinearMap two_pos)
-          (CStarAlgebra.mul_mul_le_of_nonneg_of_norm_le_one he0 he1 hp0 hp1))
+          (CStarAlgebra.mul_mul_le_of_nonneg_of_norm_le_one he0 he1 hp0.isSelfAdjoint hp1))
         (_root_.map_nonneg (hψ.toPositiveLinearMap two_pos)
           (he0.isSelfAdjoint.conjugate_nonneg hp0))
   · filter_upwards [hl.eventually_norm] with e he
