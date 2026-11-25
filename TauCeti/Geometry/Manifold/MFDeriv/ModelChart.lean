@@ -430,6 +430,16 @@ theorem toDual_symm_comp_inverse_mvfderiv {e₁ e₂ : OpenPartialHomeomorph M E
   refine A.injective ?_
   simpa using (hD _).trans ((isInvertible_mvfderiv_chart he₂ hx₂).self_apply_inverse v)
 
+omit [CompleteSpace E] in
+/-- The covector `⟪η, ·⟫ ∘ de_x` read through a chart `e` at `x` vanishes exactly when `η = 0`,
+since `de_x` is invertible. -/
+theorem innerSL_comp_mvfderiv_eq_zero_iff {e : OpenPartialHomeomorph M E}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M) {x : M} (hx : x ∈ e.source) {η : E} :
+    (innerSL ℝ η).comp (mvfderiv 𝓘(ℝ, E) e x) = 0 ↔ η = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
+  have h' := DFunLike.congr_fun h ((mvfderiv 𝓘(ℝ, E) e x).inverse η)
+  simpa [(isInvertible_mvfderiv_chart he hx).self_apply_inverse] using h'
+
 /-- A covector `ξ ∈ T*ₓM` is `⟪η, ·⟫ ∘ de_x` for the frequency `η` dual to `ξ ∘ (de_x)⁻¹`. -/
 theorem innerSL_toDual_symm_comp_inverse_mvfderiv {e : OpenPartialHomeomorph M E}
     (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M) {x : M} (hx : x ∈ e.source)
