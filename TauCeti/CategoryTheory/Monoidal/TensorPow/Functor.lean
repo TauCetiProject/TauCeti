@@ -53,7 +53,7 @@ variable (C : Type u₁) [Category.{v₁} C] [MonoidalCategory C]
 -- Exposed: tensor powers compute on the image of this functor without rewriting its objects.
 /-- The functor `(Fin (n + 1) → C) ⥤ (Fin n → C)` tensoring the entries `i` and `i + 1` of a
 tuple together: `(X₀, …, Xₙ) ↦ (X₀, …, X_{i-1}, X_i ⊗ X_{i+1}, X_{i+2}, …, Xₙ)`. On objects it
-agrees entry by entry with Mathlib's `Fin.contractNth` for the operation `⊗`. -/
+is Mathlib's `Fin.contractNth` for the operation `⊗` (`TauCeti.piContractNth_obj`). -/
 def piContractNth {n : ℕ} (i : Fin n) : (Fin (n + 1) → C) ⥤ (Fin n → C) :=
   go i.val i.isLt
 where
@@ -119,6 +119,17 @@ theorem piContractNth_obj_of_gt {n : ℕ} {i j : Fin n} (h : i < j) (X : Fin (n 
       cases i using Fin.cases with
       | zero => rfl
       | succ i => exact ih (Fin.succ_lt_succ_iff.mp h) _
+
+-- Not `@[simp]`: rewriting the tuple first would block the entry lemmas above.
+/-- On objects, `piContractNth C i` is Mathlib's `Fin.contractNth i.castSucc` for the operation
+`⊗`. -/
+theorem piContractNth_obj {n : ℕ} (i : Fin n) (X : Fin (n + 1) → C) :
+    (piContractNth C i).obj X = Fin.contractNth i.castSucc (· ⊗ ·) X := by
+  funext j
+  rcases lt_trichotomy j i with h | rfl | h
+  · exact (piContractNth_obj_of_lt h X).trans (Fin.contractNth_apply_of_lt _ _ _ _ h).symm
+  · exact (piContractNth_obj_self j X).trans (Fin.contractNth_apply_of_eq _ _ _ _ rfl).symm
+  · exact (piContractNth_obj_of_gt h X).trans (Fin.contractNth_apply_of_gt _ _ _ _ h).symm
 
 /-- Contracting at position `0`, the first entry of the morphism is the tensor product of the first
 two. -/
