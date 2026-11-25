@@ -105,10 +105,9 @@ lemma exists_mem_range_iff {x : X} : (∃ i, x ∈ Set.range (S.f i)) ↔ x ∈ 
 
 /-- Every point of `U` lies in exactly one stratum of a stratification of `U`. -/
 lemma existsUnique_mem_range {x : X} (hx : x ∈ U) : ∃! i, x ∈ Set.range (S.f i) := by
-  obtain ⟨i, hi⟩ := S.exists_mem_range_iff.2 hx
-  refine ⟨i, hi, fun j hj ↦ ?_⟩
-  by_contra hji
-  exact Set.disjoint_left.1 (S.pairwise_disjoint_range hji) hj hi
+  simpa only [Set.mem_univ, true_and] using pairwiseDisjoint_unique
+    (f := fun i ↦ Set.range (S.f i)) (S.pairwise_disjoint_range.set_pairwise Set.univ)
+    (by simpa only [Set.mem_univ, Set.iUnion_true, S.iUnion_range, SetLike.mem_coe] using hx)
 
 /-- The stratification of an open `U` by the single stratum `U`. -/
 @[expose, simps Z f]
