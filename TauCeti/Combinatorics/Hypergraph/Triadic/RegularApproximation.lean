@@ -29,11 +29,12 @@ The approximation weakens as `ε`, `F` and `b` grow and as `R` drops
 one of every coloring close to `H`, with the edit discrepancy added to `ε`
 (`Colored3Graph.IsStrongRegularApproximation3.of_approximates3`).
 
-Both schedules are chosen before the complexity bound and are evaluated only at the complex that
-is returned: `F` at its number of vertex cells plus pair colors for skeleton regularity and at
-`C.complexity` for top regularity, and `R` only at `C.complexity`. The regular approximation lemma
-for three-uniform hypergraphs (`Colored3Graph.exists_strong_regular_approximation3`) gives every
-coloring of the triples of a large enough host a strong regular approximation at the bound
+Both schedules are chosen before the complexity bound. The regularity conditions of the predicate
+evaluate them only at the complex `C`: `F` at its number of vertex cells plus pair colors for
+skeleton regularity and at `C.complexity` for top regularity, and `R` only at `C.complexity`. The
+bound `regularityBound3`, by contrast, depends on the whole schedules. The regular approximation
+lemma for three-uniform hypergraphs (`Colored3Graph.exists_strong_regular_approximation3`) gives
+every coloring of the triples of a large enough host a strong regular approximation at the bound
 `regularityBound3 q ε F R t₀`, which depends only on the number `q` of top colors, `ε`, `F`, `R`
 and the requested number `t₀` of vertex cells. It combines the regularity lemma with a
 regular lower skeleton
@@ -43,11 +44,11 @@ recoloring of the triples toward the coarse densities
 (`Colored3Graph.TopRegularOverMostPolyads.exists_approximates3_of_recoloringHostBound_le`).
 
 At the parameters of the induced counting lemma, a strong regular approximation with controlled
-vertex cells predicts the induced copies of a fixed colored pattern on `k` vertices within
-`ε |V| ^ k`
+vertex cells and positive rank `1 ≤ R C.complexity` predicts the induced copies of a fixed colored
+pattern on `k` vertices within `ε |V| ^ k`
 (`Colored3Graph.IsStrongRegularApproximation3.abs_inducedCopyCount_sub_expectedInducedCount_le`),
-so every coloring on a large enough host has such a prediction
-(`Colored3Graph.exists_strong_regular_approximation3_counting`).
+so, for a pointwise positive rank schedule `R`, every coloring on a large enough host has such a
+prediction (`Colored3Graph.exists_strong_regular_approximation3_counting`).
 
 ## Main definitions
 
@@ -193,8 +194,9 @@ variable [Fintype κ]
 /-- **Strong regular approximation of colorings of triples.** Let `ε > 0`, let `F` be a positive
 regularity schedule, let `R` be a rank schedule and let `t₀` be a requested number of vertex
 cells. Every coloring `H` of the triples of a host with at least `regularityBound3 q ε F R t₀`
-vertices, for `q` top colors, has a strong regular approximation `(H', C)` whose vertex cells form
-an equipartition into at least `t₀` cells. -/
+vertices, for `q` top colors, has a strong regular approximation `(H', C)` at the complexity bound
+`regularityBound3 q ε F R t₀`, so the complexity of `C` is bounded independently of the host, and
+the vertex cells of `C` form an equipartition into at least `t₀` cells. -/
 theorem exists_strong_regular_approximation3 (H : Colored3Graph κ V) {ε : ℝ} (hε : 0 < ε)
     {F : ℕ → ℝ} (hF : ∀ n, 0 < F n) (R : ℕ → ℕ) (t₀ : ℕ)
     (hV : regularityBound3 (Fintype.card κ) ε F R t₀ ≤ Fintype.card V) :
@@ -248,9 +250,11 @@ theorem exists_strong_regular_approximation3 (H : Colored3Graph κ V) {ε : ℝ}
 
 /-- **Strong regular approximation with induced counting.** Let `F` be a pattern on `k` vertices,
 let `0 < ε`, and let `R` be a positive rank schedule. Every coloring `H` of the triples of a large
-enough host has a strong regular approximation `(H', C)` at the counting parameters, with at least
-`diagonalControl3 k ε` equitable vertex cells, and the induced count of `F` in `H` differs from
-the prediction `H'.expectedInducedCount C F` by at most `ε |V| ^ k`. -/
+enough host has a strong regular approximation `(H', C)` at the counting parameters and at the
+complexity bound `regularityBound3 q (inducedCountingParameter3 k ε) (inducedCountingSchedule3 k ε)
+R (diagonalControl3 k ε)`, for `q` top colors, which is also the required host size. Its vertex
+cells are at least `diagonalControl3 k ε` equitable cells, and the induced count of `F` in `H`
+differs from the prediction `H'.expectedInducedCount C F` by at most `ε |V| ^ k`. -/
 theorem exists_strong_regular_approximation3_counting (H : Colored3Graph κ V)
     (F : FiniteColored3Pattern κ) {ε : ℝ} (hε : 0 < ε) {R : ℕ → ℕ} (hR : ∀ n, 1 ≤ R n)
     (hV : regularityBound3 (Fintype.card κ) (inducedCountingParameter3 F.k ε)
