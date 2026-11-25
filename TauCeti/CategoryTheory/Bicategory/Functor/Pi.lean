@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Bicategory.Functor.Cat
+public import Mathlib.CategoryTheory.Groupoid
 public import Mathlib.CategoryTheory.Pi.Basic
 public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Cat
@@ -39,6 +40,8 @@ The fibers of `pi F` for `I : Type w` and `F i` with values in `Cat.{v', u'}` li
 ## Main declarations
 
 * `TauCeti.Stack.pi`: the product of a family of pseudofunctors.
+* `TauCeti.Stack.pi.instIsGroupoidObj`: the fibers of a product of pseudofunctors with groupoid
+  fibers are groupoids.
 * `TauCeti.Stack.pi.π`: the projections.
 * `TauCeti.Stack.pi.lift`: the strong transformation into the product induced by a family of
   strong transformations `a i : K ⟶ F i`, with `liftCompπ`.
@@ -100,6 +103,11 @@ def pi : Pseudofunctor (LocallyDiscrete Cᵒᵖ) Cat.{max w v', max w u'} :=
       (F i).mapComp'_hom_app_comp_mapId'_hom_app _ rfl _ (congrArg Quiver.Hom.toLoc hf) _)
 
 namespace pi
+
+/-- The fibers of a product of pseudofunctors with groupoid fibers are groupoids. -/
+instance instIsGroupoidObj (X : LocallyDiscrete Cᵒᵖ) [∀ i, IsGroupoid ((F i).obj X)] :
+    IsGroupoid ((pi F).obj X) :=
+  inferInstanceAs (IsGroupoid (∀ i, (F i).obj X))
 
 /-! ### Components of the product
 
@@ -199,6 +207,18 @@ lemma π_app_toFunctor (i : I) (X : LocallyDiscrete Cᵒᵖ) :
     ((π F i).app X).toFunctor = Pi.eval (fun i ↦ (F i).obj X) i :=
   (rfl)
 
+/-- The naturality isomorphisms of the projections are identities. -/
+@[simp]
+lemma π_naturality_hom_app (i : I) {X Y : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y) (x : (pi F).obj X) :
+    ((π F i).naturality f).hom.toNatTrans.app x = 𝟙 _ :=
+  (rfl)
+
+/-- The naturality isomorphisms of the projections are identities. -/
+@[simp]
+lemma π_naturality_inv_app (i : I) {X Y : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y) (x : (pi F).obj X) :
+    ((π F i).naturality f).inv.toNatTrans.app x = 𝟙 _ :=
+  (rfl)
+
 /-! ### The 2-universal property
 
 A strong transformation `K ⟶ pi F` is given by a family of strong transformations `a i : K ⟶ F i`
@@ -254,6 +274,20 @@ def lift : K ⟶ pi F where
 @[simp]
 lemma lift_app_toFunctor (X : LocallyDiscrete Cᵒᵖ) :
     ((lift a).app X).toFunctor = liftApp a X :=
+  (rfl)
+
+/-- The naturality isomorphisms of `lift a` have the naturality isomorphisms of the `a i` as
+components. -/
+@[simp]
+lemma lift_naturality_hom_app {X Y : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y) (k : K.obj X) (i : I) :
+    ((lift a).naturality f).hom.toNatTrans.app k i = ((a i).naturality f).hom.toNatTrans.app k :=
+  (rfl)
+
+/-- The naturality isomorphisms of `lift a` have the naturality isomorphisms of the `a i` as
+components. -/
+@[simp]
+lemma lift_naturality_inv_app {X Y : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y) (k : K.obj X) (i : I) :
+    ((lift a).naturality f).inv.toNatTrans.app k i = ((a i).naturality f).inv.toNatTrans.app k :=
   (rfl)
 
 /-- The `i`-th projection of `lift a` is `a i`. -/
@@ -319,6 +353,12 @@ def homMk (m : ∀ i, φ ≫ π F i ⟶ ψ ≫ π F i) : φ ⟶ ψ where
     funext i
     exact naturality_apply (m i) f k
 
+/-- The components of `homMk m` are those of the `m i`. -/
+@[simp]
+lemma homMk_as_app_app (m : ∀ i, φ ≫ π F i ⟶ ψ ≫ π F i) (X : LocallyDiscrete Cᵒᵖ) (k : K.obj X)
+    (i : I) : ((homMk m).as.app X).toNatTrans.app k i = ((m i).as.app X).toNatTrans.app k :=
+  (rfl)
+
 /-- The `i`-th projection of `homMk m` is `m i`. -/
 @[simp]
 lemma homMk_whiskerRight_π (m : ∀ i, φ ≫ π F i ⟶ ψ ≫ π F i) (i : I) :
@@ -361,6 +401,11 @@ instance instUniqueObj (X : LocallyDiscrete Cᵒᵖ) :
     Unique ((terminal.{u', v'} (C := C)).obj X) where
   default := fun i ↦ i.elim
   uniq _ := funext fun i ↦ i.elim
+
+/-- The fibers of the terminal pseudofunctor are groupoids. -/
+instance instIsGroupoidObj (X : LocallyDiscrete Cᵒᵖ) :
+    IsGroupoid ((terminal.{u', v'} (C := C)).obj X) :=
+  @pi.instIsGroupoidObj _ _ _ _ X fun i ↦ i.elim
 
 variable (K : Pseudofunctor (LocallyDiscrete Cᵒᵖ) Cat.{v', u'})
 
