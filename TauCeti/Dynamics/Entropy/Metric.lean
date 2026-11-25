@@ -16,10 +16,11 @@ import TauCeti.Topology.Order.Monotone.OneSidedLimit
 
 On a pseudometric space, Mathlib's topological entropy `Dynamics.coverEntropy T F` is the limit as
 `ε → 0⁺` of the Bowen–Dinaburg exponential growth rates of maximal `(n, ε)`-separated sets and of
-minimal `(n, ε)`-spanning sets. Following the roadmap's convention, an `(n, ε)`-separated set is a
-dynamical net in Mathlib's sense (`Dynamics.IsDynNetIn`): a subset of `F` whose `(n, ε)`-Bowen
-balls are pairwise disjoint. Disjointness of the open balls forces `ε ≤ dist (T^[k] x) (T^[k] y)`
-for some `k < n` between distinct points, but it is a stronger condition than this separation.
+minimal `(n, ε)`-spanning sets. We use the disjoint-Bowen-ball convention: an `(n, ε)`-separated
+set is a dynamical net in Mathlib's sense (`Dynamics.IsDynNetIn`): a subset of `F` whose
+`(n, ε)`-Bowen balls are pairwise disjoint. Disjointness of the open balls forces
+`ε ≤ dist (T^[k] x) (T^[k] y)` for some `k < n` between distinct points, but it is a stronger
+condition than this separation.
 We prove the limits both for the entourage `{p | dist p.1 p.2 < ε}` (open Bowen balls) and for
 `{p | dist p.1 p.2 ≤ ε}` (closed Bowen balls). In particular all these limits agree.
 
@@ -43,8 +44,8 @@ open Dynamics Filter Set Topology
 variable {X : Type*} [PseudoMetricSpace X] (T : X → X) (F : Set X)
 
 /-- The growth rates of maximal families of points of `F` with pairwise disjoint open Bowen
-`(n, ε)`-balls (the roadmap's `(n, ε)`-separated sets) tend to the topological entropy as
-`ε → 0⁺`. -/
+`(n, ε)`-balls (`(n, ε)`-separated sets in the disjoint-Bowen-ball sense) tend to the topological
+entropy as `ε → 0⁺`. -/
 theorem tendsto_netEntropyEntourage_dist_lt :
     Tendsto (fun ε : ℝ ↦ netEntropyEntourage T F {p | dist p.1 p.2 < ε}) (𝓝[>] 0)
       (𝓝 (coverEntropy T F)) := by
@@ -53,8 +54,8 @@ theorem tendsto_netEntropyEntourage_dist_lt :
     Metric.monotone_setOf_dist_lt).tendsto_nhdsGT_iSup 0
 
 /-- The growth rates of maximal families of points of `F` with pairwise disjoint closed Bowen
-`(n, ε)`-balls (the roadmap's `(n, ε)`-separated sets) tend to the topological entropy as
-`ε → 0⁺`. -/
+`(n, ε)`-balls (`(n, ε)`-separated sets in the disjoint-Bowen-ball sense) tend to the topological
+entropy as `ε → 0⁺`. -/
 theorem tendsto_netEntropyEntourage_dist_le :
     Tendsto (fun ε : ℝ ↦ netEntropyEntourage T F {p | dist p.1 p.2 ≤ ε}) (𝓝[>] 0)
       (𝓝 (coverEntropy T F)) := by
@@ -81,8 +82,8 @@ theorem tendsto_coverEntropyEntourage_dist_le :
     Metric.monotone_setOf_dist_le).tendsto_nhdsGT_iSup 0
 
 /-- The `liminf` growth rates of maximal families of points of `F` with pairwise disjoint open
-Bowen `(n, ε)`-balls (the roadmap's `(n, ε)`-separated sets) tend to the `liminf` topological
-entropy as `ε → 0⁺`. -/
+Bowen `(n, ε)`-balls (`(n, ε)`-separated sets in the disjoint-Bowen-ball sense) tend to the
+`liminf` topological entropy as `ε → 0⁺`. -/
 theorem tendsto_netEntropyInfEntourage_dist_lt :
     Tendsto (fun ε : ℝ ↦ netEntropyInfEntourage T F {p | dist p.1 p.2 < ε}) (𝓝[>] 0)
       (𝓝 (coverEntropyInf T F)) := by
@@ -91,8 +92,8 @@ theorem tendsto_netEntropyInfEntourage_dist_lt :
     Metric.monotone_setOf_dist_lt).tendsto_nhdsGT_iSup 0
 
 /-- The `liminf` growth rates of maximal families of points of `F` with pairwise disjoint closed
-Bowen `(n, ε)`-balls (the roadmap's `(n, ε)`-separated sets) tend to the `liminf` topological
-entropy as `ε → 0⁺`. -/
+Bowen `(n, ε)`-balls (`(n, ε)`-separated sets in the disjoint-Bowen-ball sense) tend to the
+`liminf` topological entropy as `ε → 0⁺`. -/
 theorem tendsto_netEntropyInfEntourage_dist_le :
     Tendsto (fun ε : ℝ ↦ netEntropyInfEntourage T F {p | dist p.1 p.2 ≤ ε}) (𝓝[>] 0)
       (𝓝 (coverEntropyInf T F)) := by
