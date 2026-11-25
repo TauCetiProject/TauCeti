@@ -39,18 +39,18 @@ of `a`. Identification with the spot pricing equation uses `TauCeti.Finance.pde_
 
 For `α ≤ 1`, the coefficients satisfy `‖A_w‖ ≤ ‖a‖`, `‖B_w‖ ≤ 5 ‖a‖ + ‖r‖`, and `‖C_w‖ ≤ 3 ‖r‖`
 (`norm_weightedLogSpot{Second,First,Zeroth}OrderCoeff_le`) and are linear in differences
-(`weightedLogSpot{Second,First,Zeroth}OrderCoeff_sub`). These yield the operator-norm and
-Lipschitz bounds `‖weightedLogSpotPricingOperatorL hα a r‖ ≤ 1 + 121 ‖a‖ + 96 ‖r‖`
+(`weightedLogSpot{Second,First,Zeroth}OrderCoeff_sub`). These feed the uniform Schauder and
+resolvent-Lipschitz estimates on `weightedLogSpotTerminalDataCLE` in
+`TauCeti/Probability/Finance/Pricing/Existence.lean`, and also yield the standalone forward
+operator-norm bounds `‖weightedLogSpotPricingOperatorL hα a r‖ ≤ 1 + 121 ‖a‖ + 96 ‖r‖`
 (`norm_weightedLogSpotPricingOperatorL_le`) and
 `‖weightedLogSpotPricingOperatorL hα a r - weightedLogSpotPricingOperatorL hα a' r'‖ ≤`
-`121 ‖a - a'‖ + 96 ‖r - r'‖` (`norm_weightedLogSpotPricingOperatorL_sub_le`), feeding the
-uniform Schauder and resolvent-Lipschitz estimates on `weightedLogSpotTerminalDataCLE` in
-`TauCeti/Probability/Finance/Pricing/Existence.lean`. The three spot-PDE identities
-`pde_weightedLogSpotPrice_{,Ici_,Ioo_}eq_mul_weightedLogSpotPricingOperatorL` transfer
+`121 ‖a - a'‖ + 96 ‖r - r'‖` (`norm_weightedLogSpotPricingOperatorL_sub_le`). The three spot-PDE
+identities `pde_weightedLogSpotPrice_{,Ici_,Ioo_}eq_mul_weightedLogSpotPricingOperatorL` transfer
 `weightedLogSpotPricingOperatorL` to `weightedLogSpotPrice u` (within `[t₀, t₁]`, within
 `[t₀, ∞)` on `[t₀, t₁)`, and ordinary `deriv` on `(t₀, t₁)`), feeding
-`existsUnique_pde_weightedLogSpotPrice_eq_zero` and the spot-PDE theorems for
-`weightedLogSpotPrice (weightedLogSpotTerminalSolutionL ...)` in `Pricing/Existence.lean`.
+`existsUnique_pde_weightedLogSpotPrice_eq_zero` and the spot-PDE theorems in
+`Pricing/Existence.lean`.
 
 ## The terminal-value problem
 
@@ -159,20 +159,22 @@ theorem weightedLogSpotZerothOrderCoeff_apply (p : slab (E := ℝ) t₀ t₁) (v
   simp [weightedLogSpotZerothOrderCoeff]
   ring
 
-/-- `weightedLogSpotSecondOrderCoeff` is linear in `a` (subtraction form). -/
+/-- `weightedLogSpotSecondOrderCoeff` preserves differences. -/
 theorem weightedLogSpotSecondOrderCoeff_sub (a' : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) :
-    weightedLogSpotSecondOrderCoeff a - weightedLogSpotSecondOrderCoeff a' =
-      weightedLogSpotSecondOrderCoeff (a - a') := by ext p H; simp; ring
+    weightedLogSpotSecondOrderCoeff (a - a') =
+      weightedLogSpotSecondOrderCoeff a - weightedLogSpotSecondOrderCoeff a' := by
+  ext p H; simp; ring
 
-/-- `weightedLogSpotFirstOrderCoeff` is linear in `(a, r)` (subtraction form). -/
+/-- `weightedLogSpotFirstOrderCoeff` preserves differences. -/
 theorem weightedLogSpotFirstOrderCoeff_sub (a' r' : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) :
-    weightedLogSpotFirstOrderCoeff hα a r - weightedLogSpotFirstOrderCoeff hα a' r' =
-      weightedLogSpotFirstOrderCoeff hα (a - a') (r - r') := by ext p D; simp; ring
+    weightedLogSpotFirstOrderCoeff hα (a - a') (r - r') =
+      weightedLogSpotFirstOrderCoeff hα a r - weightedLogSpotFirstOrderCoeff hα a' r' := by
+  ext p D; simp; ring
 
-/-- `weightedLogSpotZerothOrderCoeff` is linear in `r` (subtraction form). -/
+/-- `weightedLogSpotZerothOrderCoeff` preserves differences. -/
 theorem weightedLogSpotZerothOrderCoeff_sub (r' : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) :
-    weightedLogSpotZerothOrderCoeff hα r - weightedLogSpotZerothOrderCoeff hα r' =
-      weightedLogSpotZerothOrderCoeff hα (r - r') :=
+    weightedLogSpotZerothOrderCoeff hα (r - r') =
+      weightedLogSpotZerothOrderCoeff hα r - weightedLogSpotZerothOrderCoeff hα r' :=
   HolderSpace.ext fun p ↦ ContinuousLinearMap.ext fun v ↦ by simp; ring
 
 /-- The backward pricing operator after division by `1 + exp y`, as a bounded linear
@@ -244,8 +246,7 @@ theorem norm_weightedLogSpotZerothOrderCoeff_le :
     (norm_nonneg _) (norm_nonneg r)).trans_eq (mul_comm _ _)
 
 /-- **Operator-norm bound for `weightedLogSpotPricingOperatorL`.** For `α ≤ 1` and parabolic Hölder
-coefficients `a, r`, `‖weightedLogSpotPricingOperatorL hα a r‖ ≤ 1 + 121 ‖a‖ + 96 ‖r‖`. Used to
-bound the operator norm uniformly over bounded coefficient families. -/
+coefficients `a, r`, `‖weightedLogSpotPricingOperatorL hα a r‖ ≤ 1 + 121 ‖a‖ + 96 ‖r‖`. -/
 theorem norm_weightedLogSpotPricingOperatorL_le :
     ‖weightedLogSpotPricingOperatorL (ht := ht) hα a r‖ ≤ 1 + 121 * ‖a‖ + 96 * ‖r‖ := by
   rw [weightedLogSpotPricingOperatorL_def, ← weightedLogSpotSecondOrderCoeff_def]
@@ -257,8 +258,7 @@ theorem norm_weightedLogSpotPricingOperatorL_le :
 /-- **Lipschitz dependence of `weightedLogSpotPricingOperatorL` on `(a, r)`.** For `α ≤ 1` and
 parabolic Hölder coefficients `a, a', r, r'`,
 `‖weightedLogSpotPricingOperatorL hα a r - weightedLogSpotPricingOperatorL hα a' r'‖ ≤`
-`121 ‖a - a'‖ + 96 ‖r - r'‖`. Used to control operator-norm perturbations when varying the local
-variance rate `a` and short rate `r`. -/
+`121 ‖a - a'‖ + 96 ‖r - r'‖`. -/
 theorem norm_weightedLogSpotPricingOperatorL_sub_le
     {a' r' : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ} :
     ‖weightedLogSpotPricingOperatorL (ht := ht) hα a r -
@@ -267,8 +267,8 @@ theorem norm_weightedLogSpotPricingOperatorL_sub_le
     (A := weightedLogSpotSecondOrderCoeff a) (A' := weightedLogSpotSecondOrderCoeff a')
     (B := weightedLogSpotFirstOrderCoeff hα a r) (B' := weightedLogSpotFirstOrderCoeff hα a' r')
     (C := weightedLogSpotZerothOrderCoeff hα r) (C' := weightedLogSpotZerothOrderCoeff hα r')
-  rw [weightedLogSpotSecondOrderCoeff_sub, weightedLogSpotFirstOrderCoeff_sub,
-    weightedLogSpotZerothOrderCoeff_sub] at hP
+  rw [← weightedLogSpotSecondOrderCoeff_sub, ← weightedLogSpotFirstOrderCoeff_sub,
+    ← weightedLogSpotZerothOrderCoeff_sub] at hP
   rw [weightedLogSpotPricingOperatorL_def, weightedLogSpotPricingOperatorL_def,
     ← weightedLogSpotSecondOrderCoeff_def a, ← weightedLogSpotSecondOrderCoeff_def a']
   linarith [hP, norm_weightedLogSpotSecondOrderCoeff_le (a - a'),

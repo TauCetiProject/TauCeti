@@ -138,23 +138,12 @@ theorem holderWith_sigmoid {α : NNReal} (hα : α ≤ 1) : HolderWith 1 α sigm
     rw [← NNReal.coe_le_coe, coe_nnNorm, Real.norm_eq_abs, deriv_sigmoid, NNReal.coe_one,
       abs_of_nonneg (mul_nonneg (sigmoid_nonneg x) (sub_nonneg.2 (sigmoid_le_one x)))]
     nlinarith [sigmoid_nonneg x, sigmoid_le_one x]
-  refine holderOnWith_univ.1 (HolderOnWith.of_dist_le fun x _ y _ => ?_)
-  rw [NNReal.coe_one, one_mul]
-  rcases le_total (dist x y) 1 with hxy | hxy
-  · have h1α : 0 ≤ (1 : ℝ) - α := sub_nonneg.2 (by exact_mod_cast hα)
-    calc dist (sigmoid x) (sigmoid y) ≤ (1 : NNReal) * dist x y := hL.dist_le_mul x y
-      _ = dist x y ^ ((1 : ℝ) - α) * dist x y ^ (α : ℝ) := by
-        rw [NNReal.coe_one, one_mul,
-          ← rpow_add_of_nonneg dist_nonneg h1α α.coe_nonneg, sub_add_cancel, rpow_one]
-      _ ≤ 1 ^ ((1 : ℝ) - α) * dist x y ^ (α : ℝ) := by gcongr
-      _ = dist x y ^ (α : ℝ) := by rw [one_rpow, one_mul]
-  · have hdist : dist (sigmoid x) (sigmoid y) ≤ 1 := by
-      rw [Real.dist_eq, abs_le]
-      constructor <;>
-        linarith [sigmoid_nonneg x, sigmoid_le_one x, sigmoid_nonneg y, sigmoid_le_one y]
-    calc dist (sigmoid x) (sigmoid y) ≤ 1 := hdist
-      _ = (1 : ℝ) ^ (α : ℝ) := (one_rpow _).symm
-      _ ≤ dist x y ^ (α : ℝ) := rpow_le_rpow zero_le_one hxy α.coe_nonneg
+  have h₀ : HolderWith 1 0 sigmoid :=
+    holderOnWith_univ.1 <| HolderOnWith.of_dist_le fun x _ y _ ↦ by
+      rw [NNReal.coe_zero, rpow_zero, NNReal.coe_one, one_mul, Real.dist_eq, abs_le]
+      exact ⟨by linarith [sigmoid_nonneg x, sigmoid_le_one y],
+        by linarith [sigmoid_le_one x, sigmoid_nonneg y]⟩
+  simpa using h₀.of_le_of_le hL.holderWith zero_le hα
 
 /-! ### Derivatives of every order -/
 

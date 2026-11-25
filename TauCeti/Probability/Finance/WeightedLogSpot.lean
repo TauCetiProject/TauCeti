@@ -24,11 +24,10 @@ delta `s C_s` as well as their combined exposure `|C| + |s C_s|`.
 Before maturity (`t ∈ [a, b)`), the within-slab time derivative agrees with the time
 derivative within `[a, ∞)` (the right derivative at `t = a`), and on the open horizon
 (`t ∈ (a, b)`) with the ordinary time derivative. The pricing-operator identity transports
-the backward equation for the bounded map to the financial pricing equation in each of
-these derivative conventions. This is a change-of-variables result, not an existence or
-stochastic replication theorem. In particular, no ellipticity or moment hypotheses are
-needed here. Terminal data are transported pointwise, without a smoothness claim at zero
-spot.
+the backward equation for the bounded map to the financial pricing equation. This is a
+change-of-variables result, not an existence or stochastic replication theorem. In
+particular, no ellipticity or moment hypotheses are needed here. Terminal data are
+transported pointwise, without a smoothness claim at zero spot.
 
 ## References
 
@@ -424,36 +423,5 @@ theorem abs_weightedLogSpotPrice_add_abs_mul_deriv_le (u : ParabolicC2HolderSpac
     have hnorm := u.norm_eq
     nlinarith [norm_nonneg (spatialFDerivL u), norm_nonneg (spatialSecondFDerivL u),
       norm_nonneg (timeDerivL u)]
-
-/-- The pricing-operator identity before maturity (`t ∈ [a, b)`), written with the time derivative
-within `[a, ∞)`. -/
-theorem pde_weightedLogSpotPrice_Ici (u : ParabolicC2HolderSpace α ℝ ℝ hab)
-    {s t : ℝ} (hs : 0 < s) (ht : t ∈ Ico a b) (σ r : ℝ) :
-    derivWithin (weightedLogSpotPrice u s) (Ici a) t +
-        σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ weightedLogSpotPrice u x t) s +
-        r * (s * deriv (fun x ↦ weightedLogSpotPrice u x t) s - weightedLogSpotPrice u s t) =
-      (1 + s) * (timeDerivL u (slabMk (log s) ⟨t, Ico_subset_Icc_self ht⟩) +
-        σ ^ 2 / 2 * spatialSecondFDerivL u (slabMk (log s) ⟨t, Ico_subset_Icc_self ht⟩) 1 1 +
-        (r + σ ^ 2 / 2 * ((s - 1) / (s + 1))) *
-          spatialFDerivL u (slabMk (log s) ⟨t, Ico_subset_Icc_self ht⟩) 1 -
-        r / (1 + s) * u (slabMk (log s) ⟨t, Ico_subset_Icc_self ht⟩)) := by
-  rw [← derivWithin_congr_set (Icc_eventuallyEq_Ici ht.2)]
-  exact pde_weightedLogSpotPrice u hs ⟨t, Ico_subset_Icc_self ht⟩ σ r
-
-/-- The pricing-operator identity on the open horizon (`t ∈ (a, b)`), written with the ordinary
-time derivative. -/
-theorem pde_weightedLogSpotPrice_Ioo (u : ParabolicC2HolderSpace α ℝ ℝ hab)
-    {s t : ℝ} (hs : 0 < s) (ht : t ∈ Ioo a b) (σ r : ℝ) :
-    deriv (weightedLogSpotPrice u s) t +
-        σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ weightedLogSpotPrice u x t) s +
-        r * (s * deriv (fun x ↦ weightedLogSpotPrice u x t) s - weightedLogSpotPrice u s t) =
-      (1 + s) * (timeDerivL u (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht⟩) +
-        σ ^ 2 / 2 * spatialSecondFDerivL u (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht⟩) 1 1 +
-        (r + σ ^ 2 / 2 * ((s - 1) / (s + 1))) *
-          spatialFDerivL u (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht⟩) 1 -
-        r / (1 + s) * u (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht⟩)) := by
-  rw [deriv_weightedLogSpotPrice_time u s ht,
-    ← derivWithin_weightedLogSpotPrice_time u s ⟨t, Ioo_subset_Icc_self ht⟩]
-  exact pde_weightedLogSpotPrice u hs ⟨t, Ioo_subset_Icc_self ht⟩ σ r
 
 end TauCeti.Finance

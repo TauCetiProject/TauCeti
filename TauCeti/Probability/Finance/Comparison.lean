@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+import Mathlib.Algebra.Order.Interval.Set.Group
 import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.WholeLine
 import TauCeti.Probability.Finance.LogSpot
@@ -73,10 +74,6 @@ namespace TauCeti.Finance
 
 variable {σ : ℝ → ℝ → ℝ} {r : ℝ → ℝ} {C₁ C₂ : ℝ → ℝ → ℝ} {t₀ T Λ R A : ℝ}
 
-private theorem sub_mem_Ioo_of_mem_Ioo {τ : ℝ} (hτ : τ ∈ Ioo 0 (T - t₀)) :
-    T - τ ∈ Ioo t₀ T :=
-  ⟨by linarith [hτ.2], by linarith [hτ.1]⟩
-
 /-- In weighted log-spot coordinates and reversed time, `C(e^y, T - τ) / (1 + e^y)` is
 continuous on `0 ≤ τ ≤ T - t₀`. -/
 private theorem continuousOn_reversed_div_one_add_exp {C : ℝ → ℝ → ℝ}
@@ -93,7 +90,8 @@ private theorem contDiffAt_reversed_div_one_add_exp {C : ℝ → ℝ → ℝ}
     (hcd : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ T → ContDiffAt ℝ 2 (fun x ↦ C x t) s)
     {τ : ℝ} (hτ : τ ∈ Ioo 0 (T - t₀)) (y : ℝ) :
     ContDiffAt ℝ 2 (fun y ↦ C (exp y) (T - τ) / (1 + exp y)) y :=
-  ((hcd (exp_pos y) (sub_mem_Ioo_of_mem_Ioo hτ)).comp y contDiff_exp.contDiffAt).div
+  ((hcd (exp_pos y) (sub_mem_Ioo_iff_right.mpr (by simpa only [sub_self] using hτ))).comp y
+    contDiff_exp.contDiffAt).div
     (contDiffAt_const.add contDiff_exp.contDiffAt) (by positivity : 0 < 1 + exp y).ne'
 
 /-- In weighted log-spot coordinates and reversed time, `C(e^y, T - τ) / (1 + e^y)` is
@@ -102,7 +100,7 @@ private theorem differentiableAt_reversed_div_one_add_exp {C : ℝ → ℝ → �
     (hdiff : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ T → DifferentiableAt ℝ (fun u ↦ C s u) t)
     {τ : ℝ} (hτ : τ ∈ Ioo 0 (T - t₀)) (y : ℝ) :
     DifferentiableAt ℝ (fun τ' ↦ C (exp y) (T - τ') / (1 + exp y)) τ :=
-  ((hdiff (exp_pos y) (sub_mem_Ioo_of_mem_Ioo hτ)).comp τ
+  ((hdiff (exp_pos y) (sub_mem_Ioo_iff_right.mpr (by simpa only [sub_self] using hτ))).comp τ
     ((differentiableAt_const T).sub differentiableAt_id)).div_const _
 
 /-- The first-order coefficient `r + σ² / 2 · (e^y - 1) / (e^y + 1)` in weighted log-spot
@@ -112,11 +110,12 @@ private theorem abs_rate_add_mul_le
     (hr : ∀ ⦃t⦄, t ∈ Ioo t₀ T → |r t| ≤ R) {τ : ℝ} (hτ : τ ∈ Ioo 0 (T - t₀)) (y : ℝ) :
     |r (T - τ) + σ (exp y) (T - τ) ^ 2 / 2 * ((exp y - 1) / (exp y + 1))| ≤
       (|R| + |Λ| / 2) * (1 + |y|) := by
+  have hτ' : T - τ ∈ Ioo t₀ T := sub_mem_Ioo_iff_right.mpr (by simpa only [sub_self] using hτ)
   have hq : |(exp y - 1) / (exp y + 1)| ≤ 1 := by
     rw [abs_div, abs_of_pos (by positivity : 0 < exp y + 1), div_le_one (by positivity), abs_le]
     constructor <;> linarith [exp_pos y]
-  have h1 := (hσ (exp_pos y) (sub_mem_Ioo_of_mem_Ioo hτ)).trans (le_abs_self Λ)
-  have h2 := (hr (sub_mem_Ioo_of_mem_Ioo hτ)).trans (le_abs_self R)
+  have h1 := (hσ (exp_pos y) hτ').trans (le_abs_self Λ)
+  have h2 := (hr hτ').trans (le_abs_self R)
   have h3 : 0 ≤ σ (exp y) (T - τ) ^ 2 / 2 := by positivity
   calc |r (T - τ) + σ (exp y) (T - τ) ^ 2 / 2 * ((exp y - 1) / (exp y + 1))|
       ≤ |r (T - τ)| + σ (exp y) (T - τ) ^ 2 / 2 * 1 := by
@@ -148,16 +147,16 @@ private theorem pde_reversed_div_one_add_exp_le
           (r (T - τ) + σ (exp y) (T - τ) ^ 2 / 2 * ((exp y - 1) / (exp y + 1))) *
             deriv (fun z ↦ C₂ (exp z) (T - τ) / (1 + exp z)) y +
           -r (T - τ) / (1 + exp y) * (C₂ (exp y) (T - τ) / (1 + exp y))) := by
+  have hτ' : T - τ ∈ Ioo t₀ T := sub_mem_Ioo_iff_right.mpr (by simpa only [sub_self] using hτ)
   rw [deriv_comp_const_sub (f := fun t ↦ C₁ (exp y) t / (1 + exp y)),
     deriv_comp_const_sub (f := fun t ↦ C₂ (exp y) t / (1 + exp y))]
-  have hc₁ := hcd₁ (exp_pos y) (sub_mem_Ioo_of_mem_Ioo hτ)
+  have hc₁ := hcd₁ (exp_pos y) hτ'
   have h₁ := pde_comp_exp_div_one_add_exp (σ (exp y) (T - τ)) (r (T - τ))
     (hc₁.eventually_differentiableAt (by norm_num)) hc₁.differentiableAt_deriv_two
-  have hc₂ := hcd₂ (exp_pos y) (sub_mem_Ioo_of_mem_Ioo hτ)
+  have hc₂ := hcd₂ (exp_pos y) hτ'
   have h₂ := pde_comp_exp_div_one_add_exp (σ (exp y) (T - τ)) (r (T - τ))
     (hc₂.eventually_differentiableAt (by norm_num)) hc₂.differentiableAt_deriv_two
-  have h := div_le_div_of_nonneg_right
-    (hpde (exp_pos y) (sub_mem_Ioo_of_mem_Ioo hτ)) (add_pos one_pos (exp_pos y)).le
+  have h := div_le_div_of_nonneg_right (hpde (exp_pos y) hτ') (add_pos one_pos (exp_pos y)).le
   linear_combination h + h₂ - h₁
 
 /-- **The comparison principle for the pricing equation.** Let the volatility `σ(s, t)` and the
@@ -194,12 +193,13 @@ theorem le_of_pde_le_of_terminal_le
     (Lam := |Λ| / 2) (β := |R| + |Λ| / 2) (γ := |R|)
     (fun τ _ y ↦ by positivity)
     (fun τ hτ y ↦ by
-      have h1 := (hσ (exp_pos y) (sub_mem_Ioo_of_mem_Ioo hτ)).trans (le_abs_self Λ)
+      have h1 := (hσ (exp_pos y) (t := T - τ)
+        (sub_mem_Ioo_iff_right.mpr (by simpa only [sub_self] using hτ))).trans (le_abs_self Λ)
       nlinarith [abs_nonneg Λ, sq_nonneg y])
     (fun τ hτ y ↦ abs_rate_add_mul_le hσ hr hτ y)
     (fun τ hτ y ↦ by
-      have h1 := (neg_le_abs (r (T - τ))).trans
-        ((hr (sub_mem_Ioo_of_mem_Ioo hτ)).trans (le_abs_self R))
+      have h1 := (neg_le_abs (r (T - τ))).trans ((hr (t := T - τ)
+        (sub_mem_Ioo_iff_right.mpr (by simpa only [sub_self] using hτ))).trans (le_abs_self R))
       rw [div_le_iff₀ (hψ y)]
       nlinarith [mul_nonneg (abs_nonneg R) (exp_pos y).le])
     (continuousOn_reversed_div_one_add_exp hC₁) (continuousOn_reversed_div_one_add_exp hC₂)
