@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Modules.Differentials.LocallyFreeQuotient
+public import TauCeti.AlgebraicGeometry.Modules.Differentials.LocallyFreeQuotient.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus.StalkDifferentials
 public import TauCeti.AlgebraicGeometry.VectorBundle.Reduced
 import TauCeti.AlgebraicGeometry.VectorBundle.Stalk
@@ -18,10 +18,9 @@ free quotient of rank `d`. At a point `x` of the smooth locus of dimension `d`, 
 stalk map of `q` is a surjection `Ω[𝒪_{X,x}⁄k] → E_x` between free `𝒪_{X,x}`-modules of rank `d`,
 hence bijective. If moreover `X` is reduced and `X_sm^{(d)}` is dense, then any two locally free
 quotients `q₁ : Ω_{X/k} ⟶ E₁` and `q₂ : Ω_{X/k} ⟶ E₂` of rank `d` have the same kernel: there is a
-unique isomorphism `E₁ ≅ E₂` carrying `q₁` to `q₂`. The composite of the kernel of `q₁` with `q₂`
-vanishes on the stalks at the dense subset `X_sm^{(d)}`, and a morphism into a finite locally free
-sheaf on a reduced scheme vanishing there is zero
-(`TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.existsUnique_iso_comp_eq`).
+unique isomorphism `E₁ ≅ E₂` carrying `q₁` to `q₂`. This is
+`TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.existsUnique_iso_comp_eq` applied to the
+stalkwise injectivity on the dense subset `X_sm^{(d)}`.
 
 ## Main declarations
 
@@ -53,21 +52,14 @@ there it is a surjection between free modules of rank `d` over the local ring. -
 theorem stalkₗ_bijective_of_mem_smoothLocusOfDim (E : FiniteLocallyFreeSheaf.FixedRank X d)
     (q : X.relativeDifferentials k ⟶ E.obj.obj) [Epi q] {x : X}
     (hx : x ∈ smoothLocusOfDim k X d) : Function.Bijective (q.stalkₗ x) := by
-  refine ⟨?_, q.stalkₗ_surjective_of_epi x⟩
   obtain ⟨e⟩ := nonempty_linearEquiv_kaehlerDifferential_stalk_of_mem_smoothLocusOfDim k hx
   let b := Module.finBasisOfFinrankEq _ _
     ((FiniteLocallyFreeSheaf.finrank_stalk E.obj x).trans (E.rank_apply x))
-  -- Transported to `𝒪_{X,x}^d → 𝒪_{X,x}^d`, the stalk map is a surjective endomorphism of a
-  -- finitely generated module, hence injective.
-  let φ := e.symm ≪≫ₗ (X.relativeDifferentialsStalkEquiv k x).symm
-  let g := b.equivFun.toLinearMap ∘ₗ q.stalkₗ x ∘ₗ φ.toLinearMap
-  have hg : Function.Surjective g :=
-    b.equivFun.surjective.comp ((q.stalkₗ_surjective_of_epi x).comp φ.surjective)
-  have hinj := OrzechProperty.injective_of_surjective_endomorphism g hg
-  intro m₁ m₂ h
-  have h' : g (φ.symm m₁) = g (φ.symm m₂) := by
-    simp [g, h]
-  simpa using hinj h'
+  -- Both stalks are free of rank `d`, so they are isomorphic; a surjection between isomorphic
+  -- finitely generated modules is bijective.
+  let ψ := (X.relativeDifferentialsStalkEquiv k x) ≪≫ₗ e ≪≫ₗ b.equivFun.symm
+  exact OrzechProperty.bijective_of_surjective_of_injective ψ.toLinearMap (q.stalkₗ x)
+    ψ.injective (q.stalkₗ_surjective_of_epi x)
 
 /-- **Uniqueness of locally free quotients of the differentials.** On a reduced scheme `X` whose
 smooth locus of dimension `d` is dense, two locally free quotients `q₁ : Ω_{X/k} ⟶ E₁` and
