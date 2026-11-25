@@ -16,9 +16,11 @@ public import TauCeti.CategoryTheory.Functor.LocallySmall
 The category `TauCeti.FiniteEtaleScheme S` has objects in `Type (u + 1)`, and so does the
 automorphism group `Aut (TauCeti.FiniteEtaleScheme.fiber x)` of a geometric fibre functor, the
 étale fundamental group at `x`. This file shows that the group has a model in `Type u` whenever
-the finite étale covers of `S` form an essentially small category
-(`TauCeti.FiniteEtaleScheme.small_aut_fiber`), and that they do over an affine base
-(`TauCeti.FiniteEtaleScheme.essentiallySmall_of_isAffine`).
+the finite étale covers of `S` form an essentially small category, and that they do over an
+affine base (`TauCeti.FiniteEtaleScheme.essentiallySmall_of_isAffine`). The first statement is
+found by instance search, through `CategoryTheory.locallySmall_functor_of_small_skeleton` and
+`TauCeti.small_aut`, so `Small.{u} (Aut (fiber x))` needs no named theorem; an `example` below
+records it.
 
 Over an affine base the covers are anti-equivalent to finite étale algebras over the ring of
 global functions (`TauCeti.FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme`
@@ -31,8 +33,6 @@ algebras (`TauCeti.essentiallySmall_commAlgCatFiniteEtale`, in
 
 * `TauCeti.FiniteEtaleScheme.essentiallySmall_of_isAffine`: finite étale covers of an affine
   scheme form an essentially small category.
-* `TauCeti.FiniteEtaleScheme.small_aut_fiber`: if the finite étale covers of `S` form an
-  essentially small category, the automorphism group of a geometric fibre functor is small.
 
 ## References
 
@@ -58,10 +58,10 @@ instance essentiallySmall_of_isAffine (S : Scheme.{u}) [IsAffine S] :
 
 variable {S : Scheme.{u}} {Ω : Type u} [Field Ω] [IsSepClosed Ω]
 
-/-- If the finite étale covers of `S` form an essentially small category, the automorphism group
+/- If the finite étale covers of `S` form an essentially small category, the automorphism group
 of the geometric fibre functor at `x`, the étale fundamental group, has a model in `Type u`. -/
-theorem small_aut_fiber [EssentiallySmall.{u} (FiniteEtaleScheme S)]
-    (x : Spec (.of Ω) ⟶ S) : Small.{u} (Aut (fiber x)) :=
+example [EssentiallySmall.{u} (FiniteEtaleScheme S)] (x : Spec (.of Ω) ⟶ S) :
+    Small.{u} (Aut (fiber x)) :=
   inferInstance
 
 end FiniteEtaleScheme
