@@ -141,7 +141,7 @@ private theorem mNorm_two_eq (s : Multiset ℝ) (hs : 2 ≤ card s) :
 private theorem mNorm_one_eq (s : Multiset ℝ) : mNorm s 1 = s.sum / card s := by
   rw [mNorm, Multiset.esymm_one, Nat.choose_one_right]
 
-/-- Newton's inequality at `k = 1`: `S₀ S₂ ≤ S₁²`, the inequality between the arithmetic and the
+/-- Newton's inequality at `k = 0`: `S₀ S₂ ≤ S₁²`, the inequality between the arithmetic and the
 quadratic mean. -/
 private theorem mNorm_two_le (s : Multiset ℝ) : mNorm s 2 ≤ mNorm s 1 ^ 2 := by
   rcases lt_or_ge (card s) 2 with hs | hs
@@ -174,26 +174,32 @@ private theorem mNorm_replicate (n : ℕ) (hn : 2 ≤ n) (c : ℝ) :
       div_eq_iff (by nlinarith)]
     ring
 
+/-- Iterated Rolle's theorem: if `m ≤ card s`, there is a multiset `r` of `m` real numbers with
+the same normalized elementary symmetric functions as `s` up to degree `m`. -/
+private theorem exists_mNorm_eq_of_le (s : Multiset ℝ) {m : ℕ} (hm : m ≤ card s) :
+    ∃ r : Multiset ℝ, card r = m ∧ ∀ j ≤ m, mNorm s j = mNorm r j := by
+  obtain ⟨d, hd⟩ := Nat.exists_eq_add_of_le hm
+  induction d generalizing s with
+  | zero => exact ⟨s, hd, fun _ _ ↦ rfl⟩
+  | succ d ih =>
+    obtain ⟨r, hr, hsr⟩ := exists_mNorm_eq s (m := m + d) (by omega)
+    obtain ⟨t, ht, hrt⟩ := ih r (by omega) hr
+    exact ⟨t, ht, fun j hj ↦ (hsr j (by omega)).trans (hrt j hj)⟩
+
 /-- **Newton's inequality** for a multiset, `S_k S_{k+2} ≤ S_{k+1}²`. -/
 private theorem mNorm_mul_le_sq (s : Multiset ℝ) (k : ℕ) :
     mNorm s k * mNorm s (k + 2) ≤ mNorm s (k + 1) ^ 2 := by
   rcases lt_or_ge (card s) (k + 2) with hlt | hge
   · rw [mNorm_of_card_lt hlt, mul_zero]
     positivity
-  obtain ⟨d, hd⟩ := Nat.exists_eq_add_of_le hge
-  clear hge
-  induction d generalizing s with
-  | zero =>
-    by_cases h0 : (0 : ℝ) ∈ s
-    · rw [← add_zero (k + 2), ← hd, mNorm_card, Multiset.prod_eq_zero h0, mul_zero]
-      positivity
-    obtain ⟨h0', h1, h2⟩ := mNorm_eq_mul_prod_of_card_eq hd h0
-    rw [h0', h1, h2]
-    nlinarith [mNorm_two_le (s.map (·⁻¹)), sq_nonneg s.prod]
-  | succ d ih =>
-    obtain ⟨r, hr, hsr⟩ := exists_mNorm_eq s (m := k + 2 + d) (by omega)
-    rw [hsr k (by omega), hsr (k + 1) (by omega), hsr (k + 2) (by omega)]
-    exact ih r hr
+  obtain ⟨r, hr, hsr⟩ := exists_mNorm_eq_of_le s hge
+  rw [hsr k (by omega), hsr (k + 1) (by omega), hsr (k + 2) le_rfl]
+  by_cases h0 : (0 : ℝ) ∈ r
+  · rw [← hr, mNorm_card, Multiset.prod_eq_zero h0, mul_zero]
+    positivity
+  obtain ⟨h0', h1, h2⟩ := mNorm_eq_mul_prod_of_card_eq hr h0
+  rw [h0', h1, h2]
+  nlinarith [mNorm_two_le (r.map (·⁻¹)), sq_nonneg r.prod]
 
 /-- The equality case of Newton's inequality for a multiset with `S_{k+2} ≠ 0`. -/
 private theorem eq_of_mNorm_mul_eq_sq (s : Multiset ℝ) (k : ℕ) (hne : mNorm s (k + 2) ≠ 0)
@@ -202,35 +208,26 @@ private theorem eq_of_mNorm_mul_eq_sq (s : Multiset ℝ) (k : ℕ) (hne : mNorm 
   have hge : k + 2 ≤ card s := by
     by_contra h
     exact hne (mNorm_of_card_lt (by omega))
-  obtain ⟨d, hd⟩ := Nat.exists_eq_add_of_le hge
-  clear hge
-  induction d generalizing s with
-  | zero =>
-    have hcard : card s = k + 2 := hd
-    have h0 : (0 : ℝ) ∉ s := fun h0 ↦ hne (by rw [← hcard, mNorm_card, Multiset.prod_eq_zero h0])
-    have hP : s.prod ≠ 0 := Multiset.prod_ne_zero h0
-    obtain ⟨h0', h1, h2⟩ := mNorm_eq_mul_prod_of_card_eq hcard h0
-    rw [h0', h1, h2] at heq
-    have ht : mNorm (s.map (·⁻¹)) 2 = mNorm (s.map (·⁻¹)) 1 ^ 2 := by
-      refine mul_right_cancel₀ (pow_ne_zero 2 hP) ?_
-      linear_combination heq
-    intro x hx y hy
-    have := eq_of_mNorm_two_eq _ (by rw [card_map]; omega) ht _
-      (Multiset.mem_map_of_mem _ hx) _ (Multiset.mem_map_of_mem _ hy)
-    exact inv_inj.mp this
-  | succ d ih =>
-    obtain ⟨r, hr, hsr⟩ := exists_mNorm_eq s (m := k + 2 + d) (by omega)
-    rw [hsr k (by omega), hsr (k + 1) (by omega), hsr (k + 2) (by omega)] at heq
-    rw [hsr (k + 2) (by omega)] at hne
-    have hrr := ih r hne heq hr
-    obtain ⟨c, hc⟩ := card_pos_iff_exists_mem.mp (show 0 < card r by omega)
-    have hrep : r = Multiset.replicate (k + 2 + d) c :=
-      Multiset.eq_replicate.mpr ⟨hr, fun b hb ↦ hrr b hb c hc⟩
-    obtain ⟨h1, h2⟩ := mNorm_replicate (k + 2 + d) (by omega) c
-    rw [← hrep, ← hsr 1 (by omega)] at h1
-    rw [← hrep, ← hsr 2 (by omega)] at h2
-    exact eq_of_mNorm_two_eq s (by omega) (by rw [h1, h2])
-
+  obtain ⟨r, hr, hsr⟩ := exists_mNorm_eq_of_le s hge
+  rw [hsr k (by omega), hsr (k + 1) (by omega), hsr (k + 2) le_rfl] at heq
+  rw [hsr (k + 2) le_rfl] at hne
+  have h0 : (0 : ℝ) ∉ r := fun h0 ↦ hne (by rw [← hr, mNorm_card, Multiset.prod_eq_zero h0])
+  have hP : r.prod ≠ 0 := Multiset.prod_ne_zero h0
+  obtain ⟨h0', h1, h2⟩ := mNorm_eq_mul_prod_of_card_eq hr h0
+  rw [h0', h1, h2] at heq
+  have ht : mNorm (r.map (·⁻¹)) 2 = mNorm (r.map (·⁻¹)) 1 ^ 2 := by
+    refine mul_right_cancel₀ (pow_ne_zero 2 hP) ?_
+    linear_combination heq
+  have hrr : ∀ x ∈ r, ∀ y ∈ r, x = y := fun x hx y hy ↦
+    inv_inj.mp (eq_of_mNorm_two_eq _ (by rw [card_map]; omega) ht _
+      (Multiset.mem_map_of_mem _ hx) _ (Multiset.mem_map_of_mem _ hy))
+  obtain ⟨c, hc⟩ := card_pos_iff_exists_mem.mp (show 0 < card r by omega)
+  have hrep : r = Multiset.replicate (k + 2) c :=
+    Multiset.eq_replicate.mpr ⟨hr, fun b hb ↦ hrr b hb c hc⟩
+  obtain ⟨h1, h2⟩ := mNorm_replicate (k + 2) le_add_self c
+  rw [← hrep, ← hsr 1 (by omega)] at h1
+  rw [← hrep, ← hsr 2 (by omega)] at h2
+  exact eq_of_mNorm_two_eq s (by omega) (by rw [h1, h2])
 
 /-- **Newton's inequalities** for a multiset `s` of real numbers: with
 `S_k = e_k(s) / binom(card s, k)`, `S_k S_{k+2} ≤ S_{k+1}²` for every `k`. -/

@@ -19,7 +19,9 @@ The formal partial derivatives of a multivariate polynomial give its Fréchet de
 finite coordinate space over any nontrivially normed field. For a family of equations, with the
 product topology on its target, this identifies the analytic derivative with the linear map of
 `TauCeti.jacobiMatrixAt`. In particular the derivative is surjective exactly when the Jacobian
-matrix is, and the evaluation map of the family is analytic.
+matrix is, and the evaluation map of the family is analytic. Applied to a standard coordinate
+direction, the derivative is the evaluated partial derivative
+(`MvPolynomial.fderiv_eval_apply_single`).
 
 For real or complex Euclidean coordinate spaces, we also give the derivative applied to an
 arbitrary direction and to a standard coordinate direction, and record that evaluating a polynomial
@@ -58,6 +60,16 @@ theorem MvPolynomial.hasFDerivAt_eval (p : MvPolynomial σ 𝕜) (x : σ → �
     · ext y
       simp [Finset.sum_add_distrib, mul_add, Finset.mul_sum,
         Pi.single_apply, apply_ite, mul_comm, mul_left_comm]
+
+omit [Fintype σ] in
+/-- Differentiating polynomial evaluation on `σ → 𝕜` in a standard coordinate direction gives
+evaluation of the corresponding formal partial derivative. -/
+@[simp]
+theorem MvPolynomial.fderiv_eval_apply_single [Finite σ] [DecidableEq σ]
+    (p : MvPolynomial σ 𝕜) (x : σ → 𝕜) (i : σ) :
+    fderiv 𝕜 (fun y ↦ eval y p) x (Pi.single i 1) = eval x (pderiv i p) := by
+  let := Fintype.ofFinite σ
+  simp [(p.hasFDerivAt_eval x).fderiv, Pi.single_apply]
 
 section
 

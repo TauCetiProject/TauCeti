@@ -71,10 +71,7 @@ variable {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [Fintype ι] [Decidabl
 theorem fderiv_eval_esymm_succ_apply_single (μ : ι → 𝕜) (i : ι) (k : ℕ) :
     fderiv 𝕜 (fun ν ↦ eval ν (esymm ι 𝕜 (k + 1))) μ (Pi.single i 1) =
       eval (update μ i 0) (esymm ι 𝕜 k) := by
-  rw [(hasFDerivAt_eval _ μ).fderiv]
-  simp only [FunLike.coe_sum, FunLike.coe_smul, Finset.sum_apply,
-    Pi.smul_apply, ContinuousLinearMap.proj_apply, Pi.single_apply, smul_eq_mul, mul_ite,
-    mul_one, mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true]
+  rw [fderiv_eval_apply_single]
   have h := hasDerivAt_eval_update (esymm ι 𝕜 (k + 1)) μ i (μ i)
   rw [update_eq_self] at h
   refine h.unique ?_
