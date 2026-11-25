@@ -213,6 +213,10 @@ theorem phiMeasure_comp_psiMeasure :
 theorem phiMeasure_injective : Function.Injective (phiMeasure : D(ℤ_[p], R) → D(ℤ_[p], R)) :=
   Function.LeftInverse.injective psiMeasure_phiMeasure
 
+/-- `ψ` is surjective, since `ψ φ = id`. -/
+theorem psiMeasure_surjective : Function.Surjective (psiMeasure : D(ℤ_[p], R) → D(ℤ_[p], R)) :=
+  Function.LeftInverse.surjective psiMeasure_phiMeasure
+
 /-- `1 - φ ψ` is the restriction to `ℤ_pˣ`. -/
 theorem unitRestriction_eq_id_sub_phiMeasure_comp_psiMeasure :
     unitRestriction (p := p) (R := R) = LinearMap.id - phiMeasure ∘ₗ psiMeasure := by

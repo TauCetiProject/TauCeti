@@ -20,11 +20,15 @@ It also records that extending a family along an arbitrary map of index types, w
 default outside the range, is measurable in the family
 (`TauCeti.MeasureTheory.measurable_extend`), and that reading a family along an arbitrary map of
 index types is measurable in the family (`TauCeti.MeasureTheory.measurable_comp_apply`).
+It also records that appending an entry to a tuple with `Fin.snoc` is measurable
+(`TauCeti.MeasureTheory.measurable_finSnoc`), and that the length-`n + 1` prefix of a sequence is
+its length-`n` prefix with the entry at index `n` appended this way
+(`TauCeti.MeasureTheory.prefix_succ_eq_finSnoc_comp`).
 
 It also records that recombining a block `z` on a finset `s` with the remaining coordinates of a
 point `w` of a dependent product is the finset update of `w` by `z`
-(`Finset.measurableEquiv_piEquivPiSubtypeProd_symm_apply_eq_updateFinset`), and that the product
-of trivial σ-algebras is trivial (`MeasurableSpace.pi_bot`).
+(`Finset.measurableEquiv_piEquivPiSubtypeProd_symm_apply_eq_updateFinset`), and that the product of
+trivial σ-algebras is trivial (`MeasurableSpace.pi_bot`).
 
 These are general measurable product constructions, independent of any measure or stochastic
 process.
@@ -110,12 +114,29 @@ theorem measurable_comp_apply {ι κ : Type*} (e : ι → κ) :
     Measurable fun (u : κ → α) (a : ι) ↦ u (e a) :=
   Measurable.of_eval fun a ↦ measurable_pi_apply (e a)
 
-/-- The product of trivial σ-algebras is trivial. -/
-@[simp]
-theorem _root_.MeasurableSpace.pi_bot {ι : Type*} {X : ι → Type*} :
-    MeasurableSpace.pi (m := fun i => (⊥ : MeasurableSpace (X i))) = ⊥ := by
-  simp [MeasurableSpace.pi, MeasurableSpace.comap_bot]
+/-- Appending an entry to a tuple with `Fin.snoc` is measurable. -/
+@[fun_prop]
+theorem measurable_finSnoc (n : ℕ) :
+    Measurable fun p : (Fin n → α) × α ↦ (Fin.snoc p.1 p.2 : Fin (n + 1) → α) :=
+  measurable_pi_iff.2 fun i ↦ Fin.lastCases (by simp only [Fin.snoc_last]; fun_prop)
+    (fun j ↦ by simp only [Fin.snoc_castSucc]; fun_prop) i
+
+omit [MeasurableSpace α] in
+/-- The prefix of a sequence of length `n + 1` is its prefix of length `n` followed by its entry
+at index `n`, appended with `Fin.snoc`. -/
+theorem prefix_succ_eq_finSnoc_comp (n : ℕ) :
+    (fun (x : ℕ → α) (i : Fin (n + 1)) ↦ x i.val) =
+      (fun p : (Fin n → α) × α ↦ (Fin.snoc p.1 p.2 : Fin (n + 1) → α)) ∘
+        fun x : ℕ → α ↦ ((fun i : Fin n ↦ x i.val), x n) := by
+  funext x i
+  refine Fin.lastCases ?_ (fun j ↦ ?_) i <;> simp
 
 end MeasureTheory
 
 end TauCeti
+
+/-- The product of trivial σ-algebras is the trivial σ-algebra. -/
+@[simp]
+theorem MeasurableSpace.pi_bot {ι : Type*} {α : ι → Type*} :
+    MeasurableSpace.pi (m := fun _ => ⊥) = (⊥ : MeasurableSpace (∀ i, α i)) := by
+  simp [MeasurableSpace.pi, MeasurableSpace.comap_bot]

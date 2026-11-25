@@ -33,6 +33,8 @@ which is the form every concrete centralizer computation in a matrix group start
   exactly when the two commute as elements of the monoid.
 * `Subgroup.zpowers_le_centralizer_singleton`: an element's cyclic subgroup lies in its
   centralizer.
+* `Subgroup.mem_centralizer_zpowers_iff`: an element centralizes a cyclic subgroup exactly when it
+  commutes with its generator.
 * `Subgroup.centralizer_singleton_eq_zpowers_of_centralizer_le`: an element whose cyclic subgroup
   contains the centralizer of some element generates its own centralizer.
 * `Subgroup.eq_of_centralizer_eq_self_of_le_of_isMulCommutative`: a self-centralizing subgroup is
@@ -59,6 +61,11 @@ theorem mem_centralizer_singleton_iff_commute_val {M : Type*} [Monoid M] {g h : 
 end TauCeti
 
 namespace Subgroup
+
+/-- An element centralizes the cyclic subgroup `⟨a⟩` exactly when it commutes with `a`. -/
+theorem mem_centralizer_zpowers_iff {G : Type*} [Group G] {a g : G} :
+    g ∈ centralizer (zpowers a : Set G) ↔ g * a = a * g := by
+  rw [zpowers_eq_closure, centralizer_closure, mem_centralizer_singleton_iff, commute_iff_eq]
 
 /-- Every abelian subgroup is contained in a maximal abelian subgroup. -/
 theorem exists_maximal_isMulCommutative {G : Type*} [Group G] (H : Subgroup G)

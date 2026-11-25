@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Analysis.Calculus.Morse.LocalNormalForm
-import TauCeti.Analysis.Calculus.ApproximatesLinearOn
+import TauCeti.Analysis.Calculus.ApproximatesLinearOn.Basic
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Calculus.FDeriv.Prod
