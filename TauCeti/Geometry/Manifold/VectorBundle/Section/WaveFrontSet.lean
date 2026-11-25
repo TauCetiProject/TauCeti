@@ -72,7 +72,8 @@ notions of microlocal regularity on bundles (`TauCeti.BundleTest.isMicrolocallyA
   with its defining property `TauCeti.BundleTest.isMicrolocallySmoothAt_def`, and
   `TauCeti.BundleTest.isMicrolocallySmoothAt_iff`, its characterization in every chart and frame.
 * `TauCeti.BundleTest.waveFrontSet`: the wave front set of `T`, a subset of the cotangent bundle,
-  empty for `T = 0` on a manifold without boundary (`TauCeti.BundleTest.waveFrontSet_zero`).
+  with its defining property `TauCeti.BundleTest.waveFrontSet_eq_microlocalSingularSet`, empty
+  for `T = 0` on a manifold without boundary (`TauCeti.BundleTest.waveFrontSet_zero`).
 * `TauCeti.BundleTest.mk_smul_mem_waveFrontSet_iff`: the wave front set is conic.
 * `TauCeti.BundleTest.waveFrontSet_add_subset`, `TauCeti.BundleTest.waveFrontSet_smul`: the wave
   front set of a sum lies in the union, and nonzero real multiples do not change it.
@@ -177,6 +178,13 @@ variable (I) in
 section of a bundle: the nonzero covectors of `M` at which `T` is not microlocally smooth. -/
 def waveFrontSet (T : BundleTest I F V →L_c[ℝ] ℝ) : Set (CotangentBundle I M) :=
   microlocalSingularSet I (fun _ S y η ↦ S.IsMicrolocallySmoothAt y η) T
+
+variable (I) in
+/-- The wave front set is `TauCeti.BundleTest.microlocalSingularSet` for
+`Distribution.IsMicrolocallySmoothAt`. -/
+theorem waveFrontSet_eq_microlocalSingularSet (T : BundleTest I F V →L_c[ℝ] ℝ) :
+    waveFrontSet I T = microlocalSingularSet I (fun _ S y η ↦ S.IsMicrolocallySmoothAt y η) T :=
+  (rfl)
 
 @[simp]
 theorem mem_waveFrontSet_iff {T : BundleTest I F V →L_c[ℝ] ℝ} {p : CotangentBundle I M} :

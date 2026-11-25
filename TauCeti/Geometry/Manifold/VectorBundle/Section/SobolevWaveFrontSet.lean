@@ -55,7 +55,8 @@ agrees with it where `f ≠ 0`.
   `TauCeti.BundleTest.isMicrolocallySobolevAt_smulLeftDualCLM_iff`, smooth multiples do not change
   it where they do not vanish.
 * `TauCeti.BundleTest.sobolevWaveFrontSet`: the `H^s` wave front set of `T`, a subset of the
-  cotangent bundle.
+  cotangent bundle, with its defining property
+  `TauCeti.BundleTest.sobolevWaveFrontSet_eq_microlocalSingularSet`.
 * `TauCeti.BundleTest.mk_smul_mem_sobolevWaveFrontSet_iff`: the `H^s` wave front set is conic.
 * `TauCeti.BundleTest.isOpen_setOf_isMicrolocallySobolevAt`: microlocal `H^s` regularity is an
   open condition on the cotangent bundle, so the `H^s` wave front set is closed in the complement
@@ -208,6 +209,14 @@ distributional section of a bundle: the nonzero covectors of `M` at which `T` is
 `H^s`. -/
 def sobolevWaveFrontSet (s : ℝ) (T : BundleTest I F V →L_c[ℝ] ℝ) : Set (CotangentBundle I M) :=
   microlocalSingularSet I (fun _ S y η ↦ S.IsMicrolocallySobolevAt s y η) T
+
+variable (I) in
+/-- The `H^s` wave front set is `TauCeti.BundleTest.microlocalSingularSet` for
+`Distribution.IsMicrolocallySobolevAt`. -/
+theorem sobolevWaveFrontSet_eq_microlocalSingularSet (s : ℝ) (T : BundleTest I F V →L_c[ℝ] ℝ) :
+    sobolevWaveFrontSet I s T =
+      microlocalSingularSet I (fun _ S y η ↦ S.IsMicrolocallySobolevAt s y η) T :=
+  (rfl)
 
 @[simp]
 theorem mem_sobolevWaveFrontSet_iff {s : ℝ} {T : BundleTest I F V →L_c[ℝ] ℝ}
