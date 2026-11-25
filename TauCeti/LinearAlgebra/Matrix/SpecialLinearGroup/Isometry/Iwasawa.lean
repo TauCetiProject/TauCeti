@@ -317,9 +317,9 @@ private theorem exists_mem_iSup_compensated_reflection {v : n → K} (hev : (σ 
   refine ⟨r₀, hr₀_mem, c₀, hc₀, ⟨hr₀e, hr₀f⟩, fun x hex hfx ↦ ?_⟩
   obtain ⟨w, hvw, hw_ortho, hx_eq⟩ := exists_comp_dotProduct_mulVec_eq_zero_and_eq_add_smul hvv x
   set α := ((σ ∘ v) ⬝ᵥ (Q *ᵥ v))⁻¹ * ((σ ∘ v) ⬝ᵥ (Q *ᵥ x))
+  have hαμ : α * μ = α + τ * ((σ ∘ v) ⬝ᵥ (Q *ᵥ x)) := by dsimp [α, μ]; field_simp
   (conv_lhs => rw [hx_eq, mulVec_add, mulVec_smul,
-    hr₀w w (hw_ortho _ hev hex) (hw_ortho _ hfv hfx) hvw, hrv', smul_smul,
-    show α * μ = α + τ * ((σ ∘ v) ⬝ᵥ (Q *ᵥ x)) by dsimp [α, μ]; field_simp])
+    hr₀w w (hw_ortho _ hev hex) (hw_ortho _ hfv hfx) hvw, hrv', smul_smul, hαμ])
   (conv_rhs => enter [1]; rw [hx_eq]); module
 
 private theorem exists_mem_iSup_anisotropic_pair_ne {S : Submodule K (n → K)}

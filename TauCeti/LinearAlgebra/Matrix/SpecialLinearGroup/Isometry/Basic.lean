@@ -47,9 +47,11 @@ sub-`MulAction` `Matrix.isotropicPoints Q σ`, the natural permutation domain of
 * `Matrix.mem_specialIsometryGroup_iff`: the defining matrix equation.
 * `Matrix.specialIsometryGroup_ext`, `Matrix.coe_mul_specialIsometryGroup`,
   `Matrix.coe_mul_specialIsometryGroup_mulVec`,
+  `Matrix.coe_commutatorElement_specialIsometryGroup`,
   `Matrix.coe_inv_specialIsometryGroup_mulVec_of_mulVec_eq`, and
-  `Matrix.coe_inv_specialIsometryGroup_eq_of_mul_eq_one`: matrix extensionality, product matrix
-  and action, inverse action, and right-inverse characterization in `Q.specialIsometryGroup σ`.
+  `Matrix.coe_inv_specialIsometryGroup_eq_of_mul_eq_one`: matrix extensionality, product and
+  commutator matrices, product action, inverse action, and right-inverse characterization in
+  `Q.specialIsometryGroup σ`.
 * `Matrix.mem_isotropicPoints_iff`: a point is isotropic when its chosen representative is.
 * `Matrix.mk_mem_isotropicPoints_iff`: the point of a nonzero vector is isotropic exactly when the
   vector is.
@@ -61,7 +63,7 @@ sub-`MulAction` `Matrix.isotropicPoints Q σ`, the natural permutation domain of
 
 public section
 
-open scoped LinearAlgebra.Projectivization
+open scoped LinearAlgebra.Projectivization commutatorElement
 
 namespace Matrix
 
@@ -122,6 +124,16 @@ theorem coe_mul_specialIsometryGroup_mulVec (g₁ g₂ : Q.specialIsometryGroup 
       ((g₁ : SpecialLinearGroup n K) : Matrix n n K) *ᵥ
         (((g₂ : SpecialLinearGroup n K) : Matrix n n K) *ᵥ x) := by
   rw [coe_mul_specialIsometryGroup, mulVec_mulVec]
+
+/-- The matrix of a commutator in `Q.specialIsometryGroup σ` is the commutator product of the
+matrices of its factors and their inverses. -/
+theorem coe_commutatorElement_specialIsometryGroup (g₁ g₂ : Q.specialIsometryGroup σ) :
+    (((⁅g₁, g₂⁆ : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) =
+      ((g₁ : SpecialLinearGroup n K) : Matrix n n K) *
+        ((g₂ : SpecialLinearGroup n K) : Matrix n n K) *
+        (((g₁⁻¹ : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) *
+        (((g₂⁻¹ : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) := by
+  simp only [commutatorElement_def, coe_mul_specialIsometryGroup]
 
 /-- If `g : Q.specialIsometryGroup σ` sends `x` to `y`, then `g⁻¹` sends `y` to `x`. -/
 theorem coe_inv_specialIsometryGroup_mulVec_of_mulVec_eq {g : Q.specialIsometryGroup σ}

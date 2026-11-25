@@ -58,6 +58,10 @@ as the model for this file.
 * `Matrix.coe_inv_specialIsometryGroup_eq_unitaryTransvection` and
   `Matrix.coe_inv_specialIsometryGroup_eq_siegelTransvection`: explicit matrices for the inverses
   of unitary transvections and Siegel transformations in `Q.specialIsometryGroup σ`.
+* `Matrix.coe_commutatorElement_eq_unitaryTransvection_of_mulVec_eq_smul` and
+  `Matrix.coe_commutatorElement_eq_unitaryTransvection_of_coe_eq_siegelTransvection`: explicit
+  unitary transvection matrices for commutators in `Q.specialIsometryGroup σ` of an
+  isotropic-vector rescaling with a transvection and of two Siegel transformations.
 * `Matrix.unitaryTransvectionSubgroup_smul`: `T(g • p) = g T(p) g⁻¹`.
 
 ## References
@@ -68,7 +72,7 @@ as the model for this file.
 
 public section
 
-open scoped LinearAlgebra.Projectivization Pointwise
+open scoped LinearAlgebra.Projectivization Pointwise commutatorElement
 
 namespace Matrix
 
@@ -141,6 +145,43 @@ theorem coe_inv_specialIsometryGroup_eq_unitaryTransvection {t : Q.specialIsomet
   coe_inv_specialIsometryGroup_eq_of_mul_eq_one <| by
     rw [hct, unitaryTransvection_mul_unitaryTransvection hv, add_neg_cancel,
       unitaryTransvection_zero]
+
+/-- If `g : Q.specialIsometryGroup σ` scales an isotropic vector `v` by `c` and `t` has matrix
+`τ_{v,a}`, then the commutator `⁅g, t⁆` has matrix `τ_{v, a (c σ(c) - 1)}`. -/
+theorem coe_commutatorElement_eq_unitaryTransvection_of_mulVec_eq_smul
+    {g t : Q.specialIsometryGroup σ} {v : n → K} {c a : K}
+    (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0)
+    (hgv : ((g : SpecialLinearGroup n K) : Matrix n n K) *ᵥ v = c • v)
+    (hct : ((t : SpecialLinearGroup n K) : Matrix n n K) = Q.unitaryTransvection σ v a) :
+    (((⁅g, t⁆ : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) =
+      Q.unitaryTransvection σ v (a * (c * σ c - 1)) := by
+  rw [coe_commutatorElement_specialIsometryGroup,
+    coe_inv_specialIsometryGroup_eq_unitaryTransvection hv hct, Subgroup.coe_inv, hct,
+    coe_mul_unitaryTransvection_mul_coe_inv g.property, hgv, unitaryTransvection_smul,
+    unitaryTransvection_mul_unitaryTransvection hv]
+  congr 1
+  ring
+
+/-- The commutator in `Q.specialIsometryGroup σ` of two Siegel transformations `S(u, w₁, c₁)` and
+`S(u, w₂, c₂)` along an isotropic `u` orthogonal on both sides to `w₁` and `w₂` has matrix
+`τ_{u, ε (h(w₂, w₁) - h(w₁, w₂))}`. -/
+theorem coe_commutatorElement_eq_unitaryTransvection_of_coe_eq_siegelTransvection
+    {s₁ s₂ : Q.specialIsometryGroup σ} {ε c₁ c₂ : K} {u w₁ w₂ : n → K}
+    (hu : (σ ∘ u) ⬝ᵥ (Q *ᵥ u) = 0)
+    (huw₁ : (σ ∘ u) ⬝ᵥ (Q *ᵥ w₁) = 0) (hw₁u : (σ ∘ w₁) ⬝ᵥ (Q *ᵥ u) = 0)
+    (huw₂ : (σ ∘ u) ⬝ᵥ (Q *ᵥ w₂) = 0) (hw₂u : (σ ∘ w₂) ⬝ᵥ (Q *ᵥ u) = 0)
+    (hcs₁ : ((s₁ : SpecialLinearGroup n K) : Matrix n n K) =
+      Q.siegelTransvection σ ε u w₁ c₁)
+    (hcs₂ : ((s₂ : SpecialLinearGroup n K) : Matrix n n K) =
+      Q.siegelTransvection σ ε u w₂ c₂) :
+    (((⁅s₁, s₂⁆ : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) =
+      Q.unitaryTransvection σ u
+        (ε * ((σ ∘ w₂) ⬝ᵥ (Q *ᵥ w₁) - (σ ∘ w₁) ⬝ᵥ (Q *ᵥ w₂))) := by
+  rw [coe_commutatorElement_specialIsometryGroup,
+    coe_inv_specialIsometryGroup_eq_siegelTransvection hu huw₁ hw₁u hcs₁,
+    coe_inv_specialIsometryGroup_eq_siegelTransvection hu huw₂ hw₂u hcs₂, hcs₁, hcs₂,
+    siegelTransvection_mul_siegelTransvection_mul_neg_mul_neg_eq_unitaryTransvection hu huw₁ hw₁u
+      huw₂ hw₂u]
 
 end CommRing
 

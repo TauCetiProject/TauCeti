@@ -61,9 +61,9 @@ private theorem exists_mem_elementary_w_hyperbolic (hσ : Function.Involutive σ
   have ht₁f : (t₁ : Matrix n n K) *ᵥ f = f + (u * d) • e := by
     simp [hc₁, unitaryTransvection_mulVec, hef]
   have ht₂f : (t₂ : Matrix n n K) *ᵥ f = f := by simp [hc₂, unitaryTransvection_mulVec, hf]
+  have hεud : -(ε * u⁻¹ * d⁻¹) * ε = -(u⁻¹ * d⁻¹) := by linear_combination -u⁻¹ * d⁻¹ * hε
   have ht₂e : (t₂ : Matrix n n K) *ᵥ e = e - (u⁻¹ * d⁻¹) • f := by
-    rw [hc₂, unitaryTransvection_mulVec, hfe, show -(ε * u⁻¹ * d⁻¹) * ε = -(u⁻¹ * d⁻¹) by
-      linear_combination -u⁻¹ * d⁻¹ * hε, neg_smul, ← sub_eq_add_neg]
+    rw [hc₂, unitaryTransvection_mulVec, hfe, hεud, neg_smul, ← sub_eq_add_neg]
   have hud : (u⁻¹ * d⁻¹) * (u * d) = 1 := by field_simp
   refine ⟨t₁ * t₂ * t₁, mul_mem (mul_mem ht₁ ht₂) ht₁, ?_, ?_, fun x hex hfx ↦ ?_⟩
   · simp [← mulVec_mulVec, mulVec_sub, mulVec_smul, ht₁e, ht₂e, ht₁f, smul_add, smul_smul, hud]
@@ -117,12 +117,13 @@ private theorem exists_mem_elementaryUnitaryGroup_siegelTransvection_zero_of_iso
   have hpair₁ : (σ ∘ (e + u')) ⬝ᵥ (Q *ᵥ (v + (-d * β) • u' + (-d * α) • e)) = α + β := by
     simp only [comp_add_dotProduct_mulVec, mulVec_add, mulVec_smul, dotProduct_add, dotProduct_smul,
       smul_eq_mul, he, hu', heu', hu'e, α, β]; ring
+  have hv₁ : v + (-d * β) • u' + (-d * α) • e + (d * (α + β)) • (e + u') =
+      v + (d * β) • e + (d * α) • u' := by module
+  have hdα : d * α * d⁻¹ = α := by field_simp
   rw [coe_mul_specialIsometryGroup_mulVec, coe_mul_specialIsometryGroup_mulVec, hv₂, hc₁,
-    unitaryTransvection_mulVec, hpair₁, show v + (-d * β) • u' + (-d * α) • e +
-      (d * (α + β)) • (e + u') = v + (d * β) • e + (d * α) • u' by module,
-    siegelTransvection_mulVec]
+    unitaryTransvection_mulVec, hpair₁, hv₁, siegelTransvection_mulVec]
   simp only [u', β, TauCeti.map_comp_smul, smul_dotProduct, smul_eq_mul, map_inv₀, smul_smul,
-    zero_smul, add_zero, ← mul_assoc, show d * α * d⁻¹ = α by field_simp, hd_ratio, neg_mul]; module
+    zero_smul, add_zero, ← mul_assoc, hdα, hd_ratio, neg_mul]; module
 
 section SiegelGen
 
@@ -173,12 +174,13 @@ private theorem siegelTransvection_mem_elementary_of_fixed_ne {a : K} (ha0 : a �
     rw [coe_mul_specialIsometryGroup, coe_mul_specialIsometryGroup, Subgroup.coe_inv, hcs₁,
       coe_mul_siegelTransvection_mul_coe_inv h.property, hhe, hhx w' hew' hfw',
       siegelTransvection_smul_left hσ, hσa]
+  have hw'_sub : a • w' + -w' = (a - 1) • w' := by module
   have hcs₂ : (↑((h * s₁ * h⁻¹) * s₁⁻¹) : Matrix n n K) = Q.siegelTransvection σ ε e w₀
       (c' * (a ^ 2 - 1) + ε * (a - 1) * ((σ ∘ w') ⬝ᵥ (Q *ᵥ w'))) := by
     rw [coe_mul_specialIsometryGroup, hconj,
       coe_inv_specialIsometryGroup_eq_siegelTransvection he hew' hw'e hcs₁,
       siegelTransvection_mul_siegelTransvection he (by simp [mulVec_neg, hew'])
-        (by simp [TauCeti.map_comp_smul, hw'e]), show a • w' + -w' = (a - 1) • w' by module,
+        (by simp [TauCeti.map_comp_smul, hw'e]), hw'_sub,
       smul_inv_smul₀ (sub_ne_zero.mpr ha1)]
     congr 1; simp [TauCeti.map_comp_smul, smul_dotProduct, mulVec_neg, hσa]; ring
   refine siegelTransvection_mem_elementary_of_exists_param hσ hQ hdet he hef hew₀ hc ?_ hcs₂ hs hcs
@@ -235,13 +237,13 @@ private theorem siegelTransvection_mem_elementary_of_witt_two {u w : n → K} (h
   obtain ⟨t₂, ht₂, hc₂⟩ := hs0 (by rw [comp_smul_dotProduct_mulVec_smul, hu₀_iso, mul_zero]) hex₂
   have hx₁e := (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hex₁
   have hx₂e := (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hex₂
+  have hx_sum : x₁ + x₂ + x₃ = w₀ := by dsimp [x₁, x₂, x₃]; module
   have hcs₀ : (↑(t₁ * t₂ * t₃) : Matrix n n K) = Q.siegelTransvection σ ε e w₀
       (-(ε * ((σ ∘ x₁) ⬝ᵥ (Q *ᵥ x₂) + (σ ∘ (x₁ + x₂)) ⬝ᵥ (Q *ᵥ x₃)))) := by
     rw [coe_mul_specialIsometryGroup, coe_mul_specialIsometryGroup, hc₁, hc₂, hc₃,
       siegelTransvection_mul_siegelTransvection he hex₂ hx₁e,
       siegelTransvection_mul_siegelTransvection he hex₃
-        (by rw [comp_add_dotProduct_mulVec, hx₁e, hx₂e, add_zero]),
-      show x₁ + x₂ + x₃ = w₀ by dsimp [x₁, x₂, x₃]; module]
+        (by rw [comp_add_dotProduct_mulVec, hx₁e, hx₂e, add_zero]), hx_sum]
     congr 1; ring
   exact siegelTransvection_mem_elementary_of_exists_param hσ hQ hdet he hef hew₀ hc
     (mul_mem (mul_mem ht₁ ht₂) ht₃) hcs₀ hs hcs

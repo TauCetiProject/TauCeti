@@ -57,13 +57,10 @@ private theorem unitaryTransvection_mem_commutator_of_mulVec_eq_smul {g : Q.spec
   obtain ⟨tb, htb, hctb⟩ := exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection hσ hQ he
     (a := b) (by simp only [b, map_mul, map_inv₀, map_sub, hσ c, map_one, mul_comm (σ c) c]
                  linear_combination (c * σ c - 1)⁻¹ * ha)
-  let t₀ : Q.specialIsometryGroup σ := ⟨tb, htb⟩; have hct₀ : (t₀ : Matrix n n K) = _ := hctb
+  let t₀ : Q.specialIsometryGroup σ := ⟨tb, htb⟩
   refine ⟨⁅g, t₀⁆, Subgroup.commutator_mem_commutator (by simp) (by simp), ?_⟩
-  rw [commutatorElement_def, coe_mul_specialIsometryGroup,
-    coe_inv_specialIsometryGroup_eq_unitaryTransvection he hct₀, coe_mul_specialIsometryGroup,
-    coe_mul_specialIsometryGroup, Subgroup.coe_inv, hct₀,
-    coe_mul_unitaryTransvection_mul_coe_inv g.property, hge, unitaryTransvection_smul,
-    unitaryTransvection_mul_unitaryTransvection he]; congr 1; simp only [b]; field_simp; ring
+  rw [coe_commutatorElement_eq_unitaryTransvection_of_mulVec_eq_smul he hge hctb]
+  simp only [b, inv_mul_cancel_right₀ hsub]
 
 include hσ hQ hdet hε htr he hf hef in
 private theorem unitaryTransvection_mem_commutator_of_witt_two {u w : n → K} (hu₀ : u ≠ 0)
@@ -81,29 +78,16 @@ private theorem unitaryTransvection_mem_commutator_of_witt_two {u w : n → K} (
   have hew₁ : (σ ∘ e) ⬝ᵥ (Q *ᵥ w₁) = 0 := by rw [mulVec_smul, dotProduct_smul, heu₀, smul_zero]
   have hw₁e := (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hew₁
   have hy₀e := (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hey₀
-  have hsiegel {v : n → K} (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) (hev : (σ ∘ e) ⬝ᵥ (Q *ᵥ v) = 0) :
-      ∃ g : Q.specialIsometryGroup σ, (g : Matrix n n K) = Q.siegelTransvection σ ε e v 0 ∧
-        ((g⁻¹ : Q.specialIsometryGroup σ) : Matrix n n K) = Q.siegelTransvection σ ε e (-v) 0 := by
-    obtain ⟨s, hs, hcs⟩ := exists_mem_specialIsometryGroup_coe_eq_siegelTransvection hσ hQ he hev
-      (c := 0) (by simp [hv])
-    exact ⟨⟨s, hs⟩, hcs, by
-      simpa [hv] using coe_inv_specialIsometryGroup_eq_siegelTransvection (s := ⟨s, hs⟩) he hev
-        ((comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hev) hcs⟩
-  obtain ⟨g₁, hcs₁', hg₁_inv⟩ :=
-    hsiegel (by rw [comp_smul_dotProduct_mulVec_smul, hu₀, mul_zero]) hew₁
-  obtain ⟨g₂, hcs₂', hg₂_inv⟩ := hsiegel hy₀ hey₀
+  obtain ⟨s₁, hs₁, hcs₁⟩ := exists_mem_specialIsometryGroup_coe_eq_siegelTransvection hσ hQ he hew₁
+    (c := 0) (by simp [w₁, mulVec_smul, hu₀])
+  obtain ⟨s₂, hs₂, hcs₂⟩ := exists_mem_specialIsometryGroup_coe_eq_siegelTransvection hσ hQ he hey₀
+    (c := 0) (by simp [hy₀])
+  let g₁ : Q.specialIsometryGroup σ := ⟨s₁, hs₁⟩; let g₂ : Q.specialIsometryGroup σ := ⟨s₂, hs₂⟩
   refine ⟨⁅g₁, g₂⁆, Subgroup.commutator_mem_commutator (by simp) (by simp), ?_⟩
-  rw [commutatorElement_def, coe_mul_specialIsometryGroup, hg₂_inv, coe_mul_specialIsometryGroup,
-    hg₁_inv, coe_mul_specialIsometryGroup, hcs₁', hcs₂',
-    siegelTransvection_mul_siegelTransvection he hey₀ hw₁e,
-    siegelTransvection_mul_siegelTransvection he (by simp [mulVec_neg, hew₁])
-      (by simp [hw₁e, hy₀e]),
-    siegelTransvection_mul_siegelTransvection he (by simp [mulVec_neg, hey₀]) (by simp [hy₀e]),
-    show w₁ + y₀ + -w₁ + -y₀ = 0 by simp [add_assoc, add_left_comm],
-    siegelTransvection_zero_eq_unitaryTransvection]
-  congr 1; simp only [w₁, map_comp_add, map_comp_neg, TauCeti.map_comp_smul, add_dotProduct,
-    neg_dotProduct, smul_dotProduct, mulVec_neg, mulVec_smul, dotProduct_neg, dotProduct_smul,
-    smul_eq_mul, hu₀, hy₀, hu₀y₀, hy₀u₀]; linear_combination b * hε + hb
+  rw [coe_commutatorElement_eq_unitaryTransvection_of_coe_eq_siegelTransvection he hew₁ hw₁e hey₀
+    hy₀e hcs₁ hcs₂]
+  congr 1; simp only [w₁, TauCeti.map_comp_smul, smul_dotProduct, mulVec_smul, dotProduct_smul,
+    smul_eq_mul, hu₀y₀, hy₀u₀]; linear_combination b * hε + hb
 
 private def hyperbolicRescaling (Q : Matrix n n K) (σ : K →+* K) (ε : K) (e f : n → K) (c : K) :=
   1 + ((c - 1) * ε) • vecMulVec e ((σ ∘ f) ᵥ* Q) + ((σ c)⁻¹ - 1) • vecMulVec f ((σ ∘ e) ᵥ* Q)
