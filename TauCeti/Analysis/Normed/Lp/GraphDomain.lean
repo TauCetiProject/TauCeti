@@ -140,27 +140,6 @@ theorem antilipschitzWith_normalGraphEmbedding [PseudoEMetricSpace E] (φ : E �
   simpa only [ENNReal.coe_one, one_mul, normalGraphEmbedding_snd] using
     WithLp.edist_snd_le (normalGraphEmbedding φ x) (normalGraphEmbedding φ y)
 
-/-- A `K`-Lipschitz function has a `(K + 1)`-Lipschitz normal graph parametrization. -/
-theorem _root_.LipschitzWith.normalGraphEmbedding [PseudoEMetricSpace E] {K : ℝ≥0}
-    {φ : E → ℝ} (hφ : LipschitzWith K φ) :
-    LipschitzWith (K + 1) (TauCeti.normalGraphEmbedding φ) := fun x y ↦ by
-  set a := edist (φ x) (φ y)
-  set b := edist x y
-  calc
-    edist (TauCeti.normalGraphEmbedding φ x) (TauCeti.normalGraphEmbedding φ y) =
-        (a ^ 2 + b ^ 2) ^ (1 / 2 : ℝ) := by
-      simp [WithLp.prod_edist_eq_add, a, b]
-    -- `a ^ 2 + b ^ 2 ≤ a ^ 2 + 2 * a * b + b ^ 2 = (a + b) ^ 2`.
-    _ ≤ ((a + b) ^ 2) ^ (1 / 2 : ℝ) := by
-      refine ENNReal.rpow_le_rpow ?_ (by norm_num)
-      rw [add_sq]
-      exact add_le_add le_self_add le_rfl
-    _ = a + b := by
-      rw [← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]
-      norm_num
-    _ ≤ K * b + b := add_le_add (hφ x y) le_rfl
-    _ = (K + 1) * b := by rw [add_mul, one_mul]
-
 /-- A `K`-Lipschitz map has a `(K + 1)`-Lipschitz graph parametrization `x ↦ (x, f x)` into the
 `L²` product. -/
 theorem _root_.LipschitzWith.graph {α β : Type*} [PseudoEMetricSpace α] [PseudoEMetricSpace β]
@@ -181,6 +160,15 @@ theorem _root_.LipschitzWith.graph {α β : Type*} [PseudoEMetricSpace α] [Pseu
       norm_num
     _ ≤ K * b + b := add_le_add (hf x y) le_rfl
     _ = (K + 1) * b := by rw [add_mul, one_mul]
+
+/-- A `K`-Lipschitz function has a `(K + 1)`-Lipschitz normal graph parametrization. -/
+theorem _root_.LipschitzWith.normalGraphEmbedding [PseudoEMetricSpace E] {K : ℝ≥0}
+    {φ : E → ℝ} (hφ : LipschitzWith K φ) :
+    LipschitzWith (K + 1) (TauCeti.normalGraphEmbedding φ) := by
+  -- Swapping the coordinates of the `L²` product turns `x ↦ (x, φ x)` into `y ↦ (φ y, y)`.
+  have h := (IsometryEquiv.withLpProdComm 2 E ℝ).isometry.lipschitzWith.comp hφ.graph
+  simp only [Function.comp_def, IsometryEquiv.withLpProdComm_apply, one_mul] at h
+  exact h
 
 section
 
