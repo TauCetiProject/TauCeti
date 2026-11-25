@@ -73,8 +73,9 @@ it has compact resolvent and spectrum its mixed eigenvalues, all nonnegative.
 * `TauCeti.PDE.mixedForm`, `TauCeti.PDE.isCoercive_mixedForm` and
   `TauCeti.PDE.mixedOperator_eq_formOperator`: the shifted energy form on `H¹_Γ(Ω)`, coercive
   under a Gårding inequality, whose form operator is the mixed realization.
-* `TauCeti.PDE.mixedSolutionOperator` and `TauCeti.PDE.resolvent_mixedOperator_neg`: the solution
-  operator of the shifted mixed problem, the resolvent at `-ω` up to sign.
+* `TauCeti.PDE.mixedSolutionOperator`, `TauCeti.PDE.mixedSolutionOperator_apply_eq` and
+  `TauCeti.PDE.resolvent_mixedOperator_neg`: the solution operator of the shifted mixed problem,
+  which returns the weak solution, and is the resolvent at `-ω` up to sign.
 * `TauCeti.PDE.mixedOperator_frontier`: at `Γ = ∂Ω` it is the Dirichlet realization
   `TauCeti.PDE.dirichletOperator`.
 * `TauCeti.PDE.isSelfAdjoint_mixedOperator`, `TauCeti.PDE.hasCompactResolvent_mixedOperator`,
@@ -404,6 +405,42 @@ theorem mixedSolutionOperator_def
     (hB : IsCoercive (mixedForm hcoeff Γ omega)) :
     mixedSolutionOperator hcoeff Γ hB = hB.formSolutionOperator W1pVanishingOn.valueL :=
   (rfl)
+
+/-- **The mixed solution operator returns the solution of the shifted mixed problem**: if
+`u ∈ H¹_Γ(Ω)` satisfies `a(u, v) + ω ⟪u, v⟫_{L²(Ω)} = ⟪f, v⟫_{L²(Ω)}` for every `v ∈ H¹_Γ(Ω)`,
+then the mixed solution operator sends `f` to the value of `u`. -/
+theorem mixedSolutionOperator_apply_eq
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hB : IsCoercive (mixedForm hcoeff Γ omega)) {f : Lp ℝ 2 (mu.restrict Omega)}
+    {u : W1pVanishingOn mu Omega 2 Γ}
+    (hu : ∀ v : W1pVanishingOn mu Omega 2 Γ,
+      energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) +
+          omega * ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ =
+        ⟪f, W1p.value (v : W1p mu Omega 2)⟫_ℝ) :
+    mixedSolutionOperator hcoeff Γ hB f = W1p.value (u : W1p mu Omega 2) := by
+  rw [mixedSolutionOperator_def, IsCoercive.formSolutionOperator_apply,
+    ← hB.eq_formSolutionMap W1pVanishingOn.valueL fun v ↦ by
+      rw [mixedForm_apply, W1pVanishingOn.valueL_apply, hu], W1pVanishingOn.valueL_apply]
+
+/-- **The shifted mixed problem is solvable**: for every `f ∈ L²(Ω)` there is `u ∈ H¹_Γ(Ω)` with
+`a(u, v) + ω ⟪u, v⟫_{L²(Ω)} = ⟪f, v⟫_{L²(Ω)}` for every `v ∈ H¹_Γ(Ω)`, and the mixed solution
+operator sends `f` to its value. -/
+theorem exists_mixedSolutionOperator_apply_eq
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hB : IsCoercive (mixedForm hcoeff Γ omega)) (f : Lp ℝ 2 (mu.restrict Omega)) :
+    ∃ u : W1pVanishingOn mu Omega 2 Γ,
+      (∀ v : W1pVanishingOn mu Omega 2 Γ,
+        energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) +
+            omega * ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ =
+          ⟪f, W1p.value (v : W1p mu Omega 2)⟫_ℝ) ∧
+        mixedSolutionOperator hcoeff Γ hB f = W1p.value (u : W1p mu Omega 2) := by
+  have hu (v : W1pVanishingOn mu Omega 2 Γ) :
+      energyFormH1 a b c (hB.formSolutionMap W1pVanishingOn.valueL f : W1p mu Omega 2)
+          (v : W1p mu Omega 2) +
+        omega * ⟪W1p.value (hB.formSolutionMap W1pVanishingOn.valueL f : W1p mu Omega 2),
+          W1p.value (v : W1p mu Omega 2)⟫_ℝ = ⟪f, W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
+    rw [← mixedForm_apply hcoeff, hB.apply_formSolutionMap, W1pVanishingOn.valueL_apply]
+  exact ⟨_, hu, mixedSolutionOperator_apply_eq hcoeff hB hu⟩
 
 /-- **`(A + ω)⁻¹ = S`.** The resolvent of the mixed realization at `-ω` is minus the mixed
 solution operator. -/
