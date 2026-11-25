@@ -175,26 +175,15 @@ theorem zeroOneLowerOrdersL_perturbationSuccL (hp : 2 < p) (hq : 1 < q) (hqp : q
         ((A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet).sectionChartData.lowerOrderL
           volume p (k + 1) α)
         (A.sectionChartData.lowerOrderL volume q (k + 1 + 1) ξ) := by
-  refine Subtype.ext <| SectionChartData.eq_of_chartValueL_ae_eq fun (i : Fin A.n) ↦
-    (FiniteBundleAtlas.ae_image_tangentHom_iff A volume i).2 ?_
-  have hcoe : A.tangentHom.sectionChartData.chartValueL volume q (k + 1) i
-      ((zeroOneLowerOrdersL A volume q (k + 1) 1 (perturbationSuccL A (k + 1) hp hq hqp α ξ) :
-        SobolevSection A.tangentHom volume q (k + 1)) :
-          A.tangentHom.sectionChartData.SobolevData volume q (k + 1)) =
-      A.tangentHom.sectionChartData.chartValueL volume q (k + 1 + 1) i
-        ((perturbationSuccL A (k + 1) hp hq hqp α ξ :
-          SobolevSection A.tangentHom volume q (k + 1 + 1)) :
-            A.tangentHom.sectionChartData.SobolevData volume q (k + 1 + 1)) := by
-    rw [coe_zeroOneLowerOrdersL]
-    exact A.tangentHom.sectionChartData.chartValueL_lowerOrdersL volume q (k + 1) 1 _ i
-  rw [hcoe]
-  filter_upwards [chartValueL_perturbationSuccL_ae A (k + 1) hp hq hqp α ξ i,
-    chartValueL_perturbationSuccL_ae A k hp hq hqp _ _ i] with y h₁ h₂
-  have hα := (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet).sectionChartData
-    |>.chartValueL_coe_lowerOrderL volume p (k + 1) α i
-  have hξ := A.sectionChartData.chartValueL_coe_lowerOrderL volume q (k + 1 + 1) ξ i
-  refine h₁.trans (Eq.trans ?_ h₂.symm)
-  rw [hα, hξ]
+  rw [perturbationSuccL_apply, perturbationSuccL_apply]
+  -- `rw` does not find these patterns through the hom atlas of the one-form bundle, so the steps
+  -- are chained as terms.
+  exact (zeroOneLowerOrdersL_zeroOnePartSobolevL 1 _).trans
+    (congrArg (zeroOnePartSobolevL A volume q (k + 1))
+      ((DFunLike.congr_fun
+        (A.tangentHom.sectionChartData.lowerOrdersL_one volume q (k + 1)) _).trans
+        (SobolevSection.lowerOrderL_homMulSuccL A A.tangentHom.closure_dom_subset_baseSet
+          ENat.LEInfty.out hp hq hqp α _)))
 
 include hD in
 /-- **The realization of `D₀ + α` at order `k + 2`.** For a smooth real Cauchy–Riemann operator

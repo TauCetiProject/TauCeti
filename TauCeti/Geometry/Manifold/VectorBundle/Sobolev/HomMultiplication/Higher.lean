@@ -46,6 +46,8 @@ these chart data is bounded by the closed graph theorem (`TauCeti.SectionChartDa
 * `TauCeti.SobolevSection.chartValueL_homMulSuccL_ae`,
   `TauCeti.SobolevSection.chartValueL_homMulSuccL_ae_coord`: in every chart the product is the
   pointwise application of the chart data, and of section representatives.
+* `TauCeti.SobolevSection.lowerOrderL_homMulSuccL`: the products at consecutive orders commute
+  with forgetting the highest weak derivative.
 * `TauCeti.SobolevSection.exists_norm_homMulSuccL_apply_le`: `‖α ξ‖ ≤ C ‖α‖ ‖ξ‖`.
 
 ## References
@@ -223,6 +225,29 @@ theorem chartValueL_homMulSuccL_ae_coord (hkn : ((k + 1 : ℕ) : WithTop ℕ∞)
   filter_upwards [chartValueL_homMulSuccL_ae A h hkn hp hq hqp α ξ j, hφ, hs,
     ae_restrict_mem (A.image j).isOpen.measurableSet] with z hz hφz hsz hzj
   rw [hz, hφz, hsz, A.coord_hom_apply h j φ s hzj]
+
+/-- **Compatibility with the order.** Forgetting the highest weak derivative of the product of a
+`W^{k+2,p}` coefficient and a `W^{k+2,q}` section gives the product at order `k + 1` of the
+coefficient and the section regarded as one order rougher. -/
+theorem lowerOrderL_homMulSuccL (hkn : ((k + 1 + 1 : ℕ) : WithTop ℕ∞) ≤ n) (hp : 2 < p)
+    (hq : 1 < q) (hqp : q ≤ p) (α : SobolevSection (A.hom (𝕜 := ℝ) h) volume p (k + 1 + 1))
+    (ξ : SobolevSection A volume q (k + 1 + 1)) :
+    (A.ofBaseSet h).sectionChartData.lowerOrderL volume q (k + 1)
+        (homMulSuccL A h hkn hp hq hqp α ξ) =
+      homMulSuccL A h
+        ((Nat.cast_le.2 (Nat.le_succ (k + 1)) : ((k + 1 : ℕ) : WithTop ℕ∞) ≤ _).trans hkn) hp hq hqp
+        ((A.hom (𝕜 := ℝ) h).sectionChartData.lowerOrderL volume p (k + 1) α)
+        (A.sectionChartData.lowerOrderL volume q (k + 1) ξ) := by
+  refine SectionChartData.eq_of_chartValueL_ae_eq fun j ↦ ?_
+  rw [SectionChartData.chartValueL_coe_lowerOrderL]
+  filter_upwards [ae_restrict_of_ae_restrict_of_subset (subset_self A h j)
+      (chartValueL_homMulSuccL_ae A h hkn hp hq hqp α ξ j),
+    ae_restrict_of_ae_restrict_of_subset (subset_self A h j)
+      (chartValueL_homMulSuccL_ae (n := n) A h _ hp hq hqp _ _ j)] with z h₁ h₂
+  -- The chart index lives in `Fin (A.ofBaseSet h).sectionChartData.n`, so the lowering lemmas are
+  -- instantiated explicitly at the hom and section chart data.
+  rw [h₁, h₂, (A.hom (𝕜 := ℝ) h).sectionChartData.chartValueL_coe_lowerOrderL volume p (k + 1) α j,
+    A.sectionChartData.chartValueL_coe_lowerOrderL volume q (k + 1) ξ j]
 
 /-- **Bound.** There is a constant `C` with `‖homMulSuccL α ξ‖ ≤ C ‖α‖ ‖ξ‖`. -/
 theorem exists_norm_homMulSuccL_apply_le (hkn : ((k + 1 : ℕ) : WithTop ℕ∞) ≤ n) (hp : 2 < p)
