@@ -41,8 +41,8 @@ This file supplies general constructions for Lie modules that are missing from M
   `LieHom.derivedSeries_one_eq_top_of_range_eq_of_sup_eq_top`: a Lie algebra embedded onto an ideal
   complementary to the centre is centreless, and one embedded onto the derived ideal is perfect
   when `L = 𝔷(L) + ⁅L, L⁆`. These read the Lie algebra of a subgroup integrating `⁅𝔤, 𝔤⁆`.
-* `LieEquiv.apply_mem_center` and `LieEquiv.map_center`: a Lie algebra isomorphism maps the centre
-  onto the centre.
+* `LieHom.map_center_le_center` and `LieEquiv.map_center`: a surjective Lie algebra homomorphism
+  maps the centre into the centre, and a Lie algebra isomorphism maps it onto the centre.
 * `LieEquiv.isCompl_map`: a Lie algebra isomorphism maps complementary ideals to complementary
   ideals.
 * `LieEquiv.isCompl_center_derivedSeries_iff`: whether the centre and the derived ideal are
@@ -750,6 +750,19 @@ theorem derivedSeries_one_eq_top_of_range_eq_of_sup_eq_top (f : L' →ₗ⁅R⁆
     (LieEquiv.ofInjective f hf).trans (LieEquiv.ofEq _ _ hs)
   exact derivedSeries_eq_top_of_surjective e.symm.toLieHom e.symm.surjective hD
 
+/-- A surjective Lie algebra homomorphism maps the centre into the centre. -/
+theorem map_center_le_center (f : L' →ₗ⁅R⁆ L) (hf : Function.Surjective f) :
+    (center R L').map f ≤ center R L := by
+  intro y hy
+  rw [← LieSubmodule.mem_toSubmodule, LieIdeal.coe_map_of_surjective hf] at hy
+  obtain ⟨x, hx, rfl⟩ := hy
+  replace hx : x ∈ center R L' := hx
+  rw [LieModule.mem_maxTrivSubmodule] at hx
+  rw [LieHom.coe_toLinearMap, LieModule.mem_maxTrivSubmodule]
+  intro z
+  obtain ⟨w, rfl⟩ := hf z
+  simpa using congrArg f (hx w)
+
 end LieHom
 
 namespace LieEquiv
@@ -759,22 +772,12 @@ open LieAlgebra
 variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L']
   [LieAlgebra R L']
 
-/-- A Lie algebra isomorphism maps central elements to central elements. -/
-theorem apply_mem_center (e : L' ≃ₗ⁅R⁆ L) {x : L'} (hx : x ∈ center R L') :
-    e x ∈ center R L := by
-  rw [LieModule.mem_maxTrivSubmodule] at hx ⊢
-  intro y
-  simpa [LieEquiv.map_lie] using congrArg e (hx (e.symm y))
-
 /-- A Lie algebra isomorphism maps the centre onto the centre. -/
 theorem map_center (e : L' ≃ₗ⁅R⁆ L) : (center R L').map (e : L' →ₗ⁅R⁆ L) = center R L := by
-  ext x
-  rw [← LieSubmodule.mem_toSubmodule, LieIdeal.coe_map_of_surjective e.surjective]
-  simp only [Submodule.mem_map, LieSubmodule.mem_toSubmodule, LieHom.coe_toLinearMap,
-    LieEquiv.coe_toLieHom]
-  refine ⟨?_, fun hx ↦ ⟨e.symm x, e.symm.apply_mem_center hx, e.apply_symm_apply x⟩⟩
-  rintro ⟨y, hy, rfl⟩
-  exact e.apply_mem_center hy
+  refine le_antisymm (LieHom.map_center_le_center _ e.surjective) fun x hx ↦ ?_
+  have hx' := LieHom.map_center_le_center (e.symm : L →ₗ⁅R⁆ L') e.symm.surjective
+    (LieIdeal.mem_map hx)
+  simpa using LieIdeal.mem_map (f := (e : L' →ₗ⁅R⁆ L)) hx'
 
 /-- A Lie algebra isomorphism maps complementary ideals to complementary ideals. -/
 theorem isCompl_map (e : L' ≃ₗ⁅R⁆ L) {I J : LieIdeal R L'} (h : IsCompl I J) :
