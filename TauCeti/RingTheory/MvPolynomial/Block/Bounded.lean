@@ -69,11 +69,6 @@ private theorem option_elim_comp_sumElim {S : Type*} [One S] (x : σ → S) :
   funext v
   rcases v with ⟨⟩ | j <;> rfl
 
-/-- With a single block, the degree of an exponent in that block is its total degree. -/
-private theorem mapDomain_unit_apply (e : σ →₀ ℕ) :
-    e.mapDomain (fun _ ↦ ()) () = e.degree := by
-  rw [← degree_mapDomain (fun _ : σ ↦ ()) e, degree_eq_sum, Fintype.sum_unique]
-
 /-- With a single block, block homogeneity is ordinary homogeneity. -/
 private theorem isWeightedHomogeneous_unit_iff {F : MvPolynomial (Unit ⊕ σ) R} {d : ℕ} :
     F.IsWeightedHomogeneous
@@ -94,7 +89,7 @@ private theorem mapDomain_blockHomogenizeExponent_unit (d : ℕ) (s : σ →₀ 
   ext v
   rcases v with _ | j
   · refine (mapDomain_apply_of_injective sumElim_none_some_injective _ (Sum.inl ())).trans ?_
-    simp [mapDomain_unit_apply, mapDomain_of_notMem_range]
+    simp [mapDomain_apply_eq_degree, mapDomain_of_notMem_range]
   · refine (mapDomain_apply_of_injective sumElim_none_some_injective _ (Sum.inr j)).trans ?_
     simp [mapDomain_apply_of_injective (Option.some_injective σ)]
 
@@ -114,7 +109,7 @@ private theorem aeval_homogenizeFun {d : ℕ} {f : MvPolynomial σ R}
     aeval (R := R) (Option.elim' 1 X) (homogenizeFun d f) = f := by
   rw [homogenizeFun, aeval_rename, option_elim_comp_sumElim]
   refine aeval_blockHomogenize_one_X _ _ fun e he _ ↦ ?_
-  rw [mapDomain_unit_apply]
+  rw [mapDomain_apply_eq_degree]
   exact (le_totalDegree he).trans ((mem_restrictTotalDegree σ d f).1 hf)
 
 private theorem homogenizeFun_aeval {d : ℕ} {F : MvPolynomial (Option σ) R}
@@ -196,7 +191,7 @@ theorem coeff_homogenizeEquiv {d : ℕ} (f : restrictTotalDegree σ R d) (n : Op
     conv_lhs => rw [hn']
     rw [coe_homogenizeEquiv_apply, coeff_rename_mapDomain _ sumElim_none_some_injective,
       coeff_blockHomogenizeExponent_blockHomogenize _ _ _ fun _ ↦ by
-        rw [mapDomain_unit_apply]
+        rw [mapDomain_apply_eq_degree]
         omega]
   · exact (homogenizeEquiv σ R d f).property.coeff_eq_zero hn
 
@@ -207,7 +202,7 @@ theorem homogenizeEquiv_monomial {d : ℕ} {s : σ →₀ ℕ} (hs : s.degree �
         MvPolynomial (Option σ) R) =
       X none ^ (d - s.degree) * monomial (s.mapDomain Option.some) c := by
   rw [coe_homogenizeEquiv_apply, blockHomogenize_monomial, ite_eq_left fun _ ↦ by
-    rw [mapDomain_unit_apply]; exact hs, rename_monomial, X_pow_eq_monomial,
+    rw [mapDomain_apply_eq_degree]; exact hs, rename_monomial, X_pow_eq_monomial,
     monomial_mul_monomial, one_mul, mapDomain_blockHomogenizeExponent_unit]
 
 /-- Homogenization in degree `d` sends the constant `c` to `c X₀ᵈ`. -/
