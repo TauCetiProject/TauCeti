@@ -55,8 +55,8 @@ finitely many of a family of pairwise non-isomorphic simple modules
   endomorphism ring, an element of the ring acts as the identity on the simple submodules of a
   given type and as zero on all the others, by Jacobson density.
 
-* `TauCeti.iSupIndep_isotypicComponents_restrictScalars`: the isotypic components of an algebra
-  as a left module over itself stay independent after restricting scalars.
+* `TauCeti.iSupIndep_isotypicComponents_restrictScalars`: the isotypic components of a module
+  stay independent after restricting scalars.
 
 * `IsIsotypic.isotypicComponents_eq_singleton_top`: a nonzero isotypic semisimple module is its
   only isotypic component.
@@ -343,12 +343,15 @@ theorem disjoint_isotypicComponent (S S' : Type*) [AddCommGroup S] [Module R S]
     (IsIsotypicOfType.isotypicComponent R M S') N (hN.trans inf_le_right)
   exact h ⟨e.symm.trans e'⟩
 
-/-- The isotypic components of an `R`-algebra `B` as a left `B`-module are independent over `R`. -/
-theorem iSupIndep_isotypicComponents_restrictScalars (R : Type*) [CommRing R] {B : Type*} [Ring B]
-    [Algebra R B] : iSupIndep fun c : isotypicComponents B B ↦ c.val.restrictScalars R := by
+variable {R M} in
+/-- The isotypic components of an `R`-module `M` stay independent after restricting scalars to
+`k`. -/
+theorem iSupIndep_isotypicComponents_restrictScalars (k : Type*) [Semiring k] [Module k M]
+    [SMul k R] [IsScalarTower k R M] :
+    iSupIndep fun c : isotypicComponents R M ↦ c.val.restrictScalars k := by
   intro c
   simpa only [← Submodule.restrictScalars_iSup, Submodule.disjoint_restrictScalars_iff]
-    using (sSupIndep_iff _).mp (sSupIndep_isotypicComponents B B) c
+    using (sSupIndep_iff _).mp (sSupIndep_isotypicComponents R M) c
 
 end TauCeti
 

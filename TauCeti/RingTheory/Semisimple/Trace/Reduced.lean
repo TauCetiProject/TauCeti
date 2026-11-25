@@ -155,7 +155,7 @@ theorem idealTrace_eq_zero_of_mem_isotypicComponents {c c' : Submodule B B}
 
 /-- A sum over the isotypic components `c'` of a function of `c'` and `idealTrace R c' b`, which
 vanishes when the trace does, reduces for `b` in an isotypic component `c` to its term at `c`. -/
-theorem finsum_mem_isotypicComponents_idealTrace_eq {M : Type*} [AddCommMonoid M]
+private theorem finsum_mem_isotypicComponents_idealTrace_eq {M : Type*} [AddCommMonoid M]
     (f : Submodule B B → R → M) (hf : ∀ c', f c' 0 = 0) {c : Submodule B B}
     (hc : c ∈ isotypicComponents B B) {b : B} (hb : b ∈ c) :
     ∑ᶠ c' ∈ isotypicComponents B B, f c' (idealTrace R c' b) = f c (idealTrace R c b) := by
@@ -233,7 +233,7 @@ variable [FiniteDimensional F B]
 
 /-- The regular trace of a finite-dimensional semisimple algebra is the sum of the traces on its
 isotypic components. -/
-theorem trace_mulLeft_eq_sum_idealTrace (b : B) :
+theorem trace_mulLeft_eq_finsum_idealTrace (b : B) :
     LinearMap.trace F B (LinearMap.mulLeft F b) =
       ∑ᶠ c ∈ isotypicComponents B B, idealTrace F c b := by
   classical
@@ -252,7 +252,7 @@ theorem trace_mulLeft_eq_sum_idealTrace (b : B) :
 of `b`. -/
 theorem idealTrace_eq_trace_mulLeft {c : Submodule B B} (hc : c ∈ isotypicComponents B B)
     {b : B} (hb : b ∈ c) : idealTrace F c b = LinearMap.trace F B (LinearMap.mulLeft F b) := by
-  rw [trace_mulLeft_eq_sum_idealTrace,
+  rw [trace_mulLeft_eq_finsum_idealTrace,
     finsum_mem_isotypicComponents_idealTrace_eq (fun _ t ↦ t) (fun _ ↦ rfl) hc hb]
 
 /-- On an isotypic component `c`, the reduced trace of `b ∈ c` is `(idealDeg F c)⁻¹` times its

@@ -160,7 +160,7 @@ theorem card_isotypicComponents_le_finrank_center [Module.Finite k (Subalgebra.c
   obtain ⟨e, hmem, hne, hcen⟩ := exists_center_family k R
   -- The chosen elements are linearly independent over `k`, one from each independent summand.
   have hli : LinearIndependent k e :=
-    (iSupIndep_isotypicComponents_restrictScalars k (B := R)).linearIndependent _ hmem hne
+    (iSupIndep_isotypicComponents_restrictScalars k (R := R) (M := R)).linearIndependent _ hmem hne
   -- Read the independence inside the center and count.
   have hli' : LinearIndependent k fun c ↦ (⟨e c, hcen c⟩ : Subalgebra.center k R) :=
     LinearIndependent.of_comp (Subalgebra.center k R).val.toLinearMap hli
