@@ -200,6 +200,20 @@ theorem tsupport_leftDeriv_subset (X : GroupLieAlgebra I G) (a : LieTestFunction
     tsupport (leftDeriv X a) ⊆ tsupport a :=
   tsupport_mvfderiv_apply_subset a _
 
+/-- Left differentiation is additive in the Lie algebra element. -/
+theorem leftDeriv_add (X Y : GroupLieAlgebra I G) :
+    leftDeriv (X + Y) = leftDeriv (I := I) (G := G) X + leftDeriv Y := by
+  ext a g
+  simp only [leftDeriv_apply, mulRightInvariantVectorField_add, Pi.add_apply, LinearMap.add_apply,
+    add_apply, map_add]
+
+/-- Left differentiation is real-linear in the Lie algebra element. -/
+theorem leftDeriv_smul (c : ℝ) (X : GroupLieAlgebra I G) :
+    leftDeriv (c • X) = (c : ℂ) • leftDeriv (I := I) (G := G) X := by
+  ext a g
+  simp only [leftDeriv_apply, mulRightInvariantVectorField_smul, Pi.smul_apply,
+    LinearMap.smul_apply, smul_apply, map_smul, Complex.real_smul, smul_eq_mul]
+
 /-- The iterated left differentiation `L_{X_w} = L_{X₁} ∘ ⋯ ∘ L_{Xₖ}` along a word
 `w = [X₁, …, Xₖ]` in the Lie algebra; the empty word gives the identity. -/
 def leftDerivWord : List (GroupLieAlgebra I G) → LieTestFunction I G →ₗ[ℂ] LieTestFunction I G
@@ -214,6 +228,15 @@ theorem leftDerivWord_nil : leftDerivWord (I := I) (G := G) [] = LinearMap.id :=
 theorem leftDerivWord_cons (X : GroupLieAlgebra I G) (w : List (GroupLieAlgebra I G)) :
     leftDerivWord (X :: w) = leftDeriv X ∘ₗ leftDerivWord w :=
   (rfl)
+
+/-- Left differentiation along a concatenated word is the composite of the two iterated left
+differentiations. -/
+theorem leftDerivWord_append (w v : List (GroupLieAlgebra I G)) :
+    leftDerivWord (w ++ v) = leftDerivWord w ∘ₗ leftDerivWord v := by
+  induction w with
+  | nil => rw [List.nil_append, leftDerivWord_nil, LinearMap.id_comp]
+  | cons X w ih =>
+    rw [List.cons_append, leftDerivWord_cons, leftDerivWord_cons, ih, LinearMap.comp_assoc]
 
 /-- Iterated left differentiation along a word does not enlarge the topological support. -/
 theorem tsupport_leftDerivWord_subset (w : List (GroupLieAlgebra I G)) (a : LieTestFunction I G) :
@@ -234,6 +257,13 @@ def fixedSupportSeminorm (w : List (GroupLieAlgebra I G)) : Seminorm ℂ (LieTes
 theorem fixedSupportSeminorm_apply (w : List (GroupLieAlgebra I G)) (a : LieTestFunction I G) :
     fixedSupportSeminorm w a = ‖toBoundedContinuousFunction I G (leftDerivWord w a)‖ :=
   (rfl)
+
+/-- The fixed-support seminorm of `L_X a` along `w` is that of `a` along `w ++ [X]`. -/
+theorem fixedSupportSeminorm_leftDeriv (w : List (GroupLieAlgebra I G))
+    (X : GroupLieAlgebra I G) (a : LieTestFunction I G) :
+    fixedSupportSeminorm w (leftDeriv X a) = fixedSupportSeminorm (w ++ [X]) a := by
+  simp only [fixedSupportSeminorm_apply, leftDerivWord_append, leftDerivWord_cons,
+    leftDerivWord_nil, LinearMap.comp_id, LinearMap.comp_apply]
 
 theorem norm_leftDerivWord_le (w : List (GroupLieAlgebra I G)) (a : LieTestFunction I G)
     (g : G) : ‖leftDerivWord w a g‖ ≤ fixedSupportSeminorm w a :=
