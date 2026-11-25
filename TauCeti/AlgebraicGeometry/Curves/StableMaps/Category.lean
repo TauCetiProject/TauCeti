@@ -46,6 +46,8 @@ canonically isomorphic to the chosen base change.
   isomorphism of pointed source curves commuting with the maps.
 * `TauCeti.AlgebraicGeometry.PrestableMap.autToCurve`: the injective homomorphism from the
   automorphism group of a prestable map to that of its pointed source curve.
+* `TauCeti.AlgebraicGeometry.PrestableMap.autConstMulEquiv`: the automorphisms of a constant
+  prestable map are those of its source curve.
 * `TauCeti.AlgebraicGeometry.PrestableMap.postcompFunctor`: postcomposition as a functor.
 * `TauCeti.AlgebraicGeometry.PrestableMap.postcompAut`: for a monomorphism of targets `h`, the
   identification `Aut F ≃* Aut (F ≫ h)`.
@@ -73,6 +75,8 @@ canonically isomorphic to the chosen base change.
   an isomorphism exactly when its map of total spaces is one.
 * `TauCeti.AlgebraicGeometry.PrestableMap.mem_range_autToCurve_iff`: an automorphism of the
   pointed source curve comes from the prestable map exactly when it commutes with the map.
+* `TauCeti.AlgebraicGeometry.PrestableMap.subsingleton_aut_of_mono`: a prestable map whose map is
+  a monomorphism has no nontrivial automorphisms.
 * The instances `(postcompFunctor h hh).Full` for a monomorphism `h` and
   `(postcompFunctor h hh).IsEquivalence` for an isomorphism `h`.
 * `TauCeti.AlgebraicGeometry.PrestableMap.pullbackMap_injective_of_epi`: base change is injective
@@ -229,6 +233,32 @@ theorem mem_range_autToCurve_iff (e : Aut F.curve) :
   · rintro ⟨e, rfl⟩
     simp
   · simp
+
+/-- **A prestable map whose map is a monomorphism has no nontrivial automorphisms**: an
+automorphism of the source curve commuting with a monomorphism to the target is the identity. -/
+theorem subsingleton_aut_of_mono (F : PrestableMap q n) [Mono F.map] : Subsingleton (Aut F) :=
+  ⟨fun e e' ↦ Aut.ext <| Iso.ext <| hom_ext <| PointedPrestableFamily.hom_ext <|
+    (cancel_mono F.map).1 <| e.asIso.hom.hom_comp_map.trans e'.asIso.hom.hom_comp_map.symm⟩
+
+/-- Every automorphism of the source curve of a constant prestable map commutes with the map, so
+comes from an automorphism of the constant map. -/
+theorem autToCurve_const_surjective (P : PointedPrestableFamily S n) (σ : S ⟶ V)
+    (hσ : σ ≫ q = 𝟙 S) : Function.Surjective (autToCurve (const P σ hσ)) :=
+  fun e ↦ (mem_range_autToCurve_iff e).2 (e.asIso.hom.hom_comp_toBase_assoc σ)
+
+/-- **The automorphisms of a constant prestable map are those of its source curve**: forgetting
+the map is an isomorphism `Aut (const P σ) ≃* Aut P`. -/
+def autConstMulEquiv (P : PointedPrestableFamily S n) (σ : S ⟶ V) (hσ : σ ≫ q = 𝟙 S) :
+    Aut (const P σ hσ) ≃* Aut P :=
+  MulEquiv.ofBijective (autToCurve (const P σ hσ))
+    ⟨autToCurve_injective _, autToCurve_const_surjective P σ hσ⟩
+
+/-- `autConstMulEquiv` keeps the automorphism of the source curve. -/
+@[simp]
+theorem autConstMulEquiv_apply_asIso_hom (P : PointedPrestableFamily S n) (σ : S ⟶ V)
+    (hσ : σ ≫ q = 𝟙 S) (e : Aut (const P σ hσ)) :
+    (autConstMulEquiv P σ hσ e).asIso.hom = e.asIso.hom.curve :=
+  autToCurve_apply_asIso_hom e
 
 /-! ### Postcomposition -/
 
