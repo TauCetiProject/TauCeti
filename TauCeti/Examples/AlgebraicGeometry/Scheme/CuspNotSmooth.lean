@@ -78,7 +78,7 @@ theorem not_smooth : ¬ Algebra.Smooth k (CuspRing k) := by
     (origin k)).mp ?_ hq
   have h := fittingIdeal_kaehlerDifferential_quotient_span_singleton (K := k) (cusp k)
     (mvPolynomialBasis k (Fin 2))
-  rw [Fintype.card_fin] at h
+  rw [Fintype.card_fin, Nat.add_one_sub_one] at h
   rw [h, Ideal.map_le_iff_le_comap, Ideal.span_le]
   rintro _ ⟨i, rfl⟩
   simp only [SetLike.mem_coe, Ideal.mem_comap, RingHom.mem_ker, evalOrigin_mk]
