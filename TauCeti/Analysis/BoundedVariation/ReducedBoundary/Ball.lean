@@ -193,27 +193,25 @@ private theorem variationMeasure_closedBall_ne_zero (hr : 0 < r) (hx : x ∈ sph
   have hP := (perimeter_ball_le_variationMeasure_closedBall (x := x) (r := ρ) hu
     forall_exists_totalVariationOn_indicator_ball_ne_top (by simp)).trans_eq h0
   -- By the Poincaré inequality the indicator is almost everywhere constant on `ball x ρ`.
-  set a := ⨍ y in ball x ρ, (ball c r).indicator (1 : E → ℝ) y ∂μ
-  have hP0 := setLIntegral_enorm_sub_setAverage_le_mul_totalVariationOn_of_convex
-    (Ω := ⟨ball x ρ, isOpen_ball⟩) (μ := μ) (convex_ball x ρ) isBounded_ball
-    (hu.mono_set (subset_univ _)) subset_rfl (measure_ball_pos μ x hρ).ne'
-  rw [← perimeter_def, nonpos_iff_eq_zero.1 hP, mul_zero, nonpos_iff_eq_zero,
-    lintegral_eq_zero_iff'
-    ((measurable_one.indicator measurableSet_ball).sub_const _).eNorm.aemeasurable] at hP0
+  have hae := ae_eq_setAverage_of_totalVariationOn_eq_zero (Ω := ⟨ball x ρ, isOpen_ball⟩)
+    (S := ball x ρ) (μ := μ) (convex_ball x ρ) (hu.mono_set (subset_univ _)) subset_rfl
+    (measure_ball_pos μ x hρ).ne' measure_ball_lt_top.ne
+    (by rw [← perimeter_def]; exact nonpos_iff_eq_zero.1 hP)
   have hconst (U : Set E) (hU : IsOpen U) (hUx : U ⊆ ball x ρ) (hne : U.Nonempty) (b : ℝ)
-      (hb : ∀ y ∈ U, (ball c r).indicator (1 : E → ℝ) y = b) : b = a := by
+      (hb : ∀ y ∈ U, (ball c r).indicator (1 : E → ℝ) y = b) :
+      b = ⨍ y in ball x ρ, (ball c r).indicator (1 : E → ℝ) y ∂μ := by
     have : (ae (μ.restrict U)).NeBot := ae_restrict_neBot.2 (hU.measure_ne_zero μ hne)
-    obtain ⟨y, hy, hyU⟩ := ((ae_restrict_of_ae_restrict_of_subset hUx hP0).and
+    obtain ⟨y, hy, hyU⟩ := ((ae_restrict_of_ae_restrict_of_subset hUx hae).and
       (ae_restrict_mem hU.measurableSet)).exists
-    exact (hb y hyU).symm.trans (sub_eq_zero.1 (eNorm_eq_zero.1 hy))
+    exact (hb y hyU).symm.trans hy
   -- `x` is on the frontier of the ball and of the exterior of the closed ball, so `ball x ρ`
   -- meets both.
   have hcl (s : Set E) (hs : frontier s = sphere c r) : (ball x ρ ∩ s).Nonempty :=
     mem_closure_iff_nhds.1 (frontier_subset_closure (hs ▸ hx)) _ (ball_mem_nhds x hρ)
-  have h1 : (1 : ℝ) = a :=
+  have h1 :=
     hconst (ball x ρ ∩ ball c r) (isOpen_ball.inter isOpen_ball) inter_subset_left
       (hcl _ (frontier_ball c hr.ne')) 1 fun y hy => by simp [hy.2]
-  have h0 : (0 : ℝ) = a :=
+  have h0 :=
     hconst (ball x ρ ∩ (closedBall c r)ᶜ)
       (isOpen_ball.inter isClosed_closedBall.isOpen_compl) inter_subset_left
       (hcl _ (by rw [frontier_compl, frontier_closedBall c hr.ne'])) 0 fun y hy => by
@@ -247,8 +245,8 @@ private theorem tendsto_setAverage_polarDensity_ball (hr : 0 < r) (hx : x ∈ sp
       (ae_restrict_of_ae ((ae_norm_polarDensity_eq_one locallyIntegrableOn_indicator_ball
         forall_exists_totalVariationOn_indicator_ball_ne_top).mono fun y hy => hy.le)))
   · exact (mem_closedBall.1 hmem).trans_lt (half_lt_self hε)
-  · rw [hy, mem_closedBall, dist_eq_norm, neg_sub_neg, ← smul_sub, sub_sub_sub_cancel_right,
-      norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hr.le), ← dist_eq_norm, dist_comm]
+  · rw [hy, mem_closedBall, dist_neg_neg, dist_smul₀, dist_sub_right,
+      Real.norm_of_nonneg (inv_nonneg.2 hr.le)]
     calc r⁻¹ * dist (y : E) x ≤ r⁻¹ * ρ := by gcongr; exact mem_closedBall.1 (mem_preimage.1 hyS)
       _ ≤ r⁻¹ * (ε * r / 2) := by gcongr
       _ = ε / 2 := by field_simp
