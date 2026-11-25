@@ -51,6 +51,7 @@ coordinate avoids a point of its circle has nullhomotopic inclusion.
 
 * `ContinuousMap.toLoop`: a continuous map `f : C(AddCircle p, X)` read as a based loop at `f 0`
   via `AddCircle.ofUnitInterval p`.
+* `AddCircle.periodLoop`: the loop `t ↦ t p` around `AddCircle p`, based at `0`.
 * `ContinuousMap.nullhomotopic_iff_homotopic_refl`: a map from a circle `AddCircle p` with
   `0 < p` is null-homotopic exactly when its based loop `t ↦ f (t * p)` is homotopic to the
   constant loop.
@@ -91,6 +92,28 @@ theorem toLoop_apply (f : C(AddCircle p, X)) (t : I) :
     f.toLoop t = f (((t : ℝ) * p : ℝ) : AddCircle p) := by
   simp [toLoop]
 
+end ContinuousMap
+
+namespace AddCircle
+
+variable (p : ℝ)
+
+/-- The loop `t ↦ t p` around `AddCircle p`, based at `0`, whose lift to `ℝ` from `0` ends at
+`p`: the identity map of the circle read as a based loop by `ContinuousMap.toLoop`. -/
+def periodLoop : Path (0 : AddCircle p) 0 :=
+  (ContinuousMap.id (AddCircle p)).toLoop
+
+/-- `AddCircle.periodLoop` sends `t` to the class of `t * p`. -/
+@[simp]
+theorem periodLoop_apply (t : I) : periodLoop p t = ((t * p : ℝ) : AddCircle p) :=
+  (ContinuousMap.id (AddCircle p)).toLoop_apply t
+
+end AddCircle
+
+namespace ContinuousMap
+
+variable {p : ℝ} {X : Type*} [TopologicalSpace X]
+
 /-- **A circle map is null-homotopic exactly when its based loop is.** Let `γ` be the based loop
 `t ↦ f (t * p)` of `f : AddCircle p → X`, `0 < p`. A homotopy of `γ` to the constant loop relative
 to its endpoints descends to a free null-homotopy of `f`; conversely, a free null-homotopy of `f`
@@ -102,11 +125,10 @@ theorem nullhomotopic_iff_homotopic_refl [Fact (0 < p)] (f : C(AddCircle p, X)) 
   subst hx
   refine ⟨fun hf ↦ ?_, fun ⟨F⟩ ↦ ?_⟩
   · -- The loop `t ↦ t * p` of the circle, mapped by `f`, is `γ`.
-    let ℓ : Path (0 : AddCircle p) 0 := (ContinuousMap.id (AddCircle p)).toLoop
-    have hℓ : ℓ.map f.continuous = γ := by
+    have hℓ : (AddCircle.periodLoop p).map f.continuous = γ := by
       ext t
       exact (hγ t).symm
-    exact hℓ ▸ Path.Homotopic.map_nullhomotopic_of_nullhomotopic hf ℓ
+    exact hℓ ▸ Path.Homotopic.map_nullhomotopic_of_nullhomotopic hf (AddCircle.periodLoop p)
   -- Descend the path homotopy `F` along `(s, t) ↦ (s, t * p)`, which only glues the two ends of
   -- the loop parameter, where `F` takes the value `f 0`.
   let q : C(I × I, I × AddCircle p) := (ContinuousMap.id I).prodMap (AddCircle.ofUnitInterval p)
