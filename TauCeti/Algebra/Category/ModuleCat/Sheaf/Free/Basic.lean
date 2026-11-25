@@ -307,6 +307,7 @@ theorem free_map_injective {W W' : Cᵒᵖ} (f : W ⟶ W') (hf : Function.Inject
   rw [map_zero, Finsupp.zero_apply]
   exact hf ((h0 k).trans (map_zero _).symm)
 
+omit [Finite I] in
 /-- **Bases of sections from a free presentation.** If the morphism `free I ⟶ M` defined by a
 finite family of sections `s` of `M` is an isomorphism, then over every object `W` the sections
 `s i` form a basis of `M(W)`: the map `(I → R(W)) → M(W)` sending `c` to `∑ i, c i • s i` is
