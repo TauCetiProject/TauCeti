@@ -21,15 +21,15 @@ fppf topology, Stacks, Lemma 39.20.3 (03C5)).
 
 ## Main results
 
-* `TauCeti.CategoryTheory.quotientSheaf.isIso_desc_of_epi`: if `p : h_U ⟶ F` is an epimorphism to
-  a `J`-sheaf and `π : h_U ⟶ U/R` coequalises the kernel pair of `p`, then
-  `quotientSheaf.desc p : U/R ⟶ F` is an isomorphism.
 * `TauCeti.CategoryTheory.quotientSheaf.isIso_desc_of_isLocallySurjective`: under these
   hypotheses, `quotientSheaf.desc (h q) : U/R ⟶ h_M` is an isomorphism.
 * `TauCeti.CategoryTheory.quotientSheaf.isoOfIsLocallySurjective`: the resulting isomorphism
   `U/R ≅ h_M`.
 * `TauCeti.CategoryTheory.quotientSheaf.isIso_desc_kernelPair`: for `q` whose singleton sieve
   covers `M`, the quotient sheaf of the kernel pair `U ×_M U ⇉ U` is `h_M`.
+* `TauCeti.CategoryTheory.quotientSheaf.isIso_desc_of_epi`: if `p : h_U ⟶ F` is an epimorphism to
+  a `J`-sheaf and `π : h_U ⟶ U/R` coequalises the kernel pair of `p`, then
+  `quotientSheaf.desc p : U/R ⟶ F` is an isomorphism.
 
 ## Implementation notes
 

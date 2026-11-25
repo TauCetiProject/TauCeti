@@ -7,8 +7,6 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import TauCeti.AlgebraicGeometry.AlgebraicSpace.QuotientSheaf
-public import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation.Basic
-public import TauCeti.AlgebraicGeometry.Morphisms.UnderlyingMap
 public import TauCeti.CategoryTheory.Sites.QuotientSheaf.Restrict
 
 /-!
@@ -66,13 +64,13 @@ theorem quotientSheaf.π_restrictIso_hom [IsEquivalenceRelation t s] [Flat g]
 /-- The map `h_{U'} ⟶ h_U` induced by `g`, followed by the projection onto `U/R` and the inverse
 of `U'/R' ≅ U/R`, is the projection onto `U'/R'`. -/
 @[reassoc (attr := simp)]
-theorem quotientSheaf.π_restrictIso_inv [IsEquivalenceRelation t s] [Flat g]
+theorem quotientSheaf.uliftYoneda_map_π_restrictIso_inv [IsEquivalenceRelation t s] [Flat g]
     [LocallyOfFinitePresentation g] [Surjective g] :
     Scheme.fppfTopology.uliftYoneda.{u + 1}.map g ≫
         TauCeti.CategoryTheory.quotientSheaf.π Scheme.fppfTopology s t ≫
           (quotientSheaf.restrictIso s t g).inv =
       TauCeti.CategoryTheory.quotientSheaf.π Scheme.fppfTopology (restrictRel.snd g t s)
         (restrictRel.fst g t s) :=
-  TauCeti.CategoryTheory.quotientSheaf.π_restrictIso_inv _ _ _
+  TauCeti.CategoryTheory.quotientSheaf.uliftYoneda_map_π_restrictIso_inv _ _ _
 
 end TauCeti.AlgebraicGeometry.Spaces

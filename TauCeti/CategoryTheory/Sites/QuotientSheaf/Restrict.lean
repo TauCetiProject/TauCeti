@@ -140,7 +140,7 @@ theorem quotientSheaf.π_restrictIso_hom [IsEquivalenceRelation t s]
 /-- The map `h_{U'} ⟶ h_U ⟶ U/R`, followed by the inverse of `U'/R' ≅ U/R`, is the projection
 onto `U'/R'`. -/
 @[reassoc (attr := simp)]
-theorem quotientSheaf.π_restrictIso_inv [IsEquivalenceRelation t s]
+theorem quotientSheaf.uliftYoneda_map_π_restrictIso_inv [IsEquivalenceRelation t s]
     (hg : Sieve.generate (Presieve.singleton g) ∈ J U) :
     J.uliftYoneda.{w}.map g ≫ quotientSheaf.π J s t ≫ (quotientSheaf.restrictIso.{w} s t hg).inv =
       quotientSheaf.π J (restrictRel.snd g t s) (restrictRel.fst g t s) := by
