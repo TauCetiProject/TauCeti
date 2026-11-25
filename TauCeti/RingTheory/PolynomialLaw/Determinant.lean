@@ -305,14 +305,6 @@ theorem charCoeff_smul (i : ℕ) (a : A) (x : R) :
     D.charCoeff i (a • x) = a ^ i * D.charCoeff i x := by
   simpa [charCoeff] using PolynomialLaw.coeff_optionElim_smul i a x _ D.toLaw _
 
-/-- After scalar extension to any commutative `A`-algebra `S`, `D(1 ⊗ x) = 1 ⊗ D x`. -/
-theorem toFun_one_tmul {S : Type*} [CommSemiring S] [Algebra A S] (x : R) :
-    D.toLaw.toFun S ((1 : S) ⊗ₜ x) = 1 ⊗ₜ D x := by
-  have h := D.toFun_tmul_add_tmul_one (1 : S) 0 x
-  rw [zero_tmul, add_zero, Finset.sum_range_succ, Finset.sum_eq_zero fun i hi ↦ by
-    rw [zero_pow (by simp at hi; omega), mul_zero, zero_tmul]] at h
-  simpa using h
-
 /-- **Characteristic coefficients of an inverse.** For a unit `u` and `i ≤ d`,
 `Λ_(d - i)(u⁻¹) D(u) = Λᵢ(u)`: the characteristic polynomial of `u⁻¹` is the normalized reciprocal
 of that of `u` (`charpoly_inv`). -/
@@ -322,7 +314,8 @@ theorem charCoeff_inv_mul_apply (u : Rˣ) {i : ℕ} (hi : i ≤ d) :
       (1 ⊗ₜ (u : R)) * (X ⊗ₜ ((u⁻¹ : Rˣ) : R) + 1 ⊗ₜ 1) := by
     simp [mul_add, Algebra.TensorProduct.tmul_mul_tmul, add_comm]
   rw [← D.coeff_rid_toFun_one_tmul_add_X_tmul_one hi, hfac, D.isMultiplicative.toFun_mul,
-    toFun_one_tmul, toFun_tmul_add_tmul_one, _root_.map_mul, map_sum]
+    ← PolynomialLaw.one_tmul_ground, ground_toLaw, toFun_tmul_add_tmul_one, _root_.map_mul,
+    map_sum]
   simp only [one_pow, mul_one, Algebra.TensorProduct.rid_tmul, smul_eq_C_mul, coeff_C_mul,
     finsetSum_coeff, coeff_X_pow]
   rw [Finset.sum_eq_single_of_mem (d - i) (Finset.mem_range.mpr (by omega)) fun j _ hj ↦ by
