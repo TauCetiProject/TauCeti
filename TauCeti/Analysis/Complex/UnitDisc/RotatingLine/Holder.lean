@@ -15,7 +15,7 @@ import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.Complex.Circle.Rotation
 import TauCeti.Analysis.Complex.Pompeiu.Holder.Gain
 import TauCeti.Analysis.Complex.UnitDisc.RiemannHilbert
-import TauCeti.Analysis.Complex.UnitDisc.RotatingLineBoundary
+import TauCeti.Analysis.Complex.UnitDisc.RotatingLine.Boundary
 import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import TauCeti.Analysis.Holder.Jet.Bounds
 import TauCeti.Analysis.Holder.MeanValue
@@ -118,6 +118,22 @@ private theorem exists_hasDerivAt_zpow_mul_conj_sub_holderOnWith (k : ℤ) {T : 
   rw [hγ0, Complex.star_def] at hd
   exact hd
 
+/-- **Adding a holomorphic map.** Adding a map `p` holomorphic on an open set `U` to a map `u`
+real differentiable on `U` keeps it real differentiable on `U`, adds the real derivatives and leaves
+`∂u/∂(conj z)` unchanged. -/
+private theorem differentiableOn_add_and_fderiv_add_and_conjWirtingerDeriv_add {U : Set ℂ}
+    (hU : IsOpen U) {u p : ℂ → ℂ} (hu : DifferentiableOn ℝ u U) (hp : DifferentiableOn ℂ p U) :
+    DifferentiableOn ℝ (u + p) U ∧
+      (∀ z ∈ U, fderiv ℝ (u + p) z = fderiv ℝ u z + fderiv ℝ p z) ∧
+      ∀ z ∈ U, conjWirtingerDeriv (u + p) z 1 = conjWirtingerDeriv u z 1 := by
+  have huD (z : ℂ) (hz : z ∈ U) : DifferentiableAt ℝ u z := hu.differentiableAt (hU.mem_nhds hz)
+  have hpD (z : ℂ) (hz : z ∈ U) : DifferentiableAt ℂ p z := hp.differentiableAt (hU.mem_nhds hz)
+  refine ⟨hu.add fun z hz ↦ ((hpD z hz).restrictScalars ℝ).differentiableWithinAt,
+    fun z hz ↦ fderiv_add (huD z hz) ((hpD z hz).restrictScalars ℝ), fun z hz ↦ ?_⟩
+  rw [conjWirtingerDeriv_add (huD z hz) ((hpD z hz).restrictScalars ℝ), add_apply,
+    (hpD z hz).conjWirtingerDeriv_eq_zero]
+  simp
+
 /-! ### Existence -/
 
 /-- **The disc problem with rotating-line boundary values is solvable for Hölder forcing.** Let
@@ -153,25 +169,18 @@ theorem exists_conjWirtingerDeriv_eq_and_eq_zpow_mul_conj_of_holderOnWith {k : �
     exists_holderOnWith_closedBall_deriv_sub_zpow_mul_conj_eq
       (φ := fun w ↦ w ^ k * conj (T w) - T w) hk hα0 hα1 hv hvH
       fun w hw ↦ zpow_mul_conj_sub_eq_neg_of_mem_sphere hw k (T w)
-  have hhD (z : ℂ) (hz : z ∈ ball (0 : ℂ) 1) : DifferentiableAt ℂ h z :=
-    hhd.differentiableAt isOpen_ball hz
+  obtain ⟨hd, hfd, hbar⟩ := differentiableOn_add_and_fderiv_add_and_conjWirtingerDeriv_add
+    isOpen_ball (fun z hz ↦ (hTdiff z (ball_subset_closedBall hz)).differentiableWithinAt)
+    hhd.differentiableOn
   set Λ : ℂ →L[ℝ] ℂ →L[ℝ] ℂ := ContinuousLinearMap.lsmul ℝ ℂ
-  refine ⟨T + h, ⟨_, hTH.add hhH⟩,
-    fun z hz ↦ ((hTdiff z (ball_subset_closedBall hz)).add
-      ((hhD z hz).restrictScalars ℝ)).differentiableWithinAt,
+  refine ⟨T + h, ⟨_, hTH.add hhH⟩, hd,
     ⟨fderiv ℝ T + Λ ∘ h', _, hDH.add (Λ.lipschitzWith.comp_holderOnWith hh'H),
       fun z hz ↦ ?_⟩, fun z hz ↦ ?_, fun w hw ↦ ?_⟩
   · -- The real derivative of the holomorphic `h` is multiplication by `h' z = deriv h z`.
-    rw [fderiv_add (hTdiff z (ball_subset_closedBall hz)) ((hhD z hz).restrictScalars ℝ),
-      (hhD z hz).fderiv_restrictScalars ℝ, Pi.add_apply, Function.comp_apply, hh'd z hz]
+    rw [hfd z hz, ((hhd.differentiableAt isOpen_ball hz).hasDerivAt.complexToReal_fderiv).fderiv,
+      Pi.add_apply, Function.comp_apply, hh'd z hz]
     congr 1
-    ext1 x
-    simp [Λ, mul_comm]
-  · rw [conjWirtingerDeriv_add (hTdiff z (ball_subset_closedBall hz))
-      ((hhD z hz).restrictScalars ℝ), add_apply,
-      (hhD z hz).conjWirtingerDeriv_eq_zero, hTbar z (hsub (ball_subset_closedBall hz)),
-      hgf (ball_subset_closedBall hz)]
-    simp
+  · rw [hbar z hz, hTbar z (hsub (ball_subset_closedBall hz)), hgf (ball_subset_closedBall hz)]
   · have := hhb w hw
     simp only [Pi.add_apply, map_add, mul_add]
     linear_combination this
@@ -212,8 +221,7 @@ theorem exists_conjWirtingerDeriv_eq_and_eq_zpow_mul_conj_and_eq_and_fderiv_eq_o
       ((((hasDerivAt_id (0 : ℂ)).const_mul a₁).const_add a₀).add
         ((hasDerivAt_pow (j + 2) (0 : ℂ)).const_mul _)).add
         ((hasDerivAt_pow (j + 3) (0 : ℂ)).const_mul _)
-    rw [(hpd 0).fderiv_restrictScalars ℝ, ContinuousLinearMap.coe_restrictScalars',
-      fderiv_apply_one_eq_deriv, hp.deriv]
+    rw [hp.complexToReal_fderiv.fderiv]
     simp
   have hpb (w : ℂ) (hw : w ∈ sphere (0 : ℂ) 1) : p w = w ^ ((j + 3 : ℕ) : ℤ) * conj (p w) := by
     have hq : w * w⁻¹ = 1 := mul_inv_cancel₀ (ne_of_mem_sphere hw one_ne_zero)
@@ -226,45 +234,13 @@ theorem exists_conjWirtingerDeriv_eq_and_eq_zpow_mul_conj_and_eq_and_fderiv_eq_o
     simp only [p, zpow_natCast, map_add, map_mul, map_pow, conj_conj,
       ← inv_eq_conj (mem_sphere_zero_iff_norm.mp hw)]
     linear_combination -a₀ * e₁ - a₁ * e₂ - conj a₁ * e₃
-  have hpD (z : ℂ) : DifferentiableAt ℝ p z := (hpd z).restrictScalars ℝ
-  refine ⟨u + p, ⟨_, huH.add hpH⟩, hud.add fun z _ ↦ (hpD z).differentiableWithinAt,
-    ⟨fun z ↦ u' z + fderiv ℝ p z, _, hu'H.add hp'H, fun z hz ↦ ?_⟩, fun z hz ↦ ?_,
-    fun w hw ↦ ?_, by simp [p, a₀], ?_⟩
-  · rw [fderiv_add (hud.differentiableAt (isOpen_ball.mem_nhds hz)) (hpD z), hu' z hz]
-  · rw [conjWirtingerDeriv_add (hud.differentiableAt (isOpen_ball.mem_nhds hz)) (hpD z),
-      add_apply, (hpd z).conjWirtingerDeriv_eq_zero, hubar z hz]
-    simp
+  obtain ⟨hd, hfd, hbar⟩ := differentiableOn_add_and_fderiv_add_and_conjWirtingerDeriv_add
+    isOpen_ball hud hpd.differentiableOn
+  refine ⟨u + p, ⟨_, huH.add hpH⟩, hd,
+    ⟨fun z ↦ u' z + fderiv ℝ p z, _, hu'H.add hp'H, fun z hz ↦ by rw [hfd z hz, hu' z hz]⟩,
+    fun z hz ↦ by rw [hbar z hz, hubar z hz], fun w hw ↦ ?_, by simp [p, a₀], ?_⟩
   · rw [Pi.add_apply, map_add, mul_add, ← hub w hw, ← hpb w hw]
-  · rw [fderiv_add (hud.differentiableAt (isOpen_ball.mem_nhds (mem_ball_self one_pos))) (hpD 0),
-      add_apply, hp1]
+  · rw [hfd 0 (mem_ball_self one_pos), add_apply, hp1]
     simp [a₁]
-
-/-! ### Uniqueness for Maslov index three -/
-
-/-- **Uniqueness for Maslov index three.** Two functions, continuous on the closed unit disc and
-real differentiable on the open disc, with the same `∂/∂(conj z)` on the open disc, boundary
-values `u w = w ^ 3 * conj (u w)` on the unit circle, the same centre value and the same first jet
-`∂ₛu(0)`, agree on the closed disc. -/
-theorem eqOn_of_conjWirtingerDeriv_eq_of_eq_zpow_mul_conj_of_eq_of_fderiv_eq {u₁ u₂ : ℂ → ℂ}
-    (hc₁ : ContinuousOn u₁ (closedBall 0 1)) (hc₂ : ContinuousOn u₂ (closedBall 0 1))
-    (hd₁ : DifferentiableOn ℝ u₁ (ball 0 1)) (hd₂ : DifferentiableOn ℝ u₂ (ball 0 1))
-    (heq : ∀ z ∈ ball (0 : ℂ) 1, conjWirtingerDeriv u₁ z 1 = conjWirtingerDeriv u₂ z 1)
-    (hb₁ : ∀ w ∈ sphere (0 : ℂ) 1, u₁ w = w ^ (3 : ℤ) * conj (u₁ w))
-    (hb₂ : ∀ w ∈ sphere (0 : ℂ) 1, u₂ w = w ^ (3 : ℤ) * conj (u₂ w)) (h₀ : u₁ 0 = u₂ 0)
-    (h₁ : fderiv ℝ u₁ 0 1 = fderiv ℝ u₂ 0 1) : EqOn u₁ u₂ (closedBall 0 1) := by
-  have hv := diffContOnCl_sub_of_conjWirtingerDeriv_eq isOpen_ball
-    (by rwa [closure_ball 0 one_ne_zero]) (by rwa [closure_ball 0 one_ne_zero]) hd₁ hd₂ heq
-  have h0 : (0 : ℂ) ∈ ball (0 : ℂ) 1 := mem_ball_self one_pos
-  have hderiv : deriv (u₁ - u₂) 0 = 0 := by
-    rw [← fderiv_apply_one_eq_deriv, ← ContinuousLinearMap.coe_restrictScalars' (R := ℝ),
-      ← (hv.differentiableAt isOpen_ball h0).fderiv_restrictScalars ℝ,
-      fderiv_sub (hd₁.differentiableAt (isOpen_ball.mem_nhds h0))
-        (hd₂.differentiableAt (isOpen_ball.mem_nhds h0)), sub_apply, h₁,
-      sub_self]
-  intro z hz
-  have := hv.eqOn_zero_of_eq_zpow_mul_conj_of_eq_zero_of_deriv_eq_zero
-    (fun w hw ↦ by simp only [Pi.sub_apply, map_sub, mul_sub, ← hb₁ w hw, ← hb₂ w hw])
-    (by simp [h₀]) hderiv hz
-  exact sub_eq_zero.mp this
 
 end TauCeti
