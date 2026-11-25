@@ -43,11 +43,11 @@ The extension is irreducible because its restriction to `Γ` is
 * `TauCeti.isCanonicalExtension_one`, `TauCeti.IsCanonicalExtension.eq_one`: the canonical
   extension of the trivial character is trivial.
 * `TauCeti.det_inr_eq_one_iff_exists_det_pow_eq_one`,
-  `TauCeti.isCanonicalExtension_iff_exists_det_pow_eq_one`: the determinant of a representation of
-  `Γ ⋊[φ] S` is trivial on `S` exactly when its order is coprime to `|S|`, so the canonical
-  extension can equally be normalised by the order of its determinant.
-* `TauCeti.IsCanonicalExtension.det_inr_eq_one`: every representation affording a canonical
-  extension has determinant `1` on `S`.
+  `TauCeti.isCanonicalExtension_iff_exists_det_pow_eq_one`: for `|Γ|` and `|S|` coprime, the
+  determinant of a representation of `Γ ⋊[φ] S` is trivial on `S` exactly when its order is coprime
+  to `|S|`, so the canonical extension can equally be normalised by the order of its determinant.
+* `TauCeti.IsCanonicalExtension.det_inr_eq_one`: over a field of characteristic zero, every
+  representation affording a canonical extension has determinant `1` on `S`.
 * `TauCeti.IsCanonicalExtension.comp_map`, `TauCeti.IsCanonicalExtension.eq_comp_map`: the
   canonical extension for a subgroup `T ≤ S`, or more generally along `T →* S`, is the restriction
   of the canonical extension for `S`.
@@ -127,14 +127,11 @@ theorem existsUnique_canonicalExtension (hcop : (Nat.card Γ).Coprime (Nat.card 
     ?_⟩
   · have : Representation.IsIrreducible (ρ'.comp (inl : Γ →* Γ ⋊[φ] S)) := hcomp ▸ hirr
     exact Representation.IsIrreducible.of_comp inl
-  · funext g
-    simp only [Function.comp_apply, Representation.character, hinl]
+  · rw [← Representation.character_comp, hcomp]
   · rintro ψ ⟨-, hψ, m, ρ₁, rfl, hdet₁⟩
     -- Conjugate `ρ₁` along an equivalence of its restriction to `Γ` with `ρ₀`.
     have hc : Representation.character (ρ₁.comp (inl : Γ →* Γ ⋊[φ] S)) = ρ₀.character := by
-      funext g
-      simpa only [Representation.character, MonoidHom.coe_comp, Function.comp_apply] using
-        congrFun hψ g
+      rw [Representation.character_comp, hψ]
     obtain ⟨E⟩ := Representation.nonempty_equiv_of_character_eq _ _ hc
     let ρ₂ : Representation k (Γ ⋊[φ] S) (Fin n → k) :=
       (MonoidHom.ofClass (E.toLinearEquiv.conjAlgEquiv k)).comp ρ₁
@@ -221,24 +218,14 @@ theorem IsCanonicalExtension.comp_mulEquiv_symm {Γ' S' : Type*} [Group Γ'] [Gr
   have hβ' (g' : Γ') : α.symm (inl g') = inl (β.symm g') := by
     rw [MulEquiv.symm_apply_eq, hβ, MulEquiv.apply_symm_apply]
   refine ⟨α.symm.comp_mem_irreducibleCharacters_iff.2 hirr, ?_, n,
-    ρ.comp α.symm.toMonoidHom, by rw [← hρ]; rfl, fun s' => ?_⟩
+    ρ.comp α.symm.toMonoidHom, by rw [Representation.character_comp, hρ, MulEquiv.coe_toMonoidHom],
+    fun s' => ?_⟩
   · funext g'
     simp only [Function.comp_apply, hβ', ← hinl]
   · obtain ⟨s, hs⟩ := hS s'
     rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, ← hs, MulEquiv.symm_apply_apply, hdet]
 
 variable [CharZero k] [Finite Γ]
-
-/-- A finite-dimensional representation of `G` whose restriction along `f : H →* G`, for a finite
-group `H`, has an irreducible character is irreducible. -/
-theorem _root_.Representation.isIrreducible_of_character_comp_mem_irreducibleCharacters
-    {k : Type*} [Field k] [CharZero k] {G H : Type*} [Group G] [Group H] [Finite H] {n : ℕ}
-    (ρ : Representation k G (Fin n → k)) (f : H →* G)
-    (h : ρ.character ∘ f ∈ irreducibleCharacters k H) : ρ.IsIrreducible := by
-  obtain ⟨m, ρ₀, hρ₀, hc⟩ := mem_irreducibleCharacters_iff.1 h
-  obtain ⟨E⟩ := Representation.nonempty_equiv_of_character_eq ρ₀ (ρ.comp f) hc
-  have := E.isIrreducible hρ₀
-  exact Representation.IsIrreducible.of_comp f
 
 /-- **Restriction of the canonical extension.** For a homomorphism `f : T →* S`, in particular
 the inclusion of a subgroup, the restriction of the canonical extension of `χ` along
@@ -250,19 +237,18 @@ theorem IsCanonicalExtension.comp_map {T : Type*} [Group T] (f : T →* S) {χ :
   obtain ⟨-, hinl, n, ρ, rfl, hdet⟩ := h
   let ι : Γ ⋊[φ.comp f] T →* Γ ⋊[φ] S := SemidirectProduct.map (MonoidHom.id Γ) f fun _ => rfl
   have hι : ι.comp inl = inl := by ext <;> simp [ι]
+  have hc : Representation.character (ρ.comp ι) ∘ inl = χ := by
+    rw [Representation.character_comp, Function.comp_assoc, ← MonoidHom.coe_comp, hι, hinl]
   have hirr : Representation.IsIrreducible (ρ.comp ι) :=
     Representation.isIrreducible_of_character_comp_mem_irreducibleCharacters (ρ.comp ι) inl
-      (by rw [← hinl] at hχ; convert hχ using 1; funext g; simp [ι, Representation.character])
-  refine ⟨character_mem_irreducibleCharacters (ρ.comp ι), ?_, n, ρ.comp ι, rfl, fun t => ?_⟩
-  · rw [← hinl]
-    funext g
-    simp [Representation.character]
-  · simpa [ι] using hdet (f t)
+      (hc ▸ hχ)
+  refine ⟨character_mem_irreducibleCharacters (ρ.comp ι), hc, n, ρ.comp ι, rfl, fun t => ?_⟩
+  simpa [ι] using hdet (f t)
 
 /-- **Every representation affording the canonical extension has determinant `1` on `S`**, not
-only the one witnessing `TauCeti.IsCanonicalExtension`: representations of the finite group
-`Γ ⋊[φ] S` with the same character are equivalent, and equivalent representations have the same
-determinants. -/
+only the one witnessing `TauCeti.IsCanonicalExtension`: over a field of characteristic zero,
+representations of the finite group `Γ ⋊[φ] S` with the same character are equivalent, and
+equivalent representations have the same determinants. -/
 theorem IsCanonicalExtension.det_inr_eq_one [Finite S] {χ : Γ → k} {ψ : Γ ⋊[φ] S → k}
     (h : IsCanonicalExtension φ χ ψ) {n : ℕ} (ρ : Representation k (Γ ⋊[φ] S) (Fin n → k))
     (hρ : ρ.character = ψ) (s : S) : (ρ (inr s)).det = 1 := by

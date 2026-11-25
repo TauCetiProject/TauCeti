@@ -14,6 +14,8 @@ public import TauCeti.RepresentationTheory.Invariants
 # Basic facts about characters
 
 The trace character vanishes when the representation space is not finite-dimensional.
+The character of the restriction of a representation along a monoid homomorphism `f` is the
+composite of its character with `f` (`Representation.character_comp`).
 
 The trace of the action is a class function for a representation over a commutative semiring on
 any additive commutative monoid (`Representation.trace_conj`). `Representation.character` and
@@ -42,6 +44,12 @@ theorem character_eq_zero_of_not_finite {k G V : Type*} [Field k] [Monoid G]
     ρ.character = 0 := by
   funext g
   simp [character, TauCeti.LinearMap.trace_eq_zero_of_not_finite h]
+
+/-- The character of the restriction of `ρ` along `f : H →* G` is `ρ.character ∘ f`. -/
+theorem character_comp {k G H V : Type*} [Field k] [Monoid G] [Monoid H] [AddCommGroup V]
+    [Module k V] (ρ : Representation k G V) (f : H →* G) :
+    character (ρ.comp f) = ρ.character ∘ f :=
+  rfl
 
 /-- The trace of the action is constant on conjugacy classes. This is `Representation.char_conj`
 for a representation on an additive commutative monoid. -/
