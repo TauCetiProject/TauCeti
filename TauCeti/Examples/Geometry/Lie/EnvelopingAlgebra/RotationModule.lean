@@ -44,6 +44,10 @@ noncomputable def rotationLieHom : ℝ →ₗ⁅ℝ⁆ ℂ where
   map_smul' c t := by simp only [smul_eq_mul, ofReal_mul, RingHom.id_apply, real_smul]; ring
   map_lie' {s t} := by simp only [Ring.lie_def, mul_comm s t, sub_self, ofReal_zero, zero_mul]; ring
 
+/-- The rotation generator sends `t` to `t i`. -/
+@[simp]
+theorem rotationLieHom_apply (t : ℝ) : rotationLieHom t = t * I := (rfl)
+
 /-- The action `U(𝔤) → ℂ` of the enveloping algebra on the rotation module. -/
 noncomputable def rotationAction : UniversalEnvelopingAlgebra ℝ ℝ →ₐ[ℝ] ℂ :=
   UniversalEnvelopingAlgebra.lift ℝ rotationLieHom
