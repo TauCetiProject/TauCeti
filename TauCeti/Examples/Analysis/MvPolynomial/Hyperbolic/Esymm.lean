@@ -18,6 +18,11 @@ public import TauCeti.Analysis.MvPolynomial.Hyperbolic.Esymm
 * `σ₂(−e) = 3 > 0` in `ℝ³`, but `−e ∉ Γ₂` since `σ₁(−e) = −3`; as `σ₂(0) = 0`, the set
   `{σ₂ > 0}` contains `e` and `−e` but not their midpoint, so `Γ₂` needs the condition on `σ₁`
   (`eval_neg_one_esymm_two`, `neg_one_notMem_gardingCone_esymm_two`).
+* `λ = (2, 2, −1)` has `σ₁ = 3` and `σ₂ = 0`, so it is not in `Γ₂`, while
+  `σ₂(λ + εe) = 6ε + 3ε² > 0` and `σ₁(λ + εe) = 3 + 3ε > 0` for `ε > 0`; so `λ` lies on the
+  boundary of `Γ₂` (`notMem_gardingCone_esymm_two_two_two`,
+  `add_smul_one_mem_gardingCone_esymm_two`, `mem_frontier_gardingCone_esymm_two`).
+* The set `{σ₂ > 0}` in `ℝ³` is not convex (`not_convex_setOf_eval_esymm_two_pos`).
 * For `n = 2`, `(1, −1/2)` lies in the half-plane `Γ₁` but not in the quadrant `Γ₂`
   (`mem_gardingCone_esymm_one_two`, `notMem_gardingCone_esymm_two_two`).
 -/
@@ -94,6 +99,68 @@ theorem neg_one_notMem_gardingCone_esymm_two :
   intro h
   have := h 1 le_rfl (by norm_num)
   norm_num [Fin.sum_univ_three] at this
+
+/-- `σ₁(2, 2, −1) = 3`. -/
+theorem eval_esymm_one_two_two : eval ![(2 : ℝ), 2, -1] (esymm (Fin 3) ℝ 1) = 3 := by
+  norm_num [Fin.sum_univ_three]
+
+/-- `σ₂(2, 2, −1) = 0`. -/
+theorem eval_esymm_two_two_two : eval ![(2 : ℝ), 2, -1] (esymm (Fin 3) ℝ 2) = 0 := by
+  rw [eval_esymm_two_fin_three]
+  norm_num
+
+/-- `(2, 2, −1) ∉ Γ₂`, since `σ₂(2, 2, −1) = 0`. -/
+theorem notMem_gardingCone_esymm_two_two_two :
+    ![(2 : ℝ), 2, -1] ∉ gardingCone (esymm (Fin 3) ℝ 2) 1 := by
+  rw [gardingCone_esymm _]
+  intro h
+  have := h 2 (by norm_num) le_rfl
+  rw [eval_esymm_two_two_two] at this
+  exact lt_irrefl _ this
+
+/-- `(2, 2, −1) + εe ∈ Γ₂` for `ε > 0`: `σ₁ = 3 + 3ε` and `σ₂ = 6ε + 3ε²`. -/
+theorem add_smul_one_mem_gardingCone_esymm_two {ε : ℝ} (hε : 0 < ε) :
+    ![(2 : ℝ), 2, -1] + ε • 1 ∈ gardingCone (esymm (Fin 3) ℝ 2) 1 := by
+  have h : ![(2 : ℝ), 2, -1] + ε • 1 = ![2 + ε, 2 + ε, -1 + ε] := by
+    ext i
+    fin_cases i <;> simp
+  rw [h, gardingCone_esymm _]
+  intro j hj1 hj2
+  interval_cases j
+  · norm_num [Fin.sum_univ_three]
+    linarith
+  · rw [eval_esymm_two_fin_three]
+    norm_num
+    nlinarith
+
+/-- **`(2, 2, −1)` lies on the boundary of `Γ₂`**: it is a limit of the points `(2, 2, −1) + εe`
+of `Γ₂` and is not in the open cone `Γ₂`. -/
+theorem mem_frontier_gardingCone_esymm_two :
+    ![(2 : ℝ), 2, -1] ∈ frontier (gardingCone (esymm (Fin 3) ℝ 2) 1) := by
+  have hp := isHyperbolic_esymm (σ := Fin 3) (k := 2) (by simp)
+  rw [frontier, (isOpen_gardingCone hp.isHomogeneous hp.eval_pos.ne').interior_eq]
+  refine ⟨mem_closure_of_tendsto (f := fun ε : ℝ ↦ ![(2 : ℝ), 2, -1] + ε • 1)
+    (b := nhdsWithin 0 (Set.Ioi 0)) ?_ ?_, notMem_gardingCone_esymm_two_two_two⟩
+  · have : Filter.Tendsto (fun ε : ℝ ↦ ![(2 : ℝ), 2, -1] + ε • 1) (nhds 0)
+        (nhds (![(2 : ℝ), 2, -1] + (0 : ℝ) • 1)) :=
+      tendsto_const_nhds.add (Filter.tendsto_id.smul_const _)
+    simpa using this.mono_left nhdsWithin_le_nhds
+  · filter_upwards [self_mem_nhdsWithin] with ε hε
+    exact add_smul_one_mem_gardingCone_esymm_two hε
+
+/-- **`{σ₂ > 0}` is not convex** in `ℝ³`: it contains `e` and `−e` but not their midpoint `0`. -/
+theorem not_convex_setOf_eval_esymm_two_pos :
+    ¬ Convex ℝ {x : Fin 3 → ℝ | 0 < eval x (esymm (Fin 3) ℝ 2)} := by
+  intro h
+  have h1 : (1 : Fin 3 → ℝ) ∈ {x : Fin 3 → ℝ | 0 < eval x (esymm (Fin 3) ℝ 2)} := by
+    simp only [Set.mem_ofPred_eq, eval_esymm_two_fin_three]
+    norm_num
+  have h2 : (-1 : Fin 3 → ℝ) ∈ {x : Fin 3 → ℝ | 0 < eval x (esymm (Fin 3) ℝ 2)} := by
+    simp only [Set.mem_ofPred_eq, eval_neg_one_esymm_two]
+    norm_num
+  have h0 := h h1 h2 (a := 1 / 2) (b := 1 / 2) (by norm_num) (by norm_num) (by norm_num)
+  simp only [Set.mem_ofPred_eq, eval_esymm_two_fin_three] at h0
+  norm_num at h0
 
 /-- `(1, −1/2) ∈ Γ₁` for `n = 2`. -/
 theorem mem_gardingCone_esymm_one_two :
