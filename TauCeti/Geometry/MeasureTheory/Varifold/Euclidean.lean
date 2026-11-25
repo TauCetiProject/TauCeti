@@ -12,7 +12,6 @@ public import TauCeti.MeasureTheory.Measure.Subtype
 public import TauCeti.MeasureTheory.Measure.Support
 public import TauCeti.Topology.Grassmannian.StarProjection
 public import TauCeti.Topology.Sets.Opens
-import TauCeti.MeasureTheory.Measure.Dirac
 
 /-!
 # Varifolds on an open subset of a Euclidean space
@@ -122,11 +121,6 @@ theorem weight_smul (c : ℝ≥0∞) (V : Measure (W × grassmannian ℝ E k)) :
 @[simp]
 theorem weight_dirac (p : W × grassmannian ℝ E k) : weight (Measure.dirac p) = .dirac (p.1 : E) :=
   Measure.map_dirac' measurable_coe_fst p
-
-/-- The weight of the Dirac varifold `δ_{(x, P)}` has support `{x}`. -/
-theorem support_weight_dirac [OpensMeasurableSpace E] (p : W × grassmannian ℝ E k) :
-    (weight (Measure.dirac p)).support = {(p.1 : E)} := by
-  rw [weight_dirac, Measure.support_dirac, closure_singleton]
 
 /-- Integrals against the weight: `∫⁻ φ d‖V‖ = ∫⁻ φ ∘ π dV`. -/
 theorem lintegral_weight {φ : E → ℝ≥0∞} (hφ : AEMeasurable φ (weight V)) :

@@ -9,6 +9,7 @@ public import TauCeti.Geometry.MeasureTheory.Varifold.Euclidean
 public import TauCeti.Geometry.MeasureTheory.Varifold.LineVarifold
 public import TauCeti.Topology.Algebra.Module.Trace
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
+import TauCeti.MeasureTheory.Measure.Dirac
 import TauCeti.MeasureTheory.Measure.Support
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
@@ -33,7 +34,7 @@ plane `ℝ e₁` (`Euclidean.verticalLift 0 (e 0) (e 1) _`).
   `[0, ½) e₀ = spt ‖V‖ ∩ W'` relative to `W'`, a set that is not closed in `ℝ²`: its closure
   adds the point `½ e₀` outside `W'` (`support_restrictOpens_segmentLift`).
 * *Dirac varifolds and trivial restrictions.* `spt ‖δ_{(x, P)}‖ = {x}`
-  (`Euclidean.support_weight_dirac`), `V⌞∅ = 0` and `V⌞W = V` (`restrict_preimage_empty`,
+  (`support_weight_dirac`), `V⌞∅ = 0` and `V⌞W = V` (`restrict_preimage_empty`,
   `restrict_preimage_opens`).
 -/
 
@@ -44,12 +45,17 @@ public noncomputable section
 
 namespace TauCeti.Examples.VarifoldWeight
 
-/-! ### Trivial restrictions -/
+/-! ### Dirac varifolds and trivial restrictions -/
 
 section General
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] {k : ℕ}
+
+/-- The weight of the Dirac varifold `δ_{(x, P)}` has support `{x}`. -/
+theorem support_weight_dirac [OpensMeasurableSpace E] {W : Opens E}
+    (p : W × grassmannian ℝ E k) : (weight (Measure.dirac p)).support = {(p.1 : E)} := by
+  simp
 
 /-- Restricting a varifold to the pairs over the empty set gives `0`. -/
 theorem restrict_preimage_empty {W : Opens E} (V : Measure (W × grassmannian ℝ E k)) :
