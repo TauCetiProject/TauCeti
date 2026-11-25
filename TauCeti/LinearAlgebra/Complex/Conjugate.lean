@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Complex.Module
+public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.RingTheory.Finiteness.Basic
 
 /-!
@@ -47,6 +48,11 @@ non-definitionally-equal real module structures on `Conjugate V` when the scalar
 * `LinearMap.toConjugate`: conjugate-linear maps `V → W` are equivalent to complex-linear maps
   `V → Conjugate W`.
 * `Submodule.conjugate`: a real subspace of `V`, read as a real subspace of `Conjugate V`.
+* `LinearMap.conjugateMap` and `LinearEquiv.conjugate`: functorial conjugation of complex-linear
+  maps and equivalences. The map version is not called `LinearMap.conjugate`, which Mathlib uses
+  for the conjugate of a projection by a group element (`Mathlib.RepresentationTheory.Maschke`).
+* `TauCeti.Conjugate.doubleConjugateLinearEquiv`: the complex-linear identification of the
+  double conjugate with the original module.
 -/
 
 public section
@@ -155,6 +161,28 @@ instance instFiniteComplex [AddCommGroup V] [Module ℂ V] [Module.Finite ℂ V]
     Module.Finite ℂ (Conjugate V) :=
   .of_surjective toConjₗ.toLinearMap toConjₗ.surjective
 
+/-- The conjugate of a real vector space has the same real rank: its real structure is that of
+`V`. -/
+@[simp] theorem rank_real [AddCommGroup V] [Module ℝ V] :
+    Module.rank ℝ (Conjugate V) = Module.rank ℝ V :=
+  (rfl)
+
+/-- The conjugate of a real vector space has the same real dimension. -/
+@[simp] theorem finrank_real [AddCommGroup V] [Module ℝ V] :
+    Module.finrank ℝ (Conjugate V) = Module.finrank ℝ V :=
+  (rfl)
+
+/-- The conjugate of a complex vector space has the same complex rank. -/
+@[simp] theorem rank_complex [AddCommGroup V] [Module ℂ V] :
+    Module.rank ℂ (Conjugate V) = Module.rank ℂ V :=
+  (rank_eq_of_equiv_equiv (starRingEnd ℂ) (toConjₗ : V ≃ₗ⋆[ℂ] Conjugate V).toAddEquiv
+    (Function.Involutive.bijective Complex.conj_conj) fun c v ↦ toConj_smul c v).symm
+
+/-- The conjugate of a complex vector space has the same complex dimension. -/
+@[simp] theorem finrank_complex [AddCommGroup V] [Module ℂ V] :
+    Module.finrank ℂ (Conjugate V) = Module.finrank ℂ V :=
+  congrArg Cardinal.toNat rank_complex
+
 end Conjugate
 
 end TauCeti
@@ -213,3 +241,116 @@ theorem map_toConjₗ' (L : Submodule ℝ V) :
   (rfl)
 
 end Submodule
+
+/-! ### Functoriality and double conjugation -/
+
+namespace LinearMap
+
+universe u v w
+
+variable {V : Type u} {W : Type v} {U : Type w}
+  [AddCommGroup V] [Module ℂ V] [AddCommGroup W] [Module ℂ W]
+  [AddCommGroup U] [Module ℂ U]
+
+/-- A complex-linear map, read between conjugate modules. -/
+def conjugateMap (f : V →ₗ[ℂ] W) : Conjugate V →ₗ[ℂ] Conjugate W where
+  toFun v := toConj (f (ofConj v))
+  map_add' v w := by simp
+  map_smul' c v := by simp
+
+@[simp] theorem conjugateMap_apply (f : V →ₗ[ℂ] W) (v : Conjugate V) :
+    f.conjugateMap v = toConj (f (ofConj v)) := by rfl
+
+@[simp] theorem conjugateMap_id : (LinearMap.id : V →ₗ[ℂ] V).conjugateMap = .id := by rfl
+
+theorem conjugateMap_comp (g : W →ₗ[ℂ] U) (f : V →ₗ[ℂ] W) :
+    (g.comp f).conjugateMap = g.conjugateMap.comp f.conjugateMap := by rfl
+
+@[simp] theorem conjugateMap_zero : (0 : V →ₗ[ℂ] W).conjugateMap = 0 := by ext; rfl
+
+@[simp] theorem conjugateMap_add (f g : V →ₗ[ℂ] W) :
+    (f + g).conjugateMap = f.conjugateMap + g.conjugateMap := by ext; rfl
+
+@[simp] theorem conjugateMap_neg (f : V →ₗ[ℂ] W) :
+    (-f).conjugateMap = -f.conjugateMap := by ext; rfl
+
+@[simp] theorem conjugateMap_sub (f g : V →ₗ[ℂ] W) :
+    (f - g).conjugateMap = f.conjugateMap - g.conjugateMap := by ext; rfl
+
+/-- Conjugating a scalar multiple of a map conjugates its scalar. -/
+@[simp] theorem conjugateMap_smul (c : ℂ) (f : V →ₗ[ℂ] W) :
+    (c • f).conjugateMap = starRingEnd ℂ c • f.conjugateMap := by
+  ext v
+  simp
+
+theorem conjugateMap_injective :
+    Function.Injective (conjugateMap : (V →ₗ[ℂ] W) → Conjugate V →ₗ[ℂ] Conjugate W) := by
+  intro f g h
+  ext v
+  exact toConj.injective (congrArg (fun k => k (toConj v)) h)
+
+end LinearMap
+
+namespace LinearEquiv
+
+universe u v
+
+variable {V : Type u} {W : Type v}
+  [AddCommGroup V] [Module ℂ V] [AddCommGroup W] [Module ℂ W]
+
+/-- An equivalence of complex modules induces an equivalence of their conjugates. -/
+def conjugate (e : V ≃ₗ[ℂ] W) : Conjugate V ≃ₗ[ℂ] Conjugate W where
+  __ := e.toLinearMap.conjugateMap
+  invFun w := toConj (e.symm (ofConj w))
+  left_inv v := congrArg toConj (e.symm_apply_apply (ofConj v))
+  right_inv w := congrArg toConj (e.apply_symm_apply (ofConj w))
+
+@[simp] theorem conjugate_apply (e : V ≃ₗ[ℂ] W) (v : Conjugate V) :
+    e.conjugate v = toConj (e (ofConj v)) := by rfl
+
+@[simp] theorem conjugate_symm (e : V ≃ₗ[ℂ] W) : e.conjugate.symm = e.symm.conjugate := by rfl
+
+@[simp] theorem conjugate_toLinearMap (e : V ≃ₗ[ℂ] W) :
+    e.conjugate.toLinearMap = e.toLinearMap.conjugateMap := by rfl
+
+@[simp] theorem conjugate_refl : (LinearEquiv.refl ℂ V).conjugate = .refl ℂ _ := by
+  ext v
+  rfl
+
+@[simp] theorem conjugate_trans {U : Type*} [AddCommGroup U] [Module ℂ U]
+    (e : V ≃ₗ[ℂ] W) (e' : W ≃ₗ[ℂ] U) :
+    (e.trans e').conjugate = e.conjugate.trans e'.conjugate := by
+  ext v
+  rfl
+
+end LinearEquiv
+
+namespace TauCeti.Conjugate
+
+universe u v
+
+variable {V : Type u} {W : Type v}
+  [AddCommGroup V] [Module ℂ V] [AddCommGroup W] [Module ℂ W]
+
+/-- Conjugating a complex module twice gives back the original module. -/
+def doubleConjugateLinearEquiv : Conjugate (Conjugate V) ≃ₗ[ℂ] V where
+  toFun v := ofConj (ofConj v)
+  invFun v := toConj (toConj v)
+  left_inv _ := by rfl
+  right_inv _ := by rfl
+  map_add' _ _ := by rfl
+  map_smul' c v := by simp
+
+@[simp] theorem doubleConjugateLinearEquiv_apply (v : Conjugate (Conjugate V)) :
+    doubleConjugateLinearEquiv v = ofConj (ofConj v) := by rfl
+
+@[simp] theorem doubleConjugateLinearEquiv_symm_apply (v : V) :
+    (doubleConjugateLinearEquiv : Conjugate (Conjugate V) ≃ₗ[ℂ] V).symm v =
+      toConj (toConj v) := by rfl
+
+/-- Double conjugation is natural in arbitrary complex-linear maps. -/
+theorem doubleConjugateLinearEquiv_naturality (f : V →ₗ[ℂ] W) :
+    doubleConjugateLinearEquiv.toLinearMap.comp f.conjugateMap.conjugateMap =
+      f.comp doubleConjugateLinearEquiv.toLinearMap := by rfl
+
+end TauCeti.Conjugate

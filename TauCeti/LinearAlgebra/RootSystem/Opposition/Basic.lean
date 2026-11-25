@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
+public import TauCeti.LinearAlgebra.Matrix.Submatrix
 public import TauCeti.LinearAlgebra.RootSystem.LongestElement
 
 /-!
@@ -45,14 +46,19 @@ alone.
   the longest-element translate on the coroot functionals.
 * `RootPairing.coroot_opposition`: the coroot of `opposition i` is `-w₀` applied to the coroot of
   `i`.
-* `RootPairing.pairing_opposition`: the opposition involution preserves the root pairings.
-* `RootPairing.cartanMatrix_oppositionPerm`: the opposition involution preserves the Cartan matrix,
-  with its orientation.
+* `RootPairing.pairing_opposition` and `RootPairing.pairingIn_opposition`: the opposition
+  involution preserves the root pairings, also when they are valued in a coefficient subring.
+* `RootPairing.cartanMatrix_oppositionPerm` and
+  `RootPairing.oppositionPerm_mem_matrixSymmetryGroup`: the opposition involution preserves the
+  Cartan matrix, with its orientation, so it is a symmetry of the Cartan matrix.
 * `TauCeti.opposition_mem_support`: **the opposition involution permutes the simple roots.**
 * `TauCeti.neg_smul_mem_posRootCone_longestElement`: **`-w₀` preserves the positive root cone**, the
   consequence of that permutation for nonnegative combinations of the simple roots;
   `TauCeti.neg_smul_mem_posRootCone_longestElement_iff` is the resulting `simp` normalisation, `-w₀`
   being an involution.
+* `TauCeti.neg_longestElement_smul_eq_self_iff`: when the coroots span, a weight is fixed by `-w₀`
+  exactly when its simple-coroot coordinates are constant on the orbits of the opposition
+  involution.
 
 ## Implementation notes
 
@@ -210,6 +216,26 @@ theorem oppositionPerm_oppositionPerm (i : b.support) :
     oppositionPerm P b (oppositionPerm P b i) = i :=
   Subtype.ext (by simp)
 
+variable {P b} in
+/-- **A weight is fixed by `-w₀` exactly when its simple-coroot coordinates are constant on the
+orbits of the opposition involution**: `-(w₀ • x) = x` exactly when `⟨x, α_{δ i}^∨⟩ = ⟨x, αᵢ^∨⟩`
+for every simple root `αᵢ`, where `δ` is the opposition involution. This needs the coroots to span
+the coweight space; without that, a weight is not determined by its coroot values. -/
+theorem neg_longestElement_smul_eq_self_iff (hspan : P.corootSpan R = ⊤) {x : M} :
+    -(longestElement P b • x) = x ↔
+      ∀ i ∈ b.support, P.coroot' (opposition P b i) x = P.coroot' i x := by
+  have key (i : ι) :
+      P.coroot' i (-(longestElement P b • x)) = P.coroot' (opposition P b i) x := by
+    rw [map_neg, coroot'_opposition]
+  refine ⟨fun h i _ ↦ by rw [← key, h], fun h ↦ ?_⟩
+  -- The difference `-(w₀ • x) - x` is killed by the simple coroots, hence by every coroot, and the
+  -- coroots span the coweight space.
+  rw [← sub_eq_zero]
+  have hker : -(longestElement P b • x) - x ∈ ⨅ j, LinearMap.ker (P.coroot' j) :=
+    Submodule.mem_iInf _ |>.mpr fun j ↦ P.coroot'_eq_zero_of_forall_mem_support b
+      (fun i hi ↦ by rw [map_sub, key, h i hi, sub_self]) j
+  simpa [← P.corootSpan_dualAnnihilator_map_eq_iInf_ker_coroot', hspan] using hker
+
 end Opposition
 
 end TauCeti
@@ -250,5 +276,20 @@ theorem cartanMatrix_oppositionPerm (i j : b.support) :
     b.cartanMatrix (oppositionPerm P b i) (oppositionPerm P b j) = b.cartanMatrix i j :=
   FaithfulSMul.algebraMap_injective ℤ R <| by
     simp only [Base.algebraMap_cartanMatrixIn_apply, coe_oppositionPerm, pairing_opposition]
+
+/-- **The opposition involution preserves the root pairings valued in a coefficient subring.** -/
+@[simp]
+theorem pairingIn_opposition (S : Type*) [CommRing S] [Algebra S R] [FaithfulSMul S R]
+    [P.IsValuedIn S] (i j : ι) :
+    P.pairingIn S (opposition P b i) (opposition P b j) = P.pairingIn S i j :=
+  FaithfulSMul.algebraMap_injective S R <| by
+    simp only [algebraMap_pairingIn, pairing_opposition]
+
+/-- **The opposition involution is a symmetry of the Cartan matrix**, as an element of its symmetry
+group `TauCeti.matrixSymmetryGroup`. -/
+theorem oppositionPerm_mem_matrixSymmetryGroup :
+    oppositionPerm P b ∈ matrixSymmetryGroup b.cartanMatrix :=
+  mem_matrixSymmetryGroup_iff.mpr <| Matrix.ext fun i j ↦ by
+    simpa only [Matrix.submatrix_apply] using cartanMatrix_oppositionPerm P b i j
 
 end RootPairing

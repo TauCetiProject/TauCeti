@@ -51,6 +51,8 @@ off.
 * `TauCeti.AlgebraicGeometry.Scheme.isFractionRing_residueField_of_specializes`: if every
   nonzero prime of `𝒪_{X,y}` is maximal and `x ≠ y`, then `κ(x)` is a fraction field of
   `𝒪_{X,y}`.
+* `TauCeti.AlgebraicGeometry.Scheme.Spec.Γevaluation_eq_toStalk_stalkSpecializes`: affine
+  coordinate evaluation at a generization factors through specialization from the stalk.
 * `AlgebraicGeometry.Scheme.Hom.stalkSpecializes_residue_residueFieldCongr_residueFieldMap`: for
   a morphism `g`, the stalk map and the residue field map are compatible with the specializations
   `x ⤳ g ξ'` and `x' ⤳ ξ'`, after identifying the residue fields at `x = g x'`.
@@ -69,25 +71,43 @@ public section
 
 open AlgebraicGeometry IsLocalRing CategoryTheory TopologicalSpace
 
+universe u
+
+/-- The residue-field point of a generization factors through the spectrum of the stalk at
+its specialization via the specialization map on stalks. -/
+@[reassoc]
+theorem Specializes.specMap_stalkSpecializes_residue_fromSpecStalk
+    {X : Scheme.{u}} {x y : X} (h : x ⤳ y) :
+    Spec.map (X.presheaf.stalkSpecializes h ≫ X.residue x) ≫ X.fromSpecStalk y =
+      X.fromSpecResidueField x := by
+  rw [Spec.map_comp, Category.assoc, Scheme.SpecMap_stalkSpecializes_fromSpecStalk]
+  rfl
+
 namespace TauCeti
 
 namespace AlgebraicGeometry
 
 namespace Scheme
 
-universe u
-
 variable {X : Scheme.{u}} {x y : X}
 
-/-- The residue-field point of a generization factors through the spectrum of the stalk at
-its specialization via the specialization map on stalks. -/
-@[reassoc]
-theorem SpecMap_stalkSpecializes_residue_fromSpecStalk (h : x ⤳ y) :
-    Spec.map (X.presheaf.stalkSpecializes h ≫ X.residue x) ≫ X.fromSpecStalk y =
-      X.fromSpecResidueField x := by
-  rw [Spec.map_comp, Category.assoc,
-    _root_.AlgebraicGeometry.Scheme.SpecMap_stalkSpecializes_fromSpecStalk]
-  rfl
+/-- Affine coordinates evaluated at a generization `x` of `y` are obtained by taking their
+germs at `y`, specializing to the stalk at `x`, and passing to its residue field. -/
+theorem Spec.Γevaluation_eq_toStalk_stalkSpecializes (R : CommRingCat.{u})
+    {x y : Spec R} (h : x ⤳ y) :
+    (Scheme.ΓSpecIso R).inv ≫ (Spec R).Γevaluation x =
+      StructureSheaf.toStalk R y ≫ (Spec R).presheaf.stalkSpecializes h ≫
+        (Spec R).residue x := by
+  have heval : (Spec R).Γevaluation x =
+      (Spec R).presheaf.germ ⊤ x trivial ≫ (Spec R).residue x :=
+    ((Spec R).germ_residue (U := ⊤) x trivial).symm
+  have hgerm : ((Scheme.ΓSpecIso R).inv ≫ (Spec R).presheaf.germ ⊤ x trivial) ≫
+      (Spec R).residue x = StructureSheaf.toStalk R x ≫ (Spec R).residue x :=
+    (Scheme.ΓSpecIso_inv R).symm ▸
+      StructureSheaf.algebraMap_germ_assoc ⊤ x trivial ((Spec R).residue x)
+  rw [heval, ← Category.assoc, hgerm]
+  exact (StructureSheaf.toStalk_stalkSpecializes_assoc h ((Spec R).residue x)).symm.trans
+    (Category.assoc _ _ _)
 
 /-- For a specialization `x ⤳ y`, the stalk `𝒪_{X,x}` is the localization of `𝒪_{X,y}` at the
 prime lying under the maximal ideal of `𝒪_{X,x}`, via the specialization map. -/

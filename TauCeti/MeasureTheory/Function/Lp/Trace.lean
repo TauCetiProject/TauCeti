@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import TauCeti.Analysis.InnerProductSpace.Trace.OpNorm
 
@@ -19,6 +20,10 @@ with `‖A x‖ ≤ Λ` on `K`, the trace `tr (A ∘ G)` lies in `Lᵖ` with nor
 
 This is how the lower-order terms produced by localizing a non-divergence-form equation
 `tr (A ∘ D²u) = f` with a cutoff are controlled in `Lᵖ`.
+
+For a bounded measurable `A`, the map `G ↦ tr (A ∘ G)` is moreover a bounded operator
+`Lᵖ(V →L V) → Lᵖ` (`TauCeti.exists_continuousLinearMap_traceCLM_comp`), the principal part of a
+non-divergence-form operator acting on the `Lᵖ` field of Hessians of `W^{2,p}` functions.
 -/
 
 public section
@@ -58,5 +63,20 @@ theorem exists_lp_traceCLM_comp_le {α : Type*} [MeasurableSpace α] {μ : Measu
   have hmem := (Lp.memLp G).of_le_mul hmeas hle
   exact ⟨hmem.toLp _, hmem.coeFn_toLp, Lp.norm_le_mul_norm_of_ae_le_mul
     (by filter_upwards [hmem.coeFn_toLp, hle] with x h1 h2; rwa [h1])⟩
+
+/-- **The trace against a bounded coefficient field is a bounded operator on `Lᵖ`.** For an almost
+everywhere strongly measurable field `A` of endomorphisms of `V` with `‖A x‖ ≤ Λ` almost everywhere,
+`G ↦ tr (A ∘ G)` is a continuous linear map from `Lᵖ` fields of endomorphisms of `V` to `Lᵖ`. -/
+theorem exists_continuousLinearMap_traceCLM_comp {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {p : ℝ≥0∞} [Fact (1 ≤ p)] {A : α → V →L[𝕜] V} {Λ : ℝ}
+    (hA : AEStronglyMeasurable A μ) (hAΛ : ∀ᵐ x ∂μ, ‖A x‖ ≤ Λ) :
+    ∃ T : Lp (V →L[𝕜] V) p μ →L[𝕜] Lp 𝕜 p μ, ∀ G, ∀ᵐ x ∂μ, T G x = traceCLM 𝕜 V (A x ∘L G x) := by
+  -- Pointwise application of the `L^∞` class of `A` through `(a, G) ↦ tr (a ∘ G)`.
+  have hA' := memLp_top_of_bound hA Λ hAΛ
+  let B := (ContinuousLinearMap.compL 𝕜 (V →L[𝕜] V) (V →L[𝕜] V) 𝕜 (traceCLM 𝕜 V)).comp
+    (ContinuousLinearMap.compL 𝕜 V V V)
+  refine ⟨B.holderL μ ∞ p p (hA'.toLp A), fun G => ?_⟩
+  filter_upwards [B.coeFn_holder (r := p) (hA'.toLp A) G, hA'.coeFn_toLp] with x h1 h2
+  simp [B, h1, h2]
 
 end TauCeti

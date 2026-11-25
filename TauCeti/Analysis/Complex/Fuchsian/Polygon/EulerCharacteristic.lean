@@ -49,6 +49,8 @@ group.
 * `ConvexPolygon.SidePairing.finiteCWType_orbitRel_quotient`: `Γ \ ℍ` has finite CW type.
 * `ConvexPolygon.SidePairing.eulerChar_orbitRel_quotient`: `χ(Γ \ ℍ)` is the number of vertex
   cycles plus the number of self-paired sides, minus the number of side pairs, plus one.
+* `ConvexPolygon.SidePairing.eulerChar_orbitRel_quotient_eq_cellEulerChar`: `χ(Γ \ ℍ)` is the
+  cell count `ConvexPolygon.SidePairing.cellEulerChar` of the polygon.
 * `ConvexPolygon.SidePairing.covolume_eq_two_pi_mul_neg_eulerChar_add`: the area formula
   `covolume Γ = 2π (-χ(Γ \ ℍ) + ∑ₑ (1 - 1 / mₑ))`.
 
@@ -174,71 +176,6 @@ private theorem Icc_edgeLength_subset (i : Fin n) :
     Icc 0 (σ.edgeLength i) ⊆ Icc 0 (sideLength P i) :=
   Icc_subset_Icc_right (σ.edgeLength_le i)
 
-include hmap hdisj in
-/-- A point of `P` equivalent to a point strictly inside side `i` is that point or its image
-under the pairing map of side `i`. -/
-private theorem eq_or_eq_map_smul_of_mk_eq
-    {i : Fin n} {t : ℝ} (ht : t ∈ Ioo 0 (sideLength P i)) {w : ℍ}
-    (hw : w ∈ P.toConvexPolygon.carrier) (h : π w = π (sideLine P i t)) :
-    w = sideLine P i t ∨ w = σ.map i • sideLine P i t := by
-  rw [Quotient.eq'', orbitRel_apply] at h
-  rcases (σ.mem_orbit_iff_of_mem_carrier hmap hdisj
-      (sideLine_mem_carrier (Ioo_subset_Icc_self ht)) hw).1 h with
-    h | ⟨j, hj, rfl⟩ | ⟨j, -, hj, -, -⟩
-  · exact Or.inl h
-  · obtain rfl := P.toConvexPolygon.eq_of_mem_side_of_mem_side
-      (sideLine_mem_side (Ioo_subset_Icc_self ht)) (vertex_ne_sideLine ht i)
-      (vertex_ne_sideLine ht (i + 1)) hj
-    exact Or.inr rfl
-  · exact absurd hj (vertex_ne_sideLine ht j)
-
-include hmap hdisj in
-/-- Two equivalent points strictly inside sides are equal, or are exchanged by a side pairing. -/
-private theorem sideLine_eq_or_of_mk_eq
-    {i j : Fin n} {s t : ℝ} (hs : s ∈ Ioo 0 (sideLength P i)) (ht : t ∈ Ioo 0 (sideLength P j))
-    (h : π (sideLine P j t) = π (sideLine P i s)) :
-    (j = i ∧ t = s) ∨ (j = σ.pair i ∧ sideLine P j t = σ.map i • sideLine P i s) := by
-  have hjt := sideLine_mem_side (Ioo_subset_Icc_self ht)
-  rcases σ.eq_or_eq_map_smul_of_mk_eq hmap hdisj hs
-      (sideLine_mem_carrier (Ioo_subset_Icc_self ht)) h with h | h
-  · obtain rfl := P.toConvexPolygon.eq_of_mem_side_of_mem_side hjt (vertex_ne_sideLine ht j)
-      (vertex_ne_sideLine ht (j + 1)) (h ▸ sideLine_mem_side (Ioo_subset_Icc_self hs))
-    exact Or.inl ⟨rfl, sideLine_injective j h⟩
-  · refine Or.inr ⟨P.toConvexPolygon.eq_of_mem_side_of_mem_side hjt (vertex_ne_sideLine ht j)
-      (vertex_ne_sideLine ht (j + 1)) ?_, h⟩
-    exact h ▸ σ.map_smul_mem_side (sideLine_mem_side (Ioo_subset_Icc_self hs))
-
-include hmap hdisj in
-/-- A point of `P` equivalent to a vertex is a vertex. -/
-private theorem exists_vertex_eq_of_mk_eq
-    {j : Fin n} {w : ℍ} (hw : w ∈ P.toConvexPolygon.carrier) (h : π w = π (P.vertex j)) :
-    ∃ k, w = P.vertex k := by
-  rw [Quotient.eq'', orbitRel_apply] at h
-  have hj : P.toConvexPolygon.vertex j = .inl (P.vertex j) := P.vertex_toConvexPolygon j
-  rcases (σ.mem_orbit_iff_of_mem_carrier hmap hdisj
-      (P.carrier_toConvexPolygon ▸ P.vertex_mem_carrier j) hw).1 h with
-    h | ⟨k, hk, rfl⟩ | ⟨-, k, -, hk, -⟩
-  · exact ⟨j, h⟩
-  · rcases P.toConvexPolygon.eq_or_eq_add_one_of_vertex_eq_inl_of_mem_side hj hk with rfl | rfl
-    · exact ⟨σ.pair j + 1, by simpa using σ.map_smul_vertex j⟩
-    · exact ⟨σ.pair k, by simpa using σ.map_smul_vertex_add_one k⟩
-  · exact ⟨k, by simpa using hk.symm⟩
-
-include hmap hdisj in
-/-- A point of `P` equivalent to an interior point of `P` is that point. -/
-private theorem eq_of_mk_eq_of_mem_interior
-    {z w : ℍ} (hz : z ∈ interior P.toConvexPolygon.carrier) (hw : w ∈ P.toConvexPolygon.carrier)
-    (h : π w = π z) : w = z := by
-  rw [Quotient.eq'', orbitRel_apply] at h
-  have hside {j : Fin n} (hj : z ∈ P.toConvexPolygon.side j) : False :=
-    disjoint_left.1 disjoint_interior_frontier hz
-      (P.toConvexPolygon.side_subset_frontier_carrier j hj)
-  rcases (σ.mem_orbit_iff_of_mem_carrier hmap hdisj (interior_subset hz) hw).1 h with
-    h | ⟨j, hj, -⟩ | ⟨j, -, hj, -, -⟩
-  · exact h
-  · exact (hside hj).elim
-  · exact (hside (P.toConvexPolygon.mem_side_of_vertex_eq_inl hj)).elim
-
 include hmap in
 /-- Every point of a side is equivalent to a point of the edge of a side representative: the
 whole side for a side paired with another one, and the half from its first vertex to its fixed
@@ -300,15 +237,19 @@ private theorem mk_sideLine_notMem_zeroCells {i : Fin n} {t : ℝ} (ht : t ∈ I
     π (sideLine P i t) ∉ σ.zeroCells Γ := by
   have ht' := σ.Ioo_edgeLength_subset i ht
   rintro (⟨j, hj⟩ | ⟨⟨j, hjj⟩, hj⟩)
-  · obtain ⟨k, hk⟩ := σ.exists_vertex_eq_of_mk_eq hmap hdisj
-      (sideLine_mem_carrier (Ioo_subset_Icc_self ht')) hj.symm
-    exact vertex_ne_sideLine ht' k (by rw [P.vertex_toConvexPolygon, hk])
+  · obtain ⟨k, hk⟩ := σ.exists_vertex_eq_inl_of_quotientMk_eq hmap hdisj
+      (P.vertex_toConvexPolygon j) (sideLine_mem_carrier (Ioo_subset_Icc_self ht')) hj.symm
+    exact vertex_ne_sideLine ht' k hk
   · dsimp only at hj
     rw [selfPairedSideFixedPoint_eq_sideLine] at hj
-    rcases σ.sideLine_eq_or_of_mk_eq hmap hdisj ht' (half_mem_Ioo j) hj with
+    have hhalf := half_mem_Ioo (P := P) j
+    rcases σ.eq_and_eq_or_eq_pair_and_eq_map_smul_of_quotientMk_eq (hmap i) hdisj
+        (sideLine_mem_side (Ioo_subset_Icc_self ht')) (vertex_ne_sideLine ht' i)
+        (vertex_ne_sideLine ht' (i + 1)) (sideLine_mem_side (Ioo_subset_Icc_self hhalf))
+        (vertex_ne_sideLine hhalf j) (vertex_ne_sideLine hhalf (j + 1)) hj with
       ⟨rfl, h⟩ | ⟨rfl, h⟩
     · rw [σ.edgeLength_of_pair_eq hjj] at ht
-      exact ht.2.ne h.symm
+      exact ht.2.ne (sideLine_injective _ h).symm
     · have hi : σ.pair i = i := by rwa [σ.pair_pair, eq_comm] at hjj
       rw [hi, map_smul_sideLine_of_pair_eq σ hi] at h
       rw [σ.edgeLength_of_pair_eq hi] at ht
@@ -432,9 +373,14 @@ private theorem injOn_edgeMap (i : Fin n) :
   intro x hx y hy h
   have hs := (σ.image_edgeParam_ball i).subset (mem_image_of_mem _ hx)
   have ht := (σ.image_edgeParam_ball i).subset (mem_image_of_mem _ hy)
-  rcases σ.sideLine_eq_or_of_mk_eq hmap hdisj (σ.Ioo_edgeLength_subset i hs)
-      (σ.Ioo_edgeLength_subset i ht) h.symm with ⟨-, h⟩ | ⟨hi, h⟩
-  · exact σ.injective_edgeParam i h.symm
+  have hs' := σ.Ioo_edgeLength_subset i hs
+  have ht' := σ.Ioo_edgeLength_subset i ht
+  rcases σ.eq_and_eq_or_eq_pair_and_eq_map_smul_of_quotientMk_eq (hmap i) hdisj
+      (sideLine_mem_side (Ioo_subset_Icc_self hs')) (vertex_ne_sideLine hs' i)
+      (vertex_ne_sideLine hs' (i + 1)) (sideLine_mem_side (Ioo_subset_Icc_self ht'))
+      (vertex_ne_sideLine ht' i) (vertex_ne_sideLine ht' (i + 1)) h.symm with
+    ⟨-, h⟩ | ⟨hi, h⟩
+  · exact σ.injective_edgeParam i (sideLine_injective i h).symm
   · have hi : σ.pair i = i := hi.symm
     rw [map_smul_sideLine_of_pair_eq σ hi] at h
     rw [σ.edgeLength_of_pair_eq hi] at hs ht
@@ -447,8 +393,13 @@ private theorem disjoint_image_edgeMap_ball {i j : σ.SideRepresentative} (hij :
     Disjoint (σ.edgeMap Γ i '' ball 0 1) (σ.edgeMap Γ j '' ball 0 1) := by
   rw [σ.image_edgeMap_ball, σ.image_edgeMap_ball, disjoint_left]
   rintro _ ⟨s, hs, rfl⟩ ⟨t, ht, h⟩
-  rcases σ.sideLine_eq_or_of_mk_eq hmap hdisj (σ.Ioo_edgeLength_subset i hs)
-      (σ.Ioo_edgeLength_subset j ht) h with ⟨h, -⟩ | ⟨h, -⟩
+  have hs' := σ.Ioo_edgeLength_subset i hs
+  have ht' := σ.Ioo_edgeLength_subset j ht
+  rcases σ.eq_and_eq_or_eq_pair_and_eq_map_smul_of_quotientMk_eq (hmap i) hdisj
+      (sideLine_mem_side (Ioo_subset_Icc_self hs')) (vertex_ne_sideLine hs' i)
+      (vertex_ne_sideLine hs' (i + 1)) (sideLine_mem_side (Ioo_subset_Icc_self ht'))
+      (vertex_ne_sideLine ht' j) (vertex_ne_sideLine ht' (j + 1)) h with
+    ⟨h, -⟩ | ⟨h, -⟩
   · exact hij (Subtype.ext h.symm)
   · have hj := j.property
     rw [h, σ.pair_pair] at hj
@@ -530,28 +481,18 @@ private theorem image_faceMap_closedBall :
     rw [faceMap_of_mem]
     simp [x]
 
-include hmap hdisj in
+include hdisj in
 private theorem injOn_faceMap : InjOn (faceMap (P := P) Γ) (ball 0 1) := by
   intro x hx y hy h
   have hx' : x ∈ closedBall 0 1 := ball_subset_closedBall hx
   have hy' : y ∈ closedBall 0 1 := ball_subset_closedBall hy
   rw [faceMap_of_mem ⟨x, hx'⟩, faceMap_of_mem ⟨y, hy'⟩] at h
-  have := σ.eq_of_mk_eq_of_mem_interior hmap hdisj
+  have := P.toConvexPolygon.eq_of_quotientMk_eq_of_mem_interior hdisj
     ((faceHomeomorph_mem_interior_iff ⟨x, hx'⟩).2 hx)
     (by rw [P.carrier_toConvexPolygon]; exact (faceHomeomorph P ⟨y, hy'⟩).property) h.symm
   exact (congrArg Subtype.val ((faceHomeomorph P).injective (Subtype.ext this))).symm
 
 /-! ### Disjointness of the open cells -/
-
-include hmap hdisj in
-/-- A point of a side is equivalent to no interior point of `P`. -/
-private theorem mk_notMem_image_interior {j : Fin n} {z : ℍ} (hz : z ∈ P.toConvexPolygon.side j) :
-    π z ∉ π '' interior P.toConvexPolygon.carrier := by
-  rintro ⟨w, hw, h⟩
-  obtain rfl := σ.eq_of_mk_eq_of_mem_interior hmap hdisj hw
-    (P.toConvexPolygon.side_subset_carrier j hz) h.symm
-  exact disjoint_left.1 disjoint_interior_frontier hw
-    (P.toConvexPolygon.side_subset_frontier_carrier j hz)
 
 /-- Every `0`-cell is the orbit of a point on a side. -/
 private theorem exists_mem_side_of_mem_zeroCells {q : orbitRel.Quotient Γ ℍ}
@@ -576,7 +517,7 @@ private abbrev Cell : ℕ → Type
 private def cellMap : (m : ℕ) → σ.Cell Γ m → PartialEquiv (Fin m → ℝ) (orbitRel.Quotient Γ ℍ)
   | 0, q => .single 0 q.val
   | 1, i => InjOn.toPartialEquiv _ _ (σ.injOn_edgeMap hmap hdisj i)
-  | 2, _ => InjOn.toPartialEquiv _ _ (σ.injOn_faceMap hmap hdisj)
+  | 2, _ => InjOn.toPartialEquiv _ _ (injOn_faceMap (P := P) hdisj)
   | _ + 3, i => PEmpty.elim i
 
 section CellMap
@@ -611,14 +552,16 @@ private theorem pairwiseDisjoint_cellMap :
     rw [image_cellMap_zero _ _ _ _ (hb 0), coe_cellMap_two, image_faceMap_ball,
       disjoint_singleton_left]
     obtain ⟨j, z, hz, hq⟩ := σ.exists_mem_side_of_mem_zeroCells q.property
-    exact hq ▸ σ.mk_notMem_image_interior hmap hdisj hz
+    exact hq ▸ P.toConvexPolygon.quotientMk_notMem_image_interior_of_mem_frontier hdisj
+      (P.toConvexPolygon.side_subset_frontier_carrier j hz)
   -- the open face misses the open edges
   have h12 (i : σ.Cell Γ 1) (k : σ.Cell Γ 2) :
       Disjoint (σ.cellMap hmap hdisj 1 i '' ball 0 1) (σ.cellMap hmap hdisj 2 k '' ball 0 1) := by
     rw [coe_cellMap_one, coe_cellMap_two, image_edgeMap_ball, image_faceMap_ball, disjoint_left]
     rintro _ ⟨t, ht, rfl⟩
-    exact σ.mk_notMem_image_interior hmap hdisj
-      (sideLine_mem_side (σ.Icc_edgeLength_subset i (Ioo_subset_Icc_self ht)))
+    exact P.toConvexPolygon.quotientMk_notMem_image_interior_of_mem_frontier hdisj
+      (P.toConvexPolygon.side_subset_frontier_carrier i.val
+        (sideLine_mem_side (σ.Icc_edgeLength_subset i (Ioo_subset_Icc_self ht))))
   rintro ⟨m, c⟩ - ⟨m', c'⟩ - hne
   match m, c, m', c' with
   | 0, q, 0, q' =>
@@ -650,12 +593,13 @@ private theorem continuousOn_cellMap_symm [T2Space (orbitRel.Quotient Γ ℍ)] :
     exact σ.mk_sideLine_notMem_zeroCells hmap hdisj ht (h ▸ σ.edgeMap_mem_zeroCells i hx)
   | 2, _ => by
     refine (continuousOn_faceMap (P := P)).continuousOn_invFunOn_image_of_isCompact
-      (isCompact_closedBall 0 1) ball_subset_closedBall (σ.injOn_faceMap hmap hdisj) ?_
+      (isCompact_closedBall 0 1) ball_subset_closedBall (injOn_faceMap (P := P) hdisj) ?_
     rw [closedBall_sdiff_ball, image_faceMap_ball, disjoint_left]
     rintro _ ⟨x, hx, rfl⟩
     obtain ⟨j, hj⟩ := exists_faceHomeomorph_mem_side (P := P) ⟨x, sphere_subset_closedBall hx⟩ hx
     rw [faceMap_of_mem ⟨x, sphere_subset_closedBall hx⟩]
-    exact σ.mk_notMem_image_interior hmap hdisj hj
+    exact P.toConvexPolygon.quotientMk_notMem_image_interior_of_mem_frontier hdisj
+      (P.toConvexPolygon.side_subset_frontier_carrier j hj)
   | _ + 3, i => PEmpty.elim i
 
 private theorem mapsTo_cellMap :
@@ -772,6 +716,17 @@ theorem eulerChar_orbitRel_quotient :
   rw [eulerChar_eq_cwEulerChar (Homeomorph.Set.univ _).symm.toHomotopyEquiv,
     σ.cwEulerChar_cwComplex hmap hlf hdisj]
 
+/-- **The Euler characteristic of the quotient by a compact fundamental polygon is its cell
+count.** Under the hypotheses of `finiteCWType_orbitRel_quotient`, `χ(Γ \ ℍ) = σ.cellEulerChar`:
+a compact polygon has no ideal vertex cycles. -/
+theorem eulerChar_orbitRel_quotient_eq_cellEulerChar :
+    haveI := σ.finiteCWType_orbitRel_quotient hmap hlf hdisj
+    eulerChar (orbitRel.Quotient Γ ℍ) = σ.cellEulerChar := by
+  rw [σ.eulerChar_orbitRel_quotient hmap hlf hdisj, cellEulerChar_def,
+    Nat.card_of_isEmpty (α := σ.IdealVertexCycle)]
+  push_cast
+  ring
+
 /-- **The area of a cocompact Fuchsian group through the Euler characteristic.** Under the
 hypotheses of `finiteCWType_orbitRel_quotient`, the covolume of `Γ` is
 `2π (-χ(Γ \ ℍ) + ∑ₑ (1 - 1 / mₑ))`, the sum running over the elliptic orbits `e` of `Γ` with
@@ -780,11 +735,8 @@ theorem covolume_eq_two_pi_mul_neg_eulerChar_add :
     haveI := σ.finiteCWType_orbitRel_quotient hmap hlf hdisj
     covolume Γ ℍ = ENNReal.ofReal (2 * Real.pi * (-(eulerChar (orbitRel.Quotient Γ ℍ) : ℝ) +
       ∑ᶠ e ∈ Γ.ellipticOrbits, (1 - (cardStabilizerOnOrbit e : ℝ)⁻¹))) := by
-  rw [σ.covolume_eq_two_pi_mul hmap hlf hdisj, σ.eulerChar_orbitRel_quotient hmap hlf hdisj]
-  have h : (2 * Nat.card σ.SideRepresentative : ℝ) = n + Nat.card {i : Fin n // σ.pair i = i} := by
-    exact_mod_cast σ.two_mul_natCard_sideRepresentative
-  congr 2
-  push_cast
-  linarith
+  rw [σ.eulerChar_orbitRel_quotient_eq_cellEulerChar hmap hlf hdisj,
+    σ.covolume_eq_two_pi_mul_neg_cellEulerChar_add hmap hlf hdisj,
+    Nat.card_of_isEmpty (α := σ.IdealVertexCycle), Nat.cast_zero, add_zero]
 
 end TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing

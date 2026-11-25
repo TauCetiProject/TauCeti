@@ -17,7 +17,8 @@ Because `ENNReal.ofReal` vanishes on `(-∞, 0]`, it absorbs the positive part
 (`ENNReal.ofReal_posPart`), and for `p > 1` it preserves the Hölder conjugate ratio `p / (p - 1)`
 (`ENNReal.ofReal_div_sub_one`). For `0 ≤ q ≤ p`, `ENNReal.ofReal` splits `p` into `p - q` and `q`.
 With `p = 1` and `q = θ`, this says that the interpolation weights `1 - θ` and `θ` sum to one in
-`ℝ≥0∞`.
+`ℝ≥0∞`. In the other direction, `ENNReal.toReal` vanishes at `∞`, so an exponent `q` with
+`0 < a * q.toReal` is finite.
 
 For a class `P` of functions `α → ℝ`, the quantity
 `⨆ (F : α → ℝ) (_ : P F), ENNReal.ofReal (⨆ x, F x)` in `ℝ≥0∞` is the supremum of the maxima of
@@ -29,8 +30,12 @@ reparametrization of the class along surjections.
 ## Main results
 
 * `ENNReal.ofReal_posPart`: `ENNReal.ofReal (x⁺) = ENNReal.ofReal x`.
+* `ENNReal.toNNReal_ofReal`: `(ENNReal.ofReal r).toNNReal = r.toNNReal`.
 * `ENNReal.ofReal_div_sub_one`:
   `ENNReal.ofReal (p / (p - 1)) = ENNReal.ofReal p / (ENNReal.ofReal p - 1)` for `1 < p`.
+* `ENNReal.ne_top_of_pos_mul_toReal`: `q ≠ ∞` whenever `0 < a * q.toReal`.
+* `ENNReal.iSup_ofReal_min_natCast`:
+  `⨆ n : ℕ, ENNReal.ofReal (min x n) = ENNReal.ofReal x`.
 * `TauCeti.ofReal_sub_add_ofReal`: `ENNReal.ofReal (p - q) + ENNReal.ofReal q = ENNReal.ofReal p`
   for `0 ≤ q ≤ p`.
 * `TauCeti.le_ofReal_inv_add_mul_of_add_le`: if `a + b ≤ V` and `b ≥ ω V`, then
@@ -50,6 +55,11 @@ open scoped ENNReal
 
 namespace ENNReal
 
+/-- The positive part of a real number, through `ℝ≥0∞`, is `Real.toNNReal`. -/
+@[simp]
+theorem toNNReal_ofReal (r : ℝ) : (ENNReal.ofReal r).toNNReal = r.toNNReal :=
+  toNNReal_coe r.toNNReal
+
 /-- `ENNReal.ofReal` absorbs the positive part since it already vanishes on `(-∞, 0]`. -/
 @[simp]
 theorem ofReal_posPart (x : ℝ) : ENNReal.ofReal (x⁺) = ENNReal.ofReal x := by
@@ -61,6 +71,20 @@ theorem ofReal_posPart (x : ℝ) : ENNReal.ofReal (x⁺) = ENNReal.ofReal x := b
 theorem ofReal_div_sub_one {p : ℝ} (hp : 1 < p) :
     ENNReal.ofReal (p / (p - 1)) = ENNReal.ofReal p / (ENNReal.ofReal p - 1) := by
   rw [ofReal_div_of_pos (sub_pos.2 hp), ofReal_sub _ zero_le_one, ofReal_one]
+
+/-- An extended nonnegative real `q` with `0 < a * q.toReal` is finite, since `∞.toReal = 0`. -/
+theorem ne_top_of_pos_mul_toReal {a : ℝ} {q : ℝ≥0∞} (h : 0 < a * q.toReal) : q ≠ ∞ := by
+  rintro rfl
+  rw [toReal_top, mul_zero] at h
+  exact h.false
+
+/-- Truncating a real number `x` at `n : ℕ` and taking the supremum in `ℝ≥0∞` recovers
+`ENNReal.ofReal x`. -/
+theorem iSup_ofReal_min_natCast (x : ℝ) :
+    (⨆ n : ℕ, ENNReal.ofReal (min x n)) = ENNReal.ofReal x := by
+  refine le_antisymm (iSup_le fun _ ↦ ENNReal.ofReal_le_ofReal (min_le_left _ _)) ?_
+  obtain ⟨n, hn⟩ := exists_nat_ge x
+  exact le_iSup_of_le n (by rw [min_eq_left hn])
 
 end ENNReal
 

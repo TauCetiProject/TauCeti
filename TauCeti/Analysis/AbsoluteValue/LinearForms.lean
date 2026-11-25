@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Pi
 public import Mathlib.Algebra.Order.AbsoluteValue.Basic
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
@@ -12,7 +13,9 @@ public import Mathlib.Data.Matrix.Mul
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.LinearAlgebra.StdBasis
 
+import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Data.Fintype.Order
+import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import TauCeti.Algebra.Order.AbsoluteValue.Basic
 
@@ -32,8 +35,11 @@ coordinate bounds, dot-product pairings `y ⬝ᵥ x`, and evaluations of linear 
   the same bound for `v (z ⬝ᵥ x)` when `z` lies in the span of the coefficient vectors
   `j ↦ l i (Pi.basisFun R ι j)` of a subfamily of linear forms
   (`AbsoluteValue.exists_one_le_forall_dotProduct_le_mul`).
-* Whenever a finite family of linear forms `l : κ → Module.Dual R (ι → R)` spans the dual space, a
-  constant `C ≥ 1` bounds every coordinate `v (x j)` by `C * ⨆ i, v (l i x)`
+* Whenever a family of linear forms `l : κ → Module.Dual R (ι → R)` spans the dual space, a
+  constant `C ≥ 1` bounds every coordinate `v (x j)` by `C * M` whenever `v (l k x) ≤ M` for all
+  `k`, at an absolute value with values in any ordered semiring; the family may be infinite
+  (`AbsoluteValue.exists_one_le_forall_apply_le_mul`). For a finite family and real values, `C`
+  bounds every coordinate by `C * ⨆ i, v (l i x)`
   (`AbsoluteValue.exists_one_le_forall_apply_le_mul_iSup`).
 
 In Diophantine approximation over a number field, these single-place estimates convert bounds on
@@ -137,5 +143,34 @@ theorem exists_one_le_forall_apply_le_mul_iSup {R ι κ : Type*} [CommSemiring R
   have hM0 : 0 ≤ ⨆ i, v (l i x) := Real.iSup_nonneg fun _ ↦ v.nonneg _
   refine (hB j hM0 fun _ ⟨i, hf⟩ ↦ hf ▸ Finite.le_ciSup_of_le i le_rfl).trans ?_
   exact mul_le_mul_of_nonneg_right ((Finite.le_ciSup_of_le j le_rfl).trans (le_max_right _ _)) hM0
+
+/-- If linear forms `l k` span the dual of `R^ι`, then some constant `C ≥ 1` (depending only on `v`
+and `l`) bounds every coordinate `v (x j)` by `C * M` whenever `0 ≤ M` and `v (l k x) ≤ M` for all
+`k`. The family `l` may be infinite: each coordinate only uses finitely many of the forms. -/
+theorem exists_one_le_forall_apply_le_mul {R S ι κ : Type*} [CommSemiring R] [Semiring S]
+    [PartialOrder S] [IsOrderedRing S] [Finite ι] (v : AbsoluteValue R S)
+    {l : κ → Module.Dual R (ι → R)} (hl : Submodule.span R (Set.range l) = ⊤) :
+    ∃ C : S, 1 ≤ C ∧ ∀ ⦃M : S⦄, 0 ≤ M → ∀ ⦃x : ι → R⦄, (∀ k, v (l k x) ≤ M) →
+      ∀ j, v (x j) ≤ C * M := by
+  have := Fintype.ofFinite ι
+  -- Write each coordinate form as a finite combination of the forms `l k`.
+  choose a ha using fun j : ι ↦ Finsupp.mem_span_range_iff_exists_finsupp.mp
+    (hl ▸ Submodule.mem_top : LinearMap.proj (φ := fun _ : ι ↦ R) j ∈ _)
+  refine ⟨1 + ∑ j, ∑ k ∈ (a j).support, v (a j k),
+    le_add_of_nonneg_right (Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ v.nonneg _),
+    fun M hM x hx j ↦ ?_⟩
+  have hxj : x j = ∑ k ∈ (a j).support, a j k * l k x := by
+    simpa [Finsupp.sum] using (LinearMap.congr_fun (ha j) x).symm
+  calc v (x j) ≤ ∑ k ∈ (a j).support, v (a j k) * v (l k x) := by
+        rw [hxj]
+        exact (v.sum_le _ _).trans_eq (by simp only [map_mul])
+    _ ≤ ∑ k ∈ (a j).support, v (a j k) * M :=
+        Finset.sum_le_sum fun k _ ↦ mul_le_mul_of_nonneg_left (hx k) (v.nonneg _)
+    _ = (∑ k ∈ (a j).support, v (a j k)) * M := (Finset.sum_mul _ _ _).symm
+    _ ≤ (1 + ∑ j, ∑ k ∈ (a j).support, v (a j k)) * M := by
+        refine mul_le_mul_of_nonneg_right ?_ hM
+        refine (Finset.single_le_sum (f := fun j ↦ ∑ k ∈ (a j).support, v (a j k))
+          (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ v.nonneg _) (Finset.mem_univ j)).trans ?_
+        exact le_add_of_nonneg_left zero_le_one
 
 end AbsoluteValue

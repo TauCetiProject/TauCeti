@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Chart
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # Local collars of a manifold with boundary
@@ -52,6 +55,11 @@ boundary, which is what Hirsch's bump-function argument does and what this file 
 
 * `TauCeti.EuclideanHalfSpace.exists_normalIio_subset`: the segments `[0, ε)` are a neighbourhood
   basis of the origin of the one-dimensional half-space model.
+* `TauCeti.EuclideanHalfSpace.contMDiffOn_normalRay`: the normal ray is smooth on `[0, ∞)`.
+* `TauCeti.EuclideanHalfSpace.contMDiff_interiorEmbedding` and
+  `TauCeti.EuclideanHalfSpace.contMDiffOn_interiorEmbedding_symm`: `interiorEmbedding` is smooth,
+  and so is its inverse on the open half-space, so charts of a boundaryless manifold followed by it
+  are smooth charts of interior points.
 * `TauCeti.exists_isProductCollarChart_of_mem_boundary`: **every boundary point has a product
   collar chart.** This is the shrinking step.
 * `TauCeti.IsProductCollarChart.image_source_inter_boundary`: a product collar chart carries the
@@ -335,6 +343,51 @@ theorem range_interiorEmbedding (n : ℕ) :
     refine congrArg _ (Prod.ext rfl ?_)
     rw [expRay, Real.exp_log hy, ← collarDiffeomorph_symm_apply_snd_apply_zero (k := ⊤),
       normalRay_normalCoord]
+
+/-- The normal ray is `C^k` on the nonnegative reals, where it is the inverse of the model with
+corners of the half-line. -/
+theorem contMDiffOn_normalRay {k : WithTop ℕ∞} :
+    ContMDiffOn 𝓘(ℝ) (𝓡∂ 1) k normalRay (Ici 0) := by
+  refine ((𝓡∂ 1).contMDiffOn_symm.comp
+    (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm.contDiff.contMDiff.contMDiffOn
+    fun r hr ↦ ?_).congr fun r _ ↦ normalRay_eq_symm r
+  rw [mem_preimage, range_modelWithCornersEuclideanHalfSpace, mem_ofPred_eq]
+  simpa using hr
+
+/-- `interiorEmbedding` is `C^k`, from `ℝⁿ⁺¹` to the half-space with its model with corners. -/
+theorem contMDiff_interiorEmbedding (n : ℕ) {k : WithTop ℕ∞} :
+    ContMDiff (𝓡 (n + 1)) (𝓡∂ (n + 1)) k (interiorEmbedding n) := by
+  have hval : ContDiff ℝ k fun v ↦ (interiorEmbedding n v).val := by
+    refine contDiff_piLp' 2 fun i ↦ Fin.cases ?_ (fun j ↦ ?_) i
+    · simp only [interiorEmbedding_coe_apply_zero]
+      exact Real.contDiff_exp.comp (contDiff_piLp_apply 2)
+    · simp only [interiorEmbedding_coe_apply_succ]
+      exact contDiff_piLp_apply 2
+  exact ((𝓡∂ (n + 1)).contMDiffOn_symm.comp_contMDiff hval.contMDiff
+    fun v ↦ ⟨interiorEmbedding n v, rfl⟩).congr fun v ↦ ((𝓡∂ (n + 1)).left_inv _).symm
+
+/-- The inverse of `interiorEmbedding` is `C^k` on the open half-space, its image. -/
+theorem contMDiffOn_interiorEmbedding_symm (n : ℕ) {k : WithTop ℕ∞} :
+    ContMDiffOn (𝓡∂ (n + 1)) (𝓡 (n + 1)) k
+      ((isOpenEmbedding_interiorEmbedding n).toOpenPartialHomeomorph (interiorEmbedding n)).symm
+      {y | 0 < y.val 0} := by
+  let g : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)) :=
+    fun v ↦ WithLp.toLp 2 (Fin.cons (Real.log (v 0)) fun j : Fin n ↦ v j.succ)
+  have hg : ContDiffOn ℝ k g {v | 0 < v 0} := by
+    refine contDiffOn_piLp' 2 fun i ↦ Fin.cases ?_ (fun j ↦ ?_) i
+    · simp only [g, Fin.cons_zero]
+      exact Real.contDiffOn_log.comp (contDiffOn_piLp_apply 2) fun v (hv : 0 < v 0) ↦ hv.ne'
+    · simp only [g, Fin.cons_succ]
+      exact contDiffOn_piLp_apply 2
+  have hie (y : EuclideanHalfSpace (n + 1)) (hy : 0 < y.val 0) :
+      interiorEmbedding n (g y.val) = y := by
+    refine EuclideanHalfSpace.ext _ _ (PiLp.ext fun i ↦ Fin.cases ?_ (fun j ↦ ?_) i)
+    · simp [g, Real.exp_log hy]
+    · simp [g]
+  refine ((hg.contMDiffOn.comp (𝓡∂ (n + 1)).contMDiff.contMDiffOn fun y hy ↦ hy).congr
+    fun y hy ↦ ?_)
+  conv_lhs => rw [← hie y hy]
+  exact (isOpenEmbedding_interiorEmbedding n).toOpenPartialHomeomorph_left_inv
 
 end EuclideanHalfSpace
 

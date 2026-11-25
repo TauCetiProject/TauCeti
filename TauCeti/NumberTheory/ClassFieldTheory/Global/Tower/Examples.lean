@@ -181,9 +181,7 @@ theorem ideleClassArtinMap_ideleClassExtension_zeta5_prime_apply
   split_ifs with hc
   · rw [(ideleClassArtinMap_ideleClassExtension_zeta5_prime_eq_one_iff hE v hv).mpr hc,
       AlgEquiv.one_apply]
-  · have hp : (Ideal.absNorm v.asIdeal).Prime := by
-      rw [_root_.Rat.HeightOneSpectrum.absNorm_asIdeal]
-      exact _root_.Rat.HeightOneSpectrum.prime_natGenerator v
+  · have hp := _root_.Rat.HeightOneSpectrum.prime_absNorm_asIdeal v
     have hne5 : Ideal.absNorm v.asIdeal ≠ 5 := fun h5 ↦
       hv ((_root_.Rat.HeightOneSpectrum.natCast_mem_iff_absNorm_asIdeal_dvd v (n := 5)).mpr
         (dvd_of_eq h5))

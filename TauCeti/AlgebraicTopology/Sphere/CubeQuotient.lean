@@ -13,6 +13,7 @@ public import TauCeti.Topology.Homotopy.Cube.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
 public import TauCeti.Topology.Homotopy.Homotopic.Rel
+import TauCeti.Geometry.Sphere.LinearIsometry
 
 /-!
 # The cube modulo its boundary is a sphere
@@ -42,7 +43,11 @@ relative to the north pole (`GenLoop.homotopic_iff_toSphere`), so `πₙ(X, x)` 
 pointed homotopy classes of maps `(Sⁿ, e_last) → (X, x)` (`HomotopyGroup.sphereEquiv`).  The
 identification is natural in based maps (`GenLoop.toSphere_map`).  A class is trivial exactly
 when its map out of the sphere is null-homotopic, by a free homotopy that need not fix the north
-pole (`HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`).
+pole (`HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`).  Every map out of the sphere, based or
+not, is the map of a generalized loop at the image of the north pole
+(`GenLoop.exists_diskBoundaryMap_eq`); moving its class along a path to a fixed base point shows
+that, in a path-connected space, null-homotopy of sphere maps after a based map depends only on the
+kernel of the induced map on `πₙ` (`TopCat.Hom.nullhomotopic_comp_of_ker_le`).
 
 ## Main declarations
 
@@ -65,6 +70,9 @@ pole (`HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`).
   injective exactly when `p` identifies only boundary points, and surjective exactly when `p` is.
 * `TauCeti.exists_cubeToSphere_eq_of_ne`: `TauCeti.cubeToSphere` covers the sphere off the north
   pole in every dimension, including `n = 0`.
+* `TauCeti.exists_genLoop_sphere`: in dimension `n + 1`, the unit sphere of any real inner product
+  space is the image of a generalized loop out of `I^n` at any of its points that covers it off the
+  base point and identifies only boundary points of the cube.
 * `TauCeti.diskBoundaryNorthPole` and `TauCeti.diskBoundaryGenLoop`: the universe-lifted north pole
   and tautological generalized loop on `TopCat.diskBoundary (n + 1)`.
 * `GenLoop.diskBoundaryMap`: the map `GenLoop.toSphere p` with its source written as
@@ -81,6 +89,12 @@ pole (`HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`).
   is a free homotopy of the corresponding maps out of the sphere.
 * `HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`: a class is trivial exactly when the
   corresponding map `Sⁿ → X` is freely null-homotopic.
+* `HomotopyGroup.nontrivial_of_not_nullhomotopic`: so a map `Sⁿ → X` that is not null-homotopic
+  makes `πₙ` nontrivial at the image of the north pole.
+* `GenLoop.exists_diskBoundaryMap_eq`: every map `TopCat.diskBoundary (n + 1) ⟶ X` is the
+  attaching map of a generalized loop.
+* `TopCat.Hom.nullhomotopic_comp_of_ker_le`: if every class of `πₙ(X, x)` killed by `f` is killed
+  by `g`, every map `Sⁿ → X` null-homotopic after `f` is null-homotopic after `g`.
 
 ## References
 
@@ -379,6 +393,31 @@ theorem exists_cubeToSphere_eq_of_ne {s : sphere (0 : EuclideanSpace ℝ (Fin (n
     exact ⟨0, Subtype.ext ((key _ h0).trans (key _ hs).symm)⟩
   · have : NeZero n := ⟨hn.ne'⟩
     exact cubeToSphere_surjective n s
+
+/-- **The unit sphere is a sphere collapsed from a cube.** If `V` has dimension `n + 1`, then for
+every point `u₀` of its unit sphere there is a generalized loop of the sphere at `u₀`, out of the
+cube `I^n`, that covers the sphere off `u₀` and identifies only points of the boundary of the cube:
+the collapse `TauCeti.cubeToSphere` of the cube onto the unit sphere of `ℝⁿ⁺¹`, followed by a
+linear isometry of `ℝⁿ⁺¹` onto `V` sending the north pole to `u₀`. -/
+theorem exists_genLoop_sphere {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    (hV : Module.finrank ℝ V = n + 1) (u₀ : sphere (0 : V) 1) :
+    ∃ c : Ω^ (Fin n) (sphere (0 : V) 1) u₀, (∀ q, q ≠ u₀ → ∃ y, c y = q) ∧
+      ∀ y z, c y = c z → y = z ∨ y ∈ Cube.boundary (Fin n) ∧ z ∈ Cube.boundary (Fin n) := by
+  have : FiniteDimensional ℝ V := Module.finite_of_finrank_eq_succ hV
+  let e₀ : EuclideanSpace ℝ (Fin (n + 1)) ≃ₗᵢ[ℝ] V :=
+    ((stdOrthonormalBasis ℝ V).reindex (finCongr hV)).repr.symm
+  -- Move the image of the north pole onto `u₀`: the unit sphere is homogeneous.
+  obtain ⟨r, hr⟩ := Sphere.exists_homeomorph_apply_eq
+    (e₀.unitSphereIsometryEquiv (sphereNorthPole n)) u₀
+  let F := e₀.unitSphereIsometryEquiv.toHomeomorph.trans r
+  -- `F` applies `e₀` and then `r`, so this is `hr` by unfolding `Homeomorph.trans`.
+  have he : F (sphereNorthPole n) = u₀ := hr
+  refine ⟨GenLoop.map F he (sphereGenLoop n), fun q hq ↦ ?_, fun y z h ↦ ?_⟩
+  · obtain ⟨y, hy⟩ := exists_cubeToSphere_eq_of_ne (s := F.symm q) fun h ↦
+      hq (by rw [← F.apply_symm_apply q, h, he])
+    exact ⟨y, by rw [GenLoop.map_apply, sphereGenLoop_apply, hy]; exact F.apply_symm_apply q⟩
+  · rw [GenLoop.map_apply, GenLoop.map_apply, sphereGenLoop_apply, sphereGenLoop_apply] at h
+    exact cubeToSphere_eq_cubeToSphere_iff.1 (F.injective h)
 
 variable (n) in
 /-- `TauCeti.cubeToSphere` is a quotient map in positive dimension: it is a continuous surjection
@@ -697,6 +736,17 @@ theorem map_diskBoundaryMap_diskBoundaryGenLoop (p : Ω^ (Fin n) X x) :
       ((diskBoundaryGenLoop_apply_down.{u} n y).trans (sphereGenLoop_apply y))).trans
       (toSphere_cubeToSphere p y))
 
+/-- **Every map out of a sphere is the attaching map of a generalized loop**, at the image of the
+north pole. -/
+theorem exists_diskBoundaryMap_eq (r : TopCat.diskBoundary.{u} (n + 1) ⟶ X) :
+    ∃ p : Ω^ (Fin n) X (r ⟨TauCeti.sphereNorthPole n⟩), diskBoundaryMap p = r := by
+  refine ⟨(sphereEquiv n X _).symm ⟨r.hom.comp ⟨ULift.up, continuous_uliftUp⟩, rfl⟩, ?_⟩
+  ext s
+  rw [diskBoundaryMap_apply, ← coe_sphereEquiv_apply, Equiv.apply_symm_apply]
+  -- Both sides evaluate `r` at `s`: `ULift.up s.down` is `s` by structure eta, and
+  -- `TopCat.Hom.hom` and `ConcreteCategory.hom` agree by definition.
+  rfl
+
 end GenLoop
 
 namespace GenLoop
@@ -769,6 +819,15 @@ theorem mk_eq_one_iff_nullhomotopic_toSphere (p : Ω^ (Fin n) X x) :
     rw [← hp, ← map_mk]
     exact map_eq_one_of_nullhomotopic h _ _
 
+/-- **A map out of the sphere that is not null-homotopic gives a nontrivial homotopy group** at the
+image of the north pole: its class there is not the identity. -/
+theorem nontrivial_of_not_nullhomotopic (f : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, X))
+    (hf : ¬f.Nullhomotopic) : Nontrivial (HomotopyGroup (Fin n) X (f (sphereNorthPole n))) := by
+  let p := (GenLoop.sphereEquiv n X _).symm ⟨f, rfl⟩
+  have hp : GenLoop.toSphere p = f := by
+    rw [← GenLoop.coe_sphereEquiv_apply, Equiv.apply_symm_apply]
+  exact ⟨⟦p⟧, 1, fun h ↦ hf (hp ▸ (mk_eq_one_iff_nullhomotopic_toSphere p).1 h)⟩
+
 /-- **A homotopy class is trivial exactly when its attaching map is null-homotopic.** The class of
 a generalized loop `p` is the identity of `πₙ(X, x)` if and only if the map
 `GenLoop.diskBoundaryMap p : ∂𝔻 (n + 1) ⟶ X`, along which a cell kills that class, is freely
@@ -799,3 +858,39 @@ theorem map_mk_eq_one_iff_nullhomotopic_diskBoundaryMap_comp {X Y : TopCat.{u}} 
   exact mk_eq_one_iff_nullhomotopic_diskBoundaryMap _
 
 end HomotopyGroup
+
+namespace TopCat.Hom
+
+open TauCeti
+
+variable {n : ℕ} [NeZero n] {X Y Z : TopCat.{u}} [PathConnectedSpace X] {x : X} {y : Y} {z : Z}
+
+open CategoryTheory in
+/-- **Null-homotopy of sphere maps is inherited along an inclusion of kernels.** Let `X` be path
+connected, and let `f : X ⟶ Y` and `g : X ⟶ Z` be based maps such that every class of `πₙ(X, x)`
+killed by `f` is killed by `g`. Then every map `r : Sⁿ → X` that becomes null-homotopic after `f`
+becomes null-homotopic after `g`. The map `r` need not be based. -/
+theorem nullhomotopic_comp_of_ker_le (f : X ⟶ Y) (g : X ⟶ Z) (hf : f x = y) (hg : g x = z)
+    (hfg : (HomotopyGroup.mapHom (N := Fin n) f.hom hf).ker ≤
+      (HomotopyGroup.mapHom g.hom hg).ker)
+    (r : TopCat.diskBoundary.{u} (n + 1) ⟶ X) (hr : (r ≫ f).hom.Nullhomotopic) :
+    (r ≫ g).hom.Nullhomotopic := by
+  subst hf hg
+  obtain ⟨p, hp⟩ := GenLoop.exists_diskBoundaryMap_eq r
+  rw [← hp, ← HomotopyGroup.map_mk_eq_one_iff_nullhomotopic_diskBoundaryMap_comp g rfl]
+  rw [← hp, ← HomotopyGroup.map_mk_eq_one_iff_nullhomotopic_diskBoundaryMap_comp f rfl] at hr
+  -- Transport the class of `p` to the base point `x` along a path; based maps commute with
+  -- transport, and transport is a group isomorphism.
+  let γ := PathConnectedSpace.somePath (r ⟨sphereNorthPole n⟩) x
+  have hmap {V : TopCat.{u}} (h : X ⟶ V) :
+      HomotopyGroup.map h.hom rfl (homotopyGroupTransport γ ⟦p⟧) =
+        homotopyGroupMulEquivOfPath (γ.map h.hom.continuous)
+          (HomotopyGroup.map h.hom rfl ⟦p⟧) := by
+    rw [homotopyGroupMulEquivOfPath_apply, homotopyGroupTransport_mk, HomotopyGroup.map_mk,
+      HomotopyGroup.map_mk, GenLoop.map_transport, homotopyGroupTransport_mk]
+  have h := MonoidHom.mem_ker.1 (hfg (MonoidHom.mem_ker.2 (by
+    rw [HomotopyGroup.mapHom_apply, hmap f, hr, map_one])))
+  rw [HomotopyGroup.mapHom_apply, hmap g] at h
+  exact (homotopyGroupMulEquivOfPath _).injective (h.trans (map_one _).symm)
+
+end TopCat.Hom

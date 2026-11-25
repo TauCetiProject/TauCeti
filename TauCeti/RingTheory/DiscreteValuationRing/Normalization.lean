@@ -20,18 +20,6 @@ public section
 
 namespace TauCeti.Algebra
 
-/-- Unramifiedness with respect to a local ring is invariant under an isomorphism of the
-extension fields over that ring. -/
-theorem isUnramifiedWRT_iff_of_algEquiv {A L M : Type*} [CommRing A] [IsLocalRing A]
-    [Field L] [Field M] [Algebra A L] [Algebra A M] (e : L ≃ₐ[A] M) :
-    IsUnramifiedWRT A L ↔ IsUnramifiedWRT A M := by
-  let B := integralClosure A L
-  let : Algebra B M := (e.toRingHom.comp (algebraMap B L)).toAlgebra
-  have : IsScalarTower A B M := .of_algebraMap_eq fun a ↦ (e.commutes a).symm
-  have : IsIntegralClosure B A M := IsIntegralClosure.of_algEquiv B e fun _ ↦ rfl
-  exact (isUnramifiedWRT_iff_of_isIntegralClosure (L := L) B).trans
-    (isUnramifiedWRT_iff_of_isIntegralClosure (L := M) B).symm
-
 universe u
 
 variable (A : Type*) (K : Type*) (S : Type u) [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
@@ -64,6 +52,6 @@ theorem etale_integralClosure_iff_forall_residueField :
   let : Field (S ⧸ q) := Ideal.Quotient.field q
   let φ : (S ⧸ q) →ₐ[A] q.ResidueField := IsScalarTower.toAlgHom A (S ⧸ q) q.ResidueField
   let e' := AlgEquiv.ofBijective φ (Ideal.bijective_algebraMap_quotient_residueField q)
-  exact (isUnramifiedWRT_iff_of_algEquiv e').symm
+  exact e'.isUnramifiedWRT_iff.symm
 
 end TauCeti.Algebra

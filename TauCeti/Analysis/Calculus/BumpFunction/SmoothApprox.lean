@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
@@ -24,12 +24,22 @@ of bounded smooth real functions with the same Lipschitz constant and a common b
 The construction combines Mathlib's McShane extension and normalized smooth bumps with
 `LipschitzWith.normed_convolution`. Derivative bounds follow directly from Mathlib's
 `norm_fderiv_le_of_lipschitz`.
+`LipschitzWith.exists_contDiffBump_normed_convolution` also bounds the bump's outer radius,
+so additional local properties can be proved for the same approximating convolution; for instance
+`LipschitzWith.exists_contDiff_lipschitzWith_dist_lt_fderiv_eq_zero` gives approximations whose
+differential vanishes wherever the function is constant on a ball of fixed radius. Applied to a
+truncation, it gives smooth approximations
+(`LipschitzWith.exists_contDiff_lipschitzWith_dist_max_min_lt_fderiv_eq_zero`) of the truncation
+`max a (min w b)` of a Lipschitz function `w` whose differential vanishes off the strip
+`{a < w < b}`.
 
 ## References
 
 * D. Azagra, J. Ferrera, F. López-Mesas and Y. Rangel,
   *Smooth approximation of Lipschitz functions on Riemannian manifolds*,
   J. Math. Anal. Appl. 326 (2007), 1370–1378, Section 2.
+* https://github.com/frenzymath/lean-eval-submissions
+* https://github.com/frenzymath/PoincareConjecture
 -/
 
 public section
@@ -41,21 +51,93 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
   {K : ℝ≥0} {f : E → F}
 
+/-- A Lipschitz function can be mollified with a normalized smooth bump of arbitrarily small
+outer radius, retaining its Lipschitz constant and any prescribed strict uniform error. -/
+theorem LipschitzWith.exists_contDiffBump_normed_convolution [MeasurableSpace E] [BorelSpace E]
+    (hf : LipschitzWith K f) {δ ε : ℝ} (hδ : 0 < δ) (hε : 0 < ε) :
+    ∃ φ : ContDiffBump (0 : E), φ.rOut ≤ δ ∧
+      ContDiff ℝ ∞ (φ.normed Measure.addHaar ⋆[lsmul ℝ ℝ, Measure.addHaar] f) ∧
+      LipschitzWith K (φ.normed Measure.addHaar ⋆[lsmul ℝ ℝ, Measure.addHaar] f) ∧
+      ∀ x, dist ((φ.normed Measure.addHaar ⋆[lsmul ℝ ℝ, Measure.addHaar] f) x) (f x) < ε := by
+  obtain ⟨r, hr, hbound⟩ := exists_pos_mul_lt hε (K : ℝ)
+  have hρ : 0 < min δ r := lt_min hδ hr
+  let φ : ContDiffBump (0 : E) :=
+    ⟨min δ r / 2, min δ r, half_pos hρ, half_lt_self hρ⟩
+  refine ⟨φ, min_le_left _ _, ?_, hf.normed_convolution φ, fun x ↦ ?_⟩
+  · exact φ.hasCompactSupport_normed.contDiff_convolution_left _ φ.contDiff_normed
+      hf.continuous.locallyIntegrable
+  · exact (hf.dist_normed_convolution_le φ x).trans_lt
+      ((mul_le_mul_of_nonneg_left (min_le_right δ r) K.coe_nonneg).trans_lt hbound)
+
 /-- A Lipschitz function has smooth uniform approximations with exactly the same Lipschitz
 bound. The domain may have dimension zero, and the function need not be bounded. -/
 theorem LipschitzWith.exists_contDiff_lipschitzWith_dist_lt (hf : LipschitzWith K f)
     {ε : ℝ} (hε : 0 < ε) :
     ∃ g : E → F, ContDiff ℝ ∞ g ∧ LipschitzWith K g ∧ ∀ x, dist (g x) (f x) < ε := by
   borelize E
-  obtain ⟨δ, hδ, hbound⟩ := exists_pos_mul_lt hε (K : ℝ)
-  let ρ : ContDiffBump (0 : E) := ⟨δ / 2, δ, half_pos hδ, half_lt_self hδ⟩
-  refine ⟨ρ.normed Measure.addHaar ⋆[lsmul ℝ ℝ, Measure.addHaar] f, ?_,
-    hf.normed_convolution ρ, fun x => ?_⟩
-  · exact ρ.hasCompactSupport_normed.contDiff_convolution_left _ ρ.contDiff_normed
-      hf.continuous.locallyIntegrable
-  · refine (ρ.dist_normed_convolution_le hf.continuous.aestronglyMeasurable
-      fun y hy => (hf.dist_le_mul y x).trans ?_).trans_lt hbound
-    exact mul_le_mul_of_nonneg_left (mem_ball.1 hy).le K.coe_nonneg
+  obtain ⟨φ, -, hsmooth, hLip, herr⟩ := hf.exists_contDiffBump_normed_convolution one_pos hε
+  exact ⟨φ.normed Measure.addHaar ⋆[lsmul ℝ ℝ, Measure.addHaar] f, hsmooth, hLip, herr⟩
+
+/-- A Lipschitz function has smooth uniform approximations with exactly the same Lipschitz bound
+whose differential vanishes at every point `x` such that the function is constant on the ball of
+radius `r` about `x`. -/
+theorem LipschitzWith.exists_contDiff_lipschitzWith_dist_lt_fderiv_eq_zero (hf : LipschitzWith K f)
+    {r ε : ℝ} (hr : 0 < r) (hε : 0 < ε) :
+    ∃ g : E → F, ContDiff ℝ ∞ g ∧ LipschitzWith K g ∧ (∀ x, dist (g x) (f x) < ε) ∧
+      ∀ x, (∀ y ∈ ball x r, f y = f x) → fderiv ℝ g x = 0 := by
+  borelize E
+  obtain ⟨φ, hφr, hsmooth, hLip, herr⟩ :=
+    hf.exists_contDiffBump_normed_convolution (half_pos hr) hε
+  refine ⟨φ.normed Measure.addHaar ⋆[lsmul ℝ ℝ, Measure.addHaar] f, hsmooth, hLip, herr,
+    fun x hx => ?_⟩
+  -- On the ball of radius `r / 2` about `x`, the convolution only averages the constant `f x`.
+  have hg : (φ.normed Measure.addHaar ⋆[lsmul ℝ ℝ, Measure.addHaar] f) =ᶠ[𝓝 x] fun _ => f x := by
+    filter_upwards [ball_mem_nhds x (half_pos hr)] with y hy
+    have hfy : f y = f x := hx y (ball_subset_ball (half_le_self hr.le) hy)
+    rw [← hfy]
+    refine φ.normed_convolution_eq_right fun z hz => (hx z ?_).trans hfy.symm
+    rw [mem_ball] at hy hz ⊢
+    linarith [dist_triangle z y x, hz.trans_le hφr]
+  rw [hg.fderiv_eq, fderiv_const_apply]
+
+/-- A Lipschitz function `w` has smooth approximations of its truncation `max a (min w b)`, within
+any `ε > 0`, with the same Lipschitz bound and whose differential vanishes off the strip
+`{a < w < b}`. -/
+theorem LipschitzWith.exists_contDiff_lipschitzWith_dist_max_min_lt_fderiv_eq_zero {w : E → ℝ}
+    (hw : LipschitzWith K w) (a b : ℝ) {ε : ℝ} (hε : 0 < ε) :
+    ∃ g : E → ℝ, ContDiff ℝ ∞ g ∧ LipschitzWith K g ∧
+      (∀ x, dist (g x) (max a (min (w x) b)) < ε) ∧ ∀ x, w x ∉ Ioo a b → fderiv ℝ g x = 0 := by
+  obtain ⟨η, hη, hηε⟩ : ∃ η : ℝ, 0 < η ∧ 2 * η = ε := ⟨ε / 2, half_pos hε, by ring⟩
+  set c : E → ℝ := fun x => max (a + η) (min (w x) (b - η))
+  set r := η / (K + 1)
+  have hKr : (K : ℝ) * r < η := by
+    rw [mul_div_assoc', div_lt_iff₀ (by positivity)]
+    nlinarith [K.coe_nonneg]
+  obtain ⟨g, hsmooth, hLip, herr, hconst⟩ :=
+    ((hw.min_const _).const_max _).exists_contDiff_lipschitzWith_dist_lt_fderiv_eq_zero
+      (f := c) (r := r) (by positivity) hη
+  -- On the ball of radius `r`, `w` moves by less than `η`.
+  have hnear (x z : E) (hz : z ∈ ball x r) : |w z - w x| < η := by
+    refine (hw.dist_le_mul z x).trans_lt (lt_of_le_of_lt ?_ hKr)
+    exact mul_le_mul_of_nonneg_left (mem_ball.1 hz).le K.coe_nonneg
+  refine ⟨g, hsmooth, hLip, fun x => ?_, fun x hx => ?_⟩
+  · refine (dist_triangle _ (c x) _).trans_lt ?_
+    have h₁ : dist (c x) (max a (min (w x) b)) ≤ η := by
+      refine (abs_max_sub_max_le_max _ _ _ _).trans (max_le (by simp [abs_of_pos hη]) ?_)
+      refine (abs_min_sub_min_le_max _ _ _ _).trans (max_le (by simp [hη.le]) ?_)
+      simp [abs_of_pos hη]
+    linarith [herr x, hηε]
+  · -- Off the strip, the truncation `c` is constant on the ball of radius `r` about `x`.
+    refine hconst x fun z hz => ?_
+    have h := abs_lt.1 (hnear x z hz)
+    rcases not_and_or.1 hx with hxa | hxb
+    · replace hxa := not_lt.1 hxa
+      have hz : min (w z) (b - η) ≤ a + η := (min_le_left _ _).trans (by linarith)
+      have hx : min (w x) (b - η) ≤ a + η := (min_le_left _ _).trans (by linarith)
+      simp only [c, max_eq_left hz, max_eq_left hx]
+    · replace hxb := not_lt.1 hxb
+      simp only [c, min_eq_right (by linarith : b - η ≤ w z),
+        min_eq_right (by linarith : b - η ≤ w x)]
 
 /-- Bounded real Lipschitz data on any subset have globally defined smooth approximations
 with the same Lipschitz bound and the same closed interval of values.
@@ -68,15 +150,12 @@ theorem LipschitzOnWith.exists_contDiff_lipschitzWith_mem_Icc_dist_lt {f : E →
       (∀ x, g x ∈ Icc a b) ∧ ∀ x ∈ s, dist (g x) (f x) < ε := by
   obtain ⟨u, hu, heq, hub⟩ := hf.extend_real_mem_Icc hab hmem
   borelize E
-  obtain ⟨δ, hδ, hbound⟩ := exists_pos_mul_lt hε (K : ℝ)
-  let ρ : ContDiffBump (0 : E) := ⟨δ / 2, δ, half_pos hδ, half_lt_self hδ⟩
+  obtain ⟨ρ, -, hsmooth, hLip, herr⟩ := hu.exists_contDiffBump_normed_convolution one_pos hε
   let g := ρ.normed Measure.addHaar ⋆[lsmul ℝ ℝ, Measure.addHaar] u
   have hi : ConvolutionExists (ρ.normed Measure.addHaar) u (lsmul ℝ ℝ) Measure.addHaar :=
     ρ.hasCompactSupport_normed.convolutionExists_left_of_continuous_right
       (lsmul ℝ ℝ) ρ.integrable_normed.locallyIntegrable hu.continuous
-  refine ⟨g, ?_, hu.normed_convolution ρ, ?_, ?_⟩
-  · exact ρ.hasCompactSupport_normed.contDiff_convolution_left _ ρ.contDiff_normed
-      hu.continuous.locallyIntegrable
+  refine ⟨g, hsmooth, hLip, ?_, ?_⟩
   · intro x
     exact ⟨le_convolution_lsmul_of_forall_le ρ.support_normed_eq.subset
         ρ.nonneg_normed ρ.integral_normed (hi x) (fun y _ => (hub y).1),
@@ -84,9 +163,7 @@ theorem LipschitzOnWith.exists_contDiff_lipschitzWith_mem_Icc_dist_lt {f : E →
         ρ.nonneg_normed ρ.integral_normed (hi x) (fun y _ => (hub y).2)⟩
   · intro x hx
     rw [heq hx]
-    refine (ρ.dist_normed_convolution_le hu.continuous.aestronglyMeasurable
-      fun y hy => (hu.dist_le_mul y x).trans ?_).trans_lt hbound
-    exact mul_le_mul_of_nonneg_left (mem_ball.1 hy).le K.coe_nonneg
+    exact herr x
 
 /-- A `K`-Lipschitz function is the pointwise limit of smooth functions `g n` with values in
 `[-n, n]`, Lipschitz constant `K`, and `|g n| ≤ |f| + 1`. -/

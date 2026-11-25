@@ -10,7 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import TauCeti.AlgebraicGeometry.Morphisms.CodimensionOne.Ramification
 import TauCeti.AlgebraicGeometry.Fibers
 import TauCeti.AlgebraicGeometry.FiniteEtale.Basic
-import TauCeti.AlgebraicGeometry.Normalization.GenericFiber
+import TauCeti.AlgebraicGeometry.Normalization.Localization
 import TauCeti.AlgebraicGeometry.ResidueField
 import TauCeti.AlgebraicGeometry.Scheme.DiscreteValuationStalk
 import TauCeti.AlgebraicGeometry.Scheme.StalkSpecializes
@@ -36,16 +36,14 @@ universe u
 
 variable {X Y : Scheme.{u}} {U : X.Opens} {f : Y ⟶ U}
 
-open TauCeti.AlgebraicGeometry.Scheme (SpecMap_stalkSpecializes_residue_fromSpecStalk)
-
 /-- A field factor of the affine generic fibre inherits the base algebra structure through the
 residue field of its image in the original cover. -/
 private theorem isUnramifiedWRT_of_genericFiber (hf : f.IsUnramifiedInCodimOne)
     (ξ : CodimensionOnePoint X) (hξ : (ξ : X) ∉ U) {x : X} (hx : x ⤳ ξ)
     {S : Type u} [CommRing S] [Algebra (X.residueField x) S]
-    (v : Spec (.of S) ⟶ Y) [IsPreimmersion v]
+    (v : Spec (.of S) ⟶ Y)
     (hv : v ≫ f ≫ U.ι = Spec.algebraMap (X.residueField x) S ≫ X.fromSpecResidueField x)
-    (q : Spec (.of S)) :
+    (q : Spec (.of S)) [IsIso (v.residueFieldMap q)] :
     letI := q.isPrime
     letI := (X.presheaf.stalkSpecializes hx ≫ X.residue x).hom.toAlgebra
     letI : Algebra (X.presheaf.stalk ξ) S :=
@@ -62,7 +60,6 @@ private theorem isUnramifiedWRT_of_genericFiber (hf : f.IsUnramifiedInCodimOne)
     ((algebraMap (X.residueField x) S).comp (algebraMap (X.presheaf.stalk ξ) _)).toAlgebra
   let ψ := X.presheaf.stalkSpecializes hx' ≫ X.residue _ ≫ (f ≫ U.ι).residueFieldMap (v q)
   let := ψ.hom.toAlgebra
-  have := Hom.isIso_residueFieldMap_of_surjectiveOnStalks v (q : Spec (.of S))
   let j : (Spec (.of S)).residueField q ≅ CommRingCat.of p.asIdeal.ResidueField :=
     Scheme.Spec.residueFieldIso (.of S) q
   let i := asIso (v.residueFieldMap q) ≪≫ j
@@ -72,12 +69,12 @@ private theorem isUnramifiedWRT_of_genericFiber (hf : f.IsUnramifiedInCodimOne)
   let φ := (X.presheaf.stalkSpecializes hx ≫ X.residue x) ≫ σ ≫ δ
   have hφ : Spec.map φ ≫ X.fromSpecStalk ξ = Spec.map δ ≫ v ≫ f ≫ U.ι := by
     dsimp only [φ]
-    rw [Spec.map_comp_assoc, SpecMap_stalkSpecializes_residue_fromSpecStalk hx,
+    rw [Spec.map_comp_assoc, hx.specMap_stalkSpecializes_residue_fromSpecStalk,
       Spec.map_comp_assoc, hv]
     rfl
   have hψ : Spec.map ψ ≫ X.fromSpecStalk ξ = Y.fromSpecResidueField (v q) ≫ f ≫ U.ι := by
     dsimp only [ψ]
-    rw [← Category.assoc, Spec.map_comp_assoc, SpecMap_stalkSpecializes_residue_fromSpecStalk hx']
+    rw [← Category.assoc, Spec.map_comp_assoc, hx'.specMap_stalkSpecializes_residue_fromSpecStalk]
     exact Hom.SpecMap_residueFieldMap_fromSpecResidueField (f := f ≫ U.ι) (v q)
   have hmaps : ψ ≫ i.hom = φ := by
     apply Spec.map_inj.mp
@@ -85,20 +82,15 @@ private theorem isUnramifiedWRT_of_genericFiber (hf : f.IsUnramifiedInCodimOne)
     rw [Spec.map_comp, Category.assoc, hψ, hφ]
     simp only [i, Iso.trans_hom, Spec.map_comp, Category.assoc, asIso_hom]
     rw [reassoc_of% (Hom.SpecMap_residueFieldMap_fromSpecResidueField v q)]
-    have hj : δ ≫ j.inv = CommRingCat.ofHom (algebraMap S p.asIdeal.ResidueField) ≫
-        (Scheme.Spec.residueFieldIso (.of S) q).inv := rfl
     have hδ : Spec.map j.hom ≫ (Spec (.of S)).fromSpecResidueField q = Spec.map δ := by
-      have h := Scheme.Spec.map_residueFieldIso_inv_eq_fromSpecResidueField (.of S) q
-      calc
-        _ = Spec.map j.hom ≫ Spec.map (δ ≫ j.inv) := congrArg (Spec.map j.hom ≫ ·) (by
-          simpa only [hj, Spec.map_comp] using h.symm)
-        _ = Spec.map δ := by
-          rw [← Spec.map_comp, Category.assoc, j.inv_hom_id, Category.comp_id]
+      dsimp only [j, δ]
+      rw [← Scheme.Spec.map_residueFieldIso_inv_eq_fromSpecResidueField,
+        ← Spec.map_comp_assoc, Iso.inv_hom_id, ← Spec.map_comp, Category.comp_id]
     rw [reassoc_of% hδ]
   let e : Y.residueField (v q) ≃ₐ[X.presheaf.stalk ξ] p.asIdeal.ResidueField :=
     AlgEquiv.ofRingEquiv (f := i.commRingCatIsoToRingEquiv)
       fun a ↦ ConcreteCategory.congr_hom hmaps a
-  exact (TauCeti.Algebra.isUnramifiedWRT_iff_of_algEquiv e).mp
+  exact e.isUnramifiedWRT_iff.mp
     ((isUnramifiedInCodimOne_def f).mp hf ξ hξ (v q) hx')
 
 /-- Over the fraction field of the codimension-one stalk, the normalization of the generic
@@ -137,30 +129,14 @@ private theorem exists_finiteEtale_model_of_genericFiber [IsFinite f] [Etale f]
   let : Algebra A S.obj := ((algebraMap K S.obj).comp (algebraMap A K)).toAlgebra
   have : IsScalarTower A K S.obj := .of_algebraMap_eq' rfl
   have : Algebra.Etale A (integralClosure A S.obj) :=
-    (TauCeti.Algebra.etale_integralClosure_iff_forall_residueField A K S.obj).mpr fun q ↦
-      isUnramifiedWRT_of_genericFiber hf ξ hξ hx v hv q
+    (TauCeti.Algebra.etale_integralClosure_iff_forall_residueField A K S.obj).mpr fun q ↦ by
+      have := Hom.isIso_residueFieldMap_of_surjectiveOnStalks v (q : Spec (.of S.obj))
+      exact isUnramifiedWRT_of_genericFiber hf ξ hξ hx v hv q
   have : Module.Finite A (integralClosure A S.obj) := Algebra.IsIntegral.finite
   exact ⟨_, Spec.algebraMap A (integralClosure A S.obj),
     (IsFinite.SpecMap_iff _).mpr (RingHom.finite_algebraMap.mpr inferInstance),
     (HasRingHomProperty.Spec_iff (P := @Etale)).mpr (RingHom.etale_algebraMap.mpr inferInstance),
-    ⟨integralClosureGenericFiberIso A K S.obj ≪≫ e⟩⟩
-
-/-- The inverse image of the open at the spectrum of a codimension-one stalk outside it has at
-most one point. -/
-private theorem subsingleton_preimage_fromSpecStalk (ξ : CodimensionOnePoint X) (hξ : (ξ : X) ∉ U)
-    [IsRegularLocalRing (X.presheaf.stalk ξ)] :
-    Subsingleton (X.fromSpecStalk ξ ⁻¹ᵁ U).toScheme := by
-  let A := X.presheaf.stalk ξ
-  let W := X.fromSpecStalk ξ ⁻¹ᵁ U
-  have : IsDomain A := TauCeti.IsRegularLocalRing.isDomain
-  have : IsDiscreteValuationRing A := CodimensionOnePoint.isDiscreteValuationRing_stalk ξ
-  have eqbot (a : W.toScheme) : (W.ι a : PrimeSpectrum A).asIdeal = ⊥ := by
-    by_contra hn
-    have he := IsLocalRing.eq_maximalIdeal (Ring.DimensionLEOne.maximalOfPrime hn
-      (W.ι a : PrimeSpectrum A).isPrime)
-    have hh : W.ι a = IsLocalRing.closedPoint A := PrimeSpectrum.ext he
-    exact hξ (Scheme.fromSpecStalk_closedPoint (x := (ξ : X)) ▸ hh ▸ a.property)
-  exact ⟨fun a b ↦ Subtype.ext (PrimeSpectrum.ext ((eqbot a).trans (eqbot b).symm))⟩
+    ⟨integralClosureLocalizationIso A K S.obj (nonZeroDivisors A) ≪≫ e⟩⟩
 
 /-- Extend over the spectrum of a regular codimension-one stalk at a point outside the open. -/
 private theorem exists_finiteEtale_extension_fromSpecStalk_of_notMem [IsFinite f] [Etale f]
@@ -188,17 +164,17 @@ private theorem exists_finiteEtale_extension_fromSpecStalk_of_notMem [IsFinite f
     TauCeti.AlgebraicGeometry.Scheme.isFractionRing_residueField_of_specializes hx
       (fun e ↦ hξ (e ▸ hxU))
   let k := Spec.algebraMap A K
-  have hkg : k ≫ g = X.fromSpecResidueField x := SpecMap_stalkSpecializes_residue_fromSpecStalk hx
+  have hkg : k ≫ g = X.fromSpecResidueField x := hx.specMap_stalkSpecializes_residue_fromSpecStalk
   have hkW : Set.range k ⊆ W := by
     rintro _ ⟨z, rfl⟩
-    exact (show g (k z) ∈ U from by rw [← Scheme.Hom.comp_apply, hkg,
-      Scheme.fromSpecResidueField_apply]; exact hxU)
+    apply (Scheme.Hom.mem_preimage g).mpr
+    rwa [← Scheme.Hom.comp_apply, hkg, Scheme.fromSpecResidueField_apply]
   let i := IsOpenImmersion.lift W.ι k (by rwa [Scheme.Opens.range_ι])
   have hi : i ≫ W.ι = k := IsOpenImmersion.lift_fac ..
   have : IsOpenImmersion k := TauCeti.isOpenImmersion_Spec_map_fractionRing A K
   have : IsOpenImmersion (i ≫ W.ι) := hi ▸ ‹IsOpenImmersion k›
   have : IsOpenImmersion i := IsOpenImmersion.of_comp i W.ι
-  have : Subsingleton W.toScheme := subsingleton_preimage_fromSpecStalk ξ hξ
+  have : Subsingleton W.toScheme := X.subsingleton_fromSpecStalk_preimage hξ
   have hiiso : IsIso i := isIso_of_isOpenImmersion_of_opensRange_eq_top i (by
     apply TopologicalSpace.Opens.ext
     ext z
@@ -229,11 +205,7 @@ theorem IsUnramifiedInCodimOne.exists_finiteEtale_extension_fromSpecStalk [IsFin
   by_cases hξ : (ξ : X) ∈ U
   · let g := X.fromSpecStalk ξ
     let W := g ⁻¹ᵁ U
-    have hW : W = ⊤ := by
-      apply top_unique
-      intro z _
-      have hs : g z ⤳ ξ := (Scheme.range_fromSpecStalk (x := (ξ : X))).le ⟨z, rfl⟩
-      exact hs.mem_open U.isOpen hξ
+    have hW : W = ⊤ := Scheme.preimage_eq_top_of_closedPoint_mem g (by simpa [g] using hξ)
     have : IsIso W.ι := isIso_of_isOpenImmersion_of_opensRange_eq_top W.ι (by simp [hW])
     let q := pullback.snd f (g ∣_ U)
     have hpb : IsPullback (𝟙 _) q (q ≫ W.ι) W.ι := .of_horiz_isIso ⟨by simp⟩

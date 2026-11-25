@@ -7,8 +7,9 @@ module
 
 public import Mathlib.AlgebraicGeometry.FunctionField
 public import TauCeti.AlgebraicGeometry.Scheme.CodimensionOnePoint
-public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
+public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint.Basic
 public import TauCeti.RingTheory.RegularLocalRing.Basic
+import Mathlib.RingTheory.DedekindDomain.Basic
 
 /-!
 # Regularity and valuation rings at codimension-one points
@@ -71,3 +72,22 @@ end Scheme
 end AlgebraicGeometry
 
 end TauCeti
+
+/-- If every nonzero prime of a stalk is maximal, an open missing the stalk point pulls back to
+at most one point in the spectrum of the stalk. -/
+theorem AlgebraicGeometry.Scheme.subsingleton_fromSpecStalk_preimage
+    (X : Scheme.{u}) {x : X} {U : X.Opens} (hx : x ∉ U)
+    [Ring.DimensionLEOne (X.presheaf.stalk x)] :
+    Subsingleton (X.fromSpecStalk x ⁻¹ᵁ U).toScheme := by
+  let R := X.presheaf.stalk x
+  let W := X.fromSpecStalk x ⁻¹ᵁ U
+  have eq_bot (a : W.toScheme) : (W.ι a : PrimeSpectrum R).asIdeal = ⊥ := by
+    by_contra ha
+    have hmax := IsLocalRing.eq_maximalIdeal
+      (Ring.DimensionLEOne.maximalOfPrime ha (W.ι a : PrimeSpectrum R).isPrime)
+    have hclosed : W.ι a = IsLocalRing.closedPoint R := PrimeSpectrum.ext hmax
+    have hmem : X.fromSpecStalk x (W.ι a) ∈ U :=
+      (Scheme.Hom.mem_preimage (X.fromSpecStalk x)).mp a.property
+    rw [hclosed, Scheme.fromSpecStalk_closedPoint] at hmem
+    exact hx hmem
+  exact ⟨fun a b ↦ Subtype.ext (PrimeSpectrum.ext ((eq_bot a).trans (eq_bot b).symm))⟩

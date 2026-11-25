@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import TauCeti.Analysis.Calculus.Morse.Linearization
 import TauCeti.LinearAlgebra.Matrix.Trace.NonsingularInverse
 import TauCeti.LinearAlgebra.Trace.Basic
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # First variation of the classical Monge–Ampère equation
@@ -58,12 +59,9 @@ theorem trace_ringInverse_hessian_directional_eq {u f : E → ℝ} {x : E}
     simp only [fderiv_gradient] at hne heq ⊢
     -- Use an orthonormal basis to apply the matrix Jacobi formula to the Hessian field.
     let b := (stdOrthonormalBasis ℝ E).toBasis
-    let M := ((LinearMap.toMatrix b b).toLinearMap.comp
-      (ContinuousLinearMap.coeLM ℝ : (E →L[ℝ] E) →ₗ[ℝ] (E →ₗ[ℝ] E))).toContinuousLinearMap
-    -- The continuous lift leaves the underlying matrix representation unchanged.
-    have hM (A : E →L[ℝ] E) : M A = LinearMap.toMatrix b b A.toLinearMap := rfl
-    have hdet (y : E) : (M (hessianOperator u y)).det = (hessianOperator u y).det := by
-      rw [hM, LinearMap.det_toMatrix]
+    let M := ContinuousLinearMap.toMatrixCLM b
+    have hdet (y : E) : (M (hessianOperator u y)).det = (hessianOperator u y).det :=
+      ContinuousLinearMap.det_toMatrixCLM b _
     have hlocal : (fun y ↦ (M (hessianOperator u y)).det) =ᶠ[𝓝 x] f :=
       heq.mono fun y hy ↦ (hdet y).trans hy
     have hdet_ne : (M (hessianOperator u x)).det ≠ 0 := by rwa [hdet]
@@ -80,7 +78,7 @@ theorem trace_ringInverse_hessian_directional_eq {u f : E → ℝ} {x : E}
       exact Matrix.fderiv_det_apply (isUnit_iff_ne_zero.mpr hdet_ne) _
     rw [LinearMap.trace_ringInverse_mul_eq_matrix_trace b, ← hlocal.eq_of_nhds, hJacobi, mul_comm,
       mul_div_cancel_right₀ _ hdet_ne]
-    simp only [hM]
+    simp only [M, ContinuousLinearMap.toMatrixCLM_apply]
   · have h1 : f =ᶠ[𝓝 x] fun _ ↦ (1 : ℝ) :=
       heq.symm.trans (.of_forall fun y ↦ LinearMap.det_eq_one_of_not_module_finite hE _)
     rw [LinearMap.trace_eq_zero_of_not_finite hE, LinearMap.zero_apply, h1.fderiv_eq,

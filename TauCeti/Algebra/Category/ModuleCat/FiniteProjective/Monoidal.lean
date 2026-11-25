@@ -58,8 +58,7 @@ namespace FiniteProjectiveModules
 /-- The linear dual of a finite projective module is finite projective. -/
 @[expose] def dual (M : (finiteProjectiveModules R).FullSubcategory) :
     (finiteProjectiveModules R).FullSubcategory :=
-  ⟨ModuleCat.of R (Module.Dual R M.obj),
-    finiteProjectiveModules_iff.mpr ⟨inferInstance, inferInstance⟩⟩
+  of R (Module.Dual R M.obj)
 
 @[simp]
 theorem dual_obj (M : (finiteProjectiveModules R).FullSubcategory) :
