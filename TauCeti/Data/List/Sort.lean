@@ -38,22 +38,23 @@ theorem sortedLE_append_singleton {l : List α} {a : α} :
 
 section Entries
 
-variable {α : Type*} [LinearOrder α] {l : List α}
+variable {l : List α}
 
 /-- In a strictly increasing list, the entry after `l[i]` is the least entry above `l[i]`. -/
 theorem SortedLT.isLeast_inter_Ioi_getElem_succ (hl : l.SortedLT) {i : ℕ}
     (h : i + 1 < l.length) : IsLeast ({x | x ∈ l} ∩ Set.Ioi l[i]) l[i + 1] := by
-  refine ⟨⟨getElem_mem _, Set.mem_Ioi.2 (hl.getElem_lt_getElem_iff.2 (by omega))⟩,
+  refine ⟨⟨getElem_mem _, Set.mem_Ioi.2 (hl.getElem_lt_getElem_of_lt (Nat.lt_succ_self i))⟩,
     fun x ⟨hx, hix⟩ => ?_⟩
   obtain ⟨k, hk, rfl⟩ := mem_iff_getElem.1 hx
-  exact hl.getElem_le_getElem_iff.2 (by have := hl.getElem_lt_getElem_iff.1 hix; omega)
+  refine hl.sortedLE.getElem_le_getElem_of_le (Nat.succ_le_of_lt (lt_of_not_ge fun hki => ?_))
+  exact lt_irrefl _ ((Set.mem_Ioi.1 hix).trans_le (hl.sortedLE.getElem_le_getElem_of_le hki))
 
 /-- In a strictly increasing list, the last entry is the greatest entry. -/
 theorem SortedLT.isGreatest_getElem_of_not_succ_lt (hl : l.SortedLT) {i : ℕ} (hi : i < l.length)
     (h : ¬i + 1 < l.length) : IsGreatest {x | x ∈ l} l[i] := by
   refine ⟨getElem_mem _, fun x hx => ?_⟩
   obtain ⟨k, hk, rfl⟩ := mem_iff_getElem.1 hx
-  exact hl.getElem_le_getElem_iff.2 (by omega)
+  exact hl.sortedLE.getElem_le_getElem_of_le (by omega)
 
 end Entries
 
