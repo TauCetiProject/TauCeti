@@ -17,7 +17,8 @@ The canonical map to the double dual is a natural isomorphism. It is the existin
 `TauCeti.doubleDualMap`, whose evaluation equation pairs a local functional with the original
 section. Thus dualization loses no information about the sheaf or its morphisms: together with the
 triangle identity relating the bidual isomorphisms of `E` and of `E^∨`, biduality makes
-dualization an anti-autoequivalence `dualEquiv` of finite locally free sheaves.
+dualization an anti-autoequivalence `dualEquiv` of finite locally free sheaves. An isomorphism
+`e : E ≅ F` dualizes to `dualIsoOfIso e : F^∨ ≅ E^∨`.
 
 The functor and natural isomorphism follow the finite-projective module formalization in
 `TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Monoidal` as their template.
@@ -147,6 +148,22 @@ theorem dualEquiv_unitIso : (dualEquiv (X := X)).unitIso = evalNatIso :=
 @[simp]
 theorem dualEquiv_counitIso_app (E : (FiniteLocallyFreeSheaf X)ᵒᵖ) :
     (dualEquiv (X := X)).counitIso.app E = (evalIso E.unop).op :=
+  (rfl)
+
+/-- The dual of an isomorphism of finite locally free sheaves, in the opposite direction. -/
+def dualIsoOfIso {E F : FiniteLocallyFreeSheaf X} (e : E ≅ F) : dual F ≅ dual E :=
+  dualFunctor.mapIso e.op
+
+/-- The forward map of `dualIsoOfIso e` is the dual of `e.hom`. -/
+@[simp]
+theorem dualIsoOfIso_hom {E F : FiniteLocallyFreeSheaf X} (e : E ≅ F) :
+    (dualIsoOfIso e).hom = dualFunctor.map e.hom.op :=
+  (rfl)
+
+/-- The inverse map of `dualIsoOfIso e` is the dual of `e.inv`. -/
+@[simp]
+theorem dualIsoOfIso_inv {E F : FiniteLocallyFreeSheaf X} (e : E ≅ F) :
+    (dualIsoOfIso e).inv = dualFunctor.map e.inv.op :=
   (rfl)
 
 end

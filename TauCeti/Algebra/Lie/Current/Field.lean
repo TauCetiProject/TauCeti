@@ -48,8 +48,13 @@ The commutator relations hold for the action `TauCeti.CurrentAlgebra.envelopingA
 current generators on any module over `U(ĝ) / (ι K - a)`, and smoothness of this action is
 smoothness of the module for the left ideals `I_N` of high-order currents
 (`TauCeti.CurrentAlgebra.isSmooth_envelopingAction_iff`). So every smooth module at a fixed level,
-for example each quotient `U / I_N`, carries mutually local current fields. No finiteness of `L`
-and no topology are used: each coefficient of each field applied to a vector is a single operator.
+for example each quotient `U / I_N`, carries mutually local current fields. The modes of the current
+fields generate the action of `U(ĝ) / (ι K - a)`: an `R`-submodule of a smooth module which is
+stable under every mode `J^x[[n]]` is stable under the whole algebra
+(`TauCeti.CurrentAlgebra.smul_mem_of_forall_ncoeff_currentField_apply_mem`), because the
+high-order part of a current kills each vector and the rest is a finite sum of modes. No finiteness
+of `L` and no topology are used: each coefficient of each field applied to a vector is a single
+operator.
 
 ## Main definitions
 
@@ -63,6 +68,8 @@ and no topology are used: each coefficient of each field applied to a vector is 
 * `TauCeti.CurrentAlgebra.ncoeff_currentField_mul_sub_mul`: the commutator formula.
 * `TauCeti.CurrentAlgebra.isLocalOfOrder_currentField`: current fields are mutually local of
   order `2`.
+* `TauCeti.CurrentAlgebra.smul_mem_of_forall_ncoeff_currentField_apply_mem`: a submodule stable
+  under all modes of the current fields is stable under `U(ĝ) / (ι K - a)`.
 
 ## References
 
@@ -205,6 +212,38 @@ theorem isLocalOfOrder_currentField_envelopingAction
     (currentField _ ((isSmooth_envelopingAction_iff Φ hΦ hΦs a).2 hM) x).IsLocalOfOrder
       (currentField _ ((isSmooth_envelopingAction_iff Φ hΦ hΦs a).2 hM) y) 2 :=
   isLocalOfOrder_currentField Φ a _ (envelopingAction_mul_sub_mul Φ hΦ hΦs a) x y
+
+variable {Φ hΦ hΦs a} in
+/-- **The modes generate the action.** On a module over `U(ĝ) / (ι K - a)` which is smooth for the
+left ideals `I_N`, an `R`-submodule stable under every mode `J^x[[n]]` of every current field is
+stable under the action of `U(ĝ) / (ι K - a)`. -/
+theorem smul_mem_of_forall_ncoeff_currentField_apply_mem
+    (hM : smoothModules (orderLeftIdeal Φ hΦ hΦs a) (ModuleCat.of UK M)) {W : Submodule R M}
+    (hW : ∀ (x : L) (n : ℤ), ∀ m ∈ W,
+      ((currentField _ ((isSmooth_envelopingAction_iff Φ hΦ hΦs a).2 hM) x)[[n]]) m ∈ W)
+    (u : UK) {m : M} (hm : m ∈ W) : u • m ∈ W := by
+  have hu : u ∈ Algebra.adjoin R (Set.range (LieAlgebra.ofTwoCocycle.envelopingι c a)) := by
+    rw [LieAlgebra.ofTwoCocycle.adjoin_range_envelopingι]
+    exact Algebra.mem_top
+  induction hu using Algebra.adjoin_induction generalizing m with
+  | mem u hu =>
+    obtain ⟨u, rfl⟩ := hu
+    obtain ⟨N, hN⟩ := isSmooth_iff.1 ((isSmooth_envelopingAction_iff Φ hΦ hΦs a).2 hM) m
+    -- Modulo currents of order at least `N`, which kill `m`, `u` is a polynomial current, that is
+    -- a finite sum of modes.
+    have h := hN _ (sub_ofLoop_trunc_mem_orderSubmodule R L N u)
+    rw [map_sub, LinearMap.sub_apply, sub_eq_zero, envelopingAction_apply] at h
+    rw [h, envelopingAction_apply]
+    obtain ⟨v, hv⟩ := (LieAlgebra.LoopAlgebra.toFinsupp R ℤ L).symm.surjective (trunc R L N u)
+    rw [← hv]
+    clear hv
+    induction v using Finsupp.induction_linear with
+    | zero => simp
+    | add v w hv hw => simpa only [map_add, add_smul] using add_mem hv hw
+    | single n x => simpa [LaurentPolynomial.toLaurentSeries_single] using hW x n m hm
+  | algebraMap r => simpa only [algebraMap_smul] using W.smul_mem r hm
+  | add u v _ _ hu hv => simpa only [add_smul] using add_mem (hu hm) (hv hm)
+  | mul u v _ _ hu hv => simpa only [mul_smul] using hu (hv hm)
 
 end Enveloping
 

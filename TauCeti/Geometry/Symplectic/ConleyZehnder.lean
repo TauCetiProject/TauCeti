@@ -18,6 +18,7 @@ import TauCeti.LinearAlgebra.BilinearForm.Isometry
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 import TauCeti.LinearAlgebra.Eigenspace.Matrix
 import TauCeti.LinearAlgebra.Matrix.Signature
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # The Conley–Zehnder index of a path of linear symplectic maps
@@ -253,8 +254,8 @@ theorem continuous_toGLSymplectic {X : Type*} [TopologicalSpace X] {b : Basis (�
     (hf : Continuous f) (hf' : ∀ p u v, ω (f p u) (f p v) = ω u v) :
     Continuous fun p ↦ ω.toGLSymplectic hb (f p) (hf' p) :=
   (GLSymplectic.symplecticGroupContinuousMulEquiv ι ℝ).continuous.comp
-    (Continuous.subtype_mk ((LinearMap.continuous_of_finiteDimensional
-      ((LinearMap.toMatrix b b).toLinearMap ∘ₗ ContinuousLinearMap.coeLM ℝ)).comp hf) _)
+    (Continuous.subtype_mk (((ContinuousLinearMap.toMatrixCLM b).continuous.comp hf).congr
+      fun p ↦ ContinuousLinearMap.toMatrixCLM_apply b (f p)) _)
 
 /-- The matrices, in a symplectic basis `b`, of a path `Ψ` of linear maps preserving `ω`, as a
 path of symplectic matrices. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Fin2
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
 public import Mathlib.RingTheory.FormalGroup.Basic
 public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Assoc
@@ -33,6 +34,8 @@ power-series-valued points whose constant coefficient is nilpotent.
 
 * `WeierstrassCurve.isComm_formalGroup`: the elliptic formal group law is commutative.
 * `WeierstrassCurve.map_formalGroup`: the construction commutes with base change.
+* `WeierstrassCurve.map_specialize_formalGroup`: the formal group law of every Weierstrass curve
+  is a specialization of the universal one.
 * `WeierstrassCurve.formalGroup_addInvX`: the abstract inverse is the geometric inverse parameter.
 * `WeierstrassCurve.nsmulSeries_two_formalGroup`: doubling is the inverse of the third
   intersection parameter of the tangent.
@@ -81,6 +84,14 @@ theorem map_formalGroup {S : Type*} [CommRing S] (W : WeierstrassCurve R) (φ : 
     formalGroup (W.map φ) = (formalGroup W).map φ := by
   apply FormalGroup.ext
   simp [formalGroup, MvPowerSeries.rename_map]
+
+/-- Specializing the formal group law of the universal Weierstrass curve at `W` gives the formal
+group law of `W`. -/
+@[simp]
+theorem map_specialize_formalGroup (W : WeierstrassCurve R) :
+    (formalGroup Universal.curve).map W.specialize = formalGroup W := by
+  rw [← map_formalGroup]
+  exact congrArg formalGroup W.map_specialize
 
 /-- The formal group law of a Weierstrass curve is commutative. This makes its power-series-valued
 points whose constant coefficient is nilpotent an additive commutative monoid through Mathlib's
