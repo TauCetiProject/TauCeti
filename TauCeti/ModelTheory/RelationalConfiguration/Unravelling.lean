@@ -45,6 +45,8 @@ No step uses symmetry or irreflexivity.
 
 * `TauCeti.RelationalConfiguration.unravelColor_eq_iff`: two colours agree exactly when the nodes
   have the same length and the same atomic diagram;
+* `TauCeti.RelationalConfiguration.unravelColor_eq_iff_sameAtomicType`: two nodes of the same length
+  have the same colour exactly when their vertex tuples have the same atomic type;
 * `TauCeti.RelationalConfiguration.isoSetoid_iff_exists_orderIso_unravelColor`: the unravelling
   lemma, (i) ⇔ (ii);
 * `TauCeti.RelationalConfiguration.isoSetoid_iff_exists_perm_dropLast_unravelColor`: the
@@ -165,25 +167,34 @@ private def unravelSystem (Ψ : Equiv.Perm (List ℚ)) : Set (Σ n, (Fin n → �
   {p | ∃ x : List ℚ, x.length = p.1 ∧ p.2.1 = (fun i : Fin p.1 ↦ unravelVertex x i) ∧
     p.2.2 = fun i : Fin p.1 ↦ unravelVertex (Ψ x) i}
 
-/-- The vertex tuples of a node and of its image have the same atomic type when the colours
-agree. -/
-private theorem sameAtomicType_unravelVertex {c d : RelationalConfiguration Language.graph ℕ}
-    {x y : List ℚ} {n : ℕ} (hx : x.length = n) (h : unravelColor c x = unravelColor d y) :
-    @SameAtomicType Language.graph n ℕ ℕ c.toStructure d.toStructure _
-      (fun i : Fin n ↦ unravelVertex x i) (fun i : Fin n ↦ unravelVertex y i) := by
-  obtain ⟨-, hbits⟩ := unravelColor_eq_iff.1 h
-  have hb (i j : Fin n) := hbits i (hx ▸ i.isLt) j (hx ▸ j.isLt)
-  refine (@sameAtomicType_iff Language.graph n ℕ ℕ c.toStructure d.toStructure _ _ _).2
-    ⟨fun i j ↦ by simpa using congrArg Prod.fst (hb i j), fun {k} r f ↦ ?_⟩
-  rw [toStructure_relMap, toStructure_relMap]
-  cases r
-  have hf (v : Fin n → ℕ) : v ∘ f = ![v (f 0), v (f 1)] := by
+/-- Two nodes of length `n` have the same colour exactly when their vertex tuples have the same
+atomic type in the decoded structures. -/
+theorem unravelColor_eq_iff_sameAtomicType {c d : RelationalConfiguration Language.graph ℕ}
+    {x y : List ℚ} {n : ℕ} (hx : x.length = n) (hy : y.length = n) :
+    unravelColor c x = unravelColor d y ↔
+      @SameAtomicType Language.graph n ℕ ℕ c.toStructure d.toStructure _
+        (fun i : Fin n ↦ unravelVertex x i) (fun i : Fin n ↦ unravelVertex y i) := by
+  have hf (v : Fin n → ℕ) (f : Fin 2 → Fin n) : v ∘ f = ![v (f 0), v (f 1)] := by
     funext i
     fin_cases i <;> rfl
-  rw [hf, hf, ← adjAtom_def, ← adjAtom_def]
-  have := congrArg Prod.snd (hb (f 0) (f 1))
-  simp only [unravelBits_snd] at this
-  rw [this]
+  rw [@sameAtomicType_iff Language.graph n ℕ ℕ c.toStructure d.toStructure _ _ _,
+    unravelColor_eq_iff]
+  constructor
+  · rintro ⟨-, hbits⟩
+    have hb (i j : Fin n) := hbits i (hx ▸ i.isLt) j (hx ▸ j.isLt)
+    refine ⟨fun i j ↦ by simpa using congrArg Prod.fst (hb i j), fun {k} r f ↦ ?_⟩
+    rw [toStructure_relMap, toStructure_relMap]
+    cases r
+    rw [hf, hf, ← adjAtom_def, ← adjAtom_def]
+    have := congrArg Prod.snd (hb (f 0) (f 1))
+    simp only [unravelBits_snd] at this
+    rw [this]
+  · rintro ⟨heq, hrel⟩
+    refine ⟨hx.trans hy.symm, fun i hi j hj ↦ ?_⟩
+    have hadj := hrel Language.adj ![⟨i, hx ▸ hi⟩, ⟨j, hx ▸ hj⟩]
+    rw [toStructure_relMap, toStructure_relMap, hf, hf, ← adjAtom_def, ← adjAtom_def] at hadj
+    exact Prod.ext (by simpa using heq ⟨i, hx ▸ hi⟩ ⟨j, hx ▸ hj⟩)
+      (by simpa using Bool.eq_iff_iff.2 hadj)
 
 /-- A bijection of `List ℚ` preserving the parent and the colours gives an isomorphism of the
 codes, through a tuple back-and-forth system of vertex tuples of matching nodes. -/
@@ -208,7 +219,7 @@ private theorem isoSetoid_of_perm_dropLast {c d : RelationalConfiguration Langua
     refine @IsTupleBFSystem.mk Language.graph _ ℕ ℕ c.toStructure d.toStructure _
       ⟨[], rfl, funext (·.elim0), funext (·.elim0)⟩ ?_ ?_ ?_ <;>
       rintro n a b ⟨x, hx, ha, hb⟩ <;> dsimp only at hx ha hb <;> subst ha hb
-    · exact sameAtomicType_unravelVertex hx (hχ' x).symm
+    · exact (unravelColor_eq_iff_sameAtomicType hx ((hlen x).trans hx)).1 (hχ' x).symm
     · intro m
       obtain ⟨r, rfl⟩ := exists_ratColor_eq m
       obtain ⟨s, hs⟩ := hchild x r
