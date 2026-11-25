@@ -8,7 +8,6 @@ module
 public import TauCeti.ModelTheory.Basic
 public import TauCeti.ModelTheory.Interpolation.Craig
 public import TauCeti.ModelTheory.RelationalConfiguration.LanguageMap
-import TauCeti.ModelTheory.RelationalConfiguration.SublanguageSeparation
 import Mathlib.Topology.MetricSpace.PiNat
 
 /-!
@@ -502,13 +501,9 @@ theorem exists_sentence_separating_of_forall_not_isoSetoid [Countable V]
       obtain ⟨c, hc, rfl⟩ := hc₀
       obtain ⟨d, hd, rfl⟩ := hd₀
       exact hsep c hc d hd ((isoSetoid_eq_orbitRel (L := symbSublang ∅ R₀) (V := V)) ▸ hcd))
-  refine ⟨ι₀.onBoundedFormulaInf θ₀, ?_, disjoint_left.2 ?_⟩
-  · intro c hc
-    rw [mem_modelsOf, ι₀.realize_sentenceInf_reductConfiguration, ← mem_modelsOf]
-    exact hθ₀_sub ⟨c, hc, rfl⟩
-  · intro c hc hθ
-    rw [mem_modelsOf, ι₀.realize_sentenceInf_reductConfiguration, ← mem_modelsOf] at hθ
-    exact disjoint_left.1 hθ₀_disj ⟨c, hc, rfl⟩ hθ
+  refine ⟨ι₀.onBoundedFormulaInf θ₀, ?_⟩
+  rw [ι₀.modelsOf_onBoundedFormulaInf]
+  exact ⟨image_subset_iff.1 hθ₀_sub, disjoint_image_left.1 hθ₀_disj⟩
 
 /-- **López–Escobar separation.** On a countable carrier, in a relational language of arbitrary
 cardinality, if `A` and `B` are disjoint analytic sets of configurations and `B` is isomorphism
@@ -545,8 +540,7 @@ theorem exists_modelsOf_eq_iff [Countable V] {B : Set (RelationalConfiguration L
   have hθ₀ : modelsOf θ₀ = B₀ :=
     (disjoint_compl_left_iff_subset.1 hdisj).antisymm hsub
   refine ⟨ι₀.onBoundedFormulaInf θ₀, ?_⟩
-  ext c
-  rw [mem_modelsOf, ι₀.realize_sentenceInf_reductConfiguration, ← mem_modelsOf, hθ₀, mem_preimage]
+  rw [ι₀.modelsOf_onBoundedFormulaInf, hθ₀]
 
 /-- **Relative López–Escobar.** Let `X` be a standard Borel space and
 `f : X → RelationalConfiguration L V` a measurable family of configurations on a countable carrier
