@@ -135,15 +135,12 @@ theorem eval₂_orbitLinearizedFlow (hσ : σ.IsClosed)
       σ.eval₂ (orbitLoop x 0) a b := by
   have hx := (mem_periodicSolutions.1 (contractiblePeriodicSolutions_subset x.property)).1
   rw [orbitLinearizedFlow_apply, orbitLinearizedFlow_apply]
-  -- The form is preserved at `φ_{0,t}(x 0)`, which is the point `x t` of the loop, and the loop
-  -- starts at `x 0`.
-  have h : ∀ y₁ y₀, timeDependentFlowOf X 0 t (x.val 0) = y₁ → x.val 0 = y₀ →
+  -- The general lemma holds at `x t` and `x 0`, which are the points `t` and `0` of the loop.
+  have h : ∀ y₁ y₀, x.val t = y₁ → x.val 0 = y₀ → ∀ a b : TangentSpace I (x.val 0),
       σ.eval₂ y₁ (mfderiv I I (timeDependentFlowOf X 0 t) (x.val 0) a)
         (mfderiv I I (timeDependentFlowOf X 0 t) (x.val 0) b) = σ.eval₂ y₀ a b := by
-    rintro _ _ rfl rfl
-    exact eval₂_mfderiv_timeDependentFlowOf_of_isHamiltonianVectorField (fun u _ ↦ hXH u) hσ
-      (fun u _ ↦ hH u) hX (mem_timeDependentFlowDomain_of_forall_hasMFDerivAt hx 0 t) a b
-  exact h _ _ ((timeDependentFlowOf_eq_of_forall_hasMFDerivAt (hX.of_le one_le_two) hx 0 t).trans
-    (orbitLoop_apply x t).symm) (orbitLoop x).source.symm
+    rintro _ _ rfl rfl a b
+    simpa only [linearizedFlowAlong_apply] using eval₂_linearizedFlowAlong hσ hXH hH hX hx t a b
+  exact h _ _ (orbitLoop_apply x t).symm (orbitLoop x).source.symm a b
 
 end TauCeti.SmoothTwoForm
