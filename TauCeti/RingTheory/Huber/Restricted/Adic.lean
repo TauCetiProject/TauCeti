@@ -93,6 +93,15 @@ theorem isAdic_map_algebraMap_restrictedMvPowerSeriesCompletion
   rw [Ideal.map_map] at h
   exact h
 
+/-- The separated completion of restricted power series over an `I`-adic ring is
+`I·A⟨X₁, …, Xₙ⟩`-adically separated and complete, for finitely generated `I`. -/
+theorem isAdicComplete_restrictedMvPowerSeriesCompletion
+    (hI : IsAdic I) (hfg : I.FG) :
+    IsAdicComplete (I.map (algebraMap A (restrictedMvPowerSeriesCompletion n A)))
+      (restrictedMvPowerSeriesCompletion n A) :=
+  (isAdic_map_algebraMap_restrictedMvPowerSeriesCompletion n hI hfg).isAdicComplete_iff.mpr
+    ⟨inferInstance, inferInstance⟩
+
 variable {n} in
 /-- **Presentations are open quotient maps.** Let `I` be a finitely generated ideal of definition
 of `A`. If an `A`-algebra `B` carries the adic topology of `I·B`, then every surjective
@@ -121,12 +130,12 @@ theorem isNoetherianRing_restrictedMvPowerSeriesCompletion_of_isAdic
   have hJ : IsAdic J := isAdic_map_algebraMap_restrictedMvPowerSeriesCompletion n hI
     (IsNoetherian.noetherian I)
   have : IsAdicComplete J (restrictedMvPowerSeriesCompletion n A) :=
-    hJ.isAdicComplete_iff.mpr ⟨inferInstance, inferInstance⟩
+    isAdicComplete_restrictedMvPowerSeriesCompletion n hI (IsNoetherian.noetherian I)
   have : IsNoetherianRing P :=
     isNoetherianRing_of_ringEquiv _ (weightedPolynomialsEquiv isWeightFamily_one_weight)
   have hdense : DenseRange ((Completion.coeRingHom : S →+* Completion S).comp P.subtype) :=
     Completion.denseRange_coe.comp
-      (dense_weightedPolynomials isWeightFamily_one_weight).denseRange_val
+      (dense_weightedPolynomials isWeightFamily_one_weight).denseRange_subtypeVal
       (Completion.continuous_coe _)
   exact Ideal.isNoetherianRing_of_isAdicComplete_of_denseRange (I := J)
     (Ideal.FG.map (IsNoetherian.noetherian I) _)
@@ -142,8 +151,8 @@ instance isAdicRing_restrictedMvPowerSeriesCompletion [IsAdicRing A] :
     IsAdicRing (restrictedMvPowerSeriesCompletion n A) := by
   obtain ⟨hfg, hI, -⟩ := IsAdicRing.ideal_spec A
   let J := (IsAdicRing.ideal A).map (algebraMap A (restrictedMvPowerSeriesCompletion n A))
-  have hJ : IsAdic J := isAdic_map_algebraMap_restrictedMvPowerSeriesCompletion n hI hfg
-  exact ⟨J, hfg.map _, hJ, hJ.isAdicComplete_iff.mpr ⟨inferInstance, inferInstance⟩⟩
+  exact ⟨J, hfg.map _, isAdic_map_algebraMap_restrictedMvPowerSeriesCompletion n hI hfg,
+    isAdicComplete_restrictedMvPowerSeriesCompletion n hI hfg⟩
 
 /-- Every noetherian adic ring of finite ideal type is strongly noetherian. -/
 instance IsStronglyNoetherian.of_isAdicRing [IsAdicRing A] [IsNoetherianRing A] :

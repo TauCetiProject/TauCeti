@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 public import Mathlib.LinearAlgebra.SymplecticGroup
 import Mathlib.Data.Fintype.Prod
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
-import TauCeti.LinearAlgebra.Matrix.Alternating
+import TauCeti.LinearAlgebra.Matrix.Alternating.Basic
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InnerAut
 
 /-!
@@ -122,15 +122,15 @@ theorem finrank_skewAdjointMatricesSubmodule_le_choose_two [NeZero (2 : K)] {C :
     rw [mem_skewAdjointMatricesSubmodule, Matrix.IsSkewAdjoint, IsAdjointPair] at hX
     rw [transpose_mul, hC, hX, Matrix.mul_neg]
   let f : skewAdjointMatricesSubmodule C →ₗ[K] ({p : n × n // p.1 < p.2} → K) :=
-    { toFun := fun X p => (C * X) p.1.1 p.1.2
+    { toFun := fun X p => (C * X) p.val.1 p.val.2
       map_add' := fun X Y => by ext; simp [Matrix.mul_add]
       map_smul' := fun a X => by ext; simp }
   have hf : Function.Injective f := by
     intro X Y hXY
     exact Subtype.ext <| hCu.mul_left_cancel <|
-      ext_of_lt_of_transpose_eq_neg (hskew X X.2) (hskew Y Y.2)
-        (diag_eq_zero_of_transpose_eq_neg (hskew X X.2) h2)
-        (diag_eq_zero_of_transpose_eq_neg (hskew Y Y.2) h2)
+      ext_of_lt_of_transpose_eq_neg (hskew X X.property) (hskew Y Y.property)
+        (diag_eq_zero_of_transpose_eq_neg (hskew X X.property) h2)
+        (diag_eq_zero_of_transpose_eq_neg (hskew Y Y.property) h2)
         fun a b hab => congrFun hXY ⟨(a, b), hab⟩
   calc finrank K (skewAdjointMatricesSubmodule C) ≤ finrank K ({p : n × n // p.1 < p.2} → K) :=
         LinearMap.finrank_le_finrank_of_injective hf

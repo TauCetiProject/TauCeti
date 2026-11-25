@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Lie.FundamentalVectorField.Circle
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Integrable
 public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Linear
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.Complex.Inner
 
 /-!
@@ -166,11 +166,11 @@ the rotations are a Hamiltonian circle action whose moment map is the angular mo
 `ι : Circle → ℂ`. -/
 theorem hamiltonianTorusData_angularMomentum_puncturedPhaseSpace :
     SmoothTwoForm.HamiltonianTorusData
-      (SmoothForm.mpullback (Subtype.val : puncturedPhaseSpace ℂ → ℂ × ℂ) contMDiff_subtype_val
+      (SmoothForm.mpullback (Subtype.val : puncturedPhaseSpace ℂ → ℂ × ℂ) contMDiff_subtypeVal
         (stdSymplecticForm (V := ℂ)).constSmooth) fun x ↦
       angularMomentum 1 I (x : ℂ × ℂ) •
         (imCLM ∘L mvfderiv (𝓡 1) (fun z : Circle ↦ (z : ℂ)) 1).toLinearMap :=
-  hamiltonianTorusData_angularMomentum.mpullback contMDiff_subtype_val
+  hamiltonianTorusData_angularMomentum.mpullback contMDiff_subtypeVal
     coe_smul_puncturedPhaseSpace
 
 end TauCeti

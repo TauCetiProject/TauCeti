@@ -12,7 +12,7 @@ public import Mathlib.CategoryTheory.ObjectProperty.Kernels
 public import Mathlib.LinearAlgebra.Dimension.RankNullity
 public import Mathlib.RingTheory.Finiteness.Defs
 public import Mathlib.RingTheory.Noetherian.Defs
-public import TauCeti.Algebra.Homology.SpectralSequence.Bidegree
+public import TauCeti.Algebra.Homology.SpectralSequence.BidegreeAssignment
 public import TauCeti.Algebra.Homology.SpectralSequence.EulerCharacteristic.Signs
 public import TauCeti.CategoryTheory.GrothendieckGroup.Abelian
 public import TauCeti.CategoryTheory.ObjectProperty.AdditiveFunction
@@ -29,8 +29,8 @@ import TauCeti.CategoryTheory.ObjectProperty.Kernels
 # Euler characteristics of pages of a spectral sequence
 
 Let `E : SpectralSequence C c r₀` be a spectral sequence in an abelian category with a bidegree
-assignment `A : BidegreeAssignment c r₀ e`, let `P : ObjectProperty C` contain zero and be closed
-under kernels and cokernels (for instance a weak Serre class or a Serre class), and let
+assignment `A : TauCeti.BidegreeAssignment c r₀`, let `P : ObjectProperty C` contain zero and be
+closed under kernels and cokernels (for instance a weak Serre class or a Serre class), and let
 `v : C → G` be a function into an abelian group that is additive on short exact sequences in `P`.
 
 If page `r` vanishes outside a finite set `s : Finset κ` and every term in `s` lies in `P`, then:
@@ -56,14 +56,14 @@ public section
 
 namespace CategoryTheory.SpectralSequence
 
-open Limits
+open Limits TauCeti
 
 universe v u
 
 section Abelian
 
 variable {C : Type u} [Category.{v} C] [Abelian C] {κ : Type*} {c : ℤ → ComplexShape κ}
-  {r₀ e : ℤ}
+  {r₀ : ℤ}
 
 /-- **The Euler characteristic of a page equals that of the next page** (Stacks Project, Tag 0BDW,
 page step of Lemma 24.12). Let `A` be a bidegree assignment, `P` a property containing zero and
@@ -76,7 +76,7 @@ vanishes outside a finite set `s` and its terms in `s` lie in `P`, then
   ∑ pq ∈ s, (-1)^(A.deg pq) • v ((E.page (r + 1)).X pq).
 ``` -/
 theorem sum_negOnePow_page_eq_sum_negOnePow_page_add_one
-    (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀ e)
+    (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀)
     (P : ObjectProperty C) [P.ContainsZero] [P.IsClosedUnderKernels]
     [P.IsClosedUnderCokernels]
     {G : Type*} [AddCommGroup G] (v : C → G) (hv : P.IsAdditiveOn v)
@@ -100,7 +100,7 @@ theorem sum_negOnePow_page_eq_sum_negOnePow_page_add_one
 `sum_negOnePow_page_eq_sum_negOnePow_page_add_one`, the alternating sum over `s` is unchanged on
 every later page `r' ≥ r`. -/
 theorem sum_negOnePow_page_eq_sum_negOnePow_page_of_le
-    (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀ e)
+    (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀)
     (P : ObjectProperty C) [P.ContainsZero] [P.IsClosedUnderKernels]
     [P.IsClosedUnderCokernels]
     {G : Type*} [AddCommGroup G] (v : C → G) (hv : P.IsAdditiveOn v)
@@ -120,7 +120,7 @@ theorem sum_negOnePow_page_eq_sum_negOnePow_page_of_le
 /-- Specialization of `sum_negOnePow_page_eq_sum_negOnePow_page_add_one` to a
 `TauCeti.AbelianK0.AdditiveInvariant`, taking `P = ⊤`. -/
 theorem sum_negOnePow_obj_page_eq_sum_negOnePow_obj_page_add_one
-    (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀ e)
+    (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀)
     {G : Type*} [AddCommGroup G] (v : TauCeti.AbelianK0.AdditiveInvariant C G)
     (r : ℤ) (hr : r₀ ≤ r) (s : Finset κ)
     (hs : ∀ pq : κ, pq ∉ s → IsZero ((E.page r hr).X pq)) :
@@ -132,7 +132,7 @@ theorem sum_negOnePow_obj_page_eq_sum_negOnePow_obj_page_add_one
 /-- Specialization of `sum_negOnePow_page_eq_sum_negOnePow_page_of_le` to a
 `TauCeti.AbelianK0.AdditiveInvariant`, taking `P = ⊤`. -/
 theorem sum_negOnePow_obj_page_eq_sum_negOnePow_obj_page_of_le
-    (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀ e)
+    (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀)
     {G : Type*} [AddCommGroup G] (v : TauCeti.AbelianK0.AdditiveInvariant C G)
     (r : ℤ) (hr : r₀ ≤ r) (s : Finset κ)
     (hs : ∀ pq : κ, pq ∉ s → IsZero ((E.page r hr).X pq))

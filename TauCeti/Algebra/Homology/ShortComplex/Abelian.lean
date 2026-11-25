@@ -47,7 +47,7 @@ noncomputable def cokernelAbelianImageToKernelIsoHomology (S : ShortComplex C) :
       kernel.lift S.g S.f S.zero = Abelian.factorThruImage S.f ≫ S.abelianImageToKernel := by
     rw [← cancel_mono (kernel.ι S.g), kernel.lift_ι, Category.assoc,
       S.abelianImageToKernel_comp_kernel_ι, Abelian.image.fac]
-  exact (cokernelEpiComp (Abelian.factorThruImage S.f) S.abelianImageToKernel).symm ≪≫
+  exact (cokernelEpiComp S.abelianImageToKernel (Abelian.factorThruImage S.f)).symm ≪≫
     cokernelIsoOfEq hfac.symm ≪≫ S.homologyIsoCokernelLift.symm
 
 /-- The canonical projection `kernel S.g ⟶ cokernel S.abelianImageToKernel` followed by

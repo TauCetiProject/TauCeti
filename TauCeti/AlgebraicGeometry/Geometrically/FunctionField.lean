@@ -59,7 +59,7 @@ which supplies the integrality of the base change `X ×_k Spec L`.
   algebraically closed in `k(X) · K`.
 
 The chart arguments use `TauCeti.AlgebraicGeometry.exists_affineOpen_isFractionRing` and
-`AlgebraicGeometry.Scheme.Hom.nonempty_functionField_algEquiv_of_isOpenImmersion` (the function
+`AlgebraicGeometry.Scheme.Hom.functionFieldAlgEquivOfIsOpenImmersion` (the function
 field of an integral scheme is the fraction field of any affine chart), from
 `TauCeti/AlgebraicGeometry/Scheme/BaseAlgebra.lean`, and
 `TauCeti.AlgebraicGeometry.exists_isOpenImmersion_tensorProduct_of_isPullback` (the base change of
@@ -135,7 +135,7 @@ theorem nonempty_functionField_algEquiv_of_isPullback {K : Type u} [Field K] [Al
     isFractionRing_tensorProduct_of_constantCompositum_eq_top h
   have : IsScalarTower K (Γ(X, U) ⊗[k] K) F' := .of_algebraMap_eq fun c ↦ by
     simp [RingHom.algebraMap_toAlgebra]
-  exact ι.nonempty_functionField_algEquiv_of_isOpenImmersion hι F'
+  exact ⟨ι.functionFieldAlgEquivOfIsOpenImmersion hι F'⟩
 
 /-- **The constants of a constant field extension.** Let `X` be a geometrically integral scheme
 over `k` and `F' = k(X) · K` for an algebraic extension `K / k`, separable or not. Then `K` is

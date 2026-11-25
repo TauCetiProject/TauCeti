@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.EulerCharacteristic
-public import TauCeti.Algebra.Homology.SpectralSequence.Bidegree
+public import TauCeti.Algebra.Homology.SpectralSequence.BidegreeAssignment
 
 /-!
 # Euler characteristic signs for spectral sequence pages
@@ -14,7 +14,7 @@ public import TauCeti.Algebra.Homology.SpectralSequence.Bidegree
 This file equips the standard cohomological and homological spectral sequence page shapes with the
 alternating total-degree signs `pq ↦ (-1)^(p + q)` (`ComplexShape.EulerCharSigns`), and constructs
 the alternating total-degree signs `pq ↦ (-1)^(A.deg pq)` induced on every page `r ≥ r₀` by a
-`CategoryTheory.SpectralSequence.BidegreeAssignment` (`BidegreeAssignment.eulerCharSigns`).
+`TauCeti.BidegreeAssignment` (`TauCeti.BidegreeAssignment.eulerCharSigns`).
 -/
 
 public section
@@ -88,32 +88,32 @@ lemma eulerCharSignsSpectralSequenceNatHomological_χ (r : ℤ) (pq : ℕ × ℕ
 rows. -/
 instance eulerCharSignsSpectralSequenceFinCohomological (l : ℕ) (r : ℤ) :
     (spectralSequenceFin l ⟨r, 1 - r⟩).EulerCharSigns where
-  χ pq := (pq.1 + (pq.2.1 : ℤ)).negOnePow
+  χ pq := (pq.1 + (pq.2.val : ℤ)).negOnePow
   χ_next {a b} h := by
     simp only [spectralSequenceFin_rel_iff] at h
-    have hsum : b.1 + (b.2.1 : ℤ) = a.1 + (a.2.1 : ℤ) + 1 := by lia
+    have hsum : b.1 + (b.2.val : ℤ) = a.1 + (a.2.val : ℤ) + 1 := by lia
     rw [hsum, Int.negOnePow_succ]
 
 @[simp↓]
 lemma eulerCharSignsSpectralSequenceFinCohomological_χ (l : ℕ) (r : ℤ) (pq : ℤ × Fin l) :
-    (spectralSequenceFin l ⟨r, 1 - r⟩).χ pq = (pq.1 + (pq.2.1 : ℤ)).negOnePow := rfl
+    (spectralSequenceFin l ⟨r, 1 - r⟩).χ pq = (pq.1 + (pq.2.val : ℤ)).negOnePow := rfl
 
 end ComplexShape
 
-namespace CategoryTheory.SpectralSequence.BidegreeAssignment
+namespace TauCeti.BidegreeAssignment
 
 /-- The alternating signs `pq ↦ (-1)^(A.deg pq)` induced by a bidegree assignment on page `r`
 (`r₀ ≤ r`). -/
 @[instance_reducible]
-def eulerCharSigns {κ : Type*} {c : ℤ → ComplexShape κ} {r₀ e : ℤ}
-    (A : BidegreeAssignment c r₀ e) (r : ℤ) (hr : r₀ ≤ r) : (c r).EulerCharSigns where
+def eulerCharSigns {κ : Type*} {c : ℤ → ComplexShape κ} {r₀ : ℤ}
+    (A : BidegreeAssignment c r₀) (r : ℤ) (hr : r₀ ≤ r) : (c r).EulerCharSigns where
   χ pq := (A.deg pq).negOnePow
   χ_next h := by
     rw [A.deg_rel r hr _ _ h, Int.negOnePow_succ]
 
 @[simp]
-lemma eulerCharSigns_χ {κ : Type*} {c : ℤ → ComplexShape κ} {r₀ e : ℤ}
-    (A : BidegreeAssignment c r₀ e) (r : ℤ) (hr : r₀ ≤ r) (pq : κ) :
+lemma eulerCharSigns_χ {κ : Type*} {c : ℤ → ComplexShape κ} {r₀ : ℤ}
+    (A : BidegreeAssignment c r₀) (r : ℤ) (hr : r₀ ≤ r) (pq : κ) :
     (A.eulerCharSigns r hr).χ pq = (A.deg pq).negOnePow := (rfl)
 
-end CategoryTheory.SpectralSequence.BidegreeAssignment
+end TauCeti.BidegreeAssignment

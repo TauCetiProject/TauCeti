@@ -19,19 +19,28 @@ both for the `L¹` seminorm and for the Bochner integral `∫ ‖f i‖ ∂μ`, 
 convergence of a difference `f i = W i - a` is usually consumed.
 
 It also contains the comparison of seminorms of exponents related by `1 / s = r / p` for pointwise
-bounds `‖u‖ ≤ ‖f‖ ^ r`.
+bounds `‖u‖ ≤ ‖f‖ ^ r`, and Hölder's inequality `MeasureTheory.MemLp.fun_prod` for a product of
+functions over a nonempty finset `s` with the common exponent `p * s.card`.
 
 On an arbitrary measure space, a common bound for the `Lᵖ` seminorm and the essential supremum
 also bounds every intermediate `Lᵠ` seminorm (`MeasureTheory.eLpNorm_le_of_exponent_le`).
-This comparison is useful for embeddings of real interpolation spaces.
+This comparison is useful for embeddings of real interpolation spaces. A function bounded almost
+everywhere and vanishing off a set of finite measure lies in every `Lᵖ`
+(`MeasureTheory.memLp_of_norm_le_of_measure_support_ne_top`).
 
 ## Main declarations
 
 * `TauCeti.eLpNorm_le_eLpNorm_rpow`: if `‖u‖ ≤ ‖f‖ ^ r`, then `‖u‖_s ≤ ‖f‖_p ^ r` when
   `1 / s = r / p`.
 * `TauCeti.eLpNorm_le_eLpNorm_rpow_toReal_sub_one`: its form for Hölder conjugate exponents.
+* `TauCeti.eLpNorm_le_rpow_inv_mul_eLpNorm_of_eLpNorm_norm_rpow_le`: a bound between seminorms of
+  `‖f‖ ^ r` and `‖g‖ ^ r` is a bound between seminorms of `f` and `g` at `r` times the exponents.
+* `TauCeti.memLp_fun_prod_of_memLp_mul_card`: a product over a nonempty finset `s` of functions
+  in `L^(p * s.card)` lies in `Lᵖ`.
 * `TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_eLpNorm`: convergence to zero in `Lᵖ`
   for `1 ≤ p` implies convergence to zero in `L¹`.
+* `TauCeti.MeasureTheory.tendsto_setLIntegral_enorm_of_tendsto_setLIntegral_ofReal_norm_sq`: on
+  sets of bounded measure, convergence to zero of `L²` norms implies that of `L¹` norms.
 * `TauCeti.MeasureTheory.tendsto_eLpNorm_of_tendsto_eLpNorm_one`: convergence to zero in `L¹`
   implies convergence to zero in `Lᵖ` for `p ≤ 1`.
 * `TauCeti.MeasureTheory.tendsto_integral_norm_of_tendsto_eLpNorm`: if `eLpNorm (f i) p μ → 0`
@@ -86,7 +95,32 @@ theorem eLpNorm_le_eLpNorm_rpow_toReal_sub_one {q q' : ℝ≥0∞} [hqq : q.Hold
   rw [← ENNReal.HolderConjugate.sub_one_mul_inv q q' hq, ENNReal.ofReal_sub _ zero_le_one,
     ENNReal.ofReal_toReal hq, ENNReal.ofReal_one]
 
+/-- **Changing exponents through a power.** For `r > 0`, a bound
+`‖‖f‖^r‖_{L^p(μ)} ≤ B ‖‖g‖^r‖_{L^q(ν)}` is the bound
+`‖f‖_{L^{pr}(μ)} ≤ B^{1/r} ‖g‖_{L^{qr}(ν)}`. -/
+theorem eLpNorm_le_rpow_inv_mul_eLpNorm_of_eLpNorm_norm_rpow_le {ν : Measure α} {f : α → E}
+    {g : α → F} {p q B : ℝ≥0∞} {r : ℝ} (hf : AEStronglyMeasurable f μ)
+    (hg : AEStronglyMeasurable g ν) (hr : 0 < r)
+    (h : eLpNorm (fun x => ‖f x‖ ^ r) p μ ≤ B * eLpNorm (fun x => ‖g x‖ ^ r) q ν) :
+    eLpNorm f (p * ENNReal.ofReal r) μ ≤ B ^ r⁻¹ * eLpNorm g (q * ENNReal.ofReal r) ν := by
+  rw [eLpNorm_norm_rpow f hf hr, eLpNorm_norm_rpow g hg hr] at h
+  have hr' : 0 ≤ r⁻¹ := inv_nonneg.2 hr.le
+  have hpow := ENNReal.rpow_le_rpow h hr'
+  rwa [ENNReal.mul_rpow_of_nonneg _ _ hr', ← ENNReal.rpow_mul, ← ENNReal.rpow_mul,
+    mul_inv_cancel₀ hr.ne', ENNReal.rpow_one, ENNReal.rpow_one] at hpow
+
 end Rpow
+
+/-- **Hölder's inequality** for a finite product with a common exponent: a product of functions
+indexed by a nonempty finset `s` lies in `Lᵖ` when every factor lies in `L^(p * s.card)`. This is
+`MeasureTheory.MemLp.fun_prod` with equal exponents, and it holds for any measure. -/
+theorem memLp_fun_prod_of_memLp_mul_card {ι α 𝕜 : Type*} {_ : MeasurableSpace α}
+    [NormedCommRing 𝕜] {μ : Measure α} {f : ι → α → 𝕜} {s : Finset ι} (hs : s.Nonempty)
+    {p : ℝ≥0∞} (hf : ∀ i ∈ s, MemLp (f i) (p * s.card) μ) :
+    MemLp (fun x ↦ ∏ i ∈ s, f i x) p μ := by
+  have h := MemLp.fun_prod hf
+  rwa [Finset.sum_const, nsmul_eq_mul, ENNReal.inv_mul_inv_mul_cancel
+    (Nat.cast_ne_zero.2 hs.card_pos.ne') (ENNReal.natCast_ne_top _)] at h
 
 namespace MeasureTheory
 
@@ -102,6 +136,38 @@ theorem tendsto_eLpNorm_one_of_tendsto_eLpNorm {ι E : Type*} [NormedAddCommGrou
     fun _ => eLpNorm_le_eLpNorm_mul_rpow_measure_univ_of_pos hp one_pos
   simpa using ENNReal.Tendsto.mul_const h (.inr (ENNReal.rpow_ne_top_of_nonneg
     (ENNReal.one_div_toReal_sub_one_div_toReal_nonneg one_ne_zero hp) (measure_ne_top μ Set.univ)))
+
+/-- **`L²` control gives `L¹` control on sets of bounded measure.** If the sets `A i` eventually
+have measure at most `C < ∞` and the `L²` norms of `g i` over `A i` tend to zero, then so do their
+`L¹` norms. -/
+theorem tendsto_setLIntegral_enorm_of_tendsto_setLIntegral_ofReal_norm_sq {ι F : Type*}
+    [NormedAddCommGroup F] {μ : Measure Ω} {l : Filter ι} {A : ι → Set Ω}
+    {g : ι → Ω → F} {C : ℝ≥0∞} (hC : C ≠ ∞) (hA : ∀ᶠ i in l, μ (A i) ≤ C)
+    (hg : ∀ᶠ i in l, AEStronglyMeasurable (g i) (μ.restrict (A i)))
+    (h : Tendsto (fun i ↦ ∫⁻ x in A i, ENNReal.ofReal (‖g i x‖ ^ 2) ∂μ) l (𝓝 0)) :
+    Tendsto (fun i ↦ ∫⁻ x in A i, ‖g i x‖ₑ ∂μ) l (𝓝 0) := by
+  have h2 : Tendsto (fun i ↦ (∫⁻ x in A i, ‖g i x‖ₑ ^ (2 : ℝ) ∂μ) ^ (1 / (2 : ℝ)) *
+      C ^ (1 / (2 : ℝ))) l (𝓝 0) := by
+    have h' : Tendsto (fun i ↦ ∫⁻ x in A i, ‖g i x‖ₑ ^ (2 : ℝ) ∂μ) l (𝓝 0) := by
+      refine h.congr fun i ↦ lintegral_congr fun x ↦ ?_
+      rw [← ofReal_norm, ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) zero_le_two,
+        Real.rpow_two]
+    have h'' := ((ENNReal.continuous_rpow_const (y := 1 / (2 : ℝ))).tendsto 0).comp h'
+    rw [ENNReal.zero_rpow_of_pos (by norm_num)] at h''
+    simpa using ENNReal.Tendsto.mul_const h''
+      (Or.inr (ENNReal.rpow_ne_top_of_nonneg (by norm_num) hC))
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h2
+    (Eventually.of_forall fun _ ↦ zero_le) ?_
+  filter_upwards [hA, hg] with i hiA hig
+  -- Hölder's inequality on `A i`, which has measure at most `C`.
+  have hL := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (p := 1) (q := 2) one_le_two hig
+  rw [eLpNorm_one_eq_lintegral_eNorm hig,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top hig,
+    Measure.restrict_apply_univ] at hL
+  refine hL.trans (mul_le_mul' (le_of_eq ?_) ?_)
+  · norm_num
+  · rw [show (1 / ENNReal.toReal 1 - 1 / ENNReal.toReal 2 : ℝ) = 1 / 2 by norm_num]
+    exact ENNReal.rpow_le_rpow hiA (by norm_num)
 
 /-- On a finite measure space, convergence to zero in `L¹` implies convergence to zero in `Lᵖ`
 for every exponent `p ≤ 1`. No measurability hypothesis is needed: `eLpNorm (F i) 1 μ` is finite
@@ -221,5 +287,12 @@ theorem eLpNorm_le_of_exponent_le
   rw [hnorm, ENNReal.inv_mul_le_iff (ENNReal.ofReal_ne_zero_iff.2 hM)
     ENNReal.ofReal_ne_top, mul_one] at h
   exact h
+
+/-- A function bounded almost everywhere and vanishing off a set of finite measure lies in every
+`Lᵖ`. -/
+theorem memLp_of_norm_le_of_measure_support_ne_top {F : Type*} [NormedAddCommGroup F]
+    {u : α → F} (hu : AEStronglyMeasurable u μ) {c : ℝ} (hc : ∀ᵐ x ∂μ, ‖u x‖ ≤ c) {s : Set α}
+    (hs : μ s ≠ ∞) (hsupp : ∀ x, x ∉ s → u x = 0) (p : ℝ≥0∞) : MemLp u p μ :=
+  (memLp_top_of_bound hu c hc).mono_exponent_of_measure_support_ne_top hsupp hs le_top
 
 end MeasureTheory

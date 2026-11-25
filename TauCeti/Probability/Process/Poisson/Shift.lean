@@ -43,7 +43,7 @@ theorem HasIndepIncrements.identDistrib_shift_of_hasLaw_poissonMeasure (hN : Has
   let Z : ℝ≥0 → Ω → ℤ := fun s ω ↦ (N s ω : ℤ)
   have hmZ (s : ℝ≥0) : Measurable (Z s) :=
     (measurable_of_countable (fun n : ℕ ↦ (n : ℤ))).comp (hm s)
-  have hZ : HasIndepIncrements Z P := hN.natCast hmono
+  have hZ : HasIndepIncrements Z P := hN.natCast fun _ _ hst ↦ hmono.mono fun _ hω ↦ hω hst
   have h0Z : ∀ᵐ ω ∂P, Z 0 ω = 0 := by
     filter_upwards [h0] with ω hω using by simp [Z, hω]
   have hinclaw : ∀ s u : ℝ≥0, s ≤ u →

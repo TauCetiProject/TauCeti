@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.SimpleGraph.PathGraph
+public import TauCeti.Combinatorics.SimpleGraph.PathGraph.Basic
 import Mathlib.Combinatorics.SimpleGraph.Ends.Defs
 
 /-!

@@ -59,21 +59,22 @@ theorem hasLaw_ncard_setOf_succ_eq_geometricMeasure (hp : p ≠ 0)
       ((measurableSet_singleton y).preimage (measurable_pi_apply (n + 1))).mem)
   refine ⟨hm.aemeasurable, Measure.ext_of_Ici _ _ fun k => ?_⟩
   rw [Measure.map_apply hm measurableSet_Ici]
+  -- Off the null event of infinitely many visits, `Set.ncard` and `Set.encard` agree.
   have hevent : {x : ℕ → α | k ≤ {n | x (n + 1) = y}.ncard} =ᵐ[
       markovChainLaw (Measure.dirac y) κ]
-      {x | successiveVisit (fun n x => x n) y k x ≠ ⊤} := by
-    filter_upwards [hfin, markovChainLaw_dirac_ae_apply_zero κ y] with x hx hx0
-    simp only [successiveVisit_ne_top_iff_lt_ncard (X := fun n (x : ℕ → α) => x n) hx,
-      ncard_setOf_eq_eq_ncard_setOf_succ_add_one hx hx0, Nat.lt_succ_iff]
+      {x | (k : ℕ∞) ≤ {n | x (n + 1) = y}.encard} := by
+    filter_upwards [hfin] with x hx
+    have hs : {n | x (n + 1) = y}.Finite := hx.preimage Nat.succ_injective.injOn
+    simp only [← hs.cast_ncard_eq, Nat.cast_le]
   have htail : markovChainLaw (Measure.dirac y) κ
       {x | k ≤ {n | x (n + 1) = y}.ncard} = ENNReal.ofReal (1 - (p : ℝ)) ^ k := by
-    rw [measure_congr hevent, markovChainLaw_dirac_setOf_successiveVisit_ne_top, hy]
+    rw [measure_congr hevent, markovChainLaw_dirac_setOf_le_encard_setOf_succ_eq, hy]
   -- Membership in the preimage of an upper interval is the visit-count tail inequality.
   have hpre : (fun x : ℕ → α => {n | x (n + 1) = y}.ncard) ⁻¹' Ici k =
       {x | k ≤ {n | x (n + 1) = y}.ncard} := rfl
   rw [hpre, htail]
   apply (ENNReal.toReal_eq_toReal_iff' (by finiteness) (measure_ne_top _ _)).mp
-  rw [ENNReal.toReal_pow, ENNReal.toReal_ofReal (sub_nonneg.mpr p.2.2)]
+  rw [ENNReal.toReal_pow, ENNReal.toReal_ofReal (sub_nonneg.mpr p.property.2)]
   exact (geometricMeasure_real_Ici hp k).symm
 
 /-- The probability of exactly `k` positive-time visits to a transient starting state. -/

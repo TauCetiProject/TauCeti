@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.MvPowerSeries.Trunc
 public import Mathlib.Topology.UniformSpace.AbstractCompletion
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
+import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Norm
 
 /-!
 # Polynomial approximation of restricted power series
@@ -51,8 +52,8 @@ constants and variables, and commutes with bounded coefficient maps by
   uniform structure on polynomials are given by the Gauss norm of differences.
 
 Dense coefficient subsets give dense polynomials with coefficients in them by
-`MvPowerSeries.dense_closure_monomial`, and injectivity of the polynomial embedding is Mathlib's
-`MvPolynomial.toRestricted_injective`.
+`MvPowerSeries.dense_setOfPred_coe_eq_sum_monomial`, and injectivity of the polynomial embedding
+is Mathlib's `MvPolynomial.toRestricted_injective`.
 
 The packaging as an `AbstractCompletion` follows Mathlib's `LaurentSeries.LaurentSeriesPkg` in
 `Mathlib/RingTheory/LaurentSeries.lean`, as does `TauCeti.NovikovSeries.completionPkg`.
@@ -84,18 +85,25 @@ theorem norm_sub_truncFinset_le (f : IsRestricted.subring (R := R) c) (s : Finse
   · simpa [coeff_truncFinset_eq_zero _ ht] using h t ht
 
 /-- **Finite-support truncations converge**: as the finite set `s` of exponents grows, the
-truncations `∑_{t ∈ s} aₜ Xᵗ` of a restricted series tend to it in the Gauss norm. -/
+truncations `∑_{t ∈ s} aₜ Xᵗ` of a restricted series tend to it in the Gauss norm. This is the
+case `E = R` of `TauCeti.MvPowerSeries.IsRestrictedFamily.Gauss.hasSum_ofFinsupp_single`. -/
 theorem tendsto_truncFinset_atTop (f : IsRestricted.subring (R := R) c) :
     Tendsto (fun s : Finset (σ →₀ ℕ) ↦
       polynomialToRestricted c (truncFinset R s (f : MvPowerSeries σ R))) atTop (𝓝 f) := by
-  refine Metric.tendsto_nhds.mpr fun ε hε ↦ ?_
-  -- only finitely many weighted coefficient norms are at least `ε / 2`
-  have hF : {t | ε / 2 ≤ ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·)}.Finite := by
-    simpa [Filter.eventually_cofinite, not_lt] using f.2.eventually (gt_mem_nhds (half_pos hε))
-  refine (eventually_ge_atTop hF.toFinset).mono fun s hs ↦ ?_
-  rw [dist_comm, dist_eq_norm]
-  refine (norm_sub_truncFinset_le f s (half_pos hε).le fun t ht ↦ ?_).trans_lt (half_lt_self hε)
-  exact (not_le.mp fun h ↦ ht (hs (hF.mem_toFinset.mpr h))).le
+  classical
+  -- Transport the module statement along the coefficient isometry `Φ`.
+  let Φ := IsRestrictedFamily.Gauss.subringLinearIsometryEquiv (σ := σ) (c := c) R
+  have hΦ (s : Finset (σ →₀ ℕ)) :
+      Φ (polynomialToRestricted c (truncFinset R s (f : MvPowerSeries σ R))) =
+        ∑ t ∈ s, IsRestrictedFamily.Gauss.ofFinsupp R c (Finsupp.single t (Φ f t)) := by
+    ext t
+    by_cases ht : t ∈ s <;>
+      simp [Φ, ← map_sum, Finsupp.single_apply, ht, coeff_truncFinset_of_mem,
+        coeff_truncFinset_eq_zero]
+  have h := (IsRestrictedFamily.Gauss.hasSum_ofFinsupp_single R (Φ f)).map Φ.symm Φ.symm.continuous
+  rw [Φ.symm_apply_apply] at h
+  refine Tendsto.congr (fun s ↦ Φ.injective ?_) h
+  simp [hΦ]
 
 /-- **Total-degree truncations converge**: in finitely many variables, the truncations of a
 restricted series below total degree `n` tend to it in the Gauss norm as `n → ∞`. -/
