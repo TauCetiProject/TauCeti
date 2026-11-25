@@ -52,7 +52,7 @@ instance subsingleton_outerAut_perm_fin_three : Subsingleton (OuterAut (Equiv.Pe
       {x : Equiv.Perm (Fin 3) // x ^ 2 = 1 ∧ x ≠ 1} :=
     (⟨φ (finRotate 3), hord φ 3 (by decide)⟩, ⟨φ (Equiv.swap 0 1), hord φ 2 (by decide)⟩)
   have hf : Function.Injective f := fun φ ψ h ↦ MulEquiv.toMonoidHom_injective <|
-    monoidHom_perm_fin_ext (congrArg Subtype.val (Prod.ext_iff.1 h).1)
+    MonoidHom.ext_perm_fin (congrArg Subtype.val (Prod.ext_iff.1 h).1)
       (congrArg Subtype.val (Prod.ext_iff.1 h).2)
   have hcard : Nat.card (MulAut (Equiv.Perm (Fin 3))) ≤ Nat.card (Equiv.Perm (Fin 3)) := by
     refine (Nat.card_le_card_of_injective f hf).trans ?_
