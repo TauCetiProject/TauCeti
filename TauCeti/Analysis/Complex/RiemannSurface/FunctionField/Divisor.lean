@@ -231,19 +231,18 @@ theorem singlePole_of_neg_le_meromorphicOrderAt [CompactSpace X] [T2Space X]
     have h : (localMultiplicity F x : ℤ) ≤ 0 := by
       simpa [coeff_divisorPullback, hx, hxp] using WeilDivisor.le_iff.mp hdiv x
     exact (localMultiplicity_pos F x).not_ge (by exact_mod_cast h)
-  obtain ⟨x, hx⟩ := F.surjective ∞
-  have hp : F p = ∞ := by simpa only [hpoint x hx] using hx
-  have hfib : F ⁻¹' {∞} = {p} := by
-    ext y
-    simp only [Set.mem_preimage, Set.mem_singleton_iff]
-    exact ⟨hpoint y, fun h ↦ h.symm ▸ hp⟩
+  have hfib : F ⁻¹' {∞} = {p} :=
+    (F.surjective.nonempty_preimage.mpr (Set.singleton_nonempty ∞)).subset_singleton_iff.mp
+      (Set.subset_singleton_iff.mpr hpoint)
+  have hp : F p = ∞ := hfib.symm.subset (Set.mem_singleton p)
   have hdeg : degree F = localMultiplicity F p :=
     degree_eq_localMultiplicity_of_preimage_eq_singleton F hfib
   have horder : meromorphicOrderAt (fun y ↦ affineChart (F y)) p =
       ((-(degree F : ℤ) : ℤ) : WithTop ℤ) := by
     rw [hdeg, F.meromorphicOrderAt_affineChart_comp_of_eq_infty hp]
-  have hbound := F.degree_le_degree_of_neg_le_meromorphicOrderAt hD hF
-  simp only [map_nsmul, WeilDivisor.degree_ofPoint, nsmul_eq_mul, mul_one] at hbound
+  have hbound := WeilDivisor.degree_le_of_le hdiv
+  simp only [degree_divisorPullback_ofPoint, map_nsmul, WeilDivisor.degree_ofPoint,
+    nsmul_eq_mul, mul_one] at hbound
   exact ⟨by exact_mod_cast hbound, hfib, horder⟩
 
 end TauCeti.RiemannSurface.FiniteHolomorphicMap
