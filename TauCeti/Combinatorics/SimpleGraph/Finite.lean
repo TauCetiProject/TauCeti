@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Algebra.Notation.Indicator
 public import Mathlib.Combinatorics.SimpleGraph.Finite
 public import Mathlib.Data.Finset.Interval
+import TauCeti.Combinatorics.SimpleGraph.Basic
 
 /-!
 # Finite simple graphs
@@ -30,6 +31,8 @@ an interval of the Boolean lattice `Finset (Sym2 V)`, where the finset interval 
   neighbours.
 * `SimpleGraph.edgeSet_fromEdgeSet_of_subset` — a set of edges of `G` is the edge set of the
   graph it generates.
+* `SimpleGraph.edgeFinset_symmDiff` — the edge finset of `G₁ ∆ G₂` is
+  `G₁.edgeFinset ∆ G₂.edgeFinset`.
 * `SimpleGraph.indicator_edgeSet_eq_ite_mem_edgeFinset` — `G.edgeSet.indicator c` agrees with
   `fun e ↦ if e ∈ G.edgeFinset then c e else 0`.
 * `SimpleGraph.prod_filter_le_le_eq_prod_Icc_edgeFinset` and its additive version
@@ -41,6 +44,7 @@ an interval of the Boolean lattice `Finset (Sym2 V)`, where the finset interval 
 public section
 
 open Finset
+open scoped symmDiff
 
 namespace SimpleGraph
 
@@ -94,6 +98,14 @@ theorem edgeSet_fromEdgeSet_of_subset {G : SimpleGraph V} {s : Set (Sym2 V)}
     (hs : s ⊆ G.edgeSet) : (fromEdgeSet s).edgeSet = s := by
   rw [edgeSet_fromEdgeSet, sdiff_eq_left, Set.disjoint_left]
   exact fun e he ↦ not_isDiag_of_mem_edgeSet G (hs he)
+
+/-- The edge finset of `G₁ ∆ G₂` is the symmetric difference of their edge finsets. -/
+@[simp]
+theorem edgeFinset_symmDiff {G₁ G₂ : SimpleGraph V} [Fintype G₁.edgeSet] [Fintype G₂.edgeSet]
+    [Fintype (edgeSet (G₁ ∆ G₂))] [DecidableEq V] :
+    (G₁ ∆ G₂).edgeFinset = G₁.edgeFinset ∆ G₂.edgeFinset := by
+  ext e
+  simp only [mem_edgeFinset, edgeSet_symmDiff, Finset.mem_symmDiff, Set.mem_symmDiff]
 
 /-- On a graph with finitely many edges and decidable equality on vertices, `G.edgeSet.indicator c`
 equals the `if`-`then`-`else` expression testing membership in `G.edgeFinset`. -/

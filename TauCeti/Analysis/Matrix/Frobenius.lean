@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.LinearAlgebra.UnitaryGroup
+import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 
 /-!
 # The Frobenius inner product on matrices
@@ -24,6 +25,8 @@ and the inner product together.
 
 ## Main declarations
 
+* `Matrix.frobeniusTopologicalSpace` — the topology induced by the Frobenius norm.
+* `Matrix.frobeniusTopologicalSpace_eq` — that topology is the entrywise topology on matrices.
 * `Matrix.re_trace_mul_conjTranspose_self` — the real trace of `X * Xᴴ` is the sum of the
   squared entry norms.
 * `Matrix.frobeniusInnerProductSpace` — the Frobenius inner product, compatible with
@@ -36,9 +39,12 @@ and the inner product together.
   `∑ i, ∑ j, A i j * B i j`.
 * `Matrix.frobenius_inner_eq_trace_conjTranspose_mul` — over `𝕜` itself, the inner product is
   `(Aᴴ * B).trace`.
+* `Matrix.IsHermitian.frobenius_real_inner_eq_zero_of_conjTranspose_eq_neg` — a Hermitian and a
+  skew-Hermitian matrix are orthogonal for the real inner product.
 * `Matrix.frobenius_norm_sq_eq_sum_normSq` — the squared complex Frobenius norm is the sum of
   the squared norms of the entries.
 * `Matrix.frobenius_norm_sq_conj_unitary` — unitary conjugation preserves the squared norm.
+* `Matrix.frobenius_norm_sq_of_mem_unitaryGroup` — a unitary matrix has squared norm `card ι`.
 * `Matrix.abs_apply_le_sqrt_trace_mul_transpose` — each entry of a real matrix is bounded in
   absolute value by the square root of the trace of its Gram matrix `L * Lᵀ`.
 * `TauCeti.reTraceForm`, `TauCeti.isSymm_reTraceForm`, `TauCeti.posDef_reTraceForm`: the real
@@ -53,6 +59,24 @@ noncomputable section
 open scoped ComplexConjugate InnerProductSpace
 
 namespace Matrix
+
+/-- The topology underlying the Frobenius norm on finite matrices. -/
+protected abbrev frobeniusTopologicalSpace
+    (m n : Type*) [Fintype m] [Fintype n]
+    (α : Type*) [SeminormedAddCommGroup α] : TopologicalSpace (Matrix m n α) :=
+  (Matrix.frobeniusSeminormedAddCommGroup (m := m) (n := n) (α := α)).toPseudoMetricSpace
+    |>.toUniformSpace |>.toTopologicalSpace
+
+/-- The topology of the Frobenius norm is the entrywise topology on matrices.
+
+This holds by `rfl` by design of Mathlib's `Matrix.frobeniusSeminormedAddCommGroup`: it is built
+from `PiLp.seminormedAddCommGroupToPi`, which replaces the `L²` uniformity by the product
+uniformity, so the induced topology is the product topology, which is Mathlib's topology on
+matrices. -/
+theorem frobeniusTopologicalSpace_eq (m n : Type*) [Fintype m] [Fintype n]
+    (α : Type*) [SeminormedAddCommGroup α] :
+    Matrix.frobeniusTopologicalSpace m n α = (inferInstance : TopologicalSpace (Matrix m n α)) :=
+  rfl
 
 variable {𝕜 E m n : Type*} [RCLike 𝕜] [Fintype m] [Fintype n]
 
@@ -134,6 +158,15 @@ theorem frobenius_inner_eq_trace_conjTranspose_mul (A B : Matrix m n 𝕜) :
     RCLike.star_def]
   exact Finset.sum_comm
 
+/-- A Hermitian matrix and a skew-Hermitian matrix are orthogonal for the real Frobenius inner
+product. -/
+theorem IsHermitian.frobenius_real_inner_eq_zero_of_conjTranspose_eq_neg {A W : Matrix n n 𝕜}
+    (hA : A.IsHermitian) (hW : Wᴴ = -W) : ⟪A, W⟫_ℝ = 0 := by
+  have hre : ⟪A, W⟫_ℝ = RCLike.re ⟪A, W⟫_𝕜 := by
+    simp [map_sum, real_inner_eq_re_inner 𝕜]
+  rw [hre, frobenius_inner_eq_trace_conjTranspose_mul, hA.eq]
+  exact hA.re_trace_mul_eq_zero_of_conjTranspose_eq_neg hW
+
 /-- The squared Frobenius norm of a complex matrix is the sum of its entrywise squared norms. -/
 theorem frobenius_norm_sq_eq_sum_normSq (A : Matrix m n ℂ) :
     ‖A‖ ^ 2 = ∑ i, ∑ j, Complex.normSq (A i j) := by
@@ -155,6 +188,15 @@ theorem frobenius_norm_sq_conj_unitary {ι : Type*} [Fintype ι] [DecidableEq ι
     simp only [conjTranspose_mul, conjTranspose_conjTranspose, Matrix.mul_assoc,
       ← Matrix.mul_assoc U Uᴴ, hright, one_mul]
   rw [hmul, trace_mul_cycle, hright, one_mul]
+
+/-- A unitary matrix has squared Frobenius norm `card ι`. -/
+theorem frobenius_norm_sq_of_mem_unitaryGroup {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (U : Matrix ι ι 𝕜) (hU : U ∈ Matrix.unitaryGroup ι 𝕜) :
+    ‖U‖ ^ 2 = Fintype.card ι := by
+  have h := inner_self_eq_norm_sq_to_K (𝕜 := 𝕜) U
+  rw [frobenius_inner_eq_trace_conjTranspose_mul, ← star_eq_conjTranspose,
+    mem_unitaryGroup_iff'.mp hU, trace_one] at h
+  exact_mod_cast h.symm
 
 open scoped Matrix.Norms.Frobenius in
 /-- Each entry of a real matrix is bounded in absolute value by the square root of the trace of

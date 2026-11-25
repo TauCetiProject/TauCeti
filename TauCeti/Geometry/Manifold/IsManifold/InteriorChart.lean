@@ -36,6 +36,9 @@ when the model `I` itself has a boundary.
 * `PartialDiffeomorph.trans_trans_interiorChart_symm_mem_maximalAtlas`: a partial diffeomorphism
   from a manifold to `E`, followed by a chart of the maximal atlas of `E` and by the inverse of
   `I.interiorChart`, is a chart of the `C^n` maximal atlas.
+* `OpenPartialHomeomorph.trans_interiorChart_trans_trans_interiorChart_symm_mem_maximalAtlas`: a
+  chart of the maximal atlas read in `E`, followed by a chart of the maximal atlas of `E` and by the
+  inverse of `I.interiorChart`, is a chart of the `C^n` maximal atlas.
 
 ## References
 
@@ -142,3 +145,21 @@ theorem PartialDiffeomorph.trans_trans_interiorChart_symm_mem_maximalAtlas {n : 
       fun _ hy ↦ hy.2)
     (Φ.contMDiffOn_invFun.comp ((contMDiffOn_symm_of_mem_maximalAtlas hσ).mono inter_subset_left)
       fun _ hu ↦ hu.2)
+
+/-- A chart of the `C^n` maximal atlas read in `E` through `I.interiorChart`, followed by a chart
+`σ` of the maximal atlas of `E` and read back through the inverse of `I.interiorChart`, is a chart
+of the `C^n` maximal atlas. -/
+theorem OpenPartialHomeomorph.trans_interiorChart_trans_trans_interiorChart_symm_mem_maximalAtlas
+    {n : ℕ∞ω} [IsManifold I n M] {e : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I n M) {σ : OpenPartialHomeomorph E E}
+    (hσ : σ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n E) :
+    ((e.trans I.interiorChart).trans σ).trans I.interiorChart.symm ∈
+      IsManifold.maximalAtlas I n M := by
+  refine OpenPartialHomeomorph.trans_interiorChart_symm_mem_maximalAtlas ?_ ?_
+  · -- As a map, the chart is `σ ∘ I ∘ e`.
+    exact (contMDiffOn_of_mem_maximalAtlas hσ).comp (I.contMDiff.comp_contMDiffOn
+      ((contMDiffOn_of_mem_maximalAtlas he).mono fun _ hy ↦ hy.1.1)) fun _ hy ↦ hy.2
+  · -- As a map, the inverse chart is `e.symm ∘ I.symm ∘ σ.symm`.
+    exact (contMDiffOn_symm_of_mem_maximalAtlas he).comp
+      (I.contMDiffOn_symm.comp ((contMDiffOn_symm_of_mem_maximalAtlas hσ).mono fun _ hv ↦ hv.1)
+        fun _ hv ↦ interior_subset (s := range I) hv.2.1) fun _ hv ↦ hv.2.2
