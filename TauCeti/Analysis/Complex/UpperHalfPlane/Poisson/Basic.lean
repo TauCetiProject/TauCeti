@@ -518,8 +518,8 @@ theorem tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc {a b x : ℝ} 
       (𝓝[UpperHalfPlane.upperHalfPlaneSet] (x : ℂ))
       (𝓝 ((Real.sign (b - x) - Real.sign (a - x)) / 2)) := by
   have hlim {c : ℝ} (hc : x ≠ c) := Real.tendsto_arctan_div_of_tendsto_nhdsGT_zero
-    (tendsto_const_nhds.sub (tendsto_re_nhdsWithin_upperHalfPlaneSet x)) (sub_ne_zero.2 hc.symm)
-    (tendsto_im_nhdsWithin_upperHalfPlaneSet x)
+    (tendsto_const_nhds.sub (Real.tendsto_re_nhdsWithin_upperHalfPlaneSet x))
+    (sub_ne_zero.2 hc.symm) (Real.tendsto_im_nhdsWithin_upperHalfPlaneSet x)
   have h := ((hlim hxb).sub (hlim hxa)).div_const π
   rw [show (π / 2 * Real.sign (b - x) - π / 2 * Real.sign (a - x)) / π =
       (Real.sign (b - x) - Real.sign (a - x)) / 2 by field_simp] at h

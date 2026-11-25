@@ -53,8 +53,8 @@ many points, such as the vertices of a tessellation, therefore keeps `ℍ` conne
 ## Main declarations
 
 * `Real.nhdsWithin_upperHalfPlaneSet_neBot`.
-* `TauCeti.tendsto_im_nhdsWithin_upperHalfPlaneSet`,
-  `TauCeti.tendsto_re_nhdsWithin_upperHalfPlaneSet`: the coordinates along the half-plane at a
+* `Real.tendsto_im_nhdsWithin_upperHalfPlaneSet`,
+  `Real.tendsto_re_nhdsWithin_upperHalfPlaneSet`: the coordinates along the half-plane at a
   real point.
 * `TauCeti.mem_closedBall_and_eq_of_tendsto` — transport a boundary limit through a map
   continuous on the closed unit disc.
@@ -100,10 +100,6 @@ instance nhdsWithin_upperHalfPlaneSet_neBot (x : ℝ) :
     (𝓝[upperHalfPlaneSet] ((x : ℂ))).NeBot :=
   mem_closure_iff_nhdsWithin_neBot.mp (by simp [upperHalfPlaneSet])
 
-end Real
-
-namespace TauCeti
-
 /-- Along the approach to a real point through the upper half-plane, `Im z → 0⁺`. -/
 theorem tendsto_im_nhdsWithin_upperHalfPlaneSet (x : ℝ) :
     Tendsto Complex.im (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝[>] 0) :=
@@ -115,6 +111,10 @@ theorem tendsto_im_nhdsWithin_upperHalfPlaneSet (x : ℝ) :
 theorem tendsto_re_nhdsWithin_upperHalfPlaneSet (x : ℝ) :
     Tendsto Complex.re (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 x) :=
   (Complex.continuous_re.tendsto' _ x (by simp)).mono_left nhdsWithin_le_nhds
+
+end Real
+
+namespace TauCeti
 
 /-- Along the upper half-plane, a limit of `f = G ∘ h` at a real point `x` is `G (h x)`, when `h`
 is continuous within the half-plane at `x` and maps the upper half-plane into the closed disc, on
