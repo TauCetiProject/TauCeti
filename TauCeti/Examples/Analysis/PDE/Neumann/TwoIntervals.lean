@@ -49,13 +49,13 @@ def twoIntervals : Opens (EuclideanSpace ℝ (Fin 1)) :=
 theorem coe_twoIntervals :
     (twoIntervals : Set (EuclideanSpace ℝ (Fin 1))) =
       (PDE.intervalDomain 0 1 : Set (EuclideanSpace ℝ (Fin 1))) ∪ PDE.intervalDomain 2 3 :=
-  (rfl)
+  Opens.coe_sup _ _
 
 /-- A point lies in `Ω` exactly when it lies in one of the two intervals. -/
 @[simp]
 theorem mem_twoIntervals {x : EuclideanSpace ℝ (Fin 1)} :
     x ∈ twoIntervals ↔ x ∈ PDE.intervalDomain 0 1 ∨ x ∈ PDE.intervalDomain 2 3 :=
-  Iff.rfl
+  Opens.mem_sup
 
 /-- The two intervals are disjoint. -/
 private theorem disjoint_intervalDomain :
@@ -121,7 +121,7 @@ theorem card_connectedComponents_twoIntervals :
     exact disjoint_intervalDomain.notMem_of_mem_left ha h
   · refine eq_univ_of_forall fun c => ?_
     obtain ⟨⟨z, hz⟩, rfl⟩ := ConnectedComponents.surjective_coe c
-    rcases hz with hz | hz
+    rcases mem_twoIntervals.1 hz with hz | hz
     · exact Or.inl ((PDE.isPreconnected_intervalDomain 0 1).connectedComponents_mk_eq hL hz ha)
     · exact Or.inr ((PDE.isPreconnected_intervalDomain 2 3).connectedComponents_mk_eq hR hz hb)
 
@@ -161,7 +161,7 @@ theorem forall_energyFormH1_eq_zero_iff_twoIntervals (u : W1p volume twoInterval
   · rintro ⟨g, hg, hug⟩
     refine ⟨g (WithLp.toLp 2 fun _ => 1 / 2), g (WithLp.toLp 2 fun _ => 5 / 2), ?_⟩
     refine hug.trans ((ae_restrict_mem twoIntervals.isOpen.measurableSet).mono fun x hx => ?_)
-    rcases hx with hx | hx
+    rcases mem_twoIntervals.1 hx with hx | hx
     · rw [indicator_add_indicator_of_mem_left hx]
       exact hg.apply_eq_of_isPreconnected_of_subset (PDE.isPreconnected_intervalDomain 0 1)
         intervalDomain_zero_one_subset hx half_mem_intervalDomain
@@ -170,14 +170,14 @@ theorem forall_energyFormH1_eq_zero_iff_twoIntervals (u : W1p volume twoInterval
         intervalDomain_two_three_subset hx fiveHalves_mem_intervalDomain
   · rintro ⟨a, b, hu⟩
     refine ⟨_, (IsLocallyConstant.iff_eventually_eq _).2 fun x => ?_, hu⟩
-    rcases x.property with hx | hx
+    rcases mem_twoIntervals.1 x.property with hx | hx
     · filter_upwards [((PDE.intervalDomain 0 1).isOpen.preimage continuous_subtypeVal).mem_nhds hx]
         with y hy
-      simp only [Set.domRestrict, indicator_add_indicator_of_mem_left hx,
-        indicator_add_indicator_of_mem_left (show (y : EuclideanSpace ℝ (Fin 1)) ∈ _ from hy)]
+      simp only [Set.domRestrict_apply, indicator_add_indicator_of_mem_left hx,
+        indicator_add_indicator_of_mem_left (Set.mem_preimage.1 hy)]
     · filter_upwards [((PDE.intervalDomain 2 3).isOpen.preimage continuous_subtypeVal).mem_nhds hx]
         with y hy
-      simp only [Set.domRestrict, indicator_add_indicator_of_mem_right hx,
-        indicator_add_indicator_of_mem_right (show (y : EuclideanSpace ℝ (Fin 1)) ∈ _ from hy)]
+      simp only [Set.domRestrict_apply, indicator_add_indicator_of_mem_right hx,
+        indicator_add_indicator_of_mem_right (Set.mem_preimage.1 hy)]
 
 end TauCeti.Examples.NeumannTwoIntervals
