@@ -160,7 +160,7 @@ private theorem cauchy_map_integral_truncate (P : ProjValMeasure X H) {f : X →
       edist ((hmem_tr M₁).toLp (BoundedBorelFunction.truncate f hf M₁))
         ((hmem_tr M₂).toLp (BoundedBorelFunction.truncate f hf M₂)) := by
     rw [eDist_eq_eNorm_sub, ← sub_apply, ← map_sub, P.enorm_integral_apply_eq_eLpNorm,
-      BoundedBorelFunction.coe_sub, Lp.edist_toLp_toLp]
+      FunLike.coe_sub, Lp.edist_toLp_toLp]
   rw [cauchy_map_iff, uniformity_basis_edist.tendsto_right_iff] at hlp_cauchy ⊢
   simpa only [Set.mem_ofPred_eq, hedist] using hlp_cauchy
 
@@ -608,7 +608,7 @@ theorem tendsto_spectralIntegral_proj_norm_le_apply (P : ProjValMeasure X H) {f 
 theorem spectralIntegral_zero (P : ProjValMeasure X H) :
     P.spectralIntegral 0 measurable_const = 0 := by
   have h := P.spectralIntegral_coe_boundedBorelFunction 0
-  simp only [BoundedBorelFunction.coe_zero, map_zero] at h
+  simp only [FunLike.coe_zero, map_zero] at h
   refine h.trans (LinearPMap.ext (by simp) ?_)
   simp
 
@@ -616,7 +616,7 @@ theorem spectralIntegral_zero (P : ProjValMeasure X H) :
 @[simp]
 theorem spectralIntegral_one (P : ProjValMeasure X H) :
     P.spectralIntegral 1 measurable_const = (ContinuousLinearMap.id ℂ H).toPMap ⊤ := by
-  simpa only [BoundedBorelFunction.coe_one, map_one, ContinuousLinearMap.one_def] using
+  simpa only [FunLike.coe_one, map_one, ContinuousLinearMap.one_def] using
     P.spectralIntegral_coe_boundedBorelFunction 1
 
 /-- The unbounded spectral integral of the indicator of a measurable set `B` is the everywhere
@@ -625,7 +625,7 @@ theorem spectralIntegral_indicator_one (P : ProjValMeasure X H) {B : Set X}
     (hB : MeasurableSet B) :
     P.spectralIntegral (B.indicator 1) (measurable_const.indicator hB) =
       (P.proj B hB).toPMap ⊤ := by
-  simpa only [BoundedBorelFunction.coe_indicator, BoundedBorelFunction.coe_one,
+  simpa only [BoundedBorelFunction.coe_indicator, FunLike.coe_one,
     P.integral_indicator hB] using
     P.spectralIntegral_coe_boundedBorelFunction (BoundedBorelFunction.indicator B hB 1)
 
