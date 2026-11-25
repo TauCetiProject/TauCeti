@@ -290,6 +290,14 @@ theorem eLpNormWkp_apply_le_of_norm_le_one {E : Type*} [NormedAddCommGroup E] [N
     (ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun A => by
       simpa using (A.le_opNorm v).trans (mul_le_of_le_one_right (norm_nonneg A) hv))
 
+/-- On an open set, a partial derivative `z ↦ D z v`, `‖v‖ ≤ 1`, of a weak derivative `D` of `f`
+has `W^{k,p}` norm at most the `W^{k+1,p}` norm of `f`. -/
+theorem eLpNormWkp_apply_le_eLpNormWkp_succ_of_hasWeakFDerivOn [CompleteSpace F] {Ω : Opens ℂ}
+    {D : ℂ → ℂ →L[ℝ] F} (hD : HasWeakFDerivOn volume Ω f D) {v : ℂ} (hv : ‖v‖ ≤ 1) :
+    eLpNormWkp p Ω k (fun z => D z v) ≤ eLpNormWkp p Ω (k + 1) f :=
+  (eLpNormWkp_apply_le_of_norm_le_one D hv).trans
+    (eLpNormWkp_le_eLpNormWkp_succ_of_hasWeakFDerivOn hD)
+
 /-- Negation preserves the `W^{k,p}` norm. -/
 @[simp]
 theorem eLpNormWkp_neg : eLpNormWkp p U k (-f) = eLpNormWkp p U k f := by

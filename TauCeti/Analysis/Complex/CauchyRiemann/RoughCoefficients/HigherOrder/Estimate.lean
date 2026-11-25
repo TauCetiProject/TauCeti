@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Weak
 public import TauCeti.Analysis.Sobolev.Local.Norm
 import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder.Basic
-import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.Sobolev.Local.Multiplication.Bound.Higher
+import TauCeti.Data.ENNReal.Mul
 import TauCeti.Topology.Sets.Opens
 
 /-!
@@ -111,25 +111,6 @@ theorem CRInteriorEstimate.mono_set {p q : ℝ≥0∞} {k : ℕ} {M : ℝ≥0} {
   exact ⟨C, fun J S DJ ξ η h hc hJ2 hJ hS hη =>
     (eLpNormWkp_mono_set hU).trans (hC J S DJ ξ η h hc hJ2 hJ hS hη)⟩
 
-/-- Adding two linear bounds `x ≤ c A` and `y ≤ d A`. -/
-private theorem add_le_coe_mul {x y A : ℝ≥0∞} {c d : ℝ≥0} (hx : x ≤ c * A) (hy : y ≤ d * A) :
-    x + y ≤ ↑(c + d) * A := by
-  rw [ENNReal.coe_add, add_mul]
-  exact add_le_add hx hy
-
-/-- Scaling a linear bound `x ≤ c A` by `d`. -/
-private theorem coe_mul_le_coe_mul {x A : ℝ≥0∞} {c d : ℝ≥0} (hx : x ≤ c * A) :
-    ↑d * x ≤ ↑(d * c) * A := by
-  rw [ENNReal.coe_mul, mul_assoc]
-  exact mul_le_mul_right hx _
-
-/-- Combining `x ≤ C a b`, `a ≤ M` and `b ≤ c A` into a linear bound `x ≤ (C M c) A`. -/
-private theorem le_coe_mul_of_le_mul_mul {x a b A : ℝ≥0∞} {C M c : ℝ≥0} (h : x ≤ C * a * b)
-    (ha : a ≤ M) (hb : b ≤ c * A) : x ≤ ↑(C * M * c) * A := by
-  refine h.trans ?_
-  rw [show (↑(C * M * c) : ℝ≥0∞) * A = C * M * (c * A) by push_cast; ring]
-  gcongr
-
 omit [CompleteSpace V] in
 /-- The bound for `∂_s ξ = η - J ∂_t ξ - S ξ` in `W^{k+1,q}(U)` from bounds for `J`, `S`, `∂_t ξ`
 and `ξ` on a larger set `W₂`, through the product bound `hCq`. -/
@@ -147,10 +128,10 @@ private theorem eLpNormWkp_partial_s_le {p q : ℝ≥0} (hq1 : (1 : ℝ≥0∞) 
   rw [eLpNormWkp_congr_ae (g := fun z => η z - J z (Dξ z I) - S z (ξ z))
     (heq.mono fun z hz => by dsimp only; rw [← hz]; abel)]
   refine (eLpNormWkp_sub_le (f := fun z => η z - J z (Dξ z I)) (g := fun z => S z (ξ z))
-    hq1).trans (add_le_coe_mul ((eLpNormWkp_sub_le (f := η) (g := fun z => J z (Dξ z I))
-      hq1).trans (add_le_coe_mul hη ?_)) ?_)
-  · exact le_coe_mul_of_le_mul_mul (hCq J (fun z => Dξ z I)) hJ hT
-  · exact le_coe_mul_of_le_mul_mul (hCq S ξ) hS hX
+    hq1).trans (ENNReal.add_le_coe_mul ((eLpNormWkp_sub_le (f := η) (g := fun z => J z (Dξ z I))
+      hq1).trans (ENNReal.add_le_coe_mul hη ?_)) ?_)
+  · exact ENNReal.le_coe_mul_of_le_mul_mul (hCq J (fun z => Dξ z I)) hJ hT
+  · exact ENNReal.le_coe_mul_of_le_mul_mul (hCq S ξ) hS hX
 
 /-- The bound for `∂_t ξ` in `W^{k+1,q}(W₂)`: `∂_t ξ` solves the equation with zeroth-order
 coefficient `S + ∂_t J` and right side `∂_t η - (∂_t S) ξ` on `W₁`, whose data are bounded by
@@ -185,18 +166,17 @@ private theorem eLpNormWkp_partial_t_le [FiniteDimensional ℝ V] {p q : ℝ≥0
       (ContinuousLinearMap.id ℝ (V →L[ℝ] V)) hp hq hqp hξ
   have hη' : eLpNormWkp q W₁ k (fun z => Dη z I - DS z I (ξ z)) ≤ ↑(1 + Cp * M * Ca) * A := by
     refine (eLpNormWkp_sub_le (f := fun z => Dη z I) (g := fun z => DS z I (ξ z)) hq1).trans
-      (add_le_coe_mul ?_ ?_)
-    · exact ((eLpNormWkp_apply_le_of_norm_le_one Dη (by simp)).trans
-        ((eLpNormWkp_mono_set hW₁Ω).trans
-          (eLpNormWkp_le_eLpNormWkp_succ_of_hasWeakFDerivOn hDη))).trans ha
-    · exact le_coe_mul_of_le_mul_mul (hCp (fun z => DS z I) ξ)
-        ((eLpNormWkp_apply_le_of_norm_le_one DS (by simp)).trans ((eLpNormWkp_mono_set hWle).trans
-          ((eLpNormWkp_le_eLpNormWkp_succ_of_hasWeakFDerivOn hDS).trans hSM))) hX
+      (ENNReal.add_le_coe_mul ?_ ?_)
+    · exact ((eLpNormWkp_mono_set hW₁Ω).trans
+        (eLpNormWkp_apply_le_eLpNormWkp_succ_of_hasWeakFDerivOn hDη (by simp))).trans ha
+    · exact ENNReal.le_coe_mul_of_le_mul_mul (hCp (fun z => DS z I) ξ)
+        ((eLpNormWkp_mono_set hWle).trans
+          ((eLpNormWkp_apply_le_eLpNormWkp_succ_of_hasWeakFDerivOn hDS (by simp)).trans hSM)) hX
   have hDξIq : eLpNorm (fun z => Dξ z I) q (volume.restrict W₁) ≤ ↑Ca * A := by
     rw [← eLpNormWkp_zero]
-    exact (eLpNormWkp_apply_le_of_norm_le_one Dξ (by simp)).trans ((eLpNormWkp_mono_set hW₁le).trans
-      ((eLpNormWkp_mono_order (Nat.zero_le k)).trans
-        ((eLpNormWkp_le_eLpNormWkp_succ_of_hasWeakFDerivOn (hDξ.mono hWle)).trans hX)))
+    exact (eLpNormWkp_mono_order (Nat.zero_le k)).trans ((eLpNormWkp_mono_set hW₁le).trans
+      ((eLpNormWkp_apply_le_eLpNormWkp_succ_of_hasWeakFDerivOn (hDξ.mono hWle) (by simp)).trans
+        hX))
   have hc' := hco.add_zeroth (hco.memLpLoc_deriv_apply I)
   refine (hCb J (fun z => S z + DJ z I) DJ _ _ hT ⟨hc'.hasWeakFDerivOn.mono hW₁Ω,
     hc'.memLpLoc_coeff.mono_set hW₁Ω, hc'.memLpLoc_deriv.mono_set hW₁Ω,
@@ -212,7 +192,7 @@ private theorem eLpNormWkp_partial_t_le [FiniteDimensional ℝ V] {p q : ℝ≥0
         ((eLpNormWkp_mono_set hW₁Ω).trans hDJM))
   · rw [show (↑(Cb * (1 + Cp * M * Ca + Ca)) : ℝ≥0∞) * A = Cb * (↑(1 + Cp * M * Ca + Ca) * A) by
       push_cast; ring]
-    exact mul_le_mul_right (add_le_coe_mul hη' hDξIq) _
+    exact mul_le_mul_right (ENNReal.add_le_coe_mul hη' hDξIq) _
 
 /-- **The induction step of the interior estimates** (McDuff–Salamon, Proposition B.4.9). Let
 `V` be finite-dimensional, `p > 2`, `1/p + 1/q < 1` and `q ≤ p`. If the uniform interior estimate
@@ -272,9 +252,9 @@ theorem CRInteriorEstimate.succ [FiniteDimensional ℝ V] {p q : ℝ≥0} (hp : 
     ((eLpNormWkp_mono_set hW₂W).trans hX)
   have hdec := eLpNormWkp_succ_le_eLpNorm_add_apply_one_add_apply_I (k := k + 1) hq1.le
     (hDξ.mono fun z hz => hUle (interior_subset hz)); simp only [eNorm_eq_nnNorm] at hdec
-  exact hdec.trans (add_le_coe_mul
+  exact hdec.trans (ENNReal.add_le_coe_mul
     ((eLpNorm_le_eLpNormWkp.trans (eLpNormWkp_mono_set (subset_closure.trans hUW))).trans hX)
-    (add_le_coe_mul (coe_mul_le_coe_mul hDξ1) (coe_mul_le_coe_mul ((eLpNormWkp_mono_set
-      (subset_closure.trans hUW₂)).trans hT₂))))
+    (ENNReal.add_le_coe_mul (ENNReal.coe_mul_le_coe_mul hDξ1) (ENNReal.coe_mul_le_coe_mul
+      ((eLpNormWkp_mono_set (subset_closure.trans hUW₂)).trans hT₂))))
 
 end TauCeti
