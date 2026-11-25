@@ -95,6 +95,7 @@ theorem goodReductionPrimes_mono : Monotone E.goodReductionPrimes := fun _ _ hxy
   exact ⟨hp.1.trans hxy, hp.2⟩
 
 /-- The good primes up to `x` and up to `y` have in common the good primes up to `min x y`. -/
+@[simp]
 theorem goodReductionPrimes_inter (x y : ℕ) :
     E.goodReductionPrimes x ∩ E.goodReductionPrimes y = E.goodReductionPrimes (min x y) := by
   ext p
@@ -102,6 +103,7 @@ theorem goodReductionPrimes_inter (x y : ℕ) :
   tauto
 
 /-- Below `2` there are no primes, so no good primes. -/
+@[simp]
 theorem goodReductionPrimes_eq_empty {x : ℕ} (hx : x < 2) : E.goodReductionPrimes x = ∅ := by
   ext p
   simp only [mem_goodReductionPrimes, Finset.notMem_empty, iff_false, not_and]
