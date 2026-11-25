@@ -74,10 +74,10 @@ theorem le_mul_exp_integral_Ioi_of_le_mul_add_integral_Ioi {u P g : ℝ → ℝ}
         rw [hfun]; exact (hgy.mul_comp_integral_Ioi (continuous_pow j).continuousOn).div_const _
       have heq (j : ℕ) :
           ∫ v in Ioi y, g v * (P v * (Ψ v ^ j / j !)) = Ψ y ^ (j + 1) / (j + 1)! := by
-        rw [hfun, integral_div, hgy.integral_Ioi_mul_pow_integral_Ioi j, Nat.factorial_succ]
+        rw [hfun, integral_div, hgy.integral_Ioi_mul_pow_integral_Ioi j, Nat.factorial_succ,
+          hΨ_def]
         push_cast
         field_simp
-        rfl
       have hsplit : (fun v ↦ g v * (P v * B k v)) = fun v ↦
           A * ∑ j ∈ Finset.range k, g v * (P v * (Ψ v ^ j / j !)) +
             C * (g v * (P v * (Ψ v ^ k / k !))) := by

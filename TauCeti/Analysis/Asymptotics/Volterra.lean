@@ -732,12 +732,11 @@ theorem volterra_solution_unique (hK : ContinuousOn (uncurry K) {p | a < p.1 ∧
     simp only [← smul_sub, add_sub_add_left_eq_sub]
   intro x₀ (hx₀ : a < x₀)
   -- by the equation, `‖h₁ v - h₂ v‖ ≤ C * P v` beyond `x₀`, so the difference is `O(P)` there
-  have hO : (fun v ↦ h₁ v - h₂ v) =O[𝓟 (Ici x₀)] P := by
+  have hO : (h₁ - h₂) =O[𝓟 (Ici x₀)] P := by
     refine (isBigO_principal_iff_of_nonneg fun v (hv : x₀ ≤ v) ↦ hP0 v (hx₀.trans_le hv)).2
       ⟨∫ v in Ioi x₀, Q v * ‖ψ v • (h₁ v - h₂ v)‖, fun v (hv : x₀ ≤ v) ↦ ?_⟩
     have hva : a < v := hx₀.trans_le hv
-    change ‖h₁ v - h₂ v‖ ≤ _
-    rw [hd v hva]
+    rw [Pi.sub_apply, hd v hva]
     refine (norm_integral_kernel_smul_le hKle hva (hdint v hva)).trans
       ((mul_le_mul_of_nonneg_left (setIntegral_mono_set (hdint x₀ hx₀) ?_
         (Ioi_subset_Ioi hv).eventuallySubset) (hP0 v hva)).trans_eq (mul_comm _ _))
@@ -890,7 +889,7 @@ omit [NormedSpace 𝕜 E] [NormedSpace ℝ E] in
 /-- A function satisfying the bound `‖h x‖ ≤ exp (Φ x) - 1` of
 `norm_volterra_solution_le_exp_sub_one` on `(a, ∞)`, where `Φ x = ∫ v in Ioi x, Q v * ‖ψ v‖`
 with `Q ≥ 0`, is bounded on `[x, ∞)` for every `x > a`. -/
-theorem isBigO_one_of_norm_le_exp_sub_one (hQ0 : ∀ x ∈ Ioi a, 0 ≤ Q x)
+theorem isBigO_principal_Ici_one_of_norm_le_exp_sub_one (hQ0 : ∀ x ∈ Ioi a, 0 ≤ Q x)
     (hΦ : ∀ x ∈ Ioi a, IntegrableOn (fun v ↦ Q v * ‖ψ v‖) (Ioi x)) {h : ℝ → E}
     (hh : ∀ x ∈ Ioi a, ‖h x‖ ≤ Real.exp (∫ v in Ioi x, Q v * ‖ψ v‖) - 1) :
     ∀ x ∈ Ioi a, h =O[𝓟 (Ici x)] fun _ ↦ (1 : ℝ) := fun x (hx : a < x) ↦
