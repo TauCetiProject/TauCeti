@@ -134,8 +134,8 @@ theorem of_mk_eq_of_mk_iff_isMurrayVonNeumannEquivalent (h : HasProjectionCancel
 end HasProjectionCancellation
 
 /-- **Cancelling identity matrices suffices.** A unital star ring has projection cancellation
-exactly when `p ⊕ 1ₖ ∼ q ⊕ 1ₖ` implies `p ∼ q` for all matrix projections `p` and `q`: a general
-`r` is completed to `r ⊕ (1 - r) ∼ 1ₖ`. -/
+exactly when `p ⊕ 1ⱼ ∼ q ⊕ 1ⱼ` implies `p ∼ q` for all matrix projections `p`, `q` and all
+sizes `j` of the identity matrix `1ⱼ`. -/
 theorem hasProjectionCancellation_iff_one {A : Type*} [Ring A] [StarRing A] :
     HasProjectionCancellation A ↔
       ∀ ⦃k l j : ℕ⦄ (p : Matrix (Fin k) (Fin k) A) (q : Matrix (Fin l) (Fin l) A),
@@ -143,7 +143,7 @@ theorem hasProjectionCancellation_iff_one {A : Type*} [Ring A] [StarRing A] :
           (fromBlocks q 0 0 (1 : Matrix (Fin j) (Fin j) A)) →
         IsMurrayVonNeumannEquivalent p q := by
   refine ⟨fun h _ _ _ p q ↦ h p q 1, fun h k l j p q r hpqr ↦ ?_⟩
-  -- `p ⊕ r ∼ q ⊕ r` gives `[p] = [q]` in `K₀(A)`, hence `p ⊕ 1ₖ ∼ q ⊕ 1ₖ` for some `k`.
+  -- `p ⊕ r ∼ q ⊕ r` gives `[p] = [q]` in `K₀(A)`, hence `p ⊕ 1ⱼ' ∼ q ⊕ 1ⱼ'` for some `j'`.
   obtain ⟨hp, hq, -⟩ :=
     ProjectionMonoid.exists_mk_add_mk_eq_mk_add_mk_of_isMurrayVonNeumannEquivalent hpqr
   obtain ⟨_, h'⟩ := (ProjectionKZero.of_mk_eq_of_mk_iff_exists_one hp hq).1

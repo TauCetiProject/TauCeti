@@ -28,9 +28,8 @@ open Matrix
 
 namespace TauCeti
 
-/-- **Projection cancellation over `ℝ` and `ℂ`.** Over an `RCLike` field, matrix projections are
-equivalent exactly when they have the same rank, and the rank of a block sum is the sum of the
-ranks, so ranks cancel. -/
+/-- **Projection cancellation over `ℝ` and `ℂ`.** Every `RCLike` field `𝕜` has projection
+cancellation: for matrix projections `p`, `q`, `r` over `𝕜`, `p ⊕ r ∼ q ⊕ r` implies `p ∼ q`. -/
 theorem hasProjectionCancellation_rclike (𝕜 : Type*) [RCLike 𝕜] :
     HasProjectionCancellation 𝕜 := by
   intro k l j p q r hpqr
