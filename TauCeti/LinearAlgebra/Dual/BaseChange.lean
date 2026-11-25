@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import TauCeti.LinearAlgebra.TensorProduct.Tower
 import Mathlib.LinearAlgebra.Contraction
+import Mathlib.RingTheory.Localization.BaseChange
 import TauCeti.LinearAlgebra.TensorProduct.Basis
 
 /-!
@@ -40,6 +41,8 @@ is faithful, as recorded by `IsBaseChange.toDual_ne_zero`.
   coordinates in the base-changed basis.
 * `TauCeti.Module.Dual.eq_of_baseChange_eq`: base changes of all dual elements jointly
   separate vectors when the original module is projective.
+* `TauCeti.Module.Dual.eq_zero_of_forall_baseChange_eq_zero`: base changes to a fraction ring of
+  a set of functionals separating points separate points.
 
 ## References
 
@@ -216,6 +219,20 @@ theorem eq_of_baseChange_eq [Module.Projective R M] {x y : A ⊗[R] M}
   refine TensorProduct.tensor_eq_of_forall_tensorComponent_eq fun φ ↦ ?_
   rw [hcomponent, LinearMap.restrictScalars_apply, LinearMap.restrictScalars_apply]
   exact h φ
+
+/-- If a set `Φ` of `R`-linear functionals jointly separates the points of `M`, then their base
+changes to a fraction ring `K` of `R` jointly separate the points of `K ⊗[R] M`. Unlike
+`eq_of_baseChange_eq`, `M` need not be projective. -/
+theorem eq_zero_of_forall_baseChange_eq_zero {R M K : Type*} [CommRing R] [AddCommMonoid M]
+    [Module R M] [CommRing K] [Algebra R K] [IsFractionRing R K] {Φ : Set (Module.Dual R M)}
+    (hΦ : ∀ m : M, (∀ φ ∈ Φ, φ m = 0) → m = 0) {v : K ⊗[R] M}
+    (h : ∀ φ ∈ Φ, Module.Dual.baseChange K φ v = 0) : v = 0 := by
+  obtain ⟨⟨m, r⟩, hv⟩ := IsLocalizedModule.surj (nonZeroDivisors R) (TensorProduct.mk R K M 1) v
+  have hm : m = 0 := hΦ m fun φ hφ ↦ IsFractionRing.injective R K <| by
+    rw [map_zero, ← Module.Dual.baseChange_apply_one_tmul, ← TensorProduct.mk_apply, ← hv,
+      Submonoid.smul_def, LinearMap.map_smul_of_tower, h φ hφ, smul_zero]
+  rw [hm, map_zero, Submonoid.smul_def, ← algebraMap_smul K] at hv
+  exact (IsLocalization.map_units K r).smul_eq_zero.mp hv
 
 end TauCeti.Module.Dual
 
