@@ -140,7 +140,7 @@ theorem of_comp_eq_id {f : A →+* B} (g : B →+* A) (h : g.comp f = RingHom.id
 /-- Bijective ring homomorphisms are v-covers. -/
 theorem of_bijective {f : A →+* B} (hf : Function.Bijective f) : f.IsVCover :=
   of_comp_eq_id (RingEquiv.ofBijective f hf).symm.toRingHom
-    (by ext x; exact (RingEquiv.ofBijective f hf).symm_apply_apply x)
+    (by ext x; simpa using (RingEquiv.ofBijective f hf).symm_apply_apply x)
 
 /-- Identities are v-covers, in the form used by Mathlib's ring-homomorphism properties. -/
 theorem containsIdentities : ContainsIdentities IsVCover := fun _ _ => IsVCover.id
@@ -220,9 +220,8 @@ theorem exists_lift_iff_exists_isPrime_le (V : Type u) [CommRing V] [IsDomain V]
     obtain ⟨W, i₁, i₂, i₃, g, hg, hg'⟩ := TauCeti.exists_valuationRing_of_isPrime_le hPQ hP hQ
     refine ⟨W, i₁, i₂, i₃, g.comp (algebraMap V (V ⊗[A] B)),
       g.comp Algebra.TensorProduct.includeRight.toRingHom, hg, hg', ?_⟩
-    -- both composites are `g` after the structure map `A →+* V ⊗[A] B`
-    rw [RingHom.comp_assoc, RingHom.comp_assoc, AlgHom.toRingHom_eq_coe, AlgHom.comp_algebraMap,
-      ← IsScalarTower.algebraMap_eq]
+    ext a
+    simp
 
 /-- A ring homomorphism `f : A →+* B` is a v-cover if and only if, for every homomorphism
 `φ : A →+* V` to a valuation domain, there are primes `P ≤ Q` of `V ⊗[A] B` lying over the zero
