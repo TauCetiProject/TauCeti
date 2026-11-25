@@ -20,22 +20,25 @@ zero is zero.
 
 The **finite part** `𝔪_τ⁺ = {x ∈ B₊ : τ(x) < ∞}` (`TauCeti.finitePart`) is a hereditary
 convex cone, since a trace is monotone on `B₊`. The **square-integrable elements**
-`𝔫_τ = {x : τ(x⋆x) < ∞}` form a self-adjoint two-sided ideal (`TauCeti.IsTrace.sqIntegrable`,
-Dixmier 1963, Lemme 3, p. 226): it is a left ideal because `x⋆a⋆ax ≤ ‖a⋆a‖ x⋆x`, it is closed
-under addition because `(x + y)⋆(x + y) ≤ (x + y)⋆(x + y) + (x - y)⋆(x - y) = 2(x⋆x + y⋆y)`, it is
-self-adjoint by the trace identity, and so it is also a right ideal.
+`𝔫_τ = {x : τ(x⋆x) < ∞}` (`TauCeti.sqIntegrable`) form a self-adjoint two-sided ideal
+(`TauCeti.IsTrace.sqIntegrableIdeal`, Dixmier 1963, Lemme 3, p. 226): it is a left ideal
+because `x⋆a⋆ax ≤ ‖a⋆a‖ x⋆x`, it is closed under addition because
+`(x + y)⋆(x + y) ≤ (x + y)⋆(x + y) + (x - y)⋆(x - y) = 2(x⋆x + y⋆y)`, it is self-adjoint by the
+trace identity, and so it is also a right ideal.
 
 Traces are stable under the zero map, sums, multiples by `c ∈ [0, ∞]`, and pullback along a
 star homomorphism, which preserves faithfulness for injective homomorphisms. A positive tracial
-functional (`TauCeti.PositiveTracialFunctional`) defines a trace that is finite everywhere
-(`TauCeti.PositiveTracialFunctional.isTrace_toTrace`).
+functional (`TauCeti.PositiveTracialFunctional`) defines a trace
+(`TauCeti.PositiveTracialFunctional.isTrace_toTrace`) that is finite everywhere
+(`TauCeti.PositiveTracialFunctional.toTrace_lt_top`).
 
 ## Main definitions
 
 * `TauCeti.IsTrace`: traces `B → ℝ≥0∞`.
 * `TauCeti.IsFaithfulTrace`: faithful traces.
 * `TauCeti.finitePart`: the finite part `𝔪_τ⁺`.
-* `TauCeti.IsTrace.sqIntegrable`: the two-sided ideal `𝔫_τ`.
+* `TauCeti.sqIntegrable`: the square-integrable elements `𝔫_τ`.
+* `TauCeti.IsTrace.sqIntegrableIdeal`: `𝔫_τ` as a two-sided ideal.
 * `TauCeti.PositiveTracialFunctional.toTrace`: the trace of a positive tracial functional.
 
 ## Main results
@@ -46,6 +49,9 @@ functional (`TauCeti.PositiveTracialFunctional`) defines a trace that is finite 
 * `TauCeti.IsTrace.star_mem_sqIntegrable`, `TauCeti.IsTrace.smul_mem_sqIntegrable`: `𝔫_τ` is
   self-adjoint and a complex subspace.
 * `TauCeti.IsTrace.comp`, `TauCeti.IsFaithfulTrace.comp`: pullback along star homomorphisms.
+* `TauCeti.PositiveTracialFunctional.isTrace_toTrace`,
+  `TauCeti.PositiveTracialFunctional.toTrace_lt_top`: a positive tracial functional is a trace
+  that is finite everywhere.
 
 ## References
 
@@ -79,6 +85,7 @@ def IsFaithfulTrace (τ : B → ℝ≥0∞) : Prop :=
   ∀ ⦃x : B⦄, 0 ≤ x → τ x = 0 → x = 0
 
 omit [StarOrderedRing B] in
+/-- Unfolds `IsFaithfulTrace`. -/
 theorem isFaithfulTrace_iff : IsFaithfulTrace τ ↔ ∀ ⦃x : B⦄, 0 ≤ x → τ x = 0 → x = 0 :=
   Iff.rfl
 
@@ -93,9 +100,26 @@ def finitePart (τ : B → ℝ≥0∞) : Set B :=
   {x | 0 ≤ x ∧ τ x < ∞}
 
 omit [StarOrderedRing B] in
+/-- Membership in `𝔪_τ⁺`. -/
 @[simp]
 theorem mem_finitePart {x : B} : x ∈ finitePart τ ↔ 0 ≤ x ∧ τ x < ∞ :=
   Iff.rfl
+
+/-- The **square-integrable elements** `𝔫_τ = {x : τ(x⋆x) < ∞}` of a trace. -/
+def sqIntegrable (τ : B → ℝ≥0∞) : Set B :=
+  {x | τ (star x * x) < ∞}
+
+omit [PartialOrder B] [StarOrderedRing B] in
+/-- Membership in `𝔫_τ`. -/
+@[simp]
+theorem mem_sqIntegrable {x : B} : x ∈ sqIntegrable τ ↔ τ (star x * x) < ∞ :=
+  Iff.rfl
+
+omit [PartialOrder B] [StarOrderedRing B] in
+/-- `|c|² x⋆x = (cx)⋆(cx)` for a complex scalar `c`. -/
+private theorem star_smul_mul_smul (c : ℂ) (x : B) :
+    star (c • x) * (c • x) = ((‖c‖₊ ^ 2 : ℝ≥0) : ℝ) • (star x * x) := by
+  simp [star_smul, smul_mul_smul_comm, Complex.conj_mul', ← Complex.coe_smul]
 
 namespace IsTrace
 
@@ -159,13 +183,32 @@ theorem map_star_mul_mul_le (hτ : IsTrace τ) (a x : B) :
   rw [coe_nnNorm, star_mul, mul_assoc, ← mul_assoc (star a), ← mul_assoc]
   exact CStarAlgebra.star_left_conjugate_le_norm_smul x (star a * a)
 
-/-- The **square-integrable elements** `𝔫_τ = {x : τ(x⋆x) < ∞}` of a trace, a two-sided
-ideal (Dixmier 1963, Lemme 3, p. 226). -/
-def sqIntegrable (hτ : IsTrace τ) : TwoSidedIdeal B :=
-  .mk' {x | τ (star x * x) < ∞}
+omit [StarOrderedRing B] in
+/-- The trace identity applied to `x⋆`: `τ((x⋆)⋆x⋆) = τ(x⋆x)`. -/
+theorem map_star_star_mul_star (hτ : IsTrace τ) (x : B) :
+    τ (star (star x) * star x) = τ (star x * x) := by
+  rw [star_star, hτ.map_star_mul_self]
+
+omit [StarOrderedRing B] in
+/-- `𝔫_τ` is self-adjoint. -/
+theorem star_mem_sqIntegrable (hτ : IsTrace τ) {x : B} (hx : x ∈ sqIntegrable τ) :
+    star x ∈ sqIntegrable τ := by
+  rwa [mem_sqIntegrable, hτ.map_star_star_mul_star]
+
+/-- `𝔫_τ` is closed under multiplication by complex scalars. -/
+theorem smul_mem_sqIntegrable (hτ : IsTrace τ) (c : ℂ) {x : B} (hx : x ∈ sqIntegrable τ) :
+    c • x ∈ sqIntegrable τ := by
+  rw [mem_sqIntegrable, star_smul_mul_smul,
+    hτ.map_nnreal_smul_of_nonneg _ (star_mul_self_nonneg x)]
+  exact ENNReal.mul_lt_top ENNReal.coe_lt_top hx
+
+/-- The square-integrable elements `𝔫_τ` of a trace as a two-sided ideal
+(Dixmier 1963, Lemme 3, p. 226). -/
+def sqIntegrableIdeal (hτ : IsTrace τ) : TwoSidedIdeal B :=
+  .mk' (sqIntegrable τ)
     (by simp [hτ.map_zero])
     (fun {x y} hx hy ↦ (hτ.map_star_add_mul_add_le x y).trans_lt <| by
-      simp only [Set.mem_ofPred_eq] at hx hy
+      rw [mem_sqIntegrable] at hx hy
       simp [ENNReal.add_lt_top, hx, hy])
     (fun {x} hx ↦ by simpa using hx)
     (fun {a x} hx ↦ (hτ.map_star_mul_mul_le a x).trans_lt
@@ -173,32 +216,19 @@ def sqIntegrable (hτ : IsTrace τ) : TwoSidedIdeal B :=
     (fun {x a} hx ↦ by
       have h := hτ.map_star_mul_mul_le (star a) (star x)
       rw [← star_mul, star_star] at h
-      have hx' : τ (star (star x) * star x) < ∞ := by
-        rw [star_star, ← hτ.map_star_mul_self]
-        exact hx
-      rw [Set.mem_ofPred_eq, hτ.map_star_mul_self]
-      exact h.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hx'))
+      rw [mem_sqIntegrable, hτ.map_star_mul_self]
+      exact h.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top (hτ.star_mem_sqIntegrable hx)))
 
+/-- The carrier of `hτ.sqIntegrableIdeal` is `𝔫_τ`. -/
 @[simp]
-theorem mem_sqIntegrable (hτ : IsTrace τ) {x : B} :
-    x ∈ hτ.sqIntegrable ↔ τ (star x * x) < ∞ :=
+theorem coe_sqIntegrableIdeal (hτ : IsTrace τ) : (hτ.sqIntegrableIdeal : Set B) = sqIntegrable τ :=
+  Set.ext fun _ ↦ TwoSidedIdeal.mem_mk' ..
+
+/-- Membership in `hτ.sqIntegrableIdeal` is membership in `𝔫_τ`. -/
+@[simp]
+theorem mem_sqIntegrableIdeal (hτ : IsTrace τ) {x : B} :
+    x ∈ hτ.sqIntegrableIdeal ↔ x ∈ sqIntegrable τ :=
   TwoSidedIdeal.mem_mk' ..
-
-/-- `𝔫_τ` is self-adjoint. -/
-theorem star_mem_sqIntegrable (hτ : IsTrace τ) {x : B} (hx : x ∈ hτ.sqIntegrable) :
-    star x ∈ hτ.sqIntegrable := by
-  rw [mem_sqIntegrable] at hx ⊢
-  rwa [star_star, ← hτ.map_star_mul_self]
-
-/-- `𝔫_τ` is a complex subspace. -/
-theorem smul_mem_sqIntegrable (hτ : IsTrace τ) (c : ℂ) {x : B} (hx : x ∈ hτ.sqIntegrable) :
-    c • x ∈ hτ.sqIntegrable := by
-  rw [mem_sqIntegrable] at hx ⊢
-  have : star (c • x) * (c • x) = ((‖c‖₊ ^ 2 : ℝ≥0) : ℝ) • (star x * x) := by
-    rw [star_smul, smul_mul_smul_comm, ← Complex.coe_smul, NNReal.coe_pow, coe_nnNorm,
-      Complex.ofReal_pow, ← Complex.conj_mul', Complex.star_def]
-  rw [this, hτ.map_nnreal_smul_of_nonneg _ (star_mul_self_nonneg x)]
-  exact ENNReal.mul_lt_top ENNReal.coe_lt_top hx
 
 /-! ### Constructions -/
 
@@ -254,25 +284,25 @@ namespace PositiveTracialFunctional
 noncomputable def toTrace (ω : PositiveTracialFunctional B) : B → ℝ≥0∞ :=
   fun x ↦ ENNReal.ofReal (ω x).re
 
+/-- The value of `ω.toTrace`. -/
 @[simp]
 theorem toTrace_apply (ω : PositiveTracialFunctional B) (x : B) :
     ω.toTrace x = ENNReal.ofReal (ω x).re :=
   (rfl)
 
+/-- The trace of a positive tracial functional is finite everywhere. -/
 theorem toTrace_lt_top (ω : PositiveTracialFunctional B) (x : B) : ω.toTrace x < ∞ :=
   ENNReal.ofReal_lt_top
 
 /-- A positive tracial functional is a trace. -/
 theorem isTrace_toTrace (ω : PositiveTracialFunctional B) : IsTrace ω.toTrace where
   map_add_of_nonneg x y hx hy := by
-    simp only [toTrace, map_add, Complex.add_re]
+    simp only [toTrace_apply, map_add, Complex.add_re]
     exact ENNReal.ofReal_add (Complex.nonneg_iff.mp (map_nonneg ω hx)).1
       (Complex.nonneg_iff.mp (map_nonneg ω hy)).1
   map_nnreal_smul_of_nonneg c x _ := by
-    simp only [toTrace]
-    rw [← Complex.coe_smul, map_smul, smul_eq_mul, Complex.re_ofReal_mul,
-      ENNReal.ofReal_mul c.coe_nonneg, ENNReal.ofReal_coe_nnreal]
-  map_star_mul_self x := by simp only [toTrace, map_mul_comm]
+    simp [← Complex.coe_smul, ENNReal.ofReal_mul]
+  map_star_mul_self x := by simp only [toTrace_apply, map_mul_comm]
 
 end PositiveTracialFunctional
 
