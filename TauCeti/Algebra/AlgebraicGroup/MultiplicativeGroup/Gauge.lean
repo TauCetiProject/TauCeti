@@ -67,10 +67,7 @@ theorem tangentLinearEquiv_pointRightLogDeriv_unitX :
     tangentLinearEquiv ((laurentSeriesAlgebraDerivation R).pointRightLogDeriv
         ((pointsMulEquiv (R := R) (A := R⸨X⸩)).symm TauCeti.LaurentSeries.unitX)) =
       HahnSeries.single (-1) 1 := by
-  rw [tangentLinearEquiv_pointRightLogDeriv, MulEquiv.apply_symm_apply,
-    coe_laurentSeriesAlgebraDerivation, laurentSeriesDerivation_apply,
-    TauCeti.LaurentSeries.val_unitX, TauCeti.LaurentSeries.val_inv_unitX,
-    _root_.LaurentSeries.derivative_apply, _root_.LaurentSeries.hasseDeriv_single]
-  simp
+  rw [tangentLinearEquiv_pointRightLogDeriv]
+  simp [_root_.LaurentSeries.derivative_apply]
 
 end TauCeti.MultiplicativeGroup
