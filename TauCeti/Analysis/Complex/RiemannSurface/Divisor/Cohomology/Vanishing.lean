@@ -112,38 +112,12 @@ private theorem divisorCechCohomologyMeromorphicMul_one_injective_of_le_finrank
   exact (divisorCechCohomologyMapOfLE_one_injective_of_le_finrank hF hFG).comp
     iso.toLinearEquiv.injective
 
-/-- A meromorphic function `f` which differs from every constant, with an effective divisor `P`
-bounding its poles: `ord f ≥ -P`. Any meromorphic function with a pole will do. -/
-private theorem exists_meromorphicFunction_ne_algebraMap :
-    ∃ (f : MeromorphicFunction X) (P : WeilDivisor X), 0 ≤ P ∧
-      (∀ c : ℂ, f - algebraMap ℂ _ c ≠ 0) ∧
-        ∀ y, ((-P y : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order y f := by
-  obtain ⟨x⟩ := ConnectedSpace.toNonempty (α := X)
-  obtain ⟨k, ⟨f, hfx, hf⟩, hk⟩ :=
-    ((MeromorphicFunction.eventually_exists_order_eq_neg x).and (eventually_ge_atTop 1)).exists
-  refine ⟨f, k • WeilDivisor.ofPoint x, nsmul_nonneg (WeilDivisor.ofPoint_nonneg x) k,
-    fun c ↦ ?_, fun y ↦ ?_⟩
-  · -- `f` has a pole at `x`, and no constant has.
-    rw [sub_ne_zero]
-    rintro rfl
-    rcases eq_or_ne c 0 with rfl | hc
-    · rw [map_zero, (MeromorphicFunction.order x).map_zero] at hfx
-      exact WithTop.top_ne_coe hfx
-    · rw [MeromorphicFunction.order_algebraMap hc] at hfx
-      exact absurd (WithTop.coe_eq_zero.1 hfx.symm) (by omega)
-  · rw [Finsupp.smul_apply, nsmul_eq_mul]
-    rcases eq_or_ne y x with rfl | hyx
-    · rw [show WeilDivisor.ofPoint y y = 1 from WeilDivisor.coeff_ofPoint_self y, mul_one, hfx]
-    · rw [show WeilDivisor.ofPoint x y = 0 from WeilDivisor.coeff_ofPoint_of_ne hyx, mul_zero,
-        neg_zero, WithTop.coe_zero]
-      exact hf y hyx
-
 /-- If `h¹` takes its least value at `E`, then `H¹(X, 𝒪_E) = 0`. -/
 private theorem subsingleton_divisorCechCohomology_one_of_le_finrank {E : WeilDivisor X}
     (hE : ∀ F : WeilDivisor X, Module.finrank ℂ (divisorCechCohomology E 1) ≤
       Module.finrank ℂ (divisorCechCohomology F 1)) :
     Subsingleton (divisorCechCohomology E 1) := by
-  obtain ⟨f, P, hP, hf₀, hf⟩ := exists_meromorphicFunction_ne_algebraMap (X := X)
+  obtain ⟨f, P, hP, hf₀, hf⟩ := MeromorphicFunction.exists_ne_algebraMap (X := X)
   have hEP : E ≤ E + P := le_add_of_nonneg_right hP
   have hfP (y : X) : ((E y - (E + P) y : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order y f := by
     rw [Finsupp.add_apply, sub_add_cancel_left]

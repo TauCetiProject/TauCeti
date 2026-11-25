@@ -89,6 +89,32 @@ theorem eventually_exists_order_eq_neg (x : X) :
   have hpy : WeilDivisor.ofPoint x y = 0 := WeilDivisor.coeff_ofPoint_of_ne hy
   simpa [hpy] using hf y
 
+/-- A meromorphic function `f` which differs from every constant, with an effective divisor `P`
+bounding its poles: `ord f ≥ -P`. Any meromorphic function with a pole will do. -/
+theorem exists_ne_algebraMap :
+    ∃ (f : MeromorphicFunction X) (P : WeilDivisor X), 0 ≤ P ∧
+      (∀ c : ℂ, f - algebraMap ℂ _ c ≠ 0) ∧
+        ∀ y, ((-P y : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order y f := by
+  obtain ⟨x⟩ := ConnectedSpace.toNonempty (α := X)
+  obtain ⟨k, ⟨f, hfx, hf⟩, hk⟩ :=
+    ((MeromorphicFunction.eventually_exists_order_eq_neg x).and (eventually_ge_atTop 1)).exists
+  refine ⟨f, k • WeilDivisor.ofPoint x, nsmul_nonneg (WeilDivisor.ofPoint_nonneg x) k,
+    fun c ↦ ?_, fun y ↦ ?_⟩
+  · -- `f` has a pole at `x`, and no constant has.
+    rw [sub_ne_zero]
+    rintro rfl
+    rcases eq_or_ne c 0 with rfl | hc
+    · rw [map_zero, (MeromorphicFunction.order x).map_zero] at hfx
+      exact WithTop.top_ne_coe hfx
+    · rw [MeromorphicFunction.order_algebraMap hc] at hfx
+      exact absurd (WithTop.coe_eq_zero.1 hfx.symm) (by omega)
+  · rw [Finsupp.smul_apply, nsmul_eq_mul]
+    rcases eq_or_ne y x with rfl | hyx
+    · rw [← WeilDivisor.coeff, WeilDivisor.coeff_ofPoint_self, mul_one, hfx]
+    · rw [← WeilDivisor.coeff, WeilDivisor.coeff_ofPoint_of_ne hyx, mul_zero, neg_zero,
+        WithTop.coe_zero]
+      exact hf y hyx
+
 /-- **Meromorphic functions separate points.** On a compact connected Riemann surface,
 every point `x` is the only pole of some meromorphic function. -/
 theorem exists_apply_eq_infty_and_forall_ne_infty (x : X) :
