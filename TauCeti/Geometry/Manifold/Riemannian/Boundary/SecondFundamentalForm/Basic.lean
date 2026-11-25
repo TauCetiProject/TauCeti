@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Boundary.TangentSpace
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.OutwardUnitNormal
 public import TauCeti.Geometry.Manifold.Riemannian.InwardUnitNormal
+import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 import TauCeti.Geometry.Manifold.MFDeriv.Slice
 
 /-!
@@ -32,6 +33,8 @@ With this sign the closed unit ball has `II = h`, the induced metric. The bounda
 
 ## Main declarations
 
+* `TauCeti.boundaryInducedForm`: the induced metric `h_q(u, w) = ⟨dι u, dι w⟩` on the tangent
+  space `T_q∂M` of the boundary manifold, as a bilinear form; it is symmetric and nondegenerate.
 * `TauCeti.boundarySecondFundamentalForm`: the second fundamental form `II_q` as a bilinear form on
   the tangent space of the boundary manifold at `q`.
 * `TauCeti.boundarySecondFundamentalForm_isSymm`: it is symmetric.
@@ -280,5 +283,53 @@ theorem boundarySecondFundamentalForm_apply_eq_inner_of_eq_outwardUnitNormal
   rw [boundarySecondFundamentalForm_apply_eq_neg_inner_outwardUnitNormal q u w hW hWq hWt,
     ← hWq, ← hNν.self_of_nhds, real_inner_comm (N q)]
   linarith
+
+/-! ### The induced metric -/
+
+section InducedForm
+
+omit [IsManifold (𝓡∂ (n + 1)) 2 M]
+  [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
+    (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
+
+/-- The **induced metric** `h_q(u, w) = ⟨dι u, dι w⟩` on the tangent space of the boundary at
+`q ∈ ∂M`, as a bilinear form, where `ι : ∂M → M` is the inclusion. -/
+def boundaryInducedForm (q : (𝓡∂ (n + 1)).boundary M) :
+    LinearMap.BilinForm ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :=
+  (innerₗ (TangentSpace (𝓡∂ (n + 1)) (q : M))).compl₁₂
+    (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+      (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q).toLinearMap
+    (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+      (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q).toLinearMap
+
+/-- The defining formula of `TauCeti.boundaryInducedForm`. -/
+theorem boundaryInducedForm_apply (q : (𝓡∂ (n + 1)).boundary M)
+    (u w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
+    boundaryInducedForm q u w =
+      ⟪mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+          (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u,
+        mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+          (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q w⟫_ℝ :=
+  (rfl)
+
+/-- The induced metric is symmetric. -/
+theorem boundaryInducedForm_isSymm (q : (𝓡∂ (n + 1)).boundary M) :
+    (boundaryInducedForm q).IsSymm :=
+  ⟨fun u w ↦ by rw [boundaryInducedForm_apply, real_inner_comm, ← boundaryInducedForm_apply]⟩
+
+/-- The induced metric is nondegenerate: the differential of the inclusion is injective. -/
+theorem boundaryInducedForm_nondegenerate (q : (𝓡∂ (n + 1)).boundary M) :
+    (boundaryInducedForm q).Nondegenerate :=
+  nondegenerate_inner_comp (injective_mfderiv_subtypeVal_boundary q)
+
+/-- The induced metric is the inner product of `T_q∂M ⊆ T_qM`, transported along
+`TauCeti.boundaryTangentEquiv`. -/
+theorem boundaryInducedForm_eq_inner_boundaryTangentEquiv (q : (𝓡∂ (n + 1)).boundary M)
+    (u w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
+    boundaryInducedForm q u w = ⟪boundaryTangentEquiv q u, boundaryTangentEquiv q w⟫_ℝ := by
+  rw [Submodule.coe_inner, coe_boundaryTangentEquiv_apply, coe_boundaryTangentEquiv_apply,
+    boundaryInducedForm_apply]
+
+end InducedForm
 
 end TauCeti

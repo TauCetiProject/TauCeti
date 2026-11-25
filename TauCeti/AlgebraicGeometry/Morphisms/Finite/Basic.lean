@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.RingTheory.Spectrum.Maximal.Defs
+public import TauCeti.AlgebraicGeometry.Morphisms.Finite.TargetLocal
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
 import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 import Mathlib.RingTheory.Flat.EquationalCriterion
@@ -43,9 +44,9 @@ and hence transfer from a closed immersion composite `i ≫ f` to `i.ker.subsche
 `AlgebraicGeometry.Scheme.Hom.flat_ker_subschemeι_comp`,
 `AlgebraicGeometry.Scheme.Hom.locallyOfFinitePresentation_ker_subschemeι_comp`).
 
-Finiteness of a morphism is local on the target (`TauCeti.isZariskiLocalAtTarget_isFinite`); this
-is recorded as an instance because instance search does not derive it from Mathlib's affine
-description of `IsFinite`.
+The instance stating that finiteness of a morphism is local on the target
+(`AlgebraicGeometry.isZariskiLocalAtTarget_isFinite`) is in
+`TauCeti.AlgebraicGeometry.Morphisms.Finite.TargetLocal`.
 -/
 
 public section
@@ -123,14 +124,6 @@ instance locallyOfFinitePresentation_respectsIso :
       (@LocallyOfFinitePresentation : MorphismProperty Scheme.{u}) :=
   MorphismProperty.respectsIso_of_isStableUnderComposition
     (fun _ _ f (_ : IsIso f) ↦ inferInstance)
-
-/-- Finiteness of a morphism of schemes is local on the target. Instance search does not find
-this from Mathlib's affine description of `IsFinite`, so it is recorded here, using that finite
-means integral and locally of finite type (`AlgebraicGeometry.IsFinite.eq_inf`). -/
-instance isZariskiLocalAtTarget_isFinite : IsZariskiLocalAtTarget @IsFinite.{u} :=
-  IsFinite.eq_inf ▸ @MorphismProperty.IsLocalAtTarget.inf _ _ _ _ _
-    (@HasAffineProperty.instIsZariskiLocalAtTarget _ _ IsIntegralHom.hasAffineProperty)
-    (HasRingHomProperty.instIsZariskiLocalAtTarget @LocallyOfFiniteType)
 
 end TauCeti
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Neg
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Neg
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Basic
 
 /-!
 # Real Spin groups of opposite signatures as topological groups
@@ -27,10 +28,26 @@ positive-definite form `realCliffordForm n 0`, with the Spin group of the negati
 subtype topology on `Spin(n)` agrees with the topology it inherits from the Clifford units
 (`CliffordAlgebra.realCliffordSpinContinuousMulEquivUnitsRange`).
 
+The comparison `OrthonormalBasis.realSpinGroupEquiv b hQ` of `Spin(n)` with the Spin group of a form
+`Q v = -‖v‖²` along an orthonormal frame `b` is continuous with continuous inverse, since it is
+the composite of the topological isomorphisms `CliffordAlgebra.spinGroupContinuousMulEquivNeg` and
+`QuadraticMap.IsometryEquiv.spinGroupContinuousMulEquiv`. On representatives the `Spinᶜ` frame
+comparison `OrthonormalBasis.realSpinCGroupHom` and the inverse of the `Spinᶜ` frame isomorphism
+apply these maps, so both are continuous for the quotient topologies.
+
 ## Main definitions
 
 * `CliffordAlgebra.realCliffordSpinGroupContinuousMulEquivNeg p q`: the isomorphism
   `realCliffordSpinGroupEquivNeg p q` of topological groups.
+
+## Main results
+
+* `OrthonormalBasis.continuous_realSpinGroupEquiv` and
+  `OrthonormalBasis.continuous_realSpinGroupEquiv_symm`: the Spin frame comparison and its inverse
+  are continuous.
+* `OrthonormalBasis.continuous_realSpinCGroupHom` and
+  `OrthonormalBasis.continuous_realSpinCGroupEquiv_symm`: the `Spinᶜ` frame comparison and its
+  inverse are continuous.
 
 ## References
 
@@ -80,3 +97,46 @@ theorem coe_realCliffordSpinGroupContinuousMulEquivNeg_symm :
     ContinuousMulEquiv.apply_symm_apply]
 
 end CliffordAlgebra
+
+namespace OrthonormalBasis
+
+open CliffordAlgebra TauCeti
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : QuadraticForm ℝ V}
+  {n : ℕ} (b : OrthonormalBasis (Fin n) ℝ V) (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+
+/-- The Spin frame comparison is continuous. -/
+@[fun_prop]
+theorem continuous_realSpinGroupEquiv : Continuous (b.realSpinGroupEquiv hQ) := by
+  rw [coe_realSpinGroupEquiv, ← coe_spinGroupContinuousMulEquivNeg,
+    ← QuadraticMap.IsometryEquiv.coe_spinGroupContinuousMulEquiv]
+  fun_prop
+
+/-- The inverse of the Spin frame comparison is continuous. -/
+@[fun_prop]
+theorem continuous_realSpinGroupEquiv_symm : Continuous (b.realSpinGroupEquiv hQ).symm := by
+  rw [coe_realSpinGroupEquiv_symm, ← coe_spinGroupContinuousMulEquivNeg_symm,
+    QuadraticMap.IsometryEquiv.spinGroupEquiv_symm,
+    ← QuadraticMap.IsometryEquiv.coe_spinGroupContinuousMulEquiv]
+  fun_prop
+
+variable (hpos : realCliffordForm n 0 ≠ 0) (hQ₀ : Q ≠ 0)
+
+/-- The `Spinᶜ` frame comparison is continuous for the quotient topologies. -/
+@[fun_prop]
+theorem continuous_realSpinCGroupHom : Continuous (b.realSpinCGroupHom hQ hpos hQ₀) := by
+  apply (QuotientGroup.isQuotientMap_mk (spinCKernel _ hpos)).continuous_iff.mpr
+  simp only [Function.comp_def, ← spinCGroup.mk_apply, realSpinCGroupHom_mk]
+  exact (spinCGroup.continuous_mk Q hQ₀).comp
+    (((b.continuous_realSpinGroupEquiv hQ).comp continuous_fst).prodMk continuous_snd)
+
+/-- The inverse of the `Spinᶜ` frame isomorphism is continuous for the quotient topologies. -/
+@[fun_prop]
+theorem continuous_realSpinCGroupEquiv_symm :
+    Continuous (b.realSpinCGroupEquiv hQ hpos hQ₀).symm := by
+  apply (QuotientGroup.isQuotientMap_mk (spinCKernel Q hQ₀)).continuous_iff.mpr
+  simp only [Function.comp_def, ← spinCGroup.mk_apply, realSpinCGroupEquiv_symm_mk]
+  exact (spinCGroup.continuous_mk _ hpos).comp
+    (((b.continuous_realSpinGroupEquiv_symm hQ).comp continuous_fst).prodMk continuous_snd)
+
+end OrthonormalBasis

@@ -12,6 +12,7 @@ import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Components
 import TauCeti.Analysis.Sobolev.LipschitzDomain.SobolevEmbedding
 import TauCeti.Analysis.Sobolev.W1p.LocalCompactness
+import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import TauCeti.Data.ENNReal.InterpolatedExponent
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.MeasureTheory.Measure.Haar.Rescale
@@ -45,7 +46,9 @@ finite `q`. For `q ≤ p` the inclusion factors through `Lᵖ(Ω)`, as `Ω` has 
 strict: at `q = p⋆` the inclusion is bounded but not compact.
 
 Compactness of the value map is invariant under measure-preserving changes of variables with a
-Lipschitz inverse. Transporting along the affine isometries of the boundary charts, it holds for
+Lipschitz inverse (`TauCeti.W1p.isCompactOperator_valueL_of_measurePreserving`). Transporting
+along the affine isometries of the boundary charts and a dilation normalizing the Haar measure, it
+holds for
 every bounded open subset of a finite-dimensional inner product space satisfying the intrinsic
 Lipschitz-domain predicate `Set.IsLipschitzDomain`, such as a bounded Lipschitz domain of
 `EuclideanSpace ℝ (Fin n)`, on which the energy forms of divergence-form operators live.
@@ -54,14 +57,14 @@ Lipschitz-domain predicate `Set.IsLipschitzDomain`, such as a bounded Lipschitz 
 
 * `TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith`: Rellich–Kondrachov
   compactness of `W^{1,p}(Ω) → Lᵖ(Ω)`.
+* `TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_of_affineIsometryEquiv`: the same
+  on an affine-isometric copy of `Ω`.
 * `TauCeti.W1p.exists_eLpNorm_value_sub_setAverage_le_of_isLipschitzDomainWith`: the
   Poincaré–Wirtinger inequality on a bounded connected Lipschitz domain.
 * `TauCeti.W1p.exists_eqOn_setAverage_and_eLpNorm_value_sub_le_of_finite_isLipschitzDomain`:
   Poincaré–Wirtinger after subtracting the mean on each piece of a finite disjoint cover.
 * `TauCeti.W1p.exists_isCompactOperator_of_isLipschitzDomainWith`: Rellich–Kondrachov
   compactness of `W^{1,p}(Ω) → L^q(Ω)` for every subcritical `q`.
-* `TauCeti.W1p.isCompactOperator_valueL_of_measurePreserving`: compactness of the value map
-  transported along a change of variables.
 * `TauCeti.W1p.isCompactOperator_valueL_of_frontier_eq_empty`: compactness of the value map on a
   bounded open set with empty frontier.
 * `TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_image` and
@@ -103,6 +106,20 @@ theorem W1p.isCompactOperator_valueL_of_isLipschitzDomainWith
     rw [ContinuousLinearMap.comp_assoc, hT, ContinuousLinearMap.comp_id]
   rw [heq]
   exact hK.comp_clm T
+
+/-- **Rellich–Kondrachov on rigid copies of bounded Lipschitz domains.** Let an affine isometry
+`e` carry `U` onto a bounded Lipschitz domain `Ω ⊆ ℝ × E`, in the sense that `Ω = e⁻¹⁻¹(U)`.
+Then for `1 ≤ p ≤ ∞` the value map `W^{1,p}(U) → Lᵖ(U)` is a compact operator. -/
+theorem W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_of_affineIsometryEquiv
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    [MeasurableSpace F] [BorelSpace F] {U : Opens F}
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) (e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
+    (hΩU : (Ω : Set (WithLp 2 (ℝ × E))) = e.symm ⁻¹' U) :
+    IsCompactOperator (W1p.valueL (mu := volume) (Omega := U) (p := p)) :=
+  W1p.isCompactOperator_valueL_of_affineIsometryEquiv e
+    (hΩU ▸ (e.toHomeomorph.toEquiv.preimage_symm_preimage U).symm)
+    (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith hΩ hb)
 
 /-- **The Poincaré–Wirtinger inequality on bounded connected Lipschitz domains.** Let `Ω` be a
 bounded, preconnected Lipschitz domain, let `S ⊆ Ω` have positive measure, and let `1 ≤ p ≤ ∞`.
@@ -197,47 +214,6 @@ namespace TauCeti
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-section Transport
-
-variable {F F' : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
-  [MeasurableSpace F] [BorelSpace F] [NormedAddCommGroup F'] [InnerProductSpace ℝ F']
-  [FiniteDimensional ℝ F'] [MeasurableSpace F'] [BorelSpace F']
-  {μ : Measure F} [μ.IsAddHaarMeasure] {ν : Measure F'} [ν.IsAddHaarMeasure]
-  {U : Opens F} {V : Opens F'}
-
-/-- **Compactness of the value map is invariant under Lipschitz changes of variables.** Let
-`Φ : F → F'` and `Ψ : F' → F` be measure-preserving, with `U = Φ⁻¹(V)`, `V = Ψ⁻¹(U)` and `Ψ` a left
-inverse of `Φ` on `U`, and let `Ψ` be locally Lipschitz on `V` with bounded derivative there. If
-the value map `W^{1,p}(V) → Lᵖ(V)` is compact, so is `W^{1,p}(U) → Lᵖ(U)`: it is the value map of
-`V` conjugated by the precompositions with `Ψ` and with `Φ`. -/
-theorem W1p.isCompactOperator_valueL_of_measurePreserving {Φ : F → F'} {Ψ : F' → F} {M : ℝ}
-    (hΦ : MeasurePreserving Φ μ ν) (hΨ : MeasurePreserving Ψ ν μ)
-    (hUV : (U : Set F) = Φ ⁻¹' V) (hVU : (V : Set F') = Ψ ⁻¹' U)
-    (hΨl : LocallyLipschitzOn V Ψ) (hM : ∀ y ∈ (V : Set F'), ‖fderiv ℝ Ψ y‖ ≤ M)
-    (hΨΦ : ∀ x ∈ (U : Set F), Ψ (Φ x) = x)
-    (hK : IsCompactOperator (W1p.valueL (mu := ν) (Omega := V) (p := p))) :
-    IsCompactOperator (W1p.valueL (mu := μ) (Omega := U) (p := p)) := by
-  have hΦr : MeasurePreserving Φ (μ.restrict U) (ν.restrict V) :=
-    hUV ▸ hΦ.restrict_preimage V.isOpen.measurableSet
-  let S := W1p.compMeasurePreservingL (p := p) hΨ hVU hΨl hM
-  let R : Lp ℝ p (ν.restrict V) →L[ℝ] Lp ℝ p (μ.restrict U) :=
-    (Lp.compMeasurePreservingₗᵢ ℝ Φ hΦr).toContinuousLinearMap
-  have heq : W1p.valueL (mu := μ) (Omega := U) (p := p) = R.comp (W1p.valueL.comp S) := by
-    ext1 u
-    refine Lp.ext ?_
-    filter_upwards [Lp.coeFn_compMeasurePreserving (W1p.value (S u)) hΦr,
-      hΦr.quasiMeasurePreserving.ae_eq_comp
-        (W1p.value_compMeasurePreservingL_ae hΨ hVU hΨl hM u),
-      ae_restrict_mem U.isOpen.measurableSet] with x h₁ h₂ hx
-    simp only [ContinuousLinearMap.comp_apply, W1p.valueL_apply, R,
-      LinearIsometry.coe_toContinuousLinearMap, Lp.compMeasurePreservingₗᵢ_apply]
-    rw [h₁]
-    exact (h₂.trans (congrArg (W1p.value u) (hΨΦ x hx))).symm
-  rw [heq]
-  exact (hK.comp_clm S).clm_comp R
-
-end Transport
-
 section Intrinsic
 
 open scoped Pointwise
@@ -265,12 +241,8 @@ theorem W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_image
   let W : Opens (WithLp 2 (ℝ × E)) := ⟨g '' (Ω : Set F), ((isLipschitzDomainWith_iff _ _).1 hΩ).1⟩
   have hWΩ : (W : Set (WithLp 2 (ℝ × E))) = g.symm ⁻¹' Ω :=
     congrFun (image_eq_preimage_of_inverse g.symm_apply_apply g.apply_symm_apply) _
-  exact W1p.isCompactOperator_valueL_of_measurePreserving (Ψ := g.symm) (M := 1)
-    g.measurePreserving g.symm.measurePreserving (g.toEquiv.preimage_image _).symm hWΩ
-    g.symm.lipschitzWith.locallyLipschitz.locallyLipschitzOn
-    (fun y _ => g.symm.norm_fderiv_le y) (fun x _ => g.symm_apply_apply x)
-    (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith hΩ
-      (g.lipschitzWith.isBounded_image hb))
+  exact W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_of_affineIsometryEquiv hΩ
+    (g.lipschitzWith.isBounded_image hb) g hWΩ
 
 /-- With empty frontier, a bounded open set has compact closure inside itself, so the value map is
 compact by local Rellich–Kondrachov compactness. -/

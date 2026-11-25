@@ -13,6 +13,7 @@ import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 
 /-!
@@ -43,6 +44,9 @@ half-space trace to that region. Since `fderiv ℝ Φ` vanishes where `Φ` is no
 * `TauCeti.W1p.value_compMeasurePreservingL_ae`, `TauCeti.W1p.gradient_compMeasurePreservingL_ae`:
   its value and weak gradient.
 * `TauCeti.W1p.norm_compMeasurePreservingL_le`: the bound `‖u ∘ Φ‖ ≤ max 1 M ‖u‖`.
+* `TauCeti.W1p.isCompactOperator_valueL_of_measurePreserving`: compactness of the value map
+  `W^{1,p} → Lᵖ` transfers along a measure-preserving change of variables with a Lipschitz
+  inverse.
 * `TauCeti.W1p.compMeasurePreservingL_mem_w1p0Submodule`: zero boundary values are preserved.
 * `TauCeti.W1p.compMeasurePreservingL_mem_w1p0Submodule_of_contDiff`: the same for smooth proper
   `Φ` and every exponent, without mollification.
@@ -52,6 +56,8 @@ half-space trace to that region. Since `fderiv ℝ Φ` vanishes where `Φ` is no
   (`TauCeti.W1p.norm_gradient_compAffineIsometryEquivL`), and it does not increase the norm. It
   preserves and reflects zero boundary values
   (`TauCeti.W1p.compAffineIsometryEquivL_mem_w1p0Submodule_iff`).
+* `TauCeti.W1p.isCompactOperator_valueL_of_affineIsometryEquiv`: compactness of the value map
+  `W^{1,p} → Lᵖ` transfers along an affine isometry.
 * `TauCeti.W1p.setIntegral_inner_gradient_compAffineIsometryEquivL`: the Dirichlet pairing
   `∫ ⟪∇u, ∇φ⟫` of `u` against a test function `φ` is invariant under a linear isometric change of
   coordinates.
@@ -230,6 +236,36 @@ theorem W1p.compMeasurePreservingL_compMeasurePreservingL {Ψ : E' → E} {M' : 
     ae_restrict_mem U.isOpen.measurableSet] with x h1 h2 hx
   rw [h1, h2, hΨΦ x hx]
 
+/-- **Compactness of the value map is invariant under Lipschitz changes of variables.** Let
+`Φ : E → E'` and `Ψ : E' → E` be measure-preserving, with `U = Φ⁻¹(V)`, `V = Ψ⁻¹(U)` and `Ψ` a left
+inverse of `Φ` on `U`, and let `Ψ` be locally Lipschitz on `V` with `‖fderiv ℝ Ψ‖ ≤ M'` there. If
+the value map `W^{1,p}(V) → Lᵖ(V)` is compact, so is `W^{1,p}(U) → Lᵖ(U)`: it is the value map of
+`V` conjugated by the precompositions with `Ψ` and with `Φ`. -/
+theorem W1p.isCompactOperator_valueL_of_measurePreserving {Ψ : E' → E} {M' : ℝ}
+    (hΦ : MeasurePreserving Φ μ ν) (hΨ : MeasurePreserving Ψ ν μ)
+    (hUV : (U : Set E) = Φ ⁻¹' V) (hVU : (V : Set E') = Ψ ⁻¹' U)
+    (hΨl : LocallyLipschitzOn V Ψ) (hM' : ∀ y ∈ (V : Set E'), ‖fderiv ℝ Ψ y‖ ≤ M')
+    (hΨΦ : ∀ x ∈ (U : Set E), Ψ (Φ x) = x)
+    (hK : IsCompactOperator (W1p.valueL (mu := ν) (Omega := V) (p := p))) :
+    IsCompactOperator (W1p.valueL (mu := μ) (Omega := U) (p := p)) := by
+  have hΦr := measurePreserving_restrict hΦ hUV
+  let S := W1p.compMeasurePreservingL (p := p) hΨ hVU hΨl hM'
+  let R : Lp ℝ p (ν.restrict V) →L[ℝ] Lp ℝ p (μ.restrict U) :=
+    (Lp.compMeasurePreservingₗᵢ ℝ Φ hΦr).toContinuousLinearMap
+  have heq : W1p.valueL (mu := μ) (Omega := U) (p := p) = R.comp (W1p.valueL.comp S) := by
+    ext1 u
+    refine Lp.ext ?_
+    filter_upwards [Lp.coeFn_compMeasurePreserving (W1p.value (S u)) hΦr,
+      hΦr.quasiMeasurePreserving.ae_eq_comp
+        (W1p.value_compMeasurePreservingL_ae hΨ hVU hΨl hM' u),
+      ae_restrict_mem U.isOpen.measurableSet] with x h₁ h₂ hx
+    simp only [ContinuousLinearMap.comp_apply, W1p.valueL_apply, R,
+      LinearIsometry.coe_toContinuousLinearMap, Lp.compMeasurePreservingₗᵢ_apply]
+    rw [h₁]
+    exact (h₂.trans (congrArg (W1p.value u) (hΨΦ x hx))).symm
+  rw [heq]
+  exact (hK.comp_clm S).clm_comp R
+
 /-- **Zero boundary values are preserved.** For `p < ∞` and a proper map `Φ`, precomposition
 with `Φ` maps `W^{1,p}_0(V)` into `W^{1,p}_0(U)`. -/
 theorem W1p.compMeasurePreservingL_mem_w1p0Submodule (hp : p ≠ ∞) (hΦp : IsProperMap Φ)
@@ -369,13 +405,23 @@ theorem W1p.compAffineIsometryEquivL_mem_w1p0Submodule
     (g : F ≃ᵃⁱ[ℝ] F') (hUV : (U : Set F) = g ⁻¹' V) {u : W1p volume V p} :
     W1p.compAffineIsometryEquivL g hUV u ∈ w1p0Submodule volume U p ↔
       u ∈ w1p0Submodule volume V p := by
-  have hVU : (V : Set F') = g.symm ⁻¹' U := by
-    rw [hUV, ← Set.preimage_comp]
-    ext x
-    simp
+  have hVU : (V : Set F') = g.symm ⁻¹' U :=
+    hUV ▸ (g.toHomeomorph.toEquiv.symm_preimage_preimage V).symm
   refine ⟨fun hu => ?_, W1p.compAffineIsometryEquivL_mem_w1p0Submodule g hUV⟩
   rw [← W1p.compAffineIsometryEquivL_symm_compAffineIsometryEquivL g hUV hVU u]
   exact W1p.compAffineIsometryEquivL_mem_w1p0Submodule g.symm hVU hu
+
+/-- **Rellich compactness is invariant under rigid changes of coordinates.** For `U = g⁻¹(V)`, if
+the value map `W^{1,p}(V) → Lᵖ(V)` is a compact operator, so is `W^{1,p}(U) → Lᵖ(U)`: the value
+of `u` is the value of `u ∘ g⁻¹` composed with `g`. -/
+theorem W1p.isCompactOperator_valueL_of_affineIsometryEquiv (g : F ≃ᵃⁱ[ℝ] F')
+    (hUV : (U : Set F) = g ⁻¹' V)
+    (hK : IsCompactOperator (W1p.valueL (mu := volume) (Omega := V) (p := p))) :
+    IsCompactOperator (W1p.valueL (mu := volume) (Omega := U) (p := p)) :=
+  W1p.isCompactOperator_valueL_of_measurePreserving g.measurePreserving g.symm.measurePreserving
+    hUV (hUV ▸ (g.toHomeomorph.toEquiv.symm_preimage_preimage V).symm)
+    g.symm.lipschitzWith.locallyLipschitz.locallyLipschitzOn (fun y _ => g.symm.norm_fderiv_le y)
+    (fun x _ => g.symm_apply_apply x) hK
 
 open scoped Distributions Gradient in
 /-- **The Dirichlet pairing under a linear isometry.** For a linear isometry equivalence `e` and
