@@ -25,7 +25,8 @@ Sobolev realization of `D_u` is a priori only an `L^q` covector field annihilati
 test map `ξ`, so before that argument applies it has to be shown to be regular. This file proves
 that regularity: such an `η` gains as many derivatives as the data allow
 (`TauCeti.SymplecticForm.memWkpLoc_succ_of_forall_integral_apply_floerLinearization_eq_zero`), and
-for `C²` data it agrees almost everywhere with a `C¹` covector field.
+for `C²` data `u`, `J` and `C³` Hamiltonians it agrees almost everywhere with a `C¹` covector
+field.
 
 The Sobolev classes `W^{k,r}_loc` of Tau Ceti live on `ℂ`, so the statement reads the domain
 through `e = Complex.equivRealProdCLM : ℂ ≃L[ℝ] ℝ × ℝ`, `s + i t ↦ (s, t)`, which carries Lebesgue
