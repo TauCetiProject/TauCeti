@@ -209,13 +209,17 @@ def quaternionFrame : OrthonormalBasis (Fin 4) ℝ V :=
       · simpa using hmem 0
       · simpa using hmem 3)
 
+@[simp]
+theorem coe_quaternionFrame : ⇑b.quaternionFrame = ![b 2, b 1, -b 0, b 3] :=
+  OrthonormalBasis.coe_mk _ _
+
 variable {Q : QuadraticForm ℝ V} (hQ : ∀ v, Q v = -‖v‖ ^ 2)
 
 private theorem quaternionFrame_negRealCliffordFormIsometryEquiv_coordVec (z : Fin 2 → ℂ) :
     b.quaternionFrame.negRealCliffordFormIsometryEquiv hQ (coordVec z) =
       (b.complexCoords 2).symm z := by
-  rw [negRealCliffordFormIsometryEquiv_apply, quaternionFrame, OrthonormalBasis.coe_mk,
-    Fin.sum_univ_four, complexCoords_two_symm_apply]
+  rw [negRealCliffordFormIsometryEquiv_apply, coe_quaternionFrame, Fin.sum_univ_four,
+    complexCoords_two_symm_apply]
   simp [coordVec]
   abel
 

@@ -90,6 +90,7 @@ The orthogonal transformation carrying a fixed basis adapted to `J₀` to it dep
   structure `J₀ : unitary (V →L[ℝ] V)`, the continuous homomorphism `U(V, J₀) → U(2)` from the
   orthogonal transformations commuting with `J₀`, sending each to its matrix in the complex
   coordinates (`OrthonormalBasis.complexCoords_centralizerToUnitaryGroup_apply`,
+  `OrthonormalBasis.coe_centralizerToUnitaryGroup_apply`,
   `OrthonormalBasis.continuous_centralizerToUnitaryGroup`).
 * `ContinuousLinearMap.orthonormal_adaptedFourFrame`, `ContinuousLinearMap.adaptedFourBasis`: for
   an orthogonal complex structure `K`, a unit vector `a` and a vector `c` with nonzero residual
@@ -1048,15 +1049,25 @@ theorem complexCoords_centralizerToUnitaryGroup_apply (g : Subgroup.centralizer 
         e.complexCoords 2 v :=
   e.complexCoords_apply_eq_complexCoordsMatrix_mulVec hJ₀ h₀ h₂ g v
 
+/-- The entry `(i, j)` of the matrix `centralizerToUnitaryGroup g` is the `i`-th complex
+coordinate of the image under `g` of the `j`-th complex basis vector. -/
+theorem coe_centralizerToUnitaryGroup_apply (g : Subgroup.centralizer {J₀}) (i j : Fin 2) :
+    (e.centralizerToUnitaryGroup hJ₀ h₀ h₂ g : Matrix (Fin 2) (Fin 2) ℂ) i j =
+      e.complexCoords 2
+        (((g : unitary (V →L[ℝ] V)) : V →L[ℝ] V) ((e.complexCoords 2).symm (Pi.single j 1))) i := by
+  rw [complexCoords_centralizerToUnitaryGroup_apply, LinearEquiv.apply_symm_apply,
+    Matrix.mulVec_single_one, Matrix.col_apply]
+
 /-- The matrix of a complex rotation depends continuously on it, for the operator norm. -/
 @[fun_prop]
 theorem continuous_centralizerToUnitaryGroup :
     Continuous (e.centralizerToUnitaryGroup hJ₀ h₀ h₂) := by
   have : FiniteDimensional ℝ V := e.toBasis.finiteDimensional_of_finite
   refine continuous_induced_rng.mpr (continuous_pi fun i ↦ continuous_pi fun j ↦ ?_)
-  exact (continuous_apply i).comp
+  exact ((continuous_apply i).comp
     ((e.complexCoords 2).toLinearMap.continuous_of_finiteDimensional.comp
-      ((continuous_subtypeVal.comp continuous_subtypeVal).clm_apply continuous_const))
+      ((continuous_subtypeVal.comp continuous_subtypeVal).clm_apply continuous_const))).congr
+    fun g ↦ (e.coe_centralizerToUnitaryGroup_apply hJ₀ h₀ h₂ g i j).symm
 
 end CentralizerUnitaryGroup
 
