@@ -132,7 +132,7 @@ private lemma verschiebungFiltration_le_ker (r : ℕ) (n : ℤ) :
   rw [AddMonoidHom.mem_ker, AddCommGrpCat.comp_apply]
   refine (addCommGrpCat_homologyπ_eq_zero_iff _ (CochainComplex.prev ℤ n) _).2
     ⟨((M.toQuotSMulTop (p ^ r)).f (n - 1)).hom b, ?_⟩
-  rw [quotSMulTop_d_toQuotSMulTop_f_apply, iCycles_frobeniusIterateCycles_apply, iterate_map_add,
+  simp only [quotSMulTop_d_toQuotSMulTop_f_apply, iCycles_frobeniusIterateCycles_apply,
     hM.F_iterate_V_iterate_apply, hM.F_iterate_d_V_iterate_apply, map_add, map_nsmul,
     smul_toQuotSMulTop_f_apply, zero_add]
 
@@ -180,20 +180,22 @@ noncomputable def verschiebungQuotientIsoHomology (r : ℕ) (n : ℤ) :
     (hM.verschiebungQuotient r).X n ≅ (M.quotSMulTop (p ^ r)).homology n :=
   (AddEquiv.ofBijective _ (hM.verschiebungQuotientToHomology_bijective r n)).toAddCommGrpIso
 
+/-- `θ_r` sends the class of `x` in `W_r(M)ⁿ` to the cohomology class of `Fʳ x`, on elements. -/
+@[simp]
+lemma verschiebungQuotientIsoHomology_hom_apply (r : ℕ) {n : ℤ} (x : M.X n) :
+    (hM.verschiebungQuotientIsoHomology r n).hom.hom (((hM.toVerschiebungQuotient r).f n).hom x) =
+      ((M.quotSMulTop (p ^ r)).homologyπ n).hom ((M.frobeniusIterateCycles r n).hom x) := by
+  rw [verschiebungQuotientIsoHomology, AddEquiv.toAddCommGrpIso_hom, AddCommGrpCat.hom_ofHom,
+    AddEquiv.coe_toAddMonoidHom, AddEquiv.ofBijective_apply, verschiebungQuotientToHomology,
+    verschiebungQuotientLift_apply, AddCommGrpCat.comp_apply]
+
 /-- `θ_r` sends the class of `x` in `W_r(M)ⁿ` to the cohomology class of `Fʳ x`. -/
 @[reassoc]
 lemma toVerschiebungQuotient_f_comp_verschiebungQuotientIsoHomology_hom (r : ℕ) (n : ℤ) :
     (hM.toVerschiebungQuotient r).f n ≫ (hM.verschiebungQuotientIsoHomology r n).hom =
       M.frobeniusIterateCycles r n ≫ (M.quotSMulTop (p ^ r)).homologyπ n := by
   ext x
-  exact hM.verschiebungQuotientLift_apply r _ _ x
-
-/-- `θ_r` sends the class of `x` in `W_r(M)ⁿ` to the cohomology class of `Fʳ x`, on elements. -/
-@[simp]
-lemma verschiebungQuotientIsoHomology_hom_apply (r : ℕ) {n : ℤ} (x : M.X n) :
-    (hM.verschiebungQuotientIsoHomology r n).hom.hom (((hM.toVerschiebungQuotient r).f n).hom x) =
-      ((M.quotSMulTop (p ^ r)).homologyπ n).hom ((M.frobeniusIterateCycles r n).hom x) :=
-  hM.verschiebungQuotientLift_apply r _ _ x
+  simp
 
 /-- `θ_r` is natural in morphisms of saturated Dieudonné complexes. -/
 @[reassoc]
@@ -245,9 +247,9 @@ private lemma injective_homologyMap_quotSMulTopToVerschiebungQuotient :
   obtain ⟨y', h⟩ := (addCommGrpCat_homologyπ_eq_zero_iff _ (CochainComplex.prev ℤ n) _).1 hy
   obtain ⟨w', rfl⟩ := hM.toVerschiebungQuotient_f_surjective r (n - 1) y'
   obtain ⟨w, hw, t, ht⟩ := exists_toQuotSMulTop_eq_iCycles (n + 1) z
-  rw [verschiebungQuotient_d_toVerschiebungQuotient_f_apply, addCommGrpCat_iCycles_cyclesMap_apply,
-    ← hw,
-    quotSMulTopToVerschiebungQuotient_f_apply, toVerschiebungQuotient_f_apply_eq_iff,
+  simp only [verschiebungQuotient_d_toVerschiebungQuotient_f_apply,
+    addCommGrpCat_iCycles_cyclesMap_apply] at h
+  rw [← hw, quotSMulTopToVerschiebungQuotient_f_apply, toVerschiebungQuotient_f_apply_eq_iff,
     ← neg_mem_iff, neg_sub, hM.mem_verschiebungFiltration_iff (sub_add_cancel n 1)] at h
   obtain ⟨u, v, huv⟩ := h
   obtain ⟨u', hu'⟩ := hM.exists_pow_smul_eq_V_iterate_iff.2
@@ -280,8 +282,8 @@ private lemma surjective_homologyMap_quotSMulTopToVerschiebungQuotient :
   refine ⟨((M.quotSMulTop (p ^ r)).homologyπ n).hom c, ?_⟩
   rw [addCommGrpCat_homologyMap_homologyπ_apply]
   refine congrArg _ (W.addCommGrpCat_iCycles_injective n ?_)
-  rw [addCommGrpCat_iCycles_cyclesMap_apply, hc,
-    quotSMulTopToVerschiebungQuotient_f_apply, ← hx, toVerschiebungQuotient_f_apply_eq_iff,
+  simp only [addCommGrpCat_iCycles_cyclesMap_apply, hc]
+  rw [quotSMulTopToVerschiebungQuotient_f_apply, ← hx, toVerschiebungQuotient_f_apply_eq_iff,
     sub_sub_cancel_left, neg_mem_iff]
   exact hM.V_iterate_mem_verschiebungFiltration r w
 
