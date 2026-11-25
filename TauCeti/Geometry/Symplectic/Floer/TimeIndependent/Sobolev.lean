@@ -67,7 +67,8 @@ The kernel statements are the `W^{1,2}` analogue of
 the second derivative of `X_H` and on `γ'`. They do not imply it, since it covers every bounded
 periodic `C²` kernel element; bounded kernel elements that are not square integrable on the
 cylinder, such as nonzero ones that do not decay in `s`, are not treated here. The cokernels of
-`D` and `M` are not compared here.
+`D` and `M`, and hence their Fredholm properties and indices, are compared in
+`TauCeti.Geometry.Symplectic.Floer.TimeIndependent.Index`.
 
 ## References
 

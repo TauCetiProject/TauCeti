@@ -37,6 +37,8 @@ that ideal is finite over `k` by Zariski's lemma and therefore embeds into `K`.
   algebraically closed point are equal.
 * `TauCeti.eq_one_of_isIdempotentElem_of_forall_algHom_apply_eq_one`: an idempotent evaluating to
   one at every algebraically closed point is one.
+* `IsIdempotentElem.exists_algHom_apply_eq_one`: a nonzero idempotent evaluates to one at some
+  algebraically closed point.
 * `TauCeti.exists_algHom_apply_ne_zero_of_ne_zero`: a nonzero element of a reduced finite-type
   algebra is nonzero at some algebraically closed point.
 * `TauCeti.eq_of_forall_algHom_apply_eq`: the corresponding point-separation principle.
@@ -133,6 +135,22 @@ theorem eq_of_forall_algHom_apply_eq {x y : A} (h : ∀ f : A →ₐ[k] K, f x =
       rw [map_sub, h, sub_self]
 
 end TauCeti
+
+namespace IsIdempotentElem
+
+variable {k A K : Type*} [Field k] [CommRing A] [Algebra k A] [Algebra.FiniteType k A]
+  [Field K] [Algebra k K] [IsAlgClosed K]
+
+/-- **Existence of a character at an idempotent.** For an algebraically closed extension `K` of
+`k`, some `k`-algebra homomorphism `A → K` takes the value `1` at a nonzero idempotent `e` of a
+commutative `k`-algebra `A` of finite type. -/
+theorem exists_algHom_apply_eq_one {e : A} (he : IsIdempotentElem e) (hne : e ≠ 0) :
+    ∃ φ : A →ₐ[k] K, φ e = 1 := by
+  obtain ⟨φ, hφ⟩ := TauCeti.exists_algHom_apply_ne_zero_of_not_isNilpotent (k := k) (K := K)
+    (mt he.eq_zero_of_isNilpotent hne)
+  exact ⟨φ, (IsIdempotentElem.iff_eq_zero_or_one.1 (he.map φ)).resolve_left hφ⟩
+
+end IsIdempotentElem
 
 namespace Set.Finite
 

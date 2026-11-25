@@ -79,6 +79,9 @@ for every `k` and every `g` orthogonal to the weak kernel
   `exists_norm_exp_mul_smul_adjoint_apply_le_mul_norm_of_forall_mem_framedFieldSpace`: the
   weighted Sobolev estimate for the adjoint of the right inverse on the complement of the weak
   kernel, at a smooth plane vortex with `|α| → 1` and at a continuous vortex of every `A_m^k`.
+* `exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_exp_mul_smul`: the weighted Sobolev estimate
+  `‖exp(c ρ) y‖_(H^(k+1)) ≤ K (‖exp(c ρ) f‖_(H^k) + ‖exp(c ρ) y‖_(L²))` for any weak solution of
+  `L_x y = f` whose weighted `L²` norm is finite.
 * `exists_inclusionLp_ae_eq_and_norm_le_of_eLpNorm_exp_mul_smul_le`,
   `exists_inclusionLp_ae_eq_and_norm_le_of_eLpNorm_exp_mul_smul_adjoint_apply_le`: the weighted
   Sobolev estimates for the right inverse and its adjoint from a weighted `L²` bound and a constant
@@ -453,6 +456,53 @@ private theorem le_mul_norm_of_eLpNorm_le {k : ℕ} {Y F : ℂ → EuclideanSpac
     _ ≤ K₁ * (‖v‖ + 4 * K₀ * ‖v‖) := by gcongr
     _ = K₁ * (1 + 4 * K₀) * ‖v‖ := by ring
 
+/-- **The weighted Sobolev estimate for a weak solution, by its weighted `L²` norm.** Let `x` be a
+smooth field whose coordinates have bounded derivatives through order `k`, and let `K₁` be a
+constant in the elliptic estimate for `L_x - A` with `A = expWeightCoeff c`, as given by
+`exists_norm_le_mul_add_of_integral_inner_gaugeFixedAdjoint_eq_add`. Let `y` be a
+square-integrable weak solution of `L_x y = f` with `f ∈ L²` such that `exp(c ρ) y` is square
+integrable, where `ρ(z) = √(1 + |z|²)`. If the coordinates of `exp(c ρ) f` are given by
+`v : Fin 4 → H^k(ℂ)`, then those of `exp(c ρ) y` are given by some `u : Fin 4 → H^(k+1)(ℂ)` with
+
+`‖u‖ ≤ K₁ (‖v‖ + ‖exp(c ρ) y‖_(L²))`. -/
+theorem exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_exp_mul_smul (k : ℕ)
+    (hx : ContDiff ℝ ∞ x)
+    (hbound : ∀ i, ∀ n ≤ k, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
+    {c K₁ : ℝ}
+    (hK₁b : ∀ (y f : ℂ → EuclideanSpace ℝ (Fin 4)) (u : Fin 4 → H^{(k : ℝ) + 1}(ℂ))
+      (v : Fin 4 → H^{(k : ℝ)}(ℂ)),
+      (∀ a, ⇑(inclusionLp (by positivity) (u a)) =ᵐ[volume] fun z ↦ (y z a : ℂ)) →
+      (∀ a, ⇑(inclusionLp (Nat.cast_nonneg k) (v a)) =ᵐ[volume] fun z ↦ (f z a : ℂ)) →
+      (∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η → HasCompactSupport η →
+        ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ =
+          ∫ z, ⟪f z + WithLp.toLp 2 (fun i ↦ ∑ j : Fin 4, expWeightCoeff c i j z * y z j),
+            η z⟫) →
+      ‖u‖ ≤ K₁ * (‖v‖ + (eLpNorm y 2 volume).toReal))
+    {f y : ℂ → EuclideanSpace ℝ (Fin 4)} (hf : MemLp f 2 volume) (hy : MemLp y 2 volume)
+    (hweak : ∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+      ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ = ∫ z, ⟪f z, η z⟫)
+    (hwy : MemLp (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) 2 volume)
+    {v : Fin 4 → H^{(k : ℝ)}(ℂ)}
+    (hv : ∀ a, ⇑(inclusionLp (Nat.cast_nonneg k) (v a)) =ᵐ[volume]
+      fun z ↦ ((Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) a : ℂ)) :
+    ∃ u : Fin 4 → H^{(k : ℝ) + 1}(ℂ),
+      (∀ a, ⇑(inclusionLp (by positivity) (u a)) =ᵐ[volume]
+        fun z ↦ ((Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) a : ℂ)) ∧
+      ‖u‖ ≤ K₁ * (‖v‖ +
+        (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) 2 volume).toReal) := by
+  -- `exp(c ρ) y` solves `L_x Y = exp(c ρ) f + A Y` for the weight commutator `A`, so the elliptic
+  -- estimate bounds it by `‖exp(c ρ) f‖_(H^k)` and its weighted `L²` norm.
+  have hwf : (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) ∈ sobolevFields k :=
+    (mem_sobolevFields_iff_exists_inclusionLp_ae_eq (Nat.cast_nonneg k)).2 ⟨v, hv⟩
+  have hweak' (η : ℂ → EuclideanSpace ℝ (Fin 4)) (hη : ContDiff ℝ ∞ η)
+      (hηc : HasCompactSupport η) :=
+    integral_inner_exp_mul_smul_gaugeFixedAdjoint_eq (c := c) hx.continuous hy hf
+      (fun η hη hηc ↦ hweak η (hη.of_le (by norm_cast)) hηc) hη hηc
+  obtain ⟨u, hu⟩ := (mem_sobolevFields_iff_exists_inclusionLp_ae_eq (by positivity)).1
+    (exp_mul_smul_mem_sobolevFields_natCast_add_one_of_memLp k hx hbound hy hf
+      (fun η hη hηc ↦ hweak η (hη.of_le (by norm_cast)) hηc) hwy hwf)
+  exact ⟨u, hu, hK₁b _ _ u v hu hv hweak'⟩
+
 /-- **The weighted Sobolev estimate for the right inverse from a weighted `L²` bound.** Let `x` be
 a smooth field whose coordinates have bounded derivatives through order `k`, and let `K₁` be a
 constant in the elliptic estimate for `L_x - A` with `A = expWeightCoeff c`, as given by
@@ -487,21 +537,12 @@ theorem exists_inclusionLp_ae_eq_and_norm_le_of_eLpNorm_exp_mul_smul_le (k : ℕ
       (∀ a, ⇑(inclusionLp (by positivity) (u a)) =ᵐ[volume]
         fun z ↦ ((Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) a : ℂ)) ∧
       ‖u‖ ≤ K₁ * (1 + 4 * K₀) * ‖v‖ := by
-  -- `exp(c ρ) y` solves `L_x Y = exp(c ρ) f + A Y` for the weight commutator `A`, so the elliptic
-  -- estimate bounds it by `‖exp(c ρ) f‖_(H^k)` and its weighted `L²` norm.
-  have hwf : (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) ∈ sobolevFields k :=
-    (mem_sobolevFields_iff_exists_inclusionLp_ae_eq (Nat.cast_nonneg k)).2 ⟨v, hv⟩
   have hwy : MemLp (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) 2 volume :=
-    memLp_iff.2 <| hK.trans_lt
-      (ENNReal.mul_lt_top ENNReal.coe_lt_top (memLp_of_mem_sobolevFields hwf).eLpNorm_lt_top)
-  have hweak' (η : ℂ → EuclideanSpace ℝ (Fin 4)) (hη : ContDiff ℝ ∞ η)
-      (hηc : HasCompactSupport η) :=
-    integral_inner_exp_mul_smul_gaugeFixedAdjoint_eq (c := c) hx.continuous (Lp.memLp y)
-      (Lp.memLp f) (fun η hη hηc ↦ hweak η (hη.of_le (by norm_cast)) hηc) hη hηc
-  obtain ⟨u, hu⟩ := (mem_sobolevFields_iff_exists_inclusionLp_ae_eq (by positivity)).1
-    (exp_mul_smul_mem_sobolevFields_natCast_add_one_of_memLp k hx hbound (Lp.memLp y)
-      (Lp.memLp f) (fun η hη hηc ↦ hweak η (hη.of_le (by norm_cast)) hηc) hwy hwf)
-  exact ⟨u, hu, le_mul_norm_of_eLpNorm_le hK₁ hv hK (hK₁b _ _ u v hu hv hweak')⟩
+    memLp_iff.2 <| hK.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top
+      (memLp_of_forall_inclusionLp_ae_eq (Nat.cast_nonneg k) hv).eLpNorm_lt_top)
+  obtain ⟨u, hu, hun⟩ := exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_exp_mul_smul k hx hbound
+    hK₁b (Lp.memLp f) (Lp.memLp y) hweak hwy hv
+  exact ⟨u, hu, le_mul_norm_of_eLpNorm_le hK₁ hv hK hun⟩
 
 /-- The entries of `-(expWeightCoeff c)ᵀ` have bounded derivatives through every order `k`. -/
 private theorem exists_norm_iteratedFDeriv_neg_expWeightCoeff_le (c : ℝ) (i j : Fin 4) (k : ℕ) :

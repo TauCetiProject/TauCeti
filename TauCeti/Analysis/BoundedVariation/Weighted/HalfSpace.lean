@@ -124,8 +124,7 @@ theorem gaussianPerimeter_setOf_inner_lt (hν : ‖ν‖ = 1) (c : ℝ) :
     ring
   have hmap : Measurable fun y : (ℝ ∙ ν)ᗮ => c • ν + (y : E) := by fun_prop
   have hg : Measurable fun x : E => ENNReal.ofReal (Real.exp (-gaussianWeight E x)) :=
-    (Real.continuous_exp.comp (contDiff_gaussianWeight (n := 0)).continuous.neg).measurable
-      |>.ennreal_ofReal
+    continuous_exp_neg_gaussianWeight.measurable.ennreal_ofReal
   rw [gaussianPerimeter_def, weightedPerimeter_setOf_inner_lt contDiff_gaussianWeight hν c ⊤,
     Opens.coe_top, univ_inter, euclideanHausdorffMeasure_restrict_setOf_inner_eq hν c,
     lintegral_map hg hmap]

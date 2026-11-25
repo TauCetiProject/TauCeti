@@ -48,6 +48,8 @@ invertible (`ContinuousLinearMap.isUnit_one_add_smul_shiftedResolventTransform`)
 `(c / c') (c' ι - A) (c ι - A)⁻¹`. Hence the spectral flow of the transformed path does not depend
 on the shift (`TauCeti.spectralFlow_shiftedResolventTransform_eq`): this is
 `TauCeti.spectralFlow_mul_ringInverse_one_add_smul` for the change of operator `x ↦ x / (1 + k x)`.
+For `D = H` and `ι = 1`, the transform at `c` is itself such an image, `A (1 - A / c)⁻¹`
+(`ContinuousLinearMap.shiftedResolventTransform_one_eq_mul_ringInverse`).
 
 ## References
 
@@ -214,6 +216,23 @@ theorem isUnit_one_add_smul_shiftedResolventTransform (h' : ((c' : 𝕜) • ι 
   rw [one_add_smul_shiftedResolventTransform_eq h hc hc', ← isInvertible_iff_isUnit,
     isInvertible_smul_iff (RCLike.ofReal_ne_zero.2 (div_ne_zero hc hc'))]
   exact h'.comp h.inverse
+
+section RealScalars
+
+variable [Module ℝ (H →L[𝕜] H)] [IsScalarTower ℝ 𝕜 (H →L[𝕜] H)]
+
+/-- On `D = H` with `ι = 1`, the shifted resolvent transform at a shift `c ≠ 0` with `c - A`
+invertible is `A (1 - A / c)⁻¹`, the image of `A` under `x ↦ x / (1 - x / c)`. -/
+theorem shiftedResolventTransform_one_eq_mul_ringInverse {A : H →L[𝕜] H} (hc : c ≠ 0)
+    (h : ((c : 𝕜) • (1 : H →L[𝕜] H) - A).IsInvertible) :
+    (1 : H →L[𝕜] H).shiftedResolventTransform A c = A * Ring.inverse (1 + (-c⁻¹) • A) := by
+  refine (Ring.eq_mul_inverse_iff_mul_eq _ _ _ (isUnit_one_add_neg_inv_smul hc h)).2 ?_
+  ext x
+  rw [one_add_neg_inv_smul_eq hc, RCLike.algebraMap_eq_ofReal, mul_apply_eq_comp]
+  simp only [smul_apply, sub_apply, map_smul, shiftedResolventTransform_apply_sub h, smul_smul,
+    inv_mul_cancel₀ (RCLike.ofReal_ne_zero (K := 𝕜) |>.2 hc), one_smul]
+
+end RealScalars
 
 end ContinuousLinearMap
 
