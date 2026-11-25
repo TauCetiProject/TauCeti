@@ -29,12 +29,14 @@ of the partitions `T^[-k] a`, `k < n`. At `n = 0` it is the unique empty tuple.
 * `TauCeti.measurable_iteratedPartitionLabel`: itineraries of a measurable label under a
   measurable map are measurable.
 * `TauCeti.countablePartitionEntropy_iteratedPartitionLabel_add_le`: for a measure-preserving map
-  the itinerary entropies are subadditive, `H(join_{m+n} a) ≤ H(join_m a) + H(join_n a)`.
+  under a probability (or zero) measure the itinerary entropies are subadditive,
+  `H(join_{m+n} a) ≤ H(join_m a) + H(join_n a)`.
 * `TauCeti.tendsto_partitionEntropyRate`: by Fekete's lemma, `H(join_n a) / n` converges to the
-  entropy rate for a measure-preserving map and a measurable countable label.
+  entropy rate for a measure-preserving map under a probability (or zero) measure and a
+  measurable countable label.
 * `TauCeti.measureEntropy_id`: the identity has entropy zero; its itineraries repeat one label.
-* `TauCeti.measureEntropy_eq_zero_of_iterate_eq_id`: a measure-preserving map with
-  `T^[p] = id` for some `p ≥ 1` has entropy zero.
+* `TauCeti.measureEntropy_eq_zero_of_iterate_eq_id`: under a probability (or zero) measure, a
+  measure-preserving map with `T^[p] = id` for some `p ≥ 1` has entropy zero.
 * `TauCeti.measureEntropy_eq_zero_of_forall`: if every measurable label has entropy zero, for
   instance under a Dirac probability (`TauCeti.countablePartitionEntropy_dirac`) or the zero
   measure, then every map has entropy zero.
@@ -214,8 +216,8 @@ section Subadditive
 variable [Countable ι] [MeasurableSpace ι] [MeasurableSingletonClass ι] {T : X → X}
   {a : X → ι}
 
-/-- **Subadditivity of itinerary entropies.** For a measure-preserving map,
-`H(join_{m+n} a) ≤ H(join_m a) + H(join_n a)`. -/
+/-- **Subadditivity of itinerary entropies.** For a measure-preserving map under a probability
+(or zero) measure, `H(join_{m+n} a) ≤ H(join_m a) + H(join_n a)`. -/
 theorem countablePartitionEntropy_iteratedPartitionLabel_add_le [IsZeroOrProbabilityMeasure μ]
     (hT : MeasurePreserving T μ μ) (ha : Measurable a) (m n : ℕ) :
     countablePartitionEntropy μ (iteratedPartitionLabel T a (m + n)) ≤
@@ -229,8 +231,8 @@ theorem countablePartitionEntropy_iteratedPartitionLabel_add_le [IsZeroOrProbabi
     ((hb n).comp (hT.measurable.iterate m))).trans_eq ?_
   rw [countablePartitionEntropy_comp_of_measurePreserving (hT.iterate m) (hb n)]
 
-/-- The entropy of the length-`n` itinerary of a measure-preserving map is at most `n` times the
-entropy of the label. -/
+/-- Under a probability (or zero) measure, the entropy of the length-`n` itinerary of a
+measure-preserving map is at most `n` times the entropy of the label. -/
 theorem countablePartitionEntropy_iteratedPartitionLabel_le_mul [IsZeroOrProbabilityMeasure μ]
     (hT : MeasurePreserving T μ μ) (ha : Measurable a) (n : ℕ) :
     countablePartitionEntropy μ (iteratedPartitionLabel T a n) ≤
@@ -243,8 +245,8 @@ theorem countablePartitionEntropy_iteratedPartitionLabel_le_mul [IsZeroOrProbabi
       Function.const_injective, Nat.cast_succ, add_mul, one_mul]
     gcongr
 
-/-- For a measure-preserving map, a label of finite entropy has itineraries of finite
-entropy. -/
+/-- For a measure-preserving map under a probability (or zero) measure, a label of finite entropy
+has itineraries of finite entropy. -/
 theorem countablePartitionEntropy_iteratedPartitionLabel_ne_top [IsZeroOrProbabilityMeasure μ]
     (hT : MeasurePreserving T μ μ) (ha : Measurable a) (hfin : countablePartitionEntropy μ a ≠ ∞)
     (n : ℕ) : countablePartitionEntropy μ (iteratedPartitionLabel T a n) ≠ ∞ :=
@@ -305,8 +307,7 @@ theorem measureEntropy_eq_zero_of_iterate_eq_id [IsZeroOrProbabilityMeasure μ] 
         (fun u (k : Fin n) ↦ u ⟨k % p, Nat.mod_lt _ hp⟩) ∘ iteratedPartitionLabel T a p := by
       funext x k
       simp only [Function.comp_apply, iteratedPartitionLabel_apply]
-      conv_lhs => rw [← Nat.mod_add_div (k : ℕ) p, Function.iterate_add_apply,
-        Function.iterate_mul, hTp, Function.iterate_id, id]
+      rw [Function.IsPeriodicPt.iterate_mod_apply (congrFun hTp x)]
     rw [this]
     exact countablePartitionEntropy_comp_le _ _
   have hC : C ≠ ∞ := countablePartitionEntropy_iteratedPartitionLabel_ne_top hT ha hfin p

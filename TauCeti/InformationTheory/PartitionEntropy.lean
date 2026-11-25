@@ -137,6 +137,11 @@ theorem countablePartitionEntropy_pair_self (μ : Measure X) (a : X → ι) :
   countablePartitionEntropy_comp_of_injective (e := fun i ↦ (i, i)) a
     fun _ _ h ↦ congrArg Prod.fst h
 
+/-- `negMulLog x = x * (-log x)`, read in `ℝ≥0∞` for `0 ≤ x`. -/
+private theorem ofReal_negMulLog {x : ℝ} (hx : 0 ≤ x) :
+    ENNReal.ofReal (negMulLog x) = ENNReal.ofReal x * ENNReal.ofReal (-log x) := by
+  rw [← ENNReal.ofReal_mul hx, negMulLog, neg_mul, mul_neg]
+
 /-- **Refinement.** Refining a partition by a countable label `a` does not decrease its entropy:
 `H(b) ≤ H(a ∨ b)`. This holds for every measure: a cell of `b` of mass `p ≤ 1` is covered by its
 cells in `a ∨ b`, each of mass `c ≤ p`, and `-c log c ≥ -c log p`. -/
@@ -150,16 +155,14 @@ theorem countablePartitionEntropy_le_pair [Countable ι] (a : X → ι) (b : X �
     rcases eq_or_ne (μ B) ∞ with hB | hB
     · simp [measureReal_def, hB]
     have hc : μ (a ⁻¹' {i} ∩ B) ≠ ∞ := ne_top_of_le_ne_top hB (measure_mono Set.inter_subset_right)
-    rw [← ofReal_measureReal hc, ← ENNReal.ofReal_mul measureReal_nonneg, negMulLog, neg_mul,
-      ← mul_neg]
-    refine ENNReal.ofReal_le_ofReal ?_
+    rw [← ofReal_measureReal hc, ofReal_negMulLog measureReal_nonneg]
     rcases (measureReal_nonneg (μ := μ) (s := a ⁻¹' {i} ∩ B)).eq_or_lt with h0 | h0
     · simp [← h0]
-    · exact mul_le_mul_of_nonneg_left
-        (neg_le_neg (log_le_log h0 (measureReal_mono Set.inter_subset_right hB))) h0.le
+    · gcongr
+      exact Set.inter_subset_right
   calc ENNReal.ofReal (negMulLog (μ.real B))
-      = ENNReal.ofReal (μ.real B) * ENNReal.ofReal (-log (μ.real B)) := by
-        rw [← ENNReal.ofReal_mul measureReal_nonneg, negMulLog, neg_mul, mul_neg]
+      = ENNReal.ofReal (μ.real B) * ENNReal.ofReal (-log (μ.real B)) :=
+        ofReal_negMulLog measureReal_nonneg
     _ ≤ (∑' i, μ (a ⁻¹' {i} ∩ B)) * ENNReal.ofReal (-log (μ.real B)) := by
         gcongr
         refine ENNReal.ofReal_toReal_le.trans ((measure_mono fun x hx ↦ ?_).trans
@@ -251,8 +254,8 @@ theorem countablePartitionEntropy_pair_eq_add {a : X → ι} (ha : Measurable a)
   rw [tsum_comm, countablePartitionEntropy_def]
   refine tsum_congr fun j ↦ ?_
   simp_rw [Set.inter_comm (a ⁻¹' _)]
-  rw [ENNReal.tsum_mul_right, tsum_measure_inter_preimage_singleton ha, ← ofReal_measureReal,
-    ← ENNReal.ofReal_mul measureReal_nonneg, negMulLog, neg_mul, mul_neg]
+  rw [ENNReal.tsum_mul_right, tsum_measure_inter_preimage_singleton ha,
+    ofReal_negMulLog measureReal_nonneg, ofReal_measureReal]
 
 end ChainRule
 
@@ -307,9 +310,7 @@ theorem conditionalPartitionEntropy_le [IsZeroOrProbabilityMeasure μ] (a : X �
         rw [tsum_add, ENNReal.tsum_mul_right, ENNReal.tsum_mul_left, hsplit]
         gcongr
         exact (mul_le_mul_right htot _).trans_eq (mul_one _)
-    _ = _ := by
-        rw [← ofReal_measureReal, ← ENNReal.ofReal_mul measureReal_nonneg, negMulLog, neg_mul,
-          mul_neg]
+    _ = _ := by rw [ofReal_negMulLog measureReal_nonneg, ofReal_measureReal]
 
 /-- **Subadditivity.** Under a probability measure (or the zero measure), the entropy of the join
 of two measurable countable labels is at most the sum of their entropies:
