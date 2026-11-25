@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.PicardFunctor.Abel.Jacobi
 public import TauCeti.AlgebraicGeometry.PicardFunctor.Scheme
+import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.TensorProduct
 
 /-!
 # The Abel morphism into the Picard scheme
@@ -72,9 +73,8 @@ variable {f} in
 private lemma abelMap_app_graphDivisor {T : Over S} (x : T ⟶ Over.mk f) :
     (abelMap f).app (op T) (ULift.up ((graphDivisor f).app (op T) x)) =
       (QuotientGroup.mk (graphClass x) : (relativePicardPresheaf f).obj (op T)) := by
-  rw [abelMap_app_apply, graphClass]
-  congr 4
-  exact graphDivisor_app_apply_val x
+  rw [abelMap_app_apply, graphClass, LineBundleClass.mk_toInvertibleSheaf_congr _ _
+    (graphDivisor_app_apply_val x)]
 
 /-- **The Abel map on points**: the natural transformation from the functor of points of `X`
 over `S` to the relative Picard fppf sheaf sending a `T`-point `x` to the class of the line
