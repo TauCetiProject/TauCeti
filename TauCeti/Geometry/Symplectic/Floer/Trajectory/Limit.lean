@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Compactness.Limit
 import TauCeti.Geometry.Symplectic.Floer.CylindricalEnd
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
+import TauCeti.Topology.Separation.Periodic
 
 /-!
 # Limits of Floer trajectories are Floer trajectories
@@ -40,14 +41,17 @@ energy; so it applies to the levels of a breaking sequence of smooth trajectorie
   `∫_{[a, b] × [0, 1]} E(g) = A_H(g(b, ·)) - A_H(g(a, ·))` for `g`, although `g` is only known to
   be `C¹`
   (`TauCeti.SymplecticForm.integral_floerEnergyDensity_eq_hamiltonianAction_sub_of_tendsto`).
+  If `J` is tamed by `ω` along `g`, so that the energy density of `g` is nonnegative, the action
+  increases along `g` (`TauCeti.SymplecticForm.monotone_hamiltonianAction_of_tendsto`).
 * **Energy of a level.** If the `u_k` are moreover `L`-Lipschitz, then `‖dg‖ ≤ L`, and if the
   loops of `g` converge uniformly to closed `C¹` loops `x₀` as `s → -∞` and `x₁` as `s → ∞`, such
   as the orbits at which consecutive levels of a broken limit meet, then the actions of the loops
   of `g` converge to `A_H(x₀)` and `A_H(x₁)`
-  (`TauCeti.SymplecticForm.tendsto_hamiltonianAction_slice_of_tendstoUniformly`, from
-  `TauCeti.SymplecticForm.tendsto_hamiltonianAction_sub_hamiltonianAction`). If moreover `J` is
-  tamed by `ω` along `g`, so that the energy density of `g` is nonnegative, then the energy of `g`
-  is `A_H(x₁) - A_H(x₀)`
+  (`TauCeti.SymplecticForm.tendsto_hamiltonianAction_slice_of_tendstoUniformly_of_floer`, from
+  `TauCeti.SymplecticForm.tendsto_hamiltonianAction_slice_of_tendstoUniformly`). If moreover `J`
+  is tamed by `ω` along `g`, then `A_H(x₀) ≤ A_H(x₁)`
+  (`TauCeti.SymplecticForm.hamiltonianAction_le_hamiltonianAction_of_tendstoUniformly`) and the
+  energy of `g` is `A_H(x₁) - A_H(x₀)`
   (`setLIntegral_floerEnergyDensity_eq_ofReal_hamiltonianAction_sub_of_tendstoUniformly`).
 
 The results here do not sum the energies of the levels of a broken limit. Showing that no energy
@@ -156,6 +160,63 @@ theorem integral_floerEnergyDensity_eq_hamiltonianAction_sub_of_tendsto
   exact (ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub hH1 isOpen_univ
     (hu1 k).contDiffOn hab (subset_univ _) fun s _ ↦ by simpa using hper k s 0).symm
 
+/-- **The action increases along a limit of Floer trajectories.** In the situation of
+`TauCeti.SymplecticForm.integral_floerEnergyDensity_eq_hamiltonianAction_sub_of_tendsto`, let `J`
+be tamed by `ω` along the limit `g`. Then the action `A_H(g(s, ·))` of the loops of `g` increases
+with `s`: its increase over `[a, b]` is the energy of `g` over `[a, b] × [0, 1]`, which is
+nonnegative. -/
+theorem monotone_hamiltonianAction_of_tendsto
+    (hH : ContDiff ℝ 2 (uncurry H)) (hHper : Periodic H 1) (hW : IsOpen W)
+    (hJ : ContDiffOn ℝ 1 (fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) W)
+    (hJper : Periodic J 1) (hu : ∀ k, ContDiff ℝ (⊤ : ℕ∞) (u k))
+    (hper : ∀ k s, Periodic (fun t ↦ u k (s, t)) 1)
+    (hfloer : ∀ k, ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z.2 (u k z))
+        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) z : ℝ × ℝ →ₗ[ℝ] V))
+    (hbd : ∀ C, IsCompact C → ∃ M, ∀ k, ∀ z ∈ C, ‖fderiv ℝ (u k) z‖ ≤ M)
+    (hgW : ∀ z, (z.2, g z) ∈ W) (hJt : ∀ z, ω.Tames (J z.2 (g z)))
+    (hlim : TendstoLocallyUniformly u g atTop) :
+    Monotone fun s ↦ ω.hamiltonianAction H (fun t ↦ g (s, t)) := by
+  obtain ⟨-, -, hgeq⟩ := tendstoLocallyUniformly_fderiv_of_floer_of_periodic hH hHper hW hJ
+    hJper hu hper hfloer hbd hgW fun z ↦ hlim.tendstoLocallyUniformlyOn.tendsto_at (mem_univ z)
+  intro a b hab
+  rw [← sub_nonneg, ← integral_floerEnergyDensity_eq_hamiltonianAction_sub_of_tendsto hH hHper
+    hW hJ hJper hu hper hfloer hbd hgW hlim hab]
+  exact setIntegral_nonneg (measurableSet_Icc.prod measurableSet_Icc) fun z _ ↦
+    ω.floerEnergyDensity_nonneg (hJt z) (hgeq z)
+
+/-- **The actions of the loops of a limit at an end.** In the situation of
+`TauCeti.SymplecticForm.integral_floerEnergyDensity_eq_hamiltonianAction_sub_of_tendsto`, let the
+`u_k` be `L`-Lipschitz, so that the limit `g` has `1`-periodic loops and `‖dg‖ ≤ L`. If the loops
+`g(s, ·)` converge uniformly to a closed `C¹` loop `x` along a countably generated filter `l` on
+`ℝ`, such as `s → -∞` or `s → ∞`, then their actions converge to `A_H(x)`. -/
+theorem tendsto_hamiltonianAction_slice_of_tendstoUniformly_of_floer
+    (hH : ContDiff ℝ 2 (uncurry H)) (hHper : Periodic H 1) (hW : IsOpen W)
+    (hJ : ContDiffOn ℝ 1 (fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) W)
+    (hJper : Periodic J 1) (hu : ∀ k, ContDiff ℝ (⊤ : ℕ∞) (u k))
+    (hper : ∀ k s, Periodic (fun t ↦ u k (s, t)) 1)
+    (hfloer : ∀ k, ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z.2 (u k z))
+        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) z : ℝ × ℝ →ₗ[ℝ] V))
+    {L : ℝ≥0} (hL : ∀ k, LipschitzWith L (u k)) (hgW : ∀ z, (z.2, g z) ∈ W)
+    (hlim : TendstoLocallyUniformly u g atTop) {l : Filter ℝ} [l.IsCountablyGenerated]
+    {x : ℝ → V} (hx : ContDiff ℝ 1 x) (hxper : x 1 = x 0)
+    (hgx : TendstoUniformly (fun s t ↦ g (s, t)) x l) :
+    Tendsto (fun s ↦ ω.hamiltonianAction H (fun t ↦ g (s, t))) l
+      (𝓝 (ω.hamiltonianAction H x)) := by
+  have hgl (z : ℝ × ℝ) : Tendsto (fun k ↦ u k z) atTop (𝓝 (g z)) :=
+    hlim.tendstoLocallyUniformlyOn.tendsto_at (mem_univ z)
+  obtain ⟨hg, hdlim, -⟩ := tendstoLocallyUniformly_fderiv_of_floer_of_periodic hH hHper hW hJ
+    hJper hu hper hfloer (fun _ _ ↦ ⟨L, fun k _ _ ↦ norm_fderiv_le_of_lipschitz ℝ (hL k)⟩) hgW hgl
+  -- The limit has closed loops and derivative bounded by `L`.
+  have hgper (s : ℝ) : g (s, 1) = g (s, 0) := by
+    simpa using periodic_of_tendsto (.of_forall fun k ↦ hper k s) (fun t ↦ hgl (s, t)) 0
+  have hgL (z : ℝ × ℝ) : ‖fderiv ℝ g z‖ ≤ L :=
+    le_of_tendsto (hdlim.tendstoLocallyUniformlyOn.tendsto_at (mem_univ z)).norm
+      (.of_forall fun k ↦ norm_fderiv_le_of_lipschitz ℝ (hL k))
+  exact ω.tendsto_hamiltonianAction_slice_of_tendstoUniformly (hH.of_le one_le_two).continuous hg
+    hgper hgL hx hxper hgx
+
 /-- **The energy of a limit of Floer trajectories.** In the situation of
 `TauCeti.SymplecticForm.integral_floerEnergyDensity_eq_hamiltonianAction_sub_of_tendsto`, let the
 `u_k` be `L`-Lipschitz and let `J` be tamed by `ω` along the limit `g`. If the loops `g(s, ·)`
@@ -180,17 +241,9 @@ theorem setLIntegral_floerEnergyDensity_eq_ofReal_hamiltonianAction_sub_of_tends
       ENNReal.ofReal (ω.hamiltonianAction H x₁ - ω.hamiltonianAction H x₀) := by
   have hbd : ∀ C, IsCompact C → ∃ M, ∀ k, ∀ z ∈ C, ‖fderiv ℝ (u k) z‖ ≤ M :=
     fun _ _ ↦ ⟨L, fun k _ _ ↦ norm_fderiv_le_of_lipschitz ℝ (hL k)⟩
-  obtain ⟨hg, hdlim, hgeq⟩ := tendstoLocallyUniformly_fderiv_of_floer_of_periodic hH hHper hW
+  obtain ⟨hg, -, hgeq⟩ := tendstoLocallyUniformly_fderiv_of_floer_of_periodic hH hHper hW
     hJ hJper hu hper hfloer hbd hgW fun z ↦ hlim.tendstoLocallyUniformlyOn.tendsto_at (mem_univ z)
   have hH1 : ContDiff ℝ 1 (uncurry H) := hH.of_le one_le_two
-  -- The limit has closed loops and derivative bounded by `L`.
-  have hgper (s : ℝ) : g (s, 1) = g (s, 0) := tendsto_nhds_unique
-    ((hlim.tendstoLocallyUniformlyOn.tendsto_at (mem_univ (s, 1))).congr fun k ↦ by
-      simpa using hper k s 0)
-    (hlim.tendstoLocallyUniformlyOn.tendsto_at (mem_univ (s, 0)))
-  have hgL (z : ℝ × ℝ) : ‖fderiv ℝ g z‖ ≤ L :=
-    le_of_tendsto (hdlim.tendstoLocallyUniformlyOn.tendsto_at (mem_univ z)).norm
-      (.of_forall fun k ↦ norm_fderiv_le_of_lipschitz ℝ (hL k))
   -- On each rectangle the energy is the change of action, with a nonnegative density.
   have hE (n : ℕ) : ∫⁻ z in Icc (-(n : ℝ)) n ×ˢ Icc 0 1,
       ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) g z) =
@@ -205,9 +258,35 @@ theorem setLIntegral_floerEnergyDensity_eq_ofReal_hamiltonianAction_sub_of_tends
         (ae_restrict_of_forall_mem (measurableSet_Icc.prod measurableSet_Icc)
           fun z _ ↦ ω.floerEnergyDensity_nonneg (hJt z) (hgeq z))]
   exact setLIntegral_univ_prod_eq_ofReal_of_tendsto hE
-    (ω.tendsto_hamiltonianAction_slice_of_tendstoUniformly hH1.continuous hg hgper hgL hx₀ hx₀per
-      hbot)
-    (ω.tendsto_hamiltonianAction_slice_of_tendstoUniformly hH1.continuous hg hgper hgL hx₁ hx₁per
-      htop)
+    (tendsto_hamiltonianAction_slice_of_tendstoUniformly_of_floer hH hHper hW hJ hJper hu hper
+      hfloer hL hgW hlim hx₀ hx₀per hbot)
+    (tendsto_hamiltonianAction_slice_of_tendstoUniformly_of_floer hH hHper hW hJ hJper hu hper
+      hfloer hL hgW hlim hx₁ hx₁per htop)
+
+/-- **The action increases between the ends of a limit of Floer trajectories.** Let `H`, `J` and
+the `L`-Lipschitz `u_k → g` be as in
+`setLIntegral_floerEnergyDensity_eq_ofReal_hamiltonianAction_sub_of_tendstoUniformly`, with `J`
+tamed by `ω` along `g`. If the loops `g(s, ·)` converge uniformly to closed `C¹` loops `x₀` as
+`s → -∞` and `x₁` as `s → ∞`, then `A_H(x₀) ≤ A_H(x₁)`. -/
+theorem hamiltonianAction_le_hamiltonianAction_of_tendstoUniformly
+    (hH : ContDiff ℝ 2 (uncurry H)) (hHper : Periodic H 1) (hW : IsOpen W)
+    (hJ : ContDiffOn ℝ 1 (fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) W)
+    (hJper : Periodic J 1) (hu : ∀ k, ContDiff ℝ (⊤ : ℕ∞) (u k))
+    (hper : ∀ k s, Periodic (fun t ↦ u k (s, t)) 1)
+    (hfloer : ∀ k, ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z.2 (u k z))
+        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) z : ℝ × ℝ →ₗ[ℝ] V))
+    {L : ℝ≥0} (hL : ∀ k, LipschitzWith L (u k)) (hgW : ∀ z, (z.2, g z) ∈ W)
+    (hJt : ∀ z, ω.Tames (J z.2 (g z))) (hlim : TendstoLocallyUniformly u g atTop)
+    {x₀ x₁ : ℝ → V} (hx₀ : ContDiff ℝ 1 x₀) (hx₀per : x₀ 1 = x₀ 0) (hx₁ : ContDiff ℝ 1 x₁)
+    (hx₁per : x₁ 1 = x₁ 0) (hbot : TendstoUniformly (fun s t ↦ g (s, t)) x₀ atBot)
+    (htop : TendstoUniformly (fun s t ↦ g (s, t)) x₁ atTop) :
+    ω.hamiltonianAction H x₀ ≤ ω.hamiltonianAction H x₁ := by
+  have hmono := monotone_hamiltonianAction_of_tendsto hH hHper hW hJ hJper hu hper hfloer
+    (fun _ _ ↦ ⟨L, fun k _ _ ↦ norm_fderiv_le_of_lipschitz ℝ (hL k)⟩) hgW hJt hlim
+  exact (hmono.le_of_tendsto (tendsto_hamiltonianAction_slice_of_tendstoUniformly_of_floer hH
+    hHper hW hJ hJper hu hper hfloer hL hgW hlim hx₀ hx₀per hbot) 0).trans
+    (hmono.ge_of_tendsto (tendsto_hamiltonianAction_slice_of_tendstoUniformly_of_floer hH hHper hW
+      hJ hJper hu hper hfloer hL hgW hlim hx₁ hx₁per htop) 0)
 
 end TauCeti.SymplecticForm

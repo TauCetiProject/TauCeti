@@ -13,6 +13,7 @@ import TauCeti.Analysis.Normed.Group.Lipschitz
 import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.Geometry.Symplectic.Floer.Breaking.Basic
 import TauCeti.Topology.ContinuousMap.Ascoli
+import TauCeti.Topology.Separation.Periodic
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
@@ -89,6 +90,9 @@ bounded derivatives, read in the complex coordinate `z = s + i t`, it is the sub
 
 ## Main results
 
+* `SymplecticForm.contDiff_comp_add_and_periodic_and_isComplexLinearMap_and_lipschitzWith`: a
+  translate `(s, t) ↦ u (s + r, t)` of a Lipschitz Floer trajectory with `1`-periodic loops is again
+  one, for the translated almost complex structures.
 * `SymplecticForm.exists_apply_ne_apply_zero_of_tendstoLocallyUniformly`: a limit of Floer
   trajectories normalized at a regular action value is not stationary.
 * `SymplecticForm.exists_apply_ne_apply_zero_of_tendstoLocallyUniformly_comp_add`: the same for
@@ -241,6 +245,32 @@ theorem exists_apply_ne_apply_zero_of_tendstoLocallyUniformly
     linarith
   exact ha ⟨x, ⟨hxper, hxd, hxK⟩, hxa⟩
 
+/-- **Translates of Floer trajectories.** Let `u` be a `C^n` solution of the Floer equation
+`∂_s u + J (∂_t u - X_{H_t}(u)) = 0` on the strip `ℝ × [0, 1]` with `1`-periodic loops, and let `u`
+be `L`-Lipschitz. Then for every `r` the translate `z ↦ u (z + (r, 0))` is a `C^n`, `L`-Lipschitz
+solution with `1`-periodic loops of the Floer equation for the translated almost complex structures
+`z ↦ J (z + (r, 0))`. -/
+theorem contDiff_comp_add_and_periodic_and_isComplexLinearMap_and_lipschitzWith
+    {n : WithTop ℕ∞} {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V} (hu : ContDiff ℝ n u)
+    (hper : ∀ s, Periodic (fun t ↦ u (s, t)) 1)
+    (hfloer : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hL : LipschitzWith L u) (r : ℝ) :
+    ContDiff ℝ n (fun z ↦ u (z + (r, 0))) ∧ (∀ s, Periodic (fun t ↦ u ((s, t) + (r, 0))) 1) ∧
+      (∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1,
+        IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J (z + (r, 0)))
+          (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ u (w + (r, 0))) z :
+            ℝ × ℝ →ₗ[ℝ] V)) ∧
+      LipschitzWith L fun z ↦ u (z + (r, 0)) := by
+  have hzr (z : ℝ × ℝ) : z + (r, 0) = (z.1 + r, z.2) := by ext <;> simp
+  refine ⟨hu.comp (contDiff_id.add contDiff_const), fun s t ↦ by simpa [hzr] using hper (s + r) t,
+    fun z hz ↦ ?_, (hL.comp (IsometryEquiv.addRight ((r, 0) : ℝ × ℝ)).isometry.lipschitzWith).weaken
+      (mul_one L).le⟩
+  have h := ω.perturbedFDeriv_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) u (r, 0) z
+  simp only [hzr] at h
+  simpa [hzr, h] using hfloer _ ⟨mem_univ _, by simpa [hzr] using hz.2⟩
+
 /-- **A limit of translates normalized at a regular action value is not stationary.** Under the
 hypotheses of `TauCeti.SymplecticForm.exists_apply_ne_apply_zero_of_tendstoLocallyUniformly`, let
 `σ k` be shifts such that the actions of the loops `u k (σ k, ·)` tend to a value `a` which is not
@@ -264,20 +294,15 @@ theorem exists_apply_ne_apply_zero_of_tendstoLocallyUniformly_comp_add
     {g : ℝ × ℝ → V} (hg : TendstoLocallyUniformly (fun k z ↦ u k (z + (σ k, 0))) g atTop) :
     ∃ s t, g (s, t) ≠ g (0, t) := by
   -- The translates are Floer trajectories for the translated almost complex structures.
-  have hzσ (z : ℝ × ℝ) (r : ℝ) : z + (r, 0) = (z.1 + r, z.2) := by ext <;> simp
   have hmem {z : ℝ × ℝ} (r : ℝ) (hz : z ∈ (univ : Set ℝ) ×ˢ Icc 0 1) :
-      z + (r, 0) ∈ (univ : Set ℝ) ×ˢ Icc 0 1 := ⟨mem_univ _, by simpa [hzσ] using hz.2⟩
-  refine exists_apply_ne_apply_zero_of_tendstoLocallyUniformly
+      z + (r, 0) ∈ (univ : Set ℝ) ×ˢ Icc 0 1 := ⟨mem_univ _, by simpa using hz.2⟩
+  have htr (k : ℕ) := contDiff_comp_add_and_periodic_and_isComplexLinearMap_and_lipschitzWith
+    (hu k) (hper k) (hfloer k) (hL k) (σ k)
+  exact exists_apply_ne_apply_zero_of_tendstoLocallyUniformly
     (J := fun k z ↦ J k (z + (σ k, 0))) (L := L) hH hHper hK
-    (f := fun k z ↦ u k (z + (σ k, 0))) (fun k ↦ (hu k).comp (contDiff_id.add contDiff_const))
-    (fun k s t ↦ by simpa [hzσ] using hper k (s + σ k) t)
+    (f := fun k z ↦ u k (z + (σ k, 0))) (fun k ↦ (htr k).1) (fun k ↦ (htr k).2.1)
     (fun k z ↦ huK _ _) hc (fun k z hz ↦ hJc _ _ (hmem _ hz)) (fun k z hz ↦ hJM _ _ (hmem _ hz))
-    (fun k z hz ↦ ?_) (fun k ↦ ?_) ha (by simpa using hσa) hg
-  · have h := ω.perturbedFDeriv_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) (σ k, 0) z
-    simp only [hzσ] at h
-    simpa [hzσ, h] using hfloer k _ (hmem (σ k) hz)
-  · exact ((hL k).comp (IsometryEquiv.addRight ((σ k, 0) : ℝ × ℝ)).isometry.lipschitzWith).weaken
-      (mul_one L).le
+    (fun k ↦ (htr k).2.2.1) (fun k ↦ (htr k).2.2.2) ha (by simpa using hσa) hg
 
 /-- **A sequence of nonstationary Floer trajectories has a nonstationary level.** Let `H` be a
 `C¹` Hamiltonian, `1`-periodic in time, and `K` a compact set such that the `1`-periodic orbits of
@@ -398,10 +423,9 @@ private theorem forall_apply_eq_apply_zero_of_tendsto_sub (hH : ContDiff ℝ 1 (
     (fun _ _ ↦ Eventually.of_forall fun _ ↦ prod_mono (subset_univ _) le_rfl) hen
     (hg.tendstoLocallyUniformlyOn (s := univ ×ˢ Icc 0 1))
   -- The limit is `1`-periodic in `t`, so it does not depend on `s` on the whole plane.
-  have hgper (s : ℝ) : Periodic (fun t ↦ g (s, t)) 1 := fun t ↦ by
-    have hzσ (z : ℝ × ℝ) (r : ℝ) : z + (r, 0) = (z.1 + r, z.2) := by ext <;> simp
-    exact tendsto_nhds_unique ((hg.tendsto_at (s, t + 1)).congr fun k ↦ by
-      simpa [hzσ] using hper k (s + σ k) t) (hg.tendsto_at (s, t))
+  have hgper (s : ℝ) : Periodic (fun t ↦ g (s, t)) 1 :=
+    periodic_of_tendsto (.of_forall fun k t ↦ by
+      simpa [add_right_comm] using hper k (s + σ k) t) fun t ↦ hg.tendsto_at (s, t)
   intro s t
   have hfract (s : ℝ) : g (s, t) = g (s, Int.fract t) := by
     rw [Int.fract, ← (hgper s).sub_int_mul_eq ⌊t⌋, mul_one]
