@@ -13,8 +13,9 @@ import Mathlib.Topology.Bases
 
 Two distinct vectors of an orthonormal family in an inner product space sit at squared distance `2`,
 hence at distance `√2` (`Orthonormal.norm_sub_sq`, `Orthonormal.norm_sub_eq_sqrt_two`,
-`Orthonormal.dist_eq_sqrt_two`). Consequently the open balls of radius `√2 / 2` around the members
-of an orthonormal family are pairwise disjoint, so in a separable inner product space every
+`Orthonormal.dist_eq_sqrt_two`). Consequently the range of an orthonormal family carries the
+discrete subspace topology (`Orthonormal.discreteTopology_range`), and the open balls of radius
+`√2 / 2` around its members are pairwise disjoint, so in a separable inner product space every
 orthonormal family is countable (`Orthonormal.countable_of_separableSpace`).
 
 Independently of separability, Bessel's inequality `Orthonormal.inner_products_summable` implies
@@ -33,6 +34,7 @@ vectors (`Orthonormal.exists_orthonormalBasis_coe_eq`).
 ## References
 
 * J. B. Conway, *A Course in Functional Analysis*, 2nd ed., Chapter I, §4.
+* P. R. Halmos, *A Hilbert Space Problem Book*, 2nd ed., Problem 7.
 * M. Reed and B. Simon, *Methods of Modern Mathematical Physics I: Functional Analysis*, §II.3.
 -/
 
@@ -75,6 +77,13 @@ theorem norm_sub_eq_sqrt_two (hv : Orthonormal 𝕜 v) {i j : ι} (hij : i ≠ j
 theorem dist_eq_sqrt_two (hv : Orthonormal 𝕜 v) {i j : ι} (hij : i ≠ j) :
     dist (v i) (v j) = √2 := by
   rw [dist_eq_norm, hv.norm_sub_eq_sqrt_two hij]
+
+/-- The range of an orthonormal family carries the discrete subspace topology. -/
+theorem discreteTopology_range (hv : Orthonormal 𝕜 v) : DiscreteTopology (Set.range v) :=
+  DiscreteTopology.of_forall_le_dist (Real.sqrt_pos.2 zero_lt_two)
+    fun ⟨_, i, hi⟩ ⟨_, j, hj⟩ hne ↦ by
+      subst hi hj
+      exact (hv.dist_eq_sqrt_two fun hij ↦ hne (Subtype.ext (congrArg v hij))).symm.le
 
 /-- **Countable Fourier support.** Every vector has nonzero inner product with at most countably
 many members of an orthonormal family. -/
