@@ -28,7 +28,8 @@ normed space. Openness of `Ω` is assumed only for the `C¹` result.
   Fréchet derivative wherever `u` is differentiable (`TauCeti.formalDeriv_eq_fderiv`).
 * `TauCeti.coordinateBox a b` is the closed coordinate box `Π_j [a_j, b_j]`, and
   `TauCeti.lineFunction u x i` is the line function `t ↦ u(x + (t - xᵢ) eᵢ)` of `u` through `x` in
-  the `i`-th direction. A box has volume `∏ⱼ (bⱼ - aⱼ)` (`TauCeti.volume_coordinateBox`).
+  the `i`-th direction. A box has volume `∏ⱼ ENNReal.ofReal (bⱼ - aⱼ)`
+  (`TauCeti.volume_coordinateBox`).
   For `x` in a box and `t ∈ [aᵢ, bᵢ]`, the point `x + (t - xᵢ) eᵢ` stays in the box
   (`TauCeti.add_sub_smul_single_mem_coordinateBox`), and the line function depends only on the
   coordinates of `x` other than the `i`-th (`TauCeti.lineFunction_add_smul_single`).
