@@ -48,13 +48,8 @@ theorem blockFiniteInclusion_apply (r n : ℕ)
 @[simp] theorem blockFiniteInclusion_single (r n : ℕ) (i : Fin (n + 1) × Fin r) :
     blockFiniteInclusion r n (EuclideanSpace.single i 1) =
       blockHardyBasis r (i.1, i.2) := by
-  have h := (((blockHardyBasis r).orthonormal.comp
-    (Prod.map (Fin.val : Fin (n + 1) → ℕ) id)
-    (Fin.val_injective.prodMap Function.injective_id)).synthesisMapIsometry_single i (1 : ℂ))
-  -- The native lemma fixes classical equality; finite coordinates use their concrete instance.
-  rw [show (fun a b : Fin (n + 1) × Fin r => Classical.propDecidable (a = b)) =
-    (inferInstance : DecidableEq (Fin (n + 1) × Fin r)) from Subsingleton.elim _ _] at h
-  simpa only [blockFiniteInclusion, one_smul, Function.comp_apply, Prod.map_apply, id_eq] using! h
+  simp only [blockFiniteInclusion, Orthonormal.synthesisMapIsometry_single, one_smul,
+    Function.comp_apply, Prod.map_apply', id_eq]
 
 /-- The adjoint inclusion reads the selected block Hardy coefficients. -/
 @[simp] theorem adjoint_blockFiniteInclusion_apply (r n : ℕ) (f : BlockHardySpace r)
@@ -117,16 +112,13 @@ theorem reindex_blockFiniteSectionMatrix {r : ℕ} [NeZero r]
   intro i j
   obtain ⟨i, rfl⟩ := (blockFiniteSectionIndexEquiv r n).surjective i
   obtain ⟨j, rfl⟩ := (blockFiniteSectionIndexEquiv r n).surjective j
-  rw [Matrix.reindex_apply, Matrix.submatrix_apply, Equiv.symm_apply_apply, Equiv.symm_apply_apply,
-    blockFiniteSectionMatrix_apply]
-  have h := T.finiteSection_single_apply (blockHardyBasisNat r) ((n + 1) * r - 1)
-    (blockFiniteSectionIndexEquiv r n i) (blockFiniteSectionIndexEquiv r n j)
-  rw [Matrix.toEuclideanCLM_symm_apply_single]
   have hb (p : Fin (n + 1) × Fin r) :
       blockHardyBasisNat r (blockFiniteSectionIndexEquiv r n p) =
         blockHardyBasis r (p.1, p.2) := by
     rw [blockFiniteSectionIndexEquiv_val, blockHardyBasisNat_apply]
-  simpa only [hb] using h.symm
+  simp only [Matrix.reindex_apply, Matrix.submatrix_apply, Equiv.symm_apply_apply,
+    blockFiniteSectionMatrix_apply, Matrix.toEuclideanCLM_symm_apply_single,
+    ContinuousLinearMap.finiteSection_single_apply, hb]
 
 /-- The determinant of a native full-block finite section is the block compression determinant. -/
 theorem det_finiteSection_eq_blockFiniteSectionMatrix {r : ℕ} [NeZero r]

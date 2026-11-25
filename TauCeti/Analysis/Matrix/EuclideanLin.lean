@@ -221,9 +221,7 @@ theorem toEuclideanCLM_apply_single (A : Matrix ι ι 𝕜) (j : ι) :
     toEuclideanCLM (𝕜 := 𝕜) A (EuclideanSpace.single j 1) =
       WithLp.toLp 2 (fun i => A i j) := by
   rw [toEuclideanCLM_apply, toLpLin_apply, PiLp.ofLp_single,
-    Matrix.mulVec_single_one]
-  -- Both sides use WithLp.toLp; the column function evaluates by A.col j i = A i j.
-  rfl
+    Matrix.mulVec_single_one, Matrix.col_apply']
 
 /-- The matrix of a continuous linear map has entries given by its action on coordinate units. -/
 @[simp] theorem toEuclideanCLM_symm_apply_single

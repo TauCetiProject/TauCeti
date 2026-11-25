@@ -59,14 +59,16 @@ theorem matrixSymbol_apply (t : UnitAddCircle) :
   rw [← fourier_add]
   simp
 
+/-- The determinant of the opposite-shift symbol is nonzero at every point. -/
+theorem det_matrixSymbol_ne_zero (t : UnitAddCircle) : (matrixSymbol t).det ≠ 0 := by
+  rw [det_matrixSymbol]
+  exact one_ne_zero
+
 /-- The determinant symbol has winding zero. -/
 theorem windingNumber_det_matrixSymbol :
     (⟨fun t => (matrixSymbol t).det, by fun_prop⟩ : C(UnitAddCircle, ℂ)).windingNumber
-      (fun t => by simpa only [ContinuousMap.coe_mk, det_matrixSymbol] using
-        (one_ne_zero : (1 : ℂ) ≠ 0)) = 0 :=
-  (ContinuousMap.windingNumber_congr
-    (fun t => by simpa only [ContinuousMap.coe_mk, det_matrixSymbol] using
-      (one_ne_zero : (1 : ℂ) ≠ 0)) (fun _ => one_ne_zero)
+      det_matrixSymbol_ne_zero = 0 :=
+  (ContinuousMap.windingNumber_congr det_matrixSymbol_ne_zero (fun _ => one_ne_zero)
     (g := (1 : C(UnitAddCircle, ℂ))) det_matrixSymbol).trans
       (ContinuousMap.windingNumber_one _)
 
