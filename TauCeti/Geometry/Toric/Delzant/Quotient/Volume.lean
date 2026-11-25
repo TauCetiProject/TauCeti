@@ -33,13 +33,13 @@ The proof is local over `Δ`. At a vertex `v` with set `A` of active facets, the
 (`TauCeti.Toric.IsDelzant.vertexDarbouxChart`) identifies the points of `M_Δ` whose moment values
 lie in the open set `O_v = {y | c j < ⟨y, u j⟩ for every j ∉ A}` with an open subset `W` of `ℂ^A`.
 It pulls `ω_Δ` back to the standard form, so it carries the Liouville measure there to Lebesgue
-measure on `W`. In the chart the moment map is the weight model translated to `v`,
-`w ↦ v + Σ_k ½ |w_k|² ε_k` for the edge basis `ε` dual to the active normals, which pushes Lebesgue
-measure to `(2π)ⁿ` times the Haar measure of `ε` on the cone `v + Σ_k ℝ_(≥0) ε_k`
-(`Module.Basis.map_volume_weightMomentMap_neg`). That Haar measure is the lattice-normalized one,
-since the active normals form a lattice basis, and on `O_v` the cone agrees with `Δ`. The sets
-`O_v` cover `Δ`, as the facets active at a point of `Δ` are active at some vertex, and both
-measures vanish off `Δ`.
+measure on `W` (`OpenPartialHomeomorph.map_symm_volume_restrict_target`). In the chart the moment
+map is the weight model translated to `v`, `w ↦ v + Σ_k ½ |w_k|² ε_k` for the edge basis `ε`
+dual to the active normals, which pushes Lebesgue measure to `(2π)ⁿ` times the Haar measure of `ε`
+on the cone `v + Σ_k ℝ_(≥0) ε_k` (`Module.Basis.map_volume_weightMomentMap_neg`). That Haar
+measure is the lattice-normalized one, since the active normals form a lattice basis, and on `O_v`
+the cone agrees with `Δ`. The sets `O_v` cover `Δ`, as the facets active at a point of `Δ` are
+active at some vertex, and both measures vanish off `Δ`.
 
 For the standard examples this gives the symplectic volumes `(2π)ⁿ aⁿ / n!` of `ℂPⁿ`, from the
 simplex of size `a`, `2π a` of the two-sphere, from the interval `[0, a]`, and
@@ -78,6 +78,18 @@ namespace TauCeti.Toric
 variable {ι N V : Type*} [Fintype ι] [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V]
   [FiniteDimensional ℝ V] {i : N →+ V} {u : ι → N} {c : ι → ℝ} {v : StrongDual ℝ V}
 
+/-- The open star of a point `v`: the covectors satisfying strictly every facet inequality not
+active at `v`. Around a vertex of `Δ` it is the set of moment values covered by the vertex chart. -/
+private def vertexStar (i : N →+ V) (u : ι → N) (c : ι → ℝ) (v : StrongDual ℝ V) :
+    Set (StrongDual ℝ V) :=
+  {y | ∀ j ∉ activeSet (facetPairing i u) c v, c j < y (i (u j))}
+
+omit [Fintype ι] [FiniteDimensional ℝ V] in
+private theorem isOpen_vertexStar [Finite ι] : IsOpen (vertexStar i u c v) := by
+  simp only [vertexStar, ofPred_forall]
+  exact isOpen_iInter_of_finite fun j ↦ isOpen_iInter_of_finite fun _ ↦
+    isOpen_lt continuous_const (continuous_eval_const _)
+
 namespace IsDelzant
 
 open DelzantQuotient
@@ -85,127 +97,17 @@ open DelzantQuotient
 variable (hΔ : IsDelzant i u c) (hi : IsIntegralLattice i) (hv : IsSmoothVertex i u c v)
   (hvP : v ∈ facetPolyhedron i u c) [Fintype (activeSet (facetPairing i u) c v)]
 
-/-- The inverse vertex chart, restricted to the open target of the chart. -/
-private theorem contMDiff_vertexChart_symm_restrict :
-    letI := hΔ.delzantQuotientChartedSpace hi
-    ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
-        EuclideanSpace ℝ (activeSet (facetPairing i u) c v))
-      𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
-        (Fin (Fintype.card ι + finrank ℝ V) → ℝ)) ∞
-      (fun w : (⟨_, (vertexChart hv hi hvP).open_target⟩ : TopologicalSpace.Opens
-          (EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
-            EuclideanSpace ℝ (activeSet (facetPairing i u) c v))) ↦
-        (vertexChart hv hi hvP).symm w) := by
-  let _ := hΔ.delzantQuotientChartedSpace hi
-  intro w
-  exact ((hΔ.contMDiffOn_vertexChart_symm hi hv hvP w w.property).contMDiffAt
-    ((vertexChart hv hi hvP).open_target.mem_nhds w.property)).comp w
-      contMDiff_subtypeVal.contMDiffAt
-
-/-- The inverse vertex chart, restricted to the open target `W` of the chart, pulls the symplectic
-form of the Delzant quotient back to the restriction to `W` of the standard symplectic form. -/
-private theorem mpullback_vertexChart_symm_restrict :
-    letI := hΔ.delzantQuotientChartedSpace hi
-    haveI := hΔ.isManifold_delzantQuotient hi
-    SmoothForm.mpullback _ (hΔ.contMDiff_vertexChart_symm_restrict hi hv hvP)
-        (hΔ.delzantQuotientSymplecticForm hi) =
-      SmoothForm.mpullback (Subtype.val : (⟨_, (vertexChart hv hi hvP).open_target⟩ :
-          TopologicalSpace.Opens (EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
-            EuclideanSpace ℝ (activeSet (facetPairing i u) c v))) → _) contMDiff_subtypeVal
-        (stdSymplecticForm (V := EuclideanSpace ℝ (activeSet (facetPairing i u) c v))).constSmooth
-        := by
-  let _ := hΔ.delzantQuotientChartedSpace hi
-  have := hΔ.isManifold_delzantQuotient hi
-  set e := vertexChart hv hi hvP
-  set W : TopologicalSpace.Opens (EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
-      EuclideanSpace ℝ (activeSet (facetPairing i u) c v)) := ⟨_, e.open_target⟩
-  refine SmoothBundleForm.ext_eval₂ fun w a b ↦ ?_
-  have hd : MDifferentiableAt _ _ e.symm w :=
-    ((hΔ.contMDiffOn_vertexChart_symm hi hv hvP w w.property).contMDiffAt
-      (e.open_target.mem_nhds w.property)).mdifferentiableAt (by simp)
-  have hval : MDifferentiableAt 𝓘(ℝ, EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
-      EuclideanSpace ℝ (activeSet (facetPairing i u) c v))
-      𝓘(ℝ, EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
-        EuclideanSpace ℝ (activeSet (facetPairing i u) c v)) (Subtype.val : W → _) w :=
-    contMDiff_subtypeVal.mdifferentiable one_ne_zero w
-  -- The restricted inverse chart is by definition the inclusion of `W` followed by `e.symm`.
-  rw [SmoothForm.eval₂_mpullback, SmoothForm.eval₂_mpullback,
-    show (fun w : W ↦ e.symm w) = e.symm ∘ Subtype.val from rfl, mfderiv_comp_apply w hd hval,
-    mfderiv_comp_apply w hd hval, TauCeti.Manifold.mfderiv_subtype_val_apply,
-    TauCeti.Manifold.mfderiv_subtype_val_apply]
-  exact (hΔ.eval₂_delzantQuotientSymplecticForm_mfderiv_vertexChart_symm hi hv hvP w.property a
-    b).trans (SymplecticForm.constSmooth_apply _ _ _ _).symm
-
-/-- **The Liouville measure on the source of a vertex chart.** The inverse vertex chart carries
-Lebesgue measure on the target `W ⊆ ℂ^A` of the chart to the Liouville measure of `ω_Δ` on the
-source of the chart: it pulls `ω_Δ` back to the standard form, whose Liouville measure is Lebesgue
-measure. -/
-private theorem map_vertexChart_symm_volume_restrict
-    [MeasurableSpace (DelzantQuotient i u c)] [BorelSpace (DelzantQuotient i u c)]
-    {n : ℕ} [Fact (finrank ℝ (ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
-      (Fin (Fintype.card ι + finrank ℝ V) → ℝ)) = 2 * n)]
-    (hn : Fintype.card (activeSet (facetPairing i u) c v) = n) :
-    letI := hΔ.delzantQuotientChartedSpace hi
-    haveI := hΔ.isManifold_delzantQuotient hi
-    haveI := compactSpace_delzantQuotient (u := u) (c := c) hΔ.isBounded
-    (volume.restrict (vertexChart hv hi hvP).target).map (vertexChart hv hi hvP).symm =
-      ((hΔ.delzantQuotientSymplecticForm hi).liouvilleMeasure n).restrict
-          (vertexChart hv hi hvP).source := by
-  subst hn
-  let _ := hΔ.delzantQuotientChartedSpace hi
-  have := hΔ.isManifold_delzantQuotient hi
-  have := compactSpace_delzantQuotient (u := u) (c := c) hΔ.isBounded
-  set e := vertexChart hv hi hvP
-  set W : TopologicalSpace.Opens (EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
-      EuclideanSpace ℝ (activeSet (facetPairing i u) c v)) := ⟨_, e.open_target⟩
-  set g : W → DelzantQuotient i u c := fun w ↦ e.symm w
-  have hg : ContMDiff _ _ ∞ g := hΔ.contMDiff_vertexChart_symm_restrict hi hv hvP
-  have hemb : MeasurableEmbedding g := e.symm.isOpenEmbedding_restrict.measurableEmbedding
-  -- The inverse chart pulls `ω_Δ` back to the standard form restricted to `W`.
-  have hpull' := congrArg Subtype.val (hΔ.mpullback_vertexChart_symm_restrict hi hv hvP)
-  rw [SmoothForm.coe_mpullback] at hpull'
-  have : Fact (finrank ℝ (EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
-      EuclideanSpace ℝ (activeSet (facetPairing i u) c v)) =
-        2 * Fintype.card (activeSet (facetPairing i u) c v)) :=
-    ⟨by rw [finrank_prod, finrank_euclideanSpace, two_mul]⟩
-  have hmap := hemb.map_measure_mpullback (hg.mdifferentiable (by simp))
-    ((hΔ.delzantQuotientSymplecticForm hi).volumeForm
-      (Fintype.card (activeSet (facetPairing i u) c v))).val
-  rw [SmoothTwoForm.mpullback_volumeForm hpull'] at hmap
-  have hrange : range g = e.source := by
-    rw [← e.symm_image_target_eq_source, ← Subtype.range_coe (s := e.target), ← range_comp]
-    -- The points of `W` are those of `e.target`, and `g` is `e.symm` on them.
-    rfl
-  rw [← SmoothTwoForm.liouvilleMeasure_def, ← SmoothTwoForm.liouvilleMeasure_def, hrange] at hmap
-  -- Push the Liouville measure of `W` forward to `ℂ^A`, where it is Lebesgue measure on `W`.
-  rw [← hmap, show g = e.symm ∘ Subtype.val from rfl, ← AEMeasurable.map_map_of_aemeasurable,
-    SmoothTwoForm.map_liouvilleMeasure_mpullback_subtypeVal,
-    SymplecticForm.liouvilleMeasure_constSmooth_stdSymplecticForm]
-  · -- The open set `W` has the target of the chart as its underlying set.
-    rfl
-  · rw [SmoothTwoForm.map_liouvilleMeasure_mpullback_subtypeVal,
-      SymplecticForm.liouvilleMeasure_constSmooth_stdSymplecticForm]
-    exact e.continuousOn_symm.aemeasurable e.open_target.measurableSet
-  · exact measurable_subtypeVal.aemeasurable
-
 omit [Fintype ι] [FiniteDimensional ℝ V] [Fintype (activeSet (facetPairing i u) c v)] in
 /-- **The cone of a smooth vertex agrees with `Δ` near the vertex.** Translated to the vertex `v`,
 the lattice-normalized measure on the cone `{y | 0 ≤ ⟨y, u_k⟩ for every active facet k}` agrees
-with the lattice-normalized measure on `Δ` over the open set of covectors satisfying strictly every
-facet inequality not active at `v`. -/
+with the lattice-normalized measure on `Δ` over the open star of `v`. -/
 private theorem map_add_dualMeasure_restrict_cone [Finite ι]
     [MeasurableSpace (StrongDual ℝ V)] [BorelSpace (StrongDual ℝ V)] :
     ((hi.dualMeasure.restrict {y | ∀ k, 0 ≤ (hv.edgeBasis hi).repr y k}).map (v + ·)).restrict
-        {y | ∀ j ∉ activeSet (facetPairing i u) c v, c j < y (i (u j))} =
-      (hi.dualMeasure.restrict (facetPolyhedron i u c)).restrict
-        {y | ∀ j ∉ activeSet (facetPairing i u) c v, c j < y (i (u j))} := by
-  set O := {y : StrongDual ℝ V | ∀ j ∉ activeSet (facetPairing i u) c v, c j < y (i (u j))}
+        (vertexStar i u c v) =
+      (hi.dualMeasure.restrict (facetPolyhedron i u c)).restrict (vertexStar i u c v) := by
   set K := {y : StrongDual ℝ V | ∀ k, 0 ≤ (hv.edgeBasis hi).repr y k}
-  have hO : MeasurableSet O := by
-    refine IsOpen.measurableSet ?_
-    simp only [O, ofPred_forall]
-    exact isOpen_iInter_of_finite fun j ↦ isOpen_iInter_of_finite fun _ ↦
-      isOpen_lt continuous_const (continuous_eval_const _)
+  have hO : MeasurableSet (vertexStar i u c v) := isOpen_vertexStar.measurableSet
   have hK : (v + ·) ⁻¹' ((fun y ↦ -v + y) ⁻¹' K) = K := by
     ext y
     simp
@@ -215,18 +117,42 @@ private theorem map_add_dualMeasure_restrict_cone [Finite ι]
   have hvk (k : activeSet (facetPairing i u) c v) : v (i (u k)) = c k := by
     simpa using mem_activeSet.1 k.property
   ext y
-  simp only [mem_inter_iff, mem_preimage, K, O, mem_ofPred_eq, IsSmoothVertex.edgeBasis_repr,
-    add_apply, neg_apply, mem_facetPolyhedron]
+  simp only [mem_inter_iff, mem_preimage, K, vertexStar, mem_ofPred_eq,
+    IsSmoothVertex.edgeBasis_repr, add_apply, neg_apply, mem_facetPolyhedron]
   refine and_congr_right fun hy ↦ ⟨fun h j ↦ ?_, fun h k ↦ by linarith [h k, hvk k]⟩
   by_cases hj : j ∈ activeSet (facetPairing i u) c v
   · linarith [h ⟨j, hj⟩, hvk ⟨j, hj⟩]
   · exact (hy j hj).le
 
+omit [Fintype ι] [FiniteDimensional ℝ V] in
+/-- **The weight model at a smooth vertex.** The weight model with the negated edge basis as
+weights, translated to the vertex `v`, pushes Lebesgue measure on `ℂ^A` to `(2π)^|A|` times the
+translate to `v` of the lattice-normalized measure on the cone of the edge basis. -/
+private theorem map_volume_add_weightMomentMap [Finite ι]
+    [MeasurableSpace (StrongDual ℝ V)] [BorelSpace (StrongDual ℝ V)] :
+    (volume : Measure (EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
+        EuclideanSpace ℝ (activeSet (facetPairing i u) c v))).map
+        (fun w ↦ v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k) w) =
+      ENNReal.ofReal (2 * π) ^ Fintype.card (activeSet (facetPairing i u) c v) •
+        (hi.dualMeasure.restrict {y | ∀ k, 0 ≤ (hv.edgeBasis hi).repr y k}).map (v + ·) := by
+  -- The edge basis is the dual of a lattice basis, so its Haar measure is the lattice-normalized
+  -- one; `IsSmoothVertex.edgeBasis` is not exposed, so this goes through the coordinates.
+  have hedge : hv.edgeBasis hi = hi.dualBasis hv.basis :=
+    Module.Basis.eq_ofRepr_eq_repr fun y k ↦ by
+      rw [IsSmoothVertex.edgeBasis_repr, IsIntegralLattice.dualBasis_repr, hv.basis_apply]
+  have hhaar : (hv.edgeBasis hi).addHaar = hi.dualMeasure := by
+    rw [hedge, hi.addHaar_dualBasis]
+  rw [show (fun w ↦ v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k) w) =
+      (v + ·) ∘ weightMomentMap (-⇑(hv.edgeBasis hi)) from rfl,
+    ← Measure.map_map (measurable_const_add v) (continuous_weightMomentMap _).measurable,
+    Module.Basis.map_volume_weightMomentMap_neg, hhaar,
+    Measure.map_smul _ (measurable_const_add v).aemeasurable]
+
 include hv hvP in
-/-- **The Duistermaat–Heckman measure near a vertex.** On the open set of covectors satisfying
-strictly every facet inequality not active at a smooth vertex `v`, the pushforward of the Liouville
-measure of `ω_Δ` by the moment map is `(2π)^n` times the lattice-normalized measure of `Δ`: in the
-vertex chart the moment map is the weight model translated to `v`. -/
+/-- **The Duistermaat–Heckman measure near a vertex.** On the open star of a smooth vertex `v`,
+the pushforward of the Liouville measure of `ω_Δ` by the moment map is `(2π)^n` times the
+lattice-normalized measure of `Δ`: in the vertex chart the moment map is the weight model translated
+to `v`. -/
 private theorem map_liouvilleMeasure_restrict_vertexStar
     [MeasurableSpace (DelzantQuotient i u c)] [BorelSpace (DelzantQuotient i u c)]
     [MeasurableSpace (StrongDual ℝ V)] [BorelSpace (StrongDual ℝ V)]
@@ -238,29 +164,23 @@ private theorem map_liouvilleMeasure_restrict_vertexStar
     haveI := hΔ.isManifold_delzantQuotient hi
     haveI := compactSpace_delzantQuotient (u := u) (c := c) hΔ.isBounded
     (((hΔ.delzantQuotientSymplecticForm hi).liouvilleMeasure n).map (reducedMomentMap hβ)).restrict
-          {y | ∀ j ∉ activeSet (facetPairing i u) c v, c j < y (i (u j))} =
+          (vertexStar i u c v) =
       (ENNReal.ofReal (2 * π) ^ n •
-        hi.dualMeasure.restrict (facetPolyhedron i u c)).restrict
-          {y | ∀ j ∉ activeSet (facetPairing i u) c v, c j < y (i (u j))} := by
+        hi.dualMeasure.restrict (facetPolyhedron i u c)).restrict (vertexStar i u c v) := by
   subst hn
   let _ := hΔ.delzantQuotientChartedSpace hi
   have := hΔ.isManifold_delzantQuotient hi
   have := compactSpace_delzantQuotient (u := u) (c := c) hΔ.isBounded
   set e := vertexChart hv hi hvP
-  set O := {y : StrongDual ℝ V | ∀ j ∉ activeSet (facetPairing i u) c v, c j < y (i (u j))}
+  set O := vertexStar i u c v
   set m : EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
       EuclideanSpace ℝ (activeSet (facetPairing i u) c v) → StrongDual ℝ V :=
     weightMomentMap fun k ↦ -hv.edgeBasis hi k
-  have hO : MeasurableSet O := by
-    refine IsOpen.measurableSet ?_
-    simp only [O, ofPred_forall]
-    exact isOpen_iInter_of_finite fun j ↦ isOpen_iInter_of_finite fun _ ↦
-      isOpen_lt continuous_const (continuous_eval_const _)
+  have hO : MeasurableSet O := isOpen_vertexStar.measurableSet
   have hμ : Measurable (reducedMomentMap (u := u) (c := c) hβ) :=
     (continuous_reducedMomentMap hβ).measurable
   have hm : Measurable fun w ↦ v + m w :=
     (continuous_const.add (continuous_weightMomentMap _)).measurable
-  -- In the vertex chart the moment map is the weight model translated to `v`.
   -- The source and the target of the chart are the preimages of `O` under the moment map and the
   -- translated weight model; both sides unfold to the same strict facet inequalities.
   have hsrc : reducedMomentMap hβ ⁻¹' O = e.source := by
@@ -269,29 +189,29 @@ private theorem map_liouvilleMeasure_restrict_vertexStar
   have htgt : e.target = (fun w ↦ v + m w) ⁻¹' O := by
     rw [vertexChart_target]
     rfl
-  have hedge : hv.edgeBasis hi = hi.dualBasis hv.basis :=
-    Module.Basis.eq_ofRepr_eq_repr fun y k ↦ by
-      rw [IsSmoothVertex.edgeBasis_repr, IsIntegralLattice.dualBasis_repr, hv.basis_apply]
+  -- The inverse vertex chart carries Lebesgue measure on its target to the Liouville measure.
+  have hchart : (volume.restrict e.target).map e.symm =
+      ((hΔ.delzantQuotientSymplecticForm hi).liouvilleMeasure _).restrict e.source :=
+    e.map_symm_volume_restrict_target (hΔ.contMDiffOn_vertexChart_symm hi hv hvP)
+      fun _ hw ↦ hΔ.eval₂_delzantQuotientSymplecticForm_mfderiv_vertexChart_symm hi hv hvP hw
+  -- In the vertex chart the moment map is the weight model translated to `v`.
   have hae : reducedMomentMap hβ ∘ e.symm =ᵐ[volume.restrict e.target] fun w ↦ v + m w :=
     (ae_restrict_mem e.open_target.measurableSet).mono fun w hw ↦
       reducedMomentMap_vertexChart_symm hv hi hvP (le_of_mem_vertexChart_target hv hi hvP hw)
-  rw [Measure.restrict_map hμ hO, hsrc,
-    ← hΔ.map_vertexChart_symm_volume_restrict hi hv hvP rfl,
-    AEMeasurable.map_map_of_aemeasurable hμ.aemeasurable
-      (e.continuousOn_symm.aemeasurable e.open_target.measurableSet),
-    Measure.map_congr hae,
-    htgt, ← Measure.restrict_map hm hO,
-    -- Split off the translation, and write the weights `-ε_k` as the negated basis `-ε`.
-    show (fun w ↦ v + m w) = (v + ·) ∘ m from rfl,
-    ← Measure.map_map (measurable_const_add v) (continuous_weightMomentMap _).measurable,
-    show (weightMomentMap fun k ↦ -hv.edgeBasis hi k) = weightMomentMap (-⇑(hv.edgeBasis hi))
-      from rfl, Module.Basis.map_volume_weightMomentMap_neg, hedge, hi.addHaar_dualBasis,
-    ← hedge, Measure.map_smul]
-  swap
-  · exact (measurable_const_add v).aemeasurable
-  -- Translating the cone of the weight model to `v` gives `Δ` near `v`.
-  rw [Measure.restrict_smul, Measure.restrict_smul,
-    map_add_dualMeasure_restrict_cone hi hv]
+  calc (((hΔ.delzantQuotientSymplecticForm hi).liouvilleMeasure _).map
+          (reducedMomentMap hβ)).restrict O
+      = (((hΔ.delzantQuotientSymplecticForm hi).liouvilleMeasure _).restrict e.source).map
+          (reducedMomentMap hβ) := by
+        rw [Measure.restrict_map hμ hO, hsrc]
+    _ = (volume.restrict e.target).map (reducedMomentMap hβ ∘ e.symm) := by
+        rw [← hchart, AEMeasurable.map_map_of_aemeasurable hμ.aemeasurable
+          (e.continuousOn_symm.aemeasurable e.open_target.measurableSet)]
+    _ = (volume.map fun w ↦ v + m w).restrict O := by
+        rw [Measure.map_congr hae, htgt, Measure.restrict_map hm hO]
+    _ = _ := by
+        -- The weight model gives the translated cone, which agrees with `Δ` near `v`.
+        rw [map_volume_add_weightMomentMap hi hv, Measure.restrict_smul, Measure.restrict_smul,
+          map_add_dualMeasure_restrict_cone hi hv]
 
 /-- **The Duistermaat–Heckman measure of a symplectic toric manifold.** Let `Δ` be a Delzant
 polytope in `V*`, of dimension `n`, and `(M_Δ, ω_Δ)` its Delzant quotient, of dimension `2n`. The
@@ -320,8 +240,7 @@ theorem duistermaatHeckmanMeasure_delzantQuotientSymplecticForm
     (continuous_reducedMomentMap hβ).measurable
   have hP : MeasurableSet (facetPolyhedron i u c) := measurableSet_facetPolyhedron
   -- The open stars of the vertices and the complement of `Δ` cover `V*`.
-  set O : StrongDual ℝ V → Set (StrongDual ℝ V) :=
-    fun v ↦ {y | ∀ j ∉ activeSet (facetPairing i u) c v, c j < y (i (u j))}
+  set O : StrongDual ℝ V → Set (StrongDual ℝ V) := vertexStar i u c
   rw [SmoothTwoForm.duistermaatHeckmanMeasure_def]
   refine (Measure.ext_iff_of_sUnion_eq_univ
     (S := insert (facetPolyhedron i u c)ᶜ (O '' (facetPolyhedron i u c).extremePoints ℝ))
