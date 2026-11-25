@@ -115,7 +115,8 @@ estimates do not see the boundary.
 * `TauCeti.PDE.UniformlyEllipticOn.integrable_energyIntegrand_jetField`: the energy density of
   two Sobolev functions is integrable.
 * `TauCeti.PDE.integrable_value_mul_inner_gradient`: the density `u ⟪e, ∇w⟫` of a bounded
-  lower-order term in divergence form is integrable.
+  lower-order term in divergence form is integrable, and
+  `TauCeti.PDE.integral_value_sub_mul_inner_gradient`: its integral is linear in `u`.
 * `TauCeti.PDE.UniformlyEllipticOn.integrable_matrixBilinearForm_gradient`: the principal
   density `⟨a ∇u, ∇w⟩` of two Sobolev functions is integrable.
 * `TauCeti.PDE.UniformlyEllipticOn.continuous_energyFormIntegral_jetField_left`: for
@@ -782,6 +783,20 @@ theorem integrable_value_mul_inner_gradient {e : EuclideanSpace ℝ ι → Eucli
         mul_le_mul_of_nonneg_left ((abs_real_inner_le_norm _ _).trans
           (mul_le_mul_of_nonneg_right (he_bound x hx) (norm_nonneg _))) (abs_nonneg _)
     _ = sigma * (‖W1p.gradient w x‖ * ‖W1p.value u x‖) := by rw [Real.norm_eq_abs]; ring
+
+/-- For a bounded measurable vector field `e`, the divergence-form lower-order term is linear in
+the function: `∫ (u - v) ⟪e, ∇w⟫ = ∫ u ⟪e, ∇w⟫ - ∫ v ⟪e, ∇w⟫` for `u, v, w ∈ H¹(Ω)`. -/
+theorem integral_value_sub_mul_inner_gradient {e : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    {sigma : ℝ} (he : AEStronglyMeasurable e (mu.restrict Omega))
+    (he_bound : ∀ x ∈ Omega, ‖e x‖ ≤ sigma) (u v w : W1p mu Omega 2) :
+    ∫ x in Omega, W1p.value (u - v) x * ⟪e x, W1p.gradient w x⟫_ℝ ∂mu =
+      (∫ x in Omega, W1p.value u x * ⟪e x, W1p.gradient w x⟫_ℝ ∂mu) -
+        ∫ x in Omega, W1p.value v x * ⟪e x, W1p.gradient w x⟫_ℝ ∂mu := by
+  rw [← integral_sub (integrable_value_mul_inner_gradient he he_bound u w)
+    (integrable_value_mul_inner_gradient he he_bound v w)]
+  refine integral_congr_ae ?_
+  filter_upwards [W1p.value_sub_ae u v] with x hx
+  rw [hx, Pi.sub_apply, sub_mul]
 
 /-- Subtracting a constant from the mass coefficient subtracts the corresponding `L²` mass pairing
 from the Sobolev energy form. No boundary or coercivity assumption is needed. -/

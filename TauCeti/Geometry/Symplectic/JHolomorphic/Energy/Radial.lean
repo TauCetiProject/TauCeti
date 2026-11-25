@@ -7,6 +7,8 @@ module
 
 public import TauCeti.MeasureTheory.Integral.Disc
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
+import TauCeti.Analysis.Calculus.ContDiff.Differentiable
+import TauCeti.Analysis.Calculus.TangentCone.Basic
 
 /-!
 # Radial derivative of energy on a punctured disc
@@ -16,6 +18,11 @@ radial derivative equal to the circle integral of its density. Only `C¹` regula
 away from the puncture and square integrability of the full differential are required.
 In particular, neither a holomorphic equation nor an extension at the puncture is
 assumed. The formula supplies the boundary density in radial energy-decay arguments.
+
+At a boundary puncture `x₀` on the real axis, the energy `∫ ‖∂ₛu‖²` of the closed half-disc
+`{0 ≤ im z} ∩ B_t(x₀)`, with derivatives taken within the closed upper half-plane, has radial
+derivative equal to the integral of its density over the upper half-circle
+(`TauCeti.hasDerivAt_integral_norm_fderivWithin_one_sq_inter_ball`).
 
 ## References
 
@@ -55,5 +62,25 @@ theorem hasDerivAt_integral_norm_fderiv_one_sq_ball {u : ℂ → V} {z₀ : ℂ}
       simp only [norm_one, mul_one] at h
       gcongr
   exact hint.hasDerivAt_integral_ball hcont hr
+
+/-- The energy `∫_{{0 ≤ im z} ∩ B_t(x₀)} ‖∂ₛu‖²` of the half-disc of radius `t` about a point `x₀`
+of the real axis, with derivatives taken within the closed upper half-plane, has radial derivative
+`t ∫₀^π ‖∂ₛu(x₀ + t e^{iθ})‖² dθ`. Only `C¹` regularity on the punctured half-disc and finite
+energy are required; nothing is assumed at the puncture. -/
+theorem hasDerivAt_integral_norm_fderivWithin_one_sq_inter_ball {u : ℂ → V} {x₀ : ℂ} {R r : ℝ}
+    (hx₀ : x₀.im = 0) (hu : ContDiffOn ℝ 1 u ({z | 0 ≤ z.im} ∩ (ball x₀ R \ {x₀})))
+    (henergy : IntegrableOn (fun z ↦ ‖fderivWithin ℝ u {z | 0 ≤ z.im} z 1‖ ^ 2)
+      ({z | 0 ≤ z.im} ∩ ball x₀ R))
+    (hr : r ∈ Ioo 0 R) :
+    HasDerivAt (fun t ↦ ∫ z in {z : ℂ | 0 ≤ z.im} ∩ ball x₀ t,
+        ‖fderivWithin ℝ u {z | 0 ≤ z.im} z 1‖ ^ 2)
+      (r * ∫ θ in 0..π, ‖fderivWithin ℝ u {z | 0 ≤ z.im} (circleMap x₀ r θ) 1‖ ^ 2) r := by
+  have hcont : ContinuousOn (fun z ↦ ‖fderivWithin ℝ u {z | 0 ≤ z.im} z 1‖ ^ 2)
+      ({z | 0 ≤ z.im} ∩ (ball x₀ R \ {x₀})) :=
+    ((hu.continuousOn_fderivWithin_of_inter (uniqueDiffOn_setOfPred_le_im 0)
+      (isOpen_ball.sdiff isClosed_singleton) le_rfl).clm_apply continuousOn_const).norm.pow 2
+  have hH : {z : ℂ | 0 ≤ z.im} = {z | x₀.im ≤ z.im} := by rw [hx₀]
+  rw [hH] at hcont henergy ⊢
+  simpa only [smul_eq_mul] using henergy.hasDerivAt_integral_inter_ball hcont hr
 
 end TauCeti
