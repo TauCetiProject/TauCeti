@@ -46,14 +46,10 @@ example (hn : finrank ℂ E = n) (x : E)
 example (x : EuclideanSpace ℂ (Fin (n + 1)))
     (h : ((2 : ℂ) • leviForm (fun z : EuclideanSpace ℂ (Fin (n + 1)) ↦ (z 0).re ^ 2) x).IsSymm) :
     ∑ i, h.relEigenvalues (finrank_euclideanSpace_fin) i = 1 := by
-  have hL (v w : EuclideanSpace ℂ (Fin (n + 1))) :
-      leviForm (fun z : EuclideanSpace ℂ (Fin (n + 1)) ↦ (z 0).re ^ 2) x v w =
-        (1 / 2 : ℂ) * (starRingEnd ℂ (v 0) * w 0) := by
-    simpa [mul_comm, div_eq_inv_mul] using
-      leviForm_re_sq_comp_apply (EuclideanSpace.proj (𝕜 := ℂ) (0 : Fin (n + 1))) x v w
   rw [h.sum_relEigenvalues_eq_sum_re_apply _ (EuclideanSpace.basisFun _ ℂ)]
-  rw [Finset.sum_eq_single 0 (fun j _ hj ↦ by simp [hL, Ne.symm hj]) (by simp)]
-  simp [hL]
+  rw [Finset.sum_eq_single 0
+    (fun j _ hj ↦ by simp [leviForm_re_sq_proj_apply, Ne.symm hj]) (by simp)]
+  simp [leviForm_re_sq_proj_apply]
 
 -- The pluriharmonic `Re z₁²` has vanishing Levi form: `i∂∂bar (Re z₁²) = 0`.
 example (x : EuclideanSpace ℂ (Fin (n + 1))) :

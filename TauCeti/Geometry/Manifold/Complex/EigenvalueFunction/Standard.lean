@@ -35,6 +35,8 @@ for the real inner product `Re ⟪·, ·⟫`; on `ℂⁿ` this is
 * `TauCeti.compatible_standardHermitianMetric`: `ω` is a Hermitian metric.
 * `TauCeti.relEigenvalueFunction_standardHermitianMetric`: `λ_ω[i ∂∂bar φ](x)` is the relative
   eigenvalue vector of `2 L_φ(x)` for the inner product.
+* `TauCeti.complexLaplacian_standardHermitianMetric_eq_sum`: `Δ_ω φ = 2·Σ_j Re L_φ(b_j, b_j)` for
+  any orthonormal basis `b`.
 * `TauCeti.complexLaplacian_standardHermitianMetric`: `Δ_ω φ = Δ φ / 2` for `φ` of class `C²`.
 -/
 
@@ -56,6 +58,12 @@ constant by `SymplecticForm.constSmooth`. On `ℂⁿ` it is `Σ_j dx_j ∧ dy_j`
 on `ℂ`. Its Hermitian form is the inner product. -/
 def standardHermitianMetric : SmoothTwoForm 𝓘(ℝ, V) V :=
   (imInnerSymplecticForm V).constSmooth
+
+variable (V) in
+/-- The standard Hermitian metric is the symplectic form `TauCeti.imInnerSymplecticForm V` made
+constant, so the `SymplecticForm.constSmooth` API (closedness, nondegeneracy) applies to it. -/
+theorem standardHermitianMetric_eq_constSmooth :
+    standardHermitianMetric V = (imInnerSymplecticForm V).constSmooth := (rfl)
 
 /-- The standard Hermitian metric evaluates as `ω(u, v) = Im ⟪u, v⟫`. -/
 @[simp]
@@ -82,7 +90,7 @@ theorem compatible_standardHermitianMetric :
     refine SmoothAlmostComplexStructure.ext fun x (v : V) ↦ ?_
     rw [AlmostComplexStructure.constSmooth_apply, AlmostComplexStructure.ofComplexModule_apply]
     exact SmoothAlmostComplexStructure.ofComplexManifold_apply x v
-  rw [hJ]
+  rw [hJ, standardHermitianMetric_eq_constSmooth]
   exact SymplecticForm.compatible_constSmooth_iff.2 imInnerSymplecticForm_compatible
 
 variable {φ : V → ℝ} {x : V}
@@ -101,6 +109,17 @@ theorem relEigenvalueFunction_standardHermitianMetric (h : ((2 : ℂ) • leviFo
 
 section Laplacian
 
+/-- **The complex Laplacian of the standard metric in an orthonormal basis**: for `φ` of class
+`C²` at `x` and any orthonormal basis `b`, `Δ_ω φ(x) = 2·Σ_j Re L_φ(x)(b_j, b_j)`. -/
+theorem complexLaplacian_standardHermitianMetric_eq_sum (hφ : ContDiffAt ℝ 2 φ x)
+    (b : OrthonormalBasis (Fin (finrank ℂ V)) ℂ V) :
+    complexLaplacian V (standardHermitianMetric V) φ x =
+      2 * ∑ j, (leviForm φ x (b j) (b j)).re := by
+  rw [compatible_standardHermitianMetric.complexLaplacian_eq_two_mul_sum
+    (contMDiffAt_iff_contDiffAt.2 hφ) b fun i j ↦ by
+      rw [twoFormHermitianForm_standardHermitianMetric, b.inner_eq_ite]]
+  simp only [manifoldLeviForm_eq_leviForm]
+
 attribute [local instance] InnerProductSpace.complexToReal
 
 /-- **The complex Laplacian of the standard metric is half the Laplacian**: for `φ` of class `C²`
@@ -108,11 +127,8 @@ at `x`, `Δ_ω φ(x) = Δ φ(x) / 2`, where `Δ` is the Laplacian for the real i
 `Re ⟪·, ·⟫`. On `ℂⁿ` this is `Δ_ω φ = (1/2)·Σ_j (∂²φ/∂x_j² + ∂²φ/∂y_j²)`. -/
 theorem complexLaplacian_standardHermitianMetric (hφ : ContDiffAt ℝ 2 φ x) :
     complexLaplacian V (standardHermitianMetric V) φ x = Δ φ x / 2 := by
-  rw [compatible_standardHermitianMetric.complexLaplacian_eq_two_mul_sum
-    (contMDiffAt_iff_contDiffAt.2 hφ) (stdOrthonormalBasis ℂ V) fun i j ↦ by
-      simp [orthonormal_iff_ite.1 (stdOrthonormalBasis ℂ V).orthonormal]]
-  simp only [manifoldLeviForm_eq_leviForm]
-  rw [sum_re_leviForm_apply_self (stdOrthonormalBasis ℂ V)]
+  rw [complexLaplacian_standardHermitianMetric_eq_sum hφ (stdOrthonormalBasis ℂ V),
+    sum_re_leviForm_apply_self (stdOrthonormalBasis ℂ V)]
   ring
 
 end Laplacian

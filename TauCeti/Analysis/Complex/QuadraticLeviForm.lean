@@ -63,6 +63,8 @@ any dimension; the Morse indices are computed for finite-dimensional `V`, of com
 * `TauCeti.leviForm_norm_sq_comp_apply`, `TauCeti.leviForm_re_sq_comp_apply`: for a continuous
   complex linear `ℓ`, the Levi forms of `‖ℓ z‖ ^ 2` and of `(Re (ℓ z)) ^ 2` are `⟪ℓ v, ℓ w⟫_ℂ`
   and `⟪ℓ v, ℓ w⟫_ℂ / 2`.
+* `TauCeti.leviForm_norm_sq_proj_apply`, `TauCeti.leviForm_re_sq_proj_apply`: on `ℂ^ι`, the Levi
+  forms of `‖z i‖ ^ 2` and of `(Re (z i)) ^ 2` are `conj (v i) * w i` and `conj (v i) * w i / 2`.
 * `ContinuousLinearMap.hessianQuadraticForm_mul_norm_sq_add_re_apply_self`,
   `ContinuousLinearMap.leviForm_mul_norm_sq_add_re_apply_self`: the Hessian and the Levi form of
   `a ‖z‖ ^ 2 + Re (q z z)`; the Levi form is `a ⟪·, ·⟫`.
@@ -286,12 +288,24 @@ theorem leviForm_re_sq_comp_apply (ℓ : V →L[ℂ] ℂ) (x v w : V) :
       (1 / 2 : ℝ) * ‖w‖ ^ 2 + (∑ _ : Unit, (1 / 2 : ℂ) * ContinuousLinearMap.id ℂ ℂ w ^ 2).re := by
     funext w
     rw [Complex.sq_norm, normSq_apply]
-    simp only [Finset.univ_unique, Finset.sum_singleton, ContinuousLinearMap.id_apply, sq, mul_re]
-    norm_num
+    simp only [Finset.univ_unique, Finset.sum_singleton, ContinuousLinearMap.id_apply, sq, mul_re,
+      div_ofNat_re, div_ofNat_im, one_re, one_im]
     ring
   refine (leviForm_comp_apply (g := ℓ) hg ℓ.contDiff.contDiffAt v w).trans ?_
   rw [ℓ.fderiv, hre, leviForm_mul_norm_sq_add_re_sum_mul_sq]
   simp [div_eq_inv_mul]
+
+/-- On `ℂ^ι`, the Levi form of the squared modulus `z ↦ ‖z i‖ ^ 2` of a coordinate is
+`L(v, w) = conj (v i) * w i`. -/
+theorem leviForm_norm_sq_proj_apply {ι : Type*} [Fintype ι] (i : ι) (x v w : EuclideanSpace ℂ ι) :
+    leviForm (fun z : EuclideanSpace ℂ ι ↦ ‖z i‖ ^ 2) x v w = conj (v i) * w i := by
+  simpa [mul_comm] using leviForm_norm_sq_comp_apply (EuclideanSpace.proj (𝕜 := ℂ) i) x v w
+
+/-- On `ℂ^ι`, the Levi form of the squared real part `z ↦ (Re (z i)) ^ 2` of a coordinate is
+`L(v, w) = conj (v i) * w i / 2`. -/
+theorem leviForm_re_sq_proj_apply {ι : Type*} [Fintype ι] (i : ι) (x v w : EuclideanSpace ℂ ι) :
+    leviForm (fun z : EuclideanSpace ℂ ι ↦ (z i).re ^ 2) x v w = conj (v i) * w i / 2 := by
+  simpa [mul_comm] using leviForm_re_sq_comp_apply (EuclideanSpace.proj (𝕜 := ℂ) i) x v w
 
 end NormSq
 
