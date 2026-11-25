@@ -160,15 +160,6 @@ lemma isZero_relativeFreeYonedaSheaf {U V : C} (i : U ⟶ V) [IsIso i] :
     IsZero (relativeFreeYonedaSheaf J i) :=
   isZero_cokernel_of_epi _
 
-/-- If the free abelian sheaf on `U` is zero, for instance when the empty sieve covers `U`
-(`TauCeti.CategoryTheory.isZero_freeYonedaSheaf_of_bot_mem`), the projection `ℤ_V ⟶ ℤ_{V,U}` is an
-isomorphism. -/
-lemma isIso_cokernel_π_of_isZero {U V : C} (i : U ⟶ V)
-    (hU : IsZero ((freeYonedaSheafFunctor J).obj U)) :
-    IsIso (cokernel.π ((freeYonedaSheafFunctor J).map i)) := by
-  rw [← π_comp_cokernelIsoOfEq_inv (hU.eq_of_src _ 0)]
-  infer_instance
-
 section map
 
 variable {U' V' U V : C} (i' : U' ⟶ V') (i : U ⟶ V) (a : U' ⟶ U) (b : V' ⟶ V)
@@ -395,7 +386,7 @@ instance subsingleton_of_isIso [IsIso i] (n : ℕ) : Subsingleton (F.relativeH' 
 map `Hⁿ(V, U; F) ⟶ Hⁿ(V, F)` is bijective. -/
 theorem bijective_toH'_of_isZero (hU : IsZero ((freeYonedaSheafFunctor J).obj U)) (n : ℕ) :
     Function.Bijective (toH' F i n) := by
-  have := isIso_cokernel_π_of_isZero J i hU
+  have := cokernel.π_of_zero (hU.eq_of_src ((freeYonedaSheafFunctor J).map i) 0)
   have h : ⇑(toH' F i n) = (F.H'AddEquivExt n V).symm ∘
       TauCeti.extAddEquivOfIso (asIso (cokernel.π ((freeYonedaSheafFunctor J).map i))).symm
         (Iso.refl F) n := by
