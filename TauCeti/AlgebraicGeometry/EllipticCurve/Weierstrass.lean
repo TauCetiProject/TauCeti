@@ -155,6 +155,7 @@ theorem baseChange_c₆_ne_zero (hRA : Function.Injective (algebraMap R A)) (hc�
 /-- **Base change is transitive**: base changing along `R → A` and then along `A → B` is base
 changing along `R → B`, for a scalar tower `R → A → B`. Stated in the `baseChange` spelling, so
 it rewrites directly in goals phrased that way. -/
+@[simp]
 theorem baseChange_baseChange (B : Type*) [CommRing B] [Algebra R B] [Algebra A B]
     [IsScalarTower R A B] : (E.baseChange A).baseChange B = E.baseChange B :=
   E.map_baseChange (Algebra.ofId A B)
