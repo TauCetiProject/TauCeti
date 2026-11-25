@@ -48,6 +48,11 @@ For a smooth proper geometrically connected family of curves `f`:
 * the instance `CommGrpObj (picardComponent f 0)`: the group law of `Pic⁰_{X/S}`;
 * the instance `ModObj (picardComponent f 0) (picardComponent f d)`: the action on `Picᵈ_{X/S}`;
 * `TauCeti.AlgebraicGeometry.isTorsor_picardComponent`: `Picᵈ_{X/S}` is a `Pic⁰_{X/S}`-torsor;
+* the instance `TauCeti.AlgebraicGeometry.isIso_leftSMul_picardComponent`: the action is simply
+  transitive, so the difference morphism of pseudo-torsors
+  `TauCeti.ModObj.diff : Picᵈ_{X/S} ×_S Picᵈ_{X/S} ⟶ Pic⁰_{X/S}` applies; it sends `(L, M)` to
+  `M ⊗ L⁻¹` (`TauCeti.AlgebraicGeometry.picardComponentRepresentableBy_homEquiv_diff_val`), and
+  in degree zero to `M * L⁻¹` (`TauCeti.AlgebraicGeometry.lift_diff_picardComponent_zero`);
 * the instance `IsMonHom (picardComponentι f 0)` and
   `TauCeti.AlgebraicGeometry.smul_comp_picardComponentι`: `Pic⁰_{X/S}` is a subgroup scheme of the
   Picard scheme, acting on `Picᵈ_{X/S}` by the restricted group law.
@@ -300,7 +305,7 @@ theorem picardComponentRepresentableBy_homEquiv_smul_val {T : Over S}
 /-- **`Pic⁰_{X/S}` acts simply transitively on `Picᵈ_{X/S}`**: the morphism
 `(m, x) ↦ (m • x, x)` from `Pic⁰ ×_S Picᵈ` to `Picᵈ ×_S Picᵈ` is an isomorphism, since two
 classes of degree `d` differ by a unique class of degree zero. -/
-theorem isIso_leftSMul_picardComponent :
+instance isIso_leftSMul_picardComponent :
     IsIso (ModObj.leftSMul (picardComponent f 0) (picardComponent f d)) := by
   rw [ModObj.isIso_leftSMul_iff]
   intro T x y
@@ -340,6 +345,37 @@ theorem isTorsor_picardComponent :
 /-- The structure morphism of `Picᵈ_{X/S}` is surjective, as for every torsor. -/
 instance : Surjective (picardComponent f d).hom :=
   GroupScheme.surjective_of_isTorsor (isTorsor_picardComponent f d)
+
+/-! ### The difference morphism -/
+
+/-- The difference `ModObj.diff` of two sections `x`, `y` of `Picᵈ_{X/S}`, a section of
+`Pic⁰_{X/S}`, represents the difference of their classes: `δ(x, y)` is the class of `M ⊗ L⁻¹`
+when `x`, `y` are the classes of `L`, `M`. -/
+theorem picardComponentRepresentableBy_homEquiv_diff_val {T : Over S}
+    (x y : T ⟶ picardComponent f d) :
+    ((picardComponentRepresentableBy f 0).homEquiv
+        (lift x y ≫ ModObj.diff (picardComponent f 0) (picardComponent f d))).val =
+      ((picardComponentRepresentableBy f d).homEquiv y).val -
+        ((picardComponentRepresentableBy f d).homEquiv x).val :=
+  eq_sub_of_add_eq (by
+    rw [← picardComponentRepresentableBy_homEquiv_smul_val, ModObj.lift_diff_smul])
+
+/-- `Pic⁰_{X/S}` acts on itself by its group law. -/
+theorem picardComponentSMul_zero : picardComponentSMul f 0 = μ[picardComponent f 0] := by
+  refine (picardComponentRepresentableBy f 0).homEquiv.injective (Subtype.ext ?_)
+  -- Both sides represent the sum of the classes of the two projections.
+  have hsmul := picardComponentRepresentableBy_homEquiv_comp_smul_val f 0 (𝟙 _)
+  have hmul := picardComponentRepresentableBy_homEquiv_mul_val f
+    (fst (picardComponent f 0) (picardComponent f 0)) (snd _ _)
+  simp only [Category.id_comp] at hsmul
+  rw [Hom.mul_def, lift_fst_snd, Category.id_comp] at hmul
+  exact hsmul.trans hmul.symm
+
+/-- In degree zero the difference is computed by the group law: `δ(L, M) = M * L⁻¹`, so
+`Pic⁰_{X/S}` is the trivial torsor under itself, with the unit section as origin. -/
+theorem lift_diff_picardComponent_zero {T : Over S} (x y : T ⟶ picardComponent f 0) :
+    lift x y ≫ ModObj.diff (picardComponent f 0) (picardComponent f 0) = y * x⁻¹ :=
+  ModObj.lift_diff_eq_mul_inv (picardComponentSMul_zero f) x y
 
 /-! ### Compatibility with the Picard scheme -/
 

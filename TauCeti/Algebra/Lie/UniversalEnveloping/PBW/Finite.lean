@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Ordered
+public import TauCeti.Data.List.MonomialWord
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Basic
 public import TauCeti.LinearAlgebra.Multilinear.Span
 
@@ -42,65 +43,18 @@ section PowerProducts
 
 variable {A : Type x} [Semiring A] [Algebra R A]
 
-/-- The nondecreasing list in which `i` occurs `c i` times. -/
-private def repeatedIndices (n : ℕ) (c : Fin n → ℕ) : List (Fin n) :=
-  (List.finRange n).flatMap fun i ↦ List.replicate (c i) i
-
-private theorem repeatedIndices_pairwise (n : ℕ) (c : Fin n → ℕ) :
-    (repeatedIndices n c).Pairwise (· ≤ ·) := by
-  induction n with
-  | zero => simp [repeatedIndices]
-  | succ n ih =>
-      rw [repeatedIndices, List.finRange_succ, List.flatMap_cons]
-      simp only [List.flatMap_map]
-      rw [List.pairwise_append]
-      refine ⟨by simp, ?_, ?_⟩
-      · have h := (ih (fun i ↦ c i.succ)).map Fin.succ
-            (fun _ _ h ↦ Fin.succ_le_succ_iff.mpr h)
-        simpa [repeatedIndices, List.map_flatMap] using h
-      · simp
-
-private theorem count_repeatedIndices (n : ℕ) (c : Fin n → ℕ) (i : Fin n) :
-    (repeatedIndices n c).count i = c i := by
-  induction n with
-  | zero => exact Fin.elim0 i
-  | succ n ih =>
-      have hexpand : repeatedIndices (n + 1) c = List.replicate (c 0) 0 ++
-          (repeatedIndices n fun j ↦ c j.succ).map Fin.succ := by
-        rw [repeatedIndices, List.finRange_succ, List.flatMap_cons, repeatedIndices,
-          List.flatMap_map]
-        rw [List.map_flatMap]
-        simp
-      rw [hexpand, List.count_append]
-      by_cases hi : i = 0
-      · subst i
-        simp [List.count_eq_zero]
-      · obtain ⟨j, rfl⟩ := Fin.eq_succ_of_ne_zero hi
-        rw [List.count_map_of_injective _ Fin.succ (Fin.succ_injective n) j, ih]
-        simp [List.count_replicate, Ne.symm hi]
-
-private theorem eq_repeatedIndices {n : ℕ} {word : List (Fin n)}
-    (hword : word.Pairwise (· ≤ ·)) :
-    word = repeatedIndices n fun i ↦ word.count i := by
-  apply List.Perm.eq_of_pairwise' hword (repeatedIndices_pairwise n _)
-  rw [List.perm_iff_count]
-  exact fun i ↦ (count_repeatedIndices n (fun i ↦ word.count i) i).symm
-
-private theorem pbwMonomial_flatMap_replicate {n : ℕ} (e : Fin n → L)
-    (c : Fin n → ℕ) (l : List (Fin n)) :
-    pbwMonomial R L e (l.flatMap fun i ↦ List.replicate (c i) i) =
-      (l.map fun i ↦ _root_.UniversalEnvelopingAlgebra.ι R (e i) ^ c i).prod := by
-  induction l with
+/-- The ordered PBW monomial of the ordered monomial word of `c` is the ordered product
+`X₁^{c₁} ⋯ X_n^{c_n}` of generator powers. -/
+theorem pbwMonomial_monomialWord {n : ℕ} (e : Fin n → L) (c : Fin n → ℕ) :
+    pbwMonomial R L e (monomialWord c) =
+      ((List.finRange n).map fun i ↦
+        _root_.UniversalEnvelopingAlgebra.ι R (e i) ^ c i).prod := by
+  rw [monomialWord_def]
+  induction List.finRange n with
   | nil => simp
   | cons i l ih =>
       rw [List.flatMap_cons, pbwMonomial_append, List.map_cons, List.prod_cons, ih]
       simp [pbwMonomial_def]
-
-private theorem pbwMonomial_repeatedIndices (n : ℕ) (e : Fin n → L) (c : Fin n → ℕ) :
-    pbwMonomial R L e (repeatedIndices n c) =
-      ((List.finRange n).map fun i ↦
-        _root_.UniversalEnvelopingAlgebra.ι R (e i) ^ c i).prod := by
-  exact pbwMonomial_flatMap_replicate R L e c _
 
 /-- Ordered products of generator powers span every surjective image of an enveloping algebra.
 Only a spanning family of the Lie algebra and a compatible scalar action on the target are
@@ -121,8 +75,8 @@ theorem span_range_orderedPowerProducts_eq_top (S : Type w) [Semiring S] [Module
     obtain ⟨k, hak⟩ := Set.mem_iUnion.mp ha
     obtain ⟨word, hword, -, rfl⟩ := (mem_orderedPBWMonomials_iff R L e).mp hak
     rw [SetLike.mem_coe, Submodule.mem_comap, AlgHom.coe_toLinearMap,
-      Submodule.restrictScalars_mem, eq_repeatedIndices hword,
-      pbwMonomial_repeatedIndices, map_list_prod]
+      Submodule.restrictScalars_mem, ← monomialWord_count hword,
+      pbwMonomial_monomialWord, map_list_prod]
     simp only [List.map_map, Function.comp_def, map_pow]
     exact Submodule.subset_span ⟨_, rfl⟩
   rw [span_iUnion_orderedPBWMonomials_eq_top R L e he] at hle

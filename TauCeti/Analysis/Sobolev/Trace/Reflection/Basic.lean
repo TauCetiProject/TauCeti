@@ -13,6 +13,7 @@ public import TauCeti.Analysis.SpecialFunctions.LinearCutoff
 import TauCeti.Analysis.Sobolev.WeakDeriv.MeasurePreserving
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Measure.Restrict
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
@@ -129,6 +130,15 @@ theorem normalLinearReflection_normalLinearReflection (x : WithLp 2 (ℝ × E)) 
 theorem normalLinearReflection_symm : (normalLinearReflection E).symm = normalLinearReflection E :=
   Submodule.reflection_symm
 
+/-- The linear normal reflection, as a continuous linear map, is an involution. Not `@[simp]`: the
+simp normal form of the left-hand side is the coercion of `ContinuousLinearEquiv.trans`. -/
+theorem normalLinearReflection_comp_normalLinearReflection :
+    (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) ∘L
+      (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) =
+      ContinuousLinearMap.id ℝ _ := by
+  ext x
+  exact normalLinearReflection_normalLinearReflection x
+
 /-- The linear normal reflection is self-adjoint. -/
 theorem inner_normalLinearReflection_left_eq_right (x y : WithLp 2 (ℝ × E)) :
     inner ℝ (normalLinearReflection E x) y = inner ℝ x (normalLinearReflection E y) := by
@@ -207,6 +217,14 @@ theorem normalReflection_mem_normalHalfSpace_iff (a : ℝ) (x : WithLp 2 (ℝ ×
     normalReflection E a x ∈ normalHalfSpace (E := E) a ↔ x.fst < a := by
   simp only [mem_normalHalfSpace, normalReflection_apply, WithLp.toLp_fst]
   constructor <;> intro h <;> linarith
+
+/-- The normal reflection in `{a} × E` maps the half-space `TauCeti.normalHalfSpace a` off
+itself. -/
+theorem normalReflection_notMem_normalHalfSpace {a : ℝ} {x : WithLp 2 (ℝ × E)}
+    (hx : x ∈ normalHalfSpace (E := E) a) :
+    normalReflection E a x ∉ normalHalfSpace (E := E) a := by
+  rw [normalReflection_mem_normalHalfSpace_iff]
+  exact ((mem_normalHalfSpace a x).1 hx).not_gt
 
 /-- The normal reflection in `{a} × E` is its linear part `TauCeti.normalLinearReflection`
 followed by the translation by `(2a, 0)`. -/
@@ -305,6 +323,16 @@ theorem measurePreserving_normalReflection (a : ℝ) :
   exact (measurePreserving_add_right (volume : Measure (WithLp 2 (ℝ × E)))
     (WithLp.toLp 2 (2 * a, 0))).comp (normalLinearReflection E).measurePreserving
 
+/-- The reflection `ρ` in `{a} × E` preserves volume, restricted to the whole space. -/
+theorem measurePreserving_normalReflection_top (a : ℝ) :
+    MeasurePreserving (normalReflection E a)
+      ((volume : Measure (WithLp 2 (ℝ × E))).restrict ((⊤ : Opens (WithLp 2 (ℝ × E))) :
+        Set (WithLp 2 (ℝ × E))))
+      ((volume : Measure (WithLp 2 (ℝ × E))).restrict ((⊤ : Opens (WithLp 2 (ℝ × E))) :
+        Set (WithLp 2 (ℝ × E)))) := by
+  rw [Measure.restrict_coe_opens_top]
+  exact measurePreserving_normalReflection a
+
 /-- Change of variables by the normal reflection: integrals against Lebesgue measure are
 invariant under it. -/
 theorem integral_comp_normalReflection (a : ℝ) {F : Type*} [NormedAddCommGroup F]
@@ -343,7 +371,7 @@ private theorem indicator_ae_eq_add_indicator_comp_normalReflection {a : ℝ}
       rw [indicator_of_mem hxU, indicator_of_notMem h1, indicator_of_mem h2, hg x hxU, zero_add]
     · have h1 : x ∈ U ∩ H := ⟨hxU, (mem_normalHalfSpace a x).2 hgt⟩
       have h2 : normalReflection E a x ∉ U ∩ H := fun h =>
-        absurd ((normalReflection_mem_normalHalfSpace_iff a x).1 h.2) (not_lt.2 hgt.le)
+        normalReflection_notMem_normalHalfSpace h1.2 h.2
       rw [indicator_of_mem hxU, indicator_of_mem h1, indicator_of_notMem h2, add_zero]
   · have h1 : x ∉ U ∩ H := fun h => hxU h.1
     have h2 : normalReflection E a x ∉ U ∩ H := fun h => hxU (hρU.1 h.1)

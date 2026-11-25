@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Completion
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.PartialIsometry
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.IdempotentRange
@@ -46,9 +47,12 @@ depends continuously, and over `ℝ` or `ℂ` real-smoothly, on `κ`.
 * `ContinuousLinearMap.gramLeftInverse`: the left inverse `(A† A)⁻¹ A†`
   (`ContinuousLinearMap.gramLeftInverse_def`) of `A` when `A† A` is invertible
   (`ContinuousLinearMap.gramLeftInverse_comp_self`,
-  `ContinuousLinearMap.gramLeftInverse_apply_apply`), with
-  `ContinuousLinearMap.continuousAt_gramLeftInverse` and
-  `ContinuousLinearMap.contDiffAt_gramLeftInverse`.
+  `ContinuousLinearMap.gramLeftInverse_apply_apply`), vanishing outside the open set of operators
+  with invertible Gram operator (`ContinuousLinearMap.gramLeftInverse_of_not_isUnit`,
+  `ContinuousLinearMap.isOpen_setOf_isUnit_adjoint_comp_self`), with
+  `ContinuousLinearMap.continuousAt_gramLeftInverse`,
+  `ContinuousLinearMap.contDiffAt_gramLeftInverse`, and Borel measurability
+  `ContinuousLinearMap.measurable_gramLeftInverse`.
 * `ContinuousLinearMap.gramProjection`: the projection `κ (A† A)⁻¹ A† ι`
   (`ContinuousLinearMap.gramProjection_def`) onto the range of `κ` along its `ι`-orthogonal
   complement (`ContinuousLinearMap.gramProjection_apply_apply`,
@@ -159,6 +163,37 @@ theorem contDiffAt_gramLeftInverse
   exact (((compL 𝕜 V F F).bilinearRestrictScalars ℝ).contDiff.contDiffAt.comp A
     (hi.comp (f := fun B : F →L[𝕜] V ↦ adjoint B ∘L B) A hgram.contDiffAt)).clm_apply
       ha.contDiffAt
+
+/-- Outside the invertible-Gram locus, `gramLeftInverse A` vanishes. -/
+theorem gramLeftInverse_of_not_isUnit {A : F →L[𝕜] V} (hA : ¬ IsUnit (adjoint A ∘L A)) :
+    gramLeftInverse A = 0 := by
+  rw [gramLeftInverse_def, Ring.inverse_non_unit _ hA, zero_comp]
+
+/-- Operators `A : F →L[𝕜] V` between Hilbert spaces with invertible Gram operator `A† A` form an
+open set. -/
+theorem isOpen_setOf_isUnit_adjoint_comp_self :
+    IsOpen {A : F →L[𝕜] V | IsUnit (adjoint A ∘L A)} := by
+  have ha : Continuous (adjoint : (F →L[𝕜] V) → V →L[𝕜] F) := adjoint.continuous
+  exact Units.isOpen.preimage (ha.clm_comp continuous_id')
+
+/-- The Gram left inverse `A ↦ (A† A)⁻¹ A†` between Hilbert spaces is Borel measurable, being
+continuous on the open set `{A | IsUnit (A† A)}` and `0` outside. -/
+@[fun_prop]
+theorem measurable_gramLeftInverse
+    [MeasurableSpace (F →L[𝕜] V)] [OpensMeasurableSpace (F →L[𝕜] V)]
+    [MeasurableSpace (V →L[𝕜] F)] [BorelSpace (V →L[𝕜] F)] :
+    Measurable (gramLeftInverse : (F →L[𝕜] V) → V →L[𝕜] F) := by
+  classical
+  let U : Set (F →L[𝕜] V) := {A | IsUnit (adjoint A ∘L A)}
+  have hcont : ContinuousOn (gramLeftInverse : (F →L[𝕜] V) → V →L[𝕜] F) U :=
+    fun _ hA => (continuousAt_gramLeftInverse hA).continuousWithinAt
+  have heq : (gramLeftInverse : (F →L[𝕜] V) → V →L[𝕜] F) = U.piecewise gramLeftInverse 0 :=
+    funext fun A => by
+      by_cases hA : A ∈ U
+      · exact (Set.piecewise_eq_of_mem _ _ _ hA).symm
+      · rw [Set.piecewise_eq_of_notMem _ _ _ hA, Pi.zero_apply, gramLeftInverse_of_not_isUnit hA]
+  exact heq ▸ hcont.measurable_piecewise continuousOn_const
+    isOpen_setOf_isUnit_adjoint_comp_self.measurableSet
 
 /-- If `B† B G B† = B†`, the orthogonal projection onto the range of `B` is `B G B†`. -/
 theorem starProjection_range_eq_comp_comp_adjoint {B : F →L[𝕜] V}

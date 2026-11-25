@@ -63,7 +63,8 @@ private theorem hittingAfter_Ioi_ae_eq_Ici_of_pos {Ω : Type*} {mΩ : Measurable
     have hST : {ω | τ₂ ω ≤ t} ⊆ {ω | τ₁ ω ≤ t} :=
       fun ω hω ↦ (hittingAfter_apply_anti W 0 ω Ioi_subset_Ici_self).trans hω
     have hτ₁ : {ω | τ₁ ω ≤ t} = {ω | ∃ s ≤ t, a ≤ W s ω} := by
-      ext ω; simp only [τ₁, mem_ofPred_eq]; rw [isClosed_Ici.hittingAfter_le_iff (hWc ω)]; simp
+      ext ω; simp only [τ₁, mem_ofPred_eq]
+      rw [isClosed_Ici.hittingAfter_le_iff_of_isRightContinuous (hWc ω).isRightContinuous]; simp
     have hle : P {ω | τ₁ ω ≤ t} ≤ P {ω | τ₂ ω ≤ t} := by
       rw [hτ₁, hW.measure_exists_le_ge t ha,
         hW.toIsPreBrownianReal.measure_eval_ge_eq_measure_eval_gt (.inr ha.ne'),
@@ -160,7 +161,9 @@ private theorem measure_hittingAfter_singleton_le_of_lt (hB : IsBrownianReal B P
     rw [hittingAfter_comp (f := (x + ·)), preimage_const_add_Ici]
     exact hWB.symm.hittingAfter_ae_eq _ 0
   rw [measure_congr (t := {ω | ∃ s ≤ t, a - x ≤ W s ω}) (eventuallyEqSet_iff.mpr (hτ.mono
-      fun ω hω ↦ by simp only [mem_ofPred_eq, hω]; rw [isClosed_Ici.hittingAfter_le_iff (hWc ω)]
+      fun ω hω ↦ by simp only [mem_ofPred_eq, hω]
+                    rw [isClosed_Ici.hittingAfter_le_iff_of_isRightContinuous
+                      (hWc ω).isRightContinuous]
                     simp)), hW.measure_exists_le_ge t hsub,
     measure_congr (s := {ω | a - x ≤ W t ω}) (t := {ω | |a - x| ≤ B t ω}) (eventuallyEqSet_iff.mpr
       ((hWB.ae_eq_eval t).mono fun _ hω ↦ by simp only [mem_ofPred_eq, hω, abs_of_pos hsub]))]

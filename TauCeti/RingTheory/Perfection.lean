@@ -27,6 +27,8 @@ terms is, since the inverses of its terms are again compatible.
 
 * `Perfection.coeffMonoidHom_surjective`: if `x ↦ x ^ p` is surjective on `M`, so is every
   coordinate map `Perfection.coeffMonoidHom M p n`.
+* `Perfection.coeffMonoidHom_eq_coeffMonoidHom_zero_of_isIdempotentElem`: all coordinates of an
+  idempotent of `Perfection M p` agree.
 * `Perfection.isLocalHom_coeffMonoidHom`, `Perfection.isLocalHom_coeff`,
   `PreTilt.isLocalHom_coeff`: an element of a perfection, or of a tilt, is a unit as soon as one
   of its coordinates is.
@@ -34,10 +36,16 @@ terms is, since the inverses of its terms are again compatible.
   `φ` at the `p ^ n`-th roots of `x`.
 * `Perfection.coeff_eq_zero_iff`: in the perfection of a reduced ring of characteristic `p`, an
   element vanishes as soon as one of its coordinates does.
+* `ModP.mk_bijective`: in characteristic `p`, reduction `O → O ⧸ p` is bijective.
+* `ModP.isReduced`: in characteristic `p`, `O ⧸ p` is reduced when `O` is.
 * `PreTilt.ext`, `PreTilt.coeff_equivPerfection`, `PreTilt.coeff_equivPerfection_symm`: coordinate
   extensionality and coordinate formulas for `PreTilt.equivPerfection`.
 * `PreTilt.coeff_eq_zero_iff`: in `PreTilt O p`, each coordinate detects zero when `O ⧸ p` is
   reduced.
+* `PreTilt.coeff_injective`: when `O ⧸ p` is reduced, every coordinate of `PreTilt O p` is
+  injective.
+* `PreTilt.coeff_eq_coeff_zero_of_isIdempotentElem`: all coordinates of an idempotent of
+  `PreTilt O p` agree.
 * `TauCeti.pow_pow_of_succ_pow_eq`: in a compatible root sequence, `t (j + k)` is a `p ^ k`-th
   root of `t j`.
 * `TauCeti.dvd_of_compatible_roots`: in a compatible root sequence, later roots divide earlier ones.
@@ -64,6 +72,19 @@ theorem coeffMonoidHom_surjective (h : Function.Surjective fun x : M ↦ x ^ p) 
   rw [zero_add] at hf
   exact hf.trans (coeffMonoidHom_mk _ _ 0)
 
+/-- **The coordinates of an idempotent of a perfection are all equal.** Every coordinate of an
+idempotent `e` of `Perfection M p` equals its zeroth coordinate. -/
+theorem coeffMonoidHom_eq_coeffMonoidHom_zero_of_isIdempotentElem {e : Perfection M p}
+    (he : IsIdempotentElem e) (n : ℕ) : coeffMonoidHom M p n e = coeffMonoidHom M p 0 e := by
+  -- each coordinate is an idempotent, hence its own `p`-th power, and `eₙ₊₁ ^ p = eₙ`
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    rw [← ih, ← coeffMonoidHom_pow_p' e n]
+    rcases eq_or_ne p 0 with rfl | hp
+    · -- for `p = 0` every coordinate is `x ^ 0 = 1`
+      rw [pow_zero, ← coeffMonoidHom_pow_p' e (n + 1), pow_zero]
+    · exact ((he.map (coeffMonoidHom M p (n + 1))).pow_eq hp).symm
 /-- **An element of the perfection is a unit as soon as one of its coordinates is.** Every
 coordinate of `x` is a `p`-power root of its zeroth coordinate, hence a unit, and the inverses of
 the coordinates form a compatible system, which is the inverse of `x`. -/
@@ -123,6 +144,24 @@ instance isLocalHom_coeff {R : Type*} [CommSemiring R] [Fact p.Prime] [CharP R p
 
 end Perfection
 
+namespace ModP
+
+variable {O : Type*} [CommRing O] {p : ℕ} [CharP O p]
+
+/-- **In characteristic `p`, reduction modulo `p` is bijective**, since `p = 0` and so
+`O ⧸ p = O ⧸ ⊥`. -/
+theorem mk_bijective : Function.Bijective (Ideal.Quotient.mk (Ideal.span {(p : O)})) :=
+  (Ideal.Quotient.mk_bijective_iff_eq_bot _).mpr (by simp)
+
+/-- **In characteristic `p`, `O ⧸ p` is reduced when `O` is**, since reduction modulo `p` is an
+isomorphism `O ≃+* O ⧸ p`. -/
+instance isReduced [IsReduced O] : IsReduced (ModP O p) :=
+  isReduced_of_injective
+    (RingEquiv.ofBijective _ mk_bijective).symm
+    (RingEquiv.injective _)
+
+end ModP
+
 namespace PreTilt
 
 variable {O : Type*} [CommRing O] {p : ℕ} [Fact p.Prime] [Fact ¬IsUnit (p : O)]
@@ -158,6 +197,19 @@ theorem coeff_eq_zero_iff [IsReduced (ModP O p)] (n : ℕ) {f : PreTilt O p} :
   -- `PreTilt O p` is by definition `Perfection (ModP O p) p`, with `coeff` its coordinate maps
   Perfection.coeff_eq_zero_iff (R := ModP O p) n
 
+/-- **If `O ⧸ p` is reduced, the coordinates of the tilt are injective.** Every coordinate map
+`PreTilt O p → O ⧸ p` is injective; this applies for instance to a reduced ring `O` of
+characteristic `p`, through `ModP.isReduced`. -/
+theorem coeff_injective [IsReduced (ModP O p)] (n : ℕ) :
+    Function.Injective (coeff (O := O) (p := p) n) :=
+  (injective_iff_map_eq_zero _).mpr fun _ ↦ (coeff_eq_zero_iff n).mp
+
+/-- **The coordinates of an idempotent of the tilt are all equal.** Every coordinate of an
+idempotent `e` of `PreTilt O p` equals its zeroth coordinate. -/
+theorem coeff_eq_coeff_zero_of_isIdempotentElem {e : PreTilt O p} (he : IsIdempotentElem e)
+    (n : ℕ) : coeff n e = coeff 0 e :=
+  -- `PreTilt O p` is by definition `Perfection (ModP O p) p`, with `coeff` its coordinate maps
+  Perfection.coeffMonoidHom_eq_coeffMonoidHom_zero_of_isIdempotentElem (M := ModP O p) he n
 /-- **An element of the tilt is a unit as soon as one of its coordinates in `O ⧸ p` is.** -/
 instance isLocalHom_coeff (n : ℕ) : IsLocalHom (coeff (O := O) (p := p) n) :=
   ⟨fun x hx ↦ (isUnit_map_iff equivPerfection x).mp <|

@@ -14,6 +14,8 @@ import TauCeti.RepresentationTheory.FDRep.Basic
 -- Non-public: irreducibility transports along an equivariant linear equivalence, used to move an
 -- irreducible representation onto a coordinate space.
 import TauCeti.RepresentationTheory.Irreducible
+-- Non-public: a linear character is the character of its line `Representation.ofLinearCharacter`.
+import TauCeti.RepresentationTheory.LinearCharacter.Basic
 
 /-!
 # The character table of a finite group
@@ -53,7 +55,8 @@ take their familiar Hermitian form, because inversion conjugates character value
 
 * `TauCeti.card_irreducibleCharacters`: **`G` has as many irreducible characters as conjugacy
   classes**, so the table is square; `TauCeti.character_mem_irreducibleCharacters` is the statement
-  that no irreducible character is missing from it.
+  that no irreducible character is missing from it, and `MonoidHom.coe_mem_irreducibleCharacters`
+  puts every linear character `G →* kˣ` in it.
 * `TauCeti.characterTable_apply`: the entries of the table are the irreducible character values.
 * `TauCeti.card_inv_mul_sum_characterTable_mul_characterTable_inv` and
   `TauCeti.card_inv_mul_sum_characterTable_mul_conj`: **first (row) orthogonality**, over `k` and in
@@ -158,6 +161,14 @@ theorem _root_.FDRep.character_mem_irreducibleCharacters (X : FDRep k G)
   have := FDRep.isIrreducible_of_simple X
   TauCeti.character_mem_irreducibleCharacters X.ρ
 
+/-- **A linear character is an irreducible character**: `g ↦ χ g`, read in `k`, is the character
+of the line `Representation.ofLinearCharacter χ`. -/
+@[simp]
+theorem _root_.MonoidHom.coe_mem_irreducibleCharacters (χ : G →* kˣ) :
+    (fun g => (χ g : k)) ∈ irreducibleCharacters k G := by
+  rw [← funext (Representation.char_ofLinearCharacter χ)]
+  exact character_mem_irreducibleCharacters _
+
 /-- **The trivial character is irreducible**: the constant function `1` is the character of the
 trivial one-dimensional representation. -/
 theorem one_mem_irreducibleCharacters : (fun _ : G => (1 : k)) ∈ irreducibleCharacters k G := by
@@ -244,6 +255,14 @@ theorem exists_irreducibleCharacter_eq {f : G → k} (hf : f ∈ irreducibleChar
     ∃ i, irreducibleCharacter k i = f :=
   ⟨(finEquivIrreducibleCharacters k G).symm ⟨f, hf⟩,
     congrArg Subtype.val ((finEquivIrreducibleCharacters k G).apply_symm_apply ⟨f, hf⟩)⟩
+
+variable {k} in
+/-- The enumerated irreducible characters exhaust the irreducible characters. -/
+theorem range_irreducibleCharacter :
+    Set.range (irreducibleCharacter (G := G) k) = irreducibleCharacters k G := by
+  ext f
+  exact ⟨by rintro ⟨i, rfl⟩; exact irreducibleCharacter_mem k i,
+    fun hf => exists_irreducibleCharacter_eq k hf⟩
 
 variable (G) in
 /-- **The trivial character is a row of the character table**: some enumerated irreducible

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.Basic
 import TauCeti.MeasureTheory.Function.AreaFormula.Lipschitz
+import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
 # Bi-Lipschitz parametrizations of rectifiable sets
@@ -14,13 +15,7 @@ import TauCeti.MeasureTheory.Function.AreaFormula.Lipschitz
 In finite-dimensional real inner product spaces, countable rectifiability is equivalent to
 coverage, up to normalized Hausdorff measure zero, by countably many bi-Lipschitz patches
 with Borel domains. No measurability or local finiteness of the rectifiable set is assumed.
-The patches may extend beyond the set, as in `CountablyRectifiable` itself; when the set is
-`μHE[k]`-null-measurable, intersecting with a Borel kernel refines the patches to lie inside the
-set (`TauCeti.CountablyRectifiable.exists_bilipschitz_subset_cover`). Consequently, any property
-holding `μHE[k]`-a.e. on every bi-Lipschitz Borel patch inside `s` holds `μHE[k]`-a.e. on `s`
-(`TauCeti.CountablyRectifiable.ae_of_forall_bilipschitz_patch`), and any function that is
-a.e. measurable on every such patch is `(μHE[k].restrict s)`-a.e. measurable
-(`TauCeti.CountablyRectifiable.aemeasurable_of_forall_bilipschitz_patch`).
+The patches may extend beyond the set, as in `CountablyRectifiable` itself.
 
 The construction starts from a cover by countably many Lipschitz maps defined on all of
 `EuclideanSpace ℝ (Fin k)` (`TauCeti.CountablyRectifiable.exists_lipschitzWith_cover`).
@@ -30,6 +25,16 @@ decomposed on its regular points using `LipschitzWith.exists_bilipschitz_cover`.
 The discarded image is null by
 `LipschitzWith.euclideanHausdorffMeasure_image_compl_setOf_regular`, which combines Rademacher's
 theorem and the zero-Jacobian image theorem.
+
+When `s` is `μHE[k]`-null-measurable,
+`CountablyRectifiable.exists_disjoint_measurable_bilipschitz_cover` refines the cover to pairwise
+disjoint Borel bi-Lipschitz images inside `s`, yielding patch-reduction principles for
+almost-everywhere properties (`TauCeti.CountablyRectifiable.ae_of_forall_bilipschitz_patch`) and
+almost-everywhere measurability
+(`TauCeti.CountablyRectifiable.aemeasurable_of_forall_bilipschitz_patch`); for
+`LocallyLipschitzOn s g` into a finite-dimensional real normed space,
+`LocallyLipschitzOn.exists_disjoint_measurable_bilipschitz_extension_cover` further refines the
+patches so that `g` agrees on each patch with a globally Lipschitz map.
 
 ## References
 
@@ -96,62 +101,6 @@ theorem CountablyRectifiable.exists_bilipschitz_cover {k : ℕ} {s : Set V}
           exact ⟨x, hFg n x⟩)).trans
         (Filter.EventuallySubset.countable_iUnion hcover))
 
-/-- A `μHE[k]`-null-measurable countably `k`-rectifiable set admits countably many bi-Lipschitz
-Borel patches contained in the set itself (`f n '' A n ⊆ s`) covering it up to `μHE[k]`-measure
-zero. -/
-theorem CountablyRectifiable.exists_bilipschitz_subset_cover {k : ℕ} {s : Set V}
-    (hs : CountablyRectifiable k s) (hsm : NullMeasurableSet s μHE[k]) :
-    ∃ (A : ℕ → Set (EuclideanSpace ℝ (Fin k))) (f : ℕ → EuclideanSpace ℝ (Fin k) → V),
-      (∀ n, MeasurableSet (A n)) ∧ (∀ n, f n '' A n ⊆ s) ∧
-      (∀ n, ∃ K L : ℝ≥0,
-        LipschitzWith K (f n) ∧ AntilipschitzWith L ((A n).domRestrict (f n))) ∧
-      μHE[k] (s \ ⋃ n, f n '' A n) = 0 := by
-  obtain ⟨s₀, hs₀s, hs₀m, hs₀ae⟩ := hsm.exists_measurable_subset_ae_eq
-  obtain ⟨A, f, hAm, hbi, hcover⟩ := (hs.congr hs₀ae.symm).exists_bilipschitz_cover
-  choose K L hLip hAnti using hbi
-  refine ⟨fun n => A n ∩ f n ⁻¹' s₀, f,
-    fun n => (hAm n).inter (hs₀m.preimage (hLip n).continuous.measurable),
-    fun n => image_subset_iff.2 fun _ hx => hs₀s hx.2,
-    fun n => ⟨K n, L n, hLip n, fun x y => hAnti n ⟨x, x.property.1⟩ ⟨y, y.property.1⟩⟩, ?_⟩
-  refine measure_mono_null (fun y ⟨hys, hyU⟩ => ?_)
-    (measure_union_null (ae_eq_set.1 hs₀ae.symm).1 hcover)
-  by_cases hys₀ : y ∈ s₀
-  · refine Or.inr ⟨hys₀, fun hyA => ?_⟩
-    obtain ⟨n, x, hx, rfl⟩ := mem_iUnion.1 hyA
-    exact hyU (mem_iUnion.2 ⟨n, x, ⟨hx, hys₀⟩, rfl⟩)
-  · exact Or.inl ⟨hys, hys₀⟩
-
-/-- If a predicate holds `μHE[k]`-almost everywhere on every bi-Lipschitz Borel patch
-`f '' A ⊆ s`, then it holds `μHE[k]`-almost everywhere on the null-measurable countably
-`k`-rectifiable set `s`. -/
-theorem CountablyRectifiable.ae_of_forall_bilipschitz_patch {k : ℕ} {s : Set V} {p : V → Prop}
-    (hs : CountablyRectifiable k s) (hsm : NullMeasurableSet s μHE[k])
-    (hp : ∀ {A : Set (EuclideanSpace ℝ (Fin k))} {f : EuclideanSpace ℝ (Fin k) → V} {K L : ℝ≥0},
-      MeasurableSet A → f '' A ⊆ s → LipschitzWith K f → AntilipschitzWith L (A.domRestrict f) →
-      ∀ᵐ y ∂μHE[k], y ∈ f '' A → p y) :
-    ∀ᵐ x ∂μHE[k], x ∈ s → p x := by
-  obtain ⟨A, f, hAm, hAsub, hbi, hcov⟩ := hs.exists_bilipschitz_subset_cover hsm
-  choose K L hLip hAnti using hbi
-  filter_upwards [measure_eq_zero_iff_ae_notMem.1 hcov,
-    ae_all_iff.2 fun n => hp (hAm n) (hAsub n) (hLip n) (hAnti n)] with x hcovx hpx hxs
-  obtain ⟨n, hxn⟩ := mem_iUnion.1 (not_not.1 fun h => hcovx ⟨hxs, h⟩)
-  exact hpx n hxn
-
-/-- If a map `g : V → α` is `(μHE[k].restrict (f '' A))`-a.e. measurable on every bi-Lipschitz
-Borel patch `f '' A ⊆ s`, then `g` is `(μHE[k].restrict s)`-a.e. measurable on the null-measurable
-countably `k`-rectifiable set `s`. -/
-theorem CountablyRectifiable.aemeasurable_of_forall_bilipschitz_patch
-    {α : Type*} [MeasurableSpace α] {k : ℕ} {s : Set V} {g : V → α}
-    (hs : CountablyRectifiable k s) (hsm : NullMeasurableSet s μHE[k])
-    (hg : ∀ {A : Set (EuclideanSpace ℝ (Fin k))} {f : EuclideanSpace ℝ (Fin k) → V} {K L : ℝ≥0},
-      MeasurableSet A → f '' A ⊆ s → LipschitzWith K f → AntilipschitzWith L (A.domRestrict f) →
-      AEMeasurable g (μHE[k].restrict (f '' A))) :
-    AEMeasurable g (μHE[k].restrict s) := by
-  obtain ⟨A, f, hAm, hAsub, hbi, hcov⟩ := hs.exists_bilipschitz_subset_cover hsm
-  choose K L hLip hAnti using hbi
-  exact (AEMeasurable.iUnion fun n => hg (hAm n) (hAsub n) (hLip n) (hAnti n)).mono_measure
-    (Measure.restrict_mono_ae (ae_subset.mpr hcov))
-
 /-- Countable rectifiability in a finite-dimensional Euclidean target is equivalent to
 coverage up to a null set by bi-Lipschitz patches with Borel domains and parametrizations
 that are Lipschitz on the whole parameter space. -/
@@ -169,4 +118,108 @@ theorem countablyRectifiable_iff_exists_bilipschitz_cover {k : ℕ} {s : Set V} 
     ⟨A, fun n ↦ (A n).domRestrict (f n), fun n ↦ ⟨K n, (hLip n).restrict _⟩,
       by simpa only [range_domRestrict] using hnull⟩
 
+/-- **Disjoint Borel bi-Lipschitz patch decomposition** up to a `μHE[k]`-null set. -/
+theorem CountablyRectifiable.exists_disjoint_measurable_bilipschitz_cover {k : ℕ} {s : Set V}
+    (hs : CountablyRectifiable k s) (hsm : NullMeasurableSet s μHE[k]) :
+    ∃ (B : ℕ → Set (EuclideanSpace ℝ (Fin k))) (f : ℕ → EuclideanSpace ℝ (Fin k) → V)
+      (K_f L_f : ℕ → ℝ≥0), (∀ n, MeasurableSet (B n)) ∧ (∀ n, MeasurableSet (f n '' B n)) ∧
+      (∀ n, LipschitzWith (K_f n) (f n) ∧ AntilipschitzWith (L_f n) ((B n).domRestrict (f n))) ∧
+      Pairwise (Disjoint on fun n ↦ f n '' B n) ∧ (∀ n, f n '' B n ⊆ s) ∧
+      (⋃ n, f n '' B n : Set V) =ᵐ[μHE[k]] s := by
+  classical
+  obtain ⟨s₀, hs₀_sub, hs₀m, hs₀_ae⟩ := hsm.exists_measurable_subset_ae_eq
+  obtain ⟨A, f, hAm, hbi, hc⟩ := hs.exists_bilipschitz_cover; choose K_f L_f hLip hAnti using hbi
+  let S (n : ℕ) : Set V := (f n '' A n) ∩ s₀
+  have hSm (n : ℕ) := ((hAm n).image_of_continuousOn_injOn (hLip n).continuous.continuousOn
+    (injOn_iff_injective.mpr (hAnti n).injective)).inter hs₀m
+  let B (n : ℕ) := A n ∩ (f n) ⁻¹' disjointed S n
+  have hBm (n : ℕ) := (hAm n).inter ((MeasurableSet.disjointed hSm n).preimage
+    (hLip n).continuous.measurable)
+  have himg (n : ℕ) : f n '' B n = disjointed S n := (image_inter_preimage _ _ _).trans <|
+    inter_eq_self_of_subset_right ((disjointed_subset S n).trans inter_subset_left)
+  have hUnion : (⋃ n, f n '' B n) = (⋃ n, f n '' A n) ∩ s₀ := by
+    simp_rw [himg]; rw [iUnion_disjointed, ← iUnion_inter]
+  have hsub_s : (⋃ n, f n '' B n) ⊆ s := hUnion ▸ inter_subset_right.trans hs₀_sub
+  refine ⟨B, f, K_f, L_f, hBm, fun n ↦ (himg n).symm ▸ MeasurableSet.disjointed hSm n,
+    fun n ↦ ⟨hLip n, fun u v ↦ (hAnti n) ⟨u, u.property.1⟩ ⟨v, v.property.1⟩⟩,
+    fun m n hmn ↦ by simpa only [Function.onFun, himg] using disjoint_disjointed S hmn,
+    fun n ↦ (subset_iUnion (fun m ↦ f m '' B m) n).trans hsub_s, ?_⟩
+  refine Filter.EventuallySubset.antisymm (Filter.Eventually.of_forall fun _ hx ↦ hsub_s hx) ?_
+  simpa only [inter_self, hUnion] using (ae_subset.mpr hc).inter hs₀_ae.symm.subset
+
+/-- If a predicate holds `μHE[k]`-almost everywhere on every bi-Lipschitz Borel patch
+`f '' B ⊆ s`, then it holds `μHE[k]`-almost everywhere on the null-measurable countably
+`k`-rectifiable set `s`. -/
+theorem CountablyRectifiable.ae_of_forall_bilipschitz_patch {k : ℕ} {s : Set V} {p : V → Prop}
+    (hs : CountablyRectifiable k s) (hsm : NullMeasurableSet s μHE[k])
+    (hp : ∀ {B : Set (EuclideanSpace ℝ (Fin k))} {f : EuclideanSpace ℝ (Fin k) → V} {K L : ℝ≥0},
+      MeasurableSet B → f '' B ⊆ s → LipschitzWith K f → AntilipschitzWith L (B.domRestrict f) →
+      ∀ᵐ y ∂μHE[k], y ∈ f '' B → p y) :
+    ∀ᵐ x ∂μHE[k], x ∈ s → p x := by
+  obtain ⟨B, f, _, _, hBm, -, hbi, -, hsub, hcov⟩ :=
+    hs.exists_disjoint_measurable_bilipschitz_cover hsm
+  filter_upwards [hcov.symm.subset,
+    ae_all_iff.2 fun n => hp (hBm n) (hsub n) (hbi n).1 (hbi n).2] with x hcovx hpx hxs
+  obtain ⟨n, hxn⟩ := mem_iUnion.1 (hcovx hxs)
+  exact hpx n hxn
+
+/-- If a map `g : V → α` is `(μHE[k].restrict (f '' B))`-a.e. measurable on every bi-Lipschitz
+Borel patch `f '' B ⊆ s`, then `g` is `(μHE[k].restrict s)`-a.e. measurable on the null-measurable
+countably `k`-rectifiable set `s`. -/
+theorem CountablyRectifiable.aemeasurable_of_forall_bilipschitz_patch
+    {α : Type*} [MeasurableSpace α] {k : ℕ} {s : Set V} {g : V → α}
+    (hs : CountablyRectifiable k s) (hsm : NullMeasurableSet s μHE[k])
+    (hg : ∀ {B : Set (EuclideanSpace ℝ (Fin k))} {f : EuclideanSpace ℝ (Fin k) → V} {K L : ℝ≥0},
+      MeasurableSet B → f '' B ⊆ s → LipschitzWith K f → AntilipschitzWith L (B.domRestrict f) →
+      AEMeasurable g (μHE[k].restrict (f '' B))) :
+    AEMeasurable g (μHE[k].restrict s) := by
+  obtain ⟨B, f, _, _, hBm, -, hbi, -, hsub, hcov⟩ :=
+    hs.exists_disjoint_measurable_bilipschitz_cover hsm
+  rw [← Measure.restrict_congr_set hcov]
+  exact AEMeasurable.iUnion fun n => hg (hBm n) (hsub n) (hbi n).1 (hbi n).2
+
 end TauCeti
+
+/-- Disjoint Borel bi-Lipschitz patch cover of `E` with globally Lipschitz patchwise extensions of
+`g` for `hg : LocallyLipschitzOn E g`. -/
+theorem LocallyLipschitzOn.exists_disjoint_measurable_bilipschitz_extension_cover
+    {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] [FiniteDimensional ℝ W]
+    {k : ℕ} {E : Set V} {g : V → W} (hg : LocallyLipschitzOn E g)
+    (hE : TauCeti.CountablyRectifiable k E) (hEm : NullMeasurableSet E μHE[k]) :
+    ∃ (B : ℕ → Set (EuclideanSpace ℝ (Fin k))) (f : ℕ → EuclideanSpace ℝ (Fin k) → V)
+      (gExt : ℕ → V → W) (K_f L_f K_g : ℕ → ℝ≥0),
+      (∀ n, MeasurableSet (B n)) ∧ (∀ n, MeasurableSet (f n '' B n)) ∧
+      (∀ n, LipschitzWith (K_f n) (f n) ∧ AntilipschitzWith (L_f n) ((B n).domRestrict (f n))) ∧
+      (∀ n, LipschitzWith (K_g n) (gExt n) ∧ EqOn g (gExt n) (f n '' B n)) ∧
+      Pairwise (Disjoint on fun n ↦ f n '' B n) ∧
+      (∀ n, f n '' B n ⊆ E) ∧ (⋃ n, f n '' B n) =ᵐ[μHE[k]] E := by
+  obtain ⟨O, _, hO, hcov, hLip⟩ := hg.exists_open_cover_lipschitzOnWith (.of_separableSpace E)
+  choose gExt₀ hgExt_lip hgExt_eq using fun m ↦ (hLip m).extend_finite_dimension
+  let U := disjointed O
+  have hDm (m : ℕ) : MeasurableSet (U m) :=
+    MeasurableSet.disjointed (fun j ↦ (hO j).measurableSet) m
+  obtain ⟨B₀, f₀, K₀, L₀, hBm₀, hTm₀, hbi₀, hdisj₀, hsub₀, hcov_ae₀⟩ :=
+    hE.exists_disjoint_measurable_bilipschitz_cover hEm
+  let B (n : ℕ) := B₀ n.unpair.1 ∩ f₀ n.unpair.1 ⁻¹' U n.unpair.2
+  let f (n : ℕ) := f₀ n.unpair.1
+  have himg (n : ℕ) : f n '' B n = f₀ n.unpair.1 '' B₀ n.unpair.1 ∩ U n.unpair.2 :=
+    Set.image_inter_preimage _ _ _
+  have hunion : (⋃ n, f n '' B n) = ⋃ i, f₀ i '' B₀ i := Subset.antisymm
+    (iUnion_subset fun n ↦
+      himg n ▸ inter_subset_left.trans (subset_iUnion (fun i ↦ f₀ i '' B₀ i) n.unpair.1))
+    (iUnion_subset fun i x hx ↦ by
+      obtain ⟨m, hxm⟩ := mem_iUnion.mp (by
+        simpa only [U, iUnion_disjointed] using hcov (hsub₀ i hx) : x ∈ ⋃ m, U m)
+      exact mem_iUnion.mpr ⟨Nat.pair i m, by rw [himg, Nat.unpair_pair]; exact ⟨hx, hxm⟩⟩)
+  refine ⟨B, f, fun n ↦ gExt₀ n.unpair.2, fun n ↦ K₀ n.unpair.1, fun n ↦ L₀ n.unpair.1,
+    fun n ↦ _, fun n ↦ (hBm₀ _).inter ((hDm _).preimage (hbi₀ _).1.continuous.measurable),
+    fun n ↦ himg n ▸ (hTm₀ _).inter (hDm _),
+    fun n ↦ ⟨(hbi₀ _).1, fun u v ↦ (hbi₀ _).2 ⟨u.val, u.property.1⟩ ⟨v.val, v.property.1⟩⟩,
+    fun n ↦ ⟨hgExt_lip _, (hgExt_eq _).mono (himg n ▸ inter_subset_inter (hsub₀ _)
+      (disjointed_subset O _))⟩,
+    fun m n hmn ↦ ?_, fun n ↦ himg n ▸ inter_subset_left.trans (hsub₀ _), hunion ▸ hcov_ae₀⟩
+  rw [Function.onFun, himg m, himg n]
+  by_cases h1 : m.unpair.1 = n.unpair.1
+  · exact (disjoint_disjointed O fun h2 ↦ hmn (by rw [← Nat.pair_unpair m, ← Nat.pair_unpair n,
+      h1, h2])).mono inter_subset_right inter_subset_right
+  · exact (hdisj₀ h1).mono inter_subset_left inter_subset_left
