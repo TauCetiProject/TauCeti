@@ -65,7 +65,8 @@ absolute value (`ArithmeticFunction.abs_moebius_mul_le`).
   divisors of a fixed nonzero integer `N`.
 * `ArithmeticFunction.sum_divisors_moebius_sq`: `∑_{d ∣ n} μ(d)² = 2 ^ ω(n)` for `n ≠ 0`.
 * `ArithmeticFunction.sum_Ioc_moebius_sq_le`: `∑_{L<m≤M} μ(m)² ≤ M - L`.
-* `ArithmeticFunction.abs_moebius_mul_le`: `|μ(n) a| ≤ |a|` in a linearly ordered ring.
+* `ArithmeticFunction.abs_moebius_mul_le`: `|μ(n) a| ≤ |a|` in a ring whose linear order is
+  compatible with addition.
 * `ArithmeticFunction.IsMultiplicative.moebius_sq_mul_nonneg`: `μ(n)² f(n) ≥ 0` for a
   multiplicative `f` with nonnegative prime values.
 
@@ -301,11 +302,13 @@ theorem sum_Ioc_moebius_sq_le [Ring R] [PartialOrder R] [IsOrderedRing R] (L M :
 /-! ### Absolute values -/
 
 /-- Multiplying by a value of the Möbius function does not increase the absolute value:
-`|μ(n) a| ≤ |a|`, as `|μ(n)| ≤ 1`. -/
-theorem abs_moebius_mul_le [Ring R] [LinearOrder R] [IsStrictOrderedRing R] (n : ℕ) (a : R) :
+`|μ(n) a| ≤ |a|`, as `μ(n)` is `0` or `±1`. -/
+theorem abs_moebius_mul_le [NonAssocRing R] [LinearOrder R] [AddLeftMono R] (n : ℕ) (a : R) :
     |(μ n : R) * a| ≤ |a| := by
-  rw [abs_mul]
-  exact mul_le_of_le_one_left (abs_nonneg a) (mod_cast abs_moebius_le_one)
+  obtain h | h | h : μ n = 0 ∨ μ n = 1 ∨ μ n = -1 := by
+    have := abs_le.mp (abs_moebius_le_one (n := n))
+    omega
+  all_goals simp [h]
 
 /-! ### Nonnegativity on squarefree integers -/
 

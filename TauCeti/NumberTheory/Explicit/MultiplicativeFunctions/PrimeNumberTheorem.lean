@@ -52,7 +52,7 @@ PrimeNumberTheoremAnd project (https://github.com/TauCetiProject/PrimeNumberTheo
 * `TauCeti.moebiusSum_isLittleO`: `M(x) = o(x)`.
 * `TauCeti.liouvilleSum_isLittleO`: `L_λ(x) = o(x)`.
 * `TauCeti.mul_abs_moebiusDivSum_le`: `K N |m(N)| ≤ 1 + N + ∑_{1 ≤ j < K} (|M(K N / j)| + |M(N)|)`.
-* `TauCeti.tendsto_moebiusDivSum_atTop`: `m(x) → 0`.
+* `TauCeti.tendsto_moebiusDivSum_atTop_zero`: `m(x) → 0`.
 -/
 
 public section
@@ -252,7 +252,7 @@ theorem mul_abs_moebiusDivSum_le (N K : ℕ) :
     abs_one (α := ℝ)]
 
 /-- **The logarithmic form of the prime number theorem**: `m(x) = ∑_{n ≤ x} μ(n) / n → 0`. -/
-theorem tendsto_moebiusDivSum_atTop : Tendsto moebiusDivSum atTop (𝓝 0) := by
+theorem tendsto_moebiusDivSum_atTop_zero : Tendsto moebiusDivSum atTop (𝓝 0) := by
   have hnat : Tendsto (fun N : ℕ ↦ moebiusDivSum N) atTop (𝓝 0) := by
     rw [Metric.tendsto_atTop]
     intro ε hε
