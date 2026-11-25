@@ -20,8 +20,10 @@ and `𝔞` lies in the `-1`-eigenspace `𝔭` of `θ`, `𝔞` is abelian, and ev
 self-adjoint for the inner product `B_θ`, so it is semisimple and the generalized weight spaces
 `LieModule.genWeightSpace L λ` are the weight spaces. Hence `𝔤_λ` is the generalized weight space
 of `λ`, and the restricted roots `Σ` are the nonzero weights `LieModule.Weight` of `𝔞` on `L`.
-These apply to a maximal abelian subspace of `𝔭` (`LieEquiv.IsMaximalAbelianInP`) through
-`Submodule.toLieSubalgebraOfAbelian`.
+These apply to a maximal abelian subspace `𝔞` of `𝔭` (`LieEquiv.IsMaximalAbelianInP`) through
+`LieSubalgebra.lieSpan K L 𝔞`, whose carrier is `𝔞`
+(`LieSubalgebra.coe_lieSpan_eq_span_of_forall_lie_eq_zero`) and which is abelian
+(`LieSubalgebra.isLieAbelian_lieSpan_iff`).
 
 ## Main definitions
 
