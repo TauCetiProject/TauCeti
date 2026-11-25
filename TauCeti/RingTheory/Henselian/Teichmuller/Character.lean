@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Henselian.Teichmuller
+public import TauCeti.RingTheory.Henselian.Teichmuller.Basic
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
@@ -22,23 +22,28 @@ It reduces to `ψ` (`TauCeti.unitsMap_residue_comp_teichmullerCharacter`), takes
 (`TauCeti.eq_teichmullerCharacter_iff`); a lift of infinite order, or of finite order divisible
 by the residue characteristic, is not excluded by reducing to `ψ` alone. The lift is
 multiplicative in `ψ`, sends the trivial character to the trivial character and inverses to
-inverses, has the same kernel as `ψ` (`TauCeti.ker_teichmullerCharacter`) and hence the same
-order (`TauCeti.orderOf_teichmullerCharacter`). For a topological group `Γ` and `ψ` with open
-kernel it is continuous for every topology on `Rˣ`
-(`TauCeti.continuous_teichmullerCharacter`). It does not depend on the coefficient ring: a local
-homomorphism `f : R → S` carries the lift of `ψ` to the lift in `S` of `ψ` followed by the induced
-map of residue fields (`TauCeti.unitsMap_comp_teichmullerCharacter`).
+inverses, and has the same kernel as `ψ` (`TauCeti.ker_teichmullerCharacter`). Since
+`TauCeti.teichmuller R` and `TauCeti.teichmullerCharacterHom` are injective, it preserves order
+both pointwise (`TauCeti.orderOf_teichmullerCharacter_apply`) and in the character group
+(`TauCeti.orderOf_teichmullerCharacter`). For a topological group `Γ` and `ψ` with open kernel it
+is continuous for every topology on `Rˣ` (`TauCeti.continuous_teichmullerCharacter`), and
+`TauCeti.teichmullerContinuousCharacter` bundles it as a continuous character. It does not depend
+on the coefficient ring: a local homomorphism `f : R → S` carries the lift of `ψ` to the lift in
+`S` of `ψ` followed by the induced map of residue fields
+(`TauCeti.unitsMap_comp_teichmullerCharacter`).
 
 ## Main definitions
 
 * `TauCeti.teichmullerCharacter`: the Teichmüller lift `Γ →* Rˣ` of a residual character.
+* `TauCeti.teichmullerContinuousCharacter`: the Teichmüller lift `Γ →ₜ* Rˣ` of a residual
+  character with open kernel.
 
 ## Main results
 
 * `TauCeti.unitsMap_residue_comp_teichmullerCharacter`: the lift reduces to `ψ`.
 * `TauCeti.eq_teichmullerCharacter_iff`: it is the unique lift with values in `μ_{q-1}(R)`.
-* `TauCeti.ker_teichmullerCharacter`, `TauCeti.orderOf_teichmullerCharacter`: same kernel and same
-  order as `ψ`.
+* `TauCeti.ker_teichmullerCharacter`, `TauCeti.orderOf_teichmullerCharacter_apply`,
+  `TauCeti.orderOf_teichmullerCharacter`: same kernel and same order as `ψ`.
 * `TauCeti.continuous_teichmullerCharacter`: continuity for `ψ` with open kernel.
 * `TauCeti.unitsMap_comp_teichmullerCharacter`: independence of the coefficient ring.
 
@@ -98,8 +103,7 @@ theorem eq_teichmullerCharacter_iff {ψ : Γ →* (ResidueField R)ˣ} {χ : Γ �
     exact ⟨teichmullerCharacter_apply_pow_card_sub_one ψ,
       unitsMap_residue_comp_teichmullerCharacter ψ⟩
   · refine ((teichmuller_eq_iff R).2 ⟨hpow g, ?_⟩).symm
-    rw [← hres]
-    rfl
+    rw [← hres, MonoidHom.comp_apply, Units.coe_map, MonoidHom.coe_ofClass]
 
 variable (R) in
 /-- The Teichmüller lift of the trivial character is trivial. -/
@@ -162,6 +166,29 @@ theorem continuous_teichmullerCharacter {G : Type*} [Group G] [TopologicalSpace 
     (hψ : IsOpen (ψ.ker : Set G)) :
     Continuous (teichmullerCharacter R ψ) :=
   (teichmullerCharacter R ψ).continuous_of_isOpen_ker (by rwa [ker_teichmullerCharacter])
+
+variable (R) in
+/-- The Teichmüller lift of a residual character with open kernel, as a continuous character for
+any topology on `Rˣ`. -/
+def teichmullerContinuousCharacter {G : Type*} [Group G] [TopologicalSpace G]
+    [ContinuousConstSMul G G] [TopologicalSpace Rˣ] (ψ : G →* (ResidueField R)ˣ)
+    (hψ : IsOpen (ψ.ker : Set G)) : G →ₜ* Rˣ where
+  toMonoidHom := teichmullerCharacter R ψ
+  continuous_toFun := continuous_teichmullerCharacter hψ
+
+@[simp]
+theorem coe_teichmullerContinuousCharacter {G : Type*} [Group G] [TopologicalSpace G]
+    [ContinuousConstSMul G G] [TopologicalSpace Rˣ] {ψ : G →* (ResidueField R)ˣ}
+    (hψ : IsOpen (ψ.ker : Set G)) :
+    (teichmullerContinuousCharacter R ψ hψ : G →* Rˣ) = teichmullerCharacter R ψ :=
+  (rfl)
+
+@[simp]
+theorem teichmullerContinuousCharacter_apply {G : Type*} [Group G] [TopologicalSpace G]
+    [ContinuousConstSMul G G] [TopologicalSpace Rˣ] {ψ : G →* (ResidueField R)ˣ}
+    (hψ : IsOpen (ψ.ker : Set G)) (g : G) :
+    teichmullerContinuousCharacter R ψ hψ g = teichmuller R (ψ g) :=
+  (rfl)
 
 /-- **Independence of the coefficient ring.** A local homomorphism `f : R → S` carries the
 Teichmüller lift of `ψ` to the Teichmüller lift of `ψ` followed by the induced map of residue
