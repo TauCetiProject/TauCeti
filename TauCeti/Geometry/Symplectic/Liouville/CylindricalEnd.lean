@@ -119,20 +119,13 @@ theorem mvfderiv_liouvilleRadialCoordinate_apply (h : IsLiouvilleCompletion ω �
   -- Along the trajectory `x = ψ_t(y)` from the boundary, `r(ψ_s x) = e^{s + t} = e^s r(x)` for
   -- `s > -t`, a neighbourhood of `0`.
   obtain ⟨⟨y, t⟩, ⟨hy, ht, hyx⟩, -⟩ := h.existsUnique_flowOf_eq hZ hx
-  have hr : MDifferentiableAt I 𝓘(ℝ) (liouvilleRadialCoordinate Z W) (flowOf Z 0 x) := by
-    rw [flowOf_zero Z]
-    exact (h.contMDiffAt_liouvilleRadialCoordinate hZ hx).mdifferentiableAt (by simp)
-  have hcurve := hasDerivAt_comp_flowOf ((h.contMDiff_of_interior_eq hZ).of_le (by simp))
-    ((h.isCompleteVectorField hZ).mem_flowDomain 0 x) hr
-  rw [flowOf_zero Z] at hcurve
-  have heq : (liouvilleRadialCoordinate Z W ∘ fun s ↦ flowOf Z s x) =ᶠ[𝓝 0]
-      fun s ↦ Real.exp s * liouvilleRadialCoordinate Z W x := by
-    filter_upwards [Ioi_mem_nhds (neg_lt_zero.2 ht)] with s hs
-    rw [Function.comp_apply, ← hyx, h.flowOf_flowOf hZ,
-      h.liouvilleRadialCoordinate_flowOf hZ hy (by linarith [mem_Ioi.1 hs]),
-      h.liouvilleRadialCoordinate_flowOf hZ hy ht.le, Real.exp_add]
-  refine hcurve.unique (HasDerivAt.congr_of_eventuallyEq ?_ heq)
-  simpa using (Real.hasDerivAt_exp 0).mul_const (liouvilleRadialCoordinate Z W x)
+  refine mvfderiv_apply_eq_of_comp_flowOf_eventuallyEq
+    ((h.contMDiff_of_interior_eq hZ).of_le (by simp))
+    ((h.contMDiffAt_liouvilleRadialCoordinate hZ hx).mdifferentiableAt (by simp)) ?_
+  filter_upwards [Ioi_mem_nhds (neg_lt_zero.2 ht)] with s hs
+  rw [Function.comp_apply, ← hyx, h.flowOf_flowOf hZ,
+    h.liouvilleRadialCoordinate_flowOf hZ hy (by linarith [mem_Ioi.1 hs]),
+    h.liouvilleRadialCoordinate_flowOf hZ hy ht.le, Real.exp_add]
 
 end IsLiouvilleCompletion
 

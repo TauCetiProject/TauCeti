@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.LogIntegral
+public import TauCeti.Analysis.SpecialFunctions.LogIntegral.Basic
 public import TauCeti.GroupTheory.FiniteAbelian.CharacterOrthogonality
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.VonMangoldtCoeff
 public import TauCeti.NumberTheory.LFunctions.Hecke.Primitive

@@ -208,6 +208,14 @@ theorem trivializationAt_mk_snd {b' b : B} (hb : b ∈ (trivializationAt G P b')
       (trivializationAt G P b' ⟨b, p⟩).2 • v := by
   rw [trivializationAt_mk hb]
 
+/-- In the preferred trivialization at `b'`, the class `[p, g⁻¹ • v]` has coordinate `v`, where
+`g` is the coordinate of `p` in the preferred trivialization of `P` at `b'`. -/
+theorem trivializationAt_mk_inv_smul_snd {b' b : B}
+    (hb : b ∈ (trivializationAt G P b').baseSet) (p : P b) (v : F) :
+    (trivializationAt F (AssociatedBundle G P F) b'
+        ⟨b, mk G p ((trivializationAt G P b' ⟨b, p⟩).2⁻¹ • v)⟩).2 = v := by
+  rw [trivializationAt_mk_snd hb, smul_inv_smul]
+
 /-- **The classes are the orbits of the action.** The classes of `(p • g, v)` and of
 `(p, g • v)` agree. -/
 @[simp]

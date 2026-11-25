@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.HeckeRing.GLn.Diagonal.Cosets
 import Mathlib.LinearAlgebra.Matrix.Integer
 import TauCeti.Data.Nat.GCD
 import TauCeti.GroupTheory.DoubleCoset.Identity
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.CongruenceSplit
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Congruence.Split
 
 /-!
 # Coprime multiplication in the `GL_n` Hecke ring

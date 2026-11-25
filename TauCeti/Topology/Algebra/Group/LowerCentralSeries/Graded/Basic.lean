@@ -54,6 +54,7 @@ finite; this is proved in `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCe
   inherits its commutativity and its exponent.
 * `TauCeti.natCard_quotient_pLowerCentralStep_eq_natCard_gradedPiece`: for a subgroup
   `R = λ_k`, the quotient `R ⧸ Rᵖ[R, G]` has as many elements as `gr_k(G)`.
+* `TauCeti.natCard_gradedPiece`: `gr_k(G)` has `[λ_k : λ_{k+1}]` elements.
 * `TauCeti.gradedBracket_self`, `TauCeti.gradedBracket_jacobi`: the bracket is alternating and
   satisfies the Jacobi identity.
 * `TauCeti.gradedPow_add_of_one_le`: `π` is additive in every degree `k ≥ 1`.
@@ -309,6 +310,12 @@ theorem natCard_quotient_pLowerCentralStep_eq_natCard_gradedPiece {R : Subgroup 
   subst hR
   exact Nat.card_congr
     ((quotientPLowerCentralSeriesSuccMulEquiv p G k).symm.toEquiv.trans Additive.ofMul)
+
+/-- The graded piece `gr_k(G) = λ_k ⧸ λ_{k+1}` has `[λ_k : λ_{k+1}]` elements. -/
+theorem natCard_gradedPiece (k : ℕ) :
+    Nat.card (gradedPiece p G k) =
+      (pLowerCentralSeries p G (k + 1)).relIndex (pLowerCentralSeries p G k) := by
+  rw [Subgroup.relIndex, Subgroup.index, Nat.card_congr Additive.toMul]
 
 /-! ### The inclusion into `G ⧸ λ_{k+1}` -/
 
