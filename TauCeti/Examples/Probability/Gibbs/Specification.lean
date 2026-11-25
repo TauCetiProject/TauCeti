@@ -64,7 +64,7 @@ theorem exterior_X₀ (Λ : Finset (Multiplicative ℤ)) :
   exact measurable_iff_comap_le.1 hval s hs
 
 /-- The identity map of `X₀` is measurable from every exterior σ-algebra. -/
-theorem measurable_id_exterior (Λ : Finset (Multiplicative ℤ)) :
+private theorem measurable_id_exterior (Λ : Finset (Multiplicative ℤ)) :
     Measurable[X₀.exterior (Λ : Set (Multiplicative ℤ)), Subtype.instMeasurableSpace]
       (id : X₀ → X₀) := by
   rw [exterior_X₀]
