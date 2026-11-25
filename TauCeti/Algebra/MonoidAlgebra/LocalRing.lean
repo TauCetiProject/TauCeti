@@ -97,29 +97,18 @@ instance isLocalHom_mapRingHom_residue : IsLocalHom (mapRingHom G (residue R)) :
   have hsurj : Function.Surjective (mapRingHom G (residue R)) := by
     rw [coe_mapRingHom]
     exact map_surjective (residue R).toAddMonoidHom residue_surjective
-  -- An element whose image is a unit has a left inverse: right multiplication by it is onto
-  -- modulo the maximal ideal, hence bijective by Nakayama's lemma.
-  have hleft (x : MonoidAlgebra R G) (hx : IsUnit (mapRingHom G (residue R) x)) :
-      ∃ y, y * x = 1 := by
-    let θ : (Unit → MonoidAlgebra R G) →ₗ[MonoidAlgebra R G] (Unit → MonoidAlgebra R G) :=
-      LinearMap.pi fun _ ↦ (LinearMap.toSpanSingleton _ _ x).comp (LinearMap.proj ())
-    have hθ := bijective_of_forall_exists_mapRingHom_residue_eq θ fun y ↦ by
-      obtain ⟨z, hz⟩ := hsurj (mapRingHom G (residue R) (y ()) * ↑hx.unit⁻¹)
-      exact ⟨fun _ ↦ z, fun _ ↦ by simp [θ, hz, mul_assoc]⟩
-    obtain ⟨y, hy⟩ := hθ.2 1
-    exact ⟨y (), by simpa [θ] using congrFun hy ()⟩
-  refine ⟨fun x hx ↦ ?_⟩
-  obtain ⟨y, hyx⟩ := hleft x hx
-  -- The image of `y` is the inverse of the image of `x`, so `y` has a left inverse too, which
-  -- must be `x`.
-  have hy : IsUnit (mapRingHom G (residue R) y) := by
-    have h : mapRingHom G (residue R) y * ↑hx.unit = 1 := by
-      rw [IsUnit.unit_spec, ← map_mul, hyx, map_one]
-    rw [Units.mul_eq_one_iff_eq_inv.mp h]
-    exact Units.isUnit _
-  obtain ⟨z, hzy⟩ := hleft y hy
-  have hzx : z = x := by rw [← mul_one z, ← hyx, ← mul_assoc, hzy, one_mul]
-  exact ⟨⟨x, y, hzx ▸ hzy, hyx⟩, rfl⟩
+  -- Right multiplication by an element whose image is a unit is onto modulo the maximal ideal,
+  -- hence bijective by Nakayama's lemma.
+  refine ⟨fun x hx ↦ IsUnit.isUnit_iff_mulRight_bijective.mpr ?_⟩
+  let θ : (Unit → MonoidAlgebra R G) →ₗ[MonoidAlgebra R G] (Unit → MonoidAlgebra R G) :=
+    LinearMap.pi fun _ ↦ (LinearMap.toSpanSingleton _ _ x).comp (LinearMap.proj ())
+  have hθ := bijective_of_forall_exists_mapRingHom_residue_eq θ fun y ↦ by
+    obtain ⟨z, hz⟩ := hsurj (mapRingHom G (residue R) (y ()) * ↑hx.unit⁻¹)
+    exact ⟨fun _ ↦ z, fun _ ↦ by simp [θ, hz, mul_assoc]⟩
+  let e := Equiv.funUnique Unit (MonoidAlgebra R G)
+  convert e.bijective.comp (hθ.comp e.symm.bijective) using 1
+  ext y
+  simp [θ, e]
 
 section PGroup
 
