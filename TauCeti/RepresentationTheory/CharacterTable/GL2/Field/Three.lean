@@ -457,7 +457,7 @@ private theorem exists_cuspidal_row (hF : Fintype.card F = 3) {u : Eˣ}
     fin_cases j <;> simp [hz, p3, p4, p5, p6, p15, one_add_one_eq_two]
   · -- `ζ` is a primitive eighth root of unity, and `(ζ + ζ³)² = -2`
     have hs : (ζ + ζ ^ 3) ^ 2 = (Complex.I * √2) ^ 2 := by
-      rw [Complex.I_mul_ofReal_sqrt_two_sq]
+      rw [Complex.I_mul_ofReal_sqrt_sq zero_le_two, Complex.ofReal_ofNat]
       linear_combination (ζ ^ 2 + 2) * h4
     have p4 : ζ ^ 4 = -1 := by linear_combination h4
     have p5 : ζ ^ 5 = -ζ := by linear_combination ζ * h4
