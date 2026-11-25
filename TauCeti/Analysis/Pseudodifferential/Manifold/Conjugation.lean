@@ -50,7 +50,7 @@ differential operator of order `k` is `iᵏ p(x, ξ)` with `p` real and homogene
 * `TauCeti.classicalPrincipalSymbol_intrinsicStar`: `σ_m(conj P)(x, ξ) = conj (σ_m(P)(x, -ξ))`.
 * `TauCeti.classicalPrincipalSymbol_neg_covector_of_isSelfAdjoint`: an operator equal to its
   conjugate has `σ_m(P)(x, -ξ) = conj (σ_m(P)(x, ξ))`; this applies to the complexifications of
-  real operators (`TauCeti.isSelfAdjoint_toConv_complexifyLinearMap`).
+  real operators (`ContMDiffMap.isSelfAdjoint_toConv_complexifyLinearMap`).
 
 ## References
 
@@ -188,14 +188,5 @@ theorem classicalPrincipalSymbol_neg_covector_of_isSelfAdjoint (hP : IsSelfAdjoi
     rw [hP.star_eq, ofConv_toConv]
   conv_lhs => rw [← hP']
   rw [classicalPrincipalSymbol_intrinsicStar, neg_neg]
-
-omit [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
-/-- The complexification of a real-linear operator on the real-valued smooth functions commutes
-with conjugation. -/
-theorem isSelfAdjoint_toConv_complexifyLinearMap
-    (D : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) :
-    IsSelfAdjoint (toConv (ContMDiffMap.complexifyLinearMap D)) :=
-  (LinearMap.IntrinsicStar.isSelfAdjoint_iff_map_star _).2
-    (ContMDiffMap.exists_complexifyLinearMap_eq_iff.1 ⟨D, rfl⟩)
 
 end TauCeti

@@ -189,20 +189,11 @@ when the symbol is. -/
 theorem isElliptic_intrinsicStar_iff [CompleteSpace W] :
     a.intrinsicStar.IsElliptic ↔ a.IsElliptic := by
   have := FiniteDimensional.completeSpace ℂ V
-  -- The conjugate `star ∘ T ∘ star` of a linear map `T` is bijective exactly when `T` is.
-  have hbij (T : V →L[ℂ] W) :
-      Function.Bijective (star (toConv T)).ofConv ↔ Function.Bijective T := by
-    have hV : Function.Bijective (star : V → V) := (star_involutive).bijective
-    have hW : Function.Bijective (star : W → W) := (star_involutive).bijective
-    have heq : ⇑(star (toConv T)).ofConv = star ∘ T ∘ star := by
-      ext v
-      simp
-    rw [heq, Function.Bijective.of_comp_iff' hW, Function.Bijective.of_comp_iff _ hV]
   rw [isElliptic_def, isElliptic_def, HomogeneousSymbol.isElliptic_iff_bijective,
     HomogeneousSymbol.isElliptic_iff_bijective, principal_intrinsicStar]
   -- The conjugate principal symbol at `ξ` is the conjugate of the principal symbol at `-ξ`.
   refine ⟨fun h x ξ hξ ↦ ?_, fun h x ξ hξ ↦ ?_⟩ <;>
-    simpa [hbij] using h x (-ξ) (neg_ne_zero.2 hξ)
+    simpa using h x (-ξ) (neg_ne_zero.2 hξ)
 
 end ClassicalSymbol
 

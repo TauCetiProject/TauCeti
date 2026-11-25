@@ -17,7 +17,9 @@ Mathlib's intrinsic star on `WithConv (E →L[𝕜] F)` sends `f` to
 nontrivially normed field, for finite-dimensional source spaces this operation is
 continuous in the operator topology. In particular,
 entrywise conjugation preserves continuous families of finite matrices. Over `ℂ` it is a real
-continuous linear map, `ContinuousLinearMap.intrinsicStarL`.
+continuous linear map, `ContinuousLinearMap.intrinsicStarL`. Since `star` is a bijection, the
+intrinsic star of an operator is bijective exactly when the operator is
+(`ContinuousLinearMap.bijective_intrinsicStar_iff`).
 
 The operator and its algebraic laws are those of
 `Mathlib.Topology.Algebra.Star.LinearMap` (Monica Omar).
@@ -28,6 +30,26 @@ public section
 open WithConv
 
 namespace ContinuousLinearMap
+
+section Bijective
+
+variable {R E F : Type*} [Semiring R] [InvolutiveStar R]
+  [AddCommMonoid E] [Module R E] [StarAddMonoid E] [StarModule R E]
+  [AddCommMonoid F] [Module R F] [StarAddMonoid F] [StarModule R F]
+  [TopologicalSpace E] [TopologicalSpace F] [ContinuousStar E] [ContinuousStar F]
+
+/-- The intrinsic star of `f` is the function `star ∘ f ∘ star`. -/
+theorem coe_intrinsicStar (f : E →L[R] F) : ⇑(star (toConv f)).ofConv = star ∘ f ∘ star :=
+  (rfl)
+
+/-- The intrinsic star `star ∘ f ∘ star` of `f` is bijective exactly when `f` is. -/
+@[simp]
+theorem bijective_intrinsicStar_iff (f : E →L[R] F) :
+    Function.Bijective (star (toConv f)).ofConv ↔ Function.Bijective f := by
+  rw [coe_intrinsicStar, Function.Bijective.of_comp_iff' star_involutive.bijective,
+    Function.Bijective.of_comp_iff _ star_involutive.bijective]
+
+end Bijective
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [InvolutiveStar 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [StarAddMonoid E] [StarModule 𝕜 E]

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Algebra.Star.LinearMap
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -328,6 +329,18 @@ theorem conj_eq_star (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) : conj f = star f 
 instance complexSmoothFunctionsStarModule : StarModule ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ where
   star_smul := conj_complex_smul
 
+@[simp]
+theorem star_re (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) : (star f).re = f.re :=
+  conj_re f
+
+@[simp]
+theorem star_im (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) : (star f).im = -f.im :=
+  conj_im f
+
+@[simp]
+theorem star_ofReal (f : C^n⟮I, M; ℝ⟯) : star (ofReal f) = ofReal f :=
+  conj_ofReal f
+
 /-- Real part of a product of complex-valued smooth functions. -/
 theorem mul_re (f g : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
     (f * g).re = f.re * g.re - f.im * g.im := by
@@ -433,14 +446,22 @@ theorem exists_complexifyLinearMap_eq_iff
   refine ⟨?_, fun h ↦ ⟨re ∘ₗ P.restrictScalars ℝ ∘ₗ ofReal.toLinearMap, ?_⟩⟩
   · rintro ⟨D, rfl⟩ f
     ext x
-    apply Complex.ext <;> simp [← conj_eq_star]
+    apply Complex.ext <;> simp
   -- `P` sends real functions to real functions, since they are their own conjugates.
   refine linearMap_ext_ofReal fun u ↦ ?_
   have him : (P (ofReal u)).im = 0 := by
     have h' := congrArg im (h (ofReal u))
-    rw [← conj_eq_star, ← conj_eq_star, conj_ofReal, conj_im] at h'
+    rw [star_ofReal, star_im] at h'
     exact self_eq_neg.1 h'
   refine ext_re_im ?_ ?_ <;> simp [him]
+
+open WithConv in
+/-- The complexification of a real-linear map between real-valued smooth functions commutes with
+conjugation: it is self-adjoint for Mathlib's intrinsic star of linear maps. -/
+theorem isSelfAdjoint_toConv_complexifyLinearMap (D : C^n⟮I, M; ℝ⟯ →ₗ[ℝ] C^n⟮J, N; ℝ⟯) :
+    IsSelfAdjoint (toConv (complexifyLinearMap D)) :=
+  (LinearMap.IntrinsicStar.isSelfAdjoint_iff_map_star _).2
+    (exists_complexifyLinearMap_eq_iff.1 ⟨D, rfl⟩)
 
 variable {U V : TopologicalSpace.Opens M}
 
