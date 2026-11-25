@@ -165,8 +165,11 @@ def arakiCoeffEquiv :
 @[simp]
 theorem arakiCoeffEquiv_apply (F : {F : FormalGroup R // ∃ (_ : F.IsComm), F.IsPTypical p})
     (n : ℕ+) : arakiCoeffEquiv p hunit F n = F.val.arakiCoeff hp.out n := by
-  rw [← hazewinkelIntegralFormalGroup_hazewinkelLift_comp_X p hunit F]
-  rfl
+  -- `MvPolynomial.homEquiv` sends `f` to `f ∘ X` by definition; Mathlib has no apply lemma for it
+  have hhom : MvPolynomial.homEquiv (hazewinkelLift p hunit F) =
+      hazewinkelLift p hunit F ∘ MvPolynomial.X := rfl
+  rw [arakiCoeffEquiv, Equiv.trans_apply, Equiv.trans_apply, arakiParamEquiv_apply, hhom,
+    hazewinkelIntegralFormalGroup_hazewinkelLift_comp_X]
 
 /-- The law with prescribed Araki coefficients `a` has Araki coefficients `a`. -/
 @[simp]
@@ -200,6 +203,12 @@ variable {R : Type*} [CommRing R] (p : ℕ) [hp : Fact p.Prime]
 /-! ### Araki's generators as polynomial generators -/
 
 section Polynomial
+
+omit hp in
+/-- If every prime `q ≠ p` is invertible in `R`, the same holds in `R[v₁, v₂, …]`. -/
+private theorem isUnit_natCast_mvPolynomial (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R))
+    (q : ℕ) (hq : q.Prime) (hqp : q ≠ p) : IsUnit (q : MvPolynomial ℕ+ R) := by
+  simpa using (hunit q hq hqp).map (algebraMap R (MvPolynomial ℕ+ R))
 
 variable (hS : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : MvPolynomial ℕ+ R))
 
@@ -244,20 +253,28 @@ of Hazewinkel's law `F_v` is an automorphism. For `R = ℤ_(p)` this says that A
 polynomial generators of the ring `V = ℤ_(p)[v₁, v₂, …]` of the universal `p`-typical law. -/
 def arakiAlgEquiv (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) :
     MvPolynomial ℕ+ R ≃ₐ[R] MvPolynomial ℕ+ R :=
-  have hS (q : ℕ) (hq : q.Prime) (hqp : q ≠ p) : IsUnit (q : MvPolynomial ℕ+ R) := by
-    simpa using (hunit q hq hqp).map (algebraMap R (MvPolynomial ℕ+ R))
-  AlgEquiv.ofAlgHom _ _ (aeval_arakiParamEquiv_comp_aeval_symm p hS)
-    (aeval_arakiParamEquiv_symm_comp_aeval p hS)
+  AlgEquiv.ofAlgHom _ _
+    (aeval_arakiParamEquiv_comp_aeval_symm p (isUnit_natCast_mvPolynomial p hunit))
+    (aeval_arakiParamEquiv_symm_comp_aeval p (isUnit_natCast_mvPolynomial p hunit))
 
 variable (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R))
+
+/-- `arakiAlgEquiv` is evaluation at Araki's generators. -/
+theorem arakiAlgEquiv_toAlgHom :
+    (arakiAlgEquiv p hunit : MvPolynomial ℕ+ R →ₐ[R] MvPolynomial ℕ+ R) =
+      MvPolynomial.aeval fun n : ℕ+ ↦
+        (hazewinkelIntegralFormalGroup p (MvPolynomial.X : ℕ+ → MvPolynomial ℕ+ R)).arakiCoeff
+          hp.out n := by
+  rw [arakiAlgEquiv, AlgEquiv.toAlgHom_ofAlgHom]
+  exact congrArg MvPolynomial.aeval (funext (arakiParamEquiv_apply p _ _))
 
 /-- `arakiAlgEquiv` sends `vₙ` to Araki's generator `aₙ`. -/
 @[simp]
 theorem arakiAlgEquiv_X (n : ℕ+) :
     arakiAlgEquiv p hunit (.X n) =
       (hazewinkelIntegralFormalGroup p (MvPolynomial.X : ℕ+ → MvPolynomial ℕ+ R)).arakiCoeff
-        hp.out n :=
-  MvPolynomial.aeval_X _ n
+        hp.out n := by
+  rw [← AlgEquiv.coe_toAlgHom, arakiAlgEquiv_toAlgHom, MvPolynomial.aeval_X]
 
 /-- The inverse of `arakiAlgEquiv` writes Hazewinkel's generators in Araki's: at the images of the
 generators under it, Hazewinkel's law has Araki coefficients `vₙ`. -/
@@ -265,20 +282,13 @@ generators under it, Hazewinkel's law has Araki coefficients `vₙ`. -/
 theorem arakiCoeff_hazewinkelIntegralFormalGroup_arakiAlgEquiv_symm_X (n : ℕ+) :
     (hazewinkelIntegralFormalGroup p fun i ↦ (arakiAlgEquiv p hunit).symm (.X i)).arakiCoeff
       hp.out n = .X n := by
-  have hS (q : ℕ) (hq : q.Prime) (hqp : q ≠ p) : IsUnit (q : MvPolynomial ℕ+ R) := by
-    simpa using (hunit q hq hqp).map (algebraMap R (MvPolynomial ℕ+ R))
+  have hS := isUnit_natCast_mvPolynomial p hunit
   have hsymm : (fun i ↦ (arakiAlgEquiv p hunit).symm (.X i)) =
-      (arakiParamEquiv p hS).symm MvPolynomial.X :=
-    funext fun i ↦ MvPolynomial.aeval_X _ i
+      (arakiParamEquiv p hS).symm MvPolynomial.X := by
+    funext i
+    rw [arakiAlgEquiv, AlgEquiv.ofAlgHom_symm, ← AlgEquiv.coe_toAlgHom,
+      AlgEquiv.toAlgHom_ofAlgHom, MvPolynomial.aeval_X]
   rw [hsymm, ← arakiParamEquiv_apply p hS, Equiv.apply_symm_apply]
-
-/-- `arakiAlgEquiv` is evaluation at Araki's generators. -/
-theorem arakiAlgEquiv_toAlgHom :
-    (arakiAlgEquiv p hunit : MvPolynomial ℕ+ R →ₐ[R] MvPolynomial ℕ+ R) =
-      MvPolynomial.aeval fun n : ℕ+ ↦
-        (hazewinkelIntegralFormalGroup p (MvPolynomial.X : ℕ+ → MvPolynomial ℕ+ R)).arakiCoeff
-          hp.out n :=
-  MvPolynomial.algHom_ext fun n ↦ by simp
 
 include hunit in
 /-- **Araki's generators generate.** If every prime `q ≠ p` is invertible in `R`, the Araki
