@@ -26,6 +26,9 @@ Definitions 1.13–1.14.
 * `TauCeti.AlmostComplexStructure.RiemannForm.cohomological`: the weight-one structure on
   `Hom(Λ, ℤ)`, the dual of the homological structure.
 * `TauCeti.AlmostComplexStructure.RiemannForm.cohomological_F`: its Hodge filtration.
+* `TauCeti.AlmostComplexStructure.RiemannForm.cohomological_piece_one`,
+  `TauCeti.AlmostComplexStructure.RiemannForm.cohomological_piece_zero`: `H^{1,0}` and `H^{0,1}`
+  are the annihilators of the `-i`- and `+i`-eigenspaces of `J`.
 * `TauCeti.AlmostComplexStructure.RiemannForm.cohomological_weilOperator`: its Weil operator is
   the transpose of `J`.
 -/
@@ -79,6 +82,37 @@ theorem cohomological_F_one :
     (cohomological J hℂ).F 1 =
       (Module.End.eigenspace (J.latticeComplexification hℂ) (-Complex.I)).dualAnnihilator := by
   simp
+
+/-- The component `H^{1,0}` of the cohomological structure is the annihilator of the
+`-i`-eigenspace of `J`: the functionals that are complex linear for `J`. -/
+@[simp]
+theorem cohomological_piece_one :
+    (cohomological J hℂ).piece 1 =
+      (Module.End.eigenspace (J.latticeComplexification hℂ) (-Complex.I)).dualAnnihilator := by
+  rw [cohomological_def, Hodge.HodgeStructure.dual_piece, Hodge.HodgeStructureOn.dual_piece,
+    Hodge.HodgeStructureOn.conjF_def]
+  simp
+
+/-- The component `H^{0,1}` of the cohomological structure is the annihilator of the
+`+i`-eigenspace of `J`: the functionals that are conjugate linear for `J`. -/
+@[simp]
+theorem cohomological_piece_zero :
+    (cohomological J hℂ).piece 0 =
+      (Module.End.eigenspace (J.latticeComplexification hℂ) Complex.I).dualAnnihilator := by
+  have hconj : (homological J hℂ).conjF 0 =
+      Module.End.eigenspace (J.latticeComplexification hℂ) Complex.I := by
+    rw [← homological_piece_neg_one, Hodge.HodgeStructureOn.piece_def, homological_F]
+    simp
+  rw [cohomological_def, Hodge.HodgeStructure.dual_piece, Hodge.HodgeStructureOn.dual_piece]
+  simp [hconj]
+
+/-- Every Hodge component of the cohomological structure other than `H^{1,0}` and `H^{0,1}`
+vanishes. -/
+theorem cohomological_piece_eq_bot {p : ℤ} (hp : p ≠ 0) (hp' : p ≠ 1) :
+    (cohomological J hℂ).piece p = ⊥ := by
+  by_cases hneg : p < 0
+  · exact (cohomological J hℂ).piece_eq_bot_of_F_eq_top (a := 0) (by simp) hneg
+  · exact (cohomological J hℂ).piece_eq_bot_of_F_eq_bot (b := 2) (by simp) (by omega)
 
 /-- **The Weil operator of the cohomological structure is the transpose of `J`.** It is the
 transpose of the inverse of the homological Weil operator `C = -J`, and `(-J)⁻¹ = J`. -/
