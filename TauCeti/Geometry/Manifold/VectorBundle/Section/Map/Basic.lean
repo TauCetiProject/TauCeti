@@ -177,6 +177,22 @@ theorem mapLinearMap_smul_function (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F,
   ext x
   simp
 
+/-- Postcomposition of sections with a smooth fibrewise linear map over the identity, as a map
+linear over the smooth scalar functions. -/
+def mapFunctionLinearMap : Cₛ^n⟮I; F, V⟯ →ₗ[C^n⟮I, M; 𝕜⟯] Cₛ^n⟮I; G, W⟯ where
+  toAddHom := (mapLinearMap ϕ hϕ).toAddHom
+  map_smul' := mapLinearMap_smul_function ϕ hϕ
+
+/-- Function-linear transport evaluates by the given fibre map. -/
+@[simp]
+theorem mapFunctionLinearMap_apply (s : Cₛ^n⟮I; F, V⟯) (x : M) :
+    mapFunctionLinearMap ϕ hϕ s x = ϕ x (s x) := (rfl)
+
+/-- Forgetting linearity over the smooth functions recovers ground-field linear transport. -/
+@[simp]
+theorem restrictScalars_mapFunctionLinearMap :
+    (mapFunctionLinearMap ϕ hϕ).restrictScalars 𝕜 = mapLinearMap ϕ hϕ := (rfl)
+
 /-- Pointwise injectivity of a bundle map implies injectivity on smooth sections. -/
 theorem mapLinearMap_injective (h : ∀ x, Function.Injective (ϕ x)) :
     Function.Injective (mapLinearMap ϕ hϕ) :=

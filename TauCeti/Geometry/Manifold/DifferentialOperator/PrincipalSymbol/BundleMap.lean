@@ -148,19 +148,10 @@ theorem sectionPrincipalSymbol_of_eq_mapLinearMap_comp_comp (hx : I.IsInteriorPo
         ((P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) (ContMDiffSection.mapLinearMap ϕ hϕ s)))
     (ξ : TangentSpace I x →L[ℝ] ℝ) :
     sectionPrincipalSymbol I hx Q ξ = ψ x ∘ₗ sectionPrincipalSymbol I hx P ξ ∘ₗ ϕ x := by
-  -- The section maps of `ϕ` and `ψ` are linear over the smooth functions, with fibre maps `ϕ x`
-  -- and `ψ x`.
-  let L' : Cₛ^∞⟮I; G, V'⟯ →ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; F, V⟯ :=
-    { ContMDiffSection.mapLinearMap ϕ hϕ with
-      map_smul' := ContMDiffSection.mapLinearMap_smul_function ϕ hϕ }
-  let R' : Cₛ^∞⟮I; F', W⟯ →ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; G', W'⟯ :=
-    { ContMDiffSection.mapLinearMap ψ hψ with
-      map_smul' := ContMDiffSection.mapLinearMap_smul_function ψ hψ }
-  have hL : smoothSectionFiberMap x L' = ϕ x := (smoothSectionFiberMap_eq_iff x _ _).2 fun s ↦
-    (ContMDiffSection.mapLinearMap_apply ϕ hϕ s x).symm
-  have hR : smoothSectionFiberMap x R' = ψ x := (smoothSectionFiberMap_eq_iff x _ _).2 fun s ↦
-    (ContMDiffSection.mapLinearMap_apply ψ hψ s x).symm
-  rw [sectionPrincipalSymbol_of_eq_comp_comp (L := L') (R := R') hx h, hL, hR]
+  rw [← ContMDiffSection.restrictScalars_mapFunctionLinearMap ϕ hϕ,
+    ← ContMDiffSection.restrictScalars_mapFunctionLinearMap ψ hψ] at h
+  rw [sectionPrincipalSymbol_of_eq_comp_comp hx h, smoothSectionFiberMap_mapFunctionLinearMap,
+    smoothSectionFiberMap_mapFunctionLinearMap]
 
 /-- **Ellipticity under bundle maps.** If `Q = R ∘ P ∘ L` for maps `L` and `R` of sections that are
 linear over the smooth functions and whose fibre maps at `x` are bijective, then `Q` is elliptic at

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Map.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 import Mathlib.Geometry.Manifold.BumpFunction
 import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Pow
@@ -46,7 +47,8 @@ sections, which is what makes `I_x Γ(V)`, a submodule of *finite* sums, large e
 * `TauCeti.smoothSectionFiberMap`: a `C^∞(M)`-linear map `L : Γ(V) → Γ(W)` is tensorial, and
   induces the real-linear fibre map `V_x → W_x`, `s x ↦ (L s) x`
   (`TauCeti.smoothSectionFiberMap_apply`); fibre maps are compatible with composition and with
-  multiplication by smooth functions.
+  multiplication by smooth functions, and a smooth bundle map acting on sections has its own
+  fibre maps (`TauCeti.smoothSectionFiberMap_mapFunctionLinearMap`).
 
 ## Implementation notes
 
@@ -362,5 +364,14 @@ theorem smoothSectionFiberMap_bijective [FiniteDimensional ℝ F'] [ContMDiffVec
       LinearMap.id_apply]
   · rw [← LinearMap.comp_apply, ← smoothSectionFiberMap_comp, e.comp_symm, smoothSectionFiberMap_id,
       LinearMap.id_apply]
+
+/-- The fibre maps of the action on sections of a smooth bundle map `ϕ` are the maps `ϕ x`. -/
+@[simp]
+theorem smoothSectionFiberMap_mapFunctionLinearMap (x : M) (ϕ : ∀ x, V x →ₗ[ℝ] W x)
+    (hϕ : ContMDiff (I.prod 𝓘(ℝ, F)) (I.prod 𝓘(ℝ, F')) ∞
+      (fun p : TotalSpace F V ↦ (⟨p.proj, ϕ p.proj p.snd⟩ : TotalSpace F' W))) :
+    smoothSectionFiberMap x (ContMDiffSection.mapFunctionLinearMap ϕ hϕ) = ϕ x :=
+  (smoothSectionFiberMap_eq_iff x _ _).2 fun s ↦
+    (ContMDiffSection.mapFunctionLinearMap_apply ϕ hϕ s x).symm
 
 end TauCeti
