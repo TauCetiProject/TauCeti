@@ -19,8 +19,8 @@ form `E` for `J` gives the polarization `Q = -E` of the homological structure
 (`IsRiemannForm.homologicalPolarization`). If a positive integer `a` kills the cokernel of
 `E♭ : Λ → Hom(Λ, ℤ)`, the integral form `a Q^∨` on `H¹` (`LinearMap.BilinForm.scaledDualForm`)
 polarizes the cohomological structure (`IsRiemannForm.isPolarization_cohomological`). When `E` is
-principal one may take `a = 1`, and the dual form `Q^∨` itself is a principal polarization
-(`IsRiemannForm.isPolarization_cohomological_one`).
+principal one may take `a = 1`, and the dual form `Q^∨` itself polarizes the cohomological
+structure (`IsRiemannForm.isPolarization_cohomological_one`).
 
 The construction follows the Stanford VIGRE notes, *Complex theory of abelian varieties*,
 Definitions 1.13–1.14 and Lemma 1.16.
