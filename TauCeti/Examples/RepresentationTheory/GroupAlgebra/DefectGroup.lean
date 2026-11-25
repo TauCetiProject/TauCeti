@@ -35,16 +35,17 @@ open _root_.MonoidAlgebra GroupAlgebraBlockExamples Examples
 
 /-! ### `𝔽₂[S₃]` -/
 
-/-- An element of a `2`-subgroup of `S₃` other than `1` is not of order dividing `3`. -/
-private theorem pow_three_ne_one_of_isPGroup {Q : Subgroup S₃} (hQ : IsPGroup 2 Q) {q : Q}
-    (hq : q ≠ 1) : (q : S₃) * q * q ≠ 1 := by
-  intro h3
-  obtain ⟨n, hn⟩ := hQ q
-  have h3' : q ^ 3 = 1 := Subtype.ext (by simpa [pow_succ, mul_assoc] using h3)
-  have hcop : Nat.Coprime (orderOf q) (2 ^ n) :=
-    Nat.Coprime.coprime_dvd_left (orderOf_dvd_of_pow_eq_one h3')
-      (Nat.Coprime.pow_right n (by norm_num))
-  exact hq (orderOf_eq_one_iff.1 (hcop.eq_one_of_dvd (orderOf_dvd_of_pow_eq_one hn)))
+/-- An element `q` of a `2`-subgroup with `q³ = 1` is `1`. -/
+private theorem eq_one_of_isPGroup_of_pow_three_eq_one {G : Type*} [Group G] {Q : Subgroup G}
+    (hQ : IsPGroup 2 Q) {q : G} (hq : q ∈ Q) (h3 : q ^ 3 = 1) : q = 1 := by
+  have h3' : (⟨q, hq⟩ : Q) ^ 3 = 1 := Subtype.ext h3
+  exact congrArg Subtype.val (orderOf_eq_one_iff.1 ((hQ.orderOf_coprime (n := 3) (by norm_num)
+    _).eq_one_of_dvd (orderOf_dvd_of_pow_eq_one h3')))
+
+/-- A nonzero coefficient makes an element of a monoid algebra nonzero. -/
+private theorem ne_zero_of_coeff_ne_zero {k G : Type*} [Semiring k] {x : MonoidAlgebra k G} (g : G)
+    (h : x.coeff g ≠ 0) : x ≠ 0 :=
+  ne_of_apply_ne (·.coeff g) (by simpa using h)
 
 /-- An element of `S₃` commuting with some `q` with `q³ ≠ 1` is not a `3`-cycle. -/
 private theorem coeff_blockTwoS₃_eq_zero_of_commute :
@@ -58,9 +59,8 @@ private theorem card_eq_one_or_two_of_isPGroup {Q : Subgroup S₃} (hQ : IsPGrou
   obtain ⟨n, hn⟩ := IsPGroup.iff_card.1 hQ
   have hdvd : 2 ^ n ∣ 6 := hn ▸ (Subgroup.card_subgroup_dvd_card Q).trans
     (by rw [Nat.card_eq_fintype_card, Fintype.card_perm, Fintype.card_fin]; decide)
-  have hn1 : n ≤ 1 := by
-    by_contra h
-    exact absurd ((Nat.pow_dvd_pow 2 (by omega : 2 ≤ n)).trans hdvd) (by decide)
+  have hn1 : n ≤ 1 := (Nat.pow_dvd_pow_iff_le_right one_lt_two).1
+    ((Nat.Coprime.pow_left n (by norm_num : Nat.Coprime 2 3)).dvd_of_dvd_mul_right hdvd)
   interval_cases n <;> simp [hn]
 
 /-- **Check.** `Br_{⟨(0 1)⟩}(ρ + ρ²) = 0`: neither `ρ` nor `ρ²` commutes with `(0 1)`. -/
@@ -76,14 +76,12 @@ theorem isDefectGroup_blockTwoS₃_bot :
     IsDefectGroup (ZMod 2) 2 (blockTwoS₃ : MonoidAlgebra (ZMod 2) S₃) ⊥ := by
   refine isDefectGroup_iff.2 ⟨IsPGroup.of_bot, ?_, fun Q hQ hQe _ => ?_⟩
   · rw [Ne, brauerProjection_bot_eq_zero_iff]
-    intro h
-    have := congrArg (fun x : MonoidAlgebra (ZMod 2) S₃ => x.coeff ρ) h
-    simp only [coeff_blockTwoS₃, coeff_zero, Finsupp.zero_apply] at this
-    revert this
-    decide +kernel
+    exact ne_zero_of_coeff_ne_zero ρ (by rw [coeff_blockTwoS₃]; decide +kernel)
   · by_contra hne
     obtain ⟨q, hq1⟩ := (Subgroup.ne_bot_iff_exists_ne_one).1 hne
-    have h3 := pow_three_ne_one_of_isPGroup hQ hq1
+    have h3 : (q : S₃) * q * q ≠ 1 := fun h3 => hq1 (Subtype.ext
+      (eq_one_of_isPGroup_of_pow_three_eq_one hQ q.property
+        (by simpa [pow_succ, mul_assoc] using h3)))
     refine hQe (brauerProjection_eq_zero_iff.2 fun c hc => ?_)
     have hcq : c * q = q * c :=
       (Subgroup.mem_centralizer_iff.1 hc q (SetLike.mem_coe.2 q.property)).symm
@@ -91,20 +89,17 @@ theorem isDefectGroup_blockTwoS₃_bot :
     exact coeff_blockTwoS₃_eq_zero_of_commute c q h3 hcq
 
 /-- `⟨(0 1)⟩` has order `2`. -/
-theorem card_P : Nat.card BrauerProjectionS3.P = 2 := by
+private theorem card_P : Nat.card BrauerProjectionS3.P = 2 := by
   rw [Nat.card_zpowers]
   exact orderOf_eq_prime (by decide) (by decide)
 
 /-- **Check.** `Br_Q(1 + ρ + ρ²) ≠ 0` for every subgroup `Q` of `S₃`: its coefficient at
 `1 ∈ C_{S₃}(Q)` is `1`. -/
 theorem brauerProjection_blockOneS₃_ne_zero (Q : Subgroup S₃) :
-    brauerProjection Q (blockOneS₃ : MonoidAlgebra (ZMod 2) S₃) ≠ 0 := by
-  intro h
-  have := congrArg (fun x => x.coeff 1) h
-  simp only [coeff_brauerProjection, OneMemClass.coe_one, coeff_blockOneS₃, coeff_zero,
-    Finsupp.zero_apply] at this
-  revert this
-  decide
+    brauerProjection Q (blockOneS₃ : MonoidAlgebra (ZMod 2) S₃) ≠ 0 :=
+  ne_zero_of_coeff_ne_zero 1 (by
+    rw [coeff_brauerProjection, OneMemClass.coe_one, coeff_blockOneS₃]
+    decide)
 
 /-- **Check.** The defect groups of the principal block `1 + ρ + ρ²` of `𝔽₂[S₃]` are exactly the
 three subgroups of order `2`: every subgroup has nonzero Brauer projection, and a `2`-subgroup of
@@ -137,12 +132,10 @@ theorem coeff_one_add_r_add_r_sq :
 would be the maximal subgroup with nonzero Brauer projection. -/
 theorem brauerProjection_top_one_add_r_add_r_sq_ne_zero :
     brauerProjection (⊤ : Subgroup C₃)
-      (1 + of (ZMod 2) C₃ r + of (ZMod 2) C₃ (r ^ 2)) ≠ 0 := by
-  intro h
-  have := congrArg (fun x => x.coeff 1) h
-  simp only [coeff_brauerProjection, OneMemClass.coe_one, coeff_one_add_r_add_r_sq, coeff_zero,
-    Finsupp.zero_apply] at this
-  exact one_ne_zero this
+      (1 + of (ZMod 2) C₃ r + of (ZMod 2) C₃ (r ^ 2)) ≠ 0 :=
+  ne_zero_of_coeff_ne_zero 1 (by
+    rw [coeff_brauerProjection, OneMemClass.coe_one, coeff_one_add_r_add_r_sq]
+    exact one_ne_zero)
 
 /-- **Check.** The defect group of the block `1 + r + r²` of `𝔽₂[C₃]` is `1`, the only
 `2`-subgroup of `C₃`. -/
@@ -150,17 +143,9 @@ theorem isDefectGroup_one_add_r_add_r_sq_bot :
     IsDefectGroup (ZMod 2) 2 (1 + of (ZMod 2) C₃ r + of (ZMod 2) C₃ (r ^ 2)) ⊥ := by
   refine isDefectGroup_iff.2 ⟨IsPGroup.of_bot, ?_, fun Q hQ _ _ => ?_⟩
   · rw [Ne, brauerProjection_bot_eq_zero_iff]
-    intro h
-    have := congrArg (fun x => x.coeff 1) h
-    simp only [coeff_one_add_r_add_r_sq, coeff_zero, Finsupp.zero_apply] at this
-    exact one_ne_zero this
-  · obtain ⟨n, hn⟩ := IsPGroup.iff_card.1 hQ
-    have hdvd : 2 ^ n ∣ 3 := hn ▸ (Subgroup.card_subgroup_dvd_card Q).trans
-      (by rw [Nat.card_eq_fintype_card]; decide)
-    have hn0 : n = 0 := by
-      by_contra h
-      exact absurd ((pow_dvd_pow 2 (Nat.one_le_iff_ne_zero.2 h)).trans hdvd) (by decide)
-    exact Subgroup.eq_bot_of_card_eq Q (by rw [hn, hn0, pow_zero])
+    exact ne_zero_of_coeff_ne_zero 1 (by rw [coeff_one_add_r_add_r_sq]; exact one_ne_zero)
+  · exact (Subgroup.eq_bot_iff_forall Q).2 fun q hq =>
+      eq_one_of_isPGroup_of_pow_three_eq_one hQ hq (by simpa using pow_card_eq_one (x := q))
 
 /-! ### The trivial group -/
 
