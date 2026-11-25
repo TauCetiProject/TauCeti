@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
+public import TauCeti.Analysis.Normed.Module.Ball.Opens
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
@@ -29,7 +30,6 @@ the whole model vector space, sending the point to `0`.
 
 ## Main definitions
 
-* `TauCeti.unitBallOpens`: the open unit ball, as an open subset.
 * `TauCeti.unitBallDiffeomorph`: the diffeomorphism between the open unit ball and the whole space.
 
 ## Main results
@@ -51,31 +51,6 @@ open Filter Manifold Metric OpenPartialHomeomorph Set TopologicalSpace
 open scoped Manifold ContDiff Topology
 
 namespace TauCeti
-
-section Normed
-
-variable (F : Type*) [NormedAddCommGroup F]
-
-/-- The open unit ball of a normed space, as an open subset. -/
-def unitBallOpens : Opens F :=
-  ⟨ball 0 1, isOpen_ball⟩
-
-/-- The open unit ball, as a set. -/
-@[simp]
-theorem coe_unitBallOpens : (unitBallOpens F : Set F) = ball 0 1 := by
-  rw [unitBallOpens, Opens.coe_mk]
-
-variable {F} in
-/-- A point lies in the open unit ball exactly when its norm is less than `1`. -/
-@[simp]
-theorem mem_unitBallOpens {v : F} : v ∈ unitBallOpens F ↔ ‖v‖ < 1 := by
-  rw [← SetLike.mem_coe, coe_unitBallOpens, mem_ball_zero_iff]
-
-/-- The centre of the open unit ball. -/
-theorem zero_mem_unitBallOpens : (0 : F) ∈ unitBallOpens F :=
-  mem_unitBallOpens.2 (by simp)
-
-end Normed
 
 variable (F : Type*) [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 

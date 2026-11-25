@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Holder.OpenSet.Basic
 public import Mathlib.Topology.ExtendFrom
 import Mathlib.Analysis.Calculus.MeanValue
-import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -23,11 +22,6 @@ continuous linear functional of norm at most one. These boundary values are how 
 conditions are imposed on elements of `C^{k+1,α}(Ω)`, for instance totally real boundary
 conditions for the Cauchy–Riemann operator on the disc.
 
-Conversely, a function on `Ω` that is differentiable on a bounded open set, bounded, and has an
-`α`-Hölder derivative on `Ω`, defines an element of `C^{1,α}(Ω)`
-(`TauCeti.CkHolderSpaceOn.exists_apply_eq_of_differentiableOn_of_holderOnWith`). This is the form
-in which existence theorems for boundary value problems produce their solutions.
-
 ## Main declarations
 
 * `TauCeti.CkHolderSpaceOn.closureExtend`: the extension `extendFrom Ω f` of an element to `E`; it
@@ -39,9 +33,6 @@ in which existence theorems for boundary value problems produce their solutions.
   the closure to its extension, which is Lipschitz on the closure with the same constant.
 * `TauCeti.CkHolderSpaceOn.closureEvalL`: the value of the extension at a point of the closure,
   as a continuous linear functional on `C^{k+1,α}(Ω)` of norm at most one.
-* `TauCeti.CkHolderSpaceOn.exists_apply_eq_of_differentiableOn_of_holderOnWith`: a bounded
-  function with an `α`-Hölder derivative on a bounded open set defines an element of
-  `C^{1,α}(Ω)`.
 -/
 
 public section
@@ -79,7 +70,7 @@ theorem closureExtend_apply (f : CkHolderSpaceOn k α Ω F) (x : Ω) :
 theorem closureExtend_eventuallyEq_extend (f : CkHolderSpaceOn k α Ω F) {x : E} (hx : x ∈ Ω) :
     f.closureExtend =ᶠ[𝓝 x] f.extend := by
   filter_upwards [Ω.isOpen.mem_nhds hx] with y hy
-  rw [show y = ((⟨y, hy⟩ : Ω) : E) from rfl, closureExtend_apply, extend_apply]
+  exact (f.closureExtend_apply ⟨y, hy⟩).trans (f.extend_apply_of_mem hy).symm
 
 /-- **Elements of `C^{k+1,α}(Ω)` are Lipschitz.** On a convex open set, an element of
 `C^{k+1,α}(Ω)` is Lipschitz on `Ω` with constant its norm, which bounds its derivative. -/
@@ -122,7 +113,7 @@ theorem norm_closureExtend_le (hΩ : Convex ℝ (Ω : Set E)) (f : CkHolderSpace
   have := mem_closure_iff_nhdsWithin_neBot.1 hx
   refine le_of_tendsto (f.tendsto_closureExtend hΩ hx).norm
     (eventually_nhdsWithin_of_forall fun y hy ↦ ?_)
-  rw [show y = ((⟨y, hy⟩ : Ω) : E) from rfl, extend_apply]
+  rw [f.extend_apply_of_mem hy]
   exact f.norm_apply_le _
 
 /-- The extension to the closure is additive. -/
@@ -133,8 +124,8 @@ theorem closureExtend_add (hΩ : Convex ℝ (Ω : Set E)) (f g : CkHolderSpaceOn
   refine tendsto_nhds_unique ((f + g).tendsto_closureExtend hΩ hx) ?_
   refine ((f.tendsto_closureExtend hΩ hx).add (g.tendsto_closureExtend hΩ hx)).congr'
     (eventually_nhdsWithin_of_forall fun y hy ↦ ?_)
-  rw [show y = ((⟨y, hy⟩ : Ω) : E) from rfl, extend_apply, extend_apply, extend_apply, coe_add,
-    Pi.add_apply]
+  rw [(f + g).extend_apply_of_mem hy, f.extend_apply_of_mem hy, g.extend_apply_of_mem hy,
+    coe_add, Pi.add_apply]
 
 /-- The extension to the closure commutes with real scalar multiplication. -/
 theorem closureExtend_smul (hΩ : Convex ℝ (Ω : Set E)) (c : ℝ) (f : CkHolderSpaceOn (k + 1) α Ω F)
@@ -144,8 +135,7 @@ theorem closureExtend_smul (hΩ : Convex ℝ (Ω : Set E)) (c : ℝ) (f : CkHold
   refine tendsto_nhds_unique ((c • f).tendsto_closureExtend hΩ hx) ?_
   refine ((f.tendsto_closureExtend hΩ hx).const_smul c).congr'
     (eventually_nhdsWithin_of_forall fun y hy ↦ ?_)
-  rw [show y = ((⟨y, hy⟩ : Ω) : E) from rfl, extend_apply, extend_apply, coe_smul,
-    Pi.smul_apply]
+  rw [(c • f).extend_apply_of_mem hy, f.extend_apply_of_mem hy, coe_smul, Pi.smul_apply]
 
 /-- The value at a point `x` of the closure of a convex open set `Ω`, as a continuous linear
 functional of norm at most one on `C^{k+1,α}(Ω)`: the limit of the element along `Ω` at `x`. -/
@@ -167,36 +157,5 @@ theorem closureEvalL_apply (hΩ : Convex ℝ (Ω : Set E)) {x : E} (hx : x ∈ c
 theorem norm_closureEvalL_le (hΩ : Convex ℝ (Ω : Set E)) {x : E}
     (hx : x ∈ closure (Ω : Set E)) : ‖closureEvalL (k := k) (α := α) (F := F) hΩ hx‖ ≤ 1 :=
   LinearMap.mkContinuous_norm_le _ zero_le_one _
-
-omit [CompleteSpace F] in
-/-- **A criterion for `C^{1,α}(Ω)`.** Let `α > 0`. On a bounded open set `Ω`, a function that is
-differentiable and bounded on `Ω`, with derivative equal on `Ω` to a map `g'` which is `α`-Hölder
-on `Ω`, defines an element of `C^{1,α}(Ω)`. -/
-theorem exists_apply_eq_of_differentiableOn_of_holderOnWith (hα : 0 < α) {g : E → F}
-    {g' : E → E →L[ℝ] F} {K : ℝ≥0} (hΩ : Bornology.IsBounded (Ω : Set E))
-    (hg : DifferentiableOn ℝ g Ω) (hgb : ∃ C, ∀ x ∈ Ω, ‖g x‖ ≤ C) (hg' : HolderOnWith K α g' Ω)
-    (hfd : ∀ x ∈ Ω, fderiv ℝ g x = g' x) : ∃ f : CkHolderSpaceOn 1 α Ω F, ∀ x : Ω, f x = g x := by
-  have hc : ContDiffOn ℝ 1 g Ω := by
-    rw [show (1 : WithTop ℕ∞) = 0 + 1 from rfl, contDiffOn_succ_iff_fderiv_of_isOpen Ω.isOpen]
-    refine ⟨hg, by simp, ?_⟩
-    rw [contDiffOn_zero]
-    exact (hg'.continuousOn hα).congr hfd
-  obtain ⟨C', hC'⟩ := (hg'.isBounded_image hΩ).exists_norm_le
-  have hbdd : ∀ i ≤ 1, ∃ C, ∀ x : Ω, ‖_root_.iteratedFDeriv ℝ i g x‖ ≤ C := by
-    intro i hi
-    obtain ⟨C, hC⟩ := hgb
-    rcases Nat.le_one_iff_eq_zero_or_eq_one.1 hi with rfl | rfl
-    · exact ⟨C, fun x ↦ by simpa using hC x x.property⟩
-    · exact ⟨C', fun x ↦ by
-        rw [norm_iteratedFDeriv_one (𝕜 := ℝ), hfd x x.property]
-        exact hC' _ ⟨x, x.property, rfl⟩⟩
-  -- The first iterated derivative is the derivative, uncurried by a linear isometry.
-  have hholder : MemHolder α fun x : Ω ↦ _root_.iteratedFDeriv ℝ 1 g x := by
-    refine ⟨K, HolderOnWith.holderWith ?_⟩
-    refine ((continuousMultilinearCurryFin1 ℝ E F).symm.isometry.comp_holderOnWith hg').congr
-      fun x hx ↦ ?_
-    exact (LinearIsometryEquiv.symm_apply_eq _).2
-      ((continuousMultilinearCurryFin1_iteratedFDeriv_one g x).trans (hfd x hx)).symm
-  exact ⟨ofContDiffOn g hc hbdd hholder, ofContDiffOn_apply g hc hbdd hholder⟩
 
 end TauCeti.CkHolderSpaceOn
