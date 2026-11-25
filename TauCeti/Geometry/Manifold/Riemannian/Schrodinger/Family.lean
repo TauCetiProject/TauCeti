@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Family
-public import TauCeti.Geometry.Manifold.Riemannian.DirichletEnergy.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.Schrodinger.Relative
+import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative.DensityFamily
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Topology
-import TauCeti.Geometry.Manifold.Riemannian.Gradient.Isometry
-import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Isometry
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
@@ -33,86 +31,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   {A : Type*} [TopologicalSpace A]
-
-namespace Bundle.ContMDiffRiemannianMetric
-
-open TauCeti TauCeti.Manifold
-
-section Scalar
-
-variable [LindelofSpace M]
-
-/-- The quadratic form of `-Δ_g + P`. The potential and the test are functions on the underlying
-manifold. -/
-def scalarSchrodingerForm
-    (g : ContMDiffRiemannianMetric I ∞ E (TangentSpace I : M → Type _))
-    (P φ : M → ℝ) : ℝ :=
-  ∫ x : WithMetric g, (‖mgradient I (φ ∘ WithMetric.ofWithMetric) x‖ ^ 2 +
-    P x.ofWithMetric * φ x.ofWithMetric ^ 2) ∂riemannianVolume I (WithMetric g)
-
-/-- The scalar Schrödinger form evaluated on the metric-indexed copy of the manifold. -/
-theorem scalarSchrodingerForm_def
-    (g : ContMDiffRiemannianMetric I ∞ E (TangentSpace I : M → Type _))
-    (P φ : M → ℝ) :
-    scalarSchrodingerForm g P φ =
-      ∫ x : WithMetric g, (‖mgradient I (φ ∘ WithMetric.ofWithMetric) x‖ ^ 2 +
-        P x.ofWithMetric * φ x.ofWithMetric ^ 2) ∂riemannianVolume I (WithMetric g) := (rfl)
-
-/-- The scalar Schrödinger form is the Dirichlet energy plus the potential energy when
-both integrands are integrable. -/
-theorem scalarSchrodingerForm_eq_dirichletEnergy_add
-    (g : ContMDiffRiemannianMetric I ∞ E (TangentSpace I : M → Type _))
-    (P φ : M → ℝ)
-    (hD : Integrable (fun x : WithMetric g ↦
-      ‖mgradient I (φ ∘ WithMetric.ofWithMetric) x‖ ^ 2)
-      (riemannianVolume I (WithMetric g)))
-    (hP : Integrable (fun x : WithMetric g ↦ P x.ofWithMetric * φ x.ofWithMetric ^ 2)
-      (riemannianVolume I (WithMetric g))) :
-    scalarSchrodingerForm g P φ =
-      dirichletEnergy I (φ ∘ (WithMetric.ofWithMetric : WithMetric g → M)) +
-        ∫ x : WithMetric g, P x.ofWithMetric * φ x.ofWithMetric ^ 2
-          ∂riemannianVolume I (WithMetric g) := by
-  rw [scalarSchrodingerForm_def, dirichletEnergy_def, integral_add hD hP]
-
-/-- With zero potential the scalar Schrödinger form is the Dirichlet energy. -/
-@[simp]
-theorem scalarSchrodingerForm_zero_potential
-    (g : ContMDiffRiemannianMetric I ∞ E (TangentSpace I : M → Type _)) (φ : M → ℝ) :
-    scalarSchrodingerForm g 0 φ =
-      dirichletEnergy I (φ ∘ (WithMetric.ofWithMetric : WithMetric g → M)) := by
-  simp [scalarSchrodingerForm_def, dirichletEnergy_def]
-
-/-- The zero test has zero scalar Schrödinger form for every potential. -/
-@[simp]
-theorem scalarSchrodingerForm_zero
-    (g : ContMDiffRiemannianMetric I ∞ E (TangentSpace I : M → Type _)) (P : M → ℝ) :
-    scalarSchrodingerForm g P 0 = 0 := by
-  simp [scalarSchrodingerForm_def, Function.comp_def]
-
-/-- Express the scalar Schrödinger form using a fixed reference volume and the relative
-volume density. The gradient on the underlying manifold is computed with the metric `g`. -/
-theorem scalarSchrodingerForm_eq_integral_relativeVolumeDensity
-    (r g : ContMDiffRiemannianMetric I ∞ E (TangentSpace I : M → Type _))
-    (P : M → ℝ) {φ : M → ℝ} (hφ : MDifferentiable I 𝓘(ℝ) φ) :
-    letI : RiemannianBundle (TangentSpace I : M → Type _) := ⟨g.toRiemannianMetric⟩
-    scalarSchrodingerForm g P φ =
-      ∫ x : WithMetric r, r.relativeVolumeDensity g x.ofWithMetric *
-        (‖mgradient I φ x.ofWithMetric‖ ^ 2 + P x.ofWithMetric * φ x.ofWithMetric ^ 2)
-        ∂riemannianVolume I (WithMetric r) := by
-  let : RiemannianBundle (TangentSpace I : M → Type _) := ⟨g.toRiemannianMetric⟩
-  rw [scalarSchrodingerForm_def]
-  have hiso : IsLocalRiemannianIsometry I I
-      (WithMetric.ofWithMetric : WithMetric g → M) := by
-    simpa only [WithMetric.coe_riemannianIsometry] using
-      (WithMetric.riemannianIsometry g).isLocalRiemannianIsometry
-  simp_rw [hiso.norm_mgradient_comp (hφ _)]
-  simpa only [smul_eq_mul] using
-    r.integral_riemannianVolume_eq_integral_relativeVolumeDensity_smul g
-      (fun x ↦ ‖mgradient I φ x‖ ^ 2 + P x * φ x ^ 2)
-
-end Scalar
-
-end Bundle.ContMDiffRiemannianMetric
 
 namespace TauCeti.Manifold
 
