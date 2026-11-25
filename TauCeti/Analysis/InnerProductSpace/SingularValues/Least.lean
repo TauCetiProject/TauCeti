@@ -45,6 +45,9 @@ unit vectors therefore assume `Nontrivial E`.
 * `LinearMap.minimalStretch_mul_le_minimalStretch_comp`: `ℓ(B) ℓ(A) ≤ ℓ(B ∘ A)`.
 * `LinearMap.minimalStretch_pow_le_normDet`: `ℓ(A)ⁿ ≤ normDet(A)`; the upper bound
   `normDet(A) ≤ ‖A‖ⁿ` is `ContinuousLinearMap.normDet_le_norm_pow`.
+* `LinearMap.norm_mul_minimalStretch_pow_le_normDet`,
+  `LinearMap.normDet_le_norm_pow_mul_minimalStretch`: the sharper sandwich
+  `‖A‖ ℓ(A)ⁿ⁻¹ ≤ normDet(A) ≤ ‖A‖ⁿ⁻¹ ℓ(A)`, the latter for `n > 0`.
 * `LinearMap.minimalStretch_smul`, `LinearMap.minimalStretch_linearIsometry_comp`,
   `LinearMap.minimalStretch_comp_linearIsometryEquiv`: `ℓ(c A) = ‖c‖ ℓ(A)`, and `ℓ` is unchanged
   by linear isometries on the left and isometric isomorphisms on the right.
@@ -196,6 +199,34 @@ theorem minimalStretch_pow_le_normDet (A : E →ₗ[𝕜] F) :
     A.minimalStretch ^ finrank 𝕜 E ≤ A.normDet :=
   A.pow_finrank_le_normDet_of_mul_norm_le A.minimalStretch_nonneg
     A.minimalStretch_mul_norm_le_norm_apply
+
+/-- On a nonzero space of dimension `n`, the Jacobian `normDet` is at most `‖A‖ⁿ⁻¹ ℓ(A)`: in
+terms of the singular values, `σ₁ ⋯ σₙ ≤ σ₁ⁿ⁻¹ σₙ`. In dimension `0` the right side is `0`
+while `normDet(A) = 1`. -/
+theorem normDet_le_norm_pow_mul_minimalStretch (hE : 0 < finrank 𝕜 E) (A : E →ₗ[𝕜] F) :
+    A.normDet ≤ ‖toContinuousLinearMap A‖ ^ (finrank 𝕜 E - 1) * A.minimalStretch := by
+  rw [normDet_eq_prod_singularValues, norm_toContinuousLinearMap_eq_singularValues_zero,
+    minimalStretch_def]
+  obtain ⟨m, hm⟩ := Nat.exists_eq_add_one_of_ne_zero hE.ne'
+  rw [hm, Nat.add_sub_cancel, Finset.prod_range_succ]
+  refine mul_le_mul_of_nonneg_right ?_ (A.singularValues_nonneg m)
+  exact (Finset.prod_le_prod₀ (fun i _ ↦ A.singularValues_nonneg i)
+    fun i _ ↦ A.singularValues_antitone (Nat.zero_le i)).trans_eq (by simp)
+
+/-- The Jacobian `normDet` is at least `‖A‖ ℓ(A)ⁿ⁻¹`, `n = dim E`: in terms of the singular
+values, `σ₁ σₙⁿ⁻¹ ≤ σ₁ ⋯ σₙ`. -/
+theorem norm_mul_minimalStretch_pow_le_normDet (A : E →ₗ[𝕜] F) :
+    ‖toContinuousLinearMap A‖ * A.minimalStretch ^ (finrank 𝕜 E - 1) ≤ A.normDet := by
+  rw [normDet_eq_prod_singularValues, norm_toContinuousLinearMap_eq_singularValues_zero,
+    minimalStretch_def]
+  rcases h : finrank 𝕜 E with - | m
+  · simp [A.singularValues_of_finrank_le h.le]
+  rw [Nat.add_sub_cancel, Finset.prod_range_succ', mul_comm]
+  refine mul_le_mul_of_nonneg_right ?_ (A.singularValues_nonneg 0)
+  refine (Finset.prod_le_prod₀ (fun _ _ ↦ A.singularValues_nonneg m)
+    fun i hi ↦ A.singularValues_antitone ?_).trans_eq' (by simp)
+  simp only [Finset.mem_range] at hi
+  omega
 
 /-- The zero map has minimal stretch `0`. -/
 @[simp]
