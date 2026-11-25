@@ -10,6 +10,8 @@ public import TauCeti.LinearAlgebra.Matrix.NonBacktracking
 public import TauCeti.LinearAlgebra.Matrix.Trace.Pow
 import TauCeti.Combinatorics.TraceWord.Bipartite.Basic
 import TauCeti.Data.Fin.Rotate
+import TauCeti.Data.Fin.Tuple.Basic
+import TauCeti.Data.Matrix.Block
 import TauCeti.LinearAlgebra.Matrix.Block
 
 /-!
@@ -90,23 +92,6 @@ private theorem exists_eq_bipartitePath {k : ℕ} (w : Fin (2 * k + 1) → p ⊕
 
 variable [CommSemiring R]
 
-private theorem isLeft_eq_of_prod_fromBlocks_ne_zero {k : ℕ}
-    (A : Matrix p n R) (B : Matrix n p R) {i : p} {w : Fin (2 * k + 1) → p ⊕ n}
-    (hi : w 0 = .inl i)
-    (hw : (∏ t : Fin (2 * k), fromBlocks 0 A B 0 (w t.castSucc) (w t.succ)) ≠ 0) :
-    ∀ t, (w t).isLeft = decide ((t : ℕ) % 2 = 0) := by
-  intro t
-  induction t using Fin.induction with
-  | zero => simp [hi]
-  | succ t ih =>
-    have hstep : (w t.succ).isLeft = !(w t.castSucc).isLeft := by
-      have hne := fun hz ↦ hw (Finset.prod_eq_zero (mem_univ t) hz)
-      cases h₁ : w t.castSucc <;> cases h₂ : w t.succ <;> simp_all
-    rw [hstep, ih]
-    simp only [Fin.val_succ]
-    have hparity : ((t : ℕ) + 1) % 2 = 0 ↔ (t : ℕ) % 2 ≠ 0 := by omega
-    by_cases ht : (t : ℕ) % 2 = 0 <;> simp [hparity, ht]
-
 private theorem bipartitePath_nonbacktracking_iff {k : ℕ} (u : Fin (k + 1) → p)
     (v : Fin k → n) :
     (∀ s t : Fin (2 * k + 1), (s : ℕ) + 2 = t → bipartitePath u v s ≠ bipartitePath u v t) ↔
@@ -175,7 +160,7 @@ theorem toBlocks₁₁_nonbacktrackingPow_apply (A : Matrix p n R) (B : Matrix n
       ∑ w ∈ W, P w := by
     refine sum_filter_of_ne fun w hw hn ↦ ?_
     have hi := (mem_filter.mp hw).2.1
-    exact exists_eq_bipartitePath w (isLeft_eq_of_prod_fromBlocks_ne_zero A B hi hn)
+    exact exists_eq_bipartitePath w (isLeft_eq_of_prod_fromBlocks_ne_zero A B (by simp [hi]) hn)
   rw [← hfilter]
   have hmem (uv : (Fin (k + 1) → p) × (Fin k → n)) :
       bipartitePath uv.1 uv.2 ∈ W.filter (fun w ↦ ∃ u v, bipartitePath u v = w) ↔
@@ -233,36 +218,19 @@ private theorem toBlocks₁₁_nonbacktrackingPow_apply_succ
     rw [he]
     exact ⟨h.2.2.1, (hcol _).1 h.2.2.2⟩
 
-/-- Group the row indices by walk, splitting each group into its first and interior rows. -/
-private def blockRowsEquiv (r k : ℕ) :
-    (Fin (r * (k + 1)) → p) ≃ (Fin r → p) × (Fin r → Fin k → p) :=
-  ((finProdFinEquiv.symm.arrowCongr (Equiv.refl p)).trans
-    (Equiv.curry (Fin r) (Fin (k + 1)) p)).trans
-    ((Equiv.piCongrRight fun _ ↦ (Fin.consEquiv fun _ : Fin (k + 1) ↦ p).symm).trans
-      (Equiv.arrowProdEquivProdArrow _ _ _))
-
 omit [Fintype p] [DecidableEq p] in
-private theorem cons_blockRowsEquiv {r k : ℕ} (u : Fin (r * (k + 1)) → p) (a : Fin r)
-    (t : Fin (k + 1)) :
-    Fin.cons (α := fun _ ↦ p) ((blockRowsEquiv r k u).1 a) ((blockRowsEquiv r k u).2 a) t =
-      u (finProdFinEquiv (a, t)) := by
-  have h := (Fin.consEquiv fun _ : Fin (k + 1) ↦ p).apply_symm_apply
-    (fun t ↦ u (finProdFinEquiv (a, t)))
-  exact congrFun h t
-
-omit [Fintype p] [DecidableEq p] in
-private theorem walkRows_blockRowsEquiv_succ {r k : ℕ} (u : Fin (r * (k + 1)) → p)
+private theorem walkRows_blockHeadTailEquiv_succ {r k : ℕ} (u : Fin (r * (k + 1)) → p)
     (a : Fin r) (t : Fin (k + 1)) :
-    walkRows ((blockRowsEquiv r k u).1 a) ((blockRowsEquiv r k u).1 (finRotate r a))
-      ((blockRowsEquiv r k u).2 a) t.succ =
+    walkRows ((Fin.blockHeadTailEquiv r k u).1 a) ((Fin.blockHeadTailEquiv r k u).1 (finRotate r a))
+      ((Fin.blockHeadTailEquiv r k u).2 a) t.succ =
       u (finRotate (r * (k + 1)) (finProdFinEquiv (a, t))) := by
   induction t using Fin.lastCases with
   | last =>
     rw [Fin.finRotate_finProdFinEquiv_last, Fin.succ_last, walkRows, Fin.snoc_last]
-    simpa using (cons_blockRowsEquiv u (finRotate r a) 0)
+    simpa only [Fin.cons_zero] using (Fin.cons_blockHeadTailEquiv u (finRotate r a) 0)
   | cast t =>
     rw [Fin.finRotate_finProdFinEquiv_castSucc, walkRows, Fin.succ_castSucc, Fin.snoc_castSucc]
-    exact cons_blockRowsEquiv u a t.succ
+    exact Fin.cons_blockHeadTailEquiv u a t.succ
 
 /-- The trace of the rth power of the row block of the bipartite non-backtracking walk matrix
 of length 2(k + 1) is the sum over closed bipartite words with r(k + 1) row visits.
@@ -284,7 +252,7 @@ theorem trace_pow_toBlocks₁₁_nonbacktrackingPow (A : Matrix p n R) (B : Matr
   -- Group the choices of vertices by their roles within each walk.
   simp_rw [← (Equiv.arrowProdEquivProdArrow (Fin r) (fun _ ↦ Fin k → p)
     (fun _ ↦ Fin (k + 1) → n)).symm.sum_comp, Fintype.sum_prod_type]
-  conv_lhs => rw [← Fintype.sum_prod_type', ← (blockRowsEquiv r k).sum_comp]
+  conv_lhs => rw [← Fintype.sum_prod_type', ← (Fin.blockHeadTailEquiv r k).sum_comp]
   let e : (Fin (r * (k + 1)) → n) ≃ (Fin r → Fin (k + 1) → n) :=
     (finProdFinEquiv.symm.arrowCongr (Equiv.refl n)).trans
       (Equiv.curry (Fin r) (Fin (k + 1)) n)
@@ -292,7 +260,7 @@ theorem trace_pow_toBlocks₁₁_nonbacktrackingPow (A : Matrix p n R) (B : Matr
   rw [← e.sum_comp]
   refine sum_congr rfl fun v _ ↦ ?_
   simp only [Equiv.arrowProdEquivProdArrow_symm_apply]
-  simp_rw [walkRows_blockRowsEquiv_succ, Fin.snoc_castSucc, cons_blockRowsEquiv]
+  simp_rw [walkRows_blockHeadTailEquiv_succ, Fin.snoc_castSucc, Fin.cons_blockHeadTailEquiv]
   have hv (a : Fin r) (t : Fin (k + 1)) : e v a t = v (finProdFinEquiv (a, t)) := rfl
   simp only [hv, Finset.prod_ite_zero]
   let f (t : Fin (r * (k + 1))) :=

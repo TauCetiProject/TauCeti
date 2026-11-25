@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Defs
 public import Mathlib.Data.Fin.Tuple.Basic
+public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.Order.Interval.Set.Defs
 import Mathlib.Algebra.NeZero
 import Mathlib.Data.Set.Image
@@ -47,6 +48,8 @@ set of the earlier ones.
 * `Fin.forall_snoc_eq_iff_snoc_eq`: appending one entry to each of two tuples gives the same
   equality pattern exactly when the old patterns agree and the new entries repeat the same
   positions.
+* `Fin.blockHeadTailEquiv`: split a tuple into equal-length nonempty blocks and collect their
+  heads and tails.
 * `Fin.update_append_castAdd`, `Fin.update_append_natAdd`: updating an entry of `Fin.append u v`
   updates the corresponding entry of `u` or of `v`.
 * `Fin.append_comp_swap_castAdd`, `Fin.append_comp_swap_natAdd`: exchanging two entries of
@@ -187,6 +190,25 @@ theorem forall_snoc_eq_iff_snoc_eq {β : Sort*} {n : ℕ} {a : Fin n → α} {b 
     iff_self, and_true]
   exact ⟨fun h => ⟨fun i => (h.1 i).1, fun i => (h.1 i).2⟩,
     fun h => ⟨fun i => ⟨h.1 i, h.2 i⟩, h.2⟩⟩
+
+/-- Split a tuple into `r` contiguous blocks of length `k + 1` and collect the first entry and
+the remaining entries of each block into two separate tuples. -/
+def blockHeadTailEquiv {β : Type*} (r k : ℕ) :
+    (Fin (r * (k + 1)) → β) ≃ (Fin r → β) × (Fin r → Fin k → β) :=
+  ((finProdFinEquiv.symm.arrowCongr (Equiv.refl β)).trans
+    (Equiv.curry (Fin r) (Fin (k + 1)) β)).trans
+    ((Equiv.piCongrRight fun _ ↦ (consEquiv fun _ : Fin (k + 1) ↦ β).symm).trans
+      (Equiv.arrowProdEquivProdArrow _ _ _))
+
+/-- Prepending the head to the tail of a block recovers the corresponding entries of the tuple. -/
+@[simp]
+theorem cons_blockHeadTailEquiv {β : Type*} {r k : ℕ} (u : Fin (r * (k + 1)) → β)
+    (a : Fin r) (t : Fin (k + 1)) :
+    cons (α := fun _ ↦ β) ((blockHeadTailEquiv r k u).1 a) ((blockHeadTailEquiv r k u).2 a) t =
+      u (finProdFinEquiv (a, t)) := by
+  have h := (consEquiv fun _ : Fin (k + 1) ↦ β).apply_symm_apply
+    (fun t ↦ u (finProdFinEquiv (a, t)))
+  exact congrFun h t
 
 /-- Updating `Fin.append u v` at a position of `u` is appending the updated `u` to `v`. -/
 @[simp]

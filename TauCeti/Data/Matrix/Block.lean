@@ -58,6 +58,8 @@ and empty blocks.
 * `Matrix.fromBlocks₁₁NonUnitalStarAlgHom`: the corner embedding `y ↦ fromBlocks y 0 0 0` as a
   non-unital `⋆`-algebra homomorphism.
 * `Matrix.fromBlocks_mul_sub_mul`: the four blocks of a difference of products.
+* `Matrix.isLeft_eq_of_prod_fromBlocks_ne_zero`: a path of nonzero weight in a matrix with
+  zero diagonal blocks alternates between the two index types.
 * `IsIdempotentElem.fromBlocks_zero₁₂_zero₂₁` and `IsStarProjection.fromBlocks_zero₁₂_zero₂₁`:
   the direct sum of idempotent matrices is idempotent, and that of star projections is a star
   projection. Conversely, by `Matrix.isIdempotentElem_fromBlocks_zero₁₂_zero₂₁_iff` and
@@ -85,6 +87,24 @@ public theorem fromBlocks₁₁₂₂_injective {m n p q α : Type*}
   rintro ⟨A₁, D₁⟩ ⟨A₂, D₂⟩ h
   simpa only [fromBlocks_inj, and_true, true_and, Prod.mk.injEq] using h
 
+/-- A walk of nonzero weight in a matrix with zero diagonal blocks, starting in the left
+summand, visits the left summand exactly at the even positions. -/
+public theorem isLeft_eq_of_prod_fromBlocks_ne_zero {p n R : Type*} [CommMonoidWithZero R]
+    {m : ℕ} (A : Matrix p n R) (B : Matrix n p R) {w : Fin (m + 1) → p ⊕ n}
+    (hi : (w 0).isLeft)
+    (hw : (∏ t : Fin m, fromBlocks 0 A B 0 (w t.castSucc) (w t.succ)) ≠ 0) :
+    ∀ t, (w t).isLeft = decide ((t : ℕ) % 2 = 0) := by
+  intro t
+  induction t using Fin.induction with
+  | zero => simpa using hi
+  | succ t ih =>
+    have hstep : (w t.succ).isLeft = !(w t.castSucc).isLeft := by
+      have hne := fun hz ↦ hw (Finset.prod_eq_zero (Finset.mem_univ t) hz)
+      cases h₁ : w t.castSucc <;> cases h₂ : w t.succ <;> simp_all
+    rw [hstep, ih]
+    simp only [Fin.val_succ]
+    have hparity : ((t : ℕ) + 1) % 2 = 0 ↔ (t : ℕ) % 2 ≠ 0 := by omega
+    by_cases ht : (t : ℕ) % 2 = 0 <;> simp [hparity, ht]
 
 /-- A nonnegative bound on absolute products of corresponding entries of a block diagonal
 matrix is equivalent to the same bounds within the two blocks. Each column selects a row
