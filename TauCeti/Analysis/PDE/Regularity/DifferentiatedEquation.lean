@@ -11,8 +11,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Zero
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.ClassicalSolution
-import TauCeti.Analysis.PDE.EnergyForm.WeakDivergence
-import TauCeti.Analysis.Sobolev.Leibniz
+import TauCeti.Analysis.Sobolev.W1p.Multiplication
 import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
@@ -94,8 +93,8 @@ private theorem energyFormH1_ofTestFunctionₗ_eq_sum_sum {a : EuclideanSpace �
   -- Pointwise, `⟨η, A ξ⟩ = ∑ᵢ ∑ⱼ ηᵢ Aᵢⱼ ξⱼ`.
   have hB : ∀ (A : Matrix ι ι ℝ) (η ξ : EuclideanSpace ℝ ι), matrixBilinearForm A η ξ =
       ∑ i, ∑ j, ⟪η, b i⟫_ℝ * (A i j * innerSL ℝ ξ (b j)) := fun A η ξ => by
-    simp only [b, innerSL_apply_apply, EuclideanSpace.inner_basisFun_real, matrixBilinearForm_apply,
-      dotProduct, Matrix.mulVec, Finset.mul_sum]
+    rw [← sum_inner_mul_matrixBilinearForm η ξ]
+    simp only [matrixBilinearForm_basisFun_left, Finset.mul_sum, innerSL_apply_apply, b]
   rw [energyFormH1_zero_zero_eq_setIntegral]
   calc ∫ x in Omega, matrixBilinearForm (a x)
         (W1p.gradient (W1p.ofTestFunctionₗ mu Omega 2 φ) x) (W1p.gradient w x) ∂mu
@@ -170,7 +169,7 @@ private theorem integrable_smul_sum_sum {B : EuclideanSpace ℝ ι → Matrix ι
       (fderiv ℝ (fun y => B y i j) x (EuclideanSpace.basisFun ι ℝ i) *
           ⟪W1p.gradient u x, EuclideanSpace.basisFun ι ℝ j⟫_ℝ +
         B x i j * ⟪W1p.gradient (D j) x, EuclideanSpace.basisFun ι ℝ i⟫_ℝ)) mu := by
-  have hL := hasWeakLineDerivOn_smul_inner_gradient hB hD
+  have hL := W1p.hasWeakLineDerivOn_smul_inner_gradient hB hD
   refine (integrable_finsetSum Finset.univ fun i _ => integrable_finsetSum Finset.univ fun j _ =>
     φ.integrable_smul (hL i j).locallyIntegrableOn_deriv).congr
       (Filter.Eventually.of_forall fun x => ?_)
@@ -195,7 +194,7 @@ theorem energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_of_hasWeakLineDerivOn
         (fderiv ℝ (fun y => B y i j) x (EuclideanSpace.basisFun ι ℝ i) *
             ⟪W1p.gradient u x, EuclideanSpace.basisFun ι ℝ j⟫_ℝ +
           B x i j * ⟪W1p.gradient (D j) x, EuclideanSpace.basisFun ι ℝ i⟫_ℝ)) * φ x ∂mu := by
-  have hL := hasWeakLineDerivOn_smul_inner_gradient hB hD
+  have hL := W1p.hasWeakLineDerivOn_smul_inner_gradient hB hD
   have hint : ∀ i j, Integrable (fun x => (φ : EuclideanSpace ℝ ι → ℝ) x •
       (B x i j • innerSL ℝ (W1p.gradient (D j) x) (EuclideanSpace.basisFun ι ℝ i) +
         fderiv ℝ (fun y => B y i j) x (EuclideanSpace.basisFun ι ℝ i) •
