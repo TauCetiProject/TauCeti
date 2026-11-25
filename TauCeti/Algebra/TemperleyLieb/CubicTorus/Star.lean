@@ -89,10 +89,6 @@ private theorem star_cubicFactor (g h : Multiplicative (Fin N → ZMod 3)) :
 instance instIsStarFactorSetCubicFactor : IsStarFactorSet (cubicFactor N) where
   star_apply := star_cubicFactor
 
-private theorem cubicFactor_inv_self (g : Multiplicative (Fin N → ZMod 3)) :
-    (cubicFactor N g⁻¹ g : ℂ) = 1 := by
-  simp [cubicFactor_apply, chainForm_self]
-
 /-- The adjoint on the basis: `W(a)⋆ = W(-a)`. -/
 @[simp]
 theorem star_weyl (a : Fin N → ZMod 3) : star (weyl N a) = weyl N (-a) := by
@@ -165,15 +161,6 @@ end Adjoint
 
 section ScalarCoefficient
 
-private theorem cubicScalarCoefficient_apply (x : CubicTorus N) :
-    cubicScalarCoefficient N x = (basis ℂ _ (cubicFactor N)).repr x 1 := by
-  classical
-  have key : cubicScalarCoefficient N = (basis ℂ _ (cubicFactor N)).coord 1 :=
-    (basis ℂ _ (cubicFactor N)).ext fun g ↦ by
-      rw [basis_apply, of_eq_weyl, cubicScalarCoefficient_weyl, ← of_eq_weyl]
-      simp [Finsupp.single_apply]
-  rw [key, Module.Basis.coord_apply]
-
 /-- The scalar coefficient commutes with the adjoint: `s_N(x⋆) = conj (s_N(x))`. -/
 @[simp]
 theorem cubicScalarCoefficient_star (x : CubicTorus N) :
@@ -187,20 +174,20 @@ coefficients of `x`. -/
 theorem cubicScalarCoefficient_star_mul_self (x : CubicTorus N) :
     cubicScalarCoefficient N (star x * x) =
       ∑ g, star ((basis ℂ _ (cubicFactor N)).repr x g) * (basis ℂ _ (cubicFactor N)).repr x g := by
-  rw [cubicScalarCoefficient_apply, repr_star_mul_self_apply_one cubicFactor_inv_self,
+  rw [cubicScalarCoefficient_eq_repr_one, repr_star_mul_self_apply_one cubicFactor_inv_self,
     Finsupp.sum_fintype _ _ (by simp)]
 
 /-- The scalar coefficient is nonnegative on squares. -/
 theorem cubicScalarCoefficient_star_mul_self_nonneg (x : CubicTorus N) :
     0 ≤ cubicScalarCoefficient N (star x * x) := by
-  rw [cubicScalarCoefficient_apply]
+  rw [cubicScalarCoefficient_eq_repr_one]
   exact repr_star_mul_self_apply_one_nonneg cubicFactor_inv_self x
 
 /-- **The scalar coefficient is faithful**: `s_N(x⋆ x) = 0` only for `x = 0`. -/
 @[simp]
 theorem cubicScalarCoefficient_star_mul_self_eq_zero_iff (x : CubicTorus N) :
     cubicScalarCoefficient N (star x * x) = 0 ↔ x = 0 := by
-  rw [cubicScalarCoefficient_apply]
+  rw [cubicScalarCoefficient_eq_repr_one]
   exact repr_star_mul_self_apply_one_eq_zero_iff cubicFactor_inv_self x
 
 variable (N) in

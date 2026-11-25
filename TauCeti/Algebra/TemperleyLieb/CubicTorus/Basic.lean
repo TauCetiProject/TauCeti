@@ -231,6 +231,13 @@ theorem cubicFactor_apply (a b : Multiplicative (Fin N → ZMod 3)) :
     cubicFactor N a b = cubeRootPow (2 * chainForm (ZMod 3) N a.toAdd b.toAdd) :=
   (rfl)
 
+/-- The factor set is trivial on a pair `(g⁻¹, g)`: `α(-a, a) = 1`, since the chain form is
+alternating. -/
+@[simp]
+theorem cubicFactor_inv_self (g : Multiplicative (Fin N → ZMod 3)) :
+    (cubicFactor N g⁻¹ g : ℂ) = 1 := by
+  simp [cubicFactor_apply, chainForm_self]
+
 theorem weyl_def (a : Fin N → ZMod 3) : weyl N a = of (Multiplicative.ofAdd a) :=
   (rfl)
 
@@ -275,6 +282,11 @@ variable (N) in
 It is a trace (`cubicScalarCoefficient_mul_comm`). -/
 noncomputable def cubicScalarCoefficient : CubicTorus N →ₗ[ℂ] ℂ :=
   (basis ℂ (Multiplicative (Fin N → ZMod 3)) (cubicFactor N)).coord 1
+
+/-- The scalar coefficient of `x` is its coefficient at `1` in the basis of `G_N`. -/
+theorem cubicScalarCoefficient_eq_repr_one (x : CubicTorus N) :
+    cubicScalarCoefficient N x = (basis ℂ _ (cubicFactor N)).repr x 1 :=
+  Module.Basis.coord_apply _ _ _
 
 @[simp]
 theorem cubicScalarCoefficient_weyl (a : Fin N → ZMod 3) :
