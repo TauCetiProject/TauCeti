@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.ExtendByZero
 import Mathlib.Algebra.Module.Submodule.Equiv
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
@@ -25,7 +26,8 @@ These are algebraic equivalences on the existing section carriers, not assertion
 section-space topology. In particular, they provide support-preserving transport of tests
 when a bundle is replaced by a smoothly isomorphic bundle. Smoothness is stated on total
 spaces; no norms on individual fibres, finite-rank assumption, compactness of the base,
-or choice of frames is needed. Transport commutes with smooth scalar localization.
+or choice of frames is needed. Transport commutes with smooth scalar localization and with
+extension by zero from an open subset (`ContMDiffSection.extendByZero_mapCompactlySupported`).
 
 On a real `C^n` vector bundle, `n ≤ ∞`, over a finite-dimensional Hausdorff `C^n` manifold, every
 fibre vector is the value of a global `C^n` section, so a bundle map is determined by its action on
@@ -372,5 +374,40 @@ theorem mapLinearMap_inj [ENat.LEInfty n] [IsManifold I n M] [ContMDiffVectorBun
   refine ⟨fun h ↦ funext fun x ↦ LinearMap.ext fun v ↦ ?_, fun h ↦ by subst h; rfl⟩
   obtain ⟨s, rfl⟩ := evalLinearMap_surjective (I := I) (F := F) (V := V) n x v
   simpa using DFunLike.congr_fun (LinearMap.congr_fun h s) x
+
+end ContMDiffSection
+
+namespace ContMDiffSection
+
+variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
+  {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
+  {F G : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {n : ℕ∞ω} {V W : M → Type*}
+  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
+  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle 𝕜 F V]
+  [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)] [∀ x, TopologicalSpace (W x)]
+  [TopologicalSpace (TotalSpace G W)] [FiberBundle G W] [VectorBundle 𝕜 G W]
+  {U : TopologicalSpace.Opens M}
+
+/-- Extension by zero commutes with a smooth fibrewise linear coefficient map. -/
+theorem extendByZero_mapCompactlySupported (φ : ∀ x, V x →ₗ[𝕜] W x)
+    (hφ : ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, G)) n
+      (fun p : TotalSpace F V ↦ (⟨p.proj, φ p.proj p.snd⟩ : TotalSpace G W))) :
+    let c : C^n⟮I, U; I, M⟯ := ⟨Subtype.val, contMDiff_subtypeVal⟩
+    let hφU := Pullback.contMDiff_fiberwise (fun x v ↦ φ x v) hφ c c.contMDiff
+    ∀ s : compactlySupported I F n (c *ᵖ V),
+      extendByZero (mapCompactlySupported (I := I) (F := F) (G := G)
+        (V := c *ᵖ V) (W := c *ᵖ W) (fun x ↦ φ x.val) hφU s) =
+      mapLinearMap φ hφ (extendByZero s) := by
+  intro c hφU s
+  ext x
+  rw [mapLinearMap_apply]
+  -- The law matches this goal only after unfolding the pullback along the bundled
+  -- inclusion (`ContinuousMap.coe_mk`), which `rw` does not do.
+  by_cases hx : x ∈ U
+  · erw [extendByZero_apply_of_mem _ (⟨x, hx⟩ : U), extendByZero_apply_of_mem s (⟨x, hx⟩ : U)]
+    erw [coe_mapCompactlySupported, mapLinearMap_apply]
+  · erw [extendByZero_apply_of_notMem _ hx, extendByZero_apply_of_notMem s hx, map_zero]
 
 end ContMDiffSection
