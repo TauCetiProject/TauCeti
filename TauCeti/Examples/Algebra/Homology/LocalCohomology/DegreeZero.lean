@@ -30,7 +30,7 @@ public section
 
 universe u
 
-open MvPolynomial
+open CategoryTheory.Limits MvPolynomial
 
 noncomputable section
 
@@ -38,8 +38,8 @@ namespace TauCeti.LocalCohomologyDegreeZeroExample
 
 /-- `H⁰_𝔪(R) = 0` for a discrete valuation ring `R` with maximal ideal `𝔪`. -/
 example (R : Type u) [CommRing R] [IsDomain R] [IsDiscreteValuationRing R] :
-    Subsingleton ((localCohomology (IsLocalRing.maximalIdeal R) 0).obj (ModuleCat.of R R)) :=
-  localCohomology.subsingleton_obj_zero_of_ne_bot _ _ (IsDiscreteValuationRing.not_a_field R)
+    IsZero ((localCohomology (IsLocalRing.maximalIdeal R) 0).obj (ModuleCat.of R R)) :=
+  localCohomology.isZero_obj_zero_of_ne_bot _ _ (IsDiscreteValuationRing.not_a_field R)
 
 variable (k : Type u) [CommRing k]
 
@@ -106,9 +106,9 @@ theorem primaryComponent_ideal_eq_bot : Ideal.primaryComponent (Ring k) (ideal k
 
 /-- **`H⁰_I(A) = 0`** for the native local cohomology of `A = k[x₀, x₁, …] ⧸ (x_j ^ (j + 2))`
 along `I = (x₀, x₁, …)`. -/
-theorem subsingleton_localCohomology_zero :
-    Subsingleton ((localCohomology (ideal k) 0).obj (ModuleCat.of (Ring k) (Ring k))) :=
-  (localCohomology.subsingleton_obj_zero_iff _ _).mpr primaryComponent_ideal_eq_bot
+theorem isZero_localCohomology_zero :
+    IsZero ((localCohomology (ideal k) 0).obj (ModuleCat.of (Ring k) (Ring k))) :=
+  (localCohomology.isZero_obj_zero_iff _ _).mpr primaryComponent_ideal_eq_bot
 
 /-- Every generator `x_j` of `I` is nilpotent: `x_j ^ (j + 2) = 0`. -/
 theorem X_pow_eq_zero (j : ℕ) : (Ideal.Quotient.mk (relations k) (X j)) ^ (j + 2) = 0 := by
