@@ -49,7 +49,9 @@ constant on coadjoint orbits.
   (`TauCeti.Nil.finrank_quotientModelSpace_stabilizer_coadjointRepresentation_of_ne_zero`).
 * On the orbit manifold, the generator of `ξ = (s, t, u)` is `(t r, -s r, 0)` in the coordinates
   `(μ X, μ Y, μ Z)` of the orbit map
-  (`TauCeti.Nil.mvfderiv_orbitMap_coadjointRepresentation_apply_fundamentalVectorField`), and the
+  (`TauCeti.Nil.mvfderiv_orbitMap_coadjointRepresentation_apply_fundamentalVectorField`,
+  `TauCeti.Nil.mvfderiv_orbitMap_coadjointRepresentation_apply_lieAlgebraEquiv_symm_heisenbergX`
+  and its `Y` and `Z` companions), and the
   KKS form pairs the generators of `ξ` and `ξ' = (s', t', u')` to `r (s t' - t s')`
   (`TauCeti.Nil.eval₂_coadjointOrbitForm_fundamentalVectorField`). On the plane `r = r₀ ≠ 0` the
   KKS form is therefore `dp ∧ dq / r₀` in the coordinates `p = μ X`, `q = μ Y`.
@@ -438,6 +440,18 @@ theorem finrank_quotientModelSpace_stabilizer_coadjointRepresentation_of_ne_zero
 
 /-! ### The Kirillov–Kostant–Souriau form -/
 
+/-- The central coordinate `r = μ Z` is constant along the coadjoint orbit of `ν`: every point `μ`
+of the orbit `Nil ⧸ Nil_ν` takes the value `ν Z` on the central generator. -/
+@[simp]
+theorem orbitMap_coadjointRepresentation_apply_lieAlgebraEquiv_symm_heisenbergZ
+    (ν : Dual ℝ (GroupLieAlgebra 𝓘(ℝ, R3) Nil))
+    (x : Nil ⧸ (Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).stabilizer ν) :
+    (Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).orbitMap ν x
+        (lieAlgebraEquiv.symm (heisenbergZ ℝ)) =
+      ν (lieAlgebraEquiv.symm (heisenbergZ ℝ)) := by
+  obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective x
+  rw [Representation.orbitMap_mk, coadjointRepresentation_apply_lieAlgebraEquiv_symm_heisenbergZ]
+
 /-- **Points of a coadjoint orbit of Nil on brackets.** At every point `μ` of the orbit
 `Nil ⧸ Nil_ν`, `μ ⁅ξ, ξ'⁆ = r (s t' - t s')` for `ξ = (s, t, u)` and `ξ' = (s', t', u')`, where
 `r = ν Z` is the constant value of the orbit on the central generator. -/
@@ -450,9 +464,8 @@ theorem orbitMap_coadjointRepresentation_apply_lie (ν : Dual ℝ (GroupLieAlgeb
             (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) ξ').2.1 -
           (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) ξ).2.1 *
             (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) ξ').1) := by
-  obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective x
-  rw [Representation.orbitMap_mk, lie_eq_smul_lieAlgebraEquiv_symm_heisenbergZ, map_smul,
-    coadjointRepresentation_apply_lieAlgebraEquiv_symm_heisenbergZ, smul_eq_mul, mul_comm]
+  rw [lie_eq_smul_lieAlgebraEquiv_symm_heisenbergZ, map_smul,
+    orbitMap_coadjointRepresentation_apply_lieAlgebraEquiv_symm_heisenbergZ, smul_eq_mul, mul_comm]
 
 /-- **The Kirillov–Kostant–Souriau form of a coadjoint orbit of Nil.** At every point of the
 orbit `Nil ⧸ Nil_ν`, the KKS form pairs the generators of `ξ = (s, t, u)` and `ξ' = (s', t', u')`
@@ -495,5 +508,54 @@ theorem mvfderiv_orbitMap_coadjointRepresentation_apply_fundamentalVectorField
             (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) ξ).1) := by
   rw [Dual.mvfderiv_orbitMap_coadjointRepresentation_apply_fundamentalVectorField,
     orbitMap_coadjointRepresentation_apply_lie]
+
+/-- **The generators of a coadjoint orbit of Nil, first coordinate**: along the generator of
+`ξ = (s, t, u)`, the coordinate `p = μ X` of the orbit map changes at the rate `t r`. -/
+theorem mvfderiv_orbitMap_coadjointRepresentation_apply_lieAlgebraEquiv_symm_heisenbergX
+    (ν : Dual ℝ (GroupLieAlgebra 𝓘(ℝ, R3) Nil))
+    (x : Nil ⧸ (Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).stabilizer ν)
+    (ξ : GroupLieAlgebra 𝓘(ℝ, R3) Nil) :
+    mvfderiv 𝓘(ℝ, Subgroup.QuotientModelSpace 𝓘(ℝ, R3)
+          ((Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).stabilizer ν))
+        (fun y ↦ (Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).orbitMap ν y
+          (lieAlgebraEquiv.symm (heisenbergX ℝ))) x
+        (fundamentalVectorField 𝓘(ℝ, Subgroup.QuotientModelSpace 𝓘(ℝ, R3)
+          ((Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).stabilizer ν)) ξ x) =
+      ν (lieAlgebraEquiv.symm (heisenbergZ ℝ)) *
+        (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) ξ).2.1 := by
+  rw [mvfderiv_orbitMap_coadjointRepresentation_apply_fundamentalVectorField]
+  simp
+
+/-- **The generators of a coadjoint orbit of Nil, second coordinate**: along the generator of
+`ξ = (s, t, u)`, the coordinate `q = μ Y` of the orbit map changes at the rate `-s r`. -/
+theorem mvfderiv_orbitMap_coadjointRepresentation_apply_lieAlgebraEquiv_symm_heisenbergY
+    (ν : Dual ℝ (GroupLieAlgebra 𝓘(ℝ, R3) Nil))
+    (x : Nil ⧸ (Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).stabilizer ν)
+    (ξ : GroupLieAlgebra 𝓘(ℝ, R3) Nil) :
+    mvfderiv 𝓘(ℝ, Subgroup.QuotientModelSpace 𝓘(ℝ, R3)
+          ((Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).stabilizer ν))
+        (fun y ↦ (Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).orbitMap ν y
+          (lieAlgebraEquiv.symm (heisenbergY ℝ))) x
+        (fundamentalVectorField 𝓘(ℝ, Subgroup.QuotientModelSpace 𝓘(ℝ, R3)
+          ((Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).stabilizer ν)) ξ x) =
+      -(ν (lieAlgebraEquiv.symm (heisenbergZ ℝ)) *
+        (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) ξ).1) := by
+  rw [mvfderiv_orbitMap_coadjointRepresentation_apply_fundamentalVectorField]
+  simp
+
+/-- **The generators of a coadjoint orbit of Nil, third coordinate**: the coordinate `r = μ Z` of
+the orbit map is stationary along every generator. -/
+theorem mvfderiv_orbitMap_coadjointRepresentation_apply_lieAlgebraEquiv_symm_heisenbergZ
+    (ν : Dual ℝ (GroupLieAlgebra 𝓘(ℝ, R3) Nil))
+    (x : Nil ⧸ (Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).stabilizer ν)
+    (ξ : GroupLieAlgebra 𝓘(ℝ, R3) Nil) :
+    mvfderiv 𝓘(ℝ, Subgroup.QuotientModelSpace 𝓘(ℝ, R3)
+          ((Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).stabilizer ν))
+        (fun y ↦ (Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).orbitMap ν y
+          (lieAlgebraEquiv.symm (heisenbergZ ℝ))) x
+        (fundamentalVectorField 𝓘(ℝ, Subgroup.QuotientModelSpace 𝓘(ℝ, R3)
+          ((Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).stabilizer ν)) ξ x) = 0 := by
+  rw [mvfderiv_orbitMap_coadjointRepresentation_apply_fundamentalVectorField]
+  simp
 
 end TauCeti.Nil
