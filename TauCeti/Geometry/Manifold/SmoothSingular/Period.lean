@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.SmoothSingular.Stokes
+public import TauCeti.Geometry.Manifold.SmoothSingular.Smoothing
 public import TauCeti.Geometry.Manifold.DeRham.Map
 public import TauCeti.Algebra.Homology.Kronecker
+public import TauCeti.AlgebraicTopology.Singular.ModuleChains.HomologyCross
 
 /-!
-# Periods of closed forms on integral smooth singular homology
+# Periods of closed forms on integral smooth singular and singular homology
 
 A closed `C¹` `p`-form `φ` on a `C²` manifold `M`, with values in a real normed space `F`, can be
 integrated over the smooth singular `p`-chains of `M` with coefficients in any ring `R` acting on
@@ -38,9 +40,29 @@ having period `2π` on the standard loop, is shown in
 The real-coefficient cochain-level counterpart is `TauCeti.deRhamCohomology.integration`, which
 sends a de Rham class to a class in smooth singular cohomology with real coefficients. Integer
 coefficients are what is needed to pair a closed form with integral homology classes, such as the
-area `ω(A)` of a class `A ∈ H₂(M; ℤ)` of a symplectic manifold `(M, ω)`. Through the comparison of
-smooth and ordinary singular homology this becomes a homomorphism on `H_p(M; ℤ)`; that comparison
-is not used here.
+area `ω(A)` of a class `A ∈ H₂(M; ℤ)` of a symplectic manifold `(M, ω)`.
+
+On a Hausdorff `σ`-compact smooth manifold modelled on a finite-dimensional space, the smoothing
+theorem identifies smooth singular homology with singular homology
+(`TauCeti.smoothSingularHomologyIso`). Precomposing with the inverse of this identification gives
+the **period of a closed smooth real form on integral singular homology**,
+
+`TauCeti.closedFormHomologyPeriod φ : H_p(M; ℤ) →+ ℝ`.
+
+On the image of the class of a smooth cycle `Σ nᵢ σᵢ` it is `Σ nᵢ ∫_{σᵢ} φ`
+(`TauCeti.closedFormHomologyPeriod_homologyMap_ι_homologyπ`). It is additive and homogeneous in the
+form, vanishes for exact forms, and is natural: for a smooth map `f : M → N`, the periods of
+`f^* φ` are those of `φ` composed with `f_* : H_p(M; ℤ) → H_p(N; ℤ)`
+(`TauCeti.closedFormHomologyPeriod_mpullback`). Combined with the vanishing of `pr₂_* (a × b)` for
+a class `a` of positive degree
+(`TopCat.singularHomologyMap_snd_singularHomologyCrossBilinear_eq_zero`), naturality shows that a
+closed form pulled back from the second factor of a product `A × B` has zero period on every cross
+product `a × b` with `a` of positive degree
+(`TauCeti.closedFormHomologyPeriod_mpullback_snd_singularHomologyCrossBilinear_eq_zero`).
+
+In degree one, `TauCeti.homologyPeriodHom` instead integrates closed one-forms along the
+continuous paths traced by singular `1`-simplices, which needs no smoothing; this file does not
+compare the two constructions.
 
 ## Main definitions
 
@@ -48,6 +70,8 @@ is not used here.
   and `0` for other forms.
 * `TauCeti.deRhamCohomology.smoothHomologyPeriod`: the periods of de Rham classes, a linear map
   `H^p_dR(M) →ₗ[ℝ] (H_p^sm(M; ℤ) →+ ℝ)`.
+* `TauCeti.closedFormHomologyPeriod φ`: the periods of a closed smooth real form on integral
+  singular homology.
 
 ## Main results
 
@@ -61,11 +85,22 @@ is not used here.
 * `TauCeti.deRhamCohomology.smoothHomologyPeriod_mk`,
   `TauCeti.deRhamCohomology.smoothHomologyPeriod_map`: the class-level pairing and its
   naturality.
+* `TauCeti.closedFormHomologyPeriod_homologyMap_ι_homologyπ`: the period on integral singular
+  homology of the class of a smooth cycle is the integral over the cycle.
+* `TauCeti.closedFormHomologyPeriod_add`, `TauCeti.closedFormHomologyPeriod_smul`,
+  `TauCeti.closedFormHomologyPeriod_zero`, `TauCeti.closedFormHomologyPeriod_neg`,
+  `TauCeti.closedFormHomologyPeriod_sub`: linearity in the form, and
+  `TauCeti.closedFormHomologyPeriod_eq_zero_of_mem_exactForms`: exact forms have zero periods.
+* `TauCeti.closedFormHomologyPeriod_mpullback`: naturality under smooth maps.
+* `TauCeti.closedFormHomologyPeriod_mpullback_snd_singularHomologyCrossBilinear_eq_zero`: a closed
+  form pulled back from the second factor has zero period on cross products with a positive-degree
+  class of the first factor.
 
 ## References
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Chapter 18 (integration over smooth
-  chains, Stokes' theorem for chains and the de Rham homomorphism).
+  chains, Stokes' theorem for chains, the smoothing theorem and the de Rham homomorphism).
+* A. Hatcher, *Algebraic Topology*, Section 3.B (the homology cross product).
 -/
 
 public section
@@ -311,5 +346,135 @@ theorem smoothHomologyPeriod_map {f : M → N} (hf : ContMDiff I J ∞ f)
     ((mem_closedForms J _).mp ψ.property)]
 
 end deRhamCohomology
+
+/-! ### Periods on singular homology -/
+
+section Singular
+
+variable [FiniteDimensional ℝ E] [T2Space M] [SigmaCompactSpace M] [IsManifold I ∞ M]
+
+/-- The **period of a closed form on integral singular homology** `H_p(M; ℤ)`: the periods
+`smoothHomologyPeriodHom` on integral smooth singular homology, transported along the smoothing
+isomorphism. On the class of a smooth cycle `Σ nᵢ σᵢ` it is `Σ nᵢ ∫_{σᵢ} φ`. -/
+def closedFormHomologyPeriod (φ : closedForms I M p) :
+    ((singularChains ℤ).obj (TopCat.of M)).homology p →+ ℝ :=
+  (smoothHomologyPeriodHom (R := ℤ) (φ.val : RoughForm I M ℝ p)).toAddMonoidHom.comp
+    (smoothSingularHomologyIso I M (ModuleCat.of ℤ ℤ) p).inv.hom.toAddMonoidHom
+
+/-- The period of a closed form on `H_p(M; ℤ)` is its period on smooth singular homology,
+evaluated on the preimage under the smoothing isomorphism. -/
+theorem closedFormHomologyPeriod_apply (φ : closedForms I M p)
+    (c : ((singularChains ℤ).obj (TopCat.of M)).homology p) :
+    closedFormHomologyPeriod φ c =
+      smoothHomologyPeriodHom (φ.val : RoughForm I M ℝ p)
+        ((smoothSingularHomologyIso I M (ModuleCat.of ℤ ℤ) p).inv.hom c) :=
+  (rfl)
+
+/-- The period of a closed form on the image of a smooth singular homology class is its period on
+that class. -/
+@[simp]
+theorem closedFormHomologyPeriod_homologyMap_ι (φ : closedForms I M p)
+    (c : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).homology p) :
+    closedFormHomologyPeriod φ
+        ((SSet.homologyMap (smoothSingularSubcomplex I M).ι (ModuleCat.of ℤ ℤ) p).hom c) =
+      smoothHomologyPeriodHom (φ.val : RoughForm I M ℝ p) c := by
+  rw [← smoothSingularHomologyIso_hom]
+  -- The class lies in the homology of `TopCat.toSSet`, which is the homology of `singularChains ℤ`
+  -- by definition; this is the identification that types the statement itself.
+  exact (closedFormHomologyPeriod_apply φ _).trans (congrArg _ (Iso.hom_inv_id_apply _ _))
+
+/-- The period of a closed form on the class of a smooth cycle `z` is the integral of the form
+over `z`. -/
+theorem closedFormHomologyPeriod_homologyMap_ι_homologyπ (φ : closedForms I M p)
+    (z : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).cycles p) :
+    closedFormHomologyPeriod φ
+        ((SSet.homologyMap (smoothSingularSubcomplex I M).ι (ModuleCat.of ℤ ℤ) p).hom
+          ((((smoothSingularSubcomplex I M : SSet).chainComplex
+            (ModuleCat.of ℤ ℤ)).homologyπ p).hom z)) =
+      (integrationCochain (φ.val : RoughForm I M ℝ p)).hom
+        ((((smoothSingularSubcomplex I M : SSet).chainComplex
+          (ModuleCat.of ℤ ℤ)).iCycles p).hom z) := by
+  rw [closedFormHomologyPeriod_homologyMap_ι, smoothHomologyPeriodHom_homologyπ
+    (φ.val.isSmoothForm.of_le (by simp)) ((mem_closedForms I _).mp φ.property)]
+
+/-- The periods of a sum of closed forms are the sums of their periods. -/
+@[simp]
+theorem closedFormHomologyPeriod_add (φ ψ : closedForms I M p) :
+    closedFormHomologyPeriod (φ + ψ) = closedFormHomologyPeriod φ + closedFormHomologyPeriod ψ := by
+  ext c
+  exact LinearMap.congr_fun (smoothHomologyPeriodHom_add
+    (φ.val.isSmoothForm.of_le (by simp)) ((mem_closedForms I _).mp φ.property)
+    (ψ.val.isSmoothForm.of_le (by simp)) ((mem_closedForms I _).mp ψ.property)) _
+
+/-- The periods of a real multiple of a closed form are the multiples of its periods. -/
+@[simp]
+theorem closedFormHomologyPeriod_smul (a : ℝ) (φ : closedForms I M p) :
+    closedFormHomologyPeriod (a • φ) = a • closedFormHomologyPeriod φ := by
+  ext c
+  exact LinearMap.congr_fun (smoothHomologyPeriodHom_smul a
+    (φ.val.isSmoothForm.of_le (by simp)) ((mem_closedForms I _).mp φ.property)) _
+
+/-- **Exact forms have zero periods.** -/
+theorem closedFormHomologyPeriod_eq_zero_of_mem_exactForms (φ : closedForms I M p)
+    (hφ : φ.val ∈ exactForms I M p) : closedFormHomologyPeriod φ = 0 := by
+  ext c
+  simp [closedFormHomologyPeriod_apply, smoothHomologyPeriodHom_eq_zero_of_mem_exactForms hφ]
+
+/-- The zero form has zero periods. -/
+@[simp]
+theorem closedFormHomologyPeriod_zero :
+    closedFormHomologyPeriod (0 : closedForms I M p) = 0 :=
+  closedFormHomologyPeriod_eq_zero_of_mem_exactForms 0 (zero_mem _)
+
+/-- The periods of the negative of a closed form are the negatives of its periods. -/
+@[simp]
+theorem closedFormHomologyPeriod_neg (φ : closedForms I M p) :
+    closedFormHomologyPeriod (-φ) = -closedFormHomologyPeriod φ := by
+  rw [← neg_one_smul ℝ φ, closedFormHomologyPeriod_smul, neg_one_smul]
+
+/-- The periods of a difference of closed forms are the differences of their periods. -/
+@[simp]
+theorem closedFormHomologyPeriod_sub (φ ψ : closedForms I M p) :
+    closedFormHomologyPeriod (φ - ψ) = closedFormHomologyPeriod φ - closedFormHomologyPeriod ψ := by
+  rw [sub_eq_add_neg φ ψ, closedFormHomologyPeriod_add, closedFormHomologyPeriod_neg,
+    sub_eq_add_neg]
+
+variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} {N : Type} [TopologicalSpace N]
+  [ChartedSpace H' N] [T2Space N] [SigmaCompactSpace N] [IsManifold J ∞ N]
+
+/-- **Naturality of the periods.** For a smooth map `f : M → N`, the periods of the pullback
+`f^* φ` are the periods of `φ` on the images under `f_* : H_p(M; ℤ) → H_p(N; ℤ)`. -/
+theorem closedFormHomologyPeriod_mpullback {f : M → N} (hf : ContMDiff I J ∞ f)
+    (φ : closedForms J N p) (c : ((singularChains ℤ).obj (TopCat.of M)).homology p) :
+    closedFormHomologyPeriod (closedForms.mpullback f hf p φ) c =
+      closedFormHomologyPeriod φ (ContinuousMap.singularHomologyMap ℤ p ⟨f, hf.continuous⟩ c) := by
+  rw [ContinuousMap.singularHomologyMap_eq_homologyMap_toSSet_map, closedFormHomologyPeriod_apply,
+    closedFormHomologyPeriod_apply, closedForms.coe_mpullback, SmoothForm.coe_mpullback,
+    ← smoothHomologyPeriodHom_homologyMap hf (φ.val.isSmoothForm.of_le (by simp))
+      ((mem_closedForms J _).mp φ.property)]
+  exact congrArg (smoothHomologyPeriodHom (φ.val : RoughForm J N ℝ p))
+    (ConcreteCategory.congr_hom (smoothSingularHomologyIso_inv_naturality _ hf p) c)
+
+variable {E'' H'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E''] [FiniteDimensional ℝ E'']
+  [TopologicalSpace H''] {K : ModelWithCorners ℝ E'' H''} {A : Type} [TopologicalSpace A]
+  [ChartedSpace H'' A] [T2Space A] [SigmaCompactSpace A] [IsManifold K ∞ A]
+
+/-- **A form pulled back from the second factor vanishes on cross products.** On a product
+`A × B`, a closed form `pr₂^* φ` pulled back from `B` has zero period on every cross product
+`a × b` of a class `a ∈ H_i(A; ℤ)` of positive degree with a class `b ∈ H_j(B; ℤ)`. -/
+@[simp]
+theorem closedFormHomologyPeriod_mpullback_snd_singularHomologyCrossBilinear_eq_zero {i j : ℕ}
+    (h : i + j = p) (hi : i ≠ 0) (φ : closedForms J N p)
+    (a : ((singularChains ℤ).obj (TopCat.of A)).homology i)
+    (b : ((singularChains ℤ).obj (TopCat.of N)).homology j) :
+    closedFormHomologyPeriod (closedForms.mpullback Prod.snd (contMDiff_snd (I := K)) p φ)
+      (TopCat.singularHomologyCrossBilinear ℤ (TopCat.of A) (TopCat.of N) i j p h a b) = 0 := by
+  rw [closedFormHomologyPeriod_mpullback]
+  exact (congrArg (closedFormHomologyPeriod φ)
+    (TopCat.singularHomologyMap_snd_singularHomologyCrossBilinear_eq_zero ℤ h hi a b)).trans
+      (map_zero _)
+
+end Singular
 
 end TauCeti

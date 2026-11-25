@@ -252,20 +252,9 @@ moment finite. -/
 private theorem memLp_two_algebraMap_pow_of_integrable_exp_mul_abs {b : ℝ} (hb : 0 < b)
     (hexp : Integrable (fun x : ℝ => Real.exp (b * |x|)) ν) (n : ℕ) :
     MemLp (fun x : ℝ => (algebraMap ℝ 𝕜 x) ^ n) 2 ν := by
-  have hmeas : ∀ c : ℝ, AEStronglyMeasurable (fun x : ℝ => Real.exp (c * x)) ν :=
-    fun c => (Real.continuous_exp.comp (continuous_const.mul continuous_id)).aestronglyMeasurable
-  have hpos : Integrable (fun x : ℝ => Real.exp (b * x)) ν := by
-    refine hexp.mono' (hmeas b) (Filter.Eventually.of_forall fun x => ?_)
-    rw [Real.norm_eq_abs, Real.abs_exp]
-    exact Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left (le_abs_self x) hb.le)
-  have hneg : Integrable (fun x : ℝ => Real.exp (-b * x)) ν := by
-    refine hexp.mono' (hmeas (-b)) (Filter.Eventually.of_forall fun x => ?_)
-    rw [Real.norm_eq_abs, Real.abs_exp]
-    exact Real.exp_le_exp.mpr (by nlinarith [hb, neg_le_abs x])
-  have hpow : ∀ k : ℕ, Integrable (fun x : ℝ => x ^ k) ν := fun k =>
-    integrable_pow_of_integrable_exp_mul (ne_of_gt hb) hpos hneg k
-  simpa only [Polynomial.eval_pow, Polynomial.eval_X, map_pow] using
-    memLp_two_algebraMap_eval_of_forall_integrable_pow (𝕜 := 𝕜) hpow (Polynomial.X ^ n)
+  simpa only [RCLike.algebraMap_eq_ofReal, RCLike.ofReal_pow] using
+    (memLp_pow_of_forall_integrable_pow (fun x _ _ => norm_pow x _) ENNReal.ofNat_ne_top
+      (integrable_pow_of_exp_moment ⟨b, hb, hexp⟩) n).ofReal (K := 𝕜)
 
 /-- A real-linear functional passes through a vanishing monomial moment.  The monomial `xⁿ` is
 real, so `L` commutes with multiplication by it, and `∫ xⁿ · L(g)` is `L` applied to the moment. -/

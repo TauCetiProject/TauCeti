@@ -9,6 +9,7 @@ public import Mathlib.Data.List.ChainOfFn
 public import TauCeti.RepresentationTheory.LSPath.Basic
 public import TauCeti.RepresentationTheory.LSPath.Central.Shift
 public import TauCeti.RepresentationTheory.LSPath.ConvexHull
+import TauCeti.Algebra.GroupWithZero.Action.Basic
 
 /-!
 # Distinguished presentations of paths with velocities in a Weyl orbit

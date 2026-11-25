@@ -46,6 +46,8 @@ multiplies `1 + (Q - 1) * X * ∑ G b` by one factor `(1 + (Q - 1 - ε c) * p c 
 
 * `TauCeti.TypeAHeckeAlgebra.atomicTrace_cycleWord_generating_function`: **the cycle-trace
   generating identity** for atomic traces.
+* `TauCeti.TypeAHeckeAlgebra.map_atomicTrace_cycleWord`: cycle traces commute with coefficient
+  specialization, including at `q² = 1`.
 
 ## References
 
@@ -151,6 +153,29 @@ private theorem lastLetterSum_succ (m : ℕ) (c : ι) :
   refine Finset.sum_congr rfl fun b _ ↦ Finset.sum_congr rfl fun w _ ↦ ?_
   linear_combination (signedChecked pos q (cycleWord q (m + 1)) (single (Fin.snoc w b) 1)
     (Fin.snoc w b) * crossingDiag pos q b c * (∏ i, p (w i)) * p b * p c) * hq
+
+omit [Fintype ι] in
+/-- Applying a coefficient homomorphism to a cycle trace on a finite alphabet changes the
+parameter and every letter weight by that homomorphism. This holds without normalization or
+regularity hypotheses, including at `q² = 1`. -/
+@[simp]
+theorem map_atomicTrace_cycleWord [Finite ι] {S : Type*} [CommRing S]
+    (f : R →+* S) (m : ℕ) :
+    f (atomicTrace pos q p m (cycleWord q m)) =
+      atomicTrace pos (Units.map f.toMonoidHom q) (fun a ↦ f (p a)) m
+        (cycleWord (Units.map f.toMonoidHom q) m) := by
+  let := Fintype.ofFinite ι
+  have hdiag (b c : ι) : f (crossingDiag pos q b c) =
+      crossingDiag pos (Units.map f.toMonoidHom q) b c := by
+    simp [crossingDiag, apply_ite f]
+  have hlast (k : ℕ) (c : ι) : f (lastLetterSum pos q p k c) =
+      lastLetterSum pos (Units.map f.toMonoidHom q) (fun a ↦ f (p a)) k c := by
+    induction k generalizing c with
+    | zero => simp [lastLetterSum_zero]
+    | succ k ih => simp only [lastLetterSum_succ, map_mul, map_sum, hdiag, ih]
+  cases m with
+  | zero => simp
+  | succ m => simp only [atomicTrace_cycleWord_eq_sum_lastLetterSum, map_sum, hlast]
 
 open PowerSeries
 

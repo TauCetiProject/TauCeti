@@ -23,6 +23,8 @@ This is what makes the degenerate Gaussian-Gram Wishart laws singular with respe
 * `TauCeti.measurableSet_setOfPred_det_eq_zero` — the singular matrices are measurable.
 * `TauCeti.symmetricLebesgue_setOf_det_eq_zero` — the singular matrices are
   `symmetricLebesgue`-null.
+* `TauCeti.mutuallySingular_symmetricLebesgue_of_ae_det_eq_zero` — a measure carried by the
+  singular matrices is singular with respect to `symmetricLebesgue`.
 -/
 
 public section
@@ -96,5 +98,16 @@ theorem symmetricLebesgue_setOf_det_eq_zero (p : ℕ) :
     simp only [Set.mem_preimage, Set.mem_ofPred_eq, eval_symmetricDetPolynomial]
   rw [hpre]
   exact (symmetricDetPolynomial p).volume_setOfPred_eval_eq_zero (symmetricDetPolynomial_ne_zero p)
+
+/-- A measure carried by the singular symmetric matrices has no density: it is singular with
+respect to `symmetricLebesgue`, which does not charge them. -/
+theorem mutuallySingular_symmetricLebesgue_of_ae_det_eq_zero {p : ℕ}
+    {μ : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))}
+    (h : ∀ᵐ A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ∂μ,
+      (A : Matrix (Fin p) (Fin p) ℝ).det = 0) :
+    μ.MutuallySingular (symmetricLebesgue p) :=
+  ⟨{A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+      (A : Matrix (Fin p) (Fin p) ℝ).det = 0}ᶜ, (measurableSet_setOfPred_det_eq_zero p).compl,
+    ae_iff.1 h, by rw [compl_compl, symmetricLebesgue_setOf_det_eq_zero]⟩
 
 end TauCeti

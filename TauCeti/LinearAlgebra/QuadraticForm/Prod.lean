@@ -132,6 +132,83 @@ theorem prodLinear_apply (Q : QuadraticMap R M₁ P × QuadraticMap R M₂ P) :
     prodLinear R M₁ M₂ P Q = Q.1.prod Q.2 :=
   (rfl)
 
+/-- Orthogonal products of quadratic maps are equal exactly when their factors are. -/
+@[simp]
+theorem prod_inj {Q₁ Q₁' : QuadraticMap R M₁ P} {Q₂ Q₂' : QuadraticMap R M₂ P} :
+    Q₁.prod Q₂ = Q₁'.prod Q₂' ↔ Q₁ = Q₁' ∧ Q₂ = Q₂' := by
+  refine ⟨fun h ↦ ⟨ext fun x ↦ ?_, ext fun y ↦ ?_⟩, fun h ↦ h.1 ▸ h.2 ▸ rfl⟩
+  · simpa using congr($h (x, 0))
+  · simpa using congr($h (0, y))
+
+/-- The orthogonal product of two zero quadratic maps is zero. -/
+@[simp]
+theorem zero_prod_zero : (0 : QuadraticMap R M₁ P).prod (0 : QuadraticMap R M₂ P) = 0 := by
+  ext
+  simp
+
+/-- An orthogonal product of quadratic maps vanishes exactly when both factors do. -/
+@[simp]
+theorem prod_eq_zero_iff {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P} :
+    Q₁.prod Q₂ = 0 ↔ Q₁ = 0 ∧ Q₂ = 0 := by
+  rw [← zero_prod_zero, prod_inj]
+
+/-- The orthogonal product of a nonzero quadratic map with any quadratic map is nonzero. -/
+theorem prod_ne_zero_left {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P} (h : Q₁ ≠ 0) :
+    Q₁.prod Q₂ ≠ 0 :=
+  fun h' ↦ h (prod_eq_zero_iff.mp h').1
+
+/-- The orthogonal product of any quadratic map with a nonzero quadratic map is nonzero. -/
+theorem prod_ne_zero_right {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P} (h : Q₂ ≠ 0) :
+    Q₁.prod Q₂ ≠ 0 :=
+  fun h' ↦ h (prod_eq_zero_iff.mp h').2
+
+/-- The orthogonal products of members of two submodules of quadratic maps are the span of the
+orthogonal products `Q ⊕ 0` and `0 ⊕ Q'` with `Q` and `Q'` in the respective submodules: this is
+the image of their product submodule under `QuadraticMap.prodLinear`. -/
+theorem mem_span_range_sumElim_prod_iff {ι κ : Type*} {Q₁ : ι → QuadraticMap R M₁ P}
+    {Q₂ : κ → QuadraticMap R M₂ P} {Q : QuadraticMap R (M₁ × M₂) P} :
+    Q ∈ Submodule.span R (Set.range
+        (Sum.elim (fun i ↦ (Q₁ i).prod 0) fun j ↦ (0 : QuadraticMap R M₁ P).prod (Q₂ j))) ↔
+      ∃ Q₁' ∈ Submodule.span R (Set.range Q₁), ∃ Q₂' ∈ Submodule.span R (Set.range Q₂),
+        Q₁'.prod Q₂' = Q := by
+  have hspan : Submodule.span R (Set.range
+      (Sum.elim (fun i ↦ (Q₁ i).prod 0) fun j ↦ (0 : QuadraticMap R M₁ P).prod (Q₂ j))) =
+      ((Submodule.span R (Set.range Q₁)).prod (Submodule.span R (Set.range Q₂))).map
+        (prodLinear R M₁ M₂ P) := by
+    rw [← LinearMap.span_inl_union_inr, Submodule.map_span, Set.image_union, ← Set.range_comp,
+      ← Set.range_comp, ← Set.range_comp, ← Set.range_comp, Set.Sum.elim_range]
+    simp [Function.comp_def]
+  rw [hspan, Submodule.mem_map]
+  constructor
+  · rintro ⟨⟨Q₁', Q₂'⟩, ⟨h₁, h₂⟩, rfl⟩
+    exact ⟨Q₁', h₁, Q₂', h₂, rfl⟩
+  · rintro ⟨Q₁', h₁, Q₂', h₂, rfl⟩
+    exact ⟨(Q₁', Q₂'), ⟨h₁, h₂⟩, rfl⟩
+
+section SumElim
+
+variable {ι κ : Type*} {Q₁ : ι → QuadraticMap R M₁ P} {Q₂ : κ → QuadraticMap R M₂ P}
+
+/-- `Q ⊕ 0` lies in the span of the orthogonal products `Q₁ i ⊕ 0` and `0 ⊕ Q₂ j` exactly when
+`Q` lies in the span of the `Q₁ i`. -/
+theorem prod_zero_mem_span_range_sumElim_prod_iff {Q : QuadraticMap R M₁ P} :
+    Q.prod 0 ∈ Submodule.span R (Set.range
+        (Sum.elim (fun i ↦ (Q₁ i).prod 0) fun j ↦ (0 : QuadraticMap R M₁ P).prod (Q₂ j))) ↔
+      Q ∈ Submodule.span R (Set.range Q₁) := by
+  rw [mem_span_range_sumElim_prod_iff]
+  refine ⟨fun ⟨_, h₁, _, _, h⟩ ↦ (prod_inj.1 h).1 ▸ h₁, fun h ↦ ⟨Q, h, 0, zero_mem _, rfl⟩⟩
+
+/-- `0 ⊕ Q` lies in the span of the orthogonal products `Q₁ i ⊕ 0` and `0 ⊕ Q₂ j` exactly when
+`Q` lies in the span of the `Q₂ j`. -/
+theorem zero_prod_mem_span_range_sumElim_prod_iff {Q : QuadraticMap R M₂ P} :
+    (0 : QuadraticMap R M₁ P).prod Q ∈ Submodule.span R (Set.range
+        (Sum.elim (fun i ↦ (Q₁ i).prod 0) fun j ↦ (0 : QuadraticMap R M₁ P).prod (Q₂ j))) ↔
+      Q ∈ Submodule.span R (Set.range Q₂) := by
+  rw [mem_span_range_sumElim_prod_iff]
+  refine ⟨fun ⟨_, _, _, h₂, h⟩ ↦ (prod_inj.1 h).2 ▸ h₂, fun h ↦ ⟨0, zero_mem _, Q, h, rfl⟩⟩
+
+end SumElim
+
 end Linear
 
 variable {R M₁ M₂ M₃ P : Type*} [CommSemiring R] [AddCommMonoid M₁] [AddCommMonoid M₂]
@@ -286,6 +363,50 @@ theorem IsometryEquiv.toIsometry_prod {N₁ N₂ : Type*} [AddCommMonoid N₁] [
     (e₁.prod e₂).toIsometry = e₁.toIsometry.prodMap e₂.toIsometry :=
   Isometry.ext fun _ ↦ by simp
 
+section prodProdProdComm
+
+variable {N₁ N₂ : Type*} [AddCommMonoid N₁] [AddCommMonoid N₂] [Module R N₁] [Module R N₂]
+  (Q₁ : QuadraticMap R M₁ P) (Q₂ : QuadraticMap R M₂ P) (Q₃ : QuadraticMap R N₁ P)
+  (Q₄ : QuadraticMap R N₂ P)
+
+/-- `QuadraticMap.IsometryEquiv.prodProdProdComm` carries the first summand of
+`(Q₁ ⊕ Q₂) ⊕ (Q₃ ⊕ Q₄)` to the first summand of `(Q₁ ⊕ Q₃) ⊕ (Q₂ ⊕ Q₄)`. -/
+@[simp]
+theorem IsometryEquiv.prodProdProdComm_comp_inl_comp_inl :
+    (prodProdProdComm Q₁ Q₂ Q₃ Q₄).toIsometry.comp
+      ((Isometry.inl (Q₁.prod Q₂) (Q₃.prod Q₄)).comp (Isometry.inl Q₁ Q₂)) =
+      (Isometry.inl (Q₁.prod Q₃) (Q₂.prod Q₄)).comp (Isometry.inl Q₁ Q₃) :=
+  Isometry.ext fun _ ↦ by simp
+
+/-- `QuadraticMap.IsometryEquiv.prodProdProdComm` carries the second summand of
+`(Q₁ ⊕ Q₂) ⊕ (Q₃ ⊕ Q₄)` to the third summand of `(Q₁ ⊕ Q₃) ⊕ (Q₂ ⊕ Q₄)`. -/
+@[simp]
+theorem IsometryEquiv.prodProdProdComm_comp_inl_comp_inr :
+    (prodProdProdComm Q₁ Q₂ Q₃ Q₄).toIsometry.comp
+      ((Isometry.inl (Q₁.prod Q₂) (Q₃.prod Q₄)).comp (Isometry.inr Q₁ Q₂)) =
+      (Isometry.inr (Q₁.prod Q₃) (Q₂.prod Q₄)).comp (Isometry.inl Q₂ Q₄) :=
+  Isometry.ext fun _ ↦ by simp
+
+/-- `QuadraticMap.IsometryEquiv.prodProdProdComm` carries the third summand of
+`(Q₁ ⊕ Q₂) ⊕ (Q₃ ⊕ Q₄)` to the second summand of `(Q₁ ⊕ Q₃) ⊕ (Q₂ ⊕ Q₄)`. -/
+@[simp]
+theorem IsometryEquiv.prodProdProdComm_comp_inr_comp_inl :
+    (prodProdProdComm Q₁ Q₂ Q₃ Q₄).toIsometry.comp
+      ((Isometry.inr (Q₁.prod Q₂) (Q₃.prod Q₄)).comp (Isometry.inl Q₃ Q₄)) =
+      (Isometry.inl (Q₁.prod Q₃) (Q₂.prod Q₄)).comp (Isometry.inr Q₁ Q₃) :=
+  Isometry.ext fun _ ↦ by simp
+
+/-- `QuadraticMap.IsometryEquiv.prodProdProdComm` carries the fourth summand of
+`(Q₁ ⊕ Q₂) ⊕ (Q₃ ⊕ Q₄)` to the fourth summand of `(Q₁ ⊕ Q₃) ⊕ (Q₂ ⊕ Q₄)`. -/
+@[simp]
+theorem IsometryEquiv.prodProdProdComm_comp_inr_comp_inr :
+    (prodProdProdComm Q₁ Q₂ Q₃ Q₄).toIsometry.comp
+      ((Isometry.inr (Q₁.prod Q₂) (Q₃.prod Q₄)).comp (Isometry.inr Q₃ Q₄)) =
+      (Isometry.inr (Q₁.prod Q₃) (Q₂.prod Q₄)).comp (Isometry.inr Q₂ Q₄) :=
+  Isometry.ext fun _ ↦ by simp
+
+end prodProdProdComm
+
 /-- `Fin.consLinearEquiv` is isometric: an orthogonal sum indexed by `Fin (n + 1)` is the orthogonal
 product of its first summand with the orthogonal sum of the remaining ones. -/
 def IsometryEquiv.consPi {n : ℕ} {M : Fin (n + 1) → Type*} [∀ i, AddCommMonoid (M i)]
@@ -339,6 +460,15 @@ theorem IsometryEquiv.piCongrLeft_apply_apply {ι ι' : Type*} [Fintype ι] [Fin
     (Q : ∀ i, QuadraticMap R (M i) P) (e : ι' ≃ ι) (x : ∀ i', M (e i')) (i' : ι') :
     IsometryEquiv.piCongrLeft Q e x (e i') = x i' :=
   Equiv.piCongrLeft_apply_apply M e x i'
+
+/-- The inverse map of `QuadraticMap.IsometryEquiv.piCongrLeft` reads a reindexed coordinate. -/
+@[simp]
+theorem IsometryEquiv.piCongrLeft_symm_apply {ι ι' : Type*} [Fintype ι] [Fintype ι']
+    {M : ι → Type*} [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+    (Q : ∀ i, QuadraticMap R (M i) P) (e : ι' ≃ ι) (y : ∀ i, M i) (i' : ι') :
+    (IsometryEquiv.piCongrLeft Q e).symm y i' = y (e i') := by
+  conv_rhs => rw [← (IsometryEquiv.piCongrLeft Q e).apply_symm_apply y]
+  exact (IsometryEquiv.piCongrLeft_apply_apply Q e _ i').symm
 
 /-- Restriction to the summands indexed by `{i // S i}` is isometric when every other summand is
 carried by a trivial module: such summands may be deleted from an orthogonal sum. -/

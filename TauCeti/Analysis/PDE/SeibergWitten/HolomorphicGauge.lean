@@ -46,7 +46,11 @@ pulled back along the normal projection, whose divisor is the transverse divisor
 is the input of the comparison of log-modulus ratios
 (`TauCeti.SeibergWitten.norm_eq_one_and_eq_sub_phaseForm_of_tendsto`), which identifies the whole
 pair with the pulled-back vortex up to gauge once `log |h|²` is bounded and both sections satisfy
-the transverse vacuum condition. That boundedness is not proved here.
+the transverse vacuum condition. In a unitary frame, that boundedness
+(`TauCeti.SeibergWitten.isBounded_range_log_norm_sq_of_eq_mul_sectionValue_normalCoord`) and the
+resulting classification of the flat limits as gauge transforms of pulled-back plane vortices
+(`TauCeti.SeibergWitten.exists_vortex_norm_eq_one_and_eq_normalConnection_sub_phaseForm`) are in
+`TauCeti.Analysis.PDE.SeibergWitten.ConfinedLimit`.
 
 ## Main results
 
