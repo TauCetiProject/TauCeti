@@ -14,6 +14,8 @@ import TauCeti.Analysis.PDE.Regularity.Hessian.DivergenceForm
 import TauCeti.Analysis.Sobolev.W1p.Extension
 import TauCeti.Analysis.Sobolev.W1p.Symmetry
 import TauCeti.MeasureTheory.Function.PreciseRepresentative
+import TauCeti.MeasureTheory.Measure.Haar.HalfSpace
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Hölder continuity of the second derivatives up to the boundary of a half-space
@@ -160,6 +162,17 @@ private theorem preciseRepresentative_gradient_extendRestrict {U H : Opens E}
   rw [Measure.restrict_restrict U.isOpen.measurableSet]
   exact gradient_extendRestrict_ae_eq w
 
+/-- For `D ∈ W^{1,2}(U)`, an open set `s` and a set `t` with `s ∩ t ⊆ U`, the gradient of `D`
+agrees almost everywhere on `s ∩ t` with its precise representative for the Lebesgue measure on
+`t`. -/
+private theorem gradient_ae_eq_preciseRepresentative_restrict {U : Opens E} (D : W1p volume U 2)
+    {s t : Set E} (hs : IsOpen s) (hst : s ∩ t ⊆ U) :
+    (W1p.gradient D : E → E) =ᵐ[volume.restrict (s ∩ t)]
+      preciseRepresentative (volume.restrict t) (W1p.gradient D) :=
+  ae_eq_restrict_inter_preciseRepresentative_restrict hs
+    (((Lp.memLp (W1p.gradient D)).mono_measure (Measure.restrict_mono hst le_rfl)).locallyIntegrable
+      one_le_two)
+
 /-- **Step 1: `∇u` is Hölder up to the boundary.** For the solution `u ∈ H¹₀(H)` of
 `-∂ᵢ(aⁱʲ ∂ⱼu) = f`, with `a` uniformly elliptic on `B(y₀, r)` and `α`-Hölder on
 `closedBall y₀ (3r / 4)`, and `f` bounded on the points of `H` in that ball, the precise
@@ -258,9 +271,8 @@ private theorem exists_holderOnWith_and_ae_eq_gradient {α : ℝ≥0} (hα : 0 <
       simpa only [Function.comp_apply, ((hH x).1 hxH).le, ↓reduceIte] using
         hMf x (self_subset_thickening hδf _ hx)) hu
   -- The precise representative agrees with `∇u` almost everywhere on `B ∩ H`.
-  exact ⟨_, ⟨CP, hP⟩, (ae_eq_restrict_inter_preciseRepresentative_restrict B.isOpen
-    (((Lp.memLp (W1p.gradient (extendRestrict u B))).mono_measure
-      (Measure.restrict_mono inter_subset_left le_rfl)).locallyIntegrable one_le_two)).symm.trans
+  exact ⟨_, ⟨CP, hP⟩, (gradient_ae_eq_preciseRepresentative_restrict (extendRestrict u B)
+    B.isOpen inter_subset_left).symm.trans
     (gradient_extendRestrict_ae_eq u)⟩
 
 /-- **Step 2: the folded datum is Hölder.** If the derivatives of the entries of `a` are
@@ -446,21 +458,11 @@ private theorem preciseRepresentative_eq_of_ae_eq_of_holderOnWith {α : ℝ≥0}
       le_inner_ite_hyperplaneReflection hν c₀ y⟩
   have hcont := (hG.continuousOn hα).comp
     (lipschitzWith_one_ite_hyperplaneReflection ν c₀).continuous.continuousOn hmaps
-  -- Every closed ball around `x` contains the ball of half its radius whose centre is moved from
-  -- `x` into `H` along `ν`.
+  -- `H` fills at least half of every closed ball around a point of the closed half-space.
   have hpos (ε : ℝ) (hε : 0 < ε) : volume.restrict (H : Set E) (closedBall x ε) ≠ 0 := by
-    set z : E := x + (ε / 2 / ‖ν‖) • ν
-    have hzx : ‖z - x‖ = ε / 2 := by
-      rw [add_sub_cancel_left, norm_smul, Real.norm_of_nonneg (by positivity),
-        div_mul_cancel₀ _ (norm_ne_zero_iff.2 hν)]
-    have hsub : ball z (ε / 2) ⊆ closedBall x ε ∩ H := fun y hy => by
-      refine ⟨mem_closedBall.2 ?_, (hH y).2
-        (TauCeti.ball_add_smul_subset_setOf_lt_inner hν hx.2.out hy).out⟩
-      rw [mem_ball, dist_eq_norm] at hy
-      rw [dist_eq_norm, ← sub_add_sub_cancel y z x]
-      linarith [norm_add_le (y - z) (z - x)]
-    rw [Measure.restrict_apply' H.isOpen.measurableSet]
-    exact ((measure_ball_pos volume z (half_pos hε)).trans_le (measure_mono hsub)).ne'
+    rw [show (H : Set E) = {y | c₀ < ⟪y, ν⟫_ℝ} from Set.ext hH]
+    exact volume.restrict_closedBall_ne_zero_of_mul_le (c := 2⁻¹) (by norm_num) hε
+      (volume.inv_two_mul_addHaar_closedBall_le_addHaar_closedBall_inter_setOf_lt_inner hν hx.2.out)
   refine (preciseRepresentative_eq_of_continuousAt_of_measure_closedBall_ne_zero hpos
     (isOpen_ball.mem_nhds hx.1) (hF x) ?_ (hcont.continuousAt (isOpen_ball.mem_nhds hx.1))).trans ?_
   · -- On `H` the fold is the identity.
@@ -758,9 +760,8 @@ private theorem exists_hasWeakLineDerivOn_normal_and_ae_eq_holderOnWith {α : �
     fun k => ⟨Ct k, hCt k⟩, gradient_ae_eq_normalField he hr ha hellB hf hu hd hdt
     (ae_restrict_of_ae_restrict_of_subset
       (inter_subset_inter_left _ (ball_subset_ball (by linarith))) hPuae)
-    fun k => ae_eq_restrict_inter_preciseRepresentative_restrict isOpen_ball
-      (((Lp.memLp (W1p.gradient (dt k : W1p volume H 2))).mono_measure
-        (Measure.restrict_mono inter_subset_right le_rfl)).locallyIntegrable one_le_two)⟩
+    fun k => gradient_ae_eq_preciseRepresentative_restrict (dt k : W1p volume H 2) isOpen_ball
+      inter_subset_right⟩
 
 /-- **Every second derivative is Hölder up to a flat boundary.** Let `0 < α < 1`, let
 `H = {x | c₀ < ⟪x, ν⟫}` with `ν ≠ 0`, and let `u ∈ H¹₀(H)` be a weak solution of the Dirichlet
@@ -820,9 +821,8 @@ theorem exists_hasWeakLineDerivOn_w1p_and_holderOnWith_preciseRepresentative_res
           (W1p.gradient_add_ae (⟪e, w⟫_ℝ • d) (dτ : W1p volume H 2)),
         ae_restrict_of_ae_restrict_of_subset inter_subset_right
           (W1p.gradient_smul_ae ⟪e, w⟫_ℝ d), hdG,
-        ae_eq_restrict_inter_preciseRepresentative_restrict isOpen_ball
-          (((Lp.memLp (W1p.gradient (dτ : W1p volume H 2))).mono_measure
-            (Measure.restrict_mono inter_subset_right le_rfl)).locallyIntegrable one_le_two)]
+        gradient_ae_eq_preciseRepresentative_restrict (dτ : W1p volume H 2) isOpen_ball
+          inter_subset_right]
         with x h1 h2 h3 h4
       simp only [h1, h2, h3, h4, Pi.add_apply, Pi.smul_apply, gτ]
     refine ⟨_, (hGw.mono (inter_subset_inter_left _
