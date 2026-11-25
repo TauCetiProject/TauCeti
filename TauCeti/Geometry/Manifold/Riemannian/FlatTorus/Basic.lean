@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.Algebra.Quotient
 public import TauCeti.Geometry.Manifold.Riemannian.Distance
 public import TauCeti.Geometry.Manifold.Riemannian.FlatTorus.Lattice
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Local
-import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.Algebra.Module.ZLattice.Covolume
 
 /-!
 # The flat torus `ℝⁿ / ℤⁿ`
@@ -115,6 +115,14 @@ instance instDiscreteTopologyLattice : DiscreteTopology (lattice n) :=
 instance instIsZLatticeLattice : IsZLattice ℝ (lattice n) :=
   inferInstanceAs (IsZLattice ℝ
     (Submodule.span ℤ (range (EuclideanSpace.basisFun (Fin n) ℝ).toBasis)))
+
+/-- The standard integer lattice has Euclidean covolume one. -/
+@[simp]
+theorem covolume_lattice : ZLattice.covolume (lattice n) MeasureTheory.volume = 1 := by
+  rw [lattice, ZLattice.covolume_eq_measure_fundamentalDomain _ _
+    (ZSpan.isAddFundamentalDomain (EuclideanSpace.basisFun (Fin n) ℝ).toBasis
+      MeasureTheory.volume)]
+  simp only [OrthonormalBasis.volume_real_fundamentalDomain]
 
 end FlatTorus
 
@@ -306,21 +314,15 @@ theorem riemannianIsometryFlatQuotient_mk (x : ℝ^n) :
     riemannianIsometryFlatQuotient n (mk x) = (lattice n).flatQuotientMk x := by
   let : RiemannianBundle (fun y : 𝕋 n ↦ TangentSpace 𝓘(ℝ, ℝ^n) y) :=
     ⟨(flatMetric n).toRiemannianMetric⟩
-  rw [Submodule.flatQuotientMk_eq_comp, comp_apply]
+  rw [riemannianIsometryFlatQuotient, mk, Submodule.flatQuotientMk_eq_comp, comp_apply]
   exact congrFun (WithMetric.coe_riemannianIsometry_symm (flatMetric n)) (proj n x)
 
 /-- The standard flat torus has unit Riemannian volume in every dimension. -/
 @[simp]
 theorem riemannianVolume_univ : riemannianVolume 𝓘(ℝ, ℝ^n) (FlatTorus n) univ = 1 := by
-  have hcov : ZLattice.covolume (lattice n) MeasureTheory.volume = 1 := by
-    rw [lattice, ZLattice.covolume_eq_measure_fundamentalDomain _ _
-      (ZSpan.isAddFundamentalDomain (EuclideanSpace.basisFun (Fin n) ℝ).toBasis
-        MeasureTheory.volume), MeasureTheory.measureReal_def,
-      MeasureTheory.measure_congr (ZSpan.fundamentalDomain_ae_parallelepiped _ _),
-      OrthonormalBasis.coe_toBasis, OrthonormalBasis.volume_parallelepiped, ENNReal.toReal_one]
   have h := (riemannianIsometryFlatQuotient n).measurePreserving_riemannianVolume.measure_preimage
     (s := univ) MeasurableSet.univ.nullMeasurableSet
-  rw [preimage_univ, Submodule.riemannianVolume_univ_flatQuotient_eq_covolume, hcov,
+  rw [preimage_univ, Submodule.riemannianVolume_univ_flatQuotient_eq_covolume, covolume_lattice,
     ENNReal.ofReal_one] at h
   exact h
 

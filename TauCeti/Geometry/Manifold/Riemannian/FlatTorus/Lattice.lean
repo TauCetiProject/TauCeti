@@ -147,7 +147,7 @@ theorem flatQuotientMk_surjective : Surjective (flatQuotientMk L) := by
 
 /-- Two points have the same image exactly when their difference belongs to the lattice. -/
 @[simp]
-theorem flatQuotientMk_eq_mk_iff {x y : E} :
+theorem flatQuotientMk_eq_flatQuotientMk_iff {x y : E} :
     flatQuotientMk L x = flatQuotientMk L y ↔ x - y ∈ L := by
   rw [flatQuotientMk, flatQuotientMk, WithMetric.toWithMetric_inj]
   exact Submodule.orbitRelQuotient_mk_eq_mk_iff L
@@ -156,7 +156,7 @@ theorem flatQuotientMk_eq_mk_iff {x y : E} :
 @[simp]
 theorem flatQuotientMk_add_of_mem (x : E) {l : E} (hl : l ∈ L) :
     flatQuotientMk L (x + l) = flatQuotientMk L x := by
-  rw [flatQuotientMk_eq_mk_iff, add_sub_cancel_left]
+  rw [flatQuotientMk_eq_flatQuotientMk_iff, add_sub_cancel_left]
   exact hl
 
 /-- A half-open fundamental parallelepiped parametrizes the entire flat torus bijectively. -/
@@ -168,7 +168,7 @@ theorem bijOn_flatQuotientMk_fundamentalDomain [IsZLattice ℝ L] {ι : Type*}
   let B := b.ofZLatticeBasis ℝ
   refine ⟨mapsTo_univ _ _, ?_, ?_⟩
   · intro x hx y hy hxy
-    have hL := (flatQuotientMk_eq_mk_iff L).mp hxy
+    have hL := (flatQuotientMk_eq_flatQuotientMk_iff L).mp hxy
     have heq : ZSpan.fract B y = ZSpan.fract B x := (ZSpan.fract_eq_fract B y x).mpr (by
       simpa only [B, b.ofZLatticeBasis_span ℝ, neg_add_eq_sub] using hL)
     exact ((ZSpan.fract_eq_self (b := B)).mpr hx).symm.trans
@@ -176,7 +176,7 @@ theorem bijOn_flatQuotientMk_fundamentalDomain [IsZLattice ℝ L] {ι : Type*}
   · rintro ⟨y⟩ _
     obtain ⟨x, rfl⟩ := _root_.Quotient.mk_surjective y
     refine ⟨ZSpan.fract B x, ZSpan.fract_mem_fundamentalDomain B x, ?_⟩
-    apply (flatQuotientMk_eq_mk_iff L).2
+    apply (flatQuotientMk_eq_flatQuotientMk_iff L).2
     rw [ZSpan.fract_apply, sub_right_comm, sub_self, zero_sub]
     exact L.neg_mem (b.ofZLatticeBasis_span ℝ ▸ (ZSpan.floor B x).property)
 
