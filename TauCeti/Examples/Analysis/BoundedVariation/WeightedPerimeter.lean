@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.BoundedVariation.Weighted.Basic
-public import TauCeti.Analysis.BoundedVariation.Real
+public import TauCeti.Analysis.BoundedVariation.OneDimensional.Perimeter
 public import TauCeti.Analysis.BoundedVariation.Hyperplane
 public import TauCeti.Geometry.Euclidean.Volume.Measure
 
