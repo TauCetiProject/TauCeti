@@ -125,7 +125,7 @@ theorem arcConnectivity_le_encard_nonloop_out [Nontrivial V] (v : V) :
       ↥({w | w ≠ v ∧ D.Adj v w} : Set V) :=
     (Equiv.sigmaPLiftEquivSubtype fun w : {w : V // w ≠ v} ↦ D.Adj v w).trans
       (Equiv.subtypeSubtypeEquivSubtypeInter _ _)
-  exact (TauCeti.arcConnectivity_le_encard_nonloop_out (Q := D.AdjHom) v).trans_eq
+  exact (TauCeti.arcConnectivity_le_enatCard_nonloop_out (Q := D.AdjHom) v).trans_eq
     ((ENat.card_congr e).trans (ENat.card_coe_set_eq _))
 
 /-- On at least two vertices, the arc connectivity of a digraph is at most the extended cardinality
@@ -136,7 +136,7 @@ theorem arcConnectivity_le_encard_nonloop_in [Nontrivial V] (v : V) :
       ↥({w | w ≠ v ∧ D.Adj w v} : Set V) :=
     (Equiv.sigmaPLiftEquivSubtype fun w : {w : V // w ≠ v} ↦ D.Adj w v).trans
       (Equiv.subtypeSubtypeEquivSubtypeInter (fun w : V ↦ w ≠ v) fun w ↦ D.Adj w v)
-  exact (TauCeti.arcConnectivity_le_encard_nonloop_in (Q := D.AdjHom) v).trans_eq
+  exact (TauCeti.arcConnectivity_le_enatCard_nonloop_in (Q := D.AdjHom) v).trans_eq
     ((ENat.card_congr e).trans (ENat.card_coe_set_eq _))
 
 /-- On at least two vertices, the arc connectivity of a digraph is at most the number of nonloop

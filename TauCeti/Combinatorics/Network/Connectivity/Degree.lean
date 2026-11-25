@@ -24,8 +24,8 @@ nonloop edges incident to a vertex.
 ## Main results
 
 * `TauCeti.arcConnectivity_le_encard_cut`: the bound by an arbitrary directed cut.
-* `TauCeti.arcConnectivity_le_encard_nonloop_out` and
-  `TauCeti.arcConnectivity_le_encard_nonloop_in`: the loop-free extended-cardinality bounds.
+* `TauCeti.arcConnectivity_le_enatCard_nonloop_out` and
+  `TauCeti.arcConnectivity_le_enatCard_nonloop_in`: the loop-free extended-cardinality bounds.
 * `TauCeti.arcConnectivity_le_card_nonloop_out` and
   `TauCeti.arcConnectivity_le_card_nonloop_in`: their finite-cardinality forms.
 * `TauCeti.arcConnectivity_le_card_out` and `TauCeti.arcConnectivity_le_card_in`: the bounds by
@@ -62,12 +62,6 @@ private def restrictedArrowEquiv (v : V) :
       rfl
   exact e₁.trans <| e₂.trans <| Equiv.subtypeSigmaEquiv (Q v) (fun w ↦ w ≠ v)
 
-private def reverseArrowEquiv : (Σ x y, Q x y) ≃ (Σ y x, Q x y) where
-  toFun := fun ⟨x, y, a⟩ ↦ ⟨y, x, a⟩
-  invFun := fun ⟨y, x, a⟩ ↦ ⟨x, y, a⟩
-  left_inv := fun ⟨_, _, _⟩ ↦ rfl
-  right_inv := fun ⟨_, _, _⟩ ↦ rfl
-
 /-- Arc connectivity is at most the extended cardinality of every directed cut separating two
 specified vertices. -/
 theorem arcConnectivity_le_encard_cut {C : Set V} {s t : V} (hs : s ∈ C) (ht : t ∉ C) :
@@ -85,7 +79,7 @@ theorem arcConnectivity_le_encard_cut {C : Set V} {s t : V} (hs : s ∈ C) (ht :
 
 /-- On at least two vertices, arc connectivity is at most the extended cardinality of the
 nonloop arrows leaving a chosen vertex. -/
-theorem arcConnectivity_le_encard_nonloop_out [Nontrivial V] (v : V) :
+theorem arcConnectivity_le_enatCard_nonloop_out [Nontrivial V] (v : V) :
     arcConnectivity Q ≤ ENat.card (Σ w : {w : V // w ≠ v}, Q v w) := by
   obtain ⟨w, hwv⟩ := exists_ne v
   let A := {a : Σ x y, Q x y | a.1 ∈ ({v} : Set V) ∧ a.2.1 ∉ ({v} : Set V)}
@@ -97,15 +91,15 @@ theorem arcConnectivity_le_encard_nonloop_out [Nontrivial V] (v : V) :
 
 /-- On at least two vertices, arc connectivity is at most the extended cardinality of the
 nonloop arrows entering a chosen vertex. -/
-theorem arcConnectivity_le_encard_nonloop_in [Nontrivial V] (v : V) :
+theorem arcConnectivity_le_enatCard_nonloop_in [Nontrivial V] (v : V) :
     arcConnectivity Q ≤ ENat.card (Σ w : {w : V // w ≠ v}, Q w v) := by
   obtain ⟨w, hwv⟩ := exists_ne v
   let A := {a : Σ x y, Q x y | a.1 ∈ ({v}ᶜ : Set V) ∧ a.2.1 ∉ ({v}ᶜ : Set V)}
   let e : A ≃ (Σ w : {w : V // w ≠ v}, Q w v) :=
-    ((reverseArrowEquiv (Q := Q)).subtypeEquiv fun a ↦ by
-      rcases a with ⟨x, y, a⟩
-      simp [A, reverseArrowEquiv, and_comm]).trans <|
-        restrictedArrowEquiv (Q := fun x y ↦ Q y x) v
+    (Equiv.subtypeEquivRight fun a ↦ by simp [A]).trans <|
+      (Equiv.subtypeSigmaEquivSigma (p := fun x ↦ x ≠ v)
+        (q := fun _ a ↦ a.1 = v)).trans <|
+        Equiv.sigmaCongrRight fun _ ↦ Equiv.sigmaSubtype v
   refine (arcConnectivity_le_encard_cut (Q := Q) (C := {v}ᶜ) (s := w) (t := v) ?_ ?_).trans_eq ?_
   · simpa using hwv
   · simp
@@ -116,14 +110,14 @@ chosen vertex. Only these nonloop arrows need to be finite. -/
 theorem arcConnectivity_le_card_nonloop_out [Nontrivial V] (v : V)
     [Finite (Σ w : {w : V // w ≠ v}, Q v w)] :
     arcConnectivity Q ≤ Nat.card (Σ w : {w : V // w ≠ v}, Q v w) := by
-  simpa only [ENat.card_eq_coe_natCard] using arcConnectivity_le_encard_nonloop_out (Q := Q) v
+  simpa only [ENat.card_eq_coe_natCard] using arcConnectivity_le_enatCard_nonloop_out (Q := Q) v
 
 /-- On at least two vertices, arc connectivity is at most the number of nonloop arrows entering a
 chosen vertex. Only these nonloop arrows need to be finite. -/
 theorem arcConnectivity_le_card_nonloop_in [Nontrivial V] (v : V)
     [Finite (Σ w : {w : V // w ≠ v}, Q w v)] :
     arcConnectivity Q ≤ Nat.card (Σ w : {w : V // w ≠ v}, Q w v) := by
-  simpa only [ENat.card_eq_coe_natCard] using arcConnectivity_le_encard_nonloop_in (Q := Q) v
+  simpa only [ENat.card_eq_coe_natCard] using arcConnectivity_le_enatCard_nonloop_in (Q := Q) v
 
 private def nonloopEmbedding (v : V) (P : V → Type v) :
     (Σ w : {w : V // w ≠ v}, P w) ↪ (Σ w, P w) :=
