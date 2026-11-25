@@ -91,9 +91,22 @@ theorem pressureNetSum_le_iff {a : ℝ≥0∞} :
       ∑ x ∈ s, ENNReal.ofReal (Real.exp (birkhoffSum T φ n x)) ≤ a :=
   iSup₂_le_iff
 
+/-- The pressure sum is the supremum, over finite `(U, n)`-dynamical nets `s`, of the sums of
+`exp (birkhoffSum T φ n x)` over `s`. -/
+theorem pressureNetSum_def :
+    pressureNetSum T φ U n = ⨆ (s : Finset X) (_ : IsDynNetIn T univ U n s),
+      ∑ x ∈ s, ENNReal.ofReal (Real.exp (birkhoffSum T φ n x)) :=
+  (rfl)
+
 /-- The pressure at an entourage is the upper exponential growth rate of the pressure sums. -/
 theorem netPressureEntourage_def :
     netPressureEntourage T φ U = expGrowthSup (pressureNetSum T φ U) :=
+  (rfl)
+
+/-- The topological pressure is the supremum over entourages of the uniformity of the pressure at
+each entourage. -/
+theorem topologicalPressure_def [UniformSpace X] :
+    topologicalPressure T φ = ⨆ U ∈ 𝓤 X, netPressureEntourage T φ U :=
   (rfl)
 
 /-- The pressure sums are antitone in the entourage. -/
@@ -166,8 +179,7 @@ theorem netPressureEntourage_add_const (T : X → X) (φ : X → ℝ) (c : ℝ) 
     netPressureEntourage T (fun x ↦ φ x + c) U = netPressureEntourage T φ U + c := by
   have hfun : pressureNetSum T (fun x ↦ φ x + c) U =
       fun n : ℕ ↦ EReal.exp (c * n) * pressureNetSum T φ U n := funext fun n ↦ by
-    rw [pressureNetSum_add_const, ← EReal.exp_coe, EReal.coe_mul, EReal.coe_natCast,
-      mul_comm (n : EReal)]
+    simp [pressureNetSum_add_const, ← EReal.exp_coe, mul_comm]
   rw [netPressureEntourage_def, netPressureEntourage_def, hfun, expGrowthSup_exp_mul, add_comm]
 
 /-- Adding a constant `c` to the potential adds `c` to the pressure. -/
