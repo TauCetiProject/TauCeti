@@ -70,7 +70,7 @@ coordinate `r`.
 
 public section
 
-open CategoryTheory Limits TopologicalSpace Set Topology
+open CategoryTheory TopologicalSpace Set Topology
 
 universe u
 
@@ -205,14 +205,19 @@ theorem glueInl_apply_eq_glueInr {y : Y} (hy : y ∈ e.source) :
   glueInl_eq_glueInr_iff.2 ⟨hy, rfl⟩
 
 variable (e) in
-/-- The images of `X` and `Y` cover the gluing along `e`. -/
-theorem range_glueInl_union_range_glueInr :
-    range (e.glueInl) ∪ range (e.glueInr) = univ := by
-  refine eq_univ_of_forall fun z ↦ ?_
+/-- Every point of the gluing along `e` is the image of a point of `X` or of a point of `Y`. -/
+theorem exists_glueInl_eq_or_exists_glueInr_eq (z : e.glueData.toGlueData.glued) :
+    (∃ x, e.glueInl x = z) ∨ ∃ y, e.glueInr y = z := by
   obtain ⟨⟨b⟩, w, rfl⟩ := e.glueData.ι_jointly_surjective z
   cases b
   · exact Or.inr ⟨w, rfl⟩
   · exact Or.inl ⟨w, rfl⟩
+
+variable (e) in
+/-- The images of `X` and `Y` cover the gluing along `e`. -/
+theorem range_glueInl_union_range_glueInr :
+    range (e.glueInl) ∪ range (e.glueInr) = univ :=
+  eq_univ_of_forall (exists_glueInl_eq_or_exists_glueInr_eq e)
 
 /-- The points of the gluing along `e` outside the image of `X` are the images of the points of `Y`
 outside the source of `e`. -/
@@ -220,9 +225,7 @@ theorem compl_range_glueInl :
     (range (e.glueInl))ᶜ = e.glueInr '' e.sourceᶜ := by
   ext z
   refine ⟨fun hz ↦ ?_, ?_⟩
-  · obtain ⟨x, rfl⟩ | ⟨y, rfl⟩ :=
-      (range_glueInl_union_range_glueInr e).symm ▸
-        mem_univ z
+  · obtain ⟨x, rfl⟩ | ⟨y, rfl⟩ := exists_glueInl_eq_or_exists_glueInr_eq e z
     · exact (hz ⟨x, rfl⟩).elim
     · exact ⟨y, fun hy ↦ hz ⟨e y, glueInl_apply_eq_glueInr hy⟩, rfl⟩
   · rintro ⟨y, hy, rfl⟩ ⟨x, hx⟩
@@ -234,9 +237,7 @@ theorem compl_range_glueInr :
     (range (e.glueInr))ᶜ = e.glueInl '' e.targetᶜ := by
   ext z
   refine ⟨fun hz ↦ ?_, ?_⟩
-  · obtain ⟨x, rfl⟩ | ⟨y, rfl⟩ :=
-      (range_glueInl_union_range_glueInr e).symm ▸
-        mem_univ z
+  · obtain ⟨x, rfl⟩ | ⟨y, rfl⟩ := exists_glueInl_eq_or_exists_glueInr_eq e z
     · refine ⟨x, fun hx ↦ hz ⟨e.symm x, ?_⟩, rfl⟩
       rw [← glueInl_apply_eq_glueInr (e.map_target hx), e.right_inv hx]
     · exact (hz ⟨y, rfl⟩).elim
@@ -262,14 +263,14 @@ theorem bijOn_glueInl_compl_target : BijOn e.glueInl e.targetᶜ (range e.glueIn
 
 section glueDesc
 
-variable {Z : Type u} [TopologicalSpace Z] {f : C(X, Z)} {g : C(Y, Z)}
+variable {Z : Type*} [TopologicalSpace Z] {f : C(X, Z)} {g : C(Y, Z)}
 
 variable (e) in
 /-- The maps `f` and `g` on the two pieces. -/
 private def glueDescPiece (f : C(X, Z)) (g : C(Y, Z)) :
-    ∀ i : ULift.{u} Bool, e.glueData.U i ⟶ TopCat.of Z
-  | ⟨true⟩ => TopCat.ofHom f
-  | ⟨false⟩ => TopCat.ofHom g
+    ∀ i : ULift.{u} Bool, C(e.glueData.U i, Z)
+  | ⟨true⟩ => f
+  | ⟨false⟩ => g
 
 /-- Maps on `X` and `Y` which agree along `e` agree on points identified in the gluing. -/
 private theorem glueDescPiece_eq_of_ι_eq (h : ∀ y ∈ e.source, f (e y) = g y)
@@ -289,34 +290,35 @@ variable (e f g) in
 along `e`, `f (e y) = g y` on the source of `e`, glue to a continuous map on the gluing. -/
 noncomputable def glueDesc (h : ∀ y ∈ e.source, f (e y) = g y) :
     C(e.glueData.toGlueData.glued, Z) :=
-  (Multicoequalizer.desc e.glueData.toGlueData.diagram (TopCat.of Z)
-    (glueDescPiece e f g) (by
-      rintro ⟨i, j⟩
-      ext x
-      exact glueDescPiece_eq_of_ι_eq h
-        ((e.glueData.ι_eq_iff_rel i j (e.glueData.f i j x)
-          (e.glueData.f j i (e.glueData.t i j x))).2 ⟨x, rfl, rfl⟩))).hom
+  IsQuotientMap.lift (f := .sigma fun i ↦ (e.glueData.toGlueData.ι i).hom)
+    e.glueData.isOpenQuotientMap_sigma_ι.isQuotientMap (.sigma (glueDescPiece e f g))
+    fun _ _ hab ↦ glueDescPiece_eq_of_ι_eq h hab
+
+/-- The map glued from `f` and `g` restricts to `f` and `g` on the pieces. -/
+private theorem glueDesc_comp_sigma (h : ∀ y ∈ e.source, f (e y) = g y) :
+    (e.glueDesc f g h).comp (.sigma fun i ↦ (e.glueData.toGlueData.ι i).hom) =
+      .sigma (glueDescPiece e f g) :=
+  IsQuotientMap.lift_comp _ _ _
 
 /-- The map glued from `f` and `g` is `f` on `X`. -/
 @[simp]
 theorem glueDesc_glueInl (h : ∀ y ∈ e.source, f (e y) = g y) (x : X) :
     e.glueDesc f g h (e.glueInl x) = f x :=
-  ConcreteCategory.congr_hom (Multicoequalizer.π_desc e.glueData.toGlueData.diagram _
-    (glueDescPiece e f g) _ ⟨true⟩) x
+  DFunLike.congr_fun (glueDesc_comp_sigma h) ⟨⟨true⟩, x⟩
 
 /-- The map glued from `f` and `g` is `g` on `Y`. -/
 @[simp]
 theorem glueDesc_glueInr (h : ∀ y ∈ e.source, f (e y) = g y) (y : Y) :
     e.glueDesc f g h (e.glueInr y) = g y :=
-  ConcreteCategory.congr_hom (Multicoequalizer.π_desc e.glueData.toGlueData.diagram _
-    (glueDescPiece e f g) _ ⟨false⟩) y
+  DFunLike.congr_fun (glueDesc_comp_sigma h) ⟨⟨false⟩, y⟩
 
 /-- A continuous map out of the gluing along `e` is determined by its values on `X` and `Y`. -/
+@[ext]
 theorem glued_continuousMap_ext {φ φ' : C(e.glueData.toGlueData.glued, Z)}
     (hl : ∀ x, φ (e.glueInl x) = φ' (e.glueInl x))
     (hr : ∀ y, φ (e.glueInr y) = φ' (e.glueInr y)) : φ = φ' := by
   ext z
-  obtain ⟨x, rfl⟩ | ⟨y, rfl⟩ := (range_glueInl_union_range_glueInr e).symm ▸ mem_univ z
+  obtain ⟨x, rfl⟩ | ⟨y, rfl⟩ := exists_glueInl_eq_or_exists_glueInr_eq e z
   · exact hl x
   · exact hr y
 
@@ -337,39 +339,30 @@ private theorem chartRel_true_false :
   Set.ext fun p ↦ e.glueData.mem_chartRel_iff.trans
     (glueInl_eq_glueInr_iff.trans (Set.mem_graphOn (x := p.swap)).symm)
 
+/-- The relation between the piece `Y` and the piece `X` of the gluing along `e` is the graph of
+`e`. -/
+private theorem chartRel_false_true :
+    e.glueData.chartRel ⟨false⟩ ⟨true⟩ = e.source.graphOn e :=
+  Set.ext fun (_ : Y × X) ↦ e.glueData.mem_chartRel_iff.trans
+    (glueInr_eq_glueInl_iff.trans Set.mem_graphOn.symm)
+
 /-- **Hausdorff criterion for the gluing along an open partial homeomorphism.** The gluing of `X`
 and `Y` along `e` is Hausdorff exactly when `X` and `Y` are Hausdorff and the graph
 `{(y, e y) | y ∈ e.source}` of `e` on its source is closed in `Y × X`. -/
 theorem t2Space_glueData_iff :
     T2Space e.glueData.toGlueData.glued ↔
       T2Space X ∧ T2Space Y ∧ IsClosed (e.source.graphOn e) := by
-  -- The relation of a piece with itself is the diagonal of that piece.
-  have hdiag (i : ULift.{u} Bool) : e.glueData.chartRel i i =
-      diagonal (partialHomeomorphGluePiece X Y i) :=
-    Set.ext fun _ ↦ e.glueData.mem_chartRel_iff.trans
-      (e.glueData.ι_isOpenEmbedding i).injective.eq_iff
-  -- The relation of `Y` with `X` is the graph of `e`.
-  have hswap : e.glueData.chartRel ⟨false⟩ ⟨true⟩ =
-      e.source.graphOn e :=
-    Set.ext fun (p : Y × X) ↦ e.glueData.swap_mem_chartRel_iff.symm.trans <| by
-      rw [chartRel_true_false]
-      -- Membership in the preimage under `Prod.swap` is membership of `p.swap.swap = p`.
-      exact mem_preimage.trans (iff_of_eq (congrArg (· ∈ e.source.graphOn e) (Prod.swap_swap p)))
   rw [e.glueData.t2Space_iff_isClosed_chartRel]
-  refine ⟨fun h ↦ ⟨?_, ?_, hswap ▸ h ⟨false⟩ ⟨true⟩⟩, fun ⟨hX, hY, hg⟩ ↦ ?_⟩
-  · have h' := h ⟨true⟩ ⟨true⟩
-    rw [hdiag] at h'
-    exact t2_iff_isClosed_diagonal.2 h'
-  · have h' := h ⟨false⟩ ⟨false⟩
-    rw [hdiag] at h'
-    exact t2_iff_isClosed_diagonal.2 h'
+  refine ⟨fun h ↦ ⟨?_, ?_, chartRel_false_true (e := e) ▸ h ⟨false⟩ ⟨true⟩⟩, fun ⟨hX, hY, hg⟩ ↦ ?_⟩
+  · exact t2_iff_isClosed_diagonal.2 (e.glueData.chartRel_self ⟨true⟩ ▸ h ⟨true⟩ ⟨true⟩)
+  · exact t2_iff_isClosed_diagonal.2 (e.glueData.chartRel_self ⟨false⟩ ▸ h ⟨false⟩ ⟨false⟩)
   rintro ⟨i⟩ ⟨j⟩
   cases i <;> cases j
-  · exact hdiag ⟨false⟩ ▸ t2_iff_isClosed_diagonal.1 hY
-  · exact hswap ▸ hg
+  · exact e.glueData.chartRel_self ⟨false⟩ ▸ t2_iff_isClosed_diagonal.1 hY
+  · exact chartRel_false_true (e := e) ▸ hg
   · rw [chartRel_true_false]
     exact hg.preimage continuous_swap
-  · exact hdiag ⟨true⟩ ▸ t2_iff_isClosed_diagonal.1 hX
+  · exact e.glueData.chartRel_self ⟨true⟩ ▸ t2_iff_isClosed_diagonal.1 hX
 
 /-- The gluing of Hausdorff spaces along an open partial homeomorphism with closed graph is
 Hausdorff. -/
