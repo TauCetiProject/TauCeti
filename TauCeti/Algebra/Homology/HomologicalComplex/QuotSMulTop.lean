@@ -70,7 +70,9 @@ noncomputable def quotSMulTop : HomologicalComplex AddCommGrpCat.{u} c where
 /-- The projection `K ⟶ K / a K`. -/
 noncomputable def toQuotSMulTop : K ⟶ K.quotSMulTop a where
   f _ := AddCommGrpCat.ofHom (Submodule.mkQ _).toAddMonoidHom
-  comm' _ _ _ := rfl
+  comm' _ _ _ := by
+    ext x
+    exact (QuotSMulTop.map_apply_mk _ _ x).symm
 
 variable {K a}
 
