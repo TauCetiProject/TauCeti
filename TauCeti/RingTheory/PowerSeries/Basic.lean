@@ -25,6 +25,8 @@ coefficients `map f` acts on the constant coefficient.
   inclusion of constants.
 * `PowerSeries.constantCoeff_map`: a change of coefficients `map f` acts on the constant
   coefficient by `f`, as `MvPowerSeries.constantCoeff_map` does for multivariate power series.
+* `Polynomial.coeff_coe_eq_zero_of_degree_lt`: a polynomial of degree less than `s`, viewed as a
+  power series, has zero coefficients from `s` on.
 -/
 
 public section
@@ -75,3 +77,16 @@ theorem constantCoeff_map (f : R →+* S) (φ : R⟦X⟧) :
 end Map
 
 end PowerSeries
+
+namespace Polynomial
+
+variable {R : Type*} [Semiring R]
+
+/-- A polynomial of degree less than `s`, viewed as a power series, has zero coefficients from
+`s` on. -/
+theorem coeff_coe_eq_zero_of_degree_lt {s : ℕ} {p : Polynomial R} {m : ℕ} (hp : p.degree < s)
+    (hm : s ≤ m) : (p : PowerSeries R).coeff m = 0 := by
+  rw [coeff_coe]
+  exact coeff_eq_zero_of_degree_lt (hp.trans_le (by exact_mod_cast hm))
+
+end Polynomial

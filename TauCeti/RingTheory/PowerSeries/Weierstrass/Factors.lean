@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.DivMod
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Preparation
 import TauCeti.Algebra.Polynomial.Degree.IsMonicOfDegree
+import TauCeti.RingTheory.PowerSeries.Basic
 import TauCeti.RingTheory.PowerSeries.GaussNorm.Estimates
 import TauCeti.RingTheory.PowerSeries.Weierstrass.Polynomial
 

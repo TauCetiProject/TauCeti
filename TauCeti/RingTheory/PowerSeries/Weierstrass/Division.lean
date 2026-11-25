@@ -100,14 +100,6 @@ public section
 
 namespace TauCeti.PowerSeries
 
-/-- A polynomial of degree less than `s`, viewed as a power series, has zero coefficients from
-`s` on: it is a valid remainder of a Weierstrass division by a divisor of degree `s`. -/
-theorem _root_.Polynomial.coeff_coe_eq_zero_of_degree_lt {R : Type*} [Semiring R] {s : ℕ}
-    {p : Polynomial R} {m : ℕ} (hp : p.degree < s) (hm : s ≤ m) :
-    (p : PowerSeries R).coeff m = 0 := by
-  rw [Polynomial.coeff_coe]
-  exact Polynomial.coeff_eq_zero_of_degree_lt (hp.trans_le (by exact_mod_cast hm))
-
 section NormedRing
 
 variable {R : Type*} [NormedRing R] {c : ℝ} {s : ℕ} {f q r : PowerSeries R}

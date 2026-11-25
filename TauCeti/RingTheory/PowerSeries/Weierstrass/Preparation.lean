@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.PowerSeries.GaussNorm.NearOne
 public import TauCeti.RingTheory.PowerSeries.TateAlgebra
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Division
 import TauCeti.Algebra.Polynomial.Degree.IsMonicOfDegree
+import TauCeti.RingTheory.PowerSeries.Basic
 
 /-!
 # Weierstrass preparation for restricted power series

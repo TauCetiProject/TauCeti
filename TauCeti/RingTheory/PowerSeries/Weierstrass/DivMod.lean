@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.PowerSeries.TateAlgebra
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Division
 import TauCeti.Algebra.Polynomial.Degree.IsMonicOfDegree
+import TauCeti.RingTheory.PowerSeries.Basic
 
 /-!
 # The Weierstrass quotient and remainder as linear maps
