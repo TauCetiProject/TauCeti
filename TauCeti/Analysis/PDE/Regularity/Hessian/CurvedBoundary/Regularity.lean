@@ -84,31 +84,25 @@ variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDim
   [Fact (1 ≤ p)] [Fact (1 ≤ q)] {Omega U Ω' : Opens F} {Φ Ψ : F → F} {L L' c c' : ℝ}
 
 omit [Fact (1 ≤ q)] in
-/-- **Integrability along a straightening chart.** If the value and the weak gradient of
-`u ∈ W^{2,p}(Ω)` lie in `L^q(Ω)`, so do those of `u ∘ Φ` on `Ω'`, for a change of variables `Φ`
-of order two from `Ω'` into `Ω ∩ U`. -/
-private theorem memLp_value_compL_and_memLp_gradient
+/-- The restriction to `Ω ∩ U` of `TauCeti.Wkp.IsChangeOfVariables.memLp_value_compL` and
+`TauCeti.Wkp.IsChangeOfVariables.memLp_gradient_firstOrder_compL`: if the value and the weak
+gradient of `u ∈ W^{2,p}(Ω)` lie in `L^q(Ω)`, so do those of `u ∘ Φ` on `Ω'`, for a change of
+variables `Φ` of order two from `Ω'` into `Ω ∩ U`. -/
+private theorem memLp_value_compL_restrictL_and_memLp_gradient
     (hΦ : IsChangeOfVariables 2 Ω' (Omega ⊓ U) Φ L c) (u : Wkp mu Omega p 2)
     (huq : MemLp (value 2 u) q (mu.restrict (Omega : Set F)))
     (hgq : MemLp (iteratedGradient 0 (lowerOrder 1 u)) q (mu.restrict (Omega : Set F))) :
     MemLp (value 2 (compL hΦ (restrictL inf_le_left 2 u))) q (mu.restrict (Ω' : Set F)) ∧
       MemLp (iteratedGradient 0 (lowerOrder 1 (compL hΦ (restrictL inf_le_left 2 u)))) q
         (mu.restrict (Ω' : Set F)) := by
-  have hΩ'm : MeasurableSet (Ω' : Set F) := Ω'.isOpen.measurableSet
-  have hΦΩ : MapsTo Φ Ω' Omega := fun x hx => (hΦ.mapsTo hx).1
-  refine ⟨(hΦ.memLp_comp hΩ'm subset_rfl hΦΩ huq).ae_eq ?_,
-    (hΦ.memLp_comp hΩ'm subset_rfl hΦΩ hgq).of_le_mul (c := L) (Lp.aestronglyMeasurable _) ?_⟩
-  · filter_upwards [value_compL_ae hΦ (restrictL inf_le_left 2 u),
-      hΦ.ae_comp (value_restrictL_ae inf_le_left 2 u)] with x h1 h2
-    rw [h1, h2]
-  · -- The chain rule `∇(u ∘ Φ) = DΦ† (∇u ∘ Φ)`.
-    filter_upwards [gradient_firstOrder_compL_ae hΦ (restrictL inf_le_left 2 u),
-      hΦ.ae_comp (iteratedGradient_restrictL_ae inf_le_left 0 (lowerOrder 1 u)),
-      ae_restrict_mem hΩ'm] with x h1 h2 hx
-    rw [← gradient_firstOrder_one, h1, gradient_firstOrder_one, lowerOrder_restrictL, h2]
-    refine ((fderiv ℝ Φ x).adjoint.le_opNorm _).trans ?_
-    rw [LinearIsometryEquiv.norm_map]
-    exact mul_le_mul_of_nonneg_right (hΦ.norm_fderiv_le x hx) (norm_nonneg _)
+  have hD := Measure.restrict_mono (μ := mu)
+    (show ((Omega ⊓ U : Opens F) : Set F) ⊆ Omega from fun y hy => hy.1) le_rfl
+  refine ⟨hΦ.memLp_value_compL _ ((huq.mono_measure hD).ae_eq
+    (value_restrictL_ae inf_le_left 2 u).symm), ?_⟩
+  rw [← gradient_firstOrder_one]
+  refine hΦ.memLp_gradient_firstOrder_compL _ ?_
+  rw [gradient_firstOrder_one, lowerOrder_restrictL]
+  exact (hgq.mono_measure hD).ae_eq (iteratedGradient_restrictL_ae inf_le_left 0 _).symm
 
 /-- **Regularity back along a straightening chart.** Let `Φ` and `Ψ` be mutually inverse changes of
 variables of order two between `Ω'` and `Ω ∩ U`, with `Ψ` continuous on `U`, and let `x₀ ∈ U`. If
@@ -278,7 +272,7 @@ private theorem exists_wkp_value_ae_eq_of_norm_le (hp : 1 < p) (hp_top : p ≠ �
       rw [h2, h1]
       simp)
   -- `u ∘ Φ` and its gradient lie in `L^q(Ω')`, hence so does the right side.
-  obtain ⟨hvq, hgvq⟩ := memLp_value_compL_and_memLp_gradient hΦ' u huq hgq
+  obtain ⟨hvq, hgvq⟩ := memLp_value_compL_restrictL_and_memLp_gradient hΦ' u huq hgq
   have hf'q := memLp_sub_inner_sub_mul hb' ((ae_restrict_iff' hΩ'm).2 (ae_of_all _ hb'Λ))
     (aestronglyMeasurable_const (b := (0 : ℝ))) (ae_of_all _ fun _ => abs_zero.le) v
     (hΦ'.memLp_comp hΩ'm subset_rfl hΦΩ hf) hvq hgvq
@@ -422,7 +416,7 @@ theorem exists_wkp_value_ae_eq_of_traceCLM_comp_eq_of_continuousWithinAt_of_cont
 (Gilbarg–Trudinger, Lemma 9.16). Let `1 < p, q < ∞` and let `Ω ⊆ ℝ × E` be a bounded open set with
 `C²` boundary: at every boundary point `x`, in rigid coordinates `e` with `e x = 0`, inside a normal
 cylinder, `Ω` is the region above the graph of a `C²` function `φ` with `φ 0 = 0`. Let `A` be a
-field of endomorphisms of `ℝ × E`, measurable on `Ω`, continuous within `Ω` and elliptic at every
+field of endomorphisms of `ℝ × E`, continuous within `Ω` and elliptic at every
 point of the closure of `Ω`, and let `b` and `c` be measurable with `‖b x‖ ≤ β` and `|c x| ≤ γ`
 for almost every `x ∈ Ω`. Let `u ∈ W^{2,p}(Ω)` with `u ∈ W^{1,p}_0(Ω)` solve
 
@@ -439,7 +433,6 @@ theorem exists_wkp_value_ae_eq_of_traceCLM_comp_add_inner_add_mul_eq_of_contDiff
         e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ φ 0 = 0 ∧ ContDiff ℝ 2 φ ∧
           ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Omega ↔ φ z.snd < z.fst))
     {A : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
-    (hA : AEStronglyMeasurable A (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))))
     (hcont : ∀ x ∈ closure (Omega : Set (WithLp 2 (ℝ × E))), ContinuousWithinAt A Omega x)
     (hell : ∀ x ∈ closure (Omega : Set (WithLp 2 (ℝ × E))),
       ∃ lam : ℝ, 0 < lam ∧ ∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪A x ξ, ξ⟫_ℝ)
@@ -463,6 +456,9 @@ theorem exists_wkp_value_ae_eq_of_traceCLM_comp_add_inner_add_mul_eq_of_contDiff
           =ᵐ[volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))] Wkp.value 2 u ∧
         (Wkp.iteratedGradient 1 v : WithLp 2 (ℝ × E) → IteratedGradient (WithLp 2 (ℝ × E)) 1)
           =ᵐ[volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))] Wkp.iteratedGradient 1 u := by
+  have hcontΩ : ContinuousOn A Omega := fun y hy => hcont y (subset_closure hy)
+  have hA : AEStronglyMeasurable A (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))) :=
+    hcontΩ.aestronglyMeasurable Omega.isOpen.measurableSet
   -- The lower-order terms move to the right side, which stays in `L^q(Ω)`.
   set f₀ := fun x => f x - ⟪b x, Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) x⟫_ℝ -
     c x * Wkp.value 2 u x
@@ -489,8 +485,6 @@ theorem exists_wkp_value_ae_eq_of_traceCLM_comp_add_inner_add_mul_eq_of_contDiff
             Wkp.value 2 u := fun x hx => by
     by_cases hxΩ : x ∈ (Omega : Set (WithLp 2 (ℝ × E)))
     · -- At an interior point, by the interior statement.
-      have hcontΩ : ContinuousOn A Omega := fun y hy =>
-        hcont y (subset_closure hy)
       obtain ⟨ρ, hρ, -, w, hw, -⟩ :=
         exists_wkp_value_ae_eq_of_trace_comp_iteratedGradient_eq_of_continuousOn hp hp_top hq
           hq_top hcontΩ (fun y hy => hell y (subset_closure hy)) u hf₀ huq hgq

@@ -34,7 +34,10 @@ and weak Hessian of `u ∘ Φ`, and the transfer of local `W^{k,p}` regularity o
   `TauCeti.Wkp.IsChangeOfVariables.lpNorm_le_of_ae_le_mul_comp` the resulting bound for a function
   dominated pointwise by such a composition.
 * `TauCeti.Wkp.norm_value_compL_le` and `TauCeti.Wkp.norm_gradient_firstOrder_compL_le`: the
-  `Lᵖ` bounds for the value and the weak gradient of `u ∘ Φ`.
+  `Lᵖ` bounds for the value and the weak gradient of `u ∘ Φ`, and
+  `TauCeti.Wkp.IsChangeOfVariables.memLp_value_compL` and
+  `TauCeti.Wkp.IsChangeOfVariables.memLp_gradient_firstOrder_compL` their `L^q` membership for any
+  exponent `q`.
 * `TauCeti.Wkp.norm_iteratedGradient_compL_le_ae`: the pointwise bound
   `‖D²(u ∘ Φ)‖ ≤ L² ‖D²u(Φ ·)‖ + L ‖∇u(Φ ·)‖` for the weak Hessian.
 * `TauCeti.Wkp.exists_value_eq_value_restrictL_of_w1pCompL`: if `u ∘ Φ` is `W^{k,p}` near a
@@ -195,6 +198,28 @@ theorem norm_gradient_firstOrder_compL_le (h : IsChangeOfVariables (k + 1) U V �
   rw [Lp.norm_def, toReal_eLpNorm, Lp.norm_def, toReal_eLpNorm]
   exact h.lpNorm_le_of_ae_le_mul_comp hU subset_rfl h.mapsTo hL (Lp.aestronglyMeasurable _)
     (Lp.memLp _) hgr
+
+/-- If the value of `u ∈ W^{k,p}(V)` lies in `L^q(V)`, so does the value of `compL h u` in
+`L^q(U)`, for any exponent `q`. -/
+theorem IsChangeOfVariables.memLp_value_compL (h : IsChangeOfVariables k U V Φ L c)
+    (u : Wkp mu V p k) {q : ℝ≥0∞} (hu : MemLp (value k u) q (mu.restrict V)) :
+    MemLp (value k (compL h u)) q (mu.restrict U) :=
+  (h.memLp_comp U.isOpen.measurableSet subset_rfl h.mapsTo hu).ae_eq (value_compL_ae h u).symm
+
+/-- If the weak gradient of the first-order part of `u ∈ W^{k+1,p}(V)` lies in `L^q(V)`, so does
+that of `compL h u` in `L^q(U)`, for any exponent `q`. -/
+theorem IsChangeOfVariables.memLp_gradient_firstOrder_compL
+    (h : IsChangeOfVariables (k + 1) U V Φ L c) (u : Wkp mu V p (k + 1)) {q : ℝ≥0∞}
+    (hu : MemLp (W1p.gradient (firstOrder k u)) q (mu.restrict V)) :
+    MemLp (W1p.gradient (firstOrder k (compL h u))) q (mu.restrict U) := by
+  have hU : MeasurableSet (U : Set E) := U.isOpen.measurableSet
+  refine (h.memLp_comp hU subset_rfl h.mapsTo hu).of_le_mul (c := L)
+    (Lp.aestronglyMeasurable _) ?_
+  filter_upwards [gradient_firstOrder_compL_ae h u, ae_restrict_mem hU] with x h1 hx
+  rw [h1]
+  refine ((fderiv ℝ Φ x).adjoint.le_opNorm _).trans ?_
+  rw [LinearIsometryEquiv.norm_map]
+  exact mul_le_mul_of_nonneg_right (h.norm_fderiv_le x hx) (norm_nonneg _)
 
 /-- **The Hessian under a change of variables.** Let `Φ` be a change of variables of order two
 from `U` into `V` with constant `L`, and `1 ≤ p < ∞`. For `u ∈ W^{2,p}(V)`, the weak Hessian of
