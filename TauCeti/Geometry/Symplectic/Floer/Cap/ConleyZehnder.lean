@@ -26,9 +26,11 @@ caps differ by the sphere `D' -ᵥ D ∈ π₂(M, x)`,
 
 (`TauCeti.Floer.IsSmoothBasedCap.frameConleyZehnderIndex_eq_sub_two_mul_firstChernHom`), with
 `c₁` the first Chern number `TauCeti.SmoothTwoForm.IsNondegenerate.firstChernHom` of an almost
-complex structure tamed by `σ`. Equivalently the grading `μ = -CZ` of capped orbits increases by
-`2 c₁(D' -ᵥ D)` when the cap `D` is replaced by `D'`, while the capped action increases by the area
-`σ(D' -ᵥ D)`: this is the recapping law of the grading of capped Hamiltonian Floer theory.
+complex structure tamed by `σ`. Replacing the cap `D` by `D'` also lowers the capped action by the
+area `σ(D' -ᵥ D)` (`TauCeti.Floer.RawCap.action_vadd`), so the index moves with the action: this is
+the recapping law of the grading of capped Hamiltonian Floer theory, which in the sign convention
+of `TauCeti.SymplecticForm.conleyZehnderIndex` is the index itself
+(`TauCeti.Floer.SphericalCapClass.grading`).
 
 The frames are taken complex linear for `J` over the caps, constant on the three edges of the
 square where the caps sit at the base point, and symplectic along `γ`, where they are therefore
@@ -79,6 +81,8 @@ raw caps and cap classes is in `TauCeti/Geometry/Symplectic/Floer/Cap/Grading.le
 * `TauCeti.Floer.IsSmoothBasedCap.conleyZehnderIndex_eq`,
   `TauCeti.Floer.IsSmoothBasedCap.conleyZehnderIndex_eq_sub_two_mul_firstChernHom`: the index of a
   smooth cap in any such frame, and its recapping law.
+* `TauCeti.Floer.IsSmoothBasedCap.exists_int_conleyZehnderIndex_eq`: the index along a
+  nondegenerate orbit is an integer.
 
 ## References
 
@@ -461,6 +465,24 @@ theorem IsSmoothBasedCap.conleyZehnderIndex_eq_sub_two_mul_firstChernHom (h : σ
   rw [hu.conleyZehnderIndex_eq h hχ hχ₀, hu'.conleyZehnderIndex_eq h hχ' hχ₀']
   exact hu.frameConleyZehnderIndex_eq_sub_two_mul_firstChernHom h hJ.tames hu' hχc hχc' hχJ hχJ'
     hχ₀ hχ₀' (fun t ↦ hχ.apply_apply (0, t)) (fun t ↦ hχ'.apply_apply (0, t)) hΦ hΦσ
+
+/-- **The index of a smooth cap of a nondegenerate orbit is an integer.** If the family `Φ` starts
+at the identity and its endpoint `Φ(1)` fixes no nonzero vector, as the linearized flow along a
+nondegenerate periodic orbit does, the Conley–Zehnder index of `Φ` along the capped loop `(γ, u)` is
+an integer. -/
+theorem IsSmoothBasedCap.exists_int_conleyZehnderIndex_eq (h : σ.IsNondegenerate)
+    (hu : IsSmoothBasedCap I γ u) {Φ : ∀ t, TangentSpace I (γ 0) ≃L[ℝ] TangentSpace I (γ t)}
+    (hΦ : Continuous fun q : unitInterval × TangentSpace I (γ 0) ↦
+      (⟨γ q.1, Φ q.1 q.2⟩ : TangentBundle I M))
+    (hΦσ : ∀ t u v, σ.eval₂ (γ t) (Φ t u) (Φ t v) = σ.eval₂ (γ 0) u v) (hΦ₀ : ∀ v, Φ 0 v = v)
+    (hΦ₁ : ∀ v, Φ 1 v = v → v = 0) : ∃ k : ℤ, hu.conleyZehnderIndex h hΦ hΦσ = k := by
+  have : Fact _ := ⟨h.two_mul_finrank_euclideanSpace x⟩
+  obtain ⟨χ, hχ, hχ₀⟩ := hu.exists_isSymplecticFrame_eq_on_edges
+    (G := EuclideanSpace ℂ (Fin (finrank ℝ E / 2))) h
+  -- A frame over the cap that is constant on its three other edges is periodic along `γ`.
+  rw [hu.conleyZehnderIndex_eq h hχ hχ₀]
+  exact exists_int_frameConleyZehnderIndex_eq _
+    (apply_zero_eq_apply_one_of_eq_on_edges hχ₀ fun _ _ ↦ rfl) hΦ hΦσ hΦ₀ hΦ₁
 
 end SmoothCap
 
