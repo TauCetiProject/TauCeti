@@ -17,9 +17,9 @@ isomorphism over it says that `p : V ⟶ X` is an isomorphism
 (`TauCeti.AlgebraicGeometry.Scheme.ElementaryDistinguishedSquare.isIso_p_of_isEmpty`).
 
 So an étale morphism onto a reduced scheme that is not an isomorphism, such as
-`Spec L ⟶ Spec K` for a field extension of degree two, or a morphism with two points over a
-one-point base, is never the `p` of a distinguished square with empty `U`, even when it has a
-unique point with trivial residue field extension over every point.
+`Spec L ⟶ Spec K` for a separable field extension of degree two, or a morphism with two points
+over a one-point base, is never the `p` of a distinguished square with empty `U`, even when it
+has a unique point with trivial residue field extension over every point.
 -/
 
 public section

@@ -9,13 +9,14 @@ public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import TauCeti.AlgebraicGeometry.Sites.Nisnevich.DistinguishedSquare.EmptyOpen
 
 /-!
-# Examples: étale maps that are not distinguished with empty open part
+# Examples: morphisms that are not the `p` of a square with empty open part
 
 An elementary distinguished square `Q` over a reduced scheme with empty open part `U` has `p` an
 isomorphism (`ElementaryDistinguishedSquare.isIso_p_of_isEmpty`). Hence:
 
 * for a field extension `K → L` of degree two, for instance `ℝ → ℂ`, no such `Q` over `Spec K` has
-  `p` isomorphic over `Spec K` to `Spec L ⟶ Spec K`;
+  `p` isomorphic over `Spec K` to `Spec L ⟶ Spec K` (an étale morphism when the extension is
+  separable);
 * over `X = Spec ℝ`, no such `Q` has `p` isomorphic over `X` to the morphism
   `Spec ℝ ⨿ Spec ℂ ⟶ Spec ℝ`, which has two points over the single point of `X`: the structure
   rejects it, although it has exactly one point with residue field `ℝ` over that point.
@@ -63,10 +64,9 @@ noncomputable abbrev realComplexToReal :
 components. -/
 theorem not_isIso_realComplexToReal : ¬ IsIso realComplexToReal := by
   intro _
-  obtain ⟨a⟩ : Nonempty (Spec (.of ℝ)) := inferInstanceAs (Nonempty (PrimeSpectrum ℝ))
-  obtain ⟨b⟩ : Nonempty (Spec (.of ℂ)) := inferInstanceAs (Nonempty (PrimeSpectrum ℂ))
-  have hs : Subsingleton (Spec (.of ℝ)) := inferInstanceAs (Subsingleton (PrimeSpectrum ℝ))
-  refine inl_ne_inr _ _ a b (realComplexToReal.isOpenEmbedding.injective (Subsingleton.elim _ _))
+  obtain ⟨a⟩ : Nonempty (Spec (.of ℝ)) := inferInstance
+  obtain ⟨b⟩ : Nonempty (Spec (.of ℂ)) := inferInstance
+  exact inl_ne_inr _ _ a b (realComplexToReal.isOpenEmbedding.injective (Subsingleton.elim _ _))
 
 /-- **`Spec ℝ ⨿ Spec ℂ` is rejected.** No elementary distinguished square over `Spec ℝ` with empty
 open part has `p` isomorphic over `Spec ℝ` to `Spec ℝ ⨿ Spec ℂ ⟶ Spec ℝ`. -/
