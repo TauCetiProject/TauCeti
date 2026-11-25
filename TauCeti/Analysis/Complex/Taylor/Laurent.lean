@@ -47,6 +47,14 @@ open scoped Topology
 
 namespace TauCeti.Complex
 
+/-- The binomial normalization `(k + m).choose m` of an order-`m + 1` pole is at least one. -/
+private theorem one_le_cast_choose_add (k m : ℕ) : (1 : ℝ) ≤ ((k + m).choose m : ℝ) := by
+  exact_mod_cast Nat.choose_pos (m.le_add_left k)
+
+/-- The binomial normalization `(k + m).choose m` is nonzero in `ℂ`. -/
+private theorem cast_choose_add_ne_zero (k m : ℕ) : (((k + m).choose m : ℕ) : ℂ) ≠ 0 :=
+  Nat.cast_ne_zero.mpr (Nat.choose_pos (m.le_add_left k)).ne'
+
 /-- Subtracting the contribution of a finite principal part leaves Taylor coefficients bounded
 by `M / r' ^ k` on any smaller circle of radius `r'`. The coefficient `c i` multiplies the
 pole term of order `i + 1`. Continuity of the remainder `g` at `ρ` suffices: off `ρ` it agrees
@@ -97,12 +105,22 @@ theorem exists_norm_neg_one_pow_mul_iteratedDeriv_div_factorial_sub_laurent_le
     rw [iteratedDeriv_fun_sum (fun i _ ↦ (hterm hzρ i).contDiffAt), Finset.sum_div, Finset.mul_sum]
     exact Finset.sum_congr rfl fun i _ ↦
       neg_one_pow_mul_iteratedDeriv_div_factorial_const_div_sub_pow i.val k (c i) z ρ
-  rw [hloc.iteratedDeriv_eq k, iteratedDeriv_fun_add hGz.contDiffAt (hP hzρ).contDiffAt, ← hcoeff,
-    add_div, mul_add, add_sub_cancel_right, norm_mul, norm_pow, norm_neg, norm_one, one_pow,
-    one_mul, norm_div, Complex.norm_natCast, div_le_iff₀ (by positivity)]
-  simpa [mul_div_right_comm, mul_comm] using
-    _root_.Complex.norm_iteratedDeriv_le_of_forall_mem_sphere_norm_le k hr'
-      (hG.diffContOnCl_ball (closedBall_subset_ball hrr)) hM
+  -- Subtracting the principal part leaves the coefficient of the holomorphic patch `G`.
+  have hdiff : (-1) ^ k * (iteratedDeriv k f z / (k.factorial : ℂ)) -
+      ∑ i, (↑((k + i.val).choose i.val) : ℂ) * c i / (z - ρ) ^ (k + i.val + 1) =
+        (-1) ^ k * (iteratedDeriv k G z / (k.factorial : ℂ)) := by
+    rw [hloc.iteratedDeriv_eq k, iteratedDeriv_fun_add hGz.contDiffAt (hP hzρ).contDiffAt,
+      ← hcoeff]
+    ring
+  -- Cauchy's estimate on the circle of radius `r'` bounds that coefficient.
+  have hC := _root_.Complex.norm_iteratedDeriv_le_of_forall_mem_sphere_norm_le k hr'
+    (hG.diffContOnCl_ball (closedBall_subset_ball hrr)) hM
+  have hk : (0 : ℝ) < k.factorial := by positivity
+  rw [hdiff]
+  simp only [norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul, norm_div,
+    Complex.norm_natCast]
+  rw [div_le_iff₀ hk]
+  exact hC.trans_eq (by ring)
 
 /-- The lower pole terms vanish relative to the leading term under the Taylor coefficient
 normalization for an order-`m + 1` pole. -/
@@ -117,7 +135,7 @@ private theorem tendsto_normalized_laurent_sum {m : ℕ} (c : Fin (m + 1) → �
     have hexp : k + m + 1 = (k + i.val + 1) + (m - i.val) := by omega
     rw [hexp, pow_add]
     have hchoose : (↑((k + m).choose m) : ℂ) ≠ 0 :=
-      Nat.cast_ne_zero.mpr (Nat.choose_pos (m.le_add_left k)).ne'
+      cast_choose_add_ne_zero k m
     field_simp [pow_ne_zero _ hw]
   have hsmall (i : Fin m) : Tendsto
       (fun k : ℕ ↦ (↑((k + i.val).choose i.val) : ℂ) / ↑((k + m).choose m)) atTop (𝓝 0) := by
@@ -134,7 +152,7 @@ private theorem tendsto_normalized_laurent_sum {m : ℕ} (c : Fin (m + 1) → �
         ↑((k + m).choose (m - i.val)) * ↑((k + i.val).choose i.val) := by exact_mod_cast he
     simp only [Function.comp_apply, _root_.Complex.ofReal_div, _root_.Complex.ofReal_natCast]
     refine (div_eq_div_iff (Nat.cast_ne_zero.mpr (Nat.choose_pos (by omega)).ne')
-      (Nat.cast_ne_zero.mpr (Nat.choose_pos (m.le_add_left k)).ne')).2 ?_
+      (cast_choose_add_ne_zero k m)).2 ?_
     simpa only [mul_comm] using he'
   have hsum : Tendsto (fun k : ℕ ↦ ∑ i : Fin m, (c i.castSucc * w ^ (m - i.val)) *
       ((↑((k + i.val).choose i.val) : ℂ) / ↑((k + m).choose m))) atTop (𝓝 0) := by
@@ -146,7 +164,7 @@ private theorem tendsto_normalized_laurent_sum {m : ℕ} (c : Fin (m + 1) → �
   rw [Finset.mul_sum]
   simp only [hterm, Fin.sum_univ_castSucc, Fin.val_castSucc, Fin.val_last,
     tsub_self, pow_zero, mul_one]
-  rw [div_self (Nat.cast_ne_zero.mpr (Nat.choose_pos (m.le_add_left k)).ne'), mul_one, add_comm]
+  rw [div_self (cast_choose_add_ne_zero k m), mul_one, add_comm]
 
 /-- The Taylor coefficients of `t ↦ f (z - t)` scaled by
 `(z - ρ) ^ (k + m + 1) / (k + m).choose m` converge to the coefficient of the
@@ -171,8 +189,7 @@ theorem tendsto_normalized_iteratedDeriv_of_laurent
       simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one (by positivity : 0 ≤ ‖z - ρ‖ / r')
         ((div_lt_one hr').2 hdr')).const_mul (M * ‖z - ρ‖ ^ (m + 1))
     refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun k ↦ ?_) hgeom
-    have hbinom : (1 : ℝ) ≤ ((k + m).choose m : ℝ) := by
-      exact_mod_cast Nat.succ_le_of_lt (Nat.choose_pos (m.le_add_left k))
+    have hbinom := one_le_cast_choose_add k m
     calc
       ‖N k * (A k - S k)‖ ≤ ‖z - ρ‖ ^ (k + m + 1) * (M / r' ^ k) := by
         rw [norm_mul, norm_div, norm_pow, _root_.Complex.norm_natCast]
@@ -208,8 +225,7 @@ theorem eventually_le_norm_iteratedDeriv_div_factorial_of_pole
   filter_upwards [ht.eventually_const_lt (half_lt_self (norm_pos_iff.mpr hc0))] with k hk
   simp only [norm_mul, norm_div (a := (z - ρ) ^ _), norm_pow, _root_.Complex.norm_natCast,
     norm_neg, norm_one, one_pow, one_mul] at hk
-  have hchoose : (1 : ℝ) ≤ ((k + m).choose m : ℝ) := by
-    exact_mod_cast Nat.choose_pos (m.le_add_left k)
+  have hchoose := one_le_cast_choose_add k m
   refine (div_le_iff₀ (pow_pos (norm_pos_iff.mpr (sub_ne_zero.mpr hzρ)) _)).2 ?_
   calc
     ‖meromorphicTrailingCoeffAt f ρ‖ / 2 ≤ _ := hk.le
@@ -245,8 +261,7 @@ theorem eventually_le_re_neg_one_pow_mul_iteratedDeriv_div_factorial_of_pole
     rw [Function.comp_apply, hreal, _root_.Complex.mul_re] at hk
     simpa only [_root_.Complex.ofReal_re, _root_.Complex.ofReal_im, zero_mul, sub_zero] using hk
   have hpos : 0 < (x - y) ^ (k + m + 1) := pow_pos (sub_pos.mpr hyx) _
-  have hchoose : (1 : ℝ) ≤ ((k + m).choose m : ℝ) := by
-    exact_mod_cast Nat.choose_pos (m.le_add_left k)
+  have hchoose := one_le_cast_choose_add k m
   have hA : 0 ≤ A.re := nonneg_of_mul_nonneg_right
     ((half_pos hc).le.trans hlt.le) (div_pos hpos (zero_lt_one.trans_le hchoose))
   refine (div_le_iff₀ hpos).2 ?_

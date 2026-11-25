@@ -23,6 +23,12 @@ public section
 
 namespace TauCeti
 
+/-- The rising product `(j + 1) (j + 2) ⋯ (j + k)` is `k ! * (k + j).choose j`. -/
+private theorem prod_range_add_add_one_eq (j k : ℕ) :
+    ∏ i ∈ Finset.range k, (j + 1 + i) = k.factorial * (k + j).choose j := by
+  rw [← Nat.ascFactorial_eq_prod_range, Nat.ascFactorial_eq_factorial_mul_choose, Nat.add_comm j k,
+    Nat.choose_symm_add]
+
 /-- The degree-`k` coefficient of `t ↦ c / (z - t - ρ) ^ (j + 1)` at `0`, expressed as
 an iterated derivative at `z`. The identity also holds at `z = ρ` by the conventions for
 inversion and differentiation at zero. -/
@@ -38,15 +44,12 @@ theorem neg_one_pow_mul_iteratedDeriv_div_factorial_const_div_sub_pow
     (f := fun x : 𝕜 ↦ x ^ (-(↑(j + 1) : ℤ))) (s := ρ)) z
   rw [hf, iteratedDeriv_const_mul_field, hshift, iteratedDeriv_eq_iterate, iter_deriv_zpow]
   have hexp : -(↑(j + 1) : ℤ) - ↑k = -(↑(k + j + 1) : ℤ) := by omega
+  have hneg (i : ℕ) : ((↑(-(↑(j + 1) : ℤ)) : 𝕜) - ↑i) = -((j + 1 + i : ℕ) : 𝕜) := by
+    push_cast
+    ring
   have hprod : (∏ i ∈ Finset.range k, ((↑(-(↑(j + 1) : ℤ)) : 𝕜) - ↑i)) =
       (-1 : 𝕜) ^ k * ↑(k.factorial * (k + j).choose j) := by
-    rw [← Nat.choose_symm_add, Nat.add_comm k j, ← Nat.ascFactorial_eq_factorial_mul_choose,
-      Nat.ascFactorial_eq_prod_range, Nat.cast_prod]
-    simpa only [Finset.prod_neg, Finset.card_range] using
-      (Finset.prod_congr (rfl : Finset.range k = Finset.range k) (fun i _ ↦ by
-        push_cast
-        ring) : (∏ i ∈ Finset.range k, ((↑(-(↑(j + 1) : ℤ)) : 𝕜) - ↑i)) =
-          ∏ i ∈ Finset.range k, -(↑(j + 1 + i) : 𝕜))
+    simp only [hneg, Finset.prod_neg, Finset.card_range, ← prod_range_add_add_one_eq, Nat.cast_prod]
   rw [hexp, hprod, zpow_neg, zpow_natCast, Nat.cast_mul]
   have hk : (k.factorial : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr k.factorial_ne_zero
   rw [div_eq_mul_inv, div_eq_mul_inv]
