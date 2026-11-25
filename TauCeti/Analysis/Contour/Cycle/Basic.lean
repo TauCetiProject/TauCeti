@@ -157,6 +157,12 @@ theorem of_apply {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuousOnInt
     of γ hγ hclosed t = γ t := by
   exact coe_apply (of γ hγ hclosed) ⟨t, ht⟩
 
+/-- Bundling a raw curve agrees with it on the parameter interval, as functions. The congruence
+lemmas for contour integrals, winding numbers and principal values take this on `uIoo a b`. -/
+theorem eqOn_of {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hclosed : γ a = γ b) : EqOn (of γ hγ hclosed) γ (uIcc a b) :=
+  fun _ ht ↦ of_apply γ hγ hclosed ht
+
 /-- Bundling a raw curve preserves its interval image. -/
 @[simp]
 theorem image_of {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuousOnInterval γ a b)
@@ -183,8 +189,7 @@ theorem integral_of {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuousOn
     (f : ℂ → E) :
     (∫ t in a..b, deriv (of γ hγ hclosed) t • f (of γ hγ hclosed t)) =
       ∫ t in a..b, deriv γ t • f (γ t) := by
-  have heq : EqOn (of γ hγ hclosed) γ (uIoo a b) :=
-    fun _ ht ↦ of_apply γ hγ hclosed (uIoo_subset_uIcc_self ht)
+  have heq := (eqOn_of γ hγ hclosed).mono uIoo_subset_uIcc_self
   exact intervalIntegral.integral_congr_uIoo fun t ht ↦ by
     rw [heq ht, heq.deriv isOpen_Ioo ht]
 
@@ -194,9 +199,8 @@ theorem windingNumber_of {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinu
     (hclosed : γ a = γ b) (z₀ : ℂ) :
     TauCeti.Contour.windingNumber (of γ hγ hclosed) a b z₀ =
       TauCeti.Contour.windingNumber γ a b z₀ := by
-  apply TauCeti.Contour.windingNumber_congr_curve
-  intro t ht
-  exact of_apply γ hγ hclosed (uIoo_subset_uIcc_self ht)
+  exact TauCeti.Contour.windingNumber_congr_curve
+    ((eqOn_of γ hγ hclosed).mono uIoo_subset_uIcc_self)
 
 /-- Bundling a raw curve preserves null-homology. -/
 @[simp]

@@ -124,8 +124,8 @@ theorem intervalIntegral_deriv_smul_eq_of_forall_closed_integral_eq_zero (hf : C
     exact (uIcc_of_le hab ▸ hγU).ite_le_Icc (uIcc_of_le hbe ▸ hρU)
   have hσpc : IsPiecewiseC1On σ a (b + d - c) := hγ.if_le hρ hab hbe (by simpa using hend)
   have hσclosed : σ a = σ (b + d - c) := by
-    rw [show σ a = γ a from ite_eq_left hab, hσρ ⟨hbe, le_rfl⟩]
-    simpa using hstart
+    rw [hσρ ⟨hbe, le_rfl⟩]
+    simpa [σ, hab] using hstart
   -- Its integral splits at `b` into the integrals along `γ` and along the reversed leg.
   have hsplit := intervalIntegral_deriv_smul_ite_le_eq_add (f := f) hab hbe
     (hγ.absolutelyContinuousOnInterval.intervalIntegrable_deriv_smul_comp_of_mapsTo hf hγU)
@@ -175,7 +175,7 @@ private theorem exists_intervalIntegral_deriv_smul_eq_add_curveIntegral_segment
     exact hγU.ite_le_Icc hσU
   have hσpc : IsPiecewiseC1On σ 1 2 := .of_contDiffOn (by fun_prop)
   have hηpc : IsPiecewiseC1On η 0 2 := hγ.if_le hσpc zero_le_one one_le_two (by simp [σ, hz])
-  refine ⟨η, hηpc, hηU, ite_eq_left zero_le_one, by norm_num [η, σ], ?_⟩
+  refine ⟨η, hηpc, hηU, by norm_num [η], by norm_num [η, σ], ?_⟩
   have hseg' := intervalIntegral_deriv_smul_segment_eq_curveIntegral f z w 1
   rw [one_add_one_eq_two] at hseg'
   rw [intervalIntegral_deriv_smul_ite_le_eq_add zero_le_one one_le_two

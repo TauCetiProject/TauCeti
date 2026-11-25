@@ -63,6 +63,35 @@ open MeasureTheory Set
 
 namespace TauCeti.Contour
 
+namespace AbsolutelyContinuousClosedCurve
+
+variable {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
+  (f : ℂ → ℂ)
+
+/-- Bundling a raw curve preserves its principal value. -/
+@[simp]
+theorem cauchyPV_of :
+    TauCeti.Contour.cauchyPV (of γ hγ hclosed) a b f = TauCeti.Contour.cauchyPV γ a b f :=
+  TauCeti.Contour.cauchyPV_congr_curve ((eqOn_of γ hγ hclosed).mono uIoo_subset_uIcc_self)
+
+/-- Bundling a raw curve preserves the existence of its principal value. -/
+@[simp]
+theorem cauchyPVExists_of_iff :
+    TauCeti.Contour.CauchyPVExists (of γ hγ hclosed) a b f ↔
+      TauCeti.Contour.CauchyPVExists γ a b f := by
+  have h := (eqOn_of γ hγ hclosed).mono uIoo_subset_uIcc_self
+  exact ⟨fun hc ↦ hc.congr_curve h, fun hc ↦ hc.congr_curve h.symm⟩
+
+/-- Bundling a raw curve preserves its principal value as a predicate. -/
+@[simp]
+theorem hasCauchyPV_of_iff {v : ℂ} :
+    TauCeti.Contour.HasCauchyPV (of γ hγ hclosed) a b f v ↔
+      TauCeti.Contour.HasCauchyPV γ a b f v := by
+  have h := (eqOn_of γ hγ hclosed).mono uIoo_subset_uIcc_self
+  exact ⟨fun hc ↦ hc.congr_curve h, fun hc ↦ hc.congr_curve h.symm⟩
+
+end AbsolutelyContinuousClosedCurve
+
 namespace Cycle
 
 variable {f : ℂ → ℂ} {C D : Cycle}
@@ -86,10 +115,8 @@ theorem cauchyPV_of_raw {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuo
     (hclosed : γ a = γ b) (f : ℂ → ℂ) :
     cauchyPV f (FreeAddCommGroup.of (AbsolutelyContinuousClosedCurve.of γ hγ hclosed)) =
       TauCeti.Contour.cauchyPV γ a b f := by
-  rw [cauchyPV_of]
-  simpa only [AbsolutelyContinuousClosedCurve.of_a, AbsolutelyContinuousClosedCurve.of_b] using
-    TauCeti.Contour.cauchyPV_congr_curve (f := f) fun _ ht ↦
-      AbsolutelyContinuousClosedCurve.of_apply γ hγ hclosed (uIoo_subset_uIcc_self ht)
+  simp only [cauchyPV_of, AbsolutelyContinuousClosedCurve.of_a,
+    AbsolutelyContinuousClosedCurve.of_b, AbsolutelyContinuousClosedCurve.cauchyPV_of]
 
 /-- The principal value along a cycle is the coefficient-weighted sum of the principal values
 along the curves of its canonical support. -/
@@ -153,11 +180,8 @@ theorem cauchyPVExists_of_raw_iff {a b : ℝ} (γ : ℝ → ℂ) (hγ : Absolute
     (hclosed : γ a = γ b) :
     CauchyPVExists (FreeAddCommGroup.of (AbsolutelyContinuousClosedCurve.of γ hγ hclosed)) f ↔
       TauCeti.Contour.CauchyPVExists γ a b f := by
-  have h : EqOn (AbsolutelyContinuousClosedCurve.of γ hγ hclosed) γ (uIoo a b) := fun _ ht ↦
-    AbsolutelyContinuousClosedCurve.of_apply γ hγ hclosed (uIoo_subset_uIcc_self ht)
   simp only [cauchyPVExists_of_iff, AbsolutelyContinuousClosedCurve.of_a,
-    AbsolutelyContinuousClosedCurve.of_b]
-  exact ⟨fun hc ↦ hc.congr_curve h, fun hc ↦ hc.congr_curve h.symm⟩
+    AbsolutelyContinuousClosedCurve.of_b, AbsolutelyContinuousClosedCurve.cauchyPVExists_of_iff]
 
 /-- A raw closed curve bundled as a one-generator cycle has principal value `v` exactly when the raw
 curve does. -/
@@ -165,11 +189,8 @@ theorem hasCauchyPV_of_raw_iff {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyC
     (hclosed : γ a = γ b) {v : ℂ} :
     HasCauchyPV (FreeAddCommGroup.of (AbsolutelyContinuousClosedCurve.of γ hγ hclosed)) f v ↔
       TauCeti.Contour.HasCauchyPV γ a b f v := by
-  have h : EqOn (AbsolutelyContinuousClosedCurve.of γ hγ hclosed) γ (uIoo a b) := fun _ ht ↦
-    AbsolutelyContinuousClosedCurve.of_apply γ hγ hclosed (uIoo_subset_uIcc_self ht)
   simp only [hasCauchyPV_of_iff, AbsolutelyContinuousClosedCurve.of_a,
-    AbsolutelyContinuousClosedCurve.of_b]
-  exact ⟨fun hc ↦ hc.congr_curve h, fun hc ↦ hc.congr_curve h.symm⟩
+    AbsolutelyContinuousClosedCurve.of_b, AbsolutelyContinuousClosedCurve.hasCauchyPV_of_iff]
 
 /-- Reading the value off the predicate. -/
 theorem HasCauchyPV.cauchyPV_eq {v : ℂ} (h : HasCauchyPV C f v) : cauchyPV f C = v := h.2

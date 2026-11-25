@@ -73,10 +73,8 @@ theorem _root_.TauCeti.Contour.Cycle.green_winding (C : Contour.Cycle) {U : Set 
       η γ '' uIcc (0 : ℝ) 1 = γ '' uIcc γ.a γ.b :=
     Set.image_comp_lineMap_uIcc_zero_one γ γ.a γ.b
   have htr (γ : Contour.AbsolutelyContinuousClosedCurve) (hγ : γ ∈ FreeAddCommGroup.support C) :
-      γ '' uIcc γ.a γ.b ⊆ U := by
-    intro z hz
-    exact (Contour.Cycle.isIn_iff.mp htrace)
-      (Contour.Cycle.mem_trace_iff.mpr ⟨γ, hγ, hz⟩)
+      γ '' uIcc γ.a γ.b ⊆ U :=
+    Set.mapsTo_iff_image_subset.mp (htrace.mapsTo_of_mem_support hγ)
   have hidx : ∀ z ∉ U, ∑ γ ∈ FreeAddCommGroup.support C,
       (FreeAddCommGroup.coeff γ C : ℂ) * Contour.windingNumber (η γ) 0 1 z = 0 := by
     intro z hz
