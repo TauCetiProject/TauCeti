@@ -48,6 +48,7 @@ of `M`, as used for the action of Frobenius on Picard groups.
 * `Module.Invertible.injective_of_ne_zero`: over a domain, a nonzero functional on an invertible
   module is injective.
 * `Module.Invertible.exists_finset_sum_apply_eq_one`: pairs `(ξᵢ, xᵢ)` with `∑ ξᵢ xᵢ = 1`.
+* `Module.Invertible.nontrivial`: an invertible module over a nontrivial ring is nontrivial.
 * `Module.Invertible.apply_smul_eq_self`, `Module.Invertible.dual_apply_smul_eq_self`: the
   expansions `ξ y • x = y` and `η x • ξ = η` for `ξ x = 1`.
 * `Module.Invertible.rid_lTensor_eval_tmul_eq_self`: an element of `W ⊗ M^*` is the pure tensor
@@ -133,6 +134,13 @@ theorem exists_finset_sum_apply_eq_one :
   obtain ⟨s, hs⟩ := TensorProduct.exists_finset ((linearEquiv R M).symm 1)
   refine ⟨s, ?_⟩
   simpa using congr(linearEquiv R M $hs).symm
+
+variable (R M) in
+/-- An invertible module over a nontrivial ring is nontrivial. -/
+theorem nontrivial [Nontrivial R] : Nontrivial M := by
+  by_contra hM
+  rw [not_nontrivial_iff_subsingleton] at hM
+  exact not_subsingleton R (linearEquiv R M).symm.toEquiv.subsingleton
 
 section DualPair
 
