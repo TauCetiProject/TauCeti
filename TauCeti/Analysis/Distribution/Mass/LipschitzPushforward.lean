@@ -227,17 +227,13 @@ private theorem norm_homotopyPullbackCLM_cutoffPullbackCLM_snd_le
   refine (mul_le_mul_of_nonneg_left hcon (abs_nonneg _)).trans ?_
   rw [fderiv_lineHomotopy_apply_zero_one hf hg hp]
   have hε0 : 0 ≤ ε := (norm_nonneg _).trans hε
-  have hψ1 : |ψ (graphHomotopy f g (x, t))| ≤ 1 :=
-    abs_le.2 ⟨by linarith [(hψ (graphHomotopy f g (x, t))).1], (hψ (graphHomotopy f g (x, t))).2⟩
-  have hη : ‖η (graphHomotopy f g (x, t)).2‖ ≤ ‖(η : E' →ᵇ E' [⋀^Fin (m + 1)]→L[ℝ] F)‖ :=
+  have hψ1 : |c| ≤ 1 := abs_le.2 ⟨by linarith [(hψ (graphHomotopy f g (x, t))).1], (hψ _).2⟩
+  have hη : ‖α‖ ≤ ‖(η : E' →ᵇ E' [⋀^Fin (m + 1)]→L[ℝ] F)‖ :=
     BoundedContinuousFunction.norm_coe_le_norm (η : E' →ᵇ E' [⋀^Fin (m + 1)]→L[ℝ] F) _
-  have hA := norm_fderiv_lineHomotopy_comp_inl_le hf hg hp (Ioc_subset_Icc_self ht) hfL hgL
-  calc |ψ (graphHomotopy f g (x, t))| * (‖η (graphHomotopy f g (x, t)).2‖ * ‖g x - f x‖ *
-        ‖(fderiv ℝ (lineHomotopy f g) (x, t)).comp (.inl ℝ E ℝ)‖ ^ m)
-      ≤ 1 * (‖(η : E' →ᵇ E' [⋀^Fin (m + 1)]→L[ℝ] F)‖ * ε * L ^ m) :=
-        mul_le_mul hψ1 (mul_le_mul (mul_le_mul hη hε (norm_nonneg _) (norm_nonneg _))
-          (pow_le_pow_left₀ (norm_nonneg _) hA m) (by positivity)
-          (mul_nonneg (norm_nonneg _) hε0)) (by positivity) zero_le_one
+  have hA : ‖A.comp (.inl ℝ E ℝ)‖ ≤ L :=
+    norm_fderiv_lineHomotopy_comp_inl_le hf hg hp (Ioc_subset_Icc_self ht) hfL hgL
+  calc |c| * (‖α‖ * ‖g x - f x‖ * ‖A.comp (.inl ℝ E ℝ)‖ ^ m)
+      ≤ 1 * (‖(η : E' →ᵇ E' [⋀^Fin (m + 1)]→L[ℝ] F)‖ * ε * L ^ m) := by gcongr
     _ = _ := one_mul _
 
 omit hf hg [CompleteSpace F] in
@@ -471,12 +467,10 @@ theorem mass_comp_cutoffPullbackCLM_le_of_forall_mem_dsupport (hT : HasLocallyFi
   refine enorm_apply_le_mul_mass_of_forall_mem_dsupport hT fun x hx ↦ ?_
   have h := norm_cutoffPullbackCLM_apply_le (χ := χ) (hΦ := hΦ) ω x
   rw [hχ.self_of_nhdsSet x hx, abs_one, one_mul] at h
-  rw [← ENNReal.coe_pow, eNorm_le_coe, ← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_pow]
-  calc _ ≤ ‖ω (Φ x)‖ * ‖fderiv ℝ Φ x‖ ^ k := h
-    _ ≤ 1 * (L : ℝ) ^ k := by
-        gcongr
-        exacts [hω _, hL x hx]
-    _ = (L : ℝ) ^ k := one_mul _
+  have hreal : ‖ω (Φ x)‖ * ‖fderiv ℝ Φ x‖ ^ k ≤ 1 * (L : ℝ) ^ k := by
+    gcongr
+    exacts [hω _, hL x hx]
+  exact_mod_cast h.trans (hreal.trans_eq (one_mul _))
 
 /-- The homotopy estimate in every degree: the difference of two pushforwards of a normal
 current is bounded by `ε C`, where `ε` bounds the distance of the maps on the support and `C`
