@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.CStarAlgebra.SpatialNorm
 public import TauCeti.Analysis.CStarAlgebra.Representation.GNS
 import Mathlib.LinearAlgebra.TensorProduct.Finiteness
-import Mathlib.RingTheory.Flat.Basic
 
 /-!
 # The maximal C*-norm on an algebraic tensor product of C*-algebras
