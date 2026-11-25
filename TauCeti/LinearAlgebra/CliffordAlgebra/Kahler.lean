@@ -502,19 +502,72 @@ by a spinor and its Clifford translates. -/
 abbrev canonicalSubmodule (e : OrthonormalBasis (Fin 4) ℝ V) (u : W) : Submodule ℂ W :=
   Submodule.span ℂ {u, ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u), ρ (ι Q (e 0)) u, ρ (ι Q (e 2)) u}
 
+section Generators
+
+omit [Fact (finrank ℝ V = 4)]
+
+variable (e : OrthonormalBasis (Fin 4) ℝ V) (u : W)
+
+/-- The canonical submodule contains its generating spinor. -/
+@[simp]
+theorem self_mem_canonicalSubmodule : u ∈ canonicalSubmodule (ρ := ρ) e u :=
+  Submodule.subset_span (by simp)
+
+/-- The canonical submodule contains the double Clifford translate of its generating spinor. -/
+@[simp]
+theorem ι_zero_apply_ι_two_apply_mem_canonicalSubmodule :
+    ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) ∈ canonicalSubmodule (ρ := ρ) e u :=
+  Submodule.subset_span (by simp)
+
+/-- The canonical submodule contains the translate by the zeroth frame vector. -/
+@[simp]
+theorem ι_zero_apply_mem_canonicalSubmodule :
+    ρ (ι Q (e 0)) u ∈ canonicalSubmodule (ρ := ρ) e u :=
+  Submodule.subset_span (by simp)
+
+/-- The canonical submodule contains the translate by the second frame vector. -/
+@[simp]
+theorem ι_two_apply_mem_canonicalSubmodule :
+    ρ (ι Q (e 2)) u ∈ canonicalSubmodule (ρ := ρ) e u :=
+  Submodule.subset_span (by simp)
+
+/-- The canonical submodule is the least submodule containing the four Clifford translates. -/
+theorem canonicalSubmodule_le_iff {P : Submodule ℂ W} :
+    canonicalSubmodule (ρ := ρ) e u ≤ P ↔ u ∈ P ∧ ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) ∈ P ∧
+      ρ (ι Q (e 0)) u ∈ P ∧ ρ (ι Q (e 2)) u ∈ P := by
+  simp [canonicalSubmodule, Submodule.span_le, Set.insert_subset_iff]
+
+/-- Membership in the canonical submodule amounts to writing the vector in the four generators. -/
+theorem mem_canonicalSubmodule_iff {w : W} :
+    w ∈ canonicalSubmodule (ρ := ρ) e u ↔ ∃ a b c d : ℂ,
+      w = a • u + b • ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) +
+        c • ρ (ι Q (e 0)) u + d • ρ (ι Q (e 2)) u := by
+  constructor
+  · intro hw
+    obtain ⟨a, _, hx, rfl⟩ := Submodule.mem_span_insert.1 hw
+    obtain ⟨b, _, hy, rfl⟩ := Submodule.mem_span_insert.1 hx
+    obtain ⟨c, _, hz, rfl⟩ := Submodule.mem_span_insert.1 hy
+    obtain ⟨d, rfl⟩ := Submodule.mem_span_singleton.1 hz
+    exact ⟨a, b, c, d, by simp only [add_assoc]⟩
+  · rintro ⟨a, b, c, d, rfl⟩
+    exact Submodule.add_mem _ (Submodule.add_mem _ (Submodule.add_mem _
+      (Submodule.smul_mem _ _ (by simp)) (Submodule.smul_mem _ _ (by simp)))
+      (Submodule.smul_mem _ _ (by simp))) (Submodule.smul_mem _ _ (by simp))
+
+end Generators
+
 /-- Each frame generator `c(e k)` maps the four generators of `canonicalSubmodule e u` back into
 `canonicalSubmodule e u`. -/
-private theorem mapsTo_canonicalSubmodule_ι_basis {e : OrthonormalBasis (Fin 4) ℝ V}
+private theorem canonicalSubmodule_le_comap_ι_basis {e : OrthonormalBasis (Fin 4) ℝ V}
     (hQ : ∀ v, Q v = -‖v‖ ^ 2) (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
     {u : W} (hu : ρ (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • u)
-    (k : Fin 4) {y : W}
-    (hy : y ∈ ({u, ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u), ρ (ι Q (e 0)) u, ρ (ι Q (e 2)) u} : Set W)) :
-    ρ (ι Q (e k)) y ∈ canonicalSubmodule (ρ := ρ) e u := by
+    (k : Fin 4) : canonicalSubmodule (ρ := ρ) e u ≤
+      (canonicalSubmodule (ρ := ρ) e u).comap (ρ (ι Q (e k))) := by
   set M := canonicalSubmodule (ρ := ρ) e u
-  have hb₀M : u ∈ M := Submodule.subset_span (by simp)
-  have hb₁M : ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) ∈ M := Submodule.subset_span (by simp)
-  have hb₂M : ρ (ι Q (e 0)) u ∈ M := Submodule.subset_span (by simp)
-  have hb₃M : ρ (ι Q (e 2)) u ∈ M := Submodule.subset_span (by simp)
+  have hb₀M : u ∈ M := by simp [M]
+  have hb₁M : ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) ∈ M := by simp [M]
+  have hb₂M : ρ (ι Q (e 0)) u ∈ M := by simp [M]
+  have hb₃M : ρ (ι Q (e 2)) u ∈ M := by simp [M]
   obtain ⟨h1u, h3u⟩ :=
     AlmostComplexStructure.ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply hQ h₀ h₂ hu
   obtain ⟨p10, p30⟩ :=
@@ -523,8 +576,8 @@ private theorem mapsTo_canonicalSubmodule_ι_basis {e : OrthonormalBasis (Fin 4)
     AlmostComplexStructure.ι_apply_ι_two_apply_of_bivectorExterior_apply hQ h₀ h₂ hu
   obtain ⟨p102, p302⟩ :=
     AlmostComplexStructure.ι_apply_ι_zero_apply_ι_two_apply_of_bivectorExterior_apply hQ h₀ h₂ hu
-  simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hy
-  rcases hy with rfl | rfl | rfl | rfl <;>
+  apply (canonicalSubmodule_le_iff e u).2
+  refine ⟨?_, ?_, ?_, ?_⟩ <;> simp only [Submodule.mem_comap] <;>
     match k with
     | 0 => ?_
     | 1 => ?_
@@ -566,9 +619,7 @@ theorem mapsTo_canonicalSubmodule {e : OrthonormalBasis (Fin 4) ℝ V}
     intro w hw
     rw [e.map_ι_apply_eq_sum ρ v w]
     refine Submodule.sum_mem M fun k _ ↦ M.smul_mem (⟪e k, v⟫ : ℂ) ?_
-    exact Submodule.span_induction (fun _ hy ↦ mapsTo_canonicalSubmodule_ι_basis hQ h₀ h₂ hu k hy)
-      (by simp) (fun _ _ _ _ hx hy ↦ by rw [map_add]; exact M.add_mem hx hy)
-      (fun c _ _ hx ↦ by rw [map_smul]; exact M.smul_mem c hx) hw
+    exact canonicalSubmodule_le_comap_ι_basis hQ h₀ h₂ hu k hw
   | mul a b ha hb =>
     intro w hw
     rw [map_mul, mul_apply_eq_comp]
@@ -601,10 +652,7 @@ theorem mem_span_positive_canonicalSubmodule {e : OrthonormalBasis (Fin 4) ℝ V
     {u : eigenspace (ρ (chirality Q o)) 1} {w : W} (hwM : w ∈ canonicalSubmodule (ρ := ρ) e u)
     (hwΓ : ρ (chirality Q o) w = w) :
     ∃ c₀ c₁ : ℂ, w = c₀ • (u : W) + c₁ • ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) := by
-  rcases Submodule.mem_span_insert.1 hwM with ⟨c₀, _, hw1, rfl⟩
-  rcases Submodule.mem_span_insert.1 hw1 with ⟨c₁, _, hw2, rfl⟩
-  rcases Submodule.mem_span_insert.1 hw2 with ⟨c₂, _, hw3, rfl⟩
-  rcases Submodule.mem_span_singleton.1 hw3 with ⟨c₃, rfl⟩
+  obtain ⟨c₀, c₁, c₂, c₃, rfl⟩ := (mem_canonicalSubmodule_iff e (u : W)).1 hwM
   have hΓ0 : ρ (chirality Q o) u = u := by simpa using mem_eigenspace_iff.1 u.property
   have hΓ1 : ρ (chirality Q o) (ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u)) =
       ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) := by
@@ -637,12 +685,12 @@ noncomputable def canonicalSubmodulePositiveBasis {e : OrthonormalBasis (Fin 4) 
       bivectorExterior_kahlerForm_apply_ι_apply_ι_apply_of_bivectorExterior_apply hQ h₀ h₂ hu
   have hb₁ne : b₁ ≠ 0 := e.map_ι_apply_map_ι_apply_ne_zero hQ ρ 0 2 hu₀
   let v₀ : eigenspace (ρM (chirality Q o)) 1 :=
-    ⟨⟨u, Submodule.subset_span (by simp)⟩,
+    ⟨⟨u, by simp⟩,
       mem_eigenspace_iff.2 (Subtype.ext (by
         rw [coe_canonicalSubmoduleAlgHom_apply, Submodule.coe_smul]
         exact mem_eigenspace_iff.1 u.property))⟩
   let v₁ : eigenspace (ρM (chirality Q o)) 1 :=
-    ⟨⟨b₁, Submodule.subset_span (by simp [b₁])⟩,
+    ⟨⟨b₁, by simp [b₁]⟩,
       mem_eigenspace_iff.2 (Subtype.ext (by
         rw [coe_canonicalSubmoduleAlgHom_apply, Submodule.coe_smul]
         exact mem_eigenspace_iff.1
