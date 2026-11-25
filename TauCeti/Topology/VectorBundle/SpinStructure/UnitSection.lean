@@ -9,7 +9,6 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinC.Inclusion
 public import TauCeti.Topology.FiberBundle.Principal.Reduction
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.UnitSection
 public import TauCeti.Topology.VectorBundle.SpinStructure.Basic
-import TauCeti.Data.Bundle
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Inclusion
 
 /-!
@@ -87,14 +86,22 @@ theorem mem_sectionPoints_iff {p : TotalSpace (realCliffordSpinCGroupZero (n + 1
       (s.toFrame p).frame (WithLp.toLp 2 (Pi.single (Fin.last n) 1)) = σ (s.toFrame p).proj :=
   OrthonormalFrameBundle.mem_sectionFrames_iff
 
-/-- A point `p` over `x` is adapted exactly when its frame, as a point of the total space of `E`,
-sends the last coordinate vector to `σ x`. -/
+/-- A point `p` over `x` is adapted exactly when its frame `s.frameAt p` sends the last coordinate
+vector to `σ x`. -/
 private theorem mk_mem_sectionPoints_iff {x : X} {p : s.P x} :
     (⟨x, p⟩ : TotalSpace (realCliffordSpinCGroupZero (n + 1)) s.P) ∈ s.sectionPoints σ ↔
-      TotalSpace.mk' F (s.toFrame ⟨x, p⟩).proj
-          ((s.toFrame ⟨x, p⟩).frame (WithLp.toLp 2 (Pi.single (Fin.last n) 1))) =
-        ⟨x, σ x⟩ := by
-  rw [mem_sectionPoints_iff, TotalSpace.mk_eq_mk_iff_of_eq σ (s.proj_toFrame _)]
+      s.frameAt p (WithLp.toLp 2 (Pi.single (Fin.last n) 1)) = σ x := by
+  rw [sectionPoints, mem_preimage, s.toFrame_mk, OrthonormalFrameBundle.mk_mem_sectionFrames_iff]
+
+/-- The point `p • g` over `x` is adapted exactly when the frame of `p` sends the rotation by `g` of
+the last coordinate vector to `σ x` (`TauCeti.OrthonormalFrameLift.frameAt_smul`). -/
+private theorem smul_mk_mem_sectionPoints_iff {x : X} {p : s.P x}
+    (g : realCliffordSpinCGroupZero (n + 1)) :
+    (⟨x, op g • p⟩ : TotalSpace (realCliffordSpinCGroupZero (n + 1)) s.P) ∈ s.sectionPoints σ ↔
+      s.frameAt p (WithLp.toLp 2
+        ((spinCGroup.toSpecialOrthogonal _ _ g : (Fin (n + 1) → ℝ) ≃ₗ[ℝ] (Fin (n + 1) → ℝ))
+          (Pi.single (Fin.last n) 1))) = σ x := by
+  rw [mk_mem_sectionPoints_iff, s.frameAt_smul, MonoidHom.comp_apply, Subgroup.coe_subtype]
 
 /-- **The stabilizer of the adapted points.** An element `g` of `Spinᶜ(n + 1)` keeps a point
 adapted to `σ` adapted exactly when its rotation fixes the last coordinate vector, that is, when
@@ -104,8 +111,7 @@ theorem smul_mem_sectionPoints_iff {p : TotalSpace (realCliffordSpinCGroupZero (
     op g • p ∈ s.sectionPoints σ ↔ g ∈ realCliffordSpinCLastStabilizer n := by
   obtain ⟨x, p⟩ := p
   rw [mk_mem_sectionPoints_iff] at hp
-  rw [TotalSpace.smul_mk, mk_mem_sectionPoints_iff, s.toFrame_smul_toSpecialOrthogonal, ← hp,
-    TotalSpace.mk_inj, (s.toFrame ⟨x, p⟩).frame.injective.eq_iff,
+  rw [TotalSpace.smul_mk, smul_mk_mem_sectionPoints_iff, ← hp, (s.frameAt p).injective.eq_iff,
     (WithLp.toLp_injective 2).eq_iff, mem_realCliffordSpinCLastStabilizer_iff]
 
 /-! ### Local triviality -/
@@ -142,10 +148,11 @@ private theorem realCliffordForm_coords (hσ₁ : ∀ y, ‖σ y‖ = 1)
 
 omit [NormedAddCommGroup F] [NormedSpace ℝ F] [FiberBundle F E] [VectorBundle ℝ F E]
   [ContinuousFiberNorm F E] in
-/-- The frame of a point sends its coordinate vector of `σ` to `σ`. -/
-private theorem frame_coords (p : TotalSpace (realCliffordSpinCGroupZero (n + 1)) s.P) :
-    (s.toFrame p).frame (WithLp.toLp 2 (coords s σ p)) = σ (s.toFrame p).proj := by
-  simp [coords]
+/-- The frame of a point `p` over `x` sends its coordinate vector of `σ` to `σ x`. -/
+private theorem frameAt_coords {x : X} (p : s.P x) :
+    s.frameAt p (WithLp.toLp 2 (coords s σ ⟨x, p⟩)) = σ x := by
+  rw [coords, WithLp.toLp_ofLp, s.toFrame_mk]
+  exact LinearIsometryEquiv.apply_symm_apply _ _
 
 variable [NeZero n]
 
@@ -190,8 +197,7 @@ theorem exists_trivialization_sectionPoints
   have hτS (y : X) (hy : y ∈ V) :
       (⟨y, op (g (u y)) • τ₀ y⟩ : TotalSpace (realCliffordSpinCGroupZero (n + 1)) s.P) ∈
         s.sectionPoints σ := by
-    rw [mk_mem_sectionPoints_iff, s.toFrame_smul_toSpecialOrthogonal, hgu (u y) hy.2,
-      frame_coords, s.proj_toFrame]
+    rw [smul_mk_mem_sectionPoints_iff, hgu (u y) hy.2, frameAt_coords]
   obtain ⟨t, ht, hteq⟩ := TauCeti.PrincipalBundle.exists_trivialization_of_continuousOn_section_mem
     (H := realCliffordSpinCLastStabilizer n) (fun p hp g ↦ smul_mem_sectionPoints_iff hp g) hτS
     hV hτ (b := x) ⟨hx, hxU⟩
