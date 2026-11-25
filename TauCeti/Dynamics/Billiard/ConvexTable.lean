@@ -134,6 +134,10 @@ theorem norm_deriv (s : ℝ) : ‖deriv T s‖ = 1 := T.norm_deriv' s
 theorem deriv_ne_zero (s : ℝ) : deriv T s ≠ 0 :=
   norm_ne_zero_iff.1 (by simp)
 
+/-- The unit tangent `τ(s)` of a table satisfies `conj τ(s) * τ(s) = 1`. -/
+theorem conj_deriv_mul_deriv (s : ℝ) : conj (deriv T s) * deriv T s = 1 := by
+  simp [conj_mul', T.norm_deriv]
+
 theorem differentiable : Differentiable ℝ T :=
   T.contDiff.differentiable (zero_lt_one.trans_le (by exact_mod_cast T.one_le)).ne'
 
@@ -198,9 +202,9 @@ theorem deriv_deriv (s : ℝ) : deriv (deriv T) s = I * T.curvature s * deriv T 
     linarith
   have hw : conj (deriv T s) * deriv (deriv T) s = I * T.curvature s := by
     apply Complex.ext <;> simp [hre, curvature_def]
-  calc deriv (deriv T) s = (deriv T s * conj (deriv T s)) * deriv (deriv T) s := by
-        rw [mul_conj', T.norm_deriv, ofReal_one, one_pow, one_mul]
-    _ = I * T.curvature s * deriv T s := by rw [mul_assoc, hw, mul_comm]
+  calc deriv (deriv T) s = (conj (deriv T s) * deriv T s) * deriv (deriv T) s := by
+        rw [T.conj_deriv_mul_deriv, one_mul]
+    _ = I * T.curvature s * deriv T s := by rw [mul_right_comm, hw]
 
 /-- **The curvature of a table is nonnegative.** -/
 theorem curvature_nonneg (s : ℝ) : 0 ≤ T.curvature s := by
@@ -249,6 +253,12 @@ def shift (c : ℝ) : ConvexTable k ℓ where
 
 @[simp]
 theorem shift_apply (c s : ℝ) : T.shift c s = T (s + c) := (rfl)
+
+/-- Shifting the parameter of a table does not change its image. -/
+@[simp]
+theorem range_shift (c : ℝ) : range (T.shift c) = range T := by
+  ext z
+  exact ⟨fun ⟨s, hs⟩ => ⟨s + c, by rwa [shift_apply] at hs⟩, fun ⟨s, hs⟩ => ⟨s - c, by simp [hs]⟩⟩
 
 /-- The unit tangent of the shifted table `γ (· + c)` at `s` is that of `γ` at `s + c`. -/
 @[simp]
@@ -359,6 +369,18 @@ def circle (R : ℝ) [Fact (0 < 2 * Real.pi * R)] : ConvexTable ⊤ (2 * Real.pi
 theorem circle_apply (R : ℝ) [Fact (0 < 2 * Real.pi * R)] (s : ℝ) :
     circle R s = circleMap 0 R (s / R) :=
   StrictConvexBilliardTable.circle_apply s
+
+/-- The image of the circle of radius `R` is the sphere of radius `R` about `0`. -/
+@[simp]
+theorem range_circle (R : ℝ) [Fact (0 < 2 * Real.pi * R)] :
+    range (circle R) = Metric.sphere 0 R := by
+  have hR : 0 < R := Real.pos_of_fact_two_pi_mul_pos
+  ext z
+  refine ⟨?_, fun hz => ⟨R * z.arg, ?_⟩⟩
+  · rintro ⟨s, rfl⟩
+    simp [abs_of_pos hR]
+  · rw [circle_apply, mul_div_cancel_left₀ _ hR.ne', ← mem_sphere_zero_iff_norm.1 hz,
+      circleMap_zero_norm_arg]
 
 /-- The unit tangent of the circle `s ↦ R exp(i s / R)` is `i exp(i s / R)`. -/
 @[simp]

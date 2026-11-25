@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Convex.Strict
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.Analysis.Normed.Affine.AddTorsorBases
-import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.Topology.Instances.Real.Lemmas
 import TauCeti.Analysis.Convex.Caratheodory
 import TauCeti.LinearAlgebra.Complex.Module
@@ -41,6 +40,8 @@ curve, is the tangent line at `γ s`, so `z = γ s`.
   lies in the open half-plane to the left of each tangent line.
 * `TauCeti.ConvexTable.interior_region_nonempty`: `Ω` has nonempty interior.
 * `TauCeti.ConvexTable.frontier_region`: the frontier of `Ω` is the image of the table.
+* `TauCeti.ConvexTable.mem_region_iff`: `Ω` is the set of points to the left of or on every
+  tangent line.
 * `TauCeti.ConvexTable.interior_region`: the interior of `Ω` is `Ω` minus the image of the table.
 * `TauCeti.ConvexTable.mem_interior_region_iff`: the interior of `Ω` is the set of points strictly
   to the left of every tangent line.
@@ -91,10 +92,7 @@ theorem isClosed_region : IsClosed T.region := T.isCompact_region.isClosed
 /-- Reparametrizing a table by a shift does not change its region. -/
 @[simp]
 theorem region_shift (c : ℝ) : (T.shift c).region = T.region := by
-  have : range (T.shift c) = range T := by
-    ext z
-    exact ⟨fun ⟨s, hs⟩ => ⟨s + c, by rwa [shift_apply] at hs⟩, fun ⟨s, hs⟩ => ⟨s - c, by simp [hs]⟩⟩
-  rw [region_def, region_def, this]
+  rw [region_def, region_def, range_shift]
 
 /-- Weakening the smoothness of a table does not change its region. -/
 @[simp]
@@ -102,6 +100,7 @@ theorem region_ofLE {j : ℕ∞} (hj : 1 ≤ j) (hjk : j ≤ k) : (T.ofLE hj hjk
   rw [region_def, region_def, coe_ofLE]
 
 /-- The region of a table moved by the rigid motion `z ↦ a z + b` is the image of its region. -/
+@[simp]
 theorem region_rigidMotion (a : Circle) (b : ℂ) :
     (T.rigidMotion a b).region = (fun z => a * z + b) '' T.region := by
   let f : ℂ →ᵃ[ℝ] ℂ := (LinearMap.mulLeft ℝ (a : ℂ)).toAffineMap + AffineMap.const ℝ ℂ b
@@ -118,10 +117,6 @@ unit tangent. -/
 private theorem map_deriv_eq_zero_of_isLocalMax {f : ℂ →L[ℝ] ℝ} {s : ℝ}
     (h : IsLocalMax (fun t => f (T t)) s) : f (deriv T s) = 0 :=
   h.hasDerivAt_eq_zero (f.hasFDerivAt.comp_hasDerivAt s (T.hasDerivAt s))
-
-/-- The unit tangent `τ(s)` satisfies `conj τ(s) * τ(s) = 1`. -/
-private theorem conj_deriv_mul_deriv (s : ℝ) : conj (deriv T s) * deriv T s = 1 := by
-  simp [conj_mul', T.norm_deriv]
 
 /-- **The region lies to the left of each tangent line.** Every point `z ≠ γ s` of the region
 satisfies `0 < τ(s) × (z − γ s)`. -/
@@ -255,13 +250,10 @@ theorem frontier_region : frontier T.region = range T := by
 theorem interior_region : interior T.region = T.region \ range T := by
   rw [← self_sdiff_frontier, frontier_region]
 
-/-- A point lies in the interior of the region exactly when it lies strictly to the left of every
-tangent line: `0 < τ(s) × (z − γ s)` for all `s`. -/
-theorem mem_interior_region_iff {z : ℂ} :
-    z ∈ interior T.region ↔ ∀ s, 0 < (conj (deriv T s) * (z - T s)).im := by
-  rw [interior_region]
-  refine ⟨fun hz s => T.im_conj_deriv_mul_sub_pos_of_mem_region hz.1 fun h => hz.2 ⟨s, h.symm⟩,
-    fun h => ⟨by_contra fun hz => ?_, fun ⟨s, hs⟩ => by simpa [hs] using h s⟩⟩
+/-- A point outside the region lies strictly to the right of some tangent line:
+`τ(s) × (z − γ s) < 0` for some `s`. -/
+private theorem exists_im_conj_deriv_mul_sub_neg_of_notMem_region {z : ℂ}
+    (hz : z ∉ T.region) : ∃ s, (conj (deriv T s) * (z - T s)).im < 0 := by
   -- A functional separating `z` from the region, maximal on the curve at `γ s`.
   obtain ⟨f, u, hfu, hzu⟩ := geometric_hahn_banach_closed_point T.convex_region T.isClosed_region hz
   obtain ⟨_, ⟨s, rfl⟩, hmax⟩ :=
@@ -270,8 +262,8 @@ theorem mem_interior_region_iff {z : ℂ} :
     (Eventually.of_forall fun t => hmax (mem_range_self t))
   have hlin (w : ℂ) : f w = f (I * deriv T s) * (conj (deriv T s) * w).im :=
     f.toLinearMap.apply_eq_mul_im_conj_mul (T.conj_deriv_mul_deriv s) hτ w
-  -- `f (i τ(s))` is positive, as `z` lies beyond `γ s`, and nonpositive, as an interior point `a`
-  -- does not.
+  -- `f (i τ(s))` is nonpositive, as an interior point `a` does not lie beyond `γ s`, while `z`
+  -- does.
   have hz' : 0 < f (I * deriv T s) * (conj (deriv T s) * (z - T s)).im := by
     rw [← hlin, map_sub]
     linarith [hfu _ (T.apply_mem_region s)]
@@ -280,8 +272,24 @@ theorem mem_interior_region_iff {z : ℂ} :
   have ha' : f (I * deriv T s) * (conj (deriv T s) * (a - T s)).im ≤ 0 := by
     rw [← hlin, map_sub, sub_nonpos]
     exact convexHull_min (fun w hw => hmax hw) (convex_halfSpace_le f.isLinear _) ha.1
-  have hpos := T.im_conj_deriv_mul_sub_pos_of_mem_region ha.1 fun h => ha.2 ⟨s, h.symm⟩
-  nlinarith [h s, pos_of_mul_pos_left hz' (h s).le]
+  exact ⟨s, neg_of_mul_pos_right hz' (nonpos_of_mul_nonpos_left ha'
+    (T.im_conj_deriv_mul_sub_pos_of_mem_region ha.1 fun h => ha.2 ⟨s, h.symm⟩))⟩
+
+/-- A point lies in the region exactly when it lies to the left of every tangent line, or on it:
+`0 ≤ τ(s) × (z − γ s)` for all `s`. -/
+theorem mem_region_iff {z : ℂ} :
+    z ∈ T.region ↔ ∀ s, 0 ≤ (conj (deriv T s) * (z - T s)).im :=
+  ⟨fun hz _ => T.im_conj_deriv_mul_sub_nonneg_of_mem_region hz, fun h => by_contra fun hz =>
+    let ⟨s, hs⟩ := T.exists_im_conj_deriv_mul_sub_neg_of_notMem_region hz
+    (h s).not_gt hs⟩
+
+/-- A point lies in the interior of the region exactly when it lies strictly to the left of every
+tangent line: `0 < τ(s) × (z − γ s)` for all `s`. -/
+theorem mem_interior_region_iff {z : ℂ} :
+    z ∈ interior T.region ↔ ∀ s, 0 < (conj (deriv T s) * (z - T s)).im := by
+  rw [interior_region]
+  exact ⟨fun hz s => T.im_conj_deriv_mul_sub_pos_of_mem_region hz.1 fun h => hz.2 ⟨s, h.symm⟩,
+    fun h => ⟨T.mem_region_iff.2 fun s => (h s).le, fun ⟨s, hs⟩ => by simpa [hs] using h s⟩⟩
 
 /-- **The region of a table is strictly convex.** -/
 theorem strictConvex_region : StrictConvex ℝ T.region := by
@@ -304,12 +312,7 @@ attribute [local instance] Complex.finrank_real_complex_fact in
 @[simp]
 theorem region_circle (R : ℝ) [Fact (0 < 2 * Real.pi * R)] :
     (circle R).region = Metric.closedBall 0 R := by
-  have hR : 0 < R := Real.pos_of_fact_two_pi_mul_pos
-  have hrange : range (circle R) = Metric.sphere 0 R := by
-    have : ⇑(circle R) = circleMap 0 R ∘ fun s => s / R := funext (circle_apply R)
-    have hsurj : Surjective fun s : ℝ => s / R := fun t => ⟨t * R, by field_simp⟩
-    rw [this, hsurj.range_comp, range_circleMap, abs_of_pos hR]
-  rw [region_def, hrange, convexHull_sphere_eq_closedBall]
+  rw [region_def, range_circle, convexHull_sphere_eq_closedBall]
 
 end ConvexTable
 
