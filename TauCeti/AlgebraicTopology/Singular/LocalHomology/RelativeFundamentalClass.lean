@@ -51,7 +51,9 @@ The proof follows Hatcher. For `0 < t`, let `Cₜ = c(N × [0, t))` be the colla
 `t` and `Kₜ = X ∖ Cₜ`. Then `Kₜ` is a compact subset of `ι(M)`, and the restriction
 `Hₙ(X, ∂X) ⟶ Hₙ(X, X ∖ Kₜ) = Hₙ(X, Cₜ)` is an isomorphism, by the long exact sequence of the
 triple `(X, Cₜ, ∂X)`: the collar coordinates deform `Cₜ` onto `∂X` relative to `∂X`
-(`TauCeti.IsCollar.collarDeformation`), so `H_*(Cₜ, ∂X)` vanishes. By excision,
+(`TauCeti.IsCollar.collarDeformation`), so `H_*(Cₜ, ∂X)` vanishes. This comparison holds for
+coefficients in any abelian category
+(`TauCeti.IsCollar.isIso_localHomologyRestriction_compl_collarPart`). By excision,
 `Hₙ(X, X ∖ Kₜ) ≅ Hₙ(M, M ∖ ι⁻¹(Kₜ))`, in which the family `α` glues to a single class over the
 compact set `ι⁻¹(Kₜ)` (`TauCeti.existsUnique_localHomologyRestriction_eq_of_invariant`), and a
 class there is determined by its local images (`TauCeti.localHomology_ext_of_isCompact`). Every
@@ -71,6 +73,8 @@ the connecting morphism.
 
 ## Main results
 
+* `TauCeti.IsCollar.isIso_localHomologyRestriction_compl_collarPart`: for `0 < t`, the restriction
+  `Hₖ(X, ∂X) ⟶ Hₖ(X, Cₜ)` is an isomorphism, for coefficients in any abelian category.
 * `TauCeti.existsUnique_localHomologyRestriction_range_eq_of_invariant`: a transport-invariant
   family of local classes of the interior, with coefficients in any module, is the family of
   interior local images of exactly one class of `Hₙ(X, ∂X)`.
@@ -107,40 +111,34 @@ noncomputable section
 
 open CategoryTheory Limits Set Topology Module
 
-universe w
+universe w v u
 
 namespace TauCeti
 
-section Coefficients
-
-variable {X M : Type w} {N : Type*} [TopologicalSpace X] [TopologicalSpace N] {ι : M → X}
-  {f : N → X} {Λ : Type w} [Ring Λ] (R : ModuleCat.{w} Λ)
+/-! ### The collar comparison -/
 
 section Collar
 
-variable {c : N × Ico (0 : ℝ) 1 → X} (hc : IsCollar f c) (hιf : range ι = (range f)ᶜ)
+variable {X : Type w} {M N : Type*} [TopologicalSpace X] [TopologicalSpace N] {ι : M → X}
+  {f : N → X} {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
+  {c : N × Ico (0 : ℝ) 1 → X} (hc : IsCollar f c) (hιf : range ι = (range f)ᶜ)
 include hc hιf
 
-private lemma compl_collarPart_subset_range {t : ℝ} (ht : 0 < t) :
-    (collarPart c t)ᶜ ⊆ range ι := by
-  rw [hιf]
-  exact compl_subset_compl.2 (hc.range_subset_collarPart ht)
-
 omit hιf in
-/-- The relative homology of a pair `(B, A)` with `A = ∂X = f(N)` and `B` the collar `Cₜ` of
+/-- The relative homology of a pair `(T, S)` with `S = ∂X = f(N)` and `T` the collar `Cₜ` of
 positive depth vanishes: the collar coordinates deform `Cₜ` onto `∂X` relative to `∂X`. -/
-private lemma isZero_singularHomology_of_eq_collarPart {A B : Set X} (hAB : A ⊆ B)
-    (hA : A = range f) {t : ℝ} (ht : 0 < t) (hB : B = collarPart c t) (k : ℕ) :
-    IsZero ((TopPair.ofInclusion (X := TopCat.of X) hAB).singularHomology R k) := by
-  subst hA hB
+private lemma isZero_singularHomology_of_eq_collarPart {S T : Set X} (hST : S ⊆ T)
+    (hS : S = range f) {t : ℝ} (ht : 0 < t) (hT : T = collarPart c t) (k : ℕ) :
+    IsZero ((TopPair.ofInclusion (X := TopCat.of X) hST).singularHomology R k) := by
+  subst hS hT
   exact TopPair.isZero_singularHomology_ofInclusion_of_homotopyRel _ _
     (hc.collarDeformation ht) _ k
 
 /-- **Restriction to the complement of a collar is an isomorphism.** For `0 < t`, the restriction
 `Hₖ(X, ∂X) ⟶ Hₖ(X, Cₜ)` from the local homology along `ι(M)` to the local homology along
 `Kₜ = X ∖ Cₜ` is an isomorphism, by the long exact sequence of the triple `(X, Cₜ, ∂X)`. -/
-private lemma isIso_localHomologyRestriction_compl_collarPart {t : ℝ} (ht : 0 < t) (k : ℕ) :
-    IsIso (localHomologyRestriction R (compl_collarPart_subset_range hc hιf ht) k) := by
+theorem IsCollar.isIso_localHomologyRestriction_compl_collarPart {t : ℝ} (ht : 0 < t) (k : ℕ) :
+    IsIso (localHomologyRestriction R (hc.compl_collarPart_subset_range hιf ht) k) := by
   have hsub : (range ι)ᶜ ⊆ (collarPart c t)ᶜᶜ := by
     rw [compl_compl, hιf, compl_compl]
     exact hc.range_subset_collarPart ht
@@ -154,6 +152,11 @@ private lemma isIso_localHomologyRestriction_compl_collarPart {t : ℝ} (ht : 0 
 
 end Collar
 
+section Coefficients
+
+variable {X M : Type w} {N : Type*} [TopologicalSpace X] [TopologicalSpace N] {ι : M → X}
+  {f : N → X} {Λ : Type w} [Ring Λ] (R : ModuleCat.{w} Λ)
+
 variable [TopologicalSpace M]
 
 section CollarInterior
@@ -165,7 +168,7 @@ include hι hc hιf
 private lemma isCompact_preimage_compl_collarPart [CompactSpace X] {t : ℝ} (ht : 0 < t) :
     IsCompact (ι ⁻¹' (collarPart c t)ᶜ) :=
   hι.isInducing.isCompact_preimage' (hc.isOpen_collarPart t).isClosed_compl.isCompact
-    (compl_collarPart_subset_range hc hιf ht)
+    (hc.compl_collarPart_subset_range hιf ht)
 
 end CollarInterior
 
@@ -219,11 +222,11 @@ theorem existsUnique_localHomologyRestriction_range_eq_of_invariant (hf : IsColl
         localHomologyRestriction R (singleton_subset_iff.2 hx) n γ =
           localHomologyRestriction R (singleton_subset_iff.2 hx) n γ') : γ = γ' :=
     localHomology_ext_of_isOpenEmbedding R hn hι (hc.isOpen_collarPart t).isClosed_compl
-      (compl_collarPart_subset_range hc hιf ht) (isCompact_preimage_compl_collarPart hι hc hιf ht) h
+      (hc.compl_collarPart_subset_range hιf ht) (isCompact_preimage_compl_collarPart hι hc hιf ht) h
   -- Work at depth `1 / 2`, where `r : Hₙ(X, ∂X) ⟶ Hₙ(X, X ∖ K₁/₂)` is an isomorphism.
   have h₂ : (0 : ℝ) < 1 / 2 := by norm_num
-  set r := localHomologyRestriction R (compl_collarPart_subset_range hc hιf h₂) n
-  have := isIso_localHomologyRestriction_compl_collarPart R hc hιf h₂ n
+  set r := localHomologyRestriction R (hc.compl_collarPart_subset_range hιf h₂) n
+  have := hc.isIso_localHomologyRestriction_compl_collarPart R hιf h₂ n
   obtain ⟨β, hβ⟩ := hglue h₂
   refine ⟨inv r β, fun x ↦ ?_, fun γ hγ ↦ ?_⟩
   · -- The point `ι x` lies in `Kₛ` for some `s ≤ 1 / 2`.
@@ -237,10 +240,10 @@ theorem existsUnique_localHomologyRestriction_range_eq_of_invariant (hf : IsColl
     obtain ⟨β', hβ'⟩ := hglue hs
     -- The restriction `Hₙ(X, X ∖ Kₛ) ⟶ Hₙ(X, X ∖ K₁/₂)` is an isomorphism, since both restrictions
     -- from `Hₙ(X, ∂X)` are, and it carries both `β'` and the image of `inv r β` to `β`.
-    have hρ := localHomologyRestriction_comp R hK (compl_collarPart_subset_range hc hιf hs) n
-    have := isIso_localHomologyRestriction_compl_collarPart R hc hιf hs n
+    have hρ := localHomologyRestriction_comp R hK (hc.compl_collarPart_subset_range hιf hs) n
+    have := hc.isIso_localHomologyRestriction_compl_collarPart R hιf hs n
     have := IsIso.of_isIso_fac_left hρ
-    have key : localHomologyRestriction R (compl_collarPart_subset_range hc hιf hs) n (inv r β) =
+    have key : localHomologyRestriction R (hc.compl_collarPart_subset_range hιf hs) n (inv r β) =
         β' := by
       refine ConcreteCategory.injective_of_mono_of_preservesPullback
         (localHomologyRestriction R hK n) ?_

@@ -264,7 +264,7 @@ theorem equiv₀_moduleCohomologyForgetComparison_hom_app_toRightDerivedZero
     (ComplexShape.up ℕ)).obj K
   let c : ΓK.cycles 0 := ΓK.liftCycles ((Sheaf.Γ (Opens.grothendieckTopology X)
     (ModuleCat.{u} R)).map (K.fromSingle₀Equiv F ((toGodementResolution (ModuleCat.{u} R) X).app
-      F)).val) 1 (by simp) (Functor.map_fromSingle₀Equiv_comp_d _ _) s
+      F)).val) 1 (by simp) (Functor.map_fromSingle₀Equiv_val_comp_d _ _) s
   have hA := ConcreteCategory.congr_hom
     (toRightDerivedZero_app_comp_rightDerivedΓIsoGodement_hom_app F) s
   rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hA

@@ -56,11 +56,11 @@ The proof has three steps.
   for a `P`-resolution `K` of `X`, and
   `CategoryTheory.Functor.rightDerivedObjIsoOfResolution_hom_comp_homologyMap`, its
   characterization through any injective resolution.
-* `CategoryTheory.Functor.toRightDerivedZero_app_comp_rightDerivedObjIsoOfResolution_hom`: in
-  degree `0` the isomorphism sends `F(X) ⟶ R⁰F(X)` to the class of `F` applied to the
-  augmentation.
 * `CategoryTheory.Functor.rightDerivedObjIsoOfResolution_hom_naturality`: compatibility with
   morphisms of augmented resolutions.
+* `CategoryTheory.Functor.toRightDerivedZero_app_comp_rightDerivedObjIsoOfResolution_hom`: in
+  degree `0`, the comparison is compatible with the canonical maps `F(X) ⟶ R⁰F(X)` and
+  `F(X) ⟶ H⁰(F(K))`.
 * `CategoryTheory.Functor.rightDerivedIsoOfResolution`: the natural isomorphism for a
   functorial adapted resolution.
 
@@ -276,19 +276,6 @@ namespace CategoryTheory.Functor
 
 open CochainComplex
 
-section Augmentation
-
-variable {C : Type u₁} [Category.{v₁} C] [HasZeroMorphisms C] [HasZeroObject C] {D : Type u₂}
-  [Category.{v₂} D] [HasZeroMorphisms D] (F : C ⥤ D) [F.PreservesZeroMorphisms]
-
-/-- For a coaugmented cochain complex `ι : X[0] ⟶ K`, `F` applied to the augmentation `X ⟶ K⁰`
-composes to zero with the differential `F(K⁰) ⟶ F(K¹)`, so it is a degree-`0` cycle of `F(K)`. -/
-lemma map_fromSingle₀Equiv_comp_d {X : C} {K : CochainComplex C ℕ} (ι : (single₀ C).obj X ⟶ K) :
-    F.map (K.fromSingle₀Equiv X ι).val ≫ ((F.mapHomologicalComplex _).obj K).d 0 1 = 0 := by
-  rw [mapHomologicalComplex_obj_d, ← F.map_comp, (K.fromSingle₀Equiv X ι).property, F.map_zero]
-
-end Augmentation
-
 variable {C : Type u₁} [Category.{v₁} C] [Abelian C] {D : Type u₂} [Category.{v₂} D] [Abelian D]
   [EnoughInjectives C] (F : C ⥤ D) [F.Additive] (P : ObjectProperty C)
   [P.IsClosedUnderIsomorphisms] (hinj : ∀ (Y : C), Injective Y → P Y)
@@ -336,41 +323,6 @@ lemma rightDerivedObjIsoOfResolution_hom_comp_homologyMap (n : ℕ) (I : Injecti
   exact (Category.assoc _ _ _).trans
     (_ ≫= isoOfQuasiIsoAt_inv_hom_id_assoc ((F.mapHomologicalComplex _).map φ₀) n _)
 
-/-- In degree `0`, the isomorphism `rightDerivedObjIsoOfResolution` sends the image of `F(X)` in
-`R⁰F(X)` to the homology class of the cycle `F(X) ⟶ F(K⁰)` given by `F` applied to the
-augmentation `X ⟶ K⁰` of the resolution. -/
-@[reassoc]
-lemma toRightDerivedZero_app_comp_rightDerivedObjIsoOfResolution_hom :
-    F.toRightDerivedZero.app X ≫ (F.rightDerivedObjIsoOfResolution P hinj hP hF ι hK 0).hom =
-      ((F.mapHomologicalComplex _).obj K).liftCycles (F.map (K.fromSingle₀Equiv X ι).val) 1
-        (by simp) (F.map_fromSingle₀Equiv_comp_d ι) ≫
-        ((F.mapHomologicalComplex _).obj K).homologyπ 0 := by
-  let I := injectiveResolution X
-  let φ := InjectiveResolution.descOfQuasiIso (𝟙 X) I ι
-  have hφ : ι ≫ φ = I.ι := by simp [φ]
-  have := InjectiveResolution.quasiIso_map_of_comp_eq F P hinj hP hF ι hK I φ hφ
-  have hI := rightDerivedObjIsoOfResolution_hom_comp_homologyMap F P hinj hP hF ι hK 0 I φ hφ
-  have h₁ : F.toRightDerivedZero.app X ≫ (I.isoRightDerivedObj F 0).hom =
-      I.toRightDerivedZero' F ≫ (isoHomologyπ₀ _).hom := by
-    rw [I.toRightDerivedZero_eq F]
-    -- `isoRightDerivedObj` has source `(homologyFunctor _ _ 0).obj _`, the target of
-    -- `isoHomologyπ₀` only up to unfolding, so its cancellation is matched with `erw`
-    erw [Category.assoc, Category.assoc, Iso.inv_hom_id, Category.comp_id]
-  have h₂ : F.map (I.ι.f 0) = F.map (ι.f 0) ≫ F.map (φ.f 0) := by
-    rw [← F.map_comp, ← HomologicalComplex.comp_f, hφ]
-  -- after the comparison map to an injective resolution, both sides are the class of `F(I.ι)`;
-  -- the objects of these composites agree only after unfolding `homologyFunctor` and `single₀`,
-  -- so the reassociations are pasted as terms rather than rewritten
-  refine (cancel_mono (HomologicalComplex.homologyMap ((F.mapHomologicalComplex _).map φ) 0)).1 ?_
-  refine ((Category.assoc _ _ _).trans ((congrArg _ hI).trans h₁)).trans ?_
-  refine Eq.trans ?_ (Category.assoc _ _ _).symm
-  refine Eq.trans ?_ (congrArg (_ ≫ ·) (HomologicalComplex.homologyπ_naturality _ 0).symm)
-  refine Eq.trans ?_ (Category.assoc _ _ _)
-  refine Eq.trans ?_ (congrArg (· ≫ _) (HomologicalComplex.liftCycles_comp_cyclesMap ..).symm)
-  exact congrArg (· ≫ _) (by
-    rw [← cancel_mono (HomologicalComplex.iCycles _ _)]
-    simpa using h₂)
-
 /-- The computation by adapted resolutions is natural in a morphism of augmented resolutions.
 The map on the resolutions need not be a quasi-isomorphism. -/
 @[reassoc]
@@ -407,6 +359,36 @@ lemma rightDerivedObjIsoOfResolution_hom_naturality {Y : C} {L : CochainComplex 
       F P hinj hP hF ι hK n I a (by simp [a])]
   exact InjectiveResolution.isoRightDerivedObj_hom_naturality f I J c
     (InjectiveResolution.desc_commutes_zero f J I) F n
+
+/-- **Degree-zero normalization of the computation by adapted resolutions.** The canonical map
+`F(X) ⟶ R⁰F(X)` followed by `R⁰F(X) ≅ H⁰(F(K))` sends `F(X)` to the cohomology classes of its
+image in `F(K⁰)` under the augmentation `X ⟶ K⁰`. -/
+@[reassoc]
+lemma toRightDerivedZero_app_comp_rightDerivedObjIsoOfResolution_hom :
+    F.toRightDerivedZero.app X ≫ (F.rightDerivedObjIsoOfResolution P hinj hP hF ι hK 0).hom =
+      ((F.mapHomologicalComplex _).obj K).liftCycles (F.map (fromSingle₀Equiv K X ι).val) 1
+          (by simp) (F.map_fromSingle₀Equiv_val_comp_d ι) ≫
+        ((F.mapHomologicalComplex _).obj K).homologyπ 0 := by
+  let I := injectiveResolution X
+  let φ := InjectiveResolution.descOfQuasiIso (𝟙 X) I ι
+  have hφ : ι ≫ φ = I.ι := by simp [φ]
+  have := InjectiveResolution.quasiIso_map_of_comp_eq F P hinj hP hF ι hK I φ hφ
+  have : IsIso ((F.mapHomologicalComplex _ ⋙ HomologicalComplex.homologyFunctor _ _ 0).map φ) :=
+    inferInstanceAs (IsIso (HomologicalComplex.homologyMap ((F.mapHomologicalComplex _).map φ) 0))
+  -- after composing with the isomorphism `H⁰(F(φ))`, both sides are computed in `H⁰(F(I))`
+  rw [← cancel_mono ((F.mapHomologicalComplex _ ⋙ HomologicalComplex.homologyFunctor _ _ 0).map φ),
+    Category.assoc,
+    rightDerivedObjIsoOfResolution_hom_comp_homologyMap F P hinj hP hF ι hK 0 I φ hφ,
+    I.toRightDerivedZero_eq F]
+  have h₀ : ι.f 0 ≫ φ.f 0 = I.ι.f 0 := by rw [← HomologicalComplex.comp_f, hφ]
+  -- in the degree-zero cycles of `F(I)`, `F(I.ι)` is `F(ι)` followed by `F(φ)`
+  have hc : I.toRightDerivedZero' F =
+      ((F.mapHomologicalComplex _).obj K).liftCycles (F.map (fromSingle₀Equiv K X ι).val) 1
+          (by simp) (F.map_fromSingle₀Equiv_val_comp_d ι) ≫
+        cyclesMap ((F.mapHomologicalComplex _).map φ) 0 := by
+    rw [← cancel_mono (HomologicalComplex.iCycles _ _)]
+    simp [← F.map_comp, h₀]
+  simp [hc]
 
 /-- A functorial resolution by objects of a class adapted to `F` computes `RⁿF`, naturally in
 its argument. The components are the comparisons through arbitrary injective resolutions given

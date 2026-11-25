@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Asymptotics.Lemmas
 
 /-!
@@ -18,7 +19,9 @@ the `k`-th derivative of `y ↦ B (f y) (g y)` by a binomial sum over the deriva
 `g`. It holds at any point near which `f` and `g` are smooth enough, with no global regularity
 (`ContinuousLinearMap.norm_iteratedFDeriv_le_of_bilinear_of_contDiffAt`), and so gives
 asymptotic bounds along any filter on which `f` and `g` are eventually smooth
-(`ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear_of_contDiffAt`). When all derivatives
+(`ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear_of_contDiffAt`), for instance power
+bounds `‖y‖ ^ (ℓ - i)` and `‖y‖ ^ (m - i)`, whose orders add
+(`ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear_rpow`). When all derivatives
 of `f` of order at most `k` are bounded by `M₁` and those of `g` by `M₂`, the sum collapses to
 `‖B‖ * 2 ^ k * M₁ * M₂`
 (`ContinuousLinearMap.norm_iteratedFDeriv_le_of_bilinear_of_forall_le`). The constant
@@ -83,6 +86,32 @@ theorem ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear_of_contDiffAt
   filter_upwards [hf, hg] with y hfy hgy
   rw [one_mul, Real.norm_eq_abs]
   exact (B.norm_iteratedFDeriv_le_of_bilinear_of_contDiffAt hfy hgy hn).trans (le_abs_self _)
+
+open Asymptotics in
+/-- The exponents in the Leibniz rule for power bounds add up, along any filter: the product of
+the bounds `‖y‖ ^ (ℓ - i)` and `‖y‖ ^ (m - (n - i))` is at most `‖y‖ ^ (ℓ + m - n)`. -/
+private theorem isBigO_rpow_mul_rpow (l : Filter E) (ℓ m : ℝ) {n i : ℕ} (hi : i ≤ n) :
+    (fun y : E ↦ ‖y‖ ^ (ℓ - i) * ‖y‖ ^ (m - (n - i : ℕ))) =O[l] fun y ↦ ‖y‖ ^ (ℓ + m - n) := by
+  have he : ℓ - i + (m - (n - i : ℕ)) = ℓ + m - n := by
+    push_cast [Nat.cast_sub hi]
+    ring
+  refine IsBigO.of_bound 1 (Filter.Eventually.of_forall fun y ↦ ?_)
+  rw [one_mul, Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity), ← he]
+  exact Real.le_rpow_add (norm_nonneg y) _ _
+
+open Asymptotics in
+/-- **The Leibniz rule for power bounds.** Along a filter `l` on which `f` and `g` are eventually
+`C^N`, if for `i ≤ n ≤ N` the `i`-th derivatives of `f` and `g` are `O(‖y‖ ^ (ℓ - i))` and
+`O(‖y‖ ^ (m - i))`, then the `n`-th derivative of `y ↦ B (f y) (g y)` is
+`O(‖y‖ ^ (ℓ + m - n))`. -/
+theorem ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear_rpow
+    (B : X →L[𝕜] Y →L[𝕜] Z) {l : Filter E} {f : E → X} {g : E → Y} {N : ℕ∞ω}
+    (hf : ∀ᶠ y in l, ContDiffAt 𝕜 N f y) (hg : ∀ᶠ y in l, ContDiffAt 𝕜 N g y) {ℓ m : ℝ} {n : ℕ}
+    (hn : n ≤ N) (hfn : ∀ i ≤ n, iteratedFDeriv 𝕜 i f =O[l] fun y ↦ ‖y‖ ^ (ℓ - i))
+    (hgn : ∀ i ≤ n, iteratedFDeriv 𝕜 i g =O[l] fun y ↦ ‖y‖ ^ (m - i)) :
+    iteratedFDeriv 𝕜 n (fun y ↦ B (f y) (g y)) =O[l] fun y ↦ ‖y‖ ^ (ℓ + m - n) :=
+  B.isBigO_iteratedFDeriv_of_bilinear_of_contDiffAt (ρ₁ := fun i y ↦ ‖y‖ ^ (ℓ - i))
+    (ρ₂ := fun i y ↦ ‖y‖ ^ (m - i)) hf hg hn hfn hgn fun _ hi ↦ isBigO_rpow_mul_rpow l ℓ m hi
 
 /-- The Leibniz rule at a point of an open set, with all derivatives of order at most `k` of `f`
 and `g` bounded by constants. -/

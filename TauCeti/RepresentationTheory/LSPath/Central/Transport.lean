@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.LSPath.Distinguished
+public import TauCeti.RepresentationTheory.LSPath.Weight
 import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
@@ -45,9 +46,12 @@ the transport by `-χ` inverting the transport by `χ`.
 * `TauCeti.LSPath.toPLPath_centralTransport`: **for dominant `λ`, a realization `f` injective on
   `W λ`, and a realized orbit with no two distinct points on a common ray, the transported path is
   the central shift of the original path.**
-* `TauCeti.LSPath.endpoint_toPLPath_centralTransport` and
-  `TauCeti.LSPath.minHeight_toPLPath_centralTransport`: the endpoint moves by `χ` and the minimum
-  height of a form killing `χ` is unchanged.
+* `TauCeti.LSPath.endpoint_toPLPath_centralTransport`, `TauCeti.LSPath.weight_centralTransport`,
+  and `TauCeti.LSPath.minHeight_toPLPath_centralTransport`: the endpoint and lattice-valued weight
+  move by `χ` and the minimum height of a form killing `χ` is unchanged.
+* `TauCeti.LSPath.centralTransport_zero`, `TauCeti.LSPath.centralTransport_centralTransport`,
+  `TauCeti.LSPath.centralTransport_symm_apply`, and `TauCeti.LSPath.centralTransport_congr`:
+  encoding-level identity, composition, inverse, and shape congruence coherence laws.
 * `TauCeti.LSPath.toPLPath_centralTransport_centralTransport`,
   `TauCeti.LSPath.toPLPath_centralTransport_zero` and
   `TauCeti.LSPath.toPLPath_centralTransport_neg`: on realized paths the transports compose
@@ -186,10 +190,39 @@ theorem centralTransport_straight : centralTransport χ hχ (straight lam) = str
     · intro n h₁ h₂
       simp
 
-variable (𝕜 : Type*) {V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+/-- **Central transport by `0` is the identity** up to `add_zero` on shapes. -/
+theorem centralTransport_zero (h0 : ∀ i ∈ b.support, P.coroot' i (0 : M) = 0) :
+    centralTransport (0 : M) h0 π = congr (add_zero lam).symm π :=
+  ext' (by simp) (fun _ ↦ by simp) (fun _ ↦ by simp)
+
+/-- **Successive central transports compose additively** on encodings, up to `add_assoc`. -/
+theorem centralTransport_centralTransport {ψ : M}
+    (hψ : ∀ i ∈ b.support, P.coroot' i ψ = 0) :
+    centralTransport ψ hψ (centralTransport χ hχ π) =
+      congr (add_assoc lam χ ψ).symm
+        (centralTransport (χ + ψ) (fun i hi ↦ by rw [map_add, hχ i hi, hψ i hi, add_zero]) π) :=
+  ext' (by simp) (fun _ ↦ by simp) (fun _ ↦ by simp)
+
+/-- **The inverse of central transport by `χ` is central transport by `-χ`.** -/
+theorem centralTransport_symm_apply (π : LSPath P b (lam + χ)) :
+    (centralTransport χ hχ).symm π =
+      congr (add_neg_cancel_right lam χ)
+        (centralTransport (-χ) (fun i hi ↦ by rw [map_neg, hχ i hi, neg_zero]) π) :=
+  ext' (by simp) (fun _ ↦ by simp) (fun _ ↦ by simp)
+
+@[simp]
+theorem centralTransport_congr {lam' : M} (h : lam = lam') :
+    centralTransport χ hχ (congr h π) =
+      congr (congrArg (· + χ) h) (centralTransport χ hχ π) := by subst h; simp
+
+section Realization
+
+section PartialOrder
+
+variable (𝕜 : Type*) {V : Type*} [Field 𝕜] [PartialOrder 𝕜] [IsStrictOrderedRing 𝕜]
   [AddCommGroup V] [Module 𝕜 V] (f : M →+ V)
 
-omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
+omit [PartialOrder 𝕜] [IsStrictOrderedRing 𝕜] in
 /-- **The central transport adds `t ↦ t χ` to the presentation by directions and breaks**: the
 segment `(a_{j+1} - a_j) τ_j λ` becomes `(a_{j+1} - a_j) τ_j (λ + χ) = (a_{j+1} - a_j) (τ_j λ + χ)`.
 -/
@@ -216,6 +249,39 @@ theorem endpoint_toPLPath_centralTransport :
   rw [toPLPath_centralTransport_eq_ofSegments, PLPath.endpoint_ofSegments_shiftTimed,
     duration_timed, one_smul, toPLPath_def]
 
+/-- **Central transports compose additively** on realized paths: transporting by `χ` and then by
+`ψ` gives the same path as transporting by `χ + ψ`. -/
+@[simp]
+theorem toPLPath_centralTransport_centralTransport {ψ : M}
+    (hψ : ∀ i ∈ b.support, P.coroot' i ψ = 0) :
+    (centralTransport ψ hψ (centralTransport χ hχ π)).toPLPath 𝕜 f =
+      (centralTransport (χ + ψ) (fun i hi ↦ by rw [map_add, hχ i hi, hψ i hi, add_zero]) π).toPLPath
+        𝕜 f := by
+  simpa only [toPLPath_congr] using
+    congrArg (fun ρ ↦ ρ.toPLPath 𝕜 f) (centralTransport_centralTransport χ hχ π hψ)
+
+/-- The central transport by `0` does not change the realized path. -/
+@[simp]
+theorem toPLPath_centralTransport_zero :
+    (centralTransport (0 : M) (fun _ _ ↦ map_zero _) π).toPLPath 𝕜 f = π.toPLPath 𝕜 f := by
+  simpa only [toPLPath_congr] using
+    congrArg (fun ρ ↦ ρ.toPLPath 𝕜 f) (centralTransport_zero π (fun _ _ ↦ map_zero _))
+
+/-- **The inverse of a central transport.** On realized paths, the inverse of the central
+transport by `χ` is the central transport by `-χ`. -/
+theorem toPLPath_centralTransport_neg (π : LSPath P b (lam + χ)) :
+    (centralTransport (-χ) (fun i hi ↦ by rw [map_neg, hχ i hi, neg_zero]) π).toPLPath 𝕜 f =
+      ((centralTransport χ hχ).symm π).toPLPath 𝕜 f := by
+  simpa only [toPLPath_congr] using
+    congrArg (fun ρ ↦ ρ.toPLPath 𝕜 f) (centralTransport_symm_apply χ hχ π).symm
+
+end PartialOrder
+
+section LinearOrder
+
+variable (𝕜 : Type*) {V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+  [AddCommGroup V] [Module 𝕜 V] (f : M →+ V)
+
 /-- A linear form killing `χ` has the same minimum height on an LS path and on its central
 transport. This applies to the simple coroots, whose minimum heights govern the root operators. -/
 @[simp]
@@ -238,30 +304,24 @@ theorem toPLPath_centralTransport (hlam : lam ∈ dominantChamber P b)
   rw [toPLPath_centralTransport_eq_ofSegments, toPLPath_def,
     PLPath.shiftDistinguished_ofSegments (π.isDistinguished_timed 𝕜 f hlam hf) hS]
 
-/-- **Central transports compose additively** on realized paths: transporting by `χ` and then by
-`ψ` gives the same path as transporting by `χ + ψ`. -/
-@[simp]
-theorem toPLPath_centralTransport_centralTransport {ψ : M}
-    (hψ : ∀ i ∈ b.support, P.coroot' i ψ = 0) :
-    (centralTransport ψ hψ (centralTransport χ hχ π)).toPLPath 𝕜 f =
-      (centralTransport (χ + ψ) (fun i hi ↦ by rw [map_add, hχ i hi, hψ i hi, add_zero]) π).toPLPath
-        𝕜 f := by
-  simp [toPLPath_def, PLPath.shiftTimed_shiftTimed]
+end LinearOrder
 
-/-- The central transport by `0` does not change the realized path. -/
-@[simp]
-theorem toPLPath_centralTransport_zero :
-    (centralTransport (0 : M) (fun _ _ ↦ map_zero _) π).toPLPath 𝕜 f = π.toPLPath 𝕜 f := by
-  simp [toPLPath_def, PLPath.shiftTimed_zero]
+end Realization
 
-/-- **The inverse of a central transport.** On realized paths, the inverse of the central
-transport by `χ` is the central transport by `-χ`. -/
-theorem toPLPath_centralTransport_neg (π : LSPath P b (lam + χ)) :
-    (centralTransport (-χ) (fun i hi ↦ by rw [map_neg, hχ i hi, neg_zero]) π).toPLPath 𝕜 f =
-      ((centralTransport χ hχ).symm π).toPLPath 𝕜 f := by
-  conv_lhs => rw [← (centralTransport χ hχ).apply_symm_apply π]
-  rw [toPLPath_centralTransport_centralTransport]
-  simp [toPLPath_def, PLPath.shiftTimed_zero]
+open scoped TensorProduct in
+/-- The central transport moves the canonical rational endpoint of an LS path by `χ`. -/
+theorem endpoint_toRatPLPath_centralTransport :
+    (centralTransport χ hχ π).toRatPLPath.endpoint =
+      π.toRatPLPath.endpoint + TensorProduct.mk ℤ ℚ M 1 χ := by
+  rw [toRatPLPath_def, toRatPLPath_def, endpoint_toPLPath_centralTransport,
+    LinearMap.toAddMonoidHom_coe]
+
+/-- Central transport shifts the lattice-valued weight of an LS path by `χ`. -/
+@[simp]
+theorem weight_centralTransport :
+    (centralTransport χ hχ π).weight = π.weight + χ := by
+  refine (centralTransport χ hχ π).weight_eq_iff_endpoint_toRatPLPath.mpr ?_
+  rw [endpoint_toRatPLPath_centralTransport, π.endpoint_toRatPLPath, map_add]
 
 end LSPath
 
