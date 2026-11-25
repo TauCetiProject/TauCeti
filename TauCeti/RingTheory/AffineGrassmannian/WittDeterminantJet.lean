@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.RingTheory.Localization.Away.AdjoinRoot
+public import TauCeti.LinearAlgebra.Matrix.Determinant.Locus
 public import TauCeti.RingTheory.Perfect.Colimit
 public import TauCeti.RingTheory.WittVector.Truncated.Basic
 import Mathlib.RingTheory.WittVector.Domain
@@ -115,6 +116,7 @@ variable {p ι h}
 
 /-- Evaluation of a determinant-coordinate polynomial computes the corresponding Witt
 coordinate of the evaluated matrix's determinant. -/
+@[simp]
 theorem aeval_detCoeff [Algebra (ZMod p) R] (A : Matrix ι ι (TruncatedWittVector p h R))
     (k : Fin h) :
     aeval (fun v : ι × ι × Fin h ↦ (A v.1 v.2.1).coeff v.2.2) (detCoeff p h ι k) =
@@ -159,6 +161,12 @@ variable (hN : N < h)
 def coordinateMap :
     MvPolynomial (ι × ι × Fin h) (ZMod p) →ₐ[ZMod p] CoordinateRing p ι hN :=
   (Algebra.algHom (ZMod p) _ _).comp (Ideal.Quotient.mkₐ (ZMod p) (lowerIdeal p ι hN))
+
+/-- The coordinate map sends a polynomial to the localization of its quotient class. -/
+theorem coordinateMap_apply (x : MvPolynomial (ι × ι × Fin h) (ZMod p)) :
+    coordinateMap p ι hN x = algebraMap _ (CoordinateRing p ι hN)
+      (Ideal.Quotient.mk (lowerIdeal p ι hN) x) :=
+  (rfl)
 
 @[simp]
 theorem coordinateMap_detCoeff_eq_zero (k : Fin h) (hk : k.val < N) :
@@ -251,7 +259,7 @@ theorem hom_ext [Algebra (ZMod p) R] {f g : CoordinateRing p ι hN →ₐ[ZMod p
   apply Ideal.Quotient.algHom_ext
   apply MvPolynomial.algHom_ext
   rintro ⟨i, j, k⟩
-  simpa [coordinateMap, Algebra.algHom] using congrArg (fun A ↦ (A i j).coeff k) heq
+  simpa [coordinateMap_apply, Algebra.algHom] using congrArg (fun A ↦ (A i j).coeff k) heq
 
 /-- The finite-jet determinant locus is corepresented by its coordinate algebra. -/
 def homEquiv [Algebra (ZMod p) R] :
@@ -331,41 +339,32 @@ section CharP
 
 variable [CharP R p]
 
-private theorem isPoint_of_det_eq_truncate_mul_pow (hN : N < h)
-    {A : Matrix ι ι (TruncatedWittVector p h R)} {v : WittVector p R}
-    (hdet : A.det = WittVector.truncate h (v * (p : WittVector p R) ^ N))
-    (hv : IsUnit (v.coeff 0)) : IsPoint hN A := by
-  have hlead : (v * (p : WittVector p R) ^ N).coeff N = v.coeff 0 ^ p ^ N := by
-    simpa only [zero_add] using WittVector.mul_pow_charP_coeff_succ v (m := 0) (n := N)
-  rw [isPoint_iff_det_coeff, hdet]
-  simp only [WittVector.coeff_truncate, hlead,
-    isUnit_pow_iff (pow_ne_zero _ (Fact.out : p.Prime).ne_zero)]
-  exact ⟨fun _ hi ↦ WittVector.mul_pow_charP_coeff_zero v hi, hv⟩
-
-/-- A full Witt matrix with determinant a unit times `p ^ N` gives a point at every depth
-greater than `N`. -/
-theorem IsPoint.map_truncate_of_det_eq_unit_mul_pow {hN : N < h}
-    {A : Matrix ι ι (WittVector p R)} {u : (WittVector p R)ˣ}
-    (hdet : A.det = ↑u * (p : WittVector p R) ^ N) :
-    IsPoint hN (A.map (WittVector.truncate h)) := by
-  apply isPoint_of_det_eq_truncate_mul_pow hN (v := ↑u) ?_
-  · exact WittVector.isUnit_iff_isUnit_coeff_zero.mp u.isUnit
-  · rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, hdet]
-
-/-- A truncated Witt matrix with determinant a unit times `p ^ N` lies on the determinant
-locus. -/
-theorem IsPoint.of_det_eq_unit_mul_pow {hN : N < h}
-    {A : Matrix ι ι (TruncatedWittVector p h R)} {u : (TruncatedWittVector p h R)ˣ}
-    (hdet : A.det = ↑u * (p : TruncatedWittVector p h R) ^ N) :
-    IsPoint hN A := by
+/-- Membership in the matrix determinant locus implies the finite Witt determinant equations
+in characteristic `p`. -/
+theorem IsPoint.of_mem_detLocus {hN : N < h} {A : Matrix ι ι (TruncatedWittVector p h R)}
+    (hA : A ∈ Matrix.detLocus ι (p : TruncatedWittVector p h R) N) : IsPoint hN A := by
+  obtain ⟨u, hu⟩ := Matrix.mem_detLocus_iff_associated.mp hA
   let : NeZero h := ⟨(Nat.zero_lt_of_lt hN).ne'⟩
   let v := (u : TruncatedWittVector p h R).out
   have hv : WittVector.truncate h v = ↑u := TruncatedWittVector.truncateFun_out _
-  have hdet' : A.det = WittVector.truncate h (v * (p : WittVector p R) ^ N) := by
-    simpa only [map_mul, map_pow, hv, map_natCast] using hdet
-  apply isPoint_of_det_eq_truncate_mul_pow hN hdet'
-  rw [← TruncatedWittVector.constantCoeff_wittVector_truncate (n := h), hv]
-  exact u.isUnit.map TruncatedWittVector.constantCoeff
+  have hvUnit : IsUnit v := WittVector.isUnit_iff_isUnit_coeff_zero.mpr <| by
+    rw [← TruncatedWittVector.constantCoeff_wittVector_truncate (n := h), hv]
+    exact u.isUnit.map TruncatedWittVector.constantCoeff
+  have hdet : A.det = WittVector.truncate h ((p : WittVector p R) ^ N * v) := by
+    simpa only [map_mul, map_pow, hv, map_natCast] using hu.symm
+  have hcoeff := WittVector.coeff_eq_zero_and_isUnit_of_associated_p_pow
+    (associated_mul_unit_right ((p : WittVector p R) ^ N) v hvUnit)
+  rw [isPoint_iff_det_coeff, hdet]
+  simp only [WittVector.coeff_truncate]
+  exact ⟨fun _ hi ↦ hcoeff.1 _ hi, hcoeff.2⟩
+
+/-- Truncating a full Witt matrix in the matrix determinant locus gives a point at every
+depth greater than `N`. -/
+theorem IsPoint.map_truncate_of_mem_detLocus {hN : N < h} {A : Matrix ι ι (WittVector p R)}
+    (hA : A ∈ Matrix.detLocus ι (p : WittVector p R) N) :
+    IsPoint hN (A.map (WittVector.truncate h)) := by
+  apply IsPoint.of_mem_detLocus
+  simpa only [map_natCast] using Matrix.map_mem_detLocus (WittVector.truncate h) hA
 
 end CharP
 
@@ -375,45 +374,29 @@ variable [CharP R p] [PerfectRing R p]
 
 /-- A length-`h` jet of a full Witt matrix is on the determinant locus precisely when the
 determinant of the full matrix is `p ^ N` times a unit. -/
-theorem isPoint_map_truncate_iff_exists_unit_mul_pow (hN : N < h)
+theorem isPoint_map_truncate_iff_mem_detLocus (hN : N < h)
     (A : Matrix ι ι (WittVector p R)) :
     IsPoint hN (A.map (WittVector.truncate h)) ↔
-      ∃ u : (WittVector p R)ˣ, A.det = ↑u * (p : WittVector p R) ^ N := by
-  constructor
-  · intro hA
-    rw [isPoint_iff_det_coeff] at hA
-    simp only [← RingHom.mapMatrix_apply, ← RingHom.map_det, WittVector.coeff_truncate] at hA
-    obtain ⟨u, hu⟩ := WittVector.associated_p_pow_iff.mpr
-      ⟨fun j hj ↦ hA.1 ⟨j, hj.trans hN⟩ hj, hA.2⟩
-    exact ⟨u, by simpa [mul_comm] using hu.symm⟩
-  · rintro ⟨u, hu⟩
-    exact IsPoint.map_truncate_of_det_eq_unit_mul_pow (u := u) hu
+      A ∈ Matrix.detLocus ι (p : WittVector p R) N := by
+  rw [Matrix.mem_detLocus_iff_associated, WittVector.associated_p_pow_iff, isPoint_iff_det_coeff]
+  simp only [← RingHom.mapMatrix_apply, ← RingHom.map_det, WittVector.coeff_truncate]
+  exact and_congr_left' ⟨fun ha j hj ↦ ha ⟨j, hj.trans hN⟩ hj, fun ha i hi ↦ ha i hi⟩
 
 /-- Zero-padding each matrix entry gives a full lift of a determinant jet with determinant
 `p ^ N` times a unit. -/
-theorem exists_det_map_out_eq_unit_mul_pow {hN : N < h}
+theorem IsPoint.map_out_mem_detLocus {hN : N < h}
     {A : Matrix ι ι (TruncatedWittVector p h R)} (hA : IsPoint hN A) :
-    ∃ u : (WittVector p R)ˣ,
-      (A.map TruncatedWittVector.out).det = ↑u * (p : WittVector p R) ^ N := by
-  apply (isPoint_map_truncate_iff_exists_unit_mul_pow hN _).mp
+    A.map TruncatedWittVector.out ∈ Matrix.detLocus ι (p : WittVector p R) N := by
+  apply (isPoint_map_truncate_iff_mem_detLocus hN _).mp
   rwa [Matrix.map_wittVector_truncate_map_out]
 
 /-- On a perfect base the determinant equations are equivalent to a unit times `p ^ N`
 in the truncated Witt ring itself. -/
-theorem isPoint_iff_exists_unit_mul_pow (hN : N < h) (A : Matrix ι ι (TruncatedWittVector p h R)) :
-    IsPoint hN A ↔
-      ∃ u : (TruncatedWittVector p h R)ˣ, A.det = ↑u * (p : TruncatedWittVector p h R) ^ N := by
-  constructor
-  · intro hA
-    obtain ⟨u, hu⟩ := exists_det_map_out_eq_unit_mul_pow hA
-    let trunc : WittVector p R →+* TruncatedWittVector p h R := WittVector.truncate h
-    refine ⟨Units.map trunc u, ?_⟩
-    simpa only [RingHom.map_det, RingHom.mapMatrix_apply, trunc,
-      Matrix.map_wittVector_truncate_map_out, map_mul, map_pow, map_natCast,
-      Units.coe_map, MonoidHom.coe_ofClass] using
-      congrArg trunc hu
-  · rintro ⟨u, hu⟩
-    exact IsPoint.of_det_eq_unit_mul_pow (u := u) hu
+theorem isPoint_iff_mem_detLocus (hN : N < h) (A : Matrix ι ι (TruncatedWittVector p h R)) :
+    IsPoint hN A ↔ A ∈ Matrix.detLocus ι (p : TruncatedWittVector p h R) N := by
+  refine ⟨fun hA ↦ ?_, IsPoint.of_mem_detLocus⟩
+  simpa only [Matrix.map_wittVector_truncate_map_out, map_natCast] using
+    Matrix.map_mem_detLocus (WittVector.truncate h) hA.map_out_mem_detLocus
 
 end Perfect
 

@@ -157,24 +157,31 @@ theorem p_mem_jacobson : (p : 𝕎 R) ∈ Ring.jacobson (𝕎 R) :=
     rw [constantCoeff_apply] at h
     exact h ▸ isUnit_one
 
+/-- In characteristic `p`, a Witt vector associated to `p ^ n` has its first `n` coordinates
+zero and its `n`-th coordinate a unit. -/
+theorem coeff_eq_zero_and_isUnit_of_associated_p_pow {x : 𝕎 R} {n : ℕ}
+    (hx : Associated ((p : 𝕎 R) ^ n) x) : (∀ m < n, x.coeff m = 0) ∧ IsUnit (x.coeff n) := by
+  obtain ⟨u, rfl⟩ := hx
+  rw [mul_comm]
+  refine ⟨fun _ hm ↦ mul_pow_charP_coeff_zero _ hm, ?_⟩
+  have hcoeff : ((u : 𝕎 R) * (p : 𝕎 R) ^ n).coeff n = (u : 𝕎 R).coeff 0 ^ p ^ n := by
+    simpa only [zero_add] using mul_pow_charP_coeff_succ (u : 𝕎 R) (m := 0) (n := n)
+  rw [hcoeff]
+  exact (isUnit_iff_isUnit_coeff_zero.mp u.isUnit).pow _
+
 /-- Over a perfect ring of characteristic `p`, a Witt vector is `p ^ n` times a unit exactly when
 its first `n` Witt coordinates vanish and its `n`-th Witt coordinate is a unit. -/
 theorem associated_p_pow_iff [PerfectRing R p] {x : 𝕎 R} {n : ℕ} :
     Associated ((p : 𝕎 R) ^ n) x ↔ (∀ m < n, x.coeff m = 0) ∧ IsUnit (x.coeff n) := by
-  have hcoeff (y : 𝕎 R) : ((p : 𝕎 R) ^ n * y).coeff n = y.coeff 0 ^ p ^ n := by
-    simpa [mul_comm] using mul_pow_charP_coeff_succ (p := p) y (m := 0) (n := n)
-  constructor
-  · rintro ⟨u, rfl⟩
-    refine ⟨fun m hm ↦ ?_, ?_⟩
-    · rw [mul_comm, mul_pow_charP_coeff_zero _ hm]
-    · rw [hcoeff]
-      exact (isUnit_iff_isUnit_coeff_zero.mp u.isUnit).pow _
-  · rintro ⟨h0, hn⟩
-    obtain ⟨y, rfl⟩ := Ideal.mem_span_singleton.mp
-      ((mem_span_p_pow_iff_le_coeff_eq_zero x n).mpr h0)
-    rw [hcoeff, isUnit_pow_iff (pow_ne_zero _ hp.out.ne_zero), ← isUnit_iff_isUnit_coeff_zero]
-      at hn
-    exact associated_mul_unit_right ((p : 𝕎 R) ^ n) y hn
+  refine ⟨coeff_eq_zero_and_isUnit_of_associated_p_pow, ?_⟩
+  rintro ⟨h0, hn⟩
+  obtain ⟨y, rfl⟩ := Ideal.mem_span_singleton.mp
+    ((mem_span_p_pow_iff_le_coeff_eq_zero x n).mpr h0)
+  have hcoeff : ((p : 𝕎 R) ^ n * y).coeff n = y.coeff 0 ^ p ^ n := by
+    simpa only [mul_comm ((p : 𝕎 R) ^ n), zero_add] using
+      mul_pow_charP_coeff_succ y (m := 0) (n := n)
+  rw [hcoeff, isUnit_pow_iff (pow_ne_zero _ hp.out.ne_zero), ← isUnit_iff_isUnit_coeff_zero] at hn
+  exact associated_mul_unit_right ((p : 𝕎 R) ^ n) y hn
 
 end CharP
 
