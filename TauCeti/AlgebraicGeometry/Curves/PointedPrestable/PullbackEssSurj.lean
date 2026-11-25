@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Curves.PointedPrestable.Category
+public import TauCeti.AlgebraicGeometry.Curves.PointedPrestable.PullbackIso
 
 /-!
 # Base change of pointed prestable families along an isomorphism is essentially surjective
@@ -14,17 +14,23 @@ For an isomorphism of bases `g : T ⟶ S`, every pointed prestable family `Q` ov
 to the base change along `g` of its base change along `g⁻¹`. The isomorphism is the composite of
 the canonical isomorphism `pullbackCompIso` to the base change along `g ≫ g⁻¹ = 𝟙 T` with
 `pullbackIdIso`. So base change along an isomorphism is essentially surjective; together with
-full faithfulness it is an equivalence of categories.
+full faithfulness (`TauCeti.AlgebraicGeometry.PointedPrestableFamily.full_pullbackFunctor` and
+`TauCeti.AlgebraicGeometry.PointedPrestableFamily.faithful_pullbackFunctor`) it is an equivalence
+of categories.
 
 ## Main definitions
 
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.pullbackInvIso`:
   `(Q.pullback g⁻¹).pullback g ≅ Q` for an isomorphism `g`.
+* `TauCeti.AlgebraicGeometry.PointedPrestableFamily.pullbackEquivalence`: base change along an
+  isomorphism `g`, as an equivalence of categories.
 
 ## Main results
 
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.essSurj_pullbackFunctor`: base change along an
   isomorphism of bases is essentially surjective on pointed prestable families.
+* `TauCeti.AlgebraicGeometry.PointedPrestableFamily.isEquivalence_pullbackFunctor`: base change
+  along an isomorphism of bases is an equivalence of categories.
 -/
 
 public section
@@ -81,6 +87,20 @@ theorem pullbackInvIso_inv_hom :
 families. -/
 instance essSurj_pullbackFunctor : (pullbackFunctor (n := n) g).EssSurj where
   mem_essImage Q := ⟨Q.pullback (inv g), ⟨pullbackInvIso g Q⟩⟩
+
+/-- **Base change along an isomorphism of bases is an equivalence of categories** of pointed
+prestable families: it is full, faithful and essentially surjective. -/
+instance isEquivalence_pullbackFunctor : (pullbackFunctor (n := n) g).IsEquivalence where
+
+/-- Base change along an isomorphism of bases `g : T ⟶ S`, as an equivalence between pointed
+prestable families over `S` and over `T`. -/
+def pullbackEquivalence : PointedPrestableFamily S n ≌ PointedPrestableFamily T n :=
+  (pullbackFunctor g).asEquivalence
+
+@[simp]
+theorem pullbackEquivalence_functor :
+    (pullbackEquivalence (n := n) g).functor = pullbackFunctor g :=
+  (rfl)
 
 end PointedPrestableFamily
 

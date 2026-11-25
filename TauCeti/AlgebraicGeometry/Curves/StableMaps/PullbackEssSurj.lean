@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.PointedPrestable.PullbackEssSurj
-public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Category
+public import TauCeti.AlgebraicGeometry.Curves.StableMaps.PullbackIso
 
 /-!
 # Base change of prestable maps along an isomorphism is essentially surjective
@@ -16,7 +16,10 @@ For an isomorphism of bases `g : T ⟶ S`, every prestable map `G` to the base-c
 `G` along `g⁻¹`, postcomposed with the canonical projection `(V ×_S T) ×_T S ⟶ V`. On source
 curves the isomorphism is `TauCeti.AlgebraicGeometry.PointedPrestableFamily.pullbackInvIso`, which
 commutes with the maps to `V ×_S T`. So base change along an isomorphism is essentially
-surjective; together with full faithfulness it is an equivalence of categories.
+surjective; together with full faithfulness
+(`TauCeti.AlgebraicGeometry.PrestableMap.full_pullbackFunctor` and
+`TauCeti.AlgebraicGeometry.PrestableMap.faithful_pullbackFunctor`) it is an equivalence of
+categories, and it identifies the automorphism groups of a prestable map and of its base change.
 
 ## Main definitions
 
@@ -24,11 +27,17 @@ surjective; together with full faithfulness it is an equivalence of categories.
   prestable map to `V ×_S T ⟶ T`.
 * `TauCeti.AlgebraicGeometry.PrestableMap.pullbackInvIso`: its base change along `g` is
   isomorphic to the original map.
+* `TauCeti.AlgebraicGeometry.PrestableMap.pullbackEquivalence`: base change along an isomorphism
+  `g`, as an equivalence of categories.
+* `TauCeti.AlgebraicGeometry.PrestableMap.pullbackAutMulEquiv`: the automorphisms of a prestable
+  map are those of its base change along an isomorphism.
 
 ## Main results
 
 * `TauCeti.AlgebraicGeometry.PrestableMap.essSurj_pullbackFunctor`: base change along an
   isomorphism of bases is essentially surjective on prestable maps.
+* `TauCeti.AlgebraicGeometry.PrestableMap.isEquivalence_pullbackFunctor`: base change along an
+  isomorphism of bases is an equivalence of categories.
 -/
 
 public section
@@ -95,6 +104,51 @@ theorem pullbackInvIso_inv_curve :
 /-- **Base change along an isomorphism of bases is essentially surjective** on prestable maps. -/
 instance essSurj_pullbackFunctor : (pullbackFunctor (q := q) (n := n) g).EssSurj where
   mem_essImage G := ⟨pullbackInv g G, ⟨pullbackInvIso g G⟩⟩
+
+/-- **Base change along an isomorphism of bases is an equivalence of categories** of prestable
+maps: it is full, faithful and essentially surjective. -/
+instance isEquivalence_pullbackFunctor : (pullbackFunctor (q := q) (n := n) g).IsEquivalence where
+
+/-- Base change along an isomorphism of bases `g : T ⟶ S`, as an equivalence between prestable
+maps to `q : V ⟶ S` and prestable maps to the base-changed target `V ×_S T ⟶ T`. -/
+def pullbackEquivalence : PrestableMap q n ≌ PrestableMap (Limits.pullback.snd q g) n :=
+  (pullbackFunctor g).asEquivalence
+
+@[simp]
+theorem pullbackEquivalence_functor :
+    (pullbackEquivalence (q := q) (n := n) g).functor = pullbackFunctor g :=
+  (rfl)
+
+/-- For an isomorphism of bases `g`, base change identifies the automorphisms of a prestable map
+`F` with those of `F.pullback g`: the homomorphism `pullbackAut F g` is bijective, with inverse
+given by full faithfulness of base change. -/
+def pullbackAutMulEquiv (F : PrestableMap q n) : Aut F ≃* Aut (F.pullback g) where
+  toFun := F.pullbackAut g
+  invFun e := .of ((pullbackFunctor (q := q) (n := n) g).preimageIso e.asIso)
+  left_inv e := Aut.ext (Iso.ext (by
+    change (pullbackFunctor g).preimage (F.pullbackAut g e).asIso.hom = _
+    rw [pullbackAut_apply_asIso_hom, ← pullbackFunctor_map, Functor.preimage_map]))
+  right_inv e := Aut.ext (Iso.ext (by
+    rw [pullbackAut_apply_asIso_hom]
+    change (pullbackFunctor g).map ((pullbackFunctor g).preimage e.asIso.hom) = _
+    exact Functor.map_preimage _ _))
+  map_mul' := map_mul _
+
+@[simp]
+theorem pullbackAutMulEquiv_apply (F : PrestableMap q n) (e : Aut F) :
+    F.pullbackAutMulEquiv g e = F.pullbackAut g e :=
+  (rfl)
+
+@[simp]
+theorem coe_pullbackAutMulEquiv (F : PrestableMap q n) :
+    (F.pullbackAutMulEquiv g : Aut F →* Aut (F.pullback g)) = F.pullbackAut g :=
+  (rfl)
+
+/-- The inverse of `pullbackAutMulEquiv` is the preimage under base change. -/
+theorem pullbackAutMulEquiv_symm_apply_asIso (F : PrestableMap q n) (e : Aut (F.pullback g)) :
+    ((F.pullbackAutMulEquiv g).symm e).asIso =
+      (pullbackFunctor (q := q) (n := n) g).preimageIso e.asIso :=
+  (rfl)
 
 end PrestableMap
 
