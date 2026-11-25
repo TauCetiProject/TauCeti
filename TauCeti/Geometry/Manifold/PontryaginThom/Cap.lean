@@ -150,11 +150,19 @@ theorem preimage_tubeMap_range (h : IsFramedTube f τ) :
 /-- **The framed tube as a map of pairs**: the tube with its factors exchanged,
 `(v, x) ↦ τ (x, v)`, carries the Thom pair `(V × S, (V ∖ 0) × S)` of the product bundle into the
 complement of the core, `(M, M ∖ f(S))`. -/
-@[expose] def tubePairMap (h : IsFramedTube f τ) :
+def tubePairMap (h : IsFramedTube f τ) :
     TopPair.ofSubset (fst (TopCat.of V) (TopCat.of S) ⁻¹' {(0 : V)}ᶜ) ⟶
       TopPair.ofSubset (X := TopCat.of M) (range f)ᶜ :=
   TopPair.ofSubsetMap (TopCat.ofHom h.tubeMap) fun _ hp hpf ↦
     hp ((h.preimage_tubeMap_range).subset hpf)
+
+/-- The tube as a map of pairs is the map of pairs induced by the tube with its factors
+exchanged. -/
+theorem tubePairMap_def (h : IsFramedTube f τ) :
+    h.tubePairMap = TopPair.ofSubsetMap (B := fst (TopCat.of V) (TopCat.of S) ⁻¹' {(0 : V)}ᶜ)
+      (B' := (range f)ᶜ) (TopCat.ofHom h.tubeMap) fun _ hp hpf ↦
+        hp ((h.preimage_tubeMap_range).subset hpf) :=
+  (rfl)
 
 /-- The tube as a map of pairs is the tube with its factors exchanged on the ambient spaces. -/
 @[simp]

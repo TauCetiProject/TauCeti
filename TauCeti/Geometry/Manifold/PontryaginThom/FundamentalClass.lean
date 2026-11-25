@@ -195,6 +195,7 @@ theorem span_singularHomologyToLocalHomology_eq_top_iff [T1Space M] (h : IsFrame
   have hmap : h.tubePairMap ≫ TopPair.ofSubsetMap (𝟙 (TopCat.of M))
       (compl_subset_compl.2 (singleton_subset_iff.2 (mem_range_self s))) =
       TopPair.ofSubsetMap (𝟙 _) (fun _ hz ↦ Or.inl hz) ≫ tubeLocalPairMap h s := by
+    rw [h.tubePairMap_def]
     exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _
       ((Category.comp_id _).trans (Category.id_comp _).symm)
   have hcross := TopCat.singularHomologyCrossRel_comp_singularHomologyMap (TopCat.of V)
