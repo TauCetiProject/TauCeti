@@ -24,8 +24,9 @@ on `H^q(W, M)` (`TauCeti.AlgebraicGeometry.Cohomology.Module.Basic`), so `H^q_Z(
 `Γ(X, 𝒪_X)`-module (`Scheme.Modules.cohomologyWithSupportModule`). In degree zero and for
 `W = ⊤` it is the module of global sections supported in `Z`
 (`Scheme.Modules.cohomologyWithSupportZeroLinearEquiv`); it vanishes when `W` does not meet `Z`
-(`Scheme.Modules.subsingleton_cohomologyWithSupport_of_le_compl`), in particular for `Z = ∅`. The
-long exact sequence of supports
+(`Scheme.Modules.subsingleton_cohomologyWithSupport_of_le_compl`), in particular for `Z = ∅`, and
+for `Z = X` it is `H^q(W, M)` (`Scheme.Modules.cohomologyWithSupportTopLinearEquiv`). The long exact
+sequence of supports
 
 `⋯ ⟶ H^q_Z(W, M) ⟶ H^q(W, M) ⟶ H^q(W ∖ Z, M) ⟶ H^{q+1}_Z(W, M) ⟶ ⋯`
 
@@ -40,6 +41,7 @@ is an exact sequence of `Γ(X, 𝒪_X)`-modules (Stacks, Tag 0G6Y), with the coh
 * `Scheme.Modules.cohomologyWithSupportZeroLinearEquiv`: `H⁰_Z(X, M) ≃ₗ Γ_Z(X, M)`.
 * `Scheme.Modules.subsingleton_cohomologyWithSupport_of_le_compl`: `H^q_Z(W, M) = 0` when
   `W ∩ Z = ∅`.
+* `Scheme.Modules.cohomologyWithSupportTopLinearEquiv`: `H^q_X(W, M) ≃ₗ H^q(W, M)`.
 * `Scheme.Modules.cohomologyWithSupportToCohomologyOn`, `Scheme.Modules.cohomologyWithSupportδ`:
   the linear maps of the long exact sequence of supports, whose exactness is
   `Scheme.Modules.exact_cohomologyWithSupportToCohomologyOn_cohomologyOnResLinear`,
@@ -191,6 +193,22 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyWithSupportToCohomologyO
     (x : M.cohomologyWithSupport Z W q) :
     M.cohomologyWithSupportToCohomologyOn Z W q x =
       Sheaf.relativeH'.toH' ((toSheaf X).obj M) (Z.complInclusion W) q x :=
+  (rfl)
+
+/-- Cohomology with supports in all of `X` is cohomology: the map `H^q_X(W, M) ⟶ H^q(W, M)` of the
+long exact sequence of supports is a linear equivalence over global functions. -/
+def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyWithSupportTopLinearEquiv (q : ℕ) :
+    M.cohomologyWithSupport ⊤ W q ≃ₗ[Γ(X, ⊤)] cohomologyOn M q W :=
+  LinearEquiv.ofBijective (M.cohomologyWithSupportToCohomologyOn ⊤ W q)
+    (Sheaf.relativeH'.bijective_toH'_of_isZero _ _
+      (TauCeti.CategoryTheory.isZero_freeYonedaSheaf_of_bot_mem _
+        fun x hx ↦ (hx.2 (Set.mem_univ x)).elim) q)
+
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyWithSupportTopLinearEquiv_apply (q : ℕ)
+    (x : M.cohomologyWithSupport ⊤ W q) :
+    M.cohomologyWithSupportTopLinearEquiv W q x =
+      M.cohomologyWithSupportToCohomologyOn ⊤ W q x :=
   (rfl)
 
 /-- The connecting map `H^q(W ∖ Z, M) ⟶ H^{q+1}_Z(W, M)` of the long exact sequence of supports,

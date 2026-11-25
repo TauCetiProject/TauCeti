@@ -76,6 +76,8 @@ supported in `S` glues with zero on `W ∖ S` to a unique section over `W` suppo
   `H_Sⁿ(-, F₃) ⟶ H_Sⁿ⁺¹(-, F₁)` of presheaves attached to a short exact sequence
   `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0`, an isomorphism in positive degrees when `F₂` is flasque
   (`CategoryTheory.Sheaf.isIso_supportedHPresheafδ_succ`);
+* `CategoryTheory.Sheaf.supportedHTopEquiv`: cohomology with supports in all of `X` is cohomology,
+  `H_Xⁿ(W, F) ≃+ Hⁿ(W, F)`;
 * `CategoryTheory.Sheaf.existsUnique_mem_supportedSections_map_eq`: excision for sections
   supported in `S`;
 * `TopologicalSpace.Closeds.isIso_relativeFreeYonedaSheafMap_complInclusion`: excision for the
@@ -238,6 +240,18 @@ theorem subsingleton_supportedH_of_le_compl (S : Closeds X) {W : Opens X} (hW : 
   haveI : IsIso (S.complInclusion W) :=
     ⟨homOfLE (le_inf le_rfl hW), Subsingleton.elim _ _, Subsingleton.elim _ _⟩
   relativeH'.subsingleton_of_isIso F _ n
+
+/-- Cohomology with supports in all of `X` is cohomology: the map `H_Xⁿ(W, F) ⟶ Hⁿ(W, F)` of the
+support sequence is bijective, since its third term is the cohomology of the empty open. -/
+noncomputable def supportedHTopEquiv (W : Opens X) (n : ℕ) : F.supportedH ⊤ W n ≃+ F.H' n W :=
+  relativeH'.toH'AddEquiv F _
+    (TauCeti.CategoryTheory.isZero_freeYonedaSheaf_of_bot_mem _
+      fun x hx ↦ (hx.2 (Set.mem_univ x)).elim) n
+
+@[simp]
+lemma supportedHTopEquiv_apply (W : Opens X) {n : ℕ} (x : F.supportedH ⊤ W n) :
+    F.supportedHTopEquiv W n x = relativeH'.toH' F ((⊤ : Closeds X).complInclusion W) n x :=
+  relativeH'.toH'AddEquiv_apply _ _ _ x
 
 /-- Excision for sections with supports: if `W' ≤ W` and `S ∩ W ⊆ W'` (that is,
 `W ≤ W' ⊔ (X ∖ S)`), then every section over `W'` supported in `S` is the restriction of a unique
