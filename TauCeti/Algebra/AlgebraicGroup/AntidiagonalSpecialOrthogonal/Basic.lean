@@ -128,16 +128,18 @@ theorem formMatrix_mul_self : formMatrix T l * formMatrix T l = 1 := by
     permMatrix_one]
 
 /-- Right multiplication by `J_l` reverses the columns. -/
+@[simp]
 theorem mul_formMatrix_apply {m : Type*} (M : Matrix m (Fin l) T) (i : m) (j : Fin l) :
     (M * formMatrix T l) i j = M i (Fin.rev j) := by
-  rw [formMatrix, Equiv.Perm.permMatrix, PEquiv.mul_toMatrix_toPEquiv, Fin.revPerm_symm]
-  rfl
+  rw [formMatrix, Equiv.Perm.permMatrix, PEquiv.mul_toMatrix_toPEquiv, Fin.revPerm_symm,
+    submatrix_apply, id, Fin.revPerm_apply]
 
 /-- Left multiplication by `J_l` reverses the rows. -/
+@[simp]
 theorem formMatrix_mul_apply {n : Type*} (M : Matrix (Fin l) n T) (i : Fin l) (j : n) :
     (formMatrix T l * M) i j = M (Fin.rev i) j := by
-  rw [formMatrix, Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul]
-  rfl
+  rw [formMatrix, Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul, submatrix_apply, id,
+    Fin.revPerm_apply]
 
 /-- Framing `J_l` by a diagonal matrix: `diag(d) J_l diag(d)ᵀ` has the entry `d i d (l - 1 - i)` at
 `(i, l - 1 - i)` and `0` elsewhere. -/
@@ -164,6 +166,10 @@ theorem diagonal_mul_formMatrix_mul_transpose_diagonal_eq_iff (d : Fin l → T) 
     rw [diagonal_mul_formMatrix_mul_transpose_diagonal, formMatrix_apply, h]
 
 end FormMatrixRing
+
+/-- The determinant of `J_l` is a unit, as `J_l² = 1`. -/
+theorem isUnit_det_formMatrix {T : Type*} [CommRing T] {l : ℕ} : IsUnit (formMatrix T l).det :=
+  isUnit_det_of_left_inverse formMatrix_mul_self
 
 /-! ### The point groups -/
 

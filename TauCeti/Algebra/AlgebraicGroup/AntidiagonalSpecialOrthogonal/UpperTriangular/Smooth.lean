@@ -90,8 +90,7 @@ private theorem exists_correction [Invertible (2 : S)] {I : Ideal S} (hI : I ^ 2
       g * formMatrix S l * gᵀ = formMatrix S l ∧
       g.map (Ideal.Quotient.mk I) = g₀.map (Ideal.Quotient.mk I) := by
   obtain ⟨hX, hZ⟩ := mul_one_add_mem_isometryMatrices_of_sq_eq_bot hI (transpose_formMatrix S l)
-    (isUnit_iff_exists_inv.mpr ⟨_, by rw [← det_mul, formMatrix_mul_self, det_one]⟩)
-    (by rwa [transpose_transpose])
+    isUnit_det_formMatrix (by rwa [transpose_transpose])
   rw [transpose_transpose, inv_eq_left_inv formMatrix_mul_self] at hX hZ
   set Z : Matrix (Fin l) (Fin l) S :=
     (⅟2 : S) • (formMatrix S l * (formMatrix S l - g₀ * formMatrix S l * g₀ᵀ)) with hZ_def
@@ -149,9 +148,7 @@ theorem map_quotient_mk_surjective_of_sq_eq_bot [Invertible (2 : S)] (I : Ideal 
   have hdet_sq : g₁.det ^ 2 = 1 := by
     have h := congrArg Matrix.det hg₁J
     rw [det_mul, det_mul, det_transpose] at h
-    have hJJ : (formMatrix S l).det * (formMatrix S l).det = 1 := by
-      rw [← det_mul, formMatrix_mul_self, det_one]
-    apply (isUnit_iff_exists_inv.mpr ⟨_, hJJ⟩).mul_left_cancel
+    apply isUnit_det_formMatrix.mul_left_cancel
     linear_combination h
   have hdet₁ : g₁.det = 1 := by
     refine Ideal.eq_one_of_sq_eq_one_of_sub_one_mem hI (isUnit_of_invertible 2) ?_ hdet_sq
@@ -202,20 +199,14 @@ instance instSmoothCoordinateHopfAlgebra [Invertible (2 : R)] :
     Algebra.Smooth R (coordinateHopfAlgebra R l) := by
   have hfg : (definingHopfIdeal R l).toIdeal.FG := by
     rw [definingHopfIdeal_def, HopfIdeal.sup_toIdeal,
-      AntidiagonalSpecialOrthogonal.definingHopfIdeal_toIdeal,
-      GeneralLinear.UpperTriangular.definingHopfIdeal_toIdeal]
-    refine (Submodule.FG.sup (Submodule.FG.sup ?_ (Submodule.fg_span_singleton _)) ?_)
-    · refine Submodule.fg_span ((Set.finite_range fun ij : Fin l × Fin l ↦
-        ConstantForm.relationMatrix R l (formMatrix R l) ij.1 ij.2).subset fun x hx ↦ ?_)
-      obtain ⟨i, j, hij⟩ :=
-        (ConstantForm.mem_relationSet_iff (R := R) (n := l) (C := formMatrix R l)).mp hx
-      exact ⟨(i, j), hij⟩
-    · refine Submodule.fg_span ((Set.finite_range fun p : Fin l × Fin l ↦
-        GeneralLinear.coordinateHopfAlgebraAlgEquiv R l
-          (GeneralLinear.coordinateRingMap R l (MvPolynomial.X p))).subset fun x hx ↦ ?_)
-      obtain ⟨i, j, -, rfl⟩ :=
-        (GeneralLinear.UpperTriangular.mem_definingRelationSet_iff R l x).mp hx
-      exact ⟨(i, j), rfl⟩
+      AntidiagonalSpecialOrthogonal.definingHopfIdeal_toIdeal]
+    refine (Submodule.FG.sup (Submodule.FG.sup ?_ (Submodule.fg_span_singleton _))
+      (GeneralLinear.weightParabolicDefiningHopfIdeal_toIdeal_fg R _))
+    refine Submodule.fg_span ((Set.finite_range fun ij : Fin l × Fin l ↦
+      ConstantForm.relationMatrix R l (formMatrix R l) ij.1 ij.2).subset fun x hx ↦ ?_)
+    obtain ⟨i, j, hij⟩ :=
+      (ConstantForm.mem_relationSet_iff (R := R) (n := l) (C := formMatrix R l)).mp hx
+    exact ⟨(i, j), hij⟩
   let _ : Algebra.FinitePresentation R (coordinateHopfAlgebra R l) :=
     Algebra.FinitePresentation.quotient hfg
   exact ⟨inferInstance, inferInstance⟩
