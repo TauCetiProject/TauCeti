@@ -724,32 +724,26 @@ theorem isThomClass_thomClassOfSubsingletonUnits :
     IsThomClass F E (thomClassOfSubsingletonUnits F E K) :=
   (existsUnique_isThomClass_of_subsingleton_units (F := F) (E := E) K).exists.choose_spec
 
-/-- When `Kˣ` is a subsingleton, every Thom class of `E` equals `thomClassOfSubsingletonUnits`. -/
-theorem eq_thomClassOfSubsingletonUnits_of_isThomClass
-    {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
-    (hu : IsThomClass F E u) :
-    u = thomClassOfSubsingletonUnits F E K :=
-  (existsUnique_isThomClass_of_subsingleton_units (F := F) (E := E) K).unique hu
-    (isThomClass_thomClassOfSubsingletonUnits F E K)
-
 /-- **Uniqueness characterization of `thomClassOfSubsingletonUnits`**: when `Kˣ` is a subsingleton,
 a class in `Hʳ(E, E₀; K)` equals `thomClassOfSubsingletonUnits F E K` if and only if it is a Thom
 class of `E`. -/
 theorem eq_thomClassOfSubsingletonUnits_iff
     (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)) :
     u = thomClassOfSubsingletonUnits F E K ↔ IsThomClass F E u :=
-  ⟨fun h ↦ h ▸ isThomClass_thomClassOfSubsingletonUnits F E K,
-    eq_thomClassOfSubsingletonUnits_of_isThomClass F E K⟩
+  ⟨fun h ↦ h ▸ isThomClass_thomClassOfSubsingletonUnits F E K, fun hu ↦
+    (existsUnique_isThomClass_of_subsingleton_units (F := F) (E := E) K).unique hu
+      (isThomClass_thomClassOfSubsingletonUnits F E K)⟩
 
 /-- **Naturality of `thomClassOfSubsingletonUnits` under bundle pullback**: pulling back
 `thomClassOfSubsingletonUnits F E K` along `f : C(B', B)` gives the canonical Thom class of the
 pullback bundle `f^* E`. -/
+@[simp]
 theorem singularCohomologyMap_pullbackThomPairMap_thomClassOfSubsingletonUnits
     {B' : Type w} [TopologicalSpace B'] (f : C(B', B)) :
     TopPair.singularCohomologyMap (pullbackThomPairMap F E f) (finrank ℝ F)
         (thomClassOfSubsingletonUnits F E K) =
       thomClassOfSubsingletonUnits F ((⇑f) *ᵖ E) K :=
-  eq_thomClassOfSubsingletonUnits_of_isThomClass F ((⇑f) *ᵖ E) K
+  (eq_thomClassOfSubsingletonUnits_iff F ((⇑f) *ᵖ E) K _).2
     ((isThomClass_thomClassOfSubsingletonUnits F E K).pullback f)
 
 end SubsingletonUnits

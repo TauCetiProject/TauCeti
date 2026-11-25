@@ -61,7 +61,7 @@ isomorphism in cohomology over an arbitrary base over a field:
    cohomology with all coefficient modules gives the Thom isomorphism in integral homology.
 4. **Global Thom isomorphism in homology**: over a finite union of trivializing open sets the Thom
    map is bijective for every coefficient module
-   (`TauCeti.bijective_pullbackCupRestrict_thomPair_biUnion`), in particular for every injective
+   (`TauCeti.bijective_thomMapOver_biUnion`), in particular for every injective
    one, so the homology Thom map with coefficients `A = K` is an isomorphism there
    (`TopPair.isIso_pushforwardCap_of_bijective_pullbackCup`). The filtered
    colimit of singular homology over finite trivializing unions
@@ -377,8 +377,8 @@ private theorem isIso_homologyThomMapOver_finiteTrivializingUnion {p m : ℕ}
   obtain ⟨_, hu⟩ := isThomClass_iff.1 hu
   -- Over a finite trivializing union the Thom map is bijective for every coefficient module.
   refine TopPair.isIso_pushforwardCap_of_bijective_pullbackCup _ _ h _ fun M _ ↦ ?_
-  rw [← bijective_pullbackCupRestrict_thomPairProj_iff]
-  exact bijective_pullbackCupRestrict_thomPair_biUnion M s
+  rw [← thomMapOver_apply]
+  exact bijective_thomMapOver_biUnion M s
     (fun b _ ↦ ⟨trivializationAt F E b, inferInstance, subset_rfl⟩) p m (by omega) fun b _ ↦ hu b
 
 private def homologyThomMapOverNatIso {p m : ℕ} (h : finrank ℝ F + p = m)
