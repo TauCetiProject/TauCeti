@@ -154,6 +154,7 @@ theorem polar_freeBaseChange_tmul (Q : QuadraticForm R M) (a a' : A) (m m' : M) 
     LinearMap.BilinForm.baseChange_tmul, mul_comm a' a, add_smul]
 
 /-- The polar form of the base change of `Q` is the base change of the polar form of `Q`. -/
+@[simp]
 theorem polarBilin_freeBaseChange (Q : QuadraticForm R M) :
     (Q.freeBaseChange A).polarBilin = LinearMap.BilinForm.baseChange A Q.polarBilin := by
   ext m m'

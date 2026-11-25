@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.SymplecticGroup
 public import Mathlib.RingTheory.Trace.Defs
 public import TauCeti.LinearAlgebra.QuadraticForm.FreeBaseChange
 
+import TauCeti.LinearAlgebra.Trace.RestrictScalars
+
 /-!
 # Scalar extension of the symplectic-basis Arf sum
 
@@ -25,7 +27,7 @@ This file computes the effect on that coordinate of the scalar extension
 
 * the extended basis `b.baseChange l` is again a symplectic basis for the polar form of
   `Q.freeBaseChange l` (`QuadraticForm.toMatrix_polarBilin_freeBaseChange_eq_J`);
-* when `l` is finite free over `k` and `k` is finite free over a base ring `F`, the trace to `F`
+* when `l` is free over `k` and `k` is free over a base ring `F`, the trace to `F`
   of the extended sum is `Module.finrank k l` times the trace to `F` of the original sum
   (`QuadraticForm.trace_sum_mul_freeBaseChange_eq_finrank_smul`).
 
@@ -59,8 +61,8 @@ theorem toMatrix_polarBilin_freeBaseChange_eq_J [DecidableEq ι] {Q : QuadraticF
       Matrix.J ι l := by
   rw [polarBilin_freeBaseChange, LinearMap.BilinForm.toMatrix_baseChange, hb, Matrix.map_J]
 
-/-- **Extension-degree law for the trace of the Arf sum.** Let `k` be finite free over a base
-ring `F` and `l` finite free over `k`. For a quadratic form `Q` on a free `k`-module and a basis
+/-- **Extension-degree law for the trace of the Arf sum.** Let `k` be free over a base ring `F`
+and `l` free over `k`. For a quadratic form `Q` on a free `k`-module and a basis
 `b` indexed by `ι ⊕ ι`, the trace to `F` of the sum `∑ i, Q' (b' (Sum.inl i)) * Q' (b' (Sum.inr i))`
 for `Q' = Q.freeBaseChange l` and `b' = b.baseChange l` is `Module.finrank k l` times the trace to
 `F` of the corresponding sum for `Q` and `b`.
@@ -69,15 +71,12 @@ When `b` is a symplectic basis for the polar form of `Q`, so is `b.baseChange l`
 `Q.freeBaseChange l` (`QuadraticForm.toMatrix_polarBilin_freeBaseChange_eq_J`). For finite fields
 of characteristic two and `F = ZMod 2`, both sides are then the absolute-trace Arf coordinates. -/
 theorem trace_sum_mul_freeBaseChange_eq_finrank_smul (F : Type*) [CommRing F] [Algebra F k]
-    [Algebra F l] [IsScalarTower F k l] [Module.Free F k] [Module.Finite F k]
-    [Module.Free k l] [Module.Finite k l] (Q : QuadraticForm k V)
+    [Algebra F l] [IsScalarTower F k l] [Module.Free F k] [Module.Free k l] (Q : QuadraticForm k V)
     (b : Module.Basis (ι ⊕ ι) k V) :
     Algebra.trace F l (∑ i : ι, Q.freeBaseChange l (b.baseChange l (Sum.inl i)) *
         Q.freeBaseChange l (b.baseChange l (Sum.inr i))) =
       Module.finrank k l • Algebra.trace F k (∑ i : ι, Q (b (Sum.inl i)) * Q (b (Sum.inr i))) := by
   simp only [freeBaseChange_basis_baseChange, ← map_mul, ← map_sum]
-  rcases subsingleton_or_nontrivial k with hk | hk
-  · simp [Subsingleton.elim (∑ i : ι, Q (b (Sum.inl i)) * Q (b (Sum.inr i))) 0]
-  · rw [← Algebra.trace_trace (S := k), Algebra.trace_algebraMap, map_nsmul]
+  exact TauCeti.Algebra.trace_algebraMap_tower _
 
 end QuadraticForm
