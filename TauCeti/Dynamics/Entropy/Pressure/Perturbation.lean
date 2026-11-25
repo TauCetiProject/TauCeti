@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+public import TauCeti.Dynamics.BirkhoffSum.Basic
 public import TauCeti.Dynamics.Entropy.Pressure
 public import Mathlib.Topology.ContinuousMap.Compact
 
@@ -32,13 +33,12 @@ Topological pressure only sees the Birkhoff sums of a potential up to a bounded 
   topological entropy is `⊤`.
 * `TauCeti.topologicalPressure_add_coboundary`: `P(T, φ + ψ ∘ T - ψ) = P(T, φ)` for bounded
   `ψ`.
-* `TauCeti.topologicalPressure_id`: for the identity of a nonempty finite space,
-  `P(id, φ) = max_x φ x`.
 
 ## References
 
-These are items 2 and 3 and the first Check of §5.4 of the Tau Ceti roadmap
-`ClassicalErgodicTheory`.
+* Peter Walters, *An Introduction to Ergodic Theory*, Graduate Texts in Mathematics 79, Springer,
+  1982, Theorem 9.7: the Lipschitz bound `|P(T, φ) - P(T, ψ)| ≤ ‖φ - ψ‖`, the equivalence
+  `P(T, φ) = ∞ ↔ h(T) = ∞`, and invariance `P(T, φ + ψ ∘ T - ψ) = P(T, φ)`.
 -/
 
 public section
@@ -147,61 +147,13 @@ theorem topologicalPressure_eq_top_iff [UniformSpace X] {c : ℝ} (h : ∀ x, |�
     rw [hT, top_le_iff] at h₂
     exact hc'.mp h₂
 
-/-- The Birkhoff sums of a coboundary `ψ ∘ T - ψ` telescope: at time `n` they equal
-`ψ (T^[n] x) - ψ x`. -/
-theorem birkhoffSum_comp_sub_self (T : X → X) (ψ : X → ℝ) (n : ℕ) (x : X) :
-    birkhoffSum T (fun y ↦ ψ (T y) - ψ y) n x = ψ (T^[n] x) - ψ x := by
-  rw [← birkhoffSum_apply_sub_birkhoffSum, show (fun y ↦ ψ (T y) - ψ y) = ψ ∘ T - ψ from rfl,
-    birkhoffSum_sub_apply, birkhoffSum_comp_apply]
-
 /-- Invariance of pressure under bounded coboundaries: if `|ψ x| ≤ c` for every `x`, then
 `P(T, φ + ψ ∘ T - ψ) = P(T, φ)`. -/
 theorem topologicalPressure_add_coboundary [UniformSpace X] {c : ℝ} (hψ : ∀ x, |ψ x| ≤ c) :
-    topologicalPressure T (fun x ↦ φ x + (ψ (T x) - ψ x)) = topologicalPressure T φ := by
+    topologicalPressure T (φ + (ψ ∘ T - ψ)) = topologicalPressure T φ := by
   refine topologicalPressure_eq_of_abs_birkhoffSum_sub_le (C := 2 * c) fun n x ↦ ?_
-  rw [show (fun x ↦ φ x + (ψ (T x) - ψ x)) = φ + fun y ↦ ψ (T y) - ψ y from rfl,
-    birkhoffSum_add_apply, add_sub_cancel_left, birkhoffSum_comp_sub_self]
+  rw [birkhoffSum_add_apply, add_sub_cancel_left, birkhoffSum_comp_sub_self_apply]
   exact (abs_sub _ _).trans (by linarith [hψ (T^[n] x), hψ x])
-
-section Identity
-
-/-- The pressure of the identity of a nonempty finite uniform space is the maximum of the
-potential: `P(id, φ) = max_x φ x`. The singleton nets give the lower bound and the whole space
-bounds every net. -/
-theorem topologicalPressure_id [UniformSpace X] [Fintype X] [Nonempty X] (φ : X → ℝ) :
-    topologicalPressure id φ = (Finset.univ.sup' Finset.univ_nonempty φ : ℝ) := by
-  set M := Finset.univ.sup' Finset.univ_nonempty φ
-  have hB : ∀ n x, birkhoffSum id φ n x = n * φ x := fun n x ↦ by
-    rw [birkhoffSum_apply_of_comp_eq (f := id) rfl, nsmul_eq_mul]
-  apply le_antisymm
-  · rw [topologicalPressure_le_iff]
-    intro U _
-    rw [netPressureEntourage_def]
-    refine (expGrowthSup_le_of_eventually_le (b := Fintype.card X) (ENNReal.natCast_ne_top _)
-      (v := fun n : ℕ ↦ EReal.exp (M * n)) (Eventually.of_forall fun n ↦ ?_)).trans_eq
-      (expGrowthSup_exp (a := M))
-    rw [pressureNetSum_le_iff]
-    intro s _
-    calc ∑ x ∈ s, ENNReal.ofReal (Real.exp (birkhoffSum id φ n x))
-        ≤ ∑ _x ∈ s, EReal.exp (M * n) := Finset.sum_le_sum fun x _ ↦ by
-          rw [hB, ← EReal.coe_natCast, ← EReal.coe_mul, EReal.exp_coe, mul_comm]
-          exact ENNReal.ofReal_le_ofReal (Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_right
-            (Finset.le_sup' φ (Finset.mem_univ x)) n.cast_nonneg))
-      _ = s.card * EReal.exp (M * n) := by rw [Finset.sum_const, nsmul_eq_mul]
-      _ ≤ Fintype.card X * EReal.exp (M * n) := by
-          gcongr
-          exact_mod_cast s.card_le_univ
-  · obtain ⟨x₀, -, hx₀⟩ := Finset.exists_mem_eq_sup' Finset.univ_nonempty φ
-    refine le_trans ?_ (netPressureEntourage_le_topologicalPressure (U := univ)
-      Filter.univ_mem)
-    rw [netPressureEntourage_def, show M = φ x₀ from hx₀]
-    refine Frequently.le_expGrowthSup (Eventually.of_forall fun n ↦ ?_).frequently
-    have hnet : IsDynNetIn (id : X → X) univ univ n ({x₀} : Finset X) :=
-      ⟨subset_univ _, by simp⟩
-    refine le_trans ?_ hnet.sum_le_pressureNetSum
-    rw [Finset.sum_singleton, hB, ← EReal.coe_natCast, ← EReal.coe_mul, EReal.exp_coe, mul_comm]
-
-end Identity
 
 section Compact
 
@@ -225,7 +177,7 @@ theorem topologicalPressure_continuousMap_eq_top_iff (T : X → X) (φ : C(X, �
 `P(T, φ + ψ ∘ T - ψ) = P(T, φ)`. -/
 theorem topologicalPressure_add_coboundary_continuousMap (T : X → X) (φ : X → ℝ)
     (ψ : C(X, ℝ)) :
-    topologicalPressure T (fun x ↦ φ x + (ψ (T x) - ψ x)) = topologicalPressure T φ :=
+    topologicalPressure T (φ + (ψ ∘ T - ψ)) = topologicalPressure T φ :=
   topologicalPressure_add_coboundary (c := ‖ψ‖) fun x ↦ by
     simpa [Real.norm_eq_abs] using ψ.norm_coe_le_norm x
 
