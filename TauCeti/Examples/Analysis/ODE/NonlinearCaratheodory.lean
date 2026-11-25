@@ -15,12 +15,15 @@ Examples for the nonlinear Carathéodory theorem: the linear field recovers the 
 constants formula, and without the Lipschitz bound uniqueness fails.
 
 * **The linear field.** For `P` and `G` integrable on `[a, b]`, the field
-  `F(t, x) = P(t) x + G(t)` satisfies the hypotheses of the nonlinear Carathéodory theorem with
-  `L = ‖P‖` and `m = ‖P‖ ‖x₀‖ + ‖G‖`
-  (`TauCeti.Examples.NonlinearCaratheodory.lipschitzWith_linear`,
-  `TauCeti.Examples.NonlinearCaratheodory.norm_linear_le`), and its solution is that of the linear
+  `F(t, x) = P(t) x + G(t)` satisfies the hypotheses of the nonlinear Carathéodory theorem: its
+  sections `t ↦ F(t, x)` are integrable on `[a, b]`
+  (`TauCeti.Examples.NonlinearCaratheodory.integrableOn_linear`), and `F t` is Lipschitz with the
+  integrable constant `L = ‖P‖` (`TauCeti.Examples.NonlinearCaratheodory.lipschitzWith_linear`).
+  The bound `‖F(t, x₀)‖ ≤ m(t)` of the a priori estimate holds with `m = ‖P‖ ‖x₀‖ + ‖G‖`
+  (`TauCeti.Examples.NonlinearCaratheodory.norm_linear_le`). The solution is that of the linear
   theory, the variation of constants formula `N_P(t, t₀) x₀ + ∫ s in t₀..t, N_P(t, s) G(s)`
-  (`TauCeti.Examples.NonlinearCaratheodory.eq_propagator_apply_add_integral_of_linear`).
+  (`TauCeti.Examples.NonlinearCaratheodory.eq_propagator_apply_add_integral_of_linear`,
+  `TauCeti.Examples.NonlinearCaratheodory.exists_eq_propagator_apply_add_integral_of_linear`).
 * **The Lipschitz bound is needed.** The field `F(t, x) = 2 √|x|` on `ℝ`, from `x₀ = 0` at
   `t₀ = 0`, has the two solutions `0` and `t²` on `[0, 1]`
   (`TauCeti.Examples.NonlinearCaratheodory.sq_eq_picard_sqrt`,
