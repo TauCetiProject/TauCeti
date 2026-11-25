@@ -70,7 +70,7 @@ This file records general-purpose facts about open subsets of schemes.
   every open neighbourhood of `x` pulls back to the whole source, and a section whose basic open
   misses `x` pulls back to a global section with empty basic open.
 * `AlgebraicGeometry.Scheme.notMem_closure_basicOpen_of_isNilpotent_germ`: a section with
-  nilpotent germ at `y` vanishes on a neighbourhood of `y`.
+  nilpotent germ at `y` has basic open whose closure misses `y`.
 -/
 
 open TopologicalSpace AlgebraicGeometry
@@ -429,8 +429,9 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.basicOpen_appLE_eq_bot {Y : Scheme.{
   rintro y ⟨-, hy⟩
   exact hs (hf y ▸ hy)
 
-/-- If the germ at `y` of a section `t` is nilpotent, then `t` vanishes on a neighbourhood of `y`,
-so `y` is not in the closure of the basic open of `t`. -/
+/-- If the germ at `y` of a section `t` is nilpotent, then `t` is nilpotent on a neighbourhood
+of `y`, so its basic open misses that neighbourhood and `y` is not in the closure of the basic
+open of `t`. -/
 theorem _root_.AlgebraicGeometry.Scheme.notMem_closure_basicOpen_of_isNilpotent_germ {y : X}
     (hy : y ∈ U) {t : Γ(X, U)} (h : IsNilpotent (X.presheaf.germ U y hy t)) :
     y ∉ closure (X.basicOpen t : Set X) := by

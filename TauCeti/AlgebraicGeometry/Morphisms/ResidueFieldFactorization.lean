@@ -148,7 +148,8 @@ theorem isOpen_preimage_singleton [IsLocallyNoetherian X] {E : Set X}
   have : IsNoetherianRing Γ(X, U) := IsLocallyNoetherian.component_noetherian ⟨U, hU⟩
   obtain ⟨S, hS⟩ := IsNoetherian.noetherian (hU.primeIdealOf ⟨f y, hxU⟩).asIdeal
   have hy : y ∈ f ⁻¹ᵁ U := f.mem_preimage.mpr hxU
-  -- Near `y`, the pullbacks of the finitely many generators `S` of the prime of `f y` vanish.
+  -- Near `y`, the pullbacks of the finitely many generators `S` of the prime of `f y` vanish
+  -- at every point.
   refine ⟨(f ⁻¹ᵁ U : Set Y) ∩ ⋂ s ∈ S, (closure (Y.basicOpen (f.app U s) : Set Y))ᶜ, ?_,
     (f ⁻¹ᵁ U).isOpen.inter (isOpen_biInter_finset fun _ _ ↦ isClosed_closure.isOpen_compl), hy,
     Set.mem_iInter₂.mpr fun s hs ↦ ?_⟩
