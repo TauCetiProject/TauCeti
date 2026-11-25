@@ -39,6 +39,8 @@ between Banach spaces, and from the approximation property of a Banach space.
 * `CompletelyPositiveMap.IsNuclearContraction.comp_left` and
   `CompletelyPositiveMap.IsNuclearContraction.comp_right`: composing a nuclear contraction on either
   side with a completely positive contraction gives a nuclear contraction.
+* `CompletelyPositiveMap.IsNuclear.comp_left` and `CompletelyPositiveMap.IsNuclear.comp_right`:
+  composing a nuclear map on either side with any completely positive map gives a nuclear map.
 * `CompletelyPositiveMap.IsNuclearContraction.of_forall_exists`: point-norm closedness; a point-norm
   limit of nuclear contractions is a nuclear contraction.
 * `CompletelyPositiveMap.IsNuclearContraction.smul`: multiples `c • φ` with `c ≤ 1` of nuclear
@@ -76,6 +78,15 @@ def IsNuclearContraction (φ : A →CP B) : Prop :=
     ∃ (n : ℕ) (α : A →CP CStarMatrix (Fin n) (Fin n) ℂ)
       (β : CStarMatrix (Fin n) (Fin n) ℂ →CP B),
       (∀ a, ‖α a‖ ≤ ‖a‖) ∧ (∀ x, ‖β x‖ ≤ ‖x‖) ∧ ∀ a ∈ F, ‖β (α a) - φ a‖ < ε
+
+/-- Unfolding `IsNuclearContraction`: the finite-set approximation property by composites
+`A → M_n → B` of completely positive contractions. -/
+theorem isNuclearContraction_iff {φ : A →CP B} :
+    φ.IsNuclearContraction ↔ ∀ (F : Finset A) (ε : ℝ), 0 < ε →
+      ∃ (n : ℕ) (α : A →CP CStarMatrix (Fin n) (Fin n) ℂ)
+        (β : CStarMatrix (Fin n) (Fin n) ℂ →CP B),
+        (∀ a, ‖α a‖ ≤ ‖a‖) ∧ (∀ x, ‖β x‖ ≤ ‖x‖) ∧ ∀ a ∈ F, ‖β (α a) - φ a‖ < ε :=
+  Iff.rfl
 
 /-- A nuclear contraction is a contraction. -/
 theorem IsNuclearContraction.norm_apply_le {φ : A →CP B} (h : φ.IsNuclearContraction) (a : A) :
@@ -181,6 +192,11 @@ contraction `ψ`. -/
 def IsNuclear (φ : A →CP B) : Prop :=
   ∃ (c : ℝ≥0) (ψ : A →CP B), ψ.IsNuclearContraction ∧ φ = c • ψ
 
+/-- Unfolding `IsNuclear`: `φ` is a nonnegative multiple of a nuclear contraction. -/
+theorem isNuclear_iff {φ : A →CP B} :
+    φ.IsNuclear ↔ ∃ (c : ℝ≥0) (ψ : A →CP B), ψ.IsNuclearContraction ∧ φ = c • ψ :=
+  Iff.rfl
+
 /-- A nuclear contraction is nuclear. -/
 theorem IsNuclearContraction.isNuclear {φ : A →CP B} (h : φ.IsNuclearContraction) :
     φ.IsNuclear :=
@@ -191,22 +207,36 @@ theorem IsNuclear.smul {φ : A →CP B} (h : φ.IsNuclear) (c : ℝ≥0) : (c �
   obtain ⟨d, ψ, hψ, rfl⟩ := h
   exact ⟨c * d, ψ, hψ, (mul_smul c d ψ).symm⟩
 
-/-- Composing a nuclear map with a completely positive contraction on the left gives a nuclear
-map. -/
-theorem IsNuclear.comp_left {φ : A →CP B} (h : φ.IsNuclear) (ψ : B →CP C)
-    (hψ : ∀ b, ‖ψ b‖ ≤ ‖b‖) : (ψ.comp φ).IsNuclear := by
-  obtain ⟨c, θ, hθ, rfl⟩ := h
-  refine ⟨c, ψ.comp θ, hθ.comp_left ψ hψ, ext fun a ↦ ?_⟩
-  rw [comp_apply, smul_apply, smul_apply, comp_apply]
-  exact LinearMapClass.map_smul_of_tower ψ c (θ a)
+/-- Every completely positive map is a nonnegative multiple of a completely positive contraction,
+since positive maps between C⋆-algebras are bounded. -/
+private theorem exists_eq_smul_of_norm_apply_le (ψ : A →CP B) :
+    ∃ (K : ℝ≥0) (ψ' : A →CP B), (∀ a, ‖ψ' a‖ ≤ ‖a‖) ∧ ψ = K • ψ' := by
+  obtain ⟨K, hK⟩ := PositiveLinearMap.exists_norm_apply_le (.ofClass ψ)
+  have hK₁ : (0 : ℝ) < (K + 1 : ℝ≥0) := by positivity
+  refine ⟨K + 1, (K + 1)⁻¹ • ψ, fun a ↦ ?_, ?_⟩
+  · rw [smul_apply, NNReal.smul_def, norm_smul, Real.norm_of_nonneg (by positivity),
+      NNReal.coe_inv, inv_mul_le_iff₀ hK₁]
+    calc ‖ψ a‖ ≤ K * ‖a‖ := hK a
+      _ ≤ ((K + 1 : ℝ≥0) : ℝ) * ‖a‖ := by gcongr; simp
+  · rw [smul_smul, mul_inv_cancel₀ (by positivity), one_smul]
 
-/-- Composing a nuclear map with a completely positive contraction on the right gives a nuclear
-map. -/
-theorem IsNuclear.comp_right {φ : A →CP B} (h : φ.IsNuclear) (θ : D →CP A)
-    (hθ : ∀ d, ‖θ d‖ ≤ ‖d‖) : (φ.comp θ).IsNuclear := by
+/-- Composing a nuclear map with a completely positive map on the left gives a nuclear map. -/
+theorem IsNuclear.comp_left {φ : A →CP B} (h : φ.IsNuclear) (ψ : B →CP C) :
+    (ψ.comp φ).IsNuclear := by
+  obtain ⟨c, θ, hθ, rfl⟩ := h
+  obtain ⟨K, ψ', hψ', rfl⟩ := exists_eq_smul_of_norm_apply_le ψ
+  refine ⟨K * c, ψ'.comp θ, hθ.comp_left ψ' hψ', ext fun a ↦ ?_⟩
+  rw [comp_apply, smul_apply, smul_apply, smul_apply, comp_apply, mul_smul,
+    LinearMapClass.map_smul_of_tower ψ' c (θ a)]
+
+/-- Composing a nuclear map with a completely positive map on the right gives a nuclear map. -/
+theorem IsNuclear.comp_right {φ : A →CP B} (h : φ.IsNuclear) (θ : D →CP A) :
+    (φ.comp θ).IsNuclear := by
   obtain ⟨c, ψ, hψ, rfl⟩ := h
-  refine ⟨c, ψ.comp θ, hψ.comp_right θ hθ, ext fun d ↦ ?_⟩
-  rw [comp_apply, smul_apply, smul_apply, comp_apply]
+  obtain ⟨K, θ', hθ', rfl⟩ := exists_eq_smul_of_norm_apply_le θ
+  refine ⟨c * K, ψ.comp θ', hψ.comp_right θ' hθ', ext fun d ↦ ?_⟩
+  rw [comp_apply, smul_apply, smul_apply, smul_apply, comp_apply, mul_smul,
+    LinearMapClass.map_smul_of_tower ψ K (θ' d)]
 
 end CompletelyPositiveMap
 
