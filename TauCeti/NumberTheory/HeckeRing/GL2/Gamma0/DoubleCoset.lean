@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.Basic
 
 -- the coprime-level generation and `Γ(N) ≤ Γ₀(N)` are used only inside proofs here
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.CongruenceSplit
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Congruence.Split
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 
 /-!

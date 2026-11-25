@@ -86,6 +86,10 @@ equivalence.
 * `CategoryTheory.NatTrans.app_comp_mapRightDualIso_hom_comp_rightAdjointMate` and
   `CategoryTheory.Iso.hom_app_comp_mapRightDualIso_hom`: the comparison is natural with respect to
   monoidal natural transformations and isomorphisms;
+* `TauCeti.doubleRightDualFunctor_mapRightDualIso`: the comparison is the identity for the double
+  right dual functor, so that `CategoryTheory.Iso.hom_app_comp_mapRightDualIso_hom` specializes to
+  the Freyd–Yetter identity `CategoryTheory.Iso.hom_app_rightDual` for a monoidal natural
+  isomorphism from the identity to the fourth right dual functor;
 * `CategoryTheory.Functor.mapDoubleRightDualIso`: the bidual comparison
   `F.obj Xᘁᘁ ≅ (F.obj X)ᘁᘁ`, characterized by
   `CategoryTheory.Functor.mapDoubleRightDualIso_hom_whiskerRight_evaluation`, natural by
@@ -605,3 +609,59 @@ theorem mapDoubleRightDualNatIso_inv_app (X : C) :
 end DoubleRightDual
 
 end CategoryTheory.Functor
+
+/-! ### The dual comparison of the double right dual functor -/
+
+namespace TauCeti
+
+universe v u
+
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [RightRigidCategory C]
+
+/-- For the double right dual functor, the comparison between the image of a dual and the dual of
+an image is the identity of `Xᘁᘁᘁ`: the double right dual functor carries the evaluation of
+`(X, Xᘁ)` to that of `(Xᘁᘁ, Xᘁᘁᘁ)`, by `TauCeti.doubleRightDualFunctor_μ_comp_map_evaluation`. -/
+@[simp]
+theorem doubleRightDualFunctor_mapRightDualIso (X : C) :
+    (doubleRightDualFunctor C).mapRightDualIso X = Iso.refl _ := by
+  ext
+  refine ExactPairing.rightHom_ext (X := (doubleRightDualFunctor C).obj X) ?_
+  rw [Functor.mapRightDualIso_hom_whiskerRight_evaluation, ← Category.assoc,
+    doubleRightDualFunctor_μ_comp_map_evaluation]
+  -- The object `Xᘁᘁᘁ` now appears both as `(Xᘁᘁ)ᘁ` and as `(Xᘁ)ᘁᘁ`, which agree only up to
+  -- unfolding `doubleRightDualFunctor`.
+  erw [Category.assoc, Functor.Monoidal.ε_η, Category.comp_id, id_whiskerRight, Category.id_comp]
+
+end TauCeti
+
+namespace CategoryTheory.Iso
+
+open TauCeti
+
+universe v u
+
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [RightRigidCategory C]
+
+/-- **The Freyd–Yetter identity for the fourth dual**: a monoidal natural isomorphism `e` from the
+identity to the fourth right dual functor satisfies `e_{Xᘁ} = (e_X⁻¹)ᘁ`. This is the analogue of
+`TauCeti.pivotalIsoApp_rightDual` for the fourth dual, and the case of
+`CategoryTheory.Iso.hom_app_comp_mapRightDualIso_hom` in which both dual comparisons are
+identities, by `CategoryTheory.Functor.mapRightDualIso_id`,
+`CategoryTheory.Functor.mapRightDualIso_comp` and `TauCeti.doubleRightDualFunctor_mapRightDualIso`.
+-/
+theorem hom_app_rightDual (e : 𝟭 C ≅ doubleRightDualFunctor C ⋙ doubleRightDualFunctor C)
+    [NatTrans.IsMonoidal e.hom] (X : C) : e.hom.app Xᘁ = (e.inv.app X)ᘁ := by
+  have hF : ((𝟭 C).mapRightDualIso X).hom = 𝟙 Xᘁ := by
+    rw [Functor.mapRightDualIso_id]
+    rfl
+  have hG : ((doubleRightDualFunctor C ⋙ doubleRightDualFunctor C).mapRightDualIso X).hom =
+      𝟙 _ := by
+    rw [Functor.mapRightDualIso_comp, doubleRightDualFunctor_mapRightDualIso,
+      doubleRightDualFunctor_mapRightDualIso]
+    exact (Category.comp_id _).trans ((doubleRightDualFunctor C).map_id _)
+  have h := e.hom_app_comp_mapRightDualIso_hom X
+  rw [hF, hG] at h
+  -- The identities are those of objects that agree only up to unfolding.
+  exact (Category.comp_id _).symm.trans (h.trans (Category.id_comp _))
+
+end CategoryTheory.Iso

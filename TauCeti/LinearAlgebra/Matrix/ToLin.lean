@@ -36,7 +36,9 @@ computation every matrix model of a Lie algebra performs on its root vectors.
 * `Module.Basis.toLinAlgEquiv_single_apply_basis`: the endomorphism of a matrix unit sends a basis
   vector to a single coordinate.
 * `TauCeti.matrixGeneralLinearEquiv`: matrix `GL` and the linear automorphisms of coordinate
-  vectors are equivalent over a commutative semiring.
+  vectors are equivalent over a commutative semiring; the abbreviation
+  `TauCeti.matrixLinearEquiv` lands in `(n → R) ≃ₗ[R] (n → R)`, and evaluates through
+  `TauCeti.matrixGeneralLinearEquiv_apply`.
 * `Module.Basis.toMatrixAlgEquiv_eq_single_of_apply_basis`: an endomorphism with one matrix-unit
   coordinate action has the corresponding single-entry matrix.
 * `LinearMap.vecMul_toMatrixRight'` and `LinearMap.isIdempotentElem_toMatrixRight'_iff`: over a
@@ -52,12 +54,17 @@ computation every matrix model of a Lie algebra performs on its root vectors.
   free right modules of coordinate vectors are matrices acting on column vectors.
 * `LinearMap.toMatrix_mulVec_eq_repr`: the coordinate vector of `φ (∑ j, x j • v j)` is the
   matrix of `φ` applied to `x`.
+* `LinearMap.sum_toMatrix_mulVec_smul`: the vector whose coordinates are the matrix of `φ` applied
+  to `x` is `φ (∑ j, x j • v j)`.
 * `LinearMap.toLin'_toMatrix_comp_equivFun` and `LinearMap.equivFun_symm_comp_toLin'_toMatrix`:
   the coordinate equivalences of two bases intertwine a linear map with its matrix.
 * `LinearMap.isUnit_toMatrix_iff_bijective`, `LinearMap.isUnit_det_toMatrix_iff_bijective`,
   `Matrix.toLin_bijective_iff`, and `Matrix.toLin_bijective_iff_isUnit_det`: for bases of two
   modules indexed by the same finite type, the representing matrix (and, over a commutative ring,
   its determinant) is a unit if and only if the linear map is bijective.
+* `LinearEquiv.map_toMatrix_mul_map_toMatrix_symm`: even after applying a ring homomorphism to
+  their entries, the matrix of a linear equivalence is a left inverse of the matrix of its inverse;
+  applying the lemma to `T.symm` gives the product in the other order.
 * `Matrix.linearIndependent_row_one`: over any semiring, the rows of an identity matrix are
   linearly independent.
 * `Matrix.mulVecBilin_mul` and `IsIdempotentElem.mulVecBilin`: over a possibly noncommutative
@@ -95,6 +102,13 @@ theorem matrixGeneralLinearEquiv_apply {R : Type*} [CommSemiring R] {n : Type*}
   rw [LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv,
     matrixGeneralLinearEquiv, Units.coe_mapEquiv]
   exact Matrix.toLinAlgEquiv'_apply _ _
+
+/-- Invertible matrices are the linear automorphisms of coordinate vectors, a matrix acting by
+multiplication of column vectors: `TauCeti.matrixGeneralLinearEquiv` followed by Mathlib's
+identification of `LinearMap.GeneralLinearGroup` with linear automorphisms. -/
+noncomputable abbrev matrixLinearEquiv {R : Type*} [CommSemiring R] {n : Type*} [Fintype n]
+    [DecidableEq n] : Matrix.GeneralLinearGroup n R ≃* ((n → R) ≃ₗ[R] (n → R)) :=
+  matrixGeneralLinearEquiv.trans (LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R))
 
 end TauCeti
 
@@ -248,6 +262,14 @@ theorem toMatrix_mulVec_eq_repr {R V M ι κ : Type*} [CommSemiring R] [AddCommM
   rw [← v.equivFun_symm_apply, ← toMatrix_mulVec_repr v b, ← v.equivFun_apply,
     LinearEquiv.apply_symm_apply]
 
+/-- **Vectors through the coefficient matrix.** The vector whose coordinates in the basis `b` are
+the coefficient matrix `LinearMap.toMatrix v b φ` applied to `x` is `φ (∑ j, x j • v j)`. -/
+theorem sum_toMatrix_mulVec_smul {R V M ι κ : Type*} [CommSemiring R] [AddCommMonoid V]
+    [Module R V] [AddCommMonoid M] [Module R M] [Fintype κ] [DecidableEq κ] [Fintype ι]
+    (v : Module.Basis κ R V) (b : Module.Basis ι R M) (φ : V →ₗ[R] M) (x : κ → R) :
+    ∑ c, (toMatrix v b φ *ᵥ x) c • b c = φ (∑ j, x j • v j) := by
+  rw [toMatrix_mulVec_eq_repr, b.sum_repr]
+
 /-- In the coordinates of bases `v` and `b`, a linear map `φ` acts by its matrix
 `LinearMap.toMatrix v b φ`. -/
 theorem toLin'_toMatrix_comp_equivFun {R V M ι κ : Type*} [CommSemiring R] [AddCommMonoid V]
@@ -296,6 +318,22 @@ theorem isUnit_det_toMatrix_iff_bijective {R V M ι : Type*} [CommRing R] [AddCo
   rw [← Matrix.isUnit_iff_isUnit_det, isUnit_toMatrix_iff_bijective]
 
 end LinearMap
+
+namespace LinearEquiv
+
+/-- **Matrices of a linear equivalence and its inverse.** For bases `v` and `b`, the image under a
+ring homomorphism `f` of the matrix `LinearMap.toMatrix v b T` of a linear equivalence `T` is a
+left inverse of the image of the matrix `LinearMap.toMatrix b v T.symm` of its inverse. -/
+theorem map_toMatrix_mul_map_toMatrix_symm {R S V M ι κ : Type*} [CommSemiring R] [Semiring S]
+    [AddCommMonoid V] [Module R V] [AddCommMonoid M] [Module R M] [Fintype ι] [DecidableEq ι]
+    [Fintype κ] [DecidableEq κ] (v : Module.Basis ι R V) (b : Module.Basis κ R M) (T : V ≃ₗ[R] M)
+    (f : R →+* S) :
+    (LinearMap.toMatrix v b T.toLinearMap).map f *
+      (LinearMap.toMatrix b v T.symm.toLinearMap).map f = 1 := by
+  rw [← Matrix.map_mul, ← LinearMap.toMatrix_comp, comp_symm, LinearMap.toMatrix_id,
+    Matrix.map_one _ (map_zero f) (map_one f)]
+
+end LinearEquiv
 
 namespace Matrix
 
