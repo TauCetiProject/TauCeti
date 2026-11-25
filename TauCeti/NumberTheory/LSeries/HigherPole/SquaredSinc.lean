@@ -7,6 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Function.SpecialFunctions.Sinc
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import TauCeti.Analysis.Fourier.SincSq
 import TauCeti.Analysis.SpecialFunctions.Integrals.SincSq
 import TauCeti.Analysis.SpecialFunctions.Integrals.Trigonometric.Fejer
 
@@ -35,15 +37,17 @@ only.
 
 ## Main results
 
-* `squaredSinc_nonneg`, `squaredSinc_le`, `squaredSinc_neg_right`, `continuous_squaredSinc`,
-  `integrable_squaredSinc`: positivity, the bound `K_λ ≤ λ / π`, evenness, continuity and
-  integrability.
+* `squaredSinc_nonneg`, `squaredSinc_le`, `squaredSinc_le_inv_mul_sq`, `squaredSinc_neg_right`,
+  `continuous_squaredSinc`, `integrable_squaredSinc`: positivity, the bounds `K_λ ≤ λ / π` and
+  `K_λ(v) ≤ (π λ v ^ 2)⁻¹`, evenness, continuity and integrability.
 * `squaredSinc_intCast_mul_pi_div`, `squaredSinc_pi_div`: `K_λ` vanishes at the nonzero multiples
   of `π / λ`.
 * `squaredSinc_mass`: `∫ v, K_λ v = 1` for `λ > 0`.
-* `squaredSinc_fourier`: the triangle formula above, for `λ ≥ 0` and every `v`.
-* `tendsto_intervalIntegral_squaredSinc`, `tendsto_integral_squaredSinc_tail`: for `h > 0`, the
-  mass of `[-h, h]` tends to `1` and the mass of `{v | h ≤ |v|}` tends to `0` as `λ → ∞`.
+* `squaredSinc_fourier`, `integral_squaredSinc_mul_cos`: the inverse Fourier representation and
+  forward cosine transform `∫ v, K_λ(v) cos (ξ v) = max (1 - |ξ| / (2λ)) 0`.
+* `integral_squaredSinc_tail_le`, `tendsto_intervalIntegral_squaredSinc`,
+  `tendsto_integral_squaredSinc_tail`: the quantitative tail bound `≤ 2 / (π λ h)` and
+  concentration on `[-h, h]` as `λ → ∞`.
 
 ## References
 
@@ -103,6 +107,20 @@ theorem squaredSinc_le (hell : 0 ≤ ell) (v : ℝ) : squaredSinc ell v ≤ ell 
   exact mul_le_of_le_one_right (by positivity)
     ((sq_le_one_iff_abs_le_one _).2 (abs_sinc_le_one _))
 
+/-- Away from the origin, the kernel satisfies the inverse-square bound
+`K_λ(v) ≤ (π λ v ^ 2)⁻¹` for `λ ≥ 0`. -/
+theorem squaredSinc_le_inv_mul_sq {v : ℝ} (hell : 0 ≤ ell) (hv : v ≠ 0) :
+    squaredSinc ell v ≤ (π * ell * v ^ 2)⁻¹ := by
+  rcases hell.eq_or_lt with rfl | hell
+  · simp
+  rw [squaredSinc_def, sinc_of_ne_zero (mul_ne_zero hell.ne' hv), div_pow]
+  calc ell / π * (sin (ell * v) ^ 2 / (ell * v) ^ 2)
+      ≤ ell / π * (1 / (ell * v) ^ 2) := by
+        gcongr
+        exact sin_sq_le_one _
+    _ = (π * ell * v ^ 2)⁻¹ := by
+        field_simp
+
 /-- The kernel vanishes at every nonzero integer multiple of `π / λ`. -/
 theorem squaredSinc_intCast_mul_pi_div (ell : ℝ) {n : ℤ} (hn : n ≠ 0) :
     squaredSinc ell (n * π / ell) = 0 := by
@@ -158,6 +176,52 @@ theorem tendsto_intervalIntegral_squaredSinc (hh : 0 < h) :
   refine hlim.congr' ?_
   filter_upwards [eventually_gt_atTop 0] with ell hell
   exact (intervalIntegral_squaredSinc hell h).symm
+
+/-- **Quantitative tail bound**: for `λ ≥ 0` and `h > 0`, the mass of `K_λ` on `{v | h ≤ |v|}`
+is at most `2 / (π λ h)`. -/
+theorem integral_squaredSinc_tail_le (hell : 0 ≤ ell) (hh : 0 < h) :
+    ∫ v in {v : ℝ | h ≤ |v|}, squaredSinc ell v ≤ 2 / (π * ell * h) := by
+  rcases hell.eq_or_lt with rfl | hell
+  · simp [squaredSinc_zero_left]
+  have hmeas : MeasurableSet {v : ℝ | h ≤ |v|} :=
+    measurableSet_le measurable_const continuous_abs.measurable
+  have hsym : ∫ v in {v : ℝ | h ≤ |v|}, squaredSinc ell v =
+      2 * ∫ v in Ioi h, squaredSinc ell v := by
+    rw [← integral_indicator hmeas]
+    have hcomp := integral_comp_abs (f := fun v : ℝ ↦ (Ici h).indicator (squaredSinc ell) v)
+    have heq : (fun v : ℝ ↦ ({v : ℝ | h ≤ |v|}).indicator (squaredSinc ell) v) =
+        fun v : ℝ ↦ (Ici h).indicator (squaredSinc ell) |v| := funext fun v ↦ by
+      by_cases hv : h ≤ |v|
+      · have hv1 : v ∈ {v : ℝ | h ≤ |v|} := hv
+        have hv2 : |v| ∈ Ici h := hv
+        rw [indicator_of_mem hv1, indicator_of_mem hv2]
+        rcases abs_choice v with h0 | h0 <;> simp [h0]
+      · have hv1 : v ∉ {v : ℝ | h ≤ |v|} := hv
+        have hv2 : |v| ∉ Ici h := hv
+        rw [indicator_of_notMem hv1, indicator_of_notMem hv2]
+    rw [heq, hcomp, integral_indicator measurableSet_Ici,
+      Measure.restrict_restrict measurableSet_Ici,
+      inter_eq_left.mpr (Ici_subset_Ioi.mpr hh), integral_Ici_eq_integral_Ioi]
+  rw [hsym]
+  have hint_rpow : IntegrableOn (fun v : ℝ ↦ (π * ell)⁻¹ * v ^ (-2 : ℝ)) (Ioi h) :=
+    (integrableOn_Ioi_rpow_of_lt (by norm_num : (-2 : ℝ) < -1) hh).const_mul _
+  have hle : ∫ v in Ioi h, squaredSinc ell v ≤ ∫ v in Ioi h, (π * ell)⁻¹ * v ^ (-2 : ℝ) := by
+    refine setIntegral_mono_on (integrable_squaredSinc ell).integrableOn hint_rpow
+      measurableSet_Ioi fun v hv ↦ ?_
+    have hv0 : 0 < v := hh.trans hv
+    have hrpow : (π * ell)⁻¹ * v ^ (-2 : ℝ) = (π * ell * v ^ 2)⁻¹ := by
+      rw [rpow_neg hv0.le, rpow_two]
+      ring
+    rw [hrpow]
+    exact squaredSinc_le_inv_mul_sq hell.le hv0.ne'
+  have hrpow_val : ∫ v in Ioi h, (π * ell)⁻¹ * v ^ (-2 : ℝ) = (π * ell * h)⁻¹ := by
+    rw [integral_const_mul, integral_Ioi_rpow_of_lt (by norm_num : (-2 : ℝ) < -1) hh]
+    have hadd : (-2 : ℝ) + 1 = -1 := by norm_num
+    rw [hadd, rpow_neg_one]
+    field_simp
+  calc 2 * ∫ v in Ioi h, squaredSinc ell v
+      ≤ 2 * (π * ell * h)⁻¹ := by linarith [hle, hrpow_val]
+    _ = 2 / (π * ell * h) := by ring
 
 /-- **Tail concentration**: for `h > 0`, the mass of `K_λ` on `{v | h ≤ |v|}` tends to `0` as
 `λ → ∞`. -/
@@ -216,5 +280,21 @@ theorem squaredSinc_fourier (hell : 0 ≤ ell) (v : ℝ) :
   rw [harg]
   push_cast
   ring
+
+/-- **The cosine transform of the kernel is the triangle.** For `λ > 0` and every `ξ`,
+`∫ v, K_λ(v) cos (ξ v) = max (1 - |ξ| / (2λ)) 0`; in particular it vanishes whenever
+`2λ ≤ |ξ|`. -/
+theorem integral_squaredSinc_mul_cos (hell : 0 < ell) (ξ : ℝ) :
+    ∫ v : ℝ, squaredSinc ell v * cos (ξ * v) = max (1 - |ξ| / (2 * ell)) 0 := by
+  have hrew : (fun v : ℝ ↦ squaredSinc ell v * cos (ξ * v)) =
+      fun v ↦ (ell / π) * (sinc (ell * v) ^ 2 * cos ((ξ / ell) * (ell * v))) := funext fun v ↦ by
+    rw [squaredSinc_def, ← mul_assoc (ξ / ell), div_mul_cancel₀ _ hell.ne']
+    ring
+  have habs : |ξ / ell| / 2 = |ξ| / (2 * ell) := by
+    rw [abs_div, abs_of_pos hell, div_div, mul_comm ell 2]
+  rw [hrew, integral_const_mul,
+    Measure.integral_comp_mul_left (fun x : ℝ ↦ sinc x ^ 2 * cos ((ξ / ell) * x)) ell,
+    abs_inv, abs_of_pos hell, smul_eq_mul, TauCeti.integral_sinc_sq_mul_cos, habs]
+  field_simp
 
 end TauCeti.HigherPoleTauberian
