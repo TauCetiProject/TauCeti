@@ -29,7 +29,8 @@ linear factors by `card s` over any commutative ring, without the nontriviality 
 `Polynomial.natDegree_multiset_prod_X_sub_C_eq_card` needs.
 `Polynomial.natDegree_X_pow_add_C_mul_X_add_C` reads off the degree of the trinomial
 `X ^ n + C a * X + C b` for `2 ≤ n`, and `Polynomial.natDegree_comp_C_mul_X_add_C` shows
-that an affine substitution `X ↦ a X + b` with `a ≠ 0` keeps the degree.
+that an affine substitution `X ↦ a X + b` with `a ≠ 0` keeps the degree, while
+`Polynomial.natDegree_comp_C_mul_X_le` shows that a rescaling `X ↦ a X` never increases it.
 `Polynomial.sub_C_ne_zero` records that a nonconstant polynomial differs from every constant
 polynomial, and `Polynomial.natDegree_one_sub_C_mul_le` bounds the degree of `1 - C a * p` by that
 of `p`; in particular `Polynomial.natDegree_one_sub_C_mul_X_le` shows that `1 - t X` has degree at
@@ -57,10 +58,10 @@ theorem _root_.Polynomial.degree_mul_lt_of_degree_lt_of_natDegree_le {A q : R[X]
       _ = ((a + n : ℕ) : WithBot ℕ) := by push_cast; rfl
 
 /-- A relation with multipliers of degrees below `m - j` and `n - j` has degree below
-`(m - j) + (n - j) + j`, provided the input degrees are bounded by `m` and `n` and `j` lies
-below both bounds. Either input or multiplier may be zero. -/
+`(m - j) + (n - j) + j`, provided the input degrees are bounded by `m` and `n`. Either input or
+multiplier may be zero. -/
 theorem degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le {p q A B : R[X]} {m n j : ℕ}
-    (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (hjm : j ≤ m) (hjn : j ≤ n)
+    (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n)
     (hA : A.degree < (m - j : ℕ)) (hB : B.degree < (n - j : ℕ)) :
     (A * q + B * p).degree < (((m - j) + (n - j) + j : ℕ) : WithBot ℕ) := by
   apply (degree_add_le _ _).trans_lt
@@ -70,27 +71,24 @@ theorem degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le {p q A B : R[X]} {m n
   · exact (degree_mul_lt_of_degree_lt_of_natDegree_le hB hm).trans_le
       (WithBot.coe_le_coe.mpr (by omega : n - j + m ≤ (m - j) + (n - j) + j))
 
-/-- A relation `A * q + B * p = 0` is forced by the vanishing of the window of coefficients in
-degrees `d, …, m + n - d - 1`, where `d` is the degree of a common divisor `g` of `p` and `q` and
-`A`, `B` have degrees below `m - d` and `n - d`: the combination then has degree below `d`, so
-the divisor `g` forces it to vanish. -/
+/-- A relation `A * q + B * p = 0` is forced by the vanishing of a window of coefficients. Let `d`
+be the degree of a common divisor `g` of `p` and `q`, and let `A`, `B` have degrees below `m - d`
+and `n - d`. If the `(m - d) + (n - d)` coefficients of `A * q + B * p` in degrees
+`d, …, (m - d) + (n - d) + d - 1` vanish, the combination has degree below `d`, so the divisor `g`
+forces it to vanish; if `g = 0`, then `p = q = 0` directly. -/
 theorem _root_.Polynomial.mul_add_mul_eq_zero_of_coeff_window {S : Type*} [CommSemiring S]
-    [NoZeroDivisors S] {p q A B g : S[X]} {m n : ℕ} (hp : p ≠ 0)
+    [NoZeroDivisors S] {p q A B g : S[X]} {m n : ℕ}
     (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (hgp : g ∣ p) (hgq : g ∣ q)
     (hAdeg : A.degree < (m - g.natDegree : ℕ)) (hBdeg : B.degree < (n - g.natDegree : ℕ))
     (hwin : ∀ i : Fin ((m - g.natDegree) + (n - g.natDegree)),
       (A * q + B * p).coeff (i + g.natDegree) = 0) :
     A * q + B * p = 0 := by
-  have hg0 : g ≠ 0 := ne_zero_of_dvd_ne_zero hp hgp
+  rcases eq_or_ne g 0 with rfl | hg0
+  · rw [zero_dvd_iff] at hgp hgq
+    simp [hgp, hgq]
   set d := g.natDegree
-  have hdm : d ≤ m := (natDegree_le_of_dvd hgp hp).trans hm
-  have hsumdeg : (A * q + B * p).degree < ((m - d) + (n - d) + d : ℕ) := by
-    rcases eq_or_ne q 0 with rfl | hq0
-    · rw [mul_zero, zero_add]
-      exact (degree_mul_lt_of_degree_lt_of_natDegree_le hBdeg hm).trans_le
-        (WithBot.coe_le_coe.mpr (by omega : n - d + m ≤ m - d + (n - d) + d))
-    · exact degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le hm hn hdm
-        ((natDegree_le_of_dvd hgq hq0).trans hn) hAdeg hBdeg
+  have hsumdeg : (A * q + B * p).degree < ((m - d) + (n - d) + d : ℕ) :=
+    degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le hm hn hAdeg hBdeg
   have hdeg : (A * q + B * p).degree < d := by
     rw [degree_lt_iff_coeff_zero]
     intro e he
@@ -141,5 +139,11 @@ theorem _root_.Polynomial.natDegree_X_pow_add_C_mul_X_add_C [Nontrivial R] (a b 
 theorem _root_.Polynomial.natDegree_comp_C_mul_X_add_C [NoZeroDivisors R] {a : R} (ha : a ≠ 0)
     (b : R) (p : R[X]) : (p.comp (C a * X + C b)).natDegree = p.natDegree := by
   rw [natDegree_comp, natDegree_linear ha, mul_one]
+
+/-- A rescaling `X ↦ a X` does not increase the degree. -/
+theorem _root_.Polynomial.natDegree_comp_C_mul_X_le (a : R) (p : R[X]) :
+    (p.comp (C a * X)).natDegree ≤ p.natDegree :=
+  natDegree_comp_le.trans
+    ((Nat.mul_le_mul_left _ ((natDegree_C_mul_le a X).trans natDegree_X_le)).trans_eq (mul_one _))
 
 end TauCeti

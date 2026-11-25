@@ -166,7 +166,7 @@ theorem restrictedProductMap_surjective_iff {H : ι → Type w} [∀ i, Group (H
           exact ⟨z, hz, fun _ ↦ hz'⟩
       choose z hzU hz using hmiss
       obtain ⟨x, hx⟩ := h ⟨z, .of_forall hzU⟩
-      filter_upwards [x.2] with j hxj
+      filter_upwards [x.property] with j hxj
       by_contra hj
       refine hz j hj ⟨x j, hxj, ?_⟩
       rw [← restrictedProductMap_apply U U' φ hφ, hx, RestrictedProduct.mk_apply]
@@ -181,7 +181,7 @@ theorem restrictedProductMap_surjective_iff {H : ι → Type w} [∀ i, Group (H
         exact ⟨a, hay, fun h ↦ absurd h hi⟩
     choose x hx hxU using hlift
     refine ⟨⟨x, ?_⟩, ?_⟩
-    · filter_upwards [y.2, hsurjOn] with i hyi hi using hxU i (hi hyi)
+    · filter_upwards [y.property, hsurjOn] with i hyi hi using hxU i (hi hyi)
     · ext i
       exact (restrictedProductMap_apply U U' φ hφ _ i).trans (hx i)
 

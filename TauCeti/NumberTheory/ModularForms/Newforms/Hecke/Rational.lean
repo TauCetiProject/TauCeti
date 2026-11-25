@@ -125,7 +125,7 @@ theorem heckeTDiamondCuspNewRationalAlgebra_le :
 def heckeTDiamondCuspNewRationalAlgebraToComplex :
     heckeTDiamondCuspNewRationalAlgebra N k →ₐ[ℚ] heckeTDiamondCuspNewAlgebra N k :=
   (heckeTDiamondCuspNewRationalAlgebra N k).val.codRestrict _ fun T ↦
-    heckeTDiamondCuspNewRationalAlgebra_le N k T.2
+    heckeTDiamondCuspNewRationalAlgebra_le N k T.property
 
 @[simp]
 theorem coe_heckeTDiamondCuspNewRationalAlgebraToComplex

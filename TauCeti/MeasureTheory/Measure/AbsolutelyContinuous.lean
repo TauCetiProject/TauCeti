@@ -26,6 +26,9 @@ small whenever `μ s` is small. This quantitative form of `ν ≪ μ` holds for 
 reference measure `μ`, with no σ-finiteness and hence no Radon–Nikodym derivative. It is what
 transfers approximation properties, such as regularity, from `μ` to `ν`.
 
+Each summand of a sum of measures is absolutely continuous with respect to the sum, so `μ + ν`
+is a common dominating measure for `μ` and `ν`.
+
 ## Main declarations
 
 * `TauCeti.absolutelyContinuous_of_forall_singleton_ne_zero`: a measure positive on every
@@ -34,6 +37,10 @@ transfers approximation properties, such as regularity, from `μ` to `ν`.
   along `f` `μ`-almost everywhere.
 * `MeasureTheory.Measure.AbsolutelyContinuous.exists_pos_measure_lt_of_measure_lt`: the `ε`–`δ`
   form of absolute continuity of a finite measure.
+* `MeasureTheory.Measure.absolutelyContinuous_self_add`,
+  `MeasureTheory.Measure.absolutelyContinuous_add_self`: `μ ≪ μ + ν` and `ν ≪ μ + ν`.
+* `MeasureTheory.Measure.AbsolutelyContinuous.tendsto_measure_zero`: transfer vanishing
+  measures of arbitrary families of sets to an absolutely continuous finite measure.
 
 ## References
 
@@ -44,7 +51,7 @@ transfers approximation properties, such as regularity, from `μ` to `ν`.
 public section
 
 open MeasureTheory Filter Set
-open scoped ENNReal
+open scoped ENNReal Topology
 
 namespace TauCeti
 
@@ -70,11 +77,25 @@ theorem ae_comp_of_map_absolutelyContinuous {α β : Type*} [MeasurableSpace α]
     {P : β → Prop} (h : ∀ᵐ y ∂ν, P y) : ∀ᵐ x ∂μ, P (f x) :=
   ae_of_ae_map hf (hmap.ae_le h)
 
+namespace Measure
+
+variable {α : Type*} [MeasurableSpace α]
+
+/-- A measure is absolutely continuous with respect to its sum with any other measure. -/
+theorem absolutelyContinuous_self_add (μ ν : Measure α) : μ ≪ μ + ν :=
+  AbsolutelyContinuous.rfl.add_right ν
+
+/-- A measure is absolutely continuous with respect to its sum with any other measure. -/
+theorem absolutelyContinuous_add_self (μ ν : Measure α) : ν ≪ μ + ν :=
+  AbsolutelyContinuous.rfl.add_right' μ
+
+end Measure
+
 end MeasureTheory
 
 namespace MeasureTheory.Measure.AbsolutelyContinuous
 
-variable {α : Type*} [MeasurableSpace α] {μ ν : Measure α}
+variable {α : Type*} {m : MeasurableSpace α} {μ ν : Measure α}
 
 /-- **`ε`–`δ` absolute continuity.** If a finite measure `ν` is absolutely continuous with respect
 to `μ`, then for every `ε ≠ 0` there is `δ > 0` such that `μ s < δ` implies `ν s < ε`, for every
@@ -97,7 +118,16 @@ theorem exists_pos_measure_lt_of_measure_lt [IsFiniteMeasure ν] (h : ν ≪ μ)
       measurableSet_toMeasurable μ (s i)).nullMeasurableSet) ⟨0, measure_ne_top _ _⟩]
     simpa [limsup_eq_iInf_iSup_of_nat] using h (measure_limsup_atTop_eq_zero hsum)
   -- But every tail has `ν`-measure at least `ε`.
-  exact hε (le_zero_iff.1 <| hzero ▸ le_iInf fun n ↦ (hνs n).trans <| measure_mono <|
+  exact hε (nonpos_iff_eq_zero.1 <| hzero ▸ le_iInf fun n ↦ (hνs n).trans <| measure_mono <|
     (subset_toMeasurable μ (s n)).trans <| subset_iUnion₂_of_subset n le_rfl subset_rfl)
+
+/-- If the `μ`-measures of a family of sets tend to zero, so do their `ν`-measures for any
+finite `ν ≪ μ`. The sets need not be measurable, and the index filter is arbitrary. -/
+theorem tendsto_measure_zero {ι : Type*} {l : Filter ι} {s : ι → Set α}
+    [IsFiniteMeasure ν] (h : ν ≪ μ) (hs : Tendsto (fun i ↦ μ (s i)) l (𝓝 0)) :
+    Tendsto (fun i ↦ ν (s i)) l (𝓝 0) := by
+  refine ENNReal.tendsto_nhds_zero.2 fun ε hε ↦ ?_
+  obtain ⟨δ, hδ, hsmall⟩ := h.exists_pos_measure_lt_of_measure_lt hε.ne'
+  exact (hs.eventually_lt_const hδ).mono fun i hi ↦ (hsmall (s i) hi).le
 
 end MeasureTheory.Measure.AbsolutelyContinuous

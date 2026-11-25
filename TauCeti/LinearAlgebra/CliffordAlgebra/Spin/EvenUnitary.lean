@@ -140,30 +140,22 @@ theorem mem_iff_reverse_mul_self_eq_one {x : (CliffordAlgebra Q)ˣ} :
       (x : CliffordAlgebra Q) ∈ even Q ∧
         reverse (x : CliffordAlgebra Q) * (x : CliffordAlgebra Q) = 1 := by
   rw [mem_iff]
-  constructor
-  · rintro ⟨heven, hunitary⟩
-    refine ⟨heven, ?_⟩
-    rw [← star_mul_self_eq_reverse_mul_self_of_mem_even heven]
-    exact Unitary.star_mul_self_of_mem hunitary
-  · rintro ⟨heven, hreverse⟩
-    refine ⟨heven, ?_⟩
-    apply x.isUnit.mem_unitary_of_star_mul_self
-    rw [star_mul_self_eq_reverse_mul_self_of_mem_even heven]
-    exact hreverse
+  refine and_congr_right fun heven ↦ ?_
+  rw [← star_mul_self_eq_reverse_mul_self_of_mem_even heven]
+  exact x.isUnit.mem_unitary_iff_star_mul_self
 
 /-- The reverse norm of an even unitary Clifford element is one. -/
 theorem reverse_mul_self (x : evenUnitaryGroup Q) :
     reverse ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) *
       ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = 1 :=
-  (mem_iff_reverse_mul_self_eq_one Q).mp x.2 |>.2
+  (mem_iff_reverse_mul_self_eq_one Q).mp x.property |>.2
 
 /-- The right-handed reverse norm of an even unitary Clifford element is one. -/
 theorem self_mul_reverse (x : evenUnitaryGroup Q) :
     ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) *
       reverse ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = 1 := by
-  apply self_mul_reverse_of_reverse_mul_self
-  exact (reverse_mul_self Q x).trans
-    (map_one (algebraMap R (CliffordAlgebra Q))).symm
+  rw [reverse_eq_star_of_mem_even ⟨_, x.property.1⟩]
+  exact Unitary.mul_star_self_of_mem x.property.2
 
 /-- Reversal of an even unitary Clifford element is its unit inverse after coercion. -/
 @[simp]
@@ -177,28 +169,6 @@ theorem coe_mem_evenOdd_zero {x : (CliffordAlgebra Q)ˣ} (hx : x ∈ evenUnitary
     (x : CliffordAlgebra Q) ∈ evenOdd Q 0 := by
   have h := mem_even Q hx
   rwa [← Subalgebra.mem_toSubmodule, even_toSubmodule] at h
-
-/-- The conjugate of a vector by an even unitary unit is odd. -/
-theorem mul_ι_mul_inv_mem_evenOdd_one {x : (CliffordAlgebra Q)ˣ} (hx : x ∈ evenUnitaryGroup Q)
-    (m : M) : (x : CliffordAlgebra Q) * ι Q m * ↑x⁻¹ ∈ evenOdd Q 1 := by
-  have hxe := coe_mem_evenOdd_zero Q hx
-  have hxie := coe_mem_evenOdd_zero Q (inv_mem hx)
-  have h : (x : CliffordAlgebra Q) * ι Q m ∈ evenOdd Q 1 :=
-    zero_add (1 : ZMod 2) ▸ SetLike.mul_mem_graded hxe (ι_mem_evenOdd_one Q m)
-  exact add_zero (1 : ZMod 2) ▸ SetLike.mul_mem_graded h hxie
-
-/-- Reversal fixes the conjugate of a vector by an even unitary unit, because reversal inverts
-an even unitary unit. -/
-theorem reverse_mul_ι_mul_inv (x : evenUnitaryGroup Q) (m : M) :
-    reverse (((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) * ι Q m *
-        ((((x : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ)) : CliffordAlgebra Q)) =
-      ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) * ι Q m *
-        ((((x : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ)) : CliffordAlgebra Q) := by
-  have hxr := reverse_eq_inv Q x
-  have hxir : reverse ((((x : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ)) :
-      CliffordAlgebra Q) = ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
-    rw [← hxr, reverse_reverse]
-  simp only [reverse.map_mul, reverse_ι, hxr, hxir, mul_assoc]
 
 /-- The scalar unit `-1` is even and unitary. -/
 theorem neg_one_mem : (-1 : (CliffordAlgebra Q)ˣ) ∈ evenUnitaryGroup Q := by
@@ -230,26 +200,18 @@ variable {M₁ : Type v'} {M₂ : Type w'} {M₃ : Type z'}
 
 /-- The Clifford-algebra map of a quadratic isometry restricts to the even unitary carriers. -/
 def evenUnitaryGroupMap (f : Q₁ →qᵢ Q₂) :
-    CliffordAlgebra.evenUnitaryGroup Q₁ →* CliffordAlgebra.evenUnitaryGroup Q₂ where
-  toFun x := by
-    refine ⟨Units.map (CliffordAlgebra.map f).toMonoidHom x, ?_⟩
-    constructor
-    · exact CliffordAlgebra.map_mem_even f x.2.1
-    · rw [Unitary.mem_iff]
-      have hmap :
-          (↑(Units.map (CliffordAlgebra.map f).toMonoidHom (x : (CliffordAlgebra Q₁)ˣ)) :
-              CliffordAlgebra Q₂) = CliffordAlgebra.map f
-                ((x : (CliffordAlgebra Q₁)ˣ) : CliffordAlgebra Q₁) := by
-        simp only [Units.coe_map]
-        -- The algebra-map and ring-hom coercions coincide definitionally here.
-        rfl
-      constructor
-      · rw [hmap, ← CliffordAlgebra.map_star, ← map_mul,
-          Unitary.star_mul_self_of_mem x.2.2, map_one]
-      · rw [hmap, ← CliffordAlgebra.map_star, ← map_mul,
-          Unitary.mul_star_self_of_mem x.2.2, map_one]
-  map_one' := by simp
-  map_mul' x y := by simp
+    CliffordAlgebra.evenUnitaryGroup Q₁ →* CliffordAlgebra.evenUnitaryGroup Q₂ :=
+  ((Units.map (CliffordAlgebra.map f).toMonoidHom).comp
+      (CliffordAlgebra.evenUnitaryGroup Q₁).subtype).codRestrict _ fun x ↦ by
+    -- `map f` commutes with the canonical star (`CliffordAlgebra.map_star`), so it also bundles as
+    -- a star monoid homomorphism, whose underlying function is again `map f`.
+    refine (CliffordAlgebra.evenUnitaryGroup.mem_iff Q₂).mpr ⟨?_, ?_⟩
+    · simpa using CliffordAlgebra.map_mem_even f
+        (CliffordAlgebra.evenUnitaryGroup.mem_even _ x.property)
+    · simpa using Unitary.map_mem
+        (⟨(CliffordAlgebra.map f).toMonoidHom, CliffordAlgebra.map_star f⟩ :
+          CliffordAlgebra Q₁ →⋆* CliffordAlgebra Q₂)
+        (CliffordAlgebra.evenUnitaryGroup.mem_unitary _ x.property)
 
 /-- After coercion, the induced map is the `Units.map` of the Clifford-algebra map. -/
 @[simp]
@@ -384,7 +346,7 @@ variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- Forget an even unitary Clifford unit to its value in the even Clifford subalgebra. -/
 def evenUnitaryGroupEvenPart : evenUnitaryGroup Q →* even Q where
-  toFun x := ⟨((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q), x.2.1⟩
+  toFun x := ⟨((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q), x.property.1⟩
   map_one' := rfl
   map_mul' _ _ := rfl
 
@@ -416,6 +378,15 @@ theorem reverseEven_evenUnitaryGroupEvenPart (x : evenUnitaryGroup Q) :
   left_inv_eq_right_inv (reverseEven_evenUnitaryGroupEvenPart_mul_self Q x)
     (by rw [← map_mul, mul_inv_cancel, map_one])
 
+/-- A reversal-preserving monoid homomorphism from the even Clifford algebra sends the even part of
+an even unitary Clifford element to a unitary element of the target. -/
+theorem map_evenUnitaryGroupEvenPart_mem_unitary {B : Type w} [Monoid B] [StarMul B]
+    (e : even Q →* B) (he : ∀ x, e (reverseEven Q x) = star (e x))
+    (x : evenUnitaryGroup Q) : e (evenUnitaryGroupEvenPart Q x) ∈ unitary B := by
+  rw [Unitary.mem_iff, ← he, ← map_mul, ← map_mul, reverseEven_evenUnitaryGroupEvenPart_mul_self,
+    evenUnitaryGroupEvenPart_mul_reverseEven, map_one]
+  exact ⟨rfl, rfl⟩
+
 section Transport
 
 variable {A : Type w} [Semiring A] [Algebra R A] [StarMul A]
@@ -425,30 +396,22 @@ carrier to the unitary group of the target algebra. -/
 def evenUnitaryGroupEquivUnitaryOfAlgEquiv
     (e : even Q ≃ₐ[R] A) (he : ∀ x, e (reverseEven Q x) = star (e x)) :
     evenUnitaryGroup Q ≃* unitary A where
-  toFun x := ⟨e (evenUnitaryGroupEvenPart Q x), by
-    rw [Unitary.mem_iff, ← he, ← map_mul, ← map_mul, reverseEven_evenUnitaryGroupEvenPart_mul_self,
-      evenUnitaryGroupEvenPart_mul_reverseEven, map_one]
-    exact ⟨rfl, rfl⟩⟩
+  toFun x := ⟨e (evenUnitaryGroupEvenPart Q x),
+    map_evenUnitaryGroupEvenPart_mem_unitary Q e.toMonoidHom he x⟩
   invFun q :=
     have hs : ∀ a : A, reverseEven Q (e.symm a) = e.symm (star a) := fun a ↦ by
       apply e.injective; rw [he, e.apply_symm_apply, e.apply_symm_apply]
     ⟨⟨e.symm q, e.symm (star q), by rw [← Subalgebra.coe_mul, ← map_mul,
-        Unitary.mul_star_self_of_mem q.2, map_one, Subalgebra.coe_one], by rw [← Subalgebra.coe_mul,
-        ← map_mul, Unitary.star_mul_self_of_mem q.2, map_one, Subalgebra.coe_one]⟩,
-      (evenUnitaryGroup.mem_iff_reverse_mul_self_eq_one Q).2 ⟨(e.symm q).2, by
+        Unitary.mul_star_self_of_mem q.property, map_one, Subalgebra.coe_one], by rw
+            [← Subalgebra.coe_mul,
+        ← map_mul, Unitary.star_mul_self_of_mem q.property, map_one, Subalgebra.coe_one]⟩,
+      (evenUnitaryGroup.mem_iff_reverse_mul_self_eq_one Q).2 ⟨(e.symm q).property, by
         rw [← coe_reverseEven_apply, hs, ← Subalgebra.coe_mul, ← map_mul,
-          Unitary.star_mul_self_of_mem q.2, map_one, Subalgebra.coe_one]⟩⟩
+          Unitary.star_mul_self_of_mem q.property, map_one, Subalgebra.coe_one]⟩⟩
   left_inv x := Subtype.ext <| Units.ext <| by simp
   right_inv q := Subtype.ext <| (congrArg e (Subtype.ext (coe_evenUnitaryGroupEvenPart Q _) :
     evenUnitaryGroupEvenPart Q _ = e.symm q)).trans (e.apply_symm_apply q)
   map_mul' x y := Subtype.ext <| by simp
-
-/-- A reversal-preserving algebra equivalence sends the even part of an even unitary Clifford
-element to a unitary element of the target algebra. -/
-theorem map_evenUnitaryGroupEvenPart_mem_unitary
-    (e : even Q ≃ₐ[R] A) (he : ∀ x, e (reverseEven Q x) = star (e x))
-    (x : evenUnitaryGroup Q) : e (evenUnitaryGroupEvenPart Q x) ∈ unitary A :=
-  (evenUnitaryGroupEquivUnitaryOfAlgEquiv Q e he x).2
 
 /-- The forward unitary transport applies the algebra equivalence to the even Clifford value. -/
 @[simp]
@@ -490,7 +453,7 @@ def evenUnitaryGroupEquivOfAlgEquiv
       fun g h hgh ↦ by rw [← Subalgebra.coe_mul, ← map_mul, ← map_mul, hgh, map_one, map_one,
         Subalgebra.coe_one]
     ⟨⟨e.symm (val g), e.symm (val g⁻¹), hinv _ _ (mul_inv_cancel g), hinv _ _ (inv_mul_cancel g)⟩,
-      (evenUnitaryGroup.mem_iff_reverse_mul_self_eq_one Q).2 ⟨(e.symm (val g)).2, by
+      (evenUnitaryGroup.mem_iff_reverse_mul_self_eq_one Q).2 ⟨(e.symm (val g)).property, by
         have := congrArg Subtype.val ((hP (e.symm (val g))).2 (by simpa using val_mem g))
         simpa only [coe_reverseEven_apply, Subalgebra.coe_mul, Subalgebra.coe_one] using this⟩⟩
   left_inv x := Subtype.ext <| Units.ext <| by simp [val_ofVal]
@@ -526,7 +489,7 @@ end TransportToPredicate
 
 /-- Forget a Spin element to the same Clifford unit in the even unitary carrier. -/
 def spinGroupToEvenUnitary : spinGroup Q →* evenUnitaryGroup Q :=
-  spinGroup.toUnits.codRestrict (evenUnitaryGroup Q) fun x ↦ ⟨x.2.2, x.2.1.2⟩
+  spinGroup.toUnits.codRestrict (evenUnitaryGroup Q) fun x ↦ ⟨x.property.2, x.property.1.2⟩
 
 /-- The canonical map from Spin to the even unitary carrier does not change the underlying
 Clifford unit. -/
@@ -580,20 +543,9 @@ theorem range_spinGroup_toUnits :
     (spinGroup.toUnits : spinGroup Q →* (CliffordAlgebra Q)ˣ).range =
       (lipschitzGroup Q) ⊓ evenUnitaryGroup Q := by
   ext x
-  constructor
-  · rintro ⟨g, rfl⟩
-    refine ⟨spinGroup.units_mem_lipschitzGroup g.2, ?_⟩
-    exact ⟨g.2.2, g.2.1.2⟩
-  · intro hx
-    rcases hx with ⟨hLip, hEvenUnit⟩
-    have hEven : (x : CliffordAlgebra Q) ∈ even Q := hEvenUnit.1
-    have hUnitary : (x : CliffordAlgebra Q) ∈ unitary (CliffordAlgebra Q) := hEvenUnit.2
-    have hPin : (x : CliffordAlgebra Q) ∈ pinGroup Q := by
-      rw [pinGroup.mem_iff]
-      exact ⟨lipschitzGroup.coe_mem_iff_mem.mpr hLip, hUnitary⟩
-    refine ⟨⟨(x : CliffordAlgebra Q), hPin, hEven⟩, ?_⟩
-    apply Units.ext
-    rfl
+  simp only [mem_spinGroup_toUnits_range_iff, spinGroup.mem_iff, pinGroup.units_mem_iff,
+    Subgroup.mem_inf, evenUnitaryGroup.mem_iff]
+  tauto
 
 /-! ### Spin action after right multiplication by a negative vector -/
 
@@ -616,14 +568,11 @@ theorem rightIotaEven_spinGroup_smul (e : M) (he : Q e = -1)
           ((-ι Q e * star (s : CliffordAlgebra Q)) * ι Q e) =
       (s : CliffordAlgebra Q) * ι Q m * (ι Q e * -ι Q e) *
         star (s : CliffordAlgebra Q) * ι Q e := by
-      noncomm_ring
+      simp only [mul_assoc]
     _ = (s : CliffordAlgebra Q) * ι Q m *
         star (s : CliffordAlgebra Q) * ι Q e := by
       rw [mul_neg, ι_sq_scalar, he, map_neg, map_one, neg_neg]
       simp
-    _ = ((s : CliffordAlgebra Q) * ι Q m *
-        star (s : CliffordAlgebra Q)) * ι Q e := by
-      noncomm_ring
 
 /-- The negated right-vector embedding satisfies the same Spin transport identity. -/
 theorem neg_rightIotaEven_spinGroup_smul (e : M) (he : Q e = -1)
@@ -649,12 +598,7 @@ quadratic isometry. -/
 theorem evenUnitaryGroupMap_spinGroupToEvenUnitary (f : Q₁ →qᵢ Q₂) (x : spinGroup Q₁) :
     f.evenUnitaryGroupMap (CliffordAlgebra.spinGroupToEvenUnitary Q₁ x) =
       CliffordAlgebra.spinGroupToEvenUnitary Q₂ (f.spinGroupMap x) :=
-  Subtype.ext <| Units.ext <| by
-    rw [coe_evenUnitaryGroupMap_apply, CliffordAlgebra.coe_spinGroupToEvenUnitary_apply,
-      CliffordAlgebra.coe_spinGroupToEvenUnitary_apply]
-    -- Mathlib states no coercion lemma for `spinGroup.toUnits`, whose value field is the
-    -- underlying Clifford element, so both sides are `map f x` by definition.
-    exact (coe_spinGroupMap_apply f x).symm
+  Subtype.ext <| Units.ext <| by simp
 
 end QuadraticMap.Isometry
 

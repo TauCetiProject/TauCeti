@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.DerivedCategory.Linear
 public import TauCeti.Algebra.Homology.DerivedCategory.KInjective
 public import TauCeti.Algebra.Homology.LinearHomComplex.Cohomology
 public import TauCeti.Algebra.Homology.LinearHomComplex.Homotopy
+public import TauCeti.Algebra.Homology.LinearHomComplex.KInjective
 
 /-!
 # The derived Hom complex of unbounded complexes
@@ -28,11 +29,20 @@ Its cohomology computes morphisms in the derived category: for every integer `n`
 module categories have K-injective resolutions (`TauCeti.Algebra.Homology.ModuleCat.KInjective`),
 and `derivedHom A (ModuleCat A)` is then the derived Hom `RHom_A(L, M)` in `D(A)`.
 
+The basic computation behind this needs no resolutions: when `L` is itself a K-injective complex,
+the `n`-th cohomology of the linear Hom complex from any complex `K` to `L` is the module of
+morphisms `K ⟶ L⟦n⟧` in `D(C)` (`TauCeti.linearHomComplexHomologyLinearEquivOfIsKInjective`).
+
 ## Main definitions
 
 * `TauCeti.derivedHom`: the derived Hom bifunctor.
 * `TauCeti.derivedHomHomologyLinearEquiv`: the identification of `Hⁿ RHom(L, M)` with
   `L ⟶ M⟦n⟧`.
+* `TauCeti.linearHomComplexHomologyLinearEquivOfIsKInjective`: for a K-injective complex `L`,
+  the identification of the `n`-th cohomology of the linear Hom complex from `K` to `L` with
+  `K ⟶ L⟦n⟧` in the derived category.
+* `TauCeti.derivedHomObjIsoOfQuasiIso`: `RHom(L, -)` computed by the linear Hom complex out of any
+  complex with a quasi-isomorphism to the K-injective replacement of `L`.
 
 ## Main results
 
@@ -56,6 +66,53 @@ open CategoryTheory DerivedCategory CochainComplex.HomComplex Opposite
 namespace TauCeti
 
 universe t w' w v u
+
+section IsKInjective
+
+variable (R : Type w) [Ring R] {C : Type u} [Category.{v} C] [Abelian C] [Linear R C]
+  [HasDerivedCategory.{t} C]
+
+/-- For a K-injective complex `L`, the `n`-th cohomology of the linear Hom complex
+`CochainComplex.linearHomComplex R K L` is the `R`-module of morphisms `K ⟶ L⟦n⟧` in the derived
+category. No boundedness of `K` or `L` is assumed. -/
+def linearHomComplexHomologyLinearEquivOfIsKInjective (K L : CochainComplex C ℤ) [L.IsKInjective]
+    (n : ℤ) :
+    (CochainComplex.linearHomComplex R K L).homology n ≃ₗ[R] (Q.obj K ⟶ (Q.obj L)⟦n⟧) :=
+  linearHomComplexHomologyLinearEquiv R K L n ≪≫ₗ
+    LinearEquiv.ofBijective (Qh.mapLinearMap R) (by
+      rw [Functor.coe_mapLinearMap]
+      exact CochainComplex.IsKInjective.Qh_map_bijective _ _) ≪≫ₗ
+    Linear.homCongr R ((quotientCompQhIso C).app K)
+      ((quotientCompQhIso C).app (L⟦n⟧) ≪≫ (Q.commShiftIso n).app L)
+
+/-- The class of a cocycle `x` of degree `n` corresponds to the image under `Q` of the chain map
+`K ⟶ L⟦n⟧` defined by `x`, followed by the commutation of `Q` with the shift. -/
+@[simp]
+theorem linearHomComplexHomologyLinearEquivOfIsKInjective_symm_mk {K L : CochainComplex C ℤ}
+    [L.IsKInjective] {n : ℤ} (x : Cocycle K L n) :
+    linearHomComplexHomologyLinearEquivOfIsKInjective R K L n
+        ((homologyLinearEquiv R K L n).symm (CohomologyClass.mk x)) =
+      Q.map (Cocycle.equivHomShift.symm x) ≫ (Q.commShiftIso n).hom.app L := by
+  simp only [linearHomComplexHomologyLinearEquivOfIsKInjective, LinearEquiv.trans_apply,
+    linearHomComplexHomologyLinearEquiv_symm_mk, LinearEquiv.ofBijective_apply,
+    Functor.coe_mapLinearMap, Linear.homCongr_apply, Iso.trans_hom, Iso.app_hom, Iso.app_inv,
+    Category.assoc]
+  rw [quotientCompQhIso_hom_naturality_assoc, Iso.inv_hom_id_app_assoc]
+
+/-- Transporting the identification along isomorphisms out of the derived-category images of
+`K` and of `L⟦n⟧` amounts to transporting the image of a homotopy class under `Qh`. -/
+private lemma homCongr_linearHomComplexHomologyLinearEquivOfIsKInjective
+    {K L : CochainComplex C ℤ} [L.IsKInjective] {n : ℤ} {X Y : DerivedCategory C}
+    (e : Qh.obj ((HomotopyCategory.quotient C _).obj K) ≅ X)
+    (e' : Qh.obj ((HomotopyCategory.quotient C _).obj (L⟦n⟧)) ≅ Y)
+    (a : (CochainComplex.linearHomComplex R K L).homology n) :
+    Linear.homCongr R ((quotientCompQhIso C).symm.app K ≪≫ e)
+      (((quotientCompQhIso C).app (L⟦n⟧) ≪≫ (Q.commShiftIso n).app L).symm ≪≫ e')
+        (linearHomComplexHomologyLinearEquivOfIsKInjective R K L n a) =
+      (e.inv ≫ Qh.map (linearHomComplexHomologyLinearEquiv R K L n a)) ≫ e'.hom := by
+  simp [linearHomComplexHomologyLinearEquivOfIsKInjective, Linear.homCongr_apply]
+
+end IsKInjective
 
 variable (R : Type w) [Ring R] (C : Type u) [Category.{v} C] [Abelian C] [Linear R C]
   [HasKInjectiveResolutions C] [HasDerivedCategory.{t} C]
@@ -150,12 +207,26 @@ def derivedHomHomologyLinearEquiv (L M : DerivedCategory C) (n : ℤ) :
       (L ⟶ M⟦n⟧) :=
   (homologyDerivedHomIso R L M n ≪≫ (Functor.isoWhiskerLeft _ (homologyFunctorFactorsh _ n) ≪≫
     HomotopyCategory.homologyFunctorFactors _ _ n).app _).toLinearEquiv ≪≫ₗ
-    linearHomComplexHomologyLinearEquiv R ((kInjectiveReplacement C).obj L).as
+    linearHomComplexHomologyLinearEquivOfIsKInjective R ((kInjectiveReplacement C).obj L).as
       ((kInjectiveReplacement C).obj M).as n ≪≫ₗ
-    LinearEquiv.ofBijective (Qh.mapLinearMap R)
-      (CochainComplex.IsKInjective.Qh_map_bijective _ _) ≪≫ₗ
-    Linear.homCongr R ((asIso (kInjectiveReplacementAdjunction C).counit).app L)
-      (shiftKInjectiveReplacementIso M n)
+    Linear.homCongr R ((quotientCompQhIso C).symm.app _ ≪≫
+        (asIso (kInjectiveReplacementAdjunction C).counit).app L)
+      (((quotientCompQhIso C).app _ ≪≫ (Q.commShiftIso n).app _).symm ≪≫
+        shiftKInjectiveReplacementIso M n)
+
+/-- The identification of `Hⁿ RHom(L, M)` with `L ⟶ M⟦n⟧`, written through the cohomology of the
+Hom complex of the K-injective replacements. -/
+private lemma derivedHomHomologyLinearEquiv_apply (L M : DerivedCategory C) (n : ℤ)
+    (z : (homologyFunctor (ModuleCat.{v} R) n).obj (((derivedHom R C).obj (op L)).obj M)) :
+    derivedHomHomologyLinearEquiv R L M n z =
+      (((asIso (kInjectiveReplacementAdjunction C).counit).app L).inv ≫
+        Qh.map (linearHomComplexHomologyLinearEquiv R ((kInjectiveReplacement C).obj L).as
+          ((kInjectiveReplacement C).obj M).as n
+            ((homologyDerivedHomIso R L M n ≪≫ (Functor.isoWhiskerLeft _
+              (homologyFunctorFactorsh _ n) ≪≫
+                HomotopyCategory.homologyFunctorFactors _ _ n).app _).toLinearEquiv z))) ≫
+        (shiftKInjectiveReplacementIso M n).hom :=
+  homCongr_linearHomComplexHomologyLinearEquivOfIsKInjective R _ _ _
 
 /-- The identification of the cohomology of `RHom(L, M)` with morphisms `L ⟶ M⟦n⟧` is natural in
 `M`: a morphism `g : M ⟶ M'` acts by composition with `g⟦n⟧`. -/
@@ -201,7 +272,7 @@ theorem derivedHomHomologyLinearEquiv_naturality_right (L : DerivedCategory C)
       _ = _ := (congrArg (fun t ↦ _ ≫ Qh.map a ≫ t)
             (shiftKInjectiveReplacementIso_naturality g g' hg' n)).trans
           ((Category.assoc _ _ _).trans (Category.assoc _ _ _)).symm
-  rw [derivedHomHomologyLinearEquiv, derivedHomHomologyLinearEquiv, hmap]
+  rw [derivedHomHomologyLinearEquiv_apply, derivedHomHomologyLinearEquiv_apply, hmap]
   exact (congrArg (fun t ↦ (((asIso (kInjectiveReplacementAdjunction C).counit).app L).inv ≫
     Qh.map (linearHomComplexHomologyLinearEquiv R I J' n t)) ≫
       (shiftKInjectiveReplacementIso M' n).hom) hz).trans
@@ -250,7 +321,7 @@ theorem derivedHomHomologyLinearEquiv_naturality_left {L L' : DerivedCategory C}
       ((congrArg (· ≫ _) ((Category.assoc _ _ _).symm.trans
         (congrArg (· ≫ Qh.map a) (counit_inv_naturality f f' hf')))).trans
           ((congrArg (· ≫ _) (Category.assoc _ _ _)).trans (Category.assoc _ _ _)))
-  rw [derivedHomHomologyLinearEquiv, derivedHomHomologyLinearEquiv, hmap]
+  rw [derivedHomHomologyLinearEquiv_apply, derivedHomHomologyLinearEquiv_apply, hmap]
   exact (congrArg (fun t ↦ (((asIso (kInjectiveReplacementAdjunction C).counit).app L').inv ≫
     Qh.map (linearHomComplexHomologyLinearEquiv R I' J n t)) ≫
       (shiftKInjectiveReplacementIso M n).hom) hz).trans
@@ -258,5 +329,42 @@ theorem derivedHomHomologyLinearEquiv_naturality_left {L L' : DerivedCategory C}
       Qh.map t) ≫ (shiftKInjectiveReplacementIso M n).hom)
         (linearHomComplexHomologyLinearEquiv_homologyMap_precomp R f' w)).trans
       (hcomp _))
+
+/-- The derived Hom functor `RHom(L, -)` is computed by the linear Hom complex out of any complex
+`P` with a quasi-isomorphism `p` to the K-injective replacement of `L`: precomposition with `p` is
+a quasi-isomorphism of Hom complexes into every K-injective complex
+(`TauCeti.quasiIso_linearHomComplexPrecomp`). -/
+def derivedHomObjIsoOfQuasiIso (L : DerivedCategory C) {P : CochainComplex C ℤ}
+    (p : P ⟶ ((kInjectiveReplacement C).obj L).as) [QuasiIso p] :
+    (derivedHom R C).obj (op L) ≅ kInjectiveReplacement C ⋙
+      (linearHomComplexHomotopyFunctor R C).obj (op ((HomotopyCategory.quotient _ _).obj P)) ⋙
+        Qh :=
+  have : IsIso (Functor.whiskerLeft (kInjectiveReplacement C) (Functor.whiskerRight
+      ((linearHomComplexHomotopyFunctor R C).map ((HomotopyCategory.quotient _ _).map p).op)
+        Qh)) := by
+    rw [NatTrans.isIso_iff_isIso_app]
+    intro M
+    simp only [Functor.whiskerLeft_app, Functor.whiskerRight_app]
+    -- The component at `M` is the image under `Qh` of precomposition with `p` on the Hom complex
+    -- into the K-injective replacement of `M`, whose class is that replacement itself.
+    have h := (isIso_Qh_map_iff _).2 ((HomotopyCategory.quotient_map_mem_quasiIso_iff _).2
+      ((HomologicalComplex.mem_quasiIso_iff _).2
+        (quasiIso_linearHomComplexPrecomp R p ((kInjectiveReplacement C).obj M).as)))
+    rw [← linearHomComplexHomotopyFunctor_map_app] at h
+    exact h
+  @asIso _ _ _ _ _ this
+
+/-- The component of `derivedHomObjIsoOfQuasiIso` at `M` is the image of precomposition with `p`
+on the linear Hom complex into the K-injective replacement of `M`. -/
+@[simp]
+lemma derivedHomObjIsoOfQuasiIso_hom_app (L : DerivedCategory C) {P : CochainComplex C ℤ}
+    (p : P ⟶ ((kInjectiveReplacement C).obj L).as) [QuasiIso p] (M : DerivedCategory C) :
+    (derivedHomObjIsoOfQuasiIso R L p).hom.app M = Qh.map ((HomotopyCategory.quotient _ _).map
+      (linearHomComplexPrecomp R p ((kInjectiveReplacement C).obj M).as)) := by
+  simp only [derivedHomObjIsoOfQuasiIso]
+  rw [← linearHomComplexHomotopyFunctor_map_app]
+  -- The two sides differ only in writing the K-injective replacement of `M` as the class of its
+  -- underlying complex.
+  rfl
 
 end TauCeti

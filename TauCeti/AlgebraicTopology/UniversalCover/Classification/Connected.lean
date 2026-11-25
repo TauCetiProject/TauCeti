@@ -89,7 +89,7 @@ theorem isTransitiveAction_fiberAction_iff_connectedSpace (p : CoveringSpace X) 
       have := hjoin (p.isCoveringMap_proj.liftPathQuotient g.toPath f)
       rwa [hg'] at this
     have : PathConnectedSpace (p : TopCat) := by
-      refine ⟨⟨(e₀ : ⇑p.proj ⁻¹' {x₀}).1⟩, fun a b => ?_⟩
+      refine ⟨⟨(e₀ : ⇑p.proj ⁻¹' {x₀}).val⟩, fun a b => ?_⟩
       obtain ⟨f, hf⟩ := key a
       obtain ⟨f', hf'⟩ := key b
       exact (hf.trans (hfib f f')).trans hf'.symm

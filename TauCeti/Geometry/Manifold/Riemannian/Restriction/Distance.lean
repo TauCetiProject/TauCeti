@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.EVariationComparison
+public import TauCeti.Topology.EMetricSpace.Component
 
 /-!
 # Local distance in open Riemannian submanifolds
@@ -38,6 +39,8 @@ of geodesics, run in `U` under a compactness hypothesis on a ball of `M`.
   is the ambient distance near `p`.
 * `TopologicalSpace.Opens.exists_eball_riemannianEDist_open_eq_edist`: the distance of `U` is the
   ambient distance between any two points of a small ball around `p`.
+* `TopologicalSpace.Opens.instIsRiemannianManifoldEBallTopOpens`: the inherited distance of a
+  finite-distance component `TauCeti.eballTopOpens p` is its own Riemannian distance.
 -/
 
 public noncomputable section
@@ -124,7 +127,7 @@ theorem eventually_riemannianEDist_open_eq_edist (U : Opens M) (p : U) :
     ∀ᶠ q : U in 𝓝 p, riemannianEDist I p q = edist (p : M) q := by
   obtain ⟨r, hr, hball⟩ := EMetric.mem_nhds_iff.mp (U.isOpen.mem_nhds p.property)
   have hnear : ∀ᶠ q : U in 𝓝 p, edist (p : M) q < r :=
-    (continuous_const.edist continuous_subtype_val).continuousAt.eventually
+    (continuous_const.edist continuous_subtypeVal).continuousAt.eventually
       (gt_mem_nhds (by simpa using hr))
   exact hnear.mono fun q hq ↦ U.riemannianEDist_open_eq_edist_of_eball_subset p q hball hq
 
@@ -144,5 +147,14 @@ theorem exists_eball_riemannianEDist_open_eq_edist (U : Opens M) (p : U) :
       _ < R / 2 / 2 + R / 2 / 2 := ENNReal.add_lt_add hx hy
       _ = R / 2 := ENNReal.add_halves _
   exact U.riemannianEDist_open_eq_edist_of_eball_subset x y hsubset hxy
+
+/-- The finite-distance component of `p`, with the restricted Riemannian metric, has its inherited
+distance as its Riemannian distance. -/
+instance instIsRiemannianManifoldEBallTopOpens (p : M) :
+    IsRiemannianManifold I (TauCeti.eballTopOpens p) := by
+  refine ⟨fun x y ↦ ((TauCeti.eballTopOpens p).riemannianEDist_open_eq_edist_of_eball_subset x y
+    ?_ (edist_lt_top x y)).symm⟩
+  rw [TauCeti.coe_eballTopOpens,
+    TauCeti.eball_top_eq_of_edist_ne_top (TauCeti.mem_eballTopOpens.1 x.property).ne]
 
 end TopologicalSpace.Opens

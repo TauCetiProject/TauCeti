@@ -1,0 +1,197 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Sobolev.Local.Multiplication.Bound
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+
+/-!
+# Local bounds for mixed-exponent products at every order
+
+Let `p > 2`, `1 < q ≤ p` and let `Ω` be an open planar domain. Fix real normed spaces `F`, `G`
+and `H` with `F` and `G` finite-dimensional and `H` complete. For every `k`, on a set `U` whose
+closure is compact and contained in `Ω`, there is a constant `C` such that for every continuous
+bilinear map `B : F × G → H`
+`‖B(f, g)‖_{W^{k+1,q}(U)} ≤ C ‖B‖ ‖f‖_{W^{k+1,p}(Ω)} ‖g‖_{W^{k+1,q}(Ω)}`.
+This is the local bound that accompanies the membership statement
+`TauCeti.MemWkpLoc.bilin_succ`; at `q = p` it is the local bound for the algebra property of
+`W^{k+1,p}_loc`. The constant depends on the spaces, the exponents, the order and the sets, and is
+uniform in `B`, `f` and `g`. No membership hypothesis is needed: the bound holds trivially when a
+norm on the right is infinite.
+
+The proof is by induction on `k`, starting from the order-one bound
+`TauCeti.exists_eLpNormWkp_one_bilin_le`. By the weak Leibniz rule the weak derivative of
+`B(f, g)` is `B(Df, g) + B(f, Dg)`, a sum of two products of the same kind for the bilinear maps
+`B.precompL ℂ` and `B.precompR ℂ`, whose operator norms are at most `‖B‖`.
+
+## Main declarations
+
+* `TauCeti.exists_eLpNormWkp_succ_bilin_le`: the bound at every positive order.
+* `TauCeti.eLpNormWkp_succ_bilin_le_of_hasWeakFDerivOn`: its Leibniz step, which takes the bounds
+  for `B(f, g)` in `L^q` and for the two terms of its weak derivative as hypotheses.
+* `TauCeti.exists_eLpNormWkp_succ_clm_apply_le`: the field form `z ↦ A z (u z)` for a coefficient
+  field `A` of linear maps.
+* `TauCeti.exists_eLpNormWkp_clm_apply_le_mul_eLpNormWkp_succ`: the field form at every order `k`
+  with one more derivative on `u`, including `k = 0`.
+* `TauCeti.exists_eLpNormWkp_succ_compL_le`: the composition form `z ↦ A z ∘L T z`, for
+  finite-dimensional `H`.
+
+## References
+
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
+  Proposition B.1.19.
+-/
+
+public noncomputable section
+
+open MeasureTheory TopologicalSpace
+open scoped ENNReal NNReal
+
+namespace TauCeti
+
+variable {F G H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
+  [NormedAddCommGroup H] [NormedSpace ℝ H]
+  {Ω : Opens ℂ} {p q : ℝ≥0}
+
+/-- **The Leibniz step of the local product bounds.** Let `1 ≤ q` and let
+`B(Df, g) + B(f, Dg)` be a weak derivative of `B(f, g)` on `interior U`. If
+`‖B(f, g)‖_{L^q(U)} ≤ C₀ ‖B‖ X Y` and the two terms are bounded in `W^{k,q}(U)` by
+`Cl ‖B‖ X Y` and `Cr ‖B‖ X Y`, then
+`‖B(f, g)‖_{W^{k+1,q}(U)} ≤ (C₀ + Cl + Cr + 1) ‖B‖ X Y`. This is the inductive step of
+`TauCeti.exists_eLpNormWkp_succ_bilin_le` and of the bounds for `kp > 2`. -/
+theorem eLpNormWkp_succ_bilin_le_of_hasWeakFDerivOn {F G H : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedAddCommGroup H]
+    [NormedSpace ℝ H] (B : F →L[ℝ] G →L[ℝ] H) {q : ℝ≥0∞} (hq : 1 ≤ q) {U : Set ℂ} {k : ℕ}
+    {f : ℂ → F} {Df : ℂ → ℂ →L[ℝ] F} {g : ℂ → G} {Dg : ℂ → ℂ →L[ℝ] G} {C₀ Cl Cr : ℝ≥0}
+    {X Y : ℝ≥0∞}
+    (hD : HasWeakFDerivOn volume (Opens.interior U) (fun z => B (f z) (g z))
+      (fun z => B.precompL ℂ (Df z) (g z) + B.precompR ℂ (f z) (Dg z)))
+    (h₀ : eLpNorm (fun z => B (f z) (g z)) q (volume.restrict U) ≤ C₀ * ‖B‖ₑ * X * Y)
+    (hl : eLpNormWkp q U k (fun z => B.precompL ℂ (Df z) (g z)) ≤ Cl * ‖B‖ₑ * X * Y)
+    (hr : eLpNormWkp q U k (fun z => B.precompR ℂ (f z) (Dg z)) ≤ Cr * ‖B‖ₑ * X * Y) :
+    eLpNormWkp q U (k + 1) (fun z => B (f z) (g z)) ≤ ↑(C₀ + Cl + Cr + 1) * ‖B‖ₑ * X * Y :=
+  calc
+    _ ≤ eLpNorm (fun z => B (f z) (g z)) q (volume.restrict U) +
+        eLpNormWkp q U k (fun z => B.precompL ℂ (Df z) (g z) + B.precompR ℂ (f z) (Dg z)) :=
+      eLpNormWkp_succ_le hD
+    _ ≤ eLpNorm (fun z => B (f z) (g z)) q (volume.restrict U) +
+        (eLpNormWkp q U k (fun z => B.precompL ℂ (Df z) (g z)) +
+          eLpNormWkp q U k (fun z => B.precompR ℂ (f z) (Dg z))) :=
+      add_le_add le_rfl (eLpNormWkp_add_le hq)
+    _ ≤ C₀ * ‖B‖ₑ * X * Y + (Cl * ‖B‖ₑ * X * Y + Cr * ‖B‖ₑ * X * Y) := by gcongr
+    _ = ↑(C₀ + Cl + Cr) * ‖B‖ₑ * X * Y := by push_cast; ring
+    _ ≤ _ := by gcongr ?_ * _ * _ * _; exact_mod_cast le_self_add
+
+/-- **Local bound for mixed-exponent products at every positive order.** Fix real normed spaces
+`F`, `G` and `H` with `F` and `G` finite-dimensional and `H` complete. For `p > 2`, `1 < q ≤ p`,
+every `k` and a set `U` whose closure is compact and contained in `Ω`, there is a constant `C`
+such that `‖B(f, g)‖_{W^{k+1,q}(U)} ≤ C ‖B‖ ‖f‖_{W^{k+1,p}(Ω)} ‖g‖_{W^{k+1,q}(Ω)}` for every
+continuous bilinear map `B : F →L[ℝ] G →L[ℝ] H` and all `f : ℂ → F` and `g : ℂ → G`. At `k = 0`
+this is `TauCeti.exists_eLpNormWkp_one_bilin_le`; at `q = p` it is the local bound for the algebra
+property of `W^{k+1,p}_loc`. -/
+theorem exists_eLpNormWkp_succ_bilin_le [CompleteSpace H] (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
+    (k : ℕ) {U : Set ℂ} (hU : IsCompact (closure U)) (hUΩ : closure U ⊆ Ω) :
+    ∃ C : ℝ≥0, ∀ (B : F →L[ℝ] G →L[ℝ] H) (f : ℂ → F) (g : ℂ → G),
+      eLpNormWkp q U (k + 1) (fun z => B (f z) (g z)) ≤
+        C * ‖B‖ₑ * eLpNormWkp p Ω (k + 1) f * eLpNormWkp q Ω (k + 1) g := by
+  induction k generalizing F G H with
+  | zero => exact exists_eLpNormWkp_one_bilin_le hp hq hqp hU hUΩ
+  | succ k ih =>
+    -- The order-`k + 1` bound for `B` controls the `L^q` part, and those for `B.precompL ℂ` and
+    -- `B.precompR ℂ` control the two terms of the weak derivative given by the Leibniz rule.
+    obtain ⟨C₀, hC₀⟩ := ih (F := F) (G := G) (H := H)
+    obtain ⟨Cl, hCl⟩ := ih (F := ℂ →L[ℝ] F) (G := G) (H := ℂ →L[ℝ] H)
+    obtain ⟨Cr, hCr⟩ := ih (F := F) (G := ℂ →L[ℝ] G) (H := ℂ →L[ℝ] H)
+    refine ⟨C₀ + Cl + Cr + 1, fun B f g => ?_⟩
+    have hq1 : (1 : ℝ≥0∞) ≤ q := by exact_mod_cast hq.le
+    let _ : Fact (1 ≤ (p : ℝ≥0∞)) := ⟨hq1.trans (by exact_mod_cast hqp)⟩
+    have hq0 : (q : ℝ≥0∞) ≠ 0 := (zero_lt_one.trans_le hq1).ne'
+    have hp0 : (p : ℝ≥0∞) ≠ 0 := (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne'
+    have hUΩ' : U ⊆ Ω := subset_closure.trans hUΩ
+    refine le_mul_eNorm_mul_eLpNormWkp_mul_eLpNormWkp_of_ne_top_imp_le hp0 hq0 hUΩ' hUΩ'
+      (by positivity) (fun h => by rw [eLpNormWkp_congr_ae h, eLpNormWkp_zero_fun]) fun hf hg => ?_
+    -- Weak derivatives of the factors realizing their norms on `Ω`.
+    obtain ⟨Df, hDf, hDfk, hfΩ⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hf
+    obtain ⟨Dg, hDg, hDgk, hgΩ⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hg
+    set X := eLpNormWkp p Ω (k + 1 + 1) f
+    set Y := eLpNormWkp q Ω (k + 1 + 1) g
+    have hfX : eLpNormWkp p Ω (k + 1) f ≤ X := eLpNormWkp_mono_order (k + 1).le_succ
+    have hgY : eLpNormWkp q Ω (k + 1) g ≤ Y := eLpNormWkp_mono_order (k + 1).le_succ
+    have hDfX : eLpNormWkp p Ω (k + 1) Df ≤ X := hfΩ ▸ le_add_self
+    have hDgY : eLpNormWkp q Ω (k + 1) Dg ≤ Y := hgΩ ▸ le_add_self
+    -- The weak Leibniz rule on `Ω`, with `f` locally bounded.
+    have hfloc : MemWkpLoc p Ω 1 f := (memWkpLoc_of_eLpNormWkp_ne_top hf).of_le (by omega)
+    have hLeib := hDf.bilin_of_finrank_lt B (by simpa using hp) hq hqp
+      ((hfloc.memLpLoc_of_holderTriple hp le_rfl).mono_exponent le_top)
+      (memLp_of_eLpNormWkp_ne_top hDfk).memLpLoc hDg (memLp_of_eLpNormWkp_ne_top hg).memLpLoc
+      (memLp_of_eLpNormWkp_ne_top hDgk).memLpLoc
+    exact eLpNormWkp_succ_bilin_le_of_hasWeakFDerivOn B hq1
+      (hLeib.mono fun z hz => hUΩ' (interior_subset hz))
+      (eLpNorm_le_eLpNormWkp.trans ((hC₀ B f g).trans (by gcongr)))
+      ((hCl (B.precompL ℂ) Df g).trans
+        (by gcongr; exact eNorm_le_iff_norm_le.2 (B.norm_precompL_le ℂ)))
+      ((hCr (B.precompR ℂ) f Dg).trans
+        (by gcongr; exact eNorm_le_iff_norm_le.2 (B.norm_precompR_le ℂ)))
+
+/-- **Local bound for coefficient fields acting on local Sobolev maps.** Fix finite-dimensional
+real normed spaces `F` and `G`. For `p > 2`, `1 < q ≤ p`, every `k` and a set `U` whose closure
+is compact and contained in `Ω`, there is a constant `C` such that
+`‖z ↦ A z (u z)‖_{W^{k+1,q}(U)} ≤ C ‖A‖_{W^{k+1,p}(Ω)} ‖u‖_{W^{k+1,q}(Ω)}` for every
+coefficient field `A : ℂ → F →L[ℝ] G` and every `u : ℂ → F`. This is the bound that accompanies
+`TauCeti.MemWkpLoc.clm_apply_succ`. -/
+theorem exists_eLpNormWkp_succ_clm_apply_le (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p) (k : ℕ)
+    {U : Set ℂ} (hU : IsCompact (closure U)) (hUΩ : closure U ⊆ Ω) :
+    ∃ C : ℝ≥0, ∀ (A : ℂ → F →L[ℝ] G) (u : ℂ → F),
+      eLpNormWkp q U (k + 1) (fun z => A z (u z)) ≤
+        C * eLpNormWkp p Ω (k + 1) A * eLpNormWkp q Ω (k + 1) u := by
+  obtain ⟨C, hC⟩ := exists_eLpNormWkp_succ_bilin_le (F := F →L[ℝ] G) (G := F) (H := G) hp hq hqp k
+    hU hUΩ
+  exact ⟨C, fun A u => le_mul_mul_of_le_mul_eNorm_mul_mul ContinuousLinearMap.norm_id_le
+    (hC (ContinuousLinearMap.id ℝ (F →L[ℝ] G)) A u)⟩
+
+/-- **Local bound for coefficient fields with one derivative to spare.** Fix finite-dimensional
+real normed spaces `F` and `G`. For `p > 2`, `1 < q ≤ p`, every `k` and a set `U` whose closure is
+compact and contained in `Ω`, there is a constant `C` such that
+`‖z ↦ A z (u z)‖_{W^{k,q}(U)} ≤ C ‖A‖_{W^{k,p}(Ω)} ‖u‖_{W^{k+1,q}(Ω)}` for every coefficient field
+`A : ℂ → F →L[ℝ] G` and every `u : ℂ → F`. At `k = 0` the extra derivative of `u` makes `u`
+integrable to the exponent conjugate to `p` relative to `q`. -/
+theorem exists_eLpNormWkp_clm_apply_le_mul_eLpNormWkp_succ (hp : 2 < p) (hq : 1 < q)
+    (hqp : q ≤ p) (k : ℕ) {U : Set ℂ} (hU : IsCompact (closure U)) (hUΩ : closure U ⊆ Ω) :
+    ∃ C : ℝ≥0, ∀ (A : ℂ → F →L[ℝ] G) (u : ℂ → F),
+      eLpNormWkp q U k (fun z => A z (u z)) ≤
+        C * eLpNormWkp p Ω k A * eLpNormWkp q Ω (k + 1) u := by
+  cases k with
+  | zero =>
+    obtain ⟨C, hC⟩ := exists_eLpNorm_bilin_le_eLpNormWkp_one (F := F →L[ℝ] G) (G := F) (H := G)
+      hp hq.le hqp hU hUΩ
+    refine ⟨C, fun A u => ?_⟩
+    rw [eLpNormWkp_zero, eLpNormWkp_zero]
+    refine (le_mul_mul_of_le_mul_eNorm_mul_mul ContinuousLinearMap.norm_id_le
+      (hC (ContinuousLinearMap.id ℝ (F →L[ℝ] G)) A u)).trans ?_
+    gcongr
+    exact subset_closure.trans hUΩ
+  | succ k =>
+    obtain ⟨C, hC⟩ := exists_eLpNormWkp_succ_clm_apply_le (F := F) (G := G) hp hq hqp k hU hUΩ
+    exact ⟨C, fun A u => (hC A u).trans (by gcongr; exact eLpNormWkp_mono_order k.succ.le_succ)⟩
+
+/-- **Local bound for compositions of local Sobolev fields of linear maps.** Fix
+finite-dimensional real normed spaces `F`, `G` and `H`. For `p > 2`, `1 < q ≤ p`, every `k` and a
+set `U` whose closure is compact and contained in `Ω`, there is a constant `C` such that
+`‖z ↦ A z ∘L T z‖_{W^{k+1,q}(U)} ≤ C ‖A‖_{W^{k+1,p}(Ω)} ‖T‖_{W^{k+1,q}(Ω)}` for all fields
+`A : ℂ → G →L[ℝ] H` and `T : ℂ → F →L[ℝ] G`. This is the bound that accompanies
+`TauCeti.MemWkpLoc.compL_succ`. -/
+theorem exists_eLpNormWkp_succ_compL_le [FiniteDimensional ℝ H] (hp : 2 < p) (hq : 1 < q)
+    (hqp : q ≤ p) (k : ℕ) {U : Set ℂ} (hU : IsCompact (closure U)) (hUΩ : closure U ⊆ Ω) :
+    ∃ C : ℝ≥0, ∀ (A : ℂ → G →L[ℝ] H) (T : ℂ → F →L[ℝ] G),
+      eLpNormWkp q U (k + 1) (fun z => (A z).comp (T z)) ≤
+        C * eLpNormWkp p Ω (k + 1) A * eLpNormWkp q Ω (k + 1) T := by
+  obtain ⟨C, hC⟩ := exists_eLpNormWkp_succ_bilin_le (F := G →L[ℝ] H) (G := F →L[ℝ] G)
+    (H := F →L[ℝ] H) hp hq hqp k hU hUΩ
+  exact ⟨C, fun A T => le_mul_mul_of_le_mul_eNorm_mul_mul
+    (ContinuousLinearMap.norm_compL_le ℝ F G H) (hC (ContinuousLinearMap.compL ℝ F G H) A T)⟩
+
+end TauCeti

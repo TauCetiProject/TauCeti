@@ -52,8 +52,11 @@ used to push forward currents whose support is compact, see
   near which `χ = 1`.
 * `TestFunction.cutoffPullbackCLM_cutoffPullbackCLM`: composition of pullbacks with cutoffs.
 * `TestFunction.cutoffCompCLM`: the composition with a cutoff `f ↦ χ (f ∘ Φ)` of test functions,
-  the pullback with a cutoff of `0`-forms, with its values `TestFunction.cutoffCompCLM_apply`. It
-  is used to push forward distributions whose support is compact.
+  the pullback with a cutoff of `0`-forms, with its values `TestFunction.cutoffCompCLM_apply`,
+  its composition law `TestFunction.cutoffCompCLM_cutoffCompCLM` and its commutation
+  `TestFunction.postcompCLM_cutoffCompCLM` with postcomposition, and
+  `TestFunction.cutoffCompCLM_eventuallyEq`: it agrees with `f ∘ Φ` where `χ` is one. It is used
+  to push forward distributions.
 
 ## Implementation notes
 
@@ -520,6 +523,44 @@ theorem tsupport_cutoffCompCLM_subset (f : 𝓓(Ω', F)) :
     tsupport_postcompCLE] using tsupport_cutoffPullbackCLM_subset (χ := χ) (hΦ := hΦ)
       (postcompCLE (constOfIsEmptyLIE ℝ E' F (Fin 0)).toContinuousLinearEquiv f)
 
+/-- The composition with a cutoff commutes with postcomposition by a continuous linear map. -/
+theorem postcompCLM_cutoffCompCLM {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (L : F →L[ℝ] G) (f : 𝓓(Ω', F)) :
+    postcompCLM L (cutoffCompCLM χ Φ hΦ f) = cutoffCompCLM χ Φ hΦ (postcompCLM L f) := by
+  ext x
+  simp
+
+/-- **Composition of compositions with cutoffs**: composing with the cutoff `χ'` along `Ψ` and then
+with the cutoff `χ` along `Φ` is composing with the cutoff `χ (χ' ∘ Φ)` along `Ψ ∘ Φ`. -/
+theorem cutoffCompCLM_cutoffCompCLM {Ψ : E' → E''} {χ' : 𝓓(Ω', ℝ)}
+    {hΨ : ContDiffOn ℝ (⊤ : ℕ∞) Ψ Ω'} {hΨΦ : ContDiffOn ℝ (⊤ : ℕ∞) (Ψ ∘ Φ) Ω} (f : 𝓓(Ω'', F)) :
+    cutoffCompCLM χ Φ hΦ (cutoffCompCLM χ' Ψ hΨ f) =
+      cutoffCompCLM (cutoffCompCLM χ Φ hΦ χ') (Ψ ∘ Φ) hΨΦ f := by
+  ext x
+  simp [smul_smul]
+
+/-- The composition with a cutoff along the constant map at `y₀` is the multiple `f y₀ • χ` of the
+cutoff. -/
+theorem cutoffCompCLM_const {y₀ : E'} {hc : ContDiffOn ℝ (⊤ : ℕ∞) (fun _ : E ↦ y₀) Ω}
+    (f : 𝓓(Ω', ℝ)) : cutoffCompCLM χ (fun _ : E ↦ y₀) hc f = f y₀ • χ := by
+  ext x
+  simp [mul_comm]
+
+/-- A cutoff `χ` equal to one near `s ∩ Φ⁻¹(supp f)` makes `χ (f ∘ Φ)` agree with `f ∘ Φ` near
+every point of `s ∩ Ω`. -/
+theorem cutoffCompCLM_eventuallyEq {s : Set E} {f : 𝓓(Ω', F)}
+    (hχ : ∀ᶠ x in 𝓝ˢ (s ∩ Φ ⁻¹' tsupport f), χ x = 1) {x : E} (hxΩ : x ∈ Ω) (hxs : x ∈ s) :
+    (cutoffCompCLM χ Φ hΦ f : E → F) =ᶠ[𝓝 x] fun y ↦ f (Φ y) := by
+  by_cases hfx : Φ x ∈ tsupport f
+  · have hx : x ∈ s ∩ Φ ⁻¹' tsupport f := ⟨hxs, hfx⟩
+    filter_upwards [hχ.filter_mono (nhds_le_nhdsSet hx)] with y hy
+    simp [hy]
+  · -- Away from `Φ⁻¹(supp f)`, both sides vanish near `x`.
+    have hcont : ContinuousAt Φ x := hΦ.continuousOn.continuousAt (Ω.isOpen.mem_nhds hxΩ)
+    filter_upwards [hcont.preimage_mem_nhds ((isClosed_tsupport f).isOpen_compl.mem_nhds hfx)]
+      with y hy
+    simp [image_eq_zero_of_notMem_tsupport hy]
+
 end CutoffPullback
 
 end TestFunction
@@ -558,25 +599,15 @@ variable {E E' F V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 `k`-current `T` has mass at most `L ^ k` times the mass of `T`. -/
 theorem mass_comp_pullbackCLM_le (T : 𝓕) {L : ℝ≥0} (hL : ∀ x ∈ Ω, ‖fderiv ℝ Φ x‖ ≤ L) :
     mass (T ∘ pullbackCLM Φ hΦ hΦp) ≤ (L : ℝ≥0∞) ^ k * mass T := by
-  refine mass_le_iff.2 fun ω hω ↦ ?_
-  have hb : ‖(pullbackCLM Φ hΦ hΦp ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ ≤ L ^ k := by
-    refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun x ↦ ?_
-    rw [coe_toBoundedContinuousFunction]
-    by_cases hx : x ∈ Ω
-    · refine (norm_pullbackCLM_apply_le ω x).trans ?_
-      calc ‖ω (Φ x)‖ * ‖fderiv ℝ Φ x‖ ^ k ≤ 1 * (L : ℝ) ^ k := by
-            gcongr
-            exacts [hω _, hL x hx]
-        _ = L ^ k := one_mul _
-    · simp [hx]
-  calc ‖T (pullbackCLM Φ hΦ hΦp ω)‖ₑ
-      ≤ mass T * ‖(pullbackCLM Φ hΦ hΦp ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ₑ :=
-        enorm_apply_le_mass_mul T _
-    _ ≤ mass T * (L : ℝ≥0∞) ^ k := by
-        gcongr
-        rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_pow L.coe_nonneg]
-        exact ENNReal.ofReal_le_ofReal hb
-    _ = (L : ℝ≥0∞) ^ k * mass T := mul_comm _ _
+  refine (mass_comp_le_of_norm_apply_le T (c := L ^ k) (by positivity) fun ω hω x ↦ ?_).trans_eq
+    (by simp [ENNReal.ofReal_pow, ENNReal.ofReal_coe_nnreal])
+  by_cases hx : x ∈ Ω
+  · refine (norm_pullbackCLM_apply_le ω x).trans ?_
+    calc ‖ω (Φ x)‖ * ‖fderiv ℝ Φ x‖ ^ k ≤ 1 * (L : ℝ) ^ k := by
+          gcongr
+          exacts [hω _, hL x hx]
+      _ = L ^ k := one_mul _
+  · simp [hx]
 
 omit [NormedSpace ℝ V] in
 /-- **Pushforward preserves locally finite mass.** If a map `T` on test `k`-forms on `Ω` has

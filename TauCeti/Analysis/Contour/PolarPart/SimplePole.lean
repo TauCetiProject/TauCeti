@@ -110,7 +110,7 @@ theorem exists_simplePoleDecomposition {f : ℂ → ℂ} {S : Finset ℂ} {U : S
   refine decomp.f_eq_analyticRemainder_add_residue_div (z := z) ?_ hz
   intro s
   rw [PolarPartDecomposition.ofMeromorphic_order]
-  exact meromorphicPolarOrderAt_le_one_iff.mpr (horder s s.2)
+  exact meromorphicPolarOrderAt_le_one_iff.mpr (horder s s.property)
 
 end TauCeti.Contour
 

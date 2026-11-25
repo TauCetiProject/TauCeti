@@ -97,7 +97,7 @@ private theorem hasDecompRel_iUnion {A : Set (Fin n → ℝ)} {ι : Type*} {I : 
     HasDecompRel k A (⋃ i ∈ I, B i) := by
   classical
   have := hI.to_subtype
-  choose A₀ P hA₀ hP hcov hcar hflat using fun i : ↥I => h i i.2
+  choose A₀ P hA₀ hP hcov hcar hflat using fun i : ↥I => h i i.property
   refine ⟨⋃ i : ↥I, A₀ i, ⋃ i : ↥I, P i, countable_iUnion hA₀, countable_iUnion hP, ?_, ?_, ?_⟩
   · refine iUnion₂_subset fun i hi x hx => ?_
     rcases hcov ⟨i, hi⟩ hx with h1 | h1

@@ -360,19 +360,9 @@ This is the Hille--Yosida resolvent bound `‖R(lambda)‖ ≤ M / (lambda - ω)
 through the left-inverse identity `R(lambda) (lambda x - A x) = x`. -/
 theorem norm_le_norm_smul_sub_generator (S : StronglyContinuousSemigroup X) {ω M : ℝ}
     (hb : S.HasGrowthBound ω M) {lambda : ℝ} (hlambda : ω < lambda) (x : S.generator.domain) :
-    ‖(x : X)‖ ≤ M / (lambda - ω) * ‖lambda • (x : X) - S.generator x‖ := by
-  have hx : (x : X) ∈ S.domain := by
-    rw [← S.generator_domain]
-    exact x.property
-  have key : S.resolvent hb lambda hlambda (lambda • (x : X) - S.generator x) = (x : X) :=
-    S.resolventLeftInv hb lambda hlambda ⟨(x : X), hx⟩
-  calc ‖(x : X)‖ = ‖S.resolvent hb lambda hlambda (lambda • (x : X) - S.generator x)‖ := by
-        rw [key]
-    _ ≤ ‖S.resolvent hb lambda hlambda‖ * ‖lambda • (x : X) - S.generator x‖ :=
-        ContinuousLinearMap.le_opNorm _ _
-    _ ≤ M / (lambda - ω) * ‖lambda • (x : X) - S.generator x‖ := by
-        gcongr
-        exact S.resolvent_norm_le hb lambda hlambda
+    ‖(x : X)‖ ≤ M / (lambda - ω) * ‖lambda • (x : X) - S.generator x‖ :=
+  ((S.isResolventAt_generator hb hlambda).norm_le_norm_mul_norm_smul_sub x).trans
+    (by gcongr; exact S.resolvent_norm_le hb lambda hlambda)
 
 /-- For `lambda` beyond the growth exponent, `lambda • I - A` is injective on `D(A)`: the
 resolvent is a left inverse of it. -/

@@ -26,7 +26,10 @@ Since right duals are unique up to unique isomorphism, the image `F.obj Xᘁ` of
 mates, are identities for the identity functor, and compose along a composite of functors. They
 are the comparisons against which a monoidal functor between pivotal categories is required to
 preserve the pivotal structure. They are also natural in the functor: a monoidal natural
-transformation `τ : F ⟶ G` satisfies `τ_{Xᘁ} ≫ δ^G_X ≫ (τ_X)ᘁ = δ^F_X`.
+transformation `τ : F ⟶ G` satisfies `τ_{Xᘁ} ≫ δ^G_X ≫ (τ_X)ᘁ = δ^F_X` and
+`(τ_X)ᘁ ≫ (δ^F_X)⁻¹ ≫ τ_{Xᘁ} = (δ^G_X)⁻¹`. Likewise the image
+`F.obj (ᘁY)` of a left dual of `Y` is canonically isomorphic to the left dual `ᘁ(F.obj Y)`
+(`CategoryTheory.Functor.mapLeftDualIso`), characterized through the two evaluations.
 
 Between right rigid categories, applying the comparison twice gives the bidual comparison
 `κ_X = δ_{Xᘁ} ≫ ((δ_X)ᘁ)⁻¹ : F.obj Xᘁᘁ ≅ (F.obj X)ᘁᘁ`
@@ -76,9 +79,17 @@ equivalence.
   `CategoryTheory.Functor.mapRightDualIso_hom_naturality`, and computed for identities and
   composites by `CategoryTheory.Functor.mapRightDualIso_id` and
   `CategoryTheory.Functor.mapRightDualIso_comp`;
+* `CategoryTheory.Functor.mapLeftDualIso`: the comparison `F.obj (ᘁY) ≅ ᘁ(F.obj Y)`,
+  characterized by `CategoryTheory.Functor.whiskerLeft_mapLeftDualIso_hom_evaluation`, with its
+  inverse compatible with coevaluation by
+  `CategoryTheory.Functor.coevaluation_mapLeftDualIso_inv_whiskerRight`;
 * `CategoryTheory.NatTrans.app_comp_mapRightDualIso_hom_comp_rightAdjointMate` and
   `CategoryTheory.Iso.hom_app_comp_mapRightDualIso_hom`: the comparison is natural with respect to
   monoidal natural transformations and isomorphisms;
+* `TauCeti.doubleRightDualFunctor_mapRightDualIso`: the comparison is the identity for the double
+  right dual functor, so that `CategoryTheory.Iso.hom_app_comp_mapRightDualIso_hom` specializes to
+  the Freyd–Yetter identity `CategoryTheory.Iso.hom_app_rightDual` for a monoidal natural
+  isomorphism from the identity to the fourth right dual functor;
 * `CategoryTheory.Functor.mapDoubleRightDualIso`: the bidual comparison
   `F.obj Xᘁᘁ ≅ (F.obj X)ᘁᘁ`, characterized by
   `CategoryTheory.Functor.mapDoubleRightDualIso_hom_whiskerRight_evaluation`, natural by
@@ -268,6 +279,38 @@ theorem mapRightDualIso_comp {E : Type*} [Category* E] [MonoidalCategory E]
     ← G.map_comp_assoc, mapRightDualIso_hom_whiskerRight_evaluation]
   simp
 
+variable (F)
+
+/-- The canonical isomorphism `F.obj (ᘁY) ≅ ᘁ(F.obj Y)` between the image of the left dual of `Y`
+under a strong monoidal functor and the left dual of `F.obj Y`: both are left duals of
+`F.obj Y`, the first through the image pairing `F.mapExactPairing (ᘁY) Y`. -/
+noncomputable def mapLeftDualIso (Y : C) [HasLeftDual Y] [_hFY : HasLeftDual (F.obj Y)] :
+    F.obj (ᘁY) ≅ ᘁ(F.obj Y) :=
+  leftDualIso (F.mapExactPairing (ᘁY) Y) HasLeftDual.exact
+
+variable {F}
+
+/-- Through `F.mapLeftDualIso Y`, the evaluation of `(ᘁ(F.obj Y), F.obj Y)` is the image of the
+evaluation of `(ᘁY, Y)`. This characterizes `F.mapLeftDualIso Y`, by
+`CategoryTheory.ExactPairing.leftDualHom_ext`. -/
+@[reassoc]
+theorem whiskerLeft_mapLeftDualIso_hom_evaluation (Y : C) [HasLeftDual Y]
+    [_hFY : HasLeftDual (F.obj Y)] :
+    F.obj Y ◁ (F.mapLeftDualIso Y).hom ≫ ε_ (ᘁ(F.obj Y)) (F.obj Y) =
+      μ F Y (ᘁY) ≫ F.map (ε_ (ᘁY) Y) ≫ η F := by
+  rw [mapLeftDualIso, ExactPairing.leftDualIso_hom, ExactPairing.leftMate_comp_evaluation,
+    id_whiskerRight, Category.id_comp, mapExactPairing_evaluation]
+
+/-- Through the inverse of `F.mapLeftDualIso Y`, the coevaluation of `(ᘁ(F.obj Y), F.obj Y)` is
+the image of the coevaluation of `(ᘁY, Y)`. -/
+@[reassoc]
+theorem coevaluation_mapLeftDualIso_inv_whiskerRight (Y : C) [HasLeftDual Y]
+    [_hFY : HasLeftDual (F.obj Y)] :
+    η_ (ᘁ(F.obj Y)) (F.obj Y) ≫ (F.mapLeftDualIso Y).inv ▷ F.obj Y =
+      ε F ≫ F.map (η_ (ᘁY) Y) ≫ δ F (ᘁY) Y := by
+  rw [mapLeftDualIso, ExactPairing.leftDualIso_inv, ExactPairing.coevaluation_comp_leftMate]
+  simp
+
 /-! ### Internal Hom comparisons -/
 
 variable (F)
@@ -349,6 +392,39 @@ structure SendsSelfDuality {g : D} [ExactPairing g g] (F : D ⥤ C) [F.Monoidal]
   /-- The evaluation of `g` is sent to the evaluation of `V`. -/
   evaluation : (e.inv ⊗ₘ e.inv) ≫ μ F g g ≫ F.map (ε_ g g) ≫ η F = ε_ V V
 
+/-- A functor sending a self-duality along an isomorphism preserves its closed circle,
+using the unit comparisons to view its image as a scalar. -/
+@[reassoc]
+theorem SendsSelfDuality.coevaluation_comp_evaluation {g : D} [ExactPairing g g]
+    {F : D ⥤ C} [F.Monoidal] {V : C} [ExactPairing V V] {e : F.obj g ≅ V}
+    (h : SendsSelfDuality F V e) :
+    ε F ≫ F.map (η_ g g ≫ ε_ g g) ≫ η F = η_ V V ≫ ε_ V V := by
+  rw [Functor.map_comp_assoc, reassoc_of% h.coevaluation, h.evaluation]
+
+/-- Sending a self-duality along an isomorphism is preserved by composition of strong
+monoidal functors. The composite identification is the mapped first identification followed
+by the second. -/
+theorem SendsSelfDuality.comp {E : Type*} [Category* E] [MonoidalCategory E]
+    {g : C} [ExactPairing g g] {W : D} [ExactPairing W W] {V : E} [ExactPairing V V]
+    {F : C ⥤ D} [F.Monoidal] {G : D ⥤ E} [G.Monoidal]
+    {eF : F.obj g ≅ W} {eG : G.obj W ≅ V}
+    (hF : SendsSelfDuality F W eF) (hG : SendsSelfDuality G V eG) :
+    SendsSelfDuality (F ⋙ G) V (G.mapIso eF ≪≫ eG) where
+  coevaluation := by
+    simp only [comp_ε, comp_μ, Functor.comp_map, Iso.trans_inv, Functor.mapIso_inv,
+      ← tensorHom_comp_tensorHom, Category.assoc]
+    rw [← G.map_comp, hF.coevaluation]
+    simp only [Functor.map_comp, map_tensor, Category.assoc]
+    rw [← Category.assoc, hG.coevaluation]
+    simp
+  evaluation := by
+    simp only [comp_η, comp_μ, Functor.comp_map, Iso.trans_inv, Functor.mapIso_inv,
+      ← tensorHom_comp_tensorHom, Category.assoc]
+    rw [μ_natural_assoc, ← G.map_comp_assoc, ← G.map_comp_assoc, ← G.map_comp_assoc]
+    simp only [Category.assoc]
+    rw [hF.evaluation]
+    exact hG.evaluation
+
 end TauCeti
 
 /-! ### Naturality of the dual comparison in the functor -/
@@ -377,6 +453,30 @@ theorem NatTrans.app_comp_mapRightDualIso_hom_comp_rightAdjointMate (τ : F ⟶ 
   simp only [comp_whiskerRight, Category.assoc, rightAdjointMate_comp_evaluation]
   rw [← whisker_exchange_assoc, Functor.mapRightDualIso_hom_whiskerRight_evaluation,
     ← tensorHom_def_assoc, ← IsMonoidal.tensor_assoc, ← τ.naturality_assoc, hη]
+
+/-- The coevaluation counterpart of
+`CategoryTheory.NatTrans.app_comp_mapRightDualIso_hom_comp_rightAdjointMate`: a monoidal natural
+transformation `τ : F ⟶ G` between strong monoidal functors satisfies
+`(τ_X)ᘁ ≫ (δ^F_X)⁻¹ ≫ τ_{Xᘁ} = (δ^G_X)⁻¹` as morphisms `(G.obj X)ᘁ ⟶ G.obj Xᘁ`. Together, the two
+identities make the mate `(τ_X)ᘁ`, transported through the dual-comparison isomorphisms as
+`δ^G_X ≫ (τ_X)ᘁ ≫ (δ^F_X)⁻¹`, a two-sided inverse of `τ_{Xᘁ}`. -/
+@[reassoc]
+theorem NatTrans.rightAdjointMate_comp_mapRightDualIso_inv_comp_app (τ : F ⟶ G) [τ.IsMonoidal]
+    (X : C) [HasRightDual X] [HasRightDual (F.obj X)] [HasRightDual (G.obj X)] :
+    (τ.app X)ᘁ ≫ (F.mapRightDualIso X).inv ≫ τ.app Xᘁ = (G.mapRightDualIso X).inv := by
+  have hδ : δ F X Xᘁ ≫ (τ.app X ⊗ₘ τ.app Xᘁ) = τ.app (X ⊗ Xᘁ) ≫ δ G X Xᘁ := by
+    rw [← cancel_epi (μ F X Xᘁ), μ_δ_assoc, IsMonoidal.tensor_assoc, μ_δ, Category.comp_id]
+  -- Morphisms out of the right dual `(G.obj X)ᘁ` are determined by their composite with the
+  -- coevaluation of `G.obj X`, by transposition.
+  have hext : ∀ {f g : (G.obj X)ᘁ ⟶ G.obj Xᘁ},
+      η_ (G.obj X) (G.obj X)ᘁ ≫ G.obj X ◁ f = η_ (G.obj X) (G.obj X)ᘁ ≫ G.obj X ◁ g → f = g :=
+    fun h ↦ by simpa using congrArg (tensorLeftHomEquiv (𝟙_ D) (G.obj X) (G.obj X)ᘁ _).symm h
+  refine hext ?_
+  rw [Functor.coevaluation_whiskerLeft_mapRightDualIso_inv]
+  simp only [whiskerLeft_comp]
+  rw [coevaluation_comp_rightAdjointMate_assoc, ← whisker_exchange_assoc,
+    Functor.coevaluation_whiskerLeft_mapRightDualIso_inv_assoc, ← tensorHom_def,
+    hδ, τ.naturality_assoc, IsMonoidal.unit_assoc]
 
 /-- A monoidal natural isomorphism `α : F ≅ G` intertwines the comparisons between images of
 duals and duals of images: `α_{Xᘁ} ≫ δ^G_X = δ^F_X ≫ (α_X⁻¹)ᘁ`. -/
@@ -509,3 +609,59 @@ theorem mapDoubleRightDualNatIso_inv_app (X : C) :
 end DoubleRightDual
 
 end CategoryTheory.Functor
+
+/-! ### The dual comparison of the double right dual functor -/
+
+namespace TauCeti
+
+universe v u
+
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [RightRigidCategory C]
+
+/-- For the double right dual functor, the comparison between the image of a dual and the dual of
+an image is the identity of `Xᘁᘁᘁ`: the double right dual functor carries the evaluation of
+`(X, Xᘁ)` to that of `(Xᘁᘁ, Xᘁᘁᘁ)`, by `TauCeti.doubleRightDualFunctor_μ_comp_map_evaluation`. -/
+@[simp]
+theorem doubleRightDualFunctor_mapRightDualIso (X : C) :
+    (doubleRightDualFunctor C).mapRightDualIso X = Iso.refl _ := by
+  ext
+  refine ExactPairing.rightHom_ext (X := (doubleRightDualFunctor C).obj X) ?_
+  rw [Functor.mapRightDualIso_hom_whiskerRight_evaluation, ← Category.assoc,
+    doubleRightDualFunctor_μ_comp_map_evaluation]
+  -- The object `Xᘁᘁᘁ` now appears both as `(Xᘁᘁ)ᘁ` and as `(Xᘁ)ᘁᘁ`, which agree only up to
+  -- unfolding `doubleRightDualFunctor`.
+  erw [Category.assoc, Functor.Monoidal.ε_η, Category.comp_id, id_whiskerRight, Category.id_comp]
+
+end TauCeti
+
+namespace CategoryTheory.Iso
+
+open TauCeti
+
+universe v u
+
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [RightRigidCategory C]
+
+/-- **The Freyd–Yetter identity for the fourth dual**: a monoidal natural isomorphism `e` from the
+identity to the fourth right dual functor satisfies `e_{Xᘁ} = (e_X⁻¹)ᘁ`. This is the analogue of
+`TauCeti.pivotalIsoApp_rightDual` for the fourth dual, and the case of
+`CategoryTheory.Iso.hom_app_comp_mapRightDualIso_hom` in which both dual comparisons are
+identities, by `CategoryTheory.Functor.mapRightDualIso_id`,
+`CategoryTheory.Functor.mapRightDualIso_comp` and `TauCeti.doubleRightDualFunctor_mapRightDualIso`.
+-/
+theorem hom_app_rightDual (e : 𝟭 C ≅ doubleRightDualFunctor C ⋙ doubleRightDualFunctor C)
+    [NatTrans.IsMonoidal e.hom] (X : C) : e.hom.app Xᘁ = (e.inv.app X)ᘁ := by
+  have hF : ((𝟭 C).mapRightDualIso X).hom = 𝟙 Xᘁ := by
+    rw [Functor.mapRightDualIso_id]
+    rfl
+  have hG : ((doubleRightDualFunctor C ⋙ doubleRightDualFunctor C).mapRightDualIso X).hom =
+      𝟙 _ := by
+    rw [Functor.mapRightDualIso_comp, doubleRightDualFunctor_mapRightDualIso,
+      doubleRightDualFunctor_mapRightDualIso]
+    exact (Category.comp_id _).trans ((doubleRightDualFunctor C).map_id _)
+  have h := e.hom_app_comp_mapRightDualIso_hom X
+  rw [hF, hG] at h
+  -- The identities are those of objects that agree only up to unfolding.
+  exact (Category.comp_id _).symm.trans (h.trans (Category.id_comp _))
+
+end CategoryTheory.Iso
