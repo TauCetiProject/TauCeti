@@ -196,6 +196,7 @@ theorem norm_le_norm_toGraphSpace (x : f.domain) : ‖(x : E)‖ ≤ ‖f.toGrap
 theorem norm_apply_le_norm_toGraphSpace (x : f.domain) : ‖f x‖ ≤ ‖f.toGraphSpace x‖ :=
   f.norm_graphSnd_apply_le (f.toGraphSpace x)
 
+/-- The graph norm of `x` is at most `‖x‖ + ‖f x‖`. -/
 theorem norm_toGraphSpace_le_norm_add_norm (x : f.domain) :
     ‖f.toGraphSpace x‖ ≤ ‖(x : E)‖ + ‖f x‖ := by
   rw [← sq_le_sq₀ (norm_nonneg _) (by positivity), norm_toGraphSpace_sq]
@@ -225,7 +226,8 @@ theorem tendsto_toGraphSpace_iff {ι : Type*} {l : Filter ι} {u : ι → f.doma
       Tendsto (fun i ↦ (u i : E)) l (𝓝 (x : E)) ∧ Tendsto (fun i ↦ f (u i)) l (𝓝 (f x)) := by
   rw [Topology.IsInducing.subtypeVal.tendsto_nhds_iff,
     (WithLp.homeomorphProd 2 E F).isInducing.tendsto_nhds_iff, Prod.tendsto_iff]
-  rfl
+  simp only [Function.comp_def, ← Homeomorph.coe_toEquiv, WithLp.toEquiv_homeomorphProd,
+    WithLp.equiv_apply, coe_toGraphSpace]
 
 /-- A vector of the graph space is determined by its first coordinate. -/
 theorem graphFst_injective : Function.Injective f.graphFst := fun _ _ h ↦
