@@ -16,20 +16,19 @@ component functor over `U`. Since `η_U` carries band automorphisms to band auto
 compatible with the action of the coefficients `A(U)` on the isomorphisms `x ≅ y` of the fibre
 (`BandedMorphism.map_act`) and leaves their differences unchanged
 (`BandedMorphism.map_difference`). As the action is free, `η_U` is injective on isomorphisms
-(`BandedMorphism.mapIso_injective`), hence faithful when the fibres of `F` are groupoids, for
-instance when `F` is a gerbe (`BandedMorphism.faithful`).
+(`BandedMorphism.mapIso_injective`), hence faithful when the fibre of `F` over `U` is a groupoid,
+for instance when `F` is a gerbe (`BandedMorphism.faithful`).
 
 Given an isomorphism `p : x ≅ y` (an anchor; it is data, never inferred from local
 nonemptiness), every isomorphism `q : η_U x ≅ η_U y` has the preimage
 `p • (q - η_U p)` (`BandedMorphism.preimageIso`), independent of the anchor. So `η_U` is a bijection
 `(x ≅ y) ≃ (η_U x ≅ η_U y)` as soon as `x ≅ y` is inhabited (`BandedMorphism.isomEquiv`), and full
-on that pair when the fibres of `G` are groupoids (`BandedMorphism.hom_surjective_of_anchor`). On
-automorphisms, `η_U` is the composite of the two band identifications
-(`BandedMorphism.autEquiv`).
+on that pair when the fibre of `G` over `U` is a groupoid
+(`BandedMorphism.hom_surjective_of_anchor`). On automorphisms, `η_U` is the composite of the two
+band identifications (`BandedMorphism.autEquiv`).
 
-This is the part of AlgebraicModuliForArithmeticGeometry §4.10 that concerns a single
-band-preserving transformation (`BandPreserving.comp` is
-`CategoryTheory.Pseudofunctor.BandPreserving.comp`).
+Composition of band-preserving transformations is
+`CategoryTheory.Pseudofunctor.BandPreserving.comp`.
 
 ## Main declarations
 
@@ -90,9 +89,9 @@ theorem mapIso_injective :
   rw [← bF.act_difference p q, ← hd, AbelianBanding.act_one]
 
 include bF bG in
-/-- **Faithfulness.** When the fibres of `F` are groupoids, for instance when `F` is a gerbe, each
-component functor of a band-preserving transformation is faithful. -/
-theorem faithful [∀ V : C, IsGroupoid (F.obj (.mk (op V)))] :
+/-- **Faithfulness.** When the fibre of `F` over `U` is a groupoid, for instance when `F` is a
+gerbe, the component functor `η_U` of a band-preserving transformation is faithful. -/
+theorem faithful [IsGroupoid (F.obj (.mk (op U)))] :
     (η.app (.mk (op U))).toFunctor.Faithful where
   map_injective {x y} f g h := by
     have h' : (η.app (.mk (op U))).toFunctor.mapIso (asIso f) =
@@ -163,9 +162,9 @@ theorem isomEquiv_eq (p p' : x ≅ y) : isomEquiv bF bG η p = isomEquiv bF bG �
   Equiv.ext fun _ ↦ rfl
 
 include bF bG in
-/-- **Fullness on an anchored pair.** When the fibres of `G` are groupoids and `x ≅ y` is
+/-- **Fullness on an anchored pair.** When the fibre of `G` over `U` is a groupoid and `x ≅ y` is
 inhabited, every morphism `η_U x ⟶ η_U y` is the image of a morphism `x ⟶ y`. -/
-theorem hom_surjective_of_anchor [∀ V : C, IsGroupoid (G.obj (.mk (op V)))] (p : x ≅ y) :
+theorem hom_surjective_of_anchor [IsGroupoid (G.obj (.mk (op U)))] (p : x ≅ y) :
     Function.Surjective fun f : x ⟶ y ↦ (η.app (.mk (op U))).toFunctor.map f := by
   intro q
   refine ⟨(preimageIso bF bG η p (asIso q)).hom, ?_⟩
