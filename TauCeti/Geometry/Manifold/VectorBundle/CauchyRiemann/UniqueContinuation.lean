@@ -70,6 +70,17 @@ variable {M : Type*} [TopologicalSpace M] [T2Space M] [ChartedSpace ℂ M] [IsMa
   (hDs : ContMDiffCovariantDerivativeOn F 0 D univ)
   {s : Π x, V x} (hs : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) 1 (T% s)) (hs0 : D s = 0)
 
+omit [T2Space M] [IsManifold 𝓘(ℂ) ∞ M] [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)] [∀ x, IsScalarTower ℝ ℂ (V x)]
+  [∀ x, ContinuousSMul ℂ (V x)] [VectorBundle ℂ F V] [∀ x, Module ℂ (V x)] in
+/-- Multiplication by `i` is a complex structure on `F`, in the form `J ∘L J = -id` used by the
+planar unique continuation theorems: main's `ContinuousLinearMap.lsmul_I_mul_lsmul_I`. -/
+private theorem lsmul_I_comp_lsmul_I_eq_neg_id :
+    (ContinuousLinearMap.lsmul ℝ ℂ Complex.I : F →L[ℝ] F) ∘L
+      ContinuousLinearMap.lsmul ℝ ℂ Complex.I = -ContinuousLinearMap.id ℝ F := by
+  rw [← ContinuousLinearMap.mul_def, ContinuousLinearMap.lsmul_I_mul_lsmul_I,
+    ContinuousLinearMap.one_def]
+
 /-- The coefficient `2 Zᵢ(z)(·)(1)` of the equation of a reading in chart `i`. -/
 private def coeff (i : Fin A.n) (z : ℂ) : F →L[ℝ] F :=
   ((2 : ℝ) • ContinuousLinearMap.compL ℝ F (ℂ →L[ℝ] F) F (ContinuousLinearMap.apply ℝ F 1))
@@ -101,12 +112,9 @@ private theorem coord_equation (i : Fin A.n) :
     have : ContMDiffVectorBundle ((1 : ℕ) : WithTop ℕ∞) F V 𝓘(ℝ, ℂ) :=
       .of_le (n := ∞) (mod_cast le_top)
     exact_mod_cast A.contDiffOn_coord_image (k := 1) (by exact_mod_cast hs) i
-  have hsub : (A.image i : Set ℂ) ⊆
-      (A.chart i).target ∩ (A.chart i).symm ⁻¹' ((A.triv i).baseSet ∩ univ) := by
-    simpa only [inter_univ] using A.image_subset_chart_target_inter_symm_preimage_baseSet i
   have hC : ContinuousOn (coeff A (D := D) i) (A.image i) :=
     (ContinuousLinearMap.continuous _).comp_continuousOn
-      ((A.contDiffOn_chartZeroOrder hD hDs isOpen_univ i).continuousOn.mono hsub)
+      (A.contDiffOn_chartZeroOrder_image hD hDs i).continuousOn
   refine ⟨hu,
     hC.aestronglyMeasurable (A.image i).isOpen.measurableSet, fun w hw ↦ ?_, fun w hw ↦ ?_⟩
   · exact ⟨‖coeff A (D := D) i w‖ + 1, ((hC.continuousAt
@@ -147,9 +155,7 @@ private theorem eqOn_zero_of_eventually_coord_eq_zero {i : Fin A.n} {y : ℂ} {r
   obtain ⟨hu, hCm, hCb, heq⟩ := coord_equation A hD hDs hs hs0 i
   obtain ⟨t, hts, hto, hzt⟩ := _root_.eventually_nhds_iff.1 h₀
   refine eq_zero_of_coord_eq_zero A (eqOn_zero_of_contDiffOn_of_eqOn_zero_of_complexStructure
-    isOpen_ball isPreconnected_ball contDiffOn_const (fun _ _ ↦ by
-      rw [← ContinuousLinearMap.mul_def, ContinuousLinearMap.lsmul_I_mul_lsmul_I,
-        ContinuousLinearMap.one_def])
+    isOpen_ball isPreconnected_ball contDiffOn_const (fun _ _ ↦ lsmul_I_comp_lsmul_I_eq_neg_id)
     (hu.mono hr) (hCm.mono_set hr) (fun z hz ↦ hCb z (hr hz)) (fun z hz ↦ heq z (hr hz))
     (hto.inter isOpen_ball) ⟨z₀, hzt, hz₀⟩ inter_subset_right fun z hz ↦ hts z hz.1)
 
@@ -203,9 +209,7 @@ theorem IsRealCauchyRiemannOperator.eq_zero_of_forall_isBigO [ConnectedSpace M] 
   obtain ⟨r, hr, hri⟩ := isOpen_iff.1 (A.image i).isOpen _ hy
   obtain ⟨hu, hCm, hCb, heq⟩ := coord_equation A hD hDs hs hs0 i
   have hzero := eqOn_zero_of_contDiffOn_of_forall_isBigO_of_complexStructure isOpen_ball
-    isPreconnected_ball contDiffOn_const (fun _ _ ↦ by
-      rw [← ContinuousLinearMap.mul_def, ContinuousLinearMap.lsmul_I_mul_lsmul_I,
-        ContinuousLinearMap.one_def]) (hu.mono hri)
+    isPreconnected_ball contDiffOn_const (fun _ _ ↦ lsmul_I_comp_lsmul_I_eq_neg_id) (hu.mono hri)
     (hCm.mono_set hri) (fun z hz ↦ hCb z (hri hz)) (fun z hz ↦ heq z (hri hz)) (mem_ball_self hr)
     h₀
   have := A.compactSpace
