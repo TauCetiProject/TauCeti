@@ -750,6 +750,21 @@ private theorem exists_forall_energyFormH1_ofTestFunctionₗ_eq_of_hasWeakLineDe
     (fun i j => (hsmooth i j).of_le (by simp)) hu.energyFormH1_ofTestFunctionₗ hd hD hf φ]
   exact integral_congr_ae (hF.coeFn_toLp.mono fun x hx => congrArg (· * φ x) hx.symm)
 
+/-- Under the hypotheses of `UniformlyEllipticOn.exists_lowerOrder_eq_of_mapsTo`, every first weak
+derivative of the solution `u ∈ H¹₀(Ω)` lies in `H¹(Ω)`, since `u ∈ H²(Ω)`. -/
+private theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_w1p_of_mapsTo (hν : ν ≠ 0)
+    (hΩ : ∀ τ, ⟪τ, ν⟫_ℝ = 0 → ∀ t : ℝ, MapsTo (· + t • τ) Omega Omega)
+    (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega)
+    {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p0 mu Omega 2}
+    (hu : IsWeakSolutionDirichlet a 0 0 f u) (v : EuclideanSpace ℝ ι) :
+    ∃ d : W1p mu Omega 2,
+      HasWeakLineDerivOn mu Omega (W1p.value (u : W1p mu Omega 2)) (W1p.value d) v := by
+  obtain ⟨U, hU⟩ := ha.exists_lowerOrder_eq_of_mapsTo hν hΩ hK hu
+  obtain ⟨d, hd⟩ := Wkp.exists_hasWeakLineDerivOn_value 1 U v
+  rw [Wkp.value_succ, hU, Wkp.value_one, Wkp.value_one (u : W1p mu Omega 2)] at hd
+  exact ⟨d, hd⟩
+
 /-- **Tangential derivatives have zero boundary values.** Let `ν ≠ 0` and let `Ω` be convex and
 mapped into itself by every translation orthogonal to `ν`, as a half-space `{x | c < ⟪x, ν⟫}` or a
 slab is. Let `a` be uniformly elliptic and bounded on `Ω`, with `x ↦ a(x)` Lipschitz on `Ω` as a
@@ -767,12 +782,7 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_of_mapsTo (hν : ν ≠ 0)
       (W1p.value (w : W1p mu Omega 2)) τ := by
   set b := EuclideanSpace.basisFun ι ℝ
   -- `u ∈ H²(Ω)`, so its first derivatives lie in `H¹(Ω)`.
-  obtain ⟨U, hU⟩ := ha.exists_lowerOrder_eq_of_mapsTo hν hΩ hK hu
-  have hder : ∀ v, ∃ d : W1p mu Omega 2,
-      HasWeakLineDerivOn mu Omega (W1p.value (u : W1p mu Omega 2)) (W1p.value d) v := fun v => by
-    obtain ⟨d, hd⟩ := Wkp.exists_hasWeakLineDerivOn_value 1 U v
-    rw [Wkp.value_succ, hU, Wkp.value_one, Wkp.value_one (u : W1p mu Omega 2)] at hd
-    exact ⟨d, hd⟩
+  have hder := ha.exists_hasWeakLineDerivOn_w1p_of_mapsTo hν hΩ hK hu
   choose D hD using fun j => hder (b j)
   obtain ⟨d, hd⟩ := hder τ
   -- The difference quotients along `τ` lie in `H¹₀(Ω)` and converge to `∂_τ u` in `H¹(Ω)`.
@@ -821,12 +831,7 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_isWeakSolutionDirichle
   set b := EuclideanSpace.basisFun ι ℝ
   have hΩm : MeasurableSet (Omega : Set (EuclideanSpace ℝ ι)) := Omega.isOpen.measurableSet
   -- `u ∈ H²(Ω)`, so its first derivatives lie in `H¹(Ω)`.
-  obtain ⟨U, hU⟩ := ha.exists_lowerOrder_eq_of_mapsTo hν hΩ hK hu
-  have hder : ∀ v, ∃ d : W1p mu Omega 2,
-      HasWeakLineDerivOn mu Omega (W1p.value (u : W1p mu Omega 2)) (W1p.value d) v := fun v => by
-    obtain ⟨d, hd⟩ := Wkp.exists_hasWeakLineDerivOn_value 1 U v
-    rw [Wkp.value_succ, hU, Wkp.value_one, Wkp.value_one (u : W1p mu Omega 2)] at hd
-    exact ⟨d, hd⟩
+  have hder := ha.exists_hasWeakLineDerivOn_w1p_of_mapsTo hν hΩ hK hu
   choose D hD using fun j => hder (b j)
   -- The tangential derivative has zero boundary values.
   obtain ⟨w, hw⟩ := ha.exists_hasWeakLineDerivOn_of_mapsTo hν hΩc hΩ hK hu hτ

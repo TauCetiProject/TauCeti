@@ -7,13 +7,10 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.FlatBoundary
 public import TauCeti.Analysis.PDE.Regularity.HalfSpace
-import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.InnerProductSpace.HyperplaneReflection
-import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.Analysis.PDE.Regularity.HigherOrder
 import TauCeti.Analysis.PDE.Regularity.Hessian.DivergenceForm
 import TauCeti.Analysis.Sobolev.W1p.Extension
-import TauCeti.Analysis.Sobolev.W1p.TangentialDerivative
 import TauCeti.MeasureTheory.Function.PreciseRepresentative
 
 /-!
@@ -57,7 +54,7 @@ coefficients on a half-space.
   `closedBall y₀ (r / 2) ∩ {c₀ ≤ ⟪y, ν⟫}`.
 * **The equation for `∂ₑu`.** Moving `∂ₑ` across the energy form
   (`energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_sub_setIntegral`) shows that
-  `d = ∂ₑu` solves `-∂ᵢ(aⁱʲ ∂ⱼd) = -div G` on `B ∩ H`, with `G = -f e - (∂ₑa)ᵀ P`
+  `d = ∂ₑu` solves `-∂ᵢ(aⁱʲ ∂ⱼd) = -div G` on `B ∩ H`, with `G = -f e - (∂ₑa) P`
   (`energyFormH1_eq_setIntegral_inner_of_eq_neg_sub`). Products of bounded Hölder
   functions are Hölder, so `G` is `α`-Hölder on the closed half-ball
   (`exists_holderOnWith_smul_neg_sub_toDual_symm_matrixBilinearForm`). Composed with the fold
@@ -184,7 +181,7 @@ private theorem exists_holderOnWith_preciseRepresentative_gradient_extendRestric
 
 /-- **Step 2: the folded datum is Hölder.** If the derivatives of the entries of `a` and `f` are
 `α`-Hölder near each point of `B(y₀, r)` and `P` is `α`-Hölder on the closed half-ball
-`S = closedBall y₀ (r / 2) ∩ {c₀ ≤ ⟪y, ν⟫}`, then the datum `G = -f e - (∂ₑa)ᵀ P`, composed with the
+`S = closedBall y₀ (r / 2) ∩ {c₀ ≤ ⟪y, ν⟫}`, then the datum `G = -f e - (∂ₑa) P`, composed with the
 fold across the boundary hyperplane, is `α`-Hölder on the whole ball `B(y₀, r / 2)`. -/
 private theorem exists_holderOnWith_datum_comp_fold {α : ℝ≥0} (hα : 0 < α) {ν : E} {c₀ : ℝ}
     (hν : ν ≠ 0) {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {y₀ : E} (hy₀ : ⟪y₀, ν⟫_ℝ = c₀)
@@ -215,12 +212,11 @@ private theorem exists_holderOnWith_datum_comp_fold {α : ℝ≥0} (hα : 0 < α
 entries of `a` `C¹` on an open set `W` containing the closure of `B ∩ H` and `B ∩ H` relatively
 compact, and let `d ∈ H¹₀(H)` be the weak derivative of `u` along `e`. If `P = ∇u` almost
 everywhere on `B ∩ H`, then the zero extension of `d` to `B` solves `-∂ᵢ(aⁱʲ ∂ⱼd) = -div G` on
-`B ∩ H`, for `G` the datum `-f e - (∂ₑa)ᵀ P` composed with the fold, which is the identity on
+`B ∩ H`, for `G` the datum `-f e - (∂ₑa) P` composed with the fold, which is the identity on
 `H`. -/
 private theorem energyFormH1_extendRestrict_eq_setIntegral_inner {H B : Opens E} {W : Set E}
     {ν : E} {c₀ : ℝ} (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ)
     (hBc : IsCompact (closure (((B ⊓ H : Opens E)) : Set E))) (hW : IsOpen W)
-    (hHW : (H : Set E) ⊆ W)
     (hBW : closure (((B ⊓ H : Opens E)) : Set E) ⊆ W)
     {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
     (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) W) {f : E → ℝ}
@@ -237,14 +233,22 @@ private theorem energyFormH1_extendRestrict_eq_setIntegral_inner {H B : Opens E}
         (matrixBilinearForm (Matrix.of fun i j => fderiv ℝ (fun y => a y j i) x e) (P x))) ∘
           fun y => if c₀ ≤ ⟪y, ν⟫_ℝ then y else hyperplaneReflection ν c₀ y) x,
             ∇ (φ : E → ℝ) x⟫_ℝ := by
-  have hdV : HasWeakLineDerivOn volume (B ⊓ H) (W1p.value (W1p.restrictL inf_le_right u))
-      (W1p.value (W1p.restrictL (inf_le_right : B ⊓ H ≤ H) (d : W1p volume H 2))) e :=
-    ((hd.mono inf_le_right).congr_ae (W1p.value_restrictL_ae inf_le_right _).symm).congr_ae_deriv
-      (W1p.value_restrictL_ae inf_le_right _).symm
+  have hdV : HasWeakLineDerivOn volume (B ⊓ H)
+      (W1p.value (W1p.restrictL (le_refl (B ⊓ H))
+        (W1p.restrictL (inf_le_right : B ⊓ H ≤ H) u)))
+      (W1p.value (W1p.restrictL (inf_le_right : B ⊓ H ≤ H) (d : W1p volume H 2))) e := by
+    rw [W1p.restrictL_self]
+    exact ((hd.mono inf_le_right).congr_ae
+      (W1p.value_restrictL_ae inf_le_right _).symm).congr_ae_deriv
+        (W1p.value_restrictL_ae inf_le_right _).symm
   rw [restrictL_extendRestrict]
-  refine (energyFormH1_eq_setIntegral_inner_of_eq_neg_sub hBc inf_le_right hW hBW ha hf hP
-    (energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_sub_setIntegral inf_le_right
-      (fun i j => (ha i j).mono hHW) hu hdV φ)).trans (integral_congr_ae ?_)
+  -- The coefficients only need to be `C¹` near `B ∩ H`: `u` restricts to a solution on `B ∩ H`.
+  refine (energyFormH1_eq_setIntegral_inner_of_eq_neg_sub hBc le_rfl hW hBW ha
+    (hf.mono_measure (Measure.restrict_mono inter_subset_right le_rfl))
+    (hP.trans (W1p.gradient_restrictL_ae inf_le_right u).symm)
+    (energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_sub_setIntegral le_rfl
+      (fun i j => (ha i j).mono (subset_closure.trans hBW))
+      (energyFormH1_restrictL_eq_setIntegral inf_le_right hu) hdV φ)).trans (integral_congr_ae ?_)
   -- On `H` the fold is the identity.
   filter_upwards [ae_restrict_mem (B ⊓ H).isOpen.measurableSet] with x hx
   have hxν : c₀ ≤ ⟪x, ν⟫_ℝ := ((hH x).1 hx.2).le
@@ -255,7 +259,7 @@ private theorem energyFormH1_extendRestrict_eq_setIntegral_inner {H B : Opens E}
 problem `-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `H`, that is `∫_H ⟨a ∇u, ∇v⟩ = ∫_H f v` for every `v ∈ H¹₀(H)`.
 Suppose that `a` is uniformly elliptic with constants `λ, Λ` on `H` and Lipschitz there, and that
 `f ∈ L²(H)`. Let `y₀` lie on the boundary hyperplane and `r > 0`, and suppose that the entries of
-`a` are `C¹` on `H ∪ B(y₀, r)`, that `a` is uniformly elliptic on `B(y₀, r)`, and that the
+`a` are `C¹` on `B(y₀, r)`, that `a` is uniformly elliptic on `B(y₀, r)`, and that the
 derivatives of its entries and `f` are `α`-Hölder near each point of `B(y₀, r)`.
 
 Then for every tangential direction `e`, `⟪e, ν⟫ = 0`, the weak derivative `∂ₑu` lies in `H¹₀(H)`,
@@ -269,7 +273,7 @@ theorem exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_restric
     {lam Lam : ℝ} {K : ℝ≥0} (hell : UniformlyEllipticOn (H : Set E) a lam Lam)
     (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) H) {y₀ : E}
     (hy₀ : ⟪y₀, ν⟫_ℝ = c₀) {r : ℝ} (hr : 0 < r)
-    (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) (H ∪ ball y₀ r))
+    (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) (ball y₀ r))
     (hellB : UniformlyEllipticOn (ball y₀ r) a lam Lam)
     (hda : ∀ x ∈ ball y₀ r, ∃ ρ > 0, ∃ L : ℝ≥0, ∀ i j,
       HolderOnWith L α (fderiv ℝ (fun y => a y i j)) (ball x ρ))
@@ -292,11 +296,10 @@ theorem exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_restric
   -- The ball `B = B(y₀, 3r / 4)`, the coefficients on it and the bound on `f`.
   set B : Opens E := ⟨ball y₀ (3 * r / 4), isOpen_ball⟩
   have hBr : closedBall y₀ (3 * r / 4) ⊆ ball y₀ r := closedBall_subset_ball (by linarith)
-  have hW : IsOpen ((H : Set E) ∪ ball y₀ r) := H.isOpen.union isOpen_ball
   have hcl : closure (((B ⊓ H : Opens E)) : Set E) ⊆ closedBall y₀ (3 * r / 4) :=
     (closure_mono inter_subset_left).trans closure_ball_subset_closedBall
-  obtain ⟨Ka, hKa⟩ := exists_holderOnWith_matrixBilinearForm_of_contDiffOn hW ha
-    (isCompact_closedBall y₀ (3 * r / 4)) (hBr.trans subset_union_right) hα1.le
+  obtain ⟨Ka, hKa⟩ := exists_holderOnWith_matrixBilinearForm_of_contDiffOn isOpen_ball ha
+    (isCompact_closedBall y₀ (3 * r / 4)) hBr hα1.le
   obtain ⟨δf, hδf, -, Mf, -, hMf⟩ :=
     (isCompact_closedBall y₀ (3 * r / 4)).exists_holderOnWith_thickening_and_norm_le
       fun x hx => hfH x (hBr hx)
@@ -328,11 +331,12 @@ theorem exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_restric
     (hKa.mono ((hth.trans hhalf).trans ball_subset_closedBall)) (hG.mono hth) le_rfl
     (ae_value_extendRestrict_eq_zero d)
     (energyFormH1_extendRestrict_eq_setIntegral_inner hH
-      ((isCompact_closedBall y₀ (3 * r / 4)).of_isClosed_subset isClosed_closure hcl) hW
-      subset_union_left (hcl.trans (hBr.trans subset_union_right)) ha hf hu hd hPV)
+      ((isCompact_closedBall y₀ (3 * r / 4)).of_isClosed_subset isClosed_closure hcl) isOpen_ball
+      (hcl.trans hBr) ha hf hu hd hPV)
     (by positivity) (hth.trans hhalf)
   -- On the closed half-ball, the precise representatives of the gradients of `∂ₑu` and of its
-  -- extension agree.
+  -- extension agree. Membership in the `Opens` `B` unfolds to membership in its ball, which the
+  -- `show` makes explicit.
   exact ⟨_, hPB.congr fun x hx => preciseRepresentative_gradient_extendRestrict d
     (show x ∈ ball y₀ (3 * r / 4) from closedBall_subset_ball (by linarith) hx.1)⟩
 

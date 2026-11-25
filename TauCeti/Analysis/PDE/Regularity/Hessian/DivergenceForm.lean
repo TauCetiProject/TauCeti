@@ -101,7 +101,7 @@ local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 
 /-- **The datum of the differentiated equation is Hölder.** Let the derivatives of the entries of
 `a` and the function `f` be `α`-Hölder near each point of a set `Ω`, and let `P` be `α`-Hölder on a
-compact set `S ⊆ Ω`. Then the field `G = -f e - (∂ₑa)ᵀ P`, the divergence datum of the equation
+compact set `S ⊆ Ω`. Then the field `G = -f e - (∂ₑa) P`, the divergence datum of the equation
 differentiated along `e` when `P` is the gradient of the solution, is `α`-Hölder on `S`. -/
 theorem exists_holderOnWith_smul_neg_sub_toDual_symm_matrixBilinearForm {Omega : Set E}
     {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {α : ℝ≥0} (hα : 0 < α)
