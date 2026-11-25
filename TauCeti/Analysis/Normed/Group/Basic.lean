@@ -135,6 +135,7 @@ theorem mem_eball_iff_eNorm {E : Type*} [SeminormedAddCommGroup E] {a b : E} {r 
   rw [mem_eball, eDist_eq_eNorm_sub]
 
 /-- The extended norm of `x` is below `ENNReal.ofReal r` exactly when its norm is below `r`. -/
+@[simp]
 theorem enorm_lt_ofReal_iff {E : Type*} [SeminormedAddGroup E] {x : E} {r : ℝ} :
     ‖x‖ₑ < ENNReal.ofReal r ↔ ‖x‖ < r := by
   simpa using edist_lt_ofReal (x := x) (y := 0)
