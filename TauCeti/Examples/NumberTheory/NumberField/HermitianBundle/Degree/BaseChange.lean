@@ -12,7 +12,7 @@ public import TauCeti.NumberTheory.NumberField.Quadratic.Model
 # Checks for the Arakelov degree under base change
 
 For `K = ℚ`, `L = ℚ(i)` and `M = (ℤ, 2 |·|)`, `deg(M) = -log 2` and `deg(M_{𝓞 L}) = -2 log 2`,
-through `TauCeti.HermitianMetric.sectionDegree_baseChange_of_span_eq_top`.
+through `TauCeti.HermitianMetric.sectionDegree_baseChange`.
 
 `ℚ(i)` is the model `QuadraticAlgebra ℚ (-1) 0`.
 -/
@@ -44,7 +44,9 @@ example :
       HermitianMetric.sectionDegree_trivial_one, Module.finrank_self]
     simp
   refine ⟨h1, ?_⟩
-  rw [HermitianMetric.sectionDegree_baseChange_of_span_eq_top _ Ideal.span_singleton_one, h1,
+  have : Subsingleton (𝓞 ℚ ⧸ Submodule.span (𝓞 ℚ) {(1 : 𝓞 ℚ)}) :=
+    Submodule.Quotient.subsingleton_iff.mpr Ideal.span_singleton_one
+  rw [HermitianMetric.sectionDegree_baseChange, h1,
     QuadraticAlgebra.finrank_eq_two]
   ring
 
