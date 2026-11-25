@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.Caratheodory
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousSubstitution.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
@@ -55,6 +56,8 @@ so that `N_P(t, s) y` is the value at `t` of the Carathéodory solution of `x' =
   propagators on `[a, b]²`.
 * `TauCeti.propagator_const`, `TauCeti.propagator_zero`: for a constant coefficient `A`,
   `N_P(t, s) = exp ((t - s) • A)`; for `P = 0`, `N_P(t, s) = 1`.
+* `TauCeti.propagator_const_eq_cosh_add_sinh`: for a constant coefficient `A` with `A² = a²`,
+  `a ≠ 0` real, `N_P(t, s) = cosh((t - s) a) + (sinh((t - s) a) / a) A`.
 
 ## Implementation notes
 
@@ -354,6 +357,33 @@ theorem propagator_const (A : E →L[𝕜] E) (t s : ℝ) :
   have h := ((hasDerivAt_exp_smul_const' (𝕂 := 𝕜) A ((r - s : ℝ) : 𝕜)).hasFDerivAt.restrictScalars
     ℝ).comp_hasDerivAt r hg
   simpa [Function.comp_def, ContinuousLinearMap.mul_def] using h
+
+/-- **Constant coefficients squaring to a positive scalar.** If `A² = a²` with `a ≠ 0` real,
+then `N_P(t, s) = cosh((t - s) a) + (sinh((t - s) a) / a) A` for the constant coefficient `A`. -/
+theorem propagator_const_eq_cosh_add_sinh {A : E →L[𝕜] E} {a : ℝ} (ha : a ≠ 0)
+    (hA : A * A = (a : 𝕜) ^ 2 • 1) (t s : ℝ) :
+    propagator (fun _ ↦ A) t s =
+      (Real.cosh ((t - s) * a) : 𝕜) • 1 + (Real.sinh ((t - s) * a) / a : 𝕜) • A := by
+  refine propagator_eq_of_hasDerivAt (a := min s t) (b := max s t)
+    (X := fun r ↦ (Real.cosh ((r - s) * a) : 𝕜) • 1 + (Real.sinh ((r - s) * a) / a : 𝕜) • A)
+    continuousOn_const.integrableOn_Icc ⟨min_le_left _ _, le_max_left _ _⟩
+    ⟨min_le_right _ _, le_max_right _ _⟩ (fun r _ ↦ ?_) (by simp)
+  -- `X' = a sinh((r - s) a) + cosh((r - s) a) A = A X`, since `A² = a²`.
+  have ofReal_comp {f : ℝ → ℝ} {u : ℝ} (hf : HasDerivAt f u r) :
+      HasDerivAt (fun y ↦ (f y : 𝕜)) (u : 𝕜) r := by
+    simpa [Function.comp_def] using!
+      (RCLike.ofRealCLM (K := 𝕜)).hasFDerivAt.comp_hasDerivAt r hf
+  have hlin : HasDerivAt (fun r : ℝ ↦ (r - s) * a) a r := by
+    simpa using ((hasDerivAt_id r).sub_const s).mul_const a
+  have hc : HasDerivAt (fun r : ℝ ↦ (Real.cosh ((r - s) * a) : 𝕜))
+      (Real.sinh ((r - s) * a) * a : 𝕜) r := by
+    simpa using ofReal_comp hlin.cosh
+  have hs : HasDerivAt (fun r : ℝ ↦ (Real.sinh ((r - s) * a) / a : 𝕜))
+      (Real.cosh ((r - s) * a) : 𝕜) r := by
+    simpa [ha] using ofReal_comp (hlin.sinh.div_const a)
+  refine ((hc.smul_const _).add (hs.smul_const _)).congr_deriv ?_
+  simp only [← ContinuousLinearMap.mul_def, mul_add, mul_smul_comm, mul_one, hA, smul_smul]
+  match_scalars <;> field_simp
 
 /-- **The norm bound on `N_P(t, s) - 1`.**
 `‖N_P(t, s) - 1‖ ≤ exp |∫ u in s..t, ‖P u‖| - 1` for `s, t ∈ [a, b]`. -/
