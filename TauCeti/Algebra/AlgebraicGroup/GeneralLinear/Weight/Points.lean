@@ -75,11 +75,9 @@ theorem powCocharacter_weightCocharacter (w : Fin N → ℤ) (m : ℤ) :
     congr 1
     funext i
     rw [weightDiagonalUnits_apply, weightDiagonalUnits_apply, ← zpow_mul, mul_comm]
-  -- Read off coordinates at the generic point `T` of `𝔾ₘ`.
-  have hgen := congrArg WithConv.ofConv (hpts (LaurentPolynomial.genericUnit R))
-  rw [← Cocharacter.genericPoint_eq_pointsHom, ← Cocharacter.genericPoint_eq_pointsHom,
-    Cocharacter.genericPoint_ofConv, Cocharacter.genericPoint_ofConv] at hgen
-  refine BialgHom.ext fun x ↦ ?_
-  simpa using congrArg (fun f ↦ f x) hgen
+  -- A cocharacter is determined by its value at the generic point `T` of `𝔾ₘ`.
+  apply Cocharacter.genericPoint_injective
+  rw [Cocharacter.genericPoint_eq_pointsHom, Cocharacter.genericPoint_eq_pointsHom]
+  exact hpts _
 
 end TauCeti.GeneralLinear

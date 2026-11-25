@@ -112,9 +112,8 @@ theorem ker_weightCocharacter_const {m : ℤ} (hm : m ≠ 0) :
   have hpow := powCocharacter_weightCocharacter (R := k) (N := n) (fun _ ↦ 1) m
   simp only [one_mul] at hpow
   ext x
-  rw [HopfIdeal.mem_ker, mem_centerDefiningIdeal_iff, ← hpow, BialgHom.powCocharacter_apply,
-    ← AddMonoidAlgebra.mapDomain_zero (· * m)]
-  exact (AddMonoidAlgebra.mapDomain_injective (mul_left_injective₀ hm)).eq_iff
+  rw [HopfIdeal.mem_ker, mem_centerDefiningIdeal_iff, ← hpow,
+    BialgHom.powCocharacter_apply_eq_zero_iff _ hm]
 
 end Field
 
