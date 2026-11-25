@@ -20,8 +20,8 @@ closed `C⁺` (`Pair.completedTensor.algebraMap_mem_plus_of_isFinite_inl`).
 Over the base itself, with `B = C = A` complete and Hausdorff, the coprojection
 `(A, A⁺₁) → (A, A⁺₁) ⊗̂_A (A, A⁺₂)` is finite only if `A⁺₂ ≤ A⁺₁`
 (`Pair.completedTensor.plus_le_of_isFinite_inl_self`), and when `A⁺₁ ≤ A⁺₂` the right unit
-carries the completed tensor plus ring onto `A⁺₂`
-(`Pair.completedTensor.rightUnitor_mem_plus_self_iff`). So for `A⁺₁ ⊊ A⁺₂` the completed tensor
+carries the completed tensor plus ring onto `A⁺₂` (`Pair.completedTensor.rightUnitor_plus_self`
+in `TauCeti.RingTheory.Huber.TensorProduct.Unit`). So for `A⁺₁ ⊊ A⁺₂` the completed tensor
 product is `(A, A⁺₂)` and the coprojection is the identity ring map `(A, A⁺₁) → (A, A⁺₂)`, which is
 not finite. This is why finite étale base change of Huber pairs uses the integral-closure plus
 ring on the finite étale factor (`Pair.completedTensor.isFiniteEtale_inl`).
@@ -32,8 +32,6 @@ ring on the finite étale factor (`Pair.completedTensor.isFiniteEtale_inl`).
   from `(C, C⁺)` is finite and injective, then `a ∈ A` with image in `B⁺` has image in `C⁺`.
 * `TauCeti.Huber.Pair.completedTensor.plus_le_of_isFinite_inl_self`: over the base, a finite
   coprojection forces `A⁺₂ ≤ A⁺₁`.
-* `TauCeti.Huber.Pair.completedTensor.rightUnitor_mem_plus_self_iff`: for `A⁺₁ ≤ A⁺₂`, the plus
-  ring of `(A, A⁺₁) ⊗̂_A (A, A⁺₂)` is `A⁺₂` under the right unit.
 -/
 
 public section
@@ -85,26 +83,6 @@ variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopo
 theorem plus_le_of_isFinite_inl_self (h : (inl A S T).IsFinite) : T.plus ≤ S.plus := fun _ ha ↦
   algebraMap_mem_plus_of_isFinite_inl h
     (Function.LeftInverse.injective (CompletedTensor.rightUnitor_inl A A)) ha
-
-/-- **The completed tensor plus ring over the base is the larger plus ring.** For
-`A⁺₁ ≤ A⁺₂` on the same complete Hausdorff ring, an element of `A ⊗̂_A A` lies in the plus ring of
-`(A, A⁺₁) ⊗̂_A (A, A⁺₂)` exactly when its image under the right unit lies in `A⁺₂`. -/
-theorem rightUnitor_mem_plus_self_iff (hST : S.plus ≤ T.plus) (x : CompletedTensor A A A) :
-    x ∈ (S.completedTensor A T).plus ↔ CompletedTensor.rightUnitor A A x ∈ T.plus := by
-  have := T.isRingOfIntegralElements.isIntegrallyClosedIn
-  constructor
-  · intro hx
-    exact S.completedTensor_plus_le_comap T
-      (f := (CompletedTensor.rightUnitor A A).toRingHom)
-      (T.plus.toAddSubgroup.isClosed_of_isOpen T.isRingOfIntegralElements.isOpen)
-      (CompletedTensor.continuous_rightUnitor A A)
-      (fun b hb ↦ by simpa using hST hb) (fun c hc ↦ by simpa using hc) hx
-  · intro hx
-    have hx' := S.inr_mem_completedTensor_plus (A := A) T hx
-    rwa [← Algebra.algebraMap_self_apply (CompletedTensor.rightUnitor A A x),
-      CompletedTensor.inr_algebraMap, ← CompletedTensor.inl_algebraMap,
-      Algebra.algebraMap_self_apply, ← CompletedTensor.rightUnitor_symm_apply,
-      RingEquiv.symm_apply_apply] at hx'
 
 end Self
 

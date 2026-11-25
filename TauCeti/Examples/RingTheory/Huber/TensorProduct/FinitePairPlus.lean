@@ -50,10 +50,8 @@ example : ¬ (idHom S T hST.le).IsFiniteEtale := fun h ↦
 
 /-- The completed tensor product is `K` with plus ring `K⁺₂`. -/
 example :
-    (S.completedTensor K T).plus.map (CompletedTensor.rightUnitor K K).toRingHom = T.plus := by
-  ext b
-  rw [RingEquiv.toRingHom_eq_coe, Subring.mem_map_equiv,
-    Pair.completedTensor.rightUnitor_mem_plus_self_iff hST.le, RingEquiv.apply_symm_apply]
+    (S.completedTensor K T).plus.map (CompletedTensor.rightUnitor K K).toRingHom = T.plus :=
+  Pair.completedTensor.rightUnitor_plus_self hST.le
 
 /-- Under the right unit, the coprojection from `(K, K⁺₁)` is the identity ring map. -/
 example (x : K) : CompletedTensor.rightUnitor K K (CompletedTensor.inl K K K x) = x := by
