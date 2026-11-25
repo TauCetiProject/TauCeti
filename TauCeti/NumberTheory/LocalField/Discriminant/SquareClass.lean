@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.SquareClassGroup.Discriminant
 public import TauCeti.NumberTheory.LocalField.Discriminant.Basic
+public import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
 /-!
 # The discriminant of an integral basis of an extension of local fields
@@ -85,11 +86,8 @@ theorem exists_eq_sq_mul_discr_iff (b : Basis ι 𝒪[K] 𝒪[L]) (x : 𝒪[K]) 
       rw [← hw, map_mul] at hr'
       rw [div_pow, div_eq_iff (pow_ne_zero 2 hd0), sq, ← hr']
       ring
-    -- A square root in `K` of a unit of the integrally closed ring `𝒪[K]` lies in `𝒪[K]`.
-    obtain ⟨t', htt'⟩ := IsIntegrallyClosed.isIntegral_iff.mp
-      (IsIntegral.of_pow two_pos (ht ▸ isIntegral_algebraMap))
-    have ht' : t' ^ 2 = w := IsFractionRing.injective 𝒪[K] K (by rw [map_pow, htt', ht])
-    have hu : IsUnit t' := (isUnit_pow_iff two_ne_zero).mp (ht' ▸ w.isUnit)
-    exact ⟨hu.unit, by rw [IsUnit.unit_spec, ht', ← hw, mul_comm]⟩
+    -- A unit of the integrally closed ring `𝒪[K]` that is a square in `K` is a unit square.
+    obtain ⟨u, hu⟩ := IsIntegrallyClosedIn.exists_unit_pow_eq_of_pow_eq_algebraMap two_ne_zero ht
+    exact ⟨u, by rw [← Units.val_pow_eq_pow_val, hu, ← hw, mul_comm]⟩
 
 end TauCeti

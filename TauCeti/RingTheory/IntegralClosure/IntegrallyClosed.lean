@@ -20,6 +20,7 @@ integrally closed in every domain algebra.
 If `R` is integrally closed in `A`, divisibility in `R` can be tested on `n`-th powers by any
 element of `R` that becomes a unit in `A`: a quotient `b / a` in `A` whose `n`-th power lies in `R`
 is integral over `R`. This is the non-domain form of Mathlib's `IsIntegrallyClosed.pow_dvd_pow_iff`.
+Likewise a unit of `R` that is an `n`-th power in `A` is the `n`-th power of a unit of `R`.
 
 If `x ∈ R` is a nonzerodivisor and `R ⧸ (x)` is reduced, then `R` is integrally closed in its
 localization `R[1/x]`: if `a / x` is integral over `R` then `a ^ n` is divisible by `x`, so `a` is,
@@ -43,6 +44,8 @@ subring: lift a monic integral equation, whose evaluation then lies in the kerne
   closed in every domain algebra.
 * `IsIntegrallyClosedIn.pow_dvd_pow_iff`: for `a ∈ R` invertible in `A` and `n ≠ 0`,
   `a ^ n ∣ b ^ n ↔ a ∣ b` in `R`.
+* `IsIntegrallyClosedIn.exists_unit_pow_eq_of_pow_eq_algebraMap`: a unit of `R` that is an
+  `n`-th power in `A` is the `n`-th power of a unit of `R`.
 * `IsIntegrallyClosedIn.of_ringEquiv`: transport along a semilinear ring isomorphism.
 * `IsIntegrallyClosedIn.of_isLocalization_of_le_powers`: `R` is integrally closed in its
   localization at any submonoid of the powers of a nonzerodivisor `x` with `R ⧸ (x)` reduced.
@@ -107,6 +110,16 @@ theorem pow_dvd_pow_iff {n : ℕ} (hn : n ≠ 0) {a b : R} (ha : IsUnit (algebra
     (hpow ▸ isIntegral_algebraMap)
   refine ⟨d, IsIntegralClosure.algebraMap_injective R R A ?_⟩
   simp [hd, ← hu, mul_left_comm (u : A)]
+
+/-- If `R` is integrally closed in `A` and `n ≠ 0`, a unit `w` of `R` whose image in `A` is an
+`n`-th power is the `n`-th power of a unit of `R`: an `n`-th root of `w` in `A` is integral over
+`R`, hence lies in `R`, and it is a unit since its `n`-th power is. -/
+theorem exists_unit_pow_eq_of_pow_eq_algebraMap {n : ℕ} (hn : n ≠ 0) {w : Rˣ} {t : A}
+    (ht : t ^ n = algebraMap R A w) : ∃ u : Rˣ, u ^ n = w := by
+  obtain ⟨r, rfl⟩ := exists_algebraMap_eq_of_isIntegral_pow (Nat.pos_of_ne_zero hn)
+    (ht ▸ isIntegral_algebraMap)
+  have hr : r ^ n = w := IsIntegralClosure.algebraMap_injective R R A (by rw [map_pow, ht])
+  exact ⟨((isUnit_pow_iff hn).mp (hr ▸ w.isUnit)).unit, Units.ext (by simp [hr])⟩
 
 /-- If `k` is integrally closed in `A`, an element of `A` outside the line `k ∙ 1` is
 transcendental over `k`. -/

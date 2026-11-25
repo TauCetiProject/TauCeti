@@ -45,9 +45,7 @@ theorem exists_discr_eq_sq_mul_discr (b : Basis ι A B) (b' : Basis ι' A B) :
   · exact ⟨1, Subsingleton.elim _ _⟩
   -- Reindex `b` by `ι'`, so that the change-of-basis matrix to `b'` is square.
   set c := b.reindex (b.indexEquiv b')
-  have hunit : IsUnit (c.toMatrix b').det := by
-    rw [← LinearMap.toMatrix_id_eq_basis_toMatrix b' c]
-    exact LinearEquiv.isUnit_det (LinearEquiv.refl A B) b' c
+  have hunit : IsUnit (c.toMatrix b').det := c.isUnit_det b'
   refine ⟨hunit.unit, ?_⟩
   conv_lhs => rw [← c.toMatrix_map_vecMul b']
   rw [IsUnit.unit_spec, Algebra.discr_of_matrix_vecMul, Basis.coe_reindex, Algebra.discr_reindex]
