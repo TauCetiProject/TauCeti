@@ -316,23 +316,12 @@ private noncomputable def componentMap {X : ClosedWeb.{v}} (g : W.End → X.End)
 /-! ### Counting vertices, edges and faces -/
 
 /-- The vertices are the cycles of the effective rotation. -/
-theorem orbitCount_rotation : orbitCount W.rotation = Nat.card W.Vertex := by
-  rw [orbitCount_def]
-  refine Nat.card_congr (Equiv.ofBijective
-    (Quotient.lift W.incident fun a b h ↦ W.toRibbonGraph.blackEnd_eq_blackEnd_iff.mpr h)
-    ⟨fun a b ↦ Quotient.inductionOn₂ a b fun a b h ↦
-      Quotient.sound (W.toRibbonGraph.blackEnd_eq_blackEnd_iff.mp h), fun v ↦ ?_⟩)
-  obtain ⟨d, hd⟩ := W.toRibbonGraph.blackEnd_surjective v
-  exact ⟨Quotient.mk _ d, hd⟩
+theorem orbitCount_rotation : orbitCount W.rotation = Nat.card W.Vertex :=
+  W.toRibbonGraph.orbitCount_rotB.trans (Nat.card_eq_fintype_card (α := W.toRibbonGraph.B)).symm
 
 /-- The interval edges are the cycles of the end swap. -/
-theorem orbitCount_endSwap : orbitCount W.endSwap = Nat.card W.Edge := by
-  rw [orbitCount_def]
-  refine Nat.card_congr (Equiv.ofBijective
-    (Quotient.lift Prod.fst fun a b h ↦ W.toRibbonGraph.whiteEnd_eq_whiteEnd_iff.mpr h)
-    ⟨fun a b ↦ Quotient.inductionOn₂ a b fun a b h ↦
-      Quotient.sound (W.toRibbonGraph.whiteEnd_eq_whiteEnd_iff.mp h), fun e ↦ ?_⟩)
-  exact ⟨Quotient.mk _ (e, false), rfl⟩
+theorem orbitCount_endSwap : orbitCount W.endSwap = Nat.card W.Edge :=
+  W.toRibbonGraph.orbitCount_rotW.trans (Nat.card_eq_fintype_card (α := W.toRibbonGraph.W)).symm
 
 private theorem card_end : Nat.card W.End = 2 * Nat.card W.Edge := by
   rw [Nat.card_prod, Nat.card_eq_fintype_card (α := Bool), Fintype.card_bool, mul_comm]
