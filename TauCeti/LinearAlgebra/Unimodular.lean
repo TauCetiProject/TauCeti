@@ -12,6 +12,8 @@ public import Mathlib.RingTheory.LocalRing.Basic
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
 
+import TauCeti.RingTheory.Ideal.Operations
+
 /-!
 # Unimodular elements: scalar extension, unit rescaling, and local coordinates
 
@@ -356,10 +358,7 @@ taking the value `1` at `v` maps `I • M` into `I`. -/
 theorem IsUnimodular.notMem_smul_top (hv : IsUnimodular R v) {I : Ideal R} (hI : I ≠ ⊤) :
     v ∉ I • (⊤ : Submodule R M) := by
   obtain ⟨f, hf⟩ := isUnimodular_iff.1 hv
-  refine fun h ↦ hI ((Ideal.eq_top_iff_one I).2 (hf ▸ ?_))
-  refine Submodule.smul_induction_on (p := fun x ↦ f x ∈ I) h (fun a ha x _ ↦ ?_)
-    fun x y hx hy ↦ by simpa using I.add_mem hx hy
-  simpa using I.mul_mem_right (f x) ha
+  exact fun h ↦ hI ((Ideal.eq_top_iff_one I).2 (hf ▸ f.apply_mem_of_mem_smul_top h))
 
 open IsLocalRing in
 /-- Over a local ring with maximal ideal `𝔪`, an element of a free module `M`, of any rank, is
@@ -369,9 +368,6 @@ theorem Free.isUnimodular_iff_notMem_smul_top [IsLocalRing R] [Module.Free R M] 
   refine ⟨fun hv ↦ hv.notMem_smul_top (maximalIdeal.isMaximal R).ne_top, fun hv ↦ ?_⟩
   let b := Module.Free.chooseBasis R M
   refine (Basis.isUnimodular_iff_span_repr_eq_top (b := b)).2 (by_contra fun h ↦ hv ?_)
-  have hle := le_maximalIdeal h
-  rw [← b.linearCombination_repr v, Finsupp.linearCombination_apply]
-  exact Submodule.finsuppSum_mem _ _ _ _ fun i _ ↦
-    Submodule.smul_mem_smul (hle (Ideal.subset_span ⟨i, rfl⟩)) Submodule.mem_top
+  exact b.mem_smul_top_iff.2 fun i ↦ le_maximalIdeal h (Ideal.subset_span ⟨i, rfl⟩)
 
 end Module
