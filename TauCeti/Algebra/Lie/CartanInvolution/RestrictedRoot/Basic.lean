@@ -125,7 +125,8 @@ theorem lie_mem_restrictedRootSpace (hx : x ∈ 𝔞.restrictedRootSpace μ)
   simp only [LinearMap.add_apply]
   exact TauCeti.lie_mem_iInf_eigenspace_ad (H := ((↑) : 𝔞 → L)) hx hy
 
-/-- The powers of `ad x` for `x ∈ 𝔤_μ` carry `𝔤_ν` into `𝔤_{ν + kμ}`. -/
+/-- The powers of `ad x` for `x ∈ 𝔤_μ` carry `𝔤_ν` into `𝔤_{ν + kμ}`. Analogue of Mathlib's
+`LieAlgebra.toEnd_pow_apply_mem` for root spaces of a Cartan subalgebra. -/
 theorem pow_ad_apply_mem_restrictedRootSpace (hx : x ∈ 𝔞.restrictedRootSpace μ) (k : ℕ)
     (hy : y ∈ 𝔞.restrictedRootSpace ν) :
     ((ad R L x) ^ k) y ∈ 𝔞.restrictedRootSpace (ν + k • μ) := by
@@ -182,7 +183,8 @@ theorem finite_restrictedRoots [IsDomain R] [IsTorsionFree R L] [IsNoetherian R 
 /-- **`ad x` is nilpotent on a nonzero restricted root space.** If the restricted root spaces of
 `𝔞` span a Noetherian Lie algebra over a domain of characteristic zero, and `x ∈ 𝔤_μ` with
 `μ ≠ 0`, then `ad x` is nilpotent: `(ad x)^k` carries `𝔤_ν` into `𝔤_{ν + kμ}`, and only finitely
-many restricted root spaces are nonzero. -/
+many restricted root spaces are nonzero. Adapted from Mathlib's
+`LieModule.isNilpotent_toEnd_of_mem_rootSpace` for root spaces of a Cartan subalgebra. -/
 theorem isNilpotent_ad_of_mem_restrictedRootSpace [IsDomain R] [CharZero R] [IsTorsionFree R L]
     [IsNoetherian R L] (hspan : ⨆ ν : Dual R 𝔞, 𝔞.restrictedRootSpace ν = ⊤) (hμ : μ ≠ 0)
     (hx : x ∈ 𝔞.restrictedRootSpace μ) : IsNilpotent (ad R L x) := by
