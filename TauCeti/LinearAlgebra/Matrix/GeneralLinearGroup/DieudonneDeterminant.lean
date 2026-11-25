@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Abelianization.WithZero
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stability
 
 -- Non-public: the factorization through the Weyl element is used to prove multiplicativity and the

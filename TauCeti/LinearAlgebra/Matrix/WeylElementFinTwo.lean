@@ -17,6 +17,10 @@ The Weyl element `!![0, -1; 1, 0]` of the Bruhat decomposition of `2 × 2` matri
 over every ring (`TauCeti.isUnit_weylElement_fin_two`). Over a division ring, every `2 × 2` matrix
 whose lower left entry is nonzero is an upper triangular matrix times the Weyl element times a
 unipotent upper triangular matrix (`TauCeti.eq_upper_mul_weylElement_mul_upper_fin_two`).
+
+This matrix is the underlying matrix of `TauCeti.transvectionWeylElement` for the indices `1, 0`,
+the three-factor transvection word. The permutation matrix `!![0, 1; 1, 0]`
+(`TauCeti.GL2WeylElement`) represents the same element of the Weyl group but differs by a sign.
 -/
 
 public section
