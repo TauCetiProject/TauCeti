@@ -163,6 +163,24 @@ theorem coe_antidiagCongr :
     (antidiagCongr m R : Matrix (Fin (m + m)) (Fin (m + m)) R) = antidiagCongrMatrix m R :=
   (rfl)
 
+/-- The signs of the congruence are preserved by ring homomorphisms. -/
+@[simp]
+theorem map_antidiagSign {S : Type*} [CommRing S] (f : R →+* S) (i : Fin (m + m)) :
+    f (antidiagSign m R i) = antidiagSign m S i := by
+  refine Fin.addCases (fun i ↦ ?_) (fun i ↦ ?_) i
+  · simp
+  · simp
+
+/-- The signed permutation `P` is preserved by ring homomorphisms. -/
+@[simp]
+theorem map_antidiagCongr {S : Type*} [CommRing S] (f : R →+* S) :
+    GeneralLinearGroup.map f (antidiagCongr m R) = antidiagCongr m S := by
+  apply Units.ext
+  ext i j
+  rw [GeneralLinearGroup.map_apply, coe_antidiagCongr, coe_antidiagCongr,
+    antidiagCongrMatrix_apply, antidiagCongrMatrix_apply, apply_ite f, map_antidiagSign,
+    map_zero]
+
 /-- The inverse of `P` is its transpose. -/
 theorem coe_antidiagCongr_inv :
     ((antidiagCongr m R)⁻¹ : GL (Fin (m + m)) R) = (antidiagCongrMatrix m R)ᵀ :=

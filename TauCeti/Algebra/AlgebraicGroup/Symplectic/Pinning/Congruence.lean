@@ -27,6 +27,11 @@ pinning transported along them from the standard pinning of `Sp₂ₘ` by
 
 * `TauCeti.Symplectic.constantFormPinning`: the standard pinning of `Sp₂ₘ` transported to the
   subgroup scheme preserving `C`.
+* `TauCeti.Symplectic.constantFormPinning_torus_points`: on points, the transported torus point
+  of `t = (t₁, …, t_m)` has matrix `P⁻¹ diag(t₁, …, t_m, t₁⁻¹, …, t_m⁻¹) P`.
+* `TauCeti.Symplectic.mem_quotientPointsSubgroup_constantFormPinning_borel_iff`: a point with
+  matrix `M` lies in the transported Borel subgroup exactly when `P M P⁻¹` preserves the isotropic
+  flag, that is, vanishes below the diagonal in the flag order.
 
 ## References
 
@@ -40,7 +45,7 @@ open CategoryTheory Matrix
 
 namespace TauCeti.Symplectic
 
-universe u
+universe u v
 
 variable {R : Type u} [CommRing R] {m : ℕ} {C : Matrix (Fin (m + m)) (Fin (m + m)) R}
 
@@ -79,5 +84,77 @@ theorem constantFormPinning_borel [Nontrivial R] [ConnectedSpace (PrimeSpectrum 
         (ConcreteCategory.bijective_of_isIso
           (ConstantForm.coordinateHopfAlgebraCongr P hP).hom).2 := by
   rw [constantFormPinning, Pinning.comapOfIso_borel, standardPinning_borel]
+
+/-- **The torus of the transported pinning on points.** The point of the transported torus given
+by `t = (t₁, …, t_m)` has matrix `P⁻¹ diag(t₁, …, t_m, t₁⁻¹, …, t_m⁻¹) P`, the conjugate by `P⁻¹`
+of the diagonal torus point of `Sp₂ₘ`, with `P` read in `A`. -/
+theorem constantFormPinning_torus_points [Nontrivial R] [ConnectedSpace (PrimeSpectrum R)]
+    [Algebra.Smooth R (ConstantForm.coordinateHopfAlgebra R (m + m) C)] (P : GL (Fin (m + m)) R)
+    (hP : (P : Matrix (Fin (m + m)) (Fin (m + m)) R) * C *
+      (P : Matrix (Fin (m + m)) (Fin (m + m)) R)ᵀ = JFin m R)
+    (A : Type v) [CommRing A] [Algebra R A]
+    (t : HopfAlgebra.points (R := R)
+      (H := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin m) →₀ ℤ))) (CommAlgCat.of R A)) :
+    ((GeneralLinear.pointsMulEquiv (m + m)
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (ConstantForm.coordinateMap R (m + m) C)).app
+          (CommAlgCat.of R A)
+          ((CommHopfAlgCat.Hom.mapPointsFunctor (constantFormPinning P hP).torus.coordinateMap).app
+            (CommAlgCat.of R A) t)) : GL (Fin (m + m)) A) : Matrix (Fin (m + m)) (Fin (m + m)) A) =
+      (((GeneralLinearGroup.map (algebraMap R A) P)⁻¹ : GL (Fin (m + m)) A) :
+          Matrix (Fin (m + m)) (Fin (m + m)) A) *
+        diagonal (fun k ↦ (GLSymplecticFin.diagonalCoordinates
+          (GeneralLinear.diagonalTorusCoordinates (SplitTorus.pointsMulEquiv t)) k : A)) *
+        (GeneralLinearGroup.map (algebraMap R A) P : Matrix (Fin (m + m)) (Fin (m + m)) A) := by
+  rw [constantFormPinning_torus, SplitMaximalTorus.comapOfIso_coordinateMap,
+    CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply]
+  refine (congrArg (fun g : GL (Fin (m + m)) A ↦ (g : Matrix (Fin (m + m)) (Fin (m + m)) A))
+    (ConstantForm.pointsMulEquiv_mapPointsFunctor_coordinateHopfAlgebraCongr P hP
+      (CommAlgCat.of R A) _)).trans ?_
+  rw [splitMaximalTorus_coordinateMap, mapPointsFunctor_diagonalTorusCoordinateMap_app,
+    ConstantForm.mapPointsFunctor_coordinateMap_app, pointsMulEquiv_coe,
+    pointsMulEquiv_diagonalTorusPoints, GLSymplecticFin.coe_diagonal, map_inv, inv_inv,
+    Units.val_mul, Units.val_mul, diagGL_coe]
+
+/-- **The Borel subgroup of the transported pinning on points.** A point of the subgroup scheme
+preserving `C` with matrix `M` lies in the transported Borel subgroup exactly when `P M P⁻¹`, with
+`P` read in `A`, preserves the isotropic flag: its entries vanish below the diagonal in the flag
+order. -/
+theorem mem_quotientPointsSubgroup_constantFormPinning_borel_iff [Nontrivial R]
+    [ConnectedSpace (PrimeSpectrum R)]
+    [Algebra.Smooth R (ConstantForm.coordinateHopfAlgebra R (m + m) C)] (P : GL (Fin (m + m)) R)
+    (hP : (P : Matrix (Fin (m + m)) (Fin (m + m)) R) * C *
+      (P : Matrix (Fin (m + m)) (Fin (m + m)) R)ᵀ = JFin m R)
+    (A : Type v) [CommRing A] [Algebra R A]
+    (f : HopfAlgebra.points (R := R)
+      (H := ConstantForm.coordinateHopfAlgebra R (m + m) C) (CommAlgCat.of R A)) :
+    f ∈ CommHopfAlgCat.quotientPointsSubgroup
+        (ConstantForm.coordinateHopfAlgebra R (m + m) C) (constantFormPinning P hP).borel
+        (CommAlgCat.of R A) ↔
+      ∀ i j, GLSymplecticFin.IsotropicFlag.flagOrder m j <
+          GLSymplecticFin.IsotropicFlag.flagOrder m i →
+        ((GeneralLinearGroup.map (algebraMap R A) P : Matrix (Fin (m + m)) (Fin (m + m)) A) *
+          (GeneralLinear.pointsMulEquiv (m + m)
+            ((CommHopfAlgCat.Hom.mapPointsFunctor (ConstantForm.coordinateMap R (m + m) C)).app
+              (CommAlgCat.of R A) f) : Matrix (Fin (m + m)) (Fin (m + m)) A) *
+          (((GeneralLinearGroup.map (algebraMap R A) P)⁻¹ : GL (Fin (m + m)) A) :
+            Matrix (Fin (m + m)) (Fin (m + m)) A)) i j = 0 := by
+  set e := ConstantForm.coordinateHopfAlgebraCongr P hP
+  rw [constantFormPinning_borel]
+  -- Every point of the subgroup scheme preserving `C` comes from a point of `Sp₂ₘ` along `e`.
+  obtain ⟨g, rfl⟩ : ∃ g : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R m)
+      (CommAlgCat.of R A),
+      (CommHopfAlgCat.Hom.mapPointsFunctor e.hom).app (CommAlgCat.of R A) g = f := by
+    refine ⟨(CommHopfAlgCat.Hom.mapPointsFunctor e.inv).app (CommAlgCat.of R A) f, ?_⟩
+    rw [← CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply, e.hom_inv_id,
+      CommHopfAlgCat.Hom.mapPointsFunctor_id, NatTrans.id_app]
+    exact GrpCat.id_apply _ f
+  refine (BialgHom.mapDomain_mem_quotientPointsSubgroup_comapOfSurjective_iff e.hom.hom _ _ _
+    g).trans ?_
+  rw [IsotropicFlag.mem_definingPointsSubgroup_iff,
+    GLSymplecticFin.IsotropicFlag.mem_matrixSubgroup_iff_flagOrder,
+    ConstantForm.pointsMulEquiv_mapPointsFunctor_coordinateHopfAlgebraCongr, map_inv, inv_inv,
+    Units.val_mul, Units.val_mul, ConstantForm.mapPointsFunctor_coordinateMap_app,
+    pointsMulEquiv_coe]
+  simp only [Matrix.mul_assoc, Units.mul_inv, Matrix.mul_one, Units.mul_inv_cancel_left]
 
 end TauCeti.Symplectic
