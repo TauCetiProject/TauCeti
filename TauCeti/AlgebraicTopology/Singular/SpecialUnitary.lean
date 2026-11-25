@@ -28,9 +28,9 @@ with coproducts, its homology is `M` in degrees `0` and `3` and zero otherwise
 
 **`SU(3)`.** Evaluation on the first coordinate vector, `A ↦ A e₀`, is a locally trivial bundle
 `SU(2) → SU(3) → S⁵` (`TauCeti.exists_trivialization_specialUnitarySphereMap`), hence a Serre
-fibration (`TauCeti.specialUnitarySphereMap_mem_serreFibrations`), with fibre
-`A · diag(1, SU(2))` over `A e₀` (`TauCeti.specialUnitarySphereFiberHomeomorphMul`). Filter `SU(3)`
-by the preimages of the skeleta of the CW structure of `S⁵` with one `0`-cell and one `5`-cell. The
+fibration (`TauCeti.specialUnitarySphereMap_mem_serreFibrations`) whose every fibre is homeomorphic
+to `SU(2)`. Filter `SU(3)` by the preimages of the skeleta of the CW structure of `S⁵` with one
+`0`-cell and one `5`-cell. The
 first page of this filtration has two columns, `H_*(SU(2))` over the `0`-cell and `H_*(SU(2))`
 shifted by `5` over the `5`-cell (`TauCeti.TopCat.sphereFibrationSingularHomologyIso`). Its
 nonzero entries have total degrees `0`, `3` and `5`, `8`. Every differential from the second
@@ -162,16 +162,16 @@ private lemma serreFibrations_fiveSphereProj : TopCat.serreFibrations fiveSphere
   MorphismProperty.RespectsIso.postcomp TopCat.serreFibrations _ _
     (specialUnitarySphereMap_mem_serreFibrations (𝕜 := ℂ) (n := 2))
 
-/-- Every fibre of `SU(3) → S⁵` is homeomorphic to `SU(2)`. -/
+/-- Every fibre of `SU(3) → S⁵` is homeomorphic to `SU(2)`, through a local trivialization of
+the bundle around the corresponding point of the sphere of `ℂ³`. -/
 private def fiveSphereProjFiberHomeomorph (b : FiveSphere) :
     specialUnitaryGroup (Fin 2) ℂ ≃ₜ
       (fiveSphereProj ⁻¹' {b} : Set (specialUnitaryGroup (Fin (1 + 2)) ℂ)) :=
-  let A := (surjective_specialUnitarySphereMap (𝕜 := ℂ) (n := 2)
-    (fiveSphereHomeomorph.symm b)).choose
-  (specialUnitarySphereFiberHomeomorphMul ℂ 2 A).trans (Homeomorph.setCongr (by
+  let h := exists_trivialization_specialUnitarySphereMap (𝕜 := ℂ) (n := 2)
+    (fiveSphereHomeomorph.symm b)
+  (h.choose.preimageSingletonHomeomorph h.choose_spec).symm.trans (Homeomorph.setCongr (by
     ext B
-    simp only [Set.mem_preimage, Set.mem_singleton_iff, A,
-      (surjective_specialUnitarySphereMap (fiveSphereHomeomorph.symm b)).choose_spec]
+    simp only [Set.mem_preimage, Set.mem_singleton_iff]
     rw [fiveSphereProj_apply]
     exact fiveSphereHomeomorph.eq_symm_apply))
 

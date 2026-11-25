@@ -32,15 +32,11 @@ surjective: `SU(1)` is trivial, while the unit sphere of `𝕜` is not a point.
 * `TauCeti.specialUnitarySphereMap`: the evaluation map `SU(1 + n) → S`, `A ↦ A e₀`.
 * `TauCeti.specialUnitarySphereFiberHomeomorph`: `SU(n)` is homeomorphic to the fibre of
   `A ↦ A e₀` over `e₀`, through `B ↦ diag(1, B)`.
-* `TauCeti.specialUnitarySphereFiberHomeomorphMul`: `SU(n)` is homeomorphic to the fibre of
-  `A ↦ A e₀` over `A e₀`, through `B ↦ A diag(1, B)`.
 
 ## Main results
 
 * `TauCeti.specialUnitarySphereMap_eq_specialUnitarySphereMap_one_iff`: the fibre over `e₀` is the
   image of `SU(n)`.
-* `TauCeti.specialUnitarySphereMap_mul_eq_iff`: left translation by `A` carries the fibre over `e₀`
-  onto the fibre over `A e₀`.
 * `TauCeti.exists_trivialization_specialUnitarySphereMap`: a chart with fibre `SU(n)` around each
   point of the sphere.
 * `TauCeti.specialUnitarySphereMap_mem_serreFibrations`: `SU(1 + n) → S` is a Serre fibration.
@@ -156,50 +152,6 @@ theorem fromBlocksOne_specialUnitarySphereFiberHomeomorph_symm_apply
 theorem specialUnitarySphereFiberHomeomorph_one :
     specialUnitarySphereFiberHomeomorph 𝕜 n 1 = ⟨1, rfl⟩ :=
   Subtype.ext (by simp)
-
-/-! ### The fibres over the other points -/
-
-/-- Left translation by `A` carries the fibre of `B ↦ B e₀` over `e₀` onto the fibre over `A e₀`:
-`(A B) e₀ = A e₀` exactly when `B e₀ = e₀`. -/
-theorem specialUnitarySphereMap_mul_eq_iff (A B : specialUnitaryGroup (Fin (1 + n)) 𝕜) :
-    specialUnitarySphereMap n (A * B) = specialUnitarySphereMap n A ↔
-      specialUnitarySphereMap n B = specialUnitarySphereMap n 1 := by
-  -- Multiplying by the unitary matrix `A` is injective on vectors.
-  have hinj : Function.Injective (A : Matrix (Fin (1 + n)) (Fin (1 + n)) 𝕜).mulVec :=
-    mulVec_injective_iff_isUnit.2
-      (Unitary.isUnit_coe (U := ⟨(A : Matrix (Fin (1 + n)) (Fin (1 + n)) 𝕜),
-        (mem_specialUnitaryGroup_iff.1 A.property).1⟩))
-  rw [show specialUnitarySphereMap n A = specialUnitarySphereMap n (A * 1) by rw [mul_one]]
-  simp only [Subtype.ext_iff, ← (WithLp.ofLp_injective 2).eq_iff, ofLp_specialUnitarySphereMap_mul]
-  exact hinj.eq_iff
-
-variable (𝕜 n) in
-/-- **Every fibre of `A ↦ A e₀` is `SU(n)`.** The block embedding followed by left translation,
-`B ↦ A diag(1, B)`, is a homeomorphism of `SU(n)` onto the fibre over `A e₀`. -/
-def specialUnitarySphereFiberHomeomorphMul (A : specialUnitaryGroup (Fin (1 + n)) 𝕜) :
-    specialUnitaryGroup (Fin n) 𝕜 ≃ₜ
-      specialUnitarySphereMap (𝕜 := 𝕜) n ⁻¹' {specialUnitarySphereMap n A} :=
-  (specialUnitarySphereFiberHomeomorph 𝕜 n).trans <|
-    (Homeomorph.mulLeft A).subtype fun B ↦ by
-      simp only [mem_preimage, mem_singleton_iff, Homeomorph.coe_mulLeft,
-        specialUnitarySphereMap_mul_eq_iff]
-
-@[simp]
-theorem coe_specialUnitarySphereFiberHomeomorphMul_apply (A : specialUnitaryGroup (Fin (1 + n)) 𝕜)
-    (B : specialUnitaryGroup (Fin n) 𝕜) :
-    (specialUnitarySphereFiberHomeomorphMul 𝕜 n A B : specialUnitaryGroup (Fin (1 + n)) 𝕜) =
-      A * specialUnitaryGroup.fromBlocksOne 𝕜 1 n B := by
-  simp [specialUnitarySphereFiberHomeomorphMul, Homeomorph.subtype]
-
-/-- A special unitary matrix `C` with `C e₀ = A e₀` is `A diag(1, B)` for its image `B` in
-`SU(n)`. -/
-@[simp]
-theorem fromBlocksOne_specialUnitarySphereFiberHomeomorphMul_symm_apply
-    (A : specialUnitaryGroup (Fin (1 + n)) 𝕜)
-    (C : specialUnitarySphereMap (𝕜 := 𝕜) n ⁻¹' {specialUnitarySphereMap n A}) :
-    A * specialUnitaryGroup.fromBlocksOne 𝕜 1 n
-      ((specialUnitarySphereFiberHomeomorphMul 𝕜 n A).symm C) = C := by
-  rw [← coe_specialUnitarySphereFiberHomeomorphMul_apply, Homeomorph.apply_symm_apply]
 
 /-! ### Local triviality -/
 
