@@ -39,6 +39,8 @@ converges on an annulus `r < |t| < 1` converges on the whole disc `|t| < 1`.
   inclusion is injective and lands in every annular subalgebra.
 * `TauCeti.RobbaRing.mem_range_ofOnOpenDisc`: its image is the set of elements with no terms of
   negative degree.
+* `TauCeti.RobbaRing.coe_one_add_monomial_pow_natCast`: the binomial theorem, the coefficient of
+  `tⁿ` in `(1 + t) ^ N` is `C(N, n)`.
 -/
 
 public section
@@ -145,6 +147,24 @@ theorem ofOnOpenDisc_polynomialHom_X :
     rw [coe_ofOnOpenDisc_natCast, PowerSeries.OnOpenDisc.coe_polynomialHom, Polynomial.coeff_coe,
       Polynomial.coeff_X, coe_monomial, Pi.single_apply]
     grind
+
+/-- `(1 + t) ^ N` is the image of the polynomial `(1 + X) ^ N`, whose coefficients are binomial
+coefficients. -/
+private theorem one_add_monomial_pow (N : ℕ) : (1 + monomial 1 1 : RobbaRing R) ^ N =
+    ofOnOpenDisc R (PowerSeries.OnOpenDisc.polynomialHom ((1 + Polynomial.X) ^ N)) := by
+  simp
+
+/-- **The binomial theorem in the Robba ring**: the coefficient of `tⁿ` in `(1 + t) ^ N` is
+`C(N, n)`. -/
+theorem coe_one_add_monomial_pow_natCast (N n : ℕ) :
+    (((1 + monomial 1 1 : RobbaRing R) ^ N : RobbaRing R) : ℤ → R) n = N.choose n := by
+  rw [one_add_monomial_pow, coe_ofOnOpenDisc_natCast, PowerSeries.OnOpenDisc.coe_polynomialHom,
+    Polynomial.coeff_coe, Polynomial.coeff_one_add_X_pow]
+
+/-- `(1 + t) ^ N` has no terms of negative degree. -/
+theorem coe_one_add_monomial_pow_of_neg (N : ℕ) {n : ℤ} (hn : n < 0) :
+    (((1 + monomial 1 1 : RobbaRing R) ^ N : RobbaRing R) : ℤ → R) n = 0 := by
+  rw [one_add_monomial_pow, coe_ofOnOpenDisc_of_neg R _ hn]
 
 /-- Distinct power series have distinct images in the Robba ring. -/
 theorem ofOnOpenDisc_injective : Function.Injective (ofOnOpenDisc R) := fun f g h ↦

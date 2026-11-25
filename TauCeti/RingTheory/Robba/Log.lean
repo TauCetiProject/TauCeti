@@ -48,8 +48,6 @@ binomial estimate `‖C(N - 1, j) - (-1)ʲ‖ ≤ (j + 1) ‖N‖` of `TauCeti.N
 * `TauCeti.RobbaRing.log_mem_annulus`: it lies in every annular subalgebra.
 * `TauCeti.RobbaRing.log_notMem_bounded`: it is not in the bounded Robba ring when some positive
   integer has norm less than `1`.
-* `TauCeti.RobbaRing.coe_one_add_monomial_pow_natCast`: the coefficient of `tⁿ` in `(1 + t) ^ N`
-  is `C(N, n)`.
 * `TauCeti.RobbaRing.tendsto_laurentGaussNorm_one_add_pow_sub_log`: over a normed `ℚ_p`-algebra,
   `((1 + t) ^ (p ^ m) - 1) / p ^ m → log (1 + t)` in every Gauss norm `|·|_ρ`, `0 ≤ ρ < 1`.
 
@@ -72,24 +70,6 @@ namespace RobbaRing
 open IsConvolutionRing
 
 variable (K : Type*) [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
-
-/-- `(1 + t) ^ N` is the image of the polynomial `(1 + X) ^ N`, whose coefficients are binomial
-coefficients. -/
-private theorem one_add_monomial_pow (N : ℕ) : (1 + monomial 1 1 : RobbaRing K) ^ N =
-    ofOnOpenDisc K (PowerSeries.OnOpenDisc.polynomialHom ((1 + Polynomial.X) ^ N)) := by
-  simp
-
-/-- **The binomial theorem in the Robba ring**: the coefficient of `tⁿ` in `(1 + t) ^ N` is
-`C(N, n)`. -/
-theorem coe_one_add_monomial_pow_natCast (N n : ℕ) :
-    (((1 + monomial 1 1 : RobbaRing K) ^ N : RobbaRing K) : ℤ → K) n = N.choose n := by
-  rw [one_add_monomial_pow, coe_ofOnOpenDisc_natCast, PowerSeries.OnOpenDisc.coe_polynomialHom,
-    Polynomial.coeff_coe, Polynomial.coeff_one_add_X_pow]
-
-/-- `(1 + t) ^ N` has no terms of negative degree. -/
-theorem coe_one_add_monomial_pow_of_neg (N : ℕ) {n : ℤ} (hn : n < 0) :
-    (((1 + monomial 1 1 : RobbaRing K) ^ N : RobbaRing K) : ℤ → K) n = 0 := by
-  rw [one_add_monomial_pow, coe_ofOnOpenDisc_of_neg K _ hn]
 
 variable [CharZero K]
 
@@ -189,14 +169,11 @@ theorem tendsto_laurentGaussNorm_one_add_pow_sub_log {ρ : ℝ} (hρ₀ : 0 ≤ 
           ring
       _ ≤ C * ‖(p : K)‖ ^ m := by gcongr; exact hC (j + 1)
   · -- In degrees `n ≤ 0` the coefficient vanishes.
+    have hCp : 0 ≤ C * ‖(p : K)‖ ^ m := by positivity
     rcases hn.lt_or_eq with hn | rfl
-    · rw [coe_one_add_monomial_pow_of_neg K _ hn, coe_log_of_nonpos K hn.le,
-        Pi.single_eq_of_ne hn.ne, sub_self, mul_zero, sub_zero, norm_zero, zero_mul]
-      positivity
-    · rw [← Nat.cast_zero, coe_one_add_monomial_pow_natCast, coe_log_natCast]
-      simp only [Nat.choose_zero_right, Nat.cast_one, Nat.cast_zero, Pi.single_eq_same, sub_self,
-        mul_zero, div_zero, norm_zero, zero_mul]
-      positivity
+    · simpa [coe_one_add_monomial_pow_of_neg K _ hn, coe_log_of_nonpos K hn.le,
+        Pi.single_eq_of_ne hn.ne] using hCp
+    · simpa [by simpa using coe_one_add_monomial_pow_natCast K (p ^ m) 0] using hCp
 
 end RobbaRing
 

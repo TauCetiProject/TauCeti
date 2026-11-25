@@ -10,6 +10,8 @@ public import Mathlib.NumberTheory.Padics.PadicNumbers
 import Mathlib.Analysis.Normed.Algebra.Ultra
 import Mathlib.Analysis.Normed.Ring.Ultra
 import TauCeti.Algebra.Algebra.NatCast
+import TauCeti.Analysis.Normed.Group.Ultra
+import TauCeti.Data.Nat.Choose.Cast
 import TauCeti.NumberTheory.Padics.Basic
 
 /-!
@@ -25,8 +27,8 @@ close to `(-1)ʲ` when `N` is `p`-adically small:
 coefficient `(-1)ʲ / (j + 1)` of `log (1 + t)` (`TauCeti.norm_natCast_choose_succ_div_sub_le`).
 This is the coefficient estimate behind `log (1 + t) = lim ((1 + t) ^ (p ^ m) - 1) / p ^ m`.
 
-The induction uses the recursion `C(n, k + 1) (k + 1) = C(n, k) (n - k)`, cast to an arbitrary ring
-(`Nat.cast_choose_succ_right_eq`).
+The induction uses the recursion `C(n, k) (n - k) = (k + 1) C(n, k + 1)`, cast to an arbitrary ring
+(`Nat.cast_choose_mul_sub`).
 
 ## Main results
 
@@ -36,16 +38,6 @@ The induction uses the recursion `C(n, k + 1) (k + 1) = C(n, k) (n - k)`, cast t
 -/
 
 public section
-
-/-- **`C(n, k + 1) (k + 1) = C(n, k) (n - k)` in any ring.** The cast of `Nat.choose_succ_right_eq`,
-where the subtraction `n - k` now takes place in the ring. -/
-theorem Nat.cast_choose_succ_right_eq {R : Type*} [NonAssocRing R] (n k : ℕ) :
-    (n.choose (k + 1) : R) * (k + 1) = n.choose k * (n - k) := by
-  rcases le_or_gt k n with h | h
-  · have h' := congrArg (Nat.cast : ℕ → R) (Nat.choose_succ_right_eq n k)
-    push_cast [Nat.cast_sub h] at h'
-    exact h'
-  · simp [Nat.choose_eq_zero_of_lt h, Nat.choose_eq_zero_of_lt (h.trans k.lt_succ_self)]
 
 namespace TauCeti
 
@@ -58,8 +50,6 @@ theorem norm_natCast_choose_pred_sub_neg_one_pow_le (p : ℕ) [Fact p.Prime]
     [NormedAlgebra ℚ_[p] K] {N : ℕ} (hN : N ≠ 0) (j : ℕ) :
     ‖((N - 1).choose j : K) - (-1) ^ j‖ ≤ (j + 1) * ‖(N : K)‖ := by
   have : IsUltrametricDist K := IsUltrametricDist.of_normedAlgebra ℚ_[p]
-  have hsub (a b : K) : ‖a - b‖ ≤ max ‖a‖ ‖b‖ := by
-    simpa [sub_eq_add_neg] using IsUltrametricDist.norm_add_le_max a (-b)
   induction j with
   | zero => simp
   | succ j ih =>
@@ -67,16 +57,17 @@ theorem norm_natCast_choose_pred_sub_neg_one_pow_le (p : ℕ) [Fact p.Prime]
     set x : K := N / (j + 1 : ℕ) with hx_def
     -- The recursion `C(N - 1, j + 1) = -C(N - 1, j) (1 - N / (j + 1))`.
     have hrec : ((N - 1).choose (j + 1) : K) = -((N - 1).choose j : K) * (1 - x) := by
-      have h' := Nat.cast_choose_succ_right_eq (R := K) (N - 1) j
+      have h' := Nat.cast_choose_mul_sub (R := K) (N - 1) j
       rw [Nat.cast_sub (Nat.one_le_iff_ne_zero.2 hN), Nat.cast_one] at h'
       rw [hx_def]
       push_cast at hj ⊢
       field_simp
-      linear_combination h'
+      linear_combination -h'
     by_cases hbig : 1 ≤ (j + 1 + 1) * ‖(N : K)‖
     · -- Both terms are integers, so the difference has norm at most `1`.
       have h1 : (1 : ℝ) ≤ ((j + 1 : ℕ) + 1) * ‖(N : K)‖ := by push_cast; linarith
-      refine (hsub _ _).trans (max_le ((IsUltrametricDist.norm_natCast_le_one K _).trans h1) ?_)
+      refine (IsUltrametricDist.norm_sub_le_max _ _).trans
+        (max_le ((IsUltrametricDist.norm_natCast_le_one K _).trans h1) ?_)
       simpa using h1
     · push Not at hbig
       have hx : ‖x‖ ≤ (j + 1) * ‖(N : K)‖ := by
@@ -84,13 +75,14 @@ theorem norm_natCast_choose_pred_sub_neg_one_pow_le (p : ℕ) [Fact p.Prime]
         gcongr
         exact_mod_cast norm_inv_natCast_le p (j + 1)
       have hx1 : ‖1 - x‖ ≤ 1 :=
-        (hsub _ _).trans (max_le norm_one.le (hx.trans (by nlinarith [norm_nonneg (N : K)])))
+        (IsUltrametricDist.norm_sub_le_max _ _).trans
+          (max_le norm_one.le (hx.trans (by nlinarith [norm_nonneg (N : K)])))
       have hsplit : ((N - 1).choose (j + 1) : K) - (-1) ^ (j + 1) =
           -((((N - 1).choose j : K) - (-1) ^ j) * (1 - x) - (-1) ^ j * x) := by
         rw [hrec]
         ring
       rw [hsplit, norm_neg]
-      refine (hsub _ _).trans (max_le ?_ ?_)
+      refine (IsUltrametricDist.norm_sub_le_max _ _).trans (max_le ?_ ?_)
       · rw [norm_mul]
         calc _ ≤ ((j + 1) * ‖(N : K)‖) * 1 :=
               mul_le_mul ih hx1 (norm_nonneg _) (by positivity)
