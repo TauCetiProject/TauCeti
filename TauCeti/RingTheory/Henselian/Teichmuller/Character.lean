@@ -39,9 +39,9 @@ Teichmüller lift of its reduction `χ₀` and a character `⟨χ⟩ = ω(χ₀)
 principal units `1 + 𝔪` (`TauCeti.principalUnitCharacter`,
 `TauCeti.teichmullerCharacter_mul_principalUnitCharacter`,
 `TauCeti.eq_teichmullerCharacter_and_eq_principalUnitCharacter`). The principal-unit part is
-multiplicative in `χ` and is trivial exactly on Teichmüller lifts
-(`TauCeti.principalUnitCharacter_eq_one_iff`). For the `p`-adic cyclotomic
-character this is `χ_p = ω · ⟨χ_p⟩` with `⟨χ_p⟩` valued in `1 + pℤ_p`.
+multiplicative in `χ` (`TauCeti.principalUnitCharacterHom`) and is trivial exactly on Teichmüller
+lifts (`TauCeti.principalUnitCharacter_eq_one_iff`). For the `p`-adic cyclotomic character this
+is `χ_p = ω · ⟨χ_p⟩` with `⟨χ_p⟩` valued in `1 + pℤ_p`.
 
 ## Main definitions
 
@@ -299,6 +299,16 @@ theorem principalUnitCharacter_inv (χ : Γ →* Rˣ) :
     principalUnitCharacter R χ⁻¹ = (principalUnitCharacter R χ)⁻¹ := by
   ext g
   simp only [principalUnitCharacter_apply, MonoidHom.inv_apply, map_inv, mul_inv]
+
+variable (R Γ) in
+/-- The principal-unit part as a homomorphism of character groups. -/
+def principalUnitCharacterHom : (Γ →* Rˣ) →* (Γ →* Rˣ) :=
+  MonoidHom.mk' (principalUnitCharacter R) principalUnitCharacter_mul
+
+@[simp]
+theorem principalUnitCharacterHom_apply (χ : Γ →* Rˣ) :
+    principalUnitCharacterHom R Γ χ = principalUnitCharacter R χ :=
+  (rfl)
 
 /-- A character has trivial principal-unit part exactly when it is the Teichmüller lift of its
 reduction. -/
