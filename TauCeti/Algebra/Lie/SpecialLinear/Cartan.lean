@@ -21,8 +21,8 @@ of `𝔰𝔩_{r+1}(ℝ)` (Knapp, Prop. 6.28). It acts by `-1` on the trace-zero 
 
 ## Main results
 
-* `TauCeti.slNegTranspose`: the involution `X ↦ -Xᵀ` of `𝔰𝔩_{r+1}(ℝ)`.
-* `TauCeti.isCartanInvolution_slNegTranspose`: it is a Cartan involution.
+* `TauCeti.specialLinearNegTranspose`: the involution `X ↦ -Xᵀ` of `𝔰𝔩_{r+1}(ℝ)`.
+* `TauCeti.isCartanInvolution_specialLinearNegTranspose`: it is a Cartan involution.
 
 ## References
 
@@ -40,29 +40,30 @@ namespace TauCeti
 variable (r : ℕ)
 
 /-- The Cartan involution `X ↦ -Xᵀ` of `𝔰𝔩_{r+1}(ℝ)`. -/
-noncomputable def slNegTranspose : sl (Fin (r + 1)) ℝ ≃ₗ⁅ℝ⁆ sl (Fin (r + 1)) ℝ :=
+noncomputable def specialLinearNegTranspose : sl (Fin (r + 1)) ℝ ≃ₗ⁅ℝ⁆ sl (Fin (r + 1)) ℝ :=
   (sl (Fin (r + 1)) ℝ).restrictNegConjTranspose fun _ ↦ conjTranspose_mem_sl
 
 variable {r}
 
-/-- The Cartan involution `slNegTranspose` is `X ↦ -Xᵀ` on the underlying matrices. -/
+/-- The Cartan involution `specialLinearNegTranspose` is `X ↦ -Xᵀ` on the underlying matrices. -/
 @[simp]
-theorem coe_slNegTranspose_apply (X : sl (Fin (r + 1)) ℝ) :
-    ((slNegTranspose r X : sl (Fin (r + 1)) ℝ) : Matrix (Fin (r + 1)) (Fin (r + 1)) ℝ) =
+theorem coe_specialLinearNegTranspose_apply (X : sl (Fin (r + 1)) ℝ) :
+    ((specialLinearNegTranspose r X : sl (Fin (r + 1)) ℝ) : Matrix (Fin (r + 1)) (Fin (r + 1)) ℝ) =
       -(X : Matrix (Fin (r + 1)) (Fin (r + 1)) ℝ)ᵀ := by
-  rw [slNegTranspose, LieSubalgebra.coe_restrictNegConjTranspose_apply,
+  rw [specialLinearNegTranspose, LieSubalgebra.coe_restrictNegConjTranspose_apply,
     conjTranspose_eq_transpose_of_trivial]
 
 variable (r) in
 /-- `X ↦ -Xᵀ` is a Cartan involution of `𝔰𝔩_{r+1}(ℝ)`. -/
-theorem isCartanInvolution_slNegTranspose : (slNegTranspose r).IsCartanInvolution :=
+theorem isCartanInvolution_specialLinearNegTranspose :
+    (specialLinearNegTranspose r).IsCartanInvolution :=
   LieSubalgebra.isCartanInvolution_restrictNegConjTranspose _ _
 
 /-- The Cartan involution acts on the trace-zero diagonal matrices by `-1`. -/
-theorem slNegTranspose_apply_of_mem_specialLinearDiagonal {X : sl (Fin (r + 1)) ℝ}
-    (hX : X ∈ specialLinearDiagonal r ℝ) : slNegTranspose r X = -X := by
+theorem specialLinearNegTranspose_apply_of_mem_specialLinearDiagonal {X : sl (Fin (r + 1)) ℝ}
+    (hX : X ∈ specialLinearDiagonal r ℝ) : specialLinearNegTranspose r X = -X := by
   ext : 1
-  rw [coe_slNegTranspose_apply, ((mem_specialLinearDiagonal_iff r ℝ X).mp hX).isSymm.eq,
+  rw [coe_specialLinearNegTranspose_apply, ((mem_specialLinearDiagonal_iff r ℝ X).mp hX).isSymm.eq,
     NegMemClass.coe_neg]
 
 end TauCeti
