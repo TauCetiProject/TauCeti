@@ -47,9 +47,10 @@ their number is at most the Euler number `⟨e(E), [M]⟩`, which is therefore n
 (`TauCeti.VectorBundleOrientation.ncard_le_evalFundamentalClass_eulerClass_of_eventually_eq_mul`,
 `TauCeti.VectorBundleOrientation.evalFundamentalClass_eulerClass_nonneg_of_eventually_eq_mul`);
 and a section with more zeros than the Euler number vanishes identically
-(`eq_zero_of_evalFundamentalClass_eulerClass_lt_ncard_of_eventually_eq_mul`). This is the
-zero count of a real Cauchy–Riemann operator on a line bundle, for any regularity in which the
-similarity principle supplies the factorization.
+(`TauCeti.VectorBundleOrientation.eq_zero_of_eulerClass_lt_ncard_of_eventually_eq_mul`). These
+bound the number of zeros of any section which the similarity principle factors in this way, such
+as solutions of Cauchy–Riemann inequalities
+(`TauCeti.Topology.VectorBundle.Orientation.SectionIndex.CauchyRiemann`).
 
 If a section has finitely many zeros and is complex analytic in such coordinates at each of them,
 the Euler number `⟨e(E), [M]⟩` is the sum of the orders of the zeros,
@@ -76,7 +77,7 @@ holomorphic, has local index `-1` (`TauCeti.VectorBundleOrientation.sectionIndex
   the zero count for a section that is holomorphic up to a unit at its zeros, with
   `TauCeti.finite_setOf_section_eq_zero_of_eventually_eq_mul` (finitely many zeros),
   `TauCeti.VectorBundleOrientation.evalFundamentalClass_eulerClass_nonneg_of_eventually_eq_mul`
-  and `eq_zero_of_evalFundamentalClass_eulerClass_lt_ncard_of_eventually_eq_mul`.
+  and `TauCeti.VectorBundleOrientation.eq_zero_of_eulerClass_lt_ncard_of_eventually_eq_mul`.
 
 * `TauCeti.VectorBundleOrientation.sectionIndex_eq_analyticOrderNatAt`: at a zero where the section
   is complex analytic in oriented coordinates, the local index is the order of vanishing.
@@ -525,7 +526,7 @@ oriented compatibly with `E` and `M` near `z`, in which `s`, read as
 and nonzero at `φ z z` and a function `σ` analytic at `φ z z`. If `s` vanishes on a set `S` with
 more elements than the Euler class of `E` evaluated on the fundamental class of `M`, then `s`
 vanishes identically. -/
-theorem eq_zero_of_evalFundamentalClass_eulerClass_lt_ncard_of_eventually_eq_mul
+theorem eq_zero_of_eulerClass_lt_ncard_of_eventually_eq_mul
     (hze : ∀ z, z ∈ (e z).baseSet)
     (ho : ∀ z, ∀ᶠ x in 𝓝 z, ∀ hx : x ∈ (e z).baseSet,
       (e z).mapOrientation (Fin (1 + 1)) hx (o x) = ω z)

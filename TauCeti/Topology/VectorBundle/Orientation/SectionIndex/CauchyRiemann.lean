@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.Similarity
 public import TauCeti.Topology.VectorBundle.Orientation.SectionIndex.Holomorphic
-import TauCeti.Topology.DiscreteSubset
 
 /-!
 # The zero count for sections solving a Cauchy–Riemann inequality
@@ -349,7 +348,7 @@ theorem eq_zero_of_evalFundamentalClass_eulerClass_lt_ncard (hze : ∀ z, z ∈ 
     {S : Set M} (hS : ∀ x ∈ S, s x = 0)
     (hlt : (oM.evalFundamentalClass hF (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.id M)
       (o.eulerClass hF)).down < S.ncard) (x : M) : s x = 0 :=
-  o.eq_zero_of_evalFundamentalClass_eulerClass_lt_ncard_of_eventually_eq_mul hF oM hs φ e ω hzφ hze
+  o.eq_zero_of_eulerClass_lt_ncard_of_eventually_eq_mul hF oM hs φ e ω hzφ hze
     ho hφ (fun z ↦ exists_eventually_eq_mul_of_norm_conjWirtingerDeriv_le (hΩ z) (hf z) (hK z)
       (hfK z) (hzΩ z)) hS hlt x
 
