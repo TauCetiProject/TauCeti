@@ -53,8 +53,9 @@ twists, and cancellation undoes a twist.
 
 * `TauCeti.signedPointTwistHom`, `TauCeti.signedPointTwistEquiv`: the fibre maps of the twists
   induced by fibre maps of the bundles.
-* `TauCeti.signedPointTwistDiffeomorph`: `E ≅ E'` implies `E(±x) ≅ E'(±x)`, as real `C^n`
-  diffeomorphisms of total spaces with complex linear fibre maps.
+* `TauCeti.signedPointTwistDiffeomorph`: `E ≅ E'` implies `E(±x) ≅ E'(±x)`, as `C^n`
+  diffeomorphisms of total spaces with complex linear fibre maps, for any model `I` of `X` over a
+  subfield `𝕜` of `ℂ` (real for `𝓘(ℝ, ℂ)`, holomorphic for `𝓘(ℂ)`).
 * `TauCeti.signedPointTwistCancelEquiv` and `TauCeti.signedPointTwistCancelDiffeomorph`:
   `E(x)(-x) ≅ E` and `E(-x)(x) ≅ E`.
 
@@ -224,23 +225,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra 𝕜 ℂ]
   [TopologicalSpace (TotalSpace F' E')] [FiberBundle F' E'] [VectorBundle ℂ F' E']
   {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] {I : ModelWithCorners 𝕜 EB ℂ}
   {n : ℕ∞ω}
-
-/-- The fibres of a signed point twist are `𝕜`-modules through the model fibre. The low priority
-keeps the core's own complex structure first when `𝕜 = ℂ`. -/
-local instance (priority := 50) instModuleFiberPointTwistFunctor {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℂ F] [NormedSpace 𝕜 F] {E : X → Type*} [∀ z, AddCommGroup (E z)]
-    [∀ z, Module ℂ (E z)] [∀ z, TopologicalSpace (E z)] [TopologicalSpace (TotalSpace F E)]
-    [FiberBundle F E] [VectorBundle ℂ F E] (x : X) (s : Bool) (z : X) :
-    Module 𝕜 ((signedPointTwistCore F E x s).Fiber z) :=
-  inferInstanceAs (Module 𝕜 F)
-
-/-- The `𝕜`- and `ℂ`-actions on the fibres of a signed point twist are compatible. -/
-local instance (priority := 50) instIsScalarTowerFiberPointTwistFunctor {F : Type*}
-    [NormedAddCommGroup F] [NormedSpace ℂ F] [NormedSpace 𝕜 F] [IsScalarTower 𝕜 ℂ F] {E : X → Type*}
-    [∀ z, AddCommGroup (E z)] [∀ z, Module ℂ (E z)] [∀ z, TopologicalSpace (E z)]
-    [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℂ F E] (x : X) (s : Bool)
-    (z : X) : IsScalarTower 𝕜 ℂ ((signedPointTwistCore F E x s).Fiber z) :=
-  inferInstanceAs (IsScalarTower 𝕜 ℂ F)
 
 /-- The underlying `𝕜`-vector bundle of a complex vector bundle. -/
 local instance instVectorBundlePointTwistFunctor {F : Type*} [NormedAddCommGroup F]
