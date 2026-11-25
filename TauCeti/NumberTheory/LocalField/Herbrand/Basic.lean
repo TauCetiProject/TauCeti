@@ -501,13 +501,11 @@ theorem upperRamificationGroup_eq_of_herbrand_lt_of_le {i : ℕ}
     (hv₂ : v ≤ herbrand K L ⟨((i + 1 : ℕ) : ℝ),
       Nat.cast_mem_ramificationIndexDomain (i + 1)⟩) :
     upperRamificationGroup K L v = lowerRamificationGroup K L ((i + 1 : ℕ) : ℤ) := by
-  have h₁ := inverseHerbrand_strictMono K L hv₁
-  have h₂ := (inverseHerbrand_strictMono K L).monotone hv₂
-  rw [inverseHerbrand_herbrand] at h₁ h₂
-  rw [upperRamificationGroup_def]
-  exact lowerRamificationGroupReal_eq_of_sub_one_lt_of_le K L (i := ((i + 1 : ℕ) : ℤ))
-    (by have := Subtype.coe_lt_coe.2 h₁; push_cast; linarith)
-    (by exact_mod_cast Subtype.coe_le_coe.2 h₂)
+  rw [← Subtype.coe_lt_coe, coe_herbrand_eq_herbrandFun] at hv₁
+  rw [← Subtype.coe_le_coe, coe_herbrand_eq_herbrandFun] at hv₂
+  rw [upperRamificationGroup_eq_isLocalRing_upperRamificationGroup, lowerRamificationGroup_def]
+  exact TauCeti.IsLocalRing.upperRamificationGroup_eq_of_herbrandFun_lt_of_le _ _
+    (by push_cast; simpa using hv₁) (by exact_mod_cast hv₂)
 
 /-- The upper ramification filtration of a finite Galois extension of local fields is trivial at
 every large enough natural index. -/
