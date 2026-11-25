@@ -992,7 +992,7 @@ theorem fixedPointSign_iterate_succ [FiniteDimensional ℝ E] (hx : IsFixedPt f 
   set D := fixedPointDerivative I f ⟨x, hx⟩
   have hk : (1 - D ^ (k + 1)).det ≠ 0 := by
     have := h.fixedPointDet_ne_zero
-    rwa [fixedPointDet_iterate hx hf] at this
+    rwa [fixedPointDet_iterate hx hf, ← Module.End.one_eq_id] at this
   rw [h.fixedPointSign_eq_sign, (h.of_iterate hf hx).fixedPointSign_eq_sign,
     fixedPointDet_iterate hx hf, fixedPointDet_eq_det_id_sub_fixedPointDerivative hx,
     ← Module.End.one_eq_id, D.sign_det_one_sub_pow_succ k hk]
