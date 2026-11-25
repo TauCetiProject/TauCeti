@@ -269,9 +269,9 @@ section TargetChange
 variable {M G V : Type} [TopologicalSpace M] [T2Space M] [NormedAddCommGroup G] [NormedSpace ℝ G]
   [FiniteDimensional ℝ G] [ChartedSpace G M] [NormedAddCommGroup V] [NormedSpace ℝ V]
   [FiniteDimensional ℝ V] {n : ℕ} (o : HomologicalOrientation M G n)
-  (o' : HomologicalOrientation V V n) (hG : finrank ℝ G = n) (hV : finrank ℝ V = n)
+  (o' : HomologicalOrientation V V n) (hV : finrank ℝ V = n)
 
-include hG hV in
+include hV in
 /-- **The local index of a difference under a change of coordinates of the target.** Let
 `F p = a p - b p` for maps `a, b : M → V` continuous at `x` with `a x = b x`, so that `x` is a
 point of `F⁻¹(0)`, such as an intersection point of two maps into `V` when `F` is their difference.
@@ -297,8 +297,7 @@ theorem localIndex_eq_sign_det_mul_of_apply_eq_sub {F G' : C(M, V)} {a b : M →
   rw [← hcomp]
   -- `G'` differs from `L ∘ F` by `o(‖F‖)`, which is small compared with `‖L ∘ F‖`, so Rouché's
   -- principle applies.
-  refine (o.localIndex_eq_of_norm_sub_le o' hG hV (c := 1 / 2) (by norm_num) ?_ ?_).symm
-  · simp [LF, hF0, hG', hab]
+  refine (o.localIndex_eq_of_norm_sub_le o' hV (c := 1 / 2) (by norm_num) ?_).symm
   set C := ‖(e.symm : V →L[ℝ] V)‖ + 1
   have hC : 0 < C := by positivity
   have hT : Tendsto (fun p ↦ (a p, b p)) (𝓝 x) (𝓝 (a x, a x)) := by

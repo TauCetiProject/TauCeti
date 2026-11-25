@@ -89,6 +89,8 @@ kernel of the induced map on `πₙ` (`TopCat.Hom.nullhomotopic_comp_of_ker_le`)
   is a free homotopy of the corresponding maps out of the sphere.
 * `HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`: a class is trivial exactly when the
   corresponding map `Sⁿ → X` is freely null-homotopic.
+* `HomotopyGroup.nontrivial_of_not_nullhomotopic`: so a map `Sⁿ → X` that is not null-homotopic
+  makes `πₙ` nontrivial at the image of the north pole.
 * `GenLoop.exists_diskBoundaryMap_eq`: every map `TopCat.diskBoundary (n + 1) ⟶ X` is the
   attaching map of a generalized loop.
 * `TopCat.Hom.nullhomotopic_comp_of_ker_le`: if every class of `πₙ(X, x)` killed by `f` is killed
@@ -816,6 +818,15 @@ theorem mk_eq_one_iff_nullhomotopic_toSphere (p : Ω^ (Fin n) X x) :
       GenLoop.ext _ _ fun z ↦ by simp
     rw [← hp, ← map_mk]
     exact map_eq_one_of_nullhomotopic h _ _
+
+/-- **A map out of the sphere that is not null-homotopic gives a nontrivial homotopy group** at the
+image of the north pole: its class there is not the identity. -/
+theorem nontrivial_of_not_nullhomotopic (f : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, X))
+    (hf : ¬f.Nullhomotopic) : Nontrivial (HomotopyGroup (Fin n) X (f (sphereNorthPole n))) := by
+  let p := (GenLoop.sphereEquiv n X _).symm ⟨f, rfl⟩
+  have hp : GenLoop.toSphere p = f := by
+    rw [← GenLoop.coe_sphereEquiv_apply, Equiv.apply_symm_apply]
+  exact ⟨⟦p⟧, 1, fun h ↦ hf (hp ▸ (mk_eq_one_iff_nullhomotopic_toSphere p).1 h)⟩
 
 /-- **A homotopy class is trivial exactly when its attaching map is null-homotopic.** The class of
 a generalized loop `p` is the identity of `πₙ(X, x)` if and only if the map

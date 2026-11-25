@@ -6,37 +6,49 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Adjoint
-public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Interior
+public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder
 public import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
+import TauCeti.Data.ENNReal.Holder
 
 /-!
 # Sobolev regularity of the annihilator of a real Cauchy–Riemann operator
 
 Let `Ω ⊆ ℂ` be open, write `z = s + i t`, and let `D φ = ∂_s φ + J ∂_t φ + S φ` be a real
 Cauchy–Riemann operator on maps `φ : Ω → V` into a finite-dimensional real vector space, with a
-`C¹` complex structure `J` (`J² = -1`) and a continuous zeroth-order coefficient `S`. A field `η`
+field of complex structures `J` (`J² = -1`) and a zeroth-order coefficient `S`. A field `η`
 annihilating `D φ` for every test function `φ` is a weak solution of the adjoint equation
 `D* η = 0`. In Fredholm theory such fields are the elements of the cokernel of a Sobolev
-realization of `D`, and a priori they are only locally `L^q`. This file proves that they are in
-`W^{1,r}_loc(Ω)` for every finite `r > 1`, in two forms:
+realization of `D`, and a priori they are only locally `L^q`. This file proves that they are as
+regular as the coefficients allow:
 
-* for a vector field `η` in a real inner product space, paired with `D φ` by `∫ ⟪D φ, η⟫`
-  (`TauCeti.memWkpLoc_one_of_forall_integral_inner_cauchyRiemann_eq_zero`), and more generally
-  for Sobolev coefficients `J ∈ W^{1,p}_loc`, `S ∈ Lᵖ_loc` with `p > 2` and `J² = -1` a.e.
-  (`TauCeti.IsSobolevCRCoefficients.memWkpLoc_one_of_forall_integral_inner_eq_zero`), where
-  `r ≤ p` is required;
-* for a covector field `η : Ω → V →L[ℝ] ℝ` on a finite-dimensional normed space, paired with
-  `D φ` by `∫ η(D φ)` (`TauCeti.memWkpLoc_one_of_forall_integral_apply_cauchyRiemann_eq_zero`).
-  This form needs no inner product on `V`.
+* for Sobolev coefficients `J ∈ W^{1,p}_loc`, `S ∈ Lᵖ_loc` with `p > 2` and `J² = -1` a.e., a
+  vector field `η` in a real inner product space, paired with `D φ` by `∫ ⟪D φ, η⟫`, is in
+  `W^{1,r}_loc(Ω)` for every finite `r > 1` with `r ≤ p`
+  (`TauCeti.IsSobolevCRCoefficients.memWkpLoc_one_of_forall_integral_inner_eq_zero`), and in
+  `W^{k+1,q}_loc` when moreover `J ∈ W^{k+1,p}_loc` and `S ∈ W^{k,p}_loc`, for its own exponent
+  `q ≤ p` (`TauCeti.IsSobolevCRCoefficients.memWkpLoc_succ_of_forall_integral_inner_eq_zero`);
+* for a `C^{k+1}` field `J` and a `Cᵏ` field `S`, such a vector field is in `W^{k+1,r}_loc(Ω)` for
+  every finite `r` (`TauCeti.memWkpLoc_succ_of_forall_integral_inner_cauchyRiemann_eq_zero`);
+* the same holds for a covector field `η : Ω → V →L[ℝ] ℝ` on a finite-dimensional normed space,
+  paired with `D φ` by `∫ η(D φ)`
+  (`TauCeti.memWkpLoc_succ_of_forall_integral_apply_cauchyRiemann_eq_zero`). This form needs no
+  inner product on `V`.
 
 After the reflection `ρ(z) = -conj z`, an annihilator of `D` is a weak solution of a homogeneous
 real Cauchy–Riemann equation whose leading coefficient again squares to `-1`
 (`TauCeti.IsSobolevCRCoefficients.forall_integral_inner_eq_zero_iff`,
-`TauCeti.crReflectedAdjointCoeff_mul_self_eq_neg_one_iff`), and interior regularity
-(`TauCeti.IsWeakCRSolution.memWkpLoc_one_of_le`) applies to it. Continuous coefficients are
-locally bounded, so they are Sobolev coefficients for the exponent `∞` and every `q > 1` is
-allowed. The covector form follows from the vector form in a Euclidean model of `V`.
+`TauCeti.crReflectedAdjointCoeff_mul_self_eq_neg_one_iff`). Interior regularity of order one
+(`TauCeti.IsWeakCRSolution.memWkpLoc_one_of_le`) applies to it for Sobolev coefficients, and of
+higher order (`TauCeti.IsWeakCRSolution.memWkpLoc_succ`) for Sobolev coefficients of higher order:
+the reflected coefficients `J' = -(J ∘ ρ)ᵀ` and `S' = (S ∘ ρ)ᵀ - (∂_t J ∘ ρ)ᵀ` lose one derivative
+of `J`, which is why `J` needs one derivative more than `S`. For
+smooth coefficients the reflected coefficients `J'` and `S'` are `C^{k+1}` and `Cᵏ`, the
+annihilator is locally `Lᵖ` for every finite `p` by the first case, and interior regularity of
+every order (`TauCeti.IsWeakCRSolution.memWkpLoc_succ`) applies. The covector form follows from the
+vector form in a Euclidean model of `V`. By Morrey's embedding
+(`TauCeti.MemWkpLoc.exists_contDiffOn_ae_eq`), an annihilator for a `C^{k+1}` field `J` and a `Cᵏ`
+field `S` therefore agrees almost everywhere with a `Cᵏ` field.
 
 ## References
 
@@ -50,9 +62,23 @@ public section
 noncomputable section
 
 open MeasureTheory TopologicalSpace Complex Set Module
-open scoped InnerProductSpace Distributions ENNReal ComplexConjugate
+open scoped InnerProductSpace Distributions ENNReal NNReal ComplexConjugate
 
 namespace TauCeti
+
+/-- `ρ(z) = -conj z` preserves Lebesgue measure, so `J² = -1` almost everywhere on `Ω` gives
+`J'² = -1` almost everywhere on any open `Ω'` that `ρ` maps into `Ω`. -/
+private theorem ae_crReflectedAdjointCoeff_mul_self_eq_neg_one {V : Type*}
+    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V] {Ω Ω' : Opens ℂ}
+    {J : ℂ → V →L[ℝ] V} (hρ : MapsTo (fun z : ℂ ↦ -conj z) Ω' Ω)
+    (hJ2 : ∀ᵐ z ∂volume.restrict Ω, J z * J z = -1) :
+    ∀ᵐ z ∂volume.restrict Ω', crReflectedAdjointCoeff J z * crReflectedAdjointCoeff J z = -1 := by
+  have hρm : MeasurePreserving (fun z : ℂ ↦ -conj z) :=
+    (conjLIE.trans (LinearIsometryEquiv.neg ℝ)).measurePreserving
+  rw [ae_restrict_iff' Ω'.isOpen.measurableSet]
+  filter_upwards [hρm.quasiMeasurePreserving.ae
+    ((ae_restrict_iff' Ω.isOpen.measurableSet).1 hJ2)] with z hz hzΩ'
+  exact (crReflectedAdjointCoeff_mul_self_eq_neg_one_iff z).2 (hz (hρ hzΩ'))
 
 /-- **The annihilator of a real Cauchy–Riemann operator with Sobolev coefficients is
 `W^{1,r}_loc`.** Let `Ω ⊆ ℂ` be open, `V` a finite-dimensional real inner product space, and
@@ -72,52 +98,92 @@ theorem IsSobolevCRCoefficients.memWkpLoc_one_of_forall_integral_inner_eq_zero {
   -- After the reflection `ρ z = -conj z`, `v` solves a homogeneous Cauchy–Riemann equation.
   set Ω' : Opens ℂ := ⟨(fun z ↦ -conj z) ⁻¹' Ω, Ω.isOpen.preimage (by fun_prop)⟩
   have hweak := (hc.forall_integral_inner_eq_zero_iff hpq.le (Ω' := Ω') (fun _ ↦ Iff.rfl) hv).1 h
-  -- `ρ` preserves Lebesgue measure, so `J² = -1` a.e. on `Ω` gives `J'² = -1` a.e. on `Ω'`.
-  have hρ : MeasurePreserving (fun z : ℂ ↦ -conj z) :=
-    (conjLIE.trans (LinearIsometryEquiv.neg ℝ)).measurePreserving
-  have hJ2' : ∀ᵐ z ∂volume.restrict Ω',
-      crReflectedAdjointCoeff J z * crReflectedAdjointCoeff J z = -1 := by
-    rw [ae_restrict_iff' Ω'.isOpen.measurableSet]
-    filter_upwards [hρ.quasiMeasurePreserving.ae
-      ((ae_restrict_iff' Ω.isOpen.measurableSet).1 hJ2)] with z hz hzΩ'
-    exact (crReflectedAdjointCoeff_mul_self_eq_neg_one_iff z).2 (hz hzΩ')
-  have hW := hweak.memWkpLoc_one_of_le (hc.crReflectedAdjoint fun _ hz ↦ hz) hp hJ2' hpq
-    hr hr_top hrp continuousOn_const.memLpLoc
+  have hρ : MapsTo (fun z : ℂ ↦ -conj z) Ω' Ω := fun _ hz ↦ hz
+  have hW := hweak.memWkpLoc_one_of_le (hc.crReflectedAdjoint hρ) hp
+    (ae_crReflectedAdjointCoeff_mul_self_eq_neg_one hρ hJ2) hpq hr hr_top hrp
+    continuousOn_const.memLpLoc
   -- Reflecting back along `ρ`, using `ρ ∘ ρ = id`.
   simpa using hW.comp_neg_conj fun z hz ↦ by simpa [Ω'] using hz
 
-/-- **The annihilator of a real Cauchy–Riemann operator is `W^{1,r}_loc`.** Let `Ω ⊆ ℂ` be open,
-`V` a finite-dimensional real inner product space, `J` a `C¹` field of complex structures on `V`
-and `S` a continuous field of endomorphisms over `Ω`. If a locally `L^q` field `v` (`q > 1`)
-satisfies `∫ ⟪∂_s φ + J ∂_t φ + S φ, v⟫ = 0` for every test function `φ` on `Ω`, then
-`v ∈ W^{1,r}_loc(Ω)` for every finite `r > 1`. -/
-theorem memWkpLoc_one_of_forall_integral_inner_cauchyRiemann_eq_zero {V : Type*}
+/-- **Higher regularity of the annihilator of a real Cauchy–Riemann operator with Sobolev
+coefficients.** Let `Ω ⊆ ℂ` be open, `V` a finite-dimensional real inner product space, and
+`(J, DJ, S)` Sobolev coefficients on `Ω` with finite `p > 2` and `J² = -1` almost everywhere on
+`Ω`. If moreover `J ∈ W^{k+1,p}_loc` and `S ∈ W^{k,p}_loc`, then a locally `L^q` field `v` with
+`1/p + 1/q < 1` and `q ≤ p` satisfying `∫ ⟪∂_s φ + J ∂_t φ + S φ, v⟫ = 0` for every test function
+`φ` on `Ω` is in `W^{k+1,q}_loc(Ω)`. For `k = 0` this is the case `r = q` of
+`TauCeti.IsSobolevCRCoefficients.memWkpLoc_one_of_forall_integral_inner_eq_zero`. -/
+theorem IsSobolevCRCoefficients.memWkpLoc_succ_of_forall_integral_inner_eq_zero {V : Type*}
     [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] {Ω : Opens ℂ}
-    {J S : ℂ → V →L[ℝ] V} (hJ : ContDiffOn ℝ 1 J Ω) (hS : ContinuousOn S Ω)
+    {J S : ℂ → V →L[ℝ] V} {DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V} {p q : ℝ≥0} {k : ℕ}
+    (hc : IsSobolevCRCoefficients p Ω J DJ S) (hp : 2 < p)
+    (hJ2 : ∀ᵐ z ∂volume.restrict Ω, J z * J z = -1) (hpq : (p : ℝ≥0∞)⁻¹ + (q : ℝ≥0∞)⁻¹ < 1)
+    (hqp : q ≤ p) (hJ : MemWkpLoc p Ω (k + 1) J) (hS : MemWkpLoc p Ω k S) {v : ℂ → V}
+    (hv : MemLpLoc q Ω v)
+    (h : ∀ φ : 𝓓(Ω, V), ∫ z, ⟪fderiv ℝ (φ : ℂ → V) z 1 + J z (fderiv ℝ (φ : ℂ → V) z I) +
+      S z ((φ : ℂ → V) z), v z⟫_ℝ = 0) :
+    MemWkpLoc q Ω (k + 1) v := by
+  -- After the reflection `ρ z = -conj z`, `v` solves a homogeneous Cauchy–Riemann equation.
+  set Ω' : Opens ℂ := ⟨(fun z ↦ -conj z) ⁻¹' Ω, Ω.isOpen.preimage (by fun_prop)⟩
+  have hρ : MapsTo (fun z : ℂ ↦ -conj z) Ω' Ω := fun _ hz ↦ hz
+  have hweak := (hc.forall_integral_inner_eq_zero_iff hpq.le (Ω' := Ω') (fun _ ↦ Iff.rfl) hv).1 h
+  -- The reflected coefficients `J'` and `S'` are in `W^{k,p}_loc`; `S'` involves `DJ`.
+  have hDJ : MemWkpLoc p Ω k DJ := hJ.memWkpLoc_of_hasWeakFDerivOn hc.hasWeakFDerivOn
+  have hW := hweak.memWkpLoc_succ (hc.crReflectedAdjoint hρ) hp
+    (ae_crReflectedAdjointCoeff_mul_self_eq_neg_one hρ hJ2) hpq hqp
+    (hJ.of_succ.crReflectedAdjointCoeff hρ) (hDJ.crReflectedAdjointZeroth hS hρ)
+    memWkpLoc_zero_fun
+  -- Reflecting back along `ρ`, using `ρ ∘ ρ = id`.
+  simpa using hW.comp_neg_conj fun z hz ↦ by simpa [Ω'] using hz
+
+/-- **The annihilator of a real Cauchy–Riemann operator is `W^{k+1,r}_loc`.** Let `Ω ⊆ ℂ` be
+open, `V` a finite-dimensional real inner product space, `J` a `C^{k+1}` field of complex structures
+on `V` and `S` a `Cᵏ` field of endomorphisms over `Ω`. If a locally `L^q` field `v` (`q > 1`)
+satisfies `∫ ⟪∂_s φ + J ∂_t φ + S φ, v⟫ = 0` for every test function `φ` on `Ω`, then
+`v ∈ W^{k+1,r}_loc(Ω)` for every finite `r`. -/
+theorem memWkpLoc_succ_of_forall_integral_inner_cauchyRiemann_eq_zero {V : Type*}
+    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] {Ω : Opens ℂ}
+    {J S : ℂ → V →L[ℝ] V} {k : ℕ} (hJ : ContDiffOn ℝ (k + 1) J Ω) (hS : ContDiffOn ℝ k S Ω)
     (hJ2 : ∀ z ∈ Ω, J z * J z = -1)
     {v : ℂ → V} {q r : ℝ≥0∞} (hq : 1 < q) (hv : MemLpLoc q Ω v)
     (h : ∀ φ : 𝓓(Ω, V), ∫ z, ⟪fderiv ℝ (φ : ℂ → V) z 1 + J z (fderiv ℝ (φ : ℂ → V) z I) +
       S z ((φ : ℂ → V) z), v z⟫_ℝ = 0)
-    (hr : 1 < r) (hr_top : r ≠ ⊤) : MemWkpLoc r Ω 1 v := by
-  -- Continuous coefficients are Sobolev coefficients for the exponent `∞`.
-  exact (IsSobolevCRCoefficients.of_contDiffOn hJ hS ⊤)
-    |>.memWkpLoc_one_of_forall_integral_inner_eq_zero (by simp)
-    (ae_restrict_of_forall_mem Ω.isOpen.measurableSet hJ2)
-    (by simpa using ENNReal.inv_lt_one.2 hq) hv h hr hr_top le_top
+    (hr_top : r ≠ ⊤) : MemWkpLoc r Ω (k + 1) v := by
+  have hJ1 : ContDiffOn ℝ 1 J Ω := hJ.of_le le_add_self
+  have hJ2' := ae_restrict_of_forall_mem (μ := volume) Ω.isOpen.measurableSet hJ2
+  -- A finite exponent `P ≥ max r 4`, so that `1/P + 1/P < 1`.
+  set P : ℝ≥0 := max r.toNNReal 4
+  have hP4 : (4 : ℝ≥0) ≤ P := le_max_right _ _
+  have hrP : r ≤ P := by
+    rw [← ENNReal.coe_toNNReal hr_top]
+    exact ENNReal.coe_le_coe.2 (le_max_left _ _)
+  have hP2 : (2 : ℝ≥0∞) < P := lt_of_lt_of_le (by norm_num) (ENNReal.coe_le_coe.2 hP4)
+  -- Continuous coefficients are Sobolev coefficients for the exponent `∞`, so at order one `v`
+  -- is in `W^{1,P}_loc`, hence locally `L^P`.
+  have hvP : MemLpLoc P Ω v :=
+    ((IsSobolevCRCoefficients.of_contDiffOn hJ1 hS.continuousOn ⊤)
+      |>.memWkpLoc_one_of_forall_integral_inner_eq_zero (by simp) hJ2'
+      (by simpa using ENNReal.inv_lt_one.2 hq) hv h
+      (ENNReal.one_lt_two.trans hP2) ENNReal.coe_ne_top le_top).memLpLoc
+  -- Smooth coefficients are Sobolev coefficients of every finite exponent and every order.
+  have hW := (IsSobolevCRCoefficients.of_contDiffOn hJ1 hS.continuousOn P)
+    |>.memWkpLoc_succ_of_forall_integral_inner_eq_zero
+      (by exact_mod_cast hP2) hJ2' (ENNReal.inv_add_inv_lt_one_of_two_lt hP2) le_rfl
+      (hJ.memWkpLoc (by exact_mod_cast le_rfl)) (hS.memWkpLoc le_rfl) hvP h
+  exact hW.mono_exponent hrP
 
 /-- **The annihilator of a real Cauchy–Riemann operator, for covector fields.** Let `Ω ⊆ ℂ` be
-open, `V` a finite-dimensional real normed space, `J` a `C¹` field of complex structures on `V`
-and `S` a continuous field of endomorphisms over `Ω`. If a locally `L^q` covector field `η`
-(`q > 1`) satisfies `∫ η (∂_s φ + J ∂_t φ + S φ) = 0` for every test function `φ` on `Ω`, then
-`η ∈ W^{1,r}_loc(Ω)` for every finite `r > 1`. -/
-theorem memWkpLoc_one_of_forall_integral_apply_cauchyRiemann_eq_zero {V : Type*}
+open, `V` a finite-dimensional real normed space, `J` a `Cᵏ⁺¹` field of complex structures on `V`
+and `S` a `Cᵏ` field of endomorphisms over `Ω`. If a locally `L^q` covector field `η` (`q > 1`)
+satisfies `∫ η (∂_s φ + J ∂_t φ + S φ) = 0` for every test function `φ` on `Ω`, then
+`η ∈ W^{k+1,r}_loc(Ω)` for every finite `r`. -/
+theorem memWkpLoc_succ_of_forall_integral_apply_cauchyRiemann_eq_zero {V : Type*}
     [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] {Ω : Opens ℂ}
-    {J S : ℂ → V →L[ℝ] V} (hJ : ContDiffOn ℝ 1 J Ω) (hS : ContinuousOn S Ω)
+    {J S : ℂ → V →L[ℝ] V} {k : ℕ} (hJ : ContDiffOn ℝ (k + 1) J Ω) (hS : ContDiffOn ℝ k S Ω)
     (hJ2 : ∀ z ∈ Ω, J z * J z = -1)
     {η : ℂ → V →L[ℝ] ℝ} {q r : ℝ≥0∞} (hq : 1 < q) (hη : MemLpLoc q Ω η)
     (h : ∀ φ : 𝓓(Ω, V), ∫ z, η z (fderiv ℝ (φ : ℂ → V) z 1 + J z (fderiv ℝ (φ : ℂ → V) z I) +
       S z ((φ : ℂ → V) z)) = 0)
-    (hr : 1 < r) (hr_top : r ≠ ⊤) : MemWkpLoc r Ω 1 η := by
+    (hr_top : r ≠ ⊤) : MemWkpLoc r Ω (k + 1) η := by
   -- Transport everything to a Euclidean model `W` of `V`, and covectors to vectors in `W`.
   let L : V ≃L[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ V)) := toEuclidean
   let P := L.arrowCongr L
@@ -133,9 +199,9 @@ theorem memWkpLoc_one_of_forall_integral_apply_cauchyRiemann_eq_zero {V : Type*}
   have hP2 (z : ℂ) (hz : z ∈ Ω) : P (J z) * P (J z) = -1 := by
     refine ContinuousLinearMap.ext fun x ↦ ?_
     simpa [P] using congrArg L (congrArg (fun A : V →L[ℝ] V ↦ A (L.symm x)) (hJ2 z hz))
-  have hv := memWkpLoc_one_of_forall_integral_inner_cauchyRiemann_eq_zero (S := fun z ↦ P (S z))
-    (P.contDiff.comp_contDiffOn hJ) (P.continuous.comp_continuousOn hS) hP2 hq
-    ((hη.clm_comp Q.toContinuousLinearMap).clm_comp T.toContinuousLinearMap) (fun φ ↦ ?_) hr hr_top
+  have hv := memWkpLoc_succ_of_forall_integral_inner_cauchyRiemann_eq_zero
+    (S := fun z ↦ P (S z)) (P.contDiff.comp_contDiffOn hJ) (P.contDiff.comp_contDiffOn hS) hP2 hq
+    ((hη.clm_comp Q.toContinuousLinearMap).clm_comp T.toContinuousLinearMap) (fun φ ↦ ?_) hr_top
   · simpa using (hv.clm_comp T.symm.toContinuousLinearMap).clm_comp Q.symm.toContinuousLinearMap
   · -- The test function `L⁻¹ ∘ φ` on `V` gives the same integrand.
     rw [← h (TestFunction.postcompCLM (L.symm : _ →L[ℝ] V) φ)]
