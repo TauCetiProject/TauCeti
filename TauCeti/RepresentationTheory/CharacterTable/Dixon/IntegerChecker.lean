@@ -121,9 +121,8 @@ theorem isCharacterTableSpec :
 irreducible complex characters are exactly the functions `g ↦ table i (d.index g)`. -/
 theorem irreducibleCharacters_eq_range :
     irreducibleCharacters ℂ G = Set.range fun i g => (table i (d.index g) : ℂ) := by
-  rw [h.isCharacterTableSpec.irreducibleCharacters_eq_range,
-    ← (finCongr d.numClasses_eq_card_conjClasses).surjective.range_comp]
-  simp [Function.comp_def, ClassData.equivConjClasses_symm_apply]
+  simpa only [eq_intCast] using
+    IsExactCharacterTableSpec.irreducibleCharacters_eq_range h (Int.castRingHom ℂ) fun x ↦ by simp
 
 /-- **The degree vector of a certified integer table sums to the sum of the character degrees** of
 `G`: the identity column of the cast table is the degree vector, and it lists the character

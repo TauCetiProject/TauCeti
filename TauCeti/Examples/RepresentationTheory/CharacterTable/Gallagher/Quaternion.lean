@@ -6,18 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.QuaternionEight
+import TauCeti.RepresentationTheory.LinearCharacter.Basic
 
 /-!
 # Gallagher's correspondence needs an extension: the centre of `Q₈`
 
 Let `N = Z(Q₈) = {1, a 2}` and let `θ` be its faithful linear character, `θ (a 2) = -1`. These
 checks read the irreducible characters of `Q₈` off its certified character table
-(`TauCeti.irreducibleCharacters_quaternionGroupTwo`) and show that the extension hypothesis of
-Gallagher's correspondence is needed:
+(`TauCeti.irreducibleCharacters_quaternionGroupTwo`) and prove:
 
-* `θ` has no extension to an irreducible character of `Q₈`: the four linear characters take the
-  value `1` at `a 2`, and the remaining one has degree `2`;
+* `θ` is an irreducible character of `N` with no extension to an irreducible character of `Q₈`:
+  the four linear characters take the value `1` at `a 2`, and the remaining one has degree `2`.
+  So of the hypotheses of `TauCeti.gallagher_bijOn` only the extension hypothesis fails;
 * `Irr(Q₈ | θ)` has exactly one member, the character of degree `2`.
+
+Set against the four irreducible characters of `Q₈ ⧸ N`, a count this file does not prove, this
+illustrates why Gallagher's correspondence needs the extension hypothesis.
 -/
 
 public section
@@ -37,6 +41,22 @@ noncomputable def χ₂ (g : QuaternionGroup 2) : ℂ :=
   (quaternionGroupTwoCharacterTable ⟨4, by decide⟩ ((quaternionClassData 2).index g) : ℂ)
 
 private theorem a_two_mem : (a 2 : QuaternionGroup 2) ∈ N := by decide
+
+/-- `θ` as a homomorphism to `ℤˣ`. -/
+private def θHom : N →* ℤˣ where
+  toFun n := if (n : QuaternionGroup 2) = 1 then 1 else -1
+  map_one' := by simp
+  map_mul' := by decide
+
+/-- `θ` is an irreducible character of `N`, the character of a one-dimensional representation. -/
+theorem θ_mem : θ ∈ irreducibleCharacters ℂ N := by
+  let ψ : N →* ℂˣ := (Units.map (Int.castRingHom ℂ).toMonoidHom).comp θHom
+  have : (Representation.ofLinearCharacter ψ).IsIrreducible :=
+    Representation.isIrreducible_of_finrank_eq_one _ (Module.finrank_self ℂ)
+  convert character_mem_irreducibleCharacters (Representation.ofLinearCharacter ψ) using 1
+  funext n
+  rw [Representation.char_ofLinearCharacter]
+  by_cases hn : n = 1 <;> simp [ψ, θ, θHom, hn]
 
 private theorem univ_eq : (Finset.univ : Finset N) = {1, ⟨a 2, a_two_mem⟩} := by decide
 
@@ -71,8 +91,11 @@ private theorem eq_four_of_ne :
   simp only [quaternionGroupTwoCharacterTable_apply]
   decide
 
-/-- `θ` has no extension to an irreducible character of `Q₈`. -/
-example : ¬ ∃ χ ∈ irreducibleCharacters ℂ (QuaternionGroup 2), ∀ n : N, χ n = θ n := by
+/-- `θ` is an irreducible character of `N` with no extension to an irreducible character of
+`Q₈`: of the hypotheses of `TauCeti.gallagher_bijOn`, only the extension hypothesis fails. -/
+example : θ ∈ irreducibleCharacters ℂ N ∧
+    ¬ ∃ χ ∈ irreducibleCharacters ℂ (QuaternionGroup 2), ∀ n : N, χ n = θ n := by
+  refine ⟨θ_mem, ?_⟩
   rintro ⟨χ, hχ, hext⟩
   rw [irreducibleCharacters_quaternionGroupTwo] at hχ
   obtain ⟨i, rfl⟩ := hχ
