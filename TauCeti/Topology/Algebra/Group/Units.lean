@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.GroupWithZero
 public import Mathlib.Topology.Algebra.Group.Units
+public import Mathlib.Topology.MetricSpace.Polish
 
 /-!
 # Separation, neighbourhoods, countability and preconnected sets in a group of units
@@ -20,7 +21,7 @@ file records consequences of that definition.
   neighbourhood of `u` in `Mˣ` exactly when it contains every unit `v` with `v` in a prescribed
   neighbourhood of `u` and `v⁻¹` in a prescribed neighbourhood of `u⁻¹`.
 * In a `T₁` monoid with continuous multiplication, `u ↦ (u, u⁻¹)` is a closed embedding, so the
-  units of a σ-compact monoid are σ-compact.
+  units of a σ-compact monoid are σ-compact and the units of a Polish monoid are Polish.
 * The units of a totally disconnected monoid form a totally disconnected space, as `Units.val` is
   continuous and injective.
 * Since `u ↦ (u, u⁻¹)` is an embedding, the units of a second-countable monoid are second
@@ -39,6 +40,7 @@ file records consequences of that definition.
   disconnected.
 * `Units.instSecondCountableTopology`: the units of a second-countable monoid are second
   countable.
+* `Units.instPolishSpace`: the units of a Polish monoid with continuous multiplication are Polish.
 * `IsPreconnected.preimage_units_val`: preconnected sets of nonzero elements pull back to
   preconnected sets of units.
 -/
@@ -106,6 +108,14 @@ countable. -/]
 instance instSecondCountableTopology [SecondCountableTopology M] : SecondCountableTopology Mˣ :=
   ((Homeomorph.refl M).prodCongr MulOpposite.opHomeomorph.symm).isEmbedding.comp
     isEmbedding_embedProduct |>.secondCountableTopology
+
+/-- **The units of a Polish monoid form a Polish space.** In a Polish monoid with continuous
+multiplication, `u ↦ (u, u⁻¹)` is a closed embedding of `Mˣ` into the Polish space `M × M`. -/
+@[to_additive /-- The additive units of a Polish additive monoid with continuous addition form a
+Polish space. -/]
+instance instPolishSpace [ContinuousMul M] [PolishSpace M] : PolishSpace Mˣ :=
+  ((Homeomorph.refl M).prodCongr MulOpposite.opHomeomorph.symm).isClosedEmbedding.comp
+    isClosedEmbedding_embedProduct |>.polishSpace
 
 end Units
 

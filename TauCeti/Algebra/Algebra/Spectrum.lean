@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Spectrum.Basic
 
 /-!
-# Spectra under unit-reflecting algebra homomorphisms
+# Spectra under unit-reflecting algebra homomorphisms, and of `1 + k a`
 
 Every algebra homomorphism `φ` satisfies `spectrum R (φ a) ⊆ spectrum R a`
 (`AlgHom.spectrum_apply_subset`). When `φ` also reflects units, the inclusion is an equality.
@@ -20,6 +20,10 @@ killing the kernel of `Φ` satisfies `spectrum R (χ a) ⊆ spectrum R (Φ a)`
 (`AlgHom.spectrum_apply_subset_of_ker_le`); in particular a scalar-valued such `χ` takes values
 in the image spectrum (`AlgHom.apply_mem_spectrum_of_ker_le`). This is the algebraic input to
 extending characters from dense homomorphic images of Banach algebras.
+
+Over a field, `1 + k a` is invertible exactly when `1 + k x` does not vanish on the spectrum of
+`a` (`spectrum.isUnit_one_add_smul_iff`): for `k ≠ 0` the spectrum of `1 + k a` is the image of
+that of `a` under `x ↦ 1 + k x`.
 
 ## References
 
@@ -67,3 +71,23 @@ theorem apply_mem_spectrum_of_ker_le {R A B F G : Type*} [CommRing R] [Nontrivia
   spectrum_apply_subset_of_ker_le Φ hUnits χ hχ a (by simp [spectrum.mem_iff])
 
 end AlgHom
+
+namespace spectrum
+
+/-- Over a field, `1 + k a` is invertible exactly when `1 + k x` does not vanish on the spectrum
+of `a`. -/
+theorem isUnit_one_add_smul_iff {R A : Type*} [Field R] [Ring A] [Algebra R A] {a : A} {k : R} :
+    IsUnit (1 + k • a) ↔ ∀ x ∈ spectrum R a, 1 + k * x ≠ 0 := by
+  rcases eq_or_ne k 0 with rfl | hk
+  · simp
+  -- The spectrum of `1 + k a` is the image of that of `a` under `x ↦ 1 + k x`.
+  have hσ : spectrum R (1 + k • a) = (fun x ↦ 1 + k * x) '' spectrum R a := by
+    have h₁ := singleton_add_eq (Units.mk0 k hk • a) (1 : R)
+    have h₂ := unit_smul_eq_smul a (Units.mk0 k hk)
+    simp only [map_one, Units.smul_mk0] at h₁ h₂
+    rw [← h₁, h₂, Set.singleton_add, ← Set.image_smul, Set.image_image]
+    simp only [smul_eq_mul]
+  rw [← zero_notMem_iff R, hσ]
+  simp
+
+end spectrum

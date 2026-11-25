@@ -24,12 +24,15 @@ parameters:
 * `Polynomial.X_mul_laguerre_add_one`:
   `X Lₙ^{(α+1)} = (n + α + 1) Lₙ^{(α)} - (n + 1) Lₙ₊₁^{(α)}` (DLMF 18.9.14);
 * `Polynomial.laguerre_succ_succ`, the three-term recurrence (DLMF 18.9.1 with Table 18.9.1)
-  `(n + 2) Lₙ₊₂^{(α)} = (2n + α + 3 - X) Lₙ₊₁^{(α)} - (n + α + 1) Lₙ^{(α)}`.
+  `(n + 2) Lₙ₊₂^{(α)} = (2n + α + 3 - X) Lₙ₊₁^{(α)} - (n + α + 1) Lₙ^{(α)}`;
+* `Polynomial.X_mul_derivative_laguerre_add_one`, the raising relation
+  `X (Lₙ^{(α+1)})' = (n + 1) Lₙ₊₁^{(α)} - (α + 1 - X) Lₙ^{(α+1)}`, the inductive step of
+  the Rodrigues formula.
 
-The first three are proved by comparing coefficients; the three-term recurrence is a linear
-combination of the other two. Every identity involving the index `n - 1` is stated at successor
-indices, since the `n`-indexed forms are false at `n = 0` under truncated subtraction (for
-instance `(L₀^{(α)})' = 0`, while `-L₀^{(α+1)} = -1`).
+The first three are proved by comparing coefficients; the three-term recurrence and the raising
+relation are linear combinations of them. Every identity involving the index `n - 1` is stated
+at successor indices, since the `n`-indexed forms are false at `n = 0` under truncated
+subtraction (for instance `(L₀^{(α)})' = 0`, while `-L₀^{(α+1)} = -1`).
 
 ## References
 
@@ -138,5 +141,22 @@ theorem laguerre_succ_succ (α : R) (n : ℕ) :
   simp only [nsmul_eq_mul, Nat.cast_add, Nat.cast_one, Nat.cast_ofNat, map_add, map_mul,
     map_natCast, map_one, map_ofNat] at h₁ h₂ ⊢
   linear_combination h₁ + X * h₃ - h₂
+
+/-- The raising relation: `X (Lₙ^{(α+1)})' = (n + 1) Lₙ₊₁^{(α)} - (α + 1 - X) Lₙ^{(α+1)}`. It
+expresses `Lₙ₊₁^{(α)}` through `Lₙ^{(α+1)}` and its derivative, and is the inductive step of the
+Rodrigues formula. It follows from DLMF 18.9.13, 18.9.14 and 18.9.23. -/
+theorem X_mul_derivative_laguerre_add_one (α : R) (n : ℕ) :
+    X * derivative (laguerre (α + 1) n) =
+      (n + 1) • laguerre α (n + 1) - (C (α + 1) - X) * laguerre (α + 1) n := by
+  have h₁ := X_mul_laguerre_add_one α n
+  rcases n with _ | m
+  · simp only [nsmul_eq_mul, Nat.cast_add, Nat.cast_one, Nat.cast_zero, map_add, map_one,
+      map_zero, laguerre_zero, derivative_one] at h₁ ⊢
+    linear_combination -h₁
+  · have h₂ := X_mul_laguerre_add_one (α + 1) m
+    have h₃ := laguerre_add_one_sub α m
+    rw [derivative_laguerre]
+    simp only [nsmul_eq_mul, Nat.cast_add, Nat.cast_one, map_add, map_natCast, map_one] at h₁ h₂ ⊢
+    linear_combination -h₁ - h₂ - (C α + m + 2) * h₃
 
 end Polynomial
