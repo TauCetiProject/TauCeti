@@ -39,6 +39,9 @@ idempotents read in `R[G]`).
 
 ## Main results
 
+* `TauCeti.moduleFinite_center_monoidAlgebra`, `TauCeti.isArtinianRing_center_monoidAlgebra`: for
+  `G` finite, `Z(R[G])` is a finite `R`-module when `R` is Noetherian, and an Artinian ring when
+  `R` is Artinian (instances).
 * `TauCeti.exists_completeOrthogonalIdempotents_isBlockIdempotent`: over an Artinian commutative
   ring `R` and for `G` finite, `1` is a finite sum of orthogonal block idempotents.
 * `TauCeti.complete_blockIdempotents_unique`: two complete orthogonal families of block
@@ -78,17 +81,28 @@ theorem IsBlockIdempotent.domCongr [CommSemiring R] [Monoid G] {G' : Type*} [Mon
     IsBlockIdempotent (Subalgebra.centerCongr (MonoidAlgebra.domCongr R R σ) b) :=
   IsPrimitiveIdempotent.map (Subalgebra.centerCongr (MonoidAlgebra.domCongr R R σ)).toRingEquiv hb
 
+/-- The centre of `R[G]` is a finite `R`-module, over a Noetherian commutative ring `R` and for a
+finite group (or monoid) `G`. -/
+instance moduleFinite_center_monoidAlgebra [CommRing R] [IsNoetherianRing R] [Monoid G]
+    [Finite G] : Module.Finite R (Subalgebra.center R (MonoidAlgebra R G)) :=
+  have : IsNoetherian R (Subalgebra.center R (MonoidAlgebra R G)) :=
+    isNoetherian_submodule' (Subalgebra.toSubmodule (Subalgebra.center R (MonoidAlgebra R G)))
+  inferInstance
+
+/-- The centre of `R[G]` is an Artinian ring, over an Artinian commutative ring `R` and for a
+finite group (or monoid) `G`. -/
+instance isArtinianRing_center_monoidAlgebra [CommRing R] [IsArtinianRing R] [Monoid G]
+    [Finite G] : IsArtinianRing (Subalgebra.center R (MonoidAlgebra R G)) :=
+  IsArtinianRing.of_finite R _
+
 /-- **Existence of the block decomposition.** Over an Artinian commutative ring `R`, for a finite
 group (or monoid) `G`, the centre of `R[G]` is a finite `R`-module, hence an Artinian ring, and so
 `1` is a finite sum of orthogonal block idempotents. -/
 theorem exists_completeOrthogonalIdempotents_isBlockIdempotent (R G : Type*) [CommRing R]
     [IsArtinianRing R] [Monoid G] [Finite G] :
     ∃ (n : ℕ) (b : Fin n → Subalgebra.center R (MonoidAlgebra R G)),
-      CompleteOrthogonalIdempotents b ∧ ∀ i, IsBlockIdempotent (b i) := by
-  have : IsNoetherian R (Subalgebra.center R (MonoidAlgebra R G)) :=
-    isNoetherian_submodule' (Subalgebra.toSubmodule (Subalgebra.center R (MonoidAlgebra R G)))
-  have : IsArtinianRing (Subalgebra.center R (MonoidAlgebra R G)) := IsArtinianRing.of_finite R _
-  exact exists_completeOrthogonalIdempotents_isPrimitiveIdempotent _
+      CompleteOrthogonalIdempotents b ∧ ∀ i, IsBlockIdempotent (b i) :=
+  exists_completeOrthogonalIdempotents_isPrimitiveIdempotent _
 
 /-- **Uniqueness of the block decomposition.** Two complete orthogonal families of block
 idempotents of `R[G]`, indexed by finite types, agree up to a bijection of the index types. This
