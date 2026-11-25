@@ -9,6 +9,7 @@ public import Mathlib.Topology.CWComplex.Classical.Subcomplex
 public import TauCeti.Topology.CWComplex.Classical.Subcomplex
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.Induction
 public import TauCeti.Topology.Homotopy.Extension.Ball
+import TauCeti.Topology.Homotopy.Extension.Segment
 
 /-!
 # Relative CW inclusions are closed cofibrations
@@ -32,6 +33,18 @@ and homotopies can be modified on the base or on a skeleton and extended over th
 * `TauCeti.hasHomotopyExtensionProperty_range_of_coe_map_eq`: the range of a map between CW
   complexes carrying every cell onto a cell, characteristic maps included, has the homotopy
   extension property, being a subcomplex.
+* `TauCeti.hasHomotopyExtensionProperty_singleton`: **every point of a relative CW complex outside
+  its base has the homotopy extension property inside the complex**, and
+  `TauCeti.hasHomotopyExtensionProperty_singleton_of_cwComplex` states this for a CW structure on
+  the whole space.
+
+A point of an open cell of positive dimension is not a subcomplex, so the last result does not
+follow from the subcomplex case. Its proof works in the skeleton containing the cell, where the
+open cell is open and the inverse characteristic map is a chart onto the open unit ball: a point
+of a chart has the homotopy extension property
+(`OpenPartialHomeomorph.hasHomotopyExtensionProperty_symm_image_segment`, for a degenerate
+segment), and the skeleton has it inside the complex. The detour through the skeleton is needed,
+since cells of higher dimension attached along the cell make it fail to be open in the complex.
 
 ## Related results
 
@@ -43,7 +56,8 @@ over the skeleta by `TauCeti.exists_continuousMap_prod_skeletonLT_succ` and
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Chapter 0, Proposition 0.16: a CW pair has the homotopy extension property.
+  Chapter 0, Proposition 0.16: a CW pair has the homotopy extension property; and the Appendix,
+  Proposition A.4, on the local contractibility of CW complexes.
 -/
 
 public section
@@ -196,5 +210,37 @@ theorem hasHomotopyExtensionProperty_range_of_coe_map_eq {W Y : Type*} [Topologi
   have h := E.hasHomotopyExtensionProperty.image (Homeomorph.Set.univ Y)
   rwa [Homeomorph.Set.univ_apply, image_preimage_eq_range_inter, Subtype.range_coe, univ_inter]
     at h
+
+/-- **A point of a relative CW complex outside its base has the homotopy extension property
+inside the complex.** -/
+theorem hasHomotopyExtensionProperty_singleton {x : C} (hx : (x : X) ∉ D) :
+    HasHomotopyExtensionProperty ({x} : Set C) := by
+  obtain ⟨n, i, hxi⟩ : ∃ n, ∃ i : cell C n, (x : X) ∈ openCell n i := by
+    have hmem : (x : X) ∈ D ∪ ⋃ (n : ℕ) (j : cell C n), openCell n j :=
+      (union_iUnion_openCell_eq_complex (C := C)).symm.subset x.property
+    simpa [hx] using hmem
+  have hS : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) ⊆ C := (skeletonLT C _).subset_complex
+  -- The point of the `n`-skeleton lying over `x`, in the source of the chart of the cell `i`.
+  let x' : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) :=
+    ⟨x, openCell_subset_skeletonLT n i hxi⟩
+  have hx' : x' ∈ (openCellChart n i).source := by
+    rw [openCellChart_source]
+    exact hxi
+  have h := (openCellChart n i).hasHomotopyExtensionProperty_symm_image_segment
+    (x := openCellChart n i x') (y := openCellChart n i x')
+    (by rw [segment_same, singleton_subset_iff]; exact (openCellChart n i).map_source hx')
+  rw [segment_same, image_singleton, (openCellChart n i).left_inv hx'] at h
+  have h' := h.image_of_isEmbedding (IsEmbedding.inclusion hS)
+    (by rw [range_inclusion]; exact hasHomotopyExtensionProperty_skeletonLT (n + 1))
+  rwa [image_singleton] at h'
+
+/-- **A point of a Hausdorff CW complex has the homotopy extension property**, for a CW structure
+on the whole space. -/
+theorem hasHomotopyExtensionProperty_singleton_of_cwComplex {Y : Type*} [TopologicalSpace Y]
+    [T2Space Y] [CWComplex (univ : Set Y)] (y : Y) :
+    HasHomotopyExtensionProperty ({y} : Set Y) := by
+  have h := (hasHomotopyExtensionProperty_singleton (C := (univ : Set Y))
+    (x := ⟨y, mem_univ y⟩) (notMem_empty y)).image (Homeomorph.Set.univ Y)
+  rwa [image_singleton, Homeomorph.Set.univ_apply] at h
 
 end TauCeti
