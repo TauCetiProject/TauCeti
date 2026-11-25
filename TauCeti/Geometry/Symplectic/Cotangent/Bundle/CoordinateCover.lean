@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ActionAngle
+public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ActionAngle.Basic
+
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # The cotangent bundle in the coordinates of a map to `ℝ^ι`

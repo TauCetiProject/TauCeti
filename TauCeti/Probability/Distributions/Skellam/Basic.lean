@@ -61,6 +61,12 @@ theorem map_neg_skellamMeasure (r₁ r₂ : ℝ≥0) :
   funext z
   simp
 
+/-- Negating an integer-valued random variable with a Skellam law exchanges its rates. -/
+theorem _root_.ProbabilityTheory.HasLaw.neg_skellamMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {X : Ω → ℤ} {r₁ r₂ : ℝ≥0} (hX : HasLaw X (skellamMeasure r₁ r₂) P) :
+    HasLaw (fun ω ↦ -X ω) (skellamMeasure r₂ r₁) P :=
+  HasLaw.comp ⟨by fun_prop, map_neg_skellamMeasure r₁ r₂⟩ hX
+
 /-- The mass of a nonnegative integer is a sum over the possible subtracted counts. -/
 theorem skellamMeasure_singleton_natCast (r₁ r₂ : ℝ≥0) (k : ℕ) :
     skellamMeasure r₁ r₂ {(k : ℤ)} =

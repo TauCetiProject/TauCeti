@@ -82,8 +82,8 @@ variable [GradedLieAlgebra ℒ]
 it sends the degree-`n` piece into the span of the tensors `a ⊗ b` with `a` and `b` homogeneous
 of degrees adding to `n`. -/
 theorem isHomogeneous_comul :
-    TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := U)) 𝒜 𝒯 0 := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+    LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := U)) 𝒜 𝒯 0 := by
+  rw [LinearMap.isHomogeneous_def]
   intro n a ha
   rw [add_zero]
   refine (homogeneousSubmodule_le_iff ℒ n ((𝒯 n).comap (Coalgebra.comul (R := R)))).mpr

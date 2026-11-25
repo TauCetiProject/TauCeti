@@ -66,8 +66,8 @@ characteristic `p`, `a_V = X ^ p - X`.
 * `Polynomial.aeval_C_X_add_Y_eq_iff_mem_span`: in prime characteristic `p`, the additive
   polynomials are the `R`-linear combinations of the `X ^ p ^ i`.
 * `AddSubgroup.aeval_additivePolynomial_add_algebraMap`: `a_V (x + c) = a_V x` for `c ∈ V`.
-* `AddSubgroup.aeval_additivePolynomial_eq_zero_iff`: the roots of `a_V` in a domain are the
-  elements of `V`.
+* `AddSubgroup.aeval_additivePolynomial_eq_zero_iff`: the roots of `a_V` in an `R`-algebra
+  without zero divisors are the images under `algebraMap R A` of the elements of `V`.
 * `AddSubgroup.aeval_additivePolynomial_add`: `a_V (x + y) = a_V x + a_V y`.
 * `AddSubgroup.map_additivePolynomial_sub_C_eq_prod`: `a_V - u = ∏_{c ∈ V} (X - (y + c))`.
 * `AddSubgroup.splits_additivePolynomial_sub_C`: `a_V - u` splits in any commutative `R`-algebra
@@ -208,17 +208,6 @@ theorem aeval_additivePolynomial (x : A) :
     aeval x V.additivePolynomial = ∏ c : V, (x - algebraMap R A c) := by
   simp [additivePolynomial_eq_prod]
 
-/-- The roots of `a_V` in a commutative ring without zero divisors, such as a domain, are exactly
-the elements of `V`. -/
-theorem aeval_additivePolynomial_eq_zero_iff [NoZeroDivisors A] {x : A} :
-    aeval x V.additivePolynomial = 0 ↔ ∃ c ∈ V, algebraMap R A c = x := by
-  -- In the zero ring both sides hold.
-  rcases subsingleton_or_nontrivial A with _ | _
-  · exact iff_of_true (Subsingleton.elim _ _) ⟨0, V.zero_mem, Subsingleton.elim _ _⟩
-  simp only [aeval_additivePolynomial, Finset.prod_eq_zero_iff, Finset.mem_univ, true_and,
-    sub_eq_zero, Subtype.exists, exists_prop]
-  exact exists_congr fun c ↦ and_congr_right fun _ ↦ eq_comm
-
 end Algebra
 
 section Semiring
@@ -240,6 +229,24 @@ theorem aeval_additivePolynomial_algebraMap {c : R} (hc : c ∈ V) :
     aeval (algebraMap R A c) V.additivePolynomial = 0 := by
   rw [aeval_algebraMap_apply_eq_algebraMap_eval, additivePolynomial,
     Lagrange.eval_nodal_at_node (v := ((↑) : V → R)) (Finset.mem_univ ⟨c, hc⟩), map_zero]
+
+/-- The roots of `a_V` in an `R`-algebra `A` without zero divisors, such as a domain or a division
+ring, are exactly the images under `algebraMap R A` of the elements of `V`. -/
+theorem aeval_additivePolynomial_eq_zero_iff [NoZeroDivisors A] {x : A} :
+    aeval x V.additivePolynomial = 0 ↔ ∃ c ∈ V, algebraMap R A c = x := by
+  refine ⟨fun hx ↦ ?_, fun ⟨c, hc, hcx⟩ ↦ hcx ▸ V.aeval_additivePolynomial_algebraMap hc⟩
+  -- In the zero ring `x = algebraMap R A 0`.
+  rcases subsingleton_or_nontrivial A with _ | _
+  · exact ⟨0, V.zero_mem, Subsingleton.elim _ _⟩
+  -- `aeval x` maps the product of the factors `X - c` to the list product of their values,
+  -- so one value vanishes.
+  rw [additivePolynomial_eq_prod, ← Finset.prod_map_toList] at hx
+  obtain ⟨c, hc⟩ : ∃ c : V, aeval x (X - C (c : R)) = 0 := by
+    simpa [map_list_prod, List.mem_map] using hx
+  -- Evaluating `X = (X - c) + c` at `x` gives `x = 0 + c`.
+  have hcx := (map_add (aeval x) (X - C (c : R)) (C (c : R))).symm
+  simp only [hc, zero_add, aeval_C, sub_add_cancel, aeval_X] at hcx
+  exact ⟨c, c.property, hcx⟩
 
 end Semiring
 

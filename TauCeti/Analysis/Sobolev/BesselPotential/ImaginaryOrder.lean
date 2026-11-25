@@ -49,7 +49,10 @@ holomorphy in `z`.
 * `TauCeti.exists_fourierMultiplierCLM_japaneseBracketCpow_eq_and_norm_le`: for `re z ≤ 0`, the
   Bessel potential `J^z` is bounded on `Lᵖ` with norm at most `C (1 + ‖z‖) ^ N`.
 * `TemperedDistribution.besselPotential_fourierMultiplierCLM_japaneseBracketCpow`:
-  `J^{s - re z} J^z u = J^{i im z} J^s u` on tempered distributions.
+  `J^{s - re z} J^z u = J^{i im z} J^s u` on tempered distributions, the composition law
+  `J^w J^v u = J^{v + w} u`
+  (`fourierMultiplierCLM_japaneseBracketCpow_fourierMultiplierCLM_japaneseBracketCpow`), and
+  `J^0 u = u` (`fourierMultiplierCLM_japaneseBracketCpow_zero`).
 * `TemperedDistribution.MemSobolev.fourierMultiplierCLM_japaneseBracketCpow`: `J^z` maps
   `H^{s,p}` into `H^{s - re z,p}`.
 * `BesselPotentialSpace.besselPotentialCLM`: `J^z` as a bounded operator
@@ -112,6 +115,39 @@ theorem besselPotential_fourierMultiplierCLM_japaneseBracketCpow (s : ℝ) (z : 
     congr 1
     apply Complex.ext <;> simp
   rw [hsym]
+
+/-- The Fourier multiplier with symbol `⟨ξ⟩ ^ 0 = 1` is the identity: `J^0 u = u` on tempered
+distributions. -/
+@[simp]
+theorem fourierMultiplierCLM_japaneseBracketCpow_zero (u : 𝓢'(E, F)) :
+    fourierMultiplierCLM F (TauCeti.japaneseBracketCpow (0 : ℂ)) u = u := by
+  have h : TauCeti.japaneseBracketCpow (0 : ℂ) = fun _ : E ↦ (1 : ℂ) :=
+    funext TauCeti.japaneseBracketCpow_zero
+  rw [h, fourierMultiplierCLM_const, one_smul, ContinuousLinearMap.id_apply]
+
+/-- Fourier multipliers with complex powers of the Japanese bracket compose by adding the orders:
+`J^w (J^v u) = J^{v + w} u` on tempered distributions. -/
+@[simp]
+theorem fourierMultiplierCLM_japaneseBracketCpow_fourierMultiplierCLM_japaneseBracketCpow
+    (v w : ℂ) (u : 𝓢'(E, F)) :
+    fourierMultiplierCLM F (TauCeti.japaneseBracketCpow w)
+        (fourierMultiplierCLM F (TauCeti.japaneseBracketCpow v) u) =
+      fourierMultiplierCLM F (TauCeti.japaneseBracketCpow (v + w)) u := by
+  rw [fourierMultiplierCLM_fourierMultiplierCLM_apply
+    (TauCeti.hasTemperateGrowth_japaneseBracketCpow v)
+    (TauCeti.hasTemperateGrowth_japaneseBracketCpow w)]
+  congr 2
+  funext ξ
+  simp only [Pi.mul_apply, TauCeti.japaneseBracketCpow_add]
+
+/-- Mathlib's Bessel potential of real order `s` is the Fourier multiplier with the complex power
+`⟨ξ⟩ ^ s` of the Japanese bracket. -/
+theorem besselPotential_eq_fourierMultiplierCLM_japaneseBracketCpow (s : ℝ) (u : 𝓢'(E, F)) :
+    besselPotential E F s u = fourierMultiplierCLM F (TauCeti.japaneseBracketCpow (s : ℂ)) u := by
+  rw [besselPotential]
+  congr 2
+  funext ξ
+  exact (TauCeti.japaneseBracketCpow_ofReal s ξ).symm
 
 end TemperedDistribution
 
@@ -191,20 +227,15 @@ distributions as Mathlib's Bessel potential `TemperedDistribution.besselPotentia
 theorem toDistr_besselPotentialCLM_ofReal (hp : 1 < p) (hp_top : p ≠ ∞) (t : ℝ)
     (u : H^{s, p}(E, F)) :
     (besselPotentialCLM hp hp_top (t : ℂ) u).toDistr = besselPotential E F t u.toDistr := by
-  rw [toDistr_besselPotentialCLM, besselPotential]
-  congr 2
-  funext ξ
-  exact TauCeti.japaneseBracketCpow_ofReal t ξ
+  rw [toDistr_besselPotentialCLM, besselPotential_eq_fourierMultiplierCLM_japaneseBracketCpow]
 
 /-- The Bessel potential of order `0` on the Sobolev scale is the identity, after identifying
 `H^{s - re 0,p}` with `H^{s,p}`. -/
 theorem besselPotentialCLM_zero (hp : 1 < p) (hp_top : p ≠ ∞) (u : H^{s, p}(E, F)) :
     besselPotentialCLM hp hp_top 0 u = u.copy (s - (0 : ℂ).re) (by simp) := by
   ext1
-  have h : TauCeti.japaneseBracketCpow (0 : ℂ) = fun _ : E ↦ (1 : ℂ) :=
-    funext TauCeti.japaneseBracketCpow_zero
-  rw [toDistr_copy _ (by simp), toDistr_besselPotentialCLM, h, fourierMultiplierCLM_const,
-    one_smul, ContinuousLinearMap.id_apply]
+  rw [toDistr_copy _ (by simp), toDistr_besselPotentialCLM,
+    fourierMultiplierCLM_japaneseBracketCpow_zero]
 
 /-- The orders of Bessel potentials on the Sobolev scale add: `J^w (J^z u) = J^(z + w) u`, after
 identifying `H^{s - re (z + w),p}` with `H^{s - re z - re w,p}`. -/
@@ -217,12 +248,7 @@ theorem besselPotentialCLM_besselPotentialCLM (hp : 1 < p) (hp_top : p ≠ ∞) 
   ext1
   rw [toDistr_copy _ (by rw [Complex.add_re]; ring), toDistr_besselPotentialCLM,
     toDistr_besselPotentialCLM, toDistr_besselPotentialCLM,
-    fourierMultiplierCLM_fourierMultiplierCLM_apply
-      (TauCeti.hasTemperateGrowth_japaneseBracketCpow z)
-      (TauCeti.hasTemperateGrowth_japaneseBracketCpow w)]
-  congr 2
-  funext ξ
-  exact (TauCeti.japaneseBracketCpow_add z w ξ).symm
+    fourierMultiplierCLM_japaneseBracketCpow_fourierMultiplierCLM_japaneseBracketCpow]
 
 /-- On Schwartz functions, `besselPotentialCLM hp hp_top z` is the Bessel potential
 `SchwartzMap.besselPotentialCLM z` of complex order. -/

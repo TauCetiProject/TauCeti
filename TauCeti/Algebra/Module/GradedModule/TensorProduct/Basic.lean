@@ -49,7 +49,7 @@ degrees. This grading is used by tensor products of differential graded objects 
   span the tensor product.
 * `TauCeti.InternalGrading.piTensorProduct_ext`: linear maps from a finite tensor product agree
   when they agree on pure tensors of homogeneous elements.
-* `TauCeti.LinearMap.IsHomogeneous.tensorProduct`: tensoring homogeneous maps adds their degrees.
+* `LinearMap.IsHomogeneous.tensorProduct`: tensoring homogeneous maps adds their degrees.
 * `TauCeti.InternalGrading.isHomogeneous_assoc`,
   `TauCeti.InternalGrading.isHomogeneous_assoc_symm`, and
   `TauCeti.InternalGrading.isHomogeneous_tensorTensorTensorComm`: reassociating and interchanging
@@ -68,9 +68,9 @@ public section
 
 open scoped DirectSum TensorProduct
 
-namespace TauCeti
-
 universe u v w v' w'
+
+namespace TauCeti
 
 namespace InternalGrading
 
@@ -298,7 +298,11 @@ end KoszulTwist
 
 end InternalGrading
 
+end TauCeti
+
 namespace LinearMap.IsHomogeneous
+
+open TauCeti (InternalGrading)
 
 variable {R : Type u} [CommSemiring R]
 variable {M : Type v} {N : Type w} {M' : Type v'} {N' : Type w'}
@@ -334,6 +338,8 @@ theorem rTensor {ι : Type*} [DecidableEq ι] [AddCommMonoid ι]
     hf.tensorProduct (LinearMap.isHomogeneous_id (R := R) H.piece)
 
 end LinearMap.IsHomogeneous
+
+namespace TauCeti
 
 /-- The tensor product of two even-supported internally `ℤ`-graded modules is even-supported. -/
 theorem parityGrading_tensorProduct_one_eq_bot {R : Type u} {M : Type v} {N : Type w}

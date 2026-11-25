@@ -8,6 +8,8 @@ module
 public import Mathlib.NumberTheory.JacobiSum.Basic
 public import Mathlib.NumberTheory.MulChar.Lemmas
 
+import TauCeti.RingTheory.RootsOfUnity.Basic
+
 /-!
 # Gauss and Jacobi sums of a cubic character
 
@@ -71,8 +73,6 @@ theorem three_dvd_jacobiSum_add_one {χ : MulChar F R} (hχ : orderOf χ = 3) :
   obtain ⟨z, -, hz⟩ := exists_jacobiSum_eq_neg_one_add (by norm_num) hχ3 hχ3
     (hχ ▸ χ.orderOf_dvd_card_sub_one) hμ
   -- `μ ^ 2 + μ + 1 = 0`, so `J(χ, χ) + 1 = z * (μ - 1) ^ 2 = -3 * z * μ`.
-  have h := hμ.geom_sum_eq_zero (by norm_num)
-  simp only [Finset.sum_range_succ, Finset.sum_range_zero] at h
-  exact ⟨-z * χ a, by rw [hz]; linear_combination z * h⟩
+  exact ⟨-z * χ a, by rw [hz]; linear_combination z * hμ.one_add_add_sq⟩
 
 end TauCeti

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.WittVector.Truncated
+public import TauCeti.RingTheory.WittVector.Truncated.Basic
 
 import Mathlib.Tactic.FinCases
 
@@ -74,6 +74,17 @@ theorem ghostComponentOne_comp_wittSection :
       frobenius p A := by
   ext x
   simp [TruncatedWittVector.ghostComponentOne_apply, frobenius_apply]
+
+variable {p A} in
+/-- A ring homomorphism of delta rings is a delta map exactly when it intertwines the Witt
+sections, the source section being followed by the coefficient map of length-two Witt vectors. -/
+theorem isDeltaMap_iff_wittSection_comp {B : Type*} [CommRing B] [DeltaRing p B] (f : A →+* B) :
+    IsDeltaMap p f ↔
+      (wittSection p B).comp f = (TruncatedWittVector.map 2 f).comp (wittSection p A) := by
+  refine ⟨fun hf => ?_, fun h => ⟨fun x => ?_⟩⟩
+  · ext x i
+    fin_cases i <;> simp [hf.map_delta]
+  · simpa using congr(($h x).coeff 1).symm
 
 end Section
 

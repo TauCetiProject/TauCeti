@@ -107,12 +107,10 @@ theorem IsFreePair.exists_strong_deformation_retraction (h : IsFreePair K σ τ)
       (continuous_faceInclusion A ⟨τ, hK h.upper_mem⟩).subtype_mk
         (support_faceInclusion_mem hK h.upper_mem)⟩
   -- Read a point supported on the upper face as a point of its closed simplex.
-  let toτ (x : X) (hx : x.val.val.support ⊆ τ) : StandardSimplex τ := ⟨x.val.val, by
-    rw [Finset.coe_image, mem_standardSimplex_iff]
-    exact ⟨Realization.nonneg A x.val, Realization.sum_eq_one A x.val, hx⟩⟩
-  have hiτ (x : X) (hx : x.val.val.support ⊆ τ) : iτ (toτ x hx) = x := by
-    apply Subtype.ext
-    exact Subtype.ext (faceInclusion_val _ _ _)
+  let toτ (x : X) (hx : x.val.val.support ⊆ τ) : StandardSimplex τ :=
+    ⟨x.val.val, Realization.mem_convexHull_of_support_subset A x.val hx⟩
+  have hiτ (x : X) (hx : x.val.val.support ⊆ τ) : iτ (toτ x hx) = x :=
+    Subtype.ext (faceInclusion_mk_val _ _ _ _)
   have hT (x : StandardSimplex τ) : x ∈ T ↔ x.val.support ∈ deletion K σ := by
     simp only [T, mem_ofPred_eq, Geometry.SimplicialComplex.mem_space_onFinsupp_iff,
       StandardSimplex.nonneg, StandardSimplex.sum_eq_one, implies_true, true_and]

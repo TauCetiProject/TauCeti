@@ -34,6 +34,8 @@ form of that computation: every element of `H ⊔ K` is a product `x * t` with `
 * `TauCeti.map_conj_eq_conj_smul`: the image of `H` under the inner automorphism of `s` is
   `MulAut.conj s • H`, which converts Mathlib's statements phrased with `Subgroup.map`, such as
   `MulAction.stabilizer_smul_eq_stabilizer_map_conj` and `Ideal.inertia_smul`, to this convention.
+* `TauCeti.conjAct_inv_smul_inf_conjAct_smul_le`: the intersection `U ∩ gUg⁻¹`, conjugated back
+  by `g⁻¹`, lies in `U`.
 * `Subgroup.mem_sup_of_right_le_normalizer_left`: if `K` normalizes `H`, an element of `H ⊔ K` is
   a product of an element of `H` followed by an element of `K`.
 * `Subgroup.mem_smul_set_iff_exists_smul_mem`: a point lies in the translate `H • t` of a set by a
@@ -66,6 +68,12 @@ theorem map_conj_eq_conj_smul (s : G) (H : Subgroup G) :
 theorem card_conj_smul_eq (s : G) (H : Subgroup G) :
     Nat.card (MulAut.conj s • H : Subgroup G) = Nat.card H :=
   Nat.card_congr (Subgroup.equivSMul (MulAut.conj s) H).toEquiv.symm
+
+/-- The intersection of `U` with its conjugate `gUg⁻¹`, translated back by `g⁻¹`, lies in `U`. -/
+theorem conjAct_inv_smul_inf_conjAct_smul_le (U : Subgroup G) (g : G) :
+    ConjAct.toConjAct g⁻¹ • (U ⊓ ConjAct.toConjAct g • U) ≤ U := by
+  rw [Subgroup.smul_inf, map_inv, inv_smul_smul]
+  exact inf_le_right
 
 end TauCeti
 

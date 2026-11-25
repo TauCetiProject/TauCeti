@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.RegularValue.Level
-public import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
+public import TauCeti.Analysis.Calculus.ImplicitFunction.Basic
 public import Mathlib.Geometry.Manifold.Submersion
 
 /-!
