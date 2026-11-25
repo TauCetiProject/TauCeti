@@ -35,6 +35,13 @@ its form; its elements are the isometric equivalences of `H` with itself
   left-separating exactly when `W` meets its orthogonal only in `0`.
 * `TauCeti.SignedHermitianSpace.Equivalent.prod`: orthogonal sums of equivalent spaces are
   equivalent.
+
+## Attribution
+
+`TauCeti.SignedHermitianSpace.IsometryEquiv` and `TauCeti.SignedHermitianSpace.Equivalent`, with
+their API (`refl`, `symm`, `trans`, the `EquivLike` instance and `map_app`), are modelled on
+Mathlib's `QuadraticMap.IsometryEquiv` and `QuadraticMap.Equivalent`
+(`Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv`), here for sesquilinear forms of a fixed sign.
 -/
 
 public section
@@ -60,7 +67,7 @@ structure IsometryEquiv (H₁ : SignedHermitianSpace K V₁ σ ε) (H₂ : Signe
 
 /-- Two signed hermitian spaces are **equivalent** (isometric) if there is an isometric
 equivalence between them. -/
-@[expose] def Equivalent (H₁ : SignedHermitianSpace K V₁ σ ε) (H₂ : SignedHermitianSpace K V₂ σ ε) :
+def Equivalent (H₁ : SignedHermitianSpace K V₁ σ ε) (H₂ : SignedHermitianSpace K V₂ σ ε) :
     Prop :=
   Nonempty (IsometryEquiv H₁ H₂)
 
@@ -143,6 +150,27 @@ theorem toLinearEquiv_mem_isometryGroup (f : IsometryEquiv H H) :
   LinearMap.mem_isometryGroup_iff.2 f.map_app
 
 end IsometryEquiv
+
+section Equivalent
+
+variable {H₁ : SignedHermitianSpace K V₁ σ ε} {H₂ : SignedHermitianSpace K V₂ σ ε}
+  {H₃ : SignedHermitianSpace K V₃ σ ε}
+
+/-- Two signed hermitian spaces are equivalent exactly when there is an isometric equivalence
+between them. -/
+theorem equivalent_iff_nonempty_isometryEquiv :
+    Equivalent H₁ H₂ ↔ Nonempty (IsometryEquiv H₁ H₂) :=
+  Iff.rfl
+
+/-- An isometric equivalence witnesses that the two spaces are equivalent. -/
+theorem IsometryEquiv.equivalent (f : IsometryEquiv H₁ H₂) : Equivalent H₁ H₂ :=
+  ⟨f⟩
+
+/-- Choose an isometric equivalence between two equivalent spaces. -/
+theorem Equivalent.nonempty (h : Equivalent H₁ H₂) : Nonempty (IsometryEquiv H₁ H₂) :=
+  h
+
+end Equivalent
 
 namespace Equivalent
 

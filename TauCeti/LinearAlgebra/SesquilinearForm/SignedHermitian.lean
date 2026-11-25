@@ -81,6 +81,12 @@ variable (H : SignedHermitianSpace K V σ ε)
 theorem isRefl : H.form.IsRefl := fun v w hvw ↦ by
   rw [H.form_swap, hvw, map_zero, smul_zero]
 
+/-- The value `h x x` of an `ε`-hermitian form satisfies `σ (h x x) = ε h x x`: it is fixed by the
+involution for a hermitian form and negated by it for a skew-hermitian one. -/
+theorem apply_form_self (x : V) : σ (H.form x x) = ε • H.form x x := by
+  conv_rhs => rw [H.form_swap x x]
+  rw [smul_smul, Int.units_mul_self, one_smul]
+
 /-- A signed hermitian form separates on the right as well. -/
 theorem separatingRight : H.form.SeparatingRight := fun w hw ↦
   H.separatingLeft w fun v ↦ H.isRefl _ _ (hw v)

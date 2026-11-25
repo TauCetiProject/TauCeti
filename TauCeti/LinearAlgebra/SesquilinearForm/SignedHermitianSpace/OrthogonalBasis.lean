@@ -7,8 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Basis.Fin
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+public import TauCeti.LinearAlgebra.SesquilinearForm.Basic
 public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitian
-import Mathlib.Tactic.LinearCombination
 
 /-!
 # Orthogonal bases of signed hermitian spaces
@@ -30,13 +30,18 @@ characteristic is needed: over `𝔽₄/𝔽₂` the form `σ x₁ * y₁ + σ x
 
 ## Main statements
 
-* `LinearMap.eq_zero_of_forall_apply_self_eq_zero`: over a commutative ring with an involution
-  moving some `z` with `z - σ z` cancellable, a sesquilinear form vanishing on the diagonal is
-  zero.
 * `TauCeti.exists_isOrthoᵢ_basis_of_forall_form_swap`: every `ε`-hermitian form on a
   finite-dimensional space, nondegenerate or not, has an orthogonal basis.
 * `TauCeti.SignedHermitianSpace.exists_isOrthoᵢ_basis`: a signed hermitian space has an
   orthogonal basis whose vectors are anisotropic.
+
+## Attribution
+
+The inductive construction of `TauCeti.exists_isOrthoᵢ_basis_of_forall_form_swap`, splitting off
+an anisotropic vector `x` and recursing on the kernel of `h x`, follows Mathlib's
+`LinearMap.BilinForm.exists_orthogonal_basis` (`Mathlib.LinearAlgebra.QuadraticForm.Basic`), which
+treats symmetric bilinear forms with `2` invertible; here the anisotropic vector comes from the
+nontrivial involution instead of polarization.
 
 ## References
 
@@ -47,26 +52,6 @@ characteristic is needed: over `𝔽₄/𝔽₂` the form `σ x₁ * y₁ + σ x
 public section
 
 open Module
-
-namespace LinearMap
-
-/-- **A sesquilinear form vanishing on the diagonal is zero** when the involution moves some `z`
-with `z - σ z` cancellable. Indeed `B x y + B y x = 0` by expanding `B (x + y) (x + y)`, and the
-same identity for `z • y` gives `(z - σ z) B x y = 0`. This needs no hypothesis on `2`. -/
-theorem eq_zero_of_forall_apply_self_eq_zero {K V : Type*} [CommRing K] [AddCommGroup V]
-    [Module K V] {σ : K →+* K} {B : V →ₛₗ[σ] V →ₗ[K] K} {z : K}
-    (hz : z - σ z ∈ nonZeroDivisors K) (hB : ∀ x, B x x = 0) : B = 0 := by
-  have hswap (x y : V) : B y x = -B x y := by
-    have := hB (x + y)
-    simp only [map_add, LinearMap.add_apply, hB x, hB y, zero_add, add_zero] at this
-    exact eq_neg_of_add_eq_zero_left this
-  ext x y
-  have h := hswap x (z • y)
-  simp only [map_smulₛₗ, LinearMap.smul_apply, smul_eq_mul, hswap x y, RingHom.id_apply] at h
-  have h' : (z - σ z) * B x y = 0 := by linear_combination h
-  simpa using (mul_right_mem_nonZeroDivisors_eq_zero_iff hz).1 (by rwa [mul_comm] at h')
-
-end LinearMap
 
 namespace TauCeti
 
@@ -121,25 +106,13 @@ namespace SignedHermitianSpace
 
 variable (H : SignedHermitianSpace K V σ ε)
 
-/-- The value `h x x` of an `ε`-hermitian form satisfies `σ (h x x) = ε h x x`: it is fixed by the
-involution for a hermitian form and negated by it for a skew-hermitian one. -/
-theorem apply_form_self (x : V) : σ (H.form x x) = ε • H.form x x := by
-  conv_rhs => rw [H.form_swap x x]
-  rw [smul_smul, Int.units_mul_self, one_smul]
-
 /-- **Orthogonal bases** (Scharlau, Chapter 7). Over a field whose involution `σ` is not the
 identity, a finite-dimensional signed hermitian space `(V, h)` has an orthogonal basis
 `x₁, …, xₙ` with every `h xᵢ xᵢ` nonzero. -/
 theorem exists_isOrthoᵢ_basis [FiniteDimensional K V] (hσ : ∃ z, σ z ≠ z) :
     ∃ b : Basis (Fin (finrank K V)) K V, H.form.IsOrthoᵢ b ∧ ∀ i, H.form (b i) (b i) ≠ 0 := by
   obtain ⟨b, hb⟩ := exists_isOrthoᵢ_basis_of_forall_form_swap hσ H.form_swap
-  refine ⟨b, hb, fun i hi ↦ b.ne_zero i (H.separatingLeft _ fun y ↦ ?_)⟩
-  -- `b i` is orthogonal to every basis vector, hence to everything.
-  have : H.form (b i) = 0 := b.ext fun j ↦ by
-    rcases eq_or_ne i j with rfl | hij
-    · exact hi
-    · exact hb hij
-  rw [this, LinearMap.zero_apply]
+  exact ⟨b, hb, hb.not_isOrtho_basis_self_of_separatingLeft H.separatingLeft⟩
 
 end SignedHermitianSpace
 

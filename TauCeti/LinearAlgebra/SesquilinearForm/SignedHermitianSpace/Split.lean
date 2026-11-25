@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dimension.Free
-public import Mathlib.RingTheory.Artinian.Module
 public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Isometry
+import TauCeti.RingTheory.Artinian.Module
 
 /-!
 # Signed hermitian spaces over the split quadratic algebra `F × F`
@@ -27,7 +27,8 @@ The proof uses the idempotents `e₁ = (1, 0)` and `e₂ = (0, 1)`, which `σ` e
 `h (e₁ x) (e₁ y) = e₂ e₁ h x y = 0`: the summands `e₁ V` and `e₂ V` are totally isotropic, and `h`
 pairs them perfectly. For a basis `cᵢ` of `V`, choose `dⱼ` with `h cᵢ dⱼ = δᵢⱼ`; then the vectors
 `fᵢ = e₁ cᵢ + e₂ dᵢ` satisfy `h fᵢ fⱼ = δᵢⱼ (ε, 1)`. The vectors `dⱼ` exist, and the `fᵢ` form a
-basis, because an injective endomorphism of `Eⁿ` is bijective (`E` is artinian).
+basis, because an injective linear map between free `E`-modules of the same finite rank is
+bijective (`E` is artinian, `IsArtinian.bijective_of_injective_of_linearEquiv`).
 
 ## Main statements
 
@@ -54,18 +55,6 @@ variable {F V : Type*} [Field F] [AddCommGroup V] [Module (F × F) V] [Module.Fr
   [Module.Finite (F × F) V] {σ : F × F →+* F × F} {ε : ℤˣ}
   (H : SignedHermitianSpace (F × F) V σ ε)
 
-omit [Module.Free (F × F) V] in
-/-- Over the artinian ring `F × F`, an injective linear map between free modules of the same
-finite rank `n` is bijective. -/
-private theorem bijective_of_injective_split {W : Type*} [AddCommGroup W] [Module (F × F) W]
-    (f : V →ₗ[F × F] W) (hf : Function.Injective f) (eV : V ≃ₗ[F × F] W) :
-    Function.Bijective f := by
-  have h := IsArtinian.bijective_of_injective_endomorphism (R := F × F) (M := V)
-    (eV.symm.toLinearMap ∘ₗ f) (eV.symm.injective.comp hf)
-  refine ⟨hf, fun w ↦ ?_⟩
-  obtain ⟨v, hv⟩ := h.2 (eV.symm w)
-  exact ⟨v, eV.symm.injective hv⟩
-
 omit [Module.Free (F × F) V] [Module.Finite (F × F) V] in
 include H in
 /-- A vector paired to `0` with every vector of a basis is `0`. -/
@@ -82,7 +71,8 @@ private theorem exists_form_apply_eq_ite_split {n : ℕ} (c : Basis (Fin n) (F �
   let Φ : V →ₗ[F × F] Fin n → F × F := LinearMap.pi fun i ↦ H.form (c i)
   have hΦ : Function.Injective Φ := (injective_iff_map_eq_zero Φ).2 fun d hd ↦
     H.eq_zero_of_forall_basis c fun i ↦ congrFun hd i
-  obtain ⟨d, hd⟩ := (bijective_of_injective_split Φ hΦ c.equivFun).2 (Pi.single j 1)
+  obtain ⟨d, hd⟩ :=
+    (IsArtinian.bijective_of_injective_of_linearEquiv c.equivFun Φ hΦ).2 (Pi.single j 1)
   exact ⟨d, fun i ↦ by simpa [Φ, Pi.single_apply] using congrFun hd i⟩
 
 /-- **The diagonal model of a space over `F × F`.** Let `σ` be the involution `(a, b) ↦ (b, a)` of
@@ -128,7 +118,8 @@ theorem exists_linearEquiv_form_eq_sum_split (hσ : ∀ x, σ x = x.swap) {n : �
     have hu : IsUnit ((((ε : ℤ) : F), (1 : F)) : F × F) :=
       Prod.isUnit_iff.2 ⟨(ε.isUnit.map (Int.castRingHom F)), isUnit_one⟩
     exact hu.mul_left_eq_zero.1 h
-  exact ⟨LinearEquiv.ofBijective T (bijective_of_injective_split T hinj c.equivFun.symm), hTf⟩
+  exact ⟨LinearEquiv.ofBijective T
+    (IsArtinian.bijective_of_injective_of_linearEquiv c.equivFun.symm T hinj), hTf⟩
 
 /-- **Classification over `F × F`.** Let `σ` be the involution `(a, b) ↦ (b, a)` of `F × F`. Two
 finite free `ε`-hermitian spaces over `F × F` of the same rank are isometric. -/
@@ -138,7 +129,7 @@ theorem equivalent_of_finrank_eq_split {V' : Type*} [AddCommGroup V'] [Module (F
     Equivalent H H' := by
   obtain ⟨T, hT⟩ := H.exists_linearEquiv_form_eq_sum_split hσ h
   obtain ⟨T', hT'⟩ := H'.exists_linearEquiv_form_eq_sum_split hσ rfl
-  refine ⟨{ T.symm.trans T' with map_app' := fun x y ↦ ?_ }⟩
+  refine IsometryEquiv.equivalent { T.symm.trans T' with map_app' := fun x y ↦ ?_ }
   simp only [LinearEquiv.toFun_eq_coe, LinearEquiv.trans_apply, hT']
   rw [← hT, LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
 
@@ -150,7 +141,7 @@ theorem equivalent_of_equivalent_prod_split {V₀ V' : Type*} [AddCommGroup V₀
     (hσ : ∀ x, σ x = x.swap) {H₀ : SignedHermitianSpace (F × F) V₀ σ ε}
     {H' : SignedHermitianSpace (F × F) V' σ ε} (h : Equivalent (H₀.prod H) (H₀.prod H')) :
     Equivalent H H' := by
-  obtain ⟨e⟩ := h
+  obtain ⟨e⟩ := h.nonempty
   have := e.toLinearEquiv.finrank_eq
   rw [finrank_prod, finrank_prod] at this
   exact H.equivalent_of_finrank_eq_split hσ H' (by lia)

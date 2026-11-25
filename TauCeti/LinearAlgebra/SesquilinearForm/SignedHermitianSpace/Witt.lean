@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
-public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace
+public import Mathlib.LinearAlgebra.Transvection.Basic
 public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Isometry
 public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.OrthogonalBasis
 import Mathlib.Tactic.LinearCombination
@@ -15,17 +15,18 @@ import Mathlib.Tactic.LinearCombination
 # Witt's extension and cancellation theorems for signed hermitian spaces
 
 Let `K` be a field with an involution `σ` that is not the identity (for instance a separable
-quadratic extension `E/F` with its Galois conjugation), and let `(V, h)` be a finite-dimensional
-`ε`-hermitian space over `K`, `ε = ±1`. This file proves Witt's theorems for `(V, h)`, in every
-characteristic and for both signs:
+quadratic extension `E/F` with its Galois conjugation), and let `(V, h)` be an `ε`-hermitian
+space over `K`, `ε = ±1`, nondegenerate but of any dimension. This file proves Witt's theorems for
+`(V, h)`, in every characteristic and for both signs:
 
-* **extension**: an isometry between two subspaces of `V`, nondegenerate or not, extends to an
-  element of the unitary group `U(V)`, the isometry group of `h`; it can even be chosen as a
-  product of quasi-reflections;
-* **cancellation**: if `U ⊥ V ≅ U ⊥ V'`, then `V ≅ V'`.
+* **extension**: an isometry between two finite-dimensional subspaces of `V`, nondegenerate or
+  not, extends to an element of the unitary group `U(V)`, the isometry group of `h`; it can even
+  be chosen as a product of quasi-reflections;
+* **cancellation**: if `U ⊥ V ≅ U ⊥ V'` with `U` finite-dimensional, then `V ≅ V'`.
 
 For a unit `s` with `s + ε σ s = h v v`, the **quasi-reflection** along `v` is
-`x ↦ x - s⁻¹ h v x • v`. It is an isometry of `h` fixing the hyperplane orthogonal to `v`; for
+`x ↦ x - s⁻¹ h v x • v`, a dilatransvection in Mathlib's sense (`LinearEquiv.dilatransvection`).
+It is an isometry of `h` fixing the hyperplane orthogonal to `v`; for
 `h v v ≠ 0` these are the unitary reflections `x ↦ x + (λ - 1) h(v, v)⁻¹ h(v, x) v`, `λ σ λ = 1`,
 and for isotropic `v` the unitary transvections. Every `c` with `σ c = ε c`, in particular every
 `h v v`, has this form `s + ε σ s` because `σ` is not the identity
@@ -42,7 +43,8 @@ trace-valued). Cancellation follows: an isometry `U ⊥ V ≅ U ⊥ V'` is corre
 
 * `TauCeti.SignedHermitianSpace.quasiReflection H v s hs`: the quasi-reflection along `v`.
 * `TauCeti.SignedHermitianSpace.quasiReflectionSubgroup H`: the subgroup of `V ≃ₗ[K] V` generated
-  by the quasi-reflections, contained in the unitary group.
+  by the quasi-reflections, contained in the unitary group
+  (`TauCeti.SignedHermitianSpace.quasiReflectionSubgroup_le_iff`).
 
 ## Main statements
 
@@ -85,6 +87,9 @@ private theorem units_smul_eq_mul (c : K) : ε • c = ((ε : ℤ) : K) * c := b
 private theorem units_cast_sq : ((ε : ℤ) : K) ^ 2 = 1 := by
   rw [← Int.cast_pow, Int.isUnit_sq ε.isUnit, Int.cast_one]
 
+private theorem units_cast_ne_zero : ((ε : ℤ) : K) ≠ 0 := fun h ↦ by
+  simpa [h] using units_cast_sq (K := K) (ε := ε)
+
 /-- **Every `σ`-hermitian scalar is a trace.** Over a field whose involution `σ` is not the
 identity, every `c` with `σ c = c` is `s + σ s` for a unit `s`. -/
 theorem exists_units_add_eq [RingHomInvPair σ σ] (hσ : ∃ z, σ z ≠ z) {c : K} (hc : σ c = c) :
@@ -126,43 +131,26 @@ variable {V : Type*} [AddCommGroup V] [Module K V] (H : SignedHermitianSpace K V
 
 /-! ### Quasi-reflections -/
 
-/-- The linear map `x ↦ x - a h v x • v`. -/
-private def quasiReflectionAux (v : V) (a : K) : V →ₗ[K] V :=
-  LinearMap.id - (a • H.form v).smulRight v
-
-private theorem quasiReflectionAux_apply (v : V) (a : K) (x : V) :
-    H.quasiReflectionAux v a x = x - (a * H.form v x) • v := by
-  simp [quasiReflectionAux]
-
-/-- The quasi-reflections along `v` with parameters `a`, `b` are inverse to each other when
-`a + b = a b h v v`. -/
-private theorem quasiReflectionAux_comp (v : V) {a b : K} (hab : a + b = a * b * H.form v v)
-    (x : V) : H.quasiReflectionAux v a (H.quasiReflectionAux v b x) = x := by
-  have hv : H.form v (x - (b * H.form v x) • v) = H.form v x - b * H.form v x * H.form v v := by
-    rw [map_sub, map_smul, smul_eq_mul]
-  rw [quasiReflectionAux_apply, quasiReflectionAux_apply, hv, sub_sub, ← add_smul]
-  convert sub_zero x
-  convert zero_smul K v
-  linear_combination H.form v x * hab
-
 /-- The **quasi-reflection** along `v` with parameter a unit `s` such that `s + ε σ s = h v v`:
 the isometry `x ↦ x - s⁻¹ h v x • v` of `(V, h)`. It fixes every vector orthogonal to `v`
 (`quasiReflection_apply_of_form_eq_zero`). For `h v v ≠ 0` it is a unitary reflection, for
-isotropic `v` a unitary transvection. -/
-def quasiReflection (v : V) (s : Kˣ) (hs : (s : K) + ε • σ s = H.form v v) : V ≃ₗ[K] V :=
-  have hss : σ (s : K)⁻¹ * σ s = 1 := by rw [← map_mul, inv_mul_cancel₀ s.ne_zero, map_one]
-  have hab : (s : K)⁻¹ + ε • σ (s : K)⁻¹ = (s : K)⁻¹ * (ε • σ (s : K)⁻¹) * H.form v v := by
-    rw [← hs, units_smul_eq_mul, units_smul_eq_mul]
-    linear_combination (-((ε : ℤ) : K) * σ (s : K)⁻¹) * inv_mul_cancel₀ s.ne_zero +
-      (-(s : K)⁻¹ * ((ε : ℤ) : K) ^ 2) * hss + (-(s : K)⁻¹) * units_cast_sq (K := K) (ε := ε)
-  { H.quasiReflectionAux v (s : K)⁻¹ with
-    invFun := H.quasiReflectionAux v (ε • σ (s : K)⁻¹)
-    left_inv := H.quasiReflectionAux_comp v (by linear_combination hab)
-    right_inv := H.quasiReflectionAux_comp v hab }
+isotropic `v` a unitary transvection. It is Mathlib's dilatransvection `x ↦ x + f x • v` for the
+linear form `f = -s⁻¹ h v`, which is invertible because `1 + f v = -s⁻¹ ε σ s` is a unit. -/
+noncomputable def quasiReflection (v : V) (s : Kˣ) (hs : (s : K) + ε • σ s = H.form v v) :
+    V ≃ₗ[K] V :=
+  LinearEquiv.dilatransvection (f := -((s : K)⁻¹ • H.form v)) (v := v) <| IsUnit.mk0 _ <| by
+    have h1 : 1 + (-((s : K)⁻¹ • H.form v)) v = -((s : K)⁻¹ * (((ε : ℤ) : K) * σ s)) := by
+      rw [LinearMap.neg_apply, LinearMap.smul_apply, smul_eq_mul, ← hs, units_smul_eq_mul,
+        mul_add, inv_mul_cancel₀ s.ne_zero]
+      ring
+    rw [h1, neg_ne_zero]
+    exact mul_ne_zero (inv_ne_zero s.ne_zero)
+      (mul_ne_zero units_cast_ne_zero ((map_ne_zero σ).2 s.ne_zero))
 
 theorem quasiReflection_apply (v : V) (s : Kˣ) (hs : (s : K) + ε • σ s = H.form v v) (x : V) :
-    H.quasiReflection v s hs x = x - ((s : K)⁻¹ * H.form v x) • v :=
-  H.quasiReflectionAux_apply v _ x
+    H.quasiReflection v s hs x = x - ((s : K)⁻¹ * H.form v x) • v := by
+  rw [quasiReflection, LinearEquiv.dilatransvection.apply, LinearMap.neg_apply,
+    LinearMap.smul_apply, smul_eq_mul, neg_smul, ← sub_eq_add_neg]
 
 /-- A quasi-reflection fixes the vectors orthogonal to its direction. -/
 theorem quasiReflection_apply_of_form_eq_zero (v : V) (s : Kˣ)
@@ -192,10 +180,17 @@ theorem quasiReflection_mem_quasiReflectionSubgroup (v : V) (s : Kˣ)
     H.quasiReflection v s hs ∈ H.quasiReflectionSubgroup :=
   Subgroup.subset_closure ⟨v, s, hs, rfl⟩
 
+/-- **The universal property of `quasiReflectionSubgroup`**: it lies in a subgroup `G` exactly
+when every quasi-reflection does. -/
+theorem quasiReflectionSubgroup_le_iff {G : Subgroup (V ≃ₗ[K] V)} :
+    H.quasiReflectionSubgroup ≤ G ↔ ∀ v s hs, H.quasiReflection v s hs ∈ G := by
+  rw [quasiReflectionSubgroup, Subgroup.closure_le]
+  exact ⟨fun h v s hs ↦ h ⟨v, s, hs, rfl⟩, fun h _ ⟨v, s, hs, he⟩ ↦ he ▸ h v s hs⟩
+
 /-- Products of quasi-reflections are isometries. -/
 theorem quasiReflectionSubgroup_le_isometryGroup :
     H.quasiReflectionSubgroup ≤ H.form.isometryGroup :=
-  (Subgroup.closure_le _).2 fun _ ⟨v, s, hs, he⟩ ↦ he ▸ H.quasiReflection_mem_isometryGroup v s hs
+  H.quasiReflectionSubgroup_le_iff.2 H.quasiReflection_mem_isometryGroup
 
 /-! ### Witt's extension theorem -/
 
@@ -217,19 +212,41 @@ theorem exists_quasiReflection_apply_eq {p q : V} (hpq : H.form p p = H.form q q
   · rw [quasiReflection_apply, hsp, Units.val_mk0, inv_mul_cancel₀ hne, one_smul, sub_sub_cancel]
   · rw [map_sub, LinearMap.sub_apply, hw, sub_self]
 
-variable [FiniteDimensional K V]
-
-/-- Through the form, the coordinate functionals of a linearly independent family are
-represented: there is `u` with `h u (x i) = 1` for `i = j` and `0` otherwise. -/
-theorem exists_form_apply_eq_ite [RingHomSurjective σ] {ι : Type*} [DecidableEq ι] {x : ι → V}
-    (hx : LinearIndependent K x) (j : ι) :
+/-- Through the form, the coordinate functionals of a finite linearly independent family are
+represented: there is `u` with `h u (x i) = 1` for `i = j` and `0` otherwise. The space need not
+be finite-dimensional. -/
+theorem exists_form_apply_eq_ite [RingHomSurjective σ] {ι : Type*} [Finite ι] [DecidableEq ι]
+    {x : ι → V} (hx : LinearIndependent K x) (j : ι) :
     ∃ u, ∀ i, H.form u (x i) = if i = j then 1 else 0 := by
-  obtain ⟨f, hf⟩ := LinearMap.exists_extend ((Finsupp.lapply j).comp hx.repr)
-  obtain ⟨u, hu⟩ := H.form_bijective.2 f
+  cases nonempty_fintype ι
+  -- The map `u ↦ (h (x i) u)ᵢ` is onto `ι → K`: a nonzero linear form vanishing on its range
+  -- would give a nontrivial relation `∑ aᵢ xᵢ` in the right kernel of `h`.
+  let Φ : V →ₗ[K] ι → K := LinearMap.pi fun i ↦ H.form (x i)
+  have hΦ : Function.Surjective Φ := by
+    rw [← LinearMap.range_eq_top]
+    by_contra hne
+    obtain ⟨f, hf0, hf⟩ := (LinearMap.range Φ).exists_le_ker_of_lt_top (lt_top_iff_ne_top.2 hne)
+    choose a ha using fun i ↦ RingHomSurjective.is_surjective (σ := σ) (f (Pi.single i 1))
+    have hfΦ (u : V) : f (Φ u) = H.form (∑ i, a i • x i) u := by
+      conv_lhs => rw [← Finset.univ_sum_single (Φ u)]
+      simp only [map_sum, map_smulₛₗ, LinearMap.sum_apply, LinearMap.smul_apply, ha, smul_eq_mul]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      rw [← mul_one (Φ u i), ← smul_eq_mul, Pi.single_smul', map_smul, smul_eq_mul, mul_comm]
+      rfl
+    have hsum : ∑ i, a i • x i = 0 := H.separatingLeft _ fun u ↦ by
+      rw [← hfΦ]
+      exact hf (LinearMap.mem_range_self Φ u)
+    have ha0 := Fintype.linearIndependent_iff.1 hx a hsum
+    refine hf0 (LinearMap.pi_ext fun i r ↦ ?_)
+    rw [LinearMap.zero_apply, ← mul_one r, ← smul_eq_mul, Pi.single_smul', map_smul, ← ha, ha0,
+      map_zero, smul_zero]
+  obtain ⟨u, hu⟩ := hΦ (Pi.single j ((ε : ℤ) : K))
   refine ⟨u, fun i ↦ ?_⟩
-  have hi := LinearMap.congr_fun hf ⟨x i, Submodule.subset_span (Set.mem_range_self i)⟩
-  rw [hu]
-  simpa [hx.repr_eq_single i ⟨x i, _⟩ rfl, Finsupp.single_apply] using hi
+  have hi : H.form (x i) u = Pi.single (M := fun _ ↦ K) j ((ε : ℤ) : K) i := congrFun hu i
+  rw [H.form_swap (x i) u, hi, units_smul_eq_mul]
+  rcases eq_or_ne i j with rfl | hij
+  · simp [← sq, units_cast_sq]
+  · simp [hij]
 
 variable [RingHomInvPair σ σ]
 
@@ -237,7 +254,8 @@ omit [RingHomInvPair σ σ] in
 /-- If `x` and `y` are linearly independent and agree on `s ∌ j`, some `u` is orthogonal to the
 `y i`, `i ∈ s`, but to neither `x j` nor `y j`: among the vectors `a`, `b` dual to `x j` and to
 `y j`, and `a + b`, one serves. -/
-private theorem exists_form_eq_zero_and_ne_zero [RingHomSurjective σ] {ι : Type*} {x y : ι → V}
+private theorem exists_form_eq_zero_and_ne_zero [RingHomSurjective σ] {ι : Type*} [Finite ι]
+    {x y : ι → V}
     (hx : LinearIndependent K x) (hy : LinearIndependent K y) {s : Finset ι} {j : ι}
     (hj : j ∉ s) (hs : ∀ i ∈ s, x i = y i) :
     ∃ u, (∀ i ∈ s, H.form u (y i) = 0) ∧ H.form u (y j) ≠ 0 ∧ H.form u (x j) ≠ 0 := by
@@ -258,7 +276,7 @@ private theorem exists_form_eq_zero_and_ne_zero [RingHomSurjective σ] {ι : Typ
 matrix and agree on `s`, a product of quasi-reflections fixing the `y i`, `i ∈ s`, sends `x j` to
 `y j`. It takes one quasi-reflection, or two when `h (y j) (y j - x j) = 0`. -/
 private theorem exists_mem_quasiReflectionSubgroup_step (hσ : ∃ z, σ z ≠ z) {ι : Type*}
-    {x y : ι → V} (hx : LinearIndependent K x) (hy : LinearIndependent K y)
+    [Finite ι] {x y : ι → V} (hx : LinearIndependent K x) (hy : LinearIndependent K y)
     (hxy : ∀ i k, H.form (x i) (x k) = H.form (y i) (y k)) {s : Finset ι} {j : ι} (hj : j ∉ s)
     (hs : ∀ i ∈ s, x i = y i) :
     ∃ r ∈ H.quasiReflectionSubgroup, r (x j) = y j ∧ ∀ i ∈ s, r (y i) = y i := by
@@ -288,11 +306,8 @@ private theorem exists_mem_quasiReflectionSubgroup_step (hσ : ∃ z, σ z ≠ z
       rw [quasiReflection_apply]
       abel
     rw [hsub, map_add, hne, zero_add, map_smul, smul_eq_mul, hyu, units_smul_eq_mul]
-    have hε : ((ε : ℤ) : K) ≠ 0 := by
-      intro h0
-      simpa [h0] using units_cast_sq (K := K) (ε := ε)
     exact mul_ne_zero (mul_ne_zero (inv_ne_zero t.ne_zero) hux)
-      (mul_ne_zero hε ((map_ne_zero σ).2 huy))
+      (mul_ne_zero units_cast_ne_zero ((map_ne_zero σ).2 huy))
   obtain ⟨r, hr, hrx, hry⟩ := reflect (H.quasiReflection u t ht (x j)) (by rw [hρ, hxy])
     (fun i hi ↦ by
       calc H.form (H.quasiReflection u t ht (x j)) (y i)
@@ -304,9 +319,9 @@ private theorem exists_mem_quasiReflectionSubgroup_step (hσ : ∃ z, σ z ≠ z
   rw [mul_apply_eq_comp, hρy i hi, hry i hi]
 
 /-- **Witt's theorem for families.** Over a field whose involution `σ` is not the identity, let
-`x` and `y` be linearly independent families in a finite-dimensional signed hermitian space with
-the same Gram matrix, `h (x i) (x j) = h (y i) (y j)`. Then a product `g` of quasi-reflections
-sends each `x i` to `y i`. -/
+`x` and `y` be finite linearly independent families in a signed hermitian space, of any
+dimension, with the same Gram matrix, `h (x i) (x j) = h (y i) (y j)`. Then a product `g` of
+quasi-reflections sends each `x i` to `y i`. -/
 theorem exists_mem_quasiReflectionSubgroup_apply_eq (hσ : ∃ z, σ z ≠ z) {ι : Type*} [Finite ι]
     {x y : ι → V} (hx : LinearIndependent K x) (hy : LinearIndependent K y)
     (hxy : ∀ i j, H.form (x i) (x j) = H.form (y i) (y j)) :
@@ -328,11 +343,12 @@ theorem exists_mem_quasiReflectionSubgroup_apply_eq (hσ : ∃ z, σ z ≠ z) {�
     rw [mul_apply_eq_comp, hgs i hi, hrs i hi]
 
 /-- **Witt's extension theorem** (Scharlau, Chapter 7). Over a field whose involution
-`σ` is not the identity, every isometry `f` from a subspace `W` of a finite-dimensional signed
+`σ` is not the identity, every isometry `f` from a finite-dimensional subspace `W` of a signed
 hermitian space `(V, h)` into `V` extends to an element of the unitary group `U(V)`. The subspace
-`W` may be degenerate. -/
+`W` may be degenerate, and `V` need not be finite-dimensional. -/
 theorem exists_mem_isometryGroup_extend (hσ : ∃ z, σ z ≠ z) {W : Submodule K V}
-    (f : W →ₗ[K] V) (hf : Function.Injective f) (hff : ∀ x y, H.form (f x) (f y) = H.form x y) :
+    [FiniteDimensional K W] (f : W →ₗ[K] V) (hf : Function.Injective f)
+    (hff : ∀ x y, H.form (f x) (f y) = H.form x y) :
     ∃ g ∈ H.form.isometryGroup, ∀ x : W, g x = f x := by
   let b := Module.finBasis K W
   obtain ⟨g, hg, hgb⟩ := H.exists_mem_quasiReflectionSubgroup_apply_eq hσ
@@ -351,13 +367,13 @@ variable {V₀ V₁ V₂ : Type*} [AddCommGroup V₀] [Module K V₀] [AddCommGr
   [AddCommGroup V₂] [Module K V₂] {H₀ : SignedHermitianSpace K V₀ σ ε}
   {H₁ : SignedHermitianSpace K V₁ σ ε} {H₂ : SignedHermitianSpace K V₂ σ ε}
 
-omit [FiniteDimensional K V] [RingHomInvPair σ σ] in
+omit [RingHomInvPair σ σ] in
 /-- An isometry `U ⊥ V ≅ U ⊥ V'` fixing `U` pointwise carries `V = Uᗮ` into `V' = Uᗮ`. -/
 private theorem fst_apply_zero_eq_zero (e : IsometryEquiv (H₀.prod H₁) (H₀.prod H₂))
     (he : ∀ a, e (a, 0) = (a, 0)) (b : V₁) : (e (0, b)).1 = 0 :=
   H₀.separatingRight _ fun a ↦ by simpa [he] using e.map_app (a, 0) (0, b)
 
-omit [FiniteDimensional K V] [RingHomInvPair σ σ] in
+omit [RingHomInvPair σ σ] in
 /-- An isometry `U ⊥ V ≅ U ⊥ V'` fixing `U` pointwise restricts to an isometry `V ≅ V'`. -/
 private theorem equivalent_of_isometryEquiv_prod_apply_zero
     (e : IsometryEquiv (H₀.prod H₁) (H₀.prod H₂)) (he : ∀ a, e (a, 0) = (a, 0)) :
@@ -371,8 +387,9 @@ private theorem equivalent_of_isometryEquiv_prod_apply_zero
     Prod.ext (fst_apply_zero_eq_zero e.symm he' d).symm rfl
   let φ : V₁ →ₗ[K] V₂ := LinearMap.snd K V₀ V₂ ∘ₗ e.toLinearMap ∘ₗ LinearMap.inr K V₀ V₁
   let ψ : V₂ →ₗ[K] V₁ := LinearMap.snd K V₀ V₁ ∘ₗ e.symm.toLinearMap ∘ₗ LinearMap.inr K V₀ V₂
-  refine ⟨{ toFun := φ, invFun := ψ, map_add' := φ.map_add, map_smul' := φ.map_smul,
-             left_inv := fun b ↦ ?_, right_inv := fun d ↦ ?_, map_app' := fun b b' ↦ ?_ }⟩
+  refine IsometryEquiv.equivalent
+    { toFun := φ, invFun := ψ, map_add' := φ.map_add, map_smul' := φ.map_smul,
+      left_inv := fun b ↦ ?_, right_inv := fun d ↦ ?_, map_app' := fun b b' ↦ ?_ }
   · simp only [φ, ψ, LinearMap.comp_apply, LinearMap.inr_apply, LinearMap.snd_apply,
       LinearEquiv.coe_coe, IsometryEquiv.coe_toLinearEquiv, h₁, IsometryEquiv.symm_apply_apply]
   · simp only [φ, ψ, LinearMap.comp_apply, LinearMap.inr_apply, LinearMap.snd_apply,
@@ -381,17 +398,20 @@ private theorem equivalent_of_isometryEquiv_prod_apply_zero
     rw [← h₁ b, ← h₁ b'] at this
     simpa [φ] using this
 
-variable [FiniteDimensional K V₀] [FiniteDimensional K V₂]
+variable [FiniteDimensional K V₀]
 
 /-- **Witt's cancellation theorem.** Over a field whose involution `σ` is not the identity, if
-`U ⊥ V` and `U ⊥ V'` are isometric signed hermitian spaces, with `U` and `V'` finite-dimensional,
-then `V` and `V'` are isometric. -/
+`U ⊥ V` and `U ⊥ V'` are isometric signed hermitian spaces, with `U` finite-dimensional, then `V`
+and `V'` are isometric. -/
 theorem equivalent_of_equivalent_prod (hσ : ∃ z, σ z ≠ z)
     (h : Equivalent (H₀.prod H₁) (H₀.prod H₂)) : Equivalent H₁ H₂ := by
-  obtain ⟨e⟩ := h
+  obtain ⟨e⟩ := h.nonempty
   -- Extend `(a, 0) ↦ e (a, 0)`, defined on `W = U ⊥ 0`, to some `g ∈ U(U ⊥ V')`.
-  let W := LinearMap.ker (LinearMap.snd K V₀ V₂)
-  have hW (w : W) : (w : V₀ × V₂) = ((w : V₀ × V₂).1, 0) := Prod.ext rfl w.property
+  let W := LinearMap.range (LinearMap.inl K V₀ V₂)
+  have hW (w : W) : (w : V₀ × V₂) = ((w : V₀ × V₂).1, 0) := by
+    obtain ⟨a, ha⟩ := w.property
+    rw [← ha]
+    rfl
   let f : W →ₗ[K] V₀ × V₂ :=
     e.toLinearMap ∘ₗ LinearMap.inl K V₀ V₁ ∘ₗ LinearMap.fst K V₀ V₂ ∘ₗ W.subtype
   have hf (w : W) : f w = e ((w : V₀ × V₂).1, 0) := rfl
@@ -406,7 +426,7 @@ theorem equivalent_of_equivalent_prod (hσ : ∃ z, σ z ≠ z)
   -- Then `g⁻¹ ∘ e` fixes `U` pointwise.
   refine equivalent_of_isometryEquiv_prod_apply_zero
     (e.trans (IsometryEquiv.ofMemIsometryGroup (inv_mem hg))) fun a ↦ ?_
-  have hga := hgf ⟨(a, 0), rfl⟩
+  have hga := hgf ⟨(a, 0), a, rfl⟩
   rw [hf] at hga
   rw [IsometryEquiv.trans_apply, IsometryEquiv.ofMemIsometryGroup_apply, ← hga]
   exact g.symm_apply_apply _
