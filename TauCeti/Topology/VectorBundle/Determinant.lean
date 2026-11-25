@@ -577,6 +577,17 @@ theorem coe_linearEquiv_pullbackEquiv (f : B' → B) (y : B')
   erw [LinearEquiv.exteriorPower_refl (R := 𝕜) (M := E (f y)) (finrank 𝕜 F)]
   rfl
 
+/-- Canonical determinant pullback sends an exterior generator of the fibre of `det E` over
+`f y` to the same exterior generator of the fibre of `det (f *ᵖ E)` over `y`. -/
+theorem pullbackEquiv_ιMulti (f : B' → B) (y : B') (a : Fin (finrank 𝕜 F) → E (f y)) :
+    pullbackEquiv (𝕜 := 𝕜) (F := F) (E := E) f y
+        ((linearEquiv 𝕜 F E (f y)).symm (exteriorPower.ιMulti 𝕜 _ a)) =
+      (linearEquiv 𝕜 F (f *ᵖ E) y).symm (exteriorPower.ιMulti 𝕜 _ a) := by
+  apply (linearEquiv 𝕜 F (f *ᵖ E) y).injective
+  apply Subtype.ext
+  -- Both exterior generators are the same element of the exterior algebra of `E (f y)`.
+  exact (coe_linearEquiv_pullbackEquiv f y _).trans rfl
+
 variable [TopologicalSpace B] [FiniteDimensional 𝕜 F]
   [TopologicalSpace (TotalSpace F E)]
   [TopologicalSpace B'] {K : Type*} [FunLike K B' B] [ContinuousMapClass K B' B]
