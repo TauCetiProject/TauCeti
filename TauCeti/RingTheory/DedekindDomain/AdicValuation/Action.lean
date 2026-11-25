@@ -53,6 +53,16 @@ section DedekindDomain
 variable {L R : Type*} [Field L] [CommRing R] [IsDedekindDomain R] [Algebra R L]
   [IsFractionRing R L]
 
+/-- The elements of the localization of `R` at `w`, as a valuation subring of `L`, are the
+fractions `a / s` with `s ∉ w.asIdeal`. -/
+private theorem mem_valuationSubringAtPrime_iff {w : HeightOneSpectrum R} {x : L} :
+    x ∈ valuationSubringAtPrime L w ↔
+      ∃ a s, s ∈ w.asIdeal.primeCompl ∧ x = algebraMap R L a * (algebraMap R L s)⁻¹ := by
+  rw [← ValuationSubring.mem_toSubring, valuationSubringAtPrime_toSubring,
+    Subalgebra.mem_toSubring, Localization.subalgebra.ofField, ← SetLike.mem_coe,
+    Subalgebra.coe_copy, Set.mem_ofPred_eq]
+  simp only [exists_prop]
+
 variable (L) in
 /-- A place of `R` is determined by its localization, as a valuation subring of `L`. -/
 theorem valuationSubringAtPrime_injective :
@@ -70,8 +80,9 @@ variable {G : Type*} [Group G] [MulSemiringAction G L] [MulSemiringAction G R]
 private theorem smul_valuationSubringAtPrime_le (σ : G) (w : HeightOneSpectrum R) :
     σ • valuationSubringAtPrime L w ≤ valuationSubringAtPrime L (σ • w) := by
   intro x hx
-  obtain ⟨y, ⟨a, s, hs, rfl⟩, rfl⟩ := (ValuationSubring.mem_smul_pointwise_iff_exists _ _ _).1 hx
-  refine ⟨σ • a, σ • s, ?_, ?_⟩
+  obtain ⟨y, hy, rfl⟩ := (ValuationSubring.mem_smul_pointwise_iff_exists _ _ _).1 hx
+  obtain ⟨a, s, hs, rfl⟩ := mem_valuationSubringAtPrime_iff.1 hy
+  refine mem_valuationSubringAtPrime_iff.2 ⟨σ • a, σ • s, ?_, ?_⟩
   · simpa [Ideal.primeCompl, Ideal.smul_mem_pointwise_smul_iff] using hs
   · simp [algebraMap.smul']
 

@@ -56,7 +56,7 @@ by the pointwise action on ideals. This is available as an instance in the `Poin
 def pointwiseMulAction : MulAction G (HeightOneSpectrum R) where
   smul σ w := ⟨σ • w.asIdeal, inferInstance, fun h ↦ w.ne_bot <| by
     rw [← inv_smul_smul σ w.asIdeal, h]
-    exact smul_zero σ⁻¹⟩
+    exact Ideal.smul_bot σ⁻¹⟩
   one_smul w := HeightOneSpectrum.ext (one_smul G w.asIdeal)
   mul_smul σ τ w := HeightOneSpectrum.ext (mul_smul σ τ w.asIdeal)
 
