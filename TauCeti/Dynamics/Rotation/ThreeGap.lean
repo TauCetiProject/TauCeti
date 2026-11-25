@@ -186,53 +186,29 @@ theorem mem_gaps_iff_exists {g : ℝ} :
         (IsGreatest (orbitFract α N : Set ℝ) y ∧ g = 1 - y) := by
   set l := (orbitFract α N).sort (· ≤ ·) with hl
   have hs : l.SortedLT := sortedLT_sort _
-  have hmem {x : ℝ} : x ∈ (orbitFract α N : Set ℝ) ↔ x ∈ l := by rw [mem_coe, hl, mem_sort]
-  -- The entry of the list of gaps at `i` is the difference from `l[i]` to the next entry of `l`,
-  -- or to `1` for the last entry.
-  have hget (i : ℕ) (hi : i < l.length)
-      (hi' : i < (List.zipWith (· - ·) (l.tail ++ [1]) l).length) :
-      (List.zipWith (· - ·) (l.tail ++ [1]) l)[i] =
-        (if h : i + 1 < l.length then l[i + 1] else 1) - l[i] := by
-    rw [List.getElem_zipWith]
-    split_ifs with h
-    · rw [List.getElem_append_left (by simp; omega), List.getElem_tail]
-    · rw [List.getElem_append_right (by simp; omega)]
-      simp
+  have hset : (orbitFract α N : Set ℝ) = {x | x ∈ l} := by ext; simp [hl]
   have hlen : (List.zipWith (· - ·) (l.tail ++ [1]) l).length = l.length := by simp; omega
-  have hsucc (i : ℕ) (h : i + 1 < l.length) :
-      IsLeast ((orbitFract α N : Set ℝ) ∩ Set.Ioi l[i]) l[i + 1] := by
-    refine ⟨⟨hmem.2 (List.getElem_mem _), Set.mem_Ioi.2 (hs.getElem_lt_getElem_iff.2 (by omega))⟩,
-      fun x ⟨hx, hix⟩ => ?_⟩
-    obtain ⟨k, hk, rfl⟩ := List.mem_iff_getElem.1 (hmem.1 hx)
-    exact hs.getElem_le_getElem_iff.2 (by have := hs.getElem_lt_getElem_iff.1 hix; omega)
-  have hlast (i : ℕ) (hi : i < l.length) (h : ¬i + 1 < l.length) :
-      IsGreatest (orbitFract α N : Set ℝ) l[i] := by
-    refine ⟨hmem.2 (List.getElem_mem _), fun x hx => ?_⟩
-    obtain ⟨k, hk, rfl⟩ := List.mem_iff_getElem.1 (hmem.1 hx)
-    exact hs.getElem_le_getElem_iff.2 (by omega)
-  rw [mem_gaps_iff, List.mem_iff_getElem]
+  rw [mem_gaps_iff, List.mem_iff_getElem, hset]
   constructor
   · rintro ⟨i, hi', rfl⟩
     have hi : i < l.length := hlen ▸ hi'
-    refine ⟨l[i], mem_coe.1 (hmem.2 (List.getElem_mem _)), ?_⟩
-    rw [hget i hi hi']
+    refine ⟨l[i], (mem_sort _).1 (List.getElem_mem _), ?_⟩
+    rw [List.getElem_zipWith_sub_tail_append_singleton]
     by_cases h : i + 1 < l.length
-    · exact Or.inl ⟨l[i + 1], hsucc i h, by simp [h]⟩
-    · exact Or.inr ⟨hlast i hi h, by simp [h]⟩
-  · rintro ⟨y, hy, ⟨z, hz, rfl⟩ | ⟨hy', rfl⟩⟩
-    · obtain ⟨i, hi, rfl⟩ := List.mem_iff_getElem.1 (hmem.1 (mem_coe.2 hy))
+    · exact Or.inl ⟨l[i + 1], hs.isLeast_inter_Ioi_getElem_succ h, by rw [dite_eq_left h]⟩
+    · exact Or.inr ⟨hs.isGreatest_getElem_of_not_succ_lt hi h, by rw [dite_eq_right h]⟩
+  · rintro ⟨y, hy, ⟨z, hz, rfl⟩ | ⟨hy', rfl⟩⟩ <;>
+      obtain ⟨i, hi, rfl⟩ := List.mem_iff_getElem.1 ((mem_sort (· ≤ ·)).2 hy) <;>
       by_cases h : i + 1 < l.length
-      · refine ⟨i, hlen ▸ hi, ?_⟩
-        rw [hget i hi, ← (hsucc i h).unique hz]
-        simp [h]
-      · obtain ⟨hz, hiz⟩ := hz.1
-        obtain ⟨k, hk, rfl⟩ := List.mem_iff_getElem.1 (hmem.1 hz)
-        have := hs.getElem_lt_getElem_iff.1 (Set.mem_Ioi.1 hiz)
-        omega
-    · obtain ⟨i, hi, rfl⟩ := List.mem_iff_getElem.1 (hmem.1 (mem_coe.2 hy))
-      by_cases h : i + 1 < l.length
-      · exact absurd (hy'.2 (hsucc i h).1.1) (not_le.2 (hs.getElem_lt_getElem_iff.2 (by omega)))
-      · exact ⟨i, hlen ▸ hi, by rw [hget i hi]; simp [h]⟩
+    · refine ⟨i, hlen ▸ hi, ?_⟩
+      rw [List.getElem_zipWith_sub_tail_append_singleton,
+        ← (hs.isLeast_inter_Ioi_getElem_succ h).unique hz, dite_eq_left h]
+    · obtain ⟨k, hk, rfl⟩ := List.mem_iff_getElem.1 hz.1.1
+      have := hs.getElem_lt_getElem_iff.1 (Set.mem_Ioi.1 hz.1.2)
+      omega
+    · exact absurd (hy'.2 (hs.isLeast_inter_Ioi_getElem_succ h).1.1)
+        (not_le.2 (hs.getElem_lt_getElem_iff.2 (by omega)))
+    · exact ⟨i, hlen ▸ hi, by rw [List.getElem_zipWith_sub_tail_append_singleton, dite_eq_right h]⟩
 
 /-- Every gap is positive. -/
 theorem pos_of_mem_gaps {g : ℝ} (hg : g ∈ gaps α N) : 0 < g :=
@@ -250,6 +226,25 @@ noncomputable def etaPos (α : ℝ) (N : ℕ) : ℝ :=
 /-- The wrap-around gap from the largest point of `orbitFract α N` to `1`, written `η⁻`. -/
 noncomputable def etaNeg (α : ℝ) (N : ℕ) : ℝ :=
   1 - sSup ((orbitFract α N : Finset ℝ) : Set ℝ)
+
+theorem etaPos_def (α : ℝ) (N : ℕ) :
+    etaPos α N = sInf (((orbitFract α N).erase 0 : Finset ℝ) : Set ℝ) := (rfl)
+
+theorem etaNeg_def (α : ℝ) (N : ℕ) :
+    etaNeg α N = 1 - sSup ((orbitFract α N : Finset ℝ) : Set ℝ) := (rfl)
+
+/-- With fewer than two points there is no positive point, and `etaPos α N` is `0`. -/
+theorem etaPos_of_card_lt_two (h : #(orbitFract α N) < 2) : etaPos α N = 0 := by
+  have he : (orbitFract α N).erase 0 = ∅ := by
+    rcases Nat.eq_zero_or_pos N with rfl | hN
+    · simp
+    · rw [← card_eq_zero, card_erase_of_mem (zero_mem_orbitFract α hN)]
+      omega
+  simp [etaPos, he]
+
+@[simp]
+theorem etaNeg_zero (α : ℝ) : etaNeg α 0 = 1 := by
+  simp [etaNeg]
 
 /-- When the orbit has at least two points, `etaPos α N` is the least of its nonzero points. -/
 theorem isLeast_etaPos (h : 2 ≤ #(orbitFract α N)) :
