@@ -9,7 +9,12 @@ public import Mathlib.Algebra.Algebra.Equiv
 public import Mathlib.Algebra.Order.Module.PositiveLinearMap
 
 /-!
-# Equivalences of positive linear maps
+# Coercion and equivalences of positive linear maps
+
+Mathlib's `PositiveLinearMap.ofClass` reinterprets an element of a type of positive linear maps as
+a bundled positive linear map, but has no lemma computing its coercion to a function. This file
+supplies the simp lemma `PositiveLinearMap.coe_ofClass`, matching `LinearMap.coe_ofClass` and
+`PositiveContinuousLinearMap.coe_ofClass`.
 
 An order-preserving linear equivalence `e : U ≃ₗ[R] V` induces a bijection between positive linear
 maps out of `U` and positive linear maps out of `V`, by precomposition with `e.symm` and `e`. When
@@ -28,6 +33,21 @@ and `{m : V →ₚ[R] W // m 1 = w}`.
 public section
 
 namespace PositiveLinearMap
+
+section OfClass
+
+variable {F R E₁ E₂ : Type*} [Semiring R]
+  [AddCommMonoid E₁] [PartialOrder E₁] [AddCommMonoid E₂] [PartialOrder E₂]
+  [Module R E₁] [Module R E₂] [FunLike F E₁ E₂] [LinearMapClass F R E₁ E₂]
+  [OrderHomClass F E₁ E₂]
+
+/-- The positive linear map `PositiveLinearMap.ofClass f` has the same underlying function as
+`f`. -/
+@[simp]
+theorem coe_ofClass (f : F) : ⇑(ofClass f : E₁ →ₚ[R] E₂) = f :=
+  rfl
+
+end OfClass
 
 section LinearEquiv
 

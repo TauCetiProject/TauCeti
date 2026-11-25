@@ -18,9 +18,9 @@ A **polar-part decomposition** of `f` on `U` at the finite singular set `S`: for
 explicit finite Laurent tail `polarPart s z = ∑ k, coeff s k / (z - s)^(k+1)`, such that `f`
 minus the total polar part extends to a function differentiable on all of `U`, and the residue at
 each `s` is the first Laurent coefficient. This bundles exactly the data the generalized residue
-theorem manipulates: the analytic remainder integrates to zero around any null-homologous closed
-curve — even one passing through the poles — so the principal value of `∮ f` reduces to the polar
-parts.
+theorem manipulates: the analytic remainder integrates to zero around any closed absolutely
+continuous curve in `U` that is null-homologous there — even one passing through the poles — so
+the principal value of `∮ f` reduces to the polar parts.
 
 ## Main definitions
 
@@ -37,8 +37,8 @@ parts.
   simple-pole coefficient alone sums to `Res_s f` times that weight; the last step of every
   term-by-term evaluation of a polar part.
 * `Contour.PolarPartDecomposition.intervalIntegral_deriv_smul_analyticRemainder_eq_zero` — the
-  contour integral of the analytic remainder along a closed null-homologous piecewise-`C¹` curve
-  in `U` vanishes, by the homology Cauchy theorem.
+  contour integral of the analytic remainder along a closed null-homologous absolutely continuous
+  curve in `U` vanishes, by the homology Cauchy theorem.
 * `Contour.PolarPartDecomposition.intervalIntegrable_polarPart_mul_deriv_truncated` — the
   `ε`-truncated polar-part integrand along a measurable curve with interval-integrable
   derivative is interval-integrable, for every `ε > 0` — the integrability clause of
@@ -121,15 +121,15 @@ theorem sum_ite_coeff_eq_residue_mul (decomp : PolarPartDecomposition f S U) (s 
     rw [Finset.sum_congr rfl fun k _ => h_pick k, Finset.sum_ite_eq' Finset.univ,
       ite_eq_left (Finset.mem_univ _), decomp.residue_eq s, dite_eq_left h_pos]
 
-/-- **The analytic remainder integrates to zero** along any closed null-homologous
-piecewise-`C¹` curve in `U` — even one passing through the poles of `f`, since the remainder
+/-- **The analytic remainder integrates to zero** along any closed null-homologous absolutely
+continuous curve in `U` — even one passing through the poles of `f`, since the remainder
 extends differentiably to all of `U`. The homology Cauchy theorem applied to the remainder. -/
 theorem intervalIntegral_deriv_smul_analyticRemainder_eq_zero
     (decomp : PolarPartDecomposition f S U)
-    (hU : IsOpen U) {γ : ℝ → ℂ} {a b : ℝ} (hγ_pc1 : IsPiecewiseC1On γ a b)
+    (hU : IsOpen U) {γ : ℝ → ℂ} {a b : ℝ} (hγ_ac : AbsolutelyContinuousOnInterval γ a b)
     (hγ : ∀ t ∈ uIcc a b, γ t ∈ U) (hclosed : γ a = γ b) (hnull : IsNullHomologous γ a b U) :
     ∫ t in a..b, deriv γ t • decomp.analyticRemainder (γ t) = 0 :=
-  homologyCauchyTheorem hU γ a b hγ_pc1 hγ hclosed decomp.analyticRemainder_differentiableOn hnull
+  homologyCauchyTheorem hU γ a b hγ_ac hγ hclosed decomp.analyticRemainder_differentiableOn hnull
 
 end PolarPartDecomposition
 

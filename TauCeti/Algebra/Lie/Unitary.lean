@@ -18,7 +18,7 @@ public import TauCeti.Algebra.Lie.SkewAdjoint.Star
 public import TauCeti.Algebra.Star.SelfAdjoint
 public import TauCeti.LinearAlgebra.Complex.Module
 import Mathlib.LinearAlgebra.Matrix.PosDef
-import TauCeti.LinearAlgebra.Complex.Conjugation
+import TauCeti.Algebra.Star.SelfAdjoint.BaseChange
 import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 
 /-!
@@ -148,7 +148,9 @@ variable (ι) in
 dimension is the complex dimension `n²` of all `n × n` matrices. -/
 theorem finrank_unitaryLieAlgebra :
     finrank ℝ (unitaryLieAlgebra ι) = Fintype.card ι * Fintype.card ι := by
-  rw [(unitaryLieAlgebraEquivSelfAdjoint ι).finrank_eq, finrank_selfAdjoint_submodule,
+  rw [(unitaryLieAlgebraEquivSelfAdjoint ι).finrank_eq,
+    finrank_selfAdjoint_submodule_eq ℝ _ Complex.mem_range_algebraMap_of_isSelfAdjoint
+      Complex.val_mk0_I_mem_skewAdjoint,
     finrank_matrix, finrank_self, mul_one]
 
 /-! ### The adjoint and coadjoint representations -/

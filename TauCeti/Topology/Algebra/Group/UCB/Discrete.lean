@@ -12,8 +12,9 @@ public import TauCeti.Topology.Algebra.Group.UCB.CompRight
 # Bounded functions on a discrete group
 
 On a discrete group every bounded continuous function is uniformly continuous for the right
-uniformity. Thus `TauCeti.UCB G` is the entire algebra `G →ᵇ ℝ` (`TauCeti.UCB.discreteAlgEquiv`).
-The identification preserves the supremum norm, pointwise order, constants, and left and right
+uniformity. Thus `TauCeti.UCB G` is the entire algebra `G →ᵇ ℝ` (`TauCeti.UCB.discreteAlgEquiv`),
+and additively `TauCeti.AddUCB A` is `A →ᵇ ℝ` (`TauCeti.AddUCB.discreteAlgEquiv`). The
+identification preserves the supremum norm, pointwise order, constants, and left and right
 translations. Since every function on a discrete space is continuous, this is the bounded-function
 space used for finitely additive probabilities and discrete invariant means.
 
@@ -44,7 +45,7 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
 
 /-- On a discrete group the UCB subalgebra is the entire bounded-function algebra. -/
 @[to_additive (attr := simp) addUcb_eq_top
-  /-- On a discrete additive group the AddUCB subalgebra is the entire bounded-function
+  /-- On a discrete additive group the `addUcb` subalgebra is the entire bounded-function
   algebra. -/]
 theorem ucb_eq_top : ucb G = ⊤ := by
   ext f
@@ -55,8 +56,8 @@ namespace UCB
 variable (G) in
 /-- The canonical algebra equivalence from UCB to all bounded functions on a discrete group. -/
 @[to_additive
-  /-- The canonical algebra equivalence from AddUCB to all bounded functions on a discrete additive
-  group. -/]
+  /-- The canonical algebra equivalence from `AddUCB A` to all bounded functions on a discrete
+  additive group. -/]
 def discreteAlgEquiv : UCB G ≃ₐ[ℝ] (G →ᵇ ℝ) :=
   (Subalgebra.equivOfEq _ _ ucb_eq_top).trans Subalgebra.topEquiv
 
@@ -201,6 +202,9 @@ end UCB
 namespace AddUCB
 
 variable {A : Type*} [AddGroup A] [TopologicalSpace A] [DiscreteTopology A]
+
+-- `UCB.leftTranslation` and `UCB.rightTranslation` are `MonoidHom`s, so `@[to_additive]` cannot
+-- generate these translation intertwining lemmas directly.
 
 /-- The inverse discrete identification intertwines left translation. -/
 @[simp]

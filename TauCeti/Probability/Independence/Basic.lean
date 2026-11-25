@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.IdentDistrib
 public import Mathlib.Probability.Independence.Basic
+import Mathlib.Data.Finset.Powerset
 import TauCeti.Probability.HasLaw
 
 /-!
@@ -25,17 +26,58 @@ event `F`) gives `Z` the scalar-multiple law `P A • ν` (respectively `P (A �
 
 An independent, identically distributed family admits a measurable version agreeing almost
 everywhere at each index, preserving independence and identical distribution
-(`ProbabilityTheory.iIndepFun.exists_measurable_ae_eq_of_identDistrib`).
+(`ProbabilityTheory.iIndepFun.exists_measurable_ae_eq_of_identDistrib`). Preimages of measurable
+sets under the coordinates of an independent family are independent events, whether or not the
+coordinates are measurable (`ProbabilityTheory.iIndepFun.iIndepSet_preimage`).
+
+Independence within rows also gives a union bound for row counts. For a finite array of events
+whose rows consist of independent events of measure at most `p`, the measure that some row
+contains at least `q` occurring events is at most `p ^ q` times the sum over rows of the number of
+`q`-element subsets of the row indices (`TauCeti.Probability.measure_exists_le_card_filter_mem_le`).
+No separate `[IsProbabilityMeasure μ]` argument is needed: whenever some row is nonempty, its
+independence hypothesis already makes `μ` a probability measure. For rows of independent random
+variables of length at most `N`, the measure that some row has at least `q` entries of norm above
+`R` is at most `card ι * N ^ q * τ ^ q`, where `τ` bounds each entry tail
+(`TauCeti.Probability.measure_exists_le_card_filter_lt_norm_le`).
 -/
 
 public section
 
-open MeasureTheory ProbabilityTheory
+open MeasureTheory ProbabilityTheory Set
+open scoped ENNReal
 
 namespace TauCeti.Probability
 
 variable {Ω ι : Type*} {β : ι → Type*} [MeasurableSpace Ω]
-  [∀ i, MeasurableSpace (β i)] {μ : Measure Ω} [IsProbabilityMeasure μ]
+  [∀ i, MeasurableSpace (β i)] {μ : Measure Ω}
+
+open scoped Classical in
+/-- For a finite array of events, each row consisting of independent events with measures at
+most `p`, the measure that some row contains at least `q` occurring events is bounded by
+`p ^ q` times the sum, over rows, of the number of `q`-element subsets of entry indices
+in that row. -/
+theorem measure_exists_le_card_filter_mem_le {κ : ι → Type*} [Fintype ι]
+    [∀ i, Fintype (κ i)] (E : (i : ι) → κ i → Set Ω) (hE : ∀ i, iIndepSet (E i) μ)
+    {p : ℝ≥0∞} (hp : ∀ i j, μ (E i j) ≤ p) (q : ℕ) :
+    μ {ω | ∃ i, q ≤ (Finset.univ.filter fun j ↦ ω ∈ E i j).card} ≤
+      ∑ i, ((Fintype.card (κ i)).choose q : ℝ≥0∞) * p ^ q := by
+  let U (i : ι) := ⋃ S ∈ (Finset.univ : Finset (κ i)).powersetCard q, ⋂ j ∈ S, E i j
+  have hcover : {ω | ∃ i, q ≤ (Finset.univ.filter fun j ↦ ω ∈ E i j).card} ⊆ ⋃ i, U i := by
+    rintro ω ⟨i, hi⟩
+    obtain ⟨S, hsub, hcard⟩ := Finset.exists_subset_card_eq hi
+    refine mem_iUnion.2 ⟨i, mem_iUnion₂.2 ⟨S, Finset.mem_powersetCard.2 ⟨
+      Finset.subset_univ _, hcard⟩, ?_⟩⟩
+    exact mem_iInter₂.2 fun j hj ↦ (Finset.mem_filter.1 (hsub hj)).2
+  refine ((measure_mono hcover).trans (measure_iUnion_fintype_le μ U)).trans ?_
+  refine Finset.sum_le_sum fun i _ ↦ (measure_biUnion_finset_le _ _).trans ?_
+  calc
+    _ ≤ ∑ _S ∈ (Finset.univ : Finset (κ i)).powersetCard q, p ^ q := by
+      refine Finset.sum_le_sum fun S hS ↦ ?_
+      rw [(hE i).meas_biInter, ← (Finset.mem_powersetCard.1 hS).2, ← Finset.prod_const]
+      exact Finset.prod_le_prod fun j _ ↦ hp i j
+    _ = _ := by simp [Finset.card_powersetCard, nsmul_eq_mul]
+
+variable [IsProbabilityMeasure μ]
 
 omit [IsProbabilityMeasure μ] in
 /-- An independent restriction remains independent when the other coordinates are almost
@@ -155,4 +197,48 @@ theorem iIndepFun.exists_measurable_ae_eq_of_identDistrib {Ω ι α : Type*}
       (hid i₀).aemeasurable_fst.identDistrib_mk,
     fun i ↦ (hid i).aemeasurable_fst.identDistrib_mk.symm⟩
 
+/-- Preimages of measurable sets under the coordinates of an independent family are independent
+events. The coordinates need not be measurable, so these events need not be measurable in the
+ambient σ-algebra. -/
+theorem iIndepFun.iIndepSet_preimage {Ω ι : Type*} {β : ι → Type*} [MeasurableSpace Ω]
+    [∀ i, MeasurableSpace (β i)] {P : Measure Ω} {f : ∀ i, Ω → β i} (h : iIndepFun f P)
+    {s : ∀ i, Set (β i)} (hs : ∀ i, MeasurableSet (s i)) :
+    iIndepSet (fun i ↦ f i ⁻¹' s i) P := by
+  rw [iIndepSet_iff_iIndep]
+  exact iIndep_of_iIndep_of_le h.iIndep fun i ↦ MeasurableSpace.generateFrom_singleton_le <|
+    MeasurableSpace.measurableSet_comap.2 ⟨s i, hs i, rfl⟩
+
 end ProbabilityTheory
+
+namespace TauCeti.Probability
+
+variable {Ω ι E : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [SeminormedAddGroup E]
+  [MeasurableSpace E] [OpensMeasurableSpace E]
+
+/-- For a finite family of rows of random variables, each row independent and with at most `N`
+entries, the measure of the set where some row has at least `q` entries of norm strictly above
+`R` is at most `card ι * N ^ q * τ ^ q`, where `τ` bounds the measure of each entry exceeding `R`.
+The entries need not be measurable, so this bounds an outer measure in general. -/
+theorem measure_exists_le_card_filter_lt_norm_le {κ : ι → Type*} [Fintype ι]
+    [∀ i, Fintype (κ i)] {Y : (i : ι) → κ i → Ω → E} (hind : ∀ i, iIndepFun (Y i) μ) (R : ℝ)
+    {τ : ℝ≥0∞} (htail : ∀ i j, μ {ω | R < ‖Y i j ω‖} ≤ τ) {N : ℕ}
+    (hN : ∀ i, Fintype.card (κ i) ≤ N) (q : ℕ) :
+    μ {ω | ∃ i, q ≤ (Finset.univ.filter fun j ↦ R < ‖Y i j ω‖).card} ≤
+      Fintype.card ι * (N : ℝ≥0∞) ^ q * τ ^ q := by
+  have hE (i : ι) : iIndepSet (fun j ↦ {ω | R < ‖Y i j ω‖}) μ :=
+    (hind i).iIndepSet_preimage (s := fun _ ↦ {z : E | R < ‖z‖})
+      fun _ ↦ measurableSet_lt measurable_const continuous_norm.measurable
+  calc
+    _ ≤ μ {ω | ∃ i, q ≤ (Finset.univ.filter fun j ↦ ω ∈ {ω | R < ‖Y i j ω‖}).card} :=
+      -- The two filters differ only in their decidability instances.
+      measure_mono fun ω ↦ by
+        rintro ⟨i, hi⟩
+        exact ⟨i, by convert hi⟩
+    _ ≤ ∑ i, ((Fintype.card (κ i)).choose q : ℝ≥0∞) * τ ^ q :=
+      measure_exists_le_card_filter_mem_le _ hE htail q
+    _ ≤ ∑ _i : ι, (N : ℝ≥0∞) ^ q * τ ^ q := by
+      gcongr with i
+      exact_mod_cast (Nat.choose_le_pow _ _).trans (Nat.pow_le_pow_left (hN i) q)
+    _ = _ := by simp [mul_assoc]
+
+end TauCeti.Probability
