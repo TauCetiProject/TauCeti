@@ -94,8 +94,9 @@ theorem _root_.MulEquiv.comp_mem_irreducibleCharacters_iff {H : Type w} [Group H
 restriction along `f : H →* G`, for a finite group `H`, has an irreducible character is
 irreducible. -/
 theorem _root_.Representation.isIrreducible_of_character_comp_mem_irreducibleCharacters
-    [CharZero k] {H : Type w} [Group H] [Finite H] {n : ℕ} (ρ : Representation k G (Fin n → k))
-    (f : H →* G) (h : ρ.character ∘ f ∈ irreducibleCharacters k H) : ρ.IsIrreducible := by
+    [CharZero k] {H : Type w} [Group H] [Finite H] {V : Type*} [AddCommGroup V] [Module k V]
+    [FiniteDimensional k V] (ρ : Representation k G V) (f : H →* G)
+    (h : ρ.character ∘ f ∈ irreducibleCharacters k H) : ρ.IsIrreducible := by
   obtain ⟨m, ρ₀, hρ₀, hc⟩ := mem_irreducibleCharacters_iff.1 h
   obtain ⟨E⟩ := Representation.nonempty_equiv_of_character_eq ρ₀ (ρ.comp f) hc
   have := E.isIrreducible hρ₀

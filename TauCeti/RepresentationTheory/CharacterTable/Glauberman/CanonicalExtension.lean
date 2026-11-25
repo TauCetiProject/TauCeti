@@ -250,8 +250,9 @@ only the one witnessing `TauCeti.IsCanonicalExtension`: over a field of characte
 representations of the finite group `Γ ⋊[φ] S` with the same character are equivalent, and
 equivalent representations have the same determinants. -/
 theorem IsCanonicalExtension.det_inr_eq_one [Finite S] {χ : Γ → k} {ψ : Γ ⋊[φ] S → k}
-    (h : IsCanonicalExtension φ χ ψ) {n : ℕ} (ρ : Representation k (Γ ⋊[φ] S) (Fin n → k))
-    (hρ : ρ.character = ψ) (s : S) : (ρ (inr s)).det = 1 := by
+    (h : IsCanonicalExtension φ χ ψ) {V : Type*} [AddCommGroup V] [Module k V]
+    [FiniteDimensional k V] (ρ : Representation k (Γ ⋊[φ] S) V) (hρ : ρ.character = ψ) (s : S) :
+    (ρ (inr s)).det = 1 := by
   have : Finite (Γ ⋊[φ] S) := Finite.of_equiv _ equivProd.symm
   obtain ⟨-, -, m, ρ', hρ', hdet⟩ := h
   obtain ⟨E⟩ := Representation.nonempty_equiv_of_character_eq ρ' ρ (hρ'.trans hρ.symm)
