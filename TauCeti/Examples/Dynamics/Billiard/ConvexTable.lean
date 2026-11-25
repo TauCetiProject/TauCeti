@@ -35,7 +35,7 @@ namespace TauCeti.Examples.BilliardConvexTable
 def stadium : Set ℂ := {z | infDist z (segment ℝ (-1 : ℂ) 1) = 1}
 
 /-- The points of the segment `[-1, 1]` of `ℂ` are real. -/
-theorem im_eq_zero_of_mem_segment {y : ℂ} (hy : y ∈ segment ℝ (-1 : ℂ) 1) : y.im = 0 := by
+private theorem im_eq_zero_of_mem_segment {y : ℂ} (hy : y ∈ segment ℝ (-1 : ℂ) 1) : y.im = 0 := by
   obtain ⟨a, b, -, -, -, rfl⟩ := hy
   simp
 
@@ -43,7 +43,7 @@ theorem im_eq_zero_of_mem_segment {y : ℂ} (hy : y ∈ segment ℝ (-1 : ℂ) 1
 theorem segment_subset_stadium : segment ℝ (-1 + I) (1 + I) ⊆ stadium := by
   rintro z ⟨a, b, ha, hb, hab, rfl⟩
   have hx : ((b - a : ℝ) : ℂ) ∈ segment ℝ (-1 : ℂ) 1 :=
-    ⟨a, b, ha, hb, hab, by simp [real_smul]; ring⟩
+    ⟨a, b, ha, hb, hab, by simp only [real_smul]; push_cast; ring⟩
   have hz : a • (-1 + I) + b • (1 + I) = ((b - a : ℝ) : ℂ) + I := by
     have hab' : (a : ℂ) + b = 1 := by exact_mod_cast hab
     simp only [real_smul]

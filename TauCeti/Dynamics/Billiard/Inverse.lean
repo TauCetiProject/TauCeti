@@ -44,7 +44,8 @@ boundary point exactly when they agree in `AddCircle L`
 `β` have distinct base points (`TauCeti.StrictConvexBilliardTable.fst_billiardMap_ne`). So `χ`
 descends to a homeomorphism of `AddCircle L` onto its image
 (`TauCeti.StrictConvexBilliardTable.isClosedEmbedding_circleParam`), and that image is a Jordan
-curve (`TauCeti.StrictConvexBilliardTable.isJordanCurve_range`).
+curve (`TauCeti.StrictConvexBilliardTable.isJordanCurve_range`) that contains no segment
+(`TauCeti.StrictConvexBilliardTable.not_segment_subset_range`).
 
 The continuity and smoothness of `B` and of its inverse are not treated here.
 
@@ -72,6 +73,9 @@ The continuity and smoothness of `B` and of its inverse are not treated here.
 * `TauCeti.StrictConvexBilliardTable.isClosedEmbedding_circleParam`,
   `TauCeti.StrictConvexBilliardTable.isJordanCurve_range`: the boundary is homeomorphic to
   `AddCircle L` and is a Jordan curve.
+* `TauCeti.StrictConvexBilliardTable.apply_notMem_openSegment`,
+  `TauCeti.StrictConvexBilliardTable.not_segment_subset_range`: no boundary point lies strictly
+  between two others, so the boundary contains no segment.
 
 ## References
 
@@ -259,6 +263,32 @@ theorem isJordanCurve_range : IsJordanCurve (range χ) := by
   rw [← χ.periodic.image_Icc χ.period_pos 0]
   exact isJordanCurve_image_Icc (by simpa using χ.period_pos) χ.continuous.continuousOn
     (χ.periodic 0).symm (by simpa using χ.injOn)
+
+/-- **No boundary point lies strictly between two others.** If `p ≠ q` are points of the boundary,
+no boundary point `χ(s)` lies on the open segment between them: the tangent line at `χ(s)` would
+have `p` and `q` strictly on its left, while they lie on opposite sides of `χ(s)` along a line. In
+particular a line meets the boundary in at most two points. -/
+theorem apply_notMem_openSegment {p q : E} (hp : p ∈ range χ) (hq : q ∈ range χ) (hpq : p ≠ q)
+    (s : ℝ) : χ s ∉ openSegment ℝ p q := by
+  intro hs
+  obtain ⟨t, rfl⟩ := hp
+  obtain ⟨u, rfl⟩ := hq
+  have ⟨a, b, ha, hb, hab, hs'⟩ := hs
+  have h₁ := χ.areaForm_pos s t fun h ↦ hpq (left_mem_openSegment_iff.1 (by rwa [← h] at hs))
+  have h₂ := χ.areaForm_pos s u fun h ↦ hpq (right_mem_openSegment_iff.1 (by rwa [← h] at hs))
+  have h0 : a • (χ t - χ s) + b • (χ u - χ s) = 0 := by
+    rw [smul_sub, smul_sub, sub_add_sub_comm, ← add_smul, hab, one_smul, hs', sub_self]
+  have h := congrArg (o.areaForm (deriv χ s)) h0
+  rw [map_add, map_smul, map_smul, map_zero, smul_eq_mul, smul_eq_mul] at h
+  linarith [mul_pos ha h₁, mul_pos hb h₂]
+
+/-- **The boundary contains no segment.** No nondegenerate segment lies in the boundary of a
+strictly convex billiard table: its midpoint would lie strictly between its endpoints. -/
+theorem not_segment_subset_range {p q : E} (hpq : p ≠ q) : ¬segment ℝ p q ⊆ range χ := by
+  intro h
+  obtain ⟨s, hs⟩ := h (openSegment_subset_segment ℝ p q (midpoint_mem_openSegment p q))
+  exact χ.apply_notMem_openSegment (h (left_mem_segment ℝ p q)) (h (right_mem_segment ℝ p q)) hpq
+    s (hs ▸ midpoint_mem_openSegment p q)
 
 /-- A collision state and its image under the billiard map have distinct base points. -/
 theorem fst_billiardMap_ne (x : AddCircle χ.period × Ioo (-1 : ℝ) 1) :
