@@ -15,7 +15,7 @@ import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Cutoff
 import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 import TauCeti.Analysis.Normed.Module.Ball
-import TauCeti.Analysis.Calculus.Hadamard
+import TauCeti.Analysis.Calculus.Hadamard.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Mul
 public import TauCeti.Analysis.Calculus.Jet.Realization
 

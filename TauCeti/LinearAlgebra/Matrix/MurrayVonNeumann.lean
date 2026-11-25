@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.Orthogonal
 public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import Mathlib.LinearAlgebra.Matrix.Rank
 public import TauCeti.Algebra.Star.PartialIsometry
@@ -46,6 +47,8 @@ spectral order (`Matrix.conjTranspose_mul_self_eq_zero`).
 * `Matrix.IsMurrayVonNeumannEquivalent.reindex`, `Matrix.IsMurrayVonNeumannEquivalent.fromBlocks`
   and `Matrix.IsMurrayVonNeumannEquivalent.map`: the relation is preserved by reindexing, by block
   sums and by entrywise star ring homomorphisms.
+* `Matrix.IsMurrayVonNeumannEquivalent.add`: equivalence is compatible with orthogonal sums
+  `p + q` of projections in a single matrix algebra.
 * `IsStarProjection.isMurrayVonNeumannEquivalent_fromBlocks_zero`,
   `Matrix.isMurrayVonNeumannEquivalent_fromBlocks_comm` and
   `Matrix.isMurrayVonNeumannEquivalent_fromBlocks_assoc`: padding by a zero block, and
@@ -61,6 +64,8 @@ spectral order (`Matrix.conjTranspose_mul_self_eq_zero`).
   are equivalent exactly when `p ⊕ 0` and `0 ⊕ q` are unitarily conjugate, and
   `Matrix.IsMurrayVonNeumannEquivalent.exists_isSelfAdjoint_mem_unitary_mul_fromBlocks_mul_star`
   supplies the conjugating self-adjoint unitary `!![1 - p, vᴴ; v, 1 - q]`.
+* `IsStarProjection.isMurrayVonNeumannEquivalent_fromBlocks_one_sub`: over a ring, `p ⊕ (1 - p)`
+  is equivalent to the identity matrix.
 * `Matrix.isMurrayVonNeumannEquivalent_single_one` and
   `Matrix.IsMurrayVonNeumannEquivalent.rank_eq`: diagonal matrix units of any sizes are
   equivalent, and over a commutative star ring with the strong rank condition equivalent
@@ -310,6 +315,38 @@ theorem isMurrayVonNeumannEquivalent_iff_exists_isPartialIsometry {p q : Matrix 
   · rintro ⟨v, hv, rfl, rfl⟩
     exact hv.isMurrayVonNeumannEquivalent
 
+/-- **Orthogonal sums.** If `p ∼ p'` and `q ∼ q'`, where `p` is orthogonal to `q` and `p'` to `q'`,
+then `p + q ∼ p' + q'`. -/
+theorem IsMurrayVonNeumannEquivalent.add {p q : Matrix m m R} {p' q' : Matrix n n R}
+    (h₁ : IsMurrayVonNeumannEquivalent p p') (h₂ : IsMurrayVonNeumannEquivalent q q')
+    (hpq : p * q = 0) (hpq' : p' * q' = 0) : IsMurrayVonNeumannEquivalent (p + q) (p' + q') := by
+  have hp := h₁.isStarProjection_left
+  have hp' := h₁.isStarProjection_right
+  have hq := h₂.isStarProjection_left
+  have hq' := h₂.isStarProjection_right
+  have hqp : q * p = 0 :=
+    ((hp.isSelfAdjoint.isStarOrtho_iff_mul_eq_zero hq.isSelfAdjoint).mpr hpq).mul_eq_zero
+      hq.isSelfAdjoint
+  have hqp' : q' * p' = 0 :=
+    ((hp'.isSelfAdjoint.isStarOrtho_iff_mul_eq_zero hq'.isSelfAdjoint).mpr hpq').mul_eq_zero
+      hq'.isSelfAdjoint
+  -- Partial isometries `v` and `w` implementing the two equivalences have orthogonal ranges and
+  -- orthogonal initial spaces, so `v + w` implements the sum.
+  obtain ⟨v, hvp, hvp', hv⟩ := h₁.exists_mul_conjTranspose_mul_self_eq
+  obtain ⟨w, hwq, hwq', hw⟩ := h₂.exists_mul_conjTranspose_mul_self_eq
+  -- `v` maps the range of `p` onto that of `p'`, and `w` that of `q` onto that of `q'`.
+  have hvr : v * p = v := by rw [← hvp, ← Matrix.mul_assoc, hv]
+  have hvl : p' * v = v := by rw [← hvp', hv]
+  have hwr : w * q = w := by rw [← hwq, ← Matrix.mul_assoc, hw]
+  have hwl : q' * w = w := by rw [← hwq', hw]
+  refine ⟨hp.add hq hpq, hp'.add hq' hpq', v + w, ?_, ?_⟩
+  · rw [conjTranspose_add, Matrix.add_mul, Matrix.mul_add, Matrix.mul_add, hvp, hwq,
+      conjTranspose_mul_eq_zero_of_mul_eq_zero hp'.isSelfAdjoint hvl hwl hpq',
+      conjTranspose_mul_eq_zero_of_mul_eq_zero hq'.isSelfAdjoint hwl hvl hqp', add_zero, zero_add]
+  · rw [conjTranspose_add, Matrix.mul_add, Matrix.add_mul, Matrix.add_mul, hvp', hwq',
+      mul_conjTranspose_eq_zero_of_mul_eq_zero hq.isSelfAdjoint hvr hwr hpq,
+      mul_conjTranspose_eq_zero_of_mul_eq_zero hp.isSelfAdjoint hwr hvr hqp, add_zero, zero_add]
+
 end NonUnitalSemiring
 
 section Semiring
@@ -408,6 +445,22 @@ theorem isMurrayVonNeumannEquivalent_iff_exists_mem_unitary_mul_fromBlocks_mul_s
     isMurrayVonNeumannEquivalent_of_mem_unitary_mul_fromBlocks_mul_star hp hw hwpq⟩
   obtain ⟨w, -, hw, hwpq⟩ := h.exists_isSelfAdjoint_mem_unitary_mul_fromBlocks_mul_star
   exact ⟨w, hw, hwpq⟩
+
+omit [DecidableEq n] in
+/-- **Complements.** For a matrix projection `p`, the block sum `p ⊕ (1 - p)` is equivalent to
+the identity matrix, through the row of blocks `(p  1 - p)`. -/
+theorem _root_.IsStarProjection.isMurrayVonNeumannEquivalent_fromBlocks_one_sub
+    {p : Matrix m m R} (hp : IsStarProjection p) :
+    IsMurrayVonNeumannEquivalent (fromBlocks p 0 0 (1 - p)) (1 : Matrix m m R) := by
+  have hpH : pᴴ = p := by rw [← star_eq_conjTranspose, hp.isSelfAdjoint.star_eq]
+  have hqH : (1 - p)ᴴ = 1 - p := by
+    rw [← star_eq_conjTranspose, hp.one_sub.isSelfAdjoint.star_eq]
+  have hpe := hp.isIdempotentElem
+  refine ⟨hp.fromBlocks_zero₁₂_zero₂₁ hp.one_sub, .one _, fromCols p (1 - p), ?_, ?_⟩
+  · rw [conjTranspose_fromCols_eq_fromRows_conjTranspose, hpH, hqH, fromRows_mul_fromCols,
+      hpe.eq, hpe.mul_one_sub_self, hpe.one_sub_mul_self, hpe.one_sub.eq]
+  · rw [conjTranspose_fromCols_eq_fromRows_conjTranspose, hpH, hqH, fromCols_mul_fromRows,
+      hpe.eq, hpe.one_sub.eq, add_sub_cancel]
 
 end Ring
 
