@@ -17,6 +17,8 @@ For a quasi-compact morphism the map onto its scheme-theoretic image is
 scheme-theoretically dominant. In particular, a reduced source gives a reduced image, and an
 integral source an integral image. The underlying set of the image is the closure of the
 topological image. When the topological image is closed, the factorization is surjective on points.
+For any morphism `f` and any `g`, the closed immersion of the image followed by `g` has the kernel
+of `f ≫ g`.
 
 ## Main declarations
 
@@ -61,7 +63,15 @@ namespace AlgebraicGeometry.Scheme.Hom
 
 universe u
 
-variable {X Y : Scheme.{u}} (f : X ⟶ Y) [QuasiCompact f]
+variable {X Y : Scheme.{u}} (f : X ⟶ Y)
+
+/-- Following the closed immersion of the scheme-theoretic image by a morphism `g` gives the same
+kernel as `f ≫ g`. The left side is by definition the pushforward along `g` of the kernel of `f`,
+so this is Mathlib's `IdealSheafData.map_ker` stated for `imageι`. -/
+theorem ker_imageι_comp {Z : Scheme.{u}} (g : Y ⟶ Z) : (f.imageι ≫ g).ker = (f ≫ g).ker :=
+  IdealSheafData.map_ker f g
+
+variable [QuasiCompact f]
 
 /-- The factorization through the scheme-theoretic image is scheme-theoretically dominant. -/
 instance isSchemeTheoreticallyDominant_toImage : IsSchemeTheoreticallyDominant f.toImage := by

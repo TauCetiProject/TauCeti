@@ -51,6 +51,10 @@ is surjective when `f` is dominant and `X` is proper over `S`: the graph closure
 restriction of the representative of `f` to a dense open on which it is over `S` maps into `Γ_f`
 over `Y`.
 
+Together these give the properties of the graph for a `K`-rational map `f : X ⤏ Y` with `X`
+integral and `X` and `Y` proper over a field `K`, for instance projective varieties: `X` is then
+Noetherian and `Y` separated, so all the hypotheses above hold.
+
 ## Main definitions
 
 * `AlgebraicGeometry.Scheme.RationalMap.graphLift`: the morphism `γ_f = (ι_V, g) : V → X × Y`.
@@ -80,6 +84,10 @@ over `Y`.
 * `AlgebraicGeometry.Scheme.RationalMap.topologicalKrullDim_graph`: over a field `K`, for `X`
   reduced and irreducible, `Y` separated, and `X` and `Y` locally of finite type over `K`, `Γ_f`
   has the dimension of `X`.
+* `AlgebraicGeometry.Scheme.RationalMap.graph_isIntegral_and_projections`: for `X` integral and
+  `f` a `K`-rational map between schemes proper over a field `K`, `Γ_f` is integral of the
+  dimension of `X`, `π_1` is proper and an isomorphism over the domain of definition of `f`, and
+  `π_2` is surjective when `f` is dominant.
 
 ## References
 
@@ -182,17 +190,14 @@ theorem surjective_graphSnd [f.IsOver sX sY] [IsProper sX] [f.IsDominant] :
   set h := opensGraph sX sY g.domain g.hom (g.over sX sY)
   have hgV : g.domain ≤ f.representative.domain := hUV
   -- the graph closure of `g` over `S` maps to `Γ_f` over `Y`
-  have e : h ≫ pullback.map sX sY _ _ (𝟙 X) (𝟙 Y) (terminal.from S) (terminal.hom_ext _ _)
-      (terminal.hom_ext _ _) = X.homOfLE hgV ≫ graphLift f := by
+  have e : h ≫ pullbackToProd sX sY = X.homOfLE hgV ≫ graphLift f := by
     apply pullback.hom_ext
     · simp [h, Scheme.homOfLE_ι]
     · rw [Category.assoc, pullback.lift_snd, Category.comp_id, opensGraph_snd, Category.assoc,
         opensGraph_snd]
       exact PartialMap.restrict_hom ..
-  have H : (graphι f).ker ≤ (h.imageι ≫ pullback.map sX sY _ _ (𝟙 X) (𝟙 Y) (terminal.from S)
-      (terminal.hom_ext _ _) (terminal.hom_ext _ _)).ker := by
-    rw [Scheme.Hom.ker_comp, IdealSheafData.ker_subschemeι, IdealSheafData.ker_subschemeι,
-      ← Scheme.Hom.ker_comp, e]
+  have H : (graphι f).ker ≤ (h.imageι ≫ pullbackToProd sX sY).ker := by
+    rw [Scheme.Hom.ker_imageι_comp, e, IdealSheafData.ker_subschemeι]
     exact Scheme.Hom.le_ker_comp _ _
   have e' : IsClosedImmersion.lift _ _ H ≫ graphSnd f =
       graphClosureSnd sX sY g.domain g.hom (g.over sX sY) := by
@@ -212,13 +217,11 @@ theorem surjective_graphSnd [f.IsOver sX sY] [IsProper sX] [f.IsDominant] :
 
 variable [IsReduced X] [Y.IsSeparated] [S.IsSeparated] [f.IsOver sX sY]
 
-private theorem ker_imageι_comp_pullbackMap :
+private theorem ker_imageι_comp_pullbackToProd :
     ((opensGraph sX sY f.toPartialMap.domain f.toPartialMap.hom
-      (f.toPartialMap.over sX sY)).imageι ≫ pullback.map sX sY _ _ (𝟙 X) (𝟙 Y) (terminal.from S)
-        (terminal.hom_ext _ _) (terminal.hom_ext _ _)).ker = (graphι f).ker := by
-  rw [Scheme.Hom.ker_comp, IdealSheafData.ker_subschemeι, ← Scheme.Hom.ker_comp,
-    IdealSheafData.ker_subschemeι, ← ker_opensGraph_eq_ker_graphLift f f.toPartialMap
-      f.toRationalMap_toPartialMap]
+      (f.toPartialMap.over sX sY)).imageι ≫ pullbackToProd sX sY).ker = (graphι f).ker := by
+  rw [Scheme.Hom.ker_imageι_comp, IdealSheafData.ker_subschemeι,
+    ← ker_opensGraph_eq_ker_graphLift f f.toPartialMap f.toRationalMap_toPartialMap]
   congr 1
   apply pullback.hom_ext <;> simp
 
@@ -228,17 +231,15 @@ representative of `f` on its domain of definition, compatibly with the projectio
 def graphIsoGraphClosure :
     graph f ≅ graphClosure sX sY f.toPartialMap.domain f.toPartialMap.hom
       (f.toPartialMap.over sX sY) :=
-  have := IsClosedImmersion.isIso_lift _ _ (ker_imageι_comp_pullbackMap f sX sY)
-  asIso (IsClosedImmersion.lift _ (graphι f) (ker_imageι_comp_pullbackMap f sX sY).le)
+  have := IsClosedImmersion.isIso_lift _ _ (ker_imageι_comp_pullbackToProd f sX sY)
+  asIso (IsClosedImmersion.lift _ (graphι f) (ker_imageι_comp_pullbackToProd f sX sY).le)
 
 /-- The isomorphism `graphIsoGraphClosure` is compatible with the closed immersions into `X × Y`:
 the graph closure embeds in `X × Y` through the closed immersion `X ×_S Y → X × Y`. -/
 @[reassoc (attr := simp)]
-theorem graphIsoGraphClosure_hom_imageι_pullbackMap :
+theorem graphIsoGraphClosure_hom_imageι_pullbackToProd :
     (graphIsoGraphClosure f sX sY).hom ≫ (opensGraph sX sY f.toPartialMap.domain
-      f.toPartialMap.hom (f.toPartialMap.over sX sY)).imageι ≫
-        pullback.map sX sY _ _ (𝟙 X) (𝟙 Y) (terminal.from S) (terminal.hom_ext _ _)
-          (terminal.hom_ext _ _) = graphι f :=
+      f.toPartialMap.hom (f.toPartialMap.over sX sY)).imageι ≫ pullbackToProd sX sY = graphι f :=
   IsClosedImmersion.lift_fac _ _ _
 
 /-- The isomorphism `graphIsoGraphClosure` is compatible with the first projections. -/
@@ -246,7 +247,7 @@ theorem graphIsoGraphClosure_hom_imageι_pullbackMap :
 theorem graphIsoGraphClosure_hom_graphClosureFst :
     (graphIsoGraphClosure f sX sY).hom ≫ graphClosureFst sX sY f.toPartialMap.domain
       f.toPartialMap.hom (f.toPartialMap.over sX sY) = graphFst f := by
-  have := graphIsoGraphClosure_hom_imageι_pullbackMap f sX sY =≫ pullback.fst _ _
+  have := graphIsoGraphClosure_hom_imageι_pullbackToProd f sX sY =≫ pullback.fst _ _
   simp only [Category.assoc, pullback.lift_fst, Category.comp_id] at this
   rw [graphClosureFst_def, this]
   exact (graphClosureFst_def _ _ _ _ _).symm
@@ -256,7 +257,7 @@ theorem graphIsoGraphClosure_hom_graphClosureFst :
 theorem graphIsoGraphClosure_hom_graphClosureSnd :
     (graphIsoGraphClosure f sX sY).hom ≫ graphClosureSnd sX sY f.toPartialMap.domain
       f.toPartialMap.hom (f.toPartialMap.over sX sY) = graphSnd f := by
-  have := graphIsoGraphClosure_hom_imageι_pullbackMap f sX sY =≫ pullback.snd _ _
+  have := graphIsoGraphClosure_hom_imageι_pullbackToProd f sX sY =≫ pullback.snd _ _
   simp only [Category.assoc, pullback.lift_snd, Category.comp_id] at this
   rw [graphClosureSnd_def, this]
   exact (graphClosureSnd_def _ _ _ _ _).symm
@@ -316,5 +317,21 @@ theorem topologicalKrullDim_graph [Y.IsSeparated] {K : Type u} [Field K]
     (graphIsoGraphClosure f sX sY).hom.homeomorph.isHomeomorph
 
 end Projections
+
+/-- **The graph of a rational map between proper schemes over a field.** For `X` integral and
+`f : X ⤏ Y` a `K`-rational map with `X` and `Y` proper over a field `K` (for instance projective
+varieties, by `AlgebraicGeometry.Scheme.IsProjectiveOver.isProper`), the graph `Γ_f` is integral
+and has the dimension of `X`, the first projection is proper and an isomorphism over the domain of
+definition of `f`, and the second projection is surjective when `f` is dominant. -/
+theorem graph_isIntegral_and_projections {K : Type u} [Field K] (sX : X ⟶ Spec (.of K))
+    (sY : Y ⟶ Spec (.of K)) [IsIntegral X] [IsProper sX] [IsProper sY] [f.IsOver sX sY] :
+    IsIntegral (graph f) ∧ topologicalKrullDim (graph f) = topologicalKrullDim X ∧
+      IsProper (graphFst f) ∧ IsIso (graphFst f ∣_ f.domain) ∧
+      (f.IsDominant → Function.Surjective (graphSnd f)) := by
+  -- `X` is Noetherian and `Y` is separated, since both are proper over a field
+  have := LocallyOfFiniteType.isLocallyNoetherian sX
+  have := Scheme.IsSeparated.of_isSeparated sY
+  exact ⟨inferInstance, topologicalKrullDim_graph f sX sY, isProper_graphFst f sX sY,
+    inferInstance, fun _ ↦ (surjective_graphSnd f sX sY).surj⟩
 
 end AlgebraicGeometry.Scheme.RationalMap

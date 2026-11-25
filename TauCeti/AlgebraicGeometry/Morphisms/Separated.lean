@@ -30,7 +30,8 @@ charts, such as the two-chart model of an algebraic function field, is separated
 Separated morphisms compose, so a scheme separated over a separated scheme is itself separated;
 in particular a scheme proper over a separated base, such as a field, is a separated scheme.
 Likewise the canonical map `X ×_S Y ⟶ X ×_T Y` over a separated `S ⟶ T` is a closed immersion, so
-`X ×_S Y` is a closed subscheme of `X × Y` when `S` is a separated scheme.
+`X ×_S Y` is a closed subscheme of `X × Y` (through `AlgebraicGeometry.pullbackToProd`) when `S` is
+a separated scheme.
 A section of a separated morphism is a closed immersion, so a section with dense range is
 surjective.
 
@@ -125,6 +126,13 @@ instance isClosedImmersion_pullbackMap_id {Y T : Scheme.{u}} (f : X ⟶ S) (g : 
   obtain rfl : f' = f ≫ i := by simpa using h₁.symm
   obtain rfl : g' = g ≫ i := by simpa using h₂.symm
   exact inferInstanceAs (IsClosedImmersion (pullback.mapDesc f g i))
+
+/-- The canonical map `X ×_S Y ⟶ X × Y` from the fibre product over `S` to the product, that is,
+the fibre product over the terminal scheme. It is a closed immersion when `S` is a separated
+scheme, by `isClosedImmersion_pullbackMap_id`. -/
+noncomputable abbrev pullbackToProd {Y : Scheme.{u}} (f : X ⟶ S) (g : Y ⟶ S) :
+    pullback f g ⟶ pullback (terminal.from X) (terminal.from Y) :=
+  pullback.map f g _ _ (𝟙 X) (𝟙 Y) (terminal.from S) (terminal.hom_ext _ _) (terminal.hom_ext _ _)
 
 /-- A section of a separated morphism with dense range is surjective: it is a closed immersion,
 so its range is closed as well as dense. -/
