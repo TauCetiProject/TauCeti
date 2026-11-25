@@ -131,7 +131,7 @@ private theorem eq_zero_of_coord_eq_zero {i : Fin A.n} {y : ℂ} {r : ℝ}
     ∀ x ∈ A.dom i ∩ A.chart i ⁻¹' ball y r, s x = 0 := by
   intro x ⟨hx, hxb⟩
   have hxi : A.chart i x ∈ A.image i := A.mem_image.2 ⟨x, hx, rfl⟩
-  have h := (A.coord_eq_coord_iff (t := 0) hxi).1 ((hu hxb).trans (A.coord_zero i hxi).symm)
+  have h := (A.coord_eq_zero_iff hxi).1 (hu hxb)
   rwa [(A.chart i).left_inv (A.dom_subset_chart_source i hx)] at h
 
 include hD hDs hs hs0 in
@@ -179,7 +179,7 @@ theorem IsRealCauchyRiemannOperator.eq_zero_of_eqOn_zero [CompactSpace M] [Conne
     have h₀ : ∀ᶠ z in 𝓝 (A.chart i x'), A.coord i s z = 0 := by
       filter_upwards [hsymm.eventually (hx' ▸ hx'Z),
         (A.image i).isOpen.mem_nhds hz'] with z hz hzi
-      exact ((A.coord_eq_coord_iff (t := 0) hzi).2 hz).trans (A.coord_zero i hzi)
+      exact A.coord_eq_zero hzi hz
     exact eventually_of_mem (hNo.mem_nhds hxN)
       (eqOn_zero_of_eventually_coord_eq_zero A hD hDs hs hs0 hri hx'N.2 h₀)
   have hZu : Z = univ := IsClopen.eq_univ ⟨hZc, hZo⟩ hZne

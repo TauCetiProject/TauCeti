@@ -838,6 +838,15 @@ theorem coord_eq_zero {s : ∀ x, V x} {i : Fin A.n} {y : E} (hy : y ∈ A.image
   rw [A.coord_def, h]
   simpa only [A.coord_def, Pi.zero_apply] using A.coord_zero i hy
 
+/-- On the image of chart `i`, the reading of a section vanishes exactly where the section
+vanishes. -/
+theorem coord_eq_zero_iff {s : ∀ x, V x} {i : Fin A.n} {y : E} (hy : y ∈ A.image i) :
+    A.coord i s y = 0 ↔ s ((A.chart i).symm y) = 0 := by
+  refine ⟨fun h ↦ ?_, A.coord_eq_zero hy⟩
+  obtain ⟨x, hx, rfl⟩ := A.mem_image.1 hy
+  rw [(A.chart i).left_inv (A.dom_subset_chart_source i hx)]
+  exact A.eq_of_coord_chart_eq (t := 0) hx (h.trans (A.coord_zero i hy).symm)
+
 open Classical in
 /-- The section whose coordinates in chart `i` are `G` on the domain of the chart, and which
 vanishes off it. -/
