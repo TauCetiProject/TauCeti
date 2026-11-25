@@ -240,6 +240,23 @@ end
 
 public section
 
+namespace Cubic
+
+/-! ### Coefficients of a mapped form -/
+
+section Map
+
+variable {R S : Type*} [Semiring R] [Semiring S] (φ : R →+* S) (P : Cubic R)
+
+@[simp] theorem map_a : (P.map φ).a = φ P.a := (rfl)
+@[simp] theorem map_b : (P.map φ).b = φ P.b := (rfl)
+@[simp] theorem map_c : (P.map φ).c = φ P.c := (rfl)
+@[simp] theorem map_d : (P.map φ).d = φ P.d := (rfl)
+
+end Map
+
+end Cubic
+
 namespace Cubic.CubicRing
 
 variable {R : Type*} {f : Cubic R}
@@ -489,7 +506,7 @@ coordinate, so it sends `ω` and `θ` to `ω` and `θ`. -/
 def mapRingHom (f : Cubic R) : f.CubicRing →+* (f.map φ).CubicRing where
   toFun x := ⟨φ x.c₀, φ x.c₁, φ x.c₂⟩
   map_one' := by ext <;> simp
-  map_mul' _ _ := by ext <;> simp <;> simp [Cubic.map]
+  map_mul' _ _ := by ext <;> simp
   map_zero' := by ext <;> simp
   map_add' _ _ := by ext <;> simp
 
