@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Order.Cadlag
 public import TauCeti.MeasureTheory.Measure.NNReal
 public import TauCeti.Probability.PointProcess.Poisson.Basic
 public import TauCeti.Probability.Process.Poisson.Filtered
+public import TauCeti.Probability.Process.SimpleCountingPath
 import TauCeti.MeasureTheory.Measure.IntegerValued.Stieltjes
 import TauCeti.Probability.Independence.Process.HasIndepIncrements
 import TauCeti.Probability.PointProcess.Poisson.Count
@@ -26,10 +26,10 @@ of every rate `α`, including `α = 0`.
 
 The random measure is almost surely locally finite, integer-valued and simple. Changing the
 counts to zero on an ambient-measurable null set containing the exceptional realizations
-gives a Poisson process for its natural filtration *every* path of which is a counting path:
-natural-valued, zero at time zero, nondecreasing and right-continuous, with jumps from the
-left of size at most one (`exists_isFilteredPoissonProcess`). Being natural-valued and
-nondecreasing, each path has finitely many jumps on every bounded interval.
+gives a Poisson process for its natural filtration *every* path of which satisfies
+`IsSimpleCountingPath`: natural-valued, zero at time zero, nondecreasing and right-continuous,
+with jumps from the left of size at most one (`exists_isFilteredPoissonProcess`). Being
+natural-valued and nondecreasing, each path has finitely many jumps on every bounded interval.
 
 The filtration-relative Poisson property comes from the independent Poisson increments of the
 counts through `HasIndepIncrements.isFilteredPoissonProcess_natural`; path regularity comes
@@ -75,9 +75,10 @@ theorem IsPoissonRandomMeasure.isFilteredPoissonProcess_natural_count
   simp [Nat.cast_sub (hω hst)]
 
 /-- **Existence of Poisson processes.** For every rate `α`, some probability space carries a
-Poisson process of rate `α` relative to its natural filtration whose paths are all counting
-paths: natural-valued, zero at time zero, nondecreasing and right-continuous, and at each
-positive time some earlier value is at most one below, so every jump has size at most one.
+Poisson process of rate `α` relative to its natural filtration whose paths are all simple
+counting paths (`IsSimpleCountingPath`): natural-valued, zero at time zero, nondecreasing and
+right-continuous, and at each positive time some earlier value is at most one below, so every
+jump has size at most one.
 
 The process is the count process of a Poisson random measure, set to zero on a null event. -/
 theorem exists_isFilteredPoissonProcess (α : ℝ≥0) :
@@ -85,8 +86,7 @@ theorem exists_isFilteredPoissonProcess (α : ℝ≥0) :
       (hK : ∀ t, StronglyMeasurable fun ω => (K t ω : ℝ)),
       IsFilteredPoissonProcess (Filtration.natural (fun t ω => (K t ω : ℝ)) hK) α
         (fun t ω => (K t ω : ℝ)) P ∧
-      ∀ ω, K 0 ω = 0 ∧ Monotone (K · ω) ∧ IsRightContinuous (K · ω) ∧
-        ∀ t > 0, ∃ s < t, K t ω ≤ K s ω + 1 := by
+      ∀ ω, IsSimpleCountingPath (K · ω) := by
   classical
   let Λ : Measure ℝ≥0 := (α : ℝ≥0∞) • nnvolume
   have : IsLocallyFiniteMeasure Λ := nnvolume.isLocallyFiniteMeasure_smul ENNReal.coe_ne_top
@@ -118,11 +118,9 @@ theorem exists_isFilteredPoissonProcess (α : ℝ≥0) :
   refine ⟨Measure ℝ≥0, inferInstance, P, K, fun t => (hKm t).stronglyMeasurable,
     (hcount.ambientNullAugmentation.congr hadapted hCK).natural _, fun μ => ?_⟩
   by_cases hμS : μ ∈ S
-  · have hK (t : ℝ≥0) : K t μ = 0 := by simp [K, hμS]
-    refine ⟨hK 0, fun s t _ => (hK s).trans_le (hK t).ge, ?_,
-      fun t ht => ⟨0, ht, by simp [hK]⟩⟩
-    rw [show (K · μ) = fun _ => 0 from funext hK]
-    exact IsRightContinuous.const
+  · have hK : (K · μ) = fun _ => 0 := funext fun t => by simp [K, hμS]
+    rw [hK]
+    exact IsSimpleCountingPath.fun_zero
   · obtain ⟨_, hint, hsimple⟩ : μ ∈ G := by
       by_contra hμG
       exact hμS (subset_toMeasurable P Gᶜ hμG)

@@ -244,24 +244,33 @@ private theorem ramifiedGhost_aeval (n : ℕ) (Φ : MvPolynomial ι O) (x : ι �
   rw [aeval_eq_peval]
   exact ramifiedGhost_aeval_ramifiedWittStructure _ _ _ _ _
 
-/-- The `n`-th ramified ghost component as an algebra homomorphism. -/
-noncomputable def ghostComponent (n : ℕ) : W A →ₐ[O] A where
-  toFun x := ramifiedGhost π q n x.coeff
+/-- Compatibility with polynomial evaluation gives an algebra homomorphism.
+Inlining keeps the resulting function computable when `g` is, even though the Witt operations
+in its proof are noncomputable. -/
+@[macro_inline]
+private def algHomOfAeval {B : Type*} [CommRing B] [Algebra O B] (g : W A → B)
+    (hg : ∀ {ι : Type} (Φ : MvPolynomial ι O) (x : ι → W A),
+      g (aeval x Φ) = aeval (fun i ↦ g (x i)) Φ) : W A →ₐ[O] B where
+  toFun := g
   map_zero' := by
     simpa only [map_zero] using
-      ramifiedGhost_aeval n (0 : MvPolynomial Empty O) (Empty.elim : Empty → W A)
+      hg (0 : MvPolynomial Empty O) (Empty.elim : Empty → W A)
   map_one' := by
     simpa only [map_one] using
-      ramifiedGhost_aeval n (1 : MvPolynomial Empty O) (Empty.elim : Empty → W A)
+      hg (1 : MvPolynomial Empty O) (Empty.elim : Empty → W A)
   map_add' x y := by
-    have h := ramifiedGhost_aeval n (X 0 + X 1 : MvPolynomial (Fin 2) O) ![x, y]
+    have h := hg (X 0 + X 1 : MvPolynomial (Fin 2) O) ![x, y]
     simpa only [map_add, aeval_X, Matrix.cons_val_zero, Matrix.cons_val_one] using h
   map_mul' x y := by
-    have h := ramifiedGhost_aeval n (X 0 * X 1 : MvPolynomial (Fin 2) O) ![x, y]
+    have h := hg (X 0 * X 1 : MvPolynomial (Fin 2) O) ![x, y]
     simpa only [map_mul, aeval_X, Matrix.cons_val_zero, Matrix.cons_val_one] using h
   commutes' a := by
     simpa only [aeval_C] using
-      ramifiedGhost_aeval n (C a : MvPolynomial Empty O) (Empty.elim : Empty → W A)
+      hg (C a : MvPolynomial Empty O) (Empty.elim : Empty → W A)
+
+/-- The `n`-th ramified ghost component as an algebra homomorphism. -/
+noncomputable def ghostComponent (n : ℕ) : W A →ₐ[O] A :=
+  algHomOfAeval (fun x ↦ ramifiedGhost π q n x.coeff) (ramifiedGhost_aeval n)
 
 theorem ghostComponent_apply (n : ℕ) (x : W A) :
     ghostComponent n x = ramifiedGhost π q n x.coeff :=
@@ -326,23 +335,8 @@ private theorem mapFun_aeval (f : A →ₐ[O] B) (Φ : MvPolynomial ι O) (x : �
   simp only [mapFun, coeff_mk, coeff_aeval, comp_aeval_apply]
 
 /-- The algebra map on ramified Witt vectors induced by an algebra map on coefficients. -/
-def map (f : A →ₐ[O] B) : W A →ₐ[O] W B where
-  toFun := mapFun f
-  map_zero' := by
-    simpa only [map_zero] using
-      mapFun_aeval f (0 : MvPolynomial Empty O) (Empty.elim : Empty → W A)
-  map_one' := by
-    simpa only [map_one] using
-      mapFun_aeval f (1 : MvPolynomial Empty O) (Empty.elim : Empty → W A)
-  map_add' x y := by
-    have h := mapFun_aeval f (X 0 + X 1 : MvPolynomial (Fin 2) O) ![x, y]
-    simpa only [map_add, aeval_X, Matrix.cons_val_zero, Matrix.cons_val_one] using h
-  map_mul' x y := by
-    have h := mapFun_aeval f (X 0 * X 1 : MvPolynomial (Fin 2) O) ![x, y]
-    simpa only [map_mul, aeval_X, Matrix.cons_val_zero, Matrix.cons_val_one] using h
-  commutes' a := by
-    simpa only [aeval_C] using
-      mapFun_aeval f (C a : MvPolynomial Empty O) (Empty.elim : Empty → W A)
+def map (f : A →ₐ[O] B) : W A →ₐ[O] W B :=
+  algHomOfAeval (mapFun f) (mapFun_aeval f)
 
 /-- A coefficient map acts on each Witt coordinate separately. -/
 @[simp]

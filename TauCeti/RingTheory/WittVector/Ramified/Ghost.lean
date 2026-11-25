@@ -9,9 +9,8 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import Mathlib.Algebra.MvPolynomial.Eval
 public import Mathlib.Algebra.Ring.NonZeroDivisors
 
-import Mathlib.FieldTheory.Finite.Basic
-import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 import TauCeti.Algebra.Ring.FrobeniusLift
+import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 
 /-!
 # Ramified ghost components and the ramified Dwork criterion
@@ -51,8 +50,8 @@ then `w_n(x) = x_0 ^ (q ^ n)` forgets every coordinate but the first.
   to `0` in a nontrivial algebra.
 * `TauCeti.exists_ramifiedGhost_eq_iff`: the ramified Dwork criterion for the ghost image.
 * `TauCeti.exists_ramifiedGhost_natCard_residueField_eq_iff`: the criterion over a local ring
-  whose maximal ideal lies in `(π)` and whose residue field is finite, with `q` the cardinality of
-  the residue field.
+  whose maximal ideal lies in `(π)`, with `q = Nat.card` of the residue field. This is zero when
+  the residue field is infinite.
 
 ## References
 
@@ -258,22 +257,11 @@ theorem exists_ramifiedGhost_eq_iff (hq : algebraMap O A π ∣ (q : A)) (σ : A
     rw [ramifiedGhost_congr fun i hi ↦ (ghostPreimageAux_of_le y hi).symm]
     exact ramifiedGhost_ghostPreimageAux hq σ hσ hy n
 
-/-- The cardinality of a finite residue field is divisible by every element whose principal
-ideal contains the maximal ideal. -/
-theorem dvd_natCard_residueField [IsLocalRing O] [Finite (IsLocalRing.ResidueField O)]
-    (hπ : IsLocalRing.maximalIdeal O ≤ Ideal.span {π}) :
-    π ∣ (Nat.card (IsLocalRing.ResidueField O) : O) := by
-  have : Fintype (IsLocalRing.ResidueField O) := Fintype.ofFinite _
-  apply Ideal.mem_span_singleton.1
-  apply hπ
-  rw [← IsLocalRing.residue_eq_zero_iff, map_natCast, Nat.card_eq_fintype_card,
-    FiniteField.cast_card_eq_zero]
-
 /-- The ramified Dwork criterion over a local ring `O` whose maximal ideal is contained in `(π)`
-(for instance a discrete valuation ring with uniformizer `π`) and whose residue field is finite,
-with `q` the cardinality of the residue field. -/
+(for instance a discrete valuation ring with uniformizer `π`), with `q = Nat.card` of the residue
+field. If the residue field is infinite, this specializes the criterion to `q = 0`. -/
 theorem exists_ramifiedGhost_natCard_residueField_eq_iff [IsLocalRing O]
-    [Finite (IsLocalRing.ResidueField O)] (hπ : IsLocalRing.maximalIdeal O ≤ Ideal.span {π})
+    (hπ : IsLocalRing.maximalIdeal O ≤ Ideal.span {π})
     (σ : A →ₐ[O] A)
     (hσ : ∀ a, algebraMap O A π ∣ σ a - a ^ Nat.card (IsLocalRing.ResidueField O))
     (y : ℕ → A) :

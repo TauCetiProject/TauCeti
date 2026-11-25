@@ -9,7 +9,7 @@ public import Mathlib.Algebra.MvPolynomial.Rename
 public import TauCeti.RingTheory.WittVector.Ramified.Ghost
 
 import Mathlib.RingTheory.MvPolynomial.Expand
-import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 import TauCeti.RingTheory.MvPolynomial.RegularSequence
 
 /-!
@@ -40,11 +40,6 @@ namespace TauCeti
 open IsLocalRing MvPolynomial
 
 variable {O : Type*} [CommRing O] {π : O} {ι : Type*}
-
-private theorem C_mem_nonZeroDivisors (hreg : π ∈ nonZeroDivisors O) :
-    C π ∈ nonZeroDivisors (MvPolynomial (ι × ℕ) O) :=
-  isRegular_iff_mem_nonZeroDivisors.1 (isLeftRegular_iff_isRegular.1
-    (isSMulRegular_C_iff.2 (isRegular_iff_mem_nonZeroDivisors.2 hreg).left.isSMulRegular))
 
 /-- Universal existence and uniqueness of structure polynomials over any coefficient ring
 with regular `π`, `π ∣ q`, and a lift of the `q`-th power map on the universal input algebra. -/
