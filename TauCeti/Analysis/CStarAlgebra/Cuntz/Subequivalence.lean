@@ -17,9 +17,9 @@ For positive elements `a, b` of a C⋆-algebra `A`, `a` is **Cuntz subequivalent
 `TauCeti.CuntzLE a b`, if there are `xₙ ∈ A` with `xₙ⋆ b xₙ → a` in norm (Rørdam, §4.1). The
 relation lives on the positive-element subtype `{a : A // 0 ≤ a}`; we define it as membership of
 `a` in the closure of `{x⋆ b x : x ∈ A}` and prove the sequential form
-(`TauCeti.cuntzLE_iff_exists_tendsto`). The relation is written out rather than given an order
-notation: it is not the order on positive elements. Mutual subequivalence is
-`AntisymmRel CuntzLE`.
+(`TauCeti.cuntzLE_iff_exists_tendsto`). Below, `a ≼ b` is informal shorthand for `CuntzLE a b`;
+no Lean notation is defined, since the relation is not the order on positive elements. Mutual
+subequivalence is `AntisymmRel CuntzLE`.
 
 * It is a preorder (`TauCeti.CuntzLE.refl`, `TauCeti.CuntzLE.trans`): reflexivity uses the
   compressions `e a e → a` along an increasing approximate unit, and transitivity holds because
@@ -31,8 +31,8 @@ notation: it is not the order on positive elements. Mutual subequivalence is
   `x = cfcₙ (fun t ↦ √(max (t - ε) 0 / t)) a`.
 
 In `ℂ`, `a ≼ b` holds exactly when `b ≠ 0` or `a = 0` (`TauCeti.cuntzLE_complex_iff`), so all
-nonzero positive scalars are mutually subequivalent (`TauCeti.antisymmRel_cuntzLE_complex`); the
-Check `1 ≼ 2` and `2 ≼ 1` is `TauCeti.antisymmRel_cuntzLE_one_two`.
+nonzero positive scalars are mutually subequivalent (`TauCeti.antisymmRel_cuntzLE_complex`); for
+instance `1` and `2` are mutually subequivalent (`TauCeti.antisymmRel_cuntzLE_one_two`).
 
 ## References
 
@@ -49,7 +49,7 @@ namespace TauCeti
 
 variable {A B : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
 
-/-- **Cuntz subequivalence** `a ≼ b` of positive elements: `a` is a norm limit of elements
+/-- **Cuntz subequivalence** `CuntzLE a b` of positive elements: `a` is a norm limit of elements
 `x⋆ b x` (Rørdam, §4.1). -/
 def CuntzLE (a b : {a : A // 0 ≤ a}) : Prop :=
   (a : A) ∈ closure (Set.range fun x : A ↦ star x * b * x)
@@ -58,7 +58,8 @@ theorem cuntzLE_def {a b : {a : A // 0 ≤ a}} :
     CuntzLE a b ↔ (a : A) ∈ closure (Set.range fun x : A ↦ star x * b * x) :=
   Iff.rfl
 
-/-- The sequential form of Cuntz subequivalence: `a ≼ b` iff `xₙ⋆ b xₙ → a` for some sequence. -/
+/-- The sequential form of Cuntz subequivalence: `CuntzLE a b` iff `xₙ⋆ b xₙ → a` for some
+sequence. -/
 theorem cuntzLE_iff_exists_tendsto {a b : {a : A // 0 ≤ a}} :
     CuntzLE a b ↔ ∃ x : ℕ → A, Tendsto (fun n ↦ star (x n) * b * x n) atTop (𝓝 (a : A)) := by
   rw [cuntzLE_def, mem_closure_iff_seq_limit]
@@ -90,7 +91,7 @@ theorem CuntzLE.refl (a : {a : A // 0 ≤ a}) : CuntzLE a a := by
       simp only [he]
   exact mem_closure_of_tendsto this (.of_forall fun e ↦ ⟨e, rfl⟩)
 
-/-- The set `{x⋆ b x}` lies in the closure of `{y⋆ c y}` once `b` does. -/
+/-- If `b` is Cuntz subequivalent to `c`, so is every compression `x⋆ b x`. -/
 theorem CuntzLE.star_mul_mul {b c : {a : A // 0 ≤ a}} (h : CuntzLE b c) (x : A) :
     CuntzLE ⟨star x * b * x, star_left_conjugate_nonneg b.property x⟩ c := by
   have hcont : Continuous fun z : A ↦ star x * z * x := by fun_prop
@@ -158,8 +159,8 @@ private theorem cutdownRoot_mul_mul_cutdownRoot {ε : ℝ} (hε : 0 ≤ ε) (t :
     simp only [cutdownRoot, max_eq_left (sub_nonneg.mpr htε.le)]
     exact sqrt_div_mul_mul_sqrt_div hpos ht
 
-/-- **Cutdown**: for positive `a` and `ε > 0`, `(a - ε)₊ ≼ a`, where
-`(a - ε)₊ = cfcₙ (fun t ↦ max (t - ε) 0) a`. -/
+/-- **Cutdown**: for positive `a` and `ε > 0`, the cutdown
+`(a - ε)₊ = cfcₙ (fun t ↦ max (t - ε) 0) a` is Cuntz subequivalent to `a`. -/
 theorem cuntzLE_cfcₙ_max_sub_zero (a : {a : A // 0 ≤ a}) {ε : ℝ} (hε : 0 < ε) :
     CuntzLE ⟨cfcₙ (fun t : ℝ ↦ max (t - ε) 0) (a : A), cfcₙ_nonneg fun _ _ ↦ le_max_right _ _⟩
       a := by
