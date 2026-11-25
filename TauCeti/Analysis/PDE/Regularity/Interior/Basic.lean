@@ -110,8 +110,8 @@ to `3 r / 2` has `N ≲ 1 / r` and `L ≲ 1 / r²`
 * `TauCeti.PDE.divMatrixGradient_eq_sum_fderiv_fderiv_apply`: the classical Hessian contraction.
 * `TauCeti.PDE.contDiff_divMatrixGradient`: `div(a ∇ψ)` is `Cᵏ` when `a` is `Cᵏ⁺¹` and `ψ` is
   `Cᵏ⁺²`.
-* `ContDiffOn.integral_matrixBilinearForm_gradient_eq_neg_integral_divMatrixGradient`:
-  integration by parts against the conormal gradient of a `C²` function.
+* `TauCeti.PDE.integral_matrixBilinearForm_gradient_eq_neg_integral_divMatrixGradient`:
+  integration by parts for continuously differentiable conormal components.
 
 ## References
 
@@ -263,7 +263,7 @@ theorem continuous_divMatrixGradient {ψ : EuclideanSpace ℝ ι → ℝ}
 
 /-- Integration by parts when the conormal components are continuously differentiable.
 The test function is compactly supported in the open domain, so no boundary term occurs. -/
-theorem integral_matrixGradient_eq_neg_integral_divMatrixGradient
+theorem integral_matrixBilinearForm_gradient_eq_neg_integral_divMatrixGradient
     (hq : ∀ i, ContDiffOn ℝ 1
       (fun x ↦ matrixBilinearForm (a x) (EuclideanSpace.basisFun ι ℝ i) (∇ g x)) Omega)
     (φ : 𝓓(Omega, ℝ)) :
@@ -304,17 +304,14 @@ theorem integral_matrixGradient_eq_neg_integral_divMatrixGradient
         (fun i _ ↦ φ.integrable_smul (hqd i))]
       simp only [Finset.mul_sum, divMatrixGradient, b, q, smul_eq_mul]
 
-/-- Integration by parts for the constant-matrix conormal gradient of a `C²` function.
-The test function is compactly supported in the open domain, so no boundary term occurs. -/
-theorem _root_.ContDiffOn.integral_matrixBilinearForm_gradient_eq_neg_integral_divMatrixGradient
-    {g : EuclideanSpace ℝ ι → ℝ} (hg : ContDiffOn ℝ 2 g Omega) (φ : 𝓓(Omega, ℝ)) :
-    ∫ x, matrixBilinearForm A (∇ (φ : EuclideanSpace ℝ ι → ℝ) x) (∇ g x) ∂mu =
-      -∫ x, φ x * divMatrixGradient (fun _ => A) g x ∂mu := by
+/-- Every constant-matrix conormal component of a `C²` function is `C¹` on the open domain. -/
+theorem _root_.ContDiffOn.matrixBilinearForm_gradient
+    {g : EuclideanSpace ℝ ι → ℝ} (hg : ContDiffOn ℝ 2 g Omega) (η : EuclideanSpace ℝ ι) :
+    ContDiffOn ℝ 1 (fun y ↦ matrixBilinearForm A η (∇ g y)) Omega := by
   have hg₁ : ContDiffOn ℝ 1 (∇ g) Omega :=
     (toDual ℝ (EuclideanSpace ℝ ι)).symm.contDiff.comp_contDiffOn
       (hg.fderiv_of_isOpen Omega.isOpen (by norm_num))
-  exact integral_matrixGradient_eq_neg_integral_divMatrixGradient
-    (fun i ↦ (matrixBilinearForm A (EuclideanSpace.basisFun ι ℝ i)).contDiff.comp_contDiffOn hg₁) φ
+  exact (matrixBilinearForm A η).contDiff.comp_contDiffOn hg₁
 
 end ClassicalOperator
 
