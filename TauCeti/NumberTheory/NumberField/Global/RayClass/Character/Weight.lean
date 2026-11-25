@@ -84,6 +84,21 @@ theorem toMultiplicativeIdealWeight_mul (χ ψ : RayClassCharacter 𝔪) :
     TauCeti.MultiplicativeIdealWeight.ofIntegralIdealsAway_mul]
   rfl
 
+/-- The inverse character gives the conjugate ideal weight, including at ideals meeting the
+modulus, where both weights vanish. -/
+@[simp]
+theorem toMultiplicativeIdealWeight_inv (χ : RayClassCharacter 𝔪) :
+    toMultiplicativeIdealWeight χ⁻¹ = χ.toMultiplicativeIdealWeight.conj := by
+  ext I
+  rw [MultiplicativeIdealWeight.conj_apply]
+  by_cases hI : I.IsPrimeTo 𝔪.support
+  · simp only [toMultiplicativeIdealWeight_apply_of_isPrimeTo _ hI, onIdeals_apply,
+      MonoidHom.inv_apply, Units.val_inv_eq_inv_val]
+    refine Complex.inv_eq_conj (Complex.norm_eq_one_of_pow_eq_one ?_
+      (Nat.card_pos (α := RayClassGroup 𝔪)).ne')
+    rw [← Units.val_pow_eq_pow_val, ← map_pow, pow_card_eq_one', map_one, Units.val_one]
+  · simp [toMultiplicativeIdealWeight_apply_of_not_isPrimeTo _ hI]
+
 /-- Distinct ray class characters have distinct ideal weights: evaluation on the prime-to
 integral ideals already determines a ray class character. -/
 theorem toMultiplicativeIdealWeight_injective :
@@ -123,6 +138,13 @@ theorem toUnitaryIdealWeight_mul (χ ψ : RayClassCharacter 𝔪) :
     (χ * ψ).toUnitaryIdealWeight = χ.toUnitaryIdealWeight * ψ.toUnitaryIdealWeight := by
   apply Subtype.ext
   simp
+
+/-- The ideal weight of the inverse character is the conjugate ideal weight. -/
+@[simp]
+theorem toUnitaryIdealWeight_inv (χ : RayClassCharacter 𝔪) :
+    χ⁻¹.toUnitaryIdealWeight = χ.toUnitaryIdealWeight.conj := by
+  apply Subtype.ext
+  simp [UnitaryIdealWeight.val_conj]
 
 /-- Increasing the modulus restricts the induced character's ideal weight away from the finite
 primes of the larger modulus. -/
