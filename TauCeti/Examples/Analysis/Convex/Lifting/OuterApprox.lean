@@ -691,16 +691,16 @@ variable {κ : Type*} [Nonempty κ] (D : Set ℝ) (E : Set (Fin 0 → ℝ)) (g :
   (h : (Fin 0 → ℝ) → ℝ) (a : κ → ℝ) (Dg : κ → ℝ →L[ℝ] Fin 0 → ℝ)
   (Dh : κ → (Fin 0 → ℝ) →L[ℝ] ℝ) (b : ℝ)
 
-/-- With no height coordinates and at least one anchor, every direct row is the scalar `h 0`. -/
-theorem directOuterApprox_fin_zero :
-    directOuterApprox D g h a Dg Dh b = {x | x ∈ D ∧ h 0 ≤ b} :=
-  directOuterApprox_of_isEmpty_heights
+/-- With no height coordinates and at least one anchor, every direct row is the scalar `h 0`
+(`directOuterApprox_of_isEmpty_heightCoords`). -/
+example : directOuterApprox D g h a Dg Dh b = {x | x ∈ D ∧ h 0 ≤ b} :=
+  directOuterApprox_of_isEmpty_heightCoords
 
 /-- With no height coordinates and at least one anchor, the shared set projects onto the points
-of `D` satisfying `h 0 ≤ b`, provided the unique height `0` lies in `E`. -/
-theorem fst_image_sharedOuterApprox_fin_zero :
-    Prod.fst '' sharedOuterApprox D E g h a Dg Dh b = {x | x ∈ D ∧ 0 ∈ E ∧ h 0 ≤ b} :=
-  fst_image_sharedOuterApprox_of_isEmpty_heights
+of `D` satisfying `h 0 ≤ b`, provided the unique height `0` lies in `E`
+(`fst_image_sharedOuterApprox_of_isEmpty_heightCoords`). -/
+example : Prod.fst '' sharedOuterApprox D E g h a Dg Dh b = {x | x ∈ D ∧ 0 ∈ E ∧ h 0 ≤ b} :=
+  fst_image_sharedOuterApprox_of_isEmpty_heightCoords
 
 end NoHeights
 
