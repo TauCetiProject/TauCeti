@@ -26,9 +26,13 @@ namespace TauCeti
 open MeasureTheory Set TopologicalSpace
 open scoped Distributions Gradient InnerProductSpace
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {μ : Measure E}
   {Ω V : Opens E} {u : E → E} {g : E → ℝ}
+
+section Translation
+
+variable [CompleteSpace E] [μ.IsAddRightInvariant]
 
 /-- The divergence of a translated field is the translated divergence, on any open set whose
 translate lies in the original domain. -/
@@ -46,6 +50,18 @@ theorem HasWeakDivergenceOn.comp_add_right (hu : HasWeakDivergenceOn μ Ω u g)
     simpa only [ψ, translateTestFunction_apply, add_sub_cancel_right] using
       integral_add_right_eq_self (fun y ↦ ψ y * g y) a
   rw [hleft, hright, hu.integral_inner_gradient_eq_neg_integral_mul]
+
+/-- Translating a solenoidal field preserves solenoidality. -/
+theorem IsSolenoidalOn.comp_add_right (hu : IsSolenoidalOn μ Ω u)
+    {a : E} (hV : MapsTo (· + a) V Ω) : IsSolenoidalOn μ V (fun x ↦ u (x + a)) := by
+  rw [isSolenoidalOn_iff_hasWeakDivergenceOn] at hu ⊢
+  simpa [Pi.zero_def] using hu.comp_add_right hV
+
+end Translation
+
+section Linear
+
+variable [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure]
 
 /-- The pullback of a field by a linear change of variables has divergence given by precomposing
 the original divergence with the same change of variables. -/
@@ -87,12 +103,6 @@ theorem HasWeakDivergenceOn.comp_smul (hu : HasWeakDivergenceOn μ Ω u g)
   rw [hfield] at h
   exact h
 
-/-- Translating a solenoidal field preserves solenoidality. -/
-theorem IsSolenoidalOn.comp_add_right (hu : IsSolenoidalOn μ Ω u)
-    {a : E} (hV : MapsTo (· + a) V Ω) : IsSolenoidalOn μ V (fun x ↦ u (x + a)) := by
-  rw [isSolenoidalOn_iff_hasWeakDivergenceOn] at hu ⊢
-  simpa [Pi.zero_def] using hu.comp_add_right hV
-
 /-- Orthogonal changes of coordinates preserve solenoidality. For an orthogonal map `e`,
 a field `u` in the original coordinates becomes `x ↦ e (u (e.symm x))`. -/
 theorem IsSolenoidalOn.comp_linearIsometryEquiv (hu : IsSolenoidalOn μ Ω u)
@@ -106,5 +116,7 @@ theorem IsSolenoidalOn.comp_smul (hu : IsSolenoidalOn μ Ω u)
     IsSolenoidalOn μ V (fun x ↦ u (r • x)) := by
   rw [isSolenoidalOn_iff_hasWeakDivergenceOn] at hu ⊢
   simpa only [Pi.zero_def, mul_zero] using hu.comp_smul hr hV
+
+end Linear
 
 end TauCeti

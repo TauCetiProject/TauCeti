@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.PDE.Incompressible.Solenoidal
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
-import TauCeti.MeasureTheory.Function.LocallyAEConst
 
 /-!
 # Solenoidal fields on the real line
@@ -35,12 +34,7 @@ theorem hasWeakDivergenceOn_real_iff {μ : Measure ℝ} {Ω : Opens ℝ} {u g : 
 theorem IsSolenoidalOn.exists_ae_eq_const {u : ℝ → ℝ} (hu : IsSolenoidalOn volume ⊤ u) :
     ∃ c : ℝ, u =ᵐ[volume] fun _ ↦ c := by
   have hd := hasWeakDivergenceOn_real_iff.mp (isSolenoidalOn_iff_hasWeakDivergenceOn.mp hu)
-  suffices h : ∃ c : ℝ, u =ᵐ[volume.restrict (univ : Set ℝ)] fun _ ↦ c by
-    simpa only [Measure.restrict_univ] using h
-  refine isPreconnected_univ.exists_ae_eq_const_of_forall_nhds isLindelof_univ ?_
-  intro x _
-  obtain ⟨c, hc⟩ := (hd.mono (Ω' := ⟨Ioo (x - 1) (x + 1), isOpen_Ioo⟩) le_top).exists_ae_eq_const
-  exact ⟨c, Ioo (x - 1) (x + 1), Ioo_mem_nhds (by linarith) (by linarith), hc⟩
+  simpa using hd.exists_ae_eq_add_intervalIntegral_top 0
 
 /-- For every finite exponent `p ≥ 1`, the solenoidal subspace on the real line is zero. -/
 theorem solenoidalLp_real_eq_bot {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞) :

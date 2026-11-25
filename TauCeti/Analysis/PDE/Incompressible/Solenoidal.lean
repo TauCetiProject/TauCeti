@@ -14,11 +14,11 @@ import TauCeti.MeasureTheory.Function.Lp.Duality
 /-!
 # Solenoidal subspaces
 
-Solenoidal test fields form the kernel of the divergence on test functions. In `Lᵖ`, the
-solenoidal fields form the intersection of the kernels of the continuous pairings with scalar
-test gradients. At `p = 2`, these pairings are Hilbert space inner products, so the closed
-subspace is the orthogonal complement of the closed span of the test gradients. We use
-`TauCeti.wassersteinTangentSpace` for that closed span.
+The submodule `TestFunction.solenoidalSubmodule` consists exactly of weakly solenoidal test
+fields. In `Lᵖ`, the solenoidal fields form the intersection of the kernels of the
+continuous pairings with scalar test gradients. At `p = 2`, these pairings are Hilbert space inner
+products, so the closed subspace is the orthogonal complement of the closed span of the test
+gradients, given by `TauCeti.wassersteinTangentSpace`.
 -/
 
 public section
@@ -30,16 +30,6 @@ namespace TestFunction
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {Ω : Opens E}
-
-/-- Smooth compactly supported vector fields with zero divergence on the open set. -/
-noncomputable def solenoidalSubmodule (Ω : Opens E) : Submodule ℝ 𝓓(Ω, E) :=
-  (divergenceCLM (Ω := Ω)).ker
-
-/-- A test field is solenoidal exactly when its bundled divergence vanishes. -/
-@[simp]
-theorem mem_solenoidalSubmodule_iff {φ : 𝓓(Ω, E)} :
-    φ ∈ solenoidalSubmodule Ω ↔ divergenceCLM φ = 0 :=
-  (Iff.rfl)
 
 variable [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
 
