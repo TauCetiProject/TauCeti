@@ -193,10 +193,19 @@ theorem mapFunctionLinearMap_apply (s : Cₛ^n⟮I; F, V⟯) (x : M) :
 theorem restrictScalars_mapFunctionLinearMap :
     (mapFunctionLinearMap ϕ hϕ).restrictScalars 𝕜 = mapLinearMap ϕ hϕ := (rfl)
 
+/-- As a function, function-linear transport is ground-field linear transport. -/
+theorem coe_mapFunctionLinearMap :
+    (mapFunctionLinearMap ϕ hϕ : Cₛ^n⟮I; F, V⟯ → Cₛ^n⟮I; G, W⟯) = mapLinearMap ϕ hϕ := (rfl)
+
 /-- Pointwise injectivity of a bundle map implies injectivity on smooth sections. -/
 theorem mapLinearMap_injective (h : ∀ x, Function.Injective (ϕ x)) :
     Function.Injective (mapLinearMap ϕ hϕ) :=
   ContMDiffSection.map_injective (fun x ↦ ϕ x) hϕ h
+
+/-- Pointwise injectivity of a bundle map implies injectivity of function-linear transport. -/
+theorem mapFunctionLinearMap_injective (h : ∀ x, Function.Injective (ϕ x)) :
+    Function.Injective (mapFunctionLinearMap ϕ hϕ) :=
+  coe_mapFunctionLinearMap ϕ hϕ ▸ mapLinearMap_injective ϕ hϕ h
 
 /-- The identity bundle map acts identically on sections. -/
 @[simp]

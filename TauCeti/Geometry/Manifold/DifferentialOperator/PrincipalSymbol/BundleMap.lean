@@ -242,8 +242,8 @@ theorem IsDiracType.of_eq_comp_comp
       R ((D : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) (L s))) :
     IsDiracType D' := by
   refine isDiracType_iff.2 fun x hx ξ v w ↦ ?_
-  rw [sectionPrincipalSymbol_of_eq_comp_comp hx h, LinearMap.comp_apply, LinearMap.comp_apply,
-    LinearMap.comp_apply, LinearMap.comp_apply, hR, hD.inner_sectionPrincipalSymbol, hL]
+  simp only [sectionPrincipalSymbol_of_eq_comp_comp hx h, LinearMap.comp_apply, hR,
+    hD.inner_sectionPrincipalSymbol, hL]
 
 end Dirac
 

@@ -260,8 +260,8 @@ def toTangentSection : letI := hD.fiberBundle; letI := hD.vectorBundle
 theorem toTangentSection_injective : letI := hD.fiberBundle; letI := hD.vectorBundle
     Function.Injective hD.toTangentSection :=
   let := hD.fiberBundle; let := hD.vectorBundle
-  fun _ _ h ↦ ContMDiffSection.ext fun x ↦ Subtype.val_injective <| by
-    simpa using congr($h x)
+  ContMDiffSection.mapFunctionLinearMap_injective (fun x ↦ (D x).subtype)
+    hD.contMDiff_totalSpace_inclusion fun _ ↦ Subtype.val_injective
 
 /-- A `C^n` tangent vector field taking values in `D` defines a `C^n` section of `D`. -/
 def mkSection (X : Cₛ^n⟮I; E, (TangentSpace I : M → Type _)⟯) (hX : ∀ x, X x ∈ D x) :
