@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.Map.Basic
 
 /-!
 # Extension by zero of compactly supported bundle sections
@@ -258,33 +257,6 @@ theorem extendByZero_smul_function (f : C^n⟮I, M; 𝕜⟯)
       extendByZero_apply_of_mem s ⟨x, hx⟩]
     exact smul_apply _ s.val ⟨x, hx⟩
   · simp [extendByZero_apply_of_notMem _ hx]
-
-section Coefficients
-variable {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
-  {W : M → Type*} [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)]
-  [∀ x, TopologicalSpace (W x)] [TopologicalSpace (TotalSpace G W)]
-  [FiberBundle G W] [VectorBundle 𝕜 G W]
-
-/-- Extension by zero commutes with a smooth fibrewise linear coefficient map. -/
-theorem extendByZero_mapCompactlySupported (φ : ∀ x, V x →ₗ[𝕜] W x)
-    (hφ : ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, G)) n
-      (fun p : TotalSpace F V ↦ (⟨p.proj, φ p.proj p.snd⟩ : TotalSpace G W))) :
-    let c : C^n⟮I, U; I, M⟯ := ⟨Subtype.val, contMDiff_subtypeVal⟩
-    let hφU := Pullback.contMDiff_fiberwise (fun x v ↦ φ x v) hφ c c.contMDiff
-    ∀ s : compactlySupported I F n (c *ᵖ V),
-      extendByZero (mapCompactlySupported (I := I) (F := F) (G := G)
-        (V := c *ᵖ V) (W := c *ᵖ W) (fun x ↦ φ x.val) hφU s) =
-      mapLinearMap φ hφ (extendByZero s) := by
-  intro c hφU s
-  ext x
-  rw [mapLinearMap_apply]
-  by_cases hx : x ∈ U
-  · erw [extendByZero_apply_of_mem _ (⟨x, hx⟩ : U), extendByZero_apply_of_mem s (⟨x, hx⟩ : U)]
-    erw [coe_mapCompactlySupported, mapLinearMap_apply]
-    rfl
-  · erw [extendByZero_apply_of_notMem _ hx, extendByZero_apply_of_notMem s hx, map_zero]
-
-end Coefficients
 
 end ContMDiffSection
 
