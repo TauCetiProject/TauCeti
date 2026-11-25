@@ -75,9 +75,12 @@ attached only to doubles along the complement of `TauCeti.borderedInterior M`.
   `TauCeti.DoubleAlong`.
 * `TauCeti.SchottkyDouble.doubleChart_swap` and
   `TauCeti.SchottkyDouble.writtenInExtChartAt_swap_eventuallyEq_conj`: the swap reads as
-  `z ↦ conj z` in every doubled chart, so it is real smooth (`contMDiff_swap`).
+  `z ↦ conj z` in every doubled chart, so it is real smooth (`contMDiff_swap`), and a real
+  diffeomorphism (`swapDiffeomorph`), its own inverse (`swapDiffeomorph_symm`).
 * `TauCeti.SchottkyDouble.contMDiffAt_fold_inl` and `TauCeti.SchottkyDouble.contMDiffAt_fold_inr`:
   the fold of the double onto `M` is real smooth at both copies of every interior point.
+  `TauCeti.SchottkyDouble.contMDiffOn_fold_range_inl`: read within the whole first copy, boundary
+  included, the fold is real smooth.
 * `TauCeti.SchottkyDouble.hasMFDerivAt_swap`: the differential of the sheet swap is conjugation.
 * `TauCeti.SchottkyDouble.mem_range_interiorInl_or_mem_range_interiorInr_or_mem_image_inl_compl`:
   every point lies on one of the two interior sheets or on the gluing set.
@@ -437,6 +440,32 @@ theorem contMDiff_swap {n : ℕ∞ω} :
   exact Complex.conjCLE.contDiff.contDiffAt.congr_of_eventuallyEq
     (writtenInExtChartAt_swap_eventuallyEq_conj z)
 
+/-- The sheet swap of the Schottky double as a real `C^n` diffeomorphism, for every `n`. It is its
+own inverse (`TauCeti.DoubleAlong.swap_swap`). -/
+def swapDiffeomorph (n : ℕ∞ω) :
+    SchottkyDouble M ≃ₘ^n⟮𝓘(ℝ, ℂ), 𝓘(ℝ, ℂ)⟯ SchottkyDouble M where
+  toEquiv := (DoubleAlong.swap (borderedInterior M : Set M)ᶜ).toEquiv
+  contMDiff_toFun := contMDiff_swap
+  contMDiff_invFun := contMDiff_swap.congr fun z ↦
+    (DoubleAlong.swap _).symm_apply_eq.2 (DoubleAlong.swap_swap _ z).symm
+
+/-- `swapDiffeomorph` is the sheet swap. -/
+@[simp]
+theorem coe_swapDiffeomorph (n : ℕ∞ω) :
+    ⇑(swapDiffeomorph (M := M) n) = DoubleAlong.swap (borderedInterior M : Set M)ᶜ := by
+  rw [swapDiffeomorph]
+  rfl
+
+/-- `swapDiffeomorph` is its own inverse. -/
+@[simp]
+theorem swapDiffeomorph_symm (n : ℕ∞ω) :
+    (swapDiffeomorph (M := M) n).symm = swapDiffeomorph n := by
+  ext z
+  have h := (swapDiffeomorph (M := M) n).apply_symm_apply z
+  rw [coe_swapDiffeomorph] at h ⊢
+  conv_rhs => rw [← h]
+  rw [DoubleAlong.swap_swap]
+
 /-- **The differential of the sheet swap is conjugation**, in the doubled charts at a point and at
 its image, which coincide. -/
 theorem hasMFDerivAt_swap (z : SchottkyDouble M) :
@@ -740,6 +769,38 @@ theorem contMDiffAt_fold_inr {n : ℕ∞ω} {x : M} (hx : x ∈ borderedInterior
   have h := (contMDiffAt_fold_inl (n := n) hx).comp_of_eq (contMDiff_swap.contMDiffAt)
     (DoubleAlong.swap_inr A x)
   exact h.congr_of_eventuallyEq (Eventually.of_forall fun z ↦ (DoubleAlong.fold_swap A z).symm)
+
+/-- **The fold is smooth along the first copy.** Read within the first copy of `M`, including
+its boundary, the fold of the double onto `M` is real `C^n`: in the doubled chart at a point of the
+first copy and the chart of `M`, it is the identity on the closed upper half-plane. In particular a
+smooth map into the seam stays smooth after folding, although the fold itself is not
+differentiable at the seam (it reads as `w ↦ re w + i |im w|` there). -/
+theorem contMDiffOn_fold_range_inl {n : ℕ∞ω} :
+    ContMDiffOn 𝓘(ℝ, ℂ) closedUpperHalfPlaneModel n (DoubleAlong.fold A)
+      (range (DoubleAlong.inl A)) := by
+  rintro _ ⟨x, rfl⟩
+  refine contMDiffWithinAt_iff'.2 ⟨(DoubleAlong.fold A).continuous.continuousWithinAt, ?_⟩
+  set e := chartAt ClosedUpperHalfPlane x
+  have he : e ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 M :=
+    IsManifold.chart_mem_maximalAtlas x
+  refine contDiffWithinAt_id.congr_of_mem (fun w hw ↦ ?_) ?_
+  · obtain ⟨hwt, ⟨y, hy⟩, -⟩ := hw
+    have hw : ClosedUpperHalfPlane.fold w ∈ e.target := by simpa using hwt
+    rw [extChartAt_coe_symm, chartAt_inl, modelWithCornersSelf_coe_symm,
+      Function.comp_apply, id_eq] at hy
+    -- A coordinate of a point of the first copy lies in the closed upper half-plane.
+    have him : 0 ≤ w.im := by
+      have h := congrArg (doubleChart e he) hy
+      rw [doubleChart_inl, (doubleChart e he).right_inv (by simpa using hw)] at h
+      rw [← h]
+      exact (e y).property
+    simp only [Function.comp_apply, extChartAt_coe, extChartAt_coe_symm, chartAt_inl,
+      DoubleAlong.fold_inl, modelWithCornersSelf_coe_symm, fold_doubleChart_symm,
+      closedUpperHalfPlaneModel_apply, id_eq]
+    rw [e.right_inv hw, ClosedUpperHalfPlane.coe_fold_of_im_nonneg him]
+  · refine ⟨mem_extChartAt_target _, ?_⟩
+    rw [mem_preimage, extChartAt_to_inv]
+    exact ⟨mem_range_self x, by simp⟩
 
 end ChartSides
 

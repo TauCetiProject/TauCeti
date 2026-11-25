@@ -30,9 +30,11 @@ part of the theory.
 * `TauCeti.IsPartialIsometry.isStarProjection_star_mul_self`: the initial projection
   `star u * u` of a partial isometry is a star projection; `isStarProjection_mul_star_self` is the
   corresponding statement for the final projection `u * star u`.
-* `TauCeti.isPartialIsometry_iff_isStarProjection_star_mul_self`,
-  `TauCeti.isPartialIsometry_iff_isStarProjection_mul_star_self`: in a non-unital star ring with
-  proper star, `u` is a partial isometry iff `star u * u` (or `u * star u`) is a star projection.
+* `TauCeti.IsPartialIsometry.of_isIdempotentElem_star_mul_self`,
+  `TauCeti.isPartialIsometry_iff_isStarProjection_star_mul_self`: in a ring with a proper star,
+  conversely, `u` is a partial isometry once `star u * u` is idempotent (equivalently, a star
+  projection); `isPartialIsometry_iff_isStarProjection_mul_star_self` is the version for
+  `u * star u`.
 * `TauCeti.IsPartialIsometry.of_star_mul_self_eq_one`, `TauCeti.IsPartialIsometry.of_mem_unitary`,
   `IsStarProjection.isPartialIsometry`: isometries, unitaries and star projections are partial
   isometries.
@@ -121,17 +123,6 @@ theorem isPartialIsometry_iff_isIdempotentElem_star_mul_self :
     IsPartialIsometry u ↔ IsIdempotentElem (star u * u) :=
   ⟨fun h => h.isStarProjection_star_mul_self.isIdempotentElem, .of_isIdempotentElem_star_mul_self⟩
 
-/-- In a ring with proper star, `u` is a partial isometry iff `star u * u` is a star projection. -/
-theorem isPartialIsometry_iff_isStarProjection_star_mul_self :
-    IsPartialIsometry u ↔ IsStarProjection (star u * u) :=
-  ⟨IsPartialIsometry.isStarProjection_star_mul_self,
-    fun h => .of_isIdempotentElem_star_mul_self h.isIdempotentElem⟩
-
-/-- In a ring with proper star, `u` is a partial isometry iff `u * star u` is a star projection. -/
-theorem isPartialIsometry_iff_isStarProjection_mul_star_self :
-    IsPartialIsometry u ↔ IsStarProjection (u * star u) := by
-  rw [← isPartialIsometry_star_iff, isPartialIsometry_iff_isStarProjection_star_mul_self, star_star]
-
 end ProperStar
 
 namespace IsPartialIsometry
@@ -162,6 +153,20 @@ protected theorem IsPartialIsometry.one [MulOneClass R] [StarMul R] :
 protected theorem IsPartialIsometry.zero [MulZeroClass R] [Star R] :
     IsPartialIsometry (0 : R) := by
   rw [isPartialIsometry_iff, mul_zero]
+
+/-- In a ring with a proper star, `w` is a partial isometry if and only if `star w * w` is a
+star projection. -/
+theorem isPartialIsometry_iff_isStarProjection_star_mul_self [NonUnitalRing R] [StarRing R]
+    [IsProperStar R] {w : R} : IsPartialIsometry w ↔ IsStarProjection (star w * w) :=
+  ⟨IsPartialIsometry.isStarProjection_star_mul_self,
+    fun hw ↦ .of_isIdempotentElem_star_mul_self hw.isIdempotentElem⟩
+
+/-- In a ring with a proper star, `w` is a partial isometry if and only if `w * star w` is a
+star projection. -/
+theorem isPartialIsometry_iff_isStarProjection_mul_star_self [NonUnitalRing R] [StarRing R]
+    [IsProperStar R] {w : R} : IsPartialIsometry w ↔ IsStarProjection (w * star w) := by
+  simpa only [isPartialIsometry_star_iff, star_star] using
+    isPartialIsometry_iff_isStarProjection_star_mul_self (w := star w)
 
 end TauCeti
 
