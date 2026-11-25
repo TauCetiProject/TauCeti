@@ -72,6 +72,10 @@ decomposition `K A N`.
   subgroup meets the upper triangular matrices with nonnegative real diagonal only in the identity.
 * `Matrix.GeneralLinearGroup.inf_posUpperTriangularGroup_eq_bot_of_isCompact`: a compact subgroup
   `K` of `GL n ℂ` satisfies `K ⊓ A N = ⊥`.
+* `Matrix.GeneralLinearGroup.inf_range_eq_bot_of_isCompact_of_posUpperTriangular` and
+  `Matrix.GeneralLinearGroup.comap_eq_bot_of_isCompact_of_posUpperTriangular`: a compact subgroup
+  `K` of `GL n ℂ` meets the image of a homomorphism with values in `A N` only in the identity, and
+  its preimage under an injective such homomorphism is trivial.
 * `Matrix.GeneralLinearGroup.maximal_isCompact_iff`: the maximal compact subgroups are exactly the
   conjugates of the unitary subgroup.
 * `Matrix.GeneralLinearGroup.eq_inf_unitarySubgroup_of_isCompact_of_le_of_polarUnitary_mem` and
@@ -217,6 +221,28 @@ theorem inf_posUpperTriangularGroup_eq_bot_of_isCompact {n : Type*} [Fintype n] 
   refine eq_bot_iff.mpr fun g hg ↦ Subgroup.mem_bot.mpr ?_
   obtain ⟨htri, hpos⟩ := TauCeti.PosUpperTriangularGroup.mem_iff.mp hg.2
   exact htri.eq_one_of_mem_isCompact_subgroup_of_diag_nonneg hK hg.1 fun i ↦ (hpos i).le
+
+/-- A compact subgroup `K` of `GL n ℂ` meets the image of a homomorphism with values in the
+positive upper-triangular group `A N` only in the identity. -/
+theorem inf_range_eq_bot_of_isCompact_of_posUpperTriangular {n : Type*} [Fintype n]
+    [LinearOrder n] {C : Type*} [Group C] {K : Subgroup (GL n ℂ)}
+    (hK : IsCompact (K : Set (GL n ℂ))) {f : C →* GL n ℂ}
+    (hf : ∀ c, f c ∈ TauCeti.posUpperTriangularGroup n ℂ) : K ⊓ f.range = ⊥ := by
+  refine eq_bot_iff.mpr ((inf_le_inf_left K ?_).trans
+    (inf_posUpperTriangularGroup_eq_bot_of_isCompact hK).le)
+  rintro _ ⟨c, rfl⟩
+  exact hf c
+
+/-- For an injective homomorphism `f` into `GL n ℂ` with values in the positive upper-triangular
+group `A N`, the preimage of a compact subgroup is trivial. -/
+theorem comap_eq_bot_of_isCompact_of_posUpperTriangular {n : Type*} [Fintype n] [LinearOrder n]
+    {C : Type*} [Group C] {K : Subgroup (GL n ℂ)} (hK : IsCompact (K : Set (GL n ℂ)))
+    {f : C →* GL n ℂ} (hinj : Function.Injective f)
+    (hf : ∀ c, f c ∈ TauCeti.posUpperTriangularGroup n ℂ) : K.comap f = ⊥ := by
+  refine eq_bot_iff.mpr fun c hc ↦ Subgroup.mem_bot.mpr (hinj ?_)
+  have hmem : f c ∈ K ⊓ f.range := ⟨hc, c, rfl⟩
+  rw [inf_range_eq_bot_of_isCompact_of_posUpperTriangular hK hf] at hmem
+  simpa using hmem
 
 
 /-- **The maximal compact subgroups of `GL ι 𝕜` are the conjugates of the unitary subgroup.** Over

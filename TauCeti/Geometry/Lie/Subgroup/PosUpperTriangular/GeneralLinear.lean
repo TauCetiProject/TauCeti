@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Subgroup.PosUpperTriangular.Immersed
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.MaximalCompact
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 import TauCeti.Geometry.Manifold.Immersion.Differential
 
@@ -20,28 +19,24 @@ matrices with positive real diagonal. Corestricting `f` to `AN` presents `C` as 
 immersed Lie subgroup of `AN`, for the closed-subgroup smooth structure of `AN`. The results on
 such subgroups (`TauCeti.Lie.ImmersedLieSubgroupData.lieExp_bijective_of_posUpperTriangular` and
 its companions) then apply to `C` with its own intrinsic topology: the exponential of `C` is a
-global diffeomorphism and `f` is a smooth embedding with closed image. Over `ℂ`, a compact
-subgroup of `GL_n(ℂ)` meets the image of `f` only in the identity.
+global diffeomorphism and `f` is a smooth embedding with closed image.
 
 ## Main definitions
 
-* `TauCeti.Lie.posUpperTriangularCodRestrict`: the corestriction of `f` to `AN`.
 * `TauCeti.Lie.immersedLieSubgroupDataOfPosUpperTriangular`: the presentation of `C` as a
   connected immersed Lie subgroup of `AN`.
-* `TauCeti.Lie.lieExpDiffeomorphOfImmersedPositiveTriangular`: the exponential of `C` as a global
+* `TauCeti.Lie.lieExpDiffeomorphOfImmersedPosUpperTriangular`: the exponential of `C` as a global
   diffeomorphism.
 
 ## Main results
 
-* `TauCeti.Lie.isImmersion_posUpperTriangularCodRestrict`: the corestriction is an immersion.
-* `TauCeti.Lie.lieExp_bijective_of_immersed_positiveTriangular`: the exponential of `C` is
+* `TauCeti.Lie.isImmersion_codRestrict_posUpperTriangularGroup`: the corestriction of `f` to `AN`
+  is an immersion.
+* `TauCeti.Lie.lieExp_bijective_of_immersed_posUpperTriangular`: the exponential of `C` is
   bijective.
-* `TauCeti.Lie.isSmoothEmbedding_of_immersed_positiveTriangular` and
-  `TauCeti.Lie.isClosedEmbedding_of_immersed_positiveTriangular`: `f` is a smooth embedding and a
-  closed embedding.
-* `TauCeti.Lie.inf_range_eq_bot_of_isCompact_of_positiveTriangular` and
-  `TauCeti.Lie.comap_eq_bot_of_isCompact_of_positiveTriangular`: a compact subgroup `K` of
-  `GL_n(ℂ)` meets the image of `f` trivially, and its preimage under an injective `f` is trivial.
+* `TauCeti.Lie.isSmoothEmbedding_of_immersed_posUpperTriangular` and
+  `TauCeti.Lie.isClosedEmbedding_of_immersed_posUpperTriangular`: `f` is a smooth embedding and a
+  closed embedding, so its image is closed.
 
 ## References
 
@@ -70,9 +65,30 @@ attribute [local instance] ImmersedLieSubgroupData.group
   ImmersedLieSubgroupData.modelTopology ImmersedLieSubgroupData.chartedSpace
   ImmersedLieSubgroupData.lieGroup ImmersedLieSubgroupData.connectedSpace
 
-universe u
+section Immersion
+
+variable {ι : Type*} [Fintype ι] [LinearOrder ι] {𝕜 : Type*} [RCLike 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {C : Type*} [Group C] [TopologicalSpace C] [ChartedSpace H C] [IsManifold I ∞ C]
+
+/-- A smooth immersion into `GL ι 𝕜` with values in the positive triangular group `AN` is a
+smooth immersion into `AN`, for the closed-subgroup smooth structure of `AN`. -/
+theorem isImmersion_codRestrict_posUpperTriangularGroup {f : C →* GL ι 𝕜}
+    (himm : IsImmersion I 𝓘(ℝ, Matrix ι ι 𝕜) ∞ f) (hf : ∀ c, f c ∈ posUpperTriangularGroup ι 𝕜) :
+    IsImmersion I 𝓘(ℝ, LieSubalgebra.toSubmodule (lieSubalgebraOfSubgroup
+      (I := 𝓘(ℝ, Matrix ι ι 𝕜)) (posUpperTriangularGroup ι 𝕜))) ∞
+      (f.codRestrict (posUpperTriangularGroup ι 𝕜) hf) := by
+  have he :=
+    (posUpperTriangularEmbeddedLieSubgroupData (ι := ι) (𝕜 := 𝕜)).isSmoothEmbedding_subtypeVal
+  exact (he.contMDiff_iff_comp.2 himm.contMDiff).isImmersion_of_isImmersion_comp (by simp)
+    (fun _ ↦ he.contMDiff.mdifferentiableAt (by simp)) himm
+
+end Immersion
 
 section GeneralLinear
+
+universe u
 
 variable {n : ℕ} {𝕜 : Type u} [RCLike 𝕜]
   {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -84,36 +100,6 @@ local notation "AN" => posUpperTriangularGroup (Fin n) 𝕜
 local notation "Model" => LieSubalgebra.toSubmodule
   (lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Mat)) AN)
 
-/-- The inclusion of the positive triangular group into the general linear group is a smooth
-embedding for its closed-subgroup smooth structure. -/
-theorem isSmoothEmbedding_subtypeVal_posUpperTriangularGroup :
-    IsSmoothEmbedding 𝓘(ℝ, Model) 𝓘(ℝ, Mat) ∞ (fun k : AN ↦ (k : GL (Fin n) 𝕜)) :=
-  (posUpperTriangularEmbeddedLieSubgroupData (ι := Fin n) (𝕜 := 𝕜)).isSmoothEmbedding_subtypeVal
-
-/-- The corestriction to the positive triangular group `AN` of a homomorphism into `GL_n(𝕜)`
-with values in `AN`. -/
-abbrev posUpperTriangularCodRestrict (f : C →* GL (Fin n) 𝕜) (hf : ∀ c, f c ∈ AN) : C →* AN :=
-  f.codRestrict AN hf
-
-/-- A smooth immersion into `GL_n(𝕜)` with values in the positive triangular group `AN` is a
-smooth immersion into `AN`, for the closed-subgroup smooth structure of `AN`. -/
-theorem isImmersion_posUpperTriangularCodRestrict {f : C →* GL (Fin n) 𝕜}
-    (himm : IsImmersion I 𝓘(ℝ, Mat) ∞ f) (hf : ∀ c, f c ∈ AN) :
-    IsImmersion I 𝓘(ℝ, Model) ∞ (posUpperTriangularCodRestrict f hf) := by
-  have he := isSmoothEmbedding_subtypeVal_posUpperTriangularGroup (n := n) (𝕜 := 𝕜)
-  have hsm : ContMDiff I 𝓘(ℝ, Model) ∞ (posUpperTriangularCodRestrict f hf) :=
-    he.contMDiff_iff_comp.2 himm.contMDiff
-  refine hsm.isImmersion_of_injective_mfderiv (by simp) fun x ↦ ?_
-  have hcomp := mfderiv_comp x (he.contMDiff.mdifferentiable (by simp) _)
-    (hsm.mdifferentiable (by simp) x)
-  have hinj : Injective ((mfderiv 𝓘(ℝ, Model) 𝓘(ℝ, Mat) (fun k : AN ↦ (k : GL (Fin n) 𝕜))
-      (posUpperTriangularCodRestrict f hf x)).comp
-      (mfderiv I 𝓘(ℝ, Model) (posUpperTriangularCodRestrict f hf) x)) := by
-    rw [← hcomp]
-    exact (himm.isImmersionAt x).mfderiv_injective (by simp)
-  exact Injective.of_comp (f := ⇑(mfderiv 𝓘(ℝ, Model) 𝓘(ℝ, Mat)
-    (fun k : AN ↦ (k : GL (Fin n) 𝕜)) (posUpperTriangularCodRestrict f hf x))) hinj
-
 variable [FiniteDimensional ℝ E] [T2Space C] [ConnectedSpace C]
 
 /-- A connected real Lie group `C` with an injective smooth immersive homomorphism into `GL_n(𝕜)`
@@ -121,20 +107,20 @@ with values in the positive triangular group `AN` presents a connected immersed 
 of `AN`. -/
 def immersedLieSubgroupDataOfPosUpperTriangular (f : C →* GL (Fin n) 𝕜) (hinj : Injective f)
     (himm : IsImmersion I 𝓘(ℝ, Mat) ∞ f) (hf : ∀ c, f c ∈ AN) :
-    ImmersedLieSubgroupData 𝓘(ℝ, Model) (posUpperTriangularCodRestrict f hf).range where
+    ImmersedLieSubgroupData 𝓘(ℝ, Model) (f.codRestrict AN hf).range where
   X := C
   E' := E
   H' := H
   I' := I
-  toHom := posUpperTriangularCodRestrict f hf
+  toHom := f.codRestrict AN hf
   injective _ _ hab := hinj (congrArg Subtype.val hab)
   range_eq := rfl
-  isImmersion := isImmersion_posUpperTriangularCodRestrict himm hf
+  isImmersion := isImmersion_codRestrict_posUpperTriangularGroup himm hf
 
 /-- **Exponential coordinates on Lie groups immersed in the positive triangular group.** If a
 connected real Lie group `C` has an injective smooth immersive homomorphism into `GL_n(𝕜)` with
 values in the positive triangular group, then the exponential of `C` is bijective. -/
-theorem lieExp_bijective_of_immersed_positiveTriangular {f : C →* GL (Fin n) 𝕜}
+theorem lieExp_bijective_of_immersed_posUpperTriangular {f : C →* GL (Fin n) 𝕜}
     (hinj : Injective f) (himm : IsImmersion I 𝓘(ℝ, Mat) ∞ f) (hf : ∀ c, f c ∈ AN) :
     Bijective (lieExp : LeftInvariantDerivation I C → C) :=
   (immersedLieSubgroupDataOfPosUpperTriangular f hinj himm
@@ -142,7 +128,7 @@ theorem lieExp_bijective_of_immersed_positiveTriangular {f : C →* GL (Fin n) �
 
 /-- The exponential of a connected real Lie group immersed in `GL_n(𝕜)` through the positive
 triangular group, as a global diffeomorphism. -/
-def lieExpDiffeomorphOfImmersedPositiveTriangular {f : C →* GL (Fin n) 𝕜}
+def lieExpDiffeomorphOfImmersedPosUpperTriangular {f : C →* GL (Fin n) 𝕜}
     (hinj : Injective f) (himm : IsImmersion I 𝓘(ℝ, Mat) ∞ f) (hf : ∀ c, f c ∈ AN) :
     Diffeomorph 𝓘(ℝ, LeftInvariantDerivation I C) I (LeftInvariantDerivation I C) C ∞ :=
   (immersedLieSubgroupDataOfPosUpperTriangular f hinj himm
@@ -151,10 +137,10 @@ def lieExpDiffeomorphOfImmersedPositiveTriangular {f : C →* GL (Fin n) 𝕜}
 /-- The exponential diffeomorphism of a connected Lie group immersed in `GL_n(𝕜)` through the
 positive triangular group is its Lie exponential. -/
 @[simp]
-theorem lieExpDiffeomorphOfImmersedPositiveTriangular_apply {f : C →* GL (Fin n) 𝕜}
+theorem lieExpDiffeomorphOfImmersedPosUpperTriangular_apply {f : C →* GL (Fin n) 𝕜}
     (hinj : Injective f) (himm : IsImmersion I 𝓘(ℝ, Mat) ∞ f) (hf : ∀ c, f c ∈ AN)
     (X : LeftInvariantDerivation I C) :
-    lieExpDiffeomorphOfImmersedPositiveTriangular hinj himm hf X = lieExp X :=
+    lieExpDiffeomorphOfImmersedPosUpperTriangular hinj himm hf X = lieExp X :=
   (immersedLieSubgroupDataOfPosUpperTriangular f hinj himm
     hf).posUpperTriangularLieExpDiffeomorph_apply X
 
@@ -162,7 +148,7 @@ omit [T2Space C] in
 /-- An injective smooth immersive homomorphism from a connected real Lie group into `GL_n(𝕜)`
 with values in the positive triangular group is a closed embedding for the intrinsic topology
 of its source. -/
-theorem isClosedEmbedding_of_immersed_positiveTriangular {f : C →* GL (Fin n) 𝕜}
+theorem isClosedEmbedding_of_immersed_posUpperTriangular {f : C →* GL (Fin n) 𝕜}
     (hinj : Injective f) (himm : IsImmersion I 𝓘(ℝ, Mat) ∞ f) (hf : ∀ c, f c ∈ AN) :
     Topology.IsClosedEmbedding f :=
   (isClosed_posUpperTriangularGroup (Fin n) 𝕜).isClosedEmbedding_subtypeVal.comp
@@ -172,45 +158,11 @@ theorem isClosedEmbedding_of_immersed_positiveTriangular {f : C →* GL (Fin n) 
 omit [T2Space C] in
 /-- An injective smooth immersive homomorphism from a connected real Lie group into `GL_n(𝕜)`
 with values in the positive triangular group is a smooth embedding. -/
-theorem isSmoothEmbedding_of_immersed_positiveTriangular {f : C →* GL (Fin n) 𝕜}
+theorem isSmoothEmbedding_of_immersed_posUpperTriangular {f : C →* GL (Fin n) 𝕜}
     (hinj : Injective f) (himm : IsImmersion I 𝓘(ℝ, Mat) ∞ f) (hf : ∀ c, f c ∈ AN) :
     IsSmoothEmbedding I 𝓘(ℝ, Mat) ∞ f :=
-  ⟨himm, (isClosedEmbedding_of_immersed_positiveTriangular hinj himm hf).isEmbedding⟩
-
-omit [T2Space C] in
-/-- The image of an injective smooth immersive homomorphism from a connected real Lie group into
-`GL_n(𝕜)` with values in the positive triangular group is closed. -/
-theorem isClosed_range_of_immersed_positiveTriangular {f : C →* GL (Fin n) 𝕜}
-    (hinj : Injective f) (himm : IsImmersion I 𝓘(ℝ, Mat) ∞ f) (hf : ∀ c, f c ∈ AN) :
-    IsClosed (range f) :=
-  (isClosedEmbedding_of_immersed_positiveTriangular hinj himm hf).isClosed_range
+  ⟨himm, (isClosedEmbedding_of_immersed_posUpperTriangular hinj himm hf).isEmbedding⟩
 
 end GeneralLinear
-
-section Compact
-
-variable {n : ℕ} {C : Type*} [Group C]
-
-/-- A compact subgroup `K` of `GL_n(ℂ)` meets the image of a homomorphism with values in the
-positive triangular group only in the identity. -/
-theorem inf_range_eq_bot_of_isCompact_of_positiveTriangular {K : Subgroup (GL (Fin n) ℂ)}
-    (hK : IsCompact (K : Set (GL (Fin n) ℂ))) {f : C →* GL (Fin n) ℂ}
-    (hf : ∀ c, f c ∈ posUpperTriangularGroup (Fin n) ℂ) : K ⊓ f.range = ⊥ := by
-  refine eq_bot_iff.mpr ((inf_le_inf_left K ?_).trans
-    (Matrix.GeneralLinearGroup.inf_posUpperTriangularGroup_eq_bot_of_isCompact hK).le)
-  rintro _ ⟨c, rfl⟩
-  exact hf c
-
-/-- For an injective homomorphism `f` into `GL_n(ℂ)` with values in the positive triangular
-group, the preimage of a compact subgroup is trivial. -/
-theorem comap_eq_bot_of_isCompact_of_positiveTriangular {K : Subgroup (GL (Fin n) ℂ)}
-    (hK : IsCompact (K : Set (GL (Fin n) ℂ))) {f : C →* GL (Fin n) ℂ} (hinj : Injective f)
-    (hf : ∀ c, f c ∈ posUpperTriangularGroup (Fin n) ℂ) : K.comap f = ⊥ := by
-  refine eq_bot_iff.mpr fun c hc ↦ Subgroup.mem_bot.mpr (hinj ?_)
-  have hmem : f c ∈ K ⊓ f.range := ⟨hc, c, rfl⟩
-  rw [inf_range_eq_bot_of_isCompact_of_positiveTriangular hK hf] at hmem
-  simpa using hmem
-
-end Compact
 
 end TauCeti.Lie
