@@ -126,6 +126,18 @@ section WeightedLogSpot
 
 variable {α : ℝ≥0} {t₀ t₁ : ℝ} {ht : t₀ < t₁}
 
+private theorem weightedLogSpotPrice_growth_hypotheses (u : ParabolicC2HolderSpace α ℝ ℝ ht) :
+    ContinuousOn (Function.uncurry (weightedLogSpotPrice u)) (Ioi 0 ×ˢ Ico t₀ t₁) ∧
+      ContinuousOn (fun q : ℝ × ℝ ↦ deriv (fun s ↦ weightedLogSpotPrice u s q.2) q.1)
+        (Ioi 0 ×ˢ Ico t₀ t₁) ∧
+      ∀ s > 0, ∀ t ∈ Ico t₀ t₁,
+        |weightedLogSpotPrice u s t| + |s * deriv (fun x ↦ weightedLogSpotPrice u x t) s| ≤
+          (2 * ‖u‖) * (1 + s ^ (1 : ℝ)) :=
+  ⟨(continuousOn_weightedLogSpotPrice u).mono (prod_mono_right (subset_univ _)),
+    (continuousOn_deriv_weightedLogSpotPrice_spot u).mono (prod_mono_right (subset_univ _)),
+    fun _ hs t _ ↦ by
+      simpa only [rpow_one] using abs_weightedLogSpotPrice_add_abs_mul_deriv_le u hs.le t⟩
+
 /-- Along any positive continuous stock trajectory on `[t₀, t₁]`, both `weightedLogSpotPrice u`
 and its dollar delta exposure belong to every `L^q` on `[t₀, t₁)` (including `q = ∞`). -/
 theorem memLp_price_path_and_delta_exposure_weightedLogSpotPrice
@@ -133,13 +145,9 @@ theorem memLp_price_path_and_delta_exposure_weightedLogSpotPrice
     (hS : ContinuousOn S (Icc t₀ t₁)) (hpos : ∀ t ∈ Icc t₀ t₁, 0 < S t) (q : ℝ≥0∞) :
     MemLp (fun t ↦ weightedLogSpotPrice u (S t) t) q (volume.restrict (Ico t₀ t₁)) ∧
       MemLp (fun t ↦ S t * deriv (fun s ↦ weightedLogSpotPrice u s t) (S t)) q
-        (volume.restrict (Ico t₀ t₁)) :=
-  memLp_price_path_and_delta_exposure_of_growth (A := 2 * ‖u‖) (p := 1)
-    ((continuousOn_weightedLogSpotPrice u).mono (prod_mono_right (subset_univ _)))
-    ((continuousOn_deriv_weightedLogSpotPrice_spot u).mono (prod_mono_right (subset_univ _)))
-    (fun s hs t _ ↦ by
-      simpa only [rpow_one] using abs_weightedLogSpotPrice_add_abs_mul_deriv_le u hs.le t)
-    hS hpos q
+        (volume.restrict (Ico t₀ t₁)) := by
+  have ⟨hC, hCs, hgrowth⟩ := weightedLogSpotPrice_growth_hypotheses u
+  exact memLp_price_path_and_delta_exposure_of_growth hC hCs hgrowth hS hpos q
 
 /-- Pathwise time-integrability of the stock drift, stock diffusion, and bond gains of the delta
 hedge built from any `u : ParabolicC2HolderSpace α ℝ ℝ ht`. -/
@@ -155,13 +163,9 @@ theorem integrable_delta_hedge_gains_weightedLogSpotPrice
         (volume.restrict (Ico t₀ t₁)) ∧
       IntegrableOn (fun t ↦ r t * β t *
         BlackScholes.hedgeBondHolding (fun s ↦ weightedLogSpotPrice u s t) (S t) (β t))
-        (Ico t₀ t₁) :=
-  integrable_delta_hedge_gains_of_growth (A := 2 * ‖u‖) (p := 1)
-    ((continuousOn_weightedLogSpotPrice u).mono (prod_mono_right (subset_univ _)))
-    ((continuousOn_deriv_weightedLogSpotPrice_spot u).mono (prod_mono_right (subset_univ _)))
-    (fun s hs t _ ↦ by
-      simpa only [rpow_one] using abs_weightedLogSpotPrice_add_abs_mul_deriv_le u hs.le t)
-    hS hpos hμ hσ hr hβ
+        (Ico t₀ t₁) := by
+  have ⟨hC, hCs, hgrowth⟩ := weightedLogSpotPrice_growth_hypotheses u
+  exact integrable_delta_hedge_gains_of_growth hC hCs hgrowth hS hpos hμ hσ hr hβ
 
 end WeightedLogSpot
 

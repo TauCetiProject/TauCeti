@@ -106,14 +106,13 @@ variable {hα₀ : 0 < α} {hα₁ : α < 1} {a r : HolderSpace α (slab (E := �
       (weightedLogSpotPricingOperatorL hα₁.le a r u,
         u.spatialTrace ⟨t₁, right_mem_Icc.2 ht.le⟩) := by
   rw [weightedLogSpotTerminalDataCLE, realTerminalDataCLE_apply,
-    weightedLogSpotSecondOrderCoeff_def, ← weightedLogSpotPricingOperatorL_def]
+    ← weightedLogSpotPricingOperatorL_def]
 
 @[simp] theorem weightedLogSpotPricingOperatorL_weightedLogSpotTerminalDataCLE_symm_apply
     (d : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ × CkHolderSpace 2 α ℝ ℝ) :
     weightedLogSpotPricingOperatorL hα₁.le a r
       ((weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a r ha).symm d) = d.1 := by
   rw [weightedLogSpotTerminalDataCLE, weightedLogSpotPricingOperatorL_def,
-    ← weightedLogSpotSecondOrderCoeff_def,
     backwardParabolicOperatorL_realTerminalDataCLE_symm_apply]
 
 @[simp] theorem spatialTrace_weightedLogSpotTerminalDataCLE_symm_apply

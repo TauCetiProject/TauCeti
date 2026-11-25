@@ -289,14 +289,20 @@ private theorem weightedLogSpotPrice_eq_projIcc (u : ParabolicC2HolderSpace α �
   ext x
   rw [weightedLogSpotPrice_def, timeExtension_def, weightedLogSpotPrice_of_mem]
 
+private theorem continuousOn_spatialFDerivL_log_slabMk_univ
+    (u : ParabolicC2HolderSpace α ℝ ℝ hab) :
+    ContinuousOn
+      (fun p : ℝ × ℝ ↦ spatialFDerivL u (slabMk (log p.1) (projIcc a b hab.le p.2)) 1)
+      (Ioi 0 ×ˢ (univ : Set ℝ)) :=
+  ((spatialFDerivL u).continuous.clm_apply continuous_const).comp_continuousOn
+    (continuousOn_log_slabMk_univ hab)
+
 /-- The spot derivative of the reconstructed price is jointly continuous at positive spot,
 for all times (including the slab endpoints). -/
 theorem continuousOn_deriv_weightedLogSpotPrice_spot (u : ParabolicC2HolderSpace α ℝ ℝ hab) :
     ContinuousOn (fun p : ℝ × ℝ ↦ deriv (fun x ↦ weightedLogSpotPrice u x p.2) p.1)
       (Ioi 0 ×ˢ (univ : Set ℝ)) := by
   have hu : Continuous fun q ↦ u q := (valueL u).continuous
-  have hux : Continuous fun q ↦ spatialFDerivL u q 1 :=
-    (ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)).continuous.comp (spatialFDerivL u).continuous
   have hc : ContinuousOn (fun p : ℝ × ℝ ↦
       u (slabMk (log p.1) (projIcc a b hab.le p.2)) +
         (1 + p.1) / p.1 * spatialFDerivL u (slabMk (log p.1) (projIcc a b hab.le p.2)) 1)
@@ -304,7 +310,7 @@ theorem continuousOn_deriv_weightedLogSpotPrice_spot (u : ParabolicC2HolderSpace
     (hu.comp_continuousOn (continuousOn_log_slabMk_univ hab)).add
       (((continuousOn_const.add continuousOn_fst).div continuousOn_fst
         fun _ hp ↦ ne_of_gt (mem_prod.1 hp).1).mul
-        (hux.comp_continuousOn (continuousOn_log_slabMk_univ hab)))
+        (continuousOn_spatialFDerivL_log_slabMk_univ u))
   refine hc.congr ?_
   rintro ⟨s, t⟩ ⟨hs, -⟩
   dsimp only
@@ -316,8 +322,6 @@ theorem continuousOn_deriv_deriv_weightedLogSpotPrice_spot
     (u : ParabolicC2HolderSpace α ℝ ℝ hab) :
     ContinuousOn (fun p : ℝ × ℝ ↦ deriv (deriv fun x ↦ weightedLogSpotPrice u x p.2) p.1)
       (Ioi 0 ×ˢ (univ : Set ℝ)) := by
-  have hux : Continuous fun q ↦ spatialFDerivL u q 1 :=
-    (ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)).continuous.comp (spatialFDerivL u).continuous
   have huxx : Continuous fun q ↦ spatialSecondFDerivL u q 1 1 :=
     (((ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)).comp
       (ContinuousLinearMap.apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ))).continuous).comp
@@ -327,7 +331,7 @@ theorem continuousOn_deriv_deriv_weightedLogSpotPrice_spot
         (1 + p.1) * spatialSecondFDerivL u (slabMk (log p.1) (projIcc a b hab.le p.2)) 1 1) /
       p.1 ^ 2) (Ioi 0 ×ˢ (univ : Set ℝ)) :=
     (((continuousOn_fst.sub continuousOn_const).mul
-        (hux.comp_continuousOn (continuousOn_log_slabMk_univ hab))).add
+        (continuousOn_spatialFDerivL_log_slabMk_univ u)).add
       ((continuousOn_const.add continuousOn_fst).mul
         (huxx.comp_continuousOn (continuousOn_log_slabMk_univ hab)))).div
       (continuousOn_fst.pow 2) fun _ hp ↦ pow_ne_zero 2 (ne_of_gt (mem_prod.1 hp).1)

@@ -494,13 +494,19 @@ theorem norm_compSlabTimeL_le_one :
     ‖compSlabTimeL (α := α) (E := E) (Y := Y) (a := a) (b := b)‖ ≤ 1 :=
   LinearMap.mkContinuous_norm_le _ zero_le_one _
 
+/-- The Hölder-space norm of a spatially constant field on a slab is at most that of the temporal
+field on `[a, b]`. -/
+theorem norm_compSlabTimeL_apply_le (f : HolderSpace (α / 2) (Icc a b) Y) :
+    ‖compSlabTimeL (E := E) f‖ ≤ ‖f‖ :=
+  (compSlabTimeL.le_of_opNorm_le norm_compSlabTimeL_le_one f).trans_eq (one_mul _)
+
 /-- On a nonempty spatial domain, lifting a temporal `α / 2`-Hölder function to a slab preserves
 its norm. -/
 @[simp] theorem norm_compSlabTimeL_apply [Nonempty E] (f : HolderSpace (α / 2) (Icc a b) Y) :
     ‖compSlabTimeL (E := E) f‖ = ‖f‖ := by
   obtain ⟨x⟩ := ‹Nonempty E›
-  exact le_antisymm ((compSlabTimeL.le_of_opNorm_le norm_compSlabTimeL_le_one f).trans_eq
-    (one_mul _)) (norm_le_norm_of_apply_comp (ι := slabMk x) (fun _ ↦ by simp)
+  exact le_antisymm (norm_compSlabTimeL_apply_le f)
+    (norm_le_norm_of_apply_comp (ι := slabMk x) (fun _ ↦ by simp)
       fun t s ↦ (edist_slabMk_same_space_rpow x t s α).le)
 
 /-- Lift an `(α / 2)`-Hölder map `f : ℝ → Y` on `[a, b]` (`0 < α`) to a spatially constant bounded
@@ -518,7 +524,7 @@ spatially constant lift `ofHolderTime` has parabolic `α`-Hölder norm at most `
 theorem norm_ofHolderTime_le (hα : 0 < α) {M H : ℝ≥0} {f : ℝ → Y}
     (hM : ∀ t ∈ Icc a b, ‖f t‖ ≤ M) (hH : HolderOnWith H (α / 2) f (Icc a b)) :
     ‖ofHolderTime (E := E) hα hH‖ ≤ (M : ℝ) + H :=
-  ((compSlabTimeL.le_of_opNorm_le norm_compSlabTimeL_le_one _).trans_eq (one_mul _)).trans
+  (norm_compSlabTimeL_apply_le _).trans
     (norm_ofHolderOnWith_le (half_pos hα) isCompact_Icc M.coe_nonneg hM hH)
 
 /-- Assemble a bounded parabolically `α`-Hölder field on `E × [a, b]` (with `0 < α`) from a map

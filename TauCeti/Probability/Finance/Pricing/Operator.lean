@@ -166,12 +166,11 @@ def weightedLogSpotPricingOperatorL :
   backwardParabolicOperatorL (F := ℝ) hα (weightedLogSpotSecondOrderCoeff a)
     (weightedLogSpotFirstOrderCoeff hα a r) (weightedLogSpotZerothOrderCoeff hα r)
 
-/-- The weighted operator is the backward operator with the second-order coefficient `a`
-and the weighted first- and zeroth-order coefficients. -/
+/-- The weighted operator is the backward operator with the weighted second-, first-, and
+zeroth-order coefficients. -/
 theorem weightedLogSpotPricingOperatorL_def :
     weightedLogSpotPricingOperatorL (ht := ht) hα a r =
-      backwardParabolicOperatorL (F := ℝ) hα
-        ((lsmul ℝ ℝ).compHolder₂ a (HolderSpace.const ((apply ℝ ℝ 1).comp (apply ℝ _ 1))))
+      backwardParabolicOperatorL (F := ℝ) hα (weightedLogSpotSecondOrderCoeff a)
         (weightedLogSpotFirstOrderCoeff hα a r) (weightedLogSpotZerothOrderCoeff hα r) :=
   (rfl)
 
@@ -214,9 +213,7 @@ theorem norm_weightedLogSpotFirstOrderCoeff_le :
 theorem norm_weightedLogSpotZerothOrderCoeff_le :
     ‖weightedLogSpotZerothOrderCoeff hα r‖ ≤ 3 * ‖r‖ := by
   have hsig : ‖HolderSpace.compSlabSpaceL (a := t₀) (b := t₁) (logOneAddExpGrad hα)‖ ≤ 2 :=
-    ((HolderSpace.compSlabSpaceL (a := t₀) (b := t₁)).le_of_opNorm_le
-      HolderSpace.norm_compSlabSpaceL_le_one _).trans
-      ((one_mul _).trans_le (norm_logOneAddExpGrad_le hα))
+    (HolderSpace.norm_compSlabSpaceL_apply_le _).trans (norm_logOneAddExpGrad_le hα)
   have hsub : ‖HolderSpace.const (ContinuousLinearMap.id ℝ ℝ) -
       HolderSpace.compSlabSpaceL (a := t₀) (b := t₁) (logOneAddExpGrad hα)‖ ≤ 3 :=
     (norm_sub_le _ _).trans <| by linarith [(HolderSpace.norm_const_le (α := α)
@@ -239,8 +236,7 @@ theorem one_add_exp_mul_weightedLogSpotPricingOperatorL
             fderiv ℝ (fun y ↦ (1 + exp y) * v (slabMk y t)) x 1 -
           r (slabMk x t) * ((1 + exp x) * v (slabMk x t))) := by
   have h := one_add_exp_smul_parabolicOperatorL_weightCoeff hα
-    (A := (lsmul ℝ ℝ).compHolder₂ a
-      (HolderSpace.const ((apply ℝ ℝ 1).comp (apply ℝ _ 1))))
+    (A := weightedLogSpotSecondOrderCoeff a)
     (B := (lsmul ℝ ℝ).compHolder₂ (r - a) (HolderSpace.const (apply ℝ ℝ 1)))
     (C := (lsmul ℝ ℝ).compHolder₂ (-r)
       (HolderSpace.const (ContinuousLinearMap.id ℝ ℝ))) v
