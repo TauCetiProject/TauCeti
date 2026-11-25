@@ -77,7 +77,9 @@ theorem mem_characterAnnihilator_iff_valuation_le (h0 : {x | ψ x = 1} ∈ 𝓝 
   refine ⟨fun h x hx ↦ ?_, fun h x hx ↦ ?_⟩
   · -- `B (L, y)` is stable under `𝒪[K]`, so `ψ` is trivial on `𝒪[K] • B x y`.
     have key := (ψ.forall_mul_eq_one_iff_valuation_le h0 h1 0 (B x y)).1 fun r hr ↦ by
-      have hrx : B ((⟨r, hr⟩ : 𝒪[K]) • x) y = r * B x y := by
+      -- `uniformizer K ^ (0 : ℤ) = 1`, so `r` is integral.
+      have hr' : r ∈ 𝒪[K] := (Valuation.mem_integer_iff _ _).2 (by simpa using hr)
+      have hrx : B ((⟨r, hr'⟩ : 𝒪[K]) • x) y = r * B x y := by
         simp [← algebraMap_smul K, Algebra.algebraMap_ofSubring]
       exact hrx ▸ h _ (L.smul_mem _ hx)
     simpa using key
@@ -91,6 +93,14 @@ variable {B : LinearMap.BilinForm K V} {c : K}
 private theorem ne_zero_of_valuation_eq {n : ℤ} (hc : valuation K c = uniformizer K ^ n) :
     c ≠ 0 :=
   (valuation K).ne_zero_iff.1 <| hc ▸ zpow_ne_zero _ uniformizer_ne_zero
+
+omit [Module 𝒪[K] V] [IsScalarTower 𝒪[K] K V] in
+/-- Rescaling a nondegenerate form by `c⁻¹`, for `c` of valuation a power of the uniformizer, keeps
+it nondegenerate. -/
+private theorem nondegenerate_inv_smul {n : ℤ} (hc : valuation K c = uniformizer K ^ n)
+    (hB : B.Nondegenerate) : (c⁻¹ • B).Nondegenerate :=
+  (TauCeti.BilinForm.nondegenerate_smul_iff
+    (IsRegular.of_ne_zero (inv_ne_zero (ne_zero_of_valuation_eq hc)))).2 hB
 
 /-- For `c ∈ K` of valuation `uniformizer K ^ (-ν(ψ))`, the annihilator of an `𝒪[K]`-submodule
 `L` under `ψ (B x y)` is the dual submodule `{y | c⁻¹ * B (x, y) ∈ 𝒪[K] for all x ∈ L}` of `L`
@@ -121,13 +131,12 @@ theorem characterAnnihilator_span_of_basis {ι : Type*} [Finite ι] [DecidableEq
     (e : Basis ι K V) :
     (span 𝒪[K] (Set.range e)).characterAnnihilator ψ B =
       span 𝒪[K] (Set.range fun i ↦ c • B.flip.dualBasis hB.flip e i) := by
-  have hc0 : c⁻¹ ≠ 0 := inv_ne_zero (ne_zero_of_valuation_eq hc)
   rw [characterAnnihilator_eq_dualSubmodule h0 h1 hc,
-    LinearMap.BilinForm.dualSubmodule_span_of_basis _
-      ((TauCeti.BilinForm.nondegenerate_smul_iff (IsRegular.of_ne_zero hc0)).2 hB.flip)]
+    LinearMap.BilinForm.dualSubmodule_span_of_basis _ (nondegenerate_inv_smul hc hB.flip)]
   congr 2
   funext i
-  rw [Basis.dualBasis_smul_apply _ _ hB.flip _ hc0, inv_inv]
+  rw [Basis.dualBasis_smul_apply _ _ hB.flip _ (inv_ne_zero (ne_zero_of_valuation_eq hc)),
+    inv_inv]
 
 /-- The annihilator of an `𝒪[K]`-lattice `L` under `ψ (B x y)`, for a nondegenerate `B` and a
 nontrivial `ψ` trivial on a neighbourhood of `0`, is again an `𝒪[K]`-lattice. -/
@@ -135,11 +144,9 @@ theorem isFullLattice_characterAnnihilator (h0 : {x | ψ x = 1} ∈ 𝓝 (0 : K)
     (hB : B.Nondegenerate) (L : Submodule 𝒪[K] V) [L.IsFullLattice K] :
     (L.characterAnnihilator ψ B).IsFullLattice K := by
   obtain ⟨c, hc⟩ := valuation_surjective (uniformizer K ^ (-ψ.conductorExponent))
-  have hc0 : c⁻¹ ≠ 0 := inv_ne_zero (ne_zero_of_valuation_eq hc)
   have := IsLattice.free K L
   rw [characterAnnihilator_eq_dualSubmodule h0 h1 hc]
-  exact (c⁻¹ • B.flip).isFullLattice_dualSubmodule
-    ((TauCeti.BilinForm.nondegenerate_smul_iff (IsRegular.of_ne_zero hc0)).2 hB.flip) L
+  exact (c⁻¹ • B.flip).isFullLattice_dualSubmodule (nondegenerate_inv_smul hc hB.flip) L
 
 /-- **Double duality.** The annihilator of the dual lattice `L^∨ = L.characterAnnihilator ψ B` of
 an `𝒪[K]`-lattice `L` in the first variable, that is for the transposed pairing `B.flip`, is `L`,
@@ -148,12 +155,10 @@ theorem characterAnnihilator_characterAnnihilator_flip (h0 : {x | ψ x = 1} ∈ 
     (h1 : ψ ≠ 1) (hB : B.Nondegenerate) (L : Submodule 𝒪[K] V) [L.IsFullLattice K] :
     (L.characterAnnihilator ψ B).characterAnnihilator ψ B.flip = L := by
   obtain ⟨c, hc⟩ := valuation_surjective (uniformizer K ^ (-ψ.conductorExponent))
-  have hc0 : c⁻¹ ≠ 0 := inv_ne_zero (ne_zero_of_valuation_eq hc)
   have := IsLattice.free K L
   have hflip : B.flip.flip = B := LinearMap.ext₂ fun _ _ ↦ rfl
   rw [characterAnnihilator_eq_dualSubmodule h0 h1 hc,
     characterAnnihilator_eq_dualSubmodule h0 h1 hc, hflip, ← map_smul]
-  exact (c⁻¹ • B).dualSubmodule_dualSubmodule_flip
-    ((TauCeti.BilinForm.nondegenerate_smul_iff (IsRegular.of_ne_zero hc0)).2 hB) L
+  exact (c⁻¹ • B).dualSubmodule_dualSubmodule_flip (nondegenerate_inv_smul hc hB) L
 
 end Submodule
