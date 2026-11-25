@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.FlatBoundary
 public import TauCeti.Analysis.PDE.Regularity.HalfSpace
+import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.InnerProductSpace.HyperplaneReflection
 import TauCeti.Analysis.PDE.Regularity.HigherOrder
 import TauCeti.Analysis.PDE.Regularity.Hessian.DivergenceForm
@@ -448,22 +449,16 @@ private theorem preciseRepresentative_eq_of_ae_eq_of_holderOnWith {α : ℝ≥0}
   -- Every closed ball around `x` contains the ball of half its radius whose centre is moved from
   -- `x` into `H` along `ν`.
   have hpos (ε : ℝ) (hε : 0 < ε) : volume.restrict (H : Set E) (closedBall x ε) ≠ 0 := by
-    have hνn : 0 < ‖ν‖ := norm_pos_iff.2 hν
     set z : E := x + (ε / 2 / ‖ν‖) • ν
     have hzx : ‖z - x‖ = ε / 2 := by
       rw [add_sub_cancel_left, norm_smul, Real.norm_of_nonneg (by positivity),
-        div_mul_cancel₀ _ hνn.ne']
-    have hzν : ⟪z, ν⟫_ℝ = ⟪x, ν⟫_ℝ + ε / 2 * ‖ν‖ := by
-      rw [inner_add_left, real_inner_smul_left, real_inner_self_eq_norm_sq]
-      field_simp
+        div_mul_cancel₀ _ (norm_ne_zero_iff.2 hν)]
     have hsub : ball z (ε / 2) ⊆ closedBall x ε ∩ H := fun y hy => by
+      refine ⟨mem_closedBall.2 ?_, (hH y).2
+        (TauCeti.ball_add_smul_subset_setOf_lt_inner hν hx.2.out hy).out⟩
       rw [mem_ball, dist_eq_norm] at hy
-      refine ⟨mem_closedBall.2 ?_, (hH y).2 ?_⟩
-      · rw [dist_eq_norm, ← sub_add_sub_cancel y z x]
-        linarith [norm_add_le (y - z) (z - x)]
-      · have h := abs_real_inner_le_norm (y - z) ν
-        rw [inner_sub_left, hzν] at h
-        nlinarith [abs_le.1 h, hx.2.out]
+      rw [dist_eq_norm, ← sub_add_sub_cancel y z x]
+      linarith [norm_add_le (y - z) (z - x)]
     rw [Measure.restrict_apply' H.isOpen.measurableSet]
     exact ((measure_ball_pos volume z (half_pos hε)).trans_le (measure_mono hsub)).ne'
   refine (preciseRepresentative_eq_of_continuousAt_of_measure_closedBall_ne_zero hpos
@@ -473,7 +468,36 @@ private theorem preciseRepresentative_eq_of_ae_eq_of_holderOnWith {α : ℝ≥0}
     filter_upwards [hFG, ae_restrict_mem (isOpen_ball.measurableSet.inter H.isOpen.measurableSet)]
       with y hy hyB
     simp only [Function.comp_apply, ((hH y).1 hyB.2).le, ↓reduceIte, hy]
-  · simp only [Function.comp_apply, show c₀ ≤ ⟪x, ν⟫_ℝ from hx.2, ↓reduceIte]
+  · simp only [Function.comp_apply, hx.2.out, ↓reduceIte]
+
+/-- For a unit vector `e`, every `z` is `⟪e, z⟫ e` plus its projection onto `(ℝ ∙ e)ᗮ`. -/
+private theorem inner_smul_add_starProjection_eq {e : E} (he : ‖e‖ = 1) (z : E) :
+    ⟪e, z⟫_ℝ • e + (ℝ ∙ e)ᗮ.starProjection z = z := by
+  rw [← Submodule.starProjection_unit_singleton ℝ he,
+    Submodule.starProjection_add_starProjection_orthogonal]
+
+/-- For `ν ≠ 0`, the projection onto the orthogonal complement of the unit normal `ν / ‖ν‖` is
+tangential: orthogonal to `ν`. -/
+private theorem inner_starProjection_orthogonal_eq_zero {ν : E} (hν : ν ≠ 0) (z : E) :
+    ⟪(ℝ ∙ (‖ν‖⁻¹ • ν))ᗮ.starProjection z, ν⟫_ℝ = 0 := by
+  have h : ⟪(ℝ ∙ (‖ν‖⁻¹ • ν))ᗮ.starProjection z, ‖ν‖⁻¹ • ν⟫_ℝ = 0 :=
+    Submodule.mem_orthogonal_singleton_iff_inner_left.1 (Submodule.starProjection_apply_mem _ z)
+  rw [real_inner_smul_right, mul_eq_zero] at h
+  exact h.resolve_left (inv_ne_zero (norm_ne_zero_iff.2 hν))
+
+/-- For a unit vector `e`, weak derivatives `d` of `u` along `e` and `dτ` along the projection of
+`z` onto `(ℝ ∙ e)ᗮ` combine into the weak derivative `⟪e, z⟫ d + dτ` of `u` along `z`. -/
+private theorem hasWeakLineDerivOn_smul_add_of_normal_tangential {H : Opens E} {e : E}
+    (he : ‖e‖ = 1) {u d dτ : W1p volume H 2}
+    (hd : HasWeakLineDerivOn volume H (W1p.value u) (W1p.value d) e) {z : E}
+    (hdτ : HasWeakLineDerivOn volume H (W1p.value u) (W1p.value dτ)
+      ((ℝ ∙ e)ᗮ.starProjection z)) :
+    HasWeakLineDerivOn volume H (W1p.value u) (W1p.value (⟪e, z⟫_ℝ • d + dτ)) z := by
+  have h := (hd.smul_direction ⟪e, z⟫_ℝ).add_direction hdτ
+  rw [inner_smul_add_starProjection_eq he] at h
+  refine h.congr_ae_deriv ?_
+  filter_upwards [W1p.value_add_ae (⟪e, z⟫_ℝ • d) dτ, W1p.value_smul_ae ⟪e, z⟫_ℝ d] with x h1 h2
+  simp only [h1, h2, Pi.add_apply]
 
 /-- **Solving the equation for the normal second derivative, pointwise.** Let `e` be a unit vector,
 `P` the orthogonal projection onto `(ℝ ∙ e)ᗮ` and `(bᵢ)` the standard basis. Suppose that the
@@ -496,9 +520,7 @@ private theorem eq_smul_add_sum_of_sum_sum_eq_neg {e : E} (he : ‖e‖ = 1)
       ∑ k, ⟪t k, e⟫_ℝ • EuclideanSpace.basisFun (Fin (n + 1)) ℝ k := by
   set b := EuclideanSpace.basisFun (Fin (n + 1)) ℝ
   set P := (ℝ ∙ e)ᗮ.starProjection
-  have hdec (z : E) : ⟪e, z⟫_ℝ • e + P z = z := by
-    rw [← Submodule.starProjection_unit_singleton ℝ he,
-      Submodule.starProjection_add_starProjection_orthogonal]
+  have hdec := inner_smul_add_starProjection_eq he
   -- `⟪v, bᵢ⟫ = ⟪e, bᵢ⟫ ⟪v, e⟫ + ⟪t i, e⟫`.
   have hvb (i : Fin (n + 1)) : ⟪v, b i⟫_ℝ = ⟪e, b i⟫_ℝ * ⟪v, e⟫_ℝ + ⟪t i, e⟫_ℝ := by
     conv_lhs => rw [← hdec (b i)]
@@ -607,7 +629,7 @@ private theorem exists_holderOnWith_normalField_closedBall {α : ℝ≥0} (hα :
     obtain ⟨δ, hδ, L, -, hL, -⟩ := hSc.exists_holderOnWith_thickening_and_norm_le
       fun x hx => holderOnWith_comp_fold_ball hν hy₀ hfH x (hSr hx)
     exact ⟨L, ((hL.mono (self_subset_thickening hδ S)).neg).congr fun x hx => by
-      simp only [Pi.neg_apply, Function.comp_apply, show c₀ ≤ ⟪x, ν⟫_ℝ from hx.2, ↓reduceIte]⟩
+      simp only [Pi.neg_apply, Function.comp_apply, hx.2.out, ↓reduceIte]⟩
   · obtain ⟨δ, hδ, L, -, hL, -⟩ := hSc.exists_holderOnWith_thickening_and_norm_le
       (f := fderiv ℝ fun y => a y i j) fun x hx => by
         obtain ⟨ρ, hρ, L, hL⟩ := hda x (hSr hx)
@@ -655,14 +677,8 @@ private theorem gradient_ae_eq_normalField {H : Opens E} {e : E} (he : ‖e‖ =
   have hVsub : (V : Set E) ⊆ H := inter_subset_right
   -- The coordinate derivatives `∂ⱼu = ⟪e, bⱼ⟫ ∂ₑu + ∂_{P bⱼ}u`.
   have hDf (j : Fin (n + 1)) : HasWeakLineDerivOn volume H (W1p.value (u : W1p volume H 2))
-      (W1p.value (⟪e, b j⟫_ℝ • d + (dt j : W1p volume H 2))) (b j) := by
-    have h := (hd.smul_direction ⟪e, b j⟫_ℝ).add_direction (hdt j)
-    rw [← Submodule.starProjection_unit_singleton ℝ he,
-      Submodule.starProjection_add_starProjection_orthogonal] at h
-    refine h.congr_ae_deriv ?_
-    filter_upwards [W1p.value_add_ae (⟪e, b j⟫_ℝ • d) (dt j : W1p volume H 2),
-      W1p.value_smul_ae ⟪e, b j⟫_ℝ d] with x h1 h2
-    simp only [h1, h2, Pi.add_apply]
+      (W1p.value (⟪e, b j⟫_ℝ • d + (dt j : W1p volume H 2))) (b j) :=
+    hasWeakLineDerivOn_smul_add_of_normal_tangential he hd (hdt j)
   -- The equation holds almost everywhere on `V`, where the coefficients are `C¹`.
   have hstrong := ae_sum_sum_eq_neg_of_hasWeakLineDerivOn (fun i j => (ha i j).mono hVr)
     (locallyIntegrableOn_of_locallyIntegrable_restrict ((hf.mono_measure
@@ -726,12 +742,6 @@ private theorem exists_hasWeakLineDerivOn_normal_and_ae_eq_holderOnWith {α : �
   set b := EuclideanSpace.basisFun (Fin (n + 1)) ℝ
   set e : E := ‖ν‖⁻¹ • ν
   have he : ‖e‖ = 1 := norm_smul_inv_norm hν
-  set P := (ℝ ∙ e)ᗮ.starProjection
-  have hPν (z : E) : ⟪P z, ν⟫_ℝ = 0 := by
-    have h : ⟪P z, e⟫_ℝ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_left.1
-      (Submodule.starProjection_apply_mem _ z)
-    rw [real_inner_smul_right, mul_eq_zero] at h
-    exact h.resolve_left (inv_ne_zero (norm_ne_zero_iff.2 hν))
   -- The normal derivative `d = ∂ₑu ∈ H¹(H)`, from `H²` regularity.
   obtain ⟨d, hd⟩ := hell.exists_hasWeakLineDerivOn_w1p_of_halfSpace hν hH hK
     ((isWeakSolutionDirichlet_iff (hf.toLp f) u).2 fun v => (hu v).trans
@@ -740,7 +750,7 @@ private theorem exists_hasWeakLineDerivOn_normal_and_ae_eq_holderOnWith {α : �
   -- representatives `gₖ` on the closed half-ball, and the Hölder representative `Pu` of `∇u`.
   choose dt hdt Ct hCt using fun k =>
     exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_restrict_gradient hα hα1 hν hH
-      hell hK hy₀ hr ha hellB hda hf hfH hu (hPν (b k))
+      hell hK hy₀ hr ha hellB hda hf hfH hu (inner_starProjection_orthogonal_eq_zero hν (b k))
   obtain ⟨Pu, ⟨CPu, hPu⟩, hPuae⟩ :=
     exists_holderOnWith_and_ae_eq_gradient hα hα1 hν hH hy₀ hr ha hellB hf hfH hu
   refine ⟨d, hd, _, exists_holderOnWith_normalField_closedBall hα hα1 hν hy₀ hr ha hellB hda hfH
@@ -791,28 +801,14 @@ theorem exists_hasWeakLineDerivOn_w1p_and_holderOnWith_preciseRepresentative_res
         (W1p.gradient d : E → E)) (closedBall y₀ (r / 8) ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}) := by
   set e : E := ‖ν‖⁻¹ • ν
   have he : ‖e‖ = 1 := norm_smul_inv_norm hν
-  set P := (ℝ ∙ e)ᗮ.starProjection
-  -- Split `w = ⟪e, w⟫ e + P w` into its normal and tangential parts.
-  have hdec : ⟪e, w⟫_ℝ • e + P w = w := by
-    rw [← Submodule.starProjection_unit_singleton ℝ he,
-      Submodule.starProjection_add_starProjection_orthogonal]
-  have hPν : ⟪P w, ν⟫_ℝ = 0 := by
-    have h : ⟪P w, e⟫_ℝ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_left.1
-      (Submodule.starProjection_apply_mem _ w)
-    rw [real_inner_smul_right, mul_eq_zero] at h
-    exact h.resolve_left (inv_ne_zero (norm_ne_zero_iff.2 hν))
   obtain ⟨d, hd, G, ⟨C, hG⟩, hdG⟩ := exists_hasWeakLineDerivOn_normal_and_ae_eq_holderOnWith hα
     hα1 hν hH hell hK hy₀ hr ha hellB hda hf hfH hu
   obtain ⟨dτ, hdτ, Cτ, hτ⟩ :=
     exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_restrict_gradient hα hα1 hν hH
-      hell hK hy₀ hr ha hellB hda hf hfH hu hPν
-  refine ⟨⟪e, w⟫_ℝ • d + (dτ : W1p volume H 2), ?_, ?_⟩
-  · have h := (hd.smul_direction ⟪e, w⟫_ℝ).add_direction hdτ
-    rw [hdec] at h
-    refine h.congr_ae_deriv ?_
-    filter_upwards [W1p.value_add_ae (⟪e, w⟫_ℝ • d) (dτ : W1p volume H 2),
-      W1p.value_smul_ae ⟪e, w⟫_ℝ d] with x h1 h2
-    simp only [h1, h2, Pi.add_apply]
+      hell hK hy₀ hr ha hellB hda hf hfH hu (inner_starProjection_orthogonal_eq_zero hν w)
+  -- Split `w` into its normal part `⟪e, w⟫ e` and its tangential part.
+  refine ⟨⟪e, w⟫_ℝ • d + (dτ : W1p volume H 2),
+    hasWeakLineDerivOn_smul_add_of_normal_tangential he hd hdτ, ?_⟩
   · -- The gradient agrees on `B(y₀, r / 4) ∩ H` with `⟪e, w⟫ G + ∇(∂_{P w} u)`, whose precise
     -- representative is Hölder on the closed half-ball of radius `r / 4`.
     set gτ := preciseRepresentative (volume.restrict (H : Set E))
