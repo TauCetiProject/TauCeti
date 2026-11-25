@@ -24,6 +24,12 @@ linear trivialization also induces the original fibre equivalence at the image p
 as the original one does (`Bundle.Trivialization.symm_pullback`). Hom coordinates between
 pullbacks by two different base maps agree with the original source and target coordinates
 (`ContinuousLinearMap.inCoordinates_pullback_of_mem`).
+
+Mathlib's `FiberBundle.pullback` and `VectorBundle.pullback` give the fibres of `f *ᵖ E` the
+pulled-back fibre topology, which agrees with the topology of the fibre norm only after unfolding
+instances. Constructions that read the fibres through their norms, such as orthonormal frames,
+use the restatements `Bundle.Pullback.normedFiberBundle` and `Bundle.Pullback.normedVectorBundle`
+for the norm topologies instead, as local instances.
 -/
 
 public section
@@ -73,6 +79,30 @@ instance instInnerProductSpace {𝕜 : Type*} [RCLike 𝕜]
     [∀ b, NormedAddCommGroup (E b)] [∀ b, InnerProductSpace 𝕜 (E b)] (x : B') :
     InnerProductSpace 𝕜 ((f *ᵖ E) x) :=
   inferInstanceAs (InnerProductSpace 𝕜 (E (f x)))
+
+end Bundle.Pullback
+
+namespace Bundle.Pullback
+
+variable {B B' : Type*} [TopologicalSpace B] [TopologicalSpace B'] (F : Type*)
+  [NormedAddCommGroup F] (E : B → Type*) [∀ b, NormedAddCommGroup (E b)]
+  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E]
+  {K : Type*} [FunLike K B' B] [ContinuousMapClass K B' B]
+
+/-- The pullback of a fibre bundle `E` with normed fibres along `f`, with the fibres `E (f y)`
+carrying the topology of their norms (Mathlib's `FiberBundle.pullback`, restated for these fibre
+topologies). -/
+noncomputable abbrev normedFiberBundle (f : K) :
+    @FiberBundle B' F _ _ ((f : B' → B) *ᵖ E) _ fun _ ↦ UniformSpace.toTopologicalSpace :=
+  FiberBundle.pullback (F := F) (E := E) f
+
+/-- The pullback of a vector bundle `E` with normed fibres along `f`, with the fibres `E (f y)`
+carrying the topology of their norms (Mathlib's `VectorBundle.pullback`, restated for these fibre
+topologies). -/
+abbrev normedVectorBundle (𝕜 : Type*) [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 F]
+    [∀ b, NormedSpace 𝕜 (E b)] [VectorBundle 𝕜 F E] (f : K) :
+    @VectorBundle 𝕜 B' F ((f : B' → B) *ᵖ E) _ _ _ _ _ _ _ _ (normedFiberBundle F E f) :=
+  VectorBundle.pullback 𝕜 (F := F) (E := E) f
 
 end Bundle.Pullback
 

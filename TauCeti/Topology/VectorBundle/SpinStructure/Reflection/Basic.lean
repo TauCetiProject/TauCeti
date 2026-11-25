@@ -94,6 +94,12 @@ noncomputable abbrev precompIsometryHom
     spinCGroup (realCliffordForm n 0) hQ →* spinCGroup (realCliffordForm n 0) hQ :=
   f.symm.toIsometry.spinCGroupMap hQ hQ
 
+/-- The automorphism `σ` of `Spinᶜ(n)` defining `s.precompIsometry f` is continuous. -/
+theorem continuous_precompIsometryHom
+    (f : (realCliffordForm n 0).IsometryEquiv (realCliffordForm n 0)) :
+    Continuous (precompIsometryHom f) :=
+  f.symm.toIsometry.continuous_spinCGroupMap hQ hQ
+
 /-- The rotation of `[f⁻¹ g, z]` is `f⁻¹ π(g) f`: applying `π(g)` after `f` is applying `f` after
 the rotation of `[f⁻¹ g, z]`. -/
 theorem toSpecialOrthogonal_precompIsometryHom_apply
@@ -123,7 +129,7 @@ noncomputable def precompIsometry
         (spinCGroup.toSpecialOrthogonal (realCliffordForm n 0) _)).comp (precompIsometryHom f))
       fun g v ↦ by
         simpa using toSpecialOrthogonal_precompIsometryHom_apply f g v).extendSpinC
-    (precompIsometryHom f) (f.symm.toIsometry.continuous_spinCGroupMap hQ hQ) rfl
+    (precompIsometryHom f) (continuous_precompIsometryHom f) rfl
 
 /-- **The frame of `[p, 1]`** in the precomposition of a `Spinᶜ` structure with `f` is the frame
 of `p` precomposed with `f`. -/
@@ -132,7 +138,7 @@ theorem toFrame_precompIsometry_inl
     (f : (realCliffordForm n 0).IsometryEquiv (realCliffordForm n 0)) (s : SpinCStructure F V n)
     (x : X) (p : s.P x) :
     (s.precompIsometry f).toFrame ⟨x, PrincipalBundle.Extend.inl (precompIsometryHom f)
-        (f.symm.toIsometry.continuous_spinCGroupMap hQ hQ) p⟩ =
+        (continuous_precompIsometryHom f) p⟩ =
       ⟨(s.toFrame ⟨x, p⟩).proj, (realCliffordIsometryEquivEuclidean f).trans
         (s.toFrame ⟨x, p⟩).frame⟩ := by
   unfold precompIsometry
@@ -146,7 +152,7 @@ theorem toOrientationCover_toFrame_precompIsometry_inl
     {ι : Type*} (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) ι) (x : X) (p : s.P x) :
     OrthonormalFrameBundle.toOrientationCover o ((s.precompIsometry f).toFrame ⟨x,
         PrincipalBundle.Extend.inl (precompIsometryHom f)
-          (f.symm.toIsometry.continuous_spinCGroupMap hQ hQ) p⟩) =
+          (continuous_precompIsometryHom f) p⟩) =
       OrthonormalFrameBundle.toOrientationCover
         (Orientation.map ι (realCliffordIsometryEquivEuclidean f).toLinearEquiv o)
         (s.toFrame ⟨x, p⟩) := by
@@ -165,7 +171,7 @@ theorem toOrientationCover_toFrame_precompIsometry_inl_of_det_neg
     (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) ι) (x : X) (p : s.P x) :
     OrthonormalFrameBundle.toOrientationCover o ((s.precompIsometry f).toFrame ⟨x,
         PrincipalBundle.Extend.inl (precompIsometryHom f)
-          (f.symm.toIsometry.continuous_spinCGroupMap hQ hQ) p⟩) =
+          (continuous_precompIsometryHom f) p⟩) =
       OrthonormalFrameBundle.toOrientationCover (-o) (s.toFrame ⟨x, p⟩) := by
   rw [toOrientationCover_toFrame_precompIsometry_inl, (Orientation.map_eq_neg_iff_det_neg o _
     (by simp [finrank_euclideanSpace, hι])).2 (by rwa [det_realCliffordIsometryEquivEuclidean])]
@@ -185,7 +191,7 @@ theorem toOrientationCover_toFrame_reverse_inl (s : SpinCStructure F V n) {ι : 
     (p : s.P x) :
     OrthonormalFrameBundle.toOrientationCover o (s.reverse.toFrame ⟨x,
         PrincipalBundle.Extend.inl (precompIsometryHom (realCliffordCoordReflection 0))
-          ((realCliffordCoordReflection 0).symm.toIsometry.continuous_spinCGroupMap hQ hQ) p⟩) =
+          (continuous_precompIsometryHom (realCliffordCoordReflection 0)) p⟩) =
       OrthonormalFrameBundle.toOrientationCover (-o) (s.toFrame ⟨x, p⟩) :=
   toOrientationCover_toFrame_precompIsometry_inl_of_det_neg _
     (by rw [det_realCliffordCoordReflection]; norm_num) s hι o x p

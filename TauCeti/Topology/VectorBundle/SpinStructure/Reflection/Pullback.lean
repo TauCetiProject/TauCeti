@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.SpinStructure.Reflection
+public import TauCeti.Topology.VectorBundle.Pullback
+public import TauCeti.Topology.VectorBundle.SpinStructure.Reflection.Basic
 
 /-!
 # Orientation reversal of `Spinᶜ` structures commutes with pullback
@@ -22,15 +23,21 @@ orientation reversal commutes with pullback (`TauCeti.SpinCStructure.reversePull
 `TauCeti.SpinCStructure.precompIsometry` needs the pulled-back bundle `g *ᵖ V` to be a vector
 bundle whose fibres carry the topology of their norms. Mathlib's `FiberBundle.pullback` gives the
 fibres the pulled-back fibre topology, which agrees with the norm topology only after unfolding
-instances, so the fibre and vector bundle structures of the pullback are restated here
-(`TauCeti.SpinCStructure.pullbackFiberBundle`, `TauCeti.SpinCStructure.pullbackVectorBundle`), as in
-`Topology/VectorBundle/Contractible.lean`.
+instances, so this file uses the restatements of the fibre and vector bundle structures of the
+pullback for the norm topologies (`Bundle.Pullback.normedFiberBundle`,
+`Bundle.Pullback.normedVectorBundle`) as local instances.
 
 ## Main definitions
 
 * `TauCeti.SpinCStructure.precompIsometryPullbackEquiv`:
   `(g^* s).precompIsometry f ≃ g^* (s.precompIsometry f)`.
 * `TauCeti.SpinCStructure.reversePullbackEquiv`: `(g^* s).reverse ≃ g^* s.reverse`.
+
+## Main results
+
+* `TauCeti.SpinCStructure.precompIsometryPullbackEquiv_toEquiv_inl`,
+  `TauCeti.SpinCStructure.reversePullbackEquiv_toEquiv_inl`: the equivalences send `[p, 1]` to
+  `[p, 1]`.
 
 ## References
 
@@ -54,32 +61,7 @@ variable {X : Type*} [TopologicalSpace X] {F : Type*} [NormedAddCommGroup F] [No
   [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℝ F V] {n : ℕ} [NeZero n]
   {Y : Type*} [TopologicalSpace Y]
 
-/-- The proof that the standard form on `ℝⁿ`, `n ≥ 1`, is nonzero, on which `Spinᶜ(n)` depends. -/
-local notation "hQ" => QuadraticMap.Nondegenerate.ne_zero (nondegenerate_realCliffordForm n 0)
-
-variable (F V) in
-/-- The pullback of a fibre bundle `V` along `g`, with the fibres `V (g y)` carrying the topology
-of their norms (Mathlib's `FiberBundle.pullback`, restated for these fibre topologies). -/
-abbrev pullbackFiberBundle (g : C(Y, X)) :
-    @FiberBundle Y F _ _ ((g : Y → X) *ᵖ V) _ fun _ ↦ UniformSpace.toTopologicalSpace :=
-  FiberBundle.pullback (F := F) (E := V) g
-
-attribute [local instance] pullbackFiberBundle
-
-variable (F V) in
-/-- The pullback of a vector bundle `V` along `g`, with the fibres `V (g y)` carrying the topology
-of their norms (Mathlib's `VectorBundle.pullback`, restated for these fibre topologies). -/
-abbrev pullbackVectorBundle (g : C(Y, X)) :
-    @VectorBundle ℝ Y F ((g : Y → X) *ᵖ V) _ _ _ _ _ _ _ _ (pullbackFiberBundle F V g) :=
-  VectorBundle.pullback ℝ (F := F) (E := V) g
-
-attribute [local instance] pullbackVectorBundle
-
-/-- The automorphism `σ` of `Spinᶜ(n)` defining `s.precompIsometry f` is continuous. -/
-theorem continuous_precompIsometryHom
-    (f : (realCliffordForm n 0).IsometryEquiv (realCliffordForm n 0)) :
-    Continuous (precompIsometryHom f) :=
-  f.symm.toIsometry.continuous_spinCGroupMap hQ hQ
+attribute [local instance] Pullback.normedFiberBundle Pullback.normedVectorBundle
 
 /-- **Precomposition commutes with pullback**: for a continuous map `g : Y → X`,
 `(g^* s).precompIsometry f ≃ g^* (s.precompIsometry f)`. Over `y`, both principal bundles are
@@ -101,14 +83,8 @@ def precompIsometryPullbackEquiv (g : C(Y, X))
     ((s.precompIsometry f).pullback g)
     (fun _ (p : s.P _) ↦ Extend.inl (precompIsometryHom f) (continuous_precompIsometryHom f) p)
     (fun _ (p : s.P _) h ↦ Extend.inl_smul _ _ p h)
-    ((Pullback.continuous_iff (f := (g : Y → X))
-      (g := fun q : TotalSpace _ ((g : Y → X) *ᵖ s.P) ↦
-        (⟨q.proj, Extend.inl (P := s.P) (precompIsometryHom f) (continuous_precompIsometryHom f)
-          (q.snd : s.P (g q.proj))⟩ :
-          TotalSpace _ ((g : Y → X) *ᵖ (s.precompIsometry f).P)))).2
-      ⟨Pullback.continuous_proj _ _ _,
-        (Extend.continuous_inl (P := s.P) (precompIsometryHom f)
-          (continuous_precompIsometryHom f)).comp (Pullback.continuous_lift _ _ _)⟩)
+    (Pullback.continuous_fiberwise
+      (Extend.continuous_inl s.P (precompIsometryHom f) (continuous_precompIsometryHom f)) g)
     (fun y (p : s.P (g y)) ↦ by
       obtain ⟨φ, hφ⟩ := s.exists_toFrame_eq_mk ⟨g y, p⟩
       have hs : (s.pullback g).toFrame ⟨y, p⟩ = ⟨y, φ⟩ := s.toFrame_pullback_mk g y p hφ
@@ -117,11 +93,12 @@ def precompIsometryPullbackEquiv (g : C(Y, X))
             ⟨g y, (realCliffordIsometryEquivEuclidean f).trans φ⟩ :=
         (toFrame_precompIsometry_inl f s (g y) p).trans (by rw [hφ])
       rw [(s.precompIsometry f).toFrame_pullback_mk g y _ ht]
-      change _ = (⟨((s.pullback g).toFrame ⟨y, p⟩).proj,
-        (realCliffordIsometryEquivEuclidean f).trans ((s.pullback g).toFrame ⟨y, p⟩).frame⟩ :
-          OrthonormalFrameBundle ℝ F ((g : Y → X) *ᵖ V) (EuclideanSpace ℝ (Fin n)))
-      rw [hs]
-      rfl)
+      -- `rw [hs]` does not see `hs` in the frame given by `toFrame_precomp`, whose fibre
+      -- instances are unfolded differently, so `hs` is transported along the precomposition.
+      exact ((toFrame_precomp _ _ _ _ _).trans (congrArg
+        (fun q : OrthonormalFrameBundle ℝ F ((g : Y → X) *ᵖ V) (EuclideanSpace ℝ (Fin n)) ↦
+          (⟨q.proj, (realCliffordIsometryEquivEuclidean f).trans q.frame⟩ :
+            OrthonormalFrameBundle ℝ F ((g : Y → X) *ᵖ V) (EuclideanSpace ℝ (Fin n)))) hs)).symm)
 
 /-- The equivalence `(g^* s).precompIsometry f ≃ g^* (s.precompIsometry f)` sends `[p, 1]` to
 `[p, 1]`. -/
@@ -140,6 +117,16 @@ theorem precompIsometryPullbackEquiv_toEquiv_inl (g : C(Y, X))
 def reversePullbackEquiv (g : C(Y, X)) (s : SpinCStructure F V n) :
     (SpinCStructure.reverse (s.pullback g)).Equiv (s.reverse.pullback g) :=
   precompIsometryPullbackEquiv g _ s
+
+/-- The equivalence `(g^* s).reverse ≃ g^* s.reverse` sends `[p, 1]` to `[p, 1]`. -/
+theorem reversePullbackEquiv_toEquiv_inl (g : C(Y, X)) (s : SpinCStructure F V n) (y : Y)
+    (p : s.P (g y)) :
+    (reversePullbackEquiv g s).toEquiv y
+        (Extend.inl (P := (g : Y → X) *ᵖ s.P) (precompIsometryHom (realCliffordCoordReflection 0))
+          (continuous_precompIsometryHom _) p) =
+      Extend.inl (P := s.P) (precompIsometryHom (realCliffordCoordReflection 0))
+        (continuous_precompIsometryHom _) p :=
+  precompIsometryPullbackEquiv_toEquiv_inl g _ s y p
 
 end SpinCStructure
 
