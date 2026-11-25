@@ -39,6 +39,8 @@ limits that need no `rpow`, `π`, or calculus are in `TauCeti.Analysis.Real.Sqrt
   derivative wherever `t² + p > 0`.
 * `Real.hasDerivAt_div_mul_add_sqrt_sq_add`: the function `y ↦ α / (β y + √(y² + c))` has an
   explicit derivative where `y² + c` and the denominator do not vanish.
+* `Real.hasDerivAt_inv_sqrt_one_add`: the derivative of `r ↦ (√(1 + r))⁻¹` is
+  `-((√(1 + r))⁻¹ / (2 (1 + r)))` where `1 + r ≠ 0`.
 * `TauCeti.sqrt_four_div_pi`: `√(4/π) = 2/√π`.
 
 ## References
@@ -164,6 +166,20 @@ theorem hasDerivAt_div_mul_add_sqrt_sq_add (α β c : ℝ) {y : ℝ} (hyc : y ^ 
   have := (hasDerivAt_const y α).div (hasDerivAt_mul_add_sqrt_sq_add β y hyc) hy
   refine this.congr_deriv ?_
   ring
+
+/-- The derivative of `r ↦ (√(1 + r))⁻¹` at a point where `1 + r` does not vanish. For
+`1 + x < 0` both sides vanish, since the square root is `0` on nonpositive reals. -/
+theorem hasDerivAt_inv_sqrt_one_add {x : ℝ} (hx : 1 + x ≠ 0) :
+    HasDerivAt (fun r ↦ (√(1 + r))⁻¹) (-((√(1 + x))⁻¹ / (2 * (1 + x)))) x := by
+  rcases hx.lt_or_gt with hx | hx
+  · rw [sqrt_eq_zero'.2 hx.le, inv_zero, zero_div, neg_zero]
+    refine (hasDerivAt_const x (0 : ℝ)).congr_of_eventuallyEq ?_
+    filter_upwards [eventually_lt_nhds (show x < -1 by linarith)] with r hr
+    rw [sqrt_eq_zero'.2 (by linarith), inv_zero]
+  · have hs : 0 < √(1 + x) := sqrt_pos.2 hx
+    refine ((((hasDerivAt_id' x).const_add 1).sqrt hx.ne').inv hs.ne').congr_deriv ?_
+    field_simp
+    rw [sq_sqrt hx.le]
 
 end Real
 
