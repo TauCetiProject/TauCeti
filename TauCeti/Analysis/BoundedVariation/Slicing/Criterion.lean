@@ -136,10 +136,8 @@ theorem exists_perimeter_ne_top_of_euclideanHausdorffMeasure_essentialBoundary_i
   exact measure_mono (inter_subset_inter_right _ subset_closure)
 
 /-- **The perimeter is at most the Hausdorff measure of the essential boundary.** Every
-null-measurable set `s` has `P(s; Ω) ≤ Hⁿ⁻¹(∂ᵉs ∩ Ω)` in every open set `Ω`, in `[0, ∞]`. In
-dimension `n ≤ 1` this is the bound `P(s; Ω) ≤ n 2ⁿ⁻¹ Hⁿ⁻¹(∂ᵉs ∩ Ω)`. In dimension `n ≥ 2`, when
-the right side is finite, Federer's criterion gives locally finite perimeter, and De Giorgi's
-theorem `P(s; Ω) = Hⁿ⁻¹(∂*s)` with `∂*s ⊆ ∂ᵉs` gives the bound. -/
+null-measurable set `s` in a real inner product space of any dimension `n` has
+`P(s; Ω) ≤ Hⁿ⁻¹(∂ᵉs ∩ Ω)` in every open set `Ω`, as an inequality in `[0, ∞]`. -/
 theorem perimeter_le_euclideanHausdorffMeasure_essentialBoundary_inter (Ω : Opens E)
     (hs : NullMeasurableSet s volume) :
     perimeter volume Ω s ≤ μHE[finrank ℝ E - 1] (essentialBoundary volume s ∩ Ω) := by
