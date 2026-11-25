@@ -36,23 +36,6 @@ namespace TauCeti.CliffordExtension
 
 variable {k G : Type*} [Field k] [Group G] {N : Subgroup G} [N.Normal]
 
-/-- If all equivariant endomorphisms are scalars, the canonical Clifford extension is central. -/
-theorem inl_range_le_center_of_surjective_algebraMap {A : FDRep k N}
-    (h : Function.Surjective (algebraMap k (End A))) :
-    (groupExtension A).inl.range ≤ Subgroup.center (Carrier A) := by
-  rintro _ ⟨d, rfl⟩
-  apply Subgroup.mem_center_iff.mpr
-  intro c
-  have hd : Units.map (commutantAction c).toMonoidHom d = d := by
-    apply Units.ext
-    obtain ⟨a, ha⟩ := h (d : End A)
-    rw [Units.coe_map, ← ha]
-    exact (commutantAction c).commutes a
-  rw [groupExtension_inl]
-  have he : c * inl A d * c⁻¹ = inl A d := by
-    simpa only [hd] using (inl_map_commutantAction c d).symm
-  simpa [mul_assoc] using congrArg (· * c) he
-
 /-- The Clifford extension of a simple representation over an algebraically closed field
 splits when the inertia quotient is cyclic. -/
 theorem nonempty_splitting_of_isCyclic {A : FDRep k N} [IsAlgClosed k] [Simple A]

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.GroupTheory.GroupExtension.Defs
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
-import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
 # Splitting extensions of cyclic groups
@@ -32,19 +31,12 @@ theorem nonempty_splitting_iff_exists_lift_pow_eq_one (S : GroupExtension N E G)
   · rintro ⟨s⟩
     exact ⟨s g, s.rightHom_splitting g, by rw [← map_pow, pow_orderOf_eq_one, map_one]⟩
   · rintro ⟨t, ht, hpow⟩
-    have hsurj : Function.Surjective (zpowersHom G g) := by
-      rw [← MonoidHom.range_eq_top, Subgroup.range_zpowersHom, hg]
-    let e := QuotientGroup.quotientKerEquivOfSurjective (zpowersHom G g) hsurj
-    let f := QuotientGroup.lift (zpowersHom G g).ker (zpowersHom E t) (by
-      rw [zpowersHom_ker_eq, Subgroup.zpowers_le, MonoidHom.mem_ker]
-      simpa using hpow)
-    have hf : Function.RightInverse (f.comp e.symm.toMonoidHom) S.rightHom := by
-      intro q
-      obtain ⟨i, rfl⟩ := hsurj q
-      rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-        TauCeti.QuotientGroup.quotientKerEquivOfSurjective_symm_apply]
+    have hgen : ∀ x, x ∈ Subgroup.zpowers g := fun x ↦ hg ▸ Subgroup.mem_top x
+    let f := monoidHomOfForallMemZpowers hgen (orderOf_dvd_of_pow_eq_one hpow)
+    have hf : S.rightHom.comp f = MonoidHom.id G := by
+      rw [MonoidHom.eq_iff_eq_on_generator hgen]
       simp [f, ht]
-    exact ⟨{ toMonoidHom := f.comp e.symm.toMonoidHom, rightInverse_rightHom := hf }⟩
+    exact ⟨{ toMonoidHom := f, rightInverse_rightHom := DFunLike.congr_fun hf }⟩
 
 /-- A central extension of a cyclic group splits if the kernel admits roots of degree the
 order of a generator (or if the generator has infinite order). -/
