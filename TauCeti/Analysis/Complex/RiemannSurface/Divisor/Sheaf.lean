@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Meromorphic
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Basic
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Topology.ContinuousOn.PuncturedNhds
 
 /-!
 # The sheaf `𝒪_D` of a divisor on a Riemann surface
@@ -396,12 +397,9 @@ theorem divisorSheafMapOfLE_app_eventuallyEq {E : WeilDivisor X} (h : D ≤ E) (
     (f : (divisorSheaf D).obj.obj (op U)) (x : U) :
     (divisorSheafSectionsEquiv E U ((divisorSheafMapOfLE h).hom.app (op U) f)).val =ᶠ[𝓝[≠] x]
       (divisorSheafSectionsEquiv D U f).val := by
-  have hval : Tendsto (Subtype.val : U → X) (𝓝[≠] x) (𝓝[≠] (x : X)) :=
-    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      (continuous_subtypeVal.continuousAt.mono_left nhdsWithin_le_nhds)
-      (eventually_nhdsWithin_of_forall fun _ hy ↦ Subtype.coe_injective.ne hy)
   have := ChartedSpace.t1Space ℂ X
-  filter_upwards [hval.eventually (E.eventually_eq_zero_nhdsNE x)] with y hy
+  filter_upwards [(tendsto_subtype_val_nhdsNE x).eventually (E.eventually_eq_zero_nhdsNE x)]
+    with y hy
   rw [divisorSheafMapOfLE_app]
   exact Set.indicator_of_mem (s := {y : U | E y ≤ 0}) hy.le _
 
