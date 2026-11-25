@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Polynomial.Resultant.WeightedHomogeneous
+import TauCeti.Algebra.Polynomial.Taylor
+import TauCeti.RingTheory.Polynomial.Resultant.FreeMonic
+import TauCeti.RingTheory.Polynomial.Resultant.RootCoordinates
 
 /-!
 # The generic depressed polynomial and its discriminant
@@ -20,6 +23,15 @@ multiplied by `tʲ`.
 The discriminant of the generic depressed polynomial is weighted homogeneous of weight
 `m (m - 1)`, over every commutative ring. For `m = 2` it is `-4 a₂`, and for `m = 3` it is
 `-4 a₂³ - 27 a₃²`.
+
+Over a domain in which `2` is nonzero and `m ≥ 2` is invertible, for instance over a field of
+characteristic `0`, the discriminant is moreover prime. Translating the variable by `cₘ₋₁ / m`
+turns the free monic polynomial `Xᵐ + cₘ₋₁ Xᵐ⁻¹ + ⋯ + c₀` into a depressed polynomial with the
+same discriminant. This gives a ring map from `R[a₂, …, aₘ]` to `R[c₀, …, cₘ₋₁]` carrying the
+depressed discriminant to the discriminant of the free monic polynomial, which is prime
+(`Polynomial.prime_discr_freeMonic`); setting `cₘ₋₁ = 0` is a retraction of that map. The
+hypotheses are needed: in characteristic `3` the discriminant for `m = 3` is `-a₂³`, and in
+characteristic `2` the discriminant for `m = 2` is `0`.
 
 ## Main definitions
 
@@ -38,6 +50,9 @@ The discriminant of the generic depressed polynomial is weighted homogeneous of 
 * `TauCeti.discr_genericDepressed`: `depressedDiscr R m` is the discriminant of
   `genericDepressed R m`.
 * `TauCeti.depressedDiscr_mem`: the discriminant is weighted homogeneous of weight `m (m - 1)`.
+* `TauCeti.map_depressedDiscr`: the discriminant commutes with changing the coefficients.
+* `TauCeti.depressedDiscr_prime`: over a domain in which `2 ≠ 0` and `m` is invertible, the
+  discriminant is prime.
 * `TauCeti.depressedDiscr_two`, `TauCeti.depressedDiscr_three`: the discriminants in degrees `2`
   and `3`.
 -/
@@ -162,6 +177,13 @@ theorem map_eval_genericDepressed {p : R[X]} (hp : p.Monic) (hdeg : p.natDegree 
     · rw [nextCoeff, hdeg, ite_eq_right (by omega)] at hnext
       rwa [show k = m - 1 by omega]
 
+/-- Changing the coefficients of the generic depressed polynomial along `φ : R →+* S` gives the
+generic depressed polynomial over `S`. -/
+@[simp]
+theorem map_genericDepressed {S : Type*} [CommSemiring S] (φ : R →+* S) :
+    (genericDepressed R m).map (MvPolynomial.map φ) = genericDepressed S m := by
+  simp [genericDepressed, Polynomial.map_sum]
+
 end Semiring
 
 section Ring
@@ -186,6 +208,64 @@ theorem discr_eq_eval_depressedDiscr {p : R[X]} (hp : p.Monic) (hdeg : p.natDegr
       MvPolynomial.eval (fun j : Fin (m - 1) ↦ p.coeff (m - 2 - j)) (depressedDiscr R m) := by
   rw [← discr_genericDepressed, ← monic_genericDepressed.discr_map,
     map_eval_genericDepressed hp hdeg hnext]
+
+/-- Changing the coefficients of the generic depressed discriminant along `φ : R →+* S` gives the
+generic depressed discriminant over `S`. -/
+@[simp]
+theorem map_depressedDiscr {S : Type*} [CommRing S] (φ : R →+* S) :
+    MvPolynomial.map φ (depressedDiscr R m) = depressedDiscr S m := by
+  rw [← discr_genericDepressed, ← monic_genericDepressed.discr_map, map_genericDepressed,
+    discr_genericDepressed]
+
+/-- **The generic depressed discriminant is prime.** Over a domain in which `2 ≠ 0` and `m ≥ 2` is
+invertible, in particular over a field of characteristic `0`, the discriminant of
+`Xᵐ + a₂ Xᵐ⁻² + ⋯ + aₘ` is a prime element of `R[a₂, …, aₘ]`. -/
+theorem depressedDiscr_prime [IsDomain R] (h2 : (2 : R) ≠ 0) (hm : IsUnit (m : R))
+    (hm2 : 2 ≤ m) : Prime (depressedDiscr R m) := by
+  -- Translating the root coordinate by `c / m`, with `c` the subleading coefficient, turns the
+  -- free monic polynomial `F` into a depressed polynomial `T` with the same discriminant.
+  let F := freeMonic R m
+  let c : MvPolynomial (Fin m) R :=
+    MvPolynomial.C (↑hm.unit⁻¹ : R) * MvPolynomial.X ⟨m - 1, by omega⟩
+  let T := taylor (-c) F
+  have hFdeg : F.natDegree = m := natDegree_freeMonic R m
+  have hTmonic : T.Monic := by
+    rw [Monic, leadingCoeff_taylor]
+    exact monic_freeMonic R m
+  have hTdeg : T.natDegree = m := by rw [natDegree_taylor, hFdeg]
+  have hTnext : T.nextCoeff = 0 := by
+    have hu : (m : MvPolynomial (Fin m) R) * MvPolynomial.C (↑hm.unit⁻¹ : R) = 1 := by
+      rw [← map_natCast MvPolynomial.C, ← map_mul, hm.mul_val_inv, map_one]
+    rw [nextCoeff_taylor, (monic_freeMonic R m).leadingCoeff, hFdeg,
+      nextCoeff_of_natDegree_pos (by omega), hFdeg, coeff_freeMonic, dite_eq_left (by omega)]
+    linear_combination (-MvPolynomial.X ⟨m - 1, by omega⟩) * hu
+  -- `ψ` substitutes the coefficients of `T`, and `ε` sets `c` to zero.
+  let ψ : MvPolynomial (Fin (m - 1)) R →ₐ[R] MvPolynomial (Fin m) R :=
+    MvPolynomial.aeval fun j ↦ T.coeff (m - 2 - j)
+  let ε : MvPolynomial (Fin m) R →ₐ[R] MvPolynomial (Fin (m - 1)) R :=
+    MvPolynomial.aeval fun i : Fin m ↦ (genericDepressed R m).coeff i
+  have hψ : ψ (depressedDiscr R m) = F.discr := by
+    rw [← discr_comp_X_add_C F (-c), ← taylor_apply,
+      discr_eq_eval_depressedDiscr hTmonic hTdeg hTnext,
+      ← map_depressedDiscr (algebraMap R (MvPolynomial (Fin m) R)), MvPolynomial.eval_map,
+      ← MvPolynomial.aeval_def]
+  have hεF : F.map ε.toRingHom = genericDepressed R m :=
+    map_aeval_coeff_freeMonic monic_genericDepressed natDegree_genericDepressed
+  have hεψ : ε.comp ψ = AlgHom.id R _ := by
+    refine MvPolynomial.algHom_ext fun j ↦ ?_
+    have hc : ε c = 0 := by
+      simp only [c, ε, map_mul, MvPolynomial.aeval_C, MvPolynomial.aeval_X, coeff_genericDepressed,
+        ite_eq_right (show m - 1 ≠ m by omega), dite_eq_right (show ¬m - 1 + 2 ≤ m by omega),
+        mul_zero]
+    have hTε : T.map ε.toRingHom = genericDepressed R m := by
+      rw [map_taylor, hεF, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, map_neg, hc, neg_zero,
+        taylor_zero]
+    have := coeff_map ε.toRingHom (p := T) (m - 2 - j)
+    rw [hTε, coeff_genericDepressed_sub_two_sub, AlgHom.toRingHom_eq_coe, RingHom.coe_coe] at this
+    simpa [ψ] using this.symm
+  refine comap_prime ψ ε (fun a ↦ congr($hεψ a)) ?_
+  rw [hψ]
+  exact prime_discr_freeMonic h2 hm2
 
 variable (R m)
 
