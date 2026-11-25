@@ -21,7 +21,7 @@ file transports `q` along two operations.
   closed exactly when `W` is closed in the form norm of `q`
   (`TauCeti.SemiboundedForm.isClosed_restrict_iff`). When `W` is dense in `H`, the operator
   represented by the restriction has graph `{(u, h) | u ∈ W, ∀ v ∈ W, q u v = ⟪h, v⟫_𝕜}`
-  (`TauCeti.SemiboundedForm.mem_graph_restrict_operator_iff`).
+  (`TauCeti.SemiboundedForm.mem_graph_operator_restrict_iff`).
 * **Unitary transport.** For a linear isometric equivalence `U : H ≃ₗᵢ[𝕜] H'`, `q.map U` is the
   form `(u, v) ↦ q (U⁻¹ u) (U⁻¹ v)` on `U D`. It has the same lower bounds, isometric form spaces
   (`TauCeti.SemiboundedForm.mapFormSpaceEquiv`), is closed exactly when `q` is, and represents the
@@ -32,7 +32,7 @@ file transports `q` along two operations.
 
 * `TauCeti.SemiboundedForm.restrict`: the restriction to a subspace of the form domain.
 * `TauCeti.SemiboundedForm.isClosed_restrict_iff`: closedness of a restriction of a closed form.
-* `TauCeti.SemiboundedForm.mem_graph_restrict_operator_iff`: the operator of a restriction.
+* `TauCeti.SemiboundedForm.mem_graph_operator_restrict_iff`: the operator of a restriction.
 * `TauCeti.SemiboundedForm.map`: unitary transport of a form.
 * `TauCeti.SemiboundedForm.isClosed_map_iff`, `TauCeti.SemiboundedForm.operator_map`.
 
@@ -63,7 +63,7 @@ section Restrict
 variable (W : Submodule 𝕜 H) (hW : W ≤ q.domain)
 
 /-- The **restriction** of a semibounded form `q` to a subspace `W` of its form domain. -/
-@[expose] def restrict : SemiboundedForm 𝕜 H where
+def restrict : SemiboundedForm 𝕜 H where
   domain := W
   form := (q.form.comp (Submodule.inclusion hW)).compl₂ (Submodule.inclusion hW)
   form_apply_eq_star u v := q.form_apply_eq_star _ _
@@ -77,8 +77,14 @@ theorem restrict_domain : (q.restrict W hW).domain = W :=
   (rfl)
 
 /-- The inclusion of the form domain of a restriction into the form domain of `q`. -/
-abbrev restrictInclusion : (q.restrict W hW).domain →ₗ[𝕜] q.domain :=
-  Submodule.inclusion (p := (q.restrict W hW).domain) hW
+def restrictInclusion : (q.restrict W hW).domain →ₗ[𝕜] q.domain :=
+  Submodule.inclusion ((q.restrict_domain W hW).le.trans hW)
+
+/-- The inclusion of the form domain of a restriction does not change the underlying vector. -/
+@[simp]
+theorem coe_restrictInclusion (u : (q.restrict W hW).domain) :
+    (q.restrictInclusion W hW u : H) = u :=
+  Submodule.coe_inclusion _ u
 
 /-- The restriction to `W` is `q` on the vectors of `W`. -/
 @[simp]
@@ -112,8 +118,8 @@ def restrictFormSpaceIsometry :
       obtain ⟨u, rfl⟩ := ((q.restrict W hW).toFormSpace (hα.restrict hW)).surjective x
       obtain ⟨v, rfl⟩ := ((q.restrict W hW).toFormSpace (hα.restrict hW)).surjective y
       simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
-        LinearEquiv.symm_apply_apply, inner_toFormSpace, shiftedInner_def, restrict_form_apply]
-      rfl
+        LinearEquiv.symm_apply_apply, inner_toFormSpace, shiftedInner_def, restrict_form_apply,
+        coe_restrictInclusion]
 
 @[simp]
 theorem restrictFormSpaceIsometry_toFormSpace (u : (q.restrict W hW).domain) :
@@ -127,8 +133,8 @@ theorem inclusion_restrictFormSpaceIsometry (x : (q.restrict W hW).FormSpace α 
     q.inclusion hα (q.restrictFormSpaceIsometry hW hα x) =
       (q.restrict W hW).inclusion (hα.restrict hW) x := by
   obtain ⟨u, rfl⟩ := ((q.restrict W hW).toFormSpace (hα.restrict hW)).surjective x
-  rw [restrictFormSpaceIsometry_toFormSpace, inclusion_toFormSpace, inclusion_toFormSpace]
-  rfl
+  rw [restrictFormSpaceIsometry_toFormSpace, inclusion_toFormSpace, inclusion_toFormSpace,
+    coe_restrictInclusion]
 
 /-- The image of the form space of a restriction to `W` consists of the vectors of the form space
 of `q` whose underlying vector lies in `W`. -/
@@ -167,7 +173,7 @@ variable (q) {hW} in
 /-- **The operator represented by a restriction.** For a subspace `W` of the form domain which is
 dense in `H`, the graph of the operator represented by `q.restrict W hW` consists of the pairs
 `(x, h)` with `x ∈ W` and `q x v = ⟪h, v⟫_𝕜` for every `v ∈ W`. -/
-theorem mem_graph_restrict_operator_iff (hd : Dense ((q.restrict W hW).domain : Set H)) {x h : H} :
+theorem mem_graph_operator_restrict_iff (hd : Dense ((q.restrict W hW).domain : Set H)) {x h : H} :
     (x, h) ∈ ((q.restrict W hW).operator hd).graph ↔
       ∃ hx : x ∈ W, ∀ v (hv : v ∈ W), q.form ⟨x, hW hx⟩ ⟨v, hW hv⟩ = ⟪h, v⟫_𝕜 := by
   rw [mem_graph_operator_iff]
@@ -180,7 +186,7 @@ theorem mem_graph_restrict_operator_iff (hd : Dense ((q.restrict W hW).domain : 
 variable {hW} in
 /-- The operator represented by the restriction of `q` to a dense subspace `W` of the form domain
 which is closed in the form norm is self-adjoint, when `q` is closed and `H` is complete. -/
-theorem isSelfAdjoint_restrict_operator [CompleteSpace H] (hq : q.IsClosed)
+theorem isSelfAdjoint_operator_restrict [CompleteSpace H] (hq : q.IsClosed)
     (hd : Dense ((q.restrict W hW).domain : Set H))
     (hWc : _root_.IsClosed {x : q.FormSpace α hα | q.inclusion hα x ∈ W}) :
     IsSelfAdjoint ((q.restrict W hW).operator hd) :=
@@ -196,7 +202,7 @@ variable {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace 𝕜 H'] (U : H
 
 /-- The **unitary transport** of a semibounded form `q` along `U : H ≃ₗᵢ[𝕜] H'`: the form
 `(u, v) ↦ q (U⁻¹ u) (U⁻¹ v)` on the image `U D` of the form domain `D`. -/
-@[expose] def map : SemiboundedForm 𝕜 H' where
+def map : SemiboundedForm 𝕜 H' where
   domain := q.domain.map (U.toLinearEquiv : H →ₗ[𝕜] H')
   form := (q.form.comp (U.toLinearEquiv.submoduleMap q.domain).symm.toLinearMap).compl₂
     (U.toLinearEquiv.submoduleMap q.domain).symm.toLinearMap
@@ -264,6 +270,21 @@ def mapFormSpaceEquiv :
       obtain ⟨u, rfl⟩ := (q.toFormSpace hα).surjective x
       obtain ⟨v, rfl⟩ := (q.toFormSpace hα).surjective y
       simp [shiftedInner_def, U.inner_map_map]
+
+/-- The isometry of form spaces sends the class of `u` to the class of `U u`. -/
+@[simp]
+theorem mapFormSpaceEquiv_toFormSpace (u : q.domain) :
+    q.mapFormSpaceEquiv U hα (q.toFormSpace hα u) =
+      (q.map U).toFormSpace ((q.isAdmissibleShift_map_iff U).mpr hα) (q.mapDomainEquiv U u) := by
+  simp [mapFormSpaceEquiv]
+
+/-- The isometry of form spaces commutes with the inclusions into `H` and `H'`. -/
+theorem inclusion_mapFormSpaceEquiv (x : q.FormSpace α hα) :
+    (q.map U).inclusion ((q.isAdmissibleShift_map_iff U).mpr hα) (q.mapFormSpaceEquiv U hα x) =
+      U (q.inclusion hα x) := by
+  obtain ⟨u, rfl⟩ := (q.toFormSpace hα).surjective x
+  rw [mapFormSpaceEquiv_toFormSpace, inclusion_toFormSpace, inclusion_toFormSpace,
+    coe_mapDomainEquiv]
 
 /-- **Unitary transport keeps closedness.** -/
 @[simp]
