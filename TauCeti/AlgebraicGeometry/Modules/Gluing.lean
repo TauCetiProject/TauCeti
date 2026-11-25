@@ -281,6 +281,8 @@ theorem injective_transition_app {i j : J} (f : i ⟶ j) {U : (colimit F).Opens}
     (hU : U ≤ (colimit.ι F i).opensRange) : Function.Injective ((D.transition f).app U) := by
   have h := hD f (colimit.ι F j ⁻¹ᵁ U)
     ((Scheme.Hom.preimage_mono _ hU).trans (Scheme.IsLocallyDirected.preimage_opensRange_ι_le F f))
+  -- Injectivity is a property of the whole function, so the pointwise `transition_app_apply`
+  -- cannot rewrite it directly; `funext` identifies it with the map followed by restriction.
   rw [show ⇑((D.transition f).app U) = _ from funext (D.transition_app_apply f U)]
   exact (ConcreteCategory.bijective_of_isIso _).1.comp h
 
@@ -358,6 +360,8 @@ theorem bijective_transition_app {i j : J} (f : i ⟶ j) {U : (colimit F).Opens}
     (hU : U ≤ (colimit.ι F i).opensRange) : Function.Bijective ((D.transition f).app U) := by
   have h := hD f (colimit.ι F j ⁻¹ᵁ U)
     ((Scheme.Hom.preimage_mono _ hU).trans (Scheme.IsLocallyDirected.preimage_opensRange_ι_le F f))
+  -- Bijectivity is a property of the whole function, so the pointwise `transition_app_apply`
+  -- cannot rewrite it directly; `funext` identifies it with the map followed by restriction.
   rw [show ⇑((D.transition f).app U) = _ from funext (D.transition_app_apply f U)]
   exact (ConcreteCategory.bijective_of_isIso _).comp h
 
