@@ -30,7 +30,8 @@ including an empty base. Rank zero is included.
   projection formulas.
 * `conjugateLinearEquiv_naturality` is the square for every linear fibre map between equal-rank
   model presentations in independent universes, with their degree casts explicit. The corollary
-  `conjugateLinearEquiv_bundleIso_naturality` derives rank equality at each given base point.
+  `conjugateLinearEquiv_bundleIso_naturality` states it for fibrewise isomorphisms through the
+  determinant transport `congrModelEquiv`.
 * The fibre comparisons commute with determinant pullback (`conjugateLinearEquiv_pullback`,
   `conjugateEquiv_pullback`). The source side uses the canonical `pullbackHomeomorph` directly;
   `conjugateTargetPullbackHomeomorph` conjugates that comparison on the target side.
@@ -159,10 +160,11 @@ theorem conjugateLinearEquiv_naturality {G : Type*} [NormedAddCommGroup G] [Norm
   simpa only [conjugateLinearEquiv_apply, LinearEquiv.apply_symm_apply,
     LinearEquiv.symm_apply_apply, ofConj_toConj] using hn'
 
-/-- Naturality for bundle isomorphisms derives model-rank equality at the supplied point.
-No inhabited or nonempty base is assumed; the models and fibres may lie in independent universes. -/
+/-- Naturality for fibrewise isomorphisms between independently presented finite-dimensional
+models, through the determinant transport `congrModelEquiv`. No inhabited or nonempty base is
+assumed; the models and fibres may lie in independent universes. -/
 theorem conjugateLinearEquiv_bundleIso_naturality {G : Type*}
-    [NormedAddCommGroup G] [NormedSpace ℂ G]
+    [NormedAddCommGroup G] [NormedSpace ℂ G] [FiniteDimensional ℂ F] [FiniteDimensional ℂ G]
     {E' : B → Type*} [∀ x, AddCommGroup (E' x)] [∀ x, Module ℂ (E' x)]
     [TopologicalSpace B] [∀ x, TopologicalSpace (E x)]
     [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℂ F E]
@@ -170,25 +172,39 @@ theorem conjugateLinearEquiv_bundleIso_naturality {G : Type*}
     [FiberBundle G E'] [VectorBundle ℂ G E']
     (e : ∀ x, E x ≃L[ℂ] E' x) (x : B)
     (v : DetBundle ℂ (Conjugate F) (ConjugateBundle E) x) :
-    let eModel := (VectorBundle.continuousLinearEquivAt ℂ F E x).symm.trans
-      ((e x).trans (VectorBundle.continuousLinearEquivAt ℂ G E' x))
-    let h := eModel.toLinearEquiv.finrank_eq
-    let hc := (finrank_complex (V := F)).trans (h.trans (finrank_complex (V := G)).symm)
     conjugateLinearEquiv (F := G) (E := E') x
-      ((linearEquiv ℂ (Conjugate G) (ConjugateBundle E') x).symm
+      (congrModelEquiv (F₁ := Conjugate F) (F' := Conjugate G)
+        (fun x => (e x).conjugate) x v) =
+      toConj (congrModelEquiv (F₁ := F) (F' := G) e x
+        (ofConj (conjugateLinearEquiv (F := F) (E := E) x v))) := by
+  have h : finrank ℂ F = finrank ℂ G :=
+    ((VectorBundle.continuousLinearEquivAt ℂ F E x).symm.trans
+      ((e x).trans (VectorBundle.continuousLinearEquivAt ℂ G E' x))).toLinearEquiv.finrank_eq
+  have hc := (finrank_complex (V := F)).trans (h.trans (finrank_complex (V := G)).symm)
+  -- `congrModelEquiv` is the exterior power of the fibre map, read through the rank equality.
+  have hT : congrModelEquiv (F₁ := F) (F' := G) e x
+      (ofConj (conjugateLinearEquiv (F := F) (E := E) x v)) =
+      (linearEquiv ℂ G E' x).symm (LinearEquiv.ofEq _ _ (congrArg (fun n => ⋀[ℂ]^n (E' x)) h)
+        (exteriorPower.map (finrank ℂ F) (e x).toLinearEquiv.toLinearMap
+          (linearEquiv ℂ F E x (ofConj (conjugateLinearEquiv (F := F) (E := E) x v))))) := by
+    apply (linearEquiv ℂ G E' x).injective
+    apply Subtype.ext
+    rw [coe_congrModelEquiv, LinearEquiv.apply_symm_apply, LinearEquiv.coe_ofEq_apply,
+      exteriorPower.coe_map]
+  have hS : congrModelEquiv (F₁ := Conjugate F) (F' := Conjugate G)
+      (fun x => (e x).conjugate) x v =
+      (linearEquiv ℂ (Conjugate G) (ConjugateBundle E') x).symm
         (LinearEquiv.ofEq _ _ (congrArg (fun n => ⋀[ℂ]^n (Conjugate (E' x))) hc)
           (exteriorPower.map (finrank ℂ (Conjugate F)) (e x).toLinearEquiv.toLinearMap.conjugate
-            (linearEquiv ℂ (Conjugate F) (ConjugateBundle E) x v)))) =
-    toConj ((linearEquiv ℂ G E' x).symm
-      (LinearEquiv.ofEq _ _ (congrArg (fun n => ⋀[ℂ]^n (E' x)) h)
-        (exteriorPower.map (finrank ℂ F) (e x).toLinearEquiv.toLinearMap
-          (linearEquiv ℂ F E x
-            (ofConj (conjugateLinearEquiv (F := F) (E := E) x v)))))) := by
-  dsimp only
-  exact conjugateLinearEquiv_naturality
-    (((VectorBundle.continuousLinearEquivAt ℂ F E x).symm.trans
-      ((e x).trans (VectorBundle.continuousLinearEquivAt ℂ G E' x))).toLinearEquiv.finrank_eq)
-    x (e x).toLinearEquiv.toLinearMap v
+            (linearEquiv ℂ (Conjugate F) (ConjugateBundle E) x v))) := by
+    apply (linearEquiv ℂ (Conjugate G) (ConjugateBundle E') x).injective
+    apply Subtype.ext
+    rw [coe_congrModelEquiv, LinearEquiv.apply_symm_apply, LinearEquiv.coe_ofEq_apply,
+      exteriorPower.coe_map]
+    congr 2
+    exact LinearMap.ext fun w => by simp
+  rw [hS, hT]
+  exact conjugateLinearEquiv_naturality h x (e x).toLinearEquiv.toLinearMap v
 
 /-- The native determinant transport induced by cancelling two conjugations on the original
 fibre. It is defined directly by the exterior functor, independently of `conjugateLinearEquiv`. -/
@@ -284,18 +300,6 @@ section Pullback
 
 variable {B' : Type*}
 
-omit [NormedSpace ℂ F] [∀ x, Module ℂ (E x)] in
-/-- Determinant pullback is the identity on exterior generators. -/
-private theorem pullbackEquiv_ιMulti {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
-    {E' : B → Type*} [∀ x, AddCommGroup (E' x)] [∀ x, Module ℂ (E' x)] (f : B' → B) (y : B')
-    (a : Fin (finrank ℂ G) → E' (f y)) :
-    pullbackEquiv (𝕜 := ℂ) (F := G) (E := E') f y
-        ((linearEquiv ℂ G E' (f y)).symm (exteriorPower.ιMulti ℂ _ a)) =
-      (linearEquiv ℂ G (f *ᵖ E') y).symm (exteriorPower.ιMulti ℂ _ a) := by
-  apply (linearEquiv ℂ G (f *ᵖ E') y).injective
-  apply Subtype.ext
-  exact (coe_linearEquiv_pullbackEquiv f y _).trans rfl
-
 /-- The native exterior comparison commutes with the canonical determinant-pullback maps,
 along any map of bases. -/
 theorem conjugateLinearEquiv_pullback (f : B' → B) (y : B')
@@ -304,39 +308,28 @@ theorem conjugateLinearEquiv_pullback (f : B' → B) (y : B')
       (pullbackEquiv (𝕜 := ℂ) (F := Conjugate F) (E := ConjugateBundle E) f y v) =
       toConj (pullbackEquiv (𝕜 := ℂ) (F := F) (E := E) f y
         (ofConj (conjugateLinearEquiv (F := F) (E := E) (f y) v))) := by
-  -- Both sides are complex-linear in `v`; compare them on exterior generators. The identity
-  -- equivalences `e`, `eS` and `eT` only change how the same fibres are presented.
-  let e : ⋀[ℂ]^(finrank ℂ (Conjugate F)) (Conjugate (E (f y))) ≃ₗ[ℂ]
-      (f *ᵖ (DetBundle ℂ (Conjugate F) (ConjugateBundle E))) y :=
-    LinearEquiv.refl ℂ _
-  let eS : DetBundle ℂ (Conjugate F) (f *ᵖ (ConjugateBundle E)) y ≃ₗ[ℂ]
-      DetBundle ℂ (Conjugate F) (ConjugateBundle (f *ᵖ E)) y :=
-    LinearEquiv.refl ℂ _
-  let eT : DetBundle ℂ F E (f y) ≃ₗ[ℂ] (f *ᵖ (DetBundle ℂ F E)) y :=
-    LinearEquiv.refl ℂ _
-  suffices h : ∀ w ∈ Submodule.span ℂ (Set.range (exteriorPower.ιMulti ℂ
-      (finrank ℂ (Conjugate F)) (M := Conjugate (E (f y))))),
-      conjugateLinearEquiv (F := F) (E := f *ᵖ E) y
-        (eS (pullbackEquiv (𝕜 := ℂ) (F := Conjugate F) (E := ConjugateBundle E) f y (e w))) =
-      toConj (pullbackEquiv (𝕜 := ℂ) (F := F) (E := E) f y
-        (eT (ofConj (conjugateLinearEquiv (F := F) (E := E) (f y)
-          ((linearEquiv ℂ (Conjugate F) (ConjugateBundle E) (f y)).symm w))))) from
-    h v (by rw [exteriorPower.ιMulti_span]; exact Submodule.mem_top)
-  intro w hw
-  induction hw using Submodule.span_induction with
-  | mem w hw =>
-    obtain ⟨a, rfl⟩ := hw
+  -- Both sides are complex-linear in `v`; compare them on exterior generators.
+  have h : (conjugateLinearEquiv (F := F) (E := f *ᵖ E) y).toLinearMap ∘ₗ
+      (pullbackEquiv (𝕜 := ℂ) (F := Conjugate F) (E := ConjugateBundle E) f y).toLinearMap ∘ₗ
+        (linearEquiv ℂ (Conjugate F) (ConjugateBundle E) (f y)).symm.toLinearMap =
+      (pullbackEquiv (𝕜 := ℂ) (F := F) (E := E) f y).toLinearEquiv.conjugate.toLinearMap ∘ₗ
+        (conjugateLinearEquiv (F := F) (E := E) (f y)).toLinearMap ∘ₗ
+          (linearEquiv ℂ (Conjugate F) (ConjugateBundle E) (f y)).symm.toLinearMap := by
+    refine exteriorPower.linearMap_ext (AlternatingMap.ext fun a => ?_)
+    simp only [LinearMap.compAlternatingMap_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+      LinearEquiv.conjugate_apply, ContinuousLinearEquiv.coe_toLinearEquiv]
     have hl := (congrArg (conjugateLinearEquiv (F := F) (E := f *ᵖ E) y)
-      (pullbackEquiv_ιMulti (G := Conjugate F) (E' := ConjugateBundle E) f y a)).trans
+      (pullbackEquiv_ιMulti (𝕜 := ℂ) (F := Conjugate F) (E := ConjugateBundle E) f y a)).trans
       (conjugateLinearEquiv_ιMulti (F := F) (E := f *ᵖ E) y a)
     have hr := congrArg (fun z => toConj (pullbackEquiv (𝕜 := ℂ) (F := F) (E := E) f y
       (ofConj z))) (conjugateLinearEquiv_ιMulti (F := F) (E := E) (f y) a)
-    exact hl.trans ((hr.trans (congrArg toConj (pullbackEquiv_ιMulti (G := F) (E' := E) f y
-      (fun i => ofConj (a (Fin.cast (finrank_complex (V := F)).symm i)))))).symm)
-  | zero => simp only [map_zero, ofConj_zero, toConj_zero]
-  | add w w' _ _ hw hw' => simp only [map_add, ofConj_add, toConj_add, hw, hw']
-  | smul c w _ hw =>
-    simp only [map_smul, ofConj_smul, toConj_smul, hw, Complex.conj_conj]
+    exact hl.trans ((hr.trans (congrArg toConj (pullbackEquiv_ιMulti (𝕜 := ℂ) (F := F) (E := E)
+      f y (fun i => ofConj (a (Fin.cast (finrank_complex (V := F)).symm i)))))).symm)
+  have hv := LinearMap.congr_fun h (linearEquiv ℂ (Conjugate F) (ConjugateBundle E) (f y) v)
+  rw [LinearMap.comp_apply
+    (f := (pullbackEquiv (𝕜 := ℂ) (F := F) (E := E) f y).toLinearEquiv.conjugate.toLinearMap),
+    LinearEquiv.coe_coe, LinearEquiv.conjugate_apply] at hv
+  exact hv
 
 /-- Conjugation of native determinant fibres commutes with canonical determinant pullback,
 along any map of bases. -/
@@ -652,17 +645,19 @@ theorem conjugateHomeomorph_pullback (f : K) :
     (pulledConjugateHomeomorph (F := F) (E := E) (f : X → B)).trans
       (conjugateTargetPullbackHomeomorph (F := F) (E := E) f) := by
   ext p : 1
-  -- Instantiate the fibre law before unifying with the type of `p.snd`, which would otherwise
-  -- fix the fibre dictionaries of `E` in a form that instance search does not recognise.
-  have h := conjugateEquiv_pullback (F := F) (E := E) (f : X → B) p.proj
   conv_rhs =>
     rw [Homeomorph.trans_apply, pulledConjugateHomeomorph_apply,
       conjugateTargetPullbackHomeomorph_apply]
+  -- The left composite passes through two presentations of the same fibres:
+  -- `pullbackHomeomorph` lands in `DetBundle ℂ (Conjugate F) (f *ᵖ ConjugateBundle E)`, while
+  -- `conjugateHomeomorph` starts from `DetBundle ℂ (Conjugate F) (ConjugateBundle (f *ᵖ E))`.
+  -- They agree only up to unfolding the pullback and conjugate fibre aliases, so `erw` is needed.
   erw [Homeomorph.trans_apply,
     pullbackHomeomorph_apply (𝕜 := ℂ) (F := Conjugate F) (E := ConjugateBundle E) f,
     conjugateHomeomorph_apply (F := F) (E := (f : X → B) *ᵖ E)]
   exact congrArg (fun z => (⟨p.proj, z⟩ :
-    TotalSpace (Conjugate ℂ) (ConjugateBundle (DetBundle ℂ F ((f : X → B) *ᵖ E))))) (h p.snd)
+    TotalSpace (Conjugate ℂ) (ConjugateBundle (DetBundle ℂ F ((f : X → B) *ᵖ E)))))
+    (conjugateEquiv_pullback (f : X → B) p.proj p.snd)
 
 end Pullback
 

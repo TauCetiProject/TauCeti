@@ -168,24 +168,6 @@ theorem _root_.Bundle.Trivialization.exists_conjugate_eq
     ∃ e' : Trivialization F (π F E), e'.conjugate = e :=
   ⟨e, rfl⟩
 
-section PullbackCoordinates
-
-variable {X : Type*} [TopologicalSpace X]
-  {K : Type*} [FunLike K X B] [ContinuousMapClass K X B]
-
-/-- Coordinates in a pulled-back conjugate chart use the original chart at the image point. -/
-theorem _root_.Bundle.Trivialization.conjugate_pullback_apply
-    [∀ x, Nonempty (ConjugateBundle E x)] (e : Trivialization F (π F E)) (f : K)
-    (p : TotalSpace (Conjugate F) ((f : X → B) *ᵖ (ConjugateBundle E))) :
-    e.conjugate.pullback f p =
-      (p.proj, toConj (e ⟨f p.proj, ofConj p.snd⟩).2) := by
-  rw [Trivialization.pullback_apply, Trivialization.conjugate_apply,
-    toConjHomeomorph_symm_apply]
-  -- `Pullback.lift` changes only the base point; its fibre entry is the same pair projection.
-  rfl
-
-end PullbackCoordinates
-
 variable [∀ x, TopologicalSpace (E x)] [FiberBundle F E]
 
 variable (F E) in
@@ -272,49 +254,6 @@ instance instVectorBundleComplex [VectorBundle ℂ F E] :
     exact (ContinuousLinearMap.continuous_conjugate.comp_continuousOn
       (continuousOn_coordChange ℂ e₁ e₂)).congr fun b hb ↦
         Trivialization.coordChangeL_conjugate e₁ e₂ hb
-
-section PullbackCoordinates
-
-variable {X : Type*} [TopologicalSpace X]
-  {K : Type*} [FunLike K X B] [ContinuousMapClass K X B]
-
-omit [∀ x, TopologicalSpace (E x)] [FiberBundle F E] in
-/-- Conjugating and pulling back a chart give the same fibre linear coordinate map. -/
-theorem _root_.Bundle.Trivialization.linearEquivAt_conjugate_pullback
-    (e : Trivialization F (π F E)) [e.IsLinear ℂ] (f : K) {y : X}
-    (hy : y ∈ (e.pullback f).baseSet) :
-    let : ∀ x, AddCommGroup (((f : X → B) *ᵖ E) x) := fun x =>
-      inferInstanceAs (AddCommGroup (E (f x)))
-    let : ∀ x, Module ℂ (((f : X → B) *ᵖ E) x) := fun x =>
-      inferInstanceAs (Module ℂ (E (f x)))
-    let ePB : Trivialization (Conjugate F)
-      (π (Conjugate F) (ConjugateBundle ((f : X → B) *ᵖ E))) := e.conjugate.pullback f
-    let : ePB.IsLinear ℂ := Trivialization.pullback_linear ℂ e.conjugate f
-    (ePB.linearEquivAt ℂ y
-      (by simpa only [ePB, Trivialization.pullback_baseSet,
-        Trivialization.baseSet_conjugate] using hy)).toLinearMap =
-      ((e.pullback f).conjugate.linearEquivAt ℂ y
-        ((e.pullback f).baseSet_conjugate.symm ▸ hy)).toLinearMap := by
-  intro _ _ _ _
-  refine LinearMap.ext fun v => ?_
-  simp only [LinearEquiv.coe_toLinearMap]
-  calc
-    _ = (e.conjugate.pullback f ⟨y, v⟩).2 := by
-      -- Pullback's monoid and the inherited group dictionaries agree after reducing
-      -- the fibre aliases; `erw` aligns this dictionary instantiation of the apply lemma.
-      erw [Trivialization.linearEquivAt_apply (F := Conjugate F)
-        (E := ConjugateBundle ((f : X → B) *ᵖ E))]
-      -- Both sides are now the second projection of the same pulled-back chart.
-      rfl
-    _ = toConj (e ⟨f y, ofConj v⟩).2 :=
-      congrArg Prod.snd (Trivialization.conjugate_pullback_apply e f ⟨y, v⟩)
-    _ = _ := by
-      simp only [Trivialization.linearEquivAt_apply, Trivialization.conjugate_apply,
-        toConjHomeomorph_symm_apply, Trivialization.pullback_apply, Pullback.lift]
-      -- The remaining original-chart coordinates have the same base and fibre entries.
-      rfl
-
-end PullbackCoordinates
 
 variable [NormedSpace ℝ F] [∀ x, Module ℝ (E x)]
 

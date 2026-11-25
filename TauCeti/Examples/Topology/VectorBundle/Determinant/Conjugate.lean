@@ -149,69 +149,29 @@ theorem rankTwo_nonreal_inverse_chart :
 `Nonempty` hypothesis, with model presentations in independent universes. -/
 theorem emptyBase_bundleIso_naturality (x : Empty)
     (v : DetBundle ℂ (Conjugate Plane) (ConjugateBundle (Trivial Empty Plane)) x) :
-    let e : Plane ≃L[ℂ] ULift.{u} Plane :=
+    let e : ∀ _ : Empty, Plane ≃L[ℂ] ULift.{u} Plane := fun _ =>
       (ULift.moduleEquiv (R := ℂ) (M := Plane)).symm.toContinuousLinearEquiv
-    let eModel := (VectorBundle.continuousLinearEquivAt ℂ Plane (Trivial Empty Plane) x).symm.trans
-      (e.trans (VectorBundle.continuousLinearEquivAt ℂ (ULift.{u} Plane)
-        (Trivial Empty (ULift.{u} Plane)) x))
-    let h := eModel.toLinearEquiv.finrank_eq
-    let hc := (finrank_complex (V := Plane)).trans
-      (h.trans (finrank_complex (V := ULift.{u} Plane)).symm)
     DetBundle.conjugateLinearEquiv (F := ULift.{u} Plane)
       (E := Trivial Empty (ULift.{u} Plane)) x
-      ((DetBundle.linearEquiv ℂ (Conjugate (ULift.{u} Plane))
-        (ConjugateBundle (Trivial Empty (ULift.{u} Plane))) x).symm
-          (LinearEquiv.ofEq _ _
-            (congrArg (fun n => ⋀[ℂ]^n (Conjugate (ULift.{u} Plane))) hc)
-            (exteriorPower.map (finrank ℂ (Conjugate Plane)) e.toLinearEquiv.toLinearMap.conjugate
-              (DetBundle.linearEquiv ℂ (Conjugate Plane)
-                (ConjugateBundle (Trivial Empty Plane)) x v)))) =
-      toConj ((DetBundle.linearEquiv ℂ (ULift.{u} Plane)
-        (Trivial Empty (ULift.{u} Plane)) x).symm
-          (LinearEquiv.ofEq _ _ (congrArg (fun n => ⋀[ℂ]^n (ULift.{u} Plane)) h)
-            (exteriorPower.map (finrank ℂ Plane) e.toLinearEquiv.toLinearMap
-              (DetBundle.linearEquiv ℂ Plane (Trivial Empty Plane) x
-                (ofConj (DetBundle.conjugateLinearEquiv (F := Plane)
-                  (E := Trivial Empty Plane) x v)))))) := by
-  dsimp only
-  exact DetBundle.conjugateLinearEquiv_bundleIso_naturality
-    (F := Plane) (G := ULift.{u} Plane) (E := Trivial Empty Plane)
-    (E' := Trivial Empty (ULift.{u} Plane))
-    (fun _ => (ULift.moduleEquiv (R := ℂ) (M := Plane)).symm.toContinuousLinearEquiv) x v
+      (DetBundle.congrModelEquiv (F₁ := Conjugate Plane) (F' := Conjugate (ULift.{u} Plane))
+        (fun x => (e x).conjugate) x v) =
+      toConj (DetBundle.congrModelEquiv (F₁ := Plane) (F' := ULift.{u} Plane) e x
+        (ofConj (DetBundle.conjugateLinearEquiv (F := Plane) (E := Trivial Empty Plane) x v))) :=
+  DetBundle.conjugateLinearEquiv_bundleIso_naturality _ x v
 
 /-- Pointwise bundle-isomorphism naturality at a point of a nonempty base, with independent
 model universes and an arbitrary determinant vector. -/
 theorem unitBase_bundleIso_naturality (x : Unit)
     (v : DetBundle ℂ (Conjugate Plane) (ConjugateBundle (Trivial Unit Plane)) x) :
-    let e : Plane ≃L[ℂ] ULift.{u} Plane :=
+    let e : ∀ _ : Unit, Plane ≃L[ℂ] ULift.{u} Plane := fun _ =>
       (ULift.moduleEquiv (R := ℂ) (M := Plane)).symm.toContinuousLinearEquiv
-    let eModel := (VectorBundle.continuousLinearEquivAt ℂ Plane (Trivial Unit Plane) x).symm.trans
-      (e.trans (VectorBundle.continuousLinearEquivAt ℂ (ULift.{u} Plane)
-        (Trivial Unit (ULift.{u} Plane)) x))
-    let h := eModel.toLinearEquiv.finrank_eq
-    let hc := (finrank_complex (V := Plane)).trans
-      (h.trans (finrank_complex (V := ULift.{u} Plane)).symm)
     DetBundle.conjugateLinearEquiv (F := ULift.{u} Plane)
       (E := Trivial Unit (ULift.{u} Plane)) x
-      ((DetBundle.linearEquiv ℂ (Conjugate (ULift.{u} Plane))
-        (ConjugateBundle (Trivial Unit (ULift.{u} Plane))) x).symm
-          (LinearEquiv.ofEq _ _
-            (congrArg (fun n => ⋀[ℂ]^n (Conjugate (ULift.{u} Plane))) hc)
-            (exteriorPower.map (finrank ℂ (Conjugate Plane)) e.toLinearEquiv.toLinearMap.conjugate
-              (DetBundle.linearEquiv ℂ (Conjugate Plane)
-                (ConjugateBundle (Trivial Unit Plane)) x v)))) =
-      toConj ((DetBundle.linearEquiv ℂ (ULift.{u} Plane)
-        (Trivial Unit (ULift.{u} Plane)) x).symm
-          (LinearEquiv.ofEq _ _ (congrArg (fun n => ⋀[ℂ]^n (ULift.{u} Plane)) h)
-            (exteriorPower.map (finrank ℂ Plane) e.toLinearEquiv.toLinearMap
-              (DetBundle.linearEquiv ℂ Plane (Trivial Unit Plane) x
-                (ofConj (DetBundle.conjugateLinearEquiv (F := Plane)
-                  (E := Trivial Unit Plane) x v)))))) := by
-  dsimp only
-  exact DetBundle.conjugateLinearEquiv_bundleIso_naturality
-    (F := Plane) (G := ULift.{u} Plane) (E := Trivial Unit Plane)
-    (E' := Trivial Unit (ULift.{u} Plane))
-    (fun _ => (ULift.moduleEquiv (R := ℂ) (M := Plane)).symm.toContinuousLinearEquiv) x v
+      (DetBundle.congrModelEquiv (F₁ := Conjugate Plane) (F' := Conjugate (ULift.{u} Plane))
+        (fun x => (e x).conjugate) x v) =
+      toConj (DetBundle.congrModelEquiv (F₁ := Plane) (F' := ULift.{u} Plane) e x
+        (ofConj (DetBundle.conjugateLinearEquiv (F := Plane) (E := Trivial Unit Plane) x v))) :=
+  DetBundle.conjugateLinearEquiv_bundleIso_naturality _ x v
 
 /-- The inverse target comparison conjugates the inverse determinant pullback on arbitrary
 rank-two vectors over the pullback along `z ↦ z²`. -/

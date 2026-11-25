@@ -23,7 +23,8 @@ conjugating twice gives back `V`, and conjugation commutes with products.
 
 * `TauCeti.Conjugate.toConjL`: the identity as a continuous conjugate-linear equivalence;
   `TauCeti.Conjugate.toConjL'` is the identity as a continuous real-linear one.
-* `ContinuousLinearMap.conjugate`: the conjugate of a continuous complex-linear map, an isometry.
+* `ContinuousLinearMap.conjugate`: the conjugate of a continuous complex-linear map, an isometry;
+  `ContinuousLinearEquiv.conjugate` is the conjugate of a continuous linear equivalence.
 * `ContinuousLinearMap.toConjugate`: continuous conjugate-linear maps `V → W` are equivalent to
   continuous complex-linear maps `V → Conjugate W`.
 * `TauCeti.Conjugate.doubleConjugateL`: `Conjugate (Conjugate V) ≃L[ℂ] V`.
@@ -263,6 +264,31 @@ theorem continuous_conjugate :
 end Normed
 
 end ContinuousLinearMap
+
+namespace ContinuousLinearEquiv
+
+variable {V W : Type*} [AddCommGroup V] [Module ℂ V] [TopologicalSpace V]
+  [AddCommGroup W] [Module ℂ W] [TopologicalSpace W]
+
+/-- The conjugate of a continuous complex-linear equivalence: the same map, read between the
+conjugate spaces. -/
+def conjugate (e : V ≃L[ℂ] W) : Conjugate V ≃L[ℂ] Conjugate W where
+  toLinearEquiv := e.toLinearEquiv.conjugate
+  continuous_toFun := (e : V →L[ℂ] W).conjugate.continuous.congr fun v => by simp
+  continuous_invFun := (e.symm : W →L[ℂ] V).conjugate.continuous.congr fun w => by
+    simp [LinearEquiv.conjugate_symm, LinearEquiv.conjugate_apply]
+
+@[simp] theorem conjugate_toLinearEquiv (e : V ≃L[ℂ] W) :
+    e.conjugate.toLinearEquiv = e.toLinearEquiv.conjugate := by rfl
+
+@[simp] theorem conjugate_apply (e : V ≃L[ℂ] W) (v : Conjugate V) :
+    e.conjugate v = toConj (e (ofConj v)) :=
+  LinearEquiv.conjugate_apply e.toLinearEquiv v
+
+@[simp] theorem conjugate_symm (e : V ≃L[ℂ] W) : e.conjugate.symm = e.symm.conjugate :=
+  toLinearEquiv_injective (LinearEquiv.conjugate_symm e.toLinearEquiv)
+
+end ContinuousLinearEquiv
 
 namespace TauCeti.Conjugate
 
