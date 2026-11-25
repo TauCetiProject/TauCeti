@@ -145,6 +145,26 @@ private noncomputable def centralTorusEquiv (u : Rˣ) (Λ : LinearMap.BilinForm 
         (fun a b ↦ factorSet u Λ a b) :=
   TwistedMonoidAlgebra.domCongr (centralIndexEquiv u Λ) (centralFactorSet_eq u Λ)
 
+private theorem centralTorusEquiv_monomial (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L)
+    (a : (u.quantumTorusCentralExponents Λ).toIntSubmodule) :
+    centralTorusEquiv u Λ (monomial u _ a) =
+      TwistedMonoidAlgebra.of (centralIndexEquiv u Λ (Multiplicative.ofAdd a)) := by
+  rw [centralTorusEquiv, monomial_def, TwistedMonoidAlgebra.domCongr_of]
+
+private theorem repr_centralTorusEquiv_apply (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L)
+    (f : let S := (u.quantumTorusCentralExponents Λ).toIntSubmodule
+      QuantumTorus R S u (Λ.restrict S))
+    (a : (u.quantumTorusCentralExponents Λ).toIntSubmodule) :
+    (TwistedMonoidAlgebra.basis R
+      (TwistedMonoidAlgebra.centralIndices (factorSet u Λ))
+      (fun a b ↦ factorSet u Λ a b)).repr (centralTorusEquiv u Λ f)
+        (centralIndexEquiv u Λ (Multiplicative.ofAdd a)) =
+      (basis u (Λ.restrict (u.quantumTorusCentralExponents Λ).toIntSubmodule)).repr f a := by
+  rw [centralTorusEquiv]
+  simpa only [basis_repr_apply] using TwistedMonoidAlgebra.repr_domCongr_apply
+    (β := fun a b : TwistedMonoidAlgebra.centralIndices (factorSet u Λ) ↦ factorSet u Λ a b)
+    (centralIndexEquiv u Λ) (centralFactorSet_eq u Λ) f (Multiplicative.ofAdd a)
+
 /-- A normalized central monomial, bundled as an element of the center. -/
 noncomputable def _root_.Units.quantumTorusCenterMonomial (u : Rˣ)
     (Λ : LinearMap.BilinForm ℤ L) (a : L) (ha : a ∈ u.quantumTorusCentralExponents Λ) :
@@ -173,11 +193,11 @@ theorem _root_.Units.quantumTorusCenterHom_monomial (u : Rˣ)
     (u.quantumTorusCenterHom Λ) (monomial u _ a) =
       u.quantumTorusCenterMonomial Λ (a : L)
         ((AddSubgroup.mem_toIntSubmodule _ _).mp a.property) := by
+  rw [Units.quantumTorusCenterHom, AlgHom.comp_apply, AlgEquiv.toAlgHom_apply,
+    centralTorusEquiv_monomial, TwistedMonoidAlgebra.centerHom_of]
   apply Subtype.ext
-  simp only [Units.quantumTorusCenterHom, AlgHom.comp_apply, AlgEquiv.toAlgHom_apply,
-    centralTorusEquiv, monomial_def, TwistedMonoidAlgebra.domCongr_of,
-    TwistedMonoidAlgebra.centerHom_of, TwistedMonoidAlgebra.coe_centerOf,
-    centralIndexEquiv_apply_coe, toAdd_ofAdd, Units.coe_quantumTorusCenterMonomial]
+  simp only [TwistedMonoidAlgebra.coe_centerOf, Units.coe_quantumTorusCenterMonomial,
+    centralIndexEquiv_apply_coe, toAdd_ofAdd, monomial_def]
 
 /-- Included exponent coefficients are unchanged by the restricted center map. -/
 @[simp]
@@ -191,12 +211,9 @@ theorem _root_.Units.basis_repr_quantumTorusCenterHom_apply (u : Rˣ)
       (basis u (Λ.restrict (u.quantumTorusCentralExponents Λ).toIntSubmodule)).repr f a := by
   have h := TwistedMonoidAlgebra.repr_centerHom_apply (centralTorusEquiv u Λ f)
     (centralIndexEquiv u Λ (Multiplicative.ofAdd a))
-  have hr := TwistedMonoidAlgebra.repr_domCongr_apply
-    (β := fun a b : TwistedMonoidAlgebra.centralIndices (factorSet u Λ) ↦ factorSet u Λ a b)
-    (centralIndexEquiv u Λ)
-    (centralFactorSet_eq u Λ) f (Multiplicative.ofAdd a)
+  have hr := repr_centralTorusEquiv_apply u Λ f a
   simpa only [Units.quantumTorusCenterHom, AlgHom.comp_apply, AlgEquiv.toAlgHom_apply,
-    centralIndexEquiv_apply_coe, toAdd_ofAdd, basis_repr_apply, centralTorusEquiv] using h.trans hr
+    centralIndexEquiv_apply_coe, toAdd_ofAdd, basis_repr_apply] using h.trans hr
 
 /-- Ambient exponent coefficients outside the central subgroup vanish under the center map. -/
 theorem _root_.Units.basis_repr_quantumTorusCenterHom_apply_eq_zero (u : Rˣ)
