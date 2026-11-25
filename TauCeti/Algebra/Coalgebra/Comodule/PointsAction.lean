@@ -46,12 +46,23 @@ the criterion is restated for natural point representations in
 
 A regular one-cochain `b : V ⊗[R] H` can likewise be evaluated at any point by pushing its
 `H`-factor through the point. Evaluation at the universal tensor-factor points recovers the
-tensor expressions in the regular cocycle identity.
+tensor expressions in the regular cocycle identity. For a Hopf algebra, applying the antipode
+to the coordinate factor inverts the point argument.
 
 ## Main declarations
 
 * `TauCeti.Comodule.pointCochain`: evaluation of a regular one-cochain at a point.
 * `TauCeti.Comodule.rTensor_pointCochain`: this evaluation is natural in the value algebra.
+* `LinearMap.baseChange_pointCochain`: evaluation is natural in the coefficient module.
+* `TauCeti.Comodule.pointCochain_lTensor_antipode`: the coordinate antipode inverts the point.
+* `TauCeti.Comodule.liftBaseChange_pointCochain_pointCochain`: evaluation at two points agrees
+  with evaluation at their tensor-product point.
+* `TauCeti.Comodule.liftBaseChange_pointCochain_pointCochain_includeLeft_includeRight`:
+  evaluation at the universal pair recovers the reassociated tensor.
+* `TauCeti.Comodule.liftBaseChange_pointCochain_rTensor_coact`: evaluating a coacted cochain
+  gives the point action on its value.
+* `TauCeti.Comodule.liftBaseChange_pointCochain_rTensor_comul`: evaluating a comultiplied
+  coordinate gives convolution of points.
 * `TauCeti.Comodule.pointCochain_includeLeft` and
   `TauCeti.Comodule.endOfPoint_includeLeft_pointCochain_includeRight`: cochain evaluation at the
   universal pair of points.
@@ -157,7 +168,7 @@ theorem _root_.LinearMap.baseChange_pointCochain {W : Type*} [AddCommMonoid W] [
 variable (V) in
 /-- Evaluating both coordinate factors agrees with evaluating at their tensor-product point.
 The value algebra is commutative, so the two point images commute. -/
-theorem pointCochain_lift {D : Type*} [Semiring D] [Algebra R D]
+theorem liftBaseChange_pointCochain_pointCochain {D : Type*} [Semiring D] [Algebra R D]
     (h : D →ₐ[R] A) (g : H →ₐ[R] A) (z : (V ⊗[R] D) ⊗[R] H) :
     (LinearMap.liftBaseChange A (pointCochain V h)) (pointCochain (V ⊗[R] D) g z) =
       pointCochain V (Algebra.TensorProduct.lift h g (fun _ _ ↦ Commute.all _ _))
@@ -196,13 +207,13 @@ variable {R H V : Type*} [CommSemiring R] [CommSemiring H] [Algebra R H]
 
 variable (V) in
 /-- Evaluation at the two universal tensor-factor points recovers the reassociated tensor. -/
-theorem pointCochain_lift_includeLeft_includeRight {D : Type*}
+theorem liftBaseChange_pointCochain_pointCochain_includeLeft_includeRight {D : Type*}
     [CommSemiring D] [Algebra R D] (z : (V ⊗[R] D) ⊗[R] H) :
     LinearMap.liftBaseChange (D ⊗[R] H)
         (pointCochain V (Algebra.TensorProduct.includeLeft (S := R)))
         (pointCochain (V ⊗[R] D) Algebra.TensorProduct.includeRight z) =
       TensorProduct.comm R V (D ⊗[R] H) (TensorProduct.assoc R V D H z) := by
-  rw [pointCochain_lift, Algebra.TensorProduct.lift_includeLeft_includeRight]
+  rw [liftBaseChange_pointCochain_pointCochain, Algebra.TensorProduct.lift_includeLeft_includeRight]
   simp [pointCochain_apply]
 
 end CochainUniversal
@@ -285,8 +296,7 @@ lemma baseChange_comp_endOfPoint (f : Hom R H V W) (g : H →ₐ[R] A) :
   intro a v
   simp only [LinearMap.comp_apply, endOfPoint_tmul, map_smul, LinearMap.baseChange_tmul]
   rw [← pointCochain_apply, LinearMap.baseChange_pointCochain,
-    LinearMap.rTensor_def, Hom.map_coact_apply]
-  rfl
+    LinearMap.rTensor_def, Hom.map_coact_apply, Hom.coe_toLinearMap, pointCochain_apply]
 
 /-- An injective comodule morphism preserves and reflects the stabilizer of a subspace
 after flat scalar extension. Thus a subspace has the same stabilizer in a subrepresentation
@@ -307,7 +317,7 @@ end Functorial
 
 variable (V) in
 /-- Evaluating the coordinate factors of a coacted cochain is the action on its value. -/
-theorem pointCochain_lift_coact {C : Type*} [Semiring C] [Algebra R C]
+theorem liftBaseChange_pointCochain_rTensor_coact {C : Type*} [Semiring C] [Algebra R C]
     (h : H →ₐ[R] A) (g : C →ₐ[R] A) (t : V ⊗[R] C) :
     LinearMap.liftBaseChange A (pointCochain V h)
         (pointCochain (V ⊗[R] H) g ((coact (R := R) (C := H) (M := V)).rTensor C t)) =
@@ -330,13 +340,13 @@ variable {R C D V A : Type*} [CommSemiring R] [Semiring C] [Bialgebra R C]
 variable (V) in
 /-- Evaluation of a comultiplied coordinate is convolution of the two points,
 with the left coordinate first mapped along an algebra homomorphism. -/
-theorem pointCochain_lift_rTensor_comul (f : C →ₐ[R] D)
+theorem liftBaseChange_pointCochain_rTensor_comul (f : C →ₐ[R] D)
     (h : D →ₐ[R] A) (g : C →ₐ[R] A) (t : V ⊗[R] C) :
     LinearMap.liftBaseChange A (pointCochain V h)
         (pointCochain (V ⊗[R] D) g ((TensorProduct.assoc R V D C).symm
           ((f.toLinearMap.rTensor C ∘ₗ Coalgebra.comul).lTensor V t))) =
       pointCochain V (toConv (h.comp f) * toConv g).ofConv t := by
-  rw [pointCochain_lift, LinearEquiv.apply_symm_apply]
+  rw [liftBaseChange_pointCochain_pointCochain, LinearEquiv.apply_symm_apply]
   have he : (Algebra.TensorProduct.lift h g (fun _ _ ↦ Commute.all _ _)).toLinearMap ∘ₗ
       f.toLinearMap.rTensor C =
         LinearMap.mul' R A ∘ₗ TensorProduct.map (h.comp f).toLinearMap g.toLinearMap := by
@@ -620,15 +630,16 @@ lemma endOfPoint_convMul (g h : WithConv (H →ₐ[R] A)) :
   intro a v
   simp only [LinearMap.comp_apply, endOfPoint_tmul, map_smul]
   congr 1
-  rw [← pointCochain_apply, ← pointCochain_apply, ← pointCochain_lift_coact,
-    pointCochain_lift]
+  rw [← pointCochain_apply, ← pointCochain_apply, ← liftBaseChange_pointCochain_rTensor_coact,
+    liftBaseChange_pointCochain_pointCochain]
   have hc := LinearMap.congr_fun (coassoc (R := R) (C := H) (M := V)) v
   simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap] at hc
   rw [hc]
-  have he := pointCochain_lift_rTensor_comul V (AlgHom.id R H) g.ofConv h.ofConv
+  have he := liftBaseChange_pointCochain_rTensor_comul V (AlgHom.id R H) g.ofConv h.ofConv
     (coact (R := R) (C := H) v)
   simpa only [AlgHom.comp_id, toConv_ofConv, AlgHom.toLinearMap_id, LinearMap.rTensor_id,
-    LinearMap.id_comp, pointCochain_lift, LinearEquiv.apply_symm_apply] using he.symm
+    LinearMap.id_comp, liftBaseChange_pointCochain_pointCochain,
+    LinearEquiv.apply_symm_apply] using he.symm
 
 variable (V) in
 /-- If two points whose convolution product is one both preserve a submodule, the first

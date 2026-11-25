@@ -202,11 +202,9 @@ theorem pointCochain_mapDomain_mul_of_mem_induced {t : M ⊗[R] C}
       endOfPoint M h.ofConv (pointCochain M g.ofConv t) := by
   have heq := congrArg (fun z ↦ LinearMap.liftBaseChange A (pointCochain M h.ofConv)
     (pointCochain (M ⊗[R] D) g.ofConv z)) ((mem_induced_iff q.toCoalgHom).mp ht)
-  rw [pointCochain_lift_coact] at heq
-  have hq : (q.toCoalgHom : C →ₗ[R] D) = q.toAlgHom.toLinearMap := by
-    rw [← CoalgHom.toLinearMap_eq_ofClass]
-    exact (BialgHom.toAlgHom_toLinearMap q).symm
-  rw [hq, pointCochain_lift_rTensor_comul] at heq
+  rw [liftBaseChange_pointCochain_rTensor_coact] at heq
+  -- `erw` matches Mathlib's class coercion with the coalgebra projection.
+  erw [← BialgHom.toAlgHom_toLinearMap q, liftBaseChange_pointCochain_rTensor_comul] at heq
   simpa only [BialgHom.mapDomain_apply, toConv_ofConv] using heq.symm
 
 /-- Evaluation is equivariant on the scalar extension of the induced comodule,
@@ -245,12 +243,11 @@ theorem mem_induced_iff_pointCochain_mapDomain_mul_universal
   apply (mem_induced_iff q.toCoalgHom).mpr
   apply (TensorProduct.assoc R M D C).injective
   apply (TensorProduct.comm R M (D ⊗[R] C)).injective
-  rw [← pointCochain_lift_includeLeft_includeRight,
-    ← pointCochain_lift_includeLeft_includeRight, pointCochain_lift_coact]
-  have hq : (q.toCoalgHom : C →ₗ[R] D) = q.toAlgHom.toLinearMap := by
-    rw [← CoalgHom.toLinearMap_eq_ofClass]
-    exact (BialgHom.toAlgHom_toLinearMap q).symm
-  rw [hq, pointCochain_lift_rTensor_comul]
+  rw [← liftBaseChange_pointCochain_pointCochain_includeLeft_includeRight,
+    ← liftBaseChange_pointCochain_pointCochain_includeLeft_includeRight,
+    liftBaseChange_pointCochain_rTensor_coact]
+  -- `erw` matches Mathlib's class coercion with the coalgebra projection.
+  erw [← BialgHom.toAlgHom_toLinearMap q, liftBaseChange_pointCochain_rTensor_comul]
   simpa only [BialgHom.mapDomain_apply, ofConv_toConv] using ht.symm
 
 /-- A regular function belongs to cotensor induction exactly when `F(hg) = h F(g)` for
@@ -303,8 +300,7 @@ variable {R : Type u} [CommRing R]
 
 /-- A cochain satisfies Jantzen's equation `f(gh) = h⁻¹ f(g)` exactly when applying
 its coordinate antipode gives an induced function. The value algebras in `Type (max v w)`
-contain the universal tensor-factor test. Inverting both point arguments reverses the
-cotensor criterion; point inversion is involutive. -/
+contain the universal tensor-factor test. -/
 theorem lTensor_antipode_mem_induced_iff_forall_pointCochain_mul_mapDomain
     (t : M ⊗[R] C) :
     (_root_.HopfAlgebraStruct.antipode R).lTensor M t ∈ induced q.toCoalgHom M ↔
