@@ -145,6 +145,12 @@ theorem isGradedEulerAdmissible_gradedFiniteProjectiveModules_of_finite
     ((GradedModuleCat.hasFiniteLaurentSupport_hom_shiftObj P N).of_equiv fun j ↦
       (GradedModuleCat.homShiftPowEquiv 𝒜 P N j).symm)
 
+/-- Applying the semilinear map induced by `LaurentPolynomial.invert` is `invert`. -/
+private theorem invert_toSemilinearMap_apply (z : LaurentPolynomial ℤ) :
+    (LaurentPolynomial.invert (R := ℤ)).toRingEquiv.toRingHom.toSemilinearMap z = invert z := by
+  rw [RingHom.toSemilinearMap_apply, RingHom.toFun_eq_coe, RingEquiv.toRingHom_eq_coe,
+    RingHom.coe_coe, AlgEquiv.coe_toRingEquiv]
+
 /-- **The q-Euler pairing against a fixed finite-dimensional graded module**,
 `K₀^gr(proj A) → ℤ[q,q⁻¹]`. It is `q`-antilinear in the projective class and sends `[P]` to
 `χ_q(P, N)`, with no finite-dimensionality or `HasExt` assumption on `A`. It is the
@@ -159,7 +165,7 @@ def gradedProjectiveExtEulerTarget (N : GradedModuleCat.{uA} 𝒜) [Module.Finit
 theorem gradedProjectiveExtEulerTarget_apply (N : GradedModuleCat.{uA} 𝒜) [Module.Finite k N]
     (x : LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)) :
     gradedProjectiveExtEulerTarget N x = invert (gradedHomShiftCoordinate N x) := by
-  rfl
+  rw [gradedProjectiveExtEulerTarget, LinearMap.comp_apply, invert_toSemilinearMap_apply]
 
 /-- Evaluating `gradedProjectiveExtEulerTarget N` on `[P]` gives `χ_q(P, N)`. -/
 @[simp]
@@ -254,8 +260,7 @@ theorem gradedProjectiveExtEuler_of_right
     (LaurentPolynomial.invert (R := ℤ)).toRingEquiv.toRingHom.toSemilinearMap.comp
       ((gradedProjectiveExtEuler 𝒜).flip (LaurentK0.of.{uA} _ M))
   have hφ (y) : φ₁ y = invert (gradedProjectiveExtEuler 𝒜 y (LaurentK0.of.{uA} _ M)) := by
-    rw [LinearMap.comp_apply, LinearMap.flip_apply]
-    rfl
+    rw [LinearMap.comp_apply, LinearMap.flip_apply, invert_toSemilinearMap_apply]
   have hlin : φ₁ = gradedHomShiftCoordinate M.obj := LaurentK0.hom_ext _ fun P ↦ by
     rw [hφ, gradedProjectiveExtEuler_of_of, ← gradedProjectiveExtEulerTarget_of,
       gradedProjectiveExtEulerTarget_apply, involutive_invert]
