@@ -12,6 +12,7 @@ import Mathlib.Tactic.LinearCombination
 import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 import TauCeti.MeasureTheory.Measure.ResolventTransform.Atoms
 import TauCeti.MeasureTheory.Measure.ResolventTransform.Inversion
+import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.Probability.Distributions.Cauchy.ApproximateIdentity
 
 /-!
@@ -137,10 +138,6 @@ private theorem lintegral_Ioc_ofReal_le_measure_Icc_of_tendsto {f : ℝ → ℝ}
         measureReal_union (by simp) (measurableSet_singleton a)]
       linarith [measureReal_nonneg (μ := μ) (s := {a}), measureReal_nonneg (μ := μ) (s := {b})]
 
-private theorem restrict_withDensity_restrict (s : Set ℝ) (d : ℝ → ℝ≥0∞) :
-    ((volume.restrict s).withDensity d).restrict s = (volume.restrict s).withDensity d := by
-  rw [restrict_withDensity' s, Measure.restrict_restrict_of_subset Subset.rfl]
-
 /-- The pointwise vertical boundary values of the normalized imaginary resolvent transform
 of a finite measure define a dominated density measure on an open set. -/
 theorem Measure.withDensity_restrict_le_of_tendsto_im_resolventTransform
@@ -152,7 +149,7 @@ theorem Measure.withDensity_restrict_le_of_tendsto_im_resolventTransform
   have hν : ν ≪ volume :=
     (withDensity_absolutelyContinuous _ _).trans (Measure.restrict_le_self.absolutelyContinuous)
   refine Measure.le_iff.2 fun t ht ↦ ?_
-  have hνs : ν.restrict s = ν := restrict_withDensity_restrict s _
+  have hνs : ν.restrict s = ν := volume.restrict_withDensity_restrict s _
   have hts : ν t = ν (t ∩ s) := by
     rw [← Measure.restrict_apply ht, hνs]
   rw [hts]
@@ -267,7 +264,7 @@ theorem restrict_eq_withDensity_of_tendsto_im_resolventTransform (μ : Measure �
     μ.restrict s = (μ - ν).restrict s + ν.restrict s := by
       rw [← Measure.restrict_add, Measure.sub_add_cancel_of_le hνle]
     _ = (volume.restrict s).withDensity (fun x ↦ ENNReal.ofReal (f x)) := by
-      rw [hzero, zero_add, hνeq, restrict_withDensity_restrict s]
+      rw [hzero, zero_add, hνeq, volume.restrict_withDensity_restrict s]
 
 end Measure
 
