@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Diffeology.Basic
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 public import TauCeti.Analysis.Calculus.DifferentialForm.Wedge
+public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 public import TauCeti.Topology.Algebra.Module.Alternating.Basic
 
 /-!
@@ -198,13 +199,14 @@ instance : AddCommGroup (DifferentialForm X F k) where
   add_comm _ _ := ext fun _ _ ↦ add_comm _ _
   sub_eq_add_neg _ _ := ext fun _ _ ↦ sub_eq_add_neg _ _
 
-instance : Module ℝ (DifferentialForm X F k) where
-  one_smul _ := ext fun _ _ ↦ one_smul ℝ _
+instance {R : Type*} [Semiring R] [Module R F] [SMulCommClass ℝ R F] [ContinuousConstSMul R F] :
+    Module R (DifferentialForm X F k) where
+  one_smul _ := ext fun _ _ ↦ one_smul R _
   mul_smul _ _ _ := ext fun _ _ ↦ mul_smul _ _ _
   smul_zero _ := ext fun _ _ ↦ smul_zero _
   smul_add _ _ _ := ext fun _ _ ↦ smul_add _ _ _
   add_smul _ _ _ := ext fun _ _ ↦ add_smul _ _ _
-  zero_smul _ := ext fun _ _ ↦ zero_smul ℝ _
+  zero_smul _ := ext fun _ _ ↦ zero_smul R _
 
 /-! ### The exterior derivative -/
 
@@ -586,6 +588,18 @@ theorem ofForm_smul (c : ℝ) (σ : E → E [⋀^Fin k]→L[ℝ] F) (hσ : ContD
   ext
   simp
 
+@[simp]
+theorem ofForm_neg (σ : E → E [⋀^Fin k]→L[ℝ] F) (hσ : ContDiff ℝ ∞ σ) :
+    ofForm (-σ) hσ.neg = -ofForm σ hσ := by
+  ext
+  simp
+
+@[simp]
+theorem ofForm_sub (σ τ : E → E [⋀^Fin k]→L[ℝ] F) (hσ : ContDiff ℝ ∞ σ) (hτ : ContDiff ℝ ∞ τ) :
+    ofForm (σ - τ) (hσ.sub hτ) = ofForm σ hσ - ofForm τ hτ := by
+  ext
+  simp
+
 /-- The paired wedge product of the plotwise forms given by smooth flat forms `σ` and `τ` is the
 plotwise form given by their pointwise paired wedge. -/
 @[simp]
@@ -596,6 +610,14 @@ theorem wedgeWith_ofForm (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (σ : E → E
         (contDiff_const.pairedWedge hσ hτ) :=
   ext fun _ _ ↦ funext fun _ ↦
     (ContinuousAlternatingMap.pairedWedge_compContinuousLinearMap _ _ _ _ _).symm
+
+/-- The wedge product of the real-valued plotwise forms given by smooth flat forms `σ` and `τ` is
+the plotwise form given by their pointwise wedge. -/
+@[simp]
+theorem wedge_ofForm (σ : E → E [⋀^Fin k]→L[ℝ] ℝ) (hσ : ContDiff ℝ ∞ σ)
+    (τ : E → E [⋀^Fin l]→L[ℝ] ℝ) (hτ : ContDiff ℝ ∞ τ) :
+    (ofForm σ hσ).wedge (ofForm τ hτ) = ofForm (fun y ↦ (σ y).wedge (τ y)) (hσ.wedge hτ) :=
+  ext fun _ _ ↦ funext fun _ ↦ by simp
 
 variable [FiniteDimensional ℝ E]
 
@@ -670,6 +692,18 @@ theorem toForm_add (σ τ : DifferentialForm E F k) : (σ + τ).toForm = σ.toFo
 
 @[simp]
 theorem toForm_smul (c : ℝ) (σ : DifferentialForm E F k) : (c • σ).toForm = c • σ.toForm := by
+  funext
+  ext
+  simp [toForm_apply]
+
+@[simp]
+theorem toForm_neg (σ : DifferentialForm E F k) : (-σ).toForm = -σ.toForm := by
+  funext
+  ext
+  simp [toForm_apply]
+
+@[simp]
+theorem toForm_sub (σ τ : DifferentialForm E F k) : (σ - τ).toForm = σ.toForm - τ.toForm := by
   funext
   ext
   simp [toForm_apply]
