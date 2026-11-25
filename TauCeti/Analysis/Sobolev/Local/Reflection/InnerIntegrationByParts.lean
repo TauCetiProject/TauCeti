@@ -29,9 +29,9 @@ on the real axis.
 
 Both test the scalar identities `TauCeti.HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg` and
 `TauCeti.HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg_of_continuousOn` against a cutoff
-equal to `1` near the support. The bridge from local integrability up to the axis to
-integrability against test functions on the upper half-plane is
-`TauCeti.MemLpLoc.locallyIntegrableOn_restrict_setOf_im_nonneg`, which gives
+equal to `1` near the support. Local integrability up to the axis gives integrability against
+test functions on the upper half-plane through
+`TauCeti.MemLpLoc.locallyIntegrableOn_restrict_setOf_im_nonneg`; the resulting statements are
 `TestFunction.integrableOn_im_pos_inner_of_memLpLoc` and its derivative form.
 -/
 
@@ -115,7 +115,6 @@ theorem integrableOn_im_pos_inner_fderiv_of_memLpLoc (φ : 𝓓(Ω, V)) {w : ℂ
     (ofPred_subset_ofPred.2 fun _ h => h.le)
 
 variable [FiniteDimensional ℝ V]
-
 
 /-- **Integration by parts on the upper half-plane against a vector-valued test function.** Let
 `w'` be a weak derivative of `w` in the direction `v` on the upper part of `Ω`, with `w` and `w'`
