@@ -26,7 +26,8 @@ automorphism `exp(ad E) exp(-ad F) exp(ad E)` (`TauCeti.weylAut`) carries `𝔤_
 Consequently `s_λ` permutes the restricted roots and preserves their multiplicities
 `m_ν = dim 𝔤_ν`. This is the reflection step of the restricted root system (Knapp, Ch. VI,
 Prop. 6.52, realizes `s_λ` inside `K_θ` by `e^{ad((π/2)(E' + θE'))}`; the Weyl automorphism of the
-triple used here is a product of three exponentials of nilpotent operators).
+triple used here is a product of three exponentials of nilpotent operators, following Humphreys,
+§14.3, and the root-space version `TauCeti.exists_lieEquiv_forall_mem_rootSpace`).
 
 ## Main results
 
@@ -38,6 +39,7 @@ triple used here is a product of three exponentials of nilpotent operators).
 ## References
 
 * A. W. Knapp, *Lie Groups Beyond an Introduction*, 2nd ed., Chapter VI, §4, Proposition 6.52.
+* J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §14.3.
 -/
 
 public section
@@ -51,7 +53,8 @@ variable {L : Type*} [LieRing L] [LieAlgebra ℝ L] {θ : L ≃ₗ⁅ℝ⁆ L} {
 
 /-- **The reflection of a restricted root is realized by an automorphism.** For a restricted root
 `λ` there is an automorphism of `𝔤₀` carrying every `𝔤_ν` into `𝔤_{s_λ ν}`, where
-`s_λ ν = ν - ν(H'_λ) λ`: the Weyl automorphism of the `𝔰𝔩₂` triple of `λ`. -/
+`s_λ ν = ν - ν(H'_λ) λ`: the Weyl automorphism of the `𝔰𝔩₂` triple of `λ`. Adapted from
+`TauCeti.exists_lieEquiv_forall_mem_rootSpace` for root spaces of a Cartan subalgebra. -/
 theorem exists_lieEquiv_forall_mem_restrictedRootSpace {μ : Dual ℝ 𝔞}
     (hμ : μ ∈ 𝔞.restrictedRoots) :
     ∃ τ : L ≃ₗ⁅ℝ⁆ L, ∀ (ν : Dual ℝ 𝔞) (z : L), z ∈ 𝔞.restrictedRootSpace ν →
