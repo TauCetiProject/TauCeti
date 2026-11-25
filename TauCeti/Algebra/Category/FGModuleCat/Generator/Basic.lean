@@ -168,6 +168,9 @@ theorem _root_.CategoryTheory.IsCoseparator.additiveClosure_of_injective {M : FG
         ObjectProperty.homMk (ModuleCat.ofHom (LinearMap.proj j ∘ₗ g)) := biproduct.lift_π _ j
     have h := congrArg (ConcreteCategory.hom (biproduct.π (fun _ : Fin n ↦ M) j)) hxy
     rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, hπ] at h
+    -- `h` evaluates `ObjectProperty.homMk (ModuleCat.ofHom (proj j ∘ₗ g))` at `x` and `y`; these
+    -- wrappers have no simp lemmas through `ConcreteCategory.hom` (`simpa` leaves them), and the
+    -- value is `g x j` by definition of `homMk`, `ofHom`, `proj` and `∘ₗ`.
     exact h
   exact (additiveClosure M).prop_of_retract ⟨ι, Injective.factorThru (𝟙 I) ι, by simp⟩
     (additiveClosure_biproduct (M := M) n)
