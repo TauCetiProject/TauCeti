@@ -144,6 +144,39 @@ theorem compl (hs : NullMeasurableSet s μ)
     (h : HasDensityAt μ s x d) : HasDensityAt μ sᶜ x (1 - d) :=
   hs.tendsto_measure_compl_inter_div hx h
 
+/-- **Densities of almost disjoint sets add.** If `s` and `t` have densities `a` and `b` at `x`,
+are almost disjoint and `t` is null-measurable, then `s ∪ t` has density `a + b` at `x`. -/
+theorem union [OpensMeasurableSpace α] {a b : ℝ≥0∞} (hs : HasDensityAt μ s x a)
+    (ht : HasDensityAt μ t x b) (hst : AEDisjoint μ s t) (htm : NullMeasurableSet t μ) :
+    HasDensityAt μ (s ∪ t) x (a + b) := by
+  have hm (r : ℝ) : μ ((s ∪ t) ∩ closedBall x r) =
+      μ (s ∩ closedBall x r) + μ (t ∩ closedBall x r) := by
+    rw [union_inter_distrib_right]
+    exact measure_union₀ (htm.inter measurableSet_closedBall.nullMeasurableSet)
+      (hst.mono inter_subset_left inter_subset_left)
+  simpa only [hasDensityAt_iff, hm, ENNReal.add_div] using
+    (hasDensityAt_iff.1 hs).add (hasDensityAt_iff.1 ht)
+
+/-- **Densities of finitely many almost disjoint sets add.** -/
+theorem biUnion_finset [OpensMeasurableSpace α] {ι : Type*} {s : ι → Set α} {d : ι → ℝ≥0∞}
+    {S : Finset ι} (hs : ∀ i ∈ S, HasDensityAt μ (s i) x (d i))
+    (hd : ∀ i ∈ S, ∀ j ∈ S, i ≠ j → AEDisjoint μ (s i) (s j))
+    (hm : ∀ i ∈ S, NullMeasurableSet (s i) μ) :
+    HasDensityAt μ (⋃ i ∈ S, s i) x (∑ i ∈ S, d i) := by
+  classical
+  induction S using Finset.induction_on with
+  | empty => simp [hasDensityAt_iff]
+  | insert j S hj ih =>
+    rw [Finset.set_biUnion_insert, Finset.sum_insert hj, union_comm, add_comm]
+    refine (ih (fun i hi => hs i (Finset.mem_insert_of_mem hi))
+      (fun i hi k hk => hd i (Finset.mem_insert_of_mem hi) k (Finset.mem_insert_of_mem hk))
+      fun i hi => hm i (Finset.mem_insert_of_mem hi)).union
+      (hs j (Finset.mem_insert_self j S)) ?_ (hm j (Finset.mem_insert_self j S))
+    -- `AEDisjoint` asks for a null intersection, which splits over the finite union.
+    rw [AEDisjoint, iUnion₂_inter]
+    exact (measure_biUnion_null_iff S.countable_toSet).2 fun i hi =>
+      hd i (Finset.mem_insert_of_mem hi) j (Finset.mem_insert_self j S) (ne_of_mem_of_not_mem hi hj)
+
 end HasDensityAt
 
 /-- For a null-measurable set `s`, if closed balls of small positive radius around `x` have
@@ -397,6 +430,14 @@ theorem mem_essentialInterior_of_mem_interior
   filter_upwards [Ioo_mem_nhdsGT hε, hμ] with r hr hr'
   rw [inter_eq_right.2 ((closedBall_subset_ball hr.2).trans (hεs.trans interior_subset)),
     ENNReal.div_self hr'.1 hr'.2]
+
+/-- A set whose complement is null has density one at `x`, provided closed balls of small positive
+radius around `x` have positive finite measure. -/
+theorem hasDensityAt_one_of_measure_compl_eq_zero
+    (hx : ∀ᶠ r in 𝓝[>] 0, μ (closedBall x r) ≠ 0 ∧ μ (closedBall x r) ≠ ∞) (hs : μ sᶜ = 0) :
+    HasDensityAt μ s x 1 :=
+  HasDensityAt.congr_ae (mem_essentialInterior_of_mem_interior hx (by simp))
+    (ae_eq_univ.2 hs).symm
 
 section OpenPos
 
