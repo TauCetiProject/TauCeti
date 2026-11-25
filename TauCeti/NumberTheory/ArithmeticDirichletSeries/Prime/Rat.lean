@@ -41,13 +41,11 @@ open NumberField
 the corresponding sum over the rational primes in `Nat.primesLE ⌊x⌋₊`. -/
 theorem primeSummatory_rat_eq_sum_primesLE {M : Type*} [AddCommMonoid M] (f : ℕ → M) (x : ℝ) :
     primeSummatory ℚ (fun v ↦ f (Ideal.absNorm v.asIdeal)) x = ∑ p ∈ Nat.primesLE ⌊x⌋₊, f p := by
-  have hprime (v : IsDedekindDomain.HeightOneSpectrum (𝓞 ℚ)) : (Ideal.absNorm v.asIdeal).Prime := by
-    rw [Rat.HeightOneSpectrum.absNorm_asIdeal]
-    exact Rat.HeightOneSpectrum.prime_natGenerator v
   have hmem (v : IsDedekindDomain.HeightOneSpectrum (𝓞 ℚ)) :
       v ∈ primesLE ℚ x ↔ Ideal.absNorm v.asIdeal ∈ Nat.primesLE ⌊x⌋₊ := by
-    rw [mem_normLE, Nat.mem_primesLE, Nat.le_floor_iff' (hprime v).ne_zero]
-    exact (and_iff_left (hprime v)).symm
+    have hprime := Rat.HeightOneSpectrum.prime_absNorm_asIdeal v
+    rw [mem_normLE, Nat.mem_primesLE, Nat.le_floor_iff' hprime.ne_zero]
+    exact (and_iff_left hprime).symm
   rw [primeSummatory_apply]
   refine Finset.sum_bij (fun v _ ↦ Ideal.absNorm v.asIdeal) (fun v hv ↦ (hmem v).mp hv)
     (fun v _ w _ h ↦ Rat.HeightOneSpectrum.absNorm_asIdeal_injective h) (fun p hp ↦ ?_)
@@ -62,8 +60,7 @@ theorem image_absNorm_primesLE_rat (x : ℝ) :
   simp only [Finset.mem_image, mem_normLE, Nat.mem_primesLE]
   constructor
   · rintro ⟨v, hv, rfl⟩
-    rw [Rat.HeightOneSpectrum.absNorm_asIdeal] at hv ⊢
-    exact ⟨Nat.le_floor hv, Rat.HeightOneSpectrum.prime_natGenerator v⟩
+    exact ⟨Nat.le_floor hv, Rat.HeightOneSpectrum.prime_absNorm_asIdeal v⟩
   · rintro ⟨hple, hp⟩
     obtain ⟨v, hv⟩ := Rat.HeightOneSpectrum.exists_absNorm_eq hp
     have hx0 : 0 ≤ x := by

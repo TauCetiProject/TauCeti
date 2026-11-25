@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PuncturedNeighborhoods
-public import TauCeti.Topology.Covering.Finite
+public import TauCeti.Topology.Covering.Finite.Basic
 public import TauCeti.Topology.Covering.Proper
 
 /-!

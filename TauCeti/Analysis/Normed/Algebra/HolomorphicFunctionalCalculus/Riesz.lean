@@ -26,7 +26,8 @@ Since the calculus is a unital algebra homomorphism, the Riesz idempotents inher
 algebra of clopen parts of `σ(a)`: for a finite partition of `σ(a)` into clopen parts they are
 complete orthogonal idempotents, that is, pairwise orthogonal idempotents summing to `1`. They
 commute with every element commuting with `a`. The spectral mapping theorem shows that
-`rieszIdempotent a K` vanishes exactly when `K` is empty.
+`rieszIdempotent a K` vanishes exactly when `K` is empty, so distinct clopen parts have
+distinct Riesz idempotents.
 
 The idempotent `p = rieszIdempotent a K` cuts out the part `K` of the spectrum: in the corner
 ring `p A p` (`IsIdempotentElem.Corner`), whose unit is `p`, the compression of `μ - a` is a
@@ -50,7 +51,8 @@ hyperinvariant subspace.
   `TauCeti.completeOrthogonalIdempotents_rieszIdempotent`: the same facts in the language of
   Mathlib's `OrthogonalIdempotents` and `CompleteOrthogonalIdempotents`.
 * `Commute.rieszIdempotent_right`: commutation with the commutant of `a`.
-* `TauCeti.rieszIdempotent_eq_zero_iff` and `TauCeti.rieszIdempotent_eq_one_iff`.
+* `TauCeti.rieszIdempotent_eq_zero_iff` and `TauCeti.rieszIdempotent_eq_one_iff`, and the
+  injectivity of `K ↦ rieszIdempotent a K` (`TauCeti.rieszIdempotent_injective`).
 * `TauCeti.isUnit_sub_mul_rieszIdempotent_add_iff` and
   `TauCeti.isUnit_compress_rieszIdempotent_iff`: the corner spectrum of `a` cut out by
   `rieszIdempotent a K` is `K`, stated as an equality in
@@ -230,6 +232,20 @@ theorem rieszIdempotent_eq_zero_iff (a : A) (K : Clopens (spectrum ℂ a)) :
 theorem rieszIdempotent_eq_one_iff (a : A) (K : Clopens (spectrum ℂ a)) :
     rieszIdempotent a K = 1 ↔ K = ⊤ := by
   rw [← compl_eq_bot, ← rieszIdempotent_eq_zero_iff, rieszIdempotent_compl, sub_eq_zero, eq_comm]
+
+/-- Distinct clopen parts of the spectrum have distinct Riesz idempotents. -/
+theorem rieszIdempotent_injective (a : A) : Injective (rieszIdempotent a) := by
+  have hle {K L : Clopens (spectrum ℂ a)} (h : rieszIdempotent a K = rieszIdempotent a L) :
+      K ≤ L := by
+    rw [← disjoint_compl_right_iff, disjoint_iff, ← rieszIdempotent_eq_zero_iff]
+    simp only [rieszIdempotent_inf, rieszIdempotent_compl, h,
+      (isIdempotentElem_rieszIdempotent a L).mul_one_sub_self]
+  exact fun K L h ↦ le_antisymm (hle h) (hle h.symm)
+
+@[simp]
+theorem rieszIdempotent_inj {a : A} {K L : Clopens (spectrum ℂ a)} :
+    rieszIdempotent a K = rieszIdempotent a L ↔ K = L :=
+  (rieszIdempotent_injective a).eq_iff
 
 /-- **Corner spectrum**, unit form: for `p = rieszIdempotent a K`, the element
 `(μ - a) p + (1 - p)` is a unit exactly when `μ` lies outside `K`. -/

@@ -91,7 +91,7 @@ theorem laplaceBeltrami_comp_riemannianLog_self (h : IsNormalDomain I M p U)
     {P : TangentSpace I p → ℝ} (hP : ContDiffAt ℝ 2 P 0) :
     laplaceBeltrami I (P ∘ riemannianLog I M p U) p = Laplacian.laplacian P 0 := by
   rw [laplaceBeltrami_eq_sum_hessian I _ p (stdOrthonormalBasis ℝ (TangentSpace I p)),
-    TauCeti.laplacian_eq_traceL, TauCeti.traceL_apply]
+    TauCeti.laplacian_eq_traceL, ContinuousLinearMap.traceL_apply]
   exact Finset.sum_congr rfl fun i _ ↦ h.hessian_comp_riemannianLog_self hP _ _
 
 end TauCeti.Manifold.IsNormalDomain

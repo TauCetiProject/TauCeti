@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Measure.ResolventTransform.Expansion
 public import TauCeti.Probability.Distributions.Semicircle.Moments
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Complex.Convex
+import Mathlib.Analysis.Complex.HalfPlane
 import TauCeti.Analysis.SpecificLimits.Catalan
 
 /-!
@@ -38,6 +39,10 @@ is written as `v * (m * m) + (z - a) * m + 1`, the shape used by Mathlib's `disc
   equation off the support.
 * `TauCeti.Probability.eq_resolventTransform_semicircleReal_iff`: in the upper half-plane, `m(z)`
   is the only root of the quadratic with positive imaginary part.
+* `TauCeti.Probability.deriv_resolventTransform_semicircleReal`: the derivative
+  `m'(z) = -m(z) / (2 v m(z) + (z - a))` in the upper half-plane.
+* `TauCeti.Probability.hasDerivWithinAt_resolventTransform_semicircleReal_variance`: Burgers'
+  equation, the variance derivative of `m(z)` is `m(z) m'(z)`.
 * `TauCeti.Probability.resolventTransform_semicircleReal_zero_one_I`: for the standard law,
   `m(i) = i (√5 - 1) / 2`.
 
@@ -228,6 +233,103 @@ theorem norm_resolventTransform_semicircleReal_sub_le
     _ ≤ |(v' : ℝ) - v| * (‖w‖ * ‖w‖) / z.im := h
     _ ≤ |(v' : ℝ) - v| * (z.im⁻¹ * z.im⁻¹) / z.im := by gcongr
     _ = _ := by simp only [div_eq_mul_inv, ← inv_pow]; ring
+
+/-- The factor `2 v m(z) + (z - a)` has positive imaginary part in the upper half-plane, so it
+does not vanish. -/
+private lemma im_two_mul_resolventTransform_semicircleReal_add_pos (hz : 0 < z.im) :
+    0 < (2 * (v : ℂ) * resolventTransform (semicircleReal a v) z + (z - a)).im := by
+  have hm := im_resolventTransform_pos (IsProbabilityMeasure.ne_zero (semicircleReal a v)) hz
+  have : 0 ≤ (v : ℝ) * (resolventTransform (semicircleReal a v) z).im := by positivity
+  rw [show (2 : ℂ) * (v : ℂ) = ((2 * (v : ℝ) : ℝ) : ℂ) by push_cast; ring]
+  simp only [add_im, sub_im, ofReal_im, sub_zero, im_ofReal_mul]
+  linarith
+
+/-- In the upper half-plane the derivative of the transform `m` of `semicircleReal a v` is
+`m'(z) = -m(z) / (2 v m(z) + (z - a))`. -/
+theorem deriv_resolventTransform_semicircleReal (hz : 0 < z.im) :
+    deriv (resolventTransform (semicircleReal a v)) z =
+      -resolventTransform (semicircleReal a v) z /
+        (2 * (v : ℂ) * resolventTransform (semicircleReal a v) z + (z - a)) := by
+  set f : ℂ → ℂ := resolventTransform (semicircleReal a v)
+  have hf : HasDerivAt f (deriv f z) z :=
+    (hasDerivAt_resolventTransform_of_im_ne_zero hz.ne').differentiableAt.hasDerivAt
+  have hΦ := ((hf.mul hf).const_mul (v : ℂ)).add (((hasDerivAt_id z).sub_const (a : ℂ)).mul hf)
+    |>.add_const 1
+  have h0 : HasDerivAt (fun w ↦ (v : ℂ) * (f w * f w) + (id w - a) * f w + 1) 0 z :=
+    (hasDerivAt_const z (0 : ℂ)).congr_of_eventuallyEq <| by
+      filter_upwards [(isOpen_im_gt 0).mem_nhds hz] with w hw
+      exact ((eq_resolventTransform_semicircleReal_iff hw).1 rfl).2
+  have huniq := hΦ.unique h0
+  have hne : 2 * (v : ℂ) * f z + (z - a) ≠ 0 := fun h ↦
+    (im_two_mul_resolventTransform_semicircleReal_add_pos hz).ne' (by rw [h, zero_im])
+  rw [eq_div_iff hne]
+  simp only [id] at huniq
+  linear_combination huniq
+
+/-- At a point of the upper half-plane the transform of `semicircleReal a v` is continuous in the
+variance `v`. -/
+theorem continuous_resolventTransform_semicircleReal_variance (hz : 0 < z.im) :
+    Continuous fun v : ℝ≥0 ↦ resolventTransform (semicircleReal a v) z := by
+  refine (LipschitzWith.of_dist_le_mul fun v' v ↦ ?_).continuous (K := Real.toNNReal (z.im ^ 3)⁻¹)
+  rw [dist_eq_norm, NNReal.dist_eq, Real.coe_toNNReal _ (by positivity), ← div_eq_inv_mul]
+  exact norm_resolventTransform_semicircleReal_sub_le hz v'
+
+/-- At a point of the upper half-plane the derivative of the transform of `semicircleReal a v` is
+continuous in the variance `v`. -/
+theorem continuous_deriv_resolventTransform_semicircleReal_variance (hz : 0 < z.im) :
+    Continuous fun v : ℝ≥0 ↦ deriv (resolventTransform (semicircleReal a v)) z := by
+  simp_rw [deriv_resolventTransform_semicircleReal hz]
+  have hm := continuous_resolventTransform_semicircleReal_variance (a := a) hz
+  exact hm.neg.div ((continuous_const.mul (continuous_ofReal.comp NNReal.continuous_coe)).mul hm
+    |>.add continuous_const) fun v ↦ fun h ↦
+      (im_two_mul_resolventTransform_semicircleReal_add_pos hz).ne' (by rw [h, zero_im])
+
+/-- **Burgers' equation for the semicircle laws.** At a point `z` of the upper half-plane the
+transform `m_v(z)` of `semicircleReal a v` has right derivative `m_v(z) m_v'(z)` in the variance
+`v ≥ 0`. -/
+theorem hasDerivWithinAt_resolventTransform_semicircleReal_variance (hz : 0 < z.im) {u : ℝ}
+    (hu : 0 ≤ u) :
+    HasDerivWithinAt (fun s : ℝ ↦ resolventTransform (semicircleReal a s.toNNReal) z)
+      (resolventTransform (semicircleReal a u.toNNReal) z *
+        deriv (resolventTransform (semicircleReal a u.toNNReal)) z) (Ici u) u := by
+  set m : ℝ → ℂ := fun s ↦ resolventTransform (semicircleReal a s.toNNReal) z with hm_def
+  have hmc : Continuous m :=
+    (continuous_resolventTransform_semicircleReal_variance hz).comp continuous_real_toNNReal
+  have hquad {s : ℝ} (hs : 0 ≤ s) : (s : ℂ) * (m s * m s) + (z - a) * m s + 1 = 0 := by
+    simpa [hm_def, Real.coe_toNNReal s hs] using
+      ((eq_resolventTransform_semicircleReal_iff (v := s.toNNReal) hz).1 rfl).2
+  have hE (s : ℝ) : (u : ℂ) * (m s + m u) + (z - a) ≠ 0 := by
+    have h₁ := im_resolventTransform_pos
+      (IsProbabilityMeasure.ne_zero (semicircleReal a s.toNNReal)) hz
+    have h₂ := im_resolventTransform_pos
+      (IsProbabilityMeasure.ne_zero (semicircleReal a u.toNNReal)) hz
+    have : 0 ≤ u * ((m s).im + (m u).im) := mul_nonneg hu (add_nonneg h₁.le h₂.le)
+    refine fun h ↦ (lt_irrefl (0 : ℝ)) ?_
+    have him := congrArg im h
+    simp only [add_im, sub_im, ofReal_im, sub_zero, im_ofReal_mul, zero_im] at him
+    linarith
+  have hval : resolventTransform (semicircleReal a u.toNNReal) z *
+      deriv (resolventTransform (semicircleReal a u.toNNReal)) z =
+        -m u ^ 2 / ((u : ℂ) * (m u + m u) + (z - a)) := by
+    rw [deriv_resolventTransform_semicircleReal hz, Real.coe_toNNReal u hu]
+    ring
+  rw [hval]
+  refine HasDerivWithinAt.Ici_of_Ioi ((hasDerivWithinAt_iff_tendsto_slope' (lt_irrefl u)).2 ?_)
+  -- For `s > u` the two quadratics give the slope `-m(s)² / (u (m s + m u) + (z - a))`.
+  have hlim : Tendsto (fun s ↦ -m s ^ 2 / ((u : ℂ) * (m s + m u) + (z - a))) (𝓝[>] u)
+      (𝓝 (-m u ^ 2 / ((u : ℂ) * (m u + m u) + (z - a)))) :=
+    (((hmc.continuousAt.pow 2).neg).div (continuousAt_const.mul
+      (hmc.continuousAt.add continuousAt_const) |>.add continuousAt_const)
+        (hE u)).tendsto.mono_left nhdsWithin_le_nhds
+  refine hlim.congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with s hs
+  have hsu : (s : ℂ) - u ≠ 0 := sub_ne_zero.2 (by exact_mod_cast (ne_of_gt hs))
+  have key : (m s - m u) * ((u : ℂ) * (m s + m u) + (z - a)) = -((s : ℂ) - u) * m s ^ 2 := by
+    linear_combination hquad (hu.trans (le_of_lt hs)) - hquad hu
+  have hE' := hE s
+  simp only [slope_def_module, Complex.real_smul, ofReal_inv, ofReal_sub]
+  field_simp
+  linear_combination -key
 
 /-- The transform of the standard semicircle law at `i` is `i (√5 - 1) / 2`, the root of
 `m² + i m + 1 = 0` with positive imaginary part; the other root is `-i (√5 + 1) / 2`. -/

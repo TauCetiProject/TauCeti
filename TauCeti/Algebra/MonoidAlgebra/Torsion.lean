@@ -125,7 +125,8 @@ theorem isMulTorsionFree_of_isReduced_monoidAlgebra_of_connectedSpace
   by_cases hchar : (p : k) = 0
   · have _ : Fact p.Prime := ⟨hp⟩
     have _ : CharP k p := (CharP.charP_iff_prime_eq_zero hp).mpr hchar
-    exact not_isReduced_monoidAlgebra (R := k) (G := G) p hy_ne_one hy_pow inferInstance
+    exact not_isReduced_monoidAlgebra (R := k) (G := G) p (n := 1) hy_ne_one
+      (by rw [pow_one]; exact hy_pow) inferInstance
   · let P := Subgroup.zpowers y
     have hyfinite : IsOfFinOrder y := orderOf_ne_zero_iff.mp (hy_order ▸ hp.ne_zero)
     let _ : Fintype P := Fintype.ofEquiv (Fin (orderOf y)) (finEquivZPowers hyfinite)

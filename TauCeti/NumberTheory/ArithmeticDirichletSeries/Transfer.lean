@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.LogIntegral
+public import TauCeti.Analysis.SpecialFunctions.LogIntegral.Basic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.AbelSummation
 
 /-!
@@ -18,7 +18,7 @@ the prime-power contribution passes from `ψ` to the count `ϑ` over primes alon
 wants is about the *unweighted* count `π`.  This file carries out that last passage for the primes
 of a number field, taking the asymptotic for `ϑ` as given: if `ϑ(x) = δx + o(x)`, then
 `π(x) = δ Li(x) + o(x/log x)`, where `Li` is the offset logarithmic integral of
-`TauCeti/Analysis/SpecialFunctions/LogIntegral.lean`.
+`TauCeti/Analysis/SpecialFunctions/LogIntegral/Basic.lean`.
 
 The bridge is the exact Abel-summation identity
 `TauCeti.primeCount_eq_primeTheta_div_log_add_integral` together with the

@@ -554,6 +554,19 @@ theorem spa_eq_biUnion_rationalSubset_of_isTateRing_of_isOpen (Aplus : Subring A
   spa_eq_biUnion_rationalSubset_of_span_eq_top Aplus
     ((IsTateRing.isOpen_iff_eq_top (Ideal.span (T : Set A))).mp hT)
 
+/-- Over a Tate ring, every rational open has a presentation `R(T/s)` with `s ∈ T` and `T`
+generating the unit ideal. -/
+theorem exists_spaBasicOpen_of_mem_spaRationalOpens {Aplus : Subring A}
+    {U : Opens (spa Aplus)} (hU : U ∈ spaRationalOpens Aplus) :
+    ∃ T : Finset A, ∃ s ∈ T, Ideal.span (T : Set A) = ⊤ ∧ U = spaBasicOpen Aplus T s := by
+  classical
+  obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hU
+  refine ⟨insert s T, s, Finset.mem_insert_self s T, top_le_iff.mp ?_, ?_⟩
+  · rw [← IsTateRing.eq_top_of_isOpen hT]
+    exact Ideal.span_mono (by simp)
+  · ext v
+    simp only [SetLike.mem_coe, mem_spaBasicOpen, rationalSubset_insert_self]
+
 /-- **A dominating unit for a standard rational cover** (the input to Wedhorn Lemma 8.34(ii)).
 Let `A` be a Tate ring and `T` a finite set generating the unit ideal. Then some unit `ϖ` of `A`
 is strictly dominated at every point of `Spa (A, A⁺)` by an element of `T`.
