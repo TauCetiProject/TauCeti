@@ -149,6 +149,18 @@ theorem finiteProjectiveModulesExtendScalarsCompιIso_inv_app
         (BalancedExtension.functor_obj f P.obj).symm).symm :=
   (rfl)
 
+/-- Extending along `f` and then along `g` on finitely generated projective modules has the same
+underlying module as extending along `f` and then along `g` on all modules. -/
+theorem finiteProjectiveModulesExtendScalars_comp_obj_obj {T : Type u} [Ring T] (g : S →+* T)
+    (P : (finiteProjectiveModules R).FullSubcategory) :
+    ((f.finiteProjectiveModulesExtendScalars ⋙ g.finiteProjectiveModulesExtendScalars).obj P).obj =
+      (BalancedExtension.functor.{u, u, u} f ⋙ BalancedExtension.functor.{u, u, u} g).obj P.obj :=
+  ((g.finiteProjectiveModulesExtendScalars_obj_obj _).trans
+    (BalancedExtension.functor_obj g _).symm).trans
+      (congrArg (BalancedExtension.functor g).obj
+        ((f.finiteProjectiveModulesExtendScalars_obj_obj P).trans
+          (BalancedExtension.functor_obj f P.obj).symm))
+
 section Square
 
 variable {A B C D : Type u} [Ring A] [Ring B] [Ring C] [Ring D] (f₁ : A →+* B) (g₁ : B →+* D)
@@ -159,7 +171,7 @@ variable {A B C D : Type u} [Ring A] [Ring B] [Ring C] [Ring D] (f₁ : A →+* 
 along `g₁` is naturally isomorphic to extending it along `f₂` and then along `g₂`: both are
 extension along the common composite, through `TauCeti.BalancedExtension.cancelBaseChange`. The
 component at `P` sends `t ⊗ (s ⊗ p)` to `(t * g₁ s) ⊗ (1 ⊗ p)`, in particular `1 ⊗ (1 ⊗ p)` to
-`1 ⊗ (1 ⊗ p)` (`RingHom.finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom`); for the
+`1 ⊗ (1 ⊗ p)` (`RingHom.finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom_tmul`); for the
 trivial square it is the identity (`RingHom.finiteProjectiveModulesExtendScalarsCompIso_refl`). -/
 noncomputable def finiteProjectiveModulesExtendScalarsCompIso :
     f₁.finiteProjectiveModulesExtendScalars ⋙ g₁.finiteProjectiveModulesExtendScalars ≅
@@ -181,34 +193,61 @@ noncomputable def finiteProjectiveModulesExtendScalarsCompIso :
 /-- The component of `RingHom.finiteProjectiveModulesExtendScalarsCompIso` at `P` is, on underlying
 modules, `D ⊗_B (B ⊗_A P) ≃ D ⊗_A P ≃ D ⊗_C (C ⊗_A P)`, the composite of the inverse of
 `TauCeti.BalancedExtension.functorComp f₁ g₁`, of `TauCeti.BalancedExtension.functorCongr h` and of
-`TauCeti.BalancedExtension.functorComp f₂ g₂`: it sends `t ⊗ (s ⊗ p)` to `(t * g₁ s) ⊗ (1 ⊗ p)`. -/
+`TauCeti.BalancedExtension.functorComp f₂ g₂`: it sends `t ⊗ (s ⊗ p)` to `(t * g₁ s) ⊗ (1 ⊗ p)`
+(`RingHom.finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom_tmul`). -/
 theorem finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom
     (P : (finiteProjectiveModules A).FullSubcategory) :
     ((finiteProjectiveModulesExtendScalarsCompIso f₁ g₁ f₂ g₂ h).hom.app P).hom =
-      eqToHom (by
-          simp only [Functor.comp_obj]
-          rw [finiteProjectiveModulesExtendScalars_obj_obj,
-            finiteProjectiveModulesExtendScalars_obj_obj]
-          rfl) ≫
+      eqToHom (finiteProjectiveModulesExtendScalars_comp_obj_obj f₁ g₁ P) ≫
         (BalancedExtension.functorComp f₁ g₁).inv.app P.obj ≫
           (BalancedExtension.functorCongr h).hom.app P.obj ≫
             (BalancedExtension.functorComp f₂ g₂).hom.app P.obj ≫
-              eqToHom (by
-                simp only [Functor.comp_obj]
-                rw [finiteProjectiveModulesExtendScalars_obj_obj,
-                  finiteProjectiveModulesExtendScalars_obj_obj]
-                rfl) := by
-  -- Unfold the whiskered isomorphisms; the components of the inclusion isomorphisms are `eqToHom`.
-  simp only [finiteProjectiveModulesExtendScalarsCompIso, Functor.FullyFaithful.preimageIso_hom,
-    Functor.FullyFaithful.whiskeringRight_preimage_app, Functor.comp_obj, ObjectProperty.ι_obj,
-    Functor.associator_hom_app, Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app,
-    finiteProjectiveModulesExtendScalarsCompιIso_hom_app, Functor.associator_inv_app,
-    Functor.isoWhiskerRight_hom, Functor.whiskerRight_app, Functor.isoWhiskerLeft_trans,
-    Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app,
-    finiteProjectiveModulesExtendScalarsCompιIso_inv_app, Category.comp_id, Category.id_comp,
-    Category.assoc, ObjectProperty.homMk_hom]
-  rw [eqToHom_map, eqToHom_map]
-  simp
+              eqToHom (finiteProjectiveModulesExtendScalars_comp_obj_obj f₂ g₂ P).symm := by
+  simp [finiteProjectiveModulesExtendScalarsCompIso,
+    Functor.FullyFaithful.whiskeringRight_preimage_app, eqToHom_map]
+
+/-- The component of `RingHom.finiteProjectiveModulesExtendScalarsCompIso` at `P` sends
+`t ⊗ (s ⊗ p)` to `(t * g₁ s) ⊗ (1 ⊗ p)`; in particular it sends `1 ⊗ (1 ⊗ p)` to `1 ⊗ (1 ⊗ p)`. -/
+theorem finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom_tmul
+    (P : (finiteProjectiveModules A).FullSubcategory) (t : D) (s : B) (p : P.obj) :
+    (eqToHom (finiteProjectiveModulesExtendScalars_comp_obj_obj f₁ g₁ P).symm ≫
+        ((finiteProjectiveModulesExtendScalarsCompIso f₁ g₁ f₂ g₂ h).hom.app P).hom ≫
+          eqToHom (finiteProjectiveModulesExtendScalars_comp_obj_obj f₂ g₂ P)).hom
+        (BalancedExtension.tmul g₁ t (BalancedExtension.tmul f₁ s p)) =
+      BalancedExtension.tmul g₂ (t * g₁ s) (BalancedExtension.tmul f₂ 1 p) := by
+  simp only [finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom, Category.assoc,
+    eqToHom_trans, eqToHom_refl, Category.comp_id, eqToHom_trans_assoc, Category.id_comp]
+  exact (congrArg ((BalancedExtension.functorComp f₂ g₂).hom.app P.obj)
+    ((congrArg ((BalancedExtension.functorCongr h).hom.app P.obj)
+      (BalancedExtension.functorComp_inv_app_tmul f₁ g₁ P.obj t s p)).trans
+        (BalancedExtension.functorCongr_hom_app_tmul h P.obj _ p))).trans
+    (BalancedExtension.functorComp_hom_app_tmul f₂ g₂ P.obj _ p)
+
+/-- The inverse of the component of `RingHom.finiteProjectiveModulesExtendScalarsCompIso` at `P`
+sends `t ⊗ (c ⊗ p)` to `(t * g₂ c) ⊗ (1 ⊗ p)`. -/
+theorem finiteProjectiveModulesExtendScalarsCompIso_inv_app_hom_tmul
+    (P : (finiteProjectiveModules A).FullSubcategory) (t : D) (c : C) (p : P.obj) :
+    (eqToHom (finiteProjectiveModulesExtendScalars_comp_obj_obj f₂ g₂ P).symm ≫
+        ((finiteProjectiveModulesExtendScalarsCompIso f₁ g₁ f₂ g₂ h).inv.app P).hom ≫
+          eqToHom (finiteProjectiveModulesExtendScalars_comp_obj_obj f₁ g₁ P)).hom
+        (BalancedExtension.tmul g₂ t (BalancedExtension.tmul f₂ c p)) =
+      BalancedExtension.tmul g₁ (t * g₂ c) (BalancedExtension.tmul f₁ 1 p) := by
+  -- The argument `t ⊗ (c ⊗ p) = (t * g₂ c * g₁ 1) ⊗ (1 ⊗ p)` is the image of the claimed value
+  -- under the component, and the inverse undoes the component.
+  have key : BalancedExtension.tmul g₂ t
+      (BalancedExtension.tmul f₂ c p : (BalancedExtension.functor f₂).obj P.obj) =
+        BalancedExtension.tmul g₂ (t * g₂ c * g₁ 1)
+          (BalancedExtension.tmul f₂ 1 p : (BalancedExtension.functor f₂).obj P.obj) := by
+    rw [map_one, mul_one]
+    exact (congrArg (BalancedExtension.tmul g₂ t)
+      (BalancedExtension.tmul_eq_smul_one_tmul c p)).trans (BalancedExtension.tmul_smul t c _)
+  refine (congrArg _ (key.trans (finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom_tmul
+    f₁ g₁ f₂ g₂ h P _ 1 p).symm)).trans
+    (ModuleCat.inv_hom_apply
+      (eqToIso (finiteProjectiveModulesExtendScalars_comp_obj_obj f₁ g₁ P).symm ≪≫
+        (finiteProjectiveModules D).ι.mapIso
+          ((finiteProjectiveModulesExtendScalarsCompIso f₁ g₁ f₂ g₂ h).app P) ≪≫
+        eqToIso (finiteProjectiveModulesExtendScalars_comp_obj_obj f₂ g₂ P)) _)
 
 /-- Extension of scalars around the trivial square `g ∘ f = g ∘ f` is the identity. -/
 @[simp]
