@@ -32,9 +32,11 @@ to the number of distinct generators occurring in it
 
 Conversely, the normalization, traciality and the Markov property with parameter `η` determine
 the trace: every normalized tracial Markov functional with parameter `η` is the Bernoulli trace
-(`TauCeti.BalancedProjectionAlgebra.eq_bernoulliTrace`). The proof uses that the stage of the
-first `n + 2` strands is spanned by the stage `A` of the first `n + 1` strands and the products
-`a * e n * b` with `a, b ∈ A` (`TauCeti.BalancedProjectionAlgebra.toSubmodule_stage_add_two`).
+(`TauCeti.BalancedProjectionAlgebra.eq_bernoulliTrace`). This is the uniqueness of normalized
+tracial Markov functionals for every `τ` (`TauCeti.BalancedProjectionAlgebra.eq_of_markov`), which
+uses that the stage of the first `n + 2` strands is spanned by the stage `A` of the first `n + 1`
+strands and the products `a * e n * b` with `a, b ∈ A`
+(`TauCeti.BalancedProjectionAlgebra.toSubmodule_stage_add_two`).
 The algebraic presentation at `τ = 0` is not commutative, but its representations by projections
 in a ring with a proper star, such as a C⋆-algebra, have commutative image
 (`TauCeti.BalancedProjectionAlgebra.commute_map_of_zero`). Consequently a normalized Markov
@@ -322,35 +324,13 @@ section Uniqueness
 
 variable {η : R} {μ : BalancedProjectionAlgebra R (0 : R) →ₗ[R] R}
 
-/-- Two normalized tracial Markov functionals with the same parameter agree on every stage. -/
-private theorem eqOn_stage_of_markov {ν : BalancedProjectionAlgebra R (0 : R) →ₗ[R] R}
-    (h1 : μ 1 = 1) (htrace : ∀ x y, μ (x * y) = μ (y * x))
-    (hmarkov : ∀ {n w}, w ∈ stage R 0 (n + 1) → μ (w * e 0 n) = η * μ w)
-    (h1' : ν 1 = 1) (htrace' : ∀ x y, ν (x * y) = ν (y * x))
-    (hmarkov' : ∀ {n w}, w ∈ stage R 0 (n + 1) → ν (w * e 0 n) = η * ν w) (n : ℕ) :
-    Set.EqOn μ ν (stage R 0 (n + 1)) := by
-  induction n with
-  | zero =>
-    intro x hx
-    obtain ⟨r, rfl⟩ := Algebra.mem_bot.1 (stage_eq_bot_of_le_one (R := R) (τ := 0) le_rfl ▸ hx)
-    rw [Algebra.algebraMap_eq_smul_one, map_smul, map_smul, h1, h1']
-  | succ n ih =>
-    have h : Subalgebra.toSubmodule (stage R 0 (n + 2)) ≤ LinearMap.eqLocus μ ν :=
-      toSubmodule_stage_add_two_le_iff.2 ⟨fun y hy ↦ LinearMap.mem_eqLocus.2 (ih hy),
-        fun a ha b hb ↦ LinearMap.mem_eqLocus.2 <| by
-          rw [htrace, htrace', ← mul_assoc, hmarkov (mul_mem hb ha), hmarkov' (mul_mem hb ha),
-            ih (mul_mem hb ha)]⟩
-    exact fun x hx ↦ LinearMap.mem_eqLocus.1 (h hx)
-
 /-- **Uniqueness of the Bernoulli trace.** A normalized tracial functional with the Markov property
 for the parameter `η` is the Bernoulli trace. -/
 theorem eq_bernoulliTrace (h1 : μ 1 = 1) (htrace : ∀ x y, μ (x * y) = μ (y * x))
     (hmarkov : ∀ {n w}, w ∈ stage R 0 (n + 1) → μ (w * e 0 n) = η * μ w) :
-    μ = bernoulliTrace η := by
-  ext x
-  obtain ⟨n, hn⟩ := exists_mem_stage x
-  exact eqOn_stage_of_markov h1 htrace hmarkov (bernoulliTrace_one η) (bernoulliTrace_mul_comm η)
-    (bernoulliTrace_mul_e η) n (stage_mono n.le_succ hn)
+    μ = bernoulliTrace η :=
+  eq_of_markov h1 htrace hmarkov (bernoulliTrace_one η) (bernoulliTrace_mul_comm η)
+    (bernoulliTrace_mul_e η)
 
 variable {A F M : Type*} [Semiring A] [Algebra R A]
   [FunLike F (BalancedProjectionAlgebra R (0 : R)) A]
