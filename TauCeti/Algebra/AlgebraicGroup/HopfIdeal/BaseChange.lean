@@ -16,7 +16,7 @@ public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Map
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Kernel
 public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive
 public import TauCeti.LinearAlgebra.TensorProduct.Basis
-import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Ascent
+import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Ascent.Basic
 
 /-!
 # Base change of Hopf ideals
@@ -45,6 +45,9 @@ along `h ↦ 1 ⊗ h`.
   change reflects containment of Hopf ideals when the larger quotient is flat over the base.
 * `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_toIdeal_le_ker_baseChangeMap`: base-changing a
   morphism that kills `J` gives a morphism that kills `J_K`.
+* `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_toIdeal_le_ker_baseChangeMap_iff`: conversely, along
+  an injective scalar map and for a flat target, the morphism kills `J` when its base change
+  kills `J_K`.
 * `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_augmentation`: base change preserves the
   augmentation ideal, so the identity section base-changes to the identity section.
 * `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_le_iff_of_faithfullyFlat`: faithfully flat base
@@ -67,6 +70,8 @@ along `h ↦ 1 ⊗ h`.
   along a tower `k → E → K` agrees with one-step base change across the tower comparison.
 * `TauCeti.CommHopfAlgCat.quotientBaseChangeIso`: the identification
   `(K ⊗[k] H) ⧸ J_K ≅ K ⊗[k] (H ⧸ J)`.
+* `TauCeti.CommHopfAlgCat.baseChangeLiftQuotient`: a morphism out of `K ⊗[k] H` killing `J_K`
+  factors through `K ⊗[k] (H ⧸ J)`.
 * `TauCeti.CommHopfAlgCat.map_baseChangeHopfIdeal_of_quotientIso`: an ambient base-change
   isomorphism carries a base-changed Hopf ideal onto a target ideal presented as the kernel of
   the base change of the quotient morphism.
@@ -307,6 +312,23 @@ theorem baseChangeHopfIdeal_toIdeal_le_ker_baseChangeMap {N : _root_.CommHopfAlg
   rw [baseChangeMap_apply_tmul]
   have hf : f.hom h = 0 := RingHom.mem_ker.mp (hJ hh)
   rw [hf, tmul_zero]
+
+/-- Along an injective scalar map, a morphism kills a Hopf ideal exactly when its base change
+kills the base change of the Hopf ideal, provided the target is flat over the base. -/
+theorem baseChangeHopfIdeal_toIdeal_le_ker_baseChangeMap_iff
+    (halg : Function.Injective (algebraMap k K)) {N : _root_.CommHopfAlgCat.{v} k}
+    [Module.Flat k N] (I : HopfIdeal k H) (f : H ⟶ N) :
+    (baseChangeHopfIdeal (K := K) I).toIdeal ≤
+        RingHom.ker (baseChangeMap (K := K) f).hom.toAlgHom.toRingHom ↔
+      I.toIdeal ≤ RingHom.ker f.hom.toAlgHom.toRingHom := by
+  refine ⟨fun hI x hx ↦ ?_, baseChangeHopfIdeal_toIdeal_le_ker_baseChangeMap I f⟩
+  have h := BialgHom.mem_ker_toAlgHom_toRingHom.mp (hI ((HopfIdeal.mem_toIdeal).mpr
+    (one_tmul_mem_baseChangeHopfIdeal (K := K) (HopfIdeal.mem_toIdeal.mp hx))))
+  rw [baseChangeMap_apply_tmul] at h
+  refine BialgHom.mem_ker_toAlgHom_toRingHom.mpr
+    (Algebra.TensorProduct.includeRight_injective (A := K) halg ?_)
+  rw [map_zero, Algebra.TensorProduct.includeRight_apply]
+  exact h
 
 /-- The base change of the trivial Hopf ideal is trivial. -/
 @[simp]
@@ -662,6 +684,39 @@ theorem quotientBaseChangeIso_hom_apply (J : HopfIdeal k H) (y : baseChange (K :
             (quotientBaseChangeIso (K := K) J).hom).hom y := by
     rw [_root_.CommHopfAlgCat.comp_apply, mkQuotient_apply, Ideal.Quotient.mkₐ_eq_mk]
   rw [h, mkQuotient_comp_quotientBaseChangeIso_hom]
+
+/-- A morphism out of `K ⊗[k] H` that kills the base change of a Hopf ideal `I` factors through
+the base change of the quotient `H ⧸ I`: contravariantly, a homomorphism into `G_K` landing in
+the base change of the closed subgroup cut out by `I` is a homomorphism into that base change. -/
+noncomputable def baseChangeLiftQuotient {A : _root_.CommHopfAlgCat.{max w v} K}
+    (I : HopfIdeal k H) (f : baseChange (K := K) H ⟶ A)
+    (hf : (baseChangeHopfIdeal (K := K) I).toIdeal ≤ RingHom.ker f.hom.toAlgHom.toRingHom) :
+    baseChange (K := K) (quotient H I) ⟶ A :=
+  (quotientBaseChangeIso (K := K) I).inv ≫ liftQuotient _ f hf
+
+/-- The lift through the base change of a quotient recovers the original morphism after the
+base-changed quotient morphism. -/
+@[reassoc (attr := simp)]
+theorem baseChangeMap_mkQuotient_comp_baseChangeLiftQuotient
+    {A : _root_.CommHopfAlgCat.{max w v} K} (I : HopfIdeal k H)
+    (f : baseChange (K := K) H ⟶ A)
+    (hf : (baseChangeHopfIdeal (K := K) I).toIdeal ≤ RingHom.ker f.hom.toAlgHom.toRingHom) :
+    baseChangeMap (K := K) (mkQuotient H I) ≫ baseChangeLiftQuotient I f hf = f := by
+  rw [baseChangeLiftQuotient, ← mkQuotient_comp_quotientBaseChangeIso_hom, Category.assoc,
+    Iso.hom_inv_id_assoc, mkQuotient_comp_liftQuotient]
+
+/-- The lift through the base change of a quotient is the only morphism recovering the original
+one after the base-changed quotient morphism. -/
+theorem baseChangeLiftQuotient_unique {A : _root_.CommHopfAlgCat.{max w v} K}
+    (I : HopfIdeal k H) (f : baseChange (K := K) H ⟶ A)
+    (hf : (baseChangeHopfIdeal (K := K) I).toIdeal ≤ RingHom.ker f.hom.toAlgHom.toRingHom)
+    (g : baseChange (K := K) (quotient H I) ⟶ A)
+    (hg : baseChangeMap (K := K) (mkQuotient H I) ≫ g = f) :
+    g = baseChangeLiftQuotient I f hf := by
+  have : Epi (baseChangeMap (K := K) (mkQuotient H I)) :=
+    ConcreteCategory.epi_of_surjective _ (baseChangeMap_surjective _ (mkQuotient_surjective H I))
+  exact (cancel_epi _).mp
+    (hg.trans (baseChangeMap_mkQuotient_comp_baseChangeLiftQuotient I f hf).symm)
 
 /-- An ambient base-change isomorphism carries a base-changed Hopf ideal generated by a set to
 the target Hopf ideal when it carries the generating set onto the target generating set. -/

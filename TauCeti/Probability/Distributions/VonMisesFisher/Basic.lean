@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.Tilted
+public import TauCeti.Probability.Density
 public import TauCeti.Probability.Distributions.Uniform.Sphere.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
@@ -21,6 +22,11 @@ are ratios of normalizers at `η + t • θ` and `η`.
 The direction/concentration form uses a unit direction and a nonnegative concentration;
 negative concentration gives zero. Zero natural parameter or concentration gives the uniform
 law. The natural-parameter law on the empty sphere in dimension zero is zero.
+
+Both parameterizations expose their normalized density relative to uniform sphere probability.
+The density, `HasPDF`, canonical `pdf`, and Radon--Nikodym interfaces use the same totalized
+conventions as the laws: in dimension zero, or at negative concentration in the
+direction/concentration form, the density and law are zero.
 
 This construction uses Mathlib's `Measure.tilted` and its density and integration APIs, and
 `MeasureTheory.Measure.measurable_tilted` for joint parameter measurability. The explicit
@@ -57,6 +63,126 @@ theorem vonMisesFisherNaturalMeasure_def (η : E) :
 Negative concentrations give the zero measure. -/
 def vonMisesFisherMeasure (m : sphere (0 : E) 1) (κ : ℝ) : Measure (sphere (0 : E) 1) :=
   if 0 ≤ κ then vonMisesFisherNaturalMeasure (κ • (m : E)) else 0
+
+/-- The real normalized density of the natural-parameter von Mises--Fisher law relative to
+uniform sphere probability. In dimension zero both the normalizing integral and this totalized
+density are zero. -/
+def vonMisesFisherNaturalPDFReal (η : E) (x : sphere (0 : E) 1) : ℝ :=
+  exp ⟪η, (x : E)⟫_ℝ /
+    ∫ y : sphere (0 : E) 1, exp ⟪η, (y : E)⟫_ℝ ∂uniformSphereMeasure E
+
+/-- The defining formula of the real natural-parameter von Mises--Fisher density. -/
+theorem vonMisesFisherNaturalPDFReal_def (η : E) :
+    vonMisesFisherNaturalPDFReal η = fun x : sphere (0 : E) 1 ↦ exp ⟪η, (x : E)⟫_ℝ /
+      ∫ y : sphere (0 : E) 1, exp ⟪η, (y : E)⟫_ℝ ∂uniformSphereMeasure E := (rfl)
+
+/-- The extended nonnegative density of the natural-parameter von Mises--Fisher law relative to
+uniform sphere probability. -/
+def vonMisesFisherNaturalPDF (η : E) (x : sphere (0 : E) 1) : ℝ≥0∞ :=
+  ENNReal.ofReal (vonMisesFisherNaturalPDFReal η x)
+
+/-- The extended natural-parameter density is the nonnegative extended-real lift of the real
+density. -/
+theorem vonMisesFisherNaturalPDF_def (η : E) :
+    vonMisesFisherNaturalPDF η = fun x ↦ ENNReal.ofReal (vonMisesFisherNaturalPDFReal η x) :=
+  (rfl)
+
+/-- The real normalized density of the direction/concentration von Mises--Fisher law. Negative
+concentrations use the zero density, matching the totalized zero law. -/
+def vonMisesFisherPDFReal (m : sphere (0 : E) 1) (κ : ℝ) (x : sphere (0 : E) 1) : ℝ :=
+  if 0 ≤ κ then vonMisesFisherNaturalPDFReal (κ • (m : E)) x else 0
+
+/-- The defining formula of the real direction/concentration von Mises--Fisher density. -/
+theorem vonMisesFisherPDFReal_def (m : sphere (0 : E) 1) (κ : ℝ) :
+    vonMisesFisherPDFReal m κ = fun x ↦
+      if 0 ≤ κ then vonMisesFisherNaturalPDFReal (κ • (m : E)) x else 0 := (rfl)
+
+/-- The extended nonnegative density of the direction/concentration von Mises--Fisher law
+relative to uniform sphere probability. -/
+def vonMisesFisherPDF (m : sphere (0 : E) 1) (κ : ℝ) (x : sphere (0 : E) 1) : ℝ≥0∞ :=
+  ENNReal.ofReal (vonMisesFisherPDFReal m κ x)
+
+/-- The extended direction/concentration density is the nonnegative extended-real lift of the
+real density. -/
+theorem vonMisesFisherPDF_def (m : sphere (0 : E) 1) (κ : ℝ) :
+    vonMisesFisherPDF m κ = fun x ↦ ENNReal.ofReal (vonMisesFisherPDFReal m κ x) := (rfl)
+
+/-- At nonnegative concentration, the real direction/concentration density is the natural-
+parameter density. -/
+@[simp]
+theorem vonMisesFisherPDFReal_of_nonneg (m : sphere (0 : E) 1) {κ : ℝ} (hκ : 0 ≤ κ) :
+    vonMisesFisherPDFReal m κ = vonMisesFisherNaturalPDFReal (κ • (m : E)) := by
+  funext x
+  rw [vonMisesFisherPDFReal, ite_eq_left hκ]
+
+/-- At negative concentration, the real direction/concentration density is zero. -/
+@[simp]
+theorem vonMisesFisherPDFReal_of_neg (m : sphere (0 : E) 1) {κ : ℝ} (hκ : κ < 0) :
+    vonMisesFisherPDFReal m κ = 0 := by
+  funext x
+  rw [vonMisesFisherPDFReal, ite_eq_right hκ.not_ge]
+  simp only [Pi.zero_apply]
+
+/-- At nonnegative concentration, the direction/concentration density is the natural-parameter
+density. -/
+@[simp]
+theorem vonMisesFisherPDF_of_nonneg (m : sphere (0 : E) 1) {κ : ℝ} (hκ : 0 ≤ κ) :
+    vonMisesFisherPDF m κ = vonMisesFisherNaturalPDF (κ • (m : E)) := by
+  funext x
+  rw [vonMisesFisherPDF, vonMisesFisherNaturalPDF, vonMisesFisherPDFReal_of_nonneg m hκ]
+
+/-- At negative concentration, the direction/concentration density is zero. -/
+@[simp]
+theorem vonMisesFisherPDF_of_neg (m : sphere (0 : E) 1) {κ : ℝ} (hκ : κ < 0) :
+    vonMisesFisherPDF m κ = 0 := by
+  funext x
+  rw [vonMisesFisherPDF, vonMisesFisherPDFReal_of_neg m hκ]
+  exact ENNReal.ofReal_zero
+
+/-- The real natural-parameter von Mises--Fisher density is nonnegative, including in dimension
+zero. -/
+theorem vonMisesFisherNaturalPDFReal_nonneg (η : E) (x : sphere (0 : E) 1) :
+    0 ≤ vonMisesFisherNaturalPDFReal η x :=
+  div_nonneg (exp_pos _).le (integral_nonneg fun _ ↦ (exp_pos _).le)
+
+/-- The real direction/concentration von Mises--Fisher density is nonnegative for every
+concentration. -/
+theorem vonMisesFisherPDFReal_nonneg (m : sphere (0 : E) 1) (κ : ℝ) (x : sphere (0 : E) 1) :
+    0 ≤ vonMisesFisherPDFReal m κ x := by
+  rw [vonMisesFisherPDFReal]
+  split_ifs
+  exacts [vonMisesFisherNaturalPDFReal_nonneg _ x, le_rfl]
+
+/-- The real value of the extended natural-parameter density is the real density. -/
+@[simp]
+theorem toReal_vonMisesFisherNaturalPDF (η : E) (x : sphere (0 : E) 1) :
+    (vonMisesFisherNaturalPDF η x).toReal = vonMisesFisherNaturalPDFReal η x :=
+  ENNReal.toReal_ofReal (vonMisesFisherNaturalPDFReal_nonneg η x)
+
+/-- The real value of the extended direction/concentration density is the real density for
+every concentration. -/
+@[simp]
+theorem toReal_vonMisesFisherPDF (m : sphere (0 : E) 1) (κ : ℝ) (x : sphere (0 : E) 1) :
+    (vonMisesFisherPDF m κ x).toReal = vonMisesFisherPDFReal m κ x :=
+  ENNReal.toReal_ofReal (vonMisesFisherPDFReal_nonneg m κ x)
+
+/-- The natural-parameter von Mises--Fisher density is measurable. -/
+@[fun_prop]
+theorem measurable_vonMisesFisherNaturalPDF (η : E) :
+    Measurable (vonMisesFisherNaturalPDF η) := by
+  unfold vonMisesFisherNaturalPDF vonMisesFisherNaturalPDFReal
+  fun_prop
+
+/-- The direction/concentration von Mises--Fisher density is measurable for every concentration,
+including the totalized negative branch. -/
+@[fun_prop]
+theorem measurable_vonMisesFisherPDF (m : sphere (0 : E) 1) (κ : ℝ) :
+    Measurable (vonMisesFisherPDF m κ) := by
+  by_cases hκ : 0 ≤ κ
+  · rw [vonMisesFisherPDF_of_nonneg m hκ]
+    exact measurable_vonMisesFisherNaturalPDF (κ • (m : E))
+  · rw [vonMisesFisherPDF_of_neg m (lt_of_not_ge hκ)]
+    fun_prop
 
 /-- At nonnegative concentration, the natural parameter is the concentration times the direction. -/
 @[simp]
@@ -103,16 +229,84 @@ theorem isProbabilityMeasure_vonMisesFisherMeasure_iff (m : sphere (0 : E) 1) (�
 sphere law, including the empty-sphere case. -/
 theorem vonMisesFisherNaturalMeasure_eq_withDensity (η : E) :
     vonMisesFisherNaturalMeasure η = (uniformSphereMeasure E).withDensity
-      (fun x ↦ ENNReal.ofReal (exp ⟪η, (x : E)⟫_ℝ /
-        ∫ y : sphere (0 : E) 1, exp ⟪η, (y : E)⟫_ℝ ∂uniformSphereMeasure E)) := (rfl)
+      (vonMisesFisherNaturalPDF η) := (rfl)
+
+/-- The direction/concentration law is the uniform sphere law weighted by its named density for
+every concentration, including the totalized negative branch. -/
+theorem vonMisesFisherMeasure_eq_withDensity (m : sphere (0 : E) 1) (κ : ℝ) :
+    vonMisesFisherMeasure m κ =
+      (uniformSphereMeasure E).withDensity (vonMisesFisherPDF m κ) := by
+  by_cases hκ : 0 ≤ κ
+  · rw [vonMisesFisherMeasure_of_nonneg m hκ,
+      vonMisesFisherNaturalMeasure_eq_withDensity, vonMisesFisherPDF_of_nonneg m hκ]
+  · rw [vonMisesFisherMeasure_of_neg m (lt_of_not_ge hκ),
+      vonMisesFisherPDF_of_neg m (lt_of_not_ge hκ)]
+    simp
 
 /-- The Radon–Nikodym derivative against uniform sphere probability is the normalized
 exponential weight. -/
 theorem rnDeriv_vonMisesFisherNaturalMeasure (η : E) :
     (vonMisesFisherNaturalMeasure η).rnDeriv (uniformSphereMeasure E) =ᵐ[uniformSphereMeasure E]
-      fun x ↦ ENNReal.ofReal (exp ⟪η, (x : E)⟫_ℝ /
-        ∫ y : sphere (0 : E) 1, exp ⟪η, (y : E)⟫_ℝ ∂uniformSphereMeasure E) :=
+      vonMisesFisherNaturalPDF η :=
   rnDeriv_tilted_left_self (by fun_prop)
+
+/-- The Radon--Nikodym derivative of the direction/concentration law against uniform sphere
+probability is its named density. -/
+theorem rnDeriv_vonMisesFisherMeasure (m : sphere (0 : E) 1) (κ : ℝ) :
+    (vonMisesFisherMeasure m κ).rnDeriv (uniformSphereMeasure E) =ᵐ[uniformSphereMeasure E]
+      vonMisesFisherPDF m κ := by
+  rw [vonMisesFisherMeasure_eq_withDensity]
+  exact Measure.rnDeriv_withDensity _ (measurable_vonMisesFisherPDF m κ)
+
+end TauCeti.Probability
+
+namespace ProbabilityTheory.HasLaw
+
+open TauCeti.Probability
+
+variable {E Ω : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [MeasurableSpace Ω] {P : Measure Ω}
+
+/-- A random variable with a natural-parameter von Mises--Fisher law has its named density
+relative to uniform sphere probability. -/
+theorem hasPDF_vonMisesFisherNaturalMeasure {X : Ω → sphere (0 : E) 1} {η : E}
+    (hX : HasLaw X (vonMisesFisherNaturalMeasure η) P) :
+    HasPDF X P (uniformSphereMeasure E) := by
+  apply hasPDF_of_hasLaw_withDensity (measurable_vonMisesFisherNaturalPDF η).aemeasurable
+  rwa [← vonMisesFisherNaturalMeasure_eq_withDensity]
+
+/-- The canonical density of a random variable with a natural-parameter von Mises--Fisher law
+agrees almost everywhere with the named density. -/
+theorem pdf_eq_vonMisesFisherNaturalPDF {X : Ω → sphere (0 : E) 1} {η : E}
+    (hX : HasLaw X (vonMisesFisherNaturalMeasure η) P) :
+    pdf X P (uniformSphereMeasure E) =ᵐ[uniformSphereMeasure E]
+      vonMisesFisherNaturalPDF η := by
+  apply pdf_eq_of_hasLaw_withDensity (measurable_vonMisesFisherNaturalPDF η).aemeasurable
+  rwa [← vonMisesFisherNaturalMeasure_eq_withDensity]
+
+/-- A random variable with a direction/concentration von Mises--Fisher law has its named density
+relative to uniform sphere probability, including for the totalized negative branch. -/
+theorem hasPDF_vonMisesFisherMeasure {X : Ω → sphere (0 : E) 1}
+    {m : sphere (0 : E) 1} {κ : ℝ} (hX : HasLaw X (vonMisesFisherMeasure m κ) P) :
+    HasPDF X P (uniformSphereMeasure E) := by
+  apply hasPDF_of_hasLaw_withDensity (measurable_vonMisesFisherPDF m κ).aemeasurable
+  rwa [← vonMisesFisherMeasure_eq_withDensity]
+
+/-- The canonical density of a random variable with a direction/concentration von Mises--Fisher
+law agrees almost everywhere with the named density. -/
+theorem pdf_eq_vonMisesFisherPDF {X : Ω → sphere (0 : E) 1}
+    {m : sphere (0 : E) 1} {κ : ℝ} (hX : HasLaw X (vonMisesFisherMeasure m κ) P) :
+    pdf X P (uniformSphereMeasure E) =ᵐ[uniformSphereMeasure E]
+      vonMisesFisherPDF m κ := by
+  apply pdf_eq_of_hasLaw_withDensity (measurable_vonMisesFisherPDF m κ).aemeasurable
+  rwa [← vonMisesFisherMeasure_eq_withDensity]
+
+end ProbabilityTheory.HasLaw
+
+namespace TauCeti.Probability
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
 
 /-- Zero natural parameter gives the uniform sphere law. -/
 @[simp]

@@ -10,6 +10,7 @@ import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Calculus.SmoothSeries
 import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Fourier.Monomial
+import TauCeti.Analysis.Fourier.Torus.FourierCoeff
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
@@ -312,7 +313,7 @@ theorem summable_norm_mFourierCoeff_mul_pow {f : UnitAddTorus d → ℂ} (hf : f
     Summable fun n ↦ ‖mFourierCoeff f n‖ * (1 + R * ‖n‖) ^ N := by
   obtain ⟨M, hM⟩ := exists_derivBound hf (N + Fintype.card d + 1)
   refine Summable.of_nonneg_of_le (fun n ↦ by positivity) (fun n ↦ ?_)
-    (summable_pi_int_inv_one_add_norm_pow.mul_left
+    ((summable_pi_int_one_add_norm_pow_inv (lt_add_one _)).mul_left
       ((1 + R) ^ N * (2 ^ (N + Fintype.card d + 2) * M)))
   have h1 : (1 + R * ‖n‖) ^ N ≤ (1 + R) ^ N * (1 + ‖n‖) ^ N := by
     rw [← mul_pow]
@@ -400,7 +401,7 @@ theorem _root_.LinearMap.hasSum_mFourierCoeff_smul_apply {F : Type*} [NormedAddC
   rw [SummationFilter.unconditional_filter, Metric.tendsto_nhds]
   intro δ hδ
   have hε : 0 < δ / (|C| + 1) := by positivity
-  filter_upwards [eventually_derivBound_sub_sum f.2 N hε] with s hs
+  filter_upwards [eventually_derivBound_sub_sum f.property N hε] with s hs
   have hT' := hT (f - ∑ n ∈ s, mFourierCoeff (f : UnitAddTorus d → ℂ) n • mFourierSmooth n) _
     (by simpa using hs)
   rw [dist_eq_norm, ← norm_neg, neg_sub]
@@ -470,7 +471,7 @@ theorem tsum_smul_mFourier_mem_smoothFunctions_of_bounded {c : (d → ℤ) → �
   obtain ⟨C₀, hC₀⟩ := hc 0
   obtain ⟨C, hC⟩ := hc K
   refine Summable.of_nonneg_of_le (fun n ↦ by positivity) (fun n ↦ ?_)
-    (summable_pi_int_inv_one_add_norm_pow.mul_left (2 ^ K * (C₀ + C)))
+    ((summable_pi_int_one_add_norm_pow_inv (lt_add_one _)).mul_left (2 ^ K * (C₀ + C)))
   have hpow : (1 + ‖n‖) ^ K ≤ 2 ^ K * (1 + ‖n‖ ^ K) := by
     calc (1 + ‖n‖) ^ K ≤ 2 ^ (K - 1) * (1 ^ K + ‖n‖ ^ K) := add_pow_le zero_le_one (norm_nonneg n) K
       _ ≤ 2 ^ K * (1 + ‖n‖ ^ K) := by
@@ -495,8 +496,8 @@ theorem tsum_smul_mFourier_mem_smoothFunctions_of_bounded {c : (d → ℤ) → �
 /-- The `n`-th Fourier coefficient as a complex-linear form on the smooth functions. -/
 def mFourierCoeffₗ (n : d → ℤ) : smoothFunctions d →ₗ[ℂ] ℂ where
   toFun f := mFourierCoeff (f : UnitAddTorus d → ℂ) n
-  map_add' f g := mFourierCoeff_add (integrable_of_mem_smoothFunctions f.2)
-    (integrable_of_mem_smoothFunctions g.2) n
+  map_add' f g := mFourierCoeff_add (integrable_of_mem_smoothFunctions f.property)
+    (integrable_of_mem_smoothFunctions g.property) n
   map_smul' c _ := mFourierCoeff_smul c _ n
 
 @[simp]

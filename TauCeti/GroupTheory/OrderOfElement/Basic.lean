@@ -7,8 +7,10 @@ module
 
 public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.Data.Nat.Totient
+public import Mathlib.RingTheory.Coprime.Basic
 public import TauCeti.Data.Nat.Factorization.MulDvd
 import Mathlib.FieldTheory.Finite.Basic
+import TauCeti.Algebra.Group.Coprime
 
 /-!
 # Orders of elements and cardinalities
@@ -48,11 +50,22 @@ the least positive power of `g` lying in `K`; otherwise `d = 0` and `g ^ d = 1`.
 
 * `MonoidHom.isOfFinOrder_iff_exists_pow_apply_eq_one`: the common-exponent characterization
   of finite order for monoid homomorphisms.
+* `MonoidHom.pow_natCard_eq_one`, and its additive counterpart: raising a homomorphism from a
+  group into a commutative monoid to `Nat.card G` yields the trivial homomorphism.
 
 * `IsOfFinOrder.dvd_orderOf_pow_iff`, and its additive counterpart: divisibility of the order of
   a power as non-divisibility of its exponent by a prime power at each prime of `f`.
+* `IsConj.orderOf_eq`, and its additive counterpart: conjugate elements of a monoid have the same
+  order.
+* `IsCoprime.orderOf_zpow`, and its additive counterpart: an integer exponent coprime to the order
+  of `x` preserves it.
 * `QuotientGroup.orderOf_mk_dvd_iff_pow_mem`, and its additive counterpart: the order of the
   image of `g` in a quotient `G ⧸ K` divides `n` exactly when `g ^ n ∈ K`.
+* `Subgroup.mem_of_pow_mem_of_coprime_index`, and its additive counterpart: a normal subgroup
+  contains `g` as soon as it contains a power of `g` with exponent coprime to its index.
+* `TauCeti.mem_of_pow_eq_one_of_dvd_natCard_of_not_sq_dvd`: for a prime `p` whose square does not
+  divide the order of the group, a normal subgroup of order divisible by `p` contains every
+  element whose `p`-th power is `1`.
 * `Subgroup.liftClass`, `AddSubgroup.liftClass`: the power `g ^ d` of `g` lying in a normal
   subgroup `K`, where `d` is the order of `g` in `G ⧸ K`; it is the least positive such power when
   `d` is positive, and `1` when the image of `g` has infinite order.
@@ -83,6 +96,16 @@ theorem MonoidHom.isOfFinOrder_iff_exists_pow_apply_eq_one
   simp only [isOfFinOrder_iff_pow_eq_one, DFunLike.ext_iff, MonoidHom.pow_apply,
     MonoidHom.one_apply]
 
+/-- Raising a homomorphism from a group into a commutative monoid to `Nat.card G` yields the
+trivial homomorphism. -/
+@[to_additive
+/-- Multiplying a homomorphism from an additive group into a commutative additive monoid by
+`Nat.card G` yields the zero homomorphism. -/]
+theorem MonoidHom.pow_natCard_eq_one {G M : Type*} [Group G] [CommMonoid M] (f : G →* M) :
+    f ^ Nat.card G = 1 := by
+  ext g
+  rw [MonoidHom.pow_apply, MonoidHom.one_apply, ← map_pow, pow_card_eq_one', map_one]
+
 namespace IsOfFinOrder
 
 variable {G : Type*} [Monoid G]
@@ -112,6 +135,34 @@ theorem dvd_orderOf_pow_iff {g : G} (hg : IsOfFinOrder g) {f : ℕ}
 
 end IsOfFinOrder
 
+/-- Conjugate elements of a monoid have the same order. -/
+@[to_additive /-- Additively conjugate elements of an additive monoid have the same additive
+order. -/]
+theorem IsConj.orderOf_eq {G : Type*} [Monoid G] {a b : G} (h : IsConj a b) :
+    orderOf a = orderOf b :=
+  orderOf_eq_orderOf_iff.2 fun n ↦ by
+    rw [← isConj_one_right, ← isConj_one_right (a := b ^ n)]
+    exact ⟨fun h' ↦ h'.trans (h.pow n), fun h' ↦ h'.trans (h.pow n).symm⟩
+
+/-- An integer exponent coprime to the order of `x` preserves it. This is Mathlib's
+`Nat.Coprime.orderOf_pow` for integer exponents. -/
+@[to_additive /-- An integer coefficient coprime to the additive order of `x` preserves it. This
+is Mathlib's `Nat.Coprime.addOrderOf_nsmul` for integer coefficients. -/]
+theorem IsCoprime.orderOf_zpow {G : Type*} [Group G] {x : G} {u : ℤ}
+    (h : IsCoprime u (orderOf x)) : orderOf (x ^ u) = orderOf x := by
+  rw [← orderOf_pow_natAbs]
+  exact Nat.Coprime.orderOf_pow (Nat.Coprime.symm (Int.isCoprime_iff_gcd_eq_one.mp h))
+
+/-- Raising to an integer power coprime to `N` is injective on the elements whose order divides
+`N`. -/
+@[to_additive /-- Scaling by an integer coprime to `N` is injective on the elements whose additive
+order divides `N`. -/]
+theorem IsCoprime.injOn_zpow_of_orderOf_dvd {G : Type*} [Group G] {u : ℤ} {N : ℕ}
+    (hu : IsCoprime u N) : Set.InjOn (· ^ u) {x : G | orderOf x ∣ N} := fun x hx y hy h ↦
+  hu.eq_of_zpow_eq_zpow h <| by
+    rw [zpow_natCast, zpow_natCast, orderOf_dvd_iff_pow_eq_one.mp hx,
+      orderOf_dvd_iff_pow_eq_one.mp hy]
+
 /-- The order of the image of `g` in `G ⧸ K` divides `n` exactly when `g ^ n` lies in `K`. -/
 @[to_additive
 /-- The additive order of the image of `g` in `G ⧸ K` divides `n` exactly when `n • g` lies in
@@ -119,6 +170,18 @@ end IsOfFinOrder
 theorem QuotientGroup.orderOf_mk_dvd_iff_pow_mem {G : Type*} [Group G] (K : Subgroup G)
     [K.Normal] (g : G) (n : ℕ) : orderOf (g : G ⧸ K) ∣ n ↔ g ^ n ∈ K := by
   rw [orderOf_dvd_iff_pow_eq_one, ← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff]
+
+/-- A normal subgroup `K` contains `g` as soon as it contains a power `g ^ n` whose exponent is
+coprime to the index of `K`. -/
+@[to_additive
+/-- A normal additive subgroup `K` contains `g` as soon as it contains a multiple `n • g` whose
+coefficient is coprime to the index of `K`. -/]
+theorem Subgroup.mem_of_pow_mem_of_coprime_index {G : Type*} [Group G] {K : Subgroup G}
+    [K.Normal] {n : ℕ} (hn : K.index.Coprime n) {g : G} (hg : g ^ n ∈ K) : g ∈ K := by
+  have horder : orderOf (g : G ⧸ K) = 1 :=
+    Nat.eq_one_of_dvd_coprimes hn (K.index_eq_card ▸ _root_.orderOf_dvd_natCard _)
+      ((QuotientGroup.orderOf_mk_dvd_iff_pow_mem K g n).mpr hg)
+  exact (QuotientGroup.eq_one_iff g).mp (orderOf_eq_one_iff.mp horder)
 
 namespace Subgroup
 
@@ -231,6 +294,16 @@ theorem exists_forall_pow_ne_of_not_isOfFinOrder {G : Type*} [LeftCancelMonoid G
   exact Filter.eventually_atTop.1 (Nat.cofinite_eq_atTop ▸
     (injective_pow_iff_not_isOfFinOrder.2 hH).tendsto_cofinite.eventually
       (Filter.eventually_cofinite_ne a))
+
+/-- For a prime `p`, if `p ^ 2` does not divide the order of a group, then a normal subgroup
+whose order is divisible by `p` contains every element whose `p`-th power is `1`. -/
+theorem mem_of_pow_eq_one_of_dvd_natCard_of_not_sq_dvd {G : Type*} [Group G] {p : ℕ}
+    (hp : p.Prime) {N : Subgroup G} [N.Normal] {a : G} (ha : a ^ p = 1) (hN : p ∣ Nat.card N)
+    (hsq : ¬ p ^ 2 ∣ Nat.card G) : a ∈ N := by
+  refine Subgroup.mem_of_pow_mem_of_coprime_index
+    (Nat.Coprime.symm (hp.coprime_iff_not_dvd.mpr fun hi ↦ hsq ?_)) (ha ▸ N.one_mem)
+  rw [← N.card_mul_index, pow_two]
+  exact Nat.mul_dvd_mul hN hi
 
 section Conj
 

@@ -11,7 +11,7 @@ public import TauCeti.Topology.Algebra.InfiniteSum.DiscreteConvolution
 import Mathlib.Analysis.MeanInequalitiesPow
 import TauCeti.Analysis.MeanInequalities
 import TauCeti.Analysis.Normed.Lp.WeightedSum
-import TauCeti.Analysis.PSeries
+import TauCeti.Analysis.PSeries.Shifted
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
@@ -85,16 +85,16 @@ theorem addConvolutionExists_of_memℓp [CompleteSpace F] (L : E →L[𝕜] E' �
   obtain ⟨C, hC⟩ := memℓp_infty_iff.1 hf
   have hg' : Summable fun y ↦ ‖g y‖ := by simpa using (memℓp_gen_iff (by simp)).1 hg
   -- The second coordinate is injective on the fibre at `x`.
-  have hinj : Function.Injective fun ab : addFiber x ↦ ab.1.2 := fun ab ab' h ↦ by
-    have h₁ := mem_addFiber.1 ab.2
-    have h₂ := mem_addFiber.1 ab'.2
-    have h' : ab.1.2 = ab'.1.2 := h
-    refine Subtype.ext <| Prod.ext (add_right_cancel (b := ab.1.2) ?_) h
+  have hinj : Function.Injective fun ab : addFiber x ↦ ab.val.2 := fun ab ab' h ↦ by
+    have h₁ := mem_addFiber.1 ab.property
+    have h₂ := mem_addFiber.1 ab'.property
+    have h' : ab.val.2 = ab'.val.2 := h
+    refine Subtype.ext <| Prod.ext (add_right_cancel (b := ab.val.2) ?_) h
     rw [h₁, h', h₂]
   refine Summable.of_norm_bounded ((hg'.comp_injective hinj).mul_left (‖L‖ * C)) fun ab ↦ ?_
-  calc ‖L.toLinearMap₁₂ (f ab.1.1) (g ab.1.2)‖ ≤ ‖L‖ * ‖f ab.1.1‖ * ‖g ab.1.2‖ :=
+  calc ‖L.toLinearMap₁₂ (f ab.val.1) (g ab.val.2)‖ ≤ ‖L‖ * ‖f ab.val.1‖ * ‖g ab.val.2‖ :=
         L.le_opNorm₂ _ _
-    _ ≤ ‖L‖ * C * ‖g ab.1.2‖ := by
+    _ ≤ ‖L‖ * C * ‖g ab.val.2‖ := by
         gcongr
         exact hC ⟨_, rfl⟩
 
@@ -197,11 +197,11 @@ theorem mul_addRingConvolution_le {M : Type*} [AddMonoid M] {ω ω₁ ω₂ : M 
     ω x * (f ⋆ᵣ₊ g) x ≤ ((fun y ↦ ω₁ y * f y) ⋆ᵣ₊ fun y ↦ ω₂ y * g y) x := by
   simp_rw [addRingConvolution_apply, ← ENNReal.tsum_mul_left]
   refine _root_.tsum_le_tsum fun ab ↦ ?_
-  calc ω x * (f ab.1.1 * g ab.1.2)
-      ≤ ω₁ ab.1.1 * ω₂ ab.1.2 * (f ab.1.1 * g ab.1.2) := by
+  calc ω x * (f ab.val.1 * g ab.val.2)
+      ≤ ω₁ ab.val.1 * ω₂ ab.val.2 * (f ab.val.1 * g ab.val.2) := by
         gcongr
-        exact (congrArg ω (mem_addFiber.1 ab.2)).symm.trans_le (hω ab.1.1 ab.1.2)
-    _ = ω₁ ab.1.1 * f ab.1.1 * (ω₂ ab.1.2 * g ab.1.2) := by ring
+        exact (congrArg ω (mem_addFiber.1 ab.property)).symm.trans_le (hω ab.val.1 ab.val.2)
+    _ = ω₁ ab.val.1 * f ab.val.1 * (ω₂ ab.val.2 * g ab.val.2) := by ring
 
 /-- **Weighted Young's inequality** `‖ω (f ⋆ g)‖₂ ≤ ‖ω₂ g‖₁ ‖ω₁ f‖₂` for families in `ℝ≥0∞` on an
 additive group, in squared form, for weights satisfying `ω (x + y) ≤ ω₁ x * ω₂ y`. -/
@@ -340,7 +340,7 @@ private theorem addConvolutionExists_of_summable_sq_one_add_abs_rpow_mul_norm [C
   unfold AddConvolutionExistsAt
   refine Summable.of_norm <| tsum_eNorm_ne_top_iff_summable_norm.1 <| ne_top_of_le_ne_top
     (ENNReal.mul_ne_top (eNorm_ne_top (x := L)) (ENNReal.mul_ne_top ha' hb')) ?_
-  calc ∑' ab : addFiber x, ‖L.toLinearMap₁₂ (a ab.1.1) (b ab.1.2)‖ₑ
+  calc ∑' ab : addFiber x, ‖L.toLinearMap₁₂ (a ab.val.1) (b ab.val.2)‖ₑ
       ≤ ∑' p : ℤ × ℤ, ‖L.toLinearMap₁₂ (a p.1) (b p.2)‖ₑ :=
         _root_.tsum_comp_le_tsum_of_injective Subtype.val_injective
           fun p : ℤ × ℤ ↦ ‖L.toLinearMap₁₂ (a p.1) (b p.2)‖ₑ

@@ -64,18 +64,22 @@ private theorem i_smul_i_smul {V : Type*} [NormedAddCommGroup V] [NormedSpace �
 
 /-! ### Real-linear postcomposition -/
 
+section RealLinear
+
 private theorem weight_mul_norm_complexAntilinearPart_le (Ψ : E →L[ℝ] F) (a : CircleSobolev s E)
     (n : ℤ) : weight s n * ‖Ψ.complexAntilinearPart (a.coeff (-n))‖ ≤
       ‖Ψ‖ * (weight s n * ‖(reflect a).coeff n‖) := by
   have h : ‖Ψ.complexAntilinearPart (a.coeff (-n))‖ ≤ ‖Ψ‖ * ‖a.coeff (-n)‖ := by
-    rw [ContinuousLinearMap.complexAntilinearPart_apply]
-    exact norm_two_inv_smul_add_le (𝕜 := ℝ) (Ψ.le_opNorm _)
+    rw [Ψ.complexAntilinearPart_apply]; exact norm_two_inv_smul_add_le (𝕜 := ℝ) (Ψ.le_opNorm _)
       (by simpa [norm_smul] using Ψ.le_opNorm (I • a.coeff (-n)))
   simpa [mul_left_comm] using mul_le_mul_of_nonneg_left h (weight_nonneg s n)
 
 private def mapAntilinearAux (Ψ : E →L[ℝ] F) (a : CircleSobolev s E) : CircleSobolev s F :=
   ⟨fun n ↦ Ψ.complexAntilinearPart (a.coeff (-n)),
     memℓp_of_forall_le (weight_mul_norm_complexAntilinearPart_le Ψ a)⟩
+
+@[simp] private theorem coeff_mapAntilinearAux (Ψ : E →L[ℝ] F) (a : CircleSobolev s E) (n : ℤ) :
+    (mapAntilinearAux Ψ a).coeff n = Ψ.complexAntilinearPart (a.coeff (-n)) := rfl
 
 private def mapRealAux (Ψ : E →L[ℝ] F) (a : CircleSobolev s E) : CircleSobolev s F :=
   mapCLM Ψ.complexLinearPart a + mapAntilinearAux Ψ a
@@ -84,9 +88,8 @@ private theorem norm_mapRealAux_le (Ψ : E →L[ℝ] F) (a : CircleSobolev s E) 
     ‖mapRealAux Ψ a‖ ≤ (2 * ‖Ψ‖) * ‖a‖ := by
   have hlin : ‖mapCLM Ψ.complexLinearPart a‖ ≤ ‖Ψ‖ * ‖a‖ := norm_le_of_forall_le fun n ↦ by
     have h : ‖Ψ.complexLinearPart (a.coeff n)‖ ≤ ‖Ψ‖ * ‖a.coeff n‖ := by
-      rw [ContinuousLinearMap.complexLinearPart_apply, sub_eq_add_neg]
-      exact norm_two_inv_smul_add_le (𝕜 := ℝ) (Ψ.le_opNorm _)
-        (by simpa [norm_smul] using Ψ.le_opNorm (I • a.coeff n))
+      rw [Ψ.complexLinearPart_apply, sub_eq_add_neg]; exact norm_two_inv_smul_add_le (𝕜 := ℝ)
+        (Ψ.le_opNorm _) (by simpa [norm_smul] using Ψ.le_opNorm (I • a.coeff n))
     simpa only [coeff_mapCLM, mul_left_comm] using mul_le_mul_of_nonneg_left h (weight_nonneg s n)
   have hanti : ‖mapAntilinearAux Ψ a‖ ≤ ‖Ψ‖ * ‖a‖ := by
     simpa using norm_le_of_forall_le (a := reflect a) (b := mapAntilinearAux Ψ a)
@@ -100,28 +103,27 @@ pointwise application `x ↦ Ψ (a x)` (`toContinuousMap_mapRealCLM_apply`). -/
 def mapRealCLM : (E →L[ℝ] F) →L[ℝ] CircleSobolev s E →L[ℝ] CircleSobolev s F :=
   LinearMap.mkContinuous₂
     (LinearMap.mk₂ ℝ mapRealAux
-      (fun _ _ _ ↦ CircleSobolev.ext <| funext fun _ ↦ by
-        simp only [mapRealAux, coeff_add, Pi.add_apply, coeff_mapCLM, mapAntilinearAux,
+      (fun _ _ _ ↦ by
+        ext n; simp only [mapRealAux, coeff_add, Pi.add_apply, coeff_mapCLM, coeff_mapAntilinearAux,
           ContinuousLinearMap.complexLinearPart_add, ContinuousLinearMap.complexAntilinearPart_add,
           add_apply]; abel)
-      (fun _ _ _ ↦ CircleSobolev.ext <| funext fun _ ↦ by
-        simp only [mapRealAux, coeff_add, coeff_real_smul, Pi.add_apply, Pi.smul_apply,
-          coeff_mapCLM, mapAntilinearAux, ContinuousLinearMap.complexLinearPart_smul,
+      (fun _ _ _ ↦ by
+        ext n; simp only [mapRealAux, coeff_add, coeff_real_smul, Pi.add_apply, Pi.smul_apply,
+          coeff_mapCLM, coeff_mapAntilinearAux, ContinuousLinearMap.complexLinearPart_smul,
           ContinuousLinearMap.complexAntilinearPart_smul, smul_apply, smul_add])
-      (fun _ _ _ ↦ CircleSobolev.ext <| funext fun _ ↦ by
-        simp only [mapRealAux, coeff_add, Pi.add_apply, coeff_mapCLM, mapAntilinearAux, map_add]
-        abel)
-      (fun c _ a ↦ CircleSobolev.ext <| funext fun n ↦ by
-        simp only [mapRealAux, coeff_add, coeff_real_smul, Pi.add_apply, Pi.smul_apply,
-          coeff_mapCLM, mapAntilinearAux]
-        rw [← Complex.coe_smul c, ← Complex.coe_smul c (a.coeff (-n)), map_smul, map_smulₛₗ,
-          Complex.conj_ofReal, Complex.coe_smul, Complex.coe_smul, smul_add]))
+      (fun _ _ _ ↦ by
+        ext n; simp only [mapRealAux, coeff_add, Pi.add_apply, coeff_mapCLM, coeff_mapAntilinearAux,
+          map_add]; abel)
+      (fun c _ _ ↦ by
+        ext n; simp only [mapRealAux, ← Complex.coe_smul c, smul_add, map_smul, coeff_add,
+          coeff_smul, Pi.add_apply, Pi.smul_apply, coeff_mapAntilinearAux, map_smulₛₗ,
+          Complex.conj_ofReal]))
     2 fun Ψ a ↦ by simpa only [LinearMap.mk₂_apply, mul_assoc] using norm_mapRealAux_le Ψ a
 
 @[simp] theorem coeff_mapRealCLM (Ψ : E →L[ℝ] F) (a : CircleSobolev s E) (n : ℤ) :
     (mapRealCLM Ψ a).coeff n =
       Ψ.complexLinearPart (a.coeff n) + Ψ.complexAntilinearPart (a.coeff (-n)) := by
-  simp [mapRealCLM, mapRealAux, mapAntilinearAux]
+  simp [mapRealCLM, mapRealAux]
 
 theorem norm_mapRealCLM_le (Ψ : E →L[ℝ] F) (a : CircleSobolev s E) :
     ‖mapRealCLM Ψ a‖ ≤ 2 * ‖Ψ‖ * ‖a‖ := norm_mapRealAux_le Ψ a
@@ -131,33 +133,29 @@ theorem norm_mapRealCLM_le (Ψ : E →L[ℝ] F) (a : CircleSobolev s E) :
   CircleSobolev.ext <| funext fun n ↦ by rw [coeff_mapRealCLM]; simp
 
 /-- `mapRealCLM` sends the identity real-linear operator to the identity on `H^s`. -/
-@[simp] theorem mapRealCLM_id (a : CircleSobolev s E) : mapRealCLM (.id ℝ E) a = a :=
-  CircleSobolev.ext <| funext fun n ↦ by
-    simp only [coeff_mapRealCLM, ContinuousLinearMap.complexLinearPart_apply,
-      ContinuousLinearMap.complexAntilinearPart_apply, ContinuousLinearMap.id_apply,
-      i_smul_i_smul]; module
+@[simp] theorem mapRealCLM_id (a : CircleSobolev s E) : mapRealCLM (.id ℝ E) a = a := by
+  ext n; simp only [coeff_mapRealCLM, ContinuousLinearMap.complexLinearPart_apply,
+    ContinuousLinearMap.complexAntilinearPart_apply, ContinuousLinearMap.id_apply, i_smul_i_smul]
+  module
 
 /-- `mapRealCLM` respects composition of continuous real-linear operators. -/
 @[simp] theorem mapRealCLM_comp (Φ : F →L[ℝ] G) (Ψ : E →L[ℝ] F) (a : CircleSobolev s E) :
-    mapRealCLM (Φ.comp Ψ) a = mapRealCLM Φ (mapRealCLM Ψ a) :=
-  CircleSobolev.ext <| funext fun n ↦ by
-    simp only [coeff_mapRealCLM, neg_neg, ContinuousLinearMap.complexLinearPart_apply,
-      ContinuousLinearMap.complexAntilinearPart_apply, ContinuousLinearMap.comp_apply, map_add,
-      map_sub, map_smul, map_neg, smul_add, smul_sub, smul_comm I (2⁻¹ : ℝ), i_smul_i_smul,
-      smul_neg]
-    module
+    mapRealCLM (Φ.comp Ψ) a = mapRealCLM Φ (mapRealCLM Ψ a) := by
+  ext n; simp only [coeff_mapRealCLM, neg_neg, ContinuousLinearMap.complexLinearPart_apply,
+    ContinuousLinearMap.complexAntilinearPart_apply, ContinuousLinearMap.comp_apply, map_add,
+    map_sub, map_smul, map_neg, smul_add, smul_sub, smul_comm I (2⁻¹ : ℝ), i_smul_i_smul, smul_neg]
+  module
 
 @[simp] theorem mapRealCLM_inclusion (h : t ≤ s) (Ψ : E →L[ℝ] F) (a : CircleSobolev s E) :
     mapRealCLM Ψ (inclusion h a) = inclusion h (mapRealCLM Ψ a) :=
   CircleSobolev.ext <| funext fun _ ↦ by simp
 
 @[simp] theorem mapRealCLM_single_zero (Ψ : E →L[ℝ] F) (v : E) :
-    mapRealCLM Ψ (single (s := s) 0 v) = single 0 (Ψ v) :=
-  CircleSobolev.ext <| funext fun n ↦ by
-    rw [coeff_mapRealCLM]; rcases eq_or_ne n 0 with rfl | hn
-    · simp only [coeff_single, neg_zero, Pi.single_eq_same,
-        ContinuousLinearMap.complexLinearPart_add_complexAntilinearPart_apply]
-    · simp [hn, neg_eq_zero.not.2 hn]
+    mapRealCLM Ψ (single (s := s) 0 v) = single 0 (Ψ v) := by
+  ext n; rw [coeff_mapRealCLM]; rcases eq_or_ne n 0 with rfl | hn
+  · simp only [coeff_single, Pi.single_eq_same, neg_zero,
+      Ψ.complexLinearPart_add_complexAntilinearPart_apply]
+  · simp [hn, neg_eq_zero.not.2 hn]
 
 /-- **On continuous representatives `mapRealCLM` acts pointwise:** for `s > 1/2`, the continuous
 function attached to `mapRealCLM Ψ a` is `x ↦ Ψ (a x)`. -/
@@ -167,8 +165,7 @@ function attached to `mapRealCLM Ψ a` is `x ↦ Ψ (a x)`. -/
   have hsplit : mapRealCLM Ψ a = mapCLM Ψ.complexLinearPart a + mapAntilinearAux Ψ a :=
     CircleSobolev.ext <| funext fun n ↦ by simp [mapAntilinearAux]
   rw [hsplit, map_add, ContinuousMap.add_apply, toContinuousMap_mapCLM_apply,
-    ← Ψ.complexLinearPart_add_complexAntilinearPart_apply (toContinuousMap T hs a x)]
-  congr 1
+    ← Ψ.complexLinearPart_add_complexAntilinearPart_apply (toContinuousMap T hs a x)]; congr 1
   have hA := (hasSum_toContinuousMap T hs a).mapL (ContinuousMap.evalCLM ℂ x)
   simp only [ContinuousMap.evalCLM_apply, ContinuousMap.smul_apply', ContinuousMap.const_apply]
     at hA
@@ -176,6 +173,8 @@ function attached to `mapRealCLM Ψ a` is `x ↦ Ψ (a x)`. -/
     (ContinuousMap.evalCLM ℂ x)).unique ?_
   convert ((Equiv.neg ℤ).hasSum_iff.2 hA).mapL Ψ.complexAntilinearPart using 1
   ext n; simp [mapAntilinearAux, ContinuousMap.smul_apply']
+
+end RealLinear
 
 /-! ### Real-bilinear coefficient convolutions (symmetric and asymmetric) -/
 
@@ -191,25 +190,10 @@ private def mkCoeffConvolution (K : ℝ) (B : G →L[ℝ] E' →L[ℝ] F)
   LinearMap.mkContinuous₂
     (LinearMap.mk₂ ℝ (fun a b ↦ ⟨a.coeff ⋆₊[B.toLinearMap₁₂] b.coeff, hmem a b⟩)
       (fun a a' b ↦ CircleSobolev.ext <| (hex a b).add_distrib _ (hex a' b))
-      (fun _ a b ↦ CircleSobolev.ext <| funext fun n ↦ by
-        simp only [coeff_real_smul, Pi.smul_apply]; exact (hex a b n).vadd_convolution _)
+      (fun _ a b ↦ CircleSobolev.ext <| funext fun n ↦ (hex a b n).vadd_convolution _)
       (fun a b b' ↦ CircleSobolev.ext <| (hex a b).distrib_add _ (hex a b'))
-      (fun _ a b ↦ CircleSobolev.ext <| funext fun n ↦ by
-        simp only [coeff_real_smul, Pi.smul_apply]; exact (hex a b n).convolution_vadd _))
-    (K * ‖B‖) fun a b ↦ by simpa only [LinearMap.mk₂_apply] using hnorm a b
-
-private theorem norm_mkCoeffConvolution_le {K : ℝ} {B : G →L[ℝ] E' →L[ℝ] F}
-    {hex : ∀ (a : CircleSobolev r G) (b : CircleSobolev t E'),
-      AddConvolutionExists B.toLinearMap₁₂ a.coeff b.coeff}
-    {hmem : ∀ (a : CircleSobolev r G) (b : CircleSobolev t E'),
-      Memℓp (fun n ↦ weight t n • (a.coeff ⋆₊[B.toLinearMap₁₂] b.coeff) n) 2}
-    (hnorm : ∀ (a : CircleSobolev r G) (b : CircleSobolev t E'),
-      ‖(⟨a.coeff ⋆₊[B.toLinearMap₁₂] b.coeff, hmem a b⟩ : CircleSobolev t F)‖ ≤
-        K * ‖B‖ * ‖a‖ * ‖b‖)
-    (a : CircleSobolev r G) (b : CircleSobolev t E') :
-    ‖mkCoeffConvolution K B hex hmem hnorm a b‖ ≤ K * ‖B‖ * ‖a‖ * ‖b‖ := by
-  have h : mkCoeffConvolution K B hex hmem hnorm a b = ⟨_, hmem a b⟩ := CircleSobolev.ext rfl
-  exact h ▸ hnorm a b
+      (fun _ a b ↦ CircleSobolev.ext <| funext fun n ↦ (hex a b n).convolution_vadd _))
+    (K * ‖B‖) fun a b ↦ hnorm a b
 
 section CoeffConvolution
 
@@ -233,17 +217,16 @@ private theorem norm_coeffConvolutionAux_le (hs : 1 / 2 < s) (B : G →L[ℝ] E'
       (addConvolutionExists_and_memℓp_real hs B a b).2⟩ : CircleSobolev s F)‖ ≤
       2 ^ (s + 1) * √(∑' n, weight (-(2 * s)) n) * ‖B‖ * ‖a‖ * ‖b‖ := by
   set w : CircleSobolev s F := ⟨_, (addConvolutionExists_and_memℓp_real hs B a b).2⟩
-  have hcoeff : a.coeff ⋆₊[B.toLinearMap₁₂] b.coeff = w.coeff := rfl
-  have hK : 0 ≤ ∑' n, weight (-(2 * s)) n := tsum_nonneg fun n ↦ weight_nonneg _ n
   have h := tsum_sq_one_add_abs_rpow_mul_norm_addConvolution_le B hs
     (summable_sq_weight_mul_norm_coeff' a) (summable_sq_weight_mul_norm_coeff' b)
-  simp only [hcoeff, neg_mul, ← weight_def] at h
-  rw [(hasSum_sq_weight_mul_norm_coeff w).tsum_eq,
-    (hasSum_sq_weight_mul_norm_coeff a).tsum_eq, (hasSum_sq_weight_mul_norm_coeff b).tsum_eq] at h
+  simp only [show a.coeff ⋆₊[B.toLinearMap₁₂] b.coeff = w.coeff from rfl, neg_mul, ← weight_def]
+    at h
+  rw [(hasSum_sq_weight_mul_norm_coeff w).tsum_eq, (hasSum_sq_weight_mul_norm_coeff a).tsum_eq,
+    (hasSum_sq_weight_mul_norm_coeff b).tsum_eq] at h
   refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 (h.trans_eq ?_)
   have h4 : ((2 : ℝ) ^ (s + 1)) ^ 2 = 4 ^ (s + 1) := by
     rw [sq, ← Real.mul_rpow (by norm_num) (by norm_num)]; norm_num
-  simp only [mul_pow, Real.sq_sqrt hK, h4]; ring
+  simp only [mul_pow, Real.sq_sqrt (tsum_nonneg fun n ↦ weight_nonneg _ n), h4]; ring
 
 private def coeffConvolution (hs : 1 / 2 < s) (B : G →L[ℝ] E' →L[ℝ] F) :
     CircleSobolev s G →L[ℝ] CircleSobolev s E' →L[ℝ] CircleSobolev s F :=
@@ -255,18 +238,10 @@ private def coeffConvolution (hs : 1 / 2 < s) (B : G →L[ℝ] E' →L[ℝ] F) :
     (a : CircleSobolev s G) (b : CircleSobolev s E') :
     (coeffConvolution hs B a b).coeff = a.coeff ⋆₊[B.toLinearMap₁₂] b.coeff := (rfl)
 
-private theorem norm_coeffConvolution_le (hs : 1 / 2 < s) (B : G →L[ℝ] E' →L[ℝ] F)
-    (a : CircleSobolev s G) (b : CircleSobolev s E') :
-    ‖coeffConvolution hs B a b‖ ≤
-      2 ^ (s + 1) * √(∑' n, weight (-(2 * s)) n) * ‖B‖ * ‖a‖ * ‖b‖ :=
-  norm_mkCoeffConvolution_le (norm_coeffConvolutionAux_le hs B) a b
-
-private theorem toContinuousMap_coeffConvolution_eq (T : ℝ) [Fact (0 < T)]
-    (hs : 1 / 2 < s) (B : G →L[ℝ] E' →L[ℝ] F) (a : CircleSobolev s G)
-    (c : CircleSobolev s E') (x : AddCircle T) {f₁ : ℤ → G} {u : G}
-    (ha : HasSum f₁ u) {f₂ : ℤ → E'} {v : E'} (hf : HasSum f₂ v)
-    (hterm : ∀ m k, fourier (T := T) (m + k) x • B (a.coeff m) (c.coeff k) =
-      B (f₁ m) (f₂ k)) :
+private theorem toContinuousMap_coeffConvolution_eq (T : ℝ) [Fact (0 < T)] (hs : 1 / 2 < s)
+    (B : G →L[ℝ] E' →L[ℝ] F) (a : CircleSobolev s G) (c : CircleSobolev s E') (x : AddCircle T)
+    {f₁ : ℤ → G} {u : G} (ha : HasSum f₁ u) {f₂ : ℤ → E'} {v : E'} (hf : HasSum f₂ v)
+    (hterm : ∀ m k, fourier (T := T) (m + k) x • B (a.coeff m) (c.coeff k) = B (f₁ m) (f₂ k)) :
     toContinuousMap T hs (coeffConvolution hs B a c) x = B u v := by
   set g : ℤ × ℤ → F := fun p ↦ fourier (p.1 + p.2) x • B (a.coeff p.1) (c.coeff p.2) with hg
   have hgs : Summable g := Summable.of_norm_bounded
@@ -332,8 +307,7 @@ private theorem ofReal_sq_weight_mul_norm {X : Type*} [SeminormedAddCommGroup X]
 private theorem tsum_sq_ofReal_weight_mul_enorm_addConvolution_asym_le (ht : 0 ≤ t)
     (B : G →L[ℝ] E' →L[ℝ] F) (f : ℤ → G) (g : ℤ → E') :
     ∑' n : ℤ, (ENNReal.ofReal (weight t n) * ‖(f ⋆₊[B.toLinearMap₁₂] g) n‖ₑ) ^ 2 ≤
-      ‖B‖ₑ ^ 2 *
-        (∑' m, ENNReal.ofReal (weight t m) * ‖f m‖ₑ) ^ 2 *
+      ‖B‖ₑ ^ 2 * (∑' m, ENNReal.ofReal (weight t m) * ‖f m‖ₑ) ^ 2 *
         ∑' k, (ENNReal.ofReal (weight t k) * ‖g k‖ₑ) ^ 2 := by
   set ω : ℤ → ℝ≥0∞ := fun n ↦ ENNReal.ofReal (weight t n)
   have hω (m k : ℤ) : ω (m + k) ≤ ω m * ω k := by
@@ -351,8 +325,7 @@ private theorem ofReal_tsum_sq_weight_mul_norm_addConvolution_asym_le (ht : 0 �
     (htr : t + 1 / 2 < r) (B : G →L[ℝ] E' →L[ℝ] F) (a : CircleSobolev r G)
     (b : CircleSobolev t E') :
     ∑' n : ℤ, ENNReal.ofReal ((weight t n * ‖(a.coeff ⋆₊[B.toLinearMap₁₂] b.coeff) n‖) ^ 2) ≤
-      ENNReal.ofReal
-        ((√(∑' n, weight (-(2 * (r - t))) n) * ‖B‖ * ‖a‖ * ‖b‖) ^ 2) := by
+      ENNReal.ofReal ((√(∑' n, weight (-(2 * (r - t))) n) * ‖B‖ * ‖a‖ * ‖b‖) ^ 2) := by
   -- Identify the weighted `ℓ²` coefficient sum of `b : H^t` with `‖b‖ₑ ^ 2` and combine bounds.
   have hb_eq : ∑' k, (ENNReal.ofReal (weight t k) * ‖b.coeff k‖ₑ) ^ 2 = ‖b‖ₑ ^ 2 := by
     simp_rw [← ofReal_sq_weight_mul_norm, ← ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ sq_nonneg _)
@@ -370,10 +343,9 @@ private theorem ofReal_tsum_sq_weight_mul_norm_addConvolution_asym_le (ht : 0 �
 private theorem memℓp_asym (ht : 0 ≤ t) (htr : t + 1 / 2 < r) (B : G →L[ℝ] E' →L[ℝ] F)
     (a : CircleSobolev r G) (b : CircleSobolev t E') :
     Memℓp (fun n ↦ weight t n • (a.coeff ⋆₊[B.toLinearMap₁₂] b.coeff) n) 2 :=
-  (memℓp_weight_smul_iff _).2 <|
-    (ENNReal.summable_toReal (ne_top_of_le_ne_top ENNReal.ofReal_ne_top
-      (ofReal_tsum_sq_weight_mul_norm_addConvolution_asym_le ht htr B a b))).congr
-      fun _ ↦ ENNReal.toReal_ofReal (sq_nonneg _)
+  (memℓp_weight_smul_iff _).2 <| (ENNReal.summable_toReal (ne_top_of_le_ne_top ENNReal.ofReal_ne_top
+    (ofReal_tsum_sq_weight_mul_norm_addConvolution_asym_le ht htr B a b))).congr
+    fun _ ↦ ENNReal.toReal_ofReal (sq_nonneg _)
 
 private theorem norm_coeffConvolutionAsymAux_le (ht : 0 ≤ t) (htr : t + 1 / 2 < r)
     (B : G →L[ℝ] E' →L[ℝ] F) (a : CircleSobolev r G) (b : CircleSobolev t E') :
@@ -387,8 +359,7 @@ private theorem norm_coeffConvolutionAsymAux_le (ht : 0 ≤ t) (htr : t + 1 / 2 
   exact ofReal_tsum_sq_weight_mul_norm_addConvolution_asym_le ht htr B a b
 
 private def coeffConvolutionAsym [CompleteSpace F] (ht : 0 ≤ t) (htr : t + 1 / 2 < r)
-    (B : G →L[ℝ] E' →L[ℝ] F) :
-    CircleSobolev r G →L[ℝ] CircleSobolev t E' →L[ℝ] CircleSobolev t F :=
+    (B : G →L[ℝ] E' →L[ℝ] F) : CircleSobolev r G →L[ℝ] CircleSobolev t E' →L[ℝ] CircleSobolev t F :=
   mkCoeffConvolution √(∑' n, weight (-(2 * (r - t))) n) B
     (addConvolutionExists_asym (by linarith) ht B) (memℓp_asym ht htr B)
     (norm_coeffConvolutionAsymAux_le ht htr B)
@@ -398,58 +369,36 @@ private def coeffConvolutionAsym [CompleteSpace F] (ht : 0 ≤ t) (htr : t + 1 /
     (b : CircleSobolev t E') :
     (coeffConvolutionAsym ht htr B a b).coeff = a.coeff ⋆₊[B.toLinearMap₁₂] b.coeff := (rfl)
 
-private theorem norm_coeffConvolutionAsym_le [CompleteSpace F] (ht : 0 ≤ t) (htr : t + 1 / 2 < r)
-    (B : G →L[ℝ] E' →L[ℝ] F) (a : CircleSobolev r G) (b : CircleSobolev t E') :
-    ‖coeffConvolutionAsym ht htr B a b‖ ≤
-      √(∑' n, weight (-(2 * (r - t))) n) * ‖B‖ * ‖a‖ * ‖b‖ :=
-  norm_mkCoeffConvolution_le (norm_coeffConvolutionAsymAux_le ht htr B) a b
-
 /-! ### Public real-bilinear convolutions via four-part sesquilinear decomposition -/
 
 private def reflectRealCLM : CircleSobolev s G →L[ℝ] CircleSobolev s G :=
   (reflect : CircleSobolev s G ≃ₗᵢ[ℂ] CircleSobolev s G).toLinearIsometry.toContinuousLinearMap
     |>.restrictScalars ℝ
-
 private def reflectIf (b : Bool) : CircleSobolev s G →L[ℝ] CircleSobolev s G :=
   if b then reflectRealCLM else .id ℝ _
-
 private theorem norm_reflectIf (b : Bool) (a : CircleSobolev s G) : ‖reflectIf b a‖ = ‖a‖ := by
   cases b <;> simp [reflectIf, reflectRealCLM]
-
 @[simp] private theorem coeff_reflectIf (b : Bool) (a : CircleSobolev s G) (n : ℤ) :
     (reflectIf b a).coeff n = a.coeff (if b then -n else n) := by
   cases b <;> simp [reflectIf, reflectRealCLM]
-
 @[simp] private theorem reflectIf_single (b : Bool) (k : ℤ) (v : G) :
     reflectIf b (single (s := s) k v) = single (if b then -k else k) v :=
-  CircleSobolev.ext <| funext fun n ↦ by cases b <;> simp [Pi.single_apply, neg_eq_iff_eq_neg]
-
+  CircleSobolev.ext <| funext fun _ ↦ by cases b <;> simp [Pi.single_apply, neg_eq_iff_eq_neg]
 private theorem reflectIf_inclusion (b : Bool) (h : t ≤ s) (a : CircleSobolev s G) :
     reflectIf b (inclusion h a) = inclusion h (reflectIf b a) :=
   CircleSobolev.ext <| funext fun _ ↦ by simp
-
-private theorem four_mul_two_rpow_add_one (u : ℝ) : (4 : ℝ) * 2 ^ (u + 1) = 2 ^ (u + 3) := by
-  have h4 : (4 : ℝ) = 2 ^ (2 : ℝ) := by norm_num
-  rw [h4, ← Real.rpow_add two_pos]; exact congrArg ((2 : ℝ) ^ ·) (by ring)
-
 private theorem norm_sum_bool_prod_le (K : ℝ) (f : Bool × Bool → CircleSobolev s F)
     (hf : ∀ p, ‖f p‖ ≤ K) : ‖∑ p : Bool × Bool, f p‖ ≤ 4 * K :=
-  (norm_sum_le _ _).trans <|
-    (Finset.sum_le_sum fun p _ ↦ hf p).trans_eq (by simp [Fintype.card_prod])
+  (norm_sum_le _ _).trans <| (Finset.sum_le_sum fun p _ ↦ hf p).trans_eq (by simp)
 
 section PublicConvolutions
-
 variable [CompleteSpace F]
 
-/-- **Symmetric real-bilinear product on `H^s`, `s > 1/2`.** A continuous real-bilinear map
-`L : E →L[ℝ] E' →L[ℝ] F` induces a continuous real-bilinear map
-`H^s(E) →L[ℝ] H^s(E') →L[ℝ] H^s(F)`. On continuous representatives it is the pointwise map
-`x ↦ L (a x) (b x)` (`toContinuousMap_realConvolution_apply`). -/
+/-- **Symmetric real-bilinear product on `H^s`, `s > 1/2` (`x ↦ L (a x) (b x)`).** -/
 def realConvolution (hs : 1 / 2 < s) (L : E →L[ℝ] E' →L[ℝ] F) :
     CircleSobolev s E →L[ℝ] CircleSobolev s E' →L[ℝ] CircleSobolev s F :=
-  ∑ p : Bool × Bool,
-    (((coeffConvolution hs (L.sesquiPart p.1 p.2)).comp (reflectIf p.1)).flip.comp
-      (reflectIf p.2)).flip
+  ∑ p : Bool × Bool, (((coeffConvolution hs (L.sesquiPart p.1 p.2)).comp
+    (reflectIf p.1)).flip.comp (reflectIf p.2)).flip
 
 private theorem realConvolution_apply (hs : 1 / 2 < s) (L : E →L[ℝ] E' →L[ℝ] F)
     (a : CircleSobolev s E) (b : CircleSobolev s E') :
@@ -465,18 +414,18 @@ theorem norm_realConvolution_le (hs : 1 / 2 < s) (L : E →L[ℝ] E' →L[ℝ] F
   rw [realConvolution_apply]
   refine (norm_sum_bool_prod_le (2 ^ (s + 1) * √(∑' n, weight (-(2 * s)) n) * ‖L‖ * ‖a‖ * ‖b‖) _
     fun p ↦ ?_).trans_eq ?_
-  · refine (norm_coeffConvolution_le hs _ _ _).trans ?_
+  · refine (show ‖coeffConvolution hs _ _ _‖ ≤ _ from norm_coeffConvolutionAux_le hs _ _ _).trans ?_
     rw [norm_reflectIf, norm_reflectIf]; have := L.norm_sesquiPart_le p.1 p.2; gcongr
-  · rw [← mul_assoc, ← mul_assoc, ← mul_assoc, ← mul_assoc, four_mul_two_rpow_add_one]
+  · have h4 : (4 : ℝ) * 2 ^ (s + 1) = 2 ^ (s + 3) := by
+      rw [show (4 : ℝ) = 2 ^ (2 : ℝ) by norm_num, ← Real.rpow_add two_pos]
+      exact congrArg ((2 : ℝ) ^ ·) (by ring)
+    rw [← mul_assoc, ← mul_assoc, ← mul_assoc, ← mul_assoc, h4]
 
-/-- **Asymmetric real-bilinear product `H^r(E) × H^t(E') → H^t(F)` for `0 ≤ t` and
-`t + 1/2 < r`.** Extends `realConvolution` (`realConvolutionAsym_inclusion_right`) so that an `H^r`
-multiplier acts boundedly on `H^t` even when `t ≤ 1/2`. -/
+/-- **Asymmetric real-bilinear product `H^r(E) × H^t(E') → H^t(F)` (`0 ≤ t`, `t + 1/2 < r`).** -/
 def realConvolutionAsym (ht : 0 ≤ t) (htr : t + 1 / 2 < r) (L : E →L[ℝ] E' →L[ℝ] F) :
     CircleSobolev r E →L[ℝ] CircleSobolev t E' →L[ℝ] CircleSobolev t F :=
-  ∑ p : Bool × Bool,
-    (((coeffConvolutionAsym ht htr (L.sesquiPart p.1 p.2)).comp (reflectIf p.1)).flip.comp
-      (reflectIf p.2)).flip
+  ∑ p : Bool × Bool, (((coeffConvolutionAsym ht htr (L.sesquiPart p.1 p.2)).comp
+    (reflectIf p.1)).flip.comp (reflectIf p.2)).flip
 
 private theorem realConvolutionAsym_apply (ht : 0 ≤ t) (htr : t + 1 / 2 < r)
     (L : E →L[ℝ] E' →L[ℝ] F) (a : CircleSobolev r E) (b : CircleSobolev t E') :
@@ -490,11 +439,11 @@ theorem norm_realConvolutionAsym_le (ht : 0 ≤ t) (htr : t + 1 / 2 < r) (L : E 
     ‖realConvolutionAsym ht htr L a b‖ ≤
       4 * √(∑' n, weight (-(2 * (r - t))) n) * ‖L‖ * ‖a‖ * ‖b‖ := by
   rw [realConvolutionAsym_apply]
-  refine (norm_sum_bool_prod_le
-    (√(∑' n, weight (-(2 * (r - t))) n) * ‖L‖ * ‖a‖ * ‖b‖) _ fun p ↦ ?_).trans_eq ?_
-  · refine (norm_coeffConvolutionAsym_le ht htr _ _ _).trans ?_
-    rw [norm_reflectIf, norm_reflectIf]; have := L.norm_sesquiPart_le p.1 p.2; gcongr
-  · ring
+  refine (norm_sum_bool_prod_le (√(∑' n, weight (-(2 * (r - t))) n) * ‖L‖ * ‖a‖ * ‖b‖) _
+    fun p ↦ ?_).trans_eq (by ring)
+  refine (show ‖coeffConvolutionAsym ht htr _ _ _‖ ≤ _ from
+    norm_coeffConvolutionAsymAux_le ht htr _ _ _).trans ?_
+  rw [norm_reflectIf, norm_reflectIf]; have := L.norm_sesquiPart_le p.1 p.2; gcongr
 
 private theorem hasSum_reflectIf (T : ℝ) [Fact (0 < T)] [CompleteSpace G] (hs : 1 / 2 < s)
     (b : Bool) (a : CircleSobolev s G) (x : AddCircle T) :
@@ -507,26 +456,22 @@ private theorem hasSum_reflectIf (T : ℝ) [Fact (0 < T)] [CompleteSpace G] (hs 
   · simpa [reflectIf] using hA
   · simpa [reflectIf, reflectRealCLM, Function.comp_def] using (Equiv.neg ℤ).hasSum_iff.2 hA
 
-private theorem starRingEnd_ite_fourier (T : ℝ) (b : Bool) (m : ℤ) (x : AddCircle T) :
-    (if b then starRingEnd ℂ (fourier (T := T) (if b then -m else m) x : ℂ)
-      else (fourier (T := T) (if b then -m else m) x : ℂ)) = fourier (T := T) m x := by
-  cases b <;> simp
-
-/-- **On continuous representatives `realConvolution` is pointwise:** for `s > 1/2`, the continuous
-function attached to `realConvolution hs L a b` is `x ↦ L (a x) (b x)`. -/
+/-- **On continuous representatives `realConvolution` evaluates to `x ↦ L (a x) (b x)`.** -/
 @[simp] theorem toContinuousMap_realConvolution_apply (T : ℝ) [Fact (0 < T)] [CompleteSpace E]
     [CompleteSpace E'] (hs : 1 / 2 < s) (L : E →L[ℝ] E' →L[ℝ] F) (a : CircleSobolev s E)
     (b : CircleSobolev s E') (x : AddCircle T) :
     toContinuousMap T hs (realConvolution hs L a b) x =
       L (toContinuousMap T hs a x) (toContinuousMap T hs b x) := by
+  have hstar (b : Bool) (m : ℤ) :
+      (if b then starRingEnd ℂ (fourier (T := T) (if b then -m else m) x : ℂ)
+        else (fourier (T := T) (if b then -m else m) x : ℂ)) = fourier (T := T) m x := by
+    cases b <;> simp
   rw [realConvolution_apply, map_sum, ContinuousMap.coe_sum, Finset.sum_apply,
     ← L.sum_sesquiPart_apply (toContinuousMap T hs a x) (toContinuousMap T hs b x)]
-  refine Finset.sum_congr rfl fun p _ ↦
-    toContinuousMap_coeffConvolution_eq T hs (L.sesquiPart p.1 p.2)
-      (reflectIf p.1 a) (reflectIf p.2 b) x (hasSum_reflectIf T hs p.1 a x)
-      (hasSum_reflectIf T hs p.2 b x) fun m k ↦ ?_
-  rw [ContinuousLinearMap.sesquiPart_apply_smul, starRingEnd_ite_fourier,
-    starRingEnd_ite_fourier, fourier_add]
+  refine Finset.sum_congr rfl fun p _ ↦ toContinuousMap_coeffConvolution_eq T hs
+    (L.sesquiPart p.1 p.2) (reflectIf p.1 a) (reflectIf p.2 b) x (hasSum_reflectIf T hs p.1 a x)
+    (hasSum_reflectIf T hs p.2 b x) fun m k ↦ ?_
+  rw [ContinuousLinearMap.sesquiPart_apply_smul, hstar, hstar, fourier_add]
 
 /-- `realConvolution` commutes with the Sobolev inclusions `H^s → H^t`, `1/2 < t ≤ s`. -/
 @[simp] theorem realConvolution_inclusion (ht : 1 / 2 < t) (h : t ≤ s) (L : E →L[ℝ] E' →L[ℝ] F)
@@ -536,8 +481,7 @@ function attached to `realConvolution hs L a b` is `x ↦ L (a x) (b x)`. -/
   CircleSobolev.ext <| funext fun _ ↦ by
     simp [realConvolution_apply, map_sum, coeff_sum, reflectIf_inclusion]
 
-/-- When the second factor also lies in `H^r`, `realConvolutionAsym` agrees with `realConvolution`
-at order `r`. -/
+/-- `realConvolutionAsym` agrees with `realConvolution` when the right factor lies in `H^r`. -/
 @[simp] theorem realConvolutionAsym_inclusion_right (ht : 0 ≤ t) (htr : t + 1 / 2 < r)
     (L : E →L[ℝ] E' →L[ℝ] F) (a : CircleSobolev r E) (b : CircleSobolev r E') :
     realConvolutionAsym ht htr L a (inclusion (by linarith) b) =
@@ -545,8 +489,7 @@ at order `r`. -/
   CircleSobolev.ext <| funext fun _ ↦ by
     simp [realConvolutionAsym_apply, realConvolution_apply, map_sum, coeff_sum, reflectIf_inclusion]
 
-/-- When both factors come from `H^s` with `r ≤ s`, `realConvolutionAsym` agrees with
-`realConvolution` at order `s`. -/
+/-- `realConvolutionAsym` agrees with `realConvolution` on `H^s` factors (`r ≤ s`). -/
 @[simp] theorem realConvolutionAsym_inclusion (ht : 0 ≤ t) (htr : t + 1 / 2 < r) (hrs : r ≤ s)
     (L : E →L[ℝ] E' →L[ℝ] F) (a : CircleSobolev s E) (b : CircleSobolev s E') :
     realConvolutionAsym ht htr L (inclusion hrs a) (inclusion (by linarith) b) =
@@ -554,21 +497,19 @@ at order `r`. -/
   CircleSobolev.ext <| funext fun _ ↦ by
     simp [realConvolutionAsym_apply, realConvolution_apply, map_sum, coeff_sum, reflectIf_inclusion]
 
-/-- For `1/2 < t`, `realConvolutionAsym` evaluates pointwise to `x ↦ L (a x) (b x)` on continuous
-representatives. -/
+/-- For `1/2 < t`, `realConvolutionAsym` evaluates pointwise to `x ↦ L (a x) (b x)`. -/
 @[simp] theorem toContinuousMap_realConvolutionAsym_apply (T : ℝ) [Fact (0 < T)] [CompleteSpace E]
     [CompleteSpace E'] (ht : 1 / 2 < t) (htr : t + 1 / 2 < r) (L : E →L[ℝ] E' →L[ℝ] F)
     (a : CircleSobolev r E) (b : CircleSobolev t E') (x : AddCircle T) :
     toContinuousMap T ht (realConvolutionAsym (by linarith) htr L a b) x =
       L (toContinuousMap T (by linarith) a x) (toContinuousMap T ht b x) := by
   have h : realConvolutionAsym (by linarith) htr L a b =
-      realConvolution ht L (inclusion (by linarith) a) b :=
-    CircleSobolev.ext <| funext fun _ ↦ by
-      simp [realConvolutionAsym_apply, realConvolution_apply, coeff_sum, reflectIf_inclusion]
+      realConvolution ht L (inclusion (by linarith) a) b := CircleSobolev.ext <| funext fun _ ↦ by
+    simp [realConvolutionAsym_apply, realConvolution_apply, coeff_sum, reflectIf_inclusion]
   rw [h, toContinuousMap_realConvolution_apply, toContinuousMap_inclusion]
 
-/-- Fourier-coefficient formula for `realConvolutionAsym` against a Fourier monomial `single k w` at
-any order `0 ≤ t` (`t + 1/2 < r`). -/
+open ContinuousLinearMap in
+/-- Fourier-coefficient formula for `realConvolutionAsym` against `single k w`. -/
 @[simp] theorem coeff_realConvolutionAsym_single_right (ht : 0 ≤ t) (htr : t + 1 / 2 < r)
     (L : E →L[ℝ] E' →L[ℝ] F) (a : CircleSobolev r E) (k n : ℤ) (w : E') :
     (realConvolutionAsym ht htr L a (single k w)).coeff n =
@@ -579,17 +520,11 @@ any order `0 ≤ t` (`t + 1/2 < r`). -/
         else (L.flip.complexAntilinearPart w).complexLinearPart x
       else if b₁ then (L.flip.complexLinearPart w).complexAntilinearPart x
         else (L.flip.complexLinearPart w).complexLinearPart x := by
-    cases b₁ <;> cases b₂ <;>
-      simp only [Bool.false_eq_true, ↓reduceIte,
-        ContinuousLinearMap.sesquiPart_false_false_apply,
-        ContinuousLinearMap.sesquiPart_true_false_apply,
-        ContinuousLinearMap.sesquiPart_false_true_apply,
-        ContinuousLinearMap.sesquiPart_true_true_apply,
-        ContinuousLinearMap.complexLinearPart_apply,
-        ContinuousLinearMap.complexAntilinearPart_apply,
-        smul_apply, add_apply, sub_apply, ContinuousLinearMap.flip_apply,
-        smul_add, smul_sub, smul_comm I (2⁻¹ : ℝ), i_smul_i_smul] <;>
-      module
+    cases b₁ <;> cases b₂ <;> simp only [Bool.false_eq_true, ↓reduceIte,
+      ContinuousLinearMap.sesquiPart_apply, Bool.true_eq_false, one_smul, neg_smul,
+      ContinuousLinearMap.complexLinearPart_apply, ContinuousLinearMap.complexAntilinearPart_apply,
+      smul_apply, add_apply, sub_apply, ContinuousLinearMap.flip_apply, smul_add, smul_sub,
+      smul_comm I (2⁻¹ : ℝ), i_smul_i_smul] <;> module
   rw [realConvolutionAsym_apply, coeff_sum]
   simp only [Finset.sum_apply, Fintype.sum_prod_type, Fintype.sum_bool, reflectIf_single, hp,
     Bool.false_eq_true, ↓reduceIte, coeff_coeffConvolutionAsym, coeff_single,
@@ -604,11 +539,10 @@ theorem hasSum_coeff_realConvolutionAsym (ht : 0 ≤ t) (htr : t + 1 / 2 < r)
     HasSum (fun k : ℤ ↦ (mapRealCLM (L.flip.complexLinearPart (b.coeff k)) a).coeff (n - k) +
       (mapRealCLM (L.flip.complexAntilinearPart (b.coeff k)) a).coeff (n + k))
       ((realConvolutionAsym ht htr L a b).coeff n) := by
-  have h := (hasSum_single b).mapL
-    (((coeffCLM (s := t) (E := F) n).restrictScalars ℝ).comp (realConvolutionAsym ht htr L a))
   simpa only [Function.comp_def, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.coe_restrictScalars', coeffCLM_apply,
-    coeff_realConvolutionAsym_single_right] using h
+    coeff_realConvolutionAsym_single_right] using (hasSum_single b).mapL
+      (((coeffCLM (s := t) (E := F) n).restrictScalars ℝ).comp (realConvolutionAsym ht htr L a))
 
 /-- Fourier-coefficient characterization of `realConvolutionAsym ht htr L a b` at every order
 `0 ≤ t` (`t + 1/2 < r`). -/
@@ -633,20 +567,14 @@ theorem coeff_realConvolutionAsym (ht : 0 ≤ t) (htr : t + 1 / 2 < r)
 at every order `0 ≤ t` (including `t ≤ 1/2`). -/
 @[simp] theorem realConvolutionAsym_single_zero_left (ht : 0 ≤ t) (htr : t + 1 / 2 < r)
     (L : E →L[ℝ] E' →L[ℝ] F) (v : E) (b : CircleSobolev t E') :
-    realConvolutionAsym ht htr L (single 0 v) b = mapRealCLM (L v) b :=
-  CircleSobolev.ext <| funext fun n ↦ by
-    rw [realConvolutionAsym_apply, coeff_sum]
-    simp only [Finset.sum_apply, Fintype.sum_prod_type, Fintype.sum_bool, reflectIf_single,
-      neg_zero, ite_self, coeff_coeffConvolutionAsym, coeff_single, single_addConvolution_apply,
-      ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, zero_add, coeff_reflectIf,
-      Bool.false_eq_true, ↓reduceIte, coeff_mapRealCLM,
-      ContinuousLinearMap.complexLinearPart_apply,
-      ContinuousLinearMap.complexAntilinearPart_apply,
-      ContinuousLinearMap.sesquiPart_false_false_apply,
-      ContinuousLinearMap.sesquiPart_true_false_apply,
-      ContinuousLinearMap.sesquiPart_false_true_apply,
-      ContinuousLinearMap.sesquiPart_true_true_apply]
-    module
+    realConvolutionAsym ht htr L (single 0 v) b = mapRealCLM (L v) b := by
+  ext n; rw [realConvolutionAsym_apply, coeff_sum]
+  simp only [Finset.sum_apply, Fintype.sum_prod_type, Fintype.sum_bool, reflectIf_single,
+    neg_zero, ite_self, coeff_coeffConvolutionAsym, coeff_single, single_addConvolution_apply,
+    ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, zero_add, coeff_reflectIf,
+    Bool.false_eq_true, Bool.true_eq_false, ↓reduceIte, coeff_mapRealCLM,
+    ContinuousLinearMap.complexLinearPart_apply, ContinuousLinearMap.complexAntilinearPart_apply,
+    ContinuousLinearMap.sesquiPart_apply, one_smul, neg_smul]; module
 
 end PublicConvolutions
 end CircleSobolev

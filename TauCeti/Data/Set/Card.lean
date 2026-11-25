@@ -5,14 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Finprod
+public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.Data.Set.Card
+import TauCeti.Data.Nat.Set
+import TauCeti.Data.Set.Prod
+import TauCeti.Logic.Function.Fiber
+import Mathlib.Algebra.BigOperators.Ring.Finset
+import Mathlib.Algebra.CharP.Two
 import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.Data.Set.Finite.Lattice
 import Mathlib.Order.Interval.Finset.Fin
 import Mathlib.Order.Interval.Finset.Nat
+import Mathlib.Order.Interval.Set.Nat
 
 /-!
-# Cardinalities of images, complements, coverings, division preimages, sigma fibres and doubled sets
+# Cardinalities of images, complements, coverings, preimages, fibres, products and doubled sets
 
 Two maps on a common index type that identify the same pairs of indices take equally many values
 on every set of indices (`Set.encard_image_eq_encard_image_of_eq_iff`): the second map factors
@@ -24,13 +32,15 @@ For `n > 0`, every natural number `j` is the quotient `i / n` of exactly the `n`
 repeat each term `n` times, such as the singular values of a block sum of `n` copies of one map.
 
 Adding a fresh element to a set removes one element from its complement
-(`Set.encard_compl_insert_add_one`).
+(`Set.encard_compl_insert_add_one`). A set of naturals containing `0` has one more element, in
+`ℕ∞`, than the set of indices whose successor lies in it (`Set.encard_preimage_succ_add_one`).
 
 The points of the range of an injective map `φ` into a sigma type that lie in the fibre over `i`
 are counted by the arguments that `φ` maps into that fibre (`Set.ncard_preimage_sigmaMk_range`).
 
 A property read off the same function on both copies of `ι` in `ι ⊕ ι` holds on twice as many
-indices as on `ι` (`Set.ncard_setOf_sumElim`).
+indices as on `ι` (`Set.ncard_setOf_sumElim`). A property of the first coordinate of `α × β` holds
+on `Nat.card β` times as many pairs as elements of `α` (`Set.ncard_setOf_fst`).
 
 Reading a set of indices of `Fin (n + 1)` through `k.succAbove` counts its elements other than
 `k` (`Set.ncard_preimage_succAbove`).
@@ -41,8 +51,26 @@ the values of `f`. Each `j < Nat.card ι` is the rank of exactly one index
 (`Set.encard_setOf_ncard_setOf_lt_eq`). For a strictly monotone map on `Fin n`, the rank of `f k`
 is `k` (`Set.ncard_setOf_lt_of_strictMono`).
 
+The same count works for an infinite set `s`, provided only finitely many of its points lie below
+each one. For `f` injective on `s`, the number of points of `s` below `f a` determines `a ∈ s`
+(`Set.InjOn.injOn_ncard_sep_lt`), and when `s` is infinite every natural number is such a count
+(`Set.Infinite.exists_mem_ncard_sep_lt_eq`). This lists `s` in increasing order of `f`, as a
+sequence indexed by `ℕ`, such as the zeros of an analytic function ordered by modulus.
+
 A set covered by finitely many finite sets `C i` is finite, with at most `∑ i, |C i|` elements
-(`Set.finite_and_ncard_le_sum_of_subset_biUnion`).
+(`Set.finite_and_ncard_le_sum_of_subset_biUnion`). Over a finite index type, the triples
+`(i, a, b)` with `a ∈ A i` and `b ∈ B i` are counted fibrewise by `∑ i, |A i| * |B i|`
+(`Set.ncard_setOf_and_and_mem_and_mem`); this is the count behind the coefficients of a composite
+of two counting matrices. Cast into a semiring, the count is `∑ i, a i * b i` for coefficients
+`a i` equal to `|A i|` when `P i` holds and `0` otherwise, and `b i` likewise for `B i` and `Q i`
+(`Set.natCast_ncard_setOf_and_and_mem_and_mem`). The same fibrewise regrouping sums weights
+`g i y * k i z` over the triples into `∑ i, a i * b i`, for `a i` the sum of `g i` over `A i` when
+`P i` holds and `0` otherwise, and `b i` likewise (`Set.finsum_mem_setOf_and_and_mem_and_mem`);
+this is the coefficient of a composite of two matrices whose entries are weighted counts, such as
+signed counts.
+A sum of signs `±1` over a finite set, read in a ring of characteristic two, is the number of
+elements of the set (`Set.intCast_finsum_mem_eq_ncard_of_eq_one_or_eq_neg_one`): modulo two, a
+signed count is a count.
 
 A set of naturals with at most `n` elements up to `2n`, for every `n`, leaves at least `n + 1`
 numbers up to `2n` outside it, so its complement is infinite
@@ -52,6 +80,11 @@ coinfiniteness from this counting invariant.
 The statement `Set.ncard_preimage_div` needs no hypotheses: `Set.ncard` is `0` on infinite sets,
 and `i / 0 = 0` makes the preimage under division by zero either `∅` or all of `ℕ`, so both
 sides are `0` when `S` is infinite or `n = 0`.
+
+The fibre of the first pullback projection has the same `Set.ncard` as the original fibre
+(`Function.Pullback.ncard_preimage_fst_singleton`). An equivalence onto the preimage of a subset
+transfers `Set.ncard` of fibres over that subset (`Equiv.ncard_fiber_eq_of_preimage`). These
+identities transfer sheet counts from local models; `Set.ncard` is zero on infinite fibres.
 -/
 
 public section
@@ -80,6 +113,13 @@ theorem encard_compl_insert_add_one {α : Type*} {s : Set α} {x : α} (hx : x �
   rw [← encard_sdiff_singleton_add_one (mem_compl hx), insert_eq, compl_union, sdiff_eq,
     inter_comm]
 
+/-- A set of natural numbers containing `0` has one more element than the set of indices `n` with
+`n + 1 ∈ s`; both sides are `⊤` when `s` is infinite. -/
+theorem encard_preimage_succ_add_one {s : Set ℕ} (hs : 0 ∈ s) :
+    (Nat.succ ⁻¹' s).encard + 1 = s.encard := by
+  rw [← Nat.succ_injective.encard_image, image_preimage_eq_inter_range, ← compl_compl (range _),
+    Nat.compl_range_succ, ← sdiff_eq, encard_sdiff_singleton_add_one hs]
+
 /-- The points of the range of an injective map into a sigma type lying over the index `i` are
 counted by the arguments mapped over `i`. -/
 theorem ncard_preimage_sigmaMk_range {κ α : Type*} {Y : κ → Type*}
@@ -104,6 +144,122 @@ theorem finite_and_ncard_le_sum_of_subset_biUnion {ι α : Type*} {S : Set α} {
   have hfin : (⋃ i ∈ t, C i).Finite := t.finite_toSet.biUnion fun i hi => (hC i hi).1
   exact ⟨hfin.subset hS, (ncard_le_ncard hS hfin).trans <|
     (t.set_ncard_biUnion_le C).trans (Finset.sum_le_sum fun i hi => (hC i hi).2)⟩
+
+/-- Over a finite index type, the triples `(i, a, b)` with `P i`, `Q i`, `a ∈ A i` and `b ∈ B i`
+form a finite set when `A i` is finite whenever `P i` holds and `B i` is finite whenever `Q i`
+holds. -/
+theorem finite_setOf_and_and_mem_and_mem {ι α β : Type*} [Finite ι] {P Q : ι → Prop}
+    {A : ι → Set α} {B : ι → Set β} (hA : ∀ i, P i → (A i).Finite)
+    (hB : ∀ i, Q i → (B i).Finite) :
+    {x : ι × α × β | P x.1 ∧ Q x.1 ∧ x.2.1 ∈ A x.1 ∧ x.2.2 ∈ B x.1}.Finite :=
+  ((toFinite {i | P i ∧ Q i}).biUnion fun i hi ↦
+    ((hA i hi.1).prod (hB i hi.2)).image (Prod.mk i)).subset
+    fun x hx ↦ mem_biUnion ⟨hx.1, hx.2.1⟩ ⟨x.2, ⟨hx.2.2.1, hx.2.2.2⟩, rfl⟩
+
+/-- **Counting triples fibrewise.** Over a finite index type, the triples `(i, a, b)` with `P i`,
+`Q i`, `a ∈ A i` and `b ∈ B i`, when finitely many, are counted by summing `|A i| * |B i|` over
+the indices with `P i` and `Q i`. This is the count behind the coefficients of a composite of two
+linear maps given by counting matrices. -/
+theorem ncard_setOf_and_and_mem_and_mem {ι α β : Type*} [Fintype ι] {P Q : ι → Prop}
+    [DecidablePred P] [DecidablePred Q] {A : ι → Set α} {B : ι → Set β}
+    (hfin : {x : ι × α × β | P x.1 ∧ Q x.1 ∧ x.2.1 ∈ A x.1 ∧ x.2.2 ∈ B x.1}.Finite) :
+    {x : ι × α × β | P x.1 ∧ Q x.1 ∧ x.2.1 ∈ A x.1 ∧ x.2.2 ∈ B x.1}.ncard =
+      ∑ i with P i ∧ Q i, (A i).ncard * (B i).ncard := by
+  classical
+  -- Sort the triples by their index `i`; the fibre over `i` is a copy of `A i ×ˢ B i`.
+  rw [ncard_eq_toFinset_card _ hfin,
+    Finset.card_eq_sum_card_fiberwise fun x _ ↦ Finset.mem_univ x.1, Finset.sum_filter]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [← ncard_coe_finset, Finset.coe_filter,
+    ← ncard_preimage_of_injective_subset_range (Prod.mk_right_injective i) ?_]
+  swap
+  · rintro ⟨_, z⟩ ⟨-, rfl⟩
+    exact ⟨z, rfl⟩
+  split_ifs with hi
+  · rw [← ncard_prod]
+    congr 1
+    ext
+    simp [hi]
+  · convert ncard_empty (α × β)
+    refine eq_empty_of_forall_notMem fun z hz ↦ hi ?_
+    simp only [mem_preimage, Finite.mem_toFinset, mem_ofPred_eq] at hz
+    exact ⟨hz.1.1, hz.1.2.1⟩
+
+/-- **Counting triples fibrewise, against coefficients.** Let `a i` be `|A i|` when `P i` holds and
+`0` otherwise, and `b i` be `|B i|` when `Q i` holds and `0` otherwise, both read in a semiring `R`.
+Over a finite index type, the triples `(i, a, b)` with `P i`, `Q i`, `a ∈ A i` and `b ∈ B i`, when
+finitely many, are counted in `R` by `∑ i, a i * b i`. This is the coefficient of a composite of two
+linear maps whose matrices count the elements of `A i` and of `B i`. -/
+theorem natCast_ncard_setOf_and_and_mem_and_mem {ι α β R : Type*} [Fintype ι] [Semiring R]
+    {P Q : ι → Prop} {A : ι → Set α} {B : ι → Set β} {a b : ι → R}
+    (ha : ∀ i, P i → a i = (A i).ncard) (ha₀ : ∀ i, ¬P i → a i = 0)
+    (hb : ∀ i, Q i → b i = (B i).ncard) (hb₀ : ∀ i, ¬Q i → b i = 0)
+    (hfin : {x : ι × α × β | P x.1 ∧ Q x.1 ∧ x.2.1 ∈ A x.1 ∧ x.2.2 ∈ B x.1}.Finite) :
+    ({x : ι × α × β | P x.1 ∧ Q x.1 ∧ x.2.1 ∈ A x.1 ∧ x.2.2 ∈ B x.1}.ncard : R) =
+      ∑ i, a i * b i := by
+  classical
+  rw [ncard_setOf_and_and_mem_and_mem hfin, Nat.cast_sum, Finset.sum_filter]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  by_cases hP : P i
+  · by_cases hQ : Q i
+    · rw [ite_eq_left ⟨hP, hQ⟩, Nat.cast_mul, ha i hP, hb i hQ]
+    · rw [ite_eq_right fun h ↦ hQ h.2, hb₀ i hQ, mul_zero]
+  · rw [ite_eq_right fun h ↦ hP h.1, ha₀ i hP, zero_mul]
+
+/-- **Summing over triples fibrewise.** Let `a i` be the sum of `g i` over `A i` when `P i` holds
+and `0` otherwise, and `b i` the sum of `k i` over `B i` when `Q i` holds and `0` otherwise. Over a
+finite index type, when `A i` is finite whenever `P i` holds and `B i` is finite whenever `Q i`
+holds, the weights `g i y * k i z` of the triples `(i, y, z)` with `P i`, `Q i`, `y ∈ A i` and
+`z ∈ B i` sum to `∑ i, a i * b i`. This is the coefficient of a composite of two linear maps whose
+matrices are weighted counts of the elements of `A i` and of `B i`. -/
+theorem finsum_mem_setOf_and_and_mem_and_mem {ι α β R : Type*} [Fintype ι]
+    [NonUnitalNonAssocSemiring R] {P Q : ι → Prop} {A : ι → Set α} {B : ι → Set β}
+    {g : ι → α → R} {k : ι → β → R} {a b : ι → R}
+    (hA : ∀ i, P i → (A i).Finite) (hB : ∀ i, Q i → (B i).Finite)
+    (ha : ∀ i, P i → a i = ∑ᶠ y ∈ A i, g i y) (ha₀ : ∀ i, ¬P i → a i = 0)
+    (hb : ∀ i, Q i → b i = ∑ᶠ z ∈ B i, k i z) (hb₀ : ∀ i, ¬Q i → b i = 0) :
+    ∑ᶠ x ∈ {x : ι × α × β | P x.1 ∧ Q x.1 ∧ x.2.1 ∈ A x.1 ∧ x.2.2 ∈ B x.1},
+        g x.1 x.2.1 * k x.1 x.2.2 =
+      ∑ i, a i * b i := by
+  classical
+  -- Sort the triples by their index `i`; the fibre over `i` is a copy of `A i ×ˢ B i`.
+  rw [finsum_mem_eq_finite_toFinset_sum _ (finite_setOf_and_and_mem_and_mem hA hB),
+    ← Finset.sum_fiberwise _ Prod.fst]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  by_cases hi : P i ∧ Q i
+  · rw [ha i hi.1, hb i hi.2, finsum_mem_eq_finite_toFinset_sum _ (hA i hi.1),
+      finsum_mem_eq_finite_toFinset_sum _ (hB i hi.2), Finset.sum_mul_sum, ← Finset.sum_product']
+    refine Finset.sum_nbij' (fun x ↦ x.2) (Prod.mk i) (fun x hx ↦ ?_) (fun z hz ↦ ?_)
+      (fun x hx ↦ ?_) (fun _ _ ↦ rfl) fun x hx ↦ ?_
+    · rw [Finset.mem_filter, Finite.mem_toFinset] at hx
+      obtain ⟨⟨-, -, hy, hz⟩, rfl⟩ := hx
+      exact Finset.mem_product.2 ⟨(hA _ hi.1).mem_toFinset.2 hy, (hB _ hi.2).mem_toFinset.2 hz⟩
+    · rw [Finset.mem_product, Finite.mem_toFinset, Finite.mem_toFinset] at hz
+      exact Finset.mem_filter.2 ⟨Finite.mem_toFinset _ |>.2 ⟨hi.1, hi.2, hz⟩, rfl⟩
+    · exact Prod.ext (Finset.mem_filter.1 hx).2.symm rfl
+    · rw [(Finset.mem_filter.1 hx).2]
+  · -- Off the indices with `P i` and `Q i`, the fibre is empty and `a i * b i` vanishes.
+    rw [Finset.sum_eq_zero fun x hx ↦ (hi ?_).elim]
+    · rcases not_and_or.1 hi with hP | hQ
+      · rw [ha₀ i hP, zero_mul]
+      · rw [hb₀ i hQ, mul_zero]
+    · obtain ⟨hmem, rfl⟩ := Finset.mem_filter.1 hx
+      rw [Finite.mem_toFinset] at hmem
+      exact ⟨hmem.1, hmem.2.1⟩
+
+/-- **A signed count reduces to the number of elements in characteristic two.** If `w` takes the
+values `±1` on a finite set `s`, then the integer sum of `w` over `s`, read in a ring `R` of
+characteristic two such as `ZMod 2`, is the number of elements of `s`. -/
+theorem intCast_finsum_mem_eq_ncard_of_eq_one_or_eq_neg_one {α R : Type*}
+    [AddCommGroupWithOne R] [CharP R 2] {s : Set α} (hs : s.Finite) {w : α → ℤ}
+    (hw : ∀ x ∈ s, w x = 1 ∨ w x = -1) :
+    ((∑ᶠ x ∈ s, w x : ℤ) : R) = s.ncard := by
+  rw [finsum_mem_eq_finite_toFinset_sum _ hs, Int.cast_sum, ncard_eq_toFinset_card _ hs,
+    Finset.card_eq_sum_ones, Nat.cast_sum]
+  refine Finset.sum_congr rfl fun x hx ↦ ?_
+  rcases hw x (hs.mem_toFinset.1 hx) with h | h
+  · rw [h, Int.cast_one, Nat.cast_one]
+  · rw [h, Int.cast_neg, Int.cast_one, CharTwo.neg_one_eq_one, Nat.cast_one]
 
 /-- **The counting invariant gives coinfiniteness.** A set of naturals with at most `n` elements
 up to `2 * n`, for every `n`, has an infinite complement. -/
@@ -144,19 +300,53 @@ theorem ncard_preimage_div (S : Set ℕ) (n : ℕ) : ((· / n) ⁻¹' S).ncard =
       congrArg (· / n) hpq
   exact Prod.ext h₁ (Fin.ext (by simpa [h₁] using hpq))
 
+/-- If `a ∈ s` has a smaller value under `f` than `b`, and only finitely many points of `s` have
+value below `f b`, then fewer points of `s` have value below `f a` than below `f b`. -/
+theorem ncard_sep_lt_lt_ncard_sep_lt {ι α : Type*} [Preorder α] {f : ι → α} {s : Set ι}
+    {a b : ι} (ha : a ∈ s) (hab : f a < f b) (hb : {i ∈ s | f i < f b}.Finite) :
+    {i ∈ s | f i < f a}.ncard < {i ∈ s | f i < f b}.ncard :=
+  ncard_lt_ncard ⟨fun _ hi ↦ ⟨hi.1, hi.2.trans hab⟩,
+    fun hsub ↦ lt_irrefl (f a) (hsub ⟨ha, hab⟩).2⟩ hb
+
+/-- For a map `f` into a linear order that is injective on `s`, if only finitely many points of `s`
+have value below each point of `s`, then the number of points of `s` whose value lies below `f a`
+determines `a ∈ s`. -/
+theorem InjOn.injOn_ncard_sep_lt {ι α : Type*} [LinearOrder α] {f : ι → α} {s : Set ι}
+    (hf : InjOn f s) (hfin : ∀ a ∈ s, {i ∈ s | f i < f a}.Finite) :
+    InjOn (fun a ↦ {i ∈ s | f i < f a}.ncard) s := by
+  intro a ha b hb h
+  by_contra hne
+  rcases lt_or_gt_of_ne (hf.ne ha hb hne) with hlt | hlt
+  · exact (ncard_sep_lt_lt_ncard_sep_lt ha hlt (hfin b hb)).ne h
+  · exact (ncard_sep_lt_lt_ncard_sep_lt hb hlt (hfin a ha)).ne h.symm
+
+/-- For a map `f` into a linear order that is injective on the infinite set `s`, if only finitely
+many points of `s` have value below each point of `s`, then every natural number `n` is the number
+of points of `s` whose value lies below `f a`, for some `a ∈ s`. Together with
+`Set.InjOn.injOn_ncard_sep_lt`, this lists `s` in increasing order of `f`, indexed by `ℕ`. -/
+theorem Infinite.exists_mem_ncard_sep_lt_eq {ι α : Type*} [LinearOrder α] {f : ι → α}
+    {s : Set ι} (hs : s.Infinite) (hf : InjOn f s) (hfin : ∀ a ∈ s, {i ∈ s | f i < f a}.Finite)
+    (n : ℕ) : ∃ a ∈ s, {i ∈ s | f i < f a}.ncard = n := by
+  set r : ι → ℕ := fun a ↦ {i ∈ s | f i < f a}.ncard
+  have hrinj : InjOn r s := hf.injOn_ncard_sep_lt hfin
+  -- The values of `r` on `s` are unbounded, since `s` is infinite and `r` is injective on it.
+  obtain ⟨_, ⟨b, hb, rfl⟩, hnb⟩ := (Infinite.image hrinj hs).exists_gt n
+  -- The `r b` points of `s` below `b` take distinct values of `r`, all below `r b`; so each value
+  -- below `r b`, in particular `n`, is taken.
+  have hsub : r '' {i ∈ s | f i < f b} ⊆ Iio (r b) := by
+    rintro _ ⟨i, hi, rfl⟩
+    exact ncard_sep_lt_lt_ncard_sep_lt hi.1 hi.2 (hfin b hb)
+  have heq : r '' {i ∈ s | f i < f b} = Iio (r b) :=
+    eq_of_subset_of_ncard_le hsub
+      (by rw [ncard_Iio_nat]; exact (hrinj.mono (sep_subset s _)).ncard_image.ge) (finite_Iio _)
+  obtain ⟨a, ha, hra⟩ := heq.symm.subset (show n ∈ Iio (r b) from hnb)
+  exact ⟨a, ha.1, hra⟩
+
 /-- For an injective map `f` from a finite type into a linear order, the number of indices whose
 value lies below `f a` determines `a`. -/
 theorem injective_ncard_setOf_lt {ι α : Type*} [Finite ι] [LinearOrder α] {f : ι → α}
     (hf : Function.Injective f) : Function.Injective fun a ↦ {i | f i < f a}.ncard := by
-  -- The set of values below the larger of `f a`, `f b` strictly contains the other set.
-  have key (a b : ι) (hab : f a < f b) : {i | f i < f a}.ncard < {i | f i < f b}.ncard :=
-    ncard_lt_ncard ⟨fun i hi ↦ lt_trans hi hab, fun hsub ↦ lt_irrefl (f a) (hsub hab)⟩
-      (toFinite _)
-  intro a b h
-  by_contra hne
-  rcases lt_or_gt_of_ne (hf.ne hne) with hlt | hlt
-  · exact (key a b hlt).ne h
-  · exact (key b a hlt).ne h.symm
+  simpa [injOn_univ] using hf.injOn.injOn_ncard_sep_lt (s := univ) fun _ _ ↦ toFinite _
 
 /-- For an injective map `f` from a finite type into a linear order, every `j < Nat.card ι` is the
 number of indices whose value lies below `f k` for exactly one index `k`, and no larger `j` is. -/
@@ -193,6 +383,13 @@ theorem ncard_setOf_sumElim {ι β : Type*} (f : ι → β) (P : β → Prop) :
   congr 1
   ext (i | i) <;> simp
 
+/-- A property of the first coordinate of `α × β` holds on `Nat.card β` times as many pairs as
+elements of `α`. Both sides are `0` when `β` or the set on `α` is infinite. -/
+theorem ncard_setOf_fst {α β : Type*} (P : α → Prop) :
+    {p : α × β | P p.1}.ncard = Nat.card β * {a | P a}.ncard := by
+  rw [show {p : α × β | P p.1} = {a | P a} ×ˢ (univ : Set β) by ext; simp, ncard_prod,
+    ncard_univ, mul_comm]
+
 /-- Reading a set of indices of `Fin (n + 1)` through `k.succAbove` counts its elements other
 than `k`. -/
 theorem ncard_preimage_succAbove {n : ℕ} (k : Fin (n + 1)) (s : Set (Fin (n + 1))) :
@@ -201,3 +398,19 @@ theorem ncard_preimage_succAbove {n : ℕ} (k : Fin (n + 1)) (s : Set (Fin (n + 
     Fin.range_succAbove, ← sdiff_eq]
 
 end Set
+
+/-- The fibre of `Function.Pullback.fst` over `a` has the same `Set.ncard` as the fibre of `q`
+over `f a`. Both sides are zero for infinite fibres. -/
+@[simp]
+theorem Function.Pullback.ncard_preimage_fst_singleton {A B C : Type*}
+    {f : A → B} {q : C → B} (a : A) :
+    ((Function.Pullback.fst : f.Pullback q → A) ⁻¹' {a}).ncard =
+      (q ⁻¹' {f a}).ncard :=
+  Set.ncard_congr' (Function.Pullback.fstPreimageEquiv a)
+
+/-- An equivalence onto `p ⁻¹' U` commuting with projections preserves `Set.ncard` of the fibres
+over `y ∈ U`. Both sides are zero for infinite fibres. -/
+theorem Equiv.ncard_fiber_eq_of_preimage {A X Y : Type*} {p : X → Y} {q : A → Y}
+    {U : Set Y} (k : A ≃ p ⁻¹' U) (hk : ∀ a, p (k a).val = q a) {y : Y} (hy : y ∈ U) :
+    (q ⁻¹' {y}).ncard = (p ⁻¹' {y}).ncard :=
+  Set.ncard_congr' (k.fiberEquivOfPreimage hk hy)

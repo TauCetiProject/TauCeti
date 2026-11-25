@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.Normed.Operator.Bilinear
+public import Mathlib.Topology.Algebra.Module.Complement
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.LinearAlgebra.Complex.LinearPart
 public import TauCeti.LinearAlgebra.Complex.Module
@@ -21,7 +22,7 @@ import TauCeti.Analysis.Normed.Module.RCLike.Basic
 /-!
 # The complex-linear part of a real-linear operator
 
-A continuous real-linear operator `Ψ : E →L[ℝ] F` between complex normed spaces has a
+A continuous real-linear operator `Ψ : E →L[ℝ] F` between complex topological modules has a
 **complex-linear part**
 
 `Ψ.complexLinearPart z = ½ (Ψ z - i Ψ (i z))`,
@@ -33,11 +34,15 @@ complex structures given by multiplication by `i`
 `Ψ.complexAntilinearPart z = ½ (Ψ z + i Ψ (i z))` is a continuous complex-antilinear operator
 (`ContinuousLinearMap.complexAntilinearPart`), and `Ψ` is the sum of its two parts. A
 complex-linear operator is its own complex-linear part and has zero complex-antilinear part, and
-taking either part commutes with composition by complex-linear operators on either side. Both
-parts depend continuously on `Ψ` (`ContinuousLinearMap.continuous_complexLinearPart`,
+taking either part commutes with composition by complex-linear operators on either side. Between
+complex normed spaces both parts depend continuously on `Ψ`
+(`ContinuousLinearMap.continuous_complexLinearPart`,
 `ContinuousLinearMap.continuous_complexAntilinearPart`), so a continuous family of real-linear
-operators has continuous families of complex-linear and complex-antilinear parts. For real
-structures on `E` and `F` given separately and compatible with the complex ones, the
+operators has continuous families of complex-linear and complex-antilinear parts. The
+complex-linear part of a continuous real-linear projection onto a complex submodule is a
+continuous complex-linear projection onto it, so a complex submodule complemented over the reals
+is complemented over the complex numbers (`Submodule.ClosedComplemented.of_restrictScalars`).
+For real structures on `E` and `F` given separately and compatible with the complex ones, the
 complex-antilinear part is a continuous real-linear operator on `E →L[ℝ] F`
 (`ContinuousLinearMap.complexAntilinearPartL`), an idempotent operator whose fixed points are the
 complex-antilinear maps (`ContinuousLinearMap.complexAntilinearPartL_eq_self_iff`) and whose kernel
@@ -76,6 +81,8 @@ These are mutually orthogonal contractive projections summing to `L`
 * `ContinuousLinearMap.restrictScalars_complexLinearPart`: the underlying real-linear operator
   `½ (Ψ - i ∘ Ψ ∘ i)`.
 * `ContinuousLinearMap.continuous_complexLinearPart`: continuity in the operator.
+* `Submodule.ClosedComplemented.of_restrictScalars`: a complex submodule with a continuous
+  real-linear projection onto it has a continuous complex-linear one.
 * `ContinuousLinearMap.complexAntilinearPart_add`, `ContinuousLinearMap.complexAntilinearPart_smul`,
   `ContinuousLinearMap.complexAntilinearPart_restrictScalars`,
   `ContinuousLinearMap.complexAntilinearPart_restrictScalars_comp`,
@@ -84,18 +91,16 @@ These are mutually orthogonal contractive projections summing to `L`
   part.
 * `ContinuousLinearMap.complexAntilinearPartL`: the complex-antilinear part as a continuous
   real-linear operator on real-linear maps, for arbitrary compatible real structures, with
-  `ContinuousLinearMap.complexAntilinearPartL_eq_self_iff` and
-  `ContinuousLinearMap.complexAntilinearPartL_eq_zero_iff`.
+  `ContinuousLinearMap.complexAntilinearPartL_eq_self_iff`,
+  `ContinuousLinearMap.complexAntilinearPartL_eq_zero_iff` and the postcomposition and
+  precomposition rules `ContinuousLinearMap.complexAntilinearPartL_restrictScalars_comp` and
+  `ContinuousLinearMap.complexAntilinearPartL_comp_restrictScalars`.
 * `ContinuousLinearMap.sesquiPart`: the four-part `(ℂ, ℂ)`-linear/antilinear decomposition of a
-  continuous real-bilinear operator `L : E →L[ℝ] E' →L[ℝ] F`, with explicit evaluation formulas
-  (`ContinuousLinearMap.sesquiPart_apply`, `sesquiPart_false_false_apply`, …), real-linearity,
-  flip symmetry (`ContinuousLinearMap.sesquiPart_flip`), reconstruction
-  (`ContinuousLinearMap.sum_sesquiPart`), complex scalar actions
-  (`ContinuousLinearMap.sesquiPart_apply_smul_left`, `sesquiPart_apply_smul_right`,
-  `sesquiPart_apply_smul`), mutual orthogonality and idempotence
-  (`ContinuousLinearMap.sesquiPart_sesquiPart`, `sesquiPart_eq_self_iff`), norm contraction
-  (`ContinuousLinearMap.norm_sesquiPart_le`), and continuity
-  (`ContinuousLinearMap.continuous_sesquiPart`).
+  continuous real-bilinear operator `L : E →L[ℝ] E' →L[ℝ] F`, with explicit evaluation formulas,
+  real-linearity, flip symmetry, reconstruction (`ContinuousLinearMap.sum_sesquiPart`), complex
+  scalar actions (`ContinuousLinearMap.sesquiPart_apply_smul`), mutual orthogonality/idempotence
+  (`ContinuousLinearMap.sesquiPart_sesquiPart`), norm contraction
+  (`ContinuousLinearMap.norm_sesquiPart_le`), and continuity.
 * `ContinuousLinearMap.norm_sq_complexLinearPart_apply`: the norm identity for a linear map
   preserving `Im ⟪·, ·⟫`.
 * `ContinuousLinearMap.complexLinearPartEquiv`: the complex-linear part of such a map, as a
@@ -118,11 +123,17 @@ open scoped InnerProductSpace
 
 namespace ContinuousLinearMap
 
-variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-  [NormedAddCommGroup F] [NormedSpace ℂ F] [NormedAddCommGroup G] [NormedSpace ℂ G]
+section Module
+
+variable {E F G : Type*} [AddCommGroup E] [TopologicalSpace E] [Module ℝ E] [Module ℂ E]
+  [IsScalarTower ℝ ℂ E] [ContinuousConstSMul ℂ E]
+  [AddCommGroup F] [TopologicalSpace F] [IsTopologicalAddGroup F] [Module ℝ F] [Module ℂ F]
+  [IsScalarTower ℝ ℂ F] [ContinuousConstSMul ℝ F] [ContinuousConstSMul ℂ F]
+  [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G] [Module ℝ G] [Module ℂ G]
+  [IsScalarTower ℝ ℂ G] [ContinuousConstSMul ℝ G] [ContinuousConstSMul ℂ G]
 
 /-- The **complex-linear part** `z ↦ ½ (Ψ z - i Ψ (i z))` of a continuous real-linear operator
-between complex normed spaces, as a continuous complex-linear operator. -/
+between complex modules, as a continuous complex-linear operator. -/
 def complexLinearPart (Ψ : E →L[ℝ] F) : E →L[ℂ] F :=
   complexOfMapISmul
     ((2⁻¹ : ℝ) • (Ψ - (Complex.smulIEquiv F : F →L[ℝ] F).comp
@@ -150,7 +161,7 @@ theorem coe_complexLinearPart (Ψ : E →L[ℝ] F) :
   simp
 
 /-- The **complex-antilinear part** `z ↦ ½ (Ψ z + i Ψ (i z))` of a continuous real-linear
-operator between complex normed spaces, as a continuous complex-antilinear operator. -/
+operator between complex modules, as a continuous complex-antilinear operator. -/
 def complexAntilinearPart (Ψ : E →L[ℝ] F) : E →L⋆[ℂ] F where
   toFun v := (2⁻¹ : ℝ) • (Ψ v + Complex.I • Ψ (Complex.I • v))
   map_add' v w := by simp only [map_add, smul_add]; module
@@ -199,6 +210,7 @@ theorem complexLinearPart_restrictScalars_comp (f : F →L[ℂ] G) (Ψ : E →L[
   ext v
   simp [map_smul, map_sub]
 
+omit [IsTopologicalAddGroup F] [ContinuousConstSMul ℝ F] in
 /-- Precomposing with a complex-linear operator commutes with taking complex-linear parts. -/
 @[simp]
 theorem complexLinearPart_comp_restrictScalars (Ψ : F →L[ℝ] G) (f : E →L[ℂ] F) :
@@ -252,18 +264,6 @@ theorem restrictScalars_complexLinearPart (Ψ : E →L[ℝ] F) :
       (2⁻¹ : ℝ) • (Ψ - (Complex.smulIEquiv F : F →L[ℝ] F).comp
         (Ψ.comp (Complex.smulIEquiv E : E →L[ℝ] E))) :=
   restrictScalars_complexOfMapISmul _ _
-
-/-- **The complex-linear part depends continuously on the operator.** -/
-theorem continuous_complexLinearPart :
-    Continuous (complexLinearPart : (E →L[ℝ] F) → E →L[ℂ] F) := by
-  refine (restrictScalarsIsometry ℂ E F ℝ ℝ).isometry.isUniformInducing.isInducing.continuous_iff.2
-    ?_
-  simp only [Function.comp_def, coe_restrictScalarsIsometry, restrictScalars_complexLinearPart]
-  have hJE : Continuous fun _ : E →L[ℝ] F => (Complex.smulIEquiv E : E →L[ℝ] E) :=
-    continuous_const
-  have hJF : Continuous fun _ : E →L[ℝ] F => (Complex.smulIEquiv F : F →L[ℝ] F) :=
-    continuous_const
-  exact (continuous_id.sub (hJF.clm_comp (continuous_id.clm_comp hJE))).const_smul (2⁻¹ : ℝ)
 
 /-- The complex-antilinear part of `0` is `0`. -/
 @[simp]
@@ -319,12 +319,32 @@ theorem complexAntilinearPart_restrictScalars_comp (f : F →L[ℂ] G) (Ψ : E �
   ext v
   simp [map_smul, map_add]
 
+omit [IsTopologicalAddGroup F] [ContinuousConstSMul ℝ F] in
 /-- Precomposing with a complex-linear operator commutes with taking complex-antilinear parts. -/
 @[simp]
 theorem complexAntilinearPart_comp_restrictScalars (Ψ : F →L[ℝ] G) (f : E →L[ℂ] F) :
     (Ψ.comp (f.restrictScalars ℝ)).complexAntilinearPart = Ψ.complexAntilinearPart.comp f := by
   ext v
   simp [map_smul]
+
+end Module
+
+section Normed
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+  [NormedAddCommGroup F] [NormedSpace ℂ F]
+
+/-- **The complex-linear part depends continuously on the operator.** -/
+theorem continuous_complexLinearPart :
+    Continuous (complexLinearPart : (E →L[ℝ] F) → E →L[ℂ] F) := by
+  refine (restrictScalarsIsometry ℂ E F ℝ ℝ).isometry.isUniformInducing.isInducing.continuous_iff.2
+    ?_
+  simp only [Function.comp_def, coe_restrictScalarsIsometry, restrictScalars_complexLinearPart]
+  have hJE : Continuous fun _ : E →L[ℝ] F => (Complex.smulIEquiv E : E →L[ℝ] E) :=
+    continuous_const
+  have hJF : Continuous fun _ : E →L[ℝ] F => (Complex.smulIEquiv F : F →L[ℝ] F) :=
+    continuous_const
+  exact (continuous_id.sub (hJF.clm_comp (continuous_id.clm_comp hJE))).const_smul (2⁻¹ : ℝ)
 
 /-- **The complex-antilinear part depends continuously on the operator.** -/
 theorem continuous_complexAntilinearPart :
@@ -336,6 +356,8 @@ theorem continuous_complexAntilinearPart :
   refine opNorm_le_bound _ (norm_nonneg Ψ) fun v => ?_
   have h := Ψ.le_opNorm_of_le (x := Complex.I • v) (c := ‖v‖) (by simp [norm_smul])
   exact TauCeti.norm_two_inv_smul_add_le (𝕜 := ℝ) (Ψ.le_opNorm v) (by simpa [norm_smul] using h)
+
+end Normed
 
 /-! ### The complex-linear part of a linear symplectic map -/
 
@@ -422,13 +444,42 @@ end Symplectic
 
 end ContinuousLinearMap
 
+/-! ### Complex complements from real ones -/
+
+section ClosedComplemented
+
+open Complex
+
+variable {V : Type*} [AddCommGroup V] [TopologicalSpace V] [IsTopologicalAddGroup V] [Module ℝ V]
+  [Module ℂ V] [IsScalarTower ℝ ℂ V] [ContinuousConstSMul ℂ V]
+
+/-- **Complex complements from real ones.** A complex submodule `K` that is the range of a
+continuous real-linear projection `P` is the range of a continuous complex-linear projection, the
+complex-linear part `x ↦ ½ (P x - i • P (i • x))` of `P`. -/
+theorem Submodule.ClosedComplemented.of_restrictScalars {K : Submodule ℂ V}
+    (hK : (K.restrictScalars ℝ).ClosedComplemented) : K.ClosedComplemented := by
+  obtain ⟨P, hP⟩ := hK
+  -- `P` lands in `K.restrictScalars ℝ`, whose carrier is definitionally that of `K`, so `P` is
+  -- retyped as a map into `K` by definitional unfolding.
+  let P' : V →L[ℝ] K := P
+  have hP' (x : K) : P' x = x := hP x
+  -- Real scalars act continuously on `K` since they act through the complex ones.
+  have : ContinuousConstSMul ℝ K := IsScalarTower.continuousConstSMul ℝ ℂ K
+  refine ⟨P'.complexLinearPart, fun x ↦ ?_⟩
+  have hIx : P' (I • (x : V)) = I • x := hP' (I • x)
+  rw [ContinuousLinearMap.complexLinearPart_apply, hP', hIx]
+  match_scalars; norm_num [I_mul_I]
+
+end ClosedComplemented
+
 /-! ### The complex-antilinear part as an operator on real-linear maps -/
 
 namespace ContinuousLinearMap
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace ℂ E]
+variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace ℂ E]
   [IsScalarTower ℝ ℂ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F]
-  [IsScalarTower ℝ ℂ F]
+  [IsScalarTower ℝ ℂ F] [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedSpace ℂ G]
+  [IsScalarTower ℝ ℂ G]
 
 /-- The complex-antilinear part `Ψ ↦ ½ (Ψ + i • Ψ ∘ i)`, as a continuous real-linear operator on
 the real-linear maps `E →L[ℝ] F` between complex normed spaces. Unlike
@@ -492,6 +543,24 @@ theorem complexAntilinearPartL_restrictScalars (f : E →L[ℂ] F) :
     complexAntilinearPartL (f.restrictScalars ℝ) = 0 :=
   complexAntilinearPartL_eq_zero_iff.2 fun v ↦ by simp
 
+/-- Postcomposing with a complex-linear operator commutes with
+`ContinuousLinearMap.complexAntilinearPartL`. -/
+@[simp]
+theorem complexAntilinearPartL_restrictScalars_comp (f : F →L[ℂ] G) (Ψ : E →L[ℝ] F) :
+    complexAntilinearPartL ((f.restrictScalars ℝ).comp Ψ) =
+      (f.restrictScalars ℝ).comp (complexAntilinearPartL Ψ) := by
+  ext v
+  simp [map_smul]
+
+/-- Precomposing with a complex-linear operator commutes with
+`ContinuousLinearMap.complexAntilinearPartL`. -/
+@[simp]
+theorem complexAntilinearPartL_comp_restrictScalars (Ψ : F →L[ℝ] G) (f : E →L[ℂ] F) :
+    complexAntilinearPartL (Ψ.comp (f.restrictScalars ℝ)) =
+      (complexAntilinearPartL Ψ).comp (f.restrictScalars ℝ) := by
+  ext v
+  simp [map_smul]
+
 end ContinuousLinearMap
 
 /-! ### Four-part decomposition of continuous real-bilinear operators -/
@@ -508,164 +577,88 @@ variable {E E' F : Type*}
 For `b₁ b₂ : Bool`, `b₁ = false` (resp. `true`) selects complex-linearity (resp.
 complex-antilinearity) in the first argument, and `b₂` selects the same in the second argument. -/
 def sesquiPart (L : E →L[ℝ] E' →L[ℝ] F) (b₁ b₂ : Bool) : E →L[ℝ] E' →L[ℝ] F :=
-  let J₁ : E →L[ℝ] E := Complex.smulIEquiv E
-  let J₂ : E' →L[ℝ] E' := Complex.smulIEquiv E'
-  let JF : F →L[ℝ] F := Complex.smulIEquiv F
-  let S₂ : E →L[ℝ] E' →L[ℝ] F := (compL ℝ E' F F JF).comp (L.flip.comp J₂).flip
-  let L₂ : E →L[ℝ] E' →L[ℝ] F := (2⁻¹ : ℝ) • if b₂ then L + S₂ else L - S₂
-  let S₁ : E →L[ℝ] E' →L[ℝ] F := ((compL ℝ E' F F JF).comp L₂).comp J₁
+  let S₂ := (compL ℝ E' F F (Complex.smulIEquiv F)).comp
+    (L.flip.comp (Complex.smulIEquiv E' : E' →L[ℝ] E')).flip
+  let L₂ := (2⁻¹ : ℝ) • if b₂ then L + S₂ else L - S₂
+  let S₁ := ((compL ℝ E' F F (Complex.smulIEquiv F)).comp L₂).comp
+    (Complex.smulIEquiv E : E →L[ℝ] E)
   (2⁻¹ : ℝ) • if b₁ then L₂ + S₁ else L₂ - S₁
 
 /-- Explicit formula for `L.sesquiPart b₁ b₂ u v` in terms of `L` and multiplication by `I`. -/
 theorem sesquiPart_apply (L : E →L[ℝ] E' →L[ℝ] F) (b₁ b₂ : Bool) (u : E) (v : E') :
-    L.sesquiPart b₁ b₂ u v =
-      (4⁻¹ : ℝ) • (L u v +
-        (if b₁ then (1 : ℝ) else -1) • (Complex.I • L (Complex.I • u) v) +
-        (if b₂ then (1 : ℝ) else -1) • (Complex.I • L u (Complex.I • v)) -
-        (if b₁ = b₂ then (1 : ℝ) else -1) • L (Complex.I • u) (Complex.I • v)) := by
+    L.sesquiPart b₁ b₂ u v = (4⁻¹ : ℝ) • (L u v +
+      (if b₁ then (1 : ℝ) else -1) • (Complex.I • L (Complex.I • u) v) +
+      (if b₂ then (1 : ℝ) else -1) • (Complex.I • L u (Complex.I • v)) -
+      (if b₁ = b₂ then (1 : ℝ) else -1) • L (Complex.I • u) (Complex.I • v)) := by
   have hI (x : F) : Complex.I • Complex.I • x = -x := by
     rw [smul_smul, Complex.I_mul_I, neg_one_smul]
-  cases b₁ <;> cases b₂ <;>
-    simp only [sesquiPart, Bool.false_eq_true, Bool.true_eq_false, ↓reduceIte, smul_apply,
-      add_apply, sub_apply, comp_apply, flip_apply, compL_apply, ContinuousLinearEquiv.coe_coe,
-      Complex.smulIEquiv_apply, smul_add, smul_sub, smul_comm Complex.I (2⁻¹ : ℝ), hI, smul_neg,
-      neg_smul, one_smul] <;>
-    module
-
-/-- Explicit four-term formula for the `(false, false)` (complex-bilinear) component of `L`. -/
-theorem sesquiPart_false_false_apply (L : E →L[ℝ] E' →L[ℝ] F) (u : E) (v : E') :
-    L.sesquiPart false false u v =
-      (4⁻¹ : ℝ) • (L u v - Complex.I • L (Complex.I • u) v -
-        Complex.I • L u (Complex.I • v) - L (Complex.I • u) (Complex.I • v)) := by
-  rw [sesquiPart_apply]
-  simp only [Bool.false_eq_true, ↓reduceIte, one_smul, neg_smul]
-  module
-
-/-- Explicit four-term formula for the `(true, false)` (antilinear in the first argument,
-linear in the second) component of `L`. -/
-theorem sesquiPart_true_false_apply (L : E →L[ℝ] E' →L[ℝ] F) (u : E) (v : E') :
-    L.sesquiPart true false u v =
-      (4⁻¹ : ℝ) • (L u v + Complex.I • L (Complex.I • u) v -
-        Complex.I • L u (Complex.I • v) + L (Complex.I • u) (Complex.I • v)) := by
-  rw [sesquiPart_apply]
-  simp only [Bool.false_eq_true, Bool.true_eq_false, ↓reduceIte, one_smul, neg_smul]
-  module
-
-/-- Explicit four-term formula for the `(false, true)` (linear in the first argument,
-antilinear in the second) component of `L`. -/
-theorem sesquiPart_false_true_apply (L : E →L[ℝ] E' →L[ℝ] F) (u : E) (v : E') :
-    L.sesquiPart false true u v =
-      (4⁻¹ : ℝ) • (L u v - Complex.I • L (Complex.I • u) v +
-        Complex.I • L u (Complex.I • v) + L (Complex.I • u) (Complex.I • v)) := by
-  rw [sesquiPart_apply]
-  simp only [Bool.false_eq_true, ↓reduceIte, one_smul, neg_smul]
-  module
-
-/-- Explicit four-term formula for the `(true, true)` (complex-antilinear in both arguments)
-component of `L`. -/
-theorem sesquiPart_true_true_apply (L : E →L[ℝ] E' →L[ℝ] F) (u : E) (v : E') :
-    L.sesquiPart true true u v =
-      (4⁻¹ : ℝ) • (L u v + Complex.I • L (Complex.I • u) v +
-        Complex.I • L u (Complex.I • v) - L (Complex.I • u) (Complex.I • v)) := by
-  rw [sesquiPart_apply]
-  simp only [↓reduceIte, one_smul]
+  cases b₁ <;> cases b₂ <;> simp only [sesquiPart, Bool.false_eq_true, Bool.true_eq_false,
+    ↓reduceIte, smul_apply, add_apply, sub_apply, comp_apply, flip_apply, compL_apply,
+    ContinuousLinearEquiv.coe_coe, Complex.smulIEquiv_apply, smul_add, smul_sub,
+    smul_comm Complex.I (2⁻¹ : ℝ), hI, smul_neg, neg_smul, one_smul] <;> module
 
 /-- The four-part decomposition of `0` is `0`. -/
-@[simp]
-theorem sesquiPart_zero (b₁ b₂ : Bool) : (0 : E →L[ℝ] E' →L[ℝ] F).sesquiPart b₁ b₂ = 0 := by
-  ext u v
-  simp [sesquiPart_apply]
+@[simp] theorem sesquiPart_zero (b₁ b₂ : Bool) : (0 : E →L[ℝ] E' →L[ℝ] F).sesquiPart b₁ b₂ = 0 := by
+  ext u v; simp [sesquiPart_apply]
 
 /-- `sesquiPart` is additive in the bilinear operator. -/
-@[simp]
-theorem sesquiPart_add (L M : E →L[ℝ] E' →L[ℝ] F) (b₁ b₂ : Bool) :
+@[simp] theorem sesquiPart_add (L M : E →L[ℝ] E' →L[ℝ] F) (b₁ b₂ : Bool) :
     (L + M).sesquiPart b₁ b₂ = L.sesquiPart b₁ b₂ + M.sesquiPart b₁ b₂ := by
-  ext u v
-  cases b₁ <;> cases b₂ <;>
-    simp only [add_apply, sesquiPart_false_false_apply, sesquiPart_true_false_apply,
-      sesquiPart_false_true_apply, sesquiPart_true_true_apply, smul_add] <;>
-    module
+  ext u v; simp only [add_apply, sesquiPart_apply, smul_add]; module
 
 /-- `sesquiPart` commutes with negation of the bilinear operator. -/
-@[simp]
-theorem sesquiPart_neg (L : E →L[ℝ] E' →L[ℝ] F) (b₁ b₂ : Bool) :
+@[simp] theorem sesquiPart_neg (L : E →L[ℝ] E' →L[ℝ] F) (b₁ b₂ : Bool) :
     (-L).sesquiPart b₁ b₂ = -L.sesquiPart b₁ b₂ := by
-  ext u v
-  cases b₁ <;> cases b₂ <;>
-    simp only [neg_apply, sesquiPart_false_false_apply, sesquiPart_true_false_apply,
-      sesquiPart_false_true_apply, sesquiPart_true_true_apply, smul_neg] <;>
-    module
+  ext u v; simp only [neg_apply, sesquiPart_apply, smul_neg]; module
 
 /-- `sesquiPart` commutes with subtraction of bilinear operators. -/
-@[simp]
-theorem sesquiPart_sub (L M : E →L[ℝ] E' →L[ℝ] F) (b₁ b₂ : Bool) :
+@[simp] theorem sesquiPart_sub (L M : E →L[ℝ] E' →L[ℝ] F) (b₁ b₂ : Bool) :
     (L - M).sesquiPart b₁ b₂ = L.sesquiPart b₁ b₂ - M.sesquiPart b₁ b₂ := by
   rw [sub_eq_add_neg, sesquiPart_add, sesquiPart_neg, ← sub_eq_add_neg]
 
 /-- `sesquiPart` commutes with real scalar multiplication of the bilinear operator. -/
-@[simp]
-theorem sesquiPart_smul (c : ℝ) (L : E →L[ℝ] E' →L[ℝ] F) (b₁ b₂ : Bool) :
+@[simp] theorem sesquiPart_smul (c : ℝ) (L : E →L[ℝ] E' →L[ℝ] F) (b₁ b₂ : Bool) :
     (c • L).sesquiPart b₁ b₂ = c • L.sesquiPart b₁ b₂ := by
-  ext u v
-  cases b₁ <;> cases b₂ <;>
-    simp only [smul_apply, sesquiPart_false_false_apply, sesquiPart_true_false_apply,
-      sesquiPart_false_true_apply, sesquiPart_true_true_apply, smul_comm Complex.I c] <;>
-    module
+  ext u v; simp only [smul_apply, sesquiPart_apply, smul_comm Complex.I c,
+    smul_comm (if _ then (1 : ℝ) else -1) c]; module
 
 /-- Flipping the arguments of `L` swaps the two Boolean indices of `sesquiPart`. -/
-@[simp]
-theorem sesquiPart_flip (L : E →L[ℝ] E' →L[ℝ] F) (b₁ b₂ : Bool) :
+@[simp] theorem sesquiPart_flip (L : E →L[ℝ] E' →L[ℝ] F) (b₁ b₂ : Bool) :
     L.flip.sesquiPart b₁ b₂ = (L.sesquiPart b₂ b₁).flip := by
-  ext v u
-  cases b₁ <;> cases b₂ <;>
-    simp only [flip_apply, sesquiPart_false_false_apply, sesquiPart_true_false_apply,
-      sesquiPart_false_true_apply, sesquiPart_true_true_apply] <;>
-    module
+  ext v u; cases b₁ <;> cases b₂ <;> simp only [flip_apply, sesquiPart_apply, Bool.false_eq_true,
+    Bool.true_eq_false, ↓reduceIte, one_smul, neg_smul] <;> module
 
 /-- Every continuous real-bilinear map is the sum of its four `sesquiPart` components. -/
-@[simp]
-theorem sum_sesquiPart (L : E →L[ℝ] E' →L[ℝ] F) :
+@[simp] theorem sum_sesquiPart (L : E →L[ℝ] E' →L[ℝ] F) :
     ∑ p : Bool × Bool, L.sesquiPart p.1 p.2 = L := by
-  ext u v
-  simp only [Fintype.sum_prod_type, Fintype.sum_bool, add_apply,
-    sesquiPart_false_false_apply, sesquiPart_true_false_apply,
-    sesquiPart_false_true_apply, sesquiPart_true_true_apply]
-  module
+  ext u v; simp only [Fintype.sum_prod_type, Fintype.sum_bool, add_apply, sesquiPart_apply,
+    Bool.false_eq_true, Bool.true_eq_false, ↓reduceIte, one_smul, neg_smul]; module
 
 /-- Pointwise reconstruction: `L u v` is the sum of its four `sesquiPart` components. -/
 theorem sum_sesquiPart_apply (L : E →L[ℝ] E' →L[ℝ] F) (u : E) (v : E') :
     ∑ p : Bool × Bool, L.sesquiPart p.1 p.2 u v = L u v := by
-  have h := congrArg (fun M : E →L[ℝ] E' →L[ℝ] F ↦ M u v) (sum_sesquiPart L)
-  simpa only [sum_apply] using h
+  simpa only [sum_apply] using congrArg (fun M : E →L[ℝ] E' →L[ℝ] F ↦ M u v) (sum_sesquiPart L)
 
-/-- Action of `Complex.I` in the first argument of `L.sesquiPart b₁ b₂`: complex-linear when
-`b₁ = false`, complex-antilinear when `b₁ = true`. -/
+/-- Action of `Complex.I` in the first argument of `L.sesquiPart b₁ b₂`. -/
 theorem sesquiPart_apply_I_smul_left (L : E →L[ℝ] E' →L[ℝ] F) (b₁ b₂ : Bool) (u : E) (v : E') :
     L.sesquiPart b₁ b₂ (Complex.I • u) v =
       (if b₁ then -Complex.I else Complex.I) • L.sesquiPart b₁ b₂ u v := by
-  have hI (x : E) : Complex.I • Complex.I • x = -x := by
-    rw [smul_smul, Complex.I_mul_I, neg_one_smul]
+  have hIE : Complex.I • Complex.I • u = -u := by rw [smul_smul, Complex.I_mul_I, neg_one_smul]
   have hIF (x : F) : Complex.I • Complex.I • x = -x := by
     rw [smul_smul, Complex.I_mul_I, neg_one_smul]
-  cases b₁ <;> cases b₂ <;>
-    simp only [Bool.false_eq_true, ↓reduceIte, sesquiPart_false_false_apply,
-      sesquiPart_true_false_apply, sesquiPart_false_true_apply, sesquiPart_true_true_apply,
-      hI, map_neg, neg_apply, neg_smul, smul_add, smul_sub, smul_neg,
-      smul_comm Complex.I (4⁻¹ : ℝ), hIF] <;>
-    module
+  cases b₁ <;> cases b₂ <;> simp only [Bool.false_eq_true, Bool.true_eq_false, ↓reduceIte,
+    sesquiPart_apply, one_smul, hIE, hIF, map_neg, neg_apply, neg_smul, smul_add, smul_sub,
+    smul_neg, smul_comm Complex.I (4⁻¹ : ℝ)] <;> module
 
-/-- Action of `Complex.I` in the second argument of `L.sesquiPart b₁ b₂`: complex-linear when
-`b₂ = false`, complex-antilinear when `b₂ = true`. -/
+/-- Action of `Complex.I` in the second argument of `L.sesquiPart b₁ b₂`. -/
 theorem sesquiPart_apply_I_smul_right (L : E →L[ℝ] E' →L[ℝ] F) (b₁ b₂ : Bool) (u : E) (v : E') :
     L.sesquiPart b₁ b₂ u (Complex.I • v) =
       (if b₂ then -Complex.I else Complex.I) • L.sesquiPart b₁ b₂ u v := by
-  have h := sesquiPart_apply_I_smul_left L.flip b₂ b₁ v u
-  simpa only [sesquiPart_flip, flip_apply] using h
+  simpa only [sesquiPart_flip, flip_apply] using sesquiPart_apply_I_smul_left L.flip b₂ b₁ v u
 
 /-- Complex scalar action in the first argument of `L.sesquiPart b₁ b₂`. -/
 theorem sesquiPart_apply_smul_left (L : E →L[ℝ] E' →L[ℝ] F) (b₁ b₂ : Bool) (z : ℂ) (u : E)
-    (v : E') :
-    L.sesquiPart b₁ b₂ (z • u) v =
+    (v : E') : L.sesquiPart b₁ b₂ (z • u) v =
       (if b₁ then starRingEnd ℂ z else z) • L.sesquiPart b₁ b₂ u v := by
   cases b₁
   · have h := ((L.sesquiPart false b₂).flip v).toLinearMap.complexOfMapISmul
@@ -677,11 +670,9 @@ theorem sesquiPart_apply_smul_left (L : E →L[ℝ] E' →L[ℝ] F) (b₁ b₂ :
 
 /-- Complex scalar action in the second argument of `L.sesquiPart b₁ b₂`. -/
 theorem sesquiPart_apply_smul_right (L : E →L[ℝ] E' →L[ℝ] F) (b₁ b₂ : Bool) (w : ℂ) (u : E)
-    (v : E') :
-    L.sesquiPart b₁ b₂ u (w • v) =
+    (v : E') : L.sesquiPart b₁ b₂ u (w • v) =
       (if b₂ then starRingEnd ℂ w else w) • L.sesquiPart b₁ b₂ u v := by
-  have h := sesquiPart_apply_smul_left L.flip b₂ b₁ w v u
-  simpa only [sesquiPart_flip, flip_apply] using h
+  simpa only [sesquiPart_flip, flip_apply] using sesquiPart_apply_smul_left L.flip b₂ b₁ w v u
 
 /-- Simultaneous complex scalar action in both arguments of `L.sesquiPart b₁ b₂`. -/
 theorem sesquiPart_apply_smul (L : E →L[ℝ] E' →L[ℝ] F) (b₁ b₂ : Bool) (z w : ℂ) (u : E) (v : E') :
@@ -691,64 +682,51 @@ theorem sesquiPart_apply_smul (L : E →L[ℝ] E' →L[ℝ] F) (b₁ b₂ : Bool
   rw [sesquiPart_apply_smul_left, sesquiPart_apply_smul_right, smul_smul]
 
 /-- The four `sesquiPart` projections are mutually orthogonal idempotents. -/
-@[simp]
-theorem sesquiPart_sesquiPart (L : E →L[ℝ] E' →L[ℝ] F) (b₁ b₂ c₁ c₂ : Bool) :
+@[simp] theorem sesquiPart_sesquiPart (L : E →L[ℝ] E' →L[ℝ] F) (b₁ b₂ c₁ c₂ : Bool) :
     (L.sesquiPart b₁ b₂).sesquiPart c₁ c₂ =
       if c₁ = b₁ ∧ c₂ = b₂ then L.sesquiPart b₁ b₂ else 0 := by
-  ext u v
-  have hIF (x : F) : Complex.I • Complex.I • x = -x := by
+  ext u v; have hIF (x : F) : Complex.I • Complex.I • x = -x := by
     rw [smul_smul, Complex.I_mul_I, neg_one_smul]
-  rw [sesquiPart_apply]
-  simp only [sesquiPart_apply_I_smul_left, sesquiPart_apply_I_smul_right]
-  cases b₁ <;> cases b₂ <;> cases c₁ <;> cases c₂ <;>
-    simp only [Bool.false_eq_true, Bool.true_eq_false, and_self, and_false, false_and, ↓reduceIte,
-      zero_apply, one_smul, neg_smul, smul_neg, hIF] <;>
-    module
+  rw [sesquiPart_apply]; simp only [sesquiPart_apply_I_smul_left, sesquiPart_apply_I_smul_right]
+  cases b₁ <;> cases b₂ <;> cases c₁ <;> cases c₂ <;> simp only [Bool.false_eq_true,
+    Bool.true_eq_false, and_self, and_false, false_and, ↓reduceIte, zero_apply, one_smul, neg_smul,
+    smul_neg, hIF] <;> module
 
-/-- A continuous real-bilinear map is fixed by `sesquiPart · b₁ b₂` exactly when it transforms by
-`± I` under multiplication by `I` in each argument. -/
+/-- A continuous real-bilinear map is fixed by `sesquiPart · b₁ b₂` iff multiplication by `I` in
+each argument acts by `± I`. -/
 theorem sesquiPart_eq_self_iff {L : E →L[ℝ] E' →L[ℝ] F} {b₁ b₂ : Bool} :
     L.sesquiPart b₁ b₂ = L ↔
       (∀ u v, L (Complex.I • u) v = (if b₁ then -Complex.I else Complex.I) • L u v) ∧
       (∀ u v, L u (Complex.I • v) = (if b₂ then -Complex.I else Complex.I) • L u v) := by
   refine ⟨fun h ↦ ⟨fun u v ↦ by rw [← h, sesquiPart_apply_I_smul_left],
     fun u v ↦ by rw [← h, sesquiPart_apply_I_smul_right]⟩, fun ⟨h₁, h₂⟩ ↦ ?_⟩
-  ext u v
-  have hIF (x : F) : Complex.I • Complex.I • x = -x := by
+  ext u v; have hIF (x : F) : Complex.I • Complex.I • x = -x := by
     rw [smul_smul, Complex.I_mul_I, neg_one_smul]
   rw [sesquiPart_apply, h₁, h₂, h₁, h₂]
-  cases b₁ <;> cases b₂ <;>
-    simp only [Bool.false_eq_true, Bool.true_eq_false, ↓reduceIte, one_smul, neg_smul, smul_neg,
-      hIF] <;>
-    module
+  cases b₁ <;> cases b₂ <;> simp only [Bool.false_eq_true, Bool.true_eq_false, ↓reduceIte,
+    one_smul, neg_smul, smul_neg, hIF] <;> module
 
 /-- Each `sesquiPart` projection is contractive in operator norm: `‖L.sesquiPart b₁ b₂‖ ≤ ‖L‖`. -/
 theorem norm_sesquiPart_le (L : E →L[ℝ] E' →L[ℝ] F) (b₁ b₂ : Bool) :
     ‖L.sesquiPart b₁ b₂‖ ≤ ‖L‖ := by
   refine opNorm_le_bound _ (norm_nonneg L) fun u ↦
     opNorm_le_bound _ (mul_nonneg (norm_nonneg L) (norm_nonneg u)) fun v ↦ ?_
-  have h1 : ‖L u v‖ ≤ ‖L‖ * ‖u‖ * ‖v‖ := L.le_opNorm₂ u v
-  have h2 : ‖Complex.I • L (Complex.I • u) v‖ ≤ ‖L‖ * ‖u‖ * ‖v‖ := by
-    simpa [norm_smul] using L.le_opNorm₂ (Complex.I • u) v
-  have h3 : ‖Complex.I • L u (Complex.I • v)‖ ≤ ‖L‖ * ‖u‖ * ‖v‖ := by
-    simpa [norm_smul] using L.le_opNorm₂ u (Complex.I • v)
-  have h4 : ‖L (Complex.I • u) (Complex.I • v)‖ ≤ ‖L‖ * ‖u‖ * ‖v‖ := by
-    simpa [norm_smul] using L.le_opNorm₂ (Complex.I • u) (Complex.I • v)
-  have hsign (p : Prop) [Decidable p] (x : F) : ‖(if p then (1 : ℝ) else -1) • x‖ = ‖x‖ := by
+  have h (x : E) (y : E') (hx : ‖x‖ = ‖u‖) (hy : ‖y‖ = ‖v‖) : ‖L x y‖ ≤ ‖L‖ * ‖u‖ * ‖v‖ :=
+    hx ▸ hy ▸ L.le_opNorm₂ x y
+  have hs (p : Prop) [Decidable p] (w : F) : ‖(if p then (1 : ℝ) else -1) • w‖ = ‖w‖ := by
     split_ifs <;> simp
-  rw [sesquiPart_apply, norm_smul, Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ 4⁻¹)]
-  calc
-    (4⁻¹ : ℝ) * ‖_‖
-        ≤ 4⁻¹ * (‖L u v‖ +
-            ‖(if b₁ then (1 : ℝ) else -1) • (Complex.I • L (Complex.I • u) v)‖ +
-            ‖(if b₂ then (1 : ℝ) else -1) • (Complex.I • L u (Complex.I • v))‖ +
-            ‖(if b₁ = b₂ then (1 : ℝ) else -1) • L (Complex.I • u) (Complex.I • v)‖) := by
-          gcongr
-          exact (norm_sub_le _ _).trans
-            (by gcongr; exact (norm_add_le _ _).trans (by gcongr; exact norm_add_le _ _))
-    _ ≤ 4⁻¹ * (‖L‖ * ‖u‖ * ‖v‖ + ‖L‖ * ‖u‖ * ‖v‖ + ‖L‖ * ‖u‖ * ‖v‖ + ‖L‖ * ‖u‖ * ‖v‖) := by
-          rw [hsign, hsign, hsign]; gcongr
-    _ = ‖L‖ * ‖u‖ * ‖v‖ := by ring
+  rw [sesquiPart_apply, norm_smul, Real.norm_of_nonneg (by norm_num : (0 : ℝ) ≤ 4⁻¹)]
+  set t₁ := (if b₁ then (1 : ℝ) else -1) • (Complex.I • L (Complex.I • u) v)
+  set t₂ := (if b₂ then (1 : ℝ) else -1) • (Complex.I • L u (Complex.I • v))
+  set t₃ := (if b₁ = b₂ then (1 : ℝ) else -1) • L (Complex.I • u) (Complex.I • v)
+  have ht₁ : ‖t₁‖ ≤ ‖L‖ * ‖u‖ * ‖v‖ := by
+    rw [hs, norm_smul, Complex.norm_I, one_mul]; exact h _ _ (by simp [norm_smul]) rfl
+  have ht₂ : ‖t₂‖ ≤ ‖L‖ * ‖u‖ * ‖v‖ := by
+    rw [hs, norm_smul, Complex.norm_I, one_mul]; exact h _ _ rfl (by simp [norm_smul])
+  have ht₃ : ‖t₃‖ ≤ ‖L‖ * ‖u‖ * ‖v‖ :=
+    (hs _ _).trans_le (h _ _ (by simp [norm_smul]) (by simp [norm_smul]))
+  linarith [norm_sub_le (L u v + t₁ + t₂) t₃, norm_add_le (L u v + t₁) t₂, norm_add_le (L u v) t₁,
+    h u v rfl rfl]
 
 /-- Each `sesquiPart` projection depends continuously on the bilinear operator. -/
 theorem continuous_sesquiPart (b₁ b₂ : Bool) :

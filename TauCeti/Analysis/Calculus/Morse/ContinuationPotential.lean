@@ -64,7 +64,7 @@ base potential `C h`. If `|∂ₜ f| ≤ K t (1 - t²)` with `0 ≤ K < C`, then
 `C / (C + K)` and `C / (C - K)`, and it is `1` wherever `f` is independent of the time, so the two
 fields agree near the critical points. Being a bounded positive multiple, the rescaled field has
 the same oriented trajectories, reparametrized
-(`TauCeti.Geometry.Manifold.Morse.ContinuationPotential`).
+(`TauCeti.Geometry.Manifold.Morse.ContinuationPotential.Basic`).
 
 ## Main declarations
 
@@ -306,7 +306,7 @@ theorem exists_forall_le_mul_one_sub_sq {M : ℝ} (hδ : 0 < δ)
     (h₀ : ∀ x ∈ s, ∀ t ∈ Ioo 0 1, t ∉ Icc δ (1 - δ) → g x t ≤ 0) :
     ∃ K, 0 ≤ K ∧ ∀ x ∈ s, ∀ t ∈ Ioo 0 1, g x t ≤ K * t * (1 - t ^ 2) := by
   refine ⟨max M 0 / δ ^ 2, by positivity, fun x hx t ht ↦ ?_⟩
-  have hpos : 0 < t * (1 - t ^ 2) := mul_pos ht.1 (by nlinarith [ht.1, ht.2])
+  have hpos : 0 < t * (1 - t ^ 2) := mul_one_sub_sq_pos_of_mem_Ioo ht
   rw [mul_assoc]
   by_cases hti : t ∈ Icc δ (1 - δ)
   · calc g x t ≤ max M 0 := (hM x hx t hti).trans (le_max_left _ _)
@@ -416,7 +416,7 @@ private theorem le_intervalBaseTimeCoordinate_sub {K : ℝ}
   have hmono : Monotone w := by
     refine monotone_of_deriv_nonneg (fun s ↦ (hw s).differentiableAt) fun s ↦ ?_
     rw [(hw s).deriv]
-    have hpos : 0 < τ s * (1 - τ s ^ 2) := mul_pos (hτI s).1 (by nlinarith [(hτI s).1, (hτI s).2])
+    have hpos : 0 < τ s * (1 - τ s ^ 2) := mul_one_sub_sq_pos_of_mem_Ioo (hτI s)
     rw [sub_nonneg, le_mul_inv_iff₀ hpos]
     nlinarith [hb s]
   have := hmono hs
@@ -545,7 +545,7 @@ theorem continuationRescaling_mem_Icc (hK : 0 ≤ K) (hKC : K < C)
   have _ : 0 < C := hK.trans_lt hKC
   by_cases ht : z.2 ∈ Ioo 0 1
   · set b := deriv (fun s ↦ f (z.1, s)) z.2
-    have hw : 0 < z.2 * (1 - z.2 ^ 2) := mul_pos ht.1 (by nlinarith [ht.1, ht.2])
+    have hw : 0 < z.2 * (1 - z.2 ^ 2) := mul_one_sub_sq_pos_of_mem_Ioo ht
     obtain ⟨hb₁, hb₂⟩ := abs_le.1 (hb ht)
     -- The time component is at least `(C - K) t (1 - t²) > 0`.
     have hden : 0 < C * z.2 * (1 - z.2 ^ 2) - b := by nlinarith

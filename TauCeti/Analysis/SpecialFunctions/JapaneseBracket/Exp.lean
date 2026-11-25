@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+public import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.Analysis.Calculus.Deriv.Inv
-import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # Smooth radial exponential weights
@@ -19,6 +20,10 @@ times the weight, and by an arbitrarily small multiple of the weight on a fixed 
 large. The usual choice is `b = 1`, and changing `b` changes the weight by at most a constant
 factor. The truncated weights `W / (1 + ε W)`, `ε > 0`, are smooth, lie between `0` and
 `min W (1 / ε)`, and have logarithmic gradient at most that of `W`.
+
+The weights `exp(c √(b + ‖z‖²))` and `exp(-c √(b + ‖z‖²))` are reciprocal, so either can be moved
+across the `L²` pairing: `|⟪e, f⟫| ≤ ‖exp(-c ρ) e‖₂ ‖exp(c ρ) f‖₂`
+(`abs_inner_le_of_memLp_exp_mul_smul`).
 -/
 
 public section
@@ -59,9 +64,9 @@ theorem norm_fderiv_exp_mul_sqrt_add_norm_sq (c : ℝ) (hb : 0 < b) (z : E) :
 
 omit [InnerProductSpace ℝ E] in
 /-- The factor `‖z‖ / √(b + ‖z‖²)` in the logarithmic gradient is at most `1`. -/
-theorem norm_div_sqrt_add_norm_sq_le_one (hb : 0 ≤ b) (z : E) : ‖z‖ / √(b + ‖z‖ ^ 2) ≤ 1 :=
-  div_le_one_of_le₀ ((Real.le_sqrt (norm_nonneg z) (by positivity)).2 (by linarith))
-    (Real.sqrt_nonneg _)
+theorem norm_div_sqrt_add_norm_sq_le_one (hb : 0 ≤ b) (z : E) : ‖z‖ / √(b + ‖z‖ ^ 2) ≤ 1 := by
+  simpa only [abs_div, abs_norm, abs_of_nonneg (Real.sqrt_nonneg _), add_comm] using
+    Real.abs_div_sqrt_sq_add_le_one hb ‖z‖
 
 /-- The logarithmic gradient of the regularized radial exponential weight has norm
 at most `|c|`, with no restriction on the sign of `c`. -/
@@ -161,5 +166,33 @@ theorem sq_exp_mul_sqrt_add_norm_sq_le (c s t : ℝ) (z : E) :
       Real.exp (|c| * √|s - t|) ^ 2 * Real.exp (c * √(t + ‖z‖ ^ 2)) ^ 2 := by
   rw [← mul_pow]
   exact pow_le_pow_left₀ (Real.exp_pos _).le (exp_mul_sqrt_add_norm_sq_le c s t z) 2
+
+section L2
+
+open MeasureTheory
+open scoped RealInnerProductSpace
+
+variable {X F : Type*} [Norm X] [MeasurableSpace X] {μ : Measure X}
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- **Moving an exponential weight across the `L²` pairing.** Let `ρ(z) = √(b + ‖z‖²)` and let
+`e`, `f` be `L²` functions such that `exp(-c ρ) e` and `exp(c ρ) f` are square integrable. Then
+the `L²` pairing satisfies `|⟪e, f⟫| ≤ ‖exp(-c ρ) e‖₂ ‖exp(c ρ) f‖₂`. -/
+theorem abs_inner_le_of_memLp_exp_mul_smul {c : ℝ} {e f : Lp F 2 μ}
+    (he : MemLp (fun z ↦ Real.exp (-c * √(b + ‖z‖ ^ 2)) • e z) 2 μ)
+    (hf : MemLp (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • f z) 2 μ) :
+    |⟪e, f⟫| ≤ (eLpNorm (fun z ↦ Real.exp (-c * √(b + ‖z‖ ^ 2)) • e z) 2 μ).toReal *
+      (eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • f z) 2 μ).toReal := by
+  -- Moving the weight across the pairing: `⟪e, f⟫ = ⟪exp(-c ρ) e, exp(c ρ) f⟫` in `L²`.
+  have hinner : ⟪e, f⟫ = ⟪he.toLp _, hf.toLp _⟫ := by
+    rw [L2.inner_def, L2.inner_def]
+    refine integral_congr_ae ?_
+    filter_upwards [he.coeFn_toLp, hf.coeFn_toLp] with z hez hfz
+    simp only [hez, hfz, real_inner_smul_left, real_inner_smul_right, ← mul_assoc, ← Real.exp_add,
+      ← add_mul, add_neg_cancel, zero_mul, Real.exp_zero, one_mul]
+  rw [hinner, ← Lp.norm_toLp _ he, ← Lp.norm_toLp _ hf]
+  exact abs_real_inner_le_norm _ _
+
+end L2
 
 end TauCeti
