@@ -251,6 +251,19 @@ theorem signedPointTwistFactor_mul {x z : X} {s b b' b'' : Bool} (hb : z ∈ poi
     exact pointTwistFactor_mul hb'' hb' hb
   · exact pointTwistFactor_mul hb hb' hb''
 
+/-- The signed scalar transition function with the opposite sign is the reversed one. -/
+@[simp] theorem signedPointTwistFactor_not (x : X) (s b b' : Bool) :
+    signedPointTwistFactor x (!s) b b' = signedPointTwistFactor x s b' b := by
+  cases s <;> simp only [Bool.not_false, Bool.not_true, signedPointTwistFactor_true,
+    signedPointTwistFactor_false]
+
+/-- The signed scalar transition functions in the two directions between two pieces containing
+`z` are inverse to each other. -/
+theorem signedPointTwistFactor_mul_swap {x z : X} {s b b' : Bool}
+    (hb : z ∈ pointTwistBaseSet x b) (hb' : z ∈ pointTwistBaseSet x b') :
+    signedPointTwistFactor x s b' b z * signedPointTwistFactor x s b b' z = 1 := by
+  rw [signedPointTwistFactor_mul hb hb' hb, signedPointTwistFactor_self]
+
 variable {n : ℕ∞ω} [IsManifold 𝓘(ℂ) n X] in
 theorem contMDiffOn_signedPointTwistFactor (x : X) (s b b' : Bool) :
     ContMDiffOn 𝓘(ℂ) 𝓘(ℂ) n (signedPointTwistFactor x s b b')
