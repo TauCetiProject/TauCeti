@@ -16,17 +16,19 @@ import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
 
 Let `Ω ⊆ ℝⁿ` be open, let `Γ` be a set disjoint from `Ω`, typically a part of its boundary, and
 let `H¹_Γ(Ω)` be the space `TauCeti.w1pVanishingOnSubmodule mu Ω 2 Γ` of Sobolev functions
-vanishing on `Γ`. For the divergence-form operator `L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u` with energy
-form `a(u, v)`, a real number `κ` is a **mixed eigenvalue** (`TauCeti.PDE.IsMixedEigenvalue`) when
-some nonzero `u ∈ H¹_Γ(Ω)` satisfies
+vanishing on `Γ`: the closure in `H¹(Ω)` of the restrictions of test functions supported away
+from `closure Γ`, so it depends on `Γ` only through `closure Γ`. For the divergence-form operator
+`L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u` with energy form `a(u, v)`, a real number `κ` is a
+**mixed eigenvalue** (`TauCeti.PDE.IsMixedEigenvalue`) when some nonzero `u ∈ H¹_Γ(Ω)` satisfies
 
 `a(u, v) = κ ∫_Ω u v` for every `v ∈ H¹_Γ(Ω)`.
 
-This is the weak form of `L u = κ u` in `Ω` with the Dirichlet condition `u = 0` on `Γ` and the
-natural (conormal) condition on the rest of the boundary, which the test functions `v` do not
-constrain there. For `Γ = ∂Ω` it is the Dirichlet eigenvalue problem
-(`TauCeti.PDE.isMixedEigenvalue_frontier_iff`). For `Γ = ∅` it is the Neumann eigenvalue problem
-whenever `H¹_∅(Ω) = H¹(Ω)`, as on bounded Lipschitz domains
+This is the weak form of `L u = κ u` in `Ω` with the Dirichlet condition `u = 0` on `closure Γ`,
+which may be larger than `Γ`, and, formally (for solutions and boundaries regular enough for the
+conormal derivative to make sense), the natural (conormal) condition on the remaining boundary
+`∂Ω \ closure Γ`, where the test functions `v` are not constrained. For `Γ = ∂Ω` it is the
+Dirichlet eigenvalue problem (`TauCeti.PDE.isMixedEigenvalue_frontier_iff`). For `Γ = ∅` it is
+the Neumann eigenvalue problem whenever `H¹_∅(Ω) = H¹(Ω)`, as on bounded Lipschitz domains
 (`TauCeti.w1pVanishingOnSubmodule_empty_of_isLipschitzDomainWith`).
 
 Unlike the Dirichlet case, the energy form need not be coercive on `H¹_Γ(Ω)`: for `-Δ` and
@@ -126,13 +128,16 @@ local instance : CompleteSpace (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodu
 
 variable (mu Omega Γ a b c) in
 /-- **A mixed eigenvalue** of the divergence-form operator `L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u`
-on `Ω`, with the Dirichlet condition on `Γ`: a real number `κ` for which some nonzero
-`u ∈ H¹_Γ(Ω)` satisfies
+on `Ω`, with the Dirichlet condition on `closure Γ`: a real number `κ` for which some
+nonzero `u ∈ H¹_Γ(Ω)` satisfies
 
 `a(u, v) = κ ∫_Ω u v` for every `v ∈ H¹_Γ(Ω)`,
 
-where `a` is the energy form of `L` and `H¹_Γ(Ω)` is `TauCeti.w1pVanishingOnSubmodule`. The test
-functions are unconstrained off `Γ`, which imposes the natural boundary condition there. For
+where `a` is the energy form of `L` and `H¹_Γ(Ω)` is `TauCeti.w1pVanishingOnSubmodule`, the closure
+of the test functions supported away from `closure Γ`. So the Dirichlet condition is imposed on
+`closure Γ`, which may be larger than `Γ`. The test functions are unconstrained on the remaining
+boundary `∂Ω \ closure Γ`, where, for regular enough solutions and boundaries, this weak
+formulation encodes the natural (conormal) boundary condition. For
 `Γ = ∂Ω` this is `TauCeti.PDE.IsDirichletEigenvalue`, and for `Γ = ∅`, on a domain where
 `H¹_∅(Ω) = H¹(Ω)`, the Neumann eigenvalue problem. -/
 def IsMixedEigenvalue (kappa : ℝ) : Prop :=
