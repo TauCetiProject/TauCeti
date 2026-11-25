@@ -33,10 +33,11 @@ and rescaled termwise differentiated series are absolutely summable inside the d
 `FormalMultilinearSeries.summable_norm_mul_pow_of_lt_radius`, and
 `HasFPowerSeriesOnBall.summable_norm_mul_pow_ofScalars`), and at zero the `n`-th iterated
 derivative equals `n! * c n` (`FormalMultilinearSeries.iteratedDeriv_ofScalarsSum_zero`),
-recovering `c n` when `(n.factorial : 𝕜) ≠ 0`. Termwise differentiation of a scalar series
-represents the derivative on the same ball (`HasFPowerSeriesOnBall.deriv_ofScalars`), and gives
-the Euler operators `y * f' y = ∑ n * c n * y ^ n`
-(`HasFPowerSeriesOnBall.hasSum_mul_deriv_ofScalars`) and
+recovering `c n` when `(n.factorial : 𝕜) ≠ 0`. Correspondingly, a real series summable on
+`[0, R)` remains summable inside `R` when multiplied by the index `n`
+(`TauCeti.summable_nat_mul_of_forall_lt`). Termwise differentiation of a scalar series represents
+the derivative on the same ball (`HasFPowerSeriesOnBall.deriv_ofScalars`), and gives the Euler
+operators `y * f' y = ∑ n * c n * y ^ n` (`HasFPowerSeriesOnBall.hasSum_mul_deriv_ofScalars`) and
 `y ^ 2 * f'' y = ∑ n * (n - 1) * c n * y ^ n`
 (`HasFPowerSeriesOnBall.hasSum_sq_mul_deriv_deriv_ofScalars`).
 
@@ -649,6 +650,23 @@ theorem mkPiRingSeries_eq_ofScalars {𝕜 : Type*} [Field 𝕜] [TopologicalSpac
   ext1 n
   rw [mkPiRingSeries_def, ← (FormalMultilinearSeries.ofScalars 𝕜 c n).mkPiRing_apply_one_eq_self]
   simp [FormalMultilinearSeries.ofScalars]
+
+/-- Multiplying a real sequence by the index `s` preserves weighted summability strictly inside
+the radius `R`. -/
+theorem summable_nat_mul_of_forall_lt {f : ℕ → ℝ} {R : ℝ}
+    (hf : ∀ r : ℝ, 0 ≤ r → r < R → Summable fun s : ℕ => f s * r ^ s)
+    {r : ℝ} (hr0 : 0 ≤ r) (hr : r < R) :
+    Summable fun s : ℕ => (s : ℝ) * f s * r ^ s := by
+  have hR_pos : 0 < R := hr0.trans_lt hr
+  have hrad : ENNReal.ofReal R ≤ (FormalMultilinearSeries.ofScalars ℝ f).radius := by
+    refine FormalMultilinearSeries.le_radius_ofScalars_of_summable f fun z _ hz => ?_
+    rw [← ofReal_norm, ENNReal.ofReal_lt_ofReal_iff hR_pos] at hz
+    exact ((hf ‖z‖ (norm_nonneg z) hz).abs.congr fun s => by
+      simp only [abs_mul, abs_pow, Real.norm_eq_abs, abs_abs]).of_abs
+  have hnorm : ‖r‖ₑ < (FormalMultilinearSeries.ofScalars ℝ f).radius := by
+    refine lt_of_lt_of_le ?_ hrad
+    rwa [← ofReal_norm, Real.norm_of_nonneg hr0, ENNReal.ofReal_lt_ofReal_iff hR_pos]
+  exact (FormalMultilinearSeries.summable_norm_natCast_mul_ofScalars f hnorm).of_norm
 
 /-- Shifting a scalar power series `FormalMultilinearSeries.ofScalarsSum c` by `z₀` gives a
 `HasFPowerSeriesOnBall` expansion around `z₀`, provided its convergence radius is positive. -/
