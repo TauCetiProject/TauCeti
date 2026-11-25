@@ -13,7 +13,7 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Dimension.Finite
 import Mathlib.RingTheory.Finiteness.Prod
 import TauCeti.Algebra.Category.ModuleCat.Biproducts
-import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 
 /-!
 # Finrank of zero objects, coproducts, biproducts and short exact sequences in `ModuleCat`

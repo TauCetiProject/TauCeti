@@ -69,13 +69,13 @@ lemma exists_scaled_cusp_reduction (γ : SL(2, ℤ)) {t : ℕ} :
   obtain ⟨δ, hδa, hδc⟩ := (Int.isCoprime_iff_gcd_eq_one.mpr hac).exists_SL2_col 0
   exact ⟨δ, by simpa [hδa, hgcd] using ha, by simpa [hδc, hgcd] using hc⟩
 
-/-- Reducing the scaled cusp leaves an upper-triangular factor with lower-right entry
-`t / gcd(c,t)`. -/
+/-- Reducing the scaled cusp leaves an upper-triangular factor with diagonal
+`(gcd(c,t), t / gcd(c,t))`. -/
 lemma scaled_cusp_upperTriangular (γ δ : SL(2, ℤ)) {t : ℕ} [NeZero t]
     (ha : (t : ℤ) * γ 0 0 = δ 0 0 * Int.gcd (γ 1 0) t)
     (hc : γ 1 0 = δ 1 0 * Int.gcd (γ 1 0) t) :
     let β := (mapGL ℝ δ)⁻¹ * (scaleGL t * mapGL ℝ γ)
-    β 1 0 = 0 ∧ β 1 1 = (t : ℝ) / Int.gcd (γ 1 0) t := by
+    β 0 0 = Int.gcd (γ 1 0) t ∧ β 1 0 = 0 ∧ β 1 1 = (t : ℝ) / Int.gcd (γ 1 0) t := by
   intro β
   have ha' : (t : ℝ) * γ 0 0 = (δ 0 0 : ℝ) * Int.gcd (γ 1 0) t := by
     exact_mod_cast ha
@@ -100,7 +100,7 @@ lemma scaled_cusp_upperTriangular (γ δ : SL(2, ℤ)) {t : ℕ} [NeZero t]
   have hg : (Int.gcd (γ 1 0) t : ℝ) ≠ 0 := by
     exact_mod_cast (Int.gcd_pos_of_ne_zero_right (γ 1 0)
       (Nat.cast_ne_zero.mpr (NeZero.ne t))).ne'
-  exact ⟨h10, (eq_div_iff hg).mpr (by simpa [mul_comm] using hprod)⟩
+  exact ⟨h00, h10, (eq_div_iff hg).mpr (by simpa [mul_comm] using hprod)⟩
 
 end Matrix.SpecialLinearGroup
 
@@ -119,7 +119,7 @@ theorem constantTermAt_levelRaise (f : ModularForm Γ k)
     constantTermAt γ (TauCeti.ModularForm.levelRaise t h f) =
       ((Int.gcd (γ 1 0) t : ℂ) / t) ^ k * constantTermAt δ f := by
   let β := (mapGL ℝ δ)⁻¹ * (TauCeti.scaleGL t * mapGL ℝ γ)
-  obtain ⟨h10, h11⟩ := γ.scaled_cusp_upperTriangular δ ha hc
+  obtain ⟨-, h10, h11⟩ := γ.scaled_cusp_upperTriangular δ ha hc
   have hdet : (β.det : ℝ) = t := by simp [β]
   have hdetpos : 0 < (β : Matrix (Fin 2) (Fin 2) ℝ).det := by
     rw [← GeneralLinearGroup.val_det_apply, hdet]
