@@ -305,15 +305,15 @@ theorem adjoin_range_e : Algebra.adjoin R (Set.range (e (R := R) τ)) = ⊤ := b
 
 /-- The stages exhaust the balanced projection algebra. -/
 theorem iSup_stage : ⨆ n, stage R τ n = ⊤ := by
-  rw [eq_top_iff, ← adjoin_range_e, Algebra.adjoin_le_iff, Set.range_subset_iff]
-  exact fun i ↦ le_iSup (stage R τ) (i + 2) (e_mem_stage (by omega))
+  rw [← adjoin_range_e, ← Algebra.iSup_adjoinPrefix]
+  exact le_antisymm (iSup_mono' fun n ↦ ⟨n - 1, le_rfl⟩)
+    (iSup_mono' fun n ↦ ⟨n + 1, (stage_add_one n).ge⟩)
 
 /-- Every element of the balanced projection algebra lies in some finite stage. -/
 theorem exists_mem_stage (x : BalancedProjectionAlgebra R τ) : ∃ n, x ∈ stage R τ n := by
-  have hx : x ∈ ((⨆ n, stage R τ n : Subalgebra R _) : Set (BalancedProjectionAlgebra R τ)) := by
-    rw [iSup_stage]
-    trivial
-  rwa [Subalgebra.coe_iSup_of_directed stage_mono.directed_le, Set.mem_iUnion] at hx
+  obtain ⟨n, hn⟩ := Algebra.exists_mem_adjoinPrefix (g := e τ)
+    (adjoin_range_e (R := R) ▸ Algebra.mem_top)
+  exact ⟨n + 1, by rwa [stage_add_one]⟩
 
 /-- The range of an algebra map out of the balanced projection algebra is the subalgebra generated
 by the images of the generators. -/

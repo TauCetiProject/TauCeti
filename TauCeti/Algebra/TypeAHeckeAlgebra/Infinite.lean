@@ -339,15 +339,15 @@ theorem stage_eq_bot_of_le_one {n : ℕ} (h : n ≤ 1) : stage R q n = ⊥ := by
 
 /-- The stages exhaust the infinite type-A Hecke algebra. -/
 theorem iSup_stage : ⨆ n, stage R q n = ⊤ := by
-  rw [eq_top_iff, ← adjoin_range_T, Algebra.adjoin_le_iff, Set.range_subset_iff]
-  exact fun i ↦ le_iSup (stage R q) (i + 2) (T_mem_stage (by omega))
+  rw [← adjoin_range_T, ← Algebra.iSup_adjoinPrefix]
+  exact le_antisymm (iSup_mono' fun n ↦ ⟨n - 1, le_rfl⟩)
+    (iSup_mono' fun n ↦ ⟨n + 1, (stage_add_one n).ge⟩)
 
 /-- Every element of the infinite type-A Hecke algebra lies in some finite stage. -/
 theorem exists_mem_stage (x : InfiniteTypeAHeckeAlgebra R q) : ∃ n, x ∈ stage R q n := by
-  have hx : x ∈ ((⨆ n, stage R q n : Subalgebra R _) : Set (InfiniteTypeAHeckeAlgebra R q)) := by
-    rw [iSup_stage]
-    trivial
-  rwa [Subalgebra.coe_iSup_of_directed stage_mono.directed_le, Set.mem_iUnion] at hx
+  obtain ⟨n, hn⟩ := Algebra.exists_mem_adjoinPrefix (g := T q)
+    (adjoin_range_T (R := R) ▸ Algebra.mem_top)
+  exact ⟨n + 1, by rwa [stage_add_one]⟩
 
 /-- A generator commutes with the stage of the first `n` strands when it crosses none of
 them. -/
