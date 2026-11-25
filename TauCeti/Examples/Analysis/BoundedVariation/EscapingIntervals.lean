@@ -17,8 +17,8 @@ mass, the intervals `U_k = (k, k + 1)` all have perimeter `2`. Their indicators 
 `L¹_loc`: every compact set meets `U_k` in a null set, in fact the empty set, for large `k`. They
 do not converge to `0` in `L¹`, since each `U_k` has measure `1`, and no subsequence converges in
 `L¹` to the indicator of any set, since `U_j` and `U_k` are disjoint for `j ≠ k`, so the distance
-between their indicators is `2`. So the compactness statement of the
-GaussianIsoperimetryAndClusters roadmap, §2.4, needs the finite total mass `μ(E) < ∞`.
+between their indicators is `2`. So compactness in `L¹(μ)` of sets with bounded weighted perimeter
+needs the finite total mass `μ(E) < ∞`.
 -/
 
 open Filter MeasureTheory Set TopologicalSpace
@@ -47,7 +47,7 @@ example {K : Set ℝ} (hK : IsCompact K) :
 /-- The indicators of `(k, k + 1)` do not converge to `0` in `L¹`: each interval has measure
 `1`. -/
 example (k : ℕ) : volume (Ioo (k : ℝ) (k + 1) ∆ ∅) = 1 := by
-  rw [show Ioo (k : ℝ) (k + 1) ∆ ∅ = Ioo (k : ℝ) (k + 1) from symmDiff_bot _, Real.volume_Ioo]
+  rw [← bot_eq_empty, symmDiff_bot, Real.volume_Ioo]
   simp
 
 /-- No subsequence of the indicators of `(k, k + 1)` converges in `L¹` to the indicator of any
