@@ -353,6 +353,7 @@ theorem mapCompactlySupportedEquiv_ofSupportedIn (K : TopologicalSpace.Compacts 
     coe_mapSupportedInEquiv]
 
 /-- Inverse transport also commutes with the inclusion of a fixed-compact support stage. -/
+@[simp]
 theorem mapCompactlySupportedEquiv_symm_ofSupportedIn (K : TopologicalSpace.Compacts M)
     (s : supportedIn I G n W K) :
     (mapCompactlySupportedEquiv e he he').symm (ofSupportedIn K s) =

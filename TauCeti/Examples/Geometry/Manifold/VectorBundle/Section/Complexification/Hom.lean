@@ -137,11 +137,13 @@ example : ∃ T : BundleTest 𝓘(ℝ, ℝ) ℝ (Bundle.Trivial ℝ ℝ) ≃L[�
     (by
       intro i s x
       rw [hsec, LinearEquiv.neg_apply, map_neg]
-      rfl)
+      simp only [neg_apply, ContinuousLinearMap.id_apply, ContMDiffMap.coe_neg,
+        Pi.neg_apply])
     (by
       intro i s x
       rw [hsec, LinearEquiv.symm_neg, LinearEquiv.neg_apply, map_neg]
-      rfl)
+      simp only [neg_apply, ContinuousLinearMap.id_apply, ContMDiffMap.coe_neg,
+        Pi.neg_apply])
   obtain ⟨s, hs⟩ := BundleTest.exists_apply_eq (I := 𝓘(ℝ, ℝ)) (F := ℝ)
     (V := Bundle.Trivial ℝ ℝ) 0 1
   refine ⟨T, s, ?_⟩

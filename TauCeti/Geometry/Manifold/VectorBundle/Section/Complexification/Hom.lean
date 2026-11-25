@@ -49,21 +49,56 @@ variable {M : Type uM} [TopologicalSpace M]
   {H : Type uH} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [ChartedSpace H M] {n : ℕ∞ω}
 
+/-- The fibrewise Hom complexification comparison `bundleHomComplexificationEquiv`, as the real
+linear equivalence of fibres consumed by section transport (`ContMDiffSection.mapEquiv`). -/
+def _root_.TauCeti.bundleHomComplexificationLinearEquiv (x : M) :
+    (ℂ ⊗[ℝ] (V x →L[ℝ] L x)) ≃ₗ[ℝ] ((ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x)) :=
+  (bundleHomComplexificationEquiv (F := F) (G := G) (V := V) (L := L)
+    x).toLinearEquiv.restrictScalars ℝ
+
+@[simp]
+theorem _root_.TauCeti.bundleHomComplexificationLinearEquiv_apply (x : M)
+    (u : ℂ ⊗[ℝ] (V x →L[ℝ] L x)) :
+    bundleHomComplexificationLinearEquiv (F := F) (G := G) x u =
+      bundleHomComplexificationEquiv (F := F) (G := G) x u :=
+  (rfl)
+
+@[simp]
+theorem _root_.TauCeti.bundleHomComplexificationLinearEquiv_symm_apply (x : M)
+    (u : (ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x)) :
+    (bundleHomComplexificationLinearEquiv (F := F) (G := G) x).symm u =
+      (bundleHomComplexificationEquiv (F := F) (G := G) x).symm u :=
+  (rfl)
+
+/-- The fibrewise Hom comparison is smooth on total spaces, in the form `mapEquiv` consumes. -/
+theorem _root_.TauCeti.contMDiff_bundleHomComplexificationLinearEquiv :
+    ContMDiff (I.prod 𝓘(ℝ, Complexification (F →L[ℝ] G)))
+      (I.prod 𝓘(ℝ, Complexification F →L[ℂ] Complexification G)) n
+      (fun p : TotalSpace (Complexification (F →L[ℝ] G)) (fun x ↦ ℂ ⊗[ℝ] (V x →L[ℝ] L x)) ↦
+        (⟨p.proj, bundleHomComplexificationLinearEquiv (F := F) (G := G) p.proj p.snd⟩ :
+          TotalSpace (Complexification F →L[ℂ] Complexification G)
+            (fun x ↦ (ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x)))) :=
+  contMDiff_bundleHomComplexificationEquiv
+
+/-- The inverse fibrewise Hom comparison is smooth on total spaces, in the form `mapEquiv`
+consumes. -/
+theorem _root_.TauCeti.contMDiff_bundleHomComplexificationLinearEquiv_symm :
+    ContMDiff (I.prod 𝓘(ℝ, Complexification F →L[ℂ] Complexification G))
+      (I.prod 𝓘(ℝ, Complexification (F →L[ℝ] G))) n
+      (fun p : TotalSpace (Complexification F →L[ℂ] Complexification G)
+          (fun x ↦ (ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x)) ↦
+        (⟨p.proj, (bundleHomComplexificationLinearEquiv (F := F) (G := G) p.proj).symm p.snd⟩ :
+          TotalSpace (Complexification (F →L[ℝ] G)) (fun x ↦ ℂ ⊗[ℝ] (V x →L[ℝ] L x)))) :=
+  contMDiff_bundleHomComplexificationEquiv_symm
+
 /-- Complexification of real bundle Hom sections as complex-linear Hom sections. -/
 def homComplexificationEquiv :
     Cₛ^n⟮I; Complexification (F →L[ℝ] G), fun x ↦ ℂ ⊗[ℝ] (V x →L[ℝ] L x)⟯ ≃ₗ[ℝ]
       Cₛ^n⟮I; Complexification F →L[ℂ] Complexification G,
         fun x ↦ (ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x)⟯ :=
-  mapEquiv (fun x ↦ (bundleHomComplexificationEquiv (F := F) (G := G) (V := V) (L := L)
-    x).toLinearEquiv.restrictScalars ℝ)
-    (by simpa only [LinearEquiv.restrictScalars_apply, ContinuousLinearEquiv.coe_toLinearEquiv]
-      using
-      (contMDiff_bundleHomComplexificationEquiv (F := F) (G := G) (V := V) (L := L) (IB := I) (n
-        := n)))
-    (by simpa only [LinearEquiv.restrictScalars_symm_apply,
-      ContinuousLinearEquiv.coe_symm_toLinearEquiv] using
-      (contMDiff_bundleHomComplexificationEquiv_symm (F := F) (G := G) (V := V) (L := L) (IB := I)
-        (n := n)))
+  mapEquiv (bundleHomComplexificationLinearEquiv (F := F) (G := G))
+    contMDiff_bundleHomComplexificationLinearEquiv
+    contMDiff_bundleHomComplexificationLinearEquiv_symm
 
 /-- The Hom coefficient identification on sections supported in any given set. -/
 def SupportedIn.homComplexificationEquiv (K : Set M) :
@@ -72,20 +107,11 @@ def SupportedIn.homComplexificationEquiv (K : Set M) :
     supportedIn I (Complexification F →L[ℂ] Complexification G) n
       (fun x ↦ (ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x)) K :=
   mapSupportedInEquiv (I := I) (n := n)
-    (F := Complexification (F →L[ℝ] G))
-    (G := Complexification F →L[ℂ] Complexification G)
-    (V := fun x ↦ ℂ ⊗[ℝ] (V x →L[ℝ] L x))
-    (W := fun x ↦ (ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x))
-    (fun x ↦ (bundleHomComplexificationEquiv (F := F) (G := G) (V := V) (L := L)
-      x).toLinearEquiv.restrictScalars ℝ)
-    (by simpa only [LinearEquiv.restrictScalars_apply, ContinuousLinearEquiv.coe_toLinearEquiv]
-      using
-      (contMDiff_bundleHomComplexificationEquiv (F := F) (G := G) (V := V) (L := L) (IB := I) (n
-        := n)))
-    (by simpa only [LinearEquiv.restrictScalars_symm_apply,
-      ContinuousLinearEquiv.coe_symm_toLinearEquiv] using
-      (contMDiff_bundleHomComplexificationEquiv_symm (F := F) (G := G) (V := V) (L := L) (IB := I)
-        (n := n))) K
+    (F := Complexification (F →L[ℝ] G)) (G := Complexification F →L[ℂ] Complexification G)
+    (V := fun x ↦ ℂ ⊗[ℝ] (V x →L[ℝ] L x)) (W := fun x ↦ (ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x))
+    (bundleHomComplexificationLinearEquiv (F := F) (G := G))
+    contMDiff_bundleHomComplexificationLinearEquiv
+    contMDiff_bundleHomComplexificationLinearEquiv_symm K
 
 /-- The Hom coefficient identification on compactly supported sections. -/
 def CompactlySupported.homComplexificationEquiv :
@@ -93,16 +119,9 @@ def CompactlySupported.homComplexificationEquiv :
       (fun x ↦ ℂ ⊗[ℝ] (V x →L[ℝ] L x)) ≃ₗ[ℝ]
     compactlySupported I (Complexification F →L[ℂ] Complexification G) n
       (fun x ↦ (ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x)) :=
-  mapCompactlySupportedEquiv (fun x ↦ (bundleHomComplexificationEquiv (F := F) (G := G) (V := V)
-    (L := L) x).toLinearEquiv.restrictScalars ℝ)
-    (by simpa only [LinearEquiv.restrictScalars_apply, ContinuousLinearEquiv.coe_toLinearEquiv]
-      using
-      (contMDiff_bundleHomComplexificationEquiv (F := F) (G := G) (V := V) (L := L) (IB := I) (n
-        := n)))
-    (by simpa only [LinearEquiv.restrictScalars_symm_apply,
-      ContinuousLinearEquiv.coe_symm_toLinearEquiv] using
-      (contMDiff_bundleHomComplexificationEquiv_symm (F := F) (G := G) (V := V) (L := L) (IB := I)
-        (n := n)))
+  mapCompactlySupportedEquiv (bundleHomComplexificationLinearEquiv (F := F) (G := G))
+    contMDiff_bundleHomComplexificationLinearEquiv
+    contMDiff_bundleHomComplexificationLinearEquiv_symm
 
 /-- The section equivalence is the existing fibrewise Hom complexification map. -/
 @[simp]
@@ -111,7 +130,7 @@ theorem homComplexificationEquiv_apply (s :
     homComplexificationEquiv (F := F) (G := G) s x =
       bundleHomComplexificationEquiv (F := F) (G := G) x (s x) := by
   simp only [homComplexificationEquiv, mapEquiv_apply,
-    LinearEquiv.restrictScalars_apply, ContinuousLinearEquiv.coe_toLinearEquiv]
+    bundleHomComplexificationLinearEquiv_apply]
 
 /-- The coefficient identification preserves topological support exactly. -/
 @[simp]
@@ -128,7 +147,7 @@ theorem CompactlySupported.homComplexificationEquiv_apply (s : compactlySupporte
     (CompactlySupported.homComplexificationEquiv (F := F) (G := G) s).val x =
       bundleHomComplexificationEquiv (F := F) (G := G) x (s.val x) := by
   simp only [CompactlySupported.homComplexificationEquiv, coe_mapCompactlySupportedEquiv,
-    mapEquiv_apply, LinearEquiv.restrictScalars_apply, ContinuousLinearEquiv.coe_toLinearEquiv]
+    mapEquiv_apply, bundleHomComplexificationLinearEquiv_apply]
 
 
 /-- The inverse section equivalence is the inverse fibrewise Hom complexification map. -/
@@ -139,7 +158,7 @@ theorem homComplexificationEquiv_symm_apply (s :
     (homComplexificationEquiv (F := F) (G := G)).symm s x =
       (bundleHomComplexificationEquiv (F := F) (G := G) x).symm (s x) := by
   simp only [homComplexificationEquiv, mapEquiv_symm, mapEquiv_apply,
-    LinearEquiv.restrictScalars_symm_apply, ContinuousLinearEquiv.coe_symm_toLinearEquiv]
+    bundleHomComplexificationLinearEquiv_symm_apply]
 
 /-- Real and imaginary compactly supported real Hom coefficients. -/
 def CompactlySupported.homComplexificationEquivProd :
@@ -226,7 +245,7 @@ theorem SupportedIn.homComplexificationEquiv_apply (K : Set M)
     (SupportedIn.homComplexificationEquiv (F := F) (G := G) K s).val x =
       bundleHomComplexificationEquiv (F := F) (G := G) x (s.val x) := by
   simp only [SupportedIn.homComplexificationEquiv, coe_mapSupportedInEquiv, mapEquiv_apply,
-    LinearEquiv.restrictScalars_apply, ContinuousLinearEquiv.coe_toLinearEquiv]
+    bundleHomComplexificationLinearEquiv_apply]
 
 /-- Inverse fixed-support evaluation is the inverse native fibrewise Hom comparison. -/
 @[simp]
@@ -236,8 +255,7 @@ theorem SupportedIn.homComplexificationEquiv_symm_apply (K : Set M)
     ((SupportedIn.homComplexificationEquiv (F := F) (G := G) K).symm s).val x =
       (bundleHomComplexificationEquiv (F := F) (G := G) x).symm (s.val x) := by
   simp only [SupportedIn.homComplexificationEquiv, coe_mapSupportedInEquiv_symm, mapEquiv_symm,
-    mapEquiv_apply, LinearEquiv.restrictScalars_symm_apply,
-    ContinuousLinearEquiv.coe_symm_toLinearEquiv]
+    mapEquiv_apply, bundleHomComplexificationLinearEquiv_symm_apply]
 
 /-- Inverse compact-support evaluation is the inverse native fibrewise Hom comparison. -/
 @[simp]
@@ -247,8 +265,7 @@ theorem CompactlySupported.homComplexificationEquiv_symm_apply
     ((CompactlySupported.homComplexificationEquiv (F := F) (G := G)).symm s).val x =
       (bundleHomComplexificationEquiv (F := F) (G := G) x).symm (s.val x) := by
   simp only [CompactlySupported.homComplexificationEquiv, coe_mapCompactlySupportedEquiv_symm,
-    mapEquiv_symm, mapEquiv_apply, LinearEquiv.restrictScalars_symm_apply,
-    ContinuousLinearEquiv.coe_symm_toLinearEquiv]
+    mapEquiv_symm, mapEquiv_apply, bundleHomComplexificationLinearEquiv_symm_apply]
 
 /-- Splitting compact Hom coefficients returns the real and imaginary parts of the inverse
 coefficient identification, as native compactly supported real Hom sections. -/
@@ -263,8 +280,8 @@ theorem CompactlySupported.homComplexificationEquivProd_apply
   simp only [CompactlySupported.homComplexificationEquivProd, LinearEquiv.trans_apply,
     CompactlySupported.complexificationEquivProd_apply]
 
-/-- Recombining real and imaginary compact Hom sections includes the first with coefficient1
-and the second with coefficientI, then applies the native Hom comparison. -/
+/-- Recombining real and imaginary compact Hom sections includes the first with coefficient `1`
+and the second with coefficient `Complex.I`, then applies the native Hom comparison. -/
 @[simp]
 theorem CompactlySupported.homComplexificationEquivProd_symm_apply
     (s : compactlySupported I (F →L[ℝ] G) n (fun x ↦ V x →L[ℝ] L x) ×
@@ -339,6 +356,59 @@ variable [ContMDiffVectorBundle n F V I] [ContMDiffVectorBundle n G L I] [IsMani
   (U : ι → TopologicalSpace.Opens M)
   (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet ∩ (d i).baseSet)
 
+omit [∀ x, TopologicalSpace (ℂ ⊗[ℝ] V x)] [∀ x, IsComplexificationTopology (V x)]
+  [∀ x, TopologicalSpace (ℂ ⊗[ℝ] L x)] [∀ x, IsComplexificationTopology (L x)] in
+include hU in
+/-- The common frame domains lie in the base sets of the complexified real Hom frames. -/
+theorem subset_baseSet_complexification_continuousLinearMap (i : ι) :
+    (U i : Set M) ⊆ ((e i).continuousLinearMap (RingHom.id ℝ) (d i)).complexification.baseSet := by
+  simpa only [Trivialization.baseSet_complexification,
+    Trivialization.baseSet_continuousLinearMap] using hU i
+
+omit [∀ x, TopologicalSpace (ℂ ⊗[ℝ] (V x →L[ℝ] L x))]
+  [∀ x, IsComplexificationTopology (V x →L[ℝ] L x)] in
+include hU in
+/-- The common frame domains lie in the base sets of the Hom frames of the complexified frames. -/
+theorem subset_baseSet_continuousLinearMap_complexification (i : ι) :
+    (U i : Set M) ⊆
+      ((e i).complexification.continuousLinearMap (RingHom.id ℂ)
+        (d i).complexification).baseSet := by
+  simpa only [Trivialization.baseSet_continuousLinearMap,
+    Trivialization.baseSet_complexification] using hU i
+
+/-- The frame topology of complexified real Hom sections in the complexified real Hom frames. -/
+abbrev homFrameTopology :
+    TopologicalSpace Cₛ^n⟮I; Complexification (F →L[ℝ] G), fun x ↦ ℂ ⊗[ℝ] (V x →L[ℝ] L x)⟯ :=
+  frameTopology (fun i ↦ ((e i).continuousLinearMap (RingHom.id ℝ) (d i)).complexification) U
+    (subset_baseSet_complexification_continuousLinearMap e d U hU)
+
+/-- The frame topology of complex-linear Hom sections in the Hom frames of the complexified
+frames. -/
+abbrev complexHomFrameTopology :
+    TopologicalSpace Cₛ^n⟮I; Complexification F →L[ℂ] Complexification G,
+      fun x ↦ (ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x)⟯ :=
+  frameTopology
+    (fun i ↦ (e i).complexification.continuousLinearMap (RingHom.id ℂ) (d i).complexification) U
+    (subset_baseSet_continuousLinearMap_complexification e d U hU)
+
+/-- The final locally convex topology of compactly supported complexified real Hom sections in
+the complexified real Hom frames. -/
+abbrev homCompactlySupportedTopology :
+    TopologicalSpace (compactlySupported I (Complexification (F →L[ℝ] G)) n
+      (fun x ↦ ℂ ⊗[ℝ] (V x →L[ℝ] L x))) :=
+  compactlySupportedTopology
+    (fun i ↦ ((e i).continuousLinearMap (RingHom.id ℝ) (d i)).complexification) U
+    (subset_baseSet_complexification_continuousLinearMap e d U hU)
+
+/-- The final locally convex topology of compactly supported complex-linear Hom sections in the
+Hom frames of the complexified frames. -/
+abbrev complexHomCompactlySupportedTopology :
+    TopologicalSpace (compactlySupported I (Complexification F →L[ℂ] Complexification G) n
+      (fun x ↦ (ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x))) :=
+  compactlySupportedTopology
+    (fun i ↦ (e i).complexification.continuousLinearMap (RingHom.id ℂ) (d i).complexification) U
+    (subset_baseSet_continuousLinearMap_complexification e d U hU)
+
 omit [IsManifold I n M] in
 /-- In arbitrary common frame domains the Hom coefficient identification has the existing
 continuous model map as its frame expression. -/
@@ -347,16 +417,13 @@ theorem frameCoordinates_homComplexificationEquiv (i : ι)
     (x : U i) :
     ((e i).complexification.continuousLinearMap
       (RingHom.id ℂ) (d i).complexification).frameCoordinates
-      (by
-        simpa only [Trivialization.baseSet_continuousLinearMap,
-          Trivialization.baseSet_complexification] using (hU i))
+      (subset_baseSet_continuousLinearMap_complexification e d U hU i)
       (homComplexificationEquiv (F := F) (G := G) s) x =
-    Complexification.continuousLinearMapEquiv F G
+    (Complexification.continuousLinearMapEquiv F G).toContinuousLinearMap.restrictScalars ℝ
       ((((e i).continuousLinearMap (RingHom.id ℝ) (d i)).complexification).frameCoordinates
-        (by
-          simpa only [Trivialization.baseSet_complexification,
-            Trivialization.baseSet_continuousLinearMap] using (hU i)) s x) := by
-  simpa only [Trivialization.frameCoordinates_apply, homComplexificationEquiv_apply] using
+        (subset_baseSet_complexification_continuousLinearMap e d U hU i) s x) := by
+  simpa only [Trivialization.frameCoordinates_apply, homComplexificationEquiv_apply,
+    ContinuousLinearMap.coe_restrictScalars', ContinuousLinearEquiv.coe_coe] using
     bundleHomComplexificationEquiv_in_trivializations (e i) (d i) (hU i x.property) (s x)
 
 omit [IsManifold I n M] in
@@ -365,259 +432,131 @@ theorem frameCoordinates_homComplexificationEquiv_symm (i : ι)
     (s : Cₛ^n⟮I; Complexification F →L[ℂ] Complexification G,
       fun x ↦ (ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x)⟯) (x : U i) :
     (((e i).continuousLinearMap (RingHom.id ℝ) (d i)).complexification).frameCoordinates
-      (by
-        simpa only [Trivialization.baseSet_complexification,
-          Trivialization.baseSet_continuousLinearMap] using (hU i))
+      (subset_baseSet_complexification_continuousLinearMap e d U hU i)
       ((homComplexificationEquiv (F := F) (G := G)).symm s) x =
-    (Complexification.continuousLinearMapEquiv F G).symm
+    (Complexification.continuousLinearMapEquiv F G).symm.toContinuousLinearMap.restrictScalars ℝ
       (((e i).complexification.continuousLinearMap
         (RingHom.id ℂ) (d i).complexification).frameCoordinates
-        (by
-          simpa only [Trivialization.baseSet_continuousLinearMap,
-            Trivialization.baseSet_complexification] using (hU i)) s x) := by
-  have h := frameCoordinates_homComplexificationEquiv e d U hU i
-    ((homComplexificationEquiv (F := F) (G := G)).symm s) x
-  have h' := congrArg (Complexification.continuousLinearMapEquiv F G).symm h
-  simpa only [LinearEquiv.apply_symm_apply, ContinuousLinearEquiv.symm_apply_apply] using h'.symm
+        (subset_baseSet_continuousLinearMap_complexification e d U hU i) s x) := by
+  have h := congrArg (Complexification.continuousLinearMapEquiv F G).symm
+    (frameCoordinates_homComplexificationEquiv e d U hU i
+      ((homComplexificationEquiv (F := F) (G := G)).symm s) x)
+  simpa only [LinearEquiv.apply_symm_apply, ContinuousLinearEquiv.symm_apply_apply,
+    ContinuousLinearMap.coe_restrictScalars', ContinuousLinearEquiv.coe_coe] using h.symm
 
 /-- Hom coefficient transport for arbitrary common atlas frames and their native
 support-stage topologies. -/
 def SupportedIn.homComplexificationCLE (K : Set M) :
-    let _ := frameTopology (I := I) (n := n)
-      (fun i ↦ ((e i).continuousLinearMap (RingHom.id ℝ) (d i)).complexification) U
-      (fun _i ↦ by simpa only [Trivialization.baseSet_complexification,
-      Trivialization.baseSet_continuousLinearMap] using hU _i)
-    let _ := frameTopology (I := I) (n := n)
-      (fun i ↦ (e i).complexification.continuousLinearMap (RingHom.id ℂ) (d i).complexification) U
-      (fun _i ↦ by simpa only [Trivialization.baseSet_continuousLinearMap,
-      Trivialization.baseSet_complexification] using hU _i)
+    let _ := homFrameTopology (I := I) (n := n) e d U hU
+    let _ := complexHomFrameTopology (I := I) (n := n) e d U hU
     supportedIn I (Complexification (F →L[ℝ] G)) n
       (fun x ↦ ℂ ⊗[ℝ] (V x →L[ℝ] L x)) K ≃L[ℝ]
     supportedIn I (Complexification F →L[ℂ] Complexification G) n
-      (fun x ↦ (ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x)) K := by
-  let φ := fun x ↦ (bundleHomComplexificationEquiv (F := F) (G := G) (V := V) (L := L)
-    x).toLinearEquiv.restrictScalars ℝ
-  refine mapSupportedInCLE (I := I) (n := n) φ
-    (by
-      simpa only [φ, LinearEquiv.restrictScalars_apply,
-        ContinuousLinearEquiv.coe_toLinearEquiv] using
-        (contMDiff_bundleHomComplexificationEquiv (F := F) (G := G) (V := V) (L := L)
-          (IB := I) (n := n)))
-    (by
-      simpa only [φ, LinearEquiv.restrictScalars_symm_apply,
-        ContinuousLinearEquiv.coe_symm_toLinearEquiv] using
-        (contMDiff_bundleHomComplexificationEquiv_symm (F := F) (G := G) (V := V) (L := L)
-          (IB := I) (n := n)))
-      (fun i ↦ ((e i).continuousLinearMap (RingHom.id ℝ) (d i)).complexification)
-      (fun i ↦ (e i).complexification.continuousLinearMap (RingHom.id ℂ) (d i).complexification) U
-      (fun _i ↦ by simpa only [Trivialization.baseSet_complexification,
-      Trivialization.baseSet_continuousLinearMap] using hU _i)
-    (fun _i ↦ by simpa only [Trivialization.baseSet_continuousLinearMap,
-      Trivialization.baseSet_complexification] using hU _i)
+      (fun x ↦ (ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x)) K :=
+  mapSupportedInCLE (I := I) (n := n)
+    (F := Complexification (F →L[ℝ] G)) (G := Complexification F →L[ℂ] Complexification G)
+    (V := fun x ↦ ℂ ⊗[ℝ] (V x →L[ℝ] L x)) (W := fun x ↦ (ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x))
+    (bundleHomComplexificationLinearEquiv (F := F) (G := G))
+    contMDiff_bundleHomComplexificationLinearEquiv
+    contMDiff_bundleHomComplexificationLinearEquiv_symm
+    (fun i ↦ ((e i).continuousLinearMap (RingHom.id ℝ) (d i)).complexification)
+    (fun i ↦ (e i).complexification.continuousLinearMap (RingHom.id ℂ) (d i).complexification) U
+    (subset_baseSet_complexification_continuousLinearMap e d U hU)
+    (subset_baseSet_continuousLinearMap_complexification e d U hU)
     (fun _ ↦
       (Complexification.continuousLinearMapEquiv F G).toContinuousLinearMap.restrictScalars ℝ)
     (fun _ ↦
-      (Complexification.continuousLinearMapEquiv F G).symm.toContinuousLinearMap.restrictScalars
-        ℝ)
-    ?_ ?_ K
-  · intro i s x
-    simpa only [φ, ContMDiffSection.homComplexificationEquiv,
-      ContinuousLinearMap.coe_restrictScalars',
-      ContinuousLinearEquiv.coe_coe] using frameCoordinates_homComplexificationEquiv e d U hU i s x
-  · intro i s x
-    simpa only [φ, ContMDiffSection.homComplexificationEquiv,
-      ContinuousLinearMap.coe_restrictScalars',
-      ContinuousLinearEquiv.coe_coe] using
-      frameCoordinates_homComplexificationEquiv_symm e d U hU i s x
+      (Complexification.continuousLinearMapEquiv F G).symm.toContinuousLinearMap.restrictScalars ℝ)
+    (frameCoordinates_homComplexificationEquiv e d U hU)
+    (frameCoordinates_homComplexificationEquiv_symm e d U hU) K
 
 /-- Hom coefficient transport for arbitrary common atlas frames and their native final
 locally convex topologies. -/
 def CompactlySupported.homComplexificationCLE :
-    let _ := compactlySupportedTopology (I := I) (n := n)
-      (fun i ↦ ((e i).continuousLinearMap (RingHom.id ℝ) (d i)).complexification) U
-      (fun _i ↦ by simpa only [Trivialization.baseSet_complexification,
-      Trivialization.baseSet_continuousLinearMap] using hU _i)
-    let _ := compactlySupportedTopology (I := I) (n := n)
-      (fun i ↦ (e i).complexification.continuousLinearMap (RingHom.id ℂ) (d i).complexification) U
-      (fun _i ↦ by simpa only [Trivialization.baseSet_continuousLinearMap,
-      Trivialization.baseSet_complexification] using hU _i)
+    let _ := homCompactlySupportedTopology (I := I) (n := n) e d U hU
+    let _ := complexHomCompactlySupportedTopology (I := I) (n := n) e d U hU
     compactlySupported I (Complexification (F →L[ℝ] G)) n
       (fun x ↦ ℂ ⊗[ℝ] (V x →L[ℝ] L x)) ≃L[ℝ]
     compactlySupported I (Complexification F →L[ℂ] Complexification G) n
-      (fun x ↦ (ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x)) := by
-  let φ := fun x ↦ (bundleHomComplexificationEquiv (F := F) (G := G) (V := V) (L := L)
-    x).toLinearEquiv.restrictScalars ℝ
-  refine mapCompactlySupportedCLE (I := I) (n := n) φ
-    (by
-      simpa only [φ, LinearEquiv.restrictScalars_apply,
-        ContinuousLinearEquiv.coe_toLinearEquiv] using
-        (contMDiff_bundleHomComplexificationEquiv (F := F) (G := G) (V := V) (L := L)
-          (IB := I) (n := n)))
-    (by
-      simpa only [φ, LinearEquiv.restrictScalars_symm_apply,
-        ContinuousLinearEquiv.coe_symm_toLinearEquiv] using
-        (contMDiff_bundleHomComplexificationEquiv_symm (F := F) (G := G) (V := V) (L := L)
-          (IB := I) (n := n)))
-      (fun i ↦ ((e i).continuousLinearMap (RingHom.id ℝ) (d i)).complexification)
-      (fun i ↦ (e i).complexification.continuousLinearMap (RingHom.id ℂ) (d i).complexification) U
-      (fun _i ↦ by simpa only [Trivialization.baseSet_complexification,
-      Trivialization.baseSet_continuousLinearMap] using hU _i)
-    (fun _i ↦ by simpa only [Trivialization.baseSet_continuousLinearMap,
-      Trivialization.baseSet_complexification] using hU _i)
+      (fun x ↦ (ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x)) :=
+  mapCompactlySupportedCLE (I := I) (n := n)
+    (F := Complexification (F →L[ℝ] G)) (G := Complexification F →L[ℂ] Complexification G)
+    (V := fun x ↦ ℂ ⊗[ℝ] (V x →L[ℝ] L x)) (W := fun x ↦ (ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x))
+    (bundleHomComplexificationLinearEquiv (F := F) (G := G))
+    contMDiff_bundleHomComplexificationLinearEquiv
+    contMDiff_bundleHomComplexificationLinearEquiv_symm
+    (fun i ↦ ((e i).continuousLinearMap (RingHom.id ℝ) (d i)).complexification)
+    (fun i ↦ (e i).complexification.continuousLinearMap (RingHom.id ℂ) (d i).complexification) U
+    (subset_baseSet_complexification_continuousLinearMap e d U hU)
+    (subset_baseSet_continuousLinearMap_complexification e d U hU)
     (fun _ ↦
       (Complexification.continuousLinearMapEquiv F G).toContinuousLinearMap.restrictScalars ℝ)
     (fun _ ↦
-      (Complexification.continuousLinearMapEquiv F G).symm.toContinuousLinearMap.restrictScalars
-        ℝ)
-    ?_ ?_
-  · intro i s x
-    simpa only [φ, ContMDiffSection.homComplexificationEquiv,
-      ContinuousLinearMap.coe_restrictScalars',
-      ContinuousLinearEquiv.coe_coe] using frameCoordinates_homComplexificationEquiv e d U hU i s x
-  · intro i s x
-    simpa only [φ, ContMDiffSection.homComplexificationEquiv,
-      ContinuousLinearMap.coe_restrictScalars',
-      ContinuousLinearEquiv.coe_coe] using
-      frameCoordinates_homComplexificationEquiv_symm e d U hU i s x
+      (Complexification.continuousLinearMapEquiv F G).symm.toContinuousLinearMap.restrictScalars ℝ)
+    (frameCoordinates_homComplexificationEquiv e d U hU)
+    (frameCoordinates_homComplexificationEquiv_symm e d U hU)
 
 /-- The continuous Hom comparison retains exactly the existing algebraic equivalence. -/
 @[simp]
 theorem SupportedIn.homComplexificationCLE_toLinearEquiv (K : Set M) :
-    let _ := frameTopology (I := I) (n := n)
-      (fun i ↦ ((e i).continuousLinearMap (RingHom.id ℝ) (d i)).complexification) U
-      (fun _i ↦ by simpa only [Trivialization.baseSet_complexification,
-      Trivialization.baseSet_continuousLinearMap] using hU _i)
-    let _ := frameTopology (I := I) (n := n)
-      (fun i ↦ (e i).complexification.continuousLinearMap (RingHom.id ℂ) (d i).complexification) U
-      (fun _i ↦ by simpa only [Trivialization.baseSet_continuousLinearMap,
-      Trivialization.baseSet_complexification] using hU _i)
+    let _ := homFrameTopology (I := I) (n := n) e d U hU
+    let _ := complexHomFrameTopology (I := I) (n := n) e d U hU
     (SupportedIn.homComplexificationCLE e d U hU K).toLinearEquiv =
-      SupportedIn.homComplexificationEquiv (I := I) (n := n) (F := F) (G := G) K := by
-  simp only [SupportedIn.homComplexificationCLE, mapSupportedInCLE_toLinearEquiv,
-    SupportedIn.homComplexificationEquiv]
+      SupportedIn.homComplexificationEquiv (I := I) (n := n) (F := F) (G := G) K :=
+  mapSupportedInCLE_toLinearEquiv ..
 
 /-- The continuous Hom comparison retains exactly the existing algebraic equivalence. -/
 @[simp]
 theorem CompactlySupported.homComplexificationCLE_toLinearEquiv :
-    let _ := compactlySupportedTopology (I := I) (n := n)
-      (fun i ↦ ((e i).continuousLinearMap (RingHom.id ℝ) (d i)).complexification) U
-      (fun _i ↦ by simpa only [Trivialization.baseSet_complexification,
-      Trivialization.baseSet_continuousLinearMap] using hU _i)
-    let _ := compactlySupportedTopology (I := I) (n := n)
-      (fun i ↦ (e i).complexification.continuousLinearMap (RingHom.id ℂ) (d i).complexification) U
-      (fun _i ↦ by simpa only [Trivialization.baseSet_continuousLinearMap,
-      Trivialization.baseSet_complexification] using hU _i)
+    let _ := homCompactlySupportedTopology (I := I) (n := n) e d U hU
+    let _ := complexHomCompactlySupportedTopology (I := I) (n := n) e d U hU
     (CompactlySupported.homComplexificationCLE e d U hU).toLinearEquiv =
-      CompactlySupported.homComplexificationEquiv (I := I) (n := n) (F := F) (G := G) := by
-  simp only [CompactlySupported.homComplexificationCLE, mapCompactlySupportedCLE_toLinearEquiv,
-    CompactlySupported.homComplexificationEquiv]
+      CompactlySupported.homComplexificationEquiv (I := I) (n := n) (F := F) (G := G) :=
+  mapCompactlySupportedCLE_toLinearEquiv ..
 
 /-- Forward continuous Hom transport evaluates by the native fibre map. -/
 @[simp]
 theorem SupportedIn.homComplexificationCLE_apply (K : Set M)
     (s : supportedIn I (Complexification (F →L[ℝ] G)) n
       (fun x ↦ ℂ ⊗[ℝ] (V x →L[ℝ] L x)) K) (x : M) :
-    let _ := frameTopology (I := I) (n := n)
-      (fun i ↦ ((e i).continuousLinearMap (RingHom.id ℝ) (d i)).complexification) U
-      (fun _i ↦ by simpa only [Trivialization.baseSet_complexification,
-      Trivialization.baseSet_continuousLinearMap] using hU _i)
-    let _ := frameTopology (I := I) (n := n)
-      (fun i ↦ (e i).complexification.continuousLinearMap (RingHom.id ℂ) (d i).complexification) U
-      (fun _i ↦ by simpa only [Trivialization.baseSet_continuousLinearMap,
-      Trivialization.baseSet_complexification] using hU _i)
+    let _ := homFrameTopology (I := I) (n := n) e d U hU
+    let _ := complexHomFrameTopology (I := I) (n := n) e d U hU
     (SupportedIn.homComplexificationCLE e d U hU K s).val x =
-      bundleHomComplexificationEquiv (F := F) (G := G) x (s.val x) := by
-  let _ := frameTopology (I := I) (n := n)
-    (fun i ↦ ((e i).continuousLinearMap (RingHom.id ℝ) (d i)).complexification) U
-    (fun _i ↦ by simpa only [Trivialization.baseSet_complexification,
-    Trivialization.baseSet_continuousLinearMap] using hU _i)
-  let _ := frameTopology (I := I) (n := n)
-    (fun i ↦ (e i).complexification.continuousLinearMap (RingHom.id ℂ) (d i).complexification) U
-    (fun _i ↦ by simpa only [Trivialization.baseSet_continuousLinearMap,
-    Trivialization.baseSet_complexification] using hU _i)
-  rw [← ContinuousLinearEquiv.coe_toLinearEquiv, SupportedIn.homComplexificationCLE_toLinearEquiv]
-  exact SupportedIn.homComplexificationEquiv_apply K s x
+      bundleHomComplexificationEquiv (F := F) (G := G) x (s.val x) :=
+  mapSupportedInCLE_apply ..
 
 /-- Inverse continuous Hom transport evaluates by the inverse native fibre map. -/
 @[simp]
 theorem SupportedIn.homComplexificationCLE_symm_apply (K : Set M)
     (s : supportedIn I (Complexification F →L[ℂ] Complexification G) n
       (fun x ↦ (ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x)) K) (x : M) :
-    let _ := frameTopology (I := I) (n := n)
-      (fun i ↦ ((e i).continuousLinearMap (RingHom.id ℝ) (d i)).complexification) U
-      (fun _i ↦ by simpa only [Trivialization.baseSet_complexification,
-      Trivialization.baseSet_continuousLinearMap] using hU _i)
-    let _ := frameTopology (I := I) (n := n)
-      (fun i ↦ (e i).complexification.continuousLinearMap (RingHom.id ℂ) (d i).complexification) U
-      (fun _i ↦ by simpa only [Trivialization.baseSet_continuousLinearMap,
-      Trivialization.baseSet_complexification] using hU _i)
+    let _ := homFrameTopology (I := I) (n := n) e d U hU
+    let _ := complexHomFrameTopology (I := I) (n := n) e d U hU
     ((SupportedIn.homComplexificationCLE e d U hU K).symm s).val x =
-      (bundleHomComplexificationEquiv (F := F) (G := G) x).symm (s.val x) := by
-  let _ := frameTopology (I := I) (n := n)
-    (fun i ↦ ((e i).continuousLinearMap (RingHom.id ℝ) (d i)).complexification) U
-    (fun _i ↦ by simpa only [Trivialization.baseSet_complexification,
-    Trivialization.baseSet_continuousLinearMap] using hU _i)
-  let _ := frameTopology (I := I) (n := n)
-    (fun i ↦ (e i).complexification.continuousLinearMap (RingHom.id ℂ) (d i).complexification) U
-    (fun _i ↦ by simpa only [Trivialization.baseSet_continuousLinearMap,
-    Trivialization.baseSet_complexification] using hU _i)
-  rw [← ContinuousLinearEquiv.coe_symm_toLinearEquiv,
-    SupportedIn.homComplexificationCLE_toLinearEquiv]
-  exact SupportedIn.homComplexificationEquiv_symm_apply K s x
+      (bundleHomComplexificationEquiv (F := F) (G := G) x).symm (s.val x) :=
+  mapSupportedInCLE_symm_apply ..
 
 /-- Forward continuous Hom transport evaluates by the native fibre map. -/
 @[simp]
 theorem CompactlySupported.homComplexificationCLE_apply
     (s : compactlySupported I (Complexification (F →L[ℝ] G)) n
       (fun x ↦ ℂ ⊗[ℝ] (V x →L[ℝ] L x))) (x : M) :
-    let _ := compactlySupportedTopology (I := I) (n := n)
-      (fun i ↦ ((e i).continuousLinearMap (RingHom.id ℝ) (d i)).complexification) U
-      (fun _i ↦ by simpa only [Trivialization.baseSet_complexification,
-      Trivialization.baseSet_continuousLinearMap] using hU _i)
-    let _ := compactlySupportedTopology (I := I) (n := n)
-      (fun i ↦ (e i).complexification.continuousLinearMap (RingHom.id ℂ) (d i).complexification) U
-      (fun _i ↦ by simpa only [Trivialization.baseSet_continuousLinearMap,
-      Trivialization.baseSet_complexification] using hU _i)
+    let _ := homCompactlySupportedTopology (I := I) (n := n) e d U hU
+    let _ := complexHomCompactlySupportedTopology (I := I) (n := n) e d U hU
     (CompactlySupported.homComplexificationCLE e d U hU s).val x =
-      bundleHomComplexificationEquiv (F := F) (G := G) x (s.val x) := by
-  let _ := compactlySupportedTopology (I := I) (n := n)
-    (fun i ↦ ((e i).continuousLinearMap (RingHom.id ℝ) (d i)).complexification) U
-    (fun _i ↦ by simpa only [Trivialization.baseSet_complexification,
-    Trivialization.baseSet_continuousLinearMap] using hU _i)
-  let _ := compactlySupportedTopology (I := I) (n := n)
-    (fun i ↦ (e i).complexification.continuousLinearMap (RingHom.id ℂ) (d i).complexification) U
-    (fun _i ↦ by simpa only [Trivialization.baseSet_continuousLinearMap,
-    Trivialization.baseSet_complexification] using hU _i)
-  rw [← ContinuousLinearEquiv.coe_toLinearEquiv,
-    CompactlySupported.homComplexificationCLE_toLinearEquiv]
-  exact CompactlySupported.homComplexificationEquiv_apply s x
+      bundleHomComplexificationEquiv (F := F) (G := G) x (s.val x) :=
+  mapCompactlySupportedCLE_apply ..
 
 /-- Inverse continuous Hom transport evaluates by the inverse native fibre map. -/
 @[simp]
 theorem CompactlySupported.homComplexificationCLE_symm_apply
     (s : compactlySupported I (Complexification F →L[ℂ] Complexification G) n
       (fun x ↦ (ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x))) (x : M) :
-    let _ := compactlySupportedTopology (I := I) (n := n)
-      (fun i ↦ ((e i).continuousLinearMap (RingHom.id ℝ) (d i)).complexification) U
-      (fun _i ↦ by simpa only [Trivialization.baseSet_complexification,
-      Trivialization.baseSet_continuousLinearMap] using hU _i)
-    let _ := compactlySupportedTopology (I := I) (n := n)
-      (fun i ↦ (e i).complexification.continuousLinearMap (RingHom.id ℂ) (d i).complexification) U
-      (fun _i ↦ by simpa only [Trivialization.baseSet_continuousLinearMap,
-      Trivialization.baseSet_complexification] using hU _i)
+    let _ := homCompactlySupportedTopology (I := I) (n := n) e d U hU
+    let _ := complexHomCompactlySupportedTopology (I := I) (n := n) e d U hU
     ((CompactlySupported.homComplexificationCLE e d U hU).symm s).val x =
-      (bundleHomComplexificationEquiv (F := F) (G := G) x).symm (s.val x) := by
-  let _ := compactlySupportedTopology (I := I) (n := n)
-    (fun i ↦ ((e i).continuousLinearMap (RingHom.id ℝ) (d i)).complexification) U
-    (fun _i ↦ by simpa only [Trivialization.baseSet_complexification,
-    Trivialization.baseSet_continuousLinearMap] using hU _i)
-  let _ := compactlySupportedTopology (I := I) (n := n)
-    (fun i ↦ (e i).complexification.continuousLinearMap (RingHom.id ℂ) (d i).complexification) U
-    (fun _i ↦ by simpa only [Trivialization.baseSet_continuousLinearMap,
-    Trivialization.baseSet_complexification] using hU _i)
-  rw [← ContinuousLinearEquiv.coe_symm_toLinearEquiv,
-    CompactlySupported.homComplexificationCLE_toLinearEquiv]
-  exact CompactlySupported.homComplexificationEquiv_symm_apply s x
+      (bundleHomComplexificationEquiv (F := F) (G := G) x).symm (s.val x) :=
+  mapCompactlySupportedCLE_symm_apply ..
 
 end Frames
 section Tests
@@ -631,44 +570,27 @@ def _root_.TauCeti.BundleTest.homComplexificationCLE :
     BundleTest I (Complexification (F →L[ℝ] G))
       (fun x ↦ ℂ ⊗[ℝ] (V x →L[ℝ] L x)) ≃L[ℝ]
     BundleTest I (Complexification F →L[ℂ] Complexification G)
-      (fun x ↦ (ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x)) := by
+      (fun x ↦ (ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x)) :=
   let e := fun a : M ↦ trivializationAt F V a
   let d := fun a : M ↦ trivializationAt G L a
   let U : M → TopologicalSpace.Opens M := fun a ↦
     ⟨(e a).baseSet ∩ (d a).baseSet, (e a).open_baseSet.inter (d a).open_baseSet⟩
   have hU : ∀ a, (U a : Set M) ⊆ (e a).baseSet ∩ (d a).baseSet := fun _ ↦ Subset.rfl
-  have hcover : ∀ x : M, ∃ a, x ∈ U a := fun x ↦
-    ⟨x, mem_baseSet_trivializationAt F V x, mem_baseSet_trivializationAt G L x⟩
-  refine BundleTest.mapCLE (I := I)
+  BundleTest.mapCLE (I := I)
     (fun a ↦ ((e a).continuousLinearMap (RingHom.id ℝ) (d a)).complexification)
     (fun a ↦ (e a).complexification.continuousLinearMap (RingHom.id ℂ) (d a).complexification) U
-    (fun a ↦ by simpa only [Trivialization.baseSet_complexification,
-      Trivialization.baseSet_continuousLinearMap] using hU a)
-    (fun a ↦ by simpa only [Trivialization.baseSet_continuousLinearMap,
-      Trivialization.baseSet_complexification] using hU a) hcover
-    (fun x ↦ (bundleHomComplexificationEquiv (F := F) (G := G) (V := V) (L := L)
-      x).toLinearEquiv.restrictScalars ℝ)
-    (by
-      simpa only [LinearEquiv.restrictScalars_apply, ContinuousLinearEquiv.coe_toLinearEquiv] using
-        (contMDiff_bundleHomComplexificationEquiv (F := F) (G := G) (V := V) (L := L)
-          (IB := I) (n := ∞)))
-    (by
-      simpa only [LinearEquiv.restrictScalars_symm_apply,
-        ContinuousLinearEquiv.coe_symm_toLinearEquiv] using
-        (contMDiff_bundleHomComplexificationEquiv_symm (F := F) (G := G) (V := V) (L := L)
-          (IB := I) (n := ∞)))
+    (subset_baseSet_complexification_continuousLinearMap e d U hU)
+    (subset_baseSet_continuousLinearMap_complexification e d U hU)
+    (fun x ↦ ⟨x, mem_baseSet_trivializationAt F V x, mem_baseSet_trivializationAt G L x⟩)
+    (bundleHomComplexificationLinearEquiv (F := F) (G := G))
+    contMDiff_bundleHomComplexificationLinearEquiv
+    contMDiff_bundleHomComplexificationLinearEquiv_symm
     (fun _ ↦
       (Complexification.continuousLinearMapEquiv F G).toContinuousLinearMap.restrictScalars ℝ)
     (fun _ ↦
-      (Complexification.continuousLinearMapEquiv F G).symm.toContinuousLinearMap.restrictScalars
-        ℝ)
-    (fun a s x ↦ ?_) (fun a s x ↦ ?_)
-  · simpa only [ContMDiffSection.homComplexificationEquiv,
-      ContinuousLinearMap.coe_restrictScalars', ContinuousLinearEquiv.coe_coe] using
-      frameCoordinates_homComplexificationEquiv e d U hU a s x
-  · simpa only [ContMDiffSection.homComplexificationEquiv,
-      ContinuousLinearMap.coe_restrictScalars', ContinuousLinearEquiv.coe_coe] using
-      frameCoordinates_homComplexificationEquiv_symm e d U hU a s x
+      (Complexification.continuousLinearMapEquiv F G).symm.toContinuousLinearMap.restrictScalars ℝ)
+    (frameCoordinates_homComplexificationEquiv e d U hU)
+    (frameCoordinates_homComplexificationEquiv_symm e d U hU)
 
 /-- The native Hom equivalence retains the original algebraic coefficient identification and
 the original two carrier wrappers. -/
@@ -694,7 +616,7 @@ theorem _root_.TauCeti.BundleTest.homComplexificationCLE_apply
   BundleTest.mapCLE_apply ..
 
 /-- Evaluating the native comparison on a complexified vector is the intrinsic Hom coefficient
-formula; this bridges native bundle wrappers to the existing algebraic comparison. -/
+formula, so native bundle tests reduce to the existing algebraic comparison. -/
 theorem _root_.TauCeti.BundleTest.homComplexificationCLE_apply_apply
     (s : BundleTest I (Complexification (F →L[ℝ] G))
       (fun x ↦ ℂ ⊗[ℝ] (V x →L[ℝ] L x))) (x : M) (v : ℂ ⊗[ℝ] V x) :

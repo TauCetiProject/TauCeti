@@ -173,48 +173,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   (hd : ∀ i, (U i : Set M) ⊆ (d i).baseSet)
   (hcover : ∀ x : M, ∃ i, x ∈ U i)
 
-/-- The existing algebraic wrapper from compactly supported sections to native bundle tests is a
-continuous linear equivalence for any covering smooth atlas's final locally convex topology. -/
-def ofCompactlySupportedCLE :
-    let _ := compactlySupportedTopology (I := I) (n := ∞) e U he
-    compactlySupported I F ∞ V ≃L[ℝ] BundleTest I F V := by
-  let _ := compactlySupportedTopology (I := I) (n := ∞) e U he
-  have ht := instTopologicalSpace_eq_compactlySupportedTopology (I := I) e U he hcover
-  refine ContinuousLinearEquiv.mk (ofCompactlySupported I F V) ?_ ?_
-  -- The native wrapper is the identity linear equivalence on the existing type synonym.
-  -- Once the public topology comparison is rewritten, both continuity goals are continuity of id.
-  · rw [ht]
-    exact @continuous_id (compactlySupported I F ∞ V)
-      (compactlySupportedTopology (I := I) (n := ∞) e U he)
-  · rw [ht]
-    exact @continuous_id (compactlySupported I F ∞ V)
-      (compactlySupportedTopology (I := I) (n := ∞) e U he)
-
-/-- The continuous native wrapper retains exactly the original algebraic wrapper. -/
-@[simp]
-theorem ofCompactlySupportedCLE_toLinearEquiv :
-    let _ := compactlySupportedTopology (I := I) (n := ∞) e U he
-    (ofCompactlySupportedCLE e U he hcover).toLinearEquiv = ofCompactlySupported I F V := by
-  unfold ofCompactlySupportedCLE
-  rfl
-
-/-- Passing through the continuous native wrapper preserves every fibre value. -/
-@[simp]
-theorem ofCompactlySupportedCLE_apply (s : compactlySupported I F ∞ V) (x : M) :
-    let _ := compactlySupportedTopology (I := I) (n := ∞) e U he
-    ofCompactlySupportedCLE e U he hcover s x = s.val x := by
-  simpa only [ofCompactlySupportedCLE, ContinuousLinearEquiv.coe_mk] using
-    congrFun (coe_ofCompactlySupported s) x
-
-/-- The inverse continuous native wrapper also preserves every fibre value. -/
-@[simp]
-theorem ofCompactlySupportedCLE_symm_apply (s : BundleTest I F V) (x : M) :
-    let _ := compactlySupportedTopology (I := I) (n := ∞) e U he
-    ((ofCompactlySupportedCLE e U he hcover).symm s).val x = s x := by
-  let _ := compactlySupportedTopology (I := I) (n := ∞) e U he
-  -- Native test evaluation is evaluation after the inverse original algebraic wrapper.
-  rw [← ContinuousLinearEquiv.coe_symm_toLinearEquiv, ofCompactlySupportedCLE_toLinearEquiv]
-
 variable (φ : ∀ x, V x ≃ₗ[ℝ] W x)
   (hφ : ContMDiff (I.prod 𝓘(ℝ, F)) (I.prod 𝓘(ℝ, G)) ∞
     (fun p : TotalSpace F V ↦ (⟨p.proj, φ p.proj p.snd⟩ : TotalSpace G W)))
