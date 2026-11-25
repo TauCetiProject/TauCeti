@@ -35,8 +35,9 @@ unitarily isomorphic to an object of `C`.
   of `Karoubi C` is isomorphic to `(X, p)` for the range projection `p` of `e`.
 * `TauCeti.CStarCategory.daggerKaroubiEquivalence`: the equivalence `DaggerKaroubi C ≌ Karoubi C`
   given by the inclusion.
-* `TauCeti.CStarCategory.exists_isUnitary_toDaggerKaroubi_obj`: in an idempotent complete
-  C*-category, every object of the envelope is unitarily isomorphic to an object of `C`.
+* `TauCeti.CStarCategory.hasUnitarySplittings_of_isIdempotentComplete`: an idempotent
+  complete C*-category has unitary splittings, so every object of the envelope is unitarily
+  isomorphic to an object of `C`.
 * `TauCeti.CStarCategory.isEquivalence_toDaggerKaroubi_iff`: the embedding `toDaggerKaroubi C`
   is an equivalence exactly when `C` is idempotent complete.
 
@@ -222,22 +223,11 @@ def daggerKaroubiEquivalence : DaggerKaroubi C ≌ Karoubi C :=
 instance : IsIdempotentComplete (DaggerKaroubi C) :=
   (isIdempotentComplete_iff_of_equivalence (daggerKaroubiEquivalence C)).2 inferInstance
 
-/-- In an idempotent complete C*-category, every object of the dagger Karoubi envelope is unitarily
-isomorphic to the image of an object of `C`. -/
-theorem exists_isUnitary_toDaggerKaroubi_obj [IsIdempotentComplete C] (P : DaggerKaroubi C) :
-    ∃ (Y : C) (u : (toDaggerKaroubi C).obj Y ⟶ P), IsUnitary u :=
-  exists_isUnitary_toDaggerKaroubi_obj_iff.2 (isIdempotentComplete_iff.1 ‹_›) P
-
-/-- The embedding of an idempotent complete C*-category into its dagger Karoubi envelope is
-essentially surjective. -/
-instance [IsIdempotentComplete C] : (toDaggerKaroubi C).EssSurj where
-  mem_essImage P :=
-    have ⟨Y, _, hu⟩ := exists_isUnitary_toDaggerKaroubi_obj P
-    ⟨Y, ⟨hu.toIso⟩⟩
-
-/-- The embedding of an idempotent complete C*-category into its dagger Karoubi envelope is an
-equivalence. -/
-instance [IsIdempotentComplete C] : (toDaggerKaroubi C).IsEquivalence where
+/-- An idempotent complete C*-category has unitary splittings. In particular `toDaggerKaroubi C`
+is then an equivalence. -/
+instance hasUnitarySplittings_of_isIdempotentComplete [IsIdempotentComplete C] :
+    HasUnitarySplittings C :=
+  isIdempotentComplete_iff.1 ‹_›
 
 variable (C) in
 /-- The embedding of a C*-category into its dagger Karoubi envelope is an equivalence exactly when

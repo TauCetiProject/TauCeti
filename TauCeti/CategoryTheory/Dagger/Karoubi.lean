@@ -46,6 +46,9 @@ equivalent to `Karoubi C`; see `TauCeti/Analysis/CStarAlgebra/Category/Karoubi.l
   has a unitary splitting, so `DaggerKaroubi C` has unitary splittings.
 * `TauCeti.exists_isUnitary_toDaggerKaroubi_obj_iff`: the objects of `DaggerKaroubi C` are
   unitarily isomorphic to objects of `C` exactly when `C` has unitary splittings.
+* `TauCeti.exists_isUnitary_toDaggerKaroubi_obj`: when `C` has unitary splittings, every object
+  of `DaggerKaroubi C` is unitarily isomorphic to an object of `C`, and `toDaggerKaroubi C` is an
+  equivalence.
 * `TauCeti.DaggerKaroubi.lift`: the extension of a dagger functor to the envelope, with
   `TauCeti.DaggerKaroubi.toDaggerKaroubiCompLiftIso` its unitary comparison with `F` on `C`.
 * `TauCeti.DaggerKaroubi.liftUnique`: the extension is unique up to unitary natural isomorphism.
@@ -262,6 +265,23 @@ theorem exists_isUnitary_toDaggerKaroubi_obj_iff :
       simpa using hv
     · ext
       simpa using hvp
+
+/-- When `C` has unitary splittings, every object of the dagger Karoubi envelope is unitarily
+isomorphic to the image of an object of `C`. -/
+theorem exists_isUnitary_toDaggerKaroubi_obj [HasUnitarySplittings C] (P : DaggerKaroubi C) :
+    ∃ (Y : C) (u : (toDaggerKaroubi C).obj Y ⟶ P), IsUnitary u :=
+  exists_isUnitary_toDaggerKaroubi_obj_iff.2 ‹_› P
+
+/-- The embedding of a dagger category with unitary splittings into its dagger Karoubi envelope is
+essentially surjective. -/
+instance [HasUnitarySplittings C] : (toDaggerKaroubi C).EssSurj where
+  mem_essImage P :=
+    have ⟨Y, _, hu⟩ := exists_isUnitary_toDaggerKaroubi_obj P
+    ⟨Y, ⟨hu.toIso⟩⟩
+
+/-- The embedding of a dagger category with unitary splittings into its dagger Karoubi envelope is
+an equivalence. -/
+instance [HasUnitarySplittings C] : (toDaggerKaroubi C).IsEquivalence where
 
 section Lift
 
