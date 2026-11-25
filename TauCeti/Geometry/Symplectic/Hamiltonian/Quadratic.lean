@@ -67,6 +67,10 @@ quadratic form whose Hamiltonian endomorphism preserves both summands is a direc
 * `TauCeti.SymplecticForm.hamiltonianEnd_quadraticPoissonBracket`: `A_{Q, R} = ⁅A_Q, A_R⁆`.
 * `TauCeti.SymplecticForm.quadraticPoissonBracket_eq_zero_iff`: `{Q, R} = 0` exactly when `A_Q`
   and `A_R` commute.
+* `TauCeti.SymplecticForm.commute_hamiltonianEnd_of_mem_span`,
+  `TauCeti.SymplecticForm.hamiltonianEnd_apply_mem_of_mem_span`: an endomorphism commuting with,
+  or a subspace preserved by, the Hamiltonian endomorphisms of a family does so for every form in
+  its span.
 * `TauCeti.SymplecticForm.polar_hamiltonianEnd_apply_of_quadraticPoissonBracket_eq_zero`: if
   `{R, P} = 0` then `A_P` is skew for the polar form of `R`.
 * `TauCeti.SymplecticForm.hamiltonianEnd_prod`,
@@ -372,6 +376,33 @@ theorem quadraticPoissonBracket_eq_zero_of_mem_span {ι : Type*} {Q : ι → Qua
   | zero => exact ω.quadraticPoissonBracket_zero_left _
   | add _ _ _ _ h h' => rw [quadraticPoissonBracket_add_left, h, h', add_zero]
   | smul c _ _ h => rw [quadraticPoissonBracket_smul_left, h, smul_zero]
+
+/-- An endomorphism commuting with the Hamiltonian endomorphisms of a family commutes with those
+of every form in its span. -/
+theorem commute_hamiltonianEnd_of_mem_span {ι : Type*} {Q : ι → QuadraticForm ℝ V}
+    {E : Module.End ℝ V} (hE : ∀ i, Commute E (ω.hamiltonianEnd (Q i))) {R : QuadraticForm ℝ V}
+    (hR : R ∈ Submodule.span ℝ (Set.range Q)) : Commute E (ω.hamiltonianEnd R) := by
+  induction hR using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨i, rfl⟩ := hx
+    exact hE i
+  | zero => simp
+  | add x y _ _ hx hy => simpa using hx.add_right hy
+  | smul c x _ hx => simpa using hx.smul_right c
+
+/-- A subspace preserved by the Hamiltonian endomorphisms of a family is preserved by those of
+every form in its span. -/
+theorem hamiltonianEnd_apply_mem_of_mem_span {ι : Type*} {Q : ι → QuadraticForm ℝ V}
+    {L : Submodule ℝ V} (hQL : ∀ i, ∀ v ∈ L, ω.hamiltonianEnd (Q i) v ∈ L)
+    {R : QuadraticForm ℝ V} (hR : R ∈ Submodule.span ℝ (Set.range Q)) :
+    ∀ v ∈ L, ω.hamiltonianEnd R v ∈ L := by
+  induction hR using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨i, rfl⟩ := hx
+    exact hQL i
+  | zero => simp
+  | add x y _ _ hx hy => exact fun v hv ↦ by simpa using add_mem (hx v hv) (hy v hv)
+  | smul c x _ hx => exact fun v hv ↦ by simpa using L.smul_mem c (hx v hv)
 
 /-! ### Direct sums -/
 

@@ -50,6 +50,8 @@ dimension count but no isotropic/Lagrangian vocabulary, which this file supplies
 * `TauCeti.SymplecticForm.isSymplectic_iff_nondegenerate_restrict`: a subspace is symplectic exactly
   when `ω` restricts to it nondegenerately, and in finite dimension
   `isSymplectic_iff_isCompl` identifies this with the splitting `V = L ⊕ L^ω`.
+* `TauCeti.SymplecticForm.isSymplectic_span_range_pair`: two vectors `v`, `w` with `ω w v ≠ 0`
+  span a symplectic plane.
 * `TauCeti.SymplecticForm.Tames.isSymplectic_of_mem_invtSubmodule`: a subspace invariant under
   an almost complex structure tamed by `ω` is symplectic.
 * `TauCeti.SymplecticForm.iSupIndep_of_pairwise_apply_eq_zero`: pairwise `ω`-orthogonal
@@ -265,6 +267,21 @@ lemma isSymplectic_bot : ω.IsSymplectic (⊥ : Submodule ℝ V) :=
 lemma isSymplectic_top : ω.IsSymplectic (⊤ : Submodule ℝ V) := by
   rw [isSymplectic_iff_disjoint, orthogonal_top]
   exact disjoint_bot_right
+
+/-- Two vectors `v`, `w` with `ω w v ≠ 0` span a symplectic plane. -/
+theorem isSymplectic_span_range_pair {v w : V} (hd : ω w v ≠ 0) :
+    ω.IsSymplectic (Submodule.span ℝ (Set.range ![v, w])) := by
+  rw [isSymplectic_iff_disjoint, Submodule.disjoint_def]
+  intro x hx hxo
+  obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun _).1 hx
+  have h₁ := mem_orthogonal_iff.1 hxo v (Submodule.subset_span ⟨0, rfl⟩)
+  have h₂ := mem_orthogonal_iff.1 hxo w (Submodule.subset_span ⟨1, rfl⟩)
+  have hvw : ω v w = -ω w v := (ω.neg_eq w v).symm
+  simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, map_add, map_smul,
+    smul_eq_mul, ω.self_eq_zero, hvw, mul_zero, zero_add, add_zero] at h₁ h₂
+  have hc₁ : c 1 = 0 := by simpa [hd] using h₁
+  have hc₀ : c 0 = 0 := by simpa [hd] using h₂
+  simp [Fin.sum_univ_two, hc₀, hc₁]
 
 /-- A subspace invariant under an almost complex structure `J` tamed by `ω` is symplectic: a
 nonzero vector `v` of it pairs positively with `J v`, which lies in it too. -/

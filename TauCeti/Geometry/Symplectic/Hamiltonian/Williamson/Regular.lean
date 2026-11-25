@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Mixed
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 import Mathlib.LinearAlgebra.Semisimple
+import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Splitting
 import TauCeti.LinearAlgebra.SesquilinearForm.AdjointPair
 
@@ -71,19 +72,6 @@ namespace IsNondegenerateQuadraticFamily
 
 /-! ### The centralizer of a nondegenerate family -/
 
-/-- An endomorphism commuting with the Hamiltonian endomorphisms of a family commutes with those
-of every form in its span. -/
-private theorem commute_hamiltonianEnd_of_mem_span {E : Module.End ℝ V}
-    (hE : ∀ i, Commute E (ω.hamiltonianEnd (Q i))) {R : QuadraticForm ℝ V}
-    (hR : R ∈ Submodule.span ℝ (Set.range Q)) : Commute E (ω.hamiltonianEnd R) := by
-  induction hR using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨i, rfl⟩ := hx
-    exact hE i
-  | zero => simp
-  | add x y _ _ hx hy => simpa using hx.add_right hy
-  | smul c x _ hx => simpa using hx.smul_right c
-
 /-- An element of `sp(V, ω)` commuting with a nondegenerate family is the Hamiltonian
 endomorphism of a form in its span. -/
 private theorem exists_mem_span_hamiltonianEnd_eq (h : ω.IsNondegenerateQuadraticFamily Q)
@@ -133,7 +121,7 @@ private theorem IsSymmCentral.commute (h : ω.IsNondegenerateQuadraticFamily Q)
     {E X : Module.End ℝ V} (hE : IsSymmCentral ω Q E) (hX : IsSkewCentral ω Q X) :
     Commute E X := by
   obtain ⟨R, hR, rfl⟩ := h.exists_mem_span_hamiltonianEnd_eq hX.1 hX.2
-  exact commute_hamiltonianEnd_of_mem_span hE.2 hR
+  exact ω.commute_hamiltonianEnd_of_mem_span hE.2 hR
 
 private theorem IsSkewCentral.mul_isSymmCentral (h : ω.IsNondegenerateQuadraticFamily Q)
     {X E : Module.End ℝ V} (hX : IsSkewCentral ω Q X) (hE : IsSymmCentral ω Q E) :
@@ -368,22 +356,6 @@ private def HasRegularSpectrum (A : Module.End ℝ V) : Prop :=
     ∀ z ∈ t, ∃ v w : V, v ≠ 0 ∧ A v = z.re • v - z.im • w ∧ A w = z.im • v + z.re • w
 
 omit [FiniteDimensional ℝ V] in
-/-- Two vectors `v`, `w` with `ω w v ≠ 0` span a symplectic plane. -/
-private theorem isSymplectic_span_range_pair {v w : V} (hd : ω w v ≠ 0) :
-    ω.IsSymplectic (Submodule.span ℝ (Set.range ![v, w])) := by
-  rw [isSymplectic_iff_disjoint, Submodule.disjoint_def]
-  intro x hx hxo
-  obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun _).1 hx
-  have h₁ := mem_orthogonal_iff.1 hxo v (Submodule.subset_span ⟨0, rfl⟩)
-  have h₂ := mem_orthogonal_iff.1 hxo w (Submodule.subset_span ⟨1, rfl⟩)
-  have hvw : ω v w = -ω w v := (ω.neg_eq w v).symm
-  simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, map_add, map_smul,
-    smul_eq_mul, ω.self_eq_zero, hvw, mul_zero, zero_add, add_zero] at h₁ h₂
-  have hc₁ : c 1 = 0 := by simpa [hd] using h₁
-  have hc₀ : c 0 = 0 := by simpa [hd] using h₂
-  simp [Fin.sum_univ_two, hc₀, hc₁]
-
-omit [FiniteDimensional ℝ V] in
 /-- Let `A₀ ∈ sp(V, ω)` commute with a self-adjoint `K` with `K² = -1`. The vectors on which `A₀`
 acts as `a + b K`, for `(a, b) ≠ 0`, pair to zero under `ω`. -/
 private theorem apply_eq_zero_of_apply_eq_smul_add_smul {A₀ K : Module.End ℝ V}
@@ -522,21 +494,6 @@ private theorem hasRegularSpectrum_of_forall_eq_algebraMap (h : ω.IsNondegenera
   refine ⟨{μ}, ∅, by simp [hfin], by simpa using hμ0.symm, fun μ' hμ' ↦ ?_, by simp, by simp⟩
   rw [Finset.mem_singleton.1 hμ']
   exact hasEigenvalue_sq_of_apply hv₀ (hAA v₀)
-
-/-- A square root `a + b i` of `x + y i`, `y > 0`, in the open first quadrant. -/
-private theorem exists_pos_sq_sub_sq_eq (x : ℝ) {y : ℝ} (hy : 0 < y) :
-    ∃ a b : ℝ, 0 < a ∧ 0 < b ∧ a ^ 2 - b ^ 2 = x ∧ 2 * a * b = y := by
-  obtain ⟨w, hw⟩ := IsAlgClosed.exists_pow_nat_eq (⟨x, y⟩ : ℂ) two_pos
-  have hre : w.re ^ 2 - w.im ^ 2 = x := by simpa [sq] using congrArg Complex.re hw
-  have him : 2 * w.re * w.im = y := by
-    have := congrArg Complex.im hw
-    simp only [sq, Complex.mul_im] at this
-    linarith
-  have hab : 2 * |w.re| * |w.im| = y := by
-    have : |2 * w.re * w.im| = y := by rw [him, abs_of_pos hy]
-    rwa [abs_mul, abs_mul, abs_two] at this
-  refine ⟨|w.re|, |w.im|, abs_pos.2 fun h0 ↦ ?_, abs_pos.2 fun h0 ↦ ?_, by rw [sq_abs, sq_abs, hre],
-    hab⟩ <;> simp [h0] at him <;> linarith
 
 omit [FiniteDimensional ℝ V] in
 /-- Let `A₀ ∈ sp(V, ω)` commute with a self-adjoint `K`, `K² = -1`, with
@@ -754,7 +711,15 @@ private theorem exists_hasRegularSpectrum_of_mul_self_eq_neg_one
       obtain ⟨a, b, rfl⟩ := hspanJ E hE
       exact ⟨a, -b, by simp⟩
     · exact ⟨J, hJ, hJpt, hspanJ, y₀, hpos, hAA⟩
-  obtain ⟨a, b, ha, hb, hab, hab'⟩ := exists_pos_sq_sub_sq_eq x₀ hy₁
+  -- `a + b i` is the principal square root of `x₀ + y₁ i`, which lies in the open first quadrant.
+  obtain ⟨a, b, ha, hb, hab, hab'⟩ :
+      ∃ a b : ℝ, 0 < a ∧ 0 < b ∧ a ^ 2 - b ^ 2 = x₀ ∧ 2 * a * b = y₁ := by
+    have hw := Complex.sq_sqrt ⟨x₀, y₁⟩
+    refine ⟨_, _, (Complex.sqrt_re_pos_iff _).2 (Complex.mem_slitPlane_iff.2 (.inr hy₁.ne')),
+      Complex.sqrt_im_pos hy₁, by simpa [sq] using congrArg Complex.re hw, ?_⟩
+    have := congrArg Complex.im hw
+    simp only [sq, Complex.mul_im] at this
+    linarith
   obtain ⟨P₀, hP₀, rfl⟩ := h.exists_mem_span_hamiltonianEnd_eq hA₀.1 hA₀.2
   have hKA (v : V) : ω.hamiltonianEnd P₀ (K v) = K (ω.hamiltonianEnd P₀ v) :=
     LinearMap.congr_fun (hK.commute h hA₀).symm.eq v
@@ -786,19 +751,6 @@ private theorem exists_hasRegularSpectrum_of_isIrreducible (h : ω.IsNondegenera
     · exact absurd ⟨J, hJ', hJJ⟩ hJ
 
 /-! ### Gluing along invariant symplectic splittings -/
-
-/-- A subspace preserved by the Hamiltonian endomorphisms of a family is preserved by those of
-every form in its span. -/
-private theorem apply_mem_of_mem_span {L : Submodule ℝ V}
-    (hQL : ∀ i, ∀ v ∈ L, ω.hamiltonianEnd (Q i) v ∈ L) {R : QuadraticForm ℝ V}
-    (hR : R ∈ Submodule.span ℝ (Set.range Q)) : ∀ v ∈ L, ω.hamiltonianEnd R v ∈ L := by
-  induction hR using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨i, rfl⟩ := hx
-    exact hQL i
-  | zero => simp
-  | add x y _ _ hx hy => exact fun v hv ↦ by simpa using add_mem (hx v hv) (hy v hv)
-  | smul c x _ hx => exact fun v hv ↦ by simpa using L.smul_mem c (hx v hv)
 
 /-- A positive scale `c` separating the spectral data of two summands: `c² s₂` avoids `s₁` and
 `c t₂` avoids `t₁`. -/
@@ -903,11 +855,11 @@ private theorem exists_hasRegularSpectrum_of_isSymplectic (h : ω.IsNondegenerat
       ext x
       simp only [R, QuadraticMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply]⟩
   -- `A_R` preserves `L` and `L^ω`, on which `R` restricts to `P₁` and `c P₂`.
-  have hRL := apply_mem_of_mem_span (fun i _ hv ↦ (Module.End.mem_invtSubmodule _).1 (hQL i) hv) hR
+  have hRL := ω.hamiltonianEnd_apply_mem_of_mem_span
+    (fun i _ hv ↦ (Module.End.mem_invtSubmodule _).1 (hQL i) hv) hR
   have hRL' (x : V) (hx : x ∈ ω.orthogonal L) : ω.hamiltonianEnd R x ∈ ω.orthogonal L :=
-    mem_orthogonal_iff.2 fun y hy ↦ by
-      rw [apply_hamiltonianEnd_right, ← apply_hamiltonianEnd, mem_orthogonal_iff.1 hx _ (hRL y hy),
-        neg_zero]
+    ((LinearMap.mem_skewAdjointSubmodule _).1
+      (ω.hamiltonianEnd_mem_skewAdjointLieSubalgebra R)).apply_mem_orthogonal hRL hx
   refine ⟨R, hR, hcA _ (hamiltonianEnd_coe_of_comp_subtype_eq hL hRL (P := P₁)
     (by ext a; simp [R])) fun b ↦ ?_⟩
   rw [hamiltonianEnd_coe_of_comp_subtype_eq hL.orthogonal hRL' (P := c • P₂) (by ext b; simp [R]),
