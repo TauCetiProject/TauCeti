@@ -72,7 +72,7 @@ If `π : R ^ n → M` and `σ : M → R ^ n` split `M` off a free module, then
 
 Both Cayley–Hamilton statements reduce to free modules: a polynomial kills an endomorphism once
 its image kills the base change to the localization at every maximal ideal
-(`LinearMap.aeval_eq_zero_of_forall_baseChange_localization`).
+(`Module.End.aeval_eq_zero_of_forall_baseChange_localization`).
 
 The scaling, transpose and inverse statements are the linear algebra of Euler factors. For a
 Frobenius `φ` acting on a lattice `T` and the cyclotomic character value `N`, the Euler polynomial
@@ -271,32 +271,14 @@ private theorem aeval_projectiveCharpolyRev_eq_zero_of_mul_eq_one_of_free [Modul
   exact Matrix.aeval_charpolyRev_eq_zero_of_mul_eq_one (by rw [← toMatrix_mul, h, toMatrix_one])
 
 open scoped TensorProduct in
-/-- **Local-to-global for polynomial identities.** A polynomial `p` kills `f` once its image kills
-the base change of `f` to the localization `A` at every maximal ideal, where `A ⊗[R] M` is free. -/
-theorem aeval_eq_zero_of_forall_baseChange_localization (f : Module.End R M) (p : R[X])
-    (h : ∀ (P : Ideal R) [P.IsMaximal]
-      [Module.Free (Localization.AtPrime P) (Localization.AtPrime P ⊗[R] M)],
-      aeval (f.baseChange (Localization.AtPrime P))
-        (p.map (algebraMap R (Localization.AtPrime P))) = 0) :
-    aeval f p = 0 := by
-  ext x
-  refine Module.eq_zero_of_localization_maximal (fun P _ ↦ Localization.AtPrime P ⊗[R] M)
-    (fun P _ ↦ TensorProduct.mk R (Localization.AtPrime P) M 1) _ fun P hP ↦ ?_
-  let A := Localization.AtPrime P
-  have : Module.Free A (A ⊗[R] M) := free_of_flat_of_isLocalRing
-  have hbase : (aeval f p).baseChange A = 0 := by
-    rw [show (aeval f p).baseChange A = aeval (f.baseChange A) p from
-        (aeval_algHom_apply (Module.End.baseChangeHom R A M) f p).symm,
-      aeval_eq_aeval_map (IsScalarTower.algebraMap_eq R A (Module.End A (A ⊗[R] M))).symm]
-    exact h P
-  rw [TensorProduct.mk_apply, ← LinearMap.baseChange_tmul, hbase, LinearMap.zero_apply]
-
 /-- **Cayley–Hamilton for the inverse.** If `g f = 1`, then `g` is a root of the reversed
 characteristic polynomial `det (1 - X f)` of `f`. -/
 theorem aeval_projectiveCharpolyRev_eq_zero_of_mul_eq_one {f g : Module.End R M} (h : g * f = 1) :
     aeval g (projectiveCharpolyRev f) = 0 := by
   -- after localizing at a maximal ideal the module is free, where the free case applies
-  refine aeval_eq_zero_of_forall_baseChange_localization g _ fun P _ _ ↦ ?_
+  refine Module.End.aeval_eq_zero_of_forall_baseChange_localization g _ fun P _ ↦ ?_
+  have : Module.Free (Localization.AtPrime P) (Localization.AtPrime P ⊗[R] M) :=
+    free_of_flat_of_isLocalRing
   rw [← projectiveCharpolyRev_baseChange]
   refine aeval_projectiveCharpolyRev_eq_zero_of_mul_eq_one_of_free ?_
   rw [Module.End.mul_eq_comp, ← baseChange_comp, ← Module.End.mul_eq_comp, h,
@@ -443,8 +425,9 @@ at every point of `Spec R`, the reflection `X ^ d · Q(1/X)` at `d` of
 theorem aeval_reflect_projectiveCharpolyRev_eq_zero_of_rankAtStalk_le {d : ℕ}
     (hd : ∀ p, rankAtStalk (R := R) M p ≤ d) (f : Module.End R M) :
     aeval f ((projectiveCharpolyRev f).reflect d) = 0 := by
-  refine aeval_eq_zero_of_forall_baseChange_localization f _ fun P hP _ ↦ ?_
+  refine Module.End.aeval_eq_zero_of_forall_baseChange_localization f _ fun P hP ↦ ?_
   let A := Localization.AtPrime P
+  have : Module.Free A (A ⊗[R] M) := free_of_flat_of_isLocalRing
   have hfin : finrank A (A ⊗[R] M) ≤ d := by
     rw [← rankAtStalk_eq_finrank_tensorProduct (M := M) ⟨P, hP.isPrime⟩]
     exact hd ⟨P, hP.isPrime⟩
