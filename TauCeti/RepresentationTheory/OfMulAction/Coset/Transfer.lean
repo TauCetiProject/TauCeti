@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.OfMulAction.Coset.Lift
 public import TauCeti.RepresentationTheory.RelativeNorm
 import TauCeti.RepresentationTheory.Intertwining
+import TauCeti.RepresentationTheory.Stabilizer
 
 /-!
 # Inclusion and trace of invariants through permutation representations
@@ -110,7 +111,8 @@ private theorem cosetTransfer_single_one_eq_cosetSum :
 theorem cosetTransfer_single (g : G) (c : A) :
     cosetTransfer A U' (MonoidAlgebra.single (g : G ⧸ U) c) =
       ∑ q : U ⧸ U'.subgroupOf U, MonoidAlgebra.single ((g * ((q.out : U) : G) : G) : G ⧸ U') c := by
-  simp [cosetTransfer, cosetSum, relNorm_apply, ofMulAction_single, Finset.smul_sum]
+  simp [cosetTransfer, cosetSum, relNorm_apply, ofMulAction_single, Finset.smul_sum,
+    Subgroup.smul_def]
 
 /-- The transfer sends the coset `U` to the sum of the cosets `u U'`, `u ∈ U ⧸ U'`. -/
 theorem cosetTransfer_single_one :
