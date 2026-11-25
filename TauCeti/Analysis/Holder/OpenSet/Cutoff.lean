@@ -67,19 +67,13 @@ include hδ hχΩ in
 private theorem tsupport_subset : tsupport χ ⊆ Ω :=
   (self_subset_thickening (by exact_mod_cast hδ) _).trans hχΩ
 
-private theorem norm_iteratedFDeriv_extend_le_nnnorm (f : CkHolderSpaceOn k α Ω F) {i : ℕ}
-    (hi : i ≤ k) (x : E) (hx : x ∈ Ω) :
-    ‖_root_.iteratedFDeriv ℝ i f.extend x‖ ≤ ‖f‖₊ := by
-  rw [coe_nnNorm]
-  exact f.norm_iteratedFDeriv_extend_le hi ⟨x, hx⟩
-
 include hχ hδ hχΩ hχb in
 private theorem norm_iteratedFDeriv_smul_extend_le (f : CkHolderSpaceOn k α Ω F) {j : ℕ}
     (hj : j ≤ k) (x : E) :
     ‖_root_.iteratedFDeriv ℝ j (fun x ↦ χ x • f.extend x) x‖ ≤ (2 : ℝ) ^ j * N * ‖f‖₊ :=
   norm_iteratedFDeriv_cutoff_smul_le f.contDiffOn_extend (hχ.of_le (by simp)) Ω.isOpen
     (tsupport_subset hδ hχΩ) hj
-    (fun _ hi x hx ↦ norm_iteratedFDeriv_extend_le_nnnorm f hi x hx)
+    (fun _ hi x hx ↦ (f.norm_iteratedFDeriv_extend_le hi ⟨x, hx⟩).trans_eq (coe_nnNorm f).symm)
     (fun i hi ↦ hχb i (by omega)) x
 
 include hχ hδ hχΩ hα hχb in
@@ -88,8 +82,8 @@ private theorem holderWith_iteratedFDeriv_smul_extend (f : CkHolderSpaceOn k α 
       (_root_.iteratedFDeriv ℝ k (fun x ↦ χ x • f.extend x)) :=
   holderWith_iteratedFDeriv_cutoff_smul_of_thickening_subset f.contDiffOn_extend hχ Ω.isOpen hδ
     hχΩ hα
-    (fun _ hi x hx ↦ norm_iteratedFDeriv_extend_le_nnnorm f hi x hx) hχb
-    ((f.holderOnWith_iteratedFDeriv f.extend_apply).mono_const
+    (fun _ hi x hx ↦ (f.norm_iteratedFDeriv_extend_le hi ⟨x, hx⟩).trans_eq (coe_nnNorm f).symm) hχb
+    (f.holderOnWith_iteratedFDeriv_extend.mono_const
       (by exact_mod_cast f.nnHolderNorm_iteratedFDeriv_le))
 
 /-- The product of a cutoff with an element of `C^{k,α}(Ω)`, extended by zero, as an element of
