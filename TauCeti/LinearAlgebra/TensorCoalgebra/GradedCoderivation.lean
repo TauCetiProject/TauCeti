@@ -1147,6 +1147,7 @@ theorem ReducedTensorWords.gradedCoderiv_zero_left (G : InternalGrading R M ℤ)
   congrArg Subtype.val (map_zero (gradedCoderivEquivTaylor G q).symm)
 
 /-- The graded Taylor expansion of a finite sum of Taylor maps is the sum of their expansions. -/
+@[simp]
 theorem ReducedTensorWords.gradedCoderiv_sum {ι : Type*} (G : InternalGrading R M ℤ) (s : Finset ι)
     (F : ι → ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
     gradedCoderiv G (∑ i ∈ s, F i) q = ∑ i ∈ s, gradedCoderiv G (F i) q :=

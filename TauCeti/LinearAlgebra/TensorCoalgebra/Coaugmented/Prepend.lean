@@ -197,6 +197,15 @@ theorem cons_one_eq_of (x : M) : cons R M x 1 = of R M 1 (PiTensorProduct.tprod 
 theorem counit_cons (x : M) (w : TensorWords R M) : counit R M (cons R M x w) = 0 :=
   counit_reducedInclusion R M _
 
+/-- Iterated prepending of a letter to a word starting with a letter gives a word with zero
+counit. -/
+@[simp]
+theorem counit_cons_pow_cons (a x : M) (k : ℕ) (w : TensorWords R M) :
+    counit R M ((cons R M a ^ k) (cons R M x w)) = 0 := by
+  rcases k with _ | k
+  · simp
+  · rw [pow_succ', mul_apply_eq_comp, counit_cons]
+
 /-- Cutting `x w` either cuts before `x` or cuts `w` and prepends `x` to the left half. -/
 theorem deconcatenation_cons (x : M) (w : TensorWords R M) :
     deconcatenation R M (cons R M x w) =

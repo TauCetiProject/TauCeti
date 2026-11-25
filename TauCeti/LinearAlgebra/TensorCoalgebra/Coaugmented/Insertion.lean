@@ -139,13 +139,6 @@ theorem zero_insertions {t : ℕ} (ht : t ≠ 0) : insertions R (0 : M) t = 0 :=
     rw [insertions_cons, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk, Finset.sum_range_succ']
     simp [pow_succ', hw]
 
-/-- Iterated prepending of a letter to a word with zero counit gives a word with zero counit. -/
-private theorem counit_cons_pow_cons (a x : M) (k : ℕ) (w : TensorWords R M) :
-    counit R M ((cons R M a ^ k) (cons R M x w)) = 0 := by
-  rcases k with _ | k
-  · simp
-  · rw [pow_succ', mul_apply_eq_comp, counit_cons]
-
 /-- A word into which at least one letter has been inserted has zero counit. -/
 @[simp]
 theorem counit_insertions_succ (a : M) (t : ℕ) (w : TensorWords R M) :
@@ -153,7 +146,7 @@ theorem counit_insertions_succ (a : M) (t : ℕ) (w : TensorWords R M) :
   refine LinearMap.congr_fun (linearMap_ext_cons'
     (f := counit R M ∘ₗ insertions R a (t + 1)) (g := 0) ?_ fun x w _ ↦ ?_) w
   · simp [pow_succ', mul_apply_eq_comp]
-  · simp [insertions_cons, counit_cons_pow_cons]
+  · simp [insertions_cons]
 
 /-- **The coproduct identity for the insertions**, coefficientwise in the number of inserted
 letters: inserting `t` letters and cutting is the same as cutting and inserting `i` letters on the
