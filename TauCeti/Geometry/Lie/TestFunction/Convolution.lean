@@ -232,9 +232,7 @@ theorem inversion_convolution (a b : LieTestFunction I G) :
 left-invariant measure: `(a * b)^* = b^* * a^*`. -/
 theorem involution_convolution (a b : LieTestFunction I G) :
     involution (convolution μ a b) = convolution μ (involution b) (involution a) := by
-  have h (c : LieTestFunction I G) : involution c = conj (inversion c) := by
-    ext; simp
-  rw [h, h, h, inversion_convolution, conj_convolution]
+  simp only [involution_eq_conj_inversion, inversion_convolution, conj_convolution]
 
 end LeftInvariant
 
