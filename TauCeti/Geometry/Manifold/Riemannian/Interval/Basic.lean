@@ -216,7 +216,7 @@ theorem outwardUnitNormal_Icc_bot :
     outwardUnitNormal (⟨⊥, Icc_isBoundaryPoint_bot⟩ : (𝓡∂ (0 + 1)).boundary (Icc a b)) =
       -(1 : TangentSpace (𝓡∂ (0 + 1)) (⊥ : Icc a b)) := by
   have hab : ((⊥ : Icc a b) : ℝ) < b := Fact.out (p := a < b)
-  refine (eq_outwardUnitNormal_iff_of_dim_zero.2
+  refine (eq_outwardUnitNormal_iff_of_dim_one.2
     ⟨by rw [norm_neg, IccZeroAddOne.norm_one_tangentSpace], ?_⟩).symm
   rw [isOutwardPointing_neg_iff_proj Icc_isBoundaryPoint_bot, IccZeroAddOne.proj_one_tangentSpace]
   simp only [hab, ↓reduceIte, zero_lt_one]
@@ -227,7 +227,7 @@ theorem outwardUnitNormal_Icc_top :
     outwardUnitNormal (⟨⊤, Icc_isBoundaryPoint_top⟩ : (𝓡∂ (0 + 1)).boundary (Icc a b)) =
       (1 : TangentSpace (𝓡∂ (0 + 1)) (⊤ : Icc a b)) := by
   have hab : ¬((⊤ : Icc a b) : ℝ) < b := lt_irrefl b
-  refine (eq_outwardUnitNormal_iff_of_dim_zero.2 ⟨IccZeroAddOne.norm_one_tangentSpace _, ?_⟩).symm
+  refine (eq_outwardUnitNormal_iff_of_dim_one.2 ⟨IccZeroAddOne.norm_one_tangentSpace _, ?_⟩).symm
   rw [isOutwardPointing_iff_proj Icc_isBoundaryPoint_top, IccZeroAddOne.proj_one_tangentSpace]
   simp only [hab, ↓reduceIte, neg_lt_zero, zero_lt_one]
 

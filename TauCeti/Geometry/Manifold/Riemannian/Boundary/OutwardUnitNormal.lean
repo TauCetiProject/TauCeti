@@ -51,7 +51,7 @@ directions, boundary defining functions and the second fundamental form are read
 * `TauCeti.norm_outwardUnitNormal`, `TauCeti.isOutwardPointing_outwardUnitNormal` and
   `TauCeti.inner_outwardUnitNormal_mfderiv_subtypeVal`: its three defining laws.
 * `TauCeti.eq_outwardUnitNormal_iff`: the three laws characterize it, and
-  `TauCeti.eq_outwardUnitNormal_iff_of_dim_zero` drops orthogonality in dimension one.
+  `TauCeti.eq_outwardUnitNormal_iff_of_dim_one` drops orthogonality in dimension one.
 * `TauCeti.orthogonalNormalSpace_subtypeVal_boundary_eq_span`: it spans the normal space.
 * `TauCeti.outwardUnitNormal_eq_normalize_mgradient`: its formula in any chart of the `C¹` maximal
   atlas.
@@ -243,7 +243,7 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace (0 +
 /-- On a one-dimensional manifold with boundary, a tangent vector at a boundary point is the
 outward unit normal exactly when it has norm one and points outward: the boundary is
 zero-dimensional, so orthogonality to its tangent vectors is automatic. -/
-theorem eq_outwardUnitNormal_iff_of_dim_zero {q : (𝓡∂ (0 + 1)).boundary M}
+theorem eq_outwardUnitNormal_iff_of_dim_one {q : (𝓡∂ (0 + 1)).boundary M}
     {v : TangentSpace (𝓡∂ (0 + 1)) (q : M)} :
     v = outwardUnitNormal q ↔ ‖v‖ = 1 ∧ IsOutwardPointing (q : M) v := by
   refine eq_outwardUnitNormal_iff.trans
