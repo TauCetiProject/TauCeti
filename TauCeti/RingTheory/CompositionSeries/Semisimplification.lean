@@ -47,7 +47,9 @@ block of size three), which is why the full composition series is used.
 * `TauCeti.nonempty_linearEquiv_semisimplification_prod_of_exact`: `M^ss ≅ A^ss × B^ss` for a
   short exact sequence `0 → A → M → B → 0`, and
   `TauCeti.nonempty_linearEquiv_semisimplification_prod_quotient`: `M^ss ≅ N^ss × (M/N)^ss`.
-* `TauCeti.nonempty_linearEquiv_semisimplification_of_linearEquiv`: isomorphic modules have
+* `TauCeti.nonempty_linearEquiv_semisimplification_iff_jordanHolderMultiplicity_eq`:
+  `M^ss ≅ N^ss` iff `M` and `N` have the same Jordan-Hölder multiplicities; in particular
+  `TauCeti.nonempty_linearEquiv_semisimplification_of_linearEquiv`: isomorphic modules have
   isomorphic semisimplifications.
 -/
 
@@ -86,7 +88,9 @@ variable (R M) in
 composition series from `⊥` to `⊤`. By `TauCeti.nonempty_linearEquiv_seriesSemisimplification`
 every such series gives an isomorphic module, so the choice below is immaterial. It is a `def`
 rather than an `abbrev`, so that it is used through the multiplicity lemma
-`TauCeti.jordanHolderMultiplicity_semisimplification` instead of through the chosen series. -/
+`TauCeti.jordanHolderMultiplicity_semisimplification` instead of through the chosen series. Its
+body is exposed only because the instances below, which Lean requires to be exposed, are
+transferred from the chosen series. -/
 @[expose] noncomputable def semisimplification : Type v :=
   seriesSemisimplification (exists_compositionSeries_of_isNoetherian_isArtinian R M).choose
 
@@ -143,13 +147,27 @@ theorem nonempty_linearEquiv_semisimplification_semisimplification :
     Nonempty (semisimplification R (semisimplification R M) ≃ₗ[R] semisimplification R M) :=
   nonempty_linearEquiv_semisimplification_of_isSemisimpleModule
 
+/-- **Two modules of finite length have isomorphic semisimplifications exactly when they have the
+same Jordan-Hölder multiplicities.** It suffices to test the simple modules in the universe of
+`R`. -/
+theorem nonempty_linearEquiv_semisimplification_iff_jordanHolderMultiplicity_eq {N : Type w}
+    [AddCommGroup N] [Module R N] [IsNoetherian R N] [IsArtinian R N] :
+    Nonempty (semisimplification R M ≃ₗ[R] semisimplification R N) ↔
+      ∀ (S : Type u) [AddCommGroup S] [Module R S] [IsSimpleModule R S],
+        jordanHolderMultiplicity R M S = jordanHolderMultiplicity R N S := by
+  refine ⟨fun ⟨e⟩ S _ _ _ ↦ ?_, fun h ↦
+    IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq _ _ fun S _ _ _ ↦ ?_⟩
+  · rw [← jordanHolderMultiplicity_semisimplification (M := M),
+      jordanHolderMultiplicity_eq_of_linearEquiv e, jordanHolderMultiplicity_semisimplification]
+  · rw [jordanHolderMultiplicity_semisimplification, jordanHolderMultiplicity_semisimplification,
+      h S]
+
 /-- Isomorphic modules of finite length have isomorphic semisimplifications. -/
 theorem nonempty_linearEquiv_semisimplification_of_linearEquiv {N : Type w} [AddCommGroup N]
     [Module R N] [IsNoetherian R N] [IsArtinian R N] (e : M ≃ₗ[R] N) :
     Nonempty (semisimplification R M ≃ₗ[R] semisimplification R N) :=
-  IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq _ _ fun S _ _ _ ↦ by
-    rw [jordanHolderMultiplicity_semisimplification, jordanHolderMultiplicity_semisimplification,
-      jordanHolderMultiplicity_eq_of_linearEquiv e]
+  nonempty_linearEquiv_semisimplification_iff_jordanHolderMultiplicity_eq.mpr fun S _ _ _ ↦
+    jordanHolderMultiplicity_eq_of_linearEquiv e S
 
 /-- **Semisimplification is additive in short exact sequences**: for a short exact sequence
 `0 → A → M → B → 0` of modules of finite length, `M^ss ≅ A^ss × B^ss`. -/
