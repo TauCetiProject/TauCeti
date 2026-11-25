@@ -105,17 +105,15 @@ noncomputable def smoothAverage : V →ₗ[A] V where
     have := H.quotient_finite_of_isOpen hH
     have hv : H ≤ σ.stabilizer v := inf_le_left
     have hw : H ≤ σ.stabilizer w := inf_le_right
-    have hvw : H ≤ σ.stabilizer (v + w) := fun h hh ↦ by
-      rw [mem_stabilizer, map_add, mem_stabilizer.1 (hv hh), mem_stabilizer.1 (hw hh)]
-    rw [orbitAverage_eq σ hK hH hv, orbitAverage_eq σ hK hH hw, orbitAverage_eq σ hK hH hvw,
+    rw [orbitAverage_eq σ hK hH hv, orbitAverage_eq σ hK hH hw,
+      orbitAverage_eq σ hK hH (H := H) (σ.le_stabilizer_add v w),
       ← smul_add, ← finsum_add_distrib (toFinite _) (toFinite _)]
     simp only [map_add]
   map_smul' c v := by
     have hH := IsSmooth.isOpen_stabilizer (ρ := σ) v
-    have hcv : σ.stabilizer v ≤ σ.stabilizer (c • v) := fun h hh ↦ by
-      rw [mem_stabilizer, map_smul, mem_stabilizer.1 hh]
     simp only [RingHom.id_apply]
-    rw [orbitAverage_eq σ hK hH le_rfl, orbitAverage_eq σ hK hH hcv, smul_comm c]
+    rw [orbitAverage_eq σ hK hH le_rfl, orbitAverage_eq σ hK hH (σ.le_stabilizer_smul c v),
+      smul_comm c]
     simp only [finsum_eq_sum_of_fintype, map_smul, Finset.smul_sum]
 
 /-- The averaging projector sends `v` to the barycentre of its orbit. -/
