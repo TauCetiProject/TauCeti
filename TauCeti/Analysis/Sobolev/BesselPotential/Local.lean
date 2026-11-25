@@ -341,16 +341,10 @@ theorem isLocallyMemSobolevAt_iff_exists_memSobolev_cutoffTempered (hp : 1 < p) 
 test function `χ`, then `χ T ∈ H^{s,p}`. -/
 theorem memSobolev_cutoffTempered_of_forall_isLocallyMemSobolevAt {χ : 𝓓(Ω, ℂ)}
     (h : ∀ x ∈ tsupport χ, T.IsLocallyMemSobolevAt s p x) :
-    TemperedDistribution.MemSobolev s p (T.cutoffTempered χ) := by
-  -- Each point of `tsupport χ` has a neighbourhood on which every cutoff gives an `H^{s,p}`
-  -- product.
-  choose U hU _ hUs using fun x : tsupport χ ↦ h x x.property
-  -- Split `χ` into finitely many test functions supported in these neighbourhoods.
-  obtain ⟨t, ψ, hψU, hψχ, -⟩ := χ.exists_sum_subordinate (fun x ↦ interior (U x))
-    (fun _ ↦ isOpen_interior) fun x hx ↦
-      mem_iUnion.2 ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.2 (hU ⟨x, hx⟩)⟩
-  rw [← hψχ, cutoffTempered_sum_cutoff]
-  exact TemperedDistribution.MemSobolev.sum fun i _ ↦ hUs i _ ((hψU i).trans interior_subset)
+    TemperedDistribution.MemSobolev s p (T.cutoffTempered χ) :=
+  cutoffTempered_induction _ (TemperedDistribution.memSobolev_fun_zero E ℂ s p)
+    (fun _ _ ↦ TemperedDistribution.MemSobolev.add)
+    fun x hx ↦ (h x hx).imp fun _ hU ↦ ⟨hU.1, hU.2.2⟩
 
 /-- If `χ = 1` on the support of `φ` and `χ T ∈ H^r` with `n < 2 (r + 2k)`, then
 `φ T = φ (χ T) ∈ H^{-2k,p}`. -/

@@ -229,10 +229,7 @@ def besselPotentialSpace :
     simp only [Pi.zero_apply, BesselPotentialSpace.toDistr_zero]
     rw [← Pi.zero_def, map_zero, map_zero]
   smul_mem' a u hu k := by
-    -- The real action on `H^{s,p}(E, ℂ)` is the restriction of the complex one, so
-    -- `BesselPotentialSpace.toDistr_smul` applies at `(a : ℂ)`.
-    simp only [Pi.smul_apply, ← Complex.coe_smul, BesselPotentialSpace.toDistr_smul]
-    simp only [Complex.coe_smul]
+    simp only [Pi.smul_apply, BesselPotentialSpace.toDistr_real_smul]
     rw [← Pi.smul_def, map_smul, map_smul, hu k]
 
 variable {s p} in
@@ -275,10 +272,8 @@ def besselPotentialToDistribution :
     simp only [Submodule.coe_add, Pi.add_apply, BesselPotentialSpace.toDistr_add]
     rw [← Pi.add_def, map_add]
   map_smul' a u := by
-    -- As in `besselPotentialSpace`, `BesselPotentialSpace.toDistr_smul` applies at `(a : ℂ)`.
-    simp only [Submodule.coe_smul, Pi.smul_apply, ← Complex.coe_smul,
-      BesselPotentialSpace.toDistr_smul, RingHom.id_apply]
-    simp only [Complex.coe_smul]
+    simp only [Submodule.coe_smul, Pi.smul_apply, BesselPotentialSpace.toDistr_real_smul,
+      RingHom.id_apply]
     rw [← Pi.smul_def, map_smul]
 
 variable {s p}

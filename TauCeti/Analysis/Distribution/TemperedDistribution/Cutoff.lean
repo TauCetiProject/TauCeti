@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
@@ -52,6 +53,9 @@ on `Ω` be replaced by one acting on the tempered distribution `χ T`.
 * `Distribution.cutoffTempered_congr`: independence of the cutoff near the support of `T`.
 * `Distribution.cutoffTempered_zero`, `Distribution.cutoffTempered_add`,
   `Distribution.cutoffTempered_smul`, `Distribution.cutoffTempered_sum`: `φ T` is linear in `T`.
+* `Distribution.cutoffTempered_induction`: a property of tempered distributions that holds for `0`
+  and is preserved by sums passes from the cut-off distributions `ψ T` with `ψ` supported near
+  each point of the support of `χ` to `χ T`.
 * `Distribution.cutoffTempered_smulLeftCLM`: `φ (g T) = (g φ) T` for a smooth real `g`.
 * `Distribution.cutoffTempered_restrictCLM`: cutting off the restriction of `T` to an open
   `Ω' ≤ Ω` by `φ` is cutting off `T` by `φ` extended by zero.
@@ -248,6 +252,22 @@ theorem cutoffTempered_smul_cutoff (T : 𝓓'(Ω, ℂ)) (c : ℂ) (φ : 𝓓(Ω,
     T.cutoffTempered (c • φ) = c • T.cutoffTempered φ := by
   ext ψ
   simp only [smul_apply, cutoffTempered_def, map_smul, smul_eq_mul]
+
+/-- **From local to global properties of cut-off distributions.** Let `P` be a property of
+tempered distributions that holds for `0` and is preserved by sums. If every point of the support
+of `χ` has a neighbourhood `U` such that `P (ψ T)` holds for every test function `ψ` supported in
+`U`, then `P (χ T)` holds: `χ` is a finite sum of test functions supported in such
+neighbourhoods. -/
+theorem cutoffTempered_induction (P : 𝓢'(E, ℂ) → Prop) (zero : P 0)
+    (add : ∀ u v, P u → P v → P (u + v)) {T : 𝓓'(Ω, ℂ)} {χ : 𝓓(Ω, ℂ)}
+    (h : ∀ x ∈ tsupport χ, ∃ U ∈ 𝓝 x, ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U → P (T.cutoffTempered ψ)) :
+    P (T.cutoffTempered χ) := by
+  choose U hU hUP using fun x : tsupport χ ↦ h x x.property
+  obtain ⟨t, ψ, hψU, hψχ, -⟩ := χ.exists_sum_subordinate (fun x ↦ interior (U x))
+    (fun _ ↦ isOpen_interior) fun x hx ↦
+      mem_iUnion.2 ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.2 (hU ⟨x, hx⟩)⟩
+  rw [← hψχ, cutoffTempered_sum_cutoff]
+  exact Finset.sum_induction _ P add zero fun i _ ↦ hUP i _ ((hψU i).trans interior_subset)
 
 end Cutoff
 

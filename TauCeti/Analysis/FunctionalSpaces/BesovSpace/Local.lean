@@ -215,17 +215,9 @@ theorem _root_.TemperedDistribution.MemBesov.isLocallyMemBesovAt_toDistribution 
 a test function `χ`, then `χ T ∈ B^s_{p,q}`. -/
 theorem memBesov_cutoffTempered_of_forall_isLocallyMemBesovAt {χ : 𝓓(Ω, ℂ)}
     (h : ∀ x ∈ tsupport χ, T.IsLocallyMemBesovAt φ s p q x) :
-    (T.cutoffTempered χ).MemBesov φ s p q := by
-  -- Each point of `tsupport χ` has a neighbourhood on which every cutoff gives a `B^s_{p,q}`
-  -- product.
-  choose U hU _ hUs using fun x : tsupport χ ↦ h x x.property
-  -- Split `χ` into finitely many test functions supported in these neighbourhoods.
-  obtain ⟨t, ψ, hψU, hψχ, -⟩ := χ.exists_sum_subordinate (fun x ↦ interior (U x))
-    (fun _ ↦ isOpen_interior) fun x hx ↦
-      mem_iUnion.2 ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.2 (hU ⟨x, hx⟩)⟩
-  rw [← hψχ, cutoffTempered_sum_cutoff]
-  exact Finset.sum_induction _ (fun u : 𝓢'(E, ℂ) ↦ u.MemBesov φ s p q)
-    (fun _ _ ↦ MemBesov.add) MemBesov.zero fun i _ ↦ hUs i _ ((hψU i).trans interior_subset)
+    (T.cutoffTempered χ).MemBesov φ s p q :=
+  cutoffTempered_induction (fun u : 𝓢'(E, ℂ) ↦ u.MemBesov φ s p q) MemBesov.zero
+    (fun _ _ ↦ MemBesov.add) fun x hx ↦ (h x hx).imp fun _ hU ↦ ⟨hU.1, hU.2.2⟩
 
 variable (φ) in
 /-- **Finite order on the Besov scale.** Let `1 < p ≤ ∞` and `q ≠ 0`. Every cut-off distribution

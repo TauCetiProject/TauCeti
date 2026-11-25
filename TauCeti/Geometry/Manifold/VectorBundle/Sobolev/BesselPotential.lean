@@ -484,10 +484,7 @@ def sobolevSpace :
     simp only [PiLp.zero_apply, BesselPotentialSpace.toDistr_zero]
     rw [← Pi.zero_def, map_zero, map_zero]
   smul_mem' a u hu k := by
-    -- The real action on `H^s(E, ℂ)` here is the restriction of the complex one
-    -- (`NormedSpace.complexToReal`), so `BesselPotentialSpace.toDistr_smul` applies at `(a : ℂ)`.
-    simp only [PiLp.smul_apply, ← Complex.coe_smul, BesselPotentialSpace.toDistr_smul]
-    simp only [Complex.coe_smul]
+    simp only [PiLp.smul_apply, BesselPotentialSpace.toDistr_real_smul]
     rw [← Pi.smul_def, map_smul, map_smul, hu k]
 
 theorem mem_sobolevSpace {u : PiLp 2 fun _ : ι × Fin (Module.finrank ℝ F) ↦ H^{s}(E, ℂ)} :
@@ -542,10 +539,8 @@ def toDistribution : A.sobolevSpace s →ₗ[ℝ] (BundleTest I F V →L_c[ℝ] 
     simp only [Submodule.coe_add, PiLp.add_apply, BesselPotentialSpace.toDistr_add]
     rw [← Pi.add_def, map_add]
   map_smul' a u := by
-    -- As in `sobolevSpace`, `BesselPotentialSpace.toDistr_smul` applies at `(a : ℂ)`.
-    simp only [Submodule.coe_smul, PiLp.smul_apply, ← Complex.coe_smul,
-      BesselPotentialSpace.toDistr_smul, RingHom.id_apply]
-    simp only [Complex.coe_smul]
+    simp only [Submodule.coe_smul, PiLp.smul_apply, BesselPotentialSpace.toDistr_real_smul,
+      RingHom.id_apply]
     rw [← Pi.smul_def, map_smul]
 
 theorem toDistribution_apply (u : A.sobolevSpace s) :
