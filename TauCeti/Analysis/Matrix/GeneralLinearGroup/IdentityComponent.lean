@@ -62,6 +62,8 @@ instance over a real or complex Banach algebra, is locally path connected for th
 topology. Hence its identity component is the path component of `1`. -/
 instance instLocallyPathConnectedSpace [NormedRing A] [NormedSpace ℝ A] [CompleteSpace A] :
     LocallyPathConnectedSpace (GL n A) := by
+  -- The operator-norm topology is the entrywise one by `rfl`
+  -- (`Matrix.linftyOpTopologicalSpace_eq`), so the unit-group instance applies as is.
   open scoped Matrix.Norms.Operator in exact Units.instLocallyPathConnectedSpace
 
 open scoped Matrix.Norms.Operator in
@@ -71,6 +73,8 @@ theorem closure_setOf_norm_sub_one_lt_eq_connectedComponentOfOne [NormedRing A] 
     [CompleteSpace A] :
     Subgroup.closure {g : GL n A | ‖(g : Matrix n n A) - 1‖ < 1} =
       Subgroup.connectedComponentOfOne (GL n A) :=
+  -- The statement uses the operator norm for the ball and the entrywise topology for the
+  -- identity component; these agree by `rfl` (`Matrix.linftyOpTopologicalSpace_eq`).
   TauCeti.closure_setOf_norm_sub_one_lt_eq_connectedComponentOfOne
 
 variable [NormedRing A] [NormedAlgebra ℝ A] [CompleteSpace A]
@@ -80,6 +84,8 @@ finite products of exponentials of matrices.** -/
 theorem mem_connectedComponentOfOne_iff_exists_prod_exp {g : GL n A} :
     g ∈ Subgroup.connectedComponentOfOne (GL n A) ↔
       ∃ l : List (Matrix n n A), (l.map exp).prod = g := by
+  -- The operator-norm topology is the entrywise one by `rfl`
+  -- (`Matrix.linftyOpTopologicalSpace_eq`), so the unit-group result applies as is.
   open scoped Matrix.Norms.Operator in exact TauCeti.mem_connectedComponentOfOne_iff_exists_prod_exp
 
 end Matrix.GeneralLinearGroup
@@ -96,6 +102,8 @@ theorem map_connectedComponentOfOne_GL_eq_of_surjective (f : A →+* B) (hf : Co
     (Subgroup.connectedComponentOfOne (GL n A)).map
         (Units.map (f.mapMatrix (m := n) : Matrix n n A →* Matrix n n B)) =
       Subgroup.connectedComponentOfOne (GL n B) := by
+  -- The operator-norm topologies are the entrywise ones by `rfl`
+  -- (`Matrix.linftyOpTopologicalSpace_eq`), so the unit-group result applies as is.
   open scoped Matrix.Norms.Operator in
   exact (f.mapMatrix (m := n)).map_connectedComponentOfOne_units_eq_of_surjective
     (continuous_id.matrix_map hf)
