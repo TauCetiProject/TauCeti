@@ -109,6 +109,11 @@ theorem coe_units_apply_ne_zero (x : 𝔸ᶠ[R, K]ˣ) (v : HeightOneSpectrum R) 
     (x : 𝔸ᶠ[R, K]) v ≠ 0 :=
   (isUnit_iff.mp x.isUnit).1 v
 
+/-- Every component of the inverse of a finite idele is the inverse of the component. -/
+theorem coe_units_inv_apply (x : 𝔸ᶠ[R, K]ˣ) (v : HeightOneSpectrum R) :
+    ((x⁻¹ : 𝔸ᶠ[R, K]ˣ) : 𝔸ᶠ[R, K]) v = ((x : 𝔸ᶠ[R, K]) v)⁻¹ :=
+  eq_inv_of_mul_eq_one_left (by rw [← mul_apply, Units.inv_mul, one_apply])
+
 /-- The valuation of a component of a finite idele is nonzero. -/
 theorem valued_coe_units_apply_ne_zero (x : 𝔸ᶠ[R, K]ˣ) (v : HeightOneSpectrum R) :
     Valued.v ((x : 𝔸ᶠ[R, K]) v) ≠ 0 := by

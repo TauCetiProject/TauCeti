@@ -48,6 +48,8 @@ everywhere-integral units.
 * `IsDedekindDomain.FiniteAdeleRing.isClosedEmbedding_unitsOfAdicCompletion` and
   `IsDedekindDomain.FiniteAdeleRing.mem_range_unitsOfAdicCompletion_iff`: the single-place
   embedding is a closed embedding onto the finite ideles that are `1` away from `v`.
+* `IsDedekindDomain.FiniteAdeleRing.eventually_smul_adicCompletionIntegers`: a finite idele `a`
+  satisfies `a_v • 𝒪_v = 𝒪_v` at all but finitely many places.
 * `IsDedekindDomain.FiniteAdeleRing.image_unitsProj_integralUnits`: the everywhere-integral units
   project onto the local integral units.
 * `IsDedekindDomain.FiniteAdeleRing.sIntegralUnits_eq_iSup_range_sup_integralUnits`: the
@@ -97,6 +99,22 @@ theorem unitsProj_unitEmbedding (v : HeightOneSpectrum R) (x : Kˣ) :
     unitsProj K v (unitEmbedding R K x) =
       Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x :=
   Units.ext (algebraMap_apply R K (x : K) v)
+
+open scoped Pointwise in
+/-- At all but finitely many places a finite idele `a` and its inverse are integral, so that
+`a_v • 𝒪_v = 𝒪_v`. -/
+theorem eventually_smul_adicCompletionIntegers (a : 𝔸ᶠ[R, K]ˣ) :
+    ∀ᶠ v : HeightOneSpectrum R in Filter.cofinite,
+      (a : 𝔸ᶠ[R, K]) v • (v.adicCompletionIntegers K : Set (v.adicCompletion K)) =
+        v.adicCompletionIntegers K := by
+  filter_upwards [(a : 𝔸ᶠ[R, K]).cofinite_mem_adicCompletionIntegers,
+    ((a⁻¹ : 𝔸ᶠ[R, K]ˣ) : 𝔸ᶠ[R, K]).cofinite_mem_adicCompletionIntegers] with v ha ha'
+  ext x
+  refine ⟨?_, fun hx ↦ ⟨_ * x, mul_mem ha' hx, ?_⟩⟩
+  · rintro ⟨y, hy, rfl⟩
+    exact mul_mem ha hy
+  · simp only [smul_eq_mul, ← mul_assoc, coe_units_inv_apply,
+      mul_inv_cancel₀ (coe_units_apply_ne_zero a v), one_mul]
 
 /-! ### The finite ideles concentrated at one place -/
 

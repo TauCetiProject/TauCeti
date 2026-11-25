@@ -123,38 +123,14 @@ theorem smul_integralAdeles (a : (FiniteAdeleRing R K)ˣ) :
       box fun v : HeightOneSpectrum R ↦
         (a : FiniteAdeleRing R K) v • (v.adicCompletionIntegers K : Set (v.adicCompletion K)) := by
   ext x
-  have ha (v : HeightOneSpectrum R) : (a : FiniteAdeleRing R K) v ≠ 0 :=
-    (isUnit_iff.mp a.isUnit).1 v
-  have hinv (v : HeightOneSpectrum R) :
-      ((a⁻¹ : (FiniteAdeleRing R K)ˣ) : FiniteAdeleRing R K) v = ((a : FiniteAdeleRing R K) v)⁻¹ :=
-    eq_inv_of_mul_eq_one_left (by rw [← mul_apply, Units.inv_mul, one_apply])
   rw [Set.mem_smul_set_iff_inv_smul_mem, SetLike.mem_coe, mem_integralAdeles, Units.smul_def,
     smul_eq_mul]
-  simp_rw [mul_apply, hinv]
+  simp_rw [mul_apply, coe_units_inv_apply]
   refine Iff.trans (forall_congr' fun v ↦ ?_) mem_box.symm
-  rw [Set.mem_smul_set_iff_inv_smul_mem₀ (ha v), smul_eq_mul]
+  rw [Set.mem_smul_set_iff_inv_smul_mem₀ (coe_units_apply_ne_zero a v), smul_eq_mul]
   -- The two sides differ only in the coercion through which the coordinate `x v` is read, that of
   -- `FiniteAdeleRing R K` or that of the underlying restricted product; they agree by definition.
   exact Iff.rfl
-
-variable {R K} in
-/-- At all but finitely many places a finite idele `a` and its inverse are integral, so that
-`a_v • 𝒪_v = 𝒪_v`. -/
-private theorem eventually_smul_adicCompletionIntegers (a : (FiniteAdeleRing R K)ˣ) :
-    ∀ᶠ v : HeightOneSpectrum R in Filter.cofinite,
-      (a : FiniteAdeleRing R K) v • (v.adicCompletionIntegers K : Set (v.adicCompletion K)) =
-        v.adicCompletionIntegers K := by
-  filter_upwards [(a : FiniteAdeleRing R K).cofinite_mem_adicCompletionIntegers,
-    ((a⁻¹ : (FiniteAdeleRing R K)ˣ) : FiniteAdeleRing R K).cofinite_mem_adicCompletionIntegers]
-    with v ha ha'
-  have hmul : (a : FiniteAdeleRing R K) v *
-      ((a⁻¹ : (FiniteAdeleRing R K)ˣ) : FiniteAdeleRing R K) v = 1 := by
-    rw [← mul_apply, Units.mul_inv, one_apply]
-  ext x
-  refine ⟨?_, fun hx ↦ ⟨_ * x, mul_mem ha' hx, ?_⟩⟩
-  · rintro ⟨y, hy, rfl⟩
-    exact mul_mem ha hy
-  · simp only [smul_eq_mul, ← mul_assoc, hmul, one_mul]
 
 /-! ### The restricted product of the local Haar measures -/
 
@@ -206,8 +182,9 @@ theorem distribHaarChar_eq_finprod (a : (FiniteAdeleRing R K)ˣ) :
   have hμ (v : HeightOneSpectrum R) : μ v (v.adicCompletionIntegers K) = 1 := by
     have h : (v.adicCompletionIntegers K : Set (v.adicCompletion K)) =
         integerPositiveCompacts (v.adicCompletion K) := by
-      rw [coe_integerPositiveCompacts, v.integer_eq_adicCompletionIntegers]
-      rfl
+      ext x
+      rw [coe_integerPositiveCompacts, v.integer_eq_adicCompletionIntegers, SetLike.mem_coe,
+        SetLike.mem_coe, ValuationSubring.mem_toSubring]
     rw [h]
     exact addHaarMeasure_self
   -- The local factor at `v` is `|a_v|_v`, and it is `1` at all but finitely many places.
