@@ -78,8 +78,10 @@ example (v : HeightOneSpectrum (𝓞 (complexField 3)))
 
 example [Fact (Nat.Prime 7)] (v : HeightOneSpectrum (𝓞 (complexField 3)))
     (hv : (7 : 𝓞 (complexField 3)) ∈ v.asIdeal) :
-    Nonempty (v.adicCompletion (complexField 3) ≃+* ℚ_[7]) :=
-  nonempty_ringEquiv_padic v 7 (by decide) (mod_cast hv)
+    Nonempty (v.adicCompletion (complexField 3) ≃A[ℚ] ℚ_[7]) :=
+  have := (Rat.HeightOneSpectrum.liesOver_asIdeal_primesEquiv_symm_iff (R := ℤ) v.asIdeal
+    ⟨7, Fact.out⟩).2 (mod_cast hv)
+  ⟨adicCompletionEquivPadic v 7 (by decide)⟩
 
 end Seven
 
