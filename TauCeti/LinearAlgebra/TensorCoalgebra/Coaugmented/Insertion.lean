@@ -129,6 +129,7 @@ theorem insertions_zero (a : M) : insertions R a 0 = LinearMap.id := by
   simp [insertions_cons, hw]
 
 /-- Inserting at least one copy of the zero letter gives zero. -/
+@[simp]
 theorem zero_insertions {t : ℕ} (ht : t ≠ 0) : insertions R (0 : M) t = 0 := by
   obtain ⟨t, rfl⟩ := Nat.exists_eq_succ_of_ne_zero ht
   refine linearMap_ext_cons (ι := ℕ) (f := fun t ↦ insertions R (0 : M) (t + 1)) (g := fun _ ↦ 0)

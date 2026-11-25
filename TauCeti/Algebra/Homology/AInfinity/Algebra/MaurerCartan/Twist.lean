@@ -336,7 +336,7 @@ theorem twist_zero {T : ℕ} (hT : 𝒜.IsInsertionBound 0 T) :
     𝒜.twist 0 𝒜.isMaurerCartan_zero T hT = 𝒜 := by
   have h : 𝒜.twistTaylor 0 T = 𝒜.taylor := by
     rw [← hT.twistTaylor_eq (Nat.le_succ T), twistTaylor, Finset.sum_range_succ']
-    simp [insertionTaylor, zero_insertions, LinearMap.comp_assoc]
+    simp [insertionTaylor, LinearMap.comp_assoc]
   exact ext_of_taylor (twist_grading ..) (by rw [twist_taylor, h])
 
 end AInfinityAlgebra
