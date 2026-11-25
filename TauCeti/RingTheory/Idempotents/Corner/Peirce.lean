@@ -23,7 +23,6 @@ decomposition `M = ⨁ᵢ eᵢ M` of a module, is `TauCeti.isInternal_smul_top`.
 
 ## Main results
 
-* `TauCeti.mul_mem_cornerSubmodule`: the Peirce multiplication rule `(eAf)(fAg) ⊆ eAg`.
 * `OrthogonalIdempotents.mul_coeLinearMap_cornerSubmodule_mul`: cutting a sum of elements
   `zᵢⱼ ∈ eᵢ A eⱼ` down by `eₖ` on the left and `eₗ` on the right recovers `zₖₗ`.
 * `CompleteOrthogonalIdempotents.isInternal_cornerSubmodule`: **the two-sided Peirce
@@ -40,23 +39,6 @@ decomposition `M = ⨁ᵢ eᵢ M` of a module, is `TauCeti.isInternal_smul_top`.
 public section
 
 open scoped DirectSum
-
-namespace TauCeti
-
-/-- **The Peirce multiplication rule** `(eAf)(fAg) ⊆ eAg`. No idempotency is needed. -/
-theorem mul_mem_cornerSubmodule {k A : Type*} [Semiring k] [NonUnitalSemiring A] [Module k A]
-    [SMulCommClass k A A] [IsScalarTower k A A] {e f g x y : A}
-    (hx : x ∈ cornerSubmodule k e f) (hy : y ∈ cornerSubmodule k f g) :
-    x * y ∈ cornerSubmodule k e g := by
-  rw [cornerSubmodule_def, LinearMap.mem_range] at hx hy
-  obtain ⟨a, rfl⟩ := hx
-  obtain ⟨b, rfl⟩ := hy
-  simp only [LinearMap.mulLeftRight_apply]
-  have h : e * a * f * (f * b * g) = e * (a * f * (f * b)) * g := by simp only [mul_assoc]
-  rw [h]
-  exact mul_mul_mem_cornerSubmodule k e g _
-
-end TauCeti
 
 namespace OrthogonalIdempotents
 
@@ -119,7 +101,10 @@ variable [DecidableEq ι]
 theorem isInternal_cornerSubmodule (he : CompleteOrthogonalIdempotents e) :
     DirectSum.IsInternal fun p : ι × ι ↦ TauCeti.cornerSubmodule k (e p.1) (e p.2) := by
   -- Injectivity: each component is recovered by cutting down to its corner. Surjectivity: the
-  -- terms of `x = ∑ᵢ ∑ⱼ eᵢ x eⱼ` lie in the corners.
+  -- terms of `x = ∑ᵢ ∑ⱼ eᵢ x eⱼ` lie in the corners. `DirectSum.IsInternal` is stated with
+  -- `DirectSum.coeAddMonoidHom`, which is definitionally the underlying map of
+  -- `DirectSum.coeLinearMap`; Mathlib has no lemma relating the two, so both halves restate the
+  -- hypothesis or goal with `coeLinearMap` to use its linear-map API.
   refine ⟨fun z w hzw ↦ DFinsupp.ext fun p ↦ Subtype.ext ?_, ?_⟩
   · replace hzw : DirectSum.coeLinearMap
         (fun p : ι × ι ↦ TauCeti.cornerSubmodule k (e p.1) (e p.2)) z =

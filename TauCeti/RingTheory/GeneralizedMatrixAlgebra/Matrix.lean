@@ -25,6 +25,7 @@ which every entry module is free of rank one.
 
 ## Main results
 
+* `Matrix.cornerEquiv_scalarGMAData_apply`: its corner isomorphisms read off the diagonal entry.
 * `Matrix.trace_scalarGMAData`: its trace is the matrix trace.
 * `Matrix.primitiveIdempotent_scalarGMAData`: its primitive idempotents are the `Eᵢᵢ`.
 * `Matrix.mem_entry_scalarGMAData_iff`: its entry module `A_{ij}` consists of the multiples of
@@ -49,13 +50,34 @@ private def scalarCornerEquiv (i : n) :
     (isIdempotentElem_single_one (α := A) i).Corner ≃ₐ[A] Matrix (Fin 1) (Fin 1) A :=
   (cornerSingleOneAlgEquiv A i).trans <| AlgEquiv.ofRingEquiv (f := uniqueRingEquiv.symm) fun a ↦ by
     ext k l
-    simp [algebraMap_eq_diagonal, Subsingleton.elim k l]
-    rfl
+    simp only [Subsingleton.elim k l, algebraMap_matrix_apply, ↓reduceIte]
+    -- `uniqueRingEquiv` multiplies matrices over `Fin 1` with the instances `Unique.fintype` and
+    -- `decidableEq_of_subsingleton`, rather than `Fin.fintype 1` and `instDecidableEqFin 1`, so
+    -- `rw` and `simp` cannot use `uniqueRingEquiv_symm_apply`; the two instance paths agree
+    -- definitionally, and `exact` applies the lemma across them.
+    exact (congrFun₂ (uniqueRingEquiv_symm_apply _) l l).trans (of_apply _ l l)
+
+/-- `scalarCornerEquiv` sends an element of the corner of `Eᵢᵢ` to the `1 × 1` matrix of its
+`(i, i)` entry. The last step is `uniqueRingEquiv_symm_apply`, applied across the two
+definitionally equal instance paths on `Fin 1` explained in `scalarCornerEquiv`. -/
+private theorem scalarCornerEquiv_apply (i : n)
+    (x : (isIdempotentElem_single_one (α := A) i).Corner) :
+    scalarCornerEquiv A n i x = of fun _ _ ↦ x.val i i := by
+  rw [scalarCornerEquiv, AlgEquiv.trans_apply, cornerSingleOneAlgEquiv_apply]
+  exact uniqueRingEquiv_symm_apply _
+
+private theorem val_scalarCornerEquiv_symm_apply (i : n) (M : Matrix (Fin 1) (Fin 1) A) :
+    ((scalarCornerEquiv A n i).symm M).val = single i i (M 0 0) := by
+  have h : (scalarCornerEquiv A n i).symm M = (cornerSingleOneEquiv i).symm (M 0 0) := by
+    rw [AlgEquiv.symm_apply_eq, scalarCornerEquiv_apply]
+    ext k l
+    rw [Subsingleton.elim k 0, Subsingleton.elim l 0, of_apply,
+      val_cornerSingleOneEquiv_symm_apply, single_apply_same]
+  rw [h, val_cornerSingleOneEquiv_symm_apply]
 
 private theorem trace_scalarCornerEquiv_compress (i : n) (x : Matrix n n A) :
     (scalarCornerEquiv A n i ((isIdempotentElem_single_one i).compress x)).trace = x i i := by
-  simp [scalarCornerEquiv, trace_fin_one]
-  rfl
+  simp [scalarCornerEquiv_apply, trace_fin_one]
 
 private theorem sum_trace_scalarCornerEquiv_compress (x : Matrix n n A) :
     ∑ i, (scalarCornerEquiv A n i ((isIdempotentElem_single_one i).compress x)).trace =
@@ -78,6 +100,20 @@ variable {A n}
 @[simp]
 theorem idempotent_scalarGMAData (i : n) : (scalarGMAData A n).idempotent i = single i i 1 :=
   (rfl)
+
+/-- The corner isomorphism `ψᵢ` of the scalar-block GMA data reads off the `(i, i)` entry. -/
+@[simp]
+theorem cornerEquiv_scalarGMAData_apply (i : n)
+    (x : ((scalarGMAData A n).isIdempotentElem_idempotent i).Corner) :
+    (scalarGMAData A n).cornerEquiv i x = of fun _ _ ↦ x.val i i :=
+  scalarCornerEquiv_apply A n i x
+
+/-- The inverse of the corner isomorphism `ψᵢ` of the scalar-block GMA data sends a `1 × 1` matrix
+`(a)` to `a Eᵢᵢ`. -/
+@[simp]
+theorem val_cornerEquiv_scalarGMAData_symm_apply (i : n) (M : Matrix (Fin 1) (Fin 1) A) :
+    (((scalarGMAData A n).cornerEquiv i).symm M).val = single i i (M 0 0) :=
+  val_scalarCornerEquiv_symm_apply A n i M
 
 /-- **The trace of the scalar-block GMA data is the matrix trace.** -/
 @[simp]

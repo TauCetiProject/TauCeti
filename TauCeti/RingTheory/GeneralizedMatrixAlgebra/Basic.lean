@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Trace
-public import TauCeti.RingTheory.Idempotents.Corner.Peirce
+public import TauCeti.RingTheory.Idempotents.Corner.Basic
 import Mathlib.Data.Matrix.Basis
 
 /-!
@@ -137,6 +137,7 @@ theorem trace_val (i : ι) (b : (E.isIdempotentElem_idempotent i).Corner) :
   · simp
 
 /-- **The trace of `1` is the total size** `∑ᵢ dᵢ` of the blocks. -/
+@[simp]
 theorem trace_one : E.trace 1 = ∑ i, (d i : A) := by
   simp [trace_apply, IsIdempotentElem.compress_one, Matrix.trace_one]
 
@@ -242,6 +243,7 @@ theorem matrixUnit_mul_mul_matrixUnit (i : ι) (a k l b : Fin (d i)) (x : R) :
     one_mul, mul_one, val_cornerEquiv_symm_single]
 
 /-- The trace of a matrix unit is `1` on the diagonal and `0` off it. -/
+@[simp]
 theorem trace_matrixUnit (i : ι) (k l : Fin (d i)) :
     E.trace (E.matrixUnit i k l) = if k = l then 1 else 0 := by
   rw [matrixUnit, trace_val, AlgEquiv.apply_symm_apply]
@@ -272,6 +274,10 @@ theorem trace_primitiveIdempotent (i : ι) : E.trace (E.primitiveIdempotent i) =
 primitive idempotents of the blocks `i` and `j`. -/
 def entry (i j : ι) : Submodule A R :=
   TauCeti.cornerSubmodule A (E.primitiveIdempotent i) (E.primitiveIdempotent j)
+
+theorem entry_def (i j : ι) :
+    E.entry i j = TauCeti.cornerSubmodule A (E.primitiveIdempotent i) (E.primitiveIdempotent j) :=
+  (rfl)
 
 theorem mem_entry_iff {i j : ι} {x : R} :
     x ∈ E.entry i j ↔ E.primitiveIdempotent i * x * E.primitiveIdempotent j = x :=
@@ -360,6 +366,7 @@ theorem entryMul_assoc {i j k l : ι} (x : E.entry i j) (y : E.entry j k) (z : E
 def pairing (i j : ι) : E.entry i j →ₗ[A] E.entry j i →ₗ[A] A :=
   (E.entryMul i j i).compr₂ (E.entrySelfEquiv i).symm.toLinearMap
 
+@[simp]
 theorem pairing_apply {i j : ι} (x : E.entry i j) (y : E.entry j i) :
     E.pairing i j x y = E.trace (x * y) :=
   (rfl)
