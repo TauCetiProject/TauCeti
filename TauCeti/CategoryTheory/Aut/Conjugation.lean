@@ -65,6 +65,7 @@ theorem autMulEquivOfIso_refl (x : C) : autMulEquivOfIso (Iso.refl x) = MulEquiv
   simp
 
 /-- Conjugation along a composite of isomorphisms is the composite of the conjugations. -/
+@[simp]
 theorem autMulEquivOfIso_trans (e : x ≅ y) (d : y ≅ z) :
     autMulEquivOfIso (e ≪≫ d) = (autMulEquivOfIso e).trans (autMulEquivOfIso d) := by
   simp only [autMulEquivOfIso_eq_conjAut]
