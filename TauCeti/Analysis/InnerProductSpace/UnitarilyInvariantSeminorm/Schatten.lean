@@ -42,7 +42,8 @@ rectangular factors `C`. Its endpoints are the nuclear seminorm (`p = 1`), the F
 * `TauCeti.UnitarilyInvariantSeminorm.schatten_one`, `schatten_two`, `schatten_top`: the
   nuclear, Frobenius and operator-norm endpoints.
 * `LinearMap.norm_toContinuousLinearMap_le_frobenius`,
-  `LinearMap.frobenius_le_sqrt_finrank_mul_norm`: `‖A‖ ≤ ‖A‖_F ≤ √(dim E) ‖A‖`.
+  `LinearMap.frobenius_le_sqrt_finrank_mul_norm_toContinuousLinearMap`:
+  `‖A‖ ≤ ‖A‖_F ≤ √(dim E) ‖A‖`.
 
 ## References
 
@@ -130,7 +131,8 @@ theorem _root_.LinearMap.norm_toContinuousLinearMap_le_frobenius (A : E →ₗ[�
   simpa [opNorm_apply] using opNorm_apply_le_schatten_apply 2 A
 
 /-- The Frobenius norm is at most `√(dim E)` times the operator norm: `‖A‖_F ≤ √(dim E) ‖A‖`. -/
-theorem _root_.LinearMap.frobenius_le_sqrt_finrank_mul_norm (A : E →ₗ[𝕜] F) :
+theorem _root_.LinearMap.frobenius_le_sqrt_finrank_mul_norm_toContinuousLinearMap
+    (A : E →ₗ[𝕜] F) :
     frobenius 𝕜 E F A ≤ √(finrank 𝕜 E : ℝ) * ‖LinearMap.toContinuousLinearMap A‖ := by
   rw [A.frobenius_apply_eq_sqrt_sum_range_sq_singularValues,
     A.norm_toContinuousLinearMap_eq_singularValues_zero,

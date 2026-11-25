@@ -39,6 +39,8 @@ calculations: in orthonormal eigenbases, for instance, it turns the coordinate f
   orthonormal basis.
 * `LinearMap.sum_sum_norm_apply_apply_sq_eq_sum_sum_norm_apply_apply_sq`: so is `∑ᵢ ∑ⱼ ‖B bᵢ bⱼ‖²`
   for a bilinear map `B`.
+* `LinearMap.frobenius_linearIsometry_comp`, `LinearMap.frobenius_comp_linearIsometryEquiv`:
+  composing with isometries on either side leaves `‖A‖_F` unchanged.
 * `LinearMap.sum_sq_norm_apply_orthonormal_le`: compression to an orthonormal family
   cannot increase the squared Frobenius sum.
 * `TauCeti.UnitarilyInvariantSeminorm.frobenius`: the Frobenius seminorm.
@@ -177,6 +179,25 @@ theorem frobenius_norm_toMatrix [DecidableEq n] (A : E →ₗ[𝕜] F) (b : Orth
   simpa [LinearMap.toMatrix_apply, OrthonormalBasis.coe_toBasis_repr_apply,
     OrthonormalBasis.repr_apply_apply, Real.rpow_two] using
     (c.sum_sq_norm_inner_right (A (b i))).symm
+
+variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
+
+/-- Composing on the left with a linear isometry leaves the Frobenius seminorm unchanged. -/
+theorem frobenius_linearIsometry_comp (U : F →ₗᵢ[𝕜] G) (A : E →ₗ[𝕜] F) :
+    TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 E G (U.toLinearMap ∘ₗ A) =
+      TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 E F A := by
+  simp [TauCeti.UnitarilyInvariantSeminorm.frobenius_apply (stdOrthonormalBasis 𝕜 E)]
+
+/-- Composing on the right with an isometric isomorphism leaves the Frobenius seminorm
+unchanged. -/
+theorem frobenius_comp_linearIsometryEquiv [FiniteDimensional 𝕜 G] (A : E →ₗ[𝕜] F)
+    (U : G ≃ₗᵢ[𝕜] E) :
+    TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 G F (A ∘ₗ (U : G →ₗ[𝕜] E)) =
+      TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 E F A := by
+  rw [TauCeti.UnitarilyInvariantSeminorm.frobenius_apply
+      ((stdOrthonormalBasis 𝕜 E).map U.symm),
+    TauCeti.UnitarilyInvariantSeminorm.frobenius_apply (stdOrthonormalBasis 𝕜 E)]
+  simp
 
 end LinearMap
 

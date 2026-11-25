@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.LinearDistortion
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Schatten
 import TauCeti.Algebra.Module.LinearMap.Defs
 import TauCeti.Analysis.MeanInequalities
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # The Hilbert–Schmidt distortion of a linear map
@@ -154,9 +155,12 @@ omit [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
 theorem one_le_hilbertSchmidtDistortion {A : V →ₗ[ℝ] W} (h : 0 < oV.orientedJacobian oW A) :
     1 ≤ oV.hilbertSchmidtDistortion oW A := by
   have hc := Real.sqrt_natCast_pow_self_pos n
-  rw [oV.hilbertSchmidtDistortion_of_pos oW h, ENNReal.one_le_ofReal,
-    one_le_div (mul_pos hc h), mul_comm (√(n : ℝ) ^ n), ← le_div_iff₀ hc, ← div_pow]
-  exact oV.orientedJacobian_le_frobenius_div_sqrt_pow oW A
+  rw [oV.hilbertSchmidtDistortion_of_pos oW h, ENNReal.one_le_ofReal, one_le_div (mul_pos hc h)]
+  calc √(n : ℝ) ^ n * oV.orientedJacobian oW A
+      ≤ √(n : ℝ) ^ n * (frobenius ℝ V W A / √(n : ℝ)) ^ n := by
+        gcongr
+        exact oV.orientedJacobian_le_frobenius_div_sqrt_pow oW A
+    _ = frobenius ℝ V W A ^ n := by rw [div_pow, mul_div_cancel₀ _ hc.ne']
 
 /-! ### Comparison with the outer distortion -/
 
@@ -166,12 +170,16 @@ theorem hilbertSchmidtDistortion_le_outerDistortion (A : V →ₗ[ℝ] W) :
     oV.hilbertSchmidtDistortion oW A ≤ oV.outerDistortion oW A := by
   by_cases h : 0 < oV.orientedJacobian oW A
   · rw [oV.hilbertSchmidtDistortion_of_pos oW h, oV.outerDistortion_of_pos oW h]
+    have hc := Real.sqrt_natCast_pow_self_pos n
     refine ENNReal.ofReal_le_ofReal ?_
-    rw [← div_div, div_le_div_iff_of_pos_right h,
-      div_le_iff₀ (Real.sqrt_natCast_pow_self_pos n), ← mul_pow,
-      mul_comm ‖LinearMap.toContinuousLinearMap A‖]
-    refine pow_le_pow_left₀ (apply_nonneg _ A) ?_ n
-    simpa [(Fact.out : finrank ℝ V = n)] using A.frobenius_le_sqrt_finrank_mul_norm
+    calc frobenius ℝ V W A ^ n / (√(n : ℝ) ^ n * oV.orientedJacobian oW A)
+        ≤ (√(n : ℝ) * ‖LinearMap.toContinuousLinearMap A‖) ^ n /
+            (√(n : ℝ) ^ n * oV.orientedJacobian oW A) := by
+          gcongr
+          simpa [(Fact.out : finrank ℝ V = n)] using
+            A.frobenius_le_sqrt_finrank_mul_norm_toContinuousLinearMap
+      _ = ‖LinearMap.toContinuousLinearMap A‖ ^ n / oV.orientedJacobian oW A := by
+          rw [mul_pow, mul_div_mul_left _ _ hc.ne']
   · simp only [hilbertSchmidtDistortion_def, outerDistortion_def, h, ite_false, le_refl]
 
 omit [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
@@ -217,28 +225,24 @@ theorem hilbertSchmidtDistortion_smul {c : ℝ} (hc : 0 < c ^ n) (A : V →ₗ[�
   simp only [oV.orientedJacobian_smul oW, map_smul_eq_mul, Real.norm_eq_abs, mul_pow, hpow,
     mul_left_comm (√(n : ℝ) ^ n), mul_div_mul_left _ _ hc.ne', mul_pos_iff_of_pos_left hc]
 
+omit [FiniteDimensional ℝ W] [FiniteDimensional ℝ X] in
 /-- Postcomposing with a linear isometry of oriented Jacobian `1` (orientation-preserving) changes
 no Hilbert–Schmidt distortion. -/
 theorem hilbertSchmidtDistortion_linearIsometry_comp (U : W →ₗᵢ[ℝ] X)
     (hU : oW.orientedJacobian oX U.toLinearMap = 1) (A : V →ₗ[ℝ] W) :
     oV.hilbertSchmidtDistortion oX (U.toLinearMap ∘ₗ A) = oV.hilbertSchmidtDistortion oW A := by
-  have hF : frobenius ℝ V X (U.toLinearMap ∘ₗ A) = frobenius ℝ V W A := by
-    simp only [frobenius_apply_eq_sqrt_sum_sq_singularValues,
-      LinearMap.singularValues_linearIsometry_comp]
   rw [hilbertSchmidtDistortion_def, hilbertSchmidtDistortion_def,
-    oV.orientedJacobian_comp_of_left_eq_one oW oX hU, hF,
+    oV.orientedJacobian_comp_of_left_eq_one oW oX hU, LinearMap.frobenius_linearIsometry_comp,
     LinearMap.comp_eq_zero_iff_of_injective U.injective]
 
+omit [FiniteDimensional ℝ W] in
 /-- Precomposing with an isometric isomorphism of oriented Jacobian `1` (orientation-preserving)
 changes no Hilbert–Schmidt distortion. -/
 theorem hilbertSchmidtDistortion_comp_linearIsometryEquiv (U : X ≃ₗᵢ[ℝ] V)
     (hU : oX.orientedJacobian oV (U : X →ₗ[ℝ] V) = 1) (A : V →ₗ[ℝ] W) :
     oX.hilbertSchmidtDistortion oW (A ∘ₗ (U : X →ₗ[ℝ] V)) = oV.hilbertSchmidtDistortion oW A := by
-  have hF : frobenius ℝ X W (A ∘ₗ (U : X →ₗ[ℝ] V)) = frobenius ℝ V W A := by
-    simp only [frobenius_apply_eq_sqrt_sum_sq_singularValues,
-      LinearMap.singularValues_comp_linearIsometryEquiv]
   rw [hilbertSchmidtDistortion_def, hilbertSchmidtDistortion_def,
-    oX.orientedJacobian_comp_of_right_eq_one oV oW hU, hF,
+    oX.orientedJacobian_comp_of_right_eq_one oV oW hU, LinearMap.frobenius_comp_linearIsometryEquiv,
     LinearMap.comp_eq_zero_iff_of_surjective (f := (U : X →ₗ[ℝ] V)) U.surjective]
 
 end Orientation

@@ -452,12 +452,6 @@ theorem Lp_const_of_nonneg {ι : Type*} (s : Finset ι) {t p : ℝ} (ht : 0 ≤ 
   rw [Finset.sum_const, nsmul_eq_mul, mul_rpow s.card.cast_nonneg (rpow_nonneg ht p), one_div,
     rpow_rpow_inv ht hp]
 
-/-- The power `√n ^ n` (the constant `n^{n/2}`) is positive; it is `1` for `n = 0`. -/
-theorem sqrt_natCast_pow_self_pos (n : ℕ) : 0 < √(n : ℝ) ^ n := by
-  rcases n.eq_zero_or_pos with rfl | hn
-  · simp
-  · exact pow_pos (sqrt_pos.mpr (Nat.cast_pos.mpr hn)) n
-
 /-- **Arithmetic and geometric means** for nonnegative numbers, comparing the product with the
 root mean square: `∏ i ∈ s, σ i ≤ (√(∑ i ∈ s, σ i ^ 2) / √#s) ^ #s`. -/
 theorem prod_le_sqrt_sum_sq_div_sqrt_card_pow {ι : Type*} (s : Finset ι) (σ : ι → ℝ)
