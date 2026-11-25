@@ -54,14 +54,6 @@ variable (R : Type*) [CommRing R] [IsDomain R] [CharZero R]
 local notation "Q" =>
   rootPairingBaseChange R e8SimplyConnectedRootDatum e8SimplyConnectedRootDatum_toLinearMap_apply
 
--- The roots and coroots of the pinned `E₈` datum already span over `ℤ`, because the `E₈` Cartan
--- matrix is unimodular, so they span after any base change.
-private instance : (Q).IsRootSystem where
-  span_root_eq_top :=
-    span_range_root_rootPairingBaseChange_eq_top R _ _ span_root_e8SimplyConnectedRootDatum_eq_top
-  span_coroot_eq_top := span_range_coroot_rootPairingBaseChange_eq_top R _ _
-    corootSpan_e8SimplyConnectedRootDatum_eq_top
-
 private instance : (Q).IsReduced := isReduced_rootPairingBaseChange R _ _
 
 end TauCeti.DynkinType

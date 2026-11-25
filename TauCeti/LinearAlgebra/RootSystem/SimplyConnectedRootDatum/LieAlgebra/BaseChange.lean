@@ -120,11 +120,8 @@ instance instIsCrystallographicRootSystemBaseChange :
     (t.rootSystemBaseChange ht K).IsCrystallographic :=
   isCrystallographic_rootPairingBaseChange ..
 
-instance instIsRootSystemRootSystemBaseChange : (t.rootSystemBaseChange ht K).IsRootSystem where
-  span_root_eq_top := span_range_root_rootPairingBaseChange_eq_top K _ _
-    (span_range_root_rationalRootSystem_eq_top t ht)
-  span_coroot_eq_top := span_range_coroot_rootPairingBaseChange_eq_top K _ _
-    (span_range_coroot_rationalRootSystem_eq_top t ht)
+instance instIsRootSystemRootSystemBaseChange : (t.rootSystemBaseChange ht K).IsRootSystem :=
+  isRootSystem_rootPairingBaseChange ..
 
 instance instIsReducedRootSystemBaseChange : (t.rootSystemBaseChange ht K).IsReduced :=
   isReduced_rootPairingBaseChange K _ _
