@@ -23,7 +23,7 @@ null (`MDifferentiableOn.isNullSet_image_of_dimH_lt_finrank`): `range g` is a nu
 
 For a smooth triangulation `κ : |K| ≃ₜ M`, the image of every closed simplex of dimension below
 `dim E` is null (`TauCeti.IsSmoothTriangulation.isNullSet_image_range_faceInclusion`), and so is
-the image of the union of all of them when the vertex set is countable
+the image of the union of all of them when the complex has countably many simplices
 (`TauCeti.IsSmoothTriangulation.isNullSet_biUnion_image_range_faceInclusion`).
 -/
 
@@ -69,9 +69,9 @@ theorem IsSmoothTriangulation.isNullSet_image_range_faceInclusion (hn : 1 ≤ n)
   exact (isSmoothTriangulation_iff.mp h σ).isNullSet_range hn hσ
 
 /-- In a `C¹` smooth triangulation of a manifold modelled on `E` by a complex with countably many
-vertices, the image of the union of the closed simplices of dimension below `dim E` is null. -/
-theorem IsSmoothTriangulation.isNullSet_biUnion_image_range_faceInclusion [Countable ι]
-    (hn : 1 ≤ n) {K : AbstractSimplicialComplex ι} {κ : Realization K ≃ₜ M}
+simplices, the image of the union of the closed simplices of dimension below `dim E` is null. -/
+theorem IsSmoothTriangulation.isNullSet_biUnion_image_range_faceInclusion (hn : 1 ≤ n)
+    {K : AbstractSimplicialComplex ι} [Countable (Face K)] {κ : Realization K ≃ₜ M}
     (h : IsSmoothTriangulation I n κ) :
     IsNullSet I (⋃ σ ∈ {σ : Face K | σ.val.card ≤ finrank ℝ E},
       κ '' range (faceInclusion K σ)) :=
