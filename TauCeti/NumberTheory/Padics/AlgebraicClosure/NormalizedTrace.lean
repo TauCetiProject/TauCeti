@@ -140,8 +140,6 @@ theorem norm_normalizedTrace_le {z : PadicAlgCl p}
   have hπe : ‖ζ - 1‖ ^ e = (p : ℝ)⁻¹ := by
     rw [hζ.norm'_sub_one_pow_totient_prime_pow, ← map_natCast (algebraMap ℚ_[p] (PadicAlgCl p)),
       PadicAlgCl.norm_extends, Padic.norm_p]
-  have hπ0 : 0 < ‖ζ - 1‖ :=
-    norm_pos_iff.mpr (sub_ne_zero.mpr (hζ.ne_one (Nat.one_lt_pow n.succ_ne_zero hp.out.one_lt)))
   have hπ1 : ‖ζ - 1‖ < 1 := by
     by_contra! h
     have := one_le_pow₀ (n := e) h
@@ -159,11 +157,11 @@ theorem norm_normalizedTrace_le {z : PadicAlgCl p}
     _ ≤ p * ‖a i • (ζ - 1) ^ i‖ := by
         rw [norm_smul, norm_pow]
         exact mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left
-          (pow_le_pow_of_le_one hπ0.le hπ1.le hie) (norm_nonneg _)) (by positivity)
+          (pow_le_pow_of_le_one (norm_nonneg _) hπ1.le hie) (norm_nonneg _)) (by positivity)
     _ ≤ p * ‖∑ j ∈ Finset.range e with a j • (ζ - 1) ^ j ≠ 0, a j • (ζ - 1) ^ j‖ := by
         gcongr
         rw [IsUltrametricDist.norm_sum_eq_sup'_of_pairwise_ne ⟨i, hi⟩
-          (TauCeti.pairwise_norm_smul_pow_ne hπ0 hπ1 hπe fun j hj ↦ ?_)]
+          (TauCeti.pairwise_norm_smul_pow_ne hπe fun j hj ↦ ?_)]
         · exact Finset.le_sup' (fun j ↦ ‖a j • (ζ - 1) ^ j‖) hi
         obtain ⟨hj, hj0⟩ := Finset.mem_filter.mp hj
         exact ⟨Finset.mem_range.mp hj, fun h0 ↦ hj0 (by simp [h0])⟩

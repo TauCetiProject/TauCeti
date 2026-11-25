@@ -19,15 +19,15 @@ spectral norm, so an element `x` whose minimal polynomial has degree `d` and con
 `a₀` satisfies `‖x‖ ^ d = ‖a₀‖`. Since `d` divides `n` and `‖a₀‖` is an integer power of `p`, the
 `n`-th power of the norm of every nonzero element of `K` is an integer power of `p`.
 
-In any normed field extension of `ℚ_[p]`, an element `π` with `‖π‖ ^ e = ‖p‖` and `0 < ‖π‖ < 1`
-behaves like a uniformizer: the nonzero terms `aᵢ πⁱ`, `i < e`, have pairwise distinct norms.
+In any normed field extension of `ℚ_[p]`, an element `π` with `‖π‖ ^ e = ‖p‖` behaves like a
+uniformizer: the nonzero terms `aᵢ πⁱ`, `i < e`, have pairwise distinct norms.
 
 ## Main results
 
 * `TauCeti.exists_norm_pow_finrank_eq_zpow`: in an extension of `ℚ_[p]` of degree `n`, the `n`-th
   powers of the nonzero norms lie in `p ^ ℤ`.
-* `TauCeti.pairwise_norm_smul_pow_ne`: if `‖π‖ ^ e = p⁻¹` and `0 < ‖π‖ < 1`, the nonzero terms
-  `aᵢ πⁱ` (`aᵢ ∈ ℚ_[p]`, `i < e`) have pairwise distinct norms.
+* `TauCeti.pairwise_norm_smul_pow_ne`: if `‖π‖ ^ e = p⁻¹`, the nonzero terms `aᵢ πⁱ`
+  (`aᵢ ∈ ℚ_[p]`, `i < e`) have pairwise distinct norms.
 
 ## References
 
@@ -53,14 +53,23 @@ theorem exists_norm_pow_finrank_eq_zpow {p : ℕ} [Fact p.Prime] {K : Type*} [No
     zpow_natCast]
 
 /-- **Distinct norms of the terms of a `π`-adic expansion.** In a normed field extension of
-`ℚ_[p]`, if `‖π‖ ^ e = p⁻¹` with `0 < ‖π‖ < 1`, the nonzero terms `aᵢ πⁱ`, `i < e`, of a
-`ℚ_p`-combination of powers of `π` have pairwise distinct norms: the norm of `aᵢ πⁱ` is
-`‖π‖ ^ (e v(aᵢ) + i)`, and these exponents differ modulo `e`. -/
+`ℚ_[p]`, if `‖π‖ ^ e = p⁻¹`, the nonzero terms `aᵢ πⁱ`, `i < e`, of a `ℚ_p`-combination of
+powers of `π` have pairwise distinct norms: the norm of `aᵢ πⁱ` is `‖π‖ ^ (e v(aᵢ) + i)`, and
+these exponents differ modulo `e`. -/
 theorem pairwise_norm_smul_pow_ne {p : ℕ} [Fact p.Prime] {K : Type*} [NormedField K]
     [NormedAlgebra ℚ_[p] K] {π : K} {e : ℕ} {a : ℕ → ℚ_[p]} {s : Finset ℕ}
-    (hπ0 : 0 < ‖π‖) (hπ1 : ‖π‖ < 1) (hπe : ‖π‖ ^ e = (p : ℝ)⁻¹)
-    (hs : ∀ i ∈ s, i < e ∧ a i ≠ 0) :
+    (hπe : ‖π‖ ^ e = (p : ℝ)⁻¹) (hs : ∀ i ∈ s, i < e ∧ a i ≠ 0) :
     (s : Set ℕ).Pairwise fun i j ↦ ‖a i • π ^ i‖ ≠ ‖a j • π ^ j‖ := by
+  -- `0 < ‖π‖ < 1` follows from `‖π‖ ^ e = p⁻¹ < 1`.
+  have hp : 1 < (p : ℝ) := by exact_mod_cast (Fact.out : p.Prime).one_lt
+  have hp1 : (p : ℝ)⁻¹ < 1 := inv_lt_one_of_one_lt₀ hp
+  have he : e ≠ 0 := by
+    rintro rfl
+    exact hp1.ne' (by rwa [pow_zero] at hπe)
+  have hπ1 : ‖π‖ < 1 := (pow_lt_one_iff_of_nonneg (norm_nonneg π) he).mp (hπe ▸ hp1)
+  have hπ0 : 0 < ‖π‖ := lt_of_pow_lt_pow_left₀ e (norm_nonneg π) (by
+    rw [zero_pow he, hπe]
+    exact inv_pos.mpr (zero_lt_one.trans hp))
   have h_norm (i : ℕ) (ha : a i ≠ 0) : ‖a i • π ^ i‖ = ‖π‖ ^ ((e : ℤ) * (a i).valuation + i) := by
     rw [norm_smul, norm_pow, Padic.norm_eq_zpow_neg_valuation ha, zpow_add₀ hπ0.ne', zpow_mul,
       zpow_natCast, hπe, zpow_natCast, inv_zpow', zpow_neg]
