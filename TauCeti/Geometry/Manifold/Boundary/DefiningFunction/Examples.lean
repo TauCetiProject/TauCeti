@@ -18,9 +18,9 @@ two model manifolds with boundary.
 
 * On the closed unit ball of a real inner product space `E` of dimension `n + 1`,
   `ρ = 1 - ‖x‖²` is a global boundary defining function
-  (`TauCeti.isBoundaryDefiningFunctionOn_closedBall`), whose differential sends the radial vector
-  `x` to `-2 ‖x‖²`, so to `-2` on the sphere
-  (`TauCeti.mvfderiv_closedBallDefiningFunction_radial`). For every `a` with `‖a‖ ≤ 1`,
+  (`TauCeti.isBoundaryDefiningFunctionOn_closedBall`), whose differential sends the tangent vector
+  `v` to `-2 ⟪x, v⟫` (`TauCeti.mvfderiv_closedBallDefiningFunction_symm_apply`); in particular it
+  sends the radial vector `x` to `-2` on the sphere. For every `a` with `‖a‖ ≤ 1`,
   `(2 + ⟪a, x⟫) ρ` is another one (`TauCeti.isBoundaryDefiningFunctionOn_closedBall_mul`), with
   ratio `2 + ⟪a, x⟫ ∈ [1, 3]` (`TauCeti.two_add_inner_mem_Icc`); `ρ²` is not one, since its
   differential vanishes on the sphere, and `-ρ` is not one, since it is negative inside.
@@ -60,12 +60,12 @@ private theorem contDiff_one_sub_norm_sq {k : ℕ∞ω} :
     ContDiff ℝ k (fun y : E ↦ 1 - ‖y‖ ^ 2) :=
   contDiff_const.sub (contDiff_norm_sq ℝ)
 
-/-- The differential of `1 - ‖x‖²` on the closed ball sends the radial vector `x`, read as a
-tangent vector through the inclusion, to `-2 ‖x‖²`. -/
-theorem mvfderiv_closedBallDefiningFunction_radial (x : closedBall (0 : E) 1) :
+/-- The differential of `1 - ‖x‖²` on the closed ball sends a vector `v`, read as a tangent
+vector through the inclusion, to `-2 ⟪x, v⟫`. -/
+theorem mvfderiv_closedBallDefiningFunction_symm_apply (x : closedBall (0 : E) 1) (v : E) :
     mvfderiv (𝓡∂ (n + 1)) closedBallDefiningFunction x
-        ((subtypeValClosedBallTangentEquiv (n := n + 1) x).symm (x : E)) =
-      -2 * ‖(x : E)‖ ^ 2 := by
+        ((subtypeValClosedBallTangentEquiv (n := n + 1) x).symm v) =
+      -2 * ⟪(x : E), v⟫ := by
   have hg : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) (fun y : E ↦ 1 - ‖y‖ ^ 2) (x : E) :=
     (contDiff_one_sub_norm_sq (k := 1)).contMDiff.mdifferentiableAt one_ne_zero
   have hι : MDifferentiableAt (𝓡∂ (n + 1)) 𝓘(ℝ, E) (Subtype.val : closedBall (0 : E) 1 → E) x :=
@@ -76,7 +76,7 @@ theorem mvfderiv_closedBallDefiningFunction_radial (x : closedBall (0 : E) 1) :
     mvfderiv_eq_fderiv, fderiv_const_sub, fderiv_norm_sq_apply]
   -- The tangent vector `x` lives in `TangentSpace 𝓘(ℝ, E) x`, which is `E` by definition;
   -- re-type it so that the evaluation lemmas of `E →L[ℝ] ℝ` apply.
-  change (-(2 • innerSL ℝ (x : E)) : E →L[ℝ] ℝ) (x : E) = -2 * ‖(x : E)‖ ^ 2
+  change (-(2 • innerSL ℝ (x : E)) : E →L[ℝ] ℝ) v = -2 * ⟪(x : E), v⟫
   simp
 
 /-- **`1 - ‖x‖²` is a global boundary defining function of the closed unit ball.** -/
@@ -93,8 +93,8 @@ theorem isBoundaryDefiningFunctionOn_closedBall :
   eq_zero x _ hx := by
     simp [(isBoundaryPoint_closedBall_iff (n := n + 1)).1 hx]
   mvfderiv_ne_zero x _ hx h0 := by
-    have h := mvfderiv_closedBallDefiningFunction_radial (n := n) x
-    rw [h0, (isBoundaryPoint_closedBall_iff (n := n + 1)).1 hx] at h
+    have h := mvfderiv_closedBallDefiningFunction_symm_apply (n := n) x x
+    rw [h0, real_inner_self_eq_norm_sq, (isBoundaryPoint_closedBall_iff (n := n + 1)).1 hx] at h
     simp at h
 
 /-- The ratio `2 + ⟪a, x⟫` lies in `[1, 3]` on the closed unit ball when `‖a‖ ≤ 1`. -/
