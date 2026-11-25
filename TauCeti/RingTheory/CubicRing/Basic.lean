@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.CubicDiscriminant
 public import Mathlib.RingTheory.Discriminant
+public import TauCeti.Algebra.Polynomial.Cubic.Basic
 
 /-!
 # The cubic ring of a binary cubic form
@@ -239,23 +239,6 @@ end Cubic
 end
 
 public section
-
-namespace Cubic
-
-/-! ### Coefficients of a mapped form -/
-
-section Map
-
-variable {R S : Type*} [Semiring R] [Semiring S] (φ : R →+* S) (P : Cubic R)
-
-@[simp] theorem map_a : (P.map φ).a = φ P.a := (rfl)
-@[simp] theorem map_b : (P.map φ).b = φ P.b := (rfl)
-@[simp] theorem map_c : (P.map φ).c = φ P.c := (rfl)
-@[simp] theorem map_d : (P.map φ).d = φ P.d := (rfl)
-
-end Map
-
-end Cubic
 
 namespace Cubic.CubicRing
 

@@ -24,6 +24,8 @@ using Mathlib's expansion `Cubic.prod_X_sub_C_eq`.
 * `Polynomial.eq_cubic_of_natDegree_le_three` and `Polynomial.Monic.eq_X_pow_three_add`: the normal
   form `a * X ^ 3 + b * X ^ 2 + c * X + d` of a polynomial of degree at most three, and
   `X ^ 3 + a * X ^ 2 + b * X + c` of a monic cubic.
+* `Cubic.map_a`, `Cubic.map_b`, `Cubic.map_c`, `Cubic.map_d`: the coefficients of `Cubic.map φ P`
+  are the images under `φ` of those of `P`.
 * `TauCeti.Polynomial.add_add_eq_and_mul_add_mul_add_mul_eq`: if
   `(X - a)(X - b)(X - c) = (X - a')(X - b')(X - c')`, then `a + b + c = a' + b' + c'` and
   `ab + ac + bc = a'b' + a'c' + b'c'`.
@@ -51,6 +53,23 @@ theorem Monic.eq_X_pow_three_add {g : R[X]} (hmonic : g.Monic) (hdeg : g.natDegr
   rwa [show g.coeff 3 = 1 from hdeg ▸ hmonic.coeff_natDegree, C_1, one_mul] at h
 
 end Polynomial
+
+namespace Cubic
+
+/-! ### Coefficients of a mapped cubic -/
+
+section Map
+
+variable {R S : Type*} [Semiring R] [Semiring S] (φ : R →+* S) (P : Cubic R)
+
+@[simp] theorem map_a : (P.map φ).a = φ P.a := (rfl)
+@[simp] theorem map_b : (P.map φ).b = φ P.b := (rfl)
+@[simp] theorem map_c : (P.map φ).c = φ P.c := (rfl)
+@[simp] theorem map_d : (P.map φ).d = φ P.d := (rfl)
+
+end Map
+
+end Cubic
 
 namespace TauCeti.Polynomial
 
