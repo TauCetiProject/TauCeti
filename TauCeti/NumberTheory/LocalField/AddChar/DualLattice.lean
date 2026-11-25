@@ -156,7 +156,7 @@ theorem characterAnnihilator_characterAnnihilator_flip (h0 : {x | ψ x = 1} ∈ 
     (L.characterAnnihilator ψ B).characterAnnihilator ψ B.flip = L := by
   obtain ⟨c, hc⟩ := valuation_surjective (uniformizer K ^ (-ψ.conductorExponent))
   have := IsLattice.free K L
-  have hflip : B.flip.flip = B := LinearMap.ext₂ fun _ _ ↦ rfl
+  have hflip : B.flip.flip = B := LinearMap.flip_flip B
   rw [characterAnnihilator_eq_dualSubmodule h0 h1 hc,
     characterAnnihilator_eq_dualSubmodule h0 h1 hc, hflip, ← map_smul]
   exact (c⁻¹ • B).dualSubmodule_dualSubmodule_flip (nondegenerate_inv_smul hc hB) L
