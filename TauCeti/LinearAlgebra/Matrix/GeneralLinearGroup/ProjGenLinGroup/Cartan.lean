@@ -50,7 +50,7 @@ the Weyl element of `GL₂(R)` to a scalar multiple of `diag(1, πᵏ)`.
   double coset of `diag(1, πᵏ)` for exactly one `k : ℕ`; its halves are
   `TauCeti.exists_mem_doubleCoset_mk_diagGL_pow` and `TauCeti.eq_of_mem_doubleCoset_mk_diagGL_pow`.
 * `TauCeti.doubleCoset_mk_diagGL_pow_zero`: the double coset for `k = 0` is `Γ`.
-* `TauCeti.comap_conj_smul_range_eq_GL2K0`: the stabilizer in `GL₂(R)` of the coset
+* `TauCeti.comap_conj_smul_projectiveImage_eq_GL2K0`: the stabilizer in `GL₂(R)` of the coset
   `diag(1, πᵏ) Γ` is the congruence level `K₀(𝔭ᵏ)`.
 * `TauCeti.natCard_image_mk_doubleCoset_mk_diagGL_pow`: for `k ≥ 1` the double coset contains
   `qᵏ⁻¹ (q + 1)` left cosets of `Γ`.
@@ -100,7 +100,7 @@ private theorem mem_range_map_of_mk_mem {M : GL (Fin 2) K}
 /-- **The stabilizer of a Cartan coset.** In `PGL₂(K)`, conjugating the class of `x ∈ GL₂(R)` by
 `diag(1, πᵏ)⁻¹` stays in the image `Γ` of `GL₂(R)` exactly when `x` lies in the congruence level
 `K₀(𝔭ᵏ)`: the preimage of `Γ ∩ diag(1, πᵏ) Γ diag(1, πᵏ)⁻¹` in `GL₂(R)` is `K₀(𝔭ᵏ)`. -/
-theorem comap_conj_smul_range_eq_GL2K0 (hϖ : Irreducible ϖ) (hπ : algebraMap R K ϖ = π)
+theorem comap_conj_smul_projectiveImage_eq_GL2K0 (hϖ : Irreducible ϖ) (hπ : algebraMap R K ϖ = π)
     (k : ℕ) :
     (MulAut.conj (ProjGenLinGroup.mk (diagGL ![1, π ^ k])) •
         (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage).comap
@@ -315,7 +315,7 @@ theorem natCard_image_mk_doubleCoset_mk_diagGL_pow [Finite (ResidueField R)]
         rw [Subgroup.relIndex_map_map, sup_eq_left.mpr (Subgroup.ker_le_comap f C), top_sup_eq,
           Subgroup.relIndex_top_right]
     _ = _ := by
-        rw [comap_conj_smul_range_eq_GL2K0 hϖ hπ, GL2K0.index_maximalIdeal_pow hk]
+        rw [comap_conj_smul_projectiveImage_eq_GL2K0 hϖ hπ, GL2K0.index_maximalIdeal_pow hk]
 
 /-- **The coset counts of the Cartan double cosets of `PGL₂`, for right cosets.** If the residue
 field of `R` has `q` elements and `k ≥ 1`, the double coset `Γ diag(1, πᵏ) Γ` in `PGL₂(K)`, where
