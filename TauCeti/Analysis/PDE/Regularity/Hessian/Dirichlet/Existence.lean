@@ -181,7 +181,7 @@ private theorem exists_firstOrder_mem_w1p0Submodule_and_trace_iteratedGradient_a
   have hΩ'b : Bornology.IsBounded (Ω' : Set (EuclideanSpace ℝ (Fin (finrank ℝ E + 1)))) := by
     obtain ⟨R, hR⟩ := isBounded_iff_forall_norm_le.1 hΩ
     exact isBounded_iff_forall_norm_le.2 ⟨R, fun y hy => by
-      simpa using hR _ (show g.symm y ∈ (Omega : Set (WithLp 2 (ℝ × E))) from hy)⟩
+      simpa using hR (g.symm y) (by simpa [Ω'] using hy)⟩
   -- The carrier of `Ω'` is `g⁻¹⁻¹(Ω)` by definition, so the charts of `Ω` transport to `Ω'`.
   obtain ⟨w, hw0, hw⟩ :=
     exists_lowerOrder_mem_w1p0Submodule_and_trace_iteratedGradient_ae_eq_of_euclidean hΩ'b
@@ -285,10 +285,9 @@ private theorem exists_norm_le_mul_norm_lineMap_apply (hp : 1 < p) (hp_top : p �
   rw [AffineMap.lineMap_apply_module]
   filter_upwards [hT₀ u, hT₁ u, Lp.coeFn_add ((1 - t) • T₀ u) (t • T₁ u),
     Lp.coeFn_smul (1 - t) (T₀ u), Lp.coeFn_smul t (T₁ u)] with x h₀ h₁ hadd hs₀ hs₁
-  rw [add_apply, smul_apply, smul_apply, hadd, Pi.add_apply, hs₀, hs₁, Pi.smul_apply, Pi.smul_apply,
-    h₀, h₁]
-  simp only [ContinuousLinearMap.add_comp, ContinuousLinearMap.smul_comp,
-    ContinuousLinearMap.id_comp, map_add, map_smul, traceCLM_apply, smul_eq_mul]
+  simp only [add_apply, smul_apply, hadd, Pi.add_apply, hs₀, hs₁, Pi.smul_apply, h₀, h₁,
+    ContinuousLinearMap.add_comp, ContinuousLinearMap.smul_comp, ContinuousLinearMap.id_comp,
+    map_add, map_smul, traceCLM_apply, smul_eq_mul]
   ring
 
 /-- The Laplacian is onto `Lᵖ(Ω)` from `W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)` once it is bounded below there.
