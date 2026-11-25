@@ -57,6 +57,8 @@ the derived action lowers the order by one: if `Y = ∑ i, c i • X i`, then
   `P_k(dπ(Y) v) ≤ (∑ i, |b.repr Y i|) P_{k+1}(v)`.
 * `TauCeti.exists_sobolevIndex_monomialWord_eq`: a sorted word of length at most `k` is the
   ordered monomial word `TauCeti.monomialWord α` of an index `α` in `SobolevIndex m k`.
+* `ContRepresentation.wordSeminorm_trivial`, `ContRepresentation.sobolevSeminorm_trivial`: for
+  the trivial representation, every nonempty word acts by zero, so `P_k = Q_k = ‖·‖`.
 
 ## References
 
@@ -236,6 +238,12 @@ theorem wordAction_append (X : ι → LeftInvariantDerivation I G) (w₁ w₂ : 
     wordAction I π X (w₁ ++ w₂) = wordAction I π X w₁ * wordAction I π X w₂ := by
   simp [wordAction]
 
+/-- For the trivial representation, every nonempty word acts by zero. -/
+theorem wordAction_trivial_of_ne_nil (X : ι → LeftInvariantDerivation I G) {w : List ι}
+    (hw : w ≠ []) : wordAction I (trivial R G V) X w = 0 := by
+  obtain ⟨i, w, rfl⟩ := List.exists_cons_of_ne_nil hw
+  simp
+
 end WordAction
 
 variable {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 V] [SMulCommClass ℝ 𝕜 V]
@@ -337,6 +345,22 @@ theorem wordSeminorm_lieSmoothVectorsDerivative_le_basis
 
 end RealCombination
 
+/-- **The word seminorms of the trivial representation are the norm**: `P_k(v) = ‖v‖` for every
+`k`, since only the empty word acts nontrivially. -/
+@[simp]
+theorem wordSeminorm_trivial (X : ι → LeftInvariantDerivation I G) (k : ℕ)
+    (v : lieSmoothVectors I (trivial 𝕜 G V)) :
+    wordSeminorm I (trivial 𝕜 G V) X k v = ‖(v : V)‖ := by
+  rw [wordSeminorm_apply, Finset.sum_eq_single (⟨0, Fin.elim0⟩ : BoundedWord ι k)]
+  · simp
+  · rintro ⟨n, w⟩ - hw
+    have hn : (n : ℕ) ≠ 0 := fun hn ↦ hw (by
+      obtain rfl : n = 0 := Fin.ext hn
+      exact congrArg _ (funext fun i ↦ i.elim0))
+    have hne : List.ofFn w ≠ [] := by simpa [List.ofFn_eq_nil_iff] using hn
+    simp [wordAction_trivial_of_ne_nil X hne]
+  · simp
+
 /-! ### The Sobolev seminorms -/
 
 variable {m : ℕ}
@@ -369,6 +393,23 @@ theorem sobolevSeminorm_apply (X : Fin m → LeftInvariantDerivation I G) (k : �
     sobolevSeminorm I π X k v =
       √(∑ α : SobolevIndex m k, ‖(wordAction I π X (monomialWord α.exponent) v : V)‖ ^ 2) := by
   simp [sobolevSeminorm, PiLp.norm_eq_of_L2]
+
+/-- **The Sobolev seminorms of the trivial representation are the norm**: `Q_k(v) = ‖v‖` for every
+`k`, since only the constant monomial acts nontrivially. -/
+@[simp]
+theorem sobolevSeminorm_trivial (X : Fin m → LeftInvariantDerivation I G) (k : ℕ)
+    (v : lieSmoothVectors I (trivial 𝕜 G V)) :
+    sobolevSeminorm I (trivial 𝕜 G V) X k v = ‖(v : V)‖ := by
+  let α₀ : SobolevIndex m k := ⟨0, by simp⟩
+  have hα₀ : α₀.exponent = 0 := funext fun _ ↦ by simp [α₀]
+  rw [sobolevSeminorm_apply, Finset.sum_eq_single α₀]
+  · simp [monomialWord_eq_nil_iff.mpr hα₀, Real.sqrt_sq (norm_nonneg _)]
+  · intro α _ hα
+    have hne : monomialWord α.exponent ≠ [] := by
+      rw [Ne, monomialWord_eq_nil_iff, ← hα₀]
+      exact SobolevIndex.exponent_injective.ne hα
+    simp [wordAction_trivial_of_ne_nil X hne]
+  · simp
 
 /-- The Sobolev seminorm is bounded by the word seminorm: every ordered monomial is a word, and
 the `ℓ²` norm of a finite family is at most its `ℓ¹` norm. -/
