@@ -185,15 +185,6 @@ private theorem locallyConstantFinsuppEquiv_homConeπ (j : StructuredArrow S Fin
       h.comp (LocallyConstant.comapAddMonoidHom j.hom.hom.hom) :=
   LinearEquiv.apply_symm_apply _ _
 
-omit [Ring R] in
-private theorem comap_comap_of_hom {j j' : StructuredArrow S FintypeCat.toProfinite} (k : j ⟶ j')
-    {Z : Type*} (φ : LocallyConstant (FintypeCat.toProfinite.obj j'.right) Z) :
-    LocallyConstant.comap j.hom.hom.hom
-        (LocallyConstant.comap (FintypeCat.toProfinite.map k.right).hom.hom φ) =
-      LocallyConstant.comap j'.hom.hom.hom φ := by
-  ext x
-  exact congrArg φ (congrArg (fun f ↦ f.hom.hom x) (StructuredArrow.w k))
-
 private theorem homConeπ_naturality {j j' : StructuredArrow S FintypeCat.toProfinite} (k : j ⟶ j')
     (h : LocallyConstant S ℤ →+ LocallyConstant T R) :
     (homConeπ R S T j h).map
@@ -204,7 +195,7 @@ private theorem homConeπ_naturality {j j' : StructuredArrow S FintypeCat.toProf
     locallyConstantFinsuppEquiv_homConeπ, AddMonoidHom.comp_assoc]
   congr 1
   ext φ : 1
-  exact comap_comap_of_hom S k φ
+  exact Profinite.comap_comap_of_structuredArrow_hom k φ
 
 /-- The cone with apex `Hom(C(S, ℤ), C(T, R))` over `sectionsDiagram`. -/
 private noncomputable def homCone : Cone (sectionsDiagram R S T) where
@@ -217,28 +208,6 @@ private noncomputable def homCone : Cone (sectionsDiagram R S T) where
 private theorem homCone_π_app (j : StructuredArrow S FintypeCat.toProfinite) :
     (homCone R S T).π.app j = ModuleCat.ofHom (homConeπ R S T j) :=
   rfl
-
-/-- A locally constant function on `S`, as a function on its discrete quotient by fibres. -/
-private noncomputable def liftOfDiscreteQuotient (f : LocallyConstant S ℤ) :
-    LocallyConstant (FintypeCat.toProfinite.obj
-      ((Profinite.Extend.functor S.asLimitCone).obj f.discreteQuotient).right) ℤ :=
-  ⟨(f.lift : _ → ℤ), IsLocallyConstant.of_discrete _⟩
-
-private theorem comap_liftOfDiscreteQuotient (f : LocallyConstant S ℤ) :
-    LocallyConstant.comap
-      ((Profinite.Extend.functor S.asLimitCone).obj f.discreteQuotient).hom.hom.hom
-      (liftOfDiscreteQuotient S f) = f :=
-  -- The object of `Extend.functor` at `Q` is the projection `S → Q` by definition, so this is
-  -- `f.lift ∘ f.discreteQuotient.proj = f`.
-  LocallyConstant.coe_injective f.lift_comp_proj
-
-omit [Ring R] in
-/-- Every locally constant function on `S` is pulled back from a finite set. -/
-private theorem exists_comap_eq (f : LocallyConstant S ℤ) :
-    ∃ (j : StructuredArrow S FintypeCat.toProfinite)
-      (φ : LocallyConstant (FintypeCat.toProfinite.obj j.right) ℤ),
-      LocallyConstant.comap j.hom.hom.hom φ = f :=
-  ⟨_, _, comap_liftOfDiscreteQuotient S f⟩
 
 variable {R S T}
 
@@ -273,7 +242,8 @@ private theorem pairing_π_eq (s : Cone (sectionsDiagram R S T)) (m : s.pt)
   rw [pairing_π_eq_of_hom s k₁, pairing_π_eq_of_hom s k₂]
   congr 1
   apply LocallyConstant.comap_injective j.hom.hom.hom hj
-  rw [comap_comap_of_hom S k₁, comap_comap_of_hom S k₂, h]
+  rw [Profinite.comap_comap_of_structuredArrow_hom k₁,
+    Profinite.comap_comap_of_structuredArrow_hom k₂, h]
 
 /-- The lift of a cone over `sectionsDiagram` to `homCone`, at one element of its apex, as a
 function: `f` is paired with the image of `m` in the discrete quotient of `S` by the fibres of
@@ -282,7 +252,7 @@ private noncomputable def homConeLiftFun (s : Cone (sectionsDiagram R S T)) (m :
     (f : LocallyConstant S ℤ) : LocallyConstant T R :=
   locallyConstantFinsuppEquiv R _ T
     (s.π.app ((Profinite.Extend.functor S.asLimitCone).obj f.discreteQuotient) m)
-    (liftOfDiscreteQuotient S f)
+    (S.liftOfDiscreteQuotient f)
 
 /-- `homConeLiftFun` agrees with the pairing at every map from `S` to a finite set. -/
 private theorem homConeLiftFun_comap (s : Cone (sectionsDiagram R S T)) (m : s.pt)
@@ -290,7 +260,7 @@ private theorem homConeLiftFun_comap (s : Cone (sectionsDiagram R S T)) (m : s.p
     (φ : LocallyConstant (FintypeCat.toProfinite.obj j.right) ℤ) :
     homConeLiftFun s m (LocallyConstant.comap j.hom.hom.hom φ) =
       locallyConstantFinsuppEquiv R _ T (s.π.app j m) φ :=
-  pairing_π_eq s m _ _ (comap_liftOfDiscreteQuotient S _)
+  pairing_π_eq s m _ _ (S.comap_liftOfDiscreteQuotient _)
 
 /-- The lift of a cone over `sectionsDiagram` to `homCone`, at one element of its apex. -/
 private noncomputable def homConeLiftAux (s : Cone (sectionsDiagram R S T)) (m : s.pt) :
@@ -305,13 +275,15 @@ private noncomputable def homConeLiftAux (s : Cone (sectionsDiagram R S T)) (m :
       ((Profinite.Extend.functor S.asLimitCone).obj f.discreteQuotient)
       ((Profinite.Extend.functor S.asLimitCone).obj g.discreteQuotient)
     let φ := LocallyConstant.comap (FintypeCat.toProfinite.map k₁.right).hom.hom
-      (liftOfDiscreteQuotient S f)
+      (S.liftOfDiscreteQuotient f)
     let ψ := LocallyConstant.comap (FintypeCat.toProfinite.map k₂.right).hom.hom
-      (liftOfDiscreteQuotient S g)
+      (S.liftOfDiscreteQuotient g)
     have hf : LocallyConstant.comap j.hom.hom.hom φ = f :=
-      (comap_comap_of_hom S k₁ _).trans (comap_liftOfDiscreteQuotient S f)
+      (Profinite.comap_comap_of_structuredArrow_hom k₁ _).trans
+        (S.comap_liftOfDiscreteQuotient f)
     have hg : LocallyConstant.comap j.hom.hom.hom ψ = g :=
-      (comap_comap_of_hom S k₂ _).trans (comap_liftOfDiscreteQuotient S g)
+      (Profinite.comap_comap_of_structuredArrow_hom k₂ _).trans
+        (S.comap_liftOfDiscreteQuotient g)
     have hfg : LocallyConstant.comap j.hom.hom.hom (φ + ψ) = f + g :=
       (map_add (LocallyConstant.comapAddMonoidHom j.hom.hom.hom) φ ψ).trans (congrArg₂ _ hf hg)
     rw [← hfg, ← hf, ← hg]
@@ -330,12 +302,12 @@ private noncomputable def isLimitHomCone : IsLimit (homCone R S T) where
     { toFun := homConeLiftAux s
       map_add' m₁ m₂ := by
         ext f : 1
-        obtain ⟨j, φ, rfl⟩ := exists_comap_eq S f
+        obtain ⟨j, φ, rfl⟩ := S.exists_structuredArrow_comap_eq f
         simp only [AddMonoidHom.add_apply, homConeLiftAux_apply, homConeLiftFun_comap, map_add]
         exact DFunLike.congr_fun (map_add (locallyConstantFinsuppEquiv R _ T) _ _) φ
       map_smul' r m := by
         ext f : 1
-        obtain ⟨j, φ, rfl⟩ := exists_comap_eq S f
+        obtain ⟨j, φ, rfl⟩ := S.exists_structuredArrow_comap_eq f
         simp only [AddMonoidHom.smul_apply, homConeLiftAux_apply, homConeLiftFun_comap, map_smul,
           RingHom.id_apply]
         exact DFunLike.congr_fun (map_smul (locallyConstantFinsuppEquiv R _ T) _ _) φ }
@@ -347,7 +319,7 @@ private noncomputable def isLimitHomCone : IsLimit (homCone R S T) where
       (homConeLiftFun_comap s m j φ)
   uniq s m' hm := by
     refine ModuleCat.hom_ext (LinearMap.ext fun x ↦ AddMonoidHom.ext fun f ↦ ?_)
-    obtain ⟨j, φ, rfl⟩ := exists_comap_eq S f
+    obtain ⟨j, φ, rfl⟩ := S.exists_structuredArrow_comap_eq f
     have h : (s.π.app j).hom x = homConeπ R S T j (m'.hom x) := by
       rw [← hm, homCone_π_app]
       -- Composition in `ModuleCat` is composition of the underlying linear maps by definition.
@@ -413,8 +385,14 @@ private theorem profiniteSolidSectionsIso_naturality {T T' : CompHaus.{u}} (g : 
       (LocallyConstant.comapAddMonoidHom g.hom.hom).comp
         ((profiniteSolidSectionsIso R S T).hom x) := by
   ext f : 1
-  obtain ⟨j, φ, rfl⟩ := exists_comap_eq S f
+  obtain ⟨j, φ, rfl⟩ := S.exists_structuredArrow_comap_eq f
   -- Both sides are the pairing of `φ` with the image of `x` in `R[F]`, pulled back along `g`.
+  -- Two steps hold by definition: the restriction maps of the discrete condensed module
+  -- `(finLocallyConstant R).obj j.right` are `LocallyConstant.comap`, so the output of
+  -- `CondensedMod.hom_naturality_apply` is the `v.comap g.hom.hom` expected by
+  -- `locallyConstantFinsuppEquiv_comap`; and the right-hand side applied to `comap j φ` is
+  -- `comap g.hom.hom` of `(profiniteSolidSectionsIso R S T).hom x (comap j φ)` by
+  -- `AddMonoidHom.comp_apply`.
   refine (profiniteSolidSectionsIso_hom_apply_comap R S T' _ j φ).trans ?_
   refine (congrArg (fun v ↦ locallyConstantFinsuppEquiv R _ T' v φ)
     (CondensedMod.hom_naturality_apply R (profiniteSolidToFin R S j) g.op x)).trans ?_
@@ -503,6 +481,10 @@ noncomputable def isLimitLocallyConstantDualFan {I : Type u}
     -- The `i`-th coordinate of `e h` is `h (b i)`, the value of the leg `locallyConstantDualEval`.
     have he (h : LocallyConstant S ℤ →+ LocallyConstant T.unop R) (i : I) : e h i = h (b i) := by
       simp [e]
+    -- In `fac` and `uniq`, `(f ≫ (locallyConstantDualFan b).π.app ⟨i⟩).hom x` is
+    -- `(x' : _ →+ _) (b i)` for `x' := f.hom x`, by definition: composition in `ModuleCat` is
+    -- composition of the underlying linear maps, the legs of `Fan.mk` are the given maps, and
+    -- `locallyConstantDualEval (b i)` evaluates at `b i` (`locallyConstantDualEval_hom_app_apply`).
     { lift s := ModuleCat.ofHom (e.symm.toLinearMap ∘ₗ LinearMap.pi fun i ↦ (s.π.app ⟨i⟩).hom)
       fac s i := ModuleCat.hom_ext (LinearMap.ext fun x ↦ (he _ i.as).symm.trans
         (congrFun (e.apply_symm_apply fun i ↦ (s.π.app ⟨i⟩).hom x) i.as))
