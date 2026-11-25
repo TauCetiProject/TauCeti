@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.PadicIntegers
-public import Mathlib.Analysis.SpecificLimits.Normed
 public import TauCeti.RepresentationTheory.Smooth.Basic
+import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
 # Smoothness is not closed under extensions
@@ -41,14 +41,6 @@ theorem unipotentRep_apply (t : Multiplicative ℤ_[2]) (v : ℚ_[2] × ℚ_[2])
     unipotentRep t v = (v.1 + ((Multiplicative.toAdd t : ℤ_[2]) : ℚ_[2]) * v.2, v.2) :=
   rfl
 
-/-- `{0}` is not open in `ℤ_2`: the powers `2 ^ n` are nonzero and tend to `0`. -/
-theorem not_isOpen_singleton_one : ¬ IsOpen ({1} : Set (Multiplicative ℤ_[2])) := fun h ↦ by
-  have h0 : IsOpen ({0} : Set ℤ_[2]) := h
-  have hlim : Filter.Tendsto (fun n : ℕ ↦ ((2 : ℕ) : ℤ_[2]) ^ n) Filter.atTop (nhds 0) :=
-    tendsto_pow_atTop_nhds_zero_of_norm_lt_one (by rw [PadicInt.norm_p]; norm_num)
-  obtain ⟨n, hn⟩ := (hlim.eventually (h0.mem_nhds rfl)).exists
-  exact pow_ne_zero n (Nat.cast_ne_zero.2 two_ne_zero) hn
-
 /-- A vector `(x, y)` is smooth for the unipotent representation exactly when `y = 0`. -/
 theorem mem_smoothVectors_unipotentRep_iff {v : ℚ_[2] × ℚ_[2]} :
     v ∈ unipotentRep.smoothVectors ↔ v.2 = 0 := by
@@ -59,7 +51,7 @@ theorem mem_smoothVectors_unipotentRep_iff {v : ℚ_[2] × ℚ_[2]} :
     ext t
     simp [mem_stabilizer, unipotentRep_apply, hv, Prod.ext_iff]
   · refine iff_of_false ?_ hv
-    convert not_isOpen_singleton_one
+    convert PadicInt.not_isOpen_singleton_one_multiplicative (p := 2)
     ext t
     simp [mem_stabilizer, unipotentRep_apply, hv, Prod.ext_iff]
 
