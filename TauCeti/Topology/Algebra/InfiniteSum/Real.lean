@@ -44,8 +44,6 @@ analogue of the power-rule integral identity for tails.
 * `Summable.prod_mul_of_hasSum_one`, `HasSum.tsum_mul_of_hasSum_one`: mixing nonnegative
   families `ν i` summing to one with nonnegative summable weights `a i` gives a summable family
   on the product, and the mixture `∑' i, a i * ν i m` sums to `∑' i, a i`.
-* `hasSum_rows_iff_hasSum_cols_of_nonneg`: the row sums of a nonnegative real double family sum
-  to `x` exactly when its column sums do.
 * `Summable.antitone_tsum_Ioi`: the tails `∑_{m > n} a m` of a nonnegative summable sequence
   decrease with `n`.
 * `Summable.mul_pow_tsum_Ioi`: the sequence `a m * (∑_{j > m} a j) ^ k` is summable for a
@@ -58,6 +56,8 @@ analogue of the power-rule integral identity for tails.
   when the nonnegative radius decreases.
 * `TauCeti.summable_sigma_fin_iff`: repeating each nonnegative term `m i` times is summable
   exactly when `∑ i, m i * a i` is.
+* `TauCeti.hasSum_rows_iff_hasSum_cols_of_nonneg`: the row sums of a nonnegative real double
+  family sum to `x` exactly when its column sums do.
 * `TauCeti.eventually_mul_le_one_of_summable_sq`: a square-summable family eventually satisfies
   `b i * C ≤ 1`.
 * `Filter.Tendsto.exists_summable_mul_div_pow`: if `r : ι → ℝ` tends to infinity along
@@ -181,27 +181,6 @@ theorem HasSum.tsum_mul_of_hasSum_one {ι κ : Type*} {a : ι → ℝ} {A : ℝ}
   rw [Summable.tsum_comm' hh (fun i ↦ hh.prod_factor i) fun m ↦ hsw.prod_factor m, ← ha.tsum_eq]
   exact tsum_congr fun i ↦ by simp only [tsum_mul_left, (hν i).tsum_eq, mul_one]
 
-/-- One direction of `hasSum_rows_iff_hasSum_cols_of_nonneg`: if the row sums of a nonnegative
-real double family sum to `x`, so do its column sums. -/
-private theorem hasSum_cols_of_hasSum_rows_of_nonneg {β γ : Type*} {a : β → γ → ℝ} {r : β → ℝ}
-    {k : γ → ℝ} {x : ℝ} (ha : ∀ j n, 0 ≤ a j n) (hr : ∀ j, HasSum (a j) (r j))
-    (hk : ∀ n, HasSum (a · n) (k n)) (h : HasSum r x) : HasSum k x := by
-  have hprod : Summable (Function.uncurry a) :=
-    (summable_prod_of_nonneg fun p ↦ ha p.1 p.2).2
-      ⟨fun j ↦ (hr j).summable, by simpa only [fun j ↦ (hr j).tsum_eq] using h.summable⟩
-  -- Both the rows and the columns sum to the sum of the double family.
-  rw [h.unique (hprod.hasSum.prod_fiberwise hr)]
-  exact ((Equiv.prodComm γ β).hasSum_iff.2 hprod.hasSum).prod_fiberwise hk
-
-/-- **Exchanging the order of a nonnegative real double series.** If the rows `a j` of a
-nonnegative real double family sum to `r j` and its columns `(a · n)` sum to `k n`, then the row
-sums `r` sum to `x` exactly when the column sums `k` do. -/
-theorem hasSum_rows_iff_hasSum_cols_of_nonneg {β γ : Type*} {a : β → γ → ℝ} {r : β → ℝ}
-    {k : γ → ℝ} {x : ℝ} (ha : ∀ j n, 0 ≤ a j n) (hr : ∀ j, HasSum (a j) (r j))
-    (hk : ∀ n, HasSum (a · n) (k n)) : HasSum r x ↔ HasSum k x :=
-  ⟨hasSum_cols_of_hasSum_rows_of_nonneg ha hr hk,
-    hasSum_cols_of_hasSum_rows_of_nonneg (a := fun n j ↦ a j n) (fun n j ↦ ha j n) hk hr⟩
-
 section Tail
 
 variable {a : ℕ → ℝ}
@@ -284,6 +263,27 @@ theorem summable_sigma_fin_iff {ι : Type*} {a : ι → ℝ} (ha : ∀ i, 0 ≤ 
   · intro h
     refine ⟨fun _ ↦ Summable.of_finite, ?_⟩
     simpa using h
+
+/-- One direction of `hasSum_rows_iff_hasSum_cols_of_nonneg`: if the row sums of a nonnegative
+real double family sum to `x`, so do its column sums. -/
+private theorem hasSum_cols_of_hasSum_rows_of_nonneg {β γ : Type*} {a : β → γ → ℝ} {r : β → ℝ}
+    {k : γ → ℝ} {x : ℝ} (ha : ∀ j n, 0 ≤ a j n) (hr : ∀ j, HasSum (a j) (r j))
+    (hk : ∀ n, HasSum (a · n) (k n)) (h : HasSum r x) : HasSum k x := by
+  have hprod : Summable (Function.uncurry a) :=
+    (summable_prod_of_nonneg fun p ↦ ha p.1 p.2).2
+      ⟨fun j ↦ (hr j).summable, by simpa only [fun j ↦ (hr j).tsum_eq] using h.summable⟩
+  -- Both the rows and the columns sum to the sum of the double family.
+  rw [h.unique (hprod.hasSum.prod_fiberwise hr)]
+  exact ((Equiv.prodComm γ β).hasSum_iff.2 hprod.hasSum).prod_fiberwise hk
+
+/-- **Exchanging the order of a nonnegative real double series.** If the rows `a j` of a
+nonnegative real double family sum to `r j` and its columns `(a · n)` sum to `k n`, then the row
+sums `r` sum to `x` exactly when the column sums `k` do. -/
+theorem hasSum_rows_iff_hasSum_cols_of_nonneg {β γ : Type*} {a : β → γ → ℝ} {r : β → ℝ}
+    {k : γ → ℝ} {x : ℝ} (ha : ∀ j n, 0 ≤ a j n) (hr : ∀ j, HasSum (a j) (r j))
+    (hk : ∀ n, HasSum (a · n) (k n)) : HasSum r x ↔ HasSum k x :=
+  ⟨hasSum_cols_of_hasSum_rows_of_nonneg ha hr hk,
+    hasSum_cols_of_hasSum_rows_of_nonneg (a := fun n j ↦ a j n) (fun n j ↦ ha j n) hk hr⟩
 
 /-- A family with summable squares eventually satisfies `b i * C ≤ 1`, for any real `C`. -/
 theorem eventually_mul_le_one_of_summable_sq {ι : Type*} {b : ι → ℝ}
