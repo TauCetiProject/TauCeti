@@ -46,15 +46,15 @@ instance moduleCat_preservesColimitsOfShape_tensorRight (J : Type w) (Z : Module
 
 /-- **`Tor` of modules commutes with direct sums in the second variable**: the comparison map
 `⨁ⱼ Torₙ(X, Yⱼ) ⟶ Torₙ(X, ⨁ⱼ Yⱼ)` is an isomorphism. -/
-theorem isIso_sigmaComparison_moduleCat_Tor_obj {J : Type u} (X : ModuleCat.{u} R)
-    (Y : J → ModuleCat.{u} R) (n : ℕ) :
+theorem isIso_sigmaComparison_moduleCat_Tor_obj {J : Type w} [Small.{u} J]
+    (X : ModuleCat.{u} R) (Y : J → ModuleCat.{u} R) (n : ℕ) :
     IsIso (sigmaComparison ((Tor (ModuleCat.{u} R) n).obj X) Y) :=
   inferInstance
 
 /-- **`Tor` of modules commutes with direct sums in the first variable**: the comparison map
 `⨁ⱼ Torₙ(Xⱼ, Y) ⟶ Torₙ(⨁ⱼ Xⱼ, Y)` is an isomorphism. -/
-theorem isIso_sigmaComparison_moduleCat_Tor_flip_obj {J : Type u} (X : J → ModuleCat.{u} R)
-    (Y : ModuleCat.{u} R) (n : ℕ) :
+theorem isIso_sigmaComparison_moduleCat_Tor_flip_obj {J : Type w} [Small.{u} J]
+    (X : J → ModuleCat.{u} R) (Y : ModuleCat.{u} R) (n : ℕ) :
     IsIso (sigmaComparison ((Tor (ModuleCat.{u} R) n).flip.obj Y) X) :=
   inferInstance
 
