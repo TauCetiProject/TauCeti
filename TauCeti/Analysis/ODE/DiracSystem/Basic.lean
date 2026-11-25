@@ -10,6 +10,7 @@ public import TauCeti.Analysis.ODE.Propagator.Liouville
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # The Dirac system and its fundamental matrix
@@ -58,7 +59,7 @@ uniqueness, continuity, holomorphy in `z` (`TauCeti.differentiable_propagator_sm
 the coefficient is affine in `z`) and Liouville's formula (`TauCeti.det_propagator`) are
 inherited from the general theory of linear equations with integrable coefficients. The integral
 equation is stated on the coordinate space `Fin 2 → ℂ`; it does not depend on the norm, and
-`EuclideanSpace.equiv` is the identity on coordinates.
+`WithLp.ofLp` is a continuous linear equivalence, so it commutes with interval integrals.
 
 ## References
 
@@ -122,6 +123,25 @@ theorem diracFundamentalMatrix_zero (q : ℝ → ℂ) (z : ℂ) : diracFundament
 
 variable {q : ℝ → ℂ} {z : ℂ} {a b t T : ℝ}
 
+/-- The defining property of a solution of the Dirac system: `X` is continuous on `[0, ∞)` and
+`X t = X 0 + ∫₀ᵗ -Ω (z - Q_q(s)) X s ds` for every `t ≥ 0`. -/
+theorem isDiracSolution_iff {X : ℝ → Fin 2 → ℂ} :
+    IsDiracSolution q z X ↔
+      ContinuousOn X (Ici 0) ∧
+        ∀ t, 0 ≤ t → X t = X 0 + ∫ s in (0 : ℝ)..t, diracCoeff q z s *ᵥ X s :=
+  Iff.rfl
+
+/-- A solution of the Dirac system is continuous on `[0, ∞)`. -/
+theorem IsDiracSolution.continuousOn {X : ℝ → Fin 2 → ℂ} (hX : IsDiracSolution q z X) :
+    ContinuousOn X (Ici 0) :=
+  (isDiracSolution_iff.1 hX).1
+
+/-- A solution of the Dirac system satisfies `X t = X 0 + ∫₀ᵗ -Ω (z - Q_q(s)) X s ds` for
+`t ≥ 0`. -/
+theorem IsDiracSolution.eq_add_integral {X : ℝ → Fin 2 → ℂ} (hX : IsDiracSolution q z X)
+    (ht : 0 ≤ t) : X t = X 0 + ∫ s in (0 : ℝ)..t, diracCoeff q z s *ᵥ X s :=
+  (isDiracSolution_iff.1 hX).2 t ht
+
 /-- The generator `-Ω = [[0, -1], [1, 0]]` multiplying the spectral parameter. -/
 private noncomputable def diracGen : EuclideanSpace ℂ (Fin 2) →L[ℂ] EuclideanSpace ℂ (Fin 2) :=
   toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) !![0, -1; 1, 0]
@@ -136,8 +156,7 @@ private noncomputable def diracPotential (q : ℝ → ℂ) (s : ℝ) :
 private theorem diracGen_mul_diracGen : diracGen * diracGen = -1 := by
   rw [diracGen, ← map_mul, ← map_one (toEuclideanCLM (n := Fin 2) (𝕜 := ℂ)), ← map_neg]
   congr 1
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp
+  simp [← Matrix.ext_iff, Fin.forall_fin_two]
 
 /-- The Dirac coefficient as an operator: `z` times the generator `-Ω` plus the potential part
 `f [[1, 0], [0, -1]] + g [[0, -1], [-1, 0]]`. -/
@@ -146,8 +165,7 @@ private theorem toEuclideanCLM_diracCoeff (q : ℝ → ℂ) (z : ℂ) (s : ℝ) 
       z • diracGen + diracPotential q s := by
   simp only [diracGen, diracPotential, ← map_smul, ← map_add]
   congr 1
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [diracCoeff] <;> ring
+  simp [diracCoeff, sub_eq_add_neg]
 
 /-- The potential part of the Dirac coefficient is integrable where `q` is. -/
 private theorem integrableOn_diracPotential (hq : IntegrableOn q (Icc a b)) :
@@ -169,6 +187,11 @@ private theorem diracFundamentalMatrix_mulVec_eq (q : ℝ → ℂ) (t : ℝ) (z 
         t 0 (WithLp.toLp 2 v)) := by
   rw [← toEuclideanCLM_diracFundamentalMatrix, ofLp_toEuclideanCLM]
 
+/-- `WithLp.ofLp` commutes with interval integrals on `EuclideanSpace ℂ (Fin 2)`. -/
+private theorem ofLp_intervalIntegral (F : ℝ → EuclideanSpace ℂ (Fin 2)) (a b : ℝ) :
+    WithLp.ofLp (∫ s in a..b, F s) = ∫ s in a..b, WithLp.ofLp (F s) :=
+  ((PiLp.continuousLinearEquiv 2 ℂ (fun _ : Fin 2 ↦ ℂ)).intervalIntegral_comp_comm F).symm
+
 /-- `t ↦ M_q(t, z) v` is continuous on `[0, T]` when `q` is integrable there. -/
 theorem continuousOn_diracFundamentalMatrix_mulVec (hq : IntegrableOn q (Icc 0 T)) (z : ℂ)
     (v : Fin 2 → ℂ) : ContinuousOn (fun t ↦ diracFundamentalMatrix q t z *ᵥ v) (Icc 0 T) := by
@@ -179,28 +202,19 @@ theorem continuousOn_diracFundamentalMatrix_mulVec (hq : IntegrableOn q (Icc 0 T
     ((continuousOn_propagator_left (integrableOn_toEuclideanCLM_diracCoeff hq z)
       (left_mem_Icc.2 hT)).clm_apply continuousOn_const)
 
-/-- **The integral equation of the fundamental matrix.** For `t ∈ [0, T]`, with `q` integrable on
-`[0, T]`, `M_q(t, z) v = v + ∫₀ᵗ -Ω (z - Q_q(s)) M_q(s, z) v ds`. -/
-theorem diracFundamentalMatrix_mulVec_eq_add_integral (hq : IntegrableOn q (Icc 0 T))
-    (ht : t ∈ Icc 0 T) (z : ℂ) (v : Fin 2 → ℂ) :
+/-- **The integral equation of the fundamental matrix.** If `q` is integrable on an interval
+`[a, b]` containing `0` and `t`, then
+`M_q(t, z) v = v + ∫₀ᵗ -Ω (z - Q_q(s)) M_q(s, z) v ds`. -/
+theorem diracFundamentalMatrix_mulVec_eq_add_integral (hq : IntegrableOn q (Icc a b))
+    (h0 : 0 ∈ Icc a b) (ht : t ∈ Icc a b) (z : ℂ) (v : Fin 2 → ℂ) :
     diracFundamentalMatrix q t z *ᵥ v =
       v + ∫ s in (0 : ℝ)..t, diracCoeff q z s *ᵥ (diracFundamentalMatrix q s z *ᵥ v) := by
-  set P := fun s ↦ toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) (diracCoeff q z s)
-  have hP : IntegrableOn P (Icc 0 T) := integrableOn_toEuclideanCLM_diracCoeff hq z
-  have h0 : (0 : ℝ) ∈ Icc 0 T := left_mem_Icc.2 (ht.1.trans ht.2)
-  have hx : ContinuousOn (fun s ↦ propagator P s 0 (WithLp.toLp 2 v)) (Icc 0 T) :=
-    (continuousOn_propagator_left hP h0).clm_apply continuousOn_const
-  have hI : IntervalIntegrable (fun s ↦ P s (propagator P s 0 (WithLp.toLp 2 v))) volume 0 t :=
-    (intervalIntegrable_iff_integrableOn_Icc_of_le ht.1).2
-      ((hP.clm_apply_continuousOn hx isCompact_Icc).mono_set (Icc_subset_Icc_right ht.2))
-  rw [diracFundamentalMatrix_mulVec_eq, propagator_apply_eq_add_integral hP h0 ht, WithLp.ofLp_add,
-    WithLp.ofLp_toLp]
+  rw [diracFundamentalMatrix_mulVec_eq,
+    propagator_apply_eq_add_integral (integrableOn_toEuclideanCLM_diracCoeff hq z) h0 ht,
+    WithLp.ofLp_add, WithLp.ofLp_toLp, ofLp_intervalIntegral]
   congr 1
-  have := (EuclideanSpace.equiv (Fin 2) ℂ).toContinuousLinearMap.intervalIntegral_comp_comm hI
-  simp only [ContinuousLinearEquiv.coe_coe, PiLp.coe_continuousLinearEquiv] at this
-  rw [← this]
   refine intervalIntegral.integral_congr fun s _ ↦ ?_
-  simp [P, diracFundamentalMatrix_mulVec_eq]
+  simp [diracFundamentalMatrix_mulVec_eq]
 
 /-- **Existence of solutions.** If `q` is locally integrable on `[0, ∞)`, then for every initial
 value `v` the function `t ↦ M_q(t, z) v` solves the Dirac system at `z`. -/
@@ -209,13 +223,14 @@ theorem isDiracSolution_diracFundamentalMatrix_mulVec (hq : LocallyIntegrableOn 
     IsDiracSolution q z fun t ↦ diracFundamentalMatrix q t z *ᵥ v := by
   have hqT (T : ℝ) : IntegrableOn q (Icc 0 T) :=
     hq.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc
-  refine ⟨fun t ht ↦ ?_, fun t ht ↦ ?_⟩
+  refine isDiracSolution_iff.2 ⟨fun t ht ↦ ?_, fun t ht ↦ ?_⟩
   · have hmem : Icc 0 (t + 1) ∈ 𝓝[Ici 0] t := by
       rw [← Ici_inter_Iic]
       exact inter_mem_nhdsWithin _ (Iic_mem_nhds (by linarith))
     exact ((continuousOn_diracFundamentalMatrix_mulVec (hqT (t + 1)) z v) t
       ⟨ht, by linarith⟩).mono_of_mem_nhdsWithin hmem
-  · simpa using diracFundamentalMatrix_mulVec_eq_add_integral (hqT t) ⟨ht, le_rfl⟩ z v
+  · simpa using diracFundamentalMatrix_mulVec_eq_add_integral (hqT t) (left_mem_Icc.2 ht)
+      (right_mem_Icc.2 ht) z v
 
 /-- **Uniqueness of solutions.** If `q` is integrable on `[0, t]`, every solution `X` of the Dirac
 system at `z` satisfies `X t = M_q(t, z) X 0`. -/
@@ -227,20 +242,10 @@ theorem IsDiracSolution.eq_diracFundamentalMatrix_mulVec {X : ℝ → Fin 2 → 
   have h0 : (0 : ℝ) ∈ Icc 0 t := left_mem_Icc.2 ht
   set x : ℝ → EuclideanSpace ℂ (Fin 2) := fun s ↦ WithLp.toLp 2 (X s)
   have hx : ContinuousOn x (Icc 0 t) :=
-    (PiLp.continuous_toLp 2 _).comp_continuousOn (hX.1.mono Icc_subset_Ici_self)
+    (PiLp.continuous_toLp 2 _).comp_continuousOn (hX.continuousOn.mono Icc_subset_Ici_self)
   have key := eq_propagator_apply hP h0 (right_mem_Icc.2 ht) hx fun r hr ↦ by
-    have hI : IntervalIntegrable (fun s ↦ diracCoeff q z s *ᵥ X s) volume 0 r := by
-      have := (hP.clm_apply_continuousOn hx isCompact_Icc).mono_set (Icc_subset_Icc_right hr.2)
-      have h2 := (PiLp.continuousLinearEquiv 2 ℂ (fun _ : Fin 2 ↦ ℂ)).toContinuousLinearMap
-        |>.integrable_comp this
-      have h3 : IntegrableOn (fun s ↦ diracCoeff q z s *ᵥ X s) (Icc 0 r) :=
-        h2.congr (ae_of_all _ fun s ↦ by simp [P, x, PiLp.coe_continuousLinearEquiv])
-      exact (intervalIntegrable_iff_integrableOn_Icc_of_le hr.1).2 h3
-    have := (PiLp.continuousLinearEquiv 2 ℂ (fun _ : Fin 2 ↦ ℂ)).symm.toContinuousLinearMap
-      |>.intervalIntegral_comp_comm hI
-    simp only [ContinuousLinearEquiv.coe_coe, PiLp.coe_symm_continuousLinearEquiv] at this
-    simp only [x, hX.2 r hr.1, WithLp.toLp_add, ← this]
-    simp only [P, toEuclideanCLM_toLp]
+    rw [WithLp.ext_iff, WithLp.ofLp_add, ofLp_intervalIntegral]
+    simp [x, P, hX.eq_add_integral hr.1]
   have := congrArg WithLp.ofLp key
   simpa [x, diracFundamentalMatrix_mulVec_eq] using this
 
@@ -252,12 +257,12 @@ theorem IsDiracSolution.eqOn (hq : LocallyIntegrableOn q (Ici 0)) {X Y : ℝ →
     hq.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc
   rw [hX.eq_diracFundamentalMatrix_mulVec hqt ht, hY.eq_diracFundamentalMatrix_mulVec hqt ht, h]
 
-/-- **The fundamental matrix is entire in the spectral parameter.** If `q` is integrable on
-`[0, t]`, every entry of `M_q(t, ·)` is an entire function. -/
-theorem differentiable_diracFundamentalMatrix_apply (hq : IntegrableOn q (Icc 0 t)) (ht : 0 ≤ t)
+/-- **The fundamental matrix is entire in the spectral parameter.** If `q` is integrable between
+`0` and `t`, every entry of `M_q(t, ·)` is an entire function. -/
+theorem differentiable_diracFundamentalMatrix_apply (hq : IntegrableOn q (uIcc 0 t))
     (i j : Fin 2) : Differentiable ℂ fun z ↦ diracFundamentalMatrix q t z i j := by
   have hd := differentiable_propagator_smul_add diracGen (integrableOn_diracPotential hq)
-    (left_mem_Icc.2 ht) (right_mem_Icc.2 ht)
+    left_mem_uIcc right_mem_uIcc
   have key (z : ℂ) : diracFundamentalMatrix q t z i j =
       WithLp.ofLp (propagator (fun s ↦ z • diracGen + diracPotential q s) t 0
         (EuclideanSpace.single j 1)) i := by
@@ -269,12 +274,11 @@ theorem differentiable_diracFundamentalMatrix_apply (hq : IntegrableOn q (Icc 0 
     (hd.clm_apply (differentiable_const _))
 
 /-- **Liouville's formula for the Dirac system.** The coefficient is trace-free, so
-`det M_q(t, z) = 1` whenever `q` is integrable on `[0, t]`. -/
-theorem det_diracFundamentalMatrix (hq : IntegrableOn q (Icc 0 t)) (ht : 0 ≤ t) (z : ℂ) :
+`det M_q(t, z) = 1` whenever `q` is integrable between `0` and `t`. -/
+theorem det_diracFundamentalMatrix (hq : IntegrableOn q (uIcc 0 t)) (z : ℂ) :
     (diracFundamentalMatrix q t z).det = 1 := by
   rw [← det_toEuclideanCLM, toEuclideanCLM_diracFundamentalMatrix, ContinuousLinearMap.det,
-    det_propagator (integrableOn_toEuclideanCLM_diracCoeff hq z) (left_mem_Icc.2 ht)
-      (right_mem_Icc.2 ht)]
+    det_propagator (integrableOn_toEuclideanCLM_diracCoeff hq z) left_mem_uIcc right_mem_uIcc]
   simp
 
 /-- **The free Dirac system.** For the zero potential the fundamental matrix is the rotation
@@ -286,8 +290,7 @@ theorem diracFundamentalMatrix_zero_potential (t : ℝ) (z : ℂ) :
     ext1 s
     rw [diracGen, ← map_smul]
     congr 1
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [diracCoeff]
+    simp [diracCoeff]
   -- `M_0(r, z)` acts as `cos (r z) + sin (r z) (-Ω)`, which solves `N' = z (-Ω) N` since
   -- `(-Ω)² = -1`.
   have hX : propagator (fun _ ↦ z • diracGen) t 0 =
@@ -299,19 +302,16 @@ theorem diracFundamentalMatrix_zero_potential (t : ℝ) (z : ℂ) :
       ⟨min_le_left _ _, le_max_left _ _⟩ ⟨min_le_right _ _, le_max_right _ _⟩
       (fun r _ ↦ ?_) (by simp)
     have hc : HasDerivAt (fun r : ℝ ↦ cos (r * z)) (-sin (r * z) * z) r := by
-      simpa [Function.comp_def] using ((Complex.hasDerivAt_cos ((r : ℂ) * z)).comp (r : ℂ)
-        ((hasDerivAt_id (r : ℂ)).mul_const z)).comp_ofReal
+      simpa using ((hasDerivAt_id (r : ℂ)).mul_const z).ccos.comp_ofReal
     have hs : HasDerivAt (fun r : ℝ ↦ sin (r * z)) (cos (r * z) * z) r := by
-      simpa [Function.comp_def] using ((Complex.hasDerivAt_sin ((r : ℂ) * z)).comp (r : ℂ)
-        ((hasDerivAt_id (r : ℂ)).mul_const z)).comp_ofReal
+      simpa using ((hasDerivAt_id (r : ℂ)).mul_const z).csin.comp_ofReal
     refine ((hc.smul_const _).add (hs.smul_const _)).congr_deriv ?_
     simp only [← ContinuousLinearMap.mul_def, smul_mul_assoc, mul_add, mul_smul_comm, mul_one,
       diracGen_mul_diracGen]
     module
   rw [diracFundamentalMatrix, hP, hX, map_add, map_smul, map_smul, map_one, diracGen,
     StarAlgEquiv.symm_apply_apply]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp
+  simp [← Matrix.ext_iff, Fin.forall_fin_two]
 
 /-- **A real constant potential at `z = 0`.** For `q = c` real, the fundamental matrix at the
 spectral parameter `0` is `M_c(t, 0) = diag(e^{ct}, e^{-ct})`. The opposite sign convention
@@ -319,50 +319,37 @@ spectral parameter `0` is `M_c(t, 0) = diag(e^{ct}, e^{-ct})`. The opposite sign
 theorem diracFundamentalMatrix_ofReal_const_zero (c t : ℝ) :
     diracFundamentalMatrix (fun _ ↦ (c : ℂ)) t 0 =
       !![(Real.exp (c * t) : ℂ), 0; 0, (Real.exp (-(c * t)) : ℂ)] := by
+  set J := toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) !![1, 0; 0, -1]
   set E₁ := toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) !![1, 0; 0, 0]
   set E₂ := toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) !![0, 0; 0, 1]
   have hP : (fun s ↦ toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) (diracCoeff (fun _ ↦ (c : ℂ)) 0 s)) =
-      fun _ ↦ (c : ℂ) • (E₁ - E₂) := by
+      fun _ ↦ (c : ℂ) • J := by
     ext1 s
-    rw [← map_sub, ← map_smul]
+    rw [← map_smul]
     congr 1
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [diracCoeff]
-  have hmul (A B : Matrix (Fin 2) (Fin 2) ℂ) :
-      toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) A * toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) B =
-        toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) (A * B) :=
-    (map_mul _ A B).symm
-  have h11 : E₁ * E₁ = E₁ := by rw [hmul]; congr 1; ext i j; fin_cases i <;> fin_cases j <;> simp
-  have h22 : E₂ * E₂ = E₂ := by rw [hmul]; congr 1; ext i j; fin_cases i <;> fin_cases j <;> simp
-  have h12 : E₁ * E₂ = 0 := by
-    rw [hmul, ← map_zero (toEuclideanCLM (n := Fin 2) (𝕜 := ℂ))]
-    congr 1; ext i j; fin_cases i <;> fin_cases j <;> simp
-  have h21 : E₂ * E₁ = 0 := by
-    rw [hmul, ← map_zero (toEuclideanCLM (n := Fin 2) (𝕜 := ℂ))]
-    congr 1; ext i j; fin_cases i <;> fin_cases j <;> simp
+    simp [diracCoeff]
+  have h₁ : J * E₁ = E₁ := by rw [← map_mul]; congr 1; simp
+  have h₂ : J * E₂ = -E₂ := by rw [← map_mul, ← map_neg]; congr 1; simp
   have hE : E₁ + E₂ = 1 := by
     rw [← map_add, ← map_one (toEuclideanCLM (n := Fin 2) (𝕜 := ℂ))]
-    congr 1; ext i j; fin_cases i <;> fin_cases j <;> simp
-  -- `M_c(r, 0)` acts as `e^{cr} E₁ + e^{-cr} E₂`, which solves `N' = c (E₁ - E₂) N`.
-  have hX : propagator (fun _ ↦ (c : ℂ) • (E₁ - E₂)) t 0 =
+    congr 1
+    simp [← Matrix.ext_iff, Fin.forall_fin_two]
+  -- `M_c(r, 0)` acts as `e^{cr} E₁ + e^{-cr} E₂`, which solves `N' = c J N`.
+  have hX : propagator (fun _ ↦ (c : ℂ) • J) t 0 =
       cexp (c * t) • E₁ + cexp (-(c * t)) • E₂ := by
     refine propagator_eq_of_hasDerivAt (a := min 0 t) (b := max 0 t)
       (X := fun r : ℝ ↦ cexp (c * r) • E₁ + cexp (-(c * r)) • E₂)
       continuousOn_const.integrableOn_Icc ⟨min_le_left _ _, le_max_left _ _⟩
       ⟨min_le_right _ _, le_max_right _ _⟩ (fun r _ ↦ ?_) (by simp [hE])
-    have h₁ : HasDerivAt (fun r : ℝ ↦ cexp (c * r)) (cexp (c * r) * c) r := by
-      simpa [Function.comp_def] using ((Complex.hasDerivAt_exp ((c : ℂ) * r)).comp (r : ℂ)
-        ((hasDerivAt_id (r : ℂ)).const_mul (c : ℂ))).comp_ofReal
-    have h₂ : HasDerivAt (fun r : ℝ ↦ cexp (-(c * r))) (cexp (-(c * r)) * -c) r := by
-      simpa [Function.comp_def] using ((Complex.hasDerivAt_exp (-((c : ℂ) * r))).comp (r : ℂ)
-        ((hasDerivAt_id (r : ℂ)).const_mul (c : ℂ)).neg).comp_ofReal
-    refine ((h₁.smul_const _).add (h₂.smul_const _)).congr_deriv ?_
-    simp only [← ContinuousLinearMap.mul_def, smul_mul_assoc, mul_add, mul_smul_comm, sub_mul,
-      h11, h22, h12, h21]
+    have hd₁ : HasDerivAt (fun r : ℝ ↦ cexp (c * r)) (cexp (c * r) * c) r := by
+      simpa using ((hasDerivAt_id r).ofReal_comp.const_mul (c : ℂ)).cexp
+    have hd₂ : HasDerivAt (fun r : ℝ ↦ cexp (-(c * r))) (cexp (-(c * r)) * -c) r := by
+      simpa using ((hasDerivAt_id r).ofReal_comp.const_mul (c : ℂ)).neg.cexp
+    refine ((hd₁.smul_const _).add (hd₂.smul_const _)).congr_deriv ?_
+    simp only [← ContinuousLinearMap.mul_def, smul_mul_assoc, mul_add, mul_smul_comm, h₁, h₂]
     module
   rw [diracFundamentalMatrix, hP, hX, map_add, map_smul, map_smul, StarAlgEquiv.symm_apply_apply,
     StarAlgEquiv.symm_apply_apply]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [Complex.ofReal_exp]
+  simp [Complex.ofReal_exp]
 
 end TauCeti
