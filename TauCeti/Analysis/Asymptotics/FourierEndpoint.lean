@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
 public import TauCeti.Analysis.Calculus.IteratedDeriv.Within
 import TauCeti.Analysis.Calculus.Deriv.InvPow
 import TauCeti.Analysis.SpecialFunctions.Integrability.Rpow
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.NonIntegrable
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Sinc
 
 /-!
@@ -47,7 +48,7 @@ it exists at two different frequencies (`Asymptotics.eq_zero_of_tendsto_cexp_smu
   convergence at infinity, uniformly for `x ≥ 1`.
 * `Asymptotics.hasAsymptoticExpansion_of_tendsto_integral_cexp_smul_sinc`: that criterion is not
   necessary: `q(t) = sin t / t` on `[1, ∞)` has the expansion although `q'` is not integrable
-  there (`TauCeti.not_integrableOn_iteratedDerivWithin_one_sinc`).
+  there (`Asymptotics.not_integrableOn_iteratedDerivWithin_one_sinc`).
 -/
 
 public section
@@ -79,6 +80,19 @@ private theorem norm_I_div_pow {x : ℝ} (hx : 0 < x) (n : ℕ) :
 private theorem norm_integral_cexp_smul_le {f : ℝ → E} {a b x : ℝ} (hab : a ≤ b) :
     ‖∫ t in a..b, cexp (((x * t : ℝ) : ℂ) * I) • f t‖ ≤ ∫ t in a..b, ‖f t‖ := by
   refine (intervalIntegral.norm_integral_le_integral_norm hab).trans_eq ?_
+  simp only [norm_smul, norm_exp_ofReal_mul_I, one_mul]
+
+private theorem norm_integral_cexp_smul_le_setIntegral_Ioi {f : ℝ → E} {a x T T' : ℝ}
+    (hf : IntegrableOn f (Ioi a)) (hT : a ≤ T) (hTT' : T ≤ T') :
+    ‖∫ t in T..T', cexp (((x * t : ℝ) : ℂ) * I) • f t‖ ≤ ∫ t in Ioi a, ‖f t‖ := by
+  refine (norm_integral_cexp_smul_le hTT').trans ?_
+  rw [integral_of_le hTT']
+  exact setIntegral_mono_set hf.norm (Eventually.of_forall fun _ => norm_nonneg _)
+    (Ioc_subset_Ioi_self.trans (Ioi_subset_Ioi hT)).eventuallySubset
+
+private theorem norm_cexp_smul_sub_cexp_smul_le (x y : ℝ) (u v : E) :
+    ‖cexp ((x : ℂ) * I) • u - cexp ((y : ℂ) * I) • v‖ ≤ ‖u‖ + ‖v‖ := by
+  refine (norm_sub_le _ _).trans_eq ?_
   simp only [norm_smul, norm_exp_ofReal_mul_I, one_mul]
 
 section Compact
@@ -188,8 +202,7 @@ theorem isBigO_integral_cexp_smul_sub_sum {q : ℝ → E} {a b : ℝ} (hab : a �
       (x ^ (N + 1))⁻¹ * (‖iteratedDerivWithin N q (Icc a b) a‖ +
         ‖iteratedDerivWithin N q (Icc a b) b‖) := by
     rw [norm_smul, norm_I_div_pow hx]
-    refine mul_le_mul_of_nonneg_left ((norm_sub_le _ _).trans_eq ?_) (by positivity)
-    simp only [norm_smul, norm_exp_ofReal_mul_I, one_mul]
+    exact mul_le_mul_of_nonneg_left (norm_cexp_smul_sub_cexp_smul_le _ _ _ _) (by positivity)
   have hpos : ‖x⁻¹ ^ (N + 1)‖ = (x ^ (N + 1))⁻¹ := by
     rw [norm_pow, norm_inv, Real.norm_of_nonneg hx.le, inv_pow]
   rw [hpos, add_mul, add_mul]
@@ -455,10 +468,7 @@ theorem norm_sub_sum_le_of_tendsto_integral_cexp_smul {q : ℝ → E} {a : ℝ} 
   rw [hEq F hF, add_sub_cancel_left, norm_smul, norm_I_div_pow hx]
   refine mul_le_mul_of_nonneg_left (le_of_tendsto hG.norm ?_) (by positivity)
   filter_upwards [eventually_ge_atTop a] with T hT
-  refine (norm_integral_cexp_smul_le hT).trans ?_
-  rw [integral_of_le hT]
-  exact setIntegral_mono_set hn.norm (Eventually.of_forall fun _ => norm_nonneg _)
-    (Ioc_subset_Ioi_self.eventuallySubset)
+  exact norm_integral_cexp_smul_le_setIntegral_Ioi hn le_rfl hT
 
 /-- One integration by parts bounds a Fourier integral over `[T, T']` by the values of `r` at the
 ends and the tail of `∫ |r'|`. -/
@@ -477,12 +487,8 @@ theorem norm_integral_cexp_smul_le_of_hasDerivAt {r r' : ℝ → E} {a x T T' : 
   have hnorm : ‖I / (x : ℂ)‖ = x⁻¹ := by simpa using norm_I_div_pow hx 1
   rw [hnorm]
   refine mul_le_mul_of_nonneg_left ?_ (by positivity)
-  refine (norm_add_le _ _).trans (add_le_add ((norm_sub_le _ _).trans_eq ?_) ?_)
-  · simp only [norm_smul, norm_exp_ofReal_mul_I, one_mul]
-  · refine (norm_integral_cexp_smul_le hTT').trans ?_
-    rw [integral_of_le hTT']
-    exact setIntegral_mono_set (hint.mono_set hsub).norm
-      (Eventually.of_forall fun _ => norm_nonneg _) Ioc_subset_Ioi_self.eventuallySubset
+  exact (norm_add_le _ _).trans (add_le_add (norm_cexp_smul_sub_cexp_smul_le _ _ _ _)
+    (norm_integral_cexp_smul_le_setIntegral_Ioi (hint.mono_set hsub) le_rfl hTT'))
 
 /-- If `r` tends to `0` at infinity and `r'` is integrable on `(a, ∞)`, then
 `∫ e^{ixt} r(t) dt` converges at infinity uniformly for `x ≥ 1`. -/
@@ -551,11 +557,8 @@ private theorem tailSmall_oscPow {ν : ℝ} (hν : ν = 1 ∨ ν = -1) {k : ℕ}
     TailSmall (oscPow ν k) := by
   intro ε hε
   have h0 : Tendsto (fun t : ℝ => ((t⁻¹ ^ k : ℝ) : ℂ)) atTop (𝓝 0) := by
-    have h := (tendsto_inv_atTop_zero (𝕜 := ℝ)).pow k
-    rw [zero_pow (by omega)] at h
-    have h2 := (continuous_ofReal.tendsto (0 : ℝ)).comp h
-    rw [ofReal_zero] at h2
-    exact h2
+    simpa [Function.comp_def, zero_pow (by omega : k ≠ 0)] using
+      (continuous_ofReal.tendsto _).comp ((tendsto_inv_atTop_zero (𝕜 := ℝ)).pow k)
   obtain ⟨c, hc⟩ := exists_forall_norm_integral_cexp_smul_le (a := 1)
     (r := fun t : ℝ => ((t⁻¹ ^ k : ℝ) : ℂ))
     (r' := fun t : ℝ => (((-(k : ℝ) * t⁻¹ ^ (k + 1) : ℝ)) : ℂ))
@@ -688,8 +691,21 @@ theorem exists_forall_norm_integral_cexp_smul_iteratedDerivWithin_sinc_le (s : �
   rw [uIcc_of_le hT'] at ht
   simp only [hEq (hc.trans (hT.trans ht.1) : (1 : ℝ) ≤ t)]
 
+/-- For `q(t) = sin t / t`, the derivative `q'` within `[1, ∞)` is not integrable on `(1, ∞)`, so
+`exists_forall_norm_integral_cexp_smul_le` does not apply to `q`. -/
+theorem not_integrableOn_iteratedDerivWithin_one_sinc :
+    ¬ IntegrableOn (iteratedDerivWithin 1 (fun t : ℝ => ((Real.sinc t : ℝ) : ℂ)) (Ici 1))
+      (Ioi 1) := by
+  intro h
+  refine TauCeti.not_integrableOn_Ioi_deriv_sinc one_pos ?_
+  have hc : IntegrableOn (fun t : ℝ => ((deriv Real.sinc t : ℝ) : ℂ)) (Ioi 1) := by
+    refine h.congr_fun (fun t ht => ?_) measurableSet_Ioi
+    rw [iteratedDerivWithin_one, derivWithin_of_mem_nhds (Ici_mem_nhds ht)]
+    exact (Real.analyticAt_sinc t).differentiableAt.hasDerivAt.ofReal_comp.deriv
+  simpa only [RCLike.re_to_complex, Complex.ofReal_re] using hc.re
+
 /-- The expansion 2.3.5 applies to `q(t) = sin t / t` on `[1, ∞)`, although `q'` is not integrable
-there (`TauCeti.not_integrableOn_iteratedDerivWithin_one_sinc`). -/
+there (`not_integrableOn_iteratedDerivWithin_one_sinc`). -/
 theorem hasAsymptoticExpansion_of_tendsto_integral_cexp_smul_sinc {F : ℝ → ℂ}
     (hF : ∀ᶠ x : ℝ in atTop, Tendsto (fun T : ℝ => ∫ t in (1 : ℝ)..T,
       cexp (((x * t : ℝ) : ℂ) * I) • ((Real.sinc t : ℝ) : ℂ)) atTop (𝓝 (F x))) :
