@@ -105,7 +105,7 @@ theorem blockSymbolEntry_eq (i j : Fin 2) :
   split_ifs <;> simp [fourierLp]
 
 /-- Coordinatewise, the opposite-shift block operator applies the corresponding scalar shift. -/
-theorem apply_coordinate (f : BlockHardySpace 2) (i : Fin 2) :
+theorem blockToeplitz_apply_apply (f : BlockHardySpace 2) (i : Fin 2) :
     blockToeplitz 2 symbol f i = toeplitz (fourierLp (T := 1) ∞ (![1, -1] i)) (f i) := by
   rw [blockToeplitz_apply_of_row_offDiagonal_eq_zero]
   · simp [blockSymbolEntry_eq]
@@ -113,48 +113,51 @@ theorem apply_coordinate (f : BlockHardySpace 2) (i : Fin 2) :
     simp [blockSymbolEntry_eq, Ne.symm hji]
 
 /-- The block operator is the direct sum of the forward and backward scalar shifts. -/
-theorem conjugate :
+theorem blockToeplitz_eq_conjContinuousAlgEquiv_prodMap :
     blockToeplitz 2 symbol = ((PiLp.continuousLinearEquiv 2 ℂ (fun _ : Fin 2 => HardySpace)).trans
       (ContinuousLinearEquiv.finTwoArrow ℂ HardySpace)).symm.conjContinuousAlgEquiv
         ((toeplitz (fourierLp (T := 1) ∞ 1)).prodMap
           (toeplitz (fourierLp (T := 1) ∞ (-1)))) := by
   ext f i
-  fin_cases i <;> simp [ContinuousLinearEquiv.conjContinuousAlgEquiv_apply, apply_coordinate]
+  fin_cases i <;>
+    simp [ContinuousLinearEquiv.conjContinuousAlgEquiv_apply, blockToeplitz_apply_apply]
 
 /-- The opposite-shift block Toeplitz operator is Fredholm. -/
 theorem isFredholm : ContinuousLinearMap.IsFredholm (blockToeplitz 2 symbol) := by
-  rw [conjugate, ContinuousLinearEquiv.conjContinuousAlgEquiv_apply]
+  rw [blockToeplitz_eq_conjContinuousAlgEquiv_prodMap,
+    ContinuousLinearEquiv.conjContinuousAlgEquiv_apply]
   simpa only [ContinuousLinearMap.isFredholm_equiv_comp,
     ContinuousLinearMap.isFredholm_comp_equiv] using
     ((isFredholm_toeplitz_fourierLp 1).prodMap (isFredholm_toeplitz_fourierLp (-1)))
 
 /-- The opposite-shift block Toeplitz operator has Fredholm index zero. -/
 theorem index_eq_zero : ContinuousLinearMap.index (blockToeplitz 2 symbol) = 0 := by
-  rw [conjugate, ContinuousLinearEquiv.conjContinuousAlgEquiv_apply,
+  rw [blockToeplitz_eq_conjContinuousAlgEquiv_prodMap,
+    ContinuousLinearEquiv.conjContinuousAlgEquiv_apply,
     ContinuousLinearMap.index_equiv_comp, ContinuousLinearMap.index_comp_equiv,
     (isFredholm_toeplitz_fourierLp 1).index_prodMap (isFredholm_toeplitz_fourierLp (-1))]
   norm_num [index_toeplitz_fourierLp]
 
 /-- The operator annihilates the constant mode in its second component. -/
-theorem apply_second_constant :
+theorem blockToeplitz_apply_blockHardyBasis_eq_zero :
     blockToeplitz 2 symbol (blockHardyBasis 2 (0, 1)) = 0 := by
   rw [blockHardyBasis_apply]
   ext i
-  fin_cases i <;> simp [apply_coordinate]
+  fin_cases i <;> simp [blockToeplitz_apply_apply]
 
 /-- The operator is not invertible even though its Fredholm index is zero. -/
 theorem not_isUnit : ¬ IsUnit (blockToeplitz 2 symbol) := by
   intro h
   have hi := ContinuousLinearMap.isUnit_iff_bijective.mp h |>.1
-  have hz := hi (apply_second_constant.trans (map_zero _).symm)
+  have hz := hi (blockToeplitz_apply_blockHardyBasis_eq_zero.trans (map_zero _).symm)
   exact (blockHardyBasis 2).orthonormal.ne_zero (0, 1) hz
 
 /-- Compression to the first `n + 1` full blocks has determinant zero. -/
-@[simp] theorem det_sectionMatrix (n : ℕ) :
+@[simp] theorem det_blockFiniteSectionMatrix (n : ℕ) :
     (blockFiniteSectionMatrix (blockToeplitz 2 symbol) n).det = 0 := by
   apply Matrix.det_eq_zero_of_column_eq_zero (⟨0, by omega⟩, 1)
   intro i
-  rw [blockFiniteSectionMatrix_apply, apply_second_constant, inner_zero_right]
+  rw [blockFiniteSectionMatrix_apply, blockToeplitz_apply_blockHardyBasis_eq_zero, inner_zero_right]
 
 /-- The native finite section at every leading full-block cutoff is noninvertible. -/
 theorem not_isUnit_finiteSection (n : ℕ) :
@@ -163,7 +166,7 @@ theorem not_isUnit_finiteSection (n : ℕ) :
   have hd := (LinearMap.isUnit_iff_isUnit_det _).1
     (h.map ContinuousLinearMap.toLinearMapRingHom)
   simp only [ContinuousLinearMap.toLinearMapRingHom_apply] at hd
-  rw [det_finiteSection_eq_blockFiniteSectionMatrix, det_sectionMatrix] at hd
+  rw [det_finiteSection_eq_blockFiniteSectionMatrix, det_blockFiniteSectionMatrix] at hd
   exact not_isUnit_zero hd
 
 end ToeplitzOppositeShifts
