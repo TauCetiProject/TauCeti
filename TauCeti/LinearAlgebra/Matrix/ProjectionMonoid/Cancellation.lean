@@ -142,14 +142,13 @@ theorem hasProjectionCancellation_iff_one {A : Type*} [Ring A] [StarRing A] :
         IsMurrayVonNeumannEquivalent (fromBlocks p 0 0 (1 : Matrix (Fin j) (Fin j) A))
           (fromBlocks q 0 0 (1 : Matrix (Fin j) (Fin j) A)) →
         IsMurrayVonNeumannEquivalent p q := by
-  refine ⟨fun h _ _ _ p q ↦ h p q 1, fun h k l j p q r hpqr ↦ h (j := j) p q ?_⟩
-  -- In `V(A)`: `[p] + [1] = [p] + [r] + [1 - r] = [q] + [r] + [1 - r] = [q] + [1]`.
-  obtain ⟨hp, hq, hr, e⟩ :=
+  refine ⟨fun h _ _ _ p q ↦ h p q 1, fun h k l j p q r hpqr ↦ ?_⟩
+  -- `p ⊕ r ∼ q ⊕ r` gives `[p] = [q]` in `K₀(A)`, hence `p ⊕ 1ₖ ∼ q ⊕ 1ₖ` for some `k`.
+  obtain ⟨hp, hq, -⟩ :=
     ProjectionMonoid.exists_mk_add_mk_eq_mk_add_mk_of_isMurrayVonNeumannEquivalent hpqr
-  rw [← ProjectionMonoid.mk_eq_mk_iff (hp.fromBlocks_zero₁₂_zero₂₁ (.one _))
-      (hq.fromBlocks_zero₁₂_zero₂₁ (.one _)), ProjectionMonoid.mk_fromBlocks hp (.one _),
-    ProjectionMonoid.mk_fromBlocks hq (.one _), ← ProjectionMonoid.mk_add_mk_one_sub hr,
-    ← add_assoc, ← add_assoc, e]
+  obtain ⟨_, h'⟩ := (ProjectionKZero.of_mk_eq_of_mk_iff_exists_one hp hq).1
+    ((ProjectionKZero.of_mk_eq_of_mk_iff hp hq).2 ⟨j, r, hpqr⟩)
+  exact h p q h'
 
 /-- The zero ring has projection cancellation: `V(R)` has a single element. -/
 theorem hasProjectionCancellation_of_subsingleton [Subsingleton R] :
