@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.GradedMulAction
 public import Mathlib.Algebra.Module.Submodule.LinearMap
 public import Mathlib.Algebra.Module.Submodule.Range
 
@@ -61,6 +62,15 @@ section Semiring
 variable {R : Type uR} {ι : Type uι} {M : Type uM} {N : Type uN} {σM : Type*} {σN : Type*}
   [Semiring R] [AddCommMonoid M] [AddCommMonoid N]
   [Module R M] [Module R N] [SetLike σM M] [SetLike σN N]
+
+/-- If a linear map detects membership in each piece, a graded scalar action on the
+target also respects the source pieces. -/
+theorem gradedSMul_of_mem_iff {κ S : Type*} [SetLike S R] [VAdd κ ι]
+    (f : M →ₗ[R] N) (𝒜 : κ → S) (G : ι → σM) (H : ι → σN) [SetLike.GradedSMul 𝒜 H]
+    (hmem : ∀ {q x}, x ∈ G q ↔ f x ∈ H q) : SetLike.GradedSMul 𝒜 G where
+  smul_mem {p q} {a x} ha hx := by
+    rw [hmem, map_smul]
+    exact SetLike.GradedSMul.smul_mem ha (hmem.mp hx)
 
 section Add
 
