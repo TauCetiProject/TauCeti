@@ -14,6 +14,8 @@ public import Mathlib.RingTheory.Ideal.Quotient.Defs
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 -- Non-public: `Matrix.GeneralLinearGroup.mem_ker_map_quotientMk_iff` is used only in proofs.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
+-- Non-public: `TauCeti.transvectionWeylElement_mem_elementarySubgroup` is used only in a proof.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary.Permutation
 
 /-!
 # The oriented relation of Bass–Milnor–Serre
@@ -51,8 +53,9 @@ The stabilization statement rests on the explicit identity, in `GL (ι ⊕ Unit)
 elementary matrices between `i₀` and the new coordinate, `w` is the Weyl element they generate,
 `u` is the block unipotent matrix carrying the `i₀`-th column of `U` into the new column, and `v`
 the one carrying the off-diagonal part of the `i₀`-th row of `U` into the new row. Neither `t ∈ I`
-nor a stable range hypothesis is needed. The factors `u`, `v` and `x₊(s)` lie in `⁅E(A), GL(A, I)⁆`
-by `Matrix.upperBlockGL_mem_commutator_elementarySubgroup_ker` and its lower analogue.
+nor a stable range hypothesis is needed. The factors `u` and `v` lie in `⁅E(A), GL(A, I)⁆` by
+`Matrix.upperBlockGL_mem_commutator_elementarySubgroup_ker` and its lower analogue, and `x₊(s)` by
+`TauCeti.transvectionUnit_mem_commutator_elementarySubgroup_ker`.
 
 ## References
 
@@ -175,45 +178,38 @@ end OrientedRel
 
 section Stabilization
 
-/-- The elementary matrix adding `c` times the new last coordinate to the `i₀`-th one. -/
-private abbrev upperGL (i₀ : ι) (c : A) : GL (ι ⊕ Unit) A :=
-  upperBlockGL (single i₀ () c)
-
-/-- The elementary matrix adding `c` times the `i₀`-th coordinate to the new last one. -/
-private abbrev lowerGL (i₀ : ι) (c : A) : GL (ι ⊕ Unit) A :=
-  lowerBlockGL (single () i₀ c)
-
-/-- The Weyl element exchanging the `i₀`-th coordinate with the new last one. -/
-private abbrev weylGL (i₀ : ι) : GL (ι ⊕ Unit) A :=
-  upperGL i₀ 1 * lowerGL i₀ (-1) * upperGL i₀ 1
-
-/-- The matrix of `w x₋(t)`: the scaling by `t` at `i₀`, bordered by the Weyl element. -/
-private theorem coe_weylGL_mul_lowerGL (i₀ : ι) (t : A) :
-    ((weylGL i₀ * lowerGL i₀ t : GL (ι ⊕ Unit) A) : Matrix (ι ⊕ Unit) (ι ⊕ Unit) A) =
+/-- The matrix of `w x₋(t)`, where `w` is the Weyl element exchanging the `i₀`-th coordinate with
+the new last one and `x₋(t)` adds `t` times the `i₀`-th coordinate to the new last one: the scaling
+by `t` at `i₀`, bordered by the Weyl element. -/
+private theorem coe_transvectionWeylElement_mul_transvectionUnit (i₀ : ι) (t : A) :
+    ((transvectionWeylElement (Sum.inl_ne_inr (a := i₀) (b := ())) *
+        transvectionUnit (Sum.inr_ne_inl (a := i₀) (b := ())) t : GL (ι ⊕ Unit) A) :
+        Matrix (ι ⊕ Unit) (ι ⊕ Unit) A) =
       fromBlocks (diagonal (Pi.mulSingle i₀ t)) (single i₀ () 1) (single () i₀ (-1)) 0 := by
-  simp only [Units.val_mul, coe_upperBlockGL, coe_lowerBlockGL, fromBlocks_multiply]
+  simp only [transvectionWeylElement_def, ← upperBlockGL_single, ← lowerBlockGL_single,
+    Units.val_mul, coe_upperBlockGL, coe_lowerBlockGL, fromBlocks_multiply]
   congr 1 <;> ext i j <;>
     simp [Matrix.mul_apply, single_apply, Pi.mulSingle_apply, Matrix.one_apply, diagonal_apply] <;>
     grind
 
-/-- The matrix of `x₋(t)⁻¹ x₊(s)⁻¹`. -/
-private theorem coe_lowerGL_inv_mul_upperGL_inv (i₀ : ι) (s t : A) :
-    (((lowerGL i₀ t)⁻¹ * (upperGL i₀ s)⁻¹ : GL (ι ⊕ Unit) A) :
+/-- The matrix of `x₋(t)⁻¹ x₊(s)⁻¹`, where `x₊(s)` adds `s` times the new last coordinate to the
+`i₀`-th one. -/
+private theorem coe_transvectionUnit_inv_mul_transvectionUnit_inv (i₀ : ι) (s t : A) :
+    (((transvectionUnit (Sum.inr_ne_inl (a := i₀) (b := ())) t)⁻¹ *
+        (transvectionUnit (Sum.inl_ne_inr (a := i₀) (b := ())) s)⁻¹ : GL (ι ⊕ Unit) A) :
         Matrix (ι ⊕ Unit) (ι ⊕ Unit) A) =
       fromBlocks 1 (single i₀ () (-s)) (single () i₀ (-t)) (of fun _ _ ↦ 1 + t * s) := by
-  simp only [upperBlockGL_inv, lowerBlockGL_inv, Units.val_mul, coe_upperBlockGL,
-    coe_lowerBlockGL, fromBlocks_multiply]
+  simp only [← upperBlockGL_single, ← lowerBlockGL_single, upperBlockGL_inv, lowerBlockGL_inv,
+    Units.val_mul, coe_upperBlockGL, coe_lowerBlockGL, fromBlocks_multiply]
   congr 1 <;> ext i j <;> simp [single_apply, add_comm] <;> split_ifs <;> simp
 
 /-- The matrix of `w⁻¹`. -/
-private theorem coe_weylGL_inv (i₀ : ι) :
-    (((weylGL i₀)⁻¹ : GL (ι ⊕ Unit) A) : Matrix (ι ⊕ Unit) (ι ⊕ Unit) A) =
+private theorem coe_transvectionWeylElement_inv (i₀ : ι) :
+    (((transvectionWeylElement (Sum.inl_ne_inr (a := i₀) (b := ())))⁻¹ : GL (ι ⊕ Unit) A) :
+        Matrix (ι ⊕ Unit) (ι ⊕ Unit) A) =
       fromBlocks (1 - single i₀ i₀ 1) (single i₀ () (-1)) (single () i₀ 1) 0 := by
-  simp only [_root_.mul_inv_rev, upperBlockGL_inv, lowerBlockGL_inv, Units.val_mul,
-    coe_upperBlockGL, coe_lowerBlockGL, fromBlocks_multiply]
-  congr 1 <;> ext i j <;>
-    simp [Matrix.mul_apply, single_apply, Matrix.one_apply] <;>
-    grind
+  rw [transvectionWeylElement_inv, coe_transvectionWeylElement]
+  ext (i | i) (j | j) <;> simp [single_apply, Matrix.one_apply, neg_ite]
 
 /-- The explicit factorization behind the stabilization theorem: with `s = U i₀ i₀`,
 `(1 + D U) ⊕ 1 = w x₋(t) u ((1 + U D) ⊕ 1) x₋(t)⁻¹ x₊(s)⁻¹ w⁻¹ v`. -/
@@ -258,15 +254,20 @@ private theorem inv_mul_mem_commutator_of_eq {G : Type*} [Group G] {E K : Subgro
 private theorem fromBlocksGL_eq_mul {g h : GL ι A} {U : Matrix ι ι A}
     (hgU : 1 + U * diagonal (Pi.mulSingle i₀ t) = g)
     (hhU : 1 + diagonal (Pi.mulSingle i₀ t) * U = h) :
-    fromBlocksGL (h, (1 : GL Unit A)) = weylGL i₀ * lowerGL i₀ t *
+    fromBlocksGL (h, (1 : GL Unit A)) =
+      transvectionWeylElement (Sum.inl_ne_inr (a := i₀) (b := ())) *
+      transvectionUnit (Sum.inr_ne_inl (a := i₀) (b := ())) t *
       upperBlockGL (of fun i (_ : Unit) ↦ U i i₀) * fromBlocksGL (g, 1) *
-      ((lowerGL i₀ t)⁻¹ * (upperGL i₀ (U i₀ i₀))⁻¹) * (weylGL i₀)⁻¹ *
+      ((transvectionUnit (Sum.inr_ne_inl (a := i₀) (b := ())) t)⁻¹ *
+        (transvectionUnit (Sum.inl_ne_inr (a := i₀) (b := ())) (U i₀ i₀))⁻¹) *
+      (transvectionWeylElement (Sum.inl_ne_inr (a := i₀) (b := ())))⁻¹ *
       lowerBlockGL (of fun (_ : Unit) j ↦ if j = i₀ then 0 else U i₀ j) := by
   ext : 1
-  -- The grouped factors `w x₋(t)`, `x₋(t)⁻¹ x₊(s)⁻¹` and `w⁻¹` are rewritten as pre-lemmas (`↓`),
-  -- before `Units.val_mul` would split them into their elementary factors.
-  simp only [Units.val_mul, ↓coe_weylGL_mul_lowerGL, ↓coe_lowerGL_inv_mul_upperGL_inv,
-    ↓coe_weylGL_inv, coe_upperBlockGL, coe_lowerBlockGL, coe_fromBlocksGL, ← hgU, ← hhU]
+  -- The grouped factors `w x₋(t)` and `x₋(t)⁻¹ x₊(s)⁻¹` are rewritten as pre-lemmas (`↓`), before
+  -- `Units.val_mul` would split them into their elementary factors.
+  simp only [Units.val_mul, ↓coe_transvectionWeylElement_mul_transvectionUnit,
+    ↓coe_transvectionUnit_inv_mul_transvectionUnit_inv, coe_transvectionWeylElement_inv,
+    coe_upperBlockGL, coe_lowerBlockGL, coe_fromBlocksGL, ← hgU, ← hhU]
   exact fromBlocks_one_add_diagonal_mul_eq U
 
 namespace OrientedRel
@@ -311,17 +312,14 @@ theorem fromBlocksGL_inv_mul_mem_commutator {g h : GL ι A}
       · simp [hj]
       · simpa [← hgU, Pi.mulSingle_apply, hj, Matrix.one_apply_ne' hj] using
           (Matrix.GeneralLinearGroup.mem_ker_map_quotientMk_iff I).1 hg i₀ j
-  have hs : upperGL i₀ (U i₀ i₀) ∈ ⁅E, K⁆ :=
-    upperBlockGL_mem_commutator_elementarySubgroup_ker hn fun _ _ ↦ by
-      simp only [single_apply]
-      split_ifs
-      exacts [hU, zero_mem _]
-  have hw : weylGL i₀ ∈ E := mul_mem (mul_mem (upperBlockGL_mem_elementarySubgroup _)
-    (lowerBlockGL_mem_elementarySubgroup _)) (upperBlockGL_mem_elementarySubgroup _)
+  obtain ⟨j, hj⟩ := exists_ne i₀
+  have hs := transvectionUnit_mem_commutator_elementarySubgroup_ker (I := I)
+    (Sum.inl_ne_inr (a := i₀) (b := ())) (Sum.inl_injective.ne hj.symm) Sum.inl_ne_inr hU
   have : ((g⁻¹ * h, 1) : GL ι A × GL Unit A) = (g, 1)⁻¹ * (h, 1) := by simp
   rw [this, map_mul, map_inv]
-  exact inv_mul_mem_commutator_of_eq (fromBlocksGL_mem_ker_iff.2 ⟨hg, one_mem _⟩) hw
-    (lowerBlockGL_mem_elementarySubgroup _) hu hs hv (fromBlocksGL_eq_mul hgU hhU)
+  exact inv_mul_mem_commutator_of_eq (fromBlocksGL_mem_ker_iff.2 ⟨hg, one_mem _⟩)
+    (transvectionWeylElement_mem_elementarySubgroup _)
+    (transvectionUnit_mem_elementarySubgroup _ _) hu hs hv (fromBlocksGL_eq_mul hgU hhU)
 
 end OrientedRel
 

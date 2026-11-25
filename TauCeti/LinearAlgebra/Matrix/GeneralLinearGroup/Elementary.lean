@@ -90,7 +90,7 @@ pairs of coordinates, carries every vector to a multiple of a standard basis vec
   `Matrix.lowerBlockGL_mem_commutator_elementarySubgroup_ker`: in size at least three, elementary
   and block unipotent matrices with entries in an ideal `I` lie in the commutator
   `⁅E(A), GL(A, I)⁆` of the elementary subgroup with the principal congruence subgroup.
-* `TauCeti.map_fromBlocksGL`: change of scalars commutes with the block diagonal homomorphism.
+* `RingHom.map_fromBlocksGL`: change of scalars commutes with the block diagonal homomorphism.
 * `TauCeti.fromBlocksGL_mem_ker_iff`: a block diagonal matrix lies in the kernel of a scalar
   change exactly when both blocks do.
 * `Matrix.GeneralLinearGroup.eq_fromBlocksGL_mul_upperBlockGL`: block upper-triangular
@@ -636,7 +636,7 @@ variable {m k B : Type*} [DecidableEq m] [Fintype m] [DecidableEq k] [Fintype k]
 /-- Change of scalars along `f` commutes with the block diagonal homomorphism:
 `(x ⊕ y).map f = x.map f ⊕ y.map f`. -/
 @[simp]
-theorem map_fromBlocksGL (f : A →+* B) (u : GL m A × GL k A) :
+theorem _root_.RingHom.map_fromBlocksGL (f : A →+* B) (u : GL m A × GL k A) :
     Matrix.GeneralLinearGroup.map f (fromBlocksGL u) =
       fromBlocksGL (Matrix.GeneralLinearGroup.map f u.1, Matrix.GeneralLinearGroup.map f u.2) := by
   ext (i | i) (j | j) <;> simp
@@ -646,7 +646,7 @@ both `x` and `y` do. -/
 theorem fromBlocksGL_mem_ker_iff {f : A →+* B} {x : GL m A} {y : GL k A} :
     fromBlocksGL (x, y) ∈ (Matrix.GeneralLinearGroup.map f).ker ↔
       x ∈ (Matrix.GeneralLinearGroup.map f).ker ∧ y ∈ (Matrix.GeneralLinearGroup.map f).ker := by
-  rw [MonoidHom.mem_ker, MonoidHom.mem_ker, MonoidHom.mem_ker, map_fromBlocksGL,
+  rw [MonoidHom.mem_ker, MonoidHom.mem_ker, MonoidHom.mem_ker, RingHom.map_fromBlocksGL,
     ← map_one fromBlocksGL,
     fromBlocksGL_injective.eq_iff, ← Prod.mk_one_one, Prod.mk.injEq]
 
