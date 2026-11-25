@@ -21,9 +21,9 @@ Let `F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat` be a pseudofunctor and `U` an objec
 families `z = (z(V, f))`, indexed by the arrows `f : V ⟶ U`, of units `z(V, f)` of the categorical
 centre `CatCenter (F V)` (invertible natural endomorphisms of the identity of the fibre over `V`),
 that are compatible with pullback: for every `g : W ⟶ V` and every object `x` over `V`,
-`F(g)(z(V, f)_x) = z(W, g ≫ f)_{F(g) x}`. These are the sections over `U` of the band of `F` read
-off from the centres of the fibres, without choosing objects (Stacks, Lemma 8.11.8 (06NY), the
-varying-`U` step).
+`F(g)(z(V, f)_x) = z(W, g ≫ f)_{F(g) x}`. These are pullback-compatible families of central
+automorphisms of the fibres, defined without choosing objects; when `F` is a gerbe they give the
+sections over `U` of the centre of its band (Stacks, Lemma 8.11.8 (06NY), the varying-`U` step).
 
 `ZF(U)` is a subgroup of the product of the unit groups, with pointwise operations, and it is
 commutative because each categorical centre is. Restriction along `f : V ⟶ U` reindexes a

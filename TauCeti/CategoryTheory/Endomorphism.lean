@@ -26,14 +26,14 @@ variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
 /-- The component of `z⁻¹` at `X` is a left inverse of that of `z`. -/
 @[reassoc (attr := simp)]
 lemma inv_app_comp_app (z : (End F)ˣ) (X : C) :
-    z⁻¹.val.asHom.app X ≫ z.val.asHom.app X = 𝟙 (F.obj X) :=
-  congr_app congr($(z.mul_inv).asHom) X
+    z⁻¹.val.asHom.app X ≫ z.val.asHom.app X = 𝟙 (F.obj X) := by
+  rw [← NatTrans.comp_app, ← End.mul_asHom, z.mul_inv, End.one_asHom, NatTrans.id_app]
 
 /-- The component of `z⁻¹` at `X` is a right inverse of that of `z`. -/
 @[reassoc (attr := simp)]
 lemma app_comp_inv_app (z : (End F)ˣ) (X : C) :
-    z.val.asHom.app X ≫ z⁻¹.val.asHom.app X = 𝟙 (F.obj X) :=
-  congr_app congr($(z.inv_mul).asHom) X
+    z.val.asHom.app X ≫ z⁻¹.val.asHom.app X = 𝟙 (F.obj X) := by
+  rw [← NatTrans.comp_app, ← End.mul_asHom, z.inv_mul, End.one_asHom, NatTrans.id_app]
 
 /-- The component of a unit of `End F` at every object is an isomorphism. -/
 instance isIso_app (z : (End F)ˣ) (X : C) : IsIso (z.val.asHom.app X) :=
