@@ -73,6 +73,9 @@ variable {V W : Type*}
 /-- The adjacency atom `adj(u, v)`. -/
 def adjAtom (u v : V) : Atom Language.graph V := atom Language.adj ![u, v]
 
+/-- The adjacency atom `adj(u, v)` is the atom of `adj` at the pair `![u, v]`. -/
+theorem adjAtom_def (u v : V) : adjAtom u v = atom Language.adj ![u, v] := (rfl)
+
 @[simp]
 theorem adjAtom_map (f : V → W) (u v : V) : (adjAtom u v).map f = adjAtom (f u) (f v) := by
   simp only [adjAtom, Atom.map_atom]
