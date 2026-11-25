@@ -174,10 +174,7 @@ section Pullback
 variable {Y : AlgebraicGeometry.Scheme.{u}} (g : Y ⟶ X)
 
 /-- **Base change of an elementary distinguished square** along `g : Y ⟶ X`: the open immersion
-`U ×_X Y ⟶ Y` and the étale morphism `V ×_X Y ⟶ Y`. Over the reduced closed complement `Z'` of
-`U ×_X Y`, the base change of `p` is the base change of the isomorphism `p⁻¹(Z) ⟶ Z` along the
-factorization `Z' ⟶ Z` of `Z' ⟶ Y ⟶ X`, which exists because `Z'` is reduced and `g` maps it into
-the complement of `U`. -/
+`U ×_X Y ⟶ Y` and the étale morphism `V ×_X Y ⟶ Y`. -/
 @[expose]
 noncomputable def pullback : ElementaryDistinguishedSquare Y where
   U := Limits.pullback Q.j g
