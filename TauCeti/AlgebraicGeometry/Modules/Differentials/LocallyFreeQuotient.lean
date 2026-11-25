@@ -33,6 +33,8 @@ The predicate is sensitive to the characteristic: for the cusp `y² = x³` and `
   `HasLocallyFreeQuotientOfDifferentials.restrict`: the predicate passes to open subschemes;
 * `hasLocallyFreeQuotientOfDifferentials_of_smoothOfRelativeDimension`: on a scheme smooth of
   relative dimension `d`, the identity of `Ω_{X/k}` witnesses the predicate;
+* `le_of_hasLocallyFreeQuotientOfDifferentials`: on a nonempty scheme smooth of relative
+  dimension `d`, there is no locally free quotient of rank greater than `d`;
 * `HasLocallyFreeQuotientOfDifferentials.exists_surjective_stalk`: the forward direction of the
   stalk criterion, that at every point `x` there is a surjective `𝒪_{X,x}`-linear map
   `Ω[𝒪_{X,x}⁄k] → 𝒪_{X,x}^d`. The stalk of a locally free quotient `Ω_{X/k} ⟶ E` at `x` is
@@ -124,6 +126,26 @@ theorem hasLocallyFreeQuotientOfDifferentials_of_smoothOfRelativeDimension :
     HasLocallyFreeQuotientOfDifferentials k X d :=
   ⟨FiniteLocallyFreeSheaf.FixedRank.relativeDifferentials k X d, eqToHom (by simp),
     inferInstance⟩
+
+/-- **No locally free quotient of excess rank on a smooth scheme.** If `X` is nonempty and smooth
+of relative dimension `d` over `Spec k`, then `Ω_{X/k}` admits no locally free quotient of rank
+`e > d`: at any point `x`, the stalk `Ω[𝒪_{X,x}⁄k]` is free of rank `d`, and it surjects onto
+`𝒪_{X,x}^e` by the stalk criterion. For `𝔸¹_k` the predicate holds for `d = 1` and fails for
+`d = 2`. -/
+theorem le_of_hasLocallyFreeQuotientOfDifferentials [Nonempty X] {e : ℕ}
+    (h : HasLocallyFreeQuotientOfDifferentials k X e) : e ≤ d := by
+  obtain ⟨x⟩ := ‹Nonempty X›
+  obtain ⟨g, hg⟩ := h.exists_surjective_stalk x
+  let F := FiniteLocallyFreeSheaf.FixedRank.relativeDifferentials k X d
+  let eq : F.obj.obj.presheaf.stalk x ≃ₗ[X.presheaf.stalk x] Ω[X.presheaf.stalk x⁄k] := by
+    rw [show F.obj.obj = X.relativeDifferentials k from
+      FiniteLocallyFreeSheaf.FixedRank.relativeDifferentials_obj_obj k X d]
+    exact X.relativeDifferentialsStalkEquiv k x
+  have : Module.Finite (X.presheaf.stalk x) Ω[X.presheaf.stalk x⁄k] := Module.Finite.equiv eq
+  have hrank : Module.finrank (X.presheaf.stalk x) Ω[X.presheaf.stalk x⁄k] = d :=
+    (eq.finrank_eq.symm.trans (FiniteLocallyFreeSheaf.finrank_stalk F.obj x)).trans
+      (F.rank_apply x)
+  simpa [hrank] using LinearMap.finrank_le_finrank_of_surjective hg
 
 end
 
