@@ -93,7 +93,7 @@ open scoped Manifold ContDiff
 namespace TauCeti.Toric
 
 variable {ι N V : Type*} [Fintype ι] [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V]
-  {i : N →+ V} {u : ι → N} {c : ι → ℝ} [FiniteDimensional ℝ V] {v : StrongDual ℝ V}
+  {i : N →+ V} {u : ι → N} {c : ι → ℝ} {v : StrongDual ℝ V}
 
 namespace DelzantQuotient
 
@@ -220,8 +220,7 @@ private theorem contMDiff_vertexLift_subtypeVal :
 /-- On the target of the vertex chart, the lift lies in the level `Z`. -/
 private theorem vertexLift_mem_delzantLevel_of_mem_target (w : vertexChartTargetOpens hv hi hvP) :
     vertexLift hv hi w ∈ delzantLevel i u c :=
-  vertexLift_mem_delzantLevel hv hi fun j hj ↦
-    ((mem_vertexChart_target_iff hv hi hvP).1 w.property j hj).le
+  vertexLift_mem_delzantLevel hv hi (le_of_mem_vertexChart_target hv hi hvP w.property)
 
 /-- The inverse vertex chart on its target, as a map on the open subset of `ℂ^A`: the class of the
 point `vertexLift w` of the level. -/
@@ -230,7 +229,8 @@ private theorem vertexChart_symm_comp_subtypeVal_eq :
       DelzantQuotient.mk ∘ fun w : vertexChartTargetOpens hv hi hvP ↦
         (⟨vertexLift hv hi w, vertexLift_mem_delzantLevel_of_mem_target hv hi hvP w⟩ :
           delzantLevel i u c) :=
-  funext fun w ↦ vertexChart_symm_apply hv hi hvP w.property
+  funext fun w ↦
+    vertexChart_symm_apply hv hi hvP (le_of_mem_vertexChart_target hv hi hvP w.property)
 
 end DelzantQuotient
 
@@ -240,8 +240,9 @@ namespace IsDelzant
 
 open DelzantQuotient
 
-variable (hΔ : IsDelzant i u c) (hi : IsIntegralLattice i) (hv : IsSmoothVertex i u c v)
-  (hvP : v ∈ facetPolyhedron i u c) [Fintype (activeSet (facetPairing i u) c v)]
+variable [FiniteDimensional ℝ V] (hΔ : IsDelzant i u c) (hi : IsIntegralLattice i)
+  (hv : IsSmoothVertex i u c v) (hvP : v ∈ facetPolyhedron i u c)
+  [Fintype (activeSet (facetPairing i u) c v)]
 
 /-- **The inverse vertex chart is smooth.** On its target it is the class of the smooth lift
 `vertexLift w` into the level `Z`, followed by the smooth projection `Z → M_Δ`. -/

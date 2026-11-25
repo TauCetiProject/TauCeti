@@ -9,7 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Borel.Conjugation
 public import TauCeti.Algebra.AlgebraicGroup.Borel.Over
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.BaseChange
-import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Conjugation
+import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Conjugation.Basic
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.SmoothConnected
 import TauCeti.Algebra.AlgebraicGroup.Smooth.GeometricallyReduced

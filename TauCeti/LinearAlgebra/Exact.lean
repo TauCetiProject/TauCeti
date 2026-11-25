@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import Mathlib.LinearAlgebra.Prod
 
+import Mathlib.LinearAlgebra.Dual.Lemmas
+
 /-!
 # Exact sequences of linear maps
 
@@ -21,7 +23,8 @@ including the exactness of `U' → V → B × A` built from two exact stages `U'
 exactness of products with an identity factor (`Function.Exact.prodMap_id_comp_fst`,
 `Function.Exact.id_prodMap_comp_snd`), the left exactness of `Hom` over a noncommutative ring
 (`Function.Exact.lcomp_of_surjective`), its covariant counterpart
-(`Function.Exact.compRight_of_injective`), the generators and relations of an extension
+(`Function.Exact.compRight_of_injective`), the exactness of transposition over a field
+(`Function.Exact.dualMap`), the generators and relations of an extension
 (`Function.Exact.surjective_coprod`, `TauCeti.ker_coprod_eq_map_prod_top`), the horseshoe step
 `TauCeti.exists_surjective_ker_exact`, the short exact sequence of kernels
 `TauCeti.exact_ker_comp` attached to a surjection and a further map, the exact sequence
@@ -57,6 +60,9 @@ instead indexed by `ℕ` with three families of spaces, which is the form taken 
 
 For four consecutive maps, `LinearMap.finrank_sub_finrank_sub_finrank_of_exact` gives the
 alternating dimension difference with endpoint kernel corrections.
+
+A short exact sequence `0 → K → X → Y → 0` with `Y` projective splits as `X ≃ K × Y`
+(`Function.Exact.exists_linearEquiv_prod_of_projective`).
 
 For an exact augmented sequence with one family of spaces,
 `TauCeti.sum_range_neg_one_pow_finrank_eq_add_of_exact` records the finite alternating sum
@@ -220,6 +226,15 @@ theorem _root_.Function.Exact.compRight_of_injective {R T M₁ M₂ M₃ : Type*
     ext x
     simp [exac.apply_apply_eq_zero]
 
+/-- **Transposition is exact over a field.** If `V₁ --f--> V₂ --g--> V₃` is exact, so is
+`V₃* --g*--> V₂* --f*--> V₁*`: a functional on `V₂` vanishing on the range of `f`, which is the
+kernel of `g`, factors through `g`. -/
+theorem dualMap {K V₁ V₂ V₃ : Type*} [Field K] [AddCommGroup V₁] [Module K V₁] [AddCommGroup V₂]
+    [Module K V₂] [AddCommGroup V₃] [Module K V₃] {f : V₁ →ₗ[K] V₂} {g : V₂ →ₗ[K] V₃}
+    (h : Exact f g) : Exact g.dualMap f.dualMap := by
+  rw [LinearMap.exact_iff, LinearMap.ker_dualMap_eq_dualAnnihilator_range,
+    LinearMap.range_dualMap_eq_dualAnnihilator_ker, h.linearMap_ker_eq]
+
 /-- Given an exact sequence `M₁ → M → M₂`, a surjection `π₁ : P₁ → M₁` and a lift `σ : P₂ → M`
 of a surjection `π₂ : P₂ → M₂`, the combined generator map `(x, y) ↦ f (π₁ x) + σ y` of `M` is
 surjective. -/
@@ -296,6 +311,25 @@ theorem finrank_eq_add {k M N P : Type*} [DivisionRing k] [AddCommGroup M] [Modu
     Module.finrank k N = Module.finrank k M + Module.finrank k P := by
   rw [← g.finrank_range_add_finrank_ker, LinearMap.range_eq_top.2 hg, finrank_top,
     h.linearMap_ker_eq, LinearMap.finrank_range_of_inj hf, add_comm]
+
+section Projective
+
+variable {R K X Y : Type*} [Semiring R] [AddCommGroup K] [Module R K] [AddCommGroup X]
+  [Module R X] [AddCommGroup Y] [Module R Y] [Module.Projective R Y] {f : K →ₗ[R] X}
+  {g : X →ₗ[R] Y}
+
+/-- **A short exact sequence onto a projective module splits.** If `0 → K → X → Y → 0` is exact
+and `Y` is projective, then `X ≃ K × Y` compatibly with the inclusion of `K` and the projection
+onto `Y`. -/
+theorem exists_linearEquiv_prod_of_projective (hfg : Exact f g) (hf : Function.Injective f)
+    (hg : Function.Surjective g) :
+    ∃ e : X ≃ₗ[R] K × Y, f = e.symm.toLinearMap ∘ₗ LinearMap.inl R K Y ∧
+      g = LinearMap.snd R K Y ∘ₗ e.toLinearMap := by
+  obtain ⟨s, hs⟩ := Module.projective_lifting_property g LinearMap.id hg
+  obtain ⟨e, he⟩ := (hfg.splitSurjectiveEquiv hf) ⟨s, hs⟩
+  exact ⟨e, he⟩
+
+end Projective
 
 end Function.Exact
 

@@ -40,10 +40,6 @@ variable (A B : Type*) [CommRing A] [CommRing B] [Algebra A B]
   [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B] [IsHuberRing B]
   [CompleteSpace B] [T2Space B] [IsAdicHom (algebraMap A B)]
 
-/-- The identity structure map used in the unit tensor is adic. -/
-local instance isAdicHom_self : IsAdicHom (algebraMap A A) := by
-  simpa using (IsAdicHom.id (A := A))
-
 namespace CompletedTensor
 
 /-- The right unit of the completed tensor product, for a complete Hausdorff Huber algebra. -/

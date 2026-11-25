@@ -9,12 +9,11 @@ public import TauCeti.RingTheory.Huber.Henselian
 public import TauCeti.RingTheory.Huber.Padic.Field
 
 /-!
-# Checks for henselian subrings of complete Tate rings
+# Checks for henselian subrings of complete Huber rings
 
-The power-bounded subring of `ℚ_p` lifts the simple root zero of `X^p - X - p`.
-The ring-of-definition formulation and the zero ring are also covered. The negative check
-records why the theorem uses a pseudouniformizer in the ambient ring rather than merely an
-ideal of definition of an arbitrary complete Huber ring.
+The power-bounded subring of `ℚ_p` lifts the simple root zero of `X^p - X - p`. A ring of
+definition is henselian along the radical of its ideal of definition. The power-bounded subring
+of `ℤ_p`, which is not a Tate ring, is henselian along its topologically nilpotent elements.
 -/
 
 public section
@@ -33,7 +32,8 @@ example : ∃ x : powerBoundedSubring ℚ_[p], (x : ℚ_[p]) ^ p - x = p ∧
     ⟨p, mem_powerBoundedSubring.mpr (IsPowerBounded.of_isTopologicallyNilpotent
       (Padic.isPseudoUniformizer_p (p := p)).isTopologicallyNilpotent)⟩
   have hπ : (π : ℚ_[p]) = p := (rfl)
-  have := henselianRing_powerBoundedSubring π (hπ ▸ Padic.isPseudoUniformizer_p)
+  have := henselianRing_span_singleton_of_isOpen_subring (isOpen_powerBoundedSubring ℚ_[p]) le_rfl
+    π (hπ ▸ (Padic.isPseudoUniformizer_p (p := p)).isTopologicallyNilpotent)
   have hp : 1 < p := (Fact.out : p.Prime).one_lt
   let f : (powerBoundedSubring ℚ_[p])[X] := X ^ p - X - C π
   have hf : f.Monic := by
@@ -51,27 +51,19 @@ example : ∃ x : powerBoundedSubring ℚ_[p], (x : ℚ_[p]) ^ p - x = p ∧
   · exact_mod_cast hroot
   · exact_mod_cast hy.symm
 
-/-- The ring-of-definition result applies to any contained pseudouniformizer, regardless
-of the originally chosen ideal of definition. -/
+/-- A ring of definition of a complete Hausdorff Huber ring is henselian along the radical of
+its ideal of definition, whatever ideal of definition was chosen. -/
 example {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A]
-    [IsTopologicalRing A] [CompleteSpace A] [T0Space A]
-    (P : PairOfDefinition A) (π : P.ringOfDefinition)
-    (hπ : IsPseudoUniformizer (π : A)) :
-    HenselianRing P.ringOfDefinition (Ideal.span {π}) :=
-  P.henselianRing π hπ
+    [CompleteSpace A] [T0Space A] (P : PairOfDefinition A) :
+    HenselianRing P.ringOfDefinition P.idealOfDefinition.radical :=
+  P.henselianRing fun _ hx ↦ P.mem_radical_idealOfDefinition_iff.mp hx
 
-/-- *henselian_zero_ring*: the zero ring is permitted, with zero as pseudouniformizer. -/
-example {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A]
-    [IsTopologicalRing A] [IsHuberRing A] [CompleteSpace A] [T0Space A] [Subsingleton A] :
-    HenselianRing (powerBoundedSubring A) (Ideal.span {(0 : powerBoundedSubring A)}) := by
-  apply henselianRing_powerBoundedSubring
-  rw [isPseudoUniformizer_iff]
-  exact ⟨by
-    rw [Subsingleton.elim (↑(0 : powerBoundedSubring A) : A) 1]
-    exact isUnit_one, IsTopologicallyNilpotent.zero⟩
+/-- *henselian_test_not_tate*: `ℤ_p` has no pseudouniformizer, so it is not a Tate ring, but
+`(ℤ_p°, ℤ_p°°)` is still a henselian pair. -/
+example : HenselianRing (powerBoundedSubring ℤ_[p]) (topologicallyNilpotentIdeal ℤ_[p]) :=
+  inferInstance
 
-/-- *henselian_test_not_tate*: no element of `ℤ_p` satisfies the ambient
-pseudouniformizer hypothesis, despite its adic completeness. -/
+/-- `ℤ_p` has no pseudouniformizer, despite its adic completeness. -/
 example (x : ℤ_[p]) : ¬ IsPseudoUniformizer x := by
   intro hx
   obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := ℤ_[p])

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
+public import Mathlib.RingTheory.SimpleRing.Matrix
 import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.CStarAlgebra.Basic
 import TauCeti.Analysis.CStarAlgebra.Compression
@@ -39,13 +40,14 @@ Hilbert C⋆-module.
 
 The file also collects basic algebraic API for `CStarMatrix` that Mathlib lacks: entries of finite
 sums and of `1 × 1` matrices, entrywise images under sums and scalar multiples of linear maps,
-the transpose as a linear map, the star algebra isomorphism `M_m(M_n(A)) ≃ M_{m × n}(A)` and the
-diagonal embedding `b ↦ diag(b, …, b)`.
+the transpose as a linear map, the star algebra isomorphism `M_m(M_n(A)) ≃ M_{m × n}(A)`, the
+diagonal embedding `b ↦ diag(b, …, b)` and the matrix units `eᵢⱼ` of `M_n(ℂ)`.
 
 ## Main declarations
 
 * `CStarMatrix.instNonUnitalContinuousFunctionalCalculusReal`: the real continuous functional
   calculus of `CStarMatrix n n A`, which instance search does not find on its own.
+* `CStarMatrix.instIsSimpleRing`: square matrices over a simple ring form a simple ring.
 * `CStarMatrix.instSeparableSpace`: finite matrices over a separable C⋆-algebra form a separable
   space.
 * `CStarMatrix.instModuleFinite`: `CStarMatrix m n A` is a finite module over finite index
@@ -56,6 +58,10 @@ diagonal embedding `b ↦ diag(b, …, b)`.
   companions `CStarMatrix.ofMatrix_symm_zero`, `ofMatrix_symm_one`, `ofMatrix_symm_add`,
   `ofMatrix_symm_neg`, `ofMatrix_symm_sub` and `ofMatrix_symm_smul` do the same for the other
   algebraic operations.
+* `CStarMatrix.isStarProjection_ofMatrix_symm_iff`, `CStarMatrix.isStarProjection_ofMatrix_iff`:
+  a C⋆-matrix is a star projection exactly when the underlying matrix is; companions
+  `CStarMatrix.isSelfAdjoint_ofMatrix_iff` and `CStarMatrix.ofMatrix_mem_unitary_iff` do the same
+  for self-adjoint and unitary matrices.
 * `CStarMatrix.mul_eq_self_of_conjTranspose_mul_eq`: over a star-ordered ring with proper star,
   a rectangular matrix is supported on its initial projection.
 * `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`, `CStarMatrix.reindexₐ_apply_apply`:
@@ -66,8 +72,9 @@ diagonal embedding `b ↦ diag(b, …, b)`.
   image under a linear map.
 * `CStarMatrix.transposeₗ`: the transpose of C⋆-matrices, as a linear map.
 * `CStarMatrix.matrixUnit`: the matrix units `e_ij` of `M_n(ℂ)`, with
-  `CStarMatrix.star_matrixUnit`, `CStarMatrix.matrixUnit_mul_matrixUnit` and
-  `CStarMatrix.norm_matrixUnit`: `‖e_ij‖ = 1`.
+  `CStarMatrix.ofMatrix_symm_matrixUnit`, `CStarMatrix.star_matrixUnit`,
+  `CStarMatrix.matrixUnit_mul_matrixUnit`, `CStarMatrix.isStarProjection_matrixUnit` (`e_ii` is a
+  projection) and `CStarMatrix.norm_matrixUnit`: `‖e_ij‖ = 1`.
 * `CStarMatrix.compStarAlgEquiv`: `Matrix.comp` as a star algebra isomorphism
   `M_m(M_n(A)) ≃ M_{m × n}(A)`.
 * `CStarMatrix.diagonalNonUnitalStarAlgHom`: the diagonal embedding `b ↦ diag(b, …, b)` of `B`
@@ -96,6 +103,9 @@ diagonal embedding `b ↦ diag(b, …, b)`.
   `‖∑ i j, (vᵢ wⱼ*) xᵢⱼ‖ ≤ ‖v‖ ‖x‖ ‖w‖`. The proof tests `x` against the vectors `(vᵢ a)ᵢ` and
   `(wⱼ b)ⱼ` of `Aᵐ` and `Aⁿ`, which bounds `‖a z b*‖` for the compression `z`, and takes `a = z*`,
   `b = z* z`; no unit is needed.
+* `CStarMatrix.norm_ofMatrix_diagonal`: a diagonal matrix `diag(d₁, …, dₙ)` over a C⋆-algebra has
+  norm `maxᵢ ‖dᵢ‖`, the sup norm of `d`; `CStarMatrix.norm_ofMatrix_diagonal_fin_two` is the
+  `2 × 2` case `‖diag(a, b)‖ = max ‖a‖ ‖b‖`.
 
 ## References
 
@@ -266,6 +276,47 @@ lemma conjTranspose_conjTranspose {m : Type*} [InvolutiveStar A] (M : CStarMatri
   apply ofMatrix.symm.injective
   simp only [ofMatrix_symm_conjTranspose, Matrix.conjTranspose_conjTranspose]
 
+/-- A C⋆-matrix is a star projection exactly when the underlying matrix is. -/
+@[simp]
+lemma isStarProjection_ofMatrix_symm_iff [Fintype n] [NonUnitalSemiring A] [StarRing A]
+    {M : CStarMatrix n n A} : IsStarProjection (ofMatrix.symm M) ↔ IsStarProjection M := by
+  have h₁ : ofMatrix.symm M * ofMatrix.symm M = ofMatrix.symm M ↔ M * M = M := by
+    rw [← ofMatrix_symm_mul, ofMatrix.symm.injective.eq_iff]
+  have h₂ : star (ofMatrix.symm M) = ofMatrix.symm M ↔ star M = M := by
+    rw [Matrix.star_eq_conjTranspose, ← ofMatrix_symm_star, ofMatrix.symm.injective.eq_iff]
+  simp only [isStarProjection_iff, IsIdempotentElem, IsSelfAdjoint, h₁, h₂]
+
+/-- A matrix is a star projection exactly when it is one as a C⋆-matrix. -/
+@[simp]
+lemma isStarProjection_ofMatrix_iff [Fintype n] [NonUnitalSemiring A] [StarRing A]
+    {M : Matrix n n A} : IsStarProjection (ofMatrix M) ↔ IsStarProjection M := by
+  rw [← isStarProjection_ofMatrix_symm_iff, Equiv.symm_apply_apply]
+
+/-- A matrix is self-adjoint exactly when it is self-adjoint as a C⋆-matrix. -/
+@[simp]
+lemma isSelfAdjoint_ofMatrix_iff [Star A] {M : Matrix n n A} :
+    IsSelfAdjoint (ofMatrix M) ↔ IsSelfAdjoint M :=
+  Iff.rfl
+
+/-- A C⋆-matrix is self-adjoint exactly when the underlying matrix is. -/
+@[simp]
+lemma isSelfAdjoint_ofMatrix_symm_iff [Star A] {M : CStarMatrix n n A} :
+    IsSelfAdjoint (ofMatrix.symm M) ↔ IsSelfAdjoint M :=
+  Iff.rfl
+
+/-- A matrix is unitary exactly when it is unitary as a C⋆-matrix. -/
+@[simp]
+lemma ofMatrix_mem_unitary_iff [Fintype n] [DecidableEq n] [Semiring A] [StarRing A]
+    {M : Matrix n n A} : ofMatrix M ∈ unitary (CStarMatrix n n A) ↔ M ∈ unitary (Matrix n n A) :=
+  Iff.rfl
+
+/-- A C⋆-matrix is unitary exactly when the underlying matrix is. -/
+@[simp]
+lemma ofMatrix_symm_mem_unitary_iff [Fintype n] [DecidableEq n] [Semiring A] [StarRing A]
+    {M : CStarMatrix n n A} :
+    ofMatrix.symm M ∈ unitary (Matrix n n A) ↔ M ∈ unitary (CStarMatrix n n A) :=
+  Iff.rfl
+
 /-- Over a star-ordered ring with proper star, a rectangular matrix whose initial Gram matrix is
 an idempotent `p` is supported on `p`. -/
 lemma mul_eq_self_of_conjTranspose_mul_eq {m : Type*} [Fintype m] [Fintype n] [NonUnitalRing A]
@@ -395,6 +446,12 @@ lemma ofMatrixₗ_symm_apply {m : Type*} [AddCommMonoid A] [Semiring R] [Module 
 
 end Algebraic
 
+/-- Square matrices over a simple ring form a simple ring: their two-sided ideals are the matrices
+over the two-sided ideals of the coefficient ring. -/
+instance instIsSimpleRing {n A : Type*} [Fintype n] [Nonempty n] [Ring A] [IsSimpleRing A] :
+    IsSimpleRing (CStarMatrix n n A) :=
+  inferInstanceAs (IsSimpleRing (Matrix n n A))
+
 /-- A matrix space over a separable C⋆-algebra with finite index types is separable. -/
 instance instSeparableSpace {m n A : Type*} [Finite m] [Finite n] [NonUnitalCStarAlgebra A]
     [TopologicalSpace.SeparableSpace A] :
@@ -408,6 +465,12 @@ variable {n : Type*} [DecidableEq n]
 /-- The matrix unit `e_ij` of `M_n(ℂ)`, with entry `1` at `(i, j)` and `0` elsewhere. -/
 def matrixUnit (i j : n) : CStarMatrix n n ℂ :=
   ofMatrix (Matrix.single i j 1)
+
+/-- Reading `e_ij` as an ordinary matrix gives `Matrix.single i j 1`. -/
+@[simp]
+theorem ofMatrix_symm_matrixUnit (i j : n) :
+    ofMatrix.symm (matrixUnit i j) = Matrix.single i j 1 :=
+  (rfl)
 
 /-- The entries of `e_ij`. -/
 theorem matrixUnit_apply (i j k l : n) :
@@ -451,12 +514,16 @@ theorem matrixUnit_mul_matrixUnit_of_ne (i : n) {j k : n} (l : n) (h : j ≠ k) 
   rw [matrixUnit_eq_ofMatrixStarAlgEquiv, matrixUnit_eq_ofMatrixStarAlgEquiv, ← map_mul,
     single_mul_single_of_ne _ _ _ _ h, map_zero]
 
+/-- The diagonal matrix unit `e_ii` is a self-adjoint idempotent. -/
+theorem isStarProjection_matrixUnit (i : n) : IsStarProjection (matrixUnit i i) :=
+  ⟨matrixUnit_mul_matrixUnit i i i, star_matrixUnit i i⟩
+
 open scoped ComplexOrder in
 /-- A matrix unit has norm one: `e_jj` is a nonzero projection and `e_ij⋆ e_ij = e_jj`. -/
 @[simp]
 theorem norm_matrixUnit (i j : n) : ‖matrixUnit i j‖ = 1 := by
   have hp : ‖matrixUnit j j‖ = 1 :=
-    IsStarProjection.norm_eq_one ⟨matrixUnit_mul_matrixUnit j j j, star_matrixUnit j j⟩
+    (isStarProjection_matrixUnit j).norm_eq_one
       fun h0 => by simpa using congrFun (congrFun h0 j) j
   have h := CStarRing.norm_star_mul_self (x := matrixUnit i j)
   rw [star_matrixUnit, matrixUnit_mul_matrixUnit, hp] at h
@@ -733,5 +800,49 @@ theorem norm_sum_smul_le (x : CStarMatrix m n A) (v : C⋆ᵐᵒᵈ(ℂ, m → �
   nlinarith
 
 end Compression
+
+section DiagonalNorm
+
+open WithCStarModule CStarModule
+
+variable {n A : Type*} [Fintype n] [DecidableEq n] [NonUnitalCStarAlgebra A] [PartialOrder A]
+  [StarOrderedRing A]
+
+/-- A diagonal matrix over a C⋆-algebra has norm the largest norm of its diagonal entries: the
+diagonal matrices form a copy of `Aⁿ` with the sup norm. -/
+theorem norm_ofMatrix_diagonal (d : n → A) : ‖ofMatrix (diagonal d)‖ = ‖d‖ := by
+  refine le_antisymm ?_ ((pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 fun i => ?_)
+  · rw [norm_def]
+    refine (toCLM (ofMatrix (diagonal d))).opNorm_le_bound (norm_nonneg d) fun v => ?_
+    have hv : toCLM (ofMatrix (diagonal d)) v = (equiv A (n → A)).symm fun j => v j * d j := by
+      simp [toCLM_apply_eq_sum, diagonal_apply]
+    rw [hv, ← sq_le_sq₀ (norm_nonneg _) (by positivity), mul_pow, norm_sq_eq A (x := v),
+      norm_sq_eq A (x := (equiv A (n → A)).symm _), pi_inner, pi_inner]
+    simp only [equiv_symm_pi_apply, inner_def]
+    -- Each term `vⱼ dⱼ (vⱼ dⱼ)⋆` is the conjugate of `dⱼ dⱼ⋆ ≤ ‖d‖²` by `vⱼ`.
+    calc ‖∑ j, v j * d j * star (v j * d j)‖ ≤ ‖∑ j, ‖d‖ ^ 2 • (v j * star (v j))‖ := by
+          refine CStarAlgebra.norm_le_norm_of_le_of_nonneg (Finset.sum_le_sum fun j _ => ?_)
+            (Finset.sum_nonneg fun j _ => mul_star_self_nonneg _)
+          calc v j * d j * star (v j * d j) = v j * (d j * star (d j)) * star (v j) := by
+                simp [star_mul, mul_assoc]
+            _ ≤ ‖d j * star (d j)‖ • (v j * star (v j)) :=
+                CStarAlgebra.star_right_conjugate_le_norm_smul _ _
+            _ ≤ ‖d‖ ^ 2 • (v j * star (v j)) := by
+                refine smul_le_smul_of_nonneg_right ?_ (mul_star_self_nonneg _)
+                rw [CStarRing.norm_self_mul_star, ← sq]
+                exact pow_le_pow_left₀ (norm_nonneg _) (norm_le_pi_norm d j) 2
+      _ = ‖d‖ ^ 2 * ‖∑ j, v j * star (v j)‖ := by
+          rw [← Finset.smul_sum, norm_smul, Real.norm_of_nonneg (by positivity)]
+  · simpa using norm_entry_le_norm (M := ofMatrix (diagonal d)) (i := i) (j := i)
+
+/-- A `2 × 2` diagonal matrix `diag(a, b)` over a C⋆-algebra has norm `max ‖a‖ ‖b‖`. -/
+theorem norm_ofMatrix_diagonal_fin_two (a b : A) :
+    ‖ofMatrix (diagonal ![a, b])‖ = max ‖a‖ ‖b‖ := by
+  rw [norm_ofMatrix_diagonal]
+  refine le_antisymm ((pi_norm_le_iff_of_nonneg (by positivity)).2 fun i => ?_)
+    (max_le (norm_le_pi_norm ![a, b] 0) (norm_le_pi_norm ![a, b] 1))
+  fin_cases i <;> simp
+
+end DiagonalNorm
 
 end CStarMatrix
