@@ -22,7 +22,8 @@ import TauCeti.Probability.Moments.SubGaussian.Vector
 
 We develop squared-variable exponential moment bounds for
 `ProbabilityTheory.HasSubgaussianMGF` (`integrable_exp_mul_sq`, `integral_exp_mul_sq_le`,
-`mgf_sq_sub_integral_le`), complex directional sub-Gaussianity, and
+`mgf_sq_sub_integral_le`), the fourth-moment bound `E X⁴ ≤ 32 √2 c²` they imply
+(`integral_pow_four_le`), complex directional sub-Gaussianity, and
 Gaussianization and decoupled bilinear MGF bounds for jointly sub-Gaussian vectors
 (`TauCeti.integral_exp_half_mul_sum_mulVec_sq_le`,
 `TauCeti.mgf_dotProduct_mulVec_prod_le`; Vershynin 2018, §2.5–2.7, §6.2; Rudelson–Vershynin 2013).
@@ -109,6 +110,37 @@ theorem integral_exp_mul_sq_le (h : HasSubgaussianMGF X c μ) {s : ℝ}
     ofReal_integral_eq_lintegral_ofReal (h.integrable_exp_mul_sq hs)
       (.of_forall fun _ ↦ (exp_pos _).le)]
   exact h.lintegral_ofReal_exp_mul_sq_le hs0 hs
+
+/-- **Fourth moment of a sub-Gaussian variable.** For `c`-sub-Gaussian `X`,
+`E X⁴ ≤ 32 √2 c²`. -/
+theorem integral_pow_four_le (h : HasSubgaussianMGF X c μ) :
+    ∫ ω, X ω ^ 4 ∂μ ≤ 32 * √2 * (c : ℝ) ^ 2 := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · have h0 : (fun ω ↦ X ω ^ 4) =ᵐ[μ] fun _ ↦ (0 : ℝ) :=
+      h.ae_eq_zero_of_hasSubgaussianMGF_zero.mono fun ω hω ↦ by simp [hω]
+    simp [integral_congr_ae h0]
+  have hc' : (0 : ℝ) < c := by positivity
+  -- At `s = 1 / (4c)`, the exponential moment `E exp (s X²)` is at most `√2`.
+  have hs0 : 0 < (4 * (c : ℝ))⁻¹ := inv_pos.2 (mul_pos four_pos hc')
+  have hs : 2 * (c : ℝ) * (4 * (c : ℝ))⁻¹ = 1 / 2 := by field_simp; norm_num
+  have hexp := h.integral_exp_mul_sq_le hs0.le (by rw [hs]; norm_num)
+  rw [hs, (by norm_num : (1 : ℝ) - 1 / 2 = 2⁻¹), Real.inv_rpow (by norm_num),
+    ← Real.rpow_neg (by norm_num), neg_div, neg_neg, ← Real.sqrt_eq_rpow] at hexp
+  set s := (4 * (c : ℝ))⁻¹
+  -- Pointwise, `X⁴ ≤ (2 / s²) exp (s X²)`, since `(s X²)² / 2 ≤ exp (s X²)`.
+  have hpt (ω : Ω) : X ω ^ 4 ≤ 2 / s ^ 2 * exp (s * X ω ^ 2) := by
+    have := Real.pow_div_factorial_le_exp (x := s * X ω ^ 2) (by positivity) 2
+    rw [div_mul_eq_mul_div, le_div_iff₀ (by positivity)]
+    norm_num [Nat.factorial] at this
+    nlinarith
+  have hX4 : Integrable (fun ω ↦ X ω ^ 4) μ := by
+    simpa [Real.norm_eq_abs, Even.pow_abs ⟨2, rfl⟩] using
+      (h.memLp 4).integrable_norm_pow (p := 4) (by norm_num)
+  calc ∫ ω, X ω ^ 4 ∂μ ≤ ∫ ω, 2 / s ^ 2 * exp (s * X ω ^ 2) ∂μ :=
+        integral_mono hX4 ((h.integrable_exp_mul_sq (by rw [hs]; norm_num)).const_mul _) hpt
+    _ = 2 / s ^ 2 * ∫ ω, exp (s * X ω ^ 2) ∂μ := integral_const_mul _ _
+    _ ≤ 2 / s ^ 2 * √2 := mul_le_mul_of_nonneg_left hexp (by positivity)
+    _ = 32 * √2 * (c : ℝ) ^ 2 := by simp only [s]; field_simp; ring
 
 /-- **Sub-exponential MGF bound for a centred squared sub-Gaussian variable.** -/
 theorem mgf_sq_sub_integral_le [IsZeroOrProbabilityMeasure μ] (h : HasSubgaussianMGF X c μ)
