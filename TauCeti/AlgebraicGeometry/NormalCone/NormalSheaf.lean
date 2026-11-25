@@ -58,6 +58,8 @@ direct sums underlying `symmetricAlgebraToNormalConeAlgebra`.
   closed subscheme of the normal sheaf.
 * `AlgebraicGeometry.Scheme.Hom.normalConeToNormalSheaf_normalSheafToBase`: the embedding is a
   morphism over `X`.
+* `AlgebraicGeometry.Scheme.Hom.isEmpty_normalSheaf`: an immersion with empty source has empty
+  normal sheaf.
 
 ## References
 
@@ -166,6 +168,10 @@ theorem normalSheafToBase_eq_relativeSpecToBase :
 /-- The projection of the normal sheaf is affine. -/
 instance isAffineHom_normalSheafToBase : IsAffineHom i.normalSheafToBase :=
   inferInstanceAs (IsAffineHom i.normalSheafOver.hom)
+
+/-- An immersion with empty source has empty normal sheaf, which lies over the source. -/
+instance isEmpty_normalSheaf [IsEmpty X] : IsEmpty i.normalSheaf :=
+  ⟨fun x ↦ isEmptyElim (i.normalSheafToBase x)⟩
 
 /-- The embedding `C_X Y ⟶ N_X Y` of the normal cone into the normal sheaf, as a morphism of affine
 schemes over `X`: the relative spectrum of `Sym (I/I²) ⟶ ⨁ₙ Iⁿ/Iⁿ⁺¹`. -/

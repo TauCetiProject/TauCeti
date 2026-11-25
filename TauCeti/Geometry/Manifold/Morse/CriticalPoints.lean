@@ -121,6 +121,9 @@ polynomial in the Morse inequalities.
 * `TauCeti.IsMorse.exists_lt_lt_forall_mem_Ioo`: on a compact manifold, for `a < b` there are
   levels `a < c₂ < c₁ < b` such that every critical value strictly between `a` and `b` lies
   strictly between `c₂` and `c₁`.
+* `TauCeti.IsMorse.exists_lt_forall_lt` and `TauCeti.IsMorse.exists_gt_forall_gt`: on a compact
+  manifold, below (respectively above) any value there is a level separating it from the critical
+  values below (respectively above) it.
 * `TauCeti.IsMorse.band_induction`: a property of compact bands between regular values follows
   from its validity across bands without critical points, across single critical levels, and
   along triples of levels.
@@ -804,6 +807,25 @@ theorem IsMorse.exists_lt_lt_forall_mem_Ioo [CompactSpace M] (hf : IsMorse I f) 
   have h₁ := T.min'_le _ (hmem hx hxab)
   have h₂ := T.le_max' _ (hmem hx hxab)
   constructor <;> linarith [hmin.1, hmax.2]
+
+/-- **A level just below a value.** For a Morse function on a compact manifold, below any value
+`v` some level `c < v` lies above every critical value below `v`. -/
+theorem IsMorse.exists_lt_forall_lt [CompactSpace M] (hf : IsMorse I f) (v : ℝ) :
+    ∃ c < v, ∀ x ∈ criticalPoints I f, f x < v → f x < c := by
+  have h : ∀ᶠ c in 𝓝[<] v, ∀ x ∈ {x ∈ criticalPoints I f | f x < v}, f x < c :=
+    (hf.finite_criticalPoints.subset (sep_subset _ _)).eventually_all.2 fun _ hx ↦
+      nhdsWithin_le_nhds (lt_mem_nhds hx.2)
+  obtain ⟨c, hc, hcv⟩ := (h.and self_mem_nhdsWithin).exists
+  exact ⟨c, hcv, fun x hx hxv ↦ hc x ⟨hx, hxv⟩⟩
+
+/-- **A level just above a value.** For a Morse function on a compact manifold, above any value
+`v` some level `c > v` lies below every critical value above `v`. -/
+theorem IsMorse.exists_gt_forall_gt [CompactSpace M] (hf : IsMorse I f) (v : ℝ) :
+    ∃ c > v, ∀ x ∈ criticalPoints I f, v < f x → c < f x := by
+  -- Apply the level below `-v` to the Morse function `-f`, which has the same critical points.
+  obtain ⟨c, hcv, hc⟩ := hf.neg.exists_lt_forall_lt (-v)
+  exact ⟨-c, lt_neg_of_lt_neg hcv, fun x hx hvx ↦
+    neg_lt.1 (hc x (by rwa [criticalPoints_neg]) (neg_lt_neg hvx))⟩
 
 /-- **Dense regular levels.** For a Morse function on a compact manifold there is a countable dense
 set of levels none of which is the level of a critical point. -/

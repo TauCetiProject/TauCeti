@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
-public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Annihilator
+public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Annihilator.Basic
 public import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 public import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
 public import TauCeti.Geometry.Symplectic.Floer.Transversality.Cokernel
@@ -58,8 +58,9 @@ frozen almost complex structure
 variations of `J_t` along a Floer trajectory
 (`ae_eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOperator`), all in the
 namespace `TauCeti.SymplecticForm`. In each case `η = 0` almost everywhere. The surjectivity of
-the universal operator on Banach spaces that follows from this, given closed range, is not treated
-here.
+the universal operator on `L²` of the cylinder that follows from this, given closed range of finite
+codimension, is `range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top` in the namespace
+`TauCeti.SymplecticForm`, in `TauCeti.Geometry.Symplectic.Floer.Transversality.Surjective`.
 
 ## Main results
 
