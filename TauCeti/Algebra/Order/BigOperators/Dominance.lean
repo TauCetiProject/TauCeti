@@ -180,10 +180,12 @@ theorem Dominates.apply_last_le_apply [AddCommMonoid M] [Preorder M]
     [IsOrderedCancelAddMonoid M] {a g : Fin (n + 1) → M} (h : Dominates a g) (ha : Antitone a)
     (i : Fin (n + 1)) : g (Fin.last n) ≤ a i := by
   have hn := (dominates_iff_forall_prefixSum_le.mp h).2 n
+  -- `prefixSum_succ` names the last index `⟨n, _⟩`; identify it with `Fin.last n`.
+  have hidx : (⟨n, Nat.lt_succ_self n⟩ : Fin (n + 1)) = Fin.last n :=
+    Fin.ext (Fin.val_last n).symm
   -- the total is the prefix sum of length `n` plus the last coordinate
   have hlast (z : Fin (n + 1) → M) : ∑ j, z j = prefixSum n z + z (Fin.last n) := by
-    rw [← prefixSum_of_le le_rfl, prefixSum_succ (Nat.lt_succ_self n),
-      show (⟨n, Nat.lt_succ_self n⟩ : Fin (n + 1)) = Fin.last n from Fin.ext (Fin.val_last n).symm]
+    rw [← prefixSum_of_le le_rfl, prefixSum_succ (Nat.lt_succ_self n), hidx]
   have htot := h.1
   rw [hlast, hlast] at htot
   have hle : prefixSum n a + a (Fin.last n) ≤ prefixSum n g + a (Fin.last n) := by gcongr
