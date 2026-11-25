@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Category.Idempotent
 public import TauCeti.CategoryTheory.Dagger.Karoubi
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
+import TauCeti.Algebra.Star.Projection.Commute
 
 /-!
 # The dagger Karoubi envelope of a C*-category
@@ -111,19 +112,6 @@ private theorem completeSpace (P Q : DaggerKaroubi C) :
   rw [completeSpace_iff_isComplete_range hι.isUniformInducing, hrange]
   exact (isClosed_eq hφ continuous_id).isComplete
 
-/-- Corner algebra for a projection `p` of a star monoid: a self-adjoint `s` commuting with `p`,
-with `s * s = a` for some `a` in the corner `p * a = a = a * p`, gives `s * p` in that corner, with
-`star (s * p) * (s * p) = a`. -/
-private theorem mul_projection_corner {R : Type*} [Monoid R] [StarMul R] {p s a : R}
-    (hpp : p * p = p) (hp : star p = p) (hs : star s = s) (hsp : Commute s p) (hsa : s * s = a)
-    (hpa : p * a = a) (hap : a * p = a) :
-    p * (s * p) * p = s * p ∧ star (s * p) * (s * p) = a := by
-  have hl : p * (s * p) = s * p := by rw [← mul_assoc, ← hsp.eq, mul_assoc, hpp]
-  have hr : s * p * p = s * p := by rw [mul_assoc, hpp]
-  refine ⟨by rw [hl, hr], ?_⟩
-  -- `star (s * p) * (s * p) = p * (s * s) * p = p * a * p`.
-  rw [star_mul, hp, hs, mul_assoc, ← mul_assoc s, hsa, ← mul_assoc, hpa, hap]
-
 /-- Positivity of `f†f` in the dagger Karoubi envelope. For `f : (X, p) ⟶ (Y, q)` the positive
 endomorphism `a = f ≫ dagger f` of `X` commutes with `p`, hence so does its square root `s`, and
 `g = s ≫ p` is an endomorphism of `(X, p)` with `g ≫ dagger g = a`. -/
@@ -140,17 +128,20 @@ private theorem exists_self_comp_dagger_eq {P Q : DaggerKaroubi C} (f : P ⟶ Q)
   have hap : a * p = a := by
     ext
     simp [hp, ha, reassoc_of% hpf]
-  have hpp : p * p = p := by
+  have hpp : IsIdempotentElem p := by
     ext
     simp [hp]
   have hps : IsSelfAdjoint p := End.ext (by simp [hp])
   have hs : Commute (CFC.sqrt a) p := Commute.cfcₙ_nnreal (hap.trans hpa.symm) _
-  have hss : star (CFC.sqrt a) = CFC.sqrt a := (CFC.sqrt_nonneg a).isSelfAdjoint.star_eq
   have hsa : CFC.sqrt a * CFC.sqrt a = a := CFC.sqrt_mul_sqrt_self a <| by
     rw [ha]
     exact End.self_comp_dagger_nonneg _
-  -- The endomorphism `g = s * p` of `End X` lies in the corner `p * End X * p`.
-  obtain ⟨hg, hgg⟩ := mul_projection_corner hpp hps.star_eq hss hs hsa hpa hap
+  -- The endomorphism `g = s * p` of `End X` lies in the corner `p * End X * p`, and
+  -- `star g * g = s * s * p = a`.
+  have hg : p * (CFC.sqrt a * p) * p = CFC.sqrt a * p := hpp.mul_mul_mul_of_commute hs
+  have hgg : star (CFC.sqrt a * p) * (CFC.sqrt a * p) = a := by
+    rw [IsStarProjection.star_mul_self_eq_of_commute ⟨hpp, hps⟩
+      (CFC.sqrt_nonneg a).isSelfAdjoint hs, hsa, hap]
   refine ⟨ObjectProperty.homMk ⟨(CFC.sqrt a * p).asHom, ?_⟩, ?_⟩
   · simpa only [End.mul_asHom, hp, Category.assoc] using congrArg End.asHom hg
   · ext

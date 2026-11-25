@@ -225,13 +225,13 @@ splitting: an isometry `v : Q ⟶ P`, with `v ≫ dagger v = 𝟙 Q`, whose rang
 `dagger v ≫ v` is `q`. -/
 theorem exists_isometry {P : DaggerKaroubi C} (q : P ⟶ P) (hq : dagger q = q) (hqq : q ≫ q = q) :
     ∃ (Q : DaggerKaroubi C) (v : Q ⟶ P), v ≫ dagger v = 𝟙 Q ∧ dagger v ≫ v = q := by
-  have hq' : dagger q.hom.f = q.hom.f := congrArg (fun f => f.hom.f) hq
-  have hqq' : q.hom.f ≫ q.hom.f = q.hom.f := congrArg (fun f => f.hom.f) hqq
+  have hq' : dagger q.hom.f = q.hom.f := by simpa using congrArg (fun f => f.hom.f) hq
+  have hqq' : q.hom.f ≫ q.hom.f = q.hom.f := by simpa using congrArg (fun f => f.hom.f) hqq
   refine ⟨⟨⟨P.obj.X, q.hom.f, hqq'⟩, hq'⟩, ObjectProperty.homMk ⟨q.hom.f, by simp [hqq']⟩, ?_, ?_⟩
   · ext
-    exact (congrArg (q.hom.f ≫ ·) hq').trans hqq'
+    simp [hq', hqq']
   · ext
-    exact (congrArg (· ≫ q.hom.f) hq').trans hqq'
+    simp [hq', hqq']
 
 /-- The dagger Karoubi envelope has unitary splittings. -/
 instance : HasUnitarySplittings (DaggerKaroubi C) :=
@@ -250,8 +250,8 @@ theorem exists_isUnitary_toDaggerKaroubi_obj_iff :
   · -- A unitary `u : (Y, 𝟙 Y) ⟶ (X, p)` has underlying arrow an isometry with range projection `p`.
     intro h X p hp hpp
     obtain ⟨Y, u, hu⟩ := h ⟨⟨X, p, hpp⟩, hp⟩
-    exact ⟨Y, u.hom.f, congrArg (fun f => f.hom.f) hu.hom_dagger_id,
-      congrArg (fun f => f.hom.f) hu.dagger_hom_id⟩
+    exact ⟨Y, u.hom.f, by simpa using congrArg (fun f => f.hom.f) hu.hom_dagger_id,
+      by simpa using congrArg (fun f => f.hom.f) hu.dagger_hom_id⟩
   · -- An isometry `v : Y ⟶ X` with range projection `p` is a unitary `(Y, 𝟙 Y) ⟶ (X, p)`.
     intro h P
     obtain ⟨Y, v, hv, hvp⟩ := h P.obj.X P.obj.p P.dagger_p P.obj.idem
@@ -394,28 +394,33 @@ include hα in
 /-- The components of the comparison `G ≅ lift F` are unitary. -/
 private theorem isUnitary_liftUnique_app (P : DaggerKaroubi C) :
     IsUnitary (G.map (ι P) ≫ α.app P.obj.X ≫ dagger (liftIsometry F P)) := by
-  have hn := α.naturality P.obj.p
-  simp only [Functor.comp_map] at hn
+  -- Conjugating by the unitary `α.app X` exchanges `G.map p` and `F.map p`.
+  have h₁ := NatIso.naturality_1 (NatTrans.unitaryIso α hα) P.obj.p
+  have h₂ := NatIso.naturality_2 (NatTrans.unitaryIso α hα) P.obj.p
+  simp only [Functor.comp_map, NatTrans.unitaryIso_hom, NatTrans.unitaryIso_inv_app] at h₁ h₂
   refine (isUnitary_iff _).2 ⟨?_, ?_⟩
-  · -- `α ≫ F.map p ≫ dagger α = G.map p`, and `G.map (i ≫ p ≫ dagger i) = 𝟙`.
-    simp only [dagger_comp, dagger_dagger, Category.assoc, dagger_comp_liftIsometry_assoc]
-    rw [← reassoc_of% hn, (hα _).hom_dagger_id_assoc, ← G.map_dagger, ← G.map_comp, ← G.map_comp,
-      ι_comp_map_p_assoc, ι_comp_dagger_ι, G.map_id]
-  · -- `dagger (G.map i) ≫ G.map i = G.map p`, which `α` conjugates to `F.map p`.
-    simp only [dagger_comp, dagger_dagger, Category.assoc]
-    rw [← G.map_dagger, ← G.map_comp_assoc, dagger_ι_comp_ι, reassoc_of% hn,
-      (hα _).dagger_hom_id_assoc, liftIsometry_comp_map_p_assoc, liftIsometry_comp_dagger]
+  · -- `α ≫ F.map p ≫ dagger α = G.map p`, and `G.map (ι ≫ p ≫ dagger ι) = 𝟙`.
+    have hι : ι P ≫ (toDaggerKaroubi C).map P.obj.p ≫ dagger (ι P) = 𝟙 P := by
+      simp [ι_comp_map_p_assoc]
+    have hG := congrArg G.map hι
+    simp only [Functor.map_comp, Functor.map_dagger] at hG
+    simp [reassoc_of% h₂, hG]
+  · -- `dagger (G.map ι) ≫ G.map ι = G.map p`, which `α` conjugates to `F.map p`.
+    have hG := congrArg G.map (dagger_ι_comp_ι P)
+    simp only [Functor.map_comp, Functor.map_dagger] at hG
+    simp [reassoc_of% hG, reassoc_of% h₁]
 
 /-- The natural transformation `G ⟶ lift F` with components
 `G.map (ι P) ≫ α.app X ≫ dagger v`, for `P = (X, p)` with chosen splitting `v`. -/
 private def liftUniqueHom : G ⟶ lift F where
   app P := G.map (ι P) ≫ α.app P.obj.X ≫ dagger (liftIsometry F P)
   naturality P Q f := by
+    -- Move `f` past `ι` (`comp_ι`), then past `α` (naturality), where `p ≫ f = f` absorbs `p`.
     have hn := α.naturality f.hom.f
-    simp only [Functor.comp_map] at hn
-    simp only [lift_map, Category.assoc, dagger_comp_liftIsometry_assoc]
-    rw [← G.map_comp_assoc, comp_ι, G.map_comp_assoc, reassoc_of% hn,
-      ← F.map_comp_assoc, Karoubi.p_comp]
+    have hG := congrArg G.map (comp_ι f)
+    have hp := congrArg F.map (Karoubi.p_comp f.hom)
+    simp only [Functor.comp_map, Functor.map_comp] at hn hG hp
+    simp [reassoc_of% hG, reassoc_of% hn, reassoc_of% hp]
 
 include hα in
 /-- **Uniqueness of the extension.** A dagger functor `G : DaggerKaroubi C ⥤ D` whose restriction
