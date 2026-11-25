@@ -46,7 +46,7 @@ variable {k : Type} {G V : Type*} [Field k] [Monoid G] [AddCommGroup V] [Module 
 /-- **Symmetric powers of semisimple representations of commutative monoids are semisimple**,
 over an algebraically closed field and in finite dimension: an eigenbasis of `V` induces an
 eigenbasis of `Sym^m V`. -/
-theorem isSemisimpleRepresentation_symmetricPower [ρ.IsSemisimpleRepresentation] (m : ℕ) :
+instance isSemisimpleRepresentation_symmetricPower [ρ.IsSemisimpleRepresentation] (m : ℕ) :
     IsSemisimpleRepresentation (k := k) (G := G) (V := Sym[k]^m V) (ρ.symmetricPower m) := by
   obtain ⟨s, b, hb⟩ := exists_basis_forall_apply_eq_smul ρ
   refine isSemisimpleRepresentation_of_span_eq_top (ρ.symmetricPower m)
