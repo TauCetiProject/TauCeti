@@ -133,8 +133,12 @@ variable {E : Type u} {F : Type v} [NormedAddCommGroup E] [InnerProductSpace ℂ
   [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
 
 /-- The **spatial pair** of representations `π : A → B(E)` and `ρ : B → B(F)`: the commuting
-amplifications `a ↦ π a ⊗ 1` and `b ↦ 1 ⊗ ρ b` on the Hilbert tensor product `E ⊗₂ F`. -/
-@[expose] def spatial (π : A →⋆ₙₐ[ℂ] (E →L[ℂ] E)) (ρ : B →⋆ₙₐ[ℂ] (F →L[ℂ] F)) :
+amplifications `a ↦ π a ⊗ 1` and `b ↦ 1 ⊗ ρ b` on the Hilbert tensor product `E ⊗₂ F`.
+
+It is an abbreviation so that `simp` and instance search see its Hilbert space as
+`Completion (E ⊗[ℂ] F)` with its own instances, and so can apply the lemmas about operators on
+that space (such as `NonUnitalStarAlgHom.spatialTensorHom_tmul`) to its operators. -/
+abbrev spatial (π : A →⋆ₙₐ[ℂ] (E →L[ℂ] E)) (ρ : B →⋆ₙₐ[ℂ] (F →L[ℂ] F)) :
     CommutingRepresentationPair A B where
   H := Completion (E ⊗[ℂ] F)
   left := π.rTensorCompletion F
@@ -142,25 +146,21 @@ amplifications `a ↦ π a ⊗ 1` and `b ↦ 1 ⊗ ρ b` on the Hilbert tensor p
   commute := π.commute_rTensorCompletion_lTensorCompletion ρ
 
 /-- The left representation of the spatial pair is `a ↦ π a ⊗ 1`. -/
-@[simp]
 theorem spatial_left_apply (π : A →⋆ₙₐ[ℂ] (E →L[ℂ] E)) (ρ : B →⋆ₙₐ[ℂ] (F →L[ℂ] F)) (a : A) :
     (spatial π ρ).left a = (π a).rTensorCompletion F :=
   π.rTensorCompletion_apply a
 
 /-- The right representation of the spatial pair is `b ↦ 1 ⊗ ρ b`. -/
-@[simp]
 theorem spatial_right_apply (π : A →⋆ₙₐ[ℂ] (E →L[ℂ] E)) (ρ : B →⋆ₙₐ[ℂ] (F →L[ℂ] F)) (b : B) :
     (spatial π ρ).right b = (ρ b).lTensorCompletion E :=
   ρ.lTensorCompletion_apply b
 
 /-- The integrated form of the spatial pair is the spatial tensor homomorphism of `π` and `ρ`:
 both are `Algebra.TensorProduct.liftNonUnitalStarAlgHom` of the same two amplifications. -/
+@[simp]
 theorem tensorHom_spatial (π : A →⋆ₙₐ[ℂ] (E →L[ℂ] E)) (ρ : B →⋆ₙₐ[ℂ] (F →L[ℂ] F)) :
     (spatial π ρ).tensorHom = π.spatialTensorHom ρ := by
   rw [tensorHom_def, NonUnitalStarAlgHom.spatialTensorHom_def]
-  -- The fields of `spatial π ρ` are, by definition, these two amplifications and their
-  -- commutation lemma.
-  rfl
 
 /-- The integrated form of the spatial pair sends `a ⊗ b` to `π a ⊗ ρ b`. -/
 theorem tensorHom_spatial_tmul (π : A →⋆ₙₐ[ℂ] (E →L[ℂ] E)) (ρ : B →⋆ₙₐ[ℂ] (F →L[ℂ] F))
