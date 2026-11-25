@@ -49,7 +49,7 @@ since `∇u = ∇v` where `v ≠ 0`, with `W = σ + β + |d|`,
 
 where `σ` bounds `e` and `Γ = {u > l, ∇u ≠ 0}`, outside of which `∇v = 0`
 (`TauCeti.W1p.ae_mem_of_gradient_posPartAbove_ne_zero`, and
-`TauCeti.PDE.ofReal_integral_mul_norm_gradient_mul_norm_value_eq` for the first step). If `u > l`
+`TauCeti.W1p.ofReal_integral_mul_norm_gradient_mul_norm_value_eq` for the first step). If `u > l`
 on a set of positive measure then `∇v ≠ 0` (`TauCeti.W1p.enorm_gradient_posPartAbove_ne_zero`),
 so `λ ≤ S ‖1_Γ W‖_p`. As `|Γ| → 0`, `‖1_Γ W‖_p → 0`, because `p < ∞` and `d ∈ Lᵖ`
 (`MeasureTheory.MemLp.tendsto_eLpNorm_indicator_of_tendsto_measure`), and the level-set argument
@@ -256,7 +256,7 @@ private theorem UniformlyEllipticOn.ofReal_le_mul_eLpNorm_indicator_of_not_ae_va
   -- almost everywhere outside `Γ`.
   have hlin := (ENNReal.ofReal_le_ofReal (h.mul_norm_gradient_sq_le_integral_of_memLp_drift ha hd
     hb_bound hc he hc_bound he_bound hsign hpq hl hmem hfq hu)).trans_eq
-    (ofReal_integral_mul_norm_gradient_mul_norm_value_eq (ae_of_all _ fun x ↦ by positivity)
+    (W1p.ofReal_integral_mul_norm_gradient_mul_norm_value_eq (ae_of_all _ fun x ↦ by positivity)
       (integrable_const_add_norm_mul_norm_mul_norm (sigma + beta) hd hpq (Lp.memLp g)
         (Lp.memLp f) hfq) hΓ (W1p.ae_mem_of_gradient_posPartAbove_ne_zero (by norm_num) hl u))
   have hholder : ∫⁻ x in Γ, ‖sigma + beta + ‖d x‖‖ₑ * (‖g x‖ₑ * ‖f x‖ₑ) ∂μ ≤

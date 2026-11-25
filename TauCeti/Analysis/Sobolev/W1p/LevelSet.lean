@@ -232,6 +232,26 @@ theorem W1p.ae_mem_of_gradient_posPartAbove_ne_zero (hp : p ≠ ∞) {l : ℝ} (
     exact ⟨hlt, hne⟩
   · exact absurd (indicator_of_notMem (s := {y | l < W1p.value u y}) hlt _) hne
 
+omit [FiniteDimensional ℝ E] in
+/-- If `∇v = 0` almost everywhere outside a measurable set `Γ`, then in `ℝ≥0∞` the weighted
+integral `∫_Ω w |∇v| |v|` of a nonnegative weight `w` is a lower integral that only sees `Γ`. -/
+theorem W1p.ofReal_integral_mul_norm_gradient_mul_norm_value_eq {v : W1p mu Omega p}
+    {w : E → ℝ} (hw : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ w x)
+    (hint : Integrable (fun x ↦ w x * (‖W1p.gradient v x‖ * ‖W1p.value v x‖)) (mu.restrict Omega))
+    {Γ : Set E} (hΓ : MeasurableSet Γ)
+    (hgrad : ∀ᵐ x ∂mu.restrict Omega, W1p.gradient v x ≠ 0 → x ∈ Γ) :
+    ENNReal.ofReal (∫ x in Omega, w x * (‖W1p.gradient v x‖ * ‖W1p.value v x‖) ∂mu) =
+      ∫⁻ x in Γ, ‖w x‖ₑ * (‖W1p.gradient v x‖ₑ * ‖W1p.value v x‖ₑ) ∂mu.restrict Omega := by
+  rw [ofReal_integral_eq_lintegral_ofReal hint
+      (hw.mono fun x hx ↦ mul_nonneg hx (by positivity)), ← lintegral_indicator hΓ]
+  refine lintegral_congr_ae ?_
+  filter_upwards [hgrad, hw] with x hx hwx
+  by_cases hxΓ : x ∈ Γ
+  · rw [indicator_of_mem hxΓ, ENNReal.ofReal_mul hwx, ENNReal.ofReal_mul (norm_nonneg _),
+      ofReal_norm, ofReal_norm, Real.eNorm_of_nonneg hwx]
+  · have hg0 : W1p.gradient v x = 0 := by_contra fun hne ↦ hxΓ (hx hne)
+    rw [indicator_of_notMem hxΓ, hg0, norm_zero, zero_mul, mul_zero, ENNReal.ofReal_zero]
+
 /-- If `u > l ≥ 0` on a set of positive measure and `(u - l)⁺` satisfies a Sobolev inequality
 `‖(u - l)⁺‖_q ≤ S ‖∇(u - l)⁺‖_p` with `q ≠ 0`, then the gradient of `(u - l)⁺` is not zero:
 otherwise `(u - l)⁺ = 0`, that is `u ≤ l`, almost everywhere. -/

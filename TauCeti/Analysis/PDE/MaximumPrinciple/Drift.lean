@@ -165,36 +165,14 @@ theorem mul_norm_gradient_sq_sub_le_energyFormH1_self
     ← energyFormH1_def] at hle
 
 omit [DecidableEq ι] in
-/-- If `∇v = 0` almost everywhere outside a measurable set `Γ`, then in `ℝ≥0∞` the weighted drift
-integral `∫_Ω w |∇v| |v|` of a nonnegative weight `w` is a lower integral that only sees `Γ`. -/
-theorem ofReal_integral_mul_norm_gradient_mul_norm_value_eq {v : W1p mu Omega 2}
-    {w : EuclideanSpace ℝ ι → ℝ} (hw : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ w x)
-    (hint : Integrable (fun x ↦ w x * (‖W1p.gradient v x‖ * ‖W1p.value v x‖)) (mu.restrict Omega))
-    {Γ : Set (EuclideanSpace ℝ ι)} (hΓ : MeasurableSet Γ)
-    (hgrad : ∀ᵐ x ∂mu.restrict Omega, W1p.gradient v x ≠ 0 → x ∈ Γ) :
-    ENNReal.ofReal (∫ x in Omega, w x * (‖W1p.gradient v x‖ * ‖W1p.value v x‖) ∂mu) =
-      ∫⁻ x in Γ, ‖w x‖ₑ * (‖W1p.gradient v x‖ₑ * ‖W1p.value v x‖ₑ) ∂mu.restrict Omega := by
-  set f := W1p.value v
-  set g := W1p.gradient v
-  rw [ofReal_integral_eq_lintegral_ofReal hint
-      (hw.mono fun x hx ↦ mul_nonneg hx (by positivity)), ← lintegral_indicator hΓ]
-  refine lintegral_congr_ae ?_
-  filter_upwards [hgrad, hw] with x hx hwx
-  by_cases hxΓ : x ∈ Γ
-  · rw [indicator_of_mem hxΓ, ENNReal.ofReal_mul hwx, ENNReal.ofReal_mul (norm_nonneg _),
-      ofReal_norm, ofReal_norm, Real.eNorm_of_nonneg hwx]
-  · have hg0 : g x = 0 := by_contra fun hne ↦ hxΓ (hx hne)
-    rw [indicator_of_notMem hxΓ, hg0, norm_zero, zero_mul, mul_zero, ENNReal.ofReal_zero]
-
-omit [DecidableEq ι] in
-/-- The unweighted case `w = 1` of `TauCeti.PDE.ofReal_integral_mul_norm_gradient_mul_norm_value_eq`
+/-- The unweighted case `w = 1` of `TauCeti.W1p.ofReal_integral_mul_norm_gradient_mul_norm_value_eq`
 for the drift integral `∫_Ω |∇v| |v|`. -/
 private theorem ofReal_integral_norm_gradient_mul_norm_value_eq {v : W1p mu Omega 2}
     {Γ : Set (EuclideanSpace ℝ ι)} (hΓ : MeasurableSet Γ)
     (hgrad : ∀ᵐ x ∂mu.restrict Omega, W1p.gradient v x ≠ 0 → x ∈ Γ) :
     ENNReal.ofReal (∫ x in Omega, ‖W1p.gradient v x‖ * ‖W1p.value v x‖ ∂mu) =
       ∫⁻ x in Γ, ‖W1p.gradient v x‖ₑ * ‖W1p.value v x‖ₑ ∂mu.restrict Omega := by
-  simpa using ofReal_integral_mul_norm_gradient_mul_norm_value_eq (w := fun _ ↦ 1)
+  simpa using W1p.ofReal_integral_mul_norm_gradient_mul_norm_value_eq (w := fun _ ↦ 1)
     (ae_of_all _ fun _ ↦ zero_le_one)
     (((Lp.memLp (W1p.gradient v)).norm.integrable_mul (Lp.memLp (W1p.value v)).norm).congr
       (ae_of_all _ fun x ↦ (one_mul _).symm)) hΓ hgrad
@@ -898,20 +876,6 @@ theorem UniformlyEllipticOn.value_le_const_of_forall_integral_nonneg_of_measure_
       hOmega
   exact h.value_le_const_of_forall_integral_nonneg_of_forall_eLpNorm_le ha hb hc he hb_bound
     hc_bound he_bound hsign hq hsob hk hboundary hu
-
-omit [DecidableEq ι] in
-/-- For a bounded measurable vector field `e`, the divergence-form lower-order term is linear in
-the function: `∫ (u - v) ⟪e, ∇w⟫ = ∫ u ⟪e, ∇w⟫ - ∫ v ⟪e, ∇w⟫` for `u, v, w ∈ H¹(Ω)`. -/
-theorem integral_value_sub_mul_inner_gradient (he : AEStronglyMeasurable e (mu.restrict Omega))
-    (he_bound : ∀ x ∈ Omega, ‖e x‖ ≤ sigma) (u v w : W1p mu Omega 2) :
-    ∫ x in Omega, W1p.value (u - v) x * ⟪e x, W1p.gradient w x⟫_ℝ ∂mu =
-      (∫ x in Omega, W1p.value u x * ⟪e x, W1p.gradient w x⟫_ℝ ∂mu) -
-        ∫ x in Omega, W1p.value v x * ⟪e x, W1p.gradient w x⟫_ℝ ∂mu := by
-  rw [← integral_sub (integrable_value_mul_inner_gradient he he_bound u w)
-    (integrable_value_mul_inner_gradient he he_bound v w)]
-  refine integral_congr_ae ?_
-  filter_upwards [W1p.value_sub_ae u v] with x hx
-  rw [hx, Pi.sub_apply, sub_mul]
 
 /-- **The comparison principle with lower-order terms in divergence form**, under a Sobolev
 inequality (Gilbarg–Trudinger, Theorem 8.1). Under the hypotheses of
