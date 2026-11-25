@@ -63,6 +63,7 @@ inclusion.
   `exp (b * x * I)`.
 * `TauCeti.integrable_one_add_abs_rpow_mul_exp_neg_mul_abs`: `(1 + |·|) ^ K * exp (-(a * |·|))`
   is integrable for every `K : ℝ` when `0 < a`.
+* `TauCeti.tendsto_one_add_abs_rpow_mul_exp_neg_mul_abs`: it tends to `0` along `cocompact ℝ`.
 * `TauCeti.integrable_exp_neg_mul_norm`: `exp (-(a * ‖·‖))` is integrable on a finite-dimensional
   space when `0 < a`.
 * `TauCeti.memLp_exp_neg_mul_norm`: it lies in every `Lᵖ`.
@@ -564,6 +565,22 @@ theorem integrable_one_add_abs_rpow_mul_exp_neg_mul_abs (K : ℝ) {a : ℝ} (ha 
             rw [mul_assoc, ← Real.exp_add]
             congr 2
             ring
+
+open Filter Topology in
+/-- Any real power of `1 + |x|` times a two-sided decaying exponential `exp (-(a * |x|))` tends to
+`0` as `|x| → ∞` when `0 < a`. -/
+theorem tendsto_one_add_abs_rpow_mul_exp_neg_mul_abs (K : ℝ) {a : ℝ} (ha : 0 < a) :
+    Tendsto (fun x : ℝ ↦ (1 + |x|) ^ K * Real.exp (-(a * |x|))) (cocompact ℝ) (𝓝 0) := by
+  have h1 := tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero K a ha
+  have h2 : Tendsto (fun x : ℝ ↦ 1 + |x|) (cocompact ℝ) atTop :=
+    tendsto_atTop_add_const_left _ 1
+      ((tendsto_norm_cocompact_atTop (E := ℝ)).congr fun x ↦ Real.norm_eq_abs x)
+  have h3 := (h1.comp h2).const_mul (Real.exp a)
+  rw [mul_zero] at h3
+  refine h3.congr fun x ↦ ?_
+  simp only [Function.comp_apply]
+  rw [mul_left_comm, ← Real.exp_add]
+  ring_nf
 
 /-- At a nonnegative rate the integrand is bounded below by a positive constant on `(c, ∞)`, a set
 of infinite measure, so it is not integrable there. -/

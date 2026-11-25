@@ -46,8 +46,6 @@ the transport by `-χ` inverting the transport by `χ`.
 * `TauCeti.LSPath.toPLPath_centralTransport`: **for dominant `λ`, a realization `f` injective on
   `W λ`, and a realized orbit with no two distinct points on a common ray, the transported path is
   the central shift of the original path.**
-* `TauCeti.LSPath.lower_toPLPath_centralTransport`: lowering on a centrally transported path lifts
-  through the time–weight graph shift.
 * `TauCeti.LSPath.endpoint_toPLPath_centralTransport`, `TauCeti.LSPath.weight_centralTransport`,
   and `TauCeti.LSPath.minHeight_toPLPath_centralTransport`: the endpoint and lattice-valued weight
   move by `χ` and the minimum height of a form killing `χ` is unchanged.
@@ -283,17 +281,6 @@ section LinearOrder
 
 variable (𝕜 : Type*) {V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
   [AddCommGroup V] [Module 𝕜 V] (f : M →+ V)
-
-/-- Lowering along a form killing `χ` on a centrally transported LS path computes the lower of the
-time–weight graph of `π` shifted by `f χ` and projected back to `V`. -/
-theorem lower_toPLPath_centralTransport (F : Module.Dual 𝕜 V)
-    (hFχ : F (f χ) = 0) (i : b.support) :
-    PLPath.lower F (f (P.root i)) ((centralTransport χ hχ π).toPLPath 𝕜 f) =
-      (PLPath.lower (F.comp (LinearMap.snd 𝕜 𝕜 V)) (0, f (P.root i))
-        (PLPath.ofSegments 𝕜 (π.timed 𝕜 f))).map
-        (fun q ↦ (q.shiftGraph (f χ)).map (LinearMap.snd 𝕜 𝕜 V)) := by
-  rw [toPLPath_centralTransport_eq_ofSegments,
-    PLPath.lower_ofSegments_shiftTimed (π.timed 𝕜 f) hFχ (f (P.root i))]
 
 /-- A linear form killing `χ` has the same minimum height on an LS path and on its central
 transport. This applies to the simple coroots, whose minimum heights govern the root operators. -/

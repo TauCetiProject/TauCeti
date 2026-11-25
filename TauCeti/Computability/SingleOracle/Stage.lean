@@ -132,6 +132,24 @@ theorem evalStage_eq_some_of_eqOn (h : evalStage σ s c n = some d)
   exact evalStage_eq_some_of_evaln (evaln_eq_some_of_eqOn h hστ) hst
     (hc.trans_le hst) (hd.trans_le hst)
 
+/-- Agreement of oracle answers below `s` preserves stage evaluation at stage `s`, including
+failure as well as output and use. -/
+theorem evalStage_eq_of_eqOn (hστ : Set.EqOn σ τ (Set.Iio s)) :
+    evalStage σ s c n = evalStage τ s c n := by
+  apply Option.ext
+  intro d
+  constructor <;> intro hd
+  · exact evalStage_eq_some_of_eqOn hd
+      (hστ.mono fun _ hz => hz.trans_le (evalStage_use_le hd)) le_rfl
+  · exact evalStage_eq_some_of_eqOn hd
+      (hστ.symm.mono fun _ hz => hz.trans_le (evalStage_use_le hd)) le_rfl
+
+/-- Stage evaluation at stage `s` against a total oracle depends only on its first `s` answers. -/
+theorem evalStage_range_map (O : ℕ → ℕ) (s : ℕ) (c : Code) (n : ℕ) :
+    evalStage (fun z => ((List.range s).map O)[z]?) s c n =
+      evalStage (fun z => some (O z)) s c n := by
+  simp only [evalStage_def, evaln_range_map]
+
 /-- Every successful raw run is eventually retained at all normalized stages. The output and
 recorded use are those of the original run, not merely some run with the same output. -/
 theorem exists_forall_evalStage_eq_some (h : evaln σ k c n = some d) :
@@ -185,6 +203,14 @@ theorem primrec_evalStage {σ : α → ℕ → Option ℕ} (hσ : Primrec₂ σ)
     Primrec fun p : α × ℕ × Code × ℕ => evalStage (σ p.1) p.2.1 p.2.2.1 p.2.2.2 := by
   simpa only [evalStage] using primrec_normalizeStage.comp
     (((fst.comp snd).pair (fst.comp (snd.comp snd))).pair (primrec_evaln hσ))
+
+/-- Halting of bounded oracle simulation is primitive recursive in any primitive-recursive family
+of oracle answers, the program, the stage, and the input. -/
+theorem primrec₂_evalStage_isSome {σ : α → ℕ → Option ℕ} (hσ : Primrec₂ σ) :
+    Primrec₂ fun (p : α × Code × ℕ) x => (evalStage (σ p.1) p.2.2 p.2.1 x).isSome :=
+  option_isSome.comp <| (primrec_evalStage hσ).comp <|
+    (fst.comp fst).pair <| (snd.comp (snd.comp fst)).pair <|
+      (fst.comp (snd.comp fst)).pair snd
 
 /-- Normalized evaluation on finite strings is primitive recursive. Missing answers are not
 replaced by zero. -/

@@ -37,7 +37,8 @@ the generic point, and a dominant one by its pullback of rational functions.
 
 ## Main results
 
-* `AlgebraicGeometry.IsDominant.pullback_fst_of_isOpenMap`: base change of a dominant morphism
+* `AlgebraicGeometry.IsDominant.of_isPullback_of_isOpenMap` and
+  `AlgebraicGeometry.IsDominant.pullback_fst_of_isOpenMap`: base change of a dominant morphism
   along a morphism with open underlying map (for instance an étale morphism) is dominant, without
   reducedness or irreducibility assumptions.
 * `AlgebraicGeometry.Scheme.Hom.isDominant_of_isOpenMap`: a morphism with open underlying map
@@ -99,11 +100,22 @@ universe u
 
 open CategoryTheory.Limits in
 /-- Base change of a dominant morphism along a morphism whose underlying map is open is
+dominant, for any cartesian square. No flatness or reducedness assumption is needed. -/
+theorem IsDominant.of_isPullback_of_isOpenMap {P X Y S : Scheme.{u}} {fst : P ⟶ X} {snd : P ⟶ Y}
+    {f : X ⟶ S} {g : Y ⟶ S} (H : IsPullback fst snd f g) [IsDominant f] (hg : IsOpenMap g) :
+    IsDominant snd := by
+  rw [← H.isoPullback_hom_snd]
+  have : IsDominant (pullback.snd f g) := by
+    rw [isDominant_iff, DenseRange, Scheme.Pullback.range_snd]
+    exact f.denseRange.preimage hg
+  infer_instance
+
+open CategoryTheory.Limits in
+/-- Base change of a dominant morphism along a morphism whose underlying map is open is
 dominant. No flatness or reducedness assumption is needed. -/
 theorem IsDominant.pullback_fst_of_isOpenMap {X Y S : Scheme.{u}} (f : X ⟶ S) (g : Y ⟶ S)
-    [IsDominant g] (hf : IsOpenMap f) : IsDominant (pullback.fst f g) := by
-  rw [isDominant_iff, DenseRange, Scheme.Pullback.range_fst]
-  exact g.denseRange.preimage hf
+    [IsDominant g] (hf : IsOpenMap f) : IsDominant (pullback.fst f g) :=
+  of_isPullback_of_isOpenMap (IsPullback.of_hasPullback f g).flip hf
 
 /-- The target of a dominant morphism from an irreducible scheme is irreducible. -/
 theorem Scheme.Hom.irreducibleSpace_of_isDominant {X Y : Scheme.{u}} [IrreducibleSpace X]

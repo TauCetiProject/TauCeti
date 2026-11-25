@@ -216,15 +216,6 @@ private theorem isTate_eqToHom_projModelBaseChange (φ : ULift.{u} UniversalTate
     (projModelAffinePoint_inj h).mpr ⟨(map_zero φ).symm, (map_zero φ).symm⟩
   rw [h', point_def, eqToHom_refl, Category.id_comp, projModelAffinePoint_projModelBaseChange]
 
--- The classifying homomorphism `ULift ℤ[A, B][Δ⁻¹] →+* R` of an elliptic Tate normal form.
-private noncomputable def liftULift {a b : R} (h : IsUnit (tateNormalForm a b).Δ) :
-    ULift.{u} UniversalTate.Ring →+* R :=
-  (lift h).comp ULift.ringEquiv.toRingHom
-
-private theorem map_liftULift {a b : R} (h : IsUnit (tateNormalForm a b).Δ) :
-    curveULift.map (liftULift h) = tateNormalForm a b := by
-  simp [liftULift, ULift.ringEquiv]
-
 -- A ring homomorphism out of `ULift ℤ[A, B][Δ⁻¹]` is the classifying homomorphism of the Tate
 -- normal form with the images of `A` and `B` as coefficients.
 private theorem eq_liftULift (φ : ULift.{u} UniversalTate.Ring →+* R) :
@@ -233,11 +224,7 @@ private theorem eq_liftULift (φ : ULift.{u} UniversalTate.Ring →+* R) :
   have h : IsUnit (tateNormalForm (φ curveULift.a₁) (φ curveULift.a₃)).Δ := by
     rw [← hφ, map_Δ]
     exact curveULift.isUnit_Δ.map φ
-  refine ⟨h, ?_⟩
-  have := eq_lift h (f := φ.comp (ULift.ringEquiv.symm : _ ≃+* ULift.{u} _).toRingHom) <| by
-    rw [← map_map, ← curveULift_eq, hφ]
-  ext x
-  simpa [liftULift, ULift.ringEquiv] using congr($this x.down)
+  refine ⟨h, ringHom_ext_uLift ?_ ?_⟩ <;> simp
 
 private theorem liftULift_congr {a b a' b' : R} (h : IsUnit (tateNormalForm a b).Δ)
     (h' : IsUnit (tateNormalForm a' b').Δ) (ha : a = a') (hb : b = b') :
