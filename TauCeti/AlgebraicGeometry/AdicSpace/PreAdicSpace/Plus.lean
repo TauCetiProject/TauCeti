@@ -71,8 +71,8 @@ germ at every point `x ∈ U` is sub-unit for the stalk valuation `v_x`. It is t
 `x ∈ U` of the preimages, under the germ maps, of the valuation rings of the stalk valuations. -/
 noncomputable def plusSubring (U : Opens X) :
     Subring (X.toRingPresheafedSpace.presheaf.obj (op U)) :=
-  ⨅ x : U, (X.stalkValuation x.1).valuation.integer.comap
-    (X.toRingPresheafedSpace.presheaf.germ U x.1 x.2).hom
+  ⨅ x : U, (X.stalkValuation x.val).valuation.integer.comap
+    (X.toRingPresheafedSpace.presheaf.germ U x.val x.property).hom
 
 variable {X}
 
@@ -117,10 +117,10 @@ noncomputable def plusPresheaf : X.toTopCat.Presheaf CommRingCat.{u} where
   -- (`RingHom.coe_restrict_apply` is `rfl`), so both laws are those of `𝒪_X`.
   map_id U := CommRingCat.hom_ext <| RingHom.ext fun f ↦ Subtype.ext <|
     RingHom.congr_fun (congrArg CommRingCat.Hom.hom
-      (X.toRingPresheafedSpace.presheaf.map_id U)) f.1
+      (X.toRingPresheafedSpace.presheaf.map_id U)) f.val
   map_comp i j := CommRingCat.hom_ext <| RingHom.ext fun f ↦ Subtype.ext <|
     RingHom.congr_fun (congrArg CommRingCat.Hom.hom
-      (X.toRingPresheafedSpace.presheaf.map_comp i j)) f.1
+      (X.toRingPresheafedSpace.presheaf.map_comp i j)) f.val
 
 /-- The sections of `𝒪_X⁺` over `U` are the subring `𝒪_X⁺(U)`. -/
 @[simp]
@@ -184,6 +184,12 @@ theorem plusSubring_le_comap (V : Opens Y) :
   intro s hs
   exact Subring.mem_comap.mpr (mem_plusSubring_iff.mpr fun x hx ↦
     (f.vle_germ_c_app_iff V x hx s).mpr (mem_plusSubring_iff.mp hs (f.base x) hx))
+
+/-- The global-sections map of a morphism carries integral sections to integral sections. -/
+theorem appTop_mem_plusSubring {s : (Y.toPresheafedSpace.presheaf.obj (op ⊤)).obj}
+    (hs : s ∈ Y.plusSubring ⊤) : f.appTop s ∈ X.plusSubring ⊤ := by
+  rw [appTop_def]
+  exact f.plusSubring_le_comap ⊤ hs
 
 /-- **Over the image of a morphism, integrality is detected after pullback**: if the open `V ⊆ Y`
 lies in the image of `f : X ⟶ Y`, a section of `𝒪_Y` over `V` is integral exactly when its pullback

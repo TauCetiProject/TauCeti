@@ -5,10 +5,11 @@ Authors: Kim Morrison
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.FieldDivision
+public import Mathlib.Algebra.Polynomial.Splits
 import Mathlib.Data.Finset.Max
 import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.Polynomial.Derivative
 
 /-! # Polynomial Rolle and mean value
 
@@ -26,7 +27,8 @@ number for `p.derivative` (`PolynomialRolle.card_roots_toFinset_le_derivative`,
 `PolynomialRolle.card_roots_le_derivative`). These are the algebraic counterparts of the
 real-analytic root counts in `Mathlib.Analysis.Calculus.LocalExtr.Polynomial`, whose proofs
 (by Benjamin Davidson and Yury Kudryashov) they follow with polynomial Rolle in place of Rolle's
-theorem for differentiable functions.
+theorem for differentiable functions. Consequently the derivatives of a split polynomial split
+(`PolynomialRolle.splits_derivative`, `PolynomialRolle.splits_iterate_derivative`).
 
 `TauCeti.FieldTheory.RealClosure.AbstractRolle` supplies this hypothesis from `IsRealClosed`
 as `TauCeti.RealClosure.polynomialRolle_of_isRealClosed`, and exports direct `Polynomial`
@@ -86,16 +88,13 @@ private theorem PolynomialRolle.exists_sub_eq (h : PolynomialRolle R) (p : R[X])
 /-- A field with polynomial Rolle has characteristic zero: if `(n : R) = 0` for some `n ≥ 1`,
 then `X ^ n - X` vanishes at `0` and `1` while its derivative is the constant `-1`. -/
 theorem PolynomialRolle.charZero (h : PolynomialRolle R) : CharZero R := by
-  refine charZero_of_inj_zero fun n hn ↦ ?_
-  by_contra hn0
-  have key (a b : R) (hab : a < b) (ha : a ^ n - a = 0) (hb : b ^ n - b = 0) : False := by
+  refine charZero_of_inj_zero fun n hn ↦ by_contra fun hn0 ↦ ?_
+  have key {a b : R} (hab : a < b) (ha : a ^ n = a) (hb : b ^ n = b) : False := by
     obtain ⟨c, -, hc⟩ := h.exists_derivative_root (X ^ n - X) hab (by simp [ha, hb])
     simp [derivative_X_pow, hn] at hc
-  have h1 : (1 : R) ^ n - 1 = 0 := by simp
-  have h0 : (0 : R) ^ n - 0 = 0 := by simp [hn0]
-  rcases lt_or_gt_of_ne (zero_ne_one' R) with hlt | hlt
-  · exact key 0 1 hlt h0 h1
-  · exact key 1 0 hlt h1 h0
+  rcases (zero_ne_one' R).lt_or_gt with hlt | hlt
+  · exact key hlt (zero_pow hn0) (one_pow n)
+  · exact key hlt (one_pow n) (zero_pow hn0)
 
 /-- Roots of the derivative separate the values of a polynomial: on an order-connected set
 containing no root of the derivative, the polynomial is injective. In particular such a set
@@ -139,33 +138,14 @@ number of roots of its derivative counted with multiplicity. -/
 theorem PolynomialRolle.card_roots_le_derivative (h : PolynomialRolle R) (p : R[X]) :
     Multiset.card p.roots ≤ Multiset.card p.derivative.roots + 1 := by
   have := h.charZero
-  -- A root of multiplicity `m` of `p` is a root of multiplicity at least `m - 1` of `p'`; the
+  -- At a root of `p` of multiplicity `m`, `p'` has root multiplicity at least `m - 1`; the
   -- remaining one per distinct root is paid for by the roots of `p'` that are not roots of `p`.
-  calc
-    Multiset.card p.roots = ∑ x ∈ p.roots.toFinset, p.roots.count x :=
-      (Multiset.toFinset_sum_count_eq _).symm
-    _ = ∑ x ∈ p.roots.toFinset, (p.roots.count x - 1 + 1) :=
-      (Finset.sum_congr rfl fun _ hx ↦ tsub_add_cancel_of_le <|
-        Nat.succ_le_iff.2 <| Multiset.count_pos.2 <| Multiset.mem_toFinset.1 hx).symm
-    _ = (∑ x ∈ p.roots.toFinset, (p.rootMultiplicity x - 1)) + p.roots.toFinset.card := by
-      simp only [Finset.sum_add_distrib, Finset.card_eq_sum_ones, count_roots]
-    _ ≤ (∑ x ∈ p.roots.toFinset, p.derivative.rootMultiplicity x) +
-          ((p.derivative.roots.toFinset \ p.roots.toFinset).card + 1) :=
-      add_le_add
-        (Finset.sum_le_sum fun _ _ ↦ rootMultiplicity_sub_one_le_derivative_rootMultiplicity _ _)
-        (h.card_roots_toFinset_le_card_roots_derivative_sdiff_roots_succ p)
-    _ ≤ (∑ x ∈ p.roots.toFinset, p.derivative.roots.count x) +
-          ((∑ x ∈ p.derivative.roots.toFinset \ p.roots.toFinset,
-            p.derivative.roots.count x) + 1) := by
-      simp only [← count_roots, Finset.card_eq_sum_ones]
-      gcongr with x hx
-      rw [Nat.succ_le_iff, Multiset.count_pos, ← Multiset.mem_toFinset]
-      exact (Finset.mem_sdiff.1 hx).1
-    _ = Multiset.card p.derivative.roots + 1 := by
-      rw [← add_assoc, ← Finset.sum_union Finset.disjoint_sdiff, Finset.union_sdiff_self_eq_union,
-        ← Multiset.toFinset_sum_count_eq, ← Finset.sum_subset Finset.subset_union_right]
-      intro x _ hx₂
-      simpa only [Multiset.mem_toFinset, Multiset.count_eq_zero] using hx₂
+  -- Taking cardinalities, combine with the bound on distinct roots.
+  have hcard := Multiset.card_le_card
+    (roots_add_roots_derivative_sdiff_roots_le_roots_derivative_add_roots_toFinset p)
+  simp only [Multiset.card_add, Finset.card_val] at hcard
+  have := h.card_roots_toFinset_le_card_roots_derivative_sdiff_roots_succ p
+  omega
 
 /-- For a polynomial over a commutative ring `F` with an algebra map to `R`, the number of its
 roots in `R` is at most one more than the number of roots in `R` of its derivative. -/
@@ -175,6 +155,23 @@ theorem PolynomialRolle.card_rootSet_le_derivative (h : PolynomialRolle R) {F : 
   classical
   simpa only [rootSet_def, Finset.coe_sort_coe, Fintype.card_coe, derivative_map] using
     h.card_roots_toFinset_le_derivative (p.map (algebraMap F R))
+
+/-- With polynomial Rolle, the derivative of a split polynomial splits: a polynomial of degree `d`
+with `d` roots counted with multiplicity has a derivative with at least `d - 1` roots. -/
+theorem PolynomialRolle.splits_derivative (h : PolynomialRolle R) {p : R[X]} (hp : p.Splits) :
+    p.derivative.Splits := by
+  rw [splits_iff_card_roots] at hp ⊢
+  have hroots := h.card_roots_le_derivative p
+  have hdeg := natDegree_derivative_le p
+  have hcard := card_roots' p.derivative
+  omega
+
+/-- With polynomial Rolle, every iterated derivative of a split polynomial splits. -/
+theorem PolynomialRolle.splits_iterate_derivative (h : PolynomialRolle R) {p : R[X]}
+    (hp : p.Splits) (k : ℕ) : (derivative^[k] p).Splits := by
+  induction k with
+  | zero => exact hp
+  | succ k ih => exact Function.iterate_succ_apply' derivative k p ▸ h.splits_derivative ih
 
 variable [IsStrictOrderedRing R]
 
@@ -191,12 +188,10 @@ theorem PolynomialRolle.monotoneOn (h : PolynomialRolle R) (p : R[X]) {a b : R}
 /-- Polynomial Rolle implies antitonicity where the derivative is nonpositive. -/
 theorem PolynomialRolle.antitoneOn (h : PolynomialRolle R) (p : R[X]) {a b : R}
     (hd : ∀ x ∈ Ioo a b, p.derivative.eval x ≤ 0) : AntitoneOn p.eval (Icc a b) := by
-  intro u hu v hv huv
-  rcases huv.eq_or_lt with rfl | huv
-  · exact le_rfl
-  obtain ⟨c, hc, he⟩ := h.exists_sub_eq p hu hv huv
-  rw [← sub_nonpos, he]
-  exact mul_nonpos_of_nonpos_of_nonneg (hd c hc) (sub_pos.mpr huv).le
+  -- `-p` has the opposite derivative sign, so `monotoneOn` applies to it.
+  have h' := h.monotoneOn (-p) fun x hx ↦ by
+    simpa only [derivative_neg, eval_neg, neg_nonneg] using hd x hx
+  simpa only [eval_neg, neg_neg] using h'.neg
 
 /-- Strict positivity of the derivative gives strict monotonicity. -/
 theorem PolynomialRolle.strictMonoOn (h : PolynomialRolle R) (p : R[X]) {a b : R}
@@ -209,9 +204,9 @@ theorem PolynomialRolle.strictMonoOn (h : PolynomialRolle R) (p : R[X]) {a b : R
 /-- Strict negativity of the derivative gives strict antitonicity. -/
 theorem PolynomialRolle.strictAntiOn (h : PolynomialRolle R) (p : R[X]) {a b : R}
     (hd : ∀ x ∈ Ioo a b, p.derivative.eval x < 0) : StrictAntiOn p.eval (Icc a b) := by
-  intro u hu v hv huv
-  obtain ⟨c, hc, he⟩ := h.exists_sub_eq p hu hv huv
-  rw [← sub_neg, he]
-  exact mul_neg_of_neg_of_pos (hd c hc) (sub_pos.mpr huv)
+  -- `-p` has the opposite derivative sign, so `strictMonoOn` applies to it.
+  have h' := h.strictMonoOn (-p) fun x hx ↦ by
+    simpa only [derivative_neg, eval_neg, neg_pos] using hd x hx
+  simpa only [eval_neg, neg_neg] using h'.neg
 
 end TauCeti

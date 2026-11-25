@@ -323,7 +323,7 @@ theorem clifford_restrict_character [Finite G] [IsAlgClosed k]
   -- Evaluate the class-function identity at `n`.
   simpa only [ClassFunction.ofFDRep_apply, FDRep.character_actionRes, Subgroup.coe_subtype,
     Submodule.coe_smul, Submodule.coe_sum, Pi.smul_apply, Finset.sum_apply, smul_eq_mul] using
-    congrArg (fun f : ClassFunction k N ↦ f.1 n)
+    congrArg (fun f : ClassFunction k N ↦ f.val n)
       (ofFDRep_resFDRep_eq_smul_sum W sigma hsigma e hcommon)
 
 end TauCeti

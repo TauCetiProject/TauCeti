@@ -476,7 +476,7 @@ private def ellipseAngle (a θ : ℝ) : ℂ :=
 
 private theorem ellipseAngle_one (θ : ℝ) : ellipseAngle 1 θ = Circle.exp (2 * θ) := by
   rw [ellipseAngle, sqDir, Circle.coe_exp, one_mul, Real.cos_sq_add_sin_sq, ofReal_one, div_one,
-    ofReal_cos, ofReal_sin, ← exp_mul_I, ← exp_nat_mul]
+    ofReal_cos, ofReal_sin, ← exp_mul_I, ← exp_natCast_mul]
   push_cast
   ring_nf
 
@@ -487,8 +487,8 @@ private theorem degree_eq_two_of_ellipseAngle {a : ℝ} (ha : 0 < a) {x : Circle
     Circle.degree γ = 2 := by
   -- Deform the ellipse to the unit circle through the ellipses with `b = (1 - s) a + s > 0`.
   have hb (s : unitInterval) : (1 - (s : ℝ)) * a + s ≠ 0 := by
-    have h₀ : (0 : ℝ) ≤ s := s.2.1
-    have h₁ : (s : ℝ) ≤ 1 := s.2.2
+    have h₀ : (0 : ℝ) ≤ s := s.property.1
+    have h₁ : (s : ℝ) ≤ 1 := s.property.2
     rcases le_or_gt (s : ℝ) (1 / 2) with h | h <;> nlinarith
   -- The point `(b cos θ, sin θ)` of each ellipse is nonzero.
   have hpos {b : ℝ} (hb : b ≠ 0) (θ : ℝ) : 0 < (b * Real.cos θ) ^ 2 + Real.sin θ ^ 2 := by
@@ -552,10 +552,10 @@ theorem projectiveMomentFunction_mk_lt_two_iff (v : Fin 3 → ℝ) (hv : v ≠ 0
 /-- The squared direction of the first two homogeneous coordinates, `[x : y : z] ↦ (x + i y)² /
 (x² + y²)`, well defined on projective space (with value `0` at `[0 : 0 : 1]`). -/
 private def coreAngleFun : ℙ ℝ (Fin 3 → ℝ) → ℂ :=
-  Projectivization.lift (fun v ↦ sqDir (v.1 0) (v.1 1)) fun a b t h ↦ by
+  Projectivization.lift (fun v ↦ sqDir (v.val 0) (v.val 1)) fun a b t h ↦ by
     have ht : t ≠ 0 := by
       rintro rfl
-      exact a.2 (by simpa using h)
+      exact a.property (by simpa using h)
     rw [h]
     exact sqDir_mul ht _ _
 
@@ -574,10 +574,10 @@ private theorem continuousAt_coreAngleFun {x : ℙ ℝ (Fin 3 → ℝ)}
   obtain ⟨v, rfl⟩ := isOpenQuotientMap_mk'.surjective x
   rw [mk'_eq_mk, projectiveMomentFunction_mk_lt_two_iff] at hx
   rw [← isOpenQuotientMap_mk'.continuousAt_comp_iff]
-  exact continuousAt_sqDir (x := fun v : {v : Fin 3 → ℝ // v ≠ 0} ↦ v.1 0)
-    (y := fun v : {v : Fin 3 → ℝ // v ≠ 0} ↦ v.1 1)
-    ((continuous_apply 0).comp continuous_subtype_val)
-    ((continuous_apply 1).comp continuous_subtype_val) hx
+  exact continuousAt_sqDir (x := fun v : {v : Fin 3 → ℝ // v ≠ 0} ↦ v.val 0)
+    (y := fun v : {v : Fin 3 → ℝ // v ≠ 0} ↦ v.val 1)
+    ((continuous_apply 0).comp continuous_subtypeVal)
+    ((continuous_apply 1).comp continuous_subtypeVal) hx
 
 /-- The **core angle** `ρ[x : y : z] = (x + i y)² / (x² + y²)` of `ℝℙ²` minus the maximum
 `[0 : 0 : 1]` of `f[x : y : z] = (y² + 2z²) / (x² + y² + z²)`, that is of the open set
@@ -587,9 +587,9 @@ It measures how often a loop winds around the core of the Möbius band `{f ≤ 2
 `TauCeti.realProjPlaneCoreDegree`. -/
 def realProjPlaneCoreAngle :
     C({x : ℙ ℝ (Fin 3 → ℝ) | projectiveMomentFunction ℝ ![0, 1, 2] x < 2}, Circle) where
-  toFun x := ⟨coreAngleFun x, mem_sphere_zero_iff_norm.2 (norm_coreAngleFun x.2)⟩
+  toFun x := ⟨coreAngleFun x, mem_sphere_zero_iff_norm.2 (norm_coreAngleFun x.property)⟩
   continuous_toFun := (continuousOn_of_forall_continuousAt (fun _ hx ↦ continuousAt_coreAngleFun hx)
-    |>.comp_continuous continuous_subtype_val fun x ↦ x.2).subtype_mk _
+    |>.comp_continuous continuous_subtypeVal fun x ↦ x.property).subtype_mk _
 
 @[simp]
 theorem coe_realProjPlaneCoreAngle_mk (v : Fin 3 → ℝ) (hv : v ≠ 0)
@@ -760,7 +760,7 @@ theorem realProjPlaneCoreDegree_realProjPlaneCoreMap :
   rw [coe_realProjPlaneCoreAngle,
     coe_realProjPlaneCoreMap_apply (s := diskBoundaryHomeomorphCircle.symm _)
       (θ := 2 * Real.pi * t)
-      ⟨mul_nonneg (by positivity) t.2.1, mul_le_of_le_one_right (by positivity) t.2.2⟩
+      ⟨mul_nonneg (by positivity) t.property.1, mul_le_of_le_one_right (by positivity) t.property.2⟩
       (by rw [diskBoundaryHomeomorphCircle_symm_apply_down,
         EuclideanSpace.coe_sphereHomeomorphCircle_symm_exp]), coreAngleFun_mk]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one]

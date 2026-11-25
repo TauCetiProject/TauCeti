@@ -27,6 +27,8 @@ derivative: the value-gradient jets of Sobolev functions can feed this definitio
 * `TauCeti.PDE.energyFormIntegral`: the integrated scalar energy form on two jet fields.
 * `TauCeti.PDE.energyFormIntegral_one_zero_zero` and
   `TauCeti.PDE.energyFormIntegral_one_zero_mass`: the `−Δ` and shifted-`−Δ + c` model forms.
+* `TauCeti.PDE.energyFormIntegral_zero_zero_eq_integral`: with no drift and no mass the form is
+  `∫ ⟨a U₂, V₂⟩`.
 * `TauCeti.PDE.energyFormIntegral_add_left`, `TauCeti.PDE.energyFormIntegral_add_right`,
   `TauCeti.PDE.energyFormIntegral_smul_left`, and
   `TauCeti.PDE.energyFormIntegral_smul_right`: bilinearity identities under the usual
@@ -341,6 +343,14 @@ lemma energyFormIntegral_one_zero_mass (m : X → ℝ) :
   apply MeasureTheory.integral_congr_ae
   exact Filter.Eventually.of_forall fun x ↦
     by simp
+
+/-- With no drift and no mass, the integrated energy form is `∫ ⟨a U₂, V₂⟩`, read through the
+matrix bilinear form. -/
+lemma energyFormIntegral_zero_zero_eq_integral :
+    energyFormIntegral μ a 0 0 U V = ∫ x, matrixBilinearForm (a x) (V x).2 (U x).2 ∂μ := by
+  rw [energyFormIntegral_def]
+  refine MeasureTheory.integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
+  simp [energyIntegrand_apply, driftForm_apply, massForm_apply]
 
 /-- The diagonal of the integrated shifted Laplacian model is the integral of
 `‖∇u‖² + c u²` at the jet level. -/

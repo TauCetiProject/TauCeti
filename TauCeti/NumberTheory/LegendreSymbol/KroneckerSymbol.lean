@@ -7,10 +7,11 @@ module
 
 public import Mathlib.Data.Nat.Factorization.Basic
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
-public import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol
+public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
 import TauCeti.Data.Int.Sign
 import TauCeti.Data.Nat.Factorization.GcdSplit
 import TauCeti.NumberTheory.DirichletCharacter.Basic
+import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol
 
 /-!
 # The Kronecker symbol
@@ -31,10 +32,10 @@ multiplicativity in the denominator fail exactly for the numerator `-1`, where
 `(-1 / 0) = 1` but `(-1 / 0) * (-1 / 3) = -1`.
 
 The point of the extension is the case of a **discriminant** `D ≡ 0, 1 (mod 4)`. Then `(D / ·)` is
-periodic modulo `|D|` on all of `ℤ`, so it is a quadratic Dirichlet character `kroneckerChar` of
-modulus `|D|`, whose value at `-1` is the sign of `D`. For `D ≡ 1 (mod 4)` this rests on
-quadratic reciprocity, in the form `(D / n) = J(n | |D|)`; for `D ≡ 0 (mod 4)` it rests on the
-periodicity of `J(D | ·)` modulo `|D|` on odd numbers and on its reflection law under `b ↦ -b`.
+periodic modulo `|D|` on all of `ℤ`, so for `D ≠ 0` it is a quadratic Dirichlet character
+`kroneckerChar` of modulus `|D|`, whose value at `-1` is the sign of `D`. For `D ≡ 1 (mod 4)` this
+rests on quadratic reciprocity, in the form `(D / n) = J(n | |D|)`; for `D ≡ 0 (mod 4)` it rests on
+the periodicity of `J(D | ·)` modulo `|D|` on odd numbers and on its reflection law under `b ↦ -b`.
 The character need not be primitive: `(-12 / ·)` is induced from `(-3 / ·)`.
 
 ## Main definitions
@@ -58,6 +59,9 @@ The character need not be primitive: `(-12 / ·)` is induced from `(-3 / ·)`.
   unrestricted power law, and value `1` on squares coprime to the denominator.
 * `TauCeti.kroneckerSym_eq_zero_iff`: `(a / b) = 0` exactly when `gcd (a, b) ≠ 1`.
 * `TauCeti.kroneckerSym_eq_jacobiSym_natAbs`: `(D / n) = J(n | |D|)` for `D ≡ 1 (mod 4)`.
+* `TauCeti.kroneckerSym_neg_one_left_of_odd`, `TauCeti.kroneckerSym_quadratic_reciprocity`: the
+  first supplementary law `(-1 / b) = χ₄ b` at odd `b`, and quadratic reciprocity
+  `(n / b) = (b / n) (-1 / b) ^ ((n - 1) / 2)` at an odd positive numerator `n` and every `b`.
 * `TauCeti.kroneckerSym_mod_right'`: for `D ≡ 0, 1 (mod 4)`, `(D / ·)` is periodic modulo `D`.
 * `TauCeti.kroneckerChar_intCast`, `TauCeti.kroneckerChar_isQuadratic`,
   `TauCeti.kroneckerChar_neg_one`: the character computes the Kronecker symbol, is quadratic, and
@@ -243,7 +247,7 @@ theorem kroneckerSym_trichotomy (a b : ℤ) :
     Int.abs_le_one_iff.mpr (jacobiSym.trichotomy _ _)
   have hmul (x y : ℤ) (hx : |x| ≤ 1) (hy : |y| ≤ 1) : |x * y| ≤ 1 := by
     rw [abs_mul]
-    nlinarith [abs_nonneg x, abs_nonneg y]
+    exact (mul_le_of_le_one_left (abs_nonneg _) hx).trans hy
   rw [kroneckerSym_of_ne_zero a hb]
   exact hmul _ _ (hmul _ _ hs (by rw [abs_pow]; exact pow_le_one₀ (abs_nonneg _) h₈)) hJ
 
@@ -301,6 +305,15 @@ theorem kroneckerSym_sq_one {a b : ℤ} (h : a.gcd b = 1) : kroneckerSym (a ^ 2)
   · exact absurd h (kroneckerSym_eq_zero_iff.mp h0)
   · simp [h1]
   · simp [h1]
+
+/-- `(a / b) ^ 2 = 1` when `a` and `b` are coprime: the symbol is then `±1`. -/
+theorem sq_kroneckerSym_eq_one {a b : ℤ} (h : a.gcd b = 1) : kroneckerSym a b ^ 2 = 1 := by
+  rw [← kroneckerSym_pow_left, kroneckerSym_sq_one h]
+
+/-- The image of `(a / b)` in any ring squares to `1` when `a` and `b` are coprime. -/
+theorem sq_intCast_kroneckerSym_eq_one {R : Type*} [Ring R] {a b : ℤ} (h : a.gcd b = 1) :
+    ((kroneckerSym a b : ℤ) : R) ^ 2 = 1 := by
+  rw [← Int.cast_pow, sq_kroneckerSym_eq_one h, Int.cast_one]
 
 /-- For a square integer `a` coprime to `b`, `(a / b) = 1`. -/
 theorem kroneckerSym_eq_one_of_isSquare {a b : ℤ} (ha : IsSquare a) (h : a.gcd b = 1) :
@@ -363,11 +376,9 @@ theorem kroneckerSym_eq_jacobiSym_natAbs {D : ℤ} (hD : D ≡ 1 [ZMOD 4]) (n : 
       kroneckerSym_eq_jacobiSym _ hm, jacobiSym_eq_jacobiSym_natAbs_of_emod_four_eq_one hD4 hm]
     simp only [jacobiSym.mul_left, jacobiSym.pow_left, jacobiSym.at_two hodd]
     congr 2
-    have habs : ((D.natAbs : ℕ) : ZMod 8) = ((|D| : ℤ) : ZMod 8) := by
-      rw [← Int.natCast_natAbs, Int.cast_natCast]
-    rw [habs]
-    rcases abs_choice D with h | h <;> rw [h]
-    rw [Int.cast_neg, χ₈_neg]
+    rcases Int.natAbs_eq D with h | h
+    · rw [h, Int.natAbs_natCast, Int.cast_natCast]
+    · rw [h, Int.natAbs_neg, Int.natAbs_natCast, Int.cast_neg, Int.cast_natCast, χ₈_neg]
   rcases Int.eq_nat_or_neg n with ⟨k, rfl | rfl⟩
   · exact hnat k
   · rw [neg_eq_neg_one_mul, kroneckerSym_mul_right_of_ne_neg_one hD1, kroneckerSym_neg_one_right,
@@ -377,22 +388,53 @@ theorem kroneckerSym_eq_jacobiSym_natAbs {D : ℤ} (hD : D ≡ 1 [ZMOD 4]) (n : 
     · rw [ite_eq_right (by omega), χ₄_nat_one_mod_four (by omega)]
     · rw [ite_eq_left (by omega), χ₄_nat_three_mod_four (by omega)]
 
+/-- The first supplementary law at an odd denominator of either sign: `(-1 / b) = χ₄ b`. For
+`b < 0` the factor `(-1 / -1) = -1` makes up for `χ₄ |b| = -χ₄ b`. -/
+theorem kroneckerSym_neg_one_left_of_odd {b : ℤ} (hb : Odd b) : kroneckerSym (-1) b = χ₄ b := by
+  have h2 : b % 2 = 1 := Int.odd_iff.mp hb
+  rw [kroneckerSym_of_odd _ hb, jacobiSym.at_neg_one (Int.natAbs_odd.mpr hb),
+    ← Int.cast_natCast, χ₄_int_eq_if_mod_four, χ₄_int_eq_if_mod_four, Int.natCast_natAbs]
+  rcases le_or_gt 0 b with h | h
+  · rw [abs_of_nonneg h]
+    simp [h.not_gt]
+  · rw [abs_of_neg h]
+    simp only [h, neg_lt_zero, zero_lt_one, and_self, ite_true]
+    split_ifs <;> omega
+
+/-- **Quadratic reciprocity for the Kronecker symbol** at an odd positive numerator `n`: for every
+integer `b`, `(n / b) = (b / n) · (-1 / b) ^ ((n - 1) / 2)`. For odd `b > 0` this is the
+reciprocity law of the Jacobi symbol; it also covers even and negative `b`. -/
+theorem kroneckerSym_quadratic_reciprocity {n : ℕ} (hn : Odd n) (b : ℤ) :
+    kroneckerSym n b = kroneckerSym b n * kroneckerSym (-1) b ^ (n / 2) := by
+  have hsq : kroneckerSym (-1) b ^ 2 = 1 := sq_kroneckerSym_eq_one (by simp)
+  rw [kroneckerSym_eq_jacobiSym b hn]
+  obtain ⟨m, rfl⟩ := hn
+  rcases Nat.even_or_odd m with ⟨j, rfl⟩ | ⟨j, rfl⟩
+  · -- `n ≡ 1 (mod 4)`: `(n / b) = J(b | n)`, and the power of `(-1 / b)` is even.
+    have hD : ((2 * (j + j) + 1 : ℕ) : ℤ) ≡ 1 [ZMOD 4] :=
+      Int.modEq_iff_dvd.mpr ⟨-j, by push_cast; ring⟩
+    rw [kroneckerSym_eq_jacobiSym_natAbs hD, Int.natAbs_natCast,
+      show (2 * (j + j) + 1) / 2 = 2 * j by omega, pow_mul, hsq, one_pow, mul_one]
+  · -- `n ≡ 3 (mod 4)`: `(-n / b) = J(b | n)` and `(-n / b) = (-1 / b) (n / b)`.
+    have hD : -((2 * (2 * j + 1) + 1 : ℕ) : ℤ) ≡ 1 [ZMOD 4] :=
+      Int.modEq_iff_dvd.mpr ⟨j + 1, by push_cast; ring⟩
+    have h := kroneckerSym_eq_jacobiSym_natAbs hD b
+    rw [Int.natAbs_neg, Int.natAbs_natCast, neg_eq_neg_one_mul,
+      kroneckerSym_mul_left (by norm_num) (by positivity)] at h
+    rw [show (2 * (2 * j + 1) + 1) / 2 = 2 * j + 1 by omega, pow_succ, pow_mul, hsq, one_pow,
+      one_mul, ← h, mul_right_comm, ← sq, hsq, one_mul]
+
 /-- For `D ≡ 0 (mod 4)` and odd `m`, the Kronecker symbol `(D / m)` is the Jacobi symbol at the
 least nonnegative residue of `m` modulo `D`. For `m < 0` this is the reflection law
 `jacobiSym_eq_sign_mul_of_emod_four_eq_zero`. -/
 private theorem kroneckerSym_eq_jacobiSym_emod {D : ℤ} (hD : D % 4 = 0) (hD₀ : D ≠ 0) {m : ℤ}
     (hm : Odd m) : kroneckerSym D m = jacobiSym D (m % D).toNat := by
   have hr₀ : 0 ≤ m % D := Int.emod_nonneg m hD₀
-  have hr : Odd (m % D).toNat := by
-    have h2 : Even D := even_iff_two_dvd.mpr (dvd_trans (by norm_num) (Int.dvd_of_emod_eq_zero hD))
-    rw [← Int.odd_natCast, Int.toNat_of_nonneg hr₀, Int.emod_def]
-    exact hm.sub_even (h2.mul_right _)
   rcases Int.eq_nat_or_neg m with ⟨k, rfl | rfl⟩
   · have hk : Odd k := (Int.odd_natCast k).mp hm
     have hmod : ((k : ℤ) % D).toNat = k % D.natAbs := by
       rw [← Int.emod_abs, ← Int.natCast_natAbs, ← Int.natCast_mod, Int.toNat_natCast]
-    rw [kroneckerSym_eq_jacobiSym D hk, jacobiSym_mod_natAbs_of_emod_four_eq_zero hD hk, hmod,
-      jacobiSym_mod_natAbs_of_emod_four_eq_zero hD (hmod ▸ hr), Nat.mod_mod]
+    rw [kroneckerSym_eq_jacobiSym D hk, hmod, jacobiSym_mod_natAbs_of_emod_four_eq_zero hD hk]
   · have hk : Odd k := (Int.odd_natCast k).mp (by simpa using hm)
     have hdvd : D.natAbs ∣ k + (-(k : ℤ) % D).toNat := by
       rw [← Int.natCast_dvd_natCast, Nat.cast_add, Int.toNat_of_nonneg hr₀, Int.natCast_natAbs,

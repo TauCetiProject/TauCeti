@@ -141,8 +141,8 @@ private theorem exists_transition {X Y : Type*} [TopologicalSpace X] [T1Space X]
       (df v).localInverse_mem_source) fun x' hx' ↦ (df v).localInverse_right_inv hx'
   have hev : ∀ᶠ x' in 𝓝 (x : X), L x' ≠ 0 ∧ f (L x') = x' ∧ τ₀ x' ≠ g 0 :=
     (hLc.eventually_ne (by rwa [hLx])).and (hfL.and
-      (hτ₀.continuousAt.eventually_ne (by rw [hτ₀x]; exact mem_puncture.1 y.2)))
-  have hev' := continuous_subtype_val.continuousAt.eventually hev
+      (hτ₀.continuousAt.eventually_ne (by rw [hτ₀x]; exact mem_puncture.1 y.property)))
+  have hev' := continuous_subtypeVal.continuousAt.eventually hev
   classical
   let τ : puncture f → puncture g := fun x' ↦
     if h : τ₀ x' = g 0 then y else ⟨τ₀ x', mem_puncture.2 h⟩
@@ -152,7 +152,7 @@ private theorem exists_transition {X Y : Type*} [TopologicalSpace X] [T1Space X]
   · -- A map into the open punctured summand is `C^n` when it is after the inclusion, which holds
     -- as it agrees with `τ₀` near `x`.
     have hcomp : ContMDiffAt I I n (Subtype.val ∘ τ) x :=
-      (hτ₀.comp x contMDiff_subtype_val.contMDiffAt).congr_of_eventuallyEq hτ
+      (hτ₀.comp x contMDiff_subtypeVal.contMDiffAt).congr_of_eventuallyEq hτ
     exact (TauCeti.ContMDiffAt.subtypeVal_comp_iff (puncture g) τ x).mp hcomp
   · rw [hτ.self_of_nhds, hτ₀x]
 
@@ -176,7 +176,7 @@ private theorem exists_contMDiffAt_deck (h₁ : IsOpenEmbedding e₁) (h₂ : Is
     rw [← IsOpenEmbedding.inl.map_nhds_eq, EventuallyEq, eventually_map]
     filter_upwards [hev] with x' ⟨v', hv', hx', hy'⟩
     simp only [comp_apply, Sum.elim_inl, id_eq, mk_inl, mk_inr]
-    exact ((inl_eq_inr_iff h₁.injective h₂.injective).2 ⟨v', hv', hx', hy'⟩).symm
+    exact ((inl_eq_inr_iff h₁.injective).2 ⟨v', hv', hx', hy'⟩).symm
   · -- `z = e₂ w'` is glued to `w = e₁ (inversion 0 1 w')`, as the inversion is an involution.
     rcases z with x | x <;> rcases w with y | y <;>
       simp only [rel_inl_inr, not_rel_inl_inl, not_rel_inr_inl, not_rel_inr_inr] at h
@@ -190,7 +190,7 @@ private theorem exists_contMDiffAt_deck (h₁ : IsOpenEmbedding e₁) (h₂ : Is
     rw [← IsOpenEmbedding.inr.map_nhds_eq, EventuallyEq, eventually_map]
     filter_upwards [hev] with x' ⟨v', hv', hx', hy'⟩
     simp only [comp_apply, Sum.elim_inr, id_eq, mk_inl, mk_inr]
-    refine (inl_eq_inr_iff h₁.injective h₂.injective).2 ⟨inversion 0 1 v',
+    refine (inl_eq_inr_iff h₁.injective).2 ⟨inversion 0 1 v',
       by simpa [inversion_eq_center one_ne_zero] using hv', hy', ?_⟩
     rw [inversion_inversion (0 : E) one_ne_zero, hx']
 

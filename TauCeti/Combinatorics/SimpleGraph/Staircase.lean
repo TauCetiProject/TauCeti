@@ -144,6 +144,14 @@ theorem isBipartite_staircase (c t : ℕ) : (staircase c t).IsBipartite := by
   intro u v huv
   rcases u with i | u <;> rcases v with j | v <;> simp_all
 
+/-- `staircase c t` is bipartite with the rows `Sum.inl i` on one side and the columns
+`Sum.inr (Sum.inl j)` on the other; the vertices of the `Fin c` summand lie on neither side. -/
+theorem isBipartiteWith_staircase (c t : ℕ) :
+    (staircase c t).IsBipartiteWith (Set.range Sum.inl) (Set.range fun j ↦ .inr (.inl j)) where
+  disjoint := Set.disjoint_left.mpr <| by rintro _ ⟨i, rfl⟩ ⟨j, hj⟩; cases hj
+  mem_of_adj u v h := by
+    rcases u with i | (j | k) <;> rcases v with i' | (j' | k') <;> simp_all
+
 /-- `staircase c t` contains no `3`-cliques. -/
 theorem cliqueFree_staircase (c t : ℕ) : (staircase c t).CliqueFree 3 :=
   (isBipartite_staircase c t).cliqueFree (by decide)
@@ -664,8 +672,10 @@ theorem three_mul_sum_degree_sq_staircase (c t : ℕ) :
 
 /-- Exact natural-number form of Kozlov's odd-triangle formula for `staircase c t`:
 `3 * #(staircase c t).oddTriangleFinset = c * (2 * t + 1) * #(staircase c t).edgeFinset`
-(Kozlov, arXiv:1610.07136v2, Lemma 3.10). -/
-theorem three_mul_card_oddTriangleFinset_staircase (c t : ℕ) :
+(Kozlov, arXiv:1610.07136v2, Lemma 3.10). It holds for any decidable equality on the vertices,
+such as the one of a linear order chosen on them. -/
+theorem three_mul_card_oddTriangleFinset_staircase (c t : ℕ)
+    [DecidableEq (Fin (c * t) ⊕ Fin (c * t) ⊕ Fin c)] :
     3 * #(staircase c t).oddTriangleFinset =
       c * (2 * t + 1) * #(staircase c t).edgeFinset := by
   have hodd := (staircase c t).card_oddTriangleFinset_add_sum_degree_sq (cliqueFree_staircase c t)
@@ -681,8 +691,10 @@ theorem three_mul_card_oddTriangleFinset_staircase (c t : ℕ) :
 /-- **Kozlov's staircase odd-triangle formula**: in `staircase c t` on `n = c * (2 * t + 1)`
 vertices, the number of `3`-vertex subsets spanning an odd number of edges is
 `(n / 3) * #(staircase c t).edgeFinset` over `ℝ`
-(Kozlov, arXiv:1610.07136v2, equation (2.5) and Lemma 3.10). -/
-theorem card_oddTriangleFinset_staircase (c t : ℕ) :
+(Kozlov, arXiv:1610.07136v2, equation (2.5) and Lemma 3.10). It holds for any decidable equality
+on the vertices. -/
+theorem card_oddTriangleFinset_staircase (c t : ℕ)
+    [DecidableEq (Fin (c * t) ⊕ Fin (c * t) ⊕ Fin c)] :
     (#(staircase c t).oddTriangleFinset : ℝ) =
       (c * (2 * t + 1) : ℝ) / 3 * #(staircase c t).edgeFinset := by
   have h := congrArg (Nat.cast : ℕ → ℝ) (three_mul_card_oddTriangleFinset_staircase c t)

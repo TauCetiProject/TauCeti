@@ -8,6 +8,9 @@ module
 public import TauCeti.QuantumGroups.UqSl2.Dual.Basic
 public import TauCeti.QuantumGroups.UqSl2.LadderModule.Basic
 
+import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Algebra.BigOperators.ZPow
+
 /-!
 # Contragredients of the signed ladder modules
 
@@ -19,7 +22,12 @@ entries outside the reversed diagonal.
 
 The construction uses `AlgHom.hopfDual` and the highest-vector universal property
 `LadderModule.lift`. The dual action is installed only locally; the exported equivalence is
-complex-linear and its intertwining theorem specifies the representation explicitly.
+complex-linear and its intertwining theorem specifies the representation explicitly. Its corner
+entry is `C(v_m)(v₀) = (-ε)^m q^m`.
+
+The same isomorphism, read as an isomorphism of `UqSl2 q`-modules onto the contragredient module
+`TauCeti.BialgebraModule.Dual` used by the right duals of finite modules, is
+`LadderModule.hopfDualEquiv`.
 
 ## References
 
@@ -180,5 +188,50 @@ theorem contragredientEquiv_symm_intertwines (hq : IsGenericQuantumParameter q) 
       rep q m ε a ((contragredientEquiv hq).symm φ) := by
   apply (contragredientEquiv hq).injective
   simp [contragredientEquiv_intertwines]
+
+/-- The corner entry of the contragredient isomorphism: the lowest vector `v_m` is sent to
+`(-ε)^m q^m` times the coordinate functional of the highest vector, so its value on `v₀` is
+`(-ε)^m q^m`. -/
+theorem contragredientEquiv_vec_apply_vec_zero (hq : IsGenericQuantumParameter q) :
+    contragredientEquiv (m := m) (ε := ε) hq (vec q m ε m) (vec q m ε 0) =
+      (-(ε : ℂ)) ^ m * q ^ m := by
+  have hq0 : q ≠ 0 := Fact.out
+  -- The powers of `q` in the product formula form an arithmetic progression of exponents.
+  have hprod (n : ℕ) :
+      ∏ t ∈ Finset.range n, q ^ ((m : ℤ) - 2 * t) = q ^ ((n : ℤ) * m - n * (n - 1)) := by
+    rw [Finset.prod_zpow_eq_zpow_sum_of_isUnit _ (IsUnit.mk0 q hq0)]
+    congr 1
+    simp only [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_range, nsmul_eq_mul,
+      ← Finset.mul_sum]
+    linear_combination -Finset.sum_range_natCast_mul_two (R := ℤ) n
+  rw [contragredientEquiv_vec_apply_vec]
+  simp only [zero_add, ↓reduceIte, mul_one, Finset.prod_mul_distrib, Finset.prod_const,
+    Finset.card_range, hprod]
+  rw [← quantumFactorial_def, show (m : ℤ) * m - m * (m - 1) = m by ring, zpow_natCast]
+  field_simp [quantumFactorial_ne_zero hq m]
+
+/-- The contragredient isomorphism of `L_m^ε` as an isomorphism of `UqSl2 q`-modules onto the
+contragredient module `BialgebraModule.Dual`, the right dual of the rigid structure on finite
+modules. Its underlying linear map is `contragredientEquiv`. -/
+def hopfDualEquiv (hq : IsGenericQuantumParameter q) :
+    LadderModule q m ε ≃ₗ[UqSl2 q] BialgebraModule.Dual ℂ (UqSl2 q) (LadderModule q m ε) where
+  __ := (contragredientEquiv hq).trans (BialgebraModule.dualEquiv ℂ (UqSl2 q) _).symm
+  map_smul' a v := (BialgebraModule.dualEquiv ℂ (UqSl2 q) _).injective <|
+    LinearMap.ext fun w => by simp [smul_def, contragredientEquiv_intertwines]
+
+/-- The functional underlying the image of a vector is its image under `contragredientEquiv`. -/
+@[simp]
+theorem dualEquiv_hopfDualEquiv (hq : IsGenericQuantumParameter q) (v : LadderModule q m ε) :
+    BialgebraModule.dualEquiv ℂ (UqSl2 q) _ (hopfDualEquiv hq v) = contragredientEquiv hq v :=
+  LinearEquiv.apply_symm_apply _ _
+
+/-- The inverse isomorphism is the inverse of `contragredientEquiv` on the underlying
+functional. -/
+@[simp]
+theorem hopfDualEquiv_symm_apply (hq : IsGenericQuantumParameter q)
+    (φ : BialgebraModule.Dual ℂ (UqSl2 q) (LadderModule q m ε)) :
+    (hopfDualEquiv hq).symm φ =
+      (contragredientEquiv hq).symm (BialgebraModule.dualEquiv ℂ (UqSl2 q) _ φ) :=
+  (rfl)
 
 end TauCeti.UqSl2.LadderModule

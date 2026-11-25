@@ -106,7 +106,7 @@ theorem ker_sharpQuot {π : plusSubring p h} (hπ : IsUnit (coeff p B 0 π))
     simpa using congrArg Subtype.val hc
   have hy : coeff p B 0 (↑u⁻¹ * (x : uniformTilt p B)) ∈ Bplus := by
     rw [map_mul, hc', ← mul_assoc, ← map_mul, ← hu, Units.inv_mul, map_one, one_mul]
-    exact c.2
+    exact c.property
   refine ⟨⟨_, mem_plusSubring_iff_coeff_zero.mpr hy⟩, Subtype.ext ?_⟩
   rw [Subring.coe_mul, ← hu, Units.mul_inv_cancel_left]
 
@@ -120,7 +120,7 @@ theorem sharpQuot_surjective_iff (I : Ideal Bplus) (hI : (p : Bplus) ∈ I)
   · intro hs a
     obtain ⟨x, hx⟩ := hs (Ideal.Quotient.mk I a)
     -- `x♯ = (x⁽¹⁾) ^ p` with `x⁽¹⁾ ∈ B⁺`
-    refine ⟨⟨coeff p B 1 x, mem_plusSubring_iff.mp x.2 1⟩, ?_⟩
+    refine ⟨⟨coeff p B 1 x, mem_plusSubring_iff.mp x.property 1⟩, ?_⟩
     rw [← Ideal.Quotient.eq, ← hx, sharpQuot_apply]
     congr 1
     refine Subtype.ext ?_

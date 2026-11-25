@@ -57,7 +57,8 @@ along it, so no canonical sample space is imposed on users.
   `TauCeti.Probability.markovChainLaw_dirac_ae_apply_zero` — started at `a₀`, it is almost surely
   at `a₀` at time zero.
 * `MeasureTheory.Measure.markovChainLaw_eq_comp` — the path law with initial law `ν` is the path-law
-  kernel integrated against `ν`.
+  kernel integrated against `ν`. Consequently the path law is additive in a countable sum of initial
+  measures (`MeasureTheory.Measure.markovChainLaw_sum`).
 * `MeasureTheory.Measure.markovChainLaw_map_eval` — the state at time `n` has law `(κ ^ n) ∘ₘ ν`;
   `ProbabilityTheory.Kernel.markovChainKernel_map_eval` is the kernel form, and
   `MeasureTheory.Measure.markovChainLaw_setOf_apply_eq_comp` evaluates it at a singleton.
@@ -88,9 +89,9 @@ along it, so no canonical sample space is imposed on users.
 * `TauCeti.Probability.hasLaw_markovChainLaw_iff_prefixLaw_singleton` — on a countable state space,
   a process has path law `markovChainLaw ν κ` exactly when its finite path masses are given by the
   product formula.
-* `ProbabilityTheory.HasLaw.eval_markovChainLaw`,
-  `ProbabilityTheory.HasLaw.pair_succ_markovChainLaw` — the time-`n` and one-step laws of such a
-  process.
+* `ProbabilityTheory.HasLaw.eval_markovChainLaw` — the time-`n` law of such a process. The joint
+  law of `(X n, X (n + k))` is `ProbabilityTheory.HasLaw.pair_add_markovChainLaw` in
+  `TauCeti.Probability.MarkovChain.Cylinder`.
 
 ## References
 
@@ -128,11 +129,11 @@ private theorem coe_orderIsoIic_apply (n : ℕ) (i : Fin (n + 1)) :
   rw [Finset.coe_orderIsoOfFin_apply]
   symm
   exact congrFun (Finset.orderEmbOfFin_unique (by simp)
-    (fun j => mem_Iic.2 (Nat.le_of_lt_succ j.2)) Fin.val_strictMono) i
+    (fun j => mem_Iic.2 (Nat.le_of_lt_succ j.isLt)) Fin.val_strictMono) i
 
 @[simp]
 private theorem iicEquivFin_apply (n : ℕ) (u : (_ : ↥(Iic n)) → α) (i : Fin (n + 1)) :
-    iicEquivFin α n u i = u ⟨i.1, mem_Iic.2 (Nat.lt_succ_iff.1 i.2)⟩ :=
+    iicEquivFin α n u i = u ⟨i.val, mem_Iic.2 (Nat.lt_succ_iff.1 i.isLt)⟩ :=
   by
     -- `piCongrLeft` acts by precomposition, so its coercion reduces definitionally to this value.
     change u ((Iic n).orderIsoOfFin (k := n + 1) (by simp) i) = _
@@ -142,7 +143,7 @@ private theorem iicEquivFin_apply (n : ℕ) (u : (_ : ↥(Iic n)) → α) (i : F
 
 @[simp]
 private theorem iicEquivFin_symm_apply (n : ℕ) (w : Fin (n + 1) → α) (j : ↥(Iic n)) :
-    (iicEquivFin α n).symm w j = w ⟨j.1, Nat.lt_succ_iff.2 (mem_Iic.1 j.2)⟩ :=
+    (iicEquivFin α n).symm w j = w ⟨j.val, Nat.lt_succ_iff.2 (mem_Iic.1 j.property)⟩ :=
   by
     simp only [iicEquivFin, MeasurableEquiv.symm_symm]
     rw [MeasurableEquiv.coe_piCongrLeft, Equiv.piCongrLeft_apply]
@@ -150,7 +151,7 @@ private theorem iicEquivFin_symm_apply (n : ℕ) (w : Fin (n + 1) → α) (j : �
     congr 1
     ext
     -- The subtype coercion exposes the value component of the inverse order isomorphism.
-    change (((Iic n).orderIsoOfFin (k := n + 1) (by simp)).symm j : Fin (n + 1)).1 = j.1
+    change (((Iic n).orderIsoOfFin (k := n + 1) (by simp)).symm j : Fin (n + 1)).val = j.val
     have h := coe_orderIsoIic_apply n
       (((Iic n).orderIsoOfFin (k := n + 1) (by simp)).symm j)
     simpa using h.symm
@@ -199,6 +200,13 @@ theorem _root_.MeasureTheory.Measure.markovChainLaw_eq_comp :
     Measure.bind_map (MeasurableEquiv.measurable _).aemeasurable (Kernel.aemeasurable _),
     Kernel.markovChainKernel, Kernel.coe_comap, Function.comp_def]
 
+/-- The path law of a countable sum of initial measures is the sum of their path laws. This
+extends statements about finite initial measures to s-finite ones through `sum_sfiniteSeq`. -/
+theorem _root_.MeasureTheory.Measure.markovChainLaw_sum {ι : Type*} (μ : ι → Measure α) :
+    markovChainLaw (Measure.sum μ) κ = Measure.sum fun i => markovChainLaw (μ i) κ := by
+  simp_rw [Measure.markovChainLaw_eq_comp]
+  exact Measure.bind_sum _ _ κ.markovChainKernel.aemeasurable
+
 /-- The path-law kernel evaluated at a state `x` is the law of the chain started at `x`. -/
 @[simp]
 theorem _root_.ProbabilityTheory.Kernel.markovChainKernel_apply (x : α) :
@@ -213,37 +221,11 @@ theorem _root_.ProbabilityTheory.Kernel.measurable_markovChainLaw_dirac :
   rw [h]
   exact κ.markovChainKernel.measurable
 
-/-- The trajectory of the chain restricted to time `0` is the initial law, transported along the
-canonical identification of `(_ : ↥(Iic 0)) → α` with `α`. -/
-private theorem markovChainLaw_map_frestrictLe_zero :
-    (markovChainLaw ν κ).map (frestrictLe 0) =
-      ν.map (MeasurableEquiv.piUnique fun _ : ↥(Iic (0 : ℕ)) => α).symm := by
-  rw [markovChainLaw, Kernel.trajMeasure,
-    Measure.map_comp _ _ (measurable_frestrictLe _), Kernel.traj_map_frestrictLe,
-    Kernel.partialTraj_self, Measure.id_comp]
-
 /-- **The chain starts from its initial law.** -/
 @[simp]
 theorem markovChainLaw_map_eval_zero :
-    (markovChainLaw ν κ).map (fun x => x 0) = ν := by
-  have hcomp : (fun x : ℕ → α => x 0)
-      = (fun u : ((_ : ↥(Iic (0 : ℕ))) → α) => u ⟨0, mem_Iic.2 le_rfl⟩) ∘ frestrictLe 0 := rfl
-  have hid : (fun u : ((_ : ↥(Iic (0 : ℕ))) → α) => u ⟨0, mem_Iic.2 le_rfl⟩) ∘
-      (MeasurableEquiv.piUnique fun _ : ↥(Iic (0 : ℕ)) => α).symm = id := by
-    funext a
-    simp [MeasurableEquiv.piUnique, Equiv.piUnique, uniqueElim_const]
-  calc (markovChainLaw ν κ).map (fun x => x 0)
-      = ((markovChainLaw ν κ).map (frestrictLe 0)).map
-          (fun u : ((_ : ↥(Iic (0 : ℕ))) → α) => u ⟨0, mem_Iic.2 le_rfl⟩) := by
-        rw [Measure.map_map (μ := markovChainLaw ν κ) (f := frestrictLe 0)
-          (g := fun u : ((_ : ↥(Iic (0 : ℕ))) → α) => u ⟨0, mem_Iic.2 le_rfl⟩)
-          (by fun_prop) (measurable_frestrictLe 0), hcomp]
-    _ = ν := by
-        rw [markovChainLaw_map_frestrictLe_zero,
-          Measure.map_map (μ := ν)
-            (f := ⇑(MeasurableEquiv.piUnique fun _ : ↥(Iic (0 : ℕ)) => α).symm)
-            (g := fun u : ((_ : ↥(Iic (0 : ℕ))) → α) => u ⟨0, mem_Iic.2 le_rfl⟩)
-            (by fun_prop) (MeasurableEquiv.measurable _), hid, Measure.map_id]
+    (markovChainLaw ν κ).map (fun x => x 0) = ν :=
+  Kernel.trajMeasure_map_eval_zero
 
 /-- **A chain started at `a₀` starts at `a₀`.** -/
 theorem markovChainLaw_dirac_ae_apply_zero [MeasurableSingletonClass α] (a₀ : α) :
@@ -256,8 +238,8 @@ theorem markovChainLaw_dirac_ae_apply_zero [MeasurableSingletonClass α] (a₀ :
 the last coordinate of the prefix. Together with `markovChainLaw_map_eval_zero` this determines all
 the finite-dimensional laws of the chain. -/
 theorem markovChainLaw_map_prefix_succ_eq_compProd [SFinite ν] (n : ℕ) :
-    (markovChainLaw ν κ).map (fun x => ((fun i : Fin (n + 1) => x i.1), x (n + 1)))
-      = ((markovChainLaw ν κ).map fun x (i : Fin (n + 1)) => x i.1) ⊗ₘ
+    (markovChainLaw ν κ).map (fun x => ((fun i : Fin (n + 1) => x i.val), x (n + 1)))
+      = ((markovChainLaw ν κ).map fun x (i : Fin (n + 1)) => x i.val) ⊗ₘ
         κ.comap (fun w : Fin (n + 1) → α => w (Fin.last n))
           (measurable_pi_apply (Fin.last n)) := by
   have he : Measurable (iicEquivFin α n) := (iicEquivFin α n).measurable
@@ -267,7 +249,7 @@ theorem markovChainLaw_map_prefix_succ_eq_compProd [SFinite ν] (n : ℕ) :
           (measurable_pi_apply (Fin.last n))).comap (iicEquivFin α n) he := by
     ext u s _
     simp [markovStep, Kernel.comap_apply, iicEquivFin_apply]
-  calc (markovChainLaw ν κ).map (fun x => ((fun i : Fin (n + 1) => x i.1), x (n + 1)))
+  calc (markovChainLaw ν κ).map (fun x => ((fun i : Fin (n + 1) => x i.val), x (n + 1)))
       = ((markovChainLaw ν κ).map (fun x => (frestrictLe n x, x (n + 1)))).map
           (Prod.map (iicEquivFin α n) id) := by
         rw [Measure.map_map hmap (by fun_prop)]
@@ -303,17 +285,17 @@ theorem markovChainLaw_map_pair_succ [SFinite ν] (n : ℕ) :
       (Prod.map (fun w : Fin (n + 1) → α => w (Fin.last n)) (id : α → α)) :=
     hlast.prodMap measurable_id
   have hprod : Measurable
-      fun x : ℕ → α => ((fun i : Fin (n + 1) => x i.1), x (n + 1)) := by fun_prop
+      fun x : ℕ → α => ((fun i : Fin (n + 1) => x i.val), x (n + 1)) := by fun_prop
   calc (markovChainLaw ν κ).map (fun x => (x n, x (n + 1)))
       = ((markovChainLaw ν κ).map
-          fun x => ((fun i : Fin (n + 1) => x i.1), x (n + 1))).map
+          fun x => ((fun i : Fin (n + 1) => x i.val), x (n + 1))).map
           (Prod.map (fun w : Fin (n + 1) → α => w (Fin.last n)) id) := by
         rw [Measure.map_map hmap hprod]; rfl
-    _ = (((markovChainLaw ν κ).map fun x (i : Fin (n + 1)) => x i.1) ⊗ₘ
+    _ = (((markovChainLaw ν κ).map fun x (i : Fin (n + 1)) => x i.val) ⊗ₘ
           κ.comap (fun w : Fin (n + 1) → α => w (Fin.last n)) hlast).map
           (Prod.map (fun w : Fin (n + 1) → α => w (Fin.last n)) id) := by
         rw [markovChainLaw_map_prefix_succ_eq_compProd]
-    _ = ((markovChainLaw ν κ).map fun x (i : Fin (n + 1)) => x i.1).map
+    _ = ((markovChainLaw ν κ).map fun x (i : Fin (n + 1)) => x i.val).map
           (fun w : Fin (n + 1) → α => w (Fin.last n)) ⊗ₘ κ :=
         Measure.map_prodMap_compProd_comap _ _ hlast
     _ = _ := by rw [Measure.map_map hlast (by fun_prop)]; rfl
@@ -398,11 +380,11 @@ private theorem comap_apply_prodMk_preimage_singleton {n : ℕ}
 `markovChainLaw_map_prefix_apply_singleton` for every initial law. -/
 private theorem markovChainLaw_map_prefix_apply_singleton_of_sFinite [SFinite ν]
     [MeasurableSingletonClass α] (n : ℕ) (w : Fin (n + 1) → α) :
-    ((markovChainLaw ν κ).map fun x (i : Fin (n + 1)) => x i.1) {w}
+    ((markovChainLaw ν κ).map fun x (i : Fin (n + 1)) => x i.val) {w}
       = ν {w 0} * ∏ i : Fin n, κ (w i.castSucc) {w i.succ} := by
   induction n with
   | zero =>
-    have hc : (fun (x : ℕ → α) (i : Fin 1) => x i.1)
+    have hc : (fun (x : ℕ → α) (i : Fin 1) => x i.val)
         = (fun (a : α) (_ : Fin 1) => a) ∘ (fun x : ℕ → α => x 0) := by
       funext x i
       simp
@@ -415,9 +397,9 @@ private theorem markovChainLaw_map_prefix_apply_singleton_of_sFinite [SFinite ν
     simp
   | succ n ih =>
     have hprod : Measurable
-        fun x : ℕ → α => ((fun i : Fin (n + 1) => x i.1), x (n + 1)) := by fun_prop
-    have hpre : (fun (x : ℕ → α) (i : Fin (n + 2)) => x i.1) ⁻¹' {w}
-        = (fun x : ℕ → α => ((fun i : Fin (n + 1) => x i.1), x (n + 1))) ⁻¹'
+        fun x : ℕ → α => ((fun i : Fin (n + 1) => x i.val), x (n + 1)) := by fun_prop
+    have hpre : (fun (x : ℕ → α) (i : Fin (n + 2)) => x i.val) ⁻¹' {w}
+        = (fun x : ℕ → α => ((fun i : Fin (n + 1) => x i.val), x (n + 1))) ⁻¹'
           {(Fin.init w, w (Fin.last (n + 1)))} := by
       ext x
       simp only [Set.mem_preimage, Set.mem_singleton_iff, Prod.mk.injEq, funext_iff]
@@ -442,12 +424,12 @@ product of the transition weights along it. This is the defining product form of
 finite-dimensional laws of a Markov chain. -/
 theorem markovChainLaw_map_prefix_apply_singleton
     [MeasurableSingletonClass α] (n : ℕ) (w : Fin (n + 1) → α) :
-    ((markovChainLaw ν κ).map fun x (i : Fin (n + 1)) => x i.1) {w}
+    ((markovChainLaw ν κ).map fun x (i : Fin (n + 1)) => x i.val) {w}
       = ν {w 0} * ∏ i : Fin n, κ (w i.castSucc) {w i.succ} := by
-  have hg : Measurable fun (x : ℕ → α) (i : Fin (n + 1)) => x i.1 := by fun_prop
+  have hg : Measurable fun (x : ℕ → α) (i : Fin (n + 1)) => x i.val := by fun_prop
   rw [Measure.markovChainLaw_eq_comp, Measure.map_comp _ _ hg,
     Measure.bind_apply (measurableSet_singleton w) (Kernel.aemeasurable _)]
-  have hx (x : α) : (κ.markovChainKernel.map fun x (i : Fin (n + 1)) => x i.1) x {w}
+  have hx (x : α) : (κ.markovChainKernel.map fun x (i : Fin (n + 1)) => x i.val) x {w}
       = ({w 0} : Set α).indicator (fun _ => ∏ i : Fin n, κ (w i.castSucc) {w i.succ}) x := by
     rw [Kernel.map_apply _ hg, Kernel.markovChainKernel_apply,
       markovChainLaw_map_prefix_apply_singleton_of_sFinite (Measure.dirac x) κ n w,
@@ -479,18 +461,18 @@ time-zero marginal is `ν` and whose prefix laws satisfy the Markov recursion of
 theorem _root_.MeasureTheory.Measure.eq_markovChainLaw [IsFiniteMeasure ν]
     {μ : Measure (ℕ → α)}
     (h₀ : μ.map (fun x => x 0) = ν)
-    (hstep : ∀ n, μ.map (fun x => ((fun i : Fin (n + 1) => x i.1), x (n + 1)))
-      = (μ.map fun x (i : Fin (n + 1)) => x i.1) ⊗ₘ
+    (hstep : ∀ n, μ.map (fun x => ((fun i : Fin (n + 1) => x i.val), x (n + 1)))
+      = (μ.map fun x (i : Fin (n + 1)) => x i.val) ⊗ₘ
         κ.comap (fun w : Fin (n + 1) → α => w (Fin.last n))
           (measurable_pi_apply (Fin.last n))) :
     μ = markovChainLaw ν κ := by
   -- The laws of the prefixes `(X 0, …, X n)` agree, by induction on `n`.
-  have hpre : ∀ n : ℕ, μ.map (fun x (i : Fin (n + 1)) => x i.1)
-      = (markovChainLaw ν κ).map (fun x (i : Fin (n + 1)) => x i.1) := by
+  have hpre : ∀ n : ℕ, μ.map (fun x (i : Fin (n + 1)) => x i.val)
+      = (markovChainLaw ν κ).map (fun x (i : Fin (n + 1)) => x i.val) := by
     intro n
     induction n with
     | zero =>
-      have hc : (fun (x : ℕ → α) (i : Fin 1) => x i.1)
+      have hc : (fun (x : ℕ → α) (i : Fin 1) => x i.val)
           = (fun (a : α) (_ : Fin 1) => a) ∘ (fun x : ℕ → α => x 0) := by
         funext x i
         simp [Fin.fin_one_eq_zero i]
@@ -498,22 +480,14 @@ theorem _root_.MeasureTheory.Measure.eq_markovChainLaw [IsFiniteMeasure ν]
       exact map_comp_eq_of_map_eq (by fun_prop) (by fun_prop)
         (h₀.trans (markovChainLaw_map_eval_zero ν κ).symm)
     | succ n ih =>
-      have hc : (fun (x : ℕ → α) (i : Fin (n + 2)) => x i.1)
-          = (fun p : (Fin (n + 1) → α) × α => Fin.snoc p.1 p.2) ∘
-            (fun x : ℕ → α => ((fun i : Fin (n + 1) => x i.1), x (n + 1))) := by
-        funext x i
-        refine Fin.lastCases ?_ (fun j => ?_) i <;> simp
-      have hsnoc : Measurable
-          fun p : (Fin (n + 1) → α) × α => (Fin.snoc p.1 p.2 : Fin (n + 2) → α) :=
-        measurable_pi_iff.2 fun i => Fin.lastCases (by simp only [Fin.snoc_last]; fun_prop)
-          (fun j => by simp only [Fin.snoc_castSucc]; fun_prop) i
-      rw [hc]
-      refine map_comp_eq_of_map_eq hsnoc (by fun_prop) ?_
-      rw [hstep, ih, markovChainLaw_map_prefix_succ_eq_compProd]
+      have hX (ρ : Measure (ℕ → α)) (k : ℕ) : AEMeasurable (fun x : ℕ → α => x k) ρ :=
+        (measurable_pi_apply k).aemeasurable
+      rw [← map_finSnoc_map_prefix_eval μ (hX μ), ← map_finSnoc_map_prefix_eval _ (hX _), hstep,
+        ih, markovChainLaw_map_prefix_succ_eq_compProd]
   -- Every prefix law is a pushforward of one of these, so finite-marginal uniqueness applies.
   refine (measure_eq_of_prefixProj_map_eq fun n => ?_).symm
   have hc : prefixProj α n = (fun (w : Fin (n + 1) → α) (i : Fin n) => w i.castSucc) ∘
-      (fun x (i : Fin (n + 1)) => x i.1) := by
+      (fun x (i : Fin (n + 1)) => x i.val) := by
     funext x i
     simp
   rw [hc]
@@ -534,8 +508,8 @@ theorem markovChainLaw_dirac_deterministic {f : α → α} (hf : Measurable f) (
           (hf.comp (measurable_pi_apply (Fin.last n))) := by
       ext1 w
       simp [Kernel.comap_apply, Kernel.deterministic_apply]
-    have hpre : Measurable fun x : ℕ → α => fun i : Fin (n + 1) => x i.1 := by fun_prop
-    have hpair : Measurable fun x : ℕ → α => ((fun i : Fin (n + 1) => x i.1), x (n + 1)) :=
+    have hpre : Measurable fun x : ℕ → α => fun i : Fin (n + 1) => x i.val := by fun_prop
+    have hpair : Measurable fun x : ℕ → α => ((fun i : Fin (n + 1) => x i.val), x (n + 1)) :=
       by fun_prop
     have hstep_m : Measurable fun u : Fin (n + 1) → α => (u, f (u (Fin.last n))) := by fun_prop
     rw [hcomap, Measure.compProd_deterministic, Measure.map_dirac' hpair, Measure.map_dirac' hpre,
@@ -585,15 +559,15 @@ theorem hasLaw_markovChainLaw_iff [IsFiniteMeasure ν] (hX : ∀ n, AEMeasurable
   have hY : AEMeasurable (fun ω n => X n ω) μ := AEMeasurable.of_eval hX
   -- Both conditions on `μ` are conditions on the path law of `X`, read off along measurable maps.
   -- `prefixProj α n` is by definition `fun x i => x i.1`, the prefix map of `eq_markovChainLaw`.
-  have hpre : ∀ n, prefixLaw μ X n = (pathLaw μ X).map fun x (i : Fin n) => x i.1 := fun n =>
+  have hpre : ∀ n, prefixLaw μ X n = (pathLaw μ X).map fun x (i : Fin n) => x i.val := fun n =>
     (map_prefixProj_pathLaw μ hY n).symm
   have h₀ : μ.map (X 0) = (pathLaw μ X).map fun x => x 0 := by
     rw [pathLaw_def, AEMeasurable.map_map_of_aemeasurable (measurable_pi_apply 0).aemeasurable hY,
       Function.comp_def]
   have hstep : ∀ n, μ.map (fun ω => ((fun i : Fin (n + 1) => X i ω), X (n + 1) ω))
-      = (pathLaw μ X).map fun x => ((fun i : Fin (n + 1) => x i.1), x (n + 1)) := fun n => by
+      = (pathLaw μ X).map fun x => ((fun i : Fin (n + 1) => x i.val), x (n + 1)) := fun n => by
     rw [pathLaw_def, AEMeasurable.map_map_of_aemeasurable
-      (g := fun x : ℕ → α => ((fun i : Fin (n + 1) => x i.1), x (n + 1))) (by fun_prop) hY,
+      (g := fun x : ℕ → α => ((fun i : Fin (n + 1) => x i.val), x (n + 1))) (by fun_prop) hY,
       Function.comp_def]
   simp only [h₀, hstep, hpre]
   refine ⟨fun h => ?_, fun h => ⟨hY, Measure.eq_markovChainLaw ν κ h.1 h.2⟩⟩
@@ -647,7 +621,7 @@ theorem hasLaw_markovChainLaw_iff_prefixLaw_singleton [IsFiniteMeasure ν] [Coun
     fun n => Measure.ext_of_singleton fun w => by
       rw [h n w, Measure.markovChainLaw_prefixLaw_singleton]
   refine (measure_eq_of_prefixProj_map_eq fun n => ?_).symm
-  have hcoord : ∀ i : Fin (n + 1), AEMeasurable (fun x : ℕ → α => x i.1) (markovChainLaw ν κ) :=
+  have hcoord : ∀ i : Fin (n + 1), AEMeasurable (fun x : ℕ → α => x i.val) (markovChainLaw ν κ) :=
     fun i => (measurable_pi_apply _).aemeasurable
   -- Both sides are length-`n` prefix laws, which are truncations of the length-`n + 1` ones.
   rw [← hchain, ← pathLaw_def, map_prefixProj_pathLaw μ (AEMeasurable.of_eval hX)]
@@ -657,7 +631,7 @@ theorem hasLaw_markovChainLaw_iff_prefixLaw_singleton [IsFiniteMeasure ν] [Coun
         (map_prefixLaw_castLE _ (Nat.le_succ n) hcoord).symm
     _ = (prefixLaw μ X (n + 1)).map fun x i => x (Fin.castLE (Nat.le_succ n) i) := by
         rw [hsucc]
-    _ = prefixLaw μ X n := map_prefixLaw_castLE μ (Nat.le_succ n) fun i => hX i.1
+    _ = prefixLaw μ X n := map_prefixLaw_castLE μ (Nat.le_succ n) fun i => hX i.val
 
 /-- **The time-`n` law of a Markov chain.** If the path of `X` has law `markovChainLaw ν κ`, then
 `X n` has law `(κ ^ n) ∘ₘ ν`. -/
@@ -666,15 +640,6 @@ theorem _root_.ProbabilityTheory.HasLaw.eval_markovChainLaw
     HasLaw (X n) ((κ ^ n : Kernel α α) ∘ₘ ν) μ := by
   rw [← Measure.markovChainLaw_map_eval]
   exact (hasLaw_map (measurable_pi_apply n).aemeasurable).comp h
-
-/-- **The one-step transition law of a Markov chain.** If the path of `X` has law
-`markovChainLaw ν κ`, then the pair `(X n, X (n + 1))` has law `((κ ^ n) ∘ₘ ν) ⊗ₘ κ`. -/
-theorem _root_.ProbabilityTheory.HasLaw.pair_succ_markovChainLaw [SFinite ν]
-    (h : HasLaw (fun ω n => X n ω) (markovChainLaw ν κ) μ) (n : ℕ) :
-    HasLaw (fun ω => (X n ω, X (n + 1) ω)) (((κ ^ n : Kernel α α) ∘ₘ ν) ⊗ₘ κ) μ := by
-  rw [← Measure.markovChainLaw_map_eval, ← markovChainLaw_map_pair_succ]
-  exact (hasLaw_map
-    ((measurable_pi_apply n).prodMk (measurable_pi_apply (n + 1))).aemeasurable).comp h
 
 end Process
 

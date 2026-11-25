@@ -20,6 +20,8 @@ import Mathlib.RingTheory.Flat.Stability
 import Mathlib.RingTheory.Flat.Tensor
 import Mathlib.RingTheory.TensorProduct.Quotient
 import Mathlib.Tactic.Algebraize
+import TauCeti.LinearAlgebra.TensorProduct.Basic
+import TauCeti.LinearAlgebra.TensorProduct.Quotient
 import TauCeti.LinearAlgebra.TensorProduct.Submodule
 import TauCeti.RingTheory.Flat.TensorProduct
 import TauCeti.RingTheory.Ideal.TensorProduct
@@ -105,6 +107,9 @@ For the infinitesimal form, step 3 is replaced by flatness of `M ⧸ Iⁿ M` ove
 
 ## Main results
 
+* `Module.Flat.quotient_of_lTensor_injective`: test quotient flatness on modules killed by the
+  ideal.
+* `Module.Flat.of_lTensor_injective`: the local criterion with a tensor test for quotient flatness.
 * `Module.Flat.of_subtype_rTensor_injective`: the local criterion for flatness.
 * `Module.Flat.of_forall_flat_quotient_pow`: the infinitesimal form of the local criterion;
   `Module.flat_iff_forall_flat_quotient_pow` is the equivalence.
@@ -137,9 +142,11 @@ public section
 
 open TensorProduct LinearMap
 
+universe uTensorCriterion
+
 namespace Module
 
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+variable {R : Type uTensorCriterion} {M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- If `M` is flat over `R`, then `M ⧸ x M` is flat over `R ⧸ (x)`. -/
 instance Flat.quotSMulTop [Flat R M] (x : R) : Flat (R ⧸ Ideal.span {x}) (QuotSMulTop x M) :=
@@ -231,6 +238,55 @@ theorem Flat.of_subtype_rTensor_injective [IsNoetherianRing R] {S : Type*} [Comm
     I.mem_range_rTensor_inclusion_inf_pow hI n ht
 
 end
+
+/-- If tensoring with `M` preserves submodule inclusions of modules annihilated by `I`, then
+`M ⧸ I M` is flat over `R ⧸ I`. No finiteness or Noetherian hypothesis is required. -/
+theorem Flat.quotient_of_lTensor_injective (I : Ideal R)
+    (h : ∀ (N : Type uTensorCriterion) [AddCommGroup N] [Module R N],
+      (∀ r ∈ I, ∀ n : N, r • n = 0) →
+        ∀ N' : Submodule R N, Function.Injective (N'.subtype.lTensor M)) :
+    Module.Flat (R ⧸ I) (M ⧸ I • (⊤ : Submodule R M)) := by
+  let Q := M ⧸ I • (⊤ : Submodule R M)
+  rw [Module.Flat.iff_lTensor_injective']
+  intro J
+  have hN (r : R) (hr : r ∈ I) (n : R ⧸ I) : r • n = 0 := by
+    rw [Algebra.smul_def, Ideal.Quotient.algebraMap_eq, Ideal.Quotient.eq_zero_iff_mem.mpr hr,
+      zero_mul]
+  have hJ (r : R) (hr : r ∈ I) (n : J) : r • n = 0 := Subtype.ext (hN r hr n)
+  have hM := h (R ⧸ I) hN (J.restrictScalars R)
+  let π := (I • (⊤ : Submodule R M)).mkQ
+  have hπ := quotient_tensor_bijective (M := M) I hJ
+  have hπ' := quotient_tensor_bijective (M := M) I hN
+  have hQ : Function.Injective ((J.subtype.restrictScalars R).lTensor Q) := by
+    intro x y hxy
+    obtain ⟨x, rfl⟩ := hπ.2 x
+    obtain ⟨y, rfl⟩ := hπ.2 y
+    apply congrArg (π.rTensor J)
+    apply hM
+    apply hπ'.1
+    exact ((LinearMap.lTensor_rTensor_comm π (J.subtype.restrictScalars R) x).symm.trans
+      hxy).trans (LinearMap.lTensor_rTensor_comm π (J.subtype.restrictScalars R) y)
+  let e := quotientScalarEquiv I Q J
+  intro x y hxy
+  apply e.injective
+  apply hQ
+  rw [← quotientScalarEquiv_lTensor, ← quotientScalarEquiv_lTensor, hxy]
+
+/-- A finite module over a Noetherian algebra is flat if tensoring preserves inclusions of
+modules annihilated by `I` and the inclusion of `I`, provided `I S` lies in the Jacobson radical.
+This is the local flatness criterion with quotient flatness expressed as a tensor test. -/
+theorem Flat.of_lTensor_injective [IsNoetherianRing R]
+    {S : Type*} [CommRing S] [Algebra R S] [Module S M] [IsScalarTower R S M]
+    [IsNoetherianRing S] [Module.Finite S M] (I : Ideal R)
+    (hIS : I.map (algebraMap R S) ≤ (⊥ : Ideal S).jacobson)
+    (h : ∀ (N : Type uTensorCriterion) [AddCommGroup N] [Module R N],
+      (∀ r ∈ I, ∀ n : N, r • n = 0) →
+        ∀ N' : Submodule R N, Function.Injective (N'.subtype.lTensor M))
+    (hI : Function.Injective (I.subtype.lTensor M)) : Module.Flat R M := by
+  have : Module.Flat (R ⧸ I) (M ⧸ I • (⊤ : Submodule R M)) :=
+    Flat.quotient_of_lTensor_injective I h
+  exact Module.Flat.of_subtype_rTensor_injective hIS
+    ((LinearMap.lTensor_inj_iff_rTensor_inj M I.subtype).mp hI)
 
 /-- **Flatness over the fibres** (Stacks, Tag 00MP). Let `R → S → T` be ring maps with `S` and `T`
 Noetherian, let `M` be a finite `T`-module which is flat over `R`, and let `J` be an ideal of `R`

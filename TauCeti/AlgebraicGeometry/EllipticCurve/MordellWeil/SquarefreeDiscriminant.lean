@@ -143,8 +143,8 @@ field factor and a prime `w` above `v`, of the `w`-adic valuations of the compon
 the inertia degrees. -/
 private lemma valuation_norm_eq_prod (v : HeightOneSpectrum R) (a : W.A) :
     v.valuation K (Algebra.norm K a) = ∏ i : W.PrimesAboveFactors R v,
-      i.2.1.valuation (𝕃 i.1) (AdjoinRoot.projFactor W.f_ne_zero W.squarefree_f i.1 a) ^
-        i.2.1.asIdeal.inertiaDeg R := by
+      i.2.val.valuation (𝕃 i.1) (AdjoinRoot.projFactor W.f_ne_zero W.squarefree_f i.1 a) ^
+        i.2.val.asIdeal.inertiaDeg R := by
   rw [AdjoinRoot.norm_eq_prod_norm_projFactor W.f_ne_zero W.squarefree_f, map_prod,
     ← Finset.univ_sigma_univ, Finset.prod_sigma]
   exact Finset.prod_congr rfl fun q _ ↦
@@ -153,8 +153,8 @@ private lemma valuation_norm_eq_prod (v : HeightOneSpectrum R) (a : W.A) :
 /-- Since `N(f'(T)) = -disc f`, the weighted product over the pairs `(q, w)` above `v` of the
 `w`-adic valuations of `f' θ` is `v (disc f)`. -/
 private lemma prod_valuation_deriv_root (v : HeightOneSpectrum R) :
-    ∏ i : W.PrimesAboveFactors R v, i.2.1.valuation (𝕃 i.1)
-      (3 * θ i.1 ^ 2 + 2 * ι i.1 W.a₂ * θ i.1 + ι i.1 W.a₄) ^ i.2.1.asIdeal.inertiaDeg R =
+    ∏ i : W.PrimesAboveFactors R v, i.2.val.valuation (𝕃 i.1)
+      (3 * θ i.1 ^ 2 + 2 * ι i.1 W.a₂ * θ i.1 + ι i.1 W.a₄) ^ i.2.val.asIdeal.inertiaDeg R =
       v.valuation K W.f.discr := by
   rw [← Valuation.map_neg, ← W.norm_mk_derivative_f, W.valuation_norm_eq_prod R v]
   refine Finset.prod_congr rfl fun i _ ↦ ?_
@@ -165,7 +165,7 @@ private lemma prod_valuation_deriv_root (v : HeightOneSpectrum R) :
 valuations of `x - θ` is `v (f x)`. -/
 private lemma prod_valuation_algebraMap_sub_root (v : HeightOneSpectrum R) (x : K) :
     ∏ i : W.PrimesAboveFactors R v,
-      i.2.1.valuation (𝕃 i.1) (ι i.1 x - θ i.1) ^ i.2.1.asIdeal.inertiaDeg R =
+      i.2.val.valuation (𝕃 i.1) (ι i.1 x - θ i.1) ^ i.2.val.asIdeal.inertiaDeg R =
       v.valuation K (W.f.eval x) := by
   rw [← AdjoinRoot.norm_algebraMap_sub_root W.monic_f x, ← AdjoinRoot.mk_C, ← AdjoinRoot.mk_X,
     ← map_sub, W.valuation_norm_eq_prod R v]
@@ -194,31 +194,31 @@ theorem even_valuationOfNeZero_sub_root_of_exp_neg_one_le (p : W.f.Factors) {x y
   set v := HeightOneSpectrum.under R w
   -- the pairs `i = (q, w')` of a field factor and a prime above `v`, with `w` among them
   let i₀ : W.PrimesAboveFactors R v := ⟨p, w, inferInstance⟩
-  have hv (i : W.PrimesAboveFactors R v) : HeightOneSpectrum.under R i.2.1 = v :=
-    HeightOneSpectrum.under_eq_iff_liesOver.mpr i.2.2
-  have he (i : W.PrimesAboveFactors R v) : 1 ≤ i.2.1.asIdeal.inertiaDeg R :=
-    Ideal.inertiaDeg_pos i.2.1.asIdeal R
+  have hv (i : W.PrimesAboveFactors R v) : HeightOneSpectrum.under R i.2.val = v :=
+    HeightOneSpectrum.under_eq_iff_liesOver.mpr i.2.property
+  have he (i : W.PrimesAboveFactors R v) : 1 ≤ i.2.val.asIdeal.inertiaDeg R :=
+    Ideal.inertiaDeg_pos i.2.val.asIdeal R
   -- `f' θ` is a unit at every pair but `i₀`, which has inertia degree `1`
   obtain ⟨he₀, hrest⟩ := eq_one_and_forall_eq_one_of_exp_neg_one_le_prod (i₀ := i₀)
-    (t := fun i : W.PrimesAboveFactors R v ↦ i.2.1.valuation (𝕃 i.1)
+    (t := fun i : W.PrimesAboveFactors R v ↦ i.2.val.valuation (𝕃 i.1)
       (3 * θ i.1 ^ 2 + 2 * ι i.1 W.a₂ * θ i.1 + ι i.1 W.a₄))
     (fun i _ ↦ W.valuation_deriv_root_le_one R i.1 (by rwa [hv]) (by rwa [hv]) (by rwa [hv]))
     (fun i _ ↦ he i) (hd.trans_eq (W.prod_valuation_deriv_root R v).symm) (Finset.mem_univ _) hw
   -- the valuations of `x - θ` are even away from `i₀`, with product `v(y)²`
   have hlog (i : W.PrimesAboveFactors R v) :
-      log (i.2.1.valuation (𝕃 i.1) (ι i.1 x - θ i.1)) = Multiplicative.toAdd
-        (i.2.1.valuationOfNeZero (W.isUnit_algebraMap_sub_root hx i.1).unit) := by
+      log (i.2.val.valuation (𝕃 i.1) (ι i.1 x - θ i.1)) = Multiplicative.toAdd
+        (i.2.val.valuationOfNeZero (W.isUnit_algebraMap_sub_root hx i.1).unit) := by
     conv_lhs => rw [← IsUnit.unit_spec (W.isUnit_algebraMap_sub_root hx i.1)]
     rw [← HeightOneSpectrum.valuationOfNeZero_eq]
     rfl
   have hev := two_dvd_log_of_prod_eq_sq (i₀ := i₀) (c := v.valuation K y)
-    (x := fun i : W.PrimesAboveFactors R v ↦ i.2.1.valuation (𝕃 i.1) (ι i.1 x - θ i.1))
-    (e := fun i : W.PrimesAboveFactors R v ↦ i.2.1.asIdeal.inertiaDeg R)
+    (x := fun i : W.PrimesAboveFactors R v ↦ i.2.val.valuation (𝕃 i.1) (ι i.1 x - θ i.1))
+    (e := fun i : W.PrimesAboveFactors R v ↦ i.2.val.asIdeal.inertiaDeg R)
     (fun i _ _ ↦ (Valuation.ne_zero_iff _).mpr (W.isUnit_algebraMap_sub_root hx i.1).ne_zero)
     (Finset.mem_univ _) he₀
     (fun i hi₁ hi ↦ by
       rw [hlog]
-      exact W.even_valuationOfNeZero_sub_root R i.1 h hx _ (IsUnit.unit_spec _) i.2.1
+      exact W.even_valuationOfNeZero_sub_root R i.1 h hx _ (IsUnit.unit_spec _) i.2.val
         (by rwa [hv]) (by rwa [hv]) (by rwa [hv]) (hrest i hi₁ hi)) (by
       rw [W.prod_valuation_algebraMap_sub_root R v, (equation_iff_eval_f_eq_sq W x y).mp h,
         map_pow])

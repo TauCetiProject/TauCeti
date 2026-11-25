@@ -21,6 +21,12 @@ are all defined for all time. Its maximal integral curves then assemble into a f
 manifold, and this file packages them as a Mathlib `Flow`. Every `C¹` vector field on a compact
 boundaryless manifold is complete (`isCompleteVectorField_of_compactSpace`).
 
+A field that is not complete may still have maximal integral curves through the points of a set `K`
+that are defined for all time and stay in `K`. These curves then form a flow of `ℝ` on `K`
+(`TauCeti.globalFlowOn`), to which the topological dynamics of Mathlib's `Flow` applies; a typical
+use is a compact invariant region of a field that blows up elsewhere, such as the slab
+`M × [0, 1]` of a continuation field on `M × ℝ`.
+
 ## Main declarations
 
 * `TauCeti.globalFlow`: the flow of a complete `C¹` vector field;
@@ -28,13 +34,15 @@ boundaryless manifold is complete (`isCompleteVectorField_of_compactSpace`).
 * `TauCeti.isMIntegralCurve_globalFlow`: its orbits are integral curves of the field.
 * `TauCeti.apply_globalFlow_eq_sub`: a function `f` with `df(v) = -1` on a band decreases at unit
   speed along the flow while the flow stays in the band;
+  `TauCeti.apply_globalFlow_eq_sub_of_forall_mem`: the same forward or backward up to a time `s`,
+  along a flow line staying where `df(v) = -1` between `0` and `s`;
   `TauCeti.mvfderiv_apply_eq_one_of_eventually_apply_globalFlow_eq_add`: conversely, a function
   translated at unit speed by the flow has `df(v) = 1`, so
   (`TauCeti.isRegularValue_of_apply_globalFlow_eq_add`) the values it is translated through are
   regular.
 * `TauCeti.globalFlow_eq_of_isMIntegralCurve`: every integral curve is an orbit.
-* `TauCeti.forall_globalFlow_eq_self_iff`: a point is fixed at all times exactly when the field
-  vanishes there.
+* `TauCeti.forall_globalFlow_eq_self_iff`, `TauCeti.exists_globalFlow_ne_self`: a point is fixed at
+  all times exactly when the field vanishes there.
 * `TauCeti.contMDiff_globalFlow_uncurry`: for a complete `C^n` field, the flow is jointly `C^n` in
   time and space.
 * `TauCeti.mfderiv_globalFlow_apply_self`: the differential of the time-`t` map preserves the
@@ -43,6 +51,10 @@ boundaryless manifold is complete (`isCompleteVectorField_of_compactSpace`).
   diffeomorphism; `TauCeti.globalFlowDiffeomorph_symm_apply`: its inverse is the time-`(-t)` map.
 * `TauCeti.globalFlowDiffeomorphHom`: the flow as a homomorphism from the additive group `ℝ` to
   the group of `C^n` self-diffeomorphisms.
+* `TauCeti.globalFlowOn`: the flow on a set `K` of a field that need not be complete, when its
+  maximal integral curves through `K` are defined for all time and stay in `K`;
+  `TauCeti.coe_globalFlowOn_apply`: it is the maximal integral curve, read in `K`;
+  `TauCeti.globalFlowOn_eq_restrict`: for a complete field it is the restriction of `globalFlow`.
 
 ## References
 
@@ -100,6 +112,20 @@ theorem isMIntegralCurve_globalFlow (x : M) :
   exact isMIntegralCurve_maximalIntegralCurve_of_eq_univ hv
     (hcomplete.maximalIntegralCurveInterval_eq_univ x)
 
+/-- Where the flow line of `x` lies in a set on which `df(v) = -1`, the function
+`u ↦ f (ψ_u x) + u` has derivative `0`, for the flow `ψ` of `v`. -/
+theorem hasDerivAt_apply_globalFlow_add {f : M → ℝ} {U : Set M}
+    (hvU : ∀ y ∈ U, mvfderiv I f y (v y) = -1) {x : M} {u : ℝ}
+    (hu : globalFlow v hv hcomplete u x ∈ U) :
+    HasDerivAt (fun w ↦ f (globalFlow v hv hcomplete w x) + w) 0 u := by
+  set γ : ℝ → M := fun w ↦ globalFlow v hv hcomplete w x
+  have hmd : MDifferentiableAt I 𝓘(ℝ) f (γ u) :=
+    mdifferentiableAt_of_mvfderiv_apply_ne_zero (by rw [hvU _ hu]; norm_num)
+  have h := Manifold.hasDerivAt_comp_curve hmd (isMIntegralCurve_globalFlow hv hcomplete x u)
+  rw [hvU _ hu] at h
+  have h' := h.add (hasDerivAt_id' u)
+  rwa [neg_add_cancel] at h'
+
 /-- **Unit-speed descent along a flow.** Let `v` be a complete `C¹` vector field with
 `df(v) = -1` on an open set `U` containing the band `a ≤ f ≤ b`. If `f x ≤ b`, then `f` decreases
 at unit speed along the flow line of `x` until it reaches the level `a`. -/
@@ -121,15 +147,8 @@ theorem apply_globalFlow_eq_sub {f : M → ℝ} {a b : ℝ} (hf : Continuous f) 
   have hu' : f (γ u) = f x - u := hu
   obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 (hU.preimage hγ) u
     (hband _ (by rw [hu']; linarith) (by rw [hu']; linarith))
-  have hderiv : ∀ s ∈ Metric.ball u ε, HasDerivAt (fun w ↦ f (γ w) + w) 0 s := by
-    intro s hs
-    have hsU : γ s ∈ U := hball hs
-    have hmd : MDifferentiableAt I 𝓘(ℝ) f (γ s) :=
-      mdifferentiableAt_of_mvfderiv_apply_ne_zero (by rw [hvU _ hsU]; norm_num)
-    have h := Manifold.hasDerivAt_comp_curve hmd (isMIntegralCurve_globalFlow hv hcomplete x s)
-    rw [hvU _ hsU] at h
-    have h' := h.add (hasDerivAt_id' s)
-    rwa [neg_add_cancel] at h'
+  have hderiv : ∀ s ∈ Metric.ball u ε, HasDerivAt (fun w ↦ f (γ w) + w) 0 s := fun s hs ↦
+    hasDerivAt_apply_globalFlow_add hv hcomplete hvU (hball hs)
   have hconst : ∀ s ∈ Metric.ball u ε, f (γ s) + s = f (γ u) + u := fun s hs ↦
     Metric.isOpen_ball.is_const_of_deriv_eq_zero (convex_ball u ε).isPreconnected
       (fun w hw ↦ (hderiv w hw).differentiableAt.differentiableWithinAt)
@@ -137,6 +156,27 @@ theorem apply_globalFlow_eq_sub {f : M → ℝ} {a b : ℝ} (hf : Continuous f) 
   filter_upwards [nhdsWithin_le_nhds (Metric.ball_mem_nhds u hε)] with s hs
   simp only [S, mem_ofPred_eq]
   linarith [hconst s hs]
+
+/-- **Unit-speed descent between two times.** Let `v` be a complete `C¹` vector field with
+`df(v) = -1` on a set `U`. If the flow line of `x` stays in `U` at all times between `0` and `s`,
+then `f (ψ_s x) = f x - s`, for `s` of either sign. -/
+theorem apply_globalFlow_eq_sub_of_forall_mem {f : M → ℝ} {U : Set M}
+    (hvU : ∀ y ∈ U, mvfderiv I f y (v y) = -1) {x : M} {s : ℝ}
+    (hxU : ∀ w ∈ uIcc 0 s, globalFlow v hv hcomplete w x ∈ U) :
+    f (globalFlow v hv hcomplete s x) = f x - s := by
+  rcases eq_or_ne s 0 with rfl | hs
+  · rw [Flow.map_zero_apply, sub_zero]
+  -- `f (ψ_w x) + w` has zero derivative on the segment `uIcc 0 s`, which has nonempty interior.
+  have hderiv := fun w hw ↦ hasDerivAt_apply_globalFlow_add hv hcomplete hvU (hxU w hw)
+  have huniq : UniqueDiffOn ℝ (uIcc 0 s) := uniqueDiffOn_Icc (inf_lt_sup.2 hs.symm)
+  have hconst := (convex_uIcc 0 s).is_const_of_fderivWithin_eq_zero
+    (fun w hw ↦ (hderiv w hw).differentiableAt.differentiableWithinAt)
+    (fun w hw ↦ by
+      rw [(hderiv w hw).hasFDerivAt.hasFDerivWithinAt.fderivWithin (huniq w hw)]
+      simp)
+    left_mem_uIcc right_mem_uIcc
+  rw [Flow.map_zero_apply, add_zero] at hconst
+  linarith
 
 /-- **A function translated by a flow has unit derivative along the field.** If `f` is
 differentiable at `x` and `f (ψ_t x) = f x + t` for all times `t` near `0`, where `ψ` is the flow
@@ -200,6 +240,18 @@ theorem forall_globalFlow_eq_self_iff (x : M) :
   · intro h t
     exact globalFlow_eq_of_isMIntegralCurve hv hcomplete (isMIntegralCurve_const h) t
 
+/-- A point is non-stationary under the complete flow if and only if the vector field does not
+vanish there. -/
+theorem exists_globalFlow_ne_self_iff (x : M) :
+    (∃ t : ℝ, globalFlow v hv hcomplete t x ≠ x) ↔ v x ≠ 0 := by
+  simpa only [not_forall] using (forall_globalFlow_eq_self_iff hv hcomplete x).not
+
+/-- If the vector field does not vanish at `x`, then `x` is non-stationary under the complete
+flow. -/
+theorem exists_globalFlow_ne_self {x : M} (hv0 : v x ≠ 0) :
+    ∃ t : ℝ, globalFlow v hv hcomplete t x ≠ x :=
+  (exists_globalFlow_ne_self_iff hv hcomplete x).2 hv0
+
 omit hv in
 /-- The flow of a complete `C^n` vector field, `1 ≤ n`, is jointly `C^n` in time and space. -/
 theorem contMDiff_globalFlow_uncurry {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M]
@@ -255,6 +307,13 @@ theorem coe_globalFlowDiffeomorph {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M]
       globalFlow v (hvn.of_le (by exact_mod_cast hn)) hcomplete t :=
   funext (globalFlowDiffeomorph_apply hcomplete hn hvn t)
 
+/-- The time-`t` map of the flow of a complete `C¹` vector field has injective differential at
+every point, since it is a diffeomorphism. -/
+theorem injective_mfderiv_flowOf (t : ℝ) (x : M) :
+    Function.Injective (mfderiv I I (flowOf v t) x) := by
+  rw [flowOf_eq_globalFlow hv hcomplete, ← coe_globalFlowDiffeomorph hcomplete le_rfl hv t]
+  exact ((globalFlowDiffeomorph hcomplete le_rfl hv t).isInvertible_mfderiv one_ne_zero).injective
+
 omit hv in
 /-- The inverse of `globalFlowDiffeomorph` at time `t` is the time-`(-t)` map of the flow. -/
 @[simp]
@@ -288,5 +347,60 @@ theorem toMul_globalFlowDiffeomorphHom {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I
     (globalFlowDiffeomorphHom hcomplete hn hvn t).toMul =
       globalFlowDiffeomorph hcomplete hn hvn t :=
   (rfl)
+
+end TauCeti
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I 1 M]
+  [BoundarylessManifold I M]
+  {v : (x : M) → TangentSpace I x} {K : Set M}
+
+/-- **The flow of a vector field on an invariant set.** Let `v` be a `C¹` vector field and `K` a
+set such that the maximal integral curve of `v` through each point of `K` is defined for all time
+and stays in `K`. These curves form a flow of `ℝ` on `K`: `globalFlowOn v hv K hK hKv t x` is the
+value at time `t` of the maximal integral curve through `x`. -/
+noncomputable def globalFlowOn (v : (x : M) → TangentSpace I x)
+    (hv : ContMDiff I I.tangent 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (K : Set M)
+    (hK : ∀ x ∈ K, maximalIntegralCurveInterval v x = univ)
+    (hKv : ∀ x ∈ K, ∀ t, maximalIntegralCurve v x t ∈ K) : Flow ℝ K where
+  toFun t x := ⟨maximalIntegralCurve v x t, hKv x x.property t⟩
+  cont' := by
+    refine Continuous.subtype_mk ?_ _
+    refine (contMDiffOn_maximalIntegralCurve (n := 1) le_rfl hv).continuousOn.comp_continuous
+      ((continuous_subtypeVal.comp continuous_snd).prodMk continuous_fst) fun p ↦ ?_
+    simp [hK p.snd p.snd.property]
+  map_add' t₁ t₂ x := by
+    refine Subtype.ext ?_
+    simp only
+    rw [add_comm,
+      maximalIntegralCurve_add hv (by simp [hK x x.property]) (by simp [hK x x.property])]
+  map_zero' x := Subtype.ext maximalIntegralCurve_zero
+
+variable (hv : ContMDiff I I.tangent 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+  (hK : ∀ x ∈ K, maximalIntegralCurveInterval v x = univ)
+  (hKv : ∀ x ∈ K, ∀ t, maximalIntegralCurve v x t ∈ K)
+
+/-- The flow on an invariant set is the maximal integral curve. -/
+@[simp]
+theorem coe_globalFlowOn_apply (t : ℝ) (x : K) :
+    (globalFlowOn v hv K hK hKv t x : M) = maximalIntegralCurve v x t :=
+  (rfl)
+
+/-- The orbits of the flow on an invariant set are integral curves of the field. -/
+theorem isMIntegralCurve_coe_globalFlowOn (x : K) :
+    IsMIntegralCurve (fun t ↦ (globalFlowOn v hv K hK hKv t x : M)) v := by
+  simp only [coe_globalFlowOn_apply]
+  exact isMIntegralCurve_maximalIntegralCurve_of_eq_univ hv (hK x x.property)
+
+/-- For a complete field, the flow on an invariant set `K` is the restriction to `K` of the flow
+`globalFlow` of the field. -/
+theorem globalFlowOn_eq_restrict (hcomplete : IsCompleteVectorField v)
+    (hinv : IsInvariant (globalFlow v hv hcomplete) K) :
+    globalFlowOn v hv K hK hKv = (globalFlow v hv hcomplete).restrict hinv :=
+  Flow.ext fun t x ↦ Subtype.ext <| by
+    rw [coe_globalFlowOn_apply, Flow.coe_restrict_apply, globalFlow_apply]
 
 end TauCeti

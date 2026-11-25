@@ -5,6 +5,7 @@ Authors: Wentao Li
 -/
 module
 public import TauCeti.NumberTheory.QuadraticOrder.Field
+public import TauCeti.Algebra.Ring.Hom
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
@@ -50,19 +51,43 @@ noncomputable def algEquivOfSqrt (D : ℤ) [Fact (¬ IsSquare D)] (δ : K)
   unfold algEquivOfSqrt
   exact AlgEquiv.ofBijective_apply _ _ _
 
-/-- The field identification sends the model generator to the chosen square root. -/
+/-- The field identification sends the generator `ω` of the model to the chosen square root. -/
+-- Not `@[simp]`: `simp` proves it from `algEquivOfSqrt_apply`.
 theorem algEquivOfSqrt_apply_omega (D : ℤ) [Fact (¬ IsSquare D)] (δ : K)
     (hδ : δ ^ 2 = (D : K)) (hK : Module.finrank ℚ K = 2) :
     algEquivOfSqrt D δ hδ hK ω = δ := by
-  simp
+  simp [algEquivOfSqrt_apply]
 
-/-- Algebra homomorphisms out of the presented quadratic field are determined by the image of
-its chosen square root. -/
-theorem algHom_ext_of_sqrt (D : ℤ) [Fact (¬ IsSquare D)] (δ : K)
-    (hδ : δ ^ 2 = (D : K)) (hK : Module.finrank ℚ K = 2)
-    {A : Type*} [Semiring A] [Algebra ℚ A] {φ ψ : K →ₐ[ℚ] A} (h : φ δ = ψ δ) : φ = ψ := by
+/-- The model `ℚ(√D)`, presented by its generator `ω`, is identified with itself by the identity:
+evaluation at `ω` is the identity map. -/
+@[simp]
+theorem algEquivOfSqrt_omega (D : ℤ) [Fact (¬ IsSquare D)]
+    (hω : (ω : QuadraticAlgebra ℚ (D : ℚ) 0) ^ 2 = (D : _))
+    (hK : Module.finrank ℚ (QuadraticAlgebra ℚ (D : ℚ) 0) = 2) :
+    algEquivOfSqrt D ω hω hK = AlgEquiv.refl := by
+  ext z <;> simp [algEquivOfSqrt_apply, Algebra.smul_def]
+
+/-- **Composition of model equivalences**: the model equivalence of `K`, followed by a
+`ℚ`-isomorphism `σ : K ≃ₐ[ℚ] L`, is the model equivalence of `L` presented by `σ δ`. -/
+@[simp]
+theorem algEquivOfSqrt_trans {L : Type*} [Field L] [NumberField L] (D : ℤ) [Fact (¬ IsSquare D)]
+    (δ : K) (hδ : δ ^ 2 = (D : K)) (hK : Module.finrank ℚ K = 2) (σ : K ≃ₐ[ℚ] L) :
+    (algEquivOfSqrt D δ hδ hK).trans σ =
+      algEquivOfSqrt D (σ δ) (sq_map_of_sq_eq_intCast σ hδ)
+        (σ.toLinearEquiv.finrank_eq.symm.trans hK) := by
+  ext z
+  simp [algEquivOfSqrt_apply, map_rat_smul]
+
+/-- Algebra homomorphisms out of a quadratic field are determined by the image of the chosen
+square root of a nonsquare integer. -/
+theorem algHom_ext_of_sqrt {F : Type*} [Field F] [CharZero F] {D : ℤ}
+    (hD : ¬ IsSquare D) {δ : F} (hδ : δ ^ 2 = (D : F)) (hF : Module.finrank ℚ F = 2)
+    {A : Type*} [Semiring A] [Algebra ℚ A] {φ ψ : F →ₐ[ℚ] A} (h : φ δ = ψ δ) : φ = ψ := by
+  have : NumberField F :=
+    { to_finiteDimensional := FiniteDimensional.of_finrank_pos (hF ▸ zero_lt_two) }
+  have : Fact (¬ IsSquare D) := ⟨hD⟩
   ext x
-  obtain ⟨z, rfl⟩ := (algEquivOfSqrt D δ hδ hK).surjective x
+  obtain ⟨z, rfl⟩ := (algEquivOfSqrt D δ hδ hF).surjective x
   simp only [algEquivOfSqrt_apply, map_add, map_smul, map_one, h]
 
 /-- The same canonical order, embedded in a supplied quadratic number field. -/

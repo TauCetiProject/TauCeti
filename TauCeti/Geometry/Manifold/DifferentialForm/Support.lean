@@ -204,6 +204,27 @@ theorem isCompact_tsupport_of_eq_mpullback (hfe : EqOn f e e.source) {φ : Rough
     (_root_.isClosed_tsupport (α := E [⋀^Fin k]→L[ℝ] F) _)
     fun x hx ↦ ⟨e x, e.mapsTo_tsupport_of_eq_mpullback hfe hψ hψφ hx, e.left_inv (hψ hx)⟩
 
+/-- Let `e` be an open partial homeomorphism agreeing with a map `f` on its source, and let `φ` be
+a form with compact support in the target of `e`. On a Hausdorff space, a form `ψ` vanishing off the
+source of `e` and agreeing there with `f^*φ`, such as `f^*φ` extended by zero off the source, is
+supported in the source of `e`. -/
+theorem tsupport_subset_source_of_eq_mpullback [T2Space X] (hfe : EqOn f e e.source)
+    {φ : RoughForm I' Y F k} {ψ : RoughForm I X F k}
+    (hφ : IsCompact (_root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] F) φ))
+    (hφt : _root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] F) φ ⊆ e.target)
+    (hψ0 : ∀ x ∉ e.source, ψ x = 0) (hψφ : ∀ x ∈ e.source, ψ x = mpullback I I' f φ x) :
+    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) ψ ⊆ e.source := by
+  -- `ψ` vanishes off the source and `f^*φ` vanishes off the preimage of the support of `φ`, so
+  -- the support of `ψ` lies in the image of the support of `φ` under the inverse of `e`. That set
+  -- is compact, hence closed, and lies in the source.
+  have hK := hφ.image_of_continuousOn (e.continuousOn_symm.mono hφt)
+  refine (closure_minimal (fun x hx ↦ ?_) hK.isClosed).trans
+    (image_subset_iff.mpr fun q hq ↦ e.map_target (hφt hq))
+  have hxs : x ∈ e.source := by_contra fun h ↦ hx (hψ0 x h)
+  have hfx : f x ∈ _root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] F) φ := by_contra fun h ↦
+    hx ((hψφ x hxs).trans (mpullback_apply_eq_zero (image_eq_zero_of_notMem_tsupport h)))
+  exact ⟨f x, hfx, by rw [hfe hxs, e.left_inv hxs]⟩
+
 end OpenPartialHomeomorph
 
 namespace TauCeti.RoughForm
@@ -272,7 +293,7 @@ theorem exists_finset_partition_eq (φ : RoughForm I M F k) (hc : IsCompact
       simp [hρ]
 
 /-- Weights summing to one on the support give an actual finite form decomposition. -/
-theorem eq_sum_fun_smul {n : ℕ} (φ : RoughForm I M F k) (ρ : Fin n → M → ℝ)
+theorem eq_sum_fun_smul [Fintype ι] (φ : RoughForm I M F k) (ρ : ι → M → ℝ)
     (hρ : ∀ x ∈ (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ), ∑ i, ρ i x = 1) :
     φ = (fun x ↦ ∑ i, ρ i x • φ x) := by
   funext x

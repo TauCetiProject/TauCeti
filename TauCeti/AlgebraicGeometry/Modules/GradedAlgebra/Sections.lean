@@ -43,6 +43,8 @@ arguments here follow the proofs there.
   `CategoryTheory.CommMon.gAlgebraSections`: the graded
   commutative `Γ(X, U)`-algebra structure on `n ↦ Γ(Aₙ, U)`, characterized by
   `sections_gMul_def`, `sections_gOne_def` and `gAlgebraSections_toFun`;
+* `CategoryTheory.CommMon.finite_sections_zero_of_isIso_one`: when the unit `𝒪_X ⟶ A₀` is an
+  isomorphism, the degree-zero sections are a finite module over the sections of `X`;
 * `CategoryTheory.CommMon.gradedSectionsGrading`: the grading of `⨁ n, Γ(Aₙ, U)` by its
   summands, as an internally graded algebra in the sense of `GradedAlgebra`;
 * `CategoryTheory.CommMon.map_gMul_sections`: restriction of sections preserves the homogeneous
@@ -57,7 +59,9 @@ arguments here follow the proofs there.
   (`gradedSectionsPresheafMap`); its graded form is
   `CategoryTheory.CommMon.gradedSectionsGradedHom`, which is surjective onto a homogeneous
   component over an affine open when the morphism is an epimorphism of quasicoherent sheaves in
-  that degree (`grade_subset_range_gradedSectionsGradedHom_of_epi`).
+  that degree (`grade_subset_range_gradedSectionsGradedHom_of_epi`), so `gradedSectionsMap` is
+  surjective there when the morphism is an epimorphism in every degree
+  (`range_gradedSectionsMap_eq_top_of_epi`).
 -/
 
 public section
@@ -170,6 +174,18 @@ lemma gAlgebraSections_toFun (r : Γ(X, U)) :
     GAlgebra.toFun (R := Γ(X, U)) (A := fun n ↦ Γ(A.X n, U)) r =
       A.toMon.one.app U (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U) r) :=
   (rfl)
+
+/-- If the unit `𝒪_X ⟶ A₀` of a graded algebra is an isomorphism, then over every open `U` the
+sections `Γ(A₀, U)` form a finite `Γ(X, U)`-module. -/
+instance finite_sections_zero_of_isIso_one [IsIso A.toMon.one] :
+    Module.Finite Γ(X, U) Γ(A.X 0, U) := by
+  -- the unit induces an isomorphism `Γ(X, U) ≅ Γ(A₀, U)`
+  refine Module.Finite.of_surjective (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U) ≫
+    (Scheme.Modules.sectionsFunctor U).map A.toMon.one).hom ?_
+  have : IsIso (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U)) := by
+    rw [Scheme.Modules.sectionsFunctor_ε]
+    exact IsIso.id _
+  exact (ConcreteCategory.bijective_of_isIso _).2
 
 end CategoryTheory.CommMon
 
@@ -539,6 +555,22 @@ theorem grade_subset_range_gradedSectionsGradedHom_of_epi
     (φ.hom.hom i) hφ hA hB U hU x
   exact ⟨DirectSum.of _ i y, (gradedSectionsGradedHom_apply φ U _).trans
     (gradedSectionsMap_of φ U i y)⟩
+
+/-- Over an affine open, a morphism of graded algebras that is an epimorphism of quasicoherent
+module sheaves in every degree is surjective on graded rings of sections. -/
+theorem range_gradedSectionsMap_eq_top_of_epi
+    (φ : A ⟶ B) (U : X.Opens) (hU : IsAffineOpen U) [∀ n, Epi (φ.hom.hom n)]
+    [∀ n, (A.X n).IsQuasicoherent] [∀ n, (B.X n).IsQuasicoherent] :
+    (gradedSectionsMap φ U).range = ⊤ := by
+  refine eq_top_iff.mpr ?_
+  rintro x -
+  induction x using DirectSum.induction_on with
+  | zero => exact zero_mem _
+  | of i x =>
+    obtain ⟨y, hy⟩ := grade_subset_range_gradedSectionsGradedHom_of_epi φ U hU i
+      (DirectSum.mem_summand.mpr ⟨x, rfl⟩)
+    exact ⟨y, (gradedSectionsGradedHom_apply φ U y).symm.trans hy⟩
+  | add x y hx hy => exact add_mem hx hy
 
 /-- The morphism of presheaves of graded rings of sections induced by a morphism of graded
 algebras: on each open `U` it is `gradedSectionsMap`. -/
