@@ -52,6 +52,9 @@ continues to hold when the input family loses rank.
   a family of vectors depending continuously on a parameter, up to the index, is continuous at
   every parameter where the relevant initial segment of the family is linearly independent, with
   `ContinuousAt`, `ContinuousOn` and `Continuous` variants for the normalized process.
+* `LinearIndependent.gramSchmidt_norm_sq_pos` — squared residual lengths are positive.
+* `TauCeti.InnerProductSpace.norm_gramSchmidt_le_norm_sum_zsmul` bounds a residual by the norm of
+  an integer combination whose last nonzero coordinate corresponds to that residual.
 * `InnerProductSpace.inner_gramSchmidt_eq_norm_sq`,
   `InnerProductSpace.inner_gramSchmidtNormed_eq_norm`,
   `InnerProductSpace.inner_gramSchmidtOrthonormalBasis_eq_norm`,
@@ -105,6 +108,11 @@ theorem inner_gramSchmidt_eq_norm_sq (f : ι → E) (j : ι) :
   · simpa only [inner_self_eq_norm_sq_to_K] using h
   · rw [gramSchmidt_orthogonal 𝕜 f (ne_of_gt (Finset.mem_Iio.mp hi)), mul_zero]
 
+/-- Every Gram–Schmidt vector of a linearly independent family has positive squared norm. -/
+theorem _root_.LinearIndependent.gramSchmidt_norm_sq_pos {f : ι → E}
+    (hf : LinearIndependent 𝕜 f) (j : ι) : 0 < ‖gramSchmidt 𝕜 f j‖ ^ 2 :=
+  pow_pos (norm_pos_iff.mpr (gramSchmidt_ne_zero j hf)) _
+
 /-- The normalized Gram–Schmidt vector paired with its original input has residual norm. -/
 @[simp]
 theorem inner_gramSchmidtNormed_eq_norm (f : ι → E) (j : ι) :
@@ -157,6 +165,41 @@ theorem gramSchmidtNormed_eq_self_of_inner_eq_zero {f : ι → E} {i : ι}
   simp [gramSchmidtNormed, gramSchmidt_eq_self_of_inner_eq_zero hf, hi]
 
 end InnerProductSpace
+
+namespace TauCeti.InnerProductSpace
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+variable {ι : Type*} [LinearOrder ι] [LocallyFiniteOrderBot ι]
+
+attribute [local instance] IsWellOrder.toHasWellFounded
+
+/-- The last nonzero coefficient of an integer combination identifies a Gram–Schmidt vector
+whose norm is bounded by the norm of the combination. -/
+theorem norm_gramSchmidt_le_norm_sum_zsmul [Fintype ι] {b : ι → E} {c : ι → ℤ} {j : ι}
+    (hcj : c j ≠ 0) (hc : ∀ i, j < i → c i = 0) :
+    ‖gramSchmidt 𝕜 b j‖ ≤ ‖∑ i, c i • b i‖ := by
+  let g := gramSchmidt 𝕜 b j
+  have hinner : inner 𝕜 g (∑ i, c i • b i) = (c j : 𝕜) * (‖g‖ : 𝕜) ^ 2 := by
+    simp only [inner_sum, ← Int.cast_smul_eq_zsmul 𝕜, inner_smul_right]
+    rw [Finset.sum_eq_single j]
+    · exact congrArg ((c j : 𝕜) * ·) (inner_gramSchmidt_eq_norm_sq b j)
+    · intro i _ hij
+      rcases hij.lt_or_gt with hlt | hgt
+      · rw [gramSchmidt_inv_triangular 𝕜 b hlt, mul_zero]
+      · simp [hc i hgt]
+    · simp
+  have habs : (1 : ℝ) ≤ |(c j : ℝ)| := by exact_mod_cast Int.one_le_abs hcj
+  have hprod : ‖g‖ ^ 2 ≤ ‖g‖ * ‖∑ i, c i • b i‖ := calc
+    ‖g‖ ^ 2 ≤ |(c j : ℝ)| * ‖g‖ ^ 2 := le_mul_of_one_le_left (sq_nonneg _) habs
+    _ = ‖inner 𝕜 g (∑ i, c i • b i)‖ := by
+      rw [hinner, norm_mul, norm_pow, ← RCLike.ofReal_intCast (K := 𝕜) (c j),
+        RCLike.norm_ofReal, RCLike.norm_ofReal, abs_of_nonneg (norm_nonneg _)]
+    _ ≤ _ := norm_inner_le_norm _ _
+  by_contra! hlt
+  exact (mul_lt_mul_of_pos_left hlt ((norm_nonneg _).trans_lt hlt)).not_ge
+    (by simpa only [pow_two] using hprod)
+
+end TauCeti.InnerProductSpace
 
 section Continuity
 
