@@ -161,9 +161,8 @@ theorem reductionK0_eq_of_pow_smul_le [IsNoetherianRing O] [Module.Finite O N] {
       ⟨Submodule.inclusion hPT, fun g ↦ rfl⟩
     let b : IntertwiningMap T.toRepresentation P.toRepresentation :=
       ⟨(r • T.toSubmodule.subtype).codRestrict P.toSubmodule fun v ↦
-        hrT (Submodule.smul_mem_pointwise_smul _ _ _ v.property), fun g ↦ by
-        ext v
-        exact (map_smul (σ g) r (v : N)).symm⟩
+        hrT (Submodule.smul_mem_pointwise_smul _ _ _ v.property), fun g ↦
+        LinearMap.ext fun v ↦ Subtype.ext <| by simp⟩
     have hab (w : T.toSubmodule) : a (b w) = r • w := Subtype.ext <| by
       simp [a, b, ← IntertwiningMap.toLinearMap_apply]
     have hba (v : P.toSubmodule) : b (a v) = r • v := Subtype.ext <| by
@@ -207,9 +206,14 @@ theorem reductionK0_residueField_eq_of_nonempty_equiv_baseChange [IsDomain O]
     simp [hff', hs, mul_comm (u : O), mul_smul, ← Units.smul_def]
   let k := IsLocalRing.ResidueField O
   let eρ : ρ.Equiv f.range.toRepresentation :=
-    .mk (LinearEquiv.ofInjective f.toLinearMap hf) fun g ↦ by
-      ext v
-      exact f.isIntertwining _ _ g v
+    .mk (LinearEquiv.ofInjective f.toLinearMap hf) fun g ↦
+      -- `ofInjective` sends `v` to `f v` and the range acts through `σ`; both hold by `rfl`
+      -- (`LinearEquiv.ofInjective_apply`, `Subrepresentation.coe_toRepresentation_apply`), but
+      -- `simp` cannot rewrite with them here, as the codomain `f.range.toSubmodule` is
+      -- `LinearMap.range f.toLinearMap` only after unfolding `IntertwiningMap.range`.
+      LinearMap.ext fun v ↦ Subtype.ext <| by
+        change f (ρ g v) = σ g (f v)
+        exact f.isIntertwining _ _ g v
   let eσ : (⊤ : Subrepresentation σ).toRepresentation.Equiv σ :=
     .mk Submodule.topEquiv fun g ↦ rfl
   exact (reductionK0_congr k eρ).trans <|
