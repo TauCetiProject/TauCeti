@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import Mathlib.Analysis.Calculus.TaylorIntegral
 import TauCeti.Analysis.BoundedVariation.Approximation
 import TauCeti.Analysis.BoundedVariation.Countable
 import TauCeti.Analysis.InnerProductSpace.OrthogonalLine
@@ -119,10 +120,7 @@ private theorem totalVariationOn_line_eq_lintegral {w : E → ℝ} (hw : ContDif
   rw [hc.locallyLipschitz.locallyLipschitzOn.totalVariationOn_eq_setLIntegral_enorm_fderiv,
     Opens.coe_top, Measure.restrict_univ]
   refine lintegral_congr fun t => ?_
-  have hl : HasDerivAt (fun s : ℝ => y + s • e) e t := by
-    simpa using ((hasDerivAt_id t).smul_const e).const_add y
-  have hd := ((hw.differentiable one_ne_zero (y + t • e)).hasFDerivAt.comp_hasDerivAt t hl).deriv
-  rw [← hd]
+  rw [← (hw.differentiable one_ne_zero (y + t • e)).deriv_comp_add_smul]
   simp only [eNorm_eq_nnNorm, ENNReal.coe_inj]
   exact NNReal.eq (norm_deriv_eq_norm_fderiv (f := fun s : ℝ => w (y + s • e))).symm
 
@@ -310,13 +308,6 @@ theorem ae_totalVariationOn_line_lt_top {u : E → ℝ} (hu : Integrable u)
   replace hGint : ∫⁻ y, G y ≤ totalVariationOn volume ⊤ u := by simpa using hGint
   filter_upwards [hG, ae_lt_top' hGm (ne_top_of_le_ne_top hV hGint)] with y h₁ h₂
   exact h₁.trans_lt h₂
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The restriction of an indicator to a line is the indicator of the line section. -/
-private theorem indicator_one_line (s : Set E) (y e : E) :
-    (fun t : ℝ => s.indicator (1 : E → ℝ) (y + t • e)) =
-      {t : ℝ | y + t • e ∈ s}.indicator 1 :=
-  funext fun _ => (indicator_comp_right (fun t : ℝ => y + t • e)).symm
 
 private theorem integrable_indicator_one {s : Set E} (hs : NullMeasurableSet s)
     (hfin : volume s ≠ ∞) : Integrable (s.indicator (1 : E → ℝ)) :=

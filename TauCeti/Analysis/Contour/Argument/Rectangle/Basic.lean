@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Contour.Argument.Cycle
 public import TauCeti.Analysis.Contour.Curve.Rectangle
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.Winding.Number.Rectangle
 
 /-!
@@ -74,7 +75,8 @@ theorem argumentPrinciple_rectBoundary {ord : ℂ → ℤ} (hre : z.re ≤ w.re)
     (hS : ∀ s ∈ S, s ∉ frontier (Rectangle z w)) :
     ∫ t in (0 : ℝ)..4, deriv (rectBoundary z w) t • logDeriv f (rectBoundary z w t) =
       2 * π * I * ∑ s ∈ S with s ∈ Rectangle z w, (ord s : ℂ) := by
-  rw [argumentPrinciple_nullHomologous hU hoff hmero hord (isPiecewiseC1On_rectBoundary z w)
+  rw [argumentPrinciple_nullHomologous hU hoff hmero hord
+    (isPiecewiseC1On_rectBoundary z w).absolutelyContinuousOnInterval
     (fun t _ ↦ hRU (rectBoundary_mem_rectangle t)) (by simp)
     (fun _ _ hS' ↦ hS _ hS' (rectBoundary_mem_frontier _))
     (isNullHomologous_rectBoundary hRU), Finset.sum_filter]
@@ -94,7 +96,8 @@ theorem argumentPrinciple_rectBoundary_of_analyticOnNhd (hre : z.re ≤ w.re) (h
     ∫ t in (0 : ℝ)..4, deriv (rectBoundary z w) t • logDeriv f (rectBoundary z w t) =
       2 * π * I * ∑ s ∈ S with s ∈ Rectangle z w, (analyticOrderNatAt f s : ℂ) := by
   rw [argumentPrinciple_nullHomologous_of_analyticOnNhd hU hf hzeros
-    (isPiecewiseC1On_rectBoundary z w) (fun t _ ↦ hRU (rectBoundary_mem_rectangle t))
+    (isPiecewiseC1On_rectBoundary z w).absolutelyContinuousOnInterval
+    (fun t _ ↦ hRU (rectBoundary_mem_rectangle t))
     (by simp) (fun _ _ ↦ hfr _ (rectBoundary_mem_frontier _))
     (isNullHomologous_rectBoundary hRU), Finset.sum_filter]
   refine congrArg _ (Finset.sum_congr rfl fun s _ ↦ ?_)

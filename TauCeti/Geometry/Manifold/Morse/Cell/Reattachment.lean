@@ -117,6 +117,11 @@ private def morseFiberwiseBaseInv :
   ((sublevelInclusionHomeomorph f (c - ε) (c + ε) (by linarith)).symm : C(_, _)).comp
     ContinuousMap.snd
 
+private theorem morseFiberwiseBase_apply (x : {x | f x ≤ c - ε}) :
+    morseFiberwiseBase hε x =
+      (PUnit.unit, sublevelInclusionHomeomorph f (c - ε) (c + ε) (by linarith) x) :=
+  rfl
+
 private theorem morseFiberwiseBaseInv_morseFiberwiseBase (p : PUnit.{u + 1})
     (x : {x | f x ≤ c - ε}) : morseFiberwiseBaseInv hε (p, (morseFiberwiseBase hε x).2) = x :=
   Homeomorph.symm_apply_apply _ x
@@ -126,43 +131,24 @@ private theorem coe_morseFiberwiseBaseInv (p : PUnit.{u + 1})
     (morseFiberwiseBaseInv hε (p, y) : M) = y :=
   coe_sublevelInclusionHomeomorph_symm_apply f _ y
 
-/-- The attaching maps of the cells of `φ`, as families over a point. -/
-private def morseFiberwiseAttachingMap (i : ι) :
-    C(PUnit.{u + 1} × TopCat.diskBoundary.{u} (k i), {y : {x | f x ≤ c + ε} | f y ≤ c - ε}) :=
-  ContinuousMap.snd.comp ((morseFiberwiseBase hε).comp
-    (((φ i).morseAttachingMap (hk i) hε (hball i) (hf i)).hom.comp ContinuousMap.snd))
+/-- The attaching maps of the cells of `φ`, as families over a point: the attaching family of `φ`
+viewed as a constant family of charts. -/
+private abbrev morseFiberwiseAttachingMap :=
+  morseFamilyAttachingMap (fun (_ : PUnit.{u + 1}) ↦ φ) k hk hε (fun _ ↦ hball) (fun _ ↦ hf)
+    (continuousOn_symm_const φ hball)
 
-/-- The characteristic maps of the cells of `φ`, as families over a point. -/
-private def morseFiberwiseCharacteristicMap (i : ι) :
-    C(PUnit.{u + 1} × TopCat.disk.{u} (k i), {x | f x ≤ c + ε}) :=
-  ((φ i).morseCharacteristicMap (hk i) hε (hball i) (hf i)).hom.comp ContinuousMap.snd
-
-private theorem morseFiberwiseCharacteristicMap_apply (i : ι)
-    (x : PUnit.{u + 1} × TopCat.disk.{u} (k i)) :
-    morseFiberwiseCharacteristicMap φ k hk hε hball hf i x =
-      (φ i).morseCharacteristicMap (hk i) hε (hball i) (hf i) x.2 :=
-  rfl
-
-private theorem coe_morseFiberwiseAttachingMap (i : ι) (p : PUnit.{u + 1})
-    (s : TopCat.diskBoundary.{u} (k i)) :
-    (morseFiberwiseAttachingMap φ k hk hε hball hf i (p, s)).val.val =
-      ((φ i).morseAttachingMap (hk i) hε (hball i) (hf i) s).val :=
-  coe_coe_sublevelInclusionHomeomorph_apply f _ _
+/-- The characteristic maps of the cells of `φ`, as families over a point: the characteristic
+family of `φ` viewed as a constant family of charts. -/
+private abbrev morseFiberwiseCharacteristicMap :=
+  morseFamilyCharacteristicMap (fun (_ : PUnit.{u + 1}) ↦ φ) k hk hε (fun _ ↦ hball)
+    (fun _ ↦ hf) (continuousOn_symm_const φ hball)
 
 private theorem morseFiberwiseBaseInv_morseFiberwiseAttachingMap (i : ι) (p q : PUnit.{u + 1})
     (s : TopCat.diskBoundary.{u} (k i)) :
     morseFiberwiseBaseInv hε (q, morseFiberwiseAttachingMap φ k hk hε hball hf i (p, s)) =
-      (φ i).morseAttachingMap (hk i) hε (hball i) (hf i) s :=
-  Homeomorph.symm_apply_apply _ _
-
-private theorem morseFiberwiseCharacteristicMap_diskBoundaryInclusion (i : ι) (p : PUnit.{u + 1})
-    (s : TopCat.diskBoundary.{u} (k i)) :
-    morseFiberwiseCharacteristicMap φ k hk hε hball hf i (p, TopCat.diskBoundaryInclusion (k i) s) =
-      morseFiberwiseAttachingMap φ k hk hε hball hf i (p, s) :=
-  Subtype.ext <| by
-    rw [morseFiberwiseCharacteristicMap_apply, coe_morseFiberwiseAttachingMap]
-    exact OpenPartialHomeomorph.coe_morseCharacteristicMap_diskBoundaryInclusion (hball i) (hf i)
-      (hk i) hε s
+      (φ i).morseAttachingMap (hk i) hε (hball i) (hf i) s := by
+  rw [morseFamilyAttachingMap_const_apply]
+  exact Homeomorph.symm_apply_apply _ _
 
 /-- The map from the cell attachment of `φ` to the fiberwise cell attachment over a point. -/
 private def morseCellAttachmentToFiberwise :
@@ -173,7 +159,9 @@ private def morseCellAttachmentToFiberwise :
     (fun i ↦ TopCat.ofHom (ContinuousMap.const _ PUnit.unit |>.prodMk (ContinuousMap.id _)) ≫
       fiberwiseCellAttachmentCell _ i) fun i ↦ by
     ext s
-    exact (fiberwiseCellAttachmentCell_diskBoundaryInclusion _ i PUnit.unit s).symm
+    refine ((fiberwiseCellAttachmentCell_diskBoundaryInclusion _ i PUnit.unit s).trans ?_).symm
+    rw [morseFamilyAttachingMap_const_apply, ConcreteCategory.comp_apply,
+      ConcreteCategory.comp_apply, TopCat.ofHom_apply, morseFiberwiseBase_apply]
 
 /-- The map from the fiberwise cell attachment over a point to the cell attachment of `φ`. -/
 private def morseCellAttachmentOfFiberwise :
@@ -234,7 +222,8 @@ private theorem morseCellComparison_morseCellAttachmentOfFiberwise
     (y : fiberwiseCellAttachment (morseFiberwiseAttachingMap φ k hk hε hball hf)) :
     morseCellComparison φ k hk hε hball hf (morseCellAttachmentOfFiberwise φ k hk hε hball hf y) =
       (fiberwiseCellComparison _ (morseFiberwiseCharacteristicMap φ k hk hε hball hf)
-        (morseFiberwiseCharacteristicMap_diskBoundaryInclusion φ k hk hε hball hf) y).2 := by
+        (morseFamilyCharacteristicMap_diskBoundaryInclusion (P := PUnit.{u + 1}) _ k hk hε _ _ _)
+        y).2 := by
   refine fiberwiseCellAttachment_induction _ (fun x ↦ ?_) (fun i x ↦ ?_) y
   · rw [morseCellAttachmentOfFiberwise_fiberwiseCellAttachmentIncl,
       fiberwiseCellComparison_fiberwiseCellAttachmentIncl]
@@ -242,8 +231,9 @@ private theorem morseCellComparison_morseCellAttachmentOfFiberwise
       (coe_morseFiberwiseBaseInv hε x.1 x.2))
   · rw [morseCellAttachmentOfFiberwise_fiberwiseCellAttachmentCell,
       fiberwiseCellComparison_fiberwiseCellAttachmentCell]
+    rw [morseFamilyCharacteristicMap_apply]
     exact ConcreteCategory.congr_hom
-      (morseCellAttachmentCell_comp_morseCellComparison _ _ _ _ _ hε i) x.2
+      (morseCellAttachmentCell_comp_morseCellComparison φ k hk hball hf hε i) x.2
 
 end Fiberwise
 
@@ -268,12 +258,12 @@ variable (φ₀ φ₁ : ι → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin 
 private def morseFiberwiseHomotopy (i : ι) :
     (morseFiberwiseCharacteristicMap φ₁ k hk hε hball₁ hf₁ i).Homotopy
       ((morseFiberwiseCharacteristicMap φ₀ k hk hε hball₀ hf₀ i).comp
-        (ContinuousMap.fst.prodMk ((h i).hom.comp ContinuousMap.snd))) where
-  toFun q := K i (q.1, q.2.2)
-  continuous_toFun :=
-    (K i).continuous.comp (continuous_fst.prodMk (continuous_snd.comp continuous_snd))
-  map_zero_left q := (K i).apply_zero q.2
-  map_one_left q := (K i).apply_one q.2
+        (ContinuousMap.fst.prodMk ((h i).hom.comp ContinuousMap.snd))) :=
+  ((K i).compContinuousMap ContinuousMap.snd).cast
+    (ContinuousMap.ext fun q ↦ (morseFamilyCharacteristicMap_apply (fun _ ↦ φ₁) k hk hε
+      (fun _ ↦ hball₁) (fun _ ↦ hf₁) (continuousOn_symm_const φ₁ hball₁) i q).symm)
+    (ContinuousMap.ext fun q ↦ (morseFamilyCharacteristicMap_apply (fun _ ↦ φ₀) k hk hε
+      (fun _ ↦ hball₀) (fun _ ↦ hf₀) (continuousOn_symm_const φ₀ hball₀) i (q.1, h i q.2)).symm)
 
 private theorem morseFiberwiseHomotopy_apply (i : ι) (t : I)
     (x : PUnit.{u + 1} × TopCat.disk.{u} (k i)) :
@@ -306,8 +296,8 @@ private def morseFiberwiseReattachment :
     (morseFiberwiseAttachingMap φ₁ k hk hε hball₁ hf₁)
     (morseFiberwiseCharacteristicMap φ₀ k hk hε hball₀ hf₀)
     (morseFiberwiseCharacteristicMap φ₁ k hk hε hball₁ hf₁)
-    (morseFiberwiseCharacteristicMap_diskBoundaryInclusion φ₀ k hk hε hball₀ hf₀)
-    (morseFiberwiseCharacteristicMap_diskBoundaryInclusion φ₁ k hk hε hball₁ hf₁)
+    (morseFamilyCharacteristicMap_diskBoundaryInclusion (P := PUnit.{u + 1}) _ k hk hε _ _ _)
+    (morseFamilyCharacteristicMap_diskBoundaryInclusion (P := PUnit.{u + 1}) _ k hk hε _ _ _)
     (fun i ↦ (h i).hom.comp ContinuousMap.snd) (mapsTo_morseFiberwise k h hh)
     (morseFiberwiseHomotopy φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K)
     (morseFiberwiseHomotopy_mem φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK)
@@ -393,8 +383,8 @@ theorem homotopicRel_morseCellReattachment_comp_morseCellComparison :
       (morseFiberwiseAttachingMap φ₁ k hk hε hball₁ hf₁)
       (morseFiberwiseCharacteristicMap φ₀ k hk hε hball₀ hf₀)
       (morseFiberwiseCharacteristicMap φ₁ k hk hε hball₁ hf₁)
-      (morseFiberwiseCharacteristicMap_diskBoundaryInclusion φ₀ k hk hε hball₀ hf₀)
-      (morseFiberwiseCharacteristicMap_diskBoundaryInclusion φ₁ k hk hε hball₁ hf₁)
+      (morseFamilyCharacteristicMap_diskBoundaryInclusion (P := PUnit.{u + 1}) _ k hk hε _ _ _)
+      (morseFamilyCharacteristicMap_diskBoundaryInclusion (P := PUnit.{u + 1}) _ k hk hε _ _ _)
       (fun i ↦ (h i).hom.comp ContinuousMap.snd) (mapsTo_morseFiberwise k h hh)
       (morseFiberwiseHomotopy φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K)
       (morseFiberwiseHomotopy_mem φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK)⟩
