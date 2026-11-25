@@ -154,10 +154,11 @@ theorem not_isUnit : ¬ IsUnit (blockToeplitz 2 symbol) := by
 
 /-- Compression to the first `n + 1` full blocks has determinant zero. -/
 @[simp] theorem det_blockFiniteSectionMatrix (n : ℕ) :
-    (blockFiniteSectionMatrix (blockToeplitz 2 symbol) n).det = 0 := by
+    ((blockToeplitz 2 symbol).blockFiniteSectionMatrix n).det = 0 := by
   apply Matrix.det_eq_zero_of_column_eq_zero (⟨0, by omega⟩, 1)
   intro i
-  rw [blockFiniteSectionMatrix_apply, blockToeplitz_apply_blockHardyBasis_eq_zero, inner_zero_right]
+  rw [ContinuousLinearMap.blockFiniteSectionMatrix_apply,
+    blockToeplitz_apply_blockHardyBasis_eq_zero, inner_zero_right]
 
 /-- The native finite section at every leading full-block cutoff is noninvertible. -/
 theorem not_isUnit_finiteSection (n : ℕ) :
@@ -166,7 +167,8 @@ theorem not_isUnit_finiteSection (n : ℕ) :
   have hd := (LinearMap.isUnit_iff_isUnit_det _).1
     (h.map ContinuousLinearMap.toLinearMapRingHom)
   simp only [ContinuousLinearMap.toLinearMapRingHom_apply] at hd
-  rw [det_finiteSection_eq_blockFiniteSectionMatrix, det_blockFiniteSectionMatrix] at hd
+  rw [ContinuousLinearMap.det_finiteSection_eq_blockFiniteSectionMatrix,
+    det_blockFiniteSectionMatrix] at hd
   exact not_isUnit_zero hd
 
 end ToeplitzOppositeShifts

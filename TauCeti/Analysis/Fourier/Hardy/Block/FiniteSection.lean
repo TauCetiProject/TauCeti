@@ -59,33 +59,6 @@ theorem blockFiniteInclusion_apply (r n : ℕ)
   rw [blockFiniteInclusion, Orthonormal.adjoint_synthesisMapIsometry_apply]
   exact ((blockHardyBasis r).repr_apply_apply f (i.1, i.2)).symm
 
-/-- Matrix of compression to the first `n + 1` block positions. -/
-def blockFiniteSectionMatrix {r : ℕ}
-    (T : BlockHardySpace r →L[ℂ] BlockHardySpace r) (n : ℕ) :
-    Matrix (Fin (n + 1) × Fin r) (Fin (n + 1) × Fin r) ℂ :=
-  (Matrix.toEuclideanCLM (𝕜 := ℂ)).symm
-    (T.compression (blockFiniteInclusion r n).toContinuousLinearMap)
-
-/-- Converting the finite block matrix to an operator gives its defining compression. -/
-@[simp] theorem toEuclideanCLM_blockFiniteSectionMatrix {r : ℕ}
-    (T : BlockHardySpace r →L[ℂ] BlockHardySpace r) (n : ℕ) :
-    Matrix.toEuclideanCLM (𝕜 := ℂ) (blockFiniteSectionMatrix T n) =
-      T.compression (blockFiniteInclusion r n).toContinuousLinearMap :=
-  (Matrix.toEuclideanCLM (𝕜 := ℂ)).apply_symm_apply _
-
-/-- Entries of a finite block section are the operator's block Hardy coefficients. -/
-@[simp] theorem blockFiniteSectionMatrix_apply {r : ℕ}
-    (T : BlockHardySpace r →L[ℂ] BlockHardySpace r) (n : ℕ)
-    (i j : Fin (n + 1) × Fin r) :
-    blockFiniteSectionMatrix T n i j =
-      ⟪blockHardyBasis r (i.1, i.2), T (blockHardyBasis r (j.1, j.2))⟫_ℂ := by
-  rw [blockFiniteSectionMatrix, Matrix.toEuclideanCLM_symm_apply_single]
-  simpa only [EuclideanSpace.inner_single_left, map_one, one_mul,
-    LinearIsometry.coe_toContinuousLinearMap,
-    blockFiniteInclusion_single] using T.inner_compression_apply
-      (blockFiniteInclusion r n).toContinuousLinearMap
-      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
-
 /-- Reindex the first `n + 1` full blocks as the first `(n + 1) * r` scalar coordinates. -/
 def blockFiniteSectionIndexEquiv (r n : ℕ) [NeZero r] :
     (Fin (n + 1) × Fin r) ≃ Fin ((n + 1) * r - 1 + 1) :=
@@ -101,11 +74,44 @@ def blockFiniteSectionIndexEquiv (r n : ℕ) [NeZero r] :
     finProdFinEquiv_apply_val]
   ac_rfl
 
+end TauCeti
+
+namespace ContinuousLinearMap
+
+open TauCeti
+
+/-- Matrix of compression to the first `n + 1` block positions. -/
+def blockFiniteSectionMatrix {r : ℕ}
+    (T : BlockHardySpace r →L[ℂ] BlockHardySpace r) (n : ℕ) :
+    Matrix (Fin (n + 1) × Fin r) (Fin (n + 1) × Fin r) ℂ :=
+  (Matrix.toEuclideanCLM (𝕜 := ℂ)).symm
+    (T.compression (blockFiniteInclusion r n).toContinuousLinearMap)
+
+/-- Converting the finite block matrix to an operator gives its defining compression. -/
+@[simp] theorem toEuclideanCLM_blockFiniteSectionMatrix {r : ℕ}
+    (T : BlockHardySpace r →L[ℂ] BlockHardySpace r) (n : ℕ) :
+    Matrix.toEuclideanCLM (𝕜 := ℂ) (T.blockFiniteSectionMatrix n) =
+      T.compression (blockFiniteInclusion r n).toContinuousLinearMap :=
+  (Matrix.toEuclideanCLM (𝕜 := ℂ)).apply_symm_apply _
+
+/-- Entries of a finite block section are the operator's block Hardy coefficients. -/
+@[simp] theorem blockFiniteSectionMatrix_apply {r : ℕ}
+    (T : BlockHardySpace r →L[ℂ] BlockHardySpace r) (n : ℕ)
+    (i j : Fin (n + 1) × Fin r) :
+    T.blockFiniteSectionMatrix n i j =
+      ⟪blockHardyBasis r (i.1, i.2), T (blockHardyBasis r (j.1, j.2))⟫_ℂ := by
+  rw [blockFiniteSectionMatrix, toEuclideanCLM_symm_apply_single]
+  simpa only [EuclideanSpace.inner_single_left, map_one, one_mul,
+    LinearIsometry.coe_toContinuousLinearMap,
+    blockFiniteInclusion_single] using T.inner_compression_apply
+      (blockFiniteInclusion r n).toContinuousLinearMap
+      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
+
 /-- Flattening block coordinates gives the matrix of the native Hilbert-basis finite section. -/
 theorem reindex_blockFiniteSectionMatrix {r : ℕ} [NeZero r]
     (T : BlockHardySpace r →L[ℂ] BlockHardySpace r) (n : ℕ) :
     Matrix.reindex (blockFiniteSectionIndexEquiv r n) (blockFiniteSectionIndexEquiv r n)
-      (blockFiniteSectionMatrix T n) =
+      (T.blockFiniteSectionMatrix n) =
         (Matrix.toEuclideanCLM (𝕜 := ℂ)).symm
           (T.finiteSection (blockHardyBasisNat r) ((n + 1) * r - 1)) := by
   apply Matrix.ext
@@ -117,16 +123,16 @@ theorem reindex_blockFiniteSectionMatrix {r : ℕ} [NeZero r]
         blockHardyBasis r (p.1, p.2) := by
     rw [blockFiniteSectionIndexEquiv_val, blockHardyBasisNat_apply]
   simp only [Matrix.reindex_apply, Matrix.submatrix_apply, Equiv.symm_apply_apply,
-    blockFiniteSectionMatrix_apply, Matrix.toEuclideanCLM_symm_apply_single,
-    ContinuousLinearMap.finiteSection_single_apply, hb]
+    blockFiniteSectionMatrix_apply, toEuclideanCLM_symm_apply_single,
+    finiteSection_single_apply, hb]
 
 /-- The determinant of a native full-block finite section is the block compression determinant. -/
 theorem det_finiteSection_eq_blockFiniteSectionMatrix {r : ℕ} [NeZero r]
     (T : BlockHardySpace r →L[ℂ] BlockHardySpace r) (n : ℕ) :
     (T.finiteSection (blockHardyBasisNat r) ((n + 1) * r - 1)).toLinearMap.det =
-      (blockFiniteSectionMatrix T n).det := by
+      (T.blockFiniteSectionMatrix n).det := by
   rw [← Matrix.det_reindex_self (blockFiniteSectionIndexEquiv r n),
     reindex_blockFiniteSectionMatrix, ← Matrix.det_toEuclideanCLM,
     StarAlgEquiv.apply_symm_apply]
 
-end TauCeti
+end ContinuousLinearMap

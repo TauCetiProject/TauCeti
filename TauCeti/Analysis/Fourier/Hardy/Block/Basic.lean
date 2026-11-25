@@ -328,7 +328,9 @@ def blockHardyBasis (r : ℕ) : HilbertBasis (ℕ × Fin r) ℂ (BlockHardySpace
     blockHardyBasis r p = PiLp.single 2 p.2 (hardyBasis p.1) :=
   congrFun (HilbertBasis.coe_mkOfOrthogonalEqBot _ _) p
 
-/-- Enumerate the block Hardy basis by increasing position, then coordinate within the block. -/
+/-- Enumerate the block Hardy basis by increasing position, then coordinate within the block.
+For a scalar index, `HilbertBasis.reindex_apply` and `Equiv.symm_symm` reduce evaluation to
+the quotient and remainder given by `Nat.divModEquiv_apply`. -/
 def blockHardyBasisNat (r : ℕ) [NeZero r] : HilbertBasis ℕ ℂ (BlockHardySpace r) :=
   (blockHardyBasis r).reindex (Nat.divModEquiv r).symm
 
@@ -337,14 +339,6 @@ def blockHardyBasisNat (r : ℕ) [NeZero r] : HilbertBasis ℕ ℂ (BlockHardySp
     blockHardyBasisNat r (k * r + i) = blockHardyBasis r (k, i) := by
   rw [blockHardyBasisNat, HilbertBasis.reindex_apply, Equiv.symm_symm]
   rw [← Nat.divModEquiv_symm_apply r (k, i), Equiv.apply_symm_apply]
-
-/-- An arbitrary scalar index is its quotient block position and remainder coordinate. -/
-theorem blockHardyBasisNat_apply_div_mod (r : ℕ) [NeZero r] (m : ℕ) :
-    blockHardyBasisNat r m =
-      blockHardyBasis r (m / r, ⟨m % r, Nat.mod_lt m (NeZero.pos r)⟩) := by
-  rw [blockHardyBasisNat, HilbertBasis.reindex_apply, Equiv.symm_symm]
-  apply congrArg (blockHardyBasis r)
-  exact (Nat.divModEquiv_apply r m).trans (Prod.ext rfl (Fin.ext (by simp)))
 
 /-- Coordinate representation in `blockHardyBasis r` evaluates coordinatewise via `hardyBasis`. -/
 @[simp] theorem blockHardyBasis_repr {r : ℕ} (f : BlockHardySpace r) (p : ℕ × Fin r) :
