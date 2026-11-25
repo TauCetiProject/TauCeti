@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.LocalRing.Herbrand
-public import TauCeti.RingTheory.LocalRing.RamificationGroup
+public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
 
 /-!
 # Upper ramification jumps, `psiNat`, and transport of Herbrand functions on a local ring

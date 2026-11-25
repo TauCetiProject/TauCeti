@@ -21,11 +21,13 @@ Small real examples for the rows `TauCeti.ConvexLifting.componentRow`,
 approximations `TauCeti.ConvexLifting.directOuterApprox`,
 `TauCeti.ConvexLifting.sharedOuterApprox` and `TauCeti.ConvexLifting.sharedOuterApproxOn`.
 In the explicitly computed rows, all derivatives are the actual Fréchet derivatives of the inner
-and outer functions at the anchors; the empty-height result holds for arbitrary continuous linear
-row maps. The shared approximations below use unrestricted heights (every height is admissible),
-except where a bullet names another height domain: the empty one of the third bullet and the
-half-line `y ≥ 0` of the `exp` bullet. In particular the projected shared sets of the one-anchor,
-identity-map and two-anchor bullets are computed with unrestricted heights.
+and outer functions at the anchors; the empty-height result and the results with no height
+coordinates hold for arbitrary inner and outer maps and continuous linear row maps. The shared
+approximations below use unrestricted heights (every height is admissible), except where a bullet
+names another height domain: the empty one of the third bullet, the half-line `y ≥ 0` of the
+`exp` bullet and the arbitrary height domain `E` of the last bullet. In particular the projected
+shared sets of the one-anchor, identity-map and two-anchor bullets are computed with unrestricted
+heights.
 
 * Squared coordinates `g x = (x_j ^ 2)_j` with outer sum `h y = ∑ j, y j`. At the anchor `(1, 1)`
   the rows are `G x = (2 x₀ - 1, 2 x₁ - 1)`, `H y = y₀ + y₁` and `C x = 2 x₀ + 2 x₁ - 2`, with
@@ -56,8 +58,11 @@ identity-map and two-anchor bullets are computed with unrestricted heights.
   exact row on the only coordinate the projection is `[-1, ∞)`.
 * For `g x = (x, x ^ 2)` and `h (u, v) = u ^ 2 + v` at the anchor `-1` with budget two and an exact
   row on the first coordinate, the projected shared set and the direct set are both `[-1, ∞)`, and
-  the original set is `[-1, 1]`; the outer derivative `(-2, 1)` is nonnegative on the nonnegative
-  directions vanishing on the first coordinate.
+  the original set is `[-1, 1]`; the outer derivative `(-2, 1)` is not monotone but is nonnegative
+  on the nonnegative directions vanishing on the first coordinate.
+* With no height coordinates (`ι = Fin 0`), arbitrary inner and outer maps, arbitrary row maps, an
+  arbitrary height domain `E` and at least one anchor, every row reduces to the scalar condition
+  `h 0 ≤ b`, and the shared set retains the membership of the unique height `0` in `E`.
 
 ## References
 
@@ -608,6 +613,13 @@ theorem hasFDerivAt_sq_add_neg_one_one :
   ext v
   norm_num
 
+/-- The outer derivative `w ↦ -2 w₀ + w₁` of `(u, v) ↦ u ^ 2 + v` at `(-1, 1)` is not monotone. -/
+theorem not_monotone_neg_two_smul_proj_add_proj :
+    ¬Monotone ((-2 : ℝ) • proj 0 + proj 1 : (Fin 2 → ℝ) →L[ℝ] ℝ) := by
+  intro hm
+  have := hm (show (0 : Fin 2 → ℝ) ≤ Pi.single 0 1 from Pi.single_nonneg.2 zero_le_one)
+  norm_num at this
+
 /-- The outer derivative `w ↦ -2 w₀ + w₁` is nonnegative on the nonnegative directions vanishing on
 the first coordinate, although it is not monotone. -/
 theorem neg_two_smul_proj_add_proj_nonneg_of_nonneg_of_proj_zero_eq_zero (v : Fin 2 → ℝ)
@@ -670,5 +682,26 @@ theorem originalSet_id_sq_two :
   simp [this, sq_le_one_iff_abs_le_one, abs_le]
 
 end Line
+
+/-! ### No height coordinates -/
+
+section NoHeights
+
+variable {κ : Type*} [Nonempty κ] (D : Set ℝ) (E : Set (Fin 0 → ℝ)) (g : ℝ → Fin 0 → ℝ)
+  (h : (Fin 0 → ℝ) → ℝ) (a : κ → ℝ) (Dg : κ → ℝ →L[ℝ] Fin 0 → ℝ)
+  (Dh : κ → (Fin 0 → ℝ) →L[ℝ] ℝ) (b : ℝ)
+
+/-- With no height coordinates and at least one anchor, every direct row is the scalar `h 0`
+(`directOuterApprox_of_isEmpty_heightCoords`). -/
+example : directOuterApprox D g h a Dg Dh b = {x | x ∈ D ∧ h 0 ≤ b} :=
+  directOuterApprox_of_isEmpty_heightCoords
+
+/-- With no height coordinates and at least one anchor, the shared set projects onto the points
+of `D` satisfying `h 0 ≤ b`, provided the unique height `0` lies in `E`
+(`fst_image_sharedOuterApprox_of_isEmpty_heightCoords`). -/
+example : Prod.fst '' sharedOuterApprox D E g h a Dg Dh b = {x | x ∈ D ∧ 0 ∈ E ∧ h 0 ≤ b} :=
+  fst_image_sharedOuterApprox_of_isEmpty_heightCoords
+
+end NoHeights
 
 end TauCeti.ConvexLifting

@@ -11,6 +11,8 @@ public import Mathlib.LinearAlgebra.Unimodular
 public import Mathlib.RingTheory.LocalRing.Basic
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
 
+import TauCeti.RingTheory.Ideal.Operations
+
 /-!
 # Unimodular elements: scalar extension, unit rescaling, and local coordinates
 
@@ -44,7 +46,8 @@ and, since the rows of an invertible matrix are unimodular, it gives every such 
 * `Matrix.isUnimodular_apply_of_isUnit_det` and `Matrix.GeneralLinearGroup.isUnimodular_apply`:
   every row of an invertible square matrix is unimodular, and
   `Matrix.GeneralLinearGroup.isUnimodular_vecMul_iff`: right-multiplying by an invertible matrix
-  preserves unimodularity.
+  preserves unimodularity; over a commutative semiring so does left-multiplying a column vector,
+  `Matrix.GeneralLinearGroup.isUnimodular_mulVec_iff`.
 * `TauCeti.Module.isUnimodular_pi_iff`: a finitely indexed coordinate vector `v : ι → R` over a
   semiring is unimodular if and only if `∑ i, v i * b i = 1` for some `b`.
 * `TauCeti.Module.isUnimodular_iff_exists_isUnit`: over a directly finite local semiring, a vector
@@ -56,6 +59,8 @@ and, since the rows of an invertible matrix are unimodular, it gives every such 
 * `LinearMap.kerProdEquivOfApplyEqOne`: if a linear functional `f` takes the value `1` at `v`, then
   `ker f × R ≃ M` by `(x, a) ↦ x + a • v`. Consequently `ker f` is finite when `M` is
   (`LinearMap.finite_ker_of_apply_eq_one`).
+* `Module.IsUnimodular.notMem_smul_top`: a unimodular element does not lie in `I • M` for a
+  proper ideal `I`, since a linear functional maps `I • M` into `I`.
 -/
 
 public section
@@ -175,6 +180,15 @@ theorem Matrix.GeneralLinearGroup.isUnimodular_vecMul_iff {R m : Type*} [Semirin
       (LinearMap.ext fun x ↦ by simp [Matrix.vecMul_vecMul])
       (LinearMap.ext fun x ↦ by simp [Matrix.vecMul_vecMul])
   exact e.isUnimodular_apply_iff
+
+/-- Over a commutative semiring, left-multiplying a column vector by an invertible matrix
+preserves unimodularity. -/
+@[simp]
+theorem Matrix.GeneralLinearGroup.isUnimodular_mulVec_iff {R m : Type*} [CommSemiring R]
+    [Fintype m] [DecidableEq m] (g : Matrix.GeneralLinearGroup m R) {v : m → R} :
+    Module.IsUnimodular R ((g : Matrix m m R) *ᵥ v) ↔ Module.IsUnimodular R v := by
+  simpa using (LinearMap.GeneralLinearGroup.toLinearEquiv
+    (Units.map (Matrix.toLinAlgEquiv' (R := R) (n := m)).toMonoidHom g)).isUnimodular_apply_iff
 
 /-- Every row of an invertible matrix over a semiring is unimodular. -/
 theorem Matrix.GeneralLinearGroup.isUnimodular_apply {R m : Type*} [Semiring R] [Fintype m]
@@ -341,3 +355,16 @@ theorem finite_ker_of_apply_eq_one [Module.Finite R M] {f : M →ₗ[R] R} {v : 
     (Prod.fst_surjective.comp (kerProdEquivOfApplyEqOne hf).symm.surjective)
 
 end LinearMap
+
+namespace Module
+
+variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] {v : M}
+
+/-- A unimodular element does not lie in `I • M` for a proper ideal `I`: a linear functional
+taking the value `1` at `v` maps `I • M` into `I`. -/
+theorem IsUnimodular.notMem_smul_top (hv : IsUnimodular R v) {I : Ideal R} (hI : I ≠ ⊤) :
+    v ∉ I • (⊤ : Submodule R M) := by
+  obtain ⟨f, hf⟩ := isUnimodular_iff.1 hv
+  exact fun h ↦ hI ((Ideal.eq_top_iff_one I).2 (hf ▸ f.apply_mem_of_mem_smul_top h))
+
+end Module
