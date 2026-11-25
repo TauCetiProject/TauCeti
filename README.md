@@ -89,7 +89,7 @@ the CI machinery. Those suites live with the shared tooling and run in
 [TauCetiTools](https://github.com/TauCetiProject/TauCetiTools) CI. Their results do not
 gate content builds, merge statuses, lint, or cache publication.
 
-Operators can [enable, disable, or resize Namespace runners](scripts/namespace-controls.md)
+Namespace runners are off. Operators can [re-enable or resize them](scripts/namespace-controls.md)
 through Actions variables, without a source PR or staging batch.
 
 Human-owned infrastructure changes still require human review. After reviewing a PR,
