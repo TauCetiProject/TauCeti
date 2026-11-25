@@ -112,8 +112,11 @@ instance natEndModule_isScalarTower (Y : D) : IsScalarTower R (End F) (F.obj Y) 
 noncomputable def toNatEndModuleCompRestrictScalarsIso :
     F.toNatEndModule ⋙ ModuleCat.restrictScalars (algebraMap R (End F)) ≅ F :=
   NatIso.ofComponents (fun Y ↦ LinearEquiv.toModuleIso
-    (@AddEquiv.toLinearEquiv _ _ _ _ _ _
-      ((ModuleCat.restrictScalars (algebraMap R (End F))).obj (F.toNatEndModule.obj Y)).isModule _
+    -- The source is stated as the carrier of the restricted module, so that its `R`-module
+    -- structure is the one `ModuleCat.restrictScalars` puts on it; the scalar compatibility is
+    -- `algebraMap_smul` for the `R`-algebra `End F`.
+    (AddEquiv.toLinearEquiv (M :=
+        (ModuleCat.restrictScalars (algebraMap R (End F))).obj (F.toNatEndModule.obj Y))
       (.refl (F.obj Y)) fun c y ↦ algebraMap_smul (End F) (M := F.obj Y) c y)) fun _ ↦ rfl
 
 /-- The components of `F.toNatEndModuleCompRestrictScalarsIso` are identities. -/

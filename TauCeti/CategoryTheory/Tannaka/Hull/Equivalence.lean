@@ -11,6 +11,7 @@ public import Mathlib.CategoryTheory.Abelian.Exact
 public import TauCeti.Algebra.Category.ModuleCat.NatEnd
 public import TauCeti.CategoryTheory.Tannaka.Hull.Algebra
 public import TauCeti.CategoryTheory.Tannaka.RepresentingObject
+import TauCeti.LinearAlgebra.LinearMap.Range
 
 /-!
 # The hull of an object is equivalent to finite modules over the fibre-endomorphism algebra
@@ -192,15 +193,6 @@ private lemma map_biproductDesc_apply {ι : Type} [Fintype ι]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [hullEndOfPoint_smul, map_biproductDesc_map_ι_apply]
 
-/-- A linear map is surjective once every member of a spanning family lies in its range. -/
-private lemma surjective_of_span_range_eq_top {S M N ι : Type*} [Semiring S] [AddCommMonoid M]
-    [AddCommMonoid N] [Module S M] [Module S N] {s : ι → N}
-    (hs : Submodule.span S (Set.range s) = ⊤) (f : M →ₗ[S] N) (h : ∀ j, s j ∈ LinearMap.range f) :
-    Function.Surjective f := by
-  rw [← LinearMap.range_eq_top, eq_top_iff, ← hs, Submodule.span_le]
-  rintro _ ⟨j, rfl⟩
-  exact h j
-
 /-- Every `End (⟨X⟩.ι ⋙ ω)`-linear map between fibres of objects of the hull of `X` is `ω g` for
 some morphism `g`. -/
 private lemma exists_map_eq {Y Y' : (subquotientHull X).FullSubcategory}
@@ -215,7 +207,7 @@ private lemma exists_map_eq {Y Y' : (subquotientHull X).FullSubcategory}
   have h₂ (v) : (ω.map f₂).hom v = φ ((ω.map f₁).hom v) := by
     simp only [f₁, f₂, map_biproductDesc_apply, _root_.map_sum, LinearMap.map_smul]
   have hsurj : Function.Surjective (ω.map f₁).hom :=
-    surjective_of_span_range_eq_top b.span_eq _ fun j ↦
+    (ω.map f₁).hom.surjective_of_span_range_eq_top b.span_eq fun j ↦
       ⟨(ω.map (biproduct.ι _ j)).hom (ω.fiberSpanPoint (ω.hullBasisPoint X)), by simp [f₁]⟩
   have : Epi f₁ := ω.epi_of_epi_map ((ModuleCat.epi_iff_surjective _).2 hsurj)
   have hker : kernel.ι f₁ ≫ f₂ = 0 := ω.map_injective <| by
@@ -281,7 +273,7 @@ private lemma exists_iso (M : FGModuleCat.{w} (End ((subquotientHull X).ι ⋙ �
       End ((subquotientHull X).ι ⋙ ω)] M.obj :=
     biproductLinearMap ω s
   have hρ : Function.Surjective ρ :=
-    surjective_of_span_range_eq_top hs ρ fun j ↦ ⟨_, biproductLinearMap_map_ι ω s j⟩
+    ρ.surjective_of_span_range_eq_top hs fun j ↦ ⟨_, biproductLinearMap_map_ι ω s j⟩
   obtain ⟨m, f, hf⟩ := exists_range_eq ω (LinearMap.ker ρ)
   have hY : subquotientHull X (cokernel f) :=
     (subquotientHull X).prop_of_epi (cokernel.π f) hQ

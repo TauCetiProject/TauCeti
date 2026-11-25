@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import TauCeti.Algebra.Category.ModuleCat.Biproducts
 public import TauCeti.Algebra.Category.ModuleCat.Kernels
 public import TauCeti.CategoryTheory.Abelian.SubquotientHull
+import TauCeti.LinearAlgebra.LinearMap.Range
 
 /-!
 # The representing object of a fibre functor on the hull of an object
@@ -261,12 +262,11 @@ theorem exists_epi_biproduct_fiberSpan [Preadditive C] [HasFiniteBiproducts C] [
   choose f hf using h
   let b := Module.finBasis K (ω.obj Y)
   refine ⟨_, biproduct.desc fun k ↦ f (b k), ω.epi_of_epi_map ?_⟩
-  rw [ModuleCat.epi_iff_surjective, ← LinearMap.range_eq_top, eq_top_iff, ← b.span_eq,
-    Submodule.span_le]
-  rintro _ ⟨k, rfl⟩
-  exact ⟨(ω.map (biproduct.ι _ k)).hom (ω.fiberSpanPoint t), by
-    rw [← ModuleCat.comp_apply, ← ω.map_comp, biproduct.ι_desc]
-    exact hf (b k)⟩
+  rw [ModuleCat.epi_iff_surjective]
+  refine LinearMap.surjective_of_span_range_eq_top _ b.span_eq fun k ↦
+    ⟨(ω.map (biproduct.ι _ k)).hom (ω.fiberSpanPoint t), ?_⟩
+  rw [← ModuleCat.comp_apply, ← ω.map_comp, biproduct.ι_desc]
+  exact hf (b k)
 
 /-- `fiberSpan t` is projective relative to the objects onto whose fibre evaluation at
 `fiberSpanPoint t` is surjective: every morphism from it to a quotient of such an object lifts. -/
