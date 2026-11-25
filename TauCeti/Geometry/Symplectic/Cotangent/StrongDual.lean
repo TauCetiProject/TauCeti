@@ -34,6 +34,8 @@ composition and inverses.
 
 * `TauCeti.strongDualCotangentSymplecticForm`: the canonical symplectic form on
   `V × StrongDual ℝ V`.
+* `TauCeti.strongDualCotangentFlat`: the same form as a continuous bilinear map, that is its flat
+  map `x ↦ ω(x, ·)` into the continuous dual.
 * `TauCeti.strongDualCotangentZeroSection`: the zero section of `V × StrongDual ℝ V`.
 * `TauCeti.strongDualCotangentFiber`: the vertical subspace `{0} × V*`, which is Lagrangian
   (`TauCeti.isLagrangian_strongDualCotangentFiber`).
@@ -102,6 +104,43 @@ noncomputable def strongDualCotangentSymplecticForm :
 lemma strongDualCotangentSymplecticForm_apply (x y : V × StrongDual ℝ V) :
     strongDualCotangentSymplecticForm x y = y.2 x.1 - x.2 y.1 := by
   exact strongDualCotangentBilinForm_apply x y
+
+variable (V) in
+/-- The canonical form `ω((q, α), (q', β)) = β(q) - α(q')` on `V × V*` as a continuous bilinear
+map, that is its flat map `x ↦ ω(x, ·)` into the continuous dual. It is the bilinear form of
+`TauCeti.strongDualCotangentSymplecticForm`
+(`TauCeti.strongDualCotangentFlat_apply_apply_eq_strongDualCotangentSymplecticForm`). -/
+def strongDualCotangentFlat :
+    (V × StrongDual ℝ V) →L[ℝ] (V × StrongDual ℝ V) →L[ℝ] ℝ :=
+  LinearMap.mkContinuous₂
+    (LinearMap.mk₂ ℝ (fun x y : V × StrongDual ℝ V ↦ y.2 x.1 - x.2 y.1)
+      (fun x x' y ↦ by simp; ring) (fun c x y ↦ by simp; ring)
+      (fun x y y' ↦ by simp; ring) (fun c x y ↦ by simp; ring))
+    2 fun x y ↦ by
+      -- `|β(q) - α(q')| ≤ ‖β‖ ‖q‖ + ‖α‖ ‖q'‖`, and each factor is bounded by a norm of `x` or `y`.
+      rw [LinearMap.mk₂_apply]
+      calc ‖y.2 x.1 - x.2 y.1‖ ≤ ‖y.2‖ * ‖x.1‖ + ‖x.2‖ * ‖y.1‖ :=
+            (norm_sub_le _ _).trans (add_le_add (y.2.le_opNorm _) (x.2.le_opNorm _))
+        _ ≤ ‖y‖ * ‖x‖ + ‖x‖ * ‖y‖ := by
+          gcongr
+          exacts [norm_snd_le y, norm_fst_le x, norm_snd_le x, norm_fst_le y]
+        _ = 2 * ‖x‖ * ‖y‖ := by ring
+
+@[simp]
+theorem strongDualCotangentFlat_apply_apply (x y : V × StrongDual ℝ V) :
+    strongDualCotangentFlat V x y = y.2 x.1 - x.2 y.1 :=
+  (rfl)
+
+/-- The canonical form is alternating: it vanishes on the diagonal. -/
+theorem strongDualCotangentFlat_apply_self (x : V × StrongDual ℝ V) :
+    strongDualCotangentFlat V x x = 0 :=
+  sub_self _
+
+/-- The flat map evaluates as the canonical symplectic form. -/
+theorem strongDualCotangentFlat_apply_apply_eq_strongDualCotangentSymplecticForm
+    (x y : V × StrongDual ℝ V) :
+    strongDualCotangentFlat V x y = strongDualCotangentSymplecticForm x y := by
+  rw [strongDualCotangentFlat_apply_apply, strongDualCotangentSymplecticForm_apply]
 
 /-- The zero section in the normed linear cotangent space `V × StrongDual ℝ V`. -/
 def strongDualCotangentZeroSection : Submodule ℝ (V × StrongDual ℝ V) :=

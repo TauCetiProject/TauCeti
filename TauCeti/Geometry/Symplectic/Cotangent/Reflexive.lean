@@ -29,8 +29,9 @@ is evaluation at a point of `V` (`TauCeti.surjective_strongDualCotangentFlat_iff
 Read as a constant two-form on the manifold `V × V*`
 (`TauCeti.strongDualCotangentTwoForm`), the same holds pointwise: the flat maps are all onto the
 continuous dual exactly when `V` is reflexive
-(`TauCeti.surjective_flat_strongDualCotangentTwoForm_iff`), while the form is nondegenerate for
-every `V` (`TauCeti.isNondegenerate_strongDualCotangentTwoForm`).
+(`TauCeti.surjective_flat_strongDualCotangentTwoForm_iff`, through
+`TauCeti.SmoothTwoForm.surjective_flat_const_iff`), while the form is nondegenerate for every `V`
+(`TauCeti.isNondegenerate_strongDualCotangentTwoForm`).
 
 The distinction is visible on Hamiltonian vector fields. For every `V`, the position function
 `f(q, α) = a(q)` of a covector `a ∈ V*` has the Hamiltonian vector field `(0, -a)`
@@ -60,10 +61,8 @@ pinned Hamiltonian vector field is not a Hamiltonian vector field
 
 ## Main definitions
 
-* `TauCeti.strongDualCotangentFlat`: the canonical form on `V × V*` as a continuous bilinear map,
-  that is its flat map `v ↦ ω(v, ·)`.
 * `TauCeti.strongDualCotangentTwoForm`: the canonical form as a constant smooth two-form on
-  `V × V*`.
+  `V × V*`, built from its flat map `TauCeti.strongDualCotangentFlat`.
 
 ## Main results
 
@@ -100,39 +99,7 @@ namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-! ### The flat map of the canonical form -/
-
-variable (V) in
-/-- The canonical form `ω((q, α), (q', β)) = β(q) - α(q')` on `V × V*` as a continuous bilinear
-map, that is its flat map `x ↦ ω(x, ·)` into the continuous dual. It is the bilinear form of
-`TauCeti.strongDualCotangentSymplecticForm`
-(`TauCeti.strongDualCotangentFlat_apply_apply_eq_strongDualCotangentSymplecticForm`). -/
-def strongDualCotangentFlat :
-    (V × StrongDual ℝ V) →L[ℝ] (V × StrongDual ℝ V) →L[ℝ] ℝ :=
-  LinearMap.mkContinuous₂
-    (LinearMap.mk₂ ℝ (fun x y : V × StrongDual ℝ V ↦ y.2 x.1 - x.2 y.1)
-      (fun x x' y ↦ by simp; ring) (fun c x y ↦ by simp; ring)
-      (fun x y y' ↦ by simp; ring) (fun c x y ↦ by simp; ring))
-    2 fun x y ↦ by
-      -- `|β(q) - α(q')| ≤ ‖β‖ ‖q‖ + ‖α‖ ‖q'‖`, and each factor is bounded by a norm of `x` or `y`.
-      rw [LinearMap.mk₂_apply]
-      calc ‖y.2 x.1 - x.2 y.1‖ ≤ ‖y.2‖ * ‖x.1‖ + ‖x.2‖ * ‖y.1‖ :=
-            (norm_sub_le _ _).trans (add_le_add (y.2.le_opNorm _) (x.2.le_opNorm _))
-        _ ≤ ‖y‖ * ‖x‖ + ‖x‖ * ‖y‖ := by
-          gcongr
-          exacts [norm_snd_le y, norm_fst_le x, norm_snd_le x, norm_fst_le y]
-        _ = 2 * ‖x‖ * ‖y‖ := by ring
-
-@[simp]
-theorem strongDualCotangentFlat_apply_apply (x y : V × StrongDual ℝ V) :
-    strongDualCotangentFlat V x y = y.2 x.1 - x.2 y.1 :=
-  (rfl)
-
-/-- The flat map evaluates as the canonical symplectic form. -/
-theorem strongDualCotangentFlat_apply_apply_eq_strongDualCotangentSymplecticForm
-    (x y : V × StrongDual ℝ V) :
-    strongDualCotangentFlat V x y = strongDualCotangentSymplecticForm x y := by
-  rw [strongDualCotangentFlat_apply_apply, strongDualCotangentSymplecticForm_apply]
+/-! ### The reflexivity criterion -/
 
 /-- **The canonical form on `V × V*` is strongly nondegenerate exactly when `V` is reflexive**:
 its flat map is onto the continuous dual exactly when the inclusion of `V` into its double dual
@@ -153,9 +120,8 @@ theorem surjective_strongDualCotangentFlat_iff :
     have hβ := congrArg (fun Φ ↦ Φ y.2) hq
     simp only [NormedSpace.dual_def, ContinuousLinearMap.coe_comp, Function.comp_apply,
       ContinuousLinearMap.inr_apply] at hβ
-    rw [strongDualCotangentFlat_apply_apply, hβ, neg_apply,
-      ContinuousLinearMap.comp_apply, ContinuousLinearMap.inl_apply, sub_neg_eq_add, ← map_add,
-      Prod.mk_add_mk, zero_add, add_zero]
+    rw [strongDualCotangentFlat_apply_apply, hβ]
+    simp [← map_add]
 
 /-! ### The constant two-form -/
 
@@ -172,60 +138,27 @@ theorem eval₂_strongDualCotangentTwoForm (x : V × StrongDual ℝ V)
     (v w : TangentSpace 𝓘(ℝ, V × StrongDual ℝ V) x) :
     SmoothBundleForm.eval₂ (strongDualCotangentTwoForm V) x v w =
       strongDualCotangentFlat V (fromTangentSpace x v) (fromTangentSpace x w) :=
-  SmoothTwoForm.const_apply _ (fun v ↦ by simp) x v w
-
-/-- The flat map of the constant two-form at a point is the flat map of the canonical form, read
-through the identification of the tangent space with the model space. -/
-theorem flat_strongDualCotangentTwoForm_apply_apply (x : V × StrongDual ℝ V)
-    (v w : TangentSpace 𝓘(ℝ, V × StrongDual ℝ V) x) :
-    (strongDualCotangentTwoForm V).flat x v w =
-      strongDualCotangentFlat V (fromTangentSpace x v) (fromTangentSpace x w) := by
-  rw [SmoothTwoForm.flat_apply, eval₂_strongDualCotangentTwoForm]
-
-/-- The flat map of the constant two-form at any point is onto the continuous dual exactly when
-the flat map of the canonical form is. -/
-theorem surjective_flat_strongDualCotangentTwoForm_iff_surjective_strongDualCotangentFlat
-    (x : V × StrongDual ℝ V) :
-    Function.Surjective ((strongDualCotangentTwoForm V).flat x) ↔
-      Function.Surjective (strongDualCotangentFlat V) := by
-  -- Transport forms along the identification `e` of the tangent space with the model space.
-  let e := fromTangentSpace (𝕜 := ℝ) x
-  refine ⟨fun h ℓ ↦ ?_, fun h ℓ ↦ ?_⟩
-  · obtain ⟨v, hv⟩ := h (ℓ.comp (e : TangentSpace 𝓘(ℝ, V × StrongDual ℝ V) x →L[ℝ] _))
-    refine ⟨e v, ContinuousLinearMap.ext fun y ↦ ?_⟩
-    have := DFunLike.congr_fun hv (e.symm y)
-    rwa [flat_strongDualCotangentTwoForm_apply_apply, ContinuousLinearMap.comp_apply,
-      ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] at this
-  · obtain ⟨y, hy⟩ := h (ℓ.comp (e.symm : V × StrongDual ℝ V →L[ℝ] _))
-    refine ⟨e.symm y, ContinuousLinearMap.ext fun w ↦ ?_⟩
-    have := DFunLike.congr_fun hy (e w)
-    rw [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      ContinuousLinearEquiv.symm_apply_apply] at this
-    rw [flat_strongDualCotangentTwoForm_apply_apply, ContinuousLinearEquiv.apply_symm_apply]
-    exact this
+  SmoothTwoForm.const_apply (strongDualCotangentFlat V) strongDualCotangentFlat_apply_self x v w
 
 /-- **The constant canonical two-form on `V × V*` is strongly nondegenerate exactly when `V` is
 reflexive.** -/
 theorem surjective_flat_strongDualCotangentTwoForm_iff :
     (∀ x, Function.Surjective ((strongDualCotangentTwoForm V).flat x)) ↔
       Function.Surjective (inclusionInDoubleDual ℝ V) := by
-  simp_rw [surjective_flat_strongDualCotangentTwoForm_iff_surjective_strongDualCotangentFlat,
+  simp_rw [strongDualCotangentTwoForm, SmoothTwoForm.surjective_flat_const_iff
+    (strongDualCotangentFlat V) strongDualCotangentFlat_apply_self,
     surjective_strongDualCotangentFlat_iff]
   exact ⟨fun h ↦ h 0, fun h _ ↦ h⟩
 
 /-- **The constant canonical two-form on `V × V*` is nondegenerate**, for every normed space `V`,
 by Hahn–Banach. -/
 theorem isNondegenerate_strongDualCotangentTwoForm :
-    (strongDualCotangentTwoForm V).IsNondegenerate := by
-  refine SmoothTwoForm.isNondegenerate_iff_separatingLeft.2 fun x v hv ↦ ?_
-  have h (w : V × StrongDual ℝ V) : strongDualCotangentFlat V (fromTangentSpace x v) w = 0 := by
-    have := hv ((fromTangentSpace x).symm w)
-    rwa [eval₂_strongDualCotangentTwoForm,
-      ContinuousLinearEquiv.apply_symm_apply] at this
-  refine (fromTangentSpace x).injective ?_
-  rw [map_zero]
-  refine Prod.ext ?_ (ContinuousLinearMap.ext fun q ↦ by simpa using h (q, 0))
-  exact SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := ℝ) fun β ↦ by simpa using h (0, β)
+    (strongDualCotangentTwoForm V).IsNondegenerate :=
+  (SmoothTwoForm.isNondegenerate_const_iff (strongDualCotangentFlat V)
+    strongDualCotangentFlat_apply_self).2
+    fun v hv ↦ strongDualCotangentSymplecticForm.nondegenerate.1 v fun w ↦
+      (strongDualCotangentFlat_apply_apply_eq_strongDualCotangentSymplecticForm v w).symm.trans
+        (hv w)
 
 /-! ### Hamiltonian vector fields of position and momentum functions -/
 
@@ -275,8 +208,8 @@ theorem not_isInvertible_flat_strongDualCotangentTwoForm
     (hV : ¬ Function.Surjective (inclusionInDoubleDual ℝ V)) (x : V × StrongDual ℝ V) :
     ¬ ((strongDualCotangentTwoForm V).flat x).IsInvertible := fun h ↦
   hV <| surjective_strongDualCotangentFlat_iff.1 <|
-    (surjective_flat_strongDualCotangentTwoForm_iff_surjective_strongDualCotangentFlat x).1
-      h.surjective
+    (SmoothTwoForm.surjective_flat_const_iff (strongDualCotangentFlat V)
+      strongDualCotangentFlat_apply_self x).1 h.surjective
 
 /-- **On a non-reflexive `V` the pinned Hamiltonian vector field vanishes**: the field
 `(ω♭)⁻¹ df` of every function on `V × V*` is `0`, since no flat map is invertible. -/
