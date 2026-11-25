@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.TestFunction
 public import TauCeti.Geometry.Manifold.Algebra.ComplexSmoothFunctions
 public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Basic
+public import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.Algebra.GroupWithZero.Indicator
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
@@ -16,6 +17,7 @@ import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
+import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
 /-!
 # Differential operators on a manifold, compressed to a chart
@@ -51,6 +53,9 @@ with no continuity assumed) and computes their principal symbols:
   `x` of the chart target, the principal symbol of the compression at a covector `η` is
   `φ(x) ψ(x) σ(D)(e⁻¹ x)(η ∘ de)`: the principal symbol transforms as a function on the cotangent
   bundle, multiplied by the cutoffs.
+* `OpenPartialHomeomorph.complexChartCompression_conj`: for a diffeomorphism `Φ : M → N`, the chart
+  compression in a chart `e` of `M` of the transport `f ↦ (D (f ∘ Φ⁻¹)) ∘ Φ` of an operator `D` on
+  `N` is the chart compression of `D` in the chart `e ∘ Φ⁻¹` of `N`, by the same cutoffs.
 
 ## Main definitions
 
@@ -71,6 +76,11 @@ with no continuity assumed) and computes their principal symbols:
 * `IsCompact.exists_sum_cutoffPullback_eq_one`: a compact set has finitely many cutoffs in preferred
   charts whose pullbacks sum to `1` on it, through which operators on `M` are assembled from
   operators in charts.
+* `OpenPartialHomeomorph.complexChartCompression_congr`: two charts with the same inverse on the
+  supports of the cutoffs give the same chart compressions.
+* `OpenPartialHomeomorph.complexChartCompression_comp_apply`: the compression of a composition
+  `A ∘ B` is the compression of `A` after that of `B`, through a cutoff equal to `1` where the
+  outputs of `B` live.
 
 ## References
 
@@ -498,6 +508,13 @@ def complexChartCompression (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) :
   map_smul' c D := by
     rw [LinearMap.smul_comp, LinearMap.comp_smul, RingHom.id_apply]
 
+/-- The chart compression of `D` is `D` between the pullback by `ψ` and the pushforward by `φ`. -/
+theorem complexChartCompression_def (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (D : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    e.complexChartCompression he φ ψ D =
+      e.complexCutoffPushforward he φ ∘ₗ D ∘ₗ e.complexCutoffPullback he ψ :=
+  LinearMap.ext fun _ ↦ rfl
+
 @[simp]
 theorem complexChartCompression_apply (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
     (D : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯)
@@ -513,6 +530,134 @@ theorem complexChartCompression_complexifyLinearMap (φ ψ : 𝓓(⟨e.target, e
       ContMDiffMap.complexifyLinearMap (e.chartCompression he φ ψ D) := by
   ext f y
   apply Complex.ext <;> simp
+
+section Diffeomorph
+
+variable {N : Type*} [TopologicalSpace N] [ChartedSpace E N] [IsManifold 𝓘(ℝ, E) ∞ N] [T2Space N]
+
+/-- **Chart compressions under a diffeomorphism.** Transport an operator `D` on the complex-valued
+smooth functions on `N` to `M` along a diffeomorphism `Φ : M → N`, by conjugation with the pullback
+`f ↦ f ∘ Φ`. Its chart compression in a chart `e` of `M` is the chart compression of `D`, by the
+same cutoffs, in the chart `e ∘ Φ⁻¹` of `N`, which has the same target as `e`. -/
+theorem complexChartCompression_conj (Φ : M ≃ₘ⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ N)
+    (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (D : C^∞⟮𝓘(ℝ, E), N; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮𝓘(ℝ, E), N; 𝓘(ℝ, ℂ), ℂ⟯) :
+    e.complexChartCompression he φ ψ (Φ.compRightComplexAlgEquiv.toLinearEquiv.conj D) =
+      (Φ.symm.toHomeomorph.transOpenPartialHomeomorph e).complexChartCompression
+        (Φ.symm.transOpenPartialHomeomorph_mem_maximalAtlas le_rfl he) φ ψ D := by
+  have he' := Φ.symm.transOpenPartialHomeomorph_mem_maximalAtlas le_rfl he
+  -- Pulling back through `e` and then along `Φ⁻¹` is pulling back through `e ∘ Φ⁻¹`. The cutoff
+  -- `ψ` lives on `e.target`, which is the target of `e ∘ Φ⁻¹` only up to unfolding, so the two
+  -- pullbacks are compared by explicit terms rather than by rewriting.
+  have hpull (f : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, ℂ), ℂ⟯) :
+      Φ.compRightComplexAlgEquiv.symm (e.complexCutoffPullback he ψ f) =
+        (Φ.symm.toHomeomorph.transOpenPartialHomeomorph e).complexCutoffPullback he' ψ f := by
+    ext z
+    by_cases hz : Φ.symm z ∈ e.source
+    · exact ((Φ.compRightComplexAlgEquiv_symm_apply _ z).trans
+        (complexCutoffPullback_apply_of_mem he ψ f hz)).trans
+          (complexCutoffPullback_apply_of_mem he' ψ f hz).symm
+    · exact ((Φ.compRightComplexAlgEquiv_symm_apply _ z).trans
+        (complexCutoffPullback_apply_of_notMem he ψ f hz)).trans
+          (complexCutoffPullback_apply_of_notMem he' ψ f hz).symm
+  ext f y
+  refine (complexChartCompression_apply he φ ψ _ f y).trans
+    (Eq.trans ?_ (complexChartCompression_apply he' φ ψ D f y).symm)
+  rw [LinearEquiv.conj_apply_apply, AlgEquiv.toLinearEquiv_apply,
+    Diffeomorph.compRightComplexAlgEquiv_apply]
+  exact congrArg₂ (fun g z ↦ φ y • D g z) (hpull f) (by simp)
+
+end Diffeomorph
+
+/-! ### Changing the chart and composing -/
+
+/-- **Changing the chart of a pullback.** If two charts have the same inverse on the support of
+the cutoff `ψ`, read as a test function on both chart targets, then pulling back through either
+chart gives the same function on `M`. -/
+theorem complexCutoffPullback_congr {e' : OpenPartialHomeomorph M E}
+    (he' : e' ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M) {ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)}
+    {ψ' : 𝓓(⟨e'.target, e'.open_target⟩, ℝ)} (hψ : (ψ : E → ℝ) = ψ')
+    (h : EqOn e.symm e'.symm (tsupport ψ)) :
+    e.complexCutoffPullback he ψ = e'.complexCutoffPullback he' ψ' := by
+  have hts : tsupport (ψ : E → ℝ) = tsupport ψ' := by rw [hψ]
+  have h₁ : tsupport ψ ⊆ e'.target := hts ▸ ψ'.tsupport_subset
+  have h₂ : tsupport ψ' ⊆ e.target := hts ▸ ψ.tsupport_subset
+  have h' : EqOn e'.symm e.symm (tsupport ψ') := hts ▸ h.symm
+  ext f x
+  by_cases hx : x ∈ e.source ∧ e x ∈ tsupport ψ
+  · obtain ⟨hx', hex⟩ := mem_source_and_apply_eq_of_eqOn_symm h₁ h hx.1 hx.2
+    rw [complexCutoffPullback_apply_of_mem he _ _ hx.1,
+      complexCutoffPullback_apply_of_mem he' _ _ hx', hex, hψ]
+  by_cases hx' : x ∈ e'.source ∧ e' x ∈ tsupport ψ'
+  · obtain ⟨hxe, hex⟩ := mem_source_and_apply_eq_of_eqOn_symm h₂ h' hx'.1 hx'.2
+    exact absurd ⟨hxe, hex ▸ hts ▸ hx'.2⟩ hx
+  -- Away from the chart preimages of the supports, both pullbacks vanish.
+  have hzero : ∀ {e'' : OpenPartialHomeomorph M E}
+      (he'' : e'' ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M) (χ : 𝓓(⟨e''.target, e''.open_target⟩, ℝ)),
+      ¬(x ∈ e''.source ∧ e'' x ∈ tsupport χ) → e''.complexCutoffPullback he'' χ f x = 0 := by
+    intro e'' he'' χ hχ
+    by_cases hxs : x ∈ e''.source
+    · rw [complexCutoffPullback_apply_of_mem he'' _ _ hxs,
+        image_eq_zero_of_notMem_tsupport fun h ↦ hχ ⟨hxs, h⟩, zero_smul]
+    · exact complexCutoffPullback_apply_of_notMem he'' _ _ hxs
+  rw [hzero he ψ hx, hzero he' ψ' hx']
+
+omit [T2Space M] in
+/-- **Changing the chart of a pushforward.** If two charts have the same inverse on the support of
+the cutoff `φ`, read as a test function on both chart targets, then pushing forward through either
+chart gives the same function. -/
+theorem complexCutoffPushforward_congr {e' : OpenPartialHomeomorph M E}
+    (he' : e' ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M) {φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)}
+    {φ' : 𝓓(⟨e'.target, e'.open_target⟩, ℝ)} (hφ : (φ : E → ℝ) = φ')
+    (h : EqOn e.symm e'.symm (tsupport φ)) :
+    e.complexCutoffPushforward he φ = e'.complexCutoffPushforward he' φ' := by
+  ext g y
+  rw [complexCutoffPushforward_apply, complexCutoffPushforward_apply, ← hφ]
+  by_cases hy : φ y = 0
+  · simp [hy]
+  · rw [h (subset_tsupport _ hy)]
+
+/-- **Changing the chart of a chart compression.** If two charts have the same inverse on the
+supports of the cutoffs `φ` and `ψ`, read as test functions on both chart targets, the chart
+compressions of every operator in the two charts agree. -/
+theorem complexChartCompression_congr {e' : OpenPartialHomeomorph M E}
+    (he' : e' ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M) {φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)}
+    {φ' ψ' : 𝓓(⟨e'.target, e'.open_target⟩, ℝ)} (hφ : (φ : E → ℝ) = φ')
+    (hψ : (ψ : E → ℝ) = ψ') (h : EqOn e.symm e'.symm (tsupport φ ∪ tsupport ψ)) :
+    e.complexChartCompression he φ ψ = e'.complexChartCompression he' φ' ψ' := by
+  ext D : 1
+  rw [complexChartCompression_def, complexChartCompression_def,
+    complexCutoffPushforward_congr he he' hφ (h.mono subset_union_left),
+    complexCutoffPullback_congr he he' hψ (h.mono subset_union_right)]
+
+/-- Pushing a function forward by a cutoff `χ` and pulling it back by `χ` again gives the function
+back when it is supported in the chart source, at points where `χ` equals `1`. -/
+theorem complexCutoffPullback_complexCutoffPushforward (χ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    {g : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯} (hg : ∀ x, g x ≠ 0 → x ∈ e.source ∧ χ (e x) = 1) :
+    e.complexCutoffPullback he χ (e.complexCutoffPushforward he χ g) = g := by
+  ext x
+  by_cases hx : x ∈ e.source
+  · rw [complexCutoffPullback_apply_of_mem he _ _ hx, complexCutoffPushforward_apply,
+      e.left_inv hx]
+    by_cases hgx : g x = 0
+    · simp [hgx]
+    · simp [(hg x hgx).2]
+  · rw [complexCutoffPullback_apply_of_notMem he _ _ hx]
+    by_contra hgx
+    exact hx (hg x (Ne.symm hgx)).1
+
+/-- **Chart compressions of a composition.** If a cutoff `χ` equals `1` at the chart images of
+the points where `B` applied to the pullback of `f` does not vanish, which all lie in the chart
+source, the compression of `A ∘ B` by `φ` and `ψ` applied to `f` is the compression of `A` by `φ`
+and `χ` applied to the compression of `B` by `χ` and `ψ` applied to `f`. -/
+theorem complexChartCompression_comp_apply (φ ψ χ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (A B : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯)
+    {f : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hB : ∀ x, B (e.complexCutoffPullback he ψ f) x ≠ 0 → x ∈ e.source ∧ χ (e x) = 1) :
+    e.complexChartCompression he φ ψ (A ∘ₗ B) f =
+      e.complexChartCompression he φ χ A (e.complexChartCompression he χ ψ B f) := by
+  simp only [complexChartCompression_def, LinearMap.comp_apply,
+    complexCutoffPullback_complexCutoffPushforward he χ hB]
 
 end Complex
 

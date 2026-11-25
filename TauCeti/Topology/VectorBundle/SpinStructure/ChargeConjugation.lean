@@ -170,11 +170,9 @@ def chargeConjChargeConjEquiv (s : SpinCStructure F V n) : s.chargeConj.chargeCo
       continuous_spinCGroup_toSpecialOrthogonal_apply χ hχ hπχ
       norm_toLp_spinCGroup_toSpecialOrthogonal_apply
       continuous_spinCGroup_toSpecialOrthogonal_apply).symm.trans
-    (s.extendEquivOfEquivariant (ρ' := πᶜ) (MonoidHom.comp χ χ)
+    (s.extendSpinCEquivOfEquivariant (MonoidHom.comp χ χ)
       (by rw [spinCGroup.chargeConj_comp_chargeConj]; exact continuous_id)
-      (by rw [spinCGroup.chargeConj_comp_chargeConj, MonoidHom.comp_id])
-      norm_toLp_spinCGroup_toSpecialOrthogonal_apply
-      continuous_spinCGroup_toSpecialOrthogonal_apply s (fun _ p ↦ p)
+      (by rw [spinCGroup.chargeConj_comp_chargeConj, MonoidHom.comp_id]) s (fun _ p ↦ p)
       (fun _ p g ↦ by rw [spinCGroup.chargeConj_comp_chargeConj, MonoidHom.id_apply]) continuous_id
       fun _ _ ↦ rfl)
 
@@ -192,7 +190,7 @@ theorem chargeConjChargeConjEquiv_toEquiv_mk (s : SpinCStructure F V n) (x : X) 
     continuous_spinCGroup_toSpecialOrthogonal_apply x p (χ h * k)).trans
       (Extend.mk_mk χ hχ χ hχ p h k).symm).symm
   exact (Equiv.trans_apply _ _ _).trans <| (congrArg _ hcomp).trans <|
-    OrthonormalFrameLift.extendEquivOfEquivariant_toEquiv_mk (x := x) (p := p) ..
+    OrthonormalFrameLift.extendSpinCEquivOfEquivariant_toEquiv_mk (x := x) (p := p) ..
 
 end SpinCStructure
 

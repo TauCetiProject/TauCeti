@@ -50,10 +50,10 @@ dimensions and indices. For finitely many compact ones `i j : S j → M` with pa
 images on the level `c`, crossing the level attaches all their negative disc bundles at once
 (`TauCeti.SmoothEmbedding.exists_sublevel_union_iUnion_negativeDiscBundle_deformation`), and the
 same argument identifies `Hₙ(M_{c+ε}, M_{c-ε})`, and `Hₙ(M_b, M_a)` for regular levels
-`a < c < b`, with `Hₙ(M_{c-ε} ∪ ⋃ j, Θ j (D j ε), M_{c-ε})`. For a Morse–Bott function on a compact
-manifold (`TauCeti.IsMorseBottFamily`) the pieces on a level are finite in number, compact and
-disjoint, so this applies to every band `[a, b]` whose only critical value is `c`, with the pieces
-on the level `c` as the family.
+`a < c < b`, with `Hₙ(M_{c-ε} ∪ ⋃ j, Θ j (D j ε), M_{c-ε})`. For a Morse–Bott function
+(`TauCeti.IsMorseBottFamily`) the pieces on a level inside a compact band are finite in number,
+compact and disjoint, so this applies to every compact band `[a, b]` whose only critical value is
+`c`, with the pieces on the level `c` as the family. The manifold need not be compact.
 
 This relative homology splits over the submanifolds. For small `ε` the sets `Θ j (D j ε)` are
 compact and pairwise disjoint, since the disc bundles shrink to the zero sections
@@ -64,8 +64,8 @@ closed sets is the coproduct of the contributions of the sets
 `j` of `Hₙ(M_{c-ε} ∪ Θ j (D j ε), M_{c-ε})`, the relative homology of attaching the negative disc
 bundle of `i j` alone
 (`TauCeti.SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_negativeDiscBundle`).
-For a Morse–Bott function on a compact manifold this splits each band with a single critical value
-over the critical submanifolds on that level
+For a Morse–Bott function this splits each compact band with a single critical value over the
+critical submanifolds on that level
 (`TauCeti.IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_negativeDiscBundle`).
 
 The relative homology across the critical level can also be read off a parametrization of the
@@ -118,9 +118,9 @@ In the namespace `TauCeti.SmoothEmbedding`:
 In the namespace `TauCeti.IsMorseBottFamily`:
 
 * `nonempty_singularHomology_sublevelPair_iso_iUnion_negativeDiscBundle`: the relative homology of
-  a band of a Morse–Bott function on a compact manifold with a single critical value `c` is that of
-  the lower sublevel with the negative disc bundles of all the critical submanifolds on the level
-  `c` attached.
+  a compact band of a Morse–Bott function with a single critical value `c` is that of the lower
+  sublevel with the negative disc bundles of all the critical submanifolds on the level `c`
+  attached.
 * `nonempty_singularHomology_sublevelPair_iso_sigma_negativeDiscBundle`: it is the coproduct over
   the critical submanifolds on the level `c` of the relative homology of attaching each negative
   disc bundle alone.
@@ -312,11 +312,12 @@ theorem SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_iUnion_negati
 
 /-- **The relative homology across a critical level of a Morse–Bott function is carried by the
 negative disc bundles of its critical submanifolds on that level.** Let the family
-`i j : S j → M` exhibit `f` as a Morse–Bott function (`TauCeti.IsMorseBottFamily`) on a compact
-Hausdorff second-countable boundaryless manifold, with pieces modelled on boundaryless models,
-and let `g j` be a smooth fibre metric on the normal bundle of `i j`. Let `a < c < b` be such that
-`c` is the only critical value of `f` in `[a, b]`, and index the pieces on the level `f = c` by
-`{j // ∀ s, f (i j s) = c}`.
+`i j : S j → M` exhibit `f` as a Morse–Bott function (`TauCeti.IsMorseBottFamily`) on a Hausdorff
+second-countable boundaryless manifold, not necessarily compact, with pieces modelled on
+boundaryless models, and let `g j` be a smooth fibre metric on the normal bundle of `i j`. Let
+`a < c < b` be such that the band `f⁻¹[a, b]` is compact and `c` is its only critical value, and
+index the pieces on the level `f = c` by `{j // ∀ s, f (i j s) = c}`; they lie in the band, so they
+are finitely many and compact.
 
 Then there are smooth partial diffeomorphisms `Θ j` from the total spaces of the normal bundles of
 these pieces to `M`, each defined on a neighbourhood of the zero section and sending it to `i j`,
@@ -327,8 +328,9 @@ of `Θ j` and the relative singular homology `Hₙ({f ≤ b}, {f ≤ a})` is iso
 object. If `c` is not a critical value there are no such pieces, and the second pair is
 `({f ≤ c - ε}, {f ≤ c - ε})`. -/
 theorem IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_iUnion_negativeDiscBundle
-    [T2Space M] [SecondCountableTopology M] [CompactSpace M] [∀ j, (J j).Boundaryless]
+    [T2Space M] [SecondCountableTopology M] [∀ j, (J j).Boundaryless]
     (h : IsMorseBottFamily i f) {a b c : ℝ} (hac : a < c) (hcb : c < b)
+    (hcompact : IsCompact (f ⁻¹' Icc a b))
     (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c)
     (hdim : ∀ j, Module.finrank ℝ (P j) = Module.finrank ℝ E - Module.finrank ℝ (E' j))
     (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
@@ -359,16 +361,16 @@ theorem IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_iUnion_nega
                 ⋃ j, Θ j '' (h.isNondegenerateCriticalSubmanifold j).negativeDiscBundle hn (P j)
                   (g j).toRiemannianMetric ε)
               ).singularHomology R n) := by
-  have := h.finite
+  -- The pieces on the level `c` lie in the compact band, so they are finitely many and compact.
+  have := h.finite_subtype_of_forall_apply_eq hcompact ⟨hac.le, hcb.le⟩ fun _ ↦ id
   have (j : ι) : Nonempty (S j) := h.nonempty j
-  have (j : ι) : CompactSpace (S j) :=
-    (Topology.IsClosedEmbedding.mk (i j).isEmbedding (h.isClosed_range j)).compactSpace
+  have (j : {j // ∀ s, f (i j s) = c}) : CompactSpace (S j) :=
+    h.compactSpace_of_forall_apply_eq hcompact ⟨hac.le, hcb.le⟩ j.property
   refine SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_iUnion_negativeDiscBundle
     (ι := {j // ∀ s, f (i j s) = c}) (S := fun j ↦ S j) (P := fun j ↦ P j) (J := fun j ↦ J j)
     (i := fun j ↦ i j) hn (fun j ↦ h.isNondegenerateCriticalSubmanifold j) h.contMDiff
     (fun j ↦ j.property) (fun j k hjk ↦ h.pairwise_disjoint_range fun he ↦ hjk
-        (Subtype.ext he)) hac hcb
-    (isClosed_Icc.preimage h.contMDiff.continuous).isCompact (fun x ⟨hx, hfx⟩ ↦ ?_)
+        (Subtype.ext he)) hac hcb hcompact (fun x ⟨hx, hfx⟩ ↦ ?_)
     (fun j ↦ hdim j) (fun j ↦ g j)
   -- A critical point in the band has value `c`, so its piece lies on the level `c`.
   exact h.mem_iUnion_range_of_apply_eq hn hx (hcrit _ hx hfx)
@@ -501,10 +503,11 @@ theorem SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_negativ
 
 /-- **The relative homology across a critical level of a Morse–Bott function splits over its
 critical submanifolds on that level.** Let the family `i j : S j → M` exhibit `f` as a Morse–Bott
-function (`TauCeti.IsMorseBottFamily`) on a compact Hausdorff second-countable boundaryless
-manifold, with pieces modelled on boundaryless models, and let `g j` be a smooth fibre metric on
-the normal bundle of `i j`. Let `a < c < b` be such that `c` is the only critical value of `f` in
-`[a, b]`, and index the pieces on the level `f = c` by `{j // ∀ s, f (i j s) = c}`.
+function (`TauCeti.IsMorseBottFamily`) on a Hausdorff second-countable boundaryless manifold, not
+necessarily compact, with pieces modelled on boundaryless models, and let `g j` be a smooth fibre
+metric on the normal bundle of `i j`. Let `a < c < b` be such that the band `f⁻¹[a, b]` is compact
+and `c` is its only critical value, and index the pieces on the level `f = c` by
+`{j // ∀ s, f (i j s) = c}`; they lie in the band, so they are finitely many and compact.
 
 Then there are smooth partial diffeomorphisms `Θ j` from the total spaces of the normal bundles of
 these pieces to `M`, each defined on a neighbourhood of the zero section and sending it to `i j`,
@@ -515,8 +518,9 @@ of `Θ j`, the sets `Θ j (D j ε)` are pairwise disjoint, and the relative sing
 `Hₙ({f ≤ c - ε} ∪ Θ j (D j ε), {f ≤ c - ε})`, in every degree and for every coefficient object.
 If `c` is not a critical value there are no such pieces, and the coproduct is zero. -/
 theorem IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_negativeDiscBundle
-    [T2Space M] [SecondCountableTopology M] [CompactSpace M] [∀ j, (J j).Boundaryless]
+    [T2Space M] [SecondCountableTopology M] [∀ j, (J j).Boundaryless]
     (h : IsMorseBottFamily i f) {a b c : ℝ} (hac : a < c) (hcb : c < b)
+    (hcompact : IsCompact (f ⁻¹' Icc a b))
     (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c)
     (hdim : ∀ j, Module.finrank ℝ (P j) = Module.finrank ℝ E - Module.finrank ℝ (E' j))
     (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
@@ -545,23 +549,23 @@ theorem IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_negat
             (g j).toRiemannianMetric ε) ∧
         ∀ {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A] (R : A) (n : ℕ),
           -- The pieces are finitely many, so the coproduct exists in the abelian category `A`.
-          haveI := h.finite
+          haveI := h.finite_subtype_of_forall_apply_eq hcompact ⟨hac.le, hcb.le⟩ fun _ ↦ id
           Nonempty ((sublevelPair f (hac.trans hcb).le).singularHomology R n ≅
             ∐ fun j : {j // ∀ s, f (i j s) = c} ↦
               (TopPair.ofInclusion (X := TopCat.of M) (subset_union_left :
                 {y | f y ≤ c - ε} ⊆ {y | f y ≤ c - ε} ∪
                   Θ j '' (h.isNondegenerateCriticalSubmanifold j).negativeDiscBundle hn (P j)
                     (g j).toRiemannianMetric ε)).singularHomology R n) := by
-  have := h.finite
+  -- The pieces on the level `c` lie in the compact band, so they are finitely many and compact.
+  have := h.finite_subtype_of_forall_apply_eq hcompact ⟨hac.le, hcb.le⟩ fun _ ↦ id
   have (j : ι) : Nonempty (S j) := h.nonempty j
-  have (j : ι) : CompactSpace (S j) :=
-    (Topology.IsClosedEmbedding.mk (i j).isEmbedding (h.isClosed_range j)).compactSpace
+  have (j : {j // ∀ s, f (i j s) = c}) : CompactSpace (S j) :=
+    h.compactSpace_of_forall_apply_eq hcompact ⟨hac.le, hcb.le⟩ j.property
   refine SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_negativeDiscBundle
     (ι := {j // ∀ s, f (i j s) = c}) (S := fun j ↦ S j) (P := fun j ↦ P j) (J := fun j ↦ J j)
     (i := fun j ↦ i j) hn (fun j ↦ h.isNondegenerateCriticalSubmanifold j) h.contMDiff
     (fun j ↦ j.property) (fun j k hjk ↦ h.pairwise_disjoint_range fun he ↦ hjk (Subtype.ext he))
-    hac hcb
-    (isClosed_Icc.preimage h.contMDiff.continuous).isCompact (fun x ⟨hx, hfx⟩ ↦ ?_)
+    hac hcb hcompact (fun x ⟨hx, hfx⟩ ↦ ?_)
     (fun j ↦ hdim j) (fun j ↦ g j)
   -- A critical point in the band has value `c`, so its piece lies on the level `c`.
   exact h.mem_iUnion_range_of_apply_eq hn hx (hcrit _ hx hfx)
