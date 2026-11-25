@@ -48,8 +48,7 @@ generating the unit ideal: if `s * x = t * x` for every `x ∈ T` and `Ideal.spa
 theorem eq_of_forall_mul_eq_of_span_eq_top {R : Type*} [CommSemiring R] {T : Set R}
     (hT : span T = ⊤) {s t : R} (h : ∀ x ∈ T, s * x = t * x) : s = t := by
   have hle : span T ≤ LinearMap.eqLocus (LinearMap.mulLeft R s) (LinearMap.mulLeft R t) :=
-    span_le.mpr h
-  have h₁ : s * 1 = t * 1 := hle (hT ▸ Submodule.mem_top)
-  rwa [mul_one, mul_one] at h₁
+    span_le.mpr fun x hx ↦ LinearMap.mem_eqLocus.mpr (by simpa using h x hx)
+  simpa using LinearMap.mem_eqLocus.mp (hle (hT ▸ Submodule.mem_top : (1 : R) ∈ span T))
 
 end Ideal

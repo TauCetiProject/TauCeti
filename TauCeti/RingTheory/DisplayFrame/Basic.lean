@@ -215,6 +215,7 @@ theorem map_mem (f : Hom F F') {a : S} (ha : a ∈ I) : f a ∈ I' :=
 theorem le_comap (f : Hom F F') : I ≤ I'.comap (f : S →+* S') :=
   fun _ ↦ f.map_mem
 
+@[simp]
 theorem map_frobenius (f : Hom F F') (s : S) : f (F.frobenius s) = F'.frobenius (f s) :=
   f.map_frobenius' s
 
@@ -254,7 +255,7 @@ theorem id_apply (s : S) : Hom.id F s = s :=
 def comp (g : Hom F' F'') (f : Hom F F') : Hom F F'' where
   toRingHom := (g : S' →+* S'').comp f
   map_mem' _ ha := g.map_mem (f.map_mem ha)
-  map_frobenius' s := by simp [map_frobenius]
+  map_frobenius' s := by simp
   map_divFrobenius' a := by
     simpa [map_divFrobenius] using g.map_divFrobenius ⟨f a, f.map_mem a.property⟩
 
