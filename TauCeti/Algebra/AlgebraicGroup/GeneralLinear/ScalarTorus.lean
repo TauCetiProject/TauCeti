@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Points
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Center
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Torus
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Kernel
@@ -32,6 +33,11 @@ the universally central quotient point of the center is a scalar point
   ideal of `GLₙ` exactly when it vanishes on scalar matrices.
 * `TauCeti.GeneralLinear.ker_weightCocharacter_const_one`: the center ideal of `GLₙ` is the kernel
   of the scalar cocharacter, so the center is the scalar subgroup.
+* `TauCeti.GeneralLinear.powCocharacter_weightCocharacter`: the `m`-th power of the weight
+  cocharacter with weights `w` has weights `w i * m`; so `t ↦ t ^ m • 1` is the `m`-th power of
+  `t ↦ t • 1`.
+* `TauCeti.GeneralLinear.ker_weightCocharacter_const`: for `m ≠ 0`, the kernel of
+  `t ↦ t ^ m • 1` is still the center ideal.
 
 ## References
 
@@ -56,6 +62,40 @@ theorem weightCocharacterPoints_const_one {A : Type w} [CommRing A] [Algebra R A
   rw [pointsMulEquiv_weightCocharacterPoints, pointsMulEquiv_scalarTorusPoints]
   ext i j
   simp [Matrix.diagonal_apply]
+
+/-- The `m`-th power `t ↦ λ(t ^ m)` of the weight cocharacter with weights `w` is the weight
+cocharacter with weights `w i * m`. -/
+theorem powCocharacter_weightCocharacter (w : Fin n → ℤ) (m : ℤ) :
+    (weightCocharacter (R := R) w).powCocharacter m = weightCocharacter (fun i ↦ w i * m) := by
+  let σ : R[T;T⁻¹] →ₐ[R] R[T;T⁻¹] :=
+    AddMonoidAlgebra.mapDomainAlgHom R R (AddMonoidHom.mulRight m)
+  let p : WithConv (R[T;T⁻¹] →ₐ[R] R[T;T⁻¹]) := toConv (AlgHom.id R R[T;T⁻¹])
+  -- Both sides agree at the universal point `T` of `𝔾ₘ`: each is the diagonal point with
+  -- entries `T ^ (w i * m)`.
+  have hσ : MultiplicativeGroup.pointsMulEquiv (toConv σ) =
+      MultiplicativeGroup.pointsMulEquiv p ^ m := by
+    refine Units.ext ?_
+    rw [MultiplicativeGroup.pointsMulEquiv_apply, laurentEvalEquiv_symm_apply,
+      ofConv_toConv, ← (AlgHom.id R R[T;T⁻¹]).apply_laurentPolynomial_T_of_apply_T_one
+        (u := MultiplicativeGroup.pointsMulEquiv p) (by simp [p])]
+    -- `T n` is `single n 1`, on which `mapDomainAlgHom` acts through its domain map.
+    rw [AlgHom.id_apply, LaurentPolynomial.T, LaurentPolynomial.T,
+      AddMonoidAlgebra.mapDomainAlgHom_apply, AddMonoidAlgebra.mapDomain_single,
+      AddMonoidHom.mulRight_apply, one_mul]
+  have hpts : BialgHom.mapDomain (weightCocharacter (R := R) w) (toConv σ) =
+      BialgHom.mapDomain (weightCocharacter (R := R) (N := n) (fun i ↦ w i * m)) p := by
+    rw [mapDomain_weightCocharacter, mapDomain_weightCocharacter]
+    apply (pointsMulEquiv (R := R) (A := R[T;T⁻¹]) n).injective
+    rw [pointsMulEquiv_weightCocharacterPoints, pointsMulEquiv_weightCocharacterPoints, hσ]
+    congr 1
+    funext i
+    rw [weightDiagonalUnits_apply, weightDiagonalUnits_apply, ← zpow_mul, mul_comm]
+  refine BialgHom.ext fun x ↦ ?_
+  have hx := congrArg (fun q ↦ q.ofConv x) hpts
+  simp only [BialgHom.mapDomain_apply_apply, p, σ, AlgHom.id_apply,
+    AddMonoidAlgebra.mapDomainAlgHom_apply, AddMonoidHom.coe_mulRight] at hx
+  rw [BialgHom.powCocharacter_apply]
+  exact hx
 
 section Field
 
@@ -105,6 +145,19 @@ theorem ker_weightCocharacter_const_one :
       CommHopfAlgCat.centerDefiningIdeal (coordinateHopfAlgebra k n) := by
   ext x
   rw [HopfIdeal.mem_ker, mem_centerDefiningIdeal_iff]
+
+/-- For `m ≠ 0`, the cocharacter `t ↦ t ^ m • 1` has the same kernel as `t ↦ t • 1`: the center
+ideal of `GLₙ`. Scheme-theoretically its image is the whole scalar subgroup, not a finite
+subgroup `μ_m`. -/
+theorem ker_weightCocharacter_const {m : ℤ} (hm : m ≠ 0) :
+    HopfIdeal.ker (weightCocharacter (R := k) (N := n) (fun _ ↦ m)) =
+      CommHopfAlgCat.centerDefiningIdeal (coordinateHopfAlgebra k n) := by
+  have hpow := powCocharacter_weightCocharacter (R := k) n (fun _ ↦ 1) m
+  simp only [one_mul] at hpow
+  ext x
+  rw [HopfIdeal.mem_ker, mem_centerDefiningIdeal_iff, ← hpow, BialgHom.powCocharacter_apply,
+    ← AddMonoidAlgebra.mapDomain_zero (· * m)]
+  exact (AddMonoidAlgebra.mapDomain_injective (mul_left_injective₀ hm)).eq_iff
 
 end Field
 

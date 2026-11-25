@@ -21,10 +21,8 @@ weight morphism `w : 𝔾ₘ → S`.
 The proof is on coordinate rings. The cocharacter `t ↦ t ^ m • 1` is the weight cocharacter
 `TauCeti.GeneralLinear.weightCocharacter (fun _ ↦ m)`, and it lands in `MT(h)`
 (`TauCeti.DeligneTorus.mumfordTateHopfIdeal_toIdeal_le_ker`), so the Mumford–Tate ideal lies in
-the kernel of its comorphism. That comorphism is the scalar comorphism
-`weightCocharacter (fun _ ↦ 1)` followed by `T ↦ T ^ m`. For `m ≠ 0` the second map is injective,
-so the kernel is the kernel of the scalar comorphism, the center ideal
-(`TauCeti.GeneralLinear.mem_centerDefiningIdeal_iff`).
+the kernel of its comorphism. For `m ≠ 0` that kernel is the center ideal
+(`TauCeti.GeneralLinear.ker_weightCocharacter_const`).
 Scheme-theoretically, the image of `t ↦ t ^ m • 1` is the whole scalar subgroup, not a finite
 subgroup `μ_k`.
 
@@ -51,42 +49,6 @@ open scoped LaurentPolynomial
 
 namespace TauCeti.DeligneTorus
 
-/-- The weight cocharacter with all weights `m` is the one with all weights `1` followed by
-`T ↦ T ^ m`. -/
-private theorem weightCocharacter_const_eq_comp {R : Type*} [CommRing R] (n : ℕ) (m : ℤ) :
-    GeneralLinear.weightCocharacter (R := R) (N := n) (fun _ ↦ m) =
-      (AddMonoidAlgebra.mapDomainBialgHom R (AddMonoidHom.mulRight m)).comp
-        (GeneralLinear.weightCocharacter (fun _ ↦ 1)) := by
-  let σ : R[T;T⁻¹] →ₐ[R] R[T;T⁻¹] :=
-    AddMonoidAlgebra.mapDomainBialgHom R (AddMonoidHom.mulRight m)
-  let p : WithConv (R[T;T⁻¹] →ₐ[R] R[T;T⁻¹]) := WithConv.toConv (AlgHom.id R R[T;T⁻¹])
-  -- Both sides agree at the universal point of `𝔾ₘ`: each is the diagonal point `T ^ m • 1`.
-  have hσ : MultiplicativeGroup.pointsMulEquiv (WithConv.toConv σ) =
-      MultiplicativeGroup.pointsMulEquiv p ^ m := by
-    refine Units.ext ?_
-    rw [MultiplicativeGroup.pointsMulEquiv_apply, laurentEvalEquiv_symm_apply,
-      WithConv.ofConv_toConv, ← (AlgHom.id R R[T;T⁻¹]).apply_laurentPolynomial_T_of_apply_T_one
-        (u := MultiplicativeGroup.pointsMulEquiv p) (by simp [p])]
-    -- `T n` is `single n 1`, on which `mapDomainBialgHom` acts through its domain map.
-    rw [AlgHom.id_apply, LaurentPolynomial.T, LaurentPolynomial.T]
-    exact (AddMonoidAlgebra.mapDomainBialgHom_single _ _ _).trans
-      (by rw [AddMonoidHom.mulRight_apply, one_mul])
-  have hpts : BialgHom.mapDomain (GeneralLinear.weightCocharacter (R := R) (N := n)
-      (fun _ ↦ m)) p = BialgHom.mapDomain (GeneralLinear.weightCocharacter (fun _ ↦ 1))
-        (WithConv.toConv σ) := by
-    rw [GeneralLinear.mapDomain_weightCocharacter, GeneralLinear.mapDomain_weightCocharacter]
-    apply (GeneralLinear.pointsMulEquiv (R := R) (A := R[T;T⁻¹]) n).injective
-    rw [GeneralLinear.pointsMulEquiv_weightCocharacterPoints,
-      GeneralLinear.pointsMulEquiv_weightCocharacterPoints, hσ]
-    congr 1
-    funext i
-    rw [GeneralLinear.weightDiagonalUnits_apply, GeneralLinear.weightDiagonalUnits_apply, zpow_one]
-  refine BialgHom.ext fun x ↦ ?_
-  have hx := congrArg (fun q ↦ q.ofConv x) hpts
-  simp only [BialgHom.mapDomain_apply_apply, p, AlgHom.id_apply] at hx
-  rw [BialgHom.comp_apply]
-  exact hx
-
 /-- **The Mumford–Tate group contains the scalars when the weight is nonzero.** Let
 `h : S → GL_{n,ℝ}` and `m ≠ 0`, and suppose that the cocharacter `t ↦ t ^ m • 1` of `GLₙ` over `ℚ`
 (the weight cocharacter `TauCeti.GeneralLinear.weightCocharacter (fun _ ↦ m)`) factors through `h`
@@ -105,9 +67,8 @@ theorem mumfordTateHopfIdeal_le_centerDefiningIdeal {n : ℕ}
   intro x hx
   have hker := BialgHom.mem_ker_toAlgHom_toRingHom.mp
     (mumfordTateHopfIdeal_toIdeal_le_ker _ g hg (HopfIdeal.mem_toIdeal.mpr hx))
-  rw [_root_.CommHopfAlgCat.hom_ofHom, weightCocharacter_const_eq_comp, BialgHom.comp_apply,
-    ← map_zero (AddMonoidAlgebra.mapDomainBialgHom ℚ (AddMonoidHom.mulRight m))] at hker
-  exact (GeneralLinear.mem_centerDefiningIdeal_iff n ℚ).mpr
-    (AddMonoidAlgebra.mapDomain_injective (mul_left_injective₀ hm) hker)
+  rw [_root_.CommHopfAlgCat.hom_ofHom] at hker
+  rw [← GeneralLinear.ker_weightCocharacter_const n ℚ hm]
+  exact (HopfIdeal.mem_ker _).mpr hker
 
 end TauCeti.DeligneTorus
