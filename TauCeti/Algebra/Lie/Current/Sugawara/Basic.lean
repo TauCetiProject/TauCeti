@@ -57,10 +57,11 @@ relations when `2 ≠ 0` and `3 ≠ 0`).
 The general construction and current commutator above need no characteristic or algebraic-closure
 hypothesis. In `TauCeti.Algebra.Lie.Current.Sugawara.Normalization`, when `2 ≠ 0` and
 `κ_L = 2 h^∨ κ₀` with `h^∨ ≠ 0` (in particular, for a simple Lie algebra in characteristic zero
-where `h^∨` is the dual Coxeter number), in the normalisation of Frenkel with `κ₀ = κ_L / (2 h^∨)`
-and `S(z) = ½ ∑ :J^a J_a:` for `κ₀`-dual bases, the Segal--Sugawara modes are `h^∨ Sₙ`, and at the
-level `κ = k κ₀` (`Φ = -(k • κ₀)`, `a = 1`) the formula above becomes
-`[z_m, h^∨ Sₙ] = (k + h^∨) m z_{n+m}`.
+where `h^∨` is the dual Coxeter number), specialising `Φ = -(k • κ₀)` (`(-k / (2 h^∨)) • κ_L`)
+and `a = 1` gives the `κ₀`-dual-basis formula `Lₘ = (2 (k + h^∨))⁻¹ ∑ᵢ :bᵢ b^i:_m`
+(`TauCeti.CurrentAlgebra.sugawaraVirasoro_eq_sum_dualBasis_of_dualCoxeterNumber`) and the scalar
+`c_{Vir} = k · dim L / (k + h^∨)`
+(`TauCeti.CurrentAlgebra.sugawaraCentralCharge_of_dualCoxeterNumber`).
 
 The homothety `t ↦ u t` scales `Sₙ` by `u ^ n` at every central value
 (`TauCeti.CurrentAlgebra.coordinateCompletedEnvelopingAut_homothety_sugawaraMode`). The finite
