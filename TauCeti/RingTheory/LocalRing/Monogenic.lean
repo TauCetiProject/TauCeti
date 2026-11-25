@@ -119,8 +119,9 @@ theorem adjoin_toSubmodule_sup_maximalIdeal_eq_top_of_adjoin_residue_eq_top {β 
   · rw [Submodule.restrictScalars_mem, ← Ideal.Quotient.eq]
     exact hp.symm
 
-/-- **A residue class separable over `R` is a simple root of a polynomial over `R`**: a lift
-`g : R[X]` of the minimal polynomial of the residue of `a` has `g(a) ∈ 𝓂(S)` and `g'(a)` a unit.
+/-- **A residue class separable over `R` is a simple root of a polynomial over `R`**: some
+`g : R[X]` has `g(a) ∈ 𝓂(S)` and `g'(a)` a unit. The proof takes for `g` a lift of the minimal
+polynomial of the residue of `a`.
 This is the input of the Newton step `TauCeti.IsLocalRing.exists_span_eval_eq_maximalIdeal`, and
 of Taylor expansion at `a`. -/
 theorem exists_aeval_mem_maximalIdeal_isUnit_aeval_derivative

@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Inertia
 public import TauCeti.FieldTheory.FunctionField.Place.Filtration
 public import TauCeti.Algebra.Group.Subgroup.FiniteFiltration
 public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
+import TauCeti.RingTheory.LocalRing.RamificationGroup.Graded
 
 /-!
 # The higher ramification groups of a place
@@ -351,20 +352,14 @@ theorem commutator_ramificationGroup_le (i : ℕ) :
 
 /-- **In characteristic `p` the successive quotients of the ramification filtration are killed by
 `p`** (Stichtenoth, Proposition 3.8.5): the `p`-th power of an element of `G_{i+1}(P)` lies in
-`G_{i+2}(P)`, so `G_{i+1}(P) / G_{i+2}(P)` is elementary abelian. -/
+`G_{i+2}(P)`, so `G_{i+1}(P) / G_{i+2}(P)` is elementary abelian. This is the case of the
+valuation ring `𝒪_P` of `TauCeti.IsLocalRing.pow_mem_ramificationGroup_of_charP`. -/
 theorem pow_mem_ramificationGroup_of_charP (p : ℕ) [CharP P.ResidueField p] (i : ℕ)
     {g : P.integers.decompositionSubgroup F} (hg : g ∈ ramificationGroup F P (i + 1)) :
     g ^ p ∈ ramificationGroup F P (i + 2) := by
-  obtain ⟨t, ht⟩ := P.exists_isUniformizer
-  rw [isUniformizer_iff_ord_eq_one] at ht
-  have hp : (p : P.ResidueField) = 0 := CharP.cast_eq_zero P.ResidueField p
-  have hmem : (⟨g, hg⟩ : ramificationGroup F P (i + 1)) ^ p ∈
-      (ramificationResidueHom F P ht i).ker := by
-    rw [MonoidHom.mem_ker, map_pow, ← toAdd_eq_zero]
-    funext x
-    rw [toAdd_pow, Pi.smul_apply, Pi.zero_apply, nsmul_eq_mul, hp, zero_mul]
-  rw [ker_ramificationResidueHom, Subgroup.mem_subgroupOf] at hmem
-  simpa using hmem
+  rw [ramificationGroup_def] at hg ⊢
+  simpa [add_assoc, one_add_one_eq_two] using
+    IsLocalRing.pow_mem_ramificationGroup_of_charP p (by omega) hg
 
 /-- **In characteristic zero a finite first ramification group is trivial** (Stichtenoth,
 Proposition 3.8.5): each successive quotient embeds in a

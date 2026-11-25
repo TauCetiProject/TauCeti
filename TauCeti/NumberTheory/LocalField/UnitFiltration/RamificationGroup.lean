@@ -12,9 +12,8 @@ public import TauCeti.NumberTheory.LocalField.Teichmuller
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Uniformizer
 public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
-import TauCeti.GroupTheory.PGroup
-import TauCeti.NumberTheory.LocalField.UnitFiltration.ProP
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.RingTheory.LocalRing.RamificationGroup.Graded
 import TauCeti.RingTheory.Valuation.ValuativeRel.Action
 
 /-!
@@ -43,10 +42,10 @@ decided at `ϖ` alone.
 At depth zero, composing with the reduction isomorphism `U(L,0) / U(L,1) ≃ 𝓀[L]ˣ`
 gives the **tame character** `G_0 → 𝓀[L]ˣ`, which kills `G_1`; the induced map on `G_0 / G_1` is
 injective, so the tame quotient is cyclic of order dividing `q - 1`, where `q` is the cardinality
-of the residue field. At positive depth `U(L,i) / U(L,i+1)` has `q` elements, so every
-`G_i / G_{i+1}` with `i ≥ 1` is a `p`-group for the residue characteristic `p`; when the action is
-faithful and `G_0` is finite, the filtration reaches `1`, and every `G_i` with `i ≥ 1`, in
-particular the wild inertia group `G_1`, is a `p`-group.
+of the residue field. At positive depth every `G_i / G_{i+1}` is a `p`-group for the residue
+characteristic `p`; when the action is faithful and `G_0` is finite, every `G_i` with `i ≥ 1`, in
+particular the wild inertia group `G_1`, is a `p`-group. These are the local-field cases of the
+general local-ring statements in `TauCeti.RingTheory.LocalRing.RamificationGroup.Graded`.
 
 ## Main definitions
 
@@ -628,40 +627,21 @@ theorem card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one :
 
 variable (G) in
 /-- At positive depth `i`, the graded piece `G_i / G_{i+1}` is a `p`-group for the residue
-characteristic `p`: it embeds into `U(L,i) / U(L,i+1)`, which has `q` elements. -/
+characteristic `p`. This is the local-field case of
+`TauCeti.IsLocalRing.isPGroup_ramificationGroupGraded`. -/
 theorem isPGroup_ramificationGroupGraded_natCast_succ (p : ℕ) [CharP 𝓀[L] p] (i : ℕ) :
     IsPGroup p (RamificationGroupGraded G 𝒪[L] ((i + 1 : ℕ) : ℤ)) :=
-  have ⟨_, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
-  (isPGroup_unitFiltration_succ_quotient_add_succ p i 1).of_injective _
-    (ramificationGroupGradedToUnitFiltrationGraded_injective (i := i + 1) hϖ)
+  IsLocalRing.isPGroup_ramificationGroupGraded p (by omega)
 
 variable (G) in
 /-- **The positive-depth ramification groups are `p`-groups**, for `p` the residue
 characteristic, whenever the action is faithful and `G_0` is finite; in particular the wild
-inertia group `G_1` is a `p`-group. The filtration reaches `1`, and each positive-depth step
-`G_i / G_{i+1}` is a `p`-group (`TauCeti.isPGroup_ramificationGroupGraded_natCast_succ`). -/
+inertia group `G_1` is a `p`-group. This is the local-field case of
+`TauCeti.IsLocalRing.isPGroup_ramificationGroup`. -/
 theorem isPGroup_ramificationGroup (p : ℕ) [CharP 𝓀[L] p] [FaithfulSMul G 𝒪[L]]
     [Finite (ramificationGroup G 𝒪[L] 0)] {i : ℤ} (hi : 0 < i) :
-    IsPGroup p (ramificationGroup G 𝒪[L] i) := by
-  obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_bot G 𝒪[L]
-  obtain ⟨j, rfl⟩ : ∃ j : ℕ, i = ((j + 1 : ℕ) : ℤ) := ⟨(i - 1).toNat, by omega⟩
-  -- Descending induction on the distance `d` from the index `j + 1` to a vanishing index.
-  suffices ∀ d j : ℕ, N ≤ j + 1 + d → IsPGroup p (ramificationGroup G 𝒪[L] ((j + 1 : ℕ) : ℤ)) from
-    this N.toNat j (by omega)
-  intro d
-  induction d with
-  | zero =>
-    intro j hj
-    rw [hN _ (by omega)]
-    exact IsPGroup.of_bot
-  | succ d ih =>
-    intro j hj
-    have hsucc := ih (j + 1) (by omega)
-    push_cast at hsucc
-    -- `G_{j+1}` is an extension of the `p`-group `G_{j+1} / G_{j+2}` by the `p`-group `G_{j+2}`.
-    refine IsPGroup.of_subgroup_of_quotient ?_ (isPGroup_ramificationGroupGraded_natCast_succ G p j)
-    push_cast
-    exact hsucc.comap_subtype
+    IsPGroup p (ramificationGroup G 𝒪[L] i) :=
+  IsLocalRing.isPGroup_ramificationGroup G 𝒪[L] p hi
 
 /-! ### Wild inertia as the Sylow subgroup of inertia -/
 

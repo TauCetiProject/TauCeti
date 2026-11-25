@@ -180,7 +180,8 @@ theorem mem_ramificationGroup_add_one_of_pow_mem {i : ℤ} (hi : 0 < i) {σ : G}
   simpa using sub_mem (hpow x) (smul_pow_sub_sub_nsmul_mem hσ m x)
 
 /-- **In residue characteristic `p` the positive-depth graded pieces `G_i / G_{i+1}` are
-`p`-groups**, indeed of exponent dividing `p`. -/
+`p`-groups**: every element has order dividing `p`, by
+`TauCeti.IsLocalRing.pow_mem_ramificationGroup_of_charP`. -/
 theorem isPGroup_ramificationGroupGraded (p : ℕ) [CharP (ResidueField S) p] {i : ℤ}
     (hi : 0 < i) : IsPGroup p (RamificationGroupGraded G S i) := by
   intro g
