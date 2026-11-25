@@ -35,11 +35,11 @@ variable {R : Type u} [CommRing R] (M : ModuleCat.{v} R) [Projective M] (r : R)
 
 /-- The first term of `ModuleCat.smulShortComplex M r` is `M`, so it is projective when `M` is. -/
 instance smulShortComplex_X₁_projective : Projective (M.smulShortComplex r).X₁ :=
-  ‹Projective M›
+  inferInstanceAs (Projective M)
 
 /-- The middle term of `ModuleCat.smulShortComplex M r` is `M`, so it is projective when `M` is. -/
 instance smulShortComplex_X₂_projective : Projective (M.smulShortComplex r).X₂ :=
-  ‹Projective M›
+  inferInstanceAs (Projective M)
 
 end ModuleCat
 

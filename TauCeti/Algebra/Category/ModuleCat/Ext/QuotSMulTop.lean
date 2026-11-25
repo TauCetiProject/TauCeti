@@ -87,8 +87,9 @@ theorem extOneQuotSMulTopEquiv_extClass_comp (hf : IsSMulRegular R f) {X : Modul
     extOneQuotSMulTopEquiv hf X
         ((hf.smulShortComplex_shortExact (M := of R R)).extClass.comp (Ext.mk₀ g) (add_zero 1)) =
       Submodule.Quotient.mk (g.hom 1) := by
-  rw [extOneQuotSMulTopEquiv, LinearEquiv.trans_apply, TauCeti.homCokernelEquivExt_symm_comp_mk₀]
-  exact congrArg Submodule.Quotient.mk (homSelfLinearEquiv_apply g)
+  rw [extOneQuotSMulTopEquiv, LinearEquiv.trans_apply, TauCeti.homCokernelEquivExt_symm_comp_mk₀,
+    Submodule.Quotient.equiv_apply, Submodule.mapQ_apply, LinearEquiv.coe_coe,
+    homSelfLinearEquiv_apply]
 
 /-- The inverse of `ModuleCat.extOneQuotSMulTopEquiv` sends the class of `x` to the extension
 class of `0 → R → R → R ⧸ f R → 0` pushed forward along `r ↦ r • x`. -/
