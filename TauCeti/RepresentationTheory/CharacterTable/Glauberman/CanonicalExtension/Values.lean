@@ -18,10 +18,10 @@ Let a finite group `S` act on a finite group `Γ` through `φ`, and let `ψ` be 
 algebraically closed field of characteristic zero.
 
 For `j` coprime to `|Γ ⋊ S|`, the canonical extension of `χ^{(j)} : g ↦ χ(g ^ j)` is
-`ψ^{(j)} : x ↦ ψ(x ^ j)` (`TauCeti.IsCanonicalExtension.pow`): `ψ^{(j)}` is irreducible, extends
-`χ^{(j)}`, and every representation affording it has determinant `(det ρ(x)) ^ j` at `x` for a
-representation `ρ` affording `ψ` (`Representation.det_eq_det_pow_of_character_eq`), so it is
-still trivial on `S`.
+`ψ^{(j)} : x ↦ ψ(x ^ j)` (`TauCeti.IsCanonicalExtension.apply_pow`): `ψ^{(j)}` is irreducible,
+extends `χ^{(j)}`, and every representation affording it has determinant `(det ρ(x)) ^ j` at `x`
+for a representation `ρ` affording `ψ` (`Representation.det_eq_det_pow_of_character_eq`), so it
+is still trivial on `S`.
 
 When `|Γ|` and `|S|` are coprime, this gives the values of `ψ` (Glauberman 1968, Theorem 2 (b),
 p. 1470). An automorphism of a cyclotomic field fixing the values of `χ` acts on characters
@@ -37,7 +37,7 @@ of order `|Γ ⋊ S|`. The two statements together are `TauCeti.canonicalExtensi
 
 ## Main results
 
-* `TauCeti.IsCanonicalExtension.pow`: the canonical extension of `χ^{(j)}` is `ψ^{(j)}`.
+* `TauCeti.IsCanonicalExtension.apply_pow`: the canonical extension of `χ^{(j)}` is `ψ^{(j)}`.
 * `TauCeti.IsCanonicalExtension.apply_pow_eq_self`: power maps fixing `χ` fix `ψ`.
 * `TauCeti.IsCanonicalExtension.adjoin_range_eq`: `ℚ(ψ) = ℚ(χ)`.
 * `TauCeti.IsCanonicalExtension.exists_int_eq_apply_inr`: `ψ(s) ∈ ℤ` for `s ∈ S`.
@@ -61,11 +61,11 @@ variable {k Γ S : Type*} [Field k] [IsAlgClosed k] [CharZero k] [Group Γ] [Gro
 
 /-- **Galois conjugates of the canonical extension.** For `j` coprime to `|Γ ⋊ S|`, if `ψ` is the
 canonical extension of `χ`, then `x ↦ ψ (x ^ j)` is the canonical extension of `g ↦ χ (g ^ j)`. -/
-theorem IsCanonicalExtension.pow {χ : Γ → k} {ψ : Γ ⋊[φ] S → k}
+theorem IsCanonicalExtension.apply_pow {χ : Γ → k} {ψ : Γ ⋊[φ] S → k}
     (hψ : IsCanonicalExtension φ χ ψ) {j : ℕ} (hj : j.Coprime (Nat.card (Γ ⋊[φ] S))) :
     IsCanonicalExtension φ (fun g => χ (g ^ j)) fun x => ψ (x ^ j) := by
   obtain ⟨hirr, hinl, n, ρ, hρ, hdet⟩ := isCanonicalExtension_iff.1 hψ
-  have hirr' := pow_mem_irreducibleCharacters hirr hj
+  have hirr' := apply_pow_mem_irreducibleCharacters hirr hj
   obtain ⟨m, ρ', -, hρ'⟩ := mem_irreducibleCharacters_iff.1 hirr'
   refine isCanonicalExtension_iff.2 ⟨hirr', ?_, m, ρ', hρ', fun s => ?_⟩
   · funext g
@@ -81,7 +81,7 @@ theorem IsCanonicalExtension.apply_pow_eq_self (hcop : (Nat.card Γ).Coprime (Na
     {ψ : Γ ⋊[φ] S → k} (hψ : IsCanonicalExtension φ χ ψ) {j : ℕ}
     (hj : j.Coprime (Nat.card (Γ ⋊[φ] S))) (hχj : ∀ g, χ (g ^ j) = χ g) (x : Γ ⋊[φ] S) :
     ψ (x ^ j) = ψ x := by
-  have h := hψ.pow hj
+  have h := hψ.apply_pow hj
   rw [show (fun g => χ (g ^ j)) = χ from funext hχj] at h
   exact congrFun ((existsUnique_canonicalExtension hcop hχ hinv).unique h hψ) x
 
