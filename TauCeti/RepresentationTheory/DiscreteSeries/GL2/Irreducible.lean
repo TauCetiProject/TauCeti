@@ -96,9 +96,7 @@ theorem eq_bot_or_eq_discreteSeries {k : ℕ} (hk : 1 ≤ k)
     by_contra! h
     exact hv0 ((equivFinsupp (k : ℂ) μ).injective (by ext ℓ; simp [h ℓ]))
   have hvℓ := weightVector_mem_of_mem hv hℓ
-  have hℓw : ℓ ∈ discreteSeriesWeights k := by
-    by_contra h
-    exact hℓ ((Finsupp.mem_supported' _ _).mp (mem_discreteSeries_iff.mp (hN hv)) ℓ h)
+  have hℓw := mem_discreteSeriesWeights_of_equivFinsupp_ne_zero (hN hv) hℓ
   -- Some weight vector of the positive ray lies in `N`.
   obtain ⟨ℓ', hℓ', hNℓ'⟩ : ∃ ℓ' ∈ positiveDiscreteSeriesWeights k,
       weightVector (k : ℂ) μ ℓ' ∈ N := by
@@ -115,9 +113,7 @@ theorem eq_bot_or_eq_discreteSeries {k : ℕ} (hk : 1 ≤ k)
         (neg_mem_positiveDiscreteSeriesWeights_iff.mpr h))
   intro w hw
   rw [← sum_smul_weightVector w]
-  refine sum_mem fun j hj ↦ N.smul_mem _ (hall j ?_)
-  by_contra h
-  exact Finsupp.mem_support_iff.mp hj
-    ((Finsupp.mem_supported' _ _).mp (mem_discreteSeries_iff.mp hw) j h)
+  exact sum_mem fun j hj ↦ N.smul_mem _ (hall j
+    (mem_discreteSeriesWeights_of_equivFinsupp_ne_zero hw (Finsupp.mem_support_iff.mp hj)))
 
 end TauCeti

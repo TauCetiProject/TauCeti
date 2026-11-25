@@ -24,7 +24,8 @@ it over `ℂ` but not over `ℝ`.
 
 ## Main results
 
-* `TauCeti.compactCayley`: the matrix `C`, with `det C = -2i` (`TauCeti.det_compactCayley`).
+* `TauCeti.compactCayley`: the matrix `C`, with `det C = -2i` (`TauCeti.det_compactCayley`) and
+  `C⁻¹ = (1 / 2) [[1, -i], [1, i]]` (`TauCeti.compactCayley_inv`).
 * `TauCeti.compactCayley_mul_compactCartanReflection`,
   `TauCeti.compactCayley_mul_single_zero_one`, `TauCeti.compactCayley_mul_single_one_zero`: the
   intertwining relations `C M = M_c C`.
@@ -54,6 +55,7 @@ theorem compactCayley_def : compactCayley = !![1, 1; I, -I] :=
   (rfl)
 
 /-- `det C = -2i`. -/
+@[simp]
 theorem det_compactCayley : compactCayley.det = -2 * I := by
   rw [compactCayley_def, det_fin_two_of]
   ring
@@ -61,6 +63,13 @@ theorem det_compactCayley : compactCayley.det = -2 * I := by
 theorem isUnit_det_compactCayley : IsUnit compactCayley.det := by
   rw [det_compactCayley]
   exact (mul_ne_zero (by norm_num) I_ne_zero).isUnit
+
+/-- `C⁻¹ = (1 / 2) [[1, -i], [1, i]]`. -/
+theorem compactCayley_inv : compactCayley⁻¹ = (1 / 2 : ℂ) • !![1, -I; 1, I] := by
+  refine inv_eq_left_inv ?_
+  rw [compactCayley_def]
+  ext i j
+  fin_cases i <;> fin_cases j <;> norm_num [Complex.ext_iff, mul_apply, Fin.sum_univ_two]
 
 /-- `C diag(1, -1) = H_c C`. -/
 theorem compactCayley_mul_compactCartanReflection :
