@@ -30,6 +30,8 @@ This file provides the cast to a ground ring of Mathlib's unit-valued sign chara
   induce the same scalar action on a module.
 * `TauCeti.negOnePowCast_smul_mem`: the ground-ring signs preserve every additive subgroup.
 * `TauCeti.map_negOnePowCast_smul`: additive homomorphisms commute with the ground-ring signs.
+* `TauCeti.negOnePow_smul_eq_self_of_subsingleton_units`: the signs act trivially when `1` is the
+  only unit of the ground ring.
 * `Int.negOnePow_smul_negOnePow_smul`, `TauCeti.neg_one_pow_smul_neg_one_pow_smul`: the
   unit-valued sign and the power `(-1) ^ n` act as involutions.
 * `TauCeti.neg_one_pow_mul_succ_div_two_succ`: the signs of successive triangular numbers, as
@@ -114,6 +116,16 @@ theorem map_negOnePowCast_smul {B F : Type*} [AddCommGroup B] [Module R B] [FunL
     [AddMonoidHomClass F A B] (f : F) (e : ℤ) (a : A) :
     f (negOnePowCast R e • a) = negOnePowCast R e • f a := by
   simp only [← negOnePow_smul_eq_negOnePowCast_smul, Units.smul_def, map_zsmul]
+
+variable (R) in
+/-- When `1` is the only unit of the ground ring, as in `ZMod 2`, every sign `(-1) ^ e` acts
+trivially on its modules. -/
+theorem negOnePow_smul_eq_self_of_subsingleton_units [Subsingleton Rˣ] (e : ℤ) (a : A) :
+    e.negOnePow • a = a := by
+  have h1 : (-1 : R) = 1 := congrArg Units.val (Subsingleton.elim (-1 : Rˣ) 1)
+  rcases Int.units_eq_one_or e.negOnePow with h | h
+  · rw [h, one_smul]
+  · rw [h, Units.neg_smul, one_smul, ← neg_one_smul R a, h1, one_smul]
 
 end
 
