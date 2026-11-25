@@ -183,98 +183,79 @@ theorem norm_sliceLeftₗ_le (φ : StrongDual 𝕜 A) (x : A ⊗[𝕜] B) :
 
 variable (A B)
 
-/-- The linear map `A ⊗[𝕜] B → A ⊗_min B` underlying `NonUnitalStarSubalgebra.toMinTensor`. -/
-def toMinTensorₗ : A ⊗[𝕜] B →ₗ[𝕜] minTensor A B where
-  toFun := toMinTensor A B
-  map_add' := map_add _
-  map_smul' := map_smul _
-
 /-- The **right slice map** `R_ψ : A ⊗_min B → A` of a bounded linear functional `ψ` on `B`, for
 complete `A`: the bounded extension of `a ⊗ b ↦ ψ(b) a`. -/
 def minSliceRight [CompleteSpace A] (ψ : StrongDual 𝕜 B) : minTensor A B →L[𝕜] A :=
-  (sliceRightₗ A B (ψ : B →ₗ[𝕜] 𝕜)).extendOfNorm (E := A ⊗[𝕜] B) (toMinTensorₗ A B)
+  (sliceRightₗ A B (ψ : B →ₗ[𝕜] 𝕜)).extendOfNorm (E := A ⊗[𝕜] B)
+    (LinearMap.ofClass (toMinTensor A B))
 
 /-- The **left slice map** `L_φ : A ⊗_min B → B` of a bounded linear functional `φ` on `A`, for
 complete `B`: the bounded extension of `a ⊗ b ↦ φ(a) b`. -/
 def minSliceLeft [CompleteSpace B] (φ : StrongDual 𝕜 A) : minTensor A B →L[𝕜] B :=
-  (sliceLeftₗ A B (φ : A →ₗ[𝕜] 𝕜)).extendOfNorm (E := A ⊗[𝕜] B) (toMinTensorₗ A B)
+  (sliceLeftₗ A B (φ : A →ₗ[𝕜] 𝕜)).extendOfNorm (E := A ⊗[𝕜] B)
+    (LinearMap.ofClass (toMinTensor A B))
 
 variable {A B}
 
 /-- Unfolding `NonUnitalStarSubalgebra.minSliceRight`. -/
 theorem minSliceRight_def [CompleteSpace A] (ψ : StrongDual 𝕜 B) :
     minSliceRight A B ψ =
-      (sliceRightₗ A B (ψ : B →ₗ[𝕜] 𝕜)).extendOfNorm (E := A ⊗[𝕜] B) (toMinTensorₗ A B) :=
+      (sliceRightₗ A B (ψ : B →ₗ[𝕜] 𝕜)).extendOfNorm (E := A ⊗[𝕜] B)
+        (LinearMap.ofClass (toMinTensor A B) : A ⊗[𝕜] B →ₗ[𝕜] minTensor A B) :=
   (rfl)
 
 /-- Unfolding `NonUnitalStarSubalgebra.minSliceLeft`. -/
 theorem minSliceLeft_def [CompleteSpace B] (φ : StrongDual 𝕜 A) :
     minSliceLeft A B φ =
-      (sliceLeftₗ A B (φ : A →ₗ[𝕜] 𝕜)).extendOfNorm (E := A ⊗[𝕜] B) (toMinTensorₗ A B) :=
+      (sliceLeftₗ A B (φ : A →ₗ[𝕜] 𝕜)).extendOfNorm (E := A ⊗[𝕜] B)
+        (LinearMap.ofClass (toMinTensor A B) : A ⊗[𝕜] B →ₗ[𝕜] minTensor A B) :=
   (rfl)
-
-/-- `toMinTensorₗ` is `toMinTensor`. -/
-@[simp]
-theorem toMinTensorₗ_apply (x : A ⊗[𝕜] B) : toMinTensorₗ A B x = toMinTensor A B x :=
-  (rfl)
-
-private theorem denseRange_toMinTensorₗ : DenseRange (toMinTensorₗ A B) :=
-  denseRange_toMinTensor A B
 
 private theorem norm_sliceRightₗ_le' (ψ : StrongDual 𝕜 B) (x : A ⊗[𝕜] B) :
-    ‖sliceRightₗ A B (ψ : B →ₗ[𝕜] 𝕜) x‖ ≤ ‖ψ‖ * ‖toMinTensorₗ A B x‖ :=
-  (norm_sliceRightₗ_le ψ x).trans_eq (by rw [toMinTensorₗ_apply, norm_toMinTensor])
+    ‖sliceRightₗ A B (ψ : B →ₗ[𝕜] 𝕜) x‖ ≤
+      ‖ψ‖ * ‖(LinearMap.ofClass (toMinTensor A B) : A ⊗[𝕜] B →ₗ[𝕜] minTensor A B) x‖ :=
+  (norm_sliceRightₗ_le ψ x).trans_eq (by rw [LinearMap.coe_ofClass, norm_toMinTensor])
 
 private theorem norm_sliceLeftₗ_le' (φ : StrongDual 𝕜 A) (x : A ⊗[𝕜] B) :
-    ‖sliceLeftₗ A B (φ : A →ₗ[𝕜] 𝕜) x‖ ≤ ‖φ‖ * ‖toMinTensorₗ A B x‖ :=
-  (norm_sliceLeftₗ_le φ x).trans_eq (by rw [toMinTensorₗ_apply, norm_toMinTensor])
-
-/-- `LinearMap.extendOfNorm_eq` for maps into and out of concrete operator algebras, stated for an
-arbitrary subalgebra `S` so that applying it to `minTensor A B` needs no unfolding. -/
-private theorem extendOfNorm_eq_of_le {G K : Type*} [NormedAddCommGroup G]
-    [InnerProductSpace 𝕜 G] [NormedAddCommGroup K] [InnerProductSpace 𝕜 K] [CompleteSpace G]
-    [CompleteSpace K] {S : NonUnitalStarSubalgebra 𝕜 (K →L[𝕜] K)}
-    {D : NonUnitalStarSubalgebra 𝕜 (G →L[𝕜] G)} [CompleteSpace D] {f : A ⊗[𝕜] B →ₗ[𝕜] D}
-    {e : A ⊗[𝕜] B →ₗ[𝕜] S} (he : DenseRange e) {C : ℝ} (hC : ∀ x, ‖f x‖ ≤ C * ‖e x‖)
-    (x : A ⊗[𝕜] B) : f.extendOfNorm (E := A ⊗[𝕜] B) e (e x) = f x :=
-  LinearMap.extendOfNorm_eq (E := A ⊗[𝕜] B) he ⟨C, hC⟩ x
-
-/-- `LinearMap.opNorm_extendOfNorm_le` in the setting of `extendOfNorm_eq_of_le`. -/
-private theorem opNorm_extendOfNorm_le_of_le {G K : Type*} [NormedAddCommGroup G]
-    [InnerProductSpace 𝕜 G] [NormedAddCommGroup K] [InnerProductSpace 𝕜 K] [CompleteSpace G]
-    [CompleteSpace K] {S : NonUnitalStarSubalgebra 𝕜 (K →L[𝕜] K)}
-    {D : NonUnitalStarSubalgebra 𝕜 (G →L[𝕜] G)} [CompleteSpace D] {f : A ⊗[𝕜] B →ₗ[𝕜] D}
-    {e : A ⊗[𝕜] B →ₗ[𝕜] S} (he : DenseRange e) {C : ℝ} (hC₀ : 0 ≤ C)
-    (hC : ∀ x, ‖f x‖ ≤ C * ‖e x‖) : ‖f.extendOfNorm (E := A ⊗[𝕜] B) e‖ ≤ C :=
-  LinearMap.opNorm_extendOfNorm_le (E := A ⊗[𝕜] B) he hC₀ hC
+    ‖sliceLeftₗ A B (φ : A →ₗ[𝕜] 𝕜) x‖ ≤
+      ‖φ‖ * ‖(LinearMap.ofClass (toMinTensor A B) : A ⊗[𝕜] B →ₗ[𝕜] minTensor A B) x‖ :=
+  (norm_sliceLeftₗ_le φ x).trans_eq (by rw [LinearMap.coe_ofClass, norm_toMinTensor])
 
 /-- On the algebraic tensor product, `minSliceRight` is the right slice map. -/
 @[simp]
 theorem minSliceRight_toMinTensor [CompleteSpace A] (ψ : StrongDual 𝕜 B) (x : A ⊗[𝕜] B) :
     minSliceRight A B ψ (toMinTensor A B x) = sliceRightₗ A B (ψ : B →ₗ[𝕜] 𝕜) x := by
   rw [minSliceRight_def]
-  exact extendOfNorm_eq_of_le denseRange_toMinTensorₗ (norm_sliceRightₗ_le' ψ) x
+  apply LinearMap.extendOfNorm_eq
+  · exact denseRange_toMinTensor A B
+  · exact ⟨_, norm_sliceRightₗ_le' ψ⟩
 
 /-- On the algebraic tensor product, `minSliceLeft` is the left slice map. -/
 @[simp]
 theorem minSliceLeft_toMinTensor [CompleteSpace B] (φ : StrongDual 𝕜 A) (x : A ⊗[𝕜] B) :
     minSliceLeft A B φ (toMinTensor A B x) = sliceLeftₗ A B (φ : A →ₗ[𝕜] 𝕜) x := by
   rw [minSliceLeft_def]
-  exact extendOfNorm_eq_of_le denseRange_toMinTensorₗ (norm_sliceLeftₗ_le' φ) x
+  apply LinearMap.extendOfNorm_eq
+  · exact denseRange_toMinTensor A B
+  · exact ⟨_, norm_sliceLeftₗ_le' φ⟩
 
 /-- The right slice map has norm at most `‖ψ‖`. -/
 theorem norm_minSliceRight_le [CompleteSpace A] (ψ : StrongDual 𝕜 B) :
     ‖minSliceRight A B ψ‖ ≤ ‖ψ‖ := by
   rw [minSliceRight_def]
-  exact opNorm_extendOfNorm_le_of_le denseRange_toMinTensorₗ (norm_nonneg ψ)
-    (norm_sliceRightₗ_le' ψ)
+  apply LinearMap.opNorm_extendOfNorm_le
+  · exact denseRange_toMinTensor A B
+  · exact norm_nonneg ψ
+  · exact norm_sliceRightₗ_le' ψ
 
 /-- The left slice map has norm at most `‖φ‖`. -/
 theorem norm_minSliceLeft_le [CompleteSpace B] (φ : StrongDual 𝕜 A) :
     ‖minSliceLeft A B φ‖ ≤ ‖φ‖ := by
   rw [minSliceLeft_def]
-  exact opNorm_extendOfNorm_le_of_le denseRange_toMinTensorₗ (norm_nonneg φ)
-    (norm_sliceLeftₗ_le' φ)
+  apply LinearMap.opNorm_extendOfNorm_le
+  · exact denseRange_toMinTensor A B
+  · exact norm_nonneg φ
+  · exact norm_sliceLeftₗ_le' φ
 
 /-- **The right slice map has norm `‖ψ‖`** when `A ≠ 0`: test it on `a ⊗ b` for a nonzero
 `a ∈ A`. -/
