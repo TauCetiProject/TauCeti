@@ -58,6 +58,12 @@ theorem iteratedPartitionLabel_apply (T : X → X) (a : X → ι) (n : ℕ) (x :
     iteratedPartitionLabel T a n x k = a (T^[k] x) :=
   (rfl)
 
+/-- The length-zero itinerary is the unique empty tuple. -/
+@[simp]
+theorem iteratedPartitionLabel_zero (T : X → X) (a : X → ι) :
+    iteratedPartitionLabel T a 0 = fun _ ↦ Fin.elim0 :=
+  funext fun _ ↦ funext fun k ↦ k.elim0
+
 /-- The length-one itinerary is the label itself, viewed as a constant tuple. -/
 theorem iteratedPartitionLabel_one (T : X → X) (a : X → ι) :
     iteratedPartitionLabel T a 1 = Function.const (Fin 1) ∘ a :=

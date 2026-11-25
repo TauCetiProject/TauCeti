@@ -204,13 +204,6 @@ end ChainRule
 
 variable [Countable κ] [MeasurableSpace κ] [MeasurableSingletonClass κ]
 
-/-- A set whose mass `m` satisfies `m = m * ∞` has mass `0` or `∞`, hence real mass zero. -/
-private theorem measureReal_eq_zero_of_eq_mul_top {s : Set X} (h : μ s = μ s * ∞) :
-    μ.real s = 0 := by
-  rcases eq_or_ne (μ s) 0 with h0 | h0
-  · simp [measureReal_def, h0]
-  · rw [measureReal_def, h, ENNReal.mul_top h0, ENNReal.toReal_top]
-
 private theorem countablePartitionEntropy_pair_of_indepFun_of_isProbabilityMeasure
     [IsProbabilityMeasure μ] {a : X → ι} {b : X → κ} (ha : Measurable a)
     (hb : Measurable b) (hab : IndepFun a b μ) :
@@ -258,11 +251,11 @@ theorem countablePartitionEntropy_pair_of_indepFun {a : X → ι} {b : X → κ}
     have hA : ∀ i, μ.real (a ⁻¹' {i}) = 0 := fun i ↦ by
       have := hmul {i} Set.univ (measurableSet_singleton i) MeasurableSet.univ
       simp only [Set.preimage_univ, Set.inter_univ, htop] at this
-      exact measureReal_eq_zero_of_eq_mul_top this
+      rw [measureReal_def, this, ENNReal.toReal_mul_top]
     have hB : ∀ j, μ.real (b ⁻¹' {j}) = 0 := fun j ↦ by
       have := hmul Set.univ {j} MeasurableSet.univ (measurableSet_singleton j)
       simp only [Set.preimage_univ, Set.univ_inter, htop] at this
-      exact measureReal_eq_zero_of_eq_mul_top (this.trans (mul_comm _ _))
+      rw [measureReal_def, this, mul_comm, ENNReal.toReal_mul_top]
     have hC : ∀ i j, μ.real (a ⁻¹' {i} ∩ b ⁻¹' {j}) = 0 := fun i j ↦ by
       rw [measureReal_def, hmul _ _ (measurableSet_singleton i) (measurableSet_singleton j),
         ENNReal.toReal_mul, ← measureReal_def, hA, zero_mul]

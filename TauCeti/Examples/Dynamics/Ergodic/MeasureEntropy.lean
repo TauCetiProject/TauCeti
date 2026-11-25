@@ -47,14 +47,9 @@ instance instIsProbabilityMeasureFairBit : IsProbabilityMeasure fairBit :=
 /-- Two independent fair bits: the uniform probability on `Bool × Bool`. -/
 noncomputable abbrev twoBits : Measure (Bool × Bool) := fairBit.prod fairBit
 
-theorem preimage_fst_inter_preimage_snd (i j : Bool) :
-    Prod.fst ⁻¹' {i} ∩ Prod.snd ⁻¹' {j} = ({i} : Set Bool) ×ˢ ({j} : Set Bool) := by
-  ext ⟨x, y⟩
-  simp
-
 theorem twoBits_real_cell (i j : Bool) :
     twoBits.real (Prod.fst ⁻¹' {i} ∩ Prod.snd ⁻¹' {j}) = 1 / 4 := by
-  rw [preimage_fst_inter_preimage_snd, measureReal_prod_prod, fairBit_real_singleton,
+  rw [← Set.prod_eq, measureReal_prod_prod, fairBit_real_singleton,
     fairBit_real_singleton]
   norm_num
 
@@ -74,7 +69,7 @@ example : countablePartitionEntropy fairBit id = ENNReal.ofReal (log 2) := by
 example : countablePartitionEntropy twoBits id = ENNReal.ofReal (2 * log 2) := by
   rw [countablePartitionEntropy_eq_ofReal_sum]
   have h : ∀ p : Bool × Bool, twoBits.real (id ⁻¹' {p}) = 1 / 4 := fun ⟨i, j⟩ ↦ by
-    rw [Set.preimage_id, ← twoBits_real_cell i j, preimage_fst_inter_preimage_snd,
+    rw [Set.preimage_id, ← twoBits_real_cell i j, ← Set.prod_eq,
       Set.singleton_prod_singleton]
   simp only [h, Finset.sum_const, Finset.card_univ, Fintype.card_prod, Fintype.card_bool,
     negMulLog, one_div, log_inv, nsmul_eq_mul]
@@ -116,8 +111,8 @@ example : iteratedPartitionLabel not id 3 false = ![false, true, false] := by
   fin_cases k <;> simp
 
 /-- The length-zero itinerary is the empty function. -/
-example (T : Bool → Bool) (x : Bool) : iteratedPartitionLabel T id 0 x = Fin.elim0 :=
-  funext fun k ↦ k.elim0
+example (T : Bool → Bool) (x : Bool) : iteratedPartitionLabel T id 0 x = Fin.elim0 := by
+  simp
 
 /-- The identity has entropy `0`. -/
 example : measureEntropy fairBit id = 0 :=
