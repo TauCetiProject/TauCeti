@@ -29,15 +29,14 @@ namespace TauCeti.Examples.GeneralizedGlobalField
 /-- Over `ℚ`, at `a = 2`, the archimedean factor of the product formula is `2`: `ℚ` has one
 archimedean absolute value, the real one, counted once. -/
 theorem prod_archAbsVal_rat_two : (archAbsVal.map (· (2 : ℚ))).prod = 2 := by
-  rw [prod_archAbsVal_eq, Fintype.prod_unique, (IsTotallyReal.isReal _).mult_eq_one, pow_one]
-  exact (Rat.infinitePlace_apply default 2).trans (by norm_num)
+  rw [prod_archAbsVal_eq]
+  exact (InfinitePlace.prod_eq_abs_norm (2 : ℚ)).trans (by simp [Algebra.norm_self])
 
 /-- Over `ℚ`, at `a = 2`, the nonarchimedean factor of the product formula is `1 / 2`. -/
 theorem finprod_nonarchAbsVal_rat_two :
     ∏ᶠ v : nonarchAbsVal, v.val (2 : ℚ) = 1 / 2 := by
-  have h := product_formula (K := ℚ) (x := 2) two_ne_zero
-  rw [prod_archAbsVal_rat_two] at h
-  rw [eq_div_iff two_ne_zero, mul_comm, h]
+  rw [prod_nonarchAbsVal_eq (· (2 : ℚ))]
+  exact (FinitePlace.prod_eq_inv_abs_norm two_ne_zero).trans (by simp [Algebra.norm_self])
 
 /-- **Check.** Over `ℚ`, at `a = 2`, the product formula reads `2 · 1/2 = 1`. -/
 example : (archAbsVal.map (· (2 : ℚ))).prod = 2 ∧
@@ -63,8 +62,10 @@ theorem exists_archAbsVal_eq_replicate_two_of_isCyclotomicExtension_four :
   have hwc : w.IsComplex := IsTotallyComplex.isComplex w
   refine ⟨w.val, Multiset.eq_replicate.2 ⟨?_, fun b hb ↦ ?_⟩,
     ⟨InfinitePlace.Completion.ringEquivComplexOfIsComplex hwc⟩⟩
-  · rw [← totalWeight.eq_def, totalWeight_eq_sum_mult,
-      Fintype.sum_eq_single w fun w' h ↦ (h (hw w')).elim, hwc.mult_eq_two]
+  · have h : totalWeight K = 2 := by
+      rw [totalWeight_eq_sum_mult, Fintype.sum_eq_single w fun w' h ↦ (h (hw w')).elim,
+        hwc.mult_eq_two]
+    simpa only [totalWeight] using h
   · obtain ⟨w', rfl⟩ := (isInfinitePlace_iff b).1 (mem_multisetInfinitePlace.1 hb)
     rw [hw w']
 
@@ -76,7 +77,7 @@ because at `2` the nonarchimedean factor alone is `1 / 2 ≠ 1`. -/
 theorem archAbsVal_ne_zero_of_nonarchAbsVal_eq_setOf_isFinitePlace (I : AdmissibleAbsValues ℚ)
     (hn : I.nonarchAbsVal = {v | IsFinitePlace v}) : I.archAbsVal ≠ 0 := by
   intro ha
-  have h := @AdmissibleAbsValues.product_formula ℚ _ I 2 two_ne_zero
+  have h := I.product_formula (x := 2) two_ne_zero
   rw [ha, hn, Multiset.map_zero, Multiset.prod_zero, one_mul] at h
   have h' := finprod_nonarchAbsVal_rat_two
   -- The number-field instance `NumberField.instAdmissibleAbsValues` defines `nonarchAbsVal` as
