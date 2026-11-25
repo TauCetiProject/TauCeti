@@ -129,11 +129,10 @@ theorem closure_symbol_unitGroup_eq_top {t : Fˣ} (ht : v.ord (t : F) = 1) :
     exact htu ⟨-1, v.valuationSubring.neg_one_mem_unitGroup⟩
   -- Expand `{t ^ a u, t ^ b w}` by bilinearity.
   have hfg (f g : Fˣ) : symbol f g ∈ H := by
-    rw [v.eq_zpow_mul_unitPart t ht f, v.eq_zpow_mul_unitPart t ht g, symbol_mul_left,
-      symbol_mul_right, symbol_mul_right, symbol_zpow_left, symbol_zpow_left, symbol_zpow_right,
-      symbol_zpow_right]
-    exact add_mem (add_mem (zsmul_mem (zsmul_mem htt _) _) (zsmul_mem (htu _) _))
-      (add_mem (zsmul_mem (hut _) _) (huw _ _))
+    rw [v.eq_zpow_mul_unitPart t ht f, v.eq_zpow_mul_unitPart t ht g]
+    simp only [symbol_mul_left, symbol_mul_right, symbol_zpow_left, symbol_zpow_right]
+    exact add_mem (zsmul_mem (add_mem (zsmul_mem htt _) (hut _)) _)
+      (add_mem (zsmul_mem (htu _) _) (huw _ _))
   refine eq_top_iff.2 fun q _ ↦ ?_
   clear ‹q ∈ ⊤›
   induction q using MatsumotoGroup.induction_on with
