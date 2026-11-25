@@ -32,8 +32,9 @@ smooth representation and reads its action as a `DistribMulAction`, and Tau Ceti
 * `TauCeti.SmoothRep.equivDiscreteRep`: the equivalence `SmoothRep A G ≌ DiscreteRep A G`.
 * `TauCeti.SmoothRep.equivSmoothDiscreteTopRep`: the equivalence
   `SmoothRep A G ≌ SmoothDiscreteTopRep A G`.
-* `TauCeti.SmoothRep.equivSmoothDiscreteTopRepCompForget`: the equivalence is compatible with the
-  forgetful functors to types.
+* `TauCeti.SmoothRep.equivSmoothDiscreteTopRepCompForget₂`,
+  `TauCeti.SmoothRep.equivSmoothDiscreteTopRepCompForget`: the equivalence is compatible with the
+  forgetful functors to `A`-modules and to types.
 
 ## References
 
@@ -90,43 +91,19 @@ end OfDiscreteRep
 
 variable [DiscreteTopology A] [IsTopologicalGroup G]
 
-section ToDiscreteRep
-
-variable {A G}
-
-/-- The smooth representation `V`, with the discrete topology on its underlying module and the
-action `g • v = ρ(g) v`, as a discrete `G`-module with continuous `G`-action. The action is
-continuous because the module is discrete and every point stabilizer is open. -/
-def toDiscreteRepObj (V : SmoothRep.{w} A G) : DiscreteRep.{u, v, w} A G :=
-  letI : TopologicalSpace V.obj := ⊥
-  haveI : DiscreteTopology V.obj := ⟨rfl⟩
-  letI : DistribMulAction G V.obj := .compHom V.obj V.obj.ρ
-  { V := V.obj
-    smulCommClass := ⟨fun g a v ↦ map_smul (V.obj.ρ g) a v⟩
-    continuousSMulRing := ⟨continuous_of_discreteTopology⟩
-    continuousSMul := continuousSMul_iff_stabilizer_isOpen.2 fun v ↦
-      IsSmooth.isOpen_stabilizer (ρ := V.obj.ρ) v }
-
-/-- The underlying module of `toDiscreteRepObj V` is that of `V`. -/
-@[simp] lemma toDiscreteRepObj_V (V : SmoothRep.{w} A G) : (toDiscreteRepObj V).V = V.obj :=
-  (rfl)
-
-/-- In `toDiscreteRepObj V`, the action of `g` is the operator `ρ(g)` of `V`. -/
-@[simp] lemma toDiscreteRepObj_smul (V : SmoothRep.{w} A G) (g : G) (v : (toDiscreteRepObj V).V) :
-    g • v = V.obj.ρ g (v : V.obj) :=
-  (rfl)
-
-/-- The representation carried by `toDiscreteRepObj V` is the representation of `V`. -/
-@[simp] lemma toDiscreteRepObj_ρ (V : SmoothRep.{w} A G) : (toDiscreteRepObj V).ρ = V.obj.ρ :=
-  (rfl)
-
-end ToDiscreteRep
-
 /-- Smooth representations as discrete `G`-modules with continuous action: the discrete topology
-on the underlying module, the action read off from the representation, and every morphism acting
-as itself. -/
+on the underlying module, the action `g • v = ρ(g) v`, and every morphism acting as itself. The
+action is continuous because the module is discrete and every point stabilizer is open. -/
 def toDiscreteRep : SmoothRep.{w} A G ⥤ DiscreteRep.{u, v, w} A G where
-  obj := toDiscreteRepObj
+  obj V :=
+    letI : TopologicalSpace V.obj := ⊥
+    haveI : DiscreteTopology V.obj := ⟨rfl⟩
+    letI : DistribMulAction G V.obj := .compHom V.obj V.obj.ρ
+    { V := V.obj
+      smulCommClass := ⟨fun g a v ↦ map_smul (V.obj.ρ g) a v⟩
+      continuousSMulRing := ⟨continuous_of_discreteTopology⟩
+      continuousSMul := continuousSMul_iff_stabilizer_isOpen.2 fun v ↦
+        IsSmooth.isOpen_stabilizer (ρ := V.obj.ρ) v }
   map {V W} f := (f.hom.hom : V.obj.ρ.IntertwiningMap W.obj.ρ)
   map_id _ := rfl
   map_comp _ _ := rfl
@@ -136,6 +113,16 @@ variable {A G}
 /-- `toDiscreteRep` keeps the underlying module. -/
 @[simp] lemma toDiscreteRep_obj_V (V : SmoothRep.{w} A G) :
     ((toDiscreteRep A G).obj V).V = V.obj :=
+  (rfl)
+
+/-- In `(toDiscreteRep A G).obj V`, the action of `g` is the operator `ρ(g)` of `V`. -/
+@[simp] lemma toDiscreteRep_obj_smul (V : SmoothRep.{w} A G) (g : G)
+    (v : ((toDiscreteRep A G).obj V).V) : g • v = V.obj.ρ g (v : V.obj) :=
+  (rfl)
+
+/-- The representation carried by `(toDiscreteRep A G).obj V` is the representation of `V`. -/
+@[simp] lemma toDiscreteRep_obj_ρ (V : SmoothRep.{w} A G) :
+    ((toDiscreteRep A G).obj V).ρ = V.obj.ρ :=
   (rfl)
 
 /-- `toDiscreteRep` sends a morphism to its underlying linear map. -/
@@ -148,25 +135,22 @@ variable (A G)
 /-- **Smooth representations are the discrete `G`-modules with continuous action.** Over a
 discrete ring `A`, putting the discrete topology on a smooth representation is an equivalence
 between `SmoothRep A G` and `DiscreteRep A G`. Both round trips return the module and the action
-they started from, so every component of the unit and of the counit is an identity. -/
-def equivDiscreteRep : SmoothRep.{w} A G ≌ DiscreteRep.{u, v, w} A G :=
-  .mk (toDiscreteRep A G) (ofDiscreteRep A G)
-    (NatIso.ofComponents (fun V ↦ ObjectProperty.isoMk _ (Iso.refl V.obj)) fun _ ↦ rfl)
-    (NatIso.ofComponents
-      (fun X ↦
-        { hom := (Representation.IntertwiningMap.id X.ρ : X.ρ.IntertwiningMap X.ρ)
-          inv := (Representation.IntertwiningMap.id X.ρ : X.ρ.IntertwiningMap X.ρ)
-          hom_inv_id := rfl
-          inv_hom_id := rfl })
-      fun _ ↦ rfl)
-
-/-- The functor of `equivDiscreteRep` is `toDiscreteRep`. -/
-@[simp] lemma equivDiscreteRep_functor : (equivDiscreteRep A G).functor = toDiscreteRep A G :=
-  (rfl)
-
-/-- The inverse of `equivDiscreteRep` is `ofDiscreteRep`. -/
-@[simp] lemma equivDiscreteRep_inverse : (equivDiscreteRep A G).inverse = ofDiscreteRep A G :=
-  (rfl)
+they started from: every component of the unit is an identity morphism, and every component of
+the counit is the identity intertwining map, the round trip replacing the topology of a discrete
+module by `⊥`. -/
+@[simps! functor inverse unitIso_hom_app unitIso_inv_app counitIso_hom_app counitIso_inv_app]
+def equivDiscreteRep : SmoothRep.{w} A G ≌ DiscreteRep.{u, v, w} A G where
+  functor := toDiscreteRep A G
+  inverse := ofDiscreteRep A G
+  unitIso := NatIso.ofComponents (fun V ↦ Iso.refl V) fun _ ↦ rfl
+  counitIso := NatIso.ofComponents
+    (fun X ↦
+      { hom := (Representation.IntertwiningMap.id X.ρ : X.ρ.IntertwiningMap X.ρ)
+        inv := (Representation.IntertwiningMap.id X.ρ : X.ρ.IntertwiningMap X.ρ)
+        hom_inv_id := rfl
+        inv_hom_id := rfl })
+    fun _ ↦ rfl
+  functor_unitIso_comp _ := rfl
 
 /-- **Smooth representations as discrete continuous representations.** Over a discrete ring `A`,
 sending a smooth representation to the same module with the discrete topology and the same action
@@ -213,10 +197,50 @@ variable {A G}
     ((equivSmoothDiscreteTopRep A G).inverse.map f).hom.hom x = f.hom.hom x :=
   (rfl)
 
+/-- Every component of the unit of `equivSmoothDiscreteTopRep` is an identity morphism. -/
+@[simp] lemma equivSmoothDiscreteTopRep_unitIso_hom_app (V : SmoothRep.{w} A G) :
+    (equivSmoothDiscreteTopRep A G).unitIso.hom.app V = 𝟙 V :=
+  (rfl)
+
+/-- Every component of the inverse of the unit of `equivSmoothDiscreteTopRep` is an identity
+morphism. -/
+@[simp] lemma equivSmoothDiscreteTopRep_unitIso_inv_app (V : SmoothRep.{w} A G) :
+    (equivSmoothDiscreteTopRep A G).unitIso.inv.app V = 𝟙 V :=
+  (rfl)
+
+/-- Every component of the counit of `equivSmoothDiscreteTopRep` acts as the identity of the
+underlying module. This is not a simp lemma: the elaborated left-hand side carries the source and
+target objects as `Functor.comp_obj` and `Functor.id_obj` terms, which `simp` rewrites first. -/
+lemma equivSmoothDiscreteTopRep_counitIso_hom_app_hom_hom_apply
+    (X : SmoothDiscreteTopRep.{u, v, w} A G) (x : X.obj.V) :
+    ((equivSmoothDiscreteTopRep A G).counitIso.hom.app X).hom.hom x = x :=
+  (rfl)
+
+/-- Every component of the inverse of the counit of `equivSmoothDiscreteTopRep` acts as the
+identity of the underlying module. Like
+`TauCeti.SmoothRep.equivSmoothDiscreteTopRep_counitIso_hom_app_hom_hom_apply`, this is not a simp
+lemma. -/
+lemma equivSmoothDiscreteTopRep_counitIso_inv_app_hom_hom_apply
+    (X : SmoothDiscreteTopRep.{u, v, w} A G) (x : X.obj.V) :
+    ((equivSmoothDiscreteTopRep A G).counitIso.inv.app X).hom.hom x = x :=
+  (rfl)
+
 variable (A G)
+
+/-- **Compatibility with forgetting to `A`-modules.** The equivalence
+`equivSmoothDiscreteTopRep` commutes with the forgetful functors to `ModuleCat A`, by the identity
+of underlying modules. On `TopRep A G` the forgetful functor passes through Mathlib's
+`Action (TopModuleCat A) G`, as Mathlib has no direct `forget₂` from `TopRep A G`. -/
+@[simps! hom_app inv_app]
+def equivSmoothDiscreteTopRepCompForget₂ :
+    (equivSmoothDiscreteTopRep A G).functor ⋙ smoothDiscreteι A G ⋙ TopRep.toActionTopModFunc ⋙
+        Action.forget (TopModuleCat.{w} A) G ⋙ forget₂ (TopModuleCat.{w} A) (ModuleCat.{w} A) ≅
+      ι A G ⋙ forget₂ (Rep.{w} A G) (ModuleCat.{w} A) :=
+  NatIso.ofComponents (fun _ ↦ Iso.refl _) fun _ ↦ rfl
 
 /-- **Compatibility with forgetting.** The equivalence `equivSmoothDiscreteTopRep` commutes with
 the forgetful functors to types, by the identity of underlying sets. -/
+@[simps! hom_app inv_app]
 def equivSmoothDiscreteTopRepCompForget :
     (equivSmoothDiscreteTopRep A G).functor ⋙ smoothDiscreteι A G ⋙ forget (TopRep.{w} A G) ≅
       ι A G ⋙ forget (Rep.{w} A G) :=
