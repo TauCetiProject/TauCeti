@@ -54,6 +54,8 @@ supported continuous function on `W × G(E, k)`). In the degenerate dimensions, 
 ## Main results
 
 * `Euclidean.abs_tangentialDivergence_le`: `|div_P X (x)| ≤ k ‖DX(x)‖` for `P ∈ G(E, k)`.
+* `Euclidean.tangentialDivergence_comp_sub`, `Euclidean.tangentialDivergence_comp_smul`: the
+  tangential divergence of a translated or rescaled vector field.
 * `Euclidean.firstVariation_apply`: `δV(X) = ∫ div_P X (x) dV(x, P)`.
 * `Euclidean.firstVariation_map_apply`: the first variation of the image `ν.map f` of a measure
   under a proper map `f`, as an integral against `ν`.
@@ -128,6 +130,20 @@ theorem tangentialDivergence_sub {X Y : E → E} {x : E} (hX : DifferentiableAt 
 theorem tangentialDivergence_const_smul (c : ℝ) (X : E → E) (x : E) (P : E →L[ℝ] E) :
     tangentialDivergence (c • X) x P = c * tangentialDivergence X x P := by
   simp [tangentialDivergence_def, fderiv_const_smul_field]
+
+/-- The tangential divergence of a translated vector field `y ↦ X (y - a)` at `x` is that of `X`
+at `x - a`. -/
+@[simp]
+theorem tangentialDivergence_comp_sub (X : E → E) (a x : E) (P : E →L[ℝ] E) :
+    tangentialDivergence (fun y ↦ X (y - a)) x P = tangentialDivergence X (x - a) P := by
+  simp [tangentialDivergence_def, fderiv_comp_sub]
+
+/-- The tangential divergence of a rescaled vector field `y ↦ X (c • y)` at `x` is `c` times that
+of `X` at `c • x`. -/
+@[simp]
+theorem tangentialDivergence_comp_smul (X : E → E) (c : ℝ) (x : E) (P : E →L[ℝ] E) :
+    tangentialDivergence (fun y ↦ X (c • y)) x P = c * tangentialDivergence X (c • x) P := by
+  simp [tangentialDivergence_def, fderiv_comp_smul]
 
 /-- The tangential divergence vanishes outside the closed support of the vector field. -/
 theorem tangentialDivergence_eq_zero_of_notMem_tsupport {X : E → E} {x : E} (hx : x ∉ tsupport X)
