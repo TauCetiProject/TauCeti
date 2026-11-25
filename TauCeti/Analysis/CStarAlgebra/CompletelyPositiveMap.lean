@@ -302,23 +302,6 @@ private theorem IsNPositive.star_map_mul_map_le_of_unital (hφ : IsNPositive 2 �
   rw [smul_smul, inv_mul_cancel₀ hpos.ne', one_smul, sub_nonneg] at this
   exact this
 
-/-- **Kadison–Schwarz inequality** (subunital form) for a `2`-positive map: if `φ 1 ≤ 1`, then
-`φ(a)⋆ φ(a) ≤ φ(a⋆a)`. -/
-theorem IsNPositive.star_map_mul_map_le_of_map_one_le (hφ : IsNPositive 2 φ) (h1 : φ 1 ≤ 1)
-    (a : A) : star (φ a) * φ a ≤ φ (star a * a) := by
-  have hnorm : ‖φ 1‖ ≤ 1 :=
-    (CStarAlgebra.norm_le_one_iff_of_nonneg (φ 1) (hφ.map_nonneg two_pos zero_le_one)).mpr h1
-  calc star (φ a) * φ a
-      ≤ ‖φ 1‖ • φ (star a * a) := hφ.star_map_mul_map_le_of_unital a
-    _ ≤ (1 : ℝ) • φ (star a * a) :=
-        smul_le_smul_of_nonneg_right hnorm (hφ.map_nonneg two_pos (star_mul_self_nonneg a))
-    _ = φ (star a * a) := one_smul ℝ _
-
-/-- **Kadison–Schwarz inequality** for a unital `2`-positive map: `φ(a)⋆ φ(a) ≤ φ(a⋆a)`. -/
-theorem IsNPositive.star_map_mul_map_le_of_map_one (hφ : IsNPositive 2 φ) (h1 : φ 1 = 1)
-    (a : A) : star (φ a) * φ a ≤ φ (star a * a) :=
-  hφ.star_map_mul_map_le_of_map_one_le h1.le a
-
 end Unital
 
 section UnitalDomain
@@ -412,6 +395,26 @@ theorem IsNPositive.mul_map_eq_zero_of_mul_map_one_eq_zero (hφ : IsNPositive 2 
     congrArg star (hφ.map_mul_eq_zero_of_map_one_mul_eq_zero h' (star a))
 
 end UnitalDomain
+
+section Unital
+
+variable [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+  {φ : A →ₗ[ℂ] B}
+
+/-- **Kadison–Schwarz inequality** (subunital form) for a `2`-positive map: if `φ 1 ≤ 1`, then
+`φ(a)⋆ φ(a) ≤ φ(a⋆a)`. -/
+theorem IsNPositive.star_map_mul_map_le_of_map_one_le (hφ : IsNPositive 2 φ) (h1 : φ 1 ≤ 1)
+    (a : A) : star (φ a) * φ a ≤ φ (star a * a) :=
+  hφ.star_map_mul_map_le_of_norm_map_one_le_one
+    ((CStarAlgebra.norm_le_one_iff_of_nonneg _ (hφ.map_nonneg two_pos zero_le_one)).mpr h1) a
+
+/-- **Kadison–Schwarz inequality** for a unital `2`-positive map: `φ(a)⋆ φ(a) ≤ φ(a⋆a)`. -/
+theorem IsNPositive.star_map_mul_map_le_of_map_one (hφ : IsNPositive 2 φ) (h1 : φ 1 = 1)
+    (a : A) : star (φ a) * φ a ≤ φ (star a * a) :=
+  hφ.star_map_mul_map_le_of_map_one_le h1.le a
+
+end Unital
 
 end TauCeti
 

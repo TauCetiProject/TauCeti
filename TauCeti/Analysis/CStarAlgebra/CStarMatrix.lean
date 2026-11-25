@@ -524,12 +524,9 @@ theorem blockDiagonalSingle_mul_of_ne [Fintype ι] {i j : ι} (h : i ≠ j)
 theorem sum_blockDiagonalSingle [Fintype ι] (x : ∀ i, CStarMatrix (n i) (n i) B) :
     ∑ i, blockDiagonalSingle R B i (x i) =
       ofMatrix (Matrix.blockDiagonal' fun i => ofMatrix.symm (x i)) := by
-  ext p q
-  simp only [sum_apply, blockDiagonalSingle_apply, ofMatrix_apply, Matrix.blockDiagonal'_apply]
-  split_ifs with h
-  · rw [Finset.sum_eq_single p.1 (fun b _ hb => by simp [Ne.symm hb]) (by simp)]
-    simp
-  · simp
+  rw [← Finset.univ_sum_single fun i => ofMatrix.symm (x i)]
+  -- `ofMatrix` is the identity equivalence, so this is additivity of `Matrix.blockDiagonal'`.
+  exact (map_sum (Matrix.blockDiagonal'AddMonoidHom n n B) _ _).symm
 
 end NonUnital
 
