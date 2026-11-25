@@ -190,6 +190,7 @@ theorem mapHomeomorph_symm_mapHomeomorph (U : PointOpenCover X) (h : X ≃ₜ Y)
   simp [mapHomeomorph, Homeomorph.opensCongr]
 
 /-- Transport both the neighborhoods and the actual refinement relation. -/
+@[simp]
 theorem mapHomeomorph_le_mapHomeomorph_iff (U V : PointOpenCover X) (h : X ≃ₜ Y) :
     U.mapHomeomorph h ≤ V.mapHomeomorph h ↔ U ≤ V := by
   rw [le_iff_forall_exists, le_iff_forall_exists]
