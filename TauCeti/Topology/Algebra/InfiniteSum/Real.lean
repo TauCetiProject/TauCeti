@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.InfiniteSum.Real
 import Mathlib.Algebra.Order.Ring.Pow
+import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 
@@ -25,6 +26,9 @@ Natural multiplicities can also be expressed by repeating each nonnegative real 
 through a finite fiber. Summability of the repeated family is equivalent to summability of
 the original family weighted by those multiplicities.
 
+A summable real family times a bounded one is summable. Mixing families `ν i`, each nonnegative
+and summing to one, with nonnegative weights `a i` summing to `A` gives a family summing to `A`.
+
 A square-summable real family is eventually small: `b i * C ≤ 1` for all but finitely many
 `i`, for any fixed real `C`.
 
@@ -35,6 +39,10 @@ analogue of the power-rule integral identity for tails.
 
 * `Summable.exists_tendsto_atTop_summable_mul`: weights `c n ≥ 1` with `c n → ∞` and
   `∑ n, c n * a n` summable.
+* `Summable.mul_of_abs_le`: a summable family times a bounded family is summable.
+* `Summable.prod_mul_of_hasSum_one`, `HasSum.tsum_mul_of_hasSum_one`: mixing nonnegative
+  families `ν i` summing to one with nonnegative summable weights `a i` gives a summable family
+  on the product, and the mixture `∑' i, a i * ν i m` sums to `∑' i, a i`.
 * `Summable.antitone_tsum_Ioi`: the tails `∑_{m > n} a m` of a nonnegative summable sequence
   decrease with `n`.
 * `Summable.mul_pow_tsum_Ioi`: the sequence `a m * (∑_{j > m} a j) ^ k` is summable for a
@@ -43,16 +51,32 @@ analogue of the power-rule integral identity for tails.
   `∑_{m > n} a m * (∑_{j > m} a j) ^ k ≤ (∑_{m > n} a m) ^ (k + 1) / (k + 1)` for a nonnegative
   summable sequence `a`, the discrete counterpart of `∫_x^∞ a Ψ ^ k = Ψ x ^ (k + 1) / (k + 1)` for
   `Ψ x = ∫_x^∞ a`.
+* `TauCeti.summable_mul_pow_of_le`: weighted powers with nonnegative real weights stay summable
+  when the nonnegative radius decreases.
 * `TauCeti.summable_sigma_fin_iff`: repeating each nonnegative term `m i` times is summable
   exactly when `∑ i, m i * a i` is.
 * `TauCeti.eventually_mul_le_one_of_summable_sq`: a square-summable family eventually satisfies
   `b i * C ≤ 1`.
+* `Filter.Tendsto.exists_summable_mul_div_pow`: if `r : ι → ℝ` tends to infinity along
+  `Filter.cofinite`, then for any natural multiplicities `m : ι → ℕ` there exist exponents
+  `p : ι → ℕ` such that `∑' i, m i * (R / r i) ^ (p i + 1) < ∞` for every `R > 0`.
+* `TauCeti.summable_pow_natAbs`, `TauCeti.tsum_pow_natAbs`,
+  `TauCeti.tsum_ite_eq_zero_pow_natAbs`, `TauCeti.tendsto_tsum_ite_eq_zero_pow_natAbs`: summability,
+  sum `(1 + r) * (1 - r)⁻¹`, nonzero-mode sum `2 * (r * (1 - r)⁻¹)`, and limit along `𝓝[≥] 0` of
+  the bilateral geometric series `r ^ k.natAbs` on `ℤ` for `0 ≤ r < 1`.
+* `TauCeti.cauchySeq_of_eventually_dist_le_of_summable`: a sequence whose steps are eventually
+  bounded by a summable sequence is Cauchy.
+
+## References
+
+* W. Rudin, *Real and Complex Analysis*, 3rd ed., McGraw-Hill, 1987, Theorem 15.9 (indexed
+  geometric-tail exponent selection for Weierstrass canonical products).
 -/
 
 public section
 
 open Filter Finset
-open scoped Topology
+open scoped Topology NNReal
 
 /-- The weights `1 + #{k ≤ n | N k ≤ n}` tend to infinity along a strictly increasing sequence
 of cut points `N`. -/
@@ -126,6 +150,34 @@ theorem Summable.exists_tendsto_atTop_summable_mul {a : ℕ → ℝ} (ha : Summa
     simp only [hb_def]
     split_ifs <;> simp
 
+/-- A summable real family times a bounded real family is summable. -/
+theorem Summable.mul_of_abs_le {ι : Type*} {f g : ι → ℝ} {C : ℝ} (hf : Summable f)
+    (hg : ∀ i, |g i| ≤ C) : Summable fun i ↦ f i * g i :=
+  summable_abs_iff.1 <| (hf.abs.mul_right C).of_nonneg_of_le (fun i ↦ abs_nonneg _) fun i ↦ by
+    rw [abs_mul]
+    exact mul_le_mul_of_nonneg_left (hg i) (abs_nonneg _)
+
+/-- Mixing nonnegative families `ν i`, each summing to one, with nonnegative summable weights
+`a i` gives a summable family `a i * ν i m` on the product. -/
+theorem Summable.prod_mul_of_hasSum_one {ι κ : Type*} {a : ι → ℝ} (ha : Summable a)
+    (ha0 : ∀ i, 0 ≤ a i) {ν : ι → κ → ℝ} (hν0 : ∀ i m, 0 ≤ ν i m)
+    (hν : ∀ i, HasSum (ν i) 1) : Summable fun p : ι × κ ↦ a p.1 * ν p.1 p.2 :=
+  (summable_prod_of_nonneg fun p ↦ mul_nonneg (ha0 _) (hν0 _ _)).2
+    ⟨fun i ↦ (hν i).summable.mul_left (a i), by
+      simpa only [tsum_mul_left, fun i ↦ (hν i).tsum_eq, mul_one] using ha⟩
+
+/-- Mixing nonnegative families `ν i`, each summing to one, with nonnegative weights `a i`
+summing to `A` gives a family `∑' i, a i * ν i m` summing to `A`. -/
+theorem HasSum.tsum_mul_of_hasSum_one {ι κ : Type*} {a : ι → ℝ} {A : ℝ} (ha : HasSum a A)
+    (ha0 : ∀ i, 0 ≤ a i) {ν : ι → κ → ℝ} (hν0 : ∀ i m, 0 ≤ ν i m)
+    (hν : ∀ i, HasSum (ν i) 1) : HasSum (fun m ↦ ∑' i, a i * ν i m) A := by
+  have hh := ha.summable.prod_mul_of_hasSum_one ha0 hν0 hν
+  have hsw : Summable fun p : κ × ι ↦ a p.2 * ν p.2 p.1 := hh.prod_symm
+  -- Nonnegative Fubini: sum over `m` first, then exchange the order of summation.
+  refine ((summable_prod_of_nonneg fun p ↦ mul_nonneg (ha0 _) (hν0 _ _)).1 hsw).2.hasSum_iff.2 ?_
+  rw [Summable.tsum_comm' hh (fun i ↦ hh.prod_factor i) fun m ↦ hsw.prod_factor m, ← ha.tsum_eq]
+  exact tsum_congr fun i ↦ by simp only [tsum_mul_left, (hν i).tsum_eq, mul_one]
+
 section Tail
 
 variable {a : ℕ → ℝ}
@@ -187,6 +239,15 @@ end Tail
 
 namespace TauCeti
 
+/-- Weighted powers with nonnegative weights that are summable at radius `s` are summable
+at every nonnegative radius `r ≤ s`, for any family of natural-number exponents. -/
+theorem summable_mul_pow_of_le {ι : Type*} {w : ι → ℝ} {degree : ι → ℕ}
+    {r s : ℝ≥0} (hw : ∀ i, 0 ≤ w i) (hrs : r ≤ s)
+    (h : Summable fun i ↦ w i * (s : ℝ) ^ degree i) :
+    Summable fun i ↦ w i * (r : ℝ) ^ degree i :=
+  h.of_nonneg_of_le (fun i ↦ mul_nonneg (hw i) (pow_nonneg r.coe_nonneg _)) fun i ↦
+    mul_le_mul_of_nonneg_left (pow_le_pow_left₀ r.coe_nonneg (NNReal.coe_le_coe.2 hrs) _) (hw i)
+
 /-- Repeating each nonnegative real term a finite natural number of times preserves
 summability exactly when the multiplicity-weighted family is summable. -/
 theorem summable_sigma_fin_iff {ι : Type*} {a : ι → ℝ} (ha : ∀ i, 0 ≤ a i) (m : ι → ℕ) :
@@ -214,4 +275,81 @@ theorem eventually_mul_le_one_of_summable_sq {ι : Type*} {b : ι → ℝ}
         linarith
   nlinarith
 
+private lemma pow_neg_succ_natAbs (r : ℝ) :
+    (fun n : ℕ ↦ r ^ (-(n + 1 : ℤ)).natAbs) = fun n : ℕ ↦ r * r ^ n := by
+  ext n; rw [(by omega : (-(n + 1 : ℤ)).natAbs = n + 1), pow_succ']
+
+/-- For `0 ≤ r < 1`, the bilateral geometric series `k ↦ r ^ k.natAbs` on `ℤ` is summable. -/
+theorem summable_pow_natAbs {r : ℝ} (hr₀ : 0 ≤ r) (hr₁ : r < 1) :
+    Summable fun k : ℤ ↦ r ^ k.natAbs :=
+  Summable.of_nat_of_neg_add_one (summable_geometric_of_lt_one hr₀ hr₁)
+    (pow_neg_succ_natAbs r ▸ (summable_geometric_of_lt_one hr₀ hr₁).mul_left r)
+
+/-- For `0 ≤ r < 1`, `k ↦ r ^ k.natAbs` on `ℤ` sums to `(1 + r) * (1 - r)⁻¹`. -/
+theorem tsum_pow_natAbs {r : ℝ} (hr₀ : 0 ≤ r) (hr₁ : r < 1) :
+    (∑' k : ℤ, r ^ k.natAbs) = (1 + r) * (1 - r)⁻¹ := by
+  have h1 : (fun n : ℕ ↦ r ^ (n : ℤ).natAbs) = fun n : ℕ ↦ r ^ n := by ext n; simp
+  rw [tsum_of_nat_of_neg_add_one (h1 ▸ summable_geometric_of_lt_one hr₀ hr₁)
+    (pow_neg_succ_natAbs r ▸ (summable_geometric_of_lt_one hr₀ hr₁).mul_left r), h1,
+    pow_neg_succ_natAbs, tsum_mul_left, tsum_geometric_of_lt_one hr₀ hr₁]; ring
+
+/-- For `0 ≤ r < 1`, the nonzero modes of `r ^ k.natAbs` sum to `2 * (r * (1 - r)⁻¹)`. -/
+theorem tsum_ite_eq_zero_pow_natAbs {r : ℝ} (hr₀ : 0 ≤ r) (hr₁ : r < 1) :
+    (∑' k : ℤ, if k = 0 then (0 : ℝ) else r ^ k.natAbs) = 2 * (r * (1 - r)⁻¹) := by
+  have hite := (summable_pow_natAbs hr₀ hr₁).tsum_eq_add_tsum_ite (0 : ℤ)
+  rw [tsum_pow_natAbs hr₀ hr₁, Int.natAbs_zero, pow_zero] at hite
+  have : 1 - r ≠ 0 := sub_ne_zero.2 hr₁.ne'; field_simp at hite ⊢; linarith
+
+/-- Along `𝓝[≥] 0`, the nonzero-mode bilateral geometric sum `∑'_{k ≠ 0} r ^ |k|` tends to `0`. -/
+theorem tendsto_tsum_ite_eq_zero_pow_natAbs :
+    Tendsto (fun r : ℝ ↦ ∑' k : ℤ, if k = 0 then (0 : ℝ) else r ^ k.natAbs) (𝓝[≥] 0) (𝓝 0) :=
+  ((by simpa using (((tendsto_id (α := ℝ)).mul (((tendsto_const_nhds (x := (1 : ℝ))).sub
+      tendsto_id).inv₀ (by norm_num : (1 : ℝ) - 0 ≠ 0))).const_mul 2) :
+      Tendsto (fun r : ℝ ↦ 2 * (r * (1 - r)⁻¹)) (𝓝 0) (𝓝 0)).mono_left nhdsWithin_le_nhds).congr'
+    (eventually_of_mem (Ico_mem_nhdsGE zero_lt_one) fun _ hr ↦
+      (tsum_ite_eq_zero_pow_natAbs hr.1 hr.2).symm)
+
+/-- A sequence whose steps are eventually bounded by a summable sequence is Cauchy. -/
+theorem cauchySeq_of_eventually_dist_le_of_summable {α : Type*} [PseudoMetricSpace α]
+    {x : ℕ → α} {d : ℕ → ℝ} (hd : Summable d)
+    (h : ∀ᶠ m in atTop, dist (x m) (x (m + 1)) ≤ d m) : CauchySeq x := by
+  obtain ⟨n, hn⟩ := eventually_atTop.mp h
+  exact (cauchySeq_shift n).mp <| cauchySeq_of_dist_le_of_summable (fun k ↦ d (k + n))
+    (fun k ↦ by simpa only [Nat.succ_add] using hn (k + n) (Nat.le_add_left n k))
+    ((summable_nat_add_iff n).mpr hd)
+
 end TauCeti
+
+/-- **Weierstrass genus selection** (Rudin, Theorem 15.9, with natural multiplicities). If
+`r : ι → ℝ` tends to infinity along the cofinite filter, then for any multiplicity function
+`m : ι → ℕ` there exist exponents `p : ι → ℕ` such that
+`∑' i, m i * (R / r i) ^ (p i + 1) < ∞` for every `R > 0`. -/
+theorem Filter.Tendsto.exists_summable_mul_div_pow {ι : Type*} {r : ι → ℝ}
+    (hr : Tendsto r cofinite atTop) (m : ι → ℕ) :
+    ∃ p : ι → ℕ, ∀ R : ℝ, 0 < R → Summable fun i ↦ (m i : ℝ) * (R / r i) ^ (p i + 1) := by
+  have hker : (atTop : Filter ℝ).ker = ∅ :=
+    le_cofinite_iff_ker.mp (Filter.atTop_le_cofinite : (atTop : Filter ℝ) ≤ cofinite)
+  have : Countable ι := Set.countable_univ_iff.mp <| by
+    simpa [hker] using hr.countable_compl_preimage_ker
+  obtain ⟨idx, hidx⟩ := Countable.exists_injective_nat ι
+  -- Rudin's exponent `idx i`, raised by `m i` so that `m i * (1 / 2) ^ m i ≤ 1` absorbs the
+  -- multiplicity and the tail is dominated by `∑' i, (1 / 2) ^ (idx i + 1)`.
+  refine ⟨fun i ↦ idx i + m i, fun R hR ↦ ?_⟩
+  have hgeom : Summable fun i ↦ (1 / 2 : ℝ) ^ (idx i + 1) :=
+    ((summable_nat_add_iff 1).mpr summable_geometric_two).comp_injective hidx
+  refine Summable.of_norm_bounded_eventually hgeom ?_
+  filter_upwards [hr.eventually_gt_atTop (2 * R)] with i hi
+  have hr_pos : 0 < r i := by linarith
+  have hhalf : R / r i ≤ 1 / 2 := (div_le_iff₀ hr_pos).mpr (by linarith)
+  have hm_two : (m i : ℝ) * (1 / 2 : ℝ) ^ m i ≤ 1 := by
+    have hlt : (m i : ℝ) ≤ (2 : ℝ) ^ m i := by exact_mod_cast (m i).lt_two_pow_self.le
+    calc (m i : ℝ) * (1 / 2 : ℝ) ^ m i ≤ (2 : ℝ) ^ m i * (1 / 2 : ℝ) ^ m i := by gcongr
+      _ = 1 := by rw [← mul_pow]; norm_num
+  rw [Real.norm_of_nonneg (by positivity)]
+  calc
+    (m i : ℝ) * (R / r i) ^ (idx i + m i + 1)
+      ≤ (m i : ℝ) * (1 / 2 : ℝ) ^ (idx i + m i + 1) := by gcongr
+    _ = ((m i : ℝ) * (1 / 2 : ℝ) ^ m i) * (1 / 2 : ℝ) ^ (idx i + 1) := by
+        rw [add_right_comm, add_assoc, pow_add]; ring
+    _ ≤ 1 * (1 / 2 : ℝ) ^ (idx i + 1) := by gcongr
+    _ = (1 / 2 : ℝ) ^ (idx i + 1) := one_mul _

@@ -245,7 +245,7 @@ theorem virtualCharacters_le_classFunction :
   virtualCharacters_le fun V => by
     have h : (ClassFunction.ofCharacter V.ρ : G → k) = V.character :=
       funext fun g => ClassFunction.ofCharacter_apply V.ρ g
-    exact h ▸ (ClassFunction.ofCharacter V.ρ).2
+    exact h ▸ (ClassFunction.ofCharacter V.ρ).property
 
 end ClassFunctions
 
@@ -339,13 +339,6 @@ theorem irreducibleCharacter_mem_virtualCharacters (i : Fin (Nat.card (ConjClass
     irreducibleCharacter k i ∈ virtualCharacters k G := by
   rw [virtualCharacters_eq_closure_irreducibleCharacters]
   exact AddSubgroup.subset_closure (irreducibleCharacter_mem k i)
-
-/-- The enumerated irreducible characters exhaust the irreducible characters. -/
-theorem range_irreducibleCharacter :
-    Set.range (irreducibleCharacter (G := G) k) = irreducibleCharacters k G := by
-  ext f
-  exact ⟨by rintro ⟨i, rfl⟩; exact irreducibleCharacter_mem k i,
-    fun hf => exists_irreducibleCharacter_eq k hf⟩
 
 /-- **A function `G → k` is a virtual character exactly when it is an integer combination of the
 irreducible characters.**
@@ -599,7 +592,7 @@ private theorem exists_char_sub_eq_of_ne_zero {V W : Type*} [AddCommGroup V] [Mo
         Representation.IntertwiningMap.coe_toLinearMap, map_sub]
       exact sub_eq_zero.mpr (by simpa [ψ] using hxy)
     exact Subtype.ext (sub_eq_zero.mp (Submodule.disjoint_def.mp hC'.disjoint _ hker
-      (C.toSubmodule.sub_mem x.2 y.2)))
+      (C.toSubmodule.sub_mem x.property y.property)))
   obtain ⟨ρ', hρ'⟩ := exists_isCompl ψ.range
   refine ⟨ρ', φ.ker, ?_, ?_⟩
   · -- the image of `ψ` is nonzero, since otherwise `C` is zero and `φ` vanishes

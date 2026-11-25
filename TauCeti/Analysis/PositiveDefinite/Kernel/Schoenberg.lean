@@ -68,9 +68,7 @@ theorem CondNegSemidef.posSemidef_cexp_neg_mul {ψ : Matrix n n ℂ} (hψ : ψ.C
   -- The centred kernel at `a₀` is positive semidefinite, hence so is its scaled exponential.
   have hL := ((hψ.isHermitian.condNegSemidef_iff_posSemidef_centered a₀).mp hψ).smul
     (by exact_mod_cast ht : (0 : ℂ) ≤ t)
-  have hrank : PosSemidef (of fun a b ↦ star (Complex.exp (-(t * ψ a₀ a))) *
-      Complex.exp (-(t * ψ a₀ b))) :=
-    TauCeti.posSemidef_rankOne fun b ↦ Complex.exp (-(t * ψ a₀ b))
+  have hrank := posSemidef_vecMulVec_star_self fun b ↦ Complex.exp (-(t * ψ a₀ b))
   -- The diagonal value `ψ(a₀, a₀)` is real, so `exp (t ψ(a₀, a₀))` is a nonnegative scalar.
   have hreal : ((ψ a₀ a₀).re : ℂ) = ψ a₀ a₀ := Complex.conj_eq_iff_re.mp (hsymm a₀ a₀)
   have hc : (0 : ℂ) ≤ Complex.exp (t * ψ a₀ a₀) := by
@@ -78,9 +76,9 @@ theorem CondNegSemidef.posSemidef_cexp_neg_mul {ψ : Matrix n n ℂ} (hψ : ψ.C
     exact_mod_cast (Real.exp_pos _).le
   refine (congrArg PosSemidef ?_).mp ((hL.map_cexp.hadamard hrank).smul hc)
   ext a b
-  simp only [Matrix.smul_apply, Matrix.hadamard_apply, map_apply, of_apply, smul_eq_mul,
-    RCLike.star_def, ← Complex.exp_conj, map_neg, map_mul, Complex.conj_ofReal, ← Complex.star_def,
-    hsymm, ← Complex.exp_add]
+  simp only [Matrix.smul_apply, Matrix.hadamard_apply, map_apply, of_apply, vecMulVec_apply,
+    Pi.star_apply, smul_eq_mul, RCLike.star_def, ← Complex.exp_conj, map_neg, map_mul,
+    Complex.conj_ofReal, ← Complex.star_def, hsymm, ← Complex.exp_add]
   congr 1
   ring
 

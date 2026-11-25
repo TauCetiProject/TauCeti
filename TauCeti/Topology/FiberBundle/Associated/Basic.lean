@@ -162,6 +162,16 @@ theorem baseSet_trivializationAt (b : B) :
     (trivializationAt F (AssociatedBundle G P F) b).baseSet = (trivializationAt G P b).baseSet := by
   rw [trivializationAt_eq_localTriv, associatedBundleCore_localTriv_baseSet]
 
+/-- On overlaps of preferred charts, the coordinate change of the associated bundle acts on `F` by
+the transition function of `P`. -/
+theorem coordChange_trivializationAt {b b' x : B} (hb : x ∈ (trivializationAt G P b).baseSet)
+    (hb' : x ∈ (trivializationAt G P b').baseSet) (v : F) :
+    (trivializationAt F (AssociatedBundle G P F) b).coordChange
+        (trivializationAt F (AssociatedBundle G P F) b') x v =
+      (trivializationAt G P b).coordChange (trivializationAt G P b') x 1 • v := by
+  rw [trivializationAt_eq_localTriv, trivializationAt_eq_localTriv, associatedBundleCore_def]
+  exact fiberBundleCoreOfGroupCocycle_localTriv_coordChange _ _ _ _ _ _ _ _ b b' ⟨hb, hb'⟩ v
+
 variable (G) in
 /-- The class `[p, v]` in the associated bundle of a point `p` of the fibre of `P` over `b` and of
 `v : F`: the point over `b` with coordinate `(e p).2 • v` in the chart at `b`, where
@@ -198,6 +208,14 @@ theorem trivializationAt_mk_snd {b' b : B} (hb : b ∈ (trivializationAt G P b')
       (trivializationAt G P b' ⟨b, p⟩).2 • v := by
   rw [trivializationAt_mk hb]
 
+/-- In the preferred trivialization at `b'`, the class `[p, g⁻¹ • v]` has coordinate `v`, where
+`g` is the coordinate of `p` in the preferred trivialization of `P` at `b'`. -/
+theorem trivializationAt_mk_inv_smul_snd {b' b : B}
+    (hb : b ∈ (trivializationAt G P b').baseSet) (p : P b) (v : F) :
+    (trivializationAt F (AssociatedBundle G P F) b'
+        ⟨b, mk G p ((trivializationAt G P b' ⟨b, p⟩).2⁻¹ • v)⟩).2 = v := by
+  rw [trivializationAt_mk_snd hb, smul_inv_smul]
+
 /-- **The classes are the orbits of the action.** The classes of `(p • g, v)` and of
 `(p, g • v)` agree. -/
 @[simp]
@@ -229,6 +247,11 @@ theorem exists_mk {b : B} (v : AssociatedBundle G P F b) :
   obtain ⟨w, hw⟩ := (mk_bijective (F := F) p).2 v
   exact ⟨p, w, hw⟩
 
+/-- When the model fibre `F` is nonempty, every fibre of the associated bundle is nonempty. -/
+instance instNonempty [Nonempty F] (b : B) : Nonempty (AssociatedBundle G P F b) :=
+  let ⟨v⟩ := ‹Nonempty F›
+  ⟨mk G ((FiberBundle.homeomorphAt G P b).symm 1) v⟩
+
 /-! ### The quotient topology -/
 
 /-- The class of `(p • g, g⁻¹ • v)` is the class of `(p, v)`. -/
@@ -239,9 +262,9 @@ theorem mk_smul_inv_smul {b : B} (p : P b) (g : G) (v : F) :
 /-- Two pairs of points of the total space of `P` and of `F` have the same class exactly when they
 differ by the action of an element `g` of `G`, acting by `(p, v) ↦ (p • g, g⁻¹ • v)`. -/
 theorem totalSpaceMk_mk_eq_iff {x y : TotalSpace G P × F} :
-    (⟨x.1.proj, mk G x.1.2 x.2⟩ : TotalSpace F (AssociatedBundle G P F)) =
-        ⟨y.1.proj, mk G y.1.2 y.2⟩ ↔
-      ∃ g : G, y = (⟨x.1.proj, op g • x.1.2⟩, g⁻¹ • x.2) := by
+    (⟨x.1.proj, mk G x.1.snd x.2⟩ : TotalSpace F (AssociatedBundle G P F)) =
+        ⟨y.1.proj, mk G y.1.snd y.2⟩ ↔
+      ∃ g : G, y = (⟨x.1.proj, op g • x.1.snd⟩, g⁻¹ • x.2) := by
   obtain ⟨⟨b, p⟩, v⟩ := x
   obtain ⟨⟨b', q⟩, w⟩ := y
   constructor
@@ -260,7 +283,7 @@ variable (G P F) in
 `(p • g, g⁻¹ • v)` for every `g : G`. Its quotient is the associated bundle
 (`TauCeti.AssociatedBundle.quotientHomeomorph`). -/
 def orbitRel : Setoid (TotalSpace G P × F) where
-  r x y := ∃ g : G, y = (⟨x.1.proj, op g • x.1.2⟩, g⁻¹ • x.2)
+  r x y := ∃ g : G, y = (⟨x.1.proj, op g • x.1.snd⟩, g⁻¹ • x.2)
   -- By `totalSpaceMk_mk_eq_iff`, the relation says that the two pairs have the same class.
   iseqv.refl _ := totalSpaceMk_mk_eq_iff.1 rfl
   iseqv.symm h := totalSpaceMk_mk_eq_iff.1 (totalSpaceMk_mk_eq_iff.2 h).symm
@@ -269,13 +292,13 @@ def orbitRel : Setoid (TotalSpace G P × F) where
 
 /-- Two pairs are related by `orbitRel` when they differ by the action of an element of `G`. -/
 theorem orbitRel_iff {x y : TotalSpace G P × F} :
-    orbitRel G P F x y ↔ ∃ g : G, y = (⟨x.1.proj, op g • x.1.2⟩, g⁻¹ • x.2) :=
+    orbitRel G P F x y ↔ ∃ g : G, y = (⟨x.1.proj, op g • x.1.snd⟩, g⁻¹ • x.2) :=
   Iff.rfl
 
 /-- The orbit relation is the kernel of `(p, v) ↦ [p, v]`. -/
 theorem orbitRel_eq_ker :
     orbitRel G P F = Setoid.ker fun x : TotalSpace G P × F ↦
-      (⟨x.1.proj, mk G x.1.2 x.2⟩ : TotalSpace F (AssociatedBundle G P F)) :=
+      (⟨x.1.proj, mk G x.1.snd x.2⟩ : TotalSpace F (AssociatedBundle G P F)) :=
   Setoid.ext fun _ _ ↦ totalSpaceMk_mk_eq_iff.symm
 
 end AssociatedBundle
@@ -344,17 +367,17 @@ variable (G P F)
 total space of the associated bundle is continuous. -/
 theorem continuous_totalSpaceMk_mk :
     Continuous fun x : TotalSpace G P × F ↦
-      (⟨x.1.proj, mk G x.1.2 x.2⟩ : TotalSpace F (AssociatedBundle G P F)) :=
+      (⟨x.1.proj, mk G x.1.snd x.2⟩ : TotalSpace F (AssociatedBundle G P F)) :=
   Continuous.totalSpaceMk_associatedBundleMk (f := fun x : TotalSpace G P × F ↦ x.1.proj)
     continuous_fst continuous_snd
 
 /-- The map `(p, v) ↦ [p, v]` is an open map. -/
 theorem isOpenMap_totalSpaceMk_mk :
     IsOpenMap fun x : TotalSpace G P × F ↦
-      (⟨x.1.proj, mk G x.1.2 x.2⟩ : TotalSpace F (AssociatedBundle G P F)) := by
+      (⟨x.1.proj, mk G x.1.snd x.2⟩ : TotalSpace F (AssociatedBundle G P F)) := by
   refine IsOpenMap.of_local_sections fun x₀ ↦ ?_
   set Φ := fun x : TotalSpace G P × F ↦
-    (⟨x.1.proj, mk G x.1.2 x.2⟩ : TotalSpace F (AssociatedBundle G P F))
+    (⟨x.1.proj, mk G x.1.snd x.2⟩ : TotalSpace F (AssociatedBundle G P F))
   set e := trivializationAt G P x₀.1.proj
   set eA := trivializationAt F (AssociatedBundle G P F) x₀.1.proj
   have heA : eA.baseSet = e.baseSet := baseSet_trivializationAt _
@@ -402,9 +425,9 @@ points of the total space of `P` and of `F` onto the total space of the associat
 open quotient map. -/
 theorem isOpenQuotientMap_totalSpaceMk_mk :
     IsOpenQuotientMap fun x : TotalSpace G P × F ↦
-      (⟨x.1.proj, mk G x.1.2 x.2⟩ : TotalSpace F (AssociatedBundle G P F)) where
+      (⟨x.1.proj, mk G x.1.snd x.2⟩ : TotalSpace F (AssociatedBundle G P F)) where
   surjective y := by
-    obtain ⟨p, v, hv⟩ := exists_mk y.2
+    obtain ⟨p, v, hv⟩ := exists_mk y.snd
     exact ⟨(⟨y.proj, p⟩, v), congrArg (TotalSpace.mk y.proj) hv⟩
   continuous := continuous_totalSpaceMk_mk G P F
   isOpenMap := isOpenMap_totalSpaceMk_mk G P F
@@ -423,7 +446,7 @@ variable {G P F}
 /-- The homeomorphism `quotientHomeomorph` sends the class of `(p, v)` to `[p, v]`. -/
 @[simp]
 theorem quotientHomeomorph_mk (x : TotalSpace G P × F) :
-    quotientHomeomorph G P F (Quotient.mk _ x) = ⟨x.1.proj, mk G x.1.2 x.2⟩ :=
+    quotientHomeomorph G P F (Quotient.mk _ x) = ⟨x.1.proj, mk G x.1.snd x.2⟩ :=
   (rfl)
 
 end TauCeti.AssociatedBundle

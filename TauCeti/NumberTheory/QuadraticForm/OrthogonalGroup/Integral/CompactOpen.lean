@@ -60,7 +60,7 @@ open scoped TensorProduct
 
 noncomputable section
 
-variable {V : Type*} [AddCommGroup V] [Module ℚ V] [FiniteDimensional ℚ V]
+variable {V : Type*} [AddCommGroup V] [Module ℚ V]
   {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 namespace OrthogonalCompactOpens
@@ -112,6 +112,7 @@ theorem mem_integral_spin (Q : QuadraticForm ℚ V) (hQ : Q.Nondegenerate) (b : 
         integralOrthogonalSubgroup (Q.baseChange ℚ_[p]) (b.baseChange ℚ_[p]) := by
   rw [integral_spin, CliffordAlgebra.mem_integralSpinSubgroup_iff]
 
+variable [FiniteDimensional ℚ V] in
 /-- **The local spinor-norm images are eventually the unit square classes.** Let `U` be
 compatible compact-open reference data for a nondegenerate rational quadratic space of dimension
 at least two, whose orthogonal reference subgroups are integral in a rational basis `b` at almost
@@ -143,9 +144,10 @@ theorem eventually_localSpinorNormImage_eq_unitSquareClasses {Q : QuadraticForm 
     (QuadraticForm.Nondegenerate.baseChange hQ) hp, ← hbc, ← hUp]
   ext x
   rw [mem_localSpinorNormImage_iff, Subgroup.mem_map]
-  exact ⟨fun ⟨g, hg⟩ ↦ ⟨g, (U.mem_specialOrthogonal_iff p g).mp g.2, hg⟩,
+  exact ⟨fun ⟨g, hg⟩ ↦ ⟨g, (U.mem_specialOrthogonal_iff p g).mp g.property, hg⟩,
     fun ⟨g, hg, hgx⟩ ↦ ⟨⟨g, (U.mem_specialOrthogonal_iff p g).mpr hg⟩, hgx⟩⟩
 
+variable [FiniteDimensional ℚ V] in
 /-- At almost every prime, the local spinor-norm image of the integral family of a rational basis
 of a nondegenerate quadratic space of dimension at least two is the group of unit square
 classes. -/

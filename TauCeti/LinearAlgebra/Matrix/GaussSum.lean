@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Group.AddChar
 public import Mathlib.Data.Matrix.Block
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
-import TauCeti.Algebra.Group.AddChar
+import TauCeti.Algebra.Group.AddChar.Basic
 
 /-!
 # Gauss sums of quadratic forms over a finite semiring

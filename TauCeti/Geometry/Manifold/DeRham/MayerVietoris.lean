@@ -10,9 +10,10 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Opens
 public import TauCeti.Algebra.Homology.ModuleCat.Biprod
 public import TauCeti.Geometry.Manifold.DeRham.DegreeZero
 import TauCeti.Algebra.Homology.HomologicalComplex.Biprod
+import TauCeti.Algebra.Homology.HomologySequenceBiprod
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
-import Mathlib.Geometry.Manifold.Metrizable
 import Mathlib.Geometry.Manifold.PartitionOfUnity
+import TauCeti.Geometry.Manifold.Metrizable
 
 /-!
 # The Mayer–Vietoris sequence of de Rham complexes
@@ -74,6 +75,23 @@ the glued form restricting to `dα` and `dβ` is the differential of a function 
 * `TauCeti.deRhamCohomology.mayerVietorisδ_const` and
   `TauCeti.deRhamCohomology.ker_mayerVietorisδ_zero`: the connecting map kills constant classes,
   and in degree zero, for preconnected `U` and `V`, nothing else.
+* `TauCeti.deRhamCohomology.mayerVietorisδ_zero_apply_eq_zero_iff`: in degree zero the connecting
+  map kills exactly the classes of differences of restrictions of locally constant functions on
+  `U` and on `V`.
+* `TauCeti.deRhamCohomology.exists_locallyConstant_eq_inclusion_sub_inclusion`: if `U ⊔ V` has
+  no first cohomology, every locally constant function on `U ⊓ V` is the difference of the
+  restrictions of locally constant functions on `U` and on `V`.
+* `TauCeti.subsingleton_deRhamCohomology_one_sup`: if `U` and `V` have no first cohomology and
+  `U ⊓ V` is preconnected, then `U ⊔ V` has no first cohomology.
+* `TauCeti.deRhamCohomology.mayerVietorisToProd` and
+  `TauCeti.deRhamCohomology.mayerVietorisFromProd`: the restrictions `H^k(U ⊔ V) → H^k(U) × H^k(V)`
+  and their difference `H^k(U) × H^k(V) → H^k(U ⊓ V)`, as linear maps to and from the product
+  module.
+* `TauCeti.deRhamCohomology.exact_mayerVietorisToProd_fromProd`,
+  `TauCeti.deRhamCohomology.exact_mayerVietorisFromProd_δ` and
+  `TauCeti.deRhamCohomology.exact_mayerVietorisδ_toProd`: the Mayer–Vietoris long exact sequence,
+  as exactness (`Function.Exact`) of linear maps, the form diagram chases such as the five lemma
+  use; `TauCeti.deRhamCohomology.mayerVietorisToProd_zero_injective`: it starts with an injection.
 
 ## References
 
@@ -112,7 +130,7 @@ theorem injective_mayerVietoris (U V : Opens M) :
   rw [LinearMap.prod_apply, Function.prod_apply, Prod.mk_eq_zero] at hφ
   apply Subtype.ext
   funext x
-  rcases Opens.mem_sup.mp x.2 with hx | hx
+  rcases Opens.mem_sup.mp x.property with hx | hx
   · have h := congrFun (congrArg Subtype.val hφ.1) ⟨x, hx⟩
     rw [coe_mpullback, mpullback_inclusion_apply] at h
     exact h
@@ -139,23 +157,23 @@ theorem exact_mayerVietoris (U V : Opens M) :
   refine ⟨fun hαβ ↦ ?_, ?_⟩
   · -- Pointwise, `α` and `β` agree on `U ⊓ V`.
     have hagree : ∀ (y : M) (hU : y ∈ U) (hV : y ∈ V),
-        (α.1 ⟨y, hU⟩ : E [⋀^Fin k]→L[ℝ] F) = β.1 ⟨y, hV⟩ := fun y hU hV ↦ by
+        (α.val ⟨y, hU⟩ : E [⋀^Fin k]→L[ℝ] F) = β.val ⟨y, hV⟩ := fun y hU hV ↦ by
       have h := congrFun (congrArg Subtype.val hαβ) ⟨y, hU, hV⟩
       rw [coe_mpullback, coe_mpullback, mpullback_inclusion_apply,
         mpullback_inclusion_apply] at h
       exact h
     let γ : RoughForm I (U ⊔ V : Opens M) F k := fun x ↦
-      if hx : (x : M) ∈ U then (α.1 ⟨x, hx⟩ : E [⋀^Fin k]→L[ℝ] F)
-      else β.1 ⟨x, (Opens.mem_sup.mp x.2).resolve_left hx⟩
-    have hγU : TauCeti.mpullback I I (Opens.inclusion (le_sup_left : U ≤ U ⊔ V)) γ = α.1 := by
+      if hx : (x : M) ∈ U then (α.val ⟨x, hx⟩ : E [⋀^Fin k]→L[ℝ] F)
+      else β.val ⟨x, (Opens.mem_sup.mp x.property).resolve_left hx⟩
+    have hγU : TauCeti.mpullback I I (Opens.inclusion (le_sup_left : U ≤ U ⊔ V)) γ = α.val := by
       funext y
       rw [mpullback_inclusion_apply]
-      exact dite_eq_left y.2
-    have hγV : TauCeti.mpullback I I (Opens.inclusion (le_sup_right : V ≤ U ⊔ V)) γ = β.1 := by
+      exact dite_eq_left y.property
+    have hγV : TauCeti.mpullback I I (Opens.inclusion (le_sup_right : V ≤ U ⊔ V)) γ = β.val := by
       funext y
       rw [mpullback_inclusion_apply]
       by_cases hy : (y : M) ∈ U
-      · exact (dite_eq_left hy).trans (hagree y hy y.2)
+      · exact (dite_eq_left hy).trans (hagree y hy y.property)
       · exact dite_eq_right hy
     have hγ : IsSmoothForm I ∞ γ :=
       IsSmoothForm.of_mpullback_inclusion_sup (hγU ▸ α.isSmoothForm) (hγV ▸ β.isSmoothForm)
@@ -183,7 +201,7 @@ variable {U V : Opens M} {ρ : (U ⊔ V : Opens M) → ℝ}
 private theorem eventually_eq_zero_of_tsupport_subset (hρV : tsupport ρ ⊆ {x | (x : M) ∈ V})
     {x : U} (hx : (x : M) ∉ U ⊓ V) : ∀ᶠ y in 𝓝 x, ρ (Opens.inclusion le_sup_left y) = 0 :=
   (continuous_inclusion (le_sup_left : U ≤ U ⊔ V)).continuousAt.eventually
-    (notMem_tsupport_iff_eventuallyEq.mp fun h ↦ hx ⟨x.2, hρV h⟩)
+    (notMem_tsupport_iff_eventuallyEq.mp fun h ↦ hx ⟨x.property, hρV h⟩)
 
 /-- If `1 - ρ` is supported in `U`, then `ρ - 1` vanishes near every point of `V` outside
 `U ⊓ V`. -/
@@ -191,7 +209,7 @@ private theorem eventually_sub_one_eq_zero_of_tsupport_subset
     (hρU : tsupport (fun x ↦ 1 - ρ x) ⊆ {x | (x : M) ∈ U}) {x : V} (hx : (x : M) ∉ U ⊓ V) :
     ∀ᶠ y in 𝓝 x, ρ (Opens.inclusion le_sup_right y) - 1 = 0 :=
   ((continuous_inclusion (le_sup_right : V ≤ U ⊔ V)).continuousAt.eventually
-    (notMem_tsupport_iff_eventuallyEq.mp fun h ↦ hx ⟨hρU h, x.2⟩)).mono fun _ hy ↦ by
+    (notMem_tsupport_iff_eventuallyEq.mp fun h ↦ hx ⟨hρU h, x.property⟩)).mono fun _ hy ↦ by
       rw [Pi.zero_apply] at hy
       linarith
 
@@ -200,14 +218,14 @@ variable [IsManifold I ∞ M] (hρ : ContMDiff I 𝓘(ℝ) ∞ ρ) (hρV : tsupp
 
 /-- The cut-off form `ρ φ` on `U ⊓ V`, extended by zero to a smooth form on `U`. -/
 private def cutoffLeft (φ : SmoothForm I (U ⊓ V : Opens M) F k) : SmoothForm I U F k :=
-  ⟨RoughForm.extendByZero U fun y : (U ⊓ V : Opens M) ↦ ρ (Opens.inclusion inf_le_sup y) • φ.1 y,
+  ⟨RoughForm.extendByZero U fun y : (U ⊓ V : Opens M) ↦ ρ (Opens.inclusion inf_le_sup y) • φ.val y,
     (φ.isSmoothForm.extendByZero_smul inf_le_left (hρ.comp (contMDiff_inclusion le_sup_left))
       fun _ hx ↦ eventually_eq_zero_of_tsupport_subset hρV hx).mem_smoothBundleForms⟩
 
 /-- The cut-off form `(ρ - 1) φ` on `U ⊓ V`, extended by zero to a smooth form on `V`. -/
 private def cutoffRight (φ : SmoothForm I (U ⊓ V : Opens M) F k) : SmoothForm I V F k :=
   ⟨RoughForm.extendByZero V
-      fun y : (U ⊓ V : Opens M) ↦ (ρ (Opens.inclusion inf_le_sup y) - 1) • φ.1 y,
+      fun y : (U ⊓ V : Opens M) ↦ (ρ (Opens.inclusion inf_le_sup y) - 1) • φ.val y,
     (φ.isSmoothForm.extendByZero_smul inf_le_right
       ((hρ.comp (contMDiff_inclusion le_sup_right)).sub contMDiff_const)
       fun _ hx ↦ eventually_sub_one_eq_zero_of_tsupport_subset hρU hx).mem_smoothBundleForms⟩
@@ -233,14 +251,14 @@ private theorem mpullback_cutoffLeft_sub_mpullback_cutoffRight
 of `d(ρ φ)` to `U ⊔ V` are the exterior derivatives of the two cut-off forms of `φ`. -/
 private theorem mpullback_extendByZero_mextDeriv_cutoff (φ : closedForms I (U ⊓ V : Opens M) k) :
     mpullback I I (Opens.inclusion le_sup_left) (RoughForm.extendByZero (U ⊔ V)
-        (mextDeriv fun y : (U ⊓ V : Opens M) ↦ ρ (Opens.inclusion inf_le_sup y) • φ.1.1 y)) =
-      (mextDerivₗ I k (cutoffLeft hρ hρV φ.1)).1 ∧
+        (mextDeriv fun y : (U ⊓ V : Opens M) ↦ ρ (Opens.inclusion inf_le_sup y) • φ.val.val y)) =
+      (mextDerivₗ I k (cutoffLeft hρ hρV φ.val)).val ∧
     mpullback I I (Opens.inclusion le_sup_right) (RoughForm.extendByZero (U ⊔ V)
-        (mextDeriv fun y : (U ⊓ V : Opens M) ↦ ρ (Opens.inclusion inf_le_sup y) • φ.1.1 y)) =
-      (mextDerivₗ I k (cutoffRight hρ hρU φ.1)).1 := by
+        (mextDeriv fun y : (U ⊓ V : Opens M) ↦ ρ (Opens.inclusion inf_le_sup y) • φ.val.val y)) =
+      (mextDerivₗ I k (cutoffRight hρ hρU φ.val)).val := by
   have hρφ : IsSmoothForm I ∞
-      fun y : (U ⊓ V : Opens M) ↦ ρ (Opens.inclusion inf_le_sup y) • φ.1.1 y :=
-    φ.1.isSmoothForm.fun_smul (hρ.comp (contMDiff_inclusion inf_le_sup))
+      fun y : (U ⊓ V : Opens M) ↦ ρ (Opens.inclusion inf_le_sup y) • φ.val.val y :=
+    φ.val.isSmoothForm.fun_smul (hρ.comp (contMDiff_inclusion inf_le_sup))
   rw [mextDerivₗ_apply, mextDerivₗ_apply, cutoffLeft, cutoffRight,
     RoughForm.mpullback_inclusion_extendByZero_eq_extendByZero,
     RoughForm.mpullback_inclusion_extendByZero_eq_extendByZero,
@@ -253,11 +271,11 @@ private theorem mpullback_extendByZero_mextDeriv_cutoff (φ : closedForms I (U �
   refine ⟨rfl, congrArg _ ?_⟩
   -- Since `φ` is closed, `d((ρ - 1) φ) = d(ρ φ) - dφ = d(ρ φ)`.
   let ρφ : SmoothForm I (U ⊓ V : Opens M) ℝ k := ⟨_, hρφ.mem_smoothBundleForms⟩
-  have hsub : (fun y : (U ⊓ V : Opens M) ↦ (ρ (Opens.inclusion inf_le_sup y) - 1) • φ.1.1 y) =
-      (ρφ - φ.1).1 := by
+  have hsub : (fun y : (U ⊓ V : Opens M) ↦ (ρ (Opens.inclusion inf_le_sup y) - 1) • φ.val.val y) =
+      (ρφ - φ.val).val := by
     funext y
     simp [ρφ, sub_smul]
-  rw [hsub, ← mextDerivₗ_apply, map_sub, (mem_closedForms_iff_mextDerivₗ_eq_zero I _).mp φ.2,
+  rw [hsub, ← mextDerivₗ_apply, map_sub, (mem_closedForms_iff_mextDerivₗ_eq_zero I _).mp φ.property,
     sub_zero, mextDerivₗ_apply]
 
 include hρ hρV hρU in
@@ -266,15 +284,15 @@ For a closed form `φ` on `U ⊓ V`, the form `d(ρ φ)` on `U ⊓ V` extends by
 `U ⊔ V`. -/
 theorem exists_closedForms_coe_eq_extendByZero_mextDeriv (φ : closedForms I (U ⊓ V : Opens M) k) :
     ∃ σ : closedForms I (U ⊔ V : Opens M) (k + 1),
-      (σ.1 : RoughForm I (U ⊔ V : Opens M) ℝ (k + 1)) = RoughForm.extendByZero (U ⊔ V)
-        (mextDeriv fun y : (U ⊓ V : Opens M) ↦ ρ (Opens.inclusion inf_le_sup y) • φ.1.1 y) := by
+      (σ.val : RoughForm I (U ⊔ V : Opens M) ℝ (k + 1)) = RoughForm.extendByZero (U ⊔ V)
+        (mextDeriv fun y : (U ⊓ V : Opens M) ↦ ρ (Opens.inclusion inf_le_sup y) • φ.val.val y) := by
   obtain ⟨hU, hV⟩ := mpullback_extendByZero_mextDeriv_cutoff hρ hρV hρU φ
   -- The extension is smooth, since its restrictions to `U` and to `V` are smooth.
   have hσ : IsSmoothForm I ∞ (RoughForm.extendByZero (U ⊔ V)
-      (mextDeriv fun y : (U ⊓ V : Opens M) ↦ ρ (Opens.inclusion inf_le_sup y) • φ.1.1 y)) :=
+      (mextDeriv fun y : (U ⊓ V : Opens M) ↦ ρ (Opens.inclusion inf_le_sup y) • φ.val.val y)) :=
     IsSmoothForm.of_mpullback_inclusion_sup
-      (hU ▸ (mextDerivₗ I k (cutoffLeft hρ hρV φ.1)).isSmoothForm)
-      (hV ▸ (mextDerivₗ I k (cutoffRight hρ hρU φ.1)).isSmoothForm)
+      (hU ▸ (mextDerivₗ I k (cutoffLeft hρ hρV φ.val)).isSmoothForm)
+      (hV ▸ (mextDerivₗ I k (cutoffRight hρ hρU φ.val)).isSmoothForm)
   let σ : SmoothForm I (U ⊔ V : Opens M) ℝ (k + 1) := ⟨_, hσ.mem_smoothBundleForms⟩
   -- It is closed, since its restrictions to `U` and to `V` are exact.
   refine ⟨⟨σ, (mem_closedForms_iff_mextDerivₗ_eq_zero I σ).mpr <|
@@ -298,22 +316,16 @@ theorem SmoothForm.surjective_mayerVietoris [FiniteDimensional ℝ E] [IsManifol
           (Opens.inclusion (inf_le_right : U ⊓ V ≤ V)) (contMDiff_inclusion _))) := by
   intro θ
   -- The open subset `U ⊔ V` is again a Hausdorff σ-compact manifold, hence normal.
-  have : LocallyCompactSpace H := I.locallyCompactSpace
-  have : SecondCountableTopology H := I.secondCountableTopology
-  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
-  have : SecondCountableTopology M := ChartedSpace.secondCountable_of_sigmaCompact H M
-  have : LocallyCompactSpace (U ⊔ V : Opens M) := ChartedSpace.locallyCompactSpace H _
-  have : NormalSpace (U ⊔ V : Opens M) :=
-    have := Manifold.metrizableSpace I (U ⊔ V : Opens M)
-    inferInstance
+  have := Manifold.sigmaCompactSpace_opens I (U ⊔ V)
+  have := Manifold.normalSpace_opens I (U ⊔ V)
   -- A cut-off function vanishing near the points outside `V` and equal to one near the points
   -- outside `U`.
   have hA : IsClosed {x : (U ⊔ V : Opens M) | (x : M) ∉ V} :=
-    (V.isOpen.preimage continuous_subtype_val).isClosed_compl
+    (V.isOpen.preimage continuous_subtypeVal).isClosed_compl
   have hB : IsClosed {x : (U ⊔ V : Opens M) | (x : M) ∉ U} :=
-    (U.isOpen.preimage continuous_subtype_val).isClosed_compl
+    (U.isOpen.preimage continuous_subtypeVal).isClosed_compl
   have hAB : Disjoint {x : (U ⊔ V : Opens M) | (x : M) ∉ V} {x | (x : M) ∉ U} :=
-    disjoint_left.mpr fun x hxV hxU ↦ (Opens.mem_sup.mp x.2).elim hxU hxV
+    disjoint_left.mpr fun x hxV hxU ↦ (Opens.mem_sup.mp x.property).elim hxU hxV
   obtain ⟨ρ, hρ0, hρ1, -⟩ := exists_contMDiffMap_zero_one_nhds_of_isClosed I (n := ⊤) hA hB hAB
   have hρV : tsupport ρ ⊆ {x | (x : M) ∈ V} := fun x hx ↦ not_not.mp fun hxV ↦
     notMem_tsupport_iff_eventuallyEq.mpr (hρ0.filter_mono (nhds_le_nhdsSet hxV)) hx
@@ -419,9 +431,9 @@ theorem exists_closedForms_mpullback_eq_mextDerivₗ {U V : Opens M} (α : Smoot
       SmoothForm.mpullback (Opens.inclusion inf_le_right) (contMDiff_inclusion _) β ∈
         closedForms I (U ⊓ V : Opens M) k) :
     ∃ σ : closedForms I (U ⊔ V : Opens M) (k + 1),
-      SmoothForm.mpullback (Opens.inclusion le_sup_left) (contMDiff_inclusion _) σ.1 =
+      SmoothForm.mpullback (Opens.inclusion le_sup_left) (contMDiff_inclusion _) σ.val =
           mextDerivₗ I k α ∧
-        SmoothForm.mpullback (Opens.inclusion le_sup_right) (contMDiff_inclusion _) σ.1 =
+        SmoothForm.mpullback (Opens.inclusion le_sup_right) (contMDiff_inclusion _) σ.val =
           mextDerivₗ I k β := by
   -- `dα` and `dβ` agree on `U ⊓ V`, so they glue to a form `σ` on `U ⊔ V`.
   obtain ⟨σ, hσ⟩ := (SmoothForm.exact_mayerVietoris (I := I) (F := ℝ) (k := k + 1) U V
@@ -468,11 +480,11 @@ the class of `φ` to the class of `σ`. -/
 theorem mayerVietorisδ_mk (U V : Opens M) {k : ℕ} (φ : closedForms I (U ⊓ V : Opens M) k)
     (α : SmoothForm I U ℝ k) (β : SmoothForm I V ℝ k)
     (hαβ : SmoothForm.mpullback (Opens.inclusion inf_le_left) (contMDiff_inclusion _) α -
-      SmoothForm.mpullback (Opens.inclusion inf_le_right) (contMDiff_inclusion _) β = φ.1)
+      SmoothForm.mpullback (Opens.inclusion inf_le_right) (contMDiff_inclusion _) β = φ.val)
     (σ : closedForms I (U ⊔ V : Opens M) (k + 1))
-    (hσU : SmoothForm.mpullback (Opens.inclusion le_sup_left) (contMDiff_inclusion _) σ.1 =
+    (hσU : SmoothForm.mpullback (Opens.inclusion le_sup_left) (contMDiff_inclusion _) σ.val =
       mextDerivₗ I k α)
-    (hσV : SmoothForm.mpullback (Opens.inclusion le_sup_right) (contMDiff_inclusion _) σ.1 =
+    (hσV : SmoothForm.mpullback (Opens.inclusion le_sup_right) (contMDiff_inclusion _) σ.val =
       mextDerivₗ I k β) :
     mayerVietorisδ I U V k (mk I k φ) = mk I (k + 1) σ := by
   -- The lift of `φ` to `Ω^•(U) ⊞ Ω^•(V)` is the pair `(α, β)`.
@@ -485,7 +497,7 @@ theorem mayerVietorisδ_mk (U V : Opens M) {k : ℕ} (φ : closedForms I (U ⊓ 
       (deRhamComplex.map (I := I) (I' := I) (Opens.inclusion (inf_le_left : U ⊓ V ≤ U))
         (contMDiff_inclusion _))
       (-deRhamComplex.map (I := I) (I' := I) (Opens.inclusion (inf_le_right : U ⊓ V ≤ V))
-        (contMDiff_inclusion _))).f k x₂ = (deRhamComplexXIso I k).inv φ.1 := by
+        (contMDiff_inclusion _))).f k x₂ = (deRhamComplexXIso I k).inv φ.val := by
     rw [← hαβ, map_sub, ← deRhamComplex.map_f_inv_apply, ← deRhamComplex.map_f_inv_apply]
     simp [x₂, ← ModuleCat.comp_apply, sub_eq_add_neg]
   -- The image of `σ` in `Ω^•(U) ⊞ Ω^•(V)` is the differential of the lift.
@@ -493,9 +505,9 @@ theorem mayerVietorisδ_mk (U V : Opens M) {k : ℕ} (φ : closedForms I (U ⊓ 
       (deRhamComplex.map (I := I) (I' := I) (Opens.inclusion (le_sup_left : U ≤ U ⊔ V))
         (contMDiff_inclusion _))
       (deRhamComplex.map (I := I) (I' := I) (Opens.inclusion (le_sup_right : V ≤ U ⊔ V))
-        (contMDiff_inclusion _))).f (k + 1) ((deRhamComplexXIso I (k + 1)).inv σ.1) =
+        (contMDiff_inclusion _))).f (k + 1) ((deRhamComplexXIso I (k + 1)).inv σ.val) =
       (deRhamComplex I U ⊞ deRhamComplex I V).d k (k + 1) x₂ := by
-    simp [x₂, biprod.lift_eq, deRhamComplex.map_f_inv_apply _ _ (k + 1) σ.1, hσU, hσV,
+    simp [x₂, biprod.lift_eq, deRhamComplex.map_f_inv_apply _ _ (k + 1) σ.val, hσU, hσV,
       HomologicalComplex.Hom.comm_apply, deRhamComplex_d_apply]
   rw [mayerVietorisδ, mk_eq_moduleCatHomologyClass, mk_eq_moduleCatHomologyClass,
     HomologicalComplex.moduleCatHomologyClass_apply,
@@ -518,12 +530,12 @@ on `U ⊔ V` supported in `V` such that `1 - ρ` is supported in `U`, and let `�
 class of `φ` to the class of `σ`. -/
 theorem mayerVietorisδ_mk_eq_mk_extendByZero (φ : closedForms I (U ⊓ V : Opens M) k)
     (σ : closedForms I (U ⊔ V : Opens M) (k + 1))
-    (hσ : (σ.1 : RoughForm I (U ⊔ V : Opens M) ℝ (k + 1)) = RoughForm.extendByZero (U ⊔ V)
-      (mextDeriv fun y : (U ⊓ V : Opens M) ↦ ρ (Opens.inclusion inf_le_sup y) • φ.1.1 y)) :
+    (hσ : (σ.val : RoughForm I (U ⊔ V : Opens M) ℝ (k + 1)) = RoughForm.extendByZero (U ⊔ V)
+      (mextDeriv fun y : (U ⊓ V : Opens M) ↦ ρ (Opens.inclusion inf_le_sup y) • φ.val.val y)) :
     mayerVietorisδ I U V k (mk I k φ) = mk I (k + 1) σ := by
   obtain ⟨hU, hV⟩ := mpullback_extendByZero_mextDeriv_cutoff hρ hρV hρU φ
-  exact mayerVietorisδ_mk U V φ (cutoffLeft hρ hρV φ.1) (cutoffRight hρ hρU φ.1)
-    (mpullback_cutoffLeft_sub_mpullback_cutoffRight hρ hρV hρU φ.1) σ
+  exact mayerVietorisδ_mk U V φ (cutoffLeft hρ hρV φ.val) (cutoffRight hρ hρU φ.val)
+    (mpullback_cutoffLeft_sub_mpullback_cutoffRight hρ hρV hρU φ.val) σ
     (Subtype.ext ((SmoothForm.coe_mpullback _ _ _).trans (hσ ▸ hU)))
     (Subtype.ext ((SmoothForm.coe_mpullback _ _ _).trans (hσ ▸ hV)))
 
@@ -550,19 +562,19 @@ theorem mayerVietorisδ_naturality {U V : Opens M} {U' V' : Opens M'}
   obtain ⟨φ, rfl⟩ := mk_surjective I' k c
   -- Write `φ = α - β` with `α` on `U'` and `β` on `V'`, and choose the closed form `σ` on
   -- `U' ⊔ V'` restricting to `dα` and `dβ`, which represents the image of `[φ]`.
-  obtain ⟨⟨α, β⟩, hαβ⟩ := SmoothForm.surjective_mayerVietoris U' V' φ.1
+  obtain ⟨⟨α, β⟩, hαβ⟩ := SmoothForm.surjective_mayerVietoris U' V' φ.val
   rw [LinearMap.coprod_apply, LinearMap.neg_apply, ← sub_eq_add_neg] at hαβ
-  obtain ⟨σ, hσU, hσV⟩ := exists_closedForms_mpullback_eq_mextDerivₗ α β (hαβ ▸ φ.2)
+  obtain ⟨σ, hσU, hσV⟩ := exists_closedForms_mpullback_eq_mextDerivₗ α β (hαβ ▸ φ.property)
   rw [mayerVietorisδ_mk U' V' φ α β hαβ σ hσU hσV, map_mk, map_mk]
   -- The restrictions of `f` to `U → U'` and to `V → V'`.
-  let fU : U → U' := fun x ↦ ⟨f (Opens.inclusion le_sup_left x), hfU _ x.2⟩
-  let fV : V → V' := fun x ↦ ⟨f (Opens.inclusion le_sup_right x), hfV _ x.2⟩
+  let fU : U → U' := fun x ↦ ⟨f (Opens.inclusion le_sup_left x), hfU _ x.property⟩
+  let fV : V → V' := fun x ↦ ⟨f (Opens.inclusion le_sup_right x), hfV _ x.property⟩
   -- Read in `M'`, they are the composites of `f` with the inclusions of `U` and `V` in `U ⊔ V`.
   have hfU' : ContMDiff I I' ∞ fU := (ContMDiff.subtypeVal_comp_iff U' fU).mp
-    (contMDiff_subtype_val.comp (hf.comp (contMDiff_inclusion le_sup_left)) :
+    (contMDiff_subtypeVal.comp (hf.comp (contMDiff_inclusion le_sup_left)) :
       ContMDiff I I' ∞ (Subtype.val ∘ f ∘ Opens.inclusion le_sup_left))
   have hfV' : ContMDiff I I' ∞ fV := (ContMDiff.subtypeVal_comp_iff V' fV).mp
-    (contMDiff_subtype_val.comp (hf.comp (contMDiff_inclusion le_sup_right)) :
+    (contMDiff_subtypeVal.comp (hf.comp (contMDiff_inclusion le_sup_right)) :
       ContMDiff I I' ∞ (Subtype.val ∘ f ∘ Opens.inclusion le_sup_right))
   have hgU : Opens.inclusion inf_le_left ∘ g = fU ∘ Opens.inclusion inf_le_left :=
     funext fun x ↦ Subtype.ext (hfg x)
@@ -666,33 +678,69 @@ theorem mayerVietorisδ_const (U V : Opens M) (r : ℝ) :
     mayerVietorisδ I U V 0 (const I (U ⊓ V : Opens M) r) = 0 := by
   -- The constant function `r` on `U ⊓ V` is the restriction of the closed constant form `r` on `U`.
   let α := (closedFormsZeroEquiv I U).symm (LocallyConstant.const U r)
-  rw [const_eq_mk, mayerVietorisδ_mk U V _ α.1 0 ?_ 0 ?_ ?_, map_zero]
+  rw [const_eq_mk, mayerVietorisδ_mk U V _ α.val 0 ?_ 0 ?_ ?_, map_zero]
   · rw [map_zero, sub_zero]
     refine Subtype.ext ?_
     simp [α, coe_closedFormsZeroEquiv_symm_apply, mpullback_ofFunction]
-  · rw [Submodule.coe_zero, map_zero, (mem_closedForms_iff_mextDerivₗ_eq_zero I α.1).mp α.2]
+  · rw [Submodule.coe_zero, map_zero, (mem_closedForms_iff_mextDerivₗ_eq_zero I α.val).mp
+      α.property]
   · rw [Submodule.coe_zero, map_zero, map_zero]
 
 omit [FiniteDimensional ℝ E] [T2Space M] [SigmaCompactSpace M] in
-/-- A smooth function `γ` on an open subset `W ≤ U ⊔ V`, whose differential is the restriction of
-the differential of a smooth function `g` on `U ⊔ V`, differs from the restriction of `g` by a
-constant when `W` is preconnected. -/
-private theorem exists_forall_sub_eq_of_mextDerivₗ_eq {U V W : Opens M} (hW : W ≤ U ⊔ V)
-    [PreconnectedSpace W] (γ : SmoothForm I W ℝ 0) (g : SmoothForm I (U ⊔ V : Opens M) ℝ 0)
+/-- A smooth function `γ` on an open subset `W ≤ W'`, whose differential is the restriction of the
+differential of a smooth function `g` on `W'`, differs from the restriction of `g` by a closed
+`0`-form. -/
+private theorem sub_mpullback_mem_closedForms_of_mextDerivₗ_eq {W W' : Opens M} (hW : W ≤ W')
+    (γ : SmoothForm I W ℝ 0) (g : SmoothForm I W' ℝ 0)
     (hγ : mextDerivₗ I 0 γ = SmoothForm.mpullback (Opens.inclusion hW) (contMDiff_inclusion _)
       (mextDerivₗ I 0 g)) :
-    ∃ a : ℝ, ∀ x : W, γ.1 x 0 - g.1 (Opens.inclusion hW x) 0 = a := by
-  set ψ := γ - SmoothForm.mpullback (Opens.inclusion hW) (contMDiff_inclusion _) g
-  have hψ : ψ ∈ closedForms I W 0 := by
-    rw [mem_closedForms_iff_mextDerivₗ_eq_zero, map_sub, SmoothForm.mextDerivₗ_mpullback, hγ,
-      sub_self]
-  obtain ⟨a, ha⟩ := ((mem_closedForms_zero_iff I ψ).mp hψ).exists_eq_const
-  refine ⟨a, fun x ↦ ?_⟩
-  have hx := congrFun ha x
-  simp only [Function.const_apply, ψ, Submodule.coe_sub, SmoothForm.coe_mpullback] at hx
-  rw [Pi.sub_apply, mpullback_inclusion_apply] at hx
-  -- `g` is evaluated at the inclusion of `x`, whose tangent space is that of `x`.
-  exact hx
+    γ - SmoothForm.mpullback (Opens.inclusion hW) (contMDiff_inclusion _) g ∈
+      closedForms I W 0 := by
+  rw [mem_closedForms_iff_mextDerivₗ_eq_zero, map_sub, SmoothForm.mextDerivₗ_mpullback, hγ,
+    sub_self]
+
+/-- **Degree-zero Mayer–Vietoris exactness.** The connecting map `H⁰(U ⊓ V) → H¹(U ⊔ V)` kills a
+class exactly when its locally constant function is the difference of the restrictions of a locally
+constant function on `U` and a locally constant function on `V`. -/
+theorem mayerVietorisδ_zero_apply_eq_zero_iff (U V : Opens M)
+    (c : deRhamCohomology I (U ⊓ V : Opens M) 0) :
+    mayerVietorisδ I U V 0 c = 0 ↔ ∃ (g : LocallyConstant U ℝ) (k : LocallyConstant V ℝ),
+      ∀ x, deRhamCohomologyZeroEquiv I _ c x =
+        g (Opens.inclusion inf_le_left x) - k (Opens.inclusion inf_le_right x) := by
+  obtain ⟨φ, rfl⟩ := mk_surjective I 0 c
+  simp only [deRhamCohomologyZeroEquiv_mk]
+  constructor
+  · intro hc
+    -- Write `φ = α - β` and let `σ` be the closed `1`-form on `U ⊔ V` restricting to `dα`, `dβ`.
+    obtain ⟨⟨α, β⟩, hαβ⟩ := SmoothForm.surjective_mayerVietoris U V φ.val
+    rw [LinearMap.coprod_apply, LinearMap.neg_apply, ← sub_eq_add_neg] at hαβ
+    obtain ⟨σ, hσU, hσV⟩ := exists_closedForms_mpullback_eq_mextDerivₗ α β (hαβ ▸ φ.property)
+    -- Since `[σ] = 0`, `σ = dg`; then `α - g` is closed on `U` and `β - g` is closed on `V`.
+    rw [mayerVietorisδ_mk U V φ α β hαβ σ hσU hσV, mk_eq_zero_iff, exactForms_succ] at hc
+    obtain ⟨g, hg⟩ := hc
+    refine ⟨closedFormsZeroEquiv I U
+        ⟨_, sub_mpullback_mem_closedForms_of_mextDerivₗ_eq le_sup_left α g (hg ▸ hσU.symm)⟩,
+      closedFormsZeroEquiv I V
+        ⟨_, sub_mpullback_mem_closedForms_of_mextDerivₗ_eq le_sup_right β g (hg ▸ hσV.symm)⟩,
+      fun x ↦ ?_⟩
+    rw [← hαβ, closedFormsZeroEquiv_apply, closedFormsZeroEquiv_apply]
+    simp only [Submodule.coe_sub, SmoothForm.coe_mpullback, Pi.sub_apply,
+      mpullback_inclusion_apply]
+    -- Both inclusions of `x` into `U ⊔ V` are the same point, so the values of `g` cancel.
+    exact (sub_sub_sub_cancel_right _ _ _).symm
+  · rintro ⟨g, k, hgk⟩
+    -- `φ` is `α - β` for the closed forms `α` of `g` and `β` of `k`, so its class goes to `0`.
+    let α := (closedFormsZeroEquiv I U).symm g
+    let β := (closedFormsZeroEquiv I V).symm k
+    rw [mayerVietorisδ_mk U V φ α.val β.val ?_ 0 ?_ ?_, map_zero]
+    · refine Subtype.ext ?_
+      rw [RoughForm.eq_ofFunction φ.val.val]
+      ext x v
+      simp [α, β, mpullback_ofFunction, ← hgk x]
+    · rw [Submodule.coe_zero, map_zero, (mem_closedForms_iff_mextDerivₗ_eq_zero I α.val).mp
+        α.property]
+    · rw [Submodule.coe_zero, map_zero, (mem_closedForms_iff_mextDerivₗ_eq_zero I β.val).mp
+        β.property]
 
 /-- **The kernel of the degree-zero Mayer–Vietoris connecting map.** When `U` and `V` are
 preconnected, the connecting map `H⁰(U ⊓ V) → H¹(U ⊔ V)` kills exactly the classes of constant
@@ -701,29 +749,146 @@ theorem ker_mayerVietorisδ_zero (U V : Opens M) [PreconnectedSpace U] [Preconne
     LinearMap.ker (mayerVietorisδ I U V 0) = LinearMap.range (const I (U ⊓ V : Opens M)) := by
   refine le_antisymm (fun c hc ↦ ?_)
     (LinearMap.range_le_ker_iff.mpr (LinearMap.ext (mayerVietorisδ_const U V)))
-  obtain ⟨φ, rfl⟩ := mk_surjective I 0 c
-  -- Write `φ = α - β` and let `σ` be the closed `1`-form on `U ⊔ V` restricting to `dα` and `dβ`.
-  obtain ⟨⟨α, β⟩, hαβ⟩ := SmoothForm.surjective_mayerVietoris U V φ.1
-  rw [LinearMap.coprod_apply, LinearMap.neg_apply, ← sub_eq_add_neg] at hαβ
-  obtain ⟨σ, hσU, hσV⟩ := exists_closedForms_mpullback_eq_mextDerivₗ α β (hαβ ▸ φ.2)
-  -- Since `[σ] = 0`, `σ = dg` for a function `g` on `U ⊔ V`, so `α - g` and `β - g` are constant.
-  rw [LinearMap.mem_ker, mayerVietorisδ_mk U V φ α β hαβ σ hσU hσV, mk_eq_zero_iff,
-    exactForms_succ] at hc
-  obtain ⟨g, hg⟩ := hc
-  obtain ⟨a, ha⟩ := exists_forall_sub_eq_of_mextDerivₗ_eq le_sup_left α g (hg ▸ hσU.symm)
-  obtain ⟨b, hb⟩ := exists_forall_sub_eq_of_mextDerivₗ_eq le_sup_right β g (hg ▸ hσV.symm)
+  -- The locally constant functions on preconnected `U` and `V` are constant.
+  obtain ⟨g, k, hgk⟩ := (mayerVietorisδ_zero_apply_eq_zero_iff U V c).1 hc
+  obtain ⟨a, rfl⟩ := g.exists_eq_const
+  obtain ⟨b, rfl⟩ := k.exists_eq_const
   refine ⟨a - b, (deRhamCohomologyZeroEquiv I _).injective ?_⟩
   ext x
-  rw [deRhamCohomologyZeroEquiv_const, deRhamCohomologyZeroEquiv_mk, LocallyConstant.coe_const,
-    Function.const_apply, ← hαβ, ← ha (Opens.inclusion inf_le_left x),
-    ← hb (Opens.inclusion inf_le_right x)]
-  simp only [Submodule.coe_sub, SmoothForm.coe_mpullback, Pi.sub_apply,
-    mpullback_inclusion_apply]
-  -- Both inclusions of `x` into `U ⊔ V` are the same point, so the values of `g` cancel.
-  exact sub_sub_sub_cancel_right _ _ _
+  simp only [deRhamCohomologyZeroEquiv_const, hgk, LocallyConstant.coe_const,
+    Function.const_apply]
+
+/-- If `U ⊔ V` has no first de Rham cohomology, then every locally constant function on `U ⊓ V` is
+the difference of the restrictions of a locally constant function on `U` and a locally constant
+function on `V`. Without the vanishing of `H¹(U ⊔ V)` this fails: on the circle covered by two arcs
+meeting in two intervals, the function equal to `1` on one interval and `0` on the other is not of
+this form. -/
+theorem exists_locallyConstant_eq_inclusion_sub_inclusion {U V : Opens M}
+    (h : Subsingleton (deRhamCohomology I (U ⊔ V : Opens M) 1))
+    (φ : LocallyConstant (U ⊓ V : Opens M) ℝ) :
+    ∃ (g : LocallyConstant U ℝ) (k : LocallyConstant V ℝ),
+      ∀ x, φ x = g (Opens.inclusion inf_le_left x) - k (Opens.inclusion inf_le_right x) := by
+  simpa using (mayerVietorisδ_zero_apply_eq_zero_iff U V
+    ((deRhamCohomologyZeroEquiv I _).symm φ)).1 (Subsingleton.elim _ _)
 
 end deRhamCohomology
 
+/-- **The first de Rham cohomology of a union.** If `U` and `V` have no first de Rham cohomology
+and their intersection is preconnected, then `U ⊔ V` has no first de Rham cohomology. -/
+theorem subsingleton_deRhamCohomology_one_sup {U V : Opens M}
+    [PreconnectedSpace (U ⊓ V : Opens M)] (hU : Subsingleton (deRhamCohomology I U 1))
+    (hV : Subsingleton (deRhamCohomology I V 1)) :
+    Subsingleton (deRhamCohomology I (U ⊔ V : Opens M) 1) := by
+  -- Every class is the image of a degree-zero class on `U ⊓ V`, which is constant.
+  refine subsingleton_of_forall_eq 0 fun c ↦ ?_
+  obtain ⟨d, rfl⟩ := deRhamCohomology.mayerVietorisδ_surjective (k := 0) hU hV c
+  obtain ⟨r, rfl⟩ := deRhamCohomology.exists_eq_const d
+  exact deRhamCohomology.mayerVietorisδ_const U V r
+
 end Connecting
+
+
+section LongExact
+
+/-! ### The Mayer–Vietoris long exact sequence as linear maps -/
+
+namespace deRhamCohomology
+
+section Maps
+
+variable [IsManifold I 2 M]
+
+variable (I) in
+/-- The map `H^k(U ⊔ V) → H^k(U) × H^k(V)` of the Mayer–Vietoris sequence of de Rham cohomology,
+whose components are the restrictions to `U` and to `V`. -/
+def mayerVietorisToProd (U V : Opens M) (k : ℕ) :
+    deRhamCohomology I (U ⊔ V : Opens M) k →ₗ[ℝ] deRhamCohomology I U k × deRhamCohomology I V k :=
+  (map (Opens.inclusion (le_sup_left : U ≤ U ⊔ V)) (contMDiff_inclusion _) k).prod
+    (map (Opens.inclusion (le_sup_right : V ≤ U ⊔ V)) (contMDiff_inclusion _) k)
+
+@[simp]
+theorem mayerVietorisToProd_apply (U V : Opens M) (k : ℕ)
+    (x : deRhamCohomology I (U ⊔ V : Opens M) k) :
+    mayerVietorisToProd I U V k x =
+      (map (Opens.inclusion (le_sup_left : U ≤ U ⊔ V)) (contMDiff_inclusion _) k x,
+        map (Opens.inclusion (le_sup_right : V ≤ U ⊔ V)) (contMDiff_inclusion _) k x) :=
+  (rfl)
+
+variable (I) in
+/-- The map `H^k(U) × H^k(V) → H^k(U ⊓ V)` of the Mayer–Vietoris sequence of de Rham cohomology:
+the difference of the restrictions to `U ⊓ V`. -/
+def mayerVietorisFromProd (U V : Opens M) (k : ℕ) :
+    deRhamCohomology I U k × deRhamCohomology I V k →ₗ[ℝ]
+      deRhamCohomology I (U ⊓ V : Opens M) k :=
+  (map (Opens.inclusion (inf_le_left : U ⊓ V ≤ U)) (contMDiff_inclusion _) k).coprod
+    (-map (Opens.inclusion (inf_le_right : U ⊓ V ≤ V)) (contMDiff_inclusion _) k)
+
+@[simp]
+theorem mayerVietorisFromProd_apply (U V : Opens M) (k : ℕ)
+    (x : deRhamCohomology I U k × deRhamCohomology I V k) :
+    mayerVietorisFromProd I U V k x =
+      map (Opens.inclusion (inf_le_left : U ⊓ V ≤ U)) (contMDiff_inclusion _) k x.1 -
+        map (Opens.inclusion (inf_le_right : U ⊓ V ≤ V)) (contMDiff_inclusion _) k x.2 := by
+  simp [mayerVietorisFromProd, sub_eq_add_neg]
+
+/-- The pair of maps induced on cohomology by the first map of the Mayer–Vietoris short complex is
+`mayerVietorisToProd`. -/
+private theorem prod_homologyMap (U V : Opens M) (k : ℕ) :
+    (HomologicalComplex.homologyMap (deRhamComplex.map (I := I) (I' := I)
+        (Opens.inclusion (le_sup_left : U ≤ U ⊔ V)) (contMDiff_inclusion _)) k).hom.prod
+      (HomologicalComplex.homologyMap (deRhamComplex.map (I := I) (I' := I)
+        (Opens.inclusion (le_sup_right : V ≤ U ⊔ V)) (contMDiff_inclusion _)) k).hom =
+      mayerVietorisToProd I U V k := by
+  simp [mayerVietorisToProd, deRhamComplex.homologyMap_map]
+
+/-- The sum of the maps induced on cohomology by the second map of the Mayer–Vietoris short
+complex is `mayerVietorisFromProd`. -/
+private theorem coprod_homologyMap (U V : Opens M) (k : ℕ) :
+    (HomologicalComplex.homologyMap (deRhamComplex.map (I := I) (I' := I)
+        (Opens.inclusion (inf_le_left : U ⊓ V ≤ U)) (contMDiff_inclusion _)) k).hom.coprod
+      (HomologicalComplex.homologyMap (-deRhamComplex.map (I := I) (I' := I)
+        (Opens.inclusion (inf_le_right : U ⊓ V ≤ V)) (contMDiff_inclusion _)) k).hom =
+      mayerVietorisFromProd I U V k := by
+  simp [mayerVietorisFromProd, HomologicalComplex.homologyMap_neg, deRhamComplex.homologyMap_map]
+
+/-- The map `H⁰(U ⊔ V) → H⁰(U) × H⁰(V)` at the start of the Mayer–Vietoris sequence is injective:
+a closed function on `U ⊔ V` vanishing on `U` and on `V` vanishes. -/
+theorem mayerVietorisToProd_zero_injective (U V : Opens M) :
+    Function.Injective (mayerVietorisToProd I U V 0) := by
+  refine (injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_
+  obtain ⟨φ, rfl⟩ := mk_surjective I 0 x
+  simp only [mayerVietorisToProd_apply, map_mk, Prod.mk_eq_zero, mk_eq_zero_iff, exactForms_zero,
+    Submodule.mem_bot] at hx ⊢
+  refine SmoothForm.injective_mayerVietoris (I := I) (F := ℝ) U V ?_
+  simp [← closedForms.coe_mpullback, hx.1, hx.2]
+
+end Maps
+
+variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] [SigmaCompactSpace M]
+
+/-- **Exactness of the Mayer–Vietoris sequence at `H^k(U) × H^k(V)`.** -/
+theorem exact_mayerVietorisToProd_fromProd (U V : Opens M) (k : ℕ) :
+    Function.Exact (mayerVietorisToProd I U V k) (mayerVietorisFromProd I U V k) := by
+  rw [← prod_homologyMap, ← coprod_homologyMap]
+  exact (ShortComplex.moduleCat_exact_biprod_lift_desc_iff _).1
+    ((mayerVietorisShortComplex_shortExact (I := I) U V).biprod_homology_exact₂ k)
+
+/-- **Exactness of the Mayer–Vietoris sequence at `H^k(U ⊓ V)`.** -/
+theorem exact_mayerVietorisFromProd_δ (U V : Opens M) (k : ℕ) :
+    Function.Exact (mayerVietorisFromProd I U V k) (mayerVietorisδ I U V k) := by
+  rw [← coprod_homologyMap]
+  exact (ShortComplex.moduleCat_exact_biprod_desc_iff _).1
+    ((mayerVietorisShortComplex_shortExact (I := I) U V).biprod_homology_exact₃ k (k + 1) rfl)
+
+/-- **Exactness of the Mayer–Vietoris sequence at `H^{k+1}(U ⊔ V)`.** -/
+theorem exact_mayerVietorisδ_toProd (U V : Opens M) (k : ℕ) :
+    Function.Exact (mayerVietorisδ I U V k) (mayerVietorisToProd I U V (k + 1)) := by
+  rw [← prod_homologyMap]
+  exact (ShortComplex.moduleCat_exact_biprod_lift_iff _).1
+    ((mayerVietorisShortComplex_shortExact (I := I) U V).biprod_homology_exact₁ k (k + 1) rfl)
+
+end deRhamCohomology
+
+end LongExact
 
 end TauCeti

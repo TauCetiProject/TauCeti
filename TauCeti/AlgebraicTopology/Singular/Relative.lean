@@ -5,15 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Relative
 public import Mathlib.Topology.Category.TopCat.EpiMono
 public import Mathlib.Topology.Category.TopPair
-public import TauCeti.Algebra.Homology.HomologySequenceLemmas
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Restrict
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.AlgebraicTopology.Singular.Basic
 public import TauCeti.Topology.Category.TopCat.Subspace
+public import TauCeti.Topology.Category.TopCat.Opens
 public import TauCeti.Topology.Category.TopPair
 
 /-!
@@ -23,17 +25,22 @@ This file sends a topological pair to the corresponding pair of singular simplic
 defines its relative singular chain complex.  The complex is the cokernel of the inclusion of the
 singular chains of the subspace into those of the ambient space.  In an abelian coefficient
 category this gives the short exact sequence of chain complexes used to construct the connecting
-morphisms in relative singular homology.  A simplex of the singular pair restricted to a subcomplex
-of the ambient simplicial set comes from the subspace exactly when its image lies in the subspace
+morphisms in relative singular homology, and an identification of the relative singular
+chain complex with the cokernel of that inclusion (`TopPair.cokernelSingularChainComplexIso`).
+A simplex of the singular pair restricted to a subcomplex of the ambient simplicial set comes
+from the subspace exactly when its image lies in the subspace
 (`TopPair.mem_range_restrict_hom_app_iff`).
 
 The quotient map on zeroth homology is an epimorphism already for preadditive coefficients with
-coproducts and homology.
+coproducts and homology. Degree equalities induce canonical isomorphisms on relative homology
+(`TopPair.singularHomologyCongrDegreeIso`).
 
 In abelian coefficients, the long exact sequence of a pair gives five lemmas comparing maps of
 pairs: on relative homology (`TopPair.isIso_singularHomologyMap_of_isIso`) and on the homology of
-the ambient spaces (`TopPair.isIso_homologyMap_fst_of_isIso`, and
-`TopPair.isIso_homologyMap_fst_of_isZero` when the relative homology vanishes).
+the ambient spaces when the relative homology vanishes (`TopPair.isIso_homologyMap_fst_of_isZero`).
+The five lemma for the ambient spaces, `TopPair.isIso_homologyMap_fst_of_isIso`, is the case of
+the zero objects of its form modulo a Serre class, in
+`TauCeti.AlgebraicTopology.Singular.SerreClass`.
 
 The construction follows the quotient-chain presentation in Eilenberg--Steenrod, *Foundations of
 Algebraic Topology*, Chapters I--III, and is implemented using Mathlib's `SSetPair` relative-chain
@@ -44,7 +51,7 @@ functor.
 
 noncomputable section
 
-open CategoryTheory Limits
+open Simplicial CategoryTheory Limits TopologicalSpace
 
 universe w v u
 
@@ -90,9 +97,9 @@ exactly when its image lies in the subspace. -/
 lemma mem_range_restrict_hom_app_iff (P : TopPair.{w}) (S : (toSSetPair.obj P).right.Subcomplex)
     {n : SimplexCategoryᵒᵖ} (x : ((toSSetPair.obj P).restrict S).right.obj n) :
     x ∈ Set.range (((toSSetPair.obj P).restrict S).hom.app n) ↔
-      Set.range (P.fst.toSSetObjEquiv n x.1) ⊆ Set.range P.map :=
+      Set.range (P.fst.toSSetObjEquiv n x.val) ⊆ Set.range P.map :=
   (SSetPair.mem_range_restrict_hom_app_iff _ _ x).trans
-    (P.isEmbedding_map.isInducing.mem_range_toSSet_map_app_iff n x.1)
+    (P.isEmbedding_map.isInducing.mem_range_toSSet_map_app_iff n x.val)
 
 section ofInclusionMap
 
@@ -176,6 +183,14 @@ noncomputable def singularChainComplexFunctor :
 
 variable {C} (P P' : TopPair.{w}) (f : P ⟶ P') (R : C)
 
+/-- Open inclusions induce monomorphisms of singular chains in each degree. -/
+instance _root_.TopCat.mono_chainComplexMap_inclusion'_f {X : TopCat.{w}} (U : Opens X)
+    (R : C) (q : ℕ) :
+    Mono ((SSet.chainComplexMap (TopCat.toSSet.map (Opens.inclusion' U)) R).f q) :=
+  inferInstanceAs (Mono ((SSet.chainComplexMap
+    (TopPair.toSSetPair.obj (TopPair.ofSubset (U : Set X))).hom R).f q))
+
+
 /-- The relative singular chain complex of a topological pair. -/
 noncomputable abbrev singularChainComplex : ChainComplex C ℕ :=
   (toSSetPair.obj P).chainComplex R
@@ -212,6 +227,20 @@ noncomputable abbrev singularChainComplexMap :
     P.singularChainComplex R ⟶ P'.singularChainComplex R :=
   SSetPair.chainComplexMap (toSSetPair.map f) R
 
+/-- Relative singular chains send the identity map of a pair to the identity chain map. -/
+@[simp]
+lemma singularChainComplexMap_id : singularChainComplexMap (𝟙 P) R = 𝟙 _ := by
+  simp only [singularChainComplexMap, SSetPair.chainComplexMap, CategoryTheory.Functor.map_id]
+
+variable {P P'} in
+/-- Relative singular chains send a composite of maps of pairs to the composite of the induced
+chain maps. -/
+@[reassoc]
+lemma singularChainComplexMap_comp {P'' : TopPair.{w}} (g : P' ⟶ P'') :
+    singularChainComplexMap (f ≫ g) R =
+      singularChainComplexMap f R ≫ singularChainComplexMap g R := by
+  simp only [singularChainComplexMap, SSetPair.chainComplexMap, Functor.map_comp]
+
 @[simp]
 lemma singularChainComplexFunctor_obj_map :
     ((singularChainComplexFunctor C).obj R).map f =
@@ -241,6 +270,42 @@ lemma singularChainComplexπ_pair_naturality
     ((SSetPair.chainComplexFunctorπ C).app M).naturality (toSSetPair.map f)
   rwa [toSSetPair_map_right] at h
 
+/-- The quotient map from ambient to relative singular chains is natural in the map of pairs of
+subsets `(X, B) ⟶ (Y, B')` induced by a continuous map `g : X ⟶ Y` carrying `B` into `B'`. -/
+lemma singularChainComplexπ_ofSubsetMap_naturality {X Y : TopCat.{w}} (g : X ⟶ Y) {B : Set X}
+    {B' : Set Y} (hB : Set.MapsTo g B B') (M : C) :
+    SSet.chainComplexMap (TopCat.toSSet.map g) M ≫ (ofSubset B').singularChainComplexπ M =
+      (ofSubset B).singularChainComplexπ M ≫ singularChainComplexMap (ofSubsetMap g hB) M := by
+  have h := singularChainComplexπ_pair_naturality (ofSubsetMap g hB) M
+  rwa [ofSubsetMap_fst] at h
+
+/-- `singularChainComplexπ_ofSubsetMap_naturality` followed by a further map `h` out of the relative
+chains. -/
+-- Stated by hand rather than by `reassoc`: the domain of `singularChainComplexπ` agrees with the
+-- codomain of `SSet.chainComplexMap` only up to unfolding `toSSetPair`, so `reassoc` cannot
+-- reassociate the left-hand side. Elaborating `singularChainComplexπ M ≫ h` on its own keeps its
+-- source in the form of the source of `singularChainComplexπ`.
+lemma singularChainComplexπ_ofSubsetMap_naturality_assoc {X Y : TopCat.{w}} (g : X ⟶ Y)
+    {B : Set X} {B' : Set Y} (hB : Set.MapsTo g B B') (M : C) {K : ChainComplex C ℕ}
+    (h : (ofSubset B').singularChainComplex M ⟶ K) :
+    SSet.chainComplexMap (TopCat.toSSet.map g) M ≫ ((ofSubset B').singularChainComplexπ M ≫ h :) =
+      (ofSubset B).singularChainComplexπ M ≫ singularChainComplexMap (ofSubsetMap g hB) M ≫ h :=
+  (Category.assoc _ _ _).symm.trans
+    ((eq_whisker (singularChainComplexπ_ofSubsetMap_naturality g hB M) h).trans
+      (Category.assoc _ _ _))
+
+/-- A map of pairs `(X, A) ⟶ (X, B)` given by the identity of `X` carries the quotient map to the
+relative singular chains of `(X, A)` to the quotient map to those of `(X, B)`. -/
+@[reassoc]
+lemma singularChainComplexπ_comp_singularChainComplexMap_of_fst_eq_id {X A B : TopCat.{w}}
+    {i : A ⟶ X} {j : B ⟶ X} {hi : Topology.IsEmbedding i} {hj : Topology.IsEmbedding j}
+    (f : TopPair.of i hi ⟶ TopPair.of j hj) (hf : Hom.fst f = 𝟙 X) :
+    (TopPair.of i hi).singularChainComplexπ R ≫ singularChainComplexMap f R =
+      (TopPair.of j hj).singularChainComplexπ R := by
+  rw [← singularChainComplexπ_pair_naturality, hf]
+  exact (congrArg (· ≫ _) ((TopCat.toSSet ⋙ (SSet.chainComplexFunctor C).obj R).map_id X)).trans
+    (Category.id_comp _)
+
 /-- The quotient map from ambient to relative singular chains is natural in the coefficient
 object. -/
 @[reassoc]
@@ -265,6 +330,16 @@ lemma chainComplexMap_comp_singularChainComplexπ :
   rw [← toSSetPair_obj_hom]
   exact (toSSetPair.obj P).chainComplex_condition R
 
+/-- A simplex lying in the subspace of a pair vanishes in relative singular chains. -/
+lemma ιChainComplex_comp_singularChainComplexπ_eq_zero {n : ℕ}
+    (σ : (TopCat.toSSet.obj P.fst) _⦋n⦌)
+    (hσ : Set.range (P.fst.toSSetObjEquiv _ σ) ⊆ Set.range P.map) :
+    (TopCat.toSSet.obj P.fst).ιChainComplex σ ≫ (P.singularChainComplexπ R).f n = 0 := by
+  obtain ⟨τ, hτ⟩ := (P.isEmbedding_map.isInducing.mem_range_toSSet_map_app_iff _ σ).2 hσ
+  -- The relative quotient source is the ambient singular chains after toSSetPair unfolds.
+  erw [← hτ, ← SSet.ι_chainComplexMap_f, Category.assoc, ← HomologicalComplex.comp_f,
+    chainComplexMap_comp_singularChainComplexπ, HomologicalComplex.zero_f, comp_zero]
+
 variable {P P'} in
 /-- A map of pairs `f : (X, A) ⟶ (X', A')` whose map of ambient spaces factors through the
 subspace `A'` induces the zero map on relative singular chains. -/
@@ -281,6 +356,16 @@ lemma singularChainComplexMap_eq_zero_of_fac (g : P.fst ⟶ P'.snd) (hg : g ≫ 
   -- `(toSSetPair.obj P').right.chainComplex R` and as `(TopCat.toSSet.obj P'.fst).chainComplex R`.
   exact (Category.assoc _ _ _).trans
     ((congrArg (_ ≫ ·) (chainComplexMap_comp_singularChainComplexπ P' R)).trans comp_zero)
+
+/-- **A pair whose subspace is everything has zero relative singular chains.** If the embedding
+of the subspace of `P` is surjective, for instance for `(X, X)`, the relative singular chain
+complex of `P` is zero, and in particular acyclic. -/
+lemma isZero_singularChainComplex_of_surjective_map (hP : Function.Surjective P.map) :
+    IsZero (P.singularChainComplex R) := by
+  -- The identity of `P` factors through the subspace, so it induces zero.
+  rw [IsZero.iff_id_eq_zero, ← singularChainComplexMap_id]
+  exact singularChainComplexMap_eq_zero_of_fac _ R
+    (TopCat.ofHom (P.liftSnd (.id _) fun x ↦ hP x)) (by ext x; exact P.map_liftSnd _ _ x)
 
 /-- The cokernel cofork presenting the relative singular chain complex as the quotient of the
 ambient singular chains by the subspace singular chains. -/
@@ -309,6 +394,29 @@ variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A]
 lemma shortExact_singularChainComplexShortComplex :
     (P.singularChainComplexShortComplex R).ShortExact :=
   (toSSetPair.obj P).shortExact_chainComplexShortComplex R
+
+/-- The cokernel of the map of singular chains induced by the inclusion of the subspace of a pair
+`P` is the relative singular chain complex of `P`. The isomorphism is induced by the quotient map
+(`TopPair.π_cokernelSingularChainComplexIso_hom`). -/
+@[no_expose]
+noncomputable def cokernelSingularChainComplexIso :
+    cokernel (((AlgebraicTopology.singularChainComplexFunctor A).obj R).map P.map) ≅
+      P.singularChainComplex R :=
+  (colimit.isColimit _).coconePointUniqueUpToIso (P.isColimitCokernelCoforkSingularChainComplex R)
+
+/-- The identification of the cokernel with the relative singular chain complex of a pair is
+induced by the quotient map from the singular chains of the ambient space. -/
+@[reassoc]
+lemma π_cokernelSingularChainComplexIso_hom :
+    cokernel.π _ ≫ (P.cokernelSingularChainComplexIso R).hom = P.singularChainComplexπ R :=
+  IsColimit.comp_coconePointUniqueUpToIso_hom _ _ WalkingParallelPair.one
+
+/-- The inverse identification of the relative singular chain complex of a pair with the cokernel
+sends the quotient map from the singular chains of the ambient space to the cokernel map. -/
+@[reassoc]
+lemma singularChainComplexπ_comp_cokernelSingularChainComplexIso_inv :
+    P.singularChainComplexπ R ≫ (P.cokernelSingularChainComplexIso R).inv = cokernel.π _ :=
+  (Iso.comp_inv_eq _).2 (π_cokernelSingularChainComplexIso_hom P R).symm
 
 end
 
@@ -350,6 +458,24 @@ noncomputable def singularHomologyMapIso (e : P ≅ P') (n : ℕ) :
   hom_inv_id := by rw [← singularHomologyMap_comp, e.hom_inv_id, singularHomologyMap_id]
   inv_hom_id := by rw [← singularHomologyMap_comp, e.inv_hom_id, singularHomologyMap_id]
 
+/-- The canonical isomorphism `Hₘ(X, A; R) ≅ Hₙ(X, A; R)` induced by an equality of degrees
+`m = n`. -/
+noncomputable def singularHomologyCongrDegreeIso {m n : ℕ} (h : m = n) :
+    P.singularHomology R m ≅ P.singularHomology R n :=
+  eqToIso (congrArg (P.singularHomology R) h)
+
+@[simp]
+lemma singularHomologyCongrDegreeIso_hom {m n : ℕ} (h : m = n) :
+    (P.singularHomologyCongrDegreeIso R h).hom =
+      eqToHom (congrArg (P.singularHomology R) h) :=
+  (rfl)
+
+@[simp]
+lemma singularHomologyCongrDegreeIso_inv {m n : ℕ} (h : m = n) :
+    (P.singularHomologyCongrDegreeIso R h).inv =
+      eqToHom (congrArg (P.singularHomology R) h).symm :=
+  (rfl)
+
 variable {P P'} in
 /-- Relative singular homology sends the map of pairs `eqToHom h` of an equation `h : P = P'` to
 `eqToHom` of the corresponding equation of homologies. -/
@@ -378,14 +504,42 @@ lemma isZero_singularHomology_ofInclusion_congr {X : TopCat.{w}} {A A' S S' : Se
   subst hA hS
   rfl
 
+/-- A map of pairs `(t, s) ⟶ (t', s')` of subspaces induces on relative singular homology the
+same map as a map of pairs `(t₁, s₁) ⟶ (t₁', s₁')` of equal subspaces, written differently, with
+the same values, through the identifications `TopPair.ofInclusion_congr` of the pairs. -/
+lemma singularHomologyMap_comp_eqToHom_of_eq {X Y : TopCat.{w}} {s t s₁ t₁ : Set X}
+    {s' t' s₁' t₁' : Set Y} {h : s ⊆ t} {h₁ : s₁ ⊆ t₁} {h' : s' ⊆ t'} {h₁' : s₁' ⊆ t₁'}
+    (hs : s = s₁) (ht : t = t₁) (hs' : s' = s₁') (ht' : t' = t₁')
+    (φ : ofInclusion h ⟶ ofInclusion h') (ψ : ofInclusion h₁ ⟶ ofInclusion h₁')
+    (hφψ : ∀ x : t, (Hom.fst φ x).val = (Hom.fst ψ ⟨x, ht ▸ x.property⟩).val) (n : ℕ) :
+    TopPair.singularHomologyMap φ R n ≫
+        eqToHom (congrArg (TopPair.singularHomology · R n) (ofInclusion_congr h' h₁' hs' ht')) =
+      eqToHom (congrArg (TopPair.singularHomology · R n) (ofInclusion_congr h h₁ hs ht)) ≫
+        TopPair.singularHomologyMap ψ R n := by
+  subst hs ht hs' ht'
+  obtain rfl : φ = ψ := hom_ext_of_fst _ (by ext x; exact Subtype.ext (hφψ x))
+  simp
+
+/-- Two maps of pairs of subspaces acting by the same map `g` induce the same map on homology, up
+to equalities of the subspaces: one is an isomorphism exactly when the other is. -/
+lemma isIso_singularHomologyMap_ofInclusion_congr {X Y : TopCat.{w}} (g : X → Y)
+    {s t s₁ t₁ : Set X} {s' t' s₁' t₁' : Set Y} {h : s ⊆ t} {h' : s' ⊆ t'} {h₁ : s₁ ⊆ t₁}
+    {h₁' : s₁' ⊆ t₁'} (hs : s = s₁) (ht : t = t₁) (hs' : s' = s₁') (ht' : t' = t₁')
+    (φ : ofInclusion h ⟶ ofInclusion h') (ψ : ofInclusion h₁ ⟶ ofInclusion h₁')
+    (hφ : ∀ x, (Hom.fst φ x).val = g x.val) (hψ : ∀ x, (Hom.fst ψ x).val = g x.val) (n : ℕ) :
+    IsIso (TopPair.singularHomologyMap φ R n) ↔ IsIso (TopPair.singularHomologyMap ψ R n) := by
+  subst hs ht hs' ht'
+  obtain rfl : φ = ψ := hom_ext_of_fst _ (by
+    ext x
+    exact Subtype.ext ((hφ x).trans (hψ x).symm))
+  rfl
+
 /-- **A pair whose subspace is everything has no relative homology.** If the embedding of the
 subspace of `P` is surjective, the relative singular homology of `P` vanishes in every degree. -/
 lemma isZero_singularHomology_of_surjective_map (hP : Function.Surjective P.map) (n : ℕ) :
-    IsZero (P.singularHomology R n) := by
-  -- The identity of `P` factors through the subspace, so it induces zero.
-  rw [IsZero.iff_id_eq_zero, ← singularHomologyMap_id]
-  exact singularHomologyMap_eq_zero_of_fac _ R
-    (TopCat.ofHom (P.liftSnd (.id _) fun x ↦ hP x)) (by ext x; exact P.map_liftSnd _ _ x) n
+    IsZero (P.singularHomology R n) :=
+  (HomologicalComplex.homologyFunctor C _ n).map_isZero
+    (isZero_singularChainComplex_of_surjective_map P R hP)
 
 /-- **A subspace relative to itself has no relative homology.** For every subset `s` of `X`, the
 relative singular homology of the pair `(s, s)` vanishes in every degree. -/
@@ -444,7 +598,9 @@ lemma singularHomologyFunctor_eq_chainComplexFunctor (n : ℕ) :
     apply eq_of_heq
     simp only [singularHomologyMap.eq_def, eqToHom_comp_heq_iff,
       comp_eqToHom_heq_iff, heq_eqToHom_comp_iff, heq_comp_eqToHom_iff]
-    exact (comp_eqToHom_heq _ _).symm
+    -- After unfolding `singularHomologyMap` and stripping the `eqToHom` casts, both sides are
+    -- the same homology map, so the `HEq` goal closes by `rfl`.
+    rfl
   · intro Q
     exact (singularHomologyFunctor_obj Q R n).trans <|
       (congrArg (fun K : ChainComplex C ℕ ↦ K.homology n)
@@ -564,6 +720,31 @@ lemma isIso_homologyMap_map_of_isZero {n : ℕ} (h₁ : IsZero (P.singularHomolo
   have := P.epi_homologyMap_map_of_isZero R h₀
   isIso_of_mono_of_epi _
 
+/-- If `Hₙ(A)` and `Hₙ(X, A)` vanish, so does `Hₙ(X)`. -/
+lemma isZero_singularHomology_fst_of_isZero {n : ℕ}
+    (hA : IsZero ((toSSetPair.obj P).left.homology R n))
+    (hXA : IsZero (P.singularHomology R n)) :
+    IsZero ((toSSetPair.obj P).right.homology R n) :=
+  (P.singularHomology_exact_space R n).isZero_X₂ (hA.eq_of_src _ _) (hXA.eq_of_tgt _ _)
+
+/-- If the inclusion of the subspace induces an epimorphism `Hₙ(A) ⟶ Hₙ(X)` and a monomorphism
+`Hₘ(A) ⟶ Hₘ(X)`, where `m + 1 = n`, then `Hₙ(X, A)` vanishes. -/
+lemma isZero_singularHomology_of_epi_of_mono {n m : ℕ} (h : m + 1 = n)
+    (he : Epi (SSet.homologyMap (TopCat.toSSet.map P.map) R n))
+    (hm : Mono (SSet.homologyMap (TopCat.toSSet.map P.map) R m)) :
+    IsZero (P.singularHomology R n) :=
+  (P.singularHomology_exact_relative R n m h).isZero_X₂
+    ((P.singularHomology_exact_space R n).epi_f_iff.1 he)
+    ((P.singularHomology_exact_subspace R n m h).mono_g_iff.1 hm)
+
+/-- If the inclusion of the subspace induces an epimorphism `H₀(A) ⟶ H₀(X)`, then `H₀(X, A)`
+vanishes. -/
+lemma isZero_singularHomology_zero_of_epi
+    (he : Epi (SSet.homologyMap (TopCat.toSSet.map P.map) R 0)) :
+    IsZero (P.singularHomology R 0) :=
+  IsZero.of_epi_eq_zero (P.singularHomologyπ R 0)
+    ((P.singularHomology_exact_space R 0).epi_f_iff.1 he)
+
 /-- A map of pairs `f : (X, A) ⟶ (X', A')` such that `Hₙ` of both pairs and `Hₙ₊₁(X', A')` vanish
 induces an isomorphism `Hₙ(X) ≅ Hₙ(X')` if it induces one on `Hₙ(A) ≅ Hₙ(A')`. -/
 lemma isIso_homologyMap_fst_of_isZero {P P' : TopPair.{w}} (f : P ⟶ P') {n : ℕ}
@@ -636,26 +817,93 @@ lemma isIso_singularHomologyMap_of_isIso {P P' : TopPair.{w}} (f : P ⟶ P') (n 
         (SSet.chainComplexMap (toSSetPair.map f).right R) m) := hfst' m hm
     inferInstance
 
-/-- **The five lemma for the ambient space of a pair.** A map of pairs `f : (X, A) ⟶ (X', A')`
-inducing isomorphisms `Hₙ(A) ≅ Hₙ(A')` and `Hₙ(X, A) ≅ Hₙ(X', A')`, an epimorphism
-`Hₙ₊₁(X, A) ⟶ Hₙ₊₁(X', A')` and a monomorphism `Hₘ(A) ⟶ Hₘ(A')` for `m + 1 = n`, induces an
-isomorphism `Hₙ(X) ≅ Hₙ(X')`. -/
-lemma isIso_homologyMap_fst_of_isIso {P P' : TopPair.{w}} (f : P ⟶ P') (n : ℕ)
-    (hrel' : Epi (TopPair.singularHomologyMap f R (n + 1)))
-    (hsnd : IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.snd f)) R n))
-    (hrel : IsIso (TopPair.singularHomologyMap f R n))
-    (hsnd' : ∀ m, m + 1 = n → Mono (SSet.homologyMap (TopCat.toSSet.map (Hom.snd f)) R m)) :
-    IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R n) := by
-  have := HomologicalComplex.HomologySequence.isIso_homologyMap_τ₂
-    (SSetPair.chainComplexShortComplexMap (toSSetPair.map f) R)
-    ((toSSetPair.obj P).shortExact_chainComplexShortComplex R)
-    ((toSSetPair.obj P').shortExact_chainComplexShortComplex R) n
-  simp only [SSetPair.chainComplexShortComplexMap_τ₁, SSetPair.chainComplexShortComplexMap_τ₂,
-    SSetPair.chainComplexShortComplexMap_τ₃, ComplexShape.down_Rel] at this
-  -- The homology maps of these chain maps are `SSet.homologyMap` and
-  -- `TopPair.singularHomologyMap` by definition.
-  exact this (fun i (hi : n + 1 = i) ↦ hi ▸ hrel') hsnd hrel fun m (hm : m + 1 = n) ↦ hsnd' m hm
-
 end LongExactSequence
+
+section OpenSupport
+
+open TopologicalSpace
+
+variable {R}
+
+variable {X : TopCat.{w}} (U : Opens X) (A : Set X)
+
+/-- The original subspace paired with the inverse image of the relative subset. -/
+abbrev openSubspacePair : TopPair.{w} :=
+  TopPair.ofSubset (Opens.inclusion' U ⁻¹' (A : Set X))
+
+/-- The open-subspace pair of a complement is the complement pair of the inverse image. -/
+lemma openSubspacePair_compl :
+    openSubspacePair U Aᶜ = ofSubset (Opens.inclusion' U ⁻¹' A)ᶜ := rfl
+
+/-- The map of original relative pairs induced by the open inclusion. -/
+def openSubspaceInclusion :
+    openSubspacePair U A ⟶ TopPair.ofSubset (A : Set X) :=
+  TopPair.ofSubsetMap (Opens.inclusion' U) (fun _ hx ↦ hx)
+
+/-- The ambient component of the native pair map is the open inclusion. -/
+@[simp]
+lemma openSubspaceInclusion_fst :
+    TopPair.Hom.fst (openSubspaceInclusion U A) = Opens.inclusion' U := by
+  erw [openSubspaceInclusion, TopPair.ofSubsetMap_fst]
+
+variable (S : (TopCat.toSSet.obj X).Subcomplex)
+
+/-- Enlarging the relative subset induces a map of the native restricted pairs. -/
+def restrictSubsetMap
+    {A B : Set X} (hAB : A ⊆ B) :
+    (TopPair.toSSetPair.obj (TopPair.ofSubset A)).restrict S ⟶
+      (TopPair.toSSetPair.obj (TopPair.ofSubset B)).restrict S :=
+  SSetPair.restrictMap (TopPair.toSSetPair.map (TopPair.ofSubsetMap (𝟙 X) hAB)) (by
+    erw [TopPair.toSSetPair_map_right, TopPair.ofSubsetMap_fst, CategoryTheory.Functor.map_id,
+      SSet.Subcomplex.preimage_id]
+    exact le_refl S)
+
+/-- The ambient map of a support restriction is the identity. -/
+@[simp]
+lemma restrictSubsetMap_right
+    {A B : Set X} (hAB : A ⊆ B) : (restrictSubsetMap S hAB).right = 𝟙 S.toSSet := by
+  ext i σ
+  apply Subtype.ext
+  erw [restrictSubsetMap, SSetPair.restrictMap_right_app_coe]
+  erw [TopPair.toSSetPair_map_right, TopPair.ofSubsetMap_fst, CategoryTheory.Functor.map_id]
+  -- The identity natural transformation evaluates to the original simplex.
+  rfl
+
+/-- Relative quotient maps commute with support restriction. -/
+@[reassoc]
+lemma chainComplexπ_restrictSubsetMap
+    {A B : Set X} (hAB : A ⊆ B) :
+    ((TopPair.toSSetPair.obj (TopPair.ofSubset A)).restrict S).chainComplexπ R ≫
+      SSetPair.chainComplexMap (restrictSubsetMap S hAB) R =
+      ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).restrict S).chainComplexπ R := by
+  erw [← SSetPair.chainComplexπ_naturality, restrictSubsetMap_right]
+  erw [SSet.chainComplexMap_id, Category.id_comp]
+
+/-- Support change commutes with the original relative-chain inclusion. -/
+lemma chainComplexMap_restrictSubsetMap_comp_restrictι
+    {A B : Set X} (hAB : A ⊆ B) :
+    SSetPair.chainComplexMap (restrictSubsetMap S hAB) R ≫
+      SSetPair.chainComplexMap ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).restrictι S) R =
+    SSetPair.chainComplexMap ((TopPair.toSSetPair.obj (TopPair.ofSubset A)).restrictι S) R ≫
+      TopPair.singularChainComplexMap (TopPair.ofSubsetMap (𝟙 X) hAB) R := by
+  have hc : restrictSubsetMap S hAB ≫ (TopPair.toSSetPair.obj (TopPair.ofSubset B)).restrictι S =
+      (TopPair.toSSetPair.obj (TopPair.ofSubset A)).restrictι S ≫
+        TopPair.toSSetPair.map (TopPair.ofSubsetMap (𝟙 X) hAB) :=
+    SSetPair.restrictMap_comp_restrictι _ _
+  have h := congrArg (fun f ↦ SSetPair.chainComplexMap f R) hc
+  simpa only [CategoryTheory.Functor.map_comp] using h
+
+/-- Successive support restrictions compose. -/
+@[reassoc (attr := simp)]
+lemma chainComplexMap_restrictSubsetMap_comp
+    {A B C : Set X} (hAB : A ⊆ B) (hBC : B ⊆ C) :
+    SSetPair.chainComplexMap (restrictSubsetMap S hAB) R ≫
+      SSetPair.chainComplexMap (restrictSubsetMap S hBC) R =
+      SSetPair.chainComplexMap (restrictSubsetMap S (hAB.trans hBC)) R := by
+  apply (cancel_epi (((toSSetPair.obj (ofSubset A)).restrict S).chainComplexπ R)).1
+  erw [chainComplexπ_restrictSubsetMap_assoc, chainComplexπ_restrictSubsetMap,
+    chainComplexπ_restrictSubsetMap]
+
+end OpenSupport
 
 end TopPair

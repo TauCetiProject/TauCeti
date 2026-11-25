@@ -84,8 +84,8 @@ variable (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
 private def repartitionToPrincipalPartsFamily (D : SchemeWeilDivisor X)
     (a : repartitionSpace k X.functionField) : principalPartsSections D ⊤ := by
   let e := CodimensionOnePoint.equivPlace (k := k) hex hdim
-  let q : ∀ x : {x : CodimensionOnePoint X // (x : X) ∈ (⊤ : X.Opens)}, PrincipalPart D x.1 :=
-    fun x ↦ Submodule.Quotient.mk ((a : Place k X.functionField → X.functionField) (e x.1))
+  let q : ∀ x : {x : CodimensionOnePoint X // (x : X) ∈ (⊤ : X.Opens)}, PrincipalPart D x.val :=
+    fun x ↦ Submodule.Quotient.mk ((a : Place k X.functionField → X.functionField) (e x.val))
   have ha : {P : Place k X.functionField |
       ¬ P.valuation ((a : Place k X.functionField → X.functionField) P) ≤ 1}.Finite :=
     mem_repartitionSpace_iff_finite.mp a.property
@@ -94,7 +94,7 @@ private def repartitionToPrincipalPartsFamily (D : SchemeWeilDivisor X)
     ha.preimage e.injective.injOn
   have hq : {x | q x ≠ 0}.Finite := by
     let val : {x : CodimensionOnePoint X // (x : X) ∈ (⊤ : X.Opens)} →
-        CodimensionOnePoint X := fun x ↦ x.1
+        CodimensionOnePoint X := fun x ↦ x.val
     have hDfinite : (val ⁻¹' (D.support : Set (CodimensionOnePoint X))).Finite :=
       Set.Finite.preimage Subtype.val_injective.injOn D.support.finite_toSet
     have hafinite : (val ⁻¹' {x | ¬ (e x).valuation
@@ -104,9 +104,9 @@ private def repartitionToPrincipalPartsFamily (D : SchemeWeilDivisor X)
     intro x hx
     by_contra h
     rw [Set.mem_union, Set.mem_preimage, Finset.mem_coe, Set.mem_preimage, not_or] at h
-    have hD : WeilDivisor.coeff D x.1 = 0 := Finsupp.notMem_support_iff.mp h.1
-    have ha_integral : (e x.1).valuation
-        ((a : Place k X.functionField → X.functionField) (e x.1)) ≤ 1 := by
+    have hD : WeilDivisor.coeff D x.val = 0 := Finsupp.notMem_support_iff.mp h.1
+    have ha_integral : (e x.val).valuation
+        ((a : Place k X.functionField → X.functionField) (e x.val)) ≤ 1 := by
       simpa only [Set.mem_preimage, Set.mem_ofPred_eq, not_not] using h.2
     apply hx
     simp only [q]
@@ -124,7 +124,7 @@ private theorem repartitionToPrincipalPartsFamily_apply (D : SchemeWeilDivisor X
     (x : {x : CodimensionOnePoint X // (x : X) ∈ (⊤ : X.Opens)}) :
     repartitionToPrincipalPartsFamily hex hdim D a x =
       Submodule.Quotient.mk ((a : Place k X.functionField → X.functionField)
-        (X.toPlace (k := k) (x.1 : X))) := by
+        (X.toPlace (k := k) (x.val : X))) := by
   simp only [repartitionToPrincipalPartsFamily, DFinsupp.ofSupportFinite_apply,
     CodimensionOnePoint.equivPlace_apply (X := X) (k := k) hex hdim]
 
@@ -152,13 +152,13 @@ def repartitionToPrincipalParts (D : SchemeWeilDivisor X) :
     simp only [AddEquiv.apply_symm_apply, repartitionToPrincipalPartsFamily_apply]
     congr 1
     simp only [Submodule.coe_smul, Pi.smul_apply, Algebra.smul_def]
-    have hgerm : X.presheaf.germ ⊤ x.1 x.2
+    have hgerm : X.presheaf.germ ⊤ x.val x.property
         (Scheme.Modules.baseRingToGlobalSections k X c) =
-        algebraMap k (X.presheaf.stalk (x.1 : X)) c := by
+        algebraMap k (X.presheaf.stalk (x.val : X)) c := by
       rw [Scheme.algebraMap_stalk_eq_baseRingToStalk]
-      exact (Scheme.baseRingToStalk_apply k X x.1 c).symm
+      exact (Scheme.baseRingToStalk_apply k X x.val c).symm
     rw [hgerm, IsScalarTower.algebraMap_apply k
-      (X.presheaf.stalk (x.1 : X)) X.functionField]
+      (X.presheaf.stalk (x.val : X)) X.functionField]
 
 /-- The principal part of a repartition at `x` is the class of its entry at the place attached
 to `x`. -/
@@ -168,7 +168,7 @@ theorem repartitionToPrincipalParts_apply (D : SchemeWeilDivisor X)
     (x : {x : CodimensionOnePoint X // (x : X) ∈ (⊤ : X.Opens)}) :
     principalPartsSectionsEquiv D ⊤ (repartitionToPrincipalParts hex hdim D a) x =
       Submodule.Quotient.mk ((a : Place k X.functionField → X.functionField)
-        (X.toPlace (k := k) (x.1 : X))) := by
+        (X.toPlace (k := k) (x.val : X))) := by
   -- Expose the application of the linear-map wrapper so that the public additive equivalence,
   -- rather than the sealed sheaf construction, reduces the section to its family of values.
   change principalPartsSectionsEquiv D ⊤
@@ -186,6 +186,22 @@ lemma repartitionToPrincipalParts_naturality {D E : SchemeWeilDivisor X} (h : D 
   intro x
   rw [principalPartsHomOfLE_app_apply, repartitionToPrincipalParts_apply,
     repartitionToPrincipalParts_apply, principalPartMapOfLE_mk]
+
+/-- The principal-parts map of a repartition is compatible with multiplication by a nonzero
+rational function `g`: multiplying the principal parts by `g` multiplies the repartition by `g`. -/
+lemma repartitionToPrincipalParts_principalPartsMul (hF : IsFunctionField k X.functionField)
+    (g : Additive X.functionFieldˣ) (D : SchemeWeilDivisor X)
+    (a : repartitionSpace k X.functionField) :
+    (principalPartsMul g D).app ⊤ (repartitionToPrincipalParts hex hdim D a) =
+      repartitionToPrincipalParts hex hdim _
+        (repartitionMul hF ((Additive.toMul g : X.functionFieldˣ) : X.functionField) a) := by
+  apply (principalPartsSectionsEquiv
+    (D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) ⊤).injective
+  apply DFinsupp.ext
+  intro x
+  rw [principalPartsMul_app_apply, repartitionToPrincipalParts_apply,
+    repartitionToPrincipalParts_apply, principalPartMapOfMul_mk, coe_repartitionMul_apply,
+    Pi.smul_apply, smul_eq_mul]
 
 /-- The kernel of the repartition-to-principal-parts map is the step of the repartition
 filtration bounded by the corresponding function-field divisor. -/
@@ -226,7 +242,7 @@ theorem ker_repartitionToPrincipalParts (D : SchemeWeilDivisor X) :
       Submodule.Quotient.mk_eq_zero,
       mem_stalkSubmodule_iff_valuation_le_exp (k := k)]
     have hbound :=
-      (mem_adeleFiltration_iff.mp ha (X.toPlace (k := k) (x.1 : X)))
+      (mem_adeleFiltration_iff.mp ha (X.toPlace (k := k) (x.val : X)))
     rw [coeff_equivFunctionFieldDivisor_toPlace] at hbound
     exact hbound
 
@@ -245,12 +261,12 @@ theorem repartitionToPrincipalParts_surjective (D : SchemeWeilDivisor X) :
     apply e.symm.injective
     exact congrArg Subtype.val h
   let q (x : {x : CodimensionOnePoint X // (x : X) ∈ (⊤ : X.Opens)}) :=
-    Submodule.mkQ (stalkSubmodule D x.1)
+    Submodule.mkQ (stalkSubmodule D x.val)
   obtain ⟨u, hu⟩ : ∃ u : Π₀ _ : {x : CodimensionOnePoint X //
       (x : X) ∈ (⊤ : X.Opens)}, X.functionField,
       DFinsupp.mapRange (fun x ↦ q x) (fun x ↦ (q x).map_zero) u = t :=
     (DFinsupp.mapRange_surjective (fun x ↦ q x)
-      (fun x ↦ (q x).map_zero)).mpr (fun x ↦ (stalkSubmodule D x.1).mkQ_surjective) t
+      (fun x ↦ (q x).map_zero)).mpr (fun x ↦ (stalkSubmodule D x.val).mkQ_surjective) t
   let b : Place k X.functionField → X.functionField := fun P ↦ u (ix P)
   have hb_support : {P | b P ≠ 0}.Finite := by
     refine (u.support.finite_toSet.preimage hix.injOn).subset ?_
@@ -265,12 +281,12 @@ theorem repartitionToPrincipalParts_surjective (D : SchemeWeilDivisor X) :
   apply DFinsupp.ext
   intro x
   rw [repartitionToPrincipalParts_apply]
-  have hix_apply : ix (X.toPlace (k := k) (x.1 : X)) = x := by
+  have hix_apply : ix (X.toPlace (k := k) (x.val : X)) = x := by
     apply Subtype.ext
     simp only [ix, e, ← CodimensionOnePoint.equivPlace_apply (X := X) (k := k) hex hdim,
       Equiv.symm_apply_apply]
   have ha_apply : (a : Place k X.functionField → X.functionField)
-      (X.toPlace (k := k) (x.1 : X)) = u x := by
+      (X.toPlace (k := k) (x.val : X)) = u x := by
     simp only [a, b, hix_apply]
   rw [ha_apply]
   have hx := congrArg (fun v : principalPartsSections D ⊤ ↦ v x) hu

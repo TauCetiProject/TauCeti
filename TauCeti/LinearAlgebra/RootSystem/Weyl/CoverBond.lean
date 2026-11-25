@@ -102,6 +102,24 @@ theorem reflectionBond_smul_add [IsDomain R] [P.IsReduced]
 
 /-! ### Bonds of covers -/
 
+/-- **A cover of `W / W_λ` has a positive root label** `β` with `y λ = s_β (x λ)` (without
+assuming `λ` is dominant or `R` is ordered). -/
+theorem exists_isPos_reflection_smul_eq_of_minimalCosetRepCovBy [IsDomain R] [Finite ι]
+    [P.IsCrystallographic] [P.IsReduced] {lam : M} {x y : P.weylGroup}
+    (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y x) :
+    ∃ β, b.IsPos β ∧ P.reflection β (x • lam) = y • lam := by
+  obtain ⟨t, ⟨w, i, rfl⟩, -, hmem⟩ := h.exists_isReflection
+  have hstab := MulAction.mem_stabilizer_iff.mp
+    (P.parabolic_wallIndices_le_stabilizer b lam hmem)
+  rw [mul_smul, inv_smul_eq_iff, mul_smul, weylCoxeterSystem_simple,
+    ← RootPairing.weylGroup.ofIdx_weylGroupToPerm_eq_conj,
+    RootPairing.weylGroup.ofIdx_smul, Equiv.reflection_smul] at hstab
+  let := P.indexNeg
+  rcases Base.IsPos.or_neg b (P.weylGroupToPerm w i) with hj | hj
+  · exact ⟨_, hj, hstab⟩
+  · refine ⟨_, hj, ?_⟩
+    rw [← hstab, reflection_indexNeg_neg]
+
 variable [LinearOrder R] [IsStrictOrderedRing R] [Finite ι] [P.IsCrystallographic] [P.IsReduced]
   {lam : M}
 
@@ -124,18 +142,7 @@ theorem existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy
     ∃! β, b.IsPos β ∧ P.reflection β (x • lam) = y • lam := by
   have := P.flip_isReduced
   have hne := smul_ne_smul_of_minimalCosetRepCovBy hlam h
-  -- The reflection of the cover is the reflection in the root `j = w αᵢ`.
-  obtain ⟨t, ⟨w, i, rfl⟩, -, hmem⟩ := h.exists_isReflection
-  rw [inv_mul_mem_parabolic_wallIndices_iff hlam, weylCoxeterSystem_simple,
-    ← RootPairing.weylGroup.ofIdx_weylGroupToPerm_eq_conj, mul_smul,
-    RootPairing.weylGroup.ofIdx_smul, Equiv.reflection_smul] at hmem
-  obtain ⟨β, hβ, hβx⟩ : ∃ β, b.IsPos β ∧ P.reflection β (x • lam) = y • lam := by
-    let := P.indexNeg
-    rcases Base.IsPos.or_neg b (P.weylGroupToPerm w i) with hj | hj
-    · exact ⟨_, hj, hmem⟩
-    · -- The reflection in `-j` is the reflection in `j`.
-      refine ⟨_, hj, ?_⟩
-      rw [← hmem, reflection_indexNeg_neg]
+  obtain ⟨β, hβ, hβx⟩ := exists_isPos_reflection_smul_eq_of_minimalCosetRepCovBy h
   exact ⟨β, ⟨hβ, hβx⟩, fun γ ⟨hγ, hγx⟩ ↦
     (eq_of_isPos_of_reflection_eq hβ hγ (hβx.trans hγx.symm) (by rwa [hβx])).symm⟩
 
@@ -208,7 +215,7 @@ theorem reflectionBond_smul_simple_mul_smul (i : b.support) (x : P.weylGroup) :
     P.reflectionBond b (x • lam) (((weylCoxeterSystem P b).simple i * x) • lam) =
       -P.coroot' i (x • lam) := by
   rw [simple_mul_smul_eq_reflection]
-  exact reflectionBond_reflection (b.isPos_of_mem_support i.2) _
+  exact reflectionBond_reflection (b.isPos_of_mem_support i.property) _
 
 /-- **The bond of `sᵢ λ` and `λ` is `⟨λ, αᵢ^∨⟩`**, for a simple root `αᵢ`. When `⟨λ, αᵢ^∨⟩ ≠ 0`
 this is the bond of the cover `1 ⋖ sᵢ` of `W / W_λ`; otherwise `sᵢ λ = λ` and both sides vanish. -/
@@ -252,7 +259,7 @@ theorem reflectionBond_simple_mul_smul_simple_mul_smul (hlam : lam ∈ dominantC
   have hne' : P.reflection i (y • lam) ≠ P.reflection i (x • lam) :=
     fun h' ↦ hxy ((P.reflection i).injective h')
   rw [simple_mul_smul_eq_reflection, simple_mul_smul_eq_reflection,
-    reflectionBond_eq_coroot' (hβ.reflectionPerm i.2 hβi) hγ hne', ← coroot'_reflection,
+    reflectionBond_eq_coroot' (hβ.reflectionPerm i.property hβi) hγ hne', ← coroot'_reflection,
     reflection_same, reflectionBond_eq_coroot' hβ hβx hxy]
 
 end

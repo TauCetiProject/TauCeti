@@ -76,7 +76,7 @@ noncomputable def gradedConjugation (k : ℤ) : Conjugation (weightGradedComplex
 theorem gradedConjugation_mk (k : ℤ) (x : mhs.WC k) :
     (mhs.gradedConjugation k).toEquiv (Submodule.Quotient.mk x) =
       Submodule.Quotient.mk ⟨latticeConj hℂ (x : Vℂ),
-        (rationalToComplexSubmodule_conj hℚ hℂ (mhs.WQ k)).le ⟨x, x.2, rfl⟩⟩ :=
+        (rationalToComplexSubmodule_conj hℚ hℂ (mhs.WQ k)).le ⟨x, x.property, rfl⟩⟩ :=
   gradedComplexConjugation_mk hℚ hℂ mhs.WQ k x
 
 /-- The comparison of the rational and complex models of the `k`-th graded piece intertwines the
@@ -185,7 +185,7 @@ theorem mk_mem_complexGradedHodgeStructure_piece (k p : ℤ) (y : mhs.WC k)
   have hak : a ∈ mhs.WC k := by
     have hay : a = (y : Vℂ) - b := eq_sub_of_add_eq hab
     rw [hay]
-    exact Submodule.sub_mem _ y.2 hbk
+    exact Submodule.sub_mem _ y.property hbk
   refine (mem_complexGradedF_iff mhs.WC _ k (k - p) _).2 ⟨⟨a, hak⟩, ha,
     (weightGradedComplex_mk_eq_mk_iff mhs.WC k ⟨a, hak⟩ y).2 ?_⟩
   have hay : a - (y : Vℂ) = -b := by rw [← hab]; abel
