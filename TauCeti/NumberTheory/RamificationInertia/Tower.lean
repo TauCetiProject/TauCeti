@@ -31,6 +31,8 @@ the compositum is unramified over the quadratic base.
   prime to the fundamental identity is at most the rank of the extension.
 * `TauCeti.RamificationInertia.ramificationIdx_le_finrank`: a ramification index is at most the
   rank of a finite flat extension.
+* `TauCeti.RamificationInertia.ramificationIdx_mul_inertiaDeg_eq_finrank_of_isLocalRing`: for a
+  local ring `S`, the ramification index times the inertia degree of its maximal ideal is the rank.
 * `TauCeti.RamificationInertia.ramificationIdx_eq_one_iff_ramificationIdx_eq`: the relative
   ramification index in a tower is one if and only if the absolute ramification indices at the
   two levels agree.
@@ -72,8 +74,8 @@ theorem ncard_primesOver_le_finrank (p : Ideal R) :
   rw [← Nat.card_coe_set_eq, Nat.card_eq_fintype_card, Fintype.card_eq_sum_ones,
     ← Ideal.sum_ramification_inertia_eq_finrank p S]
   refine Finset.sum_le_sum fun q _ ↦ ?_
-  have : q.1.IsPrime := q.2.1
-  exact Nat.succ_le_of_lt (Nat.mul_pos (q.1.ramificationIdx_pos R) (q.1.inertiaDeg_pos R))
+  have : q.val.IsPrime := q.property.1
+  exact Nat.succ_le_of_lt (Nat.mul_pos (q.val.ramificationIdx_pos R) (q.val.inertiaDeg_pos R))
 
 variable (R) in
 /-- **One prime's contribution to the fundamental identity is at most the extension rank.**
@@ -85,7 +87,7 @@ theorem ramificationIdx_mul_inertiaDeg_le_finrank (q : Ideal S) [q.IsPrime] :
     (Algebra.QuasiFinite.finite_primesOver (q.under R)).fintype
   rw [← Ideal.sum_ramification_inertia_eq_finrank (q.under R) S]
   exact Finset.single_le_sum (f := fun Q : (q.under R).primesOver S ↦
-    Q.1.ramificationIdx R * Q.1.inertiaDeg R) (fun _ _ ↦ Nat.zero_le _)
+    Q.val.ramificationIdx R * Q.val.inertiaDeg R) (fun _ _ ↦ Nat.zero_le _)
     (Finset.mem_univ ⟨q, inferInstance, inferInstance⟩)
 
 variable (R) in
@@ -95,6 +97,23 @@ theorem ramificationIdx_le_finrank (q : Ideal S) [q.IsPrime] :
     q.ramificationIdx R ≤ finrank R S :=
   (Nat.le_mul_of_pos_right _ (q.inertiaDeg_pos R)).trans
     (ramificationIdx_mul_inertiaDeg_le_finrank R q)
+
+variable (R) in
+/-- **The fundamental identity for a local extension.** If `S` is local, its maximal ideal is the
+only prime above its contraction to `R`, so its ramification index times its inertia degree over
+`R` is the rank of `S`. -/
+theorem ramificationIdx_mul_inertiaDeg_eq_finrank_of_isLocalRing [IsLocalRing S] :
+    (IsLocalRing.maximalIdeal S).ramificationIdx R * (IsLocalRing.maximalIdeal S).inertiaDeg R =
+      finrank R S := by
+  set q := IsLocalRing.maximalIdeal S
+  have : Fintype ((q.under R).primesOver S) :=
+    (Algebra.QuasiFinite.finite_primesOver (q.under R)).fintype
+  rw [← Ideal.sum_ramification_inertia_eq_finrank (q.under R) S,
+    Finset.sum_eq_single_of_mem ⟨q, inferInstance, ⟨rfl⟩⟩ (Finset.mem_univ _)]
+  -- A prime above the maximal ideal `q.under R` is maximal, hence is the maximal ideal of `S`.
+  rintro ⟨q', hq', hq'o⟩ - hne
+  have : q'.IsMaximal := Ideal.IsMaximal.of_liesOver_isMaximal q' (q.under R)
+  exact absurd (Subtype.ext (IsLocalRing.eq_maximalIdeal this)) hne
 
 end Bounds
 

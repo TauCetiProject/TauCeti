@@ -284,11 +284,7 @@ private abbrev finiteZero : GradedModuleCat.{uA} 𝒜 where
   gradedSMul := ⟨fun _ _ => by simp⟩
 
 private theorem isZero_finiteZero : IsZero (finiteZero (𝒜 := 𝒜)) :=
-  (IsZero.iff_id_eq_zero _).2 (by
-    apply GradedModuleCat.hom_ext
-    apply LinearMap.ext
-    intro x
-    exact Subsingleton.elim (α := PUnit) _ _)
+  GradedModuleCat.isZero_of_subsingleton _
 
 private theorem finite_finiteZero : Module.Finite A (finiteZero (𝒜 := 𝒜)) :=
   inferInstance
@@ -330,7 +326,7 @@ theorem isExtensionClosed_gradedFiniteProjectiveModules :
     let _ : Module.Projective A S.X₃ := h₃.2
     obtain ⟨l, hl⟩ := Module.projective_lifting_property S.g.hom LinearMap.id
       ((GradedModuleCat.epi_iff_surjective S.g).1 hS.epi_g)
-    exact Module.Projective.of_equiv (hex.splitSurjectiveEquiv hf ⟨l, hl⟩).1.symm
+    exact Module.Projective.of_equiv (hex.splitSurjectiveEquiv hf ⟨l, hl⟩).val.symm
 
 instance : (gradedFiniteModules 𝒜).IsClosedUnderBinaryProducts :=
   (isExtensionClosed_gradedFiniteModules (𝒜 := 𝒜)).isClosedUnderBinaryProducts

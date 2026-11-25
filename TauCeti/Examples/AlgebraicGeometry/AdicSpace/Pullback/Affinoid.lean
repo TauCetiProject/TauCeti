@@ -10,6 +10,7 @@ import Mathlib.NumberTheory.Padics.PadicNumbers
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Emptiness
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.StronglyNoetherian
 import TauCeti.RingTheory.Huber.Padic.Field
+import TauCeti.RingTheory.Huber.Pair.PowerBounded
 import TauCeti.RingTheory.Huber.Prod
 import TauCeti.RingTheory.Huber.Restricted.Noetherian
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Complete
@@ -60,20 +61,10 @@ example (p : ℕ) [Fact p.Prime] (m n : ℕ) :
     have := hm.isStronglyNoetherian
     have := hn.isTateRing
     have := hn.isStronglyNoetherian
-    let f : S.Hom T :=
-      { toRingHom := algebraMap ℚ_[p] _
-        continuous_toRingHom := continuous_algebraMap_restrictedMvPowerSeriesCompletion m ℚ_[p]
-        map_mem_plus _ ha := by
-          rw [Pair.powerBounded_plus] at ha ⊢
-          exact mem_powerBoundedSubring.mpr <| (mem_powerBoundedSubring.mp ha).map_of_isTateRing
-            (continuous_algebraMap_restrictedMvPowerSeriesCompletion m ℚ_[p]).continuousAt }
-    let g : S.Hom U :=
-      { toRingHom := algebraMap ℚ_[p] _
-        continuous_toRingHom := continuous_algebraMap_restrictedMvPowerSeriesCompletion n ℚ_[p]
-        map_mem_plus _ ha := by
-          rw [Pair.powerBounded_plus] at ha ⊢
-          exact mem_powerBoundedSubring.mpr <| (mem_powerBoundedSubring.mp ha).map_of_isTateRing
-            (continuous_algebraMap_restrictedMvPowerSeriesCompletion n ℚ_[p]).continuousAt }
+    let f : S.Hom T := Pair.powerBoundedHom (algebraMap ℚ_[p] _)
+      (continuous_algebraMap_restrictedMvPowerSeriesCompletion m ℚ_[p])
+    let g : S.Hom U := Pair.powerBoundedHom (algebraMap ℚ_[p] _)
+      (continuous_algebraMap_restrictedMvPowerSeriesCompletion n ℚ_[p])
     let hS := isSheafyForEveryPresentation_of_isStronglyNoetherian S.isRingOfIntegralElements
     let hT := isSheafyForEveryPresentation_of_isStronglyNoetherian T.isRingOfIntegralElements
     let hU := isSheafyForEveryPresentation_of_isStronglyNoetherian U.isRingOfIntegralElements
@@ -89,7 +80,8 @@ example (p : ℕ) [Fact p.Prime] (m n : ℕ) :
   have := hm.isAdicHom
   have := hn.isAdicHom
   exact ⟨affinoid_isPullback_of_isStablySheafyRing_left hS hU
-      isStablySheafyRing_of_isStronglyNoetherian hn f g rfl rfl,
+      isStablySheafyRing_of_isStronglyNoetherian hn f g
+      (Pair.Hom.toRingHom_powerBoundedHom _ _) (Pair.Hom.toRingHom_powerBoundedHom _ _),
     locallyOfWeaklyFiniteType_comapOfPair_completedTensor_inl hT hTU hn,
     locallyOfWeaklyFiniteType_comapOfPair_completedTensor_inr hU hTU hm⟩
 
@@ -121,13 +113,7 @@ example :
         weightedEvalHomCompletion_coe, weightedEvalHom_weightedC]
     let S := Pair.powerBounded ℚ_[2]
     let T := Pair.powerBounded (ℚ_[2] × ℚ_[2])
-    let f : S.Hom T :=
-      { toRingHom := algebraMap ℚ_[2] (ℚ_[2] × ℚ_[2])
-        continuous_toRingHom := hcont
-        map_mem_plus _ ha := by
-          rw [Pair.powerBounded_plus] at ha ⊢
-          exact mem_powerBoundedSubring.mpr <|
-            (mem_powerBoundedSubring.mp ha).map_of_isTateRing hcont.continuousAt }
+    let f : S.Hom T := Pair.powerBoundedHom (algebraMap ℚ_[2] (ℚ_[2] × ℚ_[2])) hcont
     let hS := isSheafyForEveryPresentation_of_isStronglyNoetherian S.isRingOfIntegralElements
     have := htft.isStronglyNoetherian
     let hB : IsStablySheafyRing (ℚ_[2] × ℚ_[2]) := isStablySheafyRing_of_isStronglyNoetherian
@@ -147,8 +133,10 @@ example :
       (comapOfPair hT hTT (Pair.completedTensor.inr ℚ_[2] T T)).hom.base z₂ = y₁ := by
   intro hcont htft S T f hS _ hB hT hTT
   have : IsAdicHom (algebraMap ℚ_[2] (ℚ_[2] × ℚ_[2])) := htft.isAdicHom
-  refine ⟨affinoid_isPullback_of_isStablySheafyRing_left hS hT hB htft f f rfl rfl, ?_⟩
-  have hne : (spa S.plus).Nonempty := Set.nonempty_iff_ne_empty.mpr fun h ↦
+  have hf : f.toRingHom = algebraMap ℚ_[2] (ℚ_[2] × ℚ_[2]) :=
+    Pair.Hom.toRingHom_powerBoundedHom _ _
+  refine ⟨affinoid_isPullback_of_isStablySheafyRing_left hS hT hB htft f f hf hf, ?_⟩
+  have hne : (spa S.plus).Nonempty := Set.ne_empty_iff_nonempty.mp fun h ↦
     not_subsingleton ℚ_[2] ((spa_eq_empty_iff_subsingleton _ S.isRingOfIntegralElements).mp h)
   let x₀ : spa S.plus := ⟨hne.some, hne.some_mem⟩
   have hy (p : Pair.Hom T S) (hp : p.comp f = Pair.Hom.id S) :
@@ -158,20 +146,8 @@ example :
     exact congrArg (ofPairHomeomorph S hS).symm <|
       (congrFun (Pair.Hom.spaComap_comp p f) x₀).symm.trans <| by
         rw [hp, Pair.Hom.spaComap_id, id_eq]
-  let p₁ : Pair.Hom T S :=
-    { toRingHom := RingHom.fst _ _
-      continuous_toRingHom := continuous_fst
-      map_mem_plus a ha := by
-        rw [Pair.powerBounded_plus] at ha ⊢
-        rw [powerBoundedSubring_prod] at ha
-        exact ha.1 }
-  let p₂ : Pair.Hom T S :=
-    { toRingHom := RingHom.snd _ _
-      continuous_toRingHom := continuous_snd
-      map_mem_plus a ha := by
-        rw [Pair.powerBounded_plus] at ha ⊢
-        rw [powerBoundedSubring_prod] at ha
-        exact ha.2 }
+  let p₁ : Pair.Hom T S := Pair.powerBoundedFst ℚ_[2] ℚ_[2]
+  let p₂ : Pair.Hom T S := Pair.powerBoundedSnd ℚ_[2] ℚ_[2]
   let y₁ : (ofPair T hT).obj := (ofPairHomeomorph T hT).symm (p₁.spaComap x₀)
   let y₂ : (ofPair T hT).obj := (ofPairHomeomorph T hT).symm (p₂.spaComap x₀)
   have hy₁ : (comapOfPair hS hT f).hom.base y₁ = (ofPairHomeomorph S hS).symm x₀ :=
@@ -181,16 +157,16 @@ example :
   have hy₁₂ : (comapOfPair hS hT f).hom.base y₁ = (comapOfPair hS hT f).hom.base y₂ :=
     hy₁.trans hy₂.symm
   have hy_ne : y₁ ≠ y₂ := fun hyeq ↦ by
-    have hspv : (p₁.spaComap x₀).1 = (p₂.spaComap x₀).1 :=
+    have hspv : (p₁.spaComap x₀).val = (p₂.spaComap x₀).val :=
       congrArg Subtype.val ((ofPairHomeomorph T hT).symm.injective hyeq)
-    have hvle : (p₁.spaComap x₀).1.toValuativeRel.vle ((0, 1) : ℚ_[2] × ℚ_[2]) 0 := by
+    have hvle : (p₁.spaComap x₀).val.toValuativeRel.vle ((0, 1) : ℚ_[2] × ℚ_[2]) 0 := by
       rw [Pair.Hom.spaComap_val, comap_vle]
       simp [p₁]
     rw [hspv, Pair.Hom.spaComap_val, comap_vle] at hvle
     simp [p₂] at hvle
-  obtain ⟨z₁, hz₁, hz₁'⟩ := exists_ofPair_completedTensor_point hS hT hT hTT f f rfl rfl
+  obtain ⟨z₁, hz₁, hz₁'⟩ := exists_ofPair_completedTensor_point hS hT hT hTT f f hf hf
     y₁ y₂ hy₁₂
-  obtain ⟨z₂, hz₂, hz₂'⟩ := exists_ofPair_completedTensor_point hS hT hT hTT f f rfl rfl
+  obtain ⟨z₂, hz₂, hz₂'⟩ := exists_ofPair_completedTensor_point hS hT hT hTT f f hf hf
     y₂ y₁ hy₁₂.symm
   exact ⟨y₁, y₂, z₁, z₂, hy_ne, fun h ↦ hy_ne (by rw [← hz₁, h, hz₂]),
     hy₁₂, hz₁, hz₁', hz₂, hz₂'⟩

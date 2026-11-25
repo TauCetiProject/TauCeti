@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Limits.Types.Filtered
 public import Mathlib.Topology.Category.TopCat.Limits.Basic
+public import Mathlib.Topology.Category.TopCat.Limits.Products
 public import Mathlib.Topology.Coherent
 public import TauCeti.Topology.Coherent
 
@@ -18,8 +19,12 @@ As an instance, this makes the separation properties of the empty space, such as
 available for it by instance search. It is the base of every CW complex in Mathlib's categorical
 sense, `TopCat.CWComplex X`, which is a relative CW complex over the map out of `⊥_ TopCat`.
 
-A directed colimit in `TopCat` along injective transition maps has injective colimit maps
+A filtered colimit in `TopCat` along injective transition maps has injective colimit maps
 (`TauCeti.TopCat.injective_ι_of_isColimit`), since the forgetful functor to types preserves it.
+In a colimit of `T1` spaces in `TopCat`, any set whose preimage in every stage is finite is closed
+(`CategoryTheory.Limits.IsColimit.isClosed_of_forall_finite_preimage`); in particular, any colimit
+of `T1` spaces with injective colimit maps is `T1` (`CategoryTheory.Limits.IsColimit.t1Space`), so
+such a filtered colimit is.
 
 The ranges of the maps to the vertex of a cocone over a preorder increase
 (`TauCeti.TopCat.monotone_range_ι`). The colimit maps of any colimit in `TopCat` jointly cover it
@@ -34,6 +39,13 @@ a cocone over it (`TauCeti.TopCat.subspaceCocone`). If the `A j` cover `Y` and `
 topology coherent with them, then `Y` is the colimit of this diagram
 (`TauCeti.TopCat.isColimitOfIsCoherentWith`): maps out of the `A j` agreeing along the inclusions
 glue by `ContinuousMap.liftCoherent`.
+
+Read through Mathlib's identification `TopCat.sigmaIsoSigma` of coproducts in `TopCat` with
+disjoint unions, the map of coproducts `Limits.Sigma.map φ` of a family of maps is the map
+`Sigma.map id φ` of disjoint unions (`TauCeti.TopCat.coe_sigmaMap`). Hence a coproduct of
+embeddings is an embedding (`TauCeti.TopCat.isEmbedding_sigmaMap`). Likewise a map out of a
+coproduct is the map `ContinuousMap.sigma` glued from its restrictions to the summands
+(`TauCeti.TopCat.hom_eq_sigma_comp_sigmaIsoSigma_hom`).
 -/
 
 public section
@@ -50,17 +62,34 @@ instance initial_isEmpty : IsEmpty (⊥_ TopCat.{u}) :=
 
 end TopCat
 
+namespace CategoryTheory.Limits.IsColimit
+
+/-- In the colimit of a diagram of `T1` spaces in `TopCat`, a set meeting every stage in
+finitely many points is closed. -/
+theorem isClosed_of_forall_finite_preimage {J : Type w} [Category J] {F : J ⥤ TopCat.{u}}
+    {c : Cocone F} (hc : IsColimit c) [∀ j, T1Space (F.obj j)] {S : Set c.pt}
+    (hS : ∀ j, (c.ι.app j ⁻¹' S).Finite) : IsClosed S :=
+  (TopCat.isClosed_iff_of_isColimit _ hc S).2 fun j ↦ (hS j).isClosed
+
+/-- A colimit of `T1` spaces in `TopCat` whose colimit maps are injective is `T1`. -/
+theorem t1Space {J : Type w} [Category J] {F : J ⥤ TopCat.{u}} {c : Cocone F}
+    (hc : IsColimit c) (hι : ∀ j, Function.Injective (c.ι.app j)) [∀ j, T1Space (F.obj j)] :
+    T1Space c.pt :=
+  ⟨fun _ ↦ hc.isClosed_of_forall_finite_preimage fun j ↦
+    (Set.subsingleton_singleton.preimage (hι j)).finite⟩
+
+end CategoryTheory.Limits.IsColimit
+
 namespace TauCeti.TopCat
 
-/-- If all transition maps of a directed diagram in `TopCat` are injective, then so are the maps
+/-- If all transition maps of a filtered diagram in `TopCat` are injective, then so are the maps
 from the objects of the diagram to its colimit. -/
-theorem injective_ι_of_isColimit {J : Type w} [Preorder J] [IsDirectedOrder J]
-    {F : J ⥤ TopCat.{u}} (hF : ∀ ⦃i j : J⦄ (hij : i ≤ j), Function.Injective (F.map (homOfLE hij)))
+theorem injective_ι_of_isColimit {J : Type w} [Category J] [IsFilteredOrEmpty J]
+    {F : J ⥤ TopCat.{u}} (hF : ∀ ⦃i j : J⦄ (f : i ⟶ j), Function.Injective (F.map f))
     {c : Cocone F} (hc : IsColimit c) (i : J) : Function.Injective (c.ι.app i) := fun x y h ↦ by
-  have : Nonempty J := ⟨i⟩
-  obtain ⟨k, g, hk⟩ :=
+  obtain ⟨k, f, hk⟩ :=
     (Types.FilteredColimit.isColimit_eq_iff' (isColimitOfPreserves (forget TopCat) hc) x y).1 h
-  exact hF (leOfHom g) hk
+  exact hF f hk
 
 /-- The ranges of the maps of a diagram in `TopCat` indexed by a preorder to the vertex of a cocone
 increase along the order. -/
@@ -136,5 +165,50 @@ noncomputable def isColimitOfIsCoherentWith [IsDirectedOrder J] (hAY : ⋃ j, A 
       exact (ConcreteCategory.congr_hom (hm j) ⟨y, hj⟩).trans (hdesc s j ⟨y, hj⟩).symm }
 
 end Subspace
+
+section Sigma
+
+variable {ι : Type u} {A X : ι → TopCat.{u}} (φ : ∀ i, A i ⟶ X i)
+
+/-- Read through the homeomorphisms `TopCat.sigmaIsoSigma` with disjoint unions, the map of
+coproducts `Limits.Sigma.map φ` is the map `Sigma.map id φ` of disjoint unions. -/
+theorem coe_sigmaMap :
+    ⇑(Limits.Sigma.map φ) = TopCat.homeoOfIso (TopCat.sigmaIsoSigma X).symm ∘
+      Sigma.map id (fun i ↦ φ i) ∘ TopCat.homeoOfIso (TopCat.sigmaIsoSigma A) := by
+  have : Limits.Sigma.map φ = (TopCat.sigmaIsoSigma A).hom ≫ TopCat.ofHom
+      ⟨Sigma.map id fun i ↦ φ i, continuous_sigma_map.2 fun i ↦ (φ i).hom.continuous⟩ ≫
+        (TopCat.sigmaIsoSigma X).inv := by
+    rw [← Category.assoc, Iso.eq_comp_inv]
+    refine Limits.Sigma.hom_ext _ _ fun i ↦ ?_
+    rw [Limits.Sigma.ι_map_assoc, TopCat.sigmaIsoSigma_hom_ι, ← Category.assoc,
+      TopCat.sigmaIsoSigma_hom_ι]
+    -- Both sides send `x : A i` to `⟨i, φ i x⟩`.
+    refine TopCat.ext fun x ↦ ?_
+    simp [Sigma.map]
+  ext x
+  rw [this, Function.comp_apply, Function.comp_apply, TopCat.homeoOfIso_apply,
+    TopCat.homeoOfIso_apply, Iso.symm_hom]
+  simp only [ConcreteCategory.comp_apply, TopCat.hom_ofHom, ContinuousMap.coe_mk]
+
+/-- **A coproduct of embeddings in `TopCat` is an embedding.** -/
+theorem isEmbedding_sigmaMap (hφ : ∀ i, Topology.IsEmbedding (φ i)) :
+    Topology.IsEmbedding (Limits.Sigma.map φ) := by
+  rw [coe_sigmaMap]
+  exact (TopCat.homeoOfIso (TopCat.sigmaIsoSigma X).symm).isEmbedding.comp
+    (((Topology.isEmbedding_sigmaMap Function.injective_id).2 hφ).comp
+      (TopCat.homeoOfIso (TopCat.sigmaIsoSigma A)).isEmbedding)
+
+/-- Read through the homeomorphism `TopCat.sigmaIsoSigma` with the disjoint union, a map `χ` out
+of a coproduct in `TopCat` is the map `ContinuousMap.sigma` glued from its restrictions
+`Limits.Sigma.ι X i ≫ χ` to the summands. -/
+theorem hom_eq_sigma_comp_sigmaIsoSigma_hom {Y : TopCat.{u}} (χ : ∐ X ⟶ Y) :
+    χ.hom = (ContinuousMap.sigma fun i ↦ (Limits.Sigma.ι X i ≫ χ).hom).comp
+      (TopCat.sigmaIsoSigma X).hom.hom := by
+  refine congrArg TopCat.Hom.hom (Limits.Sigma.hom_ext χ ((TopCat.sigmaIsoSigma X).hom ≫
+    TopCat.ofHom (ContinuousMap.sigma fun i ↦ (Limits.Sigma.ι X i ≫ χ).hom)) fun i ↦ ?_)
+  rw [TopCat.sigmaIsoSigma_hom_ι_assoc]
+  exact TopCat.ext fun _ ↦ by simp
+
+end Sigma
 
 end TauCeti.TopCat

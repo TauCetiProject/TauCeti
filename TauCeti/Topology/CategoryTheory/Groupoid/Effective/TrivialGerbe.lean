@@ -39,6 +39,9 @@ neither a categorical nor a Morita equivalence.
 * `TauCeti.TrivialGerbe.objectHomeomorph`, `TauCeti.TrivialGerbe.arrowHomeomorph`: coordinate
   homeomorphisms `(SingleObj K × Discrete N) ≃ₜ N` and
   `Quiver.Total (SingleObj K × Discrete N) ≃ₜ K × N`.
+* `TauCeti.TrivialGerbe.arrowHomeomorph_id`, `TauCeti.TrivialGerbe.arrowHomeomorph_comp`,
+  `TauCeti.TrivialGerbe.arrowHomeomorph_inverse`: the unit `(1, x)`, the composite `(g * h, x)` of
+  `(h, x)` followed by `(g, x)`, and the inverse `(g⁻¹, x)` in these coordinates.
 * `TauCeti.TrivialGerbe.isLocalHomeomorph_source`, `TauCeti.TrivialGerbe.isLocalHomeomorph_target`,
   `TauCeti.TrivialGerbe.isProperMap_source_target`: étale and properness results.
 * `TauCeti.TrivialGerbe.autMulEquiv`, `TauCeti.TrivialGerbe.ineffectiveArrows_eq_univ`,
@@ -51,6 +54,8 @@ neither a categorical nor a Morita equivalence.
   `TauCeti.TrivialGerbe.isEmpty_faithful_functor_discrete`,
   `TauCeti.TrivialGerbe.isEmpty_equivalence_effectiveQuotient`: for nontrivial `K` and nonempty `N`,
   the trivial gerbe is not categorically equivalent (`≌`) to its effective quotient.
+* `TauCeti.TrivialGerbe.isEmpty_equivalence_of_isThin`: for nontrivial `K` and nonempty `N`, the
+  trivial gerbe is not equivalent to any thin category.
 
 ## References
 
@@ -67,7 +72,11 @@ namespace TauCeti.TrivialGerbe
 
 section Monoid
 
-variable (K N : Type*) [Monoid K]
+variable (K N : Type*)
+
+section SourceTarget
+
+variable [Monoid K]
 
 /-- Every arrow of `SingleObj K × Discrete N` has equal source and target. -/
 @[simp]
@@ -80,23 +89,28 @@ theorem target_eq_source :
       Quiver.Total.left :=
   funext (right_eq_left K N)
 
-variable [TopologicalSpace K] [TopologicalSpace N]
+end SourceTarget
 
-omit [Monoid K] [TopologicalSpace K] in
+section ObjectHomeomorph
+
+variable [TopologicalSpace N]
+
 /-- The object space of the trivial gerbe `SingleObj K × Discrete N` is homeomorphic to `N`. -/
 def objectHomeomorph : SingleObj K × Discrete N ≃ₜ N :=
   (Homeomorph.uniqueProd (SingleObj K) (Discrete N)).trans (UnitGroupoid.objectHomeomorph N)
 
-omit [Monoid K] [TopologicalSpace K] in
 @[simp]
 theorem objectHomeomorph_apply (x : SingleObj K × Discrete N) :
     objectHomeomorph K N x = x.2.as := by simp [objectHomeomorph]
 
-omit [Monoid K] [TopologicalSpace K] in
 @[simp]
 theorem objectHomeomorph_symm_apply (y : N) :
     (objectHomeomorph K N).symm y = (SingleObj.star K, ⟨y⟩) :=
   (objectHomeomorph K N).injective (by simp)
+
+end ObjectHomeomorph
+
+variable [Monoid K] [TopologicalSpace K] [TopologicalSpace N]
 
 /-- The total-arrow space of `SingleObj K × Discrete N` is homeomorphic to `K × N`. -/
 def arrowHomeomorph : Quiver.Total (SingleObj K × Discrete N) ≃ₜ K × N :=
@@ -112,6 +126,22 @@ theorem arrowHomeomorph_symm_apply (p : K × N) :
     (arrowHomeomorph K N).symm p =
       ⟨(SingleObj.star K, ⟨p.2⟩), (SingleObj.star K, ⟨p.2⟩), (p.1, 𝟙 _)⟩ :=
   (arrowHomeomorph K N).injective <| by simp
+
+/-- The unit at `x` is the arrow `(1, x)`. -/
+theorem arrowHomeomorph_id (x : SingleObj K × Discrete N) :
+    arrowHomeomorph K N ⟨x, x, 𝟙 x⟩ = (1, objectHomeomorph K N x) :=
+  (arrowHomeomorph_apply K N _).trans (Prod.ext (SingleObj.id_as_one K x.1) (by simp))
+
+/-- Composing `(h, x)` followed by `(g, x)` gives `(g * h, x)`: categorical composition reverses
+the order of the labels. -/
+theorem arrowHomeomorph_comp (a b : Quiver.Total (SingleObj K × Discrete N))
+    (h : a.right = b.left) :
+    arrowHomeomorph K N (a.comp b h) =
+      ((arrowHomeomorph K N b).1 * (arrowHomeomorph K N a).1, (arrowHomeomorph K N a).2) := by
+  obtain ⟨⟨⟨⟩, x⟩, ⟨⟨⟩, y⟩, f⟩ := a
+  obtain ⟨⟨⟨⟩, y'⟩, ⟨⟨⟩, z⟩, g⟩ := b
+  cases h
+  simp [SingleObj.comp_as_mul]
 
 /-- Every arrow of `SingleObj K × Discrete N` is ineffective. -/
 @[simp]
@@ -174,9 +204,21 @@ theorem autMulEquiv_symm_apply (x : SingleObj K × Discrete N) (e : Aut x) :
 theorem nontrivial_aut (x : SingleObj K × Discrete N) [Nontrivial K] : Nontrivial (Aut x) :=
   (autMulEquiv K N x).symm.toEquiv.nontrivial
 
-variable [TopologicalSpace K] [TopologicalSpace N]
+variable [TopologicalSpace K] [TopologicalSpace N] in
+/-- Inverting the arrow `(g, x)` gives `(g⁻¹, x)`. -/
+theorem arrowHomeomorph_inverse (a : Quiver.Total (SingleObj K × Discrete N)) :
+    arrowHomeomorph K N ⟨a.right, a.left, inv a.hom⟩ =
+      ((arrowHomeomorph K N a).1⁻¹, (arrowHomeomorph K N a).2) := by
+  obtain ⟨⟨⟨⟩, x⟩, ⟨⟨⟩, y⟩, f⟩ := a
+  obtain rfl : x = y := Discrete.ext (Discrete.eq_of_hom f.2)
+  have h : (inv f).1 = f.1⁻¹ :=
+    ((CategoryTheory.Prod.fst _ _).map_inv f).trans (SingleObj.inv_as_inv K _)
+  simp only [arrowHomeomorph_apply, h]
 
-omit [TopologicalSpace K] in
+section CoarseSpace
+
+variable [TopologicalSpace N]
+
 /-- The coarse space of the trivial gerbe `SingleObj K × Discrete N` is homeomorphic to `N`. -/
 def isomorphismClassesHomeomorph :
     _root_.Quotient (isIsomorphicSetoid (SingleObj K × Discrete N)) ≃ₜ N :=
@@ -185,17 +227,21 @@ def isomorphismClassesHomeomorph :
       ⟨fun ⟨e⟩ ↦ (right_eq_left K N ⟨_, _, e.hom⟩).symm, fun h ↦ h ▸ ⟨Iso.refl _⟩⟩).trans
     (Homeomorph.quotientBot.trans (objectHomeomorph K N))
 
-omit [TopologicalSpace K] in
 @[simp]
 theorem isomorphismClassesHomeomorph_mk (x : SingleObj K × Discrete N) :
     isomorphismClassesHomeomorph K N (_root_.Quotient.mk _ x) = x.2.as := by
-  simp [isomorphismClassesHomeomorph]; rfl
+  simp [isomorphismClassesHomeomorph]
 
-omit [TopologicalSpace K] in
 @[simp]
 theorem isomorphismClassesHomeomorph_symm_apply (y : N) :
     (isomorphismClassesHomeomorph K N).symm y = _root_.Quotient.mk _ (SingleObj.star K, ⟨y⟩) :=
   (isomorphismClassesHomeomorph K N).injective (by simp)
+
+end CoarseSpace
+
+section EffectiveQuotient
+
+variable [TopologicalSpace K] [TopologicalSpace N]
 
 /-- Projection from `EffectiveQuotient (SingleObj K × Discrete N)` to `Discrete N`, induced by the
 second projection. -/
@@ -327,7 +373,8 @@ theorem coe_effectiveQuotientArrowHomeomorph_symm :
     ⇑(effectiveQuotientArrowHomeomorph K N).symm =
       (discreteToEffectiveQuotient K N).toPrefunctor.mapTotal := (rfl)
 
-omit [TopologicalSpace K] [TopologicalSpace N] in
+end EffectiveQuotient
+
 /-- At every object of `SingleObj K × Discrete N`, the automorphism group has order `Nat.card K`. -/
 @[simp]
 theorem card_aut (x : SingleObj K × Discrete N) : Nat.card (Aut x) = Nat.card K :=
@@ -335,7 +382,7 @@ theorem card_aut (x : SingleObj K × Discrete N) : Nat.card (Aut x) = Nat.card K
 
 section Etale
 
-variable [DiscreteTopology K]
+variable [TopologicalSpace K] [TopologicalSpace N] [DiscreteTopology K]
 
 /-- Every ineffective kernel of `SingleObj K × Discrete N` is the whole isotropy group. -/
 @[simp]
@@ -360,7 +407,6 @@ end Etale
 
 section Nontrivial
 
-omit [TopologicalSpace K] [TopologicalSpace N] in
 /-- When `K` is nontrivial and `N` is nonempty, no functor `SingleObj K × Discrete N ⥤ Discrete N`
 is faithful. -/
 theorem isEmpty_faithful_functor_discrete [Nontrivial K] [Nonempty N] :
@@ -373,12 +419,23 @@ theorem isEmpty_faithful_functor_discrete [Nontrivial K] [Nonempty N] :
       (Subsingleton.elim (F.map ((k₁, 𝟙 (Discrete.mk y)) : x ⟶ x))
         (F.map ((k₂, 𝟙 (Discrete.mk y)) : x ⟶ x)))⟩
 
-omit [TopologicalSpace K] [TopologicalSpace N] in
+/-- When `K` is nontrivial and `N` is nonempty, `SingleObj K × Discrete N` is not equivalent to a
+thin category: an equivalence would make the isotropy group `K` at any object trivial. -/
+theorem isEmpty_equivalence_of_isThin [Nontrivial K] [Nonempty N] {D : Type*} [Category D]
+    [Quiver.IsThin D] : IsEmpty (SingleObj K × Discrete N ≌ D) := by
+  refine ⟨fun e ↦ ?_⟩
+  let x : SingleObj K × Discrete N := (SingleObj.star K, ⟨Classical.arbitrary N⟩)
+  have : Subsingleton (Aut x) :=
+    ⟨fun g h ↦ Aut.ext (Iso.ext (e.functor.map_injective (Subsingleton.elim _ _)))⟩
+  exact not_subsingleton K (autMulEquiv K N x).toEquiv.subsingleton
+
 /-- When `K` is nontrivial and `N` is nonempty, `SingleObj K × Discrete N` is not categorically
 equivalent to `Discrete N`. -/
 theorem isEmpty_equivalence_discrete [Nontrivial K] [Nonempty N] :
     IsEmpty (SingleObj K × Discrete N ≌ Discrete N) :=
   ⟨fun e ↦ (isEmpty_faithful_functor_discrete K N).false ⟨e.functor, inferInstance⟩⟩
+
+variable [TopologicalSpace K] [TopologicalSpace N]
 
 /-- When `K` is nontrivial and `N` is nonempty, the projection to the effective quotient of
 `SingleObj K × Discrete N` is not faithful. -/

@@ -15,7 +15,9 @@ A pseudo-basis identifies a lattice with a finite product of nonzero integral id
 Applying this to the image of a finite flat module in its scalar extension to the fraction
 field gives the corresponding module decomposition, with one ideal for each generic dimension.
 This makes the pseudo-basis theorem available for abstract projective modules, in particular
-for computing their classes in projective `K₀`.
+for computing their classes in projective `K₀`. Recording the factors as non-zero-divisors of the
+ideal monoid (`Module.exists_linearEquiv_pi_nonZeroDivisors`) is the form used to take ideal
+classes of them.
 
 ## References
 
@@ -53,7 +55,8 @@ theorem Submodule.exists_linearEquiv_pi_ideal {ι : Type*} [Finite ι]
     ext v
     constructor
     · rintro ⟨x, rfl⟩
-      exact (hb _).2 fun i ↦ (IsLocalization.mem_coeSubmodule _ _).2 ⟨x i, (x i).2, (hf x i).symm⟩
+      exact (hb _).2 fun i ↦ (IsLocalization.mem_coeSubmodule _ _).2 ⟨x i, (x i).property,
+          (hf x i).symm⟩
     · intro hv
       choose x hx heq using fun i ↦ (IsLocalization.mem_coeSubmodule K (J i)).1 ((hb v).1 hv i)
       refine ⟨fun i ↦ ⟨x i, hx i⟩, b.repr.injective ?_⟩
@@ -76,3 +79,12 @@ theorem Module.exists_linearEquiv_pi_ideal (R K M : Type*) [CommRing R] [IsDedek
   obtain ⟨J, hJ, ⟨e⟩⟩ :=
     L.exists_linearEquiv_pi_ideal (ι := Fin (finrank K (K ⊗[R] M))) hL hspan (by simp)
   exact ⟨J, hJ, ⟨(TensorProduct.unitTmulEquiv R K M).trans e⟩⟩
+
+open scoped nonZeroDivisors in
+/-- A finite flat module over a Dedekind domain is a finite product of nonzero ideals, indexed
+here by non-zero-divisors of the ideal monoid. -/
+theorem Module.exists_linearEquiv_pi_nonZeroDivisors (R M : Type*) [CommRing R]
+    [IsDedekindDomain R] [AddCommGroup M] [Module R M] [Module.Finite R M] [Module.Flat R M] :
+    ∃ (n : ℕ) (J : Fin n → (Ideal R)⁰), Nonempty (M ≃ₗ[R] (i : Fin n) → (J i : Ideal R)) := by
+  obtain ⟨J, hJ, e⟩ := Module.exists_linearEquiv_pi_ideal R (FractionRing R) M
+  exact ⟨_, fun i ↦ ⟨J i, mem_nonZeroDivisors_of_ne_zero (hJ i)⟩, e⟩

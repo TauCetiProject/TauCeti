@@ -48,7 +48,7 @@ structure Hom (A D : FiniteRankAtlas 𝕜 X) where
   fiberMap (x : X) : A.Fiber x →ₗ[𝕜] D.Fiber x
   /-- Continuity is measured in the glued bundle topologies. -/
   continuous_totalSpaceMap : Continuous (fun p : TotalSpace Unit A.Fiber =>
-    (⟨p.proj, fiberMap p.proj p.2⟩ : TotalSpace Unit D.Fiber))
+    (⟨p.proj, fiberMap p.proj p.snd⟩ : TotalSpace Unit D.Fiber))
 
 namespace Hom
 
@@ -98,6 +98,32 @@ variable {A D C : FiniteRankAtlas 𝕜 X}
 
 @[simp] theorem totalSpaceMap_comp (f : A ⟶ D) (g : D ⟶ C) :
     (f ≫ g).totalSpaceMap = g.totalSpaceMap.comp f.totalSpaceMap := (rfl)
+
+namespace Hom
+
+/-- Every fibre map of an atlas morphism is continuous, without assuming completeness of `𝕜`. -/
+@[continuity, fun_prop]
+theorem continuous_fiberMap (f : A ⟶ D) (x : X) : Continuous (f.fiberMap x) :=
+  (D.isInducing_mk x).continuous_iff.2 <|
+    f.continuous_totalSpaceMap.comp (A.isInducing_mk x).continuous
+
+/-- The continuous linear map on the fibre at `x` induced by an atlas morphism. -/
+def fiberCLM (f : A ⟶ D) (x : X) : A.Fiber x →L[𝕜] D.Fiber x :=
+  ⟨f.fiberMap x, f.continuous_fiberMap x⟩
+
+@[simp] theorem coe_fiberCLM (f : A ⟶ D) (x : X) :
+    (f.fiberCLM x : A.Fiber x →ₗ[𝕜] D.Fiber x) = f.fiberMap x := (rfl)
+
+@[simp] theorem fiberCLM_apply (f : A ⟶ D) (x : X) (v : A.Fiber x) :
+    f.fiberCLM x v = f.fiberMap x v := (rfl)
+
+end Hom
+
+@[simp] theorem fiberCLM_id (A : FiniteRankAtlas 𝕜 X) (x : X) :
+    Hom.fiberCLM (𝟙 A) x = ContinuousLinearMap.id 𝕜 (A.Fiber x) := (rfl)
+
+@[simp] theorem fiberCLM_comp (f : A ⟶ D) (g : D ⟶ C) (x : X) :
+    Hom.fiberCLM (f ≫ g) x = (g.fiberCLM x).comp (f.fiberCLM x) := (rfl)
 
 /-- Passing to the continuous maps of total spaces is faithful. -/
 theorem totalSpaceMap_injective : Function.Injective (Hom.totalSpaceMap (A := A) (D := D)) := by
@@ -171,9 +197,9 @@ variable {𝕜 : Type v} [NontriviallyNormedField 𝕜]
 continuity of both induced total-space maps. -/
 def isoMk (e : ∀ x, A.Fiber x ≃ₗ[𝕜] D.Fiber x)
     (h : Continuous (fun p : TotalSpace Unit A.Fiber =>
-      (⟨p.proj, e p.proj p.2⟩ : TotalSpace Unit D.Fiber)))
+      (⟨p.proj, e p.proj p.snd⟩ : TotalSpace Unit D.Fiber)))
     (h' : Continuous (fun p : TotalSpace Unit D.Fiber =>
-      (⟨p.proj, (e p.proj).symm p.2⟩ : TotalSpace Unit A.Fiber))) : A ≅ D where
+      (⟨p.proj, (e p.proj).symm p.snd⟩ : TotalSpace Unit A.Fiber))) : A ≅ D where
   hom := ⟨fun x => (e x).toLinearMap, h⟩
   inv := ⟨fun x => (e x).symm.toLinearMap, h'⟩
   hom_inv_id := by

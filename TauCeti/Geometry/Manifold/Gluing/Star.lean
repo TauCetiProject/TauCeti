@@ -6,138 +6,122 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Gluing.GlueData
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Topology.Category.TopCat.GlueData.Star
 
 /-!
-# Compatible manifold gluing in a star
+# Star gluings of manifolds
 
-Glue a hub manifold `X` to abstract leaf manifolds `Y i` along smooth open partial
-homeomorphisms with pairwise disjoint sources. The resulting `TauCeti.starGlueData` satisfies
-`TopCat.GlueData.IsCompatible`: it therefore acquires a manifold atlas from the general
-compatible-gluing theorem, and every piece includes by a local diffeomorphism. Over `ℂ`,
-holomorphic transitions give a complex manifold and local biholomorphisms.
+The star gluing `TauCeti.starGlueData ψ` attaches pieces `U i` to a centre `X` by homeomorphisms
+`ψ i : W i ≃ₜ A i` between open subsets, and glues two pieces along the points they attach to the
+same points of `X`. When `X` and the pieces are charted spaces, every piece carries its own atlas
+and every overlap the atlas of an open subset of its piece. If every `ψ i` is a `C^n` local
+diffeomorphism, hence a `C^n` diffeomorphism from `W i` onto `A i`, then the star gluing is a
+compatible gluing (`TauCeti.isCompatible_starGlueData`): both maps out of an overlap are, after
+following the attaching maps into `X`, inclusions of open subsets of `X`.
 
-This tests compatible gluing with heterogeneous pieces, empty off-diagonal overlaps, and an
-arbitrary number of leaves. In particular it applies to finite stars, without requiring any
-piece or overlap to be nonempty. The glued atlas is the named `TopCat.GlueData.chartedSpace`;
-no additional atlas is installed globally.
+The general results on compatible gluings then apply to star gluings without further work. If the
+pieces are `C^n` manifolds, `TopCat.GlueData.IsCompatible.isManifold` makes the glued space a
+`C^n` manifold for the glued atlas `TopCat.GlueData.chartedSpace`, and
+`TopCat.GlueData.IsCompatible.isLocalDiffeomorph_ι` makes every canonical map from a piece a
+`C^n` local diffeomorphism. Taking a hub, the centre itself attached by the identity, together
+with finitely many arms gives the finite star gluings, whose arms with disjoint images in the hub
+meet only the hub (`TauCeti.nonempty_starGlueData_V_iff`). For `𝕜 = ℂ` these glue complex
+manifolds along biholomorphisms.
+
+## Main declarations
+
+* `TauCeti.isLocalDiffeomorph_starTransition`: the transitions of a star gluing along local
+  diffeomorphisms are local diffeomorphisms.
+* `TauCeti.isCompatible_starGlueData`: a star gluing along local diffeomorphisms is compatible.
 
 ## References
 
-* John M. Lee, *Introduction to Smooth Manifolds*, second edition, Chapter 1
-  (the smooth manifold chart lemma).
+* John M. Lee, *Introduction to Smooth Manifolds*, second edition, Graduate Texts in
+  Mathematics 218, Springer, 2013, Chapter 1 (the smooth manifold chart lemma).
 -/
 
 public section
 
-open Set TopologicalSpace Function
+open Set TopologicalSpace
 open scoped Manifold ContDiff
 
 namespace TauCeti
 
 universe u
 
-variable {ι X : Type u} [TopologicalSpace X] {Y : ι → Type u}
-  [∀ i, TopologicalSpace (Y i)] {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {n : ℕ∞ω}
-  [ChartedSpace H X] [∀ i, ChartedSpace H (Y i)]
-  (e : ∀ i, OpenPartialHomeomorph X (Y i))
-  (he : Pairwise (Disjoint on fun i ↦ (e i).source))
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {n : ℕ∞ω}
+  {J : Type u} {X : Type*} [TopologicalSpace X] [ChartedSpace H X] {U : J → Type u}
+  [∀ i, TopologicalSpace (U i)] [∀ i, ChartedSpace H (U i)] {W : ∀ i, Opens (U i)}
+  {A : J → Opens X} (ψ : ∀ i, W i ≃ₜ A i)
 
-/-- Each piece of the star retains its original atlas. -/
-@[instance_reducible]
-noncomputable instance instChartedSpaceStarGlueDataU (i : (starGlueData e he).J) :
-    ChartedSpace H ((starGlueData e he).U i) := by
-  cases i with
-  | none => exact inferInstanceAs (ChartedSpace H X)
-  | some i => exact inferInstanceAs (ChartedSpace H (Y i))
+-- The indices below have type `(starGlueData ψ).J`, which is `J` by `starGlueData_J`, so that
+-- these instances apply to the families of instances in `TopCat.GlueData.IsCompatible`. The
+-- instances of the family indexed by `J` are applied to them directly for the same reason.
 
-/-- Each overlap of the star carries its open-subspace atlas. -/
-@[instance_reducible]
+/-- Each piece of a star gluing carries its own atlas. -/
+noncomputable instance instChartedSpaceStarGlueDataU (i : (starGlueData ψ).J) :
+    ChartedSpace H ((starGlueData ψ).U i) :=
+  (inferInstance : ∀ i, ChartedSpace H (U i)) i
+
+/-- The overlap of the pieces `i` and `j` of a star gluing carries the atlas of the open subset
+`starOverlap ψ i j` of the piece `i`. -/
 noncomputable instance instChartedSpaceStarGlueDataV
-    (p : (starGlueData e he).J × (starGlueData e he).J) :
-    ChartedSpace H ((starGlueData e he).V p) := by
-  classical
-  rcases p with ⟨i, j⟩
-  cases i with
-  | none =>
-    cases j with
-    | none => exact inferInstanceAs (ChartedSpace H (⊤ : Opens X))
-    | some j => exact inferInstanceAs
-        (ChartedSpace H (⟨(e j).source, (e j).open_source⟩ : Opens X))
-  | some i =>
-    cases j with
-    | none => exact inferInstanceAs
-        (ChartedSpace H (⟨(e i).target, (e i).open_target⟩ : Opens (Y i)))
-    | some j => exact inferInstanceAs (ChartedSpace H
-        (⟨{_x | i = j}, by by_cases h : i = j <;> simp [h]⟩ : Opens (Y i)))
+    (p : (starGlueData ψ).J × (starGlueData ψ).J) : ChartedSpace H ((starGlueData ψ).V p) :=
+  (inferInstance : ∀ i j, ChartedSpace H (starOverlap ψ i j)) p.1 p.2
 
-/-- Each piece of a star of `C^n` manifolds is a `C^n` manifold. -/
-instance instIsManifoldStarGlueDataU [IsManifold I n X] [∀ i, IsManifold I n (Y i)]
-    (i : (starGlueData e he).J) : IsManifold I n ((starGlueData e he).U i) := by
-  cases i with
-  | none => exact inferInstanceAs (IsManifold I n X)
-  | some i => exact inferInstanceAs (IsManifold I n (Y i))
+/-- Each piece of a star gluing of `C^n` manifolds is a `C^n` manifold. -/
+instance instIsManifoldStarGlueDataU [∀ i, IsManifold I n (U i)] (i : (starGlueData ψ).J) :
+    IsManifold I n ((starGlueData ψ).U i) :=
+  (inferInstance : ∀ i, IsManifold I n (U i)) i
 
-private theorem isLocalDiffeomorph_starGlueData_f (i j : (starGlueData e he).J) :
-    IsLocalDiffeomorph I I n ((starGlueData e he).f i j) := by
-  classical
-  cases i with
-  | none =>
-    cases j with
-    | none => exact isLocalDiffeomorph_subtype_val (I := I) (U := (⊤ : Opens X))
-    | some j =>
-      exact isLocalDiffeomorph_subtype_val (I := I)
-        (U := (⟨(e j).source, (e j).open_source⟩ : Opens X))
-  | some i =>
-    cases j with
-    | none =>
-      exact isLocalDiffeomorph_subtype_val (I := I)
-        (U := (⟨(e i).target, (e i).open_target⟩ : Opens (Y i)))
-    | some j =>
-      exact isLocalDiffeomorph_subtype_val (I := I)
-        (U := (⟨{_x : Y i | i = j}, by by_cases h : i = j <;> simp [h]⟩ : Opens (Y i)))
+variable {ψ}
 
-/-- Smooth transitions with pairwise disjoint hub sources give a compatible star gluing.
-Both overlap maps into adjacent pieces are local diffeomorphisms, including when an overlap
-is empty. Apply `TopCat.GlueData.IsCompatible.isManifold` to obtain the glued manifold. -/
-theorem isCompatible_starGlueData
-    (hs : ∀ i, ContMDiffOn I I n (e i) (e i).source)
-    (ht : ∀ i, ContMDiffOn I I n (e i).symm (e i).target) :
-    (starGlueData e he).IsCompatible I n := by
-  classical
-  let Φ (i : ι) : PartialDiffeomorph I I X (Y i) n :=
-    { (e i) with contMDiffOn_toFun := hs i, contMDiffOn_invFun := ht i }
-  constructor
-  · exact isLocalDiffeomorph_starGlueData_f e he
-  · intro i j
-    cases i with
-    | none =>
-      cases j with
-      | none =>
-        rw [(starGlueData e he).toGlueData.t_id none]
-        exact isLocalDiffeomorph_subtype_val (I := I) (n := n) (U := (⊤ : Opens X))
-      | some j =>
-        intro x
-        simp only [starGlueData_t_none_some]
-        exact (isLocalDiffeomorph_subtype_val (I := I)
-          (U := (⟨(e j).source, (e j).open_source⟩ : Opens X)) x).comp I (Y j)
-          (hg := (Φ j).isLocalDiffeomorphAt I I n x.2)
-    | some i =>
-      cases j with
-      | none =>
-        intro x
-        simp only [starGlueData_t_some_none]
-        exact (isLocalDiffeomorph_subtype_val (I := I)
-          (U := (⟨(e i).target, (e i).open_target⟩ : Opens (Y i))) x).comp I X
-          (hg := (Φ i).symm.isLocalDiffeomorphAt I I n x.2)
-      | some j =>
-        intro x
-        have hij : i = j := x.2
-        subst j
-        rw [(starGlueData e he).toGlueData.t_id (some i)]
-        exact isLocalDiffeomorph_subtype_val (I := I) (n := n)
-          (U := (⟨{_x : Y i | i = i}, by simp⟩ : Opens (Y i))) x
+/-- On the overlap of distinct pieces `i` and `j`, the attaching map `ψ i` into the centre is a
+`C^n` local diffeomorphism, if `ψ i` is one. -/
+private theorem isLocalDiffeomorph_apply_inclusion_starOverlap {i j : J} (hij : i ≠ j)
+    (hψ : IsLocalDiffeomorph I I n (ψ i)) :
+    IsLocalDiffeomorph I I n fun y : starOverlap ψ i j ↦
+      (ψ i (Opens.inclusion (starOverlap_le hij) y) : X) := fun y ↦ by
+  -- The inclusion of the overlap into `W i` is a local diffeomorphism, since its composite with
+  -- the inclusion of `W i` is the inclusion of the overlap.
+  have hincl : IsLocalDiffeomorphAt I I n (Opens.inclusion (starOverlap_le (ψ := ψ) hij)) y :=
+    IsLocalDiffeomorphAt.of_comp_left (f := (Subtype.val : W i → U i))
+      (isLocalDiffeomorph_subtype_val y) (isLocalDiffeomorph_subtype_val _)
+      (continuous_inclusion _).continuousAt
+  exact (hincl.comp (hg := hψ _)).comp (hg := isLocalDiffeomorph_subtype_val _)
+
+/-- **The transitions of a star gluing are local diffeomorphisms.** If every attaching map `ψ i` is
+a `C^n` local diffeomorphism, then so is every transition `ψ j⁻¹ ∘ ψ i` between overlaps. -/
+theorem isLocalDiffeomorph_starTransition (hψ : ∀ i, IsLocalDiffeomorph I I n (ψ i)) (i j : J) :
+    IsLocalDiffeomorph I I n (starTransition ψ i j) := by
+  by_cases hij : i = j
+  · subst hij
+    rw [starTransition_self, ContinuousMap.coe_id]
+    exact (Diffeomorph.refl I _ n).isLocalDiffeomorph
+  -- Followed by the attaching map `ψ j`, the transition is the attaching map `ψ i`.
+  refine fun x ↦ IsLocalDiffeomorphAt.of_comp_left
+    (f := fun y : starOverlap ψ j i ↦ (ψ j (Opens.inclusion (starOverlap_le (Ne.symm hij)) y) : X))
+    ?_ (isLocalDiffeomorph_apply_inclusion_starOverlap (Ne.symm hij) (hψ j) _)
+    (starTransition ψ i j).continuous.continuousAt
+  have h : (fun y : starOverlap ψ j i ↦
+      (ψ j (Opens.inclusion (starOverlap_le (Ne.symm hij)) y) : X)) ∘ starTransition ψ i j =
+      fun y : starOverlap ψ i j ↦ (ψ i (Opens.inclusion (starOverlap_le hij) y) : X) :=
+    funext fun y ↦ apply_starTransition y _ _
+  rw [h]
+  exact isLocalDiffeomorph_apply_inclusion_starOverlap hij (hψ i) x
+
+/-- **Star gluings along local diffeomorphisms are compatible.** If every attaching map `ψ i` is a
+`C^n` local diffeomorphism from the open subset `W i` of its piece onto the open subset `A i` of
+the centre, then the pieces and overlaps of the star gluing are `C^n` compatible. -/
+theorem isCompatible_starGlueData (hψ : ∀ i, IsLocalDiffeomorph I I n (ψ i)) :
+    (starGlueData ψ).IsCompatible I n :=
+  -- By `starGlueData_f` and `starGlueData_t`, each map `f i j` is the inclusion of the open
+  -- subset `starOverlap ψ i j` and each transition `t i j` is `starTransition ψ i j`. The
+  -- inclusions are stated for indices in `J` and then read at the indices of `starGlueData ψ`.
+  have hf (i j : J) : IsLocalDiffeomorph I I n (Subtype.val : starOverlap ψ i j → U i) :=
+    isLocalDiffeomorph_subtype_val
+  .of_isLocalDiffeomorph_t hf fun i j : J ↦ isLocalDiffeomorph_starTransition hψ i j
 
 end TauCeti

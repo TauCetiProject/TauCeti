@@ -139,7 +139,7 @@ theorem homogeneousCoeffEquiv_apply [Finite σ] {n : ℕ} (p : homogeneousSubmod
 @[simp]
 theorem coe_homogeneousCoeffEquiv_symm_apply [Fintype σ] [DecidableEq σ] {n : ℕ}
     (a : {s : σ →₀ ℕ // s.degree = n} → R) :
-    ((homogeneousCoeffEquiv n).symm a : MvPolynomial σ R) = ∑ s, monomial s.1 (a s) := by
+    ((homogeneousCoeffEquiv n).symm a : MvPolynomial σ R) = ∑ s, monomial s.val (a s) := by
   rw [← ContinuousLinearEquiv.coe_symm_toLinearEquiv, homogeneousCoeffEquiv_toLinearEquiv]
   simp [Module.Basis.equivFun_symm_apply, smul_monomial]
 

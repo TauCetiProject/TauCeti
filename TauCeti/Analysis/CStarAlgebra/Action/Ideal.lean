@@ -88,7 +88,7 @@ def restrictIdealEquiv {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
 @[simp]
 theorem restrictIdealEquiv_apply {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
     (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) (g : G) (x : I) :
-    hI.restrictIdealEquiv g x = ⟨α g x, hI.apply_mem g x.2⟩ := by
+    hI.restrictIdealEquiv g x = ⟨α g x, hI.apply_mem g x.property⟩ := by
   simp [restrictIdealEquiv]
 
 /-- Restrict a C⋆-action to a closed invariant two-sided ideal. -/
@@ -100,7 +100,7 @@ def restrictIdeal {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
 @[simp]
 theorem restrictIdeal_apply {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
     (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) (g : G) (x : I) :
-    hI.restrictIdeal g x = ⟨α g x, hI.apply_mem g x.2⟩ := by
+    hI.restrictIdeal g x = ⟨α g x, hI.apply_mem g x.property⟩ := by
   simp [restrictIdeal]
 
 @[norm_cast]

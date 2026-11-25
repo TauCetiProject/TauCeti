@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Data.Set.PowersetCard
+public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.Basis
 
 /-!
@@ -19,7 +20,8 @@ coordinate space `Fin (m.choose j) → R`.
 
 Reading `exteriorPower.map j f` through these identifications gives
 `LinearMap.exteriorPowerCoords j f`, the `j`th compound matrix of `f`. It is functorial
-(`LinearMap.exteriorPowerCoords_id`, `LinearMap.exteriorPowerCoords_comp`), and its matrix
+(`LinearMap.exteriorPowerCoords_id`, `LinearMap.exteriorPowerCoords_comp`), homogeneous of degree
+`j` (`LinearMap.exteriorPowerCoords_smul`), and its matrix
 entries are the `j × j` minors of the matrix of `f` (`LinearMap.exteriorPowerCoords_single_apply`).
 In degree zero it is the identity after identifying the coordinate space with the coordinate line
 (`exteriorPower.piZeroEquiv_exteriorPowerCoords`), in degree one it is `f` itself
@@ -106,6 +108,12 @@ theorem piEquiv_symm_exteriorPowerCoords (j : ℕ) {m n : ℕ}
     (f : (Fin l → R) →ₗ[R] (Fin m → R)) :
     (g ∘ₗ f).exteriorPowerCoords j = g.exteriorPowerCoords j ∘ₗ f.exteriorPowerCoords j :=
   LinearMap.ext fun v ↦ by simp [exteriorPowerCoords, map_comp]
+
+/-- The compound matrix of `c • f` in degree `j` is `c ^ j` times the compound matrix of `f`. -/
+@[simp] theorem exteriorPowerCoords_smul (j : ℕ) {m n : ℕ} (c : R)
+    (f : (Fin m → R) →ₗ[R] (Fin n → R)) :
+    (c • f).exteriorPowerCoords j = c ^ j • f.exteriorPowerCoords j :=
+  LinearMap.ext fun v ↦ by simp [exteriorPowerCoords]
 
 /-- The entries of the `j`th compound matrix are the `j × j` minors of the original matrix, with
 rows and columns selected by the enumerated subsets in increasing order. -/

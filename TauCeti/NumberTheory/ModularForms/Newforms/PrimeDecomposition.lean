@@ -63,29 +63,29 @@ theorem exists_eq_sum_levelRaise_prime_of_forall_coprime_qExpansion_coeff_eq_zer
     (hf : f ∈ cuspFormCharSpace k χ)
     (hvan : ∀ n, Nat.Coprime n N → (qExpansion 1 f).coeff n = 0) :
     ∃ F : ∀ p : {p // p ∈ N.primeFactors},
-        CuspForm ((Gamma1 (N / p.1)).map (mapGL ℝ)) k,
+        CuspForm ((Gamma1 (N / p.val)).map (mapGL ℝ)) k,
       f = ∑ p : {p // p ∈ N.primeFactors},
-        haveI : NeZero p.1 := ⟨(Nat.prime_of_mem_primeFactors p.2).ne_zero⟩
-        CuspForm.levelRaise p.1
+        haveI : NeZero p.val := ⟨(Nat.prime_of_mem_primeFactors p.property).ne_zero⟩
+        CuspForm.levelRaise p.val
           (Gamma1_map_le_conjAct_scaleGL_of_dvd
-            (Nat.mul_div_cancel' (Nat.dvd_of_mem_primeFactors p.2)).dvd) (F p) := by
+            (Nat.mul_div_cancel' (Nat.dvd_of_mem_primeFactors p.property)).dvd) (F p) := by
   obtain ⟨g, hsum, hsupp, hchar⟩ :=
     exists_eq_sum_of_forall_coprime_prod_qExpansion_coeff_eq_zero (Finset.Subset.refl _) hf
       fun n hn ↦ hvan n (Nat.coprime_of_dvd fun q hq hqn hqN ↦ hq.one_lt.ne'
         (Nat.Coprime.eq_one_of_dvd (Nat.Coprime.coprime_dvd_left hqn hn)
           (Finset.dvd_prod_of_mem id (Nat.mem_primeFactors.mpr ⟨hq, hqN, NeZero.ne N⟩))))
   have hex : ∀ p : {p // p ∈ N.primeFactors},
-      ∃ G : CuspForm ((Gamma1 (N / p.1)).map (mapGL ℝ)) k,
-        haveI : NeZero p.1 := ⟨(Nat.prime_of_mem_primeFactors p.2).ne_zero⟩
-        g p.1 = CuspForm.levelRaise p.1
+      ∃ G : CuspForm ((Gamma1 (N / p.val)).map (mapGL ℝ)) k,
+        haveI : NeZero p.val := ⟨(Nat.prime_of_mem_primeFactors p.property).ne_zero⟩
+        g p.val = CuspForm.levelRaise p.val
           (Gamma1_map_le_conjAct_scaleGL_of_dvd
-            (Nat.mul_div_cancel' (Nat.dvd_of_mem_primeFactors p.2)).dvd) G := by
+            (Nat.mul_div_cancel' (Nat.dvd_of_mem_primeFactors p.property)).dvd) G := by
     intro p
-    have hp := Nat.prime_of_mem_primeFactors p.2
-    have hpN := Nat.dvd_of_mem_primeFactors p.2
-    let _ : NeZero p.1 := ⟨hp.ne_zero⟩
+    have hp := Nat.prime_of_mem_primeFactors p.property
+    have hpN := Nat.dvd_of_mem_primeFactors p.property
+    let _ : NeZero p.val := ⟨hp.ne_zero⟩
     exact exists_eq_levelRaise_of_mem_qSupportedOnDvdSubmodule hpN χ
-      (hchar p.1 p.2) (hsupp p.1 p.2)
+      (hchar p.val p.property) (hsupp p.val p.property)
   choose F hF using hex
   refine ⟨F, ?_⟩
   rw [hsum, ← Finset.sum_attach]

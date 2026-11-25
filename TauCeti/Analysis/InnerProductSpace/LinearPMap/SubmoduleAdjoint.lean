@@ -6,12 +6,14 @@ Authors: Jon Crall, Claude Opus 5
 module
 
 public import Mathlib.Analysis.InnerProductSpace.LinearPMap
+import TauCeti.Analysis.Normed.Operator.Dense
+import TauCeti.Topology.Algebra.Module.LinearPMap.GraphCore
 
 /-!
 # Double adjoints of submodules and densely defined operators
 
-The double adjoint of a submodule is its topological closure, so the double
-adjoint of a closed submodule is the original submodule.
+The double adjoint of a submodule of a product of complete spaces is its topological closure,
+and the double adjoint of a complete submodule is the original submodule.
 As a consequence, the adjoint of a closable partial linear map has dense domain.
 
 ## Main results
@@ -19,9 +21,15 @@ As a consequence, the adjoint of a closable partial linear map has dense domain.
 * `Submodule.le_adjoint_adjoint`: double adjoints contain the original submodule.
 * `Submodule.adjoint_adjoint_eq_topologicalClosure`: the double adjoint is the
   topological closure.
-* `Submodule.adjoint_adjoint`: equality for closed submodules.
+* `Submodule.adjoint_adjoint`: equality for complete submodules.
 * `LinearPMap.dense_adjoint_domain`: a closable operator has a densely defined
   adjoint.
+* `LinearPMap.tendsto_inner_apply_of_isClosable`: for closable `A`, a family `uᵢ → 0` of
+  `dom A` with `‖A uᵢ‖` eventually bounded has `A uᵢ → 0` weakly.
+* `LinearPMap.adjoint_adjoint_eq_closure`: `T†† = closure T` for a closable densely defined
+  operator.
+* `LinearPMap.adjoint_adjoint`, `LinearPMap.adjoint_adjoint_apply`: `T†† = T` for a closed
+  densely defined operator.
 
 ## Provenance
 
@@ -32,6 +40,7 @@ Adapted from the Kitware DKPS formalization, originally authored in `ForTauCeti`
 
 public section
 
+open Filter Topology
 open scoped InnerProductSpace
 
 namespace Submodule
@@ -52,48 +61,62 @@ theorem le_adjoint_adjoint (g : Submodule 𝕜 (E × F)) : g ≤ g.adjoint.adjoi
   simp only [map_sub, inner_conj_symm, map_zero] at h2
   exact sub_eq_zero.mpr (sub_eq_zero.mp h2).symm
 
+/-- Transport of the double adjoint to the `L²` product: a point of `g.adjoint.adjoint` lies in
+the double orthogonal complement of the copy of `g` in `WithLp 2 (E × F)`. -/
+private theorem toLp_mem_orthogonal_orthogonal_of_mem_adjoint_adjoint {g : Submodule 𝕜 (E × F)}
+    {x : E × F} (hx : x ∈ g.adjoint.adjoint) :
+    WithLp.toLp 2 x ∈ (g.comap (WithLp.linearEquiv 2 𝕜 (E × F)).toLinearMap)ᗮᗮ := by
+  rw [Submodule.mem_orthogonal]
+  intro y hy
+  rw [Submodule.mem_orthogonal] at hy
+  have hab : ((-(WithLp.ofLp y).2 : F), ((WithLp.ofLp y).1 : E)) ∈ g.adjoint := by
+    rw [Submodule.mem_adjoint_iff]
+    intro c d hcd
+    have := hy (WithLp.toLp 2 (c, d)) (by simpa using hcd)
+    rw [WithLp.prod_inner_apply] at this
+    simp only [inner_neg_right]
+    linear_combination -this
+  have hxy := (Submodule.mem_adjoint_iff _ x).mp hx _ _ hab
+  rw [WithLp.prod_inner_apply]
+  simp only [inner_neg_left] at hxy
+  linear_combination hxy
+
 /-- The double adjoint of a submodule is its topological closure when the ambient
 inner product spaces are complete. -/
 theorem adjoint_adjoint_eq_topologicalClosure [CompleteSpace E] [CompleteSpace F]
     (g : Submodule 𝕜 (E × F)) : g.adjoint.adjoint = g.topologicalClosure := by
-  refine le_antisymm ?_ (g.topologicalClosure_minimal g.le_adjoint_adjoint ?_)
-  · set L := WithLp.prodContinuousLinearEquiv 2 𝕜 E F with hL
-    set G : Submodule 𝕜 (WithLp 2 (E × F)) :=
-      g.comap (L : WithLp 2 (E × F) →L[𝕜] E × F).toLinearMap with hG
-    intro x hx
-    have hmem : (L.symm x) ∈ Gᗮᗮ := by
-      rw [Submodule.mem_orthogonal]
-      intro y hy
-      rw [Submodule.mem_orthogonal] at hy
-      have hab : ((-(WithLp.ofLp y).2 : F), ((WithLp.ofLp y).1 : E)) ∈ g.adjoint := by
-        rw [Submodule.mem_adjoint_iff]
-        intro c d hcd
-        have hu : (L.symm (c, d)) ∈ G := by simpa [hG, hL] using hcd
-        have := hy _ hu
-        rw [WithLp.prod_inner_apply] at this
-        simp only [hL, WithLp.prodContinuousLinearEquiv_symm_apply, WithLp.ofLp_toLp] at this ⊢
-        simp only [inner_neg_right]
-        linear_combination -this
-      have hxy := (Submodule.mem_adjoint_iff _ x).mp hx _ _ hab
-      rw [WithLp.prod_inner_apply]
-      simp only [hL, WithLp.prodContinuousLinearEquiv_symm_apply, WithLp.ofLp_toLp]
-      simp only [inner_neg_left] at hxy
-      linear_combination hxy
-    rw [G.orthogonal_orthogonal_eq_closure, ← SetLike.mem_coe, topologicalClosure_coe] at hmem
+  refine le_antisymm (fun x hx => ?_) (g.topologicalClosure_minimal g.le_adjoint_adjoint ?_)
+  · have hmem := toLp_mem_orthogonal_orthogonal_of_mem_adjoint_adjoint hx
+    rw [orthogonal_orthogonal_eq_closure, ← SetLike.mem_coe, topologicalClosure_coe, comap_coe,
+      LinearEquiv.coe_toLinearMap, WithLp.coe_linearEquiv] at hmem
     rw [← SetLike.mem_coe, topologicalClosure_coe]
-    simpa [hG, ← L.preimage_closure] using hmem
+    simpa using (WithLp.prod_continuous_ofLp 2 E F).closure_preimage_subset _ hmem
   · -- A submodule adjoint is closed: it is the preimage of an orthogonal complement.
     rw [Submodule.adjoint, map_coe, LinearEquiv.coe_coe, LinearEquiv.image_eq_preimage_symm]
     exact (isClosed_orthogonal _).preimage (WithLp.prod_continuous_toLp _ _ _)
 
-/-- **Involutivity of the submodule adjoint on closed submodules.**
+/-- **Involutivity of the submodule adjoint on complete submodules.**
 
 This is the graph-level statement that makes the unbounded-operator adjoint
 theory close on itself: with `LinearPMap.adjoint_graph_eq_graph_adjoint` it says
-`Γ(T††) = Γ(T)` for closed densely defined `T`. -/
-theorem adjoint_adjoint [CompleteSpace E] [CompleteSpace F] (g : Submodule 𝕜 (E × F))
-    (hg : IsClosed (g : Set (E × F))) : g.adjoint.adjoint = g :=
-  (adjoint_adjoint_eq_topologicalClosure g).trans hg.submodule_topologicalClosure_eq
+`Γ(T††) = Γ(T)` for closed densely defined `T`. Only the submodule needs to be complete, not
+the ambient spaces: the proof applies `Submodule.orthogonal_orthogonal`, whose
+`HasOrthogonalProjection` hypothesis a complete submodule satisfies through
+`Submodule.HasOrthogonalProjection.ofCompleteSpace`. In complete ambient spaces, apply it to a
+closed submodule through `IsClosed.isComplete`. -/
+@[simp]
+theorem adjoint_adjoint (g : Submodule 𝕜 (E × F)) (hg : IsComplete (g : Set (E × F))) :
+    g.adjoint.adjoint = g := by
+  refine le_antisymm (fun x hx => ?_) g.le_adjoint_adjoint
+  set G := g.comap (WithLp.linearEquiv 2 𝕜 (E × F)).toLinearMap
+  -- `G` is the image of `g` under the uniform equivalence `WithLp.toLp`, hence complete.
+  have : CompleteSpace G := by
+    refine completeSpace_coe_iff_isComplete.mpr ?_
+    rwa [comap_coe, LinearEquiv.coe_toLinearMap, ← LinearEquiv.image_symm_eq_preimage,
+      WithLp.coe_symm_linearEquiv, (WithLp.isUniformInducing_toLp 2 E F).isComplete_iff]
+  have hmem := toLp_mem_orthogonal_orthogonal_of_mem_adjoint_adjoint hx
+  rw [orthogonal_orthogonal] at hmem
+  simpa [G] using hmem
 
 end Submodule
 
@@ -128,5 +151,45 @@ theorem dense_adjoint_domain {T : E →ₗ.[𝕜] F} (hTc : T.IsClosable) :
   rw [Submodule.adjoint_adjoint_eq_topologicalClosure,
     hTc.graph_closure_eq_closure_graph] at hmem
   exact T.closure.graph_fst_eq_zero_snd hmem rfl
+
+/-- **The double adjoint is the closure.** For a closable densely defined partial linear map `T`
+between Hilbert spaces, `T†† = closure T`. -/
+theorem adjoint_adjoint_eq_closure {T : E →ₗ.[𝕜] F} (hT : T.IsClosable)
+    (hd : Dense (T.domain : Set E)) : T.adjoint.adjoint = T.closure := by
+  apply eq_of_eq_graph
+  rw [adjoint_graph_eq_graph_adjoint (dense_adjoint_domain hT), adjoint_graph_eq_graph_adjoint hd,
+    Submodule.adjoint_adjoint_eq_topologicalClosure, hT.graph_closure_eq_closure_graph]
+
+/-- **The adjoint of a closed operator is involutive.** For a closed densely defined partial linear
+map `T` between Hilbert spaces, `T†† = T`. -/
+theorem adjoint_adjoint {T : E →ₗ.[𝕜] F} (hT : T.IsClosed) (hd : Dense (T.domain : Set E)) :
+    T.adjoint.adjoint = T :=
+  (adjoint_adjoint_eq_closure hT.isClosable hd).trans hT.closure_eq
+
+/-- For a closed densely defined `T`, the double adjoint `T††` evaluates as `T` on `dom T`. -/
+theorem adjoint_adjoint_apply {T : E →ₗ.[𝕜] F} (hT : T.IsClosed) (hd : Dense (T.domain : Set E))
+    (x : T.domain) : T.adjoint.adjoint ⟨x, (adjoint_adjoint hT hd).symm ▸ x.property⟩ = T x :=
+  (adjoint_adjoint hT hd).le.2 rfl
+
+/-- For a closable `A` and a family `uᵢ → 0` of `dom A` with `‖A uᵢ‖` eventually bounded, the
+vectors `A uᵢ` tend to zero weakly: they do so against the dense domain of the adjoint
+(`LinearPMap.dense_adjoint_domain`), and they are bounded. -/
+theorem tendsto_inner_apply_of_isClosable {A : E →ₗ.[𝕜] F} (hA : A.IsClosable) {ι : Type*}
+    {l : Filter ι} {u : ι → A.domain} {C : ℝ} (hu : Tendsto (fun i ↦ (u i : E)) l (𝓝 0))
+    (hAu : ∀ᶠ i in l, ‖A (u i)‖ ≤ C) (k : F) : Tendsto (fun i ↦ ⟪A (u i), k⟫_𝕜) l (𝓝 0) := by
+  have hD (b : F) (hb : b ∈ A.adjoint.domain) :
+      Tendsto (fun i ↦ ⟪A (u i), b⟫_𝕜) l (𝓝 0) := by
+    -- On `dom A†`, `x ↦ ⟪b, A x⟫` is continuous, so it tends to `0` along `uₙ → 0`.
+    have hc : Continuous ((innerₛₗ 𝕜 b).comp A.toFun) := (A.mem_adjoint_domain_iff b).mp hb
+    have h₁ : Tendsto (fun i ↦ ⟪b, A (u i)⟫_𝕜) l (𝓝 0) := by
+      simpa [Function.comp_def] using
+        (hc.tendsto 0).comp (tendsto_subtype_rng.mpr (by simpa using hu))
+    simpa [Function.comp_def, inner_conj_symm] using
+      ((RCLike.continuous_conj (K := 𝕜)).tendsto 0).comp h₁
+  have := ContinuousLinearMap.tendsto_apply_of_dense (dense_adjoint_domain hA) (l := l)
+    (f := fun i ↦ innerSL 𝕜 (A (u i))) (g := 0) (C := C)
+    (hAu.mono fun i hi ↦ (innerSL_apply_norm 𝕜 _).trans_le hi)
+    (fun b hb ↦ by simpa using hD b hb) k
+  simpa using this
 
 end LinearPMap

@@ -22,7 +22,10 @@ equivalence of `Nonempty`s for isomorphism classification.
 
 The point of the dictionary is that classification statements are naturally proved on one side and
 used on the other. The isomorphism classes of simple `k[G]`-modules are what the semisimple-algebra
-theory counts, while the objects being classified are representations.
+theory counts, while the objects being classified are representations. In the same way, a section
+of a free cover of a projective `k[G]`-module transports to the representation side, so that a
+representation with projective group-algebra module is a retract of Mathlib's free representation
+`Representation.free k G V`.
 
 ## Main results
 
@@ -30,6 +33,8 @@ theory counts, while the objects being classified are representations.
   `Representation.IntertwiningMap.equivLinearMapAsModule_symm_apply`: evaluation of the two
   identifications Mathlib leaves definitional, of `ρ.asModule` with `V` and of the intertwining
   map attached to a `k[G]`-linear map.
+* `Representation.IntertwiningMap.equivLinearMapAsModule_surjective_iff`: an intertwining map
+  is surjective exactly when its attached `k[G]`-linear map is.
 * `Representation.finrank_moduleCat_asModule`: bundling the attached module and restricting
   scalars preserves the dimension of the representation.
 * `FDRep.finrank_end_eq_finrank_moduleEnd`: the categorical endomorphism space has
@@ -38,6 +43,8 @@ theory counts, while the objects being classified are representations.
   `ρ.asModule ≃ₗ σ.asModule` is an equivalence of representations.
 * `TauCeti.Representation.asModuleLinearEquivOfEquiv`: the converse.
 * `TauCeti.Representation.nonempty_equiv_iff`: the two notions of isomorphism agree.
+* `Representation.exists_retract_free_of_projective`: a representation whose
+  `k[G]`-module is projective is a retract of the free representation `Representation.free k G V`.
 * `Representation.prodAsModuleEquiv`: the module of a product of representations is the
   product of their modules.
 * `Representation.linearEquivAsModuleComp`: an isomorphism onto `ρ.asModule` restricts
@@ -139,6 +146,21 @@ theorem _root_.Representation.IntertwiningMap.equivLinearMapAsModule_symm_apply
       σ.asModuleEquiv (f (ρ.asModuleEquiv.symm v)) :=
   (rfl)
 
+/-- **Surjectivity transfers across the module dictionary.** The `k[G]`-linear map that
+`Representation.IntertwiningMap.equivLinearMapAsModule` attaches to an intertwining map is
+surjective exactly when the intertwining map is. -/
+theorem _root_.Representation.IntertwiningMap.equivLinearMapAsModule_surjective_iff
+    (f : _root_.Representation.IntertwiningMap ρ σ) :
+    Function.Surjective (_root_.Representation.IntertwiningMap.equivLinearMapAsModule ρ σ f) ↔
+      Function.Surjective f := by
+  have h : ⇑(_root_.Representation.IntertwiningMap.equivLinearMapAsModule ρ σ f) =
+      σ.asModuleEquiv.symm ∘ f ∘ ρ.asModuleEquiv := by
+    ext x
+    rw [Function.comp_apply, Function.comp_apply, _root_.Representation.asModuleEquiv_apply,
+      _root_.Representation.asModuleEquiv_symm_apply,
+      _root_.Representation.IntertwiningMap.equivLinearMapAsModule_apply]
+  rw [h, EquivLike.comp_surjective, EquivLike.surjective_comp]
+
 /-- **A `k[G]`-linear isomorphism of the attached modules is an equivalence of representations.**
 The underlying intertwining map is the one attached by
 `Representation.IntertwiningMap.equivLinearMapAsModule`; the inverse is transported from
@@ -203,6 +225,28 @@ theorem asModuleLinearEquivOfEquiv_equivOfAsModuleLinearEquiv
 theorem nonempty_equiv_iff :
     Nonempty (ρ.Equiv σ) ↔ Nonempty (ρ.asModule ≃ₗ[k[G]] σ.asModule) :=
   ⟨fun ⟨φ⟩ ↦ ⟨asModuleLinearEquivOfEquiv φ⟩, fun ⟨f⟩ ↦ ⟨equivOfAsModuleLinearEquiv f⟩⟩
+
+variable (ρ) in
+/-- **A projective representation is a retract of a free representation.** If the `k[G]`-module
+underlying `ρ` is projective, then there is an intertwining map onto `ρ` out of the free
+representation `Representation.free k G V` on its carrier, together with an intertwining section. -/
+theorem _root_.Representation.exists_retract_free_of_projective
+    [Module.Projective k[G] ρ.asModule] :
+    ∃ (F : (_root_.Representation.free k G V).IntertwiningMap ρ)
+      (S : ρ.IntertwiningMap (_root_.Representation.free k G V)), ∀ v, F (S v) = v := by
+  -- Lift the identity of `ρ.asModule` along the surjection `Finsupp.linearCombination`, indexed by
+  -- the carrier `V`, to get a section; it is transported to the free representation below.
+  obtain ⟨s, hs⟩ := Module.projective_lifting_property
+    (Finsupp.linearCombination k[G] ρ.asModuleEquiv.symm) LinearMap.id
+    (Finsupp.linearCombination_surjective k[G] ρ.asModuleEquiv.symm.surjective)
+  refine ⟨(_root_.Representation.IntertwiningMap.equivLinearMapAsModule _ ρ).symm
+      (Finsupp.linearCombination k[G] ρ.asModuleEquiv.symm ∘ₗ
+        (_root_.Representation.finsuppLEquivFreeAsModule k G V).symm.toLinearMap),
+    (_root_.Representation.IntertwiningMap.equivLinearMapAsModule ρ _).symm
+      ((_root_.Representation.finsuppLEquivFreeAsModule k G V).toLinearMap ∘ₗ s), fun v => ?_⟩
+  simp only [_root_.Representation.IntertwiningMap.equivLinearMapAsModule_symm_apply,
+    LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply]
+  rw [← LinearMap.comp_apply, hs, LinearMap.id_apply, LinearEquiv.apply_symm_apply]
 
 variable (ρ σ) in
 /-- **The module of a product representation is equivalent to the product of the modules.** -/

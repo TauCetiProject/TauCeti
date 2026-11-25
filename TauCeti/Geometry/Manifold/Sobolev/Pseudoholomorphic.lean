@@ -15,6 +15,7 @@ import Mathlib.MeasureTheory.Function.Jacobian
 import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
+import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.Geometry.Manifold.Sobolev.LocalMap.Locality
 import TauCeti.Topology.ContinuousOn.NhdsWithin
 
@@ -63,6 +64,10 @@ product targets such as `X × M`, on which graphs of solutions live.
   `TauCeti.isWeakPseudoholomorphic_id`).
 * `TauCeti.isWeakPseudoholomorphicOn_const`, `TauCeti.isWeakPseudoholomorphic_const`: constant
   maps solve the homogeneous equation for every `J`.
+* `Diffeomorph.isWeakPseudoholomorphicOn_comp_biholomorph_iff`,
+  `Diffeomorph.isWeakPseudoholomorphic_comp_biholomorph_iff`: **Invariance under biholomorphisms.**
+  For a biholomorphism `Φ : X' → X`, the map `u ∘ Φ` solves the equation for `J` read at `Φ x`
+  and `ν` composed with `dΦ` exactly when `u` solves it for `(J, ν)`.
 * Check on `X = M = ℂ`: conjugation does not solve the equation for the structure `i`
   (`TauCeti.not_isWeakPseudoholomorphicOn_conj`).
 * Check on `X = ℂ`, for any `M`: a constant map with value `u₀` solves the inhomogeneous equation
@@ -76,8 +81,11 @@ predicate does not depend on chosen atlases, and it is intended for open sets `s
 meant for `p > 2`, where Sobolev maps are continuous; the definition is stated for every `p`.
 No dimension hypothesis on `E` is needed; the theorems assume it complete, as weak derivatives
 require.
-That the equation in one atlas of each implies it in all charts, its invariance under
-biholomorphisms of `X` and diffeomorphisms of `M`, and boundary conditions are not treated here.
+That the equation in one atlas of each implies it in all charts is
+`TauCeti.isWeakPseudoholomorphicOn_iff_of_subset_maximalAtlas`, in
+`TauCeti.Geometry.Manifold.Sobolev.Pseudoholomorphic.Atlas`. Invariance under diffeomorphisms of
+`M` is proved in `TauCeti.Geometry.Manifold.Sobolev.Pseudoholomorphic.TargetDiffeomorph`.
+Boundary conditions are not treated here.
 
 ## References
 
@@ -647,5 +655,120 @@ theorem isWeakPseudoholomorphicOn_const_iff_complex
     exact hz ⟨φ.symm z, ⟨⟨hzD.2.1, hne⟩, φ.map_target hzD.1⟩, φ.right_inv hzD.1⟩
 
 end Plane
+
+/-! ### Invariance under biholomorphisms of the surface -/
+
+section Biholomorphism
+
+variable {X' : Type*} [TopologicalSpace X'] [ChartedSpace ℂ X'] [IsManifold 𝓘(ℂ) ∞ X']
+
+variable {J' : ContMDiffAlmostComplexStructureFamily I M 𝓘(ℝ, ℂ) X' ℓ}
+  {ν' : InhomogeneousTerm ((SmoothAlmostComplexStructure.ofComplexManifold ℂ X').toContMDiff ℓ) J'}
+
+/-- **The coordinate equations of `u ∘ Φ` and of `u` agree in corresponding charts.** Let
+`Φ : X' → X` be a biholomorphism, `φ'` a holomorphic chart of `X'` and `χ` a holomorphic chart of
+`X` with the same target and `χ⁻¹ = Φ ∘ φ'⁻¹` there, so that `χ` is `φ'` transported along `Φ`.
+If `J'` is `J` read at the image domain point and `ν'` is `ν` composed with the differential of
+`Φ`, then `u ∘ Φ` solves the coordinate equation in the charts `φ'` and `ψ` exactly when `u`
+solves it in the charts `χ` and `ψ`. -/
+private theorem isWeakCauchyRiemannOn_comp_biholomorph_iff (Φ : X' ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ X)
+    (hJ : ∀ x : X', J'.freeze x = J.freeze (Φ x))
+    (hν : ∀ (x : X') (y : M) (v : TangentSpace 𝓘(ℝ, ℂ) x), ν'.val.tangentHom (x, y) v =
+      ν.val.tangentHom (Φ x, y) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) Φ x v))
+    {φ' : OpenPartialHomeomorph X' ℂ} (hφ' : φ' ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X')
+    {χ : OpenPartialHomeomorph X ℂ} (htarget : φ'.target = χ.target)
+    (hsymm : ∀ z ∈ χ.target, χ.symm z = Φ (φ'.symm z)) (ψ : OpenPartialHomeomorph M H) :
+    IsWeakCauchyRiemannOn p (φ'.target ∩ φ'.symm ⁻¹' (Φ ⁻¹' s ∩ (u ∘ Φ) ⁻¹' ψ.source))
+        (J'.chartField φ' (ψ.extendTrans I (Homeomorph.refl E)))
+        (ν'.chartTerm φ' (ψ.extendTrans I (Homeomorph.refl E)))
+        (ψ.extendTrans I (Homeomorph.refl E) ∘ (u ∘ Φ) ∘ φ'.symm) ↔
+      IsWeakCauchyRiemannOn p (χ.target ∩ χ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source))
+        (J.chartField χ (ψ.extendTrans I (Homeomorph.refl E)))
+        (ν.chartTerm χ (ψ.extendTrans I (Homeomorph.refl E)))
+        (ψ.extendTrans I (Homeomorph.refl E) ∘ u ∘ χ.symm) := by
+  set ψ' := ψ.extendTrans I (Homeomorph.refl E)
+  set D := χ.target ∩ χ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)
+  -- The two domains of the coordinate equations coincide.
+  have hD : φ'.target ∩ φ'.symm ⁻¹' (Φ ⁻¹' s ∩ (u ∘ Φ) ⁻¹' ψ.source) = D := by
+    ext z
+    simp only [D, mem_inter_iff, mem_preimage, Function.comp_apply, htarget]
+    exact and_congr_right fun hz ↦ by rw [hsymm z hz]
+  -- On the common target, the inverse of `χ` is `Φ ∘ φ'⁻¹` near every point.
+  have hev {z : ℂ} (hz : z ∈ χ.target) : (χ.symm : ℂ → X) =ᶠ[𝓝 z] Φ ∘ φ'.symm :=
+    eventually_of_mem (χ.open_target.mem_nhds hz) fun w hw ↦ hsymm w hw
+  have hmf {z : ℂ} (hz : z ∈ χ.target) :
+      mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) χ.symm z =
+        (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) Φ (φ'.symm z)).comp (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ'.symm z) := by
+    have hφ'd : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ'.symm z :=
+      (contMDiffAt_symm_of_mem_maximalAtlas
+        (IsManifold.maximalAtlas_subset_restrictScalars ℝ (M := X') hφ')
+        (htarget ▸ hz)).mdifferentiableAt one_ne_zero
+    -- A biholomorphism is smooth for the underlying real manifolds.
+    have hΦd : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) Φ (φ'.symm z) := by
+      have hΦ := Φ.contMDiff.restrictScalars ℝ
+      rw [modelWithCornersSelf_restrictScalars] at hΦ
+      exact (hΦ _).mdifferentiableAt (by simp)
+    rw [(hev hz).mfderiv_eq, mfderiv_comp z hΦd hφ'd]
+    -- What remains is the cast `tangentSpaceCast` between the tangent spaces at the equal points
+    -- `χ⁻¹ z` and `Φ (φ'⁻¹ z)`, which is the identity of `ℂ` by definition.
+    rfl
+  rw [hD, isWeakCauchyRiemannOn_congr (u := ψ' ∘ (u ∘ Φ) ∘ φ'.symm) (v := ψ' ∘ u ∘ χ.symm)
+    fun z hz ↦ by simp only [Function.comp_apply, hsymm z hz.1]]
+  -- The structures and the terms read in the two charts agree on the common domain.
+  refine isWeakCauchyRiemannOn_congr_ae ?_ ?_
+  all_goals refine (ae_restrict_iff' measurableSet_interior).2 (Eventually.of_forall fun z hz ↦ ?_)
+  · simp only [ContMDiffAlmostComplexStructureFamily.chartField_apply, hJ,
+      hsymm z (interior_subset hz).1]
+  · have hzt : z ∈ χ.target := (interior_subset hz).1
+    simp only [InhomogeneousTerm.chartTerm_apply]
+    rw [hν, hmf hzt, hsymm z hzt]
+    -- The composite differential applied to `1` is the iterated application; the tangent spaces
+    -- are `ℂ` only up to definitional unfolding, so `ContinuousLinearMap.comp_apply` does not
+    -- rewrite here.
+    rfl
+
+/-- **Invariance under biholomorphisms of the surface.** Let `Φ : X' → X` be a biholomorphism of
+Riemann surfaces, `J'` the domain-dependent structure `J` read at the image domain point,
+`J'(x, y) = J(Φ x, y)`, and `ν'` the inhomogeneous term `ν` composed with the differential of `Φ`,
+`ν'(x, y) = ν(Φ x, y) ∘ dΦₓ`. Then `u ∘ Φ` is weakly pseudoholomorphic on `Φ⁻¹(s)` for `(J', ν')`
+exactly when `u` is weakly pseudoholomorphic on `s` for `(J, ν)`. The family `J.comp g`, for the
+real smooth map `g` underlying `Φ`, is such a `J'`
+(`TauCeti.ContMDiffAlmostComplexStructureFamily.freeze_comp`). -/
+theorem _root_.Diffeomorph.isWeakPseudoholomorphicOn_comp_biholomorph_iff (Φ : X' ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ X)
+    (hJ : ∀ x : X', J'.freeze x = J.freeze (Φ x))
+    (hν : ∀ (x : X') (y : M) (v : TangentSpace 𝓘(ℝ, ℂ) x), ν'.val.tangentHom (x, y) v =
+      ν.val.tangentHom (Φ x, y) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) Φ x v)) :
+    IsWeakPseudoholomorphicOn J' ν' p (u ∘ Φ) (Φ ⁻¹' s) ↔ IsWeakPseudoholomorphicOn J ν p u s := by
+  simp only [isWeakPseudoholomorphicOn_iff_continuousOn_isWeakCauchyRiemannOn]
+  refine and_congr ?_ ⟨fun h χ hχ ψ hψ ↦ ?_, fun h φ' hφ' ψ hψ ↦ ?_⟩
+  · -- Continuity transfers along the homeomorphism `Φ`.
+    refine ⟨fun h ↦ ?_, fun h ↦ h.comp Φ.continuous.continuousOn fun _ hx ↦ hx⟩
+    have h' := h.comp Φ.symm.continuous.continuousOn
+      fun x hx ↦ show Φ (Φ.symm x) ∈ s by rwa [Φ.apply_symm_apply]
+    exact h'.congr fun x _ ↦ by simp
+  · -- Transport the chart `χ` of `X` to the chart `χ ∘ Φ` of `X'`.
+    have hφ' := Φ.transOpenPartialHomeomorph_mem_maximalAtlas (by simp) hχ
+    refine (isWeakCauchyRiemannOn_comp_biholomorph_iff Φ hJ hν hφ' rfl (fun z _ ↦ ?_) ψ).1
+      (h _ hφ' ψ hψ)
+    simp
+  · -- Transport the chart `φ'` of `X'` to the chart `φ' ∘ Φ⁻¹` of `X`.
+    have hχ := Φ.symm.transOpenPartialHomeomorph_mem_maximalAtlas (by simp) hφ'
+    refine (isWeakCauchyRiemannOn_comp_biholomorph_iff Φ hJ hν hφ' rfl (fun z _ ↦ ?_) ψ).2
+      (h _ hχ ψ hψ)
+    simp
+
+/-- **Invariance under biholomorphisms of the surface**, on the whole surface: for a
+biholomorphism `Φ : X' → X`, with `J'(x, y) = J(Φ x, y)` and `ν'(x, y) = ν(Φ x, y) ∘ dΦₓ`, the map
+`u ∘ Φ` is weakly pseudoholomorphic for `(J', ν')` exactly when `u` is weakly pseudoholomorphic for
+`(J, ν)`. -/
+theorem _root_.Diffeomorph.isWeakPseudoholomorphic_comp_biholomorph_iff (Φ : X' ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ X)
+    (hJ : ∀ x : X', J'.freeze x = J.freeze (Φ x))
+    (hν : ∀ (x : X') (y : M) (v : TangentSpace 𝓘(ℝ, ℂ) x), ν'.val.tangentHom (x, y) v =
+      ν.val.tangentHom (Φ x, y) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) Φ x v)) :
+    IsWeakPseudoholomorphic J' ν' p (u ∘ Φ) ↔ IsWeakPseudoholomorphic J ν p u := by
+  rw [← isWeakPseudoholomorphicOn_univ, ← isWeakPseudoholomorphicOn_univ, ← preimage_univ]
+  exact Φ.isWeakPseudoholomorphicOn_comp_biholomorph_iff hJ hν
+
+end Biholomorphism
 
 end TauCeti
