@@ -319,10 +319,12 @@ theorem primaryComponent_span_singleton_eq_bot_iff {N : Type*} [AddCommGroup N] 
     exact (mem_primaryComponent_span_singleton_iff r).mpr ⟨1, by simpa using hx⟩
   · exact primaryComponent_eq_bot_of_isSMulRegular (mem_span_singleton_self r)
 
-/-- Over a domain, the `𝔞`-primary component of a torsion-free module vanishes for a nonzero
-ideal `𝔞`: a nonzero element of `𝔞` is regular. -/
-theorem primaryComponent_eq_bot_of_ne_bot [IsDomain R] {N : Type*} [AddCommMonoid N] [Module R N]
-    [Module.IsTorsionFree R N] {𝔞 : Ideal R} (h𝔞 : 𝔞 ≠ ⊥) : 𝔞.primaryComponent N = ⊥ := by
+/-- Over a ring with cancellative multiplication by nonzero elements (for instance a domain), the
+`𝔞`-primary component of a torsion-free module vanishes for a nonzero ideal `𝔞`: a nonzero element
+of `𝔞` is regular. -/
+theorem primaryComponent_eq_bot_of_ne_bot [IsCancelMulZero R] {N : Type*} [AddCommMonoid N]
+    [Module R N] [Module.IsTorsionFree R N] {𝔞 : Ideal R} (h𝔞 : 𝔞 ≠ ⊥) :
+    𝔞.primaryComponent N = ⊥ := by
   obtain ⟨a, ha, ha0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot h𝔞
   exact primaryComponent_eq_bot_of_isSMulRegular ha (IsSMulRegular.of_ne_zero ha0)
 

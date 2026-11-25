@@ -266,10 +266,11 @@ theorem isZero_obj_zero_of_isSMulRegular {a : R} (ha : a ∈ J) (hreg : IsSMulRe
     IsZero ((localCohomology J 0).obj M) :=
   (isZero_obj_zero_iff J M).mpr (Ideal.primaryComponent_eq_bot_of_isSMulRegular ha hreg)
 
-/-- Over a domain, local cohomology in degree zero along a nonzero ideal vanishes for a
-torsion-free module: a nonzero element of `J` is `M`-regular. For instance `H⁰_𝔪(R) = 0` for a
-discrete valuation ring `R` with maximal ideal `𝔪`. -/
-theorem isZero_obj_zero_of_ne_bot [IsDomain R] [Module.IsTorsionFree R M] (hJ : J ≠ ⊥) :
+/-- Over a ring with cancellative multiplication by nonzero elements (for instance a domain), local
+cohomology in degree zero along a nonzero ideal vanishes for a torsion-free module: a nonzero
+element of `J` is `M`-regular. For instance `H⁰_𝔪(R) = 0` for a discrete valuation ring `R` with
+maximal ideal `𝔪`. -/
+theorem isZero_obj_zero_of_ne_bot [IsCancelMulZero R] [Module.IsTorsionFree R M] (hJ : J ≠ ⊥) :
     IsZero ((localCohomology J 0).obj M) :=
   (isZero_obj_zero_iff J M).mpr (Ideal.primaryComponent_eq_bot_of_ne_bot hJ)
 
