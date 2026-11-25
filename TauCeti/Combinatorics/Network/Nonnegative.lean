@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Basic.NNReal.Defs
+public import TauCeti.Algebra.Order.Ring.Cast
+public import TauCeti.Combinatorics.Network.Coefficients
 public import TauCeti.Combinatorics.Network.ShortestAugmentation
+import TauCeti.Data.Rat.Cast.Order
 
 /-!
 # Nonnegative coefficients for finite flows
@@ -21,6 +24,39 @@ For natural capacities, `NatFlow` uses integer excess. Its arrow values are reco
 `Flow.natAssignment`, with exact round trips, capacity bounds, and natural cut sums.
 The named rational and real interfaces specialize this API, and reverse recovery lemmas
 characterize assignments by their nonnegative or natural arrow values.
+
+Natural capacities can also be read through `Nat.cast` in any ordered additive group `K` with
+`0 ≤ 1`, such as `ℤ`, `ℚ` or `ℝ`. The flow `NatFlow.castFlow K f` over `K` is the integer flow
+`f` with its coefficients changed along the integer cast by `Flow.map`; it has the same natural
+arrow values, and its value is the cast of the value of `f`. Its range consists of the flows over
+`K` with natural arrow values. It always preserves maximality, and when `1 ≠ 0` in `K` it is
+injective and also reflects maximality. Changing its coefficients further along an
+order-preserving additive map `φ : K →+o L` with `φ 1 = 1`, such as
+`Rat.castOrderAddMonoidHom ℝ : ℚ →+o ℝ`, gives the flow over `L` with the same natural arrow
+values. A flow over `ℚ` with natural arrow values therefore
+has the same arrow values, value and maximality as the corresponding flows over `ℤ` and `ℝ`.
+Casting a maximum integer flow and its attaining natural cut gives a maximum flow over `K` with
+natural arrow values whose value is the cast of a natural cut capacity. Over linearly ordered `K`
+this is the case `H = AddSubgroup.zmultiples 1` of the integrality theorem
+`Flow.exists_isMaximum_mem`; casting the integer case needs no linear order on `K`.
+
+## Main definitions
+
+* `TauCeti.NatFlow.castFlow K f`: the flow over `K` with the natural arrow values of the integer
+  flow `f`.
+
+## Main results
+
+* `TauCeti.NatFlow.exists_castFlow_eq_iff`: a flow over `K` comes from an integer flow exactly
+  when its arrow values are natural numbers.
+* `TauCeti.NatFlow.isMaximum_castFlow_iff`: when `1 ≠ 0` in `K`, `TauCeti.NatFlow.castFlow K`
+  preserves and reflects maximality.
+* `TauCeti.NatFlow.congr_map_castFlow`: changing coefficients along `K →+o L` takes
+  `castFlow K f` to `castFlow L f`.
+* `TauCeti.Flow.exists_isMaximum_eq_natCast`: for natural capacities, some maximum flow over `K`
+  has natural arrow values.
+* `TauCeti.Flow.exists_eq_natCast_val_eq_arrowSum`: max-flow/min-cut for natural capacities over
+  `K`, with natural arrow values and a natural cut capacity.
 -/
 
 public section
@@ -212,6 +248,150 @@ end NatFlow
 
 end Natural
 
+/-! ### Natural capacities over ordered coefficient groups -/
+
+section NaturalCoefficients
+
+variable [Fintype V] [∀ v w, Fintype (Q v w)]
+variable [AddCommGroupWithOne K] [PartialOrder K] [IsOrderedAddMonoid K] [ZeroLEOneClass K]
+variable {cap : Assignment Q ℕ} {s t : V}
+
+namespace NatFlow
+
+variable (K) in
+/-- The ordinary flow for the natural capacities `cap` read in `K` whose arrow values are the
+natural arrow values of the integer flow `f`. It is `TauCeti.Flow.map` along the integer cast,
+with the mapped capacities written as `cap.map Nat.cast`. -/
+def castFlow (f : NatFlow cap s t) : Flow (cap.map (Nat.cast : ℕ → K)) s t :=
+  Flow.congr (cap.map_map_natCast (Int.castOrderAddMonoidHom K) (by simp)) rfl rfl
+    (f.map (Int.castOrderAddMonoidHom K))
+
+/-- `f.castFlow K` is the image of `f` under the integer cast, with its capacities rewritten. -/
+theorem castFlow_eq_congr_map (f : NatFlow cap s t) :
+    f.castFlow K = Flow.congr (cap.map_map_natCast (Int.castOrderAddMonoidHom K) (by simp))
+      rfl rfl (f.map (Int.castOrderAddMonoidHom K)) :=
+  (rfl)
+
+/-- The arrow values of `f.castFlow K` are the casts of the integer arrow values of `f`. -/
+theorem castFlow_toFun_apply (f : NatFlow cap s t) {x y : V} (e : Q x y) :
+    (f.castFlow K).toFun e = (f.toFun e : K) := by
+  simp only [castFlow_eq_congr_map, Flow.toBoundedFlow_congr, BoundedFlow.congr_apply_toFun,
+    Flow.map_toFun, Assignment.map_apply, Int.coe_castOrderAddMonoidHom]
+
+@[simp]
+theorem castFlow_toFun (f : NatFlow cap s t) :
+    (f.castFlow K).toFun = f.natAssignment.map Nat.cast := by
+  funext x y e
+  rw [castFlow_toFun_apply, Assignment.map_apply, ← f.coe_natAssignment e, Int.cast_natCast]
+
+/-- The value of `f.castFlow K` is the cast of the integer value of `f`. -/
+@[simp]
+theorem val_castFlow (f : NatFlow cap s t) : (f.castFlow K).val = (f.val : K) := by
+  rw [castFlow_eq_congr_map (K := K), Flow.toBoundedFlow_congr, BoundedFlow.val_congr]
+  exact (Flow.val_map _ f).trans (congrFun (Int.coe_castOrderAddMonoidHom K) f.val)
+
+/-- Over `ℤ`, `TauCeti.NatFlow.castFlow` returns the integer flow itself. -/
+@[simp]
+theorem castFlow_int (f : NatFlow cap s t) : f.castFlow ℤ = f :=
+  Flow.ext <| funext fun _ ↦ funext fun _ ↦ funext fun e ↦ by
+    rw [castFlow_toFun_apply, Int.cast_id]
+
+/-- A flow over `K` for natural capacities comes from an integer flow exactly when its arrow values
+are natural numbers. -/
+theorem exists_castFlow_eq_iff {g : Flow (cap.map (Nat.cast : ℕ → K)) s t} :
+    (∃ f : NatFlow cap s t, f.castFlow K = g) ↔ ∃ a : Assignment Q ℕ, g.toFun = a.map Nat.cast := by
+  refine ⟨fun ⟨f, hf⟩ ↦ ⟨f.natAssignment, hf ▸ castFlow_toFun f⟩, fun ⟨a, ha⟩ ↦ ?_⟩
+  by_cases h1 : (1 : K) = 0
+  · -- Every natural cast vanishes, so `g` is the zero flow.
+    have hcast (n : ℕ) : (n : K) = 0 := by rw [← nsmul_one, h1, nsmul_zero]
+    refine ⟨Flow.zero fun _ _ e ↦ Int.natCast_nonneg (cap e), Flow.ext ?_⟩
+    funext x y e
+    rw [castFlow_toFun, Assignment.map_apply, hcast]
+    exact (le_antisymm (by simpa [hcast] using g.le_upper e) (g.nonneg e)).symm
+  have : NeZero (1 : K) := ⟨h1⟩
+  -- The integer excess of `a` casts to the excess of `g` over `K`.
+  have hexc (v : V) : ((excessAt (a.map (Nat.cast : ℕ → ℤ)) v : ℤ) : K) = excessAt g.toFun v := by
+    simpa [ha, Assignment.map_map, Function.comp_def] using map_excessAt (Int.castAddHom K)
+      (a.map (Nat.cast : ℕ → ℤ)) v
+  let f : NatFlow cap s t :=
+    { toFun := a.map Nat.cast
+      mem_Icc := by
+        refine ⟨fun _ _ _ ↦ Int.natCast_nonneg _, fun _ _ e ↦ ?_⟩
+        have he : ((a e : ℤ) : K) ≤ ((cap e : ℤ) : K) := by simpa [ha] using g.le_upper e
+        simpa using (Int.cast_le (R := K)).1 he
+      conserve v hvs hvt := (Int.cast_strictMono (R := K)).injective <| by
+        simpa [hexc] using g.conserve v hvs hvt
+      excessAt_sink_nonneg := (Int.cast_le (R := K)).1 <| by
+        simpa [hexc] using g.excessAt_sink_nonneg }
+  exact ⟨f, Flow.ext <| by rw [castFlow_toFun, Flow.natAssignment_eq f rfl, ha]⟩
+
+/-- When `1 ≠ 0` in `K`, distinct integer flows give distinct flows over `K`. -/
+theorem castFlow_injective [NeZero (1 : K)] :
+    Function.Injective (fun f : NatFlow cap s t ↦ f.castFlow K) := by
+  intro f g h
+  refine Flow.ext ?_
+  funext x y e
+  refine (Int.cast_strictMono (R := K)).injective ?_
+  simpa only [castFlow_toFun_apply] using congrArg (fun f ↦ f.toFun e) h
+
+/-- The flow over `K` with the natural arrow values of a maximum integer flow is maximum. -/
+theorem isMaximum_castFlow {f : NatFlow cap s t} (hf : f.IsMaximum) :
+    (f.castFlow K).IsMaximum := by
+  rcases eq_or_ne s t with rfl | hst
+  · exact Flow.isMaximum_iff.2 fun g ↦
+      (BoundedFlow.val_eq_zero_of_eq rfl _).trans_le (BoundedFlow.val_eq_zero_of_eq rfl _).ge
+  rw [castFlow_eq_congr_map, Flow.isMaximum_congr_iff]
+  exact hf.map hst _
+
+/-- When `1 ≠ 0` in `K`, an integer flow for natural capacities is maximum exactly when the flow
+over `K` with the same natural arrow values is maximum. -/
+theorem isMaximum_castFlow_iff [NeZero (1 : K)] {f : NatFlow cap s t} :
+    (f.castFlow K).IsMaximum ↔ f.IsMaximum := by
+  refine ⟨fun hf ↦ Flow.isMaximum_iff.2 fun g ↦ ?_, isMaximum_castFlow⟩
+  have hg := Flow.isMaximum_iff.1 hf (castFlow K g)
+  rwa [val_castFlow, val_castFlow, Int.cast_le] at hg
+
+/-- Changing the coefficients of `f.castFlow K` along an order-preserving additive map
+`φ : K →+o L` with `φ 1 = 1`, such as the rational cast from `ℚ` to `ℝ`, gives `f.castFlow L`. -/
+theorem congr_map_castFlow {L : Type*} [AddCommGroupWithOne L] [PartialOrder L]
+    [IsOrderedAddMonoid L] [ZeroLEOneClass L] (φ : K →+o L) (hφ : φ 1 = 1) (f : NatFlow cap s t) :
+    Flow.congr (cap.map_map_natCast φ hφ) rfl rfl ((f.castFlow K).map φ) = f.castFlow L :=
+  Flow.ext <| funext fun _ ↦ funext fun _ ↦ funext fun e ↦ by
+    simp only [Flow.toBoundedFlow_congr, BoundedFlow.congr_apply_toFun, Flow.map_toFun,
+      Assignment.map_apply, castFlow_toFun_apply, map_intCast' φ hφ]
+
+end NatFlow
+
+namespace Flow
+
+variable (cap)
+
+/-- **Integrality for natural capacities.** For natural capacities read in an ordered additive
+group `K` with `0 ≤ 1`, such as `ℤ`, `ℚ` or `ℝ`, some maximum ordinary flow has natural arrow
+values: the flow over `K` with the arrow values of a maximum integer flow. -/
+theorem exists_isMaximum_eq_natCast :
+    ∃ (f : Flow (cap.map (Nat.cast : ℕ → K)) s t) (a : Assignment Q ℕ),
+      f.IsMaximum ∧ f.toFun = a.map Nat.cast := by
+  obtain ⟨f, hf⟩ := exists_isMaximum (cap := cap.map (Nat.cast : ℕ → ℤ)) (s := s) (t := t)
+    fun _ _ e ↦ Int.natCast_nonneg (cap e)
+  exact ⟨NatFlow.castFlow K f, f.natAssignment, NatFlow.isMaximum_castFlow hf,
+    NatFlow.castFlow_toFun f⟩
+
+/-- **Max-flow/min-cut for natural capacities.** For natural capacities read in an ordered
+additive group `K` with `0 ≤ 1` and distinct terminals, some ordinary flow over `K` with natural
+arrow values has value equal to the cast of the natural capacity of the arrows leaving some vertex
+set containing `s` but not `t`. -/
+theorem exists_eq_natCast_val_eq_arrowSum [DecidableEq V] (hst : s ≠ t) :
+    ∃ (f : Flow (cap.map (Nat.cast : ℕ → K)) s t) (a : Assignment Q ℕ) (S : Finset V),
+      f.toFun = a.map Nat.cast ∧ s ∈ S ∧ t ∉ S ∧ f.val = ((arrowSum cap S Sᶜ : ℕ) : K) := by
+  obtain ⟨f, S, hs, ht, hS⟩ := NatFlow.exists_val_eq_coe_arrowSum cap hst
+  exact ⟨NatFlow.castFlow K f, f.natAssignment, S, NatFlow.castFlow_toFun f, hs, ht,
+    by rw [NatFlow.val_castFlow, hS, Int.cast_natCast]⟩
+
+end Flow
+
+end NaturalCoefficients
+
 /-! The following examples include parallel arrows, opposite arrows, and loops. Only the two
 arrows from `false` to `true` contribute to the displayed cuts. -/
 
@@ -224,6 +404,35 @@ example : ∃ f : NatFlow (Q := fun _ _ : Bool ↦ Fin 2) (fun _ _ _ ↦ 3) fals
     cases b <;> simp_all
   refine ⟨f, ?_, fun _ _ e ↦ f.natAssignment_le e⟩
   simpa [hS, arrowSum_def, Finset.card_compl] using h
+
+/-! The following examples read the same capacities `3` in `ℚ` and in `ℝ`. A maximum flow over `ℝ`
+with natural arrow values has value `6`. A maximum flow over `ℚ` with natural arrow values comes
+from an integer flow; casting it to `ℝ` gives the flow over `ℝ` with the same natural arrow
+values, which is again maximum, with the same value. -/
+
+example : ∃ (f : Flow (Assignment.map (fun _ _ _ ↦ 3 : Assignment (fun _ _ : Bool ↦ Fin 2) ℕ)
+      (Nat.cast : ℕ → ℝ)) false true) (a : Assignment (fun _ _ : Bool ↦ Fin 2) ℕ),
+    f.toFun = a.map Nat.cast ∧ f.val = 6 := by
+  obtain ⟨f, a, S, ha, hs, ht, h⟩ := Flow.exists_eq_natCast_val_eq_arrowSum (K := ℝ)
+    (Q := fun _ _ : Bool ↦ Fin 2) (fun _ _ _ ↦ 3) Bool.false_ne_true
+  have hS : S = {false} := by
+    ext b
+    cases b <;> simp_all
+  refine ⟨f, a, ha, ?_⟩
+  norm_num [h, hS, arrowSum_def, Finset.card_compl]
+
+example {g : Flow (Assignment.map (fun _ _ _ ↦ 3 : Assignment (fun _ _ : Bool ↦ Fin 2) ℕ)
+      (Nat.cast : ℕ → ℚ)) false true} {a : Assignment (fun _ _ : Bool ↦ Fin 2) ℕ}
+    (ha : g.toFun = a.map Nat.cast) (hg : g.IsMaximum) :
+    ∃ f : NatFlow (fun _ _ _ ↦ 3 : Assignment (fun _ _ : Bool ↦ Fin 2) ℕ) false true,
+      f.castFlow ℚ = g ∧
+      Flow.congr (Assignment.map_map_natCast (Rat.castOrderAddMonoidHom ℝ) (by simp) _) rfl rfl
+        (g.map (Rat.castOrderAddMonoidHom ℝ)) = f.castFlow ℝ ∧
+      (f.castFlow ℝ).IsMaximum ∧ (f.castFlow ℝ).val = g.val := by
+  obtain ⟨f, rfl⟩ := NatFlow.exists_castFlow_eq_iff.2 ⟨a, ha⟩
+  refine ⟨f, rfl, NatFlow.congr_map_castFlow _ (by simp) f,
+    NatFlow.isMaximum_castFlow (NatFlow.isMaximum_castFlow_iff.1 hg), ?_⟩
+  simp
 
 example : ∃ f : NonnegFlow (K := ℚ) (Q := fun _ _ : Bool ↦ Fin 2)
     (fun _ _ _ ↦ ⟨1 / 2, by norm_num⟩) false true, f.val = 1 := by

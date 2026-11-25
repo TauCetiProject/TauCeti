@@ -20,7 +20,8 @@ For `γ = [a,b;c,d]` in `SL₂(ℤ)`, the conjugate `γ Tʲ γ⁻¹` depends onl
 column `(a,c)`. Its lower-left entry is `-j c²`. This calculation describes the
 translations fixing the rational cusp `γ ∞` and turns congruence-subgroup membership
 into a divisibility condition on the translation exponent. An element of `SL₂(ℤ)` with
-vanishing lower-left entry, that is one fixing `∞` itself, is a signed translation `±Tʲ`.
+vanishing lower-left entry, that is one fixing `∞` itself, is a signed translation `±Tʲ`,
+and so commutes with every translation.
 
 In `PSL(2, ℤ)`, distinct integer powers of `T` are pairwise non-conjugate
 (`TauCeti.ModularGroup.eq_of_conj_coe_T_zpow_eq`), containment of a conjugate of `⟨T ^ a⟩` in
@@ -70,6 +71,26 @@ theorem ModularGroup.eq_T_zpow_or_eq_neg_T_zpow_of_c_eq_zero {g : SL(2, ℤ)}
   · right
     ext i j
     fin_cases i <;> fin_cases j <;> simp [ha, hc, hd, ModularGroup.coe_T_zpow]
+
+/-- An element of `SL₂(ℤ)` with vanishing lower-left entry, being `±Tᵇ`, commutes with every
+integral translation `Tʲ`. -/
+theorem ModularGroup.mul_T_zpow_mul_inv_of_c_eq_zero {g : SL(2, ℤ)} (hc : g 1 0 = 0) (j : ℤ) :
+    g * ModularGroup.T ^ j * g⁻¹ = ModularGroup.T ^ j := by
+  have hcomm : Commute g (ModularGroup.T ^ j) := by
+    rcases ModularGroup.eq_T_zpow_or_eq_neg_T_zpow_of_c_eq_zero hc with h | h <;> rw [h]
+    · exact Commute.zpow_zpow_self _ _ _
+    · exact (Commute.zpow_zpow_self _ _ _).neg_left
+  rw [hcomm.eq, mul_inv_cancel_right]
+
+/-- Conjugating a translation by `h γ M`, for `M` fixing `∞`, is conjugating it by `γ` and then
+by `h`: `M` commutes with the translations. -/
+theorem ModularGroup.mul_mul_T_zpow_mul_inv_of_c_eq_zero (h γ : SL(2, ℤ)) {M : SL(2, ℤ)}
+    (hM : M 1 0 = 0) (j : ℤ) :
+    h * γ * M * ModularGroup.T ^ j * (h * γ * M)⁻¹ =
+      h * (γ * ModularGroup.T ^ j * γ⁻¹) * h⁻¹ := by
+  calc h * γ * M * ModularGroup.T ^ j * (h * γ * M)⁻¹ =
+        h * γ * (M * ModularGroup.T ^ j * M⁻¹) * γ⁻¹ * h⁻¹ := by group
+    _ = _ := by rw [ModularGroup.mul_T_zpow_mul_inv_of_c_eq_zero hM]; group
 
 /-- Distinct integer powers of `T` are pairwise non-conjugate in `PSL(2, ℤ)`: since elements of
 `SL(2, ℤ)` have determinant `+1`, any element conjugating a nontrivial power of `T` into `⟨T⟩`
