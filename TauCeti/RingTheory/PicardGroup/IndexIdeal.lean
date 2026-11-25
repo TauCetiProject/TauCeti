@@ -287,7 +287,8 @@ theorem invertible_indexIdeal (hf : f ≠ 0) : Module.Invertible R f.indexIdeal 
   have hinj := Module.Invertible.injective_of_ne_zero (M := Dual R N ⊗[R] L)
     (g := contractLeft R N ∘ₗ f.lTensor (Dual R N))
     fun h ↦ hf <| f.indexIdeal_eq_bot_iff.1 <| f.indexIdeal_def ▸ range_eq_bot.2 h
-  exact .congr (LinearEquiv.ofInjective _ hinj ≪≫ₗ .ofEq _ _ f.indexIdeal_def.symm)
+  exact f.invertible_indexIdeal_of_injective <|
+    (Module.Invertible.lTensor_injective_iff _).1 (hinj.of_comp (f := contractLeft R N))
 
 end IsDomain
 
