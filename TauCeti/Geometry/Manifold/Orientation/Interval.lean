@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Boundary.InducedOrientation
 public import TauCeti.Geometry.Manifold.Instances.Icc
+public import TauCeti.Geometry.Manifold.Instances.Icc.Boundary
 
 /-!
 # The increasing orientation of a closed interval
@@ -132,8 +133,6 @@ theorem exists_interval_tangent_bases {a b : ℝ} [Fact (a < b)] (x : Icc a b) :
   · simp [B, e, Module.Basis.map_apply]
   · by_cases hx : (x : ℝ) < b <;>
       simp [C, Module.Basis.unitsSMul_apply, B, e, Module.Basis.map_apply, hx]
-
-open scoped IccZeroAddOne
 
 /-- The canonical zero-dimensional charted structure on the two interval endpoints. -/
 @[reducible] local instance intervalBoundaryChartedSpace :

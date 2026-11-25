@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Instances.Icc
+public import TauCeti.Geometry.Manifold.Instances.Icc.Boundary
 public import TauCeti.Geometry.Manifold.Riemannian.Induced
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.OutwardUnitNormal
 
@@ -146,32 +147,32 @@ theorem norm_one_tangentSpace_Icc (x : Icc a b) : ‖(1 : TangentSpace (𝓡∂ 
 namespace IccZeroAddOne
 
 /-- The Euclidean metric of the interval, on the tangent spaces of the charts
-`IccZeroAddOne.instChartedSpace` used by the boundary constructions. -/
+`instChartedSpaceIccZeroAddOne` used by the boundary constructions. -/
 scoped instance instRiemannianBundle :
     RiemannianBundle (fun x : Icc a b ↦ TangentSpace (𝓡∂ (0 + 1)) x) :=
   instRiemannianBundleIcc
 
 /-- The Euclidean metric of the interval is analytic for the charts
-`IccZeroAddOne.instChartedSpace`. -/
+`instChartedSpaceIccZeroAddOne`. -/
 scoped instance instIsContMDiffRiemannianBundle :
     IsContMDiffRiemannianBundle (𝓡∂ (0 + 1)) ω (EuclideanSpace ℝ (Fin (0 + 1)))
       (fun x : Icc a b ↦ TangentSpace (𝓡∂ (0 + 1)) x) :=
   instIsContMDiffRiemannianBundleIcc
 
 /-- The Euclidean metric of the interval is continuous for the charts
-`IccZeroAddOne.instChartedSpace`. -/
+`instChartedSpaceIccZeroAddOne`. -/
 scoped instance instIsContinuousRiemannianBundle :
     IsContinuousRiemannianBundle (EuclideanSpace ℝ (Fin (0 + 1)))
       (fun x : Icc a b ↦ TangentSpace (𝓡∂ (0 + 1)) x) :=
   instIsContinuousRiemannianBundleIcc
 
 /-- The unit tangent vector `1` of `[a, b]`, the image of `1 ∈ ℝ`, on the tangent spaces of the
-charts `IccZeroAddOne.instChartedSpace`. -/
+charts `instChartedSpaceIccZeroAddOne`. -/
 scoped instance instOneTangentSpace (x : Icc a b) : One (TangentSpace (𝓡∂ (0 + 1)) x) :=
   inferInstanceAs (One (TangentSpace (𝓡∂ 1) x))
 
 /-- The inner product of two tangent vectors of `[a, b]` for the charts
-`IccZeroAddOne.instChartedSpace` is the product of their images in `ℝ`. -/
+`instChartedSpaceIccZeroAddOne` is the product of their images in `ℝ`. -/
 @[scoped simp]
 theorem inner_tangentSpace (x : Icc a b) (v w : TangentSpace (𝓡∂ (0 + 1)) x) :
     inner ℝ v w =
@@ -179,7 +180,7 @@ theorem inner_tangentSpace (x : Icc a b) (v w : TangentSpace (𝓡∂ (0 + 1)) x
         mvfderiv (𝓡∂ (0 + 1)) (Subtype.val : Icc a b → ℝ) x w :=
   inner_tangentSpace_Icc x v w
 
-/-- The norm of a tangent vector of `[a, b]` for the charts `IccZeroAddOne.instChartedSpace` is
+/-- The norm of a tangent vector of `[a, b]` for the charts `instChartedSpaceIccZeroAddOne` is
 the absolute value of its image in `ℝ`. -/
 @[scoped simp]
 theorem norm_tangentSpace (x : Icc a b) (v : TangentSpace (𝓡∂ (0 + 1)) x) :
@@ -187,7 +188,7 @@ theorem norm_tangentSpace (x : Icc a b) (v : TangentSpace (𝓡∂ (0 + 1)) x) :
   norm_tangentSpace_Icc x v
 
 /-- The differential of the inclusion of `[a, b]` into `ℝ`, for the charts
-`IccZeroAddOne.instChartedSpace`, sends the unit tangent vector `1` to `1 ∈ ℝ`. -/
+`instChartedSpaceIccZeroAddOne`, sends the unit tangent vector `1` to `1 ∈ ℝ`. -/
 -- Priority `high` for the same reason as `mvfderiv_subtypeVal_Icc_one`.
 @[scoped simp high]
 theorem mvfderiv_subtypeVal_one (x : Icc a b) :
@@ -195,7 +196,7 @@ theorem mvfderiv_subtypeVal_one (x : Icc a b) :
   mvfderiv_subtypeVal_Icc_one x
 
 /-- The unit tangent vector `1` of `[a, b]` has norm one for the charts
-`IccZeroAddOne.instChartedSpace`. -/
+`instChartedSpaceIccZeroAddOne`. -/
 theorem norm_one_tangentSpace (x : Icc a b) : ‖(1 : TangentSpace (𝓡∂ (0 + 1)) x)‖ = 1 := by
   simp
 
@@ -223,7 +224,9 @@ open scoped IccZeroAddOne
 theorem outwardUnitNormal_Icc_bot :
     outwardUnitNormal (⟨⊥, Icc_isBoundaryPoint_bot⟩ : (𝓡∂ (0 + 1)).boundary (Icc a b)) =
       -(1 : TangentSpace (𝓡∂ (0 + 1)) (⊥ : Icc a b)) := by
-  have hab : ((⊥ : Icc a b) : ℝ) < b := Fact.out (p := a < b)
+  have hab : ((⊥ : Icc a b) : ℝ) < b := by
+    rw [Set.Icc.coe_bot]
+    exact Fact.out
   refine (eq_outwardUnitNormal_iff_of_dim_one.2
     ⟨by rw [norm_neg, IccZeroAddOne.norm_one_tangentSpace], ?_⟩).symm
   rw [isOutwardPointing_neg_iff_proj Icc_isBoundaryPoint_bot, IccZeroAddOne.proj_one_tangentSpace]
@@ -234,7 +237,9 @@ although the preferred chart there reads it as `-e₀`. -/
 theorem outwardUnitNormal_Icc_top :
     outwardUnitNormal (⟨⊤, Icc_isBoundaryPoint_top⟩ : (𝓡∂ (0 + 1)).boundary (Icc a b)) =
       (1 : TangentSpace (𝓡∂ (0 + 1)) (⊤ : Icc a b)) := by
-  have hab : ¬((⊤ : Icc a b) : ℝ) < b := lt_irrefl b
+  have hab : ¬((⊤ : Icc a b) : ℝ) < b := by
+    rw [Set.Icc.coe_top]
+    exact lt_irrefl b
   refine (eq_outwardUnitNormal_iff_of_dim_one.2 ⟨IccZeroAddOne.norm_one_tangentSpace _, ?_⟩).symm
   rw [isOutwardPointing_iff_proj Icc_isBoundaryPoint_top, IccZeroAddOne.proj_one_tangentSpace]
   simp only [hab, ↓reduceIte, neg_lt_zero, zero_lt_one]

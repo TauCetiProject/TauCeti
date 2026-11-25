@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
-import Mathlib.Analysis.Real.Cardinality
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.Topology.Baire.CompleteMetrizable
 import Mathlib.Topology.Instances.RealVectorSpace
+import TauCeti.LinearAlgebra.Dimension.RealRat
 import TauCeti.Topology.Algebra.Group.Baire
 
 /-!
@@ -45,13 +45,6 @@ homomorphism `ℝ →+ ℝ` that is neither continuous nor Borel-measurable. -/
 theorem exists_addMonoidHom_not_continuous_and_not_measurable :
     ∃ f : ℝ →+ ℝ, ¬ Continuous f ∧ ¬ Measurable f := by
   let b := Module.Basis.ofVectorSpace ℚ ℝ
-  have hnt : Nontrivial (Module.Basis.ofVectorSpaceIndex ℚ ℝ) := by
-    by_contra h
-    rw [not_nontrivial_iff_subsingleton] at h
-    have : Countable (Module.Basis.ofVectorSpaceIndex ℚ ℝ →₀ ℚ) :=
-      Finsupp.equivFunOnFinite.countable_iff.2 inferInstance
-    have hcnt : Countable ℝ := b.repr.toEquiv.countable_iff.2 this
-    exact not_countable hcnt
   obtain ⟨i, j, hij⟩ := exists_pair_ne (Module.Basis.ofVectorSpaceIndex ℚ ℝ)
   let L : ℝ →ₗ[ℚ] ℝ := (Algebra.linearMap ℚ ℝ).comp (b.coord i)
   let f : ℝ →+ ℝ := L.toAddMonoidHom

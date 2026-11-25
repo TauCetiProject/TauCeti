@@ -137,6 +137,12 @@ instance : BorelSpace (grassmannBundle F E k) :=
 theorem continuous_proj : Continuous (proj : grassmannBundle F E k → B) :=
   (FiberBundle.continuous_proj (F →L[ℝ] F) fun b ↦ E b →L[ℝ] E b).comp continuous_subtypeVal
 
+/-- The projection of the Grassmann bundle to the base is measurable. -/
+@[fun_prop]
+theorem measurable_proj [MeasurableSpace B] [BorelSpace B] :
+    Measurable (proj : grassmannBundle F E k → B) :=
+  continuous_proj.measurable
+
 section Fiber
 
 variable (F E k)

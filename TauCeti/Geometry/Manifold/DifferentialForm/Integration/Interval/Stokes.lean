@@ -65,8 +65,6 @@ theorem integralTopForm_mextDeriv_ofFunction_Icc (f : ℝ → ℝ)
   simp only [hη, ContinuousLinearEquiv.apply_symm_apply]
   exact intervalIntegral.integral_deriv_of_contDiffOn_Icc hf hab.out.le
 
-open scoped IccZeroAddOne
-
 attribute [local instance] intervalBoundaryChartedSpace
 
 local instance : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) 1

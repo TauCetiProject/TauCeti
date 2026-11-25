@@ -40,13 +40,6 @@ Both preferred charts send their endpoints to `0` (`extChartAt_Icc_bot`, `extCha
 The unit tangent vector `1` of the interval has the chart sign as its coordinate in its own chart
 (`TauCeti.one_tangentSpace_Icc_apply`), and the unit vector field `t ↦ 1` is a smooth section of
 the tangent bundle, including at both endpoints (`TauCeti.contMDiff_one_tangentSpace_Icc`).
-
-The scope `TauCeti.IccZeroAddOne` provides the interval charts and manifold instance with the model
-dimension written as the successor `0 + 1` (`TauCeti.IccZeroAddOne.instChartedSpace`,
-`TauCeti.IccZeroAddOne.instIsManifold`). Instance search does not identify `0 + 1` with `1`, and
-the boundary constructions, whose boundary model is the zero-dimensional `EuclideanSpace ℝ (Fin 0)`,
-need the successor spelling; files that open the scope share these instances instead of declaring
-local copies.
 -/
 
 public section
@@ -573,21 +566,3 @@ theorem hasMFDerivAt_prodMk_projIcc {γ : ℝ → M} {s t : ℝ} (hγ : MDiffere
   exact hγ.hasMFDerivAt.prodMap (p := (s, t)) (mdifferentiableAt_projIcc ht).hasMFDerivAt
 
 end TauCeti
-
-/-! ### The interval charts in the successor dimension `0 + 1` -/
-
-namespace TauCeti.IccZeroAddOne
-
-variable {a b : ℝ} [Fact (a < b)]
-
-/-- The interval charts, with the model dimension written as the successor `0 + 1` used by the
-boundary constructions, so that the zero-dimensional boundary of `[a, b]` infers them. -/
-@[reducible] noncomputable scoped instance instChartedSpace :
-    ChartedSpace (EuclideanHalfSpace (0 + 1)) (Icc a b) :=
-  instIccChartedSpace a b
-
-/-- The interval is a `C^n` manifold for the charts `instChartedSpace`. -/
-scoped instance instIsManifold {n : ℕ∞ω} : IsManifold (𝓡∂ (0 + 1)) n (Icc a b) :=
-  instIsManifoldIcc a b
-
-end TauCeti.IccZeroAddOne

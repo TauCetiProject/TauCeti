@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Restrict
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
+public import Mathlib.Topology.Compactness.Lindelof
 public import Mathlib.Topology.Sets.Opens
 
 /-!
@@ -34,6 +35,9 @@ Splitting a restriction along a second set `E` bounds it by the restriction to `
 mass of `Eᶜ` under the restriction to `s`, with no measurability assumption
 (`MeasureTheory.Measure.restrict_apply_le_restrict_inter_add_compl`); this is the counting step of
 the comparison between conditioning on `s` and on `s ∩ E`.
+
+For a map `f` into a Lindelöf space, a measure is determined by its restrictions to the preimages
+of the sets of an open cover (`MeasureTheory.Measure.ext_of_restrict_preimage`).
 -/
 
 public section
@@ -75,6 +79,17 @@ theorem restrict_apply_le_restrict_inter_add_compl {α : Type*} [MeasurableSpace
     refine add_le_add le_rfl ((measure_mono A.subset_univ).trans ?_)
     rw [restrict_apply_univ, Set.sdiff_eq, Set.inter_comm]
     exact le_restrict_apply _ _
+
+/-- **Locality of measures.** For a map `f` into a Lindelöf space, two measures that agree on the
+preimage of each set of an open cover are equal. -/
+theorem ext_of_restrict_preimage {α β ι : Type*} [MeasurableSpace α] [TopologicalSpace β]
+    [LindelofSpace β] {μ ν : Measure α} (f : α → β) {U : ι → Set β} (hU : ∀ i, IsOpen (U i))
+    (hcover : ⋃ i, U i = univ) (h : ∀ i, μ.restrict (f ⁻¹' U i) = ν.restrict (f ⁻¹' U i)) :
+    μ = ν := by
+  obtain ⟨T, hT, hTU⟩ := isLindelof_univ.elim_countable_subcover U hU hcover.ge
+  have : Countable T := hT.to_subtype
+  refine (ext_iff_of_iUnion_eq_univ (s := fun i : T ↦ f ⁻¹' U i) ?_).mpr fun i ↦ h i
+  rw [← preimage_iUnion, iUnion_subtype, univ_subset_iff.mp hTU, preimage_univ]
 
 end MeasureTheory.Measure
 
