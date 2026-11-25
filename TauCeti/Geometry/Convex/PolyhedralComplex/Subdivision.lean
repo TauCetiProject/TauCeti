@@ -138,11 +138,6 @@ theorem biUnion_cellsOfCodimension_subset (hCD : C.IsSubdivision D) (k : ℕ) :
   obtain ⟨Q, hQ, -, -, hxQ⟩ := hCD.exists_mem_cellsOfCodimension_subset hP hxP
   exact Set.mem_iUnion₂.mpr ⟨Q, hQ, hxQ⟩
 
-/-- Subdividing a complex can only enlarge the union of its walls. -/
-theorem biUnion_walls_subset (hCD : C.IsSubdivision D) :
-    (⋃ P ∈ D.walls, P) ⊆ ⋃ Q ∈ C.walls, Q :=
-  hCD.biUnion_cellsOfCodimension_subset 1
-
 end IsSubdivision
 
 end TauCeti.FinitePolyhedralComplex

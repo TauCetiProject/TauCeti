@@ -5,7 +5,7 @@ Authors: Codex, Antigravity (Gemini 4 Carbon)
 -/
 module
 
-public import TauCeti.Geometry.ScatteringDiagram.Path.CrossingEvents
+public import TauCeti.Geometry.ScatteringDiagram.Path.Crossing.Events
 public import TauCeti.Data.Finset.NoncommProd
 public import Mathlib.Combinatorics.Quiver.Path.Weight
 import TauCeti.Data.Finset.Sort
@@ -313,30 +313,6 @@ theorem segmentPathProduct_mapReindex {U ι' : Type*} [NormedAddCommGroup U] [No
   rw [segmentPathProduct_def, segmentPathProduct_def, orderedCrossingTimes_mapReindex a e r hW b,
     funext (crossingEventProduct_mapReindex ν label hcomm a e r hW b)]
 
-/-- Continuous affine coordinate transport preserves each simultaneous crossing-event product under
-pushed-forward coorientations. -/
-theorem crossingEventProduct_map {U : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
-    (a : x ⟶ y) (e : V ≃ᴬ[ℝ] U)
-    {hcomm' : ∀ i j, affineSpan ℝ (e '' W i) = affineSpan ℝ (e '' W j) →
-      Commute (label i) (label j)}
-    (b : x.map e ⟶ y.map e) (t : ℝ) :
-    crossingEventProduct (fun i => (ν i).comp e.toAffineEquiv.linear.symm.toLinearMap)
-        label hcomm' b t =
-      crossingEventProduct ν label hcomm a t :=
-  crossingEventProduct_mapReindex ν label hcomm a e (Equiv.refl ι) (fun _ => rfl) b t
-
-/-- Continuous affine coordinate transport preserves segment transport under pushed-forward
-coorientations. -/
-theorem segmentPathProduct_map {U : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
-    (a : x ⟶ y) (e : V ≃ᴬ[ℝ] U)
-    {hcomm' : ∀ i j, affineSpan ℝ (e '' W i) = affineSpan ℝ (e '' W j) →
-      Commute (label i) (label j)}
-    (b : x.map e ⟶ y.map e) :
-    segmentPathProduct (fun i => (ν i).comp e.toAffineEquiv.linear.symm.toLinearMap)
-        label hcomm' b =
-      segmentPathProduct ν label hcomm a :=
-  segmentPathProduct_mapReindex ν label hcomm a e (Equiv.refl ι) (fun _ => rfl) b
-
 end TauCeti.WallComplement
 
 namespace TauCeti.WallComplement
@@ -559,7 +535,8 @@ theorem wallPathProduct_affineMapReindex {U ι' : Type*} [NormedAddCommGroup U] 
   induction p with
   | nil => simp
   | cons p a ih =>
-    rw [affineMapReindex_cons, wallPathProduct_cons, wallPathProduct_cons, ih,
+    dsimp only [affineMapReindex]
+    rw [Prefunctor.mapPath_cons, wallPathProduct_cons, wallPathProduct_cons, ← ih,
       segmentPathProduct_mapReindex]
 
 /-- Transporting an admissible polygonal path along a continuous affine equivalence preserves

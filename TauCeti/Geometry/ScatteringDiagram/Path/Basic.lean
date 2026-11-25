@@ -30,7 +30,7 @@ segments between off-wall points of a convex set avoiding singular support are a
 For a finite family, the crossing events (segment index, wall index and affine
 parameter) form a finite set. Thus repeated visits and simultaneous coplanar
 crossings are retained. Every crossing lies in the relative
-interior of its wall. In finite dimension, finite families of codimension-one
+interior of its wall. Finite families of codimension-one
 polyhedra admit such paths between any two allowed endpoints, with two edges
 sufficing and all vertices in any prescribed open set containing the endpoints.
 A function that is locally constant off the walls takes equal values at the
@@ -38,8 +38,8 @@ endpoints of a segment meeting no wall, by connectedness of the unit interval.
 
 Adapted from `Mei/Geometry/Convex/Polyhedron/AdmissiblePath.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
-`a79c57178cc83666fc244ca6e6eeaa722e9b8bc7` (Apache 2.0), with crossing and reversal
-lemmas for `WallComplement.restrictPrefunctor` added here.
+`a79c57178cc83666fc244ca6e6eeaa722e9b8bc7` (Apache 2.0), with reversal for
+`WallComplement.restrictPrefunctor` added here.
 Original copyright (c) 2026 Mei contributors; original author: Codex.
 -/
 
@@ -77,6 +77,10 @@ structure AdmissibleSegment (x y : WallComplement W) : Prop where
 /-- Admissible segments are the edges of the quiver of allowed vertices. -/
 instance : Quiver (WallComplement W) where
   Hom x y := PLift (AdmissibleSegment x y)
+
+/-- There is at most one admissible segment between two allowed vertices. -/
+instance (x y : WallComplement W) : Subsingleton (x ⟶ y) :=
+  ⟨fun _ _ => PLift.ext (Subsingleton.elim _ _)⟩
 
 /-- The wall indices and affine crossing parameters of one segment. -/
 def crossings (x y : WallComplement W) : Set (ι × ℝ) :=
@@ -248,7 +252,7 @@ theorem apply_eq_of_crossings_eq_empty {Y : Type*} {F : V → Y}
     (hF : ∀ θ, (∀ i, θ ∉ W i) → ∀ᶠ φ in nhds θ, F φ = F θ) {x y : WallComplement W}
     (he : crossings x y = ∅) : F x.val = F y.val := by
   have hc : Continuous fun r : I => AffineMap.lineMap x.val y.val (r : ℝ) :=
-    AffineMap.lineMap_continuous.comp continuous_subtype_val
+    AffineMap.lineMap_continuous.comp continuous_subtypeVal
   have hf : IsLocallyConstant fun r : I => F (AffineMap.lineMap x.val y.val (r : ℝ)) := by
     refine (IsLocallyConstant.iff_eventually_eq _).mpr fun r =>
       (hc.tendsto r).eventually (p := fun φ => F φ = F _) (hF _ fun i hi => ?_)
@@ -271,13 +275,13 @@ abbrev restrictPrefunctor {κ : Type*} (W : ι → Set V) (f : κ → ι) :
 theorem restrictPrefunctor_obj_val {κ : Type*} (W : ι → Set V) (f : κ → ι)
     (x : WallComplement W) : ((restrictPrefunctor W f).obj x).val = x.val := (rfl)
 
-/-- Forgetting walls along `f : κ → ι` retains the crossings of the selected walls at the same
+/-- Forgetting walls retains exactly the crossings of the selected walls, at the same affine
 parameters. -/
-theorem mem_crossings_restrictPrefunctor {κ : Type*} (W : ι → Set V) (f : κ → ι)
-    (x y : WallComplement W) (j : κ) (t : ℝ) :
-    (j, t) ∈ crossings ((restrictPrefunctor W f).obj x) ((restrictPrefunctor W f).obj y) ↔
-      (f j, t) ∈ crossings x y := by
-  simp only [mem_crossings, Function.comp_apply]
+theorem mem_crossings_restrictPrefunctor {κ : Type*} (f : κ → ι) (x y : WallComplement W)
+    (k : κ) (t : ℝ) :
+    (k, t) ∈ crossings ((restrictPrefunctor W f).obj x) ((restrictPrefunctor W f).obj y) ↔
+      (f k, t) ∈ crossings x y :=
+  Iff.rfl
 
 /-- Forgetting walls preserves the entire ambient vertex list. -/
 theorem vertices_restrictPrefunctor {κ : Type*} (W : ι → Set V) (f : κ → ι)
@@ -289,12 +293,12 @@ theorem vertices_restrictPrefunctor {κ : Type*} (W : ι → Set V) (f : κ → 
 /-- Reversal of segments makes the allowed-vertex quiver symmetric. -/
 instance : Quiver.HasInvolutiveReverse (WallComplement W) where
   reverse' e := ⟨e.down.symm⟩
-  inv' _ := PLift.ext (Subsingleton.elim _ _)
+  inv' _ := Subsingleton.elim _ _
 
 /-- Forgetting walls commutes with segment reversal. -/
 instance {κ : Type*} (W : ι → Set V) (f : κ → ι) :
     (restrictPrefunctor W f).MapReverse where
-  map_reverse' _ := PLift.ext (Subsingleton.elim _ _)
+  map_reverse' _ := Subsingleton.elim _ _
 
 end WallComplement
 
@@ -512,7 +516,7 @@ variable {V ι : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {W : ι → S
 /-- Allowed endpoints in an open set, for a finite family of codimension-one
 polyhedra, admit an admissible chain with exactly two edges whose vertices all lie
 in that set. The set need not be convex. -/
-theorem exists_length_eq_two_vertices_mem_of_isOpen [FiniteDimensional ℝ V] [Finite ι]
+theorem exists_length_eq_two_vertices_mem_of_isOpen [Finite ι]
     (hpoly : ∀ i, TauCeti.IsConvexPolyhedron (W i))
     (hdim : ∀ i, Module.finrank ℝ (affineSpan ℝ (W i)).direction + 1 = Module.finrank ℝ V)
     {U : Set V} (hU : IsOpen U) {x y : WallComplement W} (hx : x.val ∈ U) (hy : y.val ∈ U) :
@@ -534,7 +538,7 @@ theorem exists_length_eq_two_vertices_mem_of_isOpen [FiniteDimensional ℝ V] [F
 
 /-- Allowed endpoints in a finite family of codimension-one polyhedra admit
 an admissible chain with exactly two edges. -/
-theorem exists_length_eq_two [FiniteDimensional ℝ V] [Finite ι]
+theorem exists_length_eq_two [Finite ι]
     (hpoly : ∀ i, TauCeti.IsConvexPolyhedron (W i))
     (hdim : ∀ i, Module.finrank ℝ (affineSpan ℝ (W i)).direction + 1 = Module.finrank ℝ V)
     (x y : WallComplement W) : ∃ p : AdmissiblePLPath x y, p.length = 2 :=

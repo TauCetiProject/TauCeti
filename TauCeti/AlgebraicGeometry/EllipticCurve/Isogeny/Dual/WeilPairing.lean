@@ -78,9 +78,9 @@ over a separably closed field (Silverman III.6.1). Its sum is `deg φ • P₀ -
 theorem exists_principal_eq_divisorPullback_sub (T : W₂.Point) :
     letI := φ.fieldPullback.toRingHom.toAlgebra
     ∃ h : W₁.FunctionFieldˣ, Divisor.principal W₁.isFunctionField h =
-      φ.divisorPullback (fun _ ↦ rfl) (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W₂ T).1 -
+      φ.divisorPullback (fun _ ↦ rfl) (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W₂ T).val -
           WeilDivisor.ofPoint (Place.infinity W₂)) -
-        (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W₁ ((Hom.ofIsogeny φ.dual).pointMap T)).1 -
+        (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W₁ ((Hom.ofIsogeny φ.dual).pointMap T)).val -
           WeilDivisor.ofPoint (Place.infinity W₁)) := by
   let _ := φ.fieldPullback.toRingHom.toAlgebra
   obtain ⟨P₀, hP₀⟩ := φ.toPointHom_surjective T
@@ -150,7 +150,7 @@ private theorem weilPairing_eq_weilPairing_dual_of_isSeparable
   let _ := (mulByIntIsogeny W₂ hψ₂).fieldPullback.toRingHom.toAlgebra
   -- `g` computes `e_N(·, T)` on `W₂`, and `div h = φ^* ((T) - (O)) - ((φ̂ T) - (O))` on `W₁`
   obtain ⟨g, hg⟩ := exists_principal_eq_weilPairingDivisor W₂ hchar
-    ((Submodule.mem_torsionBy_iff _ _).mp T.2)
+    ((Submodule.mem_torsionBy_iff _ _).mp T.property)
   obtain ⟨h, hh⟩ := φ.exists_principal_eq_divisorPullback_sub T
   rw [hT] at hh
   -- `φ^* g / [N]^* h` computes `e_N(·, φ̂ T)` on `W₁`
@@ -176,7 +176,7 @@ private theorem weilPairing_eq_weilPairing_dual_of_isSeparable
   have hfix : translation W₁ (Point.equivBaseChangeSelf W₁ S)
       ((mulByIntIsogeny W₁ hψ₁).fieldPullback h) = (mulByIntIsogeny W₁ hψ₁).fieldPullback h :=
     mem_ker_iff.mp ((mem_ker_mulByIntIsogeny_iff W₁ hψ₁).mpr (by
-      rw [← map_zsmul, (Submodule.mem_torsionBy_iff _ _).mp S.2, map_zero]))
+      rw [← map_zsmul, (Submodule.mem_torsionBy_iff _ _).mp S.property, map_zero]))
       _ (AlgHom.mem_fieldRange.mpr ⟨h, rfl⟩)
   -- and moves `φ^* g` to `φ^* (τ_{φ S}^* g)`
   have hφS : φ.toPointHom S = S' := by rw [← Hom.pointMap_ofIsogeny_eq_toPointHom, hS]

@@ -111,7 +111,7 @@ theorem mem_crossings_mapReindex (x y : WallComplement W) (e : V ≃ᴬ[ℝ] U) 
     (r i, t) ∈ crossings (x.mapReindex e r hW) (y.mapReindex e r hW) ↔
       (i, t) ∈ crossings x y := by
   obtain rfl := (r.eq_comp_symm W' _).mpr (funext hW)
-  exact (mem_crossings_restrictPrefunctor (fun j => e '' W j) r.symm
+  exact (mem_crossings_restrictPrefunctor (W := fun j => e '' W j) r.symm
     (x.map e) (y.map e) (r i) t).trans (by simp [crossings_map])
 
 /-- Transporting along a continuous affine equivalence and a wall bijection preserves segment
@@ -132,7 +132,7 @@ abbrev mapReindexPrefunctor (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι') (hW : ∀ i, 
 /-- Reindexed affine transport preserves reversal of segments. -/
 instance (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι') (hW : ∀ i, W' (r i) = e '' W i) :
     (mapReindexPrefunctor e r hW).MapReverse where
-  map_reverse' _ := PLift.ext (Subsingleton.elim _ _)
+  map_reverse' _ := Subsingleton.elim _ _
 
 end Reindex
 
@@ -160,7 +160,7 @@ theorem wallComplementPrefunctor_obj (e : V ≃ᴬ[ℝ] U) (x : WallComplement W
 
 /-- Affine transport preserves reversal of segments. -/
 instance (e : V ≃ᴬ[ℝ] U) : (e.wallComplementPrefunctor (W := W)).MapReverse where
-  map_reverse' _ := PLift.ext (Subsingleton.elim _ _)
+  map_reverse' _ := Subsingleton.elim _ _
 
 end ContinuousAffineEquiv
 
@@ -258,72 +258,17 @@ variable {ι' : Type*} {W' : ι' → Set U}
 
 /-- Transport an admissible polygonal path along `e : V ≃ᴬ[ℝ] U` and a wall bijection `r : ι ≃ ι'`.
 -/
-def affineMapReindex (p : AdmissiblePLPath x y) (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι')
+abbrev affineMapReindex (p : AdmissiblePLPath x y) (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι')
     (hW : ∀ i, W' (r i) = e '' W i) :
     AdmissiblePLPath (x.mapReindex e r hW) (y.mapReindex e r hW) :=
   (WallComplement.mapReindexPrefunctor e r hW).mapPath p
-
-/-- `affineMapReindex` is `Prefunctor.mapPath` along `WallComplement.mapReindexPrefunctor`. -/
-theorem affineMapReindex_def (p : AdmissiblePLPath x y) (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι')
-    (hW : ∀ i, W' (r i) = e '' W i) :
-    p.affineMapReindex e r hW = (WallComplement.mapReindexPrefunctor e r hW).mapPath p := (rfl)
-
-/-- Constant paths remain constant under reindexed affine transport. -/
-@[simp]
-theorem affineMapReindex_nil (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι') (hW : ∀ i, W' (r i) = e '' W i) :
-    (nil : AdmissiblePLPath x x).affineMapReindex e r hW = nil := (rfl)
-
-/-- Reindexed affine transport acts edgewise on path extension. -/
-@[simp]
-theorem affineMapReindex_cons (p : AdmissiblePLPath x y) (a : y ⟶ z)
-    (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι') (hW : ∀ i, W' (r i) = e '' W i) :
-    (p.cons a).affineMapReindex e r hW =
-      (p.affineMapReindex e r hW).cons ((WallComplement.mapReindexPrefunctor e r hW).map a) :=
-  (rfl)
-
-/-- Reindexed affine transport of a single-edge path is the single-edge path of the transported
-edge. -/
-@[simp]
-theorem affineMapReindex_toPath (a : x ⟶ y) (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι')
-    (hW : ∀ i, W' (r i) = e '' W i) :
-    a.toPath.affineMapReindex e r hW =
-      ((WallComplement.mapReindexPrefunctor e r hW).map a).toPath := (rfl)
-
-/-- Reindexed affine transport commutes with path concatenation. -/
-@[simp]
-theorem affineMapReindex_comp (p : AdmissiblePLPath x y) (q : AdmissiblePLPath y z)
-    (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι') (hW : ∀ i, W' (r i) = e '' W i) :
-    (p.comp q).affineMapReindex e r hW =
-      (p.affineMapReindex e r hW).comp (q.affineMapReindex e r hW) :=
-  Prefunctor.mapPath_comp _ _ _
-
-/-- Reindexed affine transport preserves path length. -/
-@[simp]
-theorem length_affineMapReindex (p : AdmissiblePLPath x y) (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι')
-    (hW : ∀ i, W' (r i) = e '' W i) :
-    (p.affineMapReindex e r hW).length = p.length :=
-  Prefunctor.length_mapPath _ _
-
-/-- Reindexed affine transport maps the path's vertices by `WallComplement.mapReindex`. -/
-@[simp]
-theorem vertices_affineMapReindex (p : AdmissiblePLPath x y) (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι')
-    (hW : ∀ i, W' (r i) = e '' W i) :
-    (p.affineMapReindex e r hW).vertices = p.vertices.map (·.mapReindex e r hW) :=
-  Prefunctor.vertices_mapPath _ _
 
 /-- Reindexed affine transport maps the ambient vertex list by `e`. -/
 theorem map_val_vertices_affineMapReindex (p : AdmissiblePLPath x y) (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι')
     (hW : ∀ i, W' (r i) = e '' W i) :
     (p.affineMapReindex e r hW).vertices.map WallComplement.val =
       (p.vertices.map WallComplement.val).map e := by
-  simp only [vertices_affineMapReindex, List.map_map, Function.comp_def]
-
-/-- Reindexed affine transport commutes with path reversal. -/
-@[simp]
-theorem affineMapReindex_reverse (p : AdmissiblePLPath x y) (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι')
-    (hW : ∀ i, W' (r i) = e '' W i) :
-    p.reverse.affineMapReindex e r hW = (p.affineMapReindex e r hW).reverse :=
-  Prefunctor.mapPath_reverse (WallComplement.mapReindexPrefunctor e r hW) p
+  simp only [Prefunctor.vertices_mapPath, List.map_map, Function.comp_def]
 
 /-- When the target wall family is `(fun i => e '' W i) ∘ r.symm`, reindexed affine transport
 factors as `affineMap e` followed by `WallComplement.restrictPrefunctor _ r.symm`. -/

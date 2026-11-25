@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Finance.BlackScholes.Basic
+public import TauCeti.Probability.Finance.BlackScholes.Greeks
 import TauCeti.Probability.Finance.BlackScholes.Limits
 
 /-!
@@ -26,7 +26,9 @@ the payoffs `(s - K)⁺` and `(K - s)⁺` at maturity `τ = 0`, and, for a strik
 For `σ > 0` and `K > 0` the extended prices are jointly continuous in `(s, τ)` on the whole plane,
 in particular on the closed domain `s ≥ 0`, `τ ≥ 0`; they satisfy put–call parity everywhere and
 the no-arbitrage bounds `0 ≤ C ≤ s` and `0 ≤ P ≤ K e^{-rτ}` for `s ≥ 0`; and in the interior they
-agree with the closed forms, so they solve the Black–Scholes equation there. These are the
+agree with the closed forms, so they solve the Black–Scholes equation there. For `K > 0` they also
+solve it before the expiry at every spot `s ≤ 0`, where they are the intrinsic values `0` and
+`K e^{-rτ} - s`. These are the
 continuity, growth and terminal conditions under which a solution of the Black–Scholes equation
 is compared with the closed-form price.
 
@@ -54,7 +56,7 @@ intrinsic value from the side `τ ≤ 0`. At zero spot it is the squeeze `0 ≤ 
 * `TauCeti.BlackScholes.continuous_callValue`, `TauCeti.BlackScholes.continuous_putValue`:
   joint continuity of the extended prices in the spot and the remaining maturity.
 * `TauCeti.BlackScholes.callValue_pde`, `TauCeti.BlackScholes.putValue_pde`: the Black–Scholes
-  equation in the interior.
+  equation before the expiry, at every spot.
 
 ## References
 
@@ -296,42 +298,72 @@ theorem continuous_putValue (hσ : 0 < σ) (hK : 0 < K) :
 
 /-! ### The Black–Scholes equation -/
 
-/-- **The Black–Scholes equation for the extended call.** In calendar time `t < T` and at spot
-`s > 0`, the extended call `C(s, t) = callValue s r σ K (T - t)` satisfies
-`∂C/∂t + σ² s² / 2 ∂²C/∂s² + r (s ∂C/∂s - C) = 0`. -/
-theorem callValue_pde (hs : 0 < s) (hK : 0 < K) {T t : ℝ} (ht : t < T) :
-    deriv (fun u => callValue s r σ K (T - u)) t +
-      σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => callValue x r σ K (T - t)) s +
-      r * (s * deriv (fun x => callValue x r σ K (T - t)) s - callValue s r σ K (T - t)) = 0 := by
+/-- **The Black–Scholes equation for the extended call.** In calendar time `t < T` and at every
+spot `s`, the extended call `C(s, t) = callValue s r σ K (T - t)` satisfies
+`∂C/∂t + σ² s² / 2 ∂²C/∂s² + r (s ∂C/∂s - C) = 0`. For `s > 0` this is `callPrice_pde`; at a spot
+`s ≤ 0` the extended call is the intrinsic value `0` at every maturity. -/
+theorem callValue_pde (hK : 0 < K) {T t : ℝ} (ht : t < T) :
+    residual r σ (fun x u => callValue x r σ K (T - u)) s t = 0 := by
+  simp only [residual_def]
   have hτ : 0 < T - t := sub_pos.2 ht
-  have hspot : (fun x => callValue x r σ K (T - t)) =ᶠ[𝓝 s]
-      fun x => callPrice x r σ K (T - t) := by
-    filter_upwards [Ioi_mem_nhds hs] with x hx
-    exact callValue_of_pos hx hτ
-  have htime : (fun u => callValue s r σ K (T - u)) =ᶠ[𝓝 t]
-      fun u => callPrice s r σ K (T - u) := by
-    filter_upwards [Iio_mem_nhds ht] with u hu
-    exact callValue_of_pos hs (sub_pos.2 hu)
-  rw [htime.deriv_eq, hspot.deriv.deriv_eq, hspot.deriv_eq, callValue_of_pos hs hτ]
-  exact callPrice_pde hs hK ht
+  rcases lt_or_ge 0 s with hs | hs
+  · have hspot : (fun x => callValue x r σ K (T - t)) =ᶠ[𝓝 s]
+        fun x => callPrice x r σ K (T - t) := by
+      filter_upwards [Ioi_mem_nhds hs] with x hx
+      exact callValue_of_pos hx hτ
+    have htime : (fun u => callValue s r σ K (T - u)) =ᶠ[𝓝 t]
+        fun u => callPrice s r σ K (T - u) := by
+      filter_upwards [Iio_mem_nhds ht] with u hu
+      exact callValue_of_pos hs (sub_pos.2 hu)
+    rw [htime.deriv_eq, hspot.deriv.deriv_eq, hspot.deriv_eq, callValue_of_pos hs hτ]
+    simpa only [residual_def] using callPrice_pde hs hK ht.ne
+  have h0 : ∀ x ≤ 0, ∀ u, callValue x r σ K u = 0 := fun x hx u => by
+    rw [callValue_of_nonpos (.inl hx), posPart_eq_zero]
+    linarith [mul_pos hK (exp_pos (-r * u))]
+  rw [show (fun u => callValue s r σ K (T - u)) = fun _ => 0 from funext fun _ => h0 s hs _,
+    deriv_const, h0 s hs]
+  rcases hs.lt_or_eq with hs | rfl
+  · have hspot : (fun x => callValue x r σ K (T - t)) =ᶠ[𝓝 s] fun _ => 0 := by
+      filter_upwards [Iio_mem_nhds hs] with x hx using h0 x hx.le _
+    rw [hspot.deriv.deriv_eq, hspot.deriv_eq]
+    simp
+  · simp
 
-/-- **The Black–Scholes equation for the extended put.** In calendar time `t < T` and at spot
-`s > 0`, the extended put `P(s, t) = putValue s r σ K (T - t)` satisfies
-`∂P/∂t + σ² s² / 2 ∂²P/∂s² + r (s ∂P/∂s - P) = 0`. -/
-theorem putValue_pde (hs : 0 < s) (hK : 0 < K) {T t : ℝ} (ht : t < T) :
-    deriv (fun u => putValue s r σ K (T - u)) t +
-      σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => putValue x r σ K (T - t)) s +
-      r * (s * deriv (fun x => putValue x r σ K (T - t)) s - putValue s r σ K (T - t)) = 0 := by
+/-- **The Black–Scholes equation for the extended put.** In calendar time `t < T` and at every
+spot `s`, the extended put `P(s, t) = putValue s r σ K (T - t)` satisfies
+`∂P/∂t + σ² s² / 2 ∂²P/∂s² + r (s ∂P/∂s - P) = 0`. For `s > 0` this is `putPrice_pde`; at a spot
+`s ≤ 0` the extended put is the intrinsic value `K e^{-rτ} - s` at every maturity `τ`. -/
+theorem putValue_pde (hK : 0 < K) {T t : ℝ} (ht : t < T) :
+    residual r σ (fun x u => putValue x r σ K (T - u)) s t = 0 := by
+  simp only [residual_def]
   have hτ : 0 < T - t := sub_pos.2 ht
-  have hspot : (fun x => putValue x r σ K (T - t)) =ᶠ[𝓝 s]
-      fun x => putPrice x r σ K (T - t) := by
-    filter_upwards [Ioi_mem_nhds hs] with x hx
-    exact putValue_of_pos hx hτ
-  have htime : (fun u => putValue s r σ K (T - u)) =ᶠ[𝓝 t]
-      fun u => putPrice s r σ K (T - u) := by
-    filter_upwards [Iio_mem_nhds ht] with u hu
-    exact putValue_of_pos hs (sub_pos.2 hu)
-  rw [htime.deriv_eq, hspot.deriv.deriv_eq, hspot.deriv_eq, putValue_of_pos hs hτ]
-  exact putPrice_pde hs hK ht
+  rcases lt_or_ge 0 s with hs | hs
+  · have hspot : (fun x => putValue x r σ K (T - t)) =ᶠ[𝓝 s]
+        fun x => putPrice x r σ K (T - t) := by
+      filter_upwards [Ioi_mem_nhds hs] with x hx
+      exact putValue_of_pos hx hτ
+    have htime : (fun u => putValue s r σ K (T - u)) =ᶠ[𝓝 t]
+        fun u => putPrice s r σ K (T - u) := by
+      filter_upwards [Iio_mem_nhds ht] with u hu
+      exact putValue_of_pos hs (sub_pos.2 hu)
+    rw [htime.deriv_eq, hspot.deriv.deriv_eq, hspot.deriv_eq, putValue_of_pos hs hτ]
+    simpa only [residual_def] using putPrice_pde hs hK ht.ne
+  have h0 : ∀ x ≤ 0, ∀ u, putValue x r σ K u = K * exp (-r * u) - x := fun x hx u => by
+    rw [putValue_of_nonpos (.inl hx), posPart_eq_self]
+    linarith [mul_pos hK (exp_pos (-r * u))]
+  have hu : deriv (fun u => K * exp (-r * (T - u)) - s) t =
+      K * (exp (-r * (T - t)) * (-r * -1)) :=
+    (((((hasDerivAt_id t).const_sub T).const_mul (-r)).exp.const_mul K).sub_const s).deriv
+  rw [show (fun u => putValue s r σ K (T - u)) = fun u => K * exp (-r * (T - u)) - s from
+    funext fun _ => h0 s hs _, hu, h0 s hs]
+  rcases hs.lt_or_eq with hs | rfl
+  · have hspot : (fun x => putValue x r σ K (T - t)) =ᶠ[𝓝 s]
+        fun x => K * exp (-r * (T - t)) - x := by
+      filter_upwards [Iio_mem_nhds hs] with x hx using h0 x hx.le _
+    have hx : deriv (fun x => K * exp (-r * (T - t)) - x) = fun _ => -1 :=
+      funext fun x => ((hasDerivAt_id x).const_sub _).deriv
+    rw [hspot.deriv.deriv_eq, hspot.deriv_eq, hx, deriv_const]
+    ring
+  · ring
 
 end TauCeti.BlackScholes

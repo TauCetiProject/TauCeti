@@ -141,9 +141,9 @@ theorem mem_cellsOfCodimension_image (C : FinitePolyhedralComplex h)
 noncomputable def cellsOfCodimensionEquiv (C : FinitePolyhedralComplex h)
     (e : Toric.IntegralAffineEquiv h h') (k : ℕ) :
     C.cellsOfCodimension k ≃ (C.image e).cellsOfCodimension k where
-  toFun P := ⟨e '' P.val, (C.mem_cellsOfCodimension_image e k _).mpr ⟨P.val, P.2, rfl⟩⟩
+  toFun P := ⟨e '' P.val, (C.mem_cellsOfCodimension_image e k _).mpr ⟨P.val, P.property, rfl⟩⟩
   invFun Q := ⟨e.symm '' Q.val, by
-    obtain ⟨P, hP, hPQ⟩ := (C.mem_cellsOfCodimension_image e k Q.val).mp Q.2
+    obtain ⟨P, hP, hPQ⟩ := (C.mem_cellsOfCodimension_image e k Q.val).mp Q.property
     rwa [← hPQ, e.symm_image_image]⟩
   left_inv P := Subtype.ext (e.symm_image_image P.val)
   right_inv Q := Subtype.ext (e.image_symm_image Q.val)
@@ -163,18 +163,6 @@ noncomputable abbrev wallsEquiv (C : FinitePolyhedralComplex h)
     (e : Toric.IntegralAffineEquiv h h') :
     C.walls ≃ (C.image e).walls :=
   C.cellsOfCodimensionEquiv e 1
-
--- Not `@[simp]`: `wallsEquiv` is reducible, so `coe_cellsOfCodimensionEquiv_apply` already
--- simplifies the LHS.
-/-- `wallsEquiv` acts on underlying sets as the image under `e`. -/
-theorem coe_wallsEquiv_apply (C : FinitePolyhedralComplex h)
-    (e : Toric.IntegralAffineEquiv h h') (w : C.walls) :
-    (C.wallsEquiv e w : Set W) = e '' (w : Set V) := (rfl)
-
-/-- `(wallsEquiv e).symm` acts on underlying sets as the image under `e.symm`. -/
-theorem coe_wallsEquiv_symm_apply (C : FinitePolyhedralComplex h)
-    (e : Toric.IntegralAffineEquiv h h') (w : (C.image e).walls) :
-    ((C.wallsEquiv e).symm w : Set V) = e.symm '' (w : Set W) := (rfl)
 
 end FinitePolyhedralComplex
 

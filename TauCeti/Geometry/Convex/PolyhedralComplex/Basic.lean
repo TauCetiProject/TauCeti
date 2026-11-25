@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors, Codex, Antigravity (Gemini 4 Carbon)
 -/
 module
 
+public import Mathlib.Geometry.Convex.Cone.Pointed
 public import TauCeti.Analysis.Convex.Exposed
 public import TauCeti.Analysis.Convex.Polyhedron.Rational.Basic
 
@@ -26,7 +27,11 @@ point of the intrinsic interior of another cell contains it entirely. The cells 
 and two are its walls and joints. A complex `C` is a weak
 refinement of `D` when each cell of `C` lies in a cell of `D`, and a subdivision when moreover the
 supports agree. Both relations are reflexive, transitive and antisymmetric. A subcomplex is a
-complex whose cells are among the cells of another. The simplest example is
+complex whose cells are among the cells of another. A conical complex
+(`TauCeti.FinitePolyhedralComplex.IsConical`) has cone carriers as cells, and each subcomplex
+of a conical complex is conical. The predicate is adapted from
+`Mei/Geometry/Convex/PolyhedralComplex/Basic.lean` at commit
+`7f1e4c7714fb020473694755ad8748c8f15d0e7f` of the repository cited below. The simplest example is
 `TauCeti.FinitePolyhedralComplex.univ`, whose only cell is the whole space.
 
 Adapted from `Mei/Geometry/Convex/PolyhedralComplex/Basic.lean` and `Subcomplex.lean` in
@@ -243,6 +248,14 @@ theorem IsSubdivision.exists_mem_cells_subset {C D : FinitePolyhedralComplex h}
   exact ⟨(R ∩ P) ∩ Q, C.face_closed Q hQ _ ⟨⟨x, ⟨hQR hxQ, hx⟩, hxQ⟩, hF⟩,
     fun _ hy => hy.1.2, ⟨hQR hxQ, hx⟩, hxQ⟩
 
+/-- Every cell is the carrier of a pointed cone with apex zero. -/
+def IsConical (C : FinitePolyhedralComplex h) : Prop :=
+  ∀ P ∈ C.cells, ∃ σ : PointedCone ℝ V, (σ : Set V) = P
+
+/-- Conicality means that each actual cell carrier is a cone. -/
+theorem isConical_iff {C : FinitePolyhedralComplex h} :
+    C.IsConical ↔ ∀ P ∈ C.cells, ∃ σ : PointedCone ℝ V, (σ : Set V) = P := Iff.rfl
+
 /-- `C` is a subcomplex of `D` when every cell of `C` is a cell of `D`. -/
 def IsSubcomplex (C D : FinitePolyhedralComplex h) : Prop := C.cells ⊆ D.cells
 
@@ -261,6 +274,11 @@ theorem IsSubcomplex.trans {C D E : FinitePolyhedralComplex h}
 theorem IsSubcomplex.antisymm {C D : FinitePolyhedralComplex h}
     (hCD : C.IsSubcomplex D) (hDC : D.IsSubcomplex C) : C = D :=
   FinitePolyhedralComplex.ext (Finset.Subset.antisymm hCD hDC)
+
+/-- A subcomplex inherits conicality from its ambient complex. -/
+theorem IsSubcomplex.isConical {C D : FinitePolyhedralComplex h}
+    (hCD : C.IsSubcomplex D) (hD : D.IsConical) : C.IsConical :=
+  isConical_iff.mpr fun P hP => isConical_iff.mp hD P (isSubcomplex_iff.mp hCD hP)
 
 /-- A subcomplex is a weak refinement of its ambient complex. -/
 theorem IsSubcomplex.isWeakRefinement {C D : FinitePolyhedralComplex h}
@@ -294,6 +312,12 @@ theorem cells_univ : (univ h).cells = {Set.univ} := by
 
 theorem mem_cells_univ {P : Set V} : P ∈ (univ h).cells ↔ P = Set.univ := by
   simp
+
+/-- The whole-space complex is conical. -/
+@[simp]
+theorem isConical_univ : (univ h).IsConical := by
+  refine isConical_iff.mpr fun P hP => ?_
+  exact ⟨⊤, Submodule.top_coe.trans (mem_cells_univ.mp hP).symm⟩
 
 @[simp]
 theorem support_univ : (univ h).support = Set.univ := by
@@ -346,21 +370,14 @@ theorem eq_of_subset_of_mem_cellsOfCodimension (C : FinitePolyhedralComplex h) {
     (mem_cellsOfCodimension.mp hP₁).1 (mem_cellsOfCodimension.mp hP₂).1
     hQP₁ hQP₂ (hspan hP₁ hQP₁) (hspan hP₂ hQP₂)
 
-/-- Distinct walls of a finite polyhedral complex have disjoint intrinsic interiors. -/
-theorem pairwise_disjoint_intrinsicInterior_walls (C : FinitePolyhedralComplex h) :
-    Pairwise fun w₁ w₂ : C.walls =>
-      Disjoint (intrinsicInterior ℝ (w₁ : Set V)) (intrinsicInterior ℝ (w₂ : Set V)) :=
-  fun w₁ w₂ hne => C.disjoint_intrinsicInterior
-    (mem_cellsOfCodimension.mp w₁.2).1 (mem_cellsOfCodimension.mp w₂.2).1
-    (Subtype.coe_ne_coe.mpr hne)
-
-/-- Any wall of a complex `C'` is contained in at most one wall of a complex `C`. -/
-theorem eq_of_wall_subset {C C' : FinitePolyhedralComplex h}
-    {w' : C'.walls} {w₁ w₂ : C.walls}
-    (h₁ : (w' : Set V) ⊆ (w₁ : Set V)) (h₂ : (w' : Set V) ⊆ (w₂ : Set V)) : w₁ = w₂ :=
+/-- Any codimension-`k` cell of a complex `C'` is contained in at most one codimension-`k` cell of
+a complex `C`. -/
+theorem eq_of_cellsOfCodimension_subset {C C' : FinitePolyhedralComplex h} {k : ℕ}
+    {P' : C'.cellsOfCodimension k} {P₁ P₂ : C.cellsOfCodimension k}
+    (h₁ : (P' : Set V) ⊆ (P₁ : Set V)) (h₂ : (P' : Set V) ⊆ (P₂ : Set V)) : P₁ = P₂ :=
   Subtype.ext (C.eq_of_subset_of_mem_cellsOfCodimension
-    (C'.nonempty w' (mem_cellsOfCodimension.mp w'.2).1)
-    (mem_cellsOfCodimension.mp w'.2).2 w₁.2 w₂.2 h₁ h₂)
+    (C'.nonempty P' (mem_cellsOfCodimension.mp P'.property).1)
+    (mem_cellsOfCodimension.mp P'.property).2 P₁.property P₂.property h₁ h₂)
 
 end FinitePolyhedralComplex
 

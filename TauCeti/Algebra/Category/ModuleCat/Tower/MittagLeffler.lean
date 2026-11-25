@@ -42,6 +42,8 @@ transitions reduce a family in `∏ₙ Aₙ`, modulo the image of the shift, to 
   `TauCeti.ModuleTower.isMittagLeffler_of_isArtinian`: towers with eventually surjective
   transitions, towers with surjective transitions, and towers of Artinian modules, are
   Mittag-Leffler.
+* `TauCeti.ModuleTower.exists_limπ_eq_of_forall_mem_range`: in a Mittag-Leffler tower, an element
+  of `Aₙ` in the image of every composite transition into `Aₙ` lifts to `lim A`.
 * `TauCeti.ModuleTower.shift_surjective_of_isMittagLeffler`,
   `TauCeti.ModuleTower.subsingleton_limOne_of_isMittagLeffler`: Mittag-Leffler towers have
   surjective shift map, hence vanishing `lim¹`.
@@ -128,6 +130,23 @@ theorem isMittagLeffler_of_isArtinian [∀ n, IsArtinian R (F.obj (op n))] : F.I
   refine ⟨n + N, Nat.le_add_right n N, fun k hk ↦ ?_⟩
   obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le ((Nat.le_add_right n N).trans hk)
   exact (OrderDual.toDual_inj.1 (hN j (by omega))).symm
+
+/-- **Lifting along a Mittag-Leffler tower.** In a Mittag-Leffler tower, an element of `Aₙ` lying
+in the image of every composite transition `Aₖ → Aₙ` is the `n`th component of an element of
+`lim A`. -/
+theorem exists_limπ_eq_of_forall_mem_range (h : F.IsMittagLeffler) {n : ℕ} (x : F.obj (op n))
+    (hx : ∀ k (hnk : n ≤ k), x ∈ LinearMap.range (F.transitionOfLE hnk)) :
+    ∃ y : F.lim, F.limπ n y = x := by
+  -- `x` lies in the eventual range of the underlying functor to types, and elements of the
+  -- eventual ranges lift along the transitions through the eventual ranges.
+  refine F.exists_limπ_eq_of_forall_exists_transition_eq
+    (fun k y ↦ y ∈ (F ⋙ forget (ModuleCat R)).eventualRange (op k)) (fun k y hy ↦ ?_)
+    ((F ⋙ forget (ModuleCat R)).mem_eventualRange_iff.2 fun k f ↦ ?_)
+  · obtain ⟨y', hy', rfl⟩ :=
+      h.subset_image_eventualRange (F ⋙ forget (ModuleCat R)) (homOfLE (Nat.le_succ k)).op hy
+    exact ⟨y', hy', by simp⟩
+  · rw [range_forget_map]
+    exact hx k.unop (leOfHom f.unop)
 
 /-- Let `Bₙ ⊆ Aₙ` be submodules such that, for every `n`, some composite transition `Aₘ → Aₙ` has
 image in `Bₙ`. Then every family `(bₙ)` agrees with the image of some family under the shift

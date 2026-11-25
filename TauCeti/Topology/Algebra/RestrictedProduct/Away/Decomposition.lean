@@ -72,7 +72,7 @@ It is the composite of the reindexing along `Equiv.sumCompl (· ∈ S)`, the spl
 `S ⊕ {i // i ∉ S}`, and the collapse of the restricted product over the finite index type `S`. -/]
 noncomputable def awayDecomposition (S : Set ι) (hS : S.Finite) (U : ∀ i, Subgroup (G i)) :
     RestrictedProductGroup U ≃*
-      RestrictedProductGroupWithFactor (∀ i : S, G i) fun j : {i // i ∉ S} ↦ U j.1 :=
+      RestrictedProductGroupWithFactor (∀ i : S, G i) fun j : {i // i ∉ S} ↦ U j.val :=
   letI : DecidablePred (· ∈ S) := Classical.decPred _
   haveI : Finite S := hS.to_subtype
   -- The reindexed restricted product over `S ⊕ {i // i ∉ S}`, split into its two summands.
@@ -145,7 +145,7 @@ product over `S`. -/
 inverse of the additive away-`S` decomposition reads its coordinate off the plain product
 over `S`. -/]
 theorem awayDecomposition_symm_apply_of_mem
-    (y : RestrictedProductGroupWithFactor (∀ i : S, G i) fun j : {i // i ∉ S} ↦ U j.1)
+    (y : RestrictedProductGroupWithFactor (∀ i : S, G i) fun j : {i // i ∉ S} ↦ U j.val)
     (i : ι) (hi : i ∈ S) :
     (awayDecomposition S hS U).symm y i = y.1 ⟨i, hi⟩ := by
   have h := awayDecomposition_fst S hS U ((awayDecomposition S hS U).symm y) ⟨i, hi⟩
@@ -158,7 +158,7 @@ product away from `S`. -/
 inverse of the additive away-`S` decomposition reads its coordinate off the restricted product away
 from `S`. -/]
 theorem awayDecomposition_symm_apply_of_notMem
-    (y : RestrictedProductGroupWithFactor (∀ i : S, G i) fun j : {i // i ∉ S} ↦ U j.1)
+    (y : RestrictedProductGroupWithFactor (∀ i : S, G i) fun j : {i // i ∉ S} ↦ U j.val)
     (i : ι) (hi : i ∉ S) :
     (awayDecomposition S hS U).symm y i = y.2 ⟨i, hi⟩ := by
   have h := awayDecomposition_snd S hS U ((awayDecomposition S hS U).symm y) ⟨i, hi⟩
@@ -194,7 +194,7 @@ theorem continuous_awayDecomposition_symm (hU : ∀ i ∉ S, IsOpen (U i : Set (
     Continuous (awayDecomposition S hS U).symm :=
   -- A map out of a product with a restricted-product factor, coordinatewise the identity.
   continuous_restrictedProduct_of_apply_eq_of_isOpen hS hU
-    (fun y i ↦ awayDecomposition_symm_apply_of_mem S hS U y i.1 i.2)
-    fun y j ↦ awayDecomposition_symm_apply_of_notMem S hS U y j.1 j.2
+    (fun y i ↦ awayDecomposition_symm_apply_of_mem S hS U y i.val i.property)
+    fun y j ↦ awayDecomposition_symm_apply_of_notMem S hS U y j.val j.property
 
 end TauCeti

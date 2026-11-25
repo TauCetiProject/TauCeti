@@ -60,6 +60,8 @@ in the Harish-Chandra projection from the center of `U(L)` to `S(H)`.
 
 * `TauCeti.UniversalEnvelopingAlgebra.instCommRing`: the enveloping algebra of an abelian Lie
   algebra is commutative.
+* `TauCeti.UniversalEnvelopingAlgebra.ι_mem_center`: the canonical generators of the enveloping
+  algebra of an abelian Lie algebra are central.
 * `TauCeti.UniversalEnvelopingAlgebra.isSymmetricAlgebra_ι` and
   `TauCeti.UniversalEnvelopingAlgebra.symmetricAlgebraEquiv`: **`ι : L → U(L)` exhibits `U(L)` as
   the symmetric algebra of `L`**, with the resulting algebra isomorphism `S(L) ≃ₐ[R] U(L)`.
@@ -111,6 +113,12 @@ instance instCommRing : CommRing U :=
       rw [adjoin_range_ι R L] at hcomm
       exact setLike_mul_comm (s := (⊤ : Subalgebra R U)) _root_.Algebra.mem_top
         _root_.Algebra.mem_top }
+
+/-- In `U(L)` for an abelian Lie algebra `L`, the canonical generators are central. -/
+theorem ι_mem_center (y : L) :
+    _root_.UniversalEnvelopingAlgebra.ι R y ∈ Subalgebra.center R U :=
+  ι_mem_center_of_mem_center <|
+    (LieModule.mem_maxTrivSubmodule R L L y).mpr fun x => trivial_lie_zero L L x y
 
 /-! ### The comparison with the symmetric algebra -/
 
