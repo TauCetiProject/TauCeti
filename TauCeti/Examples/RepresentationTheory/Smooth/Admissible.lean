@@ -86,12 +86,7 @@ example : IsSmooth (ofMulAction ℚ (Multiplicative ℚ_[p]) (PadicQuotient p)) 
     exact fun v _ ↦ mem_invariants_ofMulAction_iff.2 fun u x ↦
       congrArg v.coeff (smul_eq_of_mem_padicIntOpenSubgroup p u.property x)
   rw [htop] at hfin
-  have : Module.Finite ℚ (PadicQuotient p →₀ ℚ) :=
-    Module.Finite.equiv ((LinearEquiv.ofTop ⊤ rfl).trans (MonoidAlgebra.coeffLinearEquiv ℚ))
-  have hinf := infinite_quotient_padicIntOpenSubgroup p
-  rcases Module.finite_finsupp_self_iff.1 this with h | h
-  · exact not_subsingleton ℚ h
-  · exact not_finite (PadicQuotient p)
+  exact not_finite_monoidAlgebra_padicQuotient p (Module.Finite.equiv (LinearEquiv.ofTop ⊤ rfl))
 
 /-- **`ℚ_p^ℕ` has no compact open subgroup**, so the trivial action of `ℚ_p^ℕ` on `ℚ^(ℕ)` is
 admissible. An open subgroup contains a whole coordinate line `ℚ_p`, since a basic neighbourhood of

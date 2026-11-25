@@ -109,6 +109,17 @@ theorem infinite_quotient_padicIntOpenSubgroup :
   · exact (one_lt_zpow₀ hp (by omega : (0 : ℤ) < m)).not_ge ((le_max_right _ _).trans h)
   · exact (one_lt_zpow₀ hp (by omega : (0 : ℤ) < n)).not_ge ((le_max_left _ _).trans h)
 
+/-- `ℚ[ℚ_[p] ⧸ ℤ_[p]]` is not finite-dimensional over `ℚ`, as `ℚ_[p] ⧸ ℤ_[p]` is infinite. -/
+theorem not_finite_monoidAlgebra_padicQuotient :
+    ¬Module.Finite ℚ (MonoidAlgebra ℚ (PadicQuotient p)) := by
+  intro h
+  have hfin : Module.Finite ℚ (PadicQuotient p →₀ ℚ) :=
+    Module.Finite.equiv (MonoidAlgebra.coeffLinearEquiv ℚ)
+  have := infinite_quotient_padicIntOpenSubgroup p
+  rcases Module.finite_finsupp_self_iff.1 hfin with h | h
+  · exact not_subsingleton ℚ h
+  · exact not_finite (PadicQuotient p)
+
 /-- **The evaluation map to the double smooth dual need not be surjective.** For `G = ℚ_[p]` and
 `V = ℚ[ℚ_[p] ⧸ ℤ_[p]]`, the evaluation map `V → V^∨∨` is not surjective. -/
 theorem not_surjective_smoothDualEval_padic :
@@ -117,13 +128,7 @@ theorem not_surjective_smoothDualEval_padic :
   rw [smoothDualEval_surjective_iff (padicIntOpenSubgroup p).isOpen
     (le_stabilizer_ofMulAction fun x _ hg ↦
       MulAction.mem_stabilizer_iff.2 (smul_eq_of_mem_padicIntOpenSubgroup p hg x))]
-  intro h
-  have hfin : Module.Finite ℚ (PadicQuotient p →₀ ℚ) :=
-    Module.Finite.equiv (MonoidAlgebra.coeffLinearEquiv ℚ)
-  have := infinite_quotient_padicIntOpenSubgroup p
-  rcases Module.finite_finsupp_self_iff.1 hfin with h | h
-  · exact (not_subsingleton ℚ) h
-  · exact not_finite (PadicQuotient p)
+  exact not_finite_monoidAlgebra_padicQuotient p
 
 end Examples.SmoothDual
 
