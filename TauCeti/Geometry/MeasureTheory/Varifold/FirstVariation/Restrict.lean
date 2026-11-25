@@ -27,8 +27,7 @@ variation of `V` on the `C¹` vector fields with compact support in `W'`, extend
   two measures agree on every Borel subset of `W'`
   (`Euclidean.firstVariationMeasure_restrictOpens_apply`).
 
-This is the last clause of the second bullet of Varifolds §4.3 in Euclidean space (Simon,
-*Lectures on Geometric Measure Theory*, 39.3).
+This is Simon, *Lectures on Geometric Measure Theory*, 39.3, in Euclidean space.
 
 ## References
 
@@ -51,6 +50,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 /-- **The first variation of a restriction.** For `W' ⊆ W` and `V` finite on compact sets, the
 first variation of `V ⌞ W'` at a `C¹` field `X` with compact support in `W'` is the first variation
 of `V` at `X` extended by zero to `W`. -/
+@[simp]
 theorem firstVariation_restrictOpens [IsFiniteMeasureOnCompacts V] (h : W' ≤ W) :
     firstVariation (restrictOpens V h) =
       (firstVariation V).comp (monoCLM ℝ : 𝓓^{1}(W', E) →L[ℝ] 𝓓^{1}(W, E)) := by
@@ -65,10 +65,11 @@ theorem firstVariation_restrictOpens [IsFiniteMeasureOnCompacts V] (h : W' ≤ W
     setIntegral_eq_integral_of_forall_compl_eq_zero fun p hp =>
       tangentialDivergence_eq_zero_of_notMem_tsupport (fun hpX => hp (X.tsupport_subset hpX)) _
   rw [← hS, ← map_restrictOpens h, he.integral_map]
-  rfl
+  simp only [e, Prod.map_fst, Prod.map_snd, id_eq]
 
 /-- **Total first variation of a restriction.** For every set `U`, the total first variation of
 `V ⌞ W'` on `U` is the total first variation of `V` on `U ∩ W'`. -/
+@[simp]
 theorem firstVariationMass_restrictOpens [IsFiniteMeasureOnCompacts V] (h : W' ≤ W)
     (U : Set E) :
     firstVariationMass (restrictOpens V h) U = firstVariationMass V (U ∩ W') := by
@@ -99,18 +100,13 @@ theorem firstVariationMeasure_restrictOpens [IsFiniteMeasureOnCompacts V]
     (hV : HasLocallyBoundedFirstVariation V) (h : W' ≤ W) :
     firstVariationMeasure (restrictOpens V h) =
       (firstVariationMeasure V).comap (inclusion h) := by
-  have hi := Opens.isOpenEmbedding_of_le h
-  have := Measure.Regular.comap' (firstVariationMeasure V) hi
-  refine Measure.OuterRegular.ext_isOpen fun U hU => ?_
-  obtain ⟨O, hO, rfl⟩ := isOpen_induced_iff.1 hU
-  rw [firstVariationMeasure_preimage_coe (hV.restrictOpens h) hO,
-    hi.measurableEmbedding.comap_apply]
-  have himage : inclusion h '' ((↑) ⁻¹' O : Set W') = ((↑) ⁻¹' (O ∩ (W' : Set E)) : Set W) := by
-    change inclusion h '' (inclusion h ⁻¹' ((↑) ⁻¹' O : Set W)) = _
-    rw [image_preimage_eq_inter_range, range_inclusion h, preimage_inter]
-    rfl
-  rw [himage, firstVariationMeasure_preimage_coe hV (hO.inter W'.isOpen),
-    firstVariationMass_restrictOpens h]
+  -- `Distribution.massMeasure_comp_monoCLM` is stated for linear maps; pass to them.
+  rw [firstVariationMeasure_def, firstVariationMeasure_def, firstVariation_restrictOpens h,
+    massMeasure_congr (S := (firstVariation V : 𝓓^{1}(W, E) →ₗ[ℝ] ℝ).comp
+      (monoCLM (n₁ := 1) ℝ : 𝓓^{1}(W', E) →L[ℝ] 𝓓^{1}(W, E)).toLinearMap)
+      (by simp [ContinuousLinearMap.coe_comp]),
+    massMeasure_congr (T := firstVariation V) (ContinuousLinearMap.coe_coe _).symm]
+  exact massMeasure_comp_monoCLM hV.hasLocallyFiniteMass h
 
 /-- In particular `‖δ(V ⌞ W')‖` and `‖δV‖` agree on every subset of `W'`. -/
 theorem firstVariationMeasure_restrictOpens_apply [IsFiniteMeasureOnCompacts V]
