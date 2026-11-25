@@ -26,8 +26,6 @@ The statement is proved for the Tate coaction on any real vector space `M` in pl
 
 * `TauCeti.DeligneTorus.hodgeComponent_tensor_tateComodule`: `(V ⊗ M(m))^{p,q}` is the image of
   `V^{p+m,q+m} ⊗ (ℂ ⊗ M)`.
-* `TauCeti.DeligneTorus.distribBaseChange_symm_tmul_mem_hodgeComponent_tensor_tateComodule`: the
-  twist of a vector of type `(p + m, q + m)` has type `(p, q)`.
 
 ## References
 
@@ -66,16 +64,5 @@ theorem hodgeComponent_tensor_tateComodule (m p q : ℤ) :
       rw [h1, h2]
     · simp
   · rw [hodgeComponent_tateComodule, ite_eq_left (by omega)]
-
-/-- **Twisting shifts Hodge types.** If `v ∈ V^{p+m,q+m}`, then for every `w ∈ ℂ ⊗ M` the image
-of `v ⊗ w` in `ℂ ⊗[ℝ] (V ⊗[ℝ] M(m))` has type `(p, q)`. -/
-theorem distribBaseChange_symm_tmul_mem_hodgeComponent_tensor_tateComodule {m p q : ℤ}
-    {v : ℂ ⊗[ℝ] V} (hv : v ∈ hodgeComponent V (p + m) (q + m)) (w : ℂ ⊗[ℝ] M) :
-    letI := tateComodule M m
-    (TensorProduct.AlgebraTensorModule.distribBaseChange ℝ ℂ V M).symm (v ⊗ₜ[ℂ] w) ∈
-      hodgeComponent (V ⊗[ℝ] M) p q := by
-  let _ := tateComodule M m
-  rw [hodgeComponent_tensor_tateComodule]
-  exact Submodule.mem_map_of_mem (Submodule.apply_mem_map₂ _ hv Submodule.mem_top)
 
 end TauCeti.DeligneTorus
