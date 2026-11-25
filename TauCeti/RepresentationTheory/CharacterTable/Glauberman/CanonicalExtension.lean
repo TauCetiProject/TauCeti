@@ -37,8 +37,6 @@ The extension is irreducible because its restriction to `Γ` is
 
 ## Main results
 
-* `Representation.IsIrreducible.of_comp`: a representation whose pullback along a monoid
-  homomorphism is irreducible is irreducible.
 * `TauCeti.IsCanonicalExtension`: `ψ` is a canonical extension of `χ`.
 * `TauCeti.existsUnique_canonicalExtension`: existence and uniqueness of the canonical extension.
 * `TauCeti.isCanonicalExtension_one`, `TauCeti.IsCanonicalExtension.eq_one`: the canonical
@@ -53,29 +51,6 @@ The extension is irreducible because its restriction to `Γ` is
 public section
 
 open Module SemidirectProduct
-
-namespace Representation
-
-variable {k G H V : Type*} [Field k] [Monoid G] [Monoid H] [AddCommGroup V] [Module k V]
-
-/-- A representation whose pullback along a monoid homomorphism `f : H →* G` is irreducible is
-irreducible: every subrepresentation of `ρ` is one of `ρ.comp f`. -/
-theorem IsIrreducible.of_comp {ρ : Representation k G V} (f : H →* G)
-    [hρ : Representation.IsIrreducible (ρ.comp f)] : ρ.IsIrreducible := by
-  have := hρ.nontrivial
-  refine ⟨fun S => ?_⟩
-  let T : Subrepresentation (ρ.comp f) :=
-    { toSubmodule := S.toSubmodule
-      apply_mem_toSubmodule g v hv := S.apply_mem_toSubmodule _ hv }
-  refine (eq_bot_or_eq_top T).imp (fun h => ?_) fun h => ?_
-  · apply Subrepresentation.toSubmodule_injective
-    simpa only [T, Subrepresentation.toSubmodule_bot] using
-      congrArg Subrepresentation.toSubmodule h
-  · apply Subrepresentation.toSubmodule_injective
-    simpa only [T, Subrepresentation.toSubmodule_top] using
-      congrArg Subrepresentation.toSubmodule h
-
-end Representation
 
 namespace TauCeti
 
@@ -98,13 +73,6 @@ theorem isCanonicalExtension_iff {χ : Γ → k} {ψ : Γ ⋊[φ] S → k} :
       ∃ (n : ℕ) (ρ : Representation k (Γ ⋊[φ] S) (Fin n → k)),
         ρ.character = ψ ∧ ∀ s, (ρ (inr s)).det = 1 :=
   Iff.rfl
-
-/-- The trivial character is irreducible. -/
-private theorem one_mem_irreducibleCharacters {G : Type*} [Group G] :
-    (fun _ : G => (1 : k)) ∈ irreducibleCharacters k G := by
-  have h : (Representation.trivial k G k).character = fun _ => 1 :=
-    funext fun _ => by rw [Representation.char_trivial, Module.finrank_self, Nat.cast_one]
-  exact h ▸ character_mem_irreducibleCharacters _
 
 /-- **The canonical extension of the trivial character is trivial**: the trivial representation
 of `Γ ⋊[φ] S` has determinant `1` everywhere. -/
@@ -148,26 +116,28 @@ theorem existsUnique_canonicalExtension (hcop : (Nat.card Γ).Coprime (Nat.card 
   · have : Representation.IsIrreducible (ρ'.comp (inl : Γ →* Γ ⋊[φ] S)) := hcomp ▸ hirr
     exact Representation.IsIrreducible.of_comp inl
   · funext g
-    exact congrArg (fun T => LinearMap.trace k _ T) (hinl g)
+    simp only [Function.comp_apply, Representation.character, hinl]
   · rintro ψ ⟨-, hψ, m, ρ₁, rfl, hdet₁⟩
     -- Conjugate `ρ₁` along an equivalence of its restriction to `Γ` with `ρ₀`.
-    have hc : Representation.character (ρ₁.comp (inl : Γ →* Γ ⋊[φ] S)) = ρ₀.character := hψ
+    have hc : Representation.character (ρ₁.comp (inl : Γ →* Γ ⋊[φ] S)) = ρ₀.character := by
+      funext g
+      simpa only [Representation.character, MonoidHom.coe_comp, Function.comp_apply] using
+        congrFun hψ g
     obtain ⟨E⟩ := Representation.nonempty_equiv_of_character_eq _ _ hc
-    let e := E.toLinearEquiv
     let ρ₂ : Representation k (Γ ⋊[φ] S) (Fin n → k) :=
-      (MonoidHom.ofClass (e.conjAlgEquiv k)).comp ρ₁
-    have hρ₂ (x : Γ ⋊[φ] S) : ρ₂ x = e.toLinearMap ∘ₗ ρ₁ x ∘ₗ e.symm.toLinearMap := rfl
+      (MonoidHom.ofClass (E.toLinearEquiv.conjAlgEquiv k)).comp ρ₁
+    have hρ₂ (x : Γ ⋊[φ] S) : ρ₂ x = E.toLinearEquiv.conj (ρ₁ x) := by
+      rw [MonoidHom.comp_apply, MonoidHom.coe_ofClass, LinearEquiv.conjAlgEquiv_apply,
+        LinearEquiv.conj_apply, LinearMap.comp_assoc]
     have h₂inl (g : Γ) : ρ₂ (inl g) = ρ₀ g := by
-      rw [hρ₂, ← E.conj_apply_self g]
-      rfl
+      rw [hρ₂, ← E.conj_apply_self g, MonoidHom.comp_apply]
     have h₂det (s : S) : (ρ₂ (inr s)).det = 1 := by
-      rw [hρ₂, LinearMap.det_conj, hdet₁]
+      rw [hρ₂, LinearEquiv.conj_apply, LinearMap.comp_assoc, LinearMap.det_conj, hdet₁]
     have h₂ := Representation.semidirectProduct_extension_det_eq_one_unique hscalar hcop'
       h₂inl hinl h₂det hdet
     funext x
-    change LinearMap.trace k _ (ρ₁ x) = LinearMap.trace k _ (ρ' x)
-    rw [← h₂, hρ₂]
-    exact (LinearMap.trace_conj' (ρ₁ x) e).symm
+    rw [Representation.character, Representation.character, ← h₂, hρ₂,
+      LinearMap.trace_conj']
 
 /-- A canonical extension of the trivial character is the trivial character. -/
 theorem IsCanonicalExtension.eq_one (hcop : (Nat.card Γ).Coprime (Nat.card S))
