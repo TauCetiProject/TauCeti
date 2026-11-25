@@ -25,13 +25,14 @@ solutions (`TauCeti.IsDiracSolution.eq_diracFundamentalMatrix_mulVec`).
   (`TauCeti.mul_diracFundamentalMatrix_neg_potential`). In entries, `A_{-q} = D_q`,
   `B_{-q} = -C_q`, `C_{-q} = -B_q` and `D_{-q} = A_q`
   (`TauCeti.diracFundamentalMatrix_neg_potential`).
-* **Parity for real potentials.** For a real potential, conjugation by `diag(1, -1)` changes the
-  sign of the spectral parameter, so `A` and `D` are even and `B` and `C` are odd in `z`
-  (`TauCeti.diracFundamentalMatrix_neg_of_im_eq_zero`).
+* **Parity.** Conjugation by `diag(1, -1)` changes the sign of the spectral parameter and replaces
+  `q` by `conj q`, so `M_{conj q}(t, -z) = diag(1, -1) M_q(t, z) diag(1, -1)`
+  (`TauCeti.diracFundamentalMatrix_neg_of_eqOn_conj`). For a real potential, `A` and `D` are even
+  and `B` and `C` are odd in `z` (`TauCeti.diracFundamentalMatrix_neg_of_im_eq_zero`).
 
-The first two are instances of a general principle: an invertible constant matrix `S` with
-`S (-Ω(z - Q_q(s))) = (-Ω(z' - Q_{q'}(s))) S` for every `s` intertwines the fundamental matrices,
-`S M_q(t, z) = M_{q'}(t, z') S` (`TauCeti.mul_diracFundamentalMatrix_of_mul_eq`).
+All three are instances of a general principle: an invertible constant matrix `S` with
+`S (-Ω(z - Q_q(s))) = (-Ω(z' - Q_{q'}(s))) S` for every `s ≥ 0` intertwines the fundamental
+matrices, `S M_q(t, z) = M_{q'}(t, z') S` (`TauCeti.mul_diracFundamentalMatrix_of_mul_eq`).
 
 ## References
 
@@ -50,10 +51,11 @@ namespace TauCeti
 variable {q q' : ℝ → ℂ} {z z' : ℂ} {t : ℝ}
 
 /-- An invertible constant matrix `S` intertwining the Dirac coefficients of `(q, z)` and
-`(q', z')` carries solutions of the Dirac system for `(q, z)` to solutions for `(q', z')`. -/
+`(q', z')` on `[0, ∞)` carries solutions of the Dirac system for `(q, z)` to solutions for
+`(q', z')`. -/
 theorem IsDiracSolution.mulVec_of_mul_eq {X : ℝ → Fin 2 → ℂ} (hX : IsDiracSolution q z X)
     {S : Matrix (Fin 2) (Fin 2) ℂ} (hS : IsUnit S)
-    (h : ∀ s, S * diracCoeff q z s = diracCoeff q' z' s * S) :
+    (h : ∀ s ∈ Ici 0, S * diracCoeff q z s = diracCoeff q' z' s * S) :
     IsDiracSolution q' z' fun t ↦ S *ᵥ X t := by
   have := hS.invertible
   let L : (Fin 2 → ℂ) ≃L[ℂ] (Fin 2 → ℂ) := (toLinearEquiv' S this).toContinuousLinearEquiv
@@ -61,17 +63,18 @@ theorem IsDiracSolution.mulVec_of_mul_eq {X : ℝ → Fin 2 → ℂ} (hX : IsDir
   refine isDiracSolution_iff.2 ⟨L.continuous.comp_continuousOn hX.continuousOn, fun t ht ↦ ?_⟩
   have hint : ∫ s in (0 : ℝ)..t, diracCoeff q' z' s *ᵥ (S *ᵥ X s) =
       ∫ s in (0 : ℝ)..t, L (diracCoeff q z s *ᵥ X s) := by
-    refine intervalIntegral.integral_congr fun s _ ↦ ?_
-    simp only [hL, mulVec_mulVec, h]
+    refine intervalIntegral.integral_congr fun s hs ↦ ?_
+    rw [uIcc_of_le ht] at hs
+    simp only [hL, mulVec_mulVec, h s hs.1]
   rw [hint, L.intervalIntegral_comp_comm, hL, hX.eq_add_integral ht, mulVec_add]
 
 /-- **Intertwining the fundamental matrices.** If `q` and `q'` are locally integrable on
 `[0, ∞)` and an invertible constant matrix `S` satisfies
-`S (-Ω(z - Q_q(s))) = (-Ω(z' - Q_{q'}(s))) S` for every `s`, then
+`S (-Ω(z - Q_q(s))) = (-Ω(z' - Q_{q'}(s))) S` for every `s ≥ 0`, then
 `S M_q(t, z) = M_{q'}(t, z') S` for `t ≥ 0`. -/
 theorem mul_diracFundamentalMatrix_of_mul_eq (hq : LocallyIntegrableOn q (Ici 0))
     (hq' : LocallyIntegrableOn q' (Ici 0)) {S : Matrix (Fin 2) (Fin 2) ℂ} (hS : IsUnit S)
-    (h : ∀ s, S * diracCoeff q z s = diracCoeff q' z' s * S) (ht : 0 ≤ t) :
+    (h : ∀ s ∈ Ici 0, S * diracCoeff q z s = diracCoeff q' z' s * S) (ht : 0 ≤ t) :
     S * diracFundamentalMatrix q t z = diracFundamentalMatrix q' t z' * S := by
   have hq't : IntegrableOn q' (Icc 0 t) :=
     hq'.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc
@@ -111,12 +114,7 @@ theorem diracFundamentalMatrix_conj (hq : LocallyIntegrableOn q (Ici 0)) (ht : 0
   ext i j
   have := congrFun ((isDiracSolution_diracFundamentalMatrix_mulVec hq z
     (Pi.single j 1)).map_star.eq_diracFundamentalMatrix_mulVec hqt ht) i
-  have h1 : star (Pi.single j (1 : ℂ) : Fin 2 → ℂ) = Pi.single j 1 := by
-    ext k
-    by_cases hk : k = j
-    · subst hk; simp
-    · simp [hk]
-  rw [diracFundamentalMatrix_zero, one_mulVec, h1, mulVec_single] at this
+  rw [diracFundamentalMatrix_zero, one_mulVec, ← Pi.single_star, star_one, mulVec_single] at this
   simpa using this.symm
 
 /-- On the real axis the entries of the fundamental matrix are real: for `x : ℝ`,
@@ -138,7 +136,7 @@ theorem mul_diracFundamentalMatrix_neg_potential (hq : LocallyIntegrableOn q (Ic
   have hS : IsUnit (!![0, 1; -1, 0] : Matrix (Fin 2) (Fin 2) ℂ) := by
     rw [isUnit_iff_isUnit_det, det_fin_two_of]
     simp
-  refine mul_diracFundamentalMatrix_of_mul_eq hq hq.neg hS (fun s ↦ ?_) ht
+  refine mul_diracFundamentalMatrix_of_mul_eq hq hq.neg hS (fun s _ ↦ ?_) ht
   ext i j
   fin_cases i <;> fin_cases j <;> simp [diracCoeff_def, Matrix.mul_apply, Fin.sum_univ_two] <;>
     ring
@@ -163,29 +161,44 @@ theorem diracFundamentalMatrix_neg_potential (hq : LocallyIntegrableOn q (Ici 0)
   rw [h', eta_fin_two (diracFundamentalMatrix q t z)]
   simp
 
-/-- **Parity for real potentials.** For a real potential `q`, locally integrable on `[0, ∞)`, and
-`t ≥ 0`, conjugation by `diag(1, -1)` changes the sign of the spectral parameter:
-`M_q(t, -z) = diag(1, -1) M_q(t, z) diag(1, -1)`. So `A(t, -z) = A(t, z)`,
-`B(t, -z) = -B(t, z)`, `C(t, -z) = -C(t, z)` and `D(t, -z) = D(t, z)`. -/
-theorem diracFundamentalMatrix_neg_of_im_eq_zero (hq : LocallyIntegrableOn q (Ici 0))
-    (hre : ∀ s, (q s).im = 0) (ht : 0 ≤ t) (z : ℂ) :
-    diracFundamentalMatrix q t (-z) =
+/-- **Parity.** For `q` locally integrable on `[0, ∞)`, a potential `q'` equal to `conj q` on
+`[0, ∞)`, and `t ≥ 0`, conjugation by `diag(1, -1)` changes the sign of the spectral parameter:
+`M_{q'}(t, -z) = diag(1, -1) M_q(t, z) diag(1, -1)`. So `A_{q'}(t, -z) = A_q(t, z)`,
+`B_{q'}(t, -z) = -B_q(t, z)`, `C_{q'}(t, -z) = -C_q(t, z)` and `D_{q'}(t, -z) = D_q(t, z)`. -/
+theorem diracFundamentalMatrix_neg_of_eqOn_conj (hq : LocallyIntegrableOn q (Ici 0))
+    (hconj : EqOn q' (fun s ↦ conj (q s)) (Ici 0)) (ht : 0 ≤ t) (z : ℂ) :
+    diracFundamentalMatrix q' t (-z) =
       !![diracFundamentalMatrix q t z 0 0, -diracFundamentalMatrix q t z 0 1;
         -diracFundamentalMatrix q t z 1 0, diracFundamentalMatrix q t z 1 1] := by
+  have hqc : LocallyIntegrableOn q' (Ici 0) := by
+    refine LocallyIntegrableOn.congr ((ae_restrict_mem measurableSet_Ici).mono
+      fun s hs ↦ (hconj hs).symm) fun x hx ↦ ?_
+    obtain ⟨U, hU, hi⟩ := hq x hx
+    exact ⟨U, hU, conjCLE.toContinuousLinearMap.integrable_comp hi⟩
   have hS : IsUnit (!![1, 0; 0, -1] : Matrix (Fin 2) (Fin 2) ℂ) := by
     rw [isUnit_iff_isUnit_det, det_fin_two_of]
     simp
-  have h := mul_diracFundamentalMatrix_of_mul_eq (z := z) (z' := -z) hq hq hS (fun s ↦ by
+  have h := mul_diracFundamentalMatrix_of_mul_eq (z := z) (z' := -z) hq hqc hS (fun s hs ↦ by
     ext i j
-    fin_cases i <;> fin_cases j <;> simp [diracCoeff_def, Matrix.mul_apply, Fin.sum_univ_two, hre]
-    ) ht
+    fin_cases i <;> fin_cases j <;>
+      simp [diracCoeff_def, Matrix.mul_apply, Fin.sum_univ_two, hconj hs] <;> ring) ht
   have hSS : (!![1, 0; 0, -1] * !![1, 0; 0, -1] : Matrix (Fin 2) (Fin 2) ℂ) = 1 := by
     ext i j
     fin_cases i <;> fin_cases j <;> simp
-  have h' : diracFundamentalMatrix q t (-z) =
+  have h' : diracFundamentalMatrix q' t (-z) =
       !![1, 0; 0, -1] * diracFundamentalMatrix q t z * !![1, 0; 0, -1] := by
     rw [h, Matrix.mul_assoc, hSS, Matrix.mul_one]
   rw [h', eta_fin_two (diracFundamentalMatrix q t z)]
   simp
+
+/-- **Parity for real potentials.** For a potential `q`, locally integrable and real on
+`[0, ∞)`, and `t ≥ 0`, `A` and `D` are even and `B` and `C` are odd in `z`:
+`M_q(t, -z) = diag(1, -1) M_q(t, z) diag(1, -1)`. -/
+theorem diracFundamentalMatrix_neg_of_im_eq_zero (hq : LocallyIntegrableOn q (Ici 0))
+    (hre : ∀ s ∈ Ici 0, (q s).im = 0) (ht : 0 ≤ t) (z : ℂ) :
+    diracFundamentalMatrix q t (-z) =
+      !![diracFundamentalMatrix q t z 0 0, -diracFundamentalMatrix q t z 0 1;
+        -diracFundamentalMatrix q t z 1 0, diracFundamentalMatrix q t z 1 1] :=
+  diracFundamentalMatrix_neg_of_eqOn_conj hq (fun s hs ↦ (conj_eq_iff_im.2 (hre s hs)).symm) ht z
 
 end TauCeti
