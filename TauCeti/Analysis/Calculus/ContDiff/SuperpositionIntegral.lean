@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
-public import Mathlib.Topology.ContinuousMap.Bounded.Normed
+public import TauCeti.MeasureTheory.Integral.BoundedContinuousFunction
 import TauCeti.Analysis.Calculus.FDeriv.BoundedContinuousFunction
 
 /-!
@@ -36,36 +35,6 @@ namespace BoundedContinuousFunction
 variable {α E X : Type*} [TopologicalSpace α] [MeasurableSpace α] [OpensMeasurableSpace α]
   {μ : Measure α} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup X]
   [NormedSpace ℝ X] [ProperSpace X]
-
-/-- Integration against an integrable weight `w`, as a continuous linear functional
-`g ↦ ∫ w g` on real bounded continuous functions, of norm at most `∫ ‖w‖`. -/
-@[expose] noncomputable def integralMulCLM {w : α → ℝ} (hw : Integrable w μ) : (α →ᵇ ℝ) →L[ℝ] ℝ :=
-  LinearMap.mkContinuous
-    { toFun g := ∫ t, w t * g t ∂μ
-      map_add' g g' := by
-        simp only [add_apply, mul_add]
-        exact integral_add (hw.mul_bdd g.continuous.aestronglyMeasurable
-          (ae_of_all _ fun t ↦ g.norm_coe_le_norm t)) (hw.mul_bdd
-          g'.continuous.aestronglyMeasurable (ae_of_all _ fun t ↦ g'.norm_coe_le_norm t))
-      map_smul' c g := by
-        simp only [smul_apply, smul_eq_mul, RingHom.id_apply, mul_left_comm (w _),
-          integral_const_mul] }
-    (∫ t, ‖w t‖ ∂μ) fun g ↦ by
-      refine (norm_integral_le_of_norm_le (hw.norm.mul_const ‖g‖)
-        (ae_of_all _ fun t ↦ ?_)).trans_eq (by rw [integral_mul_const, mul_comm])
-      rw [norm_mul]
-      exact mul_le_mul_of_nonneg_left (g.norm_coe_le_norm t) (norm_nonneg _)
-
-/-- `integralMulCLM hw` integrates `g` against the weight `w`. -/
-@[simp]
-theorem integralMulCLM_apply {w : α → ℝ} (hw : Integrable w μ) (g : α →ᵇ ℝ) :
-    integralMulCLM hw g = ∫ t, w t * g t ∂μ :=
-  rfl
-
-/-- The operator norm of integration against `w` is at most the `L¹` norm `∫ ‖w‖` of `w`. -/
-theorem norm_integralMulCLM_le {w : α → ℝ} (hw : Integrable w μ) :
-    ‖integralMulCLM hw‖ ≤ ∫ t, ‖w t‖ ∂μ :=
-  LinearMap.mkContinuous_norm_le _ (integral_nonneg fun _ ↦ norm_nonneg _) _
 
 /-- **Smooth integral functionals of superpositions.** If `F` is a `C^n` family of bounded
 continuous functions `α → X`, `G : X → ℝ` is `C^n` and `w` is integrable, then
