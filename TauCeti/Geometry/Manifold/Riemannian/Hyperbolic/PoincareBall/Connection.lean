@@ -17,35 +17,16 @@ import TauCeti.Geometry.Manifold.VectorField.LieBracket
 # The Levi-Civita connection in the Poincaré ball
 
 For a finite-dimensional real inner product space `E`, we compute the Levi-Civita connection of the
-Poincaré ball metric `4 ⟪dx, dy⟫ / (1 - ‖x‖²)²` on constant coordinate fields, identify its
-Christoffel map, and deduce the coordinate covariant-derivative formula for general vector fields on
-`PoincareBall E`.
-
-In the inherited model-space coordinates on `PoincareBall E`, the covariant derivative of the
-constant vector field `v` in direction `u` at `x` is
-
-`(2 / (1 - ‖x‖²)) (⟪x, u⟫ v + ⟪x, v⟫ u - ⟪u, v⟫ x)`,
-
-where `⟪·, ·⟫` is the Euclidean inner product of `E`. All formulas hold in every finite dimension
-`dim E ≥ 0`, including dimensions zero and one.
-
-## Main definitions
-
-* `TauCeti.PoincareBall.constantField`: the vector field with constant coordinate value `v : E`.
-
-## Main results
-
-* `TauCeti.PoincareBall.leviCivitaConnection_const_apply`: explicit formula for the Levi-Civita
-  derivative of a constant coordinate vector field.
-* `TauCeti.PoincareBall.christoffelMap_leviCivitaConnection_apply`: the model-space Christoffel map
-  of the Poincaré ball metric, independent of the finite basis used to construct it.
-* `TauCeti.PoincareBall.leviCivitaConnection_comp_apply`: coordinate formula for the Levi-Civita
-  derivative of a differentiable model-space-valued vector field.
+Poincaré ball metric `4 ⟪dx, dy⟫ / (1 - ‖x‖²)²` on constant coordinate fields `constantField v`,
+`(2 / (1 - ‖x‖²)) (⟪x, u⟫ v + ⟪x, v⟫ u - ⟪u, v⟫ x)` (`leviCivitaConnection_const_apply`), identify
+its model-space Christoffel map (`christoffelMap_leviCivitaConnection_apply`), and deduce the
+coordinate covariant-derivative formula (`leviCivitaConnection_comp_apply`) in every finite
+dimension `dim E ≥ 0`.
 
 ## References
 
 * J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Springer GTM 176 (2018), Chapter 3
-  and Theorem 5.10 (Koszul formula).
+  and Theorem 5.10.
 -/
 
 public section
@@ -69,16 +50,12 @@ def constantField (v : E) (x : PoincareBall E) : TangentSpace J x :=
   (tangentSpaceCastModel J x).symm v
 
 /-- Evaluation of a constant coordinate vector field at `x`. -/
-@[simp]
-theorem constantField_apply (v : E) (x : PoincareBall E) :
-    constantField v x = (tangentSpaceCastModel J x).symm v :=
-  (rfl)
+@[simp] theorem constantField_apply (v : E) (x : PoincareBall E) :
+    constantField v x = (tangentSpaceCastModel J x).symm v := (rfl)
 
-/-- Constant vector field on the ambient normed space `E` with fibre value `v`
-(`TangentSpace 𝓘(ℝ, E) y` is the type synonym `E`,
+/-- Constant vector field on `E` (`TangentSpace 𝓘(ℝ, E) y` is the type synonym `E`,
 `Mathlib/Geometry/Manifold/IsManifold/Basic.lean`). -/
-private def ambientConstField (v : E) (y : E) : TangentSpace J y :=
-  v
+private def ambientConstField (v : E) (y : E) : TangentSpace J y := v
 
 private theorem mpullback_const (v : E) :
     mpullback J J coe (ambientConstField v) = constantField v := by
@@ -94,9 +71,7 @@ theorem contMDiff_constantField [CompleteSpace E] (v : E) :
   rw [← mpullback_const]
   exact ((contMDiff_vectorSpace_iff_contDiff (𝕜 := ℝ) (n := ∞) (V := ambientConstField v)).2
     (contDiff_const (c := v))).mpullback_vectorField contMDiff_coe
-      (fun x ↦ by
-        rw [mfderiv_coe]
-        exact ContinuousLinearMap.isInvertible_equiv) (by simp)
+      (fun x ↦ mfderiv_coe x ▸ ContinuousLinearMap.isInvertible_equiv) (by simp)
 
 private theorem mdifferentiableAt_constantField [CompleteSpace E] (v : E) (x : PoincareBall E) :
     MDifferentiableAt J ((J).prod J)
@@ -104,20 +79,15 @@ private theorem mdifferentiableAt_constantField [CompleteSpace E] (v : E) (x : P
   (contMDiff_constantField v x).mdifferentiableAt (by simp)
 
 /-- Constant coordinate vector fields commute. -/
-@[simp]
-theorem mlieBracket_constantField [CompleteSpace E] (u v : E) (x : PoincareBall E) :
+@[simp] theorem mlieBracket_constantField [CompleteSpace E] (u v : E) (x : PoincareBall E) :
     mlieBracket J (constantField u) (constantField v) x = 0 := by
-  rw [← mpullback_const, ← mpullback_const]
-  have h := mpullback_mlieBracket (I := J) (I' := J) (f := coe)
-    (V := ambientConstField u) (W := ambientConstField v)
-    (((contMDiffAt_vectorSpace_iff_contDiffAt (𝕜 := ℝ) (n := 1) (V := ambientConstField u)).2
-      contDiffAt_const).mdifferentiableAt one_ne_zero)
-    (((contMDiffAt_vectorSpace_iff_contDiffAt (𝕜 := ℝ) (n := 1) (V := ambientConstField v)).2
-      contDiffAt_const).mdifferentiableAt one_ne_zero)
-    (contMDiff_coe x) (by simp)
+  have hd (w : E) := ((contMDiffAt_vectorSpace_iff_contDiffAt (𝕜 := ℝ) (n := 1)
+    (V := ambientConstField w) (x := (x : E))).2 contDiffAt_const).mdifferentiableAt one_ne_zero
+  rw [← mpullback_const, ← mpullback_const, ← mpullback_mlieBracket (I := J) (I' := J) (f := coe)
+    (hd u) (hd v) (contMDiff_coe x) (by simp), mpullback_apply]
   have hbr : mlieBracket J (ambientConstField u) (ambientConstField v) (x : E) = 0 :=
     mlieBracket_const_model_space u v (x : E)
-  rw [← h, mpullback_apply, hbr, map_zero]
+  rw [hbr, map_zero]
 
 end NormedSpace
 
@@ -132,10 +102,8 @@ private theorem mvfderiv_inner_constantField (u v w : E) (x : PoincareBall E) :
     mvfderiv J (fun y ↦ inner ℝ (constantField u y) (constantField v y)) x (constantField w x) =
       16 * inner ℝ (x : E) w * inner ℝ u v / (1 - ‖(x : E)‖ ^ 2) ^ 3 := by
   have heq : (fun y ↦ inner ℝ (constantField u y) (constantField v y)) =
-      (fun p : E ↦ 4 * inner ℝ u v / (1 - ‖p‖ ^ 2) ^ 2) ∘ coe := by
-    funext y
-    simp [inner_def, constantField]
-  rw [heq]
+      (fun p : E ↦ 4 * inner ℝ u v / (1 - ‖p‖ ^ 2) ^ 2) ∘ coe :=
+    funext fun y ↦ by simp [inner_def, constantField]
   set t₀ : ℝ := 1 - ‖(x : E)‖ ^ 2
   have ht₀ : t₀ ≠ 0 := (one_sub_norm_sq_pos x).ne'
   have hsub : HasFDerivAt (fun p : E ↦ 1 - ‖p‖ ^ 2) (0 - 2 • innerSL ℝ (x : E)) (x : E) :=
@@ -146,7 +114,7 @@ private theorem mvfderiv_inner_constantField (u v w : E) (x : PoincareBall E) :
       ((hasDerivAt_id t₀).pow 2) (pow_ne_zero 2 ht₀)
   have h := hdiv.comp_hasFDerivAt (x : E) hsub
   simp only [Function.comp_def] at h
-  rw [TauCeti.mvfderiv_comp_apply_of_differentiableAt h.differentiableAt
+  rw [heq, TauCeti.mvfderiv_comp_apply_of_differentiableAt h.differentiableAt
       (contMDiff_coe.mdifferentiable (by simp) x),
     mvfderiv_coe_apply, constantField_apply, ContinuousLinearEquiv.apply_symm_apply, h.fderiv]
   simp only [zero_sub, smul_apply, neg_apply, innerSL_apply_apply, smul_eq_mul, zero_mul,
@@ -157,24 +125,21 @@ private theorem mvfderiv_inner_constantField (u v w : E) (x : PoincareBall E) :
 /-- In the Poincaré ball coordinates, the Levi-Civita derivative of the constant coordinate vector
 field `v` in direction `u` at `x` is `(2 / (1 - ‖x‖²)) (⟪x, u⟫ v + ⟪x, v⟫ u - ⟪u, v⟫ x)`, read in
 the Euclidean model `E`. -/
-@[simp]
-theorem leviCivitaConnection_const_apply (x : PoincareBall E) (u v : E) :
+@[simp] theorem leviCivitaConnection_const_apply (x : PoincareBall E) (u v : E) :
     tangentSpaceCastModel J x
       (leviCivitaConnection J (PoincareBall E) (constantField v) x
         ((tangentSpaceCastModel J x).symm u)) =
       (2 / (1 - ‖(x : E)‖ ^ 2)) •
         (inner ℝ (x : E) u • v + inner ℝ (x : E) v • u - inner ℝ u v • (x : E)) := by
   rw [← constantField_apply u x]
-  apply ext_inner_right ℝ
-  intro w
+  refine ext_inner_right ℝ fun w ↦ ?_
   have h := two_inner_leviCivitaConnection_eq_koszul (I := J) (M := PoincareBall E)
     (mdifferentiableAt_constantField u x) (mdifferentiableAt_constantField v x)
     (mdifferentiableAt_constantField w x)
   rw [TauCeti.Manifold.koszul_apply] at h
   simp only [mlieBracket_constantField, inner_zero_left, mvfderiv_inner_constantField] at h
   rw [inner_def] at h
-  simp only [constantField, ContinuousLinearEquiv.apply_symm_apply] at h
-  rw [real_inner_comm u w] at h
+  simp only [constantField, ContinuousLinearEquiv.apply_symm_apply, real_inner_comm u w] at h
   simp only [constantField, real_inner_smul_left, inner_add_left, inner_sub_left]
   field_simp [(one_sub_norm_sq_pos x).ne'] at h ⊢
   linarith
@@ -184,9 +149,8 @@ private theorem eventually_symm_eq_constantField (x : PoincareBall E) :
     ∀ᶠ y in 𝓝 x, ∀ v : E,
       (trivializationAt E (TangentSpace J) x).symm y v = constantField v y := by
   let e := trivializationAt E (TangentSpace J) x
-  have hx : x ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace J) x
-  filter_upwards [eventually_symmL_trivializationAt_eq x, e.open_baseSet.mem_nhds hx]
-    with y hy hyb v
+  filter_upwards [eventually_symmL_trivializationAt_eq x,
+    e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt E (TangentSpace J) x)] with y hy hyb v
   exact (e.symmL_apply (R := ℝ) hyb v).symm.trans (hy v)
 
 omit [FiniteDimensional ℝ E] in
@@ -215,8 +179,7 @@ private theorem leviCivitaConnection_trivializationAt_symm_comp {g : PoincareBal
 /-- The model-space Christoffel map of the Poincaré ball metric in its inherited coordinates,
 independently of the finite basis used to construct it. The first argument `v` is the field value
 and the second argument `u` is the differentiation direction. -/
-@[simp]
-theorem christoffelMap_leviCivitaConnection_apply {ι : Type*} [Fintype ι]
+@[simp] theorem christoffelMap_leviCivitaConnection_apply {ι : Type*} [Fintype ι]
     (b : Module.Basis ι ℝ E) (x : PoincareBall E) (u v : E) :
     TauCeti.Manifold.christoffelMap b
       ((leviCivitaConnection J (PoincareBall E)).isCovariantDerivativeOn
@@ -225,12 +188,12 @@ theorem christoffelMap_leviCivitaConnection_apply {ι : Type*} [Fintype ι]
         (inner ℝ (x : E) u • v + inner ℝ (x : E) v • u - inner ℝ u v • (x : E)) := by
   set cov := leviCivitaConnection J (PoincareBall E)
   set e := trivializationAt E (TangentSpace J) x
-  have hx : x ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace J) x
   have hcongr : cov (fun y ↦ e.symm y v) x = cov (constantField v) x := by
     simpa only [← constantField_apply] using
       leviCivitaConnection_trivializationAt_symm_comp (x := x) (mdifferentiableAt_const (c := v))
   have h := TauCeti.Manifold.covariantDerivative_symm_apply_symm b (e := e)
-    (cov.isCovariantDerivativeOn (s := e.baseSet)) hx v u
+    (cov.isCovariantDerivativeOn (s := e.baseSet))
+    (mem_baseSet_trivializationAt E (TangentSpace J) x) v u
   rw [hcongr, (eventually_symm_eq_constantField x).self_of_nhds u] at h
   exact (tangentSpaceCastModel_trivializationAt_symm x _).symm.trans
     ((congrArg (tangentSpaceCastModel J x) h.symm).trans (leviCivitaConnection_const_apply x u v))
@@ -248,9 +211,9 @@ theorem leviCivitaConnection_comp_apply {g : PoincareBall E → E} {x : Poincare
           (inner ℝ (x : E) u • g x + inner ℝ (x : E) (g x) • u - inner ℝ u (g x) • (x : E)) := by
   set cov := leviCivitaConnection J (PoincareBall E)
   set e := trivializationAt E (TangentSpace J) x
-  have hx : x ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace J) x
   have h := TauCeti.Manifold.covariantDerivative_symm_comp_apply_symm (Module.finBasis ℝ E)
-    (e := e) (cov.isCovariantDerivativeOn (s := e.baseSet)) hx hg u
+    (e := e) (cov.isCovariantDerivativeOn (s := e.baseSet))
+    (mem_baseSet_trivializationAt E (TangentSpace J) x) hg u
   rw [leviCivitaConnection_trivializationAt_symm_comp hg,
     (eventually_symm_eq_constantField x).self_of_nhds u] at h
   rw [← constantField_apply u x]

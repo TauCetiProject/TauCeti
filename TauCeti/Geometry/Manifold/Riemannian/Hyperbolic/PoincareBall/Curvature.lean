@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.PoincareBall.Connection
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional.Basic
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.InnerProductSpace.Calculus
@@ -15,24 +15,12 @@ import TauCeti.Geometry.Manifold.IsManifold.Basic
 /-!
 # Curvature of the Poincaré ball metric
 
-For a finite-dimensional real inner product space `E`, we prove directly from the Levi-Civita
-connection formulas in `PoincareBall.Connection` that the Poincaré ball metric
-`4 ⟪dx, dy⟫ / (1 - ‖x‖²)²` has constant-curvature tensor with parameter `-1`:
-
-`R(u, v) w = -(⟪v, w⟫ u - ⟪u, w⟫ v)`.
-
-Consequently, every tangent two-plane has sectional curvature `-1`, the Ricci tensor equals
-`-(dim E - 1) g`, and the scalar curvature equals `-dim E (dim E - 1)`. All results hold in every
-finite dimension `dim E ≥ 0`, including dimensions zero and one.
-
-## Main results
-
-* `TauCeti.PoincareBall.curvatureTensor_eq`: the Riemann curvature tensor of `PoincareBall E` is
-  the constant-curvature tensor with parameter `-1`.
-* `TauCeti.PoincareBall.hasConstantSectionalCurvature`: every nondegenerate tangent plane of
-  `PoincareBall E` has sectional curvature `-1`.
-* `TauCeti.PoincareBall.ricciTensor_eq`: `Ric(u, v) = -(dim E - 1) ⟪u, v⟫`.
-* `TauCeti.PoincareBall.scalarCurvature_eq`: `scal = -dim E (dim E - 1)`.
+For a finite-dimensional real inner product space `E`, we prove from the Levi-Civita connection
+formulas in `PoincareBall.Connection` that the Poincaré ball metric `4 ⟪dx, dy⟫ / (1 - ‖x‖²)²` has
+constant-curvature tensor with parameter `-1`, `R(u, v) w = -(⟪v, w⟫ u - ⟪u, w⟫ v)`
+(`curvatureTensor_eq`), and deduce its sectional (`hasConstantSectionalCurvature`), Ricci
+(`ricciTensor_eq`), and scalar (`scalarCurvature_eq`) curvatures in every finite dimension
+`dim E ≥ 0`.
 
 ## References
 
@@ -55,8 +43,6 @@ local notation "J" => 𝓘(ℝ, E)
 local notation "∇" => leviCivitaConnection J (PoincareBall E)
 
 omit [FiniteDimensional ℝ E] in
-/-- The linear part `p ↦ ⟪p, v⟫ w + ⟪p, w⟫ v - ⟪v, w⟫ p` of the Poincaré ball connection
-numerator, packaged as a continuous linear map in the base vector `p`. -/
 private def connectionLinear (v w : E) : E →L[ℝ] E :=
   (innerSL ℝ v).smulRight w + (innerSL ℝ w).smulRight v - inner ℝ v w • ContinuousLinearMap.id ℝ E
 
@@ -68,7 +54,6 @@ private theorem connectionLinear_apply (v w p : E) :
   rw [real_inner_comm v p, real_inner_comm w p]
 
 omit [FiniteDimensional ℝ E] in
-/-- Model-space coordinate representation of `∇ (constantField w) · (constantField v ·)`. -/
 private def connectionModel (v w p : E) : E :=
   (2 / (1 - ‖p‖ ^ 2)) • connectionLinear v w p
 
@@ -95,8 +80,7 @@ private theorem hasFDerivAt_connectionModel (x : PoincareBall E) (v w : E) :
 
 private theorem connection_const_eq (v w : E) :
     (fun y : PoincareBall E ↦ ∇ (constantField w) y (constantField v y)) =
-      fun y : PoincareBall E ↦
-        (tangentSpaceCastModel J y).symm ((connectionModel v w ∘ coe) y) := by
+      fun y ↦ (tangentSpaceCastModel J y).symm ((connectionModel v w ∘ coe) y) := by
   funext y
   apply (tangentSpaceCastModel J y).injective
   rw [constantField_apply, leviCivitaConnection_const_apply,
@@ -136,51 +120,25 @@ private theorem connectionLinear_curvature_second (p u v w : E) :
     inner ℝ p u • connectionLinear v w p + connectionLinear u (connectionLinear v w p) p -
       (inner ℝ p v • connectionLinear u w p + connectionLinear v (connectionLinear u w p) p) =
       (‖p‖ ^ 2 : ℝ) • (inner ℝ u w • v - inner ℝ v w • u) := by
-  have huv : inner ℝ v u = inner ℝ u v := real_inner_comm u v
-  have hpu : inner ℝ u p = inner ℝ p u := real_inner_comm p u
-  have hpv : inner ℝ v p = inner ℝ p v := real_inner_comm p v
   simp only [connectionLinear_apply, inner_add_right, inner_sub_right, real_inner_smul_right,
-    real_inner_self_eq_norm_sq, smul_add, smul_sub, smul_smul, huv, hpu, hpv]
+    real_inner_self_eq_norm_sq, smul_add, smul_sub, smul_smul, real_inner_comm u v,
+    real_inner_comm p u, real_inner_comm p v]
   module
 
 /-- The Riemann curvature tensor of `PoincareBall E` is the constant-curvature tensor with
 parameter `-1`, with inner products taken in the hyperbolic tangent metric. -/
-@[simp]
-theorem curvatureTensor_eq (x : PoincareBall E) (u v w : TangentSpace J x) :
-    ∇.curvatureTensor x u v w =
-      (-1 : ℝ) • (inner ℝ v w • u - inner ℝ u w • v) := by
-  let a := tangentSpaceCastModel J x u
-  let b := tangentSpaceCastModel J x v
-  let c := tangentSpaceCastModel J x w
-  have hu : constantField a x = u := by simp [a]
-  have hv : constantField b x = v := by simp [b]
-  have hw : constantField c x = w := by simp [c]
-  rw [← hu, ← hv, ← hw, ∇.curvatureTensor_apply x
-    (contMDiff_constantField a) (contMDiff_constantField b) (contMDiff_constantField c),
+@[simp] theorem curvatureTensor_eq (x : PoincareBall E) (u v w : TangentSpace J x) :
+    ∇.curvatureTensor x u v w = (-1 : ℝ) • (inner ℝ v w • u - inner ℝ u w • v) := by
+  have hcast (z : TangentSpace J x) : constantField (tangentSpaceCastModel J x z) x = z := by simp
+  rw [← hcast u, ← hcast v, ← hcast w, ∇.curvatureTensor_apply x
+    (contMDiff_constantField _) (contMDiff_constantField _) (contMDiff_constantField _),
     ∇.curvatureOperator_apply, mlieBracket_constantField, map_zero, sub_zero]
   apply (tangentSpaceCastModel J x).injective
-  rw [map_sub, second_connection_const, second_connection_const]
-  have hrearr :
-      (2 / (1 - ‖(x : E)‖ ^ 2)) • connectionLinear b c a +
-        (4 / (1 - ‖(x : E)‖ ^ 2) ^ 2) •
-          (inner ℝ (x : E) a • connectionLinear b c (x : E) +
-            connectionLinear a (connectionLinear b c (x : E)) (x : E)) -
-      ((2 / (1 - ‖(x : E)‖ ^ 2)) • connectionLinear a c b +
-        (4 / (1 - ‖(x : E)‖ ^ 2) ^ 2) •
-          (inner ℝ (x : E) b • connectionLinear a c (x : E) +
-            connectionLinear b (connectionLinear a c (x : E)) (x : E))) =
-      (2 / (1 - ‖(x : E)‖ ^ 2)) • (connectionLinear b c a - connectionLinear a c b) +
-        (4 / (1 - ‖(x : E)‖ ^ 2) ^ 2) •
-          (inner ℝ (x : E) a • connectionLinear b c (x : E) +
-            connectionLinear a (connectionLinear b c (x : E)) (x : E) -
-            (inner ℝ (x : E) b • connectionLinear a c (x : E) +
-              connectionLinear b (connectionLinear a c (x : E)) (x : E))) := by
-    module
-  rw [hrearr, connectionLinear_curvature_first, connectionLinear_curvature_second,
+  rw [map_sub, second_connection_const, second_connection_const, add_sub_add_comm,
+    ← smul_sub, ← smul_sub, connectionLinear_curvature_first, connectionLinear_curvature_second,
     smul_smul, smul_smul, ← add_smul]
   have hcoeff : 2 / (1 - ‖(x : E)‖ ^ 2) * (2 : ℝ) +
-      4 / (1 - ‖(x : E)‖ ^ 2) ^ 2 * ‖(x : E)‖ ^ 2 =
-      4 / (1 - ‖(x : E)‖ ^ 2) ^ 2 := by
+      4 / (1 - ‖(x : E)‖ ^ 2) ^ 2 * ‖(x : E)‖ ^ 2 = 4 / (1 - ‖(x : E)‖ ^ 2) ^ 2 := by
     field_simp [(one_sub_norm_sq_pos x).ne']
     ring
   rw [hcoeff]
@@ -196,17 +154,14 @@ theorem hasConstantSectionalCurvature :
 
 /-- The Ricci tensor of `PoincareBall E` is `-(dim E - 1)` times the hyperbolic metric. In
 dimensions zero and one it vanishes. -/
-@[simp 1100]
-theorem ricciTensor_eq (x : PoincareBall E) (u v : TangentSpace J x) :
+@[simp 1100] theorem ricciTensor_eq (x : PoincareBall E) (u v : TangentSpace J x) :
     ∇.ricciTensor x u v = -((Module.finrank ℝ E : ℝ) - 1) * inner ℝ u v := by
   rw [∇.ricciTensor_eq_of_curvatureTensor_eq_smul_inner_sub x (-1) (curvatureTensor_eq x)]
-  simp only [LinearMap.smul_apply, TauCeti.finrank_tangentSpace, innerₗ_apply_apply,
-    smul_eq_mul]
+  simp only [LinearMap.smul_apply, TauCeti.finrank_tangentSpace, innerₗ_apply_apply, smul_eq_mul]
   ring
 
 /-- The scalar curvature of `PoincareBall E` is `-dim E (dim E - 1)`. -/
-@[simp]
-theorem scalarCurvature_eq (x : PoincareBall E) :
+@[simp] theorem scalarCurvature_eq (x : PoincareBall E) :
     ∇.scalarCurvature x = -(Module.finrank ℝ E : ℝ) * ((Module.finrank ℝ E : ℝ) - 1) := by
   rw [∇.scalarCurvature_eq_of_curvatureTensor_eq_smul_inner_sub x (-1) (curvatureTensor_eq x),
     TauCeti.finrank_tangentSpace]
