@@ -19,10 +19,7 @@ Mathlib's `SimpleGraph.vertexCoverNum`:
   edge of `G` (`SimpleGraph.Subgraph.maximal_isMatching_iff`).
 * Every matching `M` has twice as many vertices as edges in both `ℕ∞` and `ℕ`
   (`SimpleGraph.Subgraph.IsMatching.encard_verts`, `SimpleGraph.Subgraph.IsMatching.ncard_verts`),
-  giving `2 * M.edgeSet.encard = ENat.card V` for perfect matchings
-  (`SimpleGraph.Subgraph.IsPerfectMatching.two_mul_encard_edgeSet`), restricts to any subset of its
-  edges (`SimpleGraph.Subgraph.IsMatching.exists_le_isMatching_edgeSet_eq`), and has at most as many
-  edges as the vertices in any vertex cover `C`
+  and at most as many edges as the vertices in any vertex cover `C`
   (`SimpleGraph.Subgraph.IsMatching.encard_edgeSet_le_encard_of_isVertexCover`).
 * In a bipartite graph with sides `L` and `R`, the matched vertices in `L` are in bijection with
   the edges of `M` (`SimpleGraph.Subgraph.IsMatching.encard_verts_inter_left`,
@@ -32,9 +29,7 @@ Mathlib's `SimpleGraph.vertexCoverNum`:
 * The matching number `SimpleGraph.matchingNum G : ℕ∞` is the supremum of `M.edgeSet.encard` over
   all matchings `M : G.Subgraph`. Whenever `G.matchingNum ≠ ⊤` (in particular, when `V` or
   `G.edgeSet` is finite), it is attained by a maximal matching (`SimpleGraph.matchingNum_exists`,
-  `SimpleGraph.exists_maximal_isMatching`), every finite cardinal `k ≤ G.matchingNum` is realized
-  by a matching (`SimpleGraph.exists_of_le_matchingNum`), `(⊤ : SimpleGraph V).matchingNum =
-  Nat.card V / 2` on finite `V` (`SimpleGraph.matchingNum_top`), and every simple graph satisfies
+  `SimpleGraph.exists_maximal_isMatching`), and every simple graph satisfies
   `G.matchingNum ≤ G.vertexCoverNum` and `G.vertexCoverNum ≤ 2 * G.matchingNum`.
 
 ## Main definitions
@@ -45,19 +40,16 @@ Mathlib's `SimpleGraph.vertexCoverNum`:
 
 * `SimpleGraph.Subgraph.maximal_isMatching_iff`: a matching is maximal precisely when its vertex
   set is a vertex cover of `G`.
-* `SimpleGraph.Subgraph.IsMatching.exists_le_isMatching_edgeSet_eq`: restricting a matching to any
-  subset of its edges yields a sub-matching with that edge set.
 * `SimpleGraph.Subgraph.IsMatching.encard_edgeSet_le_encard_of_isVertexCover`: weak duality between
   matchings and vertex covers.
 * `SimpleGraph.Subgraph.IsMatching.encard_verts_inter_left`,
   `SimpleGraph.Subgraph.IsMatching.verts_superset_iff_encard_edgeSet_eq`: matched-side edge
   counting and saturation in bipartite graphs.
-* `SimpleGraph.matchingNum_exists` and `SimpleGraph.exists_of_le_matchingNum`: finite attainment
-  for `G.matchingNum` and intermediate finite matching sizes.
+* `SimpleGraph.matchingNum_exists`: every simple graph with finite matching number has a matching
+  attaining `G.matchingNum`.
 * `SimpleGraph.matchingNum_le_vertexCoverNum`,
   `SimpleGraph.vertexCoverNum_le_two_mul_matchingNum`: general two-sided bounds between the
   matching number and the vertex cover number.
-* `SimpleGraph.matchingNum_top`: the matching number of a finite complete graph.
 -/
 
 public section
@@ -150,60 +142,6 @@ theorem IsMatching.ncard_verts (hM : M.IsMatching) :
     ← Nat.card_congr (vertsEquivEdgeSetProdBool hM), Nat.card_prod]
   have hb : Nat.card Bool = 2 := by simp
   rw [hb, mul_comm]
-
-/-- A perfect matching on `G` has half as many edges as `V` has vertices, in `ℕ∞`. -/
-theorem IsPerfectMatching.two_mul_encard_edgeSet (hM : M.IsPerfectMatching) :
-    2 * M.edgeSet.encard = ENat.card V := by
-  obtain ⟨hM₁, hspan⟩ := hM
-  rw [← hM₁.encard_verts, hspan.verts_eq_univ, Set.encard_univ]
-
-/-- A perfect matching on `G` has half as many edges as `V` has vertices, in `ℕ`. -/
-theorem IsPerfectMatching.two_mul_ncard_edgeSet (hM : M.IsPerfectMatching) :
-    2 * M.edgeSet.ncard = Nat.card V := by
-  obtain ⟨hM₁, hspan⟩ := hM
-  rw [← hM₁.ncard_verts, hspan.verts_eq_univ, Set.ncard_univ]
-
-/-- Restricting a matching to any subset `E` of its edges produces a sub-matching with edge set
-`E`. -/
-theorem IsMatching.exists_le_isMatching_edgeSet_eq (hM : M.IsMatching) {E : Set (Sym2 V)}
-    (hE : E ⊆ M.edgeSet) :
-    ∃ N ≤ M, N.IsMatching ∧ N.edgeSet = E := by
-  let s : Set V := ⋃ e ∈ E, (e : Set V)
-  have hs : s ⊆ M.verts :=
-    Set.iUnion₂_subset fun e he _ hv ↦ M.mem_verts_of_mem_edge (hE he) hv
-  refine ⟨M.induce s, (M.induce_mono_right hs).trans_eq M.induce_self_verts, fun v hv ↦ ?_, ?_⟩
-  · rw [Subgraph.induce_verts] at hv
-    simp_rw [Subgraph.induce_adj]
-    obtain ⟨e, heE, hve⟩ := Set.mem_iUnion₂.1 hv
-    induction e using Sym2.ind with
-    | _ x y =>
-      have hxy : M.Adj x y := M.mem_edgeSet.1 (hE heE)
-      have hx : x ∈ s := Set.mem_iUnion₂.2 ⟨s(x, y), heE, Sym2.mem_mk_left x y⟩
-      have hy : y ∈ s := Set.mem_iUnion₂.2 ⟨s(x, y), heE, Sym2.mem_mk_right x y⟩
-      rcases Sym2.mem_iff.1 hve with hvx | hvy
-      · subst hvx
-        exact ⟨y, ⟨hx, hy, hxy⟩, fun z hz ↦ (hM.eq_of_adj_left hxy hz.2.2).symm⟩
-      · subst hvy
-        exact ⟨x, ⟨hy, hx, hxy.symm⟩, fun z hz ↦ (hM.eq_of_adj_left hxy.symm hz.2.2).symm⟩
-  · ext e
-    induction e using Sym2.ind with
-    | _ x y =>
-      rw [Subgraph.mem_edgeSet, Subgraph.induce_adj]
-      refine ⟨fun ⟨hx, _, hxy⟩ ↦ ?_, fun he ↦ ?_⟩
-      · obtain ⟨e', he'E, hxe'⟩ := Set.mem_iUnion₂.1 hx
-        induction e' using Sym2.ind with
-        | _ u w =>
-          have huw : M.Adj u w := M.mem_edgeSet.1 (hE he'E)
-          rcases Sym2.mem_iff.1 hxe' with hxu | hxw
-          · subst hxu
-            have hyw : y = w := hM.eq_of_adj_left hxy huw
-            exact hyw ▸ he'E
-          · subst hxw
-            have hyu : y = u := hM.eq_of_adj_left hxy huw.symm
-            subst hyu
-            exact Sym2.eq_swap ▸ he'E
-      · exact ⟨Set.mem_iUnion₂.2 ⟨s(x, y), he, Sym2.mem_mk_left x y⟩,
-          Set.mem_iUnion₂.2 ⟨s(x, y), he, Sym2.mem_mk_right x y⟩, M.mem_edgeSet.1 (hE he)⟩
 
 /-- **Weak duality.** Every matching has at most as many edges as the vertices in any vertex cover,
 without finiteness assumptions. -/
@@ -365,12 +303,6 @@ theorem le_matchingNum_iff {n : ℕ∞} :
       ∀ m : ℕ∞, (∀ M : G.Subgraph, M.IsMatching → M.edgeSet.encard ≤ m) → n ≤ m := by
   simp [matchingNum_def, le_iSup_iff]
 
-/-- `n` is strictly less than `G.matchingNum` if and only if some matching of `G` has strictly
-more than `n` edges. -/
-theorem lt_matchingNum_iff {n : ℕ∞} :
-    n < G.matchingNum ↔ ∃ M : G.Subgraph, M.IsMatching ∧ n < M.edgeSet.encard := by
-  simp [matchingNum_def, lt_iSup_iff]
-
 /-- Every matching of `G` has extended edge cardinality at most `G.matchingNum`. -/
 theorem Subgraph.IsMatching.encard_edgeSet_le_matchingNum {M : G.Subgraph} (hM : M.IsMatching) :
     M.edgeSet.encard ≤ G.matchingNum :=
@@ -390,12 +322,6 @@ theorem matchingNum_le_vertexCoverNum (G : SimpleGraph V) :
   obtain ⟨C, hCnum, hC⟩ := G.vertexCoverNum_exists
   exact matchingNum_le_iff.2 fun M hM ↦ hCnum ▸ hM.encard_edgeSet_le_encard_of_isVertexCover hC
 
-/-- Every matching of `G` has extended edge cardinality at most `G.vertexCoverNum`. -/
-theorem Subgraph.IsMatching.encard_edgeSet_le_vertexCoverNum {M : G.Subgraph}
-    (hM : M.IsMatching) :
-    M.edgeSet.encard ≤ G.vertexCoverNum :=
-  hM.encard_edgeSet_le_matchingNum.trans G.matchingNum_le_vertexCoverNum
-
 /-- Every simple graph with finite matching number has a matching attaining `G.matchingNum`. -/
 theorem matchingNum_exists (hfin : G.matchingNum ≠ ⊤) :
     ∃ M : G.Subgraph, M.IsMatching ∧ M.edgeSet.encard = G.matchingNum := by
@@ -404,17 +330,6 @@ theorem matchingNum_exists (hfin : G.matchingNum ≠ ⊤) :
     rw [matchingNum_def, iSup_subtype]
   obtain ⟨M, hM⟩ := ENat.exists_eq_iSup_of_lt_top (hsup ▸ lt_top_iff_ne_top.2 hfin)
   exact ⟨M.val, M.property, hM.trans hsup⟩
-
-/-- For every finite cardinal `k ≤ G.matchingNum`, there exists a matching of `G` with `k`
-edges. -/
-theorem exists_of_le_matchingNum {k : ℕ∞} (hk : k ≤ G.matchingNum) (hfin : k ≠ ⊤) :
-    ∃ M : G.Subgraph, M.IsMatching ∧ M.edgeSet.encard = k := by
-  obtain hlt | rfl := hk.lt_or_eq
-  · obtain ⟨M, hM, hMk⟩ := lt_matchingNum_iff.1 hlt
-    obtain ⟨E, hEM, hEk⟩ := Set.exists_subset_encard_eq hMk.le
-    obtain ⟨N, -, hN, rfl⟩ := hM.exists_le_isMatching_edgeSet_eq hEM
-    exact ⟨N, hN, hEk⟩
-  · exact G.matchingNum_exists hfin
 
 /-- A matching attaining a finite matching number is maximal. -/
 theorem Subgraph.IsMatching.maximal_of_encard_edgeSet_eq_matchingNum {M : G.Subgraph}
@@ -444,30 +359,21 @@ theorem vertexCoverNum_le_two_mul_matchingNum (G : SimpleGraph V) :
     exact hcov.vertexCoverNum_le.trans <|
       hM.encard_verts.trans_le (mul_le_mul_right hM.encard_edgeSet_le_matchingNum 2)
 
-/-- A matching with at least as many edges as the vertices of a vertex cover attains
-`G.matchingNum`. -/
+/-- A matching whose edge count equals the size of some vertex cover attains `G.matchingNum`. -/
 theorem Subgraph.IsMatching.encard_edgeSet_eq_matchingNum_of_isVertexCover
     {M : G.Subgraph} {C : Set V} (hM : M.IsMatching) (hC : G.IsVertexCover C)
-    (hle : C.encard ≤ M.edgeSet.encard) :
+    (heq : M.edgeSet.encard = C.encard) :
     M.edgeSet.encard = G.matchingNum :=
   le_antisymm hM.encard_edgeSet_le_matchingNum <|
-    G.matchingNum_le_vertexCoverNum.trans (hC.vertexCoverNum_le.trans hle)
+    G.matchingNum_le_vertexCoverNum.trans (hC.vertexCoverNum_le.trans_eq heq.symm)
 
-/-- A vertex cover of size at most the edge count of a matching attains `G.vertexCoverNum`. -/
+/-- A vertex cover whose size equals the edge count of some matching attains `G.vertexCoverNum`. -/
 theorem IsVertexCover.encard_eq_vertexCoverNum_of_isMatching
     {C : Set V} {M : G.Subgraph} (hC : G.IsVertexCover C) (hM : M.IsMatching)
-    (hle : C.encard ≤ M.edgeSet.encard) :
+    (heq : M.edgeSet.encard = C.encard) :
     C.encard = G.vertexCoverNum :=
-  le_antisymm (hle.trans hM.encard_edgeSet_le_vertexCoverNum) hC.vertexCoverNum_le
-
-/-- A matching and a vertex cover with `C.encard ≤ M.edgeSet.encard` certify strong duality
-`G.matchingNum = G.vertexCoverNum`. -/
-theorem matchingNum_eq_vertexCoverNum_of_isMatching_of_isVertexCover
-    {M : G.Subgraph} {C : Set V} (hM : M.IsMatching) (hC : G.IsVertexCover C)
-    (hle : C.encard ≤ M.edgeSet.encard) :
-    G.matchingNum = G.vertexCoverNum :=
-  le_antisymm G.matchingNum_le_vertexCoverNum <|
-    (hC.vertexCoverNum_le.trans hle).trans hM.encard_edgeSet_le_matchingNum
+  le_antisymm (heq ▸ hM.encard_edgeSet_le_matchingNum.trans G.matchingNum_le_vertexCoverNum)
+    hC.vertexCoverNum_le
 
 /-- The empty graph has matching number zero. -/
 @[simp]
@@ -509,34 +415,6 @@ theorem two_mul_matchingNum_le_card : 2 * G.matchingNum ≤ ENat.card V := by
 @[simp]
 theorem matchingNum_ne_top_of_finite [Finite V] : G.matchingNum ≠ ⊤ :=
   ne_top_of_le_ne_top vertexCoverNum_ne_top_of_finite G.matchingNum_le_vertexCoverNum
-
-/-- On a finite vertex type, the complete graph has matching number `Nat.card V / 2`. -/
-@[simp]
-theorem matchingNum_top [Finite V] :
-    (⊤ : SimpleGraph V).matchingNum = (Nat.card V / 2 : ℕ) := by
-  apply le_antisymm
-  · obtain ⟨m, hm⟩ :=
-      ENat.ne_top_iff_exists.1 (matchingNum_ne_top_of_finite (G := (⊤ : SimpleGraph V)))
-    have h2 : 2 * (m : ℕ∞) ≤ ENat.card V := hm ▸ two_mul_matchingNum_le_card
-    rw [ENat.card_eq_coe_natCard] at h2
-    norm_cast at h2
-    rw [← hm, Nat.cast_le]
-    omega
-  · -- Any subset of size `2 * (Nat.card V / 2)` is an even finite clique, hence matched.
-    have hle : ((2 * (Nat.card V / 2) : ℕ) : ℕ∞) ≤ (Set.univ : Set V).encard := by
-      rw [Set.encard_univ, ENat.card_eq_coe_natCard, Nat.cast_le]
-      exact Nat.mul_div_le (Nat.card V) 2
-    obtain ⟨u, -, hu⟩ := Set.exists_subset_encard_eq hle
-    have huncard : u.ncard = 2 * (Nat.card V / 2) := by
-      rwa [← u.toFinite.cast_ncard_eq, Nat.cast_inj] at hu
-    obtain ⟨M, hMverts, hM⟩ :=
-      ((IsClique.top (s := u)).even_iff_exists_isMatching u.toFinite).1 ⟨Nat.card V / 2, by omega⟩
-    have hMncard : M.edgeSet.ncard = Nat.card V / 2 := by
-      have h2 := hM.ncard_verts.symm.trans (hMverts ▸ huncard)
-      omega
-    have hMedge : M.edgeSet.encard = (Nat.card V / 2 : ℕ) := by
-      rw [← M.edgeSet.toFinite.cast_ncard_eq, hMncard]
-    exact hMedge ▸ hM.encard_edgeSet_le_matchingNum
 
 /-- The matching number of `G` is at most the number of edges of `G`. -/
 theorem matchingNum_le_encard_edgeSet : G.matchingNum ≤ G.edgeSet.encard :=

@@ -20,22 +20,28 @@ looplessness. For unit-capacity multiset matchings on a loopless multigraph with
 actual edges, the analogous bound holds for the total multiplicity.
 
 Given a finite covering bipartition on a multigraph with finitely many actual edges, both bounds
-are attained: the multiset capacitated Kőnig theorem of
-`TauCeti.Combinatorics.Graph.Matching.Capacitated` yields a unit-capacity matching and a vertex
-cover of equal size, and taking the positive support gives an ordinary matching of the same
-cardinality. Thus the matching side retains actual edge identities (allowing parallel edges and
-isolated vertices), while the cover optimum uses `SimpleGraph.vertexCoverNum`.
+are attained: the matching side retains actual edge identities (allowing parallel edges and
+isolated vertices), while the cover optimum uses Mathlib's `SimpleGraph.vertexCoverNum` interface.
+The attainment theorems specialize the multiset capacitated Kőnig theorem proved in
+`TauCeti.Combinatorics.Graph.Matching.Capacitated`.
 
 ## Main results
 
-* `Graph.IsMatching.encard_le_of_isVertexCover`, `Graph.IsMatching.encard_le_vertexCoverNum`:
-  weak duality for ordinary matchings, without finiteness or looplessness hypotheses.
+* `Graph.IsMatching.encard_le_encard_of_isVertexCover`,
+  `Graph.IsMatching.encard_le_vertexCoverNum`: weak duality for ordinary matchings, without
+  finiteness or looplessness hypotheses.
 * `Graph.IsBipartition.exists_isMatching_isVertexCover_card_eq`,
   `Graph.IsBipartition.exists_isMatching_card_eq_vertexCoverNum`: **Kőnig's theorem** for ordinary
   matchings in finite bipartite multigraphs.
 * `Graph.IsCapacitatedMatching.sum_le_vertexCoverNum`,
   `Graph.IsBipartition.exists_isCapacitatedMatching_sum_eq_vertexCoverNum`: the corresponding
   statements for unit-capacity multiset matchings.
+
+## References
+
+* D. Kőnig, *Gráfok és alkalmazásuk a determinánsok és a halmazok elméletére*, Mat. Természett.
+  Ért. 34 (1916), 104--119.
+* A. Schrijver, *A Course in Combinatorial Optimization*, Corollary 8.3a.
 -/
 
 public section
@@ -54,8 +60,8 @@ variable {α : Type u} {β : Type v} {G : Graph α β}
 /-- **Weak duality with covers of the simplification.** Every matching in a multigraph has
 cardinality at most that of any vertex cover of its underlying simple graph, even if `G` carries
 loops outside the matching. -/
-theorem IsMatching.encard_le_of_isVertexCover_toSimpleGraph {M : Set E(G)} (hM : G.IsMatching M)
-    {C : Set V(G)} (hC : G.toSimpleGraph.IsVertexCover C) :
+theorem IsMatching.encard_le_encard_of_isVertexCover_toSimpleGraph {M : Set E(G)}
+    (hM : G.IsMatching M) {C : Set V(G)} (hC : G.toSimpleGraph.IsVertexCover C) :
     M.encard ≤ C.encard := by
   -- Each selected edge is nonloop, so it projects to a simple-graph edge and meets `C`; since
   -- matching edges are vertex-disjoint, choosing an incident cover vertex is injective.
@@ -71,16 +77,16 @@ theorem IsMatching.encard_le_of_isVertexCover_toSimpleGraph {M : Set E(G)} (hM :
 
 /-- **Weak duality for ordinary matchings.** The cardinality of a matching is at most that of any
 vertex cover. -/
-theorem IsMatching.encard_le_of_isVertexCover {M : Set E(G)} (hM : G.IsMatching M)
+theorem IsMatching.encard_le_encard_of_isVertexCover {M : Set E(G)} (hM : G.IsMatching M)
     {C : Set V(G)} (hC : G.IsVertexCover C) :
     M.encard ≤ C.encard :=
-  hM.encard_le_of_isVertexCover_toSimpleGraph hC.toSimpleGraph
+  hM.encard_le_encard_of_isVertexCover_toSimpleGraph hC.toSimpleGraph
 
 /-- **Weak duality for ordinary matchings** in `Set.ncard` form, for a finite vertex cover. -/
-theorem IsMatching.ncard_le_of_isVertexCover {M : Set E(G)} (hM : G.IsMatching M)
+theorem IsMatching.ncard_le_ncard_of_isVertexCover {M : Set E(G)} (hM : G.IsMatching M)
     {C : Set V(G)} (hC : G.IsVertexCover C) (hCf : C.Finite) :
     M.ncard ≤ C.ncard := by
-  have hle := hM.encard_le_of_isVertexCover hC
+  have hle := hM.encard_le_encard_of_isVertexCover hC
   have hMf : M.Finite := hCf.finite_of_encard_le hle
   rwa [← hMf.cast_ncard_eq, ← hCf.cast_ncard_eq, Nat.cast_le] at hle
 
@@ -88,14 +94,14 @@ theorem IsMatching.ncard_le_of_isVertexCover {M : Set E(G)} (hM : G.IsMatching M
 theorem IsMatching.card_le_card_of_isVertexCover {M : Finset E(G)}
     (hM : G.IsMatching (M : Set E(G))) {C : Finset V(G)} (hC : G.IsVertexCover (C : Set V(G))) :
     M.card ≤ C.card := by
-  simpa using hM.ncard_le_of_isVertexCover hC C.finite_toSet
+  simpa using hM.ncard_le_ncard_of_isVertexCover hC C.finite_toSet
 
 /-- **Weak duality with the simple-graph cover number.** Every matching in a multigraph has
 cardinality at most the vertex cover number of its simplification. -/
 theorem IsMatching.encard_le_vertexCoverNum {M : Set E(G)} (hM : G.IsMatching M) :
     M.encard ≤ G.toSimpleGraph.vertexCoverNum := by
   obtain ⟨C, hCnum, hC⟩ := G.toSimpleGraph.vertexCoverNum_exists
-  exact hCnum ▸ hM.encard_le_of_isVertexCover_toSimpleGraph hC
+  exact hCnum ▸ hM.encard_le_encard_of_isVertexCover_toSimpleGraph hC
 
 /-- **Kőnig's theorem for ordinary matchings in multigraphs.** A multigraph with finitely many
 actual edges and a finite covering bipartition has an ordinary matching and a vertex cover of equal
