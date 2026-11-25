@@ -35,8 +35,8 @@ of Cartan type `Dₙ` has Weyl group of order `2ⁿ⁻¹ · n!`.
 
 * `TauCeti.DynkinType.typeDWeylSubgroup`: the signed permutations of `n` coordinates with an even
   number of sign changes.
-* `TauCeti.DynkinType.negSwap`: the signed permutation exchanging two coordinates and changing both
-  their signs.
+* `TauCeti.DynkinType.negSwap`: the signed permutation exchanging two distinct coordinates and
+  changing both their signs.
 * `TauCeti.DynkinType.typeDRootPermHom`: the action of signed permutations on the pinned root
   indices of type `Dₙ`.
 * `TauCeti.DynkinType.typeDWeylGroupEquiv`: the Weyl group of the pinned integral datum of type
@@ -191,12 +191,14 @@ private theorem typeDRootReflectionEquiv_eq_toPerm {u : TypeDRoot n}
     rw [typeDRootReflectionEquiv_apply, typeDRootReflection_val, MulAction.toPerm_apply,
       coe_smul_typeDRoot, h]
 
-/-- The signed permutation exchanging the coordinates `i` and `j` and changing both their signs. -/
+/-- For `i ≠ j`, the signed permutation exchanging the coordinates `i` and `j` and changing both
+their signs. For `i = j` the two sign changes cancel and `negSwap i i = 1`. -/
 def negSwap (i j : Fin n) : WreathProduct ℤˣ (Fin n) :=
   SemidirectProduct.inl (Pi.mulSingle i (-1) * Pi.mulSingle j (-1)) *
     SemidirectProduct.inr (Equiv.swap i j)
 
-/-- The signs of `negSwap i j`: `-1` at the coordinates `i` and `j`, `1` elsewhere. -/
+/-- The signs of `negSwap i j`: for `i ≠ j`, `-1` at the coordinates `i` and `j` and `1`
+elsewhere (for `i = j` the two factors cancel). -/
 @[simp]
 theorem left_negSwap (i j : Fin n) :
     (negSwap i j).left = Pi.mulSingle i (-1) * Pi.mulSingle j (-1) := by
