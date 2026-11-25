@@ -139,7 +139,7 @@ namespace TauCeti.MonoidAlgebra
 
 section CharP
 
-variable {S : Type*} [CommRing S] {p : ℕ} [ExpChar S p]
+variable {S : Type*} [Ring S] {p : ℕ} [ExpChar S p]
 
 /-- **Nilpotence lifts along the quotient by a central `p`-element.** In exponential
 characteristic `p`, let `z` be a central element of `p`-power order of a group `G`. An element of
@@ -170,7 +170,7 @@ theorem isNilpotent_of_isNilpotent_mapDomainRingHom_mk' {G : Type*} [Group G] {z
   exact ⟨m * j, by rw [pow_mul, hj]⟩
 
 /-- **The augmentation ideal of a finite `p`-group algebra is nil in characteristic `p`.** In the
-group algebra of a finite, possibly noncommutative, `p`-group over a commutative ring of
+group algebra of a finite, possibly noncommutative, `p`-group over a ring of
 exponential characteristic `p`, every element of augmentation zero is nilpotent. -/
 theorem isNilpotent_of_isPGroup_of_augmentation_eq_zero {P : Type*} [Group P] [Finite P]
     (hP : IsPGroup p P) {x : MonoidAlgebra S P} (hx : augmentation S P x = 0) : IsNilpotent x := by
