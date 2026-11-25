@@ -5,13 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Valuation.Integers
 public import Mathlib.Topology.Algebra.Valued.WithVal
 public import TauCeti.Algebra.GroupWithZero.Range
 public import TauCeti.RingTheory.Valuation.RingEquiv
 public import TauCeti.Topology.Algebra.UniformRing
 
 /-!
-# Completions of a field at a valuation
+# Valued rings and their completions
+
+If `O` is a ring of integers for a valuation `v` on `R`, the same algebra map identifies `O`
+with the integers for the canonical valuation on `WithVal v` (`Valuation.Integers.withVal`).
 
 Let `σ : K ≃+* K'` be a ring isomorphism carrying a valuation `v` on `K` to a valuation `w`
 on `K'`, in the sense that `w (σ x) = v x`. Then `σ` is uniformly continuous for the uniform
@@ -57,6 +61,17 @@ The uniform-continuity and completion-transport arguments are extracted and gene
 public section
 
 open Filter WithZeroTopology MonoidWithZeroHom MonoidWithZeroHom.ValueGroup₀
+
+/-- A ring of integers for `v` is also a ring of integers for the canonical valuation on
+`WithVal v`. -/
+theorem Valuation.Integers.withVal {O R Γ₀ : Type*} [CommRing O] [CommRing R] [Algebra O R]
+    [LinearOrderedCommGroupWithZero Γ₀] {v : Valuation R Γ₀} (hv : v.Integers O) :
+    (Valued.v (R := WithVal v)).Integers O where
+  hom_inj := WithVal.algebraMap_right_injective v hv.hom_inj
+  map_le_one := hv.map_le_one
+  exists_of_le_one := fun {x} hx ↦ by
+    obtain ⟨a, ha⟩ := hv.exists_of_le_one (r := x.ofVal) hx
+    exact ⟨a, WithVal.ofVal_injective v ha⟩
 
 namespace WithVal
 
