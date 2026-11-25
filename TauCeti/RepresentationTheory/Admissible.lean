@@ -110,15 +110,9 @@ theorem finiteDimensional (hρ : ρ.HasFiniteMultiplicities) {W : Type w} [AddCo
     infer_instance
   obtain ⟨f, hf⟩ := h
   have hinj : Function.Injective f := (IsIrreducible.injective_or_eq_zero f).resolve_right hf
-  let e : Representation.Equiv σ f.range.toRepresentation :=
-    .mk (LinearEquiv.ofInjective f.toLinearMap hinj) fun g ↦ by
-      ext w
-      exact IntertwiningMap.isIntertwining _ _ f g w
+  let e := f.equivOfRange hinj (P := f.range) rfl
   have := hρ f.range (e.isIrreducible hσ)
-  refine Module.Finite.of_injective
-    ((IntertwiningMap.llcomp _ _ _).flip e.symm.toIntertwiningMap) fun φ φ' h ↦ ?_
-  ext w
-  simpa [← IntertwiningMap.comp_def] using congr($h (e w))
+  exact (e.intertwiningMapCongr (Representation.Equiv.refl ρ)).symm.finiteDimensional
 
 /-- A representation on `V` in which `Hom_G(σ, ρ)` is finite-dimensional for every irreducible
 `σ` on a carrier in the universe of `V` has finite multiplicities. -/
