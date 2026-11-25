@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.RingTheory.Unramified.Basic
 public import TauCeti.NumberTheory.NumberField.CMType.Reflex.Basic
+import Mathlib.Algebra.Algebra.Hom.Rat
 import Mathlib.RingTheory.Unramified.Field
 import Mathlib.RingTheory.Unramified.Pi
 import TauCeti.RingTheory.Unramified.TraceRepresentation
@@ -82,8 +83,13 @@ theorem exists_linearEquiv_of_trace_eq_typeTrace [Algebra ℚ E] [Module.Finite 
     (ρ : E →+* Module.End k V) (ρ' : E →+* Module.End k W)
     (h : ∀ a, (LinearMap.trace k V (ρ a) : ℂ) = Φ.typeTrace a)
     (h' : ∀ a, (LinearMap.trace k W (ρ' a) : ℂ) = Φ.typeTrace a) :
-    ∃ e : V ≃ₗ[k] W, ∀ a v, e (ρ a v) = ρ' a (e v) :=
-  exists_linearEquiv_of_trace_eq ρ ρ' fun a ↦ Subtype.ext ((h a).trans (h' a).symm)
+    ∃ e : V ≃ₗ[k] W, ∀ a v, e (ρ a v) = ρ' a (e v) := by
+  let : Module ℚ V := Module.compHom V (algebraMap ℚ k)
+  let : Module ℚ W := Module.compHom W (algebraMap ℚ k)
+  have : IsScalarTower ℚ k V := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  have : IsScalarTower ℚ k W := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  exact exists_linearEquiv_of_trace_eq ρ.toRatAlgHom ρ'.toRatAlgHom fun a ↦
+    Subtype.ext ((h a).trans (h' a).symm)
 
 /-- **Uniqueness of the representation with the type trace, for a product of number fields**,
 such as a CM algebra `E = ∏ Fᵢ`: two representations of `E` over a subfield `k ⊆ ℂ`, both with
