@@ -67,7 +67,7 @@ theorem IsPoint.map {hN : N < h} {A : Matrix ι ι (TruncatedWittVector p h R)}
 
 /-- Reducing the jet preserves and reflects membership whenever the new depth still exceeds
 the determinant order. -/
-theorem isPoint_truncate_iff_of_le {m : ℕ} (hN : N < h) (hh : h ≤ m)
+theorem isPoint_map_truncate_iff {m : ℕ} (hN : N < h) (hh : h ≤ m)
     (A : Matrix ι ι (TruncatedWittVector p m R)) :
     IsPoint hN (A.map (TruncatedWittVector.truncate hh)) ↔ IsPoint (hN.trans_le hh) A := by
   simp only [IsPoint, ← RingHom.mapMatrix_apply, ← RingHom.map_det,
@@ -75,42 +75,45 @@ theorem isPoint_truncate_iff_of_le {m : ℕ} (hN : N < h) (hh : h ≤ m)
   refine and_congr_left' ⟨fun ha i hi ↦ ?_, fun ha i hi ↦ ha _ hi⟩
   exact ha ⟨i.val, hi.trans hN⟩ hi
 
-/-- Right multiplication by a matrix with unit determinant preserves the determinant locus in
-characteristic `p`, including over nonperfect test rings. -/
-theorem IsPoint.mul_right [CharP R p] {hN : N < h}
+/-- Right multiplication by a matrix with unit determinant preserves the determinant locus. -/
+theorem IsPoint.mul_right {hN : N < h}
     {A B : Matrix ι ι (TruncatedWittVector p h R)} (hA : IsPoint hN A) (hB : IsUnit B.det) :
     IsPoint hN (A * B) := by
-  let : NeZero h := ⟨(Nat.zero_lt_of_lt hN).ne'⟩
-  let x := A.det.out
-  let y := B.det.out
-  have htrunc : (A * B).det = WittVector.truncate h (x * y) := by
-    rw [Matrix.det_mul, map_mul]
-    exact congrArg₂ (· * ·) (TruncatedWittVector.truncateFun_out _).symm
-      (TruncatedWittVector.truncateFun_out _).symm
-  have hx : x = WittVector.verschiebung^[N] (x.shift N) :=
-    WittVector.eq_iterate_verschiebung fun i hi ↦
-      (TruncatedWittVector.coeff_out A.det ⟨i, hi.trans hN⟩).trans (hA.1 _ hi)
-  have hprod : x * y =
-      WittVector.verschiebung^[N] (x.shift N * WittVector.frobenius^[N] y) :=
-    (congrArg (· * y) hx).trans (WittVector.iterate_verschiebung_mul_left _ _ _)
-  have hy : IsUnit (y.coeff 0) := by
-    rw [← Fin.val_zero (n := h), TruncatedWittVector.coeff_out,
-      ← TruncatedWittVector.constantCoeff_apply]
-    exact hB.map TruncatedWittVector.constantCoeff
-  have hlead : (x * y).coeff N = x.coeff N * y.coeff 0 ^ p ^ N := by
-    rw [hprod]
-    simpa only [zero_add, WittVector.mul_coeff_zero, WittVector.shift_coeff, add_zero,
-      WittVector.iterate_frobenius_coeff] using
-      WittVector.iterate_verschiebung_coeff (x.shift N * WittVector.frobenius^[N] y) N 0
-  rw [isPoint_iff_det_coeff, htrunc]
-  constructor
-  · intro i hi
-    rw [WittVector.coeff_truncate, hprod]
-    exact WittVector.iterate_verschiebung_coeff_eq_zero _ hi
-  · rw [WittVector.coeff_truncate, hlead]
-    have hxUnit : IsUnit (x.coeff N) :=
-      (TruncatedWittVector.coeff_out A.det ⟨N, hN⟩).symm ▸ hA.2
-    exact hxUnit.mul (hy.pow _)
+  obtain ⟨b, hb⟩ := hB.exists_right_inv
+  rw [isPoint_iff_det_coeff, Matrix.det_mul]
+  have hAu := (mul_coeff hN A.det B.det hA.1).1
+  refine ⟨hAu, isUnit_of_dvd_unit ?_ hA.2⟩
+  -- Multiplying back by the inverse shows the new leading coefficient divides the original.
+  have hdiv := (mul_coeff hN (A.det * B.det) b hAu).2
+  rwa [mul_assoc, hb, mul_one] at hdiv
+where
+  mul_coeff (hN : N < h) (a b : TruncatedWittVector p h R)
+      (ha : ∀ i : Fin h, i.val < N → a.coeff i = 0) :
+      (∀ i : Fin h, i.val < N → (a * b).coeff i = 0) ∧
+        a.coeff ⟨N, hN⟩ ∣ (a * b).coeff ⟨N, hN⟩ := by
+    have htrunc : a * b = WittVector.truncate h (a.out * b.out) := by
+      rw [map_mul]
+      exact congrArg₂ (· * ·) (TruncatedWittVector.truncateFun_out _).symm
+        (TruncatedWittVector.truncateFun_out _).symm
+    have ha' : a.out = WittVector.verschiebung^[N] (a.out.shift N) :=
+      WittVector.eq_iterate_verschiebung fun i hi ↦
+        (TruncatedWittVector.coeff_out a ⟨i, hi.trans hN⟩).trans (ha _ hi)
+    have hprod : a.out * b.out =
+        WittVector.verschiebung^[N] (a.out.shift N * WittVector.frobenius^[N] b.out) :=
+      (congrArg (· * b.out) ha').trans (WittVector.iterate_verschiebung_mul_left _ _ _)
+    constructor
+    · intro i hi
+      rw [htrunc, WittVector.coeff_truncate, hprod]
+      exact WittVector.iterate_verschiebung_coeff_eq_zero _ hi
+    · let c := (WittVector.frobenius^[N] b.out).coeff 0
+      refine ⟨c, ?_⟩
+      calc
+        (a * b).coeff ⟨N, hN⟩ = a.out.coeff N * c := by
+          rw [htrunc, WittVector.coeff_truncate, hprod]
+          simpa only [zero_add, WittVector.mul_coeff_zero, WittVector.shift_coeff, add_zero] using
+            WittVector.iterate_verschiebung_coeff
+              (a.out.shift N * WittVector.frobenius^[N] b.out) N 0
+        _ = a.coeff ⟨N, hN⟩ * c := congrArg (· * c) (TruncatedWittVector.coeff_out a ⟨N, hN⟩)
 
 section CoordinateRing
 
@@ -120,6 +123,12 @@ variable (p h ι)
 def universalMatrix :
     Matrix ι ι (TruncatedWittVector p h (MvPolynomial (ι × ι × Fin h) (ZMod p))) :=
   Matrix.of fun i j ↦ TruncatedWittVector.mk p fun k ↦ X (i, j, k)
+
+omit [Fintype ι] [DecidableEq ι] in
+@[simp]
+theorem coeff_universalMatrix (i j : ι) (k : Fin h) :
+    (universalMatrix p h ι i j).coeff k = X (i, j, k) := by
+  simp [universalMatrix]
 
 /-- The polynomial giving one Witt coordinate of the determinant of a length-`h` matrix. -/
 def detCoeff (k : Fin h) : MvPolynomial (ι × ι × Fin h) (ZMod p) :=
@@ -137,7 +146,7 @@ theorem aeval_detCoeff [Algebra (ZMod p) R] (A : Matrix ι ι (TruncatedWittVect
     aeval fun v ↦ (A v.1 v.2.1).coeff v.2.2
   have hm : (universalMatrix p h ι).map (TruncatedWittVector.map h f.toRingHom) = A := by
     ext i j k
-    simp [universalMatrix, f]
+    simp [f]
   calc
     f (detCoeff p h ι k) =
         ((TruncatedWittVector.map h f.toRingHom) (universalMatrix p h ι).det).coeff k :=
@@ -193,7 +202,7 @@ def matrixOfHom [Algebra (ZMod p) R] (f : CoordinateRing p ι hN →ₐ[ZMod p] 
 theorem coeff_matrixOfHom [Algebra (ZMod p) R] (f : CoordinateRing p ι hN →ₐ[ZMod p] R)
     (i j : ι) (k : Fin h) :
     (matrixOfHom hN f i j).coeff k = f (coordinateMap p ι hN (X (i, j, k))) := by
-  simp [matrixOfHom, universalMatrix]
+  simp [matrixOfHom]
 
 theorem isPoint_matrixOfHom [Algebra (ZMod p) R] (f : CoordinateRing p ι hN →ₐ[ZMod p] R) :
     IsPoint hN (matrixOfHom hN f) := by
@@ -203,20 +212,20 @@ theorem isPoint_matrixOfHom [Algebra (ZMod p) R] (f : CoordinateRing p ι hN →
   exact ⟨fun k hk ↦ by rw [heval, coordinateMap_detCoeff_eq_zero _ _ _ _ hk, map_zero],
     by rw [heval]; exact (isUnit_coordinateMap_detCoeff p ι hN).map f⟩
 
-private def matrixEval [Algebra (ZMod p) R] (A : Matrix ι ι (TruncatedWittVector p h R)) :
-    MvPolynomial (ι × ι × Fin h) (ZMod p) →ₐ[ZMod p] R :=
-  aeval fun v ↦ (A v.1 v.2.1).coeff v.2.2
+private theorem aeval_eq_zero_of_mem_lowerIdeal [Algebra (ZMod p) R]
+    {A : Matrix ι ι (TruncatedWittVector p h R)} (hA : IsPoint hN A)
+    (x : MvPolynomial (ι × ι × Fin h) (ZMod p)) (hx : x ∈ lowerIdeal p ι hN) :
+    aeval (fun v : ι × ι × Fin h ↦ (A v.1 v.2.1).coeff v.2.2) x = 0 := by
+  refine (Ideal.span_le.mpr ?_ : lowerIdeal p ι hN ≤ RingHom.ker _) hx
+  rintro _ ⟨k, rfl⟩
+  exact RingHom.mem_ker.mpr ((aeval_detCoeff A _).trans (hA.1 _ k.is_lt))
 
 /-- Evaluate polynomials at a matrix on the determinant locus, then descend to the quotient by
 the vanishing coordinates. -/
 private def evalQuotient [Algebra (ZMod p) R]
     {A : Matrix ι ι (TruncatedWittVector p h R)} (hA : IsPoint hN A) :
     (MvPolynomial (ι × ι × Fin h) (ZMod p) ⧸ lowerIdeal p ι hN) →ₐ[ZMod p] R :=
-  Ideal.Quotient.liftₐ _ (matrixEval A) (by
-    intro x hx
-    refine (Ideal.span_le.mpr ?_ : lowerIdeal p ι hN ≤ RingHom.ker _) hx
-    rintro _ ⟨k, rfl⟩
-    exact RingHom.mem_ker.mpr ((aeval_detCoeff A _).trans (hA.1 _ k.is_lt)))
+  Ideal.Quotient.liftₐ _ _ (aeval_eq_zero_of_mem_lowerIdeal hN hA)
 
 /-- Evaluation at a matrix on the locus extends uniquely to its coordinate algebra. -/
 def homOfMatrix [Algebra (ZMod p) R]
@@ -226,9 +235,9 @@ def homOfMatrix [Algebra (ZMod p) R]
     (Ideal.Quotient.mk (lowerIdeal p ι hN) (detCoeff p h ι ⟨N, hN⟩))
     (f := evalQuotient hN hA)
     (by
-      erw [evalQuotient, Ideal.Quotient.liftₐ_apply, Ideal.Quotient.lift_mk,
-        AlgHom.coe_toRingHom, matrixEval, aeval_detCoeff]
-      exact hA.2)
+      have heval := Ideal.Quotient.liftₐ_comp _ _ (aeval_eq_zero_of_mem_lowerIdeal hN hA)
+      have hk := (AlgHom.congr_fun heval (detCoeff p h ι ⟨N, hN⟩)).trans (aeval_detCoeff A _)
+      exact hk.symm ▸ hA.2)
 
 @[simp]
 theorem homOfMatrix_coordinateMap [Algebra (ZMod p) R]
@@ -237,10 +246,12 @@ theorem homOfMatrix_coordinateMap [Algebra (ZMod p) R]
     homOfMatrix hN hA (coordinateMap p ι hN x) =
       aeval (fun v : ι × ι × Fin h ↦ (A v.1 v.2.1).coeff v.2.2) x := by
   simp only [homOfMatrix, coordinateMap, AlgHom.comp_apply, Algebra.algHom,
-    IsScalarTower.coe_toAlgHom', Ideal.Quotient.mkₐ_eq_mk,
-    IsLocalization.Away.liftAlgHom_apply, IsLocalization.Away.lift_eq]
-  erw [evalQuotient, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom,
-    Ideal.Quotient.liftₐ_apply, Ideal.Quotient.lift_mk, AlgHom.coe_toRingHom, matrixEval]
+    IsScalarTower.coe_toAlgHom']
+  calc
+    _ = evalQuotient hN hA (Ideal.Quotient.mkₐ (ZMod p) (lowerIdeal p ι hN) x) :=
+      (IsLocalization.Away.liftAlgHom_apply _ _ _).trans (IsLocalization.Away.lift_eq _ _ _)
+    _ = _ := AlgHom.congr_fun
+      (Ideal.Quotient.liftₐ_comp _ _ (aeval_eq_zero_of_mem_lowerIdeal hN hA)) x
 
 @[simp]
 theorem matrixOfHom_homOfMatrix [Algebra (ZMod p) R]
@@ -271,6 +282,12 @@ def homEquiv [Algebra (ZMod p) R] :
 @[simp]
 theorem homEquiv_apply_val [Algebra (ZMod p) R] (f : CoordinateRing p ι hN →ₐ[ZMod p] R) :
     (homEquiv hN f).val = matrixOfHom hN f :=
+  (rfl)
+
+@[simp]
+theorem homEquiv_symm_apply [Algebra (ZMod p) R]
+    (A : {A : Matrix ι ι (TruncatedWittVector p h R) // IsPoint hN A}) :
+    (homEquiv hN).symm A = homOfMatrix hN A.property :=
   (rfl)
 
 /-- The corepresenting equivalence sends postcomposition to coefficient change of matrices. -/
@@ -305,6 +322,11 @@ def toPerfect : CoordinateRing p ι hN →ₐ[ZMod p] PerfectCoordinateRing p ι
   toRingHom := ColimitPerfection.of _ p (natCast_eq_zero p ι hN)
   commutes' _ := rfl
 
+@[simp]
+theorem toPerfect_apply (x : CoordinateRing p ι hN) :
+    toPerfect p ι hN x = ColimitPerfection.of _ p (natCast_eq_zero p ι hN) x :=
+  (rfl)
+
 variable {p ι}
 
 /-- The affine perfection of the finite model represents determinant jets on perfect test
@@ -332,6 +354,14 @@ theorem perfectHomEquiv_apply [Algebra (ZMod p) R] [PerfectRing R p]
     perfectHomEquiv hN f = homEquiv hN (f.comp (toPerfect p ι hN)) :=
   (rfl)
 
+@[simp]
+theorem perfectHomEquiv_symm_comp_toPerfect [Algebra (ZMod p) R] [PerfectRing R p]
+    (A : {A : Matrix ι ι (TruncatedWittVector p h R) // IsPoint hN A}) :
+    ((perfectHomEquiv hN).symm A).comp (toPerfect p ι hN) = homOfMatrix hN A.property := by
+  apply (homEquiv hN).injective
+  rw [← perfectHomEquiv_apply, Equiv.apply_symm_apply, ← homEquiv_symm_apply,
+    Equiv.apply_symm_apply]
+
 /-- The perfect model's point equivalence commutes with coefficient change. -/
 theorem perfectHomEquiv_natural [Algebra (ZMod p) R] [PerfectRing R p]
     [Algebra (ZMod p) S] [PerfectRing S p] (g : R →ₐ[ZMod p] S)
@@ -343,81 +373,104 @@ theorem perfectHomEquiv_natural [Algebra (ZMod p) R] [PerfectRing R p]
 
 end Perfection
 
+section CharP
+
+variable [CharP R p]
+
+private theorem isPoint_iff_of_det_eq_truncate_mul_pow (hN : N < h)
+    {A : Matrix ι ι (TruncatedWittVector p h R)} {v : WittVector p R}
+    (hdet : A.det = WittVector.truncate h (v * (p : WittVector p R) ^ N)) :
+    IsPoint hN A ↔ IsUnit (v.coeff 0) := by
+  have hlead : (v * (p : WittVector p R) ^ N).coeff N = v.coeff 0 ^ p ^ N := by
+    simpa only [zero_add] using WittVector.mul_pow_charP_coeff_succ v (m := 0) (n := N)
+  rw [isPoint_iff_det_coeff, hdet]
+  simp only [WittVector.coeff_truncate, hlead,
+    isUnit_pow_iff (pow_ne_zero _ (Fact.out : p.Prime).ne_zero)]
+  exact ⟨And.right, fun hv ↦ ⟨fun _ hi ↦ WittVector.mul_pow_charP_coeff_zero v hi, hv⟩⟩
+
+/-- A full Witt matrix with determinant a unit times `p ^ N` gives a point at every depth
+greater than `N`. -/
+theorem IsPoint.map_truncate_of_det_eq_unit_mul_pow {hN : N < h}
+    {A : Matrix ι ι (WittVector p R)} {u : (WittVector p R)ˣ}
+    (hdet : A.det = ↑u * (p : WittVector p R) ^ N) :
+    IsPoint hN (A.map (WittVector.truncate h)) := by
+  apply (isPoint_iff_of_det_eq_truncate_mul_pow hN (v := ↑u) ?_).mpr
+  · exact WittVector.isUnit_iff_isUnit_coeff_zero.mp u.isUnit
+  · rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, hdet]
+
+/-- A truncated Witt matrix with determinant a unit times `p ^ N` lies on the determinant
+locus. -/
+theorem IsPoint.of_det_eq_unit_mul_pow {hN : N < h}
+    {A : Matrix ι ι (TruncatedWittVector p h R)} {u : (TruncatedWittVector p h R)ˣ}
+    (hdet : A.det = ↑u * (p : TruncatedWittVector p h R) ^ N) :
+    IsPoint hN A := by
+  let : NeZero h := ⟨(Nat.zero_lt_of_lt hN).ne'⟩
+  let v := (u : TruncatedWittVector p h R).out
+  have hv : WittVector.truncate h v = ↑u := TruncatedWittVector.truncateFun_out _
+  have hdet' : A.det = WittVector.truncate h (v * (p : WittVector p R) ^ N) := by
+    simpa only [map_mul, map_pow, hv, map_natCast] using hdet
+  apply (isPoint_iff_of_det_eq_truncate_mul_pow hN hdet').mpr
+  rw [← TruncatedWittVector.constantCoeff_wittVector_truncate (n := h), hv]
+  exact u.isUnit.map TruncatedWittVector.constantCoeff
+
+end CharP
+
 section Perfect
 
 variable [CharP R p] [PerfectRing R p]
 
 /-- A length-`h` jet of a full Witt matrix is on the determinant locus precisely when the
 determinant of the full matrix is `p ^ N` times a unit. -/
-theorem isPoint_truncate_iff (hN : N < h) (A : Matrix ι ι (WittVector p R)) :
+theorem isPoint_map_truncate_iff_exists_unit_mul_pow (hN : N < h)
+    (A : Matrix ι ι (WittVector p R)) :
     IsPoint hN (A.map (WittVector.truncate h)) ↔
       ∃ u : (WittVector p R)ˣ, A.det = ↑u * (p : WittVector p R) ^ N := by
-  simp only [IsPoint, ← RingHom.mapMatrix_apply, ← RingHom.map_det, WittVector.coeff_truncate]
-  have coeff_mul_pow (u : WittVector p R) : (u * (p : WittVector p R) ^ N).coeff N =
-      u.coeff 0 ^ p ^ N := by
-    simpa using (WittVector.mul_pow_charP_coeff_succ u (m := 0) (n := N))
   constructor
-  · rintro ⟨hlo, hunit⟩
+  · intro hA
+    have hlo := ((isPoint_iff_det_coeff _ _).mp hA).1
+    simp only [← RingHom.mapMatrix_apply, ← RingHom.map_det, WittVector.coeff_truncate] at hlo
     have hdvd : (p : WittVector p R) ^ N ∣ A.det := by
       rw [← Ideal.mem_span_singleton, WittVector.mem_span_p_pow_iff_le_coeff_eq_zero]
       exact fun j hj ↦ hlo ⟨j, hj.trans hN⟩ hj
-    obtain ⟨u, hu⟩ := hdvd
-    have hu₀ : IsUnit (u.coeff 0) := by
-      rw [hu, mul_comm ((p : WittVector p R) ^ N) u, coeff_mul_pow] at hunit
-      exact (isUnit_pow_iff (pow_ne_zero _ (Fact.out : p.Prime).ne_zero)).mp hunit
-    exact ⟨(WittVector.isUnit_iff_isUnit_coeff_zero.mpr hu₀).unit,
-      by simpa [mul_comm] using hu⟩
+    obtain ⟨v, hv⟩ := hdvd
+    have hdet : (A.map (WittVector.truncate h)).det =
+        WittVector.truncate h (v * (p : WittVector p R) ^ N) := by
+      rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, hv, mul_comm]
+    have hv₀ := (isPoint_iff_of_det_eq_truncate_mul_pow hN hdet).mp hA
+    exact ⟨(WittVector.isUnit_iff_isUnit_coeff_zero.mpr hv₀).unit,
+      by simpa [mul_comm] using hv⟩
   · rintro ⟨u, hu⟩
-    refine ⟨fun i hi ↦ by rw [hu, WittVector.mul_pow_charP_coeff_zero _ hi], ?_⟩
-    rw [hu, coeff_mul_pow]
-    exact ((WittVector.isUnit_iff_isUnit_coeff_zero.mp u.isUnit).pow _)
+    exact IsPoint.map_truncate_of_det_eq_unit_mul_pow (u := u) hu
+
+omit [Fintype ι] [DecidableEq ι] [CharP R p] [PerfectRing R p] in
+private theorem map_out_map_truncate (A : Matrix ι ι (TruncatedWittVector p h R)) :
+    (A.map TruncatedWittVector.out).map (WittVector.truncate h) = A :=
+  Matrix.ext fun _ _ ↦ TruncatedWittVector.truncateFun_out _
 
 /-- Zero-padding each matrix entry gives a full lift of a determinant jet with determinant
 `p ^ N` times a unit. -/
-theorem exists_unit_det_out {hN : N < h} {A : Matrix ι ι (TruncatedWittVector p h R)}
-    (hA : IsPoint hN A) :
+theorem exists_det_map_out_eq_unit_mul_pow {hN : N < h}
+    {A : Matrix ι ι (TruncatedWittVector p h R)} (hA : IsPoint hN A) :
     ∃ u : (WittVector p R)ˣ,
       (A.map TruncatedWittVector.out).det = ↑u * (p : WittVector p R) ^ N := by
-  apply (isPoint_truncate_iff hN _).mp
-  have heq : (A.map TruncatedWittVector.out).map (WittVector.truncate h) = A := by
-    ext i j k
-    simp
-  rwa [heq]
+  apply (isPoint_map_truncate_iff_exists_unit_mul_pow hN _).mp
+  rwa [map_out_map_truncate]
 
 /-- On a perfect base the determinant equations are equivalent to a unit times `p ^ N`
 in the truncated Witt ring itself. -/
-theorem isPoint_iff (hN : N < h) (A : Matrix ι ι (TruncatedWittVector p h R)) :
+theorem isPoint_iff_exists_unit_mul_pow (hN : N < h) (A : Matrix ι ι (TruncatedWittVector p h R)) :
     IsPoint hN A ↔
       ∃ u : (TruncatedWittVector p h R)ˣ, A.det = ↑u * (p : TruncatedWittVector p h R) ^ N := by
-  let trunc : WittVector p R →+* TruncatedWittVector p h R := WittVector.truncate h
   constructor
   · intro hA
-    obtain ⟨u, hu⟩ := exists_unit_det_out hA
-    have hm : trunc.mapMatrix (A.map TruncatedWittVector.out) = A := by
-      ext i j k
-      simp [trunc, RingHom.mapMatrix_apply]
+    obtain ⟨u, hu⟩ := exists_det_map_out_eq_unit_mul_pow hA
+    let trunc : WittVector p R →+* TruncatedWittVector p h R := WittVector.truncate h
     refine ⟨Units.map trunc u, ?_⟩
-    simpa only [RingHom.map_det, hm, map_mul, map_pow, map_natCast, Units.coe_map,
-      MonoidHom.coe_ofClass] using congrArg trunc hu
+    simpa only [RingHom.map_det, RingHom.mapMatrix_apply, trunc, map_out_map_truncate,
+      map_mul, map_pow, map_natCast, Units.coe_map, MonoidHom.coe_ofClass] using
+      congrArg trunc hu
   · rintro ⟨u, hu⟩
-    have hzero : 0 < h := Nat.zero_lt_of_lt hN
-    let : NeZero h := ⟨hzero.ne'⟩
-    let v := (u : TruncatedWittVector p h R).out
-    have hv : IsUnit (v.coeff 0) := by
-      rw [← Fin.val_zero (n := h), TruncatedWittVector.coeff_out,
-        ← TruncatedWittVector.constantCoeff_apply]
-      exact u.isUnit.map TruncatedWittVector.constantCoeff
-    have hvtrunc : trunc v = u := TruncatedWittVector.truncateFun_out _
-    have hdet : A.det = trunc (v * (p : WittVector p R) ^ N) := by
-      rwa [map_mul, map_pow, hvtrunc, map_natCast]
-    constructor
-    · intro i hi
-      rw [hdet]
-      exact WittVector.mul_pow_charP_coeff_zero v hi
-    · have hc : (v * (p : WittVector p R) ^ N).coeff N = v.coeff 0 ^ p ^ N := by
-        simpa only [zero_add] using (WittVector.mul_pow_charP_coeff_succ v (m := 0) (n := N))
-      rw [hdet]
-      simpa only [trunc, WittVector.coeff_truncate, hc] using hv.pow (p ^ N)
+    exact IsPoint.of_det_eq_unit_mul_pow (u := u) hu
 
 end Perfect
 
