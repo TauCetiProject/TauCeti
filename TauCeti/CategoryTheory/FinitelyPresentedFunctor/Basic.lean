@@ -173,15 +173,6 @@ theorem IsFinitelyGeneratedFunctor.additive (hF : IsFinitelyGeneratedFunctor F) 
 theorem IsFinitelyPresentedFunctor.additive (hF : IsFinitelyPresentedFunctor F) : F.Additive :=
   hF.isFinitelyGeneratedFunctor.additive
 
-/-- A morphism from a finite sum of representable functors to `G` lifts along an epimorphism onto
-`G` from an additive functor. -/
-private theorem exists_sigma_lift {J : Type} {Y : J → C} {B : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
-    [HasCoproduct fun j ↦ preadditiveYoneda.obj (Y j)] [B.Additive] (q : B ⟶ G) [Epi q]
-    (α : (∐ fun j ↦ preadditiveYoneda.obj (Y j)) ⟶ G) : ∃ ℓ, ℓ ≫ q = α := by
-  choose s hs using fun j : J ↦ exists_comp_eq_preadditiveYoneda_obj_of_epi q
-    (Sigma.ι (fun j ↦ preadditiveYoneda.obj (Y j)) j ≫ α)
-  exact ⟨Sigma.desc s, Sigma.hom_ext _ _ fun j ↦ by simp [hs]⟩
-
 /-! ### Finite sums of representable functors -/
 
 /-- A functor is isomorphic to a finite sum of representable functors. -/
@@ -334,7 +325,7 @@ theorem IsFinitelyPresentedFunctor.of_isColimit_cokernelCofork {φ : F ⟶ G}
     (hG : IsFinitelyPresentedFunctor G) : IsFinitelyPresentedFunctor c.pt := by
   obtain ⟨k, Z, p, hp⟩ := hF
   obtain ⟨m, n, X, Y, g, q, hgq, hq, hS⟩ := hG
-  obtain ⟨ℓ, hℓ⟩ := exists_sigma_lift q (p ≫ φ)
+  obtain ⟨ℓ, hℓ⟩ := exists_comp_eq_sigma_preadditiveYoneda_obj_of_epi q (p ≫ φ)
   have : Epi c.π := Cofork.IsColimit.epi hc
   have hgc : biprod.desc g ℓ ≫ q ≫ c.π = 0 := by
     apply biprod.hom_ext'

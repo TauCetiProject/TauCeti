@@ -67,10 +67,8 @@ private theorem projective_of_obj_eq_sigma
     have := E.property.additive
     obtain ⟨P, hP'⟩ := P
     subst hP
-    choose s hs using fun i ↦ exists_comp_eq_preadditiveYoneda_obj_of_epi e.hom
-      (Sigma.ι (fun i ↦ preadditiveYoneda.obj (Y i)) i ≫ f.hom)
-    exact ⟨ObjectProperty.homMk (Sigma.desc s),
-      ObjectProperty.hom_ext _ (Sigma.hom_ext _ _ fun i ↦ by simp [hs])⟩
+    obtain ⟨s, hs⟩ := exists_comp_eq_sigma_preadditiveYoneda_obj_of_epi e.hom f.hom
+    exact ⟨ObjectProperty.homMk s, ObjectProperty.hom_ext _ hs⟩
 
 /-- Representable functors are projective objects of `mod C`. -/
 instance projective_modYoneda_obj (Y : C) : Projective (modYoneda.obj Y) where
