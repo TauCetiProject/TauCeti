@@ -39,6 +39,8 @@ strictly increasing factors. `Nat.injOn_add_divisorsAntidiagonal_filter_lt` and
 `Int.isSquare_sq_sub_four_mul_iff_exists_mem_divisorsAntidiagonal` identify those factor pairs
 by their sum and by a positive square discriminant.
 
+`Int.card_divisors` counts the integer divisors of `z` as twice the natural divisors of `|z|`.
+
 `Nat.prod_Ioc_prod_divisors` (and its additive form `Nat.sum_Ioc_sum_divisors`) regroups a
 product over the divisors of `1, …, N` by divisor: `d` occurs `N / d` times.
 
@@ -236,6 +238,12 @@ theorem isSquare_sq_sub_four_mul_iff_exists_mem_divisorsAntidiagonal
     have hm : (p.1 : ℤ) * p.2 = n := by exact_mod_cast (Nat.mem_divisorsAntidiagonal.mp hp).1
     refine ⟨(p.2 : ℤ) - p.1, ?_⟩
     nlinarith [sq_abs t]
+
+open Finset in
+/-- An integer has twice as many integer divisors as its absolute value has natural divisors,
+one of each sign. -/
+theorem card_divisors (z : ℤ) : #z.divisors = 2 * #z.natAbs.divisors := by
+  rw [Int.divisors, card_disjUnion, card_map, card_map, two_mul]
 
 end Int
 

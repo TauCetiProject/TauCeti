@@ -11,6 +11,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 public import TauCeti.NumberTheory.ArithmeticFunction.Zeta
 public import Mathlib.NumberTheory.Harmonic.Bounds
 import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Basic
+import TauCeti.NumberTheory.Divisors
 
 /-!
 # Bounds for divisor sums
@@ -338,17 +339,6 @@ theorem sum_Ioc_sigma_zero_le_mul_one_add_log {Z : ℝ} (hZ : 1 ≤ Z) :
     sum_Ioc_zeta_pow_le_mul_one_add_log_pow 2 hZ
 
 end ArithmeticFunction
-
-namespace Int
-
-open Finset
-
-/-- An integer has twice as many integer divisors as its absolute value has natural divisors,
-one of each sign. -/
-theorem card_divisors (z : ℤ) : #z.divisors = 2 * #z.natAbs.divisors := by
-  rw [Int.divisors, card_disjUnion, card_map, card_map, two_mul]
-
-end Int
 
 namespace TauCeti
 
