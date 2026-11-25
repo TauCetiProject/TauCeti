@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Grassmannian.RankOne
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveLine
 
 /-!
 # Checks for the rank-one Grassmannian of `R²`
@@ -20,7 +21,7 @@ is the inverse of `u_{e₀}(e₁)`: the charts are glued along `t ↦ t⁻¹`, n
 
 public section
 
-open CategoryTheory AlgebraicGeometry TauCeti.SymmetricAlgebra
+open CategoryTheory AlgebraicGeometry TauCeti.AlgebraicGeometry TauCeti.SymmetricAlgebra
 
 namespace TauCeti.Grassmannian.RankOne
 
@@ -35,15 +36,10 @@ abbrev e (i : Fin 2) : Fin 2 → R := Pi.single i 1
 theorem chart_e₀_sup_chart_e₁ :
     (chartι R (fun _ : Fin 1 ↦ e R 0)).opensRange ⊔
       (chartι R (fun _ : Fin 1 ↦ e R 1)).opensRange = ⊤ := by
-  have h := iSup_basicOpen_ι_eq_top R (Fin 2 → R) (e R) (by
-    rw [show e R = ⇑(Pi.basisFun R (Fin 2)) from
-      funext fun i ↦ (Pi.basisFun_apply R (Fin 2) i).symm]
-    exact (Pi.basisFun R (Fin 2)).span_eq)
-  rw [← toProj_preimage_basicOpen, ← toProj_preimage_basicOpen, ← Scheme.Hom.preimage_sup,
-    ← Scheme.Hom.preimage_top (toProj R), ← h]
-  congr 1
-  exact le_antisymm (sup_le (le_iSup_of_le 0 le_rfl) (le_iSup_of_le 1 le_rfl))
-    (iSup_le fun i ↦ by fin_cases i <;> simp)
+  have h (i : Fin 2) : SymmetricAlgebra.ι R (Fin 2 → R) (e R i) = projectiveLine.coord R i := by
+    fin_cases i <;> simp [projectiveLine.ι_eq_smul_coord_add_smul_coord R 0]
+  rw [← toProj_preimage_basicOpen, ← toProj_preimage_basicOpen, ← Scheme.Hom.preimage_sup, h, h,
+    projectiveLine.basicOpen_coord_sup_eq_top, Scheme.Hom.preimage_top]
 
 /-- **The overlap is the complement of the origin.** Inside the chart of `G(1, R²)` at `e₀`, the
 chart at `e₁` is the basic open set of the coordinate `u_{e₀}(e₁)`. -/
