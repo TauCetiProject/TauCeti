@@ -169,8 +169,8 @@ variable (N : GKSubmodule M)
 def submodule : GKModule Ad N.toLieSubmodule where
   ρ := N.toSubrepresentation.toRepresentation
   map_lie g x v := Subtype.ext (M.map_lie g x v)
-  isGFinite v := IsGFinite.of_injective (ρ := N.toSubrepresentation.toRepresentation)
-    ⟨N.toLieSubmodule.toSubmodule.subtype, fun _ ↦ rfl⟩ Subtype.val_injective (M.isGFinite v)
+  isGFinite v := IsGFinite.of_injective N.toSubrepresentation.subtype
+    N.toSubrepresentation.subtype_injective (by simpa using M.isGFinite v)
 
 @[simp]
 theorem submodule_ρ_apply_coe (g : K) (v : N.toLieSubmodule) :
@@ -241,10 +241,21 @@ but in general not under `𝔤`. -/
 def isotypic : Submodule k V :=
   ⨆ f : IntertwiningMap σ M.ρ, LinearMap.range f.toLinearMap
 
+/-- The isotypic component is the supremum of the ranges of the `K`-equivariant maps from `σ`. -/
+theorem isotypic_def :
+    M.isotypic σ = ⨆ f : IntertwiningMap σ M.ρ, LinearMap.range f.toLinearMap :=
+  (rfl)
+
+/-- The isotypic component is the least submodule containing the ranges of all `K`-equivariant
+maps from `σ`. -/
+theorem isotypic_le_iff {P : Submodule k V} :
+    M.isotypic σ ≤ P ↔ ∀ f : IntertwiningMap σ M.ρ, LinearMap.range f.toLinearMap ≤ P := by
+  rw [isotypic_def, iSup_le_iff]
+
 variable {σ} in
 theorem range_le_isotypic (f : IntertwiningMap σ M.ρ) :
     LinearMap.range f.toLinearMap ≤ M.isotypic σ :=
-  le_iSup (fun f : IntertwiningMap σ M.ρ ↦ LinearMap.range f.toLinearMap) f
+  (M.isotypic_le_iff σ).1 le_rfl f
 
 variable {σ} in
 theorem apply_mem_isotypic (f : IntertwiningMap σ M.ρ) (w : W) : f w ∈ M.isotypic σ :=
@@ -392,6 +403,23 @@ compatible with the Lie group structure of `K`, `TauCeti.GKModule.IsCompatible`.
 def IsHarishChandraModule : Prop :=
   M.IsAdmissible ∧ ∃ s : Finset V, LieSubmodule.lieSpan k 𝔤 (s : Set V) = ⊤
 
+/-- A Harish-Chandra module is an admissible `(𝔤, K)`-module generated over `𝔤` by a finite set. -/
+theorem isHarishChandraModule_iff :
+    M.IsHarishChandraModule ↔
+      M.IsAdmissible ∧ ∃ s : Finset V, LieSubmodule.lieSpan k 𝔤 (s : Set V) = ⊤ :=
+  Iff.rfl
+
+variable {M} in
+/-- A Harish-Chandra module is admissible. -/
+theorem IsHarishChandraModule.isAdmissible (hM : M.IsHarishChandraModule) : M.IsAdmissible :=
+  hM.1
+
+variable {M} in
+/-- A Harish-Chandra module is generated over `𝔤` by a finite set. -/
+theorem IsHarishChandraModule.exists_lieSpan_eq_top (hM : M.IsHarishChandraModule) :
+    ∃ s : Finset V, LieSubmodule.lieSpan k 𝔤 (s : Set V) = ⊤ :=
+  hM.2
+
 namespace IsAdmissible
 
 variable {M}
@@ -413,15 +441,10 @@ theorem finiteDimensional (hM : M.IsAdmissible) {W : Type w} [AddCommGroup W] [M
       ext w
       exact IntertwiningMap.isIntertwining _ _ f g w
   have := hM f.range (e.isIrreducible hσ)
-  let c : IntertwiningMap σ M.ρ →ₗ[k] IntertwiningMap f.range.toRepresentation M.ρ :=
-    { toFun φ := φ.comp e.symm.toIntertwiningMap
-      map_add' _ _ := rfl
-      map_smul' _ _ := rfl }
-  refine Module.Finite.of_injective c fun φ φ' h ↦ ?_
+  refine Module.Finite.of_injective
+    ((IntertwiningMap.llcomp _ _ _).flip e.symm.toIntertwiningMap) fun φ φ' h ↦ ?_
   ext w
-  have h' : φ.comp e.symm.toIntertwiningMap (e w) = φ'.comp e.symm.toIntertwiningMap (e w) :=
-    congr($h (e w))
-  simpa using h'
+  simpa [← IntertwiningMap.comp_def] using congr($h (e w))
 
 /-- A `(𝔤, K)`-module in which `Hom_K(σ, V)` is finite-dimensional for every irreducible `σ` on a
 carrier in the universe of `V` is admissible. -/
@@ -443,16 +466,12 @@ theorem of_finiteDimensional_isotypic
 theorem submodule (hM : M.IsAdmissible) (N : GKSubmodule M) : (M.submodule N).IsAdmissible := by
   intro U hU
   have := hM.finiteDimensional U.toRepresentation
-  let ι : IntertwiningMap (M.submodule N).ρ M.ρ :=
-    ⟨N.toLieSubmodule.toSubmodule.subtype, fun _ ↦ rfl⟩
-  let c : IntertwiningMap U.toRepresentation (M.submodule N).ρ →ₗ[k]
-      IntertwiningMap U.toRepresentation M.ρ :=
-    { toFun f := ι.comp f
-      map_add' _ _ := rfl
-      map_smul' _ _ := rfl }
-  refine Module.Finite.of_injective c fun f f' h ↦ ?_
+  refine Module.Finite.of_injective
+    (IntertwiningMap.llcomp U.toRepresentation _ _ N.toSubrepresentation.subtype) fun f f' h ↦ ?_
   ext w
-  exact congr($h w)
+  have h' : N.toSubrepresentation.subtype (f w) = N.toSubrepresentation.subtype (f' w) :=
+    congr($h w)
+  simpa using h'
 
 /-- A finite direct sum of admissible `(𝔤, K)`-modules is admissible. -/
 theorem directSum {ι : Type*} [Finite ι] {V : ι → Type*} [∀ i, AddCommGroup (V i)]
