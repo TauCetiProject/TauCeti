@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Projectivization.Basic
 
 import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 import Mathlib.LinearAlgebra.Projectivization.Independence
+import TauCeti.LinearAlgebra.Pi
 
 /-!
 # The line through two points, marked at its point on a hyperplane
@@ -104,21 +105,6 @@ point.
 -/
 
 public section
-
-namespace LinearMap
-
-variable {K V : Type*} [Semiring K] [AddCommGroup V] [Module K V]
-
-/-- For a linear map `A : K² → V`, the value at `[0 : 1]` is the difference of the values at
-`[1 : 1]` and `[1 : 0]`. In the homogeneous coordinates `A` of a marked line, the marked point
-`0 = [0 : 1]` is the difference of the marked points `1 = [1 : 1]` and `∞ = [1 : 0]`. -/
-theorem map_single_one_one_eq_sub (A : (Fin 2 → K) →ₗ[K] V) :
-    A (Pi.single 1 1) = A 1 - A (Pi.single 0 1) := by
-  rw [eq_sub_iff_add_eq, ← map_add, add_comm]
-  congr 1
-  simpa [Fin.sum_univ_two] using Finset.univ_sum_single (1 : Fin 2 → K)
-
-end LinearMap
 
 namespace TauCeti
 
