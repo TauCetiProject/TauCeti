@@ -38,10 +38,10 @@ conclusions restrict to `Ω⁺`, where the reflections are `ξ` and `J`.
 
 * `TauCeti.IsWeakLinearCauchyRiemannOn.twistedSchwarzReflection`: the reflected solution is a weak
   solution of the reflected equation on all of `Ω`.
-* `TauCeti.exists_similarity_of_isWeakLinearCauchyRiemannOn_inter_im_nonneg`: near every point
-  of `Ω`, boundary points included, `ξ = Φ σ` on the upper part of a disc, with `Φ` a continuous
-  `W^{1,p}` family of invertible real-linear maps satisfying `J Φ = Φ i` there and `σ` holomorphic
-  on the whole disc.
+* `TauCeti.exists_similarity_of_isWeakLinearCauchyRiemannOn_inter_setOf_im_nonneg`: near every
+  point of `Ω`, boundary points included, `ξ = Φ σ` on the upper part of a disc, with `Φ` a
+  continuous `W^{1,p}` family of invertible real-linear maps satisfying `J Φ = Φ i` there and `σ`
+  holomorphic on the whole disc.
 
 ## References
 
@@ -106,8 +106,8 @@ to the axis. Let `ξ` solve `∂ₛξ + J ∂ₜξ + C ξ = 0` weakly on `Ω ∩
 condition `R ξ = ξ` on `Ω ∩ ℝ`. Then every point `z₀ ∈ Ω`, in particular every real one, is the
 centre of a disc in `Ω` carrying a continuous `W^{1,p}_loc` family `Φ` of invertible real-linear
 maps and a holomorphic `σ` such that `J Φ = Φ i` and `ξ = Φ σ` on the upper part of the disc. -/
-theorem exists_similarity_of_isWeakLinearCauchyRiemannOn_inter_im_nonneg {p : ℝ≥0∞} (hp : 2 < p)
-    (hp_top : p ≠ ∞) (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
+theorem exists_similarity_of_isWeakLinearCauchyRiemannOn_inter_setOf_im_nonneg {p : ℝ≥0∞}
+    (hp : 2 < p) (hp_top : p ≠ ∞) (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
     (hJ : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 J)
     (hJc : ContinuousOn J ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))
     (hJ2 : ∀ z ∈ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im}, J z ∘L J z = -ContinuousLinearMap.id ℝ V)
@@ -124,22 +124,17 @@ theorem exists_similarity_of_isWeakLinearCauchyRiemannOn_inter_im_nonneg {p : �
       EqOn ξ (fun z ↦ Φ z (σ z)) (ball z₀ r ∩ {z | 0 ≤ z.im}) := by
   have hp1 : 1 ≤ p := one_le_two.trans hp.le
   -- the reflection of `J` by `M ↦ -R M R⁻¹`, as in `TauCeti.crReflectionCoeff`
-  set L := -(R.conjContinuousAlgEquiv.toContinuousLinearEquiv : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V)
-  have hJL (x : ℝ) (hx : (x : ℂ) ∈ Ω) : L (J x) = J x := by
-    ext v
-    simp [L, hJR x hx]
+  set L := crReflectionCoeffMap R
+  have hJL (x : ℝ) (hx : (x : ℂ) ∈ Ω) : L (J x) = J x :=
+    crReflectionCoeffMap_apply_eq_self (hJR x hx)
   have hJ2' (z : ℂ) (hz : z ∈ Ω) :
       twistedSchwarzReflection L J z ∘L twistedSchwarzReflection L J z =
         -ContinuousLinearMap.id ℝ V := by
     rcases le_or_gt 0 z.im with h0 | h0
     · rw [twistedSchwarzReflection_of_im_nonneg h0]
       exact hJ2 z ⟨hz, h0⟩
-    · have h := crReflectionCoeff_mul_self_of_im_neg (R := R) h0
-        (by simpa [ContinuousLinearMap.mul_def, ContinuousLinearMap.one_def] using
-          hJ2 (conj z) ⟨hΩ hz, by simpa using h0.le⟩)
-      rw [crReflectionCoeff_def, twistedReflection_of_im_neg h0,
-        ← twistedSchwarzReflection_of_im_neg (ξ := J) h0] at h
-      simpa [ContinuousLinearMap.mul_def, ContinuousLinearMap.one_def] using h
+    · exact twistedSchwarzReflection_crReflectionCoeffMap_comp_self_of_im_neg h0
+        (hJ2 (conj z) ⟨hΩ hz, by simpa using h0.le⟩)
   obtain ⟨r, hr, hrΩ, Φ, σ, hΦc, hΦW, hΦu, hJΦ, hσ, hξσ⟩ :=
     exists_similarity_of_isWeakLinearCauchyRiemannOn hp hp_top
       (hJ.twistedSchwarzReflection hΩ hp1 L hJc hJL)
