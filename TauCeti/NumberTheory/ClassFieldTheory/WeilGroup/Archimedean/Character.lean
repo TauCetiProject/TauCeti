@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Complex.ArchimedeanCharacter
-public import TauCeti.NumberTheory.ClassFieldTheory.WeilGroup.Archimedean
+public import TauCeti.NumberTheory.ClassFieldTheory.WeilGroup.Archimedean.Basic
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Descent
 
 /-!
 # Characters of the real Weil group
@@ -24,8 +25,6 @@ classification of its irreducible finite-dimensional continuous representations.
 
 ## Main definitions
 
-* `TauCeti.ClassFieldTheory.WeilGroupReal.normHom`: the norm `W_ℝ → ℝˣ` as a continuous
-  homomorphism.
 * `TauCeti.ClassFieldTheory.WeilGroupReal.character s ε`: the character
   `w ↦ |norm w| ^ s * sgn(norm w) ^ ε` of `W_ℝ`.
 * `TauCeti.ClassFieldTheory.WeilGroupReal.characterEquiv`: the continuous characters of `W_ℝ` are
@@ -33,8 +32,8 @@ classification of its irreducible finite-dimensional continuous representations.
 
 ## Main results
 
-* `TauCeti.ClassFieldTheory.WeilGroupReal.exists_eq_comp_normHom`: every continuous character of
-  `W_ℝ` factors through the norm.
+* `TauCeti.ClassFieldTheory.WeilGroupReal.exists_eq_comp_normHom`: every continuous homomorphism
+  from `W_ℝ` to a commutative topological group factors through the norm.
 * `TauCeti.ClassFieldTheory.WeilGroupReal.character_includeComplex`,
   `TauCeti.ClassFieldTheory.WeilGroupReal.character_j`: `character s ε` is `|z| ^ (2 * s)` on
   `z ∈ ℂˣ` and `(-1) ^ ε` at `j`.
@@ -48,40 +47,15 @@ public section
 
 namespace TauCeti.ClassFieldTheory.WeilGroupReal
 
-/-- The norm `W_ℝ → ℝˣ`, `z ↦ |z|²`, `j ↦ -1`, as a continuous homomorphism. -/
-noncomputable def normHom : WeilGroupReal →ₜ* ℝˣ :=
-  ⟨norm, continuous_norm⟩
-
-@[simp]
-theorem normHom_apply (w : WeilGroupReal) : normHom w = norm w :=
-  (rfl)
-
-/-- On `ℂˣ` the norm is `z ↦ |z|²`. -/
-theorem norm_includeComplex (z : WeilGroupComplex) :
-    norm (includeComplex z) = Units.map (Complex.normSq : ℂ →* ℝ) z :=
-  Units.ext (by simp)
-
-/-- **Continuous characters of `W_ℝ` factor through the norm.** The kernel of the norm is the
-commutator subgroup, which every character into the commutative group `ℂˣ` kills, and the norm
-is a quotient map. -/
-theorem exists_eq_comp_normHom (χ : WeilGroupReal →ₜ* ℂˣ) :
-    ∃ ψ : ℝˣ →ₜ* ℂˣ, χ = ψ.comp normHom := by
-  have hker : norm.ker ≤ (χ : WeilGroupReal →* ℂˣ).ker := by
-    rw [ker_norm]
-    exact Group.Abelianization.commutator_le_ker _
-  let ψ : ℝˣ →* ℂˣ := (QuotientGroup.lift norm.ker (χ : WeilGroupReal →* ℂˣ) hker).comp
-    (QuotientGroup.quotientKerEquivOfSurjective norm norm_surjective).symm.toMonoidHom
-  have hψ (w : WeilGroupReal) : ψ (norm w) = χ w := by
-    simp only [ψ, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
-    rw [show (QuotientGroup.quotientKerEquivOfSurjective norm norm_surjective).symm (norm w) =
-        (w : WeilGroupReal ⧸ norm.ker) from
-      (MulEquiv.symm_apply_eq _).mpr rfl]
-    rfl
-  have hcont : Continuous ψ := by
-    rw [isQuotientMap_norm.continuous_iff]
-    convert χ.continuous_toFun using 1
-    exact funext hψ
-  exact ⟨⟨ψ, hcont⟩, ContinuousMonoidHom.ext fun w ↦ (hψ w).symm⟩
+/-- **Continuous homomorphisms from `W_ℝ` to a commutative group factor through the norm.** The
+kernel of the norm is the commutator subgroup, which every homomorphism into a commutative group
+kills, and the norm is a quotient map. -/
+theorem exists_eq_comp_normHom {A : Type*} [CommGroup A] [TopologicalSpace A]
+    (χ : WeilGroupReal →ₜ* A) : ∃ ψ : ℝˣ →ₜ* A, χ = ψ.comp normHom := by
+  have hker : (normHom : WeilGroupReal →* ℝˣ).ker ≤ (χ : WeilGroupReal →* A).ker :=
+    ker_norm.trans_le (Group.Abelianization.commutator_le_ker _)
+  exact ⟨.liftOfIsQuotientMap normHom isQuotientMap_norm χ hker,
+    (ContinuousMonoidHom.liftOfIsQuotientMap_comp normHom isQuotientMap_norm χ hker).symm⟩
 
 /-- **The character `w ↦ |norm w| ^ s * sgn(norm w) ^ ε` of `W_ℝ`**, the pullback along the norm of
 the character `x ↦ |x| ^ s * sgn(x) ^ ε` of `ℝˣ`. Every continuous character of `W_ℝ` is one of
@@ -106,10 +80,11 @@ theorem character_j (s : ℂ) (ε : ZMod 2) : (character s ε j : ℂ) = (-1) ^ 
   rw [character_apply, norm_j, realUnitsCharacter_neg_one]
 
 /-- Multiplying characters of `W_ℝ` adds their parameters. -/
+@[simp]
 theorem character_add (s t : ℂ) (ε η : ZMod 2) :
     character (s + t) (ε + η) = character s ε * character t η := by
-  rw [character, realUnitsCharacter_add]
-  rfl
+  ext w
+  simp [character_apply, ContinuousMonoidHom.mul_apply]
 
 /-- **Every continuous character of `W_ℝ` is `character s ε`.** -/
 theorem exists_eq_character (χ : WeilGroupReal →ₜ* ℂˣ) :
@@ -149,5 +124,10 @@ noncomputable def characterEquiv : Multiplicative (ℂ × ZMod 2) ≃* (WeilGrou
 theorem characterEquiv_apply (s : ℂ) (ε : ZMod 2) :
     characterEquiv (.ofAdd (s, ε)) = character s ε :=
   (rfl)
+
+@[simp]
+theorem characterEquiv_symm_apply (s : ℂ) (ε : ZMod 2) :
+    characterEquiv.symm (character s ε) = .ofAdd (s, ε) := by
+  rw [MulEquiv.symm_apply_eq, characterEquiv_apply]
 
 end TauCeti.ClassFieldTheory.WeilGroupReal
