@@ -27,8 +27,9 @@ kernel from any time to any later time.
 
 The main example is the variance-preserving path of a noise schedule `β`, with signal
 level `vpSignal β t = exp (-(∫₀ᵗ β) / 2)` and noise level `vpNoise β t = √(1 - (vpSignal β t) ^ 2)`.
-Its transition kernel from time `r` to time `t` is the variance-preserving noising kernel
-`noiseKernel (exp (-∫ᵣᵗ β))`; in particular its law at time `t` is the law of the data noised with
+For a locally integrable nonnegative schedule and times `0 ≤ r ≤ t`, its transition kernel from
+time `r` to time `t` is the variance-preserving noising kernel `noiseKernel (exp (-∫ᵣᵗ β))`; in
+particular its law at time `t` is the law of the data noised with
 the signal level `exp (-∫₀ᵗ β)`.
 
 ## Main definitions
@@ -49,8 +50,9 @@ the signal level `exp (-∫₀ᵗ β)`.
   when the noise-to-signal ratio does not decrease.
 * `TauCeti.Probability.gaussianKernel_vpSignal_vpNoise`: the observation kernel at time `t` of the
   variance-preserving path is `noiseKernel (exp (-∫₀ᵗ β))`.
-* `TauCeti.Probability.gaussianKernel_vpSignal_div_eq_noiseKernel`: its transition kernel from
-  time `r` to time `t` is `noiseKernel (exp (-∫ᵣᵗ β))`.
+* `TauCeti.Probability.gaussianKernel_vpSignal_div_eq_noiseKernel`: the two-level kernel from
+  time `r` to time `t` is `noiseKernel (exp (-∫ᵣᵗ β))`; where `∫ᵣᵗ β ≥ 0` it is the transition
+  kernel.
 
 ## References
 
@@ -110,7 +112,7 @@ theorem gaussianKernel_div_comp_gaussianKernel_div {c₁ s₁ c₂ s₂ c₃ s�
 /-- Two levels admit a transition kernel exactly when the noise-to-signal ratio does not
 decrease: for `c₂ ≠ 0`, `(c₂ / c₁) ^ 2 * s₁ ^ 2 ≤ s₂ ^ 2` if and only if
 `|s₁ / c₁| ≤ |s₂ / c₂|`. So a noising path along which `|s / c|` is nondecreasing and `c` does not
-vanish has a transition kernel between any two of its times, and these kernels compose by
+vanish has a transition kernel from any time to any later time, and these kernels compose by
 `gaussianKernel_div_comp_gaussianKernel_div`. -/
 theorem div_sq_mul_sq_le_sq_iff {c₁ s₁ c₂ s₂ : ℝ} (hc₂ : c₂ ≠ 0) :
     (c₂ / c₁) ^ 2 * s₁ ^ 2 ≤ s₂ ^ 2 ↔ |s₁ / c₁| ≤ |s₂ / c₂| := by
@@ -200,9 +202,11 @@ theorem gaussianKernel_vpSignal_vpNoise (h : 0 ≤ ∫ u in (0 : ℝ)..t, β u) 
     vpNoise_sq h]
 
 /-- **The transition kernels of the variance-preserving path.** If `β` is integrable on `[0, r]`
-and on `[r, t]`, and `∫₀ʳ β ≥ 0` and `∫₀ᵗ β ≥ 0`, then the transition kernel of the
-variance-preserving path from time `r` to time `t` is the variance-preserving noising kernel with
-signal level `exp (-∫ᵣᵗ β)`. When moreover `∫ᵣᵗ β ≥ 0`, this signal level lies in `(0, 1]`. -/
+and on `[r, t]`, and `∫₀ʳ β ≥ 0` and `∫₀ᵗ β ≥ 0`, then the kernel given by the two-level formula
+from time `r` to time `t` is the variance-preserving noising kernel with signal level
+`exp (-∫ᵣᵗ β)`. When moreover `∫ᵣᵗ β ≥ 0`, it is a transition kernel, carrying the law at
+time `r` to the law at time `t` by `gaussianKernel_div_comp_gaussianKernel`, and this signal level
+lies in `(0, 1]`. Otherwise the variance argument is negative and both sides are point masses. -/
 theorem gaussianKernel_vpSignal_div_eq_noiseKernel (h₀ : IntervalIntegrable β volume 0 r)
     (h₁ : IntervalIntegrable β volume r t) (hr : 0 ≤ ∫ u in (0 : ℝ)..r, β u)
     (ht : 0 ≤ ∫ u in (0 : ℝ)..t, β u) :
