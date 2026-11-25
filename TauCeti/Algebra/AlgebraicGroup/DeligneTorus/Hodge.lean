@@ -338,29 +338,21 @@ theorem _root_.Submodule.stabilizerHopfIdeal_eq_bot_iff_eq_iSup_hodgeComponent (
     N.stabilizerHopfIdeal S = ⊥ ↔
       N.baseChange ℂ = ⨆ pq : ℤ × ℤ, N.baseChange ℂ ⊓ hodgeComponent V pq.1 pq.2 := by
   let _ := Comodule.baseChange (R := ℝ) (H := S) (M := V) ℂ
-  let φ : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)) := splittingBialgEquiv
-  have hφ : RingHom.ker (φ : ℂ ⊗[ℝ] S →ₐ[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) = ⊥ :=
-    (RingHom.injective_iff_ker_eq_bot _).mp splittingBialgEquiv.injective
   -- the complexified representation, as a comodule over `ℂ[ℤ²]` through the splitting
   let _ := Comodule.Corestrict (R := ℂ) (M := ℂ ⊗[ℝ] V) (C := ℂ ⊗[ℝ] S)
-    (D := MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) φ.toCoalgHom
+    (D := MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
+    ((splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) :
+      ℂ ⊗[ℝ] S →ₗc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
   have h := (N.baseChange ℂ).stabilizerHopfIdeal_corestrict_eq_bot_iff (H₁ := ℂ ⊗[ℝ] S)
-    (H₂ := MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) φ
-  rw [hφ, HopfIdeal.toIdeal_le_bot_iff] at h
+    (H₂ := MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) splittingBialgEquiv
+  rw [BialgHom.toCoalgHom_eq_ofClass, HopfIdeal.toIdeal_le_ker_iff_of_injective
+    (f := ((splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) :
+      ℂ ⊗[ℝ] S →ₐ[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))))
+    splittingBialgEquiv.injective] at h
   have hV (pq : ℤ × ℤ) := congrFun (hodgeComponent_eq_comp (V := V)) pq
   rw [← Submodule.stabilizerHopfIdeal_baseChange_eq_bot_iff (K := ℂ), ← h,
     Submodule.stabilizerHopfIdeal_eq_bot_iff, Submodule.coact_mem_range_iff_eq_iSup_inf_weightSpace,
     ← hodgeIndexEquiv.iSup_comp]
   simp only [hV, Function.comp_apply, DiagonalizableGroup.weightSpace_eq_comoduleWeightSpace]
-  -- The two sides differ only in the comodule structure defining `Comodule.weightSpace`: on the
-  -- left the corestriction along `φ.toCoalgHom`, from `stabilizerHopfIdeal_corestrict_eq_bot_iff`,
-  -- on the right the corestriction along the coalgebra map that `hodgeComponent` uses. Both
-  -- coactions are `(id ⊗ φ) ∘ ρ`, so compare the weight spaces through the underlying linear maps.
-  have hφ' : φ.toLinearMap = ((splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ]
-      MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) : _ →ₗc[ℂ] _).toLinearMap :=
-    LinearMap.ext fun x ↦ by simp [φ, BialgHom.toCoalgHom_apply]
-  refine Iff.of_eq <| congrArg (_ = ·) <| iSup_congr fun _ ↦ congrArg (_ ⊓ ·) <|
-    Submodule.ext fun v ↦ ?_
-  simp only [Comodule.mem_weightSpace, Comodule.corestrict_coact_apply, hφ']
 
 end TauCeti.DeligneTorus

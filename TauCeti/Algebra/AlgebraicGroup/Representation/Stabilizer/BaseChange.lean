@@ -82,9 +82,8 @@ theorem stabilizerHopfIdeal_corestrict_eq_bot_iff (W : Submodule k M) (φ : H₁
   let _ : Comodule k H₂ M := Comodule.Corestrict φ.toCoalgHom
   have h := stabilizerHopfIdeal_corestrict_le_ker_iff W φ (AlgHom.id k H₂)
   rw [AlgHom.id_comp] at h
-  have hk : RingHom.ker (AlgHom.id k H₂) = ⊥ :=
-    (RingHom.injective_iff_ker_eq_bot _).mp Function.injective_id
-  rw [← h, hk, HopfIdeal.toIdeal_le_bot_iff]
+  rw [← h, HopfIdeal.toIdeal_le_ker_iff_of_injective (f := AlgHom.id k H₂)
+    (AlgHom.coe_id k H₂ ▸ Function.injective_id)]
 
 end Corestrict
 
@@ -128,10 +127,9 @@ theorem stabilizerHopfIdeal_baseChange_eq_bot_iff (W : Submodule k M) :
   have hinj : Function.Injective
       (((AlgHom.id K (K ⊗[k] H)).restrictScalars k).comp Algebra.TensorProduct.includeRight) :=
     Algebra.TensorProduct.includeRight_injective (algebraMap k K).injective
-  have hk : RingHom.ker (AlgHom.id K (K ⊗[k] H)) = ⊥ :=
-    (RingHom.injective_iff_ker_eq_bot _).mp Function.injective_id
-  rwa [hk, (RingHom.injective_iff_ker_eq_bot _).mp hinj, HopfIdeal.toIdeal_le_bot_iff,
-    HopfIdeal.toIdeal_le_bot_iff] at h
+  rwa [HopfIdeal.toIdeal_le_ker_iff_of_injective (f := AlgHom.id K (K ⊗[k] H))
+      (AlgHom.coe_id K (K ⊗[k] H) ▸ Function.injective_id),
+    HopfIdeal.toIdeal_le_ker_iff_of_injective hinj] at h
 
 end BaseChange
 

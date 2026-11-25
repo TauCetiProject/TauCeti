@@ -487,4 +487,21 @@ end HopfIdeal
 
 end Bridge
 
+section Ring
+
+variable {R : Type u} {H : Type v}
+variable [CommSemiring R] [Ring H] [HopfAlgebra R H]
+
+namespace HopfIdeal
+
+/-- A Hopf ideal lies in the kernel of an injective ring homomorphism exactly when it is zero. -/
+theorem toIdeal_le_ker_iff_of_injective {F A : Type*} [Semiring A] [FunLike F H A]
+    [RingHomClass F H A] {f : F} (hf : Function.Injective f) {I : HopfIdeal R H} :
+    I.toIdeal ≤ RingHom.ker f ↔ I = ⊥ := by
+  rw [(RingHom.injective_iff_ker_eq_bot f).mp hf, toIdeal_le_bot_iff]
+
+end HopfIdeal
+
+end Ring
+
 end TauCeti

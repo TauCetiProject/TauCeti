@@ -596,24 +596,21 @@ theorem _root_.Submodule.coact_mem_range_iff_eq_iSup_inf_weightSpace (N : Submod
   classical
   constructor
   · intro hN
-    let N' : Subcomodule R (MonoidAlgebra R G) V := ⟨N, fun _ hm ↦ hN _ hm⟩
+    let N' : Subcomodule R (MonoidAlgebra R G) V := Subcomodule.ofSubmodule N fun _ hm ↦ hN _ hm
     let _ : Comodule R (MonoidAlgebra R G) N' := Subcomodule.instComodule N'
     have h := congrArg (Submodule.map (SMulMemClass.subtype N')) (iSup_weightSpace_eq_top R G N')
-    simp only [weightSpace_subcomodule, Submodule.map_iSup] at h
-    -- the inclusion `SMulMemClass.subtype N'` of the subcomodule `N'` with carrier `N` is
-    -- `N.subtype` by definition
-    change ⨆ g, Submodule.map N.subtype ((weightSpace R G V g).comap N.subtype) =
-      Submodule.map N.subtype ⊤ at h
-    simpa only [Submodule.map_comap_subtype, Submodule.map_subtype_top] using h.symm
+    simp only [weightSpace_subcomodule, Submodule.map_iSup, Submodule.map_comap_eq,
+      Submodule.map_top, ← Subcomodule.subtype_toLinearMap, Subcomodule.range_subtype_toLinearMap,
+      Subcomodule.toSubmodule_carrier, Subcomodule.ofSubmodule_carrier, N'] at h
+    exact h.symm
   · intro hN v hv
     rw [hN] at hv
     refine Submodule.iSup_induction _ (motive := fun x ↦ coact (R := R)
       (C := MonoidAlgebra R G) x ∈ LinearMap.range (TensorProduct.map N.subtype LinearMap.id)) hv
       (fun g w hw ↦ ?_) (by simp) fun x y hx hy ↦ by simpa using add_mem hx hy
     refine ⟨⟨w, hw.1⟩ ⊗ₜ MonoidAlgebra.single g 1, ?_⟩
-    rw [mem_weightSpace.mp hw.2, TensorProduct.map_tmul]
-    -- `N.subtype ⟨w, hw.1⟩` is `w` by definition (`Submodule.subtype_apply`)
-    rfl
+    rw [mem_weightSpace.mp hw.2, TensorProduct.map_tmul, Submodule.subtype_apply,
+      LinearMap.id_apply]
 
 variable (R G V)
 
