@@ -22,10 +22,10 @@ series (`TauCeti.Huber.toMvPowerSeries`), so it has coefficients. Under the isom
 coefficient of `T^μ S^ν` in the image of `f ⊗ g` is therefore the product of the coefficient of
 `T^μ` in `f` and that of `S^ν` in `g`.
 
-Over a field this bounds the rank of the coefficient matrix `(c_{ij})` of the image of an element
-of the algebraic tensor product `A⟨T⟩ ⊗_A A⟨S⟩` by the number of its pure tensors. An element
-whose coefficient matrix is diagonal with nonzero diagonal, such as `Σₙ πⁿTⁿSⁿ` for a nonzero
-topologically nilpotent `π`, is thus not in the image: the completed tensor product of two
+Over a field it follows that the coefficient matrices `(c_{ij})_{i,j<N}` of the image of an
+element of the algebraic tensor product `A⟨T⟩ ⊗_A A⟨S⟩` have rank bounded uniformly in `N`. An
+element whose coefficient matrix is diagonal with nonzero diagonal, such as `Σₙ πⁿTⁿSⁿ` for a
+nonzero topologically nilpotent `π`, is thus not in the image: the completed tensor product of two
 one-variable Tate algebras is strictly larger than the algebraic one, so the finiteness hypothesis
 in the comparison of completed and algebraic tensor products for finite algebras cannot be
 dropped.
@@ -43,6 +43,8 @@ dropped.
 * `TauCeti.Huber.CompletedTensor.coeff_polydiscEquiv_inl_mul_inr`: the coefficient of `T^μ S^ν` in
   the image of `f ⊗ g` is the product of coefficients; for one variable on each side this is
   `TauCeti.Huber.CompletedTensor.coeff_single_add_single_polydiscEquiv_inl_mul_inr`.
+* `TauCeti.Huber.CompletedTensor.toMvPowerSeries_diagonalSeries`: the power series of
+  `diagonalSeries π` is `Σₙ πⁿTⁿSⁿ`.
 * `TauCeti.Huber.CompletedTensor.exists_rank_coeffMatrix_le`: over a field, the coefficient
   matrices of the image of an element of the algebraic tensor product have bounded rank.
 * `TauCeti.Huber.CompletedTensor.diagonalSeries_notMem_range`: `Σₙ πⁿTⁿSⁿ` is not in the image of
@@ -65,6 +67,7 @@ variable (m n : ℕ)
 
 /-- Under `polydiscEquiv`, an element of the left factor is renamed into the first block of
 variables. -/
+@[simp]
 theorem toMvPowerSeries_polydiscEquiv_inl (f : restrictedMvPowerSeriesCompletion m A) :
     toMvPowerSeries (m + n) A (polydiscEquiv A m n (inl A _ _ f)) =
       rename (Fin.castAddEmb n) (toMvPowerSeries m A f) :=
@@ -72,12 +75,13 @@ theorem toMvPowerSeries_polydiscEquiv_inl (f : restrictedMvPowerSeriesCompletion
     (φ := (polydiscEquiv A m n).toRingEquiv.toRingHom.comp (inl A _ _))
     ((polydiscEquiv A m n).continuous.comp (continuous_inl _ _ _))
     (fun a ↦ by
-      rw [RingHom.comp_apply, ← RingHom.comp_apply (inl A _ _), ← algebraMap_eq_inl]
+      rw [RingHom.comp_apply, inl_algebraMap]
       exact polydiscEquiv_algebraMap A m n a)
     (fun i ↦ polydiscEquiv_inl_polydiscVar A m n i) f
 
 /-- Under `polydiscEquiv`, an element of the right factor is renamed into the second block of
 variables. -/
+@[simp]
 theorem toMvPowerSeries_polydiscEquiv_inr (g : restrictedMvPowerSeriesCompletion n A) :
     toMvPowerSeries (m + n) A (polydiscEquiv A m n (inr A _ _ g)) =
       rename (Fin.natAddEmb m) (toMvPowerSeries n A g) :=
@@ -85,8 +89,7 @@ theorem toMvPowerSeries_polydiscEquiv_inr (g : restrictedMvPowerSeriesCompletion
     (φ := (polydiscEquiv A m n).toRingEquiv.toRingHom.comp (inr A _ _))
     ((polydiscEquiv A m n).continuous.comp (continuous_inr _ _ _))
     (fun a ↦ by
-      rw [RingHom.comp_apply, ← RingHom.comp_apply (inr A _ _), ← inl_comp_algebraMap,
-        ← algebraMap_eq_inl]
+      rw [RingHom.comp_apply, inr_algebraMap]
       exact polydiscEquiv_algebraMap A m n a)
     (fun i ↦ polydiscEquiv_inr_polydiscVar A m n i) g
 
@@ -177,13 +180,17 @@ noncomputable def diagonalSeries {π : A} (hπ : IsTopologicallyNilpotent π) :
       mem_weightedRestrictedSubring.mpr (isWeightedRestricted_diagonalMvPowerSeries hπ)⟩
 
 omit [IsHuberRing A] in
-/-- The coefficient of `TⁱSʲ` in `Σₙ πⁿTⁿSⁿ` is `πⁱ` if `i = j` and `0` otherwise. -/
+/-- The power series of `diagonalSeries hπ` is `Σₙ πⁿTⁿSⁿ`. -/
 @[simp]
+theorem toMvPowerSeries_diagonalSeries {π : A} (hπ : IsTopologicallyNilpotent π) :
+    toMvPowerSeries (1 + 1) A (diagonalSeries hπ) = diagonalMvPowerSeries A π := by
+  rw [toMvPowerSeries_apply, diagonalSeries, RingEquiv.apply_symm_apply]
+
+omit [IsHuberRing A] in
+/-- The coefficient of `TⁱSʲ` in `Σₙ πⁿTⁿSⁿ` is `πⁱ` if `i = j` and `0` otherwise. -/
 theorem coeff_diagonalSeries {π : A} (hπ : IsTopologicallyNilpotent π) (i j : ℕ) :
     coeff (single 0 i + single 1 j) (toMvPowerSeries (1 + 1) A (diagonalSeries hπ)) =
       if i = j then π ^ i else 0 := by
-  rw [toMvPowerSeries_apply, diagonalSeries, RingEquiv.apply_symm_apply,
-    coeff_diagonalMvPowerSeries]
   simp
 
 end Diagonal
@@ -194,9 +201,9 @@ variable {K : Type*} [Field K] [UniformSpace K] [IsUniformAddGroup K] [Nonarchim
   [CompleteSpace K] [T0Space K] [IsHuberRing K]
 
 /-- **Elements of the algebraic tensor product have coefficient matrices of bounded rank.** For an
-element `x = Σₖ fₖ ⊗ gₖ` of `K⟨T⟩ ⊗_K K⟨S⟩`, the coefficient matrix of its image in `K⟨T, S⟩` is
-`Σₖ (coefficients of fₖ) (coefficients of gₖ)ᵀ`, of rank at most the number of terms. The
-decomposition into pure tensors is `TensorProduct.exists_finset`. -/
+element `x` of `K⟨T⟩ ⊗_K K⟨S⟩`, the `N × N` coefficient matrices of its image in `K⟨T, S⟩` have
+rank bounded independently of `N`: writing `x = Σₖ fₖ ⊗ gₖ`, each is
+`Σₖ (coefficients of fₖ) (coefficients of gₖ)ᵀ`. -/
 theorem exists_rank_coeffMatrix_le
     (x : restrictedMvPowerSeriesCompletion 1 K ⊗[K] restrictedMvPowerSeriesCompletion 1 K) :
     ∃ r : ℕ, ∀ N, (coeffMatrix N (polydiscEquiv K 1 1 (toCompletion K _ _ x))).rank ≤ r := by

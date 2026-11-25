@@ -89,7 +89,9 @@ specialisations are discharged with.
 * `TauCeti.Huber.restrictedMvPowerSeriesCompletionAlgEquiv` : the same comparison as an
   `A`-algebra equivalence.
 * `TauCeti.Huber.toMvPowerSeries` : the power series of an element of `A⟨X₁,…,Xₖ⟩`, an injective
-  ring homomorphism (`TauCeti.Huber.toMvPowerSeries_injective`).
+  ring homomorphism (`TauCeti.Huber.toMvPowerSeries_injective`) sending a restricted series to
+  itself and a constant `a` to `C a` (`TauCeti.Huber.toMvPowerSeries_coe`,
+  `TauCeti.Huber.toMvPowerSeries_algebraMap`).
 * `TauCeti.Huber.uniformContinuous_restrictedMvPowerSeriesCompletionEquiv` and
   `TauCeti.Huber.uniformContinuous_restrictedMvPowerSeriesCompletionEquiv_symm` : the
   comparison and its inverse are uniformly continuous. The inverse is the canonical map into
@@ -356,6 +358,21 @@ comparison `TauCeti.Huber.restrictedMvPowerSeriesCompletionEquiv`. -/
 theorem toMvPowerSeries_apply (f : restrictedMvPowerSeriesCompletion k A) :
     toMvPowerSeries k A f = (restrictedMvPowerSeriesCompletionEquiv k A f : _) :=
   (rfl)
+
+/-- The power series of a restricted series, regarded as an element of its completion, is that
+series. -/
+@[simp]
+theorem toMvPowerSeries_coe
+    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+    toMvPowerSeries k A (f : restrictedMvPowerSeriesCompletion k A) = f := by
+  rw [toMvPowerSeries_apply, restrictedMvPowerSeriesCompletionEquiv_coe]
+
+/-- The power series of a constant `a ∈ A⟨X₁,…,Xₖ⟩` is the constant series `C a`. (Not `@[simp]`:
+`simp` proves it through `TauCeti.Huber.toMvPowerSeries_coe`.) -/
+theorem toMvPowerSeries_algebraMap (a : A) :
+    toMvPowerSeries k A (algebraMap A (restrictedMvPowerSeriesCompletion k A) a) =
+      MvPowerSeries.C a := by
+  rw [algebraMap_completion_weightedRestrictedSubring_apply, toMvPowerSeries_coe, coe_weightedC]
 
 /-- An element of `A⟨X₁,…,Xₖ⟩` is determined by its power series. -/
 theorem toMvPowerSeries_injective : Function.Injective (toMvPowerSeries k A) :=
