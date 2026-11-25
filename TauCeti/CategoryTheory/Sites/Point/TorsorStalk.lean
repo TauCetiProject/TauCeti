@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Torsor.Defs
-public import Mathlib.CategoryTheory.Limits.Shapes.FunctorToTypes
 public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Torsor
+public import TauCeti.CategoryTheory.Sites.Point.Basic
 public import TauCeti.CategoryTheory.Sites.Point.GrpStalk
 
 /-!
@@ -18,24 +18,22 @@ Let `Φ` be a point of a site `(C, J)`, `G` a sheaf of groups and `P` a `G`-tors
 `Φ.GrpStalk G.obj` (`CategoryTheory.GrothendieckTopology.Point.instTorsorTorsorStalk`).
 
 The action is defined on germs, `[g] • [p] = [g • p]` for sections `g` and `p` over the same
-object (`CategoryTheory.GrothendieckTopology.Point.grpGerm_smul_torsorGerm`): the stalk of the
-presheaf of pairs `U ↦ G(U) × P(U)` (Mathlib's `CategoryTheory.FunctorToTypes.prod`) is the
-product of the two stalks (`CategoryTheory.GrothendieckTopology.Point.pairsStalkEquiv`), because
-taking stalks preserves finite limits, and the action is the map of stalks induced by the action
-map on pairs. The action is free and transitive because it is so on sections, and the stalk is
-nonempty because `P` has sections locally.
+object (`CategoryTheory.GrothendieckTopology.Point.grpGerm_smul_toPresheafFiber`): the stalk of
+the presheaf of pairs `U ↦ G(U) × P(U)` (Mathlib's `CategoryTheory.FunctorToTypes.prod`) is the
+product of the two stalks (`CategoryTheory.GrothendieckTopology.Point.presheafFiberProdEquiv`),
+and the action is the map of stalks induced by the action map on pairs. The action is free and
+transitive because it is so on sections, and the stalk is nonempty because `P` has sections
+locally.
 
 ## Main definitions
 
 * `CategoryTheory.Sheaf.Torsor.pairsAct P`: the action map from the presheaf of pairs
   `U ↦ G(U) × P(U)` to `P`.
 * `CategoryTheory.GrothendieckTopology.Point.TorsorStalk Φ P`: the stalk of a torsor.
-* `CategoryTheory.GrothendieckTopology.Point.pairsStalkEquiv Φ P`: the stalk of the presheaf of
-  pairs is the product of the stalks.
 
 ## Main results
 
-* `CategoryTheory.GrothendieckTopology.Point.grpGerm_smul_torsorGerm`: the action on germs.
+* `CategoryTheory.GrothendieckTopology.Point.grpGerm_smul_toPresheafFiber`: the action on germs.
 * `CategoryTheory.GrothendieckTopology.Point.instTorsorTorsorStalk`: the stalk of a `G`-torsor
   is a torsor under the stalk of `G`.
 
@@ -71,106 +69,62 @@ namespace CategoryTheory.GrothendieckTopology.Point
 variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
   (Φ : Point.{w} J) {G : Sheaf J GrpCat.{w}} (P : Sheaf.Torsor G)
 
-/-- Two points of the fibre functor of `Φ` both come from a single one. -/
-theorem exists_fiber_map_eq_fiber_map_eq {X Y : C} (x : Φ.fiber.obj X) (y : Φ.fiber.obj Y) :
-    ∃ (Z : C) (z : Φ.fiber.obj Z) (f : Z ⟶ X) (g : Z ⟶ Y),
-      Φ.fiber.map f z = x ∧ Φ.fiber.map g z = y := by
-  let a := Φ.fiber.elementsMk X x
-  let b := Φ.fiber.elementsMk Y y
-  exact ⟨(IsCofiltered.min a b).obj, (IsCofiltered.min a b).val, (IsCofiltered.minToLeft a b).hom,
-    (IsCofiltered.minToRight a b).hom, (IsCofiltered.minToLeft a b).map_val,
-    (IsCofiltered.minToRight a b).map_val⟩
-
 /-- The stalk at `Φ` of the sheaf of sets underlying a torsor. -/
 abbrev TorsorStalk : Type w := Φ.presheafFiber.obj P.sheaf.obj
 
-/-- The germ at `x : Φ.fiber.obj X` of a section of a torsor over `X`. -/
-noncomputable abbrev torsorGerm (X : C) (x : Φ.fiber.obj X) (p : P.sheaf.obj.obj (op X)) :
-    Φ.TorsorStalk P :=
-  Φ.toPresheafFiber X x P.sheaf.obj p
-
-/-- The germ of a restriction is the germ at the image point. -/
-theorem torsorGerm_map {X Y : C} (f : X ⟶ Y) (x : Φ.fiber.obj X) (a : P.sheaf.obj.obj (op Y)) :
-    Φ.torsorGerm P X x (P.sheaf.obj.map f.op a) = Φ.torsorGerm P Y (Φ.fiber.map f x) a :=
-  Φ.toPresheafFiber_w_apply f x P.sheaf.obj a
-
 variable [LocallySmall.{w} C]
-
-/-- Every element of the stalk of a torsor is a germ. -/
-theorem exists_torsorGerm_eq (p : Φ.TorsorStalk P) :
-    ∃ (X : C) (x : Φ.fiber.obj X) (a : P.sheaf.obj.obj (op X)), Φ.torsorGerm P X x a = p :=
-  Φ.toPresheafFiber_jointly_surjective (P := P.sheaf.obj) p
-
-/-- **The stalk of the presheaf of pairs is the product of the stalks** of `G` and of `P`,
-because taking stalks preserves finite limits. -/
-noncomputable def pairsStalkEquiv :
-    Φ.presheafFiber.obj (FunctorToTypes.prod (G.obj ⋙ forget GrpCat) P.sheaf.obj) ≃
-      Φ.GrpStalk G.obj × Φ.TorsorStalk P :=
-  (IsLimit.conePointUniqueUpToIso
-    (mapIsLimitOfPreservesOfIsLimit Φ.presheafFiber _ _ (FunctorToTypes.binaryProductLimit _ _))
-    (Types.binaryProductLimit _ _)).toEquiv
-
-/-- On germs, `pairsStalkEquiv` takes the germs of the two components. -/
-theorem pairsStalkEquiv_germ (X : C) (x : Φ.fiber.obj X)
-    (a : (FunctorToTypes.prod (G.obj ⋙ forget GrpCat) P.sheaf.obj).obj (op X)) :
-    Φ.pairsStalkEquiv P (Φ.toPresheafFiber X x (FunctorToTypes.prod _ _) a) =
-      (Φ.grpGerm G.obj X x a.1, Φ.torsorGerm P X x a.2) := by
-  change (Φ.presheafFiber.map FunctorToTypes.prod.fst (Φ.toPresheafFiber X x
-      (FunctorToTypes.prod (G.obj ⋙ forget GrpCat) P.sheaf.obj) a),
-    Φ.presheafFiber.map FunctorToTypes.prod.snd (Φ.toPresheafFiber X x
-      (FunctorToTypes.prod (G.obj ⋙ forget GrpCat) P.sheaf.obj) a)) = _
-  rw [toPresheafFiber_naturality_apply, toPresheafFiber_naturality_apply, grpGerm_apply]
-  rfl
 
 /-- The action of the stalk of `G` on the stalk of a `G`-torsor, induced by the action map on
 pairs. -/
 noncomputable instance : SMul (Φ.GrpStalk G.obj) (Φ.TorsorStalk P) where
-  smul g p := Φ.presheafFiber.map P.pairsAct ((Φ.pairsStalkEquiv P).symm (g, p))
+  smul g p := Φ.presheafFiber.map P.pairsAct
+    ((Φ.presheafFiberProdEquiv (G.obj ⋙ forget GrpCat) P.sheaf.obj).symm (g, p))
 
-/-- **The action on germs**: `[g] • [p] = [g • p]`. -/
-theorem grpGerm_smul_torsorGerm (X : C) (x : Φ.fiber.obj X) (g : G.obj.obj (op X))
-    (p : P.sheaf.obj.obj (op X)) :
-    Φ.grpGerm G.obj X x g • Φ.torsorGerm P X x p = Φ.torsorGerm P X x (g • p) := by
-  let a : (FunctorToTypes.prod (G.obj ⋙ forget GrpCat) P.sheaf.obj).obj (op X) := (g, p)
-  have : (Φ.pairsStalkEquiv P).symm (Φ.grpGerm G.obj X x g, Φ.torsorGerm P X x p) =
-      Φ.toPresheafFiber X x (FunctorToTypes.prod (G.obj ⋙ forget GrpCat) P.sheaf.obj) a :=
-    (Φ.pairsStalkEquiv P).symm_apply_eq.2 (Φ.pairsStalkEquiv_germ P X x a).symm
-  change Φ.presheafFiber.map P.pairsAct _ = _
-  rw [this, toPresheafFiber_naturality_apply]
+/-- The action on the stalk of a torsor is the map of stalks induced by the action map on pairs,
+through the identification of the stalk of pairs with the product of the stalks. -/
+theorem smul_torsorStalk_def (g : Φ.GrpStalk G.obj) (p : Φ.TorsorStalk P) :
+    g • p = Φ.presheafFiber.map P.pairsAct
+      ((Φ.presheafFiberProdEquiv (G.obj ⋙ forget GrpCat) P.sheaf.obj).symm (g, p)) :=
   rfl
 
-/-- An element of the stalk of `G` and two elements of the stalk of `P` are germs over a common
-object. -/
-theorem exists_germs_eq (g : Φ.GrpStalk G.obj) (p q : Φ.TorsorStalk P) :
-    ∃ (X : C) (x : Φ.fiber.obj X) (a : G.obj.obj (op X)) (b c : P.sheaf.obj.obj (op X)),
-      Φ.grpGerm G.obj X x a = g ∧ Φ.torsorGerm P X x b = p ∧ Φ.torsorGerm P X x c = q := by
-  obtain ⟨X, x, a, rfl⟩ := Φ.exists_grpGerm_eq G.obj g
-  obtain ⟨Y, y, b, c, rfl, rfl⟩ := Φ.toPresheafFiber_jointly_surjective₂ (P := P.sheaf.obj) p q
-  obtain ⟨Z, z, f₁, f₂, rfl, rfl⟩ := Φ.exists_fiber_map_eq_fiber_map_eq x y
-  exact ⟨Z, z, G.obj.map f₁.op a, P.sheaf.obj.map f₂.op b, P.sheaf.obj.map f₂.op c,
-    Φ.grpGerm_map G.obj f₁ z a, Φ.torsorGerm_map P f₂ z b, Φ.torsorGerm_map P f₂ z c⟩
+/-- **The action on germs**: `[g] • [p] = [g • p]`. -/
+@[simp]
+theorem grpGerm_smul_toPresheafFiber (X : C) (x : Φ.fiber.obj X) (g : G.obj.obj (op X))
+    (p : P.sheaf.obj.obj (op X)) :
+    Φ.grpGerm G.obj X x g • Φ.toPresheafFiber X x P.sheaf.obj p =
+      Φ.toPresheafFiber X x P.sheaf.obj (g • p) := by
+  let a : (FunctorToTypes.prod (G.obj ⋙ forget GrpCat) P.sheaf.obj).obj (op X) := (g, p)
+  have : (Φ.presheafFiberProdEquiv (G.obj ⋙ forget GrpCat) P.sheaf.obj).symm
+      (Φ.toPresheafFiber X x (G.obj ⋙ forget GrpCat) g, Φ.toPresheafFiber X x P.sheaf.obj p) =
+        Φ.toPresheafFiber X x (FunctorToTypes.prod (G.obj ⋙ forget GrpCat) P.sheaf.obj) a :=
+    (Equiv.symm_apply_eq _).2
+      (Φ.presheafFiberProdEquiv_toPresheafFiber (G.obj ⋙ forget GrpCat) P.sheaf.obj X x a).symm
+  rw [smul_torsorStalk_def, grpGerm_apply, this, toPresheafFiber_naturality_apply,
+    Sheaf.Torsor.pairsAct_app]
+  exact congrArg _ (TypeCat.ofHom_apply _ a)
 
 /-- The stalk of `G` acts on the stalk of a `G`-torsor. -/
 noncomputable instance instMulActionTorsorStalk : MulAction (Φ.GrpStalk G.obj) (Φ.TorsorStalk P)
     where
   one_smul p := by
-    obtain ⟨X, x, a, rfl⟩ := Φ.exists_torsorGerm_eq P p
-    rw [← map_one (Φ.grpGerm G.obj X x), grpGerm_smul_torsorGerm, one_smul]
+    obtain ⟨X, x, a, rfl⟩ := Φ.toPresheafFiber_jointly_surjective (P := P.sheaf.obj) p
+    rw [← map_one (Φ.grpGerm G.obj X x), grpGerm_smul_toPresheafFiber, one_smul]
   mul_smul g h p := by
     obtain ⟨X, x, a, b, rfl, rfl⟩ := Φ.exists_grpGerm_eq₂ G.obj g h
-    obtain ⟨Y, y, c, rfl⟩ := Φ.exists_torsorGerm_eq P p
+    obtain ⟨Y, y, c, rfl⟩ := Φ.toPresheafFiber_jointly_surjective (P := P.sheaf.obj) p
     obtain ⟨Z, z, f₁, f₂, rfl, rfl⟩ := Φ.exists_fiber_map_eq_fiber_map_eq x y
-    rw [← grpGerm_map, ← grpGerm_map, ← torsorGerm_map, ← map_mul, grpGerm_smul_torsorGerm,
-      grpGerm_smul_torsorGerm, grpGerm_smul_torsorGerm, mul_smul]
+    rw [← grpGerm_map, ← grpGerm_map, ← toPresheafFiber_w_apply, ← map_mul,
+      grpGerm_smul_toPresheafFiber, grpGerm_smul_toPresheafFiber, grpGerm_smul_toPresheafFiber,
+      mul_smul]
 
 /-- The action on the stalk of a torsor is free. -/
 theorem smul_left_injective_torsorStalk (p : Φ.TorsorStalk P) :
     Function.Injective fun g : Φ.GrpStalk G.obj ↦ g • p := by
   intro g h hgh
   obtain ⟨X, x, a, b, rfl, rfl⟩ := Φ.exists_grpGerm_eq₂ G.obj g h
-  obtain ⟨Y, y, c, rfl⟩ := Φ.exists_torsorGerm_eq P p
+  obtain ⟨Y, y, c, rfl⟩ := Φ.toPresheafFiber_jointly_surjective (P := P.sheaf.obj) p
   obtain ⟨Z, z, f₁, f₂, rfl, rfl⟩ := Φ.exists_fiber_map_eq_fiber_map_eq x y
-  simp only [← grpGerm_map, ← torsorGerm_map, grpGerm_smul_torsorGerm] at hgh ⊢
+  simp only [← grpGerm_map, ← toPresheafFiber_w_apply, grpGerm_smul_toPresheafFiber] at hgh ⊢
   obtain ⟨W, f, w, rfl, hf⟩ := (Φ.toPresheafFiber_eq_iff' Z z _ _).1 hgh
   rw [← Φ.grpGerm_map G.obj f w, ← Φ.grpGerm_map G.obj f w]
   congr 1
@@ -180,9 +134,9 @@ theorem smul_left_injective_torsorStalk (p : Φ.TorsorStalk P) :
 /-- The action on the stalk of a torsor is transitive. -/
 theorem exists_smul_eq_torsorStalk (p q : Φ.TorsorStalk P) :
     ∃ g : Φ.GrpStalk G.obj, g • q = p := by
-  obtain ⟨X, x, -, b, c, -, rfl, rfl⟩ := Φ.exists_germs_eq P 1 p q
+  obtain ⟨X, x, b, c, rfl, rfl⟩ := Φ.toPresheafFiber_jointly_surjective₂ (P := P.sheaf.obj) p q
   obtain ⟨a, ha⟩ := MulAction.exists_smul_eq (G.obj.obj (op X)) c b
-  exact ⟨Φ.grpGerm G.obj X x a, by rw [grpGerm_smul_torsorGerm, ha]⟩
+  exact ⟨Φ.grpGerm G.obj X x a, by rw [grpGerm_smul_toPresheafFiber, ha]⟩
 
 omit [LocallySmall.{w} C] in
 /-- The stalk of a torsor is nonempty, since a torsor has sections locally. -/
@@ -190,7 +144,7 @@ theorem nonempty_torsorStalk : Nonempty (Φ.TorsorStalk P) := by
   obtain ⟨e⟩ : Nonempty Φ.fiber.Elements := IsCofiltered.nonempty
   obtain ⟨Y, f, ⟨i, ⟨g⟩⟩, y, -⟩ := Φ.jointly_surjective _ (P.coversTop e.obj) e.val
   obtain ⟨s⟩ := i.property
-  exact ⟨Φ.torsorGerm P Y y (P.sheaf.obj.map g.op s)⟩
+  exact ⟨Φ.toPresheafFiber Y y P.sheaf.obj (P.sheaf.obj.map g.op s)⟩
 
 /-- **The stalk of a `G`-torsor is a torsor under the stalk of `G`.** -/
 noncomputable instance instTorsorTorsorStalk : Torsor (Φ.GrpStalk G.obj) (Φ.TorsorStalk P) where
