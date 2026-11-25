@@ -44,6 +44,8 @@ entries back into diagonal entries. The resolvent identities specialize Mathlib'
   at `z` is the resolvent at `conj z`;
 * `Matrix.IsHermitian.notMem_spectrum_of_im_ne_zero` — a non-real scalar lies outside the spectrum
   of a Hermitian matrix;
+* `Matrix.IsHermitian.notMem_spectrum_of_forall_eigenvalues_lt` — a real number above every
+  eigenvalue lies outside the real spectrum of a Hermitian matrix;
 * `Matrix.IsHermitian.l2_opNorm_inv_sub_smul_one_le` — the resolvent bound
   `‖(A - z • 1)⁻¹‖ ≤ |Im z|⁻¹`;
 * `Matrix.IsHermitian.l2_opNorm_one_add_sub_conj_smul_inv_sub_smul_one_le` — the Cayley
@@ -167,6 +169,13 @@ theorem notMem_spectrum_of_im_ne_zero {z : 𝕜} (hz : RCLike.im z ≠ 0) : z �
   rw [hA.spectrum_eq_image_range]
   rintro ⟨_, ⟨j, rfl⟩, rfl⟩
   exact hz (by simp)
+
+/-- A real number above every eigenvalue of a Hermitian matrix lies outside its real spectrum. -/
+theorem notMem_spectrum_of_forall_eigenvalues_lt {μ : ℝ} (hμA : ∀ j, hA.eigenvalues j < μ) :
+    μ ∉ spectrum ℝ A := by
+  rw [hA.spectrum_real_eq_range_eigenvalues]
+  rintro ⟨j, rfl⟩
+  exact lt_irrefl _ (hμA j)
 
 /-- A shifted Hermitian matrix `A - z • 1` is invertible when `z` is not real. -/
 theorem isUnit_sub_smul_one_of_im_ne_zero {z : 𝕜} (hz : RCLike.im z ≠ 0) :

@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.LinearAlgebra.Matrix.Rank
+public import Mathlib.RingTheory.Idempotents
 import Mathlib.Data.Matrix.ColumnRowPartitioned
 import Mathlib.FieldTheory.Finiteness
 import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
@@ -71,6 +72,12 @@ self-adjoint for the Hermitian form making the basis orthonormal.
 * `Matrix.rank_conjAct_smul` and `Matrix.rank_neg`: conjugation by an invertible matrix and
   negation preserve the rank.
 * `Matrix.rank_add_le`: over a field, the rank of a sum is at most the sum of the ranks.
+* `Matrix.IsIdempotentElem.rank_one_sub_add_rank`, `Matrix.IsIdempotentElem.rank_add` and
+  `Matrix.OrthogonalIdempotents.rank_sum`: over a field, the ranks of `e` and `1 - e` add up to
+  the size of the matrix, and the rank of a sum of orthogonal idempotent matrices is the sum of
+  their ranks.
+* `Matrix.rank_fromBlocks_zero₁₂_zero₂₁`: over a field, the rank of a block-diagonal matrix is the
+  sum of the ranks of its diagonal blocks.
 * `Matrix.rank_conjTranspose_of_field` and
   `Matrix.rank_mul_conjTranspose_self_sub_mul_conjTranspose_self_le`: over a field with a star ring
   structure, the conjugate transpose preserves the rank and `rank (X Xᴴ - Y Yᴴ) ≤ 2 * rank (X - Y)`.
@@ -495,6 +502,29 @@ theorem rank_add_le (A B : Matrix m n K) : (A + B).rank ≤ A.rank + B.rank := b
       (LinearMap.range B.mulVecLin))
   exact LinearMap.range_add_le A.mulVecLin B.mulVecLin
 
+/-- Over a field, the rank of the block-diagonal matrix `fromBlocks A 0 0 D` is the sum of the
+ranks of `A` and `D`. -/
+theorem rank_fromBlocks_zero₁₂_zero₂₁ {l l' m' : Type*} [Finite l] [Finite l']
+    (A : Matrix m l K) (D : Matrix m' l' K) :
+    (fromBlocks A 0 0 D).rank = A.rank + D.rank := by
+  classical
+  have := Fintype.ofFinite l
+  have := Fintype.ofFinite l'
+  have h : (fromBlocks A 0 0 D).mulVecLin =
+      (LinearEquiv.sumArrowLequivProdArrow m m' K K).symm.toLinearMap ∘ₗ
+        (A.mulVecLin.prodMap D.mulVecLin) ∘ₗ
+          (LinearEquiv.sumArrowLequivProdArrow l l' K K).toLinearMap := by
+    refine LinearMap.ext fun x => ?_
+    obtain ⟨⟨u, v⟩, rfl⟩ := (LinearEquiv.sumArrowLequivProdArrow l l' K K).symm.surjective x
+    ext (i | i) <;> simp [fromBlocks_mulVec, Function.comp_def]
+  have hr : LinearMap.range (fromBlocks A 0 0 D).mulVecLin =
+      ((LinearMap.range A.mulVecLin).prod (LinearMap.range D.mulVecLin)).map
+        (LinearEquiv.sumArrowLequivProdArrow m m' K K).symm.toLinearMap := by
+    simp [h, LinearMap.range_comp, LinearMap.range_prodMap]
+  simp only [← finrank_range_mulVecLin]
+  rw [hr, LinearEquiv.finrank_map_eq]
+  exact (Submodule.prodEquiv _ _).finrank_eq.trans Module.finrank_prod
+
 /-- Over a field, if `P + e + Q = 1` then the ranks of `P`, `e` and `Q` add up to at least the
 size of the matrices. -/
 lemma card_le_rank_add_rank_add_rank [Fintype m] [DecidableEq m] (P e Q : Matrix m m K)
@@ -541,6 +571,45 @@ lemma rank_add_rank_add_rank_eq_card [Fintype m] [DecidableEq m]
   have hσ := rank_mul_le_left A₁ σ
   have hτ := rank_mul_le_right τ A₂
   omega
+
+/-- The ranks of an idempotent matrix `e` and of the complementary idempotent `1 - e` add up to
+the size of the matrix: this is the decomposition `e + (1 - e) = 1` with `e (1 - e) = 0`. -/
+theorem IsIdempotentElem.rank_one_sub_add_rank [Fintype m] [DecidableEq m] {e : Matrix m m K}
+    (he : IsIdempotentElem e) : (1 - e).rank + e.rank = Fintype.card m := by
+  have h := rank_add_rank_add_rank_eq_card e (1 - e) (0 : Matrix m m K) 1 0 he.eq
+    (by rw [mul_sub, mul_one, he.eq, sub_self]) (zero_mul _) (zero_mul _) (by simp)
+  rw [rank_zero, add_zero] at h
+  omega
+
+/-- The rank of the sum of two idempotent matrices `p` and `q` with `p * q = 0` and `q * p = 0`
+is the sum of their ranks: `p`, `q` and `1 - p - q` are mutually annihilating, and `p + q` is the
+idempotent complementary to `1 - p - q`. -/
+theorem IsIdempotentElem.rank_add [Fintype m] {p q : Matrix m m K}
+    (hp : IsIdempotentElem p) (hq : IsIdempotentElem q) (hpq : p * q = 0) (hqp : q * p = 0) :
+    (p + q).rank = p.rank + q.rank := by
+  classical
+  have hle := rank_add_rank_add_rank_le p q (1 - p - q) hp.eq hpq
+    (by simp [sub_mul, hp.eq, hqp]) (by simp [sub_mul, hq.eq, hpq])
+  have hcard := IsIdempotentElem.rank_one_sub_add_rank (hp.add hq (by simp [hpq, hqp]))
+  rw [← sub_sub] at hcard
+  have := rank_add_le p q
+  omega
+
+/-- The rank of a sum of orthogonal idempotent matrices is the sum of their ranks: the range of
+the sum is the direct sum of the ranges. -/
+theorem OrthogonalIdempotents.rank_sum [Fintype m] [DecidableEq m] {I : Type*}
+    {e : I → Matrix m m K} (he : OrthogonalIdempotents e) (s : Finset I) :
+    (∑ i ∈ s, e i).rank = ∑ i ∈ s, (e i).rank := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s ha ih =>
+    have hqp : (∑ i ∈ s, e i) * e a = 0 := by
+      rw [Finset.sum_mul]
+      exact Finset.sum_eq_zero fun i hi => he.ortho (ne_of_mem_of_not_mem hi ha)
+    rw [Finset.sum_insert ha, Finset.sum_insert ha, ← ih]
+    exact IsIdempotentElem.rank_add (he.idem a) he.isIdempotentElem_sum
+      (he.mul_sum_of_notMem ha) hqp
 
 section Field
 

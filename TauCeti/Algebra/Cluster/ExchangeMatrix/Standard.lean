@@ -13,24 +13,13 @@ public import Mathlib.Data.Matrix.ColumnRowPartitioned
 
 A mutable-first matrix is equivalent to its principal exchange matrix and an arbitrary frozen
 block. The inverse is the shared construction used by principal and degree-principal extensions.
-It retains the principal matrix's chosen symmetrizer and its existing witness. Local row-projection
-bridges record how row submatrices match the standard matrix partition identities.
+It retains the principal matrix's chosen symmetrizer and its existing witness. The round trips use
+Mathlib row-partition identities directly.
 -/
 
 public section
 
 namespace TauCeti.ExchangeMatrix
-
-private theorem submatrix_inl_eq_toRows₁ {K J : Type*} (M : Matrix (K ⊕ J) K ℤ) :
-    M.submatrix (Function.Embedding.inl : K ↪ K ⊕ J) id = M.toRows₁ := by
-  ext i j
-  simpa only [Matrix.submatrix_apply, Function.Embedding.inl_apply, id_eq] using
-    (Matrix.toRows₁_apply M i j).symm
-
-private theorem submatrix_inr_eq_toRows₂ {K J : Type*} (M : Matrix (K ⊕ J) K ℤ) :
-    M.submatrix Sum.inr id = M.toRows₂ := by
-  ext i j
-  simpa only [Matrix.submatrix_apply, id_eq] using (Matrix.toRows₂_apply M i j).symm
 
 /-- Standard mutable-first exchange matrices are reconstructed from a principal exchange matrix
 and an arbitrary frozen-row matrix, without choosing a complement presentation. -/
@@ -46,18 +35,17 @@ def standardPartsEquiv (K J : Type*) :
   left_inv B := by
     ext : 1
     · dsimp only
-      rw [principal_matrix, submatrix_inl_eq_toRows₁, submatrix_inr_eq_toRows₂]
+      rw [principal_matrix]
       exact Matrix.fromRows_toRows B.matrix
     · simp
   right_inv p := by
     apply Prod.ext
     · ext : 1
       · dsimp only
-        rw [principal_matrix, submatrix_inl_eq_toRows₁]
+        rw [principal_matrix]
         exact Matrix.toRows₁_fromRows p.1.matrix p.2
       · simp
     · dsimp only
-      rw [submatrix_inr_eq_toRows₂]
       exact Matrix.toRows₂_fromRows p.1.matrix p.2
 
 /-- Decomposing a standard presentation returns its principal and frozen blocks. -/

@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Cluster.CoefficientSemifield.Tropical
-public import TauCeti.Algebra.Cluster.YSeed.Basic
+public import TauCeti.Algebra.Cluster.YSeed.Word
 public import TauCeti.Algebra.Cluster.ExchangeMatrix.FrozenSupport
+public import TauCeti.Algebra.Cluster.ExchangeMatrix.Standard
 
 import TauCeti.Algebra.Order.Ring.PosPart.Mul
 
@@ -80,32 +81,35 @@ namespace YSeed
 
 /-- Adjoin the tropical coefficient exponents as frozen rows of the principal matrix. -/
 noncomputable def toExtendedMatrix (s : YSeed K (Trop J)) :
-    ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J) where
-  matrix := Sum.elim s.exchangeMatrix.matrix (fun j k ↦ (s.coefficient k).toAdd j)
-  symmetrizer := s.exchangeMatrix.symmetrizer
-  isSkewSymmetrizer := s.exchangeMatrix.isSkewSymmetrizer
+    ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J) :=
+  (ExchangeMatrix.standardPartsEquiv K J).symm
+    (s.exchangeMatrix, Matrix.of fun j k ↦ (s.coefficient k).toAdd j)
 
 @[simp]
 theorem toExtendedMatrix_matrix_inl (s : YSeed K (Trop J)) (i k : K) :
-    s.toExtendedMatrix.matrix (Sum.inl i) k = s.exchangeMatrix.matrix i k :=
-  (rfl)
+    s.toExtendedMatrix.matrix (Sum.inl i) k = s.exchangeMatrix.matrix i k := by
+  simp only [toExtendedMatrix, ExchangeMatrix.standardPartsEquiv_symm_matrix,
+    Matrix.fromRows_apply_inl]
 
 @[simp]
 theorem toExtendedMatrix_matrix_inr (s : YSeed K (Trop J)) (j : J) (k : K) :
-    s.toExtendedMatrix.matrix (Sum.inr j) k = (s.coefficient k).toAdd j :=
-  (rfl)
+    s.toExtendedMatrix.matrix (Sum.inr j) k = (s.coefficient k).toAdd j := by
+  simp only [toExtendedMatrix, ExchangeMatrix.standardPartsEquiv_symm_matrix,
+    Matrix.fromRows_apply_inr, Matrix.of_apply]
 
 @[simp]
 theorem toExtendedMatrix_symmetrizer (s : YSeed K (Trop J)) :
-    s.toExtendedMatrix.symmetrizer = s.exchangeMatrix.symmetrizer :=
-  (rfl)
+    s.toExtendedMatrix.symmetrizer = s.exchangeMatrix.symmetrizer := by
+  simp only [toExtendedMatrix, ExchangeMatrix.standardPartsEquiv_symm_symmetrizer]
 
 /-- The matrix presentation of a tropical Y-seed has finitely supported frozen columns. -/
 @[simp]
 theorem hasFiniteFrozenColumnSupport_toExtendedMatrix (s : YSeed K (Trop J)) :
     s.toExtendedMatrix.HasFiniteFrozenColumnSupport := by
   rw [ExchangeMatrix.hasFiniteFrozenColumnSupport_iff]
-  exact fun k ↦ (s.coefficient k).toAdd.hasFiniteSupport
+  intro k
+  simpa only [toExtendedMatrix_matrix_inr, Function.HasFiniteSupport] using
+    (s.coefficient k).toAdd.hasFiniteSupport
 
 @[simp]
 theorem frozenColumn_toExtendedMatrix (s : YSeed K (Trop J))
@@ -163,6 +167,16 @@ theorem toExtendedMatrix_mutation [DecidableEq K] [DecidableEq J]
         linarith
   · simp [toExtendedMatrix_symmetrizer]
 
+/-- Reading tropical exponents transports a whole normalized mutation word to the extended
+exchange-matrix word in the same order. -/
+@[simp]
+theorem toExtendedMatrix_mutationWord [DecidableEq K] [DecidableEq J]
+    (s : YSeed K (Trop J)) (w : List K) :
+    (s.mutationWord w).toExtendedMatrix = s.toExtendedMatrix.mutationWord w := by
+  rw [mutationWord_eq_foldl, ExchangeMatrix.mutationWord_eq_foldl]
+  exact (List.foldl_hom (fun s : YSeed K (Trop J) ↦ s.toExtendedMatrix)
+    (fun s k ↦ (s.toExtendedMatrix_mutation k).symm)).symm
+
 /-- Mutable reindexing commutes with the extended-matrix presentation. -/
 @[simp]
 theorem toExtendedMatrix_reindex (eK : K ≃ K') (s : YSeed K (Trop J)) :
@@ -198,7 +212,7 @@ theorem toExtendedMatrix_toTropicalYSeed
   ext : 1
   · ext i k
     cases i <;>
-      simp [YSeed.toExtendedMatrix, toTropicalYSeed, principal_matrix, Sum.elim,
+      simp [YSeed.toExtendedMatrix, toTropicalYSeed, principal_matrix,
         Matrix.submatrix_apply]
   · simp [YSeed.toExtendedMatrix, toTropicalYSeed]
 

@@ -18,6 +18,10 @@ For an ideal `I` and an element `f` of a commutative ring, `I ∩ (f) = f · (I 
 regular this determines `(I : f)`: generators of `I ∩ (f)`, which an intersection computation
 supplies, divided by `f` generate `(I : f)`.
 
+The colon conditions `r I ⊆ J` compose under multiplication of the scalars, and a power
+`x ^ (j - i)` of an element of `I` carries `I ^ i` into `I ^ j`. These conditions say when
+multiplication by a scalar induces a map between the quotients `M ⧸ I M` and `M ⧸ J M`.
+
 ## Main results
 
 * `Submodule.le_annihilator_quotient_iff`: an ideal annihilates a quotient exactly when its
@@ -30,6 +34,8 @@ supplies, divided by `f` generate `(I : f)`.
 * `Ideal.span_singleton_mul_colon_singleton`: a regular principal factor cancels from colon.
 * `Ideal.exists_eq_span_pow_mul_colon_not_le`: an ideal not contained in every power of `(f)` is
   `(f ^ k) · (I : f ^ k)` with `(I : f ^ k)` not contained in `(f)`.
+* `Ideal.le_colon_singleton_mul`: the conditions `r I ⊆ J` and `s J ⊆ K` give `(s r) I ⊆ K`.
+* `Ideal.pow_le_colon_singleton_pow`: for `x ∈ I` and `i ≤ j`, `x ^ (j - i) I ^ i ⊆ I ^ j`.
 
 ## References
 
@@ -128,5 +134,17 @@ theorem exists_eq_span_pow_mul_colon_not_le (h : ∃ n, ¬ I ≤ span {f ^ n}) :
   · obtain ⟨a, rfl⟩ := mem_span_singleton'.1 (hIk hx)
     obtain ⟨d, rfl⟩ := mem_span_singleton'.1 (hle (Submodule.mem_colon_singleton.2 hx))
     exact mem_span_singleton'.2 ⟨d, by ring⟩
+
+/-- Colon conditions compose: if `r I ⊆ J` and `s J ⊆ K`, then `(s r) I ⊆ K`. -/
+theorem le_colon_singleton_mul {I J K : Ideal R} {r s : R} (hIJ : I ≤ J.colon {r})
+    (hJK : J ≤ K.colon {s}) : I ≤ K.colon {s * r} := fun a ha ↦ by
+  have h : a * r * s ∈ K := by simpa using hJK (by simpa using hIJ ha : a * r ∈ J)
+  simpa [mul_comm s r, ← mul_assoc] using h
+
+/-- For `x ∈ I` and `i ≤ j`, multiplication by `x ^ (j - i)` carries `I ^ i` into `I ^ j`. -/
+theorem pow_le_colon_singleton_pow {x : R} (hx : x ∈ I) {i j : ℕ} (hij : i ≤ j) :
+    I ^ i ≤ (I ^ j).colon {x ^ (j - i)} := fun a ha ↦ by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hij
+  simpa [Submodule.mem_colon_singleton, pow_add, mul_comm] using mul_mem_mul (pow_mem_pow hx k) ha
 
 end Ideal

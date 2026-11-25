@@ -393,7 +393,8 @@ theorem genEigenspace_returnDerivative_le_ker (hP : (T₀, p) ∈ flowDomain v)
     {μ : ℝ} (hμ : μ ≠ 0) (k : ℕ∞) :
     (returnDerivative v g T₀ p).genEigenspace μ k ≤
       LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ) :=
-  Module.End.genEigenspace_le_of_range_le (range_returnDerivative_le_ker hv hP hp hg hgv) hμ k
+  Module.End.genEigenspace_le_of_range_le (range_returnDerivative_le_ker hv hP hp hg hgv)
+    hμ.isUnit k
 
 /-- The eigenvectors of the linearized return map for a nonzero eigenvalue lie in the tangent space
 `ker dg_p` of the section. -/

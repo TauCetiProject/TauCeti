@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Cluster.ExchangeMatrix.Mutation
+public import TauCeti.Algebra.Cluster.ExchangeMatrix.Mutation.Basic
 public import TauCeti.Logic.Equiv.Set
 public import TauCeti.Algebra.Cluster.ExchangeMatrix.Standard
 
@@ -51,8 +51,16 @@ theorem mutableFrozenEquiv_matrix (B : ExchangeMatrix row) :
     _ = B.matrix.submatrix (Equiv.ofInjectiveSumCompl row row.injective) id :=
       B.reindex_matrix (Equiv.ofInjectiveSumCompl row row.injective).symm (Equiv.refl K)
         (fun k ↦ Equiv.ofInjectiveSumCompl_symm_apply row.injective k)
+    _ = Matrix.fromRows
+        (B.matrix.submatrix (Equiv.ofInjectiveSumCompl row row.injective) id).toRows₁
+        (B.matrix.submatrix (Equiv.ofInjectiveSumCompl row row.injective) id).toRows₂ :=
+      (Matrix.fromRows_toRows _).symm
     _ = _ := by
-      ext (i | a) j <;> simp [principal_matrix]
+      congr 1
+      · ext k j
+        simp [principal_matrix]
+      · ext a j
+        simp
 
 /-- The chosen symmetrizer is unchanged by the standard row presentation. -/
 @[simp]
@@ -132,20 +140,13 @@ theorem principalFrozenEquiv_symm_principal
   simpa only [principalFrozenEquiv_apply] using
     congrArg Prod.fst ((principalFrozenEquiv row).apply_symm_apply p)
 
-@[simp]
-private theorem fromRows_submatrix_frozen {J α : Type*}
-    (A : Matrix K J α) (F : Matrix ((Set.range row)ᶜ : Set I) J α) :
-    (Matrix.fromRows A F).submatrix
-      ((Equiv.ofInjectiveSumCompl row row.injective).symm ∘ Subtype.val) id = F := by
-  ext a j
-  simp [Matrix.submatrix_apply]
-
 /-- Reconstructed matrices have precisely the prescribed frozen block. -/
+@[simp↓]
 theorem principalFrozenEquiv_symm_frozen
     (p : ExchangeMatrix (Function.Embedding.refl K) × Matrix ((Set.range row)ᶜ : Set I) K ℤ) :
     ((principalFrozenEquiv row).symm p).matrix.submatrix Subtype.val id = p.2 := by
-  simp only [principalFrozenEquiv_symm_matrix, Matrix.submatrix_submatrix, Function.comp_id,
-    fromRows_submatrix_frozen]
+  simpa only [principalFrozenEquiv_apply] using
+    congrArg Prod.snd ((principalFrozenEquiv row).apply_symm_apply p)
 
 section Mutation
 
