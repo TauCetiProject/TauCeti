@@ -52,8 +52,9 @@ coefficients, as for option prices of linear growth in the spot `exp x`.
   derivative of the sigmoid is bounded, and Hölder continuous of every exponent `α ≤ 1`;
 * `Real.hasDerivAt_log_one_add_exp`, `Real.iteratedDeriv_succ_log_one_add_exp` — the derivatives
   of `x ↦ log (1 + exp x)` of positive order are those of the sigmoid;
-* `Real.hasDerivAt_two_mul_sigmoid`, `Real.abs_sqrt_two_mul_sigmoid_sub_one_le` — the derivative of
-  `x ↦ 2 * sigmoid (2 * x)` and the global bound `|√(2 * sigmoid (2 * u)) - 1| ≤ |u|`.
+* `Real.hasDerivAt_two_mul_sigmoid_two_mul`, `Real.abs_sqrt_two_mul_sigmoid_two_mul_sub_one_le` —
+  the derivative of `x ↦ 2 * sigmoid (2 * x)` and the global bound
+  `|√(2 * sigmoid (2 * u)) - 1| ≤ |u|`.
 -/
 
 public section
@@ -184,23 +185,23 @@ theorem iteratedDeriv_succ_log_one_add_exp (n : ℕ) :
 
 /-- The derivative of `x ↦ 2 * sigmoid (2 * x)` at `u` is
 `4 * sigmoid (2 * u) * (1 - sigmoid (2 * u))`, taking value `1` at `u = 0`. -/
-theorem hasDerivAt_two_mul_sigmoid (u : ℝ) :
+theorem hasDerivAt_two_mul_sigmoid_two_mul (u : ℝ) :
     HasDerivAt (fun x ↦ 2 * sigmoid (2 * x))
       (4 * sigmoid (2 * u) * (1 - sigmoid (2 * u))) u :=
   (((hasDerivAt_sigmoid (2 * u)).comp u ((hasDerivAt_id u).const_mul 2)).const_mul
     2).congr_deriv (by ring)
 
 /-- For every real `u`, `|√(2 * sigmoid (2 * u)) - 1| ≤ |u|`. -/
-theorem abs_sqrt_two_mul_sigmoid_sub_one_le (u : ℝ) :
+theorem abs_sqrt_two_mul_sigmoid_two_mul_sub_one_le (u : ℝ) :
     |sqrt (2 * sigmoid (2 * u)) - 1| ≤ |u| := by
   refine (abs_sqrt_sub_one_le_abs_sub_one _).trans ?_
   have hd : ∀ y ∈ Set.univ, DifferentiableAt ℝ (fun x ↦ 2 * sigmoid (2 * x)) y :=
-    fun y _ ↦ (hasDerivAt_two_mul_sigmoid y).differentiableAt
+    fun y _ ↦ (hasDerivAt_two_mul_sigmoid_two_mul y).differentiableAt
   have hb : ∀ y ∈ Set.univ, ‖deriv (fun x ↦ 2 * sigmoid (2 * x)) y‖ ≤ 1 := fun y _ ↦ by
     have h0 : 0 ≤ 4 * sigmoid (2 * y) * (1 - sigmoid (2 * y)) :=
       mul_nonneg (mul_nonneg (by norm_num) (sigmoid_pos _).le)
         (sub_nonneg.mpr (sigmoid_le_one _))
-    rw [(hasDerivAt_two_mul_sigmoid y).deriv, norm_eq_abs, abs_of_nonneg h0]
+    rw [(hasDerivAt_two_mul_sigmoid_two_mul y).deriv, norm_eq_abs, abs_of_nonneg h0]
     nlinarith [sq_nonneg (1 - 2 * sigmoid (2 * y))]
   simpa [norm_eq_abs] using
     convex_univ.norm_image_sub_le_of_norm_deriv_le hd hb (Set.mem_univ 0) (Set.mem_univ u)

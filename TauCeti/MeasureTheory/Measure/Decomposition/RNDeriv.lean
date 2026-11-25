@@ -29,8 +29,8 @@ difference `(√(dμ/dκ) - √(dν/dκ))²` of their square roots.
 
 ## Main results
 
-* `MeasureTheory.Measure.ae_sqrt_rnDeriv_pos`: `√(dμ/dν) > 0` `μ`-almost everywhere when `μ ≪ ν`
-  for σ-finite `μ`.
+* `MeasureTheory.Measure.ae_sqrt_toReal_rnDeriv_pos`: `√(dμ/dν) > 0` `μ`-almost everywhere when
+  `μ ≪ ν` for σ-finite `μ`.
 * `MeasureTheory.Measure.memLp_two_sqrt_toReal_rnDeriv`: `√(dμ/dν) ∈ L²(ν)` for finite `μ`.
 * `MeasureTheory.Measure.integrable_sqrt_toReal_rnDeriv_mul`: `√(dμ/dκ · dν/dκ)` is
   `κ`-integrable for finite `μ` and `ν`.
@@ -48,8 +48,8 @@ variable {α : Type*} [MeasurableSpace α]
 
 /-- For `μ ≪ ν` with `μ` σ-finite and admitting a Lebesgue decomposition with respect to `ν`,
 the square-root Radon–Nikodym derivative `√(dμ/dν)` is `μ`-almost everywhere positive. -/
-theorem ae_sqrt_rnDeriv_pos {μ ν : Measure α} [μ.HaveLebesgueDecomposition ν] [SigmaFinite μ]
-    (hμν : μ ≪ ν) : ∀ᵐ x ∂μ, 0 < √(μ.rnDeriv ν x).toReal := by
+theorem ae_sqrt_toReal_rnDeriv_pos {μ ν : Measure α} [μ.HaveLebesgueDecomposition ν]
+    [SigmaFinite μ] (hμν : μ ≪ ν) : ∀ᵐ x ∂μ, 0 < √(μ.rnDeriv ν x).toReal := by
   filter_upwards [rnDeriv_pos hμν, hμν (μ.rnDeriv_lt_top ν)] with x hpos hlt
   exact Real.sqrt_pos.mpr (ENNReal.toReal_pos hpos.ne' hlt.ne)
 

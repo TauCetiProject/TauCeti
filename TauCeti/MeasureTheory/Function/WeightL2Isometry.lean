@@ -40,13 +40,14 @@ Radon–Nikodym derivative `√(dμ/dν)` when `μ ≪ ν`.
   `L²(μ)` seminorm of `√w · g` equals the `L²(w·μ)` seminorm of `g`.
 * `TauCeti.coeFn_weightL2Isometry` — the forward map is multiplication by `√w`.
 * `TauCeti.coeFn_weightL2Isometry_symm` — the inverse map is multiplication by `(√w)⁻¹`.
-* `MeasureTheory.Measure.eLpNorm_sqrt_rnDeriv_smul`,
-  `MeasureTheory.Measure.eLpNorm_mul_sqrt_rnDeriv`,
-  `MeasureTheory.Measure.memLp_sqrt_rnDeriv_smul_iff`, and
-  `MeasureTheory.Measure.memLp_mul_sqrt_rnDeriv_iff` — scaling a (not necessarily measurable)
-  function by `√(dμ/dν)` preserves the `L²` seminorm and `L²` membership between `μ` and `ν`.
-* `MeasureTheory.Measure.eLpNorm_sqrt_rnDeriv` and
-  `MeasureTheory.Measure.eLpNorm_sqrt_rnDeriv_eq_one` — `√(dμ/dν)` has `L²(ν)` seminorm
+* `MeasureTheory.Measure.eLpNorm_sqrt_toReal_rnDeriv_smul`,
+  `MeasureTheory.Measure.eLpNorm_mul_sqrt_toReal_rnDeriv`,
+  `MeasureTheory.Measure.memLp_sqrt_toReal_rnDeriv_smul_iff`, and
+  `MeasureTheory.Measure.memLp_mul_sqrt_toReal_rnDeriv_iff` — scaling a (not necessarily
+  measurable) function by `√(dμ/dν)` preserves the `L²` seminorm and `L²` membership between `μ`
+  and `ν`.
+* `MeasureTheory.Measure.eLpNorm_sqrt_toReal_rnDeriv` and
+  `MeasureTheory.Measure.eLpNorm_sqrt_toReal_rnDeriv_eq_one` — `√(dμ/dν)` has `L²(ν)` seminorm
   `(μ univ)^(1/2)` (and `1` for probability measures).
 -/
 
@@ -159,7 +160,7 @@ variable {α : Type*} [MeasurableSpace α]
 /-- For `μ ≪ ν` with `μ` σ-finite and admitting a Lebesgue decomposition with respect to `ν`, and
 any function `f : α → E` into a real normed space (not assumed measurable), scaling `f` by
 `√(dμ/dν)` preserves the `L²` seminorm: `‖√(dμ/dν) • f‖_{L²(ν)} = ‖f‖_{L²(μ)}`. -/
-theorem eLpNorm_sqrt_rnDeriv_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+theorem eLpNorm_sqrt_toReal_rnDeriv_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {μ ν : Measure α} [μ.HaveLebesgueDecomposition ν] [SigmaFinite μ] (hμν : μ ≪ ν) (f : α → E) :
     eLpNorm (fun x ↦ √((μ.rnDeriv ν x).toReal) • f x) 2 ν = eLpNorm f 2 μ := by
   set r : α → ℝ := fun x ↦ (μ.rnDeriv ν x).toReal
@@ -183,44 +184,44 @@ theorem eLpNorm_sqrt_rnDeriv_smul {E : Type*} [NormedAddCommGroup E] [NormedSpac
     refine eLpNorm_of_not_aestronglyMeasurable fun hν ↦ hf ?_
     refine (hr_meas.sqrt.inv.stronglyMeasurable.smul
         hν.stronglyMeasurable_mk).aestronglyMeasurable.congr ?_
-    filter_upwards [hμν hν.ae_eq_mk, ae_sqrt_rnDeriv_pos hμν] with x hx hpos
+    filter_upwards [hμν hν.ae_eq_mk, ae_sqrt_toReal_rnDeriv_pos hμν] with x hx hpos
     dsimp [r]
     rw [← hx, smul_smul, inv_mul_cancel₀ hpos.ne', one_smul]
 
-/-- Scalar form of `MeasureTheory.Measure.eLpNorm_sqrt_rnDeriv_smul`: for `μ ≪ ν` with `μ` σ-finite
-and admitting a Lebesgue decomposition with respect to `ν`, and any `f : α → ℝ` (not assumed
-measurable), `‖f · √(dμ/dν)‖_{L²(ν)} = ‖f‖_{L²(μ)}`. -/
-theorem eLpNorm_mul_sqrt_rnDeriv {μ ν : Measure α} [μ.HaveLebesgueDecomposition ν] [SigmaFinite μ]
-    (hμν : μ ≪ ν) (f : α → ℝ) :
+/-- Scalar form of `MeasureTheory.Measure.eLpNorm_sqrt_toReal_rnDeriv_smul`: for `μ ≪ ν` with `μ`
+σ-finite and admitting a Lebesgue decomposition with respect to `ν`, and any `f : α → ℝ` (not
+assumed measurable), `‖f · √(dμ/dν)‖_{L²(ν)} = ‖f‖_{L²(μ)}`. -/
+theorem eLpNorm_mul_sqrt_toReal_rnDeriv {μ ν : Measure α} [μ.HaveLebesgueDecomposition ν]
+    [SigmaFinite μ] (hμν : μ ≪ ν) (f : α → ℝ) :
     eLpNorm (fun x ↦ f x * √((μ.rnDeriv ν x).toReal)) 2 ν = eLpNorm f 2 μ := by
-  simpa [smul_eq_mul, mul_comm] using eLpNorm_sqrt_rnDeriv_smul hμν f
+  simpa [smul_eq_mul, mul_comm] using eLpNorm_sqrt_toReal_rnDeriv_smul hμν f
 
 /-- Scaling by `√(dμ/dν)` preserves `L²` membership between `μ` and `ν`. -/
-theorem memLp_sqrt_rnDeriv_smul_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+theorem memLp_sqrt_toReal_rnDeriv_smul_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {μ ν : Measure α} [μ.HaveLebesgueDecomposition ν] [SigmaFinite μ] (hμν : μ ≪ ν) {f : α → E} :
     MemLp (fun x ↦ √((μ.rnDeriv ν x).toReal) • f x) 2 ν ↔ MemLp f 2 μ := by
-  simp only [memLp_iff, eLpNorm_sqrt_rnDeriv_smul hμν f]
+  simp only [memLp_iff, eLpNorm_sqrt_toReal_rnDeriv_smul hμν f]
 
-/-- Scalar form of `MeasureTheory.Measure.memLp_sqrt_rnDeriv_smul_iff`: multiplying by `√(dμ/dν)`
-preserves `L²` membership between `μ` and `ν`. -/
-theorem memLp_mul_sqrt_rnDeriv_iff {μ ν : Measure α} [μ.HaveLebesgueDecomposition ν] [SigmaFinite μ]
-    (hμν : μ ≪ ν) {f : α → ℝ} :
+/-- Scalar form of `MeasureTheory.Measure.memLp_sqrt_toReal_rnDeriv_smul_iff`: multiplying by
+`√(dμ/dν)` preserves `L²` membership between `μ` and `ν`. -/
+theorem memLp_mul_sqrt_toReal_rnDeriv_iff {μ ν : Measure α} [μ.HaveLebesgueDecomposition ν]
+    [SigmaFinite μ] (hμν : μ ≪ ν) {f : α → ℝ} :
     MemLp (fun x ↦ f x * √((μ.rnDeriv ν x).toReal)) 2 ν ↔ MemLp f 2 μ := by
-  simp only [memLp_iff, eLpNorm_mul_sqrt_rnDeriv hμν f]
+  simp only [memLp_iff, eLpNorm_mul_sqrt_toReal_rnDeriv hμν f]
 
 /-- For `μ ≪ ν` with `μ` σ-finite and admitting a Lebesgue decomposition with respect to `ν`, the
 `L²(ν)` seminorm of `√(dμ/dν)` is `(μ univ) ^ (1 / 2)`. -/
-theorem eLpNorm_sqrt_rnDeriv (μ ν : Measure α) [μ.HaveLebesgueDecomposition ν] [SigmaFinite μ]
-    (hμν : μ ≪ ν) :
+theorem eLpNorm_sqrt_toReal_rnDeriv (μ ν : Measure α) [μ.HaveLebesgueDecomposition ν]
+    [SigmaFinite μ] (hμν : μ ≪ ν) :
     eLpNorm (fun x ↦ √((μ.rnDeriv ν x).toReal)) 2 ν = μ Set.univ ^ (2 : ℝ)⁻¹ := by
   simpa [eLpNorm_const' (1 : ℝ) two_ne_zero ENNReal.ofNat_ne_top] using
-    eLpNorm_mul_sqrt_rnDeriv hμν (fun _ ↦ 1)
+    eLpNorm_mul_sqrt_toReal_rnDeriv hμν (fun _ ↦ 1)
 
 /-- For a probability measure `μ ≪ ν` admitting a Lebesgue decomposition with respect to `ν`, the
 `L²(ν)` seminorm of `√(dμ/dν)` is `1`. -/
-theorem eLpNorm_sqrt_rnDeriv_eq_one (μ ν : Measure α) [IsProbabilityMeasure μ]
+theorem eLpNorm_sqrt_toReal_rnDeriv_eq_one (μ ν : Measure α) [IsProbabilityMeasure μ]
     [μ.HaveLebesgueDecomposition ν] (hμν : μ ≪ ν) :
     eLpNorm (fun x ↦ √((μ.rnDeriv ν x).toReal)) 2 ν = 1 := by
-  simp [eLpNorm_sqrt_rnDeriv μ ν hμν]
+  simp [eLpNorm_sqrt_toReal_rnDeriv μ ν hμν]
 
 end MeasureTheory.Measure
