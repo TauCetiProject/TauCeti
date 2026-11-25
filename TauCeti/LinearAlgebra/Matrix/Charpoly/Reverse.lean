@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.Matrix.Block
 import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.LinearAlgebra.Matrix.Diagonal
+import TauCeti.LinearAlgebra.Matrix.Determinant.Pencil
 
 /-!
 # The reversed characteristic polynomial `det (1 - X A)` of a square matrix
@@ -112,10 +113,7 @@ theorem coeff_charpolyRev_card (A : Matrix ι ι R) :
 /-- Evaluating `det (1 - X A)` at `X = t` gives `det (1 - t A)`. -/
 theorem eval_charpolyRev_eq_det_one_sub_smul (A : Matrix ι ι R) (t : R) :
     A.charpolyRev.eval t = (1 - t • A).det := by
-  rw [charpolyRev, ← coe_evalRingHom, RingHom.map_det]
-  congr 1
-  ext i j
-  by_cases h : i = j <;> simp [h, Matrix.smul_apply, smul_eq_mul, mul_comm t]
+  simpa [charpolyRev, Matrix.map_neg, sub_eq_neg_add] using eval_det_X_add_C (-A) 1 t
 
 /-- Evaluating `det (1 - X A)` at `X = 1` gives `det (1 - A)`. -/
 @[simp]

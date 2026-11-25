@@ -78,6 +78,9 @@ attached only to doubles along the complement of `TauCeti.borderedInterior M`.
   `z ↦ conj z` in every doubled chart, so it is real smooth (`contMDiff_swap`).
 * `TauCeti.SchottkyDouble.contMDiffAt_fold_inl` and `TauCeti.SchottkyDouble.contMDiffAt_fold_inr`:
   the fold of the double onto `M` is real smooth at both copies of every interior point.
+* `TauCeti.SchottkyDouble.hasMFDerivAt_swap`: the differential of the sheet swap is conjugation.
+* `TauCeti.SchottkyDouble.mem_range_interiorInl_or_mem_range_interiorInr_or_mem_image_inl_compl`:
+  every point lies on one of the two interior sheets or on the gluing set.
 * `TauCeti.DoubleAlong.swap_swap` and `TauCeti.DoubleAlong.fixed_locus` apply directly: the swap
   is an involution whose fixed set is the boundary on the first copy.
 * `TauCeti.SchottkyDouble.isOpenEmbedding_interiorInl` and
@@ -434,6 +437,16 @@ theorem contMDiff_swap {n : ℕ∞ω} :
   exact Complex.conjCLE.contDiff.contDiffAt.congr_of_eventuallyEq
     (writtenInExtChartAt_swap_eventuallyEq_conj z)
 
+/-- **The differential of the sheet swap is conjugation**, in the doubled charts at a point and at
+its image, which coincide. -/
+theorem hasMFDerivAt_swap (z : SchottkyDouble M) :
+    HasMFDerivAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (DoubleAlong.swap (borderedInterior M : Set M)ᶜ) z
+      (Complex.conjCLE : ℂ ≃L[ℝ] ℂ).toContinuousLinearMap := by
+  refine ⟨(DoubleAlong.swap _).continuous.continuousAt, ?_⟩
+  rw [modelWithCornersSelf_coe, range_id, hasFDerivWithinAt_univ]
+  exact (Complex.conjCLE : ℂ ≃L[ℝ] ℂ).toContinuousLinearMap.hasFDerivAt.congr_of_eventuallyEq
+    (writtenInExtChartAt_swap_eventuallyEq_conj (𝕜 := ℝ) z)
+
 /-- A chart change between the doubled charts of two charts of `M` whose chart change is bordered
 holomorphic is holomorphic. -/
 private theorem doubleChart_symm_trans_mem_contDiffGroupoid
@@ -678,6 +691,20 @@ theorem disjoint_range_interiorInr_image_inl_compl :
   rintro _ ⟨u, rfl⟩ ⟨y, _, heq⟩
   rw [interiorInr_apply, DoubleAlong.inl_eq_inr_iff] at heq
   exact heq.2 (heq.1 ▸ u.property)
+
+/-- Every point of the double lies on the first interior sheet, on the second, or on the gluing
+set. -/
+theorem mem_range_interiorInl_or_mem_range_interiorInr_or_mem_image_inl_compl (z : D) :
+    z ∈ range (interiorInl M) ∨ z ∈ range (interiorInr M) ∨ z ∈ DoubleAlong.inl A '' A := by
+  induction z using DoubleAlong.induction_on with
+  | hl x =>
+    by_cases hx : x ∈ borderedInterior M
+    · exact Or.inl ⟨⟨x, hx⟩, interiorInl_apply _⟩
+    · exact Or.inr (Or.inr ⟨x, hx, rfl⟩)
+  | hr x =>
+    by_cases hx : x ∈ borderedInterior M
+    · exact Or.inr (Or.inl ⟨⟨x, hx⟩, interiorInr_apply _⟩)
+    · exact Or.inr (Or.inr ⟨x, hx, (DoubleAlong.inl_eq_inr_iff A).2 ⟨rfl, hx⟩⟩)
 
 /-- Near the first copy of an interior point, the fold of the double onto `M` is real `C^n`: it is
 the identity in the doubled chart and the chart of `M`. -/
