@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Chebyshev
-public import TauCeti.Analysis.SpecialFunctions.LogIntegral
+public import TauCeti.Analysis.SpecialFunctions.LogIntegral.Basic
 
 /-!
 # The exact remainder between `π` and `Li`, and the transfer of `θ`-bounds
@@ -27,7 +27,7 @@ for Mathlib's `Nat.primeCounting` and `Chebyshev.theta`.
 
 Every explicit bound for `θ` becomes an explicit bound for `π` through this identity, without
 repeating the partial summation. The integrals it produces are estimated by the comparisons for the
-weight `(t log² t)⁻¹` in `TauCeti/Analysis/SpecialFunctions/LogIntegral.lean`: a bound
+weight `(t log² t)⁻¹` in `TauCeti/Analysis/SpecialFunctions/LogIntegral/Basic.lean`: a bound
 `|θ(t) - t| ≤ t ε(t)` turns `∫ (θ(t) - t) / (t log² t)` into `∫ ε(t) / log² t`, and constant bounds
 on the pieces of a partition turn it into increments of `x ↦ Li x - x / log x`
 (`TauCeti.Real.abs_integral_div_mul_log_sq_le_sum`).

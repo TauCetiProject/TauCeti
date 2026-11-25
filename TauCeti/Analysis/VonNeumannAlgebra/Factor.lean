@@ -17,7 +17,10 @@ Neumann algebra classification and the target of the Murray–von Neumann ICC fa
 equivalently `Nontrivial H` and `M ⊓ M.commutant = ⊥`
 (`VonNeumannAlgebra.isFactor_iff_inf_commutant_eq_bot`). Factorhood is preserved under commutants
 (`VonNeumannAlgebra.isFactor_commutant_iff`) and holds for `⊤` and `⊥` on any nontrivial Hilbert
-space.
+space. When `M ⊓ M.commutant = ⊥`, a product `a * b` with `a ∈ M` and `b ∈ M.commutant` vanishes
+only when `a = 0` or `b = 0`
+(`VonNeumannAlgebra.eq_zero_or_eq_zero_of_mul_eq_zero_of_mem_commutant`), since the projection onto
+the closed `M`-orbit of `range a` belongs to `M ⊓ M.commutant = ⊥`.
 
 ## References
 
@@ -94,5 +97,57 @@ theorem isFactor_top [Nontrivial H] : (⊤ : VonNeumannAlgebra H).IsFactor := by
 @[simp]
 theorem isFactor_bot [Nontrivial H] : (⊥ : VonNeumannAlgebra H).IsFactor := by
   rw [← commutant_top, isFactor_commutant_iff]; exact isFactor_top
+
+/-! ### Nonzero products between `M` and `M.commutant` -/
+
+/-- **Nonzero product theorem.** If `M` has scalar center (`M ⊓ M.commutant = ⊥`), `a ∈ M`, and
+`b ∈ M.commutant` satisfy `a * b = 0`, then `a = 0` or `b = 0`. -/
+theorem eq_zero_or_eq_zero_of_mul_eq_zero_of_mem_commutant {M : VonNeumannAlgebra H}
+    (hM : M ⊓ M.commutant = ⊥) {a b : H →L[ℂ] H} (ha : a ∈ M) (hb : b ∈ M.commutant)
+    (hab : a * b = 0) :
+    a = 0 ∨ b = 0 := by
+  -- The closed span `L` of `{x v | x ∈ M, v ∈ range a}` reduces both `M` and `M.commutant`.
+  set L₀ : Submodule ℂ H := Submodule.span ℂ {w : H | ∃ x ∈ M, ∃ v ∈ Set.range a, x v = w}
+  set L : Submodule ℂ H := L₀.topologicalClosure
+  have hrange : ∀ w ∈ M.commutant, Set.MapsTo w (Set.range a) (Set.range a) := by
+    rintro w hw _ ⟨ξ, rfl⟩
+    exact ⟨w ξ, by
+      simpa [mul_apply_eq_comp] using DFunLike.congr_fun (mem_commutant_iff.mp hw a ha) ξ⟩
+  have hp_bot : L.starProjection ∈ (⊥ : VonNeumannAlgebra H) :=
+    hM ▸ mem_inf.mpr
+      ⟨M.starProjection_topologicalClosure_span_mem hrange,
+        M.starProjection_topologicalClosure_span_mem_commutant (Set.range a)⟩
+  -- Since `L.starProjection` is an idempotent in `⊥`, it is `0` or `1`.
+  rcases eq_zero_or_eq_one_of_isIdempotentElem_of_mem_bot L.isIdempotentElem_starProjection
+      hp_bot with hp0 | hp1
+  · left
+    ext ξ
+    have hξ : a ξ ∈ L := Submodule.le_topologicalClosure _
+      (Submodule.subset_span ⟨1, M.one_mem, a ξ, ⟨ξ, rfl⟩, one_apply_eq_self _⟩)
+    rw [← L.starProjection_eq_self_iff.mpr hξ, hp0, zero_apply, zero_apply]
+  · right
+    have hker : L ≤ LinearMap.ker b.toLinearMap := by
+      refine Submodule.topologicalClosure_minimal _ (Submodule.span_le.mpr ?_)
+        (isClosed_singleton.preimage b.continuous)
+      rintro _ ⟨x, hx, _, ⟨ξ, rfl⟩, rfl⟩
+      have hab' : b * a = 0 := (mem_commutant_iff.mp hb a ha).symm.trans hab
+      simpa [SetLike.mem_coe, LinearMap.mem_ker, mul_apply_eq_comp, mul_assoc, hab'] using
+        DFunLike.congr_fun (congrArg (· * a) (mem_commutant_iff.mp hb x hx).symm) ξ
+    ext v
+    exact hker (L.starProjection_eq_self_iff.mp (by rw [hp1, one_apply_eq_self]))
+
+/-- In a von Neumann algebra with scalar center, a product `a * b` with `a ∈ M` and
+`b ∈ M.commutant` vanishes if and only if `a = 0` or `b = 0`. -/
+theorem mul_eq_zero_iff_of_mem_commutant {M : VonNeumannAlgebra H} (hM : M ⊓ M.commutant = ⊥)
+    {a b : H →L[ℂ] H} (ha : a ∈ M) (hb : b ∈ M.commutant) :
+    a * b = 0 ↔ a = 0 ∨ b = 0 :=
+  ⟨eq_zero_or_eq_zero_of_mul_eq_zero_of_mem_commutant hM ha hb, by rintro (rfl | rfl) <;> simp⟩
+
+/-- In a von Neumann algebra with scalar center, the product of nonzero `a ∈ M` and
+`b ∈ M.commutant` is nonzero. -/
+theorem mul_ne_zero_of_mem_commutant {M : VonNeumannAlgebra H} (hM : M ⊓ M.commutant = ⊥)
+    {a b : H →L[ℂ] H} (ha : a ∈ M) (hb : b ∈ M.commutant) (ha0 : a ≠ 0) (hb0 : b ≠ 0) :
+    a * b ≠ 0 :=
+  fun hab => (eq_zero_or_eq_zero_of_mul_eq_zero_of_mem_commutant hM ha hb hab).elim ha0 hb0
 
 end VonNeumannAlgebra

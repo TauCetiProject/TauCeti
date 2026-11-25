@@ -264,9 +264,8 @@ theorem W1p.const_notMem_halfDiscFlatTraceZeroSubmodule (hp : p ≠ (∞ : ℝ�
     {c : ℝ} (hc : c ≠ 0) :
     (W1p.const c : W1p volume (halfDisc r) p) ∉ W1p.halfDiscFlatTraceZeroSubmodule hp r := by
   have hu : W1p.value (W1p.const c : W1p volume (halfDisc r) p)
-      =ᵐ[volume.restrict (halfDisc r : Set (WithLp 2 (ℝ × ℝ)))] fun _ => c := by
-    rw [W1p.value_const]
-    exact Lp.coeFn_const p _ c
+      =ᵐ[volume.restrict (halfDisc r : Set (WithLp 2 (ℝ × ℝ)))] fun _ => c :=
+    W1p.value_const_ae c
   rw [W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_of_continuousOn hp hr continuousOn_const hu]
   exact fun h => hc (h 0 (mem_halfDiscFlatSegment.2 ⟨by simpa using hr.le, rfl⟩))
 

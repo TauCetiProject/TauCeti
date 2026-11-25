@@ -38,6 +38,9 @@ monic quadratic factors, in the domain itself.
   closed domain with no root in it is irreducible over the fraction field.
 * `Polynomial.Monic.irreducible_map_of_natDegree_eq_four`: a monic quartic over an integrally
   closed domain with no root and no monic quadratic factor is irreducible over the fraction field.
+* `Polynomial.Monic.exists_monic_mul_eq_irreducible_map`: a monic polynomial of positive degree
+  over an integrally closed domain has a monic factor, with monic cofactor, that is irreducible
+  over the fraction field.
 -/
 
 public section
@@ -127,6 +130,22 @@ theorem irreducible_map_of_natDegree_eq_four (hg : g.Monic) (hdeg : g.natDegree 
   rw [← hg.irreducible_iff_irreducible_map_fraction_map]
   exact hg.irreducible_of_degree_le_five_of_not_isRoot_of_not_quadratic_dvd (by rw [hdeg]; decide)
     hroot hquad
+
+variable (K) in
+/-- A monic polynomial of positive degree over an integrally closed domain `R` has a monic factor
+over `R` that is irreducible over the fraction field `K`, with monic cofactor. -/
+theorem exists_monic_mul_eq_irreducible_map {f : R[X]} (hf : f.Monic) (hdeg : f.natDegree ≠ 0) :
+    ∃ g q : R[X], g.Monic ∧ q.Monic ∧ g * q = f ∧ Irreducible (g.map (algebraMap R K)) := by
+  have hinj := IsFractionRing.injective R K
+  have hu : ¬IsUnit (f.map (algebraMap R K)) := fun h ↦
+    hdeg <| by rw [← hf.natDegree_map (algebraMap R K), natDegree_eq_zero_of_isUnit h]
+  obtain ⟨G, hGm, hGirr, hGdvd⟩ := exists_monic_irreducible_factor _ hu
+  obtain ⟨g, hg⟩ := IsIntegrallyClosed.eq_map_mul_C_of_dvd K hf hGdvd
+  rw [hGm.leadingCoeff, C_1, mul_one] at hg
+  have hgm : g.Monic :=
+    hinj <| by rw [← leadingCoeff_map_of_injective hinj, hg, hGm.leadingCoeff, map_one]
+  obtain ⟨q, rfl⟩ := hf.dvd_of_fraction_map_dvd_fraction_map hgm (hg ▸ hGdvd)
+  exact ⟨g, q, hgm, hgm.of_mul_monic_left hf, rfl, hg ▸ hGirr⟩
 
 end Polynomial.Monic
 

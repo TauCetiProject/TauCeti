@@ -33,6 +33,8 @@ produce its functions.
   the point--place dictionary.
 * `WeierstrassCurve.Affine.divisorSum_eq_zero_iff`: **a degree-zero divisor is principal exactly
   when its sum is `O`.**
+* `WeierstrassCurve.Affine.exists_principal_eq_sum_zsmul_iff`: a divisor `∑ nᵢ ((Pᵢ) - (O))` on
+  rational points is principal exactly when `∑ nᵢ Pᵢ = O`.
 * `WeierstrassCurve.Affine.exists_principal_eq_ofPoint_add_sub`: the divisor
   `(P + Q) - (P) - ((Q) - (O))` is principal; a function with this divisor is the reciprocal of
   Miller's addition function for `P` and `Q`.
@@ -135,6 +137,20 @@ theorem divisorSum_ofPoint_sub_ofPoint (P Q : W.Point) :
         ⟨_, W.ofPoint_sub_ofPoint_mem_ker_degree Q 0⟩ :=
     Subtype.ext (sub_sub_sub_cancel_right _ _ _).symm
   rw [hsplit, map_sub, hO, hO]
+
+/-- **The principal-divisor criterion on rational points** (Silverman III.3.5): the divisor
+`∑ nᵢ ((Pᵢ) - (O))` is the divisor of a function exactly when `∑ nᵢ Pᵢ = O`. -/
+theorem exists_principal_eq_sum_zsmul_iff {ι : Type*} (s : Finset ι) (n : ι → ℤ)
+    (P : ι → W.Point) :
+    (∃ z : W.FunctionFieldˣ, Divisor.principal W.isFunctionField z =
+      ∑ i ∈ s, n i • (WeilDivisor.ofPoint (W.pointEquivDegreeOnePlace (P i)).val -
+        WeilDivisor.ofPoint (Place.infinity W))) ↔ ∑ i ∈ s, n i • P i = 0 := by
+  rw [← coe_pointEquivDegreeOnePlace_zero]
+  have h := W.divisorSum_eq_zero_iff
+    (D := ∑ i ∈ s, n i • ⟨_, W.ofPoint_sub_ofPoint_mem_ker_degree (P i) .zero⟩)
+  simp only [map_sum, map_zsmul, divisorSum_ofPoint_sub_ofPoint, ← Point.zero_def, sub_zero,
+    AddSubmonoidClass.coe_finsetSum, AddSubgroup.coe_zsmul] at h
+  exact h.symm
 
 /-- **`(P + Q) - (P) - ((Q) - (O))` is the divisor of a function**, its sum being
 `(P + Q) - P - Q = O` (Silverman III.3.5). Such a function is the reciprocal `v / ℓ` of Miller's

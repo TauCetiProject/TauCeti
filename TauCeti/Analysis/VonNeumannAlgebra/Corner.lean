@@ -11,7 +11,7 @@ public import TauCeti.Analysis.InnerProductSpace.Projection.ExtendByZero
 public import TauCeti.Analysis.InnerProductSpace.UltraweakTopology
 public import TauCeti.Analysis.InnerProductSpace.WeakOperatorTopology
 public import TauCeti.Analysis.VonNeumannAlgebra.Bicommutant
-public import TauCeti.Analysis.VonNeumannAlgebra.Lattice
+public import TauCeti.Analysis.VonNeumannAlgebra.Factor
 
 import Mathlib.Analysis.Normed.Operator.Extend
 import TauCeti.Algebra.Star.Subalgebra

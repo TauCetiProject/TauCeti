@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Star.TensorProduct
-public import TauCeti.Analysis.VonNeumannAlgebra.Lattice
+public import TauCeti.Analysis.VonNeumannAlgebra.Factor
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import TauCeti.Analysis.InnerProductSpace.RankOne
 import TauCeti.Analysis.VonNeumannAlgebra.Density

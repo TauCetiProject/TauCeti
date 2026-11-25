@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Prod
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Topology.Algebra.PointTopology.Group
+import TauCeti.Topology.Algebra.ContinuousMulEquiv
 
 /-!
 # Points with values in a product of coefficient rings
@@ -137,15 +138,13 @@ of points and a point, as topological monoids: `prodContinuousMulEquiv` followed
 noncomputable def piProdContinuousMulEquiv :
     WithConv (H →ₐ[k] (∀ i, R i) × B) ≃ₜ* (∀ i, WithConv (H →ₐ[k] R i)) × WithConv (H →ₐ[k] B) :=
   (prodContinuousMulEquiv k H _ B).trans
-    { toMulEquiv := MulEquiv.prodCongr (piContinuousMulEquiv k H R).toMulEquiv (MulEquiv.refl _)
-      continuous_toFun := (piContinuousMulEquiv k H R).continuous.prodMap continuous_id
-      continuous_invFun := (piContinuousMulEquiv k H R).symm.continuous.prodMap continuous_id }
+    ((piContinuousMulEquiv k H R).prodCongr (ContinuousMulEquiv.refl _))
 
 theorem piProdContinuousMulEquiv_apply (x : WithConv (H →ₐ[k] (∀ i, R i) × B)) :
     piProdContinuousMulEquiv k H R B x =
       (piContinuousMulEquiv k H R (AlgHom.mapValue (AlgHom.fst k (∀ i, R i) B) x),
-        AlgHom.mapValue (AlgHom.snd k (∀ i, R i) B) x) :=
-  (rfl)
+        AlgHom.mapValue (AlgHom.snd k (∀ i, R i) B) x) := by
+  simp [piProdContinuousMulEquiv, prodContinuousMulEquiv_apply]
 
 @[simp]
 theorem piProdContinuousMulEquiv_apply_fst (x : WithConv (H →ₐ[k] (∀ i, R i) × B)) (i : ι)
