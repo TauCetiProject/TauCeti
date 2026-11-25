@@ -191,8 +191,7 @@ theorem perfectRing [CharP A p] [IsIntegralPerfectoid p A] : PerfectRing A p := 
   -- the zeroth tilt coordinate is bijective, and reduction modulo `p = 0` is injective
   have hinj := PreTilt.coeff_zero_injective_of_isPrincipal_ker_fontaineTheta
     (isPrincipal_ker_fontaineTheta (p := p) (A := A))
-  have hsurj : Function.Surjective (PreTilt.coeff (O := A) (p := p) 0) :=
-    Perfection.coeff_surjective (frobenius_surjective (p := p) (A := A)) 0
+  have hsurj := coeff_surjective (p := p) (A := A) 0
   have := isReduced_of_perfectRing (PreTilt A p) p
   let e := RingEquiv.ofBijective _ ⟨hinj, hsurj⟩
   have : IsReduced A := isReduced_of_injective
