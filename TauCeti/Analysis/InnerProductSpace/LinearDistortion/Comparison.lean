@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearDistortion
+import TauCeti.Algebra.Order.BigOperators.GroupWithZero.Finset
 import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
@@ -331,37 +332,6 @@ theorem innerDistortion_eq_one_iff_outerDistortion_eq_one {A : V →ₗ[ℝ] W} 
 
 /-! ### Equality cases of the comparison of the exponents -/
 
-/-- A product of `m` reals in `(0, c]` is `cᵐ` exactly when every factor is `c`. -/
-private theorem prod_range_eq_pow_iff_of_le {m : ℕ} {f : ℕ → ℝ} {c : ℝ}
-    (hpos : ∀ i < m, 0 < f i) (hle : ∀ i < m, f i ≤ c) :
-    ∏ i ∈ Finset.range m, f i = c ^ m ↔ ∀ i < m, f i = c := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · by_contra hne
-    push Not at hne
-    obtain ⟨i, hi, hfi⟩ := hne
-    have := Finset.prod_lt_prod₀ (s := Finset.range m) (g := fun _ ↦ c)
-      (fun j hj ↦ hpos j (Finset.mem_range.mp hj)) (fun j hj ↦ hle j (Finset.mem_range.mp hj))
-      ⟨i, Finset.mem_range.mpr hi, (hle i hi).lt_of_ne hfi⟩
-    simp [h] at this
-  · rw [Finset.prod_congr rfl fun i hi ↦ h i (Finset.mem_range.mp hi), Finset.prod_const,
-      Finset.card_range]
-
-/-- A product of `m` reals in `[c, ∞)`, with `c > 0`, is `cᵐ` exactly when every factor is
-`c`. -/
-private theorem prod_range_eq_pow_iff_of_ge {m : ℕ} {f : ℕ → ℝ} {c : ℝ} (hc : 0 < c)
-    (hle : ∀ i < m, c ≤ f i) :
-    ∏ i ∈ Finset.range m, f i = c ^ m ↔ ∀ i < m, f i = c := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · by_contra hne
-    push Not at hne
-    obtain ⟨i, hi, hfi⟩ := hne
-    have := Finset.prod_lt_prod₀ (s := Finset.range m) (f := fun _ ↦ c) (fun _ _ ↦ hc)
-      (fun j hj ↦ hle j (Finset.mem_range.mp hj))
-      ⟨i, Finset.mem_range.mpr hi, (hle i hi).lt_of_ne hfi.symm⟩
-    simp [h] at this
-  · rw [Finset.prod_congr rfl fun i hi ↦ h i (Finset.mem_range.mp hi), Finset.prod_const,
-      Finset.card_range]
-
 omit [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
 /-- When `J(A) > 0`, every singular value `σᵢ` with `i < n` is positive. -/
 private theorem singularValues_pos_of_orientedJacobian_pos {A : V →ₗ[ℝ] W}
@@ -372,7 +342,7 @@ private theorem singularValues_pos_of_orientedJacobian_pos {A : V →ₗ[ℝ] W}
 
 omit [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
 /-- **Equality case of `q_I ≤ q_Oⁿ⁻¹`.** When `J(A) > 0`, `q_I(A) = q_O(A)ⁿ⁻¹` exactly when the
-`n - 1` largest singular values agree, `σ₁ = ⋯ = σₙ₋₁` (indexed from `0` here). -/
+`n - 1` largest singular values agree, `σ₀ = ⋯ = σₙ₋₂` (singular values indexed from `0`). -/
 theorem ofReal_innerDistortion_eq_outerDistortion_pow_iff {A : V →ₗ[ℝ] W}
     (h : 0 < oV.orientedJacobian oW A) :
     ENNReal.ofReal (oV.innerDistortion oW A) = oV.outerDistortion oW A ^ (n - 1) ↔
@@ -388,14 +358,22 @@ theorem ofReal_innerDistortion_eq_outerDistortion_pow_iff {A : V →ₗ[ℝ] W}
   have hm : 0 < A.singularValues m := hs (by omega)
   have h0 : 0 < A.singularValues 0 := hs (by omega)
   simp only [Nat.add_sub_cancel, Finset.prod_range_succ]
-  rw [← prod_range_eq_pow_iff_of_le (fun i hi ↦ hs (by omega))
-      (fun i _ ↦ A.singularValues_antitone (Nat.zero_le i))]
+  -- `σ₀ ⋯ σₘ₋₁ ≤ σ₀ᵐ`, with equality exactly when `σᵢ = σ₀` for every `i < m`
+  have hQs₀ : ∏ i ∈ Finset.range m, A.singularValues i =
+        ∏ _i ∈ Finset.range m, A.singularValues 0 ↔
+      ∀ i ∈ Finset.range m, A.singularValues i = A.singularValues 0 :=
+    Finset.prod_eq_prod_iff_of_le₀ (fun i hi ↦ hs (by simp at hi; omega))
+      fun i _ ↦ A.singularValues_antitone (Nat.zero_le i)
+  simp only [Finset.prod_const, Finset.card_range, Finset.mem_range] at hQs₀
+  rw [← hQs₀]
   set Q := ∏ i ∈ Finset.range m, A.singularValues i
   set s₀ := A.singularValues 0
   set sₘ := A.singularValues m
+  -- `q_I = q_Oᵐ` reads `Q sₘ / sₘᵐ⁺¹ = (s₀ᵐ⁺¹ / (Q sₘ))ᵐ`; clearing denominators, this is
+  -- `Qᵐ⁺¹ = (s₀ᵐ)ᵐ⁺¹`, that is `Q = s₀ᵐ`.
   rw [← ENNReal.ofReal_pow (by positivity),
     ENNReal.ofReal_eq_ofReal_iff (by positivity) (by positivity),
-    ← pow_left_inj₀ (a := Q) (b := s₀ ^ m) (n := m + 1) hQ.le (by positivity) (by omega),
+    ← pow_left_inj₀ hQ.le (pow_pos h0 m).le (by omega : m + 1 ≠ 0),
     div_pow, mul_pow, div_eq_div_iff (by positivity) (by positivity)]
   constructor <;> intro h'
   · refine mul_right_cancel₀ (pow_pos hm (m + 1)).ne' ?_
@@ -404,7 +382,7 @@ theorem ofReal_innerDistortion_eq_outerDistortion_pow_iff {A : V →ₗ[ℝ] W}
 
 omit [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
 /-- **Equality case of `q_O ≤ q_Iⁿ⁻¹`.** When `J(A) > 0`, `q_O(A) = q_I(A)ⁿ⁻¹` exactly when the
-`n - 1` smallest singular values agree, `σ₂ = ⋯ = σₙ` (indexed from `0` here). -/
+`n - 1` smallest singular values agree, `σ₁ = ⋯ = σₙ₋₁` (singular values indexed from `0`). -/
 theorem outerDistortion_eq_ofReal_innerDistortion_pow_iff {A : V →ₗ[ℝ] W}
     (h : 0 < oV.orientedJacobian oW A) :
     oV.outerDistortion oW A = ENNReal.ofReal (oV.innerDistortion oW A ^ (n - 1)) ↔
@@ -420,17 +398,26 @@ theorem outerDistortion_eq_ofReal_innerDistortion_pow_iff {A : V →ₗ[ℝ] W}
   have hm : 0 < A.singularValues m := hs (by omega)
   have h0 : 0 < A.singularValues 0 := hs (by omega)
   simp only [Nat.add_sub_cancel, Finset.prod_range_succ']
-  rw [← prod_range_eq_pow_iff_of_ge hm
-      (fun i hi ↦ A.singularValues_antitone (show i + 1 ≤ m by omega))]
+  -- `σₘᵐ ≤ σ₁ ⋯ σₘ`, with equality exactly when `σᵢ₊₁ = σₘ` for every `i < m`
+  have hsₘR : ∏ _i ∈ Finset.range m, A.singularValues m =
+        ∏ i ∈ Finset.range m, A.singularValues (i + 1) ↔
+      ∀ i ∈ Finset.range m, A.singularValues m = A.singularValues (i + 1) :=
+    Finset.prod_eq_prod_iff_of_le₀ (fun _ _ ↦ hm)
+      fun i hi ↦ A.singularValues_antitone (show i + 1 ≤ m by simp at hi; omega)
+  simp only [Finset.prod_const, Finset.card_range, Finset.mem_range] at hsₘR
+  simp_rw [@eq_comm _ (A.singularValues m)] at hsₘR
+  rw [← hsₘR]
   set R := ∏ i ∈ Finset.range m, A.singularValues (i + 1)
   set s₀ := A.singularValues 0
   set sₘ := A.singularValues m
+  -- `q_O = q_Iᵐ` reads `s₀ᵐ⁺¹ / (s₀ R) = (s₀ R / sₘᵐ⁺¹)ᵐ`; clearing denominators, this is
+  -- `(sₘᵐ)ᵐ⁺¹ = Rᵐ⁺¹`, that is `sₘᵐ = R`.
   rw [ENNReal.ofReal_eq_ofReal_iff (by positivity) (by positivity),
-    ← pow_left_inj₀ (a := R) (b := sₘ ^ m) (n := m + 1) hR.le (by positivity) (by omega),
+    ← pow_left_inj₀ (pow_pos hm m).le hR.le (by omega : m + 1 ≠ 0),
     div_pow, div_eq_div_iff (by positivity) (by positivity)]
   constructor <;> intro h'
   · refine mul_right_cancel₀ (pow_pos h0 (m + 1)).ne' ?_
-    linear_combination -h'
-  · linear_combination -(s₀ ^ (m + 1)) * h'
+    linear_combination h'
+  · linear_combination (s₀ ^ (m + 1)) * h'
 
 end Orientation

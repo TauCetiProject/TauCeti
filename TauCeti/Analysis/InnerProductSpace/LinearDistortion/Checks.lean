@@ -12,8 +12,10 @@ public import TauCeti.Analysis.InnerProductSpace.SingularValues.Planar
 # Checks for the outer and inner distortion of a linear map
 
 Worked examples for `Orientation.outerDistortion` (`q_O`) and `Orientation.innerDistortion`
-(`q_I`) on a real inner product plane `E` with an orthonormal basis `e`, oriented by `e` on both
-sides, writing `toLin e e M` for the operator with matrix `M` in that basis:
+(`q_I`), mostly on a real inner product plane `E` with an orthonormal basis `e`, oriented by `e`
+on both sides, writing `toLin e e M` for the operator with matrix `M` in that basis. The
+dimension-`3` Checks use an orthonormal basis `f` of a `3`-dimensional space `F` in the same way,
+and the dimension-`1` Check an oriented line `L`:
 
 * `diag(2, 1)` has `‖A‖ = 2`, `J(A) = 2` and `ℓ(A) = 1`, so `q_O(A) = 4 / 2 = 2` and
   `q_I(A) = 2 / 1 = 2`;
@@ -154,6 +156,7 @@ omit [Fact (finrank ℝ F = 3)] in
 theorem singularValues_diagonal_three {d₀ d₁ d₂ : ℝ} (h₂ : 0 ≤ d₂) (h₁₂ : d₂ ≤ d₁)
     (h₀₁ : d₁ ≤ d₀) :
     (toLin f.toBasis f.toBasis (diagonal ![d₀, d₁, d₂])).singularValues 0 = d₀ ∧
+      (toLin f.toBasis f.toBasis (diagonal ![d₀, d₁, d₂])).singularValues 1 = d₁ ∧
       (toLin f.toBasis f.toBasis (diagonal ![d₀, d₁, d₂])).singularValues 2 = d₂ := by
   have h₁ : 0 ≤ d₁ := h₂.trans h₁₂
   have h₀ : 0 ≤ d₀ := h₁.trans h₀₁
@@ -162,8 +165,8 @@ theorem singularValues_diagonal_three {d₀ d₁ d₂ : ℝ} (h₂ : 0 ≤ d₂)
     fin_cases i <;> fin_cases j <;>
       simp_all [Real.norm_eq_abs, abs_of_nonneg, Fin.le_def, h₁₂.trans h₀₁]
   have h := singularValues_toLin_diagonal f ![d₀, d₁, d₂] (Equiv.refl _) hanti
-  refine ⟨by simpa [abs_of_nonneg h₀] using h 0, ?_⟩
-  simpa [abs_of_nonneg h₂] using h 2
+  exact ⟨by simpa [abs_of_nonneg h₀] using h 0, by simpa [abs_of_nonneg h₁] using h 1,
+    by simpa [abs_of_nonneg h₂] using h 2⟩
 
 /-- The outer and inner distortion of `diag(d₀, d₁, d₂)` with `d₀ ≥ d₁ ≥ d₂ > 0`:
 `q_O = d₀³ / (d₀ d₁ d₂)` and `q_I = d₀ d₁ d₂ / d₂³`. -/
@@ -181,7 +184,7 @@ theorem distortion_diagonal_three {d₀ d₁ d₂ : ℝ} (h₂ : 0 < d₂) (h₁
     have : 0 < d₁ := h₂.trans_le h₁₂
     have : 0 < d₀ := this.trans_le h₀₁
     positivity
-  obtain ⟨h0, h2⟩ := singularValues_diagonal_three f h₂.le h₁₂ h₀₁
+  obtain ⟨h0, -, h2⟩ := singularValues_diagonal_three f h₂.le h₁₂ h₀₁
   constructor
   · rw [Orientation.outerDistortion_of_pos _ _ (by rwa [hJ]), hJ,
       norm_toContinuousLinearMap_eq_singularValues_zero, h0]
@@ -252,9 +255,9 @@ example {L : Type*} [NormedAddCommGroup L] [InnerProductSpace ℝ L] [FiniteDime
     o.outerDistortion o (a • LinearMap.id) = 1 ∧ o.innerDistortion o (a • LinearMap.id) = 1 := by
   have hid : (LinearIsometryEquiv.refl ℝ L : L →ₗ[ℝ] L) = LinearMap.id :=
     LinearMap.ext fun _ ↦ by simp
-  rw [o.outerDistortion_smul o (by simpa using ha), o.innerDistortion_smul o (by simpa using ha),
-    ← hid]
-  exact ⟨o.outerDistortion_linearIsometryEquiv o _ (by rw [hid, Orientation.orientedJacobian_id]),
-    o.innerDistortion_linearIsometryEquiv o _ (by rw [hid, Orientation.orientedJacobian_id])⟩
+  rw [o.outerDistortion_smul o (by simpa using ha), o.innerDistortion_smul o (by simpa using ha)]
+  refine ⟨o.outerDistortion_id, ?_⟩
+  rw [← hid]
+  exact o.innerDistortion_linearIsometryEquiv o _ (by rw [hid, Orientation.orientedJacobian_id])
 
 end TauCeti.LinearDistortionChecks
