@@ -53,7 +53,8 @@ multiplication by the transposed matrix.
   weak `L²` solution of `L_x y = f` with `f ∈ H^k` lies in `H^(k+1)`. The multiplication by the
   coefficients of `L_x - L₀` preserves `H^k` (`mulVec_mem_sobolevFields_natCast`), since those
   coefficients have derivatives bounded by `B + ‖vacuumField 0‖` when the coordinates of `x` have
-  derivatives bounded by `B` (`contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_le`).
+  derivatives bounded by `B`
+  (`contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_sub_vacuumField_le`).
 * `mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq_add`: the same for weak
   solutions of `L_x y = f + A y`, where `A` is a matrix of smooth coefficients with bounded
   derivatives through order `k`, such as the commutator of `L_x` with a weight.
@@ -278,7 +279,7 @@ private theorem mem_sobolevFields_one_of_integral_inner_eq
 `w` whose coordinates have derivatives bounded by `B` through order `k`, are smooth with
 derivatives bounded by `B` through order `k`: each entry is `0`, a coordinate of `w` or its
 negative. -/
-theorem contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_apply_le {k : ℕ} {B : ℝ}
+theorem contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_le {k : ℕ} {B : ℝ}
     {w : ℂ → EuclideanSpace ℝ (Fin 4)} (hw : ContDiff ℝ ∞ w)
     (hwb : ∀ i, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ w z i) z‖ ≤ B) (i j : Fin 4) :
     ContDiff ℝ ∞ (fun z ↦ gaugeFixedZerothOrderMatrix (w z) i j) ∧
@@ -298,15 +299,15 @@ theorem contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_apply_le {k
 /-- The entries of the zeroth-order matrix of `L_x - L₀`, at a smooth field whose coordinates have
 derivatives bounded by `B` through order `k`, are smooth with derivatives bounded by
 `B + ‖vacuumField 0‖` through order `k`. -/
-theorem contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_le {k : ℕ} {B : ℝ}
-    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x)
+theorem contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_sub_vacuumField_le
+    {k : ℕ} {B : ℝ} {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x)
     (hxb : ∀ i, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ B) (i j : Fin 4) :
     ContDiff ℝ ∞ (fun z ↦ gaugeFixedZerothOrderMatrix (x z - vacuumField z) i j) ∧
       ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n
         (fun z ↦ gaugeFixedZerothOrderMatrix (x z - vacuumField z) i j) z‖ ≤
           B + ‖vacuumField 0‖ := by
   -- The coordinates of `x - vacuumField` differ from those of `x` by constants.
-  refine contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_apply_le
+  refine contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_le
     (hx.sub contDiff_vacuumField) (fun a n hn z ↦ ?_) i j
   have hxa : ContDiff ℝ ∞ fun z ↦ x z a := contDiff_euclidean.1 hx a
   have he : (fun z ↦ (x z - vacuumField z) a) = (fun z ↦ x z a) - fun _ ↦ vacuumField 0 a :=
@@ -353,8 +354,8 @@ private theorem mem_sobolevFields_natCast_add_one_of_mem_sobolevFields {k : ℕ}
   choose M hM using fun i ↦ exists_forall_norm_iteratedFDeriv_le_of_forall_exists (hbound i)
   obtain ⟨N, hN⟩ := Finite.exists_le M
   have hN₀ : 0 ≤ N := (norm_nonneg _).trans ((hM 0 0 (Nat.zero_le k) 0).trans (hN 0))
-  have hZ := contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_le hx
-    (B := N) fun i n hn z ↦ (hM i n hn z).trans (hN i)
+  have hZ := contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_sub_vacuumField_le
+    hx (B := N) fun i n hn z ↦ (hM i n hn z).trans (hN i)
   have hzo : (fun z ↦ (A (x z - vacuumField z)).toEuclideanLin (y z)) ∈ sobolevFields k := by
     simp_rw [toEuclideanLin_apply_eq_toLp]
     refine mulVec_mem_sobolevFields_natCast k (A := fun i j z ↦ A (x z - vacuumField z) i j)

@@ -170,7 +170,8 @@ private theorem contDiff_and_norm_iteratedFDeriv_sub_gaugeFixedZerothOrderMatrix
       ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n
         (fun z ↦ g z - gaugeFixedZerothOrderMatrix (x z - vacuumField z) a b) z‖ ≤
           2 * B + ‖vacuumField 0‖ := by
-  obtain ⟨hZ, hZb⟩ := contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_le hx hxb a b
+  obtain ⟨hZ, hZb⟩ :=
+    contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_sub_vacuumField_le hx hxb a b
   refine ⟨hg.sub hZ, fun n hn z ↦ ?_⟩
   rw [fun_iteratedFDeriv_sub_apply (hg.contDiffAt.of_le (mod_cast le_top))
       (hZ.contDiffAt.of_le (mod_cast le_top))]
@@ -376,7 +377,8 @@ theorem exists_forall_norm_le_mul_add_of_integral_inner_gaugeFixedAdjoint_eq_add
     k (2 * B + ‖vacuumField 0‖)
   refine ⟨K, hK, fun x A hx hxb hA hAb y f u v hu hv hweak ↦ ?_⟩
   -- `y` is a weak solution of `L₀ y = f + (A - Z) y`, where `Z` is the matrix of `L_x - L₀`.
-  have hZ := contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_le hx hxb
+  have hZ :=
+    contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_sub_vacuumField_le hx hxb
   have hA' (i j : Fin 4) := contDiff_and_norm_iteratedFDeriv_sub_gaugeFixedZerothOrderMatrix_le
     hx hxb (hA i j) (hAb i j) i j
   have hy : MemLp y 2 volume := memLp_of_forall_inclusionLp_ae_eq (by positivity) hu
@@ -427,7 +429,8 @@ theorem exists_forall_norm_le_mul_add_of_integral_inner_gaugeFixedOperator_eq_ad
     k (2 * B + ‖vacuumField 0‖)
   refine ⟨K, hK, fun x A hx hxb hA hAb η g u v hu hv hweak ↦ ?_⟩
   -- `η` is a weak solution of `L₀* η = g + (A - Zᵀ) η`, where `Z` is the matrix of `L_x - L₀`.
-  have hZ := contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_le hx hxb
+  have hZ :=
+    contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_sub_vacuumField_le hx hxb
   have hA' (i j : Fin 4) := contDiff_and_norm_iteratedFDeriv_sub_gaugeFixedZerothOrderMatrix_le
     hx hxb (hA i j) (hAb i j) j i
   have hη : MemLp η 2 volume := memLp_of_forall_inclusionLp_ae_eq (by positivity) hu

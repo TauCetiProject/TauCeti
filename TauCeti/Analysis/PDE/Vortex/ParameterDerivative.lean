@@ -565,7 +565,7 @@ private theorem exists_forall_exists_inclusionLp_ae_eq_neg_gaugeFixedZerothOrder
   obtain ⟨C, hC, hCb⟩ := exists_forall_exists_inclusionLp_ae_eq_add_mulVec (le_refl k)
   refine ⟨C, hC, fun β hβ M hβb Y u hu ↦ ?_⟩
   have hZ (i j : Fin 4) :=
-    contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_apply_le hβ hβb i j
+    contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_le hβ hβb i j
   have hk : (k : ℝ) ≤ k + 1 := by linarith
   -- `-Z(β, Y)` is `0 + A Y` for the matrix `A = -gaugeFixedZerothOrderMatrix β`.
   obtain ⟨W, hW, hWn⟩ := hCb (fun i j z ↦ -gaugeFixedZerothOrderMatrix (β z) i j)
