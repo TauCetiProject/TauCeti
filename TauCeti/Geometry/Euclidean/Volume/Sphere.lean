@@ -50,7 +50,9 @@ lower bound on the dimension is needed: in dimension one, both measures count po
   spheres, with the integral and integrability forms
   `TauCeti.setLIntegral_sphere_eq_mul_setLIntegral_sphere_zero_one`,
   `TauCeti.setIntegral_sphere_eq_smul_setIntegral_sphere_zero_one` and
-  `TauCeti.integrableOn_sphere_iff`. For `r ≤ 0` the sphere contains at most its center
+  `TauCeti.integrableOn_sphere_iff`. For the total measure, see
+  `TauCeti.euclideanHausdorffMeasure_sphere_eq_mul_sphere_zero_one`.
+  For `r ≤ 0` the sphere contains at most its center
   (`TauCeti.setIntegral_sphere_eq_zero_of_nonpos`).
 * `TauCeti.euclideanHausdorffMeasure_image_eq_finrank_mul_volume_Ioo_smul`: the cone formula for
   a regular injective parametrization of a piece of the unit sphere.
@@ -128,6 +130,15 @@ theorem euclideanHausdorffMeasure_restrict_sphere_eq_smul_map (d : ℕ) (c : E) 
   rw [restrict_apply hs, _root_.smul_apply, φ.map_apply,
     restrict_apply' isClosed_sphere.measurableSet, ← hpre, ← preimage_inter, smul_eq_mul, ← himage,
     φ.image_preimage]
+
+/-- The `d`-dimensional Euclidean Hausdorff measure of a sphere of radius `r > 0` is
+`r ^ d` times that of the unit sphere. -/
+theorem euclideanHausdorffMeasure_sphere_eq_mul_sphere_zero_one (d : ℕ) (c : E) {r : ℝ}
+    (hr : 0 < r) :
+    μHE[d] (sphere c r) = ENNReal.ofReal r ^ d * μHE[d] (sphere (0 : E) 1) := by
+  rw [← restrict_apply_univ, euclideanHausdorffMeasure_restrict_sphere_eq_smul_map d c hr,
+    _root_.smul_apply, map_apply (by fun_prop) MeasurableSet.univ, preimage_univ,
+    restrict_apply_univ, smul_eq_mul]
 
 /-- **Rescaling integrals over spheres.** For `r > 0`, integrating a nonnegative function against
 `d`-dimensional Hausdorff measure on `sphere c r` amounts to integrating its pullback by
@@ -413,9 +424,29 @@ unit ball. -/
 theorem euclideanHausdorffMeasure_sphere (c : E) {r : ℝ} (hr : 0 < r) :
     μHE[finrank ℝ E - 1] (sphere c r) =
       finrank ℝ E * volume (ball (0 : E) 1) * ENNReal.ofReal r ^ (finrank ℝ E - 1) := by
-  rw [← restrict_apply_univ, euclideanHausdorffMeasure_restrict_sphere_eq_smul_map _ c hr,
-    _root_.smul_apply, map_apply (by fun_prop) MeasurableSet.univ, preimage_univ,
-    restrict_apply_univ, euclideanHausdorffMeasure_sphere_zero_one, smul_eq_mul, mul_comm]
+  rw [euclideanHausdorffMeasure_sphere_eq_mul_sphere_zero_one _ c hr,
+    euclideanHausdorffMeasure_sphere_zero_one, mul_comm]
+
+/-- Every sphere has finite codimension-one Euclidean Hausdorff measure. -/
+theorem euclideanHausdorffMeasure_sphere_lt_top (c : E) (r : ℝ) :
+    μHE[finrank ℝ E - 1] (sphere c r) < ∞ := by
+  rcases lt_trichotomy r 0 with hr | rfl | hr
+  · simp [sphere_eq_empty_of_neg hr]
+  · rw [sphere_zero, Measure.euclideanHausdorffMeasure_def, smul_apply, ENNReal.smul_def]
+    have h := hausdorffMeasure_le_one_of_subsingleton (s := {c}) subsingleton_singleton
+      (Nat.cast_nonneg (finrank ℝ E - 1))
+    exact ENNReal.mul_lt_top (by finiteness) (h.trans_lt (by simp))
+  · rw [euclideanHausdorffMeasure_sphere c hr]
+    finiteness
+
+/-- A continuous function on a sphere is integrable for its codimension-one Euclidean Hausdorff
+measure. -/
+theorem _root_.ContinuousOn.integrableOn_sphere_euclideanHausdorffMeasure
+    {F : Type*} [NormedAddCommGroup F]
+    {f : E → F} {c : E} {r : ℝ} (hf : ContinuousOn f (sphere c r)) :
+    IntegrableOn f (sphere c r) μHE[finrank ℝ E - 1] :=
+  hf.integrableOn_of_subset_isCompact (isCompact_sphere c r) isClosed_sphere.measurableSet
+    Subset.rfl (euclideanHausdorffMeasure_sphere_lt_top c r).ne
 
 /-- The area `|Sⁿ|` of the unit round sphere `Sⁿ ⊆ ℝⁿ⁺¹`: the normalized `n`-dimensional Hausdorff
 measure of the unit sphere of `EuclideanSpace ℝ (Fin (n + 1))`. -/
@@ -466,10 +497,9 @@ omit [FiniteDimensional ℝ E] in
 theorem euclideanHausdorffMeasure_sphere_eq_ofReal_pow_mul_roundSphereVolume {n : ℕ}
     (hE : finrank ℝ E = n + 1) (c : E) {r : ℝ} (hr : 0 < r) :
     μHE[n] (sphere c r) = ENNReal.ofReal (r ^ n * roundSphereVolume n) := by
-  rw [← restrict_apply_univ, euclideanHausdorffMeasure_restrict_sphere_eq_smul_map _ c hr,
-    _root_.smul_apply, map_apply (by fun_prop) MeasurableSet.univ, preimage_univ,
-    restrict_apply_univ, euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume hE,
-    smul_eq_mul, ← ENNReal.ofReal_pow hr.le, ← ENNReal.ofReal_mul (pow_nonneg hr.le n)]
+  rw [euclideanHausdorffMeasure_sphere_eq_mul_sphere_zero_one n c hr,
+    euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume hE,
+    ← ENNReal.ofReal_pow hr.le, ← ENNReal.ofReal_mul (pow_nonneg hr.le n)]
 
 omit [FiniteDimensional ℝ E] in
 /-- In a real inner product space of dimension `d + 1`, an `AEStronglyMeasurable` function that is
