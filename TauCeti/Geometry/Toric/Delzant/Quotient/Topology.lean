@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Toric.Delzant.Simplex
 import TauCeti.Algebra.AddCircle
 import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Perfect
 import TauCeti.Geometry.Symplectic.Manifold.SymplecticMap
+import TauCeti.Topology.Connected.TypeTags
 
 /-!
 # The topology of Delzant toric manifolds
@@ -180,6 +181,14 @@ theorem mem_fixedPoints_multiplicative_iff {q : DelzantQuotient i u c} :
     rw [← toAdd_vadd, ← coe_vadd]
     exact h _
 
+/-- The fixed points of the multiplicative copy of the torus `(ℝ / 2πℤ)^ι` on the Delzant quotient
+are those of the residual torus. -/
+theorem fixedPoints_multiplicative_eq :
+    MulAction.fixedPoints (Multiplicative (ι → AddCircle (2 * π))) (DelzantQuotient i u c) =
+      AddAction.fixedPoints ((ι → AddCircle (2 * π)) ⧸ (facetTorusHom i u (2 * π)).ker)
+        (DelzantQuotient i u c) :=
+  Set.ext fun _ ↦ mem_fixedPoints_multiplicative_iff
+
 variable (hβ : Function.Surjective (Fintype.linearCombination ℝ fun j ↦ i (u j)))
 include hβ
 
@@ -188,19 +197,14 @@ fixed points on the Delzant quotient as the polyhedron `Δ` has vertices, one ov
 theorem ncard_fixedPoints_multiplicative (hi : IsIntegralLattice i) :
     (MulAction.fixedPoints (Multiplicative (ι → AddCircle (2 * π)))
       (DelzantQuotient i u c)).ncard = ((facetPolyhedron i u c).extremePoints ℝ).ncard := by
-  rw [← (bijOn_reducedMomentMap_fixedPoints hβ hi).ncard_eq]
-  congr 1
-  ext q
-  exact mem_fixedPoints_multiplicative_iff
+  rw [fixedPoints_multiplicative_eq, (bijOn_reducedMomentMap_fixedPoints hβ hi).ncard_eq]
 
 /-- The torus has finitely many fixed points on the Delzant quotient. -/
 theorem finite_fixedPoints_multiplicative (hi : IsIntegralLattice i) :
     (MulAction.fixedPoints (Multiplicative (ι → AddCircle (2 * π)))
       (DelzantQuotient i u c)).Finite := by
-  refine Finite.of_injOn (fun q hq ↦ (bijOn_reducedMomentMap_fixedPoints hβ hi).mapsTo
-      (mem_fixedPoints_multiplicative_iff.1 hq))
-    (fun q hq q' hq' ↦ (bijOn_reducedMomentMap_fixedPoints hβ hi).injOn
-      (mem_fixedPoints_multiplicative_iff.1 hq) (mem_fixedPoints_multiplicative_iff.1 hq'))
+  rw [fixedPoints_multiplicative_eq]
+  exact (bijOn_reducedMomentMap_fixedPoints hβ hi).finite_iff_finite.2
     finite_extremePoints_facetPolyhedron
 
 /-- **Fixed points are isolated.** Near a fixed point `p` of the torus on the Delzant quotient, the
@@ -234,10 +238,15 @@ theorem connectedSpace_delzantQuotient : ConnectedSpace (DelzantQuotient i u c) 
     (surjective_linearCombination_real hi.span_range_eq_top hΔ.surjective_linearCombination)
     hΔ.isBounded hΔ.nonempty
 
-/-- **A Delzant toric manifold is simply connected.** A generic component of the moment map is a
-Morse function whose critical points are the fixed points of the torus, all of even index, so it
-attaches no one-cell. -/
-theorem simplyConnectedSpace_delzantQuotient : SimplyConnectedSpace (DelzantQuotient i u c) := by
+/-- The Morse theory of a generic component of the moment map of a Delzant toric manifold, done
+once: the manifold is simply connected and, for every division ring of coefficients, its odd Betti
+numbers vanish and its Betti numbers add up to the number of vertices of `Δ`. -/
+private theorem simplyConnectedSpace_and_bettiNumber_delzantQuotient :
+    SimplyConnectedSpace (DelzantQuotient i u c) ∧
+      ∀ (k : Type w) [DivisionRing k],
+        (∀ j, Odd j → bettiNumber k (DelzantQuotient i u c) j = 0) ∧
+        ∑ j ∈ Finset.range (2 * finrank ℝ V + 1), bettiNumber k (DelzantQuotient i u c) j =
+          ((facetPolyhedron i u c).extremePoints ℝ).ncard := by
   have := hi.finiteDimensional
   have hβ := surjective_linearCombination_real hi.span_range_eq_top hΔ.surjective_linearCombination
   let _ := hΔ.delzantQuotientChartedSpace hi
@@ -246,13 +255,24 @@ theorem simplyConnectedSpace_delzantQuotient : SimplyConnectedSpace (DelzantQuot
   have := hi.t2Space_delzantQuotient (u := u) (c := c)
   have := compactSpace_delzantQuotient (c := c) hΔ.isBounded
   have := hΔ.connectedSpace_delzantQuotient hi
-  have : PreconnectedSpace (Multiplicative (ι → AddCircle (2 * π))) :=
-    inferInstanceAs (PreconnectedSpace (ι → AddCircle (2 * π)))
   have h := hΔ.hamiltonianTorusData_delzantQuotientSymplecticForm hi hβ
-  exact h.toIsMomentMap.simplyConnectedSpace
-    (hΔ.isSymplectic_delzantQuotientSymplecticForm hi).isNondegenerate
-    (fun g ↦ ((SmoothTwoForm.isSymplecticMap_iff_mpullback_eq _).2 (h.mpullback_smul g)).apply)
-    fun _ hp ↦ DelzantQuotient.eventually_eq_of_mem_fixedPoints_multiplicative hβ hi hp
+  have hσ := (hΔ.isSymplectic_delzantQuotientSymplecticForm hi).isNondegenerate
+  have hσG := fun g ↦
+    ((SmoothTwoForm.isSymplecticMap_iff_mpullback_eq _).2 (h.mpullback_smul g)).apply
+  have hiso (p) (hp : p ∈ MulAction.fixedPoints (Multiplicative (ι → AddCircle (2 * π)))
+      (DelzantQuotient i u c)) :=
+    DelzantQuotient.eventually_eq_of_mem_fixedPoints_multiplicative hβ hi hp
+  refine ⟨h.toIsMomentMap.simplyConnectedSpace hσ hσG hiso, fun k _ ↦
+    ⟨fun _ ↦ h.toIsMomentMap.bettiNumber_eq_zero_of_odd hσ hσG k hiso, ?_⟩⟩
+  rw [← hΔ.finrank_delzantQuotientModelSpace hi,
+    ← DelzantQuotient.ncard_fixedPoints_multiplicative hβ hi]
+  exact h.toIsMomentMap.sum_bettiNumber_eq_ncard_fixedPoints hσ hσG k hiso
+
+/-- **A Delzant toric manifold is simply connected.** A generic component of the moment map is a
+Morse function whose critical points are the fixed points of the torus, all of even index, so it
+attaches no one-cell. -/
+theorem simplyConnectedSpace_delzantQuotient : SimplyConnectedSpace (DelzantQuotient i u c) :=
+  (simplyConnectedSpace_and_bettiNumber_delzantQuotient hΔ hi).1
 
 variable (k : Type w) [DivisionRing k]
 
@@ -260,21 +280,8 @@ variable (k : Type w) [DivisionRing k]
 coefficients: a generic component of the moment map is a perfect Morse function all of whose
 indices are even. -/
 theorem bettiNumber_delzantQuotient_eq_zero_of_odd {j : ℕ} (hj : Odd j) :
-    bettiNumber k (DelzantQuotient i u c) j = 0 := by
-  have := hi.finiteDimensional
-  have hβ := surjective_linearCombination_real hi.span_range_eq_top hΔ.surjective_linearCombination
-  let _ := hΔ.delzantQuotientChartedSpace hi
-  have := hΔ.isManifold_delzantQuotient hi
-  have := hΔ.contMDiffVAdd_delzantQuotient hi
-  have := hi.t2Space_delzantQuotient (u := u) (c := c)
-  have := compactSpace_delzantQuotient (c := c) hΔ.isBounded
-  have : PreconnectedSpace (Multiplicative (ι → AddCircle (2 * π))) :=
-    inferInstanceAs (PreconnectedSpace (ι → AddCircle (2 * π)))
-  have h := hΔ.hamiltonianTorusData_delzantQuotientSymplecticForm hi hβ
-  exact h.toIsMomentMap.bettiNumber_eq_zero_of_odd
-    (hΔ.isSymplectic_delzantQuotientSymplecticForm hi).isNondegenerate
-    (fun g ↦ ((SmoothTwoForm.isSymplecticMap_iff_mpullback_eq _).2 (h.mpullback_smul g)).apply)
-    k (fun _ hp ↦ DelzantQuotient.eventually_eq_of_mem_fixedPoints_multiplicative hβ hi hp) hj
+    bettiNumber k (DelzantQuotient i u c) j = 0 :=
+  ((simplyConnectedSpace_and_bettiNumber_delzantQuotient hΔ hi).2 k).1 j hj
 
 /-- **The total Betti number of a Delzant toric manifold is the number of vertices** of its
 polytope `Δ`, for every division ring of coefficients. The manifold has dimension `2 n`, with
@@ -282,23 +289,8 @@ polytope `Δ`, for every division ring of coefficients. The manifold has dimensi
 exactly one fixed point over each vertex. -/
 theorem sum_bettiNumber_delzantQuotient :
     ∑ j ∈ Finset.range (2 * finrank ℝ V + 1), bettiNumber k (DelzantQuotient i u c) j =
-      ((facetPolyhedron i u c).extremePoints ℝ).ncard := by
-  have := hi.finiteDimensional
-  have hβ := surjective_linearCombination_real hi.span_range_eq_top hΔ.surjective_linearCombination
-  let _ := hΔ.delzantQuotientChartedSpace hi
-  have := hΔ.isManifold_delzantQuotient hi
-  have := hΔ.contMDiffVAdd_delzantQuotient hi
-  have := hi.t2Space_delzantQuotient (u := u) (c := c)
-  have := compactSpace_delzantQuotient (c := c) hΔ.isBounded
-  have : PreconnectedSpace (Multiplicative (ι → AddCircle (2 * π))) :=
-    inferInstanceAs (PreconnectedSpace (ι → AddCircle (2 * π)))
-  have h := hΔ.hamiltonianTorusData_delzantQuotientSymplecticForm hi hβ
-  rw [← hΔ.finrank_delzantQuotientModelSpace hi,
-    ← DelzantQuotient.ncard_fixedPoints_multiplicative hβ hi]
-  exact h.toIsMomentMap.sum_bettiNumber_eq_ncard_fixedPoints
-    (hΔ.isSymplectic_delzantQuotientSymplecticForm hi).isNondegenerate
-    (fun g ↦ ((SmoothTwoForm.isSymplecticMap_iff_mpullback_eq _).2 (h.mpullback_smul g)).apply)
-    k fun _ hp ↦ DelzantQuotient.eventually_eq_of_mem_fixedPoints_multiplicative hβ hi hp
+      ((facetPolyhedron i u c).extremePoints ℝ).ncard :=
+  ((simplyConnectedSpace_and_bettiNumber_delzantQuotient hΔ hi).2 k).2
 
 end IsDelzant
 
