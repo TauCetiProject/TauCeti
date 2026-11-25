@@ -15,11 +15,11 @@ public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.Basic
 /-!
 # Modules over a preadditive category
 
-Let `C` be a preadditive category. A (right) `C`-module is an additive functor
+Let `C` be a preadditive category. A `C`-module is a contravariant additive functor
 `Cᵒᵖ ⥤ AddCommGrpCat`, and `TauCeti.ModCat C := Cᵒᵖ ⥤+ AddCommGrpCat.{w}` is the category of
-`C`-modules, the full subcategory of additive functors in `Cᵒᵖ ⥤ AddCommGrpCat.{w}`. Left
-`C`-modules are the objects of `ModCat Cᵒᵖ`. For a ring `A`, the category `ModCat (SingleObj Aᵐᵒᵖ)`
-is the category of left `A`-modules.
+`C`-modules, the full subcategory of additive functors in `Cᵒᵖ ⥤ AddCommGrpCat.{w}`. Covariant
+additive functors `C ⥤ AddCommGrpCat` are the objects of `ModCat Cᵒᵖ`. For a ring `A`, the category
+`ModCat (SingleObj Aᵐᵒᵖ)` is the category of left `A`-modules.
 
 Kernels, cokernels and (co)limits in a functor category are computed pointwise, so a (co)limit
 of additive functors is again additive. Hence the additive functors `D ⥤ A` into a preadditive
@@ -118,8 +118,8 @@ end Closure
 
 variable (C : Type u) [Category.{v} C] [Preadditive C]
 
-/-- The category `Mod C` of (right) `C`-modules: the additive functors `Cᵒᵖ ⥤+ AddCommGrpCat.{w}`.
-Left `C`-modules are the objects of `ModCat Cᵒᵖ`. -/
+/-- The category `Mod C` of `C`-modules: the contravariant additive functors
+`Cᵒᵖ ⥤+ AddCommGrpCat.{w}`. Covariant additive functors on `C` are the objects of `ModCat Cᵒᵖ`. -/
 abbrev ModCat := Cᵒᵖ ⥤+ AddCommGrpCat.{w}
 
 /-- `Mod C` is abelian, as a full subcategory of `Cᵒᵖ ⥤ AddCommGrpCat` containing zero and closed
