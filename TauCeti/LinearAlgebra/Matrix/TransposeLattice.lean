@@ -21,6 +21,8 @@ This file shows that the lattice determines `L` up to a change of basis by `GL(�
 
 ## Main results
 
+* `Matrix.exists_generalLinearGroup_mulVec_eq_of_mulVec_eq`: if `L' = M L` and `L = N L'` for
+  integer matrices `M`, `N` and `L` is onto, then `M` is an element of `GL(κ, ℤ)`.
 * `ContinuousLinearMap.transposeLattice_le_iff`: `L₁ᵀ ℤ^κ₁ ⊆ L₂ᵀ ℤ^κ₂` exactly when
   `L₁ = N L₂` for an integer matrix `N`.
 * `ContinuousLinearMap.exists_generalLinearGroup_mulVec_eq_of_transposeLattice_eq`: two linear
@@ -38,6 +40,28 @@ This file shows that the lattice determines `L` up to a change of basis by `GL(�
 public section
 
 open Function Matrix
+
+namespace Matrix
+
+variable {κ : Type*} [Fintype κ] [DecidableEq κ]
+
+/-- **Mutually inverse integer changes of basis.** If `L' = M L` and `L = N L'` for integer
+matrices `M`, `N` and the map `L` is onto, then `N M = 1`, so `M` is an element of `GL(κ, ℤ)`. -/
+theorem exists_generalLinearGroup_mulVec_eq_of_mulVec_eq {F : Type*}
+    {L L' : F → κ → ℝ} (hL : Surjective L) {M N : Matrix κ κ ℤ}
+    (hM : ∀ w, L' w = M.map (↑) *ᵥ L w) (hN : ∀ w, L w = N.map (↑) *ᵥ L' w) :
+    ∃ M' : GL κ ℤ, ∀ w, L' w = (M' : Matrix κ κ ℤ).map (↑) *ᵥ L w := by
+  have hcast : (N * M).map ((↑) : ℤ → ℝ) = (1 : Matrix κ κ ℤ).map ((↑) : ℤ → ℝ) := by
+    rw [Matrix.map_one _ Int.cast_zero Int.cast_one]
+    refine Matrix.toLin'.injective (LinearMap.ext fun u ↦ ?_)
+    obtain ⟨w, rfl⟩ := hL u
+    have hmap : (N * M).map ((↑) : ℤ → ℝ) = N.map (↑) * M.map (↑) :=
+      Matrix.map_mul (f := Int.castRingHom ℝ)
+    simp only [Matrix.toLin'_apply, hmap, ← mulVec_mulVec, ← hM, ← hN, one_mulVec]
+  have hNM : N * M = 1 := Matrix.map_injective Int.cast_injective hcast
+  exact ⟨⟨M, N, mul_eq_one_comm.1 hNM, hNM⟩, hM⟩
+
+end Matrix
 
 namespace ContinuousLinearMap
 
@@ -92,23 +116,6 @@ theorem transposeLattice_le_iff {L₁ : (ι → ℝ) →L[ℝ] (κ → ℝ)} {L�
   · -- `∑ᵢ nᵢ (L₁)ᵢ = ∑ₖ (n N)ₖ (L₂)ₖ`.
     rintro ⟨N, hN⟩ v ⟨n, hn⟩
     exact ⟨n ᵥ* N, fun w ↦ by rw [hn, hN, sum_intCast_mul_map_intCast_mulVec]⟩
-
-omit [Fintype ι] in
-/-- If `L' = M L` and `L = N L'` for integer matrices `M`, `N` and `L` is onto, then `N M = 1`, so
-`M` is an element of `GL(κ, ℤ)`. -/
-private theorem exists_generalLinearGroup_mulVec_eq_of_mulVec_eq [DecidableEq κ] {F : Type*}
-    {L L' : F → κ → ℝ} (hL : Surjective L) {M N : Matrix κ κ ℤ}
-    (hM : ∀ w, L' w = M.map (↑) *ᵥ L w) (hN : ∀ w, L w = N.map (↑) *ᵥ L' w) :
-    ∃ M' : GL κ ℤ, ∀ w, L' w = (M' : Matrix κ κ ℤ).map (↑) *ᵥ L w := by
-  have hcast : (N * M).map ((↑) : ℤ → ℝ) = (1 : Matrix κ κ ℤ).map ((↑) : ℤ → ℝ) := by
-    rw [Matrix.map_one _ Int.cast_zero Int.cast_one]
-    refine Matrix.toLin'.injective (LinearMap.ext fun u ↦ ?_)
-    obtain ⟨w, rfl⟩ := hL u
-    have hmap : (N * M).map ((↑) : ℤ → ℝ) = N.map (↑) * M.map (↑) :=
-      Matrix.map_mul (f := Int.castRingHom ℝ)
-    simp only [Matrix.toLin'_apply, hmap, ← mulVec_mulVec, ← hM, ← hN, one_mulVec]
-  have hNM : N * M = 1 := Matrix.map_injective Int.cast_injective hcast
-  exact ⟨⟨M, N, mul_eq_one_comm.1 hNM, hNM⟩, hM⟩
 
 /-- **Two bases of one lattice differ by an element of `GL(ι, ℤ)`.** If the injective linear map
 `L` and the linear map `L'` have the same transpose lattice `Lᵀ ℤ^ι = L'ᵀ ℤ^ι`, then `L' = M L`
