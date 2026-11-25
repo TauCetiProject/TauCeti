@@ -125,7 +125,7 @@ theorem pullbackDualIso_hom_id (E : FiniteLocallyFreeSheaf X) :
     dsimp only [Functor.id_obj]
     simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom,
       pullbackDualIso_hom_hom, pullbackId_inv_app_hom, pullbackId_app_hom_hom,
-      Scheme.Modules.pullbackObjUnitIso_id, Category.assoc, pullbackIhomComparison_id_assoc,
+      Scheme.Modules.pullbackObjUnitIso_id, Category.assoc, pullback_ihomComparison_id_assoc,
       pre_map, NatTrans.comp_app, pre_eqToHom_app, eqToHom_trans_assoc, eqToHom_refl,
       Category.id_comp]
     rw [← NatTrans.comp_app, ← pre_map, Iso.inv_hom_id_app]
@@ -174,7 +174,7 @@ theorem pullbackDualIso_hom_comp (g : Y ⟶ Z) (E : FiniteLocallyFreeSheaf Z) :
     rw [hM _ (pullback_obj_obj g E)]
     -- On module pullbacks, this is the composition coherence of the base-change map of linear
     -- functionals.
-    rw [← Functor.map_comp_assoc, Scheme.Hom.pullbackIhomComparison_app_unit_comp_assoc]
+    rw [← Functor.map_comp_assoc, Scheme.Hom.pullback_ihomComparison_app_unit_comp_assoc]
   exact h
 
 end

@@ -26,7 +26,7 @@ base-change map `f^* 𝓗om(M, 𝒪_Y) ⟶ 𝓗om(f^* M, 𝒪_X)` of linear func
 composites and with replacing `f` by an equal morphism, and it carries the pullback of evaluation
 at a global section `s` of `M` to evaluation at the pulled-back section of `f^* M`. For finite
 locally free `M`, the compatibility with composites matches the identifications of functionals on
-duals with sections (`Scheme.Hom.dualHomUnitEquiv_inv_pullbackIhomComparison_app_unit_comp`).
+duals with sections (`Scheme.Hom.dualHomUnitEquiv_inv_pullback_ihomComparison_app_unit_comp`).
 These are the inputs for the naturality, in the test scheme, of descriptions of points by sections
 or by linear functionals.
 
@@ -58,7 +58,7 @@ variable {X Y Z : Scheme.{u}}
 /-- The internal-Hom comparison along the identity is the internal-Hom map induced by the
 canonical identity isomorphism of module pullback. -/
 @[reassoc (attr := simp)]
-theorem pullbackIhomComparison_id (M N : X.Modules) :
+theorem pullback_ihomComparison_id (M N : X.Modules) :
     ((Scheme.Modules.pullback (𝟙 X)).ihomComparison M).app N ≫
         (ihom ((Scheme.Modules.pullback (𝟙 X)).obj M)).map
           ((Scheme.Modules.pullbackId X).hom.app N) =
@@ -89,7 +89,7 @@ theorem pullbackIhomComparison_id (M N : X.Modules) :
 /-- The internal-Hom comparison for a composite agrees with the two successive comparisons,
 using the canonical composition isomorphism on its source, target, and argument. -/
 @[reassoc]
-theorem pullbackIhomComparison_comp (f : X ⟶ Y) (g : Y ⟶ Z)
+theorem pullback_ihomComparison_comp (f : X ⟶ Y) (g : Y ⟶ Z)
     (M N : Z.Modules) :
     (Scheme.Modules.pullback f).map (((Scheme.Modules.pullback g).ihomComparison M).app N) ≫
         ((Scheme.Modules.pullback f).ihomComparison ((Scheme.Modules.pullback g).obj M)).app
@@ -143,7 +143,7 @@ theorem pullbackIhomComparison_comp (f : X ⟶ Y) (g : Y ⟶ Z)
 /-- If the internal-Hom comparison along `f` is invertible on the pullbacks of `M` and `N`,
 then invertibility along `f ≫ g` is equivalent to invertibility of the pullback along `f`
 of the comparison along `g`. This allows invertibility to be checked on open covers. -/
-theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app_comp_iff
+theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullback_ihomComparison_app_comp_iff
     (f : X ⟶ Y) (g : Y ⟶ Z) (M N : Z.Modules)
     [IsIso (((Scheme.Modules.pullback f).ihomComparison ((Scheme.Modules.pullback g).obj M)).app
       ((Scheme.Modules.pullback g).obj N))] :
@@ -154,7 +154,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app_com
   have : IsIso ((pre ((Scheme.Modules.pullbackComp f g).hom.app M)).app
       ((Scheme.Modules.pullback (f ≫ g)).obj N)) :=
     (NatTrans.isIso_iff_isIso_app _).mp hpre _
-  have h := congrArg IsIso (pullbackIhomComparison_comp f g M N)
+  have h := congrArg IsIso (pullback_ihomComparison_comp f g M N)
   simpa only [isIso_comp_left_iff, isIso_comp_right_iff] using (Iff.of_eq h).symm
 
 section Unit
@@ -164,7 +164,7 @@ internal-Hom comparison at the structure sheaf followed by `f^* 𝒪_Y ≅ 𝒪_
 composites: along `f ≫ g` it is the pullback along `f` of the map along `g` followed by the map
 along `f`, through the composition isomorphism of pullback. -/
 @[reassoc]
-theorem _root_.AlgebraicGeometry.Scheme.Hom.pullbackIhomComparison_app_unit_comp
+theorem _root_.AlgebraicGeometry.Scheme.Hom.pullback_ihomComparison_app_unit_comp
     (f : X ⟶ Y) (g : Y ⟶ Z) (M : Z.Modules) :
     (Scheme.Modules.pullbackComp f g).inv.app ((ihom M).obj (𝟙_ Z.Modules)) ≫
         (Scheme.Modules.pullback f).map
@@ -188,11 +188,11 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.pullbackIhomComparison_app_unit_comp
           (Scheme.Modules.pullbackObjUnitIso (f ≫ g)).hom := by
     rw [← Scheme.Modules.pullbackObjUnitIso_comp, Iso.hom_inv_id_app_assoc]
   -- Move the structure-sheaf comparison along `g` past the comparison along `f`, combine the two
-  -- structure-sheaf comparisons, and apply the coherence `pullbackIhomComparison_comp`.
+  -- structure-sheaf comparisons, and apply the coherence `pullback_ihomComparison_comp`.
   rw [Functor.map_comp, Category.assoc, reassoc_of% hn]
   simp only [← Functor.map_comp, hu]
   simp only [Functor.map_comp]
-  rw [pullbackIhomComparison_comp_assoc, Iso.inv_hom_id_app_assoc]
+  rw [pullback_ihomComparison_comp_assoc, Iso.inv_hom_id_app_assoc]
   exact congrArg (_ ≫ ·) ((pre _).naturality _).symm
 
 /-- For finite locally free `M`, base change of linear functionals along `f ≫ g` is compatible
@@ -200,7 +200,7 @@ with the identifications `Scheme.Modules.dualHomUnitEquiv` of functionals on dua
 the functional on `(f ≫ g)^* M^∨` obtained from a functional `ψ` on `f^* (g^* M)^∨` corresponds to
 the section of `f^* g^* M` of `ψ`, through `f^* g^* M ≅ (f ≫ g)^* M`. -/
 theorem
-    _root_.AlgebraicGeometry.Scheme.Hom.dualHomUnitEquiv_inv_pullbackIhomComparison_app_unit_comp
+    _root_.AlgebraicGeometry.Scheme.Hom.dualHomUnitEquiv_inv_pullback_ihomComparison_app_unit_comp
     (f : X ⟶ Y) (g : Y ⟶ Z) (M : Z.Modules) [M.IsLocallyFree]
     [M.IsFiniteType]
     [IsIso (((Scheme.Modules.pullback (f ≫ g)).ihomComparison M).app (𝟙_ Z.Modules) ≫
@@ -232,13 +232,13 @@ theorem
   refine congrArg _ ((IsIso.inv_comp_eq _).2 ?_)
   exact (congrArg (_ ≫ _ ≫ ·) ((IsIso.hom_inv_id_assoc _ _).symm.trans
     (Category.assoc _ _ _))).trans
-      ((Scheme.Hom.pullbackIhomComparison_app_unit_comp_assoc f g M _).trans
+      ((Scheme.Hom.pullback_ihomComparison_app_unit_comp_assoc f g M _).trans
         (Category.assoc _ _ _).symm)
 
 /-- The base-change map of linear functionals is unchanged, up to the canonical identifications,
 when the scheme morphism is replaced by an equal one. -/
 @[reassoc]
-theorem pullbackIhomComparison_app_unit_congr {f f' : X ⟶ Y} (h : f = f') (M : Y.Modules) :
+theorem pullback_ihomComparison_app_unit_congr {f f' : X ⟶ Y} (h : f = f') (M : Y.Modules) :
     ((Scheme.Modules.pullback f').ihomComparison M).app (𝟙_ Y.Modules) ≫
         (ihom ((Scheme.Modules.pullback f').obj M)).map
           (Scheme.Modules.pullbackObjUnitIso f').hom ≫

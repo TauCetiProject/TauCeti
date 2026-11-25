@@ -35,7 +35,7 @@ universe u
 
 namespace TauCeti.AlgebraicGeometry
 
-private theorem isIso_pullbackIhomComparison_app_of_restrictFunctor
+private theorem isIso_pullback_ihomComparison_app_of_restrictFunctor
     {U Y : Scheme.{u}} (j : U ⟶ Y) [IsOpenImmersion j]
     (M N : Y.Modules)
     (hR : IsIso (((Scheme.Modules.restrictFunctor j).ihomComparison M).app N)) :
@@ -56,10 +56,10 @@ private theorem isIso_pullbackIhomComparison_app_of_restrictFunctor
     (Scheme.Modules.restrictFunctorIsoPullback j).symm M N hm).mpr hR
 
 /-- Pullback to an open subscheme commutes with internal Hom of arbitrary module sheaves. -/
-theorem _root_.AlgebraicGeometry.Scheme.Opens.isIso_pullbackIhomComparison_app
+theorem _root_.AlgebraicGeometry.Scheme.Opens.isIso_pullback_ihomComparison_app
     {Y : Scheme.{u}} (U : Y.Opens) (M N : Y.Modules) :
     IsIso (((Scheme.Modules.pullback U.ι).ihomComparison M).app N) :=
-  isIso_pullbackIhomComparison_app_of_restrictFunctor U.ι M N
+  isIso_pullback_ihomComparison_app_of_restrictFunctor U.ι M N
     (Scheme.Modules.isIso_restrictFunctor_ihomComparison_app U M N)
 
 end TauCeti.AlgebraicGeometry

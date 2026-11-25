@@ -36,11 +36,11 @@ The canonical comparison is `CategoryTheory.Functor.ihomComparison` for module p
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app_of_presentation`:
+* `AlgebraicGeometry.Scheme.Hom.isIso_pullback_ihomComparison_app_of_presentation`:
   invertibility from a finite global presentation, without an affineness hypothesis;
-* `AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app_of_isAffine`:
+* `AlgebraicGeometry.Scheme.Hom.isIso_pullback_ihomComparison_app_of_isAffine`:
   invertibility for finitely presented sources over an affine base;
-* `AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app`:
+* `AlgebraicGeometry.Scheme.Hom.isIso_pullback_ihomComparison_app`:
   invertibility for finitely presented sources on arbitrary schemes.
 
 ## References
@@ -64,7 +64,7 @@ variable {X Y : Scheme.{u}} (f : X ⟶ Y) [Flat f]
 
 /-- A finite global presentation of the source makes the canonical internal-Hom comparison
 invertible under flat pullback, for every target, without assuming the base affine. -/
-theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app_of_presentation
+theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullback_ihomComparison_app_of_presentation
     (M N : Y.Modules)
     (P : M.Presentation) [P.IsFinite] :
     IsIso (((Scheme.Modules.pullback f).ihomComparison M).app N) := by
@@ -91,32 +91,32 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app_of_
 
 /-- Over an affine base, flat pullback commutes with internal Hom from a finitely presented
 sheaf into any sheaf of modules. The source scheme is arbitrary. -/
-theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app_of_isAffine
+theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullback_ihomComparison_app_of_isAffine
     [IsAffine Y]
     (M N : Y.Modules) [M.IsFinitePresentation] :
     IsIso (((Scheme.Modules.pullback f).ihomComparison M).app N) := by
   obtain ⟨P, hP⟩ := Scheme.Modules.exists_isFinite_presentation_of_isAffine M
   have : P.IsFinite := hP
-  exact f.isIso_pullbackIhomComparison_app_of_presentation M N P
+  exact f.isIso_pullback_ihomComparison_app_of_presentation M N P
 
 /-- Flat pullback commutes with internal Hom from a finitely presented module sheaf into any
 module sheaf. Neither scheme needs to be affine or Noetherian. -/
-theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app
+theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullback_ihomComparison_app
     (M N : Y.Modules) [M.IsFinitePresentation] :
     IsIso (((Scheme.Modules.pullback f).ihomComparison M).app N) := by
   refine (Scheme.Modules.isIso_iff_of_isOpenCover
     (TopologicalSpace.IsOpenCover.comap (iSup_affineOpens_eq_top Y) f.base.hom) _).mpr
       fun V ↦ ?_
   have : IsAffine V.val := V.property
-  have := V.val.isIso_pullbackIhomComparison_app M N
-  have := (f ∣_ V.val).isIso_pullbackIhomComparison_app_of_isAffine
+  have := V.val.isIso_pullback_ihomComparison_app M N
+  have := (f ∣_ V.val).isIso_pullback_ihomComparison_app_of_isAffine
     ((Scheme.Modules.pullback V.val.ι).obj M) ((Scheme.Modules.pullback V.val.ι).obj N)
-  have h := ((f ∣_ V.val).isIso_pullbackIhomComparison_app_comp_iff V.val.ι M N).mpr
+  have h := ((f ∣_ V.val).isIso_pullback_ihomComparison_app_comp_iff V.val.ι M N).mpr
     inferInstance
   rw [morphismRestrict_ι] at h
-  have := (f ⁻¹ᵁ V.val).isIso_pullbackIhomComparison_app
+  have := (f ⁻¹ᵁ V.val).isIso_pullback_ihomComparison_app
     ((Scheme.Modules.pullback f).obj M) ((Scheme.Modules.pullback f).obj N)
-  exact ((f ⁻¹ᵁ V.val).ι.isIso_pullbackIhomComparison_app_comp_iff f M N).mp h
+  exact ((f ⁻¹ᵁ V.val).ι.isIso_pullback_ihomComparison_app_comp_iff f M N).mp h
 
 end
 

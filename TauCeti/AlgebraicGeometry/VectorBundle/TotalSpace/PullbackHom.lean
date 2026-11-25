@@ -85,6 +85,6 @@ theorem totalSpaceIhomHomEquiv_comp (E F : FiniteLocallyFreeSheaf Z)
     simpa only [Category.assoc] using
       congrArg (fun m ↦ p ≫ m ≫ b' ≫ d') ((pullback g).map_comp s n)
   exact hl.trans ((congrArg (p ≫ a ≫ ·)
-    (pullbackIhomComparison_comp g q E.obj F.obj).symm).trans hr.symm)
+    (pullback_ihomComparison_comp g q E.obj F.obj).symm).trans hr.symm)
 
 end TauCeti.AlgebraicGeometry

@@ -360,7 +360,7 @@ private lemma relativeSpecSymmetricAlgebraPullbackHomEquiv_map_comp_totalSpacePu
 -- The equation `M' = f^* M` is a hypothesis so that it can be eliminated: the sheaf underlying a
 -- pulled-back finite locally free sheaf is equal, but not syntactically equal, to the pullback
 -- of the underlying sheaf.
-/-- `Scheme.Hom.dualHomUnitEquiv_inv_pullbackIhomComparison_app_unit_comp` for a sheaf `M'` equal
+/-- `Scheme.Hom.dualHomUnitEquiv_inv_pullback_ihomComparison_app_unit_comp` for a sheaf `M'` equal
 to `f^* M`: a functional on `(q ≫ f)^* M^∨` obtained from a functional `ψ` on `q^* M'^∨`
 corresponds to the section of `q^* M'` of `ψ`, through `q^* f^* M ≅ (q ≫ f)^* M`. -/
 private lemma dualHomUnitEquiv_inv_comp_eq_of_pullbackComp {T : Scheme.{u}} (q : T ⟶ Y)
@@ -391,7 +391,7 @@ private lemma dualHomUnitEquiv_inv_comp_eq_of_pullbackComp {T : Scheme.{u}} (q :
           (Scheme.Modules.pullbackComp q f).hom.app M := by
   subst hψ h
   simp only [eqToHom_refl, Category.comp_id, Category.id_comp]
-  exact Scheme.Hom.dualHomUnitEquiv_inv_pullbackIhomComparison_app_unit_comp q f M ψ
+  exact Scheme.Hom.dualHomUnitEquiv_inv_pullback_ihomComparison_app_unit_comp q f M ψ
 
 /-- **Base change of the total space on points.** For a scheme `q : T ⟶ Y` over `Y` and a point
 `t : T ⟶ 𝕍(f^* E)` over `Y`, the section of `(q ≫ f)^* E` of the projection of `t` to `𝕍(E)` is

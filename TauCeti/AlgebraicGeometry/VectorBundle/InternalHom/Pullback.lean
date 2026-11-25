@@ -45,7 +45,7 @@ local instance : ExactPairing (dual E).obj E.obj :=
 
 /-- The canonical internal-Hom base-change comparison is invertible for a finite locally free
 source and an arbitrary target sheaf of modules. -/
-instance isIso_pullbackIhomComparison :
+instance isIso_pullback_ihomComparison :
     IsIso ((Scheme.Modules.pullback f).ihomComparison E.obj) :=
   (Scheme.Modules.pullback f).ihomComparison_isIso_of_exactPairing (dual E).obj E.obj
 
