@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.FreeProbability.Law.Realization
+import TauCeti.MeasureTheory.Measure.Dirac
 
 /-!
 # Free additive convolution of compactly supported measures
@@ -33,15 +34,16 @@ elements in any C⋆-probability space.
 * `MeasureTheory.Measure.freeConv_comm`, `MeasureTheory.Measure.freeConv_assoc`: commutativity
   and associativity.
 * `MeasureTheory.Measure.freeConv_dirac`: `μ ⊞ δ_c` is the translate of `μ` by `c`.
-* `MeasureTheory.Measure.map_mul_left_freeConv_map_mul_left`: compatibility with dilations.
+* `MeasureTheory.Measure.map_freeConv_const_mul`: compatibility with dilations.
 * `MeasureTheory.Measure.support_freeConv_subset_Icc`: the support bound.
 
 ## Implementation notes
 
 `freeConv μ ν` is chosen among the laws of `a + b` over free realizations of `μ` and `ν` on
 C⋆-algebras in `Type`. When `μ` or `ν` is not a compactly supported probability measure there is
-no such realization, and `freeConv μ ν = 0` by convention (`freeConv_of_not`). No notation is
-introduced, since `⊞` already denotes biproducts in Mathlib.
+no such realization, and `freeConv μ ν = 0` by convention (`freeConv_of_not`, with the one-sided
+forms `freeConv_of_not_left` and `freeConv_of_not_right`). No notation is introduced, since `⊞`
+already denotes biproducts in Mathlib.
 
 ## References
 
@@ -53,7 +55,7 @@ public section
 
 noncomputable section
 
-open TauCeti PositiveLinearMap
+open MeasureTheory TauCeti PositiveLinearMap
 open scoped ComplexOrder
 
 namespace MeasureTheory.Measure
@@ -83,12 +85,10 @@ private theorem freeConv_law_law {A : Type*} [CStarAlgebra A] [PartialOrder A]
   obtain ⟨B, _, _, _, ψ, b, hψ, hb, hfb, hlaw, -⟩ :=
     exists_isFreelyIndependentElements_law_eq (fun i => law φ (a i))
       fun i => isCompact_support_law φ (a i)
-  have hex : ∃ ρ : Measure ℝ, ∃ (A : Type) (_ : CStarAlgebra A) (_ : PartialOrder A)
-      (_ : StarOrderedRing A) (φ' : A →ₚ[ℂ] ℂ) (c : Fin 2 → A), φ' 1 = 1 ∧
-        (∀ i, IsSelfAdjoint (c i)) ∧ IsFreelyIndependentElements φ'.toLinearMap c ∧
-          law φ' (c 0) = law φ (a 0) ∧ law φ' (c 1) = law φ (a 1) ∧ law φ' (c 0 + c 1) = ρ :=
-    ⟨_, B, _, _, _, ψ, b, hψ, hb, hfb, hlaw 0, hlaw 1, rfl⟩
-  rw [freeConv, dite_eq_left hex]
+  rw [freeConv]
+  split_ifs with hex
+  swap
+  · exact (hex ⟨_, B, _, _, _, ψ, b, hψ, hb, hfb, hlaw 0, hlaw 1, rfl⟩).elim
   obtain ⟨C, _, _, _, ω, c, hω, hc, hfc, h0, h1, hρ⟩ := hex.choose_spec
   rw [← hρ]
   have hlaw' (i : Fin 2) : law ω (c i) = law φ (a i) := by
@@ -107,8 +107,6 @@ private theorem freeConv_law_law {A : Type*} [CStarAlgebra A] [PartialOrder A]
 end MeasureTheory.Measure
 
 namespace TauCeti.IsFreelyIndependentElements
-
-open MeasureTheory
 
 /-- **The law of a sum of free elements is the free convolution of their laws.** If `c i` and
 `c j`, for `i ≠ j`, are selfadjoint members of a freely independent family for a state `φ` on a
@@ -154,15 +152,27 @@ theorem freeConv_of_not {μ ν : Measure ℝ}
   exact h ⟨isProbabilityMeasure_law φ hφ (ha 0), isCompact_support_law φ (a 0),
     isProbabilityMeasure_law φ hφ (ha 1), isCompact_support_law φ (a 1)⟩
 
+/-- `freeConv μ ν` is the zero measure unless `μ` is a compactly supported probability
+measure. -/
+theorem freeConv_of_not_left {μ ν : Measure ℝ}
+    (h : ¬(IsProbabilityMeasure μ ∧ IsCompact μ.support)) : μ.freeConv ν = 0 :=
+  freeConv_of_not fun ⟨h1, h2, _⟩ => h ⟨h1, h2⟩
+
+/-- `freeConv μ ν` is the zero measure unless `ν` is a compactly supported probability
+measure. -/
+theorem freeConv_of_not_right {μ ν : Measure ℝ}
+    (h : ¬(IsProbabilityMeasure ν ∧ IsCompact ν.support)) : μ.freeConv ν = 0 :=
+  freeConv_of_not fun ⟨_, _, hν⟩ => h hν
+
 /-- The free convolution with the zero measure is zero. -/
 @[simp]
 theorem zero_freeConv (ν : Measure ℝ) : (0 : Measure ℝ).freeConv ν = 0 :=
-  freeConv_of_not fun h => by simpa using h.1.measure_univ
+  freeConv_of_not_left fun h => by simpa using h.1.measure_univ
 
 /-- The free convolution with the zero measure is zero. -/
 @[simp]
 theorem freeConv_zero (μ : Measure ℝ) : μ.freeConv 0 = 0 :=
-  freeConv_of_not fun h => by simpa using h.2.2.1.measure_univ
+  freeConv_of_not_right fun h => by simpa using h.1.measure_univ
 
 /-- The free convolution of compactly supported probability measures is a probability
 measure. -/
@@ -190,7 +200,9 @@ theorem support_freeConv_subset_Icc {μ ν : Measure ℝ} {α β γ δ : ℝ}
     (μ.freeConv ν).support ⊆ Set.Icc (α + γ) (β + δ) := by
   by_cases h : IsProbabilityMeasure μ ∧ IsProbabilityMeasure ν
   swap
-  · simp [freeConv_of_not fun h' => h ⟨h'.1, h'.2.2.1⟩]
+  · rcases not_and_or.1 h with h | h
+    · simp [freeConv_of_not_left fun h' => h h'.1]
+    · simp [freeConv_of_not_right fun h' => h h'.1]
   obtain ⟨_, _⟩ := h
   obtain ⟨A, _, _, _, φ, a, hφ, ha, hfree, rfl, rfl, h0, h1⟩ :=
     exists_pair _ _ (isCompact_Icc.of_isClosed_subset isClosed_support hμ)
@@ -217,23 +229,21 @@ theorem freeConv_comm (μ ν : Measure ℝ) : μ.freeConv ν = ν.freeConv μ :=
   · obtain ⟨_, hμ, _, hν⟩ := h
     obtain ⟨A, _, _, _, φ, a, hφ, ha, hfree, rfl, rfl, -⟩ := exists_pair μ ν hμ hν
     rw [freeConv_law_law hφ ha hfree, ← hfree.law_add hφ one_ne_zero (ha 1) (ha 0), add_comm]
-  · rw [freeConv_of_not h, freeConv_of_not fun h' => h ⟨h'.2.2.1, h'.2.2.2, h'.1, h'.2.1⟩]
+  · rw [freeConv_of_not h, freeConv_of_not fun ⟨h1, h2, h3, h4⟩ => h ⟨h3, h4, h1, h2⟩]
 
 /-- Free convolution is associative. -/
 theorem freeConv_assoc (μ ν ρ : Measure ℝ) :
     (μ.freeConv ν).freeConv ρ = μ.freeConv (ν.freeConv ρ) := by
   by_cases hμ : IsProbabilityMeasure μ ∧ IsCompact μ.support
   swap
-  · rw [freeConv_of_not (μ := μ) (ν := ν) fun h => hμ ⟨h.1, h.2.1⟩, zero_freeConv,
-      freeConv_of_not fun h => hμ ⟨h.1, h.2.1⟩]
+  · rw [freeConv_of_not_left (ν := ν) hμ, zero_freeConv, freeConv_of_not_left hμ]
   by_cases hν : IsProbabilityMeasure ν ∧ IsCompact ν.support
   swap
-  · rw [freeConv_of_not (μ := μ) (ν := ν) fun h => hν ⟨h.2.2.1, h.2.2.2⟩, zero_freeConv,
-      freeConv_of_not (μ := ν) (ν := ρ) fun h => hν ⟨h.1, h.2.1⟩, freeConv_zero]
+  · rw [freeConv_of_not_right (μ := μ) hν, zero_freeConv, freeConv_of_not_left (ν := ρ) hν,
+      freeConv_zero]
   by_cases hρ : IsProbabilityMeasure ρ ∧ IsCompact ρ.support
   swap
-  · rw [freeConv_of_not (ν := ρ) fun h => hρ ⟨h.2.2.1, h.2.2.2⟩,
-      freeConv_of_not (μ := ν) (ν := ρ) fun h => hρ ⟨h.2.2.1, h.2.2.2⟩, freeConv_zero]
+  · rw [freeConv_of_not_right hρ, freeConv_of_not_right (μ := ν) hρ, freeConv_zero]
   obtain ⟨_, hμ⟩ := hμ
   obtain ⟨_, hν⟩ := hν
   obtain ⟨_, hρ⟩ := hρ
@@ -277,7 +287,7 @@ theorem freeConv_dirac (μ : Measure ℝ) [IsProbabilityMeasure μ] (hμ : IsCom
       (isFreelyIndependentElements_of_subsingleton _ _)
     fin_cases i
     · exact absurd rfl hi
-    · exact ⟨c, (IsScalarTower.algebraMap_apply ℝ ℂ A c).symm ▸ rfl⟩
+    · exact ⟨c, by simp [IsScalarTower.algebraMap_apply ℝ ℂ A, Complex.coe_algebraMap]⟩
   have hdirac : law φ (algebraMap ℝ A c) = dirac c := by
     simpa [map_const, hlaw] using law_smul_add_algebraMap φ (ha ()) 0 c
   have htrans : law φ (a () + algebraMap ℝ A c) = μ.map (· + c) := by
@@ -307,9 +317,9 @@ theorem dirac_zero_freeConv (μ : Measure ℝ) [IsProbabilityMeasure μ] (hμ : 
 /-- The free convolution of two point masses is the point mass at the sum. -/
 @[simp]
 theorem dirac_freeConv_dirac (x y : ℝ) : (dirac x).freeConv (dirac y) = dirac (x + y) := by
-  have hx : IsCompact (dirac x).support :=
-    isCompact_singleton.of_isClosed_subset isClosed_support (support_subset_of_isClosed
-      isClosed_singleton ((mem_ae_dirac_iff (measurableSet_singleton x)).2 rfl))
+  have hx : IsCompact (dirac x).support := by
+    rw [support_dirac, closure_singleton]
+    exact isCompact_singleton
   rw [freeConv_dirac _ hx y, map_dirac' (measurable_add_const y)]
 
 /-- Free convolution commutes with dilations: `(μ ⊞ ν) ∘ (r ·)⁻¹ = μ ∘ (r ·)⁻¹ ⊞ ν ∘ (r ·)⁻¹`. -/
@@ -321,11 +331,9 @@ theorem map_freeConv_const_mul (μ ν : Measure ℝ) [IsProbabilityMeasure μ] [
     simpa using law_smul_add_algebraMap φ (ha i) r 0
   have hra (i : Fin 2) : IsSelfAdjoint (r • a i) := (IsSelfAdjoint.all r).smul (ha i)
   have hrfree : IsFreelyIndependentElements φ.toLinearMap fun i => r • a i :=
-    isFreelyIndependentElements_iff.2 ((isFreelyIndependentElements_iff.1 hfree).mono fun i =>
-      Algebra.adjoin_le
-      (Set.singleton_subset_iff.2 (by
-        rw [← Complex.coe_smul]
-        exact Subalgebra.smul_mem _ (Algebra.self_mem_adjoin_singleton ℂ (a i)) _)))
+    (isFreelyIndependentElements_iff.1 hfree).isFreelyIndependentElements_of_mem fun i => by
+      rw [← Complex.coe_smul]
+      exact Subalgebra.smul_mem _ (Algebra.self_mem_adjoin_singleton ℂ (a i)) _
   rw [← hfree.law_add hφ (by decide : (0 : Fin 2) ≠ 1) (ha 0) (ha 1), ← hsmul, ← hsmul,
     ← hrfree.law_add hφ (by decide : (0 : Fin 2) ≠ 1) (hra 0) (hra 1), ← smul_add]
   simpa using (law_smul_add_algebraMap φ ((ha 0).add (ha 1)) r 0).symm

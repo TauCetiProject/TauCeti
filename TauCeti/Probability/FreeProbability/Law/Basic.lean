@@ -63,6 +63,9 @@ probability measures on `ℝ`.
   pushforward of `ν` along `g`.
 * `PositiveLinearMap.law_integralPositiveLinearMap_comap_restrict_id`: every finite measure on
   `ℝ` concentrated on a compact set `K` is the law of the coordinate `x ↦ x` in `C(K, ℂ)`.
+* `ContinuousMap.spectrum_realToRCLike_restrict_id`,
+  `ContinuousMap.integralPositiveLinearMap_comap_subtypeVal_one`: this coordinate has spectrum
+  `K`, and integration against a probability measure concentrated on `K` is a state on `C(K, ℂ)`.
 
 ## Implementation notes
 
@@ -328,6 +331,22 @@ theorem law_integralPositiveLinearMap_comap_restrict_id {K : Set ℝ} [CompactSp
   rw [law_integralPositiveLinearMap_realToRCLike]
   exact (map_comap_subtypeVal hK.measurableSet μ).trans
     (Measure.restrict_eq_self_of_ae_mem (ae_iff.2 hμ))
+
+/-- The spectrum of the coordinate function `x ↦ x` in `C(K, ℂ)` is `K`. -/
+theorem _root_.ContinuousMap.spectrum_realToRCLike_restrict_id (K : Set ℝ) :
+    spectrum ℝ ((ContinuousMap.restrict K (ContinuousMap.id ℝ)).realToRCLike ℂ) = K := by
+  ext x
+  simp [ContinuousMap.spectrum_eq_preimage_range]
+
+/-- Integration against a probability measure `μ` on `ℝ` concentrated on a compact set `K` is a
+state on `C(K, ℂ)`. -/
+theorem _root_.ContinuousMap.integralPositiveLinearMap_comap_subtypeVal_one {K : Set ℝ}
+    [CompactSpace K] {μ : Measure ℝ} [IsProbabilityMeasure μ] (hμ : μ Kᶜ = 0) :
+    ContinuousMap.integralPositiveLinearMap (μ.comap ((↑) : K → ℝ)) (1 : C(K, ℂ)) = 1 := by
+  have hK : MeasurableSet K := (isCompact_iff_compactSpace.2 ‹_›).isClosed.measurableSet
+  rw [ContinuousMap.integralPositiveLinearMap_one, Measure.real,
+    (MeasurableEmbedding.subtypeVal hK).comap_apply]
+  simp [(prob_compl_eq_zero_iff hK).1 hμ]
 
 end Realization
 

@@ -97,15 +97,14 @@ variable {I : Type u} (K : I → Set ℝ) [∀ i, CompactSpace (K i)] (μ : I �
 private def factorState (i : I) : StarPositiveFunctional C(K i, ℂ) :=
   .ofPositiveLinearMap (ContinuousMap.integralPositiveLinearMap ((μ i).comap ((↑) : K i → ℝ)))
 
+private theorem factorState_apply (i : I) (g : C(K i, ℂ)) :
+    factorState K μ i g = ContinuousMap.integralPositiveLinearMap ((μ i).comap (↑)) g :=
+  StarPositiveFunctional.ofPositiveLinearMap_apply _ g
+
 private theorem factorState_one (hK : ∀ i, μ i (K i)ᶜ = 0) (i : I) :
-    factorState K μ i 1 = 1 := by
-  have hm : MeasurableSet (K i) :=
-    (isCompact_iff_compactSpace.2 inferInstance).isClosed.measurableSet
-  rw [factorState, StarPositiveFunctional.ofPositiveLinearMap_apply,
-    ContinuousMap.integralPositiveLinearMap_one, Measure.real,
-    (MeasurableEmbedding.subtypeVal hm).comap_apply, Set.image_univ, Subtype.range_coe,
-    (prob_compl_eq_zero_iff hm).1 (hK i)]
-  simp
+    factorState K μ i 1 = 1 :=
+  (factorState_apply K μ i 1).trans
+    (ContinuousMap.integralPositiveLinearMap_comap_subtypeVal_one (hK i))
 
 /-- The coordinate function `x ↦ x` on `K i`. -/
 private def coord (i : I) : C(K i, ℂ) :=
@@ -114,11 +113,6 @@ private def coord (i : I) : C(K i, ℂ) :=
 omit [∀ i, CompactSpace (K i)] in
 private theorem isSelfAdjoint_coord (i : I) : IsSelfAdjoint (coord K i) :=
   ContinuousMap.isSelfAdjoint_realToRCLike ℂ
-
-omit [∀ i, CompactSpace (K i)] in
-private theorem spectrum_coord (i : I) : spectrum ℝ (coord K i) = K i := by
-  ext x
-  simp [coord, ContinuousMap.spectrum_eq_preimage_range]
 
 /-- Star homomorphisms `f i : C(K i, ℂ) → B(H)` with free ranges for the vector state at a unit
 vector `ξ`, along which this vector state restricts to integration against `μ i`, realize the
@@ -137,16 +131,15 @@ private theorem exists_realization_of_starAlgHom {H : Type u} [NormedAddCommGrou
   have ha (i : I) : IsSelfAdjoint (f i (coord K i)) := (isSelfAdjoint_coord K i).map (f i)
   refine ⟨H →L[ℂ] H, inferInstance, inferInstance, inferInstance,
     ContinuousLinearMap.innerPositiveLinearMap ℂ ξ, fun i => f i (coord K i), by simp [hξ], ha,
-    isFreelyIndependentElements_iff.2 (hfree.mono fun i => Algebra.adjoin_le
-      (Set.singleton_subset_iff.2 (AlgHom.mem_range_self _ (coord K i)))), fun i => ?_,
-    fun i => ?_⟩
+    hfree.isFreelyIndependentElements_of_mem fun i => AlgHom.mem_range_self _ (coord K i),
+    fun i => ?_, fun i => ?_⟩
   · refine ((eq_law_iff_forall_integral_pow (ha i) (isCompact_iff_compactSpace.2 inferInstance)
       (hK i)).2 fun n => ?_).symm
     rw [← law_integralPositiveLinearMap_comap_restrict_id (hK i),
       ofReal_integral_pow_law _ (ContinuousMap.isSelfAdjoint_realToRCLike ℂ), ← map_pow,
-      ContinuousLinearMap.innerPositiveLinearMap_apply, hf, factorState, coord,
-      StarPositiveFunctional.ofPositiveLinearMap_apply]
-  · rw [← spectrum_coord K i, ← spectrum.preimage_algebraMap ℂ,
+      ContinuousLinearMap.innerPositiveLinearMap_apply, hf, factorState_apply, coord]
+  · have hs : spectrum ℝ (coord K i) = K i := ContinuousMap.spectrum_realToRCLike_restrict_id (K i)
+    rw [← hs, ← spectrum.preimage_algebraMap ℂ,
       ← spectrum.preimage_algebraMap ℂ (a := coord K i)]
     exact Set.preimage_mono (AlgHom.spectrum_apply_subset (f i) (coord K i))
 
