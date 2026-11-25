@@ -80,6 +80,7 @@ the finite-rank groups `Stₙ(R)` along the index inclusions `Fin m ↪ Fin n`.
   `Stₙ(R)` over `n : ℕ`.
 * `TauCeti.SteinbergGroup.range_toStableGL`: the image of `toStableGL R` in `GL_∞(R)` is
   `TauCeti.StableGeneralLinearGroup.elementarySubgroup R`.
+* `TauCeti.SteinbergGroup.exists_toStableGL_eq_of`: an elementary matrix lifts to `St(R)`.
 
 ## References
 
@@ -957,6 +958,13 @@ theorem range_toStableGL :
     rw [← IndexedSteinbergGroup.range_toGL] at hu
     obtain ⟨z, rfl⟩ := hu
     exact ⟨ofFin R n z, toStableGL_ofFin n z⟩
+
+/-- An elementary matrix, placed in `GL_∞(R)`, lifts to the Steinberg group `St(R)`. -/
+theorem exists_toStableGL_eq_of {n : ℕ} {g : GL (Fin n) R}
+    (hg : g ∈ elementarySubgroup (Fin n) R) :
+    ∃ a, toStableGL R a = StableGeneralLinearGroup.of R n g :=
+  MonoidHom.mem_range.1
+    (range_toStableGL.ge (StableGeneralLinearGroup.of_mem_elementarySubgroup hg))
 
 /-- The projection `St(R) →* GL_∞(R)` intertwines `IndexedSteinbergGroup.map` with
 `StableGeneralLinearGroup.map`. -/
