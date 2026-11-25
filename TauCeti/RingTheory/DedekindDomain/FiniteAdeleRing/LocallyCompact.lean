@@ -5,17 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.NumberTheory.LocalField.Topology
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
+import TauCeti.Topology.Algebra.RestrictedProduct.SecondCountable
 
 /-!
-# Local compactness of finite adele rings
+# Local compactness and second countability of finite adele rings
 
 The finite adele ring of a Dedekind domain with finite residue fields is locally compact.  Each
 adic completion is a nonarchimedean local field, and its integer ring is compact and open.  The
 result then follows from the local-compactness theorem for restricted products.  If the Dedekind
-domain is moreover countable, the finite adele ring is σ-compact: every finite adele has a common
-denominator `b`, so it lies in one of the countably many compact sets `b⁻¹ · ∏_v 𝒪_v`.
+domain moreover has countably many places, for example if it is countable
+(`IsDedekindDomain.HeightOneSpectrum.countable`), the finite adele ring is second countable, since
+each completion is a second-countable local field; Mathlib then makes it σ-compact.
 
 The finite-residue-field hypothesis is stated directly, rather than specialized to rings of
 integers, so this applies to every Dedekind domain for which the same local compactness argument is
@@ -25,12 +28,14 @@ valid.
 
 * `IsDedekindDomain.FiniteAdeleRing.instLocallyCompactSpace`: the finite adele ring is locally
   compact when all residue fields are finite.
-* `IsDedekindDomain.FiniteAdeleRing.instSigmaCompactSpace`: the finite adele ring is σ-compact
-  when moreover the Dedekind domain is countable.
+* `IsDedekindDomain.FiniteAdeleRing.instSecondCountableTopology`: the finite adele ring is second
+  countable when moreover the Dedekind domain has countably many places.
 
 ## References
 
 * J. W. S. Cassels and A. Fröhlich, eds., *Algebraic Number Theory*, Chapter II, §14.
+* V. Platonov, A. Rapinchuk and I. Rapinchuk, *Algebraic Groups and Number Theory*, Vol. 1,
+  2nd ed., Cambridge University Press (2023), Lemma 3.63, pp. 188–189.
 -/
 
 public section
@@ -55,24 +60,12 @@ instance instLocallyCompactSpace [∀ v : HeightOneSpectrum R, Finite (R ⧸ v.a
     RestrictedProduct (fun v : HeightOneSpectrum R ↦ v.adicCompletion K)
       (fun v ↦ v.adicCompletionIntegers K) Filter.cofinite
 
-/-- The finite adele ring of a countable Dedekind domain with finite residue fields is
-σ-compact. -/
-instance instSigmaCompactSpace [Countable R] [∀ v : HeightOneSpectrum R, Finite (R ⧸ v.asIdeal)] :
-    SigmaCompactSpace (FiniteAdeleRing R K) := by
-  let s (b : R) : Set (FiniteAdeleRing R K) :=
-    (· * algebraMap K (FiniteAdeleRing R K) (algebraMap R K b)⁻¹) ''
-      (integralAdeles R K : Set (FiniteAdeleRing R K))
-  -- Every finite adele has a common denominator `b`, so it lies in `s b`.
-  have hs : ⋃ b, s b = Set.univ := by
-    refine Set.eq_univ_of_forall fun a ↦ Set.mem_iUnion.mpr ?_
-    obtain ⟨b, hb0, hb⟩ := mul_nonZeroDivisor_mem_integralAdeles a
-    have hb' : algebraMap R K b ≠ 0 := IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hb0
-    rw [IsScalarTower.algebraMap_apply R K] at hb
-    refine ⟨b, _, hb, ?_⟩
-    dsimp only
-    rw [mul_assoc, ← map_mul, mul_inv_cancel₀ hb', map_one, mul_one]
-  rw [← isSigmaCompact_univ_iff, ← hs]
-  exact isSigmaCompact_iUnion_of_isCompact _ fun b ↦
-    isCompact_integralAdeles.image (continuous_id.mul continuous_const)
+/-- The finite adele ring of a Dedekind domain with countably many places and finite residue
+fields is second countable. -/
+instance instSecondCountableTopology [Countable (HeightOneSpectrum R)]
+    [∀ v : HeightOneSpectrum R, Finite (R ⧸ v.asIdeal)] :
+    SecondCountableTopology (FiniteAdeleRing R K) :=
+  RestrictedProduct.secondCountableTopology_of_cofinite
+    (.of_forall fun _ ↦ Valued.isOpen_valuationSubring _)
 
 end IsDedekindDomain.FiniteAdeleRing

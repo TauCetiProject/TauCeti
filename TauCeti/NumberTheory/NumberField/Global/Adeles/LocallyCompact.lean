@@ -13,16 +13,16 @@ public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.LocallyCompact
 
 The adele ring of a number field is locally compact: its archimedean part is a finite product of
 local fields, while its finite part is a restricted product with compact open integer rings.
-It is also σ-compact, which is what the open mapping theorem for topological groups needs; for the
-archimedean part this follows from second countability, since it is homeomorphic to the
-finite-dimensional mixed space.
+It is also second countable, hence σ-compact, which is what the open mapping theorem for
+topological groups needs: the archimedean part is homeomorphic to the finite-dimensional mixed
+space, and the finite part is second countable when there are countably many finite places.
 
 ## Main results
 
 * `NumberField.AdeleRing.instLocallyCompactSpace`: the full adele ring is locally compact.
-* `NumberField.InfiniteAdeleRing.instSecondCountableTopology`: the infinite adele ring is second
+* `NumberField.InfiniteAdeleRing.instSecondCountableTopology`,
+  `NumberField.AdeleRing.instSecondCountableTopology`: the infinite and full adele rings are second
   countable, hence σ-compact.
-* `NumberField.AdeleRing.instSigmaCompactSpace`: the full adele ring is σ-compact.
 
 ## References
 
@@ -51,9 +51,10 @@ instance InfiniteAdeleRing.instSecondCountableTopology :
     SecondCountableTopology (InfiniteAdeleRing K) :=
   (InfiniteAdeleRing.homeomorphMixedSpace K).secondCountableTopology
 
-/-- The adele ring of a number field is σ-compact when its Dedekind domain is countable. -/
-instance AdeleRing.instSigmaCompactSpace [Countable R] : SigmaCompactSpace (AdeleRing R K) :=
-  inferInstanceAs <| SigmaCompactSpace
-    (InfiniteAdeleRing K × FiniteAdeleRing R K)
+/-- The adele ring of a number field is second countable when its Dedekind domain has countably
+many places. -/
+instance AdeleRing.instSecondCountableTopology [Countable (HeightOneSpectrum R)] :
+    SecondCountableTopology (AdeleRing R K) :=
+  inferInstanceAs <| SecondCountableTopology (InfiniteAdeleRing K × FiniteAdeleRing R K)
 
 end NumberField

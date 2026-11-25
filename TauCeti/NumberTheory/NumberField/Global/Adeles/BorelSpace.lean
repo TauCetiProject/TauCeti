@@ -39,8 +39,9 @@ groups `GL n` over each of the three adele rings for every finite `n`.
 * `NumberField.InfiniteAdeleRing.instPolishSpace`, `NumberField.InfiniteAdeleRing.instBorelSpace`:
   the infinite adele ring is a Polish Borel space. Its second countability is
   `NumberField.InfiniteAdeleRing.instSecondCountableTopology`.
-* `NumberField.AdeleRing.instSecondCountableTopology`, `NumberField.AdeleRing.instPolishSpace`,
-  `NumberField.AdeleRing.instBorelSpace`: so is the adele ring, with the product σ-algebra.
+* `NumberField.AdeleRing.instPolishSpace`, `NumberField.AdeleRing.instBorelSpace`: so is the
+  adele ring, with the product σ-algebra. Its second countability is
+  `NumberField.AdeleRing.instSecondCountableTopology`.
 
 ## References
 
@@ -90,10 +91,6 @@ instance AdeleRing.instBorelSpace : BorelSpace (AdeleRing R K) :=
   inferInstanceAs <| BorelSpace (InfiniteAdeleRing K × FiniteAdeleRing R K)
 
 variable [NumberField K]
-
-/-- The adele ring of a number field is second countable. -/
-instance AdeleRing.instSecondCountableTopology : SecondCountableTopology (AdeleRing R K) :=
-  inferInstanceAs <| SecondCountableTopology (InfiniteAdeleRing K × FiniteAdeleRing R K)
 
 /-- The adele ring of a number field is Polish. -/
 instance AdeleRing.instPolishSpace : PolishSpace (AdeleRing R K) :=
