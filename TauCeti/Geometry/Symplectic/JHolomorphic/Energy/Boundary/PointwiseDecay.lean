@@ -7,10 +7,9 @@ module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Boundary.Decay
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.BoundaryPuncture
+import TauCeti.Analysis.Calculus.FDeriv.Puncture
 import TauCeti.Analysis.RCLike.OperatorNorm
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
-import Mathlib.Analysis.Calculus.FDeriv.Measurable
-import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
 
 /-!
 # Pointwise power bounds at a boundary puncture
@@ -28,7 +27,7 @@ structure `J₀`, vanishes on `L` and tames `J` along `u` with constant `c > 0`;
 near the puncture, with an exponent strictly greater than `-1`
 (`TauCeti.SymplecticForm.exists_pos_norm_fderivWithin_le_rpow`). Consequently the speed of `u`
 along every radius into the half-disc is integrable up to the puncture
-(`TauCeti.SymplecticForm.exists_pos_integrableOn_deriv_radial_upperHalfPlane`), which supplies the
+(`TauCeti.SymplecticForm.exists_pos_integrableOn_deriv_radial_inter`), which supplies the
 finite radial length needed to extend `u` continuously over the puncture.
 
 The bound combines the power decay `E(r) ≤ A r^(2c / (1 + M)²)` of the energy of the half-disc
@@ -37,7 +36,9 @@ with the small-energy mean-value bound `d² ‖∂ₛu(z)‖² ≤ (512 / π) E(
 `d` from the puncture (`TauCeti.exists_pos_sq_norm_fderivWithin_one_le_energy`), and the
 Cauchy--Riemann equation, which bounds `du` by `(1 + M) ‖∂ₛu‖`. These are the boundary
 counterparts of `TauCeti.SymplecticForm.exists_pos_norm_fderiv_le_rpow` and
-`TauCeti.SymplecticForm.exists_pos_integrableOn_deriv_radial` at an interior puncture.
+`TauCeti.SymplecticForm.exists_pos_integrableOn_deriv_radial` at an interior puncture, and share
+with them the real-variable step `Real.exists_pos_le_sqrt_mul_rpow_sub_one_of_le_mul_rpow` and
+the radial-length step `TauCeti.integrableOn_deriv_radial_of_norm_fderivWithin_le_rpow`.
 
 ## References
 
@@ -112,47 +113,26 @@ private theorem exists_pos_norm_fderivWithin_one_le_rpow
       ({z | 0 ≤ z.im} ∩ ball x₀ R)) :
     ∃ ε > 0, ε < R ∧ ∃ B, ∀ z ∈ {z : ℂ | 0 ≤ z.im} ∩ (ball x₀ ε \ {x₀}),
       ‖fderivWithin ℝ u {z | 0 ≤ z.im} z 1‖ ≤ √B * ‖z - x₀‖ ^ (c / (1 + M) ^ 2 - 1) := by
-  set H : Set ℂ := {z | 0 ≤ z.im}
   have hM : 0 ≤ M := nonneg_of_forall_norm_le hx₀ hR hbound
   -- Normalize the energy power bound, then choose a radius below the mean-value threshold.
   let β := c / (1 + M) ^ 2
-  have _ : 0 < β := by dsimp [β]; positivity
+  have hβ : 0 < β := by dsimp [β]; positivity
+  have hα : 2 * c / (1 + M) ^ 2 = 2 * β := by dsimp [β]; ring
   obtain ⟨A, _, hpower⟩ := exists_energy_power_bound_inter_ball hg hx₀ hR
     (hu.of_le (by norm_num)) hCR htame hbound hLω huL henergy
   obtain ⟨δ, hδ, hmean⟩ := exists_pos_sq_norm_fderivWithin_one_le_energy hW hJ hK hKW hJsq
     L.isClosed_of_finiteDimensional hJL hx₀ hu hCR huL huK henergy
-  have ht : Tendsto (fun r : ℝ ↦ 2 * r) (𝓝 0) (𝓝 0) := by
-    simpa using (tendsto_id (x := 𝓝 (0 : ℝ))).const_mul 2
-  have hlim : Tendsto (fun r : ℝ ↦ A * (2 * r) ^ (2 * β)) (𝓝 0) (𝓝 0) := by
-    simpa [Real.zero_rpow (by positivity : 2 * β ≠ 0)] using
-      (ht.rpow_const_nhds_zero (by positivity : 0 < 2 * β)).const_mul A
-  obtain ⟨η, hη, hηbound⟩ := Metric.eventually_nhds_iff.mp
-    (hlim.eventually (gt_mem_nhds hδ))
-  let ε := min η (R / 4)
-  have hεR : ε < R := (min_le_right _ _).trans_lt (by linarith)
-  let B := 512 * A * (2 : ℝ) ^ (2 * β) / π
-  refine ⟨ε, lt_min hη (by positivity), hεR, B, fun z hz ↦ ?_⟩
-  let d := ‖z - x₀‖
-  have hd : 0 < d := norm_pos_iff.mpr (sub_ne_zero.mpr hz.2.2)
-  have hdε : d < ε := by simpa only [mem_ball, dist_eq_norm] using hz.2.1
-  have hdR : d < R / 4 := hdε.trans_le (min_le_right _ _)
-  have hpow := hpower (2 * d) ⟨by positivity, by linarith⟩
-  have hα : 2 * c / (1 + M) ^ 2 = 2 * β := by dsimp [β]; ring
-  rw [hα] at hpow
-  have hsmallE : A * (2 * d) ^ (2 * β) < δ := hηbound (by
-    rw [Real.dist_eq, sub_zero, abs_of_pos hd]
-    exact hdε.trans_le (min_le_left _ _))
+  obtain ⟨ε, hε, hεR, B, hB⟩ := Real.exists_pos_le_sqrt_mul_rpow_sub_one_of_le_mul_rpow
+    (E := fun r ↦ ∫ z in {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r, ‖fderivWithin ℝ u {z | 0 ≤ z.im} z 1‖ ^ 2)
+    (K := 512 / π) hR (by positivity) hβ hδ (by simpa only [hα] using hpower)
+  refine ⟨ε, hε, by linarith, B, fun z hz ↦ ?_⟩
+  have hd : 0 < ‖z - x₀‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hz.2.2)
+  have hdε : ‖z - x₀‖ < ε := by simpa only [mem_ball, dist_eq_norm] using hz.2.1
   -- The mean-value estimate on a half-disc avoiding the puncture converts energy decay into
   -- derivative decay.
-  have hpoint := hmean z
-    ⟨hz.1, by simpa only [mem_ball, dist_eq_norm] using hdR.trans (by linarith : R / 4 < R / 2),
-      hz.2.2⟩ (hpow.trans_lt hsmallE)
-  refine Real.le_sqrt_mul_rpow_sub_one_of_sq_le hd ?_
-  have h := hpoint.trans (mul_le_mul_of_nonneg_left hpow (by positivity))
-  rw [Real.mul_rpow (by positivity) hd.le] at h
-  calc
-    _ ≤ 512 / π * (A * (2 ^ (2 * β) * d ^ (2 * β))) := h
-    _ = B * d ^ (2 * β) := by dsimp [B]; ring
+  obtain ⟨hsmallE, hreal⟩ := hB _ ⟨hd, hdε⟩
+  exact hreal _ (hmean z
+    ⟨hz.1, by simpa only [mem_ball, dist_eq_norm] using hdε.trans hεR, hz.2.2⟩ hsmallE)
 
 /-- **Pointwise decay of the derivative at a boundary puncture.** The derivative within the closed
 upper half-plane of a finite-energy pseudoholomorphic half-disc with Lagrangian boundary values,
@@ -197,7 +177,7 @@ half-disc with Lagrangian boundary values has integrable velocity along every ra
 closed upper half-plane sufficiently close to the puncture, including the two radii along the real
 axis. The radius is uniform over all such unit directions; no continuous extension at the missing
 endpoint is assumed. -/
-theorem exists_pos_integrableOn_deriv_radial_upperHalfPlane
+theorem exists_pos_integrableOn_deriv_radial_inter
     (hg : ∀ v w, ω v (J₀ w) = ⟪v, w⟫) (hc : 0 < c) (hR : 0 < R)
     (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hK : IsCompact K) (hKW : K ⊆ W)
     (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v)
@@ -215,44 +195,15 @@ theorem exists_pos_integrableOn_deriv_radial_upperHalfPlane
       ({z | 0 ≤ z.im} ∩ ball x₀ R)) :
     ∃ ε > 0, ε < R ∧ ∀ v : ℂ, 0 ≤ v.im → ‖v‖ = 1 →
       IntegrableOn (deriv (fun t : ℝ ↦ u (x₀ + t • v))) (Ioo 0 ε) := by
-  set H : Set ℂ := {z | 0 ≤ z.im}
   obtain ⟨ε, hε, hεR, C, _, hC⟩ := ω.exists_pos_norm_fderivWithin_le_rpow hg hc hR hW hJ hK hKW
     hJsq hJL hLω hx₀ hu hCR huL huK htame hbound henergy
-  refine ⟨ε, hε, hεR, fun v hvim hv ↦ ?_⟩
-  have hnorm (t : ℝ) (ht : 0 < t) : ‖x₀ + t • v - x₀‖ = t := by
-    simp [hv, Real.norm_of_nonneg ht.le]
-  -- The open ray `t ↦ x₀ + t • v`, `t > 0`, stays in the closed upper half-plane.
-  have hray : MapsTo (fun t : ℝ ↦ x₀ + t • v) (Ioi 0) H := fun t ht ↦ by
-    simpa [H, hx₀] using mul_nonneg (le_of_lt ht) hvim
-  have hmem (t : ℝ) (ht : t ∈ Ioo 0 ε) : x₀ + t • v ∈ H ∩ (ball x₀ ε \ {x₀}) := by
-    refine ⟨hray ht.1, ?_, ?_⟩
-    · simpa only [mem_ball, dist_eq_norm, hnorm t ht.1] using ht.2
-    · exact sub_ne_zero.mp (norm_pos_iff.mp (by rw [hnorm t ht.1]; exact ht.1))
-  have hmemR (t : ℝ) (ht : t ∈ Ioo 0 ε) : x₀ + t • v ∈ H ∩ (ball x₀ R \ {x₀}) :=
-    ⟨(hmem t ht).1, ball_subset_ball hεR.le (hmem t ht).2.1, (hmem t ht).2.2⟩
   have hM : 0 ≤ M := nonneg_of_forall_norm_le hx₀ hR hbound
-  -- Along the ray, the derivative is that of `u` within the half-plane, in the direction `v`.
-  have heq (t : ℝ) (ht : t ∈ Ioo 0 ε) :
-      deriv (fun t : ℝ ↦ u (x₀ + t • v)) t = fderivWithin ℝ u H (x₀ + t • v) v := by
-    have hO : ball x₀ R \ {x₀} ∈ 𝓝 (x₀ + t • v) :=
-      (isOpen_ball.sdiff isClosed_singleton).mem_nhds (hmemR t ht).2
-    have hdiff : DifferentiableWithinAt ℝ u H (x₀ + t • v) :=
-      (differentiableWithinAt_inter hO).1 ((hu.differentiableOn (by norm_num)) _ (hmemR t ht))
-    have hline : HasDerivAt (fun t : ℝ ↦ x₀ + t • v) v t := by
-      simpa using ((hasDerivAt_id t).smul_const v).const_add x₀
-    exact ((hdiff.hasFDerivWithinAt.comp_hasDerivWithinAt t hline.hasDerivWithinAt hray).hasDerivAt
-      (Ioi_mem_nhds ht.1)).deriv
-  have hpow : IntegrableOn (fun t : ℝ ↦ C * t ^ (c / (1 + M) ^ 2 - 1)) (Ioo 0 ε) :=
-    ((intervalIntegral.integrableOn_Ioo_rpow_iff hε).mpr (by
-      have : 0 < c / (1 + M) ^ 2 := by positivity
-      linarith)).const_mul C
-  refine hpow.mono' (aestronglyMeasurable_deriv _ _) ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht
-  rw [heq t ht]
-  calc
-    ‖fderivWithin ℝ u H (x₀ + t • v) v‖ ≤ ‖fderivWithin ℝ u H (x₀ + t • v)‖ := by
-      simpa only [hv, mul_one] using (fderivWithin ℝ u H (x₀ + t • v)).le_opNorm v
-    _ ≤ C * t ^ (c / (1 + M) ^ 2 - 1) := by
-      simpa only [hnorm t ht.1] using hC _ (hmem t ht)
+  refine ⟨ε, hε, hεR, fun v hvim hv ↦ integrableOn_deriv_radial_of_norm_fderivWithin_le_rpow
+    (C := C) (β := c / (1 + M) ^ 2) (by positivity) hv (fun t ht ↦ ?_) (fun z hz ↦ ?_) hC⟩
+  · -- The open radius `t ↦ x₀ + t • v`, `t > 0`, stays in the closed upper half-plane.
+    simpa [hx₀] using mul_nonneg ht.1.le hvim
+  · have hzR : z ∈ ball x₀ R \ {x₀} := ⟨ball_subset_ball hεR.le hz.2.1, hz.2.2⟩
+    exact (differentiableWithinAt_inter ((isOpen_ball.sdiff isClosed_singleton).mem_nhds hzR)).1
+      ((hu.differentiableOn (by norm_num)) z ⟨hz.1, hzR⟩)
 
 end TauCeti.SymplecticForm

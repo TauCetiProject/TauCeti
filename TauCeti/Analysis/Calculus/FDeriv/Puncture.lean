@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Calculus.Deriv.Endpoint
 public import TauCeti.Topology.MetricSpace.RadialLimit
 public import TauCeti.Analysis.Calculus.FDeriv.CircleMap
+import Mathlib.Analysis.Calculus.FDeriv.Measurable
+import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
 
 /-!
 # Continuous extension across a puncture from finite radial length
@@ -24,6 +26,10 @@ point `a` of the real axis for a map on the punctured closed upper half-disc, di
 within the closed upper half-plane: there the half-circles about `a` replace the circles, and the
 radius is the one along the real axis
 (`TauCeti.exists_continuousOn_update_inter_of_integrableOn_radial_deriv_of_tendsto`).
+
+The finite radial length itself follows from a power bound `‖du(z)‖ ≤ C ‖z - a‖ ^ (β - 1)` with
+`β > 0` on the derivative within a set containing the radius
+(`TauCeti.integrableOn_deriv_radial_of_norm_fderivWithin_le_rpow`).
 
 These are the metric and one-dimensional calculus ingredients of continuous removal of
 singularities. They do not assert differentiability of the extension. The central inputs are
@@ -105,6 +111,42 @@ theorem exists_continuousOn_update_of_integrableOn_radial_deriv_of_tendsto
       (v := (1 : ℂ)) one_ne_zero hR hu.continuousOn
       (by simpa only [Complex.real_smul, mul_one] using hr)
       (by simpa only [Complex.real_smul, mul_one] using hint) hdiam
+
+/-- **Finite radial length from a power bound on the derivative.** Let the open radius
+`t ↦ a + t • v`, `0 < t < ε`, in a unit direction `v` lie in `s`, and let `u` be differentiable
+within `s` at the points of `s` in the punctured ball `B_ε(a) \ {a}`. If the derivative within `s`
+there satisfies `‖du(z)‖ ≤ C ‖z - a‖ ^ (β - 1)` with `β > 0`, then the speed of `u` along the
+radius is integrable on `(0, ε)`. For `s = univ` this is the interior case. -/
+theorem integrableOn_deriv_radial_of_norm_fderivWithin_le_rpow
+    {s : Set ℂ} {u : ℂ → V} {a v : ℂ} {ε C β : ℝ} (hβ : 0 < β) (hv : ‖v‖ = 1)
+    (hs : MapsTo (fun t : ℝ ↦ a + t • v) (Ioo 0 ε) s)
+    (hu : ∀ z ∈ s ∩ (ball a ε \ {a}), DifferentiableWithinAt ℝ u s z)
+    (hC : ∀ z ∈ s ∩ (ball a ε \ {a}), ‖fderivWithin ℝ u s z‖ ≤ C * ‖z - a‖ ^ (β - 1)) :
+    IntegrableOn (deriv fun t : ℝ ↦ u (a + t • v)) (Ioo 0 ε) := by
+  rcases le_or_gt ε 0 with hε | hε
+  · simp [Ioo_eq_empty_of_le hε]
+  have hnorm (t : ℝ) (ht : 0 < t) : ‖a + t • v - a‖ = t := by
+    simp [hv, Real.norm_of_nonneg ht.le]
+  have hmem (t : ℝ) (ht : t ∈ Ioo 0 ε) : a + t • v ∈ s ∩ (ball a ε \ {a}) := by
+    refine ⟨hs ht, ?_, ?_⟩
+    · simpa only [mem_ball, dist_eq_norm, hnorm t ht.1] using ht.2
+    · exact sub_ne_zero.mp (norm_pos_iff.mp (by rw [hnorm t ht.1]; exact ht.1))
+  -- Along the radius, the derivative is that of `u` within `s`, in the direction `v`.
+  have heq (t : ℝ) (ht : t ∈ Ioo 0 ε) :
+      deriv (fun t : ℝ ↦ u (a + t • v)) t = fderivWithin ℝ u s (a + t • v) v := by
+    have hline : HasDerivAt (fun t : ℝ ↦ a + t • v) v t := by
+      simpa using ((hasDerivAt_id t).smul_const v).const_add a
+    exact (((hu _ (hmem t ht)).hasFDerivWithinAt.comp_hasDerivWithinAt t hline.hasDerivWithinAt
+      hs).hasDerivAt (Ioo_mem_nhds ht.1 ht.2)).deriv
+  have hpow : IntegrableOn (fun t : ℝ ↦ C * t ^ (β - 1)) (Ioo 0 ε) :=
+    ((intervalIntegral.integrableOn_Ioo_rpow_iff hε).mpr (by linarith)).const_mul C
+  refine hpow.mono' (aestronglyMeasurable_deriv _ _) ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht
+  rw [heq t ht]
+  calc
+    ‖fderivWithin ℝ u s (a + t • v) v‖ ≤ ‖fderivWithin ℝ u s (a + t • v)‖ := by
+      simpa only [hv, mul_one] using (fderivWithin ℝ u s (a + t • v)).le_opNorm v
+    _ ≤ C * t ^ (β - 1) := by simpa only [hnorm t ht.1] using hC _ (hmem t ht)
 
 
 open Classical in

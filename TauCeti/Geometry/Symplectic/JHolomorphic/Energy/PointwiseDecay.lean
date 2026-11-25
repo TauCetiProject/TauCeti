@@ -8,10 +8,10 @@ module
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Decay
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Puncture
 import TauCeti.Analysis.Calculus.FDeriv.Integrable
+import TauCeti.Analysis.Calculus.FDeriv.Puncture
 import TauCeti.Analysis.RCLike.OperatorNorm
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
-import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
 
 /-!
 # Pointwise power bounds at a puncture
@@ -91,59 +91,32 @@ theorem exists_pos_norm_fderiv_le_rpow
   have hM : 0 ≤ M := (norm_nonneg _).trans (hbound _ hmem)
   -- Normalize the energy power bound, then choose a radius below the mean-value threshold.
   let β := c / (1 + M) ^ 2
-  have _ : 0 < β := by dsimp [β]; positivity
+  have hβ : 0 < β := by dsimp [β]; positivity
+  have hα : 2 * c / (1 + M) ^ 2 = 2 * β := by dsimp [β]; ring
   obtain ⟨A, _, hpower⟩ := exists_energy_power_bound hg hc hR
     (hu.of_le (by norm_num)) hCR htame hbound henergy
   obtain ⟨δ, hδ, hmean⟩ :=
     exists_pos_sq_norm_fderiv_one_le_energy hW hJ hK hKW hJsq hu hCR huK henergy
-  have ht : Tendsto (fun r : ℝ ↦ 2 * r) (𝓝 0) (𝓝 0) := by
-    simpa using (tendsto_id (x := 𝓝 (0 : ℝ))).const_mul 2
-  have hlim : Tendsto (fun r : ℝ ↦ A * (2 * r) ^ (2 * β)) (𝓝 0) (𝓝 0) := by
-    simpa [Real.zero_rpow (by positivity : 2 * β ≠ 0)] using
-      (ht.rpow_const_nhds_zero (by positivity : 0 < 2 * β)).const_mul A
-  obtain ⟨η, hη, hηbound⟩ := Metric.eventually_nhds_iff.mp
-    (hlim.eventually (gt_mem_nhds hδ))
-  let ε := min η (R / 4)
-  have hε : 0 < ε := lt_min hη (by positivity)
-  have hεR : ε < R := (min_le_right _ _).trans_lt (by linarith)
-  let B := 32 * A * (2 : ℝ) ^ (2 * β) / Real.pi
-  let C := (1 + M) * (Real.sqrt B + 1)
-  have hC : 0 < C := by dsimp [C]; positivity
-  refine ⟨ε, hε, hεR, C, hC, fun z hz ↦ ?_⟩
+  obtain ⟨ε, hε, hεR, B, hB⟩ := Real.exists_pos_le_sqrt_mul_rpow_sub_one_of_le_mul_rpow
+    (E := fun r ↦ ∫ z in ball z₀ r, ‖fderiv ℝ u z 1‖ ^ 2) (K := 32 / Real.pi) hR (by positivity)
+    hβ hδ (by simpa only [hα] using hpower)
+  refine ⟨ε, hε, by linarith, (1 + M) * (Real.sqrt B + 1), by positivity, fun z hz ↦ ?_⟩
   let d := ‖z - z₀‖
   have hd : 0 < d := norm_pos_iff.mpr (sub_ne_zero.mpr hz.2)
   have hdε : d < ε := by simpa only [mem_ball, dist_eq_norm] using hz.1
-  have hzR : z ∈ ball z₀ R \ {z₀} := ⟨ball_subset_ball hεR.le hz.1, hz.2⟩
-  have hdR : d < R / 4 := hdε.trans_le (min_le_right _ _)
-  have hsmall : 2 * d ∈ Ioo 0 (R / 2) := by
-    constructor
-    · positivity
-    · have := hdε.trans_le (min_le_right η (R / 4)); linarith
-  have hpow := hpower (2 * d) hsmall
-  have hα : 2 * c / (1 + M) ^ 2 = 2 * β := by dsimp [β]; ring
-  rw [hα] at hpow
-  have hsmallE : A * (2 * d) ^ (2 * β) < δ := hηbound (by
-    rw [Real.dist_eq, sub_zero, abs_of_pos hd]
-    exact hdε.trans_le (min_le_left _ _))
+  have hzR : z ∈ ball z₀ R \ {z₀} := ⟨ball_subset_ball (by linarith) hz.1, hz.2⟩
   -- The estimate on a disc avoiding the puncture converts energy decay into derivative decay.
-  have hpoint := hmean z
-    ⟨by simpa only [mem_ball, dist_eq_norm] using
-      hdR.trans_le (by linarith : R / 4 ≤ R / 2), hz.2⟩
-    (hpow.trans_lt hsmallE)
-  have hsquare : d ^ 2 * ‖fderiv ℝ u z 1‖ ^ 2 ≤ B * d ^ (2 * β) := by
-    have h := hpoint.trans (mul_le_mul_of_nonneg_left hpow (by positivity))
-    rw [Real.mul_rpow (by positivity) hd.le] at h
-    calc
-      _ ≤ 32 / Real.pi * (A * (2 ^ (2 * β) * d ^ (2 * β))) := h
-      _ = B * d ^ (2 * β) := by dsimp [B]; ring
-  have hreal := Real.le_sqrt_mul_rpow_sub_one_of_sq_le hd hsquare
+  obtain ⟨hsmallE, hreal⟩ := hB d ⟨hd, hdε⟩
+  have hpoint := hreal _ (hmean z
+    ⟨by simpa only [mem_ball, dist_eq_norm] using hdε.trans hεR, hz.2⟩ hsmallE)
   -- The Cauchy--Riemann equation controls the full differential by its real-direction part.
   have hop : ‖fderiv ℝ u z‖ ≤ (1 + M) * ‖fderiv ℝ u z 1‖ :=
     (fderiv ℝ u z).norm_le_of_apply_I_eq (hCR z hzR) (hbound z hzR) le_rfl
   calc
     ‖fderiv ℝ u z‖ ≤ (1 + M) * (Real.sqrt B * d ^ (β - 1)) := by
-      exact hop.trans (mul_le_mul_of_nonneg_left hreal (by positivity))
-    _ ≤ C * d ^ (β - 1) := by dsimp [C]; nlinarith [Real.rpow_pos_of_pos hd (β - 1)]
+      exact hop.trans (mul_le_mul_of_nonneg_left hpoint (by positivity))
+    _ ≤ (1 + M) * (Real.sqrt B + 1) * d ^ (β - 1) := by
+      nlinarith [Real.rpow_pos_of_pos hd (β - 1)]
 
 /-- A finite-energy pseudoholomorphic curve has integrable velocity along every radial
 segment sufficiently close to the puncture. The radius is uniform over all unit directions;
@@ -162,43 +135,14 @@ theorem exists_pos_integrableOn_deriv_radial
       IntegrableOn (deriv (fun t : ℝ ↦ u (z₀ + t • v))) (Ioo 0 ε) := by
   obtain ⟨ε, hε, hεR, C, _, hC⟩ := ω.exists_pos_norm_fderiv_le_rpow
     hg hc hR hW hJ hK hKW hJsq hu hCR huK htame hbound henergy
-  refine ⟨ε, hε, hεR, fun v hv ↦ ?_⟩
-  have hnorm (t : ℝ) (ht : 0 < t) : ‖z₀ + t • v - z₀‖ = t := by
-    simp [hv, Real.norm_of_nonneg ht.le]
-  have hmem (t : ℝ) (ht : t ∈ Ioo 0 ε) : z₀ + t • v ∈ ball z₀ ε \ {z₀} := by
-    constructor
-    · simpa only [mem_ball, dist_eq_norm, hnorm t ht.1] using ht.2
-    · exact sub_ne_zero.mp (norm_pos_iff.mp (by rw [hnorm t ht.1]; exact ht.1))
-  have hmemR (t : ℝ) (ht : t ∈ Ioo 0 ε) : z₀ + t • v ∈ ball z₀ R \ {z₀} :=
-    ⟨ball_subset_ball hεR.le (hmem t ht).1, (hmem t ht).2⟩
-  have hM : 0 ≤ M := (norm_nonneg _).trans
-    (hbound _ (hmemR (ε / 2) ⟨half_pos hε, by linarith⟩))
-  have heq (t : ℝ) (ht : t ∈ Ioo 0 ε) :
-      deriv (fun t : ℝ ↦ u (z₀ + t • v)) t = fderiv ℝ u (z₀ + t • v) v := by
-    have hd := (hu.contDiffAt ((isOpen_ball.sdiff isClosed_singleton).mem_nhds
-      (hmemR t ht))).differentiableAt (by norm_num)
-    simpa only [Function.comp_def, Pi.add_apply, zero_add, one_smul, id_eq] using
-      (hd.hasFDerivAt.comp_hasDerivAt t
-        ((hasDerivAt_const t z₀).add ((hasDerivAt_id t).smul_const v))).deriv
-  have hcont : ContinuousOn (fun t : ℝ ↦ fderiv ℝ u (z₀ + t • v) v) (Ioo 0 ε) :=
-    ((hu.continuousOn_fderiv_of_isOpen (isOpen_ball.sdiff isClosed_singleton)
-      (by norm_num)).comp
-        (continuous_const.add (continuous_id.smul continuous_const)).continuousOn
-        hmemR).clm_apply continuousOn_const
-  have hmeas : AEStronglyMeasurable (deriv (fun t : ℝ ↦ u (z₀ + t • v)))
-      (volume.restrict (Ioo 0 ε)) :=
-    (hcont.congr (fun t ht ↦ heq t ht)).aestronglyMeasurable measurableSet_Ioo
-  have hpow : IntegrableOn (fun t : ℝ ↦ C * t ^ (c / (1 + M) ^ 2 - 1)) (Ioo 0 ε) :=
-    ((intervalIntegral.integrableOn_Ioo_rpow_iff hε).mpr (by
-      have : 0 < c / (1 + M) ^ 2 := by positivity
-      linarith)).const_mul C
-  refine hpow.mono' hmeas ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht
-  rw [heq t ht]
-  calc
-    ‖fderiv ℝ u (z₀ + t • v) v‖ ≤ ‖fderiv ℝ u (z₀ + t • v)‖ := by
-      simpa only [hv, mul_one] using (fderiv ℝ u (z₀ + t • v)).le_opNorm v
-    _ ≤ C * t ^ (c / (1 + M) ^ 2 - 1) := by
-      simpa only [hnorm t ht.1] using hC _ (hmem t ht)
+  have hM : 0 ≤ M := (norm_nonneg _).trans (hbound _
+    (circleMap_mem_ball_diff_singleton (z₀ := z₀) (half_pos hR) (half_lt_self hR) 0))
+  refine ⟨ε, hε, hεR, fun v hv ↦ integrableOn_deriv_radial_of_norm_fderivWithin_le_rpow
+    (s := univ) (C := C) (β := c / (1 + M) ^ 2) (by positivity) hv (mapsTo_univ _ _)
+    (fun z hz ↦ ?_) (fun z hz ↦ ?_)⟩
+  · have hzR : z ∈ ball z₀ R \ {z₀} := ⟨ball_subset_ball hεR.le hz.2.1, hz.2.2⟩
+    exact ((hu.contDiffAt ((isOpen_ball.sdiff isClosed_singleton).mem_nhds hzR)).differentiableAt
+      (by norm_num)).differentiableWithinAt
+  · simpa only [fderivWithin_univ] using hC z hz.2
 
 end TauCeti.SymplecticForm

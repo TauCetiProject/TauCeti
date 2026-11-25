@@ -42,7 +42,7 @@ the closed upper half-plane, compact image and boundary values in a subspace `L`
 symplectic form vanishes and which `J` maps into `Lᗮ`, converges as `z → x₀` within the half-plane
 to a point of `K ∩ L`, and updating it there gives a map continuous on the half-disc
 (`SymplecticForm.exists_continuousOn_update_inter_of_finite_energy`). The inputs are
-`SymplecticForm.exists_pos_integrableOn_deriv_radial_upperHalfPlane` (finite length along the real
+`SymplecticForm.exists_pos_integrableOn_deriv_radial_inter` (finite length along the real
 radius), `TauCeti.tendsto_norm_sub_mul_norm_fderivWithin_nhdsWithin` (shrinking half-circle
 images) and `TauCeti.exists_continuousOn_update_inter_of_integrableOn_radial_deriv_of_tendsto`.
 This is the flat model of a constant taming form and a linear boundary condition.
@@ -221,7 +221,7 @@ theorem exists_continuousOn_update_inter_of_finite_energy
   have hL : IsClosed (L : Set V) := L.isClosed_of_finiteDimensional
   obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn (hJ.continuousOn.mono hKW)
   have hbound : ∀ z ∈ H ∩ (ball x₀ R \ {x₀}), ‖J (u z)‖ ≤ M := fun z hz ↦ hM _ (huK hz)
-  obtain ⟨ε, hε, hεR, hrad⟩ := ω.exists_pos_integrableOn_deriv_radial_upperHalfPlane hg hc hR hW
+  obtain ⟨ε, hε, hεR, hrad⟩ := ω.exists_pos_integrableOn_deriv_radial_inter hg hc hR hW
     hJ hK hKW hJsq hJL hLω hx₀ hu hCR huL huK htame hbound henergy
   have hsub : H ∩ (ball x₀ ε \ {x₀}) ⊆ H ∩ (ball x₀ R \ {x₀}) :=
     inter_subset_inter_right _ (sdiff_subset_sdiff_left (ball_subset_ball hεR.le))
