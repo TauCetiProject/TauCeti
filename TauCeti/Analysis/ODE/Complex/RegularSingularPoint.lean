@@ -586,7 +586,7 @@ theorem regularSingular_log_solution {z₀ α₁ α₂ c : ℂ} {N : ℕ} {r : �
       (summable_norm_mul_pow_of_lt_radius fs (hζ.trans_le hfr)).of_norm.hasSum)).summable
   have hrecB := (log_recursion_iff hN).1 ⟨hb, hb'⟩
   have hbr := le_radius_ofScalars_of_regularSingular (s₀ := 0) hfr hgr hes fun s _ ↦ hrecB s
-  have hlt {z : ℂ} (hz : ‖z - z₀‖ < r) := enorm_lt_ofReal_iff.2 hz
+  have hlt {z : ℂ} (hz : ‖z - z₀‖ < r) := eNorm_lt_ofReal_iff.2 hz
   refine ⟨fun z hz ↦ (summable_norm_mul_pow_of_lt_radius b ((hlt hz).trans_le hbr)).of_norm, ?_⟩
   -- `w` as a translate of `W(ζ) = ζ ^ α₂ T(ζ) + c ζ ^ α₁ S(ζ) log ζ`
   set S : ℂ → ℂ := fun ζ ↦ ∑' s, a s * ζ ^ s

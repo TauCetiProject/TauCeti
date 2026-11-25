@@ -64,7 +64,7 @@ A fixed point `v` of a map `T` with `‖T v‖ ≤ R + γ ‖v‖` and `γ < 1` 
 * `TauCeti.norm_add_add_sq_le_three_mul` -- the squared triangle inequality for three summands.
 * `TauCeti.eNorm_sub_le_eNorm_sub_add_eNorm_sub` -- the triangle inequality for the extended norm.
 * `TauCeti.mem_eball_iff_eNorm` -- `b ∈ eball a r ↔ ‖b - a‖ₑ < r`.
-* `TauCeti.enorm_lt_ofReal_iff` -- `‖x‖ₑ < ENNReal.ofReal r ↔ ‖x‖ < r`.
+* `TauCeti.eNorm_lt_ofReal_iff` -- `‖x‖ₑ < ENNReal.ofReal r ↔ ‖x‖ < r`.
 * `TauCeti.norm_sq_le_of_mul_norm_sub_sq_le` -- `c ‖a - b‖² ≤ r` with `c > 0` bounds `‖a‖²` by
   `2 / c * r + 2 ‖b‖²`.
 * `TauCeti.inv_one_add_norm_sub_sq_le_one` -- the reciprocal transform of a squared distance is at
@@ -136,7 +136,7 @@ theorem mem_eball_iff_eNorm {E : Type*} [SeminormedAddCommGroup E] {a b : E} {r 
 
 /-- The extended norm of `x` is below `ENNReal.ofReal r` exactly when its norm is below `r`. -/
 @[simp]
-theorem enorm_lt_ofReal_iff {E : Type*} [SeminormedAddGroup E] {x : E} {r : ℝ} :
+theorem eNorm_lt_ofReal_iff {E : Type*} [SeminormedAddGroup E] {x : E} {r : ℝ} :
     ‖x‖ₑ < ENNReal.ofReal r ↔ ‖x‖ < r := by
   simpa using edist_lt_ofReal (x := x) (y := 0)
 

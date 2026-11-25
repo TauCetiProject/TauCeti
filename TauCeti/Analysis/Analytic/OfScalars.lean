@@ -338,7 +338,7 @@ theorem le_radius_ofScalars_of_summable_sub {𝕜 : Type*} [DenselyNormedField �
     (h : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r → Summable fun n : ℕ ↦ a n * (z - z₀) ^ n) :
     ENNReal.ofReal r ≤ (FormalMultilinearSeries.ofScalars 𝕜 a).radius :=
   FormalMultilinearSeries.le_radius_ofScalars_of_summable a fun z hz0 hz ↦ by
-    simpa using h (z + z₀) (by simpa using hz0) (by simpa using enorm_lt_ofReal_iff.1 hz)
+    simpa using h (z + z₀) (by simpa using hz0) (by simpa using eNorm_lt_ofReal_iff.1 hz)
 
 /-- The scalar multilinear series `∑ₙ C(n + k, k) xⁿ` in any normed `𝕜`-algebra `A` has radius of
 convergence at least `1`. -/
