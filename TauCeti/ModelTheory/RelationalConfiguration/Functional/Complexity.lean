@@ -8,6 +8,7 @@ module
 public import TauCeti.ModelTheory.RelationalConfiguration.Functional.Coding
 public import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
 public import TauCeti.ModelTheory.Infinitary.GraphTranslation.Relationalize
+public import TauCeti.Topology.Discrete
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.ModelTheory.Complexity
 
@@ -72,15 +73,6 @@ theorem realize_sentence_perm_smul (σ : Equiv.Perm V) (F : FunctionalConfigurat
     (isoSetoid_iff_exists_perm_smul_eq.2 ⟨σ, rfl⟩) φ).symm
 
 /-! ### Terms and quantifier-free formulas -/
-
-/-- A family of continuous maps indexed by a discrete space, read at a continuously varying index,
-is continuous: on a discrete index space, continuity in the index is automatic. -/
-private theorem continuous_apply_of_discrete {X Y Z : Type*} [TopologicalSpace X]
-    [TopologicalSpace Y] [TopologicalSpace Z] [DiscreteTopology Z] {g : X → Z → Y}
-    (hg : ∀ z, Continuous fun x => g x z) {a : X → Z} (ha : Continuous a) :
-    Continuous fun x => g x (a x) :=
-  ((continuous_prod_of_discrete_right (f := Function.uncurry g)).2 hg).comp
-    (continuous_id.prodMk ha)
 
 variable [TopologicalSpace V] [DiscreteTopology V]
 
