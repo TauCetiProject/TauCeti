@@ -24,9 +24,10 @@ instance on the model space, which is Lebesgue measure for `CoordinateSpace n`. 
 measures for which formal adjoints and transposes of differential and pseudodifferential operators
 on `M` are taken; the Riemannian volume of a smooth metric is one, although that is not shown here.
 
-Lebesgue measure on `E` itself is one (`TauCeti.hasSmoothPositiveDensity_volume`): in a chart `e`
-of the maximal atlas of `E`, its density is the absolute Jacobian determinant `|det D(e⁻¹)(y)|`, by
-the change of variables formula.
+The measure `volume` on `E` itself is one when it is an additive Haar measure, such as Lebesgue
+measure (`TauCeti.hasSmoothPositiveDensity_volume`): in a chart `e` of the maximal atlas of `E`,
+its density is the absolute Jacobian determinant `|det D(e⁻¹)(y)|`, by the change of variables
+formula.
 
 ## Main definitions
 
@@ -37,8 +38,9 @@ the change of variables formula.
 ## Main results
 
 * `TauCeti.hasSmoothPositiveDensity_iff`: unfolding the definition.
-* `TauCeti.hasSmoothPositiveDensity_volume`: an additive Haar measure on a finite-dimensional real
-  normed space has a smooth positive density, for its maximal atlas.
+* `TauCeti.hasSmoothPositiveDensity_volume`: the measure `volume` on a finite-dimensional real
+  normed space, when it is an additive Haar measure, has a smooth positive density for the maximal
+  atlas.
 
 ## References
 
@@ -82,8 +84,9 @@ theorem hasSmoothPositiveDensity_iff {μ : Measure M} :
   Iff.rfl
 
 /-- **Lebesgue measure has a smooth positive density.** In a chart `e` of the maximal atlas of a
-finite-dimensional real normed space `E`, the density of an additive Haar measure is the absolute
-Jacobian determinant `|det D(e⁻¹)(y)|`, by the change of variables formula. -/
+finite-dimensional real normed space `E`, the density of `volume` (assumed to be an additive Haar
+measure) is the absolute Jacobian determinant `|det D(e⁻¹)(y)|`, by the change of variables
+formula. -/
 theorem hasSmoothPositiveDensity_volume [FiniteDimensional ℝ E] [BorelSpace E]
     [(volume : Measure E).IsAddHaarMeasure] :
     HasSmoothPositiveDensity E (volume : Measure E) := by
