@@ -20,7 +20,12 @@ and of the special orthogonal group `SO_l` of the identity form
 of `i` (`TauCeti.AntidiagonalSpecialOrthogonal.map_congrUnit`), so along the base-change
 isomorphisms of `SO_l^J` and `SO_l` the scalar extension of the identification over `R` is the
 identification over `K`
-(`baseChangeMap_coordinateHopfAlgebraIsoSpecialOrthogonal_hom_comp`).
+(`baseChangeMap_coordinateHopfAlgebraIsoSpecialOrthogonal_hom_comp`). The same holds for the
+group-scheme isomorphism `TauCeti.AntidiagonalSpecialOrthogonal.groupSchemeIsoSpecialOrthogonal`
+along the base-change isomorphisms `TauCeti.AntidiagonalSpecialOrthogonal.groupSchemeBaseChangeIso`
+and `TauCeti.SpecialOrthogonal.groupSchemeBaseChangeIso`, for `K` in the universe of `R`
+(`map_groupSchemeIsoSpecialOrthogonal_hom_comp_groupSchemeBaseChangeIso_hom`), obtained from the
+coordinate form by `TauCeti.AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso_trans_hom_naturality`.
 The proof specializes the naturality of quotient isomorphisms under base change
 (`TauCeti.CommHopfAlgCat.baseChangeMap_quotientIsoOfComapEq_hom_comp`)
 to the naturality of conjugation on `GL_l`
@@ -36,6 +41,9 @@ namespace TauCeti.AntidiagonalSpecialOrthogonal
 universe u v
 
 variable {R : Type u} [CommRing R] [Invertible (2 : R)] (l : ℕ) {i : R}
+
+section Coordinate
+
 variable (K : Type max u v) [CommRing K] [Algebra R K] [Invertible (2 : K)]
 
 /-- **The congruence matrix is natural in the base ring.** -/
@@ -71,5 +79,44 @@ theorem baseChangeMap_coordinateHopfAlgebraIsoSpecialOrthogonal_hom_comp (hi : i
   refine CommHopfAlgCat.baseChangeMap_quotientIsoOfComapEq_hom_comp _ _ _ _ _ _ h₁ h₂ ?_
   rw [← map_congrUnit, ← map_inv]
   exact GeneralLinear.baseChangeMap_conjCoordinateIso_hom_comp K (congrUnit l hi)⁻¹
+
+end Coordinate
+
+/-! ### Naturality of the group-scheme isomorphism -/
+
+section GroupScheme
+
+open _root_.AlgebraicGeometry
+
+variable (K : Type u) [CommRing K] [Algebra R K] [Invertible (2 : K)]
+
+/-- **The isomorphism `SO_l^J ≅ SO_l` of group schemes is natural in the base ring.** Along the
+base-change isomorphisms of `SO_l^J` and `SO_l`, the base change of the isomorphism over `R` is
+the isomorphism over `K`, for the image of `i`. -/
+@[reassoc]
+theorem map_groupSchemeIsoSpecialOrthogonal_hom_comp_groupSchemeBaseChangeIso_hom
+    (hi : i * i = -1) :
+    (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R K)))).mapGrp.map
+          (groupSchemeIsoSpecialOrthogonal l hi).hom ≫
+        (SpecialOrthogonal.groupSchemeBaseChangeIso R K l).hom =
+      (groupSchemeBaseChangeIso R l K).hom ≫
+        (groupSchemeIsoSpecialOrthogonal l (by rw [← map_mul, hi, map_neg, map_one] :
+          algebraMap R K i * algebraMap R K i = -1)).hom := by
+  have hS := baseChangeMap_coordinateHopfAlgebraIsoSpecialOrthogonal_hom_comp l K hi
+  rw [← CommHopfAlgCat.baseChangeFunctor_map, ← Functor.mapIso_hom] at hS
+  have hS' := (CommSq.horiz_inv ⟨hS⟩).w
+  rw [Functor.mapIso_inv, CommHopfAlgCat.baseChangeFunctor_map] at hS'
+  have hN := AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso_trans_hom_naturality
+    (coordinateHopfAlgebraIsoSpecialOrthogonal l hi).inv
+    (coordinateHopfAlgebraIsoSpecialOrthogonal l (by rw [← map_mul, hi, map_neg, map_one] :
+      algebraMap R K i * algebraMap R K i = -1)).inv
+    (coordinateHopfAlgebraBaseChangeIso R l K)
+    (SpecialOrthogonal.coordinateHopfAlgebraBaseChangeIso R K l) hS'
+  rw [groupSchemeIsoSpecialOrthogonal_def, groupSchemeIsoSpecialOrthogonal_def,
+    SpecialOrthogonal.groupSchemeBaseChangeIso_def, groupSchemeBaseChangeIso_def,
+    GeneralLinear.hopfIdealBaseChangeIso_def, GeneralLinear.hopfIdealBaseChangeIso_def]
+  simpa using hN =≫ eqToHom (SpecialOrthogonal.groupScheme_def K l).symm
+
+end GroupScheme
 
 end TauCeti.AntidiagonalSpecialOrthogonal
