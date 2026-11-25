@@ -18,7 +18,8 @@ an object by a scalar is compatible with every morphism to or from the unit: a s
 the unit factor of `Y ⊗ 𝟙_ C` can be moved past any morphism `Y ⊗ 𝟙_ C ⟶ 𝟙_ C`
 (`TauCeti.whiskerLeft_scalar_comp`), and dually a scalar acting on the unit factor of `𝟙_ C ⊗ Y`
 can be moved past any morphism `𝟙_ C ⟶ 𝟙_ C ⊗ Y` (`TauCeti.comp_scalar_whiskerRight`). In
-particular scalars commute with each other (`TauCeti.scalar_comm`).
+particular scalars commute with each other (`TauCeti.scalar_comm`), so the automorphisms of the
+unit form a commutative group.
 
 A scalar `a` acts on every object `Y` in two ways, from the left as
 `(λ_ Y).inv ≫ a ▷ Y ≫ (λ_ Y).hom` and from the right as `(ρ_ Y).inv ≫ Y ◁ a ≫ (ρ_ Y).hom`. The two
@@ -83,6 +84,11 @@ theorem comp_scalar_whiskerRight {Y : C} (a : 𝟙_ C ⟶ 𝟙_ C) (e : 𝟙_ C 
 theorem scalar_comm (a b : 𝟙_ C ⟶ 𝟙_ C) : a ≫ b = b ≫ a := by
   rw [← cancel_epi (λ_ (𝟙_ C)).hom, ← leftUnitor_naturality_assoc, unitors_equal,
     whiskerLeft_scalar_comp, Category.assoc]
+
+/-- The automorphisms of the unit of a monoidal category form a commutative group, since scalars
+commute. -/
+instance commGroupAutTensorUnit : CommGroup (Aut (𝟙_ C)) where
+  mul_comm a b := Aut.ext (Iso.ext (scalar_comm b.asIso.hom a.asIso.hom))
 
 /-- In a braided monoidal category, a scalar acts on every object in the same way from the left
 and from the right. -/
