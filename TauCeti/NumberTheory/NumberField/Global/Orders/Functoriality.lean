@@ -19,8 +19,9 @@ principal ideal `(x)` to `(f x)`, and `f x` is totally positive whenever `x` is.
 descends both to the wide Picard groups and to the narrow Picard groups, and the forgetful map
 from narrow to wide Picard groups is natural. Each of these maps respects identities and
 composition. When an isomorphism of ambient number fields `e : K ≃+* L` identifies `O` with `O'`,
-`NumberFieldOrder.narrowPicMulEquivOfRingEquiv` packages `Hom.mapNarrowPic` in both directions as
-an isomorphism `NarrowPic O ≃* NarrowPic O'`.
+`NumberFieldOrder.picMulEquivOfRingEquiv` and `NumberFieldOrder.narrowPicMulEquivOfRingEquiv`
+package `Hom.mapPic` and `Hom.mapNarrowPic` in both directions as isomorphisms `Pic O ≃* Pic O'`
+and `NarrowPic O ≃* NarrowPic O'` intertwined by `narrowToPic`.
 
 An order morphism `NumberFieldOrder.Hom` packages its ambient field map explicitly, and the
 extension of fractional ideals is described through that map. This is no extra choice: the
@@ -34,6 +35,8 @@ field map (`NumberFieldOrder.Hom.isLocalization_map_toOrderHom`).
 * `NumberFieldOrder.Hom.mapInvertible`: the induced map of invertible fractional ideals.
 * `NumberFieldOrder.Hom.mapPic`: the induced map of wide Picard groups.
 * `NumberFieldOrder.Hom.mapNarrowPic`: the induced map of narrow Picard groups.
+* `NumberFieldOrder.picMulEquivOfRingEquiv`: the isomorphism `Pic O ≃* Pic O'` induced by a field
+  isomorphism `e : K ≃+* L` carrying `O` onto `O'`.
 * `NumberFieldOrder.narrowPicMulEquivOfRingEquiv`: the isomorphism `NarrowPic O ≃* NarrowPic O'`
   induced by a field isomorphism `e : K ≃+* L` carrying `O` onto `O'`.
 
@@ -45,12 +48,17 @@ field map (`NumberFieldOrder.Hom.isLocalization_map_toOrderHom`).
 * `NumberFieldOrder.Hom.mapPic_comp`, `NumberFieldOrder.Hom.mapNarrowPic_comp` and the identity
   lemmas: functoriality.
 * `NumberFieldOrder.narrowToPic_natural`: the forgetful map `NarrowPic → Pic` is natural.
-* `NumberFieldOrder.narrowPicMulEquivOfRingEquiv_apply`,
-  `NumberFieldOrder.coe_narrowPicMulEquivOfRingEquiv`,
+* `NumberFieldOrder.picMulEquivOfRingEquiv_mkPic`,
+  `NumberFieldOrder.narrowPicMulEquivOfRingEquiv_mk`,
+  `NumberFieldOrder.narrowToPic_narrowPicMulEquivOfRingEquiv`: action of the wide and narrow
+  Picard equivalences on ideal classes and compatibility with `narrowToPic`.
+* `NumberFieldOrder.picMulEquivOfRingEquiv_refl`,
+  `NumberFieldOrder.picMulEquivOfRingEquiv_symm`,
+  `NumberFieldOrder.picMulEquivOfRingEquiv_trans`,
   `NumberFieldOrder.narrowPicMulEquivOfRingEquiv_refl`,
   `NumberFieldOrder.narrowPicMulEquivOfRingEquiv_symm`,
-  `NumberFieldOrder.narrowPicMulEquivOfRingEquiv_trans`: agreement with `Hom.mapNarrowPic` and
-  functoriality of `narrowPicMulEquivOfRingEquiv`.
+  `NumberFieldOrder.narrowPicMulEquivOfRingEquiv_trans`: functoriality of the wide and narrow
+  Picard equivalences.
 
 ## References
 
@@ -236,37 +244,106 @@ theorem narrowToPic_natural (f : Hom O O') :
   MonoidHom.ext (narrowToPic_mapNarrowPic f)
 
 /-- An isomorphism of ambient number fields `e : K ≃+* L` carrying `O` onto `O'` induces an
+isomorphism `Pic O ≃* Pic O'` via `Hom.mapPic`. -/
+def picMulEquivOfRingEquiv (e : K ≃+* L)
+    (h : ∀ x : K, e x ∈ O'.toSubalgebra ↔ x ∈ O.toSubalgebra) :
+    Pic O ≃* Pic O' :=
+  MonoidHom.toMulEquiv
+    (Hom.ofRingEquiv e h).mapPic
+    (Hom.ofRingEquiv e.symm fun y => by rw [← h, e.apply_symm_apply]).mapPic
+    (by rw [← Hom.mapPic_comp, Hom.ofRingEquiv_symm_comp_ofRingEquiv, Hom.mapPic_id])
+    (by rw [← Hom.mapPic_comp, Hom.ofRingEquiv_comp_ofRingEquiv_symm, Hom.mapPic_id])
+
+-- Not `@[simp]` so that `MulEquiv` cancellation, `picMulEquivOfRingEquiv_mkPic`, and
+-- `narrowToPic_narrowPicMulEquivOfRingEquiv` fire on the equivalence directly (`simpNF`).
+/-- Applying `picMulEquivOfRingEquiv` evaluates `Hom.mapPic` along `Hom.ofRingEquiv e h`. -/
+theorem picMulEquivOfRingEquiv_apply (e : K ≃+* L)
+    (h : ∀ x : K, e x ∈ O'.toSubalgebra ↔ x ∈ O.toSubalgebra) (c : Pic O) :
+    picMulEquivOfRingEquiv e h c = (Hom.ofRingEquiv e h).mapPic c :=
+  (rfl)
+
+/-- As a monoid homomorphism, `picMulEquivOfRingEquiv` is `(Hom.ofRingEquiv e h).mapPic`. -/
+@[simp]
+theorem coe_picMulEquivOfRingEquiv (e : K ≃+* L)
+    (h : ∀ x : K, e x ∈ O'.toSubalgebra ↔ x ∈ O.toSubalgebra) :
+    (picMulEquivOfRingEquiv e h : Pic O →* Pic O') = (Hom.ofRingEquiv e h).mapPic :=
+  (rfl)
+
+/-- On the wide Picard class of an invertible ideal, `picMulEquivOfRingEquiv` gives the class of
+its extension along `Hom.ofRingEquiv e h`. -/
+@[simp]
+theorem picMulEquivOfRingEquiv_mkPic (e : K ≃+* L)
+    (h : ∀ x : K, e x ∈ O'.toSubalgebra ↔ x ∈ O.toSubalgebra)
+    (I : O.invertibleProperFractionalIdeals) :
+    picMulEquivOfRingEquiv e h (O.mkPic I) = O'.mkPic ((Hom.ofRingEquiv e h).mapInvertible I) :=
+  Hom.mapPic_mkPic (Hom.ofRingEquiv e h) I
+
+/-- The identity field isomorphism induces the identity on `Pic O`. -/
+@[simp]
+theorem picMulEquivOfRingEquiv_refl
+    (h : ∀ x : K, (RingEquiv.refl K) x ∈ O.toSubalgebra ↔ x ∈ O.toSubalgebra) :
+    picMulEquivOfRingEquiv (RingEquiv.refl K) h = MulEquiv.refl (Pic O) := by
+  ext c
+  rw [picMulEquivOfRingEquiv_apply, Hom.ofRingEquiv_refl, Hom.mapPic_id, MonoidHom.id_apply,
+    MulEquiv.refl_apply]
+
+/-- The inverse of `picMulEquivOfRingEquiv e h` is induced by `e.symm`. -/
+@[simp]
+theorem picMulEquivOfRingEquiv_symm (e : K ≃+* L)
+    (h : ∀ x : K, e x ∈ O'.toSubalgebra ↔ x ∈ O.toSubalgebra) :
+    (picMulEquivOfRingEquiv e h).symm =
+      picMulEquivOfRingEquiv e.symm (fun y => by rw [← h, e.apply_symm_apply]) :=
+  MulEquiv.ext fun _ => (rfl)
+
+/-- `picMulEquivOfRingEquiv` respects composition of field isomorphisms. -/
+theorem picMulEquivOfRingEquiv_trans (e : K ≃+* L) (e' : L ≃+* M)
+    (h : ∀ x : K, e x ∈ O'.toSubalgebra ↔ x ∈ O.toSubalgebra)
+    (h' : ∀ y : L, e' y ∈ O''.toSubalgebra ↔ y ∈ O'.toSubalgebra) :
+    (picMulEquivOfRingEquiv e h).trans (picMulEquivOfRingEquiv e' h') =
+      picMulEquivOfRingEquiv (e.trans e')
+        (fun x => by rw [RingEquiv.trans_apply]; exact (h' (e x)).trans (h x)) := by
+  ext c
+  simp only [MulEquiv.trans_apply, picMulEquivOfRingEquiv_apply, ← MonoidHom.comp_apply,
+    ← Hom.mapPic_comp, Hom.ofRingEquiv_trans]
+
+/-- An isomorphism of ambient number fields `e : K ≃+* L` carrying `O` onto `O'` induces an
 isomorphism `NarrowPic O ≃* NarrowPic O'` via `Hom.mapNarrowPic`. -/
 def narrowPicMulEquivOfRingEquiv (e : K ≃+* L)
     (h : ∀ x : K, e x ∈ O'.toSubalgebra ↔ x ∈ O.toSubalgebra) :
     NarrowPic O ≃* NarrowPic O' :=
-  let φ : Hom O O' := ⟨e.toRingHom, fun {_} hx => (h _).mpr hx⟩
-  let ψ : Hom O' O := ⟨e.symm.toRingHom, fun {y} hy => (h (e.symm y)).mp (by simpa using hy)⟩
-  MonoidHom.toMulEquiv φ.mapNarrowPic ψ.mapNarrowPic
-    (by
-      rw [← Hom.mapNarrowPic_comp]
-      have hid : ψ.comp φ = Hom.id O := Hom.ext fun x => by simp [φ, ψ]
-      rw [hid, Hom.mapNarrowPic_id])
-    (by
-      rw [← Hom.mapNarrowPic_comp]
-      have hid : φ.comp ψ = Hom.id O' := Hom.ext fun y => by simp [φ, ψ]
-      rw [hid, Hom.mapNarrowPic_id])
+  MonoidHom.toMulEquiv
+    (Hom.ofRingEquiv e h).mapNarrowPic
+    (Hom.ofRingEquiv e.symm fun y => by rw [← h, e.apply_symm_apply]).mapNarrowPic
+    (by rw [← Hom.mapNarrowPic_comp, Hom.ofRingEquiv_symm_comp_ofRingEquiv, Hom.mapNarrowPic_id])
+    (by rw [← Hom.mapNarrowPic_comp, Hom.ofRingEquiv_comp_ofRingEquiv_symm, Hom.mapNarrowPic_id])
 
-/-- Applying `narrowPicMulEquivOfRingEquiv` evaluates `Hom.mapNarrowPic` along `e`. -/
-@[simp]
+-- Not `@[simp]` so that `MulEquiv` cancellation, `narrowPicMulEquivOfRingEquiv_mk`, and
+-- `narrowToPic_narrowPicMulEquivOfRingEquiv` fire on the equivalence directly (`simpNF`).
+/-- Applying `narrowPicMulEquivOfRingEquiv` evaluates `Hom.mapNarrowPic` along
+`Hom.ofRingEquiv e h`. -/
 theorem narrowPicMulEquivOfRingEquiv_apply (e : K ≃+* L)
     (h : ∀ x : K, e x ∈ O'.toSubalgebra ↔ x ∈ O.toSubalgebra) (c : NarrowPic O) :
-    narrowPicMulEquivOfRingEquiv e h c =
-      (⟨e.toRingHom, fun {_} hx => (h _).mpr hx⟩ : Hom O O').mapNarrowPic c :=
+    narrowPicMulEquivOfRingEquiv e h c = (Hom.ofRingEquiv e h).mapNarrowPic c :=
   (rfl)
 
-/-- As a monoid homomorphism, `narrowPicMulEquivOfRingEquiv` is `Hom.mapNarrowPic`. -/
+/-- As a monoid homomorphism, `narrowPicMulEquivOfRingEquiv` is
+`(Hom.ofRingEquiv e h).mapNarrowPic`. -/
 @[simp]
 theorem coe_narrowPicMulEquivOfRingEquiv (e : K ≃+* L)
     (h : ∀ x : K, e x ∈ O'.toSubalgebra ↔ x ∈ O.toSubalgebra) :
     (narrowPicMulEquivOfRingEquiv e h : NarrowPic O →* NarrowPic O') =
-      (⟨e.toRingHom, fun {_} hx => (h _).mpr hx⟩ : Hom O O').mapNarrowPic :=
+      (Hom.ofRingEquiv e h).mapNarrowPic :=
   (rfl)
+
+/-- On the narrow Picard class of an invertible ideal, `narrowPicMulEquivOfRingEquiv` gives the
+narrow class of its extension along `Hom.ofRingEquiv e h`. -/
+@[simp]
+theorem narrowPicMulEquivOfRingEquiv_mk (e : K ≃+* L)
+    (h : ∀ x : K, e x ∈ O'.toSubalgebra ↔ x ∈ O.toSubalgebra)
+    (I : O.invertibleProperFractionalIdeals) :
+    narrowPicMulEquivOfRingEquiv e h (NarrowPic.mk O I) =
+      NarrowPic.mk O' ((Hom.ofRingEquiv e h).mapInvertible I) :=
+  Hom.mapNarrowPic_mk (Hom.ofRingEquiv e h) I
 
 /-- The identity field isomorphism induces the identity on `NarrowPic O`. -/
 @[simp]
@@ -274,17 +351,15 @@ theorem narrowPicMulEquivOfRingEquiv_refl
     (h : ∀ x : K, (RingEquiv.refl K) x ∈ O.toSubalgebra ↔ x ∈ O.toSubalgebra) :
     narrowPicMulEquivOfRingEquiv (RingEquiv.refl K) h = MulEquiv.refl (NarrowPic O) := by
   ext c
-  rw [narrowPicMulEquivOfRingEquiv_apply, MulEquiv.refl_apply]
-  have hid : (⟨(RingEquiv.refl K).toRingHom, fun {_} hx => (h _).mpr hx⟩ : Hom O O) = Hom.id O :=
-    Hom.ext fun _ => by simp
-  rw [hid, Hom.mapNarrowPic_id, MonoidHom.id_apply]
+  rw [narrowPicMulEquivOfRingEquiv_apply, Hom.ofRingEquiv_refl, Hom.mapNarrowPic_id,
+    MonoidHom.id_apply, MulEquiv.refl_apply]
 
 /-- The inverse of `narrowPicMulEquivOfRingEquiv e h` is induced by `e.symm`. -/
 @[simp]
 theorem narrowPicMulEquivOfRingEquiv_symm (e : K ≃+* L)
     (h : ∀ x : K, e x ∈ O'.toSubalgebra ↔ x ∈ O.toSubalgebra) :
     (narrowPicMulEquivOfRingEquiv e h).symm =
-      narrowPicMulEquivOfRingEquiv e.symm (fun y => by simpa using (h (e.symm y)).symm) :=
+      narrowPicMulEquivOfRingEquiv e.symm (fun y => by rw [← h, e.apply_symm_apply]) :=
   MulEquiv.ext fun _ => (rfl)
 
 /-- `narrowPicMulEquivOfRingEquiv` respects composition of field isomorphisms. -/
@@ -292,11 +367,28 @@ theorem narrowPicMulEquivOfRingEquiv_trans (e : K ≃+* L) (e' : L ≃+* M)
     (h : ∀ x : K, e x ∈ O'.toSubalgebra ↔ x ∈ O.toSubalgebra)
     (h' : ∀ y : L, e' y ∈ O''.toSubalgebra ↔ y ∈ O'.toSubalgebra) :
     (narrowPicMulEquivOfRingEquiv e h).trans (narrowPicMulEquivOfRingEquiv e' h') =
-      narrowPicMulEquivOfRingEquiv (e.trans e') (fun x => (h' (e x)).trans (h x)) := by
+      narrowPicMulEquivOfRingEquiv (e.trans e')
+        (fun x => by rw [RingEquiv.trans_apply]; exact (h' (e x)).trans (h x)) := by
   ext c
   simp only [MulEquiv.trans_apply, narrowPicMulEquivOfRingEquiv_apply, ← MonoidHom.comp_apply,
-    ← Hom.mapNarrowPic_comp]
-  exact DFunLike.congr_fun (congrArg Hom.mapNarrowPic (Hom.ext fun _ => by simp)) c
+    ← Hom.mapNarrowPic_comp, Hom.ofRingEquiv_trans]
+
+/-- Forgetting positivity intertwines `narrowPicMulEquivOfRingEquiv` and
+`picMulEquivOfRingEquiv`. -/
+@[simp]
+theorem narrowToPic_narrowPicMulEquivOfRingEquiv (e : K ≃+* L)
+    (h : ∀ x : K, e x ∈ O'.toSubalgebra ↔ x ∈ O.toSubalgebra) (c : NarrowPic O) :
+    O'.narrowToPic (narrowPicMulEquivOfRingEquiv e h c) =
+      picMulEquivOfRingEquiv e h (O.narrowToPic c) :=
+  narrowToPic_mapNarrowPic (Hom.ofRingEquiv e h) c
+
+/-- Bundled form of `narrowToPic_narrowPicMulEquivOfRingEquiv`: `narrowToPic` commutes with the
+Picard equivalences induced by `e`. -/
+theorem narrowToPic_comp_narrowPicMulEquivOfRingEquiv (e : K ≃+* L)
+    (h : ∀ x : K, e x ∈ O'.toSubalgebra ↔ x ∈ O.toSubalgebra) :
+    O'.narrowToPic.comp (narrowPicMulEquivOfRingEquiv e h).toMonoidHom =
+      (picMulEquivOfRingEquiv e h).toMonoidHom.comp O.narrowToPic :=
+  MonoidHom.ext (narrowToPic_narrowPicMulEquivOfRingEquiv e h)
 
 end NumberFieldOrder
 

@@ -189,10 +189,8 @@ theorem nat_card_narrowPic_intAddMulOrder (hK : Module.finrank ℚ K = 2) {f : �
     {D : ℤ} [Fact (¬ IsSquare D)] (hpos : 0 < D) (hD : (f : ℤ) ^ 2 * NumberField.discr K = D) :
     Nat.card (NarrowPic (intAddMulOrder K f)) =
       Nat.card (Quotient (Equiv.Perm.SameCycle.setoid (primitiveReductionPerm D))) := by
-  have hD4 : D % 4 = 0 ∨ D % 4 = 1 := by
-    rw [← hD, Int.mul_emod, Int.sq_emod_four]
-    rcases (Multiquadratic.isFundamentalDiscr_discr hK).emod_four_eq_zero_or_one with h | h <;>
-      rcases Int.emod_two_eq_zero_or_one (f : ℤ) with h' | h' <;> simp [h, h']
+  have hD4 : D % 4 = 0 ∨ D % 4 = 1 := hD ▸ QuadraticOrder.sq_mul_emod_four_eq_zero_or_one
+    (Multiquadratic.isFundamentalDiscr_discr hK).emod_four_eq_zero_or_one (f : ℤ)
   obtain ⟨δ, hδ⟩ := Multiquadratic.exists_sq_eq_discr hK
   have hfδ : ((f : K) * δ) ^ 2 = (D : K) := by
     rw [mul_pow, hδ, ← hD]

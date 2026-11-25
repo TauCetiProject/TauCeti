@@ -200,6 +200,54 @@ theorem ofLE_apply {O O' : NumberFieldOrder K}
     (h : O.toSubalgebra ≤ O'.toSubalgebra) (x : K) :
     ofLE h x = x := by simp [ofLE]
 
+/-- The forward order morphism `O → O'` of an isomorphism of ambient fields `e : K ≃+* L`
+carrying `O` onto `O'` (for a general field homomorphism mapping `O` into `O'`, use `Hom.mk`). -/
+def ofRingEquiv (e : K ≃+* L)
+    (h : ∀ x : K, e x ∈ O'.toSubalgebra ↔ x ∈ O.toSubalgebra) : Hom O O' where
+  fieldHom := e.toRingHom
+  map_mem' := fun {_} hx => (h _).mpr hx
+
+/-- Applying `ofRingEquiv e h` evaluates `e`. -/
+@[simp]
+theorem ofRingEquiv_apply (e : K ≃+* L)
+    (h : ∀ x : K, e x ∈ O'.toSubalgebra ↔ x ∈ O.toSubalgebra) (x : K) :
+    ofRingEquiv e h x = e x :=
+  (rfl)
+
+/-- The identity field isomorphism induces the identity order morphism. -/
+@[simp]
+theorem ofRingEquiv_refl
+    (h : ∀ x : K, (RingEquiv.refl K) x ∈ O.toSubalgebra ↔ x ∈ O.toSubalgebra) :
+    ofRingEquiv (RingEquiv.refl K) h = Hom.id O :=
+  ext fun _ => rfl
+
+/-- `ofRingEquiv` respects composition of field isomorphisms. -/
+theorem ofRingEquiv_trans (e : K ≃+* L) (e' : L ≃+* M)
+    (h : ∀ x : K, e x ∈ O'.toSubalgebra ↔ x ∈ O.toSubalgebra)
+    (h' : ∀ y : L, e' y ∈ O''.toSubalgebra ↔ y ∈ O'.toSubalgebra) :
+    (ofRingEquiv e' h').comp (ofRingEquiv e h) =
+      ofRingEquiv (e.trans e')
+        (fun x => by rw [RingEquiv.trans_apply]; exact (h' (e x)).trans (h x)) :=
+  ext fun _ => rfl
+
+/-- Composing `ofRingEquiv e h` on the left with the morphism induced by `e.symm` gives the
+identity on `O`. -/
+@[simp]
+theorem ofRingEquiv_symm_comp_ofRingEquiv (e : K ≃+* L)
+    (h : ∀ x : K, e x ∈ O'.toSubalgebra ↔ x ∈ O.toSubalgebra) :
+    (ofRingEquiv e.symm fun y => by rw [← h, e.apply_symm_apply]).comp (ofRingEquiv e h) =
+      Hom.id O :=
+  ext fun x => by simp
+
+/-- Composing `ofRingEquiv e h` on the right with the morphism induced by `e.symm` gives the
+identity on `O'`. -/
+@[simp]
+theorem ofRingEquiv_comp_ofRingEquiv_symm (e : K ≃+* L)
+    (h : ∀ x : K, e x ∈ O'.toSubalgebra ↔ x ∈ O.toSubalgebra) :
+    (ofRingEquiv e h).comp (ofRingEquiv e.symm fun y => by rw [← h, e.apply_symm_apply]) =
+      Hom.id O' :=
+  ext fun y => by simp
+
 end Hom
 
 end NumberFieldOrder
