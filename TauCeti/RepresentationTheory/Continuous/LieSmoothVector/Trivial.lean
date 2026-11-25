@@ -98,8 +98,8 @@ theorem wordSeminorm_trivial {ι : Type*} [Fintype ι] (X : ι → LeftInvariant
     have hn : (n : ℕ) ≠ 0 := fun hn ↦ hw (by
       obtain rfl : n = 0 := Fin.ext hn
       exact congrArg _ (funext fun i ↦ i.elim0))
-    rw [wordAction_trivial_of_ne_nil I X (by simpa [List.ofFn_eq_nil_iff] using hn),
-      LinearMap.zero_apply, Submodule.coe_zero, norm_zero]
+    have hne : List.ofFn w ≠ [] := by simpa [List.ofFn_eq_nil_iff] using hn
+    simp [wordAction_trivial_of_ne_nil I X hne]
   · simp
 
 /-- **The Sobolev seminorms of the trivial representation are the norm**: `Q_k(v) = ‖v‖` for every
@@ -110,15 +110,13 @@ theorem sobolevSeminorm_trivial {m : ℕ} (X : Fin m → LeftInvariantDerivation
     sobolevSeminorm I (trivial 𝕜 G V) X k v = ‖(v : V)‖ := by
   let α₀ : SobolevIndex m k := ⟨0, by simp⟩
   have hα₀ : α₀.exponent = 0 := funext fun _ ↦ by simp [α₀]
-  have h₀ : monomialWord (0 : Fin m → ℕ) = [] :=
-    List.length_eq_zero_iff.mp (by simp [length_monomialWord])
   rw [sobolevSeminorm_apply, Finset.sum_eq_single α₀]
-  · simp [hα₀, h₀, Real.sqrt_sq (norm_nonneg _)]
+  · simp [monomialWord_eq_nil_iff.mpr hα₀, Real.sqrt_sq (norm_nonneg _)]
   · intro α _ hα
-    have hne : monomialWord α.exponent ≠ [] := fun h ↦
-      hα (SobolevIndex.exponent_injective (monomialWord_injective (h.trans (hα₀ ▸ h₀.symm))))
-    rw [wordAction_trivial_of_ne_nil I X hne, LinearMap.zero_apply, Submodule.coe_zero, norm_zero,
-      sq, zero_mul]
+    have hne : monomialWord α.exponent ≠ [] := by
+      rw [Ne, monomialWord_eq_nil_iff, ← hα₀]
+      exact SobolevIndex.exponent_injective.ne hα
+    simp [wordAction_trivial_of_ne_nil I X hne]
   · simp
 
 end ContRepresentation

@@ -87,6 +87,12 @@ theorem count_monomialWord (α : Fin m → ℕ) (i : Fin m) : (monomialWord α).
 theorem monomialWord_injective : Function.Injective (monomialWord (m := m)) := fun α β h ↦
   funext fun i ↦ by rw [← count_monomialWord α i, ← count_monomialWord β i, h]
 
+/-- The ordered monomial word of `α` is empty exactly for the zero exponent vector. -/
+@[simp]
+theorem monomialWord_eq_nil_iff {α : Fin m → ℕ} : monomialWord α = [] ↔ α = 0 := by
+  rw [← List.length_eq_zero_iff, length_monomialWord, Finset.sum_eq_zero_iff, funext_iff]
+  simp
+
 /-- The exponent vectors `α : Fin m → ℕ` of total degree `|α| = ∑ i, α i ≤ k`, with entries
 recorded in `Fin (k + 1)` so that they form a finite type. -/
 abbrev SobolevIndex (m k : ℕ) : Type :=
