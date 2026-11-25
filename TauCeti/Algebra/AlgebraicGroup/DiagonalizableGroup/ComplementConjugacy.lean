@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.SemidirectProdu
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Conjugation
 import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
+import TauCeti.GroupTheory.SemidirectProduct
 
 /-!
 # Complements of a vector group with linear action are conjugate
@@ -128,11 +129,6 @@ private noncomputable def semidirectHom (A : Type u) [CommRing A] [Algebra R A] 
     MonoidHom.ext fun v ↦ by
       simpa [Representation.toMulAut_apply, vectorHom_apply] using hlin A t v.toAdd
 
-private theorem semidirectHom_apply (A : Type u) [CommRing A] [Algebra R A]
-    (x : PointSemidirect (R := R) (X := X) (V := V) A) :
-    semidirectHom π hlin A x = vectorHom ν A x.left * BialgHom.mapDomain π x.right :=
-  rfl
-
 /-- The points cut out by a Hopf ideal of `H` over a commutative `R`-algebra `A`. -/
 private noncomputable abbrev pts (K : HopfIdeal R H) (A : Type u) [CommRing A] [Algebra R A] :
     Subgroup (WithConv (H →ₐ[R] A)) :=
@@ -162,7 +158,7 @@ private theorem exists_semidirectHom_eq (A : Type u) [CommRing A] [Algebra R A]
   obtain ⟨n, hn, y, hy, rfl⟩ := hx
   obtain ⟨v, rfl⟩ := exists_vectorHom_eq (ν := ν) A hn
   obtain ⟨t, rfl⟩ := (quotientPointsSubgroup_kerOfSurjective_eq_range π hπ _).le hy
-  exact ⟨⟨v, t⟩, semidirectHom_apply hlin A _⟩
+  exact ⟨⟨v, t⟩, by simp only [semidirectHom, lift_apply]⟩
 
 variable (J') in
 /-- The preimage of `T'(A)` in the points semidirect product. -/
@@ -180,7 +176,7 @@ private theorem eq_of_mem_complement (A : Type u) [CommRing A] [Algebra R A]
     (hk' : k' ∈ complement J' hlin A) (h : k.right = k'.right) : k = k' := by
   have hright : (k * k'⁻¹).right = 1 := by simp [h]
   have hΦ : semidirectHom π hlin A (k * k'⁻¹) = vectorHom ν A (k * k'⁻¹).left := by
-    rw [semidirectHom_apply, hright, map_one, mul_one]
+    rw [semidirectHom, lift_apply, hright, map_one, mul_one]
   have hmem : semidirectHom π hlin A (k * k'⁻¹) ∈ pts J' A :=
     Subgroup.mem_comap.mp (mul_mem hk (inv_mem hk'))
   rw [hΦ] at hmem
@@ -252,7 +248,7 @@ private theorem mapValue_semidirectHom {A B : Type u} [CommRing A] [Algebra R A]
     Multiplicative.toAdd.injective (Comodule.toAdd_pointSemidirectMap_left φ k)
   have hr := DFunLike.congr_fun (BialgHom.mapValue_mapDomain π φ) k.right
   simp only [MonoidHom.comp_apply] at hr
-  simp only [semidirectHom_apply, map_mul, vectorHom_apply, h, hl,
+  simp only [semidirectHom, lift_apply, map_mul, vectorHom_apply, h, hl,
     Comodule.pointSemidirectMap_right, hr]
 
 include hν in
