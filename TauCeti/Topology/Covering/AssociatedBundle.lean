@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Covering.Quotient
 public import Mathlib.Topology.VectorBundle.Basic
+public import TauCeti.Topology.IsLocalHomeomorph.Basic
 public import TauCeti.Topology.VectorBundle.FiniteRank.Monoidal
 
 /-!
@@ -201,14 +202,6 @@ theorem deckChange_smul_self (y : E) (g : G) : hp.deckChange (g • y) y (p y) =
   rw [deckChange_self_smul, hp.deckChange_self hgy] at h
   exact eq_inv_of_mul_eq_one_right h
 
-/-- A point in the image of the local section through `e` lies over the domain of that
-section. -/
-private theorem apply_mem_localInverseAt_source_of_mem_target {y : E}
-    (h : y ∈ (hp.isLocalHomeomorph.localInverseAt e).target) :
-    p y ∈ (hp.isLocalHomeomorph.localInverseAt e).source := by
-  simpa only [IsLocalHomeomorph.localInverseAt_symm] using
-    (hp.isLocalHomeomorph.localInverseAt e).map_target h
-
 /-- A point `y` in the image of the local section through `e` defines the same local section as
 `e` over `p y`. -/
 theorem deckChange_eq_one_of_mem_target {y : E}
@@ -216,7 +209,7 @@ theorem deckChange_eq_one_of_mem_target {y : E}
     hp.deckChange y e (p y) = 1 := by
   set s := hp.isLocalHomeomorph.localInverseAt e
   refine (hp.deckChange_eq_iff ⟨hp.isLocalHomeomorph.apply_self_mem_localInverseAt_source,
-    hp.apply_mem_localInverseAt_source_of_mem_target h⟩).2 ?_
+    hp.isLocalHomeomorph.apply_mem_localInverseAt_source_of_mem_target h⟩).2 ?_
   rw [one_smul, IsLocalHomeomorph.localInverseAt_apply_self]
   simpa only [s, IsLocalHomeomorph.localInverseAt_symm] using (s.right_inv h).symm
 
@@ -493,7 +486,7 @@ theorem localTriv_associatedMk_of_mem_target {e y : E}
     (hp.associatedCore ρ).localTriv e (hp.associatedMk ρ (y, v)) = (p y, v) := by
   have he : p y ∈ (hp.associatedCore ρ).baseSet e := by
     rw [associatedCore_baseSet]
-    exact hp.apply_mem_localInverseAt_source_of_mem_target hy
+    exact hp.isLocalHomeomorph.apply_mem_localInverseAt_source_of_mem_target hy
   rw [hp.localTriv_associatedMk ρ he, associatedCore_coordChange,
     hp.deckChange_eq_one_of_mem_target hy, rep_one_apply]
 
@@ -578,7 +571,7 @@ theorem isLocalHomeomorph_associatedMk : IsLocalHomeomorph (hp.associatedMk ρ) 
       exact hq.1.1
     have hsrc : hp.associatedMk ρ (y, v) ∈ T.source := by
       rw [VectorBundleCore.mem_localTriv_source, associatedMk_proj, associatedCore_baseSet]
-      exact hp.apply_mem_localInverseAt_source_of_mem_target hy'
+      exact hp.isLocalHomeomorph.apply_mem_localInverseAt_source_of_mem_target hy'
     simp only [OpenPartialHomeomorph.coe_trans, OpenPartialHomeomorph.prod_apply,
       OpenPartialHomeomorph.refl_apply, id_eq, Function.comp_apply, s,
       IsLocalHomeomorph.localInverseAt_symm]
