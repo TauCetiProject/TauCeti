@@ -381,9 +381,7 @@ theorem comapOfSurjective_eq_of_hom_le_of_inv_le (e : H ≅ H) (I : HopfIdeal R 
   rw [mem_comapOfSurjective]
   apply hinv
   rw [mem_comapOfSurjective]
-  have hcancel := congrArg (fun f : H ⟶ H => f.hom x) e.hom_inv_id
-  rw [_root_.CommHopfAlgCat.comp_apply] at hcancel
-  simpa only [_root_.CommHopfAlgCat.id_apply] using hcancel.symm ▸ hx
+  rwa [_root_.CommHopfAlgCat.inv_hom_apply]
 
 end TauCeti.HopfIdeal
 
