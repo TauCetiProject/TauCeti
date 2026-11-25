@@ -191,11 +191,8 @@ theorem wedgeMul_assoc {A : Type*} [NormedRing A] [NormedAlgebra ℝ A]
     (φ : E [⋀^Fin k]→L[ℝ] A) (ψ : E [⋀^Fin l]→L[ℝ] A)
     (χ : E [⋀^Fin m]→L[ℝ] A) (v : Fin (k + l + m) → E) :
     wedgeMul (wedgeMul φ ψ) χ v =
-      wedgeMul φ (wedgeMul ψ χ) (v ∘ Fin.cast (Nat.add_assoc k l m).symm) := by
-  exact pairedWedge_assoc _ _ _ _
-    (ContinuousLinearMap.mul ℝ A).continuous₂ (ContinuousLinearMap.mul ℝ A).continuous₂
-    (ContinuousLinearMap.mul ℝ A).continuous₂ (ContinuousLinearMap.mul ℝ A).continuous₂
-    (fun a b c : A => mul_assoc a b c) φ ψ χ v
+      wedgeMul φ (wedgeMul ψ χ) (v ∘ Fin.cast (Nat.add_assoc k l m).symm) :=
+  pairedWedge_mul_assoc φ ψ χ v
 
 /-- For a commutative normed algebra, the algebra-valued wedge is graded commutative. -/
 theorem wedgeMul_comm {A : Type*} [NormedCommRing A] [NormedAlgebra ℝ A]

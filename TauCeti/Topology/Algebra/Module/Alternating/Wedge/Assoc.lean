@@ -22,8 +22,9 @@ scalar multiplication need only be continuous for each fixed scalar.
 The iterated evaluation formulas flatten the nested alternatizations into a single signed
 permutation sum with coefficient `1 / (k! l! m!)`. They use signed-sum reindexing for the nested
 alternatizations.
-For real-valued forms, the paired wedge along multiplication is associative on any real topological
-vector space (`ContinuousAlternatingMap.pairedWedge_mul_assoc`), with no seminorm on the domain.
+For forms valued in a seminormed real algebra, the paired wedge along multiplication is associative
+on any real topological vector space (`ContinuousAlternatingMap.pairedWedge_mul_assoc`), with no
+seminorm on the domain.
 The normalization follows John M. Lee, *Introduction to Smooth Manifolds*, second edition,
 Chapter 14.
 -/
@@ -138,18 +139,20 @@ theorem pairedWedge_assoc (mu₁₂ : F₁ →L[ℝ] F₂ →L[ℝ] F₁₂) (mu
       Fin.natAdd (k + l) r := Fin.ext (Nat.add_assoc k l r).symm
   simp [h, h₁, h₂, h₃, Perm.sign_permCongr]
 
-/-- The real wedge along multiplication is associative, up to the canonical reassociation of its
-degree. -/
-theorem pairedWedge_mul_assoc (phi : E [⋀^Fin k]→L[ℝ] ℝ) (psi : E [⋀^Fin l]→L[ℝ] ℝ)
-    (chi : E [⋀^Fin m]→L[ℝ] ℝ) (v : Fin (k + l + m) → E) :
-    pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-        (pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
+/-- The paired wedge along multiplication in a seminormed real algebra is associative, up to the
+canonical reassociation of its degree. The algebra need not be unital or commutative. -/
+theorem pairedWedge_mul_assoc {A : Type*} [NonUnitalSeminormedRing A] [NormedSpace ℝ A]
+    [IsScalarTower ℝ A A] [SMulCommClass ℝ A A]
+    (phi : E [⋀^Fin k]→L[ℝ] A) (psi : E [⋀^Fin l]→L[ℝ] A)
+    (chi : E [⋀^Fin m]→L[ℝ] A) (v : Fin (k + l + m) → E) :
+    pairedWedge (ContinuousLinearMap.mul ℝ A) (ContinuousLinearMap.mul ℝ A).continuous₂
+        (pairedWedge (ContinuousLinearMap.mul ℝ A) (ContinuousLinearMap.mul ℝ A).continuous₂
           phi psi) chi v =
-      pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ phi
-        (pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
+      pairedWedge (ContinuousLinearMap.mul ℝ A) (ContinuousLinearMap.mul ℝ A).continuous₂ phi
+        (pairedWedge (ContinuousLinearMap.mul ℝ A) (ContinuousLinearMap.mul ℝ A).continuous₂
           psi chi) (v ∘ Fin.cast (Nat.add_assoc k l m).symm) :=
-  pairedWedge_assoc _ _ _ _ (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-    (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-    (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (fun a b c ↦ mul_assoc a b c) phi psi chi v
+  pairedWedge_assoc _ _ _ _ (ContinuousLinearMap.mul ℝ A).continuous₂
+    (ContinuousLinearMap.mul ℝ A).continuous₂ (ContinuousLinearMap.mul ℝ A).continuous₂
+    (ContinuousLinearMap.mul ℝ A).continuous₂ (fun a b c ↦ mul_assoc a b c) phi psi chi v
 
 end ContinuousAlternatingMap
