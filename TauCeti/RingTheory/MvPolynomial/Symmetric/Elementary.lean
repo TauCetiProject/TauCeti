@@ -194,8 +194,8 @@ theorem Multiset.esymm_card_eq_prod {R : Type*} [CommSemiring R] (s : Multiset R
   simp [Multiset.esymm, Multiset.powersetCard_self]
 
 /-- Reversal: the elementary symmetric functions of the inverses of a multiset `s` of nonzero
-elements of a field are those of `s`, read backwards and divided by `e_{card s}(s) = ∏ s`. -/
-theorem Multiset.esymm_map_inv_mul_prod {K : Type*} [Field K] (s : Multiset K)
+elements of a semifield are those of `s`, read backwards and divided by `e_{card s}(s) = ∏ s`. -/
+theorem Multiset.esymm_map_inv_mul_prod {K : Type*} [Semifield K] (s : Multiset K)
     (hs : (0 : K) ∉ s) {j : ℕ} (hj : j ≤ Multiset.card s) :
     (s.map (·⁻¹)).esymm j * s.prod = s.esymm (Multiset.card s - j) := by
   induction s using Multiset.induction_on generalizing j with
@@ -205,23 +205,24 @@ theorem Multiset.esymm_map_inv_mul_prod {K : Type*} [Field K] (s : Multiset K)
   | cons a t ih =>
     have ha : a ≠ 0 := fun h ↦ hs (h ▸ Multiset.mem_cons_self _ _)
     have ht : (0 : K) ∉ t := fun h ↦ hs (Multiset.mem_cons_of_mem h)
-    have hinv : a⁻¹ * a = 1 := inv_mul_cancel₀ ha
+    -- The factor `a⁻¹` of the new term cancels against the factor `a` of the new product.
+    have hinv (x : K) : a⁻¹ * x * (a * t.prod) = x * t.prod := by
+      rw [mul_mul_mul_comm, inv_mul_cancel₀ ha, one_mul]
     rw [Multiset.card_cons] at hj ⊢
     rcases j with _ | i
     · rw [Multiset.esymm_zero, one_mul, Nat.sub_zero, ← Multiset.card_cons a t,
         Multiset.esymm_card_eq_prod]
-    rw [Multiset.map_cons, Multiset.esymm_cons, Multiset.prod_cons]
-    have e1 := ih ht (j := i) (by omega)
+    rw [Multiset.map_cons, Multiset.esymm_cons, Multiset.prod_cons, add_mul, hinv,
+      ih ht (j := i) (by omega)]
     rcases Nat.lt_or_ge i (Multiset.card t) with hlt | hge
-    · have e2 := ih ht (j := i + 1) hlt
-      rw [show Multiset.card t + 1 - (i + 1) = (Multiset.card t - (i + 1)) + 1 by omega,
-        Multiset.esymm_cons]
-      rw [show Multiset.card t - i = Multiset.card t - (i + 1) + 1 by omega] at e1
-      linear_combination a * e2 + e1 + ((t.map (·⁻¹)).esymm i * t.prod) * hinv
+    · -- Both remaining indices are one more than `card t - (i + 1)`; expand by `esymm_cons`.
+      have h1 : Multiset.card t - i = Multiset.card t - (i + 1) + 1 := by omega
+      have h2 : Multiset.card t + 1 - (i + 1) = Multiset.card t - (i + 1) + 1 := by omega
+      rw [h1, h2, Multiset.esymm_cons, ← ih ht hlt]
+      ring
     · obtain rfl : i = Multiset.card t := by omega
-      rw [Multiset.esymm_of_card_lt (by simp), Nat.sub_self, Multiset.esymm_zero]
-      rw [Nat.sub_self, Multiset.esymm_zero] at e1
-      linear_combination e1 + ((t.map (·⁻¹)).esymm (Multiset.card t) * t.prod) * hinv
+      rw [Multiset.esymm_of_card_lt (by simp), zero_mul, zero_add, Nat.sub_self, Nat.sub_self,
+        Multiset.esymm_zero, Multiset.esymm_zero]
 
 /-- The elementary symmetric polynomial whose degree is the number of variables is the product of
 all the variables: `e_n(X₁, …, X_n) = X₁ ⋯ X_n`. -/

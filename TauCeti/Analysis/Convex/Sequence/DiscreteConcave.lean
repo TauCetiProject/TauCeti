@@ -72,7 +72,8 @@ theorem mul_sub_le_mul_sub_of_add_le_two_mul {a : ℕ → K} {r : ℕ}
       linarith
   have h1 := hB1 (q - p) p (by omega)
   have h2 := hB2 (m - q) (by omega)
-  rw [show q + (m - q) = m by omega] at h2
+  have hqm' : q + (m - q) = m := by omega
+  rw [hqm'] at h2
   push_cast [Nat.cast_sub hpq.le, Nat.cast_sub hqm.le] at h1 h2
   have hqp : (0 : K) ≤ q - p := sub_nonneg.mpr (by exact_mod_cast hpq.le)
   have hmq : (0 : K) ≤ m - q := sub_nonneg.mpr (by exact_mod_cast hqm.le)
