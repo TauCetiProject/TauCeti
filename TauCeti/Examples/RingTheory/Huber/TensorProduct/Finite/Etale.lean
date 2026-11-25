@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.TensorProduct.FiniteEtale
+public import TauCeti.RingTheory.Huber.TensorProduct.Finite.Etale
 public import Mathlib.RingTheory.Etale.Pi
 public import Mathlib.Topology.Instances.ZMod
 
