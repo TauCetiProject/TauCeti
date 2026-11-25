@@ -27,7 +27,7 @@ For a `ℤ`-basis `(bⱼ)` of `𝓞 L`, the matrix of the splitting from the bas
 coordinate basis of `∏_σ R` is `(σ(bⱼ))_{σ, j}`, whose determinant squares to `d_L`. The
 idempotents of the product split every `R`-module `M` with a commuting action of `𝓞 L` as an
 internal direct sum `M = ⨁_σ M(σ)`, where `M(σ)` is the largest submodule on which `𝓞 L` acts
-through `σ`; they act on `M` through `Algebra.TensorProduct.toModuleEnd R (𝓞 L) M`. The
+through `σ`; they act on `M` through `TauCeti.tensorToModuleEnd R (𝓞 L) M`. The
 splitting is functorial in `R`-linear maps commuting with the `𝓞 L`-actions and commutes with
 tensoring by an `R`-module: for an `R`-module `N`, with `𝓞 L` acting on `M ⊗[R] N` through the
 factor `M`, `(M ⊗[R] N)(σ)` is the image of `M(σ) ⊗[R] N`.
@@ -133,11 +133,11 @@ theorem embeddingEigenspace_le_comap {N : Type*} [AddCommMonoid N] [Module R N] 
   fun m hm ℓ ↦ by rw [← hf, hm ℓ, map_smul]
 
 /-- On `M(σ)`, the algebra `R ⊗[ℤ] 𝓞 L` acts through evaluation at `σ`. -/
-theorem toModuleEnd_apply_of_mem_embeddingEigenspace {σ : L →+* K} {m : M}
+theorem tensorToModuleEnd_apply_of_mem_embeddingEigenspace {σ : L →+* K} {m : M}
     (hm : m ∈ embeddingEigenspace L K R M σ) (t : R ⊗[ℤ] 𝓞 L) :
-    Algebra.TensorProduct.toModuleEnd R (𝓞 L) M t m = embeddingEval L K R σ t • m := by
+    tensorToModuleEnd R (𝓞 L) M t m = embeddingEval L K R σ t • m := by
   induction t using TensorProduct.inductionOn with
-  | tmul r ℓ => rw [Algebra.TensorProduct.toModuleEnd_tmul, hm ℓ, embeddingEval_tmul, smul_smul]
+  | tmul r ℓ => rw [tensorToModuleEnd_tmul, hm ℓ, embeddingEval_tmul, smul_smul]
   | add s t hs ht => rw [map_add, LinearMap.add_apply, hs, ht, map_add, add_smul]
 
 end Eigenspace
@@ -248,20 +248,20 @@ theorem one_tmul_mul_embeddingIdempotent (σ : L →+* K) (ℓ : 𝓞 L) :
 variable {M : Type*} [AddCommMonoid M] [Module R M] [Module (𝓞 L) M] [SMulCommClass (𝓞 L) R M]
 
 /-- The idempotent at `σ` acts on `M` with range `M(σ)`. -/
-theorem toModuleEnd_embeddingIdempotent_smul_top (σ : L →+* K) :
-    Algebra.TensorProduct.toModuleEnd R (𝓞 L) M (embeddingIdempotent hK hd σ) •
+theorem tensorToModuleEnd_embeddingIdempotent_smul_top (σ : L →+* K) :
+    tensorToModuleEnd R (𝓞 L) M (embeddingIdempotent hK hd σ) •
         (⊤ : Submodule R M) = embeddingEigenspace L K R M σ := by
   rw [Module.End.smul_top_eq_range]
   apply le_antisymm
   · rintro _ ⟨m, rfl⟩ ℓ
-    have h := congrArg (fun t ↦ Algebra.TensorProduct.toModuleEnd R (𝓞 L) M t m)
+    have h := congrArg (fun t ↦ tensorToModuleEnd R (𝓞 L) M t m)
       (one_tmul_mul_embeddingIdempotent hK hd σ ℓ)
     simp only [map_mul, AlgHom.commutes, Module.End.mul_eq_comp, LinearMap.comp_apply,
       Module.algebraMap_end_apply] at h
-    rw [← h, Algebra.TensorProduct.toModuleEnd_tmul, one_smul]
+    rw [← h, tensorToModuleEnd_tmul, one_smul]
   · intro m hm
     refine ⟨m, ?_⟩
-    rw [toModuleEnd_apply_of_mem_embeddingEigenspace hm,
+    rw [tensorToModuleEnd_apply_of_mem_embeddingEigenspace hm,
       embeddingEval_embeddingIdempotent_self, one_smul]
 
 /-- **The embedding eigenspace decomposition** `M = ⨁_σ M(σ)`, when `K` receives all `[L : ℚ]`
@@ -270,9 +270,9 @@ theorem isInternal_embeddingEigenspace [DecidableEq (L →+* K)] :
     DirectSum.IsInternal (embeddingEigenspace L K R M) := by
   have h := TauCeti.isInternal_smul_top (S := R) (M := M)
     ((completeOrthogonalIdempotents_embeddingIdempotent hK hd).map
-      (Algebra.TensorProduct.toModuleEnd R (𝓞 L) M).toRingHom)
+      (tensorToModuleEnd R (𝓞 L) M).toRingHom)
   simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, Function.comp_def,
-    toModuleEnd_embeddingIdempotent_smul_top hK hd] at h
+    tensorToModuleEnd_embeddingIdempotent_smul_top hK hd] at h
   exact h
 
 /-- **Tensoring the eigenspaces with an `R`-module**: for an `R`-module `N`, the eigenspace
@@ -284,17 +284,15 @@ theorem embeddingEigenspace_tensorProduct [SMulCommClass R (𝓞 L) M]
   apply le_antisymm
   · intro v hv
     have hv' : v = LinearMap.rTensor N
-        (Algebra.TensorProduct.toModuleEnd R (𝓞 L) M (embeddingIdempotent hK hd σ)) v := by
-      rw [← Algebra.TensorProduct.toModuleEnd_rTensor,
-        toModuleEnd_apply_of_mem_embeddingEigenspace hv, embeddingEval_embeddingIdempotent_self,
-        one_smul]
+        (tensorToModuleEnd R (𝓞 L) M (embeddingIdempotent hK hd σ)) v := by
+      rw [← tensorToModuleEnd_rTensor, tensorToModuleEnd_apply_of_mem_embeddingEigenspace hv,
+        embeddingEval_embeddingIdempotent_self, one_smul]
     have hrange : LinearMap.range
-        (Algebra.TensorProduct.toModuleEnd R (𝓞 L) M (embeddingIdempotent hK hd σ)) ≤
+        (tensorToModuleEnd R (𝓞 L) M (embeddingIdempotent hK hd σ)) ≤
           embeddingEigenspace L K R M σ := by
-      rw [← Module.End.smul_top_eq_range, toModuleEnd_embeddingIdempotent_smul_top hK hd]
-    let g :=
-      (Algebra.TensorProduct.toModuleEnd R (𝓞 L) M (embeddingIdempotent hK hd σ)).codRestrict
-        (embeddingEigenspace L K R M σ) fun m ↦ hrange ⟨m, rfl⟩
+      rw [← Module.End.smul_top_eq_range, tensorToModuleEnd_embeddingIdempotent_smul_top hK hd]
+    let g := (tensorToModuleEnd R (𝓞 L) M (embeddingIdempotent hK hd σ)).codRestrict
+      (embeddingEigenspace L K R M σ) fun m ↦ hrange ⟨m, rfl⟩
     refine ⟨g.rTensor N v, ?_⟩
     rw [← LinearMap.comp_apply, ← LinearMap.rTensor_comp, LinearMap.subtype_comp_codRestrict]
     exact hv'.symm
