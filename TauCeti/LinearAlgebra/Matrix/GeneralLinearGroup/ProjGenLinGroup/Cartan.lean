@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Cartan.DiscreteVal
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Projective
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.CongruenceLevel
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ProjGenLinGroup.ProjectiveImage
 import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
 import TauCeti.GroupTheory.Coset.Basic
 import TauCeti.GroupTheory.DoubleCoset.Identity
@@ -23,9 +24,10 @@ import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 # The Cartan decomposition of `PGL₂` over a discretely valued field
 
 Let `R` be a discrete valuation ring with fraction field `K`, `ϖ` a uniformizer of `R` and `π` its
-image in `Kˣ`. Write `Γ ≤ PGL₂(K)` for the image of `GL₂(R)`. Passing the Cartan decomposition of
-`GL₂(K)` (`TauCeti.existsUnique_monotone_mem_doubleCoset_diagGL_zpow`) to the quotient by the
-scalars gives
+image in `Kˣ`. Write `Γ ≤ PGL₂(K)` for the image of `GL₂(R)`, stated as the projective image
+`MonoidHom.projectiveImage` of `GL₂(R) →* GL₂(K)`. Passing the Cartan decomposition of `GL₂(K)`
+(`TauCeti.existsUnique_monotone_mem_doubleCoset_diagGL_zpow`) to the quotient by the scalars
+gives
 
 ```text
 PGL₂(K) = ⊔_{k ≥ 0} Γ · diag(1, πᵏ) · Γ,
@@ -48,7 +50,7 @@ the Weyl element of `GL₂(R)` to a scalar multiple of `diag(1, πᵏ)`.
   double coset of `diag(1, πᵏ)` for exactly one `k : ℕ`; its halves are
   `TauCeti.exists_mem_doubleCoset_mk_diagGL_pow` and `TauCeti.eq_of_mem_doubleCoset_mk_diagGL_pow`.
 * `TauCeti.doubleCoset_mk_diagGL_pow_zero`: the double coset for `k = 0` is `Γ`.
-* `TauCeti.comap_conj_smul_range_eq_GL2K0`: the stabilizer in `GL₂(R)` of the coset
+* `TauCeti.comap_conj_smul_projectiveImage_eq_GL2K0`: the stabilizer in `GL₂(R)` of the coset
   `diag(1, πᵏ) Γ` is the congruence level `K₀(𝔭ᵏ)`.
 * `TauCeti.natCard_image_mk_doubleCoset_mk_diagGL_pow`: for `k ≥ 1` the double coset contains
   `qᵏ⁻¹ (q + 1)` left cosets of `Γ`.
@@ -75,9 +77,10 @@ variable {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
 determinant is the image of a unit of `R`, lies in the image of `GL₂(R)` in `GL₂(K)`. -/
 private theorem mem_range_map_of_mk_mem {M : GL (Fin 2) K}
     (hM : ProjGenLinGroup.mk M ∈
-      (ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))).range)
+      (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage)
     {w : Rˣ} (hw : (GeneralLinearGroup.det M : K) = algebraMap R K w) :
     M ∈ (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).range := by
+  rw [MonoidHom.projectiveImage_def] at hM
   obtain ⟨y, hy⟩ := hM
   obtain ⟨u, hu⟩ := ProjGenLinGroup.mk_eq_mk_iff.mp hy
   have hdet := congrArg (fun g : GL (Fin 2) K ↦ (GeneralLinearGroup.det g : K)) hu
@@ -97,11 +100,10 @@ private theorem mem_range_map_of_mk_mem {M : GL (Fin 2) K}
 /-- **The stabilizer of a Cartan coset.** In `PGL₂(K)`, conjugating the class of `x ∈ GL₂(R)` by
 `diag(1, πᵏ)⁻¹` stays in the image `Γ` of `GL₂(R)` exactly when `x` lies in the congruence level
 `K₀(𝔭ᵏ)`: the preimage of `Γ ∩ diag(1, πᵏ) Γ diag(1, πᵏ)⁻¹` in `GL₂(R)` is `K₀(𝔭ᵏ)`. -/
-theorem comap_conj_smul_range_eq_GL2K0 (hϖ : Irreducible ϖ) (hπ : algebraMap R K ϖ = π)
+theorem comap_conj_smul_projectiveImage_eq_GL2K0 (hϖ : Irreducible ϖ) (hπ : algebraMap R K ϖ = π)
     (k : ℕ) :
     (MulAut.conj (ProjGenLinGroup.mk (diagGL ![1, π ^ k])) •
-        (ProjGenLinGroup.mk.comp
-          (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))).range).comap
+        (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage).comap
       (ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))) =
       GL2K0 (maximalIdeal R ^ k) := by
   ext x
@@ -140,6 +142,7 @@ theorem comap_conj_smul_range_eq_GL2K0 (hϖ : Irreducible ϖ) (hπ : algebraMap 
       ring
     have hϖ0 : algebraMap R K ϖ ≠ 0 :=
       (map_ne_zero_iff _ (IsFractionRing.injective R K)).mpr hϖ.ne_zero
+    rw [MonoidHom.projectiveImage_def]
     refine ⟨GeneralLinearGroup.mk'' _ hY, congrArg ProjGenLinGroup.mk (Units.ext ?_)⟩
     ext i j
     rw [hentry]
@@ -170,9 +173,9 @@ omit [IsDomain R] [IsDiscreteValuationRing R] [IsFractionRing R K] in
 /-- The double coset of `diag(1, π⁰) = 1` is `Γ` itself. -/
 theorem doubleCoset_mk_diagGL_pow_zero :
     doubleCoset (ProjGenLinGroup.mk (diagGL ![1, π ^ 0]))
-        (ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))).range
-        (ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))).range =
-      (ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))).range := by
+        (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage
+        (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage =
+      (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage := by
   have h1 : diagGL ![1, π ^ 0] = 1 := by
     rw [← map_one diagGL]
     congr 1
@@ -185,8 +188,9 @@ double coset `Γ diag(1, πᵏ) Γ` for some `k : ℕ`, where `Γ` is the image 
 theorem exists_mem_doubleCoset_mk_diagGL_pow (hϖ : Irreducible ϖ) (hπ : algebraMap R K ϖ = π)
     (g : PGL(2, K)) :
     ∃ k : ℕ, g ∈ doubleCoset (ProjGenLinGroup.mk (diagGL ![1, π ^ k]))
-      (ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))).range
-      (ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))).range := by
+      (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage
+      (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage := by
+  rw [MonoidHom.projectiveImage_def]
   set f := ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))
   have himage : (ProjGenLinGroup.mk : GL (Fin 2) K →* PGL(2, K)) ''
       ((GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).range : Set (GL (Fin 2) K)) =
@@ -211,12 +215,13 @@ of `PGL₂(K)` for distinct `k : ℕ` are disjoint, where `Γ` is the image of `
 theorem eq_of_mem_doubleCoset_mk_diagGL_pow (hϖ : Irreducible ϖ) (hπ : algebraMap R K ϖ = π)
     {g : PGL(2, K)} {k l : ℕ}
     (hk : g ∈ doubleCoset (ProjGenLinGroup.mk (diagGL ![1, π ^ k]))
-        (ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))).range
-        (ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))).range)
+        (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage
+        (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage)
     (hl : g ∈ doubleCoset (ProjGenLinGroup.mk (diagGL ![1, π ^ l]))
-        (ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))).range
-        (ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))).range) :
+        (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage
+        (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage) :
     k = l := by
+  rw [MonoidHom.projectiveImage_def] at hk hl
   set f := ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))
   -- two such double cosets meet only if their exponents agree, by uniqueness in `GL₂(K)`
   have hkl : ProjGenLinGroup.mk (diagGL ![1, π ^ k]) ∈
@@ -260,8 +265,8 @@ a uniformizer of the discrete valuation ring `R` in its fraction field `K`. By
 theorem existsUnique_mem_doubleCoset_mk_diagGL_pow (hϖ : Irreducible ϖ)
     (hπ : algebraMap R K ϖ = π) (g : PGL(2, K)) :
     ∃! k : ℕ, g ∈ doubleCoset (ProjGenLinGroup.mk (diagGL ![1, π ^ k]))
-      (ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))).range
-      (ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))).range :=
+      (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage
+      (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage :=
   let ⟨k, hk⟩ := exists_mem_doubleCoset_mk_diagGL_pow hϖ hπ g
   ⟨k, hk, fun _ hl ↦ (eq_of_mem_doubleCoset_mk_diagGL_pow hϖ hπ hk hl).symm⟩
 
@@ -271,8 +276,9 @@ of `diag(1, πᵏ)` by the Weyl element. -/
 private theorem inv_mem_doubleCoset_mk_diagGL_pow (k : ℕ) :
     (ProjGenLinGroup.mk (diagGL ![1, π ^ k]))⁻¹ ∈
       doubleCoset (ProjGenLinGroup.mk (diagGL ![1, π ^ k]))
-        (ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))).range
-        (ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))).range := by
+        (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage
+        (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage := by
+  rw [MonoidHom.projectiveImage_def]
   refine mem_doubleCoset.mpr ⟨_, ⟨GL2WeylElement R, rfl⟩, _, ⟨GL2WeylElement R, rfl⟩, ?_⟩
   simp only [MonoidHom.comp_apply]
   rw [← map_mul, ← map_mul, ← map_inv, ProjGenLinGroup.mk_eq_mk_iff]
@@ -291,24 +297,25 @@ theorem natCard_image_mk_doubleCoset_mk_diagGL_pow [Finite (ResidueField R)]
     (hϖ : Irreducible ϖ) (hπ : algebraMap R K ϖ = π) {k : ℕ} (hk : k ≠ 0) :
     Nat.card ((QuotientGroup.mk :
         PGL(2, K) → PGL(2, K) ⧸
-          (ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))).range) ''
+          (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage) ''
         doubleCoset (ProjGenLinGroup.mk (diagGL ![1, π ^ k]))
-          (ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))).range
-          (ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))).range) =
+          (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage
+          (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage) =
       Nat.card (ResidueField R) ^ (k - 1) * (Nat.card (ResidueField R) + 1) := by
   set f := ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))
-  set C := MulAut.conj (ProjGenLinGroup.mk (diagGL ![1, π ^ k])) • f.range
+  set Γ := (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage with hΓ
+  set C := MulAut.conj (ProjGenLinGroup.mk (diagGL ![1, π ^ k])) • Γ
   -- the left cosets form the `Γ`-orbit of `diag(1, πᵏ) Γ`, whose stabilizer is `Γ ∩ C`
   rw [← preimage_orbit_eq_doubleCoset, Set.image_preimage_eq _ QuotientGroup.mk_surjective,
     Subgroup.card_orbit_quotientGroup_mk_eq_relIndex_inf]
-  calc (f.range ⊓ C).relIndex f.range
+  calc (Γ ⊓ C).relIndex Γ
       = ((C.comap f).map f).relIndex ((⊤ : Subgroup (GL (Fin 2) R)).map f) := by
-        rw [Subgroup.map_comap_eq, ← f.range_eq_map]
+        rw [Subgroup.map_comap_eq, ← f.range_eq_map, hΓ, MonoidHom.projectiveImage_def]
     _ = (C.comap f).index := by
         rw [Subgroup.relIndex_map_map, sup_eq_left.mpr (Subgroup.ker_le_comap f C), top_sup_eq,
           Subgroup.relIndex_top_right]
     _ = _ := by
-        rw [comap_conj_smul_range_eq_GL2K0 hϖ hπ, GL2K0.index_maximalIdeal_pow hk]
+        rw [comap_conj_smul_projectiveImage_eq_GL2K0 hϖ hπ, GL2K0.index_maximalIdeal_pow hk]
 
 /-- **The coset counts of the Cartan double cosets of `PGL₂`, for right cosets.** If the residue
 field of `R` has `q` elements and `k ≥ 1`, the double coset `Γ diag(1, πᵏ) Γ` in `PGL₂(K)`, where
@@ -316,12 +323,12 @@ field of `R` has `q` elements and `k ≥ 1`, the double coset `Γ diag(1, πᵏ)
 theorem natCard_image_mk_rightRel_doubleCoset_mk_diagGL_pow [Finite (ResidueField R)]
     (hϖ : Irreducible ϖ) (hπ : algebraMap R K ϖ = π) {k : ℕ} (hk : k ≠ 0) :
     Nat.card (Quotient.mk (QuotientGroup.rightRel
-        (ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))).range) ''
+        (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage) ''
         doubleCoset (ProjGenLinGroup.mk (diagGL ![1, π ^ k]))
-          (ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))).range
-          (ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))).range) =
+          (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage
+          (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage) =
       Nat.card (ResidueField R) ^ (k - 1) * (Nat.card (ResidueField R) + 1) := by
-  set Γ := (ProjGenLinGroup.mk.comp (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K))).range
+  set Γ := (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage
   set S := doubleCoset (ProjGenLinGroup.mk (diagGL ![1, π ^ k])) (Γ : Set PGL(2, K)) Γ
   -- inversion exchanges right and left cosets, and preserves `S`
   have hS : S⁻¹ = S := by

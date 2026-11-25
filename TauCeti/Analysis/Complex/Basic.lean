@@ -84,6 +84,14 @@ point `z` of the closed upper half-plane does not decrease the norm
 through such a `z` has norm at least `(‖z‖ + s) / 2`
 (`Complex.norm_add_div_two_le_norm_add_ofReal_mul_I`).
 
+The difference of the real parts of two points is at most their distance
+(`Complex.re_sub_re_le_dist`), their squared distance is the sum of the squares of the differences
+of their real and imaginary parts (`Complex.sq_dist_eq_re_im`), and if the distance is at most the
+difference of the real parts then the imaginary parts agree
+(`Complex.im_eq_im_of_dist_le_re_sub_re`). A closed disc `closedBall c R` with `θ + R < c.re`,
+and an open disc `ball c R` with `θ + R ≤ c.re`, lie in the open half-plane `{z | θ < z.re}`
+(`Complex.closedBall_subset_setOfPred_lt_re`, `Complex.ball_subset_setOfPred_lt_re`).
+
 On the closed right half-plane `0 ≤ z.re`, `1 + z` has real part and norm at least `1`
 (`Complex.one_le_re_one_add`, `Complex.one_le_norm_one_add`).
 
@@ -472,6 +480,41 @@ theorem re_mem_Icc_of_normSq_sub_le (w : ℂ) {c : ℂ} {ρ : ℝ} (hρ : 0 ≤ 
   re_mem_Icc_of_norm_sub_le w <| by
     rw [norm_def, ← Real.sqrt_sq hρ]
     exact Real.sqrt_le_sqrt h
+
+/-- The difference of the real parts of two complex numbers is at most their distance. -/
+theorem re_sub_re_le_dist (z w : ℂ) : z.re - w.re ≤ dist z w := by
+  rw [dist_eq, ← sub_re]
+  exact re_le_norm _
+
+/-- The square of the distance between two complex numbers is the sum of the squares of the
+differences of their real and imaginary parts. -/
+theorem sq_dist_eq_re_im (z w : ℂ) : dist z w ^ 2 = (z.re - w.re) ^ 2 + (z.im - w.im) ^ 2 := by
+  rw [dist_eq_re_im, Real.sq_sqrt (by positivity)]
+
+/-- If the distance between two complex numbers is at most the difference of their real parts,
+then they have the same imaginary part. -/
+theorem im_eq_im_of_dist_le_re_sub_re {z w : ℂ} (h : dist z w ≤ z.re - w.re) : z.im = w.im := by
+  rw [dist_eq, ← sub_re] at h
+  rw [← sub_eq_zero, ← sub_im]
+  simpa only [RCLike.im_to_complex] using
+    RCLike.im_eq_zero_of_le (K := ℂ) (a := z - w) (by simpa only [RCLike.re_to_complex] using h)
+
+/-- A closed disc `closedBall c R` with `θ + R < c.re` lies in the open half-plane
+`{z | θ < z.re}`. -/
+theorem closedBall_subset_setOfPred_lt_re {c : ℂ} {R θ : ℝ} (h : θ + R < c.re) :
+    Metric.closedBall c R ⊆ {z | θ < z.re} := fun w hw ↦
+  Set.mem_ofPred.2 <| by
+    have : |w.re - c.re| ≤ R := by
+      simpa only [RCLike.re_to_complex] using RCLike.abs_re_sub_le_of_mem_closedBall hw
+    linarith [(abs_le.1 this).1]
+
+/-- An open disc `ball c R` with `θ + R ≤ c.re` lies in the open half-plane `{z | θ < z.re}`. -/
+theorem ball_subset_setOfPred_lt_re {c : ℂ} {R θ : ℝ} (h : θ + R ≤ c.re) :
+    Metric.ball c R ⊆ {z | θ < z.re} := fun w hw ↦
+  Set.mem_ofPred.2 <| by
+    have : c.re - R < w.re := by
+      simpa only [RCLike.re_to_complex] using (RCLike.re_mem_Ioo_of_mem_ball hw).1
+    linarith
 
 /-- Two complex numbers whose real parts have the same absolute value compare in norm as their
 imaginary parts compare in absolute value. -/

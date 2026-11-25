@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Dirac.DifferentialOperator
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Dirac.Split
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Dirac.Split.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Dirac.Square
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
@@ -37,7 +37,10 @@ for the Riemannian volume `dV`
 the integral of the curvature term of `D²`: under the frame hypotheses of
 `CovariantDerivative.covariantDerivative_transverseDiracOperator_sub_eq_sum`, the commutator
 `∇_T B_T - B_T ∇_T` is `∑ᵢ c(eᵢ) R(T, eᵢ)`. For a harmonic spinor, `D σ = 0`, the identity
-expresses the vanishing of the sum of the three terms.
+expresses the vanishing of the sum of the three terms. When smooth fields `e₁, …, eₖ` complete `T`
+to an orthonormal frame at every point and commute with `T`, as fields lifted from an orthonormal
+frame of `Y` do on `S¹ × Y`, the identity takes its curvature form
+(`CovariantDerivative.IsMetricCompatible.integral_norm_diracOperator_sq_eq_sum_curvatureOperator`).
 
 On a product `S¹ × Y` with the product metric, `T = ∂ₛ`, the spinor bundle of a `Spinᶜ`
 structure and the spin connection of a unitary connection `A` on its determinant line `L`, the
@@ -53,21 +56,28 @@ curvature of the spin connection is not made here.
 * `CovariantDerivative.contMDiff_transverseDiracOperator`: `B_T` preserves smooth sections.
 * `CovariantDerivative.IsMetricCompatible.integral_inner_transverseDiracOperator_left_eq_right`:
   `B_T` is formally self-adjoint along a Killing field of constant length.
+* `IsMetricCompatible.integral_inner_transverseDiracOperator_transverseDiracOperator_self`, in
+  the namespace `CovariantDerivative`: `∫ ⟪B_T² σ, σ⟫ dV = ∫ ‖B_T σ‖² dV`.
 * `CovariantDerivative.IsMetricCompatible.`
   `two_mul_integral_inner_clifford_covariantDerivative_transverseDiracOperator_eq`:
   along a parallel unit field, the integrated cross term `2 ∫ ⟪c(T) ∇_T σ, B_T σ⟫` is the
   integral of `⟪σ, c(T) (∇_T B_T - B_T ∇_T) σ⟫`.
 * `CovariantDerivative.IsMetricCompatible.integral_norm_diracOperator_sq_eq`: the integrated
   splitting of `‖D σ‖²` along a parallel unit field.
+* `IsMetricCompatible.integral_norm_diracOperator_sq_eq_sum_curvatureOperator`, in the
+  namespace `CovariantDerivative`: its curvature form in a frame commuting with `T`.
 
 ## References
 
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry*, Princeton University Press, 1989,
-  Chapter II, §5 (Dirac operators of Clifford bundles and their formal self-adjointness).
+  Chapter II, §5 and §8 (Dirac operators of Clifford bundles, their squares and their formal
+  self-adjointness).
 * J. W. Morgan, *The Seiberg–Witten equations and applications to the topology of smooth
   four-manifolds*, Mathematical Notes 44, Princeton University Press, 1996, §5.2.
 * C. H. Taubes, *The Seiberg–Witten invariants and symplectic forms*, Math. Res. Lett. 1 (1994),
   809–822.
+* S. Baldridge, *Seiberg–Witten invariants, orbifolds, and circle actions*, Trans. Amer. Math.
+  Soc. 355 (2003), 1669–1697, Theorem 15.
 -/
 
 public section
@@ -182,6 +192,19 @@ theorem integral_inner_transverseDiracOperator_left_eq_right (hcov : cov.IsMetri
     hPs).integral_inner_eq (s := ⟨σ, hσ⟩) (t := ⟨τ, hτ⟩)
     (by simpa only [ContMDiffSection.tsupport_def, ContMDiffSection.coeFn_mk] using hστ)
   simpa [transverseDiracOperator_def, smoothDiracOperator_apply, hP] using h
+
+/-- **The energy identity of the transverse Dirac operator.** Under the hypotheses of
+`CovariantDerivative.IsMetricCompatible.integral_inner_transverseDiracOperator_left_eq_right`, for
+a compactly supported smooth section `σ`, `∫ ⟪B_T² σ, σ⟫ dV = ∫ ‖B_T σ‖² dV`. -/
+theorem integral_inner_transverseDiracOperator_transverseDiracOperator_self
+    (hcov : cov.IsMetricCompatible) (hT : IsKillingField I T) {r : ℝ} (hTr : ∀ x, ‖T x‖ = r)
+    {σ : Π y : M, V y} (hσ : CMDiff ∞ (T% σ)) (hσc : IsCompact (closure {x | σ x ≠ 0})) :
+    ∫ x, ⟪cov.transverseDiracOperator c T (cov.transverseDiracOperator c T σ) x, σ x⟫
+        ∂riemannianVolume I M =
+      ∫ x, ‖cov.transverseDiracOperator c T σ x‖ ^ 2 ∂riemannianVolume I M := by
+  rw [integral_inner_transverseDiracOperator_left_eq_right hc hskew hcomp hcov hT hTr
+    (cov.contMDiff_transverseDiracOperator hc hT.contMDiff hσ) hσ (.inr hσc)]
+  simp only [real_inner_self_eq_norm_sq]
 
 /-- **The cross term of the split Dirac operator is a commutator.** Let `∇` be a metric
 connection compatible with a smooth Clifford multiplication `c` by skew-adjoint endomorphisms
@@ -305,6 +328,47 @@ theorem integral_norm_diracOperator_sq_eq (hcov : cov.IsMetricCompatible)
   rw [integral_add hDBint hXint, integral_add hDint hBint, integral_const_mul,
     two_mul_integral_inner_clifford_covariantDerivative_transverseDiracOperator_eq hc hskew hcomp
       hcov hcl hTs hTpar hT1 hσ hσc]
+
+/-- **The energy identity of the Dirac operator on a product.** Under the hypotheses of
+`CovariantDerivative.IsMetricCompatible.integral_norm_diracOperator_sq_eq`, let `e₁, …, eₖ` be
+smooth vector fields which at every point complete `T` to an orthonormal basis and whose brackets
+`[T, eᵢ]` vanish, as for fields lifted from an orthonormal frame of `Y` on `S¹ × Y`. Then for a
+compactly supported smooth section `σ`,
+
+`∫ ‖D σ‖² dV = ∫ ‖∇_T σ‖² dV + ∫ ‖B_T σ‖² dV + ∫ ⟪σ, c(T) ∑ᵢ c(eᵢ) R(T, eᵢ) σ⟫ dV`,
+
+where `R` is the curvature of `∇`. -/
+theorem integral_norm_diracOperator_sq_eq_sum_curvatureOperator (hcov : cov.IsMetricCompatible)
+    (hcl : ∀ x (v : TangentSpace I x) (s : V x), c x v (c x v s) = -⟪v, v⟫ • s)
+    (hTs : CMDiff ∞ (T% T)) (hTpar : ∀ x, leviCivitaConnection I M T x = 0)
+    (hT1 : ∀ x, ‖T x‖ = 1) {ι : Type*} [Fintype ι] (e : ι → Π y : M, TangentSpace I y)
+    (he : ∀ i, CMDiff ∞ (T% (e i)))
+    (hframe : ∀ x, ∃ b : OrthonormalBasis (Option ι) ℝ (TangentSpace I x),
+      b none = T x ∧ ∀ i, b (some i) = e i x)
+    (hbr : ∀ i x, VectorField.mlieBracket I T (e i) x = 0)
+    {σ : Π y : M, V y} (hσ : CMDiff ∞ (T% σ)) (hσc : IsCompact (closure {x | σ x ≠ 0})) :
+    ∫ x, ‖cov.diracOperator c σ x‖ ^ 2 ∂riemannianVolume I M =
+      ∫ x, ‖cov σ x (T x)‖ ^ 2 ∂riemannianVolume I M +
+        ∫ x, ‖cov.transverseDiracOperator c T σ x‖ ^ 2 ∂riemannianVolume I M +
+          ∫ x, ⟪σ x, c x (T x) (∑ i, c x (e i x) (curvatureOperator cov T (e i) σ x))⟫
+            ∂riemannianVolume I M := by
+  rw [integral_norm_diracOperator_sq_eq hc hskew hcomp hcov hcl hTs hTpar hT1 hσ hσc]
+  congr 1
+  refine integral_congr_ae (.of_forall fun x ↦ ?_)
+  -- Since `T` is parallel and `[T, eᵢ] = 0`, the torsion-free Levi-Civita connection has
+  -- `∇_T eᵢ = ∇_{eᵢ} T + [T, eᵢ] = 0`, so each `c(eᵢ)` is parallel along `T`.
+  have hTe (i : ι) : leviCivitaConnection I M (e i) x (T x) = 0 := by
+    have h := (leviCivitaConnection I M).torsion_apply (x := x) (hTs.mdifferentiableAt (by simp))
+      ((he i).mdifferentiableAt (by simp))
+    rw [torsion_leviCivitaConnection_eq_zero I, hTpar x, hbr i x] at h
+    simpa [eq_comm] using h
+  dsimp only
+  have hEi (i : ι) : CMDiff ∞ (T% (fun y ↦ cov σ y (e i y))) :=
+    cov.contMDiff_apply (he i) (by simpa using hσ)
+  rw [cov.covariantDerivative_transverseDiracOperator_sub_eq_sum c T e (.of_forall hframe)
+    (fun i ↦ by simp [hcomp (e i) _ (he i) (hEi i) x (T x), hTe i]) (fun i ↦ hbr i x)
+    (fun i ↦ (contMDiff_clifford_apply hc (he i) (hEi i)).mdifferentiableAt (by simp))
+    ((cov.contMDiff_transverseDiracOperator hc hTs hσ).mdifferentiableAt (by simp))]
 
 end IsMetricCompatible
 

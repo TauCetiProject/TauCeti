@@ -39,10 +39,8 @@ The orthogonal complement of the span of the basis vectors indexed by a set `s` 
 closed span of the basis vectors indexed by its complement (`HilbertBasis.orthogonal_span_image`).
 This computes the cokernels of isometries that send a Hilbert basis into another one.
 
-Finally, `lp.hilbertBasisFun` names the canonical unit-coordinate Hilbert basis of `ℓ²(ι, 𝕜)`, with
-simp lemmas for its coordinate representation (`lp.hilbertBasisFun_repr`), basis vectors
-(`lp.hilbertBasisFun_apply`), and coordinate inner products (`lp.hilbertBasisFun_inner`,
-`lp.inner_single_one_left`).
+The coordinates `⟪default i, x⟫` of a vector `x` in the standard Hilbert basis of `ℓ²(ι, 𝕜)` are
+its entries `x i` (`HilbertBasis.inner_default_apply`).
 -/
 
 public section
@@ -178,45 +176,11 @@ theorem orthogonal_span_image (b : HilbertBasis ι 𝕜 E) (s : Set ι) :
     rintro _ ⟨j, hj, rfl⟩ _ ⟨i, hi, rfl⟩
     exact b.orthonormal.inner_eq_zero fun hji ↦ hj (hji ▸ hi)
 
+open scoped lp in
+/-- The coordinates of `x` in the standard Hilbert basis of `ℓ²(ι, 𝕜)` are its entries. -/
+@[simp]
+theorem inner_default_apply (x : ℓ²(ι, 𝕜)) (i : ι) :
+    ⟪(default : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)) i, x⟫_𝕜 = x i :=
+  ((default : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)).repr_apply_apply x i).symm
+
 end HilbertBasis
-
-namespace lp
-
-open scoped InnerProductSpace lp
-
-/-- Inner product on the left against the `i`-th unit single-coordinate vector in `ℓ²(ι, 𝕜)`
-evaluates the `i`-th coordinate. -/
-@[simp]
-theorem inner_single_one_left {ι : Type*} {𝕜 : Type*} [RCLike 𝕜] [DecidableEq ι]
-    (i : ι) (x : ℓ²(ι, 𝕜)) :
-    ⟪lp.single 2 i (1 : 𝕜), x⟫_𝕜 = x i := by
-  simp [lp.inner_single_left]
-
-/-- The standard unit coordinate vectors, bundled as a Hilbert basis of `ℓ²(ι, 𝕜)` via its
-canonical `Inhabited` instance. This is the `ℓ²` analogue of `EuclideanSpace.basisFun`. -/
-noncomputable def hilbertBasisFun (ι : Type*) (𝕜 : Type*) [RCLike 𝕜] :
-    HilbertBasis ι 𝕜 ℓ²(ι, 𝕜) :=
-  default
-
-/-- The coordinate representation of `lp.hilbertBasisFun` is the identity isometry on `ℓ²(ι, 𝕜)`. -/
-@[simp]
-theorem hilbertBasisFun_repr (ι : Type*) (𝕜 : Type*) [RCLike 𝕜] :
-    (hilbertBasisFun ι 𝕜).repr = LinearIsometryEquiv.refl 𝕜 ℓ²(ι, 𝕜) :=
-  (rfl)
-
-/-- The `i`-th vector of `lp.hilbertBasisFun` is the unit single-coordinate vector at `i`. -/
-@[simp]
-theorem hilbertBasisFun_apply (ι : Type*) (𝕜 : Type*) [RCLike 𝕜] [DecidableEq ι] (i : ι) :
-    hilbertBasisFun ι 𝕜 i = lp.single 2 i 1 := by
-  rw [← HilbertBasis.repr_symm_single, hilbertBasisFun_repr]
-  exact (LinearIsometryEquiv.refl 𝕜 _).symm_apply_eq.2 rfl
-
-/-- Inner product against the `i`-th vector of `lp.hilbertBasisFun` evaluates the `i`-th
-coordinate. -/
-@[simp]
-theorem hilbertBasisFun_inner (ι : Type*) (𝕜 : Type*) [RCLike 𝕜] (x : ℓ²(ι, 𝕜)) (i : ι) :
-    ⟪hilbertBasisFun ι 𝕜 i, x⟫_𝕜 = x i := by
-  rw [← (hilbertBasisFun ι 𝕜).repr_apply_apply]
-  simp
-
-end lp
