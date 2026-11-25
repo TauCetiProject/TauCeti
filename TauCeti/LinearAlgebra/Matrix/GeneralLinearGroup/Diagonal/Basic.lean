@@ -387,11 +387,8 @@ theorem det_diagGL (t : ι → kˣ) :
 mapped units. -/
 @[simp]
 theorem map_diagGL {S : Type*} [CommRing S] (f : k →+* S) (t : ι → kˣ) :
-    Matrix.GeneralLinearGroup.map f (diagGL t) = diagGL fun i ↦ Units.map (f : k →* S) (t i) := by
-  ext i j
-  simp only [Matrix.GeneralLinearGroup.map_apply, diagGL_apply, Units.coe_map,
-    MonoidHom.coe_ofClass]
-  split_ifs <;> simp
+    Matrix.GeneralLinearGroup.map f (diagGL t) = diagGL fun i ↦ Units.map (f : k →* S) (t i) :=
+  f.unitsMap_mapMatrix_diagGL t
 
 /-- Rescaling one column makes an invertible matrix have determinant one. For an empty index
 type, every invertible matrix already has determinant one. -/
