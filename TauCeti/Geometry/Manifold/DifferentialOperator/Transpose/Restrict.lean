@@ -8,7 +8,10 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Restrict.Basic
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Transpose.Basic
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
+import TauCeti.Geometry.Manifold.Metrizable
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
+import TauCeti.MeasureTheory.Integral.Bochner.Subtype
+import TauCeti.MeasureTheory.Measure.Subtype
 
 /-!
 # Formal transposes of restricted differential operators
@@ -58,33 +61,15 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {U : Opens M}
 
-/-- The product of a smooth function `σ` on `M` supported in `U` with a smooth function `f` on `U`
-extended by zero off `U`, as a smooth function on `M`. -/
-private def cutoffExtend {σ : M → ℝ} (hσ : ContMDiff I 𝓘(ℝ) ∞ σ) (hσU : tsupport σ ⊆ U)
-    (f : C^∞⟮I, U; ℝ⟯) : C^∞⟮I, M; ℝ⟯ :=
-  ⟨fun x ↦ σ x • extend Subtype.val f 0 x,
-    (ContMDiffMap.contMDiffOn_extend U f 0).contMDiff_smul_of_tsupport_subset U.isOpen
-      hσ.contMDiffOn hσU⟩
-
-private theorem cutoffExtend_apply_val {σ : M → ℝ} (hσ : ContMDiff I 𝓘(ℝ) ∞ σ)
-    (hσU : tsupport σ ⊆ U) (f : C^∞⟮I, U; ℝ⟯) (x : U) :
-    cutoffExtend hσ hσU f x = σ x * f x := by
-  simp [cutoffExtend]
-
-private theorem cutoffExtend_apply_of_notMem {σ : M → ℝ} (hσ : ContMDiff I 𝓘(ℝ) ∞ σ)
-    (hσU : tsupport σ ⊆ U) (f : C^∞⟮I, U; ℝ⟯) {x : M} (hx : x ∉ U) :
-    cutoffExtend hσ hσU f x = 0 := by
-  simp [cutoffExtend, image_eq_zero_of_notMem_tsupport fun h ↦ hx (hσU h)]
-
 /-- If `σ = 1` on the support of `f`, then the extension `σ f` restricts to `f` on `U`. -/
-private theorem restrict_cutoffExtend {σ : M → ℝ} (hσ : ContMDiff I 𝓘(ℝ) ∞ σ)
+private theorem restrict_cutoffExtend {σ : M → ℝ} (hσ : ContMDiffOn I 𝓘(ℝ) ∞ σ U)
     (hσU : tsupport σ ⊆ U) {f : C^∞⟮I, U; ℝ⟯} (hσf : ∀ x ∈ tsupport f, σ x = 1) :
-    (cutoffExtend hσ hσU f).restrict U = f := by
+    (ContMDiffMap.cutoffExtend hσ hσU f).restrict U = f := by
   ext x
-  rw [ContMDiffMap.restrict_apply, cutoffExtend_apply_val]
+  rw [ContMDiffMap.restrict_apply, ContMDiffMap.cutoffExtend_apply_val]
   by_cases hx : x ∈ tsupport f
-  · rw [hσf x hx, one_mul]
-  · rw [image_eq_zero_of_notMem_tsupport hx, mul_zero]
+  · rw [hσf x hx, one_smul]
+  · rw [image_eq_zero_of_notMem_tsupport hx, smul_zero]
 
 variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M]
   [MeasurableSpace M] [OpensMeasurableSpace M] {μ : Measure M} {m k : ℕ}
@@ -110,19 +95,19 @@ private theorem integral_restrict_mul_eq_of_hasCompactSupport
   have hσf (x : U) (hx : x ∈ tsupport f) : ∀ᶠ y : U in 𝓝 x, σ y = 1 :=
     continuous_subtypeVal.continuousAt.eventually
       (hσ1.filter_mono (nhds_le_nhdsSet (mem_image_of_mem _ hx)))
-  set F := cutoffExtend hσ hσU f
-  set G := cutoffExtend hσ hσU g
+  set F := ContMDiffMap.cutoffExtend hσ.contMDiffOn hσU f
+  set G := ContMDiffMap.cutoffExtend hσ.contMDiffOn hσU g
   -- `F` restricts to `f` on `U`, and `G` agrees with `g` near the support of `f`.
-  have hF : F.restrict U = f := restrict_cutoffExtend hσ hσU fun x hx ↦ (hσf x hx).self_of_nhds
+  have hF : F.restrict U = f := restrict_cutoffExtend _ hσU fun x hx ↦ (hσf x hx).self_of_nhds
   have hDU (x : U) : DU f x = D₀ F x := by
     rw [← hF, Opens.restrictDifferentialOperators_apply_restrict, ContMDiffMap.restrict_apply]
   have hDU' (x : U) (hx : x ∈ tsupport f) : DU' g x = D₀' G x :=
     Opens.restrictDifferentialOperators_apply_of_eventuallyEq D' <|
-      (hσf x hx).mono fun y hy ↦ by simp [G, cutoffExtend_apply_val, hy]
+      (hσf x hx).mono fun y hy ↦ by simp [G, hy]
   -- So both integrands on `U` are restrictions of functions on `M` vanishing off `U`.
   have h₁ (x : U) : DU f x * g x = D₀ F x * G x := by
     by_cases hx : x ∈ tsupport f
-    · rw [hDU, cutoffExtend_apply_val, (hσf x hx).self_of_nhds, one_mul]
+    · rw [hDU, ContMDiffMap.cutoffExtend_apply_val, (hσf x hx).self_of_nhds, one_smul]
     · have h0 : DU f x = 0 := by
         rw [differentialOperators_apply_eq_of_eventuallyEq
           (U.restrictDifferentialOperators m D).property (g := 0)
@@ -134,21 +119,20 @@ private theorem integral_restrict_mul_eq_of_hasCompactSupport
     by_cases hx : x ∈ tsupport f
     · rw [hDU' x hx, hFx]
     · rw [hFx, image_eq_zero_of_notMem_tsupport hx, zero_mul, zero_mul]
-  have hint (φ : M → ℝ) (hφ : ∀ x ∉ (U : Set M), φ x = 0) :
-      ∫ x : U, φ x ∂μ.comap Subtype.val = ∫ x, φ x ∂μ :=
-    (integral_subtype_comap U.isOpen.measurableSet φ).trans
-      (setIntegral_eq_integral_of_forall_compl_eq_zero hφ)
+  have hU := U.isOpen.measurableSet
   calc ∫ x, DU f x * g x ∂μ.comap Subtype.val
       = ∫ x, D₀ F x * G x ∂μ := by
         simp_rw [h₁]
-        exact hint (fun x ↦ D₀ F x * G x) fun x hx ↦ by
-          rw [cutoffExtend_apply_of_notMem hσ hσU g hx, mul_zero]
+        refine integral_subtype_comap_of_ae_restrict_compl_eq_zero (f := fun x ↦ D₀ F x * G x) hU
+          (ae_restrict_of_forall_mem hU.compl fun x hx ↦ ?_)
+        simp [G, ContMDiffMap.cutoffExtend_apply_of_notMem hσ.contMDiffOn hσU g hx]
     _ = ∫ x, F x * D₀' G x ∂μ :=
-        h.integral_mul_eq (.inl (hσc.smul_right (f' := extend Subtype.val f 0)))
+        h.integral_mul_eq (.inl (by rw [ContMDiffMap.coe_cutoffExtend]; exact hσc.smul_right))
     _ = ∫ x, f x * DU' g x ∂μ.comap Subtype.val := by
         simp_rw [h₂]
-        exact (hint (fun x ↦ F x * D₀' G x) fun x hx ↦ by
-          rw [cutoffExtend_apply_of_notMem hσ hσU f hx, zero_mul]).symm
+        refine (integral_subtype_comap_of_ae_restrict_compl_eq_zero (f := fun x ↦ F x * D₀' G x)
+          hU (ae_restrict_of_forall_mem hU.compl fun x hx ↦ ?_)).symm
+        simp [F, ContMDiffMap.cutoffExtend_apply_of_notMem hσ.contMDiffOn hσU f hx]
 
 /-- **Formal transposes commute with restriction to open subsets.** If the differential operator
 `D'` is a formal transpose of the differential operator `D` with respect to `μ`, then on an open
@@ -164,5 +148,20 @@ theorem IsFormalTranspose.restrictDifferentialOperators
   rintro f g (hf | hg)
   · exact integral_restrict_mul_eq_of_hasCompactSupport h hf
   · simpa only [mul_comm] using (integral_restrict_mul_eq_of_hasCompactSupport h.symm hg).symm
+
+/-- **The formal transpose of a restriction.** If the differential operator `D'` is a formal
+transpose of the differential operator `D` with respect to a locally finite measure `μ` that is
+positive on open sets of a σ-compact manifold, then on an open subset `U` the formal transpose of
+`D|_U` with respect to the restricted measure `μ.comap Subtype.val` is `D'|_U`. -/
+theorem IsFormalTranspose.formalTranspose_restrictDifferentialOperators [SigmaCompactSpace M]
+    [BorelSpace M] [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure]
+    {D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m}
+    {D' : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ k}
+    (h : (D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯).IsFormalTranspose D' μ) (U : Opens M) :
+    (U.restrictDifferentialOperators m D : C^∞⟮I, U; ℝ⟯ →ₗ[ℝ] C^∞⟮I, U; ℝ⟯).formalTranspose
+      (μ.comap Subtype.val) = U.restrictDifferentialOperators k D' := by
+  have := Manifold.sigmaCompactSpace_opens I U
+  have := Measure.IsOpenPosMeasure.comap μ U.isOpen.isOpenEmbedding_subtypeVal
+  exact (h.restrictDifferentialOperators U).formalTranspose_eq
 
 end LinearMap
