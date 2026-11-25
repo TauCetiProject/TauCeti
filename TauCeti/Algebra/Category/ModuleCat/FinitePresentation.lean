@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Algebra.Module.FinitePresentation
-public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
+public import TauCeti.Algebra.Category.ModuleCat.CartanMap.FiniteBiproducts
 public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.RestrictedYoneda
 
 /-!
@@ -86,17 +86,6 @@ theorem presented_finiteProjectiveModules :
 
 instance : (finitePresentationModules R).IsClosedUnderIsomorphisms :=
   presented_finiteProjectiveModules R ▸ inferInstance
-
-/-- The finitely generated projective `R`-modules have finite biproducts, since they contain zero
-and are closed under binary products. Used here only, as a local instance, for the restricted
-Yoneda equivalence below. -/
-private theorem hasFiniteBiproducts_finiteProjectiveModules :
-    HasFiniteBiproducts (finiteProjectiveModules R).FullSubcategory :=
-  have := hasFiniteProducts_of_has_binary_and_terminal
-    (C := (finiteProjectiveModules R).FullSubcategory)
-  .of_hasFiniteProducts
-
-attribute [local instance] hasFiniteBiproducts_finiteProjectiveModules
 
 /-- **The finitely presented modules are `mod (proj R)`.** The functor `M ↦ (-, M)|_{proj R}` is an
 equivalence from the finitely presented `R`-modules to the finitely presented functors on the
