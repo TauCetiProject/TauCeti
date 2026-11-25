@@ -390,20 +390,20 @@ theorem singularCup_cup_alexanderWhitneyDiagonal {n r q m' q' m : ℕ} (h₁ : n
     singularCup_gradedComm K P hu hμ (by omega) _ v,
     ← singularCup_assoc K P hassoc hassocμ rfl (by omega) (add_comm q n) (by omega), smul_smul,
     ← pow_add, show n * r + (r + q) * n = q * n + 2 * (n * r) by ring, pow_add,
-    pow_mul (-1 : ℤ) 2, neg_one_sq, one_pow, mul_one]
+    (even_two_mul _).neg_one_pow, mul_one]
 
 /-- **The projection formula for the relative cap product followed by push-forward**: for a pair
-`(X, A)`, a map `p₀ : X ⟶ Y`, a relative class `v ∈ Hⁿ(X, A; K)`, a class `ψ ∈ Hʳ(Y; K)` and a
-relative class `x ∈ Hₘ(X, A; T)`,
+`(X, Z)`, a map `p₀ : X ⟶ Y`, a relative class `v ∈ Hⁿ(X, Z; K)`, a class `ψ ∈ Hʳ(Y; K)` and a
+relative class `x ∈ Hₘ(X, Z; T)`,
 
 `p₀_*((x ⌢ p₀^* ψ) ⌢ v) = (-1)^(n r) p₀_*(x ⌢ v) ⌢ ψ`
 
 in `H_q(Y; S)`, where `x ⌢ p₀^* ψ` is the cap product of absolute cohomology with relative
 homology (`TopPair.absoluteSingularCap`) and the relative cap products with `v` are taken along a
 coefficient morphism `u : T ⟶ K ⊗ S`. So `x ↦ p₀_*(x ⌢ v)` is linear over the cohomology ring of
-`Y`, up to the sign `(-1)^(n r)`. For `T = S = A` and `u` the left unitor this is the projection
-formula for `TopPair.pushforwardCap`; for the Thom pair of a vector bundle it is that for the
-homology Thom map. -/
+`Y`, up to the sign `(-1)^(n r)`. For `T = S` a module `A` and `u = (λ_ A).inv` this is the
+projection formula for `TopPair.pushforwardCap`; for the Thom pair of a vector bundle it is that
+for the homology Thom map. -/
 theorem map_singularCap_absoluteSingularCap {Y : TopCat.{w}} (p₀ : P.fst ⟶ Y) {n r q m' q' m : ℕ}
     (h₀ : r + m' = m) (h₁ : n + q = m') (h₂ : n + q' = m) (h₃ : r + q = q')
     (v : P.singularCohomology (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) n)
@@ -422,16 +422,35 @@ theorem map_singularCap_absoluteSingularCap {Y : TopCat.{w}} (p₀ : P.fst ⟶ Y
     (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} K) q).obj S).obj Y)
   apply (ModuleCat.mono_iff_injective ι).1 inferInstance
   obtain ⟨c, hc⟩ := (Y.singularKronecker_bijective K (R := S) q).2 ι
-  -- Both sides pair with `c` to `⟨p₀^* ψ ⌣ (v ⌣ p₀^* c), x⟩`, up to the sign.
-  rw [← hc, map_zsmul, ← ConcreteCategory.comp_apply, ← TopCat.singularKronecker_naturality,
-    ← ConcreteCategory.comp_apply, TopPair.singularCap_comp_singularKronecker,
-    ← ConcreteCategory.comp_apply, absoluteSingularCap_comp_singularKronecker, ← singularCup_def,
-    singularCup_cup_alexanderWhitneyDiagonal P u h₁ h₀ h₂ h₃, map_zsmul,
-    TopCat.singularCup_naturality, ← ConcreteCategory.comp_apply,
-    TopCat.singularCap_comp_singularKronecker, ← ConcreteCategory.comp_apply,
-    ← TopCat.singularKronecker_naturality, ← ConcreteCategory.comp_apply,
-    TopPair.singularCap_comp_singularKronecker]
-  rfl
+  -- Both sides pair with `c` to `⟨v ⌣ p₀^*(ψ ⌣ c), x⟩`, up to the sign.
+  have hL : Y.singularKronecker K q c
+      (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} K) q).obj S).map p₀
+        (P.singularCap K u (λ_ S).hom n q m' h₁ v
+          (P.absoluteSingularCap K (λ_ T).inv (λ_ T).hom r m' m h₀
+            (TopCat.singularCohomologyMap p₀ r ψ) x))) =
+      ((-1 : ℤ) ^ (n * r)) • P.singularKronecker K m
+        (TauCeti.ChainComplex.cup K (P.alexanderWhitneyDiagonal u) (λ_ _).hom n q' m h₂ v
+          (TopCat.singularCohomologyMap p₀ q'
+            (Y.singularCup K (λ_ S).inv (λ_ _).hom r q q' h₃ ψ c)))
+        x := by
+    rw [← ConcreteCategory.comp_apply, ← TopCat.singularKronecker_naturality,
+      ← ConcreteCategory.comp_apply, TopPair.singularCap_comp_singularKronecker,
+      ← ConcreteCategory.comp_apply, absoluteSingularCap_comp_singularKronecker, ← singularCup_def,
+      singularCup_cup_alexanderWhitneyDiagonal P u h₁ h₀ h₂ h₃, map_zsmul,
+      TopCat.singularCup_naturality]
+    simp only [ModuleCat.hom_zsmul, LinearMap.smul_apply]
+  have hR : Y.singularKronecker K q c (Y.singularCap K (λ_ S).inv (λ_ S).hom r q q' h₃ ψ
+      (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} K) q').obj S).map p₀
+        (P.singularCap K u (λ_ S).hom n q' m h₂ v x))) =
+      P.singularKronecker K m
+        (TauCeti.ChainComplex.cup K (P.alexanderWhitneyDiagonal u) (λ_ _).hom n q' m h₂ v
+          (TopCat.singularCohomologyMap p₀ q'
+            (Y.singularCup K (λ_ S).inv (λ_ _).hom r q q' h₃ ψ c)))
+        x := by
+    rw [← ConcreteCategory.comp_apply, TopCat.singularCap_comp_singularKronecker,
+      ← ConcreteCategory.comp_apply, ← TopCat.singularKronecker_naturality,
+      ← ConcreteCategory.comp_apply, TopPair.singularCap_comp_singularKronecker]
+  rw [← hc, map_zsmul, hL, hR]
 
 /-- **The projection formula for `TopPair.pushforwardCap`**: `x ↦ p₀_*(x ⌢ v)` is linear over the
 cohomology ring of `Y` up to sign, `p₀_*((x ⌢ p₀^* ψ) ⌢ v) = (-1)^(n r) p₀_*(x ⌢ v) ⌢ ψ` for
