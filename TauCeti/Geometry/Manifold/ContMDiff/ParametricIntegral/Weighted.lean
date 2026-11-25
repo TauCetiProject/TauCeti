@@ -30,8 +30,7 @@ Gårding smoothing.
 
 ## Main results
 
-* `ContDiffOn.parametric_integral_clm`: the normed-space statement.
-* `IsCompact.contMDiffAt_setIntegral_clm`: the manifold statement.
+* `IsCompact.contMDiffAt_setIntegral_clm`: smoothness of a weighted integral over a compact set.
 * `ContinuousLinearMap.contMDiff_integral_comp_inv_mul`: the Lie-group corollary.
 -/
 
@@ -39,52 +38,6 @@ public section
 
 open Set Filter MeasureTheory Function
 open scoped Topology ContDiff Manifold Pointwise
-
-section Normed
-
-variable {𝕜 : Type*} [RCLike 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace 𝕜 E]
-  {H : Type*} [NormedAddCommGroup H] [NormedSpace 𝕜 H]
-  {H' : Type*} [NormedAddCommGroup H'] [NormedSpace 𝕜 H'] [MeasurableSpace H']
-  [OpensMeasurableSpace H']
-  {E₁ : Type*} [NormedAddCommGroup E₁] [NormedSpace 𝕜 E₁]
-  {E₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace 𝕜 E₂]
-
-/-- **Smoothness of a weighted parametric integral.** If `Φ.uncurry` is `Cⁿ` on `u ×ˢ k` for an
-open set `u` and a compact set `k`, and `g` is continuous on `k`, then for every measurable subset
-`s₀ ⊆ k` of finite measure `x ↦ ∫ a in s₀, L (Φ x a) (g a) ∂μ` is `Cⁿ` on `u`. No smoothness of
-`g` is needed. -/
-theorem ContDiffOn.parametric_integral_clm {μ : Measure H'} {Φ : H → H' → E₁} {g : H' → E₂}
-    (L : E₁ →L[𝕜] E₂ →L[𝕜] E) {u : Set H} (hu : IsOpen u) {k s₀ : Set H'} (hk : IsCompact k)
-    (hs₀ : MeasurableSet s₀) (hs₀k : s₀ ⊆ k) {n : ℕ∞} (hΦ : ContDiffOn 𝕜 n Φ.uncurry (u ×ˢ k))
-    (hg : ContinuousOn g k) (hμ : μ s₀ ≠ ⊤) :
-    ContDiffOn 𝕜 n (fun x ↦ ∫ a in s₀, L (Φ x a) (g a) ∂μ) u := by
-  borelize (H' × E₂)
-  let j : H' → H' × E₂ := fun a ↦ (a, g a)
-  have hjc : ContinuousOn j k := continuousOn_id.prodMk hg
-  have hk' : IsCompact (j '' k) := hk.image_of_continuousOn hjc
-  have hj : AEMeasurable j (μ.restrict s₀) := (hjc.mono hs₀k).aemeasurable hs₀
-  set ν := (μ.restrict s₀).map j
-  have hν : ν (j '' k) ≠ ⊤ := by
-    rw [Measure.map_apply_of_aemeasurable hj hk'.measurableSet]
-    exact ne_top_of_le_ne_top hμ <| (measure_mono (subset_univ _)).trans_eq
-      (Measure.restrict_apply_univ s₀)
-  have hΨ : ContDiffOn 𝕜 n (uncurry fun x (b : H' × E₂) ↦ L (Φ x b.1) b.2) (u ×ˢ (j '' k)) := by
-    have hm : MapsTo (fun p : H × (H' × E₂) ↦ (p.1, p.2.1)) (u ×ˢ (j '' k)) (u ×ˢ k) := by
-      rintro ⟨x, b⟩ ⟨hx, a, ha, rfl⟩
-      exact ⟨hx, ha⟩
-    exact (L.contDiff.comp_contDiffOn (hΦ.comp (by fun_prop) hm)).clm_apply (by fun_prop)
-  have hνk : ν.restrict (j '' k) = ν :=
-    Measure.restrict_eq_self_of_ae_mem <| (ae_map_iff hj hk'.measurableSet).2 <|
-      ae_restrict_of_forall_mem hs₀ fun a ha ↦ mem_image_of_mem j (hs₀k ha)
-  refine (hΨ.parametric_integral (μ := ν) hu hk' subset_rfl hν).congr fun x hx ↦ ?_
-  have hc : ContinuousOn (fun b : H' × E₂ ↦ L (Φ x b.1) b.2) (j '' k) :=
-    hΨ.continuousOn.comp (continuousOn_const.prodMk continuousOn_id) fun b hb ↦ ⟨hx, hb⟩
-  have hm : AEStronglyMeasurable (fun b : H' × E₂ ↦ L (Φ x b.1) b.2) ν := by
-    simpa only [hνk] using hc.aestronglyMeasurable_of_isCompact (μ := ν) hk' hk'.measurableSet
-  rw [hνk, integral_map hj hm]
-
-end Normed
 
 namespace TauCeti
 
