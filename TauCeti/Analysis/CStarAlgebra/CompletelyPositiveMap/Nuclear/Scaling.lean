@@ -17,7 +17,7 @@ nonnegative multiple `c • ψ` of a nuclear contraction `ψ`. For a unital doma
 can always be taken to be `‖φ‖ = ‖φ 1‖`: a nuclear map with `‖φ 1‖ ≤ 1` is itself a nuclear
 contraction (`CompletelyPositiveMap.IsNuclear.isNuclearContraction`), and so `φ` is nuclear
 exactly when its normalization `‖φ 1‖⁻¹ • φ` is a nuclear contraction
-(`CompletelyPositiveMap.isNuclear_iff_isNuclearContraction_inv_norm_smul`).
+(`CompletelyPositiveMap.isNuclear_iff_isNuclearContraction_inv_nnnorm_map_one_smul`).
 
 The approximants of `c • ψ` are composites `c • β ∘ α` through matrix algebras, but `c • β` may
 have norm up to `c`. By the Choi–Effros factorization
@@ -40,31 +40,6 @@ namespace CompletelyPositiveMap
 
 variable {A B : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
-
-/-- Rescaling by `(1 + η)⁻¹` moves a vector by at most `η` times its norm. -/
-private theorem norm_inv_one_add_smul_sub_le {E : Type*} [SeminormedAddCommGroup E]
-    [NormedSpace ℝ E] {η : ℝ} (hη : 0 ≤ η) (X : E) : ‖(1 + η)⁻¹ • X - X‖ ≤ η * ‖X‖ := by
-  have ht1 : (1 + η)⁻¹ ≤ 1 := inv_le_one_of_one_le₀ (by linarith)
-  have h1t : 1 - (1 + η)⁻¹ ≤ η := by
-    rw [show (1 + η)⁻¹ = 1 - η / (1 + η) by field_simp; ring, sub_sub_cancel]
-    exact div_le_self hη (by linarith)
-  rw [show (1 + η)⁻¹ • X - X = ((1 + η)⁻¹ - 1) • X by rw [sub_smul, one_smul],
-    norm_smul, Real.norm_eq_abs, abs_sub_comm,
-    abs_of_nonneg (sub_nonneg.mpr ht1)]
-  exact mul_le_mul_of_nonneg_right h1t (norm_nonneg X)
-
-/-- A completely positive map `β` on a unital C⋆-algebra with `‖β 1‖ ≤ 1 + η` becomes
-contractive after rescaling by `(1 + η)⁻¹`. -/
-private theorem norm_inv_one_add_smul_apply_le {M : Type*} [CStarAlgebra M] [PartialOrder M]
-    [StarOrderedRing M] (β : M →CP B) {η : ℝ} (hη : 0 ≤ η) (h1 : ‖β 1‖ ≤ 1 + η) (x : M) :
-    ‖(1 + η)⁻¹ • β x‖ ≤ ‖x‖ := by
-  rw [norm_smul_of_nonneg (by positivity)]
-  refine (mul_le_mul_of_nonneg_left (CompletelyPositiveMapClass.norm_apply_le β x)
-    (by positivity)).trans ?_
-  rw [← mul_assoc]
-  refine mul_le_of_le_one_left (norm_nonneg x) ?_
-  rw [inv_mul_le_iff₀ (by positivity), mul_one]
-  exact h1
 
 /-- The choice of tolerance `δ = ε / (2 (c + 1) (c M + 1))` in the approximation step. -/
 private theorem mul_div_mul_lt {c M ε : ℝ} (hc : 0 ≤ c) (hM : 0 ≤ M) (hε : 0 < ε) :
@@ -113,8 +88,9 @@ private theorem exists_approx [Nontrivial A] {ψ : A →CP B} (hψ : ψ.IsNuclea
   refine ⟨n, α', t • β', fun a ↦ ?_, fun x ↦ ?_, fun a ha ↦ ?_⟩
   · exact (CompletelyPositiveMapClass.norm_map_one_le_one_iff α').1
       (hα'1 ▸ CStarRing.norm_one_le) a
-  · rw [smul_apply, ht]
-    exact norm_inv_one_add_smul_apply_le β' hcδ hβ'1 x
+  · refine (CompletelyPositiveMapClass.norm_map_one_le_one_iff (t • β')).1 ?_ x
+    rw [smul_apply, ht, norm_smul_of_nonneg (by positivity)]
+    exact inv_mul_le_one_of_le₀ hβ'1 (by positivity)
   have hX : ‖(c : ℝ) • β (α a)‖ ≤ c * M := by
     rw [norm_smul_of_nonneg hc]
     exact mul_le_mul_of_nonneg_left (((hβ _).trans (hα a)).trans (haM ha)) hc
@@ -122,13 +98,14 @@ private theorem exists_approx [Nontrivial A] {ψ : A →CP B} (hψ : ψ.IsNuclea
     rw [smul_apply, NNReal.smul_def, ← smul_sub, norm_smul_of_nonneg hc]
     exact mul_le_mul_of_nonneg_left (hF a (Finset.mem_insert_of_mem ha)).le hc
   calc ‖(t • β') (α' a) - (c • ψ) a‖
-      ≤ ‖(1 + (c : ℝ) * δ)⁻¹ • ((c : ℝ) • β (α a)) - (c : ℝ) • β (α a)‖ +
+      ≤ ‖((1 + (c : ℝ) * δ)⁻¹ - 1) • ((c : ℝ) • β (α a))‖ +
           ‖(c : ℝ) • β (α a) - (c • ψ) a‖ := by
-        rw [smul_apply, hβ'α', ht]
+        rw [smul_apply, hβ'α', ht, sub_smul, one_smul]
         exact norm_sub_le_norm_sub_add_norm_sub _ _ _
-    _ ≤ c * δ * (c * M) + c * δ :=
-        add_le_add ((norm_inv_one_add_smul_sub_le hcδ _).trans
-          (mul_le_mul_of_nonneg_left hX hcδ)) hXY
+    _ ≤ c * δ * (c * M) + c * δ := by
+        rw [norm_smul, Real.norm_eq_abs, abs_sub_comm,
+          abs_of_nonneg (sub_nonneg.mpr (inv_le_one_of_one_le₀ (by linarith)))]
+        exact add_le_add (mul_le_mul (by field_simp; nlinarith) hX (norm_nonneg _) hcδ) hXY
     _ < ε := mul_div_mul_lt hc hM hε
 
 /-- **Independence of the scaling.** On a unital C⋆-algebra, a nuclear completely positive map
@@ -152,17 +129,15 @@ theorem isNuclearContraction_iff_isNuclear_and_norm_map_one_le_one {φ : A →CP
 /-- **Normalization.** On a unital C⋆-algebra, a completely positive map `φ` is nuclear exactly
 when its normalization `‖φ 1‖⁻¹ • φ` is a nuclear contraction. (When `φ 1 = 0`, `φ = 0` and the
 normalization is `0`.) -/
-theorem isNuclear_iff_isNuclearContraction_inv_norm_smul {φ : A →CP B} :
+theorem isNuclear_iff_isNuclearContraction_inv_nnnorm_map_one_smul {φ : A →CP B} :
     φ.IsNuclear ↔ (‖φ 1‖₊⁻¹ • φ).IsNuclearContraction := by
   refine ⟨fun h ↦ (h.smul _).isNuclearContraction ?_, fun h ↦ ?_⟩
   · rw [smul_apply, NNReal.smul_def, norm_smul_of_nonneg (by positivity), NNReal.coe_inv,
       coe_nnNorm]
     exact inv_mul_le_one_of_le₀ le_rfl (norm_nonneg _)
   · rcases eq_or_ne ‖φ 1‖₊ 0 with h0 | h0
-    · have : φ = 0 := ext fun a ↦ by
-        have := CompletelyPositiveMapClass.norm_apply_le φ a
-        rw [← coe_nnNorm (φ 1), h0, NNReal.coe_zero, zero_mul] at this
-        simpa using norm_le_zero_iff.mp this
+    · have h := (φ.isNPositive 2).eq_zero_of_map_one_eq_zero two_pos (nnNorm_eq_zero.mp h0)
+      have : φ = 0 := ext fun a ↦ LinearMap.congr_fun h a
       exact this ▸ isNuclearContraction_zero.isNuclear
     · refine isNuclear_iff.mpr ⟨‖φ 1‖₊, _, h, ?_⟩
       rw [smul_smul, mul_inv_cancel₀ h0, one_smul]
