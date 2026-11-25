@@ -91,11 +91,13 @@ theorem nonempty_iso_baseChange_unipotent (b : ℤ_[ℓ]) :
   let f : (unipotent ℓ (ℓ * b)).toRepresentation.IntertwiningMap
       (unipotent ℓ b).toRepresentation :=
     ⟨(Matrix.diagonal ![1, (ℓ : ℤ_[ℓ])]).mulVecLin, fun n ↦ LinearMap.ext fun v ↦ by
-      ext i; fin_cases i <;> simp [unipotent_apply, Matrix.mulVec_diagonal]; ring⟩
+      ext i; fin_cases i <;>
+        simp [unipotent_apply, Matrix.mulVec_diagonal, mul_add, mul_assoc, mul_left_comm]⟩
   let g : (unipotent ℓ b).toRepresentation.IntertwiningMap
       (unipotent ℓ (ℓ * b)).toRepresentation :=
     ⟨(Matrix.diagonal ![(ℓ : ℤ_[ℓ]), 1]).mulVecLin, fun n ↦ LinearMap.ext fun v ↦ by
-      ext i; fin_cases i <;> simp [unipotent_apply, Matrix.mulVec_diagonal]; ring⟩
+      ext i; fin_cases i <;>
+        simp [unipotent_apply, Matrix.mulVec_diagonal, mul_add, mul_assoc, mul_left_comm]⟩
   have hgf (v : Fin 2 → ℤ_[ℓ]) : g (f v) = (ℓ : ℤ_[ℓ]) • v := by
     ext i; fin_cases i <;> simp [f, g, Matrix.mulVec_diagonal]
   have hfg (v : Fin 2 → ℤ_[ℓ]) : f (g v) = (ℓ : ℤ_[ℓ]) • v := by
@@ -122,19 +124,12 @@ theorem coords_reduction_unipotent (b : ℤ_[ℓ]) (n : Multiplicative ℤ)
   induction x using TensorProduct.inductionOn with
   | tmul c v =>
     ext i
-    fin_cases i
-    · simp [reduction, baseChange_apply, unipotent_apply, Algebra.smul_def,
-        ResidueField.algebraMap_eq]
-      ring
-    · simp [reduction, baseChange_apply, unipotent_apply, Algebra.smul_def,
-        ResidueField.algebraMap_eq]
+    fin_cases i <;> simp [reduction, baseChange_apply, unipotent_apply, Algebra.smul_def,
+      ResidueField.algebraMap_eq, mul_add, mul_comm, mul_left_comm]
   | add x y hx hy =>
     simp only [map_add, hx, hy]
     ext i
-    fin_cases i
-    · simp
-      ring
-    · simp
+    fin_cases i <;> simp [mul_add, add_add_add_comm]
 
 /-- **The lattice `ℤ_ℓ²` reduces to a non-trivial representation**: for a unit `a`, the
 generator of `ℤ` does not act trivially on the reduction of `(1 a; 0 1)`. -/
