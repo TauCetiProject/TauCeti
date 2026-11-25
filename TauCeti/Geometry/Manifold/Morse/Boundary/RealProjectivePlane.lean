@@ -97,7 +97,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `nonempty_linearEquiv_homology_zero_signedMorseComplex_projectiveMomentFunction_real`,
   `nonempty_linearEquiv_homology_one_signedMorseComplex_projectiveMomentFunction_real`,
   `isZero_homology_two_signedMorseComplex_projectiveMomentFunction_real`: the integral Morse
-  homology is `R`, `ℤ/2` and `0` in degrees `0`, `1` and `2`.
+  homology in degree `0` is `R` over any ring; over `ℤ`, for pseudo-gradients commuting with the
+  sign changes, it is `ℤ/2` in degree `1` and `0` in degree `2`.
 
 ## References
 
@@ -659,7 +660,7 @@ theorem nonempty_linearEquiv_homology_one_signedMorseComplex_projectiveMomentFun
   have hm : (ComplexShape.down ℕ).next 1 = 0 := ChainComplex.next_nat_succ 0
   -- Every chain of index one is a cycle, since the minimum is unique, so the homology in degree
   -- one is the quotient of the chains by the boundaries.
-  have hd0 : K.d 1 0 = 0 := signedMorseComplex_d_one_zero_eq_zero hsq
+  have hd0 : K.d 1 0 = 0 := signedMorseComplex_d_eq_zero_of_signedMorseBoundaryAt_eq_zero hsq 0
     (IsMorseSmale.signedMorseBoundaryAt_zero_eq_zero_of_unique_index_zero hf
       (hX.isMorseSmale_projectiveMomentFunction_real hw)
       (subsingleton_setOf_manifoldMorseIndex_projectiveMomentFunction_real hw 0))
@@ -688,22 +689,11 @@ theorem isZero_homology_two_signedMorseComplex_projectiveMomentFunction_real
     (𝔬 : MorseOrientation (projectiveMomentFunction ℝ w) X)
     (hsq : hX.signedMorseBoundary 𝔬 hf ℤ ∘ₗ hX.signedMorseBoundary 𝔬 hf ℤ = 0) :
     CategoryTheory.Limits.IsZero ((hX.signedMorseComplex 𝔬 hf ℤ hsq).homology 2) := by
-  set K := hX.signedMorseComplex 𝔬 hf ℤ hsq
-  have hm : (ComplexShape.down ℕ).next 2 = 1 := ChainComplex.next_nat_succ 1
-  -- Every cycle of degree two is zero, so every homology class is.
-  have hd2 : (K.d 2 1).hom = hX.signedMorseBoundaryAt 𝔬 hf ℤ 1 := by
-    rw [show K.d 2 1 = K.d (1 + 1) 1 from rfl, signedMorseComplex_d]
-    -- `(ModuleCat.ofHom g).hom` is `g`, by definition; the terms of `K` are written differently.
-    rfl
-  have hz (z : LinearMap.ker (K.d 2 1).hom) : z = 0 := by
-    have h0 := (congrArg (· z.val) hd2).symm.trans (LinearMap.mem_ker.1 z.property)
-    exact Subtype.ext (injective_signedMorseBoundaryAt_one_projectiveMomentFunction_real hX hXε hf
-      𝔬 (h0.trans (map_zero _).symm))
-  rw [ModuleCat.isZero_iff_subsingleton]
-  refine ⟨fun a b ↦ ?_⟩
-  obtain ⟨a, rfl⟩ := K.moduleCatKerHomologyClass_surjective hm a
-  obtain ⟨b, rfl⟩ := K.moduleCatKerHomologyClass_surjective hm b
-  rw [hz a, hz b]
+  -- The differential out of degree two is injective, so there are no nonzero cycles.
+  refine (hX.signedMorseComplex 𝔬 hf ℤ hsq).isZero_homology_of_injective_d
+    (ChainComplex.next_nat_succ 1) fun a b hab ↦ ?_
+  exact injective_signedMorseBoundaryAt_one_projectiveMomentFunction_real hX hXε hf 𝔬 <|
+    (signedMorseComplex_d_apply hsq 1 a).symm.trans (hab.trans (signedMorseComplex_d_apply hsq 1 b))
 
 end Maximum
 

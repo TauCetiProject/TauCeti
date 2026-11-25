@@ -157,6 +157,15 @@ theorem signedMorseBoundaryAt_eq_zero_of_signedMorseBoundary_eq_zero
   LinearMap.ext fun c ↦ Finsupp.mapDomain_injective Subtype.val_injective <| by
     simp [mapDomain_signedMorseBoundaryAt, h0]
 
+/-- The differential of the integral Morse chain complex from degree `n + 1` to degree `n`
+vanishes when the graded boundary from degree `n + 1` to degree `n` does. -/
+theorem signedMorseComplex_d_eq_zero_of_signedMorseBoundaryAt_eq_zero (n : ℕ)
+    (h0 : hX.signedMorseBoundaryAt 𝔬 hf R n = 0) :
+    (hX.signedMorseComplex 𝔬 hf R hsq).d (n + 1) n = 0 := by
+  rw [signedMorseComplex_d, h0, ModuleCat.ofHom_zero]
+  -- Both sides are the zero morphism; they differ only in how the terms are written.
+  rfl
+
 /-- If the total integral Morse boundary vanishes, every differential of the integral Morse chain
 complex is zero. -/
 theorem signedMorseComplex_d_eq_zero_of_signedMorseBoundary_eq_zero
@@ -164,10 +173,8 @@ theorem signedMorseComplex_d_eq_zero_of_signedMorseBoundary_eq_zero
     (hX.signedMorseComplex 𝔬 hf R hsq).d i j = 0 := by
   by_cases hij : (ComplexShape.down ℕ).Rel i j
   · obtain rfl : j + 1 = i := hij
-    rw [signedMorseComplex_d, signedMorseBoundaryAt_eq_zero_of_signedMorseBoundary_eq_zero h0,
-      ModuleCat.ofHom_zero]
-    -- Both sides are the zero morphism; they differ only in how the terms are written.
-    rfl
+    exact signedMorseComplex_d_eq_zero_of_signedMorseBoundaryAt_eq_zero hsq j
+      (signedMorseBoundaryAt_eq_zero_of_signedMorseBoundary_eq_zero h0 j)
   · exact (hX.signedMorseComplex 𝔬 hf R hsq).shape i j hij
 
 /-- **Integral Morse homology with zero boundary is free.** If the integral Morse boundary
@@ -201,15 +208,6 @@ theorem finrank_homology_signedMorseComplex_of_signedMorseBoundary_eq_zero
   refine (finrank_finsupp_self (R := R)).trans ?_
   rw [← Nat.card_eq_fintype_card, natCard_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount]
 
-/-- The differential of the integral Morse chain complex into degree `0` vanishes when the graded
-boundary from degree `1` to degree `0` does. -/
-theorem signedMorseComplex_d_one_zero_eq_zero
-    (h0 : hX.signedMorseBoundaryAt 𝔬 hf R 0 = 0) :
-    (hX.signedMorseComplex 𝔬 hf R hsq).d 1 0 = 0 := by
-  rw [signedMorseComplex_d, h0, ModuleCat.ofHom_zero]
-  -- Both sides are the zero morphism; they differ only in how the terms are written.
-  rfl
-
 /-- **Integral Morse homology in degree `0` with a unique minimum.** If `f` has exactly one
 critical point of index `0` and the graded integral boundary into degree `0` vanishes, the integral
 Morse homology in degree `0` is `R`: every chain of index `0` is a cycle and none but zero is a
@@ -222,7 +220,9 @@ theorem nonempty_linearEquiv_homology_zero_signedMorseComplex
   haveI : Subsingleton {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = 0} :=
     ⟨fun q r ↦ (hp q).trans (hp r).symm⟩
   ⟨((hX.signedMorseComplex 𝔬 hf R hsq).XIsoHomologyOfDEqZero 0
-    (by rw [ChainComplex.prev]; exact signedMorseComplex_d_one_zero_eq_zero hsq h0)
+    (by
+      rw [ChainComplex.prev]
+      exact signedMorseComplex_d_eq_zero_of_signedMorseBoundaryAt_eq_zero hsq 0 h0)
     ((hX.signedMorseComplex 𝔬 hf R hsq).shape _ _ (by simp))).toLinearEquiv.symm.trans
     (Finsupp.uniqueLinearEquiv R R p)⟩
 
