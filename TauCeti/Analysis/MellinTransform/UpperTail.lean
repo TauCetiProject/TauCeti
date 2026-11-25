@@ -306,8 +306,7 @@ theorem integral_ramp_mul_rpow {r : ℝ} (hr : 0 < r) {σ : ℝ} (hσ : 1 < σ) 
   apply Complex.ofReal_injective
   rw [← integral_complex_ofReal, ← setIntegral_congr_fun measurableSet_Ioi
     (fun y hy ↦ ramp_mul_cpow_ofReal (hr.trans hy).le σ),
-    integral_ramp_mul_cpow hr (by simpa using hσ), Complex.ofReal_div, Complex.ofReal_cpow hr.le]
-  push_cast
-  rfl
+    integral_ramp_mul_cpow hr (by simpa using hσ), Complex.ofReal_div, Complex.ofReal_cpow hr.le,
+    Complex.ofReal_neg, Complex.ofReal_mul, Complex.ofReal_sub, Complex.ofReal_one]
 
 end TauCeti
