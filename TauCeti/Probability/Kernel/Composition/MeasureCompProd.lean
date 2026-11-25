@@ -27,6 +27,10 @@ kernel masses of the vertical sections.
 
 * `MeasureTheory.Measure.map_prodMap_compProd_comap` — for `f : W → Y` measurable and
   `κ : Kernel Y Z`, `(μ ⊗ₘ κ.comap f hf).map (Prod.map f id) = μ.map f ⊗ₘ κ`.
+* `MeasureTheory.Measure.map_prodMap_compProd_comap_prodMk` — if `g` has conditional law `κ`
+  given `f` under `μ`, then forgetting `g` in `μ ⊗ₘ η.comap (f, g)` averages `η` over `κ`.
+* `ProbabilityTheory.Kernel.comap_compProd` — pulling back the input of `κ ⊗ₖ η` pulls back the
+  input of both factors.
 * `MeasureTheory.Measure.compProd_comap_map` — pushing a kernel forward along `g` before pulling
   its input back along `f` pushes the composition-product forward along `Prod.map id g`.
 * `MeasureTheory.Measure.compProd_restrict_left` — restricting the base to `s` restricts the
@@ -42,6 +46,28 @@ public section
 noncomputable section
 
 open ProbabilityTheory
+
+namespace ProbabilityTheory.Kernel
+
+variable {α β γ δ : Type*} [MeasurableSpace α] [MeasurableSpace β] [MeasurableSpace γ]
+  [MeasurableSpace δ]
+
+/-- Pulling back the input of a composition-product pulls back the input of both factors. -/
+theorem comap_compProd (κ : Kernel α β) [IsSFiniteKernel κ] (η : Kernel (α × β) γ)
+    [IsSFiniteKernel η] {f : δ → α} (hf : Measurable f) :
+    (κ ⊗ₖ η).comap f hf = κ.comap f hf ⊗ₖ η.comap (Prod.map f id) (hf.prodMap measurable_id) := by
+  ext x s hs
+  rw [comap_apply, compProd_apply hs, compProd_apply hs]
+  simp [comap_apply]
+
+/-- Pulling back the input of a kernel commutes with forgetting the first output coordinate. -/
+@[simp]
+theorem snd_comap (κ : Kernel α (β × γ)) {f : δ → α} (hf : Measurable f) :
+    (κ.comap f hf).snd = κ.snd.comap f hf := by
+  ext x : 1
+  rw [snd_apply, comap_apply, comap_apply, snd_apply]
+
+end ProbabilityTheory.Kernel
 
 namespace MeasureTheory.Measure
 
@@ -89,6 +115,35 @@ theorem compProd_comap_map {T : Type*} [MeasurableSpace T] (μ : Measure W)
   swap
   · simp [compProd_of_not_sfinite _ _ hμ]
   rw [Kernel.comap_map_comm κ hf hg, compProd_map hg]
+
+/-- **Integrating out a hidden variable.** Suppose that under `Q`, the variable `g` has conditional
+law `κ` given the observed variable `f`. If a kernel `η` depends on both, then replacing `w` by
+`f w` in `Q ⊗ₘ η.comap (f, g)`, which forgets `g` and keeps the output of `η`, leaves the
+composition-product of the law of `f` with `η` averaged over `κ`.
+This extends `map_prodMap_compProd_comap`, the case where `η` does not depend on `g`. -/
+theorem map_prodMap_compProd_comap_prodMk {V β : Type*} [MeasurableSpace V] [MeasurableSpace β]
+    (Q : Measure W) [SFinite Q] {f : W → V} {g : W → β}
+    (hf : Measurable f) (hg : Measurable g) (κ : Kernel V β)
+    (η : Kernel (V × β) Z) [IsSFiniteKernel η]
+    (h : Q.map (fun w ↦ (f w, g w)) = Q.map f ⊗ₘ κ) :
+    (Q ⊗ₘ η.comap (fun w ↦ (f w, g w)) (hf.prodMk hg)).map (Prod.map f id) =
+      Q.map f ⊗ₘ (κ ⊗ₖ η).snd := by
+  have hfg : Measurable fun w ↦ (f w, g w) := hf.prodMk hg
+  calc (Q ⊗ₘ η.comap (fun w ↦ (f w, g w)) hfg).map (Prod.map f id)
+      = ((Q ⊗ₘ η.comap (fun w ↦ (f w, g w)) hfg).map (Prod.map (fun w ↦ (f w, g w)) id)).map
+          (Prod.map Prod.fst id) := by
+        rw [map_map (by fun_prop) (by fun_prop)]
+        rfl
+    _ = ((Q.map f ⊗ₘ κ) ⊗ₘ η).map (Prod.map Prod.fst id) := by
+        rw [map_prodMap_compProd_comap _ _ hfg, h]
+    _ = ((Q.map f ⊗ₘ (κ ⊗ₖ η)).map MeasurableEquiv.prodAssoc.symm).map
+          (Prod.map Prod.fst id) := by
+        rw [compProd_assoc]
+    _ = Q.map f ⊗ₘ (κ ⊗ₖ η).snd := by
+        rw [map_map (by fun_prop) (by fun_prop), Kernel.snd_eq,
+          compProd_map measurable_snd]
+        refine congrArg (fun h ↦ Measure.map h _) (funext fun ⟨v, b, z⟩ ↦ ?_)
+        simp [MeasurableEquiv.prodAssoc]
 
 /-- Restricting the base of a composition-product to `s` restricts the product to `s ×ˢ univ`.
 This is the measure counterpart of Mathlib's `ProbabilityTheory.Kernel.compProd_restrict_left`. -/

@@ -290,9 +290,7 @@ private theorem powerResidueSymbolIdeal_two_neg_one_sub_three_mul :
         (Ideal.Quotient.mk _ ((-1 : 𝓞 K) - 3 * hζ.toInteger)) =
       hζ.toInteger ^ 2 := by
   let ω := hζ.toInteger
-  have hsum : 1 + ω + ω ^ 2 = 0 := by
-    simpa [Finset.sum_range_succ, pow_two] using
-      hζ.toInteger_isPrimitiveRoot.geom_sum_eq_zero (by decide)
+  have hsum : 1 + ω + ω ^ 2 = 0 := hζ.toInteger_isPrimitiveRoot.one_add_add_sq
   have hmk : Ideal.Quotient.mk (span {((2 : ℤ) : 𝓞 K)}) ((-1 : 𝓞 K) - 3 * ω) =
       Ideal.Quotient.mk _ (ω ^ 2) := by
     rw [Ideal.Quotient.eq, mem_span_singleton]
@@ -380,9 +378,7 @@ example :
         (Ideal.Quotient.mk _ ((7 : ℤ) : 𝓞 K)) = 0 := by
   let ω := hζ.toInteger
   set α := (-1 : 𝓞 K) - 3 * ω
-  have hsum : 1 + ω + ω ^ 2 = 0 := by
-    simpa [Finset.sum_range_succ, pow_two] using
-      hζ.toInteger_isPrimitiveRoot.geom_sum_eq_zero (by decide)
+  have hsum : 1 + ω + ω ^ 2 = 0 := hζ.toInteger_isPrimitiveRoot.one_add_add_sq
   have hdvd : α ∣ ((7 : ℤ) : 𝓞 K) := ⟨2 + 3 * ω, by push_cast [α]; linear_combination 9 * hsum⟩
   have htop : span {α} ≠ ⊤ := by
     intro htop

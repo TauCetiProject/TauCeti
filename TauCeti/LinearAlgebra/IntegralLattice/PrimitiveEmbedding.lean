@@ -97,6 +97,19 @@ theorem isTorsionFree_quotient (hf : IsPrimitiveEmbedding L M f) :
     hf.saturated y y.property k hk.ne_zero <| by
       simpa only [Submodule.mem_comap, Submodule.coe_subtype, SetLike.val_smul] using hy
 
+/-- A primitive embedding has no additional integral points on its rational image. -/
+theorem apply_mem_carrier_iff (hf : IsPrimitiveEmbedding L M f) (x : V) :
+    f x ∈ M.carrier ↔ x ∈ L.carrier := by
+  constructor
+  · intro hx
+    obtain ⟨k, hk, hkx⟩ := Submodule.IsLattice.exists_ne_zero_smul_mem ℚ L.carrier
+      (Submodule.IsFullLattice.span_eq_top (A := ℚ)) x
+    obtain ⟨y, hy, hxy⟩ := hf.saturated (f x) hx k hk
+      ⟨k • x, hkx, by simp⟩
+    exact hf.injective hxy ▸ hy
+  · intro hx
+    exact hf.map_carrier ⟨x, hx, rfl⟩
+
 end IsPrimitiveEmbedding
 
 /-- Postcomposition with a lattice isometry preserves and reflects primitivity. -/

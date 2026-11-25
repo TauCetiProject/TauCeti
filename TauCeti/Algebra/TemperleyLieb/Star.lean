@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Star.SelfAdjoint
 public import TauCeti.Algebra.TemperleyLieb.Basic
+public import TauCeti.Basic.Complex.Basic
 
 /-!
 # The adjoint on the Temperley–Lieb algebra
@@ -31,7 +32,7 @@ gives `δ • e = star δ • e`, and distinct scalar multiples of the two-stran
 distinct (`TauCeti.TemperleyLieb.smul_left_injective_e_two`).
 
 The hypothesis on `δ` is the instance argument `Fact (IsSelfAdjoint δ)`; for a real loop value
-`δ : ℝ` in `ℂ` it is supplied by `Complex.conj_ofReal δ`.
+`r : ℝ` in `ℂ` it is the instance `TauCeti.instFactIsSelfAdjointComplexOfReal`.
 
 ## Main definitions
 

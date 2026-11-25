@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Leibniz
+public import TauCeti.Analysis.Sobolev.W1p.Restriction
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.W1p.ChainRule
 
@@ -47,6 +49,7 @@ localization arguments need.
 * `TauCeti.W1p.contDiffSMul`: the product `ψ u`, as an element of `W^{1,p}(Ω)`.
 * `TauCeti.W1p.value_contDiffSMul_ae` and `TauCeti.W1p.gradient_contDiffSMul_ae`: its two
   components, `ψ u` and `ψ ∇u + u ∇ψ`.
+* `TauCeti.W1p.restrictL_contDiffSMul`: restriction to a smaller open set commutes with the product.
 * `TauCeti.W1p.eLpNorm_le_eLpNorm_value_contDiffSMul`: if `ψ = 1` on `s ⊆ Ω`, the `L^q(s)` norm
   of `u` is at most the `L^q(Ω)` norm of `ψ u`.
 * `TauCeti.W1p.norm_contDiffSMul_le`: the bound `‖ψ u‖ ≤ 2 M ‖u‖`.
@@ -276,6 +279,23 @@ theorem W1p.contDiffSMulL_apply (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M)
     W1p.contDiffSMulL psi hpsi hM hpsiM hgradM u
       = W1p.contDiffSMul psi hpsi hM hpsiM hgradM u :=
   (rfl)
+
+/-! ### Restriction -/
+
+/-- Restriction to a smaller open set commutes with multiplication by a smooth cutoff. -/
+@[simp]
+theorem W1p.restrictL_contDiffSMul {U : Opens E} (hU : U ≤ Omega) (hpsi : ContDiff ℝ ∞ psi)
+    (hM : 0 ≤ M) (hpsiM : ∀ x ∈ Omega, |psi x| ≤ M) (hgradM : ∀ x ∈ Omega, ‖∇ psi x‖ ≤ M)
+    (u : W1p mu Omega p) :
+    W1p.restrictL hU (W1p.contDiffSMul psi hpsi hM hpsiM hgradM u) =
+      W1p.contDiffSMul psi hpsi hM (fun x hx => hpsiM x (hU hx)) (fun x hx => hgradM x (hU hx))
+        (W1p.restrictL hU u) := by
+  refine W1p.restrictL_eq_of_value_ae_eq hU ?_
+  filter_upwards [ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hU)
+      (W1p.value_contDiffSMul_ae hpsi hM hpsiM hgradM u),
+    W1p.value_contDiffSMul_ae hpsi hM _ _ (W1p.restrictL hU u), W1p.value_restrictL_ae hU u]
+    with x h₁ h₂ h₃
+  rw [h₁, h₂, h₃]
 
 /-! ### The `L²` Leibniz estimate -/
 
