@@ -71,6 +71,14 @@ namespace NonUnitalBigWittVector
 
 variable {S T : TruncationSet} {R : Type*} [NonUnitalCommRing R]
 
+private theorem mem_augmentationKernel (y : BigWittVector S (Unitization ℤ R)) :
+    y ∈ NonUnitalSubring.comap
+      (BigWittVector.map (R := Unitization ℤ R) (R' := ℤ)
+        (Unitization.fstHom ℤ R).toRingHom).toNonUnitalRingHom ⊥ ↔
+      BigWittVector.map (R := Unitization ℤ R) (R' := ℤ) ↑(Unitization.fstHom ℤ R) y = 0 := by
+  rw [NonUnitalSubring.mem_comap]
+  exact NonUnitalSubring.mem_bot
+
 /-- The canonical inclusion in the Witt ring of the unitization. -/
 noncomputable def toBigWitt : NonUnitalBigWittVector S R →ₙ+* BigWittVector S (Unitization ℤ R) :=
   NonUnitalSubringClass.subtype _
@@ -86,14 +94,14 @@ theorem mem_range_toBigWitt (y : BigWittVector S (Unitization ℤ R)) :
     y ∈ (toBigWitt (S := S) (R := R)).range ↔
       BigWittVector.map (R := Unitization ℤ R) (R' := ℤ) ↑(Unitization.fstHom ℤ R) y = 0 := by
   rw [toBigWitt, NonUnitalSubring.range_subtype]
-  exact NonUnitalSubring.mem_bot
+  exact mem_augmentationKernel y
 
 /-- The defining kernel equation. -/
 @[simp]
 theorem map_fst_toBigWitt (x : NonUnitalBigWittVector S R) :
     BigWittVector.map (R := Unitization ℤ R) (R' := ℤ) ↑(Unitization.fstHom ℤ R)
       (toBigWitt x) = 0 :=
-  NonUnitalSubring.mem_bot.mp x.property
+  (mem_augmentationKernel _).mp x.property
 
 /-- The Witt coordinates of a nonunital Witt vector. -/
 noncomputable def coeff (x : NonUnitalBigWittVector S R) (n : S) : R :=
@@ -119,10 +127,7 @@ noncomputable def mk (x : S → R) : NonUnitalBigWittVector S R := by
   classical
   refine ⟨BigWittVector.mk' (fun n ↦ if h : n ∈ S then
     (Unitization.inr (x ⟨n, h⟩) : Unitization ℤ R) else 0), ?_⟩
-  rw [NonUnitalSubring.mem_comap, NonUnitalSubring.mem_bot]
-  -- Forgetting the unit preserves the augmentation map's underlying function.
-  change BigWittVector.map (R := Unitization ℤ R) (R' := ℤ)
-    (Unitization.fstHom ℤ R).toRingHom _ = 0
+  rw [mem_augmentationKernel]
   apply BigWittVector.ext
   intro n
   by_cases hn : n ∈ S
@@ -278,15 +283,9 @@ noncomputable def restrict (h : T ≤ S) :
   NonUnitalRingHom.codRestrict
     ((BigWittVector.restrict (R := Unitization ℤ R) h).toNonUnitalRingHom.comp toBigWitt) _
     fun x ↦ by
-      apply NonUnitalSubring.mem_bot.mpr
-      -- Express kernel membership as the unital augmentation equation.
-      change BigWittVector.map (R := Unitization ℤ R) (R' := ℤ)
-        (Unitization.fstHom ℤ R).toRingHom (BigWittVector.restrict h (toBigWitt x)) = 0
+      apply (mem_augmentationKernel
+        (BigWittVector.restrict (R := Unitization ℤ R) h (toBigWitt x))).mpr
       rw [← RingHom.comp_apply, BigWittVector.map_comp_restrict, RingHom.comp_apply]
-      -- Match the algebra-hom coercion used in the public kernel equation.
-      change BigWittVector.restrict h
-        (BigWittVector.map (R := Unitization ℤ R) (R' := ℤ)
-          ↑(Unitization.fstHom ℤ R) (toBigWitt x)) = 0
       rw [map_fst_toBigWitt, map_zero]
 
 /-- The kernel inclusion commutes with restriction of truncation sets. -/
@@ -324,12 +323,9 @@ noncomputable def map (f : R →ₙ+* A) :
     ((BigWittVector.map (R := Unitization ℤ R) (R' := Unitization ℤ A)
       (Unitization.map f.toIntNonUnitalAlgHom).toRingHom).toNonUnitalRingHom.comp toBigWitt) _
     fun x ↦ by
-      apply NonUnitalSubring.mem_bot.mpr
-      -- Express kernel membership as the unital augmentation equation.
-      change BigWittVector.map (R := Unitization ℤ A) (R' := ℤ)
-        (Unitization.fstHom ℤ A).toRingHom
-          (BigWittVector.map (R := Unitization ℤ R) (R' := Unitization ℤ A)
-            (Unitization.map f.toIntNonUnitalAlgHom).toRingHom (toBigWitt x)) = 0
+      apply (mem_augmentationKernel (BigWittVector.map
+        (R := Unitization ℤ R) (R' := Unitization ℤ A)
+        (Unitization.map f.toIntNonUnitalAlgHom).toRingHom (toBigWitt x))).mpr
       apply BigWittVector.ext
       intro n
       have hx := congrArg (fun y : BigWittVector S ℤ ↦ y.coeff n)
