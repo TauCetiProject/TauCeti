@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Basic.Real.Basic
-public import Mathlib.NumberTheory.PrimeCounting
 public import TauCeti.NumberTheory.ArithmeticFunction.Additive
 import TauCeti.Algebra.BigOperators.Finset.SquaredDeviation
 import TauCeti.Algebra.BigOperators.Ring.Finset
@@ -57,8 +56,6 @@ Turán's original 1934 variance bound.
 
 ## Main results
 
-* `ArithmeticFunction.IsAdditive.apply_eq_sum_primesLE_Icc_log`: prime-power indicator expansion of
-  an additive function for `n ≤ N`.
 * `ArithmeticFunction.IsAdditive.sum_Icc_sub_sum_primesLE_Icc_log_sq_le`,
   `ArithmeticFunction.IsAdditive.sum_Icc_sub_sq_le`: **the Turán–Kubilius inequality** with
   constant `30`, in both `Icc 1 (p.log N)` and `if p ^ k ≤ N` cutoff forms, for all `N : ℕ`.
@@ -580,33 +577,6 @@ end SplitBounds
 /-! ### The Turán–Kubilius inequality -/
 
 namespace IsAdditive
-
-/-- Prime-power cutoff expansion of an additive function for `n ≤ N` (including `n = 0`, where
-both sides vanish). -/
-theorem apply_eq_sum_primesLE_Icc_log {R : Type*} [AddCommMonoid R] {f : ArithmeticFunction R}
-    (hf : f.IsAdditive) {N n : ℕ} (hn : n ≤ N) :
-    f n = ∑ p ∈ Nat.primesLE N, ∑ k ∈ Icc 1 (p.log N),
-      if n.factorization p = k then f (p ^ k) else 0 := by
-  rcases eq_or_ne n 0 with rfl | hn0
-  · simp only [map_zero, Nat.factorization_zero, Finsupp.zero_apply]
-    exact (sum_eq_zero fun _ _ ↦ sum_eq_zero fun k hk ↦
-      ite_eq_right (by have := (mem_Icc.mp hk).1; lia)).symm
-  have hn_pos : 0 < n := Nat.pos_of_ne_zero hn0
-  rw [hf.apply_eq_sum_primeFactors_pow n]
-  have hsub : n.primeFactors ⊆ Nat.primesLE N := fun p hp ↦
-    Nat.mem_primesLE.mpr ⟨(Nat.le_of_dvd hn_pos (Nat.dvd_of_mem_primeFactors hp)).trans hn,
-      Nat.prime_of_mem_primeFactors hp⟩
-  refine (sum_congr rfl fun p hp ↦ ?_).trans (sum_subset hsub fun p _ hp ↦ ?_)
-  · have hp' := Nat.prime_of_mem_primeFactors hp
-    have hk1 : 1 ≤ n.factorization p :=
-      Nat.pos_of_ne_zero (Finsupp.mem_support_iff.mp (Nat.support_factorization n ▸ hp))
-    have hkN : n.factorization p ≤ p.log N :=
-      Nat.le_log_of_pow_le hp'.one_lt ((Nat.le_of_dvd hn_pos (Nat.ordProj_dvd n p)).trans hn)
-    exact (sum_ite_eq_of_mem (Icc 1 (p.log N)) (n.factorization p) (fun k ↦ f (p ^ k))
-      (mem_Icc.mpr ⟨hk1, hkN⟩)).symm
-  · have h0 : n.factorization p = 0 :=
-      Finsupp.notMem_support_iff.mp (Nat.support_factorization n ▸ hp)
-    exact sum_eq_zero fun k hk ↦ ite_eq_right (by rw [h0]; have := (mem_Icc.mp hk).1; lia)
 
 /-- **The Turán–Kubilius inequality** (`Icc 1 (p.log N)` form). For any real-valued additive
 arithmetic function `f` and any `N : ℕ`,

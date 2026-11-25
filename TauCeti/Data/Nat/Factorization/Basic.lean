@@ -9,6 +9,7 @@ public import Mathlib.Data.Nat.Factorization.Basic
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 import TauCeti.Data.Nat.Cast.Order.Field
+import TauCeti.Data.Nat.Div
 
 /-!
 # Prime-power factors and exact valuation counts
@@ -199,19 +200,6 @@ theorem card_filter_Icc_factorization_eq_le (N p k : ℕ) :
     · simp [hzero]
     · simp [hzero, hk.symm]
 
-/-- Helper for `Nat.card_filter_Icc_factorization_eq_and_eq` and
-`Nat.sum_Icc_ite_factorization_eq_and_eq`: when `2 ≤ p` and `2 ≤ q`, subtracting the two single-step
-refinement counts from `N / (p ^ k * q ^ l)` does not underflow in `ℕ`. -/
-private lemma div_pow_mul_pow_succ_add_le (N : ℕ) {p q : ℕ} (hp : 2 ≤ p) (hq : 2 ≤ q) (k l : ℕ) :
-    N / (p ^ k * q ^ (l + 1)) + N / (p ^ (k + 1) * q ^ l) ≤ N / (p ^ k * q ^ l) := by
-  have hq2 : N / (p ^ k * q ^ (l + 1)) ≤ N / (p ^ k * q ^ l) / 2 := by
-    rw [pow_succ, ← mul_assoc, ← Nat.div_div_eq_div_mul]
-    exact Nat.div_le_div_left hq zero_lt_two
-  have hp2 : N / (p ^ (k + 1) * q ^ l) ≤ N / (p ^ k * q ^ l) / 2 := by
-    rw [pow_succ, mul_right_comm, ← Nat.div_div_eq_div_mul]
-    exact Nat.div_le_div_left hp zero_lt_two
-  omega
-
 /-- For distinct primes `p ≠ q`, the number of `n ∈ [1, N]` with `n.factorization p = k` and
 `n.factorization q = l` is given by inclusion–exclusion over multiples of `p ^ i * q ^ j`
 (`i ∈ {k, k + 1}`, `j ∈ {l, l + 1}`). -/
@@ -257,7 +245,8 @@ theorem card_filter_Icc_factorization_eq_and_eq (N : ℕ) {p q : ℕ} (hp : p.Pr
   have h2 := Finset.card_union_add_card_inter (s k (l + 1)) (s (k + 1) l)
   rw [← htarget, hs_card] at h1
   rw [hinter, hs_card, hs_card, hs_card] at h2
-  have hle := div_pow_mul_pow_succ_add_le N hp.two_le hq.two_le k l
+  have hle := div_mul_add_div_mul_le_div N (p ^ k * q ^ l) hq.two_le hp.two_le
+  rw [mul_assoc, ← pow_succ, mul_right_comm, ← pow_succ] at hle
   omega
 
 /-- Indicator-sum form of `Nat.card_filter_Icc_factorization_eq` in any `AddCommGroupWithOne`. -/
@@ -289,7 +278,8 @@ theorem sum_Icc_ite_factorization_eq_and_eq {α : Type*} [AddCommGroupWithOne α
       ((N / (p ^ k * q ^ l) : ℕ) : α) - ((N / (p ^ k * q ^ (l + 1)) : ℕ) : α) -
         ((N / (p ^ (k + 1) * q ^ l) : ℕ) : α) +
           ((N / (p ^ (k + 1) * q ^ (l + 1)) : ℕ) : α) := by
-  have hle := div_pow_mul_pow_succ_add_le N hp.two_le hq.two_le k l
+  have hle := div_mul_add_div_mul_le_div N (p ^ k * q ^ l) hq.two_le hp.two_le
+  rw [mul_assoc, ← pow_succ, mul_right_comm, ← pow_succ] at hle
   rw [Finset.sum_boole, card_filter_Icc_factorization_eq_and_eq N hp hq hpq k l, Nat.cast_add,
     Nat.cast_sub (Nat.le_sub_of_add_le' hle), Nat.cast_sub (Nat.le_of_add_right_le hle)]
 

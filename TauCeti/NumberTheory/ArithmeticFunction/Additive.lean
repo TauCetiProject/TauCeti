@@ -5,8 +5,10 @@ Authors: Arend Mellendijk, The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 public import Mathlib.Algebra.Group.TypeTags.Basic
+public import Mathlib.Data.Nat.Log
+public import Mathlib.NumberTheory.ArithmeticFunction.Misc
+public import Mathlib.NumberTheory.PrimeCounting
 import Mathlib.Basic.Real.Basic
 
 /-!
@@ -43,7 +45,8 @@ finite products into sums (`ArithmeticFunction.IsAdditive.map_prod`). Mathlib's
 representation
 `f n = ∑ p ∈ n.primeFactors, f (p ^ n.factorization p)`
 (`ArithmeticFunction.IsAdditive.apply_eq_sum_primeFactors_pow`), which holds at zero as an empty
-sum.
+sum; for `n ≤ N`, `ArithmeticFunction.IsAdditive.apply_eq_sum_primesLE_Icc_log` expands this over
+the fixed finite cutoff `p ∈ Nat.primesLE N` and `k ∈ Finset.Icc 1 (p.log N)`.
 
 `ArithmeticFunction.IsStronglyAdditive` adds the clause `f (p ^ k) = f p` for primes `p` and
 `k ≠ 0`. A strongly additive function is the distinct-prime sum
@@ -207,6 +210,33 @@ theorem IsAdditive.apply_eq_sum_primeFactors_pow (hf : IsAdditive f) (n : ℕ) :
     (fun n => Multiplicative.ofAdd (f n)) (fun x y h => by simp [hf.map_mul_of_coprime h])
     (by simp) (by simp [hf.map_one])
   simpa [Finsupp.prod, Nat.support_factorization] using congrArg Multiplicative.toAdd this
+
+/-- Prime-power cutoff expansion of an additive function for `n ≤ N` (including `n = 0`, where
+both sides vanish). -/
+theorem IsAdditive.apply_eq_sum_primesLE_Icc_log (hf : IsAdditive f) {N n : ℕ} (hn : n ≤ N) :
+    f n = ∑ p ∈ Nat.primesLE N, ∑ k ∈ Finset.Icc 1 (p.log N),
+      if n.factorization p = k then f (p ^ k) else 0 := by
+  rcases eq_or_ne n 0 with rfl | hn0
+  · simp only [map_zero, Nat.factorization_zero, Finsupp.zero_apply]
+    exact (Finset.sum_eq_zero fun _ _ ↦ Finset.sum_eq_zero fun k hk ↦
+      ite_eq_right (by have := (Finset.mem_Icc.mp hk).1; lia)).symm
+  have hn_pos : 0 < n := Nat.pos_of_ne_zero hn0
+  rw [hf.apply_eq_sum_primeFactors_pow n]
+  have hsub : n.primeFactors ⊆ Nat.primesLE N := fun p hp ↦
+    Nat.mem_primesLE.mpr ⟨(Nat.le_of_dvd hn_pos (Nat.dvd_of_mem_primeFactors hp)).trans hn,
+      Nat.prime_of_mem_primeFactors hp⟩
+  refine (Finset.sum_congr rfl fun p hp ↦ ?_).trans (Finset.sum_subset hsub fun p _ hp ↦ ?_)
+  · have hp' := Nat.prime_of_mem_primeFactors hp
+    have hk1 : 1 ≤ n.factorization p :=
+      Nat.pos_of_ne_zero (Finsupp.mem_support_iff.mp (Nat.support_factorization n ▸ hp))
+    have hkN : n.factorization p ≤ p.log N :=
+      Nat.le_log_of_pow_le hp'.one_lt ((Nat.le_of_dvd hn_pos (Nat.ordProj_dvd n p)).trans hn)
+    exact (Finset.sum_ite_eq_of_mem (Finset.Icc 1 (p.log N)) (n.factorization p)
+      (fun k ↦ f (p ^ k)) (Finset.mem_Icc.mpr ⟨hk1, hkN⟩)).symm
+  · have h0 : n.factorization p = 0 :=
+      Finsupp.notMem_support_iff.mp (Nat.support_factorization n ▸ hp)
+    exact Finset.sum_eq_zero fun k hk ↦
+      ite_eq_right (by rw [h0]; have := (Finset.mem_Icc.mp hk).1; lia)
 
 end AddCommMonoid
 
