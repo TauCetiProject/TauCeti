@@ -38,12 +38,13 @@ J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Springer GTM 176 (20
 
 * `TauCeti.chartVolumeDensity_eq_abs_det_mul_of_inner_mfderiv`: the chart volume densities of
   two Riemannian manifolds differ by the absolute Jacobian determinant of a map whose tangent map
-  preserves the inner products. This scalar determinant formula uses a shared model vector space.
+  preserves the inner products, after identifying their model spaces by an equivalence matching
+  the coordinate bases.
 * `TauCeti.chartRiemannianVolume_image_of_inner_mfderiv`: such a map, injective on a subset of a
   chart source, carries its chart volume to the chart volume of its image. The set must be
   measurable and its image must lie in the target chart source; independent models must have
   equal dimension.
-* `TauCeti.riemannianVolume_image_of_inner_mfderiv_of_finrank_eq`: the global image formula for
+* `TauCeti.riemannianVolume_image_of_inner_mfderiv`: the global image formula for
   a map injective on a measurable set, over independent model vector spaces of equal dimension.
 * `Homeomorph.measurePreserving_riemannianVolume`: a homeomorphism whose tangent maps preserve
   the inner products preserves the Riemannian volume.
@@ -70,7 +71,11 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimension
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold I' 1 N]
   [RiemannianBundle (fun y : N ↦ TangentSpace I' y)]
 
-private theorem chartVolumeDensity_eq_abs_det_mul_of_basis
+/-- If the tangent map of `f` at `x` preserves the Riemannian inner products, then the source
+chart density is the target chart density multiplied by the absolute coordinate determinant.
+The equivalence `C` identifies the independent model spaces and matches their coordinate bases,
+up to the reindexing `σ`. -/
+theorem chartVolumeDensity_eq_abs_det_mul_of_inner_mfderiv
     {C : E ≃L[ℝ] F} {σ : Fin (Module.finrank ℝ F) ≃ Fin (Module.finrank ℝ E)}
     (hC : (Module.finBasis ℝ E).map C.toLinearEquiv = (Module.finBasis ℝ F).reindex σ)
     {f : M → N} {α x : M} {β : N}
@@ -156,7 +161,7 @@ private theorem setLIntegral_chartVolumeDensity_image_of_inner_mfderiv
   simp only [D, g, Function.comp_apply, C.apply_symm_apply,
     (extChartAt I α).left_inv (hsα' hx),
     (extChartAt I' β).left_inv (hsβ' (mem_image_of_mem _ hx))]
-  rw [chartVolumeDensity_eq_abs_det_mul_of_basis hb
+  rw [chartVolumeDensity_eq_abs_det_mul_of_inner_mfderiv hb
       (hsα hx) (hsβ hx) (hinner x hx),
     ENNReal.ofReal_mul (abs_nonneg _)]
 
@@ -167,11 +172,12 @@ and the two model vector spaces have equal dimension. No neighborhood isometry i
 The coordinate change-of-variables argument is adapted from
 `TauCeti.chartRiemannianVolume_restrict_overlap`. -/
 theorem chartRiemannianVolume_image_of_inner_mfderiv
-    (hdim : Module.finrank ℝ E = Module.finrank ℝ F) {f : M → N} {α : M} {β : N} {s : Set M}
+    {f : M → N} {α : M} {β : N} {s : Set M}
     (hs : MeasurableSet s) (hinj : InjOn f s)
     (hsα : s ⊆ (chartAt H α).source) (hsβ : MapsTo f s (chartAt H' β).source)
     (hinner : ∀ x ∈ s, ∀ v w : TangentSpace I x,
-      ⟪mfderiv I I' f x v, mfderiv I I' f x w⟫_ℝ = ⟪v, w⟫_ℝ) :
+      ⟪mfderiv I I' f x v, mfderiv I I' f x w⟫_ℝ = ⟪v, w⟫_ℝ)
+    (hdim : Module.finrank ℝ E = Module.finrank ℝ F) :
     chartRiemannianVolume (I := I') β (f '' s) = chartRiemannianVolume (I := I) α s := by
   have hf (x : M) (hx : x ∈ s) : MDifferentiableAt I I' f x :=
     mdifferentiableAt_of_inner_mfderiv fun v ↦ hinner x hx v v
@@ -214,7 +220,7 @@ measurable set `s` and preserves the tangent inner products there, then `Φ '' s
 Riemannian volume of `s`. Tangent inner-product preservation is required only at points of `s`,
 with no neighborhood isometry assumption; for instance,
 a Riemannian covering map preserves the volume of every measurable set on which it is injective. -/
-theorem riemannianVolume_image_of_inner_mfderiv_of_finrank_eq
+theorem riemannianVolume_image_of_inner_mfderiv
     [LindelofSpace M] [LindelofSpace N]
     {Φ : M → N} {s : Set M} (hs : MeasurableSet s) (hinj : InjOn Φ s)
     (hinner : ∀ x ∈ s, ∀ v w : TangentSpace I x,
@@ -243,8 +249,8 @@ theorem riemannianVolume_image_of_inner_mfderiv_of_finrank_eq
     interior_subset (s := Φ ⁻¹' _) (huV hy).2
   rw [riemannianVolume_apply_of_subset (α := Φ x) hmaps.image_subset,
     riemannianVolume_apply_of_subset (α := x) (huV.trans inter_subset_left)]
-  exact chartRiemannianVolume_image_of_inner_mfderiv hdim hu (hinj.mono hus)
-    (huV.trans inter_subset_left) hmaps fun y hy ↦ hinner y (hus hy)
+  exact chartRiemannianVolume_image_of_inner_mfderiv hu (hinj.mono hus)
+    (huV.trans inter_subset_left) hmaps (fun y hy ↦ hinner y (hus hy)) hdim
 
 /-- **Isometry invariance of the Riemannian volume.** A homeomorphism whose tangent maps preserve
 the Riemannian inner products carries the Riemannian volume of `M` to the Riemannian volume of
@@ -256,13 +262,11 @@ theorem _root_.Homeomorph.measurePreserving_riemannianVolume [LindelofSpace M] [
     MeasurePreserving Φ (riemannianVolume I M) (riemannianVolume I' N) := by
   refine ⟨Φ.measurable, Measure.ext fun s hs ↦ ?_⟩
   rcases isEmpty_or_nonempty M with hM | hM
-  · let : IsEmpty M := hM
-    have hs0 : s = ∅ := eq_empty_iff_forall_notMem.2 fun y _ ↦ isEmptyElim (Φ.symm y)
+  · have hs0 : s = ∅ := eq_empty_iff_forall_notMem.2 fun y _ ↦ isEmptyElim (Φ.symm y)
     simp only [hs0, measure_empty]
-  let : Nonempty M := hM
   have hdim := Φ.finrank_eq_of_chartedSpace I I'
   rw [Measure.map_apply Φ.measurable hs,
-    ← riemannianVolume_image_of_inner_mfderiv_of_finrank_eq
+    ← riemannianVolume_image_of_inner_mfderiv
       (hs.preimage Φ.measurable) Φ.injective.injOn (fun x _ ↦ hinner x) hdim, Φ.image_preimage]
 
 end Measure
@@ -288,39 +292,5 @@ theorem measurePreserving_riemannianVolume [LindelofSpace M] [LindelofSpace N]
 end RiemannianIsometry
 
 end CrossModel
-
-section SameModel
-
-variable {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E H'}
-  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold I' 1 N]
-  [RiemannianBundle (fun y : N ↦ TangentSpace I' y)]
-
-/-- If the tangent map of `Φ` at `x` preserves the Riemannian inner products, then the volume
-density of `M` in the chart at `α` is the volume density of `N` in the chart at `β` multiplied by
-the absolute Jacobian determinant of `Φ` read in these two charts. -/
-theorem chartVolumeDensity_eq_abs_det_mul_of_inner_mfderiv {Φ : M → N} {α x : M} {β : N}
-    (hxα : x ∈ (chartAt H α).source) (hxβ : Φ x ∈ (chartAt H' β).source)
-    (hinner : ∀ v w : TangentSpace I x,
-      ⟪mfderiv I I' Φ x v, mfderiv I I' Φ x w⟫_ℝ = ⟪v, w⟫_ℝ) :
-    chartVolumeDensity (I := I) α x =
-      |(mfderiv I' 𝓘(ℝ, E) (extChartAt I' β) (Φ x) ∘L mfderiv I I' Φ x ∘L
-        mfderivWithin 𝓘(ℝ, E) I (extChartAt I α).symm (range I) (extChartAt I α x) :
-          E →L[ℝ] E).det| *
-        chartVolumeDensity (I := I') β (Φ x) := by
-  have hC : (ContinuousLinearEquiv.refl ℝ E).symm.toContinuousLinearMap =
-      ContinuousLinearMap.id ℝ E := by
-    simp only [ContinuousLinearEquiv.refl_symm, ContinuousLinearEquiv.coe_refl]
-  have hb : (Module.finBasis ℝ E).map (ContinuousLinearEquiv.refl ℝ E).toLinearEquiv =
-      (Module.finBasis ℝ E).reindex (Equiv.refl _) := by
-    rw [Module.Basis.reindex_refl]
-    ext i
-    simp only [Module.Basis.map_apply, ContinuousLinearEquiv.coe_toLinearEquiv,
-      ContinuousLinearEquiv.refl_apply]
-  have h := chartVolumeDensity_eq_abs_det_mul_of_basis (I := I) (I' := I') hb hxα hxβ hinner
-  rw [hC, ContinuousLinearMap.id_comp] at h
-  -- Read the self-model tangent spaces as model vector spaces in the coordinate maps.
-  convert h using 2
-
-end SameModel
 
 end TauCeti
