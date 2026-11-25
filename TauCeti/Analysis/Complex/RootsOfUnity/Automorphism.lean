@@ -52,6 +52,5 @@ theorem Units.coe_cyclotomicConjugate {N : ℕ} [NeZero N] (d : (ZMod N)ˣ)
   apply RingHom.eqOn_field_closure (s := {z : ℂ | z ^ N = 1}) _ c.property
   intro z hz
   obtain ⟨i, -, rfl⟩ := ZMod.isPrimitiveRoot_stdAddChar_one.eq_pow_of_pow_eq_one hz
-  rw [map_pow, map_pow, hσ]
-  exact congrArg (fun w : ℂ ↦ w ^ i)
-    (Classical.choose_spec d.exists_ringEquiv_apply_stdAddChar_one)
+  rw [map_pow, map_pow, hσ, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+    Classical.choose_spec d.exists_ringEquiv_apply_stdAddChar_one]

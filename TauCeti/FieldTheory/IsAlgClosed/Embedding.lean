@@ -187,12 +187,10 @@ theorem IsConjRoot.exists_algEquiv_of_isAlgClosed {x y : Ω} (h : IsConjRoot k y
     have h' : IsConjRoot k y' x' := by
       rw [isConjRoot_def, ← minpoly.algHom_eq A.val (algebraMap A Ω).injective y',
         ← minpoly.algHom_eq A.val (algebraMap A Ω).injective x']
-      exact h
+      simpa [isConjRoot_def, x', y'] using h
     obtain ⟨σ, hσ⟩ := h'.exists_algEquiv
     obtain ⟨τ, hτ⟩ := σ.exists_algEquiv_apply_algebraMap (Ω := Ω)
     refine ⟨τ, ?_⟩
-    have ht := hτ x'
-    rw [hσ] at ht
-    exact ht
+    simpa [hσ, x', y'] using hτ x'
   · have hy : Transcendental k y := fun hy ↦ hx (h.isIntegral hy.isIntegral).isAlgebraic
     exact Transcendental.exists_algEquiv_apply_eq hx hy rfl

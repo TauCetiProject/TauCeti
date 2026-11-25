@@ -130,8 +130,9 @@ private def diagCoeff (d : (ZMod N)ˣ) : ℂ →+* ℂ :=
   (Classical.choose (Units.exists_ringEquiv_apply_stdAddChar_one d)).toRingHom
 
 private theorem diagCoeff_apply_stdAddChar_one (d : (ZMod N)ˣ) :
-    diagCoeff d (ZMod.stdAddChar (1 : ZMod N)) = ZMod.stdAddChar (d : ZMod N) :=
-  Classical.choose_spec (Units.exists_ringEquiv_apply_stdAddChar_one d)
+    diagCoeff d (ZMod.stdAddChar (1 : ZMod N)) = ZMod.stdAddChar (d : ZMod N) := by
+  rw [diagCoeff, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom]
+  exact Classical.choose_spec (Units.exists_ringEquiv_apply_stdAddChar_one d)
 
 /-- The ring endomorphism of `F_N` applying `diagCoeff d` to the Laurent coefficients. -/
 private def diagHom (d : (ZMod N)ˣ) : modularFunctionField N →+* modularFunctionField N :=
