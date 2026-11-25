@@ -46,9 +46,7 @@ private theorem isIso_pullback_ihomComparison_app_of_restrictFunctor
       (σ.app M ⊗ₘ σ.app ((ihom M).obj N)) ≫
         μ (Scheme.Modules.restrictFunctor j) M ((ihom M).obj N) := by
     apply (cancel_epi (δ P M ((ihom M).obj N))).mp
-    have hδμ : δ P M ((ihom M).obj N) ≫ μ P M ((ihom M).obj N) = 𝟙 _ :=
-      Functor.Monoidal.δ_μ P M ((ihom M).obj N)
-    rw [reassoc_of% hδμ]
+    rw [Functor.Monoidal.δ_μ_assoc]
     rw [← Category.assoc,
       ← Scheme.Modules.restrictFunctorIsoPullback_inv_app_tensor,
       Category.assoc, IsIso.inv_hom_id, Category.comp_id]

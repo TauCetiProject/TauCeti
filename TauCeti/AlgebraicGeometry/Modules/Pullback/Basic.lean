@@ -520,26 +520,32 @@ lemma pushforward_ε :
       SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom :=
   SheafOfModules.pushforward_ε f.toRingCatSheafHom
 
+/-- Pullback of module sheaves along any scheme morphism is strong symmetric monoidal,
+with comparisons inverse to the canonical oplax comparisons. -/
+instance pullbackBraided : (pullback f).Braided :=
+  SheafOfModules.pullbackBraided f.toRingCatSheafHom
+
 /-- Pullback of modules along a morphism of schemes is oplax monoidal, as the left adjoint of the
 lax monoidal pushforward: it carries comparison maps `f^* (M ⊗ N) ⟶ f^* M ⊗ f^* N`, and its unit
 map is `pullbackObjUnitIso f` (`pullback_η`). The comparison maps are the mates of the tensor
-map of pushforward (`pullback_δ`). -/
+map of pushforward (`pullback_δ`). This projection is reducible so that the monoidal functor
+laws rewrite directly with these comparisons. -/
+@[reducible]
 instance pullbackOplaxMonoidal : (pullback f).OplaxMonoidal :=
-  (pullbackPushforwardAdjunction f).leftAdjointOplaxMonoidal
+  (pullbackBraided f).toMonoidal.toOplaxMonoidal
 
 /-- The pullback--pushforward adjunction of modules along a morphism of schemes is compatible with
 the oplax monoidal structure of pullback and the lax monoidal structure of pushforward. -/
 instance isMonoidal_pullbackPushforwardAdjunction :
     (pullbackPushforwardAdjunction f).IsMonoidal :=
-  inferInstanceAs (letI := (pullbackPushforwardAdjunction f).leftAdjointOplaxMonoidal
-    (pullbackPushforwardAdjunction f).IsMonoidal)
+  SheafOfModules.isMonoidal_pullbackPushforwardAdjunction f.toRingCatSheafHom
 
 /-- The unit map `f^* 𝒪_Y ⟶ 𝒪_X` of the pullback of modules is the isomorphism
 `pullbackObjUnitIso f`. -/
 @[simp]
 lemma pullback_η : Functor.OplaxMonoidal.η (pullback f) = (pullbackObjUnitIso f).hom := by
-  rw [pullbackOplaxMonoidal, Adjunction.leftAdjointOplaxMonoidal_η, pushforward_ε]
-  exact (Equiv.symm_apply_eq _).mpr
+  refine (SheafOfModules.pullback_η f.toRingCatSheafHom).trans ?_
+  exact ((pullbackPushforwardAdjunction f).homEquiv _ _).symm_apply_eq.mpr
     (pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitIso_hom f).symm
 
 /-- The tensor map `f^* (M ⊗ N) ⟶ f^* M ⊗ f^* N` of the pullback of modules is the mate, under the
@@ -552,7 +558,7 @@ lemma pullback_δ (M N : Y.Modules) :
         (((pullbackPushforwardAdjunction f).unit.app M ⊗ₘ
             (pullbackPushforwardAdjunction f).unit.app N) ≫
           Functor.LaxMonoidal.μ (pushforward f) _ _) :=
-  Adjunction.leftAdjointOplaxMonoidal_δ _ _ _
+  SheafOfModules.pullback_δ f.toRingCatSheafHom M N
 
 /-- Pullback of arbitrary module sheaves along a scheme morphism preserves tensor products. -/
 instance isIso_pullback_δ (M N : Y.Modules) :
@@ -566,16 +572,11 @@ lemma pullback_map_braiding_hom_comp_δ (M N : Y.Modules) :
     (pullback f).map (β_ M N).hom ≫ Functor.OplaxMonoidal.δ (pullback f) N M =
       Functor.OplaxMonoidal.δ (pullback f) M N ≫
         (β_ ((pullback f).obj M) ((pullback f).obj N)).hom :=
-  (pullbackPushforwardAdjunction f).map_braiding_hom_comp_δ M N
+  SheafOfModules.pullback_map_braiding_hom_comp_δ f.toRingCatSheafHom M N
 
 instance : IsIso (Functor.OplaxMonoidal.η (pullback f)) := by
   rw [pullback_η]
   infer_instance
-
-/-- Pullback of module sheaves along any scheme morphism is strong symmetric monoidal,
-with comparisons inverse to the canonical oplax comparisons. -/
-instance pullbackBraided : (pullback f).Braided :=
-  SheafOfModules.pullbackBraided f.toRingCatSheafHom
 
 /-- The unit comparison `𝒪_X ⟶ f^* 𝒪_Y` of strong monoidal pullback is the inverse of
 `pullbackObjUnitIso f`. -/

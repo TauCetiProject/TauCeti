@@ -42,7 +42,6 @@ coherence of the resulting internal-Hom base-change isomorphisms.
 public section
 
 open CategoryTheory MonoidalCategory MonoidalClosed
-open Functor.LaxMonoidal (μ)
 open Functor.OplaxMonoidal
 
 namespace TauCeti.AlgebraicGeometry
@@ -72,14 +71,7 @@ theorem pullback_ihomComparison_id (M N : X.Modules) :
   rw [Functor.ihomComparison_ev]
   rw [← cancel_epi (δ (Scheme.Modules.pullback (𝟙 X)) M ((ihom M).obj N))]
   simp only [Category.assoc]
-  -- The pullback cancellations use the tensorator from Scheme.Modules.pullbackOplaxMonoidal.
-  -- Mathlib's δ_μ uses the oplax projection of Scheme.Modules.pullbackBraided, built from the
-  -- same adjunction comparison via Functor.Monoidal.ofOplaxMonoidal. The typed equality lets
-  -- elaboration identify the definitionally equal tensorators before rewriting.
-  have hδμ : δ (Scheme.Modules.pullback (𝟙 X)) M ((ihom M).obj N) ≫
-      μ (Scheme.Modules.pullback (𝟙 X)) M ((ihom M).obj N) = 𝟙 _ :=
-    Functor.Monoidal.δ_μ (Scheme.Modules.pullback (𝟙 X)) M ((ihom M).obj N)
-  rw [reassoc_of% hδμ]
+  rw [Functor.Monoidal.δ_μ_assoc]
   rw [← dsimp% tensorHom_def'_assoc (C := X.Modules)
     ((Scheme.Modules.pullbackId X).hom.app M)
     ((Scheme.Modules.pullbackId X).hom.app ((ihom M).obj N))]
@@ -118,26 +110,15 @@ theorem pullback_ihomComparison_comp (f : X ⟶ Y) (g : Y ⟶ Z)
   rw [← cancel_epi (δ (Scheme.Modules.pullback f) ((Scheme.Modules.pullback g).obj M)
     ((Scheme.Modules.pullback g).obj ((ihom M).obj N)))]
   rw [δ_natural_right_assoc]
-  let M' := (Scheme.Modules.pullback g).obj M
-  let H' := (ihom M').obj ((Scheme.Modules.pullback g).obj N)
-  have hδμf : δ (Scheme.Modules.pullback f) M' H' ≫
-      μ (Scheme.Modules.pullback f) M' H' = 𝟙 _ :=
-    Functor.Monoidal.δ_μ (Scheme.Modules.pullback f) M' H'
-  rw [reassoc_of% hδμf]
+  rw [Functor.Monoidal.δ_μ_assoc]
   rw [← Functor.map_comp_assoc, Functor.ihomComparison_ev]
   rw [← tensorHom_def'_assoc]
   rw [← cancel_epi ((Scheme.Modules.pullback f).map
     (δ (Scheme.Modules.pullback g) M ((ihom M).obj N)))]
   rw [← Functor.map_comp_assoc]
-  have hδμg : δ (Scheme.Modules.pullback g) M ((ihom M).obj N) ≫
-      μ (Scheme.Modules.pullback g) M ((ihom M).obj N) = 𝟙 _ :=
-    Functor.Monoidal.δ_μ (Scheme.Modules.pullback g) M ((ihom M).obj N)
-  rw [reassoc_of% hδμg]
+  rw [Functor.Monoidal.δ_μ_assoc]
   rw [← pullbackComp_hom_app_comp_δ_assoc]
-  have hδμfg : δ (Scheme.Modules.pullback (f ≫ g)) M ((ihom M).obj N) ≫
-      μ (Scheme.Modules.pullback (f ≫ g)) M ((ihom M).obj N) = 𝟙 _ :=
-    Functor.Monoidal.δ_μ (Scheme.Modules.pullback (f ≫ g)) M ((ihom M).obj N)
-  rw [reassoc_of% hδμfg]
+  rw [Functor.Monoidal.δ_μ_assoc]
   exact (Scheme.Modules.pullbackComp f g).hom.naturality ((ihom.ev M).app N)
 
 /-- If the internal-Hom comparison along `f` is invertible on the pullbacks of `M` and `N`,
@@ -276,10 +257,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.pullback_map_evaluation_comp_pullbac
   rw [left_unitality (Scheme.Modules.pullback f), Scheme.Modules.pullback_η]
   simp only [comp_whiskerRight, Category.assoc, hom_inv_whiskerRight_assoc, δ_natural_left_assoc,
     Functor.map_comp]
-  have hδμ : δ (Scheme.Modules.pullback f) M ((ihom M).obj (𝟙_ Y.Modules)) ≫
-      μ (Scheme.Modules.pullback f) M ((ihom M).obj (𝟙_ Y.Modules)) = 𝟙 _ :=
-    Functor.Monoidal.δ_μ (Scheme.Modules.pullback f) M ((ihom M).obj (𝟙_ Y.Modules))
-  rw [reassoc_of% hδμ]
+  rw [Functor.Monoidal.δ_μ_assoc]
 
 end Unit
 

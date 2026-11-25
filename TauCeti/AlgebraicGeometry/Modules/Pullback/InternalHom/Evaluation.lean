@@ -19,7 +19,6 @@ the pulled-back map.
 public section
 
 open CategoryTheory MonoidalCategory MonoidalClosed Functor.OplaxMonoidal
-open Functor.LaxMonoidal (μ)
 
 namespace AlgebraicGeometry.Scheme.Hom
 
@@ -43,9 +42,6 @@ theorem pullback_map_uncurry' {X Y : Scheme.{u}} (f : X ⟶ Y)
     Category.assoc]
   rw [Functor.ihomComparison_ev, ← Category.assoc (ρ_ _).inv, hu, Category.assoc,
     δ_natural_right_assoc]
-  have hδμ : δ (pullback f) M ((ihom M).obj N) ≫
-      μ (pullback f) M ((ihom M).obj N) = 𝟙 _ :=
-    Functor.Monoidal.δ_μ (pullback f) M ((ihom M).obj N)
-  rw [reassoc_of% hδμ]
+  rw [Functor.Monoidal.δ_μ_assoc]
 
 end AlgebraicGeometry.Scheme.Hom
