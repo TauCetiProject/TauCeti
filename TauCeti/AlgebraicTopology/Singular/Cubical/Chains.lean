@@ -214,9 +214,8 @@ theorem boundary_single_one {n : ℕ} (c : SingularCube X (n + 1)) :
 
 /-- The scalar boundary commutes with push-forward along a continuous map. -/
 theorem map_boundary (f : C(X, Y)) (n : ℕ) :
-    map R f n ∘ₗ boundary X R R n = boundary Y R R n ∘ₗ map R f (n + 1) := by
-  refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
-  simp [face_comp]
+    map R f n ∘ₗ boundary X R R n = boundary Y R R n ∘ₗ map R f (n + 1) :=
+  lmapDomain_comp_boundary R R f n
 
 end RingBoundary
 
