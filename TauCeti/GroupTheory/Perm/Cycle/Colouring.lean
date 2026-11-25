@@ -53,9 +53,9 @@ See `Equiv.Perm.range_invariantColouringEquiv` for equality of the colour sets. 
   rw [← π.range_invariantColouringEquiv, ← Set.image_univ, ← Finset.coe_univ,
     ← Finset.coe_image, Nat.card_coe_set_eq, Set.ncard_coe_finset]
 
-/-- **The number of colourings fixed by a permutation**: a colouring with values in `σ` is fixed by
-`π` exactly when it is constant on the cycles of `π`, so there are `Nat.card σ ^ c` of them, where
-`c = Multiset.card π.fullCycleType` is the number of cycles of `π`, fixed points included. -/
+/-- **The number of colourings fixed by a permutation**: there are `Nat.card σ ^ c` colourings with
+values in `σ` fixed by `π`, where `c = Multiset.card π.fullCycleType` is the number of cycles of
+`π`, fixed points included. -/
 theorem card_invariantColouring [Fintype α] [DecidableEq α] (π : Perm α) :
     Nat.card {f : α → σ // f ∘ π = f} = Nat.card σ ^ Multiset.card π.fullCycleType := by
   rw [← Nat.card_congr (invariantColouringEquiv π), Nat.card_fun, card_fullCycleType]
