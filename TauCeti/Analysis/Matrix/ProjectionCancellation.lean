@@ -32,7 +32,7 @@ namespace TauCeti
 cancellation: for matrix projections `p`, `q`, `r` over `𝕜`, `p ⊕ r ∼ q ⊕ r` implies `p ∼ q`. -/
 theorem hasProjectionCancellation_rclike (𝕜 : Type*) [RCLike 𝕜] :
     HasProjectionCancellation 𝕜 := by
-  intro k l j p q r hpqr
+  refine hasProjectionCancellation_iff.2 fun k l j p q r hpqr ↦ ?_
   have hp := (isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff.1 hpqr.isStarProjection_left).1
   have hq := (isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff.1 hpqr.isStarProjection_right).1
   have e := hpqr.rank_eq
