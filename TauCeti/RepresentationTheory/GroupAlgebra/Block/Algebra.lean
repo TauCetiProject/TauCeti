@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.MonoidAlgebra.Eigenvector
+public import TauCeti.LinearAlgebra.Matrix.Unique
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Basic
 public import TauCeti.RingTheory.Idempotents.Corner.Basic
 
@@ -40,6 +41,9 @@ block algebra `b K[G]` is the line `K b`, so it is isomorphic to `K = M₁(K)`.
 * `TauCeti.val_algEquivPiBlockAlgebra_apply`: the component of `x` in the block `B` is `e_B x`.
 * `TauCeti.algebraMap_surjective_blockAlgebra_of_mul_of_eq_smul`: the block algebra of a block
   idempotent on which `G` acts by scalars is spanned by its identity.
+* `TauCeti.blockAlgebraAlgEquivMatrixOfMulOfEqSmul_apply`,
+  `TauCeti.val_blockAlgebraAlgEquivMatrixOfMulOfEqSmul_symm_apply`: the isomorphism with `M₁(K)`
+  sends `a b` to the matrix with entry `a`.
 
 ## References
 
@@ -127,10 +131,29 @@ theorem algebraMap_surjective_blockAlgebra_of_mul_of_eq_smul {c : G → K}
 noncomputable def blockAlgebraAlgEquivMatrixOfMulOfEqSmul {c : G → K}
     (hc : ∀ g, (b : MonoidAlgebra K G) * MonoidAlgebra.of K G g = c g • (b : MonoidAlgebra K G)) :
     hb.BlockAlgebra ≃ₐ[K] Matrix (Fin 1) (Fin 1) K :=
-  (AlgEquiv.ofBijective (Algebra.ofId K _) ⟨(algebraMap K _).injective,
-    algebraMap_surjective_blockAlgebra_of_mul_of_eq_smul hb hc⟩).symm.trans <|
-    AlgEquiv.ofBijective (Algebra.ofId K _) ⟨(algebraMap K _).injective, fun M ↦
-      ⟨M 0 0, by ext i j; fin_cases i; fin_cases j; simp [Algebra.algebraMap_eq_smul_one]⟩⟩
+  -- The `show` keeps the bijectivity proof at type `Function.Bijective` rather than its unfolding
+  -- `Injective ∧ Surjective`, so that `AlgEquiv.ofBijective` lemmas rewrite this term.
+  (AlgEquiv.ofBijective (Algebra.ofId K _) (show Function.Bijective _ from
+    ⟨(algebraMap K _).injective, algebraMap_surjective_blockAlgebra_of_mul_of_eq_smul hb hc⟩)).symm
+    |>.trans Matrix.uniqueAlgEquivOfFintype.symm
+
+/-- The isomorphism `b K[G] ≃ₐ[K] M₁(K)` sends `a b` to the matrix with entry `a`. -/
+theorem blockAlgebraAlgEquivMatrixOfMulOfEqSmul_apply {c : G → K}
+    (hc : ∀ g, (b : MonoidAlgebra K G) * MonoidAlgebra.of K G g = c g • (b : MonoidAlgebra K G))
+    {x : hb.BlockAlgebra} {a : K} (hx : x.val = a • (b : MonoidAlgebra K G)) (i j : Fin 1) :
+    blockAlgebraAlgEquivMatrixOfMulOfEqSmul hb hc x i j = a := by
+  obtain rfl : x = algebraMap K _ a := Subtype.ext hx
+  simp [Matrix.algebraMap_matrix_apply, Subsingleton.elim i j]
+
+/-- The inverse of the isomorphism `b K[G] ≃ₐ[K] M₁(K)` sends a matrix with entry `a` to `a b`. -/
+@[simp]
+theorem val_blockAlgebraAlgEquivMatrixOfMulOfEqSmul_symm_apply {c : G → K}
+    (hc : ∀ g, (b : MonoidAlgebra K G) * MonoidAlgebra.of K G g = c g • (b : MonoidAlgebra K G))
+    (M : Matrix (Fin 1) (Fin 1) K) :
+    ((blockAlgebraAlgEquivMatrixOfMulOfEqSmul hb hc).symm M).val =
+      M 0 0 • (b : MonoidAlgebra K G) := by
+  simp [blockAlgebraAlgEquivMatrixOfMulOfEqSmul, AlgEquiv.symm_trans_apply,
+    IsIdempotentElem.Corner.val_algebraMap]
 
 end Scalar
 

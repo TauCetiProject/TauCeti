@@ -89,9 +89,8 @@ theorem two_le_finrank_blockAlgebra_r_add_r_sq :
     rw [LinearIndependent.pair_iff]
     intro s t hst
     have h := congrArg Subtype.val hst
-    rw [IsIdempotentElem.Corner.val_add, IsIdempotentElem.Corner.val_smul,
-      IsIdempotentElem.Corner.val_smul, IsIdempotentElem.Corner.val_one,
-      IsIdempotentElem.Corner.val_zero, hc, coe_toCenter] at h
+    simp only [IsIdempotentElem.Corner.val_add, IsIdempotentElem.Corner.val_smul,
+      IsIdempotentElem.Corner.val_one, IsIdempotentElem.Corner.val_zero, hc, coe_toCenter] at h
     have h1 := congrArg (fun x ↦ x.coeff 1) h
     have hr := congrArg (fun x ↦ x.coeff r) h
     exact ⟨by simpa +decide [one_def] using hr, by simpa +decide [one_def] using h1⟩
