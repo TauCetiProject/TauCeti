@@ -68,6 +68,8 @@ kernel, `S[ν]` is holomorphic on `ℂ₊`, and `P[ν] = Re S[ν]` is therefore 
   `h ∈ L¹(Π)` for the Poisson measure `Π` exactly when `P[|h| dx](i) < ∞`.
 * `TauCeti.differentiableOn_upperHalfPlaneSchwarzIntegral`: `S[ν]` is holomorphic on `ℂ₊`.
 * `TauCeti.re_upperHalfPlaneSchwarzIntegral`: `Re S[ν] = P[ν]`.
+* `TauCeti.I_mul_upperHalfPlaneSchwarzIntegral`: `i S[ν]` is the integral of the subtracted
+  resolvent kernel against `ν / π`.
 * `TauCeti.harmonicOnNhd_upperHalfPlanePoissonIntegral`: `P[ν]` is harmonic on `ℂ₊`.
 
 ## References
@@ -275,6 +277,25 @@ theorem aestronglyMeasurable_of_integrable_upperHalfPlanePoissonMeasure {E : Typ
     withDensity_absolutelyContinuous' (by fun_prop)
       (.of_forall fun _ ↦ (ENNReal.ofReal_pos.2 (by positivity)).ne'))
 
+/-- On `[-R, R]` the Lebesgue integral of `f` is at most `1 + R ^ 2` times its integral against
+the Poisson measure `dx / (1 + x ^ 2)`. -/
+theorem setLIntegral_Icc_le_mul_lintegral_upperHalfPlanePoissonMeasure (f : ℝ → ℝ≥0∞) (R : ℝ) :
+    ∫⁻ s in Icc (-R) R, f s ≤
+      ENNReal.ofReal (1 + R ^ 2) * ∫⁻ s, f s ∂upperHalfPlanePoissonMeasure := by
+  rw [upperHalfPlanePoissonMeasure_eq_withDensity,
+    lintegral_withDensity_eq_lintegral_mul_non_measurable _ (by fun_prop)
+      (.of_forall fun _ ↦ ENNReal.ofReal_lt_top),
+    ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+  refine (setLIntegral_le_lintegral _ _).trans' (setLIntegral_mono' measurableSet_Icc
+    fun s hs ↦ ?_)
+  rw [Pi.mul_apply, ← mul_assoc, ← ENNReal.ofReal_mul (by positivity)]
+  have hs2 : s ^ 2 ≤ R ^ 2 := sq_le_sq' hs.1 hs.2
+  have h1 : 1 ≤ (1 + R ^ 2) * (1 + s ^ 2)⁻¹ := by
+    rw [← div_eq_mul_inv, one_le_div (by positivity)]
+    linarith
+  calc f s = ENNReal.ofReal 1 * f s := by simp
+    _ ≤ _ := by gcongr
+
 /-- A measure `ν` on `ℝ` is **Poisson-finite** when `∫ dν / (1 + x ^ 2) < ∞`, that is when
 `x ↦ 1 / (1 + x ^ 2)` is `ν`-integrable. -/
 def IsPoissonFinite (ν : Measure ℝ) : Prop :=
@@ -383,6 +404,12 @@ theorem upperHalfPlanePoissonIntegral_volume {z : ℂ} (hz : 0 < z.im) :
     upperHalfPlanePoissonIntegral volume z = 1 :=
   integral_upperHalfPlanePoissonKernel hz
 
+/-- The Poisson integral of the Dirac mass at `a` is the Poisson kernel `P(z, a)`. -/
+@[simp]
+theorem upperHalfPlanePoissonIntegral_dirac (a : ℝ) (z : ℂ) :
+    upperHalfPlanePoissonIntegral (Measure.dirac a) z = upperHalfPlanePoissonKernel z a := by
+  rw [upperHalfPlanePoissonIntegral_def, integral_dirac]
+
 /-- The **extended Poisson integral** `P[ν](z) = ∫⁻ P(z, x) dν(x) ∈ [0, ∞]` of a measure `ν` on
 `ℝ`. On the upper half-plane it is finite exactly for Poisson-finite `ν`
 (`TauCeti.upperHalfPlanePoissonLIntegral_eq_top_iff`), where it agrees with the real-valued
@@ -475,6 +502,17 @@ theorem upperHalfPlaneSchwarzIntegral_def (ν : Measure ℝ) (z : ℂ) :
     upperHalfPlaneSchwarzIntegral ν z =
       ((π : ℂ) * I)⁻¹ * ∫ x, subtractedResolventKernel z x ∂ν := by
   rw [upperHalfPlaneSchwarzIntegral]
+
+/-- `i S[ν](z) = (1 / π) ∫ (1 / (x - z) - x / (1 + x ^ 2)) dν(x)` is the integral of the
+subtracted resolvent kernel against the measure `ν / π`, the form of a Herglotz representation. -/
+theorem I_mul_upperHalfPlaneSchwarzIntegral (ν : Measure ℝ) (z : ℂ) :
+    I * upperHalfPlaneSchwarzIntegral ν z =
+      ∫ x, subtractedResolventKernel z x ∂(ENNReal.ofReal π⁻¹ • ν) := by
+  rw [upperHalfPlaneSchwarzIntegral_def, integral_smul_measure,
+    ENNReal.toReal_ofReal (by positivity), Complex.real_smul, ← mul_assoc]
+  congr 1
+  push_cast
+  field_simp
 
 /-- Off the real axis, the Schwarz integral of a measure that is not Poisson-finite takes the junk
 value `0`, since the subtracted resolvent kernel is not integrable there. -/
