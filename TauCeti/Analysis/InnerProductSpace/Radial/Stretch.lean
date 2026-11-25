@@ -15,7 +15,7 @@ import TauCeti.Analysis.InnerProductSpace.Radial.Rescale
 # The derivative of the radial stretch
 
 For `a > 0` the **radial stretch** `x ↦ ‖x‖ ^ (a - 1) • x` of a real inner product space `E`
-multiplies distances from the origin by the power `r ↦ r ^ a` and fixes every ray. Away from the
+sends a point at distance `r` from the origin to distance `r ^ a` along the same ray. Away from the
 origin its derivative at `x` is
 
     D v = ‖x‖ ^ (a - 1) • (v + ((a - 1) ⟪x, v⟫ / ‖x‖²) • x),
@@ -33,11 +33,12 @@ which stretches the radial direction `x` by `a ‖x‖ ^ (a - 1)` and every dire
 * the determinant `det D = a · (‖x‖ ^ (a - 1)) ^ n` with `n = dim E`
   (`TauCeti.det_fderiv_norm_rpow_smul_self`), from the Jacobian of a radial rescaling.
 
-Hence the pointwise outer and inner distortions of the radial stretch are `a ^ (n - 1)` and `a`
-for `a ≥ 1`, and `1 / a` and `a ^ (1 - n)` for `0 < a ≤ 1`
-(`TauCeti.norm_fderiv_norm_rpow_smul_self_pow_eq_of_one_le`, and the three companion lemmas). These
-identities give the pointwise distortion of the radial stretch, a standard example of a
-quasiregular map.
+Hence, when `dim E ≥ 2`, the pointwise outer and inner distortions of the radial stretch are
+`a ^ (n - 1)` and `a` for `a ≥ 1`, and `1 / a` and `a ^ (1 - n)` for `0 < a ≤ 1`
+(`TauCeti.norm_fderiv_norm_rpow_smul_self_pow_eq_of_one_le`, and the three companion lemmas); the
+outer distortion `a ^ (n - 1)` for `a ≥ 1` and the inner distortion `a ^ (1 - n)` for `0 < a ≤ 1`
+hold in every dimension. These identities give the pointwise distortion of the radial stretch, a
+standard example of a quasiregular map.
 -/
 
 public section
@@ -134,33 +135,66 @@ theorem norm_fderiv_norm_rpow_smul_self_apply_mem_Icc (a : ℝ) {x : E} (hx : x 
       have : |a| ^ 2 - 1 ≤ 0 := by nlinarith [abs_nonneg a]
       nlinarith [mul_nonpos_of_nonpos_of_nonneg this ht0, sq_nonneg (‖x‖ ^ (a - 1))]
 
+/-- The radial direction gives the lower bound `|a| · ‖x‖ ^ (a - 1) ≤ ‖D‖` on the operator norm of
+the derivative of the radial stretch at `x ≠ 0`. -/
+theorem abs_mul_norm_rpow_le_norm_fderiv_norm_rpow_smul_self (a : ℝ) {x : E} (hx : x ≠ 0) :
+    |a| * ‖x‖ ^ (a - 1) ≤ ‖fderiv ℝ (fun y : E ↦ ‖y‖ ^ (a - 1) • y) x‖ := by
+  have h := (fderiv ℝ (fun y : E ↦ ‖y‖ ^ (a - 1) • y) x).le_opNorm x
+  rw [norm_fderiv_norm_rpow_smul_self_apply_self a hx] at h
+  exact le_of_mul_le_mul_right h (norm_pos_iff.mpr hx)
+
+/-- When `dim E ≥ 2`, a direction orthogonal to `x ≠ 0` gives the lower bound
+`‖x‖ ^ (a - 1) ≤ ‖D‖` on the operator norm of the derivative of the radial stretch. -/
+theorem norm_rpow_le_norm_fderiv_norm_rpow_smul_self (hE : 2 ≤ finrank ℝ E) (a : ℝ) {x : E}
+    (hx : x ≠ 0) : ‖x‖ ^ (a - 1) ≤ ‖fderiv ℝ (fun y : E ↦ ‖y‖ ^ (a - 1) • y) x‖ := by
+  obtain ⟨w, hw0, hw⟩ := exists_ne_zero_inner_eq_zero hE hx
+  have h := (fderiv ℝ (fun y : E ↦ ‖y‖ ^ (a - 1) • y) x).le_opNorm w
+  rw [norm_fderiv_norm_rpow_smul_self_apply_of_inner_eq_zero a hx hw] at h
+  exact le_of_mul_le_mul_right h (norm_pos_iff.mpr hw0)
+
+/-- The radial direction gives the upper bound `ℓ(D) ≤ |a| · ‖x‖ ^ (a - 1)` on the minimal stretch
+of the derivative of the radial stretch at `x ≠ 0`. -/
+theorem minimalStretch_fderiv_norm_rpow_smul_self_le_abs_mul_norm_rpow [FiniteDimensional ℝ E]
+    (a : ℝ) {x : E} (hx : x ≠ 0) :
+    (fderiv ℝ (fun y : E ↦ ‖y‖ ^ (a - 1) • y) x : E →ₗ[ℝ] E).minimalStretch ≤
+      |a| * ‖x‖ ^ (a - 1) := by
+  have : Nontrivial E := ⟨⟨x, 0, hx⟩⟩
+  have h := LinearMap.minimalStretch_mul_norm_le_norm_apply
+    (fderiv ℝ (fun y : E ↦ ‖y‖ ^ (a - 1) • y) x : E →ₗ[ℝ] E) x
+  rw [ContinuousLinearMap.coe_coe, norm_fderiv_norm_rpow_smul_self_apply_self a hx] at h
+  exact le_of_mul_le_mul_right h (norm_pos_iff.mpr hx)
+
+/-- When `dim E ≥ 2`, a direction orthogonal to `x ≠ 0` gives the upper bound
+`ℓ(D) ≤ ‖x‖ ^ (a - 1)` on the minimal stretch of the derivative of the radial stretch. -/
+theorem minimalStretch_fderiv_norm_rpow_smul_self_le_norm_rpow [FiniteDimensional ℝ E]
+    (hE : 2 ≤ finrank ℝ E) (a : ℝ) {x : E} (hx : x ≠ 0) :
+    (fderiv ℝ (fun y : E ↦ ‖y‖ ^ (a - 1) • y) x : E →ₗ[ℝ] E).minimalStretch ≤ ‖x‖ ^ (a - 1) := by
+  have : Nontrivial E := ⟨⟨x, 0, hx⟩⟩
+  obtain ⟨w, hw0, hw⟩ := exists_ne_zero_inner_eq_zero hE hx
+  have h := LinearMap.minimalStretch_mul_norm_le_norm_apply
+    (fderiv ℝ (fun y : E ↦ ‖y‖ ^ (a - 1) • y) x : E →ₗ[ℝ] E) w
+  rw [ContinuousLinearMap.coe_coe,
+    norm_fderiv_norm_rpow_smul_self_apply_of_inner_eq_zero a hx hw] at h
+  exact le_of_mul_le_mul_right h (norm_pos_iff.mpr hw0)
+
 /-- For `|a| ≥ 1` and `x ≠ 0`, in every dimension, `‖D‖ = |a| · ‖x‖ ^ (a - 1)`: the norm is
 attained in the radial direction. -/
 theorem norm_fderiv_norm_rpow_smul_self_of_one_le_abs {a : ℝ} (ha : 1 ≤ |a|) {x : E}
     (hx : x ≠ 0) :
     ‖fderiv ℝ (fun y : E ↦ ‖y‖ ^ (a - 1) • y) x‖ = |a| * ‖x‖ ^ (a - 1) := by
-  refine le_antisymm (ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_) ?_
-  · simpa [max_eq_left ha] using (norm_fderiv_norm_rpow_smul_self_apply_mem_Icc a hx v).2
-  · have h := (fderiv ℝ (fun y : E ↦ ‖y‖ ^ (a - 1) • y) x).le_opNorm x
-    rw [norm_fderiv_norm_rpow_smul_self_apply_self a hx] at h
-    exact le_of_mul_le_mul_right h (norm_pos_iff.mpr hx)
+  refine le_antisymm (ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_)
+    (abs_mul_norm_rpow_le_norm_fderiv_norm_rpow_smul_self a hx)
+  simpa [max_eq_left ha] using (norm_fderiv_norm_rpow_smul_self_apply_mem_Icc a hx v).2
 
 /-- **Operator norm of the derivative of the radial stretch.** For `x ≠ 0` and `dim E ≥ 2`,
 `‖D‖ = max |a| 1 · ‖x‖ ^ (a - 1)`. -/
 theorem norm_fderiv_norm_rpow_smul_self (hE : 2 ≤ finrank ℝ E) (a : ℝ) {x : E} (hx : x ≠ 0) :
     ‖fderiv ℝ (fun y : E ↦ ‖y‖ ^ (a - 1) • y) x‖ = max |a| 1 * ‖x‖ ^ (a - 1) := by
-  set D := fderiv ℝ (fun y : E ↦ ‖y‖ ^ (a - 1) • y) x
-  refine le_antisymm (D.opNorm_le_bound (by positivity) fun v ↦
+  refine le_antisymm (ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦
     (norm_fderiv_norm_rpow_smul_self_apply_mem_Icc a hx v).2) ?_
   rw [max_mul_of_nonneg _ _ (by positivity), one_mul]
-  refine max_le ?_ ?_
-  · have h := D.le_opNorm x
-    rw [norm_fderiv_norm_rpow_smul_self_apply_self a hx] at h
-    exact le_of_mul_le_mul_right h (norm_pos_iff.mpr hx)
-  · obtain ⟨w, hw0, hw⟩ := exists_ne_zero_inner_eq_zero hE hx
-    have h := D.le_opNorm w
-    rw [norm_fderiv_norm_rpow_smul_self_apply_of_inner_eq_zero a hx hw] at h
-    exact le_of_mul_le_mul_right h (norm_pos_iff.mpr hw0)
+  exact max_le (abs_mul_norm_rpow_le_norm_fderiv_norm_rpow_smul_self a hx)
+    (norm_rpow_le_norm_fderiv_norm_rpow_smul_self hE a hx)
 
 /-- For `|a| ≤ 1` and `x ≠ 0`, in every dimension, `ℓ(D) = |a| · ‖x‖ ^ (a - 1)`: the minimal
 stretch is attained in the radial direction. -/
@@ -169,12 +203,9 @@ theorem minimalStretch_fderiv_norm_rpow_smul_self_of_abs_le_one [FiniteDimension
     (fderiv ℝ (fun y : E ↦ ‖y‖ ^ (a - 1) • y) x : E →ₗ[ℝ] E).minimalStretch =
       |a| * ‖x‖ ^ (a - 1) := by
   have : Nontrivial E := ⟨⟨x, 0, hx⟩⟩
-  set D := fderiv ℝ (fun y : E ↦ ‖y‖ ^ (a - 1) • y) x
-  refine le_antisymm ?_ (((D : E →ₗ[ℝ] E).le_minimalStretch_iff).mpr fun v ↦ ?_)
-  · have h := (D : E →ₗ[ℝ] E).minimalStretch_mul_norm_le_norm_apply x
-    rw [ContinuousLinearMap.coe_coe, norm_fderiv_norm_rpow_smul_self_apply_self a hx] at h
-    exact le_of_mul_le_mul_right h (norm_pos_iff.mpr hx)
-  · simpa [min_eq_left ha] using (norm_fderiv_norm_rpow_smul_self_apply_mem_Icc a hx v).1
+  refine le_antisymm (minimalStretch_fderiv_norm_rpow_smul_self_le_abs_mul_norm_rpow a hx)
+    ((LinearMap.le_minimalStretch_iff _).mpr fun v ↦ ?_)
+  simpa [min_eq_left ha] using (norm_fderiv_norm_rpow_smul_self_apply_mem_Icc a hx v).1
 
 /-- **Minimal stretch of the derivative of the radial stretch.** For `x ≠ 0` and `dim E ≥ 2`,
 `ℓ(D) = min |a| 1 · ‖x‖ ^ (a - 1)`. -/
@@ -183,19 +214,11 @@ theorem minimalStretch_fderiv_norm_rpow_smul_self [FiniteDimensional ℝ E] (hE 
     (fderiv ℝ (fun y : E ↦ ‖y‖ ^ (a - 1) • y) x : E →ₗ[ℝ] E).minimalStretch =
       min |a| 1 * ‖x‖ ^ (a - 1) := by
   have : Nontrivial E := ⟨⟨x, 0, hx⟩⟩
-  set D := fderiv ℝ (fun y : E ↦ ‖y‖ ^ (a - 1) • y) x
-  refine le_antisymm ?_ (((D : E →ₗ[ℝ] E).le_minimalStretch_iff).mpr fun v ↦
+  refine le_antisymm ?_ ((LinearMap.le_minimalStretch_iff _).mpr fun v ↦
     (norm_fderiv_norm_rpow_smul_self_apply_mem_Icc a hx v).1)
   rw [min_mul_of_nonneg _ _ (by positivity), one_mul]
-  refine le_min ?_ ?_
-  · have h := (D : E →ₗ[ℝ] E).minimalStretch_mul_norm_le_norm_apply x
-    rw [ContinuousLinearMap.coe_coe, norm_fderiv_norm_rpow_smul_self_apply_self a hx] at h
-    exact le_of_mul_le_mul_right h (norm_pos_iff.mpr hx)
-  · obtain ⟨w, hw0, hw⟩ := exists_ne_zero_inner_eq_zero hE hx
-    have h := (D : E →ₗ[ℝ] E).minimalStretch_mul_norm_le_norm_apply w
-    rw [ContinuousLinearMap.coe_coe,
-      norm_fderiv_norm_rpow_smul_self_apply_of_inner_eq_zero a hx hw] at h
-    exact le_of_mul_le_mul_right h (norm_pos_iff.mpr hw0)
+  exact le_min (minimalStretch_fderiv_norm_rpow_smul_self_le_abs_mul_norm_rpow a hx)
+    (minimalStretch_fderiv_norm_rpow_smul_self_le_norm_rpow hE a hx)
 
 /-- **Determinant of the derivative of the radial stretch.** For `x ≠ 0`,
 `det D = a · (‖x‖ ^ (a - 1)) ^ n` with `n = dim E`: this is the Jacobian of the radial rescaling
