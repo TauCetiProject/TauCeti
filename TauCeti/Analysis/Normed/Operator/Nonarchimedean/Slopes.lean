@@ -176,12 +176,11 @@ theorem newtonPolygon_charPowerSeries_ncard_setOf_unitSlope_le_le (hu : u.IsPrCo
       unitSlope (u.charPowerSeries.newtonPolygon v) n ≤ σ}.ncard ≤
       ((σ * {n | n ∈ finiteEdges (u.charPowerSeries.newtonPolygon v) ∧
         unitSlope (u.charPowerSeries.newtonPolygon v) n ≤ σ}.ncard : ℝ) : WithTop ℝ) := by
-  obtain ⟨l, l', hf⟩ := hu.exists_isFiniteFace_newtonPolygon_charPowerSeries v hb hv σ
   -- The polygon starts at or below the height `v 1 = 0` of the constant coefficient.
   have hadm := (PowerSeries.isAdmissible_addValuation_coeff_iff_exists_isRestricted
     u.charPowerSeries v hb hv).2 ⟨1, one_pos, hu.isEntire_charPowerSeries.isRestricted 1⟩
-  simpa only [zero_add] using hf.apply_ncard_setOf_unitSlope_le_le
-    (u.charPowerSeries.isConvexSeq_newtonPolygon v) (a := 0) <| by
+  simpa only [zero_add] using
+    hu.isEntire_charPowerSeries.newtonPolygon_ncard_setOf_unitSlope_le_le v hb hv σ (a := 0) <| by
       simpa using PowerSeries.newtonPolygon_le hadm 0
 
 /-- **Local finiteness of Fredholm slopes.** Only finitely many finite unit edges of the
