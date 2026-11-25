@@ -8,10 +8,13 @@ module
 public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.LinearAlgebra.Matrix.Basis
 public import Mathlib.LinearAlgebra.Trace
+public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.LieModule
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Newton
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Homogeneous
 import TauCeti.LinearAlgebra.Trace.Nilpotent
+import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
+import TauCeti.RingTheory.Derivation.Determinant
 import TauCeti.RingTheory.Derivation.Matrix
 
 /-!
@@ -37,9 +40,15 @@ ring: the coadjoint derivation of `y : L`, applied entrywise, sends the generic 
 to the commutator `A ρ(y) - ρ(y) A`, hence each power `A ^ m` to `A ^ m ρ(y) - ρ(y) A ^ m`, whose
 trace vanishes.
 
-For a semisimple Lie algebra over an algebraically closed field of characteristic zero, these
-invariant polynomials restrict on a Cartan subalgebra to the power sums of the weights of `M`, and
-they are the invariant polynomial functions used in the surjectivity half of Chevalley's
+The same holds for the coefficients of the characteristic polynomial of the generic action matrix
+(`TauCeti.charpoly_coeff_genericActionMatrix_mem_lieInvariants`), the polynomial functions sending
+`x` to the characteristic coefficients of `ρ_M(x)`: the coadjoint derivations act on the matrix by
+commutators, which kill every characteristic coefficient. All of them except the leading one
+vanish at the origin (`TauCeti.algebraMapInv_charpoly_coeff_genericActionMatrix_of_lt`).
+
+For a semisimple Lie algebra over an algebraically closed field of characteristic zero, the
+trace-power polynomials restrict on a Cartan subalgebra to the power sums of the weights of `M`,
+and they are the invariant polynomial functions used in the surjectivity half of Chevalley's
 restriction theorem and of the Harish-Chandra isomorphism.
 
 ## Main definitions
@@ -54,6 +63,10 @@ restriction theorem and of the Harish-Chandra isomorphism.
   the matrix of `ρ_M(x)`.
 * `TauCeti.genericActionMatrix_eq_map_toMatrix_mul_mul`: change of basis conjugates the generic
   action matrix.
+* `TauCeti.charpoly_coeff_genericActionMatrix_mem_lieInvariants`: the characteristic coefficients
+  of the generic action matrix are invariant under the coadjoint action.
+* `TauCeti.algebraMapInv_charpoly_coeff_genericActionMatrix_of_lt`: those below the leading one
+  vanish at the origin.
 * `TauCeti.tracePowerPolynomial_eq_trace_pow_genericActionMatrix`: the trace-power polynomial is
   the trace of the `m`-th power of the generic action matrix in any basis.
 * `TauCeti.lift_eval_tracePowerPolynomial`: the value of the trace-power polynomial at `x` is
@@ -187,6 +200,29 @@ theorem map_lieModuleDerivation_genericActionMatrix (c : Basis κ R M) (y : L) :
     Ring.lie_def, LinearMap.toMatrix_mul, map_sub, Matrix.mul_apply]
   rw [neg_sub, ← Finset.sum_sub_distrib, ← Finset.sum_sub_distrib]
   exact Finset.sum_congr rfl fun r _ ↦ by ring
+
+/-- **The characteristic coefficients of the generic action matrix are invariant** under the
+coadjoint action of `L` on `S(L*)`. They are the polynomial functions on `L` sending `x` to the
+coefficients of the characteristic polynomial of `ρ_M(x)`. -/
+theorem charpoly_coeff_genericActionMatrix_mem_lieInvariants (c : Basis κ R M) (i : ℕ) :
+    (genericActionMatrix R L c).charpoly.coeff i ∈ lieInvariants R L (Dual R L) := by
+  refine mem_lieInvariants.mpr fun y ↦ ?_
+  refine Derivation.map_charpoly_coeff_eq_zero_of_map_eq_mul_sub_mul _
+    (B := -(LinearMap.toMatrix c c (LieModule.toEnd R L M y)).map (algebraMap R S)) ?_ i
+  rw [map_lieModuleDerivation_genericActionMatrix]
+  simp only [Matrix.neg_mul, Matrix.mul_neg]
+  abel
+
+/-- **The lower characteristic coefficients of the generic action matrix vanish at the origin**:
+every coefficient of its characteristic polynomial other than the leading one has zero constant
+term, as the entries of the matrix do. -/
+theorem algebraMapInv_charpoly_coeff_genericActionMatrix_of_lt (c : Basis κ R M) {i : ℕ}
+    (hi : i < Fintype.card κ) :
+    algebraMapInv ((genericActionMatrix R L c).charpoly.coeff i) = 0 := by
+  have hentry (p q : κ) : genericActionMatrix R L c p q ∈ RingHom.ker (algebraMapInv (R := R)) := by
+    rw [genericActionMatrix_apply, RingHom.mem_ker]
+    exact algebraMapInv_ι _
+  exact Ideal.pow_le_self (Nat.sub_ne_zero_of_lt hi) (Matrix.coeff_charpoly_mem_ideal_pow hentry i)
 
 end GenericActionMatrix
 

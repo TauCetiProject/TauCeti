@@ -67,6 +67,8 @@ quadratic form whose Hamiltonian endomorphism preserves both summands is a direc
 * `TauCeti.SymplecticForm.hamiltonianEnd_quadraticPoissonBracket`: `A_{Q, R} = ⁅A_Q, A_R⁆`.
 * `TauCeti.SymplecticForm.quadraticPoissonBracket_eq_zero_iff`: `{Q, R} = 0` exactly when `A_Q`
   and `A_R` commute.
+* `TauCeti.SymplecticForm.polar_hamiltonianEnd_apply_of_quadraticPoissonBracket_eq_zero`: if
+  `{R, P} = 0` then `A_P` is skew for the polar form of `R`.
 * `TauCeti.SymplecticForm.hamiltonianEnd_prod`,
   `TauCeti.SymplecticForm.quadraticPoissonBracket_prod`: `A_{Q₁ ⊕ Q₂} = A_{Q₁} × A_{Q₂}` and
   `{Q₁ ⊕ Q₂, R₁ ⊕ R₂} = {Q₁, R₁} ⊕ {Q₂, R₂}` for the direct-sum symplectic form.
@@ -323,6 +325,19 @@ theorem quadraticPoissonBracket_eq_zero_iff {Q R : QuadraticForm ℝ V} :
     ω.quadraticPoissonBracket Q R = 0 ↔ Commute (ω.hamiltonianEnd Q) (ω.hamiltonianEnd R) := by
   rw [commute_iff_lie_eq, ← hamiltonianEnd_quadraticPoissonBracket,
     ← map_zero ω.hamiltonianEnd, ω.hamiltonianEnd_injective.eq_iff]
+
+/-- If a quadratic form `R` Poisson-commutes with `P`, then `A_P` is skew for the polar form of `R`:
+`polar R (A_P u) v = -polar R u (A_P v)`, since `A_R` commutes with `A_P ∈ sp(V, ω)`. -/
+theorem polar_hamiltonianEnd_apply_of_quadraticPoissonBracket_eq_zero
+    {R P : QuadraticForm ℝ V} (hR : ω.quadraticPoissonBracket R P = 0) (u v : V) :
+    QuadraticMap.polar R (ω.hamiltonianEnd P u) v =
+      -QuadraticMap.polar R u (ω.hamiltonianEnd P v) := by
+  have hcomm : ω.hamiltonianEnd R (ω.hamiltonianEnd P u) =
+      ω.hamiltonianEnd P (ω.hamiltonianEnd R u) := by
+    simpa only [mul_apply_eq_comp] using
+      LinearMap.congr_fun (ω.quadraticPoissonBracket_eq_zero_iff.1 hR).eq u
+  rw [← apply_hamiltonianEnd, ← apply_hamiltonianEnd, hcomm, apply_hamiltonianEnd,
+    apply_hamiltonianEnd_right, neg_neg]
 
 /-- The Poisson bracket with the zero form vanishes. -/
 @[simp]
