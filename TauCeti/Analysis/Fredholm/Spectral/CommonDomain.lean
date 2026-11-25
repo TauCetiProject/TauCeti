@@ -45,7 +45,9 @@ additive. Any two potentials have the same increment over `[a, b]`
 (`TauCeti.IsDomainSpectralFlowPotential.sub_eq_sub`), since their difference is locally constant.
 The spectral flow `TauCeti.domainSpectralFlow ι A a b` is the increment `F b - F a` of any
 potential (`TauCeti.domainSpectralFlow_eq_sub`). For `b < a` every function is vacuously a
-potential, and the spectral flow is a junk value.
+potential, and the spectral flow is a junk value. The construction follows the spectral flow
+potentials `TauCeti.IsSpectralFlowPotential` of the bounded spectral flow in
+`TauCeti.Analysis.Fredholm.Spectral.Flow`.
 
 **Properties.**
 
