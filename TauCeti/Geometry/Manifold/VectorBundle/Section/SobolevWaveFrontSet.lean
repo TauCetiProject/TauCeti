@@ -34,9 +34,10 @@ So microlocal `H^s` regularity of `T` is `TauCeti.BundleTest.IsMicrolocallyAt` f
 covector `ξ ∈ T*ₓM` is well defined on a manifold without boundary
 (`TauCeti.BundleTest.IsMicrolocallySobolevAt`), and the **`H^s` wave front set** of `T`
 (`TauCeti.BundleTest.sobolevWaveFrontSet`) is the set of nonzero covectors of the cotangent bundle
-`TauCeti.CotangentBundle I M` at which `T` is not microlocally `H^s`. It is conic, closed in the
-complement of the zero section, grows with `s`, lies in the wave front set, and the `H^s` wave front
-set of a sum lies in the union.
+`TauCeti.CotangentBundle I M` at which `T` is not microlocally `H^s`, the singular set
+`TauCeti.BundleTest.microlocalSingularSet` for this notion. It is conic, closed in the complement of
+the zero section, grows with `s`, lies in the wave front set, the `H^s` wave front set of a sum lies
+in the union, and that of a smooth multiple `f T` lies in that of `T` over the support of `f`.
 
 ## Main declarations
 
@@ -46,9 +47,10 @@ set of a sum lies in the union.
 * `TauCeti.BundleTest.IsMicrolocallySmoothAt.isMicrolocallySobolevAt`,
   `TauCeti.BundleTest.IsMicrolocallySobolevAt.mono`,
   `TauCeti.BundleTest.IsMicrolocallySobolevAt.add`,
-  `TauCeti.BundleTest.IsMicrolocallySobolevAt.smul`: microlocal smoothness implies microlocal
-  `H^s` regularity, which implies `H^r` regularity for `r ≤ s` and is preserved by sums and real
-  multiples.
+  `TauCeti.BundleTest.IsMicrolocallySobolevAt.smul`,
+  `TauCeti.BundleTest.IsMicrolocallySobolevAt.smulLeftDualCLM`: microlocal smoothness implies
+  microlocal `H^s` regularity, which implies `H^r` regularity for `r ≤ s` and is preserved by sums,
+  real multiples and smooth multiples.
 * `TauCeti.BundleTest.sobolevWaveFrontSet`: the `H^s` wave front set of `T`, a subset of the
   cotangent bundle.
 * `TauCeti.BundleTest.mk_smul_mem_sobolevWaveFrontSet_iff`: the `H^s` wave front set is conic.
@@ -61,6 +63,8 @@ set of a sum lies in the union.
 * `TauCeti.BundleTest.sobolevWaveFrontSet_add_subset`,
   `TauCeti.BundleTest.sobolevWaveFrontSet_smul`: the `H^s` wave front set of a sum lies in the
   union, and nonzero real multiples do not change it.
+* `TauCeti.BundleTest.sobolevWaveFrontSet_smulLeftDualCLM_subset`: on a manifold without boundary,
+  the `H^s` wave front set of a smooth multiple `f T` lies in that of `T` over the support of `f`.
 
 ## References
 
@@ -159,6 +163,22 @@ theorem IsMicrolocallySobolevAt.smul {s : ℝ} {T : BundleTest I F V →L_c[ℝ]
     IsMicrolocallySobolevAt s (a • T) x ξ :=
   IsMicrolocallyAt.smul (isInvariantMicrolocalRegularity_isMicrolocallySobolevAt s) h a
 
+/-- A smooth multiple `f T` of a functional microlocally `H^s` at a covector is microlocally `H^s`
+there. -/
+theorem IsMicrolocallySobolevAt.smulLeftDualCLM {s : ℝ} {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M}
+    {ξ : TangentSpace I x →L[ℝ] ℝ} (h : IsMicrolocallySobolevAt s T x ξ) (f : C^∞⟮I, M; ℝ⟯) :
+    IsMicrolocallySobolevAt s (smulLeftDualCLM f T) x ξ :=
+  IsMicrolocallyAt.smulLeftDualCLM (isInvariantMicrolocalRegularity_isMicrolocallySobolevAt s) h f
+
+/-- On a manifold without boundary, a smooth multiple `f T` is microlocally `H^s` at every
+covector at a point outside the support of `f`. -/
+theorem isMicrolocallySobolevAt_smulLeftDualCLM_of_notMem_tsupport [I.Boundaryless] (s : ℝ)
+    (T : BundleTest I F V →L_c[ℝ] ℝ) {f : C^∞⟮I, M; ℝ⟯} {x : M} (hx : x ∉ tsupport f)
+    (ξ : TangentSpace I x →L[ℝ] ℝ) :
+    IsMicrolocallySobolevAt s (smulLeftDualCLM f T) x ξ :=
+  isMicrolocallyAt_smulLeftDualCLM_of_notMem_tsupport _
+    (isInvariantMicrolocalRegularity_isMicrolocallySobolevAt s) T hx ξ
+
 /-- **Microlocal `H^s` regularity is an open condition.** The covectors at which a real functional
 on bundle tests is microlocally `H^s` form an open subset of the cotangent bundle. -/
 theorem isOpen_setOf_isMicrolocallySobolevAt (s : ℝ) (T : BundleTest I F V →L_c[ℝ] ℝ) :
@@ -172,83 +192,82 @@ variable (I) in
 distributional section of a bundle: the nonzero covectors of `M` at which `T` is not microlocally
 `H^s`. -/
 def sobolevWaveFrontSet (s : ℝ) (T : BundleTest I F V →L_c[ℝ] ℝ) : Set (CotangentBundle I M) :=
-  {p | p.snd ≠ 0 ∧ ¬ IsMicrolocallySobolevAt s T p.proj p.snd}
+  microlocalSingularSet I (fun _ S y η ↦ S.IsMicrolocallySobolevAt s y η) T
 
 @[simp]
 theorem mem_sobolevWaveFrontSet_iff {s : ℝ} {T : BundleTest I F V →L_c[ℝ] ℝ}
     {p : CotangentBundle I M} :
     p ∈ sobolevWaveFrontSet I s T ↔ p.snd ≠ 0 ∧ ¬ IsMicrolocallySobolevAt s T p.proj p.snd :=
-  Iff.rfl
+  mem_microlocalSingularSet_iff
 
 /-- The `H^s` wave front set is conic: it is invariant under positive scaling of the
 covectors. -/
 theorem mk_smul_mem_sobolevWaveFrontSet_iff {s : ℝ} {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M}
     {ξ : TangentSpace I x →L[ℝ] ℝ} {r : ℝ} (hr : 0 < r) :
     TotalSpace.mk x (r • ξ) ∈ sobolevWaveFrontSet I s T ↔
-      TotalSpace.mk x ξ ∈ sobolevWaveFrontSet I s T := by
-  simp [isMicrolocallySobolevAt_smul_iff hr, hr.ne']
+      TotalSpace.mk x ξ ∈ sobolevWaveFrontSet I s T :=
+  mk_smul_mem_microlocalSingularSet_iff (isInvariantMicrolocalRegularity_isMicrolocallySobolevAt s)
+    hr
 
 /-- **The `H^s` wave front set is closed** in the complement of the zero section of the cotangent
 bundle. -/
 theorem isOpen_diff_sobolevWaveFrontSet (s : ℝ) (T : BundleTest I F V →L_c[ℝ] ℝ) :
     IsOpen (zeroSectionCompl (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) \
-      sobolevWaveFrontSet I s T) := by
-  have h : zeroSectionCompl (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) \
-      sobolevWaveFrontSet I s T =
-        zeroSectionCompl (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) ∩
-          {p | IsMicrolocallySobolevAt s T p.proj p.snd} := by
-    ext p
-    simp only [Set.mem_sdiff, mem_zeroSectionCompl, mem_sobolevWaveFrontSet_iff, mem_inter_iff,
-      mem_ofPred_eq]
-    tauto
-  rw [h]
-  exact (isOpen_zeroSectionCompl _ _).inter (isOpen_setOf_isMicrolocallySobolevAt s T)
+      sobolevWaveFrontSet I s T) :=
+  isOpen_diff_microlocalSingularSet (isInvariantMicrolocalRegularity_isMicrolocallySobolevAt s) T
 
 /-- The `H^s` wave front set grows with `s`. -/
 theorem sobolevWaveFrontSet_mono {s r : ℝ} (hrs : r ≤ s) (T : BundleTest I F V →L_c[ℝ] ℝ) :
-    sobolevWaveFrontSet I r T ⊆ sobolevWaveFrontSet I s T :=
-  fun _ ⟨hp, h⟩ ↦ ⟨hp, fun h' ↦ h (h'.mono hrs)⟩
+    sobolevWaveFrontSet I r T ⊆ sobolevWaveFrontSet I s T := fun _ hp ↦
+  mem_sobolevWaveFrontSet_iff.2 <| (mem_sobolevWaveFrontSet_iff.1 hp).imp_right fun h h' ↦
+    h (h'.mono hrs)
 
 /-- The `H^s` wave front set lies in the wave front set. -/
 theorem sobolevWaveFrontSet_subset_waveFrontSet (s : ℝ) (T : BundleTest I F V →L_c[ℝ] ℝ) :
-    sobolevWaveFrontSet I s T ⊆ waveFrontSet I T :=
-  fun _ ⟨hp, h⟩ ↦ mem_waveFrontSet_iff.2 ⟨hp, fun h' ↦ h (h'.isMicrolocallySobolevAt s)⟩
+    sobolevWaveFrontSet I s T ⊆ waveFrontSet I T := fun _ hp ↦
+  mem_waveFrontSet_iff.2 <| (mem_sobolevWaveFrontSet_iff.1 hp).imp_right fun h h' ↦
+    h (h'.isMicrolocallySobolevAt s)
 
 /-- The `H^s` wave front set of a sum lies in the union of the `H^s` wave front sets. -/
 theorem sobolevWaveFrontSet_add_subset (s : ℝ) (S T : BundleTest I F V →L_c[ℝ] ℝ) :
-    sobolevWaveFrontSet I s (S + T) ⊆ sobolevWaveFrontSet I s S ∪ sobolevWaveFrontSet I s T := by
-  refine fun p ⟨hp, h⟩ ↦ by_contra fun hST ↦ h ?_
-  simp only [mem_union, mem_sobolevWaveFrontSet_iff, not_or, not_and, not_not] at hST
-  exact (hST.1 hp).add (hST.2 hp)
+    sobolevWaveFrontSet I s (S + T) ⊆ sobolevWaveFrontSet I s S ∪ sobolevWaveFrontSet I s T :=
+  microlocalSingularSet_add_subset (isInvariantMicrolocalRegularity_isMicrolocallySobolevAt s) S T
 
 /-- A real multiple of `T` has `H^s` wave front set contained in that of `T`. -/
 theorem sobolevWaveFrontSet_smul_subset (s a : ℝ) (T : BundleTest I F V →L_c[ℝ] ℝ) :
     sobolevWaveFrontSet I s (a • T) ⊆ sobolevWaveFrontSet I s T :=
-  fun _ ⟨hp, h⟩ ↦ ⟨hp, fun hT ↦ h (hT.smul a)⟩
+  microlocalSingularSet_smul_subset (isInvariantMicrolocalRegularity_isMicrolocallySobolevAt s) a T
 
 /-- A nonzero real multiple of `T` has the same `H^s` wave front set as `T`. -/
 @[simp]
 theorem sobolevWaveFrontSet_smul (s : ℝ) {a : ℝ} (ha : a ≠ 0) (T : BundleTest I F V →L_c[ℝ] ℝ) :
-    sobolevWaveFrontSet I s (a • T) = sobolevWaveFrontSet I s T := by
-  refine (sobolevWaveFrontSet_smul_subset s a T).antisymm ?_
-  simpa [smul_smul, inv_mul_cancel₀ ha] using sobolevWaveFrontSet_smul_subset s a⁻¹ (a • T)
+    sobolevWaveFrontSet I s (a • T) = sobolevWaveFrontSet I s T :=
+  microlocalSingularSet_smul (isInvariantMicrolocalRegularity_isMicrolocallySobolevAt s) ha T
 
 /-- The negative of `T` has the same `H^s` wave front set as `T`. -/
 @[simp]
 theorem sobolevWaveFrontSet_neg (s : ℝ) (T : BundleTest I F V →L_c[ℝ] ℝ) :
-    sobolevWaveFrontSet I s (-T) = sobolevWaveFrontSet I s T := by
-  rw [← neg_one_smul ℝ T, sobolevWaveFrontSet_smul s (neg_ne_zero.2 one_ne_zero)]
+    sobolevWaveFrontSet I s (-T) = sobolevWaveFrontSet I s T :=
+  microlocalSingularSet_neg (isInvariantMicrolocalRegularity_isMicrolocallySobolevAt s) T
 
 /-- The `H^s` wave front set of a difference lies in the union of the `H^s` wave front sets. -/
 theorem sobolevWaveFrontSet_sub_subset (s : ℝ) (S T : BundleTest I F V →L_c[ℝ] ℝ) :
-    sobolevWaveFrontSet I s (S - T) ⊆ sobolevWaveFrontSet I s S ∪ sobolevWaveFrontSet I s T := by
-  simpa [sub_eq_add_neg] using sobolevWaveFrontSet_add_subset s S (-T)
+    sobolevWaveFrontSet I s (S - T) ⊆ sobolevWaveFrontSet I s S ∪ sobolevWaveFrontSet I s T :=
+  microlocalSingularSet_sub_subset (isInvariantMicrolocalRegularity_isMicrolocallySobolevAt s) S T
 
 /-- On a manifold without boundary, the zero functional has empty `H^s` wave front set. -/
 @[simp]
 theorem sobolevWaveFrontSet_zero [I.Boundaryless] (s : ℝ) :
     sobolevWaveFrontSet I s (0 : BundleTest I F V →L_c[ℝ] ℝ) = ∅ :=
-  subset_empty_iff.1 (waveFrontSet_zero (I := I) (F := F) (V := V) ▸
-    sobolevWaveFrontSet_subset_waveFrontSet s 0)
+  microlocalSingularSet_zero (isInvariantMicrolocalRegularity_isMicrolocallySobolevAt s)
+
+/-- **Smooth multiplication.** On a manifold without boundary, the `H^s` wave front set of a smooth
+multiple `f T` lies in the `H^s` wave front set of `T`, over the support of `f`. -/
+theorem sobolevWaveFrontSet_smulLeftDualCLM_subset [I.Boundaryless] (s : ℝ) (f : C^∞⟮I, M; ℝ⟯)
+    (T : BundleTest I F V →L_c[ℝ] ℝ) :
+    sobolevWaveFrontSet I s (smulLeftDualCLM f T) ⊆
+      sobolevWaveFrontSet I s T ∩ {p | p.proj ∈ tsupport f} :=
+  microlocalSingularSet_smulLeftDualCLM_subset
+    (isInvariantMicrolocalRegularity_isMicrolocallySobolevAt s) f T
 
 end TauCeti.BundleTest

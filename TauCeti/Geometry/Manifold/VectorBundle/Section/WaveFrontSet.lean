@@ -59,9 +59,12 @@ it agrees with `WF(T)` where `f ≠ 0`.
 ## The argument
 
 Microlocal smoothness of `T` is `TauCeti.BundleTest.IsMicrolocallyAt` for
-`Distribution.IsMicrolocallySmoothAt`, and its chart and frame independence, conicity, linearity and
-openness are the general facts about invariant notions of microlocal regularity on bundles
-(`TauCeti.BundleTest.isMicrolocallyAt_iff`, `TauCeti.BundleTest.isOpen_setOf_isMicrolocallyAt`).
+`Distribution.IsMicrolocallySmoothAt`, and its wave front set is the singular set
+`TauCeti.BundleTest.microlocalSingularSet` for it. Their chart and frame independence, conicity,
+linearity, openness and behaviour under smooth multiplication are the general facts about invariant
+notions of microlocal regularity on bundles (`TauCeti.BundleTest.isMicrolocallyAt_iff`,
+`TauCeti.BundleTest.isOpen_diff_microlocalSingularSet`,
+`TauCeti.BundleTest.microlocalSingularSet_smulLeftDualCLM_subset`).
 
 ## Main declarations
 
@@ -173,18 +176,17 @@ variable (I) in
 /-- The **wave front set** of a real functional `T` on bundle tests, for instance a distributional
 section of a bundle: the nonzero covectors of `M` at which `T` is not microlocally smooth. -/
 def waveFrontSet (T : BundleTest I F V →L_c[ℝ] ℝ) : Set (CotangentBundle I M) :=
-  {p | p.snd ≠ 0 ∧ ¬ IsMicrolocallySmoothAt T p.proj p.snd}
+  microlocalSingularSet I (fun _ S y η ↦ S.IsMicrolocallySmoothAt y η) T
 
 @[simp]
 theorem mem_waveFrontSet_iff {T : BundleTest I F V →L_c[ℝ] ℝ} {p : CotangentBundle I M} :
     p ∈ waveFrontSet I T ↔ p.snd ≠ 0 ∧ ¬ IsMicrolocallySmoothAt T p.proj p.snd :=
-  Iff.rfl
+  mem_microlocalSingularSet_iff
 
 /-- On a manifold without boundary, the zero functional has empty wave front set. -/
 @[simp]
 theorem waveFrontSet_zero [I.Boundaryless] : waveFrontSet I (0 : BundleTest I F V →L_c[ℝ] ℝ) = ∅ :=
-  eq_empty_iff_forall_notMem.2 fun p hp ↦ hp.2 <|
-    isMicrolocallyAt_zero _ isInvariantMicrolocalRegularity_isMicrolocallySmoothAt p.proj p.snd
+  microlocalSingularSet_zero isInvariantMicrolocalRegularity_isMicrolocallySmoothAt
 
 /-! ### Conicity and linearity -/
 
@@ -197,8 +199,8 @@ theorem isMicrolocallySmoothAt_smul_iff {T : BundleTest I F V →L_c[ℝ] ℝ} {
 /-- The wave front set is conic: it is invariant under positive scaling of the covectors. -/
 theorem mk_smul_mem_waveFrontSet_iff {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M}
     {ξ : TangentSpace I x →L[ℝ] ℝ} {r : ℝ} (hr : 0 < r) :
-    TotalSpace.mk x (r • ξ) ∈ waveFrontSet I T ↔ TotalSpace.mk x ξ ∈ waveFrontSet I T := by
-  simp [isMicrolocallySmoothAt_smul_iff hr, hr.ne']
+    TotalSpace.mk x (r • ξ) ∈ waveFrontSet I T ↔ TotalSpace.mk x ξ ∈ waveFrontSet I T :=
+  mk_smul_mem_microlocalSingularSet_iff isInvariantMicrolocalRegularity_isMicrolocallySmoothAt hr
 
 /-- The sum of two functionals microlocally smooth at a covector is microlocally smooth there. -/
 theorem IsMicrolocallySmoothAt.add {S T : BundleTest I F V →L_c[ℝ] ℝ} {x : M}
@@ -215,33 +217,30 @@ theorem IsMicrolocallySmoothAt.smul {T : BundleTest I F V →L_c[ℝ] ℝ} {x : 
 
 /-- The wave front set of a sum lies in the union of the wave front sets. -/
 theorem waveFrontSet_add_subset (S T : BundleTest I F V →L_c[ℝ] ℝ) :
-    waveFrontSet I (S + T) ⊆ waveFrontSet I S ∪ waveFrontSet I T := by
-  refine fun p ⟨hp, h⟩ ↦ by_contra fun hST ↦ h ?_
-  simp only [mem_union, mem_waveFrontSet_iff, not_or, not_and, not_not] at hST
-  exact (hST.1 hp).add (hST.2 hp)
+    waveFrontSet I (S + T) ⊆ waveFrontSet I S ∪ waveFrontSet I T :=
+  microlocalSingularSet_add_subset isInvariantMicrolocalRegularity_isMicrolocallySmoothAt S T
 
 /-- A real multiple of `T` has wave front set contained in that of `T`. -/
 theorem waveFrontSet_smul_subset (a : ℝ) (T : BundleTest I F V →L_c[ℝ] ℝ) :
     waveFrontSet I (a • T) ⊆ waveFrontSet I T :=
-  fun _ ⟨hp, h⟩ ↦ ⟨hp, fun hT ↦ h (hT.smul a)⟩
+  microlocalSingularSet_smul_subset isInvariantMicrolocalRegularity_isMicrolocallySmoothAt a T
 
 /-- A nonzero real multiple of `T` has the same wave front set as `T`. -/
 @[simp]
 theorem waveFrontSet_smul {a : ℝ} (ha : a ≠ 0) (T : BundleTest I F V →L_c[ℝ] ℝ) :
-    waveFrontSet I (a • T) = waveFrontSet I T := by
-  refine (waveFrontSet_smul_subset a T).antisymm ?_
-  simpa [smul_smul, inv_mul_cancel₀ ha] using waveFrontSet_smul_subset a⁻¹ (a • T)
+    waveFrontSet I (a • T) = waveFrontSet I T :=
+  microlocalSingularSet_smul isInvariantMicrolocalRegularity_isMicrolocallySmoothAt ha T
 
 /-- The negative of `T` has the same wave front set as `T`. -/
 @[simp]
 theorem waveFrontSet_neg (T : BundleTest I F V →L_c[ℝ] ℝ) :
-    waveFrontSet I (-T) = waveFrontSet I T := by
-  rw [← neg_one_smul ℝ T, waveFrontSet_smul (neg_ne_zero.2 one_ne_zero)]
+    waveFrontSet I (-T) = waveFrontSet I T :=
+  microlocalSingularSet_neg isInvariantMicrolocalRegularity_isMicrolocallySmoothAt T
 
 /-- The wave front set of a difference lies in the union of the wave front sets. -/
 theorem waveFrontSet_sub_subset (S T : BundleTest I F V →L_c[ℝ] ℝ) :
-    waveFrontSet I (S - T) ⊆ waveFrontSet I S ∪ waveFrontSet I T := by
-  simpa [sub_eq_add_neg] using waveFrontSet_add_subset S (-T)
+    waveFrontSet I (S - T) ⊆ waveFrontSet I S ∪ waveFrontSet I T :=
+  microlocalSingularSet_sub_subset isInvariantMicrolocalRegularity_isMicrolocallySmoothAt S T
 
 omit [T2Space M] [IsManifold I ∞ M] in
 /-- In a smooth chart `c` at `x` with smooth inverse, a covector `ξ` at `x` is read as the zero
@@ -338,8 +337,9 @@ theorem proj_image_waveFrontSet [I.Boundaryless] (T : BundleTest I F V →L_c[�
     TotalSpace.proj '' waveFrontSet I T = singularSupport I T := by
   ext x
   rw [← not_iff_not, notMem_singularSupport_iff_forall_isMicrolocallySmoothAt]
-  refine ⟨fun h ξ hξ ↦ by_contra fun hT ↦ h ⟨⟨x, ξ⟩, ⟨hξ, hT⟩, rfl⟩, ?_⟩
-  rintro h ⟨p, ⟨hp, hT⟩, rfl⟩
+  refine ⟨fun h ξ hξ ↦ by_contra fun hT ↦ h ⟨⟨x, ξ⟩, mem_waveFrontSet_iff.2 ⟨hξ, hT⟩, rfl⟩, ?_⟩
+  rintro h ⟨p, hpT, rfl⟩
+  obtain ⟨hp, hT⟩ := mem_waveFrontSet_iff.1 hpT
   exact hT (h p.snd hp)
 
 /-- On a manifold without boundary, a functional has empty singular support exactly when it has
@@ -479,50 +479,19 @@ theorem isOpen_setOf_isMicrolocallySmoothAt (T : BundleTest I F V →L_c[ℝ] �
 bundle. -/
 theorem isOpen_diff_waveFrontSet (T : BundleTest I F V →L_c[ℝ] ℝ) :
     IsOpen (zeroSectionCompl (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) \
-      waveFrontSet I T) := by
-  have h : zeroSectionCompl (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) \
-      waveFrontSet I T = zeroSectionCompl (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) ∩
-        {p | IsMicrolocallySmoothAt T p.proj p.snd} := by
-    ext p
-    simp only [Set.mem_sdiff, mem_zeroSectionCompl, mem_waveFrontSet_iff, mem_inter_iff,
-      mem_ofPred_eq]
-    tauto
-  rw [h]
-  exact (isOpen_zeroSectionCompl _ _).inter (isOpen_setOf_isMicrolocallySmoothAt T)
+      waveFrontSet I T) :=
+  isOpen_diff_microlocalSingularSet isInvariantMicrolocalRegularity_isMicrolocallySmoothAt T
 
 /-! ### Multiplication by smooth functions -/
 
 section SmulLeft
 
-/-- If over an open set `B` the local representative of `S` is `g` times that of `T`, then so are
-its components. -/
-private theorem restrictCLM_chartComponent_eq_smulLeftCLM {t : Trivialization F (π F V)}
-    [MemTrivializationAtlas t] {c : OpenPartialHomeomorph M E}
-    (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source) (hct : c.source ⊆ t.baseSet)
-    {S T : BundleTest I F V →L_c[ℝ] ℝ} {B : Opens E} {g : E → ℝ} (hg : ContDiff ℝ ∞ g)
-    (h : (restrictCLM (t.chartDistributionCLM c hc hct S) : 𝓓'(B, F →L[ℝ] ℝ)) =
-      Distribution.smulLeftCLM hg (restrictCLM (t.chartDistributionCLM c hc hct T))) (v : F) :
-    (restrictCLM (t.chartComponent c hc hct S v) : 𝓓'(B, ℂ)) =
-      Distribution.smulLeftCLM hg (restrictCLM (t.chartComponent c hc hct T v)) := by
-  ext φ
-  have h := congr($h φ v)
-  simp only [restrictCLM_apply, chartDistributionCLM_apply_apply,
-    Distribution.smulLeftCLM_apply] at h
-  simp [h]
-
 /-- A smooth multiple `f T` of a functional microlocally smooth at a covector `ξ` is microlocally
 smooth at `ξ`. -/
 theorem IsMicrolocallySmoothAt.smulLeftDualCLM {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M}
     {ξ : TangentSpace I x →L[ℝ] ℝ} (h : IsMicrolocallySmoothAt T x ξ) (f : C^∞⟮I, M; ℝ⟯) :
-    IsMicrolocallySmoothAt (smulLeftDualCLM f T) x ξ := by
-  obtain ⟨t, _, c, hc, hcs, hct, hx, h⟩ := isMicrolocallyAt_def.1 (isMicrolocallySmoothAt_def.1 h)
-  obtain ⟨B, g, hg, hyB, hBt, -, hB⟩ :=
-    t.exists_forall_restrictCLM_chartDistributionCLM_smulLeftDualCLM (W := ℝ) c hc hct hcs f
-      (c.map_source hx)
-  refine (isMicrolocallySmoothAt_iff _ hc hcs hct hx ξ).2 fun v ↦ ?_
-  rw [← isMicrolocallySmoothAt_restrictCLM_iff hBt hyB,
-    restrictCLM_chartComponent_eq_smulLeftCLM hc hct hg (hB T)]
-  exact ((isMicrolocallySmoothAt_restrictCLM_iff hBt hyB).2 (h v)).smulLeftCLM hg
+    IsMicrolocallySmoothAt (smulLeftDualCLM f T) x ξ :=
+  IsMicrolocallyAt.smulLeftDualCLM isInvariantMicrolocalRegularity_isMicrolocallySmoothAt h f
 
 /-- Where `f` does not vanish, a smooth multiple `f T` is microlocally smooth exactly where `T`
 is. -/
@@ -538,7 +507,7 @@ theorem isMicrolocallySmoothAt_smulLeftDualCLM_iff {T : BundleTest I F V →L_c[
   refine (isMicrolocallySmoothAt_iff T hc hcs hct hx ξ).2 fun v ↦ ?_
   rw [← isMicrolocallySmoothAt_restrictCLM_iff hBt hyB,
     ← Distribution.isMicrolocallySmoothAt_smulLeftCLM_iff hg hgx,
-    ← restrictCLM_chartComponent_eq_smulLeftCLM hc hct hg (hB T),
+    ← restrictCLM_chartComponent_eq_smulLeftCLM hg (hB T),
     isMicrolocallySmoothAt_restrictCLM_iff hBt hyB]
   exact h v
 
@@ -547,24 +516,9 @@ covector at a point outside the support of `f`. -/
 theorem isMicrolocallySmoothAt_smulLeftDualCLM_of_notMem_tsupport [I.Boundaryless]
     (T : BundleTest I F V →L_c[ℝ] ℝ) {f : C^∞⟮I, M; ℝ⟯} {x : M} (hx : x ∉ tsupport f)
     (ξ : TangentSpace I x →L[ℝ] ℝ) :
-    IsMicrolocallySmoothAt (smulLeftDualCLM f T) x ξ := by
-  obtain ⟨c, hc, hcs, hct, hxc⟩ := exists_chart_source_subset_baseSet F I V (n := ∞) x
-  -- Near `c x` the function `f ∘ c⁻¹` vanishes, so the local representative of `f T` does.
-  let B : Opens E := ⟨c.target ∩ c.symm ⁻¹' (tsupport f)ᶜ,
-    c.isOpen_inter_preimage_symm (isClosed_tsupport f).isOpen_compl⟩
-  have hyB : c x ∈ B := ⟨c.map_source hxc, by simpa [c.left_inv hxc] using hx⟩
-  have hBt : B ≤ ⟨c.target, c.open_target⟩ := fun _ hz ↦ hz.1
-  have hgB : EqOn (fun _ ↦ (0 : ℝ)) (f ∘ c.symm) B := fun z hz ↦
-    (image_eq_zero_of_notMem_tsupport hz.2).symm
-  refine (isMicrolocallySmoothAt_iff (t := trivializationAt F V x) _ hc hcs hct hxc ξ).2
-    fun v ↦ ?_
-  rw [← isMicrolocallySmoothAt_restrictCLM_iff hBt hyB,
-    restrictCLM_chartComponent_eq_smulLeftCLM hc hct contDiff_const
-      ((trivializationAt F V x).restrictCLM_chartDistributionCLM_smulLeftDualCLM c hc hct f T
-        contDiff_const hgB)]
-  convert Distribution.isMicrolocallySmoothAt_zero hyB _
-  ext φ
-  simp
+    IsMicrolocallySmoothAt (smulLeftDualCLM f T) x ξ :=
+  isMicrolocallyAt_smulLeftDualCLM_of_notMem_tsupport _
+    isInvariantMicrolocalRegularity_isMicrolocallySmoothAt T hx ξ
 
 /-- **Smooth multiplication** (Hörmander I, §8.1 and §8.2). On a manifold without boundary, the
 wave front set of a smooth multiple `f T` lies in the wave front set of `T`, over the support of
@@ -572,8 +526,8 @@ wave front set of a smooth multiple `f T` lies in the wave front set of `T`, ove
 theorem waveFrontSet_smulLeftDualCLM_subset [I.Boundaryless] (f : C^∞⟮I, M; ℝ⟯)
     (T : BundleTest I F V →L_c[ℝ] ℝ) :
     waveFrontSet I (smulLeftDualCLM f T) ⊆ waveFrontSet I T ∩ {p | p.proj ∈ tsupport f} :=
-  fun p ⟨hp, hT⟩ ↦ ⟨⟨hp, fun h ↦ hT (h.smulLeftDualCLM f)⟩, by_contra fun hx ↦
-    hT (isMicrolocallySmoothAt_smulLeftDualCLM_of_notMem_tsupport T hx p.snd)⟩
+  microlocalSingularSet_smulLeftDualCLM_subset
+    isInvariantMicrolocalRegularity_isMicrolocallySmoothAt f T
 
 /-- Over the points where `f` does not vanish, a smooth multiple `f T` has the same wave front set
 as `T`. -/
@@ -587,7 +541,8 @@ the wave front set. -/
 theorem waveFrontSet_smulLeftDualCLM_of_forall_mem_ne_zero {f : C^∞⟮I, M; ℝ⟯}
     (T : BundleTest I F V →L_c[ℝ] ℝ) (hf : ∀ p ∈ waveFrontSet I T, f p.proj ≠ 0) :
     waveFrontSet I (smulLeftDualCLM f T) = waveFrontSet I T :=
-  Subset.antisymm (fun _ ⟨hp, hT⟩ ↦ ⟨hp, fun h ↦ hT (h.smulLeftDualCLM f)⟩)
+  Subset.antisymm (fun _ hp ↦ mem_waveFrontSet_iff.2 <|
+      (mem_waveFrontSet_iff.1 hp).imp_right fun hT h ↦ hT (h.smulLeftDualCLM f))
     fun p hp ↦ (mem_waveFrontSet_smulLeftDualCLM_iff (hf p hp)).2 hp
 
 /-- Multiplying by a smooth function that vanishes nowhere does not change the wave front set. -/
