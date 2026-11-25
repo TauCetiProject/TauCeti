@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.FinitePresentation
 public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Quasicoherent
 public import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
 import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
+import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 
 /-!
 # Higher direct images over `Spec R`
@@ -44,11 +45,6 @@ universe u
 
 namespace AlgebraicGeometry.Scheme.Modules
 
-private lemma isOver_spec {X : Scheme.{u}} (R : Type u) [CommRing R] [X.Over (Spec (.of R))] :
-    (X ↘ Spec (.of R)).IsOver (Spec (.of R)) := by
-  have hid : ((Spec (.of R)) ↘ Spec (.of R)) = 𝟙 _ := by simp [specOverSpec_over]
-  exact ⟨by rw [hid, Category.comp_id]⟩
-
 section SpecBase
 
 variable {X : Scheme.{u}} (M : X.Modules) [M.IsQuasicoherent]
@@ -61,20 +57,17 @@ quasi-compact and quasi-separated over `Spec R` and quasi-coherent `M`, `Hⁿ(X,
 def cohomologyHigherDirectImageSpecΓLinearEquiv :
     Cohomology M n ≃ₗ[R]
       (moduleSpecΓFunctor (R := .of R)).obj (((X ↘ Spec (.of R)).higherDirectImage n).obj M) :=
-  have := isOver_spec (X := X) R
   ((X ↘ Spec (.of R)).cohomologyHigherDirectImageGlobalSectionsLinearEquiv M n R).trans
     (((X ↘ Spec (.of R)).higherDirectImage n).obj M).globalSectionsModuleSpecΓLinearEquiv
 
 /-- Evaluation of `cohomologyHigherDirectImageSpecΓLinearEquiv` via
-`higherDirectImageBasicOpenSectionsAddEquiv` on `D(1) = ⊤` and
-`globalSectionsModuleSpecΓLinearEquiv`. -/
+`higherDirectImageSectionsAddEquiv` on `⊤` and `globalSectionsModuleSpecΓLinearEquiv`. -/
 @[simp]
 theorem cohomologyHigherDirectImageSpecΓLinearEquiv_apply (x : Cohomology M n) :
     M.cohomologyHigherDirectImageSpecΓLinearEquiv R n x =
       (((X ↘ Spec (.of R)).higherDirectImage n).obj M).globalSectionsModuleSpecΓLinearEquiv
-        ((X ↘ Spec (.of R)).higherDirectImageBasicOpenSectionsAddEquiv M n
-          ⟨1, (Spec (.of R)).basicOpen_one⟩ ((cohomologyOnTopBaseLinearEquiv M R n).symm x)) :=
-  have := isOver_spec (X := X) R
+        ((X ↘ Spec (.of R)).higherDirectImageSectionsAddEquiv M n
+          (isAffineOpen_top (Spec (.of R))) ((cohomologyOnTopBaseLinearEquiv M R n).symm x)) :=
   congrArg (((X ↘ Spec (.of R)).higherDirectImage n).obj M).globalSectionsModuleSpecΓLinearEquiv
     ((X ↘ Spec (.of R)).cohomologyHigherDirectImageGlobalSectionsLinearEquiv_apply M n R x)
 
@@ -84,11 +77,10 @@ theorem cohomologyHigherDirectImageSpecΓLinearEquiv_symm_apply
     (y : (moduleSpecΓFunctor (R := .of R)).obj (((X ↘ Spec (.of R)).higherDirectImage n).obj M)) :
     (M.cohomologyHigherDirectImageSpecΓLinearEquiv R n).symm y =
       cohomologyOnTopBaseLinearEquiv M R n
-        (((X ↘ Spec (.of R)).higherDirectImageBasicOpenSectionsAddEquiv M n
-          ⟨1, (Spec (.of R)).basicOpen_one⟩).symm
+        (((X ↘ Spec (.of R)).higherDirectImageSectionsAddEquiv M n
+          (isAffineOpen_top (Spec (.of R)))).symm
           ((((X ↘ Spec (.of R)).higherDirectImage n).obj
             M).globalSectionsModuleSpecΓLinearEquiv.symm y)) :=
-  have := isOver_spec (X := X) R
   (X ↘ Spec (.of R)).cohomologyHigherDirectImageGlobalSectionsLinearEquiv_symm_apply M n R _
 
 /-- For `X` quasi-compact and quasi-separated over `Spec R` and quasi-coherent `M`, the higher
@@ -158,10 +150,9 @@ variable {X : Scheme.{u}} {M₁ M₂ : X.Modules} [M₁.IsQuasicoherent] [M₂.I
 theorem cohomologyHigherDirectImageSpecΓLinearEquiv_naturality (x : Cohomology M₁ n) :
     M₂.cohomologyHigherDirectImageSpecΓLinearEquiv R n (cohomologyMapBaseLinear R X φ n x) =
       (moduleSpecΓFunctor (R := .of R)).map (((X ↘ Spec (.of R)).higherDirectImage n).map φ)
-        (M₁.cohomologyHigherDirectImageSpecΓLinearEquiv R n x) := by
+        (M₁.cohomologyHigherDirectImageSpecΓLinearEquiv R n x) :=
   let f := X ↘ Spec (.of R)
-  have := isOver_spec (X := X) R
-  exact (congrArg ((f.higherDirectImage n).obj M₂).globalSectionsModuleSpecΓLinearEquiv
+  (congrArg ((f.higherDirectImage n).obj M₂).globalSectionsModuleSpecΓLinearEquiv
     (f.cohomologyHigherDirectImageGlobalSectionsLinearEquiv_naturality φ n R x)).trans
     (((f.higherDirectImage n).map φ).globalSectionsModuleSpecΓLinearEquiv_naturality _)
 
@@ -183,12 +174,8 @@ theorem tildeCohomologyIsoHigherDirectImage_naturality :
           Cohomology M₁ n ≃ₗ[CommRingCat.of R] _).toModuleIso.hom ≫
         (moduleSpecΓFunctor (R := .of R)).map (((X ↘ Spec (.of R)).higherDirectImage n).map φ) :=
     ModuleCat.hom_ext (LinearMap.ext (cohomologyHigherDirectImageSpecΓLinearEquiv_naturality φ R n))
-  have htilde := ((tilde.functor (.of R)).map_comp _ _).symm.trans
-    ((congrArg (tilde.functor (.of R)).map hmod).trans ((tilde.functor (.of R)).map_comp _ _))
-  exact (Category.assoc _ _ _).symm.trans ((eq_whisker htilde _).trans
-    ((Category.assoc _ _ _).trans ((whisker_eq _
-      ((Scheme.Modules.fromTildeΓNatTrans (R := .of R)).naturality _)).trans
-      (Category.assoc _ _ _).symm)))
+  exact (((CommSq.mk hmod).map (tilde.functor (.of R))).vert_comp
+    ⟨(Scheme.Modules.fromTildeΓNatTrans (R := .of R)).naturality _⟩).w
 
 end Naturality
 

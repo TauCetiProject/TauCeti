@@ -7,8 +7,10 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Quasicoherent
 public import TauCeti.AlgebraicGeometry.Modules.Sections
+public import TauCeti.AlgebraicGeometry.Modules.Stalk
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 public import TauCeti.CategoryTheory.Monoidal.TensorPow.Basic
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Stalk
 
 /-!
 # Tensoring sections of `𝒪_X`-modules with a section
@@ -25,28 +27,41 @@ These maps describe the sections of twists of a module by powers of a line bundl
 `TauCeti/AlgebraicGeometry/LineBundle/TwistedSections.lean` for their use over the nonvanishing
 locus of a section of an invertible sheaf.
 
+The monoidal tensor product `F ⊗ N` is the sheafification of the sectionwise tensor product, and
+`t ⊗ e` is the image of the pure tensor under the sheafification unit. Its stalk at `x` is the
+tensor product `F_x ⊗ N_x` over `𝒪_{X,x}` (`Scheme.Modules.tensorStalkEquiv`), under which the
+germ of `s ⊗ t` is `s_x ⊗ t_x`; nonvanishing loci of tensor products of sections are computed
+from this.
+
 ## Main definitions
 
 * `AlgebraicGeometry.Scheme.Modules.tmulRight`: the linear map `t ↦ t ⊗ e` on sections.
 * `AlgebraicGeometry.Scheme.Modules.tensorPowSection`: the tensor powers `eⁿ ∈ Γ(Lⁿ, U)`.
+* `AlgebraicGeometry.Scheme.Modules.tensorStalkEquiv`: the stalk of `F ⊗ N` is the tensor product
+  of the stalks.
 
 ## Main results
 
+* `AlgebraicGeometry.Scheme.Modules.tensorUnderlyingIso_hom_app_tmulRight` and
+  `AlgebraicGeometry.Scheme.Modules.tensorUnderlyingIso_hom_comp_app_tmulRight`: under the
+  comparison with the sheafification of the sectionwise tensor product, `t ⊗ e` is the image of
+  the pure tensor under the sheafification unit.
+* `AlgebraicGeometry.Scheme.Modules.tensorStalkEquiv_germ_tmulRight` and
+  `AlgebraicGeometry.Scheme.Modules.tensorStalkEquiv_symm_tmul_germ`: the germ of `s ⊗ t`
+  corresponds to `s_x ⊗ t_x`.
 * `AlgebraicGeometry.Scheme.Modules.bijective_tmulRight` and
   `AlgebraicGeometry.Scheme.Modules.bijective_tmulRight_tensorPowSection`: `t ↦ t ⊗ eⁿ` is bijective
   when `e` is a basis of `L` over `U`.
 * `AlgebraicGeometry.Scheme.Modules.bijective_smul_tensorPowSection`: if `e` is a basis of `L`
   over `U`, then `eⁿ` is a basis of `Lⁿ` over `U`.
-* `AlgebraicGeometry.Scheme.Modules.associator_hom_app_tmulRight`,
-  `AlgebraicGeometry.Scheme.Modules.leftUnitor_hom_app_tmulRight`,
-  `AlgebraicGeometry.Scheme.Modules.tensorPowSuccIso_hom_app_tmulRight_tensorPowSection`, and
-  `AlgebraicGeometry.Scheme.Modules.sectionsFunctor_μ_comp_map`: monoidal coherence identities for
-  `tmulRight`, `tensorPowSection`, and `sectionsFunctor`.
+* `AlgebraicGeometry.Scheme.Modules.tmulRight_tensorPowSection_add`: tensoring `t ⊗ eᵐ` with `eⁿ`
+  gives `t ⊗ eⁿ⁺ᵐ` under the associator and the block decomposition `Lᵐ ⊗ Lⁿ ≅ Lⁿ⁺ᵐ`.
 -/
 
 public section
 
 open CategoryTheory MonoidalCategory AlgebraicGeometry Opposite TopologicalSpace TauCeti
+open scoped TensorProduct
 
 namespace AlgebraicGeometry.Scheme.Modules
 
@@ -69,6 +84,92 @@ def tmulRight {U : X.Opens} (e : Γ(L, U)) : Γ(F, U) →ₗ[Γ(X, U)] Γ(F ⊗ 
 theorem tmulRight_apply {U : X.Opens} (e : Γ(L, U)) (t : Γ(F, U)) :
     tmulRight F e t = Functor.LaxMonoidal.μ (sectionsFunctor U) F L (t ⊗ₜ e) :=
   (rfl)
+
+/-- Under the identification of the monoidal tensor product with the sheafification of the
+sectionwise tensor product, `s ⊗ t` is the image of the pure tensor under sheafification. -/
+theorem tensorUnderlyingIso_hom_app_tmulRight {U : X.Opens} (e : Γ(L, U)) (t : Γ(F, U)) :
+    Hom.app (X := X) (F.tensorUnderlyingIso L).hom U (tmulRight F e t) =
+      (((PresheafOfModules.sheafificationAdjunction (𝟙 X.ringCatSheaf.obj)).unit.app
+        (F.val ⊗ L.val)).app (op U) (t ⊗ₜ e)) := by
+  rw [tmulRight_apply]
+  have h := TauCeti.SheafOfModules.forget_μ_comp_tensorUnderlyingIso_hom X.sheaf F L
+  have hu := TauCeti.SheafOfModules.sheafificationForgetAdjunction_unit_app
+    X.sheaf (F.val ⊗ L.val)
+  exact congrArg (fun φ ↦ (φ.app (op U)).hom (t ⊗ₜ e)) (h.trans hu)
+
+/-- A morphism from the sheafification of the sectionwise tensor product evaluates a tensor
+of sections by first applying the sheafification unit. -/
+theorem tensorUnderlyingIso_hom_comp_app_tmulRight {P : X.Modules}
+    (p : (PresheafOfModules.sheafification (𝟙 X.ringCatSheaf.obj)).obj (F.val ⊗ L.val) ⟶ P)
+    {U : X.Opens} (e : Γ(L, U)) (t : Γ(F, U)) :
+    Hom.app (X := X) ((F.tensorUnderlyingIso L).hom ≫ p) U
+        (tmulRight F e t) =
+      Hom.app (X := X) p U
+        (((PresheafOfModules.sheafificationAdjunction (𝟙 X.ringCatSheaf.obj)).unit.app
+        (F.val ⊗ L.val)).app (op U) (t ⊗ₜ e)) := by
+  -- `tensorUnderlyingIso` lives in sheaves of modules over `SheafOfModules.ringCatSheaf X.sheaf`,
+  -- so the composite is formed in that category rather than in `X.Modules` (over
+  -- `X.ringCatSheaf`). The two agree only up to unfolding, so the pattern of `Hom.comp_app` is not
+  -- found syntactically; instantiating its morphisms elaborates it at the composite in the goal.
+  rw [Hom.comp_app (φ := (F.tensorUnderlyingIso L).hom) (ψ := p), ConcreteCategory.comp_apply,
+    tensorUnderlyingIso_hom_app_tmulRight]
+
+/-- The stalk of the monoidal tensor product is the tensor product of the stalks over the
+structure-sheaf stalk. -/
+def tensorStalkEquiv (N : X.Modules) (x : X) :
+    (F ⊗ N).presheaf.stalk x ≃ₗ[X.presheaf.stalk x]
+      F.presheaf.stalk x ⊗[X.presheaf.stalk x] N.presheaf.stalk x :=
+  -- Both equivalences are linear over the stalk of `X.sheaf.obj`; restate them over the defeq
+  -- scheme stalk `X.presheaf.stalk x`, where the composite is stated.
+  (show _ ≃ₗ[X.presheaf.stalk x] _ from
+    PresheafOfModules.stalkLinearEquivCommRing (S := X.sheaf.obj) x
+      ((_root_.SheafOfModules.forget _).mapIso (F.tensorUnderlyingIso N ≪≫
+        (TauCeti.SheafOfModules.tensorProductIso X.sheaf F N).symm))).trans
+    (show _ ≃ₗ[X.presheaf.stalk x] _ from TauCeti.SheafOfModules.tensorStalkEquiv X.sheaf F N x)
+
+/-- The monoidal tensor-stalk equivalence transports through the canonical sheafification
+comparison before applying the sheaf tensor-stalk equivalence. -/
+theorem tensorStalkEquiv_apply (N : X.Modules) (x : X) (t : (F ⊗ N).presheaf.stalk x) :
+    F.tensorStalkEquiv N x t = TauCeti.SheafOfModules.tensorStalkEquiv X.sheaf F N x
+      (PresheafOfModules.stalkMapCommRing (S := X.sheaf.obj) x
+        (F.tensorUnderlyingIso N ≪≫
+          (TauCeti.SheafOfModules.tensorProductIso X.sheaf F N).symm).hom.val t) := by
+  rw [tensorStalkEquiv]
+  -- `LinearEquiv.trans` applies its factors in turn, and `(forget _).mapIso e` has forward
+  -- morphism `e.hom.val`.
+  exact congrArg (TauCeti.SheafOfModules.tensorStalkEquiv X.sheaf F N x)
+    (PresheafOfModules.stalkLinearEquivCommRing_apply x _ t)
+
+/-- The germ of a tensor of sections of the monoidal product is the tensor of their germs. -/
+@[simp]
+theorem tensorStalkEquiv_germ_tmulRight {N : X.Modules} {U : X.Opens}
+    (s : Γ(F, U)) (t : Γ(N, U)) {x : X} (hx : x ∈ U) :
+    F.tensorStalkEquiv N x ((F ⊗ N).presheaf.germ U x hx (tmulRight F t s)) =
+      F.presheaf.germ U x hx s ⊗ₜ[X.presheaf.stalk x] N.presheaf.germ U x hx t := by
+  rw [tensorStalkEquiv_apply]
+  let e := F.tensorUnderlyingIso N ≪≫
+    (TauCeti.SheafOfModules.tensorProductIso X.sheaf F N).symm
+  have hg := PresheafOfModules.stalkMapCommRing_germ (S := X.sheaf.obj) x e.hom.val
+    U hx (tmulRight F t s)
+  have hs := F.tensorUnderlyingIso_hom_comp_app_tmulRight
+    (TauCeti.SheafOfModules.tensorProductIso X.sheaf F N).inv t s
+  refine (congrArg (TauCeti.SheafOfModules.tensorStalkEquiv X.sheaf F N x) hg).trans ?_
+  refine (congrArg (fun z ↦ TauCeti.SheafOfModules.tensorStalkEquiv X.sheaf F N x
+    (TopCat.Presheaf.germ
+      (TauCeti.SheafOfModules.tensorProduct X.sheaf F N).val.presheaf U x hx z)) hs).trans ?_
+  exact (TauCeti.SheafOfModules.tensorStalkEquiv_apply X.sheaf F N x _).trans
+    (TauCeti.SheafOfModules.tensorStalkComparison_germ_unit_tmul X.sheaf F N x U hx s t)
+
+/-- The inverse tensor-stalk equivalence sends a tensor of germs to the germ of the
+tensor of sections. -/
+@[simp]
+theorem tensorStalkEquiv_symm_tmul_germ {N : X.Modules} {U : X.Opens}
+    (s : Γ(F, U)) (t : Γ(N, U)) {x : X} (hx : x ∈ U) :
+    (F.tensorStalkEquiv N x).symm
+        (F.presheaf.germ U x hx s ⊗ₜ[X.presheaf.stalk x] N.presheaf.germ U x hx t) =
+      (F ⊗ N).presheaf.germ U x hx (tmulRight F t s) := by
+  apply (F.tensorStalkEquiv N x).injective
+  simp
 
 /-- Tensoring with `e` is linear in `e`. -/
 @[simp]
@@ -107,6 +208,8 @@ theorem whiskerLeft_app_tmulRight {L' : X.Modules} (g : L ⟶ L') {U : X.Opens} 
   have h := congrArg (fun φ ↦ φ.hom (t ⊗ₜ e))
     (Functor.LaxMonoidal.μ_natural_right (sectionsFunctor U) F g)
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h
+  -- The associator and whiskerings of `ModuleCat` act on pure tensors as expected, and the
+  -- sections functor applies `Hom.app`, so `h` is the claim with `tmulRight` unfolded.
   exact h.symm
 
 /-- The right unitor `F ⊗ 𝒪_X ≅ F` sends `t ⊗ r` to `r • t`. -/
@@ -115,6 +218,8 @@ theorem rightUnitor_hom_app_tmulRight {U : X.Opens} (r : Γ(X, U)) (t : Γ(F, U)
   have h := congrArg (fun φ ↦ φ.hom (t ⊗ₜ r))
     (Functor.LaxMonoidal.right_unitality (sectionsFunctor U) F)
   simp only [sectionsFunctor_ε, ModuleCat.hom_comp, LinearMap.comp_apply] at h
+  -- The left unitor of `ModuleCat` is `TensorProduct.lid`, so `h` reads `r • e` on the right, and
+  -- the sections functor applies `Hom.app`.
   exact h.symm
 
 /-- The inverse right unitor `F ≅ F ⊗ 𝒪_X` sends `t` to `t ⊗ 1`. -/
@@ -126,6 +231,30 @@ theorem rightUnitor_inv_app_eq_tmulRight {U : X.Opens} (t : Γ(F, U)) :
   rw [← ConcreteCategory.comp_apply, ← Hom.comp_app, Iso.hom_inv_id, Hom.id_app]
   -- The identity of `Γ(F, U)` in `AddCommGrpCat` acts as the identity function.
   rfl
+
+/-- The left unitor `𝒪_X ⊗ L ≅ L` sends `r ⊗ e` to `r • e`. -/
+@[simp]
+theorem leftUnitor_hom_app_tmulRight {U : X.Opens} (r : Γ(X, U)) (e : Γ(L, U)) :
+    (λ_ L).hom.app U (tmulRight (𝟙_ X.Modules) e r) = r • e := by
+  have h := congrArg (fun φ ↦ φ.hom (r ⊗ₜ e))
+    (Functor.LaxMonoidal.left_unitality (sectionsFunctor U) L)
+  simp only [sectionsFunctor_ε, ModuleCat.hom_comp, LinearMap.comp_apply] at h
+  -- The left unitor of `ModuleCat` is `TensorProduct.lid`, so `h` reads `r • e` on the right, and
+  -- the sections functor applies `Hom.app`.
+  exact h.symm
+
+/-- The associator `(F ⊗ L) ⊗ G ≅ F ⊗ (L ⊗ G)` sends `(t ⊗ e) ⊗ e'` to `t ⊗ (e ⊗ e')`. -/
+@[simp]
+theorem associator_hom_app_tmulRight {G : X.Modules} {U : X.Opens} (e' : Γ(G, U))
+    (e : Γ(L, U)) (t : Γ(F, U)) :
+    (α_ F L G).hom.app U (tmulRight (F ⊗ L) e' (tmulRight F e t)) =
+      tmulRight F (tmulRight L e' e) t := by
+  have h := congrArg (fun φ ↦ φ.hom ((t ⊗ₜ e) ⊗ₜ e'))
+    (Functor.LaxMonoidal.associativity (sectionsFunctor U) F L G)
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h
+  -- The associator and whiskerings of `ModuleCat` act on pure tensors as expected, and the
+  -- sections functor applies `Hom.app`, so `h` is the claim with `tmulRight` unfolded.
+  exact h
 
 /-- Restriction to an open subscheme commutes with tensoring sections: the tensor map
 `F|_Y ⊗ L|_Y ⟶ (F ⊗ L)|_Y` of the restriction along an open immersion `j : Y ⟶ X` sends `t ⊗ e`
@@ -261,6 +390,35 @@ theorem tmulRight_tensorPowSection_smul {U : X.Opens} (r : Γ(X, U)) (e : Γ(L, 
       tmulRight F (tensorPowSection e n) (r ^ n • t) := by
   rw [tensorPowSection_smul, tmulRight_smul, LinearMap.map_smul]
 
+/-- The block decomposition `Lᵐ ⊗ Lⁿ ≅ Lⁿ⁺ᵐ` sends `eᵐ ⊗ eⁿ` to `eⁿ⁺ᵐ`. -/
+@[simp]
+theorem tensorPowAddIso_hom_app_tmulRight_tensorPowSection {U : X.Opens} (e : Γ(L, U))
+    (m n : ℕ) :
+    (tensorPowAddIso L m n).hom.app U
+        (tmulRight (tensorPow L m) (tensorPowSection e n) (tensorPowSection e m)) =
+      tensorPowSection e (n + m) := by
+  induction m with
+  | zero =>
+    rw [tensorPowAddIso_zero]
+    exact (leftUnitor_hom_app_tmulRight (1 : Γ(X, U)) (tensorPowSection e n)).trans
+      (one_smul _ _)
+  | succ m ih =>
+    rw [tensorPowAddIso_succ_hom, Hom.comp_app, ConcreteCategory.comp_apply,
+      tensorPowSection_succ, associator_hom_app_tmulRight, whiskerLeft_app_tmulRight, ih]
+    -- `n + (m + 1)` is definitionally `n + m + 1`, the index of the recursive step.
+    rfl
+
+/-- **Tensoring with powers of a section is multiplicative.** Tensoring `t ⊗ eᵐ` further with
+`eⁿ` gives `t ⊗ eⁿ⁺ᵐ`, after the identification `(F ⊗ Lᵐ) ⊗ Lⁿ ≅ F ⊗ Lⁿ⁺ᵐ` given by the
+associator and the block decomposition of tensor powers. -/
+theorem tmulRight_tensorPowSection_add {U : X.Opens} (e : Γ(L, U)) (m n : ℕ) (t : Γ(F, U)) :
+    tmulRight F (tensorPowSection e (n + m)) t =
+      ((α_ F (tensorPow L m) (tensorPow L n)).hom ≫ F ◁ (tensorPowAddIso L m n).hom).app U
+        (tmulRight (F ⊗ tensorPow L m) (tensorPowSection e n)
+          (tmulRight F (tensorPowSection e m) t)) := by
+  rw [Hom.comp_app, ConcreteCategory.comp_apply, associator_hom_app_tmulRight,
+    whiskerLeft_app_tmulRight, tensorPowAddIso_hom_app_tmulRight_tensorPowSection]
+
 /-- If `e` is a basis of `L` over `U`, then `eⁿ` is a basis of `Lⁿ` over `U`. -/
 theorem bijective_smul_tensorPowSection {U : X.Opens} (e : Γ(L, U))
     (he : ∀ (W : X.Opens) (i : W ⟶ U),
@@ -298,70 +456,6 @@ theorem bijective_tmulRight_tensorPowSection {U : X.Opens} (e : Γ(L, U))
       Function.Bijective fun r : Γ(X, W) ↦ r • L.presheaf.map i.op e) (n : ℕ) :
     Function.Bijective (tmulRight F (tensorPowSection e n)) :=
   bijective_tmulRight F _ (bijective_smul_tensorPowSection e he n)
-
-/-! ### Monoidal coherences on tensor products and tensor powers of sections -/
-
-/-- The associator `(F ⊗ G) ⊗ H ≅ F ⊗ (G ⊗ H)` sends `(a ⊗ b) ⊗ c` to `a ⊗ (b ⊗ c)`. -/
-theorem associator_hom_app_tmulRight (G H : X.Modules) {U : X.Opens}
-    (a : Γ(F, U)) (b : Γ(G, U)) (c : Γ(H, U)) :
-    (α_ F G H).hom.app U (tmulRight (F ⊗ G) c (tmulRight F b a)) =
-      tmulRight F (tmulRight G c b) a := by
-  let a' : (sectionsFunctor U).obj F := a
-  let b' : (sectionsFunctor U).obj G := b
-  let c' : (sectionsFunctor U).obj H := c
-  have h := congrArg (fun φ ↦ φ ((a' ⊗ₜ[Γ(X, U)] b') ⊗ₜ[Γ(X, U)] c'))
-    (Functor.LaxMonoidal.associativity (sectionsFunctor U) F G H)
-  simp only [CategoryTheory.ConcreteCategory.comp_apply,
-    ModuleCat.MonoidalCategory.whiskerRight_apply,
-    ModuleCat.MonoidalCategory.associator_hom_apply, sectionsFunctor_map] at h
-  rw [tmulRight_apply, tmulRight_apply, tmulRight_apply (F := F) (L := G ⊗ H), tmulRight_apply]
-  exact h
-
-/-- The left unitor `𝒪_X ⊗ F ≅ F` sends `r ⊗ t` to `r • t`. -/
-theorem leftUnitor_hom_app_tmulRight {U : X.Opens} (r : Γ(X, U)) (t : Γ(F, U)) :
-    (λ_ F).hom.app U (tmulRight (𝟙_ X.Modules) t r) = r • t := by
-  let t' : (sectionsFunctor U).obj F := t
-  have h := congrArg (fun φ ↦ φ (r ⊗ₜ t'))
-    (Functor.LaxMonoidal.left_unitality (sectionsFunctor U) F)
-  simp only [sectionsFunctor_ε, CategoryTheory.ConcreteCategory.comp_apply,
-    ModuleCat.MonoidalCategory.leftUnitor_hom_apply, sectionsFunctor_map] at h
-  exact (congrArg ((λ_ F).hom.app U) (tmulRight_apply (𝟙_ X.Modules) t r)).trans h.symm
-
-/-- Appending a factor on the right via `tensorPowSuccIso` carries `eⁿ ⊗ e` to `eⁿ⁺¹`. -/
-theorem tensorPowSuccIso_hom_app_tmulRight_tensorPowSection {U : X.Opens}
-    (e : Γ(L, U)) (n : ℕ) :
-    (tensorPowSuccIso L n).hom.app U (tmulRight (tensorPow L n) e (tensorPowSection e n)) =
-      tensorPowSection e (n + 1) := by
-  induction n with
-  | zero =>
-    rw [tensorPowSuccIso_zero_hom, Hom.comp_app, ConcreteCategory.comp_apply,
-      tensorPowSection_zero, leftUnitor_hom_app_tmulRight, one_smul,
-      rightUnitor_inv_app_eq_tmulRight, ← tensorPowSection_zero e]
-    exact (tensorPowSection_succ e 0).symm
-  | succ n ih =>
-    rw [tensorPowSuccIso_succ_hom, Hom.comp_app, ConcreteCategory.comp_apply,
-      tensorPowSection_succ, associator_hom_app_tmulRight, whiskerLeft_app_tmulRight, ih]
-    exact (tensorPowSection_succ e (n + 1)).symm
-
-/-- A morphism `φ : M ⊗ N ⟶ P` whose composite with `SheafOfModules.tensorUnderlyingIso.inv` is
-the sheafification of `g : M.val ⊗ N.val ⟶ P.val` followed by `sheafificationIso` agrees with `g`
-on sections over `U` after precomposing with `μ (sectionsFunctor U)`. -/
-theorem sectionsFunctor_μ_comp_map {M N P : X.Modules} (φ : M ⊗ N ⟶ P)
-    (g : MonoidalCategory.tensorObj M.val N.val ⟶ P.val)
-    (hφ : (SheafOfModules.tensorUnderlyingIso (R := X.sheaf) M N).inv ≫ φ =
-      (PresheafOfModules.sheafification.{u} (𝟙 X.ringCatSheaf.obj)).map g ≫
-        (TauCeti.SheafOfModules.sheafificationIso X.ringCatSheaf P).hom) (U : X.Opens) :
-    Functor.LaxMonoidal.μ (sectionsFunctor U) M N ≫ (sectionsFunctor U).map φ = g.app (op U) := by
-  let adj := TauCeti.SheafOfModules.sheafificationForgetAdjunction X.sheaf
-  have h1 : adj.homEquiv _ _ ((SheafOfModules.tensorUnderlyingIso (R := X.sheaf) M N).inv ≫ φ) =
-      g :=
-    (congrArg (adj.homEquiv _ _) (hφ.trans
-      ((congrArg ((PresheafOfModules.sheafification.{u} (𝟙 X.ringCatSheaf.obj)).map g ≫ ·)
-        (TauCeti.SheafOfModules.sheafificationForgetAdjunction_counit_app X.sheaf P).symm).trans
-        (adj.homEquiv_counit _ _ g).symm))).trans ((adj.homEquiv _ _).apply_symm_apply g)
-  rw [sectionsFunctor_μ, sectionsFunctor_map]
-  exact congrArg (fun ψ ↦ ψ.app (op U))
-    ((TauCeti.SheafOfModules.forget_μ_comp_map (R := X.sheaf) φ).trans h1)
 
 end
 

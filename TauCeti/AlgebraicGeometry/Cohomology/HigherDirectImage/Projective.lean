@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Spec
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver
-import TauCeti.AlgebraicGeometry.Cohomology.Projective
+import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Finite
 
 /-!
 # Coherence of higher direct images for projective schemes over a Noetherian ring
@@ -15,7 +15,7 @@ import TauCeti.AlgebraicGeometry.Cohomology.Projective
 Let `R` be a Noetherian commutative ring, `X` a scheme projective over `R`
 (`AlgebraicGeometry.Scheme.IsProjectiveOver R X`), and `M` a quasi-coherent `𝒪_X`-module of finite
 type. Combining Serre's cohomology finiteness theorem
-(`AlgebraicGeometry.Scheme.IsProjectiveOver.finite_cohomology`) with the `Spec R`
+(`AlgebraicGeometry.Scheme.Modules.finite_cohomology_of_isProjectiveOver`) with the `Spec R`
 higher-direct-image characterization
 (`AlgebraicGeometry.Scheme.Modules.isFinitePresentation_higherDirectImage_Spec_iff`) shows that
 every higher direct image `Rⁿ (X ↘ Spec R)_* M` is finitely presented (hence coherent)
@@ -52,7 +52,6 @@ instance IsProjectiveOver.isFinitePresentation_higherDirectImage (R : Type u) [C
     [IsNoetherianRing R] {X : Scheme.{u}} [X.Over (Spec (.of R))] [X.IsProjectiveOver R]
     (M : X.Modules) [M.IsQuasicoherent] [M.IsFiniteType] (n : ℕ) :
     (((X ↘ Spec (.of R)).higherDirectImage n).obj M).IsFinitePresentation :=
-  have := IsProjectiveOver.finite_cohomology R M n
   (M.isFinitePresentation_higherDirectImage_Spec_iff R n).mpr
     (Module.finitePresentation_of_finite R (Cohomology M n))
 

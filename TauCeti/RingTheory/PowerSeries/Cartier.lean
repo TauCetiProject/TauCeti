@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.Expand
+import TauCeti.Data.Nat.Carry
 import TauCeti.RingTheory.PowerSeries.Derivative
 import TauCeti.RingTheory.PowerSeries.Expand
 
@@ -16,16 +17,22 @@ import TauCeti.RingTheory.PowerSeries.Expand
 The Cartier operator of modulus `q` and index `r` selects coefficients at the indices
 `q * n + r`. It is linear in the series. For an actual residue `r < q`, it commutes with
 multiplication by an expanded series, and the expanded Cartier components reconstruct the
-original series. Over a finite field, expansion by its cardinality is the Frobenius power,
-so these identities give the usual Cartier identities used in residue averaging. Since the `j`-th
-iterate of that expansion is the `q ^ j`-th power map
+original series. The Cartier components of a product are sums of products of components whose
+residues add up to the given residue, shifted by `X` when the residues carry; for modulus `2`
+this is the product formula for even and odd parts. Rescaling the variable by `a` rescales each
+Cartier component, so the odd part of `F(-X) F(X)` vanishes. Over a finite field, expansion by its
+cardinality is the Frobenius power, so these identities give the usual Cartier identities used
+in residue averaging. Since the `j`-th iterate of that expansion is the `q ^ j`-th power map
 (`FiniteField.PowerSeries.expand_card_pow_apply`),
 for a set `T` of series stable under the Cartier operators of modulus `q = |K|`, the powers
 `h ^ q ^ j` with `h ∈ T` lie in the `K[X]`-span of the powers `g ^ q ^ m` with `g ∈ T` whenever
 `j ≤ m`; this is the linear-algebra step of the proof of Christol's theorem.
 A series whose coefficients vanish away from the multiples of the modulus is the expansion of
 its residue-zero Cartier component; in prime characteristic this applies to a series with zero
-derivative.
+derivative. Over a commutative ring, the powers `(1 + X) ^ i` with `i < q` play the role of the
+`X ^ i`: every series is uniquely `∑ i < q, (1 + X) ^ i * b i (X ^ q)`
+(`exists_sum_one_add_X_pow_mul_expand`, `eq_zero_of_sum_one_add_X_pow_mul_expand_eq_zero`), by
+the binomial change of basis between `X ^ r` and `(1 + X) ^ i`.
 
 The definition and finite-field multiplication identity follow Section 3, definition and
 Proposition 4, of Rowland–Stipulanti–Yassawi, *An elementary proof of Bridy's theorem*
@@ -112,7 +119,91 @@ theorem exists_cartier_coe_polynomial_eq (q r : ℕ) (hq : q ≠ 0) (P : Polynom
     have := (Nat.div_lt_iff_lt_mul (Nat.pos_of_ne_zero hq)).mp hlt
     nlinarith
 
+/-- **Cartier components of a product.** At an actual residue `r`, the Cartier component of
+`F * G` collects the products of the components of `F` and `G` whose residues add up to `r`
+modulo `q`, shifted by `X` when the residues carry past `q`. -/
+theorem cartier_mul (q r : ℕ) (hr : r < q) (F G : PowerSeries R) :
+    cartier R q r (F * G) = ∑ a ∈ Finset.range q, ∑ b ∈ Finset.range q,
+      if (a + b) % q = r then X ^ ((a + b) / q) * (cartier R q a F * cartier R q b G)
+      else 0 := by
+  classical
+  have hq : 0 < q := Nat.zero_lt_of_lt hr
+  ext n
+  rw [coeff_cartier, coeff_mul, ← Finset.sum_fiberwise_of_maps_to
+    (g := fun p : ℕ × ℕ ↦ (p.1 % q, p.2 % q)) (t := Finset.range q ×ˢ Finset.range q)
+    fun p _ ↦ Finset.mem_product.2 ⟨Finset.mem_range.2 (Nat.mod_lt _ hq),
+      Finset.mem_range.2 (Nat.mod_lt _ hq)⟩, Finset.sum_product, map_sum]
+  refine Finset.sum_congr rfl fun a ha ↦ ?_
+  rw [map_sum]
+  refine Finset.sum_congr rfl fun b hb ↦ ?_
+  rw [Finset.mem_range] at ha hb
+  have key : ∀ p ∈ {p ∈ Finset.antidiagonal (q * n + r) | (p.1 % q, p.2 % q) = (a, b)},
+      (a + b) % q = r ∧ p.1 / q + p.2 / q + (a + b) / q = n := by
+    intro p hp
+    simp only [Finset.mem_filter, Finset.mem_antidiagonal, Prod.mk.injEq] at hp
+    rw [← hp.2.1, ← hp.2.2, ← Nat.add_mod, ← Nat.add_div_eq_div_add_div_add_mod_add_mod_div, hp.1]
+    simp [Nat.mod_eq_of_lt hr, Nat.mul_add_div hq, Nat.div_eq_of_lt hr]
+  split_ifs with hab
+  · rw [coeff_X_pow_mul']
+    split_ifs with hc
+    · rw [coeff_mul]
+      refine Finset.sum_nbij' (fun p ↦ (p.1 / q, p.2 / q)) (fun p ↦ (q * p.1 + a, q * p.2 + b))
+        (fun p hp ↦ ?_) (fun p hp ↦ ?_) (fun p hp ↦ ?_) (fun p _ ↦ ?_) (fun p hp ↦ ?_)
+      · have := (key p hp).2
+        rw [Finset.mem_antidiagonal]
+        omega
+      · rw [Finset.mem_antidiagonal] at hp
+        have h3 := Nat.div_add_mod (a + b) q
+        -- `omega` cannot multiply by the variable modulus `q`, so the quotient identity is
+        -- multiplied by `q` here and distributed before the linear arithmetic below.
+        have h : q * (p.1 + p.2 + (a + b) / q) = q * n := by
+          rw [show p.1 + p.2 + (a + b) / q = n by omega]
+        rw [hab] at h3
+        rw [mul_add, mul_add] at h
+        simp [Nat.mod_eq_of_lt ha, Nat.mod_eq_of_lt hb]
+        omega
+      · simp only [Finset.mem_filter, Prod.mk.injEq] at hp
+        have h1 := Nat.div_add_mod p.1 q
+        have h2 := Nat.div_add_mod p.2 q
+        rw [hp.2.1] at h1
+        rw [hp.2.2] at h2
+        ext <;> simp <;> omega
+      · simp [Nat.mul_add_div hq, Nat.div_eq_of_lt ha, Nat.div_eq_of_lt hb]
+      · simp only [Finset.mem_filter, Prod.mk.injEq] at hp
+        rw [coeff_cartier, coeff_cartier, ← hp.2.1, ← hp.2.2, Nat.div_add_mod, Nat.div_add_mod]
+    · exact Finset.sum_eq_zero fun p hp ↦
+        (hc ((key p hp).2 ▸ Nat.le_add_left _ _)).elim
+  · exact Finset.sum_eq_zero fun p hp ↦ (hab (key p hp).1).elim
+
+/-- The even part of a product: writing `F(X) = F₀(X²) + X F₁(X²)` and similarly for `G`, the
+even part of `F * G` is `F₀ G₀ + X F₁ G₁`. -/
+theorem cartier_two_zero_mul (F G : PowerSeries R) :
+    cartier R 2 0 (F * G) =
+      cartier R 2 0 F * cartier R 2 0 G + X * (cartier R 2 1 F * cartier R 2 1 G) := by
+  simp [cartier_mul 2 0 two_pos, Finset.sum_range_succ]
+
+/-- The odd part of a product: writing `F(X) = F₀(X²) + X F₁(X²)` and similarly for `G`, the
+odd part of `F * G` is `F₀ G₁ + F₁ G₀`. -/
+theorem cartier_two_one_mul (F G : PowerSeries R) :
+    cartier R 2 1 (F * G) =
+      cartier R 2 0 F * cartier R 2 1 G + cartier R 2 1 F * cartier R 2 0 G := by
+  simp [cartier_mul 2 1 one_lt_two, Finset.sum_range_succ]
+
 end Semiring
+
+section CommSemiring
+
+variable {R : Type*} [CommSemiring R]
+
+/-- Rescaling the variable by `a` multiplies the Cartier component of modulus `q` and index `r`
+by `a ^ r` and rescales it by `a ^ q`. -/
+theorem cartier_rescale (q r : ℕ) (a : R) (F : PowerSeries R) :
+    cartier R q r (rescale a F) = a ^ r • rescale (a ^ q) (cartier R q r F) := by
+  ext n
+  simp only [coeff_cartier, coeff_rescale, coeff_smul, smul_eq_mul]
+  ring
+
+end CommSemiring
 
 section CommRing
 
@@ -183,6 +274,25 @@ theorem sum_X_pow_mul_expand_cartier (q : ℕ) (hq : q ≠ 0) (F : PowerSeries R
   · intro hnot
     exact (hnot (Finset.mem_range.mpr (Nat.mod_lt n hq'))).elim
 
+/-- The even part of `F(-X)` is the even part of `F`, evaluated at `X`. -/
+@[simp]
+theorem cartier_two_zero_rescale_neg_one (F : PowerSeries R) :
+    cartier R 2 0 (rescale (-1) F) = cartier R 2 0 F := by
+  simp [cartier_rescale]
+
+/-- The odd part of `F(-X)` is minus the odd part of `F`. -/
+@[simp]
+theorem cartier_two_one_rescale_neg_one (F : PowerSeries R) :
+    cartier R 2 1 (rescale (-1) F) = -cartier R 2 1 F := by
+  simp [cartier_rescale]
+
+/-- The product `F(-X) F(X)` is even: its odd part vanishes. -/
+@[simp]
+theorem cartier_two_one_rescale_neg_one_mul_self (F : PowerSeries R) :
+    cartier R 2 1 (rescale (-1) F * F) = 0 := by
+  rw [cartier_two_one_mul, cartier_two_zero_rescale_neg_one, cartier_two_one_rescale_neg_one]
+  ring
+
 /-- A series whose coefficients vanish away from the multiples of `q` is the expansion of its
 residue-zero Cartier component. -/
 theorem expand_cartier_zero_of_coeff_eq_zero (q : ℕ) (hq : q ≠ 0) {F : PowerSeries R}
@@ -192,6 +302,87 @@ theorem expand_cartier_zero_of_coeff_eq_zero (q : ℕ) (hq : q ≠ 0) {F : Power
   · obtain ⟨m, rfl⟩ := hn
     simp
   · rw [coeff_expand_of_not_dvd _ _ _ hn, hF n hn]
+
+/-- Every Cartier component of modulus `q` of a power `(1 + X) ^ i` with `i < q` is a constant
+binomial coefficient. -/
+theorem cartier_one_add_X_pow {q i : ℕ} (j : ℕ) (hi : i < q) :
+    cartier R q j ((1 + X) ^ i) = C (i.choose j : R) := by
+  have h : (1 + X : R⟦X⟧) ^ i = ((1 + Polynomial.X) ^ i : Polynomial R) := by
+    simp [Polynomial.coe_pow, Polynomial.coe_add, Polynomial.coe_one, Polynomial.coe_X]
+  ext n
+  rw [coeff_cartier, coeff_C, h, Polynomial.coeff_coe, Polynomial.coeff_one_add_X_pow]
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp
+  · rw [Nat.choose_eq_zero_of_lt (by nlinarith)]
+    simp [hn.ne']
+
+/-- The Cartier component of index `j` of `(1 + X) ^ i * g (X ^ q)`, for `i < q`, is the binomial
+coefficient times `g`. -/
+theorem cartier_one_add_X_pow_mul_expand {q i j : ℕ} (hq : q ≠ 0) (hi : i < q) (hj : j < q)
+    (g : R⟦X⟧) :
+    cartier R q j ((1 + X) ^ i * expand q hq g) = C (i.choose j : R) * g := by
+  rw [mul_comm, cartier_expand_mul q j hq hj, cartier_one_add_X_pow j hi, mul_comm]
+
+/-- A power of `X` below `q` is a combination of the powers `(1 + X) ^ i`, `i < q`, with
+binomial coefficients. -/
+theorem X_pow_eq_sum_one_add_X_pow {q r : ℕ} (hr : r < q) :
+    (X : R⟦X⟧) ^ r =
+      ∑ i : Fin q, C ((-1) ^ (r - i) * (r.choose i : R)) * (1 + X) ^ (i : ℕ) := by
+  have h : (X : R⟦X⟧) ^ r = ((1 + X) + (-1)) ^ r := by ring
+  rw [h, add_pow, Fin.sum_univ_eq_sum_range
+    (fun i ↦ C ((-1) ^ (r - i) * (r.choose i : R)) * (1 + X) ^ i)]
+  rw [← Finset.sum_range_add_sum_Ico _ (show r + 1 ≤ q by omega)]
+  rw [Finset.sum_eq_zero (s := Finset.Ico _ _) fun i hi ↦ by
+    rw [Nat.choose_eq_zero_of_lt (by simp at hi; omega)]; simp, add_zero]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  simp only [map_mul, map_pow, map_neg, map_one, map_natCast]
+  ring
+
+/-- **Existence of expanded coordinates.** Over any commutative ring, every power series is
+`∑ i < q, (1 + X) ^ i * b i (X ^ q)` for some series `b i`. -/
+theorem exists_sum_one_add_X_pow_mul_expand (q : ℕ) (hq : q ≠ 0) (g : R⟦X⟧) :
+    ∃ b : Fin q → R⟦X⟧, ∑ i : Fin q, (1 + X) ^ (i : ℕ) * expand q hq (b i) = g := by
+  refine ⟨fun i ↦ ∑ r ∈ Finset.range q,
+    C ((-1) ^ (r - i) * (r.choose i : R)) * cartier R q r g, ?_⟩
+  conv_rhs => rw [sum_X_pow_mul_expand_cartier q hq g]
+  simp_rw [map_sum, Finset.mul_sum, map_mul, expand_C]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun r hr ↦ ?_
+  rw [X_pow_eq_sum_one_add_X_pow (Finset.mem_range.mp hr), Finset.sum_mul]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  simp only [map_mul]
+  ring
+
+/-- The Cartier components of an expanded combination: the component of index `j < q` of
+`∑ i < q, (1 + X) ^ i * b i (X ^ q)` is `∑ i, choose i j * b i`. -/
+theorem cartier_sum_one_add_X_pow_mul_expand {q j : ℕ} (hq : q ≠ 0) (hj : j < q)
+    (b : Fin q → R⟦X⟧) :
+    cartier R q j (∑ i : Fin q, (1 + X) ^ (i : ℕ) * expand q hq (b i)) =
+      ∑ i : Fin q, C ((i : ℕ).choose j : R) * b i := by
+  rw [map_sum]
+  exact Finset.sum_congr rfl fun i _ ↦ cartier_one_add_X_pow_mul_expand hq i.isLt hj (b i)
+
+/-- **Uniqueness of expanded coordinates.** Over any commutative ring, if
+`∑ i < q, (1 + X) ^ i * b i (X ^ q) = 0`, then every `b i` vanishes. -/
+theorem eq_zero_of_sum_one_add_X_pow_mul_expand_eq_zero {q : ℕ} (hq : q ≠ 0)
+    {b : Fin q → R⟦X⟧} (hb : ∑ i : Fin q, (1 + X) ^ (i : ℕ) * expand q hq (b i) = 0) : b = 0 := by
+  have hc (j : Fin q) : ∑ i : Fin q, C ((i : ℕ).choose j : R) * b i = 0 := by
+    rw [← cartier_sum_one_add_X_pow_mul_expand hq j.isLt, hb, map_zero]
+  -- Downward induction: the component of index `j` sees `b j` and the `b i` with `i > j`.
+  suffices h : ∀ k, ∀ j : Fin q, q ≤ j + k → b j = 0 from
+    funext fun j ↦ h q j (by omega)
+  intro k
+  induction k with
+  | zero => exact fun j hj ↦ absurd j.isLt (by omega)
+  | succ k ih =>
+    intro j hj
+    rw [← hc j, Finset.sum_eq_single j]
+    · simp
+    · intro i _ hij
+      rcases lt_or_gt_of_ne (Fin.val_ne_of_ne hij) with h | h
+      · rw [Nat.choose_eq_zero_of_lt h]; simp
+      · rw [ih i (by omega), mul_zero]
+    · simp
 
 end CommRing
 

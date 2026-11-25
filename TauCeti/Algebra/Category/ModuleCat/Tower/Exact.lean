@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.SnakeLemma
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Basic
 public import TauCeti.Algebra.Exact.Pi
+import TauCeti.Algebra.Exact.Ladder
 
 /-!
 # The six-term sequence of `lim` and `lim¹`
@@ -28,7 +29,8 @@ proves exactness at each of the six terms and the naturality of the connecting m
 of short exact sequences of towers. Each exactness statement only assumes the levelwise
 injectivity, exactness and surjectivity it uses. As a consequence, `lim B → lim C` is surjective
 whenever `lim¹ A` vanishes, for instance when the transitions of `A` are surjective
-(`ModuleTower.subsingleton_limOne_of_surjective`).
+(`ModuleTower.subsingleton_limOne_of_surjective`), and `lim¹ B` vanishes whenever `lim¹ A` and
+`lim¹ C` do.
 
 This six-term sequence is the input to Milnor sequences for towers of complexes and to the long
 exact sequences of derived limits of towers.
@@ -45,6 +47,8 @@ exact sequences of derived limits of towers.
   the short exact sequence of a tower of complexes.
 * `TauCeti.ModuleTower.limMap_surjective_of_subsingleton_limOne`: `lim B → lim C` is surjective
   when `lim¹ A = 0`.
+* `TauCeti.ModuleTower.subsingleton_limOne_of_exact`: `lim¹ B = 0` when `lim¹ A = 0` and
+  `lim¹ C = 0`.
 
 ## References
 
@@ -89,7 +93,7 @@ private theorem exists_lift (f : F ⟶ G) (g : G ⟶ H)
   obtain ⟨b, hb⟩ := productMap_surjective hg (c : H.Product)
   refine ⟨b, hb, (exact_productMap hfg (G.shift b)).1 ?_⟩
   rw [← shift_natural_apply, hb]
-  exact LinearMap.mem_ker.1 (H.lim_eq_ker ▸ c.2)
+  exact LinearMap.mem_ker.1 (H.lim_eq_ker ▸ c.property)
 
 end Product
 
@@ -109,7 +113,7 @@ theorem exact_limMap (hf : ∀ n, Function.Injective (f.app (op n)).hom)
     rw [lim_eq_ker, LinearMap.mem_ker]
     refine productMap_injective hf ?_
     rw [← shift_natural_apply, hx, map_zero]
-    exact LinearMap.mem_ker.1 (G.lim_eq_ker ▸ y.2)
+    exact LinearMap.mem_ker.1 (G.lim_eq_ker ▸ y.property)
   exact ⟨⟨x, hxlim⟩, Subtype.ext <| (coe_limMap_apply f _).trans hx⟩
 
 /-- If `lim¹ A` vanishes in a levelwise exact sequence `A → B → C`, every compatible
@@ -118,17 +122,17 @@ theorem mem_range_limMap_of_subsingleton_limOne
     (hfg : ∀ n, Function.Exact (f.app (op n)).hom (g.app (op n)).hom)
     [Subsingleton F.limOne] (z : H.lim) (y : G.Product) (hy : productMap g y = z) :
     z ∈ LinearMap.range (limMap g) := by
-  have hyshift : productMap g (G.shift y) = 0 := by
-    rw [← shift_natural_apply, hy]
-    exact LinearMap.mem_ker.mp (H.lim_eq_ker ▸ z.property)
-  obtain ⟨x, hx⟩ := (exact_productMap hfg (G.shift y)).mp hyshift
-  -- The shift of `y` comes from `x`, which is itself a shift since `lim¹ A = 0`.
-  -- Then `y - f w` is compatible and still maps to `z`.
-  obtain ⟨w, hw⟩ := F.subsingleton_limOne_iff.1 ‹_› x
-  have hlim : y - productMap f w ∈ G.lim := by
-    rw [lim_eq_ker, LinearMap.mem_ker, map_sub, shift_natural_apply, hw, hx, sub_self]
-  refine ⟨⟨_, hlim⟩, Subtype.ext ?_⟩
-  rw [coe_limMap_apply, map_sub, hy, (exact_productMap hfg).apply_apply_eq_zero, sub_zero]
+  -- The shift of `y` comes from `A`, and is the image of a shift since `lim¹ A = 0`, so `y` can be
+  -- corrected by the image of a family of `A` to a compatible family that still maps to `z`.
+  obtain ⟨w, hw, hgw⟩ := Function.Exact.exists_apply_eq_zero_and_apply_eq_of_surjective
+    (f := (productMap f).toAddMonoidHom) (g := (productMap g).toAddMonoidHom)
+    (f' := (productMap f).toAddMonoidHom) (g' := (productMap g).toAddMonoidHom)
+    (α := F.shift.toAddMonoidHom) (β := G.shift.toAddMonoidHom) (γ := H.shift.toAddMonoidHom)
+    (exact_productMap hfg) (exact_productMap hfg).apply_apply_eq_zero
+    (F.subsingleton_limOne_iff.1 ‹_›) (shift_natural_apply f) (shift_natural_apply g) (y := y) <| by
+      simpa [hy] using LinearMap.mem_ker.mp (H.lim_eq_ker ▸ z.property)
+  refine ⟨⟨y + productMap f w, by rwa [lim_eq_ker, LinearMap.mem_ker]⟩, Subtype.ext ?_⟩
+  simpa [hy] using hgw
 
 /-- If `lim¹ A` vanishes, then for a levelwise exact sequence `A → B → C → 0` the map
 `lim B → lim C` is surjective. -/
@@ -179,6 +183,16 @@ theorem exact_limOneMap (hfg : ∀ n, Function.Exact (f.app (op n)).hom (g.app (
   rintro _ ⟨-, z, rfl⟩
   obtain ⟨w, rfl⟩ := productMap_surjective hg z
   exact ⟨G.shift w, LinearMap.mem_range_self _ w, (shift_natural_apply g w).symm⟩
+
+/-- **`lim¹` of an extension.** For a levelwise exact sequence `A → B → C → 0` of towers, if
+`lim¹ A` and `lim¹ C` vanish then so does `lim¹ B`. -/
+theorem subsingleton_limOne_of_exact
+    (hfg : ∀ n, Function.Exact (f.app (op n)).hom (g.app (op n)).hom)
+    (hg : ∀ n, Function.Surjective (g.app (op n)).hom) [Subsingleton F.limOne]
+    [Subsingleton H.limOne] : Subsingleton G.limOne :=
+  subsingleton_of_forall_eq 0 fun y ↦ by
+    obtain ⟨x, rfl⟩ := (exact_limOneMap hfg hg y).1 (Subsingleton.elim _ _)
+    rw [Subsingleton.elim x 0, map_zero]
 
 end LimOne
 

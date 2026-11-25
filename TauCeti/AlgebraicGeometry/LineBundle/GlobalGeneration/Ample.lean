@@ -9,9 +9,11 @@ public import TauCeti.AlgebraicGeometry.LineBundle.Ample
 public import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration.Basic
 public import TauCeti.AlgebraicGeometry.LineBundle.Power
 public import TauCeti.AlgebraicGeometry.Modules.Biprod
+import TauCeti.Algebra.Category.ModuleCat.Sheaf.GeneratingSections
 import TauCeti.AlgebraicGeometry.LineBundle.TwistedSections
+import TauCeti.AlgebraicGeometry.Modules.FiniteType
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.FiniteType
-import TauCeti.AlgebraicGeometry.Modules.Sheaf
+import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GeneratingSections
 
 /-!
 # Global generation and quotient presentations via ample line bundles
@@ -55,13 +57,15 @@ private theorem nonempty_tensor_tensorPow_iso (F : X.Modules) (L M : InvertibleS
     {d q r n : ℕ} (hM : LineBundleClass.mk M = LineBundleClass.mk L ^ d) (hn : d * q + r = n) :
     Nonempty ((F ⊗ tensorPow (L.obj : X.Modules) r) ⊗ tensorPow (M.obj : X.Modules) q ≅
       F ⊗ tensorPow (L.obj : X.Modules) n) := by
-  have hclass : LineBundleClass.mk (InvertibleSheaf.tensorProduct (L.tensorPow r) (M.tensorPow q)) =
-      LineBundleClass.mk L ^ n := by
-    rw [mk_tensorProduct, mk_tensorPow, mk_tensorPow, hM, ← pow_mul, ← pow_add, add_comm, hn]
-  obtain ⟨e⟩ := InvertibleSheaf.nonempty_iso_tensorPow_of_mk_eq hclass
-  exact ⟨α_ F _ _ ≪≫ whiskerLeftIso F (tensorIso (L.tensorPowObjIso r).symm
-    (M.tensorPowObjIso q).symm ≪≫
-    (InvertibleSheaf.tensorProductObjIso (L.tensorPow r) (M.tensorPow q)).symm ≪≫ e)⟩
+  have hclass : LineBundleClass.mk (tensorPow L r ⊗ tensorPow M q) =
+      LineBundleClass.mk (tensorPow L n) := by
+    rw [mk_tensorObj, mk_tensorPow, mk_tensorPow, mk_tensorPow, hM, ← pow_mul, ← pow_add,
+      add_comm, hn]
+  obtain ⟨e⟩ := LineBundleClass.mk_eq_mk_iff.mp hclass
+  exact ⟨α_ F _ _ ≪≫ whiskerLeftIso F
+    (tensorIso (eqToIso (InvertibleSheaf.tensorPow_obj L r).symm)
+        (eqToIso (InvertibleSheaf.tensorPow_obj M q).symm) ≪≫
+      e ≪≫ eqToIso (InvertibleSheaf.tensorPow_obj L n))⟩
 
 private theorem exists_finite_span_and_uniform_extension [QuasiSeparatedSpace X] [CompactSpace X]
     (G M : X.Modules) [G.IsQuasicoherent] [G.IsFiniteType] [SheafOfModules.isInvertible X M]
@@ -77,9 +81,9 @@ private theorem exists_finite_span_and_uniform_extension [QuasiSeparatedSpace X]
     G.finite_sections_of_isAffineOpen _ hU
   obtain ⟨k, g, hg⟩ := Module.Finite.exists_fin
     (R := Γ(X, M.nonvanishingLocus s)) (M := Γ(G, M.nonvanishingLocus s))
-  choose qj hqj using fun j : Fin k ↦
-    exists_forall_ge_exists_map_eq_tmulRight_tensorPowSection G
-      (isCompact_univ (X := X)) (isQuasiSeparated_univ (α := X)) s (g j)
+  choose qj hqj using fun j : Fin k ↦ Filter.eventually_atTop.mp
+    (eventually_exists_map_eq_tmulRight_tensorPowSection G
+      (isCompact_univ (X := X)) (isQuasiSeparated_univ (α := X)) s (g j))
   exact ⟨k, g, Finset.univ.sup qj, hg, fun q hq j ↦
     hqj j q ((Finset.le_sup (f := qj) (Finset.mem_univ j)).trans hq)⟩
 
@@ -123,8 +127,6 @@ private theorem exists_forall_ge_finite_global_span [QuasiSeparatedSpace X] [Com
         Submodule.span Γ(X, M.obj.nonvanishingLocus s)
           (Set.range fun j ↦ (F ⊗ tensorPow (L.obj : X.Modules) n).presheaf.map
             (M.obj.nonvanishingLocus s).leTop.op (σ j)) = ⊤ := by
-  have : (L.obj : X.Modules).IsFiniteType :=
-    have : (L.obj : X.Modules).IsFinitePresentation := inferInstance; inferInstance
   -- Step 1: For each residue `r < d`, extend a finite generating set of `Γ(F ⊗ L^r, X_s)`.
   choose k g q₀ hspan hext using fun r : Fin d ↦
     exists_finite_span_and_uniform_extension (F ⊗ tensorPow (L.obj : X.Modules) r) M.obj s hU
@@ -151,7 +153,7 @@ theorem IsAmple.exists_forall_ge_generatingSections {a : LineBundleClass X} (ha 
   have := ha.compactSpace; have := ha.quasiSeparatedSpace
   obtain ⟨L, rfl⟩ := mk_surjective a
   choose dx hdx hMx using fun x : X ↦ ha.exists_pos_forall_mk_eq x
-  let Mx (x : X) : InvertibleSheaf X := L.tensorPow (dx x)
+  let Mx (x : X) : InvertibleSheaf X := tensorPow L (dx x)
   choose sx hsx hAffx using fun x : X ↦ hMx x (Mx x) (mk_tensorPow L (dx x))
   obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover
     (fun x : X ↦ ((Mx x).obj.nonvanishingLocus (sx x) : Set X))
@@ -166,16 +168,21 @@ theorem IsAmple.exists_forall_ge_generatingSections {a : LineBundleClass X} (ha 
   refine ⟨t.attach.sup n₀, fun n hn K hK ↦ ?_⟩
   choose ki σi hspani using fun i : t ↦
     hn₀ i n ((Finset.le_sup (f := n₀) (Finset.mem_attach t i)).trans hn)
-  let σ : (Σ i : t, Fin (ki i)) → Γ(F ⊗ tensorPow (L.obj : X.Modules) n, ⊤) := fun p ↦ σi p.1 p.2
+  let σ : (Σ i : t, Fin (ki i)) → Γ(F ⊗ tensorPow (L.obj : X.Modules) n, ⊤) :=
+    fun p ↦ σi p.fst p.snd
   have hspan (i : t) : Submodule.span Γ(X, U i) (Set.range fun p : Σ i : t, Fin (ki i) ↦
       (F ⊗ tensorPow (L.obj : X.Modules) n).presheaf.map (U i).leTop.op (σ p)) = ⊤ :=
     top_unique (hspani i ▸ Submodule.span_mono (by rintro _ ⟨j, rfl⟩; exact ⟨⟨i, j⟩, rfl⟩))
   let G₀ := generatingSectionsOfSpanEqTop (F ⊗ tensorPow (L.obj : X.Modules) n)
     (fun i : t ↦ hAffx i) hcover σ hspan
-  obtain ⟨e⟩ := InvertibleSheaf.nonempty_iso_tensorPow_of_mk_eq hK
-  exact ⟨SheafOfModules.GeneratingSections.equivOfIso
-    (toSheafOfModulesIso (whiskerLeftIso F e.symm)) G₀,
-    { finite := (inferInstance : G₀.IsFiniteType).finite }⟩
+  obtain ⟨e₀⟩ := LineBundleClass.mk_eq_mk_iff.mp (hK.trans (mk_tensorPow L n).symm)
+  let e : (K.obj : X.Modules) ≅ tensorPow (L.obj : X.Modules) n :=
+    e₀ ≪≫ eqToIso (InvertibleSheaf.tensorPow_obj L n)
+  let heF : Iso (C := SheafOfModules X.ringCatSheaf)
+      (F ⊗ tensorPow (L.obj : X.Modules) n) (F ⊗ (K.obj : X.Modules)) :=
+    whiskerLeftIso F e.symm
+  exact ⟨SheafOfModules.GeneratingSections.equivOfIso heF G₀,
+    ⟨inferInstanceAs (Finite (Σ i : t, Fin (ki i)))⟩⟩
 
 /-- All sufficiently high powers of an ample line-bundle class are globally generated. -/
 theorem IsAmple.exists_forall_ge_isGloballyGenerated {a : LineBundleClass X} (ha : a.IsAmple) :
@@ -185,8 +192,11 @@ theorem IsAmple.exists_forall_ge_isGloballyGenerated {a : LineBundleClass X} (ha
   refine ⟨n₀, fun n hn K hK ↦
     InvertibleSheaf.isGloballyGenerated_iff_nonempty_generatingSections.mpr ?_⟩
   obtain ⟨G, -⟩ := hn₀ n hn K hK
-  exact ⟨SheafOfModules.GeneratingSections.equivOfIso
-    (toSheafOfModulesIso (λ_ (K.obj : X.Modules))) G⟩
+  let eK : Iso (C := SheafOfModules X.ringCatSheaf)
+      (𝟙_ X.Modules ⊗ (K.obj : X.Modules)) (K.obj : X.Modules) :=
+    (λ_ (K.obj : X.Modules) :
+      (𝟙_ X.Modules : X.Modules) ⊗ (K.obj : X.Modules) ≅ (K.obj : X.Modules))
+  exact ⟨SheafOfModules.GeneratingSections.equivOfIso eK G⟩
 
 /-- **Quotient presentation by negative ample twists** (Hartshorne, Corollary II.5.18): for an
 ample line-bundle class `a` on a scheme `X` and a quasi-coherent `𝒪_X`-module `F` of finite type,
@@ -200,10 +210,9 @@ theorem IsAmple.exists_forall_ge_epi_biproduct {a : LineBundleClass X} (ha : a.I
   refine ⟨n₀, fun n hn K hK ↦ ?_⟩
   obtain ⟨P, hP⟩ := mk_surjective (a ^ n)
   obtain ⟨G, hG⟩ := hn₀ n hn P hP
-  obtain ⟨e₀⟩ := mk_eq_one_iff.mp (by rw [mk_tensorProduct, hP, hK, mul_inv_cancel] :
-    LineBundleClass.mk (InvertibleSheaf.tensorProduct P K) = 1)
-  exact exists_epi_biproduct_of_generatingSections
-    ((InvertibleSheaf.tensorProductObjIso P K).symm ≪≫ isoOfSheafIso X e₀) G
+  obtain ⟨e₀⟩ := mk_eq_one_iff.mp (by rw [mk_tensorObj, hP, hK, mul_inv_cancel] :
+    LineBundleClass.mk (P ⊗ K) = 1)
+  exact exists_epi_biproduct_of_generatingSections e₀ G
 
 end TauCeti.AlgebraicGeometry.LineBundleClass
 

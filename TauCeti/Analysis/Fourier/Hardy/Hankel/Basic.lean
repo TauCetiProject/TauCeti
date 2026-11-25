@@ -70,7 +70,7 @@ theorem inner_negativeHardyBasis_hankel_hardyBasis
   simp only [hankel_apply, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
     coe_hardyBasis, Lp.multiplicationOperator_apply]
   rw [Submodule.inner_orthogonalProjectionOnto_eq_of_mem_left, coe_negativeHardyBasis,
-    ← HilbertBasis.repr_apply_apply, fourierBasis_repr, fourierCoeff_smul_fourierBasis]
+    inner_fourierBasis_left, fourierCoeff_smul_fourierBasis]
 
 /-- The ambient value of a Hankel operator is the complementary Hardy projection. -/
 theorem coe_hankel_apply (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) (f : HardySpace) :

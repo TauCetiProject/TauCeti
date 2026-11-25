@@ -76,21 +76,10 @@ theorem cohomologyPushforwardTensorRightIso_naturality {F₁ F₂ : X.Modules} (
     (cohomologyFunctor Y n).map ((pushforward f).map φ ▷ E.obj) ≫
         (f.cohomologyPushforwardTensorRightIso F₂ E n).hom =
       (f.cohomologyPushforwardTensorRightIso F₁ E n).hom ≫
-        (cohomologyFunctor X n).map (φ ▷ (pullback f).obj E.obj) := by
-  have hnat :
-      (cohomologyFunctor Y n).map ((pushforward f).map φ ▷ E.obj) ≫
-          (cohomologyFunctor Y n).map
-            ((FiniteLocallyFreeSheaf.pushforwardTensorRightIso f E).app F₂).hom =
-        (cohomologyFunctor Y n).map
-            ((FiniteLocallyFreeSheaf.pushforwardTensorRightIso f E).app F₁).hom ≫
-          (pushforward f ⋙ cohomologyFunctor Y n).map (φ ▷ (pullback f).obj E.obj) :=
-    ((cohomologyFunctor Y n).map_comp _ _).symm.trans ((congrArg (cohomologyFunctor Y n).map
-      ((FiniteLocallyFreeSheaf.pushforwardTensorRightIso f E).hom.naturality φ)).trans
-      ((cohomologyFunctor Y n).map_comp _ _))
-  exact (Category.assoc _ _ _).symm.trans ((eq_whisker hnat _).trans
-    ((Category.assoc _ _ _).trans ((whisker_eq _
-      (cohomologyPushforwardIso_naturality f (φ ▷ (pullback f).obj E.obj) n)).trans
-      (Category.assoc _ _ _).symm)))
+        (cohomologyFunctor X n).map (φ ▷ (pullback f).obj E.obj) :=
+  (((CommSq.mk ((FiniteLocallyFreeSheaf.pushforwardTensorRightIso f E).hom.naturality φ)).map
+    (cohomologyFunctor Y n)).vert_comp
+      ⟨cohomologyPushforwardIso_naturality f (φ ▷ (pullback f).obj E.obj) n⟩).w
 
 /-- Along a closed immersion `f`, `Hⁿ(Y, (f_* F) ⊗ E)` vanishes iff `Hⁿ(X, F ⊗ f^* E)` does. -/
 @[simp]

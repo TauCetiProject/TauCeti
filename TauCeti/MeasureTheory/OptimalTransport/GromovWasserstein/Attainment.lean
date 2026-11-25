@@ -200,7 +200,7 @@ theorem exists_isCoupling_gromovWassersteinDistortion_eq_of_isTightMeasureSet {X
     ∃ π, IsCoupling π μ ν ∧
       gromovWassersteinDistortion p ωX ωY π = gromovWassersteinEDist p μ ωX ν ωY := by
   have hKne : {π : ProbabilityMeasure (X × Y) | IsCoupling (π : Measure (X × Y)) μ ν}.Nonempty :=
-    ⟨(Coupling.prod ⟨μ, ‹_›⟩ ⟨ν, ‹_›⟩).1, (Coupling.prod ⟨μ, ‹_›⟩ ⟨ν, ‹_›⟩).2⟩
+    ⟨(Coupling.prod ⟨μ, ‹_›⟩ ⟨ν, ‹_›⟩).val, (Coupling.prod ⟨μ, ‹_›⟩ ⟨ν, ‹_›⟩).property⟩
   obtain ⟨π, hπ, hπmin⟩ :=
     (lowerSemicontinuousOn_gromovWassersteinDistortion hωX hωY p).exists_isMinOn hKne
       (isCompact_setOfPred_isCoupling (μ := ⟨μ, ‹_›⟩) (ν := ⟨ν, ‹_›⟩) hμ hν)

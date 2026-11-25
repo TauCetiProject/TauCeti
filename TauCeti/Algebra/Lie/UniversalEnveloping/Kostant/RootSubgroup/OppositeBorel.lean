@@ -253,7 +253,7 @@ theorem kostantSubsystemSubgroup_mul_torus_mul_injective [Finite η]
         (isCartanWeightVector_reindex_toDual h ρ M b wt hwt) S' hα' hneg A
   intro x y hxy
   have hB (s : τ → Aˣ) (u : U') : T s * u ∈ B :=
-    B.mul_mem (Subgroup.mem_sup_right ⟨s, rfl⟩) (Subgroup.mem_sup_left u.2)
+    B.mul_mem (Subgroup.mem_sup_right ⟨s, rfl⟩) (Subgroup.mem_sup_left u.property)
   have hpair := Subgroup.mul_injective_of_disjoint hUB
     (a₁ := (x.1, ⟨T x.2.1 * x.2.2, hB _ _⟩))
     (a₂ := (y.1, ⟨T y.2.1 * y.2.2, hB _ _⟩))

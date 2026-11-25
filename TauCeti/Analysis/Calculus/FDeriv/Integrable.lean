@@ -6,15 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.Analysis.Calculus.FDeriv.Const
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Normed.Group.Bounded
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
-import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.MeasureTheory.Measure.Prod
+import TauCeti.Analysis.Calculus.TangentCone.Basic
+import TauCeti.Analysis.RCLike.OperatorNorm
 
 /-!
 # Integrability of the applied derivative and of derivative energy densities
@@ -30,8 +33,16 @@ compact support. A weighted squared defect `c z * ‖fderiv w z e₁ + A z (fder
 integrable when it vanishes off a compact set on which `c` and `A` are continuous, so they need
 not be continuous elsewhere.
 
+Integrability of the squared norm of the derivative implies integrability of the squared norm of
+the derivative applied to any fixed vector. Conversely, for a map out of an `RCLike` field that
+satisfies a Cauchy--Riemann equation `∂ₜu = A (∂ₛu)` with `‖A‖` bounded, integrability of the
+squared norm of the real-direction derivative `∂ₛu` implies integrability of `‖du‖²`.
 Precomposing with a measure-preserving continuous linear equivalence does not change whether
 the squared norm of the derivative is integrable.
+
+For a map which is `C¹` up to the boundary of a closed ball in a finite-dimensional real space,
+every continuous function of its derivative is integrable on the open ball, for any measure finite
+on compact sets, since the derivative extends continuously to the closed ball.
 
 On a Euclidean product `ℝ × V`, the derivative of such a function in a fixed direction is also
 integrable on the product of a half-line with `V`.
@@ -46,6 +57,12 @@ integrable on the product of a half-line with `V`.
   `TauCeti.integrable_norm_fderiv_sq_add`, `TauCeti.integrable_cutoff_sq_mul_norm_fderiv_sq`,
   `TauCeti.integrable_mul_norm_defect_sq`: integrability of the derivative energy densities
   in two directions.
+* `TauCeti.integrable_norm_fderiv_apply_sq`: integrability of `‖fderiv 𝕜 u z v‖ ^ 2` from
+  integrability of `‖fderiv 𝕜 u z‖ ^ 2`.
+* `TauCeti.integrableOn_norm_fderiv_sq_of_apply_I_eq`: integrability of `‖fderiv ℝ u z‖ ^ 2` from
+  integrability of `‖fderiv ℝ u z 1‖ ^ 2` under a Cauchy--Riemann equation.
+* `TauCeti.integrableOn_ball_comp_fderiv_of_contDiffOn`: for a map that is `C¹` on a closed ball,
+  continuous functions of its derivative are integrable on the open ball.
 * `ContinuousLinearEquiv.integrable_norm_fderiv_comp_sq_iff`: integrability of
   `‖fderiv (u ∘ e)‖ ^ 2` for a measure-preserving continuous linear equivalence `e` is that of
   `‖fderiv u‖ ^ 2`.
@@ -138,7 +155,67 @@ theorem integrable_mul_norm_defect_sq (e₁ e₂ : E) {w : E → F} {c : E → �
     (hc.mul (((hdw.clm_apply continuousOn_const).add
       (hA.clm_apply (hdw.clm_apply continuousOn_const))).norm.pow 2)).integrableOn_compact hS
 
+/-- If the squared norm of the derivative of a map into a complete space is integrable, then so is
+the squared norm of the derivative applied to any fixed vector `v`: it is bounded by
+`‖v‖ ^ 2 * ‖fderiv 𝕜 u z‖ ^ 2`. -/
+theorem integrable_norm_fderiv_apply_sq [CompleteSpace F] {ν : Measure E} {u : E → F}
+    (h : Integrable (fun z ↦ ‖fderiv 𝕜 u z‖ ^ 2) ν) (v : E) :
+    Integrable (fun z ↦ ‖fderiv 𝕜 u z v‖ ^ 2) ν := by
+  borelize F
+  refine (h.const_mul (‖v‖ ^ 2)).mono'
+    ((measurable_fderiv_apply_const 𝕜 u v).norm.pow_const 2).aestronglyMeasurable
+    (.of_forall fun z ↦ ?_)
+  rw [norm_pow, norm_norm, ← mul_pow, mul_comm]
+  gcongr
+  exact (fderiv 𝕜 u z).le_opNorm v
+
 end Energy
+
+section CauchyRiemann
+
+variable {K : Type*} [RCLike K] [MeasurableSpace K] [OpensMeasurableSpace K] {G : Type*}
+  [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+
+/-- **Energy from the real-direction energy.** If `u : K → G` out of an `RCLike` field satisfies the
+Cauchy--Riemann equation `∂ₜu = A z (∂ₛu)` on a measurable set `s`, with `‖A z‖ ≤ M` there, and
+`‖∂ₛu‖²` is integrable on `s`, then so is `‖du‖²`: it is bounded by `(1 + M)² ‖∂ₛu‖²`. -/
+theorem integrableOn_norm_fderiv_sq_of_apply_I_eq {ν : Measure K} {u : K → G}
+    {A : K → G →L[ℝ] G} {M : ℝ} {s : Set K} (hs : MeasurableSet s)
+    (hCR : ∀ z ∈ s, fderiv ℝ u z RCLike.I = A z (fderiv ℝ u z 1)) (hA : ∀ z ∈ s, ‖A z‖ ≤ M)
+    (h : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) s ν) :
+    IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) s ν := by
+  borelize (K →L[ℝ] G)
+  refine (h.const_mul ((1 + M) ^ 2)).mono'
+    ((measurable_fderiv ℝ u).norm.pow_const 2).aestronglyMeasurable
+    ((ae_restrict_iff' hs).2 (.of_forall fun z hz ↦ ?_))
+  rw [norm_pow, norm_norm, ← mul_pow]
+  exact pow_le_pow_left₀ (norm_nonneg _)
+    ((fderiv ℝ u z).norm_le_of_apply_I_eq (hCR z hz) (hA z hz) le_rfl) 2
+
+end CauchyRiemann
+section ClosedBall
+
+variable {H V W : Type*} [NormedAddCommGroup H] [NormedSpace ℝ H] [FiniteDimensional ℝ H]
+  [MeasurableSpace H] [OpensMeasurableSpace H] [NormedAddCommGroup V] [NormedSpace ℝ V]
+  [NormedAddCommGroup W]
+
+/-- If `u` is `C¹` on the closed ball `‖z - z₀‖ ≤ b` of a finite-dimensional real space, then for
+every continuous `F` the function `z ↦ F (Du z)` is integrable on the open ball for any measure
+finite on compact sets: the differential of `u` extends continuously to the closed ball. -/
+theorem integrableOn_ball_comp_fderiv_of_contDiffOn {μ : Measure H} [IsFiniteMeasureOnCompacts μ]
+    {F : (H →L[ℝ] V) → W} (hF : Continuous F) {u : H → V} {z₀ : H} {b : ℝ}
+    (hu : ContDiffOn ℝ 1 u (Metric.closedBall z₀ b)) :
+    IntegrableOn (fun z ↦ F (fderiv ℝ u z)) (Metric.ball z₀ b) μ := by
+  rcases le_or_gt b 0 with hb | hb
+  · simp [Metric.ball_eq_empty.mpr hb]
+  have hDu := hu.continuousOn_fderivWithin (uniqueDiffOn_closedBall z₀ hb) le_rfl
+  refine (((hF.comp_continuousOn hDu).integrableOn_compact
+    (ProperSpace.isCompact_closedBall z₀ b)).mono_set Metric.ball_subset_closedBall).congr_fun
+    (fun z hz ↦ ?_) Metric.isOpen_ball.measurableSet
+  -- On the open ball the derivative within the closed ball is the derivative.
+  rw [Function.comp_apply, fderivWithin_of_mem_nhds (Metric.closedBall_mem_nhds_of_mem hz)]
+
+end ClosedBall
 
 section CompContinuousLinearEquiv
 

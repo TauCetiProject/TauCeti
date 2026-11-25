@@ -11,17 +11,11 @@ public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Images
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.FiniteType
 public import TauCeti.AlgebraicGeometry.Modules.Sections
-public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
-import Mathlib.RingTheory.Localization.Module
-import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
-import TauCeti.AlgebraicGeometry.Modules.Sheaf
-import TauCeti.AlgebraicGeometry.Modules.Tensor.AffineSections
-import TauCeti.CategoryTheory.Monoidal.InvertibleObject
 
 /-!
-# Finite-type quasi-coherent submodules and global generation
+# Finite-type quasi-coherent submodules
 
 Finitely many global sections of a quasi-coherent `𝒪_X`-module `N` lie in a quasi-coherent
 submodule of `N` of finite type, the image of the corresponding morphism `𝒪_X^n ⟶ N`, and any
@@ -39,12 +33,7 @@ immersions into quasi-compact quasi-separated schemes.
 
 On an affine scheme, generators of the global sections of a quasi-coherent module give a
 surjection onto it from a free module of finite rank. Consequently a quasi-coherent module is of
-finite type exactly when its sections over every affine open are finitely generated, and tensor
-products and tensor powers of quasi-coherent modules of finite type are again of finite type. More
-generally, any family of global sections of a quasi-coherent module whose restrictions span over
-every member of an affine open cover forms a `SheafOfModules.GeneratingSections`, and finite global
-generation of a twist `F ⊗ P` with `P ⊗ Q ≅ 𝒪_X` presents `F` as a quotient of a finite biproduct
-of copies of `Q`.
+finite type exactly when its sections over every affine open are finitely generated.
 
 ## Main declarations
 
@@ -63,16 +52,8 @@ of copies of `Q`.
 * `AlgebraicGeometry.Scheme.Modules.exists_epi_free_of_finite`: on an affine scheme, a
   quasi-coherent module with finitely generated global sections is a quotient of a free module
   of finite rank.
-* `AlgebraicGeometry.Scheme.Modules.isFiniteType_iff_finite_sections`,
-  `AlgebraicGeometry.Scheme.Modules.isFiniteType_tensorObj`, and
-  `AlgebraicGeometry.Scheme.Modules.isFiniteType_tensorPow`: a quasi-coherent module is of finite
-  type if and only if its sections over every affine open are finitely generated; tensor products
-  and tensor powers preserve finite type.
-* `AlgebraicGeometry.Scheme.Modules.generatingSectionsOfSpanEqTop`: global sections of a
-  quasi-coherent module whose restrictions span over every member of an affine open cover form a
-  `SheafOfModules.GeneratingSections` (of finite type when indexed by a finite type).
-* `AlgebraicGeometry.Scheme.Modules.exists_epi_biproduct_of_generatingSections`: finite global
-  generation of `F ⊗ P` with `P ⊗ Q ≅ 𝒪_X` yields an epimorphism `(⨁_{Fin k} Q) ⟶ F`.
+* `AlgebraicGeometry.Scheme.Modules.isFiniteType_iff_finite_sections`: a quasi-coherent module is
+  of finite type if and only if its sections over every affine open are finitely generated.
 
 ## References
 
@@ -82,7 +63,7 @@ of copies of `Q`.
 
 public section
 
-open CategoryTheory Limits MonoidalCategory Opposite TopologicalSpace
+open CategoryTheory Limits
 
 universe u
 
@@ -152,7 +133,7 @@ theorem exists_isFiniteType_mono_basicOpen [IsAffine X] {I : Type u} [Finite I] 
   obtain ⟨g, hg⟩ : IsUnit (X.presheaf.map (homOfLE (X.basicOpen_le f)).op f ^ n k) :=
     (X.toRingedSpace.isUnit_res_basicOpen f).pow (n k)
   let x : Γ(N', X.basicOpen f) := (t k).val (Opposite.op (X.basicOpen f))
-  refine ⟨(g⁻¹ : (Γ(X, X.basicOpen f))ˣ).1 • x, ?_⟩
+  refine ⟨(g⁻¹ : (Γ(X, X.basicOpen f))ˣ).val • x, ?_⟩
   have h : i.app _ x = N.presheaf.map (homOfLE (X.basicOpen_le f)).op (y k) := by
     have := congrArg (fun σ : N.sections ↦ σ.val (Opposite.op (X.basicOpen f))) (ht k)
     rwa [sectionsEquivTop_symm_val] at this
@@ -176,7 +157,7 @@ theorem exists_isFiniteType_mono_isIso_restrict_basicOpen [IsAffine X] {U : Sche
   have := finite_sections_of_isAffineOpen (N.restrict j) ⊤ (isAffineOpen_top _)
   obtain ⟨S, hS⟩ := Module.Finite.fg_top (R := Γ(U, ⊤)) (M := Γ(N.restrict j, ⊤))
   obtain ⟨N', _, _, i, _, hi⟩ :=
-    exists_isFiniteType_mono_basicOpen f hf fun k : S ↦ (k.1 : Γ(N, j ''ᵁ ⊤))
+    exists_isFiniteType_mono_basicOpen f hf fun k : S ↦ (k.val : Γ(N, j ''ᵁ ⊤))
   refine ⟨N', inferInstance, inferInstance, i, inferInstance, ?_⟩
   let φ := (restrictFunctor j).map i
   -- `restrictFunctor` is a right adjoint, so it preserves monomorphisms.
@@ -237,7 +218,7 @@ theorem exists_isFiniteType_mono_isIso_restrict [IsAffine X] {N : X.Modules} [N.
   obtain ⟨N', _, _, i, _, hi⟩ := comb hs.toFinset fun f hf ↦ hs.mem_toFinset.mp hf
   refine ⟨N', inferInstance, inferInstance, i, inferInstance, ?_⟩
   -- The opens `W f` cover `V`, and `i` is an isomorphism over each of them.
-  let U : hs.toFinset → V.toScheme.Opens := fun f ↦ W f.1
+  let U : hs.toFinset → V.toScheme.Opens := fun f ↦ W f.val
   have hU : TopologicalSpace.IsOpenCover U := by
     refine eq_top_iff.mpr fun x _ ↦ ?_
     have hx : V.ι x ∈ V.ι.opensRange := ⟨x, rfl⟩
@@ -245,10 +226,10 @@ theorem exists_isFiniteType_mono_isIso_restrict [IsAffine X] {N : X.Modules} [N.
     obtain ⟨f, hf, hfx⟩ := Set.mem_iUnion₂.mp hx
     exact TopologicalSpace.Opens.mem_iSup.mpr ⟨⟨f, hs.mem_toFinset.mpr hf⟩, hfx⟩
   refine (isIso_iff_of_isOpenCover hU _).mpr fun f ↦ ?_
-  have := hi f.1 f.2
-  have : IsIso ((restrictFunctor (W f.1).ι).map ((restrictFunctor V.ι).map i)) :=
-    (NatIso.isIso_map_iff (restrictFunctorComp (W f.1).ι V.ι) i).mp this
-  exact (NatIso.isIso_map_iff (restrictFunctorIsoPullback (W f.1).ι) _).mp this
+  have := hi f.val f.property
+  have : IsIso ((restrictFunctor (W f.val).ι).map ((restrictFunctor V.ι).map i)) :=
+    (NatIso.isIso_map_iff (restrictFunctorComp (W f.val).ι V.ι) i).mp this
+  exact (NatIso.isIso_map_iff (restrictFunctorIsoPullback (W f.val).ι) _).mp this
 
 /-- On an affine scheme, a quasi-coherent module whose global sections are finitely generated is
 a quotient of a free module of finite rank. -/
@@ -258,32 +239,18 @@ theorem exists_epi_free_of_finite [IsAffine X] (N : X.Modules) [N.IsQuasicoheren
       Epi π := by
   obtain ⟨S, hS⟩ := Module.Finite.fg_top (R := Γ(X, ⊤)) (M := Γ(N, ⊤))
   let F : X.Modules := SheafOfModules.free (S : Set Γ(N, ⊤))
-  let φ : F ⟶ N := N.freeHomEquiv.symm fun s ↦ N.sectionsEquivTop.symm s.1
+  let φ : F ⟶ N := N.freeHomEquiv.symm fun s ↦ N.sectionsEquivTop.symm s.val
   have : IsIso (image.ι φ) := by
     refine isIso_of_mono_of_surjective_sectionsFunctor_map_top _ ?_
     -- The sections functor applies `Hom.app ⊤`; state surjectivity in terms of the latter.
     change ∀ x : Γ(N, ⊤), ∃ y, (image.ι φ).app ⊤ y = x
     intro x
-    have hx : x ∈ Submodule.span Γ(X, ⊤) (S : Set Γ(N, ⊤)) := hS ▸ Submodule.mem_top
-    induction hx using Submodule.span_induction with
-    | mem s hs =>
-      refine ⟨(factorThruImage φ).app ⊤ (F.sectionsEquivTop (SheafOfModules.freeSection ⟨s, hs⟩)),
-        ?_⟩
-      rw [← ConcreteCategory.comp_apply, ← Hom.comp_app, image.fac,
-        ← sectionsEquivTop_sectionsMap]
-      -- `freeHomEquiv_apply` is stated in sheaves of modules; restate it for `X.Modules`.
-      have : SheafOfModules.sectionsMap φ (SheafOfModules.freeSection ⟨s, hs⟩) =
-          N.freeHomEquiv φ ⟨s, hs⟩ :=
-        (SheafOfModules.freeHomEquiv_apply (M := N) φ ⟨s, hs⟩).symm
-      rw [this, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
-    | zero => exact ⟨0, map_zero _⟩
-    | add x y _ _ hx hy =>
-      obtain ⟨a, rfl⟩ := hx
-      obtain ⟨b, rfl⟩ := hy
-      exact ⟨a + b, map_add _ _ _⟩
-    | smul r x _ hx =>
-      obtain ⟨a, rfl⟩ := hx
-      exact ⟨r • a, Hom.app_smul _ _ _⟩
+    refine (image.ι φ).exists_app_eq_of_mem_span (fun s hs ↦ ?_)
+      (hS ▸ Submodule.mem_top : x ∈ Submodule.span Γ(X, ⊤) (S : Set Γ(N, ⊤)))
+    refine ⟨(factorThruImage φ).app ⊤ (F.sectionsEquivTop (SheafOfModules.freeSection ⟨s, hs⟩)),
+      ?_⟩
+    rw [← ConcreteCategory.comp_apply, ← Hom.comp_app, image.fac]
+    exact app_freeHomEquiv_symm_freeSection N (fun s : (S : Set Γ(N, ⊤)) ↦ s.val) ⟨s, hs⟩
   refine ⟨(S : Set Γ(N, ⊤)), inferInstance, φ, ?_⟩
   have := epi_comp (factorThruImage φ) (image.ι φ)
   rwa [image.fac] at this
@@ -293,16 +260,16 @@ finite type. This is the converse of `Scheme.Modules.finite_sections_of_isAffine
 theorem isFiniteType_of_finite_sections (K : X.Modules) [K.IsQuasicoherent]
     (h : ∀ U : X.Opens, IsAffineOpen U → Module.Finite Γ(X, U) Γ(K, U)) : K.IsFiniteType := by
   refine TauCeti.AlgebraicGeometry.isFiniteType_of_isFiniteType_restrict_affineOpens K fun U ↦ ?_
-  have hU := U.2
+  have hU := U.property
   have : IsOpenImmersion hU.fromSpec := hU.isOpenImmersion_fromSpec
   let L := K.restrict hU.fromSpec
-  have := h U.1 hU
-  have : Module.Finite Γ(X, U.1) Γ(L, ⊤) := Module.Finite.equiv (K.fromSpecSectionsEquiv hU)
-  have : Module.Finite Γ(Spec Γ(X, U.1), ⊤) Γ(L, ⊤) :=
-    Module.Finite.of_restrictScalars_finite Γ(X, U.1) _ _
+  have := h U.val hU
+  have : Module.Finite Γ(X, U.val) Γ(L, ⊤) := Module.Finite.equiv (K.fromSpecSectionsEquiv hU)
+  have : Module.Finite Γ(Spec Γ(X, U.val), ⊤) Γ(L, ⊤) :=
+    Module.Finite.of_restrictScalars_finite Γ(X, U.val) _ _
   obtain ⟨I, _, π, hπ⟩ := exists_epi_free_of_finite L
   have : L.IsFiniteType := @isFiniteType_of_epi _ _ _ π hπ _
-  exact SheafOfModules.IsFiniteType.of_iso (R := U.1.toScheme.ringCatSheaf)
+  exact SheafOfModules.IsFiniteType.of_iso (R := U.val.toScheme.ringCatSheaf)
     (M := L.restrict hU.isoSpec.hom)
     (((restrictFunctorComp hU.isoSpec.hom hU.fromSpec).app K).symm ≪≫
       (restrictFunctorCongr hU.isoSpec_hom_fromSpec).app K)
@@ -312,132 +279,5 @@ are finitely generated. -/
 theorem isFiniteType_iff_finite_sections (K : X.Modules) [K.IsQuasicoherent] :
     K.IsFiniteType ↔ ∀ U : X.Opens, IsAffineOpen U → Module.Finite Γ(X, U) Γ(K, U) :=
   ⟨fun _ U hU ↦ K.finite_sections_of_isAffineOpen U hU, isFiniteType_of_finite_sections K⟩
-
-/-- The tensor product of two quasi-coherent `𝒪_X`-modules of finite type is of finite type. -/
-instance isFiniteType_tensorObj (M N : X.Modules) [M.IsQuasicoherent] [M.IsFiniteType]
-    [N.IsQuasicoherent] [N.IsFiniteType] : (M ⊗ N).IsFiniteType :=
-  isFiniteType_of_finite_sections (M ⊗ N) fun U hU ↦
-    finite_sections_tensorObj_of_isAffineOpen M N hU
-      (M.finite_sections_of_isAffineOpen U hU) (N.finite_sections_of_isAffineOpen U hU)
-
-/-- Tensor powers of a quasi-coherent `𝒪_X`-module of finite type are of finite type. -/
-instance isFiniteType_tensorPow (M : X.Modules) [M.IsQuasicoherent] [M.IsFiniteType] (n : ℕ) :
-    (TauCeti.tensorPow M n).IsFiniteType :=
-  isFiniteType_of_finite_sections (TauCeti.tensorPow M n) fun U hU ↦
-    finite_sections_tensorPow_of_isAffineOpen M hU (M.finite_sections_of_isAffineOpen U hU) n
-
-/-! ### Global generation from affine covers and quotient presentations -/
-
-section GlobalGeneration
-
-variable (E : X.Modules) [E.IsQuasicoherent] {ι : Type*} {U : ι → X.Opens}
-  (hU : ∀ i, IsAffineOpen (U i)) (hcover : ⨆ i, U i = ⊤) {I : Type u}
-
-section
-
-variable (σ : I → Γ(E, ⊤))
-  (hspan : ∀ i, Submodule.span Γ(X, U i)
-    (Set.range fun k ↦ E.presheaf.map (U i).leTop.op (σ k)) = ⊤)
-
-include hU hcover hspan
-
-private theorem isLocallySurjective_freeHomEquiv_symm_of_span_eq_top :
-    Sheaf.IsLocallySurjective
-      ((TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf X).map
-        ((SheafOfModules.freeHomEquiv E).symm fun k ↦ E.sectionsEquivTop.symm (σ k))) := by
-  let s : I → E.sections := fun k ↦ E.sectionsEquivTop.symm (σ k)
-  let φ := (SheafOfModules.freeHomEquiv E).symm s
-  refine ⟨fun {W} m x hxW ↦ ?_⟩
-  -- Shrink to a basic open `D = D(f) ⊆ W` inside an affine chart `U i` containing `x`.
-  obtain ⟨i, hxU⟩ := Opens.mem_iSup.mp (hcover.symm ▸ Opens.mem_top x)
-  obtain ⟨f, hfW, hxf⟩ := (hU i).exists_basicOpen_le ⟨x, hxW⟩ hxU
-  let D := X.basicOpen f
-  -- Localization at `f` preserves spanning sets, so the restrictions of `σ` span `Γ(E, D)`.
-  have := (hU i).isLocalization_basicOpen f
-  have := E.isLocalizedModule_basicOpenRestrict (hU i) f
-  have hD := span_eq_top_of_isLocalizedModule Γ(X, D) (.powers f) (E.basicOpenRestrict f) (hspan i)
-  -- Every generator `σ k|_D` lies in the image of `φ.val.app (op D)`, hence so does `m|_D`.
-  have hle : Submodule.span Γ(X, D)
-      (E.basicOpenRestrict f '' Set.range fun k ↦ E.presheaf.map (U i).leTop.op (σ k)) ≤
-      LinearMap.range (φ.val.app (op D)).hom := by
-    refine Submodule.span_le.mpr ?_
-    rintro _ ⟨_, ⟨k, rfl⟩, rfl⟩
-    refine ⟨(SheafOfModules.freeSection (R := X.ringCatSheaf) k).eval (op D), ?_⟩
-    have hsec := congrArg (fun t : E.sections ↦ t.eval (op D))
-      (SheafOfModules.sectionsMap_freeHomEquiv_symm_freeSection s k)
-    refine hsec.trans ?_
-    rw [PresheafOfModules.sections.eval, sectionsEquivTop_symm_val, basicOpenRestrict_apply,
-      ← Functor.map_comp_apply, ← op_comp]
-    exact congrArg (fun l : D ⟶ ⊤ ↦ E.presheaf.map l.op (σ k)) (Subsingleton.elim _ _)
-  obtain ⟨z, hz⟩ := hle (hD ▸ Submodule.mem_top (x := E.presheaf.map (homOfLE hfW).op m))
-  exact ⟨D, homOfLE hfW, ⟨z, hz⟩, hxf⟩
-
-/-- If a family of global sections of a quasi-coherent module `E` spans `Γ(E, U i)` over every
-member `U i` of an affine open cover of `X`, then it defines a `GeneratingSections` of `E`. -/
--- Exposed so the dependent field `.s` accepts indices `k : I` directly in public signatures,
--- matching `SheafOfModules.GeneratingSections.biprod`.
-@[expose]
-noncomputable def generatingSectionsOfSpanEqTop : E.GeneratingSections where
-  I := I
-  s k := E.sectionsEquivTop.symm (σ k)
-  epi := by
-    have := isLocallySurjective_freeHomEquiv_symm_of_span_eq_top E hU hcover σ hspan
-    exact (TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf X).epi_of_epi_map
-      (Sheaf.epi_of_isLocallySurjective _)
-
-/-- The indexing type of `generatingSectionsOfSpanEqTop` is `I`. -/
-@[simp]
-theorem generatingSectionsOfSpanEqTop_I :
-    (generatingSectionsOfSpanEqTop E hU hcover σ hspan).I = I := (rfl)
-
-/-- The generating sections of `generatingSectionsOfSpanEqTop` correspond to `σ` via
-`sectionsEquivTop.symm`. -/
-@[simp]
-theorem generatingSectionsOfSpanEqTop_s (k : I) :
-    (generatingSectionsOfSpanEqTop E hU hcover σ hspan).s k = E.sectionsEquivTop.symm (σ k) := (rfl)
-
-/-- The generating morphism of `generatingSectionsOfSpanEqTop` is the morphism out of `free I`
-induced by `σ`. -/
-@[simp]
-theorem generatingSectionsOfSpanEqTop_π :
-    (generatingSectionsOfSpanEqTop E hU hcover σ hspan).π =
-      (SheafOfModules.freeHomEquiv E).symm fun k ↦ E.sectionsEquivTop.symm (σ k) := (rfl)
-
-end
-
-/-- `generatingSectionsOfSpanEqTop` indexed by a finite type is of finite type. -/
-instance isFiniteType_generatingSectionsOfSpanEqTop [Finite I] (σ : I → Γ(E, ⊤))
-    (hspan : ∀ i, Submodule.span Γ(X, U i)
-      (Set.range fun k ↦ E.presheaf.map (U i).leTop.op (σ k)) = ⊤) :
-    (generatingSectionsOfSpanEqTop E hU hcover σ hspan).IsFiniteType where
-  finite := ‹Finite I›
-
-end GlobalGeneration
-
-/-- If `F ⊗ P` is generated by finitely many global sections and `P ⊗ Q ≅ 𝒪_X`, then `F` is a
-quotient of a finite biproduct of copies of `Q`. -/
-theorem exists_epi_biproduct_of_generatingSections {F P Q : X.Modules} (e : P ⊗ Q ≅ 𝟙_ X.Modules)
-    (G : (F ⊗ P).GeneratingSections) [hG : G.IsFiniteType] :
-    ∃ (k : ℕ) (p : (⨁ fun _ : Fin k ↦ Q) ⟶ F), Epi p := by
-  have : Finite G.I := hG.finite
-  obtain ⟨k, ⟨ek⟩⟩ := Finite.exists_equiv_fin G.I
-  have : (tensorRight Q).IsEquivalence :=
-    MonoidalCategory.isEquivalence_tensorRight_of_iso (β_ Q P ≪≫ e)
-  have : (tensorRight Q).Additive := Functor.additive_of_preserves_binary_products _
-  let eFin : (⨁ fun _ : Fin k ↦ (𝟙_ X.Modules : X.Modules)) ≅
-      (SheafOfModules.free G.I : X.Modules) :=
-    biproduct.whiskerEquiv (f := fun _ : Fin k ↦ (𝟙_ X.Modules : X.Modules))
-      (g := fun _ : G.I ↦ (𝟙_ X.Modules : X.Modules)) ek.symm (fun _ ↦ Iso.refl _) ≪≫
-    isoOfSheafIso X ((biproduct.isColimit (C := X.Modules)
-        (fun _ : G.I ↦ (𝟙_ X.Modules : X.Modules))).coconePointUniqueUpToIso
-      (biproduct.isColimit (C := SheafOfModules X.ringCatSheaf)
-        (fun _ : G.I ↦ 𝟙_ (SheafOfModules.{u} X.ringCatSheaf)))) ≪≫
-    isoOfSheafIso X (TauCeti.SheafOfModules.biproductIsoFree (R := X.sheaf) G.I)
-  let q : (⨁ fun _ : Fin k ↦ (𝟙_ X.Modules : X.Modules)) ⟶ F ⊗ P := eFin.hom ≫ G.π
-  have : Epi q := @epi_comp X.Modules _ _ _ _ eFin.hom
-    (@IsIso.epi_of_iso _ _ _ _ eFin.hom (Iso.isIso_hom eFin)) G.π G.epi
-  exact ⟨k, (biproduct.mapIso fun _ : Fin k ↦ (λ_ Q).symm).hom ≫
-    ((tensorRight Q).mapBiproduct fun _ : Fin k ↦ (𝟙_ X.Modules : X.Modules)).inv ≫
-    (tensorRight Q).map q ≫ (α_ F P Q).hom ≫ F ◁ e.hom ≫ (ρ_ F).hom, inferInstance⟩
 
 end AlgebraicGeometry.Scheme.Modules

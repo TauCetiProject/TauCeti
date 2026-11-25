@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Units
 public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.Maps.OpenQuotient
+public import Mathlib.Topology.Algebra.Group.Matrix
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
@@ -30,7 +31,10 @@ topology of the local unit groups.
 
 For the arithmetic maps in `IsDedekindDomain.FiniteAdeleRing`, use:
 
-* `TauCeti.isOpen_integralUnits` and `TauCeti.isCompact_integralUnits` for `integralUnits`;
+* `TauCeti.isOpen_integralUnits` and `TauCeti.isCompact_integralUnits` for `integralUnits`, and
+  `TauCeti.le_integralUnits_of_isCompact`: every compact subgroup lies in `integralUnits`, so
+  by `TauCeti.map_det_le_integralUnits_of_isCompact` do the determinants of a compact subgroup
+  of `GLₙ(𝔸_f)`;
 * `TauCeti.isOpen_sIntegralUnits`, `TauCeti.isClosed_sIntegralUnits` and
   `IsDedekindDomain.FiniteAdeleRing.isEmbedding_coe_sIntegralUnits` for `sIntegralUnits`;
 * `TauCeti.isLocallyConstant_toFractionalIdeal` and
@@ -89,6 +93,38 @@ theorem isLocallyConstant_toFractionalIdeal :
   rw [ker_toFractionalIdeal]
   exact isOpen_integralUnits R K
 
+variable {R K} in
+/-- **Every compact subgroup of the finite ideles is contained in the everywhere-integral
+units** `integralUnits R K`. -/
+theorem le_integralUnits_of_isCompact {H : Subgroup (FiniteAdeleRing R K)ˣ}
+    (hH : IsCompact (H : Set (FiniteAdeleRing R K)ˣ)) : H ≤ integralUnits R K := by
+  -- The fractional-ideal map is locally constant, so it takes finitely many values on `H`;
+  -- the fractional ideal of each element then has finite order, and invertible fractional
+  -- ideals are torsion-free.
+  intro x hx
+  have : CompactSpace H := isCompact_iff_compactSpace.mp hH
+  have hfin : (Set.range fun y : H ↦ toFractionalIdeal (y : (FiniteAdeleRing R K)ˣ)).Finite :=
+    ((isLocallyConstant_toFractionalIdeal R K).comp_continuous continuous_subtypeVal).range_finite
+  have hord : IsOfFinOrder (toFractionalIdeal x) := by
+    refine finite_powers.mp (hfin.subset ?_)
+    rintro _ ⟨n, rfl⟩
+    exact ⟨⟨x ^ n, H.pow_mem hx n⟩, map_pow _ _ _⟩
+  obtain ⟨n, hn, hxn⟩ := isOfFinOrder_iff_pow_eq_one.mp hord
+  rw [← ker_toFractionalIdeal, MonoidHom.mem_ker, toFractionalIdeal_eq_one_iff]
+  intro v
+  have h0 := toFractionalIdeal_eq_one_iff.mp ((map_pow _ x n).trans hxn) v
+  rw [adicOrd_pow] at h0
+  exact (mul_eq_zero.mp h0).resolve_left (by exact_mod_cast hn.ne')
+
+variable {R K} in
+/-- **The determinants of a compact subgroup of `GLₙ(𝔸_f)` are everywhere-integral units.** -/
+theorem map_det_le_integralUnits_of_isCompact {n : Type*} [Fintype n] [DecidableEq n]
+    {U : Subgroup (GL n (FiniteAdeleRing R K))}
+    (hU : IsCompact (U : Set (GL n (FiniteAdeleRing R K)))) :
+    U.map Matrix.GeneralLinearGroup.det ≤ integralUnits R K :=
+  le_integralUnits_of_isCompact (by
+    simpa only [Subgroup.coe_map] using hU.image Matrix.GeneralLinearGroup.continuous_det)
+
 /-- The ideal class attached to a finite idele is locally constant. -/
 theorem isLocallyConstant_toClassGroup :
     IsLocallyConstant (toClassGroup R K) := by
@@ -136,6 +172,6 @@ theorem isEmbedding_coe_sIntegralUnits {S : Set (HeightOneSpectrum R)} (hS : S.F
   -- of the local integers
   refine adicCompletionIntegers.mem_units_iff_valued_eq_one.mpr ?_
   rw [coe_unitsContinuousMulEquiv_apply]
-  exact mem_sIntegralUnits_iff.mp x.2 v hv
+  exact mem_sIntegralUnits_iff.mp x.property v hv
 
 end IsDedekindDomain.FiniteAdeleRing

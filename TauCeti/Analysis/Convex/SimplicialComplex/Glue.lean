@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.LocallyFinite
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
 public import TauCeti.Analysis.Convex.SimplicialComplex.Restrict
 import Mathlib.Analysis.Convex.Combination
 import TauCeti.Analysis.Convex.Extreme
@@ -29,7 +30,11 @@ extreme subset of both `|K i|` and `|K j|`, and such that every face of `K i` wi
 Then a face of `K i` and a face of `K j` meet properly
 (`convexHull_inter_convexHull_subset_of_isExtreme`): the point of intersection is carried by
 faces with all vertices in `F`, which are then faces of `K j`. Gluing retains the triangulation
-of each piece on its convex subsets (`restrict_glue`).
+of each piece on its convex subsets (`restrict_glue`). Two complexes `K` and `L` also meet
+properly as soon as `|K| ∩ |L|` is the underlying space of their common subcomplex `K ⊓ L`
+(`inter_convexHull_subset_convexHull_of_space_inter_subset`), since a point of a subcomplex lying
+in a simplex of the complex lies in a face of that simplex belonging to the subcomplex
+(`exists_subset_mem_faces_of_le`).
 
 This is the common-face agreement and coverage step in subdividing a locally finite family of
 compact convex polytopes, meeting in common faces, into a single simplicial complex compatible
@@ -40,17 +45,29 @@ coning a triangulation of its boundary, and the pieces are glued.
 
 * `Geometry.SimplicialComplex.glue`: the simplicial complex whose faces are the faces of a
   family of pairwise compatible complexes.
+* `Geometry.SimplicialComplex.ofSimplices`: the simplicial complex whose faces are the faces of
+  a family of affinely independent simplices meeting pairwise in common faces, generated as
+  `TauCeti.PreAbstractSimplicialComplex.ofGenerators`.
 
 ## Main results
 
 * `Geometry.SimplicialComplex.space_glue`: `|glue K h| = ⋃ i, |K i|`.
+* `Geometry.SimplicialComplex.space_ofSimplices`, `Geometry.SimplicialComplex.vertices_ofSimplices`:
+  the underlying space and the vertices of `ofSimplices σ indep inter` are the unions of the convex
+  hulls and of the vertex sets of the simplices `σ k`.
 * `Geometry.SimplicialComplex.glue_le_iff`: the glued complex is the least complex containing
   every `K i`.
+* `Geometry.SimplicialComplex.ofSimplices_le_iff`: `ofSimplices σ indep inter` is the least
+  complex containing every nonempty simplex `σ k`.
 * `Geometry.SimplicialComplex.locallyFinite_convexHull_glue`: gluing a locally finite family of
   finite complexes gives a locally finite complex.
 * `Geometry.SimplicialComplex.locallyFinite_convexHull_of_finite_restrict`: a complex whose
   simplices lie in a locally finite complex or in the cells of a locally finite family of convex
   sets, finitely many in each cell, is locally finite.
+* `Geometry.SimplicialComplex.exists_subset_mem_faces_of_le`: a point of a subcomplex lying in a
+  simplex of the complex lies in a face of that simplex belonging to the subcomplex.
+* `Geometry.SimplicialComplex.inter_convexHull_subset_convexHull_of_space_inter_subset`: two
+  complexes meeting in the underlying space of their common subcomplex have compatible faces.
 * `Geometry.SimplicialComplex.convexHull_inter_convexHull_subset_of_isExtreme`: complexes
   agreeing on common extreme subsets covering the intersection of their spaces meet properly.
 * `Geometry.SimplicialComplex.restrict_glue`: gluing along common faces does not change the
@@ -121,13 +138,13 @@ theorem vertices_glue : (glue K h).vertices = ⋃ i, (K i).vertices := by
 locally finite family. -/
 theorem locallyFinite_convexHull_glue [TopologicalSpace E] (hfin : ∀ i, (K i).faces.Finite)
     (hlf : LocallyFinite fun i => (K i).space) :
-    LocallyFinite fun σ : (glue K h).faces => convexHull 𝕜 (σ.1 : Set E) := by
+    LocallyFinite fun σ : (glue K h).faces => convexHull 𝕜 (σ.val : Set E) := by
   intro x
   obtain ⟨U, hU, hfinU⟩ := hlf x
   refine ⟨U, hU, Finite.of_finite_image ((hfinU.biUnion fun i _ => hfin i).subset ?_)
     Subtype.val_injective.injOn⟩
   rintro _ ⟨σ, ⟨y, hyσ, hyU⟩, rfl⟩
-  obtain ⟨i, hi⟩ := (mem_glue_faces h).1 σ.2
+  obtain ⟨i, hi⟩ := (mem_glue_faces h).1 σ.property
   exact mem_biUnion (x := i) ⟨y, convexHull_subset_space hi hyσ, hyU⟩ hi
 
 /-- The faces of the pieces `L` and `T j` of a glued family meet compatibly, provided distinct
@@ -164,6 +181,34 @@ theorem inter_convexHull_subset_convexHull_option {J : Type*} (L : SimplicialCom
   exact convexHull_mono (Set.inter_subset_inter (coe_subset.2 hss') (coe_subset.2 htt'))
     (L.inter_subset_convexHull hs' ht' ⟨hxs', hxt'⟩)
 
+/-- A point of a subcomplex `A` of `K` lying in a simplex `s` of `K` lies in the simplex of a
+face of `A` contained in `s`. -/
+theorem exists_subset_mem_faces_of_le {K A : SimplicialComplex 𝕜 E} {s : Finset E} (hAK : A ≤ K)
+    (hs : s ∈ K.faces) (hxs : x ∈ convexHull 𝕜 (s : Set E)) (hxA : x ∈ A.space) :
+    ∃ t ⊆ s, t ∈ A.faces ∧ x ∈ convexHull 𝕜 (t : Set E) := by
+  classical
+  obtain ⟨u, hu, hxu⟩ := mem_space_iff.1 hxA
+  have hx : x ∈ convexHull 𝕜 ((s ∩ u : Finset E) : Set E) := by
+    rw [Finset.coe_inter]
+    exact K.inter_subset_convexHull hs (hAK hu) ⟨hxs, hxu⟩
+  refine ⟨s ∩ u, Finset.inter_subset_left, A.down_closed hu Finset.inter_subset_right ?_, hx⟩
+  rw [← Finset.coe_nonempty, ← convexHull_nonempty_iff (𝕜 := 𝕜)]
+  exact ⟨x, hx⟩
+
+/-- If two complexes meet in the underlying space of their common subcomplex, then a simplex of
+one meets a simplex of the other in the convex hull of their common vertices, so their faces
+together form a simplicial complex. -/
+theorem inter_convexHull_subset_convexHull_of_space_inter_subset {K L : SimplicialComplex 𝕜 E}
+    {s t : Finset E} (hKL : K.space ∩ L.space ⊆ (K ⊓ L).space) (hs : s ∈ K.faces)
+    (ht : t ∈ L.faces) :
+    convexHull 𝕜 ↑s ∩ convexHull 𝕜 ↑t ⊆ convexHull 𝕜 (s ∩ t : Set E) := by
+  rintro x ⟨hxs, hxt⟩
+  have hx := hKL ⟨convexHull_subset_space hs hxs, convexHull_subset_space ht hxt⟩
+  obtain ⟨s', hss', hs', hxs'⟩ := exists_subset_mem_faces_of_le inf_le_left hs hxs hx
+  obtain ⟨t', htt', ht', hxt'⟩ := exists_subset_mem_faces_of_le inf_le_right ht hxt hx
+  exact convexHull_mono (Set.inter_subset_inter (Finset.coe_subset.2 hss')
+    (Finset.coe_subset.2 htt')) ((K ⊓ L).inter_subset_convexHull hs' ht' ⟨hxs', hxt'⟩)
+
 end OrderedRing
 
 section LocallyFinite
@@ -187,10 +232,10 @@ theorem locallyFinite_convexHull_of_finite_restrict {K L : SimplicialComplex �
     (((hUf.image Subtype.val).union (hVf.biUnion fun i _ => hfin i)).subset ?_)
     Subtype.val_injective.injOn⟩
   rintro _ ⟨σ, ⟨y, hyσ, hyU, hyV⟩, rfl⟩
-  rcases hK σ.1 σ.2 with hσ | ⟨i, hσi⟩
-  · exact .inl ⟨⟨σ.1, hσ⟩, ⟨y, hyσ, hyU⟩, rfl⟩
+  rcases hK σ.val σ.property with hσ | ⟨i, hσi⟩
+  · exact .inl ⟨⟨σ.val, hσ⟩, ⟨y, hyσ, hyU⟩, rfl⟩
   · exact .inr (Set.mem_biUnion (x := i) ⟨y, (hPv i).convexHull_subset_iff.2 hσi hyσ, hyV⟩
-      (mem_restrict_faces.2 ⟨σ.2, hσi⟩))
+      (mem_restrict_faces.2 ⟨σ.property, hσi⟩))
 
 /-- The restriction of `K` to a cell `P k` has finitely many faces, if `P k` is compact, the cells
 are locally finite, the restriction of `L` to `P k` has finitely many faces, the restriction of
@@ -279,6 +324,85 @@ theorem restrict_glue
     hjG.mem_of_centerMass_mem (fun _ _ => one_pos)
       (by simpa using convexHull_subset_space hs) hxG (mem_coe.1 hy)⟩
   exact restrict_le (hG hsG)
+
+/-- The simplicial complex whose faces are the nonempty subsets of the simplices `σ k`, provided
+each `σ k` is affinely independent and the convex hulls of any two of them meet inside the convex
+hull of their common vertices. -/
+def ofSimplices (σ : ι → Finset E) (indep : ∀ k, AffineIndependent 𝕜 ((↑) : σ k → E))
+    (inter : ∀ k l, convexHull 𝕜 ↑(σ k) ∩ convexHull 𝕜 ↑(σ l) ⊆
+      convexHull 𝕜 ((σ k : Set E) ∩ σ l)) :
+    SimplicialComplex 𝕜 E where
+  toPreAbstractSimplicialComplex := TauCeti.PreAbstractSimplicialComplex.ofGenerators (range σ)
+  indep := by
+    intro t ht
+    obtain ⟨-, _, ⟨k, rfl⟩, htk⟩ := TauCeti.PreAbstractSimplicialComplex.mem_ofGenerators.1 ht
+    exact (indep k).mono (coe_subset.2 htk)
+  inter_subset_convexHull := by
+    classical
+    intro s t hs ht x ⟨hxs, hxt⟩
+    obtain ⟨-, _, ⟨k, rfl⟩, hsk⟩ := TauCeti.PreAbstractSimplicialComplex.mem_ofGenerators.1 hs
+    obtain ⟨-, _, ⟨l, rfl⟩, htl⟩ := TauCeti.PreAbstractSimplicialComplex.mem_ofGenerators.1 ht
+    set U := σ k ∩ σ l
+    have hU : x ∈ convexHull 𝕜 (U : Set E) := by
+      rw [coe_inter]
+      exact inter k l ⟨convexHull_mono (coe_subset.2 hsk) hxs,
+        convexHull_mono (coe_subset.2 htl) hxt⟩
+    -- inside each of the two affinely independent simplices, `x` is carried by common vertices
+    have hs : x ∈ convexHull 𝕜 (s ∩ U : Set E) :=
+      ((indep k).convexHull_inter hsk inter_subset_left).ge ⟨hxs, hU⟩
+    have ht : x ∈ convexHull 𝕜 (t ∩ U : Set E) :=
+      ((indep l).convexHull_inter htl inter_subset_right).ge ⟨hxt, hU⟩
+    rw [← coe_inter] at hs ht
+    refine convexHull_mono (fun y hy => ?_) (((indep k).convexHull_inter
+      (inter_subset_left.trans hsk) (inter_subset_right.trans inter_subset_left)).ge ⟨hs, ht⟩)
+    simp only [coe_inter, Set.mem_inter_iff] at hy
+    exact ⟨hy.1.1, hy.2.1⟩
+
+/-- The faces of `ofSimplices σ indep inter` are the nonempty subsets of the simplices `σ k`. -/
+@[simp]
+theorem mem_ofSimplices_faces {σ : ι → Finset E} {indep} {inter} :
+    s ∈ (ofSimplices (𝕜 := 𝕜) σ indep inter).faces ↔ s.Nonempty ∧ ∃ k, s ⊆ σ k :=
+  TauCeti.PreAbstractSimplicialComplex.mem_ofGenerators.trans (by simp)
+
+/-- The face set of `ofSimplices σ indep inter` is the precomplex generated by the simplices
+`σ k`. -/
+theorem toPreAbstractSimplicialComplex_ofSimplices {σ : ι → Finset E} {indep} {inter} :
+    (ofSimplices (𝕜 := 𝕜) σ indep inter).toPreAbstractSimplicialComplex =
+      TauCeti.PreAbstractSimplicialComplex.ofGenerators (range σ) :=
+  (rfl)
+
+/-- Every nonempty simplex `σ k` is a face of `ofSimplices σ indep inter`. -/
+theorem mem_ofSimplices_faces_of_nonempty {σ : ι → Finset E} {indep} {inter} (k : ι)
+    (hk : (σ k).Nonempty) : σ k ∈ (ofSimplices (𝕜 := 𝕜) σ indep inter).faces :=
+  mem_ofSimplices_faces.2 ⟨hk, k, subset_rfl⟩
+
+/-- `ofSimplices σ indep inter` is the least simplicial complex containing every nonempty
+simplex `σ k`. -/
+theorem ofSimplices_le_iff {σ : ι → Finset E} {indep} {inter} {L : SimplicialComplex 𝕜 E} :
+    ofSimplices σ indep inter ≤ L ↔ ∀ k, (σ k).Nonempty → σ k ∈ L.faces := by
+  refine ⟨fun hL k hk => hL (mem_ofSimplices_faces_of_nonempty k hk), fun hL s hs => ?_⟩
+  obtain ⟨hs, k, hsk⟩ := mem_ofSimplices_faces.1 hs
+  exact L.down_closed (hL k (hs.mono hsk)) hsk hs
+
+/-- The underlying space of `ofSimplices σ indep inter` is the union of the convex hulls of the
+simplices `σ k`. -/
+@[simp]
+theorem space_ofSimplices {σ : ι → Finset E} {indep} {inter} :
+    (ofSimplices (𝕜 := 𝕜) σ indep inter).space = ⋃ k, convexHull 𝕜 (σ k : Set E) := by
+  ext x
+  simp only [mem_space_iff, mem_ofSimplices_faces, Set.mem_iUnion]
+  constructor
+  · rintro ⟨s, ⟨-, k, hsk⟩, hx⟩
+    exact ⟨k, convexHull_mono (coe_subset.2 hsk) hx⟩
+  · rintro ⟨k, hx⟩
+    exact ⟨σ k, ⟨by simpa using Set.nonempty_of_mem hx, k, subset_rfl⟩, hx⟩
+
+/-- The vertices of `ofSimplices σ indep inter` are the vertices of the simplices `σ k`. -/
+@[simp]
+theorem vertices_ofSimplices {σ : ι → Finset E} {indep} {inter} :
+    (ofSimplices (𝕜 := 𝕜) σ indep inter).vertices = ⋃ k, (σ k : Set E) := by
+  ext x
+  simp [mem_vertices]
 
 end LinearOrderedField
 
