@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 public import TauCeti.Geometry.Symplectic.Lagrangian.Manifold
 public import TauCeti.Geometry.Symplectic.Manifold.Flat
+import TauCeti.Geometry.Manifold.Immersion.Differential
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!

@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Prod
 public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Normal
 import TauCeti.Geometry.Contact.Levi
 import TauCeti.Geometry.Contact.Pullback
+import TauCeti.Geometry.Manifold.Immersion.Differential
 
 /-!
 # The normal bundle of a Legendrian embedding

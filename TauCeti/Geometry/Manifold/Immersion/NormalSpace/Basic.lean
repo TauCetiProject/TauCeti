@@ -325,13 +325,6 @@ theorem finrank_normalSpace (hf : IsImmersion I J n f) (x : M) (hn : n ≠ 0)
   have h := hf.finrank_normalSpace_add_finrank x hn
   omega
 
-
-/-- The tangent spaces of a positive-regularity immersion into a manifold with
-finite-dimensional model space are finite-dimensional, since the differential is injective. -/
-theorem finiteDimensional_tangentSpace (hf : IsImmersion I J n f) (x : M) (hn : n ≠ 0)
-    [FiniteDimensional 𝕜 F] : FiniteDimensional 𝕜 (TangentSpace I x) :=
-  .of_injective (mfderiv I J f x).toLinearMap (hf.mfderiv_injective hn x)
-
 section Equiv
 
 variable {E' F' : Type*}
