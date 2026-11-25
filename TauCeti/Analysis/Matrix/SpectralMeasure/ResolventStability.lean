@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
 public import TauCeti.Analysis.Matrix.HoffmanWielandt
 public import TauCeti.MeasureTheory.Measure.ResolventTransform.Basic
 public import TauCeti.Analysis.Matrix.Resolvent.RankBound
+import TauCeti.Analysis.Matrix.MeasurableSpace
 
 /-!
 # Stability of spectral-measure resolvent transforms
@@ -38,6 +39,34 @@ open scoped Matrix.Norms.L2Operator
 namespace Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n] [Nonempty n]
+
+/-- At a nonreal parameter, the spectral resolvent transform of an a.e.-measurable
+Hermitian matrix family is a.e. measurable. -/
+theorem _root_.AEMeasurable.resolventTransform_spectralMeasure {Ω : Type*}
+    [MeasurableSpace Ω] {P : Measure Ω} {A : Ω → Matrix n n ℂ}
+    (hA : AEMeasurable A P) (hHerm : ∀ ω, (A ω).IsHermitian) {z : ℂ} (hz : z.im ≠ 0) :
+    AEMeasurable (fun ω ↦ resolventTransform ((A ω).spectralMeasure (hHerm ω) : Measure ℝ) z)
+      P := by
+  have ht : Measurable (fun B : Matrix n n ℂ ↦ (Fintype.card n : ℂ)⁻¹ *
+      ((B - z • 1)⁻¹).trace) := by
+    simp only [Matrix.trace, Matrix.diag]
+    fun_prop
+  simp_rw [fun ω ↦ Matrix.resolventTransform_spectralMeasure (A ω) (hHerm ω)
+    ((hHerm ω).notMem_spectrum_of_im_ne_zero hz)]
+  exact ht.comp_aemeasurable hA
+
+/-- The spectral resolvent transform of an a.e.-measurable Hermitian matrix family is
+integrable over a finite measure at any nonreal parameter. -/
+theorem _root_.AEMeasurable.integrable_resolventTransform_spectralMeasure {Ω : Type*}
+    [MeasurableSpace Ω]
+    {P : Measure Ω} [IsFiniteMeasure P] {A : Ω → Matrix n n ℂ}
+    (hA : AEMeasurable A P) (hHerm : ∀ ω, (A ω).IsHermitian) {z : ℂ} (hz : z.im ≠ 0) :
+    Integrable (fun ω ↦ resolventTransform ((A ω).spectralMeasure (hHerm ω) : Measure ℝ) z)
+      P := by
+  refine Integrable.of_bound (hA.resolventTransform_spectralMeasure hHerm hz).aestronglyMeasurable
+    |z.im|⁻¹ (.of_forall fun ω ↦ ?_)
+  simpa only [probReal_univ, mul_one] using
+    norm_resolventTransform_le (μ := ((A ω).spectralMeasure (hHerm ω) : Measure ℝ)) hz
 
 /-- Quantitative stability of the resolvent transforms of two Hermitian spectral measures. -/
 theorem norm_resolventTransform_spectralMeasure_sub_le

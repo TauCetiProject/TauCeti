@@ -90,11 +90,8 @@ theorem norm_spatialFDerivL_le (f : ParabolicC2HolderSpace α E F hab) {ε : ℝ
   obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
   -- Each gradient slice is Lipschitz, with the supremum of the Hessian as constant.
   have hlip : HolderWith ‖(spatialSecondFDerivL f).toBoundedContinuousFunction‖₊ 1
-      fun y ↦ spatialFDerivL f (slabMk y t) := by
-    refine holderWith_one.2 (lipschitzWith_of_nnNorm_fderiv_le
-      (fun y ↦ (f.hasSpatialSecondFDerivAt t y).differentiableAt) fun y ↦ ?_)
-    rw [f.fderiv_spatialFDeriv_eq, ← HolderSpace.toBoundedContinuousFunction_apply]
-    exact BoundedContinuousFunction.nnNorm_coe_le_nnNorm _ _
+      fun y ↦ spatialFDerivL f (slabMk y t) :=
+    holderWith_one.2 (f.lipschitzWith_spatialFDerivL_slabMk t)
   simpa using hlip.norm_le_of_hasFDerivAt (f.hasSpatialFDerivAt t)
     (fun y ↦ (valueL f).norm_coe_le_norm (slabMk y t)) hε x
 

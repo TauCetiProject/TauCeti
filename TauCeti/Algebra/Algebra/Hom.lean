@@ -48,6 +48,7 @@ scalar `a ≠ 1` only when `n ≠ 0`.
 
 * `AlgHom.algebraMap_toAlgebra_apply`: `algebraMap A B z = f z` for the algebra structure
   `f.toRingHom.toAlgebra` induced by `f : A →ₐ[R] B`.
+* `Algebra.coe_ofId`: `Algebra.ofId R A` is `algebraMap R A` as a function.
 * `RingHom.toIntAlgHom_id`, `RingHom.toIntAlgHom_comp`: `RingHom.toIntAlgHom` is functorial.
 * `RingHom.toIntAlgHom_toRingHom`, `AlgHom.toRingHom_toIntAlgHom`: it is inverse to
   `AlgHom.toRingHom` in both directions.
@@ -108,6 +109,14 @@ theorem AlgHom.algebraMap_toAlgebra_apply {R A B : Type*} [CommSemiring R] [Comm
     [CommSemiring B] [Algebra R A] [Algebra R B] (f : A →ₐ[R] B) (z : A) :
     @algebraMap A B _ _ f.toRingHom.toAlgebra z = f z := by
   rw [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
+
+/-- **`Algebra.ofId R A` is `algebraMap R A`** as a function. Mathlib's `Algebra.ofId_apply` is
+the pointwise form; this unapplied form rewrites the function itself, for instance inside
+`Matrix.map M ⇑(Algebra.ofId R A)` as produced by `AlgHom.mapMatrix_apply`. -/
+@[simp]
+theorem Algebra.coe_ofId (R A : Type*) [CommSemiring R] [Semiring A] [Algebra R A] :
+    ⇑(Algebra.ofId R A) = algebraMap R A :=
+  funext (Algebra.ofId_apply A)
 
 /-! ### Functoriality of `RingHom.toIntAlgHom` -/
 

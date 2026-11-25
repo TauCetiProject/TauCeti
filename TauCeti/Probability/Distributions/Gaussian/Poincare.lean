@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Distributions.Gaussian.IntegrationByParts
+public import TauCeti.Probability.Distributions.Gaussian.IntegrationByParts.Basic
 public import TauCeti.Probability.Distributions.Gaussian.Symmetry
 public import TauCeti.Probability.Concentration.EfronStein
 public import TauCeti.MeasureTheory.Integral.Pi

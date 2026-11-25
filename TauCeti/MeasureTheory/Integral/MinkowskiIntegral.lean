@@ -6,10 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
+public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Integral.Average
+public import Mathlib.MeasureTheory.Integral.Prod
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+public import Mathlib.MeasureTheory.Measure.OpenPos
 public import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Integral.MeanInequalities
+import TauCeti.Analysis.SpecialFunctions.Pow.Integral
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 
 /-!
 # Minkowski's integral inequality
@@ -49,6 +56,15 @@ the average over `s` of its pointwise `ℓʳ` norm (`TauCeti.tsum_setLAverage_rp
 * `TauCeti.lintegral_Lp_lintegral_le`: Minkowski's integral inequality.
 * `TauCeti.lintegral_mul_setLIntegral_rpow_le`: Minkowski's integral inequality for weighted
   truncations.
+* `TauCeti.lintegral_mul_setLIntegral_rpow_le_of_le`: its form for a power weight `t ^ s` on
+  `(0, ∞)`, given a bound on each truncation of the weight.
+* `TauCeti.lintegral_mul_setLIntegral_ofReal_mul_rpow_lt_le`,
+  `TauCeti.lintegral_mul_setLIntegral_le_ofReal_mul_rpow_le`: the two endpoint estimates for the
+  truncations of `f` above and up to a height `c * t ^ γ`.
+* `TauCeti.eLpNorm_integral_le_lintegral_eLpNorm_of_ne_top`: Minkowski's integral inequality for
+  the `Lᵖ` seminorm of a Bochner integral, `1 ≤ p < ∞`.
+* `TauCeti.eLpNorm_integral_le_lintegral_eLpNorm`: the same for `1 ≤ p ≤ ∞`, for integrands
+  continuous in the variable of the `Lᵖ` norm.
 * `TauCeti.tsum_setLAverage_rpow_le`: Minkowski's inequality for the averages of a countable
   family.
 
@@ -226,6 +242,132 @@ theorem lintegral_mul_setLIntegral_rpow_le [SFinite ν] [SFinite μ] {R : β →
         refine lintegral_congr fun x ↦ ?_
         rw [hsec, ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hr0.le), ← ENNReal.rpow_mul,
           mul_inv_cancel₀ hr0.ne', ENNReal.rpow_one]
+
+/-- **Minkowski's integral inequality for power-weighted truncations.** If the truncation of the
+weight `t ^ s` at each point `x` is at most `K f(x) ^ (qᵢ (p - pᵢ) / pᵢ)`, then the `t ^ s`-weighted
+integral in `t` of the `(qᵢ / pᵢ)`-th powers of the truncated integrals of `f ^ pᵢ` is at most
+`K (∫⁻ f ^ p) ^ (qᵢ / pᵢ)`. This is the estimate for one endpoint in Marcinkiewicz interpolation
+and in the real interpolation of `Lᵖ` spaces, where the truncations cut `f` at a power `c t ^ γ` of
+the parameter. -/
+theorem lintegral_mul_setLIntegral_rpow_le_of_le [SFinite μ] {f : α → ℝ≥0∞} {p : ℝ}
+    {R : ℝ → α → Prop} (hR : MeasurableSet {z : ℝ × α | R z.1 z.2}) (hf : AEMeasurable f μ)
+    {pᵢ qᵢ s K : ℝ} (hpᵢ : 0 < pᵢ) (hpq : pᵢ ≤ qᵢ)
+    (hinner : ∀ x, ∫⁻ t in Ioi (0 : ℝ),
+        {t : ℝ | R t x}.indicator (fun t => ENNReal.ofReal (t ^ s)) t ≤
+      ENNReal.ofReal K * f x ^ (qᵢ * (p - pᵢ) / pᵢ)) :
+    ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) *
+        (∫⁻ x in {x | R t x}, f x ^ pᵢ ∂μ) ^ (qᵢ / pᵢ) ≤
+      ENNReal.ofReal K * (∫⁻ x, f x ^ p ∂μ) ^ (qᵢ / pᵢ) := by
+  have hqᵢ : 0 < qᵢ := hpᵢ.trans_le hpq
+  have hr : 1 ≤ qᵢ / pᵢ := (one_le_div hpᵢ).2 hpq
+  have hr0 : 0 < qᵢ / pᵢ := by positivity
+  have hexp : qᵢ * (p - pᵢ) / pᵢ * (qᵢ / pᵢ)⁻¹ = p - pᵢ := by
+    field_simp
+  have hpt : ∀ x, f x ^ pᵢ * (∫⁻ t in Ioi (0 : ℝ),
+        {t : ℝ | R t x}.indicator (fun t => ENNReal.ofReal (t ^ s)) t) ^ (qᵢ / pᵢ)⁻¹ ≤
+      ENNReal.ofReal K ^ (qᵢ / pᵢ)⁻¹ * f x ^ p := fun x =>
+    calc _ ≤ f x ^ pᵢ * (ENNReal.ofReal K * f x ^ (qᵢ * (p - pᵢ) / pᵢ)) ^ (qᵢ / pᵢ)⁻¹ := by
+          gcongr
+          exact hinner x
+      _ = ENNReal.ofReal K ^ (qᵢ / pᵢ)⁻¹ * (f x ^ pᵢ * f x ^ (p - pᵢ)) := by
+          rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ← ENNReal.rpow_mul, hexp]
+          ring
+      _ ≤ ENNReal.ofReal K ^ (qᵢ / pᵢ)⁻¹ * f x ^ p := by
+          gcongr
+          simpa using ENNReal.le_rpow_add (f x) pᵢ (p - pᵢ)
+  calc _ ≤ _ := lintegral_mul_setLIntegral_rpow_le hR
+        (measurable_id.pow_const s).ennreal_ofReal.aemeasurable (hf.pow_const pᵢ) hr
+    _ ≤ (∫⁻ x, ENNReal.ofReal K ^ (qᵢ / pᵢ)⁻¹ * f x ^ p ∂μ) ^ (qᵢ / pᵢ) :=
+        ENNReal.rpow_le_rpow (lintegral_mono hpt) hr0.le
+    _ = ENNReal.ofReal K * (∫⁻ x, f x ^ p ∂μ) ^ (qᵢ / pᵢ) := by
+        rw [lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_nonneg (by positivity)
+          ENNReal.ofReal_ne_top), ENNReal.mul_rpow_of_nonneg _ _ hr0.le, ← ENNReal.rpow_mul,
+          inv_mul_cancel₀ hr0.ne', ENNReal.rpow_one]
+
+/-- **The endpoint estimate above a height.** Truncate `f` above the height `c * t ^ γ`, where the
+exponents are tied by `(s + 1) / γ = qᵢ (p - pᵢ) / pᵢ` with `pᵢ < p`. Then the `t ^ s`-weighted
+integral in `t` of the `(qᵢ / pᵢ)`-th powers of the truncated integrals of `f ^ pᵢ` is at most
+`c ^ (qᵢ (pᵢ - p) / pᵢ) / |s + 1| (∫⁻ f ^ p) ^ (qᵢ / pᵢ)`. -/
+theorem lintegral_mul_setLIntegral_ofReal_mul_rpow_lt_le [SFinite μ] {f : α → ℝ≥0∞}
+    (hf : Measurable f) {p pᵢ qᵢ s γ c : ℝ} (hc : 0 < c) (hpᵢ : 0 < pᵢ) (hpq : pᵢ ≤ qᵢ)
+    (hlt : pᵢ < p) (hγ : (s + 1) / γ = qᵢ * (p - pᵢ) / pᵢ) :
+    ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) *
+        (∫⁻ x in {x | ENNReal.ofReal (c * t ^ γ) < f x}, f x ^ pᵢ ∂μ) ^ (qᵢ / pᵢ) ≤
+      ENNReal.ofReal (c ^ (qᵢ * (pᵢ - p) / pᵢ) / |s + 1|) * (∫⁻ x, f x ^ p ∂μ) ^ (qᵢ / pᵢ) := by
+  refine lintegral_mul_setLIntegral_rpow_le_of_le (measurableSet_ofReal_mul_rpow_lt hf c γ)
+    hf.aemeasurable hpᵢ hpq fun x => ?_
+  have hin := lintegral_indicator_ofReal_mul_rpow_lt_le hc
+    (hγ ▸ div_pos (mul_pos (hpᵢ.trans_le hpq) (sub_pos.2 hlt)) hpᵢ) (f x)
+  rwa [hγ, ← neg_div, ← mul_neg, neg_sub] at hin
+
+/-- **The endpoint estimate up to a height.** Truncate `f` up to the height `c * t ^ γ`, where the
+exponents are tied by `(s + 1) / γ = qᵢ (p - pᵢ) / pᵢ` with `p < pᵢ`. Then the `t ^ s`-weighted
+integral in `t` of the `(qᵢ / pᵢ)`-th powers of the truncated integrals of `f ^ pᵢ` is at most
+`c ^ (qᵢ (pᵢ - p) / pᵢ) / |s + 1| (∫⁻ f ^ p) ^ (qᵢ / pᵢ)`. -/
+theorem lintegral_mul_setLIntegral_le_ofReal_mul_rpow_le [SFinite μ] {f : α → ℝ≥0∞}
+    (hf : Measurable f) {p pᵢ qᵢ s γ c : ℝ} (hc : 0 < c) (hpᵢ : 0 < pᵢ) (hpq : pᵢ ≤ qᵢ)
+    (hlt : p < pᵢ) (hγ : (s + 1) / γ = qᵢ * (p - pᵢ) / pᵢ) :
+    ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) *
+        (∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t ^ γ)}, f x ^ pᵢ ∂μ) ^ (qᵢ / pᵢ) ≤
+      ENNReal.ofReal (c ^ (qᵢ * (pᵢ - p) / pᵢ) / |s + 1|) * (∫⁻ x, f x ^ p ∂μ) ^ (qᵢ / pᵢ) := by
+  refine lintegral_mul_setLIntegral_rpow_le_of_le (measurableSet_le_ofReal_mul_rpow hf c γ)
+    hf.aemeasurable hpᵢ hpq fun x => ?_
+  have hin := lintegral_indicator_le_ofReal_mul_rpow_le hc
+    (hγ ▸ div_neg_of_neg_of_pos (mul_neg_of_pos_of_neg (hpᵢ.trans_le hpq) (sub_neg.2 hlt)) hpᵢ)
+    (f x)
+  rwa [hγ, ← neg_div, ← mul_neg, neg_sub] at hin
+
+/-- **Minkowski's integral inequality for Bochner integrals.** Let `1 ≤ p < ∞` and let
+`F : α → β → E` be jointly a.e. strongly measurable. Then the `Lᵖ(μ)` seminorm of
+`x ↦ ∫ y, F x y ∂ν` is at most the integral over `ν` of the `Lᵖ(μ)` seminorms of the functions
+`x ↦ F x y`. For `p = ∞` see `TauCeti.eLpNorm_integral_le_lintegral_eLpNorm`. -/
+theorem eLpNorm_integral_le_lintegral_eLpNorm_of_ne_top {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [SFinite μ] [SFinite ν] {F : α → β → E}
+    (hF : AEStronglyMeasurable (uncurry F) (μ.prod ν)) {p : ℝ≥0∞} (hp : 1 ≤ p) (hp_top : p ≠ ∞) :
+    eLpNorm (fun x ↦ ∫ y, F x y ∂ν) p μ ≤ ∫⁻ y, eLpNorm (fun x ↦ F x y) p μ ∂ν := by
+  have hint : AEStronglyMeasurable (fun x ↦ ∫ y, F x y ∂ν) μ := hF.integral_prod_right'
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
+  have hp1 : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp_top hp
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hint]
+  calc (∫⁻ x, ‖∫ y, F x y ∂ν‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal)
+      ≤ (∫⁻ x, (∫⁻ y, ‖F x y‖ₑ ∂ν) ^ p.toReal ∂μ) ^ (1 / p.toReal) := by
+        gcongr with x
+        exact eNorm_integral_le_lintegral_eNorm _
+    _ ≤ ∫⁻ y, (∫⁻ x, ‖F x y‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal) ∂ν :=
+        lintegral_Lp_lintegral_le (f := fun x y ↦ ‖F x y‖ₑ) hF.eNorm hp1
+    _ ≤ _ := by
+        refine lintegral_mono fun y ↦ ?_
+        by_cases hy : AEStronglyMeasurable (fun x ↦ F x y) μ
+        · rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hy]
+        · rw [eLpNorm_of_not_aestronglyMeasurable hy]
+          exact le_top
+
+/-- **Minkowski's integral inequality for Bochner integrals.** Let `1 ≤ p ≤ ∞` and let
+`F : α → β → E` be jointly a.e. strongly measurable, and continuous in `x` for every `y`, where `μ`
+is positive on nonempty open sets. Then the `Lᵖ(μ)` seminorm of `x ↦ ∫ y, F x y ∂ν` is at most the
+integral over `ν` of the `Lᵖ(μ)` seminorms of the functions `x ↦ F x y`. Continuity is used only
+for `p = ∞`, where it turns the almost-everywhere bound `‖F x y‖ ≤ ‖F · y‖_∞` into a bound at
+every `x`, uniformly in `y`; for `p < ∞` see
+`TauCeti.eLpNorm_integral_le_lintegral_eLpNorm_of_ne_top`. -/
+theorem eLpNorm_integral_le_lintegral_eLpNorm {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace α] [μ.IsOpenPosMeasure] [SFinite μ] [SFinite ν]
+    {F : α → β → E} (hF : AEStronglyMeasurable (uncurry F) (μ.prod ν))
+    (hc : ∀ y, Continuous fun x ↦ F x y) {p : ℝ≥0∞} (hp : 1 ≤ p) :
+    eLpNorm (fun x ↦ ∫ y, F x y ∂ν) p μ ≤ ∫⁻ y, eLpNorm (fun x ↦ F x y) p μ ∂ν := by
+  rcases eq_or_ne p ∞ with rfl | hp_top
+  · have hint : AEStronglyMeasurable (fun x ↦ ∫ y, F x y ∂ν) μ := hF.integral_prod_right'
+    rw [eLpNorm_exponent_top hint]
+    refine eLpNormEssSup_le_of_ae_eNorm_bound (.of_forall fun x ↦ ?_)
+    refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono fun y ↦ ?_)
+    refine le_trans ?_ eLpNormEssSup_le_eLpNorm_top
+    -- The bound holds almost everywhere, on a closed set by continuity, hence everywhere.
+    have hcl : IsClosed {x | ‖F x y‖ₑ ≤ eLpNormEssSup (fun x ↦ F x y) μ} :=
+      isClosed_le (hc y).eNorm continuous_const
+    have hd := μ.dense_of_ae (ae_le_eLpNormEssSup (f := fun x ↦ F x y))
+    have hx : x ∈ closure {x | ‖F x y‖ₑ ≤ eLpNormEssSup (fun x ↦ F x y) μ} :=
+      hd.closure_eq ▸ Set.mem_univ x
+    rwa [hcl.closure_eq, Set.mem_ofPred_eq] at hx
+  · exact eLpNorm_integral_le_lintegral_eLpNorm_of_ne_top hF hp hp_top
 
 /-- **Minkowski's inequality for averages.** The `ℓʳ` norm of the averages over `s` of a countable
 family of functions is at most the average over `s` of their pointwise `ℓʳ` norm:

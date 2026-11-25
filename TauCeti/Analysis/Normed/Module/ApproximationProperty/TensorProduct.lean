@@ -8,9 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Module.ApproximationProperty.Basic
 public import TauCeti.Analysis.Normed.Operator.Nuclear
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
-import TauCeti.Analysis.Convex.TotallyBounded
 import TauCeti.Analysis.Normed.Module.Annihilator
-import TauCeti.Analysis.Normed.Module.Convex
 import TauCeti.Analysis.Normed.Module.TensorProduct.Associator
 import TauCeti.Analysis.Normed.Module.TensorProduct.IntegralBilinearForm
 import TauCeti.Analysis.Normed.Module.TensorProduct.Series
@@ -78,6 +76,9 @@ characterizations.
   `TauCeti.hasApproximationProperty_iff_tsum_apply_eq_zero`: for a Banach space `E`, the
   canonical-operator, nuclear-trace, and nuclear-series characterizations of the approximation
   property.
+* `TauCeti.CompletedProjectiveTensor.summable_coe_comp_singleCLM_tmul`: for a null sequence `x`,
+  the summable series `∑ n, fₙ ⊗ x n` built from the coordinate functionals `fₙ` of a functional on
+  `C₀(ℕ, E)`.
 
 ## References
 
@@ -231,6 +232,20 @@ section Normed
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 
+open ZeroAtInftyContinuousMap in
+/-- For a null sequence `x` and a functional `Λ` on `C₀(ℕ, E)`, the series `∑ n, fₙ ⊗ x n` of the
+coordinate functionals `fₙ = Λ ∘ singleCLM 𝕜 n` is summable in `E* ⊗̂π E`, since
+`C₀(ℕ, E)* = ℓ¹(ℕ, E*)`. -/
+theorem CompletedProjectiveTensor.summable_coe_comp_singleCLM_tmul {x : ℕ → E}
+    (hx : Tendsto x atTop (𝓝 0)) (Λ : StrongDual 𝕜 C₀(ℕ, E)) :
+    Summable fun n ↦
+      ((⟨Λ.comp (singleCLM 𝕜 n) ⊗ₜ x n⟩ : ProjectiveTensor 𝕜 (StrongDual 𝕜 E) E) :
+        CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) E) := by
+  obtain ⟨C, hC⟩ := hx.norm.bddAbove_range
+  exact summable_coe_tmul 𝕜 <| .of_nonneg_of_le (fun _ ↦ by positivity)
+    (fun n ↦ mul_le_mul_of_nonneg_left (hC ⟨n, rfl⟩) (norm_nonneg _))
+    ((summable_norm_comp_singleCLM Λ).mul_right C)
+
 open CompletedProjectiveTensor ZeroAtInftyContinuousMap in
 /-- If the tensor trace `E* ⊗̂π E → 𝕜` vanishes on the kernel of `E* ⊗̂π E → E* ⊗̂ε E`, then the
 identity of `E` can be approximated uniformly along any null sequence `x : ℕ → E` by bounded
@@ -239,28 +254,16 @@ private theorem exists_hasFiniteRange_forall_norm_sub_lt_of_trace_eq_zero
     (htrace : ∀ u : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) E,
       toCompletedInjectiveTensor 𝕜 (StrongDual 𝕜 E) E u = 0 → trace 𝕜 E u = 0)
     {x : ℕ → E} (hx : Tendsto x atTop (𝓝 0)) {δ : ℝ} (hδ : 0 < δ) :
-    ∃ R : E →L[𝕜] E, R.toLinearMap.HasFiniteRange ∧ ∀ n, ‖R (x n) - x n‖ < δ := by
-  have hseq (T : E →L[𝕜] E) : Tendsto (fun n ↦ T (x n)) cofinite (𝓝 0) := by
-    rw [Nat.cofinite_eq_atTop, ← map_zero T]
-    exact (T.continuous.tendsto 0).comp hx
-  let L : (E →L[𝕜] E) →ₗ[𝕜] C₀(ℕ, E) :=
-    { toFun T := mkOfDiscrete (fun n ↦ T (x n)) (hseq T)
-      map_add' _ _ := by ext; simp
-      map_smul' _ _ := by ext; simp }
-  have hL (T : E →L[𝕜] E) (n : ℕ) : L T n = T (x n) := by simp [L]
+    ∃ R ∈ {R : E →L[𝕜] E | R.toLinearMap.HasFiniteRange}, ∀ n, ‖R (x n) - x n‖ < δ := by
+  set L := evalNullSeq 𝕜 E hx with hL
   set S : Submodule 𝕜 C₀(ℕ, E) := ((InjectiveTensor.toOperator 𝕜 E E).toLinearMap.range).map L
   -- Any functional `Λ` on `C₀(ℕ, E)` annihilating `S` corresponds to a tensor in `E* ⊗̂π E` whose
   -- image in `E* ⊗̂ε E` vanishes, so its trace `Λ (L id) = ∑ n, Λ_n (x n)` is zero.
   have hmem : L (ContinuousLinearMap.id 𝕜 E) ∈ S.topologicalClosure := by
     rw [Submodule.mem_topologicalClosure_iff_forall_dual_eq_zero]
     intro Λ hΛ
+    obtain ⟨u, hu⟩ := summable_coe_comp_singleCLM_tmul hx Λ
     set f : ℕ → StrongDual 𝕜 E := fun n ↦ Λ.comp (singleCLM 𝕜 n)
-    obtain ⟨C, hC⟩ := hx.norm.bddAbove_range
-    have hfx : Summable fun n ↦ ‖f n‖ * ‖x n‖ :=
-      .of_nonneg_of_le (fun _ ↦ by positivity)
-        (fun n ↦ mul_le_mul_of_nonneg_left (hC ⟨n, rfl⟩) (norm_nonneg _))
-        ((summable_norm_comp_singleCLM Λ).mul_right C)
-    obtain ⟨u, hu⟩ := summable_coe_tmul 𝕜 hfx
     have hu0 : toCompletedInjectiveTensor 𝕜 (StrongDual 𝕜 E) E u = 0 := by
       refine toCompletedInjectiveTensor_strongDual_eq_zero_iff.2 fun v g ↦ ?_
       have hmemS : L (g.smulRight v) ∈ S :=
@@ -268,7 +271,7 @@ private theorem exists_hasFiniteRange_forall_norm_sub_lt_of_trace_eq_zero
       have h₁ : HasSum (fun n ↦ g (x n) * f n v)
           (liftIsometry 𝕜 (StrongDual 𝕜 E) E 𝕜
             ((NormedSpace.inclusionInDoubleDual 𝕜 E v).smulRight g) u) := by
-        simpa [mul_comm] using (liftIsometry 𝕜 (StrongDual 𝕜 E) E 𝕜
+        simpa [mul_comm, f] using (liftIsometry 𝕜 (StrongDual 𝕜 E) E 𝕜
           ((NormedSpace.inclusionInDoubleDual 𝕜 E v).smulRight g)).hasSum hu
       have h₂ : HasSum (fun n ↦ g (x n) * f n v) (Λ (L (g.smulRight v))) := by
         simpa [hL, f] using hasSum_comp_singleCLM Λ (L (g.smulRight v))
@@ -277,12 +280,9 @@ private theorem exists_hasFiniteRange_forall_norm_sub_lt_of_trace_eq_zero
     have hid : HasSum (fun n ↦ f n (x n)) (Λ (L (ContinuousLinearMap.id 𝕜 E))) := by
       simpa [hL, f] using hasSum_comp_singleCLM Λ (L (ContinuousLinearMap.id 𝕜 E))
     exact (hid.unique htr).trans (htrace u hu0)
-  rw [← SetLike.mem_coe, Submodule.topologicalClosure_coe, Metric.mem_closure_iff] at hmem
-  obtain ⟨_, ⟨R, hR, rfl⟩, hdist⟩ := hmem δ hδ
-  refine ⟨R, (InjectiveTensor.mem_range_toOperator_iff R).1 hR, fun n ↦ ?_⟩
-  rw [dist_comm, dist_eq_norm, ← map_sub] at hdist
-  simpa [hL] using
-    (norm_coe_le_norm (L (R - ContinuousLinearMap.id 𝕜 E)) n).trans_lt hdist
+  rw [← SetLike.mem_coe, Submodule.topologicalClosure_coe, Submodule.map_coe] at hmem
+  obtain ⟨R, hR, hRx⟩ := exists_mem_forall_norm_sub_lt_of_mem_closure hx hmem hδ
+  exact ⟨R, (InjectiveTensor.mem_range_toOperator_iff R).1 hR, hRx⟩
 
 /-- If the tensor trace `E* ⊗̂π E → 𝕜` vanishes on the kernel of the contraction
 `E* ⊗̂π E → E* ⊗̂ε E`, then `E` has the approximation property. -/
@@ -290,18 +290,11 @@ theorem hasApproximationProperty_of_trace_eq_zero
     (htrace : ∀ u : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) E,
       CompletedProjectiveTensor.toCompletedInjectiveTensor 𝕜 (StrongDual 𝕜 E) E u = 0 →
         CompletedProjectiveTensor.trace 𝕜 E u = 0) :
-    HasApproximationProperty 𝕜 E := by
-  refine hasApproximationProperty_iff.2 fun K hK ε hε ↦ ?_
-  let : NormedSpace ℝ E := .restrictScalars ℝ 𝕜 E
-  have : IsScalarTower ℝ 𝕜 E := .restrictScalars ℝ 𝕜 E
-  obtain ⟨x, hx, hKx⟩ := hK.totallyBounded.exists_tendsto_zero_subset_closure_convexHull
-  obtain ⟨R, hR, hRx⟩ :=
-    exists_hasFiniteRange_forall_norm_sub_lt_of_trace_eq_zero htrace hx (half_pos hε)
-  refine ⟨R, hR, fun z hz ↦ ?_⟩
-  have hle : ‖(R - ContinuousLinearMap.id 𝕜 E) z‖ ≤ ε / 2 :=
-    (R - ContinuousLinearMap.id 𝕜 E).norm_le_of_mem_closure_convexHull
-      (by rintro _ ⟨n, rfl⟩; exact (hRx n).le) (hKx hz)
-  simpa using hle.trans_lt (half_lt_self hε)
+    HasApproximationProperty 𝕜 E :=
+  hasApproximationProperty_iff.2 fun _ hK _ hε ↦
+    exists_mem_forall_norm_sub_lt_of_forall_tendsto_zero
+      (fun _ hx _ hδ ↦ exists_hasFiniteRange_forall_norm_sub_lt_of_trace_eq_zero htrace hx hδ)
+      hK.totallyBounded hε
 
 open CompletedProjectiveTensor in
 /-- **Grothendieck's trace criterion for the approximation property.** A normed space `E` over `ℝ`

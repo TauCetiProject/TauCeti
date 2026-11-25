@@ -8,8 +8,9 @@ module
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.Data.Finsupp.Basic
+public import Mathlib.LinearAlgebra.Basis.Defs
 public import TauCeti.GroupTheory.Coset.Fiber
-public import TauCeti.RingTheory.NovikovSeries.Basic
+public import TauCeti.RingTheory.NovikovSeries.Count.Basic
 
 /-!
 # Pushforward and restriction of Novikov series
@@ -26,9 +27,10 @@ by summing coefficients along the fibres of `φ`:
 `(map ρ φ hφ a).coeff h' = ∑ᶠ h ∈ φ ⁻¹' {h'}, ρ (a.coeff h)`.
 
 Since `φ` rescales periods, only finitely many nonzero coefficients of `a` lie in a fibre, and
-the result is again a Novikov series. No finiteness of the kernel of `φ` is needed. The
-pushforward is additive and satisfies the identity and composition laws, which include its
-naturality in the coefficient map. It extends the pushforward
+the result is again a Novikov series: the generating series `TauCeti.NovikovSeries.countSeries`
+of the family `h ↦ ρ (a.coeff h)` with classes `φ h`. No finiteness of the kernel of `φ` is
+needed. The pushforward is additive and satisfies the identity and composition laws, which
+include its naturality in the coefficient map. It extends the pushforward
 `Finsupp.mapDomain φ ∘ Finsupp.mapRange ρ` of the group ring, and sends series vanishing below
 the period cutoff `C` to series vanishing below `c * C`.
 
@@ -38,10 +40,20 @@ vanishing below `C`. Restricting a pushforward along an injective `φ` gives bac
 `ρ` applied to its coefficients. Restriction keeps a monomial `r e^(φ h)` as `r e^h` when `φ` is
 injective, and kills a monomial whose exponent is not in the range of `φ`.
 
+For a linear equivalence `e : V ≃ₗ[R] W` of coefficient modules, the pushforward along `e` and
+the identity of exponents is an `R`-linear equivalence `TauCeti.NovikovSeries.mapLinearEquiv e`.
+Novikov series with coefficients in a finite product are families of Novikov series
+(`TauCeti.NovikovSeries.piLinearEquiv`), so a finite basis of `V` identifies Novikov series with
+coefficients in `V` with families of scalar Novikov series (`TauCeti.NovikovSeries.basisCoords`).
+
 ## Main definitions
 
 * `TauCeti.NovikovSeries.map`: the pushforward of Novikov series along a coefficient map and a
   period-rescaling exponent homomorphism.
+* `TauCeti.NovikovSeries.mapLinearEquiv`, `TauCeti.NovikovSeries.piLinearEquiv`,
+  `TauCeti.NovikovSeries.basisCoords`: coefficientwise linear equivalences, and the coordinates of
+  a Novikov series with coefficients in a module with a finite basis as a family of scalar
+  Novikov series.
 * `TauCeti.NovikovSeries.comap`: the restriction of Novikov series along a period-rescaling
   exponent homomorphism with finite kernel.
 
@@ -52,6 +64,8 @@ injective, and kills a monomial whose exponent is not in the range of `φ`.
 * `TauCeti.NovikovSeries.finite_setOf_map_add_eq`: only finitely many pairs of support exponents
   of two Novikov series have images under a period-rescaling homomorphism adding up to a given
   exponent.
+* `TauCeti.NovikovSeries.finite_setOf_map_le`: a period-rescaling homomorphism keeps finitely many
+  indexed exponents below each cutoff.
 * `TauCeti.NovikovSeries.exists_period_rescale_id` and
   `TauCeti.NovikovSeries.exists_period_rescale_comp`: the identity rescales periods by `1`, and
   composites rescale them by the product of the factors.
@@ -128,6 +142,16 @@ theorem finite_setOf_map_add_eq [Zero R] [Zero S] (a : NovikovSeries R H N)
   rw [← hp.1, ← map_add, hcφ, mul_div_cancel_left₀ _ hc.ne']
   exact lt_add_one _
 
+/-- If `φ` rescales periods by a positive constant and only finitely many `i ∈ s` have
+`N (f i) ≤ C` for each cutoff `C`, then only finitely many have `N' (φ (f i)) ≤ C`. -/
+theorem finite_setOf_map_le {ι : Type*} {s : Set ι} {f : ι → H} {φ : H →+ H'}
+    (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h) (hfin : ∀ C : ℝ, {i ∈ s | N (f i) ≤ C}.Finite)
+    (C : ℝ) : {i ∈ s | N' (φ (f i)) ≤ C}.Finite := by
+  obtain ⟨c, hc, hcφ⟩ := hφ
+  refine (hfin (C / c)).subset fun i hi => ⟨hi.1, (le_div_iff₀' hc).2 ?_⟩
+  rw [← hcφ]
+  exact hi.2
+
 /-- The identity rescales periods by `1`. -/
 theorem exists_period_rescale_id : ∃ c > 0, ∀ h, N (AddMonoidHom.id H h) = c * N h :=
   ⟨1, one_pos, fun h => (one_mul (N h)).symm⟩
@@ -176,19 +200,15 @@ variable [AddMonoid R] [AddCommMonoid S] [AddCommMonoid T]
 under `ρ` of the coefficients at the exponents `h` with `φ h = h'`. -/
 def map (ρ : R →+ S) (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h) :
     NovikovSeries R H N →+ NovikovSeries S H' N' where
-  toFun a :=
-    { coeff h' := ∑ᶠ h ∈ φ ⁻¹' {h'}, ρ (a.coeff h)
-      finite_lt C := by
-        obtain ⟨c, hc, hcφ⟩ := hφ
-        refine ((a.finite_lt (C / c)).image φ).subset ?_
-        rintro h' ⟨hh', hC⟩
-        obtain ⟨h, rfl : φ h = h', hh⟩ := exists_ne_zero_of_finsum_mem_ne_zero hh'
-        exact ⟨h, ⟨fun ha => hh (by rw [ha, map_zero]), (lt_div_iff₀' hc).2 (hcφ h ▸ hC)⟩, rfl⟩ }
+  toFun a := countSeries (N := N') φ (fun h => ρ (a.coeff h))
+    (finite_setOf_map_ne_zero_and_lt (e := id) ρ φ hφ a.finite_lt)
   map_zero' := by
     ext h'
+    rw [coeff_countSeries, coeff_zero]
     exact finsum_mem_eq_zero_of_forall_eq_zero fun h _ => by rw [coeff_zero, map_zero]
   map_add' a b := by
     ext h'
+    rw [coeff_add, coeff_countSeries, coeff_countSeries, coeff_countSeries]
     refine (finsum_mem_congr rfl fun h _ => map_add ρ _ _).trans (finsum_mem_add_distrib'
       ((a.finite_support_inter_preimage_singleton hφ h').subset fun h hh => ?_)
       ((b.finite_support_inter_preimage_singleton hφ h').subset fun h hh => ?_)) <;>
@@ -199,25 +219,24 @@ variable (ρ : R →+ S) (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c
 /-- The coefficient of a pushforward at `h'` is the sum of the images under `ρ` of the
 coefficients at the exponents in the fibre of `φ` over `h'`. -/
 theorem coeff_map (a : NovikovSeries R H N) (h' : H') :
-    (map ρ φ hφ a).coeff h' = ∑ᶠ h ∈ φ ⁻¹' {h'}, ρ (a.coeff h) := by
-  rfl
+    (map ρ φ hφ a).coeff h' = ∑ᶠ h ∈ φ ⁻¹' {h'}, ρ (a.coeff h) :=
+  coeff_countSeries h'
 
 /-- A coefficient of a pushforward is the sum over any finite set of exponents in the fibre
 containing the exponents of nonzero coefficient there. -/
 theorem coeff_map_eq_sum (a : NovikovSeries R H N) {h' : H'} (s : Finset H)
     (hs : a.support ∩ φ ⁻¹' {h'} ⊆ s) (hsφ : ∀ h ∈ s, φ h = h') :
     (map ρ φ hφ a).coeff h' = ∑ h ∈ s, ρ (a.coeff h) := by
-  rw [coeff_map]
-  exact finsum_mem_eq_sum_of_subset _
-    (fun h hh => hs ⟨mem_support.2 fun ha => hh.2 (by simp [ha]), hh.1⟩) hsφ
+  classical
+  rw [← Finset.filter_true_of_mem hsφ]
+  exact coeff_countSeries_eq_sum s fun h hh hρ =>
+    hs ⟨mem_support.2 fun ha => hρ (by rw [ha, map_zero]), hh⟩
 
 /-- Every exponent of nonzero coefficient of a pushforward is the image of an exponent of nonzero
 coefficient. -/
-theorem support_map_subset (a : NovikovSeries R H N) : (map ρ φ hφ a).support ⊆ φ '' a.support := by
-  intro h' hh'
-  rw [mem_support, coeff_map] at hh'
-  obtain ⟨h, hφh, hh⟩ := exists_ne_zero_of_finsum_mem_ne_zero hh'
-  exact ⟨h, mem_support.2 fun ha => hh (by rw [ha, map_zero]), hφh⟩
+theorem support_map_subset (a : NovikovSeries R H N) : (map ρ φ hφ a).support ⊆ φ '' a.support :=
+  support_countSeries_subset.trans <| image_mono fun _ hh =>
+    mem_support.2 fun ha => hh (by rw [ha, map_zero])
 
 /-- A pushforward has zero coefficient outside the range of the exponent homomorphism. -/
 theorem coeff_map_eq_zero_of_notMem_range (a : NovikovSeries R H N) {h' : H'}
@@ -485,6 +504,90 @@ theorem comap_comap (φ' : H' →+ H'') (hφ' : ∃ c > 0, ∀ h, N'' (φ' h) = 
 end Composition
 
 end Comap
+
+section LinearEquiv
+
+variable [AddZeroClass H] {N : H →+ ℝ} [Semiring R] {V W : Type*} [AddCommMonoid V]
+  [Module R V] [AddCommMonoid W] [Module R W]
+
+/-- A linear equivalence of coefficients, applied coefficientwise to Novikov series: the
+pushforward `TauCeti.NovikovSeries.map` along `e` and the identity of exponents, which is linear
+for the ground-ring actions. -/
+def mapLinearEquiv (e : V ≃ₗ[R] W) : NovikovSeries V H N ≃ₗ[R] NovikovSeries W H N where
+  toFun := map e.toAddEquiv.toAddMonoidHom (AddMonoidHom.id H) exists_period_rescale_id
+  invFun := map e.symm.toAddEquiv.toAddMonoidHom (AddMonoidHom.id H) exists_period_rescale_id
+  left_inv v := by ext h; simp
+  right_inv w := by ext h; simp
+  map_add' := map_add _
+  map_smul' c v := by ext h; simp
+
+/-- The coefficients of `mapLinearEquiv e v` are the images under `e` of those of `v`. -/
+@[simp]
+theorem coeff_mapLinearEquiv (e : V ≃ₗ[R] W) (v : NovikovSeries V H N) (h : H) :
+    (mapLinearEquiv e v).coeff h = e (v.coeff h) := by
+  simp [mapLinearEquiv]
+
+/-- The coefficients of `(mapLinearEquiv e).symm w` are the images under `e.symm` of those of
+`w`. -/
+@[simp]
+theorem coeff_mapLinearEquiv_symm (e : V ≃ₗ[R] W) (w : NovikovSeries W H N) (h : H) :
+    ((mapLinearEquiv e).symm w).coeff h = e.symm (w.coeff h) := by
+  simp [mapLinearEquiv]
+
+variable {ι : Type*} [Finite ι] {M : ι → Type*} [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+
+variable (R) in
+/-- Novikov series with coefficients in a finite product are families of Novikov series. -/
+def piLinearEquiv : NovikovSeries (∀ i, M i) H N ≃ₗ[R] (∀ i, NovikovSeries (M i) H N) where
+  toFun v i :=
+    { coeff h := v.coeff h i
+      finite_lt C := (v.finite_lt C).subset fun h hh =>
+        ⟨fun hv => hh.1 (by rw [hv, Pi.zero_apply]), hh.2⟩ }
+  invFun v :=
+    { coeff h i := (v i).coeff h
+      finite_lt C := (Set.finite_iUnion fun i => (v i).finite_lt C).subset fun h hh => by
+        obtain ⟨i, hi⟩ := Function.ne_iff.1 hh.1
+        exact Set.mem_iUnion.2 ⟨i, hi, hh.2⟩ }
+  left_inv v := by ext h i; rfl
+  right_inv v := by ext i h; rfl
+  map_add' v w := by ext i h; rfl
+  map_smul' c v := by ext i h; rfl
+
+/-- The `i`-th series of `piLinearEquiv R v` has the `i`-th components of the coefficients of
+`v`. -/
+@[simp]
+theorem coeff_piLinearEquiv_apply (v : NovikovSeries (∀ i, M i) H N) (i : ι) (h : H) :
+    (piLinearEquiv R v i).coeff h = v.coeff h i :=
+  (rfl)
+
+/-- The coefficients of `(piLinearEquiv R).symm v` collect the coefficients of the series
+`v i`. -/
+@[simp]
+theorem coeff_piLinearEquiv_symm_apply (v : ∀ i, NovikovSeries (M i) H N) (h : H) (i : ι) :
+    ((piLinearEquiv R).symm v).coeff h i = (v i).coeff h :=
+  (rfl)
+
+/-- The coordinates of a Novikov series with coefficients in a module with a finite basis: one
+Novikov series with scalar coefficients for each basis vector. -/
+def basisCoords (b : Module.Basis ι R V) :
+    NovikovSeries V H N ≃ₗ[R] (ι → NovikovSeries R H N) :=
+  (mapLinearEquiv b.equivFun).trans (piLinearEquiv R)
+
+/-- The `i`-th coordinate series has the `i`-th basis coordinates of the coefficients. -/
+@[simp]
+theorem coeff_basisCoords (b : Module.Basis ι R V) (v : NovikovSeries V H N) (i : ι) (h : H) :
+    (basisCoords b v i).coeff h = b.repr (v.coeff h) i := by
+  simp [basisCoords]
+
+/-- A family of scalar series is the coordinates of the series with coefficients
+`∑ i, (v i)_h • b i`. -/
+@[simp]
+theorem coeff_basisCoords_symm [Fintype ι] (b : Module.Basis ι R V)
+    (v : ι → NovikovSeries R H N) (h : H) :
+    ((basisCoords b).symm v).coeff h = ∑ i, (v i).coeff h • b i := by
+  simp [basisCoords, Module.Basis.equivFun_symm_apply]
+
+end LinearEquiv
 
 end NovikovSeries
 

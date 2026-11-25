@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.LinearAlgebra.AffineSpace.Ordered
 public import Mathlib.Topology.Algebra.Affine
-public import TauCeti.Analysis.InnerProductSpace.ExternalProductBlock
+public import TauCeti.Analysis.InnerProductSpace.ExternalProductBlock.Basic
 public import TauCeti.Analysis.Normed.Module.Basic
 public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol
 public import TauCeti.Analysis.Pseudodifferential.PolarDecomposition

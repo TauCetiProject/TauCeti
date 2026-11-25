@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Localization
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Matrix.Contraction.LpNorm
 import TauCeti.Analysis.SpecificLimits.Absorption
 import TauCeti.Analysis.Sobolev.Wkp.Interpolation
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
@@ -178,7 +179,7 @@ private theorem exists_lpNorm_iteratedGradient_ball_le_of_lt (hp : 1 < p)
     _ ≤ _ := by gcongr
 
 /-- Where the coefficients are bounded, the right side of `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` lies in `Lᵖ`. -/
-private theorem memLp_of_ae_sum_mul_inner_eq {Omega : Opens (EuclideanSpace ℝ (Fin n))}
+theorem memLp_of_ae_sum_mul_inner_eq {Omega : Opens (EuclideanSpace ℝ (Fin n))}
     {S : Set (EuclideanSpace ℝ (Fin n))} (hSm : MeasurableSet S) (hS : S ⊆ Omega)
     (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin n))) Omega p 2)
     {a : EuclideanSpace ℝ (Fin n) → Matrix (Fin n) (Fin n) ℝ} {Λ : ℝ}
@@ -190,18 +191,9 @@ private theorem memLp_of_ae_sum_mul_inner_eq {Omega : Opens (EuclideanSpace ℝ 
     MemLp f p (volume.restrict S) := by
   have hH : MemLp (Wkp.iteratedGradient 1 u) p (volume.restrict S) :=
     (Lp.memLp _).mono_measure (Measure.restrict_mono hS le_rfl)
-  have hmeas : AEStronglyMeasurable (fun x => ∑ i, ∑ j, a x i j *
-      ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ)
-      (volume.restrict S) :=
-    Finset.aestronglyMeasurable_fun_sum _ fun i _ =>
-      Finset.aestronglyMeasurable_fun_sum _ fun j _ =>
-        ((continuous_id.matrix_elem i j).comp_aestronglyMeasurable ha).mul
-          (((ContinuousLinearMap.apply ℝ _ (EuclideanSpace.single i 1)).continuous
-            |>.comp_aestronglyMeasurable hH.aestronglyMeasurable).inner aestronglyMeasurable_const)
-  refine (hH.of_le_mul (c := n ^ 2 * Λ) hmeas ?_).ae_eq heq
-  filter_upwards [(ae_restrict_iff' hSm).2 haΛ] with x hx
-  rw [← Matrix.contraction_apply, Real.norm_eq_abs]
-  exact Matrix.abs_contraction_le hx _
+  refine (Matrix.memLp_contraction_and_lpNorm_le ha ((ae_restrict_iff' hSm).2 haΛ) hH).1.ae_eq ?_
+  filter_upwards [heq] with x hx
+  rw [Matrix.contraction_apply, hx]
 
 /-- **The interior Calderón–Zygmund estimate on balls for coefficients of small oscillation.**
 Let `1 < p < ∞`. There are constants `C` and `δ > 0`, depending only on `n` and `p`,

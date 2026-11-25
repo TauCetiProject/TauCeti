@@ -12,7 +12,7 @@ public import Mathlib.Topology.Homeomorph.Lemmas
 /-!
 # The unit sphere of an `L²` product as a union of two solid pieces
 
-Let `F` and `G` be real normed spaces. A point `x` of the unit sphere of the `L²` product
+Let `F` and `G` be real seminormed spaces. A point `x` of the unit sphere of the `L²` product
 `WithLp 2 (F × G)` satisfies `‖x.fst‖ ^ 2 + ‖x.snd‖ ^ 2 = 1`, so the sphere is the union of the two
 closed pieces `‖x.fst‖ ≤ ‖x.snd‖` and `‖x.snd‖ ≤ ‖x.fst‖`, which meet in the common frontier
 `‖x.fst‖ = ‖x.snd‖`. The first piece is homeomorphic to the product of the closed unit ball of
@@ -65,10 +65,9 @@ private theorem norm_fst_sq_add_norm_snd_sq_of_mem_sphere {x : WithLp 2 (F × G)
 private theorem norm_snd_pos {x : WithLp 2 (F × G)} (hx : x ∈ sphere 0 1)
     (hle : ‖x.fst‖ ≤ ‖x.snd‖) : 0 < ‖x.snd‖ := by
   have h := norm_fst_sq_add_norm_snd_sq_of_mem_sphere hx
-  by_contra! h0
-  have h0 : ‖x.snd‖ = 0 := le_antisymm h0 (norm_nonneg _)
-  have h1 : ‖x.fst‖ = 0 := le_antisymm (h0 ▸ hle) (norm_nonneg _)
-  simp [h0, h1] at h
+  refine (norm_nonneg _).lt_of_ne' fun h0 ↦ ?_
+  -- If `‖x.snd‖ = 0`, then also `‖x.fst‖ = 0`, contradicting `‖x.fst‖ ^ 2 + ‖x.snd‖ ^ 2 = 1`.
+  simp [h0, (norm_nonneg _).antisymm' (h0 ▸ hle)] at h
 
 /-- The positive scalar `1 / √(1 + r ^ 2)`; it normalizes `(u, v)` when `‖u‖ = r` and `v` is a
 unit vector. -/
@@ -76,9 +75,6 @@ private def normalizer (r : ℝ) : ℝ := (√(1 + r ^ 2))⁻¹
 
 private theorem normalizer_pos (r : ℝ) : 0 < normalizer r :=
   inv_pos.2 (Real.sqrt_pos.2 (by positivity))
-
-private theorem continuous_normalizer : Continuous normalizer :=
-  .inv₀ (by fun_prop) fun r ↦ (Real.sqrt_pos.2 (by positivity)).ne'
 
 private theorem normalizer_sq (r : ℝ) : normalizer r ^ 2 * (1 + r ^ 2) = 1 := by
   rw [normalizer, inv_pow, Real.sq_sqrt (by positivity), inv_mul_cancel₀ (by positivity)]
@@ -166,22 +162,11 @@ def sphereProdFstLeHomeomorph :
     ext <;> simp only [norm_snd_sphereProdFstLeInv] <;>
       simp [sphereProdFstLeInv, smul_smul, inv_mul_cancel₀ hn.ne']
   continuous_toFun := by
-    have hpos (x : {x : sphere (0 : WithLp 2 (F × G)) 1 | ‖(x : WithLp 2 (F × G)).fst‖ ≤
-        ‖(x : WithLp 2 (F × G)).snd‖}) : ‖(x : WithLp 2 (F × G)).snd‖ ≠ 0 :=
-      (norm_snd_pos x.val.property x.property).ne'
-    have hc : Continuous fun x : {x : sphere (0 : WithLp 2 (F × G)) 1 |
-        ‖(x : WithLp 2 (F × G)).fst‖ ≤ ‖(x : WithLp 2 (F × G)).snd‖} ↦
-          ‖(x : WithLp 2 (F × G)).snd‖⁻¹ :=
-      .inv₀ (by fun_prop) hpos
-    exact .prodMk (.subtype_mk (hc.smul (by fun_prop)) _) (.subtype_mk (hc.smul (by fun_prop)) _)
+    fun_prop (disch := exact fun x ↦ (norm_snd_pos x.val.property x.property).ne')
   continuous_invFun := by
-    have hc : Continuous fun p : closedBall (0 : F) 1 × sphere (0 : G) 1 ↦
-        normalizer ‖(p.1 : F)‖ :=
-      continuous_normalizer.comp (by fun_prop)
-    refine .subtype_mk (.subtype_mk ?_ _) _
-    exact (WithLp.prod_continuous_toLp 2 F G).comp
-      (.prodMk (hc.smul (continuous_subtypeVal.comp continuous_fst))
-        (hc.smul (continuous_subtypeVal.comp continuous_snd)))
+    unfold sphereProdFstLeInv normalizer
+    -- The discharger proves `√(1 + ‖u‖ ^ 2) ≠ 0`.
+    fun_prop (disch := intro; positivity)
 
 @[simp]
 theorem coe_sphereProdFstLeHomeomorph_apply_fst
@@ -253,7 +238,7 @@ theorem frontier_setOf_norm_fst_le_norm_snd :
 variable (F G) in
 /-- The piece `‖x.snd‖ ≤ ‖x.fst‖` of the unit sphere of `WithLp 2 (F × G)` is homeomorphic to the
 product of the unit sphere of `F` with the closed unit ball of `G`, through
-`x ↦ (x.fst / ‖x.fst‖, x.snd / ‖x.fst‖)`. -/
+`x ↦ (x.fst / ‖x.fst‖, x.snd / ‖x.fst‖)`, with inverse `(u, v) ↦ (u, v) / √(1 + ‖v‖ ^ 2)`. -/
 def sphereProdSndLeHomeomorph :
     {x : sphere (0 : WithLp 2 (F × G)) 1 | ‖(x : WithLp 2 (F × G)).snd‖ ≤
         ‖(x : WithLp 2 (F × G)).fst‖} ≃ₜ
