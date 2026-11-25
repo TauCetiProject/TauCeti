@@ -17,6 +17,8 @@ densities against a common reference measure `R` have log-likelihood ratio `log 
 
 ## Main statements
 
+* `TauCeti.ae_pos_withDensity_ofReal`: a real density is positive almost everywhere for the
+  measure it defines.
 * `TauCeti.llr_withDensity_ofReal_ae_eq`: `llr P Q =ᵐ[P] log p - log q`.
 
 ## References
@@ -35,6 +37,13 @@ namespace TauCeti
 
 variable {α : Type*} [MeasurableSpace α]
 
+/-- A real density `p` is positive almost everywhere for the measure
+`R.withDensity (ofReal ∘ p)` it defines. -/
+theorem ae_pos_withDensity_ofReal {R : Measure α} {p : α → ℝ} (hp : AEMeasurable p R) :
+    ∀ᵐ x ∂R.withDensity fun x ↦ ENNReal.ofReal (p x), 0 < p x :=
+  (ae_withDensity_iff' hp.ennreal_ofReal).2 <|
+    .of_forall fun _ hx ↦ ENNReal.ofReal_pos.1 (pos_iff_ne_zero.2 hx)
+
 /-- The log-likelihood ratio of the measures `P = R.withDensity (ofReal ∘ p)` and
 `Q = R.withDensity (ofReal ∘ q)` with almost everywhere measurable real densities `p`, `q`
 against a common reference measure `R` is `log p - log q`, `P`-almost everywhere, when `P ≪ Q`
@@ -52,10 +61,8 @@ theorem llr_withDensity_ofReal_ae_eq {R : Measure α} {p q : α → ℝ}
   set P := R.withDensity fun x ↦ ENNReal.ofReal (p x)
   set Q := R.withDensity fun x ↦ ENNReal.ofReal (q x)
   -- Both densities are positive `P`-almost everywhere.
-  have hpP : ∀ᵐ x ∂P, 0 < p x := (ae_withDensity_iff' hp.ennreal_ofReal).2 <|
-    .of_forall fun x hx ↦ ENNReal.ofReal_pos.1 (pos_iff_ne_zero.2 hx)
-  have hqP : ∀ᵐ x ∂P, 0 < q x := hPQ.ae_le <| (ae_withDensity_iff' hq.ennreal_ofReal).2 <|
-    .of_forall fun x hx ↦ ENNReal.ofReal_pos.1 (pos_iff_ne_zero.2 hx)
+  have hpP : ∀ᵐ x ∂P, 0 < p x := ae_pos_withDensity_ofReal hp
+  have hqP : ∀ᵐ x ∂P, 0 < q x := hPQ.ae_le (ae_pos_withDensity_ofReal hq)
   -- Hence `P` has density `ofReal (p / q)` against `Q`.
   have hr : AEMeasurable (fun x ↦ ENNReal.ofReal (p x / q x)) R := (hp.div hq).ennreal_ofReal
   have hP : P = Q.withDensity fun x ↦ ENNReal.ofReal (p x / q x) := by

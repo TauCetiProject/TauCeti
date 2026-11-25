@@ -347,8 +347,8 @@ theorem llr_missingLaw_ae_eq (hac : ρ.missingLaw f θ' ≪ ρ.missingLaw f θ) 
   -- Both normalized densities are positive `k_θ'`-almost everywhere.
   have hdens (θ₀ : E) (hi₀ : Integrable (f θ₀) ρ) :
       ∀ᵐ z ∂ρ.missingLaw f θ₀, 0 < f θ₀ z / ρ.obsLikelihood f θ₀ := by
-    rw [missingLaw_def, ae_withDensity_iff' (hi₀.aemeasurable.div_const _).ennreal_ofReal]
-    exact .of_forall fun z hz ↦ ENNReal.ofReal_pos.1 (pos_iff_ne_zero.2 hz)
+    rw [missingLaw_def]
+    exact TauCeti.ae_pos_withDensity_ofReal (hi₀.aemeasurable.div_const _)
   have : SigmaFinite (ρ.withDensity fun z ↦ ENNReal.ofReal (f θ z / ρ.obsLikelihood f θ)) := by
     rw [← missingLaw_def]
     infer_instance
