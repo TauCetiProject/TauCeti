@@ -11,7 +11,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Basic
 public import TauCeti.Algebra.Group.Subgroup.Pointwise
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Blocks
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
-import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Basic
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 
 /-!
 # Borel and opposite Borel subgroups of a Chevalley datum
@@ -465,5 +465,23 @@ theorem exists_weylElement_conj_notMem_borelSubgroup [Nontrivial A] (i : Fin t.r
   refine ⟨⟨D.rootSubgroupPoints (t.simpleIndex ht i) A (Multiplicative.ofAdd 1),
     D.rootSubgroupPoints_mem_borelSubgroup_of_mem_posRoots A (simpleIndex_mem_posRoots i) _⟩, ?_⟩
   simp
+
+/-- Conjugating any point of the actual weight-lattice torus by an element of `D.weylSubgroup A`
+stays inside `D.borelSubgroup A`. -/
+theorem weylSubgroup_conj_torusPoints_mem_borelSubgroup (w : D.weylSubgroup A)
+    (s : Fin t.rank → Aˣ) :
+    (w : D.points A) * D.torusPoints A s * (w : D.points A)⁻¹ ∈ D.borelSubgroup A :=
+  D.range_torusPoints_le_borelSubgroup A <|
+    (Subgroup.mem_normalizer_iff.mp
+      (D.weylSubgroup_le_normalizer_range_torusPoints A w.property)
+      (D.torusPoints A s)).mp ⟨s, rfl⟩
+
+/-- Conjugating any point of the actual weight-lattice torus by the inverse of an element of
+`D.weylSubgroup A` stays inside `D.borelSubgroup A`. -/
+theorem weylSubgroup_inv_conj_torusPoints_mem_borelSubgroup (w : D.weylSubgroup A)
+    (s : Fin t.rank → Aˣ) :
+    (w : D.points A)⁻¹ * D.torusPoints A s * (w : D.points A) ∈ D.borelSubgroup A := by
+  simpa only [Subgroup.coe_inv, inv_inv] using
+    D.weylSubgroup_conj_torusPoints_mem_borelSubgroup A w⁻¹ s
 
 end TauCeti.DynkinType.ChevalleyDatum

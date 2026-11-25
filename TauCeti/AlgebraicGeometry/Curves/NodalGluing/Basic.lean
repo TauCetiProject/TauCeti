@@ -670,6 +670,14 @@ theorem eq_of_mk_eq_of_notMem_flagPointSet {d : FlagPairData ι Flag X} {x y : �
   by_contra hne
   exact hx (mem_flagPointSet_of_gluedRelSetoid_of_ne d (Quotient.exact h) hne)
 
+/-- A point of the disjoint union has the same image in the glued curve as a mark exactly when it
+is that mark, since marks are not flag points. -/
+theorem Marking.mk_eq_mk_point_iff {d : FlagPairData ι Flag X} {L : Type*} (m : Marking d L)
+    (l : L) (z : Σ i, X i) :
+    Quotient.mk (gluedRelSetoid d) z = Quotient.mk _ (m.point l) ↔ z = m.point l :=
+  ⟨fun h ↦ (eq_of_mk_eq_of_notMem_flagPointSet (m.point_notMem_flagPointSet l) h.symm).symm,
+    fun h ↦ h ▸ rfl⟩
+
 /-- **The node set is closed.**  The node set of the glued curve is a closed subset of it, so its
 complement is open. -/
 theorem isClosed_nodeSet (d : FlagPairData ι Flag X) [∀ i, TopologicalSpace (X i)]

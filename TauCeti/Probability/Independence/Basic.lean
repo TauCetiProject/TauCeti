@@ -35,7 +35,10 @@ whose rows consist of independent events of measure at most `p`, the measure tha
 contains at least `q` occurring events is at most `p ^ q` times the sum over rows of the number of
 `q`-element subsets of the row indices (`TauCeti.Probability.measure_exists_le_card_filter_mem_le`).
 No separate `[IsProbabilityMeasure μ]` argument is needed: whenever some row is nonempty, its
-independence hypothesis already makes `μ` a probability measure.
+independence hypothesis already makes `μ` a probability measure. For rows of independent random
+variables of length at most `N`, the measure that some row has at least `q` entries of norm above
+`R` is at most `card ι * N ^ q * τ ^ q`, where `τ` bounds each entry tail
+(`TauCeti.Probability.measure_exists_le_card_filter_lt_norm_le`).
 -/
 
 public section
@@ -206,3 +209,36 @@ theorem iIndepFun.iIndepSet_preimage {Ω ι : Type*} {β : ι → Type*} [Measur
     MeasurableSpace.measurableSet_comap.2 ⟨s i, hs i, rfl⟩
 
 end ProbabilityTheory
+
+namespace TauCeti.Probability
+
+variable {Ω ι E : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [SeminormedAddGroup E]
+  [MeasurableSpace E] [OpensMeasurableSpace E]
+
+/-- For a finite family of rows of random variables, each row independent and with at most `N`
+entries, the measure of the set where some row has at least `q` entries of norm strictly above
+`R` is at most `card ι * N ^ q * τ ^ q`, where `τ` bounds the measure of each entry exceeding `R`.
+The entries need not be measurable, so this bounds an outer measure in general. -/
+theorem measure_exists_le_card_filter_lt_norm_le {κ : ι → Type*} [Fintype ι]
+    [∀ i, Fintype (κ i)] {Y : (i : ι) → κ i → Ω → E} (hind : ∀ i, iIndepFun (Y i) μ) (R : ℝ)
+    {τ : ℝ≥0∞} (htail : ∀ i j, μ {ω | R < ‖Y i j ω‖} ≤ τ) {N : ℕ}
+    (hN : ∀ i, Fintype.card (κ i) ≤ N) (q : ℕ) :
+    μ {ω | ∃ i, q ≤ (Finset.univ.filter fun j ↦ R < ‖Y i j ω‖).card} ≤
+      Fintype.card ι * (N : ℝ≥0∞) ^ q * τ ^ q := by
+  have hE (i : ι) : iIndepSet (fun j ↦ {ω | R < ‖Y i j ω‖}) μ :=
+    (hind i).iIndepSet_preimage (s := fun _ ↦ {z : E | R < ‖z‖})
+      fun _ ↦ measurableSet_lt measurable_const continuous_norm.measurable
+  calc
+    _ ≤ μ {ω | ∃ i, q ≤ (Finset.univ.filter fun j ↦ ω ∈ {ω | R < ‖Y i j ω‖}).card} :=
+      -- The two filters differ only in their decidability instances.
+      measure_mono fun ω ↦ by
+        rintro ⟨i, hi⟩
+        exact ⟨i, by convert hi⟩
+    _ ≤ ∑ i, ((Fintype.card (κ i)).choose q : ℝ≥0∞) * τ ^ q :=
+      measure_exists_le_card_filter_mem_le _ hE htail q
+    _ ≤ ∑ _i : ι, (N : ℝ≥0∞) ^ q * τ ^ q := by
+      gcongr with i
+      exact_mod_cast (Nat.choose_le_pow _ _).trans (Nat.pow_le_pow_left (hN i) q)
+    _ = _ := by simp [mul_assoc]
+
+end TauCeti.Probability
