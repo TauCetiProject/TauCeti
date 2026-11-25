@@ -40,7 +40,7 @@ the edges carry in total the mass `b₁ / g`, with `b₁` the cyclomatic number.
 * `TauCeti.ResistorNetwork.effectiveResistance_le_resistance`: across an edge it is at most the
   resistance of the edge.
 * `TauCeti.ResistorNetwork.effectiveResistance_eq_inv_sum_inv_resistance`: on a network all of
-  whose edges run from `a` to `b ≠ a`, the effective resistance is the inverse of the total
+  whose edges join `a` and `b ≠ a`, the effective resistance is the inverse of the total
   conductance (parallel law).
 * `TauCeti.ResistorNetwork.sum_effectiveResistance_div_resistance`: **Foster's theorem**.
 * `TauCeti.ResistorNetwork.sum_one_sub_effectiveResistance_div_resistance`: the complementary
@@ -175,10 +175,10 @@ theorem effectiveResistance_le_resistance (e : E) :
   · rw [N.effectiveResistance_eq_zero_of_forall_ne (not_exists.1 h)]
     exact (N.resistance_pos e).le
 
-/-- **Parallel resistors.** If every edge joins `a` to `b ≠ a`, the effective resistance between
-`a` and `b` is the inverse of the total conductance `∑ₑ 1 / rₑ`. -/
+/-- **Parallel resistors.** If every edge joins `a` and `b ≠ a`, in either direction, the
+effective resistance between `a` and `b` is the inverse of the total conductance `∑ₑ 1 / rₑ`. -/
 theorem effectiveResistance_eq_inv_sum_inv_resistance {a b : V} (hab : a ≠ b)
-    (hsrc : ∀ e, N.src e = a) (htgt : ∀ e, N.tgt e = b) :
+    (hends : ∀ e, (N.src e = a ∧ N.tgt e = b) ∨ (N.src e = b ∧ N.tgt e = a)) :
     N.effectiveResistance a b = (∑ e, (N.resistance e)⁻¹)⁻¹ := by
   cases isEmpty_or_nonempty E with
   | inl _ =>
@@ -189,11 +189,19 @@ theorem effectiveResistance_eq_inv_sum_inv_resistance {a b : V} (hab : a ≠ b)
     set c := ∑ e, (N.resistance e)⁻¹
     have hc : 0 < c :=
       Finset.sum_pos (fun e _ => inv_pos.2 (N.resistance_pos e)) Finset.univ_nonempty
-    -- The potential `c⁻¹ • 𝟙_a` drives a unit current from `a` to `b`.
+    -- The potential `c⁻¹ • 𝟙_a` drives a unit current from `a` to `b`: whatever its
+    -- orientation, each edge `e` carries the current `c⁻¹ / rₑ` from `a` to `b`.
     have hf : N.laplacian (Pi.single a c⁻¹) = Pi.single a 1 - Pi.single b 1 := by
-      simp only [N.laplacian_apply, hsrc, htgt, Pi.single_eq_same, Pi.single_eq_of_ne' hab,
-        sub_zero, ← Finset.sum_smul, div_eq_mul_inv, ← Finset.mul_sum]
-      rw [inv_mul_cancel₀ hc.ne', one_smul]
+      have he (e : E) : ((Pi.single (M := fun _ => ℝ) a c⁻¹ (N.src e) -
+          Pi.single (M := fun _ => ℝ) a c⁻¹ (N.tgt e)) / N.resistance e) •
+            (Pi.single (N.src e) 1 - Pi.single (N.tgt e) 1 : V → ℝ) =
+          (c⁻¹ * (N.resistance e)⁻¹) • (Pi.single a 1 - Pi.single b 1) := by
+        rcases hends e with ⟨hs, ht⟩ | ⟨hs, ht⟩ <;> rw [hs, ht]
+        · simp [Pi.single_eq_of_ne' hab, div_eq_mul_inv]
+        · rw [← neg_sub (Pi.single a 1), smul_neg, ← neg_smul]
+          simp [Pi.single_eq_of_ne' hab, div_eq_mul_inv]
+      rw [N.laplacian_apply, Finset.sum_congr rfl fun e _ => he e, ← Finset.sum_smul,
+        ← Finset.mul_sum, inv_mul_cancel₀ hc.ne', one_smul]
     rw [N.effectiveResistance_eq hf, Pi.single_eq_same, Pi.single_eq_of_ne' hab, sub_zero]
 
 end Finite
