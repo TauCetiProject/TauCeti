@@ -46,6 +46,7 @@ theorem character_eq_zero_of_not_finite {k G V : Type*} [Field k] [Monoid G]
   simp [character, TauCeti.LinearMap.trace_eq_zero_of_not_finite h]
 
 /-- The character of the restriction of `ρ` along `f : H →* G` is `ρ.character ∘ f`. -/
+@[simp]
 theorem character_comp {k G H V : Type*} [Field k] [Monoid G] [Monoid H] [AddCommGroup V]
     [Module k V] (ρ : Representation k G V) (f : H →* G) :
     character (ρ.comp f) = ρ.character ∘ f :=
