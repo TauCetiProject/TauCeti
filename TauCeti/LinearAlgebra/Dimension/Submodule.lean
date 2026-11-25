@@ -26,7 +26,8 @@ of rank at least `k` contains a subspace of rank exactly `k`; for `1 ≤ k ≤ r
 vector lies in a subspace of rank exactly `k`. Two disjoint subspaces of a
 finite-dimensional subspace `U` have dimensions adding to at most that of `U`.
 A subspace of dimension at least three contains `x` outside `𝕜 ∙ a` and `z` outside
-`span 𝕜 {a, x}`.
+`span 𝕜 {a, x}`. A proper subspace of a proper finite-dimensional subspace `P` can be enlarged to a
+distinct subspace of the same dimension as `P`.
 A finite-dimensional subspace spanning the whole space together with `V`, of dimension at most the
 codimension of `V`, is a complement of `V`; here `V` itself may be infinite-dimensional.
 
@@ -235,6 +236,35 @@ theorem exists_mem_notMem_span_pair {V : Submodule 𝕜 E} (a : E) (h : 3 ≤ fi
   have := Set.ncard_insert_le a ({x} : Set E)
   rw [Set.ncard_singleton] at this
   omega
+
+/-- A proper subspace `K₀ < P` of a proper finite-dimensional subspace `P < ⊤` can be enlarged
+to a subspace `Q ≠ P` of the same dimension as `P`. -/
+theorem exists_finrank_eq_and_le_and_ne {P K₀ : Submodule 𝕜 E} [FiniteDimensional 𝕜 P]
+    (hK₀ : K₀ < P) (hP : P ≠ ⊤) :
+    ∃ Q : Submodule 𝕜 E, finrank 𝕜 Q = finrank 𝕜 P ∧ K₀ ≤ Q ∧ Q ≠ P := by
+  obtain ⟨v, hvP⟩ : ∃ v : E, v ∉ P := by by_contra! h; exact hP (eq_top_iff.mpr fun x _ => h x)
+  obtain ⟨W, hW⟩ := exists_isCompl K₀
+  have hmod : K₀ ⊔ (P ⊓ W) = P := by
+    rw [inf_comm P W, ← sup_inf_assoc_of_le W hK₀.le, hW.sup_eq_top, top_inf_eq]
+  have hdisj : Disjoint K₀ (P ⊓ W) := hW.disjoint.mono_right inf_le_right
+  have : FiniteDimensional 𝕜 K₀ := finiteDimensional_of_le hK₀.le
+  have : FiniteDimensional 𝕜 ↥(P ⊓ W) := finiteDimensional_of_le inf_le_left
+  have hsum := finrank_sup_add_finrank_inf_eq K₀ (P ⊓ W)
+  rw [hmod, hdisj.eq_bot, finrank_bot, add_zero] at hsum
+  obtain ⟨M, hMPW, hMr⟩ := exists_le_rank_eq (M := P ⊓ W) (k := finrank 𝕜 ↥(P ⊓ W) - 1)
+    (by rw [← Module.finrank_eq_rank]; exact_mod_cast Nat.sub_le _ _)
+  have : FiniteDimensional 𝕜 M := finiteDimensional_of_le hMPW
+  have hMd : finrank 𝕜 M = finrank 𝕜 ↥(P ⊓ W) - 1 := by
+    rw [← Module.finrank_eq_rank] at hMr; exact_mod_cast hMr
+  have h1 := (hdisj.mono_right hMPW).eq_bot ▸ finrank_sup_add_finrank_inf_eq K₀ M
+  have h2 := (disjoint_span_singleton_of_notMem fun hv =>
+    hvP (sup_le hK₀.le (hMPW.trans inf_le_left) hv)).eq_bot ▸
+      finrank_sup_add_finrank_inf_eq (K₀ ⊔ M) (𝕜 ∙ v)
+  simp only [finrank_bot, add_zero, finrank_span_singleton fun (h : v = 0) => hvP (h ▸ P.zero_mem)]
+    at h1 h2
+  have := finrank_lt_finrank_of_lt hK₀
+  exact ⟨(K₀ ⊔ M) ⊔ (𝕜 ∙ v), by omega, le_sup_left.trans le_sup_left,
+    fun hQP => hvP (hQP ▸ mem_sup_right (mem_span_singleton_self v))⟩
 
 end DivisionRing
 
