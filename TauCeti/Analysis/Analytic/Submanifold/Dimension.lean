@@ -33,8 +33,8 @@ its local analytic dimension `TauCeti.analyticDimAt s x` at `x` is the smallest 
 dimension of a trace of `s` on a neighbourhood of `x`. The analytic dimension of a finite union of
 analytic submanifolds is the largest of their dimensions (`TauCeti.analyticDim_sUnion`), the
 analytic dimension is the supremum of the local ones (`TauCeti.iSup_analyticDimAt`), and the local
-analytic dimension at `x` is the largest dimension of a piece of any finite decomposition near `x`
-into analytic submanifolds that have `x` in their closures
+analytic dimension at `x` is the largest dimension of the pieces of any finite cover of `s` near
+`x` by analytic submanifolds contained in `s` that have `x` in their closures
 (`TauCeti.analyticDimAt_eq_iSup_of_subset_iUnion`). No claim about the dimension of closures or
 frontiers is made here; for semianalytic sets these follow from the frontier condition of the
 local normal decomposition.

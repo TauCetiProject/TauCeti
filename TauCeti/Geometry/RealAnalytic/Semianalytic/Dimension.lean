@@ -74,22 +74,26 @@ private theorem SemianalyticAt.exists_partition_analyticDim (hA : SemianalyticAt
   obtain ⟨W, hW, hWeq⟩ := exists_mem_nhds_analyticDim_inter_eq A x
   obtain ⟨U, 𝒞, hUo, hxU, hUW, -, h𝒞fin, -, h𝒞cov, h𝒞cell, h𝒞front, h𝒞dim, -⟩ :=
     exists_isAnalyticSubmanifold_partition_subset_or_disjoint (fun _ : Unit ↦ hA) hW
-  refine ⟨U, 𝒞, hUo, hxU, h𝒞fin, h𝒞cov, fun C hC ↦ ⟨(h𝒞cell C hC).1,
-    (h𝒞cell C hC).2.2.1.imp fun _ h ↦ h.2, (h𝒞cell C hC).2.2.2 ()⟩, fun C hC hCA ↦
+  -- Read off the cell data once, forgetting semianalyticity and the bound `d ≤ n`.
+  have hcell : ∀ C ∈ 𝒞, IsConnected C ∧ (∃ d, IsAnalyticSubmanifold d C) ∧
+      (C ⊆ A ∨ Disjoint C A) := fun C hC ↦ by
+    obtain ⟨hCc, -, ⟨d, -, hd⟩, hCA⟩ := h𝒞cell C hC
+    exact ⟨hCc, ⟨d, hd⟩, hCA ()⟩
+  refine ⟨U, 𝒞, hUo, hxU, h𝒞fin, h𝒞cov, hcell, fun C hC hCA ↦
     hWeq W hW subset_rfl ▸ analyticDim_mono
       (subset_inter hCA ((h𝒞cov ▸ subset_sUnion_of_mem hC).trans hUW)), ?_⟩
   rintro B hB ⟨y, hyB, hyA⟩
   -- Near `y ∈ U`, the closure of `A` is the union of the closures of the pieces inside `A`.
   have hyU : y ∈ U := h𝒞cov ▸ subset_sUnion_of_mem hB hyB
   have hAU : U ∩ A = ⋃₀ {C ∈ 𝒞 | C ⊆ A} := by
-    rw [sUnion_sep_subset_eq_inter fun C hC ↦ (h𝒞cell C hC).2.2.2 (), h𝒞cov, inter_comm]
+    rw [sUnion_sep_subset_eq_inter fun C hC ↦ (hcell C hC).2.2, h𝒞cov, inter_comm]
   have hy : y ∈ ⋃ C ∈ {C ∈ 𝒞 | C ⊆ A}, closure C := by
     rw [← (h𝒞fin.subset (sep_subset _ _)).closure_sUnion, ← hAU]
     exact hUo.inter_closure ⟨hyU, hyA⟩
   obtain ⟨C, ⟨hC, hCA⟩, hyC⟩ := mem_iUnion₂.1 hy
   refine ⟨C, hC, hCA, or_iff_not_imp_left.2 fun hBC ↦ ?_⟩
-  obtain ⟨d, hd⟩ := (h𝒞cell B hB).2.2.1.imp fun _ h ↦ h.2
-  obtain ⟨e, he⟩ := (h𝒞cell C hC).2.2.1.imp fun _ h ↦ h.2
+  obtain ⟨d, hd⟩ := (hcell B hB).2.1
+  obtain ⟨e, he⟩ := (hcell C hC).2.1
   rw [hd.analyticDim_eq, he.analyticDim_eq]
   exact_mod_cast h𝒞dim B hB C hC (h𝒞front B hB C hC ⟨y, hyB, hyC⟩) hBC d e hd he
 
@@ -128,8 +132,7 @@ theorem SemianalyticAt.analyticDimAt_closure_diff_lt (hA : SemianalyticAt A x)
   obtain ⟨U, 𝒞, hUo, hxU, h𝒞fin, h𝒞cov, h𝒞cell, h𝒞A, h𝒞front⟩ := hA.exists_partition_analyticDim
   refine (analyticDimAt_le_analyticDim_inter (hUo.mem_nhds hxU)).trans_lt ?_
   rcases ((closure A \ A) ∩ U).eq_empty_or_nonempty with h | h
-  · rw [h, analyticDim_empty, bot_lt_iff_ne_bot, Ne, analyticDimAt_eq_bot_iff, not_not]
-    exact hx
+  · simpa [h, bot_lt_iff_ne_bot] using hx
   obtain ⟨S, hS, d, hdim, hd⟩ := exists_isAnalyticSubmanifold_analyticDim_eq h
   rw [hdim]
   -- `S` is covered by the pieces meeting `closure A \ A`; none of them is a piece inside `A`.
@@ -151,8 +154,7 @@ dimension than `A`. -/
 theorem IsSemianalytic.analyticDim_closure_diff_lt (hA : IsSemianalytic A) (hne : A.Nonempty) :
     analyticDim (closure A \ A) < analyticDim A := by
   rcases (closure A \ A).eq_empty_or_nonempty with h | h
-  · rw [h, analyticDim_empty, bot_lt_iff_ne_bot, Ne, analyticDim_eq_bot_iff]
-    exact hne.ne_empty
+  · simpa [h, bot_lt_iff_ne_bot] using hne.ne_empty
   obtain ⟨S, hS, d, hdim, hd⟩ := exists_isAnalyticSubmanifold_analyticDim_eq h
   obtain ⟨y, hy⟩ := hd.nonempty
   rw [hdim]
