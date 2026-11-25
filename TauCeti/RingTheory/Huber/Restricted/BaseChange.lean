@@ -5,13 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.FinitePresentation
 public import TauCeti.RingTheory.Huber.Basic
+public import TauCeti.RingTheory.Huber.ModuleTopology.NaturallyComplete
 public import TauCeti.RingTheory.Huber.Restricted.PowerSeries
 public import Mathlib.LinearAlgebra.TensorProduct.Pi
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
-import TauCeti.RingTheory.Huber.ClosedSubmodule
 import Mathlib.Algebra.FiveLemma
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+import TauCeti.Topology.Algebra.Nonarchimedean.Pi
 
 /-!
 # Base change for restricted power series
@@ -63,6 +65,9 @@ type `M ⊗[A] MvPowerSeries (Fin k) A →ₗ[A] MvPowerSeries (Fin k) M`.
   is surjective** for an `M` presented by a surjection `Aᵐ ↠ M` that is continuous at `0` and
   pushes the neighbourhoods of `0` forward. Only the presentation is used — no noetherian
   hypothesis and no property of its kernel, both of which belong to injectivity.
+* `restrictedMvPowerSeriesBaseChange_surjective_of_finite`: the same surjectivity for any finite
+  `A`-module endowed with its module topology, assuming only that `nhds (0 : A)` is countably
+  generated (no noetherian or completeness hypothesis).
 
 * `restrictedMvPowerSeriesBaseChange_injective_of_presentation`: **the comparison map is
   injective** for an `M` presented by `Aⁿ →[u] Aᵐ →[p] M → 0` whose first map is strict onto its
@@ -79,6 +84,10 @@ type `M ⊗[A] MvPowerSeries (Fin k) A →ₗ[A] MvPowerSeries (Fin k) M`.
 * `restrictedMvPowerSeriesBaseChangeEquiv`: the same, packaged as
   `M ⊗[A] A⟨T₁, …, Tₖ⟩ ≃ₗ[A] M⟨T₁, …, Tₖ⟩`, with `restrictedMvPowerSeriesBaseChangeEquiv_apply`
   identifying it with the comparison map.
+* `restrictedMvPowerSeriesBaseChange_bijective_of_isNaturallyComplete` and
+  `restrictedMvPowerSeriesBaseChangeEquivOfNaturallyComplete`: the non-noetherian counterpart over
+  a complete Hausdorff Tate ring (Kedlaya–Liu II, Corollary 2.4.9(c)), replacing `IsNoetherianRing`
+  with finite presentation and `IsNaturallyComplete A M`.
 
 The two presentation-level statements hypothesise the topological properties of the presentation,
 `hmap` and `hstrict`, rather than deriving them, and so carry no Tate, noetherian or completeness
@@ -427,6 +436,21 @@ theorem restrictedMvPowerSeriesBaseChange_surjective_of_presentation {m : ℕ} {
   exact ⟨TensorProduct.map p LinearMap.id z, by
     rw [← restrictedMvPowerSeriesSubmoduleMap_baseChange p hp z, hz, hx]⟩
 
+/-- **Surjectivity of `M ⊗[A] A⟨T₁, …, Tₖ⟩ → M⟨T₁, …, Tₖ⟩` without noetherianity**
+(Kedlaya–Liu II, Corollary 2.4.9(c), surjectivity half). Over any nonarchimedean commutative ring
+`A` with countably generated neighbourhoods of `0`, the restricted power-series comparison map is
+surjective for every finitely generated `A`-module `M` endowed with its module topology. -/
+theorem restrictedMvPowerSeriesBaseChange_surjective_of_finite [(nhds (0 : A)).IsCountablyGenerated]
+    {M : Type*} [AddCommGroup M] [Module A M] [Module.Finite A M] [TopologicalSpace M]
+    [ContinuousAdd M] [IsModuleTopology A M] :
+    Function.Surjective (restrictedMvPowerSeriesBaseChange :
+      TensorProduct A M (restrictedMvPowerSeriesSubring k A) →
+        restrictedMvPowerSeriesSubmodule k A M) := by
+  obtain ⟨m, p, hsurj⟩ := Module.Finite.exists_fin' A M
+  exact restrictedMvPowerSeriesBaseChange_surjective_of_presentation p
+    (IsModuleTopology.continuous_of_linearMap p).continuousAt hsurj
+    (map_zero p ▸ (IsModuleTopology.isOpenMap_of_surjective hsurj).nhds_le 0)
+
 /-- **Remark 8.29's comparison map is injective for a finitely generated module.** Given a
 presentation `Aⁿ →[u] Aᵐ →[p] M → 0` whose first map is strict onto its image, the comparison map
 `M ⊗[A] A⟨T₁, …, Tₖ⟩ → M⟨T₁, …, Tₖ⟩` is injective. With
@@ -545,6 +569,58 @@ theorem restrictedMvPowerSeriesBaseChangeEquiv_apply
   simp only [restrictedMvPowerSeriesBaseChangeEquiv, LinearEquiv.ofBijective_apply]
 
 end ModuleFinite
+
+section NaturallyComplete
+
+open Topology
+open scoped TensorProduct Uniformity
+
+variable {k : ℕ} {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A]
+  [IsTopologicalRing A] [CompleteSpace A] [T0Space A] [IsTateRing A]
+  {M : Type*} [AddCommGroup M] [Module A M] [TopologicalSpace M] [ContinuousAdd M]
+  [IsModuleTopology A M]
+
+/-- **Bijectivity of `M ⊗[A] A⟨T₁, …, Tₖ⟩ → M⟨T₁, …, Tₖ⟩` for finitely presented naturally
+complete modules** (Kedlaya–Liu II, Corollary 2.4.9(c), bijectivity half). Over a complete
+Hausdorff Tate ring `A`, natural completeness of `M` makes the relation map of any finite free
+presentation strict onto its image by the open mapping theorem, supplying both halves of Remark 8.29
+with no noetherian hypothesis on `A`. -/
+theorem restrictedMvPowerSeriesBaseChange_bijective_of_isNaturallyComplete
+    [Module.FinitePresentation A M] (hM : IsNaturallyComplete A M) :
+    Function.Bijective (restrictedMvPowerSeriesBaseChange :
+      M ⊗[A] restrictedMvPowerSeriesSubring k A → restrictedMvPowerSeriesSubmodule k A M) := by
+  have : (𝓤 A).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
+  have : FirstCountableTopology A := UniformSpace.firstCountableTopology A
+  obtain ⟨m, n, p, u, hsurj, hexact⟩ := Module.FinitePresentation.exists_fin' A M
+  have hu := IsModuleTopology.continuous_of_linearMap u
+  have hp := IsModuleTopology.continuous_of_linearMap p
+  have hstrict : Topology.IsStrictMap u := u.isStrictMap_of_isClosed_range_of_isTateRing
+    hu.continuousAt ((LinearMap.exact_iff.mp hexact).symm ▸
+      (isNaturallyComplete_iff_isClosed_ker hsurj).mp hM)
+  exact ⟨restrictedMvPowerSeriesBaseChange_injective_of_presentation u hu.continuousAt p
+      hp.continuousAt hsurj (LinearMap.exact_iff.mp hexact).symm (map_zero u.rangeRestrict ▸
+        (LinearMap.isStrictMap_iff_isOpenQuotientMap_rangeRestrict.mp hstrict).isOpenMap.nhds_le 0),
+    restrictedMvPowerSeriesBaseChange_surjective_of_presentation p hp.continuousAt hsurj
+      (map_zero p ▸ (IsModuleTopology.isOpenMap_of_surjective hsurj).nhds_le 0)⟩
+
+/-- `restrictedMvPowerSeriesBaseChange_bijective_of_isNaturallyComplete` packaged as an `A`-linear
+equivalence. -/
+noncomputable def restrictedMvPowerSeriesBaseChangeEquivOfNaturallyComplete
+    [Module.FinitePresentation A M] (hM : IsNaturallyComplete A M) :
+    M ⊗[A] restrictedMvPowerSeriesSubring k A ≃ₗ[A] restrictedMvPowerSeriesSubmodule k A M :=
+  LinearEquiv.ofBijective restrictedMvPowerSeriesBaseChange
+    (restrictedMvPowerSeriesBaseChange_bijective_of_isNaturallyComplete hM)
+
+/-- `restrictedMvPowerSeriesBaseChangeEquivOfNaturallyComplete` agrees with the comparison map
+`restrictedMvPowerSeriesBaseChange`. -/
+@[simp]
+theorem restrictedMvPowerSeriesBaseChangeEquivOfNaturallyComplete_apply
+    [Module.FinitePresentation A M] (hM : IsNaturallyComplete A M)
+    (x : M ⊗[A] restrictedMvPowerSeriesSubring k A) :
+    restrictedMvPowerSeriesBaseChangeEquivOfNaturallyComplete hM x =
+      restrictedMvPowerSeriesBaseChange x := (rfl)
+
+end NaturallyComplete
 
 end TauCeti.Huber
 

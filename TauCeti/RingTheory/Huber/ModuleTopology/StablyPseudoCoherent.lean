@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.Huber.ModuleTopology.NaturallyComplete
 public import TauCeti.RingTheory.Huber.StronglyNoetherian
 import TauCeti.RingTheory.Huber.FiniteModuleTopology
 import TauCeti.RingTheory.Huber.LocalizationTopology.StronglyNoetherian
+import TauCeti.RingTheory.Huber.LocalizationTopology.Trivial
 import TauCeti.RingTheory.Huber.OpenIdeal
 
 /-!
@@ -42,6 +43,8 @@ finite module is naturally complete.
 * `TauCeti.Huber.IsStablyPseudoCoherent.mono`: stable `m`-pseudocoherence implies stable
   `m'`-pseudocoherence for `m' ≤ m`.
 * `TauCeti.Huber.IsStablyPseudoCoherent.of_equiv`: it is invariant under linear equivalence.
+* `TauCeti.Huber.IsStablyPseudoCoherent.isNaturallyComplete`: over a complete Hausdorff Huber ring,
+  a stably pseudocoherent module is itself naturally complete.
 * `TauCeti.Huber.IsStablyPseudoCoherent.of_projective`: finite projective modules are stably
   pseudocoherent.
 * `TauCeti.Huber.IsStablyPseudoCoherent.of_isStronglyNoetherian`: over a noetherian, strongly
@@ -50,7 +53,7 @@ finite module is naturally complete.
 ## References
 
 * K. S. Kedlaya and R. Liu, *Relative p-adic Hodge theory, II: Imperfect period rings*, §2.4,
-  Definition 2.4.1 and the remark following it, and §2.5, Theorem 2.5.1.
+  Definition 2.4.1 and Remark 2.4.2, and §2.5, Theorem 2.5.1.
 -/
 
 public section
@@ -100,6 +103,39 @@ theorem of_equiv {N : Type*} [AddCommGroup N] [Module A N] (e : M ≃ₗ[A] N)
   exact (h.isNaturallyComplete_tensor P T s hden hT).of_injective
     (f := (e.symm.baseChange A (ratLoc P T s hden) N M).toLinearMap)
     (e.symm.baseChange A (ratLoc P T s hden) N M).injective
+
+/-- **A stably pseudocoherent module over a complete Hausdorff Huber ring is naturally complete**
+(Kedlaya–Liu II, Remark 2.4.2): the trivial rational localisation `A⟨{1}/1⟩` is topologically
+isomorphic to `A` (`TauCeti.Huber.PairOfDefinition.toCompletionLocEquivDenomOne`). -/
+theorem isNaturallyComplete {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A]
+    [IsTopologicalRing A] [CompleteSpace A] [T0Space A] [IsHuberRing A] {M : Type*}
+    [AddCommGroup M] [Module A M] {m : ℕ∞} (h : IsStablyPseudoCoherent A M m) :
+    IsNaturallyComplete A M := by
+  obtain ⟨⟨P⟩⟩ := ‹IsHuberRing A›
+  have hden :=
+    P.hasDenominatorPower_denom_one (({1} : Finset A) : Set A) (Localization.Away (1 : A))
+  have hT : IsOpen ((Ideal.span (({1} : Finset A) : Set A) : Ideal A) : Set A) := by
+    simp [Ideal.span_singleton_one]
+  have hpb : ∀ t ∈ ({1} : Finset A), IsPowerBounded t := by simp [isPowerBounded_one]
+  set B := ratLoc P {1} 1 hden
+  let σ : A ≃+* B := P.toCompletionLocEquivDenomOne {1} hpb (Localization.Away (1 : A))
+  have hσ_alg (a : A) : σ a = algebraMap A B a :=
+    (P.toCompletionLocEquivDenomOne_apply {1} hpb (Localization.Away (1 : A)) a).trans
+      (algebraMap_ratLoc P {1} 1 hden ▸ rfl)
+  let σₐ : A ≃ₐ[A] B := AlgEquiv.ofRingEquiv (f := σ) hσ_alg
+  let e : B ⊗[A] M ≃ₗ[A] M := σₐ.symm.toLinearEquiv.rTensor M ≪≫ₗ TensorProduct.lid A M
+  let fwdₛ : B ⊗[A] M →ₛₗ[(σ.symm : B →+* A)] M :=
+    { toFun := e, map_add' := e.map_add, map_smul' := fun b z ↦ by
+        induction z using TensorProduct.inductionOn with
+        | tmul b' x => simp [e, σₐ, TensorProduct.smul_tmul', smul_eq_mul, mul_smul]
+        | add z₁ z₂ ih₁ ih₂ => simp [smul_add, map_add, ih₁, ih₂] }
+  let bwdₛ : M →ₛₗ[(σ : A →+* B)] B ⊗[A] M :=
+    { toFun := e.symm, map_add' := e.symm.map_add, map_smul' := fun a x ↦ by
+        simp [e, σₐ, hσ_alg, TensorProduct.smul_tmul', Algebra.smul_def] }
+  exact (h.isNaturallyComplete_tensor P {1} 1 hden hT).of_semilinear
+    (P.continuous_toCompletionLocEquivDenomOne_symm {1} hpb (Localization.Away (1 : A)))
+    ((funext hσ_alg).symm ▸ continuous_algebraMap_ratLoc P {1} 1 hden)
+    fwdₛ bwdₛ e.left_inv e.right_inv
 
 /-- **Finite projective modules are stably pseudocoherent** (Kedlaya–Liu II, Definition 2.4.1 and
 Remark 1.2.4): each base change `A⟨T/s⟩ ⊗[A] M` is finite projective over the complete Hausdorff
