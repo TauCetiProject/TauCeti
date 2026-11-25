@@ -19,7 +19,8 @@ A nonunital algebra `A` is a left ideal of its forced unitization: `(r, a) * a'`
 
 A homomorphism of nonunital algebras `f : A →ₙₐ[R] B` induces a unital algebra homomorphism
 `Unitization R A →ₐ[R] Unitization R B`, sending `(r, a)` to `(r, f a)`. This is the non-star
-counterpart of Mathlib's `Unitization.starMap`, and it is functorial.
+counterpart of Mathlib's `Unitization.starMap`, and it is functorial. A linear map `φ : A → B`
+and a scalar `t : R` give the linear map `(r, a) ↦ (t r, φ a)` of unitizations.
 
 For a unital algebra `B`, the map `x ↦ 1 + (x - 1_B)` is a unital multiplicative map
 `B → Unitization R B` (a star monoid homomorphism when `B` is a star algebra). It acts on
@@ -36,6 +37,8 @@ unitization are Murray–von Neumann equivalent in `A`, through the partial isom
 * `Unitization.map_id`, `Unitization.map_comp`: functoriality.
 * `Unitization.fstHom_comp_map`: the induced map preserves the augmentation.
 * `Unitization.map_surjective`: the induced map of a surjective homomorphism is surjective.
+* `Unitization.linearMap`: the extension `(r, a) ↦ (t r, φ a)` of a linear map to the
+  unitizations.
 * `Unitization.mapScalars`: for an algebra `R → S` and an `S`-algebra `A`, the map
   `Unitization R A → Unitization S A`, `(r, a) ↦ (algebraMap R S r, a)`.
 * `Unitization.fstHom_comp_mapScalars`, `Unitization.mapScalars_map`: change of scalars lies over
@@ -117,6 +120,55 @@ theorem map_comp (f : A →ₙₐ[R] B) (g : B →ₙₐ[R] C) : map (g.comp f) 
   algHom_ext'' fun _ ↦ by simp
 
 end Map
+
+section LinearMap
+
+variable {R A B : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A] [AddCommMonoid B]
+  [Module R B]
+
+/-- The extension `(r, a) ↦ (t r, φ a)` of an `R`-linear map `φ : A → B` to the unitizations,
+scaling the unit by `t : R`. -/
+def linearMap (t : R) (φ : A →ₗ[R] B) : Unitization R A →ₗ[R] Unitization R B where
+  toFun x := inl (t * x.fst) + inr (φ x.snd)
+  map_add' x y := by ext <;> simp [mul_add]
+  map_smul' c x := by ext <;> simp [mul_left_comm]
+
+/-- `linearMap t φ` sends `(r, a)` to `(t r, φ a)`. -/
+theorem linearMap_apply (t : R) (φ : A →ₗ[R] B) (x : Unitization R A) :
+    linearMap t φ x = inl (t * x.fst) + inr (φ x.snd) :=
+  (rfl)
+
+/-- The scalar part of `linearMap t φ x` is `t` times that of `x`. -/
+@[simp]
+theorem fst_linearMap (t : R) (φ : A →ₗ[R] B) (x : Unitization R A) :
+    (linearMap t φ x).fst = t * x.fst := by
+  simp [linearMap_apply]
+
+/-- The `B`-part of `linearMap t φ x` is `φ` of the `A`-part of `x`. -/
+@[simp]
+theorem snd_linearMap (t : R) (φ : A →ₗ[R] B) (x : Unitization R A) :
+    (linearMap t φ x).snd = φ x.snd := by
+  simp [linearMap_apply]
+
+/-- `linearMap t φ` restricts to `φ` on `A`. -/
+@[simp]
+theorem linearMap_inr (t : R) (φ : A →ₗ[R] B) (a : A) :
+    linearMap t φ (inr a) = inr (φ a) := by
+  simp [linearMap_apply]
+
+/-- `linearMap t φ` multiplies scalars by `t`. -/
+@[simp]
+theorem linearMap_inl (t : R) (φ : A →ₗ[R] B) (r : R) :
+    linearMap t φ (inl r) = inl (t * r) := by
+  simp [linearMap_apply]
+
+/-- `linearMap t φ` sends `1` to `t`. -/
+@[simp]
+theorem linearMap_one (t : R) (φ : A →ₗ[R] B) :
+    linearMap t φ 1 = inl t := by
+  simp [linearMap_apply]
+
+end LinearMap
 
 section MapScalars
 
