@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Boundary.BicollarSide
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Normed.Module.Ball.Radial.Equiv
 import TauCeti.Geometry.Manifold.Instances.Cylinder
@@ -64,12 +65,12 @@ This is the ball-exterior counterpart of the knot exterior of
   ball.
 * `Topology.IsOpenEmbedding.frontier_ballExterior`: the frontier of the exterior in `X` is the
   sphere of radius `r`.
-* `TauCeti.isLocalDiffeomorph_sphereBicollar`: when `φ` is a smooth local diffeomorphism, so is
-  the bicollar of the sphere.
+* `TauCeti.contMDiff_sphereBicollar` and `TauCeti.isLocalDiffeomorph_sphereBicollar`: when `φ`
+  is smooth, respectively a smooth local diffeomorphism, so is the bicollar of the sphere.
 * `Topology.IsOpenEmbedding.isManifold_ballExteriorChartedSpace`: when `X` is a smooth manifold
   and `φ` a smooth local diffeomorphism, the exterior is a smooth manifold with boundary.
-* `Topology.IsOpenEmbedding.contMDiff_subtypeVal_ballExteriorChartedSpace`: its inclusion into `X`
-  is smooth.
+* `Topology.IsOpenEmbedding.contMDiff_subtypeVal_ballExteriorChartedSpace`: when `φ` is smooth,
+  the inclusion of the exterior into `X` is smooth.
 
 ## References
 
@@ -224,6 +225,19 @@ theorem interior_ballExteriorChartedSpace (hφ : IsOpenEmbedding φ) (hr : 0 < r
   ext x
   simp
 
+omit [T2Space X] in
+/-- If `φ : E → X` is `C^k`, then so is the bicollar `TauCeti.sphereBicollar φ r`,
+`(u, t) ↦ φ ((r * exp t) • u)`, of the sphere of radius `r`. -/
+theorem _root_.TauCeti.contMDiff_sphereBicollar {k : WithTop ℕ∞}
+    (hφ : ContMDiff 𝓘(ℝ, E) (𝓡 (n + 1)) k φ) :
+    ContMDiff ((𝓡 n).prod 𝓘(ℝ)) (𝓡 (n + 1)) k (sphereBicollar φ r) := by
+  have h : sphereBicollar φ r =
+      φ ∘ fun q : sphere (0 : E) 1 × ℝ ↦ (r * Real.exp q.2) • (q.1 : E) :=
+    funext (sphereBicollar_apply φ r)
+  rw [h]
+  exact hφ.comp ((((contDiff_const.mul Real.contDiff_exp).contMDiff).comp contMDiff_snd).smul
+    (contMDiff_coe_sphere.comp contMDiff_fst))
+
 open scoped ContDiff in
 omit [T2Space X] in
 /-- If `φ : E → X` is a `C^k` local diffeomorphism, for some `k ≤ ∞`, then so is the bicollar
@@ -266,18 +280,19 @@ theorem isManifold_ballExteriorChartedSpace {k : WithTop ℕ∞} [IsManifold (�
     (isLocalDiffeomorph_sphereBicollar hφd hk hr.ne')
     (preimage_sphereBicollar_ballExterior hφ.injective hr) (hφ.isOpen_ballExterior_sdiff_range hr)
 
-open scoped ContDiff in
-/-- The inclusion of the exterior of a smoothly embedded ball into the ambient manifold is `C^k`,
-for the manifold structure of `Topology.IsOpenEmbedding.isManifold_ballExteriorChartedSpace`. -/
+/-- If the open embedding `φ : E → X` is `C^k`, then the inclusion of the exterior of the ball of
+radius `r` into `X` is `C^k`, for the charts of `Topology.IsOpenEmbedding.ballExteriorChartedSpace`
+(a `C^k` manifold structure by `Topology.IsOpenEmbedding.isManifold_ballExteriorChartedSpace` when
+`φ` is moreover a local diffeomorphism). -/
 theorem contMDiff_subtypeVal_ballExteriorChartedSpace {k : WithTop ℕ∞}
     [IsManifold (𝓡 (n + 1)) k X] (hφ : IsOpenEmbedding φ)
-    (hφd : IsLocalDiffeomorph 𝓘(ℝ, E) (𝓡 (n + 1)) k φ) (hk : k ≤ ∞) (hr : 0 < r) :
+    (hφd : ContMDiff 𝓘(ℝ, E) (𝓡 (n + 1)) k φ) (hr : 0 < r) :
     letI := hφ.ballExteriorChartedSpace (n := n) hr
     ContMDiff (𝓡∂ (n + 1)) (𝓡 (n + 1)) k (Subtype.val : ballExterior φ r → X) := by
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
   have : IsManifold (𝓡 n) k (sphere (0 : E) 1) := IsManifold.of_le le_top
   exact (hφ.isBicollar_sphereBicollar hr).contMDiff_subtypeVal_sideChartedSpace (n := n)
-    (isLocalDiffeomorph_sphereBicollar hφd hk hr.ne').contMDiff
+    (contMDiff_sphereBicollar hφd)
     (preimage_sphereBicollar_ballExterior hφ.injective hr) (hφ.isOpen_ballExterior_sdiff_range hr)
 
 end Topology.IsOpenEmbedding
