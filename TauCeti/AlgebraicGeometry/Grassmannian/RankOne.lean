@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
 public import TauCeti.RingTheory.Grassmannian.Chart.RankOne
 
 /-!
-# The charts of the rank-one Grassmannian as standard opens of `Proj (Sym M)`
+# The rank-one Grassmannian maps to `Proj (Sym M)`
 
 Let `M` be a module over a commutative ring `R`. The rank-one Grassmannian `G(1, M)` over `Spec R`
 (`Module.Grassmannian.scheme R M 1`) is glued from the charts `Spec C_x`, `x ∈ M`, where
@@ -42,8 +42,7 @@ the chart maps agree on the overlap, across the transition isomorphism
 `Module.Grassmannian.toProj R : G(1, M) ⟶ Proj (Sym M)`
 
 over `Spec R`, which is `chartToProj R x` on the chart at `x` (`Module.Grassmannian.chartι_toProj`,
-`Module.Grassmannian.toProj_projToSpec`). This is the morphism of the rank-one identification
-`G(1, M) ≅ Proj (Sym M)`.
+`Module.Grassmannian.toProj_projToSpec`).
 -/
 
 public section
@@ -110,14 +109,15 @@ theorem SpecMap_chartToProj (x : M) {S : Type u} [CommRing S]
         (ψ.comp (evalUniversal R x).toRingHom) (by simp))) ≫
         Proj.awayι (homogeneousSubmodule R M) (SymmetricAlgebra.ι R M x)
           (ι_mem_homogeneousSubmodule R M x) one_pos := by
-  rw [chartToProj_def, ← Category.assoc, ← Spec.map_comp,
-    ← RingHom.comp_homogeneousLocalizationAwayLift ψ _ (by simp), ← awayEquiv_symm_toRingHom]
-  -- the inverse of the isomorphism `awayEquiv R x` in `CommRingCat` is `ofHom` of its inverse
-  rfl
+  rw [chartToProj_def, ← Category.assoc, ← Spec.map_comp, RingEquiv.toCommRingCatIso_inv,
+    AlgEquiv.toRingEquiv_symm, ← CommRingCat.ofHom_comp,
+    ← RingHom.comp_homogeneousLocalizationAwayLift ψ _ (by simp), ← awayEquiv_symm_toRingHom,
+    RingEquiv.toRingHom_eq_coe]
 
 /-- **The rank-one charts agree on overlaps.** On the overlap of the charts of `G(1, M)` at `x`
 and `y`, the chart map to `Proj (Sym M)` at `x` is the chart map at `y` composed with the
 transition isomorphism. -/
+@[reassoc]
 theorem chartToProj_transition (x y : M) :
     Spec.map (CommRingCat.ofHom (algebraMap (ChartAlgebra R (fun _ : Fin 1 ↦ x))
         (OverlapAlgebra R (fun _ : Fin 1 ↦ x) (fun _ : Fin 1 ↦ y)))) ≫ chartToProj R x =
@@ -143,15 +143,9 @@ theorem chartToProj_transition (x y : M) :
 /-- The chart map `chartToProj R (x 0)` of `G(1, M)` read on the chart indexed by
 `x : Fin 1 → M`, which is `fun _ ↦ x 0`. The gluing data of the Grassmannian are indexed by such
 functions. -/
-noncomputable def chartToProjOfFun (x : Fin 1 → M) :
+private noncomputable def chartToProjOfFun (x : Fin 1 → M) :
     Spec (.of (ChartAlgebra R x)) ⟶ Proj (homogeneousSubmodule R M) :=
   ((eq_const_of_unique x).symm : (fun _ : Fin 1 ↦ x 0) = x) ▸ chartToProj R (x 0)
-
-/-- On a constant index, `chartToProjOfFun` is `chartToProj`. -/
-@[simp]
-theorem chartToProjOfFun_const (m : M) :
-    chartToProjOfFun R (fun _ : Fin 1 ↦ m) = chartToProj R m :=
-  (rfl)
 
 /-- **The rank-one Grassmannian maps to `Proj (Sym M)`**, by the chart maps `chartToProj`, which
 agree on overlaps (`Module.Grassmannian.chartToProj_transition`). -/
@@ -166,13 +160,12 @@ noncomputable def toProj : scheme R M 1 ⟶ Proj (homogeneousSubmodule R M) :=
     exact chartToProj_transition R a b
 
 /-- On the chart indexed by `x : Fin 1 → M`, `toProj R` is `chartToProjOfFun R x`. -/
-@[reassoc (attr := simp)]
-theorem chartι_toProjOfFun (x : Fin 1 → M) :
+private theorem chartι_toProjOfFun (x : Fin 1 → M) :
     chartι R x ≫ toProj R = chartToProjOfFun R x :=
   (chartOpenCover R M 1).ι_glueMorphisms _ _ x
 
 /-- On the chart at `m`, `toProj R` is `chartToProj R m`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem chartι_toProj (m : M) :
     chartι R (fun _ : Fin 1 ↦ m) ≫ toProj R = chartToProj R m :=
   chartι_toProjOfFun R _
