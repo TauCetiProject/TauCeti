@@ -316,9 +316,7 @@ theorem ker_aeval_eq_span_of_rename_sumElim {τ υ : Type*} (e : σ ⊕ τ ≃ �
     simp [rename_rename]
   rw [hspan, ← Ideal.comap_symm, h]
   ext p
-  rw [Ideal.mem_comap, RingHom.mem_ker, RingHom.mem_ker, AlgHom.comp_apply, AlgHom.comp_apply,
-    map_eq_zero_iff _ (rename_injective φ hφ), AlgEquiv.toRingEquiv_symm, AlgEquiv.coe_toRingEquiv,
-    renameEquiv_symm, renameEquiv_apply]
+  simp [RingHom.mem_ker, map_eq_zero_iff _ (rename_injective φ hφ)]
 
 end Graph
 

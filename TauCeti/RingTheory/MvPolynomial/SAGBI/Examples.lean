@@ -282,10 +282,10 @@ theorem toricIdeal_lex_degree_normalizedCollisionFamily :
   rw [ker_aeval_eq_span_of_rename_sumElim ((Equiv.sumComm (Fin 1) (Fin 2)).trans finSumFinEquiv)
     (φ := fun _ ↦ (0 : Fin 2)) (Function.injective_of_subsingleton _) (fun _ ↦ X 0)
     (by simp [Sum.forall, ← X_pow_eq_monomial])]
-  congr 1
-  ext p
-  constructor <;> rintro ⟨j, rfl⟩ <;> exact ⟨j, by fin_cases j <;> simp [← X_pow_eq_monomial,
-    finSumFinEquiv_apply_left (m := 2) (n := 1), finSumFinEquiv_apply_right (m := 2) (n := 1)]⟩
+  congr 2
+  funext j
+  fin_cases j <;> simp [← X_pow_eq_monomial,
+    finSumFinEquiv_apply_left (m := 2) (n := 1), finSumFinEquiv_apply_right (m := 2) (n := 1)]
 
 /-- The values `-y/2` and `y/2` of the relations `U - W` and `V - W` at
 `normalizedCollisionFamily`, as multiples of `y`. -/
@@ -388,10 +388,10 @@ theorem toricIdeal_lex_degree_scalarFamily :
     (φ := fun _ ↦ (0 : Fin 2)) (Function.injective_of_subsingleton _) (fun _ ↦ 1)
     (by simp [Sum.forall, ← X_pow_eq_monomial, finSumFinEquiv_apply_left (m := 1) (n := 1),
       finSumFinEquiv_apply_right (m := 1) (n := 1)])]
-  congr 1
-  ext p
-  constructor <;> rintro ⟨j, rfl⟩ <;> exact ⟨j, by fin_cases j; simp [← X_pow_eq_monomial,
-    finSumFinEquiv_apply_left (m := 1) (n := 1)]⟩
+  congr 2
+  funext j
+  fin_cases j
+  simp [← X_pow_eq_monomial, finSumFinEquiv_apply_left (m := 1) (n := 1)]
 
 /-- The relation `U - 1` becomes exactly zero after substituting `scalarFamily`. -/
 theorem aeval_scalarFamily_monomial_sub_one :
@@ -458,10 +458,11 @@ theorem toricIdeal_lex_degree_duplicateFamily :
   rw [ker_aeval_eq_span_of_rename_sumElim ((Equiv.sumComm (Fin 1) (Fin 1)).trans finSumFinEquiv)
     (φ := fun _ ↦ (0 : Fin 2)) (Function.injective_of_subsingleton _) (fun _ ↦ X 0)
     (by simp [Sum.forall, ← X_pow_eq_monomial])]
-  congr 1
-  ext p
-  constructor <;> rintro ⟨j, rfl⟩ <;> exact ⟨j, by fin_cases j; simp [← X_pow_eq_monomial,
-    finSumFinEquiv_apply_left (m := 1) (n := 1), finSumFinEquiv_apply_right (m := 1) (n := 1)]⟩
+  congr 2
+  funext j
+  fin_cases j
+  simp [← X_pow_eq_monomial,
+    finSumFinEquiv_apply_left (m := 1) (n := 1), finSumFinEquiv_apply_right (m := 1) (n := 1)]
 
 /-- The relation `U - V` becomes exactly zero after substituting `duplicateFamily`. -/
 theorem aeval_duplicateFamily_monomial_sub_monomial :
@@ -520,10 +521,11 @@ theorem toricIdeal_lex_degree_redundantFamily :
     Function.injective_id (fun _ ↦ X 0) (by
       simp [Sum.forall, Fin.forall_fin_two, ← X_pow_eq_monomial,
         finSumFinEquiv_apply_left (m := 1) (n := 2), finSumFinEquiv_apply_right (m := 1) (n := 2)])]
-  congr 1
-  ext p
-  constructor <;> rintro ⟨j, rfl⟩ <;> exact ⟨j, by fin_cases j; simp [← X_pow_eq_monomial,
-    finSumFinEquiv_apply_left (m := 1) (n := 2), finSumFinEquiv_apply_right (m := 1) (n := 2)]⟩
+  congr 2
+  funext j
+  fin_cases j
+  simp [← X_pow_eq_monomial,
+    finSumFinEquiv_apply_left (m := 1) (n := 2), finSumFinEquiv_apply_right (m := 1) (n := 2)]
 
 /-- The relation `U - V` becomes `-y`, the image of `-W`, whose exponent lies below that of `x`. -/
 theorem aeval_redundantFamily_monomial_sub_monomial :
