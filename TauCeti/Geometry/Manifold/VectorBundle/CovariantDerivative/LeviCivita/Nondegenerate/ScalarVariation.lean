@@ -52,8 +52,8 @@ two terms vanish and the derivative is `-a Scal`.
 
 In the namespace `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily`:
 
-* `contMDiff_metricTrace_variation` and `mvfderiv_metricTrace_variation`: the metric trace of the
-  first variation is smooth, with derivative the trace of `∇h`.
+* `contMDiff_metricTrace_variation` and `mvfderiv_metricTrace_variation`: the trace of the first
+  variation against the installed metric is smooth, with derivative the trace of `∇h`.
 * `metricTrace_deriv_difference` and `trace_deriv_difference`: the metric trace and the endomorphism
   trace of the variation of the Levi-Civita connection.
 * `hasDerivAt_scalarCurvature`: the first variation of scalar curvature.
@@ -134,7 +134,9 @@ theorem isLeviCivitaConnection_of_apply_eq_inner {p : P}
     (fun y u v ↦ by simpa only [metric_apply] using hg y u v)).mp hcov
 
 omit [T2Space M] in
-/-- The metric trace `tr_g h` of the first variation `h = δ_u g` is a smooth function. -/
+/-- The trace of the first variation `h = δ_u g` against the installed metric is a smooth
+function. This is the trace `tr_g h` against the family member `g.metric p` when that member is the
+installed metric. -/
 theorem contMDiff_metricTrace_variation (p : P) (u : TangentSpace IP p) :
     ContMDiff I 𝓘(ℝ) ∞ fun y : M ↦
       LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ (g.variation p u y)) := by
@@ -143,8 +145,9 @@ theorem contMDiff_metricTrace_variation (p : P) (u : TangentSpace IP p) :
     ContMDiffAt.metricTrace (V := Bundle.Trivial M ℝ) (g.contMDiff_variation p u x)).2
 
 omit [T2Space M] in
-/-- The derivative of `tr_g h` along `w`, for the first variation `h = δ_u g` and a connection
-compatible with the installed metric, is `∑ᵢ (∇_w h)(eᵢ, eᵢ)`. -/
+/-- The derivative along `w` of the trace of the first variation `h = δ_u g` against the installed
+metric, for a connection compatible with the installed metric, is `∑ᵢ (∇_w h)(eᵢ, eᵢ)`. The trace
+is `tr_g h` against the family member `g.metric p` when that member is the installed metric. -/
 theorem mvfderiv_metricTrace_variation {cov : CovariantDerivative I E (TangentSpace I)}
     (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
     (p : P) (u : TangentSpace IP p) (y : M) {ι : Type*} [Fintype ι]

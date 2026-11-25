@@ -16,9 +16,9 @@ Metric compatibility allows both metric contraction and endomorphism trace to co
 the induced connection. For a vector-valued bilinear tensor `C`, the metric trace `tr_g C` is a
 vector field whose divergence is the corresponding double contraction of `∇C`, and when the
 endomorphism trace `u ↦ tr (C(u, ·))` is a differential `df`, the double contraction of `∇C` against
-it is the Laplacian of `f`. Together they evaluate the Palatini double contraction of `C`, which is
-the metric trace of the first variation of the Ricci tensor when `C` is the variation of a
-connection.
+it is the Laplacian of `f`. Together they evaluate the Palatini double contraction of `C`. When `C`
+is the variation of a connection which is torsion-free at the point, this is the metric trace of the
+first variation of the Ricci tensor; torsion of the base connection contributes a further term.
 
 ## Main results
 
@@ -111,7 +111,8 @@ theorem trace_hom_eq_hessian
 /-- **The contracted Palatini expression.** Let `C` be a differentiable vector-valued bilinear
 tensor whose endomorphism trace `u ↦ tr (C(u, ·))` is the differential of `f` near `x`. Its Palatini
 double contraction is the divergence of its metric trace `tr_g C` minus the Laplace–Beltrami
-operator of `f`. -/
+operator of `f`. The connection is assumed metric compatible and to agree with the Levi-Civita
+connection on differentiable fields at `x`. -/
 theorem IsMetricCompatible.sum_palatini_eq_divergence_sub_laplaceBeltrami
     (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
     (hLC : ∀ ⦃U : Π y : M, TangentSpace I y⦄, MDiffAt (T% U) x →
