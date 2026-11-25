@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupport.Topo
 public import TauCeti.Geometry.Manifold.VectorBundle.Density
 public import TauCeti.Analysis.Distribution.TestFunction.DualEquiv
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.Map
 import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
@@ -22,13 +21,8 @@ locally convex topology of their fixed-compact support stages
 (`ContMDiffSection.compactlySupportedTopology`), computed in the preferred trivializations
 `trivializationAt F V x`. Every covering family of smooth frames gives the same topology
 (`TauCeti.BundleTest.instTopologicalSpace_eq_compactlySupportedTopology`), so this choice is
-only a normalization. The topology is Hausdorff.
-
-A smooth bundle map whose expression in the preferred frames at each point is a constant model map
-transports bundle tests continuously
-(`TauCeti.BundleTest.continuous_map_of_inCoordinates_eq_const`): in frame coordinates it acts by a
-fixed continuous linear map, so it is continuous on each fixed-compact support stage. Canonical
-identifications of bundles, such as double-dual evaluation, have this form.
+only a normalization. The topology is Hausdorff and makes the bundle tests a locally convex
+real topological vector space.
 
 A continuous linear functional `T : BundleTest I F V →L_c[ℝ] ℝ` is a distribution paired with
 `V`-valued tests; the space of these functionals carries the topology of uniform convergence on
@@ -61,8 +55,8 @@ charts whose source does not contain `x`
 
 * `TauCeti.BundleTest I F V`: the compactly supported smooth sections of `V`, with their test
   topology.
-* `TauCeti.BundleTest.continuous_map_of_inCoordinates_eq_const`: transport of bundle tests along a
-  bundle map that is constant in frames is continuous.
+* `TauCeti.BundleTest.ofCompactlySupportedCLE`: compactly supported smooth sections with the
+  test topology of any covering family of smooth frames, continuously identified with bundle tests.
 * `Bundle.Trivialization.chartTestCLM`: extension of native test functions on a chart target to
   bundle tests, as a continuous linear map.
 * `Bundle.Trivialization.chartDistributionCLM`: the local representative of a functional on bundle
@@ -198,6 +192,10 @@ theorem neg_apply (s : BundleTest I F V) (x : M) : (-s) x = -s x :=
 theorem sub_apply (s t : BundleTest I F V) (x : M) : (s - t) x = s x - t x :=
   rfl
 
+theorem sum_apply {ι : Type*} (u : Finset ι) (s : ι → BundleTest I F V) (x : M) :
+    (∑ i ∈ u, s i) x = ∑ i ∈ u, s i x :=
+  map_sum (AddMonoidHom.mk' (fun t : BundleTest I F V ↦ t x) fun a b ↦ add_apply a b x) s u
+
 variable [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M]
 
 /-- The topology on bundle tests is the test topology of any covering family of smooth frames
@@ -210,9 +208,68 @@ theorem instTopologicalSpace_eq_compactlySupportedTopology [LocallyCompactSpace 
   compactlySupportedTopology_eq_of_covers _ _ _ (fun x ↦ ⟨x, mem_baseSet_trivializationAt F V x⟩)
     e U hU hcover
 
+section CompactlySupportedCLE
+
+variable [LocallyCompactSpace E] {ι : Type*} (e : ι → Trivialization F (π F V))
+  [∀ i, MemTrivializationAtlas (e i)] (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
+  (hcover : ∀ x : M, ∃ i, x ∈ U i)
+
+/-- The existing algebraic wrapper from compactly supported sections to native bundle tests is a
+continuous linear equivalence for any covering smooth atlas's final locally convex topology. -/
+def ofCompactlySupportedCLE :
+    let _ := compactlySupportedTopology (I := I) (n := ∞) e U hU
+    compactlySupported I F ∞ V ≃L[ℝ] BundleTest I F V := by
+  let _ := compactlySupportedTopology (I := I) (n := ∞) e U hU
+  have ht := instTopologicalSpace_eq_compactlySupportedTopology (I := I) e U hU hcover
+  refine ContinuousLinearEquiv.mk (ofCompactlySupported I F V) ?_ ?_
+  -- The native wrapper is the identity linear equivalence on the existing type synonym.
+  -- Once the public topology comparison is rewritten, both continuity goals are continuity of id.
+  · rw [ht]
+    exact @continuous_id (compactlySupported I F ∞ V)
+      (compactlySupportedTopology (I := I) (n := ∞) e U hU)
+  · rw [ht]
+    exact @continuous_id (compactlySupported I F ∞ V)
+      (compactlySupportedTopology (I := I) (n := ∞) e U hU)
+
+/-- The continuous native wrapper retains exactly the original algebraic wrapper. -/
+@[simp]
+theorem ofCompactlySupportedCLE_toLinearEquiv :
+    let _ := compactlySupportedTopology (I := I) (n := ∞) e U hU
+    (ofCompactlySupportedCLE e U hU hcover).toLinearEquiv = ofCompactlySupported I F V := by
+  unfold ofCompactlySupportedCLE
+  rfl
+
+/-- Passing through the continuous native wrapper preserves every fibre value. -/
+@[simp]
+theorem ofCompactlySupportedCLE_apply (s : compactlySupported I F ∞ V) (x : M) :
+    let _ := compactlySupportedTopology (I := I) (n := ∞) e U hU
+    ofCompactlySupportedCLE e U hU hcover s x = s.val x := by
+  simpa only [ofCompactlySupportedCLE, ContinuousLinearEquiv.coe_mk] using
+    congrFun (coe_ofCompactlySupported s) x
+
+/-- The inverse continuous native wrapper also preserves every fibre value. -/
+@[simp]
+theorem ofCompactlySupportedCLE_symm_apply (s : BundleTest I F V) (x : M) :
+    let _ := compactlySupportedTopology (I := I) (n := ∞) e U hU
+    ((ofCompactlySupportedCLE e U hU hcover).symm s).val x = s x := by
+  let _ := compactlySupportedTopology (I := I) (n := ∞) e U hU
+  -- Native test evaluation is evaluation after the inverse original algebraic wrapper.
+  rw [← ContinuousLinearEquiv.coe_symm_toLinearEquiv, ofCompactlySupportedCLE_toLinearEquiv]
+
+end CompactlySupportedCLE
+
 instance : T2Space (BundleTest I F V) :=
   t2Space_compactlySupportedTopology (I := I) (n := ∞) _ _ _
     fun x ↦ ⟨x, mem_baseSet_trivializationAt F V x⟩
+
+instance : IsTopologicalAddGroup (BundleTest I F V) :=
+  isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := ∞) _ _ _
+
+instance : ContinuousSMul ℝ (BundleTest I F V) :=
+  continuousSMul_compactlySupportedTopology (I := I) (n := ∞) _ _ _
+
+instance : LocallyConvexSpace ℝ (BundleTest I F V) :=
+  locallyConvexSpace_compactlySupportedTopology (I := I) (n := ∞) _ _ _
 
 /-- Evaluation of bundle tests at a point is continuous. -/
 theorem continuous_eval_const (x : M) : Continuous fun s : BundleTest I F V ↦ s x := by
@@ -296,75 +353,6 @@ theorem delta_eq_zero_iff [FiniteDimensional ℝ E] [T2Space M] [IsTopologicalAd
 end BundleTest
 
 end TauCeti
-
-/-! ### Transport along bundle maps -/
-
-namespace TauCeti.BundleTest
-
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [LocallyCompactSpace E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I ∞ M]
-  {F₁ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
-  {V₁ : M → Type*} [∀ x, AddCommGroup (V₁ x)] [∀ x, Module ℝ (V₁ x)]
-  [∀ x, TopologicalSpace (V₁ x)] [TopologicalSpace (TotalSpace F₁ V₁)]
-  [FiberBundle F₁ V₁] [VectorBundle ℝ F₁ V₁] [ContMDiffVectorBundle ∞ F₁ V₁ I]
-  {F₂ : Type*} [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
-  {V₂ : M → Type*} [∀ x, AddCommGroup (V₂ x)] [∀ x, Module ℝ (V₂ x)]
-  [∀ x, TopologicalSpace (V₂ x)] [TopologicalSpace (TotalSpace F₂ V₂)]
-  [FiberBundle F₂ V₂] [VectorBundle ℝ F₂ V₂] [ContMDiffVectorBundle ∞ F₂ V₂ I]
-
-/-- A smooth bundle map whose expression in the preferred frames at each point is a constant model
-map transports bundle tests continuously: in frame coordinates on the common frame domains it
-is a fixed continuous linear map, so it is continuous on every fixed-compact support stage. -/
-theorem continuous_map_of_inCoordinates_eq_const (ϕ : ∀ x, V₁ x →L[ℝ] V₂ x)
-    (hϕ : ContMDiff (I.prod 𝓘(ℝ, F₁)) (I.prod 𝓘(ℝ, F₂)) ∞
-      (fun p : TotalSpace F₁ V₁ ↦ (⟨p.proj, ϕ p.proj p.snd⟩ : TotalSpace F₂ V₂)))
-    {c : M → F₁ →L[ℝ] F₂}
-    (hc : ∀ a x, x ∈ (trivializationAt F₁ V₁ a).baseSet →
-      x ∈ (trivializationAt F₂ V₂ a).baseSet →
-      ContinuousLinearMap.inCoordinates F₁ V₁ F₂ V₂ a x a x (ϕ x) = c a) :
-    Continuous fun s : BundleTest I F₁ V₁ ↦ ofCompactlySupported I F₂ V₂
-      (mapCompactlySupported (fun x ↦ (ϕ x : V₁ x →ₗ[ℝ] V₂ x)) hϕ
-        ((ofCompactlySupported I F₁ V₁).symm s)) := by
-  -- Work in the frames of both bundles at each point, over the intersection of their domains.
-  let e₁ : M → Trivialization F₁ (π F₁ V₁) := fun a ↦ trivializationAt F₁ V₁ a
-  let e₂ : M → Trivialization F₂ (π F₂ V₂) := fun a ↦ trivializationAt F₂ V₂ a
-  let U : M → Opens M := fun a ↦
-    ⟨(e₁ a).baseSet ∩ (e₂ a).baseSet, (e₁ a).open_baseSet.inter (e₂ a).open_baseSet⟩
-  have hU₁ : ∀ a, (U a : Set M) ⊆ (e₁ a).baseSet := fun _ _ h ↦ h.1
-  have hU₂ : ∀ a, (U a : Set M) ⊆ (e₂ a).baseSet := fun _ _ h ↦ h.2
-  have hcov : ∀ x : M, ∃ a, x ∈ U a :=
-    fun x ↦ ⟨x, mem_baseSet_trivializationAt F₁ V₁ x, mem_baseSet_trivializationAt F₂ V₂ x⟩
-  let ϕ' : ∀ x, V₁ x →ₗ[ℝ] V₂ x := fun x ↦ ϕ x
-  -- In frame coordinates the map is the constant model map `c a`.
-  have hΦ : letI := frameTopology (I := I) (n := ∞) e₁ U hU₁
-      letI := frameTopology (I := I) (n := ∞) e₂ U hU₂
-      Continuous (mapLinearMap ϕ' hϕ) := by
-    refine continuous_frameTopology_of_frameCoordinates_eq_clm_apply e₁ U hU₁ e₂ hU₂ c ?_
-    intro a s x
-    have hx₁ := hU₁ a x.property
-    have hx₂ := hU₂ a x.property
-    rw [← hc a x hx₁ hx₂, ContinuousLinearMap.inCoordinates_eq hx₁ hx₂]
-    simp [ϕ', e₁, e₂, Trivialization.frameCoordinates_apply, hx₁]
-  let := frameTopology (I := I) (n := ∞) e₁ U hU₁
-  let := frameTopology (I := I) (n := ∞) e₂ U hU₂
-  let := compactlySupportedTopology (I := I) (n := ∞) e₂ U hU₂
-  let := isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := ∞) e₂ U hU₂
-  let := continuousSMul_compactlySupportedTopology (I := I) (n := ∞) e₂ U hU₂
-  let := locallyConvexSpace_compactlySupportedTopology (I := I) (n := ∞) e₂ U hU₂
-  rw [instTopologicalSpace_eq_compactlySupportedTopology e₁ U hU₁ hcov,
-    instTopologicalSpace_eq_compactlySupportedTopology e₂ U hU₂ hcov]
-  refine (continuous_compactlySupportedTopology_iff e₁ U hU₁
-    (mapCompactlySupported ϕ' hϕ)).2 fun K ↦ ?_
-  -- On a fixed-compact stage the map stays in the same stage of the target.
-  have hK : Continuous (mapSupportedIn ϕ' hϕ K) :=
-    ((hΦ.comp continuous_subtypeVal).subtype_mk fun s ↦
-      mapLinearMap_mem_supportedIn ϕ' hϕ s.property).congr fun s ↦
-        Subtype.ext (coe_mapSupportedIn ϕ' hϕ K s).symm
-  exact ((ContMDiffSection.continuous_ofSupportedIn e₂ U hU₂ K).comp hK).congr fun s ↦
-    Subtype.ext (by simp)
-
-end TauCeti.BundleTest
 
 /-! ### Local representatives in charts -/
 

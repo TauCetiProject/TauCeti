@@ -64,6 +64,8 @@ of the torsion submodules. A linear map into a torsion-free module vanishes on t
 * `LinearEquiv.isTorsion'_iff`: being `S`-torsion is invariant under linear equivalences.
 * `Submodule.torsionBy_eq_ker_lsmul`: the `a`-torsion submodule is the kernel of
   `LinearMap.lsmul R M a`.
+* `Submodule.mem_torsionBy_self_iff`: in a commutative semiring `R`, `x ∈ R[a]` if and only if
+  `a * x = 0`.
 * `Submodule.forall_pow_smul_mem_iff_forall_smul_mem`: saturation of a submodule with respect to a
   scalar is equivalent to saturation with respect to all powers of that scalar.
 * `Submodule.Quotient.mk_mem_torsionBy_iff`: the class of `x` in `M ⧸ P` is `a`-torsion if and
@@ -355,6 +357,12 @@ theorem torsionBy_eq_ker_lsmul {R M : Type*} [CommSemiring R] [AddCommMonoid M] 
     (a : R) : torsionBy R M a = LinearMap.ker (LinearMap.lsmul R M a) := by
   ext x
   rw [mem_torsionBy_iff, LinearMap.mem_ker, LinearMap.lsmul_apply]
+
+/-- In a commutative semiring `R`, `x` lies in the `a`-torsion `R[a]` of `R` as a module over
+itself exactly when `a * x = 0`: the scalar action of `R` on itself is multiplication. -/
+theorem mem_torsionBy_self_iff {R : Type*} [CommSemiring R] {a x : R} :
+    x ∈ torsionBy R R a ↔ a * x = 0 := by
+  rw [mem_torsionBy_iff, smul_eq_mul]
 
 /-- A submodule `P` of an `R`-module `M` is `a`-saturated (`∀ x, a • x ∈ P → x ∈ P`) if and only
 if it is saturated with respect to all powers of `a`. -/

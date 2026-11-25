@@ -42,6 +42,8 @@ geometric Jacobian is the classical surface factor `sqrt (1 + ‖A‖²)`.
   `‖df v‖² + ‖dg v‖²`.
 * `TauCeti.fderiv_toLp_const_prodMk_apply`: with a constant first coordinate the derivative is
   `v ↦ (0, dg v)` at every point.
+* `DifferentiableAt.fderiv_withLp_snd`: the derivative of the second component of a map into
+  the product is the second component of its derivative.
 * `HasFDerivWithinAt.normalGraphEmbedding`, `HasFDerivAt.normalGraphEmbedding`: the derivative
   of a graph parametrization is the graph of the derivative.
 * `DifferentiableAt.fderiv_normalGraphEmbedding`: the Fréchet derivative of a graph
@@ -153,6 +155,13 @@ theorem fderiv_toLp_const_prodMk_apply (c : F) (g : G → E) (y v : G) :
     rw [fderiv_zero_of_not_differentiableAt h, fderiv_zero_of_not_differentiableAt hg,
       zero_apply, zero_apply]
     exact (WithLp.toLp_zero (V := F × E) p).symm
+
+/-- The derivative of the second component `w ↦ (g w).snd` of a map into `WithLp p (F × E)`,
+differentiable at `y`, is the second component of the derivative of `g`. -/
+theorem _root_.DifferentiableAt.fderiv_withLp_snd {g : G → WithLp p (F × E)} {y : G}
+    (hg : DifferentiableAt 𝕜 g y) :
+    fderiv 𝕜 (fun w ↦ (g w).snd) y = (WithLp.sndL p 𝕜 F E).comp (fderiv 𝕜 g y) :=
+  ((WithLp.sndL p 𝕜 F E).hasFDerivAt.comp y hg.hasFDerivAt).fderiv
 
 section NormalGraph
 

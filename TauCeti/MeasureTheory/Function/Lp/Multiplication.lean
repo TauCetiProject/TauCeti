@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
 /-!
 # Multiplication operators on `Lᵖ`
@@ -32,6 +33,14 @@ For a measurable set `s`, multiplication by the class `TauCeti.linftyIndicator �
 indicator cuts an `Lᵖ` class off to `s` (`multiplicationOperator_linftyIndicator_ae`). It does not
 increase the norm (`norm_multiplicationOperator_linftyIndicator_apply_le`), and the cut-offs to `s`
 and to its complement add up to the class (`multiplicationOperator_linftyIndicator_add_compl`).
+
+A function `f` continuous and bounded on a measurable set `s` has a class
+`TauCeti.linftyOfContinuousOn μ hf hs hC` in `L∞(μ.restrict s)`, and multiplication by it acts by
+`x ↦ f x • g x` (`multiplicationOperator_linftyOfContinuousOn_ae`). For `|f| ≤ 1` on `s` it does
+not increase the norm (`norm_multiplicationOperator_linftyOfContinuousOn_apply_le`), and
+multiplications by two functions summing to one on `s` add up to the identity
+(`multiplicationOperator_linftyOfContinuousOn_add_eq_one`). Multiplication by `a` commutes
+with composition by a continuous linear map (`ContinuousLinearMap.compLpL_multiplicationOperator`).
 -/
 
 public section
@@ -39,6 +48,26 @@ public section
 noncomputable section
 
 open scoped ENNReal InnerProductSpace
+
+namespace TauCeti
+
+open MeasureTheory
+
+variable {α F : Type*} [TopologicalSpace α] [MeasurableSpace α] [OpensMeasurableSpace α]
+  [NormedAddCommGroup F] [SecondCountableTopologyEither α F] {f : α → F} {s : Set α}
+
+variable (μ : Measure α) in
+/-- The class in `L∞(μ.restrict s)` of a function continuous and bounded on a measurable set `s`. -/
+def linftyOfContinuousOn (hf : ContinuousOn f s) (hs : MeasurableSet s)
+    (hC : ∃ C, ∀ x ∈ s, ‖f x‖ ≤ C) : Lp F ∞ (μ.restrict s) :=
+  (hf.memLp_top_restrict_of_bound hs _ hC.choose_spec).toLp f
+
+/-- The class `TauCeti.linftyOfContinuousOn μ hf hs hC` is almost everywhere `f` on `s`. -/
+theorem coeFn_linftyOfContinuousOn {μ : Measure α} (hf : ContinuousOn f s) (hs : MeasurableSet s)
+    (hC : ∃ C, ∀ x ∈ s, ‖f x‖ ≤ C) : linftyOfContinuousOn μ hf hs hC =ᵐ[μ.restrict s] f :=
+  MemLp.coeFn_toLp _
+
+end TauCeti
 
 namespace MeasureTheory.Lp
 
@@ -181,6 +210,69 @@ theorem multiplicationOperator_linftyIndicator_add_compl (hs : MeasurableSet s) 
   rw [hx, Pi.add_apply, h₁, h₂, Set.indicator_self_add_compl_apply]
 
 end Indicator
+
+section ContinuousOn
+
+variable {X E : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+  [NormedAddCommGroup E] [NormedSpace ℝ E] {p : ℝ≥0∞} [Fact (1 ≤ p)] {μ : Measure X}
+  {f : X → ℝ} {s : Set X}
+
+/-- Multiplication by the class `TauCeti.linftyOfContinuousOn μ hf hs hC` of `f` acts by
+`x ↦ f x • g x`. -/
+theorem multiplicationOperator_linftyOfContinuousOn_ae (hf : ContinuousOn f s)
+    (hs : MeasurableSet s) (hC : ∃ C, ∀ x ∈ s, ‖f x‖ ≤ C) (g : Lp E p (μ.restrict s)) :
+    multiplicationOperator (TauCeti.linftyOfContinuousOn μ hf hs hC) g
+      =ᵐ[μ.restrict s] fun x ↦ f x • g x := by
+  filter_upwards [multiplicationOperator_ae (TauCeti.linftyOfContinuousOn μ hf hs hC) g,
+    TauCeti.coeFn_linftyOfContinuousOn (μ := μ) hf hs hC] with x hx h₁
+  rw [hx, h₁]
+
+/-- Multiplication by the class of a function bounded by one on `s` does not increase the norm. -/
+theorem norm_multiplicationOperator_linftyOfContinuousOn_apply_le (hf : ContinuousOn f s)
+    (hs : MeasurableSet s) (hC : ∃ C, ∀ x ∈ s, ‖f x‖ ≤ C) (h₁ : ∀ x ∈ s, ‖f x‖ ≤ 1)
+    (g : Lp E p (μ.restrict s)) :
+    ‖multiplicationOperator (TauCeti.linftyOfContinuousOn μ hf hs hC) g‖ ≤ ‖g‖ := by
+  refine Lp.norm_le_norm_of_ae_le ?_
+  filter_upwards [multiplicationOperator_linftyOfContinuousOn_ae hf hs hC g, ae_restrict_mem hs]
+    with x hx hxs
+  rw [hx, norm_smul]
+  exact mul_le_of_le_one_left (norm_nonneg _) (h₁ x hxs)
+
+/-- Multiplications by the classes of two functions summing to one on `s` add up to the
+identity. -/
+theorem multiplicationOperator_linftyOfContinuousOn_add_eq_one {g : X → ℝ}
+    (hf : ContinuousOn f s) (hg : ContinuousOn g s) (hs : MeasurableSet s)
+    (hCf : ∃ C, ∀ x ∈ s, ‖f x‖ ≤ C) (hCg : ∃ C, ∀ x ∈ s, ‖g x‖ ≤ C)
+    (h : ∀ x ∈ s, f x + g x = 1) :
+    multiplicationOperator (E := E) (p := p) (TauCeti.linftyOfContinuousOn μ hf hs hCf) +
+      multiplicationOperator (TauCeti.linftyOfContinuousOn μ hg hs hCg) = 1 := by
+  ext u : 1
+  refine Lp.ext ?_
+  filter_upwards [Lp.coeFn_add (multiplicationOperator (TauCeti.linftyOfContinuousOn μ hf hs hCf) u)
+      (multiplicationOperator (TauCeti.linftyOfContinuousOn μ hg hs hCg) u),
+    multiplicationOperator_linftyOfContinuousOn_ae hf hs hCf u,
+    multiplicationOperator_linftyOfContinuousOn_ae hg hs hCg u, ae_restrict_mem hs]
+    with x hx h₁ h₂ hxs
+  rw [add_apply, hx, Pi.add_apply, h₁, h₂, ← add_smul, h x hxs, one_smul,
+    one_apply_eq_self]
+
+end ContinuousOn
+
+section CompLpL
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- Composition with a continuous linear map commutes with multiplication by an `L∞` class. -/
+theorem _root_.ContinuousLinearMap.compLpL_multiplicationOperator (L : E →L[𝕜] F)
+    (a : Lp 𝕜 ∞ μ) (g : Lp E p μ) :
+    L.compLpL p μ (multiplicationOperator a g) = multiplicationOperator a (L.compLpL p μ g) := by
+  refine Lp.ext ?_
+  filter_upwards [L.coeFn_compLpL (multiplicationOperator a g), multiplicationOperator_ae a g,
+    multiplicationOperator_ae a (L.compLpL p μ g), L.coeFn_compLpL g] with x h₁ h₂ h₃ h₄
+  rw [h₁, h₂, h₃, h₄, map_smul]
+
+end CompLpL
 
 section InnerProductSpace
 

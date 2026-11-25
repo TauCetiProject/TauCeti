@@ -27,7 +27,8 @@ The *determinant* of `L` is `ZLattice.det L = covolume L ^ 2`, the Gram determin
 integral lattice, where `L ≤ L^∨`, it is the quotient `L^∨ ⧸ L`. By the second isomorphism theorem,
 the inclusion `L^∨ ↪ L ⊔ L^∨` identifies `DiscriminantGroup L` with `(L ⊔ L^∨) ⧸ L`
 (`ZLattice.discriminantGroupEquivQuotientSup`), so whenever `DiscriminantGroup L` is finite the sum
-lattice `L ⊔ L^∨` is discrete if and only if `L` is (`ZLattice.discreteTopology_sup_dual_iff`). For
+lattice `L ⊔ L^∨` is discrete if and only if `L` is (`ZLattice.discreteTopology_sup_dual_iff`) and
+the dual lattice `L^∨` is discrete (`ZLattice.instDiscreteTopologyDualOfFinite`). For
 an integral lattice the discriminant group is finite of order `det L = [L^∨ : L]`
 (`ZLattice.IsIntegral.det_eq_card_discriminantGroup`); in particular `det L` is then a positive
 integer. Without integrality the discriminant group may be infinite — for `c ℤ ⊆ ℝ` with `c²`
@@ -69,6 +70,8 @@ diagonal (`Matrix.IsSymm.neg_one_pow_mul_det_modEq_zero_or_one`).
   is not integral.
 * `ZLattice.discreteTopology_sup_dual_iff`: when `DiscriminantGroup L` is finite, `L ⊔ L^∨` is
   discrete if and only if `L` is.
+* `ZLattice.instDiscreteTopologyDualOfFinite`: when `DiscriminantGroup L` is finite, `L^∨` is
+  discrete.
 * `ZLattice.card_discriminantGroup_comap`: the order of the discriminant group is invariant under
   linear isometry equivalences.
 * `ZLattice.IsIntegral.det_eq_card_discriminantGroup`: for integral `L`, `det L = |L^∨ ⧸ L|`.
@@ -202,6 +205,22 @@ theorem discreteTopology_sup_dual_iff [Finite (DiscriminantGroup L)] :
   exact (AddSubgroup.discreteTopology_iff_of_isFiniteRelIndex
     (toAddSubgroup_mono (le_sup_left : L ≤ L ⊔ dual L))).symm
 
+/-- When the discriminant group of `L` is finite, `L ⊓ L^∨` is an integral lattice of finite index
+in `L^∨`, so `L^∨` is discrete. -/
+instance instDiscreteTopologyDualOfFinite [Finite (DiscriminantGroup L)] :
+    DiscreteTopology (dual L) := by
+  have hd_inf : DiscreteTopology ↥(L ⊓ dual L) :=
+    (isIntegral_iff_le_dual.mpr (inf_le_right.trans (dual_anti inf_le_left))).discreteTopology
+  have : (L ⊓ dual L).toAddSubgroup.IsFiniteRelIndex (dual L).toAddSubgroup :=
+    ⟨by
+      -- `(L ⊓ dual L).toAddSubgroup` and `L.toAddSubgroup ⊓ (dual L).toAddSubgroup` have the same
+      -- carrier.
+      change (L.toAddSubgroup ⊓ (dual L).toAddSubgroup).relIndex (dual L).toAddSubgroup ≠ 0
+      rw [AddSubgroup.inf_relIndex_right, ← card_discriminantGroup]
+      exact Nat.card_pos.ne'⟩
+  exact (AddSubgroup.discreteTopology_iff_of_isFiniteRelIndex
+    (toAddSubgroup_mono (inf_le_right : L ⊓ dual L ≤ dual L))).mp hd_inf
+
 /-- When `L` is discrete and its discriminant group is finite, the sum lattice `L ⊔ L^∨` is
 discrete. -/
 instance instDiscreteTopologySupDual [DiscreteTopology L] [Finite (DiscriminantGroup L)] :
@@ -311,7 +330,7 @@ theorem rank_discriminantGroup_le : AddGroup.rank (DiscriminantGroup L) ≤ finr
   calc AddGroup.rank (DiscriminantGroup L)
       ≤ AddGroup.rank (dual L) := AddGroup.rank_le_of_surjective
         (Submodule.mkQ (L.submoduleOf (dual L))).toAddMonoidHom (Submodule.mkQ_surjective _)
-    _ ≤ finrank ℤ (dual L) := AddGroup.rank_le_finrank (dual L)
+    _ ≤ finrank ℤ (dual L) := (AddGroup.rank_eq_finrank (dual L)).le
     _ = finrank ℝ E := ZLattice.rank ℝ (dual L)
 
 end FiniteDimensional

@@ -9,6 +9,8 @@ public import Mathlib.AlgebraicTopology.SimplicialObject.Basic
 public import Mathlib.Topology.Compactness.CompactlyGeneratedSpace
 public import Mathlib.Topology.Compactness.Lindelof
 public import TauCeti.AlgebraicTopology.FatRealization
+import TauCeti.Topology.Compactness.Lindelof
+import TauCeti.Topology.Convenient.CompactlyGenerated
 
 /-!
 # Geometric realization of a simplicial space
@@ -90,11 +92,23 @@ theorem continuous_iff {Z : Type*} [TopologicalSpace Z] {g : X.geometricRealizat
     (H : ∀ n x t, g (ι X n (x, t)) = h (ι X n (x, t))) : g = h := by
   ext p; obtain ⟨n, x, t, rfl⟩ := ι_jointly_surjective X p; exact H n x t
 
-instance [∀ n : ℕ, LindelofSpace (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌)] :
-    LindelofSpace X.geometricRealization := Quot.lindelofSpace
+/-- Taking the product on the right with a topological simplex preserves `v`-compact generation. -/
+instance instUCompactlyGeneratedSpaceProdToTop {Y : Type*} [TopologicalSpace Y]
+    [UCompactlyGeneratedSpace.{v} Y] (d : SimplexCategory) :
+    UCompactlyGeneratedSpace.{v} (Y × toTop.{u}.obj d) :=
+  UCompactlyGeneratedSpace.prod_right
 
-instance [∀ n : ℕ, UCompactlyGeneratedSpace.{v} (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌)] :
+instance [∀ n : ℕ, LindelofSpace (X _⦋n⦌)] : LindelofSpace X.geometricRealization :=
+  have : ∀ n : ℕ, LindelofSpace (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌) := fun _ ↦ inferInstance
+  Quot.lindelofSpace
+
+/-- For any fixed test-space universe `v`, if each level `X _⦋n⦌` satisfies
+`UCompactlyGeneratedSpace.{v}`, then `X.geometricRealization` satisfies
+`UCompactlyGeneratedSpace.{v}` in its colimit topology. -/
+instance instUCompactlyGeneratedSpace [∀ n : ℕ, UCompactlyGeneratedSpace.{v} (X _⦋n⦌)] :
     UCompactlyGeneratedSpace.{v} X.geometricRealization :=
+  have : ∀ n : ℕ, UCompactlyGeneratedSpace.{v} (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌) :=
+    fun _ ↦ inferInstance
   uCompactlyGeneratedSpace_of_coinduced continuous_quot_mk rfl
 
 section Desc

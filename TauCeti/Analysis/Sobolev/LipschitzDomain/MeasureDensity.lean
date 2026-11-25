@@ -58,6 +58,7 @@ to `R` reduce to the radius `ρ` at the cost of the factor `ρ / R`.
   inside a chart.
 * `Set.IsLipschitzDomain.exists_ball_subset_inter_ball`: the interior corkscrew condition of a
   Lipschitz domain with compact frontier.
+* `Set.IsLipschitzDomain.exists_closedBall_subset_inter_ball`: its form with closed inner balls.
 * `Set.IsLipschitzDomain.exists_pos_mul_measure_ball_le_measure_ball_inter`,
   `Set.IsLipschitzDomain.exists_pos_mul_measure_closedBall_le_measure_closedBall_inter`: the
   measure density property of a Lipschitz domain with compact frontier, for open and closed balls.
@@ -199,6 +200,20 @@ theorem exists_ball_subset_inter_ball (hΩ : Ω.IsLipschitzDomain E)
   calc 1 / 4 / (1 + K) * min 1 (ρ₀ / R) * r = 1 / 4 / (1 + K) * (min 1 (ρ₀ / R) * r) := by ring
     _ ≤ 1 / 4 / (1 + K) * min r ρ₀ := by gcongr
     _ = min r ρ₀ / 4 / (1 + K) := by ring
+
+/-- **The interior corkscrew condition with closed balls.** For a Lipschitz domain `Ω` with compact
+frontier and `R > 0` there is `0 < c ≤ 1` such that for every `x` in the closure of `Ω` and every
+`0 < r ≤ R`, the ball `B(x, r)` contains a closed ball of radius `c r` lying in `Ω`. This is the
+form of `Set.IsLipschitzDomain.exists_ball_subset_inter_ball` that estimates on closed balls
+centred in `Ω` use. -/
+theorem exists_closedBall_subset_inter_ball (hΩ : Ω.IsLipschitzDomain E)
+    (hK : IsCompact (frontier Ω)) {R : ℝ} (hR : 0 < R) :
+    ∃ c > 0, c ≤ 1 ∧ ∀ x ∈ closure Ω, ∀ r : ℝ, 0 < r → r ≤ R →
+      ∃ y, closedBall y (c * r) ⊆ Ω ∩ ball x r := by
+  obtain ⟨δ, hδ, hball⟩ := hΩ.exists_ball_subset_inter_ball hK hR
+  refine ⟨min δ 1 / 2, by positivity, by linarith [min_le_right δ 1], fun x hx r hr hrR ↦ ?_⟩
+  obtain ⟨y, hy⟩ := hball x hx r hr hrR
+  exact ⟨y, (closedBall_subset_ball (by nlinarith [min_le_left δ 1])).trans hy⟩
 
 /-- **The exterior corkscrew condition.** For a Lipschitz domain `Ω` with compact frontier, for
 instance a bounded Lipschitz domain in a proper space, and `R > 0` there is `δ > 0` such that for
