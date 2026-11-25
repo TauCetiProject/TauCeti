@@ -14,7 +14,9 @@ import TauCeti.Algebra.Category.ModuleCat.End
 import TauCeti.Algebra.Homology.ModuleCat.FlatCycles
 import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Sequence.Left
 import TauCeti.Algebra.Homology.ShortComplex.Splitting
+import TauCeti.AlgebraicTopology.Singular.Empty
 import TauCeti.AlgebraicTopology.Singular.Point
+import TauCeti.AlgebraicTopology.Singular.Reduced
 import TauCeti.CategoryTheory.GradedObject
 import TauCeti.CategoryTheory.Monoidal.Tor.Basic
 

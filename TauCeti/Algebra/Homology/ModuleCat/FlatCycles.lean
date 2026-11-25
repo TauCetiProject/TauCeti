@@ -183,35 +183,22 @@ theorem flat_cycles_iff_flat_cokernel_iCycles_of_flat_homology {ι : Type*} {c :
     (K : HomologicalComplex (ModuleCat.{v} R) c) (i j : ι) (hij : c.Rel i j)
     [Module.Flat R (K.homology j)] :
     Module.Flat R (K.cycles j) ↔ Module.Flat R (cokernel (K.iCycles i) : ModuleCat.{v} R) := by
-  let S := ShortComplex.mk (K.cyclesComplexShortComplex_shortExact.δ i j hij)
-    (homologyMap K.cyclesComplexShortComplex.f j)
-    (K.cyclesComplexShortComplex_shortExact.δ_comp i j hij)
-  have hS : S.ShortExact :=
-    { exact := K.cyclesComplexShortComplex_shortExact.homology_exact₁ i j hij
-      mono_f := K.mono_δ_cyclesComplexShortComplex hij
-      epi_g := inferInstance }
-  let e₁ : (cokernel (K.iCycles i) : ModuleCat.{v} R) ≅ S.X₁ :=
-    eqToIso (by simp) ≪≫
-      K.cyclesComplexShortComplex.X₃.XIsoHomologyOfDEqZero i (by simp) (by simp)
-  let e₂ : K.cycles j ≅ S.X₂ :=
-    eqToIso (by simp) ≪≫
-      K.cyclesComplexShortComplex.X₁.XIsoHomologyOfDEqZero j (by simp) (by simp)
-  have : Module.Flat R S.X₃ :=
-    Module.Flat.of_linearEquiv
-      (eqToIso (congrArg (·.homology j) K.cyclesComplexShortComplex_X₂)).toLinearEquiv
+  have hS := K.homologyPresentation_shortExact i j hij
   refine ⟨fun _ ↦ ?_, fun _ ↦ ?_⟩
-  · have : Module.Flat R S.X₂ := Module.Flat.of_linearEquiv e₂.symm.toLinearEquiv
-    have : Module.Flat R S.X₁ :=
+  · have : Module.Flat R (K.homologyPresentation i j hij).X₂ :=
+      Module.Flat.of_linearEquiv (K.homologyPresentationX₂Iso i j hij).toLinearEquiv
+    have : Module.Flat R (K.homologyPresentation i j hij).X₁ :=
       Function.Exact.flat_left_of_injective_of_surjective
         ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hS.exact)
         hS.moduleCat_injective_f hS.moduleCat_surjective_g
-    exact Module.Flat.of_linearEquiv e₁.toLinearEquiv
-  · have : Module.Flat R S.X₁ := Module.Flat.of_linearEquiv e₁.symm.toLinearEquiv
-    have : Module.Flat R S.X₂ :=
+    exact Module.Flat.of_linearEquiv (K.homologyPresentationX₁Iso i j hij).symm.toLinearEquiv
+  · have : Module.Flat R (K.homologyPresentation i j hij).X₁ :=
+      Module.Flat.of_linearEquiv (K.homologyPresentationX₁Iso i j hij).toLinearEquiv
+    have : Module.Flat R (K.homologyPresentation i j hij).X₂ :=
       Function.Exact.flat_of_injective_of_surjective
         ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hS.exact)
         hS.moduleCat_injective_f hS.moduleCat_surjective_g
-    exact Module.Flat.of_linearEquiv e₂.toLinearEquiv
+    exact Module.Flat.of_linearEquiv (K.homologyPresentationX₂Iso i j hij).symm.toLinearEquiv
 
 end HomologicalComplex
 

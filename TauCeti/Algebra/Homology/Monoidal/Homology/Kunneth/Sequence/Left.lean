@@ -122,21 +122,22 @@ indexed by `(p, q)`. -/
 private def tensorShortComplexLeft : ShortComplex (GradedObject (I × I) (ModuleCat.{u} R)) :=
   ShortComplex.mk
     (((GradedObject.mapBifunctor (curriedTensor _) I I).map
-      (fun p ↦ (K.homologyPresentation p).f)).app (fun q ↦ L.homology q))
+      (fun p ↦ (K.homologyPresentation (p + 1) p (by simp)).f)).app (fun q ↦ L.homology q))
     (((GradedObject.mapBifunctor (curriedTensor _) I I).map
-      (fun p ↦ (K.homologyPresentation p).g)).app (fun q ↦ L.homology q))
+      (fun p ↦ (K.homologyPresentation (p + 1) p (by simp)).g)).app (fun q ↦ L.homology q))
     (funext fun x ↦ by
       dsimp
-      rw [← comp_whiskerRight, (K.homologyPresentation x.1).zero,
+      rw [← comp_whiskerRight, (K.homologyPresentation (x.1 + 1) x.1 (by simp)).zero,
         MonoidalPreadditive.zero_whiskerRight])
 
 private lemma tensorShortComplexLeft_exact (x : I × I) :
     (ShortComplex.mk ((tensorShortComplexLeft K L).f x) ((tensorShortComplexLeft K L).g x)
       (congr_fun (tensorShortComplexLeft K L).zero x)).Exact :=
   have := CategoryWithHomology.hasHomology
-    ((K.homologyPresentation x.1).map (tensorRight (L.homology x.2)))
-  (K.homologyPresentation_shortExact x.1).exact.map_of_epi_of_preservesCokernel
-    (tensorRight (L.homology x.2)) (K.homologyPresentation_shortExact x.1).epi_g inferInstance
+    ((K.homologyPresentation (x.1 + 1) x.1 rfl).map (tensorRight (L.homology x.2)))
+  (K.homologyPresentation_shortExact (x.1 + 1) x.1 rfl).exact.map_of_epi_of_preservesCokernel
+    (tensorRight (L.homology x.2))
+    (K.homologyPresentation_shortExact (x.1 + 1) x.1 rfl).epi_g inferInstance
 
 variable [∀ p, Projective (cokernel (K.iCycles p))] [∀ p, Projective (K.cycles p)]
 
@@ -145,18 +146,19 @@ with the kernel of `H_{p+1}(K / Z(K)) ⊗ H_q(L) ⟶ Hₚ(Z(K)) ⊗ H_q(L)` thro
 presentation `HomologicalComplex.homologyPresentation`. -/
 private def torιLeft (x : I × I) :
     ((Tor' (ModuleCat.{u} R) 1).obj (K.homology x.1)).obj (L.homology x.2) ⟶
-      (K.homologyPresentation x.1).X₁ ⊗ L.homology x.2 :=
-  ((K.homologyPresentation_shortExact x.1).tor'OneIsoKernel (L.homology x.2)).hom ≫ kernel.ι _
+      (K.homologyPresentation (x.1 + 1) x.1 (by simp)).X₁ ⊗ L.homology x.2 :=
+  ((K.homologyPresentation_shortExact (x.1 + 1) x.1 (by simp)).tor'OneIsoKernel
+    (L.homology x.2)).hom ≫ kernel.ι _
 
 private lemma torιLeft_comp (x : I × I) :
-    torιLeft K L x ≫ ((K.homologyPresentation x.1).f ▷ L.homology x.2) = 0 := by
+    torιLeft K L x ≫ ((K.homologyPresentation (x.1 + 1) x.1 (by simp)).f ▷ L.homology x.2) = 0 := by
   simp [torιLeft]
 
 /-- The inclusions `torιLeft`, as a morphism of graded objects indexed by `(p, q)`. -/
 private def torGradedιLeft : ((GradedObject.mapBifunctor (Tor' (ModuleCat.{u} R) 1) I I).obj
       (fun p ↦ K.homology p)).obj (fun q ↦ L.homology q) ⟶
     ((GradedObject.mapBifunctor (curriedTensor (ModuleCat.{u} R)) I I).obj
-      (fun p ↦ (K.homologyPresentation p).X₁)).obj (fun q ↦ L.homology q) :=
+      (fun p ↦ (K.homologyPresentation (p + 1) p (by simp)).X₁)).obj (fun q ↦ L.homology q) :=
   fun x ↦ torιLeft K L x
 
 /-- The graded short complex
@@ -169,10 +171,12 @@ private lemma torShortComplexLeft_exact (x : I × I) :
     (ShortComplex.mk ((torShortComplexLeft K L).f x) ((torShortComplexLeft K L).g x)
       (congr_fun (torShortComplexLeft K L).zero x)).Exact := by
   refine (ShortComplex.exact_iff_of_iso (ShortComplex.isoMk
-    (S₁ := ShortComplex.mk _ _ (kernel.condition ((K.homologyPresentation x.1).f ▷ L.homology x.2)))
+    (S₁ := ShortComplex.mk _ _
+      (kernel.condition ((K.homologyPresentation (x.1 + 1) x.1 (by simp)).f ▷ L.homology x.2)))
     (S₂ := ShortComplex.mk ((torShortComplexLeft K L).f x) ((torShortComplexLeft K L).g x)
       (congr_fun (torShortComplexLeft K L).zero x))
-    ((K.homologyPresentation_shortExact x.1).tor'OneIsoKernel (L.homology x.2)).symm (Iso.refl _)
+    ((K.homologyPresentation_shortExact (x.1 + 1) x.1 (by simp)).tor'OneIsoKernel
+      (L.homology x.2)).symm (Iso.refl _)
     (Iso.refl _) ?_ ?_)).1 (ShortComplex.exact_kernel _)
   · exact (Iso.inv_hom_id_assoc _ _).trans (Category.comp_id _).symm
   · exact (Category.id_comp _).trans (Category.comp_id _).symm
@@ -186,13 +190,13 @@ variable [AddRightCancelMonoid I] [One I] [Small.{u} I] (K L : ChainComplex (Mod
 /-- The map `⨁ H_{p+1}(K / Z(K)) ⊗ H_q(L) ⟶ ⨁ Hₚ(Z(K)) ⊗ H_q(L)` of degree `m` induced by the
 connecting morphisms of `0 ⟶ Z(K) ⟶ K ⟶ K / Z(K) ⟶ 0`. -/
 private abbrev tensorδLeft (m : I) :=
-  GradedObject.Monoidal.tensorHom (fun p ↦ (K.homologyPresentation p).f)
+  GradedObject.Monoidal.tensorHom (fun p ↦ (K.homologyPresentation (p + 1) p (by simp)).f)
     (𝟙 (fun q ↦ L.homology q)) m
 
 /-- The map `⨁ Hₚ(Z(K)) ⊗ H_q(L) ⟶ ⨁ Hₚ(K) ⊗ H_q(L)` of degree `m` induced by the inclusion of
 the cycles. -/
 private abbrev tensorπLeft (m : I) :=
-  GradedObject.Monoidal.tensorHom (fun p ↦ (K.homologyPresentation p).g)
+  GradedObject.Monoidal.tensorHom (fun p ↦ (K.homologyPresentation (p + 1) p (by simp)).g)
     (𝟙 (fun q ↦ L.homology q)) m
 
 private lemma tensorδLeft_comp_tensorπLeft (m : I) :
@@ -216,11 +220,12 @@ private lemma tensorπLeft_exact (m : I) :
 private instance (m : I) : Epi (tensorπLeft K L m) := by
   rw [tensorπLeft, GradedObject.Monoidal.tensorHom_id_eq_mapMap]
   have (x : I × I) : Epi ((((GradedObject.mapBifunctor (curriedTensor _) I I).map
-      (fun p ↦ (K.homologyPresentation p).g)).app (fun q ↦ L.homology q)) x) := by
+      (fun p ↦ (K.homologyPresentation (p + 1) p rfl).g)).app
+        (fun q ↦ L.homology q)) x) := by
     have : (tensorRight (L.homology x.2)).PreservesEpimorphisms :=
       Functor.preservesEpimorphisms_of_isLeftAdjoint _
-    have := (K.homologyPresentation_shortExact x.1).epi_g
-    exact (tensorRight (L.homology x.2)).map_epi (K.homologyPresentation x.1).g
+    have := (K.homologyPresentation_shortExact (x.1 + 1) x.1 rfl).epi_g
+    exact (tensorRight (L.homology x.2)).map_epi (K.homologyPresentation (x.1 + 1) x.1 rfl).g
   exact GradedObject.epi_mapMap _ _ m
 
 variable [∀ p, Projective (cokernel (K.iCycles p))] [∀ p, Projective (K.cycles p)]
@@ -255,7 +260,8 @@ private lemma torToTensorLeft_exact (m : I) :
 
 private instance (m : I) : Mono (torToTensorLeft K L m) := by
   have (x : I × I) : Mono (torGradedιLeft K L x) := mono_comp
-    ((K.homologyPresentation_shortExact x.1).tor'OneIsoKernel (L.homology x.2)).hom (kernel.ι _)
+    ((K.homologyPresentation_shortExact (x.1 + 1) x.1 (by simp)).tor'OneIsoKernel
+      (L.homology x.2)).hom (kernel.ι _)
   exact GradedObject.mono_mapMap _ _ m
 
 /-- `⨁ Tor'₁(Hₚ(K), H_q(L))` is the kernel of `tensorδLeft`, as a limit. -/
@@ -466,9 +472,10 @@ theorem isIso_homologyKunneth_of_flat_homology_left
   suffices Epi (homologyKunneth K L n) from isIso_of_mono_of_epi _
   by_cases hn : ∃ m, m + 1 = n
   · obtain ⟨m, rfl⟩ := hn
-    have (p q : I) : Mono ((K.homologyPresentation p).f ⊗ₘ 𝟙 (L.homology q)) := by
+    have (p q : I) : Mono ((K.homologyPresentation (p + 1) p (by simp)).f ⊗ₘ 𝟙 (L.homology q)) := by
       rw [tensorHom_id]
-      exact ((K.homologyPresentation_shortExact p).map_tensorRight_of_flat (L.homology q)).mono_f
+      exact ((K.homologyPresentation_shortExact (p + 1) p (by simp)).map_tensorRight_of_flat
+        (L.homology q)).mono_f
     have : Mono (tensorδLeft K L m) := GradedObject.Monoidal.mono_tensorHom _ _ m
     have hzero : toTensorQuotientLeft K L m = 0 :=
       (cancel_mono (tensorδLeft K L m)).1 (by rw [toTensorQuotientLeft_comp_tensorδLeft, zero_comp])
