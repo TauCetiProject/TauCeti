@@ -7,7 +7,13 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Variational.Sequence
 public import TauCeti.Analysis.PDE.Spectrum.MinMax
+public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
 public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
+import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
+import TauCeti.Analysis.Sobolev.W1p.AddHaar
+import TauCeti.Analysis.Sobolev.W1p.LocalCompactness
+import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # Mixed and Neumann eigenvalues
@@ -54,8 +60,11 @@ eigenvalue `TauCeti.PDE.dirichletEigenvalue` (`TauCeti.PDE.mixedEigenvalue_front
 `λₖ(Γ) ≤ λₖ(Γ')` for `Γ ⊆ Γ'` (`TauCeti.PDE.mixedEigenvalue_le_of_subset`).
 
 For `-Δ`, whose energy form is `∫_Ω ∇u · ∇v`, all hypotheses except the Rellich property hold
-outright, and the mixed eigenvalues of `-Δ` are nonnegative
-(`TauCeti.PDE.mixedEigenvalue_laplacian_spectrum`).
+outright, and the Rellich property holds on every bounded Lipschitz domain of `ℝⁿ`: a boundary
+chart carries it to a Lipschitz domain of the model space `ℝ × E`, where it is
+`TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith`. So on a nonempty bounded
+Lipschitz domain the mixed eigenvalues of `-Δ` are nonnegative and the eigenbasis and min–max
+hold outright (`TauCeti.PDE.mixedEigenvalue_laplacian_spectrum`).
 
 ## Main declarations
 
@@ -95,7 +104,7 @@ namespace TauCeti
 namespace PDE
 
 open Bornology Filter MeasureTheory Set TopologicalSpace
-open scoped InnerProductSpace
+open scoped ENNReal InnerProductSpace NNReal
 
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
   {Omega : Opens (EuclideanSpace ℝ ι)} {Γ Γ' : Set (EuclideanSpace ℝ ι)}
@@ -523,6 +532,87 @@ theorem mixedEigenvalue_le_of_subset [Nonempty ι] (hΓΓ' : Γ ⊆ Γ')
       (fun v ↦ hnonneg (i v)) htheta (fun v ↦ hgarding (i v)) hOmega_nonempty k).nonempty
     fun _ hC ↦ mem_setOf_mixedEigenvalue_of_subset hΓΓ' hC
 
+/-! ### Rellich compactness on bounded Lipschitz domains -/
+
+section Rellich
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- Rellich compactness passes along a rigid change of coordinates: for an affine isometry `g`
+with `U = g⁻¹(V)`, if the value map `W^{1,p}(V) → Lᵖ(V)` is compact, so is
+`W^{1,p}(U) → Lᵖ(U)`, since the value of `u` is the value of `u ∘ g⁻¹` composed with `g`. -/
+private theorem isCompactOperator_valueL_of_affineIsometryEquiv {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] [MeasurableSpace F]
+    [BorelSpace F] {V : Opens F} (g : EuclideanSpace ℝ ι ≃ᵃⁱ[ℝ] F)
+    (hUV : (Omega : Set (EuclideanSpace ℝ ι)) = g ⁻¹' V)
+    (hK : IsCompactOperator (W1p.valueL (mu := volume) (Omega := V) (p := p))) :
+    IsCompactOperator (W1p.valueL (mu := volume) (Omega := Omega) (p := p)) := by
+  have hVU : (V : Set F) = g.symm ⁻¹' Omega :=
+    hUV ▸ (g.toHomeomorph.toEquiv.symm_preimage_preimage V).symm
+  have hmp : MeasurePreserving g (volume.restrict (Omega : Set (EuclideanSpace ℝ ι)))
+      (volume.restrict (V : Set F)) :=
+    hUV ▸ g.measurePreserving.restrict_preimage V.isOpen.measurableSet
+  let C : Lp ℝ p (volume.restrict (V : Set F)) →L[ℝ]
+      Lp ℝ p (volume.restrict (Omega : Set (EuclideanSpace ℝ ι))) :=
+    (Lp.compMeasurePreservingₗᵢ ℝ g hmp).toContinuousLinearMap
+  convert (hK.clm_comp C).comp_clm (W1p.compAffineIsometryEquivL g.symm hVU) using 1
+  ext1 u
+  refine Lp.ext ?_
+  have hv := hmp.quasiMeasurePreserving.ae_eq_comp
+    (W1p.value_compAffineIsometryEquivL_ae g.symm hVU u)
+  filter_upwards [Lp.coeFn_compMeasurePreserving
+    (W1p.value (W1p.compAffineIsometryEquivL g.symm hVU u)) hmp, hv] with x h1 h2
+  simp only [Function.comp_apply, W1p.valueL_apply, C, LinearIsometry.coe_toContinuousLinearMap,
+    Lp.compMeasurePreservingₗᵢ_apply] at h1 h2 ⊢
+  rw [h1, h2, AffineIsometryEquiv.symm_apply_apply]
+
+/-- **Rellich–Kondrachov on bounded Lipschitz domains of `ℝⁿ`.** On a bounded Lipschitz domain
+`Ω ⊆ ℝⁿ`, modelled on `ℝ × E`, the value map `W^{1,p}(Ω) → Lᵖ(Ω)` is compact for every additive
+Haar measure and every `1 ≤ p ≤ ∞`. A boundary chart carries `Ω` onto a Lipschitz domain of the
+model space, where this is `TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith`; the
+change of Haar measure is `TauCeti.W1p.addHaarEquivL`. When the frontier is empty, `closure Ω ⊆ Ω`
+is compact and local Rellich compactness applies. -/
+private theorem isCompactOperator_valueL_of_isLipschitzDomain {E : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
+    [BorelSpace E] (hΩ : (Omega : Set (EuclideanSpace ℝ ι)).IsLipschitzDomain E)
+    (hb : IsBounded (Omega : Set (EuclideanSpace ℝ ι))) :
+    IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := p)) := by
+  have hvol : IsCompactOperator (W1p.valueL (mu := volume) (Omega := Omega) (p := p)) := by
+    rcases (frontier (Omega : Set (EuclideanSpace ℝ ι))).eq_empty_or_nonempty with hfr | hne
+    · have hcl : closure (Omega : Set (EuclideanSpace ℝ ι)) ⊆ Omega :=
+        (isClopen_iff_frontier_eq_empty.mpr hfr).isClosed.closure_subset
+      convert W1p.isCompactOperator_valueL_restrictL (mu := volume) (p := p)
+        hb.isCompact_closure hcl using 1
+      ext1 u
+      simp
+    · obtain ⟨g, L, hL⟩ := hΩ.exists_isLipschitzDomainWith_image hb hne
+      let V : Opens (WithLp 2 (ℝ × E)) :=
+        ⟨g '' Omega, ((Set.isLipschitzDomainWith_iff _ _).1 hL).1⟩
+      exact isCompactOperator_valueL_of_affineIsometryEquiv (V := V) g
+        (g.toHomeomorph.toEquiv.preimage_image _).symm
+        (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith hL
+          (g.lipschitzWith.isBounded_image hb))
+  have hle : mu.restrict (Omega : Set (EuclideanSpace ℝ ι)) ≤
+      (mu.addHaarScalarFactor volume : ℝ≥0∞) • volume.restrict Omega := by
+    conv_lhs => rw [Measure.isAddLeftInvariant_eq_smul mu volume]
+    rw [Measure.restrict_smul]
+    exact le_rfl
+  let C : Lp ℝ p (volume.restrict (Omega : Set (EuclideanSpace ℝ ι))) →L[ℝ]
+      Lp ℝ p (mu.restrict (Omega : Set (EuclideanSpace ℝ ι))) :=
+    Lp.LpToLpOfMeasureLeSMul ENNReal.coe_ne_top hle
+  convert (hvol.clm_comp C).comp_clm
+    (W1p.addHaarEquivL (Omega := Omega) (p := p) mu volume).toContinuousLinearMap using 1
+  ext1 u
+  refine Lp.ext ?_
+  filter_upwards [Lp.coeFn_LpToLpOfMeasureLeSMul ENNReal.coe_ne_top hle
+    (W1p.value (W1p.addHaarEquivL mu volume u)),
+    ((Measure.absolutelyContinuous_isAddHaarMeasure mu volume).restrict _).ae_le
+      (W1p.value_addHaarEquivL_ae mu volume u)] with x h1 h2
+  simp only [Function.comp_apply, W1p.valueL_apply, C, ContinuousLinearEquiv.coe_coe] at h1 h2 ⊢
+  rw [h1, h2]
+
+end Rellich
+
 /-! ### The mixed eigenvalues of `-Δ` -/
 
 section Laplacian
@@ -547,36 +637,40 @@ private theorem norm_sq_le_energyFormH1_laplacian_add (v : W1p mu Omega 2) :
     W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq]
   linarith
 
-variable [Nonempty ι]
-  (hrellich : IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := 2)))
+variable [Nonempty ι] {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+  (hΩ : (Omega : Set (EuclideanSpace ℝ ι)).IsLipschitzDomain E)
+  (hb : IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
   (hOmega_nonempty : (Omega : Set (EuclideanSpace ℝ ι)).Nonempty)
-include hrellich hOmega_nonempty
+include hΩ hb hOmega_nonempty
 
-/-- **The mixed eigenvalues of `-Δ` grow with the Dirichlet part**: for `Γ ⊆ Γ'`, both missing
-`Ω`, `λₖ(Γ) ≤ λₖ(Γ')` for every `k`. -/
+/-- **The mixed eigenvalues of `-Δ` grow with the Dirichlet part**: on a nonempty bounded
+Lipschitz domain `Ω`, for `Γ ⊆ Γ'`, both missing `Ω`, `λₖ(Γ) ≤ λₖ(Γ')` for every `k`. -/
 theorem mixedEigenvalue_laplacian_le_of_subset (hΓΓ' : Γ ⊆ Γ') (hΓ' : Disjoint Γ' Omega)
     (k : ℕ) :
     mixedEigenvalue mu Omega Γ (fun _ ↦ 1) 0 0 k ≤ mixedEigenvalue mu Omega Γ' (fun _ ↦ 1) 0 0 k :=
-  mixedEigenvalue_le_of_subset hΓΓ' (memLp_energyIntegrand_const_zero_zero 1) hrellich hΓ'
+  mixedEigenvalue_le_of_subset hΓΓ' (memLp_energyIntegrand_const_zero_zero 1)
+    (isCompactOperator_valueL_of_isLipschitzDomain hΩ hb) hΓ'
     (fun _ _ ↦ energyFormH1_laplacian_comm _ _) (fun _ ↦ energyFormH1_laplacian_self_nonneg _)
     one_pos (fun _ ↦ norm_sq_le_energyFormH1_laplacian_add _) hOmega_nonempty k
 
-/-- **The mixed eigenvalues of `-Δ` lie below the Dirichlet ones**: for a boundary part
-`Γ ⊆ ∂Ω`, `λₖ(Γ) ≤ λₖ(∂Ω)`, the `k`-th Dirichlet eigenvalue of `-Δ`. -/
+/-- **The mixed eigenvalues of `-Δ` lie below the Dirichlet ones**: on a nonempty bounded
+Lipschitz domain `Ω` and for a boundary part `Γ ⊆ ∂Ω`, `λₖ(Γ) ≤ λₖ(∂Ω)`, the `k`-th Dirichlet
+eigenvalue of `-Δ`. -/
 theorem mixedEigenvalue_laplacian_le_dirichletEigenvalue
     (hΓ : Γ ⊆ frontier (Omega : Set (EuclideanSpace ℝ ι))) (k : ℕ) :
     mixedEigenvalue mu Omega Γ (fun _ ↦ 1) 0 0 k ≤
       dirichletEigenvalue mu Omega (fun _ ↦ 1) 0 0 k := by
   rw [← mixedEigenvalue_frontier]
-  exact mixedEigenvalue_laplacian_le_of_subset hrellich hOmega_nonempty hΓ
+  exact mixedEigenvalue_laplacian_le_of_subset hΩ hb hOmega_nonempty hΓ
     (disjoint_frontier_iff_isOpen.2 Omega.isOpen) k
 
 variable (hΓ : Disjoint Γ Omega)
 include hΓ
 
-/-- **The mixed eigenbasis of `-Δ`.** On a nonempty open set `Ω` with the Rellich property, for
-instance a nonempty bounded Lipschitz domain, and for `Γ` missing `Ω`, there is an orthonormal
-basis `(eₖ)` of `L²(Ω)` such that `eₖ` is the value of some `uₖ ∈ H¹_Γ(Ω)` with
+/-- **The mixed eigenbasis of `-Δ`.** On a nonempty bounded Lipschitz domain `Ω ⊆ ℝⁿ` and for `Γ`
+missing `Ω`, for instance `Γ ⊆ ∂Ω`, there is an orthonormal basis `(eₖ)` of `L²(Ω)` such that `eₖ`
+is the value of some `uₖ ∈ H¹_Γ(Ω)` with
 `∫_Ω ∇uₖ · ∇v = λₖ ∫_Ω uₖ v` for every `v ∈ H¹_Γ(Ω)`, where `λₖ` is the min–max eigenvalue
 `TauCeti.PDE.mixedEigenvalue`. -/
 theorem exists_hilbertBasis_mixedEigenvalue_laplacian :
@@ -587,7 +681,8 @@ theorem exists_hilbertBasis_mixedEigenvalue_laplacian :
         energyFormH1 (fun _ ↦ 1) 0 0 (u k : W1p mu Omega 2) (v : W1p mu Omega 2) =
           mixedEigenvalue mu Omega Γ (fun _ ↦ 1) 0 0 k *
             ⟪W1p.value (u k : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ :=
-  exists_hilbertBasis_mixedEigenvalue (memLp_energyIntegrand_const_zero_zero 1) hrellich hΓ
+  exists_hilbertBasis_mixedEigenvalue (memLp_energyIntegrand_const_zero_zero 1)
+    (isCompactOperator_valueL_of_isLipschitzDomain hΩ hb) hΓ
     (fun _ _ ↦ energyFormH1_laplacian_comm _ _) (fun _ ↦ energyFormH1_laplacian_self_nonneg _)
     one_pos (fun _ ↦ norm_sq_le_energyFormH1_laplacian_add _) hOmega_nonempty
 
@@ -603,12 +698,13 @@ theorem isLeast_mixedEigenvalue_laplacian (k : ℕ) :
         ∀ v ∈ W, energyFormH1 (fun _ ↦ 1) 0 0 (v : W1p mu Omega 2) (v : W1p mu Omega 2) ≤
           C * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2}
       (mixedEigenvalue mu Omega Γ (fun _ ↦ 1) 0 0 k) :=
-  isLeast_mixedEigenvalue (memLp_energyIntegrand_const_zero_zero 1) hrellich hΓ
+  isLeast_mixedEigenvalue (memLp_energyIntegrand_const_zero_zero 1)
+    (isCompactOperator_valueL_of_isLipschitzDomain hΩ hb) hΓ
     (fun _ _ ↦ energyFormH1_laplacian_comm _ _) (fun _ ↦ energyFormH1_laplacian_self_nonneg _)
     one_pos (fun _ ↦ norm_sq_le_energyFormH1_laplacian_add _) hOmega_nonempty k
 
-/-- **The mixed spectrum of `-Δ`.** On a nonempty open set with the Rellich property and for `Γ`
-missing `Ω`, the mixed eigenvalues of `-Δ` satisfy `0 ≤ λ₀ ≤ λ₁ ≤ ⋯ → ∞`, and a real number is a
+/-- **The mixed spectrum of `-Δ`.** On a nonempty bounded Lipschitz domain and for `Γ` missing
+`Ω`, the mixed eigenvalues of `-Δ` satisfy `0 ≤ λ₀ ≤ λ₁ ≤ ⋯ → ∞`, and a real number is a
 mixed eigenvalue of `-Δ` exactly when it is some `λₖ`. -/
 theorem mixedEigenvalue_laplacian_spectrum :
     0 ≤ mixedEigenvalue mu Omega Γ (fun _ ↦ 1) 0 0 0 ∧
@@ -624,6 +720,7 @@ theorem mixedEigenvalue_laplacian_spectrum :
     energyFormH1_laplacian_self_nonneg (v : W1p mu Omega 2)
   have hgarding (v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) :=
     norm_sq_le_energyFormH1_laplacian_add (v : W1p mu Omega 2)
+  have hrellich := isCompactOperator_valueL_of_isLipschitzDomain (mu := mu) (p := 2) hΩ hb
   refine ⟨?_, monotone_mixedEigenvalue hcoeff hrellich hΓ hsymm hnonneg one_pos hgarding
       hOmega_nonempty,
     tendsto_mixedEigenvalue_atTop hcoeff hrellich hΓ hsymm hnonneg one_pos hgarding
@@ -632,7 +729,7 @@ theorem mixedEigenvalue_laplacian_spectrum :
       hgarding hOmega_nonempty⟩
   -- The first eigenvalue is the energy of a normalized eigenfunction.
   obtain ⟨basis, u, hvalue, heq⟩ :=
-    exists_hilbertBasis_mixedEigenvalue_laplacian hrellich hOmega_nonempty hΓ
+    exists_hilbertBasis_mixedEigenvalue_laplacian (mu := mu) hΩ hb hOmega_nonempty hΓ
   have h := heq 0 (u 0)
   rw [hvalue, real_inner_self_eq_norm_sq, basis.orthonormal.1 0, one_pow, mul_one] at h
   exact h ▸ hnonneg (u 0)
