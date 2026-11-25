@@ -231,7 +231,7 @@ theorem tateTwist_trivial_one :
 
 /-- **The Tate twists of `ℤ_ℓ(1)`**: `ℤ_ℓ(1)(n)` is the line of `χ_ℓ ^ (1 + n)`. -/
 @[simp]
-theorem cyclotomicLine_tateTwist (n : ℤ) :
+theorem tateTwist_cyclotomicLine (n : ℤ) :
     (cyclotomicLine ℓ F).tateTwist ℓ n = ofCharacter (cyclotomicPow ℓ F ℤ_[ℓ] (1 + n)) := by
   rw [← tateTwist_trivial_one, tateTwist_tateTwist, tateTwist_trivial]
 
