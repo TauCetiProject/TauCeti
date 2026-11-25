@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.LocalizedModule.Basic
 public import Mathlib.RingTheory.Regular.IsSMulRegular
+import TauCeti.RingTheory.QuotSMulTop
 
 /-!
 # Regular elements on localization cokernels
@@ -91,14 +92,9 @@ theorem quotSMulTop_map_injective
 `r` is regular on the cokernel of the localization map. -/
 theorem isSMulRegular_quotient_range (hr : IsSMulRegular M r)
     (hS : ∀ s : S, IsSMulRegular (QuotSMulTop r M) (s : R)) :
-    IsSMulRegular (N ⧸ LinearMap.range f) r := by
-  apply (isSMulRegular_quotient_iff_mem_of_smul_mem _ _).mpr
-  intro x hx
-  obtain ⟨m, hm⟩ := hx
-  obtain ⟨y, -, hy⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp
-    (mem_smul_top_of_map_eq_smul S f hS hm)
-  exact ⟨y, (isSMulRegular S f hr) ((f.map_smul r y).symm.trans
-    ((congrArg f hy).trans hm))⟩
+    IsSMulRegular (N ⧸ LinearMap.range f) r :=
+  TauCeti.isSMulRegular_quotient_range_of_injective_quotSMulTop_map (isSMulRegular S f hr)
+    (quotSMulTop_map_injective S f hS)
 
 /-- For a regular pair `(r, s)` on a module, the cokernel of localization away
 from `s` has no `r`-torsion. Regularity here does not require the quotient to be nonzero. -/

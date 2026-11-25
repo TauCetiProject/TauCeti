@@ -15,8 +15,15 @@ A representation is semisimple when every subrepresentation has a complementary 
 (`Representation.IsSemisimpleRepresentation`). This file records two consequences.
 
 A representation that maps injectively and equivariantly into a semisimple one is semisimple
-(`Representation.IntertwiningMap.isSemisimpleRepresentation_of_injective`). This is Mathlib's
-`IsSemisimpleModule.of_injective` for the modules over the group algebra.
+(`Representation.IntertwiningMap.isSemisimpleRepresentation_of_injective`), and so is the image of
+a semisimple representation under a surjective intertwining map
+(`Representation.IntertwiningMap.isSemisimpleRepresentation_of_surjective`). These are Mathlib's
+`IsSemisimpleModule.of_injective` and `IsSemisimpleModule.of_surjective` for the modules over the
+group algebra.
+
+The dual of a finite-dimensional semisimple representation is semisimple
+(`Representation.isSemisimpleRepresentation_dual`): annihilators exchange the subrepresentations
+of `σ` and of `σ.dual` and carry complements to complements.
 
 Every subrepresentation `S` of a semisimple representation has an equivariant projection onto it
 (`Subrepresentation.exists_equivariant_projection`): the first component of the splitting
@@ -26,6 +33,10 @@ Every subrepresentation `S` of a semisimple representation has an equivariant pr
 
 * `Representation.IntertwiningMap.isSemisimpleRepresentation_of_injective`: a representation with
   an injective intertwining map into a semisimple representation is semisimple.
+* `Representation.IntertwiningMap.isSemisimpleRepresentation_of_surjective`: a representation with
+  a surjective intertwining map from a semisimple representation is semisimple.
+* `Representation.isSemisimpleRepresentation_dual`: the dual of a finite-dimensional semisimple
+  representation is semisimple.
 * `Subrepresentation.exists_equivariant_projection`: a subrepresentation of a semisimple
   representation has an equivariant projection onto it.
 -/
@@ -43,6 +54,29 @@ theorem Representation.IntertwiningMap.isSemisimpleRepresentation_of_injective
   have := (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule ρ).mp ‹_›
   exact (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule σ).mpr
     (IsSemisimpleModule.of_injective (equivLinearMapAsModule σ ρ f) hf)
+
+/-- **A quotient of a semisimple representation is semisimple.** If `f : ρ → σ` is a surjective
+intertwining map and `ρ` is semisimple, then `σ` is semisimple. -/
+theorem Representation.IntertwiningMap.isSemisimpleRepresentation_of_surjective
+    {σ : Representation k G V} [ρ.IsSemisimpleRepresentation] (f : ρ.IntertwiningMap σ)
+    (hf : Function.Surjective f) : σ.IsSemisimpleRepresentation := by
+  have := (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule ρ).mp ‹_›
+  exact (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule σ).mpr
+    (IsSemisimpleModule.of_surjective (equivLinearMapAsModule ρ σ f) hf)
+
+/-- **The dual of a finite-dimensional semisimple representation is semisimple.** A
+subrepresentation `S` of `σ.dual` is the annihilator of its coannihilator `S°`, a subrepresentation
+of `σ`; the annihilator of an invariant complement of `S°` is an invariant complement of `S`. -/
+instance Representation.isSemisimpleRepresentation_dual {G : Type*} [Group G]
+    [FiniteDimensional k V] {σ : Representation k G V} [σ.IsSemisimpleRepresentation] :
+    σ.dual.IsSemisimpleRepresentation := by
+  refine ⟨fun S ↦ ?_⟩
+  obtain ⟨C, hC⟩ := exists_isCompl S.dualCoannihilator
+  refine ⟨C.dualAnnihilator, ?_⟩
+  rw [← Subrepresentation.isCompl_toSubmodule, Subrepresentation.toSubmodule_dualAnnihilator]
+  have h := Subspace.isCompl_dualAnnihilator (Subrepresentation.isCompl_toSubmodule.2 hC)
+  rwa [Subrepresentation.toSubmodule_dualCoannihilator,
+    Subspace.dualCoannihilator_dualAnnihilator_eq] at h
 
 namespace Subrepresentation
 

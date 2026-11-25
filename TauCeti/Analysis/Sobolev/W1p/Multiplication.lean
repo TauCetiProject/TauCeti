@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Leibniz
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.W1p.ChainRule
 

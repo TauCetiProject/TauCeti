@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicGeometry.Sites.SheafQuasiCompact
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Basic
 public import TauCeti.AlgebraicGeometry.Sites.Big.FaithfullyFlat
 public import TauCeti.AlgebraicGeometry.Sites.Big.Zariski
-public import TauCeti.CategoryTheory.Sites.Over
+public import TauCeti.CategoryTheory.Sites.Over.Basic
 
 /-!
 # The big fpqc sheaf of a quasi-coherent module

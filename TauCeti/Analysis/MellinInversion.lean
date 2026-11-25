@@ -13,7 +13,7 @@ import Mathlib.Analysis.Fourier.RiemannLebesgueLemma
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.Polynomial.Basic
 import Mathlib.Topology.Algebra.Polynomial
-import TauCeti.Analysis.Contour.Residue.Rectangle
+import TauCeti.Analysis.Contour.Residue.VerticalLineShift
 import TauCeti.Analysis.Complex.NormSq
 import TauCeti.Analysis.MellinTransform
 import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
@@ -31,7 +31,7 @@ most `(y^{-σ} / 2π) ∫ ‖f(σ + i t)‖ dt`.
 When `f : ℂ → ℂ` is meromorphic in a strip `σ₀ ≤ Re z ≤ σ₁` with finitely many poles `S` inside the
 open strip `σ₀ < Re z < σ₁`, integrable on both boundary lines, and decays on horizontal segments at
 heights `±T`, applying
-`TauCeti.Contour.integral_add_mul_I_sub_integral_add_mul_I_eq_two_pi_mul_sum_residue`
+`TauCeti.Contour.integral_vertical_sub_eq_two_pi_mul_sum_residue`
 to `z ↦ x^{-z} f(z)` shifts the Mellin inversion contour across `S`:
 
 `mellinInv σ₁ f x = mellinInv σ₀ f x + ∑_{s ∈ S} Res_s (z ↦ x^{-z} f(z))`.
@@ -170,13 +170,20 @@ theorem mellinInv_sub_mellinInv_eq_sum_residue
   have hx_slit : (x : ℂ) ∈ slitPlane := ofReal_mem_slitPlane.mpr hx
   have hcpow (z : ℂ) : AnalyticAt ℂ (fun w : ℂ ↦ (x : ℂ) ^ (-w)) z :=
     analyticAt_const.cpow (by fun_prop) hx_slit
-  have hshift := Contour.integral_add_mul_I_sub_integral_add_mul_I_eq_two_pi_mul_sum_residue
-    (f := fun z ↦ (x : ℂ) ^ (-z) * f z) hσ
-    (fun z hz hzS ↦ (hcpow z).mul (hf z hz hzS))
-    (fun s hs ↦ (hcpow s).meromorphicAt.mul (hmero s hs)) hS
-    (by simpa only [VerticalIntegrable, smul_eq_mul] using hint₀.integrable_cpow_smul hx)
-    (by simpa only [VerticalIntegrable, smul_eq_mul] using hint₁.integrable_cpow_smul hx)
-    hbot htop
+  have hbot' : Tendsto
+      (fun T : ℝ ↦ ∫ u : ℝ in σ₀..σ₁, (x : ℂ) ^ (-((u : ℂ) + T * I)) * f (u + T * I))
+      atBot (𝓝 0) := by
+    simpa only [Function.comp_def, ofReal_neg, neg_mul, sub_neg_eq_add] using
+      hbot.comp tendsto_neg_atBot_atTop
+  have hshift := Contour.integral_vertical_sub_eq_two_pi_mul_sum_residue
+    (fun z ↦ (x : ℂ) ^ (-z) * f z) hσ S hS
+    (fun z hz ↦ ((hcpow z).mul (hf z hz.1 hz.2)).continuousAt.continuousWithinAt)
+    (fun z hz ↦ ((hcpow z).mul
+      (hf z (Ioo_subset_Icc_self hz.1) hz.2)).differentiableAt.differentiableWithinAt)
+    (fun s hs ↦ (hcpow s).meromorphicAt.mul (hmero s hs))
+    (by simpa only [smul_eq_mul] using hint₁.integrable_cpow_smul hx)
+    (by simpa only [smul_eq_mul] using hint₀.integrable_cpow_smul hx)
+    htop hbot'
   rw [mellinInv, mellinInv, ← smul_sub, real_smul]
   simp only [smul_eq_mul, hshift]
   push_cast

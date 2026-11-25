@@ -7,8 +7,10 @@ module
 
 public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.Data.Nat.Totient
+public import Mathlib.RingTheory.Coprime.Basic
 public import TauCeti.Data.Nat.Factorization.MulDvd
 import Mathlib.FieldTheory.Finite.Basic
+import TauCeti.Algebra.Group.Coprime
 
 /-!
 # Orders of elements and cardinalities
@@ -53,6 +55,10 @@ the least positive power of `g` lying in `K`; otherwise `d = 0` and `g ^ d = 1`.
 
 * `IsOfFinOrder.dvd_orderOf_pow_iff`, and its additive counterpart: divisibility of the order of
   a power as non-divisibility of its exponent by a prime power at each prime of `f`.
+* `IsConj.orderOf_eq`, and its additive counterpart: conjugate elements of a monoid have the same
+  order.
+* `IsCoprime.orderOf_zpow`, and its additive counterpart: an integer exponent coprime to the order
+  of `x` preserves it.
 * `QuotientGroup.orderOf_mk_dvd_iff_pow_mem`, and its additive counterpart: the order of the
   image of `g` in a quotient `G ⧸ K` divides `n` exactly when `g ^ n ∈ K`.
 * `Subgroup.mem_of_pow_mem_of_coprime_index`, and its additive counterpart: a normal subgroup
@@ -128,6 +134,34 @@ theorem dvd_orderOf_pow_iff {g : G} (hg : IsOfFinOrder g) {f : ℕ}
     (Nat.dvd_of_mem_primeFactors hp).trans hf]
 
 end IsOfFinOrder
+
+/-- Conjugate elements of a monoid have the same order. -/
+@[to_additive /-- Additively conjugate elements of an additive monoid have the same additive
+order. -/]
+theorem IsConj.orderOf_eq {G : Type*} [Monoid G] {a b : G} (h : IsConj a b) :
+    orderOf a = orderOf b :=
+  orderOf_eq_orderOf_iff.2 fun n ↦ by
+    rw [← isConj_one_right, ← isConj_one_right (a := b ^ n)]
+    exact ⟨fun h' ↦ h'.trans (h.pow n), fun h' ↦ h'.trans (h.pow n).symm⟩
+
+/-- An integer exponent coprime to the order of `x` preserves it. This is Mathlib's
+`Nat.Coprime.orderOf_pow` for integer exponents. -/
+@[to_additive /-- An integer coefficient coprime to the additive order of `x` preserves it. This
+is Mathlib's `Nat.Coprime.addOrderOf_nsmul` for integer coefficients. -/]
+theorem IsCoprime.orderOf_zpow {G : Type*} [Group G] {x : G} {u : ℤ}
+    (h : IsCoprime u (orderOf x)) : orderOf (x ^ u) = orderOf x := by
+  rw [← orderOf_pow_natAbs]
+  exact Nat.Coprime.orderOf_pow (Nat.Coprime.symm (Int.isCoprime_iff_gcd_eq_one.mp h))
+
+/-- Raising to an integer power coprime to `N` is injective on the elements whose order divides
+`N`. -/
+@[to_additive /-- Scaling by an integer coprime to `N` is injective on the elements whose additive
+order divides `N`. -/]
+theorem IsCoprime.injOn_zpow_of_orderOf_dvd {G : Type*} [Group G] {u : ℤ} {N : ℕ}
+    (hu : IsCoprime u N) : Set.InjOn (· ^ u) {x : G | orderOf x ∣ N} := fun x hx y hy h ↦
+  hu.eq_of_zpow_eq_zpow h <| by
+    rw [zpow_natCast, zpow_natCast, orderOf_dvd_iff_pow_eq_one.mp hx,
+      orderOf_dvd_iff_pow_eq_one.mp hy]
 
 /-- The order of the image of `g` in `G ⧸ K` divides `n` exactly when `g ^ n` lies in `K`. -/
 @[to_additive

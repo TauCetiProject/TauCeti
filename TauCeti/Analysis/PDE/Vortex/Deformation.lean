@@ -18,6 +18,8 @@ Write a field as `x = (b₁, b₂, p, q)`, representing the imaginary connection
 `|b|² + |δα|² / 4` is then the Euclidean metric on variations of `x`.
 Fields take values in `EuclideanSpace ℝ (Fin 4)` and equation defects in
 `EuclideanSpace ℝ (Fin 3)`, with these Euclidean coefficient norms.
+`sectionValue x` is the section `α` of a field `x`, and `sectionVariation F` is the variation
+of the section alone by `F`, with no connection part.
 `equation x` has three real components: the defect in
 `*iF_a = (1 - |α|²) / 8` and the real and imaginary parts of `∂bar_a α`.
 The convention is `∂bar_a α = (∇₁α + i ∇₂α) / 2`, with `∇ = d + a`.
@@ -26,12 +28,16 @@ differentiable phases, and its first variation requires no phase regularity.
 Covariance of the equation requires `C²` phases. Where the section does not vanish,
 `∂bar_a α = 0` determines the connection from the section (`eq_of_forall_section_eq`).
 Where `∂bar_a α = 0`, the covariant derivative is complex linear,
-`d_a α (v) = v · d_a α (1)` (`covariantDerivative_eq_mul_of_equation_eq_zero`), and it controls
-the gradient of `|α|²` through `(∂_s |α|²)² + (∂_t |α|²)² = 4 |α|² |d_a α (1)|²`
+`d_a α (v) = v · d_a α (1)` (`covariantDerivative_eq_mul_of_equation_eq_zero`), so
+`|d_a α (v)| = |v| |d_a α (1)|` (`norm_covariantDerivative_eq_mul_of_equation_eq_zero`), and it
+controls the gradient of `|α|²` through `(∂_s |α|²)² + (∂_t |α|²)² = 4 |α|² |d_a α (1)|²`
 (`fderiv_normSq_apply_one_sq_add_apply_I_sq`), so `|d_a α (1)| ≤ |∇ |α|²|` where `|α|² ≥ 1 / 2`
 (`norm_covariantDerivative_one_le_norm_fderiv_normSq`).
-On a solution with continuous `b₁` and `C¹` section, this linearity and the curvature equation
-also make the energy density continuous (`continuous_energyDensity_of_equation_eq_zero`).
+With the curvature equation, this linearity gives the energy density of a solution as
+`(65 / 64) (1 - |α|²)² + 2 |d_a α (1)|²` (`energyDensity_eq_of_equation_eq_zero`), so bounds on
+the modulus defect and on `|d_a α (1)|` bound it (`energyDensity_le_of_equation_eq_zero`); in
+particular it is continuous on a solution with continuous `b₁` and `C¹` section
+(`continuous_energyDensity_of_equation_eq_zero`).
 
 `equation_add_smul` gives the exact quadratic expansion, and `hasDerivAt_equation`
 identifies `linearizedEquation` as its first variation. For the charge-one infinitesimal
@@ -160,12 +166,98 @@ theorem apply_eq_of_sectionValue_eq {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {
   · simp only [Fin.reduceFinMk, Fin.isValue]
     linarith
 
+/-- The **variation of the section alone** by `F`: zero connection variation and section
+variation `δα = F`, in the real coordinates of `TauCeti.Vortex.equation`. -/
+def sectionVariation (F : ℂ → ℂ) (z : ℂ) : EuclideanSpace ℝ (Fin 4) :=
+  !₂[0, 0, (F z).re / 2, (F z).im / 2]
+
+/-- The first connection component of the variation of the section alone vanishes. -/
+@[simp]
+theorem sectionVariation_apply_zero (F : ℂ → ℂ) (z : ℂ) : sectionVariation F z 0 = 0 :=
+  (rfl)
+
+/-- The second connection component of the variation of the section alone vanishes. -/
+@[simp]
+theorem sectionVariation_apply_one (F : ℂ → ℂ) (z : ℂ) : sectionVariation F z 1 = 0 :=
+  (rfl)
+
+/-- The real section component of the variation of the section alone by `F`. -/
+@[simp]
+theorem sectionVariation_apply_two (F : ℂ → ℂ) (z : ℂ) :
+    sectionVariation F z 2 = (F z).re / 2 :=
+  (rfl)
+
+/-- The imaginary section component of the variation of the section alone by `F`. -/
+@[simp]
+theorem sectionVariation_apply_three (F : ℂ → ℂ) (z : ℂ) :
+    sectionVariation F z 3 = (F z).im / 2 :=
+  (rfl)
+
+/-- The section variation of `sectionVariation F` is `F`. -/
+@[simp]
+theorem sectionValue_sectionVariation (F : ℂ → ℂ) (z : ℂ) :
+    sectionValue (sectionVariation F) z = F z := by
+  apply Complex.ext <;> simp [sectionValue_apply] <;> ring
+
+/-- Two variations of the section alone agree at a point exactly when their sections do. -/
+@[simp]
+theorem sectionVariation_left_inj {F G : ℂ → ℂ} {z : ℂ} :
+    sectionVariation F z = sectionVariation G z ↔ F z = G z := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [sectionVariation, h]⟩
+  have hs : sectionValue (sectionVariation F) z = sectionValue (sectionVariation G) z := by
+    simp only [sectionValue_apply, h]
+  simpa using hs
+
+/-- The variation of the section alone by zero is zero. -/
+@[simp]
+theorem sectionVariation_zero : sectionVariation 0 = 0 := by
+  ext z i
+  fin_cases i <;> simp [sectionVariation]
+
+/-- The variation of the section alone is additive in the section variation. -/
+theorem sectionVariation_add (F G : ℂ → ℂ) :
+    sectionVariation (F + G) = sectionVariation F + sectionVariation G := by
+  ext z i
+  fin_cases i <;> simp [sectionVariation, add_div]
+
+/-- The variation of the section alone commutes with real scalar multiplication. -/
+theorem sectionVariation_smul (r : ℝ) (F : ℂ → ℂ) :
+    sectionVariation (r • F) = r • sectionVariation F := by
+  ext z i
+  fin_cases i <;> simp [sectionVariation, mul_div_assoc]
+
+/-- A field is the variation of the section alone by `F` at a point exactly when its connection
+coordinates vanish there and its section is `F`. -/
+theorem eq_sectionVariation_iff {y : ℂ → EuclideanSpace ℝ (Fin 4)} {F : ℂ → ℂ} {z : ℂ} :
+    y z = sectionVariation F z ↔ y z 0 = 0 ∧ y z 1 = 0 ∧ sectionValue y z = F z := by
+  refine ⟨fun h ↦ ?_, fun ⟨h₀, h₁, hs⟩ ↦ apply_eq_of_sectionValue_eq h₀ h₁ (by simp [hs])⟩
+  have hs : sectionValue y z = sectionValue (sectionVariation F) z := by
+    simp only [sectionValue_apply, h]
+  simp [h, hs]
+
+/-- The variation of the section alone by a `Cⁿ` function is `Cⁿ`. -/
+theorem contDiff_sectionVariation {F : ℂ → ℂ} {n : WithTop ℕ∞} (hF : ContDiff ℝ n F) :
+    ContDiff ℝ n (sectionVariation F) := by
+  refine contDiff_euclidean.2 fun i ↦ ?_
+  fin_cases i
+  · simpa [sectionVariation] using contDiff_const
+  · simpa [sectionVariation] using contDiff_const
+  · simpa [sectionVariation] using (reCLM.contDiff.comp hF).div_const 2
+  · simpa [sectionVariation] using (imCLM.contDiff.comp hF).div_const 2
+
 /-- The squared modulus `|α|² = 4 (p² + q²)` of the section in the real field coordinates. -/
 theorem sq_norm_sectionValue (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     ‖sectionValue x z‖ ^ 2 = 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by
   rw [sectionValue_apply, ← normSq_eq_norm_sq, normSq_apply]
   simp only [mul_re, mul_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat]
   ring
+
+/-- The potential `P = |α|² / 4` in terms of the section `α`. -/
+theorem ofReal_sq_add_sq_eq_conj_sectionValue_mul_sectionValue_div_four
+    (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    ((x z 2 ^ 2 + x z 3 ^ 2 : ℝ) : ℂ) =
+      starRingEnd ℂ (sectionValue x z) * sectionValue x z / 4 := by
+  apply Complex.ext <;> simp [sectionValue_apply, sq] <;> ring
 
 /-- The section of a field is bounded by the field: `|α| ≤ 2 |x|`. -/
 theorem norm_sectionValue_le (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
@@ -198,6 +290,19 @@ theorem tendsto_sectionValue_zero {l : Filter ℂ} {x : ℂ → EuclideanSpace �
   simp only [PiLp.zero_apply, ofReal_zero, zero_mul, add_zero, mul_zero] at this
   exact this.congr fun z ↦ (sectionValue_apply x z).symm
 
+/-- The end framing `α(z) · phase(z) → 1`, with `|phase| → 1` at infinity, gives the section
+modulus `|α|` tending to one at infinity. -/
+theorem tendsto_norm_sectionValue_of_tendsto_sectionValue_mul {phase : ℂ → ℂ}
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hphase : Filter.Tendsto (fun z ↦ ‖phase z‖) (Filter.cocompact ℂ) (nhds 1))
+    (hfr : Filter.Tendsto (fun z ↦ sectionValue x z * phase z) (Filter.cocompact ℂ) (nhds 1)) :
+    Filter.Tendsto (fun z ↦ ‖sectionValue x z‖) (Filter.cocompact ℂ) (nhds 1) := by
+  have hdiv := hfr.norm.div hphase one_ne_zero
+  rw [norm_one, div_one] at hdiv
+  refine hdiv.congr' ?_
+  filter_upwards [hphase.eventually_ne one_ne_zero] with z hz
+  rw [Pi.div_apply, norm_mul, mul_div_cancel_right₀ _ hz]
+
 /-- The end framing `α(z) · phase(z) → 1`, with `|phase| → 1` at infinity, gives the squared modulus
 `|α|² = 4 (p² + q²)` tending to one at infinity. -/
 theorem tendsto_normSq_of_tendsto_sectionValue_mul {phase : ℂ → ℂ}
@@ -205,13 +310,29 @@ theorem tendsto_normSq_of_tendsto_sectionValue_mul {phase : ℂ → ℂ}
     (hphase : Filter.Tendsto (fun z ↦ ‖phase z‖) (Filter.cocompact ℂ) (nhds 1))
     (hfr : Filter.Tendsto (fun z ↦ sectionValue x z * phase z) (Filter.cocompact ℂ) (nhds 1)) :
     Filter.Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (Filter.cocompact ℂ) (nhds 1) := by
-  have hn : Filter.Tendsto (fun z ↦ ‖sectionValue x z‖) (Filter.cocompact ℂ) (nhds 1) := by
-    have hdiv := hfr.norm.div hphase one_ne_zero
-    rw [norm_one, div_one] at hdiv
-    refine hdiv.congr' ?_
-    filter_upwards [hphase.eventually_ne one_ne_zero] with z hz
-    rw [Pi.div_apply, norm_mul, mul_div_cancel_right₀ _ hz]
-  simpa only [sq_norm_sectionValue, one_pow] using hn.pow 2
+  simpa only [sq_norm_sectionValue, one_pow] using
+    (tendsto_norm_sectionValue_of_tendsto_sectionValue_mul hphase hfr).pow 2
+
+/-- The inverse degree-`m` phase `((z / |z|) ^ m)⁻¹` has unit modulus away from the origin, so in
+particular eventually at infinity. -/
+theorem eventually_norm_inv_phase_eq_one (m : ℕ) :
+    ∀ᶠ z : ℂ in cocompact ℂ, ‖((z / (‖z‖ : ℂ)) ^ m)⁻¹‖ = 1 := by
+  filter_upwards [(isCompact_singleton (x := (0 : ℂ))).compl_mem_cocompact] with z hz
+  simp [norm_inv, norm_pow, norm_ne_zero_iff.mpr hz]
+
+/-- The modulus of the inverse degree-`m` winding phase tends to one at infinity. -/
+theorem tendsto_norm_inv_phase (m : ℕ) :
+    Tendsto (fun z : ℂ ↦ ‖((z / (‖z‖ : ℂ)) ^ m)⁻¹‖) (cocompact ℂ) (𝓝 1) :=
+  tendsto_const_nhds.congr' ((eventually_norm_inv_phase_eq_one m).mono fun _ h ↦ h.symm)
+
+/-- A field whose section has the degree-`m` end framing `α(z) (z / |z|)^(-m) → 1` has section
+modulus `|α|` tending to one at infinity. -/
+theorem tendsto_norm_sectionValue_of_tendsto_sectionValue_mul_inv_pow {m : ℕ}
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hframe : Filter.Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹)
+      (Filter.cocompact ℂ) (nhds 1)) :
+    Filter.Tendsto (fun z ↦ ‖sectionValue x z‖) (Filter.cocompact ℂ) (nhds 1) :=
+  tendsto_norm_sectionValue_of_tendsto_sectionValue_mul (tendsto_norm_inv_phase m) hframe
 
 /-- A field whose section has the degree-`m` end framing `α(z) (z / |z|)^(-m) → 1` has squared
 modulus `|α|² = 4 (p² + q²)` tending to one at infinity. -/
@@ -219,13 +340,8 @@ theorem tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow {m : ℕ}
     {x : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hframe : Filter.Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹)
       (Filter.cocompact ℂ) (nhds 1)) :
-    Filter.Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (Filter.cocompact ℂ) (nhds 1) := by
-  refine tendsto_normSq_of_tendsto_sectionValue_mul
-    (phase := fun z ↦ ((z / (‖z‖ : ℂ)) ^ m)⁻¹) ?_ hframe
-  refine tendsto_const_nhds.congr' ?_
-  filter_upwards [(isCompact_singleton (x := (0 : ℂ))).compl_mem_cocompact] with z hz
-  simp only [norm_inv, norm_pow, norm_div, norm_real, norm_norm,
-    div_self (norm_ne_zero_iff.2 hz), one_pow, inv_one]
+    Filter.Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (Filter.cocompact ℂ) (nhds 1) :=
+  tendsto_normSq_of_tendsto_sectionValue_mul (tendsto_norm_inv_phase m) hframe
 
 /-- The section with its real coordinates composed with `ofRealCLM`, the form used to compute its
 regularity and derivative. -/
@@ -599,6 +715,41 @@ theorem covariantDerivative_eq_mul_of_equation_eq_zero {x : ℂ → EuclideanSpa
       (v.re + v.im * I) * covariantDerivative x z 1 := by ring
     _ = v * covariantDerivative x z 1 := by rw [re_add_im]
 
+/-- Where the holomorphicity rows `∂bar_a α = 0` hold, `|d_a α (v)| = |v| |d_a α (1)|`. -/
+theorem norm_covariantDerivative_eq_mul_of_equation_eq_zero {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    {z : ℂ} (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z)
+    (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) (h₁ : equation x z 1 = 0)
+    (h₂ : equation x z 2 = 0) (v : ℂ) :
+    ‖covariantDerivative x z v‖ = ‖v‖ * ‖covariantDerivative x z 1‖ := by
+  rw [covariantDerivative_eq_mul_of_equation_eq_zero hp hq h₁ h₂ v, norm_mul]
+
+/-- At a solution of the vortex equation the energy density is determined by the modulus defect
+and one covariant derivative: `|F_a|² + |d_a α|² + (1 - |α|²)² = (65 / 64) (1 - |α|²)² +
+2 |d_a α (1)|²`, since `curvature = -(1 - |α|²) / 8` and `|d_a α (i)| = |d_a α (1)|`. -/
+theorem energyDensity_eq_of_equation_eq_zero {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
+    (hsol : equation x z = 0) :
+    energyDensity x z = 65 / 64 * (1 - ‖sectionValue x z‖ ^ 2) ^ 2 +
+      2 * ‖covariantDerivative x z 1‖ ^ 2 := by
+  rw [energyDensity_apply, curvature_apply, curvature_eq_of_equation_eq_zero hsol,
+    ← sq_norm_sectionValue, covariantDerivative_eq_mul_of_equation_eq_zero hp hq
+      (by simp [hsol]) (by simp [hsol]) I, norm_mul, norm_I, one_mul]
+  ring
+
+/-- At a solution of the vortex equation, bounds `0 ≤ 1 - |α|² ≤ A` on the modulus defect and
+`|d_a α (1)| ≤ B` on one covariant derivative bound the energy density by
+`(65 / 64) A² + 2 B²` (`energyDensity_eq_of_equation_eq_zero`). -/
+theorem energyDensity_le_of_equation_eq_zero {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    {A B : ℝ} (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z)
+    (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) (hsol : equation x z = 0)
+    (hdef₀ : 0 ≤ 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (hdef : 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ A)
+    (hcov : ‖covariantDerivative x z 1‖ ≤ B) :
+    energyDensity x z ≤ 65 / 64 * A ^ 2 + 2 * B ^ 2 := by
+  rw [energyDensity_eq_of_equation_eq_zero hp hq hsol, sq_norm_sectionValue]
+  have := pow_le_pow_left₀ hdef₀ hdef 2
+  have := pow_le_pow_left₀ (norm_nonneg _) hcov 2
+  linarith
+
 /-- On a vortex whose `b₁` is continuous and whose section is `C¹`, the energy density is
 continuous: the equation gives `|d_a α (i)| = |d_a α (1)|` and `curvature = -(1 - |α|²) / 8`,
 neither of which involves `b₂`. -/
@@ -607,15 +758,10 @@ theorem continuous_energyDensity_of_equation_eq_zero {x : ℂ → EuclideanSpace
     (hp : ContDiff ℝ 1 (fun w ↦ x w 2)) (hq : ContDiff ℝ 1 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0) :
     Continuous (energyDensity x) := by
-  have heq : energyDensity x = fun z ↦ (-((1 - ‖sectionValue x z‖ ^ 2) / 8)) ^ 2 +
-      2 * ‖covariantDerivative x z 1‖ ^ 2 + (1 - ‖sectionValue x z‖ ^ 2) ^ 2 := by
-    funext z
-    rw [energyDensity_apply, curvature_apply, curvature_eq_of_equation_eq_zero (hsol z),
-      ← sq_norm_sectionValue,
-      covariantDerivative_eq_mul_of_equation_eq_zero (hp.differentiable one_ne_zero z)
-        (hq.differentiable one_ne_zero z) (by simp [hsol z]) (by simp [hsol z]) I, norm_mul,
-      norm_I, one_mul]
-    ring
+  have heq : energyDensity x = fun z ↦ 65 / 64 * (1 - ‖sectionValue x z‖ ^ 2) ^ 2 +
+      2 * ‖covariantDerivative x z 1‖ ^ 2 :=
+    funext fun z ↦ energyDensity_eq_of_equation_eq_zero (hp.differentiable one_ne_zero z)
+      (hq.differentiable one_ne_zero z) (hsol z)
   rw [heq]
   have := (contDiff_sectionValue hp hq).continuous
   have := continuous_covariantDerivative_one hb hp hq
@@ -830,6 +976,15 @@ theorem gaugeDirection_zero (x : ℂ → EuclideanSpace ℝ (Fin 4)) : gaugeDire
 theorem vacuumField_apply (z : ℂ) : vacuumField z = !₂[0, 0, 1 / 2, 0] := by
   rfl
 
+/-- The vacuum field is constant. -/
+theorem vacuumField_eq_const : vacuumField = fun _ ↦ vacuumField 0 :=
+  funext fun z ↦ by rw [vacuumField_apply, vacuumField_apply]
+
+/-- The vacuum field is smooth. -/
+theorem contDiff_vacuumField {n : WithTop ℕ∞} : ContDiff ℝ n vacuumField := by
+  rw [vacuumField_eq_const]
+  exact contDiff_const
+
 /-- The zero phase acts as the identity. -/
 @[simp]
 theorem phaseGauge_zero (x : ℂ → EuclideanSpace ℝ (Fin 4)) : phaseGauge x 0 = x := by
@@ -996,13 +1151,9 @@ of the existing gauge-fixed Schwartz operator. -/
 theorem linearizedEquation_vacuumField (y : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) (z : ℂ) :
     linearizedEquation vacuumField y z =
       !₂[vacuumOperator y z 1, vacuumOperator y z 2, vacuumOperator y z 3] := by
-  have hd (i : Fin 4) (v : ℂ) :
-      fderiv ℝ (fun w ↦ y w i) z v = (∂_{v} y) z i := by
-    have hp := ((EuclideanSpace.proj i).hasFDerivAt.comp z
-      y.differentiableAt.hasFDerivAt).fderiv
-    simpa [Function.comp_def, SchwartzMap.lineDerivOp_apply_eq_fderiv] using
-      congrArg (fun L : ℂ →L[ℝ] ℝ ↦ L v) hp
+  -- The simp lemma `SchwartzMap.fderiv_apply_eq_lineDerivOp_apply` turns the coordinate
+  -- derivatives of `y` into coordinates of its line derivatives.
   ext i
-  fin_cases i <;> simp [vacuumField, hd] <;> ring
+  fin_cases i <;> simp [vacuumField] <;> ring
 
 end TauCeti.Vortex
