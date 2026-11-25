@@ -202,7 +202,7 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 omit [T2Space M] in
 /-- Native tests on an open subset carry the compact-support topology of the preferred
 trivializations pulled back along the inclusion. -/
-theorem instTopologicalSpace_eq_pullbackTopology :
+theorem instTopologicalSpace_eq_compactlySupportedTopology_pullback :
     (TauCeti.BundleTest.instTopologicalSpace : TopologicalSpace
       (TauCeti.BundleTest I F ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V))) =
     compactlySupportedTopology (I := I) (n := ∞)
@@ -217,7 +217,8 @@ theorem instTopologicalSpace_eq_pullbackTopology :
 omit [T2Space M] in
 /-- Continuity out of native tests on an open subset may be checked for the compact-support
 topology of the pulled-back preferred trivializations. -/
-theorem continuous_of_continuous_pullbackTopology {X : Type*} [TopologicalSpace X]
+theorem continuous_of_continuous_compactlySupportedTopology_pullback_dom
+    {X : Type*} [TopologicalSpace X]
     {f : TauCeti.BundleTest I F ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V) → X}
     (hf : @Continuous _ _ (compactlySupportedTopology (I := I) (n := ∞)
       (fun x : M ↦ (trivializationAt F V x).pullback
@@ -225,12 +226,14 @@ theorem continuous_of_continuous_pullbackTopology {X : Type*} [TopologicalSpace 
       (fun x ↦ Opens.comap (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M))
         ⟨_, (trivializationAt F V x).open_baseSet⟩)
       (fun _ _ hx ↦ hx)) _ f) : Continuous f :=
-  instTopologicalSpace_eq_pullbackTopology (I := I) (F := F) (V := V) (U := U) ▸ hf
+  instTopologicalSpace_eq_compactlySupportedTopology_pullback (I := I) (F := F) (V := V)
+    (U := U) ▸ hf
 
 omit [T2Space M] in
 /-- Continuity into native tests on an open subset may be checked for the compact-support
 topology of the pulled-back preferred trivializations. -/
-theorem continuous_of_continuous_pullbackTopology_cod {X : Type*} [TopologicalSpace X]
+theorem continuous_of_continuous_compactlySupportedTopology_pullback_cod
+    {X : Type*} [TopologicalSpace X]
     {f : X → TauCeti.BundleTest I F ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)}
     (hf : @Continuous _ _ _ (compactlySupportedTopology (I := I) (n := ∞)
       (fun x : M ↦ (trivializationAt F V x).pullback
@@ -238,7 +241,8 @@ theorem continuous_of_continuous_pullbackTopology_cod {X : Type*} [TopologicalSp
       (fun x ↦ Opens.comap (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M))
         ⟨_, (trivializationAt F V x).open_baseSet⟩)
       (fun _ _ hx ↦ hx)) f) : Continuous f :=
-  instTopologicalSpace_eq_pullbackTopology (I := I) (F := F) (V := V) (U := U) ▸ hf
+  instTopologicalSpace_eq_compactlySupportedTopology_pullback (I := I) (F := F) (V := V)
+    (U := U) ▸ hf
 
 /-- Continuous linear extension by zero on native smooth bundle tests. -/
 def extendByZeroCLM :
@@ -253,7 +257,7 @@ def extendByZeroCLM :
   let e : M → Trivialization F (π F V) := fun x ↦ trivializationAt F V x
   let A : M → Opens M := fun x ↦ ⟨(e x).baseSet, (e x).open_baseSet⟩
   let hA : ∀ i, (A i : Set M) ⊆ (e i).baseSet := fun _ ↦ subset_rfl
-  exact continuous_of_continuous_pullbackTopology
+  exact continuous_of_continuous_compactlySupportedTopology_pullback_dom
     (continuous_extendByZero_compactlySupported (I := I) (n := ∞) e A hA)
 
 /-- Native extension commutes with the compactly supported section representation. -/
@@ -556,7 +560,7 @@ def localizeCLM :
   intro K
   have hi : Continuous (TauCeti.BundleTest.ofCompactlySupported I F (c *ᵖ V) ∘
       ofSupportedIn (I := I) (F := F) (n := ∞) (V := c *ᵖ V) (K.map q q.continuous)) := by
-    exact continuous_of_continuous_pullbackTopology_cod
+    exact continuous_of_continuous_compactlySupportedTopology_pullback_cod
       (ContMDiffSection.continuous_ofSupportedIn (I := I) (n := ∞) eU AU hAU _)
   convert hi.comp (continuous_relocalizeStageLinearMap T q hT K) using 1
   funext s
