@@ -31,11 +31,12 @@ trajectories of Morse functions
 * **The Morse data.** The function `x²` is a Morse function (`TauCeti.isMorse_sq_real`) whose
   only critical point is `0` (`TauCeti.criticalPoints_sq_real`, `TauCeti.mfderiv_sq_real_zero`),
   a minimum of index `0` (`TauCeti.manifoldMorseIndex_sq_real_zero`); its derivative is
-  `v ↦ 2 x v` (`TauCeti.mvfderiv_sq_real_apply`). The inverted well `-x²` is a Morse function
+  `v ↦ 2 x v` (`TauCeti.mvfderiv_sq_real_apply`). The critical Hessian of `x²` is
+  `(u, v) ↦ 2 u v` at every point (`TauCeti.criticalHessian_sq_real_apply`), the second derivative
+  with no factor `1 / 2`. The inverted well `-x²` is a Morse function
   (`TauCeti.isMorse_neg_sq_real`) with the same critical point
   (`TauCeti.criticalPoints_neg_sq_real`), a maximum of index `1`
-  (`TauCeti.manifoldMorseIndex_neg_sq_real`). Its critical Hessian is `(u, v) ↦ 2 u v` at every
-  point (`TauCeti.criticalHessian_sq_real_apply`), the second derivative with no factor `1 / 2`.
+  (`TauCeti.manifoldMorseIndex_neg_sq_real`).
 * **The trajectories.** The trajectory of `-grad f`
   through `x₀` is `t ↦ x₀ exp (-2 t)`, defined for all time
   (`TauCeti.maximalIntegralCurve_neg_mgradient_sq`). For `t ≥ 0` it stays in
