@@ -27,14 +27,17 @@ open set `U` are the functions `F : ℍ → ℂ`, vanishing off `π⁻¹(U)`, su
   cusp orbit lies in `U`: `F ∣[k] g` is bounded at `i∞` for every `g` with `g • ∞ = c`.
 
 This is the predicate `Subgroup.CompactifiedQuotient.IsAutomorphySection`. Over `U = X(Γ)` these
-are the defining conditions of a weight-`k` modular form for `Γ'`: holomorphy on `ℍ`, the
-transformation law, and boundedness at every cusp of `Γ`
-(`Subgroup.CompactifiedQuotient.isAutomorphySection_univ_iff`). The boundedness condition at a cusp
+are the `Γ'`-automorphic holomorphic functions on `ℍ` bounded at every cusp of `Γ`
+(`Subgroup.CompactifiedQuotient.isAutomorphySection_univ_iff`). These are the defining conditions
+of a weight-`k` modular form for `Γ'` when the cusps of `Γ` coincide with those of the projective
+image of `Γ'`. The boundedness condition at a cusp
 only involves `F` near the cusp (`Subgroup.CompactifiedQuotient.isBoundedAt_congr`): the
 neighbourhoods of a cusp orbit in `X(Γ)` pull back to horodiscs, along which `i∞` is approached
-after slashing by a lift of the scaling of a cusp datum. At an irregular cusp in odd weight the
-expansion of a bounded section in the width parameter `q₂` has only odd terms, so its order at the
-cusp is at least `1 / 2`, in the errata convention of Diamond–Shurman
+after slashing by a lift of the scaling of a cusp datum. Suppose a cusp datum `D` represents a
+cusp orbit in `U`, and its generator has a lift `g ∈ Γ'` with
+`(s * g * s⁻¹) 1 1 = -1`, where `s` lifts `D.scaling` (the irregular sign). In odd weight the
+expansion of a section, after slashing by `s⁻¹`, in the width parameter `q₂` then has only odd
+terms, so its order at the cusp is at least `1 / 2`, in the errata convention of Diamond–Shurman
 (`TauCeti.Subgroup.CuspDatum.analyticOrderAt_automorphyUntwist`).
 
 Restriction to a smaller open set `V` multiplies by the indicator function of `π⁻¹(V)`, and the
@@ -62,6 +65,11 @@ frames `Subgroup.LinearizingCoordinate.automorphyFrame` at elliptic points and
   over the holomorphic structure sheaf of `X(Γ)`.
 
 ## References
+
+The sheaf-of-vector-spaces construction follows `TauCeti.RiemannSurface.divisorSheaf`.
+The packaging as a sheaf of modules via `PresheafOfModules.ofPresheaf` follows
+`AlgebraicGeometry.Proj.twistingSheaf`, in turn following Mathlib's
+`AlgebraicGeometry.moduleStructurePresheaf`.
 
 * Fred Diamond and Jerry Shurman, *A First Course in Modular Forms*, Graduate Texts in
   Mathematics 228, Springer, 2005, §§3.1–3.6, with the corrected irregular-cusp order convention
@@ -180,8 +188,9 @@ theorem ofQuotient_quotientMk_smul
     ⟨⟨_, hΓ (_root_.Subgroup.mem_map_of_mem _ hg)⟩, UpperHalfPlane.pslMk_smul g τ⟩))
 
 /-- **The automorphy sections over the whole compactified quotient** are the holomorphic functions
-on `ℍ` satisfying the weight-`k` transformation law for `Γ'` and bounded at every cusp of `Γ`: the
-defining conditions of a weight-`k` modular form for `Γ'`. -/
+on `ℍ` satisfying the weight-`k` transformation law for `Γ'` and bounded at every cusp of `Γ`.
+These are the defining conditions of a weight-`k` modular form for `Γ'` when the cusps of `Γ`
+coincide with those of the projective image of `Γ'`. -/
 theorem isAutomorphySection_univ_iff :
     IsAutomorphySection Γ' k (univ : Set Γ.CompactifiedQuotient) F ↔
       (∀ g ∈ Γ', ∀ τ : ℍ, F (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * F τ) ∧
@@ -626,6 +635,17 @@ def automorphySheafOfModulesSectionsEquiv (k : ℤ) (U : Opens Γ.CompactifiedQu
     (automorphySheafOfModules hΓ k).val.obj (op U) ≃+
       automorphySections Γ' k (U : Set Γ.CompactifiedQuotient) :=
   AddEquiv.refl _
+
+/-- **Restriction in the automorphy sheaf of modules** multiplies by the indicator function of
+the preimage in `ℍ` of the smaller open set. -/
+@[simp]
+theorem automorphySheafOfModulesSectionsEquiv_map (k : ℤ) {U V : Opens Γ.CompactifiedQuotient}
+    (h : V ⟶ U) (F : (automorphySheafOfModules hΓ k).val.obj (op U)) :
+    (automorphySheafOfModulesSectionsEquiv hΓ k V
+        ((automorphySheafOfModules hΓ k).val.map h.op F) : ℍ → ℂ) =
+      ((fun τ : ℍ ↦ ofQuotient (Quotient.mk (orbitRel Γ ℍ) τ)) ⁻¹' V).indicator
+        (automorphySheafOfModulesSectionsEquiv hΓ k U F : ℍ → ℂ) :=
+  (rfl)
 
 /-- **The action of the structure sheaf on the automorphy sheaf** is multiplication by the pullback
 to `ℍ`: on the preimage of `U`, a holomorphic function `φ` on `U` multiplies a local section by
