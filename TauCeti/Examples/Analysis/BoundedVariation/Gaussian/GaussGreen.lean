@@ -9,6 +9,7 @@ public import TauCeti.Analysis.BoundedVariation.Weighted.HalfSpace
 public import TauCeti.Analysis.BoundedVariation.Weighted.Translation
 public import TauCeti.Probability.Distributions.Gaussian.Cdf
 public import TauCeti.Probability.Distributions.Gaussian.OrthogonalSplitting
+import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
@@ -30,8 +31,7 @@ and `Φ = cdf (gaussianReal 0 1)`.
   gives `∫ ⟨x, w⟩ dγ = 0`, matching the vanishing mean of `γ`
   (`ProbabilityTheory.integral_strongDual_stdGaussian`).
 
-These are the second and third Checks of §2.5 of the GaussianIsoperimetryAndClusters roadmap; its
-first Check is the case `n = 1`, which the formulas above do not cover.
+The formulas need dimension `n ≥ 2`, so the case of the line is not covered here.
 -/
 
 public section
@@ -46,34 +46,21 @@ namespace TauCeti.Examples.GaussianGaussGreen
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- Translating the half-space `{x | ⟪x, ν⟫ < s}` by `t ν`, for a unit vector `ν`, gives
-`{x | ⟪x, ν⟫ < s + t}`. -/
-theorem smul_vadd_setOf_inner_lt {ν : E} (hν : ‖ν‖ = 1) (s t : ℝ) :
-    (t • ν) +ᵥ {x : E | ⟪x, ν⟫ < s} = {x | ⟪x, ν⟫ < s + t} := by
-  ext x
-  rw [mem_vadd_set_iff_neg_vadd_mem, mem_ofPred_eq, mem_ofPred_eq, vadd_eq_add, inner_add_left,
-    inner_neg_left, real_inner_smul_left, real_inner_self_eq_norm_sq, hν]
-  constructor <;> intro h <;> linarith
-
 /-- The standard Gaussian measure of the translated half-space is `Φ(s + t)`. -/
 theorem measureReal_stdGaussian_smul_vadd_setOf_inner_lt {ν : E} (hν : ‖ν‖ = 1) (s t : ℝ) :
     (stdGaussian E).real ((t • ν) +ᵥ {x : E | ⟪x, ν⟫ < s}) = cdf (gaussianReal 0 1) (s + t) := by
   rw [smul_vadd_setOf_inner_lt hν, measureReal_stdGaussian_setOf_inner_lt hν]
 
-/-- Computed directly, `t ↦ γ(U + t ν)` has derivative `φ(s)` at `0`. -/
+/-- For a unit vector `ν`, `t ↦ γ((t • ν) +ᵥ {x | ⟪x, ν⟫ < s})` has derivative `φ(s)` at `0`. -/
 theorem hasDerivAt_measureReal_stdGaussian_smul_vadd_setOf_inner_lt {ν : E} (hν : ‖ν‖ = 1)
     (s : ℝ) :
     HasDerivAt (fun t : ℝ => (stdGaussian E).real ((t • ν) +ᵥ {x : E | ⟪x, ν⟫ < s}))
       (gaussianPDFReal 0 1 s) 0 := by
   simp_rw [measureReal_stdGaussian_smul_vadd_setOf_inner_lt hν]
-  have h := (hasDerivAt_cdf_gaussianReal 0 one_ne_zero (s + 0)).comp (0 : ℝ)
-    ((hasDerivAt_id (0 : ℝ)).const_add s)
-  simpa [Function.comp_def] using h
+  simpa using (hasDerivAt_cdf_gaussianReal 0 one_ne_zero (s + 0)).comp_const_add s 0
 
-/-- **The flux through a half-space.** For a unit vector `ν`, the flux of `ν` through the reduced
-boundary of `U = {x | ⟪x, ν⟫ < s}` is `φ(s)`: the derivative of `t ↦ γ(U + t ν)` computed from
-`Φ` agrees with the boundary integral of the translation formula. -/
+/-- **The flux through a half-space.** For `n ≥ 2` and a unit vector `ν`, the Gaussian-weighted
+flux of `ν` through the reduced boundary of `{x | ⟪x, ν⟫ < s}` is `φ(s)`. -/
 theorem integral_reducedBoundary_setOf_inner_lt (hn : 2 ≤ finrank ℝ E) {ν : E} (hν : ‖ν‖ = 1)
     (s : ℝ) :
     ∫ x in reducedBoundary volume ⊤ {x : E | ⟪x, ν⟫ < s},
@@ -96,14 +83,9 @@ example (hn : 2 ≤ finrank ℝ E) {ν : E} (hν : ‖ν‖ = 1) (s : ℝ) :
   rw [integral_reducedBoundary_setOf_inner_lt hn hν]
   exact gaussianPDFReal_pos 0 1 s one_ne_zero
 
-/-- The whole space has empty reduced boundary: its perimeter in every ball is zero. -/
-theorem reducedBoundary_univ (Ω : TopologicalSpace.Opens E) :
-    reducedBoundary volume Ω (univ : Set E) = ∅ :=
-  eq_empty_of_forall_notMem fun _ hx => perimeter_ball_ne_zero hx one_pos perimeter_univ
-
-/-- **The whole space.** For the bounded constant field `w`, whose Gaussian divergence is
-`−⟨x, w⟩`, the bounded-field Gauss–Green formula on `U = E`, whose reduced boundary is empty,
-gives `∫ ⟨x, w⟩ e^{−W(x)} dx = 0`. -/
+/-- **The whole space.** For `n ≥ 2` and every `w`, `∫ ⟨x, w⟩ e^{−W(x)} dx = 0`: the
+Gauss–Green formula on `U = E` for the constant field `w`, whose Gaussian divergence is
+`−⟨x, w⟩`. -/
 theorem integral_inner_mul_exp_neg_gaussianWeight (hn : 2 ≤ finrank ℝ E) (w : E) :
     ∫ x, ⟪x, w⟫ * Real.exp (-gaussianWeight E x) = 0 := by
   have hint : Integrable fun x : E => ⟪x, w⟫ * Real.exp (-gaussianWeight E x) := by
@@ -123,12 +105,7 @@ theorem integral_inner_mul_exp_neg_gaussianWeight (hn : 2 ≤ finrank ℝ E) (w 
     (W := gaussianWeight E) (X := fun _ => w) contDiff_gaussianWeight hn
     integrable_exp_neg_gaussianWeight nullMeasurableSet_univ hP contDiff_const (C := ‖w‖)
     (C' := 0) (fun _ => le_rfl) (fun x => by simp) hWX
-  rw [reducedBoundary_univ, Measure.restrict_empty, integral_zero_measure] at key
-  simp only [fderiv_const_apply, ContinuousLinearMap.toLinearMap_zero, map_zero,
-    fderiv_gaussianWeight, innerSL_apply_apply, zero_sub,
-    indicator_univ, Pi.one_apply, mul_one, neg_mul,
-    integral_neg, neg_eq_zero] at key
-  exact key
+  simpa [fderiv_gaussianWeight, integral_neg] using key
 
 /-- The same vanishing, read as the vanishing mean of the standard Gaussian measure. -/
 example (w : E) : ∫ x, ⟪x, w⟫ ∂(stdGaussian E) = 0 := by

@@ -27,16 +27,17 @@ foot `x - ((⟪x, ν⟫ - c) / ‖ν‖²) ν` of the perpendicular from `x` lie
 least `(⟪x, ν⟫ - c) / ‖ν‖` from `x`. For `ν ≠ 0`, the half-space `{x | ⟪x, ν⟫ < c}` is the
 half-space `{x | ⟪x, ‖ν‖⁻¹ • ν⟫ < c / ‖ν‖}` of a unit vector
 (`TauCeti.setOf_inner_lt_eq_smul_inv_norm`). Moving by `c ν` along a unit normal `ν` raises the
-height `⟪·, ν⟫` by `c` (`TauCeti.real_inner_add_smul_self_of_norm_eq_one`). In rigid coordinates
-`e : F ≃ᵃⁱ ℝ × E`, the normal coordinate `(e x).fst` is `⟪x, ν⟫` plus a constant, so the region
-where it is positive is a half-space.
+height `⟪·, ν⟫` by `c` (`TauCeti.real_inner_add_smul_self_of_norm_eq_one`), so translating
+`{x | ⟪x, ν⟫ < s}` by `t ν` gives `{x | ⟪x, ν⟫ < s + t}` (`TauCeti.smul_vadd_setOf_inner_lt`).
+In rigid coordinates `e : F ≃ᵃⁱ ℝ × E`, the normal coordinate `(e x).fst` is `⟪x, ν⟫` plus a
+constant, so the region where it is positive is a half-space.
 -/
 
 public section
 
 namespace TauCeti
 
-open scoped InnerProductSpace
+open scoped InnerProductSpace Pointwise
 
 /-- Every translation parallel to the boundary of the half-space `{x | c < ⟪x, ν⟫}` maps it into
 itself. -/
@@ -131,6 +132,16 @@ theorem real_inner_add_smul_self_of_norm_eq_one {E : Type*} [SeminormedAddCommGr
     ⟪y + c • ν, ν⟫_ℝ = ⟪y, ν⟫_ℝ + c := by
   rw [inner_add_left, real_inner_smul_left, real_inner_self_eq_norm_sq, hν]
   ring
+
+/-- Translating the half-space `{x | ⟪x, ν⟫ < s}` by `t ν`, for a unit vector `ν`, gives
+`{x | ⟪x, ν⟫ < s + t}`. -/
+theorem smul_vadd_setOf_inner_lt {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
+    {ν : E} (hν : ‖ν‖ = 1) (s t : ℝ) :
+    (t • ν) +ᵥ {x : E | ⟪x, ν⟫_ℝ < s} = {x | ⟪x, ν⟫_ℝ < s + t} := by
+  ext x
+  rw [Set.mem_vadd_set_iff_neg_vadd_mem, vadd_eq_add, ← neg_smul, add_comm _ x, Set.mem_ofPred_eq,
+    real_inner_add_smul_self_of_norm_eq_one hν, ← sub_eq_add_neg, sub_lt_iff_lt_add]
+  rfl
 
 /-- Every point `w` of the hyperplane `{y | ⟪y, ν⟫ = c}` lies at distance at least
 `(⟪x, ν⟫ - c) / ‖ν‖` from `x`. -/
