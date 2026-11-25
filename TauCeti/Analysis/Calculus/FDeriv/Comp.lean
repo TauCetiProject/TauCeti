@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Congr
 public import Mathlib.Analysis.Calculus.FDeriv.Equiv
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
+import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 import Mathlib.Tactic.Abel
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 
@@ -25,6 +26,15 @@ of `f`, and estimates bounding a function by its differential survive changes of
 
 At a fixed point of a map preserving the germ of `f`, the derivative of `f` is unchanged by
 precomposition with the derivative of that map.
+
+For precomposition with an affine change of variables `w ↦ c + a • w`, or with the
+multiplication `w ↦ c • w` by a fixed scalar `c` of a division semiring `𝕜'` over which the domain
+`E` is a module, the chain rule holds as an identity between values of `fderiv` for every `f`,
+differentiable or not: if `f` is not differentiable at the image `c + a • w`, respectively
+`c • w`, of the point `w`, both sides are `0`, the value of `fderiv` at points of
+nondifferentiability. For the latter, the map `w ↦ c • w` must be continuous and commute with the
+scalars `𝕜`; for instance, for `f` on `ℂ`,
+`fderiv ℝ (fun w ↦ f (c * w)) w v = fderiv ℝ f (c * w) (c * v)`.
 
 ## Main results
 
@@ -42,8 +52,15 @@ precomposition with the derivative of that map.
   `ContinuousLinearMap.fderiv_comp_left_of_leftInverse`: the chain rule for precomposition with a
   split surjection and postcomposition with a split injection, with no differentiability
   assumption.
-* `TauCeti.fderiv_comp_add_smul`: the derivative of `w ↦ f (c + a • w)` is `a` times that of `f`
-  at `c + a • w`.
+* `ContinuousLinearMap.hasFDerivAt_comp_left_iff_of_isEmbedding`,
+  `ContinuousLinearMap.comp_comp_eq_of_hasFDerivAt_comp_left`: postcomposition with an embedding
+  `Φ` turns the derivatives of `k` into those of `Φ ∘ k`, and every derivative of `Φ ∘ k` arises
+  this way when `Φ` is a split injection.
+* `TauCeti.fderiv_comp_add_smul`: `fderiv 𝕜` of `w ↦ f (c + a • w)` at `w` is `a` times
+  `fderiv 𝕜 f (c + a • w)`, for every `f`.
+* `TauCeti.fderiv_comp_smul_apply`: `fderiv 𝕜 (fun w ↦ f (c • w)) x v` equals
+  `fderiv 𝕜 f (c • x) (c • v)`, for every `f` and a scalar `c` of a division semiring `𝕜'` over
+  which `E` is a module, with each `w ↦ c • w` continuous and commuting with `𝕜`.
 -/
 
 public section
@@ -119,12 +136,30 @@ theorem norm_fderiv_comp_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace �
     ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ = |a| * ‖fderiv ℝ f (a • x)‖ := by
   rw [_root_.fderiv_comp_smul a, norm_smul, Real.norm_eq_abs]
 
-/-- **The chain rule for an affine change of variables.** The derivative of `w ↦ f (c + a • w)`
-at `w` is `a` times the derivative of `f` at `c + a • w`. Like `fderiv_comp_smul`, this needs no
-differentiability of `f`. -/
+/-- **The chain rule for an affine change of variables.** `fderiv 𝕜` of `w ↦ f (c + a • w)` at
+`w` is `a` times `fderiv 𝕜 f (c + a • w)`. Like `fderiv_comp_smul`, this holds for every `f`: if
+`f` is not differentiable at `c + a • w`, both sides are `0`. -/
 theorem fderiv_comp_add_smul (f : E → F) (c : E) (a : 𝕜) (w : E) :
     fderiv 𝕜 (fun w ↦ f (c + a • w)) w = a • fderiv 𝕜 f (c + a • w) := by
   rw [_root_.fderiv_comp_smul (f := fun y ↦ f (c + y)), fderiv_comp_add_left]
+
+/-- **The chain rule for precomposition with a scalar multiplication.** Let `𝕜'` be a division
+semiring and `E` a `𝕜'`-module such that multiplication `w ↦ c • w` by each fixed scalar `c : 𝕜'`
+is continuous and commutes with the action of `𝕜`. Then `fderiv 𝕜 (fun w ↦ f (c • w)) x` sends `v`
+to `fderiv 𝕜 f (c • x) (c • v)`. Multiplication by `c` is `𝕜`-linear and, unless `c = 0`,
+invertible, so this holds for every `f`, with no norm or additive inverses on `𝕜'`: if `f` is not
+differentiable at `c • x`, both sides are `0`, the value of `fderiv` at points of
+nondifferentiability. When `𝕜' = 𝕜` and the action is the given normed-space action, this is the
+pointwise form of `fderiv_comp_smul`; for `𝕜 = ℝ` and `𝕜' = ℂ` it computes the real `fderiv` of
+`w ↦ f (c * w)` on `ℂ`, and for `𝕜' = ℝ≥0` it covers nonnegative dilations. -/
+theorem fderiv_comp_smul_apply {𝕜' : Type*} [DivisionSemiring 𝕜'] [Module 𝕜' E]
+    [ContinuousConstSMul 𝕜' E] [SMulCommClass 𝕜' 𝕜 E] (f : E → F) (c : 𝕜') (x v : E) :
+    fderiv 𝕜 (fun w ↦ f (c • w)) x v = fderiv 𝕜 f (c • x) (c • v) := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp
+  · have h := (ContinuousLinearEquiv.smulLeft (R₁ := 𝕜) (Units.mk0 c hc)).comp_right_fderiv
+      (f := f) (x := x)
+    simpa [Function.comp_def] using DFunLike.congr_fun h v
 
 /-- For a continuous linear map `g` with a continuous linear right inverse `s`, the derivative of
 `h ∘ g` at `x` is the derivative of `h` at `g x` composed with `g`, for every `h` (no
@@ -162,6 +197,26 @@ theorem _root_.ContinuousLinearMap.fderiv_comp_left_of_leftInverse {X : Type*}
       exact Ψ.differentiableAt.comp y hd')
     rw [fderiv_zero_of_not_differentiableAt hnd, fderiv_zero_of_not_differentiableAt hd]
     simp
+
+/-- For a continuous linear map `Φ` that is an embedding, `Φ ∘ k` has derivative `Φ ∘ k'` at `y`
+exactly when `k` has derivative `k'` at `y`. -/
+theorem _root_.ContinuousLinearMap.hasFDerivAt_comp_left_iff_of_isEmbedding {X : Type*}
+    [NormedAddCommGroup X] [NormedSpace 𝕜 X] (Φ : E →L[𝕜] F) (hΦ : Topology.IsEmbedding Φ)
+    {k : X → E} {k' : X →L[𝕜] E} {y : X} :
+    HasFDerivAt (Φ ∘ k) (Φ.comp k') y ↔ HasFDerivAt k k' y :=
+  ⟨fun h ↦ HasFDerivAt.of_comp_of_isEmbedding (hΦ.isInducing.continuousAt_iff.mpr h.continuousAt)
+    Φ.hasFDerivAt hΦ h .rfl, fun h ↦ Φ.hasFDerivAt.comp y h⟩
+
+/-- For a continuous linear map `Φ` with a continuous linear left inverse `Ψ`, every derivative
+`D` of `Φ ∘ k` takes values in the range of `Φ`: it is `Φ` composed with the derivative `Ψ ∘ D`
+of `k`. -/
+theorem _root_.ContinuousLinearMap.comp_comp_eq_of_hasFDerivAt_comp_left {X : Type*}
+    [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+    (Φ : E →L[𝕜] F) (Ψ : F →L[𝕜] E) (hΨΦ : Function.LeftInverse Ψ Φ) {k : X → E}
+    {D : X →L[𝕜] F} {y : X} (hD : HasFDerivAt (Φ ∘ k) D y) : Φ.comp (Ψ.comp D) = D := by
+  rw [← hD.fderiv, Φ.fderiv_comp_left_of_leftInverse Ψ hΨΦ k y]
+  ext v
+  simp [hΨΦ _]
 
 end TauCeti
 

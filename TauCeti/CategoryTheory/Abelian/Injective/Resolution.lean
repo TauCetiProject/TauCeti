@@ -139,6 +139,10 @@ def ι₀ : Z ⟶ I.cocomplex.X 0 :=
 lemma ι₀_comp_d : I.ι₀ ≫ I.cocomplex.d 0 1 = 0 :=
   (fromSingle₀Equiv _ _ I.ι).property
 
+/-- The degree `0` component of the augmentation `I.ι` is `I.ι₀`. -/
+lemma ι_f_zero : I.ι.f 0 = I.ι₀ :=
+  (rfl)
+
 /-- `I.ι₀` is the morphism `Z ⟶ I⁰` corresponding to the augmentation `I.ι` of `I`. -/
 @[simp]
 lemma fromSingle₀Equiv_ι : fromSingle₀Equiv _ _ I.ι = ⟨I.ι₀, I.ι₀_comp_d⟩ :=

@@ -12,11 +12,15 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.Sobolev.Strip.Basic
 public import TauCeti.Analysis.Sobolev.Strip.Operator
 import Mathlib.Analysis.Normed.Operator.Mul
+import Mathlib.Analysis.Normed.Operator.Prod
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.MeasureTheory.Function.Lp.FrechetKolmogorov
 import TauCeti.MeasureTheory.Integral.Rectangle
 import TauCeti.MeasureTheory.Measure.Haar.Prod
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Coprod
 
 /-!
 # The Sobolev space `W^{1,2}` on the cylinder and Peetre's argument
@@ -32,10 +36,13 @@ setting of the linearized operators of Floer theory along Floer cylinders.
 * The strip measure is the product of Lebesgue measure and Lebesgue measure on `[0, 1]`
   (`TauCeti.CylinderSobolev.stripMeasure_eq_prod`). A section that is bounded on a box
   `[-R, R] × [0, 1]` and vanishes outside it lies in every `Lᵖ` of the strip
-  (`TauCeti.CylinderSobolev.memLp_stripMeasure_of_bound_of_eq_zero`), in particular a continuous
-  section vanishing for `|s|` large (`TauCeti.CylinderSobolev.memLp_stripMeasure_of_continuous`)
+  (`TauCeti.StripSobolev.memLp_stripMeasure_of_bound_of_eq_zero`), in particular a continuous
+  section vanishing for `|s|` large (`TauCeti.StripSobolev.memLp_stripMeasure_of_continuous`)
   and a product section `φ(s) ψ(t)` with `φ` compactly supported
-  (`TauCeti.CylinderSobolev.memLp_smul_of_hasCompactSupport`).
+  (`TauCeti.CylinderSobolev.memLp_smul_of_hasCompactSupport`). A section depending continuously
+  on `t` alone is essentially bounded (`TauCeti.CylinderSobolev.memLp_top_comp_snd`), and
+  multiplication by a continuous family of invertible maps depending on `t` alone maps `Lᵖ` onto
+  `Lᵖ` (`TauCeti.CylinderSobolev.surjective_operatorMultiplication_comp_snd`).
 * **Test sections** (`TauCeti.CylinderSobolev.testSection`) are the `C²` maps of period one in
   `t` that vanish for `|s|` large.
 * The **jet** of a section is `jet ξ = (ξ, ∂s ξ, ∂t ξ)` (`TauCeti.StripSobolev.jet`). The jet of
@@ -76,6 +83,10 @@ setting of the linearized operators of Floer theory along Floer cylinders.
   `TauCeti.StripSobolev.finiteDimensional_ker_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le`.
   The estimate is stated in the form proved for the linearized Floer operator in
   `TauCeti.Geometry.Symplectic.Floer.SemiFredholm`.
+* **Translation in `s`.** Translation in `s` commutes with a first-order operator, the coefficient
+  field being translated too (`TauCeti.CylinderSobolev.translateLp_jetOperator`), so its right
+  inverses on `W^{1,2}` translate with the same norm
+  (`TauCeti.CylinderSobolev.exists_rightInverse_jetOperator_comp_add`).
 * **An estimate from below.** If `D` moreover bounds every test section in `L²` over the whole
   strip, `∫ ‖ξ‖² ≤ C' ∫ ‖D ξ‖²`, the compact error term disappears: the extension satisfies
   `‖x‖ ≤ K ‖D x‖` on `H1`
@@ -115,33 +126,13 @@ theorem stripMeasure_eq_prod :
   rw [stripMeasure, Measure.volume_eq_prod, ← Measure.prod_restrict, Measure.restrict_univ]
 
 omit [NormedSpace ℝ V] in
-/-- A section bounded on `[-R, R] × [0, 1]` and vanishing for `|s| > R` lies in every `Lᵖ` of the
-strip. -/
-theorem memLp_stripMeasure_of_bound_of_eq_zero {u : ℝ × ℝ → V}
-    (hu : AEStronglyMeasurable u stripMeasure) {C R : ℝ}
-    (hC : ∀ z ∈ Icc (-R) R ×ˢ Icc 0 1, ‖u z‖ ≤ C) (hR : ∀ z : ℝ × ℝ, R < |z.1| → u z = 0)
-    (p : ℝ≥0∞) : MemLp u p stripMeasure := by
-  set K : Set (ℝ × ℝ) := Icc (-R) R ×ˢ Icc 0 1
-  have hK : MeasurableSet K := measurableSet_Icc.prod measurableSet_Icc
-  have hae : u =ᵐ[stripMeasure] K.indicator u := by
-    refine ae_restrict_of_forall_mem (MeasurableSet.univ.prod measurableSet_Icc) fun z hz ↦ ?_
-    by_cases hzR : |z.1| ≤ R
-    · rw [indicator_of_mem (show z ∈ K from ⟨abs_le.1 hzR, hz.2⟩)]
-    · rw [hR z (not_le.1 hzR), indicator_apply_eq_zero.2 fun _ ↦ hR z (not_le.1 hzR)]
-  refine (memLp_congr_ae hae).2 ((memLp_indicator_iff_restrict hK.nullMeasurableSet).2 ?_)
-  have : IsFiniteMeasure (stripMeasure.restrict K) := ⟨by
-    rw [Measure.restrict_apply_univ, stripMeasure, Measure.restrict_apply hK]
-    exact (measure_mono inter_subset_left).trans_lt
-      ((isCompact_Icc.prod isCompact_Icc).measure_lt_top)⟩
-  exact MemLp.of_bound hu.restrict C ((ae_restrict_mem hK).mono hC)
-
-omit [NormedSpace ℝ V] in
-/-- A continuous section vanishing for `|s| > R` lies in every `Lᵖ` of the strip. -/
-theorem memLp_stripMeasure_of_continuous {u : ℝ × ℝ → V} (hu : Continuous u) {R : ℝ}
-    (hR : ∀ z : ℝ × ℝ, R < |z.1| → u z = 0) (p : ℝ≥0∞) : MemLp u p stripMeasure := by
-  obtain ⟨C, hC⟩ := (isCompact_Icc.prod isCompact_Icc).exists_bound_of_continuousOn
-    (s := Icc (-R) R ×ˢ Icc (0 : ℝ) 1) hu.continuousOn
-  exact memLp_stripMeasure_of_bound_of_eq_zero hu.aestronglyMeasurable hC hR p
+/-- A section depending continuously on `t` alone is essentially bounded on the strip. -/
+theorem memLp_top_comp_snd {f : ℝ → V} (hf : Continuous f) :
+    MemLp (fun z : ℝ × ℝ ↦ f z.2) ∞ stripMeasure := by
+  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn (s := Icc (0 : ℝ) 1)
+    hf.continuousOn
+  exact memLp_top_of_bound (hf.comp continuous_snd).aestronglyMeasurable C
+    (ae_restrict_of_forall_mem (MeasurableSet.univ.prod measurableSet_Icc) fun z hz ↦ hC z.2 hz.2)
 
 /-- A product section `φ(s) ψ(t)`, with `φ` continuous of compact support and `ψ` continuous,
 lies in every `Lᵖ` of the strip. -/
@@ -240,6 +231,11 @@ def valueL : H1 V →L[ℝ] Lp V 2 stripMeasure :=
 theorem coeFn_valueL (x : H1 V) :
     valueL x =ᵐ[stripMeasure] fun z ↦ ((x : Lp (V × V × V) 2 stripMeasure) z).1 :=
   (ContinuousLinearMap.fst ℝ V (V × V)).coeFn_compLpL _
+
+/-- The value of an element of `H1` is the first projection applied pointwise to its jet. -/
+theorem valueL_eq_compLpL (x : H1 V) :
+    valueL x = (ContinuousLinearMap.fst ℝ V (V × V)).compLpL 2 stripMeasure x :=
+  (rfl)
 
 /-! ### Elements of `H1` are determined by their values -/
 
@@ -408,6 +404,21 @@ section Operator
 
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
 
+/-- Multiplication by a continuous family `Φ_t` of invertible maps depending on `t` alone, the
+operator `f ↦ (z ↦ Φ_{z.2} (f z))`, maps `Lᵖ` of the strip onto `Lᵖ`: multiplication by the
+inverses `Φ_t⁻¹` is a right inverse. -/
+theorem surjective_operatorMultiplication_comp_snd [CompleteSpace V] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {Φ : ℝ → V →L[ℝ] W} (hΦ : Continuous Φ) (hΦi : ∀ t, (Φ t).IsInvertible) :
+    Function.Surjective (Lp.operatorMultiplication p ((memLp_top_comp_snd hΦ).toLp _)) := by
+  have hΦinv := ((contDiff_zero (𝕜 := ℝ).2 hΦ).clm_inverse hΦi).continuous
+  set A := (memLp_top_comp_snd hΦ).toLp _
+  set B := (memLp_top_comp_snd hΦinv).toLp _
+  refine fun g ↦ ⟨Lp.operatorMultiplication p B g, Lp.ext ?_⟩
+  filter_upwards [Lp.operatorMultiplication_ae A (Lp.operatorMultiplication p B g),
+    Lp.operatorMultiplication_ae B g, (memLp_top_comp_snd hΦ).coeFn_toLp,
+    (memLp_top_comp_snd hΦinv).coeFn_toLp] with z h₁ h₂ h₃ h₄
+  rw [h₁, h₂, h₃, h₄, (hΦi z.2).self_apply_inverse]
+
 /-- The **semi-Fredholm estimate** with constants `C` and `T` for the first-order operator
 `D ξ = M (ξ, ∂s ξ, ∂t ξ)` on the cylinder: for every `C²` section `ξ` of period one in `t` that
 vanishes for `s ∉ (a, b)`,
@@ -505,6 +516,80 @@ theorem ker_jetOperator_comp_subtypeL_eq_bot {M : ℝ × ℝ → V × V × V →
     ((jetOperator stripMeasure M).comp (H1 V).subtypeL).ker = ⊥ := by
   obtain ⟨K, hK⟩ := exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL hM hest hL2
   exact LinearMap.ker_eq_bot.2 ((ContinuousLinearMap.antilipschitz_of_bound _ hK).injective)
+
+/-! #### Translation in the `s` direction -/
+
+/-- **Translation commutes with first-order operators.** Translating `D_M f` by `a` in the `s`
+direction gives the operator of the translated coefficient field `M (· + a, ·)` applied to the
+translate of `f`. -/
+theorem translateLp_jetOperator {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure)
+    (a : ℝ) (f : Lp (V × V × V) 2 stripMeasure) :
+    translateLp a (jetOperator stripMeasure M f) =
+      jetOperator stripMeasure (fun z ↦ M (z + (a, 0))) (translateLp a f) := by
+  have hMa : MemLp (fun z ↦ M (z + (a, 0))) ∞ stripMeasure :=
+    hM.comp_measurePreserving (measurePreserving_add_strip a)
+  refine Lp.ext ?_
+  filter_upwards [coeFn_translateLp a (jetOperator stripMeasure M f),
+    coeFn_jetOperator hMa (translateLp a f), coeFn_translateLp a f,
+    (measurePreserving_add_strip a).quasiMeasurePreserving.ae_eq_comp (coeFn_jetOperator hM f)]
+    with z h₁ h₂ h₃ h₄
+  simp only [Function.comp_apply] at h₄
+  rw [h₁, h₂, h₃, h₄]
+
+/-- **Right inverses of stabilized operators translate.** Let `ι : S →L[ℝ] L²` be a bounded linear
+map, such as the inclusion of a space of sections complementing the range of `D_M`. If the
+stabilized operator `(ξ, σ) ↦ D_M ξ + ι σ` on `W^{1,2}(ℝ × S¹, V) × S` has a bounded linear right
+inverse `Q`, then so does the stabilized operator `(ξ, σ) ↦ D_{M(· + a, ·)} ξ + (ι σ)(· + a, ·)` of
+the translated data, with norm at most `‖Q‖`: it is `Q` conjugated by the translations by `a`. -/
+theorem exists_rightInverse_coprod_jetOperator_comp_add {S : Type*} [NormedAddCommGroup S]
+    [NormedSpace ℝ S] {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure)
+    {ι : S →L[ℝ] Lp W 2 stripMeasure} {Q : Lp W 2 stripMeasure →L[ℝ] H1 V × S}
+    (hQ : (((jetOperator stripMeasure M).comp (H1 V).subtypeL).coprod ι).comp Q =
+      ContinuousLinearMap.id ℝ _) (a : ℝ) :
+    ∃ Q' : Lp W 2 stripMeasure →L[ℝ] H1 V × S,
+      (((jetOperator stripMeasure (fun z ↦ M (z + (a, 0)))).comp (H1 V).subtypeL).coprod
+          ((translateLp (E := W) (p := 2) a).toContinuousLinearEquiv.toContinuousLinearMap.comp
+            ι)).comp Q' = ContinuousLinearMap.id ℝ _ ∧ ‖Q'‖ ≤ ‖Q‖ := by
+  refine ⟨((translate (testSection V) a).toContinuousLinearEquiv.toContinuousLinearMap.prodMap
+    (ContinuousLinearMap.id ℝ S)).comp
+    (Q.comp (translateLp (E := W) (p := 2) (-a)).toContinuousLinearEquiv.toContinuousLinearMap),
+    ?_, ?_⟩
+  · refine ContinuousLinearMap.ext fun η ↦ ?_
+    have h := congrArg (fun T ↦ T (translateLp (-a) η)) hQ
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coprod_apply,
+      Submodule.subtypeL_apply, ContinuousLinearMap.id_apply] at h
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coprod_apply,
+      ContinuousLinearMap.coe_prodMap', Prod.map_fst, Prod.map_snd, ContinuousLinearEquiv.coe_coe,
+      LinearIsometryEquiv.coe_toContinuousLinearEquiv, Submodule.subtypeL_apply, coe_translate,
+      ContinuousLinearMap.id_apply, ← translateLp_jetOperator hM, ← map_add, h,
+      translateLp_translateLp, add_neg_cancel, translateLp_zero]
+  · refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg Q) fun η ↦ ?_
+    have h := Q.le_opNorm (translateLp (-a) η)
+    rw [LinearIsometryEquiv.norm_map] at h
+    refine le_of_eq_of_le ?_ h
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_prodMap',
+      ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+      Prod.norm_def, Prod.map_fst, Prod.map_snd, LinearIsometryEquiv.norm_map,
+      ContinuousLinearMap.id_apply]
+
+/-- **Right inverses translate.** If the operator of the coefficient field `M` has a bounded
+linear right inverse `Q` on `W^{1,2}`, then so does the operator of the translated coefficient
+field `M (· + a, ·)`, with norm at most `‖Q‖`: it is `Q` conjugated by the translation by `a`.
+This is the case of the zero stabilizer in `exists_rightInverse_coprod_jetOperator_comp_add`. -/
+theorem exists_rightInverse_jetOperator_comp_add {M : ℝ × ℝ → V × V × V →L[ℝ] W}
+    (hM : MemLp M ∞ stripMeasure) {Q : Lp W 2 stripMeasure →L[ℝ] H1 V}
+    (hQ : ((jetOperator stripMeasure M).comp (H1 V).subtypeL).comp Q =
+      ContinuousLinearMap.id ℝ _) (a : ℝ) :
+    ∃ Q' : Lp W 2 stripMeasure →L[ℝ] H1 V,
+      ((jetOperator stripMeasure (fun z ↦ M (z + (a, 0)))).comp (H1 V).subtypeL).comp Q' =
+        ContinuousLinearMap.id ℝ _ ∧ ‖Q'‖ ≤ ‖Q‖ := by
+  obtain ⟨Q', hQ', hQ'n⟩ := exists_rightInverse_coprod_jetOperator_comp_add hM
+    (ι := (0 : Unit →L[ℝ] Lp W 2 stripMeasure)) (Q := Q.prod 0)
+    (by rw [ContinuousLinearMap.coprod_zero_comp_prod_zero, hQ]) a
+  refine ⟨(ContinuousLinearMap.fst ℝ _ _).comp Q', ?_, Q'.opNorm_fst_comp_le.trans
+    (hQ'n.trans_eq Q.opNorm_prod_zero)⟩
+  rw [← hQ', ContinuousLinearMap.comp_zero, ContinuousLinearMap.coprod_zero_right,
+    ← ContinuousLinearMap.comp_assoc]
 
 end Operator
 

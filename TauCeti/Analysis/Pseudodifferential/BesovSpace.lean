@@ -13,6 +13,7 @@ import TauCeti.Analysis.FunctionalSpaces.BesovSpace.AlmostDiagonal
 import TauCeti.Analysis.Distribution.TemperedDistribution.Bernstein
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Data.Nat.Interval
 
 /-!
 # Pseudodifferential operators on Besov spaces
@@ -185,8 +186,8 @@ private theorem IsUniform.exists_quantizeTempered_eq_and_norm_le_of_isVanishingO
       _ = s.card * (C * ‖f‖) := by rw [Finset.sum_const, nsmul_eq_mul]
       _ ≤ (2 * L : ℕ) * (C * ‖f‖) := by
           gcongr
-          rw [Nat.card_Ico]
-          omega
+          exact Nat.card_Ico_add_le_two_mul_of_sub_le k L
+            (Nat.sub_le_sub_right (Nat.le_add_right k 1) L)
       _ = 2 * L * C * ‖f‖ := by push_cast; ring
 
 /-- **Blocks of the quantization of a block.** For a uniform symbol `a` of order `0` there is `C`
