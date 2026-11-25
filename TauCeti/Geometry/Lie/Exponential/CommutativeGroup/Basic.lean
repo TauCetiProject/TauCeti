@@ -36,15 +36,14 @@ its Lie algebra by a lattice.
 * `TauCeti.lieExp_surjective_of_preconnectedSpace`: the exponential of a preconnected
   commutative Lie group is surjective.
 * `TauCeti.discreteTopology_ker_lieExpAddMonoidHom`: the kernel of the exponential is discrete.
-* `TauCeti.ker_lieExpAddMonoidHom_eq_bot_of_subsingleton`: in dimension zero the kernel is zero.
 * `TauCeti.isOpenMap_lieExpAddMonoidHom` and `TauCeti.isOpenMap_lieExp`: the exponential of a
   commutative Lie group is an open map.
 * `TauCeti.lieExpAddMonoidHom_surjective_of_preconnectedSpace`: the exponential homomorphism of
   a preconnected commutative Lie group is surjective.
 * `TauCeti.lieExpQuotientKerContinuousAddEquiv`: a preconnected commutative Lie group is the
   quotient of its Lie algebra by the kernel of the exponential, as topological groups.
-* `TauCeti.lieExpQuotientKerContinuousAddEquiv_nsmul`: multiplication by `n` on `𝔤 / ker(exp)`
-  is the `n`-th power map of `G`.
+* `TauCeti.lieExpLift`: a continuous homomorphism out of the Lie algebra of a preconnected
+  commutative Lie group that vanishes on the kernel of the exponential descends to the group.
 * `TauCeti.compactSpace_quotient_ker_lieExpAddMonoidHom`: for a compact commutative Lie group
   the quotient of the Lie algebra by the kernel of the exponential is compact.
 * `TauCeti.span_ker_lieExpAddMonoidHom_eq_top`, `TauCeti.isZLattice_ker_lieExpAddMonoidHom` and
@@ -120,12 +119,6 @@ theorem mem_ker_lieExpAddMonoidHom {X : LeftInvariantDerivation I G} :
   -- Not a `simp` lemma: `simp` already proves it from `AddMonoidHom.mem_ker`,
   -- `lieExpAddMonoidHom_apply` and `ofMul_eq_zero`, so the simpNF linter rejects the attribute.
   rw [AddMonoidHom.mem_ker, lieExpAddMonoidHom_apply, ofMul_eq_zero]
-
-/-- **Dimension zero.** If the Lie algebra is zero, so is the kernel of the exponential. -/
-theorem ker_lieExpAddMonoidHom_eq_bot_of_subsingleton
-    [Subsingleton (LeftInvariantDerivation I G)] :
-    (lieExpAddMonoidHom (I := I) (G := G)).ker = ⊥ :=
-  Subsingleton.elim _ _
 
 /-- **The kernel of the exponential of a commutative Lie group is a discrete subgroup** of the
 Lie algebra. -/
@@ -243,13 +236,35 @@ theorem lieExpQuotientKerContinuousAddEquiv_symm_apply (X : LeftInvariantDerivat
       (Additive.ofMul (lieExp (I := I) X)) = QuotientAddGroup.mk X := by
   rw [← lieExpQuotientKerContinuousAddEquiv_apply, ContinuousAddEquiv.symm_apply_apply]
 
-/-- Under the identification `𝔤 / ker(exp) ≃ G` of a preconnected commutative Lie group,
-multiplication by `n` on the quotient, which descends from `X ↦ n X`, is the `n`-th power map. -/
-theorem lieExpQuotientKerContinuousAddEquiv_nsmul (n : ℕ)
-    (q : LeftInvariantDerivation I G ⧸ (lieExpAddMonoidHom (I := I) (G := G)).ker) :
-    lieExpQuotientKerContinuousAddEquiv (I := I) (G := G) (n • q) =
-      Additive.ofMul (Additive.toMul (lieExpQuotientKerContinuousAddEquiv (I := I) q) ^ n) := by
-  rw [map_nsmul, ofMul_pow, ofMul_toMul]
+/-- The continuous homomorphism `G → K` out of a preconnected commutative Lie group induced by a
+continuous homomorphism `ψ : 𝔤 →+ Additive K` vanishing on the kernel of the exponential: `ψ`
+descends to `𝔤 / ker(exp)`, which is identified with `G`. It sends `exp X` to `ψ X`
+(`TauCeti.lieExpLift_lieExp`). -/
+def lieExpLift {K : Type*} [Monoid K] [TopologicalSpace K]
+    (ψ : LeftInvariantDerivation I G →+ Additive K) (hψc : Continuous ψ)
+    (hψ : (lieExpAddMonoidHom (I := I) (G := G)).ker ≤ ψ.ker) : G →ₜ* K where
+  toFun g := Additive.toMul (QuotientAddGroup.lift _ ψ hψ
+    ((lieExpQuotientKerContinuousAddEquiv (I := I) (G := G)).symm (Additive.ofMul g)))
+  map_one' := by
+    rw [ofMul_one, map_zero, map_zero, toMul_zero]
+  map_mul' a b := by
+    rw [ofMul_mul, map_add, map_add, toMul_add]
+  continuous_toFun := by
+    -- The lift is continuous since its composite with the quotient map is `ψ`.
+    have hlift : Continuous (QuotientAddGroup.lift _ ψ hψ) :=
+      (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2 hψc
+    exact continuous_toMul.comp (hlift.comp
+      ((lieExpQuotientKerContinuousAddEquiv (I := I) (G := G)).symm.continuous.comp
+        continuous_ofMul))
+
+/-- The homomorphism `lieExpLift ψ hψc hψ` sends `exp X` to `ψ X`. -/
+@[simp]
+theorem lieExpLift_lieExp {K : Type*} [Monoid K] [TopologicalSpace K]
+    (ψ : LeftInvariantDerivation I G →+ Additive K) (hψc : Continuous ψ)
+    (hψ : (lieExpAddMonoidHom (I := I) (G := G)).ker ≤ ψ.ker) (X : LeftInvariantDerivation I G) :
+    lieExpLift ψ hψc hψ (lieExp X) = Additive.toMul (ψ X) := by
+  rw [lieExpLift, ContinuousMonoidHom.coe_mk, MonoidHom.coe_mk, OneHom.coe_mk,
+    lieExpQuotientKerContinuousAddEquiv_symm_apply, QuotientAddGroup.lift_mk]
 
 end Preconnected
 

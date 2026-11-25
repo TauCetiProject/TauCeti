@@ -171,37 +171,13 @@ variable [PreconnectedSpace G]
 `exp (φ X)`. -/
 def ofLieLinearMap (φ : LeftInvariantDerivation I G →ₗ[ℝ] LeftInvariantDerivation I' G')
     (hφ : ∀ X ∈ (lieExpAddMonoidHom (I := I) (G := G)).ker,
-      φ X ∈ (lieExpAddMonoidHom (I := I') (G := G')).ker) : G →ₜ* G' where
+      φ X ∈ (lieExpAddMonoidHom (I := I') (G := G')).ker) : G →ₜ* G' :=
   -- The kernel inclusion goes through `AddMonoidHom.mem_ker` to elaborate at the type
-  -- `X ∈ (exp' ∘ φ).ker`: passing `hφ` directly leaves a lift that `QuotientAddGroup.lift_mk'`
-  -- no longer rewrites.
-  toFun g := Additive.toMul (QuotientAddGroup.lift _
-    ((lieExpAddMonoidHom (I := I') (G := G')).comp φ.toAddMonoidHom)
-    (fun X hX ↦ AddMonoidHom.mem_ker.2 (AddMonoidHom.mem_ker.1 (hφ X hX)))
-    ((lieExpQuotientKerContinuousAddEquiv (I := I) (G := G)).symm (Additive.ofMul g)))
-  map_one' := by
-    rw [ofMul_one, map_zero, map_zero, toMul_zero]
-  map_mul' a b := by
-    rw [ofMul_mul, map_add, map_add, toMul_add]
-  continuous_toFun := by
-    refine continuous_toMul.comp (Continuous.comp ?_
-      ((lieExpQuotientKerContinuousAddEquiv (I := I) (G := G)).symm.continuous.comp
-        continuous_ofMul))
-    -- The lift is continuous since its composite with the quotient map is `exp ∘ φ`.
-    exact (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2
-      ((continuous_lieExpAddMonoidHom (I := I') (G := G')).comp
-        φ.continuous_of_finiteDimensional)
-
-/-- `ofLieLinearMap φ hφ g` lifts `exp ∘ φ` through the identification `𝔤 / ker(exp) ≃ G`. -/
-theorem ofLieLinearMap_apply
-    (φ : LeftInvariantDerivation I G →ₗ[ℝ] LeftInvariantDerivation I' G')
-    (hφ : ∀ X ∈ (lieExpAddMonoidHom (I := I) (G := G)).ker,
-      φ X ∈ (lieExpAddMonoidHom (I := I') (G := G')).ker) (g : G) :
-    ofLieLinearMap φ hφ g = Additive.toMul (QuotientAddGroup.lift _
-      ((lieExpAddMonoidHom (I := I') (G := G')).comp φ.toAddMonoidHom)
-      (fun X hX ↦ AddMonoidHom.mem_ker.2 (AddMonoidHom.mem_ker.1 (hφ X hX)))
-      ((lieExpQuotientKerContinuousAddEquiv (I := I) (G := G)).symm (Additive.ofMul g))) :=
-  (rfl)
+  -- `X ∈ (exp' ∘ φ).ker`: passing `hφ` directly leaves a term that `simp` no longer reduces in
+  -- `ofLieLinearMap_lieExp`.
+  lieExpLift ((lieExpAddMonoidHom (I := I') (G := G')).comp φ.toAddMonoidHom)
+    ((continuous_lieExpAddMonoidHom (I := I') (G := G')).comp φ.continuous_of_finiteDimensional)
+    fun X hX ↦ AddMonoidHom.mem_ker.2 (AddMonoidHom.mem_ker.1 (hφ X hX))
 
 /-- The homomorphism `ofLieLinearMap φ hφ` sends `exp X` to `exp (φ X)`. -/
 @[simp]
@@ -210,7 +186,7 @@ theorem ofLieLinearMap_lieExp
     (hφ : ∀ X ∈ (lieExpAddMonoidHom (I := I) (G := G)).ker,
       φ X ∈ (lieExpAddMonoidHom (I := I') (G := G')).ker) (X : LeftInvariantDerivation I G) :
     ofLieLinearMap φ hφ (lieExp X) = lieExp (φ X) := by
-  simp [ofLieLinearMap_apply]
+  simp [ofLieLinearMap]
 
 /-- **The Lie map of `ofLieLinearMap φ hφ` is `φ`.** -/
 @[simp]
