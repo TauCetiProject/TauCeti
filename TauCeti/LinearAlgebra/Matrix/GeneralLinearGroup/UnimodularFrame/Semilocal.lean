@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.RingTheory.Spectrum.Maximal.Defs
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UnimodularFrame.Basic
 import TauCeti.Algebra.Module.StablyFree.Semilocal
 
 /-!
@@ -15,7 +15,8 @@ import TauCeti.Algebra.Module.StablyFree.Semilocal
 A unimodular `k`-frame of `Rⁿ` is an `n × k` matrix `A` with a left inverse `B * A = 1`: its
 columns form a basis of a free direct summand of `Rⁿ`. The general linear group `GL n R` acts on
 the `n × k` matrices by left multiplication, and this action preserves frames, `B * g⁻¹` being a
-left inverse of `g • A`. The standard frame `(1 : Matrix n n R).submatrix id f` of an injective
+left inverse of `g • A`; the frames form the sub-`GL n R`-set `TauCeti.unimodularFrames R n k`.
+The standard frame `(1 : Matrix n n R).submatrix id f` of an injective
 `f : k → n` is the frame of the standard basis vectors `e_(f a)`; its stabiliser is computed in
 `TauCeti.stabilizer_submatrix_one` and, for the first `r` standard basis vectors of `Rⁿ`, it is the
 affine group `A_{n-r,r}(R)` of `TauCeti.stabilizerCastLEEquivAffineGroup`.
@@ -37,6 +38,8 @@ being stably free and not free.
 
 * `TauCeti.exists_smul_eq_of_mul_eq_one`: over a semilocal ring, any two `k`-frames of `Rⁿ` lie in
   the same orbit of `GL n R`.
+* `TauCeti.orbit_eq_unimodularFrames`: over a semilocal ring, the orbit of any `k`-frame of `Rⁿ`
+  is the set `TauCeti.unimodularFrames R n k` of all `k`-frames.
 * `TauCeti.orbit_submatrix_one`: over a semilocal ring, the orbit of the standard frame of an
   injective `f : k → n` consists of exactly the `n × k` matrices with a left inverse.
 
@@ -130,23 +133,22 @@ theorem exists_smul_eq_of_mul_eq_one [Finite (MaximalSpectrum R)] {A A' : Matrix
 
 /-- Over a commutative semilocal ring, the orbit under `GL n R` of a unimodular `k`-frame of `Rⁿ`
 is the set of all unimodular `k`-frames, the `n × k` matrices with a left inverse. -/
-theorem orbit_eq_setOf_exists_mul_eq_one [Finite (MaximalSpectrum R)] {A : Matrix n k R}
-    {B : Matrix k n R} (h : B * A = 1) :
-    MulAction.orbit (GL n R) A = {A' | ∃ B' : Matrix k n R, B' * A' = (1 : Matrix k k R)} := by
-  ext A'
-  refine ⟨?_, fun ⟨_, h'⟩ ↦ exists_smul_eq_of_mul_eq_one h h'⟩
-  rintro ⟨g, rfl⟩
-  refine ⟨B * ((g⁻¹ : GL n R) : Matrix n n R), ?_⟩
-  simp [Matrix.mul_assoc, h]
+theorem orbit_eq_unimodularFrames [Finite (MaximalSpectrum R)] {A : Matrix n k R}
+    (hA : A ∈ unimodularFrames R n k) :
+    MulAction.orbit (GL n R) A = unimodularFrames R n k := by
+  refine Set.ext fun A' ↦ ⟨?_, fun hA' ↦ ?_⟩
+  · rintro ⟨g, rfl⟩
+    exact (unimodularFrames R n k).smul_mem g hA
+  · obtain ⟨_, h⟩ := mem_unimodularFrames_iff.1 hA
+    obtain ⟨_, h'⟩ := mem_unimodularFrames_iff.1 hA'
+    exact exists_smul_eq_of_mul_eq_one h h'
 
 /-- Over a commutative semilocal ring, the orbit under `GL n R` of the standard frame
 `(e_(f a))_a` of an injective `f : k → n` is the set of all unimodular `k`-frames of `Rⁿ`, the
 `n × k` matrices with a left inverse: every unimodular frame completes to a basis of `Rⁿ`. -/
 theorem orbit_submatrix_one [Finite (MaximalSpectrum R)] {f : k → n}
     (hf : Function.Injective f) :
-    MulAction.orbit (GL n R) ((1 : Matrix n n R).submatrix id f) =
-      {A | ∃ B : Matrix k n R, B * A = (1 : Matrix k k R)} :=
-  orbit_eq_setOf_exists_mul_eq_one (B := (1 : Matrix n n R).submatrix f id) <| by
-    rw [← submatrix_mul _ _ _ _ _ Function.bijective_id, Matrix.one_mul, submatrix_one _ hf]
+    MulAction.orbit (GL n R) ((1 : Matrix n n R).submatrix id f) = unimodularFrames R n k :=
+  orbit_eq_unimodularFrames (submatrix_one_mem_unimodularFrames hf)
 
 end TauCeti
