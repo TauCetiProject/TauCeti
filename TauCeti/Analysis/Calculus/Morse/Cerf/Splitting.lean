@@ -71,17 +71,6 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- A vector spanning the kernel of a continuous linear map is killed by it. -/
-private theorem apply_eq_zero_of_ker_eq_span_singleton {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {H : E →L[ℝ] F} {v : E} (hker : H.ker = ℝ ∙ v) : H v = 0 :=
-  LinearMap.mem_ker.1 (hker.ge (Submodule.mem_span_singleton_self v))
-
-/-- A slice `f s` of a family that is jointly `C^m` at `(s, y)` is `C^m` at `y`. -/
-private theorem contDiffAt_slice {X Y : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
-    [NormedAddCommGroup Y] [NormedSpace ℝ Y] {m : WithTop ℕ∞} {f : ℝ → X → Y} {s : ℝ} {y : X}
-    (hf : ContDiffAt ℝ m (uncurry f) (s, y)) : ContDiffAt ℝ m (f s) y :=
-  hf.comp y (contDiffAt_const.prodMk contDiffAt_id)
-
 /-! ### The reduced family -/
 
 section Reduced
@@ -122,7 +111,7 @@ private theorem hasDerivAt_reduced (hU : IsOpen U) (hh : ContDiffOn ℝ 1 h U)
   have hΓ := hasDerivAt_add_smul_add_section (x := x) (v := v)
     ((hh.differentiableOn one_ne_zero).differentiableAt (hU.mem_nhds hp))
   have hfd : DifferentiableAt ℝ (f s) (x + a • v + h (s, a)) :=
-    (contDiffAt_slice (hf _ hp)).differentiableAt one_ne_zero
+    (hf _ hp).uncurry_left.differentiableAt one_ne_zero
   have hzero : fderiv ℝ (f s) (x + a • v + h (s, a)) (fderiv ℝ h (s, a) (0, 1) : E) = 0 :=
     congrArg (fun L : ℓ.ker →L[ℝ] ℝ ↦ L (fderiv ℝ h (s, a) (0, 1))) (hcrit _ hp)
   have hg := hfd.hasFDerivAt.comp_hasDerivAt a hΓ
@@ -151,9 +140,9 @@ private theorem fderiv_section_apply_zero_one (hU : IsOpen U) (htU : (t, 0) ∈ 
   set H := fderiv ℝ (fderiv ℝ (f t)) x
   set η := fderiv ℝ h (t, 0) (0, 1)
   have hx : x + (0 : ℝ) • v + (h (t, 0) : E) = x := by simp [hht]
-  have hft : ContDiffAt ℝ 2 (f t) x := contDiffAt_slice (contDiffAt_uncurry_of_section htU hht hf)
+  have hft : ContDiffAt ℝ 2 (f t) x := (contDiffAt_uncurry_of_section htU hht hf).uncurry_left
   have hsymm : ∀ u w, H u w = H w u := hft.isSymmSndFDerivAt (by simp)
-  have hv : H v = 0 := apply_eq_zero_of_ker_eq_span_singleton hker
+  have hv : H v = 0 := H.apply_eq_zero_of_ker_eq_span_singleton hker
   have hD : HasFDerivAt (fderiv ℝ (f t)) H (x + (0 : ℝ) • v + (h (t, 0) : E)) := by
     rw [hx]
     exact ((hft.fderiv_right le_rfl).differentiableAt one_ne_zero).hasFDerivAt
@@ -187,7 +176,7 @@ private theorem eventuallyEq_deriv_fderiv_reduced (hU : IsOpen U) (htU : (t, 0) 
       fderiv ℝ (fderiv ℝ (f t)) (x + a • v + h (t, a))
         (deriv (fun b ↦ x + b • v + (h (t, b) : E)) a) v := by
   filter_upwards [eventually_mk_mem (hU.mem_nhds htU)] with b hb
-  have hfb : ContDiffAt ℝ 3 (f t) (x + b • v + h (t, b)) := contDiffAt_slice (hf _ hb)
+  have hfb : ContDiffAt ℝ 3 (f t) (x + b • v + h (t, b)) := (hf _ hb).uncurry_left
   have hD := ((hfb.fderiv_right (m := 2) (by norm_num)).differentiableAt
     (by norm_num)).hasFDerivAt
   have hΓb : HasDerivAt (fun b ↦ x + b • v + (h (t, b) : E))
@@ -212,10 +201,11 @@ private theorem deriv_deriv_reduced (hU : IsOpen U) (htU : (t, 0) ∈ U)
   set Γ : ℝ → E := fun b ↦ x + b • v + (h (t, b) : E)
   have hΓ0 : Γ 0 = x := by simp [Γ, hht]
   have hUt := eventually_mk_mem (hU.mem_nhds htU)
-  have hft : ContDiffAt ℝ 3 (f t) x := contDiffAt_slice (contDiffAt_uncurry_of_section htU hht hf)
+  have hft : ContDiffAt ℝ 3 (f t) x := (contDiffAt_uncurry_of_section htU hht hf).uncurry_left
   have hsymm : ∀ u w, fderiv ℝ (fderiv ℝ (f t)) x u w = fderiv ℝ (fderiv ℝ (f t)) x w u :=
     hft.isSymmSndFDerivAt (by norm_num)
-  have hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0 := apply_eq_zero_of_ker_eq_span_singleton hker
+  have hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0 :=
+    ContinuousLinearMap.apply_eq_zero_of_ker_eq_span_singleton hker
   -- The curve `Γ` is `C³` at `0`, with velocity `v` there.
   have hΓC : ContDiffAt ℝ 3 Γ 0 := by
     have hhC : ContDiffAt ℝ 3 (fun b : ℝ ↦ h (t, b)) 0 :=
@@ -266,7 +256,8 @@ private theorem deriv_deriv_reduced_param (hU : IsOpen U) (htU : (t, 0) ∈ U)
       deriv (fun s ↦ fderiv ℝ (f s) x) t v := by
   have h1 : ContDiffAt ℝ 2 (uncurry f) (t, x) := contDiffAt_uncurry_of_section htU hht hf
   have hsymm := fderiv_fderiv_apply_comm_of_uncurry h1
-  have hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0 := apply_eq_zero_of_ker_eq_span_singleton hker
+  have hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0 :=
+    ContinuousLinearMap.apply_eq_zero_of_ker_eq_span_singleton hker
   -- Near `t`, the derivative of the reduced function at `0` is `d(f s) v` along the section.
   have hev : (fun s ↦ deriv (fun a ↦ f s (x + a • v + h (s, a))) 0) =ᶠ[𝓝 t]
       fun s ↦ fderiv ℝ (f s) (x + (0 : ℝ) • v + h (s, 0)) v :=
@@ -431,7 +422,7 @@ theorem exists_normalized_splitting_chart_of_ker_eq_span_singleton [FiniteDimens
     have h1 : (1 : WithTop ℕ∞) ≤ n := by exact_mod_cast Order.one_le_iff_ne_zero.2 hn
     calc (3 : WithTop ℕ∞) = 1 + 2 := by norm_num
       _ ≤ n + 2 := add_le_add_left h1 2
-  have hft : ContDiffAt ℝ 2 (f t) x := contDiffAt_slice
+  have hft : ContDiffAt ℝ 2 (f t) x := ContDiffAt.uncurry_left
     ((hf.contDiffAt hW).of_le ((show (2 : WithTop ℕ∞) ≤ 3 by norm_num).trans le_add_self))
   -- The section of critical points along the kernel of `ℓ`, and the splitting chart.
   obtain ⟨h, U, W', hU, htU, hht, hh, hW', hφ, hfU, hcrit⟩ :=
@@ -444,7 +435,7 @@ theorem exists_normalized_splitting_chart_of_ker_eq_span_singleton [FiniteDimens
   -- The critical points of `f` along the kernel of `ℓ`, and the reduced family.
   have hcritU (p : ℝ × ℝ) (hp : p ∈ U) :
       (fderiv ℝ (f p.1) (x + p.2 • v + h p)).comp ℓ.ker.subtypeL = 0 := by
-    rw [← fderiv_comp_add_coe_ker ((contDiffAt_slice (hfU p hp)).differentiableAt (by simp))]
+    rw [← fderiv_comp_add_coe_ker ((hfU p hp).uncurry_left.differentiableAt (by simp))]
     exact hcrit p hp
   obtain ⟨hd1, hd2, hd3, hdt⟩ := fderiv_reduced hU htU (hh.of_le h3) hht
     (fun p hp ↦ (hfU p hp).of_le h3) hcritU hc hker hℓ

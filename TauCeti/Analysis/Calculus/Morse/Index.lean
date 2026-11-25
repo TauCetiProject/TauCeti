@@ -382,7 +382,7 @@ theorem morseIndex_comp_add_coe_ker [FiniteDimensional ℝ E] {φ : E → ℝ} {
   set K := ℓ.ker
   set H := fderiv ℝ (fderiv ℝ φ) x
   have hsymm : ∀ u w, H u w = H w u := hφ.isSymmSndFDerivAt (by simp)
-  have hv : H v = 0 := LinearMap.mem_ker.1 (hker.ge (Submodule.mem_span_singleton_self v))
+  have hv : H v = 0 := H.apply_eq_zero_of_ker_eq_span_singleton hker
   -- The Hessian of the restriction is the restriction of the Hessian.
   have hcomp : hessianQuadraticForm (fun w : K ↦ φ (x + w)) 0 =
       (hessianQuadraticForm φ x).comp K.subtype := by
