@@ -82,7 +82,7 @@ noncomputable def quotientExpectation (n : ℕ) :
       TemperleyLieb K δ (n + 1) ⧸ (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1)) :=
   ((tr (n + 1)).quotientTrace (htr.map_mul_comm (n + 1))).traceExpectation
     ((tr (n + 1)).quotientTrace_nondegenerate (htr.map_mul_comm (n + 1)))
-    (δ⁻¹ • (tr (n + 2)).quotientTrace (htr.map_mul_comm (n + 2))) (htr.quotientStrandIncl n)
+    (δ⁻¹ • (tr (n + 2)).quotientTrace (htr.map_mul_comm (n + 2))) (htr.quotientStrandIncl (n + 1))
 
 /-- The defining trace identity of the conditional expectation. -/
 @[simp]
@@ -91,7 +91,7 @@ theorem quotientTrace_quotientExpectation_mul (n : ℕ)
     (y : TemperleyLieb K δ (n + 1) ⧸ (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))) :
     (tr (n + 1)).quotientTrace (htr.map_mul_comm (n + 1)) (htr.quotientExpectation n a * y) =
       δ⁻¹ * (tr (n + 2)).quotientTrace (htr.map_mul_comm (n + 2))
-        (a * htr.quotientStrandIncl n y) := by
+        (a * htr.quotientStrandIncl (n + 1) y) := by
   simp [quotientExpectation]
 
 /-- The defining trace identity characterizes the value of the conditional expectation. -/
@@ -101,7 +101,7 @@ theorem quotientExpectation_eq_iff {n : ℕ}
     htr.quotientExpectation n a = b ↔
       ∀ y, (tr (n + 1)).quotientTrace (htr.map_mul_comm (n + 1)) (b * y) =
         δ⁻¹ * (tr (n + 2)).quotientTrace (htr.map_mul_comm (n + 2))
-          (a * htr.quotientStrandIncl n y) := by
+          (a * htr.quotientStrandIncl (n + 1) y) := by
   simp [quotientExpectation, LinearMap.traceExpectation_eq_iff]
 
 /-- The conditional expectation scales the quotient traces by `δ⁻¹`; equivalently, it preserves
@@ -118,7 +118,7 @@ theorem quotientTrace_quotientExpectation (n : ℕ)
 theorem quotientExpectation_mul_quotientStrandIncl (n : ℕ)
     (a : TemperleyLieb K δ (n + 2) ⧸ (tr (n + 2)).traceRadical (htr.map_mul_comm (n + 2)))
     (y : TemperleyLieb K δ (n + 1) ⧸ (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))) :
-    htr.quotientExpectation n (a * htr.quotientStrandIncl n y) =
+    htr.quotientExpectation n (a * htr.quotientStrandIncl (n + 1) y) =
       htr.quotientExpectation n a * y :=
   LinearMap.traceExpectation_mul_algHom _ _ _ _ a y
 
@@ -134,7 +134,7 @@ private theorem smul_quotientTrace_mul_comm (n : ℕ)
 theorem quotientExpectation_quotientStrandIncl_mul (n : ℕ)
     (x : TemperleyLieb K δ (n + 1) ⧸ (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1)))
     (a : TemperleyLieb K δ (n + 2) ⧸ (tr (n + 2)).traceRadical (htr.map_mul_comm (n + 2))) :
-    htr.quotientExpectation n (htr.quotientStrandIncl n x * a) =
+    htr.quotientExpectation n (htr.quotientStrandIncl (n + 1) x * a) =
       x * htr.quotientExpectation n a :=
   LinearMap.traceExpectation_algHom_mul _
     (LinearMap.quotientTrace_mul_comm _ (htr.map_mul_comm (n + 1)))
@@ -143,7 +143,7 @@ theorem quotientExpectation_quotientStrandIncl_mul (n : ℕ)
 /-- For `δ ≠ 0`, the strand map carries the scaled trace `δ⁻¹ tr` back to `tr`. -/
 private theorem comp_quotientStrandIncl (hδ : δ ≠ 0) (n : ℕ) :
     (δ⁻¹ • (tr (n + 2)).quotientTrace (htr.map_mul_comm (n + 2))) ∘ₗ
-        (htr.quotientStrandIncl n).toLinearMap =
+        (htr.quotientStrandIncl (n + 1)).toLinearMap =
       (tr (n + 1)).quotientTrace (htr.map_mul_comm (n + 1)) := by
   ext x
   simp [inv_mul_cancel_left₀ hδ]
@@ -157,7 +157,7 @@ theorem quotientExpectation_one (hδ : δ ≠ 0) (n : ℕ) : htr.quotientExpecta
 @[simp]
 theorem quotientExpectation_quotientStrandIncl (hδ : δ ≠ 0) (n : ℕ)
     (x : TemperleyLieb K δ (n + 1) ⧸ (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))) :
-    htr.quotientExpectation n (htr.quotientStrandIncl n x) = x :=
+    htr.quotientExpectation n (htr.quotientStrandIncl (n + 1) x) = x :=
   LinearMap.traceExpectation_algHom _ (htr.comp_quotientStrandIncl hδ n) x
 
 /-- For `δ ≠ 0`, the conditional expectation of an element with no cap on the last strand is that
@@ -168,7 +168,8 @@ theorem quotientExpectation_mk_strandIncl (hδ : δ ≠ 0) (n : ℕ) (a : Temper
         (Ideal.Quotient.mk ((tr (n + 2)).traceRadical (htr.map_mul_comm (n + 2)))
           (strandIncl a)) =
       Ideal.Quotient.mk ((tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))) a := by
-  rw [← htr.quotientStrandIncl_mk, quotientExpectation_quotientStrandIncl _ hδ]
+  rw [← strandInclAll_succ, ← htr.quotientStrandIncl_mk,
+    quotientExpectation_quotientStrandIncl _ hδ]
 
 /-- The last generator has conditional expectation `δ⁻¹ • 1`: closing its last strand leaves the
 identity. Thus the Jones projection `δ⁻¹ • e` has conditional expectation `δ⁻² • 1`. -/
@@ -179,7 +180,7 @@ theorem quotientExpectation_mk_e_last (n : ℕ) :
           (e δ (Fin.last n))) = δ⁻¹ • 1 := by
   refine htr.quotientExpectation_eq_iff.mpr fun y ↦ ?_
   obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective y
-  simp only [quotientStrandIncl_mk, ← map_mul, LinearMap.quotientTrace_mk]
+  simp only [quotientStrandIncl_mk, strandInclAll_succ, ← map_mul, LinearMap.quotientTrace_mk]
   rw [htr.map_mul_comm, htr.map_strandIncl_mul_e_last]
   simp
 
@@ -191,8 +192,8 @@ theorem quotientExpectation_mk_strandIncl_mul_e_last_mul (n : ℕ)
         (Ideal.Quotient.mk ((tr (n + 2)).traceRadical (htr.map_mul_comm (n + 2)))
           (strandIncl a * e δ (Fin.last n) * strandIncl b)) =
       δ⁻¹ • Ideal.Quotient.mk ((tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))) (a * b) := by
-  rw [map_mul (Ideal.Quotient.mk _), map_mul (Ideal.Quotient.mk _), ← htr.quotientStrandIncl_mk,
-    ← htr.quotientStrandIncl_mk]
+  rw [map_mul (Ideal.Quotient.mk _), map_mul (Ideal.Quotient.mk _)]
+  simp_rw [← strandInclAll_succ, ← htr.quotientStrandIncl_mk]
   simp only [quotientExpectation_mul_quotientStrandIncl, quotientExpectation_quotientStrandIncl_mul,
     quotientExpectation_mk_e_last]
   simp
@@ -253,8 +254,8 @@ private theorem quotientExpectation_mk_of_sandwich (hδ : δ ≠ 0) {n : ℕ}
   have hyz : δ * tr (n + 1) (y * z) = δ * tr (n + 2) (x * strandIncl z) := by
     rw [← map_e_last_mul_strandIncl_mul_e_last_mul htr, hy, htr.map_strandIncl_mul_e_last_mul,
       ← map_mul strandIncl, htr.map_strandIncl]
-  simp only [smul_mul_assoc, map_smul, smul_eq_mul, quotientStrandIncl_mk, ← map_mul,
-    LinearMap.quotientTrace_mk, mul_left_cancel₀ hδ hyz]
+  simp only [smul_mul_assoc, map_smul, smul_eq_mul, quotientStrandIncl_mk, strandInclAll_succ,
+    ← map_mul, LinearMap.quotientTrace_mk, mul_left_cancel₀ hδ hyz]
 
 /-- **The basic construction relation.** For `δ ≠ 0`, sandwiching `ι x` between two copies of the
 last generator `e` gives `δ • ι (ι (E x)) * e`. In terms of the Jones projection `p = δ⁻¹ • e`,
@@ -262,18 +263,18 @@ this is `p * ι x * p = ι (ι (E x)) * p`. -/
 theorem mk_e_last_mul_quotientStrandIncl_mul_mk_e_last (hδ : δ ≠ 0) (n : ℕ)
     (x : TemperleyLieb K δ (n + 2) ⧸ (tr (n + 2)).traceRadical (htr.map_mul_comm (n + 2))) :
     Ideal.Quotient.mk ((tr (n + 3)).traceRadical (htr.map_mul_comm (n + 3)))
-          (e δ (Fin.last (n + 1))) * htr.quotientStrandIncl (n + 1) x *
+          (e δ (Fin.last (n + 1))) * htr.quotientStrandIncl (n + 2) x *
         Ideal.Quotient.mk ((tr (n + 3)).traceRadical (htr.map_mul_comm (n + 3)))
           (e δ (Fin.last (n + 1))) =
-      δ • htr.quotientStrandIncl (n + 1)
-          (htr.quotientStrandIncl n (htr.quotientExpectation n x)) *
+      δ • htr.quotientStrandIncl (n + 2)
+          (htr.quotientStrandIncl (n + 1) (htr.quotientExpectation n x)) *
         Ideal.Quotient.mk ((tr (n + 3)).traceRadical (htr.map_mul_comm (n + 3)))
           (e δ (Fin.last (n + 1))) := by
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
   obtain ⟨y, hy⟩ := exists_e_last_mul_strandIncl_mul_e_last_eq x
   rw [htr.quotientExpectation_mk_of_sandwich hδ hy]
-  simp only [map_smul, smul_smul, mul_inv_cancel₀ hδ, one_smul, quotientStrandIncl_mk, ← map_mul,
-    hy]
+  simp only [map_smul, smul_smul, mul_inv_cancel₀ hδ, one_smul, quotientStrandIncl_mk,
+    strandInclAll_succ, ← map_mul, hy]
 
 section Star
 
