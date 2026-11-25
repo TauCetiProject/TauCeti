@@ -161,10 +161,11 @@ theorem eval_coordX_coordY :
     (nodeForm (algebraMap A (PointedNodeRing γ δ s t) γ) (algebraMap A _ δ)).eval
         (coordX γ δ s t) (coordY γ δ s t) =
       algebraMap A _ ((nodeForm γ δ).eval s t) := by
-  have h : AdjoinRoot.mk (pointedNodePolynomial γ δ s t)
-      ((nodeForm (C (C γ)) (C (C δ))).eval X (C X) - C (C ((nodeForm γ δ).eval s t))) = 0 := by
-    rw [← pointedNodePolynomial_eq_eval_sub, AdjoinRoot.mk_self]
-  rwa [map_sub, sub_eq_zero, mk_C_C, ← eval_nodeForm_map, mk_C_C, mk_C_C, mk_X, mk_C_X] at h
+  have h := AdjoinRoot.mk_self (f := pointedNodePolynomial γ δ s t)
+  simp only [pointedNodePolynomial_def, map_add, map_sub, map_mul, map_pow, mk_X, mk_C_X,
+    mk_C_C] at h
+  rw [eval_nodeForm]
+  linear_combination h
 
 section Lift
 
@@ -203,7 +204,9 @@ coordinates. -/
 theorem algHom_ext {f g : PointedNodeRing γ δ s t →ₐ[A] B}
     (hX : f (coordX γ δ s t) = g (coordX γ δ s t))
     (hY : f (coordY γ δ s t) = g (coordY γ δ s t)) : f = g :=
-  AdjoinRoot.algHom_ext' (Polynomial.algHom_ext hY) hX
+  AdjoinRoot.algHom_ext' (Polynomial.algHom_ext <| by
+    rw [AlgHom.comp_apply, AlgHom.comp_apply, AdjoinRoot.coe_ofAlgHom, of_X_eq_coordY]
+    exact hY) hX
 
 end Lift
 
