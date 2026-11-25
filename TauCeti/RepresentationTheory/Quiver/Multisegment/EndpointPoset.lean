@@ -228,17 +228,6 @@ theorem matchingNumber_le_iff_perm (σ : Equiv.Perm (Fin q.card)) {k : ℕ} :
 
 /-! ### Endpoint antichains and inclusion chains -/
 
-/-- The labels carrying an interval of a finite set `B` are as many as the occurrences of the
-intervals of `B`, counted with multiplicity. -/
-theorem card_filter_occurrenceInterval_mem (q : Multisegment) (B : Finset IntInterval) :
-    #(univ.filter fun i : Fin q.card => occurrenceInterval q i ∈ B) = ∑ s ∈ B, q.count s := by
-  classical
-  rw [card_eq_sum_card_fiberwise (f := occurrenceInterval q)
-    (s := univ.filter fun i => occurrenceInterval q i ∈ B) (t := B) fun i hi => by simpa using hi]
-  refine sum_congr rfl fun s hs => ?_
-  rw [← card_filter_occurrenceInterval_eq q s, filter_filter]
-  exact congrArg card (filter_congr fun i _ => ⟨And.right, fun h => ⟨h ▸ hs, h⟩⟩)
-
 /-- The labels carrying the intervals of an inclusion chain form an endpoint antichain. -/
 theorem isAntichain_filter_occurrenceInterval_mem {B : Finset IntInterval}
     (hB : IsInclusionChain B) :

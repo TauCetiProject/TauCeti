@@ -711,6 +711,20 @@ theorem card_filter_occurrenceInterval_eq (m : Multisegment) (s : IntInterval) :
     (Finset.univ.filter fun i : Fin m.card => occurrenceInterval m i = s).card = m.count s :=
   card_filter_occurrenceInterval_perm m 1 s
 
+/-- The labels carrying an interval of a finite set `B` are as many as the occurrences of the
+intervals of `B`, counted with multiplicity. -/
+theorem card_filter_occurrenceInterval_mem (m : Multisegment) (B : Finset IntInterval) :
+    (Finset.univ.filter fun i : Fin m.card => occurrenceInterval m i ∈ B).card =
+      ∑ s ∈ B, m.count s := by
+  classical
+  rw [Finset.card_eq_sum_card_fiberwise (f := occurrenceInterval m)
+    (s := Finset.univ.filter fun i => occurrenceInterval m i ∈ B) (t := B)
+    fun i hi => by simpa using hi]
+  refine Finset.sum_congr rfl fun s hs => ?_
+  rw [← card_filter_occurrenceInterval_eq m s, Finset.filter_filter]
+  exact congrArg Finset.card
+    (Finset.filter_congr fun i _ => ⟨And.right, fun h => ⟨h ▸ hs, h⟩⟩)
+
 /-- Summing interval lengths over all occurrence labels equals `totalLength m`. -/
 theorem sum_length_occurrenceInterval (m : Multisegment) :
     ∑ i : Fin m.card, (occurrenceInterval m i).length = totalLength m := by
