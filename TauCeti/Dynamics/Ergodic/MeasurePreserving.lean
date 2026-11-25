@@ -21,7 +21,7 @@ import Mathlib.Order.SuccPred.IntervalSucc
   a measure-preserving map finite.
 * `MeasureTheory.MeasurePreserving.trim_comap` — a measure-preserving map preserves the measures
   trimmed to a target sub-σ-algebra and its pullback on the source.
-* `MeasureTheory.MeasurePreserving.map_eq_self_of_strictMono` — a strictly increasing map of a
+* `MeasureTheory.MeasurePreserving.isFixedPt_of_strictMono` — a strictly increasing map of a
   densely ordered space preserving a locally finite measure of full support fixes every point
   between two of its fixed points.
 -/
@@ -62,13 +62,13 @@ variable {α : Type*} [LinearOrder α] [DenselyOrdered α] [TopologicalSpace α]
 /-- A strictly increasing map of a densely ordered space preserving a locally finite measure of
 full support does not move a point `x` up when it fixes a point `y ≥ x`: otherwise the intervals
 `[hⁿ(x), hⁿ⁺¹(x))` would be disjoint subsets of `[x, y]` of equal positive measure. -/
-theorem map_le_self_of_strictMono (hμ : MeasurePreserving h μ μ) (hh : StrictMono h) {x y : α}
-    (hxy : x ≤ y) (hy : h y = y) : h x ≤ x := by
+theorem apply_le_self_of_strictMono (hμ : MeasurePreserving h μ μ) (hh : StrictMono h) {x y : α}
+    (hxy : x ≤ y) (hy : IsFixedPt h y) : h x ≤ x := by
   by_contra! hx
   set u : ℕ → α := fun n => h^[n] x
   have hu (n : ℕ) : u (n + 1) = h (u n) := iterate_succ_apply' h n x
   have hmono : Monotone u := (hh.strictMono_iterate_of_lt_map hx).monotone
-  have hle (n : ℕ) : u n ≤ y := iterate_fixed hy n ▸ hh.monotone.iterate n hxy
+  have hle (n : ℕ) : u n ≤ y := (hy.iterate n).eq ▸ hh.monotone.iterate n hxy
   have hpre (n : ℕ) : h ⁻¹' Ico (u (n + 1)) (u (n + 2)) = Ico (u n) (u (n + 1)) := by
     ext z
     simp only [mem_preimage, mem_Ico, hu (n + 1), hu n, hh.le_iff_le, hh.lt_iff_lt]
@@ -88,13 +88,14 @@ theorem map_le_self_of_strictMono (hμ : MeasurePreserving h μ μ) (hh : Strict
 
 /-- A strictly increasing map of a densely ordered space preserving a locally finite measure of
 full support fixes every point lying between two of its fixed points. -/
-theorem map_eq_self_of_strictMono (hμ : MeasurePreserving h μ μ) (hh : StrictMono h)
-    {x y₁ y₂ : α} (h₁ : h y₁ = y₁) (h₂ : h y₂ = y₂) (hx₁ : y₁ ≤ x) (hx₂ : x ≤ y₂) : h x = x := by
+theorem isFixedPt_of_strictMono (hμ : MeasurePreserving h μ μ) (hh : StrictMono h)
+    {x y₁ y₂ : α} (h₁ : IsFixedPt h y₁) (h₂ : IsFixedPt h y₂) (hx₁ : y₁ ≤ x) (hx₂ : x ≤ y₂) :
+    IsFixedPt h x := by
   -- The mirror inequality is the first one in the order dual.
   have : IsLocallyFiniteMeasure (α := αᵒᵈ) μ := ‹IsLocallyFiniteMeasure μ›
   have : Measure.IsOpenPosMeasure (X := αᵒᵈ) μ := ‹μ.IsOpenPosMeasure›
-  exact (hμ.map_le_self_of_strictMono hh hx₂ h₂).antisymm <|
-    map_le_self_of_strictMono (α := αᵒᵈ) (μ := μ) (h := OrderDual.toDual ∘ h ∘ OrderDual.ofDual)
+  exact (hμ.apply_le_self_of_strictMono hh hx₂ h₂).antisymm <|
+    apply_le_self_of_strictMono (α := αᵒᵈ) (μ := μ) (h := OrderDual.toDual ∘ h ∘ OrderDual.ofDual)
       hμ hh.dual hx₁ h₁
 
 end StrictMono

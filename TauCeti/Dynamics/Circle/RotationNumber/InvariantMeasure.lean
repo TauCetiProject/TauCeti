@@ -25,7 +25,7 @@ integer translations, as the lift of a measure on the circle is.
 
 The proof: the map `h = f^q − p` is strictly increasing, preserves the measure, and has a fixed
 point, hence fixed points below and above every `x`. Such a map fixes every point between two of
-its fixed points (`MeasureTheory.MeasurePreserving.map_eq_self_of_strictMono`): if `x < h(x)`
+its fixed points (`MeasureTheory.MeasurePreserving.isFixedPt_of_strictMono`): if `x < h(x)`
 below a fixed point `y`, the intervals `[hⁿ(x), hⁿ⁺¹(x))` are pairwise disjoint subsets of
 `[x, y]` of equal positive measure, which contradicts the finiteness of the measure of `[x, y]`.
 
@@ -66,7 +66,7 @@ theorem iterate_eq_add_of_measurePreserving {f : CircleDeg1Lift} (hf : StrictMon
     ring
   obtain ⟨m₁, hm₁⟩ := exists_int_lt (x - z)
   obtain ⟨m₂, hm₂⟩ := exists_int_gt (x - z)
-  have hx := hhμ.map_eq_self_of_strictMono hh (x := x) (hfix m₁) (hfix m₂) (by linarith)
+  have hx : h x = x := hhμ.isFixedPt_of_strictMono hh (hfix m₁) (hfix m₂) (by linarith)
     (by linarith)
   simp only [h] at hx
   push_cast at hx
