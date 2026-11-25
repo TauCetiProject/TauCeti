@@ -132,8 +132,10 @@ theorem pow_ad_apply_mem_restrictedRootSpace (hx : x ∈ 𝔞.restrictedRootSpac
   induction k with
   | zero => simpa using hy
   | succ k ih =>
-    rw [pow_succ', mul_apply_eq_comp, ad_apply, succ_nsmul, ← add_assoc, add_comm _ μ]
-    exact lie_mem_restrictedRootSpace hx ih
+    rw [pow_succ', mul_apply_eq_comp, ad_apply]
+    convert lie_mem_restrictedRootSpace hx ih using 2
+    rw [succ_nsmul]
+    abel
 
 /-- The Killing form pairs `𝔤_λ` and `𝔤_μ` trivially unless `λ + μ = 0`. -/
 theorem killingForm_eq_zero_of_mem_restrictedRootSpace [NoZeroDivisors R]

@@ -91,9 +91,11 @@ theorem finrank_restrictedRootSpace_sub_smul {μ : Dual ℝ 𝔞} (hμ : μ ∈ 
   refine le_antisymm ?_ (hle ν)
   set H := hθ.restrictedCoroot h𝔞.le_cartanP μ
   -- `s_λ` is Mathlib's reflection in `λ` along the evaluation at `H'_λ`, an involution
-  have hs : (ν - ν H • μ) - (ν - ν H • μ) H • μ = ν :=
-    involutive_reflection (x := μ) (f := Dual.eval ℝ 𝔞 H)
-      (hθ.apply_restrictedCoroot h𝔞.le_cartanP (Submodule.mem_restrictedRoots.mp hμ).1) ν
+  have h2 : Dual.eval ℝ 𝔞 H μ = 2 := by
+    simpa only [Dual.eval_apply] using
+      hθ.apply_restrictedCoroot h𝔞.le_cartanP (Submodule.mem_restrictedRoots.mp hμ).1
+  have hs : (ν - ν H • μ) - (ν - ν H • μ) H • μ = ν := by
+    simpa only [reflection_apply, Dual.eval_apply] using involutive_reflection h2 ν
   exact (hle (ν - ν H • μ)).trans_eq
     (congrArg (fun γ ↦ finrank ℝ (𝔞.restrictedRootSpace γ)) hs)
 
@@ -105,9 +107,11 @@ theorem sub_smul_mem_restrictedRoots {μ ν : Dual ℝ 𝔞} (hμ : μ ∈ 𝔞.
   have := hθ.finiteDimensional
   obtain ⟨hν0, hνsp⟩ := Submodule.mem_restrictedRoots.mp hν
   refine Submodule.mem_restrictedRoots.mpr ⟨fun h ↦ hν0 ?_, fun h ↦ hνsp ?_⟩
-  · exact (Module.reflection (x := μ) (f := Dual.eval ℝ 𝔞 (hθ.restrictedCoroot h𝔞.le_cartanP μ))
-      (hθ.apply_restrictedCoroot h𝔞.le_cartanP
-        (Submodule.mem_restrictedRoots.mp hμ).1)).map_eq_zero_iff.mp h
+  · have h2 : Dual.eval ℝ 𝔞 (hθ.restrictedCoroot h𝔞.le_cartanP μ) μ = 2 := by
+      simpa only [Dual.eval_apply] using
+        hθ.apply_restrictedCoroot h𝔞.le_cartanP (Submodule.mem_restrictedRoots.mp hμ).1
+    have hr : reflection h2 ν = 0 := by rwa [reflection_apply, Dual.eval_apply]
+    exact (reflection h2).map_eq_zero_iff.mp hr
   · rw [← Submodule.finrank_eq_zero, ← hθ.finrank_restrictedRootSpace_sub_smul h𝔞 hμ ν, h,
       finrank_bot]
 
