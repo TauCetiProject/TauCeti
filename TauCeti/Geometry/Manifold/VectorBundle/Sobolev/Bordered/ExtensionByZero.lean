@@ -22,21 +22,17 @@ sections smooth up to the boundary in `W^{k,p}(V)` (`TauCeti.BorderedSobolevSect
   `k ≤ n`. In the atlas `A.focus i hL hLi`, which removes `L` from the domains of the other charts,
   the section has `W^{k,p}` components in every chart, being zero in all charts but `i`; sections
   then transfer to `A` (`TauCeti.BorderedSobolevSection.exists_chartValueL_ae_eq_halfCoord`).
-* **Smooth sections from one chart.** For a `Cⁿ` function `ψ` supported in the domain of chart `i`
-  and a `Cⁿ` function `G` on `ℂ`, the section equal in chart `i` to `ψ • G` is a `Cⁿ` section, up to
-  the boundary (`TauCeti.FiniteBundleAtlas.contMDiff_smul_chartSection_coe`); its reading in
-  chart `i` is the product of the readings
-  (`TauCeti.FiniteBundleAtlas.halfCoord_smul_chartSection_coe`). With
-  `TauCeti.Wkp.mem_closure_range_restrictL_ofTestFunctionₗ_top_upperHalf`, these are the
-  approximating sections.
+* **Smooth sections from one chart.** The approximating sections are the sections equal in one
+  chart to `ψ • G`, for a cutoff `ψ` and a function `G` smooth up to the real axis
+  (`TauCeti.FiniteBundleAtlas.contMDiff_smul_chartSection_coe` and
+  `TauCeti.FiniteBundleAtlas.halfCoord_smul_chartSection_coe`, in
+  `TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.HalfPlane`), with `G` given by
+  `TauCeti.Wkp.mem_closure_range_restrictL_ofTestFunctionₗ_top_upperHalf`.
 
 ## Main results
 
 * `TauCeti.BorderedSobolevSection.exists_chartValueL_ae_eq_halfCoord_of_eq_zero`: extension by
   zero from one chart.
-* `TauCeti.FiniteBundleAtlas.contMDiff_smul_chartSection_coe`,
-  `TauCeti.FiniteBundleAtlas.halfCoord_smul_chartSection_coe`: smooth sections read off one
-  chart.
 
 ## References
 
@@ -58,73 +54,6 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
   [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
-
-namespace FiniteBundleAtlas
-
-variable {A : FiniteBundleAtlas ClosedUpperHalfPlane M F V}
-
-omit [NormedSpace ℝ F] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] in
-/-- The readings of a section in the charts of `A.focus i hL hLi` are its readings in `A`. -/
-theorem halfCoord_focus {i : Fin A.n} {L : Set M} (hL : IsClosed L) (hLi : L ⊆ A.dom i)
-    (j : Fin A.n) (s : ∀ x, V x) : (A.focus i hL hLi).halfCoord j s = A.halfCoord j s := by
-  ext z
-  rw [(A.focus i hL hLi).halfCoord_def j s z, A.halfCoord_def j s z,
-    (A.focus i hL hLi).coord_def j s, A.coord_def j s]
-  -- The charts of `A.focus i hL hLi` have the centres of `A` (`FiniteBundleAtlas.focus_center`).
-  rfl
-
-omit [NormedSpace ℝ F] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] in
-/-- The interior of the image of a chart of `A.focus i hL hLi` lies in that of `A`. -/
-theorem halfImage_focus_le {i : Fin A.n} {L : Set M} (hL : IsClosed L) (hLi : L ⊆ A.dom i)
-    (j : Fin A.n) : (A.focus i hL hLi).halfImage j ≤ A.halfImage j := by
-  intro z hz
-  obtain ⟨hz, hz0⟩ := (A.focus i hL hLi).mem_halfImage.1 hz
-  obtain ⟨x, hx, hxz⟩ := (A.focus i hL hLi).mem_image.1 hz
-  exact A.mem_halfImage.2 ⟨A.mem_image.2 ⟨x, A.focus_dom_subset hL hLi j hx, by
-    simpa only [chart, focus_center] using hxz⟩, hz0⟩
-
-/-- A section vanishing off `L` reads as zero in every chart of `A.focus i hL hLi` other than `i`,
-on the interior of its image. -/
-theorem halfCoord_focus_eq_zero {i : Fin A.n} {L : Set M} (hL : IsClosed L) (hLi : L ⊆ A.dom i)
-    {j : Fin A.n} (hj : j ≠ i) {s : ∀ x, V x} (hs : ∀ x ∉ L, s x = 0) {z : ℂ}
-    (hz : z ∈ (A.focus i hL hLi).halfImage j) : A.halfCoord j s z = 0 := by
-  obtain ⟨hz, -⟩ := (A.focus i hL hLi).mem_halfImage.1 hz
-  obtain ⟨x, hx, hxz⟩ := (A.focus i hL hLi).mem_image.1 hz
-  have hxL : x ∉ L := fun hxL ↦
-    (eq_empty_iff_forall_notMem.1 (A.focus_dom_inter hL hLi j hj)) x ⟨hx, hxL⟩
-  have hxj := A.focus_dom_subset hL hLi j hx
-  have hxz' : A.chart j x = closedUpperHalfPlaneModel.symm z := by
-    simpa only [chart, focus_center] using hxz
-  rw [halfCoord_def, ← hxz', A.coord_chart s hxj, hs x hxL]
-  exact (A.triv j).linear ℝ (A.dom_subset_baseSet j hxj) |>.map_zero
-
-/-- In chart `i`, the section equal to `ψ • G` there reads as `ψ • G` on the chart image, up to the
-real axis. -/
-theorem halfCoord_smul_chartSection_coe {i : Fin A.n} (ψ : M → ℝ) (G : ℂ → F) {z : ℂ}
-    (hz : z ∈ A.halfClosedImage i) :
-    A.halfCoord i (fun x ↦ ψ x • A.chartSection i (fun y : ClosedUpperHalfPlane ↦ G y) x) z =
-      ψ ((A.chart i).symm (closedUpperHalfPlaneModel.symm z)) • G z := by
-  obtain ⟨hzi, hz0⟩ := A.mem_halfClosedImage.1 hz
-  rw [A.halfCoord_fun_smul i ψ _ hzi, halfCoord_def, coord_chartSection _ hzi,
-    coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz0]
-
-/-- **Smooth sections read off one chart.** For a `Cⁿ` function `ψ` on `M` supported in the domain
-of chart `i` and a `Cⁿ` function `G` on `ℂ`, the section equal in chart `i` to `ψ • G` is a `Cⁿ`
-section, up to the boundary. -/
-theorem contMDiff_smul_chartSection_coe {n : WithTop ℕ∞} [IsManifold closedUpperHalfPlaneModel n M]
-    [ContMDiffVectorBundle n F V closedUpperHalfPlaneModel] {i : Fin A.n} {ψ : M → ℝ}
-    (hψ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) n ψ) (hψi : tsupport ψ ⊆ A.dom i)
-    {G : ℂ → F} (hG : ContDiff ℝ n G) :
-    ContMDiff closedUpperHalfPlaneModel (closedUpperHalfPlaneModel.prod 𝓘(ℝ, F)) n
-      fun x ↦ TotalSpace.mk' F x
-        (ψ x • A.chartSection i (fun y : ClosedUpperHalfPlane ↦ G y) x) :=
-  hψ.contMDiffOn.smul_section_of_tsupport (A.isOpen_dom i) hψi <|
-    ((A.triv i).contMDiffOn_section_iff (A.isOpen_dom i) (A.dom_subset_baseSet i)).2 <|
-      (hG.contMDiff.comp_contMDiffOn ((contMDiffOn_extChartAt (x := A.center i)).mono
-        (A.dom_subset_chart_source i))).congr fun x hx ↦ by
-          rw [triv_chartSection _ hx, Function.comp_apply, extChartAt_center_apply]
-
-end FiniteBundleAtlas
 
 namespace BorderedSobolevSection
 
@@ -151,7 +80,7 @@ theorem exists_chartValueL_ae_eq_halfCoord_of_eq_zero (hn : 1 ≤ n) (hkn : k �
       (Wkp.value k v : ℂ → ℝ) =ᵐ[volume.restrict (A'.halfImage j : Set ℂ)]
         fun z ↦ (finBasis ℝ F).coord m (A'.halfSectionChartData.coord j s z) := by
     have hcoord := (A'.halfSectionChartData_coord_ae_eq j s).fun_comp ((finBasis ℝ F).coord m)
-    rw [show A'.halfCoord j s = A.halfCoord j s from halfCoord_focus hL hLi j s] at hcoord
+    rw [show A'.halfCoord j s = A.halfCoord j s from A.halfCoord_focus hL hLi j s] at hcoord
     by_cases hj : j = i
     · obtain ⟨v, hv⟩ : ∃ v : Wkp volume (A.halfImage j) p k,
           (Wkp.value k v : ℂ → ℝ) =ᵐ[volume.restrict (A.halfImage j : Set ℂ)]
@@ -164,15 +93,10 @@ theorem exists_chartValueL_ae_eq_halfCoord_of_eq_zero (hn : 1 ≤ n) (hkn : k �
       filter_upwards [hcoord, ae_restrict_mem (A'.halfImage j).isOpen.measurableSet,
         Wkp.value_zero_ae (mu := volume) (Omega := A'.halfImage j) (p := p) k] with z hz hzm h0
       simp only [Function.comp_apply] at hz
-      rw [h0, Pi.zero_apply, hz, halfCoord_focus_eq_zero hL hLi hj hs hzm, map_zero]
+      rw [h0, Pi.zero_apply, hz, A.halfCoord_focus_eq_zero hL hLi hj hs hzm, map_zero]
   -- The tuple is an element of `W^{k,p}(V)` for `A'`, which transfers to `A`.
-  choose v hv using hcomp
-  have hw' : (fun j m ↦ v j m) ∈ A'.halfSectionChartData.sobolevSections volume p k :=
-    (SectionChartData.mem_sobolevSections_iff _ _ _ _).2 ⟨s, fun j ↦
-      A'.halfSectionChartData.chartValueL_ae_eq_coord volume p k (hv j)⟩
-  refine exists_chartValueL_ae_eq_halfCoord hn hkn ⟨_, hw'⟩ (fun j ↦ ?_) A
-  exact (A'.halfSectionChartData.chartValueL_ae_eq_coord volume p k (hv j)).trans
-    (A'.halfSectionChartData_coord_ae_eq j s)
+  obtain ⟨w', hw'⟩ := exists_chartValueL_ae_eq_halfCoord_of_forall_exists_wkp hcomp
+  exact exists_chartValueL_ae_eq_halfCoord hn hkn w' hw' A
 
 end BorderedSobolevSection
 

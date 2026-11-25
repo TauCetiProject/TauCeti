@@ -502,7 +502,7 @@ open Classical in
 /-- The atlas with the charts of `A` in which a closed set `L` inside the domain of chart `i` is
 removed from the domains of all other charts: chart `i` keeps its domain, and chart `j ≠ i` has
 domain `A.dom j \ L`. A section vanishing off `L` is then zero in every chart other than `i`. -/
-@[expose, simps n center]
+@[expose, simps n center dom]
 def focus (i : Fin A.n) {L : Set M} (hL : IsClosed L) (hLi : L ⊆ A.dom i) :
     FiniteBundleAtlas E M F V where
   n := A.n
@@ -537,15 +537,38 @@ section Focus
 
 variable {i : Fin A.n} {L : Set M} (hL : IsClosed L) (hLi : L ⊆ A.dom i)
 
+@[simp]
+theorem chart_focus (j : Fin A.n) : (A.focus i hL hLi).chart j = A.chart j :=
+  (rfl)
+
+@[simp]
+theorem triv_focus (j : Fin A.n) : (A.focus i hL hLi).triv j = A.triv j :=
+  (rfl)
+
+/-- The readings of a section in the charts of `A.focus i hL hLi` are its readings in `A`. -/
+@[simp]
+theorem coord_focus (j : Fin A.n) : (A.focus i hL hLi).coord j = A.coord j :=
+  (rfl)
+
+/-- Chart `i` of `A.focus i hL hLi` keeps its domain. -/
+theorem focus_dom_self : (A.focus i hL hLi).dom i = A.dom i := by
+  simp
+
+/-- A chart of `A.focus i hL hLi` other than `i` has the domain of `A` minus `L`. -/
+theorem focus_dom_of_ne {j : Fin A.n} (hj : j ≠ i) : (A.focus i hL hLi).dom j = A.dom j \ L := by
+  simp [hj]
+
 /-- The chart domains of `A.focus i hL hLi` lie in those of `A`. -/
 theorem focus_dom_subset (j : Fin A.n) : (A.focus i hL hLi).dom j ⊆ A.dom j := by
-  simp only [focus]
-  split_ifs with h
-  exacts [h ▸ subset_rfl, sdiff_subset]
+  by_cases hj : j = i
+  · subst hj
+    rw [focus_dom_self]
+  · rw [A.focus_dom_of_ne hL hLi hj]
+    exact sdiff_subset
 
 /-- The chart domains of `A.focus i hL hLi` other than that of chart `i` do not meet `L`. -/
-theorem focus_dom_inter (j : Fin A.n) (hj : j ≠ i) : (A.focus i hL hLi).dom j ∩ L = ∅ := by
-  simp [focus, hj]
+theorem focus_dom_inter {j : Fin A.n} (hj : j ≠ i) : (A.focus i hL hLi).dom j ∩ L = ∅ := by
+  rw [A.focus_dom_of_ne hL hLi hj, sdiff_inter_self]
 
 end Focus
 
