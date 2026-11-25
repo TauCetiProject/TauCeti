@@ -224,12 +224,9 @@ theorem ae_restrict_euclideanHausdorffMeasure_preimage_congr {A₁ A₂ : Set E}
     |>.ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_volume_eq_zero μ
       (ae_eq_set.1 hA).2 hk
   filter_upwards [h12, h21] with y hy12 hy21
-  refine Measure.restrict_congr_set
-    ((ae_eq_set (s := A₁ ∩ f ⁻¹' {y}) (t := A₂ ∩ f ⁻¹' {y})).2 ⟨?_, ?_⟩)
-  · refine measure_mono_null ?_ hy12
-    exact fun x hx ↦ ⟨⟨hx.1.1, fun hx2 ↦ hx.2 ⟨hx2, hx.1.2⟩⟩, hx.1.2⟩
-  · refine measure_mono_null ?_ hy21
-    exact fun x hx ↦ ⟨⟨hx.1.1, fun hx1 ↦ hx.2 ⟨hx1, hx.1.2⟩⟩, hx.1.2⟩
+  exact Measure.restrict_congr_set ((ae_eq_set (s := A₁ ∩ f ⁻¹' {y}) (t := A₂ ∩ f ⁻¹' {y})).2
+    ⟨measure_mono_null (by intro x; simp; tauto) hy12,
+      measure_mono_null (by intro x; simp; tauto) hy21⟩)
 
 /-- **Normalized fiber measures of a locally Lipschitz map on a Lebesgue measurable set are almost
 everywhere measurable.** Let `f` be locally Lipschitz on a Lebesgue measurable subset `A` of an
@@ -500,10 +497,7 @@ theorem ae_ae_restrict_preimage_of_hasFDerivWithinAt {f' : E → E →L[ℝ] F}
           (ae_restrict_of_ae_restrict_of_subset inter_subset_left hp) le_add_tsub
   filter_upwards [hpiece] with y hy
   have hset : s ∩ f ⁻¹' {y} = ⋃ n, (s ∩ t n) ∩ f ⁻¹' {y} := by
-    ext x
-    simp only [mem_inter_iff, mem_iUnion]
-    exact ⟨fun ⟨hxs, hxy⟩ ↦ let ⟨n, hxn⟩ := mem_iUnion.1 (hcover hxs); ⟨n, ⟨hxs, hxn⟩, hxy⟩,
-      fun ⟨_, ⟨hxs, _⟩, hxy⟩ ↦ ⟨hxs, hxy⟩⟩
+    ext x; have := @hcover x; simp at this ⊢; aesop
   rw [hset, ae_restrict_iUnion_iff]
   exact hy
 

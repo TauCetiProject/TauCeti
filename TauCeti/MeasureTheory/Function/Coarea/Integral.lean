@@ -191,14 +191,10 @@ theorem map_withDensity_normDet_adjoint_fderiv_mul_eq_withDensity_setLIntegral_f
   refine lintegral_congr fun y ↦ ?_
   by_cases hy : y ∈ t
   · have hset : (f ⁻¹' t ∩ s) ∩ f ⁻¹' {y} = s ∩ f ⁻¹' {y} := by
-      ext x
-      simp only [mem_inter_iff, mem_preimage, mem_singleton_iff]
-      exact ⟨fun h ↦ ⟨h.1.2, h.2⟩, fun h ↦ ⟨⟨h.2.symm ▸ hy, h.1⟩, h.2⟩⟩
+      ext x; simp; grind
     rw [indicator_of_mem hy, hset]
   · have hset : (f ⁻¹' t ∩ s) ∩ f ⁻¹' {y} = ∅ := by
-      ext x
-      simp only [mem_inter_iff, mem_preimage, mem_singleton_iff, mem_empty_iff_false, iff_false]
-      exact fun h ↦ hy (h.2 ▸ h.1.1)
+      ext x; simp; grind
     rw [indicator_of_notMem hy, hset, Measure.restrict_empty, lintegral_zero_measure]
 
 /-- Unweighted Radon-Nikodym form of coarea on the regular locus: pushing forward

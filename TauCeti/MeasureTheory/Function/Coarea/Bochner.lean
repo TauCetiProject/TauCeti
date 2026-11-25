@@ -158,21 +158,14 @@ theorem integral_norm_setIntegral_fiber_le (hf : LocallyLipschitzOn U f) (hU : I
     (hint : IntegrableOn (fun x ↦ (fderiv ℝ f x).adjoint.normDet • g x) s) :
     (∫ y : F, ‖∫ x in s ∩ f ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F]‖) ≤
       ∫ x in s, (fderiv ℝ f x).adjoint.normDet * ‖g x‖ := by
-  have hGm := TauCeti.measurableSet_setOf_differentiableAt_surjective_fderiv f
-  have hzero : ∫ x in s \ {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)},
-      ‖(fderiv ℝ f x).adjoint.normDet • g x‖ = 0 :=
-    integral_eq_zero_of_ae
-      ((hf.ae_restrict_sdiff_setOf_regular_normDet_adjoint_fderiv_eq_zero hU hsU).mono
-        fun _ hx ↦ by simp [hx])
-  simp_rw [← norm_smul_of_nonneg (LinearMap.normDet_nonneg _)]
-  rw [← integral_inter_add_sdiff hGm hint.norm, hzero, add_zero,
-    integral_congr_ae
-      ((hf.ae_setIntegral_fiber_eq_inter_setOf_regular hU hsU g).mono fun _ hy ↦
-        congrArg norm hy)]
-  simpa only [norm_smul_of_nonneg (LinearMap.normDet_nonneg _)] using
-    MeasureTheory.integral_norm_setIntegral_fiber_le_of_integrableOn_normDet_adjoint_fderiv_smul
-      (hs.inter hGm.nullMeasurableSet) (fun _ hx ↦ hx.2.1) (fun _ hx ↦ hx.2.2)
-      (hint.mono_set inter_subset_left)
+  have hnint : IntegrableOn (fun x ↦ (fderiv ℝ f x).adjoint.normDet • ‖g x‖) s := by
+    simpa only [IntegrableOn, norm_smul_of_nonneg (LinearMap.normDet_nonneg _), smul_eq_mul]
+      using hint.norm
+  refine (integral_mono (hf.integrable_setIntegral_fiber hU hsU hs hint).norm
+    (hf.integrable_setIntegral_fiber hU hsU hs hnint)
+    fun _ ↦ norm_integral_le_integral_norm _).trans_eq ?_
+  simpa only [smul_eq_mul] using
+    (hf.integral_normDet_adjoint_fderiv_smul_eq_integral_setIntegral_fiber hU hsU hs hnint).symm
 
 end LocallyLipschitzOn
 
