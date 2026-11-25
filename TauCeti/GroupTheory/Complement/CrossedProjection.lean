@@ -247,7 +247,8 @@ theorem IsComplement'.crossedProjection_conj_coe_smul {D : Subgroup G} (h : N.Is
   have hl := isLocalComplement_top_iff.mpr h
   have hx := hl.leftProjection_conj_coe_smul a ⟨x, mem_top x⟩
   rwa [hl.leftProjection_top_eq_crossedProjection,
-    (hl.conj_smul_of_mem (mem_top _)).leftProjection_top_eq_crossedProjection] at hx
+    (hl.conj_smul_of_mem (mem_top _)).leftProjection_top_eq_crossedProjection,
+    Subgroup.smul_def] at hx
 
 /-- Two complements of an abelian normal subgroup `N` are conjugate by `a ∈ N` exactly when
 their crossed projections differ by the principal crossed map `x ↦ x • a / a`. This is the case
@@ -258,7 +259,7 @@ theorem IsComplement'.eq_conj_smul_iff_crossedProjection_eq {D : Subgroup G}
       ∀ x, h'.crossedProjection x = h.crossedProjection x * (x • a / a) := by
   rw [(isLocalComplement_top_iff.mpr h).eq_conj_smul_iff_leftProjection_eq
     (isLocalComplement_top_iff.mpr h') a]
-  simp only [IsLocalComplement.leftProjection_top_eq_crossedProjection]
+  simp only [IsLocalComplement.leftProjection_top_eq_crossedProjection, Subgroup.smul_def]
   exact ⟨fun hD x => hD ⟨x, mem_top x⟩, fun hD x => hD x⟩
 
 /-- A normalized additive crossed map has complementary zero locus. This is the
