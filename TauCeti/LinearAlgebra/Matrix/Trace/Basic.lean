@@ -26,6 +26,8 @@ is fixed by `star` (in particular, it is real over `ℂ`).
 * `Matrix.trace_two_mul_sub_one`: `trace (2 P - 1) = 2 trace P - n` for an `n × n` matrix `P`.
 * `Matrix.trace_reindex_self`: reindexing rows and columns along one equivalence preserves the
   trace.
+* `Matrix.trace_list_prod_map_mapMatrix`: mapping a list of square matrices along a ring
+  homomorphism commutes with taking the trace of its product.
 * `Matrix.star_trace_mul_of_conjTranspose_eq_neg`: the trace of a product of two skew-Hermitian
   matrices is fixed by `star`.
 -/
@@ -56,6 +58,13 @@ trace. -/
 theorem trace_reindex_self {R : Type*} [AddCommMonoid R] (e : m ≃ n) (A : Matrix m m R) :
     (reindex e e A).trace = A.trace := by
   simpa [trace] using e.symm.sum_comp (fun i ↦ A i i)
+
+/-- Mapping a list of square matrices along a ring homomorphism commutes with taking the trace of
+its product. -/
+theorem trace_list_prod_map_mapMatrix {R S : Type*} [DecidableEq n] [Semiring R] [Semiring S]
+    (f : R →+* S) (l : List (Matrix n n R)) :
+    trace (l.map f.mapMatrix).prod = f (trace l.prod) := by
+  rw [← map_list_prod, RingHom.mapMatrix_apply, ← AddMonoidHom.map_trace]
 
 /-- The trace of a product of two skew-Hermitian matrices is fixed by `star`. -/
 theorem star_trace_mul_of_conjTranspose_eq_neg {R : Type*} [NonUnitalNonAssocCommRing R]

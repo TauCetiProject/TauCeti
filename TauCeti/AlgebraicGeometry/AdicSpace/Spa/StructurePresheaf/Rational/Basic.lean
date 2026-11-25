@@ -108,6 +108,27 @@ theorem Presentation.toCompletionLocObjHom_hom (p : Presentation P) :
       eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm :=
   (rfl)
 
+/-- The structure map `A → A⟨p⟩` as a morphism of commutative rings, followed by the comparison
+of `A⟨p⟩` with its object in `CompleteSeparatedTopCommRingCat`, is the underlying ring morphism of
+`Presentation.toCompletionLocObjHom`. -/
+theorem Presentation.ofHom_toCompletionLoc_comp_completionLocObjCommRingCatIso_inv
+    (p : Presentation P) :
+    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    CommRingCat.ofHom (toCompletionLoc P p.num p.den _ p.hasDenominatorPower) ≫
+        p.completionLocObjCommRingCatIso.inv =
+      (forget₂ _root_.TopCommRingCat CommRingCat).map
+          (eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm) ≫
+        (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
+          p.toCompletionLocObjHom := by
+  simp only [Presentation.completionLocObjCommRingCatIso_inv, Functor.comp_map,
+    ObjectProperty.ι_map, Presentation.toCompletionLocObjHom_hom, Functor.map_comp]
+  simp only [← Functor.map_comp_assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+  -- Both sides are now the same morphism up to the transport
+  -- `CompleteSeparatedTopCommRingCat.of_obj`, which holds by `rfl`.
+  rfl
+
 /-- **Comparison morphisms over `A` commute with the structure maps**: a continuous ring
 homomorphism `A⟨p⟩ → A⟨q⟩` compatible with the structure maps from `A`, as a morphism, carries the
 structure morphism of `p` to that of `q`. -/

@@ -12,7 +12,7 @@ public import TauCeti.Analysis.Fourier.AbsolutelyContinuous
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Fourier.FourierCoeffOn
 import TauCeti.Analysis.Fourier.SpectralGap
-import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.MeasureTheory.Integral.Rectangle

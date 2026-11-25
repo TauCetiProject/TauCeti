@@ -6,7 +6,9 @@ Authors: Claude
 module
 
 public import Mathlib.Analysis.Matrix.Normed
+public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.LinearAlgebra.UnitaryGroup
+import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 
 /-!
 # The Frobenius inner product on matrices
@@ -23,6 +25,8 @@ and the inner product together.
 
 ## Main declarations
 
+* `Matrix.frobeniusTopologicalSpace` — the topology induced by the Frobenius norm.
+* `Matrix.frobeniusTopologicalSpace_eq` — that topology is the entrywise topology on matrices.
 * `Matrix.re_trace_mul_conjTranspose_self` — the real trace of `X * Xᴴ` is the sum of the
   squared entry norms.
 * `Matrix.frobeniusInnerProductSpace` — the Frobenius inner product, compatible with
@@ -35,19 +39,27 @@ and the inner product together.
   `∑ i, ∑ j, A i j * B i j`.
 * `Matrix.frobenius_inner_eq_trace_conjTranspose_mul` — over `𝕜` itself, the inner product is
   `(Aᴴ * B).trace`.
-* `Matrix.frobenius_real_inner_eq_re_trace_conjTranspose_mul` — the real inner product is
-  `Re tr(Aᴴ * B)`.
+* `Matrix.frobenius_real_inner_eq_re_inner` — the real inner product is the real part of the
+  scalar inner product, hence is `Re tr(Aᴴ * B)`.
+* `Matrix.IsHermitian.frobenius_real_inner_eq_zero_of_conjTranspose_eq_neg` — a Hermitian and a
+  skew-Hermitian matrix are orthogonal for the real inner product.
 * `Matrix.UnitaryGroup.frobenius_inner_mul_left` and
   `Matrix.UnitaryGroup.frobenius_inner_mul_right` — left and right unitary multiplication preserve
-  the Frobenius inner product on rectangular matrices. In particular, unitary conjugation
-  preserves the scalar and real inner products (`Matrix.UnitaryGroup.frobenius_inner_conj` and
-  `Matrix.UnitaryGroup.frobenius_real_inner_conj`).
+  the Frobenius inner product on rectangular matrices. The real versions are
+  `Matrix.UnitaryGroup.frobenius_real_inner_mul_left` and
+  `Matrix.UnitaryGroup.frobenius_real_inner_mul_right`.
+* `Matrix.UnitaryGroup.frobenius_inner_conj` and `Matrix.UnitaryGroup.frobenius_real_inner_conj` —
+  conjugation preserves the scalar and real inner products.
 * `Matrix.frobenius_inner_lie_left` — the adjoint of commutation by `X` is commutation by `Xᴴ`.
 * `Matrix.frobenius_norm_sq_eq_sum_normSq` — the squared complex Frobenius norm is the sum of
   the squared norms of the entries.
 * `Matrix.frobenius_norm_sq_conj_unitary` — unitary conjugation preserves the squared norm.
+* `Matrix.frobenius_norm_sq_of_mem_unitaryGroup` — a unitary matrix has squared norm `card ι`.
 * `Matrix.abs_apply_le_sqrt_trace_mul_transpose` — each entry of a real matrix is bounded in
   absolute value by the square root of the trace of its Gram matrix `L * Lᵀ`.
+* `TauCeti.reTraceForm`, `TauCeti.isSymm_reTraceForm`, `TauCeti.posDef_reTraceForm`: the real
+  part `(X, Y) ↦ Re tr(X Yᴴ)` of the trace pairing as a symmetric positive-definite real bilinear
+  form, equal to the real Frobenius inner product (`TauCeti.reTraceForm_eq_frobenius_real_inner`).
 
 ## The skew-Hermitian trace metric
 
@@ -66,6 +78,24 @@ open scoped ComplexConjugate InnerProductSpace
 
 namespace Matrix
 
+/-- The topology underlying the Frobenius norm on finite matrices. -/
+protected abbrev frobeniusTopologicalSpace
+    (m n : Type*) [Fintype m] [Fintype n]
+    (α : Type*) [SeminormedAddCommGroup α] : TopologicalSpace (Matrix m n α) :=
+  (Matrix.frobeniusSeminormedAddCommGroup (m := m) (n := n) (α := α)).toPseudoMetricSpace
+    |>.toUniformSpace |>.toTopologicalSpace
+
+/-- The topology of the Frobenius norm is the entrywise topology on matrices.
+
+This holds by `rfl` by design of Mathlib's `Matrix.frobeniusSeminormedAddCommGroup`: it is built
+from `PiLp.seminormedAddCommGroupToPi`, which replaces the `L²` uniformity by the product
+uniformity, so the induced topology is the product topology, which is Mathlib's topology on
+matrices. -/
+theorem frobeniusTopologicalSpace_eq (m n : Type*) [Fintype m] [Fintype n]
+    (α : Type*) [SeminormedAddCommGroup α] :
+    Matrix.frobeniusTopologicalSpace m n α = (inferInstance : TopologicalSpace (Matrix m n α)) :=
+  rfl
+
 variable {𝕜 E m n : Type*} [RCLike 𝕜] [Fintype m] [Fintype n]
 
 /-- The real part of the trace of `X * Xᴴ` is the sum of the squared entry norms. -/
@@ -83,7 +113,7 @@ in an inner product space, compatible with the Frobenius norm of
 `Matrix.frobeniusSeminormedAddCommGroup`. Not declared as a global instance because there are
 several natural choices of norm on matrices; it is available through
 `open scoped Matrix.Norms.Frobenius`. -/
-@[instance_reducible]
+@[instance_reducible, expose]
 def frobeniusInnerProductSpace :
     letI : SeminormedAddCommGroup (Matrix m n E) := frobeniusSeminormedAddCommGroup
     InnerProductSpace 𝕜 (Matrix m n E) :=
@@ -151,10 +181,12 @@ theorem frobenius_real_inner_eq_re_inner (X Y : Matrix m n 𝕜) :
     ⟪X, Y⟫_ℝ = RCLike.re ⟪X, Y⟫_𝕜 := by
   simp only [frobenius_inner_def, real_inner_eq_re_inner 𝕜, map_sum]
 
-/-- The real Frobenius inner product is the real part of the trace pairing. -/
-theorem frobenius_real_inner_eq_re_trace_conjTranspose_mul (X Y : Matrix m n 𝕜) :
-    ⟪X, Y⟫_ℝ = RCLike.re (Xᴴ * Y).trace := by
-  rw [frobenius_real_inner_eq_re_inner, frobenius_inner_eq_trace_conjTranspose_mul]
+/-- A Hermitian matrix and a skew-Hermitian matrix are orthogonal for the real Frobenius inner
+product. -/
+theorem IsHermitian.frobenius_real_inner_eq_zero_of_conjTranspose_eq_neg {A W : Matrix n n 𝕜}
+    (hA : A.IsHermitian) (hW : Wᴴ = -W) : ⟪A, W⟫_ℝ = 0 := by
+  rw [frobenius_real_inner_eq_re_inner, frobenius_inner_eq_trace_conjTranspose_mul, hA.eq]
+  exact hA.re_trace_mul_eq_zero_of_conjTranspose_eq_neg hW
 
 /-- Left multiplication by a unitary matrix preserves the Frobenius inner product. -/
 @[simp↓]
@@ -175,6 +207,20 @@ theorem UnitaryGroup.frobenius_inner_mul_right [DecidableEq n]
     simpa only [star_eq_conjTranspose] using mem_unitaryGroup_iff.mp U.property
   simp only [frobenius_inner_eq_trace_conjTranspose_mul, conjTranspose_mul]
   rw [Matrix.mul_assoc, ← Matrix.mul_assoc Xᴴ, ← Matrix.mul_assoc, trace_mul_cycle, hU, one_mul]
+
+/-- Left multiplication by a unitary matrix preserves the real Frobenius inner product. -/
+@[simp↓]
+theorem UnitaryGroup.frobenius_real_inner_mul_left [DecidableEq m]
+    (U : Matrix.unitaryGroup m 𝕜) (X Y : Matrix m n 𝕜) :
+    ⟪(U : Matrix m m 𝕜) * X, (U : Matrix m m 𝕜) * Y⟫_ℝ = ⟪X, Y⟫_ℝ := by
+  simp only [frobenius_real_inner_eq_re_inner (𝕜 := 𝕜), UnitaryGroup.frobenius_inner_mul_left]
+
+/-- Right multiplication by a unitary matrix preserves the real Frobenius inner product. -/
+@[simp↓]
+theorem UnitaryGroup.frobenius_real_inner_mul_right [DecidableEq n]
+    (U : Matrix.unitaryGroup n 𝕜) (X Y : Matrix m n 𝕜) :
+    ⟪X * (U : Matrix n n 𝕜), Y * (U : Matrix n n 𝕜)⟫_ℝ = ⟪X, Y⟫_ℝ := by
+  simp only [frobenius_real_inner_eq_re_inner (𝕜 := 𝕜), UnitaryGroup.frobenius_inner_mul_right]
 
 /-- Unitary conjugation preserves the Frobenius inner product. -/
 @[simp↓]
@@ -251,6 +297,15 @@ theorem frobenius_norm_sq_conj_unitary {ι : Type*} [Fintype ι] [DecidableEq ι
     conjTranspose_conjTranspose, real_inner_self_eq_norm_sq] using
     UnitaryGroup.frobenius_real_inner_conj (⟨U, hU⟩ : Matrix.unitaryGroup ι 𝕜)⁻¹ A A
 
+/-- A unitary matrix has squared Frobenius norm `card ι`. -/
+theorem frobenius_norm_sq_of_mem_unitaryGroup {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (U : Matrix ι ι 𝕜) (hU : U ∈ Matrix.unitaryGroup ι 𝕜) :
+    ‖U‖ ^ 2 = Fintype.card ι := by
+  have h := inner_self_eq_norm_sq_to_K (𝕜 := 𝕜) U
+  rw [frobenius_inner_eq_trace_conjTranspose_mul, ← star_eq_conjTranspose,
+    mem_unitaryGroup_iff'.mp hU, trace_one] at h
+  exact_mod_cast h.symm
+
 open scoped Matrix.Norms.Frobenius in
 /-- Each entry of a real matrix is bounded in absolute value by the square root of the trace of
 its Gram matrix `L * Lᵀ`. -/
@@ -262,3 +317,56 @@ theorem abs_apply_le_sqrt_trace_mul_transpose (L : Matrix m n ℝ) (i : m) (j : 
   simp [trace, Matrix.mul_apply, sq]
 
 end Matrix
+
+namespace TauCeti
+
+open Matrix
+open scoped Matrix Matrix.Norms.Frobenius
+
+variable (𝕜 m n : Type*) [RCLike 𝕜] [Fintype m] [Fintype n]
+
+/-- The real bilinear form `(X, Y) ↦ Re tr(X Yᴴ)` on `m × n` matrices over `𝕜`. -/
+def reTraceForm : LinearMap.BilinForm ℝ (Matrix m n 𝕜) :=
+  LinearMap.mk₂ ℝ (fun X Y ↦ RCLike.re (X * Yᴴ).trace)
+    (fun X X' Y ↦ by rw [Matrix.add_mul, trace_add, map_add])
+    (fun r X Y ↦ by rw [Matrix.smul_mul, trace_smul, RCLike.smul_re, smul_eq_mul])
+    (fun X Y Y' ↦ by rw [conjTranspose_add, Matrix.mul_add, trace_add, map_add])
+    (fun r X Y ↦ by
+      rw [conjTranspose_smul, star_trivial, Matrix.mul_smul, trace_smul, RCLike.smul_re,
+        smul_eq_mul])
+
+variable {𝕜 m n}
+
+/-- The value of `reTraceForm`. -/
+@[simp]
+theorem reTraceForm_apply (X Y : Matrix m n 𝕜) :
+    reTraceForm 𝕜 m n X Y = RCLike.re (X * Yᴴ).trace :=
+  (rfl)
+
+/-- The bundled real trace pairing agrees with the real Frobenius inner product. -/
+theorem reTraceForm_eq_frobenius_real_inner (X Y : Matrix m n 𝕜) :
+    reTraceForm 𝕜 m n X Y = ⟪X, Y⟫_ℝ := by
+  rw [reTraceForm_apply, real_inner_comm, frobenius_real_inner_eq_re_inner,
+    frobenius_inner_eq_trace_conjTranspose_mul, trace_mul_comm]
+
+variable (𝕜 m n) in
+/-- `Re tr(X Yᴴ)` is symmetric in `X` and `Y`. -/
+theorem isSymm_reTraceForm : (reTraceForm 𝕜 m n).IsSymm := by
+  refine ⟨fun X Y ↦ ?_⟩
+  rw [reTraceForm_apply, reTraceForm_apply, ← RCLike.conj_re, starRingEnd_apply,
+    ← trace_conjTranspose, conjTranspose_mul, conjTranspose_conjTranspose]
+
+variable (𝕜 m n) in
+/-- `Re tr(X Xᴴ)` is positive for `X ≠ 0`. -/
+theorem posDef_reTraceForm : (reTraceForm 𝕜 m n).toQuadraticMap.PosDef := by
+  intro X hX
+  rw [LinearMap.BilinMap.toQuadraticMap_apply, reTraceForm_apply,
+    re_trace_mul_conjTranspose_self]
+  obtain ⟨i, j, hij⟩ : ∃ i j, X i j ≠ 0 := by
+    by_contra! h
+    exact hX (Matrix.ext h)
+  exact Finset.sum_pos' (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ by positivity)
+    ⟨i, Finset.mem_univ _, Finset.sum_pos' (fun _ _ ↦ by positivity)
+      ⟨j, Finset.mem_univ _, pow_pos (norm_pos_iff.mpr hij) 2⟩⟩
+
+end TauCeti

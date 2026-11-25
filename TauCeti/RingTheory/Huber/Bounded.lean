@@ -53,6 +53,8 @@ AINTLIB's `Bounded.lean`; its proofs were not used.
   as an adic ring, every subset is bounded.
 * `TauCeti.Huber.IsBounded.union`, `TauCeti.Huber.IsBounded.mul`: unions and pointwise products
   of bounded sets are bounded.
+* `TauCeti.Huber.IsBounded.closure`: in a regular space with separately continuous
+  multiplication, the closure of a bounded set is bounded.
 * `TauCeti.Huber.IsBounded.add`, `TauCeti.Huber.isBounded_finsetSum`: in a semiring with
   continuous addition, pointwise sums of finitely many bounded sets are bounded.
 * `TauCeti.Huber.IsBounded.neg`, `TauCeti.Huber.isBounded_neg`: in a topological monoid with
@@ -221,6 +223,16 @@ theorem isBounded_singleton (a : M) : IsBounded ({a} : Set M) :=
 theorem isBounded_finite {S : Set M} (hS : S.Finite) : IsBounded S := by
   refine Set.Finite.induction_on S hS isBounded_empty fun {a s} _ _ ih ↦ ?_
   exact Set.insert_eq a s ▸ (isBounded_singleton a).union ih
+
+/-- In a regular space, the closure of a bounded set is bounded. -/
+theorem IsBounded.closure [RegularSpace M] {S : Set M} (hS : IsBounded S) :
+    IsBounded (closure S) := fun U hU ↦ by
+  obtain ⟨C, hC, hCc, hCU⟩ := exists_mem_nhds_isClosed_subset hU
+  obtain ⟨V, hV, hVS⟩ := hS C hC
+  refine ⟨V, hV, ?_⟩
+  rintro _ ⟨v, hv, x, hx, rfl⟩
+  exact hCU (hCc.closure_subset
+    (map_mem_closure (continuous_const_mul v) hx fun y hy ↦ hVS (Set.mul_mem_mul hv hy)))
 
 end SeparatelyContinuousMul
 
