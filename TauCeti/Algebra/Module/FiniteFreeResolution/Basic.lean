@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Finiteness.Prod
 public import TauCeti.Algebra.Module.Projective.Schanuel
 public import TauCeti.Algebra.Module.PseudoCoherent.FiniteProjectiveDimension
 import TauCeti.LinearAlgebra.Exact
+import TauCeti.LinearAlgebra.LinearEquiv.Basic
 
 /-!
 # Finite free resolutions
@@ -50,9 +51,10 @@ All modules live in the universe of `R`, as do the kernels of maps out of `Fin k
   a short exact sequence `0 → M₁ → M → M₂ → 0`.
 * `TauCeti.Module.HasFiniteFreeResolution.isStablyFree`: a projective module with a finite free
   resolution is stably free.
+* `TauCeti.Module.hasFiniteFreeResolutionLE_one_of_isStablyFree`: a finite stably free module has
+  a finite free resolution of length at most one.
 * `TauCeti.Module.hasFiniteFreeResolution_iff_isStablyFree`: a finite projective module has a
-  finite free resolution if and only if it is stably free, and then it has one of length at most
-  one.
+  finite free resolution if and only if it is stably free.
 
 ## References
 
@@ -140,10 +142,8 @@ theorem succ_of_surjective {F : Type u} [AddCommGroup F] [Module R F] [Module.Fi
   let b := (Module.Free.chooseBasis R F).reindex
     (Fintype.equivFin (Module.Free.ChooseBasisIndex R F))
   let e : (Fin _ → R) ≃ₗ[R] F := b.equivFun.symm
-  have hker : (ker (f ∘ₗ e.toLinearMap)).map e.toLinearMap = ker f := by
-    rw [ker_comp, Submodule.map_comap_eq_of_surjective e.surjective]
-  exact hasFiniteFreeResolutionLE_succ_iff.mpr
-    ⟨_, f ∘ₗ e.toLinearMap, hf.comp e.surjective, h.of_equiv (e.ofSubmodules _ _ hker).symm⟩
+  exact hasFiniteFreeResolutionLE_succ_iff.mpr ⟨_, f ∘ₗ e.toLinearMap, hf.comp e.surjective,
+    h.of_equiv (kerEquivOfComp e (.refl R M) (by rw [LinearEquiv.refl_toLinearMap, id_comp])).symm⟩
 
 /-- A finite free resolution of length at most `n` is one of length at most `n + 1`. -/
 theorem succ (h : HasFiniteFreeResolutionLE R n M) : HasFiniteFreeResolutionLE R (n + 1) M := by
@@ -244,14 +244,13 @@ theorem ker_of_surjective {P : Type u} [AddCommGroup P] [Module R P] [Module.Fin
   obtain ⟨e, he⟩ := TauCeti.exists_linearEquiv_comp_fst_eq_comp_snd_comp (a := f) (b := f')
     (by rw [range_eq_top.mpr hf, range_eq_top.mpr hf'])
   -- It carries `ker (f ∘ fst) ≃ ker f × Rᵏ` onto `ker (f' ∘ snd) ≃ P × ker f'`.
-  have hker : (ker (f ∘ₗ fst R P (Fin k → R))).map e.toLinearMap =
-      ker (f' ∘ₗ snd R P (Fin k → R)) := by
-    rw [he, ← comp_assoc, ker_comp, Submodule.map_comap_eq_of_surjective e.surjective]
+  let eK : ker (f ∘ₗ fst R P (Fin k → R)) ≃ₗ[R] ker (f' ∘ₗ snd R P (Fin k → R)) :=
+    kerEquivOfComp e (.refl R M) (by rw [LinearEquiv.refl_toLinearMap, id_comp, he, comp_assoc])
   have h₁ : HasFiniteFreeResolutionLE R n (ker (f' ∘ₗ snd R P (Fin k → R))) :=
     (prod (hasFiniteFreeResolutionLE_zero.mono n.zero_le) hK).of_equiv
       ((exact_subtype_ker_map f').id_prodMap_comp_snd.linearEquivOfInjective
         (Function.Injective.prodMap Function.injective_id (ker f').injective_subtype))
-  exact of_prod (F := Fin k → R) (h₁.of_equiv ((e.ofSubmodules _ _ hker).symm.trans
+  exact of_prod (F := Fin k → R) (h₁.of_equiv (eK.symm.trans
     ((exact_subtype_ker_map f).prodMap_id_comp_fst.linearEquivOfInjective
       (Function.Injective.prodMap (ker f).injective_subtype Function.injective_id)).symm))
 
