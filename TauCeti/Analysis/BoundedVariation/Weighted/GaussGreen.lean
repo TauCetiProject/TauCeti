@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.BoundedVariation.Weighted.Basic
 public import TauCeti.Analysis.BoundedVariation.DeGiorgi
 import TauCeti.Analysis.Distribution.TestFunction.Divergence
 
