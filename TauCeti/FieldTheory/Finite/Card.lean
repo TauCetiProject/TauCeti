@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Finite.Basic
+import Mathlib.FieldTheory.Finiteness
 
 /-!
 # The order of a finite field and the integers invertible in it
@@ -22,6 +23,10 @@ characteristic: multiplication by `q` is injective on such torsion.
 * `TauCeti.FiniteField.odd_card_of_not_isSquare`: a finite field with a nonsquare has odd order.
 * `TauCeti.FiniteField.ringChar_ne_two_of_odd_card`: a finite field of odd order does not have
   characteristic two.
+* `TauCeti.FiniteField.card_sub_one_dvd_card_sub_one`: in a finite extension `F'/F` of finite
+  fields, `#F - 1 ∣ #F' - 1`.
+* `TauCeti.FiniteField.card_div_two_eq_mul_card_div_two`: in a finite extension `F'/F` of finite
+  fields of odd order, `#F' / 2 = ((#F' - 1) / (#F - 1)) * (#F / 2)`.
 -/
 
 public section
@@ -52,5 +57,36 @@ theorem ringChar_ne_two_of_odd_card (hodd : Odd (Nat.card F)) : ringChar F ≠ 2
   rw [Nat.card_eq_fintype_card, Nat.odd_iff] at hodd
   intro h
   simp [FiniteField.even_card_of_char_two h] at hodd
+
+/-! ### The order of a finite field extension -/
+
+section Extension
+
+variable {F F' : Type*} [Field F] [Field F'] [Finite F'] [Algebra F F']
+
+variable (F F') in
+/-- In a finite extension `F'/F` of finite fields, `#F - 1` divides `#F' - 1`, since
+`#F' = #F ^ [F' : F]`. -/
+theorem card_sub_one_dvd_card_sub_one : Nat.card F - 1 ∣ Nat.card F' - 1 := by
+  have : Finite F := Finite.of_injective _ (algebraMap F F').injective
+  have : Module.Finite F F' := .of_finite
+  rw [Module.natCard_eq_pow_finrank (K := F) (V := F')]
+  exact Nat.sub_one_dvd_pow_sub_one _ _
+
+/-- In a finite extension `F'/F` of finite fields of odd order, the integer `#F' / 2` is
+`((#F' - 1) / (#F - 1)) * (#F / 2)`: raising to the power `#F / 2` after the norm, which is the
+power `(#F' - 1) / (#F - 1)`, is raising to the power `#F' / 2`. -/
+theorem card_div_two_eq_mul_card_div_two (hF : Odd (Nat.card F)) :
+    Nat.card F' / 2 = (Nat.card F' - 1) / (Nat.card F - 1) * (Nat.card F / 2) := by
+  have : Finite F := Finite.of_injective _ (algebraMap F F').injective
+  have : Module.Finite F F' := .of_finite
+  have hF' : Odd (Nat.card F') := by
+    rw [Module.natCard_eq_pow_finrank (K := F) (V := F')]
+    exact hF.pow
+  have hdiv2 {k : ℕ} (hk : Odd k) : k / 2 = (k - 1) / 2 := by obtain ⟨c, rfl⟩ := hk; omega
+  rw [hdiv2 hF, hdiv2 hF', mul_comm, Nat.div_mul_right_comm (Nat.Odd.sub_odd hF odd_one).two_dvd,
+    Nat.mul_div_cancel' (card_sub_one_dvd_card_sub_one F F')]
+
+end Extension
 
 end TauCeti.FiniteField

@@ -180,6 +180,30 @@ def ofContMDiffSection
     SmoothBundleForm I F V k :=
   ⟨s, s.contMDiff⟩
 
+/-- The rough form underlying the form of a smooth section is the section. -/
+@[simp]
+theorem coe_ofContMDiffSection
+    (s : ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
+      (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] V x)) :
+    ((ofContMDiffSection s : SmoothBundleForm I F V k) : RoughBundleForm I M V k) = ⇑s :=
+  (rfl)
+
+/-- Reconstructing forms from smooth sections preserves addition. -/
+@[simp]
+theorem ofContMDiffSection_add
+    (s t : ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
+      (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] V x)) :
+    ofContMDiffSection (s + t) = ofContMDiffSection s + ofContMDiffSection t :=
+  Subtype.ext (by simp)
+
+/-- Reconstructing forms from smooth sections preserves scalar multiplication. -/
+@[simp]
+theorem ofContMDiffSection_smul (c : ℝ)
+    (s : ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
+      (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] V x)) :
+    ofContMDiffSection (c • s) = c • ofContMDiffSection s :=
+  Subtype.ext (by simp)
+
 @[simp]
 theorem toContMDiffSection_apply (φ : SmoothBundleForm I F V k) (x : M) :
     φ.toContMDiffSection x = φ.val x :=

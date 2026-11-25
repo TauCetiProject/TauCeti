@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.CongruenceSubgroup
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Topology
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.CongruenceLevel
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.CompletedIdeal
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Subalgebra
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 import TauCeti.Topology.Instances.Matrix
 
@@ -39,12 +41,16 @@ the residue fields of `R` are finite.
 * `IsDedekindDomain.FiniteAdeleRing.integralGL`: the inclusion `GL_n(Ô) → GL_n(𝔸_f)`, an open
   embedding (`isOpenEmbedding_integralGL`) with range the matrices whose entries and inverse
   entries are integral (`mem_range_integralGL_iff`).
+* `IsDedekindDomain.FiniteAdeleRing.mem_range_mapGL_of_det_eq_one`: a matrix in `GL_n(K)` of
+  determinant `1` whose diagonal image lies in `GL_n(Ô)` comes from `SL_n(R)`.
 * `IsDedekindDomain.FiniteAdeleRing.principalLevel`, `level1`, `level0`: the levels `K(N)`,
   `K₁(N)` and `K₀(N)`, with entrywise membership criteria `mem_principalLevel_iff`,
   `mem_level1_iff` and `mem_level0_iff`, all instances of `mem_map_integralGL_iff`.
 * `IsDedekindDomain.FiniteAdeleRing.principalLevel_le_level1`, `level1_le_level0` and the
   monotonicity lemmas `principalLevel_mono`, `level1_mono`, `level0_mono`.
 * `IsDedekindDomain.FiniteAdeleRing.principalLevel_bot`: `K(0) = {1}`.
+* `IsDedekindDomain.FiniteAdeleRing.map_algebraMap_mem_principalLevel`: the image of a matrix of
+  `GL₂(R)` congruent to `1` modulo `N` lies in `K(N)`.
 * `IsDedekindDomain.FiniteAdeleRing.upperRightHom_mem_level1`,
   `upperRightHom_mem_principalLevel_iff` and `upperRightHom_algebraMap_mem_principalLevel_iff`:
   the unipotent matrices `[[1, b], [0, 1]]` in `K₁(N)` and `K(N)`.
@@ -105,6 +111,21 @@ theorem mem_range_integralGL_iff {g : GL (Fin n) 𝔸ᶠ[R, K]} :
       (∀ i j, (g : Matrix (Fin n) (Fin n) 𝔸ᶠ[R, K]) i j ∈ integralAdeles R K) ∧
         ∀ i j, (↑g⁻¹ : Matrix (Fin n) (Fin n) 𝔸ᶠ[R, K]) i j ∈ integralAdeles R K :=
   Matrix.GeneralLinearGroup.mem_range_map_val_iff (integralAdeles R K) g
+
+/-- A matrix in `GL_n(K)` of determinant `1` whose diagonal image in `GL_n(𝔸_f)` lies in
+`GL_n(Ô)` comes from `SL_n(R)`. -/
+theorem mem_range_mapGL_of_det_eq_one {γ : GL (Fin n) K}
+    (hdet : Matrix.GeneralLinearGroup.det γ = 1)
+    (hint : Matrix.GeneralLinearGroup.map (algebraMap K 𝔸ᶠ[R, K]) γ ∈
+      (integralGL K n (R := R)).range) :
+    γ ∈ (Matrix.SpecialLinearGroup.mapGL (n := Fin n) (R := R) K).range := by
+  have hent (i j : Fin n) : (γ : Matrix (Fin n) (Fin n) K) i j ∈ (algebraMap R K).range := by
+    rw [← algebraMap_mem_integralAdeles_iff (R := R)]
+    simpa using (mem_range_integralGL_iff.mp hint).1 i j
+  obtain ⟨σ, hσ⟩ := (Matrix.SpecialLinearGroup.mem_range_map_iff (IsFractionRing.injective R K)
+    ⟨(γ : Matrix (Fin n) (Fin n) K), by simpa using congrArg Units.val hdet⟩).mpr hent
+  exact ⟨σ, Units.ext ((Matrix.SpecialLinearGroup.mapGL_coe_matrix σ).trans
+    (congrArg Subtype.val hσ))⟩
 
 variable (K n) in
 /-- The inclusion `GL_n(Ô) → GL_n(𝔸_f)` is an open embedding: through the homeomorphisms
@@ -238,6 +259,21 @@ theorem mem_level0_iff {N : Ideal R} {g : GL (Fin 2) 𝔸ᶠ[R, K]} :
   rw [level0_def, mem_map_integralGL_iff 2 (P := fun M ↦ M 1 0 ∈ completedIdeal K N)
     fun _ ↦ GL2K0.mem_iff]
   simp only [Matrix.of_apply]
+
+/-- The diagonal image in `GL₂(𝔸_f)` of a matrix of `GL₂(R)` congruent to `1` modulo `N` lies in
+the principal level `K(N)`. -/
+theorem map_algebraMap_mem_principalLevel {N : Ideal R} {g : GL (Fin 2) R}
+    (hg : ∀ i j, (g : Matrix (Fin 2) (Fin 2) R) i j - (1 : Matrix (Fin 2) (Fin 2) R) i j ∈ N) :
+    Matrix.GeneralLinearGroup.map (algebraMap R 𝔸ᶠ[R, K]) g ∈ principalLevel K N := by
+  rw [mem_principalLevel_iff]
+  refine ⟨fun i j ↦ ?_, fun i j ↦ ?_, fun i j ↦ ?_⟩
+  · rw [Matrix.GeneralLinearGroup.map_apply]
+    exact (integralAdeles R K).algebraMap_mem _
+  · rw [← map_inv, Matrix.GeneralLinearGroup.map_apply]
+    exact (integralAdeles R K).algebraMap_mem _
+  · convert algebraMap_mem_completedIdeal (K := K) (hg i j) using 1
+    ext
+    simp [Matrix.one_apply, apply_ite]
 
 variable (K)
 

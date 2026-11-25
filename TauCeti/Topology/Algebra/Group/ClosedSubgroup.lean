@@ -30,6 +30,10 @@ closed relation from `G` to `A` defined everywhere. When `A` is compact, the fib
 chain) of such subgroups the fibres of the intersection are nonempty, and Zorn's lemma supplies a
 minimal such subgroup below any given one.
 
+A closed subgroup of a compact group is compact; the instance
+`ClosedSubgroup.instCompactSpaceToSubgroup` records this for the underlying subgroup
+`↥H.toSubgroup`, the form on which the topological group instances are found.
+
 ## Main definitions
 
 * `ContinuousMulEquiv.closedSubgroupOrderIso`: transport of closed subgroups along an isomorphism
@@ -188,6 +192,19 @@ theorem quotientCongr_symm_mk (e : G ≃ₜ* H) (N : Subgroup G)
 end Transport
 
 end ContinuousMulEquiv
+
+namespace ClosedSubgroup
+
+/-- A closed subgroup of a compact group is compact as a subgroup, `↥H.toSubgroup`. Mathlib's
+instance covers the `SetLike` coercion `↥H`, which carries no topological group instance, so the
+compact-group API (for instance normalized Haar measure) is applied to `↥H.toSubgroup`. -/
+@[to_additive /-- A closed additive subgroup of a compact additive group is compact as an
+additive subgroup, `↥H.toAddSubgroup`. -/]
+instance instCompactSpaceToSubgroup {G : Type*} [Group G] [TopologicalSpace G] [CompactSpace G]
+    (H : ClosedSubgroup G) : CompactSpace H.toSubgroup :=
+  isCompact_iff_compactSpace.mp H.isClosed'.isCompact
+
+end ClosedSubgroup
 
 namespace Subgroup
 

@@ -10,6 +10,8 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.TargetLocal
+import TauCeti.AlgebraicGeometry.Morphisms.Integral.TargetLocal
 
 /-!
 # Morphism properties of relative spectra
@@ -96,10 +98,6 @@ open form a finite module over the structure ring. -/
 lemma relativeSpec_finite_iff :
     IsFinite A.relativeSpecToBase ↔
       ∀ (U : X.Opens), IsAffineOpen U → Module.Finite Γ(X, U) Γ(A.X, U) := by
-  observe hasFiniteAffineProperty : HasAffineProperty @IsFinite.{u}
-    (fun X _ f _ ↦ IsAffine X ∧ RingHom.Finite (f.appTop).hom)
-  have : IsZariskiLocalAtTarget @IsFinite.{u} :=
-    @HasAffineProperty.instIsZariskiLocalAtTarget _ _ hasFiniteAffineProperty
   rw [A.relativeSpecToBase_iff @IsFinite]
   simp_rw [IsFinite.SpecMap_iff, CommRingCat.hom_ofHom,
     RingHom.finite_algebraMap]
@@ -134,8 +132,6 @@ is integral over the structure ring on every affine open. -/
 lemma relativeSpec_integral_iff :
     IsIntegralHom A.relativeSpecToBase ↔
       ∀ (U : X.Opens), IsAffineOpen U → Algebra.IsIntegral Γ(X, U) Γ(A.X, U) := by
-  have : IsZariskiLocalAtTarget @IsIntegralHom.{u} :=
-    @HasAffineProperty.instIsZariskiLocalAtTarget _ _ IsIntegralHom.hasAffineProperty
   rw [A.relativeSpecToBase_iff @IsIntegralHom]
   simp_rw [IsIntegralHom.SpecMap_iff, CommRingCat.hom_ofHom,
     algebraMap_isIntegral_iff]

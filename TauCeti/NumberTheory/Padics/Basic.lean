@@ -36,8 +36,8 @@ For a `ℚ_[p]`-algebra `K`, the composite structure map
 when the structure map `ℚ_[p] → K` is. For a seminormed `ℚ_[p]`-algebra `K` with `‖1‖ ≤ 1`
 (including the zero seminorm) it maps `ℤ_[p]` into the closed unit ball of `K`; when `‖1‖ = 1` it
 is an isometry (`TauCeti.isometry_padicIntAlgebraMap`), the norm of a natural number in `K` is its
-`p`-adic norm (`TauCeti.norm_natCast_eq_norm_padic`, and in particular `‖(p : K)‖ = p⁻¹` via
-`TauCeti.norm_natCast_p_eq_inv`), and a nonzero integer `n` has norm at least
+`p`-adic norm (`TauCeti.norm_natCast_eq_norm_padic`), so `p` itself has norm `p⁻¹`
+(`TauCeti.norm_natCast_p`), and a nonzero integer `n` has norm at least
 `1 / |n|` in `K` (`TauCeti.inv_abs_le_norm_intCast`). It also records that `ℚ_[p]` has no element of
 norm strictly between `p⁻¹` and `1` (`Padic.not_exists_norm_mem_Ioo`).
 
@@ -194,8 +194,8 @@ norm. -/
 theorem norm_natCast_eq_norm_padic [NormOneClass K] (m : ℕ) : ‖(m : K)‖ = ‖(m : ℚ_[p])‖ := by
   rw [← map_natCast (algebraMap ℚ_[p] K), norm_algebraMap']
 
-/-- In a seminormed `ℚ_p`-algebra with `‖1‖ = 1`, the norm of `p` is `p⁻¹`. -/
-theorem norm_natCast_p_eq_inv [NormOneClass K] : ‖(p : K)‖ = (p : ℝ)⁻¹ := by
+/-- In a seminormed `ℚ_p`-algebra with `‖1‖ = 1`, the prime `p` has norm `p⁻¹`. -/
+theorem norm_natCast_p [NormOneClass K] : ‖(p : K)‖ = (p : ℝ)⁻¹ := by
   rw [norm_natCast_eq_norm_padic (p := p), Padic.norm_p]
 
 /-- In a seminormed `ℚ_p`-algebra with `‖1‖ = 1`, an integer `n` has norm at least `1 / |n|`,
