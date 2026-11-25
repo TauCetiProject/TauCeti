@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.State.Pure
 public import TauCeti.Analysis.CStarAlgebra.Matrix.VectorState
 public import Mathlib.Topology.UnitInterval
-import TauCeti.Examples.Analysis.CStarAlgebra.StateExtension
+import TauCeti.Examples.Analysis.CStarAlgebra.State.Extension
 import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 
 /-!
@@ -18,10 +18,11 @@ The pure state `δ₀ : f ↦ f(0)` of `C[0,1]`, embedded in `M₂(C[0,1])` as t
 `f ↦ diag(f, f)`, has both pure and non-pure extensions to `M₂(C[0,1])`. Evaluation at `0` is a
 surjective star homomorphism `ev₀ : M₂(C[0,1]) → M₂`, and pulling back states of `M₂` along it:
 
-* the vector states `f ↦ ⟪ξ, f(0) ξ⟫` of unit vectors `ξ` extend `δ₀` and are pure, since the
+* every state of `M₂` pulls back to a state extending `δ₀`;
+* the vector states `f ↦ ⟪ξ, f(0) ξ⟫` of unit vectors `ξ` are pure, since the
   pullback of a pure state along a surjective star homomorphism is pure
   (`TauCeti.pullbackFunctional_mem_extremePoints_stateSpace`);
-* the state `f ↦ tr(f(0))/2` extends `δ₀` and is not pure, as the midpoint of the pullbacks of
+* the state `f ↦ tr(f(0))/2` is not pure, as the midpoint of the pullbacks of
   the vector states of the two standard basis vectors.
 -/
 
@@ -47,52 +48,53 @@ theorem ev₀_algebraMap (f : C(unitInterval, ℂ)) :
     ev₀ (algebraMap C(unitInterval, ℂ) (CStarMatrix (Fin 2) (Fin 2) C(unitInterval, ℂ)) f) =
       algebraMap ℂ (CStarMatrix (Fin 2) (Fin 2) ℂ) (f 0) := by
   ext i j
-  change (if i = j then f else 0) 0 = if i = j then f 0 else 0
-  split_ifs <;> rfl
+  by_cases h : i = j <;> simp [CStarMatrix.algebraMap_apply, h]
+
+/-- **Every state of `M₂` pulls back to an extension of `δ₀`.** The pullback along `ev₀` of a
+state `χ` of `M₂` sends the scalar matrix of `f` to `f(0)`. -/
+theorem pullbackFunctional_ev₀_apply_algebraMap {χ : WeakDual ℂ (CStarMatrix (Fin 2) (Fin 2) ℂ)}
+    (hχ : χ ∈ stateSpace (CStarMatrix (Fin 2) (Fin 2) ℂ)) (f : C(unitInterval, ℂ)) :
+    pullbackFunctional _ ev₀ χ (algebraMap _ (CStarMatrix (Fin 2) (Fin 2) C(unitInterval, ℂ)) f) =
+      f 0 := by
+  rw [pullbackFunctional_apply, ev₀_algebraMap, map_algebraMap_of_mem_stateSpace hχ]
 
 /-- **Pure extensions of `δ₀`.** For a unit vector `ξ`, the state `f ↦ ⟪ξ, f(0) ξ⟫` of
-`M₂(C[0,1])` is pure and extends `δ₀` on the scalar matrices. -/
-theorem pure_extension {ξ : Fin 2 → ℂ} (hξ : star ξ ⬝ᵥ ξ = 1) :
+`M₂(C[0,1])` is pure; it extends `δ₀` by `pullbackFunctional_ev₀_apply_algebraMap`. -/
+theorem pullbackFunctional_vectorFunctional_mem_extremePoints_stateSpace {ξ : Fin 2 → ℂ}
+    (hξ : star ξ ⬝ᵥ ξ = 1) :
     pullbackFunctional _ ev₀ (vectorFunctional ξ) ∈
-        Set.extremePoints ℝ (stateSpace (CStarMatrix (Fin 2) (Fin 2) C(unitInterval, ℂ))) ∧
-      ∀ f : C(unitInterval, ℂ), pullbackFunctional _ ev₀ (vectorFunctional ξ)
-        (algebraMap _ (CStarMatrix (Fin 2) (Fin 2) C(unitInterval, ℂ)) f) = f 0 := by
-  refine ⟨pullbackFunctional_mem_extremePoints_stateSpace ev₀ ev₀_surjective
-    (vectorFunctional_mem_extremePoints_stateSpace hξ), fun f ↦ ?_⟩
-  rw [pullbackFunctional_apply, ev₀_algebraMap,
-    map_algebraMap_of_mem_stateSpace (vectorFunctional_mem_stateSpace hξ)]
+      Set.extremePoints ℝ (stateSpace (CStarMatrix (Fin 2) (Fin 2) C(unitInterval, ℂ))) :=
+  pullbackFunctional_mem_extremePoints_stateSpace ev₀ ev₀_surjective
+    (vectorFunctional_mem_extremePoints_stateSpace hξ)
 
-/-- **A non-pure extension of `δ₀`.** The state `f ↦ tr(f(0))/2` of `M₂(C[0,1])` extends `δ₀` on
-the scalar matrices but is not pure. -/
-theorem trace_extension :
+/-- The functional `f ↦ tr(f(0))/2` of `M₂(C[0,1])` is a state; it extends `δ₀` by
+`pullbackFunctional_ev₀_apply_algebraMap`. -/
+theorem pullbackFunctional_normalizedTraceFunctional_mem_stateSpace :
+    pullbackFunctional _ ev₀ (normalizedTraceFunctional (Fin 2)) ∈
+      stateSpace (CStarMatrix (Fin 2) (Fin 2) C(unitInterval, ℂ)) :=
+  mapsTo_pullbackFunctional_stateSpace_of_surjective ev₀ ev₀_surjective
+    (normalizedTraceFunctional_mem_stateSpace (Fin 2))
+
+/-- **A non-pure extension of `δ₀`.** The state `f ↦ tr(f(0))/2` of `M₂(C[0,1])` is not pure. -/
+theorem pullbackFunctional_normalizedTraceFunctional_notMem_extremePoints_stateSpace :
     pullbackFunctional _ ev₀ (normalizedTraceFunctional (Fin 2)) ∉
-        Set.extremePoints ℝ (stateSpace (CStarMatrix (Fin 2) (Fin 2) C(unitInterval, ℂ))) ∧
-      ∀ f : C(unitInterval, ℂ), pullbackFunctional _ ev₀ (normalizedTraceFunctional (Fin 2))
-        (algebraMap _ (CStarMatrix (Fin 2) (Fin 2) C(unitInterval, ℂ)) f) = f 0 := by
+      Set.extremePoints ℝ (stateSpace (CStarMatrix (Fin 2) (Fin 2) C(unitInterval, ℂ))) := by
+  intro h
   have he (i : Fin 2) : star (Pi.single i (1 : ℂ)) ⬝ᵥ Pi.single i 1 = 1 := by simp
-  have hinj : Function.Injective (pullbackFunctional _ ev₀) := fun χ χ' h ↦
-    DFunLike.ext _ _ fun b ↦ by
-      obtain ⟨a, rfl⟩ := ev₀_surjective b
-      simpa using congrArg (fun χ'' : WeakDual ℂ _ ↦ χ'' a) h
-  refine ⟨fun h ↦ ?_, fun f ↦ ?_⟩
-  · have hseg : pullbackFunctional _ ev₀ (normalizedTraceFunctional (Fin 2)) ∈ openSegment ℝ
-        (pullbackFunctional _ ev₀ (vectorFunctional (Pi.single 0 1)))
-        (pullbackFunctional _ ev₀ (vectorFunctional (Pi.single 1 1))) :=
-      ⟨2⁻¹, 2⁻¹, by norm_num, by norm_num, by norm_num, by
-        rw [normalizedTraceFunctional_eq_sum_smul_vectorFunctional, Fin.sum_univ_two]
-        have hsm (r : ℝ) (χ : WeakDual ℂ (CStarMatrix (Fin 2) (Fin 2) ℂ)) :
-            pullbackFunctional _ ev₀ (r • χ) = r • pullbackFunctional _ ev₀ χ :=
-          DFunLike.ext _ _ fun _ ↦ by simp [pullbackFunctional_apply]
-        simp only [map_add, hsm, Fintype.card_fin]
-        norm_num⟩
-    have h0 := hinj ((mem_extremePoints.1 h).2 _
+  have hseg : pullbackFunctional _ ev₀ (normalizedTraceFunctional (Fin 2)) ∈ openSegment ℝ
+      (pullbackFunctional _ ev₀ (vectorFunctional (Pi.single 0 1)))
+      (pullbackFunctional _ ev₀ (vectorFunctional (Pi.single 1 1))) :=
+    ⟨2⁻¹, 2⁻¹, by norm_num, by norm_num, by norm_num, by
+      rw [normalizedTraceFunctional_eq_sum_smul_vectorFunctional, Fin.sum_univ_two]
+      simp only [map_add, (pullbackFunctional _ ev₀).map_smul_of_tower, Fintype.card_fin]
+      norm_num⟩
+  have h0 := pullbackFunctional_injective_of_surjective ev₀ ev₀_surjective
+    ((mem_extremePoints.1 h).2 _
       (mapsTo_pullbackFunctional_stateSpace_of_surjective ev₀ ev₀_surjective
         (vectorFunctional_mem_stateSpace (he 0))) _
       (mapsTo_pullbackFunctional_stateSpace_of_surjective ev₀ ev₀_surjective
         (vectorFunctional_mem_stateSpace (he 1))) hseg).1
-    exact StateExtensionExamples.normalizedTraceFunctional_notMem_extremePoints_stateSpace
-      (h0 ▸ vectorFunctional_mem_extremePoints_stateSpace (he 0))
-  · rw [pullbackFunctional_apply, ev₀_algebraMap,
-      map_algebraMap_of_mem_stateSpace (normalizedTraceFunctional_mem_stateSpace (Fin 2))]
+  exact StateExtensionExamples.normalizedTraceFunctional_notMem_extremePoints_stateSpace
+    (h0 ▸ vectorFunctional_mem_extremePoints_stateSpace (he 0))
 
 end TauCeti.PureExtensionExamples

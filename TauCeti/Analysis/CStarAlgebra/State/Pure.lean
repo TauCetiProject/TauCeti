@@ -10,7 +10,7 @@ public import TauCeti.Analysis.CStarAlgebra.State.Space
 import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 
 /-!
-# Pure states supported on a minimal projection
+# Pure states: minimal projections and pullbacks
 
 Let `A` be a unital C⋆-algebra and `p` a projection in `A` that compresses every element to a
 multiple of itself, `p a p = ω(a) p`, through a state `ω` with `ω(p) = 1`. For matrices, `p` is the
@@ -22,6 +22,10 @@ functionals, `φ` kills `a (1 - p)` and `(1 - p) a`, so `φ(a) = φ(p a p) = ω(
 is a convex combination of two states with positive weights, both vanish at the positive
 element `1 - p`, because `ω` does, and hence both equal `ω`. So `ω` is a pure state, an extreme
 point of the state space.
+
+Pure states also pull back along surjective star homomorphisms `f : A → B`: if `φ` is a pure state
+of `B`, then `φ ∘ f` is a pure state of `A`. This produces pure states of `A` from those of its
+quotients, for instance pure extensions of states through evaluation maps.
 
 ## Main results
 
@@ -112,6 +116,7 @@ private theorem exists_mem_stateSpace_pullbackFunctional_eq (f : F) (hf : Functi
     have : (fₗ.quotKerEquivOfSurjective hf).symm (f a) = Submodule.Quotient.mk a :=
       (LinearEquiv.symm_apply_eq _).mpr rfl
     simp only [g, LinearMap.comp_apply, LinearEquiv.coe_coe, this, Submodule.liftQ_apply]
+    -- the coercion of `toStrongDual ψ` to a linear map evaluates as `ψ` by definition
     rfl
   have hgpos (b : B) (hb : 0 ≤ b) : 0 ≤ g b := by
     obtain ⟨c, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp hb
@@ -120,6 +125,7 @@ private theorem exists_mem_stateSpace_pullbackFunctional_eq (f : F) (hf : Functi
     exact map_nonneg_of_mem_stateSpace hψ (star_mul_self_nonneg a)
   let σ : B →ₚ[ℂ] ℂ := .mk₀ g hgpos
   let χ : WeakDual ℂ B := StrongDual.toWeakDual (PositiveContinuousLinearMap.ofClass σ)
+  -- `PositiveContinuousLinearMap.mk₀` has no evaluation lemma; `χ` evaluates as `g` by definition
   have hχ (b : B) : χ b = g b := rfl
   have hf1 : f 1 = 1 := by
     obtain ⟨a, ha⟩ := hf 1
@@ -130,9 +136,7 @@ private theorem exists_mem_stateSpace_pullbackFunctional_eq (f : F) (hf : Functi
 
 /-- **Pullback of pure states along a surjective star homomorphism.** If `f : A → B` is a
 surjective star homomorphism of unital C⋆-algebras, the pullback `φ ∘ f` of a pure state `φ` of
-`B` is a pure state of `A`. A state in an open segment through `φ ∘ f` is dominated by a multiple
-of `φ ∘ f`, so it vanishes on the kernel of `f` and is itself a pullback; the segment then comes
-from one through `φ`. -/
+`B` is a pure state of `A`. -/
 theorem pullbackFunctional_mem_extremePoints_stateSpace (f : F) (hf : Function.Surjective f)
     {φ : WeakDual ℂ B} (hφ : φ ∈ Set.extremePoints ℝ (stateSpace B)) :
     pullbackFunctional A f φ ∈ Set.extremePoints ℝ (stateSpace A) := by
@@ -154,12 +158,8 @@ theorem pullbackFunctional_mem_extremePoints_stateSpace (f : F) (hf : Function.S
     exists_mem_stateSpace_pullbackFunctional_eq f hf hψ₁ fun k hk ↦ (hker k hk).1
   obtain ⟨χ₂, hχ₂, rfl⟩ :=
     exists_mem_stateSpace_pullbackFunctional_eq f hf hψ₂ fun k hk ↦ (hker k hk).2
-  have hinj : Function.Injective (pullbackFunctional A f) := fun χ χ' hχ ↦
-    DFunLike.ext _ _ fun b ↦ by
-      obtain ⟨a, rfl⟩ := hf b
-      simpa using congrArg (fun χ'' : WeakDual ℂ A ↦ χ'' a) hχ
   have hseg : φ ∈ openSegment ℝ χ₁ χ₂ :=
-    ⟨s, t, hs, ht, hst, hinj (by
+    ⟨s, t, hs, ht, hst, pullbackFunctional_injective_of_surjective f hf (by
       rw [map_add, (pullbackFunctional A f).map_smul_of_tower,
         (pullbackFunctional A f).map_smul_of_tower]
       exact h)⟩

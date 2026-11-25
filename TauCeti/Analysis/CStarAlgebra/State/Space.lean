@@ -26,7 +26,8 @@ This file defines the state space `TauCeti.stateSpace A` as a subset of the weak
 * `TauCeti.convex_stateSpace`: the state space is convex. No unit is needed, because the norm of
   a positive functional is its limit along an approximate unit.
 * `TauCeti.pullbackFunctional`: precomposition with a star homomorphism, as a continuous
-  complex-linear map of weak-* duals. By
+  complex-linear map of weak-* duals, injective along surjective star homomorphisms
+  (`TauCeti.pullbackFunctional_injective_of_surjective`). By
   `TauCeti.mapsTo_pullbackFunctional_stateSpace_of_surjective` and
   `TauCeti.mapsTo_pullbackFunctional_stateSpace` it restricts to an affine map of state spaces
   along surjective star homomorphisms and along unital star homomorphisms.
@@ -183,6 +184,14 @@ theorem pullbackFunctional_toWeakDual (f : F) (σ : B →P[ℂ] ℂ) :
     pullbackFunctional A f (StrongDual.toWeakDual (σ : B →L[ℂ] ℂ)) =
       StrongDual.toWeakDual ((σ.comp (.ofClass f) : A →P[ℂ] ℂ) : A →L[ℂ] ℂ) :=
   DFunLike.ext _ _ fun _ => by simp
+
+/-- Pullback of functionals along a surjective star homomorphism is injective: `φ ∘ f`
+determines `φ` on the range of `f`, which is all of `B`. -/
+theorem pullbackFunctional_injective_of_surjective (f : F) (hf : Function.Surjective f) :
+    Function.Injective (pullbackFunctional A f) := fun φ ψ h =>
+  DFunLike.ext _ _ fun b => by
+    obtain ⟨a, rfl⟩ := hf b
+    simpa using congrArg (fun χ : WeakDual ℂ A => χ a) h
 
 /-- **Pullback of states along a surjective star homomorphism.** Composing a state of `B` with a
 surjective star homomorphism `A → B` gives a state of `A`. Without surjectivity the norm of the
