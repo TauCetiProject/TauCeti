@@ -65,19 +65,6 @@ theorem map_det_map_integralGL {n : ℕ} (H : Subgroup (GL (Fin n) (integralAdel
   congr 1
   exact MonoidHom.ext fun g ↦ det_integralGL g
 
-/-- The units of `𝔸_f` coming from units of the integral adeles are the everywhere-integral
-units. -/
-private theorem range_units_map_val_eq_integralUnits :
-    (Units.map ((integralAdeles R K).val.toRingHom : integralAdeles R K →* 𝔸ᶠ[R, K])).range =
-      integralUnits R K := by
-  ext x
-  rw [MonoidHom.mem_range, integralUnits_eq_units_integralAdeles, Submonoid.mem_units_iff]
-  constructor
-  · rintro ⟨u, rfl⟩
-    exact ⟨(u : integralAdeles R K).property, (↑u⁻¹ : integralAdeles R K).property⟩
-  · rintro ⟨h₁, h₂⟩
-    exact ⟨⟨⟨_, h₁⟩, ⟨_, h₂⟩, Subtype.ext x.mul_inv, Subtype.ext x.inv_mul⟩, Units.ext rfl⟩
-
 /-- **`det K₁(N) = Ô^×`**: the determinants of `K₁(N)` are the everywhere-integral units. -/
 theorem map_det_level1 (N : Ideal R) :
     (level1 K N).map GeneralLinearGroup.det = integralUnits R K := by

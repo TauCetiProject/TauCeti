@@ -73,11 +73,11 @@ theorem mem_ker_map_quotientMk_iff (I : Ideal R) {g : GL n R} :
 
 /-- **The determinants of the principal level are the units congruent to `1`**: for a nonempty
 finite index type `n`, the image under `det` of `ker(GL_n(R) → GL_n(R ⧸ I))` is
-`ker(Rˣ → (R ⧸ I)ˣ)`. The inclusion `≤` holds because the determinant commutes with reduction,
-and `≥` by a diagonal matrix with a single entry `u`. -/
+`ker(Rˣ → (R ⧸ I)ˣ)`. -/
 theorem map_det_ker_map_quotientMk [Nonempty n] (I : Ideal R) :
     (Matrix.GeneralLinearGroup.map (n := n) (Ideal.Quotient.mk I)).ker.map det =
       (Units.map (Ideal.Quotient.mk I : R →* R ⧸ I)).ker := by
+  -- `≤`: the determinant commutes with reduction; `≥`: a diagonal matrix with a single entry `u`.
   refine le_antisymm ?_ fun u hu ↦ ?_
   · rintro _ ⟨g, hg, rfl⟩
     rw [MonoidHom.mem_ker, ← GeneralLinearGroup.map_det, MonoidHom.mem_ker.mp hg, map_one]
