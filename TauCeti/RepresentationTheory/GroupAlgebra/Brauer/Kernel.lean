@@ -60,7 +60,7 @@ theorem brauerProjection_relTrace_eq_zero {p : ℕ} [Fact p.Prime] [CharP R p] {
     brauerProjection P (relTrace R Q P a : MonoidAlgebra R G) = 0 := by
   ext c
   rw [coeff_brauerProjection, coeff_relTrace_of_mem_centralizer a c.property, nsmul_eq_mul,
-    hP.index_subgroupOf_cast_eq_zero hQP, zero_mul, coeff_zero, Finsupp.coe_zero, Pi.zero_apply]
+    hP.natCast_index_subgroupOf_eq_zero hQP, zero_mul, coeff_zero, Finsupp.coe_zero, Pi.zero_apply]
 
 /-! ### The kernel -/
 
@@ -205,7 +205,7 @@ theorem augmentation_brauerProjection [Finite G] {p : ℕ} [Fact p.Prime] [CharP
       (fun w w' hw hw' => by rw [Subalgebra.coe_add, map_add, hw, hw', add_zero])
     obtain ⟨b, rfl⟩ := (mem_relTraceIdeal_iff _).1 hw
     rw [augmentation_relTrace, ← Nat.cast_smul_eq_nsmul R,
-      hP.index_subgroupOf_cast_eq_zero Q.property, zero_smul]
+      hP.natCast_index_subgroupOf_eq_zero Q.property, zero_smul]
   rw [← hy]
   conv_rhs => rw [hxyz]
   rw [map_add, h0, add_zero]

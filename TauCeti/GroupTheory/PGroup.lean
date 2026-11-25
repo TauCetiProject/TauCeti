@@ -40,7 +40,7 @@ that a homomorphism into a pro-`p` group kills their intersection.
   `p`-group.
 * `IsPGroup.sSup_of_directedOn`: the supremum of a directed family of `p`-subgroups is a
   `p`-subgroup.
-* `IsPGroup.dvd_index_subgroupOf`, `IsPGroup.index_subgroupOf_cast_eq_zero`: the index of a
+* `IsPGroup.dvd_index_subgroupOf`, `IsPGroup.natCast_index_subgroupOf_eq_zero`: the index of a
   proper subgroup of a `p`-subgroup is divisible by `p`, so vanishes in characteristic `p`.
 * `TauCeti.disjoint_of_not_dvd_natCard_of_isPGroup`: a `p`-group meets a subgroup of order prime
   to `p` trivially.
@@ -137,7 +137,7 @@ theorem _root_.IsPGroup.dvd_index_subgroupOf [Fact p.Prime] {Q P : Subgroup G}
 
 /-- In characteristic `p`, the index `|P : Q|` of a proper subgroup `Q` of a `p`-subgroup `P`
 vanishes. -/
-theorem _root_.IsPGroup.index_subgroupOf_cast_eq_zero [Fact p.Prime] {R : Type*}
+theorem _root_.IsPGroup.natCast_index_subgroupOf_eq_zero [Fact p.Prime] {R : Type*}
     [AddMonoidWithOne R] [CharP R p] {Q P : Subgroup G} [(Q.subgroupOf P).FiniteIndex]
     (hP : IsPGroup p P) (hQP : Q < P) : ((Q.subgroupOf P).index : R) = 0 :=
   (CharP.cast_eq_zero_iff R p _).2 (hP.dvd_index_subgroupOf hQP)
