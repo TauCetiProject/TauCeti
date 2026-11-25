@@ -44,7 +44,7 @@ def cubeToOnePoint : C((N → I), OnePoint (N → ℝ)) where
   toFun z := unitBallToOnePoint (cubeHomeomorphClosedBall N z : N → ℝ)
   continuous_toFun :=
     continuous_unitBallToOnePoint.comp
-      (continuous_subtype_val.comp (cubeHomeomorphClosedBall N).continuous)
+      (continuous_subtypeVal.comp (cubeHomeomorphClosedBall N).continuous)
 
 variable {N}
 
@@ -62,7 +62,7 @@ theorem cubeToOnePoint_eq_infty_iff (z : N → I) :
     cubeToOnePoint N z = ∞ ↔ z ∈ Cube.boundary N := by
   rw [← norm_cubeHomeomorphClosedBall_eq_one_iff]
   rw [cubeToOnePoint_apply, unitBallToOnePoint_apply_eq_infty_iff]
-  exact ⟨fun h => le_antisymm (mem_closedBall_zero_iff.1 (cubeHomeomorphClosedBall N z).2) h,
+  exact ⟨fun h => le_antisymm (mem_closedBall_zero_iff.1 (cubeHomeomorphClosedBall N z).property) h,
     fun h => h.ge⟩
 
 /-- The collapse of the cube is surjective when the cube has positive dimension. -/
@@ -86,7 +86,7 @@ theorem eq_or_mem_boundary_of_cubeToOnePoint_eq {z z' : N → I}
         (h.trans ((cubeToOnePoint_eq_infty_iff z').2 hz')))
     have hlt (w : N → I) (hw : w ∉ Cube.boundary N) :
         ‖(cubeHomeomorphClosedBall N w : N → ℝ)‖ < 1 :=
-      lt_of_le_of_ne (mem_closedBall_zero_iff.1 (cubeHomeomorphClosedBall N w).2)
+      lt_of_le_of_ne (mem_closedBall_zero_iff.1 (cubeHomeomorphClosedBall N w).property)
         fun h1 => hw ((norm_cubeHomeomorphClosedBall_eq_one_iff w).1 h1)
     rw [cubeToOnePoint_apply, cubeToOnePoint_apply] at h
     have hs (w : N → I) (hw : w ∉ Cube.boundary N) :

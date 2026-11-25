@@ -7,13 +7,13 @@ module
 
 public import Mathlib.Analysis.Convex.Function
 public import Mathlib.Analysis.InnerProductSpace.Defs
-public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import TauCeti.Analysis.Calculus.Bilinear
 public import TauCeti.Analysis.RCLike.Basic
+public import TauCeti.LinearAlgebra.SesquilinearForm.Basic
 import Mathlib.Analysis.Normed.Module.RCLike.Extend
 
 /-!
-# Real quadratic forms, Cauchy--Schwarz inequalities, and coercive stability for sesquilinear forms
+# Real quadratic forms, Cauchy--Schwarz, and real-part bilinear maps for sesquilinear forms
 
 Let `a` be a sesquilinear form on a module `V` over `𝕜` (`ℝ` or `ℂ`, written `[RCLike 𝕜]`),
 conjugate-linear in its first argument and `𝕜`-linear in its second. When `a` is Hermitian,
@@ -21,7 +21,7 @@ conjugate-linear in its first argument and `𝕜`-linear in its second. When `a`
 `q(u) = RCLike.re (a u u)` determines `a u u` without loss of information, and its off-diagonal
 real part `RCLike.re (a u v)` is symmetric in `u` and `v`.
 
-This file develops the algebraic, analytic, and coercive stability properties of
+This file develops the algebraic, analytic, and restricted-subspace stability properties of
 `q(u) = RCLike.re (a u u)` and of the real-part bilinear pairing `(u, v) ↦ RCLike.re (a u v)`:
 
 * **Polarization and convex-combination identities.** For a Hermitian form, expanding `q(u + c • v)`
@@ -40,10 +40,10 @@ This file develops the algebraic, analytic, and coercive stability properties of
   `C^n` over `ℝ` for every `n` (via `ContinuousLinearMap.contDiff_apply_self`), with strict Fréchet
   derivative `v ↦ 2 Re(a u v)` when `a` is Hermitian (via
   `ContinuousLinearMap.hasStrictFDerivAt_apply_self`).
-* **Coercive weak-solution stability and uniqueness.** For an arbitrary (possibly non-Hermitian)
-  continuous sesquilinear form satisfying `c * ‖w‖² ≤ q(w)` (`c > 0`), weak solutions depend
-  `c⁻¹`-Lipschitz-continuously on the forcing functional in seminormed spaces, and are unique in
-  normed spaces.
+* **Subspace-restricted coercive stability.** For an arbitrary (possibly non-Hermitian) continuous
+  sesquilinear form satisfying `c * ‖w‖² ≤ q(w)` on a submodule `W`, weak solutions on `W` that
+  differ by an element of `W` satisfy `c * ‖u - u'‖ ≤ ‖(ℓ - ℓ').comp W.subtypeL‖` in the restricted
+  dual norm on `W`.
 
 ## Main declarations
 
@@ -59,9 +59,8 @@ This file develops the algebraic, analytic, and coercive stability properties of
 * `ContinuousLinearMap.reBilin` and `ContinuousLinearMap.norm_reBilin`: the real part
   `(x, y) ↦ RCLike.re (a x y)` of a continuous sesquilinear form as an isometric continuous
   real-bilinear map.
-* `ContinuousLinearMap.norm_sub_le_inv_mul_norm_sub_of_forall_apply_eq` and
-  `ContinuousLinearMap.eq_of_forall_apply_eq_of_coercive`: `c⁻¹`-Lipschitz forcing stability and
-  uniqueness of coercive weak solutions.
+* `ContinuousLinearMap.mul_norm_sub_le_norm_comp_subtypeL_of_coercive`: coercive stability of weak
+  solutions on `W` in the restricted dual norm `‖(ℓ - ℓ').comp W.subtypeL‖`.
 * `ContinuousLinearMap.hasStrictFDerivAt_re_apply_self_of_eq_star`: the real strict Fréchet
   derivative of `u ↦ RCLike.re (a u u)` for a continuous Hermitian form.
 -/
@@ -71,20 +70,6 @@ public section
 noncomputable section
 
 namespace LinearMap
-
-section Symm
-
-variable {R V : Type*} [CommSemiring R] [StarRing R] [AddCommMonoid V] [Module R V]
-
-/-- A sesquilinear form `a : V →ₗ⋆[R] V →ₗ[R] R` is symmetric in Mathlib's `LinearMap.IsSymm`
-sense precisely when `a u v = star (a v u)` for all `u` and `v`. -/
-theorem isSymm_iff_eq_star {a : V →ₗ⋆[R] V →ₗ[R] R} :
-    a.IsSymm ↔ ∀ u v, a u v = star (a v u) := by
-  rw [isSymm_def]
-  refine forall₂_congr fun u v ↦ ?_
-  rw [starRingEnd_apply, star_eq_iff_star_eq, eq_comm]
-
-end Symm
 
 section Algebraic
 
@@ -373,34 +358,6 @@ section TopologicalSelf
 
 variable {𝕜 V : Type*} [RCLike 𝕜] [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace V]
 
-/-- **Cauchy--Schwarz inequality** for a continuous nonnegative Hermitian sesquilinear form:
-`‖a u v‖ ^ 2 ≤ re (a u u) * re (a v v)`. -/
-theorem norm_apply_sq_le_re_apply_self_mul {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ u v, a u v = star (a v u)) (hpos : ∀ u, 0 ≤ RCLike.re (a u u)) (u v : V) :
-    ‖a u v‖ ^ 2 ≤ RCLike.re (a u u) * RCLike.re (a v v) :=
-  a.toLinearMap₁₂.norm_apply_sq_le_re_apply_self_mul ha hpos u v
-
-/-- Square-root form of the **Cauchy--Schwarz inequality** for a continuous nonnegative Hermitian
-sesquilinear form: `‖a u v‖ ≤ √(re (a u u)) * √(re (a v v))`. -/
-theorem norm_apply_le_sqrt_re_apply_self_mul {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ u v, a u v = star (a v u)) (hpos : ∀ u, 0 ≤ RCLike.re (a u u)) (u v : V) :
-    ‖a u v‖ ≤ √(RCLike.re (a u u)) * √(RCLike.re (a v v)) :=
-  a.toLinearMap₁₂.norm_apply_le_sqrt_re_apply_self_mul ha hpos u v
-
-/-- **Kernel identity** for a continuous nonnegative Hermitian sesquilinear form:
-`(∀ v, a u v = 0) ↔ re (a u u) = 0`. -/
-theorem forall_apply_eq_zero_iff_re_apply_self_eq_zero {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ u v, a u v = star (a v u)) (hpos : ∀ u, 0 ≤ RCLike.re (a u u)) {u : V} :
-    (∀ v, a u v = 0) ↔ RCLike.re (a u u) = 0 :=
-  a.toLinearMap₁₂.forall_apply_eq_zero_iff_re_apply_self_eq_zero ha hpos
-
-/-- Set form of the **kernel identity** for a continuous nonnegative Hermitian sesquilinear form:
-`{u | ∀ v, a u v = 0} = {u | re (a u u) = 0}`. -/
-theorem setOf_forall_apply_eq_zero_eq {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ u v, a u v = star (a v u)) (hpos : ∀ u, 0 ≤ RCLike.re (a u u)) :
-    {u : V | ∀ v, a u v = 0} = {u : V | RCLike.re (a u u) = 0} :=
-  a.toLinearMap₁₂.setOf_forall_apply_eq_zero_eq ha hpos
-
 /-- For a continuous Hermitian form `a`, its real-part bilinear form `a.reBilin` is symmetric. -/
 theorem reBilin_comm_of_eq_star [Module ℝ V] [IsScalarTower ℝ 𝕜 V] [ContinuousSMul 𝕜 V]
     {a : V →L⋆[𝕜] V →L[𝕜] 𝕜} (ha : ∀ u v, a u v = star (a v u)) (u v : V) :
@@ -465,106 +422,33 @@ theorem flip_reBilin_of_eq_star [NormedSpace ℝ V] [IsScalarTower ℝ 𝕜 V]
   ext u v
   exact a.reBilin_comm_of_eq_star ha v u
 
-/-! ### Coercive weak-solution stability and uniqueness -/
-
-/-- **`c⁻¹`-Lipschitz dependence of weak solutions on the forcing** relative to a submodule `W`: if
-`u₁ - u₂ ∈ W`, `a u₁ w = ℓ₁ w` and `a u₂ w = ℓ₂ w` for all `w ∈ W`, and `c * ‖w‖² ≤ Re(a w w)` on
-`W` (`c > 0`), then `‖u₁ - u₂‖ ≤ c⁻¹ * ‖(ℓ₁ - ℓ₂).comp W.subtypeL‖`. No symmetry of `a` is
+/-- **Lipschitz dependence of constrained weak solutions on the restricted forcing.** If the real
+quadratic part of `a` dominates `c * ‖w‖ ^ 2` on a submodule `W`, then solutions of `a u v = ℓ v`
+and `a u' v = ℓ' v` on `W` that differ by an element of `W` satisfy
+`c * ‖u - u'‖ ≤ ‖(ℓ - ℓ').comp W.subtypeL‖`. No symmetry of `a` or positivity of `c` is
 required. -/
-theorem norm_sub_le_inv_mul_norm_comp_subtypeL_of_forall_apply_eq {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    {ℓ₁ ℓ₂ : StrongDual 𝕜 V} {W : Submodule 𝕜 V} {c : ℝ} (hc : 0 < c)
-    (hcoer : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w)) {u₁ u₂ : V}
-    (hmem : u₁ - u₂ ∈ W) (h₁ : ∀ w ∈ W, a u₁ w = ℓ₁ w) (h₂ : ∀ w ∈ W, a u₂ w = ℓ₂ w) :
-    ‖u₁ - u₂‖ ≤ c⁻¹ * ‖(ℓ₁ - ℓ₂).comp W.subtypeL‖ := by
-  obtain h0 | hpos := (norm_nonneg (u₁ - u₂)).eq_or_lt
-  · rw [← h0]
-    positivity
-  · have hpair : a (u₁ - u₂) (u₁ - u₂) = ((ℓ₁ - ℓ₂).comp W.subtypeL) ⟨u₁ - u₂, hmem⟩ := by
-      rw [a.map_sub, sub_apply, h₁ (u₁ - u₂) hmem, h₂ (u₁ - u₂) hmem]
+theorem mul_norm_sub_le_norm_comp_subtypeL_of_coercive {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
+    (ℓ : StrongDual 𝕜 V) {W : Submodule 𝕜 V} {c : ℝ}
+    (hc : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w)) {u u' : V} {ℓ' : StrongDual 𝕜 V}
+    (hu : ∀ v ∈ W, a u v = ℓ v) (hu' : ∀ v ∈ W, a u' v = ℓ' v) (h : u - u' ∈ W) :
+    c * ‖u - u'‖ ≤ ‖(ℓ - ℓ').comp W.subtypeL‖ := by
+  rcases (norm_nonneg (u - u')).eq_or_lt with h0 | hpos
+  · rw [← h0, mul_zero]
+    exact norm_nonneg _
+  · have hpair : a (u - u') (u - u') = ((ℓ - ℓ').comp W.subtypeL) ⟨u - u', h⟩ := by
+      rw [a.map_sub, sub_apply, hu (u - u') h, hu' (u - u') h]
       simp
-    have hle : c * ‖u₁ - u₂‖ ^ 2 ≤ ‖(ℓ₁ - ℓ₂).comp W.subtypeL‖ * ‖u₁ - u₂‖ := by
-      calc c * ‖u₁ - u₂‖ ^ 2 ≤ RCLike.re (a (u₁ - u₂) (u₁ - u₂)) := hcoer (u₁ - u₂) hmem
-        _ ≤ ‖a (u₁ - u₂) (u₁ - u₂)‖ :=
-            (le_abs_self _).trans (RCLike.abs_re_le_norm _)
-        _ = ‖((ℓ₁ - ℓ₂).comp W.subtypeL) ⟨u₁ - u₂, hmem⟩‖ := by rw [hpair]
-        _ ≤ ‖(ℓ₁ - ℓ₂).comp W.subtypeL‖ * ‖(⟨u₁ - u₂, hmem⟩ : W)‖ :=
-            ((ℓ₁ - ℓ₂).comp W.subtypeL).le_opNorm ⟨u₁ - u₂, hmem⟩
-        _ = ‖(ℓ₁ - ℓ₂).comp W.subtypeL‖ * ‖u₁ - u₂‖ := by simp
-    have hcancel : c * ‖u₁ - u₂‖ ≤ ‖(ℓ₁ - ℓ₂).comp W.subtypeL‖ := by
-      nlinarith
-    rwa [← div_eq_inv_mul, le_div_iff₀ hc, mul_comm]
-
-/-- **`c⁻¹`-Lipschitz dependence of constrained weak solutions on the forcing** in the ambient dual
-norm: if `u₁ - u₂ ∈ W`, `a u₁ w = ℓ₁ w` and `a u₂ w = ℓ₂ w` on `W`, and `c * ‖w‖² ≤ Re(a w w)` on
-`W` (`c > 0`), then `‖u₁ - u₂‖ ≤ c⁻¹ * ‖ℓ₁ - ℓ₂‖`. -/
-theorem norm_sub_le_inv_mul_norm_sub_of_mem_of_forall_apply_eq {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    {ℓ₁ ℓ₂ : StrongDual 𝕜 V} {W : Submodule 𝕜 V} {c : ℝ} (hc : 0 < c)
-    (hcoer : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w)) {u₁ u₂ : V}
-    (hmem : u₁ - u₂ ∈ W) (h₁ : ∀ w ∈ W, a u₁ w = ℓ₁ w) (h₂ : ∀ w ∈ W, a u₂ w = ℓ₂ w) :
-    ‖u₁ - u₂‖ ≤ c⁻¹ * ‖ℓ₁ - ℓ₂‖ := by
-  refine (a.norm_sub_le_inv_mul_norm_comp_subtypeL_of_forall_apply_eq hc hcoer hmem h₁ h₂).trans ?_
-  gcongr
-  refine opNorm_le_bound _ (norm_nonneg (ℓ₁ - ℓ₂)) fun w ↦ ?_
-  simpa only [comp_apply, Submodule.coe_subtypeL, Submodule.subtype_apply,
-    ← Submodule.norm_coe] using (ℓ₁ - ℓ₂).le_opNorm (w : V)
-
-/-- **`c⁻¹`-Lipschitz dependence of global weak solutions on the forcing**: if
-`c * ‖w‖² ≤ Re(a w w)` (`c > 0`), `∀ v, a u₁ v = ℓ₁ v`, and `∀ v, a u₂ v = ℓ₂ v`, then
-`‖u₁ - u₂‖ ≤ c⁻¹ * ‖ℓ₁ - ℓ₂‖`. No symmetry of `a` is required. -/
-theorem norm_sub_le_inv_mul_norm_sub_of_forall_apply_eq {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    {ℓ₁ ℓ₂ : StrongDual 𝕜 V} {c : ℝ} (hc : 0 < c)
-    (hcoer : ∀ w, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w)) {u₁ u₂ : V}
-    (h₁ : ∀ v, a u₁ v = ℓ₁ v) (h₂ : ∀ v, a u₂ v = ℓ₂ v) :
-    ‖u₁ - u₂‖ ≤ c⁻¹ * ‖ℓ₁ - ℓ₂‖ :=
-  a.norm_sub_le_inv_mul_norm_sub_of_mem_of_forall_apply_eq (W := ⊤) hc (fun w _ ↦ hcoer w)
-    Submodule.mem_top (fun w _ ↦ h₁ w) (fun w _ ↦ h₂ w)
-
-/-- **A priori norm bound** `‖u‖ ≤ c⁻¹ * ‖ℓ‖` for a homogeneous weak solution `u ∈ W` of
-`∀ w ∈ W, a u w = ℓ w` when `c * ‖w‖² ≤ Re(a w w)` on `W` (`c > 0`). -/
-theorem norm_le_inv_mul_norm_of_mem_of_forall_apply_eq {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    {ℓ : StrongDual 𝕜 V} {W : Submodule 𝕜 V} {c : ℝ} (hc : 0 < c)
-    (hcoer : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w)) {u : V} (hu : u ∈ W)
-    (hsol : ∀ w ∈ W, a u w = ℓ w) :
-    ‖u‖ ≤ c⁻¹ * ‖ℓ‖ := by
-  simpa using a.norm_sub_le_inv_mul_norm_sub_of_mem_of_forall_apply_eq (ℓ₁ := ℓ) (ℓ₂ := 0)
-    (u₁ := u) (u₂ := 0) hc hcoer (by simpa using hu) hsol (fun _ _ ↦ by simp)
-
-/-- **Global a priori norm bound** `‖u‖ ≤ c⁻¹ * ‖ℓ‖` for a weak solution of `∀ v, a u v = ℓ v` when
-`c * ‖w‖² ≤ Re(a w w)` (`c > 0`). -/
-theorem norm_le_inv_mul_norm_of_forall_apply_eq {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    {ℓ : StrongDual 𝕜 V} {c : ℝ} (hc : 0 < c)
-    (hcoer : ∀ w, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w)) {u : V}
-    (hsol : ∀ v, a u v = ℓ v) :
-    ‖u‖ ≤ c⁻¹ * ‖ℓ‖ :=
-  a.norm_le_inv_mul_norm_of_mem_of_forall_apply_eq (W := ⊤) hc (fun w _ ↦ hcoer w)
-    Submodule.mem_top (fun w _ ↦ hsol w)
+    have hle : c * ‖u - u'‖ ^ 2 ≤ ‖(ℓ - ℓ').comp W.subtypeL‖ * ‖u - u'‖ := by
+      calc c * ‖u - u'‖ ^ 2 ≤ RCLike.re (a (u - u') (u - u')) := hc (u - u') h
+        _ ≤ ‖a (u - u') (u - u')‖ := RCLike.re_le_norm _
+        _ = ‖((ℓ - ℓ').comp W.subtypeL) ⟨u - u', h⟩‖ := by rw [hpair]
+        _ ≤ ‖(ℓ - ℓ').comp W.subtypeL‖ * ‖(⟨u - u', h⟩ : W)‖ :=
+            le_opNorm ((ℓ - ℓ').comp W.subtypeL) ⟨u - u', h⟩
+        _ = ‖(ℓ - ℓ').comp W.subtypeL‖ * ‖u - u'‖ := by simp
+    rw [sq, ← mul_assoc] at hle
+    exact le_of_mul_le_mul_right hle hpos
 
 end SeminormedSelf
-
-section NormedUniqueness
-
-variable {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
-
-/-- **Uniqueness of constrained weak solutions** when `u₁ - u₂ ∈ W` and `a` is `c`-coercive on `W`
-(`c > 0`); no symmetry of `a` is required. -/
-theorem eq_of_mem_of_forall_apply_eq_of_coercive {a : V →L⋆[𝕜] V →L[𝕜] 𝕜} {ℓ : StrongDual 𝕜 V}
-    {W : Submodule 𝕜 V} {c : ℝ} (hc : 0 < c)
-    (hcoer : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w)) {u₁ u₂ : V}
-    (hmem : u₁ - u₂ ∈ W) (h₁ : ∀ w ∈ W, a u₁ w = ℓ w) (h₂ : ∀ w ∈ W, a u₂ w = ℓ w) :
-    u₁ = u₂ := by
-  have hbound := a.norm_sub_le_inv_mul_norm_sub_of_mem_of_forall_apply_eq hc hcoer hmem h₁ h₂
-  simp only [sub_self, norm_zero, mul_zero] at hbound
-  exact sub_eq_zero.mp (norm_le_zero_iff.mp hbound)
-
-/-- **Uniqueness of global weak solutions** when `c * ‖w‖² ≤ Re(a w w)` (`c > 0`); no symmetry of
-`a` is required. -/
-theorem eq_of_forall_apply_eq_of_coercive {a : V →L⋆[𝕜] V →L[𝕜] 𝕜} {ℓ : StrongDual 𝕜 V}
-    {c : ℝ} (hc : 0 < c) (hcoer : ∀ w, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w)) {u₁ u₂ : V}
-    (h₁ : ∀ v, a u₁ v = ℓ v) (h₂ : ∀ v, a u₂ v = ℓ v) : u₁ = u₂ :=
-  a.eq_of_mem_of_forall_apply_eq_of_coercive (W := ⊤) hc (fun w _ ↦ hcoer w) Submodule.mem_top
-    (fun w _ ↦ h₁ w) (fun w _ ↦ h₂ w)
-
-end NormedUniqueness
 
 section Calculus
 

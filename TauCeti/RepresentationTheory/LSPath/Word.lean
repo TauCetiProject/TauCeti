@@ -7,7 +7,9 @@ module
 
 public import TauCeti.RepresentationTheory.LSPath.OrbitStable
 public import TauCeti.RepresentationTheory.LSPath.PartialInverse
+public import TauCeti.RepresentationTheory.LSPath.StringLength
 import TauCeti.LinearAlgebra.RootSystem.Height
+import TauCeti.Logic.Relation
 import Mathlib.Algebra.Order.Archimedean.Basic
 
 /-!
@@ -77,6 +79,22 @@ theorem raiseWord_singleton (i : ι) (π : PLPath 𝕜 V) :
     raiseWord F x [i] π = raise (F i) (x i) π := by
   simp [raiseWord_cons]
 
+/-- Lowering along the constant word `List.replicate n i` is `lowerIter (F i) (x i) n`. -/
+@[simp]
+theorem lowerWord_replicate (n : ℕ) (i : ι) (π : PLPath 𝕜 V) :
+    lowerWord F x (List.replicate n i) π = lowerIter (F i) (x i) n π := by
+  induction n generalizing π with
+  | zero => simp
+  | succ n ih => simp only [List.replicate_succ, lowerWord_cons, lowerIter_succ, ih]
+
+/-- Raising along the constant word `List.replicate n i` is `raiseIter (F i) (x i) n`. -/
+@[simp]
+theorem raiseWord_replicate (n : ℕ) (i : ι) (π : PLPath 𝕜 V) :
+    raiseWord F x (List.replicate n i) π = raiseIter (F i) (x i) n π := by
+  induction n generalizing π with
+  | zero => simp
+  | succ n ih => simp only [List.replicate_succ, raiseWord_cons, raiseIter_succ, ih]
+
 /-- Concatenating words composes their partial lowering actions. -/
 theorem lowerWord_append (v w : List ι) (π : PLPath 𝕜 V) :
     lowerWord F x (v ++ w) π = (lowerWord F x v π).bind (lowerWord F x w) := by
@@ -103,6 +121,20 @@ theorem lowerWord_eq_some_iff (hx : ∀ i, F i (x i) = 2) :
 theorem raiseWord_eq_some_iff (hx : ∀ i, F i (x i) = 2) :
     raiseWord F x w π = some ρ ↔ lowerWord F x w.reverse ρ = some π := by
   simpa using (lowerWord_eq_some_iff hx (w := w.reverse) (π := ρ) (ρ := π)).symm
+
+/-- A path is reached from `π` by a defined lowering word exactly when it is reached by finitely
+many single lowering steps. -/
+theorem exists_lowerWord_eq_some_iff_reflTransGen :
+    (∃ w, lowerWord F x w π = some ρ) ↔
+      Relation.ReflTransGen (fun p q ↦ ∃ i, lower (F i) (x i) p = some q) π ρ :=
+  List.exists_foldlM_eq_some_iff_reflTransGen
+
+/-- A path is reached from `π` by a defined raising word exactly when it is reached by finitely
+many single raising steps. -/
+theorem exists_raiseWord_eq_some_iff_reflTransGen :
+    (∃ w, raiseWord F x w π = some ρ) ↔
+      Relation.ReflTransGen (fun p q ↦ ∃ i, raise (F i) (x i) p = some q) π ρ :=
+  List.exists_foldlM_eq_some_iff_reflTransGen
 
 /-- A lowering word subtracts the sum of its roots from the endpoint. -/
 theorem endpoint_of_lowerWord_eq_some (h : lowerWord F x w π = some ρ) :

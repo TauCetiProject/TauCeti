@@ -41,6 +41,8 @@ enveloping algebra of an affine Lie algebra at a fixed level.
 ## Main definitions
 
 * `TauCeti.ModuleTower.quotients`: the tower of quotients `M ⧸ Jₙ`.
+* `TauCeti.ModuleTower.quotientsObjEquiv`: the canonical identification of the `n`-th term of the
+  tower with `M ⧸ Jₙ`.
 * `TauCeti.ModuleTower.quotientsπ`, `TauCeti.ModuleTower.quotientsLift`,
   `TauCeti.ModuleTower.quotientsLiftEquiv`: the quotient maps `M → M ⧸ Jₙ` and their universal
   property.
@@ -171,6 +173,56 @@ theorem transition_comp_quotientsπ (n : ℕ) :
 theorem transition_quotientsπ (n : ℕ) (x : M) :
     (quotients J hJ).transition n (quotientsπ J hJ (n + 1) x) = quotientsπ J hJ n x :=
   LinearMap.congr_fun (transition_comp_quotientsπ J hJ n) x
+
+/-- The canonical linear equivalence identifying the `n`-th term of the tower of quotients with
+`M ⧸ Jₙ`. Because `quotients` is kept unexposed across `module` boundaries, downstream modules
+cannot unify `(quotients J hJ).obj (op n)` with `M ⧸ J n` definitionally via `LinearEquiv.refl`. -/
+def quotientsObjEquiv (n : ℕ) : (quotients J hJ).obj (op n) ≃ₗ[R] M ⧸ J n :=
+  -- Inside this module `(quotients J hJ).obj (op n)` is definitionally `ModuleCat.of R (M ⧸ J n)`.
+  LinearEquiv.refl R (M ⧸ J n)
+
+@[simp]
+theorem quotientsObjEquiv_quotientsπ (n : ℕ) (x : M) :
+    quotientsObjEquiv J hJ n (quotientsπ J hJ n x) = Submodule.Quotient.mk x :=
+  (rfl)
+
+@[simp]
+theorem quotientsObjEquiv_symm_mk (n : ℕ) (x : M) :
+    (quotientsObjEquiv J hJ n).symm (Submodule.Quotient.mk x) = quotientsπ J hJ n x :=
+  (rfl)
+
+/-- Under `quotientsObjEquiv`, the composite transition `transitionOfLE h` is `Submodule.factor`. -/
+@[simp]
+theorem quotientsObjEquiv_transitionOfLE {n k : ℕ} (h : n ≤ k)
+    (q : (quotients J hJ).obj (op k)) :
+    quotientsObjEquiv J hJ n ((quotients J hJ).transitionOfLE h q) =
+      Submodule.factor (hJ h) (quotientsObjEquiv J hJ k q) := by
+  rw [transitionOfLE_def]
+  rfl
+
+/-- Under `quotientsObjEquiv`, the one-step transition `transition n` is `Submodule.factor`. -/
+@[simp]
+theorem quotientsObjEquiv_transition (n : ℕ) (q : (quotients J hJ).obj (op (n + 1))) :
+    quotientsObjEquiv J hJ n ((quotients J hJ).transition n q) =
+      Submodule.factor (hJ (Nat.le_succ n)) (quotientsObjEquiv J hJ (n + 1) q) := by
+  rw [← transitionOfLE_succ, quotientsObjEquiv_transitionOfLE]
+
+/-- Transporting `Submodule.factor` back through `(quotientsObjEquiv _ _ _).symm` gives
+`transitionOfLE`. -/
+@[simp]
+theorem transitionOfLE_quotientsObjEquiv_symm {n k : ℕ} (h : n ≤ k) (q : M ⧸ J k) :
+    (quotients J hJ).transitionOfLE h ((quotientsObjEquiv J hJ k).symm q) =
+      (quotientsObjEquiv J hJ n).symm (Submodule.factor (hJ h) q) := by
+  rw [transitionOfLE_def]
+  rfl
+
+/-- Transporting the one-step `Submodule.factor` back through `(quotientsObjEquiv _ _ _).symm`
+gives `transition`. -/
+@[simp]
+theorem transition_quotientsObjEquiv_symm (n : ℕ) (q : M ⧸ J (n + 1)) :
+    (quotients J hJ).transition n ((quotientsObjEquiv J hJ (n + 1)).symm q) =
+      (quotientsObjEquiv J hJ n).symm (Submodule.factor (hJ (Nat.le_succ n)) q) := by
+  rw [← transitionOfLE_succ, transitionOfLE_quotientsObjEquiv_symm]
 
 /-- The transitions of the tower of quotients are surjective. -/
 theorem transition_quotients_surjective (n : ℕ) :

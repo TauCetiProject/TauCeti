@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
-public import Mathlib.MeasureTheory.Integral.DominatedConvergence
-public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
+public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
+import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.Contiguous
+import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.EulerIntegral
+import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.Parameters
+import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.Transformation
 
 /-!
 # Tricomi's entire incomplete Gamma function
@@ -28,8 +31,13 @@ the error function (`erf z = z γ*(1/2, z²)`) are built.
 
 * `Complex.hasSum_tricomiIncompleteGamma` — the series
   `γ*(a, z) = e^{−z} ∑ zᵏ / Γ(a + k + 1)` (DLMF 8.7.1), for all `a` and `z`;
+* `Complex.tricomiIncompleteGamma_eq_regularizedHGFun` — the Kummer representation
+  `γ*(a, z) = 𝐌(a, a + 1, −z)` (DLMF 8.5.2), for all `a` and `z`;
 * `Complex.hasSum_tricomiIncompleteGamma_of_ne_neg_natCast` — the series
-  `γ*(a, z) = Γ(a)⁻¹ ∑ (−z)ᵏ / (k! (a + k))` (DLMF 8.7.1), for `a ∉ −ℕ`;
+  `γ*(a, z) = Γ(a)⁻¹ ∑ (−z)ᵏ / (k! (a + k))` (DLMF 8.7.1), for `a ∉ −ℕ`, and its real form
+  `Complex.hasSum_Gamma_mul_re_tricomiIncompleteGamma_ofReal`;
+* `Complex.ofReal_tricomiIncompleteGamma_ofReal_re`, `Complex.tricomiIncompleteGamma_ofReal_im` —
+  `γ*(a, x)` is real for real `a` and `x`;
 * `Complex.tricomiIncompleteGamma_eq_integral` — the integral
   `γ*(a, z) = Γ(a)⁻¹ ∫₀¹ t^{a−1} e^{−zt} dt` (DLMF 8.2.7), for `0 < Re a`;
 * `Complex.tricomiIncompleteGamma_eq_mul_tricomiIncompleteGamma_add_one` — the
@@ -61,7 +69,7 @@ public section
 
 noncomputable section
 
-open Complex Filter Finset Set MeasureTheory
+open Complex Filter Finset Set
 open scoped Nat Topology Interval
 
 namespace Complex
@@ -87,17 +95,30 @@ theorem hasSum_tricomiIncompleteGamma (a z : ℂ) :
   rw [regularizedHGFunCoeff_one_singleton, add_right_comm, div_eq_mul_inv]
   ring
 
+/-- Tricomi's function is real for real `a` and `x`: the terms `e^{−x} xᵏ / Γ(a + k + 1)` of its
+series (DLMF 8.7.1) are real. -/
+@[simp]
+theorem ofReal_tricomiIncompleteGamma_ofReal_re (a x : ℝ) :
+    ((tricomiIncompleteGamma a x).re : ℂ) = tricomiIncompleteGamma a x := by
+  have h : HasSum (fun k : ℕ => ((Real.exp (-x) * x ^ k / Real.Gamma (a + k + 1) : ℝ) : ℂ))
+      (tricomiIncompleteGamma a x) := by
+    refine (hasSum_tricomiIncompleteGamma a x).congr_fun fun k => ?_
+    simp [← Gamma_ofReal]
+  rw [← (hasSum_ofReal.mpr (summable_ofReal.mp h.summable).hasSum).unique h, ofReal_re]
+
+/-- Tricomi's function has vanishing imaginary part for real `a` and `x`. -/
+@[simp]
+theorem tricomiIncompleteGamma_ofReal_im (a x : ℝ) : (tricomiIncompleteGamma a x).im = 0 := by
+  rw [← ofReal_tricomiIncompleteGamma_ofReal_re, ofReal_im]
+
 /-- The recurrence of Tricomi's function in its parameter (DLMF §8.8):
 `γ*(a, z) = z γ*(a + 1, z) + e^{−z} / Γ(a + 1)`. -/
 theorem tricomiIncompleteGamma_eq_mul_tricomiIncompleteGamma_add_one (a z : ℂ) :
     tricomiIncompleteGamma a z =
       z * tricomiIncompleteGamma (a + 1) z + cexp (-z) / Gamma (a + 1) := by
-  have h := (hasSum_nat_add_iff' 1).mpr (hasSum_tricomiIncompleteGamma a z)
-  have h' := (hasSum_tricomiIncompleteGamma (a + 1) z).mul_left z
-  simp only [range_one, sum_singleton, CharP.cast_eq_zero, add_zero, pow_zero, mul_one] at h
-  rw [← sub_eq_iff_eq_add, h.unique (h'.congr_fun fun k => ?_)]
-  push_cast
-  ring_nf
+  rw [tricomiIncompleteGamma_def, tricomiIncompleteGamma_def,
+    regularizedHGFun_one_singleton_eq_inv_Gamma_add_mul (a + 1) z, div_eq_mul_inv]
+  ring
 
 /-- The value of Tricomi's function at `z = 0` (DLMF 8.4.2): `γ*(a, 0) = 1 / Γ(a + 1)`. This is
 `0` at `a ∈ {−1, −2, …}`. -/
@@ -144,23 +165,12 @@ theorem tricomiIncompleteGamma_one_left {z : ℂ} (hz : z ≠ 0) :
 `∂γ*(a, z)/∂z = −a γ*(a + 1, z)`. -/
 theorem hasDerivAt_tricomiIncompleteGamma (a z : ℂ) :
     HasDerivAt (tricomiIncompleteGamma a) (-a * tricomiIncompleteGamma (a + 1) z) z := by
-  have hcard : ({1} : Multiset ℂ).card ≤ ({a + 1} : Multiset ℂ).card := by simp
-  -- the derivative of `𝐌(1, a + 1, ·)` is `𝐌(1, a + 1, ·) − a 𝐌(1, a + 2, ·)`, termwise
-  have hM : deriv (regularizedHGFun {1} {a + 1}) z =
-      regularizedHGFun {1} {a + 1} z - a * regularizedHGFun {1} {a + 1 + 1} z := by
-    refine (hasSum_deriv_regularizedHGFun hcard z).unique ?_
-    refine ((hasSum_regularizedHGFun hcard z).sub
-      ((hasSum_regularizedHGFun (b := {a + 1 + 1}) (by simp) z).mul_left a)).congr_fun fun k => ?_
-    simp only [regularizedHGFunCoeff_one_singleton]
-    rw [one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (a + 1 + k)]
-    push_cast
-    ring_nf
-  have hd := ((analyticAt_regularizedHGFun_of_card_le hcard z).differentiableAt.hasDerivAt)
-  rw [hM] at hd
+  have hd := hasDerivAt_regularizedHGFun_singleton 1 (a + 1) z
+  have hrel := regularizedHGFun_singleton_eq_sub_mul_add_mul 1 (a + 1) z
   convert ((hasDerivAt_neg z).cexp).mul hd using 1
   · exact funext (tricomiIncompleteGamma_def a)
   · rw [tricomiIncompleteGamma_def]
-    ring
+    linear_combination cexp (-z) * hrel
 
 /-- The derivative of Tricomi's function in its argument, as a function:
 `∂γ*(a, ·)/∂z = −a γ*(a + 1, ·)`. -/
@@ -192,65 +202,28 @@ theorem tricomiIncompleteGamma_ode (a z : ℂ) :
 
 /-! ### Entirety in the parameter -/
 
-/- Entirety in `a` is proved first on the half-plane `0 < Re a`, by the Weierstrass M-test with
-the bound `Complex.norm_inv_Gamma_add_natCast_le`, and then carried to the whole plane by the
-recurrence in `a`, as Mathlib does for `Complex.differentiable_one_div_Gamma`. -/
-
-/-- Tricomi's function is holomorphic in its parameter on the half-plane `0 < Re a`. -/
-private theorem differentiableAt_tricomiIncompleteGamma_left_of_re_pos (z : ℂ) {a₀ : ℂ}
-    (ha₀ : 0 < a₀.re) : DifferentiableAt ℂ (fun a => tricomiIncompleteGamma a z) a₀ := by
-  obtain ⟨C, hC⟩ := (isCompact_closedBall a₀ a₀.re).exists_bound_of_continuousOn
-    (differentiable_one_div_Gamma.comp (differentiable_id.add_const 1)).continuous.continuousOn
-  have hre : ∀ a ∈ Metric.ball a₀ a₀.re, 0 < a.re := fun a ha => by
-    have := (abs_re_le_norm (a - a₀)).trans_lt (by rwa [← dist_eq_norm])
-    rw [sub_re, abs_lt] at this
-    linarith
-  have hsum : Summable fun k : ℕ => C * ‖z‖ ^ k / k ! := by
-    simpa [mul_div_assoc] using (Real.summable_pow_div_factorial ‖z‖).mul_left C
-  have hM := differentiableOn_tsum_of_summable_norm hsum
-    (F := fun (k : ℕ) a => (Gamma (a + 1 + k))⁻¹ * z ^ k) (U := Metric.ball a₀ a₀.re)
-    (fun k => ((differentiable_one_div_Gamma.comp
-      ((differentiable_id.add_const 1).add_const _)).mul_const _).differentiableOn)
-    Metric.isOpen_ball (fun k a ha => ?_)
-  · have heq : (fun a => tricomiIncompleteGamma a z) =
-        fun a => cexp (-z) * ∑' k : ℕ, (Gamma (a + 1 + k))⁻¹ * z ^ k := by
-      ext a
-      rw [tricomiIncompleteGamma_def,
-        ← (hasSum_regularizedHGFun (b := {a + 1}) (by simp) z).tsum_eq]
-      simp
-    rw [heq]
-    exact ((hM _ (Metric.mem_ball_self ha₀)).differentiableAt
-      (Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self ha₀))).const_mul _
-  · have h1 : 1 ≤ (a + 1).re := by rw [add_re, one_re]; linarith [hre a ha]
-    have hCa : ‖(Gamma (a + 1))⁻¹‖ ≤ C := hC a (Metric.ball_subset_closedBall ha)
-    rw [norm_mul, norm_pow, mul_comm, mul_div_assoc, ← mul_div_assoc]
-    calc ‖z‖ ^ k * ‖(Gamma (a + 1 + k))⁻¹‖ ≤ ‖z‖ ^ k * (‖(Gamma (a + 1))⁻¹‖ / k !) := by
-          gcongr
-          exact Complex.norm_inv_Gamma_add_natCast_le h1 k
-      _ ≤ ‖z‖ ^ k * (C / k !) := by gcongr
-      _ = C * ‖z‖ ^ k / k ! := by ring
-
-/-- Tricomi's function is entire in its parameter. -/
+/-- Tricomi's function is entire in its parameter, since the regularized Kummer function
+`𝐌(1, a + 1, z)` is entire in `a` (`Differentiable.regularizedHGFun_singleton`). -/
 theorem differentiable_tricomiIncompleteGamma_left (z : ℂ) :
     Differentiable ℂ fun a => tricomiIncompleteGamma a z := by
-  intro a
-  obtain ⟨n, hn⟩ := exists_nat_gt (-a.re)
-  induction n generalizing a with
-  | zero => exact differentiableAt_tricomiIncompleteGamma_left_of_re_pos z (by simpa using hn)
-  | succ n ih =>
-    have hrec : (fun a => tricomiIncompleteGamma a z) =
-        fun a => z * tricomiIncompleteGamma (a + 1) z + cexp (-z) * (Gamma (a + 1))⁻¹ :=
-      funext fun a => by
-        rw [tricomiIncompleteGamma_eq_mul_tricomiIncompleteGamma_add_one, div_eq_mul_inv]
-    have h := ih (a + 1) (by rw [add_re, one_re]; push_cast at hn; linarith)
-    rw [hrec]
-    exact ((h.comp a (differentiableAt_id.add_const 1)).const_mul z).add
-      ((differentiable_one_div_Gamma.comp (differentiable_id.add_const 1) a).const_mul _)
+  simp only [tricomiIncompleteGamma_def]
+  fun_prop
 
 /-! ### The series in powers of `−z` and the integral -/
 
-/- The second form of 8.7.1 is the Cauchy product of the first with the exponential series, and
-the integral 8.2.7 follows from it by termwise integration. -/
+/- By Kummer's transformation, `γ*(a, z) = e^{−z} 𝐌(1, a + 1, z) = 𝐌(a, a + 1, −z)`, whose series
+is the second form of 8.7.1; the integral 8.2.7 is Kummer's integral for `𝐌(1, a + 1, z)`. -/
+
+/-- **Kummer representation** of Tricomi's function (DLMF 8.5.2):
+`γ*(a, z) = 𝐌(a, a + 1, −z)` for all `a` and `z`. The other form of 8.5.2,
+`γ*(a, z) = e^{−z} 𝐌(1, a + 1, z)`, is `tricomiIncompleteGamma_def`.
+
+Adapted from `tricomiIncompleteGamma_regularized_pair` of the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), file `DLMF/IncompleteGamma/SpecialValues.lean`. -/
+theorem tricomiIncompleteGamma_eq_regularizedHGFun (a z : ℂ) :
+    tricomiIncompleteGamma a z = regularizedHGFun {a} {a + 1} (-z) := by
+  rw [regularizedHGFun_singleton_eq_exp_mul, add_sub_cancel_left, neg_neg,
+    tricomiIncompleteGamma_def]
 
 /-- The power series of Tricomi's function in `−z` (DLMF 8.7.1): for `a ∉ −ℕ`,
 `γ*(a, z) = Γ(a)⁻¹ ∑ (−z)ᵏ / (k! (a + k))`. -/
@@ -258,78 +231,43 @@ theorem hasSum_tricomiIncompleteGamma_of_ne_neg_natCast {a : ℂ} (ha : ∀ n : 
     (z : ℂ) :
     HasSum (fun k : ℕ => (Gamma a)⁻¹ * ((-z) ^ k / (k ! * (a + k))))
       (tricomiIncompleteGamma a z) := by
-  have hexp : HasSum (fun k : ℕ => (-z) ^ k / k !) (cexp (-z)) :=
-    Complex.exp_eq_exp_ℂ ▸ NormedSpace.expSeries_div_hasSum_exp (-z)
-  have hM := hasSum_regularizedHGFun (a := {1}) (b := {a + 1}) (by simp) z
-  have hnorm := summable_norm_regularizedHGFun (a := {1}) (b := {a + 1}) (by simp) z
-  have h := hasSum_sum_range_mul_of_summable_norm (NormedSpace.norm_expSeries_div_summable (-z))
-    hnorm
-  rw [hexp.tsum_eq, hM.tsum_eq, ← tricomiIncompleteGamma_def] at h
-  refine h.congr_fun fun m => ?_
-  have hterm : ∀ i ∈ range (m + 1), (-z) ^ i / i ! *
-      (regularizedHGFunCoeff {1} {a + 1} (m - i) * z ^ (m - i)) =
-        z ^ m * ((-1 : ℂ) ^ i / (i ! * Gamma (a + (m - i : ℕ) + 1))) := fun i hi => by
-    have hi' : i ≤ m := Nat.lt_succ_iff.1 (mem_range.1 hi)
-    rw [regularizedHGFunCoeff_one_singleton, neg_pow, ← pow_mul_pow_sub z hi', add_right_comm]
-    ring
-  rw [sum_congr rfl hterm, ← mul_sum, sum_range_neg_one_pow_div_factorial_mul_Gamma ha, neg_pow]
-  ring
+  rw [tricomiIncompleteGamma_eq_regularizedHGFun]
+  refine (hasSum_regularizedHGFun (a := {a}) (b := {a + 1}) (by simp) (-z)).congr_fun fun k => ?_
+  have hak : a + k ≠ 0 := fun h => ha k (by linear_combination h)
+  have hΓk : Gamma (a + k) ≠ 0 :=
+    Gamma_ne_zero fun n h => ha (n + k) (by push_cast; linear_combination h)
+  -- `(a)ₖ / Γ(a + k + 1) = 1 / (Γ(a) (a + k))`, by `Γ(a + k + 1) = (a + k) Γ(a + k)`.
+  rw [regularizedHGFunCoeff_singleton, add_right_comm, Gamma_add_one _ hak,
+    inv_Gamma_eq_ascPochhammer_eval_mul_inv_Gamma_add_natCast a k]
+  field_simp
+
+/-- The real form of the series DLMF 8.7.1 in powers of `−x`: for real `a ∉ −ℕ` and real `x`,
+`∑ (−x)ᵏ / (k! (a + k)) = Γ(a) γ*(a, x)`, where `γ*(a, x)` is real
+(`ofReal_tricomiIncompleteGamma_ofReal_re`). -/
+theorem hasSum_Gamma_mul_re_tricomiIncompleteGamma_ofReal {a : ℝ} (ha : ∀ n : ℕ, a ≠ -n)
+    (x : ℝ) : HasSum (fun k : ℕ => (-x) ^ k / (k ! * (a + k)))
+      (Real.Gamma a * (tricomiIncompleteGamma a x).re) := by
+  have ha' : ∀ n : ℕ, (a : ℂ) ≠ -n := fun n h => ha n (by exact_mod_cast h)
+  have hΓ : Gamma a ≠ 0 := Gamma_ne_zero ha'
+  have h : HasSum (fun k : ℕ => (((-x) ^ k / (k ! * (a + k)) : ℝ) : ℂ))
+      (Gamma a * tricomiIncompleteGamma a x) := by
+    convert (hasSum_tricomiIncompleteGamma_of_ne_neg_natCast ha' x).mul_left (Gamma a) using 1
+    ext k
+    push_cast
+    rw [← mul_assoc, mul_inv_cancel₀ hΓ, one_mul]
+  rw [← ofReal_tricomiIncompleteGamma_ofReal_re, Gamma_ofReal, ← ofReal_mul] at h
+  exact hasSum_ofReal.mp h
 
 /-- Tricomi's integral (DLMF 8.2.7): for `0 < Re a`,
-`γ*(a, z) = Γ(a)⁻¹ ∫₀¹ t^{a−1} e^{−zt} dt`. -/
+`γ*(a, z) = Γ(a)⁻¹ ∫₀¹ t^{a−1} e^{−zt} dt`. It is Kummer's integral for `𝐌(1, a + 1, z)` after
+the substitution `t ↦ 1 − t`. -/
 theorem tricomiIncompleteGamma_eq_integral {a : ℂ} (ha : 0 < a.re) (z : ℂ) :
     tricomiIncompleteGamma a z =
       (Gamma a)⁻¹ * ∫ t in (0 : ℝ)..1, (t : ℂ) ^ (a - 1) * cexp (-(z * t)) := by
-  have ha' : ∀ n : ℕ, a ≠ -n := fun n h => by
-    have := congr_arg re h
-    rw [neg_re, natCast_re] at this
-    linarith [n.cast_nonneg (α := ℝ)]
-  -- integrate the exponential series termwise
-  have hint : HasSum (fun k : ℕ => (-z) ^ k / (k ! * (a + k)))
-      (∫ t in (0 : ℝ)..1, (t : ℂ) ^ (a - 1) * cexp (-(z * t))) := by
-    have hterm : ∀ k : ℕ, ∫ t in (0 : ℝ)..1, (t : ℂ) ^ (a - 1) * ((-(z * t)) ^ k / k !) =
-        (-z) ^ k / (k ! * (a + k)) := fun k => by
-      have hcongr : ∀ᵐ t ∂volume, t ∈ Ι (0 : ℝ) 1 →
-          (t : ℂ) ^ (a - 1) * ((-(z * t)) ^ k / k !) = (-z) ^ k / k ! * (t : ℂ) ^ (a - 1 + k) :=
-        Eventually.of_forall fun t ht => by
-          rw [uIoc_of_le (zero_le_one' ℝ)] at ht
-          have ht0 : (t : ℂ) ≠ 0 := ofReal_ne_zero.2 ht.1.ne'
-          rw [cpow_add _ _ ht0, cpow_natCast, neg_mul_eq_neg_mul, mul_pow]
-          ring
-      have hak : a + k ≠ 0 := fun h => by
-        have := congr_arg re h
-        rw [add_re, natCast_re, zero_re] at this
-        linarith [k.cast_nonneg (α := ℝ)]
-      have hre : -1 < (a - 1 + k).re := by
-        rw [add_re, sub_re, one_re, natCast_re]
-        linarith [k.cast_nonneg (α := ℝ)]
-      rw [intervalIntegral.integral_congr_ae hcongr, intervalIntegral.integral_const_mul,
-        integral_cpow (Or.inl hre), show a - 1 + (k : ℂ) + 1 = a + k by ring, ofReal_one, one_cpow,
-        ofReal_zero, zero_cpow hak, sub_zero]
-      field_simp
-    have hbound : ∀ k : ℕ, ∀ᵐ t ∂volume, t ∈ Ι (0 : ℝ) 1 →
-        ‖(t : ℂ) ^ (a - 1) * ((-(z * t)) ^ k / k !)‖ ≤ t ^ (a.re - 1) * (‖z‖ ^ k / k !) :=
-      fun k => Eventually.of_forall fun t ht => by
-        rw [uIoc_of_le zero_le_one] at ht
-        rw [norm_mul, norm_cpow_eq_rpow_re_of_pos ht.1, sub_re, one_re, norm_div, norm_pow,
-          norm_neg, norm_mul, Complex.norm_real, Real.norm_of_nonneg ht.1.le, Complex.norm_natCast]
-        refine mul_le_mul_of_nonneg_left ?_ (Real.rpow_nonneg ht.1.le _)
-        have hzt : ‖z‖ * t ≤ ‖z‖ := mul_le_of_le_one_right (norm_nonneg z) ht.2
-        have hzt₀ : 0 ≤ ‖z‖ * t := mul_nonneg (norm_nonneg z) ht.1.le
-        gcongr
-    convert intervalIntegral.hasSum_integral_of_dominated_convergence
-      (fun k t => t ^ (a.re - 1) * (‖z‖ ^ k / k !)) (fun k => ?_) hbound
-      (Eventually.of_forall fun t _ => (Real.summable_pow_div_factorial ‖z‖).mul_left _) ?_
-      (Eventually.of_forall fun t _ => ?_) using 1
-    · exact funext fun k => (hterm k).symm
-    · refine (ContinuousOn.aestronglyMeasurable ?_ measurableSet_uIoc)
-      refine ContinuousOn.mul (fun t ht => ?_) (Continuous.continuousOn (by fun_prop))
-      rw [uIoc_of_le zero_le_one] at ht
-      exact (continuousAt_ofReal_cpow_const _ _ (Or.inr ht.1.ne')).continuousWithinAt
-    · simp_rw [tsum_mul_left]
-      exact (intervalIntegral.intervalIntegrable_rpow' (by linarith)).mul_const _
-    · exact (Complex.exp_eq_exp_ℂ ▸ NormedSpace.expSeries_div_hasSum_exp (-(z * t)) :
-        HasSum (fun k : ℕ => (-(z * t)) ^ k / k !) (cexp (-(z * t)))).mul_left _
-  exact (hasSum_tricomiIncompleteGamma_of_ne_neg_natCast ha' z).unique (hint.mul_left _)
+  have h1 : (1 : ℂ).re < (a + 1).re := by simpa using ha
+  rw [tricomiIncompleteGamma_def, regularizedHGFun_singleton_eq_exp_mul_integral (by simp) h1]
+  simp only [add_sub_cancel_right, sub_self, cpow_zero, mul_one, Gamma_one, one_mul]
+  rw [Complex.exp_neg]
+  field_simp
 
 end Complex

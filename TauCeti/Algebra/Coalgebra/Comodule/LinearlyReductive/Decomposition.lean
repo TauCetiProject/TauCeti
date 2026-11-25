@@ -38,26 +38,20 @@ universe u v
 variable {k : Type u} [Field k]
   {C : Type v} [AddCommGroup C] [Module k C] [Coalgebra k C]
 
-attribute [local instance] Comodule.convolutionModule
-
 /-- A linearly reductive coalgebra is spanned by its distinct simple coefficient spaces. -/
 theorem sSup_simpleCoefficientSubmodules_eq_top (hC : IsLinearlyReductive.{u, v, u} k C) :
     sSup (Comodule.simpleCoefficientSubmodules k C) = ⊤ := by
   rw [eq_top_iff, ← hC.iSup_matrixCoefficientSubmodule_eq_top]
   refine iSup_le fun S ↦ iSup_le fun hS ↦ ?_
-  have : IsSimpleModule (WithConv (C →ₗ[k] k)) S :=
-    S.isSimpleModule_convolution_iff_isAtom.mpr hS
-  have : IsSimpleOrder (Subcomodule k C S) :=
-    Comodule.isSimpleModule_convolution_iff.mp inferInstance
+  have := Subcomodule.isSimpleOrder_of_isAtom hS
   exact le_sSup Comodule.matrixCoefficientSubmodule_mem_simpleCoefficientSubmodules
 
 /-- The distinct simple coefficient spaces give an internal direct sum decomposition
 of a linearly reductive coalgebra, over an arbitrary field. -/
 theorem isInternal_simpleCoefficientSubmodules (hC : IsLinearlyReductive.{u, v, u} k C) :
     DirectSum.IsInternal
-      (fun P : Comodule.simpleCoefficientSubmodules k C ↦ (P.1 : Submodule k C)) := by
-  apply DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
-  · exact (sSupIndep_iff _).mp Comodule.sSupIndep_simpleCoefficientSubmodules
-  · rw [← sSup_eq_iSup', hC.sSup_simpleCoefficientSubmodules_eq_top]
+      (fun P : Comodule.simpleCoefficientSubmodules k C ↦ (P.val : Submodule k C)) :=
+  Comodule.isInternal_of_sSup_simpleCoefficientSubmodules_eq_top
+    hC.sSup_simpleCoefficientSubmodules_eq_top
 
 end TauCeti.Coalgebra.IsLinearlyReductive

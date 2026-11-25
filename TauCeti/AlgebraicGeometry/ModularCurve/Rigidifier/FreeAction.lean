@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AffineScheme
+public import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 public import TauCeti.AlgebraicGeometry.ModularCurve.NaiveLevel
 public import TauCeti.CategoryTheory.Aut.Representable
 public import TauCeti.CategoryTheory.Monoidal.Cartesian.FunctorCategory

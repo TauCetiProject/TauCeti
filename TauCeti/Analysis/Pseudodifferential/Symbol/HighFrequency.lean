@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
-import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
@@ -83,7 +82,7 @@ theorem tendsto_rpow_neg_smul_coefficient_smul_zero {m' : ℝ} (a : Symbol n V W
     have := norm_le_norm_add_norm_sub' ζ ξ
     linarith
   have hbr : (1 + ‖t • ζ‖ ^ 2) ^ (m' / 2) ≤ M * t ^ m' :=
-    one_add_norm_smul_sq_rpow_half_le (half_pos hr) ht ⟨hζ1, hζ2⟩ _
+    one_add_norm_smul_sq_rpow_le_max_mul_rpow (half_pos hr) ht ⟨hζ1, hζ2⟩ _
   calc ‖t ^ (-m) • a.coefficient (y, t • ζ)‖
       = t ^ (-m) * ‖a.coefficient (y, t • ζ)‖ := by
         rw [norm_smul, Real.norm_of_nonneg (by positivity)]
@@ -106,7 +105,7 @@ theorem exists_norm_rpow_neg_smul_coefficient_smul_add_le (a : Symbol n V W m)
   refine ⟨C * 2 ^ (|m| / 2) * M, fun y hy t ht ζ ↦ ?_⟩
   have ht0 : 0 < t := one_pos.trans_le ht
   have hbr : (1 + ‖t • ξ‖ ^ 2) ^ (m / 2) ≤ M * t ^ m :=
-    one_add_norm_smul_sq_rpow_half_le (norm_pos_iff.2 hξ) ht ⟨le_rfl, le_rfl⟩ m
+    one_add_norm_smul_sq_rpow_le_max_mul_rpow (norm_pos_iff.2 hξ) ht ⟨le_rfl, le_rfl⟩ m
   have hle := hC y hy (t • ξ + ζ)
   have hC0 : 0 ≤ C := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans hle) (by positivity)
   have htm : t ^ (-m) * t ^ m = 1 := by rw [← Real.rpow_add ht0]; simp

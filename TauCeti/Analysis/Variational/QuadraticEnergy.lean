@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.QuadraticDiscriminant
 public import Mathlib.Analysis.Calculus.Deriv.Basic
-public import TauCeti.Analysis.LocallyConvex.WeakSpace
+public import Mathlib.Analysis.Calculus.FDeriv.Basic
+public import TauCeti.Analysis.InnerProductSpace.LaxMilgram
+public import TauCeti.Analysis.LocallyConvex.WeakSpace.Basic
 public import TauCeti.Analysis.RCLike.SesquilinearForm
 public import TauCeti.Analysis.Variational.DirectMethod
 import Mathlib.Analysis.Calculus.ContDiff.Operations
@@ -20,59 +23,61 @@ import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 /-!
 # Quadratic energies, weak Euler--Lagrange equations, and coercive minimization
 
-Let `V` be a seminormed space over `𝕜` (`ℝ` or `ℂ`, written `[RCLike 𝕜]`), `a : V →L⋆[𝕜] V →L[𝕜] 𝕜`
-a bounded sesquilinear form (conjugate-linear in its first slot and `𝕜`-linear in its second), and
-`ℓ : StrongDual 𝕜 V` a continuous `𝕜`-linear functional. The associated **quadratic energy** is the
-real-valued functional
+Let `a : V →L⋆[𝕜] V →L[𝕜] 𝕜` be a bounded sesquilinear form on a seminormed space `V` over
+`𝕜 = ℝ` or `ℂ` (`[RCLike 𝕜]`), conjugate linear in its first argument, and let
+`ℓ : StrongDual 𝕜 V` be a forcing functional. The **quadratic energy**
 
-`quadraticEnergy a ℓ u = RCLike.re (a u u) - 2 * RCLike.re (ℓ u)`.
+`E(u) = re (a u u) - 2 re (ℓ u)`
 
-When `a` is Hermitian (`∀ u v, a u v = star (a v u)`), expanding `quadraticEnergy a ℓ (u + v)`
-isolates the linear variation `2 Re(a u v - ℓ v)` from the quadratic remainder `q(v) = Re(a v v)`:
+(`ContinuousLinearMap.quadraticEnergy`) is a real-valued functional whose minimizers solve the weak
+equation `a u v = ℓ v` when `a` is Hermitian (and conversely when `re (a w w) ≥ 0`). This file
+develops the algebraic, differential, variational, and direct-method properties of
+`a.quadraticEnergy ℓ`:
 
-* **Affine shift and restriction.** For a Hermitian form, translating by a datum `g` shifts the
-  forcing from `ℓ` to `ℓ - a g`:
-  `quadraticEnergy a ℓ (g + w) = quadraticEnergy a ℓ g + quadraticEnergy a (ℓ - a g) w`, reducing
-  inhomogeneous affine constraints `g +ᵥ W` to homogeneous subspaces `W`.
-* **First variation and weak Euler--Lagrange equations.** On a normed space over `𝕜` equipped with
-  its compatible real scalar action, `quadraticEnergy a ℓ` is smooth over `ℝ`, with strict Fréchet
-  derivative `v ↦ 2 Re(a u v - ℓ v)` when `a` is Hermitian. In any seminormed space over `𝕜` with
-  Hermitian `a`, testing along rays shows that a local minimizer `u` on a convex set `C` satisfies
-  the variational inequality `Re(ℓ (v - u)) ≤ Re(a u (v - u))` for `v ∈ C`, and a local minimizer on
-  an affine subspace `g +ᵥ W` of a `𝕜`-submodule `W` satisfies the full `𝕜`-valued weak equation
-  `a u w = ℓ w` for all `w ∈ W`: testing `w` gives the real part, and testing `RCLike.I • w`
-  recovers the imaginary part.
-* **Exact energy gap and converse.** For Hermitian `a`, at any solution of `a u w = ℓ w` the linear
-  term cancels and `quadraticEnergy a ℓ (u + w) - quadraticEnergy a ℓ u = Re(a w w)`. When `q ≥ 0`
-  on `W`, the weak equation on `W` and global minimality on `g +ᵥ W` are therefore equivalent.
-* **Coercive forms and direct-method existence.** Even without symmetry of `a`, if
-  `c * ‖w‖² ≤ Re(a w w)` (`c > 0`) on differences, local minimality bounds
-  `c * ‖v - u‖² ≤ E(v) - E(u)`, giving norm convergence of near-minimizing sequences at rate
-  `‖uₙ - u‖² ≤ (E(uₙ) - E(u)) / c` and bounded sublevels on any seminormed space `V`. When `V` is a
-  normed space (`[NormedAddCommGroup V]`), this yields uniqueness of local minimizers, and on a
-  reflexive normed space weak lower semicontinuity and the direct method yield existence and
-  uniqueness of constrained minimizers (and, when `a` is Hermitian, of weak solutions on closed
-  affine subspaces `g +ᵥ W` and globally on `V`).
-
-Real Hilbert-space identifications with `IsCoercive.solutionOfFunctional`,
-`IsCoercive.solutionOfInner`, and `IsCoercive.formSolutionMap` are proved in
-`TauCeti.Analysis.InnerProductSpace.Variational.QuadraticEnergy`.
-
-## Main declarations
-
-* `TauCeti.quadraticEnergy`: the energy `u ↦ RCLike.re (a u u) - 2 * RCLike.re (ℓ u)`.
-* `TauCeti.quadraticEnergy_add_real_smul_sub_of_eq_star`: exact real-line expansion
-  `E(u + t • v) - E(u) = 2 * t * Re(a u v - ℓ v) + t² * Re(a v v)` for Hermitian `a`.
-* `TauCeti.hasStrictFDerivAt_quadraticEnergy`: strict real Fréchet derivative of `quadraticEnergy`.
-* `TauCeti.apply_eq_of_isLocalMinOn_quadraticEnergy_vadd` and
-  `TauCeti.isMinOn_quadraticEnergy_vadd_iff`: weak Euler--Lagrange equation on `g +ᵥ W` and
-  equivalence with minimality when `a` is Hermitian and `q ≥ 0` on `W`.
-* `TauCeti.norm_sub_sq_le_quadraticEnergy_sub_div` and
-  `TauCeti.tendsto_of_tendsto_quadraticEnergy`: coercivity distance rate and norm convergence of
-  near-minimizers.
-* `TauCeti.existsUnique_isMinOn_quadraticEnergy_of_isClosed_convex` and
-  `ContinuousLinearMap.existsUnique_vadd_forall_apply_eq_of_isClosed_of_coercive`: direct-method
-  existence and uniqueness of constrained minimizers and weak solutions on reflexive normed spaces.
+* **Expansions, affine datum shift, and smoothness.** For a Hermitian form, expanding `E(u + h)`
+  separates the linear variation `2 re (a u h - ℓ h)` from the quadratic remainder `re (a h h)`
+  (`ContinuousLinearMap.quadraticEnergy_add`), along scalar and real lines
+  (`ContinuousLinearMap.quadraticEnergy_add_smul_norm_sq`,
+  `ContinuousLinearMap.quadraticEnergy_add_smul`,
+  `ContinuousLinearMap.quadraticEnergy_add_real_smul`), and under translation by a datum `g`, which
+  shifts the forcing from `ℓ` to `ℓ - a g`
+  (`ContinuousLinearMap.quadraticEnergy_add_eq_add_quadraticEnergy_sub`). On a normed space over `𝕜`
+  with its compatible real scalar action, `a.quadraticEnergy ℓ` is `C^n` over `ℝ` for every `n`,
+  with strict Fréchet derivative `v ↦ 2 re (a u v - ℓ v)` when `a` is Hermitian
+  (`ContinuousLinearMap.hasStrictFDerivAt_quadraticEnergy`,
+  `ContinuousLinearMap.hasFDerivAt_quadraticEnergy`).
+* **Convexity and weak lower semicontinuity.** Even without symmetry of `a`, the Jensen deficit of
+  `E` along `t₁ • u + t₂ • v` (`t₁ + t₂ = 1`) is `t₁ t₂ re (a (u - v) (u - v))`
+  (`ContinuousLinearMap.quadraticEnergy_combo_add_mul_sub`), so `E` is convex and relatively weakly
+  lower semicontinuous on any convex set `C` on whose differences `re (a w w) ≥ 0`
+  (`ContinuousLinearMap.lowerSemicontinuousOn_quadraticEnergy_comp_toWeakSpace_symm`).
+* **Variational inequalities, weak Euler--Lagrange equations, and exact energy gap.** For Hermitian
+  `a`, local minimizers on convex sets satisfy the variational inequality
+  `re (ℓ (v - u)) ≤ re (a u (v - u))`
+  (`ContinuousLinearMap.le_re_apply_sub_of_isLocalMinOn_quadraticEnergy_convex`), and local or
+  global minimizers on affine cosets `g +ᵥ W` or `u + W` solve the full `𝕜`-valued weak equation
+  `a u v = ℓ v` on `W` (`ContinuousLinearMap.apply_eq_of_forall_le_quadraticEnergy_add`,
+  `ContinuousLinearMap.apply_eq_of_isLocalMinOn_quadraticEnergy_vadd`) via the `I`-test. Conversely,
+  at a weak solution `E(u + h) = E(u) + re (a h h)`
+  (`ContinuousLinearMap.quadraticEnergy_add_of_forall_apply_eq`), making minimality and the weak
+  equation equivalent when `re (a w w) ≥ 0` on `W`
+  (`ContinuousLinearMap.forall_le_quadraticEnergy_add_iff`,
+  `ContinuousLinearMap.isMinOn_quadraticEnergy_vadd_iff`,
+  `ContinuousLinearMap.isMinOn_quadraticEnergy_iff`).
+* **Cauchy--Schwarz, coercive stability, and direct-method existence.** Nonnegative Hermitian forms
+  satisfy `‖a u v‖² ≤ re (a u u) re (a v v)` (`ContinuousLinearMap.norm_apply_sq_le_of_hermitian`)
+  and `re (a u u) = 0 ↔ a u = 0` (`ContinuousLinearMap.re_apply_self_eq_zero_iff`). Coercive forms
+  yield quadratic energy-gap bounds, norm convergence of near-minimizers, bounded sublevels
+  (`ContinuousLinearMap.hasBoundedSublevelsOn_quadraticEnergy_of_sub_coercive`), forcing stability,
+  uniqueness, and—on reflexive normed spaces—direct-method existence and uniqueness of constrained
+  minimizers and weak solutions
+  (`ContinuousLinearMap.existsUnique_isMinOn_quadraticEnergy_of_isClosed_convex`,
+  `ContinuousLinearMap.existsUnique_vadd_forall_apply_eq_of_isClosed_of_coercive`).
+* **Hilbert-space Lax--Milgram identifications.** On a Hilbert space, global minimizers coincide
+  with `InnerProductSpace.solutionOfFunctional`, `InnerProductSpace.formSolutionMap`, and over `ℝ`
+  with `IsCoercive.solutionOfFunctional`, `IsCoercive.continuousLinearEquivOfBilin.symm`, and
+  `IsCoercive.solutionOfInner` (and with `IsCoercive.formSolutionMap` in
+  `TauCeti.Analysis.InnerProductSpace.Variational.Spectrum`).
 
 ## References
 
@@ -84,897 +89,937 @@ public section
 
 noncomputable section
 
-open Filter Set Bornology NormedSpace
-open scoped Topology Pointwise
+open RCLike Filter Topology Set Bornology NormedSpace
+open scoped Pointwise InnerProductSpace
 
-namespace TauCeti
+namespace ContinuousLinearMap
 
-section Basic
+section Seminormed
 
 variable {𝕜 V : Type*} [RCLike 𝕜] [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
 
-/-- The real **quadratic energy** `E(u) = Re(a u u) - 2 Re(ℓ u)` attached to a continuous
-sesquilinear form `a : V →L⋆[𝕜] V →L[𝕜] 𝕜` and a continuous linear functional
-`ℓ : StrongDual 𝕜 V`. -/
+/-- The **quadratic energy** `E(u) = re (a u u) - 2 re (ℓ u)` of a bounded sesquilinear form `a`
+with forcing functional `ℓ`. When `a` is Hermitian, its minimizers on `u + W` solve the weak
+equation `a u v = ℓ v` on `W`; the converse holds when `re (a w w) ≥ 0` on `W`. -/
 def quadraticEnergy (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) (ℓ : StrongDual 𝕜 V) (u : V) : ℝ :=
-  RCLike.re (a u u) - 2 * RCLike.re (ℓ u)
+  re (a u u) - 2 * re (ℓ u)
 
-/-- Defining formula for `quadraticEnergy`. Kept without `@[simp]` so lemmas stated in terms of
-`quadraticEnergy` fire before unfolding. -/
-theorem quadraticEnergy_apply (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) (ℓ : StrongDual 𝕜 V) (u : V) :
-    quadraticEnergy a ℓ u = RCLike.re (a u u) - 2 * RCLike.re (ℓ u) :=
+variable (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) (ℓ : StrongDual 𝕜 V)
+
+theorem quadraticEnergy_apply (u : V) :
+    a.quadraticEnergy ℓ u = re (a u u) - 2 * re (ℓ u) :=
   (rfl)
 
-/-- Every quadratic energy vanishes at the origin. -/
 @[simp]
-theorem quadraticEnergy_zero (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) (ℓ : StrongDual 𝕜 V) :
-    quadraticEnergy a ℓ 0 = 0 := by
+theorem quadraticEnergy_apply_zero : a.quadraticEnergy ℓ 0 = 0 := by
   simp [quadraticEnergy_apply]
 
-/-- With zero forcing, `quadraticEnergy a 0` is the pure quadratic form `u ↦ Re(a u u)`. -/
+/-- With zero forcing, `a.quadraticEnergy 0` is the pure quadratic form `u ↦ re (a u u)`. -/
 @[simp]
-theorem quadraticEnergy_zero_right (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) (u : V) :
-    quadraticEnergy a 0 u = RCLike.re (a u u) := by
+theorem quadraticEnergy_zero (u : V) : a.quadraticEnergy 0 u = re (a u u) := by
   simp [quadraticEnergy_apply]
 
-/-- With zero form, `quadraticEnergy 0 ℓ u` is `-2 * Re(ℓ u)`. -/
+/-- With zero form, `(0 : V →L⋆[𝕜] V →L[𝕜] 𝕜).quadraticEnergy ℓ u` is `-2 * re (ℓ u)`. -/
 @[simp]
-theorem quadraticEnergy_zero_left (ℓ : StrongDual 𝕜 V) (u : V) :
-    quadraticEnergy 0 ℓ u = -2 * RCLike.re (ℓ u) := by
+theorem zero_quadraticEnergy (u : V) :
+    (0 : V →L⋆[𝕜] V →L[𝕜] 𝕜).quadraticEnergy ℓ u = -2 * re (ℓ u) := by
   simp [quadraticEnergy_apply]
 
-/-- Negating both the forcing and the vector leaves `quadraticEnergy` unchanged. -/
+/-- Negating both the forcing and the vector leaves `a.quadraticEnergy` unchanged. -/
 @[simp]
-theorem quadraticEnergy_neg_neg (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) (ℓ : StrongDual 𝕜 V) (u : V) :
-    quadraticEnergy a (-ℓ) (-u) = quadraticEnergy a ℓ u := by
+theorem quadraticEnergy_neg_apply_neg (u : V) :
+    a.quadraticEnergy (-ℓ) (-u) = a.quadraticEnergy ℓ u := by
   simp [quadraticEnergy_apply]
 
-/-- Evaluating `quadraticEnergy a ℓ` at `-u` flips the sign of the forcing. -/
-theorem quadraticEnergy_neg (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) (ℓ : StrongDual 𝕜 V) (u : V) :
-    quadraticEnergy a ℓ (-u) = quadraticEnergy a (-ℓ) u := by
+/-- Evaluating `a.quadraticEnergy ℓ` at `-u` flips the sign of the forcing. -/
+theorem quadraticEnergy_neg_apply (u : V) :
+    a.quadraticEnergy ℓ (-u) = a.quadraticEnergy (-ℓ) u := by
   simp [quadraticEnergy_apply]
-
-/-- `quadraticEnergy` is additive jointly in the form `a` and the forcing `ℓ`. -/
-theorem quadraticEnergy_add_form_functional (a₁ a₂ : V →L⋆[𝕜] V →L[𝕜] 𝕜)
-    (ℓ₁ ℓ₂ : StrongDual 𝕜 V) (u : V) :
-    quadraticEnergy (a₁ + a₂) (ℓ₁ + ℓ₂) u =
-      quadraticEnergy a₁ ℓ₁ u + quadraticEnergy a₂ ℓ₂ u := by
-  simp only [quadraticEnergy_apply, add_apply, map_add]
-  ring
 
 /-- Negating both the form `a` and the forcing `ℓ` negates `quadraticEnergy`. -/
 @[simp]
-theorem quadraticEnergy_neg_form_functional (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) (ℓ : StrongDual 𝕜 V) (u : V) :
-    quadraticEnergy (-a) (-ℓ) u = -quadraticEnergy a ℓ u := by
+theorem neg_quadraticEnergy_neg (u : V) :
+    (-a).quadraticEnergy (-ℓ) u = -a.quadraticEnergy ℓ u := by
   simp only [quadraticEnergy_apply, neg_apply, map_neg]
   ring
 
-/-- `quadraticEnergy` preserves subtraction jointly in the form `a` and the forcing `ℓ`. -/
-theorem quadraticEnergy_sub_form_functional (a₁ a₂ : V →L⋆[𝕜] V →L[𝕜] 𝕜)
-    (ℓ₁ ℓ₂ : StrongDual 𝕜 V) (u : V) :
-    quadraticEnergy (a₁ - a₂) (ℓ₁ - ℓ₂) u =
-      quadraticEnergy a₁ ℓ₁ u - quadraticEnergy a₂ ℓ₂ u := by
-  simp only [quadraticEnergy_apply, sub_apply, map_sub]
-  ring
-
-/-- Scaling both the form `a` and the forcing `ℓ` by a real scalar `r` scales `quadraticEnergy` by
-`r`. -/
+/-- Scaling both the form `a` and the forcing `ℓ` by `r : ℝ` scales `quadraticEnergy` by `r`. -/
 @[simp]
-theorem quadraticEnergy_smul_form_functional (r : ℝ) (a : V →L⋆[𝕜] V →L[𝕜] 𝕜)
-    (ℓ : StrongDual 𝕜 V) (u : V) :
-    quadraticEnergy (r • a) (r • ℓ) u = r * quadraticEnergy a ℓ u := by
+theorem smul_quadraticEnergy_smul (r : ℝ) (u : V) :
+    (r • a).quadraticEnergy (r • ℓ) u = r * a.quadraticEnergy ℓ u := by
   simp only [quadraticEnergy_apply, smul_apply, Algebra.smul_def,
-    RCLike.algebraMap_eq_ofReal, RCLike.re_ofReal_mul]
+    algebraMap_eq_ofReal, re_ofReal_mul]
   ring
 
 /-- Pullback of `quadraticEnergy` along a continuous `𝕜`-linear map `L : W →L[𝕜] V`. -/
 @[simp]
-theorem quadraticEnergy_comp {W : Type*} [SeminormedAddCommGroup W] [NormedSpace 𝕜 W]
-    (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) (ℓ : StrongDual 𝕜 V) (L : W →L[𝕜] V) (w : W) :
-    quadraticEnergy (a.bilinearComp L L) (ℓ.comp L) w = quadraticEnergy a ℓ (L w) := by
+theorem bilinearComp_quadraticEnergy_comp {W : Type*} [SeminormedAddCommGroup W] [NormedSpace 𝕜 W]
+    (L : W →L[𝕜] V) (w : W) :
+    (a.bilinearComp L L).quadraticEnergy (ℓ.comp L) w = a.quadraticEnergy ℓ (L w) := by
   simp [quadraticEnergy_apply]
 
-/-- Over `ℝ`, `quadraticEnergy B ℓ u` is `B u u - 2 * ℓ u`. -/
-theorem quadraticEnergy_real_apply {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
-    (B : E →L[ℝ] E →L[ℝ] ℝ) (ℓ : StrongDual ℝ E) (u : E) :
-    quadraticEnergy B ℓ u = B u u - 2 * ℓ u := by
-  simp [quadraticEnergy_apply]
-
-/-- Viewing `V` over `ℝ`, the real quadratic energy of `a.reBilin` and `Re ∘ ℓ` coincides with
-`quadraticEnergy a ℓ`. -/
+/-- Viewing `V` over `ℝ`, the real quadratic energy of `a.reBilin` and `re ∘ ℓ` coincides with
+`a.quadraticEnergy ℓ`. -/
 @[simp]
-theorem quadraticEnergy_reBilin [NormedSpace ℝ V] [IsScalarTower ℝ 𝕜 V]
-    (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) (ℓ : StrongDual 𝕜 V) (u : V) :
-    quadraticEnergy a.reBilin (RCLike.reCLM.comp (ℓ.restrictScalars ℝ)) u =
-      quadraticEnergy a ℓ u := by
-  rw [quadraticEnergy_real_apply]
-  simp [quadraticEnergy_apply]
+theorem reBilin_quadraticEnergy [NormedSpace ℝ V] [IsScalarTower ℝ 𝕜 V] (u : V) :
+    a.reBilin.quadraticEnergy (reCLM.comp (ℓ.restrictScalars ℝ)) u = a.quadraticEnergy ℓ u := by
+  rw [quadraticEnergy_apply, ContinuousLinearMap.quadraticEnergy_apply, reBilin_apply_apply]
+  simp
 
-/-! ### Exact expansion and affine shift identities -/
-
-/-- Increment of `quadraticEnergy a ℓ` from `u` to `u + v` without assuming symmetry of `a`. -/
-theorem quadraticEnergy_add_sub (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) (ℓ : StrongDual 𝕜 V) (u v : V) :
-    quadraticEnergy a ℓ (u + v) - quadraticEnergy a ℓ u =
-      RCLike.re (a u v) + RCLike.re (a v u) - 2 * RCLike.re (ℓ v) + RCLike.re (a v v) := by
+/-- Increment of `a.quadraticEnergy ℓ` from `u` to `u + v` without assuming symmetry of `a`. -/
+theorem quadraticEnergy_add_sub (u v : V) :
+    a.quadraticEnergy ℓ (u + v) - a.quadraticEnergy ℓ u =
+      re (a u v) + re (a v u) - 2 * re (ℓ v) + re (a v v) := by
   simp only [quadraticEnergy_apply, map_add, add_apply]
   ring
 
-/-- **Exact vector increment** of `quadraticEnergy` for a Hermitian form `a`:
-`E(u + v) - E(u) = 2 * Re(a u v - ℓ v) + Re(a v v)`. -/
-theorem quadraticEnergy_add_sub_of_eq_star {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ x y, a x y = star (a y x)) (ℓ : StrongDual 𝕜 V) (u v : V) :
-    quadraticEnergy a ℓ (u + v) - quadraticEnergy a ℓ u =
-      2 * RCLike.re (a u v - ℓ v) + RCLike.re (a v v) := by
-  have hcomm : RCLike.re (a v u) = RCLike.re (a u v) :=
-    a.toLinearMap₁₂.re_apply_comm_of_eq_star ha v u
-  rw [quadraticEnergy_add_sub, hcomm, map_sub]
+/-- `a.quadraticEnergy ℓ` is norm-continuous for every continuous sesquilinear form `a` and
+continuous linear functional `ℓ`. -/
+@[fun_prop]
+theorem continuous_quadraticEnergy : Continuous (a.quadraticEnergy ℓ) :=
+  a.continuous_re_apply_self.sub (continuous_const.mul (reCLM.continuous.comp ℓ.continuous))
+
+variable {a ℓ} in
+/-- `quadraticEnergy` is additive jointly in the form `a` and the forcing `ℓ`. -/
+theorem add_quadraticEnergy_add (a₁ a₂ : V →L⋆[𝕜] V →L[𝕜] 𝕜) (ℓ₁ ℓ₂ : StrongDual 𝕜 V) (u : V) :
+    (a₁ + a₂).quadraticEnergy (ℓ₁ + ℓ₂) u =
+      a₁.quadraticEnergy ℓ₁ u + a₂.quadraticEnergy ℓ₂ u := by
+  simp only [quadraticEnergy_apply, add_apply, map_add]
   ring
 
-/-- Difference `E(v) - E(u)` between any two vectors for a Hermitian form `a`. -/
-theorem quadraticEnergy_sub_quadraticEnergy_of_eq_star {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ x y, a x y = star (a y x)) (ℓ : StrongDual 𝕜 V) (u v : V) :
-    quadraticEnergy a ℓ v - quadraticEnergy a ℓ u =
-      2 * RCLike.re (a u (v - u) - ℓ (v - u)) + RCLike.re (a (v - u) (v - u)) := by
-  simpa only [add_sub_cancel] using quadraticEnergy_add_sub_of_eq_star ha ℓ u (v - u)
+variable {a ℓ} in
+/-- `quadraticEnergy` preserves subtraction jointly in the form `a` and the forcing `ℓ`. -/
+theorem sub_quadraticEnergy_sub (a₁ a₂ : V →L⋆[𝕜] V →L[𝕜] 𝕜) (ℓ₁ ℓ₂ : StrongDual 𝕜 V) (u : V) :
+    (a₁ - a₂).quadraticEnergy (ℓ₁ - ℓ₂) u =
+      a₁.quadraticEnergy ℓ₁ u - a₂.quadraticEnergy ℓ₂ u := by
+  simp only [quadraticEnergy_apply, sub_apply, map_sub]
+  ring
+
+/-- Over `ℝ`, `B.quadraticEnergy ℓ u` is `B u u - 2 * ℓ u`. -/
+theorem quadraticEnergy_real_apply {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+    (B : E →L[ℝ] E →L[ℝ] ℝ) (ℓ : StrongDual ℝ E) (u : E) :
+    B.quadraticEnergy ℓ u = B u u - 2 * ℓ u := by
+  simp [quadraticEnergy_apply]
+
+variable {a}
+
+/-- **The exact expansion of a quadratic energy.** -/
+theorem quadraticEnergy_add (ha : ∀ u v, a u v = star (a v u)) (u h : V) :
+    a.quadraticEnergy ℓ (u + h) =
+      a.quadraticEnergy ℓ u + 2 * re (a u h - ℓ h) + re (a h h) := by
+  have hre : re (a h u) = re (a u h) := by rw [ha h u, star_def, conj_re]
+  simp only [quadraticEnergy_apply, map_add, add_apply, map_sub]
+  linarith
 
 /-- **Affine datum shift** for a Hermitian quadratic energy: translating the argument by `g` shifts
 the forcing functional from `ℓ` to `ℓ - a g` up to the additive constant `E(g)`. This reduces
 minimization on an inhomogeneous coset `g +ᵥ W` to minimization on the subspace `W`. -/
-theorem quadraticEnergy_add_eq_add_sub {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ x y, a x y = star (a y x)) (ℓ : StrongDual 𝕜 V) (g w : V) :
-    quadraticEnergy a ℓ (g + w) =
-      quadraticEnergy a ℓ g + quadraticEnergy a (ℓ - a g) w := by
-  have h := quadraticEnergy_add_sub_of_eq_star ha ℓ g w
-  simp only [quadraticEnergy_apply, sub_apply, map_sub] at h ⊢
-  linarith
+theorem quadraticEnergy_add_eq_add_quadraticEnergy_sub (ha : ∀ u v, a u v = star (a v u))
+    (g w : V) :
+    a.quadraticEnergy ℓ (g + w) = a.quadraticEnergy ℓ g + a.quadraticEnergy (ℓ - a g) w := by
+  rw [quadraticEnergy_add ℓ ha g w]
+  simp only [quadraticEnergy_apply, sub_apply, map_sub]
+  ring
 
-/-- **Complex/scalar-line expansion** of `quadraticEnergy` for a Hermitian form `a` and `c : 𝕜`:
-`E(u + c • v) - E(u) = 2 * Re(c * (a u v - ℓ v)) + ‖c‖² * Re(a v v)`. -/
-theorem quadraticEnergy_add_smul_sub_of_eq_star {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ x y, a x y = star (a y x)) (ℓ : StrongDual 𝕜 V) (u v : V) (c : 𝕜) :
-    quadraticEnergy a ℓ (u + c • v) - quadraticEnergy a ℓ u =
-      2 * RCLike.re (c * (a u v - ℓ v)) + ‖c‖ ^ 2 * RCLike.re (a v v) := by
-  rw [quadraticEnergy_add_sub_of_eq_star ha ℓ u (c • v), map_smul, map_smul, smul_eq_mul,
-    smul_eq_mul, ← mul_sub]
+/-- **Scalar-line expansion** of a quadratic energy for a Hermitian form `a` and `c : 𝕜`. -/
+theorem quadraticEnergy_add_smul_norm_sq (ha : ∀ u v, a u v = star (a v u)) (u v : V) (c : 𝕜) :
+    a.quadraticEnergy ℓ (u + c • v) =
+      a.quadraticEnergy ℓ u + 2 * re (c * (a u v - ℓ v)) + ‖c‖ ^ 2 * re (a v v) := by
+  rw [quadraticEnergy_add ℓ ha u (c • v), map_smul, map_smul, smul_eq_mul, smul_eq_mul, ← mul_sub]
   congr 1
   exact a.toLinearMap₁₂.re_apply_smul_self c v
 
-/-- Real-scalar-line expansion for a Hermitian form `a` via coercion `(t : 𝕜) • v`, requiring no
-`Module ℝ V` instance. -/
-theorem quadraticEnergy_add_ofReal_smul_sub_of_eq_star {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ x y, a x y = star (a y x)) (ℓ : StrongDual 𝕜 V) (u v : V) (t : ℝ) :
-    quadraticEnergy a ℓ (u + (t : 𝕜) • v) - quadraticEnergy a ℓ u =
-      2 * t * RCLike.re (a u v - ℓ v) + t ^ 2 * RCLike.re (a v v) := by
-  rw [quadraticEnergy_add_smul_sub_of_eq_star ha ℓ u v (t : 𝕜), RCLike.re_ofReal_mul,
-    RCLike.norm_ofReal, sq_abs]
+/-- **The expansion of a quadratic energy along a real line.** -/
+theorem quadraticEnergy_add_smul (ha : ∀ u v, a u v = star (a v u)) (u v : V) (t : ℝ) :
+    a.quadraticEnergy ℓ (u + (t : 𝕜) • v) =
+      a.quadraticEnergy ℓ u + 2 * t * re (a u v - ℓ v) + t ^ 2 * re (a v v) := by
+  rw [quadraticEnergy_add_smul_norm_sq ℓ ha u v (t : 𝕜), re_ofReal_mul, norm_ofReal, sq_abs]
   ring
+
+/-- **The weak equation at a minimizer on an affine subspace.** If `u` minimizes the quadratic
+energy of a Hermitian form on `u + W`, then `a u v = ℓ v` for every `v ∈ W`. -/
+theorem apply_eq_of_forall_le_quadraticEnergy_add (ha : ∀ u v, a u v = star (a v u))
+    {W : Submodule 𝕜 V} {u : V}
+    (hmin : ∀ w ∈ W, a.quadraticEnergy ℓ u ≤ a.quadraticEnergy ℓ (u + w)) {v : V} (hv : v ∈ W) :
+    a u v = ℓ v := by
+  -- The real part of `a u v - ℓ v` vanishes in every direction of `W`, by the expansion.
+  have hre : ∀ v ∈ W, re (a u v - ℓ v) = 0 := fun v hv => by
+    have hd := discrim_le_zero (K := ℝ) (a := re (a v v)) (b := 2 * re (a u v - ℓ v)) (c := 0)
+      fun t => by
+        have := hmin _ (W.smul_mem (t : 𝕜) hv)
+        rw [quadraticEnergy_add_smul ℓ ha] at this
+        nlinarith
+    rw [discrim] at hd
+    nlinarith [sq_nonneg (re (a u v - ℓ v))]
+  -- Its imaginary part is minus the real part in the direction `I • v`.
+  have him := hre _ (W.smul_mem I hv)
+  simp only [map_smul, smul_eq_mul, ← mul_sub, I_mul_re, neg_eq_zero] at him
+  rw [← sub_eq_zero]
+  exact RCLike.ext (by simpa using hre v hv) (by simpa using him)
+
+/-- **The energy gap at a weak solution.** If `a u v = ℓ v` for every `v ∈ W`, then the energy
+increases from `u` to `u + h` by exactly `re (a h h)` for every `h ∈ W`. -/
+theorem quadraticEnergy_add_of_forall_apply_eq (ha : ∀ u v, a u v = star (a v u))
+    {W : Submodule 𝕜 V} {u h : V} (hu : ∀ v ∈ W, a u v = ℓ v) (hh : h ∈ W) :
+    a.quadraticEnergy ℓ (u + h) = a.quadraticEnergy ℓ u + re (a h h) := by
+  rw [quadraticEnergy_add ℓ ha, hu h hh, sub_self, map_zero, mul_zero, add_zero]
+
+/-- For a Hermitian form whose energy is nonnegative on `W`, `u` minimizes the quadratic energy on
+`u + W` if and only if it solves the weak equation `a u v = ℓ v` for every `v ∈ W`. -/
+theorem forall_le_quadraticEnergy_add_iff (ha : ∀ u v, a u v = star (a v u))
+    {W : Submodule 𝕜 V} (hq : ∀ w ∈ W, 0 ≤ re (a w w)) {u : V} :
+    (∀ w ∈ W, a.quadraticEnergy ℓ u ≤ a.quadraticEnergy ℓ (u + w)) ↔ ∀ v ∈ W, a u v = ℓ v :=
+  ⟨fun hmin _ hv => apply_eq_of_forall_le_quadraticEnergy_add ℓ ha hmin hv, fun hu w hw => by
+    rw [quadraticEnergy_add_of_forall_apply_eq ℓ ha hu hw]
+    linarith [hq w hw]⟩
+
+/-- For a Hermitian form with nonnegative energy, `u` is a global minimizer of the quadratic
+energy if and only if it solves the weak equation `a u = ℓ`. -/
+theorem isMinOn_quadraticEnergy_iff (ha : ∀ u v, a u v = star (a v u))
+    (hq : ∀ w, 0 ≤ re (a w w)) {u : V} :
+    IsMinOn (a.quadraticEnergy ℓ) univ u ↔ a u = ℓ := by
+  have h := forall_le_quadraticEnergy_add_iff ℓ ha (W := ⊤) (fun w _ => hq w) (u := u)
+  simp only [Submodule.mem_top, forall_const] at h
+  rw [ContinuousLinearMap.ext_iff, ← h, isMinOn_univ_iff]
+  exact ⟨fun hmin w => hmin (u + w), fun hmin w => by simpa using hmin (w - u)⟩
+
+/-- **Cauchy--Schwarz inequality for a nonnegative Hermitian form**:
+`‖a u v‖² ≤ re (a u u) re (a v v)`. -/
+theorem norm_apply_sq_le_of_hermitian (ha : ∀ u v, a u v = star (a v u))
+    (hq : ∀ w, 0 ≤ re (a w w)) (u v : V) :
+    ‖a u v‖ ^ 2 ≤ re (a u u) * re (a v v) :=
+  a.toLinearMap₁₂.norm_apply_sq_le_re_apply_self_mul ha hq u v
+
+/-- **The kernel identity for a nonnegative Hermitian form**: `u` lies in the kernel
+(`a u v = 0` for all `v`) exactly when its energy vanishes. -/
+theorem re_apply_self_eq_zero_iff (ha : ∀ u v, a u v = star (a v u))
+    (hq : ∀ w, 0 ≤ re (a w w)) {u : V} :
+    re (a u u) = 0 ↔ a u = 0 := by
+  rw [ContinuousLinearMap.ext_iff]
+  simpa only [zero_apply, toLinearMap₁₂_apply_apply_apply] using
+    (a.toLinearMap₁₂.forall_apply_eq_zero_iff_re_apply_self_eq_zero ha hq (u := u)).symm
+
+/-- **Coercive energy gap.** If the energy of a Hermitian form dominates `c ‖w‖²` on `W` and `u`
+solves the weak equation on `W`, then `c ‖w - u‖² ≤ E(w) - E(u)` for every `w ∈ u + W`. -/
+theorem mul_norm_sub_sq_le_quadraticEnergy_sub (ha : ∀ u v, a u v = star (a v u))
+    {W : Submodule 𝕜 V} {c : ℝ} (hc : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ re (a w w)) {u w : V}
+    (hu : ∀ v ∈ W, a u v = ℓ v) (hw : w - u ∈ W) :
+    c * ‖w - u‖ ^ 2 ≤ a.quadraticEnergy ℓ w - a.quadraticEnergy ℓ u := by
+  have h := quadraticEnergy_add_of_forall_apply_eq ℓ ha hu hw
+  rw [add_sub_cancel] at h
+  linarith [hc _ hw]
+
+/-- **Near-minimizers converge in norm.** For a Hermitian form whose energy dominates `c ‖w‖²`
+on `W` with `0 < c`, points of `u + W` whose energies tend to the energy of the weak solution `u`
+converge to `u` in norm. -/
+theorem tendsto_of_tendsto_quadraticEnergy (ha : ∀ u v, a u v = star (a v u))
+    {W : Submodule 𝕜 V} {c : ℝ} (hc0 : 0 < c) (hc : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ re (a w w)) {u : V}
+    (hu : ∀ v ∈ W, a u v = ℓ v) {ι : Type*} {l : Filter ι} {x : ι → V} (hx : ∀ i, x i - u ∈ W)
+    (hE : Tendsto (fun i => a.quadraticEnergy ℓ (x i)) l (𝓝 (a.quadraticEnergy ℓ u))) :
+    Tendsto x l (𝓝 u) :=
+  TauCeti.tendsto_of_dist_pow_le_of_tendsto_zero (n := 2)
+    (g := fun i => (a.quadraticEnergy ℓ (x i) - a.quadraticEnergy ℓ u) / c)
+    (Eventually.of_forall fun i => by
+      rw [dist_eq_norm, le_div_iff₀ hc0, mul_comm]
+      exact mul_norm_sub_sq_le_quadraticEnergy_sub ℓ ha hc hu (hx i))
+    (by simpa only [sub_self, zero_div] using (hE.sub_const (a.quadraticEnergy ℓ u)).div_const c)
+
+/-- **Lipschitz dependence on the forcing.** If the energy of `a` dominates `c ‖w‖²` on `W`, then
+solutions of the weak equations `a u v = ℓ v` and `a u' v = ℓ' v` on `W` that differ by an element
+of `W` satisfy `c ‖u - u'‖ ≤ ‖ℓ - ℓ'‖`. -/
+theorem mul_norm_sub_le_norm_sub_of_coercive {W : Submodule 𝕜 V} {c : ℝ}
+    (hc : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ re (a w w)) {u u' : V} {ℓ' : StrongDual 𝕜 V}
+    (hu : ∀ v ∈ W, a u v = ℓ v) (hu' : ∀ v ∈ W, a u' v = ℓ' v) (h : u - u' ∈ W) :
+    c * ‖u - u'‖ ≤ ‖ℓ - ℓ'‖ := by
+  refine (a.mul_norm_sub_le_norm_comp_subtypeL_of_coercive ℓ hc hu hu' h).trans ?_
+  refine opNorm_le_bound _ (norm_nonneg (ℓ - ℓ')) fun w => ?_
+  simpa only [comp_apply, Submodule.coe_subtypeL, Submodule.subtype_apply,
+    ← Submodule.norm_coe] using le_opNorm (ℓ - ℓ') (w : V)
 
 section RealScalar
 
 variable [Module ℝ V] [IsScalarTower ℝ 𝕜 V]
 
-/-- **Real-line expansion** of `quadraticEnergy` for a Hermitian form `a` (Hunter, Proposition 4.5):
-`E(u + t • v) - E(u) = 2 * t * Re(a u v - ℓ v) + t² * Re(a v v)`. -/
-theorem quadraticEnergy_add_real_smul_sub_of_eq_star {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ x y, a x y = star (a y x)) (ℓ : StrongDual 𝕜 V) (u v : V) (t : ℝ) :
-    quadraticEnergy a ℓ (u + t • v) - quadraticEnergy a ℓ u =
-      2 * t * RCLike.re (a u v - ℓ v) + t ^ 2 * RCLike.re (a v v) := by
-  rw [← algebraMap_smul 𝕜 t v, RCLike.algebraMap_eq_ofReal]
-  exact quadraticEnergy_add_ofReal_smul_sub_of_eq_star ha ℓ u v t
+/-- **Real-line expansion** of `a.quadraticEnergy ℓ` under a compatible `Module ℝ V` action. -/
+theorem quadraticEnergy_add_real_smul (ha : ∀ u v, a u v = star (a v u)) (u v : V) (t : ℝ) :
+    a.quadraticEnergy ℓ (u + t • v) =
+      a.quadraticEnergy ℓ u + 2 * t * re (a u v - ℓ v) + t ^ 2 * re (a v v) := by
+  rw [← algebraMap_smul 𝕜 t v, algebraMap_eq_ofReal]
+  exact quadraticEnergy_add_smul ℓ ha u v t
 
 /-- Along a two-point affine combination `t₁ • u + t₂ • v` with `t₁ + t₂ = 1`, the Jensen deficit of
-`quadraticEnergy a ℓ` equals `t₁ * t₂ * Re(a (u - v) (u - v))`, independent of the linear forcing
-`ℓ` and without assuming symmetry of `a`. -/
+`a.quadraticEnergy ℓ` equals `t₁ * t₂ * re (a (u - v) (u - v))`, independent of `ℓ` and without
+assuming symmetry of `a`. -/
 theorem quadraticEnergy_combo_add_mul_sub (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) (ℓ : StrongDual 𝕜 V)
     {t₁ t₂ : ℝ} (ht : t₁ + t₂ = 1) (u v : V) :
-    quadraticEnergy a ℓ (t₁ • u + t₂ • v) +
-        t₁ * t₂ * RCLike.re (a (u - v) (u - v)) =
-      t₁ * quadraticEnergy a ℓ u + t₂ * quadraticEnergy a ℓ v := by
+    a.quadraticEnergy ℓ (t₁ • u + t₂ • v) +
+        t₁ * t₂ * re (a (u - v) (u - v)) =
+      t₁ * a.quadraticEnergy ℓ u + t₂ * a.quadraticEnergy ℓ v := by
   have hq := a.toLinearMap₁₂.re_apply_combo_self_add_mul_sub ht u v
-  simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply] at hq
-  have hℓ : RCLike.re (ℓ (t₁ • u + t₂ • v)) =
-      t₁ * RCLike.re (ℓ u) + t₂ * RCLike.re (ℓ v) := by
+  simp only [toLinearMap₁₂_apply_apply_apply] at hq
+  have hℓ : re (ℓ (t₁ • u + t₂ • v)) = t₁ * re (ℓ u) + t₂ * re (ℓ v) := by
     rw [map_add, ← algebraMap_smul 𝕜 t₁ u, ← algebraMap_smul 𝕜 t₂ v, map_smul, map_smul,
-      RCLike.algebraMap_eq_ofReal]
+      algebraMap_eq_ofReal]
     simp
   simp only [quadraticEnergy_apply, hℓ]
   linarith
 
-/-- One-dimensional derivative of `s ↦ quadraticEnergy a ℓ (u + s • v)` at `t : ℝ` for a Hermitian
+/-- One-dimensional derivative of `s ↦ a.quadraticEnergy ℓ (u + s • v)` at `t : ℝ` for a Hermitian
 form `a`. -/
-theorem hasDerivAt_quadraticEnergy_add_smul {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ x y, a x y = star (a y x)) (ℓ : StrongDual 𝕜 V) (u v : V) (t : ℝ) :
-    HasDerivAt (fun s : ℝ ↦ quadraticEnergy a ℓ (u + s • v))
-      (2 * RCLike.re (a u v - ℓ v) + 2 * t * RCLike.re (a v v)) t := by
-  have hpoly : (fun s : ℝ ↦ quadraticEnergy a ℓ (u + s • v)) =
-      fun s : ℝ ↦ quadraticEnergy a ℓ u +
-        2 * RCLike.re (a u v - ℓ v) * s + RCLike.re (a v v) * s ^ 2 := by
+theorem hasDerivAt_quadraticEnergy_add_smul (ha : ∀ u v, a u v = star (a v u)) (u v : V) (t : ℝ) :
+    HasDerivAt (fun s : ℝ ↦ a.quadraticEnergy ℓ (u + s • v))
+      (2 * re (a u v - ℓ v) + 2 * t * re (a v v)) t := by
+  have hpoly : (fun s : ℝ ↦ a.quadraticEnergy ℓ (u + s • v)) =
+      fun s : ℝ ↦ a.quadraticEnergy ℓ u +
+        2 * re (a u v - ℓ v) * s + re (a v v) * s ^ 2 := by
     ext s
-    linarith [quadraticEnergy_add_real_smul_sub_of_eq_star ha ℓ u v s]
+    rw [quadraticEnergy_add_real_smul ℓ ha u v s]
+    ring
   rw [hpoly]
-  have hd := ((hasDerivAt_const t (quadraticEnergy a ℓ u)).add
-    ((hasDerivAt_id' t).const_mul (2 * RCLike.re (a u v - ℓ v)))).add
-    ((hasDerivAt_pow 2 t).const_mul (RCLike.re (a v v)))
-  exact (by ring : 0 + 2 * RCLike.re (a u v - ℓ v) * 1 +
-    RCLike.re (a v v) * ((2 : ℕ) * t ^ (2 - 1)) =
-    2 * RCLike.re (a u v - ℓ v) + 2 * t * RCLike.re (a v v)) ▸ hd
+  have hd := ((hasDerivAt_const t (a.quadraticEnergy ℓ u)).add
+    ((hasDerivAt_id' t).const_mul (2 * re (a u v - ℓ v)))).add
+    ((hasDerivAt_pow 2 t).const_mul (re (a v v)))
+  exact (by ring : 0 + 2 * re (a u v - ℓ v) * 1 +
+    re (a v v) * ((2 : ℕ) * t ^ (2 - 1)) =
+    2 * re (a u v - ℓ v) + 2 * t * re (a v v)) ▸ hd
+
+/-- If `a` is nonnegative on differences of points of a convex set `C`, then `a.quadraticEnergy ℓ`
+is convex on `C`. No symmetry of `a` is required. -/
+theorem convexOn_quadraticEnergy_of_sub_nonneg {C : Set V} (hC : Convex ℝ C)
+    (hpos : ∀ u ∈ C, ∀ v ∈ C, 0 ≤ re (a (u - v) (u - v))) (ℓ : StrongDual 𝕜 V) :
+    ConvexOn ℝ C (a.quadraticEnergy ℓ) := by
+  refine ⟨hC, fun u hu v hv t₁ t₂ ht₁ ht₂ ht ↦ ?_⟩
+  simp only [smul_eq_mul]
+  have hdiff : 0 ≤ t₁ * t₂ * re (a (u - v) (u - v)) :=
+    mul_nonneg (mul_nonneg ht₁ ht₂) (hpos u hu v hv)
+  linarith [a.quadraticEnergy_combo_add_mul_sub ℓ ht u v]
+
+/-- If `∀ u, 0 ≤ re (a u u)`, then `a.quadraticEnergy ℓ` is convex on `V`. No symmetry of `a` is
+required. -/
+theorem convexOn_quadraticEnergy (hpos : ∀ u, 0 ≤ re (a u u)) (ℓ : StrongDual 𝕜 V) :
+    ConvexOn ℝ univ (a.quadraticEnergy ℓ) :=
+  a.convexOn_quadraticEnergy_of_sub_nonneg convex_univ (fun u _ v _ ↦ hpos (u - v)) ℓ
+
+/-- If `a` is nonnegative on differences of points in a convex set `C`, then `a.quadraticEnergy ℓ`
+is lower semicontinuous on `toWeakSpace 𝕜 V '' C` in the `𝕜`-weak topology; neither symmetry of `a`,
+nonnegativity outside `C`, nor closedness of `C` is required. -/
+theorem lowerSemicontinuousOn_quadraticEnergy_comp_toWeakSpace_symm {C : Set V} (hC : Convex ℝ C)
+    (hpos : ∀ u ∈ C, ∀ v ∈ C, 0 ≤ re (a (u - v) (u - v))) (ℓ : StrongDual 𝕜 V) :
+    LowerSemicontinuousOn
+      (fun u : WeakSpace 𝕜 V ↦ a.quadraticEnergy ℓ ((toWeakSpace 𝕜 V).symm u))
+      (toWeakSpace 𝕜 V '' C) := by
+  have : LocallyConvexSpace ℝ V := NormedSpace.toLocallyConvexSpace' 𝕜
+  exact (a.convexOn_quadraticEnergy_of_sub_nonneg hC hpos ℓ).quasiconvexOn
+    |>.lowerSemicontinuousOn_comp_toWeakSpace_symm
+      (a.continuous_quadraticEnergy ℓ).continuousOn.lowerSemicontinuousOn
 
 end RealScalar
 
-/-! ### Continuity, convexity, and weak lower semicontinuity -/
-
-/-- `quadraticEnergy a ℓ` is norm-continuous for every continuous sesquilinear form `a` and
-continuous linear functional `ℓ`. -/
-@[fun_prop]
-theorem continuous_quadraticEnergy (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) (ℓ : StrongDual 𝕜 V) :
-    Continuous (quadraticEnergy a ℓ) :=
-  a.continuous_re_apply_self.sub (continuous_const.mul (RCLike.reCLM.continuous.comp ℓ.continuous))
-
-/-- If `a` is nonnegative on differences of points of a convex set `C`, then `quadraticEnergy a ℓ`
-is convex on `C`. No symmetry of `a` is required. -/
-theorem convexOn_quadraticEnergy_of_sub_nonneg [Module ℝ V] [IsScalarTower ℝ 𝕜 V]
-    {a : V →L⋆[𝕜] V →L[𝕜] 𝕜} {C : Set V} (hC : Convex ℝ C)
-    (hpos : ∀ u ∈ C, ∀ v ∈ C, 0 ≤ RCLike.re (a (u - v) (u - v))) (ℓ : StrongDual 𝕜 V) :
-    ConvexOn ℝ C (quadraticEnergy a ℓ) := by
-  refine ⟨hC, fun u hu v hv t₁ t₂ ht₁ ht₂ ht ↦ ?_⟩
-  simp only [smul_eq_mul]
-  have hdiff : 0 ≤ t₁ * t₂ * RCLike.re (a (u - v) (u - v)) :=
-    mul_nonneg (mul_nonneg ht₁ ht₂) (hpos u hu v hv)
-  linarith [quadraticEnergy_combo_add_mul_sub a ℓ ht u v]
-
-/-- If `∀ u, 0 ≤ Re(a u u)`, then `quadraticEnergy a ℓ` is convex on `V`. No symmetry of `a` is
-required. -/
-theorem convexOn_quadraticEnergy [Module ℝ V] [IsScalarTower ℝ 𝕜 V]
-    {a : V →L⋆[𝕜] V →L[𝕜] 𝕜} (hpos : ∀ u, 0 ≤ RCLike.re (a u u)) (ℓ : StrongDual 𝕜 V) :
-    ConvexOn ℝ Set.univ (quadraticEnergy a ℓ) :=
-  convexOn_quadraticEnergy_of_sub_nonneg convex_univ (fun u _ v _ ↦ hpos (u - v)) ℓ
-
-/-- If `a` is nonnegative on differences of points in a convex set `C`, then `quadraticEnergy a ℓ`
-is lower semicontinuous on `toWeakSpace 𝕜 V '' C` in the `𝕜`-weak topology; neither symmetry of `a`,
-nonnegativity outside `C`, nor closedness of `C` is required. -/
-theorem lowerSemicontinuousOn_quadraticEnergy_comp_toWeakSpace_symm
-    [Module ℝ V] [IsScalarTower ℝ 𝕜 V]
-    {a : V →L⋆[𝕜] V →L[𝕜] 𝕜} {C : Set V} (hC : Convex ℝ C)
-    (hpos : ∀ u ∈ C, ∀ v ∈ C, 0 ≤ RCLike.re (a (u - v) (u - v))) (ℓ : StrongDual 𝕜 V) :
-    LowerSemicontinuousOn
-      (fun u : WeakSpace 𝕜 V ↦ quadraticEnergy a ℓ ((toWeakSpace 𝕜 V).symm u))
-      (toWeakSpace 𝕜 V '' C) := by
-  have : LocallyConvexSpace ℝ V := NormedSpace.toLocallyConvexSpace' 𝕜
-  exact (convexOn_quadraticEnergy_of_sub_nonneg hC hpos ℓ).quasiconvexOn
-    |>.lowerSemicontinuousOn_comp_toWeakSpace_symm
-      (continuous_quadraticEnergy a ℓ).continuousOn.lowerSemicontinuousOn
-
-/-- For a continuous sesquilinear form `a` with nonnegative real diagonal, `quadraticEnergy a ℓ` is
-lower semicontinuous with respect to the `𝕜`-weak topology `WeakSpace 𝕜 V`. No symmetry of `a` is
-required. -/
+/-- For a continuous sesquilinear form `a` with nonnegative real diagonal, `a.quadraticEnergy ℓ` is
+lower semicontinuous with respect to `WeakSpace 𝕜 V`. No symmetry of `a` is required. -/
 theorem lowerSemicontinuous_quadraticEnergy_comp_toWeakSpace_symm
-    {a : V →L⋆[𝕜] V →L[𝕜] 𝕜} (hpos : ∀ u, 0 ≤ RCLike.re (a u u)) (ℓ : StrongDual 𝕜 V) :
+    (hpos : ∀ u, 0 ≤ re (a u u)) (ℓ : StrongDual 𝕜 V) :
     LowerSemicontinuous
-      (fun u : WeakSpace 𝕜 V ↦ quadraticEnergy a ℓ ((toWeakSpace 𝕜 V).symm u)) := by
+      (fun u : WeakSpace 𝕜 V ↦ a.quadraticEnergy ℓ ((toWeakSpace 𝕜 V).symm u)) := by
   let : NormedSpace ℝ V := NormedSpace.restrictScalars ℝ 𝕜 V
   have : IsScalarTower ℝ 𝕜 V := IsScalarTower.restrictScalars ℝ 𝕜 V
-  exact (convexOn_quadraticEnergy hpos ℓ).quasiconvexOn.lowerSemicontinuous_comp_toWeakSpace_symm
-    (continuous_quadraticEnergy a ℓ).lowerSemicontinuous
+  exact (a.convexOn_quadraticEnergy hpos ℓ).quasiconvexOn.lowerSemicontinuous_comp_toWeakSpace_symm
+    (a.continuous_quadraticEnergy ℓ).lowerSemicontinuous
 
-end Basic
+end Seminormed
 
-/-! ### Smoothness and real Fréchet derivatives -/
-
-section Calculus
-
-variable {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
-  [NormedSpace ℝ V] [IsScalarTower ℝ 𝕜 V] {n : WithTop ℕ∞}
-
-/-- `quadraticEnergy a ℓ` is `C^n` over `ℝ` for every `n`. -/
-@[fun_prop]
-theorem contDiff_quadraticEnergy (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) (ℓ : StrongDual 𝕜 V) :
-    ContDiff ℝ n (quadraticEnergy a ℓ) :=
-  a.contDiff_re_apply_self.sub
-    (contDiff_const.mul (RCLike.reCLM.contDiff.comp (ℓ.restrictScalars ℝ).contDiff))
-
-/-- `quadraticEnergy a ℓ` is Fréchet differentiable over `ℝ`. -/
-@[fun_prop]
-theorem differentiable_quadraticEnergy (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) (ℓ : StrongDual 𝕜 V) :
-    Differentiable ℝ (quadraticEnergy a ℓ) :=
-  (contDiff_quadraticEnergy (n := 1) a ℓ).differentiable one_ne_zero
-
-/-- **Strict real Fréchet derivative** of `quadraticEnergy a ℓ` for a Hermitian form `a`: at `u`,
-the derivative is the continuous real-linear functional `v ↦ 2 * Re(a u v - ℓ v)`. -/
-theorem hasStrictFDerivAt_quadraticEnergy {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ x y, a x y = star (a y x)) (ℓ : StrongDual 𝕜 V) (u : V) :
-    HasStrictFDerivAt (quadraticEnergy a ℓ)
-      ((2 : ℝ) • RCLike.reCLM.comp ((a u - ℓ).restrictScalars ℝ)) u := by
-  have hq := a.hasStrictFDerivAt_re_apply_self_of_eq_star ha u
-  have hℓ : HasStrictFDerivAt (fun w ↦ 2 * RCLike.re (ℓ w))
-      ((2 : ℝ) • RCLike.reCLM.comp (ℓ.restrictScalars ℝ)) u :=
-    ((2 : ℝ) • RCLike.reCLM.comp (ℓ.restrictScalars ℝ)).hasStrictFDerivAt.congr_of_eventuallyEq
-      (Eventually.of_forall fun _ ↦ by simp)
-  have hderiv : (2 : ℝ) • RCLike.reCLM.comp ((a u).restrictScalars ℝ) -
-      (2 : ℝ) • RCLike.reCLM.comp (ℓ.restrictScalars ℝ) =
-      (2 : ℝ) • RCLike.reCLM.comp ((a u - ℓ).restrictScalars ℝ) := by
-    ext v
-    simp
-    ring
-  exact hderiv ▸ hq.sub hℓ
-
-/-- **Real Fréchet derivative** of `quadraticEnergy a ℓ` for a Hermitian form `a`. -/
-theorem hasFDerivAt_quadraticEnergy {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ x y, a x y = star (a y x)) (ℓ : StrongDual 𝕜 V) (u : V) :
-    HasFDerivAt (quadraticEnergy a ℓ)
-      ((2 : ℝ) • RCLike.reCLM.comp ((a u - ℓ).restrictScalars ℝ)) u :=
-  (hasStrictFDerivAt_quadraticEnergy ha ℓ u).hasFDerivAt
-
-/-- Differential `fderiv ℝ (quadraticEnergy a ℓ) u` for a Hermitian form `a`. -/
-theorem fderiv_quadraticEnergy {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ x y, a x y = star (a y x)) (ℓ : StrongDual 𝕜 V) (u : V) :
-    fderiv ℝ (quadraticEnergy a ℓ) u =
-      (2 : ℝ) • RCLike.reCLM.comp ((a u - ℓ).restrictScalars ℝ) :=
-  (hasFDerivAt_quadraticEnergy ha ℓ u).fderiv
-
-/-- Directional formula for the real Fréchet derivative of `quadraticEnergy a ℓ` for a Hermitian
-form `a`: `fderiv ℝ (quadraticEnergy a ℓ) u v = 2 * Re(a u v - ℓ v)`. -/
-theorem fderiv_quadraticEnergy_apply {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ x y, a x y = star (a y x)) (ℓ : StrongDual 𝕜 V) (u v : V) :
-    fderiv ℝ (quadraticEnergy a ℓ) u v = 2 * RCLike.re (a u v - ℓ v) := by
-  rw [fderiv_quadraticEnergy ha]
-  simp
-
-end Calculus
-
-/-! ### First variation, variational inequality, weak Euler--Lagrange equation, and energy gap -/
+/-! ### First variation on rays, convex sets, and affine cosets `g +ᵥ W` -/
 
 section FirstVariation
 
 variable {𝕜 V : Type*} [RCLike 𝕜] [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
+  {a : V →L⋆[𝕜] V →L[𝕜] 𝕜} {ℓ : StrongDual 𝕜 V}
 
 /-- **One-sided ray variation.** For a Hermitian form `a`, if `u` is a local minimizer of
-`quadraticEnergy a ℓ` on `S` and `u + (t : 𝕜) • w ∈ S` for all sufficiently small `t > 0`, then
-`Re(ℓ w) ≤ Re(a u w)`. -/
-theorem le_re_apply_of_isLocalMinOn_quadraticEnergy_ray {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ x y, a x y = star (a y x)) {ℓ : StrongDual 𝕜 V} {S : Set V} {u w : V}
-    (hmin : IsLocalMinOn (quadraticEnergy a ℓ) S u)
+`a.quadraticEnergy ℓ` on `S` and `u + (t : 𝕜) • w ∈ S` for all sufficiently small `t > 0`, then
+`re (ℓ w) ≤ re (a u w)`. -/
+theorem le_re_apply_of_isLocalMinOn_quadraticEnergy_ray
+    (ha : ∀ x y, a x y = star (a y x)) {S : Set V} {u w : V}
+    (hmin : IsLocalMinOn (a.quadraticEnergy ℓ) S u)
     (hray : ∀ᶠ t : ℝ in 𝓝[>] 0, u + (t : 𝕜) • w ∈ S) :
-    RCLike.re (ℓ w) ≤ RCLike.re (a u w) := by
+    re (ℓ w) ≤ re (a u w) := by
   have hcont : Continuous (fun t : ℝ ↦ u + (t : 𝕜) • w) :=
-    continuous_const.add ((RCLike.continuous_ofReal.comp continuous_id).smul continuous_const)
+    continuous_const.add ((continuous_ofReal.comp continuous_id).smul continuous_const)
   have htend : Tendsto (fun t : ℝ ↦ u + (t : 𝕜) • w) (𝓝[>] 0) (𝓝[S] u) := by
     refine tendsto_nhdsWithin_iff.mpr ⟨?_, hray⟩
-    simpa only [RCLike.ofReal_zero, zero_smul, add_zero] using
+    simpa only [ofReal_zero, zero_smul, add_zero] using
       (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
-  have hle : ∀ᶠ t : ℝ in 𝓝[>] 0,
-      -(t / 2 * RCLike.re (a w w)) ≤ RCLike.re (a u w - ℓ w) := by
+  have hle : ∀ᶠ t : ℝ in 𝓝[>] 0, -(t / 2 * re (a w w)) ≤ re (a u w - ℓ w) := by
     filter_upwards [htend.eventually hmin, self_mem_nhdsWithin] with t ht htpos
-    have hexp := quadraticEnergy_add_ofReal_smul_sub_of_eq_star ha ℓ u w t
-    have hmul : 0 ≤ 2 * t * (RCLike.re (a u w - ℓ w) + t / 2 * RCLike.re (a w w)) := by
-      linarith
+    have hexp := a.quadraticEnergy_add_smul ℓ ha u w t
+    have hmul : 0 ≤ 2 * t * (re (a u w - ℓ w) + t / 2 * re (a w w)) := by linarith
     have hpos2 : (0 : ℝ) < 2 * t := mul_pos zero_lt_two htpos
     linarith [nonneg_of_mul_nonneg_right hmul hpos2]
-  have hlim : Tendsto (fun t : ℝ ↦ -(t / 2 * RCLike.re (a w w))) (𝓝[>] 0) (𝓝 0) := by
-    have hc : Continuous (fun t : ℝ ↦ -(t / 2 * RCLike.re (a w w))) := by fun_prop
+  have hlim : Tendsto (fun t : ℝ ↦ -(t / 2 * re (a w w))) (𝓝[>] 0) (𝓝 0) := by
+    have hc : Continuous (fun t : ℝ ↦ -(t / 2 * re (a w w))) := by fun_prop
     simpa using (hc.tendsto 0).mono_left nhdsWithin_le_nhds
-  have h0 : 0 ≤ RCLike.re (a u w - ℓ w) := le_of_tendsto hlim hle
+  have h0 : 0 ≤ re (a u w - ℓ w) := le_of_tendsto hlim hle
   rwa [map_sub, sub_nonneg] at h0
 
 /-- **Two-sided line variation.** For a Hermitian form `a`, if `u` is a local minimizer of
-`quadraticEnergy a ℓ` on `S` and `u + (t : 𝕜) • w ∈ S` for all `t : ℝ` near `0`, then
-`Re(a u w) = Re(ℓ w)`. -/
-theorem re_apply_eq_re_of_isLocalMinOn_quadraticEnergy_line {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ x y, a x y = star (a y x)) {ℓ : StrongDual 𝕜 V} {S : Set V} {u w : V}
-    (hmin : IsLocalMinOn (quadraticEnergy a ℓ) S u)
+`a.quadraticEnergy ℓ` on `S` and `u + (t : 𝕜) • w ∈ S` for all `t : ℝ` near `0`, then
+`re (a u w) = re (ℓ w)`. -/
+theorem re_apply_eq_re_of_isLocalMinOn_quadraticEnergy_line
+    (ha : ∀ x y, a x y = star (a y x)) {S : Set V} {u w : V}
+    (hmin : IsLocalMinOn (a.quadraticEnergy ℓ) S u)
     (hline : ∀ᶠ t : ℝ in 𝓝 0, u + (t : 𝕜) • w ∈ S) :
-    RCLike.re (a u w) = RCLike.re (ℓ w) := by
-  have h₁ := le_re_apply_of_isLocalMinOn_quadraticEnergy_ray ha hmin
-    (nhdsWithin_le_nhds hline)
+    re (a u w) = re (ℓ w) := by
+  have h₁ := a.le_re_apply_of_isLocalMinOn_quadraticEnergy_ray ha hmin (nhdsWithin_le_nhds hline)
   have hneg : ∀ᶠ t : ℝ in 𝓝[>] 0, u + (t : 𝕜) • (-w) ∈ S := by
     have hnt : Tendsto (fun t : ℝ ↦ -t) (𝓝[>] 0) (𝓝 0) := by
       simpa only [neg_zero] using (continuous_neg.tendsto (0 : ℝ)).mono_left nhdsWithin_le_nhds
     filter_upwards [hnt.eventually hline] with t ht
     have ht' : u + ((-t : ℝ) : 𝕜) • w ∈ S := ht
-    simpa only [RCLike.ofReal_neg, neg_smul, smul_neg] using ht'
-  have h₂ := le_re_apply_of_isLocalMinOn_quadraticEnergy_ray ha hmin hneg
+    simpa only [ofReal_neg, neg_smul, smul_neg] using ht'
+  have h₂ := a.le_re_apply_of_isLocalMinOn_quadraticEnergy_ray ha hmin hneg
   simp only [map_neg] at h₂
   linarith
 
 /-- **Variational inequality on a convex constraint** for a Hermitian form `a`: if `u ∈ C` is a
-local minimizer of `quadraticEnergy a ℓ` on a convex set `C`, then `Re(ℓ (v - u)) ≤ Re(a u (v - u))`
-for every `v ∈ C`. -/
+local minimizer of `a.quadraticEnergy ℓ` on a convex set `C`, then
+`re (ℓ (v - u)) ≤ re (a u (v - u))` for every `v ∈ C`. -/
 theorem le_re_apply_sub_of_isLocalMinOn_quadraticEnergy_convex [Module ℝ V] [IsScalarTower ℝ 𝕜 V]
-    {a : V →L⋆[𝕜] V →L[𝕜] 𝕜} (ha : ∀ x y, a x y = star (a y x)) {ℓ : StrongDual 𝕜 V}
-    {C : Set V} (hC : Convex ℝ C) {u : V} (hu : u ∈ C)
-    (hmin : IsLocalMinOn (quadraticEnergy a ℓ) C u) {v : V} (hv : v ∈ C) :
-    RCLike.re (ℓ (v - u)) ≤ RCLike.re (a u (v - u)) := by
-  refine le_re_apply_of_isLocalMinOn_quadraticEnergy_ray ha hmin ?_
+    (ha : ∀ x y, a x y = star (a y x)) {C : Set V} (hC : Convex ℝ C) {u : V} (hu : u ∈ C)
+    (hmin : IsLocalMinOn (a.quadraticEnergy ℓ) C u) {v : V} (hv : v ∈ C) :
+    re (ℓ (v - u)) ≤ re (a u (v - u)) := by
+  refine a.le_re_apply_of_isLocalMinOn_quadraticEnergy_ray ha hmin ?_
   filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with t ht
-  rw [← RCLike.algebraMap_eq_ofReal, algebraMap_smul]
+  rw [← algebraMap_eq_ofReal, algebraMap_smul]
   exact hC.add_smul_sub_mem hu hv (Ioo_subset_Icc_self ht)
 
 /-- **Two-sided real-part variation** along a real affine subspace for a Hermitian form `a`: at a
-local minimizer `u ∈ g +ᵥ W` of `quadraticEnergy a ℓ` on `g +ᵥ W` (`W : Submodule ℝ V`),
-`Re(a u w) = Re(ℓ w)` for all `w ∈ W`. -/
+local minimizer `u ∈ g +ᵥ W` of `a.quadraticEnergy ℓ` on `g +ᵥ W` (`W : Submodule ℝ V`),
+`re (a u w) = re (ℓ w)` for all `w ∈ W`. -/
 theorem re_apply_eq_re_of_isLocalMinOn_quadraticEnergy_vadd_real
-    [Module ℝ V] [IsScalarTower ℝ 𝕜 V] {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ x y, a x y = star (a y x)) {ℓ : StrongDual 𝕜 V} {W : Submodule ℝ V} {g u : V}
-    (hu : u ∈ g +ᵥ (W : Set V))
-    (hmin : IsLocalMinOn (quadraticEnergy a ℓ) (g +ᵥ (W : Set V)) u) {w : V} (hw : w ∈ W) :
-    RCLike.re (a u w) = RCLike.re (ℓ w) := by
-  refine re_apply_eq_re_of_isLocalMinOn_quadraticEnergy_line ha hmin
+    [Module ℝ V] [IsScalarTower ℝ 𝕜 V] (ha : ∀ x y, a x y = star (a y x))
+    {W : Submodule ℝ V} {g u : V} (hu : u ∈ g +ᵥ (W : Set V))
+    (hmin : IsLocalMinOn (a.quadraticEnergy ℓ) (g +ᵥ (W : Set V)) u) {w : V} (hw : w ∈ W) :
+    re (a u w) = re (ℓ w) := by
+  refine a.re_apply_eq_re_of_isLocalMinOn_quadraticEnergy_line ha hmin
     (Eventually.of_forall fun t ↦ ?_)
-  rw [← RCLike.algebraMap_eq_ofReal, algebraMap_smul]
-  exact add_mem_vadd_set hu (W.smul_mem t hw)
+  rw [← algebraMap_eq_ofReal, algebraMap_smul]
+  exact TauCeti.add_mem_vadd_set hu (W.smul_mem t hw)
 
-/-- **Weak Euler--Lagrange equation** on an affine subspace `g +ᵥ W` for a Hermitian form `a`: if
-`u ∈ g +ᵥ W` is a local minimizer of `quadraticEnergy a ℓ` on `g +ᵥ W` (`W : Submodule 𝕜 V`), then
+/-- **Weak Euler--Lagrange equation** on an affine coset `g +ᵥ W` for a Hermitian form `a`: if
+`u ∈ g +ᵥ W` is a local minimizer of `a.quadraticEnergy ℓ` on `g +ᵥ W` (`W : Submodule 𝕜 V`), then
 `a u w = ℓ w` for every `w ∈ W` (Hunter, Definition 4.3 and Proposition 4.5). -/
-theorem apply_eq_of_isLocalMinOn_quadraticEnergy_vadd {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ x y, a x y = star (a y x)) {ℓ : StrongDual 𝕜 V} {W : Submodule 𝕜 V} {g u : V}
+theorem apply_eq_of_isLocalMinOn_quadraticEnergy_vadd
+    (ha : ∀ x y, a x y = star (a y x)) {W : Submodule 𝕜 V} {g u : V}
     (hu : u ∈ g +ᵥ (W : Set V))
-    (hmin : IsLocalMinOn (quadraticEnergy a ℓ) (g +ᵥ (W : Set V)) u) {w : V} (hw : w ∈ W) :
+    (hmin : IsLocalMinOn (a.quadraticEnergy ℓ) (g +ᵥ (W : Set V)) u) {w : V} (hw : w ∈ W) :
     a u w = ℓ w := by
   let : NormedSpace ℝ V := NormedSpace.restrictScalars ℝ 𝕜 V
   have : IsScalarTower ℝ 𝕜 V := IsScalarTower.restrictScalars ℝ 𝕜 V
-  exact RCLike.apply_eq_of_re_eq_of_re_I_smul_eq
-    (re_apply_eq_re_of_isLocalMinOn_quadraticEnergy_vadd_real (W := W.restrictScalars ℝ) ha hu
+  exact apply_eq_of_re_eq_of_re_I_smul_eq
+    (a.re_apply_eq_re_of_isLocalMinOn_quadraticEnergy_vadd_real (W := W.restrictScalars ℝ) ha hu
       hmin hw)
-    (re_apply_eq_re_of_isLocalMinOn_quadraticEnergy_vadd_real (W := W.restrictScalars ℝ) ha hu
-      hmin (W.smul_mem RCLike.I hw))
+    (a.re_apply_eq_re_of_isLocalMinOn_quadraticEnergy_vadd_real (W := W.restrictScalars ℝ) ha hu
+      hmin (W.smul_mem I hw))
 
-/-- **Weak Euler--Lagrange equation** at a local minimizer on `u +ᵥ W` for a Hermitian form `a` and
-a `𝕜`-submodule `W`: `a u w = ℓ w` for every `w ∈ W`. -/
-theorem apply_eq_of_isLocalMinOn_quadraticEnergy_vadd_self {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ x y, a x y = star (a y x)) {ℓ : StrongDual 𝕜 V} {W : Submodule 𝕜 V} {u : V}
-    (hmin : IsLocalMinOn (quadraticEnergy a ℓ) (u +ᵥ (W : Set V)) u) {w : V} (hw : w ∈ W) :
-    a u w = ℓ w :=
-  apply_eq_of_isLocalMinOn_quadraticEnergy_vadd ha ⟨0, W.zero_mem, add_zero u⟩ hmin hw
-
-/-- Global-minimizer specialization of `apply_eq_of_isLocalMinOn_quadraticEnergy_vadd` for a
-Hermitian form `a`. -/
-theorem apply_eq_of_isMinOn_quadraticEnergy_vadd {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ x y, a x y = star (a y x)) {ℓ : StrongDual 𝕜 V} {W : Submodule 𝕜 V} {g u : V}
-    (hu : u ∈ g +ᵥ (W : Set V))
-    (hmin : IsMinOn (quadraticEnergy a ℓ) (g +ᵥ (W : Set V)) u) {w : V} (hw : w ∈ W) :
-    a u w = ℓ w :=
-  apply_eq_of_isLocalMinOn_quadraticEnergy_vadd ha hu hmin.isLocalMinOn hw
-
-/-- **Unconstrained weak Euler--Lagrange equation** at a local minimizer of `quadraticEnergy a ℓ`
-for a Hermitian form `a`: `a u v = ℓ v` for every `v : V`. -/
-theorem apply_eq_of_isLocalMin_quadraticEnergy {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ x y, a x y = star (a y x)) {ℓ : StrongDual 𝕜 V} {u : V}
-    (hmin : IsLocalMin (quadraticEnergy a ℓ) u) (v : V) :
+/-- **Unconstrained weak Euler--Lagrange equation** at a local minimizer of `a.quadraticEnergy ℓ`
+for a Hermitian form `a`: `a u v = ℓ v` for every `v : V` (without requiring `re (a w w) ≥ 0`). -/
+theorem apply_eq_of_isLocalMin_quadraticEnergy
+    (ha : ∀ x y, a x y = star (a y x)) {u : V}
+    (hmin : IsLocalMin (a.quadraticEnergy ℓ) u) (v : V) :
     a u v = ℓ v := by
-  have hvadd : u +ᵥ ((⊤ : Submodule 𝕜 V) : Set V) = Set.univ := by
+  have hvadd : (0 : V) +ᵥ ((⊤ : Submodule 𝕜 V) : Set V) = univ := by
     ext x
     simp
-  refine apply_eq_of_isLocalMinOn_quadraticEnergy_vadd_self (W := ⊤) ha ?_ trivial
+  refine a.apply_eq_of_isLocalMinOn_quadraticEnergy_vadd (W := ⊤) (g := 0) ha (by simp) ?_ trivial
   rw [hvadd]
-  exact hmin.isLocalMinOn Set.univ
-
-/-- Global unconstrained specialization of `apply_eq_of_isLocalMin_quadraticEnergy` for a Hermitian
-form `a`. -/
-theorem apply_eq_of_isMinOn_quadraticEnergy_univ {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ x y, a x y = star (a y x)) {ℓ : StrongDual 𝕜 V} {u : V}
-    (hmin : IsMinOn (quadraticEnergy a ℓ) Set.univ u) (v : V) :
-    a u v = ℓ v :=
-  apply_eq_of_isLocalMin_quadraticEnergy ha (isLocalMinOn_univ_iff.mp hmin.isLocalMinOn) v
-
-/-! ### Exact energy gap and equivalence with minimality for nonnegative forms -/
-
-/-- **Exact energy gap** for a Hermitian form `a` along a test direction `w` satisfying
-`Re(a u w) = Re(ℓ w)`: `E(u + w) - E(u) = Re(a w w)` (Hunter, Corollary 4.6). -/
-theorem quadraticEnergy_add_sub_eq_re_of_re_eq {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ x y, a x y = star (a y x)) {ℓ : StrongDual 𝕜 V} {u w : V}
-    (h : RCLike.re (a u w) = RCLike.re (ℓ w)) :
-    quadraticEnergy a ℓ (u + w) - quadraticEnergy a ℓ u = RCLike.re (a w w) := by
-  rw [quadraticEnergy_add_sub_of_eq_star ha ℓ u w, map_sub, h, sub_self, mul_zero, zero_add]
-
-/-- **Exact energy gap** for a Hermitian form `a` along a test direction `w` solving `a u w = ℓ w`:
-`E(u + w) - E(u) = Re(a w w)` (Hunter, Corollary 4.6). -/
-theorem quadraticEnergy_add_sub_eq_re_of_apply_eq {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ x y, a x y = star (a y x)) {ℓ : StrongDual 𝕜 V} {u w : V} (h : a u w = ℓ w) :
-    quadraticEnergy a ℓ (u + w) - quadraticEnergy a ℓ u = RCLike.re (a w w) :=
-  quadraticEnergy_add_sub_eq_re_of_re_eq ha (congrArg RCLike.re h)
-
-/-- **Exact energy gap** relative to a submodule `W` for a Hermitian form `a`: if `v - u ∈ W` and
-`u` solves `a u w = ℓ w` for all `w ∈ W`, then `E(v) - E(u) = Re(a (v - u) (v - u))`. -/
-theorem quadraticEnergy_sub_eq_re_of_forall_apply_eq {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ x y, a x y = star (a y x)) {ℓ : StrongDual 𝕜 V} {W : Submodule 𝕜 V} {u v : V}
-    (hmem : v - u ∈ W) (hsol : ∀ w ∈ W, a u w = ℓ w) :
-    quadraticEnergy a ℓ v - quadraticEnergy a ℓ u = RCLike.re (a (v - u) (v - u)) := by
-  simpa only [add_sub_cancel] using quadraticEnergy_add_sub_eq_re_of_apply_eq ha (hsol (v - u) hmem)
+  exact hmin.isLocalMinOn univ
 
 /-- At a vector `u` satisfying `a u u = ℓ u` (in particular, a homogeneous weak solution on `W`
-with `u ∈ W`), the energy value is `E(u) = -Re(a u u) = -Re(ℓ u)`. -/
-theorem quadraticEnergy_eq_neg_re_of_apply_self_eq {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    {ℓ : StrongDual 𝕜 V} {u : V} (h : a u u = ℓ u) :
-    quadraticEnergy a ℓ u = -RCLike.re (a u u) := by
+with `u ∈ W`), the energy value is `E(u) = -re (a u u)`. -/
+theorem quadraticEnergy_eq_neg_re_of_apply_self_eq {u : V} (h : a u u = ℓ u) :
+    a.quadraticEnergy ℓ u = -re (a u u) := by
   rw [quadraticEnergy_apply, ← h]
   ring
 
 /-- **Equivalence of the variational inequality and minimality** on a convex set `C` when `a` is
 Hermitian and nonnegative on differences of points in `C`. -/
 theorem isMinOn_quadraticEnergy_iff_of_convex [Module ℝ V] [IsScalarTower ℝ 𝕜 V]
-    {a : V →L⋆[𝕜] V →L[𝕜] 𝕜} (ha : ∀ x y, a x y = star (a y x)) {ℓ : StrongDual 𝕜 V}
-    {C : Set V} (hC : Convex ℝ C) (hpos : ∀ x ∈ C, ∀ y ∈ C, 0 ≤ RCLike.re (a (y - x) (y - x)))
-    {u : V} (hu : u ∈ C) :
-    IsMinOn (quadraticEnergy a ℓ) C u ↔
-      ∀ v ∈ C, RCLike.re (ℓ (v - u)) ≤ RCLike.re (a u (v - u)) := by
-  refine ⟨fun hmin v hv ↦ le_re_apply_sub_of_isLocalMinOn_quadraticEnergy_convex ha hC hu
+    (ha : ∀ x y, a x y = star (a y x)) {C : Set V} (hC : Convex ℝ C)
+    (hpos : ∀ x ∈ C, ∀ y ∈ C, 0 ≤ re (a (y - x) (y - x))) {u : V} (hu : u ∈ C) :
+    IsMinOn (a.quadraticEnergy ℓ) C u ↔
+      ∀ v ∈ C, re (ℓ (v - u)) ≤ re (a u (v - u)) := by
+  refine ⟨fun hmin v hv ↦ a.le_re_apply_sub_of_isLocalMinOn_quadraticEnergy_convex ha hC hu
     hmin.isLocalMinOn hv, fun hvi ↦ isMinOn_iff.mpr fun v hv ↦ ?_⟩
-  have hexp := quadraticEnergy_sub_quadraticEnergy_of_eq_star ha ℓ u v
-  rw [map_sub] at hexp
+  have hexp := a.quadraticEnergy_add ℓ ha u (v - u)
+  rw [add_sub_cancel, map_sub] at hexp
   linarith [hvi v hv, hpos u hu v hv]
 
-/-- **Equivalence of the weak Euler--Lagrange equation and minimality** on an affine subspace
-`g +ᵥ W` for a Hermitian form `a` when `Re(a w w) ≥ 0` for all `w ∈ W` (Hunter, Corollary 4.6).
-Nonnegativity on `W` is necessary (`q(u) = -‖u‖²` makes the weak solution `0` a maximizer). -/
-theorem isMinOn_quadraticEnergy_vadd_iff {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ x y, a x y = star (a y x)) {ℓ : StrongDual 𝕜 V} {W : Submodule 𝕜 V}
-    (hpos : ∀ w ∈ W, 0 ≤ RCLike.re (a w w)) {g u : V} (hu : u ∈ g +ᵥ (W : Set V)) :
-    IsMinOn (quadraticEnergy a ℓ) (g +ᵥ (W : Set V)) u ↔ ∀ w ∈ W, a u w = ℓ w := by
-  refine ⟨fun hmin w hw ↦ apply_eq_of_isMinOn_quadraticEnergy_vadd ha hu hmin hw,
-    fun hsol ↦ isMinOn_iff.mpr fun v hv ↦ ?_⟩
-  have hvu : v - u ∈ W := sub_mem_of_mem_vadd_set hv hu
-  have hgap := quadraticEnergy_sub_eq_re_of_forall_apply_eq ha hvu hsol
+/-- **Equivalence of the weak Euler--Lagrange equation and minimality** on an affine coset
+`g +ᵥ W` for a Hermitian form `a` when `re (a w w) ≥ 0` for all `w ∈ W` (Hunter, Corollary 4.6). -/
+theorem isMinOn_quadraticEnergy_vadd_iff
+    (ha : ∀ x y, a x y = star (a y x)) {W : Submodule 𝕜 V}
+    (hpos : ∀ w ∈ W, 0 ≤ re (a w w)) {g u : V} (hu : u ∈ g +ᵥ (W : Set V)) :
+    IsMinOn (a.quadraticEnergy ℓ) (g +ᵥ (W : Set V)) u ↔ ∀ w ∈ W, a u w = ℓ w := by
+  refine ⟨fun hmin w hw ↦ a.apply_eq_of_isLocalMinOn_quadraticEnergy_vadd ha hu
+    hmin.isLocalMinOn hw, fun hsol ↦ isMinOn_iff.mpr fun v hv ↦ ?_⟩
+  have hvu : v - u ∈ W := TauCeti.sub_mem_of_mem_vadd_set hv hu
+  have hgap := a.quadraticEnergy_add_of_forall_apply_eq ℓ ha hsol hvu
+  rw [add_sub_cancel] at hgap
   linarith [hpos (v - u) hvu]
-
-/-- **Unconstrained equivalence** between `IsMinOn (quadraticEnergy a ℓ) Set.univ u` and the weak
-equation `∀ v, a u v = ℓ v` for a nonnegative Hermitian form `a`. -/
-theorem isMinOn_quadraticEnergy_univ_iff {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ x y, a x y = star (a y x)) {ℓ : StrongDual 𝕜 V}
-    (hpos : ∀ w, 0 ≤ RCLike.re (a w w)) {u : V} :
-    IsMinOn (quadraticEnergy a ℓ) Set.univ u ↔ ∀ v, a u v = ℓ v := by
-  simpa using isMinOn_quadraticEnergy_vadd_iff (W := ⊤) (g := 0) ha (fun w _ ↦ hpos w) (by simp)
 
 end FirstVariation
 
-/-! ### Coercive forms: quadratic growth, near-minimizer rate, and bounded sublevels -/
+/-! ### Non-Hermitian coercive growth, near-minimizer rates, and bounded sublevels -/
 
 section Coercive
 
 variable {𝕜 V : Type*} [RCLike 𝕜] [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
-
-/-- **Quantitative quadratic growth** relative to a submodule `W` for a Hermitian form `a`: if
-`v - u ∈ W`, `c * ‖w‖² ≤ Re(a w w)` for all `w ∈ W`, and `u` solves `a u w = ℓ w` on `W`, then
-`c * ‖v - u‖² ≤ E(v) - E(u)`. -/
-theorem mul_norm_sub_sq_le_quadraticEnergy_sub_of_forall_apply_eq {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ x y, a x y = star (a y x)) {ℓ : StrongDual 𝕜 V} {W : Submodule 𝕜 V} {c : ℝ}
-    (hcoer : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w)) {u v : V}
-    (hmem : v - u ∈ W) (hsol : ∀ w ∈ W, a u w = ℓ w) :
-    c * ‖v - u‖ ^ 2 ≤ quadraticEnergy a ℓ v - quadraticEnergy a ℓ u := by
-  rw [quadraticEnergy_sub_eq_re_of_forall_apply_eq ha hmem hsol]
-  exact hcoer (v - u) hmem
-
-/-- **Quantitative quadratic growth** along a vector `h` for a Hermitian form `a`: if
-`c * ‖h‖² ≤ Re(a h h)` and `a u h = ℓ h`, then `c * ‖h‖² ≤ E(u + h) - E(u)`. -/
-theorem mul_norm_sq_le_quadraticEnergy_add_sub_of_apply_eq {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ x y, a x y = star (a y x)) {ℓ : StrongDual 𝕜 V} {c : ℝ} {u h : V}
-    (hcoer : c * ‖h‖ ^ 2 ≤ RCLike.re (a h h)) (hsol : a u h = ℓ h) :
-    c * ‖h‖ ^ 2 ≤ quadraticEnergy a ℓ (u + h) - quadraticEnergy a ℓ u := by
-  rwa [quadraticEnergy_add_sub_eq_re_of_apply_eq ha hsol]
+  {a : V →L⋆[𝕜] V →L[𝕜] 𝕜} {ℓ : StrongDual 𝕜 V}
 
 /-- **Quadratic energy-gap lower bound on a convex set** around a local minimizer `u ∈ C`: for
-every `v ∈ C`, `Re(a (v - u) (v - u)) ≤ E(v) - E(u)`. No symmetry of `a` is required. -/
+every `v ∈ C`, `re (a (v - u) (v - u)) ≤ E(v) - E(u)`. No symmetry of `a` is required. -/
 theorem re_apply_sub_self_le_quadraticEnergy_sub_of_isLocalMinOn_convex
-    [Module ℝ V] [IsScalarTower ℝ 𝕜 V] {a : V →L⋆[𝕜] V →L[𝕜] 𝕜} {ℓ : StrongDual 𝕜 V}
-    {C : Set V} (hC : Convex ℝ C) {u v : V} (hu : u ∈ C) (hv : v ∈ C)
-    (hmin : IsLocalMinOn (quadraticEnergy a ℓ) C u) :
-    RCLike.re (a (v - u) (v - u)) ≤ quadraticEnergy a ℓ v - quadraticEnergy a ℓ u := by
+    [Module ℝ V] [IsScalarTower ℝ 𝕜 V] {C : Set V} (hC : Convex ℝ C) {u v : V}
+    (hu : u ∈ C) (hv : v ∈ C) (hmin : IsLocalMinOn (a.quadraticEnergy ℓ) C u) :
+    re (a (v - u) (v - u)) ≤ a.quadraticEnergy ℓ v - a.quadraticEnergy ℓ u := by
   have hpath_eq (t : ℝ) : u + (t : 𝕜) • (v - u) = t • v + (1 - t) • u := by
-    rw [← RCLike.algebraMap_eq_ofReal, algebraMap_smul]
+    rw [← algebraMap_eq_ofReal, algebraMap_smul]
     module
   have hcont : Continuous (fun t : ℝ ↦ u + (t : 𝕜) • (v - u)) :=
-    continuous_const.add ((RCLike.continuous_ofReal.comp continuous_id).smul continuous_const)
+    continuous_const.add ((continuous_ofReal.comp continuous_id).smul continuous_const)
   have htend : Tendsto (fun t : ℝ ↦ u + (t : 𝕜) • (v - u)) (𝓝[>] 0) (𝓝[C] u) := by
     refine tendsto_nhdsWithin_iff.mpr ⟨?_, ?_⟩
-    · simpa only [RCLike.ofReal_zero, zero_smul, add_zero] using
+    · simpa only [ofReal_zero, zero_smul, add_zero] using
         (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
     · filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with t ht
-      rw [← RCLike.algebraMap_eq_ofReal, algebraMap_smul]
+      rw [← algebraMap_eq_ofReal, algebraMap_smul]
       exact hC.add_smul_sub_mem hu hv (Ioo_subset_Icc_self ht)
   have hle : ∀ᶠ t : ℝ in 𝓝[>] 0,
-      (1 - t) * RCLike.re (a (v - u) (v - u)) ≤
-        quadraticEnergy a ℓ v - quadraticEnergy a ℓ u := by
+      (1 - t) * re (a (v - u) (v - u)) ≤ a.quadraticEnergy ℓ v - a.quadraticEnergy ℓ u := by
     filter_upwards [htend.eventually hmin, self_mem_nhdsWithin] with t ht htpos
-    have ht' : quadraticEnergy a ℓ u ≤ quadraticEnergy a ℓ (u + (t : 𝕜) • (v - u)) := ht
+    have ht' : a.quadraticEnergy ℓ u ≤ a.quadraticEnergy ℓ (u + (t : 𝕜) • (v - u)) := ht
     rw [hpath_eq t] at ht'
-    have hcombo := quadraticEnergy_combo_add_mul_sub a ℓ (by ring : t + (1 - t) = 1) v u
-    have hmul : t * ((1 - t) * RCLike.re (a (v - u) (v - u))) ≤
-        t * (quadraticEnergy a ℓ v - quadraticEnergy a ℓ u) := by
+    have hcombo := a.quadraticEnergy_combo_add_mul_sub ℓ (by ring : t + (1 - t) = 1) v u
+    have hmul : t * ((1 - t) * re (a (v - u) (v - u))) ≤
+        t * (a.quadraticEnergy ℓ v - a.quadraticEnergy ℓ u) := by
       linarith
     exact le_of_mul_le_mul_left hmul htpos
-  have hlim : Tendsto (fun t : ℝ ↦ (1 - t) * RCLike.re (a (v - u) (v - u))) (𝓝[>] 0)
-      (𝓝 (RCLike.re (a (v - u) (v - u)))) := by
-    have hc : Continuous (fun t : ℝ ↦ (1 - t) * RCLike.re (a (v - u) (v - u))) := by fun_prop
+  have hlim : Tendsto (fun t : ℝ ↦ (1 - t) * re (a (v - u) (v - u))) (𝓝[>] 0)
+      (𝓝 (re (a (v - u) (v - u)))) := by
+    have hc : Continuous (fun t : ℝ ↦ (1 - t) * re (a (v - u) (v - u))) := by fun_prop
     simpa using (hc.tendsto 0).mono_left nhdsWithin_le_nhds
   exact le_of_tendsto hlim hle
 
 /-- **Quantitative quadratic growth on a convex set** around a local minimizer `u ∈ C`: if
-`c * ‖y - x‖² ≤ Re(a (y - x) (y - x))` on `C`, then `c * ‖v - u‖² ≤ E(v) - E(u)` for all `v ∈ C`.
+`c * ‖y - x‖² ≤ re (a (y - x) (y - x))` on `C`, then `c * ‖v - u‖² ≤ E(v) - E(u)` for all `v ∈ C`.
 No symmetry of `a` is required. -/
 theorem mul_norm_sub_sq_le_quadraticEnergy_sub_of_isLocalMinOn_convex
-    [Module ℝ V] [IsScalarTower ℝ 𝕜 V] {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    {ℓ : StrongDual 𝕜 V} {C : Set V} (hC : Convex ℝ C)
-    {c : ℝ} (hcoer : ∀ x ∈ C, ∀ y ∈ C, c * ‖y - x‖ ^ 2 ≤ RCLike.re (a (y - x) (y - x)))
-    {u v : V} (hu : u ∈ C) (hv : v ∈ C) (hmin : IsLocalMinOn (quadraticEnergy a ℓ) C u) :
-    c * ‖v - u‖ ^ 2 ≤ quadraticEnergy a ℓ v - quadraticEnergy a ℓ u :=
+    [Module ℝ V] [IsScalarTower ℝ 𝕜 V] {C : Set V} (hC : Convex ℝ C)
+    {c : ℝ} (hcoer : ∀ x ∈ C, ∀ y ∈ C, c * ‖y - x‖ ^ 2 ≤ re (a (y - x) (y - x)))
+    {u v : V} (hu : u ∈ C) (hv : v ∈ C) (hmin : IsLocalMinOn (a.quadraticEnergy ℓ) C u) :
+    c * ‖v - u‖ ^ 2 ≤ a.quadraticEnergy ℓ v - a.quadraticEnergy ℓ u :=
   (hcoer u hu v hv).trans
-    (re_apply_sub_self_le_quadraticEnergy_sub_of_isLocalMinOn_convex hC hu hv hmin)
+    (a.re_apply_sub_self_le_quadraticEnergy_sub_of_isLocalMinOn_convex hC hu hv hmin)
 
 /-- **Near-minimizer distance rate on a convex set** `C`: for `c > 0`, every `v ∈ C` satisfies
 `‖v - u‖² ≤ (E(v) - E(u)) / c` around a local minimizer `u ∈ C`. No symmetry of `a` is required. -/
 theorem norm_sub_sq_le_quadraticEnergy_sub_div_of_isLocalMinOn_convex
-    [Module ℝ V] [IsScalarTower ℝ 𝕜 V] {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    {ℓ : StrongDual 𝕜 V} {C : Set V} (hC : Convex ℝ C) {c : ℝ} (hc : 0 < c)
-    (hcoer : ∀ x ∈ C, ∀ y ∈ C, c * ‖y - x‖ ^ 2 ≤ RCLike.re (a (y - x) (y - x)))
-    {u v : V} (hu : u ∈ C) (hv : v ∈ C) (hmin : IsLocalMinOn (quadraticEnergy a ℓ) C u) :
-    ‖v - u‖ ^ 2 ≤ (quadraticEnergy a ℓ v - quadraticEnergy a ℓ u) / c := by
+    [Module ℝ V] [IsScalarTower ℝ 𝕜 V] {C : Set V} (hC : Convex ℝ C) {c : ℝ} (hc : 0 < c)
+    (hcoer : ∀ x ∈ C, ∀ y ∈ C, c * ‖y - x‖ ^ 2 ≤ re (a (y - x) (y - x)))
+    {u v : V} (hu : u ∈ C) (hv : v ∈ C) (hmin : IsLocalMinOn (a.quadraticEnergy ℓ) C u) :
+    ‖v - u‖ ^ 2 ≤ (a.quadraticEnergy ℓ v - a.quadraticEnergy ℓ u) / c := by
   rw [le_div_iff₀ hc, mul_comm]
-  exact mul_norm_sub_sq_le_quadraticEnergy_sub_of_isLocalMinOn_convex hC hcoer hu hv hmin
+  exact a.mul_norm_sub_sq_le_quadraticEnergy_sub_of_isLocalMinOn_convex hC hcoer hu hv hmin
 
 /-- **Near-minimizer distance rate** on `g +ᵥ W`: for `c > 0`, every admissible `v ∈ g +ᵥ W`
 satisfies `‖v - u‖² ≤ (E(v) - E(u)) / c` around a local minimizer `u ∈ g +ᵥ W`. No symmetry of `a`
 is required. -/
-theorem norm_sub_sq_le_quadraticEnergy_sub_div_of_isLocalMinOn_vadd {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    {ℓ : StrongDual 𝕜 V} {W : Submodule 𝕜 V} {c : ℝ}
-    (hc : 0 < c) (hcoer : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w)) {g u v : V}
+theorem norm_sub_sq_le_quadraticEnergy_sub_div_of_isLocalMinOn_vadd
+    {W : Submodule 𝕜 V} {c : ℝ} (hc : 0 < c)
+    (hcoer : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ re (a w w)) {g u v : V}
     (hu : u ∈ g +ᵥ (W : Set V)) (hv : v ∈ g +ᵥ (W : Set V))
-    (hmin : IsLocalMinOn (quadraticEnergy a ℓ) (g +ᵥ (W : Set V)) u) :
-    ‖v - u‖ ^ 2 ≤ (quadraticEnergy a ℓ v - quadraticEnergy a ℓ u) / c := by
+    (hmin : IsLocalMinOn (a.quadraticEnergy ℓ) (g +ᵥ (W : Set V)) u) :
+    ‖v - u‖ ^ 2 ≤ (a.quadraticEnergy ℓ v - a.quadraticEnergy ℓ u) / c := by
   let : NormedSpace ℝ V := NormedSpace.restrictScalars ℝ 𝕜 V
   have : IsScalarTower ℝ 𝕜 V := IsScalarTower.restrictScalars ℝ 𝕜 V
-  exact norm_sub_sq_le_quadraticEnergy_sub_div_of_isLocalMinOn_convex
+  exact a.norm_sub_sq_le_quadraticEnergy_sub_div_of_isLocalMinOn_convex
     ((W.restrictScalars ℝ).convex.vadd g) hc
-    (fun _ hx _ hy ↦ hcoer _ (sub_mem_of_mem_vadd_set hy hx)) hu hv hmin
-
-/-- **Unconstrained near-minimizer distance rate**: for `c > 0` and `∀ w, c * ‖w‖² ≤ Re(a w w)`,
-every `v : V` satisfies `‖v - u‖² ≤ (E(v) - E(u)) / c` around a local minimizer `u`. No symmetry of
-`a` is required. -/
-theorem norm_sub_sq_le_quadraticEnergy_sub_div {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    {ℓ : StrongDual 𝕜 V} {c : ℝ} (hc : 0 < c)
-    (hcoer : ∀ w, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w)) {u v : V}
-    (hmin : IsLocalMin (quadraticEnergy a ℓ) u) :
-    ‖v - u‖ ^ 2 ≤ (quadraticEnergy a ℓ v - quadraticEnergy a ℓ u) / c :=
-  norm_sub_sq_le_quadraticEnergy_sub_div_of_isLocalMinOn_vadd (W := ⊤) (g := 0) hc
-    (fun w _ ↦ hcoer w) (by simp) (by simp)
-    (by simpa using hmin.isLocalMinOn Set.univ)
+    (fun _ hx _ hy ↦ hcoer _ (TauCeti.sub_mem_of_mem_vadd_set hy hx)) hu hv hmin
 
 /-- **Norm convergence of near-minimizers on a convex set** `C`: if `a` is `c`-coercive on
-differences in `C` (`c > 0`), `u ∈ C` locally minimizes `quadraticEnergy a ℓ` on `C`, and
+differences in `C` (`c > 0`), `u ∈ C` locally minimizes `a.quadraticEnergy ℓ` on `C`, and
 `x i ∈ C` satisfies `E(x i) → E(u)`, then `x i → u` in norm. No symmetry of `a` is required. -/
 theorem tendsto_of_tendsto_quadraticEnergy_convex [Module ℝ V] [IsScalarTower ℝ 𝕜 V]
-    {ι : Type*} {l : Filter ι} {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    {ℓ : StrongDual 𝕜 V} {C : Set V} (hC : Convex ℝ C) {c : ℝ} (hc : 0 < c)
-    (hcoer : ∀ x ∈ C, ∀ y ∈ C, c * ‖y - x‖ ^ 2 ≤ RCLike.re (a (y - x) (y - x)))
-    {u : V} (hu : u ∈ C) (hmin : IsLocalMinOn (quadraticEnergy a ℓ) C u)
+    {ι : Type*} {l : Filter ι} {C : Set V} (hC : Convex ℝ C) {c : ℝ} (hc : 0 < c)
+    (hcoer : ∀ x ∈ C, ∀ y ∈ C, c * ‖y - x‖ ^ 2 ≤ re (a (y - x) (y - x)))
+    {u : V} (hu : u ∈ C) (hmin : IsLocalMinOn (a.quadraticEnergy ℓ) C u)
     {x : ι → V} (hx : ∀ᶠ i in l, x i ∈ C)
-    (hE : Tendsto (fun i ↦ quadraticEnergy a ℓ (x i)) l (𝓝 (quadraticEnergy a ℓ u))) :
+    (hE : Tendsto (fun i ↦ a.quadraticEnergy ℓ (x i)) l (𝓝 (a.quadraticEnergy ℓ u))) :
     Tendsto x l (𝓝 u) :=
-  tendsto_of_dist_pow_le_of_tendsto_zero
+  TauCeti.tendsto_of_dist_pow_le_of_tendsto_zero
     (hx.mono fun _ hi ↦ by
       simpa only [← dist_eq_norm] using
-        norm_sub_sq_le_quadraticEnergy_sub_div_of_isLocalMinOn_convex hC hc hcoer hu hi hmin)
-    (by simpa only [sub_self, zero_div] using (hE.sub_const (quadraticEnergy a ℓ u)).div_const c)
+        a.norm_sub_sq_le_quadraticEnergy_sub_div_of_isLocalMinOn_convex hC hc hcoer hu hi hmin)
+    (by simpa only [sub_self, zero_div] using (hE.sub_const (a.quadraticEnergy ℓ u)).div_const c)
 
-/-- **Norm convergence of near-minimizers on `g +ᵥ W`**: if `a` is `c`-coercive on `W` (`c > 0`),
-`u ∈ g +ᵥ W` locally minimizes `quadraticEnergy a ℓ` on `g +ᵥ W`, and `x i ∈ g +ᵥ W` satisfies
-`E(x i) → E(u)`, then `x i → u` in norm. No symmetry of `a` is required. -/
+/-- **Norm convergence of near-minimizers on `g +ᵥ W`** around a local minimizer `u ∈ g +ᵥ W`,
+without assuming symmetry of `a`. -/
 theorem tendsto_of_tendsto_quadraticEnergy_vadd {ι : Type*} {l : Filter ι}
-    {a : V →L⋆[𝕜] V →L[𝕜] 𝕜} {ℓ : StrongDual 𝕜 V}
     {W : Submodule 𝕜 V} {c : ℝ} (hc : 0 < c)
-    (hcoer : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w)) {g u : V}
-    (hu : u ∈ g +ᵥ (W : Set V)) (hmin : IsLocalMinOn (quadraticEnergy a ℓ) (g +ᵥ (W : Set V)) u)
+    (hcoer : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ re (a w w)) {g u : V}
+    (hu : u ∈ g +ᵥ (W : Set V)) (hmin : IsLocalMinOn (a.quadraticEnergy ℓ) (g +ᵥ (W : Set V)) u)
     {x : ι → V} (hx : ∀ᶠ i in l, x i ∈ g +ᵥ (W : Set V))
-    (hE : Tendsto (fun i ↦ quadraticEnergy a ℓ (x i)) l (𝓝 (quadraticEnergy a ℓ u))) :
+    (hE : Tendsto (fun i ↦ a.quadraticEnergy ℓ (x i)) l (𝓝 (a.quadraticEnergy ℓ u))) :
     Tendsto x l (𝓝 u) :=
-  tendsto_of_dist_pow_le_of_tendsto_zero
+  TauCeti.tendsto_of_dist_pow_le_of_tendsto_zero
     (hx.mono fun _ hi ↦ by
       simpa only [← dist_eq_norm] using
-        norm_sub_sq_le_quadraticEnergy_sub_div_of_isLocalMinOn_vadd hc hcoer hu hi hmin)
-    (by simpa only [sub_self, zero_div] using (hE.sub_const (quadraticEnergy a ℓ u)).div_const c)
+        a.norm_sub_sq_le_quadraticEnergy_sub_div_of_isLocalMinOn_vadd hc hcoer hu hi hmin)
+    (by simpa only [sub_self, zero_div] using (hE.sub_const (a.quadraticEnergy ℓ u)).div_const c)
 
-/-- **Unconstrained norm convergence of near-minimizers**: if `∀ w, c * ‖w‖² ≤ Re(a w w)` (`c > 0`),
-`u` locally minimizes `quadraticEnergy a ℓ`, and `E(x i) → E(u)`, then `x i → u` in norm. No
-symmetry of `a` is required. -/
-theorem tendsto_of_tendsto_quadraticEnergy {ι : Type*} {l : Filter ι}
-    {a : V →L⋆[𝕜] V →L[𝕜] 𝕜} {ℓ : StrongDual 𝕜 V} {c : ℝ} (hc : 0 < c)
-    (hcoer : ∀ w, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w)) {u : V}
-    (hmin : IsLocalMin (quadraticEnergy a ℓ) u) {x : ι → V}
-    (hE : Tendsto (fun i ↦ quadraticEnergy a ℓ (x i)) l (𝓝 (quadraticEnergy a ℓ u))) :
-    Tendsto x l (𝓝 u) :=
-  tendsto_of_tendsto_quadraticEnergy_vadd (W := ⊤) (g := 0) hc (fun w _ ↦ hcoer w) (by simp)
-    (by simpa using hmin.isLocalMinOn Set.univ) (Eventually.of_forall fun _ ↦ by simp) hE
-
-/-! ### Bounded sublevels -/
-
-/-- **Bounded sublevels** of a coercive quadratic energy on `S`: if `c * ‖u‖² ≤ Re(a u u)` on `S`
-with `c > 0`, then `HasBoundedSublevelsOn (quadraticEnergy a ℓ) S`. No symmetry of `a` is
+/-- **Bounded sublevels** of a coercive quadratic energy on `S`: if `c * ‖u‖² ≤ re (a u u)` on `S`
+with `c > 0`, then `TauCeti.HasBoundedSublevelsOn (a.quadraticEnergy ℓ) S`. No symmetry of `a` is
 required. -/
-theorem hasBoundedSublevelsOn_quadraticEnergy {a : V →L⋆[𝕜] V →L[𝕜] 𝕜} (ℓ : StrongDual 𝕜 V)
-    {S : Set V} {c : ℝ} (hc : 0 < c) (hcoer : ∀ u ∈ S, c * ‖u‖ ^ 2 ≤ RCLike.re (a u u)) :
-    HasBoundedSublevelsOn (quadraticEnergy a ℓ) S := by
-  rw [hasBoundedSublevelsOn_iff_forall_exists_le_of_le_norm]
+theorem hasBoundedSublevelsOn_quadraticEnergy (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) (ℓ : StrongDual 𝕜 V)
+    {S : Set V} {c : ℝ} (hc : 0 < c) (hcoer : ∀ u ∈ S, c * ‖u‖ ^ 2 ≤ re (a u u)) :
+    TauCeti.HasBoundedSublevelsOn (a.quadraticEnergy ℓ) S := by
+  rw [TauCeti.hasBoundedSublevelsOn_iff_forall_exists_le_of_le_norm]
   intro b
   refine ⟨max 1 ((2 * ‖ℓ‖ + max b 0) / c), fun u hu hR ↦ ?_⟩
   have h1 : 1 ≤ ‖u‖ := (le_max_left _ _).trans hR
   have h2 : 2 * ‖ℓ‖ + max b 0 ≤ ‖u‖ * c :=
     (div_le_iff₀ hc).mp ((le_max_right _ _).trans hR)
-  have hℓ : RCLike.re (ℓ u) ≤ ‖ℓ‖ * ‖u‖ :=
-    (le_abs_self _).trans ((RCLike.abs_re_le_norm (ℓ u)).trans (ℓ.le_opNorm u))
+  have hℓ : re (ℓ u) ≤ ‖ℓ‖ * ‖u‖ :=
+    (re_le_norm (ℓ u)).trans (ℓ.le_opNorm u)
   have hb0 : 0 ≤ max b 0 := le_max_right b 0
   have hb1 : b ≤ max b 0 := le_max_left b 0
   have hquad := hcoer u hu
   rw [quadraticEnergy_apply]
   nlinarith
 
-/-- **Bounded sublevels from coercivity on differences.** If `c * ‖y - x‖² ≤ Re(a (y - x) (y - x))`
-for all `x, y ∈ C` (`c > 0`), then `quadraticEnergy a ℓ` has bounded sublevels on `C`. Neither
+/-- **Bounded sublevels from coercivity on differences.** If `c * ‖y - x‖² ≤ re (a (y - x) (y - x))`
+for all `x, y ∈ C` (`c > 0`), then `a.quadraticEnergy ℓ` has bounded sublevels on `C`. Neither
 symmetry of `a` nor nonemptiness of `C` is required. -/
-theorem hasBoundedSublevelsOn_quadraticEnergy_of_sub_coercive {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
+theorem hasBoundedSublevelsOn_quadraticEnergy_of_sub_coercive (a : V →L⋆[𝕜] V →L[𝕜] 𝕜)
     (ℓ : StrongDual 𝕜 V) {C : Set V} {c : ℝ} (hc : 0 < c)
-    (hcoer : ∀ x ∈ C, ∀ y ∈ C, c * ‖y - x‖ ^ 2 ≤ RCLike.re (a (y - x) (y - x))) :
-    HasBoundedSublevelsOn (quadraticEnergy a ℓ) C := by
+    (hcoer : ∀ x ∈ C, ∀ y ∈ C, c * ‖y - x‖ ^ 2 ≤ re (a (y - x) (y - x))) :
+    TauCeti.HasBoundedSublevelsOn (a.quadraticEnergy ℓ) C := by
   rcases C.eq_empty_or_nonempty with rfl | ⟨u₀, hu₀⟩
-  · exact hasBoundedSublevelsOn_empty
-  · rw [hasBoundedSublevelsOn_iff_forall_exists_le_of_le_norm]
+  · exact TauCeti.hasBoundedSublevelsOn_empty
+  · rw [TauCeti.hasBoundedSublevelsOn_iff_forall_exists_le_of_le_norm]
     intro b
     let M : ℝ := 2 * ‖a‖ * ‖u₀‖ + 2 * ‖ℓ‖
-    refine ⟨‖u₀‖ + max 1 ((M + max (b - quadraticEnergy a ℓ u₀) 0) / c), fun u hu hR ↦ ?_⟩
+    refine ⟨‖u₀‖ + max 1 ((M + max (b - a.quadraticEnergy ℓ u₀) 0) / c), fun u hu hR ↦ ?_⟩
     set w : V := u - u₀
     have htri : ‖u‖ ≤ ‖u₀‖ + ‖w‖ := by
       simpa only [w, add_sub_cancel] using norm_add_le u₀ (u - u₀)
-    have hw_ge : max 1 ((M + max (b - quadraticEnergy a ℓ u₀) 0) / c) ≤ ‖w‖ := by linarith
+    have hw_ge : max 1 ((M + max (b - a.quadraticEnergy ℓ u₀) 0) / c) ≤ ‖w‖ := by linarith
     have hw1 : 1 ≤ ‖w‖ := (le_max_left _ _).trans hw_ge
-    have hw2 : M + max (b - quadraticEnergy a ℓ u₀) 0 ≤ ‖w‖ * c :=
+    have hw2 : M + max (b - a.quadraticEnergy ℓ u₀) 0 ≤ ‖w‖ * c :=
       (div_le_iff₀ hc).mp ((le_max_right _ _).trans hw_ge)
     dsimp only [M] at hw2
-    have ha₁ : -(‖a‖ * ‖u₀‖ * ‖w‖) ≤ RCLike.re (a u₀ w) :=
-      neg_le_of_abs_le ((RCLike.abs_re_le_norm _).trans (a.le_opNorm₂ u₀ w))
-    have ha₂ : -(‖a‖ * ‖w‖ * ‖u₀‖) ≤ RCLike.re (a w u₀) :=
-      neg_le_of_abs_le ((RCLike.abs_re_le_norm _).trans (a.le_opNorm₂ w u₀))
-    have hℓw : RCLike.re (ℓ w) ≤ ‖ℓ‖ * ‖w‖ :=
-      (le_abs_self _).trans ((RCLike.abs_re_le_norm _).trans (ℓ.le_opNorm w))
-    have hquad : c * ‖w‖ ^ 2 ≤ RCLike.re (a w w) := hcoer u₀ hu₀ u hu
-    have hinc := quadraticEnergy_add_sub a ℓ u₀ w
+    have ha₁ : -(‖a‖ * ‖u₀‖ * ‖w‖) ≤ re (a u₀ w) :=
+      neg_le_of_abs_le ((abs_re_le_norm _).trans (a.le_opNorm₂ u₀ w))
+    have ha₂ : -(‖a‖ * ‖w‖ * ‖u₀‖) ≤ re (a w u₀) :=
+      neg_le_of_abs_le ((abs_re_le_norm _).trans (a.le_opNorm₂ w u₀))
+    have hℓw : re (ℓ w) ≤ ‖ℓ‖ * ‖w‖ :=
+      (re_le_norm _).trans (ℓ.le_opNorm w)
+    have hquad : c * ‖w‖ ^ 2 ≤ re (a w w) := hcoer u₀ hu₀ u hu
+    have hinc := a.quadraticEnergy_add_sub ℓ u₀ w
     have huw : u₀ + w = u := add_sub_cancel u₀ u
     rw [huw] at hinc
-    have hb0 : 0 ≤ max (b - quadraticEnergy a ℓ u₀) 0 := le_max_right _ _
-    have hb1 : b - quadraticEnergy a ℓ u₀ ≤ max (b - quadraticEnergy a ℓ u₀) 0 := le_max_left _ _
+    have hb0 : 0 ≤ max (b - a.quadraticEnergy ℓ u₀) 0 := le_max_right _ _
+    have hb1 : b - a.quadraticEnergy ℓ u₀ ≤ max (b - a.quadraticEnergy ℓ u₀) 0 := le_max_left _ _
     nlinarith
 
-/-- **Bounded sublevels on an inhomogeneous affine subspace** `g +ᵥ W`: it suffices that `a` be
+/-- **Bounded sublevels on an inhomogeneous affine coset** `g +ᵥ W`: it suffices that `a` be
 `c`-coercive (`c > 0`) on the direction submodule `W` alone; `a` need not be symmetric and may
-vanish or be indefinite on the datum `g` (as for shifted elliptic forms with inhomogeneous boundary
-data). -/
-theorem hasBoundedSublevelsOn_quadraticEnergy_vadd {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
+vanish or be indefinite on the datum `g`. -/
+theorem hasBoundedSublevelsOn_quadraticEnergy_vadd (a : V →L⋆[𝕜] V →L[𝕜] 𝕜)
     (ℓ : StrongDual 𝕜 V) {W : Submodule 𝕜 V} (g : V)
-    {c : ℝ} (hc : 0 < c) (hcoer : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w)) :
-    HasBoundedSublevelsOn (quadraticEnergy a ℓ) (g +ᵥ (W : Set V)) :=
-  hasBoundedSublevelsOn_quadraticEnergy_of_sub_coercive ℓ hc fun _ hx _ hy ↦
-    hcoer _ (sub_mem_of_mem_vadd_set hy hx)
+    {c : ℝ} (hc : 0 < c) (hcoer : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ re (a w w)) :
+    TauCeti.HasBoundedSublevelsOn (a.quadraticEnergy ℓ) (g +ᵥ (W : Set V)) :=
+  a.hasBoundedSublevelsOn_quadraticEnergy_of_sub_coercive ℓ hc fun _ hx _ hy ↦
+    hcoer _ (TauCeti.sub_mem_of_mem_vadd_set hy hx)
 
 end Coercive
 
-/-! ### Uniqueness and direct-method existence on normed and reflexive spaces -/
+/-! ### Normed spaces: uniqueness, smoothness, Fréchet derivatives, and direct-method existence -/
 
-section NormedUniquenessAndExistence
+section Normed
 
 variable {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+  {a : V →L⋆[𝕜] V →L[𝕜] 𝕜} {ℓ : StrongDual 𝕜 V}
+
+/-- **Uniqueness of weak solutions.** If the energy of `a` dominates `c ‖w‖²` on `W` with
+`0 < c`, two solutions of the weak equation on `W` that differ by an element of `W` agree. -/
+theorem eq_of_forall_apply_eq_of_coercive {W : Submodule 𝕜 V} {c : ℝ} (hc0 : 0 < c)
+    (hc : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ re (a w w)) {u u' : V} (hu : ∀ v ∈ W, a u v = ℓ v)
+    (hu' : ∀ v ∈ W, a u' v = ℓ v) (h : u' - u ∈ W) : u' = u := by
+  have hbound := a.mul_norm_sub_le_norm_sub_of_coercive ℓ hc hu' hu h
+  simp only [sub_self, norm_zero] at hbound
+  exact sub_eq_zero.mp (norm_le_zero_iff.mp (nonpos_of_mul_nonpos_right hbound hc0))
+
+section Calculus
+
+variable [NormedSpace ℝ V] [IsScalarTower ℝ 𝕜 V] {n : WithTop ℕ∞}
+
+/-- `a.quadraticEnergy ℓ` is `C^n` over `ℝ` for every `n`, without assuming symmetry of `a`. -/
+@[fun_prop]
+theorem contDiff_quadraticEnergy (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) (ℓ : StrongDual 𝕜 V) :
+    ContDiff ℝ n (a.quadraticEnergy ℓ) :=
+  a.contDiff_re_apply_self.sub
+    (contDiff_const.mul (reCLM.contDiff.comp (ℓ.restrictScalars ℝ).contDiff))
+
+/-- `a.quadraticEnergy ℓ` is Fréchet differentiable over `ℝ`, without assuming symmetry of `a`. -/
+@[fun_prop]
+theorem differentiable_quadraticEnergy (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) (ℓ : StrongDual 𝕜 V) :
+    Differentiable ℝ (a.quadraticEnergy ℓ) :=
+  (a.contDiff_quadraticEnergy (n := 1) ℓ).differentiable one_ne_zero
+
+/-- **Strict real Fréchet derivative** of `a.quadraticEnergy ℓ` for a Hermitian form `a`: at `u`,
+the derivative is `v ↦ 2 * re (a u v - ℓ v)`. -/
+theorem hasStrictFDerivAt_quadraticEnergy (ℓ : StrongDual 𝕜 V)
+    (ha : ∀ u v, a u v = star (a v u)) (u : V) :
+    HasStrictFDerivAt (a.quadraticEnergy ℓ)
+      ((2 : ℝ) • reCLM.comp ((a u - ℓ).restrictScalars ℝ)) u := by
+  have hq := a.hasStrictFDerivAt_re_apply_self_of_eq_star ha u
+  have hℓ : HasStrictFDerivAt (fun w ↦ 2 * re (ℓ w))
+      ((2 : ℝ) • reCLM.comp (ℓ.restrictScalars ℝ)) u :=
+    ((2 : ℝ) • reCLM.comp (ℓ.restrictScalars ℝ)).hasStrictFDerivAt.congr_of_eventuallyEq
+      (Eventually.of_forall fun _ ↦ by simp)
+  have hderiv : (2 : ℝ) • reCLM.comp ((a u).restrictScalars ℝ) -
+      (2 : ℝ) • reCLM.comp (ℓ.restrictScalars ℝ) =
+      (2 : ℝ) • reCLM.comp ((a u - ℓ).restrictScalars ℝ) := by
+    ext v
+    simp
+    ring
+  exact hderiv ▸ hq.sub hℓ
+
+/-- **The first variation of a quadratic energy.** On the real restriction of scalars, the
+quadratic energy of a Hermitian form has Fréchet derivative `v ↦ 2 re (a u v - ℓ v)` at `u`. -/
+theorem hasFDerivAt_quadraticEnergy (ℓ : StrongDual 𝕜 V)
+    (ha : ∀ u v, a u v = star (a v u)) (u : V) :
+    HasFDerivAt (a.quadraticEnergy ℓ) ((2 : ℝ) • reCLM.comp ((a u - ℓ).restrictScalars ℝ)) u :=
+  (a.hasStrictFDerivAt_quadraticEnergy ℓ ha u).hasFDerivAt
+
+/-- Differential `fderiv ℝ (a.quadraticEnergy ℓ) u` for a Hermitian form `a`. -/
+theorem fderiv_quadraticEnergy (ℓ : StrongDual 𝕜 V)
+    (ha : ∀ u v, a u v = star (a v u)) (u : V) :
+    fderiv ℝ (a.quadraticEnergy ℓ) u = (2 : ℝ) • reCLM.comp ((a u - ℓ).restrictScalars ℝ) :=
+  (a.hasFDerivAt_quadraticEnergy ℓ ha u).fderiv
+
+/-- Directional formula for `fderiv ℝ (a.quadraticEnergy ℓ) u v` for a Hermitian form `a`. -/
+theorem fderiv_quadraticEnergy_apply (ℓ : StrongDual 𝕜 V)
+    (ha : ∀ u v, a u v = star (a v u)) (u v : V) :
+    fderiv ℝ (a.quadraticEnergy ℓ) u v = 2 * re (a u v - ℓ v) := by
+  rw [a.fderiv_quadraticEnergy ℓ ha]
+  simp
+
+end Calculus
 
 /-- **Uniqueness of local minimizers on a convex set** `C` when `a` is `c`-coercive on differences
 in `C` (`c > 0`). No symmetry of `a` is required. -/
 theorem eq_of_isLocalMinOn_quadraticEnergy_convex [Module ℝ V] [IsScalarTower ℝ 𝕜 V]
-    {a : V →L⋆[𝕜] V →L[𝕜] 𝕜} {ℓ : StrongDual 𝕜 V}
     {C : Set V} (hC : Convex ℝ C) {c : ℝ} (hc : 0 < c)
-    (hcoer : ∀ x ∈ C, ∀ y ∈ C, c * ‖y - x‖ ^ 2 ≤ RCLike.re (a (y - x) (y - x)))
+    (hcoer : ∀ x ∈ C, ∀ y ∈ C, c * ‖y - x‖ ^ 2 ≤ re (a (y - x) (y - x)))
     {u₁ u₂ : V} (hu₁ : u₁ ∈ C) (hu₂ : u₂ ∈ C)
-    (hmin₁ : IsLocalMinOn (quadraticEnergy a ℓ) C u₁)
-    (hmin₂ : IsLocalMinOn (quadraticEnergy a ℓ) C u₂) : u₁ = u₂ := by
-  have h₁ := mul_norm_sub_sq_le_quadraticEnergy_sub_of_isLocalMinOn_convex hC hcoer hu₁ hu₂ hmin₁
-  have h₂ := mul_norm_sub_sq_le_quadraticEnergy_sub_of_isLocalMinOn_convex hC hcoer hu₂ hu₁ hmin₂
+    (hmin₁ : IsLocalMinOn (a.quadraticEnergy ℓ) C u₁)
+    (hmin₂ : IsLocalMinOn (a.quadraticEnergy ℓ) C u₂) : u₁ = u₂ := by
+  have h₁ := a.mul_norm_sub_sq_le_quadraticEnergy_sub_of_isLocalMinOn_convex hC hcoer hu₁ hu₂ hmin₁
+  have h₂ := a.mul_norm_sub_sq_le_quadraticEnergy_sub_of_isLocalMinOn_convex hC hcoer hu₂ hu₁ hmin₂
   rw [norm_sub_rev u₂ u₁] at h₁
   have hsq : ‖u₁ - u₂‖ ^ 2 ≤ 0 := by nlinarith
   exact sub_eq_zero.mp (norm_le_zero_iff.mp (sq_eq_zero_iff.mp (le_antisymm hsq (sq_nonneg _))).le)
 
-/-- **Uniqueness of local minimizers on an affine subspace** `g +ᵥ W` when `a` is `c`-coercive on
-`W` (`c > 0`). No symmetry of `a` is required. -/
-theorem eq_of_isLocalMinOn_quadraticEnergy_vadd {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    {ℓ : StrongDual 𝕜 V} {W : Submodule 𝕜 V} {c : ℝ}
-    (hc : 0 < c) (hcoer : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w)) {g u₁ u₂ : V}
+/-- **Uniqueness of local minimizers on an affine coset** `g +ᵥ W` when `a` is `c`-coercive on `W`
+(`c > 0`). No symmetry of `a` is required. -/
+theorem eq_of_isLocalMinOn_quadraticEnergy_vadd
+    {W : Submodule 𝕜 V} {c : ℝ} (hc : 0 < c)
+    (hcoer : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ re (a w w)) {g u₁ u₂ : V}
     (hu₁ : u₁ ∈ g +ᵥ (W : Set V)) (hu₂ : u₂ ∈ g +ᵥ (W : Set V))
-    (hmin₁ : IsLocalMinOn (quadraticEnergy a ℓ) (g +ᵥ (W : Set V)) u₁)
-    (hmin₂ : IsLocalMinOn (quadraticEnergy a ℓ) (g +ᵥ (W : Set V)) u₂) : u₁ = u₂ := by
+    (hmin₁ : IsLocalMinOn (a.quadraticEnergy ℓ) (g +ᵥ (W : Set V)) u₁)
+    (hmin₂ : IsLocalMinOn (a.quadraticEnergy ℓ) (g +ᵥ (W : Set V)) u₂) : u₁ = u₂ := by
   let : NormedSpace ℝ V := NormedSpace.restrictScalars ℝ 𝕜 V
   have : IsScalarTower ℝ 𝕜 V := IsScalarTower.restrictScalars ℝ 𝕜 V
-  exact eq_of_isLocalMinOn_quadraticEnergy_convex ((W.restrictScalars ℝ).convex.vadd g) hc
-    (fun _ hx _ hy ↦ hcoer _ (sub_mem_of_mem_vadd_set hy hx)) hu₁ hu₂ hmin₁ hmin₂
-
-/-- **Uniqueness of unconstrained local minimizers** when `∀ w, c * ‖w‖² ≤ Re(a w w)` (`c > 0`). No
-symmetry of `a` is required. -/
-theorem eq_of_isLocalMin_quadraticEnergy {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    {ℓ : StrongDual 𝕜 V} {c : ℝ} (hc : 0 < c)
-    (hcoer : ∀ w, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w)) {u₁ u₂ : V}
-    (hmin₁ : IsLocalMin (quadraticEnergy a ℓ) u₁)
-    (hmin₂ : IsLocalMin (quadraticEnergy a ℓ) u₂) : u₁ = u₂ :=
-  eq_of_isLocalMinOn_quadraticEnergy_vadd (W := ⊤) (g := 0) hc (fun w _ ↦ hcoer w)
-    (by simp) (by simp) (by simpa using hmin₁.isLocalMinOn Set.univ)
-    (by simpa using hmin₂.isLocalMinOn Set.univ)
+  exact a.eq_of_isLocalMinOn_quadraticEnergy_convex ((W.restrictScalars ℝ).convex.vadd g) hc
+    (fun _ hx _ hy ↦ hcoer _ (TauCeti.sub_mem_of_mem_vadd_set hy hx)) hu₁ hu₂ hmin₁ hmin₂
 
 /-- **Direct-method existence and uniqueness on a closed convex set.** In a reflexive normed space
 over `𝕜`, if `a` is `c`-coercive on differences of points in a nonempty closed convex set `C`
-(`c > 0`), then `quadraticEnergy a ℓ` attains a unique global minimum on `C`. No symmetry of `a` is
+(`c > 0`), then `a.quadraticEnergy ℓ` attains a unique global minimum on `C`. No symmetry of `a` is
 required. -/
 theorem existsUnique_isMinOn_quadraticEnergy_of_isClosed_convex
     [Module ℝ V] [IsScalarTower ℝ 𝕜 V]
     (hV : Function.Surjective (inclusionInDoubleDual 𝕜 V))
-    {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    {C : Set V} (hne : C.Nonempty) (hC : Convex ℝ C) (hclosed : IsClosed C)
+    (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) {C : Set V} (hne : C.Nonempty) (hC : Convex ℝ C) (hclosed : IsClosed C)
     {c : ℝ} (hc : 0 < c)
-    (hcoer : ∀ x ∈ C, ∀ y ∈ C, c * ‖y - x‖ ^ 2 ≤ RCLike.re (a (y - x) (y - x)))
+    (hcoer : ∀ x ∈ C, ∀ y ∈ C, c * ‖y - x‖ ^ 2 ≤ re (a (y - x) (y - x)))
     (ℓ : StrongDual 𝕜 V) :
-    ∃! u, u ∈ C ∧ IsMinOn (quadraticEnergy a ℓ) C u := by
+    ∃! u, u ∈ C ∧ IsMinOn (a.quadraticEnergy ℓ) C u := by
   have : LocallyConvexSpace ℝ V := NormedSpace.toLocallyConvexSpace' 𝕜
   have hwclosed : IsClosed (toWeakSpace 𝕜 V '' C) := hC.isClosed_toWeakSpace_image 𝕜 hclosed
-  have hpos : ∀ u ∈ C, ∀ v ∈ C, 0 ≤ RCLike.re (a (u - v) (u - v)) := fun u hu v hv ↦
+  have hpos : ∀ u ∈ C, ∀ v ∈ C, 0 ≤ re (a (u - v) (u - v)) := fun u hu v hv ↦
     (mul_nonneg hc.le (sq_nonneg _)).trans (hcoer v hv u hu)
-  obtain ⟨u, hu, hmin⟩ := exists_isMinOn_of_weak_closed hV hne hwclosed
-    (lowerSemicontinuousOn_quadraticEnergy_comp_toWeakSpace_symm hC hpos ℓ)
-    (hasBoundedSublevelsOn_quadraticEnergy_of_sub_coercive ℓ hc hcoer)
+  obtain ⟨u, hu, hmin⟩ := TauCeti.exists_isMinOn_of_weak_closed hV hne hwclosed
+    (a.lowerSemicontinuousOn_quadraticEnergy_comp_toWeakSpace_symm hC hpos ℓ)
+    (a.hasBoundedSublevelsOn_quadraticEnergy_of_sub_coercive ℓ hc hcoer)
   exact ⟨u, ⟨hu, hmin⟩, fun y ⟨hy, hminy⟩ ↦
-    eq_of_isLocalMinOn_quadraticEnergy_convex hC hc hcoer hy hu
+    a.eq_of_isLocalMinOn_quadraticEnergy_convex hC hc hcoer hy hu
       hminy.isLocalMinOn hmin.isLocalMinOn⟩
 
 /-- **Unconstrained direct-method existence and uniqueness.** In a reflexive normed space over `𝕜`,
-if `∀ w, c * ‖w‖² ≤ Re(a w w)` (`c > 0`), then `quadraticEnergy a ℓ` attains a unique global minimum
-on `V`. No symmetry of `a` is required. -/
+if `∀ w, c * ‖w‖² ≤ re (a w w)` (`c > 0`), then `a.quadraticEnergy ℓ` attains a unique global
+minimum on `V`. No symmetry of `a` is required. -/
 theorem existsUnique_isMinOn_quadraticEnergy_univ_of_coercive
     (hV : Function.Surjective (inclusionInDoubleDual 𝕜 V))
-    {a : V →L⋆[𝕜] V →L[𝕜] 𝕜} {c : ℝ} (hc : 0 < c)
-    (hcoer : ∀ w, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w)) (ℓ : StrongDual 𝕜 V) :
-    ∃! u, IsMinOn (quadraticEnergy a ℓ) Set.univ u := by
+    (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) {c : ℝ} (hc : 0 < c)
+    (hcoer : ∀ w, c * ‖w‖ ^ 2 ≤ re (a w w)) (ℓ : StrongDual 𝕜 V) :
+    ∃! u, IsMinOn (a.quadraticEnergy ℓ) univ u := by
   let : NormedSpace ℝ V := NormedSpace.restrictScalars ℝ 𝕜 V
   have : IsScalarTower ℝ 𝕜 V := IsScalarTower.restrictScalars ℝ 𝕜 V
   simpa only [mem_univ, true_and] using
-    existsUnique_isMinOn_quadraticEnergy_of_isClosed_convex hV univ_nonempty convex_univ
+    a.existsUnique_isMinOn_quadraticEnergy_of_isClosed_convex hV univ_nonempty convex_univ
       isClosed_univ hc (fun x _ y _ ↦ hcoer (y - x)) ℓ
-
-end NormedUniquenessAndExistence
-
-end TauCeti
-
-namespace ContinuousLinearMap
-
-variable {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
 
 /-- **Direct-method existence and uniqueness of constrained weak solutions** on an affine coset
 `g +ᵥ W` of a closed `𝕜`-submodule `W` in a reflexive normed space over `𝕜`, when `a` is Hermitian
 and `c`-coercive on `W` (`c > 0`); `a` need not be nonnegative outside `W`. -/
 theorem existsUnique_vadd_forall_apply_eq_of_isClosed_of_coercive
     (hV : Function.Surjective (inclusionInDoubleDual 𝕜 V))
-    {a : V →L⋆[𝕜] V →L[𝕜] 𝕜} (ha : ∀ x y, a x y = star (a y x))
+    (ha : ∀ x y, a x y = star (a y x))
     {W : Submodule 𝕜 V} (hW : IsClosed (W : Set V))
-    {c : ℝ} (hc : 0 < c) (hcoer : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w))
+    {c : ℝ} (hc : 0 < c) (hcoer : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ re (a w w))
     (g : V) (ℓ : StrongDual 𝕜 V) :
     ∃! u, u ∈ g +ᵥ (W : Set V) ∧ ∀ w ∈ W, a u w = ℓ w := by
   let : NormedSpace ℝ V := NormedSpace.restrictScalars ℝ 𝕜 V
   have : IsScalarTower ℝ 𝕜 V := IsScalarTower.restrictScalars ℝ 𝕜 V
-  have hpos : ∀ w ∈ W, 0 ≤ RCLike.re (a w w) := fun w hw ↦
+  have hpos : ∀ w ∈ W, 0 ≤ re (a w w) := fun w hw ↦
     (mul_nonneg hc.le (sq_nonneg _)).trans (hcoer w hw)
   refine (existsUnique_congr fun u ↦ and_congr_right fun hu ↦
-    TauCeti.isMinOn_quadraticEnergy_vadd_iff ha hpos hu).mp ?_
-  exact TauCeti.existsUnique_isMinOn_quadraticEnergy_of_isClosed_convex hV
+    a.isMinOn_quadraticEnergy_vadd_iff ha hpos hu).mp ?_
+  exact a.existsUnique_isMinOn_quadraticEnergy_of_isClosed_convex hV
     ⟨g + 0, vadd_mem_vadd_set W.zero_mem⟩ ((W.restrictScalars ℝ).convex.vadd g) (hW.vadd g) hc
     (fun _ hx _ hy ↦ hcoer _ (TauCeti.sub_mem_of_mem_vadd_set hy hx)) ℓ
 
 /-- **Global direct-method existence and uniqueness of weak solutions** in a reflexive normed space
-over `𝕜` for a Hermitian form satisfying `∀ w, c * ‖w‖² ≤ Re(a w w)` (`c > 0`). -/
+over `𝕜` for a Hermitian form satisfying `∀ w, c * ‖w‖² ≤ re (a w w)` (`c > 0`). -/
 theorem existsUnique_forall_apply_eq_of_coercive
     (hV : Function.Surjective (inclusionInDoubleDual 𝕜 V))
-    {a : V →L⋆[𝕜] V →L[𝕜] 𝕜} (ha : ∀ x y, a x y = star (a y x))
-    {c : ℝ} (hc : 0 < c) (hcoer : ∀ w, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w))
+    (ha : ∀ x y, a x y = star (a y x))
+    {c : ℝ} (hc : 0 < c) (hcoer : ∀ w, c * ‖w‖ ^ 2 ≤ re (a w w))
     (ℓ : StrongDual 𝕜 V) :
     ∃! u, ∀ v, a u v = ℓ v := by
   simpa using a.existsUnique_vadd_forall_apply_eq_of_isClosed_of_coercive (W := ⊤) hV ha
     (by simp) hc (fun w _ ↦ hcoer w) 0 ℓ
 
+end Normed
+
+/-! ### Hilbert-space Lax--Milgram identifications -/
+
+section Complete
+
+variable {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [CompleteSpace V]
+  {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
+
+open InnerProductSpace
+
+/-- On a Hilbert space, the global minimizer of the quadratic energy of a nonnegative Hermitian
+form with invertible Fréchet--Riesz operator is the Lax--Milgram solution `solutionOfFunctional`. -/
+theorem isMinOn_quadraticEnergy_iff_eq_solutionOfFunctional (ha : ∀ u v, a u v = star (a v u))
+    (hq : ∀ w, 0 ≤ re (a w w)) (hB : IsUnit (continuousLinearMapOfBilin a))
+    (ℓ : StrongDual 𝕜 V) {u : V} :
+    IsMinOn (a.quadraticEnergy ℓ) univ u ↔ u = solutionOfFunctional a hB ℓ := by
+  rw [isMinOn_quadraticEnergy_iff ℓ ha hq]
+  exact ⟨fun hu => eq_solutionOfFunctional a hB fun v => by rw [hu], fun hu => by
+    rw [hu, apply_solutionOfFunctional]⟩
+
+/-- For the forcing `v ↦ ⟪h, j v⟫`, the global minimizer of the quadratic energy of a nonnegative
+Hermitian form is the `H`-forcing solution `formSolutionMap a hB j h`. -/
+theorem isMinOn_quadraticEnergy_iff_eq_formSolutionMap (ha : ∀ u v, a u v = star (a v u))
+    (hq : ∀ w, 0 ≤ re (a w w)) (hB : IsUnit (continuousLinearMapOfBilin a))
+    {H : Type*} [SeminormedAddCommGroup H] [InnerProductSpace 𝕜 H] (j : V →L[𝕜] H) (h : H)
+    {u : V} :
+    IsMinOn (a.quadraticEnergy (toSesqForm j h)) univ u ↔ u = formSolutionMap a hB j h := by
+  rw [formSolutionMap_apply]
+  exact isMinOn_quadraticEnergy_iff_eq_solutionOfFunctional ha hq hB _
+
+/-- Value of `a.quadraticEnergy ℓ` at the Lax--Milgram solution `solutionOfFunctional a hB ℓ`
+(its global minimum value when `a` is Hermitian and nonnegative). -/
+@[simp]
+theorem quadraticEnergy_solutionOfFunctional (a : V →L⋆[𝕜] V →L[𝕜] 𝕜)
+    (hB : IsUnit (continuousLinearMapOfBilin a)) (ℓ : StrongDual 𝕜 V) :
+    a.quadraticEnergy ℓ (solutionOfFunctional a hB ℓ) = -re (ℓ (solutionOfFunctional a hB ℓ)) := by
+  rw [quadraticEnergy_apply, apply_solutionOfFunctional]
+  ring
+
+/-- Value of `a.quadraticEnergy ((innerSL 𝕜 h).comp j)` at `formSolutionMap a hB j h`, stated in
+`simp`-normal form for `toSesqForm j h` (`toSesqForm_apply_coe`). -/
+@[simp]
+theorem quadraticEnergy_innerSL_comp_formSolutionMap (a : V →L⋆[𝕜] V →L[𝕜] 𝕜)
+    (hB : IsUnit (continuousLinearMapOfBilin a))
+    {H : Type*} [SeminormedAddCommGroup H] [InnerProductSpace 𝕜 H] (j : V →L[𝕜] H) (h : H) :
+    a.quadraticEnergy ((innerSL 𝕜 h).comp j) (formSolutionMap a hB j h) =
+      -re ⟪h, j (formSolutionMap a hB j h)⟫_𝕜 := by
+  rw [quadraticEnergy_apply, apply_formSolutionMap]
+  simp only [comp_apply, innerSL_apply_apply]
+  ring
+
+end Complete
+
 end ContinuousLinearMap
+
+namespace IsCoercive
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
+  {B : V →L[ℝ] V →L[ℝ] ℝ}
+
+/-- Over `ℝ`, the global minimizer of the quadratic energy `B u u - 2 ℓ u` of a symmetric
+coercive bilinear form is the Lax--Milgram solution `IsCoercive.solutionOfFunctional`. -/
+theorem isMinOn_quadraticEnergy_iff_eq_solutionOfFunctional (hB : IsCoercive B)
+    (hsymm : ∀ u v, B u v = B v u) (ℓ : StrongDual ℝ V) {u : V} :
+    IsMinOn (B.quadraticEnergy ℓ) univ u ↔ u = hB.solutionOfFunctional ℓ := by
+  rw [hB.solutionOfFunctional_eq]
+  exact ContinuousLinearMap.isMinOn_quadraticEnergy_iff_eq_solutionOfFunctional
+    (fun u v => by rw [hsymm, star_trivial])
+    (fun w => by rw [re_to_real]; exact hB.apply_self_nonneg w) _ ℓ
+
+/-- Over `ℝ`, `u` minimizes `B.quadraticEnergy ℓ` on `univ` for symmetric coercive `B` if and only
+if `u` equals the inverse Lax--Milgram operator `hB.continuousLinearEquivOfBilin.symm` applied to
+the Fréchet--Riesz representative of `ℓ`. -/
+theorem isMinOn_quadraticEnergy_iff_eq_continuousLinearEquivOfBilin_symm (hB : IsCoercive B)
+    (hsymm : ∀ u v, B u v = B v u) (ℓ : StrongDual ℝ V) {u : V} :
+    IsMinOn (B.quadraticEnergy ℓ) univ u ↔
+      u = hB.continuousLinearEquivOfBilin.symm ((InnerProductSpace.toDual ℝ V).symm ℓ) := by
+  rw [hB.isMinOn_quadraticEnergy_iff_eq_solutionOfFunctional hsymm ℓ,
+    solutionOfFunctional_apply, solutionOfInner_def]
+
+/-- Over `ℝ`, for represented forcing `InnerProductSpace.toDual ℝ V F`, `u` minimizes
+`B.quadraticEnergy (InnerProductSpace.toDual ℝ V F)` on `univ` for symmetric coercive `B` if and
+only if `u = hB.solutionOfInner F`. -/
+theorem isMinOn_quadraticEnergy_toDual_iff_eq_solutionOfInner (hB : IsCoercive B)
+    (hsymm : ∀ u v, B u v = B v u) (F : V) {u : V} :
+    IsMinOn (B.quadraticEnergy (InnerProductSpace.toDual ℝ V F)) univ u ↔
+      u = hB.solutionOfInner F := by
+  rw [hB.isMinOn_quadraticEnergy_iff_eq_solutionOfFunctional hsymm, solutionOfFunctional_toDual]
+
+/-- Value of `B.quadraticEnergy ℓ` at `hB.solutionOfFunctional ℓ` (its global minimum value when
+`B` is symmetric). -/
+@[simp]
+theorem quadraticEnergy_solutionOfFunctional (hB : IsCoercive B) (ℓ : StrongDual ℝ V) :
+    B.quadraticEnergy ℓ (hB.solutionOfFunctional ℓ) = -ℓ (hB.solutionOfFunctional ℓ) := by
+  rw [ContinuousLinearMap.quadraticEnergy_real_apply, hB.apply_solutionOfFunctional_eq]
+  ring
+
+/-- Value of `B.quadraticEnergy (InnerProductSpace.toDual ℝ V F)` at `hB.solutionOfInner F` (its
+global minimum value when `B` is symmetric). -/
+@[simp]
+theorem quadraticEnergy_toDual_solutionOfInner (hB : IsCoercive B) (F : V) :
+    B.quadraticEnergy (InnerProductSpace.toDual ℝ V F) (hB.solutionOfInner F) =
+      -⟪F, hB.solutionOfInner F⟫_ℝ := by
+  rw [← solutionOfFunctional_toDual, quadraticEnergy_solutionOfFunctional,
+    solutionOfFunctional_toDual, InnerProductSpace.toDual_apply_apply]
+
+end IsCoercive
 
 end

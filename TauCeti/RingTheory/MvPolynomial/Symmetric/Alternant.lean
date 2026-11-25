@@ -63,6 +63,8 @@ sign appears: that is the dual Pieri rule.
   `(∏ i, X i) ^ c`.
 * `TauCeti.alternant_fin_val_eq_vandermonde`: for the exponents `0, 1, …, n - 1` the alternant
   is the Vandermonde product `∏_{i < j} (X_j - X_i)`.
+* `MvPolynomial.rename_vandermonde` and `MvPolynomial.vandermonde_ne_zero`: the Vandermonde
+  product is antisymmetric, and nonzero over a nontrivial ring.
 * `TauCeti.psum_mul_alternant`: the power-sum multiplication rule `p_r · a_α = ∑_j a_{α + r e_j}`.
 * `TauCeti.psum_mul_alternant_eq_sum_filter`: for `r > 0`, only the exponent moves onto a free
   position contribute to `p_r · a_α`.
@@ -325,44 +327,34 @@ theorem esymm_mul_alternant (r : ℕ) (α : σ → ℕ) :
     esymm σ R r * alternant σ R α =
       ∑ T ∈ powersetCard r (univ : Finset σ),
         alternant σ R fun j => α j + if j ∈ T then 1 else 0 := by
-  -- Expand both sides by the Leibniz formula.  A permutation `τ` contributes the monomial
-  -- `∏ᵢ X_{τ i} ^ α i` times, on the left, the squarefree monomial of an `r`-element set, and, on
-  -- the right, the squarefree monomial of the set of raised exponents carried along `τ`.
-  have key : ∀ (T : Finset σ) (τ : Perm σ),
-      ∏ i, (X (τ i) : MvPolynomial σ R) ^ (α i + if i ∈ T then 1 else 0) =
-        (∏ i, (X (τ i) : MvPolynomial σ R) ^ α i) *
-          ∏ k ∈ T.map τ.toEmbedding, (X k : MvPolynomial σ R) := by
-    intro T τ
-    rw [prod_map]
-    simp only [Equiv.coe_toEmbedding, pow_add, prod_mul_distrib]
-    congr 1
-    calc ∏ i, (X (τ i) : MvPolynomial σ R) ^ (if i ∈ T then 1 else 0)
-        = ∏ i, if i ∈ T then (X (τ i) : MvPolynomial σ R) else 1 :=
-          prod_congr rfl fun i _ => by split_ifs <;> simp
-      _ = ∏ i ∈ T, (X (τ i) : MvPolynomial σ R) := by rw [prod_ite_mem, univ_inter]
-  rw [eq_comm]
-  calc ∑ T ∈ powersetCard r (univ : Finset σ),
-          alternant σ R (fun j => α j + if j ∈ T then 1 else 0)
-      = ∑ T ∈ powersetCard r (univ : Finset σ), ∑ τ : Perm σ, Perm.sign τ •
-          ((∏ i, (X (τ i) : MvPolynomial σ R) ^ α i) *
-            ∏ k ∈ T.map τ.toEmbedding, (X k : MvPolynomial σ R)) :=
-        sum_congr rfl fun T _ => by
-          rw [alternant_eq_sum]
-          exact sum_congr rfl fun τ _ => by rw [key T τ]
-    _ = ∑ τ : Perm σ, ∑ T ∈ powersetCard r (univ : Finset σ), Perm.sign τ •
-          ((∏ i, (X (τ i) : MvPolynomial σ R) ^ α i) *
-            ∏ k ∈ T.map τ.toEmbedding, (X k : MvPolynomial σ R)) := sum_comm
-    _ = ∑ τ : Perm σ, ∑ T ∈ powersetCard r (univ : Finset σ), Perm.sign τ •
-          ((∏ i, (X (τ i) : MvPolynomial σ R) ^ α i) * ∏ k ∈ T, (X k : MvPolynomial σ R)) :=
-        sum_congr rfl fun τ _ => Finset.sum_equiv (Equiv.finsetCongr τ)
-          (fun T => by simp) fun T _ => by simp
-    _ = ∑ T ∈ powersetCard r (univ : Finset σ), ∑ τ : Perm σ, Perm.sign τ •
-          ((∏ i, (X (τ i) : MvPolynomial σ R) ^ α i) * ∏ k ∈ T, (X k : MvPolynomial σ R)) :=
-        sum_comm
-    _ = esymm σ R r * alternant σ R α := by
-        rw [esymm, sum_mul]
-        refine sum_congr rfl fun T _ => ?_
-        rw [alternant_eq_sum, mul_sum]
-        exact sum_congr rfl fun τ _ => by rw [mul_smul_comm, mul_comm]
+  have h := sum_monomial_mul_alternant (powersetCard r univ)
+    (fun T => ∑ i ∈ T, Finsupp.single i 1) (fun _ => (1 : R))
+    (esymm_eq_sum_monomial σ R r ▸ esymm_isSymmetric σ R r) α
+  rw [← esymm_eq_sum_monomial] at h
+  rw [h]
+  refine sum_congr rfl fun T _ => ?_
+  simp [Finsupp.finsetSum_apply, Finsupp.single_apply]
 
 end TauCeti
+
+namespace MvPolynomial
+
+open Equiv Finset
+
+variable {R : Type*} [CommRing R] {n : ℕ}
+
+/-- **The Vandermonde product is antisymmetric**: renaming the variables along a permutation `e`
+multiplies `∏_{i < j} (X j - X i)` by the sign of `e`. -/
+theorem rename_vandermonde (e : Perm (Fin n)) :
+    rename e (∏ i : Fin n, ∏ j ∈ Ioi i, (X j - X i : MvPolynomial (Fin n) R)) =
+      Perm.sign e • ∏ i : Fin n, ∏ j ∈ Ioi i, (X j - X i) := by
+  rw [← TauCeti.alternant_fin_val_eq_vandermonde, TauCeti.rename_alternant]
+
+/-- **The Vandermonde product is nonzero** over a nontrivial ring: it is the alternant of the
+pairwise distinct exponents `0, 1, …, n - 1`. -/
+theorem vandermonde_ne_zero [Nontrivial R] :
+    ∏ i : Fin n, ∏ j ∈ Ioi i, (X j - X i : MvPolynomial (Fin n) R) ≠ 0 := by
+  rw [← TauCeti.alternant_fin_val_eq_vandermonde]
+  exact TauCeti.alternant_ne_zero_of_injective Fin.val_injective
+
+end MvPolynomial

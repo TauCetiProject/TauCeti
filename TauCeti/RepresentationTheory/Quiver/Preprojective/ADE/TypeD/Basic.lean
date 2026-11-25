@@ -136,16 +136,12 @@ include hn hG
 
 omit hn in
 /-- The relation at a vertex `v`, summed over a set `S` of vertices containing its neighbours. -/
-private theorem sum_fork_relation (v : ℕ) (hv : v < n) (S : Finset ℕ) (hS : ∀ w ∈ S, w < n)
+private theorem sum_fork_relation (v : ℕ) (S : Finset ℕ)
     (hnbr : ∀ w < n, w ∉ S → ¬(v + 1 = w ∧ w ≤ c ∨ w + 1 = v ∧ v ≤ c ∨ v = c ∧ c < w ∨
       w = c ∧ c < v)) :
-    ∑ w ∈ S, signlessArrow k G w v * signlessArrow k G v w = 0 := by
-  have h := sum_signlessArrow_mul_signlessArrow k G ⟨v, hv⟩
-  rw [Fin.sum_univ_eq_sum_range (fun w => signlessArrow k G w v * signlessArrow k G v w) n] at h
-  rw [← h]
-  refine Finset.sum_subset (fun w hw => Finset.mem_range.2 (hS w hw)) fun w hw hwS => ?_
-  rw [signlessArrow_eq_zero k fun _ _ hvw => hnbr w (Finset.mem_range.1 hw) hwS (hG _ _ hvw),
-    mul_zero]
+    ∑ w ∈ S, signlessArrow k G w v * signlessArrow k G v w = 0 :=
+  sum_signlessArrow_mul_signlessArrow_of_forall_adj_mem k G v S fun _ w hw hadj =>
+    by_contra fun hwS => hnbr w hw hwS (hG _ _ hadj)
 
 omit hn in
 /-- An arrow vanishes between two vertices which are not adjacent. -/
@@ -160,6 +156,7 @@ private theorem forkUp_self_eq_zero : forkUp k G c c = 0 := by
   simp only [forkUp, Nat.sub_self, Nat.zero_sub]
   exact signlessArrow_fork_eq_zero k hG (by omega)
 
+omit hn in
 /-- **The ladder relations of the long arm.** At every vertex of the long arm other than the
 branch node, the backtrack away from the branch node cancels the backtrack towards it. -/
 private theorem forkDown_mul_forkUp_add (w : ℕ) :
@@ -167,8 +164,7 @@ private theorem forkDown_mul_forkUp_add (w : ℕ) :
   by_cases hw : w + 1 ≤ c
   · -- The rung `w + 1` is the vertex `v = c - (w + 1)`, with neighbours `v - 1` and `v + 1`.
     obtain ⟨v, rfl⟩ : ∃ v, c = v + (w + 1) := ⟨c - (w + 1), by omega⟩
-    have h := sum_fork_relation k hG v (by omega) {v - 1, v + 1}
-      (by simp only [Finset.mem_insert, Finset.mem_singleton]; omega)
+    have h := sum_fork_relation k hG v {v - 1, v + 1}
       (fun u _ hu => by simp only [Finset.mem_insert, Finset.mem_singleton] at hu; omega)
     rw [Finset.sum_pair (by omega)] at h
     have hrung : v + (w + 1) - (w + 1) = v := by omega
@@ -183,9 +179,9 @@ private theorem forkDown_mul_forkUp_add (w : ℕ) :
 
 omit hn in
 /-- **The relation at a leaf**: the backtrack from a leaf `l` vanishes. -/
-private theorem signlessArrow_mul_signlessArrow_leaf {l : ℕ} (hl : c < l) (hln : l < n) :
+private theorem signlessArrow_mul_signlessArrow_leaf {l : ℕ} (hl : c < l) :
     signlessArrow k G c l * signlessArrow k G l c = 0 := by
-  have h := sum_fork_relation k hG l hln {c} (by simp; omega)
+  have h := sum_fork_relation k hG l {c}
     (fun u _ hu => by simp only [Finset.mem_singleton] at hu; omega)
   rwa [Finset.sum_singleton] at h
 
@@ -193,17 +189,16 @@ private theorem signlessArrow_mul_signlessArrow_leaf {l : ℕ} (hl : c < l) (hln
 the two leaves sum to zero. -/
 private theorem forkDown_mul_forkUp_add_forkTurn :
     forkDown k G c 0 * forkUp k G c 0 + (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)) = 0 := by
-  have h := sum_fork_relation k hG c (by omega) {c - 1, c + 1, c + 2}
-    (by simp only [Finset.mem_insert, Finset.mem_singleton]; omega)
+  have h := sum_fork_relation k hG c {c - 1, c + 1, c + 2}
     (fun u hu hu' => by simp only [Finset.mem_insert, Finset.mem_singleton] at hu'; omega)
   rwa [Finset.sum_insert (by simp; omega), Finset.sum_pair (by omega)] at h
 
 omit hn in
 /-- The backtracks into the leaves square to zero. -/
-private theorem forkTurn_mul_self {l : ℕ} (hl : c < l) (hln : l < n) :
+private theorem forkTurn_mul_self {l : ℕ} (hl : c < l) :
     forkTurn k G c l * forkTurn k G c l = 0 := by
   rw [forkTurn, mul_assoc, ← mul_assoc (signlessArrow k G c l),
-    signlessArrow_mul_signlessArrow_leaf k hG hl hln, zero_mul, mul_zero]
+    signlessArrow_mul_signlessArrow_leaf k hG hl, zero_mul, mul_zero]
 
 /-- The backtrack into the long arm is minus the sum of the backtracks into the leaves; in
 particular it lies in their span. -/
@@ -223,13 +218,13 @@ private theorem forkTurn_add_pow_eq_zero :
     (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)) ^ (c + 1) = 0 := by
   -- The backtrack into the long arm is nilpotent, since the long arm has `c` rungs.
   have hq : (forkDown k G c 0 * forkUp k G c 0) ^ (c + 1) = 0 :=
-    pow_d_mul_u_eq_zero (forkDown_mul_forkUp_add k hn hG) (forkUp_self_eq_zero k hG)
+    pow_d_mul_u_eq_zero (forkDown_mul_forkUp_add k hG) (forkUp_self_eq_zero k hG)
   rw [forkTurn_add_eq_neg_forkDown_mul_forkUp k hn hG, neg_pow, hq, mul_zero]
 
 /-- The first long-arm arrow kills the `c`-th power of the sum of the leaf backtracks. -/
 private theorem forkUp_mul_forkTurn_add_pow_eq_zero (hc : 0 < c) :
     forkUp k G c 0 * (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)) ^ c = 0 := by
-  have hrel (r : ℕ) := forkDown_mul_forkUp_add k hn hG r
+  have hrel (r : ℕ) := forkDown_mul_forkUp_add k hG r
   have hshift : (forkDown k G c 1 * forkUp k G c 1) ^ c = 0 := by
     have h := pow_d_mul_u_eq_zero
       (u := fun r => forkUp k G c (r + 1)) (d := fun r => forkDown k G c (r + 1))
@@ -244,19 +239,12 @@ private theorem forkUp_mul_forkTurn_add_pow_eq_zero (hc : 0 < c) :
 
 /-- **Every product of `c + 2` backtracks into the leaves vanishes.** -/
 private theorem forkSpan_pow_eq_bot {t : ℕ} (ht : c + 2 ≤ t) : forkSpan k G c ^ t = ⊥ := by
-  obtain ⟨e, rfl⟩ := Nat.exists_eq_add_of_le ht
-  rw [pow_add, forkSpan, span_pair_pow_succ_eq_bot (forkTurn_mul_self k hG (by omega) (by omega))
-    (forkTurn_mul_self k hG (by omega) (by omega))
-    (forkTurn_add_pow_eq_zero k hn hG), Submodule.bot_mul]
+  rw [← Submodule.zero_eq_bot]
+  refine pow_eq_zero_of_le ht ?_
+  rw [forkSpan, span_pair_pow_succ_eq_bot (forkTurn_mul_self k hG (by omega))
+    (forkTurn_mul_self k hG (by omega)) (forkTurn_add_pow_eq_zero k hn hG), Submodule.zero_eq_bot]
 
 /-! ### Normal forms of paths -/
-
-omit hn hG in
-/-- A sign in the algebra is the integer sign acting by `zsmul`. -/
-private theorem neg_one_pow_mul_eq_zsmul (r : ℕ)
-    (a : signlessPreprojectiveAlgebra k (DoubledQuiver G)) :
-    (-1) ^ r * a = ((-1 : ℤ) ^ r) • a := by
-  simp [zsmul_eq_mul]
 
 omit hn hG in
 /-- The empty word in the backtracks into the leaves. -/
@@ -264,6 +252,7 @@ private theorem one_mem_forkSpan_pow_zero : 1 ∈ forkSpan k G c ^ 0 := by
   rw [pow_zero]
   exact Submodule.one_le.1 le_rfl
 
+omit hn in
 /-- One more arrow after a valley word on the long arm. -/
 private theorem forkNormalForm_cons_valley {i₀ j j' L : ℕ}
     {E z : signlessPreprojectiveAlgebra k (DoubledQuiver G)}
@@ -281,8 +270,9 @@ private theorem forkNormalForm_cons_valley {i₀ j j' L : ℕ}
     have hz : signlessArrow k G j j' *
         (ε • (ladderValley (forkUp k G c) (forkDown k G c) (m + 1) s r * E)) =
         (ε * (-1) ^ r) • (ladderValley (forkUp k G c) (forkDown k G c) m (s + 1) r * E) := by
-      rw [harr, mul_smul_comm, ← mul_assoc, d_mul_ladderValley (forkDown_mul_forkUp_add k hn hG),
-        mul_assoc, neg_one_pow_mul_eq_zsmul, mul_smul]
+      rw [harr, mul_smul_comm, ← mul_assoc, d_mul_ladderValley (forkDown_mul_forkUp_add k hG),
+        mul_assoc]
+      simp only [zsmul_eq_mul, Int.cast_mul, Int.cast_pow, Int.cast_neg, Int.cast_one, mul_assoc]
     rw [hz]
     rcases Nat.eq_zero_or_pos m with rfl | hm'
     · -- The valley reaches the branch node: a climb out of it after a descent into it.
@@ -329,8 +319,8 @@ private theorem forkNormalForm_cons_arm {i₀ j j' L : ℕ}
         (Submodule.mul_mem_mul (forkDown_mul_forkUp_mem_forkSpan k hn hG) hw)
     · have hj'r : c - j' = r := by omega
       rw [hr, harr, hj'r, ← mul_assoc, ← mul_assoc,
-        d_mul_ladderValley_zero_zero (forkDown_mul_forkUp_add k hn hG), neg_one_pow_mul_eq_zsmul]
-      simp only [smul_mul_assoc, mul_smul_comm, mul_assoc]
+        d_mul_ladderValley_zero_zero (forkDown_mul_forkUp_add k hG), mul_smul_comm, zsmul_eq_mul]
+      simp only [Int.cast_pow, Int.cast_neg, Int.cast_one, mul_assoc]
   · -- A step away from the branch node extends the climb.
     have harr : signlessArrow k G j j' = forkUp k G c (c - j) := by
       rw [forkUp]
@@ -373,7 +363,7 @@ private theorem forkNormalForm_cons {i₀ j j' L : ℕ}
     (h : ForkNormalForm k G c i₀ j L E z) :
     ForkNormalForm k G c i₀ j' (L + 1) E (signlessArrow k G j j' * z) := by
   rcases h with h | h | h | ⟨rfl, hj, rfl, rfl⟩
-  · exact forkNormalForm_cons_valley k hn hG hadj h
+  · exact forkNormalForm_cons_valley k hG hadj h
   · exact forkNormalForm_cons_arm k hn hG hadj h
   · exact forkNormalForm_cons_leaf k hn hjn hadj h
   · -- The first step from a leaf goes to the branch node.
@@ -406,7 +396,7 @@ private theorem forkNormalForm_ofPath {a b : DoubledQuiver G} (p : Path a b) :
   | @cons b b' q e ih =>
     rw [← ofArrow_mul_ofPath, map_mul, signlessPreprojectiveMk_ofArrow_eq_signlessArrow,
       Path.length_cons]
-    exact forkNormalForm_cons k hn hG ((vertexEquiv G).symm b).2 (hG _ _ e.down) ih
+    exact forkNormalForm_cons k hn hG ((vertexEquiv G).symm b).isLt (hG _ _ e.down) ih
 
 /-- **Every path of length at least `4 n` vanishes** in the signless algebra of a graph on
 `Fin (c + 3)` made of a long arm `0, …, c` and two leaves `c + 1`, `c + 2` attached to `c`. -/
@@ -430,26 +420,6 @@ private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_fork
 end ForkGraph
 
 /-! ### The `Dₙ` diagram -/
-
-/-- From rank three on, two nodes of the `Dₙ` diagram are joined exactly when they are consecutive
-on the long arm `0, …, n - 3`, or one is the branch node `n - 3` and the other a leaf. -/
-private theorem diagramGraph_D_adj {n : ℕ} (hn : 3 ≤ n) (i j : Fin n) :
-    (diagramGraph (DynkinType.D n).cartanMatrix : SimpleGraph (Fin n)).Adj i j ↔
-      (i : ℕ) + 1 = j ∧ (j : ℕ) ≤ n - 3 ∨ (j : ℕ) + 1 = i ∧ (i : ℕ) ≤ n - 3 ∨
-        (i : ℕ) = n - 3 ∧ n - 3 < j ∨ (j : ℕ) = n - 3 ∧ n - 3 < i := by
-  rw [DynkinType.cartanMatrix_D, diagramGraph_adj]
-  simp only [CartanMatrix.D, Matrix.of_apply, ne_eq, Fin.ext_iff]
-  have := i.2
-  have := j.2
-  split_ifs <;> simp <;> omega
-
-/-- Below rank three the `Dₙ` diagram has no edges. -/
-private theorem not_diagramGraph_D_adj {n : ℕ} (hn : n < 3) (i j : Fin n) :
-    ¬(diagramGraph (DynkinType.D n).cartanMatrix : SimpleGraph (Fin n)).Adj i j := by
-  rw [DynkinType.cartanMatrix_D, diagramGraph_adj]
-  rintro ⟨hij, h, -⟩
-  have hn' : n ≤ 2 := by omega
-  simp [CartanMatrix.D, hn', hij] at h
 
 /-- The two-colouring of `Dₙ`: the parity along the long arm, with both leaves coloured like the
 node `n - 2`. -/
@@ -479,7 +449,7 @@ theorem signlessPreprojectiveMk_D_ofPath_eq_zero_of_le
     obtain ⟨a, b, p⟩ := x
     cases p with
     | nil =>
-      have : _ < n := ((vertexEquiv _).symm a).2
+      have : _ < n := ((vertexEquiv _).symm a).isLt
       simp only [Path.length_nil] at hx
       omega
     | cons q e => exact absurd e.down (not_diagramGraph_D_adj (n := n) (by omega) _ _)
@@ -500,7 +470,7 @@ theorem preprojectiveMk_D_ofPath_eq_zero_of_le
   have hc : ∀ ⦃i j : OrientedQuiver (diagramGraph (DynkinType.D n).cartanMatrix) o⦄, (i ⟶ j) →
       dColoring n ((OrientedQuiver.vertexEquiv _ o).symm i) ≠
         dColoring n ((OrientedQuiver.vertexEquiv _ o).symm j) :=
-    fun _ _ a => (dColoring n).valid a.1
+    fun _ _ a => (dColoring n).valid a.val
   apply preprojectiveMk_ofPath_eq_zero_of_signless o k hc x
   exact signlessPreprojectiveMk_D_ofPath_eq_zero_of_le k _
     (by rwa [Prefunctor.length_mapTotalPath])
