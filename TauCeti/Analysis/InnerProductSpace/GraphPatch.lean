@@ -37,11 +37,13 @@ which is how a domain with `C^k` boundary is described near a boundary point. In
   ball about `x + ε ν` through `closure Ω`
   (`TauCeti.exists_forall_segment_subset_closure_of_ball_subset`).
 
-A bounded set `Ω` of a proper space with a Lipschitz graph patch at every frontier point therefore
-satisfies a *uniform cone condition* (`TauCeti.exists_forall_segment_subset_closure`): there are an
-aperture `θ ∈ (0, 1]` and a scale `ε₀ > 0` such that for every `ε ≤ ε₀`, every point `x` of
-`closure Ω` has a point `p` within `ε` of it with all segments from `x` to the closed ball of
-radius `θ ε` about `p` inside `closure Ω`. Interpolation inequalities up to the boundary use this
+A set `Ω` has *Lipschitz graph boundary* (`Set.HasLipschitzGraphBoundary`) if it has such a patch,
+on a ball and with `‖ν‖ = 1` and `γ` Lipschitz, at every frontier point. A bounded such set of a
+proper space therefore satisfies a *uniform cone condition*
+(`TauCeti.exists_forall_segment_subset_closure`): there are an aperture `θ ∈ (0, 1]` and a scale
+`ε₀ > 0` such that for every `ε ≤ ε₀`, every point `x` of `closure Ω` has a point `p` within `ε`
+of it with all segments from `x` to the closed ball of radius `θ ε` about `p` inside
+`closure Ω`. Interpolation inequalities up to the boundary use this
 to reach a point of the boundary from inside the domain.
 -/
 
@@ -190,17 +192,44 @@ theorem exists_forall_segment_subset_closure_of_ball_subset (hν : ‖ν‖ = 1)
   rw [hz'] at hseg ⊢
   exact segment_add_smul_add_subset_closure isOpen_ball hν hγ hγν hΩ hxγ hGe hseg
 
+end TauCeti
+
+namespace Set
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+open Metric in
+/-- A set `Ω` has **Lipschitz graph boundary** if near every point `x` of its frontier, in some
+ball `B(x, r)`, it is the region `{z | γ z < ⟪z, ν⟫}` above the graph of a Lipschitz function over
+the hyperplane `ν^⊥`: `ν` is a unit vector and `γ` is a `G`-Lipschitz function invariant
+along `ν`. -/
+def HasLipschitzGraphBoundary (Ω : Set E) : Prop :=
+  ∀ x ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧ LipschitzWith G γ ∧
+    (∀ z (t : ℝ), γ (z + t • ν) = γ z) ∧ 0 < r ∧ ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫_ℝ}
+
+open Metric in
+/-- A set has Lipschitz graph boundary exactly when every frontier point has a ball in which the
+set is the region above the graph of a Lipschitz function. -/
+theorem hasLipschitzGraphBoundary_iff {Ω : Set E} :
+    Ω.HasLipschitzGraphBoundary ↔ ∀ x ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ),
+      ‖ν‖ = 1 ∧ LipschitzWith G γ ∧ (∀ z (t : ℝ), γ (z + t • ν) = γ z) ∧ 0 < r ∧
+      ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫_ℝ} :=
+  Iff.rfl
+
+end Set
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {Ω : Set E}
+
 open Metric in
 /-- **The uniform cone condition.** Let `Ω` be a bounded set in a proper real inner product space
-with a Lipschitz graph patch at every frontier point `x`: `ball x r ∩ Ω = ball x r ∩
-{z | γ z < ⟪z, ν⟫}` for a unit vector `ν`, a radius `r > 0` and a Lipschitz function `γ` invariant
-along `ν`. Then there are `0 < θ ≤ 1` and `ε₀ > 0` such that for every `0 < ε ≤ ε₀`, every
-`x ∈ closure Ω` has a point `p` with `dist x p ≤ ε` and every segment from `x` to a point of
-`closedBall p (θ ε)` inside `closure Ω`. -/
+with Lipschitz graph boundary (`Set.HasLipschitzGraphBoundary`). Then there are `0 < θ ≤ 1` and
+`ε₀ > 0` such that for every `0 < ε ≤ ε₀`, every `x ∈ closure Ω` has a point `p` with
+`dist x p ≤ ε` and every segment from `x` to a point of `closedBall p (θ ε)` inside
+`closure Ω`. -/
 theorem exists_forall_segment_subset_closure [ProperSpace E] (hΩ : Bornology.IsBounded Ω)
-    (hbdry : ∀ x ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧
-      LipschitzWith G γ ∧ (∀ z (t : ℝ), γ (z + t • ν) = γ z) ∧ 0 < r ∧
-      ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫_ℝ}) :
+    (hbdry : Ω.HasLipschitzGraphBoundary) :
     ∃ θ : ℝ, 0 < θ ∧ θ ≤ 1 ∧ ∃ ε₀ : ℝ, 0 < ε₀ ∧ ∀ ε, 0 < ε → ε ≤ ε₀ → ∀ x ∈ closure Ω,
       ∃ p, dist x p ≤ ε ∧ ∀ z ∈ closedBall p (θ * ε), segment ℝ x z ⊆ closure Ω := by
   have hcl : IsCompact (closure Ω) := hΩ.isCompact_closure

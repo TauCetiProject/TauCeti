@@ -60,8 +60,8 @@ values and without lower-order terms.
   farther apart `‖D²u z - D²u w‖ ≤ 2 N ≤ 2 N δ^(-α) ‖z - w‖^α`
   (`lebesgue_number_lemma_of_metric`, `HolderOnWith.of_dist_lt_of_dist_le`). This gives the
   estimate with `N` bounding `|u|`, `‖Du‖` and `‖D²u‖`.
-* **Interpolation.** A `C^{2,α}` boundary patch is a Lipschitz one
-  (`Set.HasC2HolderBoundary.exists_lipschitzWith_patch`), so the interpolation inequalities on
+* **Interpolation.** A set with `C^{2,α}` boundary has Lipschitz graph boundary
+  (`Set.HasC2HolderBoundary.hasLipschitzGraphBoundary`), so the interpolation inequalities on
   `closure Ω`
   (`TauCeti.exists_forall_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_closure`) bound `‖Du‖`
   and `‖D²u‖` at a scale `ε ≤ 1` by `C_ε N` plus `ε^α` times a fixed multiple of the Hölder
@@ -377,22 +377,6 @@ private theorem exists_holderOnWith_iteratedFDeriv_two_closure_of_norm_add_norm_
   · push_cast; linarith [hT z hz, norm_nonneg (iteratedFDeriv ℝ 2 u z), N.coe_nonneg]
   · push_cast; linarith [hT z hz, norm_nonneg (fderiv ℝ u z), N.coe_nonneg]
 
-/-- Some scale `0 < ε ≤ ε₀` makes `c (ε^(1 + α) + ε^α)` at most `1 / 2`. -/
-private theorem exists_pos_le_mul_rpow_add_rpow_le {α : ℝ≥0} (hα : 0 < α) {c ε₀ : ℝ}
-    (hc : 0 ≤ c) (hε₀ : 0 < ε₀) :
-    ∃ ε : ℝ, 0 < ε ∧ ε ≤ ε₀ ∧ c * (ε ^ (1 + (α : ℝ)) + ε ^ (α : ℝ)) ≤ 1 / 2 := by
-  obtain ⟨ε₁, hε₁, hε₁1, hsmall⟩ := Real.exists_pos_le_one_mul_rpow_le (4 * c) (α := α) hα one_pos
-  refine ⟨min ε₀ ε₁, lt_min hε₀ hε₁, min_le_left _ _, ?_⟩
-  have hε : 0 < min ε₀ ε₁ := lt_min hε₀ hε₁
-  have hq : min ε₀ ε₁ ^ (α : ℝ) ≤ ε₁ ^ (α : ℝ) :=
-    Real.rpow_le_rpow hε.le (min_le_right _ _) α.coe_nonneg
-  have hq' : min ε₀ ε₁ ^ (1 + (α : ℝ)) ≤ min ε₀ ε₁ ^ (α : ℝ) := by
-    rw [Real.rpow_add hε, Real.rpow_one]
-    exact mul_le_of_le_one_left (by positivity) ((min_le_right _ _).trans hε₁1)
-  calc c * (min ε₀ ε₁ ^ (1 + (α : ℝ)) + min ε₀ ε₁ ^ (α : ℝ)) ≤ c * (2 * ε₁ ^ (α : ℝ)) := by
-        gcongr; linarith
-    _ ≤ 1 / 2 := by linarith
-
 /-- **The sup bounds of the global estimate.** Under the hypotheses of the global estimate, with
 `|u| ≤ N` on `closure Ω`, there is `B ≥ 1`, depending only on `Ω`, `α`, `λ`, `Λ`, `L` and `M`, with
 `‖Du‖ + ‖D²u‖ ≤ B (K + N)` on `closure Ω`. With `S` the supremum of `‖Du‖ + ‖D²u‖`, the estimate
@@ -417,10 +401,10 @@ private theorem exists_norm_fderiv_add_norm_iteratedFDeriv_two_le {α : ℝ≥0}
     hα1 hΩ hbdry Lam L M hlam
   obtain ⟨CI, hCI, ε₀, hε₀, hint⟩ :=
     exists_forall_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_closure (F := ℝ) hΩ
-      hbdry.exists_lipschitzWith_patch α
+      hbdry.hasLipschitzGraphBoundary α
   -- A scale `ε` at which the interpolation absorbs half of the Hölder constant.
-  obtain ⟨ε, hε, hεε₀, hsmall⟩ := exists_pos_le_mul_rpow_add_rpow_le hα (c := CI * C₁)
-    (by positivity) hε₀
+  obtain ⟨ε, hε, hεε₀, hsmall⟩ :=
+    Real.exists_pos_le_mul_rpow_add_rpow_le (CI * C₁) (α := α) hα one_half_pos hε₀
   refine ⟨2 + 2 * CI * (1 / ε + 1 / ε ^ 2), ?_,
     fun {a} hEll hEll' hL hM {U u N K V} hU hΩU hu hu0 hN hV hK => ?_⟩
   · nlinarith [show 0 ≤ 2 * CI * (1 / ε + 1 / ε ^ 2) by positivity]

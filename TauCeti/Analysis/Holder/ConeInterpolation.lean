@@ -35,10 +35,10 @@ symmetric bilinear map: with `dist x p + ρ ≤ R`,
 
 (`HolderOnWith.norm_fderiv_le_of_contDiffOn_of_forall_segment_subset`).
 
-On the closure of a bounded domain with Lipschitz graph patches the uniform cone condition
-(`TauCeti.exists_forall_segment_subset_closure`) supplies such a ball at every point, at every
-small scale `ε`, with `ρ = θ ε` and `R = 2 ε` for a fixed aperture `θ`. This gives the
-interpolation inequalities on `closure Ω`
+On the closure of a bounded domain with Lipschitz graph boundary (`Set.HasLipschitzGraphBoundary`)
+the uniform cone condition (`TauCeti.exists_forall_segment_subset_closure`) supplies such a ball
+at every point, at every small scale `ε`, with `ρ = θ ε` and `R = 2 ε` for a fixed aperture `θ`.
+This gives the interpolation inequalities on `closure Ω`
 (`TauCeti.exists_forall_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_closure`):
 
 `‖Du‖ ≤ C (M / ε + H ε^(1 + α))` and `‖D²u‖ ≤ C (M / ε² + H ε^α)`
@@ -107,18 +107,6 @@ theorem norm_apply_apply_le_of_hasFDerivWithinAt {s : Set E} {g : E → F}
   rw [norm_smul, Real.norm_two] at h1 h4
   nlinarith [mul_le_mul_of_nonneg_left hy H.coe_nonneg]
 
-omit [NormedSpace ℝ E] in
-/-- A direction `w` from `x` towards a point of `closedBall p ρ` has norm at most
-`dist x p + ρ`. -/
-private theorem add_mem_closedBall_and_norm_le {x p w : E} {ρ R : ℝ}
-    (hR : dist x p + ρ ≤ R) (hw : w ∈ closedBall (p - x) ρ) :
-    x + w ∈ closedBall p ρ ∧ ‖w‖ ≤ R := by
-  rw [mem_closedBall, dist_eq_norm] at hw
-  refine ⟨by rwa [mem_closedBall, dist_eq_norm, show x + w - p = w - (p - x) by abel], ?_⟩
-  have := norm_le_norm_add_norm_sub' w (p - x)
-  rw [dist_comm, dist_eq_norm] at hR
-  linarith
-
 /-- **Interpolation of the Hessian at a point seeing a ball.** Let `u` be `C²` on an open set
 `U ⊇ s`, with `D²u` `α`-Hölder with constant `H` on `s` and `‖u‖ ≤ M` on `s`. If every segment
 from `x` to a point of `closedBall p ρ` lies in `s`, and `dist x p + ρ ≤ R`, then
@@ -136,7 +124,10 @@ theorem norm_iteratedFDeriv_two_le_of_contDiffOn_of_forall_segment_subset {U s :
   rw [← norm_iteratedFDeriv_fderiv (n := 1), norm_iteratedFDeriv_one]
   refine (ContinuousLinearMap.opNorm_le_of_forall_mem_closedBall_norm_apply_self_le hsymm hρ
     (d := p - x) (A := 16 * M + 12 * H * R ^ (2 + (α : ℝ))) fun w hw => ?_).trans_eq (by ring)
-  obtain ⟨hxw, hwR⟩ := add_mem_closedBall_and_norm_le hR hw
+  have hxw : x + w ∈ closedBall p ρ := by
+    rwa [mem_closedBall_iff_norm, show x + w - p = w - (p - x) by abel, ← mem_closedBall_iff_norm]
+  have hwR : ‖w‖ ≤ R :=
+    (norm_le_of_mem_closedBall hw).trans (by rwa [← dist_eq_norm, dist_comm])
   refine (hH'.norm_apply_apply_le_of_hasFDerivWithinAt hd1 hd2 hM (hseg _ hxw)).trans ?_
   gcongr
 
@@ -157,8 +148,10 @@ theorem norm_fderiv_le_of_contDiffOn_of_forall_segment_subset {U s : Set E}
   refine (ContinuousLinearMap.opNorm_le_of_forall_mem_closedBall_norm_apply_le hρ (d := p - x)
     (A := 2 * M + ‖fderiv ℝ (fderiv ℝ u) x‖ * R ^ 2 / 2 + H * R ^ (2 + (α : ℝ)))
     fun w hw => ?_).trans_eq (by ring)
-  obtain ⟨hxw, hwR⟩ := add_mem_closedBall_and_norm_le hR hw
-  have hsegw := hseg _ hxw
+  have hsegw := hseg _ (by
+    rwa [mem_closedBall_iff_norm, show x + w - p = w - (p - x) by abel, ← mem_closedBall_iff_norm])
+  have hwR : ‖w‖ ≤ R :=
+    (norm_le_of_mem_closedBall hw).trans (by rwa [← dist_eq_norm, dist_comm])
   -- `Du(x) w` is `u (x + w) - u x - D²u(x) w w / 2` up to the second-order Taylor remainder.
   have hT := hH'.norm_image_sub_sub_sub_le_of_hasFDerivWithinAt hd1 hd2 hsegw
   have hMw := hM _ (hsegw (right_mem_segment ℝ x (x + w)))
@@ -188,18 +181,16 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [ProperS
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- **Interpolation inequalities on a bounded domain.** Let `Ω` be a bounded set in a proper real
-inner product space with a Lipschitz graph patch at every frontier point `x`:
-`ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫}` for a unit vector `ν`, a radius `r > 0` and a
-Lipschitz function `γ` invariant along `ν`. Let `α ≥ 0`. There are `C ≥ 0` and `ε₀ > 0`, depending
-only on `Ω` and `α`, such that for every `0 < ε ≤ ε₀` and every `u` that is `C²` on an open set
-containing `closure Ω`, with `‖u‖ ≤ M` on `closure Ω` and `D²u` `α`-Hölder with constant `H` there,
+inner product space with Lipschitz graph boundary (`Set.HasLipschitzGraphBoundary`): near each
+frontier point `x`, `ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫}` for a unit vector `ν`, a radius
+`r > 0` and a Lipschitz function `γ` invariant along `ν`. Let `α ≥ 0`. There are `C ≥ 0` and
+`ε₀ > 0`, depending only on `Ω` and `α`, such that for every `0 < ε ≤ ε₀` and every `u` that is
+`C²` on an open set containing `closure Ω`, with `‖u‖ ≤ M` on `closure Ω` and `D²u` `α`-Hölder
+with constant `H` there,
 
 `‖Du‖ ≤ C (M / ε + H ε^(1 + α))` and `‖D²u‖ ≤ C (M / ε² + H ε^α)` on `closure Ω`. -/
 theorem exists_forall_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_closure {Ω : Set E}
-    (hΩ : Bornology.IsBounded Ω)
-    (hbdry : ∀ x ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧
-      LipschitzWith G γ ∧ (∀ z (t : ℝ), γ (z + t • ν) = γ z) ∧ 0 < r ∧
-      ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫_ℝ}) (α : ℝ≥0) :
+    (hΩ : Bornology.IsBounded Ω) (hbdry : Ω.HasLipschitzGraphBoundary) (α : ℝ≥0) :
     ∃ C : ℝ, 0 ≤ C ∧ ∃ ε₀ : ℝ, 0 < ε₀ ∧ ∀ ε, 0 < ε → ε ≤ ε₀ →
       ∀ {U : Set E} {u : E → F} {H : ℝ≥0} {M : ℝ}, IsOpen U → closure Ω ⊆ U →
         ContDiffOn ℝ 2 u U → HolderOnWith H α (iteratedFDeriv ℝ 2 u) (closure Ω) →
