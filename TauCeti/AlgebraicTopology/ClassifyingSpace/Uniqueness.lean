@@ -239,10 +239,11 @@ theorem IsAspherical.exists_basedHomotopyEquiv {X : Type u} {Y : Type v}
         exact (φ.apply_symm_apply b).trans (mapOfEq_id _ b).symm
   exact ⟨⟨f, g, hgf_rel.homotopic, hfg_rel.homotopic⟩, hf, hg, hgf_rel, hfg_rel, hfφ, hgφ⟩
 
-/-- **Pointed homotopy equivalence of aspherical CW complexes (Hatcher, Theorem 1B.8).** Two
-aspherical Hausdorff CW complexes with isomorphic fundamental groups are homotopy equivalent by a
-basepoint-preserving homotopy equivalence inducing any prescribed isomorphism `φ` on fundamental
-groups; see `TauCeti.IsAspherical.exists_basedHomotopyEquiv` for the pointed homotopy inverse and
+/-- **Homotopy equivalence of aspherical CW complexes realizing a prescribed `π₁`-isomorphism
+(Hatcher, Theorem 1B.8).** Two aspherical Hausdorff CW complexes with isomorphic fundamental groups
+are homotopy equivalent by a homotopy equivalence whose forward map is basepoint-preserving and
+induces any prescribed isomorphism `φ` on fundamental groups; see
+`TauCeti.IsAspherical.exists_basedHomotopyEquiv` for the pointed homotopy inverse and
 basepoint-relative homotopies, and `TauCeti.homotopicRel_of_mapOfEq_eq_of_cwComplex` for uniqueness
 of the forward map up to pointed homotopy. -/
 theorem exists_homotopyEquiv_of_isAspherical {X : Type u} {Y : Type v}

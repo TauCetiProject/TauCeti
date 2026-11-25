@@ -301,16 +301,20 @@ private lemma unbasedInducedMonoidHom_apply {Z : Type*} [TopologicalSpace Z] (x�
         (map f x₀ a) :=
   rfl
 
-omit [PathConnectedSpace Y] in
-/-- Basepoint change along a three-step right-associated composite `p · (q · r)` applies the three
-basepoint-change equivalences in turn. -/
-private lemma fundamentalGroupMulEquivOfPath_trans_trans_apply {w₀ w₁ w₂ w₃ : Y}
-    (p : Path w₀ w₁) (q : Path w₁ w₂) (r : Path w₂ w₃) (z : FundamentalGroup Y w₀) :
-    fundamentalGroupMulEquivOfPath (p.trans (q.trans r)) z =
-      fundamentalGroupMulEquivOfPath r
-        (fundamentalGroupMulEquivOfPath q (fundamentalGroupMulEquivOfPath p z)) := by
-  rw [fundamentalGroupMulEquivOfPath_trans, MulEquiv.trans_apply,
-    fundamentalGroupMulEquivOfPath_trans, MulEquiv.trans_apply]
+/-- Transporting `unbasedInducedMonoidHom x₀ y₀ f` by conjugation with the loop `α · γ` at `y₀`
+recovers basepoint change along `γ : Path (f x₀) y₀` composed with `map f x₀`. -/
+private lemma monoidHomConjSetoid_unbasedInducedMonoidHom_comp {Z : Type*} [TopologicalSpace Z]
+    (x₀ : Z) (y₀ : Y) (f : C(Z, Y)) (γ : Path (f x₀) y₀) :
+    monoidHomConjSetoid _ _ (unbasedInducedMonoidHom x₀ y₀ f)
+      ((fundamentalGroupMulEquivOfPath γ).toMonoidHom.comp (map f x₀)) := by
+  let α := PathConnectedSpace.somePath y₀ (f x₀)
+  refine monoidHomConjSetoid_iff.2
+    ⟨fromPath (Path.Homotopic.Quotient.mk (α.trans γ)), fun a ↦ ?_⟩
+  rw [← MulAut.conj_apply, ← fundamentalGroupMulEquivOfPath_eq_conj,
+    fundamentalGroupMulEquivOfPath_trans, MulEquiv.trans_apply, unbasedInducedMonoidHom_apply,
+    MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
+  exact congrArg (fundamentalGroupMulEquivOfPath γ)
+    ((fundamentalGroupMulEquivOfPath α).apply_symm_apply _)
 
 private lemma monoidHomConjSetoid_unbasedInducedMonoidHom_iff_of_cwComplex
     [CWComplex (univ : Set X)] [PathConnectedSpace X] (x₀ : X) {y₀ : Y}
@@ -319,13 +323,13 @@ private lemma monoidHomConjSetoid_unbasedInducedMonoidHom_iff_of_cwComplex
       f.Homotopic g := by
   have hYg (n : ℕ) : Subsingleton (π_ (n + 2) Y (g x₀)) :=
     (homotopyGroupEquivOfPath (PathConnectedSpace.somePath y₀ (g x₀))).subsingleton_congr.mp (hY n)
-  rw [homotopic_iff_exists_path_fundamentalGroupMulEquivOfPath_of_cwComplex x₀ hYg,
-    monoidHomConjSetoid_iff]
+  rw [homotopic_iff_exists_path_fundamentalGroupMulEquivOfPath_of_cwComplex x₀ hYg]
   set αf := PathConnectedSpace.somePath y₀ (f x₀)
   set αg := PathConnectedSpace.somePath y₀ (g x₀)
   constructor
   · -- A conjugating loop `δ` at `y₀` yields the path `αf⁻¹ · (δ · αg)` from `f x₀` to `g x₀`.
-    rintro ⟨c, hc⟩
+    intro h
+    obtain ⟨c, hc⟩ := monoidHomConjSetoid_iff.1 h
     obtain ⟨δ, hδ⟩ := Quotient.exists_rep c.asHom
     have hc_eq : c = fromPath (Path.Homotopic.Quotient.mk δ) := by ext; exact hδ.symm
     refine ⟨αf.symm.trans (δ.trans αg), fun a ↦ ?_⟩
@@ -336,14 +340,13 @@ private lemma monoidHomConjSetoid_unbasedInducedMonoidHom_iff_of_cwComplex
     rw [fundamentalGroupMulEquivOfPath_trans_trans_apply, fundamentalGroupMulEquivOfPath_symm,
       ← unbasedInducedMonoidHom_apply, hconj, unbasedInducedMonoidHom_apply,
       MulEquiv.apply_symm_apply]
-  · -- Conversely, an intertwining path `γ` closes up with `αf` and `αg⁻¹` to a loop at `y₀`.
+  · -- Conversely, an intertwining path `γ` composes with `αg⁻¹` to a path from `f x₀` to `y₀`.
     rintro ⟨γ, hγ⟩
-    let δ : Path y₀ y₀ := αf.trans (γ.trans αg.symm)
-    refine ⟨fromPath (Path.Homotopic.Quotient.mk δ), fun a ↦ ?_⟩
-    rw [← MulAut.conj_apply, ← fundamentalGroupMulEquivOfPath_eq_conj,
-      unbasedInducedMonoidHom_apply, unbasedInducedMonoidHom_apply,
-      fundamentalGroupMulEquivOfPath_trans_trans_apply, MulEquiv.apply_symm_apply, hγ a,
-      fundamentalGroupMulEquivOfPath_symm]
+    have hfg_eq :
+        (fundamentalGroupMulEquivOfPath (γ.trans αg.symm)).toMonoidHom.comp (map f x₀) =
+          unbasedInducedMonoidHom x₀ y₀ g :=
+      MonoidHom.ext fun a ↦ by simp [αg, hγ a]
+    exact hfg_eq ▸ monoidHomConjSetoid_unbasedInducedMonoidHom_comp x₀ y₀ f (γ.trans αg.symm)
 
 /-- **Unbased homotopy classification of maps out of a CW complex on `univ` (Hatcher, Proposition
 1B.9).** For a path-connected Hausdorff CW complex `X` with base point `x₀` and a path-connected
@@ -351,26 +354,26 @@ space `Y` with `πₙ(Y, y₀) = 0` for `n ≥ 2`, free homotopy classes `[X, Y]
 bijection with conjugacy classes of homomorphisms `π₁(X, x₀) →* π₁(Y, y₀)`. -/
 def homotopicQuotientEquivMonoidHomConjQuotientOfCWComplex [CWComplex (univ : Set X)]
     [PathConnectedSpace X] (x₀ : X) {y₀ : Y} (hY : ∀ n : ℕ, Subsingleton (π_ (n + 2) Y y₀)) :
-    Quotient ⟨ContinuousMap.Homotopic (X := X) (Y := Y), ContinuousMap.Homotopic.equivalence⟩ ≃
+    Quotient (homotopicSetoid X Y) ≃
       Quotient (monoidHomConjSetoid (FundamentalGroup X x₀) (FundamentalGroup Y y₀)) :=
-  let s : Setoid C(X, Y) := ⟨ContinuousMap.Homotopic, ContinuousMap.Homotopic.equivalence⟩
   Equiv.ofBijective
-    (Quotient.lift (s := s)
+    (Quotient.lift (s := homotopicSetoid X Y)
       (fun f : C(X, Y) ↦ Quotient.mk (monoidHomConjSetoid _ _) (unbasedInducedMonoidHom x₀ y₀ f))
       fun f g h ↦ Quotient.sound
-        ((monoidHomConjSetoid_unbasedInducedMonoidHom_iff_of_cwComplex x₀ hY f g).2 h))
-    ⟨Quotient.ind₂ (s₁ := s) (s₂ := s) fun f g h ↦ Quotient.sound (s := s)
-        ((monoidHomConjSetoid_unbasedInducedMonoidHom_iff_of_cwComplex x₀ hY f g).1
-          (Quotient.exact h)),
+        ((monoidHomConjSetoid_unbasedInducedMonoidHom_iff_of_cwComplex x₀ hY f g).2
+          (homotopicSetoid_iff.1 h)))
+    ⟨Quotient.ind₂ (s₁ := homotopicSetoid X Y) (s₂ := homotopicSetoid X Y) fun f g h ↦
+        Quotient.sound (s := homotopicSetoid X Y) (homotopicSetoid_iff.2
+          ((monoidHomConjSetoid_unbasedInducedMonoidHom_iff_of_cwComplex x₀ hY f g).1
+            (Quotient.exact h))),
       Quotient.ind fun ψ ↦ by
         obtain ⟨f, hf, hfψ⟩ := exists_mapOfEq_of_cwComplex hY ψ
-        refine ⟨Quotient.mk s f, Quotient.sound (monoidHomConjSetoid_iff.2 ?_)⟩
+        refine ⟨Quotient.mk (homotopicSetoid X Y) f, Quotient.sound ?_⟩
         rcases hf with rfl
-        let α := PathConnectedSpace.somePath (f x₀) (f x₀)
-        refine ⟨fromPath (Path.Homotopic.Quotient.mk α), fun a ↦ ?_⟩
-        rw [← MulAut.conj_apply, ← fundamentalGroupMulEquivOfPath_eq_conj, ← hfψ,
-          mapOfEq_rfl, unbasedInducedMonoidHom_apply]
-        exact (fundamentalGroupMulEquivOfPath α).apply_symm_apply _⟩
+        have hψ :
+            (fundamentalGroupMulEquivOfPath (Path.refl (f x₀))).toMonoidHom.comp (map f x₀) = ψ :=
+          MonoidHom.ext fun a ↦ by simpa [mapOfEq_rfl] using DFunLike.congr_fun hfψ a
+        exact hψ ▸ monoidHomConjSetoid_unbasedInducedMonoidHom_comp x₀ (f x₀) f (Path.refl (f x₀))⟩
 
 /-- On any map `f : C(X, Y)` and any path `γ : Path (f x₀) y₀`,
 `homotopicQuotientEquivMonoidHomConjQuotientOfCWComplex` sends the free homotopy class of `f` to
@@ -379,18 +382,11 @@ theorem homotopicQuotientEquivMonoidHomConjQuotientOfCWComplex_mk_of_path
     [CWComplex (univ : Set X)] [PathConnectedSpace X] (x₀ : X) {y₀ : Y}
     (hY : ∀ n : ℕ, Subsingleton (π_ (n + 2) Y y₀)) (f : C(X, Y)) (γ : Path (f x₀) y₀) :
     homotopicQuotientEquivMonoidHomConjQuotientOfCWComplex x₀ hY
-        (Quotient.mk ⟨ContinuousMap.Homotopic, ContinuousMap.Homotopic.equivalence⟩ f) =
+        (Quotient.mk (homotopicSetoid X Y) f) =
       Quotient.mk (monoidHomConjSetoid _ _)
         ((fundamentalGroupMulEquivOfPath γ).toMonoidHom.comp (map f x₀)) := by
-  unfold homotopicQuotientEquivMonoidHomConjQuotientOfCWComplex
-  refine Quotient.sound (monoidHomConjSetoid_iff.2 ?_)
-  let α := PathConnectedSpace.somePath y₀ (f x₀)
-  refine ⟨fromPath (Path.Homotopic.Quotient.mk (α.trans γ)), fun a ↦ ?_⟩
-  rw [← MulAut.conj_apply, ← fundamentalGroupMulEquivOfPath_eq_conj,
-    fundamentalGroupMulEquivOfPath_trans, MulEquiv.trans_apply, unbasedInducedMonoidHom_apply,
-    MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
-  exact congrArg (fundamentalGroupMulEquivOfPath γ)
-    ((fundamentalGroupMulEquivOfPath α).apply_symm_apply _)
+  rw [homotopicQuotientEquivMonoidHomConjQuotientOfCWComplex.eq_1]
+  exact Quotient.sound (monoidHomConjSetoid_unbasedInducedMonoidHom_comp x₀ y₀ f γ)
 
 /-- On any map `f : C(X, Y)` sending `x₀` to `y₀`,
 `homotopicQuotientEquivMonoidHomConjQuotientOfCWComplex` sends the class of `f` to the conjugacy
@@ -400,7 +396,7 @@ theorem homotopicQuotientEquivMonoidHomConjQuotientOfCWComplex_mk_of_eq
     [CWComplex (univ : Set X)] [PathConnectedSpace X] (x₀ : X) {y₀ : Y}
     (hY : ∀ n : ℕ, Subsingleton (π_ (n + 2) Y y₀)) {f : C(X, Y)} (hf : f x₀ = y₀) :
     homotopicQuotientEquivMonoidHomConjQuotientOfCWComplex x₀ hY
-        (Quotient.mk ⟨ContinuousMap.Homotopic, ContinuousMap.Homotopic.equivalence⟩ f) =
+        (Quotient.mk (homotopicSetoid X Y) f) =
       Quotient.mk (monoidHomConjSetoid _ _) (mapOfEq f hf) := by
   rcases hf with rfl
   simpa [mapOfEq_rfl] using
@@ -410,7 +406,7 @@ theorem homotopicQuotientEquivMonoidHomConjQuotientOfCWComplex_mk_of_eq
 Proposition 1B.9).** -/
 def homotopicQuotientEquivMonoidHomConjQuotient {C : Set X} [CWComplex C] [PathConnectedSpace C]
     (x₀ : C) {y₀ : Y} (hY : ∀ n : ℕ, Subsingleton (π_ (n + 2) Y y₀)) :
-    Quotient ⟨ContinuousMap.Homotopic (X := C) (Y := Y), ContinuousMap.Homotopic.equivalence⟩ ≃
+    Quotient (homotopicSetoid C Y) ≃
       Quotient (monoidHomConjSetoid (FundamentalGroup C x₀) (FundamentalGroup Y y₀)) :=
   letI := cwComplexUniv C
   homotopicQuotientEquivMonoidHomConjQuotientOfCWComplex x₀ hY
@@ -422,7 +418,7 @@ theorem homotopicQuotientEquivMonoidHomConjQuotient_mk_of_path {C : Set X} [CWCo
     [PathConnectedSpace C] (x₀ : C) {y₀ : Y} (hY : ∀ n : ℕ, Subsingleton (π_ (n + 2) Y y₀))
     (f : C(C, Y)) (γ : Path (f x₀) y₀) :
     homotopicQuotientEquivMonoidHomConjQuotient x₀ hY
-        (Quotient.mk ⟨ContinuousMap.Homotopic, ContinuousMap.Homotopic.equivalence⟩ f) =
+        (Quotient.mk (homotopicSetoid C Y) f) =
       Quotient.mk (monoidHomConjSetoid _ _)
         ((fundamentalGroupMulEquivOfPath γ).toMonoidHom.comp (map f x₀)) := by
   let _ := cwComplexUniv C
@@ -436,7 +432,7 @@ theorem homotopicQuotientEquivMonoidHomConjQuotient_mk_of_eq {C : Set X} [CWComp
     [PathConnectedSpace C] (x₀ : C) {y₀ : Y} (hY : ∀ n : ℕ, Subsingleton (π_ (n + 2) Y y₀))
     {f : C(C, Y)} (hf : f x₀ = y₀) :
     homotopicQuotientEquivMonoidHomConjQuotient x₀ hY
-        (Quotient.mk ⟨ContinuousMap.Homotopic, ContinuousMap.Homotopic.equivalence⟩ f) =
+        (Quotient.mk (homotopicSetoid C Y) f) =
       Quotient.mk (monoidHomConjSetoid _ _) (mapOfEq f hf) := by
   let _ := cwComplexUniv C
   exact homotopicQuotientEquivMonoidHomConjQuotientOfCWComplex_mk_of_eq x₀ hY hf

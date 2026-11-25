@@ -84,8 +84,7 @@ reverse of the constant class is constant, left and right cancellation of concat
 concatenation of homotopy traces (`ContinuousMap.Homotopy.evalAt_trans`), naturality of homotopy
 traces along path classes (`Path.Homotopic.Quotient.map_trans_evalAt`,
 `Path.Homotopic.Quotient.evalAt_trans_map_of_mk_evalAt_eq`), endpoint-cast rules
-(`Path.Homotopic.Quotient.cast_trans`, `Path.Homotopic.Quotient.symm_cast`,
-`Path.Homotopic.Quotient.cast_refl_trans`, `Path.Homotopic.Quotient.trans_cast_refl`), and that
+(`Path.Homotopic.Quotient.cast_refl_trans`, `Path.Homotopic.Quotient.trans_cast_refl`), and that
 mapping a composite class and casting its endpoints composes the cast images of the factors
 (`Path.Homotopic.Quotient.map_trans_cast`). `Path.refl_trans_eq_reparam`, the left counterpart of
 Mathlib's `Path.Homotopy.trans_refl_reparam`, and `map_trans_cast` are used by the gluing of caps
@@ -887,20 +886,6 @@ theorem map_trans_evalAt {Y : Type*} [TopologicalSpace Y] {f g : C(X, Y)} (F : f
   | mk p =>
     simp only [← mk_map, ← mk_trans]
     exact Quotient.sound (Homotopic.map_trans_evalAt F p)
-
-/-- Casting the endpoints of a composite of path-homotopy classes composes the cast factors. -/
-theorem cast_trans {a b c : X} (P : Homotopic.Quotient a b) (Q : Homotopic.Quotient b c)
-    {x₀ x₁ x₂ : X} (h₀ : x₀ = a) (h₁ : x₁ = b) (h₂ : x₂ = c) :
-    (P.trans Q).cast h₀ h₂ = (P.cast h₀ h₁).trans (Q.cast h₁ h₂) := by
-  subst h₀ h₁ h₂
-  simp only [cast_rfl_rfl]
-
-/-- Reversing a cast path-homotopy class casts the reversed class with swapped endpoint proofs. -/
-@[simp]
-theorem symm_cast {a b : X} (P : Homotopic.Quotient a b) {x₀ x₁ : X} (h₀ : x₀ = a) (h₁ : x₁ = b) :
-    (P.cast h₀ h₁).symm = P.symm.cast h₁ h₀ := by
-  subst h₀ h₁
-  simp only [cast_rfl_rfl]
 
 /-- Composing on the left with a cast reflexivity class casts the left endpoint. -/
 @[simp]

@@ -40,6 +40,8 @@ differential of the inclusion is not proved here.
   `Topology.IsEmbedding.subtypeVal`, since `K` carries the subspace topology.
 * `TauCeti.Lie.EmbeddedLieSubgroupData.isSmoothEmbedding_subtypeVal`: the smooth embedding of
   a subgroup with a finite-dimensional boundaryless ambient model.
+* `TauCeti.Lie.EmbeddedLieSubgroupData.isImmersion_codRestrict`: an immersion into the ambient
+  group with values in an embedded Lie subgroup is an immersion into the subgroup.
 * `TauCeti.Lie.EmbeddedLieSubgroupData.contMDiffSMul`: an embedded Lie subgroup acts smoothly on
   every manifold on which the ambient group acts smoothly, such as the ambient group itself, and
   `TauCeti.Lie.EmbeddedLieSubgroupData.injective_mfderiv_mul_left_subtypeVal`: the differential of
@@ -122,6 +124,20 @@ theorem isSmoothEmbedding_subtypeVal [FiniteDimensional ℝ E] [LieGroup I ∞ G
   let _ := d.lieGroup
   exact ⟨d.contMDiff_subtypeVal.isImmersion_of_injective_mfderiv (by simp)
     d.injective_mfderiv_subtypeVal, Topology.IsEmbedding.subtypeVal⟩
+
+/-- An immersion into the ambient group with values in an embedded Lie subgroup is an immersion
+into the subgroup. -/
+theorem isImmersion_codRestrict [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+    [LieGroup I ∞ G] [I.Boundaryless] (d : EmbeddedLieSubgroupData I K E')
+    {EM : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ EM] {HM : Type*} [TopologicalSpace HM]
+    {IM : ModelWithCorners ℝ EM HM} [IM.Boundaryless] {M : Type*} [TopologicalSpace M]
+    [ChartedSpace HM M] [IsManifold IM ∞ M] {f : M → G} (himm : Manifold.IsImmersion IM I ∞ f)
+    (hf : ∀ x, f x ∈ K) :
+    let _ := d.chartedSpace
+    Manifold.IsImmersion IM 𝓘(ℝ, E') ∞ (fun x ↦ (⟨f x, hf x⟩ : K)) := by
+  let _ := d.chartedSpace
+  let _ := d.lieGroup
+  exact d.isSmoothEmbedding_subtypeVal.isImmersion_of_isImmersion_comp (by simp) himm
 
 /-- An embedded Lie subgroup acts smoothly on every manifold on which the ambient group acts
 smoothly, for instance on the ambient group itself by left multiplication. -/
