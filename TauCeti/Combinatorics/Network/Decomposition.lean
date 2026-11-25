@@ -27,7 +27,9 @@ each arrow at most once.
 There is such a decomposition with at most as many components as arrows of positive value, and
 with all weights in any additive subgroup containing the values of `f`. For an ordinary `s`–`t`
 flow every path of a decomposition runs from `s` to `t`, and the path weights add up to the value
-of the flow; for a circulation there are no paths at all.
+of the flow. A nonnegative bounded `s`–`t` assignment of negative value instead decomposes after
+terminal exchange into paths from `t` to `s` and cycles. For a circulation there are no paths at
+all.
 
 ## Main definitions
 
@@ -57,6 +59,9 @@ of the flow; for a circulation there are no paths at all.
   `s`–`t` flow, whose paths run from `s` to `t` with total weight the value of the flow.
 * `TauCeti.PathCycleDecomposition.pathAssignment_apply_le_val`: the path components of a
   decomposition of an ordinary flow carry at most its value on every arrow.
+* `TauCeti.BoundedFlow.exists_pathCycleDecomposition_of_val_neg`: a nonnegative bounded assignment
+  of negative value decomposes into a nonempty family of paths from the sink back to the source,
+  together with cycles.
 * `TauCeti.PathCycleDecomposition.weight_eq_one_of_mem_paths` and
   `TauCeti.PathCycleDecomposition.pairwise_disjoint_arrows`: for an integer assignment carrying at
   most one unit on every arrow, every path component has weight one and different path components
@@ -659,6 +664,33 @@ theorem pairwise_disjoint_arrows (hf : ∀ ⦃x y : V⦄ (e : Q x y), f e ≤ 1)
   omega
 
 end PathCycleDecomposition
+
+/-- A nonnegative bounded `s`–`t` assignment of negative value decomposes into paths from `t` to
+`s` and cycles. The path family is nonempty, and its total weight is the opposite of the original
+value. -/
+theorem BoundedFlow.exists_pathCycleDecomposition_of_val_neg [LinearOrder K]
+    [IsOrderedAddMonoid K] {cap : Assignment Q K} {s t : V} (f : BoundedFlow 0 cap s t)
+    (hf : f.val < 0) :
+    ∃ D : PathCycleDecomposition (f.swapFlow hf.le).toFun, D.paths ≠ [] ∧
+      (∀ p ∈ D.paths, p.source = t ∧ p.target = s) ∧
+      (D.paths.map WeightedWalk.weight).sum = -f.val := by
+  let g := f.swapFlow hf.le
+  obtain ⟨D⟩ := nonempty_pathCycleDecomposition (f := g.toFun) fun _ _ e ↦ g.nonneg e
+  have hval : g.val = -f.val := by
+    calc
+      g.val = g.toBoundedFlow.val := rfl
+      _ = f.swap.val := congrArg BoundedFlow.val (by
+        simpa only [g] using BoundedFlow.toBoundedFlow_swapFlow f hf.le)
+      _ = -f.val := BoundedFlow.val_swap f
+  have hsum : (D.paths.map WeightedWalk.weight).sum = -f.val :=
+    D.sum_weight_paths_eq_val.trans hval
+  refine ⟨D, ?_, fun p hp ↦ ⟨D.source_eq_of_mem_paths hp,
+    D.target_eq_of_mem_paths hp⟩, hsum⟩
+  intro hpaths
+  have hpos : 0 < (D.paths.map WeightedWalk.weight).sum := by
+    rw [hsum]
+    exact neg_pos.mpr hf
+  simp [hpaths] at hpos
 
 /-- An integer `s`–`t` flow carrying at most one unit on every arrow carries as many directed
 `s`–`t` paths as its value, no two of which traverse a common arrow: every arrow of these paths
