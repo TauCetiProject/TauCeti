@@ -92,23 +92,15 @@ theorem quotientSheaf.isIso_desc_of_isLocallySurjective (hq : t ≫ q = s ≫ q)
     IsIso (quotientSheaf.desc (J.uliftYoneda.{w}.map q)
       (quotientSheaf.uliftYoneda_map_condition hq)) := by
   have := IsRegularEpiCategory.regularEpiOfEpi (J.uliftYoneda.{w}.map q)
-  have hπ : ∀ {Z : Sheaf J (Type (max v w))} (g₁ g₂ : Z ⟶ J.uliftYoneda.{w}.obj U),
-      g₁ ≫ J.uliftYoneda.{w}.map q = g₂ ≫ J.uliftYoneda.{w}.map q →
-        g₁ ≫ quotientSheaf.π J s t = g₂ ≫ quotientSheaf.π J s t := by
-    intro Z g₁ g₂ h
-    have key : pullback.fst (J.uliftYoneda.{w}.map q) (J.uliftYoneda.{w}.map q) ≫
-        quotientSheaf.π J s t =
-          pullback.snd (J.uliftYoneda.{w}.map q) (J.uliftYoneda.{w}.map q) ≫
-            quotientSheaf.π J s t := by
-      rw [← cancel_epi (quotientSheaf.toKernelPair.{w} J hq), pullback.lift_fst_assoc,
-        pullback.lift_snd_assoc, quotientSheaf.condition]
-    calc g₁ ≫ quotientSheaf.π J s t
-        = pullback.lift g₁ g₂ h ≫ pullback.fst _ _ ≫ quotientSheaf.π J s t := by
-          rw [pullback.lift_fst_assoc]
-      _ = pullback.lift g₁ g₂ h ≫ pullback.snd _ _ ≫ quotientSheaf.π J s t := by rw [key]
-      _ = g₂ ≫ quotientSheaf.π J s t := by rw [pullback.lift_snd_assoc]
-  let ψ := EffectiveEpi.desc (J.uliftYoneda.{w}.map q) (quotientSheaf.π J s t) hπ
-  have hψ : J.uliftYoneda.{w}.map q ≫ ψ = quotientSheaf.π J s t := EffectiveEpi.fac _ _ _
+  have key : pullback.fst (J.uliftYoneda.{w}.map q) (J.uliftYoneda.{w}.map q) ≫
+      quotientSheaf.π J s t =
+        pullback.snd (J.uliftYoneda.{w}.map q) (J.uliftYoneda.{w}.map q) ≫
+          quotientSheaf.π J s t := by
+    rw [← cancel_epi (quotientSheaf.toKernelPair.{w} J hq), pullback.lift_fst_assoc,
+      pullback.lift_snd_assoc, quotientSheaf.condition]
+  have hc := isColimitCoforkOfEffectiveEpi (J.uliftYoneda.{w}.map q) _ (pullback.isLimit _ _)
+  let ψ := Cofork.IsColimit.desc hc (quotientSheaf.π J s t) key
+  have hψ : J.uliftYoneda.{w}.map q ≫ ψ = quotientSheaf.π J s t := Cofork.IsColimit.π_desc hc
   refine ⟨ψ, quotientSheaf.hom_ext ?_, ?_⟩
   · rw [quotientSheaf.π_desc_assoc, hψ, Category.comp_id]
   · rw [← cancel_epi (J.uliftYoneda.{w}.map q), reassoc_of% hψ, quotientSheaf.π_desc,

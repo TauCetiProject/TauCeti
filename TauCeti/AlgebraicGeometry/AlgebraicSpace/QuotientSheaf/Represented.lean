@@ -15,8 +15,9 @@ public import TauCeti.CategoryTheory.Sites.QuotientSheaf.Represented
 
 Let `s t : R ⟶ U` be a pre-relation of schemes and `q : U ⟶ M` an invariant morphism. If
 `h_U ⟶ h_M` and `h_R ⟶ h_U ×_{h_M} h_U` are fppf locally surjective, then the quotient sheaf `U/R`
-is the representable sheaf `h_M` (Stacks, Lemma 39.20.3 (03C5)). This is the instance
-`J := Scheme.fppfTopology` of `TauCeti.CategoryTheory.quotientSheaf.isoOfIsLocallySurjective`.
+is the representable sheaf `h_M` (Stacks, Lemma 39.20.3 (03C5)). Since `Spaces.quotientSheaf` is
+the general quotient sheaf at `J := Scheme.fppfTopology`, this isomorphism is
+`TauCeti.CategoryTheory.quotientSheaf.isoOfIsLocallySurjective` applied directly.
 
 The main instance is an fppf covering `q : U ⟶ M` (flat, locally of finite presentation and
 surjective) with its kernel pair `R = U ×_M U`: then `h_R ⟶ h_U ×_{h_M} h_U` is an isomorphism and
@@ -24,8 +25,6 @@ surjective) with its kernel pair `R = U ×_M U`: then `h_R ⟶ h_U ×_{h_M} h_U`
 
 ## Main definitions
 
-* `TauCeti.AlgebraicGeometry.Spaces.quotientSheaf.isoOfIsLocallySurjective`: `U/R ≅ h_M` under
-  the hypotheses of Stacks, Lemma 39.20.3 (03C5).
 * `TauCeti.AlgebraicGeometry.Spaces.quotientSheaf.kernelPairIso`: for an fppf covering
   `q : U ⟶ M`, the quotient sheaf of the kernel pair of `q` is `h_M`.
 * `TauCeti.AlgebraicGeometry.Spaces.quotientSheaf.foldKernelPairIso`: the quotient sheaf of the
@@ -47,16 +46,6 @@ open _root_.AlgebraicGeometry
 universe u
 
 variable {R U M : Scheme.{u}} {s t : R ⟶ U}
-
-/-- **Stacks, Lemma 39.20.3 (03C5).** For a morphism of schemes `q : U ⟶ M` invariant for the
-pre-relation `(t, s)`, such that `h_U ⟶ h_M` and `h_R ⟶ h_U ×_{h_M} h_U` are fppf locally
-surjective, the quotient sheaf `U/R` is the representable sheaf `h_M`. -/
-noncomputable abbrev quotientSheaf.isoOfIsLocallySurjective {q : U ⟶ M} (hq : t ≫ q = s ≫ q)
-    (hU : Sheaf.IsLocallySurjective (Scheme.fppfTopology.uliftYoneda.{u + 1}.map q))
-    (hR : Sheaf.IsLocallySurjective
-      (TauCeti.CategoryTheory.quotientSheaf.toKernelPair.{u + 1} Scheme.fppfTopology hq)) :
-    quotientSheaf s t ≅ Scheme.fppfTopology.uliftYoneda.{u + 1}.obj M :=
-  TauCeti.CategoryTheory.quotientSheaf.isoOfIsLocallySurjective hq hU hR
 
 /-- The singleton sieve of an fppf covering morphism `q : U ⟶ M` covers `M` for the fppf
 topology. -/
@@ -100,12 +89,6 @@ theorem quotientSheaf.π_kernelPairIso_hom (q : U ⟶ M) [Flat q]
 section Fold
 
 variable (U) (ι : Type) [Nonempty ι]
-
-/-- The fold map `∐_{i : ι} U ⟶ U` is flat. -/
-instance flat_sigmaDesc_id : Flat (Sigma.desc fun _ : ι ↦ 𝟙 U) :=
-  have : IsZariskiLocalAtSource @Flat.{u} :=
-    HasRingHomProperty.instIsZariskiLocalAtSource (Q := @RingHom.Flat)
-  IsZariskiLocalAtSource.sigmaDesc fun _ ↦ inferInstance
 
 /-- The fold map `∐_{i : ι} U ⟶ U` is locally of finite presentation. -/
 instance locallyOfFinitePresentation_sigmaDesc_id :
