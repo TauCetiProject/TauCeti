@@ -340,8 +340,8 @@ private theorem range_weylGroupToPerm_typeDSimplyConnectedRootDatum (hn : 4 ≤ 
       ((typeDRootPermHom n hn).domRestrict (typeDWeylSubgroup n)).range := by
   rw [range_weylGroupToPerm, reflectionPerm_typeDSimplyConnectedRootDatum,
     range_comp, (typeDRootEquiv n hn).surjective.range_comp, ← MonoidHom.map_closure,
-    closure_range_typeDRootReflectionEquiv, Subgroup.map_map, MonoidHom.domRestrict_range]
-  rfl
+    closure_range_typeDRootReflectionEquiv, Subgroup.map_map, MonoidHom.domRestrict_range,
+    typeDRootPermHom]
 
 private theorem typeDRootPermHom_domRestrict_injective (hn : 4 ≤ n) :
     Injective ((typeDRootPermHom n hn).domRestrict (typeDWeylSubgroup n)) :=
