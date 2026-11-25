@@ -691,7 +691,7 @@ theorem lineEquiv_ιMulti (hF : finrank 𝕜 F = 1) (v : Fin (finrank 𝕜 F) �
 /-- In a linear trivialization `e` of a line bundle, the isomorphism `det L ≃ L` sends a vector
 with chart coordinate `c` in `det L` to the vector with coordinate `c • b` in `L`, where `b` is the
 single vector of the basis `Module.finBasis 𝕜 F` of the model fibre. -/
-theorem trivialization_lineEquiv (hF : finrank 𝕜 F = 1) (e : Trivialization F (π F E))
+theorem snd_apply_lineEquiv (hF : finrank 𝕜 F = 1) (e : Trivialization F (π F E))
     [e.IsLinear 𝕜] (hx : x ∈ e.baseSet) (v : DetBundle 𝕜 F E x) (i : Fin (finrank 𝕜 F)) :
     (e ⟨x, lineEquiv hF x v⟩).2 = chartCoord e hx v • Module.finBasis 𝕜 F i := by
   have : Unique (Fin (finrank 𝕜 F)) := (finCongr hF).unique
@@ -713,7 +713,7 @@ theorem continuous_lineEquiv (hF : finrank 𝕜 F = 1) :
       ((trivializationAt 𝕜 _ p.proj).open_source.mem_nhds
         (FiberBundle.mem_trivializationAt_proj_source))).snd.smul continuousAt_const, ?_⟩
   rintro ⟨y, v⟩ (hy : y ∈ (trivializationAt F E p.proj).baseSet) -
-  rw [trivialization_lineEquiv hF _ hy _ default, trivializationAt_eq,
+  rw [snd_apply_lineEquiv hF _ hy _ default, trivializationAt_eq,
     trivialization_apply_mk _ hy]
 
 /-- **The determinant line bundle of a line bundle is the line bundle itself**: the total spaces
