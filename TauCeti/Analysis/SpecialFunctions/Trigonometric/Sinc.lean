@@ -17,11 +17,16 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 `sinc` is real analytic, hence smooth, since it is the slope `dslope sin 0` of the analytic
 function `sin`.
 
-`sinc` is nonnegative on `[-π, π]`, complementing Mathlib's `Real.sinc_pos` on `(-π, π)`. Near
+`sinc` is nonnegative on `[-π, π]`, complementing Mathlib's `Real.sinc_pos` on `(-π, π)`, and its
+square has the integrable majorant `2 / (1 + x²)` (`Real.sinc_sq_le_two_div_one_add_sq`). Near
 zero it is quadratically close to one, `|sinc x - 1| ≤ x² / 6`, and it factors the remainder of
 the cosine, `1 - cos x = (x² / 2) sinc (x / 2)²`. Consequently the real-line Fejér kernel
 `T / 2 * sinc (T * y / 2) ^ 2` is at least `T / 4` while `|y| ≤ T⁻¹`
 (`TauCeti.div_four_le_mul_sinc_sq`).
+
+Since `cos (π x / 2)` vanishes at `x = ±1`, `sin (π x / 2)² - 1 = -cos (π x / 2)²` is the product
+of `x² - 1` with the continuous function `(π / 2)² sinc (π (1 - x) / 2) sinc (π (1 + x) / 2)`
+(`Real.mul_self_sin_pi_mul_div_two_sub_one`).
 
 For `ω ≠ 0` the function `t ↦ t sinc (ω t)` is `t ↦ sin (ω t) / ω`, and for `ω = 0` it is the
 identity. Either way its derivative is `t ↦ cos (ω t)`, so it is the solution of
@@ -49,6 +54,13 @@ theorem contDiff_sinc {n : WithTop ℕ∞} : ContDiff ℝ n sinc :=
 theorem mul_sinc (x : ℝ) : x * sinc x = sin x := by
   simpa [sinc_eq_dslope] using sub_smul_dslope sin 0 x
 
+/-- The bound `sinc² x ≤ 2 / (1 + x²)`, from `sinc² ≤ 1` and `x² sinc² x = sin² x ≤ 1`. -/
+theorem sinc_sq_le_two_div_one_add_sq (x : ℝ) : sinc x ^ 2 ≤ 2 / (1 + x ^ 2) := by
+  have h1 : sinc x ^ 2 ≤ 1 := (sq_le_one_iff_abs_le_one _).2 (abs_sinc_le_one x)
+  have h2 : (x * sinc x) ^ 2 ≤ 1 := by rw [mul_sinc]; exact sin_sq_le_one x
+  rw [le_div_iff₀ (by positivity)]
+  nlinarith
+
 /-- For `ω ≠ 0`, `t sinc (ω t) = sin (ω t) / ω`. -/
 theorem mul_sinc_mul_of_ne_zero {ω : ℝ} (hω : ω ≠ 0) (t : ℝ) :
     t * sinc (ω * t) = sin (ω * t) / ω := by
@@ -63,6 +75,19 @@ theorem hasDerivAt_mul_sinc_mul (ω t : ℝ) :
   · simp_rw [mul_sinc_mul_of_ne_zero hω]
     convert ((hasDerivAt_id' t).const_mul ω).sin.div_const ω using 1
     field_simp
+
+/-- `sin (π x / 2)² - 1 = (π / 2)² sinc (π (1 - x) / 2) sinc (π (1 + x) / 2) (x² - 1)`: the defect
+`sin (π x / 2)² - 1` is a continuous function of `x` times `x² - 1`, because `cos (π x / 2)` is
+both `sin (π (1 - x) / 2)` and `sin (π (1 + x) / 2)`. -/
+theorem mul_self_sin_pi_mul_div_two_sub_one (x : ℝ) :
+    sin (π * x / 2) * sin (π * x / 2) - 1 =
+      (π / 2) ^ 2 * sinc (π * (1 - x) / 2) * sinc (π * (1 + x) / 2) * (x * x - 1) := by
+  have h₁ : π * (1 - x) / 2 * sinc (π * (1 - x) / 2) = cos (π * x / 2) := by
+    rw [mul_sinc, ← sin_pi_div_two_sub]; ring_nf
+  have h₂ : π * (1 + x) / 2 * sinc (π * (1 + x) / 2) = cos (π * x / 2) := by
+    rw [mul_sinc, ← sin_add_pi_div_two]; ring_nf
+  linear_combination sin_sq_add_cos_sq (π * x / 2) +
+    π * (1 + x) / 2 * sinc (π * (1 + x) / 2) * h₁ + cos (π * x / 2) * h₂
 
 /-- The subtraction formula for `t ↦ t sinc (t a)`, which is `sin (t a) / a` for `a ≠ 0`:
 `(t - s) sinc ((t - s) a) = t sinc (t a) cos (s a) - cos (t a) s sinc (s a)`. -/

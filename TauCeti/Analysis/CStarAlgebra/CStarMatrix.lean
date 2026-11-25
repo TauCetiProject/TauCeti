@@ -39,8 +39,8 @@ Hilbert C⋆-module.
 
 The file also collects basic algebraic API for `CStarMatrix` that Mathlib lacks: entries of finite
 sums and of `1 × 1` matrices, entrywise images under sums and scalar multiples of linear maps,
-the transpose as a linear map, the star algebra isomorphism `M_m(M_n(A)) ≃ M_{m × n}(A)` and the
-diagonal embedding `b ↦ diag(b, …, b)`.
+the transpose as a linear map, the star algebra isomorphism `M_m(M_n(A)) ≃ M_{m × n}(A)`, the
+diagonal embedding `b ↦ diag(b, …, b)` and the matrix units `eᵢⱼ` of `M_n(ℂ)`.
 
 ## Main declarations
 
@@ -56,6 +56,10 @@ diagonal embedding `b ↦ diag(b, …, b)`.
   companions `CStarMatrix.ofMatrix_symm_zero`, `ofMatrix_symm_one`, `ofMatrix_symm_add`,
   `ofMatrix_symm_neg`, `ofMatrix_symm_sub` and `ofMatrix_symm_smul` do the same for the other
   algebraic operations.
+* `CStarMatrix.isStarProjection_ofMatrix_symm_iff`, `CStarMatrix.isStarProjection_ofMatrix_iff`:
+  a C⋆-matrix is a star projection exactly when the underlying matrix is; companions
+  `CStarMatrix.isSelfAdjoint_ofMatrix_iff` and `CStarMatrix.ofMatrix_mem_unitary_iff` do the same
+  for self-adjoint and unitary matrices.
 * `CStarMatrix.mul_eq_self_of_conjTranspose_mul_eq`: over a star-ordered ring with proper star,
   a rectangular matrix is supported on its initial projection.
 * `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`, `CStarMatrix.reindexₐ_apply_apply`:
@@ -66,8 +70,9 @@ diagonal embedding `b ↦ diag(b, …, b)`.
   image under a linear map.
 * `CStarMatrix.transposeₗ`: the transpose of C⋆-matrices, as a linear map.
 * `CStarMatrix.matrixUnit`: the matrix units `e_ij` of `M_n(ℂ)`, with
-  `CStarMatrix.star_matrixUnit`, `CStarMatrix.matrixUnit_mul_matrixUnit` and
-  `CStarMatrix.norm_matrixUnit`: `‖e_ij‖ = 1`.
+  `CStarMatrix.ofMatrix_symm_matrixUnit`, `CStarMatrix.star_matrixUnit`,
+  `CStarMatrix.matrixUnit_mul_matrixUnit`, `CStarMatrix.isStarProjection_matrixUnit` (`e_ii` is a
+  projection) and `CStarMatrix.norm_matrixUnit`: `‖e_ij‖ = 1`.
 * `CStarMatrix.compStarAlgEquiv`: `Matrix.comp` as a star algebra isomorphism
   `M_m(M_n(A)) ≃ M_{m × n}(A)`.
 * `CStarMatrix.diagonalNonUnitalStarAlgHom`: the diagonal embedding `b ↦ diag(b, …, b)` of `B`
@@ -266,6 +271,47 @@ lemma conjTranspose_conjTranspose {m : Type*} [InvolutiveStar A] (M : CStarMatri
   apply ofMatrix.symm.injective
   simp only [ofMatrix_symm_conjTranspose, Matrix.conjTranspose_conjTranspose]
 
+/-- A C⋆-matrix is a star projection exactly when the underlying matrix is. -/
+@[simp]
+lemma isStarProjection_ofMatrix_symm_iff [Fintype n] [NonUnitalSemiring A] [StarRing A]
+    {M : CStarMatrix n n A} : IsStarProjection (ofMatrix.symm M) ↔ IsStarProjection M := by
+  have h₁ : ofMatrix.symm M * ofMatrix.symm M = ofMatrix.symm M ↔ M * M = M := by
+    rw [← ofMatrix_symm_mul, ofMatrix.symm.injective.eq_iff]
+  have h₂ : star (ofMatrix.symm M) = ofMatrix.symm M ↔ star M = M := by
+    rw [Matrix.star_eq_conjTranspose, ← ofMatrix_symm_star, ofMatrix.symm.injective.eq_iff]
+  simp only [isStarProjection_iff, IsIdempotentElem, IsSelfAdjoint, h₁, h₂]
+
+/-- A matrix is a star projection exactly when it is one as a C⋆-matrix. -/
+@[simp]
+lemma isStarProjection_ofMatrix_iff [Fintype n] [NonUnitalSemiring A] [StarRing A]
+    {M : Matrix n n A} : IsStarProjection (ofMatrix M) ↔ IsStarProjection M := by
+  rw [← isStarProjection_ofMatrix_symm_iff, Equiv.symm_apply_apply]
+
+/-- A matrix is self-adjoint exactly when it is self-adjoint as a C⋆-matrix. -/
+@[simp]
+lemma isSelfAdjoint_ofMatrix_iff [Star A] {M : Matrix n n A} :
+    IsSelfAdjoint (ofMatrix M) ↔ IsSelfAdjoint M :=
+  Iff.rfl
+
+/-- A C⋆-matrix is self-adjoint exactly when the underlying matrix is. -/
+@[simp]
+lemma isSelfAdjoint_ofMatrix_symm_iff [Star A] {M : CStarMatrix n n A} :
+    IsSelfAdjoint (ofMatrix.symm M) ↔ IsSelfAdjoint M :=
+  Iff.rfl
+
+/-- A matrix is unitary exactly when it is unitary as a C⋆-matrix. -/
+@[simp]
+lemma ofMatrix_mem_unitary_iff [Fintype n] [DecidableEq n] [Semiring A] [StarRing A]
+    {M : Matrix n n A} : ofMatrix M ∈ unitary (CStarMatrix n n A) ↔ M ∈ unitary (Matrix n n A) :=
+  Iff.rfl
+
+/-- A C⋆-matrix is unitary exactly when the underlying matrix is. -/
+@[simp]
+lemma ofMatrix_symm_mem_unitary_iff [Fintype n] [DecidableEq n] [Semiring A] [StarRing A]
+    {M : CStarMatrix n n A} :
+    ofMatrix.symm M ∈ unitary (Matrix n n A) ↔ M ∈ unitary (CStarMatrix n n A) :=
+  Iff.rfl
+
 /-- Over a star-ordered ring with proper star, a rectangular matrix whose initial Gram matrix is
 an idempotent `p` is supported on `p`. -/
 lemma mul_eq_self_of_conjTranspose_mul_eq {m : Type*} [Fintype m] [Fintype n] [NonUnitalRing A]
@@ -409,6 +455,12 @@ variable {n : Type*} [DecidableEq n]
 def matrixUnit (i j : n) : CStarMatrix n n ℂ :=
   ofMatrix (Matrix.single i j 1)
 
+/-- Reading `e_ij` as an ordinary matrix gives `Matrix.single i j 1`. -/
+@[simp]
+theorem ofMatrix_symm_matrixUnit (i j : n) :
+    ofMatrix.symm (matrixUnit i j) = Matrix.single i j 1 :=
+  (rfl)
+
 /-- The entries of `e_ij`. -/
 theorem matrixUnit_apply (i j k l : n) :
     matrixUnit i j k l = if i = k ∧ j = l then 1 else 0 := by
@@ -451,12 +503,16 @@ theorem matrixUnit_mul_matrixUnit_of_ne (i : n) {j k : n} (l : n) (h : j ≠ k) 
   rw [matrixUnit_eq_ofMatrixStarAlgEquiv, matrixUnit_eq_ofMatrixStarAlgEquiv, ← map_mul,
     single_mul_single_of_ne _ _ _ _ h, map_zero]
 
+/-- The diagonal matrix unit `e_ii` is a self-adjoint idempotent. -/
+theorem isStarProjection_matrixUnit (i : n) : IsStarProjection (matrixUnit i i) :=
+  ⟨matrixUnit_mul_matrixUnit i i i, star_matrixUnit i i⟩
+
 open scoped ComplexOrder in
 /-- A matrix unit has norm one: `e_jj` is a nonzero projection and `e_ij⋆ e_ij = e_jj`. -/
 @[simp]
 theorem norm_matrixUnit (i j : n) : ‖matrixUnit i j‖ = 1 := by
   have hp : ‖matrixUnit j j‖ = 1 :=
-    IsStarProjection.norm_eq_one ⟨matrixUnit_mul_matrixUnit j j j, star_matrixUnit j j⟩
+    (isStarProjection_matrixUnit j).norm_eq_one
       fun h0 => by simpa using congrFun (congrFun h0 j) j
   have h := CStarRing.norm_star_mul_self (x := matrixUnit i j)
   rw [star_matrixUnit, matrixUnit_mul_matrixUnit, hp] at h
