@@ -176,15 +176,38 @@ theorem kahlerPowerForm_eq_zero {r : ℕ} (h : finrank ℝ V < 2 * r) : J.kahler
 variable {J} (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
 include hJ
 
+/-! The frame `(u₀, J u₀, u₁, J u₁, …)` of a family `u` that is orthonormal for the Hermitian
+metric of `J` is a symplectic basis for the Kähler form `ω(a, b) = ⟪J a, b⟫`: `ω(uᵢ, uⱼ) = 0`,
+`ω(uᵢ, J uⱼ) = δᵢⱼ` and `ω(J uᵢ, J uⱼ) = 0`. -/
+
+/-- The Kähler form vanishes on two vectors of a family `u` with `⟪J uᵢ, uⱼ⟫ = 0`. -/
+theorem alternatingFormEquiv_kahlerForm_vecCons_eq_zero {ι : Type*} {u : ι → V}
+    (hJu : ∀ i j, ⟪J (u i), u j⟫ = 0) (i j : ι) :
+    alternatingFormEquiv V 2 J.kahlerForm ![u i, u j] = 0 := by
+  simpa [alternatingFormEquiv_kahlerForm_apply hJ] using hJu i j
+
+/-- The Kähler form pairs an orthonormal family `u` with `J u` by the Kronecker delta. -/
+theorem alternatingFormEquiv_kahlerForm_vecCons_apply {ι : Type*} [DecidableEq ι] {u : ι → V}
+    (hu : Orthonormal ℝ u) (i j : ι) :
+    alternatingFormEquiv V 2 J.kahlerForm ![u i, J (u j)] = if i = j then 1 else 0 := by
+  simpa [alternatingFormEquiv_kahlerForm_apply hJ, hJ] using (orthonormal_iff_ite.1 hu) i j
+
+/-- The Kähler form vanishes on the images under `J` of two vectors of a family `u` with
+`⟪J uᵢ, uⱼ⟫ = 0`. -/
+theorem alternatingFormEquiv_kahlerForm_vecCons_apply_apply_eq_zero {ι : Type*} {u : ι → V}
+    (hJu : ∀ i j, ⟪J (u i), u j⟫ = 0) (i j : ι) :
+    alternatingFormEquiv V 2 J.kahlerForm ![J (u i), J (u j)] = 0 := by
+  simpa [alternatingFormEquiv_kahlerForm_apply hJ, hJ, real_inner_comm] using hJu j i
+
 /-- `ω ^ r / r!` takes the value `1` on the frame `(u₀, J u₀, u₁, J u₁, …)` of a family `u` that
 is orthonormal for the Hermitian metric of `J`. -/
 theorem kahlerPowerForm_apply_complexRealFrame {r : ℕ} {u : Fin r → V} (hu : Orthonormal ℝ u)
     (hJu : ∀ i j, ⟪J (u i), u j⟫ = 0) : J.kahlerPowerForm r (J.complexRealFrame u) = 1 := by
+  -- The frame vectors `b (i, 0)` and `b (i, 1)` reduce to `u i` and `J (u i)`.
   have h := wedgePow_apply_finProdFinEquiv (alternatingFormEquiv V 2 J.kahlerForm)
     (fun p : Fin r × Fin 2 ↦ ![u p.1, J (u p.1)] p.2)
-    (fun i j ↦ by simpa [alternatingFormEquiv_kahlerForm_apply hJ] using hJu i j)
-    (fun i j ↦ by
-      simpa [alternatingFormEquiv_kahlerForm_apply hJ, hJ] using (orthonormal_iff_ite.1 hu) i j)
+    (alternatingFormEquiv_kahlerForm_vecCons_eq_zero hJ hJu)
+    (alternatingFormEquiv_kahlerForm_vecCons_apply hJ hu)
   -- `h` evaluates the wedge power on the frame `(u₀, J u₀, …)`.
   have h' : (alternatingFormEquiv V 2 J.kahlerForm).wedgePow r (J.complexRealFrame u) =
       r.factorial := by

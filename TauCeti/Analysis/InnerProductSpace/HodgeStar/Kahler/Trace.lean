@@ -57,13 +57,12 @@ theorem pairedWedge_kahlerPowerForm_apply_complexRealFrame {m : ℕ} {u : Fin (m
     (hu : Orthonormal ℝ u) (hJu : ∀ i j, ⟪J (u i), u j⟫ = 0) (α : V [⋀^Fin 2]→L[ℝ] ℝ) :
     pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
         (J.kahlerPowerForm m) α (J.complexRealFrame u) = ∑ i, α ![u i, J (u i)] := by
+  -- The frame vectors `b (i, 0)` and `b (i, 1)` reduce to `u i` and `J (u i)`.
   have h := pairedWedge_wedgePow_apply_finProdFinEquiv (alternatingFormEquiv V 2 J.kahlerForm) α
     (fun p : Fin (m + 1) × Fin 2 ↦ ![u p.1, J (u p.1)] p.2)
-    (fun i j ↦ by simpa [alternatingFormEquiv_kahlerForm_apply hJ] using hJu i j)
-    (fun i j ↦ by
-      simpa [alternatingFormEquiv_kahlerForm_apply hJ, hJ] using (orthonormal_iff_ite.1 hu) i j)
-    (fun i j ↦ by
-      simpa [alternatingFormEquiv_kahlerForm_apply hJ, hJ, real_inner_comm] using hJu j i)
+    (alternatingFormEquiv_kahlerForm_vecCons_eq_zero hJ hJu)
+    (alternatingFormEquiv_kahlerForm_vecCons_apply hJ hu)
+    (alternatingFormEquiv_kahlerForm_vecCons_apply_apply_eq_zero hJ hJu)
   rw [kahlerPowerForm_def, pairedWedge_smul_left, ContinuousAlternatingMap.smul_apply,
     smul_eq_mul]
   have hframe : J.complexRealFrame u = fun r : Fin (2 * (m + 1)) ↦
