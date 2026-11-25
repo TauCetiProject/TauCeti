@@ -201,17 +201,14 @@ theorem map_normalizedPullbackLp_map_toLp_weakEigenspace (hq : IsQuotientCoverin
     exact ⟨⟨normalizedPullback hq hf w, (normalizedPullback_mem_weakEigenspace_iff hq hf).2 hw,
       toLp_normalizedPullback hq hf w⟩, toLp w, rfl⟩
   · rintro ⟨⟨u, hu, rfl⟩, f, hfu⟩
-    -- `u` is deck invariant: `(g ·)^* u - u` is an eigenfunction with value `0` in `L²`
-    have hinv (g : G) : compRiemannianIsometry (hq.deckIsometry hf g) u = u := by
-      have hmem : compRiemannianIsometry (hq.deckIsometry hf g) u - u ∈ weakEigenspace I M μ :=
-        sub_mem ((compRiemannianIsometry_mem_weakEigenspace_iff _).2 hu) hu
-      have h0 : toLp (compRiemannianIsometry (hq.deckIsometry hf g) u - u) = 0 := by
-        rw [map_sub, toLp_compRiemannianIsometry, ← hfu, sub_eq_zero]
+    -- `u` is deck invariant: `(g ·)^* u` and `u` are eigenfunctions with the same value in `L²`
+    have hinv (g : G) : compRiemannianIsometry (hq.deckIsometry hf g) u = u :=
+      congrArg Subtype.val <| injective_toLp_domRestrict μ
+        (a₁ := ⟨_, (compRiemannianIsometry_mem_weakEigenspace_iff _).2 hu⟩) (a₂ := ⟨u, hu⟩) <| by
+        simp only [LinearMap.domRestrict_apply, ContinuousLinearMap.coe_coe]
+        rw [toLp_compRiemannianIsometry, ← hfu]
         simpa only [IsQuotientCoveringMap.coe_deckIsometry] using
           hq.compMeasurePreserving_normalizedPullbackLp (𝕜 := ℝ) hf.inner_mfderiv f g
-      have hnorm := norm_sq_eq_of_mem_weakEigenspace hmem
-      rw [h0, norm_zero] at hnorm
-      simpa [sub_eq_zero] using hnorm
     -- so `u` is the transplant of some `y`
     obtain ⟨y, rfl⟩ := (mem_range_normalizedPullback_iff hq hf).2 hinv
     exact ⟨toLp y, ⟨y, (normalizedPullback_mem_weakEigenspace_iff hq hf).1 hu, rfl⟩,

@@ -113,7 +113,7 @@ theorem norm_sq_eq_of_mem_weakEigenspace {μ : ℝ} {w : SobolevH1 I M}
     innerSL_apply_eq_of_mem_weakEigenspace hw]
 
 /-- The value map is injective on each weak eigenspace, whatever the regularity of the metric. -/
-private theorem injective_toLp_domRestrict (μ : ℝ) :
+theorem injective_toLp_domRestrict (μ : ℝ) :
     Function.Injective
       ((toLp : SobolevH1 I M →L[ℝ] _).toLinearMap.domRestrict (weakEigenspace I M μ)) := by
   refine (injective_iff_map_eq_zero _).2 fun w hw ↦ Subtype.ext ?_
