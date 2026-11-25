@@ -578,6 +578,7 @@ theorem ContinuousLinearEquiv.intervalIntegral_comp_comm {𝕜 E F : Type*} [RCL
   simp_rw [intervalIntegral, L.integral_comp_comm, map_sub]
 
 /-- `WithLp.ofLp` commutes with interval integrals of arbitrary `PiLp`-valued functions. -/
+@[simp]
 theorem PiLp.ofLp_intervalIntegral {p : ENNReal} [Fact (1 ≤ p)] {ι : Type*} [Fintype ι]
     {β : ι → Type*} [∀ i, NormedAddCommGroup (β i)] [∀ i, NormedSpace ℝ (β i)]
     {μ : Measure ℝ} {a b : ℝ} (f : ℝ → PiLp p β) :

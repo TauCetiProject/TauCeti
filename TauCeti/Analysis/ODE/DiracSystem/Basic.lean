@@ -8,7 +8,9 @@ module
 public import TauCeti.Analysis.ODE.Propagator.Holomorphic
 public import TauCeti.Analysis.ODE.Propagator.Liouville
 public import Mathlib.Analysis.CStarAlgebra.Matrix
+import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 import TauCeti.Analysis.Matrix.EuclideanLin
+import TauCeti.Analysis.ODE.Propagator.Parameter
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
@@ -270,6 +272,7 @@ theorem differentiable_diracFundamentalMatrix_apply (hq : IntegrableOn q (uIcc 0
 
 /-- **Liouville's formula for the Dirac system.** The coefficient is trace-free, so
 `det M_q(t, z) = 1` whenever `q` is integrable between `0` and `t`. -/
+@[simp]
 theorem det_diracFundamentalMatrix (hq : IntegrableOn q (uIcc 0 t)) (z : ℂ) :
     (diracFundamentalMatrix q t z).det = 1 := by
   rw [← det_toEuclideanCLM, toEuclideanCLM_diracFundamentalMatrix, ContinuousLinearMap.det,
@@ -308,43 +311,24 @@ theorem diracFundamentalMatrix_zero_potential (t : ℝ) (z : ℂ) :
     StarAlgEquiv.symm_apply_apply]
   simp [← Matrix.ext_iff, Fin.forall_fin_two]
 
+open scoped Matrix.Norms.L2Operator in
 /-- **A real constant potential at `z = 0`.** For `q = c` real, the fundamental matrix at the
 spectral parameter `0` is `M_c(t, 0) = diag(e^{ct}, e^{-ct})`. The opposite sign convention
 `Ω X' = z X + Q_q X` would give `diag(e^{-ct}, e^{ct})`. -/
 theorem diracFundamentalMatrix_ofReal_const_zero (c t : ℝ) :
     diracFundamentalMatrix (fun _ ↦ (c : ℂ)) t 0 =
       !![(Real.exp (c * t) : ℂ), 0; 0, (Real.exp (-(c * t)) : ℂ)] := by
-  set J := toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) !![1, 0; 0, -1]
-  set E₁ := toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) !![1, 0; 0, 0]
-  set E₂ := toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) !![0, 0; 0, 1]
   have hP : (fun s ↦ toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) (diracCoeff (fun _ ↦ (c : ℂ)) 0 s)) =
-      fun _ ↦ (c : ℂ) • J := by
+      fun _ ↦ (c : ℂ) • toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) (diagonal ![1, -1]) := by
     ext1 s
     rw [← map_smul]
     congr 1
-    simp [diracCoeff]
-  have h₁ : J * E₁ = E₁ := by rw [← map_mul]; congr 1; simp
-  have h₂ : J * E₂ = -E₂ := by rw [← map_mul, ← map_neg]; congr 1; simp
-  have hE : E₁ + E₂ = 1 := by
-    rw [← map_add, ← map_one (toEuclideanCLM (n := Fin 2) (𝕜 := ℂ))]
-    congr 1
-    simp [← Matrix.ext_iff, Fin.forall_fin_two]
-  -- `M_c(r, 0)` acts as `e^{cr} E₁ + e^{-cr} E₂`, which solves `N' = c J N`.
-  have hX : propagator (fun _ ↦ (c : ℂ) • J) t 0 =
-      cexp (c * t) • E₁ + cexp (-(c * t)) • E₂ := by
-    refine propagator_eq_of_hasDerivAt (a := min 0 t) (b := max 0 t)
-      (X := fun r : ℝ ↦ cexp (c * r) • E₁ + cexp (-(c * r)) • E₂)
-      continuousOn_const.integrableOn_Icc ⟨min_le_left _ _, le_max_left _ _⟩
-      ⟨min_le_right _ _, le_max_right _ _⟩ (fun r _ ↦ ?_) (by simp [hE])
-    have hd₁ : HasDerivAt (fun r : ℝ ↦ cexp (c * r)) (cexp (c * r) * c) r := by
-      simpa using ((hasDerivAt_id r).ofReal_comp.const_mul (c : ℂ)).cexp
-    have hd₂ : HasDerivAt (fun r : ℝ ↦ cexp (-(c * r))) (cexp (-(c * r)) * -c) r := by
-      simpa using ((hasDerivAt_id r).ofReal_comp.const_mul (c : ℂ)).neg.cexp
-    refine ((hd₁.smul_const _).add (hd₂.smul_const _)).congr_deriv ?_
-    simp only [← ContinuousLinearMap.mul_def, smul_mul_assoc, mul_add, mul_smul_comm, h₁, h₂]
-    module
-  rw [diracFundamentalMatrix, hP, hX, map_add, map_smul, map_smul, StarAlgEquiv.symm_apply_apply,
-    StarAlgEquiv.symm_apply_apply]
-  simp [Complex.ofReal_exp]
+    simp [diracCoeff, ← Matrix.ext_iff, Fin.forall_fin_two]
+  -- `M_c(t, 0)` is the exponential of the diagonal matrix `t c diag(1, -1)`.
+  let +nondep : NormedAlgebra ℚ (Matrix (Fin 2) (Fin 2) ℂ) := .restrictScalars ℚ ℂ _
+  rw [diracFundamentalMatrix, hP, propagator_smul_const, ← map_smul,
+    ← NormedSpace.map_exp _ continuous_toEuclideanCLM, StarAlgEquiv.symm_apply_apply,
+    ← diagonal_smul, exp_diagonal]
+  simp [← Matrix.ext_iff, Fin.forall_fin_two, ← Complex.exp_eq_exp_ℂ, Complex.ofReal_exp, mul_comm]
 
 end TauCeti
