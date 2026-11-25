@@ -10,6 +10,7 @@ import Mathlib.Analysis.Calculus.Deriv.Abs
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
+import TauCeti.Examples.Analysis.Matrix.SpectralGradient
 
 /-!
 # Checks for admissible pairs
@@ -19,7 +20,8 @@ Three pairs `(f, Γ)` that test the definition of an admissible pair
 
 * The Monge–Ampère pair `((∏_i μ_i)^{1/n}, Γ_n)` has `∂_j f(μ) = n⁻¹ (∏_i μ_i)^{1/n} / μ_j`, so
   the product of its partial derivatives is `n⁻ⁿ` identically, not only bounded below by it. For
-  `n = 2` at `(1, 4)` the partials are `1` and `1/4`.
+  `n = 2` the partials at `(4, 1)` are `1/4` and `1`
+  (`TauCeti.SpectralGradientExamples.fderiv_geomMean_four_one`), with product `1/4 = 2⁻²`.
 * `f(λ) = σ_1(λ) − ε|λ|` on `Γ_1`, with `|ε| < 1` and the Euclidean norm `|λ|`, is an admissible
   pair, since `∂_j f = 1 − ε λ_j / |λ| > 0`. For `0 < δ < ε` its value at `(1, −1 + δ) ∈ Γ_1` is
   negative, so an admissible pair need not be positive off `Γ_n`.
@@ -85,27 +87,6 @@ theorem prod_fderiv_prod_rpow_apply_single {μ : ι → ℝ} (hμ : ∀ i, 0 < �
     prod_inv_distrib, card_univ]
   rw [← Real.rpow_natCast ((∏ i, μ i) ^ _), ← Real.rpow_mul hP.le, inv_mul_cancel₀ hn,
     Real.rpow_one, mul_assoc, mul_inv_cancel₀ hP.ne', mul_one]
-
-/-- For `n = 2` at `μ = (1, 4)` the partial derivatives of `(μ_1 μ_2)^{1/2}` are `1` and `1/4`,
-with product `1/4 = 2⁻²`. -/
-theorem fderiv_prod_rpow_one_four :
-    fderiv ℝ (fun ν : Fin 2 → ℝ ↦ (∏ i, ν i) ^ (2 : ℝ)⁻¹) (![1, 4] : Fin 2 → ℝ)
-        (Pi.single 0 1) = 1 ∧
-      fderiv ℝ (fun ν : Fin 2 → ℝ ↦ (∏ i, ν i) ^ (2 : ℝ)⁻¹) (![1, 4] : Fin 2 → ℝ)
-        (Pi.single 1 1) = 1 / 4 := by
-  have hμ : ∀ i, 0 < (![1, 4] : Fin 2 → ℝ) i := by simp [Fin.forall_fin_two]
-  have h4 : (4 : ℝ) ^ (2 : ℝ)⁻¹ = 2 := by
-    rw [show (4 : ℝ) = 2 ^ (2 : ℝ) by norm_num, ← Real.rpow_mul (by norm_num)]
-    norm_num
-  have h : ∀ j, fderiv ℝ (fun ν : Fin 2 → ℝ ↦ (∏ i, ν i) ^ (2 : ℝ)⁻¹) (![1, 4] : Fin 2 → ℝ)
-      (Pi.single j 1) =
-        2⁻¹ * (∏ i, (![1, 4] : Fin 2 → ℝ) i) ^ (2 : ℝ)⁻¹ / (![1, 4] : Fin 2 → ℝ) j :=
-    fun j ↦ by
-      have := fderiv_prod_rpow_apply_single hμ j
-      simp only [Fintype.card_fin, Nat.succ_eq_add_one, Nat.reduceAdd, Nat.cast_ofNat] at this
-      exact this
-  rw [h, h]
-  simp [Fin.prod_univ_two, h4]
 
 /-! ### The pair `σ_1 − ε|λ|` on `Γ_1` -/
 
@@ -228,19 +209,11 @@ theorem not_differentiableAt_sup' [Nontrivial ι] :
       · exact le_sup'_of_le (L t) (mem_univ a) (by simp [L])
       · exact le_sup'_of_le (L t) (mem_univ b) (by simp [L, hab.symm])
   have hdL : DifferentiableAt ℝ L 0 := by fun_prop
-  have hcomp : DifferentiableAt ℝ (fun t ↦ univ.sup' univ_nonempty (L t)) 0 := by
-    refine DifferentiableAt.comp (f := L) (g := fun μ : ι → ℝ ↦ univ.sup' univ_nonempty μ) 0
-      ?_ hdL
-    simpa [L] using h
-  simp_rw [hL] at hcomp
-  have habs : DifferentiableAt ℝ (fun t : ℝ ↦ 2 * (1 + max t 0 - 1) - t) 0 :=
-    ((hcomp.sub_const 1).const_mul 2).sub differentiableAt_id
-  refine not_differentiableAt_abs_zero (habs.congr_of_eventuallyEq (Filter.Eventually.of_forall
-    fun t ↦ ?_))
-  rcases le_total t 0 with ht | ht
-  · simp [abs_of_nonpos ht, max_eq_right ht]
-  · simp [abs_of_nonneg ht, max_eq_left ht]
-    ring
+  refine TauCeti.SpectralGradientExamples.not_differentiableAt_one_add_max_zero ?_
+  have hcomp : DifferentiableAt ℝ (fun t ↦ univ.sup' univ_nonempty (L t)) 0 :=
+    DifferentiableAt.comp (f := L) (g := fun μ : ι → ℝ ↦ univ.sup' univ_nonempty μ) 0
+      (by simpa [L] using h) hdL
+  simpa only [hL] using hcomp
 
 /-- In dimension at least two, `(max_j λ_j, Γ_n)` is not an admissible pair, although
 `max_j λ_j` is symmetric (`sup'_comp_perm`) and positively homogeneous (`sup'_smul`): it is not
