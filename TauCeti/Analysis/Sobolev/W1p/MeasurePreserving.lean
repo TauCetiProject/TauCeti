@@ -265,12 +265,7 @@ theorem W1p.compMeasurePreservingL_mem_w1p0Submodule_of_contDiff (hΦc : ContDif
     ((w1p0Submodule μ U p).isClosed.preimage
       (W1p.compMeasurePreservingL hΦ hUV hΦl hM).continuous)
     (fun φ => ?_) hu
-  have hK : IsCompact (Φ ⁻¹' tsupport φ) := hΦp.isCompact_preimage φ.hasCompactSupport.isCompact
-  have hKU : Φ ⁻¹' tsupport φ ⊆ U := hUV ▸ preimage_mono φ.tsupport_subset
-  have hsub : tsupport (fun x => φ (Φ x)) ⊆ Φ ⁻¹' tsupport φ :=
-    tsupport_comp_subset_preimage φ hΦc.continuous
-  let ψ : 𝓓(U, ℝ) := TestFunction.mk (fun x => φ (Φ x)) (φ.contDiff.comp hΦc)
-    (hK.of_isClosed_subset isClosed_closure hsub) (hsub.trans hKU)
+  let ψ : 𝓓(U, ℝ) := φ.compOfIsProperMap hΦc hΦp hUV.ge
   have heq : W1p.compMeasurePreservingL hΦ hUV hΦl hM (W1p.ofTestFunctionₗ ν V p φ) =
       W1p.ofTestFunctionₗ μ U p ψ := by
     refine W1p.ext_value (Lp.ext ?_)
@@ -278,8 +273,8 @@ theorem W1p.compMeasurePreservingL_mem_w1p0Submodule_of_contDiff (hΦc : ContDif
       (measurePreserving_restrict hΦ hUV).quasiMeasurePreserving.ae
         (testFunctionLp_apply_ae (mu := ν) p φ),
       testFunctionLp_apply_ae (mu := μ) p ψ] with x h1 h2 h3
-    rw [h1, W1p.value_ofTestFunctionₗ, h2, W1p.value_ofTestFunctionₗ]
-    exact h3.symm
+    rw [h1, W1p.value_ofTestFunctionₗ, h2, W1p.value_ofTestFunctionₗ, h3,
+      TestFunction.compOfIsProperMap_apply]
   rw [Set.mem_preimage, heq]
   exact W1p.ofTestFunctionₗ_mem_w1p0Submodule ψ
 
