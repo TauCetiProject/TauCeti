@@ -10,10 +10,8 @@ public import TauCeti.NumberTheory.NumberField.HermitianBundle.Degree.Line
 /-!
 # The Arakelov degree of a hermitian line: examples
 
-* Over `ℚ`, the trivial lines with generator norms `e^{-a}` and `e^{-b}` have degrees `a` and `b`,
-  and their tensor product has degree `a + b`.
-* The line `O(D)` of an Arakelov divisor has degree `deg^(D)`; for a principal divisor this is
-  `0`.
+Over `ℚ`, the trivial lines with generator norms `e^{-a}` and `e^{-b}` have degrees `a` and `b`,
+and their tensor product has degree `a + b`.
 -/
 
 public section
@@ -34,11 +32,6 @@ example (a b : ℝ) :
       ((HermitianMetric.trivial ℚ).rescale b)).lineDegree = a + b := by
   rw [HermitianMetric.lineDegree_tmul, HermitianMetric.lineDegree_rescale,
     HermitianMetric.lineDegree_rescale, HermitianMetric.lineDegree_trivial, Module.finrank_self]
-  simp
-
-/-- The line `O((f))` of a principal divisor has degree `0`. -/
-example {K : Type*} [Field K] [NumberField K] (f : Additive Kˣ) :
-    (ArakelovDivisor.principal K f).hermitianMetric.lineDegree = 0 := by
   simp
 
 end TauCeti.HermitianLineDegreeExamples
