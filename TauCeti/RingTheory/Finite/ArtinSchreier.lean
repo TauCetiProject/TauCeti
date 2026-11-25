@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.LocalRing.Basic
 import Mathlib.Data.Set.Card
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.RingTheory.Trace.Basic
+import TauCeti.Algebra.CharP.Two
 
 /-!
 # The Artin–Schreier map `t ↦ t² + t` on a finite ring
@@ -28,8 +29,7 @@ On a finite field `k` of characteristic two the range is exactly the kernel of t
 `Algebra.trace (ZMod 2) k`: the trace is invariant under the Frobenius, so it kills every
 `t² + t`, and its kernel also has index two. This is the finite-field case of Artin–Schreier
 theory (the additive Hilbert theorem 90 for `k / ZMod 2`); it decides when a binary quadratic form
-`a x² + x y + b y²` over `k` is isotropic. Such a field is a `ZMod 2`-algebra, which makes it
-of characteristic two (`TauCeti.charP_two_of_algebra_zmod_two`).
+`a x² + x y + b y²` over `k` is isotropic.
 
 ## References
 
@@ -70,12 +70,6 @@ theorem add_mem_range_sq_add_self {R : Type*} [CommRing R] [IsLocalRing R] [Fini
   have h := AddSubgroup.add_mem_iff_of_index_two (index_range_frobenius_two_add_id R)
     (a := a) (b := b)
   simpa [AddMonoidHom.mem_range, frobenius_def, ← Set.mem_range, ha, hb] using h
-
-/-- A nontrivial semiring that is an algebra over `ZMod 2` has characteristic two, the algebra map
-from the field `ZMod 2` being injective. -/
-theorem charP_two_of_algebra_zmod_two (k : Type*) [Semiring k] [Nontrivial k]
-    [Algebra (ZMod 2) k] : CharP k 2 :=
-  charP_of_injective_algebraMap (algebraMap (ZMod 2) k).injective 2
 
 /-- **Artin–Schreier over a finite field of characteristic two.** For `s` in a finite field `k`
 of characteristic two, the equation `t ^ 2 + t = s` has a solution in `k` if and only if the

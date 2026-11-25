@@ -11,12 +11,12 @@ public import TauCeti.LinearAlgebra.QuadraticForm.CharTwo
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.FieldTheory.Perfect
 import Mathlib.NumberTheory.AddCharacter.Trace
+import TauCeti.Algebra.CharP.Two
 import TauCeti.Data.ZMod.IntUnitsPower
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 import TauCeti.LinearAlgebra.Dimension.Basis
 import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 import TauCeti.LinearAlgebra.QuadraticForm.Prod
-import TauCeti.RingTheory.Finite.ArtinSchreier
 
 /-!
 # The absolute-trace Gauss sum and Arf invariant over a finite field of characteristic two
@@ -102,6 +102,25 @@ noncomputable def traceGaussSum [Fintype V] (Q : QuadraticForm k V) : ℤ :=
 theorem traceGaussSum_def [Fintype V] (Q : QuadraticForm k V) :
     Q.traceGaussSum = ∑ v : V, (-1 : ℤ) ^ (Algebra.trace (ZMod 2) k (Q v)).val :=
   (rfl)
+
+/-- The trace Gauss sum is independent of the `Fintype` instance on `V`. -/
+@[congr]
+theorem traceGaussSum_congr (Q : QuadraticForm k V) (inst₁ inst₂ : Fintype V) :
+    @traceGaussSum k _ _ V _ _ inst₁ Q = @traceGaussSum k _ _ V _ _ inst₂ Q := by
+  rw [Subsingleton.elim inst₁ inst₂]
+
+/-- The trace Gauss sum of the zero quadratic form on `V` is `Fintype.card V`. -/
+@[simp]
+theorem traceGaussSum_zero [Fintype V] :
+    (0 : QuadraticForm k V).traceGaussSum = Fintype.card V := by
+  simp [traceGaussSum_def]
+
+/-- On a subsingleton space, every quadratic form has trace Gauss sum `1`. -/
+@[simp]
+theorem traceGaussSum_subsingleton [Fintype V] [Subsingleton V] (Q : QuadraticForm k V) :
+    Q.traceGaussSum = 1 := by
+  rw [traceGaussSum_def, Fintype.sum_subsingleton _ (0 : V), map_zero, map_zero, ZMod.val_zero,
+    pow_zero]
 
 /-- Isometric quadratic forms have equal trace Gauss sums. -/
 theorem IsometryEquiv.traceGaussSum_eq [Fintype V₁] [Fintype V₂]
@@ -265,6 +284,16 @@ theorem traceArf_of_not_nondegenerate_polarBilin (Q : QuadraticForm k V)
     (h : ¬Q.polarBilin.Nondegenerate) : Q.traceArf = 0 := by
   simp [traceArf, h]
 
+/-- On a subsingleton space, `Q.traceArf = 0`. -/
+@[simp]
+theorem traceArf_subsingleton [Subsingleton V] (Q : QuadraticForm k V) : Q.traceArf = 0 := by
+  simp [traceArf, Subsingleton.elim _ (0 : V)]
+
+/-- The absolute-trace Arf invariant of the zero quadratic form vanishes. -/
+@[simp]
+theorem traceArf_zero : (0 : QuadraticForm k V).traceArf = 0 := by
+  simp [traceArf]
+
 /-- Over a finite field `k` of characteristic two, in any finite basis
 `b : Module.Basis (ι ⊕ ι) k V` putting `Q.polarBilin` in standard symplectic form, `Q.traceArf`
 is the absolute trace of `∑ i : ι, Q (b (Sum.inl i)) * Q (b (Sum.inr i))`. -/
@@ -347,6 +376,7 @@ theorem Equivalent.traceArf_eq [Finite k] {Q₁ : QuadraticForm k V₁} {Q₂ : 
   exact e.traceArf_eq
 
 /-- **Additivity of the absolute-trace Arf invariant on orthogonal products.** -/
+@[simp]
 theorem traceArf_prod [Finite k] [FiniteDimensional k V₁] [FiniteDimensional k V₂]
     {Q₁ : QuadraticForm k V₁} {Q₂ : QuadraticForm k V₂}
     (hQ₁ : Q₁.polarBilin.Nondegenerate) (hQ₂ : Q₂.polarBilin.Nondegenerate) :
@@ -361,7 +391,21 @@ theorem traceArf_prod [Finite k] [FiniteDimensional k V₁] [FiniteDimensional k
     coe_hilbertSign, coe_hilbertSign]
   linear_combination Q₂.traceGaussSum * h₁ + (-1 : ℤ) ^ Q₁.traceArf.val * |Q₁.traceGaussSum| * h₂
 
+/-- The absolute-trace Arf invariant of `Q.prod Q` vanishes for every quadratic form `Q` over a
+finite field of characteristic two. -/
+@[simp]
+theorem traceArf_prod_self [Finite k] (Q : QuadraticForm k V) : (Q.prod Q).traceArf = 0 := by
+  by_cases h : FiniteDimensional k V ∧ Q.polarBilin.Nondegenerate
+  · obtain ⟨_, hQ⟩ := h
+    rw [traceArf_prod hQ hQ, CharTwo.add_self_eq_zero]
+  · have hprod : ¬(FiniteDimensional k (V × V) ∧ (Q.prod Q).polarBilin.Nondegenerate) := by
+      rintro ⟨_, hnd⟩
+      exact h ⟨Module.Finite.of_surjective (LinearMap.fst k V V) Prod.fst_surjective,
+        (nondegenerate_polarBilin_prod_iff.mp hnd).1⟩
+    simp only [traceArf, hprod, ↓reduceDIte]
+
 /-- **Additivity of the absolute-trace Arf invariant on finite orthogonal sums.** -/
+@[simp]
 theorem traceArf_pi [Finite k] {ι : Type*} [Fintype ι] {M : ι → Type*}
     [∀ i, AddCommGroup (M i)] [∀ i, Module k (M i)] [∀ i, FiniteDimensional k (M i)]
     {Q : ∀ i, QuadraticForm k (M i)} (hQ : ∀ i, (Q i).polarBilin.Nondegenerate) :

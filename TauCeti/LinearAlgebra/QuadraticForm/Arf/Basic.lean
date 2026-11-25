@@ -156,13 +156,13 @@ theorem Equivalent.gaussSum_eq [Fintype V₁] [Fintype V₂]
 /-- The Gauss sum of the zero quadratic form on `V` is `Fintype.card V`. -/
 @[simp]
 theorem gaussSum_zero [Fintype V] : (0 : QuadraticForm (ZMod 2) V).gaussSum = Fintype.card V := by
-  simp [gaussSum_def]
+  simpa only [traceGaussSum_eq_gaussSum] using traceGaussSum_zero (k := ZMod 2) (V := V)
 
 /-- On a subsingleton `ZMod 2`-space, every quadratic form has Gauss sum `1`. -/
 @[simp]
 theorem gaussSum_subsingleton [Fintype V] [Subsingleton V] (Q : QuadraticForm (ZMod 2) V) :
     Q.gaussSum = 1 := by
-  rw [gaussSum_def, Fintype.sum_subsingleton _ (0 : V), map_zero, ZMod.val_zero, pow_zero]
+  simpa only [traceGaussSum_eq_gaussSum] using Q.traceGaussSum_subsingleton
 
 /-- The Gauss sum is multiplicative on orthogonal products. -/
 @[simp]
@@ -322,21 +322,12 @@ theorem arf_eq_of_gaussSum_eq [Fintype V] {Q : QuadraticForm (ZMod 2) V}
 /-- On a subsingleton `ZMod 2`-space, `Q.arf = 0`. -/
 @[simp]
 theorem arf_subsingleton [Subsingleton V] (Q : QuadraticForm (ZMod 2) V) : Q.arf = 0 := by
-  let b : Module.Basis (Fin 0 ⊕ Fin 0) (ZMod 2) V := Module.Basis.empty V
-  have hb : LinearMap.BilinForm.toMatrix b Q.polarBilin = Matrix.J (Fin 0) (ZMod 2) := by
-    ext x
-    exact x.elim isEmptyElim isEmptyElim
-  rw [Q.arf_eq_sum_of_toMatrix_polarBilin_eq_J hb]
-  simp
+  simpa only [traceArf_eq_arf] using Q.traceArf_subsingleton
 
 /-- The Arf invariant of the zero quadratic form vanishes. -/
 @[simp]
 theorem arf_zero : (0 : QuadraticForm (ZMod 2) V).arf = 0 := by
-  rcases subsingleton_or_nontrivial V with _ | _
-  · exact (0 : QuadraticForm (ZMod 2) V).arf_subsingleton
-  · refine (0 : QuadraticForm (ZMod 2) V).arf_of_not_nondegenerate_polarBilin fun h ↦ ?_
-    obtain ⟨v, hv⟩ := exists_ne (0 : V)
-    exact hv (h.1 v fun w ↦ by simp [polarBilin_apply_apply, polar])
+  simpa only [traceArf_eq_arf] using traceArf_zero (k := ZMod 2) (V := V)
 
 /-- Isometric quadratic forms over `ZMod 2` have the same Arf invariant. -/
 theorem IsometryEquiv.arf_eq {Q₁ : QuadraticForm (ZMod 2) V₁} {Q₂ : QuadraticForm (ZMod 2) V₂}
@@ -359,14 +350,7 @@ theorem arf_prod [FiniteDimensional (ZMod 2) V₁] [FiniteDimensional (ZMod 2) V
 /-- The Arf invariant of `Q.prod Q` vanishes for every quadratic form `Q` over `ZMod 2`. -/
 @[simp]
 theorem arf_prod_self (Q : QuadraticForm (ZMod 2) V) : (Q.prod Q).arf = 0 := by
-  by_cases h : FiniteDimensional (ZMod 2) V ∧ Q.polarBilin.Nondegenerate
-  · obtain ⟨_, hQ⟩ := h
-    rw [arf_prod hQ hQ, CharTwo.add_self_eq_zero]
-  · have hprod : ¬(FiniteDimensional (ZMod 2) (V × V) ∧ (Q.prod Q).polarBilin.Nondegenerate) := by
-      rintro ⟨_, hnd⟩
-      exact h ⟨Module.Finite.of_surjective (LinearMap.fst (ZMod 2) V V) Prod.fst_surjective,
-        (nondegenerate_polarBilin_prod_iff.mp hnd).1⟩
-    simp only [arf, hprod, ↓reduceDIte]
+  simpa only [traceArf_eq_arf] using Q.traceArf_prod_self
 
 /-- **Additivity of the Arf invariant on finite orthogonal sums.** -/
 @[simp]

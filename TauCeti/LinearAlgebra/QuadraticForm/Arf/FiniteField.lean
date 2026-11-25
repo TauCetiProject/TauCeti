@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Arf.Trace
 public import TauCeti.LinearAlgebra.QuadraticForm.TotallyIsotropic
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.FieldTheory.Perfect
+import TauCeti.Algebra.CharP.Two
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 import TauCeti.LinearAlgebra.Dimension.Basis
 import TauCeti.LinearAlgebra.QuadraticForm.Prod
