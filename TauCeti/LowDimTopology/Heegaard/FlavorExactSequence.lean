@@ -193,16 +193,15 @@ theorem infinityDifferential_comp_self_eq_zero_iff :
   constructor
   · intro h
     refine LinearMap.ext fun c => Finsupp.mapRange_injective _ (map_zero _) toLaurent_injective ?_
-    rw [LinearMap.comp_apply, ← key, ← LinearMap.comp_apply, h, LinearMap.zero_apply,
-      LinearMap.zero_apply, Finsupp.mapRange_zero]
+    simpa [← key] using LinearMap.congr_fun h (Finsupp.mapRange toLaurent (map_zero _) c)
   · intro h
     refine Finsupp.lhom_ext' fun x => LinearMap.ext_ring ?_
     have hx : Finsupp.single x (1 : (ZMod 2)[T;T⁻¹]) =
         Finsupp.mapRange toLaurent (map_zero _) (Finsupp.single x 1) := by
       rw [Finsupp.mapRange_single, map_one]
-    simp only [LinearMap.coe_comp, Function.comp_apply, Finsupp.lsingle_apply,
-      LinearMap.zero_comp, LinearMap.zero_apply]
-    rw [hx, key, ← LinearMap.comp_apply, h, LinearMap.zero_apply, Finsupp.mapRange_zero]
+    simpa [hx, key, -Finsupp.mapRange_single] using
+      congr_arg (Finsupp.mapRange toLaurent (map_zero _))
+        (LinearMap.congr_fun h (Finsupp.single x 1))
 
 /-- If the minus differential squares to zero, so does the plus differential. -/
 theorem plusDifferential_comp_self_eq_zero
@@ -210,9 +209,9 @@ theorem plusDifferential_comp_self_eq_zero
     H.plusDifferential χ ∘ₗ H.plusDifferential χ = 0 := by
   refine LinearMap.ext fun y => ?_
   obtain ⟨c, rfl⟩ := Submodule.Quotient.mk_surjective _ y
-  rw [LinearMap.comp_apply, plusDifferential_mk, plusDifferential_mk, ← LinearMap.comp_apply,
-    infinityDifferential_comp_self_eq_zero_iff.mpr h, LinearMap.zero_apply, LinearMap.zero_apply,
-    Submodule.Quotient.mk_zero]
+  simpa [plusDifferential_mk] using
+    congr_arg Submodule.Quotient.mk
+      (LinearMap.congr_fun (infinityDifferential_comp_self_eq_zero_iff.mpr h) c)
 
 /-- If the minus differential squares to zero and the counts are finite, the hat differential
 squares to zero: it is the reduction of the minus differential modulo `U`. -/
@@ -224,10 +223,9 @@ theorem hatDifferential_comp_self_eq_zero (hfin : ∀ x y, (H.minusDomains χ x 
       (Finsupp.mapRange (Polynomial.C : ZMod 2 →+* (ZMod 2)[X]) (map_zero _) c) = c := by
     ext x
     simp
-  rw [LinearMap.comp_apply, LinearMap.zero_apply, ← hc,
-    ← mapRange_constantCoeff_minusDifferential hfin,
-    ← mapRange_constantCoeff_minusDifferential hfin, ← LinearMap.comp_apply, h,
-    LinearMap.zero_apply, Finsupp.mapRange_zero]
+  rw [LinearMap.comp_apply, ← hc, ← mapRange_constantCoeff_minusDifferential hfin,
+    ← mapRange_constantCoeff_minusDifferential hfin]
+  simpa using congr_arg (Finsupp.mapRange constantCoeff (map_zero _)) (LinearMap.congr_fun h _)
 
 end SquareZero
 
@@ -249,9 +247,7 @@ theorem plusDifferential_hatToPlus (hfin : ∀ x y, (H.minusDomains χ x y).Fini
       mem_minusLattice_iff]
     intro y
     refine ⟨Polynomial.C a * (H.minusCoefficient χ x y).divX, ?_⟩
-    rw [Finsupp.sub_apply, infinityDifferential_single_apply, Finsupp.mapRange_apply,
-      hatDifferential_single_apply, ← coeff_zero_minusCoefficient (hfin x y), map_mul, map_mul,
-      toLaurent_C]
+    simp [← coeff_zero_minusCoefficient (hfin x y)]
     linear_combination (-LaurentPolynomial.C a) *
       toLaurent_mul_T_neg_one (H.minusCoefficient χ x y)
 

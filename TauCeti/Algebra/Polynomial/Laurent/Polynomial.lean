@@ -111,7 +111,7 @@ theorem C_mul_T_eq_toLaurent_iff {n : ℤ} (hn : n < 0) {a : R} {p : R[X]} :
   refine ⟨fun h ↦ ?_, fun ⟨ha, hp⟩ ↦ by simp [ha, hp]⟩
   have ha : a = 0 := by
     have := TauCeti.exists_toLaurent_eq_iff.mp ⟨p, h.symm⟩ n hn
-    rwa [← single_eq_C_mul_T, AddMonoidAlgebra.coeff_single, Finsupp.single_eq_same] at this
+    simpa [← single_eq_C_mul_T] using this
   subst ha
   exact ⟨rfl, by simpa using h.symm⟩
 
@@ -127,8 +127,7 @@ theorem T_one_mul_mem_range_toLaurent_iff {f : R[T;T⁻¹]} :
       simp
     have hcoeff : f.coeff (-1) = q.coeff 0 := by
       have h0 := TauCeti.exists_toLaurent_eq_iff.mp ⟨q.divX, rfl⟩ (-1) (by norm_num)
-      rw [hf, AddMonoidAlgebra.coeff_add, Finsupp.add_apply, h0, ← single_eq_C_mul_T,
-        AddMonoidAlgebra.coeff_single, Finsupp.single_eq_same, zero_add]
+      simp [hf, h0, ← single_eq_C_mul_T, -coeff_toLaurent]
     exact ⟨q.divX, by rw [hcoeff, ← hf]⟩
   · rintro ⟨p, hp⟩
     refine ⟨X * p + Polynomial.C (f.coeff (-1)), ?_⟩
