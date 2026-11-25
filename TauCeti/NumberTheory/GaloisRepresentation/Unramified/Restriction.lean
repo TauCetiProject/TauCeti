@@ -14,8 +14,8 @@ public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Operations
 
 Let `L/K` be a finite extension of nonarchimedean local fields of residue degree `f = f(L/K)`,
 embedded in a separable closure of `K` by `ι`, and let `G_L → G_K` be the resulting continuous
-embedding of absolute Galois groups. A continuous representation `ρ` of `G_K` restricts to a
-representation `ρ|_{G_L}` of `G_L`.
+embedding of absolute Galois groups (`TauCeti.continuousAbsoluteGaloisGroupExtend`). A continuous
+representation `ρ` of `G_K` restricts to a representation `ρ|_{G_L}` of `G_L`.
 
 Since the inertia subgroup of `L` is the preimage of that of `K`
 (`TauCeti.comap_absoluteGaloisGroupExtend_inertiaSubgroup`), the restriction of an unramified
@@ -27,19 +27,22 @@ characteristic polynomial of `ρ(Φ_K)^f`, and the geometric one that of `ρ(Φ_
 
 ## Main declarations
 
-* `TauCeti.continuousAbsoluteGaloisGroupExtend`: the embedding `G_L →ₜ* G_K`.
-* `TauCeti.ContinuousRep.IsUnramified.apply_eq_pow_of_restrictMaximalUnramifiedHom_eq_pow`: an
-  unramified representation takes the value `ρ(σ₀)^m` at every `σ` acting on `K^{ur}` as the
-  `m`-th power of `σ₀`.
-* `TauCeti.ContinuousRep.IsUnramified.res_extend`,
-  `TauCeti.ContinuousRep.IsTamelyRamified.res_extend`: restriction preserves unramifiedness and
-  tame ramification; `TauCeti.ContinuousRep.isUnramified_res_extend_iff_of_ramificationIndex_eq_one`
-  is the converse along an unramified extension.
-* `TauCeti.ContinuousRep.IsUnramified.res_extend_apply_of_isArithFrobeniusLift`: an arithmetic
-  Frobenius lift of `L` acts on `ρ|_{G_L}` as `ρ(Φ_K)^f`.
-* `TauCeti.ContinuousRep.IsUnramified.frobCharpoly_res_extend`,
-  `TauCeti.ContinuousRep.IsUnramified.frobCharpolyGeom_res_extend`: the Frobenius polynomials of the
-  restriction are the characteristic polynomials of `ρ(Φ_K)^f` and `ρ(Φ_K⁻¹)^f`.
+All names are in the namespace `TauCeti.ContinuousRep`.
+
+* `IsUnramified.apply_eq_pow_of_restrictMaximalUnramifiedHom_eq_pow`: an unramified
+  representation takes the value `ρ(σ₀)^m` at every `σ` acting on `K^{ur}` as the `m`-th power
+  of `σ₀`.
+* `IsUnramified.res_continuousAbsoluteGaloisGroupExtend`,
+  `IsTamelyRamified.res_continuousAbsoluteGaloisGroupExtend`: restriction preserves
+  unramifiedness and tame ramification;
+  `isUnramified_res_continuousAbsoluteGaloisGroupExtend_iff_of_ramificationIndex_eq_one` is the
+  converse along an unramified extension.
+* `IsUnramified.res_continuousAbsoluteGaloisGroupExtend_apply_of_isArithFrobeniusLift`: an
+  arithmetic Frobenius lift of `L` acts on `ρ|_{G_L}` as `ρ(Φ_K)^f`.
+* `IsUnramified.frobCharpoly_res_continuousAbsoluteGaloisGroupExtend`,
+  `IsUnramified.frobCharpolyGeom_res_continuousAbsoluteGaloisGroupExtend`: the Frobenius
+  polynomials of the restriction are the characteristic polynomials of `ρ(Φ_K)^f` and
+  `ρ(Φ_K⁻¹)^f`.
 -/
 
 public section
@@ -54,23 +57,6 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 variable {L : Type*} [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [FiniteDimensional K L]
-
-variable (K L) in
-/-- **The absolute Galois group of a finite extension inside that of `K`**, as a continuous
-homomorphism `G_L →ₜ* G_K` along a `K`-embedding `ι : L →ₐ[K] Kˢ`
-(`TauCeti.absoluteGaloisGroupExtend`). -/
-def continuousAbsoluteGaloisGroupExtend (ι : L →ₐ[K] SeparableClosure K) :
-    Field.absoluteGaloisGroup L →ₜ* Field.absoluteGaloisGroup K :=
-  ⟨absoluteGaloisGroupExtend K L ι, continuous_absoluteGaloisGroupExtend K L ι⟩
-
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] [ValuativeRel L]
-  [TopologicalSpace L] [IsNonarchimedeanLocalField L] [ValuativeExtension K L] in
-/-- `continuousAbsoluteGaloisGroupExtend` is `absoluteGaloisGroupExtend`. -/
-@[simp]
-theorem continuousAbsoluteGaloisGroupExtend_apply (ι : L →ₐ[K] SeparableClosure K)
-    (τ : Field.absoluteGaloisGroup L) :
-    continuousAbsoluteGaloisGroupExtend K L ι τ = absoluteGaloisGroupExtend K L ι τ :=
-  (rfl)
 
 namespace ContinuousRep
 
@@ -93,7 +79,7 @@ variable (ι : L →ₐ[K] SeparableClosure K)
 
 /-- **Restriction to a finite extension preserves unramifiedness**, since the inertia subgroup of
 `L` maps into that of `K`. -/
-theorem IsUnramified.res_extend (h : ρ.IsUnramified) :
+theorem IsUnramified.res_continuousAbsoluteGaloisGroupExtend (h : ρ.IsUnramified) :
     (ρ.res (continuousAbsoluteGaloisGroupExtend K L ι)).IsUnramified :=
   isUnramified_iff.2 fun τ hτ ↦ by
     rw [res_apply, continuousAbsoluteGaloisGroupExtend_apply]
@@ -101,7 +87,7 @@ theorem IsUnramified.res_extend (h : ρ.IsUnramified) :
 
 /-- **Restriction to a finite extension preserves tame ramification**, since the wild inertia
 subgroup of `L` maps into that of `K`. -/
-theorem IsTamelyRamified.res_extend (h : ρ.IsTamelyRamified) :
+theorem IsTamelyRamified.res_continuousAbsoluteGaloisGroupExtend (h : ρ.IsTamelyRamified) :
     (ρ.res (continuousAbsoluteGaloisGroupExtend K L ι)).IsTamelyRamified :=
   isTamelyRamified_iff.2 fun τ hτ ↦ by
     rw [res_apply, continuousAbsoluteGaloisGroupExtend_apply]
@@ -111,10 +97,11 @@ theorem IsTamelyRamified.res_extend (h : ρ.IsTamelyRamified) :
 /-- **Restriction to an unramified extension detects unramifiedness.** If `e(L/K) = 1`, the
 inertia subgroup of `K` is the image of that of `L`, so `ρ` is unramified exactly when its
 restriction to `G_L` is. -/
-theorem isUnramified_res_extend_iff_of_ramificationIndex_eq_one
+theorem isUnramified_res_continuousAbsoluteGaloisGroupExtend_iff_of_ramificationIndex_eq_one
     (he : ramificationIndex K L = 1) :
     (ρ.res (continuousAbsoluteGaloisGroupExtend K L ι)).IsUnramified ↔ ρ.IsUnramified := by
-  refine ⟨fun h ↦ isUnramified_iff.2 fun σ hσ ↦ ?_, fun h ↦ h.res_extend ι⟩
+  refine ⟨fun h ↦ isUnramified_iff.2 fun σ hσ ↦ ?_,
+    fun h ↦ h.res_continuousAbsoluteGaloisGroupExtend ι⟩
   rw [← map_absoluteGaloisGroupExtend_inertiaSubgroup_of_ramificationIndex_eq_one ι he] at hσ
   obtain ⟨τ, hτ, rfl⟩ := hσ
   simpa using isUnramified_iff.1 h τ hτ
@@ -122,8 +109,8 @@ theorem isUnramified_res_extend_iff_of_ramificationIndex_eq_one
 /-- **Frobenius of the restriction to residue degree `f`.** An arithmetic Frobenius lift `τ` of
 `L` acts on the restriction of an unramified representation as `ρ(Φ_K)^f`, where `f = f(L/K)`
 and `Φ_K` is the chosen arithmetic Frobenius lift of `K`. -/
-theorem IsUnramified.res_extend_apply_of_isArithFrobeniusLift (h : ρ.IsUnramified)
-    {τ : Field.absoluteGaloisGroup L} (hτ : IsArithFrobeniusLift L τ) :
+theorem IsUnramified.res_continuousAbsoluteGaloisGroupExtend_apply_of_isArithFrobeniusLift
+    (h : ρ.IsUnramified) {τ : Field.absoluteGaloisGroup L} (hτ : IsArithFrobeniusLift L τ) :
     ρ.res (continuousAbsoluteGaloisGroupExtend K L ι) τ =
       ρ (arithFrobLift K) ^ inertiaDegree K L := by
   rw [res_apply]
@@ -135,8 +122,8 @@ theorem IsUnramified.res_extend_apply_of_isArithFrobeniusLift (h : ρ.IsUnramifi
 /-- **Geometric Frobenius of the restriction to residue degree `f`.** The inverse of an
 arithmetic Frobenius lift `τ` of `L` acts on the restriction of an unramified representation as
 `ρ(Φ_K⁻¹)^f`, where `f = f(L/K)`. -/
-theorem IsUnramified.res_extend_apply_inv_of_isArithFrobeniusLift (h : ρ.IsUnramified)
-    {τ : Field.absoluteGaloisGroup L} (hτ : IsArithFrobeniusLift L τ) :
+theorem IsUnramified.res_continuousAbsoluteGaloisGroupExtend_apply_inv_of_isArithFrobeniusLift
+    (h : ρ.IsUnramified) {τ : Field.absoluteGaloisGroup L} (hτ : IsArithFrobeniusLift L τ) :
     ρ.res (continuousAbsoluteGaloisGroupExtend K L ι) τ⁻¹ =
       ρ (arithFrobLift K)⁻¹ ^ inertiaDegree K L := by
   rw [res_apply]
@@ -153,20 +140,23 @@ variable {A M : Type*} [CommRing A] [AddCommGroup M] [Module A M] [TopologicalSp
 /-- **Frobenius polynomial of the restriction to residue degree `f`.** For `ρ` unramified, the
 Frobenius polynomial of its restriction to `G_L` is the characteristic polynomial of
 `ρ(Φ_K)^f`, where `f = f(L/K)`. -/
-theorem IsUnramified.frobCharpoly_res_extend (h : ρ.IsUnramified) :
+theorem IsUnramified.frobCharpoly_res_continuousAbsoluteGaloisGroupExtend (h : ρ.IsUnramified) :
     (ρ.res (continuousAbsoluteGaloisGroupExtend K L ι)).frobCharpoly =
       (ρ (arithFrobLift K) ^ inertiaDegree K L).charpoly := by
   rw [frobCharpoly_def,
-    h.res_extend_apply_of_isArithFrobeniusLift ι (isArithFrobeniusLift_arithFrobLift L)]
+    h.res_continuousAbsoluteGaloisGroupExtend_apply_of_isArithFrobeniusLift ι
+      (isArithFrobeniusLift_arithFrobLift L)]
 
 /-- **Geometric Frobenius polynomial of the restriction to residue degree `f`.** For `ρ`
 unramified, the geometric Frobenius polynomial of its restriction to `G_L` is the characteristic
 polynomial of `ρ(Φ_K⁻¹)^f`, where `f = f(L/K)`. -/
-theorem IsUnramified.frobCharpolyGeom_res_extend (h : ρ.IsUnramified) :
+theorem IsUnramified.frobCharpolyGeom_res_continuousAbsoluteGaloisGroupExtend
+    (h : ρ.IsUnramified) :
     (ρ.res (continuousAbsoluteGaloisGroupExtend K L ι)).frobCharpolyGeom =
       (ρ (arithFrobLift K)⁻¹ ^ inertiaDegree K L).charpoly := by
   rw [frobCharpolyGeom_def,
-    h.res_extend_apply_inv_of_isArithFrobeniusLift ι (isArithFrobeniusLift_arithFrobLift L)]
+    h.res_continuousAbsoluteGaloisGroupExtend_apply_inv_of_isArithFrobeniusLift ι
+      (isArithFrobeniusLift_arithFrobLift L)]
 
 end FrobCharpoly
 

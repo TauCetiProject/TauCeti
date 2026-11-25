@@ -78,8 +78,8 @@ example {A M : Type*} [CommRing A] [Nontrivial A] [AddCommGroup M] [Module A M]
     (h₁ : ρ.subrepresentation W hW = ContinuousRep.trivial _ A W)
     (h₂ : ρ.quotient W hW = ContinuousRep.trivial _ A (M ⧸ W)) :
     ρ.frobCharpoly = (X - 1) ^ (Module.finrank A W + Module.finrank A (M ⧸ W)) := by
-  rw [frobCharpoly_eq_mul_quotient ρ W hW, h₁, h₂, frobCharpoly_trivial, frobCharpoly_trivial,
-    pow_add]
+  rw [frobCharpoly_eq_subrepresentation_mul_quotient ρ W hW, h₁, h₂, frobCharpoly_trivial,
+    frobCharpoly_trivial, pow_add]
 
 -- Restricted to `G_L` for a finite extension `L/K`, the Tate module `ℤ_ℓ(1)` has Frobenius
 -- polynomial `X - q_L`, where `q_L = q^f` is the cardinality of the residue field of `L`.
@@ -92,8 +92,8 @@ example (ℓ : ℕ) [Fact ℓ.Prime] (hℓ : ℓ.Coprime (ringChar (𝓀[K]))) {
   have h : (ofCharacter (continuousLocalCyclotomicCharacter ℓ K)).IsUnramified :=
     (isUnramified_ofCharacter_iff _).2 fun σ hσ ↦ by
       simpa using localCyclotomicCharacter_eq_one_of_mem_inertiaSubgroup ℓ hℓ hσ
-  rw [h.frobCharpoly_res_extend, ← map_pow, charpoly_ofCharacter_apply, map_pow,
-    Units.val_pow_eq_pow_val,
+  rw [h.frobCharpoly_res_continuousAbsoluteGaloisGroupExtend, ← map_pow,
+    charpoly_ofCharacter_apply, map_pow, Units.val_pow_eq_pow_val,
     continuousLocalCyclotomicCharacter_apply,
     (isArithFrobeniusLift_arithFrobLift K).coe_localCyclotomicCharacter ℓ hℓ,
     natCard_residueField K L, Nat.cast_pow]

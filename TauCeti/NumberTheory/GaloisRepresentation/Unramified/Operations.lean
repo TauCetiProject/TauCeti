@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.GaloisRepresentation.Unramified.Basic
 public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Operations
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Smul
-import TauCeti.LinearAlgebra.Charpoly.Quotient
 import TauCeti.RepresentationTheory.Stabilizer
 
 /-!
@@ -20,10 +19,11 @@ For continuous representations of the absolute Galois group of a nonarchimedean 
   of unramified (or tamely ramified) representations are unramified (or tamely ramified);
 * **twist formula**: on a free module of rank `n`, the Frobenius polynomial of the twist by `χ`
   is `P(ρ(χ), X) = χ(Φ)ⁿ P(ρ, χ(Φ)⁻¹ X)`, integrally `P(ρ(χ), χ(Φ) X) = χ(Φ)ⁿ P(ρ, X)`;
-* **invariance under semisimplification**: for an invariant submodule `W` with `W` and `M ⧸ W`
-  free of finite rank, the Frobenius polynomial of `ρ` is the product of those of `ρ` on `W` and
-  on `M ⧸ W`. By induction along a composition series, `P(ρ) = P(ρ^ss)`; no complement of `W` is
-  needed, so a unipotent Frobenius has the polynomial of the trivial representation.
+* **multiplicativity on an invariant submodule and its quotient**: for an invariant submodule `W`
+  with `W` and `M ⧸ W` free of finite rank, the Frobenius polynomial of `ρ` is the product of
+  those of `ρ` on `W` and on `M ⧸ W`. No complement of `W` is needed, so the Frobenius polynomial
+  does not see the extension; this is the motivation for the invariance of the Frobenius
+  polynomial under semisimplification, which is not formalized here.
 
 ## Main results
 
@@ -31,9 +31,9 @@ For continuous representations of the absolute Galois group of a nonarchimedean 
   `TauCeti.ContinuousRep.IsUnramified.linHom` and their tame analogues.
 * `TauCeti.ContinuousRep.frobCharpoly_twist_comp`, `TauCeti.ContinuousRep.frobCharpoly_twist`:
   the twist formula.
-* `TauCeti.ContinuousRep.frobCharpoly_eq_mul_quotient`,
-  `TauCeti.ContinuousRep.frobCharpolyGeom_eq_mul_quotient`: multiplicativity on an invariant
-  submodule and its quotient.
+* `TauCeti.ContinuousRep.frobCharpoly_eq_subrepresentation_mul_quotient`,
+  `TauCeti.ContinuousRep.frobCharpolyGeom_eq_subrepresentation_mul_quotient`: multiplicativity on
+  an invariant submodule and its quotient.
 -/
 
 public section
@@ -155,27 +155,21 @@ variable {A M : Type*} [CommRing A] [AddCommGroup M] [Module A M] [TopologicalSp
   (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W) [Module.Free A W] [Module.Finite A W] [Module.Free A (M ⧸ W)]
   [Module.Finite A (M ⧸ W)]
 
-/-- **Invariance under semisimplification.** For an invariant submodule `W` such that `W` and
-`M ⧸ W` are free of finite rank, the Frobenius polynomial of `ρ` is the product of the Frobenius
-polynomials of `ρ` on `W` and on `M ⧸ W`. -/
-theorem frobCharpoly_eq_mul_quotient :
+/-- **Multiplicativity on an invariant submodule and its quotient.** For an invariant submodule
+`W` such that `W` and `M ⧸ W` are free of finite rank, the Frobenius polynomial of `ρ` is the
+product of the Frobenius polynomials of `ρ` on `W` and on `M ⧸ W`. -/
+theorem frobCharpoly_eq_subrepresentation_mul_quotient :
     ρ.frobCharpoly =
       (ρ.subrepresentation W hW).frobCharpoly * (ρ.quotient W hW).frobCharpoly := by
-  rw [frobCharpoly_def, frobCharpoly_def, frobCharpoly_def, ← coe_toRepresentation,
-    ← coe_toRepresentation (ρ.subrepresentation W hW), ← coe_toRepresentation (ρ.quotient W hW),
-    toRepresentation_subrepresentation, toRepresentation_quotient]
-  exact LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ W _ (hW _)
+  simp only [frobCharpoly_def, charpoly_apply_eq_subrepresentation_mul_quotient ρ W hW]
 
-/-- **Invariance under semisimplification**, for the geometric Frobenius polynomial: it is the
-product of the geometric Frobenius polynomials of `ρ` on an invariant submodule `W` and on
-`M ⧸ W`, when both are free of finite rank. -/
-theorem frobCharpolyGeom_eq_mul_quotient :
+/-- **Multiplicativity on an invariant submodule and its quotient**, for the geometric Frobenius
+polynomial: it is the product of the geometric Frobenius polynomials of `ρ` on an invariant
+submodule `W` and on `M ⧸ W`, when both are free of finite rank. -/
+theorem frobCharpolyGeom_eq_subrepresentation_mul_quotient :
     ρ.frobCharpolyGeom =
       (ρ.subrepresentation W hW).frobCharpolyGeom * (ρ.quotient W hW).frobCharpolyGeom := by
-  rw [frobCharpolyGeom_def, frobCharpolyGeom_def, frobCharpolyGeom_def, ← coe_toRepresentation,
-    ← coe_toRepresentation (ρ.subrepresentation W hW), ← coe_toRepresentation (ρ.quotient W hW),
-    toRepresentation_subrepresentation, toRepresentation_quotient]
-  exact LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ W _ (hW _)
+  simp only [frobCharpolyGeom_def, charpoly_apply_eq_subrepresentation_mul_quotient ρ W hW]
 
 end Subquotient
 
