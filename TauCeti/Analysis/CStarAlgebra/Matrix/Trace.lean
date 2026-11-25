@@ -668,6 +668,7 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {n : ι → Type*} [∀ i, F
 
 /-- The normalized trace of a block-diagonal matrix weights the normalized trace of the block `i`
 by `|n i| / |Σ i, n i|`. -/
+@[simp]
 theorem normalizedTrace_blockDiagonal' (x : ∀ i, CStarMatrix (n i) (n i) ℂ) :
     normalizedTrace (ofMatrix (Matrix.blockDiagonal' fun i => ofMatrix.symm (x i))) =
       ∑ i, (Fintype.card (n i) / Fintype.card (Σ i, n i) : ℂ) * normalizedTrace (x i) := by
@@ -681,6 +682,7 @@ theorem normalizedTrace_blockDiagonal' (x : ∀ i, CStarMatrix (n i) (n i) ℂ) 
 
 /-- The normalized trace of the corner embedding at `i` is that of the block, weighted by
 `|n i| / |Σ i, n i|`. -/
+@[simp]
 theorem normalizedTrace_blockDiagonalSingle (i : ι) (x : CStarMatrix (n i) (n i) ℂ) :
     normalizedTrace (blockDiagonalSingle ℂ ℂ i x) =
       (Fintype.card (n i) / Fintype.card (Σ i, n i) : ℂ) * normalizedTrace x := by
