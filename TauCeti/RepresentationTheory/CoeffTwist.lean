@@ -39,8 +39,8 @@ preserves irreducibility.
 
 ## References
 
-* J. Bernstein, *Le "centre" de Bernstein*, edited by P. Deligne, in *Représentations des groupes
-  réductifs sur un corps local*, Hermann, 1984, §2.0, Generalization, p. 9.
+* J. Bernstein, *Second adjointness for representations of reductive p-adic groups*, 1987
+  manuscript, §2.0, Generalization, p. 9.
 -/
 
 public section
@@ -140,11 +140,6 @@ theorem coeffTwist_apply_of (g : G) (v : V) :
     ρ.coeffTwist σ g (CoeffTwist.of σ V v) = CoeffTwist.of σ V (ρ g v) :=
   (rfl)
 
-/-- `ρ^σ(g)` sends `v` to `w` exactly when `ρ(g)` does. -/
-theorem coeffTwist_apply_eq_iff (g : G) (v w : V) :
-    ρ.coeffTwist σ g (CoeffTwist.of σ V v) = CoeffTwist.of σ V w ↔ ρ g v = w := by
-  simp
-
 variable (σ ρ) in
 /-- The `σ`-twist of a restriction is the restriction of the `σ`-twist. -/
 theorem coeffTwist_comp {H : Type*} [Monoid H] (f : H →* G) :
@@ -226,13 +221,6 @@ section Invariants
 
 variable {A G V : Type*} [CommRing A] [Group G] [AddCommGroup V] [Module A V]
   {σ : A ≃+* A} {ρ : Representation A G V}
-
-/-- `CoeffTwist.of σ V v` is invariant under `ρ^σ` exactly when `v` is invariant under `ρ`. Not
-`@[simp]`: `simp` proves it from `mem_invariants` and `coeffTwist_apply_of`. -/
-theorem of_mem_invariants_coeffTwist (v : V) :
-    CoeffTwist.of σ V v ∈ invariants (ρ.coeffTwist σ) ↔ v ∈ invariants ρ := by
-  simp only [mem_invariants]
-  exact forall_congr' fun g ↦ coeffTwist_apply_eq_iff g v v
 
 /-- The `σ`-semilinear bijection `V^G → (V^σ)^G` between the invariants of `ρ` and of its
 `σ`-twist, the identity on vectors. -/

@@ -36,8 +36,8 @@ inverse the twist by `σ⁻¹`.
 
 ## References
 
-* J. Bernstein, *Le "centre" de Bernstein*, edited by P. Deligne, in *Représentations des groupes
-  réductifs sur un corps local*, Hermann, 1984, §2.0, Generalization, p. 9.
+* J. Bernstein, *Second adjointness for representations of reductive p-adic groups*, 1987
+  manuscript, §2.0, Generalization, p. 9.
 -/
 
 public section
