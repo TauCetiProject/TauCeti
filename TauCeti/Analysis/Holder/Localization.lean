@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Holder.Leibniz
 public import TauCeti.Analysis.Holder.Iterated
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Data.Nat.Choose.Sum
+import Mathlib.Topology.MetricSpace.Thickening
 
 /-!
 # Quantitative localization of finite-order Hölder maps
@@ -16,11 +17,17 @@ import Mathlib.Data.Nat.Choose.Sum
 A globally smooth supported cutoff turns local `C^{k,α}` data on an open convex set into an
 actual bounded `C^{k,α}` map on the ambient space. Only the top source jet needs an explicit
 Hölder hypothesis; the lower jets are controlled by the mean-value inequality.
+
+Convexity of the open set is only needed near the support of the cutoff: when the `δ`-thickening
+of `tsupport χ` lies in the open set, the Leibniz bound on balls of radius `δ` centred in the
+support, together with the supremum bound at larger distances, makes the top derivative of the
+cutoff product globally Hölder
+(`TauCeti.holderWith_iteratedFDeriv_cutoff_smul_of_thickening_subset`).
 -/
 
 public section
 
-open Set
+open Set Metric
 open scoped NNReal Topology
 
 namespace TauCeti
@@ -59,6 +66,36 @@ theorem norm_iteratedFDeriv_cutoff_smul_le {k j : ℕ} {s : Set E} {f : E → F}
     have hnonneg : (0 : ℝ) ≤ 2^j * N * M := by positivity
     simpa using hnonneg
 
+/-- On a convex open set, every derivative through order `k` of a `C^k` map with derivatives
+bounded by `M` and `k`-th derivative `α`-Hölder with constant `H` is `α`-Hölder with constant
+`H + 3 M`. -/
+private theorem holderOnWith_iteratedFDeriv_of_le_of_convex {k : ℕ} {s : Set E} {f : E → F}
+    {M H α : ℝ≥0} (hf : ContDiffOn ℝ k f s) (hs : IsOpen s) (hc : Convex ℝ s) (hα : α ≤ 1)
+    (hfb : ∀ i ≤ k, ∀ x ∈ s, ‖iteratedFDeriv ℝ i f x‖ ≤ M)
+    (hfH : HolderOnWith H α (iteratedFDeriv ℝ k f) s) :
+    ∀ j ≤ k, HolderOnWith (H + 3 * M) α (iteratedFDeriv ℝ j f) s := by
+  intro j hj
+  rcases hj.eq_or_lt with rfl | hj
+  · exact hfH.mono_const (le_self_add)
+  · have hlow := hf.holderOnWith_iteratedFDeriv_of_lt hs hc hj hα
+      (hfb j hj.le) (hfb (j + 1) (by omega))
+    have hconstant : M + 2 * M = 3 * M := by ring
+    rw [hconstant] at hlow
+    exact hlow.mono_const le_add_self
+
+/-- The derivatives through order `k` of a `C^{k+1}` cutoff whose derivatives through order
+`k + 1` are bounded by `N` are globally `α`-Hölder with constant `3 N`. -/
+private theorem holderWith_iteratedFDeriv_of_le_of_contDiff {k : ℕ} {χ : E → ℝ} {N α : ℝ≥0}
+    (hχ : ContDiff ℝ (k + 1) χ) (hα : α ≤ 1)
+    (hχb : ∀ i ≤ k + 1, ∀ x, ‖iteratedFDeriv ℝ i χ x‖ ≤ N) :
+    ∀ j ≤ k, HolderWith (3 * N) α (iteratedFDeriv ℝ j χ) := by
+  intro j hj
+  have hlow := hχ.contDiffOn.holderOnWith_iteratedFDeriv_of_lt (k := k + 1)
+    isOpen_univ convex_univ (by omega : j < k + 1) hα
+    (fun x _ => hχb j (by omega) x) (fun x _ => hχb (j + 1) (by omega) x)
+  convert holderOnWith_univ.mp hlow using 1
+  ring
+
 /-- The top derivative of a cutoff product is globally Hölder. The constant involves only the
 source jet bound, its top Hölder constant, and the cutoff jets through order `k + 1`. -/
 theorem holderWith_iteratedFDeriv_cutoff_smul {k : ℕ} {s : Set E} {f : E → F} {χ : E → ℝ}
@@ -69,34 +106,96 @@ theorem holderWith_iteratedFDeriv_cutoff_smul {k : ℕ} {s : Set E} {f : E → F
     (hfH : HolderOnWith H α (iteratedFDeriv ℝ k f) s) :
     HolderWith ((2 : ℝ≥0)^k * N * (H + 6 * M)) α
       (iteratedFDeriv ℝ k (fun x => χ x • f x)) := by
-  have hall : ∀ j ≤ k, HolderOnWith (H + 3 * M) α (iteratedFDeriv ℝ j f) s := by
-    intro j hj
-    rcases hj.eq_or_lt with rfl | hj
-    · exact hfH.mono_const (le_self_add)
-    · have hlow := hf.holderOnWith_iteratedFDeriv_of_lt hs hc hj hα
-        (hfb j hj.le) (hfb (j + 1) (by omega))
-      have hconstant : M + 2 * M = 3 * M := by ring
-      rw [hconstant] at hlow
-      exact hlow.mono_const le_add_self
-  have hcut : ∀ j ≤ k, HolderWith (3 * N) α (iteratedFDeriv ℝ j χ) := by
-    intro j hj
-    have hlow := hχ.contDiffOn.holderOnWith_iteratedFDeriv_of_lt (k := k + 1)
-      isOpen_univ convex_univ (by omega : j < k + 1) hα
-      (fun x _ => hχb j (by omega) x) (fun x _ => hχb (j + 1) (by omega) x)
-    convert holderOnWith_univ.mp hlow using 1
-    ring
   let L := (ContinuousLinearMap.lsmul ℝ ℝ : ℝ →L[ℝ] F →L[ℝ] F).flip
   have hL : ‖L‖₊ ≤ 1 := by
     dsimp [L]
     rw [ContinuousLinearMap.opNNNorm_flip]
     exact ContinuousLinearMap.opNNNorm_lsmul_le
   have h := L.holderWith_iteratedFDeriv_of_tsupport_subset_right hf
-    (hχ.of_le (by simp)) hs hχs hfb (fun i hi => hχb i (by omega)) hall hcut
+    (hχ.of_le (by simp)) hs hχs hfb (fun i hi => hχb i (by omega))
+    (holderOnWith_iteratedFDeriv_of_le_of_convex hf hs hc hα hfb hfH)
+    (holderWith_iteratedFDeriv_of_le_of_contDiff hχ hα hχb)
   apply h.mono
   calc
     _ ≤ (2 : ℝ≥0)^k * 1 * (M * (3 * N) + N * (H + 3 * M)) := by
       gcongr
     _ = _ := by ring
+
+/-- On a convex open set `s` on which `f` is `C^k`, with derivatives through order `k` bounded
+by `M` and `k`-th derivative `α`-Hölder with constant `H`, the `k`-th derivative of the product
+`χ f` with a `C^{k+1}` function `χ` whose derivatives through order `k + 1` are bounded by `N` is
+`α`-Hölder on `s` with constant `2^k N (H + 6 M)`. -/
+theorem holderOnWith_iteratedFDeriv_smul_of_convex {k : ℕ} {s : Set E} {f : E → F}
+    {χ : E → ℝ} {M N H α : ℝ≥0} (hf : ContDiffOn ℝ k f s) (hχ : ContDiff ℝ (k + 1) χ)
+    (hs : IsOpen s) (hc : Convex ℝ s) (hα : α ≤ 1)
+    (hfb : ∀ i ≤ k, ∀ x ∈ s, ‖iteratedFDeriv ℝ i f x‖ ≤ M)
+    (hχb : ∀ i ≤ k + 1, ∀ x, ‖iteratedFDeriv ℝ i χ x‖ ≤ N)
+    (hfH : HolderOnWith H α (iteratedFDeriv ℝ k f) s) :
+    HolderOnWith ((2 : ℝ≥0) ^ k * N * (H + 6 * M)) α
+      (iteratedFDeriv ℝ k (fun x ↦ χ x • f x)) s := by
+  let L : ℝ →L[ℝ] F →L[ℝ] F := ContinuousLinearMap.lsmul ℝ ℝ
+  have hL : ‖L‖₊ ≤ 1 := ContinuousLinearMap.opNNNorm_lsmul_le
+  have h := L.holderOnWith_iteratedFDeriv_comp₂ (hχ.contDiffOn.of_le (by simp)) hf hs
+    (fun j hj y _ ↦ hχb j (by omega) y) hfb
+    (fun j hj ↦ (holderWith_iteratedFDeriv_of_le_of_contDiff hχ hα hχb j hj).holderOnWith s)
+    (holderOnWith_iteratedFDeriv_of_le_of_convex hf hs hc hα hfb hfH)
+  have hLf : (fun x ↦ L (χ x) (f x)) = fun x ↦ χ x • f x := by
+    ext x
+    simp [L]
+  rw [hLf] at h
+  refine h.mono_const ?_
+  calc
+    _ ≤ (2 : ℝ≥0) ^ k * 1 * (N * (H + 3 * M) + M * (3 * N)) := by gcongr
+    _ = _ := by ring
+
+/-- The `k`-th derivative of a cutoff product `χ f` is globally `α`-Hölder when the
+`δ`-thickening of the support of the cutoff lies in an open set `s` on which `f` is `C^k`, with
+derivatives through order `k` bounded by `M` and `k`-th derivative `α`-Hölder with constant `H`.
+No convexity of `s` is needed: the lower derivatives of `f` are only used on balls of radius `δ`
+centred in the support of `χ`. -/
+theorem holderWith_iteratedFDeriv_cutoff_smul_of_thickening_subset {k : ℕ} {s : Set E}
+    {f : E → F} {χ : E → ℝ} {M N H α δ : ℝ≥0} (hf : ContDiffOn ℝ k f s)
+    (hχ : ContDiff ℝ (k + 1) χ) (hs : IsOpen s) (hδ : 0 < δ)
+    (hχs : thickening δ (tsupport χ) ⊆ s) (hα : α ≤ 1)
+    (hfb : ∀ i ≤ k, ∀ x ∈ s, ‖iteratedFDeriv ℝ i f x‖ ≤ M)
+    (hχb : ∀ i ≤ k + 1, ∀ x, ‖iteratedFDeriv ℝ i χ x‖ ≤ N)
+    (hfH : HolderOnWith H α (iteratedFDeriv ℝ k f) s) :
+    HolderWith ((2 : ℝ≥0) ^ k * N * (H + 6 * M + 2 * M * δ ^ (-(α : ℝ)))) α
+      (iteratedFDeriv ℝ k (fun x ↦ χ x • f x)) := by
+  have hts : tsupport χ ⊆ s := (self_subset_thickening (by exact_mod_cast hδ) _).trans hχs
+  -- The product vanishes near every point outside the support of the cutoff.
+  have hzero : ∀ x ∉ tsupport χ, iteratedFDeriv ℝ k (fun x ↦ χ x • f x) x = 0 := by
+    intro x hx
+    have h0 : (fun y ↦ χ y • f y) =ᶠ[𝓝 x] 0 := by
+      filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hx] with y hy
+      simp [hy]
+    rw [(h0.iteratedFDeriv (𝕜 := ℝ) k).self_of_nhds]
+    simp
+  -- On a ball of radius `δ` centred in the support, the Leibniz rule gives a Hölder bound.
+  have hball : ∀ x ∈ tsupport χ, HolderOnWith ((2 : ℝ≥0) ^ k * N * (H + 6 * M)) α
+      (iteratedFDeriv ℝ k (fun x ↦ χ x • f x)) (ball x δ) := fun x hx ↦ by
+    have hB : ball x δ ⊆ s := (ball_subset_thickening hx _).trans hχs
+    exact holderOnWith_iteratedFDeriv_smul_of_convex (hf.mono hB) hχ isOpen_ball
+      (convex_ball x δ) hα (fun j hj y hy ↦ hfb j hj y (hB hy)) hχb (hfH.mono hB)
+  have hbd : ∀ x, ‖iteratedFDeriv ℝ k (fun x ↦ χ x • f x) x‖ ≤ (2 : ℝ) ^ k * N * M :=
+    norm_iteratedFDeriv_cutoff_smul_le hf (hχ.of_le (by simp)) hs hts le_rfl hfb
+      (fun i hi ↦ hχb i (by omega))
+  have h := HolderOnWith.of_dist_lt_of_dist_le (s := univ) (r := α) (D := 2 * 2 ^ k * N * M) hδ
+    (K := (2 : ℝ≥0) ^ k * N * (H + 6 * M))
+    (f := iteratedFDeriv ℝ k (fun x ↦ χ x • f x)) (fun x _ y _ hxy ↦ ?_)
+    (fun x _ y _ ↦ (dist_le_norm_add_norm _ _).trans (by
+      push_cast
+      linarith [hbd x, hbd y]))
+  · refine holderOnWith_univ.mp (h.mono_const (le_of_eq ?_))
+    ring
+  · by_cases hx : x ∈ tsupport χ
+    · exact (hball x hx).dist_le (mem_ball_self (by exact_mod_cast hδ))
+        (by rwa [mem_ball, dist_comm])
+    by_cases hy : y ∈ tsupport χ
+    · rw [dist_comm x y, dist_comm (iteratedFDeriv ℝ k _ x)]
+      exact (hball y hy).dist_le (mem_ball_self (by exact_mod_cast hδ)) (by rwa [mem_ball])
+    rw [hzero x hx, hzero y hy, dist_self]
+    positivity
 
 namespace CkHolderSpace
 
