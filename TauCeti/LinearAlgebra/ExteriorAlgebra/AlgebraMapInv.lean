@@ -29,6 +29,8 @@ involution and reversion, and cyclic.
 ## Main results
 
 * `ExteriorAlgebra.algebraMapInv_ι`: generators have constant term zero.
+* `ExteriorAlgebra.algebraMapInv_eq_zero_of_mem_exteriorPower`: so does every element of a
+  positive exterior power.
 * `ExteriorAlgebra.algebraMapInv_map`, `ExteriorAlgebra.algebraMapInv_involute`, and
   `ExteriorAlgebra.algebraMapInv_reverse`: induced linear maps, the grade involution, and reversion
   preserve the constant term.
@@ -52,6 +54,16 @@ variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
 @[simp]
 theorem algebraMapInv_ι (m : M) : algebraMapInv (ι R m) = 0 := by
   simp [algebraMapInv]
+
+/-- An element of a positive exterior power `⋀ⁿ M`, `n ≠ 0`, has constant term zero. -/
+theorem algebraMapInv_eq_zero_of_mem_exteriorPower {n : ℕ} (hn : n ≠ 0) {x : ExteriorAlgebra R M}
+    (hx : x ∈ ⋀[R]^n M) : algebraMapInv x = 0 := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+  rw [exteriorPower, pow_succ'] at hx
+  have hle : LinearMap.range (ι R : M →ₗ[R] ExteriorAlgebra R M) * ⋀[R]^k M ≤
+      LinearMap.ker (algebraMapInv : ExteriorAlgebra R M →ₐ[R] R).toLinearMap :=
+    Submodule.mul_le.mpr fun _ ⟨m, hm⟩ _ _ ↦ by simp [← hm]
+  exact hle hx
 
 /-- Induced exterior-algebra maps preserve the constant term. -/
 @[simp]
