@@ -5,332 +5,538 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.Holomorphic.PointTwist.EulerClass
+public import Mathlib.Analysis.Complex.RemovableSingularity
+public import Mathlib.Geometry.Manifold.Complex
+public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
+public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Holomorphic.PointTwist.Basic
 
 /-!
-# The Euler number of a negative point twist
+# Twisting a holomorphic vector bundle by the dual of a point
 
-Let `X` be a compact Riemann surface, `L → X` a complex line bundle with model fibre `ℂ`, and
-`x : X`. The negative point twist `L(-x)` (`TauCeti.signedPointTwistCore` with sign `false`) is
-glued from `L` over `X ∖ {x}` and from the frames of `L` multiplied by the centred chart coordinate
-over the chart disc at `x`; its sections are the sections of `L` vanishing at `x`. This file proves
-that twisting negatively at a point lowers the Euler number of the underlying oriented real plane
-bundle by one:
-`⟨e(L(-x)_ℝ), [X]⟩ = ⟨e(L_ℝ), [X]⟩ - 1`
-(`TauCeti.evalFundamentalClass_complexEulerClass_negPointTwist`). Together with the positive twist
-(`TauCeti.evalFundamentalClass_complexEulerClass_pointTwist`) this is the Chern-number bookkeeping
-of step 5 of the proof of the Riemann–Roch formula for real Cauchy–Riemann operators
-(McDuff–Salamon, Theorem C.1.10), where the trivial bundle is twisted at the positive zeros of a
-section and negatively at its negative zeros.
+Let `X` be a complex curve, that is a manifold modelled on `𝓘(ℂ)`, let `E → X` be a vector bundle
+with model fibre `F` whose transition functions are `C^n` over `𝓘(ℂ)`, and let `x : X`. The point
+twist `E(x)` of `TauCeti.pointTwistCore` has local frames divided by the centred chart coordinate
+`z ↦ φ z - φ x` near `x`, where `φ = chartAt ℂ x`. The negative point twist `E(-x)` has them
+multiplied by it instead. It is glued from the same two pieces, `X \ {x}` and the source of `φ`,
+with the reversed scalar transition function `TauCeti.pointTwistFactor x j i`: it is the case
+`s = false` of the signed point twist `TauCeti.signedPointTwistCore`, whose case `s = true` is
+`E(x)`. Its local sections are the sections of `E` vanishing at `x`. For a holomorphic line bundle
+`L` it is the line bundle `L(-x) = L ⊗ 𝒪(-x)`.
 
-The proof counts zeros. The inclusion of `L(-x)` into `L` is multiplication by the canonical
-section of `𝒪(x)`; on fibres it is `TauCeti.pointTwistDiv`, an isomorphism off `x` and zero at
-`x`. Let `τ` be a continuous section of `L(-x)` with finitely many zeros,
-nonzero at `x`. Then `σ = pointTwistDiv ∘ τ` is a continuous section of `L`
-(`TauCeti.continuous_pointTwistDiv_section`) whose zeros are those of `τ` together with `x`.
+The fibre map `TauCeti.pointTwistDiv` of `E(x)`, whose scalar is `0` at `x` and `1` elsewhere and
+hence its own inverse, is also the fibre map from `E(-x)` to `E` including the sections vanishing
+at `x`: it is an isomorphism off `x`, zero at `x`, and sends `C^n` sections of `E(-x)` to `C^n`
+sections of `E`. Conversely, `TauCeti.negPointTwistOfZero` builds a section of `E(-x)` from a
+section of `E` vanishing at `x`. Off `x` it is that section, and at `x` it is the derivative of its
+chart reading in the centred coordinate, so that in the chart at `x` it is the chart reading divided
+by the centred coordinate, extended by Mathlib's `dslope`. It recovers every section of `E(-x)`
+continuous at `x` from its image in `E`. When the model fibre `F` is complete, the removable
+singularity theorem makes it holomorphic when the section of `E` is. Thus, for complete `F`, the
+holomorphic sections of `E(-x)` are the holomorphic sections of `E` vanishing at `x`.
 
-* Away from `x`, the two sections have the same fibre coordinates in the preferred charts of `L`
-  and the charts `(z, false)` of `L(-x)`, so they have the same local index
-  (`TauCeti.sectionIndex_pointTwistDiv_of_ne`).
-* At `x`, the section `σ` reads `w ↦ (w - φ x) g(w)` in the chart `φ` of `X` at `x` and the chart
-  of `L` at `x`, where `g` is the reading of `τ` in the chart `(x, true)` of `L(-x)`. Its derivative
-  at `φ x` is multiplication by `g (φ x) ≠ 0`, of determinant `|g (φ x)|² > 0` over `ℝ`, so its
-  local index is `1` (`TauCeti.sectionIndex_pointTwistDiv_self`).
+For the trivial line bundle, `TauCeti.negPointTwistPairing` is the fibrewise pairing
+`𝒪(-x) × 𝒪(x) → 𝒪`. In the preferred charts it is the product of the coordinates; it is
+nondegenerate on every fibre, and it takes holomorphic sections to holomorphic functions. Paired
+with the canonical section `TauCeti.pointTwistSection` of `𝒪(x)` it is `pointTwistDiv`. On a
+compact connected curve the trivial `𝒪(-x)` has no nonzero holomorphic sections: they are
+holomorphic functions vanishing at `x`. On the Riemann sphere this is `H⁰(𝒪(-1)) = 0`.
 
-Summing over zeros gives `⟨e(L_ℝ), [X]⟩ = ⟨e(L(-x)_ℝ), [X]⟩ + 1`.
+In the proof of the Riemann–Roch theorem for line bundles over a closed Riemann surface
+(McDuff–Salamon, Theorem C.1.10), the trivial bundle is twisted at the zeros of a generic section,
+by `𝒪(xᵢ)` at the positive zeros and by its dual at the negative ones. This file provides the
+second of these twists.
+
+## Main definitions
+
+* `TauCeti.negPointTwistCore`: the coordinate core of the negative point twist `E(-x)`; its `C^n`
+  (for `n = ∞`, holomorphic) structure is `TauCeti.signedPointTwistCore.isContMDiff`.
+* `TauCeti.negPointTwistOfZero`: the section of `E(-x)` defined by a section of `E` vanishing at
+  `x`.
+* `TauCeti.negPointTwistPairing`: the fibrewise pairing `𝒪(-x) × 𝒪(x) → 𝒪`.
 
 ## Main results
 
-* `TauCeti.trivializationAt_pointTwistDiv_signed`: the inclusion `pointTwistDiv` of `L(-x)` into
-  `L`, read in the charts.
-* `TauCeti.continuous_pointTwistDiv_section`: it sends continuous sections to continuous
-  sections.
-* `TauCeti.sectionIndex_pointTwistDiv_of_ne` and `TauCeti.sectionIndex_pointTwistDiv_self`:
-  the local indices of the included section.
-* `TauCeti.evalFundamentalClass_complexEulerClass_negPointTwist`: the Euler number of `L(-x)` is
-  that of `L` minus one.
-
-## Implementation notes
-
-As for the positive twist, the section `τ` of `L(-x)` with finitely many zeros and `τ x ≠ 0` is a
-hypothesis.
+* `TauCeti.contMDiff_negPointTwist_pointTwistDiv_section`,
+  `TauCeti.continuous_negPointTwist_pointTwistDiv_section` and
+  `TauCeti.mdifferentiable_negPointTwist_pointTwistDiv_section`: the inclusion `pointTwistDiv` of
+  `E(-x)` into `E` preserves `C^n`, continuous and holomorphic sections.
+* `TauCeti.mdifferentiable_negPointTwistOfZero`, `TauCeti.pointTwistDiv_negPointTwistOfZero` and
+  `TauCeti.negPointTwistOfZero_pointTwistDiv`: the holomorphic sections of `E(-x)` correspond to
+  the holomorphic sections of `E` vanishing at `x`.
+* `TauCeti.negPointTwistPairing_nondegenerate` and `TauCeti.contMDiff_negPointTwistPairing`: the
+  pairing with `𝒪(x)` is nondegenerate and holomorphic.
+* `TauCeti.negPointTwist_trivial_section_eq_zero`: on a compact connected curve, the trivial
+  `𝒪(-x)` has no nonzero holomorphic sections.
 
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
   Theorem C.1.10.
-* J. W. Milnor, J. D. Stasheff, *Characteristic Classes*, Annals of Mathematics Studies 76,
-  Princeton (1974), §11 (the Euler class evaluated through the zeros of a section).
+* P. Griffiths and J. Harris, *Principles of Algebraic Geometry*, Chapter 1, Section 1
+  (divisors and line bundles).
 -/
 
 public section
 
 noncomputable section
 
-open Bundle Filter Module Set Topology
+open Bundle Set Topology Filter
 open scoped Manifold ContDiff
 
 namespace TauCeti
 
-variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X]
-  {F : Type} [NormedAddCommGroup F] [NormedSpace ℂ F]
-  {E : X → Type} [∀ z, AddCommGroup (E z)] [∀ z, Module ℂ (E z)] [∀ z, TopologicalSpace (E z)]
-  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℂ F E]
+variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
 
-/-! ### The inclusion of the negative twist -/
+/-! ### The negative point-twist core -/
+
+variable (F : Type*) [NormedAddCommGroup F] [NormedSpace ℂ F]
+  (E : X → Type*) [∀ z, AddCommGroup (E z)] [∀ z, Module ℂ (E z)]
+  [∀ z, TopologicalSpace (E z)] [TopologicalSpace (TotalSpace F E)]
+  [FiberBundle F E] [VectorBundle ℂ F E]
+
+/-- The coordinate core of the negative point twist `E(-x)`, the signed point twist with sign
+`false`: its coordinate changes are those of `E` multiplied by the reversed scalar transition
+function of the point twist. -/
+abbrev negPointTwistCore (x : X) : VectorBundleCore ℂ X F (X × Bool) :=
+  signedPointTwistCore F E x false
+
+variable {F E}
+
+variable {n : ℕ∞ω} [IsManifold 𝓘(ℂ) n X]
+
+/-! ### The inclusion into `E` -/
+
+/-! The inclusion of the fibre of `E(-x)` at `z` into the fibre of `E`, multiplication by the
+canonical section of `𝒪(x)`, is `TauCeti.pointTwistDiv`. In the preferred chart at `z` it is the
+scalar `1` off `x` and `0` at `x`, so it is an isomorphism off `x`
+(`TauCeti.pointTwistDiv_bijective_of_ne`) and zero at `x` (`TauCeti.pointTwistDiv_self`). -/
 
 open Classical in
-/-- In every chart `(y, b)` of the negative point twist, its inclusion into `E` reads, in the chart
-of `E` at `y`, as the scalar `pointTwistFactor x false b` times the coordinate in the chart
-`(y, b)`. -/
-theorem trivializationAt_pointTwistDiv_signed {x z : X} {i : X × Bool}
-    (hz : z ∈ (signedPointTwistCore F E x false).baseSet i) (w : F) :
+/-- In every chart of the negative point twist, the inclusion `pointTwistDiv` into `E` is the
+scalar `pointTwistFactor x false b` in the corresponding chart of `E`. -/
+theorem trivializationAt_pointTwistDiv_negPointTwistCore {x z : X} {i : X × Bool}
+    (hz : z ∈ (negPointTwistCore F E x).baseSet i) (w : F) :
     (trivializationAt F E i.1 ⟨z, pointTwistDiv F E x z w⟩).2 =
-      pointTwistFactor x false i.2 z •
-        ((signedPointTwistCore F E x false).localTriv i ⟨z, w⟩).2 := by
+      pointTwistFactor x false i.2 z • ((negPointTwistCore F E x).localTriv i ⟨z, w⟩).2 := by
   have h₀ : z ∈ (trivializationAt F E z).baseSet := mem_baseSet_trivializationAt F E z
-  have hz' := mem_signedPointTwistCore_baseSet.1 hz
+  rw [mem_signedPointTwistCore_baseSet] at hz
   rw [signedPointTwistCore_localTriv_apply, signedPointTwistFactor_false, smul_smul, mul_comm,
-    pointTwistFactor_mul_false hz'.2 (mem_pointTwistBaseSet_decide x z), pointTwistDiv_apply,
-    inv_pointTwistFactor_false_decide,
-    ← map_smul, Trivialization.coordChangeL_apply _ _ ⟨h₀, hz'.1⟩]
+    pointTwistFactor_mul_false hz.2 (mem_pointTwistBaseSet_decide x z), pointTwistDiv_apply,
+    inv_pointTwistFactor_false_decide, ← map_smul, Trivialization.coordChangeL_apply _ _ ⟨h₀, hz.1⟩]
 
-/-- The included vector vanishes exactly at `x` and where the vector does. -/
-theorem pointTwistDiv_eq_zero_iff {x z : X} (w : F) :
-    pointTwistDiv F E x z w = 0 ↔ z = x ∨ w = 0 := by
-  by_cases h : z = x
-  · subst h
-    simp
-  · simp only [h, false_or]
-    exact map_eq_zero_iff _ (pointTwistDiv_bijective_of_ne h).1
+variable [ContMDiffVectorBundle n F E 𝓘(ℂ)]
 
-/-- The inclusion of the negative point twist sends a section continuous at `z₀` to a section of
-`E` continuous at `z₀`. -/
-theorem continuousAt_pointTwistDiv_section {x z₀ : X}
-    {τ : ∀ z, (signedPointTwistCore F E x false).Fiber z}
-    (hτ : ContinuousAt (fun z ↦ TotalSpace.mk' F z (τ z)) z₀) :
-    ContinuousAt (fun z ↦ TotalSpace.mk' F z (pointTwistDiv F E x z (τ z))) z₀ := by
+/-- The inclusion of the negative point twist into `E` sends a section that is `C^n` at `z₀` to a
+section of `E` that is `C^n` at `z₀`. -/
+theorem contMDiffAt_negPointTwist_pointTwistDiv_section {x z₀ : X}
+    {τ : ∀ z, (negPointTwistCore F E x).Fiber z}
+    (hτ : ContMDiffAt 𝓘(ℂ) (𝓘(ℂ).prod 𝓘(ℂ, F)) n (fun z ↦ TotalSpace.mk' F z (τ z)) z₀) :
+    ContMDiffAt 𝓘(ℂ) (𝓘(ℂ).prod 𝓘(ℂ, F)) n
+      (fun z ↦ TotalSpace.mk' F z (pointTwistDiv F E x z (τ z))) z₀ := by
   classical
-  have hz₀ : z₀ ∈ (signedPointTwistCore F E x false).baseSet (z₀, decide (z₀ = x)) := by
-    simpa using (signedPointTwistCore F E x false).mem_baseSet_at z₀
-  rw [FiberBundle.continuousAt_totalSpace] at hτ ⊢
-  refine ⟨continuousAt_id, ?_⟩
-  have hf : ContinuousAt (pointTwistFactor x false (decide (z₀ = x))) z₀ :=
-    (contMDiffOn_pointTwistFactor_false (n := 0) x _).continuousOn.continuousAt
-      ((isOpen_pointTwistBaseSet x _).mem_nhds (mem_signedPointTwistCore_baseSet.1 hz₀).2)
-  rw [signedPointTwistCore_trivializationAt] at hτ
-  refine (hf.smul hτ.2).congr_of_eventuallyEq ?_
-  filter_upwards [((signedPointTwistCore F E x false).isOpen_baseSet _).mem_nhds hz₀] with z hz
-  exact trivializationAt_pointTwistDiv_signed (i := (z₀, decide (z₀ = x))) hz (τ z)
+  have hz₀ := (negPointTwistCore F E x).mem_baseSet_at z₀
+  rw [signedPointTwistCore_indexAt] at hz₀
+  rw [(trivializationAt F (negPointTwistCore F E x).Fiber z₀).contMDiffAt_section_iff
+    (mem_baseSet_trivializationAt F _ z₀),
+    signedPointTwistCore_trivializationAt] at hτ
+  refine ((trivializationAt F E z₀).contMDiffAt_section_iff
+    (mem_baseSet_trivializationAt F E z₀)).2 ?_
+  have hf : ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) n (pointTwistFactor x false (decide (z₀ = x))) z₀ :=
+    (contMDiffOn_pointTwistFactor_false x _).contMDiffAt
+      ((isOpen_pointTwistBaseSet x _).mem_nhds (mem_pointTwistBaseSet_decide x z₀))
+  refine (hf.smul hτ).congr_of_eventuallyEq ?_
+  filter_upwards [((negPointTwistCore F E x).isOpen_baseSet _).mem_nhds hz₀] with z hz
+  exact trivializationAt_pointTwistDiv_negPointTwistCore hz (τ z)
 
-/-- The inclusion of the negative point twist sends continuous sections to continuous sections. -/
-theorem continuous_pointTwistDiv_section {x : X}
-    {τ : ∀ z, (signedPointTwistCore F E x false).Fiber z}
+/-- The inclusion of the negative point twist into `E` sends `C^n` sections to `C^n` sections. -/
+theorem contMDiff_negPointTwist_pointTwistDiv_section {x : X}
+    {τ : ∀ z, (negPointTwistCore F E x).Fiber z}
+    (hτ : ContMDiff 𝓘(ℂ) (𝓘(ℂ).prod 𝓘(ℂ, F)) n (fun z ↦ TotalSpace.mk' F z (τ z))) :
+    ContMDiff 𝓘(ℂ) (𝓘(ℂ).prod 𝓘(ℂ, F)) n
+      (fun z ↦ TotalSpace.mk' F z (pointTwistDiv F E x z (τ z))) :=
+  fun z₀ ↦ contMDiffAt_negPointTwist_pointTwistDiv_section (hτ z₀)
+
+omit [IsManifold 𝓘(ℂ) n X] [ContMDiffVectorBundle n F E 𝓘(ℂ)] in
+/-- The inclusion of the negative point twist into `E` sends continuous sections to continuous
+sections: the case `n = 0` of `TauCeti.contMDiff_negPointTwist_pointTwistDiv_section`. -/
+theorem continuous_negPointTwist_pointTwistDiv_section {x : X}
+    {τ : ∀ z, (negPointTwistCore F E x).Fiber z}
     (hτ : Continuous fun z ↦ TotalSpace.mk' F z (τ z)) :
     Continuous fun z ↦ TotalSpace.mk' F z (pointTwistDiv F E x z (τ z)) :=
-  continuous_iff_continuousAt.2 fun _ ↦ continuousAt_pointTwistDiv_section hτ.continuousAt
+  contMDiff_zero_iff.1 (contMDiff_negPointTwist_pointTwistDiv_section (n := 0)
+    (contMDiff_zero_iff.2 hτ))
 
-/-! ### Local indices of the included section -/
+/-! ### Holomorphic sections -/
 
-variable [T2Space X] [IsManifold 𝓘(ℂ, ℂ) 1 X]
-  [NormedSpace ℝ F] [IsScalarTower ℝ ℂ F] [FiniteDimensional ℂ F]
-  [∀ z, Module ℝ (E z)] [∀ z, IsScalarTower ℝ ℂ (E z)]
+section Holomorphic
 
-local instance instVectorBundleRealNegPointTwist : VectorBundle ℝ F E :=
-  VectorBundle.restrictScalars ℝ ℂ F E
+omit [IsManifold 𝓘(ℂ) n X] [ContMDiffVectorBundle n F E 𝓘(ℂ)]
 
-local instance instVectorBundleRealNegPointTwistCore (x : X) :
-    VectorBundle ℝ F (signedPointTwistCore F E x false).Fiber :=
-  VectorBundle.restrictScalars ℝ ℂ F _
+variable (F) in
+/-- The reading of a section `σ` of `E` in the chart of `E` at `x`, as a function of the chart
+coordinate at `x`. -/
+def negPointTwistChartReading (x : X) (σ : ∀ z, E z) (w : ℂ) : F :=
+  (trivializationAt F E x ⟨(chartAt ℂ x).symm w, σ ((chartAt ℂ x).symm w)⟩).2
 
-variable (hF : finrank ℂ F = 1)
+omit [NormedSpace ℂ F] [∀ z, AddCommGroup (E z)] [∀ z, Module ℂ (E z)] [VectorBundle ℂ F E] in
+variable (F) in
+theorem negPointTwistChartReading_apply (x : X) (σ : ∀ z, E z) (w : ℂ) :
+    negPointTwistChartReading F x σ w =
+      (trivializationAt F E x ⟨(chartAt ℂ x).symm w, σ ((chartAt ℂ x).symm w)⟩).2 :=
+  (rfl)
 
-/-- **Local indices of the included section away from the twisting point.** Away from `x`, a
-continuous section `τ` of the negative point twist `L(-x)` of a complex line bundle `L` and the
-section `pointTwistDiv ∘ τ` of `L` have the same local index, for the canonical orientations of
-`L`, `L(-x)` and `X`. -/
-theorem sectionIndex_pointTwistDiv_of_ne {x z : X} (hzx : z ≠ x)
-    {τ : ∀ z, (signedPointTwistCore F E x false).Fiber z}
-    (hτ : Continuous fun z ↦ TotalSpace.mk' F z (τ z)) :
-    (VectorBundleOrientation.reindex (finCongr (by rw [hF]))
-        (VectorBundleOrientation.complex F E)).sectionIndex
-        (by rw [finrank_real_eq_two_mul_finrank_complex, hF])
-        (complexHomologicalOrientation X) (continuous_pointTwistDiv_section hτ) z =
-      (VectorBundleOrientation.reindex (finCongr (by rw [hF]))
-        (VectorBundleOrientation.complex F (signedPointTwistCore F E x false).Fiber)).sectionIndex
-        (by rw [finrank_real_eq_two_mul_finrank_complex, hF])
-        (complexHomologicalOrientation X) hτ z := by
+omit [NormedSpace ℂ F] [∀ z, AddCommGroup (E z)] [∀ z, Module ℂ (E z)] [VectorBundle ℂ F E] in
+variable (F) in
+/-- At the chart coordinate of a point `z` of the chart source, the chart reading of `σ` is `σ z`
+read in the chart of `E` at `x`. -/
+theorem negPointTwistChartReading_chartAt {x z : X} (σ : ∀ z, E z)
+    (hz : z ∈ (chartAt ℂ x).source) :
+    negPointTwistChartReading F x σ (chartAt ℂ x z) = (trivializationAt F E x ⟨z, σ z⟩).2 := by
+  rw [negPointTwistChartReading_apply, (chartAt ℂ x).left_inv hz]
+
+variable (F) in
+/-- The chart reading of a section vanishing at `x` vanishes at the chart coordinate of `x`. -/
+theorem negPointTwistChartReading_chartAt_self {x : X} {σ : ∀ z, E z} (hσx : σ x = 0) :
+    negPointTwistChartReading F x σ (chartAt ℂ x x) = 0 := by
+  rw [negPointTwistChartReading_chartAt F σ (mem_chart_source ℂ x), hσx]
+  exact congrArg Prod.snd
+    ((trivializationAt F E x).zeroSection ℂ (mem_baseSet_trivializationAt F E x))
+
+variable (F) in
+open Classical in
+/-- The section of the negative point twist `E(-x)` determined by a section `σ` of `E` vanishing at
+`x`. Off `x` it is `σ`, read in the preferred chart of `E`; at `x` it is the derivative of the
+chart reading of `σ` at the chart coordinate of `x`, so that in the chart of `E(-x)` at `x` it is
+the chart reading of `σ` divided by the centred coordinate. -/
+def negPointTwistOfZero (x : X) (σ : ∀ z, E z) (z : X) : (negPointTwistCore F E x).Fiber z :=
+  if z = x then deriv (negPointTwistChartReading F x σ) (chartAt ℂ x x)
+  else (trivializationAt F E z ⟨z, σ z⟩).2
+
+variable (F) in
+@[simp] theorem negPointTwistOfZero_self (x : X) (σ : ∀ z, E z) :
+    negPointTwistOfZero F x σ x = deriv (negPointTwistChartReading F x σ) (chartAt ℂ x x) :=
+  ite_eq_left rfl
+
+variable (F) in
+@[simp] theorem negPointTwistOfZero_of_ne {x z : X} (h : z ≠ x) (σ : ∀ z, E z) :
+    negPointTwistOfZero F x σ z = (trivializationAt F E z ⟨z, σ z⟩).2 :=
+  ite_eq_right h
+
+/-- The zero section of `E` defines the zero section of `E(-x)`. -/
+@[simp] theorem negPointTwistOfZero_zero (x : X) :
+    negPointTwistOfZero F x (fun z ↦ (0 : E z)) = 0 := by
+  funext z
+  by_cases h : z = x
+  · subst h
+    have hr : negPointTwistChartReading F z (fun z ↦ (0 : E z)) =ᶠ[𝓝 (chartAt ℂ z z)]
+        fun _ ↦ 0 := by
+      filter_upwards [(chartAt ℂ z).tendsto_symm (mem_chart_source ℂ z)
+        ((trivializationAt F E z).open_baseSet.mem_nhds (mem_baseSet_trivializationAt F E z))]
+        with w hw
+      exact congrArg Prod.snd ((trivializationAt F E z).zeroSection ℂ hw)
+    rw [negPointTwistOfZero_self, hr.deriv_eq, Pi.zero_apply]
+    exact deriv_const (chartAt ℂ z z) (0 : F)
+  · rw [negPointTwistOfZero_of_ne F h, Pi.zero_apply]
+    exact congrArg Prod.snd
+      ((trivializationAt F E z).zeroSection ℂ (mem_baseSet_trivializationAt F E z))
+
+/-- The inclusion into `E` recovers a section vanishing at `x` from its section of `E(-x)`. -/
+@[simp] theorem pointTwistDiv_negPointTwistOfZero {x : X} {σ : ∀ z, E z} (hσx : σ x = 0)
+    (z : X) : pointTwistDiv F E x z (negPointTwistOfZero F x σ z) = σ z := by
+  by_cases h : z = x
+  · subst h
+    rw [pointTwistDiv_self]
+    exact hσx.symm
+  · rw [negPointTwistOfZero_of_ne F h, pointTwistDiv_apply_of_ne h]
+    exact (trivializationAt F E z).symm_apply_apply_mk (mem_baseSet_trivializationAt F E z) _
+
+/-- In the chart of `E(-x)` at `x`, the section `negPointTwistOfZero F x σ` is the chart reading of
+`σ` divided by the centred chart coordinate, extended at `x` by the derivative. -/
+theorem negPointTwistCore_localTriv_negPointTwistOfZero {x z : X} {σ : ∀ z, E z} (hσx : σ x = 0)
+    (hz : z ∈ (negPointTwistCore F E x).baseSet (x, true)) :
+    ((negPointTwistCore F E x).localTriv (x, true) ⟨z, negPointTwistOfZero F x σ z⟩).2 =
+      dslope (negPointTwistChartReading F x σ) (chartAt ℂ x x) (chartAt ℂ x z) := by
   classical
-  -- The chart `(z, false)` of the negative twist lies over the preferred chart of `E` at `z`.
-  have hzV : z ∈ (signedPointTwistCore F E x false).baseSet (z, false) :=
-    mem_signedPointTwistCore_baseSet.2 ⟨mem_baseSet_trivializationAt F E z, by simpa using hzx⟩
-  have hVe₁ : (signedPointTwistCore F E x false).baseSet (z, false) ⊆
-      (trivializationAt F (signedPointTwistCore F E x false).Fiber z).baseSet := fun _ hy ↦ by
-    rwa [signedPointTwistCore_trivializationAt_of_ne hzx]
-  have hVe₂ : (signedPointTwistCore F E x false).baseSet (z, false) ⊆
-      (trivializationAt F E z).baseSet := fun _ hy ↦ (mem_signedPointTwistCore_baseSet.1 hy).1
-  refine VectorBundleOrientation.sectionIndex_eq_of_snd_apply_eq
-    (E₁ := (signedPointTwistCore F E x false).Fiber) (E₂ := E) _ _ _ _ hτ _
-    (trivializationAt F (signedPointTwistCore F E x false).Fiber z) (trivializationAt F E z)
-    ((signedPointTwistCore F E x false).isOpen_baseSet _) hzV hVe₁ hVe₂
-    (fun _ _ ↦ VectorBundleOrientation.mapOrientation_reindex_complex F _ _ _ _)
-    (fun _ _ ↦ VectorBundleOrientation.mapOrientation_reindex_complex F E _ _ _) fun y hy ↦ ?_
-  rw [signedPointTwistCore_trivializationAt_of_ne hzx]
-  refine (trivializationAt_pointTwistDiv_signed (i := (z, false)) hy (τ y)).trans ?_
-  rw [pointTwistFactor_self, one_smul]
+  have hx : x ∈ (trivializationAt F E x).baseSet := mem_baseSet_trivializationAt F E x
+  rw [mem_signedPointTwistCore_baseSet] at hz
+  have hzs : z ∈ (chartAt ℂ x).source := by simpa using hz.2
+  refine (signedPointTwistCore_localTriv_apply (F := F) (E := E) x false (x, true) z
+    (negPointTwistOfZero F x σ z)).trans ?_
+  by_cases h : z = x
+  · subst h
+    rw [decide_eq_true rfl, signedPointTwistFactor_self, one_smul, dslope_same,
+      negPointTwistOfZero_self, Trivialization.coordChangeL_apply _ _ ⟨hx, hx⟩,
+      (trivializationAt F E z).apply_mk_symm hx]
+  · have h₀ := mem_baseSet_trivializationAt F E z
+    have hne : chartAt ℂ x z ≠ chartAt ℂ x x := fun h' ↦ h ((chartAt ℂ x).injOn hzs
+      (mem_chart_source ℂ x) h')
+    -- Off `x`, the chart of `E(-x)` at `x` reads `σ z` in the chart of `E` at `x`, divided by the
+    -- centred coordinate.
+    rw [decide_eq_false h, signedPointTwistFactor_false, pointTwistFactor_true_false,
+      negPointTwistOfZero_of_ne F h, Trivialization.coordChangeL_apply _ _ ⟨h₀, hz.1⟩,
+      (trivializationAt F E z).symm_apply_apply_mk h₀]
+    -- The slope of the chart reading from the chart coordinate of `x`, where it vanishes.
+    rw [dslope_of_ne _ hne, slope_def_module, negPointTwistChartReading_chartAt F σ hzs,
+      negPointTwistChartReading_chartAt_self F hσx, sub_zero,
+      ← pointTwistCoord_chartAt_symm ((chartAt ℂ x).map_source hzs), (chartAt ℂ x).left_inv hzs]
 
-/-! ### The local index at the twisting point -/
-
-section Line
-
-variable {L : X → Type} [∀ z, AddCommGroup (L z)] [∀ z, Module ℂ (L z)] [∀ z, Module ℝ (L z)]
-  [∀ z, IsScalarTower ℝ ℂ (L z)] [∀ z, TopologicalSpace (L z)]
-  [TopologicalSpace (TotalSpace ℂ L)] [FiberBundle ℂ L] [VectorBundle ℂ ℂ L]
-
-local instance instVectorBundleRealLineNegPointTwist : VectorBundle ℝ ℂ L :=
-  VectorBundle.restrictScalars ℝ ℂ ℂ L
-
-local instance instVectorBundleRealLineNegPointTwistCore (x : X) :
-    VectorBundle ℝ ℂ (signedPointTwistCore ℂ L x false).Fiber :=
-  VectorBundle.restrictScalars ℝ ℂ ℂ _
-
-omit [T2Space X] [IsManifold 𝓘(ℂ, ℂ) 1 X] [∀ z, Module ℝ (L z)] [∀ z, IsScalarTower ℝ ℂ (L z)] in
-/-- In the chart `φ` of `X` at `x` and the chart of `L` at `x`, the included section reads
-`w ↦ (w - φ x) g(φ⁻¹ w)`, where `g` is the fibre coordinate of `τ` in the chart of `L(-x)` at `x`.
-Its real derivative at `φ x` is multiplication by `g x`. -/
-private theorem hasFDerivAt_pointTwistDiv_chartAt (x : X)
-    {τ : ∀ z, (signedPointTwistCore ℂ L x false).Fiber z}
-    (hτ : Continuous fun z ↦ TotalSpace.mk' ℂ z (τ z)) :
-    HasFDerivAt (fun w ↦ (trivializationAt ℂ L x (TotalSpace.mk' ℂ ((chartAt ℂ x).symm w)
-          (pointTwistDiv ℂ L x ((chartAt ℂ x).symm w) (τ ((chartAt ℂ x).symm w))))).2)
-      ((ContinuousLinearMap.id ℝ ℂ).smulRight
-        ((trivializationAt ℂ (signedPointTwistCore ℂ L x false).Fiber x
-          (TotalSpace.mk' ℂ x (τ x))).2))
-      (chartAt ℂ x x) := by
-  set φ := chartAt ℂ x
-  set eN := trivializationAt ℂ (signedPointTwistCore ℂ L x false).Fiber x
-  have hxφ : x ∈ φ.source := mem_chart_source ℂ x
-  have hxN : x ∈ eN.baseSet := mem_baseSet_trivializationAt ℂ _ x
-  -- The included section read in the charts is `w ↦ (w - φ x) g(w)`.
-  have hfeq : (fun w ↦ (trivializationAt ℂ L x (TotalSpace.mk' ℂ (φ.symm w)
-        (pointTwistDiv ℂ L x (φ.symm w) (τ (φ.symm w))))).2) =ᶠ[𝓝 (φ x)]
-      fun w ↦ (w - φ x) • (eN (TotalSpace.mk' ℂ (φ.symm w) (τ (φ.symm w)))).2 := by
-    filter_upwards [φ.open_target.mem_nhds (φ.map_source hxφ),
-      (φ.continuousAt_symm (φ.map_source hxφ)).preimage_mem_nhds (by
-        rw [φ.left_inv hxφ]
-        exact eN.open_baseSet.mem_nhds hxN)] with w hw hwe
-    have hwe' : φ.symm w ∈ (signedPointTwistCore ℂ L x false).baseSet (x, true) := by
-      simpa using mem_signedPointTwistCore_trivializationAt_baseSet.1 hwe
-    refine (trivializationAt_pointTwistDiv_signed (i := (x, true)) hwe' (τ (φ.symm w))).trans ?_
-    rw [pointTwistFactor_false_true, pointTwistCoord_chartAt_symm hw,
-      show eN = _ from signedPointTwistCore_trivializationAt_self ℂ L x false]
-  have hG : ContinuousAt ((fun z ↦ (eN (TotalSpace.mk' ℂ z (τ z))).2) ∘ φ.symm) (φ x) :=
-    ContinuousAt.comp_of_eq ((eN.continuousOn_snd_apply_mk hτ).continuousAt
-      (eN.open_baseSet.mem_nhds hxN)) (φ.continuousAt_symm (φ.map_source hxφ)) (φ.left_inv hxφ)
-  have hA := (((hasFDerivAt_id (𝕜 := ℝ) (φ x)).sub_const (φ x)).smul_of_eq_zero hG
-    (sub_self _)).congr_of_eventuallyEq hfeq
-  rwa [Function.comp_apply, φ.left_inv hxφ] at hA
-
-/-- **The local index of the included section at the twisting point is one.** For a continuous
-section `τ` of the negative point twist `L(-x)` with `τ x ≠ 0`, the section `pointTwistDiv ∘ τ`
-of `L` has a zero at `x` of local index `1`, for the canonical orientations of `L` and `X`. -/
-theorem sectionIndex_pointTwistDiv_self (x : X)
-    {τ : ∀ z, (signedPointTwistCore ℂ L x false).Fiber z}
-    (hτ : Continuous fun z ↦ TotalSpace.mk' ℂ z (τ z)) (hτx : τ x ≠ 0) :
-    (VectorBundleOrientation.reindex (finCongr (by rw [finrank_self]))
-        (VectorBundleOrientation.complex ℂ L)).sectionIndex
-        Complex.finrank_real_complex (complexHomologicalOrientation X)
-        (continuous_pointTwistDiv_section hτ) x = 1 := by
+/-- Off `x`, in the chart of `E(-x)` at `y`, the section `negPointTwistOfZero F x σ` is `σ` read in
+the chart of `E` at `y`. -/
+theorem negPointTwistCore_localTriv_negPointTwistOfZero_of_ne {x y z : X} {σ : ∀ z, E z}
+    (hz : z ∈ (negPointTwistCore F E x).baseSet (y, false)) :
+    ((negPointTwistCore F E x).localTriv (y, false) ⟨z, negPointTwistOfZero F x σ z⟩).2 =
+      (trivializationAt F E y ⟨z, σ z⟩).2 := by
   classical
-  set φ := chartAt ℂ x
-  set e := trivializationAt ℂ L x
-  set eN := trivializationAt ℂ (signedPointTwistCore ℂ L x false).Fiber x
-  -- The fibre coordinate `g` of `τ` in the chart of `L(-x)` at `x`.
-  set g : X → ℂ := fun z ↦ (eN (TotalSpace.mk' ℂ z (τ z))).2
-  have hxN : x ∈ eN.baseSet := mem_baseSet_trivializationAt ℂ _ x
-  have hgx : g x ≠ 0 := (eN.snd_apply_ne_zero_iff ℂ (v := TotalSpace.mk' ℂ x (τ x)) hxN).2 hτx
-  have heb : ∀ {z}, z ∈ eN.baseSet → z ∈ e.baseSet ∧ z ∈ φ.source := fun hz ↦ by
-    simpa using mem_signedPointTwistCore_baseSet.1
-      (mem_signedPointTwistCore_trivializationAt_baseSet.1 hz)
-  -- The neighbourhood `U` of `x` on which `τ` does not vanish.
-  set U := eN.baseSet ∩ g ⁻¹' {0}ᶜ
-  have hU : IsOpen U :=
-    (eN.continuousOn_snd_apply_mk hτ).isOpen_inter_preimage eN.open_baseSet isOpen_compl_singleton
-  have hxU : x ∈ U := ⟨hxN, hgx⟩
-  have hUz : ∀ y ∈ U, pointTwistDiv ℂ L x y (τ y) = 0 → y = x := fun y hy h0 ↦ by
-    refine ((pointTwistDiv_eq_zero_iff (F := ℂ) (E := L) (τ y)).1 h0).resolve_right fun hτy ↦
-      hy.2 ?_
-    change g y = 0
-    simp only [g, hτy]
-    exact congrArg Prod.snd (eN.zeroSection ℂ hy.1)
-  have hUφ : U ⊆ φ.source := fun _ hy ↦ (heb hy.1).2
-  have hA := hasFDerivAt_pointTwistDiv_chartAt x hτ
-  -- Over `ℝ`, multiplication by `g x` has determinant `|g x|²`.
-  have hdet' : ((ContinuousLinearMap.id ℝ ℂ).smulRight (g x)).det = Complex.normSq (g x) := by
-    simp [ContinuousLinearMap.det, LinearMap.det_complex, Complex.normSq_apply]
-  rw [VectorBundleOrientation.sectionIndex_eq_sign_det_of_hasFDerivAt _ _ _ _ e φ hU hxU hUz
-    (by rw [pointTwistDiv_self]; rfl) (fun _ hy ↦ (heb hy.1).1) hUφ
-    (fun _ hy ↦ (VectorBundleOrientation.mapOrientation_reindex_complex ℂ L _ e
-      (heb hy.1).1).trans reindex_complexOrientation_complex)
-    (by
-      rw [complexHomologicalOrientation_apply x]
-      have hσ : (((ContinuousLinearEquiv.refl ℝ ℂ : ℂ →L[ℝ] ℂ) : C(ℂ, ℂ)).comp
-          ((⟨fun y ↦ y - φ x, by fun_prop⟩ : C(ℂ, ℂ)).comp φ.sourceRestrict)) =
-          (⟨fun y : φ.source ↦ φ y - φ x,
-            φ.continuousOn.domRestrict.sub continuous_const⟩ : C(φ.source, ℂ)) :=
-        ContinuousMap.ext fun y ↦ congrArg (fun z ↦ z - φ x) (φ.sourceRestrict_apply y)
-      have hφ := φ.localHomologyMap_chart_localOrientationOfOrientedChart (hUφ hxU)
-        (ContinuousLinearEquiv.refl ℝ ℂ) Complex.orientation
-        Complex.finrank_real_complex Complex.finrank_real_complex (by
-          rw [hσ]
-          exact fun y hy ↦ Subtype.ext (φ.injOn y.property (hUφ hxU) (sub_eq_zero.1 hy)))
-      simp only [hσ] at hφ
-      -- `Orientation.map` uses the underlying linear identity, not the continuous structure.
-      have hid : (ContinuousLinearEquiv.refl ℝ ℂ).toLinearEquiv = LinearEquiv.refl ℝ ℂ := (rfl)
-      simpa only [hid, Orientation.map_refl, Equiv.refl_apply] using hφ)
-    hA (hdet'.trans_ne (Complex.normSq_pos.2 hgx).ne'), hdet',
-    sign_pos (Complex.normSq_pos.2 hgx), SignType.coe_one]
+  have h₀ := mem_baseSet_trivializationAt F E z
+  rw [mem_signedPointTwistCore_baseSet] at hz
+  have h : z ≠ x := by simpa using hz.2
+  refine (signedPointTwistCore_localTriv_apply (F := F) (E := E) x false (y, false) z
+    (negPointTwistOfZero F x σ z)).trans ?_
+  rw [decide_eq_false h, signedPointTwistFactor_self, one_smul,
+    negPointTwistOfZero_of_ne F h, Trivialization.coordChangeL_apply _ _ ⟨h₀, hz.1⟩,
+    (trivializationAt F E z).symm_apply_apply_mk h₀]
 
-/-! ### The Euler number of the negative point twist -/
+variable [IsManifold 𝓘(ℂ) 1 X] [ContMDiffVectorBundle 1 F E 𝓘(ℂ)]
 
-/-- **Twisting negatively at a point lowers the Euler number by one.** Let `L` be a complex line
-bundle over a compact Riemann surface `X` and `x : X`. If the negative point twist `L(-x)` has a
-continuous section with finitely many zeros that does not vanish at `x`, then the Euler class of
-the underlying oriented real plane bundle of `L(-x)`, evaluated on the fundamental class of `X`, is
-that of `L` minus one:
-`⟨e(L(-x)_ℝ), [X]⟩ = ⟨e(L_ℝ), [X]⟩ - 1`. -/
-theorem evalFundamentalClass_complexEulerClass_negPointTwist [CompactSpace X] (x : X)
-    {τ : ∀ z, (signedPointTwistCore ℂ L x false).Fiber z}
-    (hτ : Continuous fun z ↦ TotalSpace.mk' ℂ z (τ z))
-    (hZ : {z | τ z = 0}.Finite) (hτx : τ x ≠ 0) :
-    ((complexHomologicalOrientation X).evalFundamentalClass Complex.finrank_real_complex
-        (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.id X)
-        (complexEulerClass ℂ (signedPointTwistCore ℂ L x false).Fiber (r := 0)
-          (finrank_self ℂ))).down =
-      ((complexHomologicalOrientation X).evalFundamentalClass Complex.finrank_real_complex
-        (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.id X)
-        (complexEulerClass ℂ L (r := 0) (finrank_self ℂ))).down - 1 := by
+/-- The inclusion of the negative point twist into `E` sends a section that is holomorphic at `z₀`
+to a section of `E` that is holomorphic at `z₀`. -/
+theorem mdifferentiableAt_negPointTwist_pointTwistDiv_section {x z₀ : X}
+    {τ : ∀ z, (negPointTwistCore F E x).Fiber z}
+    (hτ : MDifferentiableAt 𝓘(ℂ) (𝓘(ℂ).prod 𝓘(ℂ, F)) (fun z ↦ TotalSpace.mk' F z (τ z)) z₀) :
+    MDifferentiableAt 𝓘(ℂ) (𝓘(ℂ).prod 𝓘(ℂ, F))
+      (fun z ↦ TotalSpace.mk' F z (pointTwistDiv F E x z (τ z))) z₀ := by
   classical
-  have hZ' : {z | pointTwistDiv ℂ L x z (τ z) = 0} = insert x {z | τ z = 0} := by
-    ext z
-    simp only [mem_ofPred_eq, mem_insert_iff]
-    exact pointTwistDiv_eq_zero_iff (F := ℂ) (E := L) _
-  have hZx : {z | pointTwistDiv ℂ L x z (τ z) = 0}.Finite := hZ' ▸ hZ.insert x
-  rw [eq_sub_iff_add_eq, complexEulerClass_def, complexEulerClass_def,
-    VectorBundleOrientation.evalFundamentalClass_eulerClass_eq_sum_sectionIndex _ _ _ hτ _ hZ,
-    VectorBundleOrientation.evalFundamentalClass_eulerClass_eq_sum_sectionIndex _ _ _
-      (continuous_pointTwistDiv_section hτ) _ hZx]
-  have hfin : hZx.toFinset = insert x hZ.toFinset := by
-    ext z
-    simp only [Set.Finite.mem_toFinset, Finset.mem_insert, hZ', Set.mem_insert_iff]
-  have hx : x ∉ hZ.toFinset := by simpa using hτx
-  refine Eq.trans ?_ (Finset.sum_congr hfin fun _ _ ↦ rfl).symm
-  rw [Finset.sum_insert hx, add_comm]
-  congr 1
-  · exact (sectionIndex_pointTwistDiv_self x hτ hτx).symm
-  · exact Finset.sum_congr rfl fun z hz ↦
-      (sectionIndex_pointTwistDiv_of_ne (finrank_self ℂ) (by rintro rfl; exact hx hz) hτ).symm
+  have hz₀ := (negPointTwistCore F E x).mem_baseSet_at z₀
+  rw [signedPointTwistCore_indexAt] at hz₀
+  rw [(trivializationAt F (negPointTwistCore F E x).Fiber z₀).mdifferentiableAt_section_iff
+    𝓘(ℂ) _ (mem_baseSet_trivializationAt F _ z₀),
+    signedPointTwistCore_trivializationAt] at hτ
+  refine ((trivializationAt F E z₀).mdifferentiableAt_section_iff 𝓘(ℂ) _
+    (mem_baseSet_trivializationAt F E z₀)).2 ?_
+  have hf : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (pointTwistFactor x false (decide (z₀ = x))) z₀ :=
+    ((contMDiffOn_pointTwistFactor_false (n := 1) x _).contMDiffAt
+      ((isOpen_pointTwistBaseSet x _).mem_nhds
+        (mem_pointTwistBaseSet_decide x z₀))).mdifferentiableAt one_ne_zero
+  refine (hf.smul hτ).congr_of_eventuallyEq ?_
+  filter_upwards [((negPointTwistCore F E x).isOpen_baseSet _).mem_nhds hz₀] with z hz
+  exact trivializationAt_pointTwistDiv_negPointTwistCore hz (τ z)
 
-end Line
+/-- The inclusion of the negative point twist into `E` sends holomorphic sections to holomorphic
+sections. -/
+theorem mdifferentiable_negPointTwist_pointTwistDiv_section {x : X}
+    {τ : ∀ z, (negPointTwistCore F E x).Fiber z}
+    (hτ : MDifferentiable 𝓘(ℂ) (𝓘(ℂ).prod 𝓘(ℂ, F)) (fun z ↦ TotalSpace.mk' F z (τ z))) :
+    MDifferentiable 𝓘(ℂ) (𝓘(ℂ).prod 𝓘(ℂ, F))
+      (fun z ↦ TotalSpace.mk' F z (pointTwistDiv F E x z (τ z))) :=
+  fun z₀ ↦ mdifferentiableAt_negPointTwist_pointTwistDiv_section (hτ z₀)
+
+/-- A holomorphic section of `E` vanishing at `x` defines a holomorphic section of the negative
+point twist `E(-x)`: the chart reading divided by the centred coordinate is holomorphic by the
+removable singularity theorem. -/
+theorem mdifferentiable_negPointTwistOfZero [CompleteSpace F] {x : X} {σ : ∀ z, E z}
+    (hσ : MDifferentiable 𝓘(ℂ) (𝓘(ℂ).prod 𝓘(ℂ, F)) (fun z ↦ TotalSpace.mk' F z (σ z)))
+    (hσx : σ x = 0) :
+    MDifferentiable 𝓘(ℂ) (𝓘(ℂ).prod 𝓘(ℂ, F))
+      (fun z ↦ TotalSpace.mk' F (E := (negPointTwistCore F E x).Fiber) z
+        (negPointTwistOfZero F x σ z)) := by
+  intro z₀
+  rw [(trivializationAt F (negPointTwistCore F E x).Fiber z₀).mdifferentiableAt_section_iff
+    𝓘(ℂ) _ (mem_baseSet_trivializationAt F _ z₀)]
+  by_cases h : z₀ = x
+  · subst h
+    rw [signedPointTwistCore_trivializationAt_self]
+    set φ := chartAt ℂ z₀
+    set e := trivializationAt F E z₀
+    set s : Set ℂ := φ.target ∩ φ.symm ⁻¹' e.baseSet
+    have hs : s ∈ 𝓝 (φ z₀) := inter_mem (chart_target_mem_nhds ℂ z₀)
+      (φ.tendsto_symm (mem_chart_source ℂ z₀) (e.open_baseSet.mem_nhds
+        (mem_baseSet_trivializationAt F E z₀)))
+    have hg : DifferentiableOn ℂ (negPointTwistChartReading F z₀ σ) s := by
+      intro w hw
+      have h₁ : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ, F) (fun z ↦ (e ⟨z, σ z⟩).2) (φ.symm w) :=
+        (e.mdifferentiableAt_section_iff 𝓘(ℂ) σ hw.2).1 (hσ _)
+      have h₂ : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) φ.symm w :=
+        mdifferentiableAt_atlas_symm (chart_mem_atlas ℂ z₀) hw.1
+      exact (h₁.comp w h₂).differentiableAt.differentiableWithinAt
+    have hd : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ, F)
+        (fun z ↦ dslope (negPointTwistChartReading F z₀ σ) (φ z₀) (φ z)) z₀ :=
+      (((Complex.differentiableOn_dslope hs).2 hg).differentiableAt hs).mdifferentiableAt.comp z₀
+        (mdifferentiableAt_atlas (chart_mem_atlas ℂ z₀) (mem_chart_source ℂ z₀))
+    refine hd.congr_of_eventuallyEq ?_
+    have hz₀ : z₀ ∈ (negPointTwistCore F E z₀).baseSet (z₀, true) :=
+      mem_signedPointTwistCore_baseSet.2 ⟨mem_baseSet_trivializationAt F E z₀, by simp⟩
+    filter_upwards [((negPointTwistCore F E z₀).isOpen_baseSet _).mem_nhds hz₀] with z hz
+    exact negPointTwistCore_localTriv_negPointTwistOfZero hσx hz
+  · rw [signedPointTwistCore_trivializationAt_of_ne h]
+    have hz₀ : z₀ ∈ (negPointTwistCore F E x).baseSet (z₀, false) :=
+      mem_signedPointTwistCore_baseSet.2 ⟨mem_baseSet_trivializationAt F E z₀, by simpa using h⟩
+    refine (((trivializationAt F E z₀).mdifferentiableAt_section_iff 𝓘(ℂ) σ
+      (mem_baseSet_trivializationAt F E z₀)).1 (hσ z₀)).congr_of_eventuallyEq ?_
+    filter_upwards [((negPointTwistCore F E x).isOpen_baseSet _).mem_nhds hz₀] with z hz
+    exact negPointTwistCore_localTriv_negPointTwistOfZero_of_ne hz
+
+omit [IsManifold 𝓘(ℂ) 1 X] [ContMDiffVectorBundle 1 F E 𝓘(ℂ)] in
+/-- Every section of the negative point twist `E(-x)` that is continuous at `x`, in particular
+every holomorphic section, is recovered by `negPointTwistOfZero` from its image in `E`, which
+vanishes at `x`. Together with `pointTwistDiv_negPointTwistOfZero` and
+`mdifferentiable_negPointTwistOfZero`, for complete `F` the holomorphic sections of `E(-x)`
+correspond to the holomorphic sections of `E` vanishing at `x`. -/
+theorem negPointTwistOfZero_pointTwistDiv {x : X}
+    {τ : ∀ z, (negPointTwistCore F E x).Fiber z}
+    (hτ : ContinuousAt (fun z ↦ TotalSpace.mk' F (E := (negPointTwistCore F E x).Fiber) z (τ z))
+      x) :
+    negPointTwistOfZero F x (fun z ↦ pointTwistDiv F E x z (τ z)) = τ := by
+  have hne (z : X) (h : z ≠ x) :
+      negPointTwistOfZero F x (fun z ↦ pointTwistDiv F E x z (τ z)) z = τ z := by
+    rw [negPointTwistOfZero_of_ne F h, ← pointTwistMul_apply_of_ne h]
+    exact pointTwistMul_pointTwistDiv (F := F) h (τ z)
+  funext z
+  by_cases h : z = x
+  · subst h
+    set σ := fun z' ↦ pointTwistDiv F E z z' (τ z')
+    have hσz : σ z = 0 := by
+      dsimp only [σ]
+      rw [pointTwistDiv_self]; exact zero_apply _
+    set φ := chartAt ℂ z
+    -- The chart reading `t` of `τ` at `x` is continuous at the chart coordinate of `x`.
+    set t : ℂ → F := fun w ↦
+      (trivializationAt F (negPointTwistCore F E z).Fiber z ⟨φ.symm w, τ (φ.symm w)⟩).2 with ht_def
+    have ht : ContinuousAt t (φ z) :=
+      ContinuousAt.comp_of_eq
+        (g := fun z' ↦ (trivializationAt F (negPointTwistCore F E z).Fiber z ⟨z', τ z'⟩).2)
+        ((FiberBundle.continuousAt_totalSpace F _).1 hτ).2
+        (φ.continuousAt_symm (mem_chart_target ℂ z)) (φ.left_inv (mem_chart_source ℂ z))
+    -- Off the chart coordinate of `x`, the slope of the chart reading of `σ` there is `t`, so `t`
+    -- at the chart coordinate of `x` is the derivative of that chart reading.
+    have hs : slope (negPointTwistChartReading F z σ) (φ z) =ᶠ[𝓝[≠] φ z] t := by
+      have hb : z ∈ (negPointTwistCore F E z).baseSet (z, true) :=
+        mem_signedPointTwistCore_baseSet.2 ⟨mem_baseSet_trivializationAt F E z, by simp⟩
+      filter_upwards [nhdsWithin_le_nhds (chart_target_mem_nhds ℂ z),
+        nhdsWithin_le_nhds (φ.tendsto_symm (mem_chart_source ℂ z)
+          (((negPointTwistCore F E z).isOpen_baseSet _).mem_nhds hb)), self_mem_nhdsWithin]
+        with w hw hwb hwz
+      have hz' : φ.symm w ≠ z := fun h' ↦ hwz (by rw [mem_singleton_iff, ← h', φ.right_inv hw])
+      rw [← dslope_of_ne _ hwz, ← φ.right_inv hw,
+        ← negPointTwistCore_localTriv_negPointTwistOfZero hσz hwb, hne _ hz', φ.right_inv hw,
+        ht_def, signedPointTwistCore_trivializationAt_self]
+    have hd : HasDerivAt (negPointTwistChartReading F z σ) (t (φ z)) (φ z) :=
+      hasDerivAt_iff_tendsto_slope.2 ((ht.tendsto.mono_left nhdsWithin_le_nhds).congr' hs.symm)
+    rw [negPointTwistOfZero_self, hd.deriv, ht_def]
+    dsimp only
+    rw [φ.left_inv (mem_chart_source ℂ z), signedPointTwistCore_trivializationAt_apply]
+    exact (negPointTwistCore F E z).coordChange_self _ _
+      ((negPointTwistCore F E z).mem_baseSet_at z) (τ z)
+  · exact hne z h
+
+end Holomorphic
+
+/-! ### The pairing with the point twist -/
+
+section Pairing
+
+omit [IsManifold 𝓘(ℂ) n X] [ContMDiffVectorBundle n F E 𝓘(ℂ)]
+
+/-- The fibrewise pairing `𝒪(-x) × 𝒪(x) → 𝒪` at `z`: the product of the coordinates of the two
+vectors in their preferred charts at `z`. The coordinate changes of `𝒪(-x)` and `𝒪(x)` are inverse
+scalars, so the product is the same in every chart. -/
+def negPointTwistPairing (x z : X) :
+    (negPointTwistCore ℂ (Bundle.Trivial X ℂ) x).Fiber z →ₗ[ℂ]
+      (pointTwistCore ℂ (Bundle.Trivial X ℂ) x).Fiber z →ₗ[ℂ] ℂ :=
+  LinearMap.mul ℂ ℂ
+
+@[simp] theorem negPointTwistPairing_apply (x z : X) (u v : ℂ) :
+    negPointTwistPairing x z u v = u * v :=
+  (rfl)
+
+/-- The pairing of `𝒪(-x)` with `𝒪(x)` is nondegenerate in every fibre. -/
+theorem negPointTwistPairing_nondegenerate (x z : X) :
+    (negPointTwistPairing x z).Nondegenerate := by
+  refine ⟨fun u hu ↦ ?_, fun v hv ↦ ?_⟩
+  · exact (mul_one (M := ℂ) u).symm.trans
+      ((negPointTwistPairing_apply x z u 1).symm.trans (hu (1 : ℂ)))
+  · exact (one_mul (M := ℂ) v).symm.trans
+      ((negPointTwistPairing_apply x z 1 v).symm.trans (hv (1 : ℂ)))
+
+/-- Paired with the canonical section of `𝒪(x)`, a vector of `𝒪(-x)` gives its image under the
+inclusion into the trivial bundle. -/
+theorem negPointTwistPairing_pointTwistSection (x z : X)
+    (u : ℂ) :
+    negPointTwistPairing x z u (pointTwistSection x z) =
+      pointTwistDiv ℂ (Bundle.Trivial X ℂ) x z u := by
+  classical
+  refine (negPointTwistPairing_apply x z u (pointTwistSection x z)).trans ?_
+  refine (congrArg (fun t : ℂ ↦ u * t) (pointTwistSection_apply x z)).trans ?_
+  rw [pointTwistDiv_apply, inv_pointTwistFactor_false_decide, mul_comm]
+  exact (congrArg Prod.snd
+    ((trivializationAt ℂ (Bundle.Trivial X ℂ) z).apply_mk_symm (mem_univ z) _)).symm
+
+/-- In the chart `(y, b)`, the coordinates of vectors of `𝒪(-x)` and `𝒪(x)` multiply to their
+pairing. -/
+theorem negPointTwistCore_localTriv_mul_pointTwistCore_localTriv {x z : X} {i : X × Bool}
+    (hz : z ∈ (negPointTwistCore ℂ (Bundle.Trivial X ℂ) x).baseSet i)
+    (u v : ℂ) :
+    ((negPointTwistCore ℂ (Bundle.Trivial X ℂ) x).localTriv i ⟨z, u⟩).2 *
+        ((pointTwistCore ℂ (Bundle.Trivial X ℂ) x).localTriv i ⟨z, v⟩).2 =
+      negPointTwistPairing x z u v := by
+  classical
+  have hb := mem_pointTwistBaseSet_decide x z
+  rw [mem_signedPointTwistCore_baseSet] at hz
+  -- The trivial bundle has a single trivialization, so its preferred charts all agree.
+  have htriv (y : X) (w : ℂ) : (trivializationAt ℂ (Bundle.Trivial X ℂ) z).coordChangeL ℂ
+      (trivializationAt ℂ (Bundle.Trivial X ℂ) y) z w = w :=
+    (Trivialization.coordChangeL_apply _ _ ⟨mem_univ z, mem_univ z⟩ w).trans
+      (congrArg Prod.snd ((trivializationAt ℂ (Bundle.Trivial X ℂ) z).apply_mk_symm
+        (mem_univ z) w))
+  rw [signedPointTwistCore_localTriv_apply (F := ℂ), signedPointTwistCore_localTriv_apply (F := ℂ),
+    signedPointTwistFactor_false, signedPointTwistFactor_true, htriv, htriv,
+    negPointTwistPairing_apply, smul_eq_mul, smul_eq_mul]
+  calc _ = (pointTwistFactor x i.2 (decide (z = x)) z *
+        pointTwistFactor x (decide (z = x)) i.2 z) * (u * v) := by ring
+    _ = u * v := by rw [pointTwistFactor_mul hb hz.2 hb, pointTwistFactor_self, one_mul]
+
+variable [IsManifold 𝓘(ℂ) n X]
+
+/-- The pairing of `C^n` sections of `𝒪(-x)` and `𝒪(x)` is a `C^n` function; for `n = ∞`, or
+`n = ω`, the pairing of holomorphic sections is holomorphic. -/
+theorem contMDiff_negPointTwistPairing {x : X}
+    {τ : ∀ z, (negPointTwistCore ℂ (Bundle.Trivial X ℂ) x).Fiber z}
+    {τ' : ∀ z, (pointTwistCore ℂ (Bundle.Trivial X ℂ) x).Fiber z}
+    (hτ : ContMDiff 𝓘(ℂ) (𝓘(ℂ).prod 𝓘(ℂ, ℂ)) n (fun z ↦ TotalSpace.mk' ℂ z (τ z)))
+    (hτ' : ContMDiff 𝓘(ℂ) (𝓘(ℂ).prod 𝓘(ℂ, ℂ)) n (fun z ↦ TotalSpace.mk' ℂ z (τ' z))) :
+    ContMDiff 𝓘(ℂ) 𝓘(ℂ) n (fun z ↦ negPointTwistPairing x z (τ z) (τ' z)) := by
+  classical
+  intro z₀
+  have h₁ := ((trivializationAt ℂ (negPointTwistCore ℂ (Bundle.Trivial X ℂ) x).Fiber
+    z₀).contMDiffAt_section_iff (mem_baseSet_trivializationAt ℂ _ z₀)).1 (hτ z₀)
+  have h₂ := ((trivializationAt ℂ (pointTwistCore ℂ (Bundle.Trivial X ℂ) x).Fiber
+    z₀).contMDiffAt_section_iff (mem_baseSet_trivializationAt ℂ _ z₀)).1 (hτ' z₀)
+  have hz₀ := (negPointTwistCore ℂ (Bundle.Trivial X ℂ) x).mem_baseSet_at z₀
+  rw [signedPointTwistCore_trivializationAt] at h₁ h₂
+  rw [signedPointTwistCore_indexAt] at hz₀
+  refine (h₁.smul h₂).congr_of_eventuallyEq ?_
+  filter_upwards [((negPointTwistCore ℂ (Bundle.Trivial X ℂ) x).isOpen_baseSet _).mem_nhds hz₀]
+    with z hz
+  exact (negPointTwistCore_localTriv_mul_pointTwistCore_localTriv hz (τ z) (τ' z)).symm
+
+/-- On a compact connected curve, the trivial negative point twist `𝒪(-x)` has no nonzero
+holomorphic sections: a holomorphic section is a holomorphic function vanishing at `x`, so it is
+zero. On the Riemann sphere this is `H⁰(𝒪(-1)) = 0`. -/
+theorem negPointTwist_trivial_section_eq_zero [CompactSpace X] [PreconnectedSpace X]
+    [IsManifold 𝓘(ℂ) 1 X] {x : X}
+    {τ : ∀ z, (negPointTwistCore ℂ (Bundle.Trivial X ℂ) x).Fiber z}
+    (hτ : MDifferentiable 𝓘(ℂ) (𝓘(ℂ).prod 𝓘(ℂ, ℂ)) (fun z ↦ TotalSpace.mk' ℂ z (τ z))) :
+    τ = 0 := by
+  set σ : ∀ z, Bundle.Trivial X ℂ z := fun z ↦ pointTwistDiv ℂ (Bundle.Trivial X ℂ) x z (τ z)
+  have hσ := mdifferentiable_negPointTwist_pointTwistDiv_section hτ
+  have hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) σ := fun z ↦
+    ((trivializationAt ℂ (Bundle.Trivial X ℂ) z).mdifferentiableAt_section_iff 𝓘(ℂ) σ
+      (mem_univ z)).1 (hσ z)
+  have h0 : σ = fun _ ↦ 0 := funext fun z ↦ (hf.apply_eq_of_compactSpace z x).trans
+    (by simp only [σ, pointTwistDiv_self]; exact zero_apply _)
+  rw [← negPointTwistOfZero_pointTwistDiv (hτ x).continuousAt]
+  exact (congrArg (negPointTwistOfZero ℂ x) h0).trans (negPointTwistOfZero_zero x)
+
+end Pairing
 
 end TauCeti
