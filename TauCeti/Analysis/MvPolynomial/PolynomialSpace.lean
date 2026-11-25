@@ -31,8 +31,9 @@ to almost-everywhere classes. In particular, degree zero means exactly the const
 also when the coordinate type is empty.
 
 Evaluating a real multilinear map on the diagonal gives a polynomial function of degree at most
-the number of its arguments (`MultilinearMap.apply_const_mem_polynomialsDegLE`), and hence every
-partial sum of a real formal multilinear series belongs to `polynomialsDegLE ι (N - 1)`
+the number of its arguments (`MultilinearMap.apply_const_mem_polynomialsDegLE`); this covers
+finite products of linear inner-product forms (`TauCeti.prod_inner_mem_polynomialsDegLE`), and
+every partial sum of a real formal multilinear series belongs to `polynomialsDegLE ι (N - 1)`
 (`FormalMultilinearSeries.partialSum_mem_polynomialsDegLE`).
 
 The file also develops the foundational calculus of these polynomial functions on
@@ -68,6 +69,7 @@ noncomputable section
 namespace TauCeti
 
 open MvPolynomial
+open scoped InnerProductSpace
 
 section Basic
 
@@ -227,6 +229,18 @@ theorem finrank_polynomialsDegLE [Fintype ι] (m : ℕ) :
     finrank_restrictTotalDegree]
 
 end Basic
+
+/-- A finite product of at most `m` linear inner-product forms on `EuclideanSpace ℝ ι` belongs to
+`TauCeti.polynomialsDegLE ι m`. -/
+theorem prod_inner_mem_polynomialsDegLE {ι α : Type*} [Fintype ι] (s : Finset α)
+    (a : α → EuclideanSpace ℝ ι) {m : ℕ} (hm : s.card ≤ m) :
+    (fun x : EuclideanSpace ℝ ι => ∏ l ∈ s, ⟪a l, x⟫_ℝ) ∈ polynomialsDegLE ι m := by
+  let M := (MultilinearMap.mkPiAlgebra ℝ s ℝ).compLinearMap fun l =>
+    (innerSL ℝ (a l.val)).toLinearMap
+  have hfn : (fun x : EuclideanSpace ℝ ι => M fun _ => x) = fun x => ∏ l ∈ s, ⟪a l, x⟫_ℝ := by
+    ext x; simpa [M] using Finset.prod_attach s fun l => ⟪a l, x⟫_ℝ
+  exact hfn ▸ polynomialsDegLE_mono ι (by simpa [Fintype.card_coe] using hm)
+    M.apply_const_mem_polynomialsDegLE
 
 section Calculus
 
