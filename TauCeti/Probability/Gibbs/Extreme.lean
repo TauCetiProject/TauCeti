@@ -22,11 +22,11 @@ subshift `X` of configurations `I → S`. The invariant Gibbs measures `𝒢_inv
 probability measures (`TauCeti.Specification.isExtreme_gibbsInvariant`): if a convex combination
 with positive weights of two invariant probability measures is Gibbs, then so are both. Hence, for
 a countable group, an invariant Gibbs measure is an extreme point of `𝒢_inv(γ)` if and only if it
-is ergodic (`TauCeti.Specification.mem_extremePoints_gibbsInvariant_iff_ergodic`), and conditioning
-an invariant Gibbs measure on a null-measurable, almost invariant event of positive mass gives an
-invariant Gibbs measure (`TauCeti.Specification.cond_mem_gibbsInvariant`). No equivariance of `γ`
-and no hypothesis on the alphabet `S` is needed: only the invariance of the measures and the
-displacement property of the action enter.
+is ergodic (`TauCeti.Specification.mem_extremePoints_gibbsInvariant_iff_ergodicSMul`), and
+conditioning an invariant Gibbs measure on a null-measurable, almost invariant event of positive
+mass gives an invariant Gibbs measure (`TauCeti.Specification.cond_mem_gibbsInvariant`). No
+equivariance of `γ` and no hypothesis on the alphabet `S` is needed: only the invariance of the
+measures and the displacement property of the action enter.
 
 All three come from one statement, `TauCeti.Specification.IsGibbs.of_absolutelyContinuous`: an
 invariant finite measure absolutely continuous with respect to an invariant finite Gibbs measure is
@@ -37,14 +37,12 @@ reweighting a Gibbs measure by such a density gives a Gibbs measure
 
 ## Main statements
 
-* `TauCeti.Specification.IsGibbs.of_absolutelyContinuous`: an invariant measure absolutely
+* `TauCeti.Specification.IsGibbs.of_absolutelyContinuous`: an invariant finite measure absolutely
   continuous with respect to an invariant finite Gibbs measure is Gibbs.
 * `TauCeti.Specification.isExtreme_gibbsInvariant`: the face property.
-* `TauCeti.Specification.mem_extremePoints_gibbsInvariant_iff_ergodic`: an invariant Gibbs measure
-  is extreme among the invariant Gibbs measures if and only if it is ergodic.
+* `TauCeti.Specification.mem_extremePoints_gibbsInvariant_iff_ergodicSMul`: an invariant Gibbs
+  measure is extreme among the invariant Gibbs measures if and only if it is ergodic.
 * `TauCeti.Specification.cond_mem_gibbsInvariant`: conditioning on an invariant event.
-* `MeasureTheory.SMulInvariantMeasure.cond`: conditioning an invariant measure on an almost
-  invariant measurable event gives an invariant measure.
 
 ## References
 
@@ -57,19 +55,6 @@ public section
 open Filter MeasureTheory ProbabilityTheory Set TauCeti.MeasureTheory
 
 open scoped ENNReal
-
-namespace MeasureTheory
-
-variable {G α : Type*} [SMul G α] {m : MeasurableSpace α} {μ : Measure α}
-
-/-- Conditioning an invariant measure on a measurable event that is invariant up to null sets gives
-an invariant measure. -/
-theorem SMulInvariantMeasure.cond [SMulInvariantMeasure G α μ] {s : Set α} (hs : MeasurableSet s)
-    (hsg : ∀ g : G, (g • ·) ⁻¹' s =ᵐ[μ] s) : SMulInvariantMeasure G α μ[|s] :=
-  have := SMulInvariantMeasure.restrict hs hsg
-  inferInstanceAs (SMulInvariantMeasure G α ((μ s)⁻¹ • μ.restrict s))
-
-end MeasureTheory
 
 namespace TauCeti
 
@@ -116,7 +101,7 @@ theorem isExtreme_gibbsInvariant (hmove : ∀ F Λ : Finset I, ∃ g : Γ, ∀ i
 /-- **Ergodic invariant Gibbs measures are the extreme ones.** If the countable group `Γ` can move
 every finite subset of the countable index set off every finite subset, then an invariant Gibbs
 measure is an extreme point of the invariant Gibbs measures if and only if it is ergodic. -/
-theorem mem_extremePoints_gibbsInvariant_iff_ergodic [Countable Γ]
+theorem mem_extremePoints_gibbsInvariant_iff_ergodicSMul [Countable Γ]
     (hmove : ∀ F Λ : Finset I, ∃ g : Γ, ∀ i ∈ F, g • i ∉ Λ) (hμ : μ ∈ γ.gibbsInvariant) :
     μ ∈ extremePoints ℝ≥0∞ γ.gibbsInvariant ↔ ErgodicSMul Γ X μ := by
   have : IsProbabilityMeasure μ :=
@@ -144,8 +129,7 @@ theorem cond_mem_gibbsInvariant (hmove : ∀ F Λ : Finset I, ∃ g : Γ, ∀ i 
   rw [← measure_congr htt'] at ht₀
   have := cond_isProbabilityMeasure (μ := μ) ht₀
   have hcond := SMulInvariantMeasure.cond ht' fun g : Γ =>
-    (((measurePreserving_smul g μ).quasiMeasurePreserving.preimage_ae_eq htt').trans
-      (htg g)).trans htt'.symm
+    preimage_smul_ae_eq_self_of_ae_eq htt' (htg g)
   exact mem_gibbsInvariant_iff.2
     ⟨mem_invariantMeasuresOfMeasureUnivEq_iff.2 ⟨hcond, measure_univ⟩,
       hγμ.of_absolutelyContinuous hmove cond_absolutelyContinuous⟩

@@ -8,6 +8,7 @@ module
 public import TauCeti.Dynamics.SymbolicDynamics.Subshift
 public import TauCeti.Probability.Process.Tail.ProperAction
 import TauCeti.MeasureTheory.Function.SuperlevelVersion
+import TauCeti.MeasureTheory.Group.Action
 
 /-!
 # Invariant events of a subshift are almost surely exterior events
@@ -18,9 +19,9 @@ every finite `Λ ⊆ I` by some `g ∈ Γ`, as an infinite group acting properly
 on a subshift `X ⊆ I → S`. Then every null-measurable almost invariant event of `X` agrees
 `μ`-almost everywhere with one event that is measurable for the exterior σ-algebra
 `TauCeti.Subshift.exterior X Λ` of every finite `Λ`
-(`TauCeti.Subshift.exists_forall_measurableSet_exterior_ae_eq`), and every almost invariant function
-`X → ℝ≥0∞` agrees almost everywhere with one function measurable for all of them
-(`TauCeti.Subshift.exists_forall_measurable_exterior_ae_eq`).
+(`TauCeti.Subshift.exists_forall_measurableSet_exterior_ae_eq`), and every almost invariant,
+almost everywhere measurable function `X → ℝ≥0∞` agrees almost everywhere with one function
+measurable for all of them (`TauCeti.Subshift.exists_forall_measurable_exterior_ae_eq`).
 
 The event statement is `TauCeti.Probability.exists_measurableSet_tailEvents_ae_eq` read on `X`: an
 event of `X` is the trace of an event of `I → S`, almost invariant for the push-forward of `μ`,
@@ -54,8 +55,7 @@ theorem exists_forall_measurableSet_exterior_ae_eq
   -- Replace `A` by a measurable version, the trace of an event `A'` of `I → S`.
   obtain ⟨A₀, hA₀A, hA₀, hA₀μ⟩ := hA.exists_measurable_subset_ae_eq
   have hA₀g (g : Γ) : (fun ω => g • ω) ⁻¹' A₀ =ᵐ[μ] A₀ :=
-    (((measurePreserving_smul g μ).quasiMeasurePreserving.preimage_ae_eq hA₀μ).trans
-      (hAg g)).trans hA₀μ.symm
+    preimage_smul_ae_eq_self_of_ae_eq hA₀μ (hAg g)
   obtain ⟨A', hA', rfl⟩ := MeasurableSpace.measurableSet_comap.1 hA₀
   -- Push `μ` forward to `I → S`, where the shifts preserve it.
   have hval : Measurable (Subtype.val : X → I → S) := measurable_subtypeVal
@@ -78,9 +78,9 @@ theorem exists_forall_measurableSet_exterior_ae_eq
 
 /-- **Invariant functions on a subshift are almost surely exterior-measurable.** If every finite
 subset of the countable index set can be moved off every finite subset by the group, then for a
-finite invariant measure `μ` on a subshift `X` every almost invariant `μ`-almost measurable function
-`X → ℝ≥0∞` agrees almost everywhere with a function measurable for the exterior σ-algebra of every
-finite set. -/
+finite invariant measure `μ` on a subshift `X` every almost invariant, almost everywhere measurable
+function `X → ℝ≥0∞` agrees almost everywhere with a function measurable for the exterior σ-algebra
+of every finite set. -/
 theorem exists_forall_measurable_exterior_ae_eq
     (hmove : ∀ F Λ : Finset I, ∃ g : Γ, ∀ i ∈ F, g • i ∉ Λ)
     {f : X → ℝ≥0∞} (hf : AEMeasurable f μ) (hfg : ∀ g : Γ, f ∘ (fun ω => g • ω) =ᵐ[μ] f) :
