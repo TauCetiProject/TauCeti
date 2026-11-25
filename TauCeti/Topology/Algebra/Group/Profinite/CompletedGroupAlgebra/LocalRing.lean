@@ -72,7 +72,7 @@ theorem isProP_of_isLocalRing (hp : ¬IsUnit (p : R)) [IsLocalRing (completedGro
       ⟨fun x y ↦ ext fun U ↦ Subsingleton.elim _ _⟩
   have : IsLocalRing (_root_.MonoidAlgebra R (Γ ⧸ U.toSubgroup)) :=
     IsLocalRing.of_surjective' (proj R Γ U).toRingHom (proj_surjective R Γ U)
-  exact MonoidAlgebra.isPGroup_of_isLocalRing hp isMulTorsion_of_finite
+  exact MonoidAlgebra.isPGroup_of_isLocalRing hp
 
 /-- **The completed group algebra is local exactly over a pro-`p` group.** For a local ring `R` in
 which the prime `p` is not a unit and a group `Γ` with finite quotients by its open normal
