@@ -32,14 +32,11 @@ representation, and its irreducibility is what the Mackey criterion decides.
 * `Representation.ofLinearCharacter`: the one-dimensional representation associated to a
   unit-valued multiplicative character.
 * `FDRep.ofLinearCharacter`: the same representation as an object of `FDRep k G`.
-* `TauCeti.uliftIntUnitsSign`: the sign character `ULift ℤˣ →* kˣ` of the copy `ULift ℤˣ` of `ℤˣ`
-  in any universe.
 * `Representation.ofLinearCharacterEquivOfDistribMulAction`: the line of a character by which `G`
   acts on `k`, such as the sign character `ℤˣ →* kˣ`, is that action.
 
 ## Main results
 
-* `TauCeti.uliftIntUnitsSign_apply`: the sign character sends `g` to the image of `g.down` in `k`.
 * `Representation.ofLinearCharacter_apply`: the action is multiplication by the character value.
 * `Representation.ofLinearCharacter_comp`: restriction of the representation is precomposition of
   the character.
@@ -85,25 +82,7 @@ public section
 
 open CategoryTheory
 
-universe u v w
-
-namespace TauCeti
-
-variable (k : Type u) [Ring k]
-
-/-- **The sign character of `ULift ℤˣ`.** The character `ULift ℤˣ →* kˣ` sending `⟨u⟩` to the
-image of `u` in `k`: the sign character `ℤˣ →* kˣ` induced by `ℤ → k`, read on the copy
-`ULift ℤˣ` of `ℤˣ` in any universe through `MulEquiv.ulift`. -/
-def uliftIntUnitsSign : ULift.{w} ℤˣ →* kˣ :=
-  (Units.map (Int.castRingHom k).toMonoidHom).comp MulEquiv.ulift.toMonoidHom
-
-/-- The sign character of `ULift ℤˣ` sends `g` to the image of `g.down` in `k`. -/
-@[simp]
-theorem uliftIntUnitsSign_apply (g : ULift.{w} ℤˣ) :
-    (uliftIntUnitsSign k g : k) = ((g.down : ℤ) : k) :=
-  (rfl)
-
-end TauCeti
+universe u v
 
 namespace Representation
 

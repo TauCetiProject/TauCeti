@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Ring.Int.Units
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.Quotient
 public import TauCeti.Topology.VectorBundle.Thom.EquivariantCap
 public import TauCeti.Topology.VectorBundle.Thom.Orientation.Cover.ChainMap
