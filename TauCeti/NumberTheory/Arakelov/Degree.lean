@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Arakelov.HermitianVectorBundle
-public import TauCeti.NumberTheory.Arakelov.SectionDegreeIndependence
 import Mathlib.RingTheory.Flat.TorsionFree
 
 /-!
@@ -64,7 +63,7 @@ theorem sectionDegree_smul (hE : E.rank = 1) {a : 𝓞 K} (ha : a ≠ 0) (s : E)
     E.sectionDegree (a • s) = E.sectionDegree s := by
   obtain rfl | hs := eq_or_ne s 0
   · rw [smul_zero]
-  simp only [sectionDegree_def, ← sectionDegreeOfNorms_def]
+  rw [sectionDegree_eq_sectionDegreeOfNorms, sectionDegree_eq_sectionDegreeOfNorms]
   exact sectionDegreeOfNorms_smul (E.rank_def ▸ hE) E.norm_smul hs
     (fun σ ↦ (E.norm_pos σ hs).ne') ha
 
@@ -74,7 +73,7 @@ product formula, and it makes this expression an invariant of the line bundle: i
 degree. -/
 theorem sectionDegree_eq_sectionDegree (hE : E.rank = 1) {s t : E} (hs : s ≠ 0) (ht : t ≠ 0) :
     E.sectionDegree s = E.sectionDegree t := by
-  simp only [sectionDegree_def, ← sectionDegreeOfNorms_def]
+  rw [sectionDegree_eq_sectionDegreeOfNorms, sectionDegree_eq_sectionDegreeOfNorms]
   exact sectionDegreeOfNorms_eq_of_finrank_eq_one (E.rank_def ▸ hE) E.norm_smul
     (fun σ _ hx ↦ (E.norm_pos σ hx).ne') hs ht
 

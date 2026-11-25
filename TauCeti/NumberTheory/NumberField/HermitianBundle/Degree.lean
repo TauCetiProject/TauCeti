@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Arakelov.SectionDegree
-public import TauCeti.NumberTheory.Arakelov.SectionDegreeIndependence
 public import TauCeti.NumberTheory.NumberField.HermitianBundle.Basic
 public import Mathlib.RingTheory.FractionalIdeal.Norm
 
@@ -154,6 +153,7 @@ theorem sectionDegree_smul [Module.Finite (𝓞 K) E] [Module.Flat (𝓞 K) E]
     h.sectionDegree (a • s) = h.sectionDegree s := by
   obtain rfl | hs := eq_or_ne s 0
   · rw [smul_zero]
+  unfold sectionDegree
   exact sectionDegreeOfNorms_smul hE (h.norm_one_tmul_smul) hs
     (fun σ ↦ (h.norm_pos (Codomain.one_tmul_ne_zero σ hs)).ne') ha
 
@@ -162,8 +162,9 @@ theorem sectionDegree_smul [Module.Finite (𝓞 K) E] [Module.Flat (𝓞 K) E]
 invariant of the hermitian line, its Arakelov degree. -/
 theorem sectionDegree_eq_sectionDegree [Module.Finite (𝓞 K) E] [Module.Flat (𝓞 K) E]
     (hE : Module.finrank K (K ⊗[𝓞 K] E) = 1) {s t : E} (hs : s ≠ 0) (ht : t ≠ 0) :
-    h.sectionDegree s = h.sectionDegree t :=
-  sectionDegreeOfNorms_eq_of_finrank_eq_one hE (h.norm_one_tmul_smul)
+    h.sectionDegree s = h.sectionDegree t := by
+  unfold sectionDegree
+  exact sectionDegreeOfNorms_eq_of_finrank_eq_one hE (h.norm_one_tmul_smul)
     (fun σ _ hx ↦ (h.norm_pos (Codomain.one_tmul_ne_zero σ hx)).ne') hs ht
 
 /-- **Lattice index term.** Let `f : E → F` be an injective `𝓞 K`-linear map preserving the norms,
@@ -174,8 +175,9 @@ theorem sectionDegree_map_eq_add_log_cardQuot_range {g : HermitianMetric K F}
     (f : E →ₗ[𝓞 K] F) (hf : Function.Injective f)
     (hnorm : ∀ σ x, g.norm σ (1 ⊗ₜ f x) = h.norm σ (1 ⊗ₜ x)) (s : E)
     [Finite (E ⧸ Submodule.span (𝓞 K) {s})] [Finite (F ⧸ LinearMap.range f)] :
-    g.sectionDegree (f s) = h.sectionDegree s + Real.log (LinearMap.range f).cardQuot :=
-  sectionDegreeOfNorms_map_eq_add_log_cardQuot_range f hf hnorm s
+    g.sectionDegree (f s) = h.sectionDegree s + Real.log (LinearMap.range f).cardQuot := by
+  unfold sectionDegree
+  exact sectionDegreeOfNorms_map_eq_add_log_cardQuot_range f hf hnorm s
 
 end TauCeti.HermitianMetric
 

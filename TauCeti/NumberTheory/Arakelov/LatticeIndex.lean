@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Arakelov.HermitianVectorBundle
-import TauCeti.NumberTheory.Arakelov.SectionDegreeIndependence
 
 /-!
 # The lattice index term of the Arakelov degree
@@ -53,7 +52,7 @@ theorem sectionDegree_map_eq_add_log_cardQuot_range (f : E →ₗ[𝓞 K] F)
     refine (injective_iff_map_eq_zero f).2 fun x hx => ?_
     by_contra h
     exact (E.norm_pos σ h).ne' (by rw [← hnorm σ, hx, HermitianVectorBundle.norm_zero])
-  simp only [sectionDegree_def, ← sectionDegreeOfNorms_def]
+  rw [sectionDegree_eq_sectionDegreeOfNorms, sectionDegree_eq_sectionDegreeOfNorms]
   exact sectionDegreeOfNorms_map_eq_add_log_cardQuot_range f hf hnorm s
 
 /-- The lattices `ℤ ⊂ ½ ℤ` with the absolute value metric, modelled as multiplication by `2` from
