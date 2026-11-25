@@ -450,7 +450,8 @@ theorem isAdmissibleBoundaryPart_setOf_lt_fst {γ : E → ℝ} {K : ℝ≥0} (h�
       (by positivity)).isBoundaryPartChart_of_forall_mem_iff
       -- The inverse of the affine identity reduces definitionally to the identity, so both sides
       -- of the membership condition agree.
-      fun z _ => Iff.rfl, hB, mem_normalCylinder_abs_add_one x⟩⟩
+      fun z _ => Iff.rfl, hB,
+    by simpa only [AffineIsometryEquiv.coe_refl, id_eq] using mem_normalCylinder_abs_add_one x⟩⟩
 
 /-- **The model half-hyperplane.** In the half-space `{0 < t}` of `ℝ × (ℝ × E')`, the half of the
 boundary hyperplane where the next coordinate is positive is an admissible boundary part. -/

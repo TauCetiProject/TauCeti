@@ -542,7 +542,7 @@ theorem isLipschitzDomain_setOf_lt_fst {γ : E → ℝ} {K : ℝ≥0} (hγ : Lip
   isLipschitzDomain_iff_exists_mem_normalCylinder.2 fun x _ =>
     ⟨_, γ, K, |x.fst| + 1, ‖x.snd‖ + 1,
       isLipschitzChart_refl_setOf_lt_fst hγ (by positivity) (by positivity),
-      mem_normalCylinder_abs_add_one x⟩
+      by simpa only [AffineIsometryEquiv.coe_refl, id_eq] using mem_normalCylinder_abs_add_one x⟩
 
 
 end Set
