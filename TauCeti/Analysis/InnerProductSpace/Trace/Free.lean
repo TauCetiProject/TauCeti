@@ -54,6 +54,8 @@ pairing `tr (T* U) = tr (T U)` is real.
   the symmetric part computes the trace pairing with a self-adjoint endomorphism.
 * `ContinuousLinearMap.traceCLM_comp_adjoint_comp_comp_of_comp_eq_id`: if `M N = 1`, then
   `tr ((N A N†) (M† D M)) = tr (A D)`.
+* `ContinuousLinearMap.traceCLM_conj_symmPart_comp_of_comp_eq_id`: over `ℝ`, if `M N = 1` and `D`
+  is self-adjoint, then `tr ((N ((A + A†) / 2) N†) (M† D M)) = tr (A D)`.
 * `ContinuousLinearMap.traceCLM_comp_eq_sum_inner`: if `H f = (T f)† g`, then
   `tr (A H) = ⟪∑ᵢ T eᵢ (A† eᵢ), g⟫` for any orthonormal basis `(eᵢ)`.
 * `InnerProductSpace.trace_rankOne_mul`, `InnerProductSpace.trace_mul_rankOne`: the trace pairing
@@ -181,6 +183,19 @@ theorem traceCLM_comp_adjoint_comp_comp_of_comp_eq_id [CompleteSpace E] {W : Typ
   congr 1
   ext z
   simp [hNM]
+
+open TauCeti in
+/-- **The trace pairing after a linear change of variables.** Over `ℝ`, if `M ∘ N = 1` and `D` is
+self-adjoint, then `tr ((N ((A + A†) / 2) N†) ∘ (M† D M)) = tr (A D)`. With `M = e` and
+`N = e⁻¹`, this turns an equation `tr (A D²u) = f` into one for `u ∘ e`, whose Hessian is
+`e† D²u(e ·) e`, with the coefficient `e⁻¹ ((A + A†) / 2) e⁻†`. -/
+theorem traceCLM_conj_symmPart_comp_of_comp_eq_id {V W : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [NormedAddCommGroup W]
+    [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] {M : W →L[ℝ] V} {N : V →L[ℝ] W}
+    (h : M ∘L N = ContinuousLinearMap.id ℝ V) (A D : V →L[ℝ] V) (hD : D.adjoint = D) :
+    traceCLM ℝ W ((N ∘L ((2⁻¹ : ℝ) • (A + A.adjoint)) ∘L N.adjoint) ∘L (M.adjoint ∘L D ∘L M)) =
+      traceCLM ℝ V (A ∘L D) := by
+  rw [traceCLM_comp_adjoint_comp_comp_of_comp_eq_id h, traceCLM_symmPart_comp _ _ hD]
 
 open TauCeti in
 /-- The trace of `A ∘ H` for an endomorphism of the form `H f = (T f)† g`: in any orthonormal

@@ -7,11 +7,13 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Hessian.HalfSpace.Basic
 public import TauCeti.Analysis.PDE.Regularity.Hessian.IntegrabilityGain
+import TauCeti.Analysis.InnerProductSpace.Positive.Definite
 import TauCeti.Analysis.InnerProductSpace.Trace.Free
 import TauCeti.Analysis.Normed.Operator.LinearIsometry
 import TauCeti.Analysis.Sobolev.Wkp.Chain
 import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Linear
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Function.Lp.Dilation
 
@@ -59,7 +61,8 @@ makes the odd reflection of `u` a function in `W^{2,p}` of the whole space.
   (`TauCeti.exists_continuousLinearEquiv_preimage_normalHalfSpace`). Then `u ∘ e` vanishes on the
   boundary of `{a / c < x.fst}` and solves `tr (b D²(u ∘ e)) = f ∘ e` with
   `b = e⁻¹ ((A + A†) / 2)(e ·) e⁻†` within `δ` of the identity
-  (`TauCeti.norm_conj_symmPart_sub_id_le`), and composing back with `e⁻¹` preserves `W^{2,r}`.
+  (`ContinuousLinearMap.norm_conj_symmPart_sub_id_le`), and composing back with `e⁻¹` preserves
+  `W^{2,r}`.
 
 ## References
 
@@ -286,8 +289,8 @@ theorem exists_wkp_value_ae_eq_of_trace_comp_iteratedGradient_eq_of_norm_sub_le_
   -- A linear change of variables `e` with `e e† = (A₀ + A₀†) / 2` maps the half-space
   -- `H' = {a / c < x.fst}` onto `H`; almost everywhere statements on `H` pull back along `e`.
   obtain ⟨e, c, hee, he, hH⟩ := exists_continuousLinearEquiv_preimage_normalHalfSpace hlam hA₀
-  have hpull := quasiMeasurePreserving_restrict_of_coe_eq_preimage
-    (mu := (volume : Measure (WithLp 2 (ℝ × E)))) e (hH a)
+  have hpull := e.quasiMeasurePreserving_restrict (volume : Measure (WithLp 2 (ℝ × E)))
+    ((mapsTo_preimage e _).mono_left (hH a).subset)
   -- `w = u ∘ e ∈ W^{2,p}(H')` has weak Hessian `e† D²u(e ·) e` and zero boundary values.
   obtain ⟨w, hwv, hwD, h0⟩ := Wkp.exists_value_ae_eq_comp_continuousLinearEquiv hp_top e (hH a) u
   -- It solves `tr (b D²w) = f ∘ e` with `b(y) = e⁻¹ ((A + A†) / 2)(e y) e⁻†` close to `1`, where
@@ -304,21 +307,20 @@ theorem exists_wkp_value_ae_eq_of_trace_comp_iteratedGradient_eq_of_norm_sub_le_
     (fun y => (e.symm : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) ∘L
       ((2⁻¹ : ℝ) • (A' (e y) + (A' (e y)).adjoint)) ∘L
         (e.symm : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)).adjoint)
-    ((continuous_conj_symmPart _).comp_stronglyMeasurable
+    ((ContinuousLinearMap.continuous_conj_symmPart _).comp_stronglyMeasurable
       (hA'.comp_measurable e.continuous.measurable))
     (by
       filter_upwards [hpull.ae hAδ, hpull.ae hAA'] with y h₁ h₂
-      refine (norm_conj_symmPart_sub_id_le hlam e hee he (A' (e y))).trans ?_
-      rw [← h₂]
-      calc lam⁻¹ * ‖A (e y) - A₀‖ ≤ lam⁻¹ * (δ * lam) := by gcongr
-        _ = δ := by field_simp)
+      exact ContinuousLinearMap.norm_conj_symmPart_sub_id_le_of_norm_sub_le hlam e hee he
+        (h₂ ▸ h₁))
     w (fun y => f (e y)) (hH a ▸ hf.comp_continuousLinearEquiv_restrict_preimage e)
     ((hH a ▸ hur.comp_continuousLinearEquiv_restrict_preimage e).ae_eq hwv.symm) (h0 hu0)
     (by
       filter_upwards [hwD, hpull.ae (Wkp.adjoint_iteratedGradient_one_ae_eq u), hpull.ae htr,
         hpull.ae hAA'] with y h₁ h₂ h₃ h₄
-      rw [h₁, ← traceCLM_apply, ContinuousLinearMap.traceCLM_comp_adjoint_comp_comp_of_comp_eq_id
-        hMN, ContinuousLinearMap.traceCLM_symmPart_comp _ _ h₂, traceCLM_apply, ← h₄, h₃])
+      rw [h₁, ← traceCLM_apply,
+        ContinuousLinearMap.traceCLM_conj_symmPart_comp_of_comp_eq_id hMN _ _ h₂, traceCLM_apply,
+        ← h₄, h₃])
   -- Composing back with `e⁻¹` gives `v ∈ W^{2,r}(H)` with value `u`.
   obtain ⟨v, hval⟩ := Wkp.exists_value_ae_eq_of_value_ae_eq_comp_continuousLinearEquiv hr_top e
     (hH a) (hv'.trans hwv)
