@@ -45,6 +45,7 @@ Every class is that of a unitary matrix, which has finite spectrum in the finite
 C⋆-algebra of matrices, so it is joined to `1`. -/
 instance subsingleton_of_finiteDimensional [FiniteDimensional ℂ A] :
     Subsingleton (StableComponentGroup A) := by
+  -- Mathlib's C⋆-algebra structure on `CStarMatrix n n A` is stated for an ordered `A`.
   let : PartialOrder A := CStarAlgebra.spectralOrder A
   let : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
   suffices h : ∀ x : StableComponentGroup A, x = 1 from ⟨fun x y ↦ (h x).trans (h y).symm⟩

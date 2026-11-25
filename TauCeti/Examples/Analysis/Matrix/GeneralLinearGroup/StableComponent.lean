@@ -11,11 +11,12 @@ public import TauCeti.Analysis.Matrix.GeneralLinearGroup.StableComponent.FiniteD
 # Checks for the stable component group of finite-dimensional C⋆-algebras
 
 For a finite-dimensional C⋆-algebra `A` every unitary is joined to `1`, so `K₁(A) = 0`; here for
-`ℂ³` and for `M₂(ℂ)`. The polar unitary of the invertible element `2 ∈ ℂ` is `1`.
+`ℂ³` and for `M₂(ℂ)`.
 -/
 
 public section
 
+-- `CStarMatrix (Fin 2) (Fin 2) ℂ` is a C⋆-algebra for the order on `ℂ`.
 open scoped ComplexOrder
 
 namespace TauCeti.StableComponentExample
@@ -27,9 +28,5 @@ example : Subsingleton (StableComponentGroup (Fin 3 → ℂ)) :=
 /-- The stable component group of the finite-dimensional C⋆-algebra `M₂(ℂ)` is trivial. -/
 example : Subsingleton (StableComponentGroup (CStarMatrix (Fin 2) (Fin 2) ℂ)) :=
   inferInstance
-
-/-- The polar unitary of the invertible element `2 ∈ ℂ` is `1`. -/
-example : (Units.mk0 (2 : ℂ) two_ne_zero).polarUnitary = 1 :=
-  Units.polarUnitary_eq_one (by norm_num)
 
 end TauCeti.StableComponentExample

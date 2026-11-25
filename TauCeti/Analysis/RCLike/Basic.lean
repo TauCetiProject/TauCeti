@@ -15,6 +15,7 @@ public import Mathlib.Analysis.RCLike.Basic
 * `RCLike.re_eq_self_of_im_eq_zero`: a scalar with zero imaginary part equals its real part.
 * `TauCeti.RCLike.mul_conj_eq_one_iff`: a scalar times its conjugate is `1` exactly when it has
   norm `1`.
+* `TauCeti.RCLike.mem_unitary_iff_norm_eq_one`: a scalar is unitary exactly when it has norm `1`.
 * `RCLike.norm_le_abs_re_add_abs_im`: `‖z‖ ≤ |re z| + |im z|`, the `RCLike` counterpart of
   `Complex.norm_le_abs_re_add_abs_im`.
 * `RCLike.continuousSMul_of_continuousConstSMul`: on an `RCLike`-module with continuous addition
@@ -148,5 +149,10 @@ theorem RCLike.mul_conj_eq_one_iff {K : Type*} [RCLike K] {z : K} :
   rw [RCLike.mul_conj]
   norm_cast
   exact pow_eq_one_iff_of_nonneg (norm_nonneg z) two_ne_zero
+
+/-- A scalar is unitary exactly when it has norm `1`. -/
+theorem RCLike.mem_unitary_iff_norm_eq_one {K : Type*} [RCLike K] {z : K} :
+    z ∈ unitary K ↔ ‖z‖ = 1 := by
+  rw [Unitary.mem_iff_self_mul_star, RCLike.star_def, RCLike.mul_conj_eq_one_iff]
 
 end TauCeti

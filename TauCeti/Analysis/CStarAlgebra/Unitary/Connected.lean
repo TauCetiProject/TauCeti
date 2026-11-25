@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Unitary.Connected
 public import Mathlib.Topology.Algebra.Star.Unitary
+import TauCeti.Analysis.RCLike.Basic
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.RealImaginaryPart
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -108,18 +109,14 @@ theorem Unitary.joined_smul (v : unitary A) {w : ℂ} (hw : w ∈ unitary ℂ) (
     _ ≤ ‖w - 1‖ * 1 := by gcongr
     _ < 2 := by rwa [mul_one]
 
-/-- **Unitaries whose spectrum misses a point of the circle are joined to `1`.** If `‖z‖ = 1` and
-`z ∉ σ(u)`, then `-1 ∉ σ(-z⋆ u)`, so `-z⋆ u` is joined to `1` by an exponential path, and `u` is
-joined to `-z⋆ u` by scalar rotations. -/
-theorem Unitary.joined_one_of_notMem_spectrum (u : unitary A) {z : ℂ} (hz : ‖z‖ = 1)
+/-- **Unitaries whose spectrum misses a point of the circle are joined to `1`.** If `z` is a
+unitary scalar (`‖z‖ = 1`) and `z ∉ σ(u)`, then `-1 ∉ σ(-z⋆ u)`, so `-z⋆ u` is joined to `1` by an
+exponential path, and `u` is joined to `-z⋆ u` by scalar rotations. -/
+theorem Unitary.joined_one_of_notMem_spectrum (u : unitary A) {z : ℂ} (hz : z ∈ unitary ℂ)
     (hzu : z ∉ spectrum ℂ (u : A)) : Joined 1 u := by
-  -- A complex number of norm one is unitary.
-  have hmem {w : ℂ} (hw : ‖w‖ = 1) : w ∈ unitary ℂ := by
-    rw [Unitary.mem_iff_star_mul_self, RCLike.star_def, RCLike.conj_mul, hw]
-    simp
-  have hz' : z ∈ unitary ℂ := hmem hz
   set c : ℂ := -star z
-  have hc : c ∈ unitary ℂ := hmem (by rw [norm_neg, norm_star, hz])
+  have hc : c ∈ unitary ℂ := TauCeti.RCLike.mem_unitary_iff_norm_eq_one.2 (by
+    rw [norm_neg, norm_star, TauCeti.RCLike.mem_unitary_iff_norm_eq_one.1 hz])
   have hcz : star c * c = 1 := Unitary.star_mul_self_of_mem hc
   set v : unitary A := ⟨c • (u : A), Unitary.smul_mem_of_mem hc u.prop⟩
   -- `-1 ∉ σ(c u) = c σ(u)`, since `-1 = c w` forces `w = z`.
@@ -131,7 +128,7 @@ theorem Unitary.joined_one_of_notMem_spectrum (u : unitary A) {z : ℂ} (hz : �
       spectrum.unit_smul_eq_smul]
     rintro ⟨w, hw, hcw⟩
     refine hzu ?_
-    have hzz : star z * z = 1 := Unitary.star_mul_self_of_mem hz'
+    have hzz : star z * z = 1 := Unitary.star_mul_self_of_mem hz
     have : w = z := by
       simp only [Units.val_mk0, smul_eq_mul, c] at hcw
       linear_combination (-w) * hzz - z * hcw
@@ -141,7 +138,7 @@ theorem Unitary.joined_one_of_notMem_spectrum (u : unitary A) {z : ℂ} (hz : �
     simp only [v, smul_smul, hcz, one_smul]
   refine hv.trans ?_
   by_cases hc₁ : star c = -1
-  · have hI : Complex.I ∈ unitary ℂ := hmem (by simp)
+  · have hI : Complex.I ∈ unitary ℂ := TauCeti.RCLike.mem_unitary_iff_norm_eq_one.2 (by simp)
     refine (Unitary.joined_smul v hI (by simp [Complex.ext_iff])).trans ?_
     convert Unitary.joined_smul _ hI (by simp [Complex.ext_iff]) using 1
     ext
@@ -158,6 +155,7 @@ theorem Unitary.joined_one_of_finite_spectrum (u : unitary A)
       (by rw [Complex.rank_real_complex]; norm_num) 0 zero_le_one).isPreconnected
       ⟨1, by simp, -1, by simp, by norm_num⟩
   obtain ⟨z, hz, hzu⟩ := hinf.exists_notMem_finite h
-  exact Unitary.joined_one_of_notMem_spectrum u (by simpa using hz) hzu
+  exact Unitary.joined_one_of_notMem_spectrum u
+    (TauCeti.RCLike.mem_unitary_iff_norm_eq_one.2 (by simpa using hz)) hzu
 
 end Spectrum
