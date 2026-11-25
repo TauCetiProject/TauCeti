@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicTopology.Cohomology.Twisted.Relative
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Coefficients
 public import TauCeti.AlgebraicTopology.Singular.Twisted.ConstantNaturality
 public import TauCeti.Topology.VectorBundle.Thom.Orientation.Cover.Basic
-public import TauCeti.Topology.VectorBundle.Thom.SignClass
+public import TauCeti.Topology.VectorBundle.Thom.Sign.Class
 
 /-!
 # Chains of the Thom pair of the orientation cover as orientation-twisted chains

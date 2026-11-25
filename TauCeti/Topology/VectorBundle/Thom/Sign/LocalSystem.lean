@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Twisted.ConstantNaturality
+public import TauCeti.AlgebraicTopology.Singular.Twisted.Functoriality
 public import TauCeti.Topology.VectorBundle.EulerClass
 public import TauCeti.Topology.VectorBundle.Orientation.LocalSystem
 import TauCeti.AlgebraicTopology.Singular.Twisted.Coefficients
@@ -148,6 +148,7 @@ theorem fiberThomPairSignLocalSystemIso_hom_app_apply (b : B) (o : Orientation �
 
 /-- Reversing the orientation of `E_b` negates the inverse of the fibre trivialization
 `TauCeti.fiberThomPairSignLocalSystemIso`. -/
+@[simp]
 theorem fiberThomPairSignLocalSystemIso_neg_inv (b : B) (o : Orientation ℝ (E b) ι) :
     (fiberThomPairSignLocalSystemIso F E R hι b (-o)).inv =
       -(fiberThomPairSignLocalSystemIso F E R hι b o).inv := by
@@ -200,6 +201,7 @@ theorem thomPairSignFiberMap_def (b : B) (o : Orientation ℝ (E b) ι) (n : ℕ
   (rfl)
 
 /-- Reversing the orientation of `E_b` negates `TauCeti.thomPairSignFiberMap`. -/
+@[simp]
 theorem thomPairSignFiberMap_neg (b : B) (o : Orientation ℝ (E b) ι) (n : ℕ) :
     thomPairSignFiberMap F E R hι b (-o) n = -thomPairSignFiberMap F E R hι b o n := by
   rw [thomPairSignFiberMap, thomPairSignFiberMap, fiberThomPairSignLocalSystemIso_neg_inv,

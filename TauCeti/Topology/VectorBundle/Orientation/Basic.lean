@@ -10,6 +10,7 @@ public import TauCeti.Topology.VectorBundle.Pullback
 public import TauCeti.LinearAlgebra.Orientation.Basic
 
 import Mathlib.Topology.LocallyConstant.Basic
+import TauCeti.Analysis.Normed.Module.Orientation
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -187,31 +188,14 @@ theorem eventually_mapOrientation_symm_eq (hι : Fintype.card ι = finrank ℝ F
     ∀ᶠ x in 𝓝 b, ∀ (hx : x ∈ e.baseSet) (hx' : x ∈ e'.baseSet),
       e'.mapOrientation ι hx' ((e.mapOrientation ι hx).symm o) =
         e'.mapOrientation ι hb' ((e.mapOrientation ι hb).symm o) := by
-  -- With `ι` empty, transport along any self-equivalence of `F` fixes every orientation.
-  rcases isEmpty_or_nonempty ι with hι₀ | hι₀
-  · exact Eventually.of_forall fun x hx hx' ↦ by
-      rw [mapOrientation_eq_map_coordChangeL e e' hx hx', Equiv.apply_symm_apply,
-        mapOrientation_eq_map_coordChangeL e e' hb hb', Equiv.apply_symm_apply,
-        Orientation.map_of_isEmpty, Orientation.map_of_isEmpty]
-  -- Otherwise `F` has positive, hence finite, dimension, so the coordinate-change determinant is
-  -- continuous and nonzero at `b`, hence keeps the same sign near `b`.
-  have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (hι ▸ Fintype.card_pos)
   have hmem : e.baseSet ∩ e'.baseSet ∈ 𝓝 b :=
     (e.open_baseSet.inter e'.open_baseSet).mem_nhds ⟨hb, hb'⟩
-  set d : B → ℝ := fun x ↦ (e.coordChangeL ℝ e' x : F →L[ℝ] F).det
-  have hdc : ContinuousAt d b :=
-    ContinuousLinearMap.continuous_det.continuousAt.comp
-      ((e.continuousOn_coordChangeL ℝ e').continuousAt hmem)
-  have hdb : d b ≠ 0 := by
-    have := (LinearEquiv.det (e.coordChangeL ℝ e' b).toLinearEquiv).ne_zero
-    rwa [LinearEquiv.coe_det] at this
-  have hpos : ∀ᶠ x in 𝓝 b, 0 < d x * d b :=
-    (hdc.mul continuousAt_const).eventually (lt_mem_nhds (mul_self_pos.2 hdb))
-  filter_upwards [hpos] with x hxpos hx hx'
-  rw [mapOrientation_eq_map_coordChangeL e e' hx hx', Equiv.apply_symm_apply,
-    mapOrientation_eq_map_coordChangeL e e' hb hb', Equiv.apply_symm_apply,
-    Orientation.map_eq_map_iff_det_mul_pos _ _ _ hι]
-  exact hxpos
+  filter_upwards [Orientation.eventually_map_eq_map_of_continuousAt hι o
+      (f₀ := e.coordChangeL ℝ e' b) (L := fun x ↦ (e.coordChangeL ℝ e' x : F →L[ℝ] F))
+      (fun _ ↦ (e.continuousOn_coordChangeL ℝ e').continuousAt hmem) rfl] with x hx hxe hxe'
+  rw [mapOrientation_eq_map_coordChangeL e e' hxe hxe', Equiv.apply_symm_apply,
+    mapOrientation_eq_map_coordChangeL e e' hb hb', Equiv.apply_symm_apply]
+  exact hx (e.coordChangeL ℝ e' x) rfl
 
 /-- If a family of fibre orientations is locally constant near `b` when read in one linear
 trivialization, then it is locally constant near `b` when read in any other, provided `ι` has
