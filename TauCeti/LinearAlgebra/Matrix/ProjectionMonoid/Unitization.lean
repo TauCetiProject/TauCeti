@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Unitization
+public import TauCeti.Algebra.Algebra.Unitization
 public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.KZero
 
 /-!
@@ -25,7 +25,6 @@ homomorphism `K₀(A) → K₀(B)` through the unitization `Unitization.starMap 
 
 ## Main definitions
 
-* `Unitization.fstStarAlgHom R A`: the augmentation `A⁺ → R` as a star algebra homomorphism.
 * `TauCeti.UnitizationKZero R A`: `K₀(A) = ker (K₀(A⁺) → K₀(R))`.
 * `TauCeti.UnitizationKZero.map φ`: the homomorphism `K₀(A) →+ K₀(B)` induced by a star
   homomorphism `φ : A →⋆ₙₐ[R] B`.
@@ -46,27 +45,10 @@ public section
 
 open Algebra
 
-namespace Unitization
-
-variable (R A : Type*) [CommSemiring R] [StarRing R] [NonUnitalSemiring A] [StarRing A]
-  [Module R A] [IsScalarTower R A A] [SMulCommClass R A A]
-
-/-- The augmentation `Unitization R A → R`, `(r, a) ↦ r`, as a star algebra homomorphism. -/
-def fstStarAlgHom : Unitization R A →⋆ₐ[R] R where
-  toAlgHom := fstHom R A
-  map_star' := fst_star
-
-/-- The augmentation sends `(r, a)` to `r`. -/
-@[simp]
-theorem fstStarAlgHom_apply (x : Unitization R A) : fstStarAlgHom R A x = x.fst :=
-  (rfl)
-
-end Unitization
-
 namespace TauCeti
 
-variable (R A : Type*) [CommRing R] [StarRing R] [NonUnitalRing A] [StarRing A] [Module R A]
-  [IsScalarTower R A A] [SMulCommClass R A A] [StarModule R A]
+variable (R A : Type*) [CommSemiring R] [StarRing R] [NonUnitalSemiring A] [StarRing A]
+  [Module R A] [IsScalarTower R A A] [SMulCommClass R A A] [StarModule R A]
 
 namespace UnitizationKZero
 
@@ -145,8 +127,8 @@ theorem prodEquiv_symm_apply (y : UnitizationKZero R A × ProjectionKZero R) :
 
 section map
 
-variable {B C : Type*} [NonUnitalRing B] [StarRing B] [Module R B] [IsScalarTower R B B]
-  [SMulCommClass R B B] [StarModule R B] [NonUnitalRing C] [StarRing C] [Module R C]
+variable {B C : Type*} [NonUnitalSemiring B] [StarRing B] [Module R B] [IsScalarTower R B B]
+  [SMulCommClass R B B] [StarModule R B] [NonUnitalSemiring C] [StarRing C] [Module R C]
   [IsScalarTower R C C] [SMulCommClass R C C] [StarModule R C]
 
 /-- The homomorphism `K₀(A⁺) →+ K₀(B⁺)` induced by the unitization of a star homomorphism. -/
@@ -160,7 +142,7 @@ private theorem augmentation_comp_unitizationMap (φ : A →⋆ₙₐ[R] B) :
   rw [augmentation, augmentation, unitizationMap, ← ProjectionKZero.map_comp]
   congr 1
   ext x
-  exact Unitization.fst_starMap φ x
+  simp
 
 /-- **Functoriality.** A star homomorphism `φ : A →⋆ₙₐ[R] B`, unital or not, induces a
 homomorphism `K₀(A) →+ K₀(B)` through its unitization `Unitization.starMap φ`. -/
@@ -172,6 +154,7 @@ noncomputable def map (φ : A →⋆ₙₐ[R] B) : UnitizationKZero R A →+ Uni
 
 /-- On the underlying elements of `K₀(A⁺)`, `TauCeti.UnitizationKZero.map φ` is the homomorphism
 induced by `Unitization.starMap φ`. -/
+@[simp]
 theorem coe_map (φ : A →⋆ₙₐ[R] B) (x : UnitizationKZero R A) :
     (map φ x : ProjectionKZero (Unitization R B)) =
       ProjectionKZero.map (NonUnitalStarRingHom.ofClass (Unitization.starMap φ)) x :=
@@ -191,9 +174,12 @@ theorem map_id : map (NonUnitalStarAlgHom.id R A) = AddMonoidHom.id (Unitization
 theorem map_comp (ψ : B →⋆ₙₐ[R] C) (φ : A →⋆ₙₐ[R] B) :
     map (ψ.comp φ) = (map ψ).comp (map φ) := by
   ext x
-  rw [coe_map, AddMonoidHom.comp_apply, coe_map, coe_map, Unitization.starMap_comp,
-    ← AddMonoidHom.comp_apply, ← ProjectionKZero.map_comp]
-  rfl
+  have h : NonUnitalStarRingHom.ofClass ((Unitization.starMap ψ).comp (Unitization.starMap φ)) =
+      (NonUnitalStarRingHom.ofClass (Unitization.starMap ψ)).comp
+        (NonUnitalStarRingHom.ofClass (Unitization.starMap φ)) :=
+    NonUnitalStarRingHom.ext fun _ ↦ rfl
+  rw [coe_map, AddMonoidHom.comp_apply, coe_map, coe_map, Unitization.starMap_comp, h,
+    ProjectionKZero.map_comp, AddMonoidHom.comp_apply]
 
 end map
 
