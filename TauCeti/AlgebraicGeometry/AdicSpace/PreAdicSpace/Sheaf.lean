@@ -154,12 +154,16 @@ exactly when `X` is empty. -/
 theorem subsingleton_presheaf_obj_top_iff_isEmpty (X : SheafyPreAdicSpace.{u}) :
     Subsingleton (X.obj.toPresheafedSpace.presheaf.obj (Opposite.op ⊤)).obj ↔ IsEmpty X.obj := by
   refine ⟨fun hs ↦ ⟨fun x ↦ ?_⟩, fun _ ↦ ?_⟩
-  · -- the germ at `x` is a ring map from the zero ring to the local ring `𝒪_{X,x}`
+  · -- the germ at `x` is a ring map from the zero ring to the local ring `𝒪_{X,x}`; its source,
+    -- the sections over `⊤` of the presheaf of rings, is by definition the underlying ring of
+    -- `X.obj.toPresheafedSpace.presheaf.obj (op ⊤)`, so `hs` applies to it
     have := (X.obj.toRingPresheafedSpace.presheaf.germ ⊤ x (Opens.mem_top x)).hom.codomain_trivial
       (h := hs)
     exact false_of_nontrivial_of_subsingleton (X.obj.toRingPresheafedSpace.presheaf.stalk x)
   · -- on the empty space `⊤ = ⊥`, so the sections over `⊤` form a terminal object, which
-    -- receives a ring map from the zero ring
+    -- receives a ring map from the zero ring; the sheaf of `X.toSheafedSpace` is by definition
+    -- the presheaf of `X.obj` (`toSheafedSpace_toPresheafedSpace`), so the codomain of that map
+    -- is `𝒪_X(X)`
     have h : (⊤ : Opens X.obj.toTopCat) = ⊥ := by
       ext x
       exact isEmptyElim x
