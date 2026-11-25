@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import Mathlib.RingTheory.Nakayama
 public import Mathlib.RingTheory.FiniteType
 public import TauCeti.Algebra.MonoidAlgebra.Basic
-public import TauCeti.Algebra.MonoidAlgebra.Augmentation
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation.Basic
 import Mathlib.Algebra.CharP.Lemmas
 import TauCeti.Algebra.CharP.LocalRing
 import Mathlib.RingTheory.Ideal.GoingUp

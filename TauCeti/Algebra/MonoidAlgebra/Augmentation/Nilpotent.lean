@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.PGroup
 import TauCeti.Algebra.CharP.Unipotent
-public import TauCeti.Algebra.MonoidAlgebra.Augmentation
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation.Basic
 import TauCeti.Algebra.MonoidAlgebra.Exactness
 import TauCeti.Algebra.MonoidAlgebra.Frobenius
 
