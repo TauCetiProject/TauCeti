@@ -320,9 +320,7 @@ theorem wordSeminorm_lieSmoothVectorsDerivative_le_of_eq_sum
       (∑ i, |c i|) * wordSeminorm I π X (k + 1) v := by
   have hd : lieSmoothVectorsDerivative I π Y v =
       ∑ i, algebraMap ℝ 𝕜 (c i) • lieSmoothVectorsDerivative I π (X i) v := by
-    rw [← lieSmoothVectorsDerivedAction_apply, hY, map_sum, LinearMap.sum_apply]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [map_smul, LinearMap.smul_apply, lieSmoothVectorsDerivedAction_apply, algebraMap_smul]
+    simp [hY, algebraMap_smul]
   rw [hd, Finset.sum_mul]
   refine (Finset.le_sum_of_subadditive _ (map_zero _).le (map_add_le_add _) _ _).trans
     (Finset.sum_le_sum fun i _ ↦ ?_)
