@@ -80,21 +80,6 @@ namespace PDE
 
 variable {n : ℕ} {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
 
-/-- The `L²` norm of the value of `u ∈ H¹(Ω)` on a subset of `Ω` is at most the `H¹` norm of
-`u`. -/
-private theorem sqrt_setIntegral_value_sq_le_norm (u : W1p volume Ω 2)
-    {s : Set (EuclideanSpace ℝ (Fin (n + 1)))} (hs : s ⊆ Ω) :
-    √(∫ x in s, W1p.value u x ^ 2) ≤ ‖u‖ := by
-  have hint : Integrable (fun x => W1p.value u x ^ 2) (volume.restrict Ω) :=
-    (Lp.memLp (W1p.value u)).integrable_sq
-  calc √(∫ x in s, W1p.value u x ^ 2)
-      ≤ √(∫ x in Ω, W1p.value u x ^ 2) :=
-        Real.sqrt_le_sqrt (setIntegral_mono_set hint (ae_of_all _ fun _ => sq_nonneg _)
-          (Eventually.of_forall hs))
-    _ = ‖W1p.value u‖ := by
-      rw [W1p.integral_value_sq_eq_norm_value_sq, Real.sqrt_sq (norm_nonneg _)]
-    _ ≤ ‖u‖ := W1p.norm_value_le u
-
 /-- The local form of the global estimate at a point `x`, with radius `ρ` and constant `C`: for
 every weak solution `u ∈ H¹₀(Ω)` with data as in
 `TauCeti.PDE.exists_holderOnWith_gradient_closure_of_forall_graph`, the gradient `∇u` agrees almost
@@ -153,7 +138,7 @@ private theorem exists_hasLocalGradientEstimate_of_mem {α β : ℝ≥0} (hβ : 
     have hQ0 := ENNReal.toReal_nonneg (a := eLpNorm f q (volume.restrict Ω))
     simp only [D, hc, add_mul]
     gcongr
-    · exact ((sqrt_setIntegral_value_sq_le_norm (u : W1p volume Ω 2) hball).trans_eq
+    · exact ((W1p.sqrt_setIntegral_value_sq_le_norm (u : W1p volume Ω 2) hball).trans_eq
         (Submodule.norm_coe u)).trans (by simp only [Q]; linarith [KG.coe_nonneg])
     · exact (ENNReal.toReal_mono hf.eLpNorm_ne_top (eLpNorm_mono_measure _
         (Measure.restrict_mono hball le_rfl))).trans
