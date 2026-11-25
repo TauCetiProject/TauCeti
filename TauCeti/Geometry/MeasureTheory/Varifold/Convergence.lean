@@ -40,8 +40,9 @@ this file proves the basic properties of the convergence for them:
   compact sets are compact (`TauCeti.VarifoldTendsto.map`); this is how the weights
   `‖V n‖ = π_* V n` of convergent varifolds converge to the weight of the limit;
 * convergence commutes with restriction to open subspaces, read as pullback along an open
-  embedding (`TauCeti.VarifoldTendsto.comap`), and it is local: a sequence converges as soon as
-  its restrictions to the sets of an open cover converge
+  embedding (`TauCeti.VarifoldTendsto.comap`), and it is local: a sequence of measures finite on
+  compact sets converges to a measure `ν` finite on compact sets as soon as its restrictions to
+  the sets of an open cover converge to the restrictions of `ν`
   (`TauCeti.varifoldTendsto_iff_forall_comap`);
 * **compactness**: on a locally compact, second countable Hausdorff space carrying its Borel
   σ-algebra, every sequence that frequently lies in a set of measures with uniformly bounded masses
