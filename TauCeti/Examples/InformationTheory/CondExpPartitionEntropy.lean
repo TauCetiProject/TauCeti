@@ -39,18 +39,16 @@ instance instIsProbabilityMeasureFairBit : IsProbabilityMeasure fairBit :=
 sub-σ-algebra. -/
 example {X : Type*} [MeasurableSpace X] (μ : Measure X) (m : MeasurableSpace X) :
     condExpPartitionEntropy μ m (fun _ : X ↦ true) = 0 :=
-  condExpPartitionEntropy_eq_zero_of_measurable measurable_const
+  condExpPartitionEntropy_eq_zero_of_measurableSet fun i ↦
+    measurable_const (measurableSet_singleton i)
 
 /-- A fair bit conditioned on the trivial σ-algebra has entropy `log 2`. -/
 example : condExpPartitionEntropy fairBit ⊥ id = log 2 := by
-  rw [condExpPartitionEntropy_bot measurable_id]
-  simp only [Set.preimage_id, Fintype.sum_bool, Measure.real]
-  simp only [smul_apply, Measure.count_singleton, smul_eq_mul, mul_one, ENNReal.toReal_inv,
-    ENNReal.toReal_ofNat, negMulLog, log_inv]
-  ring
+  rw [condExpPartitionEntropy_bot (a := id) fun i ↦ (measurableSet_singleton i).nullMeasurableSet]
+  simp [measureReal_def, negMulLog]
 
 /-- A fair bit conditioned on the bit itself has entropy `0`. -/
 example : condExpPartitionEntropy fairBit Bool.instMeasurableSpace id = 0 :=
-  condExpPartitionEntropy_eq_zero_of_measurable measurable_id
+  condExpPartitionEntropy_eq_zero_of_measurableSet measurableSet_singleton
 
 end TauCeti.CondExpPartitionEntropyExamples
