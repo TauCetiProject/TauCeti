@@ -49,11 +49,11 @@ namespace TauCeti
 open Complex
 
 /-- The rational span `L_τ = ℚ + ℚτ` of `1` and `τ` in `ℂ`. -/
-abbrev ellipticRationalLattice (τ : ℂ) : Submodule ℚ ℂ :=
+abbrev ellipticRationalSpan (τ : ℂ) : Submodule ℚ ℂ :=
   Submodule.span ℚ {1, τ}
 
-theorem mem_ellipticRationalLattice_iff {τ x : ℂ} :
-    x ∈ ellipticRationalLattice τ ↔ ∃ a b : ℚ, x = a + b * τ := by
+theorem mem_ellipticRationalSpan_iff {τ x : ℂ} :
+    x ∈ ellipticRationalSpan τ ↔ ∃ a b : ℚ, x = a + b * τ := by
   rw [Submodule.mem_span_pair]
   constructor
   · rintro ⟨a, b, rfl⟩
@@ -66,7 +66,7 @@ multiplication preserves `L_τ = ℚ + ℚτ`, that is the left order `Submodule
 It is defined for every `τ : ℂ`; when `Im τ ≠ 0` it is the algebra of rational Hodge endomorphisms
 of the elliptic curve `E_τ = ℂ / (ℤ + ℤτ)`. -/
 abbrev ellipticHodgeEndomorphisms (τ : ℂ) : Subalgebra ℚ ℂ :=
-  (ellipticRationalLattice τ).leftOrder
+  (ellipticRationalSpan τ).leftOrder
 
 /-- **Multiplication by `α` preserves `ℚ + ℚτ` exactly when `α = a + cτ` and `ατ = b + dτ`** for
 rational `a, b, c, d`. -/
@@ -76,14 +76,14 @@ theorem mem_ellipticHodgeEndomorphisms_iff {τ α : ℂ} :
   rw [Submodule.mem_leftOrder_iff]
   constructor
   · intro h
-    obtain ⟨a, c, hac⟩ := mem_ellipticRationalLattice_iff.mp
+    obtain ⟨a, c, hac⟩ := mem_ellipticRationalSpan_iff.mp
       (by simpa using h 1 (Submodule.subset_span (by simp)))
-    obtain ⟨b, d, hbd⟩ := mem_ellipticRationalLattice_iff.mp
+    obtain ⟨b, d, hbd⟩ := mem_ellipticRationalSpan_iff.mp
       (h τ (Submodule.subset_span (by simp)))
     exact ⟨a, b, c, d, hac, hbd⟩
   · rintro ⟨a, b, c, d, hα, hατ⟩ x hx
-    obtain ⟨p, q, rfl⟩ := mem_ellipticRationalLattice_iff.mp hx
-    rw [mem_ellipticRationalLattice_iff]
+    obtain ⟨p, q, rfl⟩ := mem_ellipticRationalSpan_iff.mp hx
+    rw [mem_ellipticRationalSpan_iff]
     refine ⟨p * a + q * b, p * c + q * d, ?_⟩
     push_cast
     linear_combination (p : ℂ) * hα + (q : ℂ) * hατ
