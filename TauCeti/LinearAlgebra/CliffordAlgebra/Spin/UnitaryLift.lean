@@ -142,6 +142,7 @@ private theorem realSpinCUnitary_apply (p : unitary ℍ[ℝ] × Circle) :
 
 /-- On `w • a`, for a unit quaternion `a` and `w` in the circle, the lift of the compact coordinate
 model is the class `[(a, w⁻¹), w]`, where `Spin(4) = Sp(1) × Sp(1)`. -/
+@[simp]
 theorem TauCeti.realSpinCUnitary_unitaryProdCircleToUnitaryGroup (p : unitary ℍ[ℝ] × Circle) :
     realSpinCUnitary (Quaternion.unitaryProdCircleToUnitaryGroup p) =
       spinCGroup.mk _ _

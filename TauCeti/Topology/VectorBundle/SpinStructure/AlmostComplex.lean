@@ -48,6 +48,11 @@ determinant line with the anticanonical line `Λ²_ℂ (E, J)` as line bundles i
 * `TauCeti.OrthonormalFrameBundle.toFrame_canonicalSpinCStructureInl`: the frame of the point
   `[p, 1]` (`TauCeti.OrthonormalFrameBundle.canonicalSpinCStructureInl`) in the canonical `Spinᶜ`
   structure is the unitary frame `p`.
+* `TauCeti.OrthonormalFrameBundle.canonicalSpinCStructureInl_smul`,
+  `TauCeti.OrthonormalFrameBundle.division_canonicalSpinCStructureInl` and
+  `TauCeti.OrthonormalFrameBundle.continuous_canonicalSpinCStructureInl`: the point map `[p, 1]`
+  is equivariant along `TauCeti.unitarySpinCLift`, compatible with principal division, and
+  continuous.
 
 ## References
 
@@ -58,7 +63,7 @@ public section
 
 noncomputable section
 
-open Bundle CliffordAlgebra Module
+open Bundle CliffordAlgebra Module MulOpposite
 
 namespace TauCeti
 
@@ -104,6 +109,37 @@ theorem toFrame_canonicalSpinCStructureInl (x : X) (p : (unitaryFrameLift hJ hJ�
   (unitaryFrameLift hJ hJ₂ hJ₀ hF).toFrame_extendSpinC_inl (unitarySpinCLift hJ₀ e h₀ h₂)
     (continuous_unitarySpinCLift hJ₀ e h₀ h₂)
     (toSpecialOrthogonal_comp_unitarySpinCLift hJ₀ e h₀ h₂) x p
+
+/-- The map `p ↦ [p, 1]` from the total space of the unitary frame bundle to that of the principal
+bundle of the canonical `Spinᶜ` structure is continuous. -/
+theorem continuous_canonicalSpinCStructureInl :
+    Continuous fun p :
+        TotalSpace (Subgroup.centralizer {J₀}) (unitaryFrameLift hJ hJ₂ hJ₀ hF).P ↦
+      TotalSpace.mk'
+        (spinCGroup (realCliffordForm 4 0) (nondegenerate_realCliffordForm 4 0).ne_zero) p.proj
+        (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p.snd) :=
+  PrincipalBundle.Extend.continuous_inl (unitaryFrameLift hJ hJ₂ hJ₀ hF).P _
+    (continuous_unitarySpinCLift hJ₀ e h₀ h₂)
+
+/-- `[p • g, 1] = [p, 1] • σ(g)` for a unitary transformation `g` of `(ℝ⁴, J₀)`, where `σ` is the
+lift `TauCeti.unitarySpinCLift`. -/
+theorem canonicalSpinCStructureInl_smul {x : X} (p : (unitaryFrameLift hJ hJ₂ hJ₀ hF).P x)
+    (g : Subgroup.centralizer {J₀}) :
+    canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ (op g • p) =
+      op (unitarySpinCLift hJ₀ e h₀ h₂ g) • canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p :=
+  PrincipalBundle.Extend.inl_smul _ (continuous_unitarySpinCLift hJ₀ e h₀ h₂) p g
+
+/-- The principal `Spinᶜ(4)`-division of `[p, 1]` and `[q, 1]` is the image under
+`TauCeti.unitarySpinCLift` of the principal division of the unitary frames `p` and `q`. -/
+@[simp]
+theorem division_canonicalSpinCStructureInl {x : X} (p q : (unitaryFrameLift hJ hJ₂ hJ₀ hF).P x) :
+    PrincipalBundle.division
+        (spinCGroup (realCliffordForm 4 0) (nondegenerate_realCliffordForm 4 0).ne_zero)
+        (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p)
+        (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ q) =
+      unitarySpinCLift hJ₀ e h₀ h₂
+        (PrincipalBundle.division (Subgroup.centralizer {J₀}) p q) :=
+  PrincipalBundle.Extend.division_inl _ (continuous_unitarySpinCLift hJ₀ e h₀ h₂) p q
 
 end OrthonormalFrameBundle
 

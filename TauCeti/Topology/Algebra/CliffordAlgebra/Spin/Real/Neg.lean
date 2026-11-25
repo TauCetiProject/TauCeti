@@ -9,7 +9,6 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Neg
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Neg
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Basic
-import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Even
 
 /-!
 # Real Spin groups of opposite signatures as topological groups
@@ -30,8 +29,9 @@ subtype topology on `Spin(n)` agrees with the topology it inherits from the Clif
 (`CliffordAlgebra.realCliffordSpinContinuousMulEquivUnitsRange`).
 
 The comparison `OrthonormalBasis.realSpinGroupEquiv b hQ` of `Spin(n)` with the Spin group of a form
-`Q v = -‖v‖²` along an orthonormal frame `b` is continuous with continuous inverse, since its
-Clifford values are a linear function of the even part. On representatives the `Spinᶜ` frame
+`Q v = -‖v‖²` along an orthonormal frame `b` is continuous with continuous inverse, since it is
+the composite of the topological isomorphisms `CliffordAlgebra.spinGroupContinuousMulEquivNeg` and
+`QuadraticMap.IsometryEquiv.spinGroupContinuousMulEquiv`. On representatives the `Spinᶜ` frame
 comparison `OrthonormalBasis.realSpinCGroupHom` and the inverse of the `Spinᶜ` frame isomorphism
 apply these maps, so both are continuous for the quotient topologies.
 
@@ -107,23 +107,18 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : Quadr
 
 /-- The Spin frame comparison is continuous. -/
 @[fun_prop]
-theorem continuous_realSpinGroupEquiv : Continuous (b.realSpinGroupEquiv hQ) :=
-  continuous_spinGroup_of_coe_eq
-    ((even Q).val.toLinearMap ∘ₗ (b.realEvenCliffordEquiv hQ).toLinearMap) fun s ↦ by
-      rw [← coe_spinGroupToEven_apply, spinGroupToEven_realSpinGroupEquiv]
-      simp only [LinearMap.coe_comp, Function.comp_apply, AlgEquiv.toLinearMap_apply,
-        AlgHom.toLinearMap_apply, Subalgebra.coe_val]
+theorem continuous_realSpinGroupEquiv : Continuous (b.realSpinGroupEquiv hQ) := by
+  rw [coe_realSpinGroupEquiv, ← coe_spinGroupContinuousMulEquivNeg,
+    ← QuadraticMap.IsometryEquiv.coe_spinGroupContinuousMulEquiv]
+  fun_prop
 
 /-- The inverse of the Spin frame comparison is continuous. -/
 @[fun_prop]
-theorem continuous_realSpinGroupEquiv_symm : Continuous (b.realSpinGroupEquiv hQ).symm :=
-  continuous_spinGroup_of_coe_eq
-    ((even (realCliffordForm n 0)).val.toLinearMap ∘ₗ
-      (b.realEvenCliffordEquiv hQ).symm.toLinearMap) fun s ↦ by
-      rw [← coe_spinGroupToEven_apply]
-      congr 1
-      rw [AlgEquiv.toLinearMap_apply, AlgEquiv.eq_symm_apply, ← spinGroupToEven_realSpinGroupEquiv,
-        MulEquiv.apply_symm_apply]
+theorem continuous_realSpinGroupEquiv_symm : Continuous (b.realSpinGroupEquiv hQ).symm := by
+  rw [coe_realSpinGroupEquiv_symm, ← coe_spinGroupContinuousMulEquivNeg_symm,
+    QuadraticMap.IsometryEquiv.spinGroupEquiv_symm,
+    ← QuadraticMap.IsometryEquiv.coe_spinGroupContinuousMulEquiv]
+  fun_prop
 
 variable (hpos : realCliffordForm n 0 ≠ 0) (hQ₀ : Q ≠ 0)
 
