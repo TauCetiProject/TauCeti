@@ -184,11 +184,7 @@ theorem mFourierCoeff_littlewoodPaleyBlockLp {p : ℝ≥0∞} [Fact (1 ≤ p)] (
       mFourierCoeff (fun x ↦ ∑ m ∈ (finite_setOf_norm_latticePoint_le (ι := d)
         (2 ^ j * φ.rOut)).toFinset,
           (φ.inhomogeneousLittlewoodPaley j (latticePoint m) : ℂ) * c m * mFourier m x) n :=
-    -- `mFourierCoeff` is by definition an integral for this volume, so it only depends on the
-    -- almost-everywhere class of the function.
-    integral_congr_ae ((coeFn_littlewoodPaleyBlockLp (p := p) hs c).mono fun x hx ↦ by
-      dsimp only
-      rw [hx])
+    congrFun (mFourierCoeff_congr_ae (coeFn_littlewoodPaleyBlockLp (p := p) hs c)) n
   rw [h, mFourierCoeff_sum_mul_mFourier]
   split_ifs with hn
   · rfl
@@ -247,10 +243,8 @@ theorem sum_mFourierCoeff_littlewoodPaleyBlockLp {p : ℝ≥0∞} [Fact (1 ≤ p
     ∑ j ∈ Finset.range (N + 1), mFourierCoeff (littlewoodPaleyBlockLp φ p j c) n = c n := by
   simp only [mFourierCoeff_littlewoodPaleyBlockLp, ← Finset.sum_mul, ← Complex.ofReal_sum,
     φ.sum_inhomogeneousLittlewoodPaley_range]
-  rw [φ.one_of_mem_closedBall, Complex.ofReal_one, one_mul]
-  rw [mem_closedBall_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg (by positivity),
-    inv_mul_le_iff₀ (by positivity)]
-  exact hn
+  rw [φ.one_of_mem_closedBall (by simpa [norm_smul, inv_mul_le_iff₀] using hn),
+    Complex.ofReal_one, one_mul]
 
 omit [Fintype d] in
 variable (φ) in
@@ -330,8 +324,8 @@ theorem exists_norm_littlewoodPaleyBlockLp_mul_le (φ' : ContDiffBump (0 : Eucli
   have h := hC j (Fact.out : (1 : ℝ≥0∞) ≤ p) f
   rw [hf, eLpNorm_congr_ae (coeFn_littlewoodPaleyBlockLp_ae_eq 2 p j _),
     eLpNorm_congr_ae (coeFn_littlewoodPaleyBlockLp_ae_eq 2 p k c)] at h
-  rw [Lp.norm_def, Lp.norm_def, ← ENNReal.coe_toReal, ← ENNReal.toReal_mul]
-  exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top (Lp.eLpNorm_ne_top _)) h
+  simpa [Lp.norm_def, ENNReal.toReal_mul] using
+    ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top (Lp.eLpNorm_ne_top _)) h
 
 /-! ### Membership in a periodic Besov space -/
 
@@ -385,16 +379,13 @@ theorem memBesov_of_finite_support {c : (d → ℤ) → ℂ} (hc : (Function.sup
   refine (memℓp_zero ((Finset.range (N + 1)).finite_toSet.subset fun j hj ↦ ?_)).of_exponent_ge
     bot_le
   by_contra hjN
-  obtain ⟨j, rfl⟩ : ∃ k, j = k + 1 := Nat.exists_eq_add_one.2 (by
-    simp only [Finset.coe_range, Set.mem_Iio] at hjN
-    omega)
+  simp only [Finset.coe_range, Set.mem_Iio, not_lt] at hjN
+  obtain ⟨j, rfl⟩ : ∃ k, j = k + 1 := Nat.exists_eq_add_one.2 (by omega)
   refine hj ?_
   rw [littlewoodPaleyBlockLp_succ_eq_zero fun n hn ↦ ?_, norm_zero, mul_zero]
   by_contra hcn
   have hle : ‖latticePoint n‖ ≤ R := hR ⟨n, hcn, rfl⟩
-  have hpow : (2 : ℝ) ^ N ≤ 2 ^ j := pow_le_pow_right₀ one_le_two (by
-    simp only [Finset.coe_range, Set.mem_Iio] at hjN
-    omega)
+  have hpow : (2 : ℝ) ^ N ≤ 2 ^ j := pow_le_pow_right₀ one_le_two (by omega)
   have := mul_le_mul_of_nonneg_right hpow φ.rIn_pos.le
   linarith
 
@@ -588,8 +579,9 @@ private theorem coeff_eq_sum_weightedBlocks (u : BesovSpace φ s p q) {N : ℕ} 
       ((((2 : ℝ) ^ (s * j))⁻¹ : ℝ) : ℂ) * mFourierCoeffCLM p n (u.weightedBlocks j) := by
   rw [← sum_mFourierCoeff_littlewoodPaleyBlockLp (p := p) hn u.coeff]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [weightedBlocks_apply, map_smul, mFourierCoeffCLM_apply, smul_eq_mul, ← mul_assoc,
-    ← Complex.ofReal_mul, inv_mul_cancel₀ (by positivity), Complex.ofReal_one, one_mul]
+  have h : (((2 : ℝ) ^ (s * j) : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 (by positivity)
+  rw [weightedBlocks_apply, map_smul, mFourierCoeffCLM_apply, smul_eq_mul, Complex.ofReal_inv,
+    inv_mul_cancel_left₀ h]
 
 section Normed
 

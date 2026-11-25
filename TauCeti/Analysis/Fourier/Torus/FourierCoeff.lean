@@ -32,6 +32,8 @@ each Fourier coefficient is a continuous linear functional of norm at most one.
   trigonometric polynomial, with the scalar forms
   `TauCeti.UnitAddTorus.mFourierCoeff_sum_mFourier_mul` and
   `TauCeti.UnitAddTorus.mFourierCoeff_sum_mul_mFourier`.
+* `TauCeti.UnitAddTorus.mFourierCoeff_congr_ae`: the Fourier coefficients only depend on the
+  almost-everywhere class of the function.
 * `TauCeti.UnitAddTorus.norm_mFourierCoeff_le_norm`: `‖f̂(n)‖ ≤ ‖f‖` in `Lᵖ(𝕋ᵈ)`, `1 ≤ p ≤ ∞`.
 * `TauCeti.UnitAddTorus.mFourierCoeffCLM`: the `n`-th Fourier coefficient as a continuous linear
   functional on `Lᵖ(𝕋ᵈ)`.
@@ -154,8 +156,10 @@ open scoped ENNReal
 -- the results on that same space.
 attribute [local instance 2000] instMeasureSpaceUnitAddCircle
 
--- Mathlib records with a file-local instance that this measure is a probability measure; the
--- Fourier coefficients are then bounded by every `Lᵖ` norm, `1 ≤ p`.
+-- The volume for this instance is a probability measure, but Mathlib only records this with a
+-- file-local instance, and TauCeti's global instance concerns the volume of the global
+-- `AddCircle.measureSpace`, a different instance; without this instance the Fourier coefficients
+-- are not bounded by the `Lᵖ` norms, `1 ≤ p`, below.
 local instance : IsProbabilityMeasure (volume : Measure UnitAddCircle) :=
   inferInstanceAs (IsProbabilityMeasure AddCircle.haarAddCircle)
 
@@ -173,10 +177,12 @@ theorem norm_mFourierCoeff_le_norm {p : ℝ≥0∞} [Fact (1 ≤ p)]
   exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top f)
     (eLpNorm_le_eLpNorm_of_exponent_le Fact.out)
 
-/-- The Fourier coefficients of an `Lᵖ` function only depend on its almost-everywhere class. -/
-private theorem mFourierCoeff_congr_ae {f g : UnitAddTorus d → ℂ} (h : f =ᵐ[volume] g)
-    (n : d → ℤ) : mFourierCoeff f n = mFourierCoeff g n :=
-  integral_congr_ae (h.mono fun z hz ↦ by simp only [hz])
+omit [CompleteSpace E] in
+/-- The Fourier coefficients of a function on the torus only depend on its almost-everywhere
+class for the product of the Haar probability measures on the circle factors. -/
+theorem mFourierCoeff_congr_ae {f g : UnitAddTorus d → E} (h : f =ᵐ[volume] g) :
+    mFourierCoeff f = mFourierCoeff g :=
+  funext fun _ ↦ integral_congr_ae <| .smul (.refl _ _) h
 
 /-- The `n`-th Fourier coefficient on `Lᵖ(𝕋ᵈ)`, `1 ≤ p ≤ ∞`, as a continuous linear functional. -/
 noncomputable def mFourierCoeffCLM (p : ℝ≥0∞) [Fact (1 ≤ p)] (n : d → ℤ) :
