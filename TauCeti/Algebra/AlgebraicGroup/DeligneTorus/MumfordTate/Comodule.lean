@@ -45,8 +45,8 @@ This file computes the Mumford–Tate group in the basic examples.
 
 * `TauCeti.DeligneTorus.comoduleDeligneHom`: the homomorphism `S → GL_{d,ℝ}` of an `S`-comodule
   with a basis.
-* `TauCeti.DeligneTorus.mumfordTateHopfIdeal_comoduleDeligneHom_eq_augmentation` and
-  `TauCeti.DeligneTorus.mumfordTateHopfIdeal_tateComodule_zero_eq_augmentation`: trivial
+* `mumfordTateHopfIdeal_comoduleDeligneHom_eq_augmentation_of_coact_eq_tmul_one`
+  and `TauCeti.DeligneTorus.mumfordTateHopfIdeal_tateComodule_zero_eq_augmentation`: trivial
   representations, such as `ℝ(0)`, have trivial Mumford–Tate group.
 * `TauCeti.DeligneTorus.centralizerHopfIdeal_le_mumfordTateHopfIdeal_comoduleDeligneHom`: the
   Mumford–Tate group lies in the centralizer of the matrix of an endomorphism defined over `ℚ`.
@@ -72,6 +72,11 @@ open scoped TensorProduct
 
 namespace TauCeti.DeligneTorus
 
+/-- `O(S)` as a `ℚ`-algebra through `ℝ`, the target of the rational coordinate maps. -/
+private noncomputable local instance : Algebra ℚ S := Algebra.compHom S (algebraMap ℚ ℝ)
+
+private local instance : IsScalarTower ℚ ℝ S := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
+
 /-! ### The homomorphism of a comodule with a basis -/
 
 section Comodule
@@ -92,6 +97,13 @@ noncomputable def comoduleDeligneHom (b : Module.Basis (Fin d) ℝ M) :
   (coordinateHopfAlgebraBaseChangeIso ℚ ℝ d).hom ≫
     _root_.CommHopfAlgCat.ofHom (Comodule.coordinateBialgHom (H := S) b)
 
+/-- The comorphism of `comoduleDeligneHom b` is the coordinate bialgebra map of `b` after the
+identification `ℝ ⊗[ℚ] O(GL_{d,ℚ}) ≅ O(GL_{d,ℝ})`. -/
+theorem comoduleDeligneHom_hom (b : Module.Basis (Fin d) ℝ M) :
+    (comoduleDeligneHom b).hom = (Comodule.coordinateBialgHom (H := S) b).comp
+      (coordinateHopfAlgebraBaseChangeIso ℚ ℝ d).hom.hom := by
+  rw [comoduleDeligneHom, _root_.CommHopfAlgCat.hom_comp, _root_.CommHopfAlgCat.hom_ofHom]
+
 /-- `comoduleDeligneHom` sends the generic entry `Xᵢⱼ` to the corresponding entry of the
 coefficient matrix of the basis. -/
 @[simp]
@@ -99,23 +111,20 @@ theorem comoduleDeligneHom_one_tmul_X (b : Module.Basis (Fin d) ℝ M) (i j : Fi
     (comoduleDeligneHom b).hom ((1 : ℝ) ⊗ₜ[ℚ]
         coordinateHopfAlgebraAlgEquiv ℚ d (coordinateRingMap ℚ d (MvPolynomial.X (i, j)))) =
       Comodule.coefficientMatrix (C := S) b i j := by
-  rw [comoduleDeligneHom, _root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply,
-    coordinateHopfAlgebraBaseChangeIso_hom_one_tmul_X, _root_.CommHopfAlgCat.hom_ofHom,
-    Comodule.coordinateBialgHom_X]
+  rw [comoduleDeligneHom_hom, BialgHom.comp_apply,
+    coordinateHopfAlgebraBaseChangeIso_hom_one_tmul_X, Comodule.coordinateBialgHom_X]
 
 /-- **Trivial representations have trivial Mumford–Tate group**: if `S` acts trivially on `M`,
 the Mumford–Tate ideal of `comoduleDeligneHom b` is the augmentation ideal. -/
-theorem mumfordTateHopfIdeal_comoduleDeligneHom_eq_augmentation (b : Module.Basis (Fin d) ℝ M)
+theorem mumfordTateHopfIdeal_comoduleDeligneHom_eq_augmentation_of_coact_eq_tmul_one
+    (b : Module.Basis (Fin d) ℝ M)
     (htriv : ∀ m : M, (‹Comodule ℝ S M›).coact m = m ⊗ₜ[ℝ] (1 : S)) :
     mumfordTateHopfIdeal (comoduleDeligneHom b) =
       HopfIdeal.augmentation ℚ (coordinateHopfAlgebra ℚ d) := by
   rw [mumfordTateHopfIdeal_eq_augmentation_iff]
   intro x
-  rw [comoduleDeligneHom, _root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply,
-    _root_.CommHopfAlgCat.hom_ofHom,
-    Comodule.coordinateBialgHom_eq_unit_comp_counit_of_coact_eq_tmul_one b htriv,
-    BialgHom.comp_apply, Bialgebra.counitBialgHom_apply, Bialgebra.unitBialgHom_apply,
-    CoalgHomClass.counit_comp_apply]
+  simp [comoduleDeligneHom_hom,
+    Comodule.coordinateBialgHom_eq_unit_comp_counit_of_coact_eq_tmul_one b htriv]
 
 /-- **Endomorphisms defined over `ℚ` bound the Mumford–Tate group**: if a linear endomorphism
 `f` of `M` commutes with the coaction, and its matrix in the basis `b` is a rational matrix `A`,
@@ -128,8 +137,6 @@ theorem centralizerHopfIdeal_le_mumfordTateHopfIdeal_comoduleDeligneHom
     centralizerHopfIdeal (coordinateHopfAlgebra ℚ d)
         ((cotangentDualMatrixEquiv (k := ℚ) (n := d)).symm A) ≤
       mumfordTateHopfIdeal (comoduleDeligneHom b) := by
-  let : Algebra ℚ S := Algebra.compHom S (algebraMap ℚ ℝ)
-  have : IsScalarTower ℚ ℝ S := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
   rw [le_mumfordTateHopfIdeal_iff_toIdeal_le_rationalCoordinateKernel,
     centralizerHopfIdeal_toIdeal_eq_map_centralizerIdeal, LinearEquiv.apply_symm_apply,
     Ideal.map_le_iff_le_comap]
@@ -161,7 +168,7 @@ theorem mumfordTateHopfIdeal_tateComodule_zero_eq_augmentation (b : Module.Basis
     mumfordTateHopfIdeal (comoduleDeligneHom b) =
       HopfIdeal.augmentation ℚ (coordinateHopfAlgebra ℚ d) := by
   let := tateComodule M 0
-  exact mumfordTateHopfIdeal_comoduleDeligneHom_eq_augmentation b fun m ↦ by
+  exact mumfordTateHopfIdeal_comoduleDeligneHom_eq_augmentation_of_coact_eq_tmul_one b fun m ↦ by
     rw [tateComodule_coact_apply, zpow_zero, GroupLike.val_one]
 
 /-- **`MT(ℚ(m)) = GL₁` for `m ≠ 0`.** The Tate comodule `ℝ(m)`, on which a point of `S` acts by
@@ -200,10 +207,8 @@ theorem mumfordTateHopfIdeal_tateComodule_eq_bot {m : ℤ} (hm : m ≠ 0)
     obtain rfl := Subsingleton.elim j 0
     simp only [φ, AlgHom.comp_apply, Algebra.TensorProduct.includeRight_apply,
       AlgHom.restrictScalars_apply, BialgHom.coe_toAlgHom]
-    rw [comoduleDeligneHom_one_tmul_X, hcoef, apply_normGroupLike_zpow,
-      generalLinearToPoint_apply, hp, hw, Units.coe_map, Matrix.GeneralLinearGroup.val_det_apply,
-      Matrix.det_unique, Algebra.ofId_apply, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
-      Fin.default_eq_zero]
+    rw [comoduleDeligneHom_one_tmul_X, hcoef, apply_normGroupLike_zpow, hp, hw]
+    simp
   have := DFunLike.congr_fun hφ x
   simp only [φ, AlgHom.comp_apply, Algebra.TensorProduct.includeRight_apply,
     AlgHom.restrictScalars_apply, BialgHom.coe_toAlgHom, hx0, map_zero] at this
@@ -217,8 +222,6 @@ theorem mumfordTateHopfIdeal_eq_augmentation_of_zero
     (h : baseChange (K := ℝ) (coordinateHopfAlgebra ℚ 0) ⟶ _root_.CommHopfAlgCat.of ℝ S) :
     mumfordTateHopfIdeal h = HopfIdeal.augmentation ℚ (coordinateHopfAlgebra ℚ 0) := by
   rw [mumfordTateHopfIdeal_eq_augmentation_iff]
-  let : Algebra ℚ S := Algebra.compHom S (algebraMap ℚ ℝ)
-  have : IsScalarTower ℚ ℝ S := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
   have key : h.hom.toAlgHom = (Algebra.ofId ℝ S).comp (Bialgebra.counitAlgHom ℝ _) :=
     Algebra.TensorProduct.ext (Subsingleton.elim _ _)
       (coordinateHopfAlgebra_algHom_ext ℚ 0 fun i ↦ i.elim0)
@@ -244,21 +247,6 @@ theorem centralizerHopfIdeal_le_mumfordTateHopfIdeal_tautologicalComodule :
   ext i j
   fin_cases i <;> fin_cases j <;> simp
 
-/-- An entry of the generic commutator `X J - J X` lies in the centralizer ideal of `J`, read in
-`O(GL₂)`. -/
-private theorem commutator_mem_map_centralizerIdeal (i j : Fin 2) :
-    ((coordinateHopfAlgebraAlgEquiv ℚ 2).toAlgHom.comp (coordinateRingMap ℚ 2)).toRingHom
-        ((Matrix.mvPolynomialX (Fin 2) (Fin 2) ℚ *
-            (!![0, -1; 1, 0] : Matrix (Fin 2) (Fin 2) ℚ).map MvPolynomial.C -
-          (!![0, -1; 1, 0] : Matrix (Fin 2) (Fin 2) ℚ).map MvPolynomial.C *
-            Matrix.mvPolynomialX (Fin 2) (Fin 2) ℚ :
-              Matrix (Fin 2) (Fin 2) (MvPolynomial (Fin 2 × Fin 2) ℚ)) i j) ∈
-      (Matrix.centralizerIdeal (!![0, -1; 1, 0] : Matrix (Fin 2) (Fin 2) ℚ)).map
-        ((coordinateHopfAlgebraAlgEquiv ℚ 2).toAlgHom.comp (coordinateRingMap ℚ 2)).toRingHom :=
-  Ideal.mem_map_of_mem _ (by
-    rw [Matrix.centralizerIdeal_def]
-    exact Ideal.subset_span ⟨(i, j), rfl⟩)
-
 /-- **`X₁₁ - X₂₂` lies in the Mumford–Tate ideal of `H₁(ℂ/ℤ[i], ℚ)`.** -/
 theorem genericMatrix_sub_mem_mumfordTateHopfIdeal_tautologicalComodule :
     letI := tautologicalComodule
@@ -269,7 +257,8 @@ theorem genericMatrix_sub_mem_mumfordTateHopfIdeal_tautologicalComodule :
   rw [← HopfIdeal.mem_toIdeal, centralizerHopfIdeal_toIdeal_eq_map_centralizerIdeal,
     LinearEquiv.apply_symm_apply, ← neg_sub]
   refine neg_mem ?_
-  convert commutator_mem_map_centralizerIdeal 0 1 using 1
+  convert Ideal.mem_map_of_mem _ (Matrix.commutator_entry_mem_centralizerIdeal
+    (!![0, -1; 1, 0] : Matrix (Fin 2) (Fin 2) ℚ) 0 1) using 1
   simp [Matrix.mul_apply, Fin.sum_univ_two, genericMatrix_apply]
   abel
 
@@ -282,7 +271,8 @@ theorem genericMatrix_add_mem_mumfordTateHopfIdeal_tautologicalComodule :
   refine centralizerHopfIdeal_le_mumfordTateHopfIdeal_tautologicalComodule ?_
   rw [← HopfIdeal.mem_toIdeal, centralizerHopfIdeal_toIdeal_eq_map_centralizerIdeal,
     LinearEquiv.apply_symm_apply]
-  convert commutator_mem_map_centralizerIdeal 0 0 using 1
+  convert Ideal.mem_map_of_mem _ (Matrix.commutator_entry_mem_centralizerIdeal
+    (!![0, -1; 1, 0] : Matrix (Fin 2) (Fin 2) ℚ) 0 0) using 1
   simp [Matrix.mul_apply, Fin.sum_univ_two, genericMatrix_apply]
 
 /-- **The Mumford–Tate group of `H₁(ℂ/ℤ[i], ℚ)` is not all of `GL₂`**: its ideal contains the
