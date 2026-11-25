@@ -67,7 +67,8 @@ space. The inner product is needed to interpret the gradient as a weak derivativ
 * `TauCeti.W1p.coe_ae_eq_toLp_value_gradient`: the ambient jet of a Sobolev function is almost
   everywhere its value-gradient pair.
 * `TauCeti.W1p.eLpNorm_two_eq_ofReal_sqrt_setIntegral`: on `s ⊆ Ω`, the `L²(s)` seminorm of the
-  value of `w ∈ W^{1,2}(Ω)` is `√(∫_s w²)`.
+  value of `w ∈ W^{1,2}(Ω)` is `√(∫_s w²)`, which is at most `‖w‖`
+  (`TauCeti.W1p.sqrt_setIntegral_value_sq_le_norm`).
 * `TauCeti.W1p.locallyIntegrableOn_gradient`: the weak gradient is locally integrable on `Ω`.
 * `TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero`: the weak gradient vanishes wherever
   the value vanishes on an open subset, and with it the whole jet
@@ -751,6 +752,21 @@ theorem W1p.integral_value_sq_eq_norm_value_sq (u : W1p mu Omega 2) :
 theorem W1p.integral_value_sq_eq_norm_value_sq_top (u : W1p mu ⊤ 2) :
     ∫ x, (W1p.value u x) ^ 2 ∂mu = ‖W1p.value u‖ ^ 2 := by
   simpa using W1p.integral_value_sq_eq_norm_value_sq u
+
+/-- The `L²` norm of the value of `u ∈ W^{1,2}(Ω)` on a subset of `Ω` is at most the norm of
+`u`. -/
+theorem W1p.sqrt_setIntegral_value_sq_le_norm (u : W1p mu Omega 2) {s : Set E}
+    (hs : s ⊆ (Omega : Set E)) :
+    √(∫ x in s, W1p.value u x ^ 2 ∂mu) ≤ ‖u‖ := by
+  have hint : Integrable (fun x => W1p.value u x ^ 2) (mu.restrict Omega) :=
+    (Lp.memLp (W1p.value u)).integrable_sq
+  calc √(∫ x in s, W1p.value u x ^ 2 ∂mu)
+      ≤ √(∫ x in Omega, W1p.value u x ^ 2 ∂mu) :=
+        Real.sqrt_le_sqrt (setIntegral_mono_set hint (ae_of_all _ fun _ => sq_nonneg _)
+          (Filter.Eventually.of_forall hs))
+    _ = ‖W1p.value u‖ := by
+      rw [W1p.integral_value_sq_eq_norm_value_sq, Real.sqrt_sq (norm_nonneg _)]
+    _ ≤ ‖u‖ := W1p.norm_value_le u
 
 /-- The `L²` pairing of the value components of two Sobolev functions, as an integral over `Ω`. -/
 theorem W1p.inner_value_eq_setIntegral (u v : W1p mu Omega 2) :

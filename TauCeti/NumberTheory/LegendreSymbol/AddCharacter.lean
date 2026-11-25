@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
-public import TauCeti.Algebra.Group.AddChar.Basic
 import TauCeti.Data.ZMod.Pow
 
 /-!
@@ -42,8 +41,6 @@ that its order, as a monoid hom out of `Multiplicative (ZMod n)`, is the order o
 * `AddChar.IsPrimitive.mulShift`: the shift of a primitive character by a unit is primitive.
 * `AddChar.IsPrimitive.isPrimitive_mulShift_iff`: on a finite ring, the shift of a primitive
   character by `a` is primitive if and only if `a` is a unit.
-* `AddChar.IsPrimitive.isPrimitiveRoot`: the value at `1` of a primitive character of `ZMod n`
-  is a primitive `n`th root, including the infinite-order case `n = 0`.
 * `AddChar.IsPrimitive.natCast_ne_zero`: the level of a primitive additive character of `ZMod n`
   with values in a domain is nonzero in that domain.
 * `AddChar.sum_units_mul_eq_neg_one`: a nontrivial additive character of a finite field sums to
@@ -100,34 +97,18 @@ variable {R R' : Type*} [CommRing R] [Nontrivial R] [CommMonoid R']
 theorem IsPrimitive.ne_one {ψ : AddChar R R'} (hψ : ψ.IsPrimitive) : ψ ≠ 1 := by
   simpa only [mulShift_one] using hψ one_ne_zero
 
-/-- A primitive additive character of `ZMod n` sends `1` to a primitive `n`th root of unity. -/
-theorem IsPrimitive.isPrimitiveRoot {n : ℕ} {M : Type*} [CommMonoid M]
-    {ψ : AddChar (ZMod n) M} (hψ : ψ.IsPrimitive) : IsPrimitiveRoot (ψ 1) n where
-  pow_eq_one := ψ.pow_char_eq_one n 1
-  dvd_of_pow_eq_one l hl := by
-    by_contra hdiv
-    have ha : (l : ZMod n) ≠ 0 := fun h ↦ hdiv ((ZMod.natCast_eq_zero_iff l n).mp h)
-    apply hψ ha
-    apply AddChar.eq_one_iff.mpr
-    have hφ : AddChar.mulShift ψ (l : ZMod n) 1 = 1 := by
-      simpa only [AddChar.mulShift_apply, mul_one, ← nsmul_one l,
-        AddChar.map_nsmul_eq_pow] using hl
-    have hnat (k : ℕ) : AddChar.mulShift ψ (l : ZMod n) (k : ZMod n) = 1 := by
-      rw [← nsmul_one k, AddChar.map_nsmul_eq_pow, hφ, one_pow]
-    intro a
-    obtain ⟨a, rfl⟩ := ZMod.intCast_surjective a
-    cases a with
-    | ofNat k => simpa using hnat k
-    | negSucc k =>
-      exact (AddChar.mulShift ψ (l : ZMod n)).map_eq_one_of_add_eq_zero
-        (hnat (k + 1)) (by simp)
-
 /-- The level of a primitive additive character of `ZMod n` with values in a domain is nonzero in
 that domain. This is the level hypothesis needed to show that Gauss sums against primitive
 additive characters are nonzero. -/
 theorem IsPrimitive.natCast_ne_zero {S : Type*} [CommRing S] [IsDomain S] {n : ℕ} [NeZero n]
-    {e : AddChar (ZMod n) S} (he : e.IsPrimitive) : (n : S) ≠ 0 :=
-  he.isPrimitiveRoot.neZero'.out
+    {e : AddChar (ZMod n) S} (he : e.IsPrimitive) : (n : S) ≠ 0 := by
+  have hroot : IsPrimitiveRoot (e 1) n :=
+    { pow_eq_one := by
+        rw [← map_nsmul_eq_pow, nsmul_eq_mul, mul_one, ZMod.natCast_self, map_zero_eq_one]
+      dvd_of_pow_eq_one := fun l hl ↦ by
+        rw [← map_nsmul_eq_pow, he.zmod_char_eq_one_iff n, nsmul_eq_mul, mul_one] at hl
+        exact (ZMod.natCast_eq_zero_iff l n).1 hl }
+  exact hroot.neZero'.out
 
 /-- A nontrivial additive character of a finite field sums to `-1` over the units, even after
 multiplication by a fixed unit. This is the punctured form of `AddChar.sum_eq_zero_of_ne_one`. -/

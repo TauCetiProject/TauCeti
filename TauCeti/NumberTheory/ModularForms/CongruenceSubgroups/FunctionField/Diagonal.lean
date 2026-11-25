@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.CoeffAction
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.Action
 public import TauCeti.Analysis.Complex.RootsOfUnity.Automorphism
 
@@ -20,10 +21,10 @@ gives the expansion of another element of `F_N`. This constructs the diagonal su
 
 The coefficient automorphism is the restriction to `ℚ(ζ_N)` of any field endomorphism `σ` of `ℂ`
 with `σ ζ_N = ζ_N^d`. Such a `σ` exists (`Units.exists_ringEquiv_apply_stdAddChar_one`), and its
-restriction depends only on `d`. That `F_N` is stable is checked on the generators of `F_N`
-(`TauCeti.modularFunctionField_eq_closure`): the constants in `ℚ(ζ_N)` go to their conjugates,
-`j` has rational coefficients, and the Fricke function `f_(a₀, a₁)` goes to `f_(a₀, d a₁)`
-(`TauCeti.map_laurentQExpansion_frickeMeromorphicFunction`).
+restriction depends only on `d`. We restrict the coefficient action
+`TauCeti.modularFunctionCoeffAction` on `ℂ(X(N))` to `F_N`; its Laurent coefficients remain in
+`ℚ(ζ_N)`. The generator formulas and rational fixed points follow from the upstream Fricke
+and coefficient descent lemmas.
 
 An element of `F_N` is fixed by every `diag(1, d)` exactly when its expansion has rational
 coefficients, because the field fixed by all automorphisms of `ℂ` is `ℚ` and every automorphism
@@ -61,32 +62,49 @@ namespace TauCeti
 
 variable {N : ℕ} [NeZero N]
 
-/-! ### Coefficient maps on `ℚ(ζ_N)` -/
+/-- The coefficient action preserves the arithmetic subfield `F_N`. -/
+private theorem modularFunctionCoeffAction_mem_modularFunctionField (σ : ℂ ≃+* ℂ)
+    (F : modularFunctionField N) : modularFunctionCoeffAction N σ F ∈ modularFunctionField N := by
+  obtain ⟨d, hd⟩ := ZMod.exists_map_stdAddChar_one_eq (N := N) σ
+  rw [mem_modularFunctionField, laurentQExpansion_modularFunctionCoeffAction]
+  intro n
+  rw [HahnSeries.coeff_mapRingHom]
+  rw [← d.coe_cyclotomicConjugate hd ⟨_, mem_modularFunctionField.mp F.property n⟩]
+  exact (d.cyclotomicConjugate ⟨_, mem_modularFunctionField.mp F.property n⟩).property
 
-/-- Applying two field endomorphisms of `ℂ` with the same value at `ζ_N` to the Laurent
-coefficients of an element of `F_N` gives the same result. -/
-private theorem mapRingHom_laurentQExpansion_eq {σ σ' : ℂ →+* ℂ}
-    (h : σ (ZMod.stdAddChar (1 : ZMod N)) = σ' (ZMod.stdAddChar (1 : ZMod N)))
+/-- Restriction of the coefficient action to the arithmetic subfield. -/
+private def coeffActionRestrict (σ : ℂ ≃+* ℂ) :
+    modularFunctionField N ≃+* modularFunctionField N where
+  toFun F := ⟨modularFunctionCoeffAction N σ F,
+    modularFunctionCoeffAction_mem_modularFunctionField σ F⟩
+  invFun F := ⟨modularFunctionCoeffAction N σ.symm F,
+    modularFunctionCoeffAction_mem_modularFunctionField σ.symm F⟩
+  left_inv F := Subtype.ext (by
+    dsimp only
+    have h : σ.symm * σ = 1 := RingEquiv.ext σ.symm_apply_apply
+    rw [← RingAut.mul_apply, ← map_mul, h, map_one, RingAut.one_apply])
+  right_inv F := Subtype.ext (by
+    dsimp only
+    have h : σ * σ.symm = 1 := RingEquiv.ext σ.apply_symm_apply
+    rw [← RingAut.mul_apply, ← map_mul, h, map_one, RingAut.one_apply])
+  map_mul' F G := Subtype.ext (map_mul (modularFunctionCoeffAction N σ) F.val G.val)
+  map_add' F G := Subtype.ext (map_add (modularFunctionCoeffAction N σ) F.val G.val)
+
+/-- The restriction depends only on the image of the standard primitive root, even when
+compared with a coefficient endomorphism that is not surjective. -/
+private theorem laurentQExpansion_coeffActionRestrict {σ : ℂ ≃+* ℂ} {τ : ℂ →+* ℂ}
+    {d : (ZMod N)ˣ}
+    (hσ : σ (ZMod.stdAddChar (1 : ZMod N)) = ZMod.stdAddChar (d : ZMod N))
+    (hτ : τ (ZMod.stdAddChar (1 : ZMod N)) = ZMod.stdAddChar (d : ZMod N))
     (F : modularFunctionField N) :
-    HahnSeries.mapRingHom σ (laurentQExpansion (cuspDatumInftyGamma N) F) =
-      HahnSeries.mapRingHom σ' (laurentQExpansion (cuspDatumInftyGamma N) F) := by
-  obtain ⟨d, hd⟩ := σ.toMonoidHom.exists_map_stdAddChar_one_eq (N := N) σ.injective
-  refine mapRingHom_laurentQExpansion_eq_of_mem_coeffSubfield _
-    ((mem_coeffSubfield _).mpr (mem_modularFunctionField.mp F.property)) fun c hc ↦ ?_
-  -- on `ℚ(ζ_N)`, both maps are the cyclotomic conjugation by `d`
-  rw [RingHom.mem_eqLocusField, ← d.coe_cyclotomicConjugate hd ⟨c, hc⟩,
-    ← d.coe_cyclotomicConjugate (h.symm.trans hd) ⟨c, hc⟩]
-
-/-! ### Stability of `F_N` -/
-
-variable (N) in
-/-- The Laurent expansion at `∞` of the elements of `F_N`. -/
-private def expansion : modularFunctionField N →+* LaurentSeries ℂ :=
-  (laurentQExpansion (cuspDatumInftyGamma N)).toRingHom.comp (modularFunctionField N).subtype
-
-private theorem expansion_apply (F : modularFunctionField N) :
-    expansion N F = laurentQExpansion (cuspDatumInftyGamma N) F :=
-  rfl
+    laurentQExpansion (cuspDatumInftyGamma N) (coeffActionRestrict σ F) =
+      HahnSeries.mapRingHom τ (laurentQExpansion (cuspDatumInftyGamma N) F) := by
+  rw [coeffActionRestrict, RingEquiv.coe_mk, Equiv.coe_fn_mk,
+    laurentQExpansion_modularFunctionCoeffAction]
+  ext n
+  simp only [HahnSeries.coeff_mapRingHom]
+  exact (d.coe_cyclotomicConjugate hσ ⟨_, mem_modularFunctionField.mp F.property n⟩).symm.trans
+    (d.coe_cyclotomicConjugate hτ ⟨_, mem_modularFunctionField.mp F.property n⟩)
 
 /-- Equality in `F_N` can be checked on Laurent expansions at infinity. -/
 private theorem eq_of_laurentQExpansion_eq {F G : modularFunctionField N}
@@ -94,99 +112,38 @@ private theorem eq_of_laurentQExpansion_eq {F G : modularFunctionField N}
       laurentQExpansion (cuspDatumInftyGamma N) G) : F = G :=
   Subtype.ext (laurentQExpansion_injective (cuspDatumInftyGamma N) h)
 
-private theorem expansion_const (c : Subfield.closure {z : ℂ | z ^ N = 1}) :
-    expansion N (modularFunctionFieldConst N c) = HahnSeries.C (c : ℂ) := by
-  rw [expansion_apply, coe_modularFunctionFieldConst_apply]
-  simp only [AlgHom.commutes, LaurentSeries.algebraMap_apply]
+/-- A complex lift of the cyclotomic automorphism indexed by a unit. -/
+private def diagLift (d : (ZMod N)ˣ) : ℂ ≃+* ℂ :=
+  Classical.choose d.exists_ringEquiv_apply_stdAddChar_one
 
-/-- Every complex field endomorphism preserves the expansion range of `F_N`. Its image of the
-primitive root determines the unit used for the Fricke generators. -/
-private theorem mapRingHom_mem_fieldRange_expansion (σ : ℂ →+* ℂ)
-    {x : LaurentSeries ℂ} (hx : x ∈ (expansion N).fieldRange) :
-    HahnSeries.mapRingHom σ x ∈ (expansion N).fieldRange := by
-  obtain ⟨d, hσ⟩ := σ.toMonoidHom.exists_map_stdAddChar_one_eq (N := N) σ.injective
-  obtain ⟨F, rfl⟩ := RingHom.mem_fieldRange.mp hx
-  refine (Subfield.closure_le (t := ((expansion N).fieldRange.comap
-      (HahnSeries.mapRingHom σ)).comap (laurentQExpansion (cuspDatumInftyGamma N)).toRingHom)).mpr
-    (fun G hG ↦ ?_) (modularFunctionField_eq_closure.le F.property)
-  rw [SetLike.mem_coe, Subfield.mem_comap, Subfield.mem_comap, RingHom.mem_fieldRange]
-  rcases hG with ⟨c, rfl⟩ | rfl | ⟨a, -, rfl⟩
-  · refine ⟨modularFunctionFieldConst N (d.cyclotomicConjugate c), ?_⟩
-    rw [IsScalarTower.algebraMap_apply (Subfield.closure {z : ℂ | z ^ N = 1}) ℂ,
-      Subfield.algebraMap_ofSubfield, Subfield.subtype_apply,
-      ← coe_modularFunctionFieldConst_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-      ← expansion_apply, expansion_const, expansion_const, HahnSeries.mapRingHom_apply,
-      HahnSeries.map_C, d.coe_cyclotomicConjugate hσ]
-  · refine ⟨⟨_, compactifiedQuotientComap_jMeromorphicFunction_mem_modularFunctionField⟩, ?_⟩
-    exact (mapRingHom_laurentQExpansion_of_mem_coeffSubfield_bot _ σ
-      (mem_coeffIntermediateField.mp
-        (compactifiedQuotientComap_jMeromorphicFunction_mem_coeffIntermediateField N ⊥))).symm
-  · refine ⟨frickeModularFunction ![a 0, (d : ZMod N) * a 1], ?_⟩
-    rw [expansion_apply, coe_frickeModularFunction, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
-    exact (map_laurentQExpansion_frickeMeromorphicFunction hσ a).symm
-
-/-- A field endomorphism of `ℂ` sending `ζ_N` to `ζ_N^d`, chosen once for each unit `d`. -/
-private def diagCoeff (d : (ZMod N)ˣ) : ℂ →+* ℂ :=
-  (Classical.choose (Units.exists_ringEquiv_apply_stdAddChar_one d)).toRingHom
-
-private theorem diagCoeff_apply_stdAddChar_one (d : (ZMod N)ˣ) :
-    diagCoeff d (ZMod.stdAddChar (1 : ZMod N)) = ZMod.stdAddChar (d : ZMod N) := by
-  rw [diagCoeff, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom]
-  exact Classical.choose_spec (Units.exists_ringEquiv_apply_stdAddChar_one d)
-
-/-- The ring endomorphism of `F_N` applying `diagCoeff d` to the Laurent coefficients. -/
-private def diagHom (d : (ZMod N)ˣ) : modularFunctionField N →+* modularFunctionField N :=
-  (expansion N).rangeRestrictFieldEquiv.symm.toRingHom.comp
-    (((HahnSeries.mapRingHom (diagCoeff d)).restrict _ _
-      fun _ ↦ mapRingHom_mem_fieldRange_expansion (diagCoeff d)).comp
-        (expansion N).rangeRestrictField)
-
-private theorem expansion_diagHom (d : (ZMod N)ˣ) (F : modularFunctionField N) :
-    expansion N (diagHom d F) = HahnSeries.mapRingHom (diagCoeff d) (expansion N F) := by
-  simp [diagHom, RingHom.rangeRestrictFieldEquiv_apply_symm_apply]
-
-private theorem laurentQExpansion_diagHom {σ : ℂ →+* ℂ} {d : (ZMod N)ˣ}
-    (hσ : σ (ZMod.stdAddChar (1 : ZMod N)) = ZMod.stdAddChar (d : ZMod N))
-    (F : modularFunctionField N) :
-    laurentQExpansion (cuspDatumInftyGamma N) (diagHom d F) =
-      HahnSeries.mapRingHom σ (laurentQExpansion (cuspDatumInftyGamma N) F) := by
-  rw [← expansion_apply, expansion_diagHom, expansion_apply]
-  exact mapRingHom_laurentQExpansion_eq ((diagCoeff_apply_stdAddChar_one d).trans hσ.symm) F
-
-private theorem diagHom_comp (d e : (ZMod N)ˣ) :
-    (diagHom d).comp (diagHom e) = diagHom (d * e) := by
-  refine RingHom.ext fun F ↦ eq_of_laurentQExpansion_eq ?_
-  have hde : ((diagCoeff d).comp (diagCoeff e)) (ZMod.stdAddChar (1 : ZMod N)) =
-      ZMod.stdAddChar ((d * e : (ZMod N)ˣ) : ZMod N) := by
-    rw [RingHom.comp_apply, diagCoeff_apply_stdAddChar_one,
-      ZMod.map_stdAddChar_of_map_stdAddChar_one (diagCoeff_apply_stdAddChar_one d), Units.val_mul]
-  rw [RingHom.comp_apply, laurentQExpansion_diagHom (diagCoeff_apply_stdAddChar_one d),
-    laurentQExpansion_diagHom (diagCoeff_apply_stdAddChar_one e),
-    laurentQExpansion_diagHom hde, HahnSeries.mapRingHom_comp, RingHom.comp_apply]
-
-private theorem diagHom_one : diagHom (1 : (ZMod N)ˣ) = RingHom.id _ := by
-  refine RingHom.ext fun F ↦ eq_of_laurentQExpansion_eq ?_
-  rw [laurentQExpansion_diagHom (σ := RingHom.id ℂ) (by rw [RingHom.id_apply, Units.val_one]),
-    HahnSeries.mapRingHom_id, RingHom.id_apply, RingHom.id_apply]
-
-/-! ### The action of `diag(1, d)` -/
+private theorem diagLift_apply (d : (ZMod N)ˣ) :
+    (diagLift d : ℂ →+* ℂ) (ZMod.stdAddChar (1 : ZMod N)) = ZMod.stdAddChar (d : ZMod N) :=
+  Classical.choose_spec d.exists_ringEquiv_apply_stdAddChar_one
 
 variable (N) in
-/-- **The action of `diag(1, d)` on `F_N`.** For a unit `d` modulo `N`, the matrix `diag(1, d)`
-acts on `F_N` by applying the automorphism `ζ_N ↦ ζ_N^d` of `ℚ(ζ_N)` to the Laurent coefficients
-at `∞` (`TauCeti.laurentQExpansion_modularFunctionFieldDiagAction`). Since `(ℤ/Nℤ)ˣ` is
-commutative, the multiplication order needs no opposite. -/
+/-- **The action of `diag(1, d)` on `F_N`.** Restrict the coefficient action
+`TauCeti.modularFunctionCoeffAction` at an automorphism sending `ζ_N` to `ζ_N^d`.
+The restriction is independent of this choice. Since `(ℤ/Nℤ)ˣ` is commutative, the
+multiplication order needs no opposite. -/
 def modularFunctionFieldDiagAction :
     (ZMod N)ˣ →* (modularFunctionField N ≃+* modularFunctionField N) where
-  toFun d := RingEquiv.ofRingHom (diagHom d) (diagHom d⁻¹)
-    (by rw [diagHom_comp, mul_inv_cancel, diagHom_one])
-    (by rw [diagHom_comp, inv_mul_cancel, diagHom_one])
-  map_one' := RingEquiv.ext fun F ↦ by
-    simp only [RingEquiv.ofRingHom_apply]
-    exact RingHom.congr_fun diagHom_one F
-  map_mul' d e := RingEquiv.ext fun F ↦ by
-    simp only [RingEquiv.ofRingHom_apply]
-    exact (RingHom.congr_fun (diagHom_comp d e) F).symm
+  toFun d := coeffActionRestrict (diagLift d)
+  map_one' := RingEquiv.ext fun F ↦ eq_of_laurentQExpansion_eq <| by
+    rw [laurentQExpansion_coeffActionRestrict (diagLift_apply 1)
+      (τ := RingHom.id ℂ) (by simp), HahnSeries.mapRingHom_id, RingHom.id_apply]
+    rfl
+  map_mul' d e := RingEquiv.ext fun F ↦ eq_of_laurentQExpansion_eq <| by
+    let σ := diagLift d
+    let τ := diagLift e
+    have hσ := diagLift_apply d
+    have hτ := diagLift_apply e
+    have hστ : ((σ : ℂ →+* ℂ).comp (τ : ℂ →+* ℂ))
+        (ZMod.stdAddChar (1 : ZMod N)) = ZMod.stdAddChar ((d * e : (ZMod N)ˣ) : ZMod N) := by
+      rw [RingHom.comp_apply, hτ, ZMod.map_stdAddChar_of_map_stdAddChar_one hσ, Units.val_mul]
+    rw [laurentQExpansion_coeffActionRestrict (diagLift_apply (d * e)) hστ]
+    rw [RingAut.mul_apply, laurentQExpansion_coeffActionRestrict hσ hσ,
+      laurentQExpansion_coeffActionRestrict hτ hτ, HahnSeries.mapRingHom_comp,
+      RingHom.comp_apply]
 
 /-- **`diag(1, d)` acts on Laurent coefficients.** If `σ` is a field endomorphism of `ℂ` with
 `σ ζ_N = ζ_N^d`, the Laurent expansion at `∞` of the image of `F` under `diag(1, d)` is the
@@ -195,10 +152,20 @@ theorem laurentQExpansion_modularFunctionFieldDiagAction {σ : ℂ →+* ℂ} {d
     (hσ : σ (ZMod.stdAddChar (1 : ZMod N)) = ZMod.stdAddChar (d : ZMod N))
     (F : modularFunctionField N) :
     laurentQExpansion (cuspDatumInftyGamma N) (modularFunctionFieldDiagAction N d F) =
-      HahnSeries.mapRingHom σ (laurentQExpansion (cuspDatumInftyGamma N) F) := by
-  simp only [modularFunctionFieldDiagAction, MonoidHom.coe_mk, OneHom.coe_mk,
-    RingEquiv.ofRingHom_apply]
-  exact laurentQExpansion_diagHom hσ F
+      HahnSeries.mapRingHom σ (laurentQExpansion (cuspDatumInftyGamma N) F) :=
+  laurentQExpansion_coeffActionRestrict (diagLift_apply d) hσ F
+
+/-- The diagonal action is the restriction of the coefficient action for any complex lift
+of the prescribed cyclotomic automorphism. -/
+theorem coe_modularFunctionFieldDiagAction_apply {σ : ℂ ≃+* ℂ} {d : (ZMod N)ˣ}
+    (hσ : σ (ZMod.stdAddChar (1 : ZMod N)) = ZMod.stdAddChar (d : ZMod N))
+    (F : modularFunctionField N) :
+    (modularFunctionFieldDiagAction N d F :
+        MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) =
+      modularFunctionCoeffAction N σ F := by
+  apply laurentQExpansion_injective (cuspDatumInftyGamma N)
+  rw [laurentQExpansion_modularFunctionFieldDiagAction (σ := (σ : ℂ →+* ℂ)) hσ,
+    laurentQExpansion_modularFunctionCoeffAction]
 
 /-- `diag(1, d)` sends the constant `c ∈ ℚ(ζ_N)` to `σ c`, for any field endomorphism `σ` of `ℂ`
 with `σ ζ_N = ζ_N^d`. -/
@@ -208,10 +175,10 @@ theorem coe_modularFunctionFieldDiagAction_modularFunctionFieldConst {σ : ℂ �
     (modularFunctionFieldDiagAction N d (modularFunctionFieldConst N c) :
       MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) =
         algebraMap ℂ _ (σ c) := by
-  apply laurentQExpansion_injective (cuspDatumInftyGamma N)
-  rw [laurentQExpansion_modularFunctionFieldDiagAction hσ, ← expansion_apply, expansion_const,
-    HahnSeries.mapRingHom_apply, HahnSeries.map_C, AlgHom.commutes,
-    LaurentSeries.algebraMap_apply]
+  rw [coe_modularFunctionFieldDiagAction_apply (σ := diagLift d) (diagLift_apply d),
+    coe_modularFunctionFieldConst_apply, modularFunctionCoeffAction_algebraMap]
+  exact congrArg (algebraMap ℂ _)
+    ((d.coe_cyclotomicConjugate (diagLift_apply d) c).symm.trans (d.coe_cyclotomicConjugate hσ c))
 
 /-- The diagonal action on cyclotomic constants, expressed intrinsically in the coefficient
 field and without choosing a complex lift. -/
@@ -222,8 +189,8 @@ theorem modularFunctionFieldDiagAction_modularFunctionFieldConst (d : (ZMod N)ˣ
       modularFunctionFieldConst N (d.cyclotomicConjugate c) := by
   apply Subtype.ext
   rw [coe_modularFunctionFieldDiagAction_modularFunctionFieldConst
-    (diagCoeff_apply_stdAddChar_one d), coe_modularFunctionFieldConst_apply,
-    d.coe_cyclotomicConjugate (diagCoeff_apply_stdAddChar_one d)]
+    (diagLift_apply d), coe_modularFunctionFieldConst_apply,
+    d.coe_cyclotomicConjugate (diagLift_apply d)]
 
 /-- `diag(1, d)` fixes every function pulled back from the level-one arithmetic field `ℚ(j)`;
 in particular it fixes `j`. -/
@@ -232,11 +199,14 @@ theorem modularFunctionFieldDiagAction_modularFunctionFieldMapOfLevelOne (d : (Z
     (F : coeffSubfield ModularGroup.cuspDatumInfty ⊥) :
     modularFunctionFieldDiagAction N d (modularFunctionFieldMapOfLevelOne N F) =
       modularFunctionFieldMapOfLevelOne N F := by
-  refine eq_of_laurentQExpansion_eq ?_
-  rw [laurentQExpansion_modularFunctionFieldDiagAction (diagCoeff_apply_stdAddChar_one d),
-    coe_modularFunctionFieldMapOfLevelOne_apply]
-  exact mapRingHom_laurentQExpansion_of_mem_coeffSubfield_bot _ _
-    ((compactifiedQuotientComap_mem_coeffSubfield_iff _ (by simp)).mpr F.property)
+  apply Subtype.ext
+  rw [coe_modularFunctionFieldDiagAction_apply (σ := diagLift d) (diagLift_apply d)]
+  apply modularFunctionCoeffAction_eq_self_of_mem_coeffSubfield (σ := diagLift d)
+    (K := ⊥) (fun _ hx ↦ (bot_le : (⊥ : Subfield ℂ) ≤
+      (diagLift d : ℂ →+* ℂ).eqLocusField (RingHom.id ℂ)) hx)
+  rw [coe_modularFunctionFieldMapOfLevelOne_apply]
+  exact (compactifiedQuotientComap_mem_coeffSubfield_iff (D := cuspDatumInftyGamma N) _
+    (by simp)).mpr F.property
 
 /-- `diag(1, d)` sends the Fricke function `f_(a₀, a₁)` to `f_(a₀, d a₁)`. -/
 @[simp]
@@ -244,10 +214,11 @@ theorem modularFunctionFieldDiagAction_frickeModularFunction (d : (ZMod N)ˣ)
     (a : Fin 2 → ZMod N) :
     modularFunctionFieldDiagAction N d (frickeModularFunction a) =
       frickeModularFunction ![a 0, (d : ZMod N) * a 1] := by
-  refine eq_of_laurentQExpansion_eq ?_
-  rw [laurentQExpansion_modularFunctionFieldDiagAction (diagCoeff_apply_stdAddChar_one d),
+  apply Subtype.ext
+  rw [coe_modularFunctionFieldDiagAction_apply (σ := diagLift d) (diagLift_apply d),
     coe_frickeModularFunction, coe_frickeModularFunction]
-  exact map_laurentQExpansion_frickeMeromorphicFunction (diagCoeff_apply_stdAddChar_one d) a
+  exact modularFunctionCoeffAction_frickeMeromorphicFunction
+    (σ := diagLift d) (diagLift_apply d) a
 
 /-- **The action of `diag(1, d)` is faithful**: only `d = 1` acts trivially, since `diag(1, d)`
 sends the constant `ζ_N` to `ζ_N^d`. -/
@@ -255,11 +226,11 @@ theorem modularFunctionFieldDiagAction_injective :
     Function.Injective (modularFunctionFieldDiagAction N) := by
   refine (injective_iff_map_eq_one _).mpr fun d hd ↦ ?_
   have hζ : ZMod.stdAddChar (1 : ZMod N) ∈ Subfield.closure {z : ℂ | z ^ N = 1} :=
-    Subfield.subset_closure ZMod.isPrimitiveRoot_stdAddChar_one.pow_eq_one
+    Subfield.subset_closure (ZMod.isPrimitiveRoot_stdAddChar_one N).pow_eq_one
   have h := congrArg Subtype.val (DFunLike.congr_fun hd (modularFunctionFieldConst N ⟨_, hζ⟩))
   rw [coe_modularFunctionFieldDiagAction_modularFunctionFieldConst
-    (diagCoeff_apply_stdAddChar_one d), RingAut.one_apply, coe_modularFunctionFieldConst_apply,
-    diagCoeff_apply_stdAddChar_one] at h
+    (diagLift_apply d), RingAut.one_apply, coe_modularFunctionFieldConst_apply,
+    diagLift_apply] at h
   exact Units.val_eq_one.mp (ZMod.injective_stdAddChar ((algebraMap ℂ _).injective h))
 
 /-! ### Fixed fields -/
@@ -270,21 +241,20 @@ theorem forall_modularFunctionFieldDiagAction_apply_eq_iff {F : modularFunctionF
     (∀ d, modularFunctionFieldDiagAction N d F = F) ↔
       (F : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) ∈
         coeffSubfield (cuspDatumInftyGamma N) ⊥ := by
-  refine ⟨fun hF ↦ (mem_coeffSubfield _).mpr fun n ↦ ?_, fun hF d ↦ ?_⟩
-  · -- a coefficient of `F` is fixed by every automorphism of `ℂ`, so it is rational
-    obtain ⟨q, hq⟩ := (TauCeti.IsAlgClosed.mem_range_algebraMap_iff_fixed (K := ℚ)
-      ((laurentQExpansion (cuspDatumInftyGamma N) F).coeff n)).mpr fun τ ↦ by
-        obtain ⟨d, hd⟩ := MonoidHom.exists_map_stdAddChar_one_eq (N := N) τ.toMonoidHom τ.injective
-        have h := congrArg (fun G : modularFunctionField N ↦
-          (laurentQExpansion (cuspDatumInftyGamma N) G).coeff n) (hF d)
-        rwa [laurentQExpansion_modularFunctionFieldDiagAction (σ := (τ : ℂ →+* ℂ)) hd,
-          HahnSeries.coeff_mapRingHom,
-          RingHom.coe_coe] at h
-    rw [← hq, eq_ratCast]
-    exact SubfieldClass.ratCast_mem _ q
-  · refine eq_of_laurentQExpansion_eq ?_
-    rw [laurentQExpansion_modularFunctionFieldDiagAction (diagCoeff_apply_stdAddChar_one d)]
-    exact mapRingHom_laurentQExpansion_of_mem_coeffSubfield_bot _ _ hF
+  rw [mem_coeffSubfield_iff_forall_modularFunctionCoeffAction_eq]
+  constructor
+  · intro hF σ
+    obtain ⟨d, hd⟩ := ZMod.exists_map_stdAddChar_one_eq (N := N) σ
+    apply laurentQExpansion_injective (cuspDatumInftyGamma N)
+    rw [laurentQExpansion_modularFunctionCoeffAction,
+      ← laurentQExpansion_modularFunctionFieldDiagAction hd F, hF d]
+  · intro hF d
+    let σ : ℂ ≃ₐ[(⊥ : Subfield ℂ)] ℂ :=
+      { diagLift d with commutes' := fun c ↦ (bot_le : (⊥ : Subfield ℂ) ≤
+          (diagLift d : ℂ →+* ℂ).eqLocusField (RingHom.id ℂ)) c.property }
+    apply Subtype.ext
+    rw [coe_modularFunctionFieldDiagAction_apply (σ := diagLift d) (diagLift_apply d)]
+    exact hF σ
 
 /-- **The elements fixed by `SL(2, ℤ/Nℤ)` and every `diag(1, d)` form `ℚ(j)`.** An element of
 `F_N` is fixed by every `g ∈ SL(2, ℤ/Nℤ)`, acting by fractional linear maps, and by every
