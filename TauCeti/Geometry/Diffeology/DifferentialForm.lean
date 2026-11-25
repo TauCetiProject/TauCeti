@@ -232,32 +232,38 @@ theorem extDeriv_add (σ τ : DifferentialForm X F k) :
     (τ.differentiable_toFun p hp x)
 
 @[simp]
-theorem extDeriv_smul (c : ℝ) (σ : DifferentialForm X F k) :
+theorem extDeriv_smul {R : Type*} [Semiring R] [Module R F] [SMulCommClass ℝ R F]
+    [ContinuousConstSMul R F] (c : R) (σ : DifferentialForm X F k) :
     (c • σ).extDeriv = c • σ.extDeriv :=
-  ext fun p hp ↦ funext fun _ ↦ _root_.extDeriv_smul c (σ.toFun p hp)
+  ext fun p hp ↦ funext fun x ↦ by
+    simp only [toFun_extDeriv, toFun_smul, _root_.extDeriv,
+      fderiv_const_smul (σ.differentiable_toFun p hp x) c,
+      ContinuousAlternatingMap.alternatizeUncurryFin_smul, Pi.smul_apply]
 
-/-- The exterior derivative as a linear map. -/
-def extDerivₗ : DifferentialForm X F k →ₗ[ℝ] DifferentialForm X F (k + 1) where
+/-- The exterior derivative as a linear map over any scalar ring `R` acting on the values. -/
+def extDerivₗ (R : Type*) [Semiring R] [Module R F] [SMulCommClass ℝ R F]
+    [ContinuousConstSMul R F] : DifferentialForm X F k →ₗ[R] DifferentialForm X F (k + 1) where
   toFun σ := σ.extDeriv
   map_add' := extDeriv_add
   map_smul' := extDeriv_smul
 
 @[simp]
-theorem extDerivₗ_apply (σ : DifferentialForm X F k) : extDerivₗ σ = σ.extDeriv :=
+theorem extDerivₗ_apply (R : Type*) [Semiring R] [Module R F] [SMulCommClass ℝ R F]
+    [ContinuousConstSMul R F] (σ : DifferentialForm X F k) : extDerivₗ R σ = σ.extDeriv :=
   (rfl)
 
 @[simp]
 theorem extDeriv_zero : (0 : DifferentialForm X F k).extDeriv = 0 :=
-  map_zero extDerivₗ
+  map_zero (extDerivₗ ℝ)
 
 @[simp]
 theorem extDeriv_neg (σ : DifferentialForm X F k) : (-σ).extDeriv = -σ.extDeriv :=
-  map_neg extDerivₗ σ
+  map_neg (extDerivₗ ℝ) σ
 
 @[simp]
 theorem extDeriv_sub (σ τ : DifferentialForm X F k) :
     (σ - τ).extDeriv = σ.extDeriv - τ.extDeriv :=
-  map_sub extDerivₗ σ τ
+  map_sub (extDerivₗ ℝ) σ τ
 
 /-- `d ∘ d = 0` for differential forms on a diffeological space. -/
 @[simp]
@@ -306,7 +312,8 @@ theorem pullback_add (g : X → Y) (hg : _root_.Diffeology.DSmooth g)
   (rfl)
 
 @[simp]
-theorem pullback_smul (g : X → Y) (hg : _root_.Diffeology.DSmooth g) (c : ℝ)
+theorem pullback_smul {R : Type*} [Semiring R] [Module R F] [SMulCommClass ℝ R F]
+    [ContinuousConstSMul R F] (g : X → Y) (hg : _root_.Diffeology.DSmooth g) (c : R)
     (σ : DifferentialForm Y F k) : (c • σ).pullback g hg = c • σ.pullback g hg :=
   (rfl)
 
@@ -327,16 +334,18 @@ theorem pullback_extDeriv (g : X → Y) (hg : _root_.Diffeology.DSmooth g)
     (σ : DifferentialForm Y F k) : σ.extDeriv.pullback g hg = (σ.pullback g hg).extDeriv :=
   (rfl)
 
-/-- Pullback along a smooth map, as a linear map. -/
-def pullbackₗ (g : X → Y) (hg : _root_.Diffeology.DSmooth g) :
-    DifferentialForm Y F k →ₗ[ℝ] DifferentialForm X F k where
+/-- Pullback along a smooth map, as a linear map over any scalar ring `R` acting on the values. -/
+def pullbackₗ (R : Type*) [Semiring R] [Module R F] [SMulCommClass ℝ R F]
+    [ContinuousConstSMul R F] (g : X → Y) (hg : _root_.Diffeology.DSmooth g) :
+    DifferentialForm Y F k →ₗ[R] DifferentialForm X F k where
   toFun σ := σ.pullback g hg
   map_add' := pullback_add g hg
   map_smul' := pullback_smul g hg
 
 @[simp]
-theorem pullbackₗ_apply (g : X → Y) (hg : _root_.Diffeology.DSmooth g)
-    (σ : DifferentialForm Y F k) : pullbackₗ g hg σ = σ.pullback g hg :=
+theorem pullbackₗ_apply (R : Type*) [Semiring R] [Module R F] [SMulCommClass ℝ R F]
+    [ContinuousConstSMul R F] (g : X → Y) (hg : _root_.Diffeology.DSmooth g)
+    (σ : DifferentialForm Y F k) : pullbackₗ R g hg σ = σ.pullback g hg :=
   (rfl)
 
 /-! ### The wedge product -/
@@ -583,7 +592,8 @@ theorem ofForm_add (σ τ : E → E [⋀^Fin k]→L[ℝ] F) (hσ : ContDiff ℝ 
   simp
 
 @[simp]
-theorem ofForm_smul (c : ℝ) (σ : E → E [⋀^Fin k]→L[ℝ] F) (hσ : ContDiff ℝ ∞ σ) :
+theorem ofForm_smul {R : Type*} [Semiring R] [Module R F] [SMulCommClass ℝ R F]
+    [ContinuousConstSMul R F] (c : R) (σ : E → E [⋀^Fin k]→L[ℝ] F) (hσ : ContDiff ℝ ∞ σ) :
     ofForm (c • σ) (hσ.const_smul c) = c • ofForm σ hσ := by
   ext
   simp
@@ -691,7 +701,9 @@ theorem toForm_add (σ τ : DifferentialForm E F k) : (σ + τ).toForm = σ.toFo
   simp [toForm_apply]
 
 @[simp]
-theorem toForm_smul (c : ℝ) (σ : DifferentialForm E F k) : (c • σ).toForm = c • σ.toForm := by
+theorem toForm_smul {R : Type*} [Semiring R] [Module R F] [SMulCommClass ℝ R F]
+    [ContinuousConstSMul R F] (c : R) (σ : DifferentialForm E F k) :
+    (c • σ).toForm = c • σ.toForm := by
   funext
   ext
   simp [toForm_apply]
