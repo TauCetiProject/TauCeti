@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.FullyNonlinear.AdmissiblePair
+public import TauCeti.Data.Fin.Basic
 
 /-!
 # Examples and non-examples of admissible cones in `ℝ²`
@@ -22,9 +23,10 @@ half-plane `{μ₀ + μ₁ > 0}`.
   `(-1/2, -1/2)`, whose coordinate sum is negative.
 * The union of `Γ_2` with the wedge `{μ₀ > 0, -μ₀/2 < μ₁ < -μ₀/3}` and its mirror image is an
   admissible cone that is not convex: it contains `(1, -2/5)` and `(1, 1/10)` but not their
-  midpoint `(1, -3/20)`. It also violates `Γ + Γ_2 ⊆ Γ`, at `(1, -2/5) + (1/100, 1/4)`. So the
-  convexity of the cone of a concave admissible pair is a separate hypothesis.
-* Only finite intersections of admissible cones are admissible: for every `ε > 0` the cone
+  midpoint `(1, -3/20)`. It also violates `Γ + Γ_2 ⊆ Γ`, at `(1, -2/5) + (1/100, 1/4)`. So an
+  admissible cone need not be convex; results about concave admissible pairs get convexity of the
+  cone from `ConcaveOn ℝ Γ f`, whose first component is `Convex ℝ Γ`.
+* Only finite intersections of admissible cones are admissible: for every `ε ≥ 0` the cone
   `{μ₀ + μ₁ > 0, μᵢ > -ε (μ₀ + μ₁)}` is admissible, but the intersection over all `ε > 0` is
   not open, since it contains `(1, 0)` and none of the points `(1, -t)`, `0 < t < 1`.
 -/
@@ -34,13 +36,6 @@ public section
 namespace TauCeti.Examples.AdmissibleCone
 
 open Set Topology
-
-/-- A permutation of `Fin 2` is the identity or the transposition. -/
-private theorem perm_fin_two (σ : Equiv.Perm (Fin 2)) :
-    (σ 0 = 0 ∧ σ 1 = 1) ∨ (σ 0 = 1 ∧ σ 1 = 0) := by
-  have h := σ.injective.ne (show (0 : Fin 2) ≠ 1 by decide)
-  have h0 : ∀ i : Fin 2, i = 0 ∨ i = 1 := by decide
-  rcases h0 (σ 0) with h1 | h1 <;> rcases h0 (σ 1) with h2 | h2 <;> simp_all
 
 /-! ### The half-plane `Γ_1` -/
 
@@ -119,8 +114,9 @@ theorem isAdmissibleCone_wedgeCone : IsAdmissibleCone wedgeCone where
         (isOpen_lt h0 (by fun_prop))))
   comp_perm_mem σ μ hμ := by
     rw [mem_wedgeCone] at hμ ⊢
-    rcases perm_fin_two σ with ⟨h0, h1⟩ | ⟨h0, h1⟩ <;>
-      simp only [Function.comp_apply, h0, h1] <;> tauto
+    rcases Equiv.Perm.eq_one_or_swap_fin_two σ with rfl | rfl <;>
+      simp only [Function.comp_apply, Equiv.Perm.coe_one, id_eq, Equiv.swap_apply_left,
+        Equiv.swap_apply_right] <;> tauto
   smul_mem {t} ht μ hμ := by
     rw [mem_wedgeCone] at hμ ⊢
     simp only [Pi.smul_apply, smul_eq_mul]
@@ -161,8 +157,8 @@ theorem add_notMem_wedgeCone :
 def epsCone (ε : ℝ) : Set (Fin 2 → ℝ) :=
   {μ | 0 < μ 0 + μ 1 ∧ -(ε * (μ 0 + μ 1)) < μ 0 ∧ -(ε * (μ 0 + μ 1)) < μ 1}
 
-/-- For `ε > 0`, `{μ₀ + μ₁ > 0, μᵢ > -ε (μ₀ + μ₁)}` is an admissible cone. -/
-theorem isAdmissibleCone_epsCone {ε : ℝ} (hε : 0 < ε) : IsAdmissibleCone (epsCone ε) where
+/-- For `ε ≥ 0`, `{μ₀ + μ₁ > 0, μᵢ > -ε (μ₀ + μ₁)}` is an admissible cone. -/
+theorem isAdmissibleCone_epsCone {ε : ℝ} (hε : 0 ≤ ε) : IsAdmissibleCone (epsCone ε) where
   isOpen := by
     have h0 : Continuous fun μ : Fin 2 → ℝ ↦ μ 0 := continuous_apply 0
     have h1 : Continuous fun μ : Fin 2 → ℝ ↦ μ 1 := continuous_apply 1
@@ -171,9 +167,11 @@ theorem isAdmissibleCone_epsCone {ε : ℝ} (hε : 0 < ε) : IsAdmissibleCone (e
       ((isOpen_lt (by fun_prop) h0).inter (isOpen_lt (by fun_prop) h1))
   comp_perm_mem σ μ hμ := by
     obtain ⟨hs, h0, h1⟩ := hμ
-    rcases perm_fin_two σ with ⟨hσ0, hσ1⟩ | ⟨hσ0, hσ1⟩
-    · simpa [epsCone, hσ0, hσ1] using ⟨hs, h0, h1⟩
-    · refine ⟨?_, ?_, ?_⟩ <;> simp only [Function.comp_apply, hσ0, hσ1] <;> linarith
+    rcases Equiv.Perm.eq_one_or_swap_fin_two σ with rfl | rfl
+    · exact ⟨hs, h0, h1⟩
+    · refine ⟨?_, ?_, ?_⟩ <;>
+        simp only [Function.comp_apply, Equiv.swap_apply_left, Equiv.swap_apply_right] <;>
+        linarith
   smul_mem {t} ht μ hμ := by
     obtain ⟨hs, h0, h1⟩ := hμ
     simp only [epsCone, mem_ofPred_eq, Pi.smul_apply, smul_eq_mul]
