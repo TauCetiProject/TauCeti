@@ -15,9 +15,10 @@ For a Hölder triple `p⁻¹ + q⁻¹ = r⁻¹`, multiplication adds Bartnik wei
 `Lᵖ_δ × Lᵠ_ε → Lʳ_(δ+ε)`. More generally, every bounded real bilinear map acts
 between these classes with the same operator-norm bound as in the unweighted inequality.
 The exponents include `∞`. The product, integrability and integral norm estimates require
-neither finite-dimensionality nor completeness. For a complete target, the integral estimate
-bounds the weighted Bochner volume pairing. For an incomplete target, Mathlib defines the
-Bochner integral to be zero, so that estimate is trivial.
+neither finite-dimensionality nor completeness. For weighted `Lᵖ` inputs and a complete target,
+the integral estimate bounds the weighted Bochner volume pairing. For an incomplete target,
+Mathlib defines the Bochner integral to be zero, so that estimate is trivial.
+The norm inequality has positive output exponent; product membership also covers exponent zero.
 
 The reference measure must give no mass to the origin, where the radius weight can vanish.
 This includes the intended exterior-domain measures. The result also gives the weighted
@@ -72,38 +73,28 @@ private theorem weight_bilin_ae_eq_of_add_eq_neg_finrank [ENNReal.HolderConjugat
   simp only [hδε, inv_one, ENNReal.toReal_one, mul_one, neg_neg, sub_self,
     Real.rpow_zero, one_smul]
 
-/-- A bounded bilinear map satisfies Hölder's inequality with the sum of the Bartnik weights.
+omit [OpensMeasurableSpace E] in
+/-- A bounded bilinear map satisfies Hölder's inequality with the sum of the Bartnik weights
+at a positive output exponent, without measurability assumptions on the functions.
 The reference measure gives no mass to the origin. -/
 theorem _root_.ContinuousLinearMap.weightedELpNorm_bilin_le [ENNReal.HolderTriple p q r]
     (B : F →L[ℝ] G →L[ℝ] H)
+    (hr : 0 < r)
     (h0 : ∀ᵐ x ∂μ, x ≠ 0) {f : E → F} {g : E → G}
-    (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g μ) (δ ε : ℝ) :
+    (δ ε : ℝ) :
     weightedELpNorm (fun x ↦ B (f x) (g x)) r (δ + ε) μ ≤
       ‖B‖ₑ * weightedELpNorm f p δ μ * weightedELpNorm g q ε μ := by
-  have hfm : AEStronglyMeasurable
-      (fun x ↦ ‖x‖ ^ (-δ - Module.finrank ℝ E * p⁻¹.toReal) • f x) μ :=
-    (measurable_norm.pow_const _).aestronglyMeasurable.smul hf
-  have hgm : AEStronglyMeasurable
-      (fun x ↦ ‖x‖ ^ (-ε - Module.finrank ℝ E * q⁻¹.toReal) • g x) μ :=
-    (measurable_norm.pow_const _).aestronglyMeasurable.smul hg
-  by_cases hr : r = 0
-  · have hm : AEStronglyMeasurable
-        (fun x ↦ ‖x‖ ^ (-(δ + ε) - Module.finrank ℝ E * r⁻¹.toReal) •
-          B (f x) (g x)) μ :=
-      (measurable_norm.pow_const _).aestronglyMeasurable.smul
-          (B.continuous₂.comp_aestronglyMeasurable₂ hf hg)
-    subst r
-    rw [weightedELpNorm_def, eLpNorm_exponent_zero hm]
-    exact bot_le
   have heq : (fun x ↦ ‖x‖ ^ (-(δ + ε) - Module.finrank ℝ E * r⁻¹.toReal) •
       B (f x) (g x)) =ᵐ[μ] fun x ↦
         B (‖x‖ ^ (-δ - Module.finrank ℝ E * p⁻¹.toReal) • f x)
           (‖x‖ ^ (-ε - Module.finrank ℝ E * q⁻¹.toReal) • g x) := by
     filter_upwards [h0] with x hx
-    exact weight_bilin_eq B δ ε hr hx _ _
+    exact weight_bilin_eq B δ ε hr.ne' hx _ _
   simp only [weightedELpNorm_def]
   rw [eLpNorm_congr_ae heq]
-  exact eLpNorm_le_eNorm_mul_eLpNorm_mul_eLpNorm (p := p) (q := q) (r := r) B hfm hgm
+  exact eLpNorm_le_eLpNorm_mul_eLpNorm_of_eNorm_of_pos (p := p) (q := q) (r := r)
+    (B · ·) ‖B‖ₑ B.continuous₂.comp_aestronglyMeasurable₂
+    (.of_forall fun _ ↦ B.le_opENorm₂ ..) hr
 
 /-- A bounded bilinear map sends weighted `Lᵖ` and `Lᵠ` functions into weighted `Lʳ`,
 adding the Bartnik weights. -/
@@ -112,8 +103,15 @@ theorem MemWeightedLp.bilin [ENNReal.HolderTriple p q r]
     (hf : MemWeightedLp f p δ μ) (hg : MemWeightedLp g q ε μ)
     (B : F →L[ℝ] G →L[ℝ] H) (h0 : ∀ᵐ x ∂μ, x ≠ 0) :
     MemWeightedLp (fun x ↦ B (f x) (g x)) r (δ + ε) μ := by
-  refine memWeightedLp_iff.2 ((B.weightedELpNorm_bilin_le (p := p) (q := q) h0
-    (hf.aestronglyMeasurable h0) (hg.aestronglyMeasurable h0) δ ε).trans_lt ?_)
+  by_cases hr : r = 0
+  · subst r
+    apply memWeightedLp_iff_memLp.2
+    apply memLp_zero_iff_aestronglyMeasurable.2
+    exact (measurable_norm.pow_const _).aestronglyMeasurable.smul
+      (B.continuous₂.comp_aestronglyMeasurable₂
+        (hf.aestronglyMeasurable h0) (hg.aestronglyMeasurable h0))
+  refine memWeightedLp_iff.2 ((B.weightedELpNorm_bilin_le (p := p) (q := q)
+    (pos_iff_ne_zero.2 hr) h0 δ ε).trans_lt ?_)
   exact ENNReal.mul_lt_top (ENNReal.mul_lt_top eNorm_lt_top
     (memWeightedLp_iff.1 hf)) (memWeightedLp_iff.1 hg)
 
@@ -141,25 +139,22 @@ theorem MemWeightedLp.integrable_bilin [ENNReal.HolderConjugate p q]
 
 omit [OpensMeasurableSpace E] in
 /-- The norm of the totalized Bochner integral is bounded by the weighted Hölder product.
-For a complete target this bounds the weighted volume pairing; for an incomplete target,
+For weighted `Lᵖ` inputs and a complete target, this bounds the weighted volume pairing;
+`MemWeightedLp.integrable_bilin` supplies integrability. The inequality itself needs no
+measurability or finiteness hypotheses on the functions. For an incomplete target,
 Mathlib defines the integral to be zero and the bound is trivial. -/
 theorem eNorm_integral_bilin_le_weightedELpNorm [ENNReal.HolderConjugate p q]
     {δ ε : ℝ} {f : E → F} {g : E → G}
-    (hf : MemWeightedLp f p δ μ) (hg : MemWeightedLp g q ε μ)
     (B : F →L[ℝ] G →L[ℝ] H) (h0 : ∀ᵐ x ∂μ, x ≠ 0)
     (hδε : δ + ε = -(Module.finrank ℝ E : ℝ)) :
     ‖∫ x, B (f x) (g x) ∂μ‖ₑ ≤
       ‖B‖ₑ * weightedELpNorm f p δ μ * weightedELpNorm g q ε μ := by
-  have heq := weight_bilin_ae_eq_of_add_eq_neg_finrank
-    (p := p) (q := q) (f := f) (g := g) B hδε h0
   calc
     ‖∫ x, B (f x) (g x) ∂μ‖ₑ ≤ eLpNorm (fun x ↦ B (f x) (g x)) 1 μ :=
       (eNorm_integral_le_lintegral_eNorm _).trans lintegral_eNorm_le_eLpNorm_one
-    _ ≤ _ := by
-      rw [← eLpNorm_congr_ae heq]
-      simpa only [weightedELpNorm_def] using
-        eLpNorm_le_eNorm_mul_eLpNorm_mul_eLpNorm (p := p) (q := q) (r := 1) B
-          (memWeightedLp_iff_memLp.1 hf).aestronglyMeasurable
-          (memWeightedLp_iff_memLp.1 hg).aestronglyMeasurable
+    _ = weightedELpNorm (fun x ↦ B (f x) (g x)) 1 (δ + ε) μ := by
+      simpa only [hδε, inv_one, ENNReal.toReal_one, mul_one] using
+        (weightedELpNorm_neg_finrank_mul (fun x ↦ B (f x) (g x)) 1 μ).symm
+    _ ≤ _ := B.weightedELpNorm_bilin_le (p := p) (q := q) zero_lt_one h0 δ ε
 
 end TauCeti
