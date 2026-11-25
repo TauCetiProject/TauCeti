@@ -48,8 +48,11 @@ values on compactly supported functions, and hence by its chart compressions.
 ## Main results
 
 * `TauCeti.IsProperlySupported P`: the operator `P` is properly supported. The identity, sums,
-  scalar multiples, products with smooth functions on either side and local operators
-  (`TauCeti.IsProperlySupported.of_local`) are properly supported.
+  scalar multiples, compositions (`TauCeti.IsProperlySupported.comp`), products with smooth
+  functions on either side and local operators (`TauCeti.IsProperlySupported.of_local`) are
+  properly supported. A local operator takes the same value at `x` on functions that agree near
+  `x` (`TauCeti.apply_eq_of_eventuallyEq_of_local`) and does not enlarge supports
+  (`TauCeti.apply_eq_zero_of_notMem_tsupport_of_local`).
 * `TauCeti.isProperlySupported_locallyFiniteSum`: the locally finite sum
   `ContMDiffMap.locallyFiniteSum P hP` of operators `f ↦ ∑ᵢ Pᵢ f` is properly supported when the
   outputs of `Pᵢ` lie in compact sets `Sᵢ` forming a locally finite family and each `Pᵢ` only sees
@@ -181,6 +184,40 @@ theorem IsProperlySupported.comp_mulLeft (hP : IsProperlySupported P)
     exact tsupport_mul_subset_right.trans hf
   · simp [hy]
 
+/-- **Composition.** The composition of two properly supported operators is properly
+supported. -/
+theorem IsProperlySupported.comp (hP : IsProperlySupported P) (hQ : IsProperlySupported Q) :
+    IsProperlySupported (P ∘ₗ Q) := by
+  have := ChartedSpace.locallyCompactSpace (CoordinateSpace n) M
+  intro K hK
+  obtain ⟨K₁, hK₁, hQ₁, -⟩ := hQ K hK
+  obtain ⟨K₂, hK₂, hP₁, -⟩ := hP K₁ hK₁
+  obtain ⟨K₃, hK₃, -, hP₂⟩ := hP K hK
+  obtain ⟨L, hL, hK₃L⟩ := exists_compact_superset hK₃
+  obtain ⟨K₄, hK₄, -, hQ₂⟩ := hQ L hL
+  refine ⟨K₂ ∪ K₄, hK₂.union hK₄, fun f hf ↦ (hP₁ _ (hQ₁ f hf)).trans subset_union_left,
+    fun f hf ↦ hP₂ (Q f) ?_⟩
+  have hQf := hQ₂ f (hf.filter_mono (nhdsSet_mono subset_union_right))
+  exact Filter.mem_of_superset (isOpen_interior.mem_nhdsSet.2 hK₃L) fun y hy ↦
+    hQf y (interior_subset hy)
+
+/-- A local operator, one such that `P f` vanishes at every point near which `f` vanishes, takes
+the same value at `x` on two functions that agree near `x`. -/
+theorem apply_eq_of_eventuallyEq_of_local
+    (hP : ∀ f x, (∀ᶠ y in 𝓝 x, f y = 0) → P f x = 0)
+    {f g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} {x : M} (hfg : (f : M → ℂ) =ᶠ[𝓝 x] g) :
+    P f x = P g x := by
+  rw [← sub_eq_zero, ← Pi.sub_apply, ← ContMDiffMap.coe_sub, ← map_sub]
+  exact hP _ x (hfg.mono fun y hy ↦ by simp [hy])
+
+/-- A local operator, one such that `P f` vanishes at every point near which `f` vanishes, does
+not enlarge supports. -/
+theorem apply_eq_zero_of_notMem_tsupport_of_local
+    (hP : ∀ f x, (∀ᶠ y in 𝓝 x, f y = 0) → P f x = 0)
+    {f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} {x : M} (hx : x ∉ tsupport f) :
+    P f x = 0 :=
+  hP f x (notMem_tsupport_iff_eventuallyEq.1 hx)
+
 /-- A **local** operator, one such that `P f` vanishes at every point near which `f` vanishes, is
 properly supported, with `K' = K`. -/
 theorem IsProperlySupported.of_local
@@ -189,7 +226,7 @@ theorem IsProperlySupported.of_local
     fun f hf x hx ↦ hP f x (hf.filter_mono (nhds_le_nhdsSet hx))⟩
   refine (closure_minimal (fun x hx ↦ ?_) (isClosed_tsupport f)).trans hf
   by_contra h
-  exact hx (hP f x (notMem_tsupport_iff_eventuallyEq.1 h))
+  exact hx (apply_eq_zero_of_notMem_tsupport_of_local hP h)
 
 /-- **Proper support under a diffeomorphism.** Transporting a properly supported operator `P` on
 `M` to `N` along a diffeomorphism `Φ : N → M`, by conjugation `f ↦ (P (f ∘ Φ⁻¹)) ∘ Φ` with the
@@ -552,6 +589,20 @@ theorem ClassicalSymbol.quantizeSchwartzValue_ofDifferentialOperator_eq_complexC
   push_cast
   ring
 
+/-- **The complexification of a differential operator is local.** If `D` is a differential
+operator on the real-valued smooth functions on `M`, in Grothendieck's sense, and the
+complex-valued smooth function `f` vanishes near `x`, then the complexification of `D` sends `f`
+to a function vanishing at `x`. -/
+theorem complexifyLinearMap_apply_eq_zero_of_mem_differentialOperators
+    [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] {m : ℕ}
+    {D : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯}
+    (hD : D ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ m)
+    {f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} {x : M} (hf : ∀ᶠ y in 𝓝 x, f y = 0) :
+    ContMDiffMap.complexifyLinearMap D f x = 0 :=
+  ContMDiffMap.complexifyLinearMap_apply_eq_zero (fun g hg ↦ by
+    simpa using differentialOperators_apply_eq_of_eventuallyEq hD (g := 0) hg) hf
+
 /-- **Differential operators are classical pseudodifferential operators.** The complexification of
 a differential operator `D` of order at most `m` on the real-valued smooth functions on `M`, in
 Grothendieck's sense of iterated commutators with multiplication operators, is a classical
@@ -568,16 +619,10 @@ theorem complexifyLinearMap_mem_classicalPseudodifferentialOperators
     ContMDiffMap.complexifyLinearMap D ∈
       classicalPseudodifferentialOperators (n := n) (M := M) m := by
   -- Like `D`, its complexification is local, so it is properly supported.
-  have hloc (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M)
-      (hf : ∀ᶠ y in 𝓝 x, f y = 0) : ContMDiffMap.complexifyLinearMap D f x = 0 := by
-    have hD₀ (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hg : ∀ᶠ y in 𝓝 x, g y = 0) :
-        D g x = 0 := by
-      simpa using differentialOperators_apply_eq_of_eventuallyEq hD (g := 0) hg
-    simp [ContMDiffMap.complex_smul_apply, ContMDiffMap.ofReal_apply,
-      hD₀ (ContMDiffMap.re f) (hf.mono fun y hy ↦ by simp [ContMDiffMap.re_apply, hy]),
-      hD₀ (ContMDiffMap.im f) (hf.mono fun y hy ↦ by simp [ContMDiffMap.im_apply, hy])]
   exact mem_classicalPseudodifferentialOperators_iff.2
-    ⟨IsProperlySupported.of_local hloc, fun e he φ ψ ↦ ⟨_,
+    ⟨IsProperlySupported.of_local fun _ _ ↦
+      complexifyLinearMap_apply_eq_zero_of_mem_differentialOperators hD,
+      fun e he φ ψ ↦ ⟨_,
       ClassicalSymbol.quantizeSchwartzValue_ofDifferentialOperator_eq_complexChartCompression he φ
         ψ ⟨D, hD⟩⟩⟩
 
