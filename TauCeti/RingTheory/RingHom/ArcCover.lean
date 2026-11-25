@@ -165,10 +165,7 @@ theorem of_surjective_of_ker_le_nilradical {f : A →+* B}
   refine of_forall_exists_comp_eq fun V _ _ _ _ φ => ?_
   have hle : RingHom.ker f ≤ RingHom.ker φ := fun a ha =>
     (RingHom.mem_ker).mpr ((mem_nilradical.mp (hker ha)).map φ).eq_zero
-  refine ⟨(Ideal.Quotient.lift _ φ fun a ha => (RingHom.mem_ker).mp (hle ha)).comp
-    (RingHom.quotientKerEquivOfSurjective hf).symm.toRingHom, ?_⟩
-  ext a
-  simp
+  exact ⟨f.liftOfSurjective hf ⟨φ, hle⟩, f.liftOfSurjective_comp hf ⟨φ, hle⟩⟩
 
 /-- An arc-cover is surjective on prime spectra: test it against the residue field of a prime. -/
 theorem comap_surjective {f : A →+* B} (h : f.IsArcCover) :
@@ -184,13 +181,12 @@ end IsArcCover
 
 section Milnor
 
-variable (f : A →+* B) {I : Ideal A}
-
 /-- Let `f : A →+* B` carry the ideal `I` bijectively onto an ideal of `B`. Then every
 homomorphism `φ : A →+* V` to a valuation domain of rank at most one which does not kill `I`
 extends along `f`. -/
-theorem exists_comp_eq_of_injOn {V : Type*} [CommRing V] [IsDomain V] [ValuationRing V]
-    [Ring.KrullDimLE 1 V] (hinj : Set.InjOn f I) (himage : (I.map f : Set B) ⊆ f '' I)
+theorem exists_comp_eq_of_injOn {A B V : Type*} [CommRing A] [CommRing B] (f : A →+* B)
+    {I : Ideal A} [CommRing V] [IsDomain V] [ValuationRing V] [Ring.KrullDimLE 1 V]
+    (hinj : Set.InjOn f I) (himage : (I.map f : Set B) ⊆ f '' I)
     (φ : A →+* V) {x : A} (hxI : x ∈ I) (hx : φ x ≠ 0) :
     ∃ ψ : B →+* V, ψ.comp f = φ := by
   -- Fix `x ∈ I` with `φ x ≠ 0`. For `b : B`, write `b * f x = f y` with `y ∈ I`; the extension
@@ -240,6 +236,8 @@ theorem exists_comp_eq_of_injOn {V : Type*} [CommRing V] [IsDomain V] [Valuation
   · ext a
     refine hq' _ _ ?_
     rw [hg_eq _ _ (I.mul_mem_left a hxI) (map_mul f a x), map_mul, mul_comm]
+
+variable (f : A →+* B) {I : Ideal A}
 
 /-- A Milnor square gives an arc-cover: if `f : A →+* B` carries the ideal `I` bijectively onto
 an ideal of `B`, then `A →+* A ⧸ I × B` is an arc-cover. On spectra,
