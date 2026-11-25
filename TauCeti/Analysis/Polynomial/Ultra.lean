@@ -13,7 +13,6 @@ public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Normed.Ring.Basic
-public import Mathlib.RingTheory.PowerSeries.Trunc
 import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Multiset
 import TauCeti.Algebra.Polynomial.Taylor
 import TauCeti.Analysis.Normed.Group.Ultra
@@ -29,11 +28,7 @@ predictably under polynomial operations:
 * Over any seminormed ring, left scalar multiplication scales a single-degree bound by `‖a‖`
   (`Polynomial.norm_coeff_smul_mul_pow_le`), rescaling from `0 < ϱ ≤ B` on a polynomial of natural
   degree at most `d` multiplies a bound `C` by `(B / ϱ) ^ d`
-  (`Polynomial.norm_coeff_mul_pow_le_of_natDegree_le`), truncating a power series preserves a
-  nonnegative single-degree bound below the truncation order
-  (`PowerSeries.norm_coeff_trunc_mul_pow_le`) and bounds a truncated scaled geometric series
-  `trunc N (C a * ∑ k, b ^ k * X ^ k)` by `‖a‖` when `0 ≤ c` and `‖b‖ * c ≤ 1`
-  (`PowerSeries.norm_coeff_trunc_C_mul_mk_pow_mul_pow_le`), and when `‖1‖ = 1` a linear factor
+  (`Polynomial.norm_coeff_mul_pow_le_of_natDegree_le`), and when `‖1‖ = 1` a linear factor
   `X - C a` with `‖a‖ ≤ c` has `c`-weighted coefficients bounded by `c`
   (`Polynomial.norm_coeff_X_sub_C_mul_pow_le`).
 * Over an ultrametric seminormed ring, a common bound `B` is preserved under finite sums
@@ -219,41 +214,6 @@ theorem norm_coeff_prod_mul_pow_le {ι R : Type*} [SeminormedCommRing R] [NormOn
       (ih fun j hj ↦ hf j (mem_insert_of_mem hj)) n
 
 end Polynomial
-
-namespace PowerSeries
-
-section WeightedCoeff
-
-variable {R : Type*} [SeminormedRing R]
-
-/-- Truncating a power series below degree `N` bounds its `n`-th weighted coefficient by any
-`B ≥ 0` that bounds `‖coeff n φ‖ * c ^ n` when `n < N`. -/
-theorem norm_coeff_trunc_mul_pow_le {φ : PowerSeries R} {c B : ℝ} (hB : 0 ≤ B) {N n : ℕ}
-    (hφ : n < N → ‖coeff n φ‖ * c ^ n ≤ B) :
-    ‖(trunc N φ).coeff n‖ * c ^ n ≤ B := by
-  rw [coeff_trunc]
-  split_ifs with hn
-  · exact hφ hn
-  · simpa using hB
-
-/-- If `0 ≤ c` and `‖b‖ * c ≤ 1`, every `c`-weighted coefficient of a truncated scaled geometric
-series `trunc N (C a * ∑ k, b ^ k * X ^ k)` is bounded by `‖a‖`. -/
-theorem norm_coeff_trunc_C_mul_mk_pow_mul_pow_le (a : R) {b : R} {c : ℝ} (hc : 0 ≤ c)
-    (hb : ‖b‖ * c ≤ 1) (N n : ℕ) :
-    ‖(trunc N (C a * mk fun k ↦ b ^ k)).coeff n‖ * c ^ n ≤ ‖a‖ := by
-  refine norm_coeff_trunc_mul_pow_le (norm_nonneg a) fun _ ↦ ?_
-  rw [coeff_C_mul, coeff_mk]
-  calc ‖a * b ^ n‖ * c ^ n
-      ≤ ‖a‖ * ‖b‖ ^ n * c ^ n :=
-        mul_le_mul_of_nonneg_right (TauCeti.norm_mul_pow_le a b n) (pow_nonneg hc n)
-    _ = ‖a‖ * (‖b‖ * c) ^ n := by rw [mul_assoc, ← mul_pow]
-    _ ≤ ‖a‖ * 1 :=
-        mul_le_mul_of_nonneg_left (pow_le_one₀ (mul_nonneg (norm_nonneg b) hc) hb) (norm_nonneg a)
-    _ = ‖a‖ := mul_one _
-
-end WeightedCoeff
-
-end PowerSeries
 
 namespace TauCeti
 

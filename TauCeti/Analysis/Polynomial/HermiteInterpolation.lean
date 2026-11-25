@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Field.Basic
 public import TauCeti.Analysis.Polynomial.Ultra
 public import TauCeti.LinearAlgebra.HermiteInterpolation
+import TauCeti.RingTheory.PowerSeries.GaussNorm.Estimates
 import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
