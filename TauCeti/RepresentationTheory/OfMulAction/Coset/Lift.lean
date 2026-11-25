@@ -68,6 +68,13 @@ theorem IntertwiningMap.le_stabilizer_apply_single_one
     QuotientGroup.eq.2 (by simpa using U.inv_mem hu)
   rw [mem_stabilizer, ← f.isIntertwining, ofMulAction_single, hu']
 
+variable (A) in
+/-- The basis vector of the coset `U` in `A[G ⧸ U]` is fixed by `U`: the case of
+`Representation.le_stabilizer_ofMulAction_single` at the coset `U`, whose stabilizer is `U`. -/
+theorem le_stabilizer_ofMulAction_single_one :
+    U ≤ (ofMulAction A G (G ⧸ U)).stabilizer (MonoidAlgebra.single ((1 : G) : G ⧸ U) 1) :=
+  (MulAction.stabilizer_quotient U).ge.trans (le_stabilizer_ofMulAction_single _ 1)
+
 variable (ρ) in
 /-- For a subgroup `U` fixing `v`, the intertwining map `A[G ⧸ U] → V` sending the basis vector
 of the coset `g U` to `ρ g v`. -/

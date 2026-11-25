@@ -5,16 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.OfMulAction.CosetLift
+public import TauCeti.RepresentationTheory.OfMulAction.Coset.Lift
 public import TauCeti.RepresentationTheory.RelativeNorm
+import TauCeti.RepresentationTheory.Intertwining
 
 /-!
 # Inclusion and trace of invariants through permutation representations
 
 Let `U' ≤ U` be subgroups of a group `G` (in practice compact open subgroups of a locally
-profinite group) and `A` a commutative ring. Through `V^U = Hom_G(A[G ⧸ U], V)`
-(`Representation.ofMulActionQuotientMapEquiv`), maps between the invariants of a representation
-for `U` and `U'` come from maps between the permutation representations:
+profinite group) and `A` a semiring. When `A` is a commutative ring, through
+`V^U = Hom_G(A[G ⧸ U], V)` (`Representation.ofMulActionQuotientMapEquiv`), maps between the
+invariants of a representation for `U` and `U'` come from maps between the permutation
+representations:
 
 * the projection `A[G ⧸ U'] → A[G ⧸ U]`, `g U' ↦ g U` (`Representation.cosetProjection`), induces
   the inclusion `V^U ⊆ V^{U'}`
@@ -51,40 +53,21 @@ noncomputable section
 
 namespace Representation
 
-variable {A G V : Type*} [CommRing A] [Group G] [AddCommGroup V] [Module A V]
-  (ρ : Representation A G V) {U' U : Subgroup G}
+section Semiring
 
-/-- An intertwining map commutes with the relative norm of a subgroup of the acting group. -/
-private theorem map_relNorm_comp {W : Type*} [AddCommGroup W] [Module A W]
-    {σ : Representation A G W} (f : IntertwiningMap ρ σ) (H : Subgroup U)
-    [Fintype (U ⧸ H)] (x : V) :
-    f (relNorm (ρ.comp U.subtype) H x) = relNorm (σ.comp U.subtype) H (f x) := by
-  simp only [relNorm_apply, map_sum, MonoidHom.comp_apply, f.isIntertwining]
-
-/-- The basis vector of the coset `U` is fixed by `U`. -/
-private theorem le_stabilizer_single_one (U : Subgroup G) :
-    U ≤ (ofMulAction A G (G ⧸ U)).stabilizer (MonoidAlgebra.single ((1 : G) : G ⧸ U) 1) :=
-  (IntertwiningMap.id (ofMulAction A G (G ⧸ U))).le_stabilizer_apply_single_one
+variable {A G : Type*} [Semiring A] [Group G] {U' U : Subgroup G}
 
 variable (A) in
 /-- The **projection** `A[G ⧸ U'] → A[G ⧸ U]`, `g U' ↦ g U`, for `U' ≤ U`. -/
 def cosetProjection (hU : U' ≤ U) :
     IntertwiningMap (ofMulAction A G (G ⧸ U')) (ofMulAction A G (G ⧸ U)) :=
-  (ofMulAction A G (G ⧸ U)).cosetLift U' _ (hU.trans (le_stabilizer_single_one U))
+  (ofMulAction A G (G ⧸ U)).cosetLift U' _ (hU.trans (le_stabilizer_ofMulAction_single_one A))
 
 @[simp]
 theorem cosetProjection_single (hU : U' ≤ U) (g : G) (c : A) :
     cosetProjection A hU (MonoidAlgebra.single (g : G ⧸ U') c) =
       MonoidAlgebra.single (g : G ⧸ U) c := by
   simp [cosetProjection, ofMulAction_single]
-
-/-- **The projection induces the inclusion** `V^U ⊆ V^{U'}`: the `U'`-invariant vector attached to
-the intertwining map `A[G ⧸ U'] → A[G ⧸ U] → V` of `v ∈ V^U` is `v` itself. -/
-theorem coe_ofMulActionQuotientMapEquiv_comp_cosetProjection (hU : U' ≤ U)
-    (v : invariants (ρ.comp U.subtype)) :
-    (ρ.ofMulActionQuotientMapEquiv U'
-        (((ρ.ofMulActionQuotientMapEquiv U).symm v).comp (cosetProjection A hU)) : V) = v := by
-  simp [IntertwiningMap.comp_apply]
 
 variable [Fintype (U ⧸ U'.subgroupOf U)]
 
@@ -98,10 +81,10 @@ private def cosetSum : MonoidAlgebra A (G ⧸ U') :=
 private theorem le_stabilizer_cosetSum :
     U ≤ (ofMulAction A G (G ⧸ U')).stabilizer (cosetSum A U' U) := fun u hu ↦ by
   rw [mem_stabilizer]
-  refine relNorm_apply_eq_self ((ofMulAction A G (G ⧸ U')).comp U.subtype) (H := U'.subgroupOf U)
-    (fun h ↦ ?_) (⟨u, hu⟩ : U)
-  have := le_stabilizer_single_one (A := A) U' (Subgroup.mem_subgroupOf.1 h.property)
-  rwa [mem_stabilizer] at this
+  exact relNorm_apply_eq_self ((ofMulAction A G (G ⧸ U')).comp U.subtype) (H := U'.subgroupOf U)
+    (fun h ↦ (mem_stabilizer.1 <|
+      le_stabilizer_ofMulAction_single_one A (Subgroup.mem_subgroupOf.1 h.property) :))
+    (⟨u, hu⟩ : U)
 
 variable (A U') in
 /-- The **transfer** `A[G ⧸ U] → A[G ⧸ U']`, `g U ↦ ∑_{u ∈ U ⧸ U'} g u U'`, for `U'` of finite
@@ -113,11 +96,48 @@ private theorem cosetTransfer_single_one_eq_cosetSum :
     cosetTransfer A U' (U := U) (MonoidAlgebra.single ((1 : G) : G ⧸ U) 1) = cosetSum A U' U := by
   simp [cosetTransfer]
 
+/-- The transfer sends the coset `g U` to the sum of the cosets `g u U'`, `u ∈ U ⧸ U'`. -/
+@[simp]
+theorem cosetTransfer_single (g : G) (c : A) :
+    cosetTransfer A U' (MonoidAlgebra.single (g : G ⧸ U) c) =
+      ∑ q : U ⧸ U'.subgroupOf U, MonoidAlgebra.single ((g * ((q.out : U) : G) : G) : G ⧸ U') c := by
+  simp [cosetTransfer, cosetSum, relNorm_apply, ofMulAction_single, Finset.smul_sum]
+
 /-- The transfer sends the coset `U` to the sum of the cosets `u U'`, `u ∈ U ⧸ U'`. -/
 theorem cosetTransfer_single_one :
     cosetTransfer A U' (U := U) (MonoidAlgebra.single ((1 : G) : G ⧸ U) 1) =
       ∑ q : U ⧸ U'.subgroupOf U, MonoidAlgebra.single (((q.out : U) : G) : G ⧸ U') 1 := by
-  simp [cosetTransfer_single_one_eq_cosetSum, cosetSum, relNorm_apply, ofMulAction_single]
+  simp
+
+/-- **Projection after transfer is the index**: `A[G ⧸ U] → A[G ⧸ U'] → A[G ⧸ U]` is
+multiplication by `[U : U']`. -/
+theorem cosetProjection_comp_cosetTransfer (hU : U' ≤ U) :
+    (cosetProjection A hU).comp (cosetTransfer A U') =
+      U'.relIndex U • IntertwiningMap.id (ofMulAction A G (G ⧸ U)) := by
+  ext1
+  rw [IntertwiningMap.comp_apply, cosetTransfer_single_one_eq_cosetSum, cosetSum,
+    ← IntertwiningMap.coe_res (cosetProjection A hU) U.subtype, IntertwiningMap.map_relNorm,
+    IntertwiningMap.coe_res, cosetProjection_single,
+    relNorm_apply_of_forall_apply_eq ((ofMulAction A G (G ⧸ U)).comp U.subtype) fun u ↦
+      (mem_stabilizer.1 (le_stabilizer_ofMulAction_single_one A u.property) :)]
+  simp [Subgroup.relIndex]
+
+end Semiring
+
+section CommRing
+
+variable {A G V : Type*} [CommRing A] [Group G] [AddCommGroup V] [Module A V]
+  (ρ : Representation A G V) {U' U : Subgroup G}
+
+/-- **The projection induces the inclusion** `V^U ⊆ V^{U'}`: the `U'`-invariant vector attached to
+the intertwining map `A[G ⧸ U'] → A[G ⧸ U] → V` of `v ∈ V^U` is `v` itself. -/
+theorem coe_ofMulActionQuotientMapEquiv_comp_cosetProjection (hU : U' ≤ U)
+    (v : invariants (ρ.comp U.subtype)) :
+    (ρ.ofMulActionQuotientMapEquiv U'
+        (((ρ.ofMulActionQuotientMapEquiv U).symm v).comp (cosetProjection A hU)) : V) = v := by
+  simp [IntertwiningMap.comp_apply]
+
+variable [Fintype (U ⧸ U'.subgroupOf U)]
 
 /-- **The transfer induces the trace**: the `U`-invariant vector attached to the intertwining map
 `A[G ⧸ U] → A[G ⧸ U'] → V` of `v ∈ V^{U'}` is `tr_{U/U'}(v) = ∑_{u ∈ U ⧸ U'} ρ(u) v`. -/
@@ -126,20 +146,11 @@ theorem coe_ofMulActionQuotientMapEquiv_comp_cosetTransfer (v : invariants (ρ.c
         (((ρ.ofMulActionQuotientMapEquiv U').symm v).comp (cosetTransfer A U')) : V) =
       relNorm (ρ.comp U.subtype) (U'.subgroupOf U) v := by
   rw [coe_ofMulActionQuotientMapEquiv_apply, IntertwiningMap.comp_apply,
-    cosetTransfer_single_one_eq_cosetSum, cosetSum, map_relNorm_comp,
-    ofMulActionQuotientMapEquiv_symm_apply_single, one_smul, map_one, one_apply_eq_self]
+    cosetTransfer_single_one_eq_cosetSum, cosetSum,
+    ← IntertwiningMap.coe_res ((ρ.ofMulActionQuotientMapEquiv U').symm v) U.subtype,
+    IntertwiningMap.map_relNorm]
+  simp
 
-/-- **Projection after transfer is the index**: `A[G ⧸ U] → A[G ⧸ U'] → A[G ⧸ U]` is
-multiplication by `[U : U']`. -/
-theorem cosetProjection_comp_cosetTransfer (hU : U' ≤ U) :
-    (cosetProjection A hU).comp (cosetTransfer A U') =
-      U'.relIndex U • IntertwiningMap.id (ofMulAction A G (G ⧸ U)) := by
-  ext1
-  rw [IntertwiningMap.comp_apply, cosetTransfer_single_one_eq_cosetSum, cosetSum, map_relNorm_comp,
-    cosetProjection_single,
-    relNorm_apply_of_forall_apply_eq _ fun u ↦ by
-      have := le_stabilizer_single_one (A := A) U u.property
-      rwa [mem_stabilizer] at this]
-  rfl
+end CommRing
 
 end Representation

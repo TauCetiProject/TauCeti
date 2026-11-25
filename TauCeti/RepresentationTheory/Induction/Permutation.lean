@@ -9,7 +9,7 @@ public import Mathlib.RepresentationTheory.Character
 public import TauCeti.RepresentationTheory.Induction.Projection
 public import TauCeti.RepresentationTheory.Induction.Transitivity
 public import TauCeti.RepresentationTheory.Rep.OfMulAction
-import TauCeti.RepresentationTheory.OfMulAction.CosetLift
+import TauCeti.RepresentationTheory.OfMulAction.Coset.Lift
 
 /-!
 # The permutation representation as an induced representation

@@ -44,6 +44,7 @@ subgroup in the two degrees where Tate cohomology is not ordinary group cohomolo
 
 * `Representation.relNorm_comp_norm`: `N_{G/H} ∘ N_H = N_G`.
 * `Representation.norm_comp_relTransfer`: `N_H ∘ N_{G/H}' = N_G`.
+* `Representation.IntertwiningMap.map_relNorm`: intertwining maps commute with the relative norm.
 * `Representation.relNorm_apply_eq_self`: the relative norm carries `H`-fixed vectors to `G`-fixed
   vectors, over any semiring.
 * `Representation.relNorm_apply_of_forall_apply_eq`: on `G`-fixed vectors the relative norm is
@@ -109,6 +110,13 @@ theorem relNorm_apply (x : V) : relNorm ρ H x = ∑ q : G ⧸ H, ρ q.out x := 
 chosen coset representatives. -/
 theorem relTransfer_apply (x : V) : relTransfer ρ H x = ∑ q : G ⧸ H, ρ q.out⁻¹ x := by
   simp [relTransfer]
+
+variable (H) in
+/-- An intertwining map commutes with the relative norm. -/
+theorem IntertwiningMap.map_relNorm {W : Type*} [AddCommMonoid W] [Module R W]
+    {σ : Representation R G W} (f : IntertwiningMap ρ σ) (x : V) :
+    f (relNorm ρ H x) = relNorm σ H (f x) := by
+  simp only [relNorm_apply, map_sum, f.isIntertwining]
 
 end Defs
 
