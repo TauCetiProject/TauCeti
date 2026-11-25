@@ -9,6 +9,10 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.ComplexTangentBundle
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Polar
+public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Pullback
+public import TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv
+public import TauCeti.Topology.VectorBundle.Complex.ChernCocycle
+public import TauCeti.Topology.VectorBundle.Complex.RealStructure
 public import TauCeti.Topology.VectorBundle.Complex.LinearPart
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.RestrictScalars
 import TauCeti.Geometry.Symplectic.Cayley.Basic
@@ -45,6 +49,26 @@ on `J`, and so defines the first Chern number of `σ` on spheres.
   numbers do not (`TauCeti.clutchingNumberHom_homotopyGroupTransport`). In particular the first
   Chern number is invariant under the action of the fundamental group on `π₂(M, x)`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.firstChernHom_fundamentalGroup_smul`).
+* **Symplectic and anti-symplectic diffeomorphisms.** If a diffeomorphism `h : M → N` pulls a
+  nondegenerate two-form `σ'` back to `σ`, it carries the first Chern number of `σ` on a class
+  `a ∈ π₂(M, x)` to that of `σ'` on `h_* a`
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.firstChernHom_map_of_mpullback_eq`): for `J'` tamed by
+  `σ'`, the pulled-back structure `h^* J'` is tamed by `σ` and the differential of `h` is a
+  complex-linear isomorphism `(TM, h^* J') ≃ (TN, J')` covering `h`, so clutching numbers are
+  preserved (`TauCeti.clutchingNumber_map_of_continuousLinearEquiv`). If instead `h^* σ' = -σ`,
+  the structure `-h^* J'` is tamed by `σ` and the differential is conjugate linear, so the first
+  Chern number changes sign
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.firstChernHom_map_of_mpullback_eq_neg`, through
+  `TauCeti.clutchingNumber_map_of_conjugateLinear`). Consequently, if an anti-symplectic
+  diffeomorphism of `M` is homotopic to the identity, a sphere and its image have both the same
+  and opposite first Chern numbers, so the first Chern number of `σ` vanishes
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.firstChernHom_eq_zero_of_mpullback_eq_neg`). The fibre
+  negation of a cotangent bundle is such a map.
+* **Factorization through homology.** The first Chern numbers at all base points come from one
+  additive map `H₂(M; ℤ) → ℤ` on integral singular homology, composed with the Hurewicz map
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_addMonoidHom_hurewiczIntHom_eq_firstChernHom`),
+  as clutching numbers do (`TauCeti.exists_addMonoidHom_hurewiczIntHom_eq_clutchingNumberHom`).
+  So the first Chern number of a sphere only depends on its Hurewicz class.
 * **Complex manifolds.** On a complex manifold `M` modelled on `E`, if `σ` tames the complex
   structure `TauCeti.SmoothAlmostComplexStructure.ofComplexManifold E M`, multiplication by `i`,
   then the complex vector bundle `(TM, i)` is the holomorphic tangent bundle: the identity of `E`
@@ -74,6 +98,13 @@ with a cohomological first Chern class is made.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.firstChernHom_homotopyGroupTransport`,
   `TauCeti.SmoothTwoForm.IsNondegenerate.firstChernHom_fundamentalGroup_smul`: the first Chern
   number does not depend on the base point.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.firstChernHom_map_of_mpullback_eq`,
+  `TauCeti.SmoothTwoForm.IsNondegenerate.firstChernHom_map_of_mpullback_eq_neg`: symplectic
+  diffeomorphisms preserve the first Chern number and anti-symplectic ones reverse it.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.firstChernHom_eq_zero_of_mpullback_eq_neg`: an
+  anti-symplectic diffeomorphism homotopic to the identity forces the first Chern number to vanish.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.exists_addMonoidHom_hurewiczIntHom_eq_firstChernHom`: the
+  first Chern number factors through the Hurewicz map `π₂(M, x) → H₂(M; ℤ)`, uniformly in `x`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.firstChernHom_eq_clutchingNumberHom_tangentSpace`: on a
   complex manifold, for a two-form taming the complex structure, it is the clutching number
   homomorphism of the holomorphic tangent bundle.
@@ -183,9 +214,201 @@ theorem firstChernHom_fundamentalGroup_smul (h : σ.IsNondegenerate) {x : M}
   obtain ⟨p, hp⟩ := Path.Homotopic.Quotient.mk_surjective g.toPath
   rw [fundamentalGroup_smul_eq_transport hp.symm, firstChernHom_homotopyGroupTransport]
 
+/-! ### Symplectic and anti-symplectic diffeomorphisms -/
+
+section Diffeomorph
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [IsManifold I' ∞ N] {σ' : SmoothTwoForm I' N}
+
+/-- The differential of a diffeomorphism `h : M → N` at `x`, as a real-linear isomorphism from the
+tangent space of `M` with a complex structure `K` to the tangent space of `N` with `J'`. -/
+private def mfderivFiberRealEquiv
+    (K : Bundle.ContinuousComplexStructure E (TangentSpace I : M → Type _))
+    (h : M ≃ₘ⟮I, I'⟯ N) (J' : SmoothAlmostComplexStructure I' N) (x : M) :
+    K.Fiber x ≃L[ℝ] (J'.toContMDiff ⊤).toContinuousComplexStructure.Fiber (h x) :=
+  (K.fiberEquiv x).trans ((h.mfderivToContinuousLinearEquiv (by simp) x).trans
+    ((J'.toContMDiff ⊤).toContinuousComplexStructure.fiberEquiv (h x)).symm)
+
+/-- `mfderivFiberRealEquiv` as a `σ`-semilinear isomorphism, given its compatibility with complex
+scalars. -/
+private def mfderivFiberEquivₛₗ {σ σ' : ℂ →+* ℂ} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+    (K : Bundle.ContinuousComplexStructure E (TangentSpace I : M → Type _))
+    (h : M ≃ₘ⟮I, I'⟯ N) (J' : SmoothAlmostComplexStructure I' N) (x : M)
+    (hsmul : ∀ (z : ℂ) (v : K.Fiber x),
+      mfderivFiberRealEquiv K h J' x (z • v) = σ z • mfderivFiberRealEquiv K h J' x v) :
+    K.Fiber x ≃SL[σ] (J'.toContMDiff ⊤).toContinuousComplexStructure.Fiber (h x) :=
+  let A := mfderivFiberRealEquiv K h J' x
+  { toFun := A
+    invFun := A.symm
+    map_add' := map_add A
+    map_smul' := hsmul
+    left_inv := A.left_inv
+    right_inv := A.right_inv
+    continuous_toFun := A.continuous
+    continuous_invFun := A.symm.continuous }
+
+/-- The differential of a diffeomorphism `h : M → N` at `x`, as a complex-linear isomorphism from
+the tangent space of `M` with the pulled-back complex structure `h^* J'` to the tangent space of
+`N` with `J'`. -/
+private def mfderivFiberEquiv (h : M ≃ₘ⟮I, I'⟯ N) (J' : SmoothAlmostComplexStructure I' N)
+    (x : M) :
+    ((J'.pullback h).toContMDiff ⊤).toContinuousComplexStructure.Fiber x ≃L[ℂ]
+      (J'.toContMDiff ⊤).toContinuousComplexStructure.Fiber (h x) :=
+  mfderivFiberEquivₛₗ _ h J' x fun z v ↦ by
+    apply ((J'.toContMDiff ⊤).toContinuousComplexStructure.fiberEquiv (h x)).injective
+    simp only [mfderivFiberRealEquiv, ContinuousLinearEquiv.trans_apply, RingHom.id_apply,
+      Bundle.ContinuousComplexStructure.fiberEquiv_smul, ContinuousLinearEquiv.apply_symm_apply,
+      map_add, map_smul]
+    simp
+
+/-- The differential of a diffeomorphism `h : M → N` at `x`, as a conjugate-linear isomorphism from
+the tangent space of `M` with the complex structure `-h^* J'` to the tangent space of `N` with
+`J'`. -/
+private def mfderivConjFiberEquiv (h : M ≃ₘ⟮I, I'⟯ N) (J' : SmoothAlmostComplexStructure I' N)
+    (x : M) :
+    ((-J'.pullback h).toContMDiff ⊤).toContinuousComplexStructure.Fiber x ≃L⋆[ℂ]
+      (J'.toContMDiff ⊤).toContinuousComplexStructure.Fiber (h x) :=
+  mfderivFiberEquivₛₗ _ h J' x fun z v ↦ by
+    apply ((J'.toContMDiff ⊤).toContinuousComplexStructure.fiberEquiv (h x)).injective
+    simp only [mfderivFiberRealEquiv, ContinuousLinearEquiv.trans_apply,
+      Bundle.ContinuousComplexStructure.fiberEquiv_smul, ContinuousLinearEquiv.apply_symm_apply,
+      map_add, map_smul]
+    simp [SmoothAlmostComplexStructure.mfderiv_pullback_apply]
+
+omit [T2Space M] [SigmaCompactSpace M] in
+/-- On total spaces, `mfderivFiberRealEquiv` is the tangent map of `h`, hence continuous. The
+complex-linear and conjugate-linear versions have the same underlying map. -/
+private theorem continuous_mfderivFiberRealEquiv (G G' : Type*) [NormedAddCommGroup G]
+    [NormedSpace ℂ G] [FiniteDimensional ℂ G] [Fact (finrank ℝ E = 2 * finrank ℂ G)]
+    [NormedAddCommGroup G'] [NormedSpace ℂ G'] [FiniteDimensional ℂ G']
+    [Fact (finrank ℝ E' = 2 * finrank ℂ G')]
+    (K : Bundle.ContinuousComplexStructure E (TangentSpace I : M → Type _))
+    (h : M ≃ₘ⟮I, I'⟯ N) (J' : SmoothAlmostComplexStructure I' N) :
+    Continuous fun v : TotalSpace G K.Fiber ↦
+      TotalSpace.mk' G' (h v.proj) (mfderivFiberRealEquiv K h J' v.proj v.snd) := by
+  refine (((J'.toContMDiff ⊤).toContinuousComplexStructure.totalSpaceHomeomorph
+    G').symm.continuous.comp (h.contMDiff.continuous_tangentMap (by simp))).comp
+      (K.totalSpaceHomeomorph G).continuous |>.congr fun v ↦ ?_
+  simp [mfderivFiberRealEquiv, tangentMap]
+
+variable [T2Space N] [SigmaCompactSpace N]
+
+/-- **Symplectomorphisms preserve the first Chern number.** If a diffeomorphism `h : M → N` pulls
+`σ'` back to `σ`, then the first Chern number of `σ'` on the image `h_* a ∈ π₂(N, h x)` of a class
+`a ∈ π₂(M, x)` is the first Chern number of `σ` on `a`. -/
+theorem firstChernHom_map_of_mpullback_eq (hσ : σ.IsNondegenerate) (hσ' : σ'.IsNondegenerate)
+    (h : M ≃ₘ⟮I, I'⟯ N) (hh : SmoothForm.mpullback h h.contMDiff σ' = σ) (x : M)
+    (a : π_ 2 M x) :
+    hσ'.firstChernHom (h x) (.ofMul (HomotopyGroup.map ⟨h, h.continuous⟩ rfl a)) =
+      hσ.firstChernHom x (.ofMul a) := by
+  have : Fact (finrank ℝ E = 2 * finrank ℂ (EuclideanSpace ℂ (Fin (finrank ℝ E / 2)))) :=
+    ⟨two_mul_finrank_euclideanSpace hσ x⟩
+  have : Fact (finrank ℝ E' = 2 * finrank ℂ (EuclideanSpace ℂ (Fin (finrank ℝ E' / 2)))) :=
+    ⟨two_mul_finrank_euclideanSpace hσ' (h x)⟩
+  obtain ⟨J', hJ'⟩ := exists_compatible hσ'
+  have hJ : σ.Tames (J'.pullback h) := hh ▸ hJ'.tames.pullback h
+  rw [hσ'.firstChernHom_eq_clutchingNumberHom (EuclideanSpace ℂ (Fin (finrank ℝ E' / 2)))
+      hJ'.tames ⊤,
+    hσ.firstChernHom_eq_clutchingNumberHom (EuclideanSpace ℂ (Fin (finrank ℝ E / 2))) hJ ⊤]
+  exact clutchingNumberHom_map_of_continuousLinearEquiv ⟨h, h.continuous⟩ (mfderivFiberEquiv h J')
+    (continuous_mfderivFiberRealEquiv _ _ _ h J') rfl a
+
+/-- **Anti-symplectic diffeomorphisms reverse the first Chern number.** If a diffeomorphism
+`h : M → N` pulls `σ'` back to `-σ`, then the first Chern number of `σ'` on the image
+`h_* a ∈ π₂(N, h x)` of a class `a ∈ π₂(M, x)` is the negative of the first Chern number of `σ`
+on `a`. Indeed `-h^* J'` is tamed by `σ` whenever `J'` is tamed by `σ'`, and the differential of
+`h` is conjugate linear from `-h^* J'` to `J'`. -/
+theorem firstChernHom_map_of_mpullback_eq_neg (hσ : σ.IsNondegenerate)
+    (hσ' : σ'.IsNondegenerate) (h : M ≃ₘ⟮I, I'⟯ N)
+    (hh : SmoothForm.mpullback h h.contMDiff σ' = -σ) (x : M) (a : π_ 2 M x) :
+    hσ'.firstChernHom (h x) (.ofMul (HomotopyGroup.map ⟨h, h.continuous⟩ rfl a)) =
+      -hσ.firstChernHom x (.ofMul a) := by
+  have : Fact (finrank ℝ E = 2 * finrank ℂ (EuclideanSpace ℂ (Fin (finrank ℝ E / 2)))) :=
+    ⟨two_mul_finrank_euclideanSpace hσ x⟩
+  have : Fact (finrank ℝ E' = 2 * finrank ℂ (EuclideanSpace ℂ (Fin (finrank ℝ E' / 2)))) :=
+    ⟨two_mul_finrank_euclideanSpace hσ' (h x)⟩
+  obtain ⟨J', hJ'⟩ := exists_compatible hσ'
+  have hJ : σ.Tames (-J'.pullback h) := (hh ▸ hJ'.tames.pullback h).neg
+  rw [hσ'.firstChernHom_eq_clutchingNumberHom (EuclideanSpace ℂ (Fin (finrank ℝ E' / 2)))
+      hJ'.tames ⊤,
+    hσ.firstChernHom_eq_clutchingNumberHom (EuclideanSpace ℂ (Fin (finrank ℝ E / 2))) hJ ⊤]
+  exact clutchingNumberHom_map_of_conjugateLinear ⟨h, h.continuous⟩ (mfderivConjFiberEquiv h J')
+    (continuous_mfderivFiberRealEquiv _ _ _ h J') rfl a
+
+end Diffeomorph
+
+/-- **An anti-symplectic diffeomorphism homotopic to the identity kills the first Chern number.**
+If a diffeomorphism `h` of `M` pulls `σ` back to `-σ` and is homotopic to the identity, then the
+first Chern number of `σ` vanishes on `π₂(M, x)` for every `x`. A sphere `p` and its image `h ∘ p`
+have the same first Chern number, since the homotopy moves one into the other through spheres, and
+opposite first Chern numbers, since `h` is anti-symplectic. -/
+theorem firstChernHom_eq_zero_of_mpullback_eq_neg (hσ : σ.IsNondegenerate) (h : M ≃ₘ⟮I, I⟯ M)
+    (hh : SmoothForm.mpullback h h.contMDiff σ = -σ)
+    (H : (ContinuousMap.id M).Homotopy ⟨h, h.continuous⟩) (x : M) : hσ.firstChernHom x = 0 := by
+  have : Fact (finrank ℝ E = 2 * finrank ℂ (EuclideanSpace ℂ (Fin (finrank ℝ E / 2)))) :=
+    ⟨two_mul_finrank_euclideanSpace hσ x⟩
+  obtain ⟨J, hJ⟩ := exists_compatible hσ
+  refine AddMonoidHom.ext fun a ↦ ?_
+  induction a using Additive.rec with
+  | ofMul a =>
+    induction a using Quotient.inductionOn with
+    | h p =>
+      have hneg := hσ.firstChernHom_map_of_mpullback_eq_neg hσ h hh x ⟦p⟧
+      rw [HomotopyGroup.map_mk, firstChernHom_apply_mk (EuclideanSpace ℂ (Fin (finrank ℝ E / 2))) hσ
+        hJ.tames ⊤, firstChernHom_apply_mk (EuclideanSpace ℂ (Fin (finrank ℝ E / 2))) hσ
+        hJ.tames ⊤] at hneg
+      have hhom := clutchingNumber_eq_of_homotopyAlong
+        (F := EuclideanSpace ℂ (Fin (finrank ℝ E / 2)))
+        (E := (J.toContMDiff ⊤).toContinuousComplexStructure.Fiber)
+        (GenLoop.homotopyAlongMap H rfl rfl p)
+      rw [GenLoop.map_id] at hhom
+      rw [firstChernHom_apply_mk (EuclideanSpace ℂ (Fin (finrank ℝ E / 2))) hσ hJ.tames ⊤,
+        AddMonoidHom.zero_apply]
+      -- `hhom` is stated at the base point `ContinuousMap.id M x` and `hneg` at `x`, which agree
+      -- by definition; ascribing the type at `x` lets `omega` see one atom.
+      have hp : clutchingNumber (EuclideanSpace ℂ (Fin (finrank ℝ E / 2)))
+          (J.toContMDiff ⊤).toContinuousComplexStructure.Fiber p =
+            -clutchingNumber (EuclideanSpace ℂ (Fin (finrank ℝ E / 2)))
+              (J.toContMDiff ⊤).toContinuousComplexStructure.Fiber p :=
+        hhom.symm.trans hneg
+      omega
+
 end IsNondegenerate
 
 end TauCeti.SmoothTwoForm
+
+namespace TauCeti.SmoothTwoForm.IsNondegenerate
+
+open AlgebraicTopology
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type} [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M] [SigmaCompactSpace M] {σ : SmoothTwoForm I M}
+
+/-- **The first Chern number factors through the Hurewicz map.** For a fiberwise nondegenerate
+two-form `σ` on a Hausdorff σ-compact manifold `M`, for instance a symplectic form, there is an
+additive map `c : H₂(M; ℤ) → ℤ` whose value on the Hurewicz class of every `a ∈ π₂(M, x)`, at
+every base point `x`, is the first Chern number of `σ` on `a`. -/
+theorem exists_addMonoidHom_hurewiczIntHom_eq_firstChernHom (h : σ.IsNondegenerate) :
+    ∃ c : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj (ModuleCat.of ℤ ℤ)).obj
+        (TopCat.of M) →+ ℤ,
+      ∀ (x : M) (a : Additive (π_ 2 M x)),
+        c (HomotopyGroup.hurewiczIntHom M x 1 a) = h.firstChernHom x a := by
+  rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
+  · exact ⟨0, fun x ↦ isEmptyElim x⟩
+  have : Fact (finrank ℝ E = 2 * finrank ℂ (EuclideanSpace ℂ (Fin (finrank ℝ E / 2)))) :=
+    ⟨two_mul_finrank_euclideanSpace h x₀⟩
+  -- The first Chern number is the clutching number of the tangent bundle with a compatible `J`.
+  set J := (exists_compatible h).choose
+  obtain ⟨c, hc⟩ := exists_addMonoidHom_hurewiczIntHom_eq_clutchingNumberHom
+    (EuclideanSpace ℂ (Fin (finrank ℝ E / 2))) (J.toContMDiff ⊤).toContinuousComplexStructure.Fiber
+  refine ⟨c, fun x a ↦ ?_⟩
+  rw [hc, firstChernHom_eq_clutchingNumberHom (EuclideanSpace ℂ (Fin (finrank ℝ E / 2))) h
+    (exists_compatible h).choose_spec.tames ⊤ x]
+
+end TauCeti.SmoothTwoForm.IsNondegenerate
 
 /-! ### Complex manifolds -/
 

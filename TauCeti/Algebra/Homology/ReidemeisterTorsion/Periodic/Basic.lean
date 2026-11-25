@@ -57,6 +57,10 @@ another complex `D` up to a nonzero scalar `u` transport the torsion:
 `τ(D, e c) = τ(C, c) · u ^ q / u ^ p`, where `p` and `q` are the ranks of `d₁ : C₁ → C₀` and
 `d₀ : C₀ → C₁` (`HomologicalComplex.parityTorsion_eq_mul_of_linearEquiv`). In particular the
 torsion is invariant under isomorphisms of based complexes (`HomologicalComplex.parityTorsion_map`).
+Combined with the basis-change formula, for an isomorphism `e : C ≅ D` and arbitrary bases `c' i`
+of `D`, if `Aᵢ` is the matrix of `eᵢ : Cᵢ → Dᵢ` in the bases `c i` and `c' i`, then
+`τ(C, c) = τ(D, c') · det (A₀) · det (A₁)⁻¹`
+(`HomologicalComplex.parityTorsion_eq_mul_det_toMatrix`).
 If instead the equivalences exchange the parities, `e₀ : C₁ ≃ D₀` and `e₁ : C₀ ≃ D₁`, the odd
 bracket of `D` is the even bracket of `C` and conversely, so the torsion is inverted:
 `τ(D, e c) = τ(C, c)⁻¹ · u ^ p / u ^ q`
@@ -94,6 +98,8 @@ torsion of a closed manifold.
   equivalences intertwining the differentials up to a scalar, preserving or exchanging the parities.
 * `HomologicalComplex.parityTorsion_map`: the torsion is invariant under isomorphisms of based
   complexes.
+* `HomologicalComplex.parityTorsion_eq_mul_det_toMatrix`: the change of the torsion under an
+  isomorphism of complexes with arbitrary bases.
 * `HomologicalComplex.parityTorsion_shift_of_even`, `HomologicalComplex.parityTorsion_shift_of_odd`:
   the torsion of a shifted complex; the parity shift inverts the torsion up to the sign `(-1) ^ n₀`.
 * `HomologicalComplex.map_parityTorsion`: the torsion of the scalar extension of a based
@@ -527,6 +533,18 @@ theorem parityTorsion_map :
     (fun l ↦ ?_)]
   · simp
   all_goals simp [Hom.comm_apply]
+
+/-- The torsion under an isomorphism `e : C ≅ D` of two-periodic complexes with bases `c i` and
+`c' i`: if `Aᵢ` is the matrix of `eᵢ : Cᵢ → Dᵢ` in the bases `c i` and `c' i`, then
+`τ(C, c) = τ(D, c') · det (A₀) · det (A₁)⁻¹`. -/
+theorem parityTorsion_eq_mul_det_toMatrix (c' : ∀ i, Basis (Fin (n i)) F (D.X i)) :
+    C.parityTorsion c = D.parityTorsion c' *
+      ((LinearMap.toMatrix (c 0) (c' 0) (e.hom.f 0).hom).det *
+        ((LinearMap.toMatrix (c 1) (c' 1) (e.hom.f 1).hom).det)⁻¹) := by
+  rw [← parityTorsion_map c e,
+    parityTorsion_eq_mul_det c' fun i ↦ (c i).map (Hom.isoApp e i).toLinearEquiv,
+    Basis.det_apply, Basis.det_apply]
+  congr 5 <;> ext k <;> simp
 
 end Iso
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Finset.Lattice.Fold
 public import Mathlib.Tactic.Group
 public import TauCeti.GroupTheory.FreeGroup.StartsWith
+import TauCeti.GroupTheory.FreeGroup.Basic
 
 /-!
 # The Powers partition property of free groups
@@ -79,7 +80,8 @@ private theorem exists_zpow_mul_mul_zpow_mem_startsWith {f : FreeGroup α} (hf :
       hf' c.2 (mem_startsWith_iff_exists_toWord_eq_cons.2 ⟨l, by rw [hcl, ← hc]⟩)
     have hpre : ¬invRev f'.toWord <+: (of b ^ (-(L : ℤ))).toWord := by
       intro hp
-      have hmem := hp.subset (mem_invRev_iff.2 (by simp [hcl]) : (c.1, !c.2) ∈ invRev f'.toWord)
+      have hmem := hp.subset
+        (TauCeti.FreeGroup.mem_invRev_iff.2 (by simp [hcl]) : (c.1, !c.2) ∈ invRev f'.toWord)
       rw [toWord_of_zpow] at hmem
       exact hc (congrArg Prod.fst (List.eq_of_mem_replicate hmem))
     exact Set.disjoint_left.1 (startsWith.disjoint_iff_ne.2 fun h => hc (congrArg Prod.fst h))

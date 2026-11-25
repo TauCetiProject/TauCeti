@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
-import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # Real powers
@@ -150,6 +150,7 @@ with the corresponding integral of `q`-th powers.
 * `TauCeti.exp_neg_mul_abs_isLittleO_abs_rpow_cocompact`: a positive-rate exponential beats every
   real power at both ends of the real line.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
+* `Real.rpow_eq_rpow_sub_one_mul`: `t ^ s = t ^ (s - 1) t` for `0 ≤ t` and `s ≠ 0`.
 * `Real.mul_rpow_of_nonneg_left`: `(a t) ^ z = a ^ z t ^ z` for `0 ≤ a` and every real `t`.
 * `Real.mul_rpow_mul_mul_rpow_of_add_eq_one`: `(t x) ^ a (t y) ^ b = t x ^ a y ^ b` for `0 ≤ t`
   and `a + b = 1`, for all real `x`, `y`, `a` and `b`.
@@ -175,6 +176,8 @@ with the corresponding integral of `q`-th powers.
 * `Real.le_sqrt_mul_rpow_sub_one_of_sq_le`: `x ≤ √B * d ^ (β - 1)` when
   `d ^ 2 * x ^ 2 ≤ B * d ^ (2 * β)` with `d > 0`, the step turning a mean-value bound on `d ^ 2 *
   x ^ 2` into a pointwise power bound on `x`.
+* `Real.le_rpow_inv_mul_of_rpow_le`: `x ≤ r ^ r⁻¹ n` when `x ^ r ≤ (r - 1) y ^ r + z ^ r` with
+  `1 ≤ r` and `0 ≤ y, z ≤ n`, the step turning an `Lʳ` trace inequality into a linear bound.
 * `Finsupp.prod_pow_rpow`: `(μ.prod (c · ^ ·)) ^ a = μ.prod fun i k ↦ (c i ^ a) ^ k` for `c`
   nonnegative on `μ.support`.
 -/
@@ -415,6 +418,12 @@ theorem rpow_le_exp_neg_mul {A t c : ℝ} (hA : 0 ≤ A) (hAt : A ≤ exp (-t)) 
   rw [← exp_mul]
   ring_nf
 
+/-- Peeling one factor off a real power: `t ^ s = t ^ (s - 1) * t` for `0 ≤ t` and `s ≠ 0`. Unlike
+`Real.rpow_sub_one`, it needs no `t ≠ 0`: at `t = 0` both sides are `0`. -/
+theorem rpow_eq_rpow_sub_one_mul {t s : ℝ} (ht : 0 ≤ t) (hs : s ≠ 0) :
+    t ^ s = t ^ (s - 1) * t := by
+  rw [← rpow_add_one' ht (by rwa [sub_add_cancel]), sub_add_cancel]
+
 /-- Real powers distribute over a product whose first factor is nonnegative, with no condition on
 the second factor: for `t < 0` both sides carry the same factor `cos (z π)`. -/
 theorem mul_rpow_of_nonneg_left {a : ℝ} (ha : 0 ≤ a) (t z : ℝ) :
@@ -578,9 +587,27 @@ theorem le_sqrt_mul_rpow_sub_one_of_sq_le {x d B β : ℝ} (hd : 0 < d)
     have hp : d ^ (2 * β) = (d ^ β) ^ 2 := by
       simpa only [Nat.cast_ofNat, mul_comm] using rpow_mul_natCast hd.le β 2
     rwa [hp, ← mul_pow] at h
-  have h' := le_sqrt_mul_of_sq_le_mul (rpow_nonneg hd.le β) hsq
+  have h' : d * x ≤ sqrt B * d ^ β := (le_sqrt_of_sq_le hsq).trans_eq
+    (by rw [sqrt_mul_sq, abs_of_nonneg (rpow_nonneg hd.le β)])
   rw [rpow_sub_one hd.ne', ← mul_div_assoc, le_div_iff₀ hd]
   linarith
+
+/-- If `x ^ r ≤ (r - 1) y ^ r + z ^ r` for `1 ≤ r` and nonnegative `y`, `z`, both at most `n`,
+then `x ≤ r ^ r⁻¹ n`. This turns the `Lʳ` trace inequality into a bound with constant
+`r ^ r⁻¹` by the Sobolev norm. -/
+theorem le_rpow_inv_mul_of_rpow_le {r x y z n : ℝ} (hr : 1 ≤ r) (hy : 0 ≤ y) (hz : 0 ≤ z)
+    (hyn : y ≤ n) (hzn : z ≤ n) (h : x ^ r ≤ (r - 1) * y ^ r + z ^ r) :
+    x ≤ r ^ r⁻¹ * n := by
+  have hr0 : 0 < r := zero_lt_one.trans_le hr
+  have hn : 0 ≤ n := hy.trans hyn
+  -- A negative `x` is below the nonnegative right side.
+  rcases lt_or_ge x 0 with hx | hx
+  · exact hx.le.trans (by positivity)
+  have h1 : y ^ r ≤ n ^ r := rpow_le_rpow hy hyn hr0.le
+  have h2 : z ^ r ≤ n ^ r := rpow_le_rpow hz hzn hr0.le
+  rw [← rpow_le_rpow_iff hx (by positivity) hr0, mul_rpow (by positivity) hn,
+    rpow_inv_rpow hr0.le hr0.ne']
+  nlinarith [sub_nonneg.2 hr]
 
 end Real
 
@@ -623,5 +650,17 @@ theorem exp_neg_mul_abs_isLittleO_abs_rpow_cocompact {a : ℝ} (ha : 0 < a) (s :
   simpa only [Function.comp_def, Real.norm_eq_abs, neg_mul] using
     (isLittleO_exp_neg_mul_rpow_atTop ha s).comp_tendsto
       (tendsto_norm_cocompact_atTop (E := ℝ))
+
+/-- For `x ≥ 1` and `0 < q ≤ 1`, if `k ≥ B * log x` then `x^d * q^k` is
+at most `x^e` for any `e ≥ d + B * log q`. -/
+theorem rpow_mul_pow_le_rpow_of_log_le {x q B d e : ℝ} {k : ℕ} (hx : 1 ≤ x)
+    (hq : 0 < q) (hq' : q ≤ 1) (hk : B * Real.log x ≤ k) (he : d + B * Real.log q ≤ e) :
+    x ^ d * q ^ k ≤ x ^ e := by
+  have hx₀ : 0 < x := zero_lt_one.trans_le hx
+  have hlog := Real.log_nonneg hx
+  have hqlog := Real.log_nonpos hq.le hq'
+  rw [← Real.rpow_natCast, Real.rpow_def_of_pos hx₀, Real.rpow_def_of_pos hq,
+    ← Real.exp_add, Real.rpow_def_of_pos hx₀, Real.exp_le_exp]
+  nlinarith [mul_le_mul_of_nonpos_right hk hqlog, mul_le_mul_of_nonneg_right he hlog]
 
 end TauCeti

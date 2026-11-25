@@ -119,7 +119,8 @@ private theorem norm_compLpL_prev_smulLeftCLM_le {ψ : ℝ → ℝ} (hψ : ContD
       (prev_smulLeftCLM_ae hψ.contDiffOn h₀ h₁ ι.compLpL_multiplicationOperator u).filter_mono
         hae.le] with s hs hψs
     rw [hs, hψs, map_smul]
-  refine norm_le_mul_norm_restrictBaseL ((abs_nonneg _).trans (hc 0)) u ?_ ?_
+  refine norm_le_mul_norm_restrictBaseL ((abs_nonneg _).trans (hc 0)) le_top u
+    (ae_restrict_of_ae ?_) (ae_restrict_of_ae ?_)
   · filter_upwards [hf] with s hs
     rw [hs, norm_smul, Real.norm_eq_abs]
     exact mul_le_mul_of_nonneg_right (hc s) (norm_nonneg _)
@@ -206,6 +207,12 @@ private theorem exists_forall_norm_smulLeftCLM_le (AL : Lp (D →L[ℝ] H) ∞ �
   nlinarith [norm_nonneg K, mul_nonneg (mul_nonneg he (abs_nonneg c))
     (norm_nonneg (familyDomainTrajectoryOperator ι AL w))]
 
+/-- An estimate `r ≤ C a` with `0 ≤ a` gives `r ≤ |C| (a + K)` for every `K ≥ 0`: the form in which
+the estimates near the two ends enter the splicing estimate. -/
+private theorem le_abs_mul_add_of_le_mul {r C a K : ℝ} (ha : 0 ≤ a) (hK : 0 ≤ K)
+    (h : r ≤ C * a) : r ≤ |C| * (a + K) :=
+  h.trans (mul_le_mul (le_abs_self _) (le_add_of_nonneg_right hK) ha (abs_nonneg _))
+
 variable {A : ℝ → D →L[ℝ] H} {AL : Lp (D →L[ℝ] H) ∞ μ₀} {Abot Atop : D →L[ℝ] H}
 
 /-- **The semi-Fredholm estimate for `∂ₛ + A(s)` over a common domain.** Let `A : ℝ → (D →L[ℝ] H)`
@@ -224,12 +231,12 @@ theorem exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_norm_o
   -- The estimates near the two ends and near each time.
   obtain ⟨Ct, Tt, hCt⟩ :=
     exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_of_tendsto_atTop
-      (ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hAtop
-        (.of_forall hSymm)) hAtop' hAL hAtop
+      (fun x y ↦ ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hAtop
+        (.of_forall fun s ↦ hSymm s x y)) hAtop' hAL hAtop
   obtain ⟨Cb, Tb, hCb⟩ :=
     exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_of_tendsto_atBot
-      (ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hAbot
-        (.of_forall hSymm)) hAbot' hAL hAbot
+      (fun x y ↦ ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hAbot
+        (.of_forall fun s ↦ hSymm s x y)) hAbot' hAL hAbot
   have hloc (s₀ : ℝ) : ∃ C e : ℝ, 0 ≤ e ∧ ∃ S ∈ 𝓝 s₀,
       ∀ w : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀),
       (∀ᵐ s ∂volume, s ∉ S → prev _ w s = 0) →
@@ -249,19 +256,13 @@ theorem exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_norm_o
     (hb i).imp fun _ hC x _ ↦ hC x
   have h₁ (i : Bool ⊕ ℝ) : ∃ C, ∀ x ∈ (⊤ : Opens ℝ), ‖fderiv ℝ (ψ i) x‖ ≤ C :=
     (hd i).imp fun _ hC x _ ↦ norm_deriv_eq_norm_fderiv (f := ψ i) (x := x) ▸ hC x
-  -- An estimate `‖w‖ ≤ C ‖Dw‖` gives the splicing form.
-  have hend {w : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)} {C K : ℝ} (hK : 0 ≤ K)
-      (h : ‖w‖ ≤ C * ‖familyDomainTrajectoryOperator ι AL w‖) :
-      ‖w‖ ≤ |C| * (‖familyDomainTrajectoryOperator ι AL w‖ + K) :=
-    h.trans (mul_le_mul (le_abs_self _) (le_add_of_nonneg_right hK) (norm_nonneg _)
-      (abs_nonneg _))
   obtain ⟨C, hC⟩ := exists_forall_norm_le_of_sum_eq_one AL t ψ hψ h₀ h₁ hsum (fun i _ ↦ hT i) <| by
     rintro ((_ | _) | i) -
-    · refine ⟨|Cb|, fun u ↦ hend (norm_nonneg _) (hCb _ ?_)⟩
+    · refine ⟨|Cb|, fun u ↦ le_abs_mul_add_of_le_mul (norm_nonneg _) (norm_nonneg _) (hCb _ ?_)⟩
       simpa using ae_prev_smulLeftCLM_eq_zero (hψ (.inl false)).contDiffOn (h₀ _) (h₁ _)
         ι.compLpL_multiplicationOperator (Z := Ioi Tb)
         (fun s hs ↦ hψb s (by linarith [neg_abs_le Tb, le_max_right |Tt| |Tb|, mem_Ioi.1 hs])) u
-    · refine ⟨|Ct|, fun u ↦ hend (norm_nonneg _) (hCt _ ?_)⟩
+    · refine ⟨|Ct|, fun u ↦ le_abs_mul_add_of_le_mul (norm_nonneg _) (norm_nonneg _) (hCt _ ?_)⟩
       simpa using ae_prev_smulLeftCLM_eq_zero (hψ (.inl true)).contDiffOn (h₀ _) (h₁ _)
         ι.compLpL_multiplicationOperator (Z := Iio Tt)
         (fun s hs ↦ hψt s (by linarith [le_abs_self Tt, le_max_left |Tt| |Tb|, mem_Iio.1 hs])) u

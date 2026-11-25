@@ -132,7 +132,8 @@ theorem esymmPsumPoly_succ (n : ℕ) :
 theorem mul_esymmPsumPoly_succ (n : ℕ) :
     (n + 1 : MvPolynomial ℕ R) * esymmPsumPoly R (n + 1) =
       ∑ x ∈ antidiagonal n, (-1) ^ x.2 * esymmPsumPoly R x.1 * X x.2 := by
-  rw [esymmPsumPoly_succ, natCast_add_one_mul_algebraMap_inv_smul]
+  rw [esymmPsumPoly_succ, mul_smul_comm,
+    algebraMap_inv_natCast_add_one_smul_natCast_add_one_mul _ (Nat.cast_add_one_ne_zero _)]
 
 @[simp]
 theorem esymmPsumPoly_one : esymmPsumPoly R 1 = X 0 := by
@@ -160,9 +161,10 @@ theorem aeval_psum_esymmPsumPoly (σ : Type*) [Fintype σ] (n : ℕ) :
   | _ n ih =>
     obtain _ | n := n
     · simp
-    refine (isUnit_natCast_add_one (K := MvPolynomial σ R) n).mul_left_cancel ?_
-    rw [esymmPsumPoly_succ, map_smul, natCast_add_one_mul_algebraMap_inv_smul, map_sum,
-      mul_esymm_succ_eq_sum]
+    refine (isUnit_natCast_add_one ℚ (A := MvPolynomial σ R) n).mul_left_cancel ?_
+    rw [esymmPsumPoly_succ, map_smul, mul_smul_comm,
+      algebraMap_inv_natCast_add_one_smul_natCast_add_one_mul _ (Nat.cast_add_one_ne_zero _),
+      map_sum, mul_esymm_succ_eq_sum]
     refine sum_congr rfl fun x hx => ?_
     rw [map_mul, map_mul, map_pow, map_neg, map_one, aeval_X,
       ih x.1 (Nat.antidiagonal.fst_lt hx)]

@@ -16,6 +16,7 @@ import TauCeti.Analysis.InnerProductSpace.Harmonic.Deriv
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Normed.Operator.ContinuousLinearEquiv
 import TauCeti.Analysis.PDE.Ellipticity.Basic
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # Constant-coefficient elliptic operators as the Laplacian in linear coordinates
@@ -114,7 +115,8 @@ theorem exists_continuousLinearEquiv_laplacian_comp_eq {A : Matrix ι ι ℝ} {l
       dotProduct_comm] using h
   refine ⟨e, hnorm, fun x => ?_, fun y => ?_, fun u y hu => ?_⟩
   · exact e.norm_symm_apply_le_inv_sqrt_mul_norm hlam (fun y => (hnorm y).symm ▸ hA y) x
-  · exact Real.le_sqrt_mul_of_sq_le_mul (norm_nonneg y) ((hnorm y).le.trans (hA' y))
+  · exact (Real.le_sqrt_of_sq_le ((hnorm y).le.trans (hA' y))).trans_eq
+      (by rw [Real.sqrt_mul_sq, abs_norm])
   · -- Only the symmetric part of `A` enters, because the second derivative is symmetric.
     have hsymm := hu.isSymmSndFDerivAt (by simp)
     rw [laplacian_comp_toEuclideanCLE_apply, hTt, hTT]

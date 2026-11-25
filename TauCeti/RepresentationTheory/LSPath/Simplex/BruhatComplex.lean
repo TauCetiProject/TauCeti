@@ -649,7 +649,7 @@ determined by its segment durations along `π.dir`. -/
 noncomputable def toBruhatRealization (π : LSPath P b lam) :
     (bruhatChainComplex P b lam).Realization :=
   chainSimplexToRealization π.dir (fun j ↦ π.bruhatLE_dir_succ j)
-    (π.durationSimplex.mapRange (Rat.castHom ℝ) Rat.cast_mono)
+    (π.durationSimplex.mapRange (Rat.castHom ℝ) Rat.cast_one (fun _ ↦ Rat.cast_nonneg.2))
 
 /-- The barycentric coordinates of `π.toBruhatRealization` push its rational segment durations
 forward along `π.dir`. -/
@@ -657,7 +657,8 @@ forward along `π.dir`. -/
 theorem toBruhatRealization_val (π : LSPath P b lam) :
     (π.toBruhatRealization :
         {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w} →₀ ℝ) =
-      ((π.durationSimplex.mapRange (Rat.castHom ℝ) Rat.cast_mono).weights).mapDomain π.dir :=
+      ((π.durationSimplex.mapRange (Rat.castHom ℝ) Rat.cast_one
+        (fun _ ↦ Rat.cast_nonneg.2)).weights).mapDomain π.dir :=
   chainSimplexToRealization_val _ _ _
 
 /-- The support of `π.toBruhatRealization` as a `Finset` is the image of `π.dir`. -/
@@ -665,9 +666,10 @@ theorem toBruhatRealization_val (π : LSPath P b lam) :
 @[simp↓]
 theorem support_toBruhatRealization (π : LSPath P b lam) :
     π.toBruhatRealization.val.support = Finset.univ.image π.dir := by
-  let w := π.durationSimplex.mapRange (Rat.castHom ℝ) Rat.cast_mono
+  let w := π.durationSimplex.mapRange (Rat.castHom ℝ : ℚ →+ ℝ) Rat.cast_one
+    (fun _ ↦ Rat.cast_nonneg.2)
   rw [toBruhatRealization_val, Finsupp.support_mapDomain_of_nonneg w.nonneg]
-  simp [w, Convexity.StdSimplex.support_weights_mapRange Rat.cast_mono (Rat.castHom ℝ).injective]
+  simp [w]
 
 /-- The support of `π.toBruhatRealization` as a `Set` is the exact set of directions visited by
 `π`. -/
