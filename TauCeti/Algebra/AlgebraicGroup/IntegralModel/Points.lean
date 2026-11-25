@@ -20,6 +20,9 @@ its values `g (1 ⊗ a)` lie in the image of `O`.
 
 * `TauCeti.IntegralModel.integralPoints`: the integral points of a Hopf `O`-algebra, as a subgroup
   of the points of its base change to `K`.
+* `TauCeti.IntegralModel.mem_integralPoints_iff_exists`,
+  `TauCeti.IntegralModel.pointsBaseChange_mem_integralPoints`: the integral points are the base
+  changes of the points of `A`.
 * `TauCeti.IntegralModel.integralPoints_le_comap`: integral points are contravariant along Hopf
   maps.
 * `TauCeti.IntegralModel.mem_integralPoints_iff`: the membership criterion when `O → K` is
@@ -49,6 +52,19 @@ theorem integralPoints_def :
   (rfl)
 
 variable {O K A}
+
+/-- A point of the base change `K ⊗[O] A` is integral exactly when it is the base change of a
+point of `A`. -/
+theorem mem_integralPoints_iff_exists {g : WithConv (K ⊗[O] A →ₐ[K] K)} :
+    g ∈ integralPoints O K A ↔
+      ∃ f : WithConv (A →ₐ[O] O), AlgHom.pointsBaseChange (k := O) (A := A) K f = g := by
+  rw [integralPoints_def, MonoidHom.mem_range]
+
+/-- The base change of a point of `A` is an integral point. -/
+@[simp]
+theorem pointsBaseChange_mem_integralPoints (f : WithConv (A →ₐ[O] O)) :
+    AlgHom.pointsBaseChange (k := O) (A := A) K f ∈ integralPoints O K A :=
+  ⟨f, rfl⟩
 
 /-- Integral points are contravariant in the Hopf algebra: a Hopf map `φ : A → A'` sends the
 integral points of `A'` to integral points of `A` by precomposition with its scalar extension. -/
