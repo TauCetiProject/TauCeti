@@ -46,8 +46,9 @@ through the elements of `M` whose image in `P` lies in that image, and the remai
 in the kernel of `g`, whose elements are compatible pairs with first component zero.
 
 When `R → S` is moreover faithfully flat, projection from `K` to `N` is injective, realizing the
-glued module directly as an `R`-submodule `E ≤ N` with `IsBaseChange S E.subtype` and an `R`-linear
-map `E →ₗ[R] M` compatible with `f` and `g` that becomes bijective after inverting each `r ∈ G`
+glued module directly as an `R`-submodule `E ≤ N` containing every `y : N` with `g y` in the image
+of `f`, together with `IsBaseChange S E.subtype` and an `R`-linear map `E →ₗ[R] M` compatible with
+`f` and `g` that becomes bijective after inverting each `r ∈ G`
 (`TauCeti.exists_submodule_isBaseChange_of_formalGlueing`). When `M`, `B'`, `P` are commutative
 algebras and `f`, `g` are algebra homomorphisms, compatible pairs of units and products upgrade `E`
 to an `R`-subalgebra `B ≤ B'` with `Algebra.IsPushout R S B B'` and an `R`-algebra homomorphism
@@ -151,8 +152,9 @@ variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] [Module.Faithfull
 /-- **Submodule reconstruction by formal glueing.** Suppose `R → S` is faithfully flat and induces
 `R/I ≅ S/IS` for `I = Ideal.span G`, `f : M →ₗ[R] P` exhibits `P` as `S ⊗[R] M`, and
 `g : N →ₗ[S] P` becomes bijective after inverting the image of each `r ∈ G`. Then there exist an
-`R`-submodule `E ≤ N` whose inclusion exhibits `N` as `S ⊗[R] E` and an `R`-linear map
-`ψ : E →ₗ[R] M` compatible with `f` and `g` that becomes bijective after inverting each `r ∈ G`. -/
+`R`-submodule `E ≤ N` containing every `y : N` with `g y` in the image of `f` (`f m = g y`), whose
+inclusion exhibits `N` as `S ⊗[R] E`, and an `R`-linear map `ψ : E →ₗ[R] M` compatible with `f` and
+`g` that becomes bijective after inverting each `r ∈ G`. -/
 @[stacks 05ER "submodule realization for faithfully flat ring maps"]
 theorem exists_submodule_isBaseChange_of_formalGlueing {G : Finset R}
     (hG : Bijective (Ideal.quotientMap ((Ideal.span (G : Set R)).map (algebraMap R S))
