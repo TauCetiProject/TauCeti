@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Flat.TorsionFree
-public import Mathlib.RingTheory.Localization.BaseChange
-public import TauCeti.AlgebraicGeometry.CartierDivisor.Factorial
+public import TauCeti.AlgebraicGeometry.CartierDivisor.BaseChange
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.NumericallyTrivial
 import TauCeti.AlgebraicGeometry.Curves.Normalization
 
@@ -42,26 +40,27 @@ When `X` is moreover Noetherian and normal, the Cartier-to-Weil map is injective
 coefficients is *`ℚ`-Cartier* when `r D` is the Weil divisor of a Cartier divisor `A` for some
 integer `r ≥ 1`; these form the range of that extension, a `ℚ`-subspace. The pairing transported
 along this embedding is `(D · C) = (A · C) / r`, independent of the pair `(r, A)`, and
-`ℚ`-linearly equivalent `ℚ`-Cartier Weil divisors have the same pairings with every curve.
+`ℚ`-linearly equivalent `ℚ`-Cartier Weil divisors have the same pairings with every curve. The
+divisor-theoretic side, `K`-linear equivalence and the `ℚ`-Cartier Weil divisors, is in
+`TauCeti.AlgebraicGeometry.CartierDivisor.BaseChange`.
 
 ## Main declarations
 
 * `Scheme.CartierDivisor.intersectionNumberHom k ι`: the pairing `D ↦ (D · C)` on `Div(X)`;
 * `Scheme.CartierDivisor.baseChangeIntersectionNumber K k ι`: its `K`-linear extension to
   `Div(X)_K`, with `(a ⊗ D · C) = a (D · C)`;
-* `Scheme.CartierDivisor.principalSubmodule K X`: the `K`-combinations of principal divisors, on
-  which every pairing vanishes;
+* `Scheme.CartierDivisor.principalSubmodule_le_ker_baseChangeIntersectionNumber`: every pairing
+  vanishes on the `K`-combinations of principal divisors;
 * `Scheme.CartierDivisor.NumericallyTrivial K k x` and
   `Scheme.CartierDivisor.RelNumericallyTrivial K f`: numerical and relative numerical triviality of
   `K`-Cartier divisors, forming the `K`-subspaces `numericallyTrivialSubmodule K k x` and
   `relNumericallyTrivialSubmodule K f`, which contain `principalSubmodule K X`;
 * `Scheme.CartierDivisor.numericallyTrivial_one_tmul_iff` and
   `Scheme.CartierDivisor.relNumericallyTrivial_one_tmul_iff`: `1 ⊗ D ≡_f 0` iff `𝒪_X(D) ≡_f 0`;
-* `Scheme.CartierDivisor.qCartierSubmodule X`: the `ℚ`-Cartier Weil divisors, characterized by
-  `Scheme.CartierDivisor.mem_qCartierSubmodule_iff`;
 * `Scheme.CartierDivisor.qCartierIntersectionNumber k ι`: the pairing of `ℚ`-Cartier Weil divisors
-  with curves, computed by `Scheme.CartierDivisor.qCartierIntersectionNumber_eq_div` and invariant
-  under `ℚ`-linear equivalence
+  (`Scheme.CartierDivisor.qCartierSubmodule X`) with curves, computed by
+  `Scheme.CartierDivisor.qCartierIntersectionNumber_eq_div` and invariant under `ℚ`-linear
+  equivalence
   (`Scheme.CartierDivisor.qCartierIntersectionNumber_eq_of_sub_mem_baseChange_principalSubgroup`);
 * `projectiveLine.numericallyTrivial_one_tmul_iff_toLineBundleClass_eq_one`: on `ℙ¹_k` the
   numerically trivial Cartier divisors are those with trivial sheaf.
@@ -140,28 +139,28 @@ lemma baseChangeIntersectionNumber_tmul (a : K) (D : CartierDivisor X) :
   rw [baseChangeIntersectionNumber, LinearMap.liftBaseChange_tmul, smul_eq_mul,
     AddMonoidHom.coe_toIntLinearMap, AddMonoidHom.comp_apply, Int.coe_castAddHom]
 
-variable (X) in
-/-- The `K`-submodule of `Div(X)_K` spanned by the principal Cartier divisors. Two `K`-Cartier
-divisors are **`K`-linearly equivalent** when their difference lies in it. -/
-def principalSubmodule : Submodule K (K ⊗[ℤ] CartierDivisor X) :=
-  (principalSubgroup X).toIntSubmodule.baseChange K
-
-/-- `a ⊗ D` is a `K`-combination of principal divisors when `D` is principal. -/
-theorem tmul_mem_principalSubmodule (a : K) {D : CartierDivisor X}
-    (hD : D ∈ principalSubgroup X) : a ⊗ₜ D ∈ principalSubmodule K X :=
-  Submodule.tmul_mem_baseChange_of_mem (p := (principalSubgroup X).toIntSubmodule) a hD
-
 /-- **`K`-linearly equivalent `K`-Cartier divisors have the same intersection number** with every
 curve: the pairing vanishes on `K`-combinations of principal divisors. -/
 theorem principalSubmodule_le_ker_baseChangeIntersectionNumber :
     principalSubmodule K X ≤ LinearMap.ker (baseChangeIntersectionNumber K k ι) := by
-  refine Submodule.baseChange_le_iff_le_comap.mpr fun D hD ↦ ?_
+  refine (principalSubmodule_le_iff K).mpr fun D hD ↦ ?_
   obtain ⟨f, rfl⟩ := mem_principalSubgroup.mp hD
-  rw [Submodule.mem_comap, Submodule.restrictScalars_mem, LinearMap.mem_ker, mk_apply,
-    baseChangeIntersectionNumber_tmul, intersectionNumberHom_principalCartierDivisor, Int.cast_zero,
-    mul_zero]
+  rw [LinearMap.mem_ker, baseChangeIntersectionNumber_tmul,
+    intersectionNumberHom_principalCartierDivisor, Int.cast_zero, mul_zero]
 
 end Pairing
+
+/-- A morphism equal to a composite of proper morphisms is proper. -/
+private lemma isProper_of_eq_comp {C Y S : Scheme.{u}} {f : C ⟶ S} {i : C ⟶ Y} {x : Y ⟶ S}
+    [IsProper i] [IsProper x] (h : f = i ≫ x) : IsProper f := by
+  rw [h]
+  infer_instance
+
+/-- A one-dimensional scheme over a field has relative dimension at most one. -/
+private lemma relativeDimensionLE_one_of_topologicalKrullDim_eq_one {k : Type u} [Field k]
+    {C : Scheme.{u}} (f : C ⟶ Spec (.of k)) (hC : topologicalKrullDim C = 1) :
+    RelativeDimensionLE 1 f :=
+  (relativeDimensionLE_iff_of_field f).mpr hC.le
 
 section Absolute
 
@@ -174,9 +173,8 @@ such a curve is proper over `k` of dimension one, which makes the pairing availa
 def NumericallyTrivial (D : K ⊗[ℤ] CartierDivisor X) : Prop :=
   ∀ (C : Scheme.{u}) [IsIntegral C] [C.Over (Spec (.of k))] (i : C ⟶ X) [IsClosedImmersion i]
     (hi : C ↘ Spec (.of k) = i ≫ x) (hC : topologicalKrullDim C = 1),
-    have : IsProper (C ↘ Spec (.of k)) := hi ▸ inferInstance
-    have : RelativeDimensionLE 1 (C ↘ Spec (.of k)) :=
-      (relativeDimensionLE_iff_of_field _).mpr hC.le
+    have := isProper_of_eq_comp hi
+    have := relativeDimensionLE_one_of_topologicalKrullDim_eq_one (C ↘ Spec (.of k)) hC
     baseChangeIntersectionNumber K k i D = 0
 
 variable {K k x}
@@ -189,8 +187,8 @@ theorem numericallyTrivial_iff {D : K ⊗[ℤ] CartierDivisor X} :
       [IsClosedImmersion i], C ↘ Spec (.of k) = i ≫ x → topologicalKrullDim C = 1 →
         baseChangeIntersectionNumber K k i D = 0 := by
   refine ⟨fun h C _ _ _ _ i _ hi hC ↦ h C i hi hC, fun h C _ _ i _ hi hC ↦ ?_⟩
-  have : IsProper (C ↘ Spec (.of k)) := hi ▸ inferInstance
-  have : RelativeDimensionLE 1 (C ↘ Spec (.of k)) := (relativeDimensionLE_iff_of_field _).mpr hC.le
+  have := isProper_of_eq_comp hi
+  have := relativeDimensionLE_one_of_topologicalKrullDim_eq_one (C ↘ Spec (.of k)) hC
   exact h C i hi hC
 
 /-- The pairing of a numerically trivial `K`-Cartier divisor with an integral closed curve
@@ -227,9 +225,8 @@ theorem numericallyTrivial_one_tmul_iff [CharZero K] (D : CartierDivisor X) :
       LineBundleClass.NumericallyTrivial k x D.toLineBundleClass := by
   rw [numericallyTrivial_iff, LineBundleClass.numericallyTrivial_iff]
   refine ⟨fun h C _ _ i _ hi hC ↦ ?_, fun h C _ _ _ _ i _ hi hC ↦ ?_⟩
-  · have : IsProper (C ↘ Spec (.of k)) := hi ▸ inferInstance
-    have : RelativeDimensionLE 1 (C ↘ Spec (.of k)) :=
-      (relativeDimensionLE_iff_of_field _).mpr hC.le
+  · have := isProper_of_eq_comp hi
+    have := relativeDimensionLE_one_of_topologicalKrullDim_eq_one (C ↘ Spec (.of k)) hC
     simpa using h C i hi hC
   · simpa using h C i hi hC
 
@@ -256,9 +253,9 @@ def RelNumericallyTrivial (D : K ⊗[ℤ] CartierDivisor X) : Prop :=
     (i : C ⟶ f.fiber s) [IsClosedImmersion i]
     (hi : C ↘ Spec (S.residueField s) = i ≫ f.fiberToSpecResidueField s)
     (hC : topologicalKrullDim C = 1),
-    have : IsProper (C ↘ Spec (S.residueField s)) := hi ▸ inferInstance
+    have := isProper_of_eq_comp hi
     have : RelativeDimensionLE 1 (C ↘ Spec (S.residueField s)) :=
-      (relativeDimensionLE_iff_of_field _).mpr hC.le
+      relativeDimensionLE_one_of_topologicalKrullDim_eq_one _ hC
     baseChangeIntersectionNumber K (S.residueField s) (i ≫ f.fiberι s) D = 0
 
 variable {K f}
@@ -273,9 +270,9 @@ theorem relNumericallyTrivial_iff {D : K ⊗[ℤ] CartierDivisor X} :
         topologicalKrullDim C = 1 →
           baseChangeIntersectionNumber K (S.residueField s) (i ≫ f.fiberι s) D = 0 := by
   refine ⟨fun h s C _ _ _ _ i _ hi hC ↦ h s C i hi hC, fun h s C _ _ i _ hi hC ↦ ?_⟩
-  have : IsProper (C ↘ Spec (S.residueField s)) := hi ▸ inferInstance
+  have := isProper_of_eq_comp hi
   have : RelativeDimensionLE 1 (C ↘ Spec (S.residueField s)) :=
-    (relativeDimensionLE_iff_of_field _).mpr hC.le
+    relativeDimensionLE_one_of_topologicalKrullDim_eq_one _ hC
   exact h s C i hi hC
 
 /-- The pairing of a relatively numerically trivial `K`-Cartier divisor with an integral closed
@@ -315,9 +312,9 @@ theorem relNumericallyTrivial_one_tmul_iff [CharZero K] (D : CartierDivisor X) :
   rw [relNumericallyTrivial_iff, LineBundleClass.relNumericallyTrivial_iff]
   refine ⟨fun h s ↦ (LineBundleClass.numericallyTrivial_iff _ _ _).mpr fun C _ _ i _ hi hC ↦ ?_,
     fun h s C _ _ _ _ i _ hi hC ↦ ?_⟩
-  · have : IsProper (C ↘ Spec (S.residueField s)) := hi ▸ inferInstance
+  · have := isProper_of_eq_comp hi
     have : RelativeDimensionLE 1 (C ↘ Spec (S.residueField s)) :=
-      (relativeDimensionLE_iff_of_field _).mpr hC.le
+      relativeDimensionLE_one_of_topologicalKrullDim_eq_one _ hC
     simpa using h s C i hi hC
   · simpa using (h s).intersectionNumber_eq_zero i hi hC
 
@@ -335,68 +332,7 @@ section Weil
 
 variable [IsNoetherian X]
 
-variable (X) in
-/-- The Cartier-to-Weil map `Div(X) ⟶ Weil(X)` after extending scalars to `K`. -/
-def baseChangeToWeilDivisor : K ⊗[ℤ] CartierDivisor X →ₗ[K] K ⊗[ℤ] SchemeWeilDivisor X :=
-  (toWeilDivisorHom (X := X)).toIntLinearMap.baseChange K
-
-/-- The extended Cartier-to-Weil map sends `a ⊗ D` to `a ⊗ D_Weil`. -/
-@[simp]
-lemma baseChangeToWeilDivisor_tmul (a : K) (D : CartierDivisor X) :
-    baseChangeToWeilDivisor K X (a ⊗ₜ D) = a ⊗ₜ D.toWeilDivisor := by
-  rw [baseChangeToWeilDivisor, LinearMap.baseChange_tmul, AddMonoidHom.coe_toIntLinearMap,
-    toWeilDivisorHom_apply]
-
-variable (X) in
-/-- The `ℚ`-subspace of **`ℚ`-Cartier Weil divisors**: the Weil divisors with rational coefficients
-some positive multiple of which is the Weil divisor of a Cartier divisor
-(`Scheme.CartierDivisor.mem_qCartierSubmodule_iff`). -/
-def qCartierSubmodule : Submodule ℚ (ℚ ⊗[ℤ] SchemeWeilDivisor X) :=
-  LinearMap.range (baseChangeToWeilDivisor ℚ X)
-
-/-- **`ℚ`-Cartier Weil divisors.** A Weil divisor `D` with rational coefficients is `ℚ`-Cartier
-exactly when `r D` is the Weil divisor of a Cartier divisor `A` for some integer `r ≥ 1`. -/
-theorem mem_qCartierSubmodule_iff {D : ℚ ⊗[ℤ] SchemeWeilDivisor X} :
-    D ∈ qCartierSubmodule X ↔
-      ∃ r : ℕ, 0 < r ∧ ∃ A : CartierDivisor X, (r : ℚ) • D = 1 ⊗ₜ A.toWeilDivisor := by
-  rw [qCartierSubmodule, LinearMap.mem_range]
-  refine ⟨?_, fun ⟨r, hr, A, h⟩ ↦ ⟨(r⁻¹ : ℚ) ⊗ₜ A, ?_⟩⟩
-  · -- `ℚ ⊗[ℤ] Div(X)` is the localization of `Div(X)` at the nonzero integers.
-    rintro ⟨E, rfl⟩
-    obtain ⟨⟨A, s, hs⟩, h⟩ :=
-      IsLocalizedModule.surj (nonZeroDivisors ℤ) (TensorProduct.mk ℤ ℚ (CartierDivisor X) 1) E
-    have hs0 : s ≠ 0 := nonZeroDivisors.ne_zero hs
-    have h' : (s : ℚ) • baseChangeToWeilDivisor ℚ X E = 1 ⊗ₜ A.toWeilDivisor := by
-      rw [← map_smul, Int.cast_smul_eq_zsmul, ← baseChangeToWeilDivisor_tmul]
-      simpa only [Submonoid.smul_def, mk_apply] using congrArg (baseChangeToWeilDivisor ℚ X) h
-    obtain ⟨n, rfl | rfl⟩ := s.eq_nat_or_neg
-    · exact ⟨n, by omega, A, by simpa only [Int.cast_natCast] using h'⟩
-    · refine ⟨n, by omega, -A, ?_⟩
-      rw [← toWeilDivisorHom_apply, map_neg, toWeilDivisorHom_apply, tmul_neg, ← h', Int.cast_neg,
-        Int.cast_natCast, neg_smul, neg_neg]
-  · have hr : (r : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hr.ne'
-    rw [baseChangeToWeilDivisor_tmul, ← mul_one (r⁻¹ : ℚ), ← smul_eq_mul, ← smul_tmul', ← h,
-      inv_smul_smul₀ hr]
-
 variable [IsNormalScheme X]
-
-/-- On a Noetherian normal integral scheme, the Cartier-to-Weil map stays injective after
-extending scalars to a flat `ℤ`-algebra `K`, such as `ℚ` or `ℝ`. -/
-theorem baseChangeToWeilDivisor_injective [Module.Flat ℤ K] :
-    Function.Injective (baseChangeToWeilDivisor K X) :=
-  Module.Flat.lTensor_preserves_injective_linearMap _ toWeilDivisorHom_injective
-
-variable (X) in
-/-- On a Noetherian normal integral scheme, `Div(X)_ℚ` is isomorphic to the `ℚ`-Cartier Weil
-divisors through the Cartier-to-Weil map. -/
-def qCartierEquiv : (ℚ ⊗[ℤ] CartierDivisor X) ≃ₗ[ℚ] qCartierSubmodule X :=
-  LinearEquiv.ofInjective _ (baseChangeToWeilDivisor_injective ℚ)
-
-/-- The isomorphism `Div(X)_ℚ ≃ₗ[ℚ] qCartierSubmodule X` is the extended Cartier-to-Weil map. -/
-@[simp]
-lemma coe_qCartierEquiv_apply (E : ℚ ⊗[ℤ] CartierDivisor X) :
-    (qCartierEquiv X E : ℚ ⊗[ℤ] SchemeWeilDivisor X) = baseChangeToWeilDivisor ℚ X E :=
-  (rfl)
 
 variable (k : Type u) [Field k] {C : Scheme.{u}} [C.Over (Spec (.of k))] (ι : C ⟶ X)
   [IsIntegral C] [IsProper (C ↘ Spec (.of k))] [RelativeDimensionLE 1 (C ↘ Spec (.of k))]
@@ -419,11 +355,9 @@ depend on the pair `(r, A)`. -/
 theorem qCartierIntersectionNumber_eq_div (D : qCartierSubmodule X) {r : ℕ} (hr : 0 < r)
     {A : CartierDivisor X} (h : (r : ℚ) • (D : ℚ ⊗[ℤ] SchemeWeilDivisor X) = 1 ⊗ₜ A.toWeilDivisor) :
     qCartierIntersectionNumber k ι D = intersectionNumberHom k ι A / r := by
-  have hr : (r : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hr.ne'
-  have hD : qCartierEquiv X ((r⁻¹ : ℚ) ⊗ₜ A) = D := by
-    ext
-    rw [coe_qCartierEquiv_apply, baseChangeToWeilDivisor_tmul, ← mul_one (r⁻¹ : ℚ), ← smul_eq_mul,
-      ← smul_tmul', ← h, inv_smul_smul₀ hr]
+  have hD : qCartierEquiv X ((r⁻¹ : ℚ) ⊗ₜ A) = D :=
+    Subtype.ext <| (coe_qCartierEquiv_apply _).trans <|
+      baseChangeToWeilDivisor_inv_tmul (Nat.cast_ne_zero.mpr hr.ne') h
   rw [← hD, qCartierIntersectionNumber_qCartierEquiv, baseChangeIntersectionNumber_tmul,
     inv_mul_eq_div]
 
