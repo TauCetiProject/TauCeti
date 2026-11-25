@@ -12,23 +12,24 @@ public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.GlobalS
 /-!
 # Zeroth cohomology of the twisting sheaves on projective space
 
-Let `M` be a free `R`-module with a basis `b` indexed by a type `κ` with at least two elements, and
-let `A = Sym M ≅ R[Xᵢ | i ∈ κ]`, so that `Proj A` is projective space over `R`. This file computes
+Let `M` be a free `R`-module with a basis `b` indexed by a type `κ`, and let
+`A = Sym M ≅ R[Xᵢ | i ∈ κ]`, so that `Proj A` is projective space over `R`. This file computes
 the zeroth cohomology of the twisting sheaves `𝒪(n)` on `Proj A` as an `R`-module, over any
-commutative ring `R`:
+commutative ring `R`. When `κ` has at least two elements:
 
 * for `j : ℕ`, `H⁰(Proj A, 𝒪(j)) ≅ A_j`, the forms of degree `j`, which is free with the basis of
   monomials of degree `j` in the coordinates, indexed by the degree-`j` multisets of `κ`;
 * for `n < 0`, `H⁰(Proj A, 𝒪(n)) = 0`.
-
-On projective space of dimension zero, `M` free of rank one, every twisting sheaf has a nonzero
-global section, since the coordinate is invertible there; in particular `H⁰(ℙ⁰_R, 𝒪(-1)) ≠ 0`.
 
 So `H⁰(Proj A, 𝒪(n))` is a free `R`-module for every `n : ℤ`, finitely generated when `κ` is
 finite, of rank `(card κ).multichoose j` for `n = j ≥ 0`. On the projective line this is the
 rank `max (n + 1) 0`. This is the `H⁰` part of Hartshorne, Theorem III.5.1, and follows from the
 computation of global sections (`TauCeti.SymmetricAlgebra.bijective_toTwistingSheaf_top`) through
 the identification of zeroth cohomology with global sections.
+
+Projective space of dimension zero, `M` free of rank one, is the exception to the vanishing for
+`n < 0`: the coordinate is invertible there, so every twisting sheaf has a nonzero global section;
+in particular `H⁰(ℙ⁰_R, 𝒪(-1)) ≠ 0`.
 
 ## Main definitions
 
@@ -142,31 +143,21 @@ theorem finrank_cohomology_zero_twistingSheaf [Nontrivial R] (j : ℕ) (b : Modu
   rw [Module.finrank_eq_card_basis (cohomologyZeroTwistingSheafBasis j b),
     Sym.card_sym_eq_multichoose]
 
-/-- On projective space of dimension zero, `Proj (Sym M)` for `M` free of rank one, the standard
-open `D₊(x)` of the coordinate `x` is the whole space. -/
-theorem basicOpen_ι_basis_eq_top [Unique κ] (b : Module.Basis κ R M) :
-    Proj.basicOpen 𝒜 (_root_.SymmetricAlgebra.ι R M (b default)) = ⊤ := by
-  simpa using iSup_basicOpen_ι_eq_top R M b b.span_eq
-
 /-- **Twisting sheaves on projective space of dimension zero have nonzero sections.** For `M` free
-of rank one over a nonzero ring `R`, `H⁰(Proj (Sym M), 𝒪(m))` is nontrivial for every `m : ℤ`:
-the coordinate `x` does not vanish anywhere on `Proj (Sym M) = D₊(x)`, so `xᵐ` is a global section,
-and it is nonzero since `x` is a nonzerodivisor. In particular `H⁰(ℙ⁰_R, 𝒪(-1)) ≠ 0`. -/
+of rank one over a nonzero ring `R`, `H⁰(Proj (Sym M), 𝒪(m))` is nontrivial for every `m : ℤ`.
+In particular `H⁰(ℙ⁰_R, 𝒪(-1)) ≠ 0`. -/
 theorem nontrivial_cohomology_zero_twistingSheaf_of_unique [Nontrivial R] [Unique κ]
     (b : Module.Basis κ R M) (m : ℤ) :
     Nontrivial (Cohomology (Proj.twistingSheaf 𝒜 m) 0) := by
   set x := _root_.SymmetricAlgebra.ι R M (b default)
   have hx : x ∈ 𝒜 1 := ι_mem_homogeneousSubmodule R M _
-  have : Nontrivial (SymmetricAlgebra R M) :=
-    (_root_.SymmetricAlgebra.equivMvPolynomial b).toEquiv.nontrivial
-  -- The section `xᵐ = xʲ / xᵏ` with `j = k + m`.
+  -- The coordinate `x` does not vanish anywhere on `Proj (Sym M) = D₊(x)`, so `xᵐ = xʲ / xᵏ`
+  -- with `j = k + m` is a global section; it is nonzero since `x` is a nonzerodivisor.
   obtain ⟨k, j, hkj⟩ : ∃ k j : ℕ, (j : ℤ) = k + m := ⟨m.natAbs, (m.natAbs + m).toNat, by omega⟩
   have hxk : x ^ k ∈ 𝒜 k := by simpa using SetLike.pow_mem_graded k hx
   have hxj : x ^ j ∈ 𝒜 j := by simpa using SetLike.pow_mem_graded j hx
-  have hle : Proj.basicOpen 𝒜 x ≤ Proj.basicOpen 𝒜 (x ^ k) :=
-    fun p hp hpk ↦ hp (p.isPrime.mem_of_pow_mem k hpk)
   let s := Proj.twistingSheaf.const hkj (x ^ j) (x ^ k) hxj hxk ⊤
-    ((basicOpen_ι_basis_eq_top b).ge.trans hle)
+    ((basicOpen_ι_basis_eq_top R M b).ge.trans (Proj.le_basicOpen_pow 𝒜 x k))
   have hs : s ≠ 0 := by
     intro h0
     have h := congrArg ((Proj.twistingSheaf 𝒜 m).presheaf.map
