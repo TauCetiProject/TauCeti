@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Distribution.ChangeOfVariables
+public import TauCeti.Analysis.Distribution.LocalRegularity
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 import TauCeti.Analysis.Sobolev.BesselPotential.Local
 
@@ -37,12 +37,16 @@ agrees with a bijection `Φ` of `E` whose derivatives are bounded, on a neighbou
 pullback `e^* T` is the tempered pullback `Φ^* (χ T)` of a cut-off `χ T`
 (`Distribution.restrictCLM_compCLMOfOpenPartialHomeomorph_eq_toDistribution`), and `Φ^*`
 preserves `H^s` (`TemperedDistribution.MemSobolev.compCLM_of_norm_iteratedFDeriv_le_natCeil`).
+Being `H^s` near a point is therefore an invariant notion of local regularity
+(`Distribution.isInvariantLocalRegularity_isLocallySobolevAt`).
 
 ## Main results
 
 * `Distribution.IsLocallySobolevAt.compCLMOfOpenPartialHomeomorph`,
   `Distribution.isLocallySobolevAt_compCLMOfOpenPartialHomeomorph_iff`: invariance of local
   Sobolev regularity.
+* `Distribution.isInvariantLocalRegularity_isLocallySobolevAt`: being `H^s` near a point is an
+  invariant notion of local regularity (`Distribution.IsInvariantLocalRegularity`).
 * `Distribution.sobolevSingularSupport_compCLMOfOpenPartialHomeomorph`: the `H^s` singular
   support of a pullback.
 
@@ -85,6 +89,19 @@ theorem IsLocallySobolevAt.compCLMOfOpenPartialHomeomorph {s : ℝ} {T : 𝓓'(�
     (hx : x ∈ U) (hT : T.IsLocallySobolevAt s (e x)) :
     (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T).IsLocallySobolevAt s x :=
   (isLocallySobolevAt_compCLMOfOpenPartialHomeomorph_iff hx).2 hT
+
+/-- Being `H^s` near a point is an invariant notion of local regularity: it is open, linear,
+preserved by smooth multiples and pullback along smooth changes of variables, and unchanged by
+restriction to smaller open sets. -/
+theorem isInvariantLocalRegularity_isLocallySobolevAt (s : ℝ) :
+    IsInvariantLocalRegularity fun (Ω : Opens E) (T : 𝓓'(Ω, ℂ)) x ↦ T.IsLocallySobolevAt s x where
+  isOpen_setOf _ T := isOpen_setOf_isLocallySobolevAt s T
+  zero hx := isLocallySobolevAt_zero_iff.2 hx
+  add hS hT := hS.add hT
+  smul c hT := hT.smul c
+  smulLeftCLM hg hT := hT.smulLeftCLM hg
+  restrictCLM_iff h _ _ hx := isLocallySobolevAt_restrictCLM_iff h hx
+  compCLMOfOpenPartialHomeomorph _ _ _ _ _ _ hx hT := hT.compCLMOfOpenPartialHomeomorph hx
 
 /-- **The `H^s` singular support of a pullback.** Pulling back along `e` transforms the `H^s`
 singular support by `e`: `singsupp_s (e^* T) = U ∩ e⁻¹ (singsupp_s T)`. -/
