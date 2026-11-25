@@ -30,6 +30,8 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
   determined by its permutation of the roots.
 * `RootPairing.Equiv.indexHom_injective_of_corootSpan_eq_top` gives the same faithfulness
   when the coroots span, in particular for simply connected integral root data.
+* `RootPairing.weylGroupToPerm_injective_of_corootSpan_eq_top` deduces that the Weyl group then
+  acts faithfully on the root indices.
 * `RootPairing.weylGroup_smul_eq_self_of_mem_corootKer` says the Weyl group fixes `P.corootKer`
   pointwise.
 * `RootPairing.reflectionPerm_reflectionPerm_self` says negating a root index twice gives it back.
@@ -218,6 +220,12 @@ theorem weylGroupToPerm_injective_of_span_eq_top
     (hspan : Submodule.span R (range P.root) = ⊤) :
     Function.Injective P.weylGroupToPerm :=
   (Equiv.indexHom_injective_of_span_eq_top P hspan).comp Subtype.val_injective
+
+/-- If the coroots span, the action of the Weyl group on root indices is faithful. This applies to
+simply connected root data over the integers. -/
+theorem weylGroupToPerm_injective_of_corootSpan_eq_top (hspan : P.corootSpan R = ⊤) :
+    Function.Injective P.weylGroupToPerm :=
+  (Equiv.indexHom_injective_of_corootSpan_eq_top P hspan).comp Subtype.val_injective
 
 /-- The action of the Weyl group on root indices is faithful. -/
 theorem weylGroupToPerm_injective

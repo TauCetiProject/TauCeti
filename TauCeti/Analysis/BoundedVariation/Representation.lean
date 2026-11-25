@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.BoundedVariation.LebesgueDecomposition
-public import TauCeti.Analysis.BoundedVariation.ReducedBoundary
+public import TauCeti.Analysis.BoundedVariation.ReducedBoundary.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.Topology.Sets.Opens

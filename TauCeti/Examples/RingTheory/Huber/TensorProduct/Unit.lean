@@ -24,10 +24,6 @@ open TensorProduct TauCeti.Huber
 
 namespace TauCeti.Examples.CompletedTensorUnit
 
-/-- The identity coefficient map for the two-adic unit checks is adic. -/
-local instance isAdicHom_self : IsAdicHom (algebraMap ℚ_[2] ℚ_[2]) := by
-  simpa using (IsAdicHom.id (A := ℚ_[2]))
-
 /-- *symmetry_and_unit_on_charts_unit*: the unit over the two-adic closed disc fixes `T`. -/
 example :
     CompletedTensor.rightUnitor ℚ_[2] (restrictedMvPowerSeriesCompletion 1 ℚ_[2])

@@ -9,8 +9,9 @@ public import TauCeti.Geometry.MeasureTheory.Rectifiable.Bilipschitz
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.Density
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.Tangent.Cone
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
-import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Geometry.Euclidean.Volume.Measure
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
 # Uniqueness of approximate tangent planes of rectifiable sets
@@ -142,11 +143,8 @@ theorem _root_.LipschitzOnWith.eq_range_of_densityZeroOutsideCones
   set x := f u₀
   -- Balls in `U` have the volume of balls in `EuclideanSpace ℝ (Fin k)`.
   have hvol (r : ℝ) : volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r) =
-      volume (closedBall (0 : U) r) := by
-    subst hU
-    rw [← (stdOrthonormalBasis ℝ U).measurePreserving_repr.measure_preimage
-      measurableSet_closedBall.nullMeasurableSet, LinearIsometryEquiv.preimage_closedBall,
-      map_zero]
+      volume (closedBall (0 : U) r) :=
+    volume_closedBall_eq_of_finrank_eq (finrank_euclideanSpace_fin.trans hU.symm) 0 0 r
   rw [densityZeroOutsideCones_iff] at hP
   simp only [hvol] at hE1 hE0 hP
   by_contra hne
