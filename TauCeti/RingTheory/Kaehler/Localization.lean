@@ -48,6 +48,9 @@ of it: if `Ω[A⁄R]` is finite projective and the classes of `D xᵢ` form a ba
 * R. Hartshorne, *Algebraic Geometry*, Chapter II, Section 8.
 * The Stacks Project, Tag 00RM (localization of differentials) and Tag 031J
   (projectivity of differentials of a formally smooth algebra).
+* The Stacks Project, Lemma 15.9.14 (Tag 07M7): the proof of its free case contains the step
+  where a lifted basis of `Ω[A⁄R] ⧸ J • Ω[A⁄R]` becomes a basis after inverting some
+  `g ≡ 1 (mod J)`.
 -/
 
 public section
@@ -129,7 +132,11 @@ variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
 /-- **Differentials forming a basis along `V(J)` form a basis nearby.** Let `Ω[A⁄R]` be finite
 projective, as when `A` is smooth over `R`, and let `D xᵢ` be differentials whose classes form a
 basis of `Ω[A⁄R] ⧸ J • Ω[A⁄R]` over `A ⧸ J`. Then for some `g ≡ 1 (mod J)` the `D xᵢ` form a basis
-of `Ω[A[1/g]⁄R]`. -/
+of `Ω[A[1/g]⁄R]`.
+
+This is a step of the proof of Stacks Lemma 15.9.14 (Tag 07M7). The proof is adapted from the end
+of Mathlib's `Algebra.IsSmoothAt.exists_notMem_isStandardSmooth`, with the prime replaced by the
+condition `g ≡ 1 (mod J)`. -/
 theorem exists_sub_one_mem_and_basis_localizationAway [Module.Finite A Ω[A⁄R]]
     [Module.Projective A Ω[A⁄R]] (J : Ideal A) {ι : Type*} [Finite ι] {x : ι → A}
     (b : Module.Basis ι (A ⧸ J) (Ω[A⁄R] ⧸ J • (⊤ : Submodule A Ω[A⁄R])))

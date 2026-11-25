@@ -241,7 +241,8 @@ theorem exists_sub_one_mem_and_smul_mem_range_and_smul_eq_zero (I : Ideal R) (f 
   -- As `N` is projective, multiplication by `r₁` factors through `f`.
   obtain ⟨s, hs⟩ := Module.projective_lifting_property f.rangeRestrict
     ((r₁ • LinearMap.id).codRestrict (range f) h₁) f.surjective_rangeRestrict
-  have hfs (n : N) : f (s n) = r₁ • n := congr(($hs n : N))
+  have hfs (n : N) : f (s n) = r₁ • n := by
+    simpa using congr(($(LinearMap.ext_iff.mp hs n) : N))
   -- `e = r₁ - s ∘ f` maps `M` into `ker f`, where it is multiplication by `r₁`.
   let e : M →ₗ[R] M := r₁ • LinearMap.id - s ∘ₗ f
   have he_ker (m : M) : f (e m) = 0 := by simp [e, hfs]

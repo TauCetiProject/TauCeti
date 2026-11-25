@@ -72,10 +72,11 @@ private theorem exists_comp_eq_of_subsingleton (σ : A →ₐ[R] R ⧸ I)
     (hσ : Subsingleton (A ⧸ RingHom.ker σ)) :
     ∃ φ : A →ₐ[R] R, (Ideal.Quotient.mkₐ R I).comp φ = σ := by
   have hI : I = ⊤ := by
+    -- `1 ∈ ker σ`, so `1 = σ 1 = 0` in `R ⧸ I`.
+    have h1 : (1 : A) ∈ RingHom.ker σ := Ideal.Quotient.subsingleton_iff.mp hσ ▸ trivial
+    have h10 : (1 : R ⧸ I) = 0 := by simpa using RingHom.mem_ker.mp h1
     rw [← Ideal.Quotient.subsingleton_iff]
-    refine subsingleton_of_zero_eq_one ?_
-    simpa using (RingHom.mem_ker.mp ((Ideal.Quotient.subsingleton_iff.mp hσ).symm ▸
-      Submodule.mem_top : (1 : A) ∈ RingHom.ker σ)).symm
+    exact subsingleton_of_zero_eq_one h10.symm
   have : Subsingleton R := by
     have := Ring.mem_jacobson_iff.mp
       (HenselianRing.jac (I := I) (hI ▸ Submodule.mem_top (x := (1 : R)))) (-1)
@@ -118,7 +119,7 @@ theorem exists_comp_eq_of_free [Algebra.Smooth R A] (σ : A →ₐ[R] R ⧸ I)
   let σW : W →ₐ[R] R ⧸ I := IsLocalization.Away.liftAlgHom g (f := σ)
     (by simp [show σ g = 1 by simpa [J, sub_eq_zero] using hgJ])
   have hσW (a : A) : σW (algebraMap A W a) = σ a := by
-    simp [σW, IsLocalization.Away.liftAlgHom]
+    simp [σW, IsLocalization.Away.liftAlgHom_apply]
   have hK : ∀ w ∈ K, σW w = 0 := fun w hw ↦ by
     refine (Ideal.span_le (I := RingHom.ker σW)).mpr ?_ hw
     rintro _ ⟨i, rfl⟩
