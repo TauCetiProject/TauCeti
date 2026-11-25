@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Operator.ExteriorPowerCoords
 public import TauCeti.Topology.VectorBundle.FiniteRank.CoordinateFunctor
 public import TauCeti.Topology.VectorBundle.FiniteRank.Monoidal
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.PiProd
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi.Prod
 
 /-!
 # Exterior powers of finite-rank bundle cores

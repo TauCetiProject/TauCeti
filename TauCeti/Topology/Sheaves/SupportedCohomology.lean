@@ -8,6 +8,8 @@ module
 public import Mathlib.Topology.Sets.Closeds
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Relative
 public import TauCeti.Topology.Sheaves.Flasque.Basic
+public import TauCeti.Topology.Sheaves.Stalks.Support
+import Mathlib.Algebra.Category.Grp.FilteredColimits
 
 /-!
 # Sheaf cohomology with closed supports
@@ -124,6 +126,13 @@ def supportedSections (S : Closeds X) (W : Opens X) : AddSubgroup (F.obj.obj (op
 lemma mem_supportedSections_iff {S : Closeds X} {W : Opens X} {s : F.obj.obj (op W)} :
     s ∈ F.supportedSections S W ↔ F.obj.map (S.complInclusion W).op s = 0 :=
   Iff.rfl
+
+/-- A section is supported in `S` exactly when its support, the set of points at which its germ
+is nonzero, lies in `S`. -/
+lemma mem_supportedSections_iff_sectionSupport_subset {S : Closeds X} {W : Opens X}
+    {s : F.obj.obj (op W)} : s ∈ F.supportedSections S W ↔
+      TopCat.Presheaf.sectionSupport F.obj s ⊆ S :=
+  TopCat.Presheaf.map_eq_zero_iff_sectionSupport_subset F S s
 
 /-- A morphism of sheaves maps sections supported in `S` to sections supported in `S`. -/
 lemma map_mem_supportedSections {F G : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}}

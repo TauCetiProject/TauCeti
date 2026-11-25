@@ -5,13 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.Invertible
 public import Mathlib.Analysis.Normed.Group.AddTorsor
 public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 public import Mathlib.Analysis.Real.Sqrt
+public import Mathlib.LinearAlgebra.AffineSpace.Midpoint
 public import Mathlib.LinearAlgebra.Span.Defs
 public import TauCeti.Analysis.Normed.Module.RCLike.Real
+import Mathlib.Analysis.Normed.Affine.AddTorsor
 import Mathlib.Tactic.Module
 import Mathlib.Topology.Algebra.Module.Equiv.Basic
 import Mathlib.Topology.Instances.Nat
@@ -62,7 +65,9 @@ A set on which `1 + ‖ξ‖ ^ 2 ≤ b R ^ 2`, `R ≥ 0`, lies in the closed bal
 zero (`TauCeti.subset_closedBall_of_one_add_norm_sq_le`).
 
 For `t ≥ 0`, the outer parallel set `K + t • closedBall 0 1` of a compact set `K` is its closed
-`t`-thickening (`IsCompact.add_smul_closedBall_eq_cthickening`).
+`t`-thickening (`IsCompact.add_smul_closedBall_eq_cthickening`). If `x ∈ S` and
+`2 ‖x - y‖ ≤ δ`, the ball of radius `‖x - y‖` about the midpoint of `x` and `y` lies in the closed
+`δ`-thickening of `S` (`TauCeti.ball_midpoint_subset_cthickening`).
 
 A scalar of norm one maps the product of a set with a ball about zero to itself when it acts on the
 ball factor (`TauCeti.mapsTo_prodMk_smul_ball`). A scalar `c` maps the ball of radius `R` about
@@ -80,6 +85,9 @@ The balls of radius `‖v‖ / 2` about the points `x + j • v`, `j : ℕ`, are
 For `ρ ≤ ‖ξ‖ / 2`, the points of the dilate `t • ball ξ ρ` with `t > 0` have norms strictly between
 `t ‖ξ‖ / 2` and `3 t ‖ξ‖ / 2` (`TauCeti.norm_bounds_of_mem_smul_ball`), so the dilates
 `c ^ k • ball ξ ρ` with `c ≥ 3` are pairwise disjoint (`TauCeti.pairwise_disjoint_pow_smul_ball`).
+
+Along any nonzero-norm direction, a sufficiently large positive ray parameter pushes any base point
+outside any closed ball (`TauCeti.exists_pos_add_smul_notMem_closedBall`).
 -/
 
 public section
@@ -502,5 +510,40 @@ theorem pairwise_disjoint_ball_add_natCast_smul (x v : E) :
   nlinarith [norm_nonneg v]
 
 end Disjoint
+
+section Escape
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- Along any vector `v` of nonzero norm, a sufficiently large positive ray parameter pushes `z`
+outside the closed ball `Metric.closedBall x R`. -/
+theorem exists_pos_add_smul_notMem_closedBall (z x : E) {v : E} (hv : ‖v‖ ≠ 0) (R : ℝ) :
+    ∃ T : ℝ, 0 < T ∧ z + T • v ∈ (Metric.closedBall x R)ᶜ := by
+  let T : ℝ := (max R 0 + ‖z - x‖ + 1) / ‖v‖
+  have hT_pos : 0 < T := div_pos (by positivity) ((norm_nonneg v).lt_of_ne' hv)
+  refine ⟨T, hT_pos, ?_⟩
+  rw [Set.mem_compl_iff, Metric.mem_closedBall, dist_eq_norm, not_le]
+  have hnorm : T * ‖v‖ = max R 0 + ‖z - x‖ + 1 := div_mul_cancel₀ _ hv
+  have htri := norm_le_norm_add_norm_sub' (T • v) (x - z)
+  have hsub : T • v - (x - z) = z + T • v - x := by abel
+  rw [hsub, norm_smul, Real.norm_of_nonneg hT_pos.le, hnorm, norm_sub_rev x z] at htri
+  linarith [le_max_left R 0]
+
+end Escape
+
+section Midpoint
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- If `x ∈ S` and `2 ‖x - y‖ ≤ δ`, the ball of radius `‖x - y‖` about the midpoint of `x` and `y`
+lies in the closed `δ`-thickening of `S`. -/
+theorem ball_midpoint_subset_cthickening {S : Set E} {δ : ℝ} {x y : E} (hx : x ∈ S)
+    (hxy : 2 * dist x y ≤ δ) : ball (midpoint ℝ x y) ‖x - y‖ ⊆ cthickening δ S :=
+  (ball_subset_ball' le_rfl).trans <| ball_subset_closedBall.trans <|
+    (closedBall_subset_cthickening hx _).trans <| cthickening_mono (by
+      rw [dist_midpoint_left, ← dist_eq_norm, Real.norm_ofNat]
+      linarith [dist_nonneg (x := x) (y := y)]) S
+
+end Midpoint
 
 end TauCeti

@@ -26,6 +26,8 @@ For a continuous coefficient on `ℝ`, the propagator from `0` is Tau Ceti's lef
 
 * `TauCeti.propagatorDysonTerm P s n t`: the `n`-th Dyson term `Dₙ(t)` based at `s`.
 * `TauCeti.norm_propagatorDysonTerm_le`: `‖Dₙ(t)‖ ≤ |∫ r in s..t, ‖P r‖| ^ n / n!`.
+* `TauCeti.norm_propagatorDysonTerm_le_of_norm_le`: `‖Dₙ(t)‖ ≤ |∫ r in s..t, m r| ^ n / n!` when
+  `‖P r‖ ≤ m r` between `s` and `t`.
 * `TauCeti.hasSum_propagatorDysonTerm`: `∑ₙ Dₙ(t) = N_P(t, s)`.
 * `TauCeti.propagator_zero_eq_dysonSeriesLeft`: `N_P(t, 0) = dysonSeriesLeft P t` for continuous
   `P`.
@@ -100,6 +102,18 @@ theorem norm_propagatorDysonTerm_le (hP : IntegrableOn P (Icc a b)) (hs : s ∈ 
     rw [mul_one]
     exact (ContinuousLinearMap.opNorm_comp_le _ _).trans (mul_le_mul_of_nonneg_left
       (ih (hsub (uIoc_subset_uIcc hr))) (norm_nonneg _))
+
+open scoped Interval in
+/-- **The factorial bound on the Dyson terms under a domination.** If `m` is integrable between
+`s` and `t` and `‖P r‖ ≤ m r` for almost every `r` there, then
+`‖Dₙ(t)‖ ≤ |∫ r in s..t, m r| ^ n / n!` for `s, t ∈ [a, b]`. -/
+theorem norm_propagatorDysonTerm_le_of_norm_le {m : ℝ → ℝ} (hP : IntegrableOn P (Icc a b))
+    (hm : IntervalIntegrable m volume s t) (hPm : ∀ᵐ r, r ∈ Ι s t → ‖P r‖ ≤ m r)
+    (hs : s ∈ Icc a b) (n : ℕ) (ht : t ∈ Icc a b) :
+    ‖propagatorDysonTerm P s n t‖ ≤ |∫ r in s..t, m r| ^ n / n ! := by
+  refine (norm_propagatorDysonTerm_le hP hs n ht).trans ?_
+  gcongr ?_ ^ _ / _
+  exact intervalIntegral.abs_integral_norm_le_abs_integral_of_norm_le hm hPm
 
 /-- **The Dyson expansion of the propagator.** For `s, t ∈ [a, b]`, the Dyson terms sum to
 `N_P(t, s)`. -/
