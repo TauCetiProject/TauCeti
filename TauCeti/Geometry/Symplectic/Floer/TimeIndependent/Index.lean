@@ -132,35 +132,6 @@ theorem zeroModeLp_mem_range_floerSobolevOperator_iff (hH : ContDiff ℝ 2 H) (h
   · rintro ⟨u, rfl⟩
     exact ⟨zeroModeL V u, floerSobolevOperator_zeroModeL hH hγ haγ hA u⟩
 
-/-- Along a segment of `C²` autonomous Hamiltonians `(1 - τ) H + τ G`, the derivative of the
-Hamiltonian vector field is the corresponding combination of the derivatives. -/
-private theorem fderiv_hamiltonianVectorField_lineMap {G : V → ℝ} (hH : ContDiff ℝ 2 H)
-    (hG : ContDiff ℝ 2 G) (τ : ℝ) (y : V) :
-    fderiv ℝ (ω.hamiltonianVectorField fun y ↦ (1 - τ) * H y + τ * G y) y =
-      (1 - τ) • fderiv ℝ (ω.hamiltonianVectorField H) y +
-        τ • fderiv ℝ (ω.hamiltonianVectorField G) y := by
-  have hXH := (ω.contDiff_hamiltonianVectorField (n := 1) hH).differentiable one_ne_zero
-  have hXG := (ω.contDiff_hamiltonianVectorField (n := 1) hG).differentiable one_ne_zero
-  have hX : ω.hamiltonianVectorField (fun y ↦ (1 - τ) * H y + τ * G y) =
-      (1 - τ) • ω.hamiltonianVectorField H + τ • ω.hamiltonianVectorField G :=
-    funext fun y ↦ ω.hamiltonianVectorField_const_mul_add_const_mul
-      ((hH.differentiable two_ne_zero) y) ((hG.differentiable two_ne_zero) y) _ _
-  rw [hX, fderiv_add ((hXH y).const_smul _) ((hXG y).const_smul _), fderiv_const_smul (hXH y),
-    fderiv_const_smul (hXG y)]
-
-/-- Along a segment of `C²` autonomous Hamiltonians `(1 - τ) H + τ G`, bounds `a` and `b` on the
-derivatives of `X_H` and `X_G` along `γ` give the bound `|1 - τ| a + |τ| b` for the combination. -/
-private theorem norm_fderiv_hamiltonianVectorField_lineMap_le {G : V → ℝ} (hH : ContDiff ℝ 2 H)
-    (hG : ContDiff ℝ 2 G) {a b : ℝ}
-    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
-    (hbγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField G) (γ s)‖ ≤ b) (τ s : ℝ) :
-    ‖fderiv ℝ (ω.hamiltonianVectorField fun y ↦ (1 - τ) * H y + τ * G y) (γ s)‖ ≤
-      |1 - τ| * a + |τ| * b := by
-  rw [fderiv_hamiltonianVectorField_lineMap hH hG]
-  refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul, Real.norm_eq_abs]
-  · exact mul_le_mul_of_nonneg_left (haγ s) (abs_nonneg _)
-  · exact mul_le_mul_of_nonneg_left (hbγ s) (abs_nonneg _)
-
 /-- Along a segment of `C²` autonomous Hamiltonians `(1 - τ) H + τ G`, the Sobolev realization of
 the linearized operator along `(s, t) ↦ γ(s)` is affine in `τ`, as long as `dX_H` and `dX_G` are
 bounded along `γ`. -/
@@ -185,13 +156,16 @@ private theorem floerSobolevOperator_lineMap {G : V → ℝ} (hH : ContDiff ℝ 
   rw [AffineMap.lineMap_apply_module, add_apply, smul_apply, smul_apply]
   refine Lp.ext ?_
   filter_upwards [coeFn_floerSobolevOperator ω (memLp_floerJetCoeff_const_comp_fst hHτ hγ
-      (norm_fderiv_hamiltonianVectorField_lineMap_le hH hG haγ hbγ τ)) x,
+      fun s ↦ (ω.norm_fderiv_hamiltonianVectorField_const_mul_add_const_mul_le hH hG _ _ _).trans
+        (add_le_add (mul_le_mul_of_nonneg_left (haγ s) (abs_nonneg _))
+          (mul_le_mul_of_nonneg_left (hbγ s) (abs_nonneg _)))) x,
     Lp.coeFn_add ((1 - τ) • DH x) (τ • DG x), Lp.coeFn_smul (1 - τ) (DH x), Lp.coeFn_smul τ (DG x),
     coeFn_floerSobolevOperator ω (memLp_floerJetCoeff_const_comp_fst hH hγ haγ) x,
     coeFn_floerSobolevOperator ω (memLp_floerJetCoeff_const_comp_fst hG hγ hbγ) x]
     with z h₁ h₂ h₃ h₄ h₅ h₆
   rw [h₁, h₂, Pi.add_apply, h₃, h₄, Pi.smul_apply, Pi.smul_apply, h₅, h₆, floerJetCoeff_const_eq,
-    floerJetCoeff_const_eq, floerJetCoeff_const_eq, fderiv_hamiltonianVectorField_lineMap hH hG]
+    floerJetCoeff_const_eq, floerJetCoeff_const_eq,
+    ω.fderiv_hamiltonianVectorField_const_mul_add_const_mul hH hG]
   simp only [firstOrderJetCoeff_apply, comp_add, comp_smul, neg_add_rev, add_apply, neg_apply,
     smul_apply, coe_comp, Function.comp_apply]
   module
@@ -320,9 +294,11 @@ private theorem ker_sliceAverageLp_le_range_floerSobolevOperator_of_bijective
       simp [AffineMap.lineMap_apply_module, R₀, R₁, floerSobolevOperator_def]
     have hbτ (s : ℝ) :
         ‖fderiv ℝ (ω.hamiltonianVectorField fun y ↦ (1 - τ) * H y + τ * Q y) (γ s)‖ ≤ b := by
-      refine (norm_fderiv_hamiltonianVectorField_lineMap_le hH hQ₂ haγ hQγ τ s).trans ?_
+      refine (ω.norm_fderiv_hamiltonianVectorField_const_mul_add_const_mul_le hH hQ₂ _ _ _).trans ?_
       rw [abs_of_nonneg (sub_nonneg.2 hτ.2), abs_of_nonneg hτ.1]
-      nlinarith [le_max_left a π, le_max_right a π, hτ.1, hτ.2]
+      nlinarith [le_max_left a π, le_max_right a π, hτ.1, hτ.2,
+        mul_le_mul_of_nonneg_left (haγ s) (sub_nonneg.2 hτ.2),
+        mul_le_mul_of_nonneg_left (hQγ s) hτ.1]
     have hn : ‖(⟨x, x.property.1⟩ : H1 V)‖ = ‖x‖ := by
       rw [← Submodule.norm_coe, Submodule.coe_mk, Submodule.norm_coe]
     rw [← Submodule.norm_coe (AffineMap.lineMap R₀ R₁ τ x), hcoe, ← hn]

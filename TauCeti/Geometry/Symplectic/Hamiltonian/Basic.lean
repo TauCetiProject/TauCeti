@@ -273,6 +273,33 @@ theorem hamiltonianVectorField_const_mul_add_const_mul (ω : SymplecticForm V) {
   rw [fderiv_fun_add (hF.const_mul a) (hG.const_mul b), fderiv_const_mul hF, fderiv_const_mul hG]
   simp [map_add, map_smul]
 
+/-- For `C²` Hamiltonians the derivative of the Hamiltonian vector field is linear in the
+Hamiltonian: `d X_{aF + bG} = a dX_F + b dX_G`. -/
+theorem fderiv_hamiltonianVectorField_const_mul_add_const_mul (ω : SymplecticForm V)
+    {F G : V → ℝ} (hF : ContDiff ℝ 2 F) (hG : ContDiff ℝ 2 G) (a b : ℝ) (x : V) :
+    fderiv ℝ (ω.hamiltonianVectorField fun y ↦ a * F y + b * G y) x =
+      a • fderiv ℝ (ω.hamiltonianVectorField F) x +
+        b • fderiv ℝ (ω.hamiltonianVectorField G) x := by
+  have hXF := (ω.contDiff_hamiltonianVectorField (n := 1) hF).differentiable one_ne_zero
+  have hXG := (ω.contDiff_hamiltonianVectorField (n := 1) hG).differentiable one_ne_zero
+  have hX : ω.hamiltonianVectorField (fun y ↦ a * F y + b * G y) =
+      a • ω.hamiltonianVectorField F + b • ω.hamiltonianVectorField G :=
+    funext fun y ↦ ω.hamiltonianVectorField_const_mul_add_const_mul
+      ((hF.differentiable two_ne_zero) y) ((hG.differentiable two_ne_zero) y) _ _
+  rw [hX, fderiv_add ((hXF x).const_smul _) ((hXG x).const_smul _), fderiv_const_smul (hXF x),
+    fderiv_const_smul (hXG x)]
+
+/-- For `C²` Hamiltonians the derivative of the Hamiltonian vector field of `aF + bG` is bounded
+by `|a| ‖dX_F‖ + |b| ‖dX_G‖`. -/
+theorem norm_fderiv_hamiltonianVectorField_const_mul_add_const_mul_le (ω : SymplecticForm V)
+    {F G : V → ℝ} (hF : ContDiff ℝ 2 F) (hG : ContDiff ℝ 2 G) (a b : ℝ) (x : V) :
+    ‖fderiv ℝ (ω.hamiltonianVectorField fun y ↦ a * F y + b * G y) x‖ ≤
+      |a| * ‖fderiv ℝ (ω.hamiltonianVectorField F) x‖ +
+        |b| * ‖fderiv ℝ (ω.hamiltonianVectorField G) x‖ := by
+  rw [ω.fderiv_hamiltonianVectorField_const_mul_add_const_mul hF hG, ← Real.norm_eq_abs,
+    ← Real.norm_eq_abs, ← norm_smul, ← norm_smul]
+  exact norm_add_le _ _
+
 /-- The Hamiltonian vector field is additive on finite sums of Hamiltonians differentiable at
 the point: `X_{∑ Fᵢ} = ∑ X_{Fᵢ}`. -/
 theorem hamiltonianVectorField_fun_sum (ω : SymplecticForm V) {ι : Type*} {s : Finset ι}
