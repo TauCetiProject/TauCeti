@@ -100,6 +100,24 @@ theorem ext {f g : DGRightModuleHom hM hN} (hfg : ∀ x, f x = g x) : f = g :=
 theorem map_d (f : DGRightModuleHom hM hN) (x : M) : dN (f x) = f (dM x) :=
   f.map_d' x
 
+/-- A DG right-module morphism is homogeneous of degree zero over the ground ring. -/
+theorem isHomogeneous (f : DGRightModuleHom hM hN) :
+    LinearMap.IsHomogeneous (f.toLinearMap.restrictScalars R) ℳ ℳN 0 :=
+  LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ by
+    simpa only [add_zero, LinearMap.coe_restrictScalars, coe_toLinearMap] using f.map_mem' hx
+
+/-- A DG right-module morphism commutes with every Koszul twist, since it preserves degrees. -/
+theorem map_koszulTwist (f : DGRightModuleHom hM hN) (n : ℤ) (x : M) :
+    f ((InternalGrading.ofDecomposition ℳ).koszulTwist n x) =
+      (InternalGrading.ofDecomposition ℳN).koszulTwist n (f x) := by
+  have hf : LinearMap.IsHomogeneous (f.toLinearMap.restrictScalars R)
+      (InternalGrading.ofDecomposition ℳ).piece
+      (InternalGrading.ofDecomposition ℳN).piece 0 := by
+    rw [InternalGrading.ofDecomposition_piece, InternalGrading.ofDecomposition_piece]
+    exact f.isHomogeneous
+  simpa only [mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul,
+    LinearMap.coe_restrictScalars, coe_toLinearMap] using (hf.koszulTwist_apply n x).symm
+
 instance : Zero (DGRightModuleHom hM hN) where
   zero :=
     { toLinearMap := 0

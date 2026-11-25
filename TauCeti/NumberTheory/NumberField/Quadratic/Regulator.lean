@@ -11,9 +11,8 @@ import TauCeti.NumberTheory.Multiquadratic.Quadratic.Discriminant
 import TauCeti.NumberTheory.NumberField.Index.Discriminant
 import TauCeti.NumberTheory.NumberField.Minpoly
 import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
-import TauCeti.NumberTheory.NumberField.Units.Basic
+import TauCeti.NumberTheory.NumberField.Units.Normalization
 import TauCeti.NumberTheory.NumberField.Units.PrimeDegree
-import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 /-!
@@ -35,11 +34,12 @@ of `minpoly ℤ u` from below by `D`, where `x > 1` is the real image of `u` at 
   (`sqrt_discr_add_four_add_sqrt_div_two_le_embedding_of_isReal_of_norm_eq_one`), attained for
   instance by `2 + √3` in `ℚ(√3)` (`D = 12`, `(√16 + √12)/2 = 2 + √3`).
 
-Choosing `u` to be a normalized fundamental unit yields the corresponding sharp lower bounds on
-`NumberField.Units.regulator K` for real quadratic fields (which also hold trivially for `D < 0`
-because `Real.sqrt` evaluates to `0` on negative arguments and `regulator K = 1`). For the
-uniform discriminant-free bound `log ((1 + √5) / 2) ≤ regulator K`, see
-`TauCeti.NumberField.Units.log_goldenRatio_le_regulator` in
+Choosing `u` to be a normalized fundamental unit
+(`TauCeti.NumberField.Units.exists_one_lt_embedding_of_isReal_and_regulator_eq_log`) yields the
+corresponding sharp lower bounds on `NumberField.Units.regulator K` for real quadratic fields
+(which also hold trivially for `D < 0` because `Real.sqrt` evaluates to `0` on negative arguments
+and `regulator K = 1`). For the uniform discriminant-free bound `log ((1 + √5) / 2) ≤ regulator K`,
+see `TauCeti.NumberField.Units.log_goldenRatio_le_regulator` in
 `TauCeti.NumberTheory.NumberField.Units.Elimination.GoldenRatio`.
 
 ## Main results
@@ -50,8 +50,6 @@ All declarations are in the `TauCeti.NumberField.Units` namespace:
   at a real place satisfies `(√D + √(D - 4)) / 2 ≤ x`.
 * `sqrt_discr_add_four_add_sqrt_div_two_le_embedding_of_isReal_of_norm_eq_one`: if moreover
   `N(u) = 1`, then `(√(D + 4) + √D) / 2 ≤ x`.
-* `exists_one_lt_embedding_of_isReal_and_regulator_eq_log`: existence of a unit with real image
-  `x > 1` at a real place `w` whose logarithm equals `regulator K`.
 * `log_sqrt_discr_add_sqrt_sub_four_div_two_le_regulator`:
   `log ((√D + √(D - 4)) / 2) ≤ regulator K`, sharp for real quadratic fields (`D > 0`) and trivial
   for `D < 0` (where `Real.sqrt` vanishes on negative reals and `regulator K = 1`).
@@ -164,33 +162,6 @@ theorem sqrt_discr_add_sqrt_sub_four_div_two_le_embedding_of_isReal {w : Infinit
       Real.sqrt_le_iff.mpr ⟨by linarith [div_le_self zero_le_one hu.le], hsub_sq⟩
     linarith
 
-/-- **Normalized fundamental unit of a real quadratic field.** At any real infinite place `w` of a
-quadratic field `K`, there exists a unit `u` whose real image exceeds `1` and whose logarithm is
-`regulator K`. -/
-theorem exists_one_lt_embedding_of_isReal_and_regulator_eq_log {w : InfinitePlace K} (hw : w.IsReal)
-    (hK : finrank ℚ K = 2) :
-    ∃ u : (𝓞 K)ˣ, 1 < embedding_of_isReal hw (u : K) ∧
-      regulator K = Real.log (embedding_of_isReal hw (u : K)) := by
-  have hr : rank K = 1 := rank_eq_one_of_finrank_eq_two_of_isReal hK hw
-  obtain ⟨g, hg⟩ := exists_closure_sup_torsion_eq_top_of_rank_eq_one hr
-  have hreg : regulator K = |Real.log (w g)| := by
-    rw [regulator_eq_mult_abs_log_of_rank_eq_one hr g hg w, hw.mult_eq_one, Nat.cast_one, one_mul]
-  have hlog_ne : Real.log (w g) ≠ 0 := fun h0 ↦
-    (regulator_pos K).ne' (by rw [hreg, h0, abs_zero])
-  have hg_pos : 0 < w g := Units.pos_at_place g w
-  obtain ⟨u₀, hu₀_gt, hu₀_reg⟩ : ∃ u₀ : (𝓞 K)ˣ, 1 < w u₀ ∧ regulator K = Real.log (w u₀) := by
-    by_cases h1 : 1 < w g
-    · exact ⟨g, h1, hreg.trans (abs_of_pos (Real.log_pos h1))⟩
-    · have hlt : w g < 1 := lt_of_le_of_ne (not_lt.mp h1) fun he ↦ hlog_ne (by simp [he])
-      have hwInv : w (g⁻¹ : (𝓞 K)ˣ) = (w g)⁻¹ := by simp
-      have hinv : 1 < w (g⁻¹ : (𝓞 K)ˣ) := by
-        rw [hwInv]
-        exact (one_lt_inv₀ hg_pos).mpr hlt
-      refine ⟨g⁻¹, hinv, ?_⟩
-      rw [hreg, abs_of_neg (Real.log_neg hg_pos hlt), hwInv, Real.log_inv]
-  obtain ⟨ε, hε⟩ := w.exists_torsion_mul_embedding_eq_abs hw u₀
-  exact ⟨ε.val * u₀, hε.symm ▸ hu₀_gt, hu₀_reg.trans (congrArg Real.log hε.symm)⟩
-
 /-- In a real quadratic field (`0 < discr K`), a positive lower bound `B` valid at every real place
 on units `u` with `1 < w(u)` gives `log B ≤ regulator K`. -/
 private theorem log_le_regulator_of_zero_lt_discr (hK : finrank ℚ K = 2) (hd : 0 < discr K)
@@ -200,10 +171,11 @@ private theorem log_le_regulator_of_zero_lt_discr (hK : finrank ℚ K = 2) (hd :
     Real.log B ≤ regulator K := by
   have : IsTotallyReal K := IsTotallyReal.of_zero_lt_discr hd (by omega)
   obtain ⟨w⟩ := (inferInstance : Nonempty (InfinitePlace K))
-  obtain ⟨u, hu, hreg⟩ :=
-    exists_one_lt_embedding_of_isReal_and_regulator_eq_log (IsTotallyReal.isReal w) hK
+  have hw : w.IsReal := IsTotallyReal.isReal w
+  obtain ⟨u, hu, hreg⟩ := exists_one_lt_embedding_of_isReal_and_regulator_eq_log
+    (rank_eq_one_of_finrank_eq_two_of_isReal hK hw) hw
   rw [hreg]
-  exact Real.log_le_log hB (hle w (IsTotallyReal.isReal w) u hu)
+  exact Real.log_le_log hB (hle w hw u hu)
 
 /-- **Discriminant-dependent lower bound on the regulator of a quadratic field.** For any quadratic
 field `K` of discriminant `D`, `log ((√D + √(D - 4)) / 2) ≤ regulator K`. For real quadratic fields

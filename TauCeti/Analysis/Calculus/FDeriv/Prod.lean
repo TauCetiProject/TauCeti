@@ -38,8 +38,10 @@ result is the canonical linear graph shear.
 For a function of a scalar first variable, the partial derivatives along the coordinate lines
 `s ↦ (s, b)` and `t ↦ (a, t)` are its derivative applied to `(1, 0)` and `(0, 1)`. The same holds
 one order higher for the first derivative, and more generally along any line `r ↦ p + r • q`.
-A differentiable function whose partial derivative in the first variable vanishes everywhere is
-constant along every horizontal line.
+A function differentiable everywhere whose partial derivative in the first variable vanishes
+everywhere is constant along every horizontal line. For a function differentiable at every point
+of a union `ℝ × T` of horizontal lines, the partial derivative vanishes on `ℝ × T` exactly when
+the function is constant along each of these lines.
 
 The product `η (t) * u (t, x)` of a function of time and a function of time and space has the
 expected derivative, with a norm bound in terms of bounds on the factors and their derivatives
@@ -54,10 +56,13 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
 * `TauCeti.hasDerivAt_fderiv_apply_fst`, `TauCeti.hasDerivAt_fderiv_apply_snd`: the partial
   derivatives of a first partial derivative.
 * `TauCeti.hasDerivAt_fderiv_apply_line`: the derivative of a first derivative along a line.
-* `TauCeti.apply_eq_apply_zero_of_fderiv_fst_eq_zero`: a function with vanishing partial
-  derivative in its real first variable is constant along horizontal lines.
+* `TauCeti.apply_eq_apply_zero_of_fderiv_fst_eq_zero`: a differentiable function with vanishing
+  partial derivative in its real first variable is constant along horizontal lines.
 * `TauCeti.eq_zero_of_fderiv_fst_eq_zero_of_tendsto`: such a function which decays as `s → +∞`
   along each horizontal line vanishes.
+* `TauCeti.fderiv_fst_eqOn_zero_iff`: for a function differentiable at every point of `ℝ × T`,
+  the partial derivative in the real first variable vanishes on `ℝ × T` exactly when the function
+  is constant along the horizontal lines through `T`.
 * `TauCeti.fderiv_comp_fst_add_comp_snd`: the same for the totalized derivative.
 * `TauCeti.fderiv_comp_fst_add_comp_snd_eq_zero_iff`: a separated sum of differentiable functions
   is critical at `(a, b)` exactly when both summands are critical at `a` and `b`.
@@ -92,9 +97,13 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   norm at most that of the derivative.
 * `ContDiffOn.continuousOn_deriv_slice_right`: the partial derivative in a scalar second variable
   of a `C¹` map is continuous along every vertical segment inside its open domain.
+* `TauCeti.continuous_deriv_slice_right_graph`: the partial derivative in a scalar second variable
+  of a map that is `C¹` along a continuous graph `a ↦ (a, φ a)` is continuous along it.
 * `TauCeti.continuous_fderiv_apply_slice_right`: for a `C¹` map, `t ↦ df(a, t) v` is continuous.
 * `TauCeti.continuous_fderiv_slice_right`: the derivative of the second-variable slices of a `C¹`
   function of two variables is continuous in both variables.
+* `TauCeti.tsupport_fderiv_slice_right_subset`: the derivatives of the second-variable slices
+  are supported in the topological support of the function.
 * `TauCeti.fderiv_apply_mk_one_zero`: the derivative of a function in a scalar first variable,
   applied to `(1, 0)`, is the derivative of its first-variable slice.
 * `HasFDerivAt.comp_graph`, `TauCeti.fderiv_comp_graph_apply`: the chain rule along a graph
@@ -452,6 +461,19 @@ theorem _root_.ContDiffOn.continuousOn_deriv_slice_right {u : E × 𝕜 → G} {
   exact (hasDerivAt_slice_right ((hu.differentiableOn one_ne_zero _ (hKU t ht)).differentiableAt
     (hU.mem_nhds (hKU t ht)))).deriv
 
+/-- The partial derivative in the second variable of a map `u`, evaluated along a continuous graph
+`a ↦ (a, φ a)` at whose points `u` is `C¹`, is continuous. -/
+theorem continuous_deriv_slice_right_graph {u : E × 𝕜 → G} {φ : E → 𝕜} (hφ : Continuous φ)
+    (hu : ∀ a, ContDiffAt 𝕜 1 u (a, φ a)) :
+    Continuous fun a ↦ deriv (fun t ↦ u (a, t)) (φ a) := by
+  have heq (a : E) : deriv (fun t ↦ u (a, t)) (φ a) = fderiv 𝕜 u (a, φ a) (0, 1) :=
+    (hasDerivAt_slice_right ((hu a).differentiableAt one_ne_zero)).deriv
+  simp only [heq]
+  refine continuous_iff_continuousAt.2 fun a ↦ ContinuousAt.clm_apply ?_ continuousAt_const
+  exact ContinuousAt.comp (g := fderiv 𝕜 u) (f := fun a ↦ (a, φ a))
+    ((hu a).fderiv_right (m := 0) (by norm_num)).continuousAt
+    (continuous_id.prodMk hφ).continuousAt
+
 /-- For a `C¹` map `f` on a product, `t ↦ df(a, t) v` is continuous. -/
 theorem continuous_fderiv_apply_slice_right {f : E × F → G} (hf : ContDiff 𝕜 1 f) (a : E)
     (v : E × F) : Continuous fun t ↦ fderiv 𝕜 f (a, t) v :=
@@ -465,6 +487,18 @@ theorem continuous_fderiv_slice_right {f : E → F → G}
     Continuous fun p : E × F ↦ fderiv 𝕜 (f p.1) p.2 :=
   (ContDiff.fderiv (f := fun (q : E × F) y ↦ f q.1 y)
     (hf.comp (contDiff_fst.fst.prodMk contDiff_snd)) (contDiff_snd (n := 0)) (by simp)).continuous
+
+omit [NormedSpace 𝕜 E] in
+/-- The derivatives `fderiv 𝕜 (f a) y` of the second-variable slices of `f` vanish outside the
+topological support of `(a, y) ↦ f a y`. -/
+theorem tsupport_fderiv_slice_right_subset (f : E → F → G) :
+    tsupport (fun p : E × F ↦ fderiv 𝕜 (f p.1) p.2) ⊆ tsupport fun p : E × F ↦ f p.1 p.2 := by
+  refine closure_minimal (fun p hp ↦ by_contra fun hpf ↦ hp ?_) (isClosed_tsupport _)
+  -- Near a point outside the support, the slice through it vanishes.
+  have h : f p.1 =ᶠ[nhds p.2] fun _ ↦ 0 :=
+    (notMem_tsupport_iff_eventuallyEq.1 hpf).comp_tendsto
+      (continuous_const.prodMk continuous_id).continuousAt
+  simp [h.fderiv_eq]
 
 /-- The derivative in the second variable of a first partial derivative `fderiv 𝕜 u · v` is the
 second derivative of `u` in the direction `(0, 1)`. -/
@@ -486,15 +520,34 @@ theorem hasDerivAt_fderiv_apply_line {u : E → G} {p q : E} {s : 𝕜}
   simpa [Function.comp_def] using
     (hu.hasFDerivAt.clm_apply (hasFDerivAt_const v _)).comp_hasDerivAt s hline
 
+/-- A function on `ℝ × F` that is differentiable at every point of `ℝ × T` has vanishing partial
+derivative in the first variable there exactly when it is constant along the horizontal lines
+through `T`. -/
+theorem fderiv_fst_eqOn_zero_iff {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [NormedAddCommGroup G] [NormedSpace ℝ G] {u : ℝ × F → G} {T : Set F}
+    (hu : ∀ z ∈ (Set.univ : Set ℝ) ×ˢ T, DifferentiableAt ℝ u z) :
+    Set.EqOn (fun z ↦ fderiv ℝ u z (1, 0)) 0 ((Set.univ : Set ℝ) ×ˢ T) ↔
+      ∀ s, ∀ t ∈ T, u (s, t) = u (0, t) := by
+  -- Along each horizontal line through `T`, the partial derivative is that of `r ↦ u (r, t)`.
+  have hline (r : ℝ) {t : F} (ht : t ∈ T) :
+      HasDerivAt (fun r ↦ u (r, t)) (fderiv ℝ u (r, t) (1, 0)) r :=
+    hasDerivAt_slice_left (hu (r, t) ⟨Set.mem_univ r, ht⟩)
+  refine ⟨fun h s t ht ↦ ?_, fun h z hz ↦ ?_⟩
+  · refine is_const_of_deriv_eq_zero (fun r ↦ (hline r ht).differentiableAt) (fun r ↦ ?_) s 0
+    rw [(hline r ht).deriv]
+    exact h ⟨Set.mem_univ r, ht⟩
+  · have hz' := hline z.1 hz.2
+    rw [show (fun r ↦ u (r, z.2)) = fun _ ↦ u (0, z.2) from funext fun r ↦ h r z.2 hz.2] at hz'
+    exact hz'.unique (hasDerivAt_const _ _)
+
 /-- A differentiable function on `ℝ × F` whose partial derivative in the first variable vanishes
 everywhere is constant along every horizontal line. -/
 theorem apply_eq_apply_zero_of_fderiv_fst_eq_zero {F G : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G] {u : ℝ × F → G}
     (hu : Differentiable ℝ u) (h : ∀ z, fderiv ℝ u z (1, 0) = 0) (s : ℝ) (b : F) :
-    u (s, b) = u (0, b) := by
-  have hl (s : ℝ) : HasDerivAt (fun s ↦ u (s, b)) 0 s := by
-    simpa [h] using hasDerivAt_slice_left (hu (s, b))
-  exact is_const_of_deriv_eq_zero (fun s ↦ (hl s).differentiableAt) (fun s ↦ (hl s).deriv) s 0
+    u (s, b) = u (0, b) :=
+  (fderiv_fst_eqOn_zero_iff (T := Set.univ) fun z _ ↦ hu z).1 (fun z _ ↦ h z) s b
+    (Set.mem_univ b)
 
 section FstClmApplySnd
 

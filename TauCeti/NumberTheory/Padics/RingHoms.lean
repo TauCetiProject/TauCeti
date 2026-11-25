@@ -61,6 +61,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 * `PadicInt.cast_toZModPow_eq_toZMod`: reducing the truncation modulo `p ^ n` further modulo `p`
   recovers `toZMod`.
 * `PadicInt.dvd_sub_appr`: `x - appr x n` is divisible by `p ^ n` in `ℤ_[p]`.
+* `PadicInt.exists_intCast_dvd_sub_and_toZMod_eq`: every `p`-adic integer is congruent modulo
+  `p ^ n` to an integer with the same reduction modulo `p`.
 * `PadicInt.div_pow_le_card_filter_dvd`: among `n` consecutive elements of `ℤ_[p]`, at least
   `⌊n / pʲ⌋` are divisible by `p ^ j`; `PadicInt.card_filter_pow_dvd_natCast_sub`: for a natural
   number `a`, exactly `⌊n / pʲ⌋ + [a mod pʲ < n mod pʲ]` of them are.
@@ -311,6 +313,16 @@ theorem cast_toZModPow_eq_toZMod {n : ℕ} (hn : n ≠ 0) (x : ℤ_[p]) :
 @[simp]
 theorem dvd_sub_appr (x : ℤ_[p]) (n : ℕ) : (p : ℤ_[p]) ^ n ∣ x - x.appr n :=
   Ideal.mem_span_singleton.mp (appr_spec n x)
+
+/-- A `p`-adic integer is congruent modulo `p ^ n` to an integer with the same reduction modulo
+`p`. -/
+theorem exists_intCast_dvd_sub_and_toZMod_eq (x : ℤ_[p]) (n : ℕ) :
+    ∃ θ : ℤ, (p : ℤ_[p]) ^ n ∣ x - θ ∧ toZMod x = θ := by
+  refine ⟨(x.appr (n + 1) : ℕ), ?_, ?_⟩
+  · rw [Int.cast_natCast]
+    exact (pow_dvd_pow _ n.le_succ).trans (dvd_sub_appr x (n + 1))
+  · rw [← cast_toZModPow_eq_toZMod n.succ_ne_zero, toZModPow_eq_natCast_appr,
+      ZMod.cast_natCast (dvd_pow_self p n.succ_ne_zero), Int.cast_natCast]
 
 open scoped Classical Finset in
 /-- At least `⌊n / pʲ⌋` of the `n` consecutive elements `a, a - 1, …, a - (n - 1)` of `ℤ_p` are
