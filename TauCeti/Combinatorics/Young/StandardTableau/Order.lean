@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Young.Addable
 public import TauCeti.Combinatorics.Young.StandardTableau.Basic
 public import TauCeti.Combinatorics.Young.Tableau
+import Mathlib.Order.Interval.Finset.Fin
 import Mathlib.Order.Preorder.Finite
+import TauCeti.Combinatorics.Young.Sublevel
 
 /-!
 # The labels of a standard Young tableau, ordered by their cells
@@ -134,6 +137,58 @@ theorem apply_lt_apply_of_mem (T : StandardYoungTableau μ) {i₁ j₁ i₂ j₂
   T.apply_lt_apply_of_le h₁ h₂ fun h => by
     simp only [Subtype.mk.injEq, Prod.mk.injEq] at h
     omega
+
+private theorem monotone_toTableau (T : StandardYoungTableau μ) : Monotone T.toTableau := by
+  intro _ _ h
+  rcases h.lt_or_eq with h | rfl
+  · exact (T.apply_lt_apply_of_le h.le.1 h.le.2 h.ne).le
+  · exact le_rfl
+
+/-- The diagram of the cells labelled strictly below `i` in a standard Young tableau. -/
+def initialDiagram (T : StandardYoungTableau μ) (i : Fin μ.card) : YoungDiagram :=
+  μ.sublevel T.toTableau T.monotone_toTableau i
+
+/-- The cells of the initial diagram are exactly those carrying a label below its cutoff. -/
+theorem mem_initialDiagram {T : StandardYoungTableau μ} {i : Fin μ.card} {c : ℕ × ℕ} :
+    c ∈ T.initialDiagram i ↔
+      ∃ j < i, (rowIndex T.toTableau j, colIndex T.toTableau j) = c := by
+  rw [initialDiagram, YoungDiagram.mem_sublevel]
+  constructor
+  · rintro ⟨hc, hlt⟩
+    exact ⟨T.toTableau ⟨c, hc⟩, hlt, Prod.ext (rowIndex_apply _ _) (colIndex_apply _ _)⟩
+  · rintro ⟨j, hj, rfl⟩
+    let c : ↥μ.cells :=
+      ⟨(rowIndex T.toTableau j, colIndex T.toTableau j), rowIndex_colIndex_mem T.toTableau j⟩
+    have h : T c = j := apply_eq_of_coe_eq T j (c := c) rfl
+    exact ⟨c.property, show T.toTableau c < i by rwa [toTableau_apply, h]⟩
+
+/-- Each label below the cutoff accounts for one cell of the initial diagram. -/
+@[simp]
+theorem card_initialDiagram (T : StandardYoungTableau μ) (i : Fin μ.card) :
+    (T.initialDiagram i).card = i.val := by
+  have h : (T.initialDiagram i).cells =
+      (Finset.Iio i).image (fun j => (rowIndex T.toTableau j, colIndex T.toTableau j)) := by
+    ext c
+    simp only [YoungDiagram.mem_cells, mem_initialDiagram, Finset.mem_image, Finset.mem_Iio]
+  rw [YoungDiagram.card, h,
+    Finset.card_image_of_injective _ (rowIndex_colIndex_injective T.toTableau), Fin.card_Iio]
+
+/-- The cell carrying the cutoff label is addable to the initial diagram. -/
+theorem isAddable_initialDiagram (T : StandardYoungTableau μ) (i : Fin μ.card) :
+    (T.initialDiagram i).IsAddable (rowIndex T.toTableau i, colIndex T.toTableau i) := by
+  rw [YoungDiagram.isAddable_def]
+  refine ⟨?_, ?_⟩
+  · intro hi
+    obtain ⟨j, hj, hji⟩ := mem_initialDiagram.mp hi
+    exact hj.ne (rowIndex_colIndex_injective T.toTableau hji)
+  · intro c hc
+    have hm : c ∈ μ := μ.isLowerSet hc.le (rowIndex_colIndex_mem T.toTableau i)
+    rw [rowIndex_def, colIndex_def] at hc
+    have hlt := T.apply_lt_apply_of_le (c := ⟨c, hm⟩) (d := T.toTableau.symm i)
+      hc.le.1 hc.le.2 (fun h => hc.ne (congrArg Subtype.val h))
+    simp only [← toTableau_apply T, Equiv.apply_symm_apply] at hlt
+    exact mem_initialDiagram.mpr
+      ⟨_, hlt, Prod.ext (rowIndex_apply _ _) (colIndex_apply _ _)⟩
 
 end StandardYoungTableau
 
