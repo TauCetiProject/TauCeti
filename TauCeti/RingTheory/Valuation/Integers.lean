@@ -68,6 +68,12 @@ theorem coe_equivInteger_apply (hv : v.Integers O) (x : O) :
   exact (congrArg Subtype.val (RingEquiv.ofBijective_apply _ _ x)).trans
     (RingHom.codRestrict_apply _ _ _ x)
 
+/-- The inverse integer-subring equivalence recovers the underlying element in the valued ring. -/
+@[simp]
+theorem algebraMap_equivInteger_symm_apply (hv : v.Integers O) (y : v.integer) :
+    algebraMap O R (hv.equivInteger.symm y) = (y : R) := by
+  rw [← hv.coe_equivInteger_apply, RingEquiv.apply_symm_apply]
+
 /-- **The ring of integers of a perfect ring is perfect.** If `O` is a ring of integers for a
 valuation on a ring `R` that is perfect for the exponent `p`, then `O` is perfect for `p`. -/
 theorem perfectRing (hv : v.Integers O) (p : ℕ) [PerfectRing R p] : PerfectRing O p := by

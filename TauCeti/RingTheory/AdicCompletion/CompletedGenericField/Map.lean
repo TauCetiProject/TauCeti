@@ -106,7 +106,7 @@ noncomputable def completedGenericIntegersMap :
 theorem completedGenericIntegersMap_algebraMap_genericLocalRing (x : genericLocalRing π) :
     completedGenericIntegersMap f hf (algebraMap (genericLocalRing π) _ x) =
       algebraMap (genericLocalRing π') _ (Localization.localRingHom _ _ f hf.symm x) := by
-  rw [completedGenericIntegersMap, completedGenericIntegersLift_algebraMap_local]
+  rw [completedGenericIntegersMap, completedGenericIntegersLift_algebraMap_genericLocalRing]
   have heq : genericLocalRingLift π _ (completedGenericIntegersMap_comap f hf) =
       (algebraMap (genericLocalRing π') (completedGenericIntegers π')).comp
         (Localization.localRingHom _ _ f hf.symm) := by
@@ -276,14 +276,14 @@ theorem completedGenericFieldMap_algebraMap_completedGenericIntegers
     (x : completedGenericIntegers π) :
     completedGenericFieldMap f hf hπ hπ' hzero (algebraMap _ _ x) =
       algebraMap _ _ (completedGenericIntegersMap f hf x) :=
-  completedGenericFieldLift_algebraMap π _ _ hπ hπ' hzero x
+  completedGenericFieldLift_algebraMap_completedGenericIntegers π _ _ hπ hπ' hzero x
 
 /-- The map of completed generic fields extends `f`. -/
 @[simp]
 theorem completedGenericFieldMap_algebraMap (a : A) :
     completedGenericFieldMap f hf hπ hπ' hzero (algebraMap A _ a) = algebraMap B _ (f a) := by
   simpa only [completedGenericFieldMap, RingHom.comp_apply, ← IsScalarTower.algebraMap_apply] using
-    completedGenericFieldLift_algebraMap_affine π _ (completedGenericIntegersMap_comap f hf)
+    completedGenericFieldLift_algebraMap π _ (completedGenericIntegersMap_comap f hf)
       hπ hπ' hzero a
 
 /-- **Uniqueness of the extension.** A homomorphism of completed generic fields extending the map

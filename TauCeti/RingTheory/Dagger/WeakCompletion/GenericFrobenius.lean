@@ -258,7 +258,8 @@ noncomputable def completedGenericFieldFrobenius (φ : W →+* W) (q : ℕ) (hq 
 
 /-- The generic-field Frobenius restricts to the integral Frobenius on the valuation ring. -/
 @[simp]
-theorem completedGenericFieldFrobenius_algebraMap (φ : W →+* W) (q : ℕ) (hq : q ≠ 0)
+theorem completedGenericFieldFrobenius_algebraMap_completedGenericIntegers
+    (φ : W →+* W) (q : ℕ) (hq : q ≠ 0)
     (hφ : ∀ z : W, Dagger.weakCompletion.eval ϖ 1 (φ z) =
       Dagger.weakCompletion.eval ϖ 1 z ^ q)
     (hπ : π ∈ nonZeroDivisors A)
@@ -268,12 +269,13 @@ theorem completedGenericFieldFrobenius_algebraMap (φ : W →+* W) (q : ℕ) (hq
       (algebraMap C (completedGenericField π hπ) x) =
         algebraMap C (completedGenericField π hπ)
           (completedGenericIntegersFrobenius ϖ φ q hq hφ x) := by
-  simp only [completedGenericFieldFrobenius, completedGenericFieldLift_algebraMap,
+  simp only [completedGenericFieldFrobenius,
+    completedGenericFieldLift_algebraMap_completedGenericIntegers,
     completedGenericIntegersFrobenius]
 
 /-- On the affine algebra the generic-field Frobenius is computed through the weak lift. -/
 @[simp]
-theorem completedGenericFieldFrobenius_algebraMap_affine (φ : W →+* W) (q : ℕ) (hq : q ≠ 0)
+theorem completedGenericFieldFrobenius_algebraMap (φ : W →+* W) (q : ℕ) (hq : q ≠ 0)
     (hφ : ∀ z : W, Dagger.weakCompletion.eval ϖ 1 (φ z) =
       Dagger.weakCompletion.eval ϖ 1 z ^ q)
     (hπ : π ∈ nonZeroDivisors A)
@@ -283,7 +285,7 @@ theorem completedGenericFieldFrobenius_algebraMap_affine (φ : W →+* W) (q : �
       (algebraMap A (completedGenericField π hπ) a) =
         algebraMap C (completedGenericField π hπ)
           (toCompletedGenericIntegers ϖ (φ (Dagger.weakCompletion.of ϖ A a))) := by
-  simp only [completedGenericFieldFrobenius, completedGenericFieldLift_algebraMap_affine,
+  simp only [completedGenericFieldFrobenius, completedGenericFieldLift_algebraMap,
     affineRestriction_apply]
 
 /-- If the Frobenius image of the parameter is a uniformizer of the generic integers, the
@@ -335,7 +337,7 @@ theorem completedGenericFieldFrobenius_scalarHom {K : Type*} [CommRing K] [Algeb
     refine IsLocalization.ringHom_ext (Submonoid.powers ϖ) (RingHom.ext fun a ↦ ?_)
     simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
     rw [← hcoeff a, hσ₀]
-    simp only [F, j, completedGenericFieldFrobenius_algebraMap,
+    simp only [F, j, completedGenericFieldFrobenius_algebraMap_completedGenericIntegers,
       completedGenericIntegersFrobenius_toCompletedGenericIntegers, hφ₀, ← hcoeff]
   exact DFunLike.congr_fun h x
 

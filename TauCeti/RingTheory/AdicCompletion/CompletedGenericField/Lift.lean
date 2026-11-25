@@ -93,7 +93,7 @@ noncomputable def completedGenericIntegersLift :
 
 /-- The completed extension agrees with the map on the generic local ring. -/
 @[simp]
-theorem completedGenericIntegersLift_algebraMap_local (a : genericLocalRing π) :
+theorem completedGenericIntegersLift_algebraMap_genericLocalRing (a : genericLocalRing π) :
     completedGenericIntegersLift π f hf
       (algebraMap (genericLocalRing π) (completedGenericIntegers π) a) =
         genericLocalRingLift π f hf a := by
@@ -111,7 +111,7 @@ theorem completedGenericIntegersLift_algebraMap_local (a : genericLocalRing π) 
 theorem completedGenericIntegersLift_algebraMap (a : A) :
     completedGenericIntegersLift π f hf (algebraMap A (completedGenericIntegers π) a) = f a := by
   rw [IsScalarTower.algebraMap_apply A (genericLocalRing π) (completedGenericIntegers π),
-    completedGenericIntegersLift_algebraMap_local, genericLocalRingLift_algebraMap]
+    completedGenericIntegersLift_algebraMap_genericLocalRing, genericLocalRingLift_algebraMap]
 
 include hf in
 private theorem isLocalHom_of_affine_agreement
@@ -215,7 +215,8 @@ noncomputable def completedGenericFieldLift :
 
 /-- The field extension agrees with the map on the integral completion. -/
 @[simp]
-theorem completedGenericFieldLift_algebraMap (a : completedGenericIntegers π) :
+theorem completedGenericFieldLift_algebraMap_completedGenericIntegers
+    (a : completedGenericIntegers π) :
     completedGenericFieldLift π f hf hπ hπ' hzero
       (algebraMap (completedGenericIntegers π) (completedGenericField π hπ) a) =
         algebraMap (completedGenericIntegers π') (completedGenericField π' hπ')
@@ -224,11 +225,11 @@ theorem completedGenericFieldLift_algebraMap (a : completedGenericIntegers π) :
 
 /-- The field extension agrees with the original affine map. -/
 @[simp]
-theorem completedGenericFieldLift_algebraMap_affine (a : A) :
+theorem completedGenericFieldLift_algebraMap (a : A) :
     completedGenericFieldLift π f hf hπ hπ' hzero (algebraMap A (completedGenericField π hπ) a) =
       algebraMap (completedGenericIntegers π') (completedGenericField π' hπ') (f a) := by
   rw [IsScalarTower.algebraMap_apply A (completedGenericIntegers π)
-    (completedGenericField π hπ), completedGenericFieldLift_algebraMap,
+    (completedGenericField π hπ), completedGenericFieldLift_algebraMap_completedGenericIntegers,
     completedGenericIntegersLift_algebraMap]
 
 /-- The field extension maps the source valuation ring into the target valuation ring. -/
@@ -236,7 +237,7 @@ theorem valuation_completedGenericFieldLift_le_one {x : completedGenericField π
     (hx : Valued.v x ≤ 1) :
     Valued.v (completedGenericFieldLift π f hf hπ hπ' hzero x) ≤ 1 := by
   obtain ⟨a, rfl⟩ := (completedGenericField_integers π hπ).exists_of_le_one hx
-  rw [completedGenericFieldLift_algebraMap]
+  rw [completedGenericFieldLift_algebraMap_completedGenericIntegers]
   exact (completedGenericField_integers π' hπ').map_le_one _
 
 /-- The field extension preserves the normalized valuations when the parameter maps to an
@@ -246,7 +247,7 @@ theorem valuation_completedGenericFieldLift
     (x : completedGenericField π hπ) :
     Valued.v (completedGenericFieldLift π f hf hπ hπ' hzero x) = Valued.v x := by
   refine valuation_completedGenericField_hom hπ hπ' _ _
-    (completedGenericFieldLift_algebraMap π f hf hπ hπ' hzero) ?_ x
+    (completedGenericFieldLift_algebraMap_completedGenericIntegers π f hf hπ hπ' hzero) ?_ x
   rwa [completedGenericIntegersLift_algebraMap]
 
 /-- The field extension is continuous for the valuation topologies. -/
@@ -267,7 +268,7 @@ theorem continuous_completedGenericFieldLift :
       rw [maximalIdeal_completedGenericIntegers]
       exact Ideal.mem_span_singleton_self _
     have hk := IsLocalRing.map_maximalIdeal_le k (Ideal.mem_map_of_mem k hmem)
-    rw [completedGenericFieldLift_algebraMap]
+    rw [completedGenericFieldLift_algebraMap_completedGenericIntegers]
     exact lt_of_le_of_ne (hw.map_le_one _) (fun h ↦
       (mem_maximalIdeal _).mp hk (hw.isUnit_iff_valuation_eq_one.mpr h))
   refine (uniformContinuous_of_continuousAt_zero F ?_).continuous
@@ -289,7 +290,7 @@ theorem continuous_completedGenericFieldLift :
   rw [Set.mem_ofPred_eq, w.restrict_lt_iff_lt_embedding, map_mul, map_mul, map_mul,
     map_pow, map_pow, map_pow]
   refine (mul_le_of_le_one_right zero_le ?_).trans_lt hn
-  rw [completedGenericFieldLift_algebraMap]
+  rw [completedGenericFieldLift_algebraMap_completedGenericIntegers]
   exact hw.map_le_one (k b)
 
 variable {π} in
@@ -309,14 +310,9 @@ private theorem completedGenericFieldRestrict_algebraMap
     algebraMap (completedGenericIntegers π') (completedGenericField π' hπ')
         (completedGenericFieldRestrict hπ hπ' g hint x) =
       g (algebraMap (completedGenericIntegers π) (completedGenericField π hπ) x) := by
-  let y : (Valued.v : Valuation (completedGenericField π' hπ') ℤᵐ⁰).integer :=
-    ⟨g (algebraMap (completedGenericIntegers π) (completedGenericField π hπ) x),
-      hint _ ((completedGenericField_integers π hπ).map_le_one x)⟩
-  let e := (completedGenericField_integers π' hπ').equivInteger
-  calc
-    _ = (e (e.symm y) : completedGenericField π' hπ') :=
-      ((completedGenericField_integers π' hπ').coe_equivInteger_apply _).symm
-    _ = _ := congrArg Subtype.val (e.apply_symm_apply y)
+  simp only [completedGenericFieldRestrict, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
+    RingEquiv.coe_toRingHom, Valuation.Integers.algebraMap_equivInteger_symm_apply]
+  exact (RingHom.codRestrict_apply _ _ _ x).trans (RingHom.comp_apply _ _ x)
 
 /-- Among field maps preserving the valuation ring, the extension to the completed generic
 field is uniquely determined by its values on the affine lift. -/
@@ -337,7 +333,7 @@ theorem completedGenericFieldLift_unique
   apply IsLocalization.ringHom_ext (M := nonZeroDivisors (completedGenericIntegers π))
   apply RingHom.ext
   intro x
-  simp only [RingHom.comp_apply, completedGenericFieldLift_algebraMap]
+  simp only [RingHom.comp_apply, completedGenericFieldLift_algebraMap_completedGenericIntegers]
   rw [← completedGenericFieldRestrict_algebraMap hπ hπ' g hint, ← hrestrict]
 
 end TauCeti.AdicCompletion
