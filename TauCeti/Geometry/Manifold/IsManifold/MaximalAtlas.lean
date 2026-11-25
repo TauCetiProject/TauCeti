@@ -28,9 +28,6 @@ finite smooth partition of unity each of whose pieces lies in the source of a ch
 given chart `e` over a compact subset of its target
 (`IsCompact.exists_smoothPartition_mem_maximalAtlas_eqOn_symm`).
 
-Two charts with the same inverse on a subset `s` of the second target see the points mapped into
-`s` the same way (`OpenPartialHomeomorph.mem_source_and_apply_eq_of_eqOn_symm`).
-
 Such charts see two distant regions of `M` at once. Since chart compressions of operators are
 taken in every chart of the maximal atlas, this lets a statement made in all charts control how an
 operator connects two distant points: this is how the composition of pseudodifferential operators
@@ -45,18 +42,6 @@ open scoped Manifold ContDiff
 universe u
 
 namespace OpenPartialHomeomorph
-
-/-- **Charts with the same inverse on a set.** If the inverses of `e₁` and `e₂` agree on a subset
-`s` of the target of `e₂`, a point of the source of `e₁` mapped into `s` by `e₁` lies in the source
-of `e₂`, and `e₂` maps it to the same point. -/
-theorem mem_source_and_apply_eq_of_eqOn_symm {X Y : Type*} [TopologicalSpace X]
-    [TopologicalSpace Y] {e₁ e₂ : OpenPartialHomeomorph X Y} {s : Set Y} (hs : s ⊆ e₂.target)
-    (h : EqOn e₁.symm e₂.symm s) {x : X} (hx : x ∈ e₁.source) (hxs : e₁ x ∈ s) :
-    x ∈ e₂.source ∧ e₂ x = e₁ x := by
-  have hx' : e₂.symm (e₁ x) = x := by rw [← h hxs, e₁.left_inv hx]
-  refine ⟨hx' ▸ e₂.map_target (hs hxs), ?_⟩
-  conv_lhs => rw [← hx']
-  exact e₂.right_inv (hs hxs)
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
   [NormedSpace 𝕜 E] {M : Type*} [TopologicalSpace M] [ChartedSpace E M] {n : WithTop ℕ∞}

@@ -11,9 +11,9 @@ public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Bas
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Geometry.Manifold.ContMDiff.ChartCutoff
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
-import TauCeti.Geometry.Manifold.IsManifold.MaximalAtlas
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
 /-!
 # Differential operators on a manifold, compressed to a chart
@@ -435,7 +435,7 @@ def complexChartCompression (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) :
     rw [LinearMap.smul_comp, LinearMap.comp_smul, RingHom.id_apply]
 
 /-- The chart compression of `D` is `D` between the pullback by `ψ` and the pushforward by `φ`. -/
-theorem complexChartCompression_eq (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+theorem complexChartCompression_def (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
     (D : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯) :
     e.complexChartCompression he φ ψ D =
       e.complexCutoffPushforward he φ ∘ₗ D ∘ₗ e.complexCutoffPullback he ψ :=
@@ -514,7 +514,7 @@ theorem complexChartCompression_congr {e' : OpenPartialHomeomorph M E}
     (hψ : (ψ : E → ℝ) = ψ') (h : EqOn e.symm e'.symm (tsupport φ ∪ tsupport ψ)) :
     e.complexChartCompression he φ ψ = e'.complexChartCompression he' φ' ψ' := by
   ext D : 1
-  rw [complexChartCompression_eq, complexChartCompression_eq,
+  rw [complexChartCompression_def, complexChartCompression_def,
     complexCutoffPushforward_congr he he' hφ (h.mono subset_union_left),
     complexCutoffPullback_congr he he' hψ (h.mono subset_union_right)]
 
@@ -544,7 +544,7 @@ theorem complexChartCompression_comp_apply (φ ψ χ : 𝓓(⟨e.target, e.open_
     (hB : ∀ x, B (e.complexCutoffPullback he ψ f) x ≠ 0 → x ∈ e.source ∧ χ (e x) = 1) :
     e.complexChartCompression he φ ψ (A ∘ₗ B) f =
       e.complexChartCompression he φ χ A (e.complexChartCompression he χ ψ B f) := by
-  simp only [complexChartCompression_eq, LinearMap.comp_apply,
+  simp only [complexChartCompression_def, LinearMap.comp_apply,
     complexCutoffPullback_complexCutoffPushforward he χ hB]
 
 end Complex
