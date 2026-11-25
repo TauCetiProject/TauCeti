@@ -14,8 +14,9 @@ A linear map `A : D →ₗ K` on a space `D` together with an injective linear m
 defines the partial linear map `LinearMap.domainOperator ι A hι` from `H` to `K` with domain
 `range ι`, acting by `ι x ↦ A x`. Unbounded operators are often described this way: by a bounded
 operator on a smaller space with a bounded injective inclusion (see
-`ContinuousLinearMap.domainOperator`), or by an operator on test functions or compactly supported
-smooth forms, which carry no topology, together with their injection into an `L²` space.
+`TauCeti.Topology.Algebra.Module.LinearPMap.CommonDomain`), or by an operator on test functions
+or compactly supported smooth forms, which carry no topology, together with their injection into
+an `L²` space.
 
 This file gives the domain, the values, the graph and the range of this partial linear map: the
 graph is the range of `x ↦ (ι x, A x)` (`LinearMap.graph_domainOperator`) and the range is the

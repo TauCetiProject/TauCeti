@@ -15,9 +15,9 @@ import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 # Self-adjoint operators on a common domain
 
 Let `H` be an inner product space and `ι, A : D →L H` bounded operators with `ι` injective, so
-that `ContinuousLinearMap.domainOperator ι A hι` is the unbounded operator on `H` with domain
-`range ι` acting by `ι x ↦ A x`. This file translates the symmetry and self-adjointness of that
-operator into conditions on the pair `(ι, A)`.
+that `LinearMap.domainOperator ι A hι` of the underlying linear maps is the unbounded operator on
+`H` with domain `range ι` acting by `ι x ↦ A x`. This file translates the symmetry and
+self-adjointness of that operator into conditions on the pair `(ι, A)`.
 
 * It is symmetric exactly when `⟪A x, ι y⟫ = ⟪ι x, A y⟫` for all `x, y : D`
   (`ContinuousLinearMap.isFormalAdjoint_domainOperator_iff`), the symmetry hypothesis of the
@@ -53,36 +53,38 @@ section Topological
 
 variable [AddCommGroup D] [Module 𝕜 D] [TopologicalSpace D] {ι A : D →L[𝕜] H} {hι : Injective ι}
 
-/-- `domainOperator ι A hι` is symmetric exactly when `⟪A x, ι y⟫ = ⟪ι x, A y⟫` for all
+/-- `LinearMap.domainOperator ι A hι` is symmetric exactly when `⟪A x, ι y⟫ = ⟪ι x, A y⟫` for all
 `x y : D`. -/
 theorem isFormalAdjoint_domainOperator_iff :
-    (domainOperator ι A hι).IsFormalAdjoint (domainOperator ι A hι) ↔
+    (ι.toLinearMap.domainOperator A.toLinearMap hι).IsFormalAdjoint
+        (ι.toLinearMap.domainOperator A.toLinearMap hι) ↔
       ∀ x y, ⟪A x, ι y⟫ = ⟪ι x, A y⟫ := by
   refine ⟨fun h x y ↦ ?_, fun h ↦ ?_⟩
-  · convert h ⟨ι x, apply_mem_domain_domainOperator ι A hι x⟩
-      ⟨ι y, apply_mem_domain_domainOperator ι A hι y⟩ using 2 <;>
-      exact (domainOperator_apply_mk ι A hι _ _).symm
+  · convert h ⟨ι x, LinearMap.apply_mem_domain_domainOperator _ _ hι x⟩
+      ⟨ι y, LinearMap.apply_mem_domain_domainOperator _ _ hι y⟩ using 2 <;>
+      exact (LinearMap.domainOperator_apply_mk _ _ hι _ _).symm
   · rintro ⟨_, hx⟩ ⟨_, hy⟩
-    obtain ⟨x, rfl⟩ := (mem_domain_domainOperator_iff ι A hι).1 hx
-    obtain ⟨y, rfl⟩ := (mem_domain_domainOperator_iff ι A hι).1 hy
-    convert h x y using 2 <;> exact domainOperator_apply_mk ι A hι _ _
+    obtain ⟨x, rfl⟩ := (LinearMap.mem_domain_domainOperator_iff _ _ hι).1 hx
+    obtain ⟨y, rfl⟩ := (LinearMap.mem_domain_domainOperator_iff _ _ hι).1 hy
+    convert h x y using 2 <;> exact LinearMap.domainOperator_apply_mk _ _ hι _ _
 
 /-- **Self-adjointness on a common domain.** On a Hilbert space `H`, if `⟪A x, ι y⟫ = ⟪ι x, A y⟫`
 for all `x y : D` and the shift `c • ι - A` is surjective at a real scalar `c`, then
-`domainOperator ι A hι` is self-adjoint. -/
+`LinearMap.domainOperator ι A hι` is self-adjoint. -/
 theorem isSelfAdjoint_domainOperator [CompleteSpace H] (hsymm : ∀ x y, ⟪A x, ι y⟫ = ⟪ι x, A y⟫)
     {c : 𝕜} (hc : RCLike.im c = 0) (hsurj : Surjective (c • ι - A)) :
-    IsSelfAdjoint (domainOperator ι A hι) := by
+    IsSelfAdjoint (ι.toLinearMap.domainOperator A.toLinearMap hι) := by
   refine (isFormalAdjoint_domainOperator_iff.2 hsymm).isSelfAdjoint_of_surjective_smul_sub hc
     fun z ↦ ?_
   obtain ⟨x, rfl⟩ := hsurj z
-  exact ⟨⟨ι x, apply_mem_domain_domainOperator ι A hι x⟩, smul_sub_domainOperator_apply rfl⟩
+  exact ⟨⟨ι x, LinearMap.apply_mem_domain_domainOperator _ _ hι x⟩,
+    smul_sub_domainOperator_apply rfl⟩
 
 /-- On a Hilbert space `H`, if `⟪A x, ι y⟫ = ⟪ι x, A y⟫` for all `x y : D` and `A` is invertible,
-then `domainOperator ι A hι` is self-adjoint. -/
+then `LinearMap.domainOperator ι A hι` is self-adjoint. -/
 theorem isSelfAdjoint_domainOperator_of_isInvertible [CompleteSpace H]
     (hsymm : ∀ x y, ⟪A x, ι y⟫ = ⟪ι x, A y⟫) (h : A.IsInvertible) :
-    IsSelfAdjoint (domainOperator ι A hι) :=
+    IsSelfAdjoint (ι.toLinearMap.domainOperator A.toLinearMap hι) :=
   isSelfAdjoint_domainOperator hsymm (c := 0) (map_zero _) <| by
     rw [zero_smul, zero_sub]
     exact (isInvertible_neg_iff.2 h).surjective
@@ -93,10 +95,11 @@ section Normed
 
 variable [NormedAddCommGroup D] [NormedSpace 𝕜 D] {ι A : D →L[𝕜] H} {hι : Injective ι}
 
-/-- If `domainOperator ι A hι` is self-adjoint on a Hilbert space and `D` is complete, then the
-shift `c • ι - A` is invertible at every nonreal scalar `c`. -/
+/-- If `LinearMap.domainOperator ι A hι` is self-adjoint on a Hilbert space and `D` is complete,
+then the shift `c • ι - A` is invertible at every nonreal scalar `c`. -/
 theorem isInvertible_smul_sub_of_isSelfAdjoint_domainOperator [CompleteSpace D] [CompleteSpace H]
-    (h : IsSelfAdjoint (domainOperator ι A hι)) {c : 𝕜} (hc : RCLike.im c ≠ 0) :
+    (h : IsSelfAdjoint (ι.toLinearMap.domainOperator A.toLinearMap hι)) {c : 𝕜}
+    (hc : RCLike.im c ≠ 0) :
     (c • ι - A).IsInvertible :=
   isInvertible_iff_bijective.2 (bijective_smul_sub_domainOperator_iff.1 (h.smul_sub_bijective hc))
 
