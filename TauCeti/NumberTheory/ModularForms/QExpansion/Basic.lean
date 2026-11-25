@@ -162,6 +162,14 @@ theorem UpperHalfPlane.periodic_qParam_comp_ofComplex :
       mul_div_cancel_right₀ _ (Complex.ofReal_ne_zero.mpr hh), Complex.exp_add,
       Complex.exp_two_pi_mul_I, one_mul]
 
+/-- Twisting an `h`-periodic function by a power of the `q`-parameter of width `h` keeps it
+`h`-periodic, read on `ℂ` through `ofComplex`. -/
+theorem UpperHalfPlane.periodic_qParam_pow_mul_comp_ofComplex {f : ℍ → ℂ}
+    (hfper : Function.Periodic (f ∘ ofComplex) h) (k : ℕ) :
+    Function.Periodic
+      ((fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ k * f τ) ∘ ofComplex) h := fun z ↦ by
+  simpa using congrArg₂ (fun a b ↦ a ^ k * b) (periodic_qParam_comp_ofComplex z) (hfper z)
+
 section CuspFunction
 
 open Filter Topology
@@ -319,6 +327,19 @@ theorem UpperHalfPlane.meromorphicAt_cuspFunction_pow (hf : MeromorphicAt (cuspF
 theorem UpperHalfPlane.meromorphicAt_cuspFunction_const (c : ℂ) :
     MeromorphicAt (cuspFunction h fun _ : ℍ ↦ c) 0 :=
   cuspFunction_const h c ▸ analyticAt_const.meromorphicAt
+
+/-- The cusp function of a finite product is meromorphic at `0` when all the cusp functions of
+the factors are. -/
+theorem UpperHalfPlane.meromorphicAt_cuspFunction_prod {ι : Type*} {s : Finset ι}
+    {F : ι → ℍ → ℂ} (hF : ∀ i ∈ s, MeromorphicAt (cuspFunction h (F i)) 0) :
+    MeromorphicAt (cuspFunction h (∏ i ∈ s, F i)) 0 := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp [Pi.one_def]
+  | insert i s hi ih =>
+    rw [Finset.prod_insert hi]
+    exact meromorphicAt_cuspFunction_mul (hF i (Finset.mem_insert_self i s))
+      (ih fun k hk ↦ hF k (Finset.mem_insert_of_mem hk))
 
 /-- The order at `0` of `q ^ k` times the cusp function of `f`. -/
 theorem UpperHalfPlane.meromorphicOrderAt_pow_mul_cuspFunction {k : ℕ}

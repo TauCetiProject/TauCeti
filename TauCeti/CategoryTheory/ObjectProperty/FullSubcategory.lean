@@ -33,7 +33,8 @@ in Mathlib's `Mathlib.CategoryTheory.ObjectProperty.FullSubcategory`.
 * `CategoryTheory.ObjectProperty.mono_homMk`: `homMk` of a monomorphism of the ambient category is
   a monomorphism of the full subcategory.
 * `CategoryTheory.ObjectProperty.FullSubcategory.isGroupoid`: a full subcategory of a groupoid is a
-  groupoid.
+  groupoid, and `CategoryTheory.ObjectProperty.FullSubcategory.groupoid` equips it with the
+  ambient inverses.
 * `CategoryTheory.ObjectProperty.ιOfLE_additive`: the inclusion of a smaller property into a
   larger one is additive.
 * `CategoryTheory.ObjectProperty.hasFiniteBiproducts_fullSubcategory`: a full subcategory closed
@@ -58,6 +59,11 @@ variable {C : Type*} [Category* C] (P Q : ObjectProperty C)
 /-- A full subcategory of a groupoid is a groupoid, without any closure condition on objects. -/
 instance FullSubcategory.isGroupoid [IsGroupoid C] : IsGroupoid P.FullSubcategory :=
   isGroupoid_of_reflects_iso P.ι
+
+/-- A full subcategory of a groupoid is a groupoid, whose inverses are the ambient inverses. -/
+instance FullSubcategory.groupoid {G : Type*} [Groupoid G] (R : ObjectProperty G) :
+    Groupoid R.FullSubcategory :=
+  inferInstanceAs (Groupoid (InducedCategory G FullSubcategory.obj))
 
 /-- The lift of a functor through a full subcategory, followed by the inclusion, is the original
 functor. This is the equality form of Mathlib's isomorphism
