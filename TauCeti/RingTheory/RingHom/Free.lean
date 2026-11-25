@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 
 import Mathlib.RingTheory.Ideal.Maps
 import Mathlib.Tactic.Algebraize
-import TauCeti.LinearAlgebra.Unimodular
+import TauCeti.RingTheory.LocalRing.Module
 
 /-!
 # Free ring homomorphisms
@@ -90,7 +90,7 @@ theorem Free.exists_addMonoidHom_eq_one [IsLocalRing R] {f : R →+* S} (hf : f.
   let := f.toAlgebra
   have : Module.Free R S := hf
   obtain ⟨μ, hμ⟩ := Module.isUnimodular_iff.1 <|
-    (Module.Free.isUnimodular_iff_notMem_smul_top (R := R) (v := y)).2
+    (Module.isUnimodular_iff_notMem_maximalIdeal_smul_top (R := R) (m := y)).2
       (by rwa [Ideal.smul_top_eq_map, Submodule.restrictScalars_mem, RingHom.algebraMap_toAlgebra])
   exact ⟨μ.toAddMonoidHom, fun a x ↦ by simpa [RingHom.smul_toAlgebra] using μ.map_smul a x, hμ⟩
 

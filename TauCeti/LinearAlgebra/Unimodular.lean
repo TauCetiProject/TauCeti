@@ -9,7 +9,6 @@ public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Unimodular
 public import Mathlib.RingTheory.LocalRing.Basic
-public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
 
 import TauCeti.RingTheory.Ideal.Operations
@@ -61,8 +60,6 @@ and, since the rows of an invertible matrix are unimodular, it gives every such 
   (`LinearMap.finite_ker_of_apply_eq_one`).
 * `Module.IsUnimodular.notMem_smul_top`: a unimodular element does not lie in `I • M` for a
   proper ideal `I`, since a linear functional maps `I • M` into `I`.
-* `Module.Free.isUnimodular_iff_notMem_smul_top`: over a local ring with maximal ideal `𝔪`, an
-  element of a free module `M` of any rank is unimodular if and only if it does not lie in `𝔪 • M`.
 -/
 
 public section
@@ -359,15 +356,5 @@ theorem IsUnimodular.notMem_smul_top (hv : IsUnimodular R v) {I : Ideal R} (hI :
     v ∉ I • (⊤ : Submodule R M) := by
   obtain ⟨f, hf⟩ := isUnimodular_iff.1 hv
   exact fun h ↦ hI ((Ideal.eq_top_iff_one I).2 (hf ▸ f.apply_mem_of_mem_smul_top h))
-
-open IsLocalRing in
-/-- Over a local ring with maximal ideal `𝔪`, an element of a free module `M`, of any rank, is
-unimodular exactly when it does not lie in `𝔪 • M`: then one of its coordinates is a unit. -/
-theorem Free.isUnimodular_iff_notMem_smul_top [IsLocalRing R] [Module.Free R M] :
-    IsUnimodular R v ↔ v ∉ maximalIdeal R • (⊤ : Submodule R M) := by
-  refine ⟨fun hv ↦ hv.notMem_smul_top (maximalIdeal.isMaximal R).ne_top, fun hv ↦ ?_⟩
-  let b := Module.Free.chooseBasis R M
-  refine (Basis.isUnimodular_iff_span_repr_eq_top (b := b)).2 (by_contra fun h ↦ hv ?_)
-  exact b.mem_smul_top_iff.2 fun i ↦ le_maximalIdeal h (Ideal.subset_span ⟨i, rfl⟩)
 
 end Module
