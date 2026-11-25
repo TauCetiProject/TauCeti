@@ -46,10 +46,8 @@ extensions, such as an algebraic closure of an imperfect field.
 
 * `TauCeti.Isogeny.degree_map` and `TauCeti.Isogeny.degree_baseChange`: `deg (φ.map f) = deg φ`
   and `deg (φ.baseChange K) = deg φ`.
-* `TauCeti.Isogeny.isUnit_degree_map_of_isUnit`, `TauCeti.Isogeny.isUnit_degree_map`, and
-  `TauCeti.Isogeny.isUnit_degree_baseChange`: invertibility of `deg φ` persists under any field
-  homomorphism `f : F →+* K` and any field extension `L/F` (always when `F` has characteristic
-  zero).
+* `TauCeti.Isogeny.isUnit_degree_map_of_isUnit`: invertibility of `deg φ` persists under any
+  field homomorphism `f : F →+* K`.
 
 ## References
 
@@ -230,19 +228,6 @@ theorem isUnit_degree_map_of_isUnit (φ : Isogeny W₁ W₂) (f : F →+* K)
     (hn : IsUnit (φ.degree : F)) : IsUnit ((φ.map f).degree : K) := by
   rw [φ.degree_map f]
   simpa using hn.map f
-
-/-- Over a base field of characteristic zero, the degree of `φ.map f` is invertible in `K` for
-every homomorphism of fields `f : F →+* K`. -/
-theorem isUnit_degree_map [CharZero F] (φ : Isogeny W₁ W₂) (f : F →+* K) :
-    IsUnit ((φ.map f).degree : K) :=
-  φ.isUnit_degree_map_of_isUnit f φ.isUnit_degree
-
-/-- Over a base field of characteristic zero, the degree of `φ.baseChange L` is invertible in
-every field extension `L` of `F`. -/
-theorem isUnit_degree_baseChange [CharZero F] {W₁ W₂ : WeierstrassCurve F}
-    (φ : Isogeny W₁.toAffine W₂.toAffine) (L : Type*) [Field L] [Algebra F L] :
-    IsUnit ((φ.baseChange L).degree : L) :=
-  φ.isUnit_degree_map (algebraMap F L)
 
 end TauCeti.Isogeny
 

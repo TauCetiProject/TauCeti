@@ -581,7 +581,7 @@ theorem nonempty_vectorBundleOrientation_negativeNormalSpace_projectiveHyperplan
     (g : letI := (projectiveHyperplaneEmbedding N).normalSpaceFiberBundle hn hdim
       letI := (projectiveHyperplaneEmbedding N).normalSpaceVectorBundle hn hdim
       Bundle.ContMDiffRiemannianMetric 𝓘(ℝ, Fin N → ℝ) ∞ W
-        fun s ↦ (projectiveHyperplaneEmbedding N).NormalSpace s hn)
+        fun s ↦ (projectiveHyperplaneEmbedding N).isImmersion.NormalSpace s hn)
     (hV : letI := (projectiveHyperplaneEmbedding N).normalSpaceFiberBundle hn hdim
       letI := (projectiveHyperplaneEmbedding N).normalSpaceVectorBundle hn hdim
       HasLocalSubbundleFrames W (Fin 1)

@@ -37,10 +37,6 @@ the data here, and none of the statements below use it.
 * `TauCeti.ContCohomology.SelmerStructure.localization`: the localisation map
   `H¹(G, M) → H¹(H i, N i)`.
 * `TauCeti.ContCohomology.SelmerStructure.selmerGroup`: the Selmer group.
-* `TauCeti.ContCohomology.SelmerStructure.withLocalConditions`: replace the local conditions
-  without changing the localisation data.
-* `TauCeti.ContCohomology.SelmerStructure.relax`: the `S`-relaxed Selmer structure replacing the
-  local conditions on `S` by `⊤` while keeping `𝓕.localCondition` outside `S`.
 
 ## Main results
 
@@ -122,96 +118,6 @@ theorem mem_selmerGroup_iff {c : H1 G M} :
 theorem localization_mem (c : 𝓕.selmerGroup) (i : ι) :
     𝓕.localization i c ∈ 𝓕.localCondition i :=
   (mem_selmerGroup_iff 𝓕).mp c.property i
-
-section LocalConditions
-
-variable (A B : ∀ i, AddSubgroup (H1 (H i) (N i)))
-
-/-- Replace only the local conditions of a Selmer structure. -/
-def withLocalConditions : SelmerStructure G M H N :=
-  { 𝓕 with localCondition := A }
-
-omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
-/-- Updating local conditions leaves the group homomorphisms unchanged. -/
-@[simp]
-theorem withLocalConditions_groupHom :
-    (𝓕.withLocalConditions A).groupHom = 𝓕.groupHom :=
-  (rfl)
-
-omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
-/-- Updating local conditions leaves the coefficient homomorphisms unchanged. -/
-@[simp]
-theorem withLocalConditions_coeffHom :
-    (𝓕.withLocalConditions A).coeffHom = 𝓕.coeffHom :=
-  (rfl)
-
-omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
-/-- The updated structure has the prescribed local conditions. -/
-@[simp]
-theorem withLocalConditions_localCondition :
-    (𝓕.withLocalConditions A).localCondition = A :=
-  (rfl)
-
-omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
-/-- Replacing the local conditions twice retains only the last system. -/
-@[simp]
-theorem withLocalConditions_withLocalConditions :
-    (𝓕.withLocalConditions A).withLocalConditions B = 𝓕.withLocalConditions B :=
-  (rfl)
-
-omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
-/-- Replacing the local conditions by the original ones changes nothing. -/
-@[simp]
-theorem withLocalConditions_self : 𝓕.withLocalConditions 𝓕.localCondition = 𝓕 :=
-  (rfl)
-
-/-- Updating local conditions leaves the localisation maps unchanged. -/
-@[simp]
-theorem withLocalConditions_localization :
-    (𝓕.withLocalConditions A).localization = 𝓕.localization := by
-  funext i
-  rw [localization_eq_explicitMap1, localization_eq_explicitMap1]
-  rfl
-
-/-! ### Relaxed Selmer structures -/
-
-variable (S : Set ι)
-
-/-- **The `S`-relaxed Selmer structure** `𝓕.relax S` (Rubin I.5.2): replaces the local condition
-at indices in `S` with the full group `⊤` and keeps `𝓕.localCondition i` outside `S`. -/
-def relax : SelmerStructure G M H N :=
-  𝓕.withLocalConditions fun i ↦ 𝓕.localCondition i ⊔ ⨆ _ : i ∈ S, ⊤
-
-omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
-/-- The defining formula for `SelmerStructure.relax`. -/
-theorem relax_def :
-    𝓕.relax S = 𝓕.withLocalConditions fun i ↦ 𝓕.localCondition i ⊔ ⨆ _ : i ∈ S, ⊤ :=
-  (rfl)
-
-omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
-/-- The relaxed local condition at `i` is `𝓕.localCondition i` enlarged to `⊤` when `i ∈ S`. -/
-theorem relax_localCondition (i : ι) :
-    (𝓕.relax S).localCondition i = 𝓕.localCondition i ⊔ ⨆ _ : i ∈ S, ⊤ :=
-  (rfl)
-
-omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
-/-- Relaxing local conditions leaves the group homomorphisms unchanged. -/
-@[simp]
-theorem relax_groupHom : (𝓕.relax S).groupHom = 𝓕.groupHom :=
-  (rfl)
-
-omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
-/-- Relaxing local conditions leaves the coefficient homomorphisms unchanged. -/
-@[simp]
-theorem relax_coeffHom : (𝓕.relax S).coeffHom = 𝓕.coeffHom :=
-  (rfl)
-
-/-- Relaxing local conditions leaves the localisation maps unchanged. -/
-@[simp]
-theorem relax_localization : (𝓕.relax S).localization = 𝓕.localization :=
-  𝓕.withLocalConditions_localization _
-
-end LocalConditions
 
 end SelmerStructure
 

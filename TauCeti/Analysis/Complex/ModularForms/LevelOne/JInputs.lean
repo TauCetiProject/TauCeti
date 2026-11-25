@@ -132,13 +132,7 @@ theorem j_smul_SL2Z (γ : SL(2, ℤ)) (z : ℍ) : j (γ • z) = j z := by
 @[simp]
 theorem j_smul (γ : SL(2, ℤ)) (z : ℍ) :
     j ((map (Int.castRingHom ℝ) γ) • z) = j z := by
-  have hAction : (map (Int.castRingHom ℝ) γ) • z = γ • z := by
-    rw [MulAction.compHom_smul_def, MulAction.compHom_smul_def]
-    have hMap : mapGL ℝ (map (Int.castRingHom ℝ) γ) = mapGL ℝ γ := by
-      ext i j
-      simp [mapGL_coe_matrix]
-    exact congrArg (· • z) hMap
-  rw [hAction]
+  rw [map_intCastRingHom_smul]
   exact j_smul_SL2Z γ z
 
 /-- The identity `j - 1728 = E₆² / Δ`. -/

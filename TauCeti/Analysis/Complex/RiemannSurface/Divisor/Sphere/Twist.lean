@@ -15,21 +15,18 @@ import TauCeti.Analysis.Complex.RiemannSurface.Divisor.RiemannRoch
 
 For a divisor `D` on the Riemann sphere `ℙ¹ = OnePoint ℂ`, specializing Riemann–Roch for divisor
 sheaves (`TauCeti.RiemannSurface.finrank_divisorSheaf_euler_characteristic`) to `h¹(𝒪) = 0` shows
-that `H¹(𝒪(D))` is finite-dimensional with `h⁰(𝒪(D)) - h¹(𝒪(D)) = deg D + 1`. Since
+that `h⁰(𝒪(D)) - h¹(𝒪(D)) = deg D + 1`. Since
 `h⁰(𝒪(D)) = 0` for `deg D < 0` and `h¹` does not increase with `D`, we obtain
 
 `h⁰(𝒪(D)) = max(deg D + 1, 0)` and `h¹(𝒪(D)) = max(-deg D - 1, 0)`.
 
 In particular a divisor of degree `-1`, such as `-[x]`, has `(h⁰, h¹) = (0, 0)`, and a divisor of
-degree `-2` has `(h⁰, h¹) = (0, 1)`. Neither the finiteness of `H¹(𝒪)` nor Serre duality is
-asserted for curves of higher genus.
+degree `-2` has `(h⁰, h¹) = (0, 1)`. Serre duality is not asserted for curves of higher genus.
 
 ## Main results
 
 All declarations are in the namespace `TauCeti.RiemannSurface`.
 
-* `finiteDimensional_divisorCechCohomology_one_sphere`: `H¹(𝒪(D))` is
-  finite-dimensional.
 * `finrank_divisorSheaf_globalSections_sub_finrank_divisorCechCohomology_one_sphere`:
   `h⁰(𝒪(D)) - h¹(𝒪(D)) = deg D + 1`.
 * `finrank_divisorCechCohomology_one_sphere_of_neg_one_le_degree` and
@@ -51,12 +48,6 @@ open CategoryTheory Limits OnePoint Opposite
 open TauCeti.AlgebraicGeometry
 
 namespace TauCeti.RiemannSurface
-
-/-- Every divisor sheaf on `ℙ¹` has finite-dimensional `H¹`, since `H¹(𝒪) = 0`. -/
-instance finiteDimensional_divisorCechCohomology_one_sphere (D : WeilDivisor (OnePoint ℂ)) :
-    FiniteDimensional ℂ (divisorCechCohomology D 1) :=
-  have := ModuleCat.isZero_iff_subsingleton.1 isZero_divisorCechCohomology_zero_one_sphere
-  (finiteDimensional_divisorCechCohomology_one_iff D 0).2 inferInstance
 
 /-- **Riemann–Roch on `ℙ¹`.** `h⁰(𝒪(D)) - h¹(𝒪(D)) = deg D + 1`. -/
 theorem finrank_divisorSheaf_globalSections_sub_finrank_divisorCechCohomology_one_sphere

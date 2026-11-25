@@ -322,7 +322,7 @@ theorem sum_ringEquivCongr_localTateKerWeilPairing_eq_zero
     ∑ v ∈ S,
       ZMod.ringEquivCongr (φ.degree_baseChange (K := v.adicCompletion K))
         ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
-          (φ.isUnit_degree_baseChange (v.adicCompletion K))
+          (isUnit_natCast_of_ne_zero ℚ (φ.baseChange (v.adicCompletion K)).degree_ne_zero)
           (φ.kerRes (τ v) a) (φ.dualKerRes (τ v) b)) = 0 := by
   apply ZMod.toRatAddCircle_injective φ.degree
   rw [map_zero, map_sum]

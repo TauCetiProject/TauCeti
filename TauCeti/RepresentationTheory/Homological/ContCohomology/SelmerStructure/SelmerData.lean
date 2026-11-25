@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.SelmerData
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SelmerStructure.Basic
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SelmerStructure.Comparison
 
 /-!
 # Discrete Selmer structures as Selmer data over `ℤ`
@@ -29,10 +29,8 @@ without a second discrete carrier.
 * `TauCeti.ContCohomology.SelmerStructure.selmerModule_toSelmerData`: its Selmer module is the
   Selmer group.
 * `TauCeti.ContCohomology.SelmerStructure.toSelmerData_withLocalConditions` and
-  `TauCeti.ContCohomology.SelmerStructure.toSelmerData_relax`: compatibility with replacing and
-  relaxing the local conditions.
-* `TauCeti.ContCohomology.SelmerStructure.selmerGroup_le_relax` and
-  `TauCeti.ContCohomology.SelmerStructure.mem_selmerGroup_relax_iff`: derived from `SelmerData`.
+  `TauCeti.ContCohomology.SelmerStructure.toSelmerData_relaxedAt`: compatibility with replacing
+  and relaxing the local conditions.
 
 ## References
 
@@ -96,28 +94,11 @@ theorem toSelmerData_withLocalConditions (A : ∀ i, AddSubgroup (H1 (H i) (N i)
 /-- Relaxing the local conditions of a Selmer structure commutes with passing to its Selmer
 data. -/
 @[simp]
-theorem toSelmerData_relax (S : Set ι) :
-    (𝓕.relax S).toSelmerData = 𝓕.toSelmerData.relax S := by
+theorem toSelmerData_relaxedAt (S : Set ι) :
+    (𝓕.relaxedAt S).toSelmerData = 𝓕.toSelmerData.relax S := by
   ext1
   · funext i; simp
   · funext i
-    by_cases hi : i ∈ S <;> simp [relax_localCondition, hi]
-
-/-- Membership in the `S`-relaxed Selmer group is satisfaction of the local conditions outside
-`S`. -/
-theorem mem_selmerGroup_relax_iff (S : Set ι) {c : H1 G M} :
-    c ∈ (𝓕.relax S).selmerGroup ↔ ∀ i ∉ S, 𝓕.localization i c ∈ 𝓕.localCondition i := by
-  rw [← SetLike.mem_coe, ← AddSubgroup.coe_toIntSubmodule, SetLike.mem_coe,
-    ← selmerModule_toSelmerData, toSelmerData_relax, SelmerData.mem_selmerModule_relax_iff]
-  rfl
-
-/-- The original Selmer group is contained in every `S`-relaxed Selmer group. -/
-theorem selmerGroup_le_relax (S : Set ι) : 𝓕.selmerGroup ≤ (𝓕.relax S).selmerGroup := by
-  intro c hc
-  have hc' : c ∈ (𝓕.toSelmerData.relax S).selmerModule :=
-    𝓕.toSelmerData.le_selmerModule_relax S (by
-      rwa [selmerModule_toSelmerData, ← SetLike.mem_coe, AddSubgroup.coe_toIntSubmodule])
-  rwa [← toSelmerData_relax, selmerModule_toSelmerData, ← SetLike.mem_coe,
-    AddSubgroup.coe_toIntSubmodule] at hc'
+    by_cases hi : i ∈ S <;> simp [hi]
 
 end TauCeti.ContCohomology.SelmerStructure
