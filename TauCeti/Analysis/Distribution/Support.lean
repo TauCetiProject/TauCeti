@@ -295,16 +295,16 @@ theorem dsupport_add_subset (f g : 𝓓^{n}(Ω, F) → V) :
 
 end Add
 
-section Group
+section Germ
 
-variable [AddCommGroup V] [FunLike 𝓕 𝓓^{n}(Ω, F) V] [AddMonoidHomClass 𝓕 𝓓^{n}(Ω, F) V] (T : 𝓕)
+variable [AddCommMonoid V] [FunLike 𝓕 𝓓^{n}(Ω, F) V] [AddMonoidHomClass 𝓕 𝓓^{n}(Ω, F) V] (T : 𝓕)
 
 /-- The value of an additive map on test functions depends only on the germ of the test along the
 support of the map. -/
 theorem map_eq_map_of_eventuallyEq {φ ψ : 𝓓^{n}(Ω, F)}
     (h : (φ : E → F) =ᶠ[𝓝ˢ (dsupport T)] ψ) : T φ = T ψ := by
   obtain ⟨U, hU, hTU, hφψ⟩ := mem_nhdsSet_iff_exists.1 h
-  rw [← sub_eq_zero, ← map_sub]
+  suffices h0 : T (φ - ψ) = 0 by rw [← sub_add_cancel φ ψ, map_add, h0, zero_add]
   refine map_eq_zero_of_disjoint_dsupport T (Disjoint.mono_left ?_ hTU.disjoint_compl_left)
   refine closure_minimal (fun x hx hxU ↦ hx ?_) hU.isClosed_compl
   have hx' : φ x = ψ x := hφψ hxU
@@ -322,7 +322,7 @@ theorem map_eq_map_of_forall_eventuallyEq {φ ψ : 𝓓^{n}(Ω, F)}
     have hψ := notMem_tsupport_iff_eventuallyEq.1 fun h' ↦ hxΩ (ψ.tsupport_subset h')
     exact hφ.trans hψ.symm
 
-end Group
+end Germ
 
 section SmoothMultiple
 
@@ -521,9 +521,9 @@ theorem augmentation_smul_right [AddCommMonoid V] [Module ℝ V] [FunLike 𝓕 �
 
 end AugmentationConst
 
-section AugmentationGroup
+section AugmentationMonoid
 
-variable [AddCommGroup V] [FunLike 𝓕 𝓓^{n}(Ω, F) V] [AddMonoidHomClass 𝓕 𝓓^{n}(Ω, F) V] (T : 𝓕)
+variable [AddCommMonoid V] [FunLike 𝓕 𝓓^{n}(Ω, F) V] [AddMonoidHomClass 𝓕 𝓓^{n}(Ω, F) V] (T : 𝓕)
   {𝓖 : Type*} [FunLike 𝓖 𝓓^{n}(Ω, F) V] [AddMonoidHomClass 𝓖 𝓓^{n}(Ω, F) V]
 
 /-- **Independence of the cutoff.** The augmentation of an additive map on test functions is its
@@ -554,29 +554,6 @@ theorem augmentation_add (S : 𝓖) (hT : IsCompact (dsupport T)) (hTΩ : dsuppo
   rw [← hA, augmentation_eq A hχA, augmentation_eq T (hχ.filter_mono (nhdsSet_mono
     subset_union_left)), augmentation_eq S (hχ.filter_mono (nhdsSet_mono subset_union_right))]
   simp [A]
-
-/-- The augmentation of a difference is the difference of the augmentations. -/
-theorem augmentation_sub (S : 𝓖) (hT : IsCompact (dsupport T)) (hTΩ : dsupport T ⊆ Ω)
-    (hS : IsCompact (dsupport S)) (hSΩ : dsupport S ⊆ Ω) (c : F) :
-    augmentation (⇑T - ⇑S) c = augmentation T c - augmentation S c := by
-  by_cases hE : FiniteDimensional ℝ E
-  swap
-  · simp [augmentation_eq_zero_of_not_finiteDimensional hE]
-  let N : 𝓓^{n}(Ω, F) →+ V := -(S : 𝓓^{n}(Ω, F) →+ V)
-  have hN_coe : ⇑N = -⇑S := by
-    ext φ
-    simp [N]
-  have hN : dsupport N = dsupport S := by
-    rw [hN_coe, dsupport_neg]
-  have hNS : augmentation N c = -augmentation S c := by
-    obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (n := n) hS hSΩ
-    rw [augmentation_eq N (hN ▸ hχ), augmentation_eq S hχ]
-    simp [N]
-  have h := augmentation_add T N hT hTΩ (hN ▸ hS) (hN ▸ hSΩ) c
-  have hTN : ⇑T + ⇑N = ⇑T - ⇑S := by
-    rw [hN_coe, ← sub_eq_add_neg]
-  rw [hTN, hNS] at h
-  rw [h, sub_eq_add_neg]
 
 variable [FiniteDimensional ℝ E]
 
@@ -622,6 +599,36 @@ theorem augmentation_delta {x : E} (hx : x ∈ Ω) (c : ℝ) :
   have h : ⇑(delta x : 𝓓'^{n}(Ω, ℝ)) = fun φ ↦ AddMonoidHom.id ℝ (φ x) :=
     funext fun φ ↦ delta_apply x φ
   rw [h, augmentation_apply_apply hx, AddMonoidHom.id_apply]
+
+end AugmentationMonoid
+
+section AugmentationGroup
+
+variable [AddCommGroup V] [FunLike 𝓕 𝓓^{n}(Ω, F) V] [AddMonoidHomClass 𝓕 𝓓^{n}(Ω, F) V] (T : 𝓕)
+  {𝓖 : Type*} [FunLike 𝓖 𝓓^{n}(Ω, F) V] [AddMonoidHomClass 𝓖 𝓓^{n}(Ω, F) V]
+
+/-- The augmentation of a difference is the difference of the augmentations. -/
+theorem augmentation_sub (S : 𝓖) (hT : IsCompact (dsupport T)) (hTΩ : dsupport T ⊆ Ω)
+    (hS : IsCompact (dsupport S)) (hSΩ : dsupport S ⊆ Ω) (c : F) :
+    augmentation (⇑T - ⇑S) c = augmentation T c - augmentation S c := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · simp [augmentation_eq_zero_of_not_finiteDimensional hE]
+  let N : 𝓓^{n}(Ω, F) →+ V := -(S : 𝓓^{n}(Ω, F) →+ V)
+  have hN_coe : ⇑N = -⇑S := by
+    ext φ
+    simp [N]
+  have hN : dsupport N = dsupport S := by
+    rw [hN_coe, dsupport_neg]
+  have hNS : augmentation N c = -augmentation S c := by
+    obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (n := n) hS hSΩ
+    rw [augmentation_eq N (hN ▸ hχ), augmentation_eq S hχ]
+    simp [N]
+  have h := augmentation_add T N hT hTΩ (hN ▸ hS) (hN ▸ hSΩ) c
+  have hTN : ⇑T + ⇑N = ⇑T - ⇑S := by
+    rw [hN_coe, ← sub_eq_add_neg]
+  rw [hTN, hNS] at h
+  rw [h, sub_eq_add_neg]
 
 end AugmentationGroup
 

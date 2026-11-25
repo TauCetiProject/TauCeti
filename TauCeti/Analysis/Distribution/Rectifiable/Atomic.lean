@@ -26,10 +26,10 @@ set `s` equal to its support (`Distribution.IsIntegerRectifiable.exists_finset_f
 Conversely, every finite integer combination of point masses is integer-rectifiable, so the
 compactly supported integral `0`-currents are exactly the finite integer combinations of point
 masses at points of `Ω` (`Distribution.isCompactlySupportedIntegralCurrent_finZero_iff`). The
-augmentation of a finite combination of point masses is the sum of its coefficients
-(`Distribution.augmentation_sum_mul_apply_finZero`), so the augmentation of a compactly supported
-integral `0`-current is an integer, and its mass is the sum of the absolute values of the
-coefficients (`Distribution.mass_sum_mul_apply_finZero`).
+augmentation at a constant `0`-form `c` of a finite combination of point masses is the sum of its
+coefficients times `c ![]` (`Distribution.augmentation_sum_mul_apply_finZero`), so the augmentation
+of a compactly supported integral `0`-current at the unit `0`-form is an integer, and its mass is
+the sum of the absolute values of the coefficients (`Distribution.mass_sum_mul_apply_finZero`).
 
 ## Main declarations
 
@@ -44,7 +44,8 @@ coefficients (`Distribution.mass_sum_mul_apply_finZero`).
   `0`-currents are the finite integer combinations of point masses at points of `Ω`.
 * `Distribution.dsupport_sum_mul_apply_finZero_subset`,
   `Distribution.augmentation_sum_mul_apply_finZero`: a finite combination of point masses is
-  supported on its atoms, and its augmentation is the sum of the coefficients.
+  supported on its atoms, and its augmentation at a `0`-form `c` is the sum of the coefficients
+  times `c ![]`, so at the unit `0`-form it is the sum of the coefficients.
 
 ## References
 
