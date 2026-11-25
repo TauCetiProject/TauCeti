@@ -120,8 +120,12 @@ theorem Tor_map_app_comp_torOneQuotientSpanSingletonIso_hom (hf : IsSMulRegular 
   rw [← cancel_epi (kernelIsoKer _).inv, ← cancel_mono (ofHom (torsionBy R Y f).subtype)]
   have hrid : g ▷ (smulShortComplex (of R R) f).X₁ ≫ ofHom (TensorProduct.rid R Y).toLinearMap =
       ofHom (TensorProduct.rid R X).toLinearMap ≫ g :=
-    ModuleCat.hom_ext <| TensorProduct.ext' fun x (r : R) =>
-      (TensorProduct.rid_tmul (g x) r).trans (map_smul g.hom r x).symm
+    ModuleCat.hom_ext <| TensorProduct.ext' fun x (r : R) => by
+      -- `rw`, not `simp`: the right factor carries the `R`-module structure of `X₁`, and only
+      -- `rw` matches `TensorProduct.rid_tmul` against it up to instances.
+      rw [hom_comp, hom_comp, LinearMap.comp_apply, LinearMap.comp_apply,
+        ModuleCat.MonoidalCategory.whiskerRight_apply, hom_ofHom, hom_ofHom, LinearEquiv.coe_coe,
+        LinearEquiv.coe_coe, TensorProduct.rid_tmul, TensorProduct.rid_tmul, map_smul]
   have hrestrict : ofHom (TauCeti.torsionByMap f g.hom) ≫ ofHom (torsionBy R Y f).subtype =
       ofHom (torsionBy R X f).subtype ≫ g :=
     ModuleCat.hom_ext <| LinearMap.ext fun _ => TauCeti.coe_torsionByMap_apply f g.hom _
