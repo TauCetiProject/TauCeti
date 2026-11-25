@@ -203,8 +203,7 @@ theorem intervalTraceL_restrictL_ofTestFunctionₗ (hab : a < b) (φ : 𝓓((⊤
         (le_top : (⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) ≤ ⊤) φ,
       ae_restrict_mem measurableSet_Ioo] with t ht hmem
     rw [ht, ContinuousMap.coe_mk, projIcc_of_mem hab.le (Ioo_subset_Icc_self hmem)]
-  rw [intervalTraceL_apply, h]
-  rfl
+  rw [intervalTraceL_apply, h, ContinuousMap.coe_mk]
 
 /-- Every pair of endpoint values is attained by a Sobolev class, including at `p = ∞`. -/
 theorem intervalTraceL_surjective (hab : a < b) :

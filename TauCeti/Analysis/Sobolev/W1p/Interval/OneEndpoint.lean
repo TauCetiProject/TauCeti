@@ -251,7 +251,8 @@ private theorem norm_value_le_mul_norm_gradient_of_forall_abs_le (hab : a < b)
       ((⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ)) : ℝ) = b - a := by
     simp [measureUnivNNReal, ENNReal.coe_toNNReal_eq_toReal, hab.le]
   refine (Lp.norm_le_of_ae_bound (by positivity) hbound).trans_eq ?_
-  rw [hm, ← mul_assoc, ← Real.rpow_add (sub_pos.2 hab), one_div, add_sub_cancel, Real.rpow_one]
+  rw [hm, ← mul_assoc, ← Real.rpow_add (sub_pos.2 hab)]
+  simp
 
 /-- **The Poincaré–Friedrichs inequality on an interval, vanishing at `a`.** If the continuous
 representative of `u ∈ W^{1,p}(a, b)` vanishes at `a`, then

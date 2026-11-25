@@ -298,10 +298,13 @@ theorem abs_intervalRepresentativeL_sub_le (hab : a < b) (u : W1p volume ⟨Ioo 
   rw [← setIntegral_Ioo_gradient_eq_intervalRepresentativeL_sub hab u hst, ← Real.norm_eq_abs]
   refine (norm_integral_le_integral_norm _).trans
     ((hg.integral_norm_le_mul_eLpNorm Fact.out).trans ?_)
-  rw [Measure.restrict_apply_univ, Real.volume_Ioo, ← ENNReal.toReal_rpow,
-    ENNReal.toReal_ofReal (sub_nonneg.2 hst), Lp.norm_def]
-  exact mul_le_mul_of_nonneg_left (ENNReal.toReal_mono (Lp.eLpNorm_ne_top _)
-    (eLpNorm_mono_measure (gradient u : ℝ → ℝ) hsub)) (by positivity)
+  have hm : (volume.restrict (Ioo (s : ℝ) t) univ ^ (1 - 1 / p.toReal)).toReal =
+      ((t : ℝ) - s) ^ (1 - 1 / p.toReal) := by
+    simp [← ENNReal.toReal_rpow, hst]
+  rw [hm, Lp.norm_def]
+  gcongr
+  · exact Lp.eLpNorm_ne_top _
+  · exact Ioo_subset_Ioo s.property.1 t.property.2
 
 /-- In the open interval the classical derivative of the representative agrees almost
 everywhere with the recorded weak gradient. -/
