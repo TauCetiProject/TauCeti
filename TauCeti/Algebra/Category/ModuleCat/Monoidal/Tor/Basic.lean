@@ -72,6 +72,9 @@ vanishing higher `Tor` (`ModuleCat.isZero_Tor_succ_of_flat`), and `Torₙ₊₁(
 (`ModuleCat.isZero_Tor_succ_quotient_iSup`), since an element of `N ⊗ P` already comes from a
 finitely generated submodule of `N`.
 
+Tensoring on the right with a module preserves colimits of every shape
+(`TauCeti.moduleCat_preservesColimitsOfShape_tensorRight`), as tensoring on the left does.
+
 `Tor` vanishing is invariant under flat base change: for a flat ring homomorphism `f : A →+* B`,
 a `B`-module `M` and an `A`-module `N`, `Torₙ^A(M, N)` vanishes exactly when
 `Torₙ^B(M, B ⊗[A] N)` does (`ModuleCat.isZero_Tor_restrictScalars_iff`). Extension of scalars
@@ -406,6 +409,22 @@ theorem isZero_Tor_prod {X Y : ModuleCat.{u} A} (M : ModuleCat.{u} A) {n : ℕ}
 
 end ModuleCat
 
+/-! ### Tensoring preserves colimits -/
+
+namespace TauCeti
+
+open CategoryTheory Limits MonoidalCategory
+
+universe w w' u
+
+/-- Tensoring on the right with an `R`-module preserves colimits of every shape. Tensoring on the
+left already does, as the left adjoint of the internal hom. -/
+instance moduleCat_preservesColimitsOfShape_tensorRight {R : Type u} [CommRing R] (J : Type w)
+    [Category.{w'} J] (Z : ModuleCat.{u} R) : PreservesColimitsOfShape J (tensorRight Z) :=
+  preservesColimitsOfShape_of_natIso (BraidedCategory.tensorLeftIsoTensorRight Z)
+
+end TauCeti
+
 /-! ### Flat base change -/
 
 namespace ModuleCat
@@ -467,8 +486,6 @@ theorem isZero_Tor_restrictScalars_of_projective (P : ModuleCat.{u} B) [Projecti
     simp [π]
   let r : Retract P (∐ fun _ : P ↦ of B B) :=
     ⟨Projective.factorThru (𝟙 P) π, π, Projective.factorThru_comp (𝟙 P) π⟩
-  have (Z : ModuleCat.{u} A) : PreservesColimitsOfShape (Discrete P) (tensorRight Z) :=
-    ⟨inferInstance⟩
   have hcoprod : IsZero (((Tor (ModuleCat.{u} A) n).obj
       ((restrictScalars.{u} f).obj (∐ fun _ : P ↦ of B B))).obj N) :=
     isZero_Tor_of_isColimit

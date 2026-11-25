@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
-public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Symmetric
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.Algebra.Category.ModuleCat.AB
+public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Tor.Basic
 public import TauCeti.CategoryTheory.Monoidal.Tor.Coproduct
 
 /-!
@@ -26,23 +26,13 @@ and `⨁ⱼ Torₙ(Xⱼ, Y) ⟶ Torₙ(⨁ⱼ Xⱼ, Y)` are isomorphisms
 
 public section
 
-open CategoryTheory Limits MonoidalCategory
+open CategoryTheory Limits
 
 universe w u
 
 namespace TauCeti
 
 variable {R : Type u} [CommRing R]
-
-/-- Tensoring on the left with an `R`-module preserves direct sums. -/
-instance moduleCat_preservesColimitsOfShape_tensorLeft (J : Type w) (Z : ModuleCat.{u} R) :
-    PreservesColimitsOfShape (Discrete J) (tensorLeft Z) :=
-  ⟨inferInstance⟩
-
-/-- Tensoring on the right with an `R`-module preserves direct sums. -/
-instance moduleCat_preservesColimitsOfShape_tensorRight (J : Type w) (Z : ModuleCat.{u} R) :
-    PreservesColimitsOfShape (Discrete J) (tensorRight Z) :=
-  preservesColimitsOfShape_of_natIso (BraidedCategory.tensorLeftIsoTensorRight Z)
 
 /-- **`Tor` of modules commutes with direct sums in the second variable**: the comparison map
 `⨁ⱼ Torₙ(X, Yⱼ) ⟶ Torₙ(X, ⨁ⱼ Yⱼ)` is an isomorphism. -/
