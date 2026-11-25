@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 public import TauCeti.Geometry.Manifold.Measure.PositiveDensity
 import TauCeti.Geometry.Manifold.Riemannian.Basic
-import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 
 /-!
 # Null sets for the Riemannian volume
