@@ -105,11 +105,6 @@ theorem heckeMellinKernel_congr {χ : Grossencharacter K 𝔪} {ψ : Grossenchar
   simp only [heckeMellinKernel_def, heckeScale_def, h, harmonicExponent_congr h,
     harmonicDegree_congr h, archWeight_congr h, heckeTheta_congr h]
 
-private theorem harmonicExponent_eq_zero_of_degree_eq_zero (χ : Grossencharacter K 𝔪)
-    (h : χ.harmonicDegree = 0) (w : InfinitePlace K) : χ.harmonicExponent w = 0 := by
-  rw [harmonicDegree_def, Finset.sum_eq_zero_iff] at h
-  exact h w (Finset.mem_univ _)
-
 open scoped Classical in
 /-- When the theta constant is one, the Mellin kernel specializes to the Dedekind kernel. -/
 theorem heckeMellinKernel_eq_mellinKernel (χ : Grossencharacter K 𝔪)
@@ -117,7 +112,7 @@ theorem heckeMellinKernel_eq_mellinKernel (χ : Grossencharacter K 𝔪)
     (J : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {u : ℝ} (hu : 0 < u) :
     χ.heckeMellinKernel D J u = mellinKernel D (idealLattice K J) u := by
   obtain ⟨hf, hdeg⟩ := χ.heckeEpsilon_eq_one_iff.mp hχ
-  have hP := harmonicExponent_eq_zero_of_degree_eq_zero χ hdeg
+  have hP := χ.harmonicExponent_eq_zero_of_harmonicDegree_eq_zero hdeg
   simp only [heckeMellinKernel_def, mellinKernel_def, heckeScale_def, hf, hdeg, Ideal.absNorm_top,
     Nat.cast_one, mul_one, hP, Nat.cast_zero, Finset.sum_const_zero, neg_zero, zero_div,
     Real.rpow_zero, Complex.ofReal_one]
@@ -144,11 +139,11 @@ private theorem archWeight_mul_heckeTheta_sub_surfaceScale (χ : Grossencharacte
     simp only [archWeight_def, surfaceScale_apply, Real.mul_rpow (hx _) (Real.rpow_nonneg ht _),
       Finset.prod_mul_distrib, ← Real.rpow_mul ht]
     congr 1
+    have hexponent (w : InfinitePlace K) :
+        (1 / (Module.finrank ℚ K : ℝ)) * ((χ.harmonicExponent w : ℝ) / 2) =
+          (χ.harmonicExponent w : ℝ) / (2 * (Module.finrank ℚ K : ℝ)) := by ring
     rw [← Real.rpow_sum_of_nonneg ht (fun _ _ ↦ by positivity), harmonicDegree_def, Nat.cast_sum,
-      Finset.sum_congr rfl
-        (fun w _ ↦ show (1 / (Module.finrank ℚ K : ℝ)) * ((χ.harmonicExponent w : ℝ) / 2) =
-          (χ.harmonicExponent w : ℝ) / (2 * (Module.finrank ℚ K : ℝ)) by ring),
-      Finset.sum_div]
+      Finset.sum_congr rfl (fun w _ ↦ hexponent w), Finset.sum_div]
   rw [hweight, Complex.ofReal_mul, mul_left_comm]
   ring
 
@@ -234,7 +229,7 @@ theorem continuousOn_heckeMellinKernel (χ : Grossencharacter K 𝔪)
   have hscale := χ.heckeScale_pos J
   have hu₀ : 0 < u := hu
   obtain ⟨B, hB⟩ := exists_norm_surfaceIntegrand_le χ J hD
-    (show 0 < u / 2 / χ.heckeScale J by positivity)
+    (div_pos (half_pos hu₀) hscale)
   have := isFiniteMeasure_restrict.mpr (surfaceHaar_preimage_lt_top hD).ne
   refine ContinuousAt.continuousWithinAt (continuousAt_const.mul
     (continuousAt_of_dominated (bound := fun _ ↦ B) ?_ ?_ (integrable_const B) ?_))
@@ -265,14 +260,14 @@ private theorem heckeMellinKernel_sub_eq_integral (χ : Grossencharacter K 𝔪)
     rcases hε with h | h
     · simp [h]
     have hdeg := (χ.heckeEpsilon_eq_one_iff.mp h).2
-    simp [h, archWeight_def, harmonicExponent_eq_zero_of_degree_eq_zero χ hdeg]
+    simp [h, archWeight_def, χ.harmonicExponent_eq_zero_of_harmonicDegree_eq_zero hdeg]
   have hconst :
       mellinFactor χ J * ((surfaceHaar K).real (Subtype.val ⁻¹' D) : ℂ) * χ.heckeEpsilon =
         χ.heckeEpsilon * mellinConstant K := by
     rcases hε with h | h
     · simp [h]
     have hdeg := (χ.heckeEpsilon_eq_one_iff.mp h).2
-    simp only [mellinFactor, hdeg, harmonicExponent_eq_zero_of_degree_eq_zero χ hdeg,
+    simp only [mellinFactor, hdeg, χ.harmonicExponent_eq_zero_of_harmonicDegree_eq_zero hdeg,
       Nat.cast_zero, Finset.sum_const_zero, neg_zero, zero_div, Real.rpow_zero, Complex.ofReal_one,
       mul_one, h, one_mul]
     simpa only [Complex.ofReal_mul, Complex.ofReal_div, Complex.ofReal_pow, Complex.ofReal_ofNat,
@@ -354,34 +349,6 @@ theorem isBigO_heckeMellinKernel_sub_rpow (χ : Grossencharacter K 𝔪)
   obtain ⟨c, hc, h⟩ := χ.exists_isBigO_heckeMellinKernel_sub_exp J hD
   exact isBigO_rpow_of_isBigO_exp_neg hc (inv_pos.mpr (Nat.cast_pos.mpr Module.finrank_pos)) h r
 
-private theorem integrableOn_dilated_latticeTheta_sub_one
-    (J : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {D : Set (realSpace K)} (hD : IsUnitFundamentalDomain K D)
-    {s : ℂ} (hs : 1 < s.re) {c : ℝ} (hc : 0 < c) :
-    IntegrableOn (fun y ↦ (archNorm y : ℂ) ^ (s / 2) *
-      (latticeTheta (idealLattice K J) (c • y) - 1)) (unitCone D) (archHaar K) := by
-  let μ := (archHaar K).restrict (unitCone D)
-  have hpre : (c • ·) ⁻¹' unitCone D = unitCone D := by
-    ext y
-    simp [mem_unitCone, surfacePart_smul hc, Pi.smul_apply, smul_eq_mul, mul_pos_iff_of_pos_left hc]
-  have hmp : MeasurePreserving (c • ·) μ μ := by
-    refine ⟨measurable_const_smul c, ?_⟩
-    calc
-      _ = ((archHaar K).map (c • ·)).restrict (unitCone D) := by
-        rw [Measure.restrict_map (measurable_const_smul c)
-          (measurableSet_unitCone hD.measurableSet), hpre]
-      _ = μ := by rw [map_archHaar_smul hc]
-  have hint := hmp.integrable_comp_of_integrable
-    (integrableOn_unitCone_archNorm_cpow_mul_latticeTheta_sub_one J hD hs)
-  let a : ℂ := ((c ^ Module.finrank ℚ K : ℝ) : ℂ) ^ (s / 2)
-  have ha : a ≠ 0 := Complex.cpow_ne_zero_iff.mpr
-    (Or.inl (Complex.ofReal_ne_zero.mpr (pow_pos hc _).ne'))
-  have hcomp (y : realSpace K) :
-      (archNorm (c • y) : ℂ) ^ (s / 2) =
-        a * (archNorm y : ℂ) ^ (s / 2) := by
-    rw [archNorm_smul, Complex.ofReal_mul, Complex.ofReal_mul_cpow (pow_nonneg hc.le _)]
-  simpa only [IntegrableOn, μ, Function.comp_def, hcomp, ← mul_assoc, inv_mul_cancel₀ ha,
-    one_mul] using hint.const_mul a⁻¹
-
 /-- For `Re s > 1`, the centered twisted theta series times the archimedean and Mellin weights
 is absolutely integrable over the cone above a unit fundamental domain. -/
 theorem integrableOn_unitCone_archNorm_cpow_mul_heckeTheta_sub (χ : Grossencharacter K 𝔪)
@@ -392,7 +359,8 @@ theorem integrableOn_unitCone_archNorm_cpow_mul_heckeTheta_sub (χ : Grossenchar
       (unitCone D) (archHaar K) := by
   obtain ⟨C, _, hbound⟩ := χ.exists_norm_archWeight_mul_heckeTheta_sub_le
   have hcone := measurableSet_unitCone hD.measurableSet
-  have hint := integrableOn_dilated_latticeTheta_sub_one J hD hs (c := 1 / 2) (by norm_num)
+  have hint := integrableOn_unitCone_archNorm_cpow_mul_latticeTheta_smul_sub_one
+    J hD hs (c := 1 / 2) (by norm_num)
   have hcont : ContinuousOn (fun y ↦ (archNorm y : ℂ) ^ (s / 2) *
       ((χ.archWeight y : ℂ) * (χ.heckeTheta J y - χ.heckeEpsilon))) (unitCone D) := by
     intro y hy

@@ -138,6 +138,12 @@ theorem harmonicDegree_def (χ : Grossencharacter K 𝔪) :
     χ.harmonicDegree = ∑ w : InfinitePlace K, χ.harmonicExponent w :=
   (rfl)
 
+/-- If the total harmonic degree is zero, the local harmonic degree is zero at every place. -/
+theorem harmonicExponent_eq_zero_of_harmonicDegree_eq_zero (χ : Grossencharacter K 𝔪)
+    (h : χ.harmonicDegree = 0) (w : InfinitePlace K) : χ.harmonicExponent w = 0 := by
+  rw [harmonicDegree_def, Finset.sum_eq_zero_iff] at h
+  exact h w (Finset.mem_univ _)
+
 /-- `Grossencharacter.harmonicDegree` agrees with the `ContinuousInfinityType` harmonic degree of
 `χ.toHeckeCharacter.infinityType`. -/
 theorem harmonicDegree_eq_infinityType (χ : Grossencharacter K 𝔪) :
@@ -413,6 +419,35 @@ theorem heckeEpsilon_of_toHeckeCharacter_eq_inv {χ : Grossencharacter K 𝔪}
 end Congruence
 
 /-! ### Hecke's Fourier lemma, Poisson summation, and gamma integral -/
+
+/-- Uniformly over all positive parameters, the archimedean weight times the harmonic
+Gaussian of `χ` is bounded in norm by a constant times the Gaussian at half the parameter. -/
+theorem exists_norm_archWeight_mul_harmonicFactor_mul_archGaussian_le
+    (χ : Grossencharacter K 𝔪) :
+    ∃ C ≥ 0, ∀ (y : realSpace K), (∀ w, 0 < y w) → ∀ x : mixedSpace K,
+      ‖(χ.archWeight y : ℂ) * χ.harmonicFactor x * archGaussian y x‖ ≤
+        C * ‖archGaussian ((1 / 2 : ℝ) • y) x‖ := by
+  classical
+  let f := harmonicArchGaussianSchwartz χ.toHeckeCharacter.infinityType
+    (fun _ ↦ 1 / 2) (fun _ ↦ by norm_num)
+  refine ⟨SchwartzMap.seminorm ℝ 0 0 f, apply_nonneg _ _, fun y hy x ↦ ?_⟩
+  let z := archGaussianDilation y hy x
+  have hpoly : χ.harmonicFactor z = (χ.archWeight y : ℂ) * χ.harmonicFactor x := by
+    simp only [z, archGaussianDilation_apply, harmonicFactor_mixedSpaceOfRealSpace_mul,
+      archWeight_def, Real.sqrt_eq_rpow, ← Real.rpow_mul_natCast (hy _).le, one_div, inv_mul_eq_div]
+  have hhalf : archGaussian (fun _ ↦ 1 / 2) z = archGaussian ((1 / 2 : ℝ) • y) x := by
+    simp only [z, archGaussian_apply, normAtPlace_archGaussianDilation_sq, Pi.smul_apply,
+      smul_eq_mul, mul_assoc]
+  have hsplit : archGaussian y x =
+      archGaussian (fun _ ↦ 1 / 2) z * archGaussian ((1 / 2 : ℝ) • y) x := by
+    rw [← hhalf, ← archGaussian_one_archGaussianDilation y hy, archGaussian_one,
+      archGaussian_const, ← Complex.ofReal_mul, ← Real.exp_add]
+    congr 2
+    ring
+  rw [← hpoly, hsplit, ← mul_assoc, norm_mul]
+  refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
+  simpa only [f, harmonicArchGaussianSchwartz_apply, harmonicFactor_eq_infinityType] using
+    SchwartzMap.norm_le_seminorm ℝ f z
 
 /-- For positive parameters `y`, a shifted harmonic-weighted archimedean Gaussian of `χ` is
 summable over any discrete `ℤ`-submodule of `mixedSpace K`. -/
