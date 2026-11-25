@@ -403,7 +403,7 @@ theorem depthAt_le_natCard_of_range_eq (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z
     {y : EuclideanSpace ℝ ι} (hy : y ∈ range J) :
     J.depthAt y ≤ Nat.card S := by
   rw [depthAt_eq_natCard_of_range_eq hJ hy]
-  exact Nat.card_le_card_of_injective (fun j : {i // i ∈ S ∧ y i = 0} ↦ (⟨j.1, j.2.1⟩ : S))
+  exact Nat.card_le_card_of_injective (fun j : {i // i ∈ S ∧ y i = 0} ↦ (⟨j.val, j.property.1⟩ : S))
     (fun _ _ h ↦ Subtype.ext (congrArg (Subtype.val : S → ι) h))
 
 /-- In the quadrant model `𝓡c n`, the depth of a point of the quadrant is its number of

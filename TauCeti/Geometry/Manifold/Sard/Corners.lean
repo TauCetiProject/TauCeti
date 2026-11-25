@@ -5,22 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Instances.Real
-public import TauCeti.Geometry.Manifold.Sard.Basic
+public import TauCeti.Geometry.Manifold.Sard.HalfSpace
 
 import TauCeti.Geometry.Manifold.Corners.Stratum.Manifold
 import TauCeti.Geometry.Manifold.ModelWithCorners.LinearEquiv
 
 /-!
-# Sard's theorem for manifolds with boundary and corners
+# Sard's theorem for manifolds with corners
 
 Let `f : M → N` be a `C^r` map between real manifolds modelled on finite-dimensional spaces, with
 `M` Lindelöf, and suppose the model `I` of `M` has range cut out by the nonnegativity of a subset
 `S` of coordinates in `EuclideanSpace ℝ ι` — or more generally, is carried onto such a coordinate
 region by a continuous linear equivalence `e : E ≃L[ℝ] EuclideanSpace ℝ ι`. Examples include the
-quadrant model `𝓡c m`, the half-space model `𝓡∂ m`, every finite-dimensional boundaryless model,
-and every finite product of these (such as `(𝓡∂ m).prod (𝓡∂ k)` for homotopies on manifolds with
-boundary).
+quadrant model `𝓡c m`, the half-space model `𝓡∂ m` (treated directly in
+`TauCeti.Geometry.Manifold.Sard.HalfSpace` and re-exported here), every finite-dimensional
+boundaryless model, and every finite product of these (such as `(𝓡∂ m).prod (𝓡∂ k)` for homotopies
+on manifolds with boundary).
 
 The boundaryless Sard theorem (`TauCeti.isNullSet_image_of_not_isRegularPoint_of_contMDiffAt` in
 `TauCeti.Geometry.Manifold.Sard.Basic`) requires `I.Boundaryless` so that coordinate expressions
@@ -53,9 +53,9 @@ and boundaryless models), changing model coordinates via
 * `TauCeti.isNullSet_image_of_not_isRegularPoint_of_contMDiffAt_prod_of_image_range_eq`,
   `ContMDiff.isNullSet_image_criticalPoints_prod_of_image_range_eq`,
   `ContMDiff.dense_isRegularValue_prod_of_image_range_eq`: product closure of the theorem.
-* Specializations for the quadrant `𝓡c m`, the half-space `𝓡∂ m`, products of half-spaces
-  `(𝓡∂ m).prod (𝓡∂ k)`, products of quadrants `(𝓡c m).prod (𝓡c k)`, and products of a half-space
-  with a boundaryless model in either order (`I₁.prod (𝓡∂ m)` and `(𝓡∂ m).prod I₁`).
+* Specializations for the quadrant `𝓡c m`, products of quadrants `(𝓡c m).prod (𝓡c k)`, products of
+  half-spaces `(𝓡∂ m).prod (𝓡∂ k)`, and products of a half-space with a boundaryless model in
+  either order (`I₁.prod (𝓡∂ m)` and `(𝓡∂ m).prod I₁`).
 
 ## References
 
@@ -64,9 +64,10 @@ and boundaryless models), changing model coordinates via
 * J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Graduate Texts in Mathematics 218,
   Springer, 2013, Theorem 6.10 (p. 129, Sard's theorem for manifolds with boundary).
 * Formal foundations in this library: `TauCeti.Geometry.Manifold.Sard.Basic` (boundaryless
-  sharp-regularity Sard theorem), `TauCeti.Geometry.Manifold.Corners.Stratum.Manifold` (manifold
-  structure on depth strata), and `TauCeti.Geometry.Manifold.ModelWithCorners.LinearEquiv`
-  (linear coordinate changes on models with corners).
+  sharp-regularity Sard theorem), `TauCeti.Geometry.Manifold.Sard.HalfSpace` (half-space Sard
+  theorem), `TauCeti.Geometry.Manifold.Corners.Stratum.Manifold` (manifold structure on depth
+  strata), and `TauCeti.Geometry.Manifold.ModelWithCorners.LinearEquiv` (linear coordinate changes
+  on models with corners).
 -/
 
 public section
@@ -103,38 +104,38 @@ theorem isNullSet_image_of_not_isRegularPoint_of_contMDiffAt_of_range_eq
     IsNullSet J (f '' s) := by
   have hr0 : r ≠ 0 := fun h ↦ by simp [h] at hr
   have : IsManifold I 1 M := IsManifold.of_le (ENat.one_le_iff_ne_zero_withTop.2 hr0)
-  have hcover : s = ⋃ k : Fin (Fintype.card ι + 1), s ∩ I.depthStratum M k := by
+  have hcover : s = ⋃ k : Fin (Fintype.card ι + 1), s ∩ I.depthStratum M k.val := by
     rw [← inter_iUnion]
-    have hU : ⋃ k : Fin (Fintype.card ι + 1), I.depthStratum M k = univ := by
+    have hU : ⋃ k : Fin (Fintype.card ι + 1), I.depthStratum M k.val = univ := by
       refine eq_univ_of_forall fun x ↦ mem_iUnion.2 ?_
       have hle : I.depth x ≤ Fintype.card ι := by
         simpa only [finrank_euclideanSpace] using I.depth_le_finrank x
-      exact ⟨⟨I.depth x, Nat.lt_succ_of_le hle⟩, ModelWithCorners.mem_depthStratum_iff.2 rfl⟩
+      exact ⟨⟨I.depth x, Nat.lt_succ_of_le hle⟩, ModelWithCorners.mem_depthStratum.2 rfl⟩
     rw [hU, inter_univ]
   rw [hcover, image_iUnion]
   refine IsNullSet.iUnion fun k ↦ ?_
-  let _ := I.depthStratumChartedSpace M hI k.1
-  have : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin (Fintype.card ι - k.1))) r
-      ↥(I.depthStratum M k.1) :=
-    I.isManifold_depthStratum M hr0 hI k.1
-  have : LindelofSpace ↥(I.depthStratum M k.1) := I.lindelofSpace_depthStratum (M := M) k.1
-  have hval := I.contMDiff_subtypeVal_depthStratum M hr0 hI k.1
-  have himg : f '' (s ∩ I.depthStratum M k.1) =
-      (f ∘ (Subtype.val : ↥(I.depthStratum M k.1) → M)) ''
-        ((Subtype.val : ↥(I.depthStratum M k.1) → M) ⁻¹' s) := by
+  let _ := I.depthStratumChartedSpace M hI k.val
+  have : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin (Fintype.card ι - k.val))) r
+      ↥(I.depthStratum M k.val) :=
+    I.isManifold_depthStratum M hr0 hI k.val
+  have : LindelofSpace ↥(I.depthStratum M k.val) := I.lindelofSpace_depthStratum (M := M) k.val
+  have hval := I.contMDiff_subtypeVal_depthStratum M hr0 hI k.val
+  have himg : f '' (s ∩ I.depthStratum M k.val) =
+      (f ∘ (Subtype.val : ↥(I.depthStratum M k.val) → M)) ''
+        ((Subtype.val : ↥(I.depthStratum M k.val) → M) ⁻¹' s) := by
     ext y
     simp [and_comm]
   rw [himg]
-  have hk_le : ((finrank ℝ (EuclideanSpace ℝ (Fin (Fintype.card ι - k.1))) -
+  have hk_le : ((finrank ℝ (EuclideanSpace ℝ (Fin (Fintype.card ι - k.val))) -
       finrank ℝ E' + 1 : ℕ) : ℕ∞ω) ≤ r := by
     refine le_trans ?_ hr
     rw [finrank_euclideanSpace_fin]
-    exact_mod_cast (by omega : Fintype.card ι - k.1 - finrank ℝ E' + 1 ≤
+    exact_mod_cast (by omega : Fintype.card ι - k.val - finrank ℝ E' + 1 ≤
       Fintype.card ι - finrank ℝ E' + 1)
   refine isNullSet_image_of_not_isRegularPoint_of_contMDiffAt
-    (I := 𝓘(ℝ, EuclideanSpace ℝ (Fin (Fintype.card ι - k.1)))) hk_le
-    (fun p hp ↦ (hf p.1 hp).comp p (hval p)) fun p hp hreg ↦ hs p.1 hp ?_
-  rw [isRegularPoint_iff, mfderiv_comp p ((hf p.1 hp).mdifferentiableAt hr0)
+    (I := 𝓘(ℝ, EuclideanSpace ℝ (Fin (Fintype.card ι - k.val)))) hk_le
+    (fun p hp ↦ (hf p.val hp).comp p (hval p)) fun p hp hreg ↦ hs p.val hp ?_
+  rw [isRegularPoint_iff, mfderiv_comp p ((hf p.val hp).mdifferentiableAt hr0)
     ((hval p).mdifferentiableAt hr0), ContinuousLinearMap.coe_comp] at hreg
   exact isRegularPoint_iff.2 hreg.of_comp
 
@@ -373,49 +374,7 @@ theorem _root_.ContMDiff.dense_isRegularValue_quadrant_prod
 
 end QuadrantProd
 
-/-! ### Half-space models -/
-
-section HalfSpace
-
-variable {m : ℕ} [NeZero m] {M : Type*} [TopologicalSpace M]
-  [ChartedSpace (EuclideanHalfSpace m) M] [LindelofSpace M]
-  {r : ℕ∞ω} [IsManifold (𝓡∂ m) r M] [IsManifold J r N]
-  {f : M → N} {s : Set M}
-
-/-- **Sard's theorem for manifolds with boundary modelled on the half-space `𝓡∂ m`.** If `f` is
-`C^r` at every point of a set `s` of critical points (boundary points included) with
-`r > m - finrank ℝ E'` and `r ≥ 1`, then `f '' s` is null in `N`. -/
-theorem isNullSet_image_of_not_isRegularPoint_of_contMDiffAt_halfSpace
-    [MeasurableSpace E'] [BorelSpace E']
-    (hr : ((m - finrank ℝ E' + 1 : ℕ) : ℕ∞ω) ≤ r)
-    (hf : ∀ x ∈ s, ContMDiffAt (𝓡∂ m) J r f x) (hs : ∀ x ∈ s, ¬ IsRegularPoint (𝓡∂ m) J f x) :
-    IsNullSet J (f '' s) :=
-  isNullSet_image_of_not_isRegularPoint_of_contMDiffAt_of_range_eq
-    (by simpa only [Fintype.card_fin] using hr)
-    (ModelWithCorners.range_modelWithCornersEuclideanHalfSpace_eq m) hf hs
-
-/-- **Sard's theorem for manifolds with boundary (`𝓡∂ m`).** The image of the critical points
-(boundary points included) of a `C^r` map from a Lindelöf manifold modelled on `𝓡∂ m` is null in
-every extended chart of `N` whenever `r > m - finrank ℝ E'` and `r ≥ 1`, in particular when the
-map is smooth (`r = ∞`). -/
-theorem _root_.ContMDiff.isNullSet_image_criticalPoints_halfSpace
-    [MeasurableSpace E'] [BorelSpace E']
-    (hf : ContMDiff (𝓡∂ m) J r f)
-    (hr : ((m - finrank ℝ E' + 1 : ℕ) : ℕ∞ω) ≤ r) :
-    IsNullSet J (f '' {x | ¬ IsRegularPoint (𝓡∂ m) J f x}) :=
-  isNullSet_image_of_not_isRegularPoint_of_contMDiffAt_halfSpace hr (fun x _ ↦ hf x) fun _ hx ↦ hx
-
-/-- The regular values of a `C^r` map from a Lindelöf manifold with boundary modelled on `𝓡∂ m`
-are dense whenever `r > m - finrank ℝ E'` and `r ≥ 1`, in particular when the map is smooth. -/
-theorem _root_.ContMDiff.dense_isRegularValue_halfSpace
-    (hf : ContMDiff (𝓡∂ m) J r f)
-    (hr : ((m - finrank ℝ E' + 1 : ℕ) : ℕ∞ω) ≤ r) :
-    Dense {y | IsRegularValue (𝓡∂ m) J f y} := by
-  borelize E'
-  rw [setOf_isRegularValue_eq_compl_image]
-  exact (hf.isNullSet_image_criticalPoints_halfSpace hr).dense_compl
-
-end HalfSpace
+/-! ### Products involving half-space models -/
 
 section HalfSpaceProd
 

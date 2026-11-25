@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.Geometry.Manifold.Corners.Stratum.Basic
 
 import TauCeti.Analysis.InnerProductSpace.PiL2
+import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
 # Manifold structure on depth strata of a manifold with corners
@@ -21,19 +22,23 @@ continuous linear equivalence).
 
 Near a point `p ∈ J.depthStratum M k` of depth `k`, read through a preferred ambient chart `e` of
 `M`, exactly `k` coordinates `i ∈ S` vanish at `e.extend J p` — forming a finite set `Z ⊆ S` of
-cardinality `k` — while every other coordinate in `S` is strictly positive. On the open
-neighborhood `U := {q ∈ e.source | ∀ j ∈ S, e.extend J p j ≠ 0 → 0 < e.extend J q j}` of `p`, any
-point `q ∈ U ∩ J.depthStratum M k` has the same depth `k` as `p`, so by
-`ModelWithCorners.depthAt_eq_iff_of_forall_pos` it must vanish on the exact same `k` coordinates
-`Z`. Splitting `EuclideanSpace ℝ ι` into the coordinates outside `Z` (dimension
-`Fintype.card ι - k`) and the coordinates in `Z` (dimension `k`), projection onto the coordinates
-outside `Z` gives a boundaryless chart on `U ∩ J.depthStratum M k` valued in
-`EuclideanSpace ℝ (Fin (Fintype.card ι - k))`, with inverse given by inserting zeros in `Z` and
-applying `e.symm ∘ J.symm`.
+cardinality `k` — while every other coordinate in `S` is strictly positive. Restricting `e` via
+`OpenPartialHomeomorph.restrOpen` to the open slice
+`U := {q ∈ e.source | ∀ j ∈ S, e.extend J p j ≠ 0 → 0 < e.extend J q j}`, any point
+`q ∈ U ∩ J.depthStratum M k` has the same depth `k` as `p`, so by
+`ModelWithCorners.depthAt_eq_iff_of_forall_pos` it vanishes on the exact same `k` coordinates `Z`.
+Splitting `EuclideanSpace ℝ ι` along `Z` via `EuclideanSpace.coordSplitEquiv` and applying
+`OpenPartialHomeomorph.subtypeCoord` gives a boundaryless chart on `U ∩ J.depthStratum M k` valued
+in `EuclideanSpace ℝ (Fin (Fintype.card ι - k))`.
 
-The charted-space structure `ModelWithCorners.depthStratumChartedSpace` is intentionally defined as
-an opaque (`@[irreducible]`), non-instance `def` to avoid typeclass diamonds with
-`TauCeti.boundaryChartedSpace` and because `hJ : range J = ...` is a propositional hypothesis.
+In the special case of the quadrant `J = 𝓡c m`, `TauCeti.depthStratumChartedSpace` in
+`TauCeti.Geometry.Manifold.Corners.Stratum` provides a global `ChartedSpace` instance using the
+canonical linear order on `Fin m`. Here `J` ranges over arbitrary coordinate-region models over any
+finite index type `ι` (including unordered index types such as `ι₁ ⊕ ι₂` arising from products), so
+`ModelWithCorners.depthStratumChartedSpace` is intentionally defined as an opaque
+(`@[irreducible]`), non-instance `def` to avoid typeclass diamonds with
+`TauCeti.boundaryChartedSpace` and `TauCeti.depthStratumChartedSpace` and because `hJ : range J = …`
+is a propositional hypothesis.
 
 ## Main definitions
 
@@ -57,8 +62,8 @@ an opaque (`@[irreducible]`), non-instance `def` to avoid typeclass diamonds wit
   `ModelWithCorners.injective_mfderiv_subtypeVal_depthStratum`: regularity and injectivity of the
   differential of the stratum inclusion.
 * `ModelWithCorners.mem_range_mfderiv_subtypeVal_depthStratum_iff`: characterization of the tangent
-  space of `↥(J.depthStratum M k)` inside `TangentSpace J p.1` as the subspace where the coordinates
-  in `S` vanishing at `extChartAt J p.1 p.1` are zero.
+  space of `↥(J.depthStratum M k)` inside `TangentSpace J p.val` as the subspace where the
+  coordinates in `S` vanishing at `extChartAt J p.val p.val` are zero.
 
 ## References
 
@@ -68,10 +73,12 @@ an opaque (`@[irreducible]`), non-instance `def` to avoid typeclass diamonds wit
 * J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Graduate Texts in Mathematics 218,
   Springer (2013), Chapter 16, section *Manifolds with Corners*.
 * Formal foundations and idioms in this library: `TauCeti.Geometry.Manifold.Corners.Depth`
-  (intrinsic `depth` and `depthAt`), `TauCeti.Geometry.Manifold.Boundary.Charts` (local chart
-  construction and immersion pattern for boundary manifolds),
-  `TauCeti.Geometry.Manifold.FiberProduct.Manifold` (opaque non-instance `ChartedSpace` idiom),
-  and `TauCeti.Analysis.InnerProductSpace.PiL2` (`EuclideanSpace.sumComplEquivProd`).
+  (intrinsic `depth` and `depthAt`), `TauCeti.Geometry.Manifold.Corners.Stratum` (quadrant stratum
+  manifold instance), `TauCeti.Geometry.Manifold.Boundary.Charts` and
+  `TauCeti.Topology.OpenPartialHomeomorph.Constructions` (`OpenPartialHomeomorph.subtypeCoord`
+  chart pattern), `TauCeti.Geometry.Manifold.FiberProduct.Manifold` (opaque non-instance
+  `ChartedSpace` idiom), and `TauCeti.Analysis.InnerProductSpace.PiL2`
+  (`EuclideanSpace.coordSplitEquiv`).
 -/
 
 public section
@@ -82,106 +89,6 @@ open Set Function Module Topology
 open scoped Manifold ContDiff
 
 namespace ModelWithCorners
-
-section CoordSplit
-
-variable {ι : Type*} [Fintype ι] [DecidableEq ι] {k : ℕ}
-
-/-- Splitting `EuclideanSpace ℝ ι` into the coordinates outside a `k`-element finset `Z` (indexed
-by `Fin (Fintype.card ι - k)`) and the coordinates inside `Z` (indexed by `Fin k`).
-
-Because `Fintype.equivFinOfCardEq` chooses an arbitrary non-canonical bijection, this helper is
-intentionally local to `depthStratumChart`: its only role is to give every depth-`k` stratum chart
-the uniform model space `EuclideanSpace ℝ (Fin (Fintype.card ι - k))` on top of the canonical
-splitting `EuclideanSpace.sumComplEquivProd`. -/
-private def coordSplitEquiv (Z : Finset ι) (hcard : Z.card = k) :
-    (EuclideanSpace ℝ (Fin (Fintype.card ι - k)) × EuclideanSpace ℝ (Fin k)) ≃L[ℝ]
-      EuclideanSpace ℝ ι :=
-  let hcardIn : Fintype.card {i : ι // i ∈ Z} = k := by
-    rw [Fintype.card_coe, hcard]
-  let hcardOut : Fintype.card {i : ι // i ∉ Z} = Fintype.card ι - k := by
-    rw [Fintype.card_subtype_compl (· ∈ Z), Fintype.card_coe, hcard]
-  let σ : Fin (Fintype.card ι - k) ≃ {i : ι // i ∉ Z} :=
-    (Fintype.equivFinOfCardEq hcardOut).symm
-  let τ : Fin k ≃ {i : ι // i ∈ Z} :=
-    (Fintype.equivFinOfCardEq hcardIn).symm
-  let eOut : EuclideanSpace ℝ (Fin (Fintype.card ι - k)) ≃L[ℝ]
-      EuclideanSpace ℝ {i : ι // i ∉ Z} :=
-    (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ σ).toContinuousLinearEquiv
-  let eIn : EuclideanSpace ℝ (Fin k) ≃L[ℝ] EuclideanSpace ℝ {i : ι // i ∈ Z} :=
-    (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ τ).toContinuousLinearEquiv
-  ((eOut.prodCongr eIn).trans (ContinuousLinearEquiv.prodComm ℝ _ _)).trans
-    (EuclideanSpace.sumComplEquivProd ℝ (· ∈ Z)).symm
-
-/-- Linear insertion of coordinates outside `Z`, setting every coordinate in `Z` to `0`. -/
-private def coordSplitInsert (Z : Finset ι) (hcard : Z.card = k) :
-    EuclideanSpace ℝ (Fin (Fintype.card ι - k)) →L[ℝ] EuclideanSpace ℝ ι :=
-  (coordSplitEquiv Z hcard).toContinuousLinearMap.comp (ContinuousLinearMap.inl ℝ _ _)
-
-/-- Linear projection onto the coordinates outside `Z`. -/
-private def coordSplitProj (Z : Finset ι) (hcard : Z.card = k) :
-    EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ (Fin (Fintype.card ι - k)) :=
-  (ContinuousLinearMap.fst ℝ _ _).comp (coordSplitEquiv Z hcard).symm.toContinuousLinearMap
-
-private theorem coordSplitInsert_apply (Z : Finset ι) (hcard : Z.card = k)
-    (y : EuclideanSpace ℝ (Fin (Fintype.card ι - k))) :
-    coordSplitInsert Z hcard y = coordSplitEquiv Z hcard (y, 0) :=
-  rfl
-
-private theorem coordSplitProj_apply (Z : Finset ι) (hcard : Z.card = k)
-    (z : EuclideanSpace ℝ ι) :
-    coordSplitProj Z hcard z = ((coordSplitEquiv Z hcard).symm z).1 :=
-  rfl
-
-private theorem coordSplitProj_insert (Z : Finset ι) (hcard : Z.card = k)
-    (y : EuclideanSpace ℝ (Fin (Fintype.card ι - k))) :
-    coordSplitProj Z hcard (coordSplitInsert Z hcard y) = y := by
-  simp [coordSplitProj_apply, coordSplitInsert_apply]
-
-private theorem coordSplitInsert_apply_of_mem (Z : Finset ι) (hcard : Z.card = k)
-    (y : EuclideanSpace ℝ (Fin (Fintype.card ι - k))) {i : ι} (hi : i ∈ Z) :
-    coordSplitInsert Z hcard y i = 0 := by
-  simp only [coordSplitInsert_apply, coordSplitEquiv, ContinuousLinearEquiv.trans_apply,
-    ContinuousLinearEquiv.prodComm_apply, ContinuousLinearEquiv.prodCongr_apply, Prod.swap_prod_mk,
-    map_zero, EuclideanSpace.sumComplEquivProd_symm_apply, dite_eq_left hi, PiLp.zero_apply]
-
-private theorem coordSplitEquiv_symm_snd_eq_zero_iff (Z : Finset ι) (hcard : Z.card = k)
-    (z : EuclideanSpace ℝ ι) :
-    ((coordSplitEquiv Z hcard).symm z).2 = 0 ↔ ∀ i ∈ Z, z i = 0 := by
-  have hfst : ((coordSplitEquiv Z hcard).symm z).2 = 0 ↔
-      (EuclideanSpace.sumComplEquivProd ℝ (· ∈ Z) z).1 = 0 := by
-    simp only [coordSplitEquiv, ContinuousLinearEquiv.symm_trans_apply,
-      ContinuousLinearEquiv.symm_symm, ContinuousLinearEquiv.prodComm_symm,
-      ContinuousLinearEquiv.prodComm_apply, ContinuousLinearEquiv.prodCongr_symm,
-      ContinuousLinearEquiv.prodCongr_apply, Prod.snd_swap,
-      ContinuousLinearEquiv.map_eq_zero_iff]
-  rw [hfst]
-  constructor
-  · intro h i hi
-    simpa [EuclideanSpace.sumComplEquivProd_apply_fst] using
-      congrArg (fun u : EuclideanSpace ℝ {j : ι // j ∈ Z} ↦ u ⟨i, hi⟩) h
-  · intro h
-    ext ⟨i, hi⟩
-    simpa [EuclideanSpace.sumComplEquivProd_apply_fst] using h i hi
-
-private theorem coordSplitInsert_proj (Z : Finset ι) (hcard : Z.card = k)
-    {z : EuclideanSpace ℝ ι} (hz : ∀ i ∈ Z, z i = 0) :
-    coordSplitInsert Z hcard (coordSplitProj Z hcard z) = z := by
-  have h2 : ((coordSplitEquiv Z hcard).symm z).2 = 0 :=
-    (coordSplitEquiv_symm_snd_eq_zero_iff Z hcard z).2 hz
-  rw [coordSplitInsert_apply, coordSplitProj_apply, ← h2, Prod.mk.eta,
-    ContinuousLinearEquiv.apply_symm_apply]
-
-private theorem mem_range_coordSplitInsert_iff (Z : Finset ι) (hcard : Z.card = k)
-    (w : EuclideanSpace ℝ ι) :
-    w ∈ (coordSplitInsert Z hcard).range ↔ ∀ i ∈ Z, w i = 0 := by
-  constructor
-  · rintro ⟨y, rfl⟩ i hi
-    exact coordSplitInsert_apply_of_mem Z hcard y hi
-  · intro hw
-    exact ⟨coordSplitProj Z hcard w, coordSplitInsert_proj Z hcard hw⟩
-
-end CoordSplit
 
 section Charts
 
@@ -198,21 +105,75 @@ private theorem mem_vanishingFinset_iff {S : Set ι} {e : OpenPartialHomeomorph 
     {i : ι} : i ∈ vanishingFinset J S e x ↔ i ∈ S ∧ e.extend J x i = 0 := by
   simp only [vanishingFinset, Finset.mem_filter, Finset.mem_univ, true_and]
 
+/-- Restriction of an ambient chart `e` to the open slice around `x` where every coordinate in `S`
+nonzero at `e.extend J x` stays strictly positive. -/
+private def posSliceChart (S : Set ι) (e : OpenPartialHomeomorph M H) (x : M) :
+    OpenPartialHomeomorph M H :=
+  e.restrOpen {q ∈ e.source | ∀ j ∈ S, e.extend J x j ≠ 0 → 0 < e.extend J q j}
+    (isOpen_setOf_forall_extend_pos J S e x)
+
+private theorem posSliceChart_source (S : Set ι) (e : OpenPartialHomeomorph M H) (x : M) :
+    (posSliceChart J S e x).source =
+      {q ∈ e.source | ∀ j ∈ S, e.extend J x j ≠ 0 → 0 < e.extend J q j} := by
+  rw [posSliceChart, OpenPartialHomeomorph.restrOpen_source]
+  exact inter_eq_right.2 fun _ hq ↦ hq.1
+
+private theorem mem_posSliceChart_target (S : Set ι) (e : OpenPartialHomeomorph M H) (x : M)
+    {h : H} :
+    h ∈ (posSliceChart J S e x).target ↔
+      h ∈ e.target ∧
+        e.symm h ∈ {q ∈ e.source | ∀ j ∈ S, e.extend J x j ≠ 0 → 0 < e.extend J q j} := by
+  simp [posSliceChart, PartialEquiv.restr_target]
+
+open Classical in
+/-- Coordinatewise clamping onto `{z | ∀ i ∈ S, 0 ≤ z i}`. Because `J.symm` is only a right inverse
+of `J` on `range J`, clamping before `J.symm` guarantees that the slice parametrization lands in
+`range J` globally (playing the role of `(𝓡c m).symm`'s built-in `max · 0`), while agreeing with
+the identity on `range J`. -/
+private def coordClamp (S : Set ι) (z : EuclideanSpace ℝ ι) : EuclideanSpace ℝ ι :=
+  WithLp.toLp 2 fun i ↦ if i ∈ S then max (z i) 0 else z i
+
+private theorem coordClamp_mem_range (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i})
+    (z : EuclideanSpace ℝ ι) : coordClamp S z ∈ range J := by
+  classical
+  rw [hJ]
+  intro i hi
+  simp [coordClamp, hi]
+
+private theorem coordClamp_eq_self (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i})
+    {z : EuclideanSpace ℝ ι} (hz : z ∈ range J) : coordClamp S z = z := by
+  classical
+  rw [hJ] at hz
+  ext i
+  by_cases hi : i ∈ S
+  · simp [coordClamp, hi, hz i hi]
+  · simp [coordClamp, hi]
+
+omit [Fintype ι] in
+private theorem continuous_coordClamp (S : Set ι) : Continuous (coordClamp S) := by
+  classical
+  refine (PiLp.continuous_toLp 2 _).comp (continuous_pi fun i ↦ ?_)
+  by_cases hi : i ∈ S
+  · simp only [hi, ↓reduceIte]
+    exact (PiLp.continuous_apply 2 _ i).max continuous_const
+  · simp only [hi, ↓reduceIte]
+    exact PiLp.continuous_apply 2 _ i
+
 variable [ChartedSpace H M]
 
 private theorem card_vanishingFinset [IsManifold J 1 M] (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i})
     {k : ℕ} (p : ↥(J.depthStratum M k)) {e : OpenPartialHomeomorph M H}
-    (he : e ∈ IsManifold.maximalAtlas J 1 M) (hp : p.1 ∈ e.source) :
-    (vanishingFinset J S e p.1).card = k := by
+    (he : e ∈ IsManifold.maximalAtlas J 1 M) (hp : p.val ∈ e.source) :
+    (vanishingFinset J S e p.val).card = k := by
   classical
-  have hdepth : J.depthAt (e.extend J p.1) = k := by
+  have hdepth : J.depthAt (e.extend J p.val) = k := by
     rw [depthAt_extend_eq_depth one_ne_zero he hp]
-    exact mem_depthStratum_iff.1 p.2
-  have hmem : e.extend J p.1 ∈ range J := by
+    exact mem_depthStratum.1 p.property
+  have hmem : e.extend J p.val ∈ range J := by
     rw [OpenPartialHomeomorph.extend_coe]
     exact mem_range_self _
-  have hcard : (vanishingFinset J S e p.1).card =
-      Nat.card {i : ι // i ∈ S ∧ e.extend J p.1 i = 0} := by
+  have hcard : (vanishingFinset J S e p.val).card =
+      Nat.card {i : ι // i ∈ S ∧ e.extend J p.val i = 0} := by
     rw [Nat.card_eq_fintype_card, Fintype.card_subtype]
     exact congrArg Finset.card (by
       ext i
@@ -224,212 +185,240 @@ open Classical in
 /-- Splitting of `EuclideanSpace ℝ ι` tailored to the vanishing coordinates of `e.extend J p`. -/
 private def chartSplitEquiv [IsManifold J 1 M] (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i})
     {k : ℕ} (p : ↥(J.depthStratum M k)) (e : OpenPartialHomeomorph M H)
-    (he : e ∈ IsManifold.maximalAtlas J 1 M) (hp : p.1 ∈ e.source) :
+    (he : e ∈ IsManifold.maximalAtlas J 1 M) (hp : p.val ∈ e.source) :
     (EuclideanSpace ℝ (Fin (Fintype.card ι - k)) × EuclideanSpace ℝ (Fin k)) ≃L[ℝ]
       EuclideanSpace ℝ ι :=
-  coordSplitEquiv (vanishingFinset J S e p.1) (card_vanishingFinset J hJ p he hp)
+  EuclideanSpace.coordSplitEquiv ℝ (vanishingFinset J S e p.val)
+    (card_vanishingFinset J hJ p he hp)
 
 open Classical in
-/-- Insertion of stratum coordinates outside `vanishingFinset J S e p.1`, zeroing those inside. -/
+/-- Insertion of stratum coordinates outside `vanishingFinset J S e p.val`, zeroing those inside. -/
 private def chartInsert [IsManifold J 1 M] (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i})
     {k : ℕ} (p : ↥(J.depthStratum M k)) (e : OpenPartialHomeomorph M H)
-    (he : e ∈ IsManifold.maximalAtlas J 1 M) (hp : p.1 ∈ e.source) :
+    (he : e ∈ IsManifold.maximalAtlas J 1 M) (hp : p.val ∈ e.source) :
     EuclideanSpace ℝ (Fin (Fintype.card ι - k)) →L[ℝ] EuclideanSpace ℝ ι :=
-  coordSplitInsert (vanishingFinset J S e p.1) (card_vanishingFinset J hJ p he hp)
+  EuclideanSpace.coordSplitInsert ℝ (vanishingFinset J S e p.val)
+    (card_vanishingFinset J hJ p he hp)
 
 open Classical in
-/-- Projection onto the stratum coordinates outside `vanishingFinset J S e p.1`. -/
+/-- Projection onto the stratum coordinates outside `vanishingFinset J S e p.val`. -/
 private def chartProj [IsManifold J 1 M] (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i})
     {k : ℕ} (p : ↥(J.depthStratum M k)) (e : OpenPartialHomeomorph M H)
-    (he : e ∈ IsManifold.maximalAtlas J 1 M) (hp : p.1 ∈ e.source) :
+    (he : e ∈ IsManifold.maximalAtlas J 1 M) (hp : p.val ∈ e.source) :
     EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ (Fin (Fintype.card ι - k)) :=
-  coordSplitProj (vanishingFinset J S e p.1) (card_vanishingFinset J hJ p he hp)
+  EuclideanSpace.coordSplitProj ℝ (vanishingFinset J S e p.val)
+    (card_vanishingFinset J hJ p he hp)
 
-/-- Target open set of the stratum chart induced by `(p, e)`: coordinates outside the vanishing set
-such that the remaining coordinates in `S` are strictly positive and the inserted point lands in
-`e.target`. -/
-private def depthStratumChartTarget [IsManifold J 1 M] (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i})
+/-- Slice parametrization in `H` for `OpenPartialHomeomorph.subtypeCoord`: insert zeros in the
+vanishing coordinates, clamp onto `range J`, and apply `J.symm`. On the chart target this agrees
+with `J.symm ∘ chartInsert`. -/
+private def chartParam [IsManifold J 1 M] (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i})
     {k : ℕ} (p : ↥(J.depthStratum M k)) (e : OpenPartialHomeomorph M H)
-    (he : e ∈ IsManifold.maximalAtlas J 1 M) (hp : p.1 ∈ e.source) :
-    Set (EuclideanSpace ℝ (Fin (Fintype.card ι - k))) :=
-  {y | (∀ j ∈ S, j ∉ vanishingFinset J S e p.1 → 0 < chartInsert J hJ p e he hp y j) ∧
-    J.symm (chartInsert J hJ p e he hp y) ∈ e.target}
+    (he : e ∈ IsManifold.maximalAtlas J 1 M) (hp : p.val ∈ e.source) :
+    EuclideanSpace ℝ (Fin (Fintype.card ι - k)) → H :=
+  J.symm ∘ coordClamp S ∘ chartInsert J hJ p e he hp
 
-private theorem chartInsert_mem_range_of_mem_target [IsManifold J 1 M]
+private theorem chartInsert_pos_and_mem_range_of_mem_posSliceChart_target [IsManifold J 1 M]
     {hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i}} {k : ℕ} {p : ↥(J.depthStratum M k)}
     {e : OpenPartialHomeomorph M H} {he : e ∈ IsManifold.maximalAtlas J 1 M}
-    {hp : p.1 ∈ e.source} {y : EuclideanSpace ℝ (Fin (Fintype.card ι - k))}
-    (hy : y ∈ depthStratumChartTarget J hJ p e he hp) :
-    chartInsert J hJ p e he hp y ∈ range J := by
+    {hp : p.val ∈ e.source} {y : EuclideanSpace ℝ (Fin (Fintype.card ι - k))}
+    (hy : chartParam J hJ p e he hp y ∈ (posSliceChart J S e p.val).target) :
+    (∀ j ∈ S, j ∉ vanishingFinset J S e p.val → 0 < chartInsert J hJ p e he hp y j) ∧
+      chartInsert J hJ p e he hp y ∈ range J := by
   classical
+  obtain ⟨hy₁, hy₂⟩ := (mem_posSliceChart_target J S e p.val).1 hy
+  have hpos : ∀ j ∈ S, j ∉ vanishingFinset J S e p.val →
+      0 < chartInsert J hJ p e he hp y j := fun j hj hjZ ↦ by
+    have hne : e.extend J p.val j ≠ 0 := fun h0 ↦ hjZ ((mem_vanishingFinset_iff J).2 ⟨hj, h0⟩)
+    have h := hy₂.2 j hj hne
+    rw [OpenPartialHomeomorph.extend_coe, comp_apply, e.right_inv hy₁, chartParam, comp_apply,
+      comp_apply, J.right_inv (coordClamp_mem_range J hJ _)] at h
+    simp only [coordClamp, PiLp.toLp_apply, hj, ↓reduceIte] at h
+    exact (lt_max_iff.1 h).resolve_right (lt_irrefl 0)
+  refine ⟨hpos, ?_⟩
   rw [hJ]
   intro j hj
-  by_cases hjZ : j ∈ vanishingFinset J S e p.1
-  · rw [chartInsert, coordSplitInsert_apply_of_mem _ _ y hjZ]
-  · exact (hy.1 j hj hjZ).le
+  by_cases hjZ : j ∈ vanishingFinset J S e p.val
+  · rw [chartInsert, EuclideanSpace.coordSplitInsert_apply_of_mem y hjZ]
+  · exact (hpos j hj hjZ).le
 
-private theorem mem_depthStratum_of_mem_target [IsManifold J 1 M]
+private theorem chartParam_eq_of_mem_posSliceChart_target [IsManifold J 1 M]
     {hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i}} {k : ℕ} {p : ↥(J.depthStratum M k)}
     {e : OpenPartialHomeomorph M H} {he : e ∈ IsManifold.maximalAtlas J 1 M}
-    {hp : p.1 ∈ e.source} {y : EuclideanSpace ℝ (Fin (Fintype.card ι - k))}
-    (hy : y ∈ depthStratumChartTarget J hJ p e he hp) :
-    e.symm (J.symm (chartInsert J hJ p e he hp y)) ∈ J.depthStratum M k := by
-  have hmem : chartInsert J hJ p e he hp y ∈ range J :=
-    chartInsert_mem_range_of_mem_target J hy
-  have hq_src : e.symm (J.symm (chartInsert J hJ p e he hp y)) ∈ e.source := e.map_target hy.2
+    {hp : p.val ∈ e.source} {y : EuclideanSpace ℝ (Fin (Fintype.card ι - k))}
+    (hy : chartParam J hJ p e he hp y ∈ (posSliceChart J S e p.val).target) :
+    chartParam J hJ p e he hp y = J.symm (chartInsert J hJ p e he hp y) := by
+  simp only [chartParam, comp_apply,
+    coordClamp_eq_self J hJ (chartInsert_pos_and_mem_range_of_mem_posSliceChart_target J hy).2]
+
+private theorem symm_chartParam_mem [IsManifold J 1 M]
+    {hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i}} {k : ℕ} {p : ↥(J.depthStratum M k)}
+    {e : OpenPartialHomeomorph M H} {he : e ∈ IsManifold.maximalAtlas J 1 M}
+    {hp : p.val ∈ e.source} {y : EuclideanSpace ℝ (Fin (Fintype.card ι - k))}
+    (hy : chartParam J hJ p e he hp y ∈ (posSliceChart J S e p.val).target) :
+    (posSliceChart J S e p.val).symm (chartParam J hJ p e he hp y) ∈ J.depthStratum M k := by
+  obtain ⟨hpos, hmem⟩ := chartInsert_pos_and_mem_range_of_mem_posSliceChart_target J hy
+  have hy_e : J.symm (chartInsert J hJ p e he hp y) ∈ e.target :=
+    chartParam_eq_of_mem_posSliceChart_target J hy ▸
+      ((mem_posSliceChart_target J S e p.val).1 hy).1
+  rw [posSliceChart, OpenPartialHomeomorph.coe_restrOpen_symm,
+    chartParam_eq_of_mem_posSliceChart_target J hy]
+  have hq_src : e.symm (J.symm (chartInsert J hJ p e he hp y)) ∈ e.source := e.map_target hy_e
   have hq_ext : e.extend J (e.symm (J.symm (chartInsert J hJ p e he hp y))) =
       chartInsert J hJ p e he hp y := by
-    rw [OpenPartialHomeomorph.extend_coe, comp_apply, e.right_inv hy.2, J.right_inv hmem]
-  rw [mem_depthStratum_iff, ← depthAt_extend_eq_depth one_ne_zero he hq_src, hq_ext]
-  have hdepth_p : J.depthAt (e.extend J p.1) = k := by
+    rw [OpenPartialHomeomorph.extend_coe, comp_apply, e.right_inv hy_e, J.right_inv hmem]
+  rw [mem_depthStratum, ← depthAt_extend_eq_depth one_ne_zero he hq_src, hq_ext]
+  have hdepth_p : J.depthAt (e.extend J p.val) = k := by
     rw [depthAt_extend_eq_depth one_ne_zero he hp]
-    exact mem_depthStratum_iff.1 p.2
+    exact mem_depthStratum.1 p.property
   refine ((depthAt_eq_iff_of_forall_pos hJ
     (by rw [OpenPartialHomeomorph.extend_coe]; exact mem_range_self _)
-    hmem (fun j hj hne ↦ hy.1 j hj ?_)).2 fun j hj h0 ↦ ?_).trans hdepth_p
+    hmem (fun j hj hne ↦ hpos j hj ?_)).2 fun j hj h0 ↦ ?_).trans hdepth_p
   · rw [mem_vanishingFinset_iff]
     exact fun h ↦ hne h.2
   · classical
-    exact coordSplitInsert_apply_of_mem _ _ y ((mem_vanishingFinset_iff J).2 ⟨hj, h0⟩)
+    exact EuclideanSpace.coordSplitInsert_apply_of_mem y ((mem_vanishingFinset_iff J).2 ⟨hj, h0⟩)
 
 private theorem extend_eq_zero_of_mem_posSlice [IsManifold J 1 M]
     (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i}) {k : ℕ} (p : ↥(J.depthStratum M k))
     (e : OpenPartialHomeomorph M H) (he : e ∈ IsManifold.maximalAtlas J 1 M)
-    (hp : p.1 ∈ e.source) {q : ↥(J.depthStratum M k)}
-    (hq : q.1 ∈ {q ∈ e.source | ∀ j ∈ S, e.extend J p.1 j ≠ 0 → 0 < e.extend J q j}) :
-    ∀ i ∈ vanishingFinset J S e p.1, e.extend J q.1 i = 0 := fun i hi ↦ by
+    (hp : p.val ∈ e.source) {q : ↥(J.depthStratum M k)}
+    (hq : q.val ∈ {q ∈ e.source | ∀ j ∈ S, e.extend J p.val j ≠ 0 → 0 < e.extend J q j}) :
+    ∀ i ∈ vanishingFinset J S e p.val, e.extend J q.val i = 0 := fun i hi ↦ by
   have hi' := (mem_vanishingFinset_iff J).1 hi
-  have heq : J.depthAt (e.extend J q.1) = J.depthAt (e.extend J p.1) := by
+  have heq : J.depthAt (e.extend J q.val) = J.depthAt (e.extend J p.val) := by
     rw [depthAt_extend_eq_depth one_ne_zero he hq.1,
       depthAt_extend_eq_depth one_ne_zero he hp,
-      mem_depthStratum_iff.1 q.2, mem_depthStratum_iff.1 p.2]
+      mem_depthStratum.1 q.property, mem_depthStratum.1 p.property]
   exact (depthAt_eq_iff_of_forall_pos hJ
     (by rw [OpenPartialHomeomorph.extend_coe]; exact mem_range_self _)
     (by rw [OpenPartialHomeomorph.extend_coe]; exact mem_range_self _) hq.2).1 heq i hi'.1 hi'.2
 
-private theorem chartProj_mem_depthStratumChartTarget [IsManifold J 1 M]
+private theorem chartParam_chartProj [IsManifold J 1 M]
     (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i}) {k : ℕ} (p : ↥(J.depthStratum M k))
     (e : OpenPartialHomeomorph M H) (he : e ∈ IsManifold.maximalAtlas J 1 M)
-    (hp : p.1 ∈ e.source) {q : ↥(J.depthStratum M k)}
-    (hq : q.1 ∈ {q ∈ e.source | ∀ j ∈ S, e.extend J p.1 j ≠ 0 → 0 < e.extend J q j}) :
-    chartProj J hJ p e he hp (e.extend J q.1) ∈ depthStratumChartTarget J hJ p e he hp := by
+    (hp : p.val ∈ e.source) {x : M}
+    (hx : x ∈ (posSliceChart J S e p.val).source) (hxs : x ∈ J.depthStratum M k) :
+    chartParam J hJ p e he hp
+        ((chartProj J hJ p e he hp ∘ J) (posSliceChart J S e p.val x)) =
+      posSliceChart J S e p.val x := by
   classical
-  have h_ins_eq : chartInsert J hJ p e he hp (chartProj J hJ p e he hp (e.extend J q.1)) =
-      e.extend J q.1 :=
-    coordSplitInsert_proj _ _ (extend_eq_zero_of_mem_posSlice J hJ p e he hp hq)
-  refine ⟨fun j hj hjZ ↦ ?_, ?_⟩
-  · rw [h_ins_eq]
-    exact hq.2 j hj fun h0 ↦ hjZ ((mem_vanishingFinset_iff J).2 ⟨hj, h0⟩)
-  · rw [h_ins_eq, OpenPartialHomeomorph.extend_coe, comp_apply, J.left_inv]
-    exact e.map_source hq.1
+  rw [posSliceChart_source] at hx
+  have h_ins_eq : chartInsert J hJ p e he hp (chartProj J hJ p e he hp (e.extend J x)) =
+      e.extend J x :=
+    EuclideanSpace.coordSplitInsert_proj
+      (extend_eq_zero_of_mem_posSlice J hJ p e he hp (q := ⟨x, hxs⟩) hx)
+  change J.symm (coordClamp S
+      (chartInsert J hJ p e he hp (chartProj J hJ p e he hp (e.extend J x)))) = e x
+  rw [h_ins_eq, coordClamp_eq_self J hJ
+    (by rw [OpenPartialHomeomorph.extend_coe]; exact mem_range_self _),
+    OpenPartialHomeomorph.extend_coe, comp_apply, J.left_inv]
 
-private theorem isOpen_depthStratumChartTarget [IsManifold J 1 M]
+private theorem leftInvOn_chartProj_chartParam [IsManifold J 1 M]
     (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i}) {k : ℕ} (p : ↥(J.depthStratum M k))
     (e : OpenPartialHomeomorph M H) (he : e ∈ IsManifold.maximalAtlas J 1 M)
-    (hp : p.1 ∈ e.source) :
-    IsOpen (depthStratumChartTarget J hJ p e he hp) := by
-  let ins := chartInsert J hJ p e he hp
-  have hV : depthStratumChartTarget J hJ p e he hp =
-      (⋂ j : {j : ι // j ∈ S ∧ j ∉ vanishingFinset J S e p.1}, (fun y ↦ ins y j.1) ⁻¹' Ioi 0) ∩
-        (J.symm ∘ ins) ⁻¹' e.target := by
-    ext y
-    simp only [depthStratumChartTarget, ins, mem_ofPred_eq, mem_inter_iff, mem_iInter,
-      mem_preimage, mem_Ioi, comp_apply, Subtype.forall]
-    exact ⟨fun ⟨h1, h2⟩ ↦ ⟨fun j hj ↦ h1 j hj.1 hj.2, h2⟩,
-      fun ⟨h1, h2⟩ ↦ ⟨fun j hj hjZ ↦ h1 j ⟨hj, hjZ⟩, h2⟩⟩
-  rw [hV]
-  refine (isOpen_iInter_of_finite fun j ↦ ?_).inter
-    (e.open_target.preimage (J.continuous_symm.comp ins.continuous))
-  exact isOpen_Ioi.preimage
-    ((EuclideanSpace.proj j.1 : EuclideanSpace ℝ ι →L[ℝ] ℝ).continuous.comp ins.continuous)
+    (hp : p.val ∈ e.source) :
+    LeftInvOn (chartProj J hJ p e he hp ∘ J) (chartParam J hJ p e he hp)
+      (chartParam J hJ p e he hp ⁻¹' (posSliceChart J S e p.val).target) := by
+  classical
+  intro y hy
+  rw [mem_preimage] at hy
+  rw [comp_apply, chartParam_eq_of_mem_posSliceChart_target J hy,
+    J.right_inv (chartInsert_pos_and_mem_range_of_mem_posSliceChart_target J hy).2,
+    chartProj, chartInsert, EuclideanSpace.coordSplitProj_insert]
 
-open Classical in
+private theorem continuous_chartParam [IsManifold J 1 M]
+    (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i}) {k : ℕ} (p : ↥(J.depthStratum M k))
+    (e : OpenPartialHomeomorph M H) (he : e ∈ IsManifold.maximalAtlas J 1 M)
+    (hp : p.val ∈ e.source) :
+    Continuous (chartParam J hJ p e he hp) :=
+  J.continuous_symm.comp ((continuous_coordClamp S).comp (chartInsert J hJ p e he hp).continuous)
+
+private theorem continuous_chartProj_comp [IsManifold J 1 M]
+    (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i}) {k : ℕ} (p : ↥(J.depthStratum M k))
+    (e : OpenPartialHomeomorph M H) (he : e ∈ IsManifold.maximalAtlas J 1 M)
+    (hp : p.val ∈ e.source) :
+    Continuous (chartProj J hJ p e he hp ∘ J) :=
+  (chartProj J hJ p e he hp).continuous.comp J.continuous
+
 /-- On a `C^1` manifold `M` modelled on `range J = {z | ∀ i ∈ S, 0 ≤ z i}`, an ambient chart `e`
 containing `p ∈ J.depthStratum M k` induces a chart on `↥(J.depthStratum M k)` valued in
-`EuclideanSpace ℝ (Fin (Fintype.card ι - k))` by deleting the `k` coordinates in `S` vanishing at
+`EuclideanSpace ℝ (Fin (Fintype.card ι - k))` by restricting `e` to the positive slice around `p`
+and applying `OpenPartialHomeomorph.subtypeCoord` to delete the `k` coordinates in `S` vanishing at
 `e.extend J p`. -/
 private def depthStratumChart [IsManifold J 1 M] (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i})
     {k : ℕ} (p : ↥(J.depthStratum M k)) (e : OpenPartialHomeomorph M H)
-    (he : e ∈ IsManifold.maximalAtlas J 1 M) (hp : p.1 ∈ e.source) :
-    OpenPartialHomeomorph ↥(J.depthStratum M k) (EuclideanSpace ℝ (Fin (Fintype.card ι - k))) where
-  toFun q := chartProj J hJ p e he hp (e.extend J q.1)
-  invFun y := if hy : y ∈ depthStratumChartTarget J hJ p e he hp then
-    ⟨e.symm (J.symm (chartInsert J hJ p e he hp y)), mem_depthStratum_of_mem_target J hy⟩ else p
-  source := Subtype.val ⁻¹' {q ∈ e.source | ∀ j ∈ S, e.extend J p.1 j ≠ 0 → 0 < e.extend J q j}
-  target := depthStratumChartTarget J hJ p e he hp
-  map_source' _ hq := chartProj_mem_depthStratumChartTarget J hJ p e he hp hq
-  map_target' y hy := by
-    simp only [dite_eq_left hy, mem_preimage]
-    refine ⟨e.map_target hy.2, fun j hj hne ↦ ?_⟩
-    rw [OpenPartialHomeomorph.extend_coe, comp_apply, e.right_inv hy.2,
-      J.right_inv (chartInsert_mem_range_of_mem_target J hy)]
-    exact hy.1 j hj fun h ↦ hne ((mem_vanishingFinset_iff J).1 h).2
-  left_inv' q hq := by
-    have hmem := chartProj_mem_depthStratumChartTarget J hJ p e he hp hq
-    have h_ins_eq : chartInsert J hJ p e he hp (chartProj J hJ p e he hp (e.extend J q.1)) =
-        e.extend J q.1 :=
-      coordSplitInsert_proj _ _ (extend_eq_zero_of_mem_posSlice J hJ p e he hp hq)
-    ext1
-    simp only [dite_eq_left hmem]
-    rw [h_ins_eq, OpenPartialHomeomorph.extend_coe, comp_apply, J.left_inv, e.left_inv hq.1]
-  right_inv' y hy := by
-    simp only [dite_eq_left hy]
-    rw [OpenPartialHomeomorph.extend_coe, comp_apply, e.right_inv hy.2,
-      J.right_inv (chartInsert_mem_range_of_mem_target J hy)]
-    exact coordSplitProj_insert _ _ y
-  open_source := (isOpen_setOf_forall_extend_pos J S e p.1).preimage continuous_subtype_val
-  open_target := isOpen_depthStratumChartTarget J hJ p e he hp
-  continuousOn_toFun := by
-    have h1 : ContinuousOn (fun q : ↥(J.depthStratum M k) ↦ e q.1)
-        (Subtype.val ⁻¹' {q ∈ e.source | ∀ j ∈ S, e.extend J p.1 j ≠ 0 → 0 < e.extend J q j}) :=
-      e.continuousOn.comp continuous_subtype_val.continuousOn fun q hq ↦ hq.1
-    exact ((chartProj J hJ p e he hp).continuous.comp J.continuous).comp_continuousOn h1
-  continuousOn_invFun := by
-    have hcont : ContinuousOn (fun y ↦ e.symm (J.symm (chartInsert J hJ p e he hp y)))
-        (depthStratumChartTarget J hJ p e he hp) :=
-      e.continuousOn_symm.comp
-        (J.continuous_symm.comp (chartInsert J hJ p e he hp).continuous).continuousOn
-        fun _ hy ↦ hy.2
-    refine IsInducing.subtypeVal.continuousOn_iff.2 (hcont.congr fun y hy ↦ ?_)
-    simp [dite_eq_left hy]
+    (he : e ∈ IsManifold.maximalAtlas J 1 M) (hp : p.val ∈ e.source) :
+    OpenPartialHomeomorph ↥(J.depthStratum M k) (EuclideanSpace ℝ (Fin (Fintype.card ι - k))) :=
+  (posSliceChart J S e p.val).subtypeCoord (J.depthStratum M k) ⟨p⟩
+    (chartParam J hJ p e he hp) (chartProj J hJ p e he hp ∘ J)
+    (fun hy ↦ symm_chartParam_mem J hy)
+    (fun hx hxs ↦ chartParam_chartProj J hJ p e he hp hx hxs)
+    (leftInvOn_chartProj_chartParam J hJ p e he hp)
+    (continuous_chartParam J hJ p e he hp)
+    (continuous_chartProj_comp J hJ p e he hp).continuousOn
 
 section ChartLemmas
 
 variable [IsManifold J 1 M] {hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i}} {k : ℕ}
   {p : ↥(J.depthStratum M k)} {e : OpenPartialHomeomorph M H}
-  {he : e ∈ IsManifold.maximalAtlas J 1 M} {hp : p.1 ∈ e.source}
+  {he : e ∈ IsManifold.maximalAtlas J 1 M} {hp : p.val ∈ e.source}
 
 private theorem depthStratumChart_source :
     (depthStratumChart J hJ p e he hp).source =
-      Subtype.val ⁻¹' {q ∈ e.source | ∀ j ∈ S, e.extend J p.1 j ≠ 0 → 0 < e.extend J q j} :=
-  rfl
+      Subtype.val ⁻¹' {q ∈ e.source | ∀ j ∈ S, e.extend J p.val j ≠ 0 → 0 < e.extend J q j} := by
+  rw [← posSliceChart_source J S e p.val, depthStratumChart]
+  exact OpenPartialHomeomorph.subtypeCoord_source ..
+
+private theorem depthStratumChart_target :
+    (depthStratumChart J hJ p e he hp).target =
+      chartParam J hJ p e he hp ⁻¹' (posSliceChart J S e p.val).target := by
+  rw [depthStratumChart]
+  exact OpenPartialHomeomorph.subtypeCoord_target ..
 
 private theorem depthStratumChart_apply (q : ↥(J.depthStratum M k)) :
-    depthStratumChart J hJ p e he hp q = chartProj J hJ p e he hp (e.extend J q.1) :=
-  rfl
+    depthStratumChart J hJ p e he hp q = chartProj J hJ p e he hp (e.extend J q.val) := by
+  change depthStratumChart J hJ p e he hp q =
+    (chartProj J hJ p e he hp ∘ J) (posSliceChart J S e p.val q.val)
+  rw [depthStratumChart]
+  exact OpenPartialHomeomorph.subtypeCoord_apply ..
+
+private theorem chartInsert_mem_of_mem_depthStratumChart_target
+    {y : EuclideanSpace ℝ (Fin (Fintype.card ι - k))}
+    (hy : y ∈ (depthStratumChart J hJ p e he hp).target) :
+    J.symm (chartInsert J hJ p e he hp y) ∈ e.target ∧
+      chartInsert J hJ p e he hp y ∈ range J := by
+  rw [depthStratumChart_target, mem_preimage] at hy
+  exact ⟨chartParam_eq_of_mem_posSliceChart_target J hy ▸
+      ((mem_posSliceChart_target J S e p.val).1 hy).1,
+    (chartInsert_pos_and_mem_range_of_mem_posSliceChart_target J hy).2⟩
 
 private theorem coe_depthStratumChart_symm_apply
     {y : EuclideanSpace ℝ (Fin (Fintype.card ι - k))}
     (hy : y ∈ (depthStratumChart J hJ p e he hp).target) :
     ((depthStratumChart J hJ p e he hp).symm y : M) =
       e.symm (J.symm (chartInsert J hJ p e he hp y)) := by
-  unfold depthStratumChart
-  dsimp only [OpenPartialHomeomorph.coe_toPartialEquiv_symm]
-  exact congrArg Subtype.val (dite_eq_left hy)
+  rw [depthStratumChart_target, mem_preimage] at hy
+  rw [← chartParam_eq_of_mem_posSliceChart_target J hy]
+  change ((depthStratumChart J hJ p e he hp).symm y : M) =
+    (posSliceChart J S e p.val).symm (chartParam J hJ p e he hp y)
+  rw [depthStratumChart]
+  exact OpenPartialHomeomorph.coe_subtypeCoord_symm_apply _ _ _ _ _ _ _ _ _ _ hy
 
 private theorem extend_depthStratumChart_symm_apply
     {y : EuclideanSpace ℝ (Fin (Fintype.card ι - k))}
     (hy : y ∈ (depthStratumChart J hJ p e he hp).target) :
     e.extend J ((depthStratumChart J hJ p e he hp).symm y : M) =
       chartInsert J hJ p e he hp y := by
+  obtain ⟨hy_e, hmem⟩ := chartInsert_mem_of_mem_depthStratumChart_target J hy
   rw [coe_depthStratumChart_symm_apply J hy, OpenPartialHomeomorph.extend_coe, comp_apply,
-    e.right_inv hy.2, J.right_inv (chartInsert_mem_range_of_mem_target J hy)]
+    e.right_inv hy_e, J.right_inv hmem]
 
 private theorem contDiffOn_depthStratumChart_symm_trans {n : ℕ∞ω} [IsManifold J n M]
     (p q : ↥(J.depthStratum M k))
     {e₁ e₂ : OpenPartialHomeomorph M H}
     (he₁ : e₁ ∈ atlas H M) (he₂ : e₂ ∈ atlas H M)
-    (hp : p.1 ∈ e₁.source) (hq : q.1 ∈ e₂.source) :
+    (hp : p.val ∈ e₁.source) (hq : q.val ∈ e₂.source) :
     ContDiffOn ℝ n
       ((depthStratumChart J hJ p e₁ (IsManifold.subset_maximalAtlas he₁) hp).symm ≫ₕ
         depthStratumChart J hJ q e₂ (IsManifold.subset_maximalAtlas he₂) hq)
@@ -447,10 +436,12 @@ private theorem contDiffOn_depthStratumChart_symm_trans {n : ℕ∞ω} [IsManifo
   have hmap : MapsTo ins₁ (c₁.symm ≫ₕ c₂).source
       (J.symm ⁻¹' (e₁.symm ≫ₕ e₂).source ∩ range J) := fun y hy ↦ by
     have hy₁ : y ∈ c₁.target := hy.1
+    obtain ⟨hy_e₁, hmem⟩ := chartInsert_mem_of_mem_depthStratumChart_target J hy₁
     have hy₂ : c₁.symm y ∈ c₂.source := by
       simpa only [OpenPartialHomeomorph.trans_source, mem_inter_iff, mem_preimage,
         OpenPartialHomeomorph.symm_symm] using hy.2
-    refine ⟨⟨hy₁.2, ?_⟩, chartInsert_mem_range_of_mem_target J hy₁⟩
+    rw [depthStratumChart_source] at hy₂
+    refine ⟨⟨hy_e₁, ?_⟩, hmem⟩
     simp only [OpenPartialHomeomorph.symm_symm, mem_preimage]
     rw [← coe_depthStratumChart_symm_apply J hy₁]
     exact hy₂.1
@@ -479,28 +470,28 @@ variable {ι : Type*} [Fintype ι] {H : Type*} [TopologicalSpace H]
 ambient charts of `M`.
 
 This definition is intentionally not a global `instance` (to avoid typeclass diamonds with
-`TauCeti.boundaryChartedSpace` and because `hJ` is a propositional hypothesis) and is marked
-`@[irreducible]`; use `depthStratumChartedSpace_atlas` and `depthStratumChartedSpace_chartAt_source`
-to reason about it. -/
+`TauCeti.boundaryChartedSpace` and `TauCeti.depthStratumChartedSpace`, and because `hJ` is a
+propositional hypothesis) and is marked `@[irreducible]`; use `depthStratumChartedSpace_atlas` and
+`depthStratumChartedSpace_chartAt_source` to reason about it. -/
 @[irreducible]
 def depthStratumChartedSpace [IsManifold J 1 M] (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i}) (k : ℕ) :
     ChartedSpace (EuclideanSpace ℝ (Fin (Fintype.card ι - k))) ↥(J.depthStratum M k) where
   atlas := range fun p : ↥(J.depthStratum M k) ↦
-    depthStratumChart J hJ p (chartAt H p.1) (IsManifold.chart_mem_maximalAtlas p.1)
-      (mem_chart_source H p.1)
+    depthStratumChart J hJ p (chartAt H p.val) (IsManifold.chart_mem_maximalAtlas p.val)
+      (mem_chart_source H p.val)
   chartAt := fun p ↦
-    depthStratumChart J hJ p (chartAt H p.1) (IsManifold.chart_mem_maximalAtlas p.1)
-      (mem_chart_source H p.1)
+    depthStratumChart J hJ p (chartAt H p.val) (IsManifold.chart_mem_maximalAtlas p.val)
+      (mem_chart_source H p.val)
   mem_chart_source p := by
     rw [depthStratumChart_source]
-    exact mem_setOf_forall_extend_pos_self hJ (mem_chart_source H p.1)
+    exact mem_setOf_forall_extend_pos_self hJ (mem_chart_source H p.val)
   chart_mem_atlas p := mem_range_self p
 
 private theorem depthStratumChartedSpace_chartAt [IsManifold J 1 M]
     (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i}) (k : ℕ) (p : ↥(J.depthStratum M k)) :
     (J.depthStratumChartedSpace M hJ k).chartAt p =
-      depthStratumChart J hJ p (chartAt H p.1) (IsManifold.chart_mem_maximalAtlas p.1)
-        (mem_chart_source H p.1) := by
+      depthStratumChart J hJ p (chartAt H p.val) (IsManifold.chart_mem_maximalAtlas p.val)
+        (mem_chart_source H p.val) := by
   unfold depthStratumChartedSpace
   rfl
 
@@ -517,9 +508,9 @@ chart source at `p` where every coordinate in `S` nonzero at `p` remains strictl
 theorem depthStratumChartedSpace_chartAt_source [IsManifold J 1 M]
     (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i}) (k : ℕ) (p : ↥(J.depthStratum M k)) :
     ((J.depthStratumChartedSpace M hJ k).chartAt p).source =
-      Subtype.val ⁻¹' {q ∈ (chartAt H p.1).source |
-        ∀ j ∈ S, extChartAt J p.1 p.1 j ≠ 0 → 0 < extChartAt J p.1 q j} := by
-  rw [depthStratumChartedSpace_chartAt]
+      Subtype.val ⁻¹' {q ∈ (chartAt H p.val).source |
+        ∀ j ∈ S, extChartAt J p.val p.val j ≠ 0 → 0 < extChartAt J p.val q j} := by
+  rw [depthStratumChartedSpace_chartAt, depthStratumChart_source]
   rfl
 
 variable {n : ℕ∞ω} [IsManifold J n M]
@@ -543,19 +534,19 @@ theorem isManifold_depthStratum (hn : n ≠ 0) (hJ : range J = {z | ∀ i ∈ S,
   obtain ⟨p, rfl⟩ := hf₁
   obtain ⟨q, rfl⟩ := hf₂
   have hp_ch : chartAt (EuclideanSpace ℝ (Fin (Fintype.card ι - k))) p =
-      depthStratumChart J hJ p (chartAt H p.1) (IsManifold.chart_mem_maximalAtlas p.1)
-        (mem_chart_source H p.1) :=
+      depthStratumChart J hJ p (chartAt H p.val) (IsManifold.chart_mem_maximalAtlas p.val)
+        (mem_chart_source H p.val) :=
     depthStratumChartedSpace_chartAt J M hJ k p
   have hq_ch : chartAt (EuclideanSpace ℝ (Fin (Fintype.card ι - k))) q =
-      depthStratumChart J hJ q (chartAt H q.1) (IsManifold.chart_mem_maximalAtlas q.1)
-        (mem_chart_source H q.1) :=
+      depthStratumChart J hJ q (chartAt H q.val) (IsManifold.chart_mem_maximalAtlas q.val)
+        (mem_chart_source H q.val) :=
     depthStratumChartedSpace_chartAt J M hJ k q
   dsimp only
   rw [hp_ch, hq_ch]
   simpa only [modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, id_comp, comp_id,
     range_id, preimage_id_eq, id_eq, inter_univ] using
-    contDiffOn_depthStratumChart_symm_trans J p q (chart_mem_atlas H p.1)
-      (chart_mem_atlas H q.1) (mem_chart_source H p.1) (mem_chart_source H q.1)
+    contDiffOn_depthStratumChart_symm_trans J p q (chart_mem_atlas H p.val)
+      (chart_mem_atlas H q.val) (mem_chart_source H p.val) (mem_chart_source H q.val)
 
 /-- The inclusion of a depth stratum `↥(J.depthStratum M k) → M` is a `C^n` immersion with
 complement `EuclideanSpace ℝ (Fin k)`. -/
@@ -571,24 +562,27 @@ theorem isImmersionOfComplement_subtypeVal_depthStratum (hn : n ≠ 0)
     J.isManifold_depthStratum M hn hJ k
   intro p
   refine Manifold.IsImmersionAtOfComplement.mk_of_continuousAt_of_extChartAt
-    continuous_subtype_val.continuousAt
-    (chartSplitEquiv J hJ p (chartAt H p.1) (IsManifold.chart_mem_maximalAtlas p.1)
-      (mem_chart_source H p.1)) ?_
+    continuous_subtypeVal.continuousAt
+    (chartSplitEquiv J hJ p (chartAt H p.val) (IsManifold.chart_mem_maximalAtlas p.val)
+      (mem_chart_source H p.val)) ?_
   intro y hy
   have hch : chartAt (EuclideanSpace ℝ (Fin (Fintype.card ι - k))) p =
-      depthStratumChart J hJ p (chartAt H p.1) (IsManifold.chart_mem_maximalAtlas p.1)
-        (mem_chart_source H p.1) :=
+      depthStratumChart J hJ p (chartAt H p.val) (IsManifold.chart_mem_maximalAtlas p.val)
+        (mem_chart_source H p.val) :=
     depthStratumChartedSpace_chartAt J M hJ k p
-  have hy' : y ∈ (depthStratumChart J hJ p (chartAt H p.1)
-      (IsManifold.chart_mem_maximalAtlas p.1) (mem_chart_source H p.1)).target := by
+  have hy' : y ∈ (depthStratumChart J hJ p (chartAt H p.val)
+      (IsManifold.chart_mem_maximalAtlas p.val) (mem_chart_source H p.val)).target := by
     rw [extChartAt_target] at hy
     simpa only [modelWithCornersSelf_coe_symm, preimage_id_eq, id_eq, hch] using hy.1
   have hsymm : (extChartAt 𝓘(ℝ, EuclideanSpace ℝ (Fin (Fintype.card ι - k))) p).symm y =
-      (depthStratumChart J hJ p (chartAt H p.1) (IsManifold.chart_mem_maximalAtlas p.1)
-        (mem_chart_source H p.1)).symm y := by
+      (depthStratumChart J hJ p (chartAt H p.val) (IsManifold.chart_mem_maximalAtlas p.val)
+        (mem_chart_source H p.val)).symm y := by
     simp only [extChartAt_coe_symm, modelWithCornersSelf_coe_symm, comp_id, hch]
   simp only [comp_apply, hsymm]
-  exact extend_depthStratumChart_symm_apply J hy'
+  exact (extend_depthStratumChart_symm_apply J hy').trans
+    (by
+      classical
+      exact EuclideanSpace.coordSplitInsert_apply y)
 
 /-- The inclusion of a depth stratum `↥(J.depthStratum M k) → M` is a `C^n` immersion. -/
 theorem isImmersion_subtypeVal_depthStratum (hn : n ≠ 0)
@@ -645,30 +639,33 @@ private theorem hasMFDerivAt_subtypeVal_depthStratum [IsManifold J 1 M]
     (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i}) (k : ℕ) (p : ↥(J.depthStratum M k)) :
     let _ := J.depthStratumChartedSpace M hJ k
     let E₀ := EuclideanSpace ℝ (Fin (Fintype.card ι - k))
-    let L := chartInsert J hJ p (chartAt H p.1) (IsManifold.chart_mem_maximalAtlas p.1)
-      (mem_chart_source H p.1)
+    let L := chartInsert J hJ p (chartAt H p.val) (IsManifold.chart_mem_maximalAtlas p.val)
+      (mem_chart_source H p.val)
     HasMFDerivAt 𝓘(ℝ, E₀) J (Subtype.val : ↥(J.depthStratum M k) → M) p
-      ((tangentSpaceCastModel J p.1).symm.toContinuousLinearMap.comp
+      ((tangentSpaceCastModel J p.val).symm.toContinuousLinearMap.comp
         (L.comp (tangentSpaceCastModel 𝓘(ℝ, E₀) p).toContinuousLinearMap)) := by
   intro _
   let E₀ := EuclideanSpace ℝ (Fin (Fintype.card ι - k))
-  let c := depthStratumChart J hJ p (chartAt H p.1) (IsManifold.chart_mem_maximalAtlas p.1)
-    (mem_chart_source H p.1)
+  let c := depthStratumChart J hJ p (chartAt H p.val) (IsManifold.chart_mem_maximalAtlas p.val)
+    (mem_chart_source H p.val)
   have hch : chartAt E₀ p = c := depthStratumChartedSpace_chartAt J M hJ k p
-  let L := chartInsert J hJ p (chartAt H p.1) (IsManifold.chart_mem_maximalAtlas p.1)
-    (mem_chart_source H p.1)
-  refine ⟨continuous_subtype_val.continuousAt, ?_⟩
+  let L := chartInsert J hJ p (chartAt H p.val) (IsManifold.chart_mem_maximalAtlas p.val)
+    (mem_chart_source H p.val)
+  refine ⟨continuous_subtypeVal.continuousAt, ?_⟩
   have hcast :
-      (tangentSpaceCastModel J p.1 : _ →L[ℝ] EuclideanSpace ℝ ι) ∘L
-        ((tangentSpaceCastModel J p.1).symm.toContinuousLinearMap.comp
+      (tangentSpaceCastModel J p.val : _ →L[ℝ] EuclideanSpace ℝ ι) ∘L
+        ((tangentSpaceCastModel J p.val).symm.toContinuousLinearMap.comp
           (L.comp (tangentSpaceCastModel 𝓘(ℝ, E₀) p).toContinuousLinearMap)) ∘L
         ((tangentSpaceCastModel 𝓘(ℝ, E₀) p).symm : E₀ →L[ℝ] _) = L := by
     ext u
     simp
   rw [hcast]
+  have hp_src : p ∈ c.source := by
+    rw [depthStratumChart_source]
+    exact mem_setOf_forall_extend_pos_self hJ (mem_chart_source H p.val)
   have hp_tgt : extChartAt 𝓘(ℝ, E₀) p p ∈ c.target := by
     simpa only [extChartAt_coe, modelWithCornersSelf_coe, id_comp, hch] using
-      c.map_source (mem_setOf_forall_extend_pos_self hJ (mem_chart_source H p.1))
+      c.map_source hp_src
   have heq : writtenInExtChartAt 𝓘(ℝ, E₀) J p (Subtype.val : ↥(J.depthStratum M k) → M) =ᶠ[
       𝓝[range 𝓘(ℝ, E₀)] (extChartAt 𝓘(ℝ, E₀) p p)] L := by
     filter_upwards [nhdsWithin_le_nhds (c.open_target.mem_nhds hp_tgt)] with y hy
@@ -681,38 +678,39 @@ private theorem hasMFDerivAt_subtypeVal_depthStratum [IsManifold J 1 M]
     heq.self_of_nhdsWithin (by simp)
   exact L.hasFDerivAt.hasFDerivWithinAt.congr_of_eventuallyEq heq hx
 
-/-- Tangent space characterization of a depth stratum: a tangent vector `v : TangentSpace J p.1`
+/-- Tangent space characterization of a depth stratum: a tangent vector `v : TangentSpace J p.val`
 lies in the image of the differential of `Subtype.val : ↥(J.depthStratum M k) → M` at `p` exactly
 when its model coordinates vanish along every coordinate `i ∈ S` that vanishes at
-`extChartAt J p.1 p.1`. -/
+`extChartAt J p.val p.val`. -/
 theorem mem_range_mfderiv_subtypeVal_depthStratum_iff (hn : n ≠ 0)
     (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i}) (k : ℕ) (p : ↥(J.depthStratum M k))
-    (v : TangentSpace J p.1) :
+    (v : TangentSpace J p.val) :
     let _ : IsManifold J 1 M := IsManifold.of_le (ENat.one_le_iff_ne_zero_withTop.2 hn)
     let _ := J.depthStratumChartedSpace M hJ k
     v ∈ (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin (Fintype.card ι - k))) J
       (Subtype.val : ↥(J.depthStratum M k) → M) p).range ↔
-      ∀ i ∈ S, extChartAt J p.1 p.1 i = 0 → tangentSpaceCastModel J p.1 v i = 0 := by
+      ∀ i ∈ S, extChartAt J p.val p.val i = 0 → tangentSpaceCastModel J p.val v i = 0 := by
   intro _ _
   classical
-  let L := chartInsert J hJ p (chartAt H p.1) (IsManifold.chart_mem_maximalAtlas p.1)
-    (mem_chart_source H p.1)
+  let L := chartInsert J hJ p (chartAt H p.val) (IsManifold.chart_mem_maximalAtlas p.val)
+    (mem_chart_source H p.val)
   rw [(hasMFDerivAt_subtypeVal_depthStratum J M hJ k p).mfderiv]
   constructor
   · rintro ⟨w, hw⟩ i hi h0
-    have hmem : tangentSpaceCastModel J p.1 v ∈ L.range := by
+    have hmem : tangentSpaceCastModel J p.val v ∈ L.range := by
       refine ⟨tangentSpaceCastModel 𝓘(ℝ, EuclideanSpace ℝ (Fin (Fintype.card ι - k))) p w, ?_⟩
       rw [← hw]
       simp [L]
-    exact (mem_range_coordSplitInsert_iff _ _ _).1 hmem i ((mem_vanishingFinset_iff J).2 ⟨hi, h0⟩)
+    exact (EuclideanSpace.mem_range_coordSplitInsert_iff _).1 hmem i
+      ((mem_vanishingFinset_iff J).2 ⟨hi, h0⟩)
   · intro hv
-    have hmem : tangentSpaceCastModel J p.1 v ∈ L.range :=
-      (mem_range_coordSplitInsert_iff _ _ _).2 fun i hi ↦
+    have hmem : tangentSpaceCastModel J p.val v ∈ L.range :=
+      (EuclideanSpace.mem_range_coordSplitInsert_iff _).2 fun i hi ↦
         have hi' := (mem_vanishingFinset_iff J).1 hi
         hv i hi'.1 hi'.2
     obtain ⟨u, hu⟩ := hmem
     refine ⟨(tangentSpaceCastModel 𝓘(ℝ, EuclideanSpace ℝ (Fin (Fintype.card ι - k))) p).symm u, ?_⟩
-    simpa [L] using (tangentSpaceCastModel J p.1).symm_apply_eq.2 hu
+    simpa [L] using (tangentSpaceCastModel J p.val).symm_apply_eq.2 hu
 
 end ManifoldStructure
 
