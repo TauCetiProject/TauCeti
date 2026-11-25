@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Analysis.Convex.Function
 public import TauCeti.Analysis.Matrix.Eigenvalues.SpectralFunction
-import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
 import TauCeti.Analysis.Convex.Strong
+import TauCeti.Analysis.Convex.Symmetric
 import TauCeti.Analysis.InnerProductSpace.SchurHorn
 import TauCeti.Analysis.Matrix.Eigenvalues.Basic
 
@@ -16,19 +16,20 @@ import TauCeti.Analysis.Matrix.Eigenvalues.Basic
 # The tangent inequality for concave spectral functions
 
 Let `Γ ⊆ ℝⁿ` be invariant under permutations of the coordinates and let `f : ℝⁿ → ℝ` be symmetric
-and concave on `Γ`. The spectral function `F_f(A) = f(λ(A))` on Hermitian matrices, with `λ(A)`
-the decreasingly sorted eigenvalue vector, is concave on the matrices with `λ(A) ∈ Γ`
-(`Matrix.concaveOn_spectralFunction`). This file proves the first-order form of that concavity:
-where `f` is differentiable at `λ(S)`, the spectral function lies below its tangent at `S`,
+on all of `ℝⁿ` and concave on `Γ`. The spectral function `F_f(A) = f(λ(A))` on Hermitian
+matrices, with `λ(A)` the decreasingly sorted eigenvalue vector, is concave on the matrices with
+`λ(A) ∈ Γ` (`Matrix.concaveOn_spectralFunction`). This file proves the first-order form of that
+concavity: where `f` is differentiable at `λ(S)`, the spectral function lies below its tangent at
+`S`,
 
 `F_f(T) - F_f(S) ≤ DF_f(S)(T - S)`
 
 (`Matrix.sub_le_fderiv_spectralFunction`).
 
 The proof follows Spruck. Comparing `f(μ)` with `f` at the transposition of two coordinates shows
-that `∂ᵢ f(μ) ≤ ∂ⱼ f(μ)` whenever `μⱼ < μᵢ` (`ConcaveOn.fderiv_apply_single_le_of_lt`), so the
-partial derivatives `wⱼ = ∂ⱼ f(λ(S))` are nondecreasing in `j`
-(`ConcaveOn.monotone_fderiv_apply_single`). By Lewis's theorem,
+that `∂ᵢ f(μ) ≤ ∂ⱼ f(μ)` whenever `μⱼ < μᵢ` (`ConcaveOn.fderiv_apply_single_le_of_lt`, in
+`TauCeti.Analysis.Convex.Symmetric`), so the partial derivatives `wⱼ = ∂ⱼ f(λ(S))` are
+nondecreasing in `j` (`ConcaveOn.monotone_fderiv_apply_single`). By Lewis's theorem,
 `DF_f(S)(T - S) = ∑ⱼ wⱼ Re ⟪uⱼ, (T - S) uⱼ⟫` for an orthonormal eigenbasis `(uⱼ)` of `S`, which is
 `∑ⱼ wⱼ Re ⟪uⱼ, T uⱼ⟫ - ∑ⱼ wⱼ λⱼ(S)`. Since `w` is nondecreasing, the diagonal bound of the
 Schur–Horn theorem (`LinearMap.IsSymmetric.sum_mul_re_inner_apply_self_le_sum_mul_eigenvalues`,
@@ -38,9 +39,6 @@ applied to `-w`) gives `∑ⱼ wⱼ λⱼ(T) ≤ ∑ⱼ wⱼ Re ⟪uⱼ, T uⱼ�
 
 ## Main results
 
-* `ConcaveOn.fderiv_apply_single_le_of_lt`: the partial derivatives of a symmetric concave
-  function are ordered opposite to the coordinates.
-* `ConcaveOn.monotone_fderiv_apply_single`: at an antitone point they are nondecreasing.
 * `Matrix.sub_le_fderiv_spectralFunction`: the tangent inequality for a concave spectral function.
 
 ## References
@@ -54,62 +52,17 @@ public section
 open Finset TauCeti
 open scoped InnerProductSpace
 
-section Coordinates
-
-variable {ι : Type*} [Finite ι] [DecidableEq ι] {Γ : Set (ι → ℝ)} {f : (ι → ℝ) → ℝ}
-
-/-- **Partial derivatives of a symmetric concave function are ordered opposite to the
-coordinates.** Let `Γ` be invariant under permutations of the coordinates and `f` concave and
-symmetric on `Γ`. If `f` is differentiable at `μ ∈ Γ` and `μⱼ < μᵢ`, then
-`∂ᵢ f(μ) ≤ ∂ⱼ f(μ)`. -/
-theorem ConcaveOn.fderiv_apply_single_le_of_lt (hf : ConcaveOn ℝ Γ f)
-    (hΓσ : ∀ σ : Equiv.Perm ι, ∀ μ ∈ Γ, μ ∘ σ ∈ Γ)
-    (hfσ : ∀ σ : Equiv.Perm ι, ∀ μ ∈ Γ, f (μ ∘ σ) = f μ) {μ : ι → ℝ} (hμ : μ ∈ Γ)
-    (hd : DifferentiableAt ℝ f μ) {i j : ι} (hij : μ j < μ i) :
-    fderiv ℝ f μ (Pi.single i 1) ≤ fderiv ℝ f μ (Pi.single j 1) := by
-  let := Fintype.ofFinite ι
-  have hne : i ≠ j := fun h ↦ (h ▸ hij).false
-  -- The tangent of `f` at `μ` lies above `f` at the transposed point, where `f` takes the same
-  -- value.
-  have ht := hf.neg.add_le_of_hasFDerivWithinAt hμ (hΓσ (Equiv.swap i j) μ hμ)
-    hd.hasFDerivAt.neg.hasFDerivWithinAt
-  rw [Pi.neg_apply, Pi.neg_apply, hfσ _ μ hμ] at ht
-  have hsub : μ ∘ Equiv.swap i j - μ = (μ j - μ i) • (Pi.single i 1 - Pi.single j 1) := by
-    ext k
-    rcases eq_or_ne k i with rfl | hki
-    · simp [hne]
-    rcases eq_or_ne k j with rfl | hkj
-    · simp [hki]
-    · simp [hki, hkj, Equiv.swap_apply_of_ne_of_ne]
-  rw [hsub, neg_apply, map_smul, map_sub, smul_eq_mul] at ht
-  nlinarith
-
-/-- **The partial derivatives of a symmetric concave function at an antitone point are
-nondecreasing.** Let `Γ ⊆ ℝⁿ` be invariant under permutations of the coordinates and `f` symmetric
-and concave on `Γ`. If `μ ∈ Γ` is antitone and `f` is differentiable at `μ`, then
-`k ↦ ∂ₖ f(μ)` is monotone. -/
-theorem ConcaveOn.monotone_fderiv_apply_single {n : ℕ} {Γ : Set (Fin n → ℝ)}
-    {f : (Fin n → ℝ) → ℝ} (hf : ConcaveOn ℝ Γ f)
-    (hΓσ : ∀ σ : Equiv.Perm (Fin n), ∀ μ ∈ Γ, μ ∘ σ ∈ Γ)
-    (hfσ : ∀ σ : Equiv.Perm (Fin n), ∀ μ, f (μ ∘ σ) = f μ) {μ : Fin n → ℝ} (hμ : μ ∈ Γ)
-    (hanti : Antitone μ) (hd : DifferentiableAt ℝ f μ) :
-    Monotone fun k ↦ fderiv ℝ f μ (Pi.single k 1) := by
-  intro i j hij
-  rcases (hanti hij).lt_or_eq with hlt | heq
-  · exact hf.fderiv_apply_single_le_of_lt hΓσ (fun σ ν _ ↦ hfσ σ ν) hμ hd hlt
-  · exact (fderiv_apply_single_eq_of_comp_swap (fun ν ↦ hfσ _ ν) heq.symm 1).le
-
-end Coordinates
-
 namespace Matrix
 
 variable {𝕜 ι : Type*} [RCLike 𝕜] [Fintype ι] [DecidableEq ι]
 
 /-- **The tangent inequality for concave spectral functions** (Spruck 2005, proof of
 Theorem 1.4). Let `Γ ⊆ ℝⁿ`, for `n` the size of the matrices, be invariant under permutations of
-the coordinates, and let `f` be symmetric and concave on `Γ`. If `S` and `T` are Hermitian matrices
-with `λ(S), λ(T) ∈ Γ` and `f` is differentiable at `λ(S)`, then the spectral function
-`F_f(A) = f(λ(A))` satisfies `F_f(T) - F_f(S) ≤ DF_f(S)(T - S)`. -/
+the coordinates, and let `f` be symmetric on all of `ℝⁿ` and concave on `Γ`. If `S` and `T` are
+Hermitian matrices with `λ(S), λ(T) ∈ Γ` and `f` is differentiable at `λ(S)`, then the spectral
+function `F_f(A) = f(λ(A))` satisfies `F_f(T) - F_f(S) ≤ DF_f(S)(T - S)`. Symmetry of `f` off `Γ`
+is needed: it is the hypothesis of Lewis's derivative formula, and without it `F_f` may fail to be
+differentiable at `S`. -/
 theorem sub_le_fderiv_spectralFunction {Γ : Set (Fin (Fintype.card ι) → ℝ)}
     (hΓσ : ∀ σ : Equiv.Perm (Fin (Fintype.card ι)), ∀ μ ∈ Γ, μ ∘ σ ∈ Γ)
     {f : (Fin (Fintype.card ι) → ℝ) → ℝ}
@@ -144,21 +97,17 @@ theorem sub_le_fderiv_spectralFunction {Γ : Set (Fin (Fintype.card ι) → ℝ)
   have hSH :=
     (isSymmetric_toEuclideanLin_iff.mpr hT).sum_mul_re_inner_apply_self_le_sum_mul_eigenvalues
       finrank_euclideanSpace u (c := -w)
-      (hf.monotone_fderiv_apply_single hΓσ hfσ hSΓ hS.eigenvalues₀_antitone hd).neg
+      (hf.monotone_fderiv_apply_single hΓσ hfσ hSΓ hS.eigenvalues₀_antitone).neg
   -- The tangent inequality for `f` at `λ(S)`, with the derivative written in coordinates.
   have htan := hf.neg.add_le_of_hasFDerivWithinAt hSΓ hTΓ hd.hasFDerivAt.neg.hasFDerivWithinAt
   have hlin (ν : Fin (Fintype.card ι) → ℝ) : fderiv ℝ f hS.eigenvalues₀ ν = ∑ k, w k * ν k := by
-    conv_lhs => rw [← univ_sum_single ν]
-    refine (map_sum _ _ _).trans (sum_congr rfl fun k _ ↦ ?_)
-    rw [show (Pi.single k (ν k) : Fin (Fintype.card ι) → ℝ) = ν k • Pi.single k 1 by
-      ext j; simp [Pi.single_apply], map_smul, smul_eq_mul, mul_comm]
+    conv_lhs => rw [pi_eq_sum_univ' ν, map_sum]
+    exact sum_congr rfl fun k _ ↦ by rw [map_smul, smul_eq_mul, mul_comm]
   simp only [Pi.neg_apply, neg_apply, hlin, neg_mul, sum_neg_distrib, neg_le_neg_iff,
     Pi.sub_apply, mul_sub, sum_sub_distrib] at hSH htan
   simp only [hdiag, mul_sub, sum_sub_distrib]
-  have hSH' : ∑ k, w k * hT.eigenvalues₀ k ≤
-      ∑ k, w k * RCLike.re ⟪Matrix.toEuclideanLin (T : Matrix ι ι 𝕜) (u k), u k⟫_𝕜 := hSH
-  change _ ≤ ∑ k, w k * RCLike.re ⟪Matrix.toEuclideanLin (T : Matrix ι ι 𝕜) (u k), u k⟫_𝕜 -
-    ∑ k, w k * hS.eigenvalues₀ k
+  -- `hT.eigenvalues₀` is by definition the eigenvalue vector of `toEuclideanLin T` in `hSH`.
+  rw [← IsHermitian.eigenvalues₀.eq_1 hT] at hSH
   linarith
 
 end Matrix
