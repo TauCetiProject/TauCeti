@@ -43,7 +43,8 @@ gives, for `1/p + 1/q < 1` and any `1 < r < ∞` with `r ≤ p`, the same bound
 `‖ξ‖_{W^{1,r}(U)} ≤ C (‖η‖_{Lʳ(Ω)} + ‖ξ‖_{L^q(Ω)})` without any relation between `q` and `r`
 (`TauCeti.exists_eLpNormWkp_one_le_of_isWeakCRSolution_of_le`), again uniformly in bounded
 `(J, S)`. Each rung applies the order-zero estimate at `1/r' = 1/p + 1/s` and then the local
-Sobolev or Morrey estimate (`TauCeti.exists_inv_le_inv_sub_of_memWkpLoc_one`) on a smaller open
+Sobolev or Morrey estimate
+(`TauCeti.exists_inv_le_inv_sub_and_memLpLoc_and_eLpNorm_le_mul_eLpNormWkp_one`) on a smaller open
 set, so the rungs run through nested open sets `U ⋐ ⋯ ⋐ Ω`.
 
 ## The argument at order zero
@@ -274,15 +275,25 @@ private theorem hasCREstimate_of_rung [FiniteDimensional ℝ V] (hp : 2 < p) (hr
     ((eLpNorm_mono_measure _ hμ₁).trans hSM) (hη.mono_set (hW₁W₀.trans hW₀le))
   have h₀ := hC₀ J S DJ ξ η (h.mono hW₀le) (hco.mono hW₀le) (ae_mono hμ₀ hJ2)
     ((eLpNormWkp_mono_set hW₀le).trans hJM) ((eLpNorm_mono_measure _ hμ₀).trans hSM) hηr'
-  refine h₁.trans ((mul_le_mul_right (add_le_add (eLpNorm_mono_measure _ hμ₁)
-    ((hCS ξ).trans (mul_le_mul_right (h₀.trans (mul_le_mul_right (add_le_add
-      ((hc η).trans (mul_le_mul_right (eLpNorm_mono_measure _ hμ₀) _))
-      (eLpNorm_mono_measure _ hμ₀)) _)) _))) _).trans ?_)
-  convert mul_add_mul_le_mul_mul_add (C₁ : ℝ≥0∞) (CS * C₀) c
-    (eLpNorm η r (volume.restrict Ω)) (eLpNorm ξ s (volume.restrict Ω)) using 1
-  · ring
-  · push_cast
-    ring
+  set a := eLpNorm η r (volume.restrict Ω)
+  set b := eLpNorm ξ s (volume.restrict Ω)
+  calc eLpNormWkp r U 1 ξ
+      ≤ C₁ * (eLpNorm η r (volume.restrict W₁) + eLpNorm ξ s' (volume.restrict W₁)) := h₁
+    -- the Sobolev or Morrey estimate on `W₁ ⋐ W`
+    _ ≤ C₁ * (a + CS * eLpNormWkp (p⁻¹ + s⁻¹)⁻¹ W 1 ξ) := by
+      gcongr
+      exacts [eLpNorm_mono_measure _ hμ₁, hCS ξ]
+    -- the order-zero estimate on `W ⋐ W₀`
+    _ ≤ C₁ * (a + CS * (C₀ * (eLpNorm η (p⁻¹ + s⁻¹)⁻¹ (volume.restrict W₀) +
+          eLpNorm ξ s (volume.restrict W₀)))) := by gcongr
+    -- the comparison of `L^{r'}(W₀)` with `Lʳ(W₀)`
+    _ ≤ C₁ * (a + CS * (C₀ * (c * a + b))) := by
+      gcongr
+      exacts [(hc η).trans (by gcongr; exact eLpNorm_mono_measure _ hμ₀),
+        eLpNorm_mono_measure _ hμ₀]
+    _ = C₁ * (a + CS * C₀ * (c * a + b)) := by ring
+    _ ≤ C₁ * (1 + CS * C₀ * c + CS * C₀) * (a + b) := mul_add_mul_le_mul_mul_add _ _ _ _ _
+    _ = ↑(C₁ * (1 + CS * C₀ * c + CS * C₀)) * (a + b) := by push_cast; ring
 
 /-- The estimate ladder, by induction on the number `n` of rungs: if `1/s ≤ 1/q` and
 `1/s ≤ 1/r - 1/p + n d` with `d = (1/2 - 1/p) / 2`, the estimate holds for solutions in
@@ -305,7 +316,8 @@ private theorem hasCREstimate_of_inv_le_add_mul [FiniteDimensional ℝ V] (hp : 
     · exact exists_eLpNormWkp_one_le_of_isWeakCRSolution hp hsr hr hr_top hUc hUΩ M
     rw [not_le] at hsr
     have hr'1 : 1 < (p⁻¹ + s⁻¹)⁻¹ := ENNReal.one_lt_inv.2 ((add_le_add le_rfl hsq).trans_lt hpq)
-    obtain ⟨s', hs's, hmem, hest⟩ := exists_inv_le_inv_sub_of_memWkpLoc_one (F := V) hp hr'1.le
+    obtain ⟨s', hs's, hmem, hest⟩ :=
+      exists_inv_le_inv_sub_and_memLpLoc_and_eLpNorm_le_mul_eLpNormWkp_one (F := V) hp hr'1.le
     refine hasCREstimate_of_rung hp hr_top M hr'1
       (ENNReal.inv_le_inv.1 (by rw [inv_inv]; exact hsr.le)) hmem hest
       (fun Ω' U' hU'c hU'Ω' => ih Ω' s' U' (hs's.trans (tsub_le_self.trans hsq)) ?_ hU'c hU'Ω')
@@ -323,8 +335,9 @@ closure in `Ω`, and let `M ≥ 0`. There is a constant `C` such that for all co
 `η ∈ Lʳ_loc` satisfies `‖ξ‖_{W^{1,r}(U)} ≤ C (‖η‖_{Lʳ(Ω)} + ‖ξ‖_{L^q(Ω)})`.
 
 This is the estimate accompanying `TauCeti.IsWeakCRSolution.memWkpLoc_one_of_le`: taking `r = q`
-gives `‖ξ‖_{W^{1,q}(U)} ≤ C (‖η‖_{L^q(Ω)} + ‖ξ‖_{L^q(Ω)})`. The constant depends only on `p`, `q`,
-`r`, `U`, `Ω`, `V` and `M`, so one constant serves every pair `(J, S)` in a bounded set. -/
+when `q ≤ p` and `q < ∞` gives `‖ξ‖_{W^{1,q}(U)} ≤ C (‖η‖_{L^q(Ω)} + ‖ξ‖_{L^q(Ω)})`. The constant
+depends only on `p`, `q`, `r`, `U`, `Ω`, `V` and `M`, so one constant serves every pair `(J, S)`
+in a bounded set. -/
 theorem exists_eLpNormWkp_one_le_of_isWeakCRSolution_of_le [FiniteDimensional ℝ V] (hp : 2 < p)
     (hpq : p⁻¹ + q⁻¹ < 1) (hr : 1 < r) (hr_top : r ≠ ⊤) (hrp : r ≤ p) {U : Set ℂ}
     (hUc : IsCompact (closure U)) (hUΩ : closure U ⊆ Ω) (M : ℝ≥0) :
