@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
 public import TauCeti.Topology.VectorBundle.Orientation.Complex.EulerClass
 public import TauCeti.Topology.VectorBundle.Orientation.FiberwiseEquiv
 
@@ -94,6 +95,22 @@ variable {F' : Type w} [NormedAddCommGroup F'] [NormedSpace ℝ F'] [NormedSpace
 local instance instVectorBundleRealComplexEulerClassFiberwise' : VectorBundle ℝ F' E' :=
   VectorBundle.restrictScalars ℝ ℂ F' E'
 
+/-- A complex-linear isomorphism `E'_{b'} ≃ E_b` of fibres, as a real-linear one, carries the
+canonical orientation of `E'_{b'}`, reindexed by `Fin (2r + 2)` as in `complexEulerClass_def`, to
+that of `E_b`. -/
+theorem VectorBundleOrientation.map_reindex_complex {b' : B'} {b : B} (φ : E' b' ≃L[ℂ] E b) :
+    Orientation.map (Fin (2 * r + 1 + 1)) (φ.restrictScalars' ℝ).toLinearEquiv
+        (VectorBundleOrientation.reindex (finCongr (by omega))
+          (VectorBundleOrientation.complex F' E') b') =
+      VectorBundleOrientation.reindex (finCongr (by omega))
+        (VectorBundleOrientation.complex F E) b := by
+  rw [ContinuousLinearEquiv.restrictScalars'_toLinearEquiv, VectorBundleOrientation.reindex_apply,
+    VectorBundleOrientation.reindex_apply, Orientation.map_reindex]
+  refine (congrArg _ (VectorBundleOrientation.map_complex (F := F) (E := E) (F' := F') (E' := E')
+    φ.toLinearEquiv)).trans ?_
+  rw [← Orientation.reindex_trans]
+  exact congrArg (Orientation.reindex ℝ _ · _) (Equiv.ext fun _ ↦ by simp)
+
 /-- **Naturality of the Euler class of a complex vector bundle under complex-linear bundle maps.**
 For a fibrewise complex-linear isomorphism `φ b' : E'_{b'} ≃ E_{g b'}` over a continuous map
 `g : B' → B`, continuous on total spaces, the Euler class of `E'` is the pull-back along `g` of the
@@ -105,16 +122,9 @@ theorem complexEulerClass_eq_singularCohomologyMap_of_fiberwise {g : C(B', B)}
       TopCat.singularCohomologyMap (TopCat.ofHom g) (2 * r + 2) (complexEulerClass F E hF) := by
   rw [complexEulerClass_def, complexEulerClass_def]
   refine (complexFin hF E).eulerClass_eq_singularCohomologyMap_of_fiberwise _ (complexFin hF' E')
-    _ (φ := fun b' ↦
-      { (φ b').toLinearEquiv.restrictScalars ℝ with
-        continuous_toFun := (φ b').continuous
-        continuous_invFun := (φ b').symm.continuous }) hφ fun b' ↦ ?_
-  rw [VectorBundleOrientation.reindex_apply, VectorBundleOrientation.reindex_apply,
-    Orientation.map_reindex]
-  refine (congrArg _ (VectorBundleOrientation.map_complex (F := F) (E := E) (F' := F') (E' := E')
-    (φ b').toLinearEquiv)).trans ?_
-  rw [← Orientation.reindex_trans]
-  exact congrArg (Orientation.reindex ℝ _ · _) (Equiv.ext fun _ ↦ by simp)
+    _ (φ := fun b' ↦ (φ b').restrictScalars' ℝ)
+    (by simpa only [ContinuousLinearEquiv.coe_restrictScalars'] using hφ) fun b' ↦
+      VectorBundleOrientation.map_reindex_complex hF hF' (φ b')
 
 /-- **Conjugate-linear bundle maps multiply the Euler class by `(-1) ^ (r + 1)`.** For a fibrewise
 conjugate-linear isomorphism `φ b' : E'_{b'} ≃ E_{g b'}` over a continuous map `g : B' → B`,

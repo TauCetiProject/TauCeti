@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Degree.Global
 public import TauCeti.Geometry.Manifold.Orientation.Sphere
 import Mathlib.RingTheory.RootsOfUnity.Complex
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Geometry.Sphere.Connected
 
 /-!

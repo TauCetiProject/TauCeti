@@ -75,6 +75,8 @@ the companion of the rotation angle `TauCeti.sphericalPendulumRotationAngle`.
   `TauCeti.continuousOn_sphericalPendulumPeriod`: after the sine substitution the period is the
   integral of a continuous positive function, so it is bounded below by `2π / √(2 (h + 3))` and
   continuous in `(h, j)` above the curve of relative equilibria.
+* `TauCeti.continuousAt_sphericalPendulumPeriod_zero_right`: the period is also continuous at the
+  values `(h, 0)` on the axis, for `h > -1` with `h ≠ 1`.
 
 ## References
 
@@ -231,12 +233,11 @@ theorem sphericalPendulumEnergyMomentum_eq_of_isMIntegralCurveOn (hs : IsPreconn
       fun y ↦ sphericalPendulumHamiltonian y) s) {t₀ : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
     sphericalPendulumEnergyMomentum (γ t) = sphericalPendulumEnergyMomentum (γ t₀) := by
   have hI := isIntegrableSystem_sphericalPendulumEnergyMomentumVec
-  have hσ := isSymplectic_sphericalPendulumSymplecticForm.isNondegenerate
   have hH : (fun x ↦ sphericalPendulumEnergyMomentumVec x 0) =
       fun y : sphericalPendulumPhaseSpace ↦ sphericalPendulumHamiltonian y :=
     funext sphericalPendulumEnergyMomentumVec_apply_zero
   -- Each component of `F` is a first integral of the energy, and is smooth.
-  have h (i : Fin 2) := (hH ▸ hI.isFirstIntegral 0 i).apply_eq_of_isMIntegralCurveOn hσ hs hγ
+  have h (i : Fin 2) := (hH ▸ hI.isFirstIntegral 0 i).apply_eq_of_isMIntegralCurveOn hs hγ
     (fun u _ ↦ ((contMDiff_pi_module_iff.1 hI.contMDiff i) (γ u)).mdifferentiableAt (by simp))
     ht₀ ht
   exact Prod.ext (by simpa using h 0) (by simpa using h 1)
@@ -401,6 +402,12 @@ theorem sphericalPendulumPeriod_pos (hj : j ≠ 0) (hz₀ : z₀ ∈ Ioo (-1) 1)
     (fun z hz ↦ inv_pos.2 (Real.sqrt_pos.2 (two_mul_sub_mul_one_sub_sq_sub_sq_pos hj hz₀ hV hz)))
     (sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz₀ hV)
 
+/-- On the domain of distinct nonpolar turning points, the period of the height is positive. -/
+theorem sphericalPendulumPeriod_pos_of_mem
+    (hc : (h, j) ∈ sphericalPendulumTurningPointDomain) : 0 < sphericalPendulumPeriod h j :=
+  let ⟨hj, _, hz₀, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 hc
+  sphericalPendulumPeriod_pos hj hz₀ hV
+
 /-- **The period as a regular integral.** Above the curve of relative equilibria, the substitution
 `z = (z₋ + z₊) / 2 + (z₊ - z₋) / 2 · sin θ` between the turning points `z₋ < z₊` turns the period
 into the integral `T(h, j) = 2 ∫_{-π/2}^{π/2} dθ / √(2 (z₃ - z))`, where `z₃ = h - z₋ - z₊ > 1` is
@@ -461,6 +468,19 @@ theorem continuousOn_sphericalPendulumPeriod :
     (continuousOn_integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq
     (g := fun _ _ ↦ 1) continuousOn_const)).congr fun c _ ↦ by
       simp only [sphericalPendulumPeriod_def, one_div, Pi.mul_apply]
+
+/-- **Continuity of the period across the axis.** For `h > -1` with `h ≠ 1`, the period `T` of the
+height is continuous at the value `(h, 0)` on the axis of zero vertical angular momentum. The
+excluded values `(1, 0)` and `(-1, 0)` are genuine discontinuities: at the focus–focus value
+`(1, 0)` the period integral diverges, and at the bottom value `(-1, 0)` the period is `0` while
+nearby periods are close to `π`. Values with `h < -1` are left out because their fibres are empty
+(the period is `0` there by convention), not because continuity fails. -/
+theorem continuousAt_sphericalPendulumPeriod_zero_right {h : ℝ} (hh : -1 < h) (h1 : h ≠ 1) :
+    ContinuousAt (fun c : ℝ × ℝ ↦ sphericalPendulumPeriod c.1 c.2) (h, 0) :=
+  ((continuousAt_const (y := (2 : ℝ))).mul
+    (continuousAt_integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq
+    (g := fun _ _ ↦ 1) hh h1 Filter.univ_mem continuousOn_const)).congr <|
+      .of_forall fun c ↦ by simp only [sphericalPendulumPeriod_def, one_div, Pi.mul_apply]
 
 /-- **The period of the height of the spherical pendulum.** Above the curve of relative
 equilibria, let a motion of the spherical pendulum with energy `h` and vertical angular momentum

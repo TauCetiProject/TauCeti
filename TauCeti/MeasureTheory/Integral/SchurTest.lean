@@ -335,26 +335,31 @@ theorem measurable_uncurry_indicator_ball {γ : Type*} [PseudoMetricSpace γ] [M
   exact measurable_one.indicator
     (measurableSet_lt (measurable_snd.dist measurable_fst) measurable_const)
 
-/-- **Schur's test for a convolution kernel on a countable group**: for `w, y : G → ℝ≥0∞`,
-`∑_{k, l} w(k - l) yₖ yₗ ≤ (∑ₘ w(m)) ∑ₖ yₖ²`. This is `TauCeti.lintegral_lintegral_mul_mul_le`
-for the counting measure, whose rows and columns all have sum `∑ₘ w(m)`. -/
-theorem tsum_tsum_mul_mul_le {G : Type*} [AddGroup G] [Countable G] (w y : G → ℝ≥0∞) :
-    ∑' k, ∑' l, w (k - l) * (y k * y l) ≤ (∑' m, w m) * ∑' k, y k ^ 2 := by
+/-- **Schur's test for a convolution kernel on a countable group**: for `w, y, z : G → ℝ≥0∞`,
+`∑_{k, l} w(k - l) yₖ zₗ ≤ (∑ₘ w(m)) (∑ₖ yₖ²)^{1/2} (∑ₗ zₗ²)^{1/2}`. This is
+`TauCeti.lintegral_lintegral_mul_mul_le` for the counting measure, whose rows and columns all have
+sum `∑ₘ w(m)`. -/
+theorem tsum_tsum_mul_mul_le {G : Type*} [AddGroup G] [Countable G] (w y z : G → ℝ≥0∞) :
+    ∑' k, ∑' l, w (k - l) * (y k * z l) ≤
+      (∑' m, w m) * (∑' k, y k ^ 2) ^ (2⁻¹ : ℝ) * (∑' l, z l ^ 2) ^ (2⁻¹ : ℝ) := by
   let _ : MeasurableSpace G := ⊤
   set W := ∑' m, w m
   have hrow (k : G) : ∫⁻ l, w (k - l) ∂Measure.count ≤ W := by
     rw [lintegral_count]; exact ((Equiv.subLeft k).tsum_eq w).le
   have hcol (l : G) : ∫⁻ k, w (k - l) ∂Measure.count ≤ W := by
     rw [lintegral_count]; exact ((Equiv.subRight l).tsum_eq w).le
-  have hnorm : eLpNorm y 2 Measure.count ^ 2 = ∑' k, y k ^ 2 := by
-    rw [eLpNorm_two_sq_eq_lintegral_sq (measurable_of_countable y).aemeasurable, lintegral_count]
+  have hnorm (y : G → ℝ≥0∞) : eLpNorm y 2 Measure.count = (∑' k, y k ^ 2) ^ (2⁻¹ : ℝ) := by
+    rw [← lintegral_count,
+      ← eLpNorm_two_sq_eq_lintegral_sq (measurable_of_countable y).aemeasurable,
+      ← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]
+    norm_num
   have h := lintegral_lintegral_mul_mul_le (μ := Measure.count) (ν := Measure.count)
     (k := fun k l : G ↦ w (k - l)) (measurable_of_countable _).aemeasurable
-    (measurable_of_countable y).aemeasurable (measurable_of_countable y).aemeasurable
+    (measurable_of_countable y).aemeasurable (measurable_of_countable z).aemeasurable
     (p := 2) (q := 2) (ae_of_all _ hrow) (ae_of_all _ hcol)
   simp only [lintegral_count] at h
   refine (h.trans_eq ?_).trans_eq' (tsum_congr fun k ↦ tsum_congr fun l ↦ by ring)
-  rw [mul_assoc, ← sq, hnorm, ← ENNReal.rpow_add_of_nonneg _ _ (by norm_num) (by norm_num)]
+  rw [hnorm y, hnorm z, ← ENNReal.rpow_add_of_nonneg _ _ (by norm_num) (by norm_num)]
   norm_num
 
 /-- **Schur's test** for the kernel `1_{|x - y| < R}` on the real line: its rows and columns have

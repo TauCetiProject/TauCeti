@@ -63,17 +63,6 @@ theorem hasSum_coeff_rescale_log_exp_intCast
   rw [hxu, exp_log_of_mem_unitFiltration hi hu, zsmul_eq_mul] at hexp
   simpa only [Subring.coe_intCast, hexp] using hasSum_coeff_rescale_log_exp hi hu (b : 𝒪[K])
 
-/-- Evaluating the normal series of a deep unit at an integral point gives its exponential. -/
-theorem evalAt_rescale_log_exp
-    (hi : absoluteRamificationIndex K p < (p - 1) * i)
-    {u : Kˣ} (hu : u ∈ unitFiltration K i) (z : 𝒪[K]) :
-    letI := FinitePadicExtension.charZero K p
-    (PowerSeries.rescale (log (u : K)) (PowerSeries.exp K)).evalAt (z : K) =
-      exp ((z : K) * log (u : K)) := by
-  have := FinitePadicExtension.charZero K p
-  simpa only [PowerSeries.evalAt_def, smul_eq_mul] using
-    (hasSum_coeff_rescale_log_exp hi hu z).tsum_eq
-
 /-- Evaluating the normal series of a deep unit at an integer gives its integer power. -/
 theorem evalAt_rescale_log_exp_intCast
     (hi : absoluteRamificationIndex K p < (p - 1) * i)

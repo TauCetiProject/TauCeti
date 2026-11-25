@@ -15,7 +15,8 @@ import TauCeti.Topology.FiberBundle.Separation
 Two geodesics on a preconnected parameter set agree if their position and velocity agree
 at any one parameter, including an endpoint. The comparison takes place on the native
 velocity lifts, so it also identifies their velocities without transporting tangent vectors
-by hand. Only a C² metric on a C³ manifold is required for uniqueness.
+by hand. Only a C² metric on a C³ manifold is required for uniqueness, and the manifold may
+have boundary.
 When both curves are differentiable at the initial parameter, equality of their actual
 velocity lifts also suffices, including at the left endpoint of a closed interval.
 
@@ -34,7 +35,7 @@ open scoped ContDiff Manifold
 namespace TauCeti.Manifold
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
@@ -56,7 +57,6 @@ theorem IsGeodesicCurveOn.curveVelocityLiftWithin_eqOn
   have hδlift := (isMIntegralCurveOn_curveVelocityLiftWithin_iff
     hδ.uniqueDiffOn hδ.contMDiffOn).2 hδ
   exact hγlift.eqOn_of_isPreconnected hδlift hs ha
-    (fun _ _ ↦ BoundarylessManifold.isInteriorPoint)
     (fun _ _ ↦ contMDiff_one_geodesicSpray.contMDiffAt) heq
 
 /-- Geodesics with the same initial position and velocity agree on their preconnected

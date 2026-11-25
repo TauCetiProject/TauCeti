@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Bruhat.Decomposition
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Center
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Centralizer
-import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Kernel
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Quotient
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
 import TauCeti.LinearAlgebra.Matrix.Diagonal
 import TauCeti.LinearAlgebra.RootSystem.LongestElement
@@ -369,7 +369,7 @@ theorem mem_range_torusPoints_of_mem_borelSubgroup_of_commute_weylElement
     g ∈ (D.torusPoints k).range := by
   obtain ⟨u, hu, s, rfl⟩ := (D.mem_borelSubgroup_iff k).mp hg
   let w₀ := longestElement (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
-  obtain ⟨l, hl⟩ := t.geckWeylWordProd_surjective ht w₀
+  obtain ⟨l, hl⟩ := t.simplyConnectedWeylWordProd_surjective ht w₀
   let n₀ : D.weylSubgroup k :=
     ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) k 1).prod,
       D.list_prod_map_weylElement_mem_weylSubgroup k l⟩
@@ -385,7 +385,8 @@ theorem mem_range_torusPoints_of_mem_borelSubgroup_of_commute_weylElement
       obtain ⟨i, _, rfl⟩ := List.mem_map.mp hx
       exact hcomm i
   have hu_neg : (n₀ : D.points k) * u * (n₀ : D.points k)⁻¹ ∈ D.negativePoints k := by
-    rw [← D.map_positivePoints_conj_of_weylProjection_eq_longestElement k n₀ hn₀_proj]
+    rw [← D.map_positivePoints_conj_eq_negativePoints k n₀
+      (by rw [hn₀_proj, inversions_longestElement])]
     exact ⟨u, hu, rfl⟩
   obtain ⟨s', hs'⟩ := (Subgroup.mem_normalizer_iff.mp
     (D.weylSubgroup_le_normalizer_range_torusPoints k n₀.property) (D.torusPoints k s)).mp
