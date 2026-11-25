@@ -38,8 +38,10 @@ covers, and the first computations.
 
 ## Main results
 
+* `TauCeti.hasCoveringDimensionLE_iff`, `TauCeti.HasCoveringDimensionLE.exists_refinement`: the
+  refinement form of the predicate.
 * `TauCeti.HasCoveringDimensionLE.mono`: the predicate is monotone in `d`.
-* `TauCeti.coveringDimension_le_iff`, `TauCeti.coveringDimension_lt_iff`,
+* `TauCeti.coveringDimension_le_iff`, `TauCeti.coveringDimension_lt_add_one_iff`,
   `TauCeti.coveringDimension_eq_bot_iff`, `TauCeti.coveringDimension_lt_zero_iff`,
   `TauCeti.coveringDimension_eq_top_iff`, `TauCeti.coveringDimension_lt_top_iff`,
   `TauCeti.coveringDimension_eq_zero_iff`, `TauCeti.coveringDimension_eq_add_one_iff`: the order
@@ -60,8 +62,9 @@ covers, and the first computations.
 * `TauCeti.hasCoveringDimensionLE_zero_iff_of_connectedSpace`,
   `TauCeti.not_hasCoveringDimensionLE_zero`: a preconnected `T₁` space with two points does not have
   covering dimension `0`.
-* `IsCompact.hasCoveringDimensionLE_one`: a compact subset of `ℝ` has covering dimension at most
-  `1`, and `unitInterval.coveringDimension_eq_one`: the unit interval has covering dimension `1`.
+* `Real.hasCoveringDimensionLE_one_of_isCompact`: a compact subset of `ℝ` has covering dimension
+  at most `1`, and `unitInterval.coveringDimension_eq_one`: the unit interval has covering
+  dimension `1`.
 
 ## References
 
@@ -93,6 +96,22 @@ def HasCoveringDimensionLE (X : Type*) [TopologicalSpace X] (d : ℕ) : Prop :=
   ∀ 𝒰 : Set (Set X), (∀ U ∈ 𝒰, IsOpen U) → ⋃₀ 𝒰 = univ →
     ∃ 𝒱 : Set (Set X), (∀ V ∈ 𝒱, IsOpen V) ∧ ⋃₀ 𝒱 = univ ∧ (∀ V ∈ 𝒱, ∃ U ∈ 𝒰, V ⊆ U) ∧
       ∀ x : X, {V | V ∈ 𝒱 ∧ x ∈ V}.encard ≤ ((d + 1 : ℕ) : ℕ∞)
+
+/-- Unfolding `HasCoveringDimensionLE`: every open cover `𝒰` of `X` has an open refinement `𝒱` in
+which every point lies in at most `d + 1` distinct members. -/
+theorem hasCoveringDimensionLE_iff {d : ℕ} :
+    HasCoveringDimensionLE X d ↔ ∀ 𝒰 : Set (Set X), (∀ U ∈ 𝒰, IsOpen U) → ⋃₀ 𝒰 = univ →
+      ∃ 𝒱 : Set (Set X), (∀ V ∈ 𝒱, IsOpen V) ∧ ⋃₀ 𝒱 = univ ∧ (∀ V ∈ 𝒱, ∃ U ∈ 𝒰, V ⊆ U) ∧
+        ∀ x : X, {V | V ∈ 𝒱 ∧ x ∈ V}.encard ≤ ((d + 1 : ℕ) : ℕ∞) :=
+  Iff.rfl
+
+/-- In a space of covering dimension at most `d`, every open cover `𝒰` has an open refinement `𝒱`
+in which every point lies in at most `d + 1` distinct members. -/
+theorem HasCoveringDimensionLE.exists_refinement {d : ℕ} (h : HasCoveringDimensionLE X d)
+    {𝒰 : Set (Set X)} (h𝒰o : ∀ U ∈ 𝒰, IsOpen U) (h𝒰c : ⋃₀ 𝒰 = univ) :
+    ∃ 𝒱 : Set (Set X), (∀ V ∈ 𝒱, IsOpen V) ∧ ⋃₀ 𝒱 = univ ∧ (∀ V ∈ 𝒱, ∃ U ∈ 𝒰, V ⊆ U) ∧
+      ∀ x : X, {V | V ∈ 𝒱 ∧ x ∈ V}.encard ≤ ((d + 1 : ℕ) : ℕ∞) :=
+  h 𝒰 h𝒰o h𝒰c
 
 /-- Covering dimension at most `d` implies covering dimension at most `e` for `d ≤ e`. -/
 theorem HasCoveringDimensionLE.mono {d e : ℕ} (h : HasCoveringDimensionLE X d) (hde : d ≤ e) :
@@ -206,7 +225,7 @@ theorem coveringDimension_le_iff {d : ℕ} :
 
 /-- The covering dimension is less than `d + 1` exactly when `X` has covering dimension at most
 `d`. -/
-theorem coveringDimension_lt_iff {d : ℕ} :
+theorem coveringDimension_lt_add_one_iff {d : ℕ} :
     coveringDimension X < (d + 1 : ℕ) ↔ HasCoveringDimensionLE X d := by
   rw [← coveringDimension_le_iff]
   generalize coveringDimension X = n
@@ -257,7 +276,7 @@ not at most `d`. -/
 theorem coveringDimension_eq_add_one_iff {d : ℕ} :
     coveringDimension X = (d + 1 : ℕ) ↔
       HasCoveringDimensionLE X (d + 1) ∧ ¬ HasCoveringDimensionLE X d := by
-  rw [← coveringDimension_le_iff, ← coveringDimension_lt_iff, not_lt, le_antisymm_iff]
+  rw [← coveringDimension_le_iff, ← coveringDimension_lt_add_one_iff, not_lt, le_antisymm_iff]
 
 /-- A nonempty discrete space has covering dimension `0`. -/
 theorem coveringDimension_eq_zero_of_discreteTopology [DiscreteTopology X] [Nonempty X] :
@@ -471,12 +490,13 @@ theorem coveringDimension_eq_iSup_of_iUnion_eq_univ {ι : Type*} [Finite ι] {F 
 
 end TauCeti
 
-namespace IsCompact
+namespace Real
 
 open TauCeti
 
 /-- A compact subset of `ℝ` has covering dimension at most `1`. -/
-theorem hasCoveringDimensionLE_one {s : Set ℝ} (hs : IsCompact s) : HasCoveringDimensionLE s 1 := by
+theorem hasCoveringDimensionLE_one_of_isCompact {s : Set ℝ} (hs : IsCompact s) :
+    HasCoveringDimensionLE s 1 := by
   -- For a Lebesgue number `3 h` of the cover, the traces of the open intervals of radius `h`
   -- around the points `k h`, `k ∈ ℤ`, refine it, and every point lies in at most two of them.
   have : CompactSpace s := isCompact_iff_compactSpace.1 hs
@@ -526,7 +546,7 @@ theorem hasCoveringDimensionLE_one {s : Set ℝ} (hs : IsCompact s) : HasCoverin
     refine (encard_le_encard hsub).trans ((encard_image_le _ _).trans ?_)
     exact (encard_insert_le _ _).trans (by simp; norm_num)
 
-end IsCompact
+end Real
 
 namespace unitInterval
 
@@ -534,7 +554,7 @@ open TauCeti
 
 /-- The unit interval has covering dimension `1`. -/
 theorem coveringDimension_eq_one : coveringDimension I = 1 :=
-  coveringDimension_eq_add_one_iff (d := 0).2 ⟨isCompact_Icc.hasCoveringDimensionLE_one,
-    not_hasCoveringDimensionLE_zero⟩
+  coveringDimension_eq_add_one_iff (d := 0).2
+    ⟨Real.hasCoveringDimensionLE_one_of_isCompact isCompact_Icc, not_hasCoveringDimensionLE_zero⟩
 
 end unitInterval
