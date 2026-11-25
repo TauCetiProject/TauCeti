@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.LinearAlgebra.LinearIndependent.Basic
 public import TauCeti.Analysis.SpecialFunctions.Complex.Exp.NegOfRealMulI
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.TwoMulIntMulPi
 
 /-!
 # The characteristic function of lozenge type weights and its zeros
@@ -92,7 +93,9 @@ theorem lozengeKernel_def (w₁ w₂ w₃ : ℝ) (d : ℤ × ℤ) :
         exp ((d.1 * p.1 + d.2 * p.2 : ℝ) * I) / lozengeCharFun w₁ w₂ w₃ p.1 p.2 :=
   (rfl)
 
-/-- The first coordinate `θ₀ = arccos ((w₁² − w₂² − w₃²) / (2 w₂ w₃))` of a zero of `P_w`. -/
+/-- The angle `θ₀ = arccos ((w₁² − w₂² − w₃²) / (2 w₂ w₃))`. For liquid weights it is the first
+coordinate of a zero of `P_w` (`lozengeCharFun_eq_zero_iff`); for other weights `arccos` clamps
+its argument and `θ₀` need not belong to any zero. -/
 def lozengeZeroAngleFst (w₁ w₂ w₃ : ℝ) : ℝ :=
   Real.arccos ((w₁ ^ 2 - w₂ ^ 2 - w₃ ^ 2) / (2 * w₂ * w₃))
 
@@ -101,7 +104,9 @@ theorem lozengeZeroAngleFst_def (w₁ w₂ w₃ : ℝ) :
     lozengeZeroAngleFst w₁ w₂ w₃ = Real.arccos ((w₁ ^ 2 - w₂ ^ 2 - w₃ ^ 2) / (2 * w₂ * w₃)) :=
   (rfl)
 
-/-- The second coordinate `φ₀ = arccos ((w₂² − w₁² − w₃²) / (2 w₁ w₃))` of a zero of `P_w`. -/
+/-- The angle `φ₀ = arccos ((w₂² − w₁² − w₃²) / (2 w₁ w₃))`. For liquid weights it is the
+second coordinate of a zero of `P_w` (`lozengeCharFun_eq_zero_iff`); for other weights `arccos`
+clamps its argument and `φ₀` need not belong to any zero. -/
 def lozengeZeroAngleSnd (w₁ w₂ w₃ : ℝ) : ℝ :=
   Real.arccos ((w₂ ^ 2 - w₁ ^ 2 - w₃ ^ 2) / (2 * w₁ * w₃))
 
@@ -237,24 +242,6 @@ theorem IsLiquidWeights.sin_add_ne_zero (hw : IsLiquidWeights w₁ w₂ w₃)
   rw [hsin] at this
   nlinarith [hc.1, hc.2]
 
-private theorem sin_two_mul_int_mul_pi_add (m : ℤ) (x : ℝ) :
-    Real.sin (2 * m * Real.pi + x) = Real.sin x := by
-  rw [show 2 * m * Real.pi + x = x + m * (2 * Real.pi) by ring, Real.sin_add_int_mul_two_pi]
-
-private theorem sin_two_mul_int_mul_pi_sub (m : ℤ) (x : ℝ) :
-    Real.sin (2 * m * Real.pi - x) = -Real.sin x := by
-  rw [show 2 * m * Real.pi - x = -x + m * (2 * Real.pi) by ring, Real.sin_add_int_mul_two_pi,
-    Real.sin_neg]
-
-private theorem cos_two_mul_int_mul_pi_add (m : ℤ) (x : ℝ) :
-    Real.cos (2 * m * Real.pi + x) = Real.cos x := by
-  rw [show 2 * m * Real.pi + x = x + m * (2 * Real.pi) by ring, Real.cos_add_int_mul_two_pi]
-
-private theorem cos_two_mul_int_mul_pi_sub (m : ℤ) (x : ℝ) :
-    Real.cos (2 * m * Real.pi - x) = Real.cos x := by
-  rw [show 2 * m * Real.pi - x = -x + m * (2 * Real.pi) by ring, Real.cos_add_int_mul_two_pi,
-    Real.cos_neg]
-
 /-- **The zeros of the characteristic function.** For liquid weights, `P_w(θ, φ) = 0` if and
 only if `(θ, φ)` is `(θ₀, φ₀)` or `(−θ₀, −φ₀)` modulo `2π` in each variable. -/
 theorem lozengeCharFun_eq_zero_iff (hw : IsLiquidWeights w₁ w₂ w₃) :
@@ -286,16 +273,16 @@ theorem lozengeCharFun_eq_zero_iff (hw : IsLiquidWeights w₁ w₂ w₃) :
     refine ⟨m, n, ?_⟩
     rcases hm with hm | hm <;> rcases hn with hn | hn
     · exact Or.inl ⟨hm, hn⟩
-    · rw [hm, hn, sin_two_mul_int_mul_pi_add, sin_two_mul_int_mul_pi_sub] at him
+    · rw [hm, hn, Real.sin_two_mul_int_mul_pi_add, Real.sin_two_mul_int_mul_pi_sub] at him
       nlinarith [mul_pos h2 hθ₀, mul_pos h1 hφ₀]
-    · rw [hm, hn, sin_two_mul_int_mul_pi_add, sin_two_mul_int_mul_pi_sub] at him
+    · rw [hm, hn, Real.sin_two_mul_int_mul_pi_add, Real.sin_two_mul_int_mul_pi_sub] at him
       nlinarith [mul_pos h2 hθ₀, mul_pos h1 hφ₀]
     · exact Or.inr ⟨hm, hn⟩
   · rintro ⟨m, n, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩ <;>
       refine lozengeCharFun_eq_zero_iff_re_im.2 ⟨?_, ?_⟩ <;>
-      simp only [sin_two_mul_int_mul_pi_add, sin_two_mul_int_mul_pi_sub,
-        cos_two_mul_int_mul_pi_add, cos_two_mul_int_mul_pi_sub, hw.cos_lozengeZeroAngleFst,
-        hw.cos_lozengeZeroAngleSnd]
+      simp only [Real.sin_two_mul_int_mul_pi_add, Real.sin_two_mul_int_mul_pi_sub,
+        Real.cos_two_mul_int_mul_pi_add, Real.cos_two_mul_int_mul_pi_sub,
+        hw.cos_lozengeZeroAngleFst, hw.cos_lozengeZeroAngleSnd]
     · field_simp; ring
     · exact hsin
     · field_simp; ring

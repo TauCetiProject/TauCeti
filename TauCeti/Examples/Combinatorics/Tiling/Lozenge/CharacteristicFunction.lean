@@ -19,8 +19,8 @@ import Mathlib.MeasureTheory.Integral.Prod
   degenerate weights are excluded from "liquid".
 * `w = (1, 1, 3)` is not liquid: `‖P_w‖ ≥ 1` everywhere, and `w₃ G_w(0) = 1`, the frozen value
   in which every lozenge has type `3`. The value comes from integrating `φ` and then `θ` with the
-  Fourier coefficients of `1 / (b + c e^{iθ})`
-  (`TauCeti.integral_exp_div_add_of_norm_lt_of_nonpos`).
+  Fourier coefficients of `1 / (b + c e^{iθ})` and `1 / (b + c e^{−iθ})`
+  (`TauCeti.integral_exp_div_add_of_norm_lt_of_nonpos`, `TauCeti.integral_inv_add_mul_exp_neg`).
 -/
 
 public section
@@ -113,23 +113,6 @@ theorem one_le_norm_lozengeCharFun_one_one_three (θ φ : ℝ) :
   simp only [one_mul]
   linarith [two_le_norm_three_add_exp θ]
 
-/-- The inner integral: `∫₀^{2π} 1 / (b + e^{−iφ}) dφ = 2π / b` for `‖b‖ > 1`. -/
-private theorem integral_inv_add_exp_neg {b : ℂ} (hb : 1 < ‖b‖) :
-    ∫ φ in (0 : ℝ)..2 * Real.pi, (b + exp (-(φ * I)))⁻¹ = 2 * Real.pi / b := by
-  have h := integral_exp_div_add_of_norm_lt_of_nonpos (b := b) (c := 1) (by simpa using hb)
-    (n := 0) le_rfl
-  simp only [Int.cast_zero, zero_mul, Complex.exp_zero, one_mul, neg_zero, one_div] at h
-  have h' : ∫ θ in (0 : ℝ)..2 * Real.pi, (b + exp (θ * I))⁻¹ = 2 * Real.pi * b⁻¹ := by
-    rw [h]; simp
-  have h2 := intervalIntegral.integral_comp_sub_left (fun φ : ℝ => (b + exp (-(φ * I)))⁻¹)
-    (2 * Real.pi) (a := 0) (b := 2 * Real.pi)
-  simp only [sub_self, sub_zero] at h2
-  rw [← h2, div_eq_mul_inv, ← h']
-  refine intervalIntegral.integral_congr fun φ _ => ?_
-  congr 2
-  rw [show -(((2 * Real.pi - φ : ℝ) : ℂ) * I) = φ * I + (-1 : ℤ) * (2 * Real.pi * I) by
-    push_cast; ring, exp_add, exp_int_mul_two_pi_mul_I, mul_one]
-
 /-- For `w = (1, 1, 3)`, `w₃ G_w(0) = 1`: the frozen value in which every lozenge has type `3`. -/
 theorem three_mul_lozengeKernel_one_one_three_zero : 3 * lozengeKernel 1 1 3 0 = 1 := by
   have hcont : Continuous fun p : ℝ × ℝ => (lozengeCharFun 1 1 3 p.1 p.2)⁻¹ := by
@@ -153,8 +136,8 @@ theorem three_mul_lozengeKernel_one_one_three_zero : 3 * lozengeKernel 1 1 3 0 =
   have hpi : (0 : ℝ) ≤ 2 * Real.pi := by positivity
   have inner (x : ℝ) : ∫ y in Ioc 0 (2 * Real.pi), (lozengeCharFun 1 1 3 x y)⁻¹ =
       2 * Real.pi / (3 + exp (x * I)) := by
-    rw [← intervalIntegral.integral_of_le hpi, ← integral_inv_add_exp_neg
-      (by linarith [two_le_norm_three_add_exp x])]
+    rw [← intervalIntegral.integral_of_le hpi, ← integral_inv_add_mul_exp_neg (c := 1)
+      (by rw [norm_one]; linarith [two_le_norm_three_add_exp x])]
     refine intervalIntegral.integral_congr fun y _ => ?_
     simp [lozengeCharFun_def]
   have outer := integral_exp_div_add_of_norm_lt_of_nonpos (b := 3) (c := 1) (by norm_num)
