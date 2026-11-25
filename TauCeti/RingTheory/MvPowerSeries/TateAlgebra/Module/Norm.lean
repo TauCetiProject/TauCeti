@@ -524,6 +524,14 @@ theorem subringLinearIsometryEquiv_apply (f : IsRestricted.subring (R := R) c) (
     LinearEquiv.restrictScalars_apply, toAddSubgroupLinearEquiv_symm_apply,
     coe_subringLinearEquiv]
 
+/-- The inverse coefficient isometry sends a Gauss family to the series with those
+coefficients. -/
+@[simp]
+theorem subringLinearIsometryEquiv_symm_apply (a : Gauss c R) (t : σ →₀ ℕ) :
+    _root_.MvPowerSeries.coeff t
+      ((subringLinearIsometryEquiv R).symm a : MvPowerSeries σ R) = a t := by
+  rw [← subringLinearIsometryEquiv_apply, LinearIsometryEquiv.apply_symm_apply]
+
 end Comm
 
 variable [SeminormedAddCommGroup F] [IsUltrametricDist F] [Module R F] [IsBoundedSMul R F]
