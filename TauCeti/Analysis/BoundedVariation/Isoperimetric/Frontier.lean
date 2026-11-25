@@ -12,7 +12,7 @@ import TauCeti.Analysis.BoundedVariation.FrontierCriterion
 import TauCeti.Analysis.BoundedVariation.Isoperimetric.Basic
 import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.Geometry.Euclidean.Volume.Sphere
-import TauCeti.MeasureTheory.Measure.Haar.Hausdorff
+import TauCeti.MeasureTheory.Measure.Haar.Hausdorff.Frontier
 
 /-!
 # The isoperimetric inequality for the topological frontier
@@ -25,17 +25,15 @@ measure. This file proves that every set `s` of finite volume, measurable or not
 
 (`TauCeti.finrank_pow_mul_volume_ball_mul_volume_pow_le_euclideanHausdorffMeasure_frontier_pow`),
 in particular every bounded set, which has finite volume. The two sides are compared through the
-perimeter `P(s)`: when `Hⁿ⁻¹(frontier s) < ∞`, the frontier of `s` has Hausdorff dimension at
-most `n - 1`, so it is null and `s` is null-measurable for every additive Haar measure
-(`TauCeti.nullMeasurableSet_of_euclideanHausdorffMeasure_frontier_ne_top`), and then
+perimeter `P(s)`: when `Hⁿ⁻¹(frontier s) < ∞`, the frontier of `s` is null and `s` is
+null-measurable (`TauCeti.nullMeasurableSet_of_hausdorffMeasure_frontier_ne_top`), and then
 `P(s) ≤ Hⁿ⁻¹(frontier s)` (`TauCeti.perimeter_le_euclideanHausdorffMeasure_frontier`) and the
 sharp isoperimetric inequality for the perimeter conclude.
 
 Balls attain equality (`TauCeti.euclideanHausdorffMeasure_frontier_ball_pow`). Conversely,
 equality forces the frontier to have finite measure, the perimeter of `s` to equal
-`Hⁿ⁻¹(frontier s)`
-(`TauCeti.perimeter_eq_euclideanHausdorffMeasure_frontier_of_frontier_pow_eq`), and hence
-equality in the sharp inequality for the perimeter
+`Hⁿ⁻¹(frontier s)` (`TauCeti.perimeter_eq_of_euclideanHausdorffMeasure_frontier_pow_eq`), and
+hence equality in the sharp inequality for the perimeter
 (`TauCeti.perimeter_pow_eq_of_euclideanHausdorffMeasure_frontier_pow_eq`), the hypothesis of ball
 rigidity for sets of finite perimeter.
 
@@ -55,28 +53,9 @@ needed: the complement of a ball has infinite volume and a frontier of finite me
 public section
 
 open MeasureTheory Metric Module Set
-open scoped ENNReal NNReal
+open scoped ENNReal
 
 namespace TauCeti
-
-/-- **Sets with a frontier of finite codimension-one measure are null-measurable.** In a real
-normed space of finite dimension `n`, a set `s` whose frontier has finite `Hⁿ⁻¹` measure is
-null-measurable for every additive Haar measure. In positive dimension its frontier has Hausdorff
-dimension at most `n - 1`, hence is null, so `s` agrees almost everywhere with its interior; in
-dimension zero every set is measurable. -/
-theorem nullMeasurableSet_of_euclideanHausdorffMeasure_frontier_ne_top {F : Type*}
-    [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] [MeasurableSpace F]
-    [BorelSpace F] (μ : Measure F) [μ.IsAddHaarMeasure] {s : Set F}
-    (h : μHE[finrank ℝ F - 1] (frontier s) ≠ ∞) : NullMeasurableSet s μ := by
-  rcases eq_or_ne (finrank ℝ F) 0 with hn | hn
-  · have : Subsingleton F := finrank_zero_iff.1 hn
-    exact Set.subsingleton_of_subsingleton.measurableSet.nullMeasurableSet
-  have : Nontrivial F := Module.nontrivial_of_finrank_pos (Nat.pos_of_ne_zero hn)
-  refine nullMeasurableSet_of_null_frontier (μ.addHaar_eq_zero_of_dimH_le_finrank_sub_one ?_)
-  have h' : μH[((finrank ℝ F - 1 : ℕ) : ℝ≥0)] (frontier s) ≠ ∞ := by
-    rw [NNReal.coe_natCast]
-    exact (Measure.euclideanHausdorffMeasure_lt_top_iff.1 (lt_top_iff_ne_top.2 h)).ne
-  exact (dimH_le_of_hausdorffMeasure_ne_top h').trans_eq (ENNReal.coe_natCast _)
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {s : Set E}
@@ -93,8 +72,9 @@ theorem finrank_pow_mul_volume_ball_mul_volume_pow_le_euclideanHausdorffMeasure_
   by_cases hH : μHE[finrank ℝ E - 1] (frontier s) = ∞
   · rw [hH, ENNReal.top_pow (by omega)]
     exact le_top
-  exact ((nullMeasurableSet_of_euclideanHausdorffMeasure_frontier_ne_top volume
-    hH).finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow_of_two_le hs hn).trans
+  have hH' := (Measure.euclideanHausdorffMeasure_lt_top_iff.1 (lt_top_iff_ne_top.2 hH)).ne
+  exact ((nullMeasurableSet_of_hausdorffMeasure_frontier_ne_top volume
+    hH').finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow_of_two_le hs hn).trans
     (pow_le_pow_left₀ zero_le (perimeter_le_euclideanHausdorffMeasure_frontier hn s) _)
 
 /-- **Balls attain equality in the frontier isoperimetric inequality.** In positive dimension `n`,
@@ -115,7 +95,7 @@ theorem euclideanHausdorffMeasure_frontier_ball_pow (hn : finrank ℝ E ≠ 0) (
 Euclidean space of dimension `n ≥ 2`, if a set `s` of finite volume satisfies
 `Hⁿ⁻¹(frontier s)ⁿ = nⁿ ω_n |s|ⁿ⁻¹`, where `ω_n = volume (ball 0 1)`, then its perimeter is the
 Hausdorff measure of its frontier. -/
-theorem perimeter_eq_euclideanHausdorffMeasure_frontier_of_frontier_pow_eq
+theorem perimeter_eq_of_euclideanHausdorffMeasure_frontier_pow_eq
     (hn : 2 ≤ finrank ℝ E) (hs : volume s ≠ ∞)
     (h : μHE[finrank ℝ E - 1] (frontier s) ^ finrank ℝ E =
       (finrank ℝ E : ℝ≥0∞) ^ finrank ℝ E * volume (ball (0 : E) 1) *
@@ -131,8 +111,9 @@ theorem perimeter_eq_euclideanHausdorffMeasure_frontier_of_frontier_pow_eq
   refine le_antisymm (perimeter_le_euclideanHausdorffMeasure_frontier hn s)
     ((ENNReal.pow_le_pow_left_iff (n := finrank ℝ E) (by omega)).1 ?_)
   rw [h]
-  exact (nullMeasurableSet_of_euclideanHausdorffMeasure_frontier_ne_top volume
-    hH).finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow_of_two_le hs hn
+  have hH' := (Measure.euclideanHausdorffMeasure_lt_top_iff.1 (lt_top_iff_ne_top.2 hH)).ne
+  exact (nullMeasurableSet_of_hausdorffMeasure_frontier_ne_top volume
+    hH').finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow_of_two_le hs hn
 
 /-- **Equality in the frontier isoperimetric inequality forces equality for the perimeter.** In a
 Euclidean space of dimension `n ≥ 2`, if a set `s` of finite volume satisfies
@@ -146,6 +127,6 @@ theorem perimeter_pow_eq_of_euclideanHausdorffMeasure_frontier_pow_eq
     perimeter volume ⊤ s ^ finrank ℝ E =
       (finrank ℝ E : ℝ≥0∞) ^ finrank ℝ E * volume (ball (0 : E) 1) *
         volume s ^ (finrank ℝ E - 1) := by
-  rw [perimeter_eq_euclideanHausdorffMeasure_frontier_of_frontier_pow_eq hn hs h, h]
+  rw [perimeter_eq_of_euclideanHausdorffMeasure_frontier_pow_eq hn hs h, h]
 
 end TauCeti
