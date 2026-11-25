@@ -31,7 +31,7 @@ projection of the fibre product. Its fibre over a Moore loop `γ` at `x` is ther
 Moore loops at `y` of the length of `γ` (`TauCeti.MooreLoopSpace.fiberFstHomeomorph`). For a loop
 `γ` of positive length `L`, reparametrizing to the unit interval identifies these with the loop
 space `Path y y` (`TauCeti.MooreLoopSpace.lengthLevelHomeomorph`), while over the unit, of length
-zero, the fibre is a single point (`TauCeti.MooreLoopSpace.length_preimage_singleton_zero`). For a
+zero, the fibre is a single point (`TauCeti.MooreLoopSpace.length_eq_zero_iff`). For a
 general continuous map, `TauCeti.Topology.PathSpace.Moore.LoopFibration` identifies the fibre of
 its Moore loop map with the loop space of the fibre only over the constant loops of positive length
 (`TauCeti.MooreLoopSpace.fiberConstOfLengthHomeomorph`). For the first projection of a product the
