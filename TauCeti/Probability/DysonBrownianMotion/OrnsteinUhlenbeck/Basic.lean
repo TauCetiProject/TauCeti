@@ -15,6 +15,7 @@ import Mathlib.MeasureTheory.Function.JacobianOneDim
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.HalfLinePrimitive
 import TauCeti.Analysis.SpecialFunctions.Exp.Half
+import TauCeti.Analysis.SpecialFunctions.Log.Basic
 
 /-!
 # The Ornstein–Uhlenbeck Dyson system and its exponential time change
@@ -414,22 +415,10 @@ theorem ouTimeChangeInvForcing_apply (w : ℝ≥0 → Fin n → ℝ) (s : ℝ≥
       ∫ r in (0 : ℝ)..s, w (Real.log (1 + r)).toNNReal i / (2 * √(1 + r)) :=
   (rfl)
 
-/-- The exponential time `e^u - 1` of a nonnegative `u` is nonnegative, so it survives the round
-trip through `ℝ≥0`. -/
-theorem coe_toNNReal_exp_sub_one {u : ℝ} (hu : 0 ≤ u) :
-    ((Real.exp u - 1).toNNReal : ℝ) = Real.exp u - 1 :=
-  Real.coe_toNNReal _ (sub_nonneg.2 (Real.one_le_exp hu))
-
-/-- The logarithmic time `log (1 + r)` of a nonnegative `r` is nonnegative, so it survives the
-round trip through `ℝ≥0`. -/
-theorem coe_toNNReal_log_one_add {r : ℝ} (hr : 0 ≤ r) :
-    ((Real.log (1 + r)).toNNReal : ℝ) = Real.log (1 + r) :=
-  Real.coe_toNNReal _ (Real.log_nonneg (by linarith))
-
 /-- The inverse time change evaluated at `e^t - 1` is `e^{t/2}` times the original path at `t`. -/
 theorem ouTimeChangeInv_exp_sub_one (Y : ℝ≥0 → Fin n → ℝ) (t : ℝ≥0) :
     ouTimeChangeInv Y (Real.exp t - 1).toNNReal = Real.exp ((t : ℝ) / 2) • Y t := by
-  rw [ouTimeChangeInv, coe_toNNReal_exp_sub_one t.coe_nonneg, add_sub_cancel, Real.log_exp,
+  rw [ouTimeChangeInv, Real.coe_toNNReal_exp_sub_one t.coe_nonneg, add_sub_cancel, Real.log_exp,
     Real.toNNReal_coe, ← Real.exp_half]
 
 /-- `ouTimeChange` is a left inverse of `ouTimeChangeInv`. -/
@@ -445,7 +434,7 @@ theorem ouTimeChange_ouTimeChangeInv (Y : ℝ≥0 → Fin n → ℝ) :
 theorem ouTimeChangeInv_ouTimeChange (X : ℝ≥0 → Fin n → ℝ) :
     ouTimeChangeInv (ouTimeChange X) = X := by
   ext s i
-  rw [ouTimeChangeInv_apply, ouTimeChange_apply, coe_toNNReal_log_one_add s.coe_nonneg,
+  rw [ouTimeChangeInv_apply, ouTimeChange_apply, Real.coe_toNNReal_log_one_add s.coe_nonneg,
     Real.exp_log (by positivity), add_sub_cancel_left, Real.toNNReal_coe, ← mul_assoc,
     Real.sqrt_mul_exp_neg_half_log (by positivity), one_mul]
 
@@ -607,7 +596,7 @@ private theorem intervalIntegrable_sum_inv_ouTimeChange {X : ℝ≥0 → Fin n �
     (t : ℝ≥0) (i : Fin n) : IntervalIntegrable (fun s : ℝ ↦ ∑ j ∈ Finset.univ.erase i,
       (ouTimeChange X s.toNNReal i - ouTimeChange X s.toNNReal j)⁻¹) volume 0 t := by
   have hS := hX (Real.exp t - 1).toNNReal i
-  rw [coe_toNNReal_exp_sub_one t.coe_nonneg] at hS
+  rw [Real.coe_toNNReal_exp_sub_one t.coe_nonneg] at hS
   refine (intervalIntegrable_mul_deriv_mul_comp (c := fun u ↦ Real.exp (-(u / 2)))
     (τ := fun u ↦ Real.exp u - 1) t.coe_nonneg (fun u _ ↦ (Real.hasDerivAt_exp u).sub_const 1)
     (fun u _ ↦ (Real.exp_pos u).le)
@@ -628,7 +617,7 @@ private theorem intervalIntegrable_sum_inv_ouTimeChangeInv {Y : ℝ≥0 → Fin 
     (t : ℝ≥0) (i : Fin n) : IntervalIntegrable (fun s : ℝ ↦ ∑ j ∈ Finset.univ.erase i,
       (ouTimeChangeInv Y s.toNNReal i - ouTimeChangeInv Y s.toNNReal j)⁻¹) volume 0 t := by
   have hS := hY (Real.log (1 + t)).toNNReal i
-  rw [coe_toNNReal_log_one_add t.coe_nonneg] at hS
+  rw [Real.coe_toNNReal_log_one_add t.coe_nonneg] at hS
   refine (intervalIntegrable_mul_deriv_mul_comp (c := fun u ↦ √(1 + u))
     (τ := fun u ↦ Real.log (1 + u)) (τ' := fun u ↦ 1 / (1 + u)) t.coe_nonneg
     (fun u hu ↦ ((hasDerivAt_id' u).const_add 1).log (by linarith [hu.1]))

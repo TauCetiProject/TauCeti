@@ -11,6 +11,8 @@ import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.SpecialFunctions.Exp.Half
+import TauCeti.Analysis.SpecialFunctions.Log.Basic
+import TauCeti.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Probability.BrownianMotion.Integral.TimeChange
 
 /-!
@@ -59,15 +61,6 @@ private theorem continuousOn_inv_sqrt_one_add_div :
   · exact (Real.sqrt_pos.2 (by linarith [mem_Ici.1 hr])).ne'
   · linarith [mem_Ici.1 hr]
 
-/-- The derivative of `r ↦ (1 + r)^{-1/2}`. -/
-private theorem hasDerivAt_inv_sqrt_one_add {x : ℝ} (hx : 0 < x) :
-    HasDerivAt (fun r ↦ (√(1 + r))⁻¹) (-((√(1 + x))⁻¹ / (2 * (1 + x)))) x := by
-  have hx1 : 0 < 1 + x := by linarith
-  have hs : 0 < √(1 + x) := Real.sqrt_pos.2 hx1
-  refine ((((hasDerivAt_id' x).const_add 1).sqrt hx1.ne').inv hs.ne').congr_deriv ?_
-  field_simp
-  rw [Real.sq_sqrt hx1.le]
-
 /-- The forcing of the exponential time change is the integration by parts form of the Wiener
 integral of `(1 + r)^{-1/2}` up to `e^t - 1`. -/
 private theorem ouTimeChangeForcing_eq_mul_sub_integral {w : ℝ≥0 → Fin n → ℝ} {i : Fin n}
@@ -92,7 +85,7 @@ private theorem ouTimeChangeForcing_eq_mul_sub_integral {w : ℝ≥0 → Fin n �
       -∫ r in (0 : ℝ)..Real.exp t - 1, g r := by
     rw [← intervalIntegral.integral_neg]
     simp only [g, neg_mul]
-  rw [ouTimeChangeForcing_apply, coe_toNNReal_exp_sub_one t.coe_nonneg, hneg, ← hsub,
+  rw [ouTimeChangeForcing_apply, Real.coe_toNNReal_exp_sub_one t.coe_nonneg, hneg, ← hsub,
     sub_neg_eq_add, add_sub_cancel, ← Real.exp_half, ← Real.exp_neg]
   congr 1
   refine intervalIntegral.integral_congr fun u _ ↦ ?_
@@ -120,8 +113,8 @@ private theorem ouTimeChangeInvForcing_eq_mul_sub_integral {w : ℝ≥0 → Fin 
       linarith [hr.1])
     (by fun_prop)
   simp only [add_zero, Real.log_one] at hsub
-  rw [ouTimeChangeInvForcing_apply, coe_toNNReal_log_one_add s.coe_nonneg, ← hsub, Real.exp_half,
-    Real.exp_log (by positivity)]
+  rw [ouTimeChangeInvForcing_apply, Real.coe_toNNReal_log_one_add s.coe_nonneg, ← hsub,
+    Real.exp_half, Real.exp_log (by positivity)]
   congr 1
   refine intervalIntegral.integral_congr fun r hr ↦ ?_
   rw [uIcc_of_le s.coe_nonneg] at hr
@@ -141,13 +134,13 @@ theorem isBrownianReal_ouTimeChangeForcing {B : Fin n → ℝ≥0 → Ω → ℝ
   refine hB.isBrownianReal_of_ae_eq_mul_sub_integral (a := fun t ↦ (Real.exp t - 1).toNNReal)
     (h := fun r ↦ (√(1 + r))⁻¹) (ContinuousOn.inv₀ (by fun_prop) fun r hr ↦ (Real.sqrt_pos.2 (by
       linarith [mem_Ici.1 hr])).ne')
-    (fun _ ↦ hasDerivAt_inv_sqrt_one_add)
+    (fun x hx ↦ Real.hasDerivAt_inv_sqrt_one_add (by linarith : (0 : ℝ) < 1 + x).ne')
     (fun t ↦ (hh'.mono (uIcc_of_le (Real.exp t - 1).toNNReal.coe_nonneg ▸
       Icc_subset_Ici_self)).intervalIntegrable) (fun t ↦ ?_)
     (fun t ↦ hB.cont.mono fun ω hω ↦
       ouTimeChangeForcing_eq_mul_sub_integral (w := fun s j ↦ B j s ω) hω t) ?_
   · -- `∫₀^{e^t - 1} (1 + r)⁻¹ dr = log (e^t) = t`.
-    rw [coe_toNNReal_exp_sub_one t.coe_nonneg,
+    rw [Real.coe_toNNReal_exp_sub_one t.coe_nonneg,
       intervalIntegral.integral_congr (g := fun r ↦ (1 + r)⁻¹) fun r hr ↦ ?_,
       intervalIntegral.integral_comp_add_left (fun r ↦ r⁻¹), add_zero, add_sub_cancel,
       integral_inv_of_pos one_pos (Real.exp_pos t), div_one, Real.log_exp]
@@ -173,7 +166,7 @@ theorem isBrownianReal_ouTimeChangeInvForcing {B : Fin n → ℝ≥0 → Ω → 
   · -- `∫₀^{log (1 + s)} e^u du = s`.
     have hsq (r : ℝ) : Real.exp (r / 2) ^ 2 = Real.exp r := by
       rw [sq, Real.exp_half_mul_exp_half]
-    simp only [hsq, coe_toNNReal_log_one_add s.coe_nonneg]
+    simp only [hsq, Real.coe_toNNReal_log_one_add s.coe_nonneg]
     rw [integral_exp, Real.exp_zero, Real.exp_log (by positivity)]
     ring
   · filter_upwards [hB.cont] with ω hω
