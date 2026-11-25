@@ -171,15 +171,18 @@ private theorem valueL_apply (u : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubm
     valueL mu Omega Γ u = W1p.value (u : W1p mu Omega 2) := by
   simp [valueL]
 
-/-- The energy form on `H¹_Γ(Ω)` shifted by `ω` times the `L²` inner product. -/
+/-- The energy form on `H¹_Γ(Ω)` shifted by `ω` times the `L²` inner product of the values, in
+the shape `B + ω ⟪J ·, J ·⟫` of `TauCeti.isCoercive_add_smul_toSesqForm_comp_of_garding`. -/
 private def shiftedForm
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (Γ : Set (EuclideanSpace ℝ ι)) (omega : ℝ) :
     (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule →L[ℝ]
       (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule →L[ℝ] ℝ :=
-  (energyFormH1L (memLp_energyIntegrand_mass_sub_const hcoeff (-omega))).bilinearComp
-    (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule.subtypeL
-    (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule.subtypeL
+  (energyFormH1L hcoeff).bilinearComp (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule.subtypeL
+      (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule.subtypeL +
+    omega • ((ContinuousLinearMap.toSesqForm (valueL mu Omega Γ)).comp (valueL mu Omega Γ) :
+      (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule →L[ℝ]
+        (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule →L[ℝ] ℝ)
 
 private theorem shiftedForm_apply
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
@@ -187,10 +190,8 @@ private theorem shiftedForm_apply
     shiftedForm hcoeff Γ omega u v =
       energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) +
         omega * ⟪valueL mu Omega Γ u, valueL mu Omega Γ v⟫_ℝ := by
-  rw [shiftedForm, ContinuousLinearMap.bilinearComp_apply, energyFormH1L_apply,
-    energyFormH1_mass_sub_const hcoeff]
-  simp only [Submodule.subtypeL_apply, valueL_apply]
-  ring
+  rw [← energyFormH1L_apply hcoeff]
+  rfl
 
 /-- The eigenvalue equations of the energy form and of its shift by `ω` correspond, with
 eigenvalues `κ` and `κ + ω`. -/
@@ -206,7 +207,8 @@ private theorem forall_shiftedForm_eq_iff
   rw [shiftedForm_apply, valueL_apply, valueL_apply, add_mul]
   exact add_left_inj _
 
-/-- A Gårding inequality on `H¹_Γ(Ω)` is coercivity of the shifted form. -/
+/-- A Gårding inequality on `H¹_Γ(Ω)` is coercivity of the shifted form
+(`TauCeti.isCoercive_add_smul_toSesqForm_comp_of_garding`). -/
 private theorem isCoercive_shiftedForm
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     {theta omega : ℝ} (htheta : 0 < theta)
@@ -214,10 +216,11 @@ private theorem isCoercive_shiftedForm
       theta * ‖(v : W1p mu Omega 2)‖ ^ 2 ≤
         energyFormH1 a b c (v : W1p mu Omega 2) (v : W1p mu Omega 2) +
           omega * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2) :
-    IsCoercive (shiftedForm hcoeff Γ omega) := by
-  refine ⟨theta, htheta, fun v ↦ ?_⟩
-  rw [shiftedForm_apply, real_inner_self_eq_norm_sq, valueL_apply, mul_assoc, ← sq]
-  exact hgarding v
+    IsCoercive (shiftedForm hcoeff Γ omega) :=
+  isCoercive_add_smul_toSesqForm_comp_of_garding htheta fun v ↦ by
+    rw [ContinuousLinearMap.bilinearComp_apply, Submodule.subtypeL_apply, energyFormH1L_apply,
+      valueL_apply]
+    exact hgarding v
 
 /-- The value map `H¹_Γ(Ω) → L²(Ω)` has dense range when `Γ` misses `Ω`, since `H¹_Γ(Ω)` contains
 `H¹₀(Ω)`. -/
