@@ -51,8 +51,6 @@ private def θHom : N →* ℤˣ where
 /-- `θ` is an irreducible character of `N`, the character of a one-dimensional representation. -/
 theorem θ_mem : θ ∈ irreducibleCharacters ℂ N := by
   let ψ : N →* ℂˣ := (Units.map (Int.castRingHom ℂ).toMonoidHom).comp θHom
-  have : (Representation.ofLinearCharacter ψ).IsIrreducible :=
-    Representation.isIrreducible_of_finrank_eq_one _ (Module.finrank_self ℂ)
   convert character_mem_irreducibleCharacters (Representation.ofLinearCharacter ψ) using 1
   funext n
   rw [Representation.char_ofLinearCharacter]
