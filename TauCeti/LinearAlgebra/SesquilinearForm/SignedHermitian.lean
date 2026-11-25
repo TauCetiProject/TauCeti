@@ -11,15 +11,15 @@ public import TauCeti.LinearAlgebra.SesquilinearForm.Separating
 /-!
 # Signed hermitian spaces and the adjoint of an endomorphism
 
-Let `K` be a field with a ring endomorphism `σ` (the involution: the identity for orthogonal and
-symplectic forms, the Galois conjugation of a quadratic extension for hermitian and
-skew-hermitian forms) and let `ε = ±1`. A **signed hermitian space** is a `K`-vector space `V`
-with a nondegenerate `ε`-hermitian form: a pairing `h : V × V → K`, `σ`-semilinear in the first
+Let `K` be a commutative ring with a ring endomorphism `σ` (the involution: the identity for
+orthogonal and symplectic forms, the Galois conjugation of a quadratic extension for hermitian and
+skew-hermitian forms) and let `ε = ±1`. A **signed hermitian space** is a `K`-module `V` with a
+nondegenerate `ε`-hermitian form: a pairing `h : V × V → K`, `σ`-semilinear in the first
 variable and linear in the second, with `h w v = ε σ (h v w)`.
 
-On a finite-dimensional signed hermitian space every endomorphism `a` has a unique adjoint `a*`,
-characterized by `h (a v) w = h v (a* w)`. The adjoint is `σ`-semilinear in `a`, reverses
-composition and is an involution. This is the adjoint that defines the unitary group
+Over a field, on a finite-dimensional signed hermitian space every endomorphism `a` has a unique
+adjoint `a*`, characterized by `h (a v) w = h v (a* w)`. The adjoint is `σ`-semilinear in `a`,
+reverses composition and is an involution. This is the adjoint that defines the unitary group
 `{g | g* g = 1}` and its Lie algebra `{X | X* = -X}`; the adjoint of a map between two
 hermitian spaces can be read off from it on their orthogonal sum.
 
@@ -51,11 +51,13 @@ open Module
 
 namespace TauCeti
 
-variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] {σ : K →+* K} {ε : ℤˣ}
+section CommRing
+
+variable {K V : Type*} [CommRing K] [AddCommGroup V] [Module K V] {σ : K →+* K} {ε : ℤˣ}
 
 variable (K V σ ε) in
-/-- A **signed hermitian space** `(V, h)` over a field `K` with involution `σ`, of sign `ε = ±1`:
-a form `h` on `V`, `σ`-semilinear in the first variable and linear in the second, which is
+/-- A **signed hermitian space** `(V, h)` over a commutative ring `K` with involution `σ`, of sign
+`ε = ±1`: a form `h` on `V`, `σ`-semilinear in the first variable and linear in the second, which is
 `ε`-hermitian, `h w v = ε σ (h v w)`, and nondegenerate. For `σ = id` and `ε = 1` (resp. `-1`)
 these are the nondegenerate symmetric (resp. skew-symmetric) bilinear forms; for the conjugation
 of a quadratic extension they are the hermitian (resp. skew-hermitian) forms.
@@ -93,6 +95,12 @@ theorem isSymm (H : SignedHermitianSpace K V σ 1) : H.form.IsSymm :=
   ⟨fun v w ↦ by rw [H.form_swap v w, one_smul]⟩
 
 end SignedHermitianSpace
+
+end CommRing
+
+section Field
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] {σ : K →+* K} {ε : ℤˣ}
 
 /-! ### The adjoint of an endomorphism -/
 
@@ -238,5 +246,7 @@ theorem signedHermitianAdjoint_standard_toLin' [RingHomInvPair σ σ] {n : Type*
     Finset.mul_sum]
   rw [Finset.sum_comm]
   exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
+
+end Field
 
 end TauCeti

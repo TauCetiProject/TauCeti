@@ -36,6 +36,8 @@ indexed by.
   family of open sets exactly when their underlying sets cover it.
 * `TopologicalSpace.Opens.isEmpty_of_iSup_eq_top` : an empty family of open sets covers only the
   empty space.
+* `TopologicalSpace.Opens.eq_bot_of_not_nonempty` : an open set with no points is the empty open
+  set.
 * `TauCeti.TopologicalSpace.Opens.isClopen_of_pairwiseDisjoint_iSup_eq_top` : every member of a
   pairwise-disjoint open cover is clopen.
 * `TopologicalSpace.Opens.instLocallyCompactSpace` : an open subset of a locally compact space is
@@ -119,6 +121,10 @@ theorem le_iSup_iff_subset_iUnion {ι : Sort*} {U : Opens X} {V : ι → Opens X
 theorem isEmpty_of_iSup_eq_top {ι : Sort*} [IsEmpty ι] {U : ι → Opens X}
     (hcover : ⨆ i, U i = ⊤) : IsEmpty X :=
   ⟨fun x ↦ isEmptyElim (Opens.mem_iSup.1 (hcover ▸ Opens.mem_top x)).choose⟩
+
+/-- An open set with no points is the empty open set. -/
+theorem eq_bot_of_not_nonempty {U : Opens X} (h : ¬ Nonempty U) : U = ⊥ :=
+  (not_nonempty_iff_eq_bot U).mp fun hne ↦ h (Set.nonempty_coe_sort.mpr hne)
 
 /-- Every member of a pairwise-disjoint open cover is clopen, without a finiteness assumption
 on the indexing type. -/

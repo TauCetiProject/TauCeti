@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import TauCeti.Geometry.Manifold.ContMDiff.Groupoid
+public import TauCeti.Topology.FiberBundle.Trivial
 
 /-!
 # Smooth fibre bundles with a manifold as fibre
@@ -746,13 +747,11 @@ noncomputable def diffeomorphProd (n : ℕ∞ω) (B F : Type*) [TopologicalSpace
   toEquiv := (homeomorph F (Bundle.Trivial B F)).symm.toEquiv.trans
     (Bundle.Trivial.homeomorphProd B F).toEquiv
   contMDiff_toFun := by
-    have : MemTrivializationAtlas (Bundle.Trivial.trivialization B F) := ⟨mem_singleton _⟩
     rw [← contMDiffOn_univ]
     have h := contMDiffOn_trivialization (n := n) (IB := IB) (IF := IF)
       (Bundle.Trivial.trivialization B F)
     simpa [Function.comp_def] using h
   contMDiff_invFun := by
-    have : MemTrivializationAtlas (Bundle.Trivial.trivialization B F) := ⟨mem_singleton _⟩
     rw [← contMDiffOn_univ]
     have h := contMDiffOn_trivialization_symm (n := n) (IB := IB) (IF := IF)
       (Bundle.Trivial.trivialization B F)

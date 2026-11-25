@@ -73,8 +73,9 @@ constant on the fibres factors through a unique `C^m` map
 * `Manifold.IsSubmersion.isOpenMap`: a submersion from a boundaryless manifold is an open map.
 * `Manifold.IsSubmersion.finrank_le`: a submersion out of a nonempty manifold does not raise
   dimension.
-* `Manifold.IsSubmersionAt.contMDiffAt_comp_iff`, `Manifold.IsSubmersion.contMDiff_comp_iff`:
-  smoothness descends along a submersion.
+* `Manifold.IsSubmersionAt.contMDiffAt_comp_iff`, `Manifold.IsSubmersion.contMDiff_comp_iff`,
+  `Manifold.IsSubmersionAt.mdifferentiableAt_comp_iff`: smoothness and differentiability descend
+  along a submersion.
 * `Manifold.IsSubmersion.existsUnique_contMDiff_comp_eq`: smooth maps constant on the fibres of a
   surjective submersion descend to smooth maps.
 
@@ -453,6 +454,18 @@ theorem IsSubmersionAt.contMDiffAt_comp_iff [I.Boundaryless] (h : IsSubmersionAt
   obtain ⟨U, hU, hxU, s, hsx, hs, hfs⟩ := h.exists_contMDiffOn_section
   have hgs : ContMDiffAt J K m ((g ∘ f) ∘ s) (f x) :=
     (hsx ▸ hg).comp (f x) ((hs.of_le hm).contMDiffAt (hU.mem_nhds hxU))
+  exact hgs.congr_of_eventuallyEq <| eventually_of_mem (hU.mem_nhds hxU) fun y hy ↦ by
+    rw [comp_apply, comp_apply, hfs y hy]
+
+/-- **Differentiability descends along a submersion.** If `f` is a `C^n` submersion at `x` with
+boundaryless source and `n ≠ 0`, a map `g` is differentiable at `f x` exactly when `g ∘ f` is
+differentiable at `x`. Near `f x`, `g` is `g ∘ f` composed with a local section of `f`. -/
+theorem IsSubmersionAt.mdifferentiableAt_comp_iff [I.Boundaryless] (h : IsSubmersionAt I J n f x)
+    (hn : n ≠ 0) : MDifferentiableAt I K (g ∘ f) x ↔ MDifferentiableAt J K g (f x) := by
+  refine ⟨fun hg ↦ ?_, fun hg ↦ hg.comp x (h.contMDiffAt.mdifferentiableAt hn)⟩
+  obtain ⟨U, hU, hxU, s, hsx, hs, hfs⟩ := h.exists_contMDiffOn_section
+  have hgs : MDifferentiableAt J K ((g ∘ f) ∘ s) (f x) :=
+    (hsx ▸ hg).comp (f x) ((hs.contMDiffAt (hU.mem_nhds hxU)).mdifferentiableAt hn)
   exact hgs.congr_of_eventuallyEq <| eventually_of_mem (hU.mem_nhds hxU) fun y hy ↦ by
     rw [comp_apply, comp_apply, hfs y hy]
 

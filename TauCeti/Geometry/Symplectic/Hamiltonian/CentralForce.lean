@@ -59,6 +59,10 @@ there.
 
 * `TauCeti.centralForceHamiltonian_smul`: isometries fixing the origin, such as rotations,
   preserve every central-force Hamiltonian.
+* `TauCeti.centralForceHamiltonian_linearIsometryEquiv`,
+  `TauCeti.stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_linearIsometryEquiv`:
+  applying a linear isometry to positions and momenta alike preserves every central-force
+  Hamiltonian and commutes with its Hamiltonian vector field.
 * `TauCeti.stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian`: Hamilton's
   equations for a central force.
 * `TauCeti.stdSymplecticForm_hamiltonianVectorField_angularMomentum`: angular momentum generates
@@ -78,6 +82,8 @@ there.
   `ℓ² / (m κ + ‖A‖) ≤ ‖q‖` along a Kepler motion.
 * `TauCeti.norm_rungeLenz_sq`: `‖A‖² = (m κ)² + 2 m H (‖q‖² ‖p‖² - ⟪q, p⟫²)`.
 * `TauCeti.norm_rungeLenz_sq_of_orthonormalBasis`: in the plane, `‖A‖² = (m κ)² + 2 m H L²`.
+* `TauCeti.rungeLenz_ne_zero_iff_lt_centralForceHamiltonian`: in the plane, for `m > 0` and
+  `L ≠ 0`, `A ≠ 0` exactly when `H > -m κ² / (2 L²)`.
 * `TauCeti.norm_fst_mul_add_norm_rungeLenz_mul_cos_angle`: the orbit equation
   `‖q‖ (m κ + ‖A‖ cos φ) = ℓ²`.
 * `TauCeti.norm_rungeLenz_eq_abs_mul_sqrt`: `‖A‖ = |m κ| √(1 + 2 H ℓ² / (m κ²))`.
@@ -135,6 +141,14 @@ theorem hasDerivAt_kepler_potential (κ : ℝ) {r : ℝ} (hr : r ≠ 0) :
   simpa [div_eq_mul_inv] using (hasDerivAt_inv hr).const_mul (-κ)
 
 variable [InnerProductSpace ℝ V]
+
+/-- Applying a linear isometry to positions and momenta alike preserves every central-force
+Hamiltonian. -/
+theorem centralForceHamiltonian_linearIsometryEquiv (m : ℝ) (U : ℝ → ℝ) (φ : V ≃ₗᵢ[ℝ] V)
+    (x : V × V) :
+    centralForceHamiltonian m U (φ x.1, φ x.2) = centralForceHamiltonian m U x := by
+  obtain ⟨q, p⟩ := x
+  simp [centralForceHamiltonian_apply]
 
 /-- The angular momentum `⟪q, u⟫⟪p, w⟫ - ⟪q, w⟫⟪p, u⟫` in the plane of `u` and `w`, the pairing
 of the bivector `q ∧ p` with `u ∧ w`. For `V = ℝ²` and the standard basis it is `q₁p₂ - q₂p₁`. -/
@@ -270,6 +284,25 @@ theorem norm_rungeLenz_sq_of_orthonormalBasis {m : ℝ} (hm : m ≠ 0) (κ : ℝ
     ‖rungeLenz m κ x‖ ^ 2 = (m * κ) ^ 2 + 2 * m * centralForceHamiltonian m (fun r ↦ -κ / r) x *
       angularMomentum (b 0) (b 1) x ^ 2 := by
   rw [norm_rungeLenz_sq hm κ hq, sq_angularMomentum]
+
+/-- **Where the Runge–Lenz vector vanishes.** Off the collision set, for `m > 0` and nonzero
+angular momentum `L`, the Runge–Lenz vector is nonzero exactly when the energy exceeds
+`-m κ² / (2 L²)`. For `κ > 0` this threshold is the energy of the circular orbit with angular
+momentum `L`. -/
+theorem rungeLenz_ne_zero_iff_lt_centralForceHamiltonian {m κ : ℝ} (hm : 0 < m) {x : V × V}
+    (hq : x.1 ≠ 0) (hL : angularMomentum (b 0) (b 1) x ≠ 0) :
+    rungeLenz m κ x ≠ 0 ↔ -(m * κ ^ 2) / (2 * angularMomentum (b 0) (b 1) x ^ 2) <
+      centralForceHamiltonian m (fun r ↦ -κ / r) x := by
+  have hn := norm_rungeLenz_sq_of_orthonormalBasis b hm.ne' κ hq
+  set H := centralForceHamiltonian m (fun r ↦ -κ / r) x
+  set L := angularMomentum (b 0) (b 1) x
+  -- Both sides say that `‖A‖² = m (m κ² + 2 H L²)` is positive.
+  have hprod : ‖rungeLenz m κ x‖ ^ 2 = m * (m * κ ^ 2 + H * (2 * L ^ 2)) := by
+    rw [hn]
+    ring
+  rw [div_lt_iff₀ (by positivity), ← norm_ne_zero_iff, ← sq_pos_iff, hprod,
+    mul_pos_iff_of_pos_left hm]
+  constructor <;> intro h <;> linarith
 
 /-- The first planar component of the Runge–Lenz vector is `p₂ L - m κ q₁ / ‖q‖`. -/
 theorem inner_rungeLenz_orthonormalBasis_zero (m κ : ℝ) (x : V × V) :
@@ -446,6 +479,23 @@ theorem stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian {m : �
     (stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U) x =
       (m⁻¹ • x.2, -((U' / ‖x.1‖) • x.1)) :=
   stdSymplecticForm_hamiltonianVectorField (hasFDerivAt_centralForceHamiltonian hU hq)
+
+/-- **Central forces are equivariant under linear isometries.** Off the collision set, applying a
+linear isometry `φ` to positions and momenta alike commutes with the Hamiltonian vector field of a
+central-force Hamiltonian: `X_H(φ q, φ p) = (φ X_H(q, p).1, φ X_H(q, p).2)`. -/
+theorem stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_linearIsometryEquiv
+    {m : ℝ} {U : ℝ → ℝ} {U' : ℝ} (φ : V ≃ₗᵢ[ℝ] V) {x : V × V}
+    (hU : HasDerivAt U U' ‖x.1‖) (hq : x.1 ≠ 0) :
+    (stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U)
+        (φ x.1, φ x.2) =
+      (φ ((stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U) x).1,
+        φ ((stdSymplecticForm (V := V)).hamiltonianVectorField
+          (centralForceHamiltonian m U) x).2) := by
+  have hU' : HasDerivAt U U' ‖φ x.1‖ := by rwa [φ.norm_map]
+  have hq' : φ x.1 ≠ 0 := by simpa using hq
+  rw [stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian (x := (φ x.1, φ x.2))
+    hU' hq', stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian hU hq]
+  simp [map_smul]
 
 /-- **Angular momentum generates rotations.** The Hamiltonian vector field of the angular momentum
 in the plane of `u` and `w` is `(R q, R p)` for the infinitesimal rotation
