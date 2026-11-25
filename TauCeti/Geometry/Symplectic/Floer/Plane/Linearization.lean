@@ -69,10 +69,14 @@ half-cylinder `ε s > a` and the datum is `H(t) dt` from `ε s = 2` on.
   half-cylinder at a nondegenerate orbit then bounds the `W^{1,2}` energy of `η'` by
   `∫ ‖w‖² ‖D_u^* η‖²` over the plane, by
   `exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_pssPlane`.
-  The Jacobian of the end lift is `(2π ‖w‖)²`, and one of its two factors is absorbed by the
-  change of variables. The kernel of `D_u^*` is the cokernel of `D_u`. Every PSS plane is the
-  positive plane for the Hamiltonian `ε H(ε t)` (`TauCeti.Floer.PSSPlane.perturbation_eq_positive`),
-  so the estimate covers the negative plane as well.
+  The adjoint on `η'` is the Jacobian `det (dφ) = (2π ‖w‖)²` times `D_u^* η`, so its squared
+  norm carries the Jacobian twice; the change of variables absorbs one copy, leaving the weight
+  `4π² ‖w‖²`. The kernel of `D_u^*` is the cokernel of `D_u`. Every PSS plane is the positive
+  plane for the Hamiltonian `ε H(ε t)` (`TauCeti.Floer.PSSPlane.perturbation_eq_positive`), so the
+  estimate covers the negative plane as well. This is the plane counterpart of the end estimate
+  of the adjoint on the pair of pants
+  (`exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint`),
+  and its proof follows that one.
 
 The end estimate is the end ingredient of the semi-Fredholm estimate of `D_u` on the plane, on
 which the counts of PSS planes rest. The target is a symplectic vector space throughout.
@@ -647,8 +651,9 @@ private theorem floerLinearizationAdjoint_covectorPullback_realChart_cylindrical
 /-- **The adjoint of the end, read in its chart.** On a band `[a, b]` of the end where `ε s > r`
 and `ε s ≥ 2`, and beyond `r` the structure `J` is the end structure `J_e(t)`, the `L²` norm of the
 adjoint of the end data along `u ∘ φ` on the pulled-back form `η (φ ·) ∘ (a + b J)` is at most
-`4π²` times the integral over the plane of `‖w‖² ‖D_u^* η‖²`: the Jacobian of `φ` is
-`(2π ‖φ‖)²`, and one of its two factors is absorbed by the change of variables. -/
+`4π²` times the integral over the plane of `‖w‖² ‖D_u^* η‖²`: the squared norm of the
+pulled-back adjoint is `det (dφ)²` times `‖D_u^* η‖²`, with `det (dφ) = (2π ‖φ‖)²`, and the
+change of variables absorbs one `det (dφ)`. -/
 private theorem setIntegral_norm_floerLinearizationAdjoint_covectorPullback_sq_le
     (ω : SymplecticForm V) {p : PSSPlane} {H : ℝ → V → ℝ} (hH : Periodic H 1)
     (hHs : ContDiff ℝ 2 (uncurry H)) {J : ℝ × ℝ → V → AlmostComplexStructure V}
@@ -795,7 +800,11 @@ The weight `‖w‖²` is, up to `4π²`, the Jacobian of the end lift; it is co
 inverse of the weight `TauCeti.Floer.PSSPlane.cylindricalWeight` of the Sobolev space of the plane,
 as for the dual of `W^{1,2}`. Every PSS plane is the positive plane for the Hamiltonian `ε H(ε t)`
 (`TauCeti.Floer.PSSPlane.perturbation_eq_positive`), so the estimate applies to the negative plane
-as well. -/
+as well.
+
+This is the plane counterpart of the end estimate of the adjoint on the pair of pants,
+`exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint`,
+and the proof follows that one. -/
 theorem
     exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_pssPlane
     (ω : SymplecticForm V) {H : ℝ → V → ℝ} (hH : Periodic H 1) (hHs : ContDiff ℝ 2 (uncurry H))

@@ -524,21 +524,11 @@ private theorem floerLinearizationAdjoint_covectorPullback_positiveEndChart (ω 
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           u η (positiveEndChart q ζ) := by
-  set φ := positiveEndChart q
-  set η' := covectorPullback φ (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η
   -- Near `ζ` the structures of the end data are those of the pulled-back data.
-  have hev : (fun w ↦ (η' w).comp (Je w.2 ((u ∘ φ) w)).toLinearMap.toContinuousLinearMap) =ᶠ[𝓝 ζ]
-      fun w ↦ (η' w).comp (J (φ w) ((u ∘ φ) w)).toLinearMap.toContinuousLinearMap := by
-    filter_upwards [(isOpen_lt continuous_const continuous_fst).mem_nhds hζ₁] with w hw
-    rw [hJeq w hw.le]
-  have hC : ω.floerLinearizationCoeff (fun w y ↦ (Je w.2 y).toLinearMap.toContinuousLinearMap)
-      (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ φ) ζ =
-      ω.floerLinearizationCoeff (fun w y ↦ (J (φ w) y).toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ φ) ζ := by
-    ext v
-    simp only [floerLinearizationCoeff_apply, hJeq ζ hζ₁.le]
-  refine Eq.trans ?_ (ω.floerLinearizationAdjoint_comp_positiveEndChart hH hHs hζ₂ hu hη hJu hfl)
-  rw [floerLinearizationAdjoint_def, floerLinearizationAdjoint_def, hev.fderiv_eq, hC]
+  refine Eq.trans (ω.floerLinearizationAdjoint_congr_data _ _ ?_ rfl rfl)
+    (ω.floerLinearizationAdjoint_comp_positiveEndChart hH hHs hζ₂ hu hη hJu hfl)
+  filter_upwards [(isOpen_lt continuous_const continuous_fst).mem_nhds hζ₁] with w hw
+  rw [hJeq w hw.le]
 
 /-- **The adjoint of an end, read in its chart.** Far out on the end `q`, where `J` is the end
 structure `J_q(t)` and `ζ.1 ≥ 2`, the `L²` norm over a band `[a, b] × [0, 1]` of the adjoint of the
