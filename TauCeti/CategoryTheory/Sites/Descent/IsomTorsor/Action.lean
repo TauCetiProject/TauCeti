@@ -14,7 +14,7 @@ public import TauCeti.CategoryTheory.Sites.Descent.IsomTorsor.Basic
 Let `b` be an `A`-banding of a pseudofunctor `F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat` and `x y` objects of
 the fibre over `U`. The action `AbelianBanding.act` of `A(U)` on the isomorphisms `x ≅ y` is a
 multiplicative action (`AbelianBanding.isomMulAction`), so `x ≅ y` is an object of the category
-of `A(U)`-sets (`AbelianBanding.fibreAction`), and postcomposition with `q : y ≅ z` is an
+of `A(U)`-sets (`AbelianBanding.fiberAction`), and postcomposition with `q : y ≅ z` is an
 isomorphism of `A(U)`-sets (`AbelianBanding.postcomposeActionIso`), functorial in `q`. The
 `A(U)`-set `x ≅ y` may be empty. These fibre actions are the input for a functor from
 band-preserving transformations to `A(U)`-sets (Olsson, Definition 31.1, Remark 31.2, Lemma 31.3
@@ -24,8 +24,8 @@ and Remark 31.5).
 
 In the namespace `CategoryTheory.Pseudofunctor.AbelianBanding`:
 
-* `fibreAction`: `x ≅ y` as an object of `Action (Type _) (Multiplicative A(U))`, with
-  `fibreAction_ρ_apply` and `isEmpty_fibreAction_V`.
+* `fiberAction`: `x ≅ y` as an object of `Action (Type _) (Multiplicative A(U))`, with
+  `fiberAction_ρ_apply` and `isEmpty_fiberAction_V`.
 * `postcomposeActionIso`: postcomposition with `q : y ≅ z`, with `postcomposeActionIso_hom_hom`,
   `postcomposeActionIso_inv_hom`, `postcomposeActionIso_refl`, `postcomposeActionIso_trans`.
 
@@ -50,38 +50,39 @@ variable {C : Type u} [Category.{v} C] {F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{
 variable (x y : F.obj (.mk (op U)))
 
 /-- **The `A(U)`-set of isomorphisms `x ≅ y`**, an object of the category of `A(U)`-sets. Its
-carrier is reducibly `x ≅ y`, so an isomorphism `p : x ≅ y` is an element of it. -/
-abbrev fibreAction : Action (Type v') (Multiplicative (A.obj.obj (op U))) :=
+carrier is definitionally `x ≅ y` (see `fiberAction_V`), so an isomorphism `p : x ≅ y` can be used
+as an element of it, possibly after a `change` or an explicit type ascription. -/
+abbrev fiberAction : Action (Type v') (Multiplicative (A.obj.obj (op U))) :=
   letI := b.isomMulAction x y
   Action.ofMulAction _ (x ≅ y)
 
-theorem fibreAction_V : (b.fibreAction x y).V = (x ≅ y) :=
+theorem fiberAction_V : (b.fiberAction x y).V = (x ≅ y) :=
   (rfl)
 
 variable {x y}
 
 /-- A coefficient `a` acts on `p : x ≅ y` by `act p a`, that is, `p` followed by the band
-automorphism of `a` at `y`. The element `p` is taken in the carrier `(b.fibreAction x y).V`, the
+automorphism of `a` at `y`. The element `p` is taken in the carrier `(b.fiberAction x y).V`, the
 form produced by `ext`; for `p : x ≅ y`, simp instead rewrites the action to `a • p`, which
 `isomMulAction_smul` identifies with `act p a`. -/
 @[simp]
-theorem fibreAction_ρ_apply (a : Multiplicative (A.obj.obj (op U))) (p : (b.fibreAction x y).V) :
-    (b.fibreAction x y).ρ a p = b.act p a :=
+theorem fiberAction_ρ_apply (a : Multiplicative (A.obj.obj (op U))) (p : (b.fiberAction x y).V) :
+    (b.fiberAction x y).ρ a p = b.act p a :=
   b.isomMulAction_smul a p
 
-/-- If there is no isomorphism `x ≅ y`, the `A(U)`-set `fibreAction` is empty. -/
-theorem isEmpty_fibreAction_V (h : IsEmpty (x ≅ y)) : IsEmpty (b.fibreAction x y).V :=
+/-- If there is no isomorphism `x ≅ y`, the `A(U)`-set `fiberAction` is empty. -/
+theorem isEmpty_fiberAction_V (h : IsEmpty (x ≅ y)) : IsEmpty (b.fiberAction x y).V :=
   h
 
 variable {z : F.obj (.mk (op U))}
 
 /-- **Postcomposition** with `q : y ≅ z` as an isomorphism of `A(U)`-sets
-`fibreAction x y ≅ fibreAction x z`: the bijection `Iso.isoCongrRight q`, which commutes with the
+`fiberAction x y ≅ fiberAction x z`: the bijection `Iso.isoCongrRight q`, which commutes with the
 action by `AbelianBanding.act_trans`. -/
-def postcomposeActionIso (q : y ≅ z) : b.fibreAction x y ≅ b.fibreAction x z :=
+def postcomposeActionIso (q : y ≅ z) : b.fiberAction x y ≅ b.fiberAction x z :=
   Action.mkIso (Equiv.toIso (Iso.isoCongrRight (X := x) q)) fun a ↦ by
     ext (p : x ≅ y)
-    -- The carrier of `fibreAction` is `x ≅ y` only after unfolding `Action.ofMulAction`, which
+    -- The carrier of `fiberAction` is `x ≅ y` only after unfolding `Action.ofMulAction`, which
     -- simp does not do, so the Mathlib simp lemmas for `Equiv.toIso` and `Iso.isoCongr` do not
     -- fire. `change` states the goal on isomorphisms, by unfolding `isoCongrRight q p` to
     -- `(Iso.refl x).symm ≪≫ (p ≪≫ q)`, and simp closes it with `act_trans`.
@@ -107,9 +108,9 @@ theorem postcomposeActionIso_inv_hom (q : y ≅ z) (p : x ≅ z) :
 
 /-- Postcomposition with the identity is the identity. -/
 theorem postcomposeActionIso_refl :
-    b.postcomposeActionIso (Iso.refl y) = Iso.refl (b.fibreAction x y) := by
+    b.postcomposeActionIso (Iso.refl y) = Iso.refl (b.fiberAction x y) := by
   ext p
-  -- `p` lies in the carrier `(b.fibreAction x y).V`, which simp does not identify with `x ≅ y`,
+  -- `p` lies in the carrier `(b.fiberAction x y).V`, which simp does not identify with `x ≅ y`,
   -- so the lemmas about `p` are instantiated at `p` explicitly.
   simp [b.postcomposeActionIso_hom_hom _ p, Iso.trans_refl p]
 
