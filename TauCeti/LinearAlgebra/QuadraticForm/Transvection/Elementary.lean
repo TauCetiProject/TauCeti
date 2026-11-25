@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.TotallyIsotropic
 public import TauCeti.LinearAlgebra.QuadraticForm.Transvection.Basic
 import Mathlib.LinearAlgebra.Dimension.RankNullity
 import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
+import TauCeti.LinearAlgebra.SesquilinearForm.Separating
 
 /-!
 # The elementary orthogonal group and its transitivity on singular vectors
@@ -60,8 +61,6 @@ hyperbolic plane every Eichler transvection is trivial
   normalizes it.
 * `QuadraticMap.exists_mem_elementaryOrthogonalGroup_apply_eq_of_polar_eq_zero`: one Eichler
   transvection joins two orthogonal singular vectors that some `w` pairs to `1` with both.
-* `QuadraticMap.exists_polar_eq_and_polar_eq_of_linearIndependent`: for a nondegenerate polar form,
-  the pairings with two linearly independent vectors can be prescribed independently.
 * `QuadraticMap.exists_mem_elementaryOrthogonalGroup_apply_eq`: transitivity on the nonzero
   singular vectors when the polar form is nondegenerate and `Q` vanishes on a plane.
 
@@ -183,37 +182,13 @@ section Field
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
 
-/-- Over a field, if the polar form `B` is nondegenerate, the pairings with two linearly
-independent vectors can be prescribed independently: for any `a` and `b` there is `w` with
-`B u w = a` and `B v w = b`, that is, `x ↦ (B u x, B v x)` is onto `K × K`. -/
-theorem exists_polar_eq_and_polar_eq_of_linearIndependent
-    (hQ : (polarBilin Q).Nondegenerate) {u v : V} (hli : LinearIndependent K ![u, v]) (a b : K) :
-    ∃ w, polar Q u w = a ∧ polar Q v w = b := by
-  -- A linear form vanishing on the range of `φ` is `(s, t) ↦ a' * s + b' * t` with
-  -- `B (a' • u + b' • v) = 0`, so `a' = b' = 0` and the range is everything.
-  set φ := (polarBilin Q u).prod (polarBilin Q v)
-  have hφ : LinearMap.range φ = ⊤ := by
-    by_contra h
-    obtain ⟨f, hf₀, hf⟩ := (LinearMap.range φ).exists_le_ker_of_lt_top (lt_top_iff_ne_top.mpr h)
-    have hfx (x : V) : polarBilin Q (f (1, 0) • u + f (0, 1) • v) x = 0 := by
-      have hφx : φ x = polar Q u x • ((1 : K), (0 : K)) + polar Q v x • ((0 : K), (1 : K)) := by
-        ext <;> simp [φ]
-      have := LinearMap.mem_ker.mp (hf ⟨x, rfl⟩)
-      simp only [hφx, map_add, map_smul, smul_eq_mul] at this
-      simp only [polarBilin_apply_apply, polar_add_left, polar_smul_left, smul_eq_mul]
-      linear_combination this
-    obtain ⟨ha, hb⟩ := LinearIndependent.pair_iff.mp hli _ _ (hQ.left _ hfx)
-    exact hf₀ (LinearMap.prod_ext (LinearMap.ext_ring ha) (LinearMap.ext_ring hb))
-  obtain ⟨w, hw⟩ := LinearMap.range_eq_top.mp hφ (a, b)
-  exact ⟨w, congrArg Prod.fst hw, congrArg Prod.snd hw⟩
-
 /-- Over a field, if the polar form is nondegenerate, one Eichler transvection joins any two
 linearly independent orthogonal singular vectors. -/
 theorem exists_mem_elementaryOrthogonalGroup_apply_eq_of_linearIndependent
     (hQ : (polarBilin Q).Nondegenerate) {u v : V} (hu : Q u = 0)
     (hv : Q v = 0) (huv : polar Q u v = 0) (hli : LinearIndependent K ![u, v]) :
     ∃ g ∈ elementaryOrthogonalGroup Q, g u = v := by
-  obtain ⟨w, huw, hvw⟩ := exists_polar_eq_and_polar_eq_of_linearIndependent hQ hli 1 1
+  obtain ⟨w, huw, hvw⟩ := hQ.1.exists_apply_eq_and_apply_eq_of_linearIndependent hli 1 1
   exact exists_mem_elementaryOrthogonalGroup_apply_eq_of_polar_eq_zero hu hv huv huw hvw
 
 /-- Under the hypotheses of `exists_mem_elementaryOrthogonalGroup_apply_eq_of_linearIndependent`,
