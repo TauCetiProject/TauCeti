@@ -51,22 +51,6 @@ namespace LieEquiv.IsCartanInvolution
 variable {K L : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [LieRing L]
   [LieAlgebra K L] {θ : L ≃ₗ⁅K⁆ L} {𝔞 : Submodule K L}
 
-/-- The Killing form restricted to a subspace of `𝔭` is positive definite. -/
-theorem killingForm_restrict_pos (hθ : θ.IsCartanInvolution) (h𝔞 : 𝔞 ≤ θ.cartanP) (H : 𝔞)
-    (hH : H ≠ 0) : 0 < (killingForm K L).restrict 𝔞 H H := by
-  rw [LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply]
-  exact hθ.killingForm_apply_self_pos_of_mem_cartanP (h𝔞 H.property)
-    (Submodule.coe_eq_zero.not.mpr hH)
-
-/-- The Killing form restricted to a subspace of `𝔭` is nondegenerate. -/
-theorem nondegenerate_killingForm_restrict (hθ : θ.IsCartanInvolution) (h𝔞 : 𝔞 ≤ θ.cartanP) :
-    ((killingForm K L).restrict 𝔞).Nondegenerate :=
-  have := hθ.finiteDimensional
-  LinearMap.BilinForm.Nondegenerate.ofSeparatingLeft
-    (LinearMap.BilinForm.separatingLeft_of_anisotropic fun H hH ↦ by
-      by_contra hne
-      exact (hθ.killingForm_restrict_pos h𝔞 H hne).ne' hH)
-
 /-- **The Killing form as an equivalence `𝔞 ≃ Dual 𝔞`**: for a Cartan involution `θ` and a
 subspace `𝔞` of `𝔭`, the linear equivalence `H ↦ B(H, ·)` from `𝔞` to its dual, where `B` is the
 Killing form. Its inverse sends a functional `λ` on `𝔞` to the unique `H_λ ∈ 𝔞` with
