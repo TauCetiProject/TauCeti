@@ -172,6 +172,16 @@ variable (hc : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F →L[ℝ] F)) ∞
   (fun x ↦ TotalSpace.mk' (E →L[ℝ] F →L[ℝ] F)
     (E := fun y ↦ TangentSpace I y →L[ℝ] V y →L[ℝ] V y) x (c x)))
 
+omit [FiniteDimensional ℝ E] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+include hc in
+/-- Clifford multiplication `c(Y) τ` of a smooth section `τ` by a smooth vector field `Y`, for a
+Clifford multiplication `c` which is a smooth section of `Hom(TM, End V)`, is smooth. -/
+theorem contMDiff_clifford_apply {Y : Π y : M, TangentSpace I y} (hY : CMDiff ∞ (T% Y))
+    {τ : Π y : M, V y} (hτ : CMDiff ∞ (T% τ)) :
+    CMDiff ∞ (T% (fun y ↦ c y (Y y) (τ y))) :=
+  fun x ↦ ((hc x).clm_bundle_apply (hY x)).clm_bundle_apply (hτ x)
+
 /-- The smooth Dirac operator evaluates pointwise to the Dirac operator of the section. -/
 @[simp]
 theorem smoothDiracOperator_apply (σ : Cₛ^∞⟮I; F, V⟯) (x : M) :

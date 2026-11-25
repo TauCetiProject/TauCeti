@@ -83,7 +83,7 @@ noncomputable def Equiv.precompIsometry
     (s.precompIsometry f).Equiv (t.precompIsometry f) :=
   (φ.precomp (realCliffordIsometryEquivEuclidean f) ((πᶜ).comp (precompIsometryHom f))
       (toSpecialOrthogonal_realCliffordIsometryEquivEuclidean_apply f)).extend (ρ' := πᶜ)
-    (precompIsometryHom f) (f.symm.toIsometry.continuous_spinCGroupMap hQ hQ) rfl
+    (precompIsometryHom f) (continuous_precompIsometryHom f) rfl
     norm_toLp_rotation_apply continuous_rotation_apply
 
 @[simp]
@@ -92,12 +92,12 @@ theorem Equiv.precompIsometry_toEquiv_mk
     {s t : SpinCStructure F V n} (φ : s.Equiv t) (x : X) (p : s.P x)
     (h : spinCGroup (realCliffordForm n 0) hQ) :
     (φ.precompIsometry f).toEquiv x
-        (Extend.mk (precompIsometryHom f) (f.symm.toIsometry.continuous_spinCGroupMap hQ hQ) p h) =
-      Extend.mk (precompIsometryHom f) (f.symm.toIsometry.continuous_spinCGroupMap hQ hQ)
+        (Extend.mk (precompIsometryHom f) (continuous_precompIsometryHom f) p h) =
+      Extend.mk (precompIsometryHom f) (continuous_precompIsometryHom f)
         (φ.toEquiv x p) h := by
   unfold Equiv.precompIsometry
   refine (Equiv.extend_toEquiv_mk (ρ' := πᶜ) (precompIsometryHom f)
-    (f.symm.toIsometry.continuous_spinCGroupMap hQ hQ) rfl _ _
+    (continuous_precompIsometryHom f) rfl _ _
     (φ.precomp (realCliffordIsometryEquivEuclidean f) _ _) x p h).trans ?_
   exact congrArg (Extend.mk _ _ · h) (DFunLike.congr_fun (Equiv.precomp_toEquiv φ _ _ _ x) p)
 
@@ -112,9 +112,9 @@ theorem Equiv.reverse_toEquiv_mk {s t : SpinCStructure F V n} (φ : s.Equiv t) (
     (p : s.P x) (h : spinCGroup (realCliffordForm n 0) hQ) :
     φ.reverse.toEquiv x
       (Extend.mk (precompIsometryHom (realCliffordCoordReflection 0))
-        ((realCliffordCoordReflection 0).symm.toIsometry.continuous_spinCGroupMap hQ hQ) p h) =
+        (continuous_precompIsometryHom (realCliffordCoordReflection 0)) p h) =
       Extend.mk (precompIsometryHom (realCliffordCoordReflection 0))
-        ((realCliffordCoordReflection 0).symm.toIsometry.continuous_spinCGroupMap hQ hQ)
+        (continuous_precompIsometryHom (realCliffordCoordReflection 0))
         (φ.toEquiv x p) h :=
   Equiv.precompIsometry_toEquiv_mk _ φ x p h
 
@@ -135,35 +135,32 @@ noncomputable def precompIsometryPrecompIsometryEquiv
     (f g : (realCliffordForm n 0).IsometryEquiv (realCliffordForm n 0))
     (s : SpinCStructure F V n) :
     ((s.precompIsometry f).precompIsometry g).Equiv (s.precompIsometry (g.trans f)) :=
-  ((s.precompIsometry f).precomp (realCliffordIsometryEquivEuclidean g)
-      ((πᶜ).comp (precompIsometryHom g))
-      (toSpecialOrthogonal_realCliffordIsometryEquivEuclidean_apply g)).extendEquivOfEquivariant
-    (ρ' := πᶜ) (precompIsometryHom g) (g.symm.toIsometry.continuous_spinCGroupMap hQ hQ) rfl
-    norm_toLp_rotation_apply continuous_rotation_apply (s.precompIsometry (g.trans f))
+  ((s.precompIsometry f).precompIsometryLift g).extendSpinCEquivOfEquivariant
+    (precompIsometryHom g) (continuous_precompIsometryHom g) rfl (s.precompIsometry (g.trans f))
     (fun x q ↦ Extend.congrEquiv (precompIsometryHom_comp f g) _ _ x
       (Extend.compEquiv _ _ _ _ x (Extend.inl (P := Extend s.P (precompIsometryHom f)
-        (f.symm.toIsometry.continuous_spinCGroupMap hQ hQ)) (precompIsometryHom g)
-          (g.symm.toIsometry.continuous_spinCGroupMap hQ hQ) q)))
+        (continuous_precompIsometryHom f)) (precompIsometryHom g)
+          (continuous_precompIsometryHom g) q)))
     (fun x q k ↦ (congrArg (Extend.congrEquiv (precompIsometryHom_comp f g) _ _ x)
       ((congrArg (Extend.compEquiv _ _ _ _ x) (Extend.inl_smul _ _ q k)).trans
         (Extend.compEquiv_smul _ _ _ _ x _ _))).trans (Extend.congrEquiv_smul _ _ _ x _ _))
     (((Extend.congrHomeomorph (precompIsometryHom_comp f g) _ _).continuous.comp
       ((Extend.compHomeomorph _ _ _ _).continuous.comp
         (Extend.continuous_inl (Extend s.P (precompIsometryHom f)
-          (f.symm.toIsometry.continuous_spinCGroupMap hQ hQ)) (precompIsometryHom g)
-            (g.symm.toIsometry.continuous_spinCGroupMap hQ hQ)))).congr
+          (continuous_precompIsometryHom f)) (precompIsometryHom g)
+            (continuous_precompIsometryHom g)))).congr
         fun z ↦ (congrArg (Extend.congrHomeomorph (precompIsometryHom_comp f g) _ _)
           (Extend.compHomeomorph_apply _ _ _ _ _)).trans (Extend.congrHomeomorph_apply _ _ _ _))
     fun x q ↦ by
       obtain ⟨p, h, rfl⟩ := Extend.exists_mk (P := s.P) (ρ := precompIsometryHom f)
-        (hρ := f.symm.toIsometry.continuous_spinCGroupMap hQ hQ) (b := x) q
+        (hρ := continuous_precompIsometryHom f) (b := x) q
       refine OrthonormalFrameBundle.ext_totalSpaceMk fun v ↦ ?_
       have hφ : Extend.congrEquiv (precompIsometryHom_comp f g) _ _ x
           (Extend.compEquiv _ _ _ _ x (Extend.inl (precompIsometryHom g)
-            (g.symm.toIsometry.continuous_spinCGroupMap hQ hQ) (Extend.mk (precompIsometryHom f)
-              (f.symm.toIsometry.continuous_spinCGroupMap hQ hQ) p h))) =
+            (continuous_precompIsometryHom g) (Extend.mk (precompIsometryHom f)
+              (continuous_precompIsometryHom f) p h))) =
           Extend.mk (precompIsometryHom (g.trans f))
-            ((g.trans f).symm.toIsometry.continuous_spinCGroupMap hQ hQ) p
+            (continuous_precompIsometryHom (g.trans f)) p
             (precompIsometryHom g h) := by
         rw [Extend.inl_def, Extend.compEquiv_mk, mul_one, Extend.congrEquiv_mk]
       -- `rw` cannot see through the fibre `(s.precompIsometry _).P x = Extend s.P _ _ x`, so the
@@ -173,9 +170,9 @@ noncomputable def precompIsometryPrecompIsometryEquiv
           (((s.precompIsometry (g.trans f)).toFrame ⟨x, q⟩).frame (WithLp.toLp 2 v))) hφ).trans ?_
       -- Both sides are frames of points `[p, k]` of extensions: the frame of `p` composed with
       -- the rotation of `k`.
-      refine (toFrame_extend_mk (s.precomp (realCliffordIsometryEquivEuclidean (g.trans f)) _ _)
+      refine (toFrame_extend_mk (s.precompIsometryLift (g.trans f))
         (precompIsometryHom (g.trans f)) _ rfl _ continuous_rotation_apply x p _ v).trans ?_
-      refine Eq.trans ?_ (toFrame_extend_mk (s.precomp (realCliffordIsometryEquivEuclidean f) _ _)
+      refine Eq.trans ?_ (toFrame_extend_mk (s.precompIsometryLift f)
         (precompIsometryHom f) _ rfl _ continuous_rotation_apply x p h
           ((realCliffordIsometryEquivEuclidean g) (WithLp.toLp 2 v)).ofLp).symm
       -- Unfolding the precompositions (`toFrame_precomp`), both sides are frames of `p`, at
@@ -200,14 +197,14 @@ theorem precompIsometryPrecompIsometryEquiv_toEquiv_mk
     (f g : (realCliffordForm n 0).IsometryEquiv (realCliffordForm n 0))
     (s : SpinCStructure F V n) (x : X) (p : s.P x) (h k : spinCGroup (realCliffordForm n 0) hQ) :
     (precompIsometryPrecompIsometryEquiv f g s).toEquiv x
-        (Extend.mk (precompIsometryHom g) (g.symm.toIsometry.continuous_spinCGroupMap hQ hQ)
-          (Extend.mk (precompIsometryHom f) (f.symm.toIsometry.continuous_spinCGroupMap hQ hQ) p h)
+        (Extend.mk (precompIsometryHom g) (continuous_precompIsometryHom g)
+          (Extend.mk (precompIsometryHom f) (continuous_precompIsometryHom f) p h)
           k) =
       Extend.mk (precompIsometryHom (g.trans f))
-        ((g.trans f).symm.toIsometry.continuous_spinCGroupMap hQ hQ) p
+        (continuous_precompIsometryHom (g.trans f)) p
         (precompIsometryHom g h * k) := by
   unfold precompIsometryPrecompIsometryEquiv
-  refine (extendEquivOfEquivariant_toEquiv_mk _ _ _ _ _ _ _ _ _ _ _ x _ k).trans ?_
+  refine (extendSpinCEquivOfEquivariant_toEquiv_mk ..).trans ?_
   rw [Extend.inl_def, Extend.compEquiv_mk, mul_one, Extend.congrEquiv_mk]
   exact Extend.smul_mk _ _ _ _ _
 
@@ -219,10 +216,8 @@ noncomputable def precompIsometryEquivOfEqRefl
     (f : (realCliffordForm n 0).IsometryEquiv (realCliffordForm n 0))
     (hf : f = QuadraticMap.IsometryEquiv.refl _) (s : SpinCStructure F V n) :
     (s.precompIsometry f).Equiv s :=
-  (s.precomp (realCliffordIsometryEquivEuclidean f) ((πᶜ).comp (precompIsometryHom f))
-      (toSpecialOrthogonal_realCliffordIsometryEquivEuclidean_apply f)).extendEquivOfEquivariant
-    (ρ' := πᶜ) (precompIsometryHom f) (f.symm.toIsometry.continuous_spinCGroupMap hQ hQ) rfl
-    norm_toLp_rotation_apply continuous_rotation_apply s (fun _ p ↦ p)
+  (s.precompIsometryLift f).extendSpinCEquivOfEquivariant
+    (precompIsometryHom f) (continuous_precompIsometryHom f) rfl s (fun _ p ↦ p)
     (fun x p g ↦ by
       subst hf
       exact congrArg (fun k ↦ op k • p) (precompIsometryHom_refl_apply g).symm)
@@ -245,10 +240,10 @@ theorem precompIsometryEquivOfEqRefl_toEquiv_mk
     (hf : f = QuadraticMap.IsometryEquiv.refl _) (s : SpinCStructure F V n) (x : X) (p : s.P x)
     (h : spinCGroup (realCliffordForm n 0) hQ) :
     (precompIsometryEquivOfEqRefl f hf s).toEquiv x
-        (Extend.mk (precompIsometryHom f) (f.symm.toIsometry.continuous_spinCGroupMap hQ hQ) p h) =
+        (Extend.mk (precompIsometryHom f) (continuous_precompIsometryHom f) p h) =
       op h • p := by
   unfold precompIsometryEquivOfEqRefl
-  exact extendEquivOfEquivariant_toEquiv_mk _ _ _ _ _ _ _ _ _ _ _ x _ h
+  exact extendSpinCEquivOfEquivariant_toEquiv_mk ..
 
 /-- **Orientation reversal is involutive**: `s.reverse.reverse ≃ s`, by
 `[[p, h], k] ↦ p · σ(h) k` for the automorphism `σ` of `Spinᶜ(n)` induced by the reflection. -/
@@ -261,12 +256,12 @@ theorem reverseReverseEquiv_toEquiv_mk (s : SpinCStructure F V n) (x : X) (p : s
     (h k : spinCGroup (realCliffordForm n 0) hQ) :
     (reverseReverseEquiv s).toEquiv x
         (Extend.mk (precompIsometryHom (realCliffordCoordReflection 0))
-          ((realCliffordCoordReflection 0).symm.toIsometry.continuous_spinCGroupMap hQ hQ)
+          (continuous_precompIsometryHom (realCliffordCoordReflection 0))
           (Extend.mk (precompIsometryHom (realCliffordCoordReflection 0))
-            ((realCliffordCoordReflection 0).symm.toIsometry.continuous_spinCGroupMap hQ hQ) p h)
+            (continuous_precompIsometryHom (realCliffordCoordReflection 0)) p h)
           k) =
       op (precompIsometryHom (realCliffordCoordReflection 0) h * k) • p := by
-  rw [reverseReverseEquiv, Equiv.trans_toEquiv]
+  rw [reverseReverseEquiv, OrthonormalFrameLift.Equiv.trans_toEquiv]
   exact (congrArg ((precompIsometryEquivOfEqRefl _ _ s).toEquiv x)
     (precompIsometryPrecompIsometryEquiv_toEquiv_mk _ _ s x p h k)).trans
       (precompIsometryEquivOfEqRefl_toEquiv_mk _ _ s x p _)
