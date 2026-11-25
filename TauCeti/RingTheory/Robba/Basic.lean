@@ -12,6 +12,7 @@ public import TauCeti.Topology.Algebra.InfiniteSum.ConvolutionRing
 import Mathlib.Algebra.Order.Archimedean.Real.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 import Mathlib.Topology.Instances.Int
+import TauCeti.Algebra.Order.GroupWithZero.Pow
 import TauCeti.Analysis.Normed.Group.Pi
 
 /-!
@@ -60,6 +61,10 @@ not constructed here.
 
 ## Main results
 
+* `TauCeti.LaurentConvergesAt.of_endpoints`: convergence at two positive radii implies
+  convergence at every intermediate radius.
+* `TauCeti.laurentGaussNorm_le_max_endpoints`: intermediate Gauss norms are bounded by the
+  maximum of the endpoint Gauss norms.
 * `TauCeti.LaurentConvergesAt.addRingConvolution`: convergence at a radius is preserved by
   convolution.
 * `TauCeti.RobbaRing.isUnit_monomial_bounded`: `t` is a unit of the bounded Robba ring.
@@ -138,6 +143,30 @@ end Norm
 section SeminormedAddGroup
 
 variable [SeminormedAddGroup R]
+
+/-- Endpoint convergence implies convergence at every intermediate radius. -/
+theorem LaurentConvergesAt.of_endpoints {α ρ β : ℝ}
+    (hα : 0 < α) (hαρ : α ≤ ρ) (hρβ : ρ ≤ β) {a : ℤ → R}
+    (ha : LaurentConvergesAt α a) (hb : LaurentConvergesAt β a) : LaurentConvergesAt ρ a := by
+  rw [laurentConvergesAt_iff]
+  have hmax : Tendsto (fun n ↦ max (‖a n‖ * α ^ n) (‖a n‖ * β ^ n)) cofinite (𝓝 0) := by
+    simpa only [max_self] using (laurentConvergesAt_iff.mp ha).max (laurentConvergesAt_iff.mp hb)
+  refine squeeze_zero (fun n ↦ mul_nonneg (norm_nonneg _) (zpow_pos (hα.trans_le hαρ) n).le)
+    (fun n ↦ ?_) hmax
+  rw [← mul_max_of_nonneg _ _ (norm_nonneg (a n))]
+  exact mul_le_mul_of_nonneg_left (zpow_le_max_endpoints hα hαρ hρβ n) (norm_nonneg _)
+
+/-- Every intermediate Gauss norm is bounded by the maximum of the endpoint Gauss norms. -/
+theorem laurentGaussNorm_le_max_endpoints {α ρ β : ℝ}
+    (hα : 0 < α) (hαρ : α ≤ ρ) (hρβ : ρ ≤ β) {a : ℤ → R}
+    (ha : BddAbove (Set.range fun n ↦ ‖a n‖ * α ^ n))
+    (hb : BddAbove (Set.range fun n ↦ ‖a n‖ * β ^ n)) :
+    laurentGaussNorm ρ a ≤ max (laurentGaussNorm α a) (laurentGaussNorm β a) := by
+  refine laurentGaussNorm_le fun n ↦ ?_
+  calc ‖a n‖ * ρ ^ n ≤ ‖a n‖ * max (α ^ n) (β ^ n) :=
+        mul_le_mul_of_nonneg_left (zpow_le_max_endpoints hα hαρ hρβ n) (norm_nonneg _)
+    _ = max (‖a n‖ * α ^ n) (‖a n‖ * β ^ n) := mul_max_of_nonneg _ _ (norm_nonneg _)
+    _ ≤ _ := max_le_max (le_laurentGaussNorm ha n) (le_laurentGaussNorm hb n)
 
 /-- The Gauss norm is nonnegative at every radius, including where the weighted norms are unbounded
 and the supremum takes the junk value `0`. -/

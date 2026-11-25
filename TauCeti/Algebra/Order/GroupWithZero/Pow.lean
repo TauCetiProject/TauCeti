@@ -36,6 +36,8 @@ with zero and divisibility rigidity in discrete archimedean ordered groups with 
   `(m, n)` and `(m', n')` are proportional.
 * `TauCeti.pow_le_max_one_pow`: `c ^ m ≤ max 1 c ^ n` for `0 ≤ c` and `m ≤ n`.
 * `TauCeti.pow_le_max_one_pow_pow`: `c ^ m ≤ (max 1 c ^ k) ^ n` for `0 ≤ c` and `m ≤ k * n`.
+* `TauCeti.zpow_le_max_endpoints`: an integer power at a positive intermediate base is at most
+  the maximum of the endpoint powers.
 * `TauCeti.pow_mul_pow_sub_two_mul_le`: for `0 ≤ c ≤ b ^ 2` and `0 ≤ b`, the product
   `c ^ s * b ^ (L - 2 * s)` does not increase with `s` while `2 * s ≤ L`.
 * `TauCeti.pow_mul_pow_sub_le_mul_pow_div_pow`: for `0 ≤ c ≤ b ^ 2`, `c ≤ A ^ 2 / m`,
@@ -82,6 +84,20 @@ theorem pow_le_max_one_pow_pow {M₀ : Type*} [MonoidWithZero M₀] [LinearOrder
     c ^ m ≤ (max 1 c ^ k) ^ n := by
   rw [← pow_mul]
   exact pow_le_max_one_pow hc h
+
+/-- An integer power at a base in a positive interval is bounded by the maximum of the
+endpoint powers. Nonnegative powers increase with the base, while negative powers decrease. -/
+theorem zpow_le_max_endpoints {G₀ : Type*} [GroupWithZero G₀] [LinearOrder G₀]
+    [ZeroLEOneClass G₀] [PosMulMono G₀] [MulPosMono G₀] {a x b : G₀}
+    (ha : 0 < a) (hax : a ≤ x) (hxb : x ≤ b) (n : ℤ) :
+    x ^ n ≤ max (a ^ n) (b ^ n) := by
+  have := PosMulMono.toPosMulReflectLT (α := G₀)
+  have := MulPosMono.toMulPosReflectLT (α := G₀)
+  rcases le_total 0 n with hn | hn
+  · exact (zpow_le_zpow_left₀ hn (ha.trans_le hax).le hxb).trans (le_max_right _ _)
+  · have h := inv_anti₀ (zpow_pos ha (-n))
+      (zpow_le_zpow_left₀ (neg_nonneg.mpr hn) ha.le hax)
+    simpa only [zpow_neg, inv_inv] using h.trans (le_max_left _ _)
 
 /-- Trading one factor `c` for two factors `b`: in an ordered monoid with zero, if
 `0 ≤ c ≤ b ^ 2` and `0 ≤ b`, then `c ^ s * b ^ (L - 2 * s) ≤ c ^ r * b ^ (L - 2 * r)` for

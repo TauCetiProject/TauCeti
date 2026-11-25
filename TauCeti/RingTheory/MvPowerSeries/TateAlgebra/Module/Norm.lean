@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Basic
 import TauCeti.Analysis.Normed.Group.OpenMapping
+import TauCeti.Analysis.Normed.Group.WeightedLimit
 
 /-!
 # Gauss norms on module-valued restricted series
@@ -279,8 +280,8 @@ theorem uniformContinuous_coeff (t : σ →₀ ℕ) :
 /-- Complete coefficient groups give complete restricted families for the Gauss norm. -/
 instance [CompleteSpace E] : CompleteSpace (Gauss c E) := by
   refine Metric.complete_of_cauchySeq_tendsto fun A hA ↦ ?_
-  obtain ⟨a, hres, hunif⟩ := exists_weighted_coefficient_limit
-    (fun i ↦ (Fact.out : 0 < c i).le) (fun k ↦ (A k : (σ →₀ ℕ) → E))
+  obtain ⟨a, hres, hunif⟩ := TauCeti.exists_weighted_coefficient_limit
+    (fun t ↦ (prod_pow_pos t).le) (fun k ↦ (A k : (σ →₀ ℕ) → E))
     (fun k ↦ isRestrictedFamily_iff.mp (mem_addSubgroup.mp (A k).toAddSubgroup.property)) (by
       intro ε hε
       obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hA ε hε
