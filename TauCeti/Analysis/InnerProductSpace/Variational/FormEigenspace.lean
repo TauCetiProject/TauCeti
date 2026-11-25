@@ -125,7 +125,7 @@ theorem exists_norm_le_mul_norm_inclusion_of_mem_formEigenspace (M : ℝ) :
       Real.sqrt_sq (norm_nonneg _)]
 
 /-- **Variational eigenspaces are finite dimensional.** -/
-theorem finiteDimensional_formEigenspace (lam : ℝ) :
+instance finiteDimensional_formEigenspace (lam : ℝ) :
     FiniteDimensional 𝕜 (P.formEigenspace lam) := by
   obtain ⟨C, -, hC⟩ := P.exists_norm_le_mul_norm_inclusion_of_mem_formEigenspace lam
   set S := P.formEigenspace lam
