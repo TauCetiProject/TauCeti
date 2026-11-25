@@ -24,6 +24,9 @@ base, such as the sections of an inner fibration, are fibers of this kind.
 
 * `SSet.fiber q y`: the fiber of `q : X ⟶ Y` over the vertex `y`, as a subcomplex of `X`.
 * `SSet.fiber.map g hg y`: the map of fibers over `y` induced by a map `g` over `Y`.
+* `SSet.fiber.lift`: a morphism to `X` whose composite with `q` is constant at `y`, as a morphism
+  to the fiber.
+* `SSet.fiber.basePoint`: a vertex of `X` over `y`, as a vertex of the fiber.
 
 ## Main results
 
@@ -169,6 +172,30 @@ noncomputable def fiber.isTerminalOfIsIso (q : X ⟶ Y) [IsIso q] (y : Y _⦋0�
     fun _ g ↦ by
       rw [← cancel_mono (fiber q y).ι, ← cancel_mono q]
       simp
+
+/-- A morphism `g` with `g ≫ q` constant at `y`, as a morphism to the fiber of `q` over `y`. -/
+def fiber.lift {Z : SSet.{u}} (g : Z ⟶ X) (q : X ⟶ Y) (y : Y _⦋0⦌) (hg : g ≫ q = const y) :
+    Z ⟶ (fiber q y : SSet) :=
+  Subcomplex.lift g ((range_le_fiber_iff g q y).2 hg)
+
+@[reassoc (attr := simp)]
+lemma fiber.lift_ι {Z : SSet.{u}} (g : Z ⟶ X) (q : X ⟶ Y) (y : Y _⦋0⦌) (hg : g ≫ q = const y) :
+    fiber.lift g q y hg ≫ (fiber q y).ι = g :=
+  Subcomplex.lift_ι _ _
+
+/-- A vertex `x` of `X` over `y`, as a vertex of the fiber of `q` over `y`. -/
+def fiber.basePoint (q : X ⟶ Y) {y : Y _⦋0⦌} {x : X _⦋0⦌} (hx : q.app _ x = y) :
+    (fiber q y : SSet) _⦋0⦌ :=
+  ⟨x, by simp [hx, SimplexCategory.const_eq_id]⟩
+
+@[simp]
+lemma fiber.coe_basePoint (q : X ⟶ Y) {y : Y _⦋0⦌} {x : X _⦋0⦌} (hx : q.app _ x = y) :
+    (fiber.basePoint q hx).val = x :=
+  (rfl)
+
+lemma fiber.ι_app_basePoint (q : X ⟶ Y) {y : Y _⦋0⦌} {x : X _⦋0⦌} (hx : q.app _ x = y) :
+    (fiber q y).ι.app _ (fiber.basePoint q hx) = x :=
+  (rfl)
 
 /-- A terminal simplicial set is a quasicategory. -/
 lemma quasicategory_of_isTerminal (h : IsTerminal X) : Quasicategory X :=

@@ -50,6 +50,12 @@ theorem testTopFormEquiv_symm_apply (b : Module.Basis ι ℝ E)
     b.testTopFormEquiv.symm f x v = f x * b.det v := by
   simp [Module.Basis.testTopFormEquiv]
 
+/-- The top-degree test form attached to a scalar test takes the value of that test on the basis
+itself. -/
+theorem testTopFormEquiv_symm_apply_self (b : Module.Basis ι ℝ E) (f : 𝓓^{n}(Ω, ℝ)) (x : E) :
+    b.testTopFormEquiv.symm f x b = f x := by
+  simp [Module.Basis.det_self]
+
 /-- Passing from a top-degree test form to its coefficient preserves its support exactly. -/
 @[simp]
 theorem tsupport_testTopFormEquiv (b : Module.Basis ι ℝ E)
