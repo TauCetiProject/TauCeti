@@ -72,14 +72,6 @@ namespace TauCeti
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
   {Ω : Opens ℂ} {p q r : ℝ≥0∞}
 
-/-- On an open set, a weak derivative of `f` has `Lᵖ` norm at most `‖f‖_{W^{1,p}}`. -/
-private theorem eLpNorm_le_eLpNormWkp_one {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {f : ℂ → F} {D : ℂ → ℂ →L[ℝ] F}
-    (hD : HasWeakFDerivOn volume Ω f D) :
-    eLpNorm D p (volume.restrict Ω) ≤ eLpNormWkp p Ω 1 f := by
-  rw [eLpNormWkp_succ_eq_of_hasWeakFDerivOn (k := 0) hD, eLpNormWkp_zero]
-  exact le_add_self
-
 /-- The final bookkeeping of the order-zero estimate:
 `C ((1 + k) a + 3 (1 + k) m (c b) + b) ≤ C (2 + k + 3 (1 + k) m c) (a + b)`. -/
 private theorem mul_add_le_mul_mul_add (C k m c a b : ℝ≥0∞) :
@@ -199,7 +191,8 @@ theorem exists_eLpNormWkp_one_le_of_isWeakCRSolution [FiniteDimensional ℝ V] (
     (hu.memLp_restrict_of_isCompact_closure hWc hWΩ).aestronglyMeasurable
   have hJk : eLpNorm J ∞ μ ≤ (Cm * M : ℝ≥0) := (hCm J).trans (by rw [ENNReal.coe_mul]; gcongr)
   have hDJM : eLpNorm DJ p μ ≤ M := (eLpNorm_mono_measure _ hμ).trans
-    ((eLpNorm_le_eLpNormWkp_one hco.hasWeakFDerivOn).trans hJM)
+    ((eLpNormWkp_zero (f := DJ) ▸
+      eLpNormWkp_le_eLpNormWkp_succ_of_hasWeakFDerivOn (k := 0) hco.hasWeakFDerivOn).trans hJM)
   have hdata := eLpNorm_divergenceForm_add_le (q := q') hr1 (hm hco.memLpLoc_coeff)
     (hco.memLpLoc_deriv.memLp_restrict_of_isCompact_closure hWc hWΩ).aestronglyMeasurable
     (hm hco.memLpLoc_zeroth) (hmV h.memLpLoc) (hmV hη) hJk hDJM

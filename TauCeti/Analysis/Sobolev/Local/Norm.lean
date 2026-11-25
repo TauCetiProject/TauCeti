@@ -136,6 +136,13 @@ theorem eLpNormWkp_succ_eq_of_hasWeakFDerivOn {Ω : Opens ℂ} {D : ℂ → ℂ 
   gcongr
   exact le_iInf₂ fun D' hD' => (eLpNormWkp_congr_ae (hD.ae_eq hD')).le
 
+/-- On an open set, the order-`k` norm of a weak derivative is at most the order-`k + 1` norm of
+the function. At `k = 0` this bounds `‖D‖_{Lᵖ(Ω)}` by `‖f‖_{W^{1,p}(Ω)}`. -/
+theorem eLpNormWkp_le_eLpNormWkp_succ_of_hasWeakFDerivOn {Ω : Opens ℂ} {D : ℂ → ℂ →L[ℝ] F}
+    (hD : HasWeakFDerivOn volume Ω f D) : eLpNormWkp p Ω k D ≤ eLpNormWkp p Ω (k + 1) f := by
+  rw [eLpNormWkp_succ_eq_of_hasWeakFDerivOn hD]
+  exact le_add_self
+
 /-- A finite successor-order norm provides a weak derivative on the interior of finite norm of
 the previous order. -/
 theorem exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top (hf : eLpNormWkp p U (k + 1) f ≠ ∞) :
