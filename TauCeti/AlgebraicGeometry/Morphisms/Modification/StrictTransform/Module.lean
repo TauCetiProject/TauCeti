@@ -43,6 +43,8 @@ dies in the strict transform of `M` exactly when it is killed by a power of `(a�
   dying in the strict transform of `M` are those vanishing on `V`.
 * `AlgebraicGeometry.Scheme.Hom.strictTransformModuleπ_app_eq_zero_iff_mem_primaryComponent`: they
   are the power torsion for an ideal cutting out `Y ∖ V`.
+* `AlgebraicGeometry.Scheme.Hom.isZero_strictTransformModule_of_isZero_restrict`: if `M` vanishes
+  on `f⁻¹(U)`, its strict transform is zero.
 
 ## References
 
@@ -156,5 +158,18 @@ theorem strictTransformModuleπ_app_eq_zero_iff_mem_primaryComponent [M.IsQuasic
   rw [strictTransformModuleπ_app_eq_zero_iff]
   exact Modules.mem_range_supportedKernelι_app_iff_mem_primaryComponent_of_inf_eq _ _ hW G
     (by rwa [Scheme.Opens.opensRange_ι]) s
+
+/-- **The strict transform only sees `M` over `f⁻¹(U)`.** If `M` restricts to zero on `f⁻¹(U)`, the
+strict transform of `M` is zero: the open `V` over `U` maps into `f⁻¹(U)`, so `pr_X^* M` vanishes
+on `V`. -/
+theorem isZero_strictTransformModule_of_isZero_restrict (h : IsZero (M.restrict (f ⁻¹ᵁ U).ι)) :
+    IsZero (strictTransformModule f φ U M) := by
+  refine Modules.isZero_supportedQuotient_of_isZero_restrict _ _ ?_
+  refine (Modules.isZero_pullback_of_isZero_restrict M h _ ?_).of_iso
+    (((Modules.restrictFunctorIsoPullback _).app _) ≪≫
+      (Modules.pullbackComp (strictTransformOpen f φ U).ι (pullback.fst f φ)).app M)
+  rintro _ ⟨x, rfl⟩
+  rw [Scheme.Hom.comp_apply]
+  exact (mem_strictTransformOpen f φ U).1 x.property
 
 end AlgebraicGeometry.Scheme.Hom
