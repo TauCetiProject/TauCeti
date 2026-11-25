@@ -166,10 +166,11 @@ topological closure of a proper two-sided ideal is proper. This is
 `Ideal.closure_ne_top_of_isOpen_isUnit` applied to the underlying left ideal `I.asIdeal`. -/
 theorem topologicalClosure_ne_top_of_isOpen_isUnit (hU : IsOpen {a : A | IsUnit a})
     {I : TwoSidedIdeal A} (hI : I ≠ ⊤) : I.topologicalClosure ≠ ⊤ := by
-  rw [Ne, ← one_mem_iff, mem_topologicalClosure, ← coe_asIdeal, ← Ideal.coe_closure,
-    SetLike.mem_coe, ← Ideal.eq_top_iff_one]
-  exact Ideal.closure_ne_top_of_isOpen_isUnit hU <| by
-    rwa [Ne, Ideal.eq_top_iff_one, mem_asIdeal, one_mem_iff]
+  have h : I.topologicalClosure.asIdeal = I.asIdeal.closure :=
+    SetLike.ext' (by rw [coe_asIdeal, coe_topologicalClosure, Ideal.coe_closure, coe_asIdeal])
+  intro htop
+  refine Ideal.closure_ne_top_of_isOpen_isUnit hU ?_ (by rw [← h, htop, top_asIdeal])
+  simpa [Ideal.eq_top_iff_one, one_mem_iff] using hI
 
 /-- In a topological ring whose units form an open set (for instance a unital Banach algebra), if
 every closed two-sided ideal is `⊥` or `⊤`, then so is every two-sided ideal. -/
