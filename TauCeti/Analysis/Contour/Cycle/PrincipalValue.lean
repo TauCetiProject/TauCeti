@@ -147,6 +147,32 @@ theorem hasCauchyPV_of_iff (γ : AbsolutelyContinuousClosedCurve) {v : ℂ} :
     exact ⟨(cauchyPVExists_of_iff (f := f) γ).mpr (TauCeti.Contour.CauchyPVExists.intro h),
       (cauchyPV_of γ f).trans h.cauchyPV_eq⟩
 
+/-- Existence of the principal value along a raw closed curve bundled as a one-generator cycle is
+existence along the raw curve. -/
+@[simp]
+theorem cauchyPVExists_of_raw_iff {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hclosed : γ a = γ b) :
+    CauchyPVExists (FreeAddCommGroup.of (AbsolutelyContinuousClosedCurve.of γ hγ hclosed)) f ↔
+      TauCeti.Contour.CauchyPVExists γ a b f := by
+  have h : EqOn (AbsolutelyContinuousClosedCurve.of γ hγ hclosed) γ (uIoo a b) := fun _ ht ↦
+    AbsolutelyContinuousClosedCurve.of_apply γ hγ hclosed (uIoo_subset_uIcc_self ht)
+  simp only [cauchyPVExists_of_iff, AbsolutelyContinuousClosedCurve.of_a,
+    AbsolutelyContinuousClosedCurve.of_b]
+  exact ⟨fun hc ↦ hc.congr_curve h, fun hc ↦ hc.congr_curve h.symm⟩
+
+/-- A raw closed curve bundled as a one-generator cycle has principal value `v` exactly when the raw
+curve does. -/
+@[simp]
+theorem hasCauchyPV_of_raw_iff {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hclosed : γ a = γ b) {v : ℂ} :
+    HasCauchyPV (FreeAddCommGroup.of (AbsolutelyContinuousClosedCurve.of γ hγ hclosed)) f v ↔
+      TauCeti.Contour.HasCauchyPV γ a b f v := by
+  have h : EqOn (AbsolutelyContinuousClosedCurve.of γ hγ hclosed) γ (uIoo a b) := fun _ ht ↦
+    AbsolutelyContinuousClosedCurve.of_apply γ hγ hclosed (uIoo_subset_uIcc_self ht)
+  simp only [hasCauchyPV_of_iff, AbsolutelyContinuousClosedCurve.of_a,
+    AbsolutelyContinuousClosedCurve.of_b]
+  exact ⟨fun hc ↦ hc.congr_curve h, fun hc ↦ hc.congr_curve h.symm⟩
+
 /-- Reading the value off the predicate. -/
 theorem HasCauchyPV.cauchyPV_eq {v : ℂ} (h : HasCauchyPV C f v) : cauchyPV f C = v := h.2
 

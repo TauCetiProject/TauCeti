@@ -79,11 +79,9 @@ theorem isNullHomologous_of_starConvex {C : Cycle} {Ω : Set ℂ} {x : ℂ}
   refine isNullHomologous_iff.mpr fun w hw ↦ ?_
   rw [windingNumber_eq_sum_support]
   refine Finset.sum_eq_zero fun δ hδ ↦ ?_
-  have hδΩ : ∀ t ∈ uIcc δ.a δ.b, δ t ∈ Ω := fun t ht ↦
-    isIn_iff.mp hC (mem_trace_iff.mpr ⟨δ, hδ, t, ht, rfl⟩)
   rw [TauCeti.Contour.isNullHomologous_iff.mp
     (δ.absolutelyContinuousOnInterval.isNullHomologous_of_starConvex hstar
-      δ.source_eq_target hδΩ) w hw, mul_zero]
+      δ.source_eq_target (hC.mapsTo_of_mem_support hδ)) w hw, mul_zero]
 
 end Cycle
 

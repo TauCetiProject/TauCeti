@@ -257,8 +257,8 @@ theorem IsPiecewiseC1On.if_le {δ : ℝ → E} {c : ℝ} (h₁ : IsPiecewiseC1On
   obtain ⟨p₁, -, hC₁⟩ := h₁.exists_breakpoints
   obtain ⟨p₂, -, hC₂⟩ := h₂.exists_breakpoints
   have hac : a ≤ c := hab.trans hbc
-  have hη₁ : EqOn (fun t => if t ≤ b then γ t else δ t) γ (Icc a b) :=
-    (eqOn_ite_le_Iic γ δ b).mono Icc_subset_Iic_self
+  have hη₁ : EqOn (fun t => if t ≤ b then γ t else δ t) γ (Icc a b) := fun t ht =>
+    ite_eq_left ht.2
   have hη₂ : EqOn (fun t => if t ≤ b then γ t else δ t) δ (Icc b c) :=
     (eqOn_ite_le_Ici hb).mono Icc_subset_Ici_self
   refine IsPiecewiseC1On.of_breakpoints ?_ ((p₁ ∪ p₂ ∪ {b}).filter (· ∈ Ioo a c)) ?_

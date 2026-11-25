@@ -105,7 +105,7 @@ theorem integral_eq_analyticRemainder_add_sum (decomp : PolarPartDecomposition f
               ∑ s ∈ S, TauCeti.Contour.windingNumber (⇑γ) γ.a γ.b s * residue f s := fun γ hγ ↦
     decomp.intervalIntegral_deriv_smul_eq_analyticRemainder_add_sum
       γ.absolutelyContinuousOnInterval
-      (fun t ht ↦ isIn_iff.mp hCU (mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩)) γ.source_eq_target
+      (hCU.mapsTo_of_mem_support hγ) γ.source_eq_target
       (fun t ht hmem ↦ hoff _ (Finset.mem_coe.mp hmem) (mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩))
   calc
     integral f C

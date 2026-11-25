@@ -10,10 +10,11 @@ public import Mathlib.Order.Interval.Set.Basic
 /-!
 # Functions pasted at a point of an order
 
-For `b` in an order, `t ↦ if t ≤ b then f t else g t` follows `f` up to `b` and `g` after it.
-It agrees with `f` on `Iic b` (`Set.eqOn_ite_le_Iic`), and with `g` on `Ici b` when `f` and `g`
-agree at `b` (`Set.eqOn_ite_le_Ici`). In a linear order, it maps `Icc a c` into a set into which
-`f` maps `Icc a b` and `g` maps `Icc b c` (`Set.MapsTo.ite_le_Icc`).
+For `b` in an order, `t ↦ if t ≤ b then f t else g t` follows `f` up to `b` and `g` after it:
+on `Iic b` it is `f` by `ite_eq_left`, as Mathlib's `Set.piecewise_eqOn` says for
+`(Iic b).piecewise f g`. It agrees with `g` on `Ici b` when `f` and `g` agree at `b`
+(`Set.eqOn_ite_le_Ici`), and in a linear order it maps `Icc a c` into a set into which `f` maps
+`Icc a b` and `g` maps `Icc b c` (`Set.MapsTo.ite_le_Icc`).
 -/
 
 public section
@@ -21,11 +22,6 @@ public section
 namespace Set
 
 variable {α β : Type*}
-
-/-- The function following `f` up to `b` and `g` after it agrees with `f` on `Iic b`. -/
-theorem eqOn_ite_le_Iic [Preorder α] [DecidableLE α] (f g : α → β) (b : α) :
-    EqOn (fun t ↦ if t ≤ b then f t else g t) f (Iic b) :=
-  fun _ ht ↦ ite_eq_left ht
 
 /-- The function following `f` up to `b` and `g` after it agrees with `g` on `Ici b` when `f` and
 `g` agree at `b`. -/

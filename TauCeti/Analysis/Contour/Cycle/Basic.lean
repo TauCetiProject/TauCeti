@@ -82,7 +82,6 @@ namespace TauCeti.Contour
 /-- A parametrized closed absolutely continuous curve on an oriented real interval. The
 parametrization is stored only on its interval, so curves cannot differ merely in irrelevant values
 outside it. -/
-@[ext]
 structure AbsolutelyContinuousClosedCurve where
   /-- The initial parameter. -/
   a : ℝ
@@ -106,6 +105,19 @@ instance : CoeFun AbsolutelyContinuousClosedCurve fun _ ↦ ℝ → ℂ :=
 /-- On its parameter interval, a closed curve's coercion agrees with its stored function. -/
 theorem coe_apply (γ : AbsolutelyContinuousClosedCurve) (t : uIcc γ.a γ.b) : γ t = γ.toFun t :=
   Subtype.val_injective.extend_apply γ.toFun 0 t
+
+/-- **Extensionality.** Two bundled curves are equal when they have the same endpoints and agree on
+the parameter interval. -/
+@[ext (iff := false)]
+theorem ext {γ δ : AbsolutelyContinuousClosedCurve} (ha : γ.a = δ.a) (hb : γ.b = δ.b)
+    (h : EqOn γ δ (uIcc γ.a γ.b)) : γ = δ := by
+  obtain ⟨a, b, f, hf, hfc⟩ := γ
+  obtain ⟨a', b', g, hg, hgc⟩ := δ
+  dsimp only at ha hb
+  subst ha hb
+  congr
+  funext t
+  simpa only [Subtype.val_injective.extend_apply] using h t.property
 
 /-- Bundle a raw closed absolutely continuous curve by restricting it to its parameter interval. -/
 def of {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) :
@@ -322,6 +334,11 @@ theorem IsIn.add {C D : Cycle} {Ω : Set ℂ} (hC : IsIn C Ω) (hD : IsIn D Ω) 
     IsIn (C + D) Ω := by
   rw [isIn_iff] at hC hD ⊢
   exact (trace_add_subset C D).trans (union_subset hC hD)
+
+/-- Each curve of the canonical support of a cycle in `Ω` maps its parameter interval into `Ω`. -/
+theorem IsIn.mapsTo_of_mem_support {C : Cycle} {Ω : Set ℂ} (hC : IsIn C Ω)
+    {γ : AbsolutelyContinuousClosedCurve} (hγ : γ ∈ FreeAddCommGroup.support C) :
+    MapsTo γ (uIcc γ.a γ.b) Ω := fun t ht ↦ isIn_iff.mp hC (mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩)
 
 /-- A cycle in `Ω` lies in every larger set. -/
 theorem IsIn.mono {C : Cycle} {Ω Ω' : Set ℂ} (hC : IsIn C Ω) (hΩ : Ω ⊆ Ω') : IsIn C Ω' :=
