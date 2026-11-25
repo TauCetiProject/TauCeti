@@ -32,6 +32,8 @@ from `f⁻¹(B)`, with the leftover element of `T` moved past `f w`, which norma
 
 * `TauCeti.TitsSystem.preimage_doubleCoset`: the preimage of a Bruhat cell is a Bruhat cell.
 * `TauCeti.TitsSystem.comap`: the Tits system `(f⁻¹(B), f⁻¹(N))` in `H`.
+* `TauCeti.TitsSystem.exists_mul_eq_of_surjective`: a surjective homomorphism satisfies the
+  hypothesis of `TauCeti.TitsSystem.comap`.
 * `TauCeti.TitsSystem.comapWeylGroupMulEquiv`: its Weyl group is the Weyl group of `(B, N)`.
 * `TauCeti.TitsSystem.comap_simple`: its simple reflections correspond to those of `(B, N)`.
 * `TauCeti.TitsSystem.comap_bruhatCell`: Weyl-indexed Bruhat cells pull back under this
@@ -153,6 +155,12 @@ private theorem closure_preimage_comapWeylGroupHom
     (e.image_symm_eq_preimage T.simple).symm
   rw [he, ← MulEquiv.coe_toMonoidHom, ← MonoidHom.map_closure, T.closure_simple]
   exact Subgroup.map_top_of_surjective _ e.symm.surjective
+
+/-- A surjective homomorphism `f : H →* G` satisfies `G = f(H) (B ∩ N)`, the hypothesis of
+`TauCeti.TitsSystem.comap`. -/
+theorem exists_mul_eq_of_surjective (hf : Function.Surjective f) (g : G) :
+    ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x * t = g :=
+  (hf g).imp fun _ hx ↦ ⟨1, one_mem _, by rw [mul_one, hx]⟩
 
 variable (f)
 

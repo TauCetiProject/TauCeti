@@ -22,12 +22,13 @@ subgroup, `N` the monomial subgroup and `U` the upper unitriangular subgroup; fo
 groups of Lie type, `U` is the product of the positive root subgroups and `B ∩ N` is the
 maximal torus.
 
-The structure packages exactly the hypotheses on `U` of Tits's simplicity criterion
-`TauCeti.TitsSystem.isSimpleGroup_derivedCentralQuotient`, so that a group of Lie type built with
-a split Tits system only has to supply the remaining group-theoretic inputs: an irreducible Weyl
-group, `Z ∩ U = 1` for `Z = ⋂_{g : G} g B g⁻¹`, the equality of the normal closure of `U` with
-`[G, G]`, and perfectness of `[G, G]`. Under these hypotheses the centre of `[G, G]` is
-`Z ∩ [G, G]`, and the derived central quotient `[G, G] / Z([G, G])` is simple as soon as `U ≠ 1`.
+The structure supplies the hypotheses on `U` of Tits's simplicity criterion
+`TauCeti.TitsSystem.isSimpleGroup_derivedCentralQuotient` other than `Z ∩ U = 1` (solvability,
+`B ≤ N_G(U)` and `B ≤ U (B ∩ N)`), so that a group of Lie type built with a split Tits system
+only has to supply the remaining group-theoretic inputs: an irreducible Weyl group, `Z ∩ U = 1`
+for `Z = ⋂_{g : G} g B g⁻¹`, the equality of the normal closure of `U` with `[G, G]`, and
+perfectness of `[G, G]`. Under these hypotheses the centre of `[G, G]` is `Z ∩ [G, G]`, and the
+derived central quotient `[G, G] / Z([G, G])` is simple as soon as `U ≠ 1`.
 
 Split Tits systems pull back along multiplicative equivalences, with the same Weyl group and
 simple reflections. Together with `TauCeti.DerivedCentralQuotient.congr` and
@@ -67,6 +68,7 @@ universe u v
 
 /-- A **split Tits system** on `G`: a Tits system `(B, N)` together with a solvable subgroup `U`
 of `B`, normal in `B`, of which `B ∩ N` is a complement in `B`. -/
+@[ext]
 structure SplitTitsSystem (G : Type u) [Group G] extends TitsSystem G where
   /-- The subgroup conventionally denoted `U`, the unipotent radical of `B`. -/
   subgroupU : Subgroup G
@@ -106,7 +108,8 @@ variable {G' : Type v} [Group G'] (e : G' ≃* G)
 /-- The **pullback of a split Tits system** along a multiplicative equivalence `e : G' ≃* G`: the
 preimages of `B`, `N` and `U`, with the simple reflections of `TauCeti.TitsSystem.comap`. -/
 def comap : SplitTitsSystem G' where
-  toTitsSystem := S.toTitsSystem.comap e.toMonoidHom fun g ↦ ⟨e.symm g, 1, one_mem _, by simp⟩
+  toTitsSystem :=
+    S.toTitsSystem.comap e.toMonoidHom (S.exists_mul_eq_of_surjective e.surjective)
   subgroupU := S.subgroupU.comap e.toMonoidHom
   subgroupU_le_subgroupB := by
     rw [TitsSystem.comap_subgroupB]
@@ -117,8 +120,7 @@ def comap : SplitTitsSystem G' where
       ← Subgroup.comap_normalizer_eq_of_surjective _ e.surjective]
     exact Subgroup.comap_mono S.subgroupB_le_normalizer
   isSolvable_subgroupU :=
-    Group.isSolvable_of_isSolvable_injective (f := e.toMonoidHom.subgroupComap S.subgroupU)
-      fun _ _ h ↦ Subtype.ext (e.injective (congrArg Subtype.val h))
+    Group.isSolvable_of_isSolvable_injective (e.toMonoidHom.subgroupComap_injective _ e.injective)
   subgroupU_sup_eq := by
     rw [TitsSystem.comap_subgroupB, TitsSystem.comap_subgroupN, ← Subgroup.comap_inf,
       Subgroup.comap_sup_eq e.toMonoidHom _ _ e.surjective, S.subgroupU_sup_eq]
@@ -132,7 +134,7 @@ def comap : SplitTitsSystem G' where
 @[simp]
 theorem comap_toTitsSystem :
     (S.comap e).toTitsSystem =
-      S.toTitsSystem.comap e.toMonoidHom fun g ↦ ⟨e.symm g, 1, one_mem _, by simp⟩ :=
+      S.toTitsSystem.comap e.toMonoidHom (S.exists_mul_eq_of_surjective e.surjective) :=
   (rfl)
 
 /-- The `B` subgroup of the pullback is the preimage of `B`. -/
