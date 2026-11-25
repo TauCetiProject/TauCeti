@@ -16,7 +16,7 @@ public import Mathlib.Topology.Order.Compact
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Henselian
 import TauCeti.LinearAlgebra.Matrix.Diagonal
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.LineHyperplane
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Descend
 
 /-!
 # Ribet's lemma: lattices with nonsplit reduction
@@ -152,11 +152,12 @@ private theorem exists_conj_lift_nonsplit
       exact mul_inv_le_one_of_le₀ (hg₁ g) (norm_nonneg _)
     · exact ⟨x (g₁ * g) - x g₁ * x g, (hbc g₁ g).symm⟩
     · exact ⟨y g, hy g⟩
-  obtain ⟨ρA, hρA⟩ := Matrix.GeneralLinearGroup.exists_map_comp_eq hinj N' hint
-  replace hρA (g : G) (i j : Fin 2) :
-      algebraMap A K ((ρA g : Matrix (Fin 2) (Fin 2) A) i j) =
-        (N' g : Matrix (Fin 2) (Fin 2) K) i j := by
-    rw [← hρA, MonoidHom.comp_apply, Matrix.GeneralLinearGroup.map_apply]
+  have hent : CoefficientDescent.entries N' ⊆ Set.range (algebraMap A K) := by
+    intro _ hz
+    obtain ⟨g, i, j, rfl⟩ := CoefficientDescent.mem_entries_iff.mp hz
+    exact hint g i j
+  set ρA := CoefficientDescent.descend hinj hent
+  have hρA := CoefficientDescent.map_descend_apply hinj hent
   have hρA' (g : G) (i j : Fin 2) : algebraMap A K ((ρA g : Matrix (Fin 2) (Fin 2) A) i j) =
       !![(N g : Matrix (Fin 2) (Fin 2) K) 0 0, (N g : Matrix (Fin 2) (Fin 2) K) 0 1 * b₁⁻¹;
         b₁ * (N g : Matrix (Fin 2) (Fin 2) K) 1 0, (N g : Matrix (Fin 2) (Fin 2) K) 1 1] i j := by
