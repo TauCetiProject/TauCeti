@@ -34,8 +34,8 @@ theorem rieszRemainderMellin_LFunction_of_ne_one (hχ : χ ≠ 1) {s : ℂ} (hs 
   have h₁ := χ.analyticAt_LFunction (s := 1) (.inr hχ)
   have hne₁ := χ.LFunction_ne_zero_of_one_le_re (s := 1) (.inl hχ) (by simp)
   have hord := h₁.meromorphicNFAt.meromorphicOrderAt_eq_zero_iff.mpr hne₁
-  have hpart := TauCeti.logDerivFinitePart_eq_logDeriv h₁ hne₁
-  have h := (TauCeti.rieszRemainderMellin_eq_and_analyticAt χ.meromorphic_LFunction hs₀ hs₁
+  have hpart := h₁.logDerivFinitePart_eq_logDeriv hne₁
+  have h := (χ.meromorphic_LFunction.rieszRemainderMellin_eq_and_analyticAt hs₀ hs₁
     (χ.analyticAt_LFunction (.inl hs₁))
     (χ.LFunction_ne_zero_of_one_le_re (.inr hs₁) hs.le)).1
   simpa [hpart, hord] using h
@@ -53,7 +53,7 @@ theorem rieszRemainderMellin_LFunction_simplePole {ρ : ℂ} (h₀ : ρ ≠ 0)
   obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.mp (χ.meromorphicOrderAt_LFunction_ne_top ρ)
   have hpos : 0 < n := by simpa [← hn] using hzero
   simpa [← hn] using
-    TauCeti.rieszRemainderMellin_simplePole χ.meromorphic_LFunction h₀ h₁ hn.symm hpos.ne'
+    χ.meromorphic_LFunction.rieszRemainderMellin_simplePole h₀ h₁ hn.symm hpos.ne'
 
 /-- Away from `0`, the poles are precisely the zeros of the L-function. The original
 principal-character pole at `1` is removed. -/
@@ -66,10 +66,10 @@ principal-character pole at `1` is removed. -/
     apply AnalyticAt.meromorphicOrderAt_nonneg
     by_cases h₁ : ρ = 1
     · subst ρ
-      exact TauCeti.analyticAt_rieszRemainderMellin_one χ.meromorphic_LFunction
+      exact χ.meromorphic_LFunction.analyticAt_rieszRemainderMellin_one
     · have hne : χ.LFunction ρ ≠ 0 := fun heq ↦
         horder.not_gt (χ.meromorphicOrderAt_LFunction_pos_iff.mpr ⟨heq, .inl h₁⟩)
-      exact (TauCeti.rieszRemainderMellin_eq_and_analyticAt χ.meromorphic_LFunction h₀ h₁
+      exact (χ.meromorphic_LFunction.rieszRemainderMellin_eq_and_analyticAt h₀ h₁
         (χ.analyticAt_LFunction (.inl h₁)) hne).2
   · intro h
     rw [(χ.rieszRemainderMellin_LFunction_simplePole h₀ h).1]

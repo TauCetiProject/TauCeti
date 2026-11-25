@@ -29,7 +29,7 @@ noncomputable def logDerivFinitePart (f : ℂ → ℂ) (a : ℂ) : ℂ :=
   toMeromorphicNFAt (fun z ↦ logDeriv f z - (meromorphicOrderAt f a).untop₀ / (z - a)) a a
 
 /-- The finite part can be read from any analytic representative of the regular part. -/
-theorem logDerivFinitePart_eq {f g : ℂ → ℂ} {a : ℂ} (hg : AnalyticAt ℂ g a)
+theorem _root_.AnalyticAt.logDerivFinitePart_eq {f g : ℂ → ℂ} {a : ℂ} (hg : AnalyticAt ℂ g a)
     (heq : (fun z ↦ logDeriv f z - (meromorphicOrderAt f a).untop₀ / (z - a)) =ᶠ[𝓝[≠] a] g) :
     logDerivFinitePart f a = g a := by
   rw [logDerivFinitePart]
@@ -53,9 +53,9 @@ theorem _root_.MeromorphicAt.exists_analyticAt_logDeriv_sub_order_div
     simp [hz, ← hn, div_eq_mul_inv]
 
 /-- At a regular nonzero point, the finite part is the usual logarithmic derivative. -/
-theorem logDerivFinitePart_eq_logDeriv {f : ℂ → ℂ} {a : ℂ}
+theorem _root_.AnalyticAt.logDerivFinitePart_eq_logDeriv {f : ℂ → ℂ} {a : ℂ}
     (hf : AnalyticAt ℂ f a) (ha : f a ≠ 0) : logDerivFinitePart f a = logDeriv f a :=
-  logDerivFinitePart_eq (hf.logDeriv ha)
+  (hf.logDeriv ha).logDerivFinitePart_eq
     (by simp [hf.meromorphicNFAt.meromorphicOrderAt_eq_zero_iff.mpr ha])
 
 end TauCeti
