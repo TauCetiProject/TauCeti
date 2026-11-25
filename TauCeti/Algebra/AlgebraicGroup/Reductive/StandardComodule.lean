@@ -10,18 +10,22 @@ public import TauCeti.Algebra.AlgebraicGroup.Reductive.CompleteReducibility
 public import TauCeti.Algebra.AlgebraicGroup.Reductive.Faithful
 
 /-!
-# Reductivity of closed subgroups of `GL_n` through the standard representation
+# Reductivity through a faithful representation
 
-Let `k` be a field of characteristic zero and `H` the coordinate Hopf algebra of an affine group
-of finite type over `k`, given with a surjective Hopf algebra morphism
-`f : O(GL_n) → H`, that is, as a closed subgroup of `GL_n`. Its standard representation
-`TauCeti.GeneralLinear.corestrictStandardComodule k n f` on `kⁿ` is faithful. When `H` is
-geometrically connected, `H` is reductive exactly when this representation is completely
-reducible (`TauCeti.reductiveCommHopfAlgProperty_iff_isCompletelyReducible_corestrict`):
-reductive groups in characteristic zero have completely reducible representations
+Let `k` be a field of characteristic zero and `H` the coordinate Hopf algebra of a geometrically
+connected affine group of finite type over `k`. Given a faithful representation `M` of `H`, the
+group is reductive exactly when `M` is completely reducible
+(`TauCeti.reductiveCommHopfAlgProperty_iff_isCompletelyReducible_of_isFaithful`): reductive groups
+in characteristic zero have completely reducible representations
 (`TauCeti.Comodule.isCompletelyReducible_of_reductive`), and conversely a faithful completely
 reducible representation makes a connected group reductive
 (`TauCeti.reductiveCommHopfAlgProperty_of_isFaithful_of_isCompletelyReducible`).
+
+For a closed subgroup of `GL_n`, given by a surjective Hopf algebra morphism
+`f : O(GL_n) → H`, the standard representation
+`TauCeti.GeneralLinear.corestrictStandardComodule k n f` on `kⁿ` is faithful, so `H` is reductive
+exactly when this representation is completely reducible
+(`TauCeti.reductiveCommHopfAlgProperty_iff_isCompletelyReducible_corestrictStandardComodule`).
 
 This is the form in which reductivity of a Mumford–Tate group is proved: `MT(V) ⊆ GL(V)` is
 geometrically connected, and `V` is completely reducible under it when `V` is polarizable.
@@ -38,9 +42,20 @@ namespace TauCeti
 
 universe u
 
+/-- **A connected group in characteristic zero with a faithful representation `M` is reductive
+exactly when `M` is completely reducible.** -/
+theorem reductiveCommHopfAlgProperty_iff_isCompletelyReducible_of_isFaithful
+    {k : Type u} [Field k] [CharZero k] (H : FiniteTypeCommHopfAlgCat.{u, u} k)
+    (hconnected : geometricallyConnectedCommHopfAlgProperty k H.obj)
+    {M : Type u} [AddCommGroup M] [Module k M] [Comodule k H M]
+    (hM : Comodule.IsFaithful (k := k) (H := H) (V := M)) :
+    reductiveCommHopfAlgProperty k H ↔ Comodule.IsCompletelyReducible k H M :=
+  ⟨fun hH ↦ Comodule.isCompletelyReducible_of_reductive hH,
+    reductiveCommHopfAlgProperty_of_isFaithful_of_isCompletelyReducible H hconnected hM⟩
+
 /-- **A connected closed subgroup of `GL_n` in characteristic zero is reductive exactly when its
 standard representation is completely reducible.** -/
-theorem reductiveCommHopfAlgProperty_iff_isCompletelyReducible_corestrict
+theorem reductiveCommHopfAlgProperty_iff_isCompletelyReducible_corestrictStandardComodule
     {k : Type u} [Field k] [CharZero k] (H : FiniteTypeCommHopfAlgCat.{u, u} k)
     (hconnected : geometricallyConnectedCommHopfAlgProperty k H.obj) {n : ℕ}
     (f : GeneralLinear.coordinateHopfAlgebra k n →ₐc[k] H) (hf : Function.Surjective f) :
@@ -48,8 +63,7 @@ theorem reductiveCommHopfAlgProperty_iff_isCompletelyReducible_corestrict
       letI := GeneralLinear.corestrictStandardComodule k n f
       Comodule.IsCompletelyReducible k H (Fin n → k) := by
   let _ := GeneralLinear.corestrictStandardComodule k n f
-  exact ⟨fun hH ↦ Comodule.isCompletelyReducible_of_reductive hH, fun hcr ↦
-    reductiveCommHopfAlgProperty_of_isFaithful_of_isCompletelyReducible H hconnected
-      (GeneralLinear.isFaithful_corestrictStandardComodule k n f hf) hcr⟩
+  exact reductiveCommHopfAlgProperty_iff_isCompletelyReducible_of_isFaithful H hconnected
+    (GeneralLinear.isFaithful_corestrictStandardComodule k n f hf)
 
 end TauCeti
