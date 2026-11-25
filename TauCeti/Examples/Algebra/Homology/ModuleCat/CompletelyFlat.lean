@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Algebra.Homology.ModuleCat.CompletelyFlat
-import Mathlib.Data.ZMod.QuotientRing
-import Mathlib.NumberTheory.Padics.RingHoms
+import TauCeti.Examples.RingTheory.Flat.CompletelyFlat
 import Mathlib.RingTheory.Flat.TorsionFree
 
 /-!
@@ -39,23 +38,14 @@ example : HasCompleteTorAmplitude (Ideal.span {p}) 0 0
 
 section Padic
 
-open scoped TensorProduct
-
-variable (p : ℕ) [hp : Fact p.Prime]
+variable (p : ℕ) [Fact p.Prime]
   [HasDerivedCategory.{w'} (ModuleCat.{0} (ℤ ⧸ Ideal.span {(p : ℤ)}))]
 
 -- `ℤ_p[0]` is `p`-completely faithfully flat in `D(ℤ)`.
 example : IsCompletelyFaithfullyFlat (Ideal.span {(p : ℤ)})
-    ((singleFunctor (ModuleCat ℤ) 0).obj (.of ℤ ℤ_[p])) := by
-  rw [ModuleCat.isCompletelyFaithfullyFlat_single_iff]
-  have : (Ideal.span {(p : ℤ)}).IsMaximal :=
-    PrincipalIdealRing.isMaximal_of_irreducible (Nat.prime_iff_prime_int.mp hp.out).irreducible
-  have : Nontrivial ((ℤ ⧸ Ideal.span {(p : ℤ)}) ⊗[ℤ] ℤ_[p]) :=
-    (Algebra.TensorProduct.lift (Int.quotientSpanNatEquivZMod p).toRingHom.toIntAlgHom
-      PadicInt.toZMod.toIntAlgHom fun _ _ ↦ Commute.all _ _).toRingHom.domain_nontrivial
-  let := Ideal.Quotient.field (Ideal.span {(p : ℤ)})
-  exact isCompletelyFaithfullyFlatModule_iff.mpr
-    ⟨isCompletelyFlatModule_of_flat _, inferInstanceAs (Module.FaithfullyFlat _ (_ ⊗[ℤ] ℤ_[p]))⟩
+    ((singleFunctor (ModuleCat ℤ) 0).obj (.of ℤ ℤ_[p])) :=
+  (ModuleCat.isCompletelyFaithfullyFlat_single_iff _).mpr
+    (isCompletelyFaithfullyFlatModule_padicInt p)
 
 end Padic
 
