@@ -56,16 +56,10 @@ variable [T2Space G]
 noncomputable def extendByZero : LieTestFunction I U →ₗ[ℂ] LieTestFunction I G where
   toFun a := ⟨Subtype.val.extend a 0, a.contMDiff.extend_zero a.hasCompactSupport,
     a.hasCompactSupport.extend_zero continuous_subtypeVal⟩
-  map_add' a b := ext fun x ↦ by
-    by_cases h : x ∈ U
-    · lift x to U using h
-      simp
-    · simp [Function.extend_val_apply' h]
-  map_smul' c a := ext fun x ↦ by
-    by_cases h : x ∈ U
-    · lift x to U using h
-      simp
-    · simp [Function.extend_val_apply' h]
+  map_add' a b := DFunLike.coe_injective <| by
+    simpa using extend_add Subtype.val (⇑a) (⇑b) (0 : G → ℂ) 0
+  map_smul' c a := DFunLike.coe_injective <| by
+    simpa using extend_smul c Subtype.val (⇑a) (0 : G → ℂ)
 
 theorem coe_extendByZero (a : LieTestFunction I U) :
     ⇑(extendByZero U a) = Subtype.val.extend a 0 :=

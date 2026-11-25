@@ -168,10 +168,7 @@ def chartEquiv (x : G) :
 @[simp]
 theorem tsupport_chartEquiv (x : G) (a : LieTestFunction I (chartSourceOpens H x)) :
     tsupport (chartEquiv I x a) = extChartAt I x '' ((↑) '' tsupport a) := by
-  rw [chartEquiv, LinearEquiv.trans_apply, coe_equivTestFunction, tsupport_extendByZero,
-    tsupport_compDiffeomorph_symm, ← Diffeomorph.image_eq_preimage_symm, image_image,
-    image_image]
-  simp
+  simp [chartEquiv, coe_equivTestFunction, ← Diffeomorph.image_eq_preimage_symm, image_image]
 
 theorem chartEquiv_apply_of_mem (x : G) (a : LieTestFunction I (chartSourceOpens H x)) {y : E}
     (hy : y ∈ (extChartAt I x).target) :
