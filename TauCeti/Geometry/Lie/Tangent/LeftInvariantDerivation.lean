@@ -32,6 +32,7 @@ The latter is the manifold model vector space, so this also determines the Lie a
   available as the instance `LeftInvariantDerivation.instFiniteDimensional` without boundary.
 * `finrank_leftInvariantDerivation_eq_modelVectorSpace`: its dimension equals that of the manifold
   model vector space.
+* `subsingleton_leftInvariantDerivation`: it is zero when the model vector space is zero.
 -/
 
 public section
@@ -315,6 +316,19 @@ theorem finiteDimensional_leftInvariantDerivation
     (groupLieAlgebraEquivModelVectorSpace (I := I) (G := G)).symm.finiteDimensional
   exact (leftInvariantDerivationEquivGroupLieAlgebra (I := I) (G := G)
     h₁).symm.finiteDimensional
+
+/-- If the model vector space is trivial, so is the tangent Lie algebra: `GroupLieAlgebra I G` is
+the tangent space at the identity, which is the model vector space by definition. -/
+theorem subsingleton_groupLieAlgebra [Subsingleton E] : Subsingleton (GroupLieAlgebra I G) :=
+  inferInstanceAs (Subsingleton E)
+
+/-- If the model vector space is trivial, so is the Lie algebra of left-invariant derivations of a
+finite-dimensional smooth real Lie group. -/
+theorem subsingleton_leftInvariantDerivation [Subsingleton E]
+    [FiniteDimensional ℝ E] [ContMDiffMul I ∞ G] [T2Space G]
+    (h₁ : I.IsInteriorPoint (1 : G)) : Subsingleton (LeftInvariantDerivation I G) :=
+  have := subsingleton_groupLieAlgebra (I := I) (G := G)
+  (leftInvariantDerivationEquivGroupLieAlgebra (I := I) (G := G) h₁).injective.subsingleton
 
 /-- The Lie algebra of a finite-dimensional smooth real Lie group without boundary is
 finite-dimensional. -/

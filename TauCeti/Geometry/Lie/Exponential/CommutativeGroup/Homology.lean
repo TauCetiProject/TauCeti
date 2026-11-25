@@ -144,9 +144,15 @@ theorem lieExpFirstHomologyEquiv_apply (c : ((singularChains ℤ).obj (TopCat.of
         (ContinuousMap.singularHomologyMap ℤ 1
           ((lieExpOrbitRelQuotientHomeomorph (I := I) (G := G)).symm : C(_, _)) c) := by
   rw [lieExpFirstHomologyEquiv]
-  exact (LinearEquiv.trans_apply c).trans (congrArg _ (congrArg (fun f ↦ ModuleCat.Hom.hom f c)
-    ((lieExpOrbitRelQuotientHomeomorph (I := I) (G := G)).toHomotopyEquiv.singularHomologyIso_inv
-      (ModuleCat.of ℤ ℤ) 1)))
+  -- The composite is typed at `((singularChains ℤ).obj X).homology 1` while `singularHomologyIso`
+  -- is typed at `singularHomologyFunctor`, so `rw` cannot match the lemmas about the composite and
+  -- the iso; they are chained by `Eq.trans` instead.
+  refine (LinearEquiv.trans_apply c).trans
+    (congrArg _ ((CategoryTheory.Iso.toLinearEquiv_apply _ c).trans ?_))
+  rw [CategoryTheory.Iso.symm_hom, ContinuousMap.HomotopyEquiv.singularHomologyIso_inv]
+  -- The homotopy inverse `invFun` of `e.toHomotopyEquiv` is the continuous map `e.symm`.
+  exact LinearMap.congr_fun
+    (ContinuousMap.singularHomologyMap_eq_singularHomologyFunctor_map ℤ 1 _).symm c
 
 /-- The inverse of `TauCeti.lieExpFirstHomologyEquiv` sends `λ` to the class that
 `AddSubgroup.orbitRelQuotientFirstHomologyEquiv` attaches to `λ` on the orbit space, carried to `G`
@@ -157,9 +163,15 @@ theorem lieExpFirstHomologyEquiv_symm_apply (l : (lieExpAddMonoidHom (I := I) (G
         (lieExpOrbitRelQuotientHomeomorph (I := I) (G := G) : C(_, _))
         ((lieExpAddMonoidHom (I := I) (G := G)).ker.orbitRelQuotientFirstHomologyEquiv.symm l) := by
   rw [lieExpFirstHomologyEquiv]
-  exact (LinearEquiv.symm_trans_apply l).trans (congrArg (fun f ↦ ModuleCat.Hom.hom f _)
-    ((lieExpOrbitRelQuotientHomeomorph (I := I) (G := G)).toHomotopyEquiv.singularHomologyIso_hom
-      (ModuleCat.of ℤ ℤ) 1))
+  -- As in `TauCeti.lieExpFirstHomologyEquiv_apply`, the lemmas are chained by `Eq.trans`; the
+  -- inverse of `i.symm.toLinearEquiv` is `i.toLinearEquiv`
+  -- (`CategoryTheory.Iso.toLinearEquiv_symm`).
+  refine (LinearEquiv.symm_trans_apply l).trans
+    ((CategoryTheory.Iso.toLinearEquiv_apply _ _).trans ?_)
+  rw [ContinuousMap.HomotopyEquiv.singularHomologyIso_hom]
+  -- The forward map `toFun` of `e.toHomotopyEquiv` is the continuous map `e`.
+  exact LinearMap.congr_fun
+    (ContinuousMap.singularHomologyMap_eq_singularHomologyFunctor_map ℤ 1 _).symm _
 
 /-- On a class carried from the orbit space by `TauCeti.lieExpOrbitRelQuotientHomeomorph`,
 `TauCeti.lieExpFirstHomologyEquiv` is `AddSubgroup.orbitRelQuotientFirstHomologyEquiv`. -/

@@ -43,18 +43,10 @@ example (c : ((singularChains ℤ).obj (TopCat.of G)).homology 1) :
       2 • lieExpFirstHomologyEquiv (I := I) (G := G) c :=
   lieExpFirstHomologyEquiv_singularHomologyMap_pow 2 c
 
-omit [IsMulCommutative G] [PreconnectedSpace G] in
-/-- In dimension zero the Lie algebra is zero. -/
-theorem subsingleton_leftInvariantDerivation [Subsingleton E] :
-    Subsingleton (LeftInvariantDerivation I G) :=
-  -- `GroupLieAlgebra I G` is the tangent space at the identity, which is the model space `E`.
-  have : Subsingleton (GroupLieAlgebra I G) := inferInstanceAs (Subsingleton E)
-  (leftInvariantDerivationEquivGroupLieAlgebra (I := I) (G := G)
-    BoundarylessManifold.isInteriorPoint).injective.subsingleton
-
 /-- In dimension zero the first homology vanishes. -/
 example [Subsingleton E] : Subsingleton (((singularChains ℤ).obj (TopCat.of G)).homology 1) :=
   have := subsingleton_leftInvariantDerivation (I := I) (G := G)
+    BoundarylessManifold.isInteriorPoint
   (lieExpFirstHomologyEquiv (I := I) (G := G)).toEquiv.subsingleton
 
 end TauCeti.Examples
