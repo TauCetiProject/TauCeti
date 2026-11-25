@@ -73,6 +73,9 @@ Newman, Gordon–Hughes and Ligozat, whose cusp conditions are the orders above.
   `TauCeti.ModularForm.isZeroAtImInfty_etaQuotient_slash_iff`: `f ∣[k] σ` is bounded at `i ∞`
   exactly when `0 ≤ L`, and tends to zero exactly when `0 < L`.
 * `TauCeti.ModularForm.natCast_div_gcd_mul_etaQuotientOrder`: `w L` equals Ligozat's expression.
+* `TauCeti.ModularForm.etaQuotientOrder_gcd`: `L` depends on `c` only through `gcd(N, c)`, so
+  `TauCeti.ModularForm.forall_etaQuotientOrder_iff` reduces a condition at every cusp to the
+  divisors of `N`.
 * `TauCeti.ModularForm.etaQuotient_add_intCast`: the translation law
   `f(τ + n) = e^{π i n (∑_δ δ r_δ) / 12} f(τ)`.
 * `TauCeti.ModularForm.etaQuotient_smul`: the transformation of `f` under `γ ∈ Γ₀(N)`.
@@ -300,6 +303,22 @@ theorem etaQuotientOrder_zero (N : ℕ) (r : ℕ → ℤ) :
   have : (δ : ℚ) ≠ 0 := by exact_mod_cast (Nat.pos_of_mem_divisors hδ).ne'
   rw [Int.natAbs_zero, Nat.gcd_zero_right]
   field_simp
+
+/-- The order of an eta quotient at a cusp depends on its denominator `c` only through
+`gcd(N, c)`, a divisor of `N` when `N ≠ 0`. -/
+theorem etaQuotientOrder_gcd (N : ℕ) (r : ℕ → ℤ) (c : ℤ) :
+    etaQuotientOrder N r (N.gcd c.natAbs) = etaQuotientOrder N r c := by
+  simp only [etaQuotientOrder_def, Int.natAbs_natCast]
+  refine Finset.sum_congr rfl fun δ hδ ↦ ?_
+  rw [← Nat.gcd_assoc, Nat.gcd_eq_left (Nat.dvd_of_mem_divisors hδ)]
+
+/-- A property of the order of an eta quotient holds at every cusp exactly when it holds at the
+divisors of `N`, since the order at `c` is the order at `gcd(N, c)` (`etaQuotientOrder_gcd`). -/
+theorem forall_etaQuotientOrder_iff (N : ℕ) [NeZero N] (r : ℕ → ℤ) {p : ℚ → Prop} :
+    (∀ c : ℤ, p (etaQuotientOrder N r c)) ↔ ∀ d ∈ N.divisors, p (etaQuotientOrder N r d) := by
+  refine ⟨fun h d _ ↦ h d, fun h c ↦ ?_⟩
+  rw [← etaQuotientOrder_gcd]
+  exact h _ (Nat.mem_divisors.mpr ⟨Nat.gcd_dvd_left _ _, NeZero.ne N⟩)
 
 /-- **Ligozat's formula**, as an identity in `ℚ`. For `d ∣ N` and `w = N / gcd(N, d²)`,
 `w · etaQuotientOrder N r d = (N / 24) ∑_{δ ∣ N} gcd(d, δ)² r δ / (gcd(d, N / d) d δ)`.
