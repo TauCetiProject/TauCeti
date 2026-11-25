@@ -52,6 +52,8 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 
 * `Matrix.J_mul_neg_J`, `Matrix.neg_J_mul_J` and `Matrix.isUnit_J`: the canonical skew-symmetric
   matrix is a unit, with inverse `-J`.
+* `Matrix.J_mul_fromBlocks_zero₁₂_zero₂₁`: left multiplication by `J` turns a block diagonal
+  matrix `[[A, 0], [0, D]]` into the antidiagonal matrix `[[0, -D], [A, 0]]`.
 * `Matrix.det_J`: its determinant is `1`.
 * `Matrix.star_J` and `Matrix.J_mem_unitaryGroup`: over any star ring its adjoint is `-J`, so
   it is unitary (orthogonal over `ℝ`).
@@ -161,6 +163,12 @@ theorem neg_J_mul_J : (-J l R) * J l R = 1 := by
 /-- The canonical skew-symmetric matrix is a unit, with inverse `-J`, because `J * J = -1`. -/
 theorem isUnit_J : IsUnit (J l R) :=
   ⟨⟨J l R, -J l R, J_mul_neg_J l R, neg_J_mul_J l R⟩, rfl⟩
+
+/-- Left multiplication by `J` turns a block diagonal matrix into an antidiagonal one:
+`J * [[A, 0], [0, D]] = [[0, -D], [A, 0]]`. -/
+theorem J_mul_fromBlocks_zero₁₂_zero₂₁ (A D : Matrix l l R) :
+    J l R * fromBlocks A 0 0 D = fromBlocks 0 (-D) A 0 := by
+  simp [J, fromBlocks_multiply]
 
 /-- The canonical skew-symmetric matrix has determinant one. Mathlib records only
 `det J * det J = 1` (`Matrix.J_det_mul_J_det`), which leaves the sign open. -/
