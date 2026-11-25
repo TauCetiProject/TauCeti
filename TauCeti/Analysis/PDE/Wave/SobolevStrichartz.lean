@@ -33,14 +33,12 @@ wave-admissible, `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with `2 < q < ∞` and `
   for `f = u(0)` and `g = ∂ₜu(0)`, so it satisfies the estimate on that interval, with a
   constant independent of the interval.
 
-For `W₊(t)` and `W₋(t)` the same estimates hold at the pairs `q = 2`,
-`2 (n - 1) / (n - 3) ≤ r < ∞` in dimension `n ≥ 4`; they are proved in
-`TauCeti.Analysis.PDE.Wave.TimeExponentTwo`. All five estimates also hold in mixed norm at the
-pairs `(∞, r)` with `2 ≤ r < ∞`, with `γ = n / 2 - n / r`; there they bound the `L^r` norms of the
-free waves uniformly in time, as the Sobolev embedding `\dot H^γ ⊆ L^r` predicts. These are the
-estimates of Tao, Theorem 2.6, for finite `r`, except that at `q = 2` only `W₊(t)` and `W₋(t)` are
-treated. The square
-sums are at most the `\dot B^γ_{2,1}` and `\dot B^{γ - 1}_{2,1}` norms of
+All these estimates also hold at the pairs `q = 2`, `2 (n - 1) / (n - 3) ≤ r < ∞` in dimension
+`n ≥ 4`; they are proved in `TauCeti.Analysis.PDE.Wave.TimeExponentTwo`. All five estimates also
+hold in mixed norm at the pairs `(∞, r)` with `2 ≤ r < ∞`, with `γ = n / 2 - n / r`; there they
+bound the `L^r` norms of the free waves uniformly in time, as the Sobolev embedding
+`\dot H^γ ⊆ L^r` predicts. With those, these are the estimates of Tao, Theorem 2.6, for finite
+`r`. The square sums are at most the `\dot B^γ_{2,1}` and `\dot B^{γ - 1}_{2,1}` norms of
 `TauCeti.Analysis.PDE.Wave.HomogeneousStrichartz`, so for `r < ∞` these estimates are stronger.
 At `r = ∞` the Littlewood–Paley inequality is not available, and the Besov estimates remain the
 statement there; in particular the false embedding `\dot H^{n/2} ⊆ L^∞` is not asserted.
