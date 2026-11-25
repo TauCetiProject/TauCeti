@@ -80,16 +80,6 @@ variable {Γ A M : Type*} [Monoid Γ] [TopologicalSpace Γ] [CommSemiring A] [To
 variable (B : Type*) [CommRing B] [TopologicalSpace B] [IsTopologicalSemiring B] [Algebra A B]
   [ContinuousSMul A B] [TopologicalSpace (B ⊗[A] M)] [IsModuleTopology B (B ⊗[A] M)]
 
-/-- The image `χ_B : Γ →ₜ* Bˣ` of a continuous character `χ : Γ →ₜ* Aˣ` under the coefficient
-map `A → B`. -/
-abbrev unitsMapCharacter (χ : Γ →ₜ* Aˣ) : Γ →ₜ* Bˣ :=
-  (ContinuousMonoidHom.unitsMap ⟨(algebraMap A B : A →* B), continuous_algebraMap A B⟩).comp χ
-
-omit [IsTopologicalSemiring B] in
-theorem coe_unitsMapCharacter_apply (χ : Γ →ₜ* Aˣ) (g : Γ) :
-    (unitsMapCharacter B χ g : B) = algebraMap A B (χ g) :=
-  ContinuousMonoidHom.coe_unitsMap_apply _ _
-
 /-- **Extension of scalars commutes with twisting**: `B ⊗ M(χ) = (B ⊗ M)(χ_B)`, where `χ_B` is
 the image of `χ` in `Bˣ`. -/
 theorem baseChange_twist (ρ : ContinuousRep Γ A M) (χ : Γ →ₜ* Aˣ) :
@@ -101,8 +91,8 @@ theorem baseChange_twist (ρ : ContinuousRep Γ A M) (χ : Γ →ₜ* Aˣ) :
   refine ext fun g x ↦ ?_
   induction x using TensorProduct.inductionOn with
   | tmul b x =>
+    rw [twist_apply, coe_unitsMapCharacter_apply]
     simp [baseChange_apply, TensorProduct.tmul_smul, Algebra.smul_def, TensorProduct.smul_tmul']
-    rfl
   | add x y hx hy => rw [map_add, hx, hy, map_add]
 
 end Twist

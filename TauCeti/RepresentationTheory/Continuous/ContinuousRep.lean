@@ -73,6 +73,8 @@ finitely many vectors.
 * `TauCeti.ContinuousRep.baseChangeSelfIso` and `TauCeti.ContinuousRep.baseChangeTransIso`:
   extension of scalars to `A` itself is trivial, and extension along `A → B → C` is extension
   along `A → C`.
+* `TauCeti.ContinuousRep.unitsMapCharacter`: the image `Γ →ₜ* Bˣ` of a character `Γ →ₜ* Aˣ`
+  under the coefficient map `A → B`.
 * `TauCeti.ContinuousRep.baseChangeOfCharacterIso`: the base change of a character line is the
   line of the character composed with `Aˣ → Bˣ`.
 * `TauCeti.ContinuousRep.baseChangeTrivialIso`: the base change of the trivial representation is
@@ -953,26 +955,30 @@ end BaseChangeTransTrans
 section BaseChangeOfCharacter
 
 variable {Γ A : Type*} [Monoid Γ] [TopologicalSpace Γ] [CommSemiring A] [TopologicalSpace A]
-  [IsTopologicalSemiring A]
 
 variable (B : Type*) [CommRing B] [TopologicalSpace B] [IsTopologicalSemiring B] [Algebra A B]
-  [ContinuousSMul A B] [TopologicalSpace (B ⊗[A] A)] [IsModuleTopology B (B ⊗[A] A)]
+  [ContinuousSMul A B]
+
+/-- The image `χ_B : Γ →ₜ* Bˣ` of a continuous character `χ : Γ →ₜ* Aˣ` under the coefficient
+map `A → B`. -/
+abbrev unitsMapCharacter (χ : Γ →ₜ* Aˣ) : Γ →ₜ* Bˣ :=
+  (ContinuousMonoidHom.unitsMap ⟨(algebraMap A B : A →* B), continuous_algebraMap A B⟩).comp χ
+
+omit [IsTopologicalSemiring B] in
+theorem coe_unitsMapCharacter_apply (χ : Γ →ₜ* Aˣ) (g : Γ) :
+    (unitsMapCharacter B χ g : B) = algebraMap A B (χ g) :=
+  ContinuousMonoidHom.coe_unitsMap_apply _ _
+
+variable [IsTopologicalSemiring A] [TopologicalSpace (B ⊗[A] A)] [IsModuleTopology B (B ⊗[A] A)]
 
 /-- **Extension of scalars of a character line is the line of the extended character**: the
-base change of `ofCharacter χ` to `B` is the line `B` on which `g` acts by the image of `χ g`
-in `Bˣ`, through `TensorProduct.AlgebraTensorModule.rid`. -/
+base change of `ofCharacter χ` to `B` is the line `B` on which `g` acts by the image
+`unitsMapCharacter B χ g` of `χ g` in `Bˣ`, through `TensorProduct.AlgebraTensorModule.rid`. -/
 def baseChangeOfCharacterIso (χ : Γ →ₜ* Aˣ) :
-    Iso ((ofCharacter χ).baseChange B)
-      (ofCharacter ((ContinuousMonoidHom.unitsMap
-        ⟨(algebraMap A B : A →* B), continuous_algebraMap A B⟩).comp χ)) :=
+    Iso ((ofCharacter χ).baseChange B) (ofCharacter (unitsMapCharacter B χ)) :=
   .ofEquiv (.mk (TensorProduct.AlgebraTensorModule.rid A B B) fun g => by
-    -- The extended character takes the value `algebraMap A B (χ g)` at `g`.
-    have hχ : ((ContinuousMonoidHom.unitsMap
-        ⟨(algebraMap A B : A →* B), continuous_algebraMap A B⟩).comp χ g : B) =
-        algebraMap A B (χ g) :=
-      ContinuousMonoidHom.coe_unitsMap_apply _ _
     ext
-    simpa [Algebra.smul_def] using hχ.symm)
+    simpa [Algebra.smul_def] using (coe_unitsMapCharacter_apply B χ g).symm)
 
 @[simp]
 theorem baseChangeOfCharacterIso_tmul (χ : Γ →ₜ* Aˣ) (b : B) (a : A) :
