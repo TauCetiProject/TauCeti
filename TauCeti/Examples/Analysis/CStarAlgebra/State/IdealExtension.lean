@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.State.IdealExtension
 public import TauCeti.Analysis.CStarAlgebra.State.AmenableTrace
 public import TauCeti.Analysis.CStarAlgebra.Matrix.VectorState
+import TauCeti.Analysis.CStarAlgebra.State.Extension
 
 /-!
 # Checks for the extension of tracial states from closed ideals
@@ -113,17 +114,13 @@ theorem norm_unit : ‖unit‖ = 1 := by
 
 /-- **`τ = tr₂` is a tracial state of `I`.** -/
 theorem isTracialState_trace : IsTracialState (A := I) trace := by
-  refine isTracialState_traceFst.comp_of_norm_eq_one I.starAlgHom (le_antisymm ?_ ?_)
-  · refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun c ↦ ?_
-    calc ‖trace c‖ = ‖traceFst (c : A)‖ := by rw [traceFst_apply_coe]
-      _ ≤ 1 * ‖(c : A)‖ := by
-        simpa [isTracialState_traceFst.norm_eq_one] using
-          (traceFst : A →L[ℂ] ℂ).le_opNorm (c : A)
-      _ = 1 * ‖c‖ := by rw [AddSubgroupClass.coe_norm]
-  · have h := (trace : I →L[ℂ] ℂ).le_opNorm unit
-    rw [norm_unit, mul_one] at h
-    have h1 : (trace : I →L[ℂ] ℂ) unit = 1 := by simpa using trace_unit
-    rwa [h1, norm_one] at h
+  refine isTracialState_traceFst.comp_of_norm_eq_one I.starAlgHom <|
+    (norm_eq_of_apply_map_eq I.starAlgHom (isTracialState_traceFst.norm_eq_one.trans_le ?_)
+      fun _ ↦ rfl).symm.trans isTracialState_traceFst.norm_eq_one
+  have h := (trace : I →L[ℂ] ℂ).le_opNorm unit
+  rw [norm_unit, mul_one] at h
+  have h1 : (trace : I →L[ℂ] ℂ) unit = 1 := by simpa using trace_unit
+  rwa [h1, norm_one] at h
 
 /-- **Uniqueness of the extension.** Every positive functional of norm at most one on `A` that
 restricts to `τ` on `I` is `γ(x, λ) = tr₂(x)`. -/
