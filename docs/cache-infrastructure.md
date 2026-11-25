@@ -4,10 +4,12 @@ Where the build cache lives, who owns it, and which knob feeds which workflow.
 
 ## Mathlib download cache (GitHub Actions)
 
-The main `ci.yml` workflow maintains a narrow snapshot of Mathlib's compressed download store:
-`$MATHLIB_CACHE_DIR/*.ltar`. The `.ltar` files are content-addressed; cache-tool scratch files,
-executables, and the unpacked `.lake` tree are not included. The local
-`.github/actions/restore-mathlib-ltars` action sets `MATHLIB_CACHE_DIR` job-wide through
+The post-merge `ci.yml` workflow maintains a narrow snapshot of Mathlib's compressed download store:
+`$MATHLIB_CACHE_DIR/*.ltar`. (TauCeti's `ci.yml` is a stub; its jobs are TauCetiTools'
+reusable `ci.yml`.) The `.ltar` files are content-addressed; cache-tool scratch files,
+executables, and the unpacked `.lake` tree are not included. The `restore-mathlib-ltars` action
+(TauCetiTools' copy for `ci.yml` and `pr-build.yml`, and an identical local
+`.github/actions/restore-mathlib-ltars` for the other workflows) sets `MATHLIB_CACHE_DIR` job-wide through
 `$GITHUB_ENV`, defaulting to `$GITHUB_WORKSPACE/.mathlib-ltar-cache`; its `cache-dir` input can
 override that location. Main publishes only after a non-exact restore: an exact key is immutable
 and already contains this pin's snapshot. Before publishing, main runs `lake exe cache clean` so
@@ -29,15 +31,16 @@ the snapshot lacks. This design mirrors Mathlib's own cache-snapshot warming in
 instead of per-run artifacts.
 
 GitHub Actions cache entries are immutable. If an entry is poisoned or the format becomes
-incompatible, bump `mathlib-ltar-v1` once in
-`.github/actions/restore-mathlib-ltars/action.yml`. To discard a single entry instead, find it with
+incompatible, bump `mathlib-ltar-v1` in both copies of `restore-mathlib-ltars/action.yml`
+(TauCetiTools' and the local one), which share the key namespace. To discard a single entry instead, find it with
 `gh cache list --repo TauCetiProject/TauCeti` and delete its exact key with
 `gh cache delete <key> --repo TauCetiProject/TauCeti`. A failed fetch also retries once with
 `lake exe cache get!`, which forces every linked file to be downloaded and unpacked again.
 
 Downloads go to the cache tool's default read endpoint. The escape hatch is a repository
 variable. Every workflow that runs `lake exe cache get` (`ci.yml`, `pr-build.yml`,
-`pr-profile.yml`, `nightly-verify.yml`, `pages.yml`) exports
+`pr-profile.yml`, `pages.yml`, and TauCetiTools' `nightly-verify.yml`, which
+`nightly-verify-schedule.yml` calls) exports
 `MATHLIB_CACHE_DEBUG_USE_LEGACY` from `vars.MATHLIB_CACHE_DEBUG_USE_LEGACY`. An operator
 sets the variable to `1` to send reads back to the legacy storage endpoint, and clears it
 to return to the default endpoint. Both changes apply on the next run, with no code
@@ -149,8 +152,9 @@ base, and the queue alerts, until the map is published, by hand if necessary.
 
 ## Why the upload is its own job
 
-`ci.yml` publishes in two jobs. `build` compiles main and *stages* the artifacts; the separate
-`publish-lake-cache` job holds `LAKE_CACHE_KEY` and uploads them. The split is a trust boundary,
+`ci.yml` publishes in two jobs, both defined in TauCetiTools' reusable `ci.yml` and shown as
+`ci / build` and `ci / publish-lake-cache / publish`. `build` compiles main and *stages* the
+artifacts; the separate `publish-lake-cache` job holds `LAKE_CACHE_KEY` and uploads them. The split is a trust boundary,
 not a convenience.
 
 `build` runs `lake build` unsandboxed, as the runner user, on whatever landed on main, and Lean
@@ -172,10 +176,12 @@ manifest for inherited objects. Anonymous HEAD checks are an optimization filter
 ETags are not the publisher's final integrity check. Merge-group staging runs on the host after
 the sandbox exits. Ordinary PR outputs never enter shared publication.
 
-The flat staging directory is passed to the reusable `publish-lake-cache` workflow as a workflow
-artifact. The publisher has no Lake workspace or project dependencies. Only `lean-toolchain`
-comes from the immutable revision being published; the planning, probe and file helpers are
-checked out at `github.workflow_sha`. The pin must name an official `leanprover/lean4:` release
+The flat staging directory is passed to TauCetiTools' reusable `publish-lake-cache` workflow as a
+workflow artifact; both `ci.yml` and merge-group builds use that publisher. (TauCeti's own
+`.github/workflows/publish-lake-cache.yml` is no longer called; the TauCetiQueueControl runner
+group still lists it.) The publisher has no Lake workspace or project dependencies. Only
+`lean-toolchain` comes from the immutable revision being published; the planning, probe and file
+helpers are checked out from TauCetiTools at the publisher's own revision (`job.workflow_sha`). The pin must name an official `leanprover/lean4:` release
 and match the reported toolchain. Neither the reported values nor the staged data are trusted.
 
 Before credentials are present, the workflow-pinned planner's `prepare()` validates the map

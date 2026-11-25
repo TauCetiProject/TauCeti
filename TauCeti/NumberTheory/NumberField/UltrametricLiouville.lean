@@ -14,7 +14,7 @@ import Mathlib.Analysis.Normed.Ring.Ultra
 import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 import Mathlib.NumberTheory.NumberField.Norm
 import Mathlib.RingTheory.IntegralClosure.IntegralRestrict
-import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
+import TauCeti.Analysis.Normed.Ring.Ultra
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 import TauCeti.NumberTheory.Padics.Basic
 
@@ -78,13 +78,9 @@ theorem one_le_house_pow_mul_norm_of_isUltrametricDist {L : Type*} [NormedField 
   rw [Algebra.intNorm_eq_norm] at hz
   have hNK : (N : K) = c * x * z := by
     simpa [hyK] using congrArg ((↑) : 𝓞 K → K) hz
-  -- The norm of `L` as an absolute value, which is nonarchimedean since `L` is ultrametric.
-  have hv : IsNonarchimedean (NormedField.toAbsoluteValue L) := fun a b ↦ by
-    simpa only [NormedField.toAbsoluteValue_apply] using
-      IsUltrametricDist.isNonarchimedean_norm a b
-  have hzσ : IsIntegral ℤ (σ (z : K)) := (RingOfIntegers.isIntegral_coe z).map σ.toIntAlgHom
-  have hz1 : ‖σ (z : K)‖ ≤ 1 := by
-    simpa only [NormedField.toAbsoluteValue_apply] using hv.apply_le_one_of_isIntegral_int hzσ
+  have hz1 : ‖σ (z : K)‖ ≤ 1 :=
+    IsUltrametricDist.norm_le_one_of_isIntegral (fun _ _ _ ↦ norm_pow _ _)
+      ((RingOfIntegers.isIntegral_coe z).map σ.toIntAlgHom)
   have hNσ : ‖(N : L)‖ ≤ ‖σ x‖ := by
     rw [← map_intCast σ, hNK, map_mul, map_mul, map_intCast, norm_mul, norm_mul]
     calc ‖(c : L)‖ * ‖σ x‖ * ‖σ (z : K)‖ ≤ 1 * ‖σ x‖ * 1 := by

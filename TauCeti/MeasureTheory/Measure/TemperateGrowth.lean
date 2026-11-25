@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TemperateGrowth
-public import Mathlib.Analysis.PSeries
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.Algebra.Order.ToIntervalMod
-import TauCeti.Analysis.PSeries
+import TauCeti.Analysis.PSeries.Shifted
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!

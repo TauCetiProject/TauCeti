@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.ResidueDegree
 import TauCeti.Algebra.CharZero.IntCast
 import TauCeti.Algebra.Field.SqrtIntDiv
-import TauCeti.FieldTheory.Galois.SquareRoot
+import TauCeti.FieldTheory.Galois.SquareRoot.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.NumberTheory.Multiquadratic.RamifiedPrimes
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat

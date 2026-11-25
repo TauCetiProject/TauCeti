@@ -24,6 +24,8 @@ form.
 * `Units.squareClass_eq_zero_iff_pos`: a real unit has trivial square class iff it is positive.
 * `Units.squareClass_eq_squareClass_neg_one_iff_neg`: a real unit has the square class of `-1`
   iff it is negative.
+* `TauCeti.powMonoidHom_two_range_mk_eq_one_iff_pos_real`: a real unit has trivial class in
+  `ℝˣ ⧸ (ℝˣ)²`, spelled through `powMonoidHom 2` as in `2`-descent, iff it is positive.
 * `TauCeti.sum_squareClass_eq_ncard_nsmul`: the square classes of a finite family of real units
   add up to the number of negative members times the class of `-1`.
 * `TauCeti.nsmul_squareClass_neg_one_eq_zero_iff_even`: `n • [-1]` vanishes in the real
@@ -71,6 +73,13 @@ theorem squareClass_eq_squareClass_neg_one_iff_neg (u : ℝˣ) :
 end Units
 
 namespace TauCeti
+
+/-- A real unit has trivial class in `ℝˣ ⧸ (ℝˣ)²`, with the squares written as the range of
+`powMonoidHom 2`, exactly when it is positive. -/
+theorem powMonoidHom_two_range_mk_eq_one_iff_pos_real (u : ℝˣ) :
+    (u : ℝˣ ⧸ (powMonoidHom 2 : ℝˣ →* ℝˣ).range) = 1 ↔ 0 < (u : ℝ) := by
+  rw [QuotientGroup.eq_one_iff, ← Units.isSquare_iff_pos]
+  simp [IsSquare, sq, eq_comm]
 
 /-- The `n`-th multiple of the square class of `-1` in the real square-class group vanishes
 exactly when `n` is even. -/
