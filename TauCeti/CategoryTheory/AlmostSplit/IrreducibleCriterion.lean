@@ -22,7 +22,7 @@ left minimal left almost split morphism, with `X` nonzero, is irreducible exactl
 
 The direction from the decomposition is the restriction of a right minimal right almost split
 morphism to a nonzero retract of its source
-(`TauCeti.IsRightAlmostSplit.isIrreducibleMorphism_comp_of_isSplitMono`). The converse factors an
+(`TauCeti.IsRightAlmostSplit.isIrreducibleMorphism_comp_of_not_isZero`). The converse factors an
 irreducible `h` through `g` by a split monomorphism
 (`TauCeti.IsRightAlmostSplit.exists_isSplitMono_of_isIrreducibleMorphism`) and splits off its
 complement, which needs idempotents to split.
@@ -32,9 +32,6 @@ complement, which needs idempotents to split.
 * `TauCeti.exists_isIso_biprod_desc_of_isSplitMono` and
   `TauCeti.exists_isIso_biprod_lift_of_isSplitEpi`: in an idempotent-complete preadditive category,
   a split monomorphism is a biproduct inclusion and a split epimorphism a biproduct projection.
-* `TauCeti.IsRightAlmostSplit.isIrreducibleMorphism_comp_of_not_isZero` and
-  `TauCeti.IsLeftAlmostSplit.isIrreducibleMorphism_comp_of_not_isZero`: the components of a minimal
-  almost split morphism at nonzero retracts are irreducible.
 * `TauCeti.IsRightAlmostSplit.isIrreducibleMorphism_iff_exists_biprod_desc` and
   `TauCeti.IsLeftAlmostSplit.isIrreducibleMorphism_iff_exists_biprod_lift`: the irreducibility
   criterion.
@@ -82,30 +79,6 @@ theorem exists_isIso_biprod_lift_of_isSplitEpi {X Y : C} (p : Y ⟶ X) [IsSplitE
   infer_instance
 
 end Complement
-
-section Components
-
-variable {X Y Z : C}
-
-/-- **Restricting a right minimal right almost split morphism to a nonzero retract of its source
-gives an irreducible morphism.** The restriction is radical, so it is not split monic. -/
-theorem IsRightAlmostSplit.isIrreducibleMorphism_comp_of_not_isZero {f : X ⟶ Y}
-    (hf : IsRightAlmostSplit f) (hmin : ∀ u : X ⟶ X, u ≫ f = f → IsIso u) (hZ : ¬ IsZero Z)
-    (i : Z ⟶ X) [IsSplitMono i] : IsIrreducibleMorphism (i ≫ f) :=
-  hf.isIrreducibleMorphism_comp_of_isSplitMono hmin i fun _ ↦ hZ
-    (isZero_of_isSplitMono_of_mem_jacobsonRadical
-      (comp_mem_jacobsonRadical_left i hf.mem_jacobsonRadical))
-
-/-- **Projecting a left minimal left almost split morphism onto a nonzero retract of its target
-gives an irreducible morphism.** The projection is radical, so it is not split epic. -/
-theorem IsLeftAlmostSplit.isIrreducibleMorphism_comp_of_not_isZero {f : X ⟶ Y}
-    (hf : IsLeftAlmostSplit f) (hmin : ∀ u : Y ⟶ Y, f ≫ u = f → IsIso u) (hZ : ¬ IsZero Z)
-    (p : Y ⟶ Z) [IsSplitEpi p] : IsIrreducibleMorphism (f ≫ p) :=
-  hf.isIrreducibleMorphism_comp_of_isSplitEpi hmin p fun _ ↦ hZ
-    (isZero_of_isSplitEpi_of_mem_jacobsonRadical
-      (comp_mem_jacobsonRadical_right hf.mem_jacobsonRadical p))
-
-end Components
 
 section Criterion
 

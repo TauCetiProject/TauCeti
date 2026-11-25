@@ -15,8 +15,9 @@ A left minimal left almost-split map that is not split epic is irreducible; dual
 minimal right almost-split map that is not split monic is irreducible. These criteria identify
 irreducible maps in almost-split sequences from minimality and the complementary non-splitting
 condition. In a preadditive category the same conclusions hold after restricting to a
-retract of the source, or projecting onto a retract of the target, respectively. These component
-criteria identify the irreducible maps supplied by a decomposition of the middle term.
+retract of the source, or projecting onto a retract of the target, respectively; the restriction
+or projection is automatically not split when the retract is nonzero, since it is radical. These
+component criteria identify the irreducible maps supplied by a decomposition of the middle term.
 
 These are standard criteria for irreducible maps; see Auslander,
 Reiten and Smalø, *Representation Theory of Artin Algebras*, V.5.
@@ -83,6 +84,24 @@ theorem IsLeftAlmostSplit.isIrreducibleMorphism_comp_of_isSplitEpi
     simp [u, Preadditive.add_comp, Preadditive.sub_comp, Category.assoc]
   have : IsSplitEpi (t ≫ b) := hup ▸ inferInstanceAs (IsSplitEpi (u ≫ p))
   exact Or.inr (isSplitEpi_of_isSplitEpi_comp t b)
+
+/-- **Restricting a right minimal right almost split morphism to a nonzero retract of its source
+gives an irreducible morphism.** The restriction is radical, so it is not split monic. -/
+theorem IsRightAlmostSplit.isIrreducibleMorphism_comp_of_not_isZero
+    (hf : IsRightAlmostSplit f) (hmin : ∀ u : X ⟶ X, u ≫ f = f → IsIso u) {Z : C}
+    (hZ : ¬ Limits.IsZero Z) (i : Z ⟶ X) [IsSplitMono i] : IsIrreducibleMorphism (i ≫ f) :=
+  hf.isIrreducibleMorphism_comp_of_isSplitMono hmin i fun _ ↦ hZ
+    (isZero_of_isSplitMono_of_mem_jacobsonRadical
+      (comp_mem_jacobsonRadical_left i hf.mem_jacobsonRadical))
+
+/-- **Projecting a left minimal left almost split morphism onto a nonzero retract of its target
+gives an irreducible morphism.** The projection is radical, so it is not split epic. -/
+theorem IsLeftAlmostSplit.isIrreducibleMorphism_comp_of_not_isZero
+    (hf : IsLeftAlmostSplit f) (hmin : ∀ u : Y ⟶ Y, f ≫ u = f → IsIso u) {Z : C}
+    (hZ : ¬ Limits.IsZero Z) (p : Y ⟶ Z) [IsSplitEpi p] : IsIrreducibleMorphism (f ≫ p) :=
+  hf.isIrreducibleMorphism_comp_of_isSplitEpi hmin p fun _ ↦ hZ
+    (isZero_of_isSplitEpi_of_mem_jacobsonRadical
+      (comp_mem_jacobsonRadical_right hf.mem_jacobsonRadical p))
 
 end Components
 
