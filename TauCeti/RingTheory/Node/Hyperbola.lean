@@ -39,13 +39,15 @@ open MvPolynomial
 
 variable {R : Type*} [CommRing R] (a : R) [Invertible (2 : R)]
 
+/-- The point `x = (u + v) / 2`, `y = (v - u) / 2` of the node chart `uv = a`. -/
+private abbrev hyperbolaCoord : Fin 2 → NodeAlgebra R a :=
+  ![algebraMap R _ ⅟2 * (coord a 0 + coord a 1), algebraMap R _ ⅟2 * (coord a 1 - coord a 0)]
+
 /-- The coordinate change `x = (u + v) / 2`, `y = (v - u) / 2` from the hyperbola
 `x² - y² = a` to the node chart `uv = a`. -/
 private def ofQuotientSqSubSq :
     (MvPolynomial (Fin 2) R ⧸ Ideal.span {X 0 ^ 2 - X 1 ^ 2 - C a}) →ₐ[R] NodeAlgebra R a :=
-  Ideal.Quotient.liftₐ _
-    (aeval ![algebraMap R _ ⅟2 * (coord a 0 + coord a 1),
-      algebraMap R _ ⅟2 * (coord a 1 - coord a 0)])
+  Ideal.Quotient.liftₐ _ (aeval (hyperbolaCoord a))
     (by
       intro p hp
       obtain ⟨c, rfl⟩ := Ideal.mem_span_singleton'.mp hp
@@ -54,14 +56,12 @@ private def ofQuotientSqSubSq :
       have huv := coord_zero_mul_coord_one a
       simp only [map_mul, map_sub, map_pow, aeval_X, aeval_C, Matrix.cons_val_zero,
         Matrix.cons_val_one]
-      linear_combination (aeval ![algebraMap R _ ⅟2 * (coord a 0 + coord a 1),
-        algebraMap R _ ⅟2 * (coord a 1 - coord a 0)] c) *
-          (coord a 0 * coord a 1 * (algebraMap R _ ⅟2 * 2 + 1) * h₂ + huv))
+      -- With `h = ⅟2`, `x² - y² - a = uv (2h - 1)(2h + 1) + (uv - a)`.
+      linear_combination aeval (hyperbolaCoord a) c *
+        (coord a 0 * coord a 1 * (algebraMap R _ ⅟2 * 2 + 1) * h₂ + huv))
 
 private lemma ofQuotientSqSubSq_mk (p : MvPolynomial (Fin 2) R) :
-    ofQuotientSqSubSq a (Ideal.Quotient.mk _ p) =
-      aeval ![algebraMap R _ ⅟2 * (coord a 0 + coord a 1),
-        algebraMap R _ ⅟2 * (coord a 1 - coord a 0)] p :=
+    ofQuotientSqSubSq a (Ideal.Quotient.mk _ p) = aeval (hyperbolaCoord a) p :=
   Ideal.Quotient.liftₐ_apply _ _ _ _
 
 /-- **The hyperbola `x² - y² = a` is a node chart**: when `2` is invertible in `R`, the

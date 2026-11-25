@@ -112,6 +112,25 @@ theorem comap_map_fittingIdeal_localization_eq_span [IsLocalRing R] (a : R)
     rw [← coord_zero_mul_coord_one]
     exact Ideal.mul_mem_right _ _ (coord_mem_jacobianIdeal a 0)
 
+/-- The ideal of `R` cut out by the singular locus at a prime does not change along a flat,
+formally étale map `S → T`: it is the same at a prime `Q` of `T` and at `Q ∩ S`. The first Fitting
+ideal of the differentials base-changes along `S → T`, and `S_{Q ∩ S} → T_Q` is faithfully
+flat. -/
+private theorem comap_map_fittingIdeal_localization_comap_eq {S T : Type*} [CommRing S]
+    [CommRing T] [Algebra R S] [Module.Finite S Ω[S⁄R]] [Algebra S T] [Algebra.FormallyEtale S T]
+    [Module.Flat S T] [Algebra R T] [IsScalarTower R S T] [Module.Finite T Ω[T⁄R]] (Q : Ideal T)
+    [Q.IsPrime] :
+    ((fittingIdeal S Ω[S⁄R] 1).map
+        (algebraMap S (Localization.AtPrime (Q.comap (algebraMap S T))))).comap
+      (algebraMap R (Localization.AtPrime (Q.comap (algebraMap S T)))) =
+      ((fittingIdeal T Ω[T⁄R] 1).map (algebraMap T (Localization.AtPrime Q))).comap
+        (algebraMap R (Localization.AtPrime Q)) := by
+  have hST : fittingIdeal T Ω[T⁄R] 1 = (fittingIdeal S Ω[S⁄R] 1).map (algebraMap S T) :=
+    IsBaseChange.fittingIdeal_eq_map (KaehlerDifferential.isBaseChange_of_formallyEtale R S T) 1
+  rw [IsScalarTower.algebraMap_eq R S, ← Ideal.comap_comap,
+    ← Ideal.comap_map_localization_atPrime_of_flat, Ideal.comap_comap,
+    ← IsScalarTower.algebraMap_eq, IsScalarTower.algebraMap_eq S T, ← Ideal.map_map, ← hST]
+
 /-- **The singular locus at a point with an étale local node chart.** Let `R'` be a local,
 formally unramified and faithfully flat `R`-algebra, let `T` be a flat, formally étale
 `S`-algebra which is also an `R'`-algebra, and let `φ : R'[u, v] ⧸ (uv - a) → T` be a flat,
@@ -135,11 +154,7 @@ theorem comap_map_fittingIdeal_localization_eq_span_of_etale {R' S T : Type*} [C
   -- Move from `S` at `q` to `T` at `Q`, along the formally étale and flat map `S → T`.
   have : Module.Finite T Ω[T⁄R] :=
     .equiv (KaehlerDifferential.tensorKaehlerEquivOfFormallyEtale R S T)
-  have hST : fittingIdeal T Ω[T⁄R] 1 = (fittingIdeal S Ω[S⁄R] 1).map (algebraMap S T) :=
-    IsBaseChange.fittingIdeal_eq_map (KaehlerDifferential.isBaseChange_of_formallyEtale R S T) 1
-  rw [IsScalarTower.algebraMap_eq R S, ← Ideal.comap_comap,
-    ← Ideal.comap_map_localization_atPrime_of_flat, Ideal.comap_comap,
-    ← IsScalarTower.algebraMap_eq, IsScalarTower.algebraMap_eq S T, ← Ideal.map_map, ← hST]
+  rw [comap_map_fittingIdeal_localization_comap_eq]
   -- Over the formally unramified extension `R'`, the differentials of `T` do not change.
   have : Module.Finite T Ω[T⁄R'] :=
     .equiv (KaehlerDifferential.equivOfFormallyUnramifiedBase R R' T)
@@ -150,18 +165,13 @@ theorem comap_map_fittingIdeal_localization_eq_span_of_etale {R' S T : Type*} [C
   have : IsScalarTower R' N T := .of_algebraMap_eq fun r ↦ (φ.commutes r).symm
   have : Algebra.FormallyEtale N T := hφ
   have : Module.Flat N T := hφ'
-  have hNT : fittingIdeal T Ω[T⁄R'] 1 = (fittingIdeal N Ω[N⁄R'] 1).map (algebraMap N T) :=
-    IsBaseChange.fittingIdeal_eq_map (KaehlerDifferential.isBaseChange_of_formallyEtale R' N T) 1
   have hP : fittingIdeal N Ω[N⁄R'] 1 ≤ Q.comap (algebraMap N T) := by
     rw [fittingIdeal_differential_one, Ideal.span_le]
     rintro _ (rfl | rfl)
     exacts [h₀, h₁]
   have hPR : (Q.comap (algebraMap N T)).comap (algebraMap R' N) = maximalIdeal R' := by
     rw [Ideal.comap_comap, ← IsScalarTower.algebraMap_eq, hQ]
-  rw [hNT, Ideal.map_map, ← IsScalarTower.algebraMap_eq,
-    IsScalarTower.algebraMap_eq R' N (Localization.AtPrime Q), ← Ideal.comap_comap,
-    Ideal.comap_map_localization_atPrime_of_flat, Ideal.comap_comap (algebraMap R' N),
-    ← IsScalarTower.algebraMap_eq R' N (Localization.AtPrime (Q.comap (algebraMap N T))),
+  rw [← comap_map_fittingIdeal_localization_comap_eq (S := N),
     comap_map_fittingIdeal_localization_eq_span _ _ hP hPR,
     ← Set.image_singleton, ← Ideal.map_span, Ideal.comap_map_eq_self_of_faithfullyFlat]
 
