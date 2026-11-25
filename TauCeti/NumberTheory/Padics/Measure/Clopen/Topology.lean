@@ -34,7 +34,7 @@ open AbstractMeasure ContinuousMap TopologicalSpace Topology
 
 namespace TopologicalSpace.Clopens
 
-variable {X R E : Type*} [TopologicalSpace X] [CompactSpace X]
+variable {X R E : Type*} [TopologicalSpace X]
 
 section Weak
 
@@ -97,7 +97,7 @@ end Weak
 
 section OperatorNorm
 
-variable [NontriviallyNormedField R] [SeminormedAddCommGroup E] [NormedSpace R E]
+variable [CompactSpace X] [NontriviallyNormedField R] [SeminormedAddCommGroup E] [NormedSpace R E]
 
 /-- Clopen restriction does not increase the continuous-dual operator norm. -/
 theorem norm_toCLMEquiv_restrictClopen_le (s : Clopens X) (μ : AbstractMeasure X R E) :
@@ -152,7 +152,7 @@ theorem isClosedEmbedding_map_subtype_strong (s : Clopens X) :
 
 /-- The clopen decomposition is a homeomorphism for the strong measure topologies and their
 product topology. No completeness or ultrametricity of the coefficients is required. -/
-theorem isHomeomorph_clopenDecomposition_strong (s : Clopens X) :
+theorem isHomeomorph_clopenDecomposition_strong [CompactSpace X] (s : Clopens X) :
     @IsHomeomorph _ _ (StrongTopology (X := X) (R := R) (E := E))
       (@instTopologicalSpaceProd _ _ (StrongTopology (X := s) (R := R) (E := E))
         (StrongTopology (X := ↥sᶜ) (R := R) (E := E))) (clopenDecomposition s) := by
