@@ -196,11 +196,11 @@ theorem totalSpaceDualHomEquiv_comp_map {E E' : FiniteLocallyFreeSheaf X} (a : E
   exact (congrArg (· ≫ _) (totalSpaceIhomHomEquiv_comp_map_pre_app a (𝟙_ _) T t)).trans
     (Category.assoc _ _ _)
 
-/-- The section `s` of a point `e'` of `𝕍(E^∨) = Spec_X (Sym E^∨∨)`, seen as a section of `q^* E^∨`,
-evaluated by the linear functional on `q^* E^∨` of a point `e` of `𝕍(E) = Spec_X (Sym E^∨)`, is
-the linear functional `φ` of `e'` applied to the section `s` of `e`: both are `φ ∘ s`. This
+/-- Let `e` be a point of `𝕍(E) = Spec_X (Sym E^∨)`, with section `s` of `q^* E` and linear
+functional `ψ` on `q^* E^∨`, and let `e'` be a point of `𝕍(E^∨) = Spec_X (Sym E^∨∨)`, with
+section `s'` of `q^* E^∨` and linear functional `φ` on `q^* E`. Then `ψ ∘ s' = φ ∘ s`. This
 compares the two descriptions of the points of `𝕍(E^∨)`, through `totalSpaceHomEquiv (dual E)`
-and through `totalSpaceDualHomEquiv E`. -/
+(giving `s'`) and through `totalSpaceDualHomEquiv E` (giving `φ`). -/
 @[reassoc]
 theorem totalSpaceHomEquiv_dual_comp_functional (E : FiniteLocallyFreeSheaf X) {T : Over X}
     (e : T ⟶ (MorphismProperty.Over.forget _ _ X).obj ((totalSpaceScheme X).obj E))
