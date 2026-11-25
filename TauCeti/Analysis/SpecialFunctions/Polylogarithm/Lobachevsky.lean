@@ -200,6 +200,13 @@ private lemma one_sub_exp_two_mul_I_mem_slitPlane {θ : ℝ} (hθ : sin θ ≠ 0
     cos_two_mul, cos_sq']
   linarith [sq_pos_of_ne_zero hθ]
 
+/-- The real part of `log (1 - e^{2iθ})` is `log |2 sin θ|`, the logarithm of the chord length. -/
+private lemma re_log_one_sub_exp_two_mul_I (θ : ℝ) :
+    (Complex.log (1 - Complex.exp (2 * θ * Complex.I))).re = log (2 * sin θ) := by
+  rw [Complex.log_re, norm_sub_rev, two_mul_ofReal_mul_I, mul_comm _ Complex.I,
+    Complex.norm_exp_I_mul_ofReal_sub_one, mul_div_cancel_left₀ _ two_ne_zero, Real.norm_eq_abs,
+    log_abs]
+
 /-- The function `θ ↦ Im Li₂(e^{2iθ}) / 2` has derivative `-log |2 sin θ|` away from the multiples
 of `π`, like Lobachevsky's function. -/
 private lemma hasDerivAt_im_polylog_two_exp {θ : ℝ} (hθ : sin θ ≠ 0) :
@@ -220,9 +227,7 @@ private lemma hasDerivAt_im_polylog_two_exp {θ : ℝ} (hθ : sin θ ≠ 0) :
         -Complex.log (1 - Complex.exp (2 * θ * Complex.I)) * (2 * Complex.I) := by
     rw [show ((2 : ℤ) - 1) = 1 by norm_num, polylog_one]
     field_simp
-  rw [halg, Complex.imCLM_apply, him, Complex.log_re, norm_sub_rev, ← neg_mul_eq_neg_mul,
-    two_mul_ofReal_mul_I, mul_comm _ Complex.I, Complex.norm_exp_I_mul_ofReal_sub_one,
-    mul_div_cancel_left₀ _ two_ne_zero, Real.norm_eq_abs, log_abs]
+  rw [halg, Complex.imCLM_apply, him, re_log_one_sub_exp_two_mul_I]
   ring
 
 /-- **Lobachevsky's function as a dilogarithm value**: `Λ(θ) = Im Li₂(e^{2iθ}) / 2`. -/
@@ -232,10 +237,8 @@ theorem lobachevsky_eq_im_polylog_two (θ : ℝ) :
   set H : ℝ → ℝ := fun x ↦ lobachevsky x - G x
   have hGper : Function.Periodic G π := fun x ↦ by
     simp only [G]
-    congr 3
-    push_cast
-    rw [mul_add, add_mul, Complex.exp_add, mul_assoc 2 (π : ℂ), ← mul_assoc,
-      Complex.exp_two_pi_mul_I, mul_one]
+    rw [show (2 : ℂ) * ↑(x + π) * Complex.I = 2 * x * Complex.I + 2 * π * Complex.I by
+      push_cast; ring, Complex.exp_periodic]
   have hHper : Function.Periodic H π := lobachevsky_periodic.sub hGper
   have hGcont : Continuous G := by
     refine Complex.continuous_im.comp ((continuousOn_polylog_closedBall le_rfl).comp_continuous
