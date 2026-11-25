@@ -126,12 +126,14 @@ def constDbarFunctionKernelEquiv [Nonempty M] : F ≃ₗ[ℝ] dbarFunctionKernel
     Function.const_injective).trans
     (LinearEquiv.ofEq _ _ (dbarFunctionKernel_eq_range_const E M F).symm)
 
+/-- `constDbarFunctionKernelEquiv` sends `v` to the constant function `v`. -/
 @[simp]
 theorem coe_constDbarFunctionKernelEquiv_apply [Nonempty M] (v : F) :
     (constDbarFunctionKernelEquiv E M F v : M → F) = Function.const M v :=
   (rfl)
 
-@[simp]
+/-- The inverse of `constDbarFunctionKernelEquiv` sends a function in the kernel, which is
+constant, to its value at any point. -/
 theorem constDbarFunctionKernelEquiv_symm_apply [Nonempty M] (σ : dbarFunctionKernel E M F)
     (x : M) : (constDbarFunctionKernelEquiv E M F).symm σ = (σ : M → F) x := by
   conv_rhs => rw [← (constDbarFunctionKernelEquiv E M F).apply_symm_apply σ,
