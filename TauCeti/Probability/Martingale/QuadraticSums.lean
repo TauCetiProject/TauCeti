@@ -67,8 +67,6 @@ theorem integral_sq_sum_mul_sub_of_pairwise_disjoint
             (ℱ.mono ((hst i hi).trans hij)))).aestronglyMeasurable)).mul (ha j hj)
     by_cases hσ : SigmaFinite (P.trim (ℱ.le (s j)))
     · simpa only [Z, mul_assoc] using hM.integral_mul_sub_eq_zero (hst j hj) hm
-        (by simpa only [Pi.mul_def, Pi.sub_def, Z, mul_assoc] using
-          (hZ i hi).integrable_mul (hZ j hj))
     · have ht : ¬SigmaFinite (P.trim (ℱ.le (t i))) := fun _ ↦
         hσ (sigmaFiniteTrim_mono (ℱ.le (s j)) (ℱ.mono hij))
       have hs : ¬SigmaFinite (P.trim (ℱ.le (s i))) := fun _ ↦

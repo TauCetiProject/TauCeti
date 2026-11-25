@@ -309,13 +309,19 @@ theorem Submartingale.integral_mul_le [SigmaFiniteFiltration μ ℱ]
     _ = ∫ ω, μ[a * Y j | ℱ i] ω ∂μ := integral_congr_ae he.symm
     _ = _ := integral_condExp (ℱ.le i)
 
-/-- A predictable height times a later martingale increment has mean zero whenever the
-product is integrable. No separate moment assumption on the height is needed. -/
+omit [CompleteSpace E] in
+/-- The integral of a predictable height times a later martingale increment is zero.
+In the nonintegrable case or for an incomplete codomain, the integral is zero by convention. -/
 theorem Martingale.integral_smul_sub_eq_zero
     (hX : Martingale X ℱ μ) {s t : ι} [SigmaFinite (μ.trim (ℱ.le s))] (hst : s ≤ t)
-    {ξ : Ω → ℝ} (hξ : AEStronglyMeasurable[ℱ s] ξ μ)
-    (hint : Integrable (ξ • (X t - X s)) μ) :
+    {ξ : Ω → ℝ} (hξ : AEStronglyMeasurable[ℱ s] ξ μ) :
     ∫ ω, ξ ω • (X t ω - X s ω) ∂μ = 0 := by
+  by_cases hE : CompleteSpace E
+  swap
+  · exact integral_of_not_completeSpace hE
+  by_cases hint : Integrable (ξ • (X t - X s)) μ
+  swap
+  · simpa only [Pi.smul_def', Pi.sub_def] using integral_undef hint
   have hzero : μ[X t - X s | ℱ s] =ᵐ[μ] 0 := by
     simpa only [sub_self] using hX.condExp_sub_ae_eq le_rfl hst
   have hpull := condExp_smul_of_aestronglyMeasurable_left hξ hint
@@ -326,14 +332,13 @@ theorem Martingale.integral_smul_sub_eq_zero
   simpa only [Pi.smul_apply', Pi.sub_apply, Pi.zero_apply, integral_zero] using
     (integral_condExp (ℱ.le s) (f := ξ • (X t - X s))).symm.trans (integral_congr_ae heq)
 
-/-- A predictable real height times a later real martingale increment has mean zero
-whenever the product is integrable. -/
+/-- The integral of a predictable real height times a later real martingale increment is zero.
+In the nonintegrable case, the integral is zero by convention. -/
 theorem Martingale.integral_mul_sub_eq_zero
     (hM : Martingale Y ℱ μ) {s t : ι} [SigmaFinite (μ.trim (ℱ.le s))] (hst : s ≤ t)
-    {ξ : Ω → ℝ} (hξ : AEStronglyMeasurable[ℱ s] ξ μ)
-    (hint : Integrable (ξ * (Y t - Y s)) μ) :
-    ∫ ω, ξ ω * (Y t ω - Y s ω) ∂μ = 0 :=
-  hM.integral_smul_sub_eq_zero hst hξ hint
+    {ξ : Ω → ℝ} (hξ : AEStronglyMeasurable[ℱ s] ξ μ) :
+    ∫ ω, ξ ω * (Y t ω - Y s ω) ∂μ = 0 := by
+  simpa only [smul_eq_mul] using hM.integral_smul_sub_eq_zero hst hξ
 
 /-- A deterministic almost-sure norm bound on a martingale at a later date also bounds
 its value at every earlier date. -/
