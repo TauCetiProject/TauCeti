@@ -121,9 +121,9 @@ theorem totalVariationOn_comp_le (f : E ≃ᵃⁱ[ℝ] E')
   have hWΩ : MapsTo (· + f 0) W Ω := fun _ hy => Opens.mem_comap.mp hy
   -- Transport `φ` along the linear part `L` to `W`, then translate by `f 0` to `Ω`.
   let ψ₁ : 𝓓(W, E') := postcompCLM (L : E →L[ℝ] E') (L.transportTestFunction hVW φ)
-  let ψ : 𝓓(Ω, E') := translateTestFunction hWΩ ψ₁
+  let ψ : 𝓓(Ω, E') := ψ₁.translateOfMapsTo (hWΩ.mono_left ψ₁.tsupport_subset)
   have hdiv (y : E') : divergenceCLM ψ y = divergenceCLM φ (f.symm y) := by
-    simp only [ψ, ψ₁, divergenceCLM_translateTestFunction, translateTestFunction_apply,
+    simp only [ψ, ψ₁, divergenceCLM_translateOfMapsTo, translateOfMapsTo_apply,
       ContinuousLinearEquiv.divergenceCLM_postcompCLM_transportTestFunction,
       ContinuousLinearEquiv.transportTestFunction_apply, hfsymm]
   have hpair : (∫ x, divergenceCLM φ x * (u ∘ f) x ∂μ) = ∫ y, divergenceCLM ψ y * u y ∂ν := by
@@ -131,7 +131,7 @@ theorem totalVariationOn_comp_le (f : E ≃ᵃⁱ[ℝ] E')
     simp [hdiv]
   rw [hpair]
   refine ofReal_integral_le_totalVariationOn ψ fun y => ?_
-  simp only [ψ, ψ₁, translateTestFunction_apply, postcompCLM_apply, Function.comp_apply,
+  simp only [ψ, ψ₁, translateOfMapsTo_apply, postcompCLM_apply, Function.comp_apply,
     ContinuousLinearEquiv.transportTestFunction_apply, ← hfsymm]
   simpa [L] using hφ (f.symm y)
 
