@@ -95,9 +95,11 @@ private theorem exists_retraction_of_vectorField [CompleteSpace E]
     V ∩ f ⁻¹' Ioo (-ε) ε, hV.inter (isOpen_Ioo.preimage hf.continuous),
     fun x hx ↦ ⟨hKV hx, by simpa only [mem_preimage, mem_singleton_iff.1 (mem_preimage.1 hx),
       mem_Ioo, neg_lt_zero, and_self] using hε⟩, fun x hx ↦ ?_⟩
-  have hxU : ∀ s ∈ Ioo (-ε) ε, globalFlow X hX1 hcomplete s x ∈ U := fun s hs ↦
-    huV (mk_mem_prod (hεu (by rwa [Metric.mem_ball, Real.dist_eq, sub_zero, abs_lt])) hx.1)
-  have h := apply_globalFlow_eq_sub_of_forall_mem hX1 hcomplete hXU hxU hx.2
+  have hxU : ∀ s ∈ uIcc 0 (f x), globalFlow X hX1 hcomplete s x ∈ U := fun s hs ↦ by
+    have hs' : -ε < s ∧ s < ε := by
+      rcases mem_uIcc.1 hs with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩ <;> constructor <;> linarith [hx.2.1, hx.2.2]
+    exact huV (mk_mem_prod (hεu (by rwa [Metric.mem_ball, Real.dist_eq, sub_zero, abs_lt])) hx.1)
+  have h := apply_globalFlow_eq_sub_of_forall_mem hX1 hcomplete hXU hxU
   rwa [sub_self] at h
 
 /-- **Smooth retraction onto a regular zero level.** Let `f` be a smooth function on a boundaryless
