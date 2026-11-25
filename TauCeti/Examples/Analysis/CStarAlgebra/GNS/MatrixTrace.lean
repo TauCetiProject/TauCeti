@@ -67,8 +67,9 @@ theorem gnsRightNonUnitalStarAlgHom_matrixUnit (i j : n) :
       ((tr n).toGNS (matrixUnit i i)) = (tr n).toGNS (matrixUnit i j) := by
   rw [gnsRightNonUnitalStarAlgHom_apply_toGNS, matrixUnit_mul_matrixUnit]
 
-/-- **`J π(b) J` is not the right representation.** For `i ≠ j`, `J π(e_ij) J [e_ii] =
-[e_ii e_ji] = 0`, while `πᵒᵖ(e_ijᵒᵖ)[e_ii] = [e_ij] ≠ 0`. -/
+/-- **`J π(e_ij) J` kills `[e_ii]`.** For `i ≠ j`, `J π(e_ij) J [e_ii] = [e_ii e_ji] = 0`.
+Contrast `gnsRightNonUnitalStarAlgHom_matrixUnit` and `toGNS_matrixUnit_ne_zero`, which give
+`πᵒᵖ(e_ijᵒᵖ)[e_ii] = [e_ij] ≠ 0`. -/
 theorem gnsConj_gnsNonUnitalStarAlgHom_gnsConj_toGNS_matrixUnit_eq_zero_of_ne {i j : n}
     (h : i ≠ j) :
     J n ((tr n).gnsNonUnitalStarAlgHom
