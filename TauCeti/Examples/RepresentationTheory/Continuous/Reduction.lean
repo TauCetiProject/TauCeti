@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Pi
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.Topology.Algebra.Ring.Compact
+public import TauCeti.NumberTheory.Padics.Basic
 public import TauCeti.RepresentationTheory.Continuous.Reduction
 
 /-!
@@ -64,11 +65,6 @@ local instance : TopologicalSpace (ResidueField ℤ_[ℓ] ⊗[ℤ_[ℓ]] (Fin 2 
 local instance :
     IsModuleTopology (ResidueField ℤ_[ℓ]) (ResidueField ℤ_[ℓ] ⊗[ℤ_[ℓ]] (Fin 2 → ℤ_[ℓ])) :=
   ⟨rfl⟩
-
-local instance : ContinuousSMul ℤ_[ℓ] ℚ_[ℓ] :=
-  ⟨by
-    simp_rw [Algebra.smul_def, PadicInt.algebraMap_apply]
-    exact (PadicInt.isOpenEmbedding_coe.continuous.comp continuous_fst).mul continuous_snd⟩
 
 /-- The module topology on `ℚ_ℓ ⊗ ℤ_ℓ²`. -/
 local instance : TopologicalSpace (ℚ_[ℓ] ⊗[ℤ_[ℓ]] (Fin 2 → ℤ_[ℓ])) :=
