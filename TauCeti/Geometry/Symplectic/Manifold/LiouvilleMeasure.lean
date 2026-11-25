@@ -370,9 +370,9 @@ theorem map_symm_volume_restrict_target
   have hpull' := congrArg Subtype.val hpull
   rw [SmoothForm.coe_mpullback] at hpull'
   have hrange : range g = e.source := by
-    rw [← e.symm_image_target_eq_source, ← Subtype.range_coe (s := e.target), ← range_comp]
-    -- The points of `W` are those of `e.target`, and `g` is `e.symm` on them.
-    rfl
+    ext x
+    simp only [← e.symm_image_target_eq_source, g, W, mem_range, Subtype.exists, Opens.mem_mk,
+      exists_prop, mem_image]
   have : Fact (finrank ℝ (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) = 2 * Fintype.card ι) :=
     ⟨by rw [finrank_prod, finrank_euclideanSpace, two_mul]⟩
   -- Lebesgue measure on `W` is the Liouville measure of the restricted standard form, which `g`
@@ -382,8 +382,7 @@ theorem map_symm_volume_restrict_target
         (stdSymplecticForm (V := EuclideanSpace ℝ ι)).constSmooth)).map Subtype.val := by
     rw [SmoothTwoForm.map_liouvilleMeasure_mpullback_subtypeVal,
       SymplecticForm.liouvilleMeasure_constSmooth_stdSymplecticForm]
-    -- The open set `W` has the target of `e` as its underlying set.
-    rfl
+    simp only [W, Opens.coe_mk]
   rw [hW, AEMeasurable.map_map_of_aemeasurable (by
       rw [← hW]
       exact e.continuousOn_symm.aemeasurable e.open_target.measurableSet)

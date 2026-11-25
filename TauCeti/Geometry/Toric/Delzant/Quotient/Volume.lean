@@ -259,9 +259,7 @@ theorem duistermaatHeckmanMeasure_delzantQuotientSymplecticForm
   · -- Both measures vanish off `Δ`, which contains the image of the moment map.
     have hpre : reducedMomentMap hβ ⁻¹' (facetPolyhedron i u c)ᶜ = ∅ :=
       eq_empty_of_forall_notMem fun q hq ↦ hq (reducedMomentMap_mem_facetPolyhedron hβ q)
-    rw [Measure.restrict_smul, Measure.restrict_restrict hP.compl, compl_inter_self,
-      Measure.restrict_empty, smul_zero, Measure.restrict_eq_zero, Measure.map_apply hμ hP.compl,
-      hpre, measure_empty]
+    simp [Measure.restrict_restrict hP.compl, Measure.map_apply hμ hP.compl, hpre]
   · have hsv := hΔ.isSmoothVertex v hv
     have := Fintype.ofFinite (activeSet (facetPairing i u) c v)
     refine hΔ.map_liouvilleMeasure_restrict_vertexStar hi hsv hv.1 ?_ hβ
