@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Order.Antichain
 public import Mathlib.Order.Partition.Finpartition
+public import Mathlib.Data.Finset.Prod
 import Mathlib.Combinatorics.Enumerative.DoubleCounting
+import Mathlib.Logic.Relation
 import Mathlib.Order.Preorder.Finite
 import TauCeti.Order.Chain
 
@@ -27,8 +29,17 @@ The chain partition is produced as the fibres of a colouring `f : α → ℕ` of
 `0, …, #A - 1` whose fibres in `s` are chains. Such a colouring is built by Galvin's induction on
 `#s`, removing a maximal point.
 
-These statements feed comparisons of chain partitions with matchings in the split bipartite graph
-of a finite poset, and with weighted chains of integral intervals in multisegments.
+Fulkerson's form of Dilworth's theorem replaces chain partitions by matchings in the split
+bipartite graph of a strict order `r` on `s`: a set `E` of pairs `(x, y)` with `r x y`, using each
+point of `s` at most once as a first coordinate and at most once as a second coordinate. Following
+the edges of `E` from a point gives a path, and the paths are chains; conversely, consecutive points
+of the chains of a partition form a matching. Hence the largest antichain and the largest matching
+have sizes adding up to `#s`.
+
+## Main definitions
+
+* `TauCeti.IsSplitMatching r s E`: `E` is a matching in the split bipartite graph of the relation
+  `r` on `s`.
 
 ## Main results
 
@@ -36,6 +47,10 @@ of a finite poset, and with weighted chains of integral intervals in multisegmen
 * `IsAntichain.card_le_card_parts`: weak duality for finite partitions into chains.
 * `Finset.exists_isAntichain_card_eq_card_parts`: Dilworth's theorem for a finite set in a partial
   order; taking `s = Finset.univ` gives it for a finite partial order.
+* `TauCeti.IsSplitMatching.card_add_card_le_card`: an antichain and a split-graph matching of a
+  strict order on `s` have at most `#s` elements and edges together.
+* `TauCeti.exists_isAntichain_isSplitMatching_card_add_card_eq`: some antichain and some
+  split-graph matching have exactly `#s` elements and edges together.
 
 ## References
 
@@ -43,6 +58,8 @@ of a finite poset, and with weighted chains of integral intervals in multisegmen
   (1950), 161–166.
 * F. Galvin, *A proof of Dilworth's chain decomposition theorem*, Amer. Math. Monthly 101 (1994),
   no. 4, 352–353.
+* D. R. Fulkerson, *Note on Dilworth's decomposition theorem for partially ordered sets*, Proc.
+  Amer. Math. Soc. 7 (1956), 701–702.
 -/
 
 public section
@@ -279,3 +296,241 @@ theorem exists_isAntichain_card_eq_card_parts [PartialOrder α] [DecidableEq α]
     (card_range #A).le)
 
 end Finset
+
+/-! ### Matchings in the split graph -/
+
+namespace TauCeti
+
+open Finset
+
+/-- `E` is a matching in the split bipartite graph of the relation `r` on `s`: its edges are pairs
+`(x, y)` of points of `s` with `r x y`, and no two edges share a first coordinate or share a second
+coordinate. A point may occur once as a first coordinate and once as a second coordinate. Thus `E`
+is the edge set of a matching of the bipartite graph between two copies of `s` joining `x` in the
+first copy to `y` in the second when `r x y`, recorded directly by its oriented edges. -/
+structure IsSplitMatching (r : α → α → Prop) (s : Finset α) (E : Finset (α × α)) : Prop where
+  /-- Both coordinates of every edge lie in `s`. -/
+  subset : E ⊆ s ×ˢ s
+  /-- Every edge `(x, y)` satisfies `r x y`. -/
+  rel : ∀ e ∈ E, r e.1 e.2
+  /-- No two edges share a first coordinate. -/
+  injOn_fst : Set.InjOn Prod.fst (E : Set (α × α))
+  /-- No two edges share a second coordinate. -/
+  injOn_snd : Set.InjOn Prod.snd (E : Set (α × α))
+
+namespace IsSplitMatching
+
+variable {r : α → α → Prop} {s A : Finset α} {E : Finset (α × α)}
+
+/-- The empty set is a split-graph matching. -/
+@[simp]
+theorem empty (r : α → α → Prop) (s : Finset α) : IsSplitMatching r s ∅ :=
+  ⟨empty_subset _, by simp, by simp, by simp⟩
+
+/-- The first coordinates of the edges of a split-graph matching on `s` lie in `s`. -/
+theorem image_fst_subset [DecidableEq α] (hE : IsSplitMatching r s E) : E.image Prod.fst ⊆ s :=
+  fun x hx => by
+    obtain ⟨e, he, rfl⟩ := mem_image.1 hx
+    exact (mem_product.1 (hE.subset he)).1
+
+/-- A split-graph matching on `s` has at most `#s` edges. -/
+theorem card_le_card (hE : IsSplitMatching r s E) : #E ≤ #s := by
+  classical
+  exact card_image_of_injOn hE.injOn_fst ▸ Finset.card_le_card hE.image_fst_subset
+
+/-- Mapping a split-graph matching along an embedding `f` which sends related points to related
+points gives a split-graph matching on any finite set containing the image of `s`. -/
+theorem map {β : Type*} {r' : β → β → Prop} {t : Finset β} (hE : IsSplitMatching r s E)
+    (f : α ↪ β) (hf : ∀ ⦃x y⦄, r x y → r' (f x) (f y)) (hst : s.map f ⊆ t) :
+    IsSplitMatching r' t (E.map (f.prodMap f)) := by
+  refine ⟨fun e he => ?_, fun e he => ?_, ?_, ?_⟩
+  · obtain ⟨⟨x, y⟩, hxy, rfl⟩ := mem_map.1 he
+    obtain ⟨hx, hy⟩ := mem_product.1 (hE.subset hxy)
+    exact mem_product.2 ⟨hst (mem_map_of_mem f hx), hst (mem_map_of_mem f hy)⟩
+  · obtain ⟨⟨x, y⟩, hxy, rfl⟩ := mem_map.1 he
+    exact hf (hE.rel _ hxy)
+  · rintro _ he _ he' h
+    obtain ⟨e, hmem, rfl⟩ := mem_map.1 he
+    obtain ⟨e', hmem', rfl⟩ := mem_map.1 he'
+    exact congrArg _ (hE.injOn_fst hmem hmem' (f.injective h))
+  · rintro _ he _ he' h
+    obtain ⟨e, hmem, rfl⟩ := mem_map.1 he
+    obtain ⟨e', hmem', rfl⟩ := mem_map.1 he'
+    exact congrArg _ (hE.injOn_snd hmem hmem' (f.injective h))
+
+/-- Following the edges of a split-graph matching of a transitive relation only moves up along
+the relation. -/
+private theorem eq_or_rel_of_reflTransGen [IsTrans α r] (hE : IsSplitMatching r s E) {x y : α}
+    (h : Relation.ReflTransGen (fun x y => (x, y) ∈ E) x y) : x = y ∨ r x y := by
+  induction h with
+  | refl => exact Or.inl rfl
+  | tail _ hyz ih =>
+    exact Or.inr (ih.elim (fun h => h ▸ hE.rel _ hyz) fun h => _root_.trans h (hE.rel _ hyz))
+
+/-- From every point of `s`, following the edges of a split-graph matching of a strict order ends
+at a point of `s` which is not the first coordinate of any edge. -/
+private theorem exists_reflTransGen_forall_notMem [IsStrictOrder α r] (hE : IsSplitMatching r s E)
+    {x : α} (hx : x ∈ s) : ∃ z ∈ s, (∀ y, (z, y) ∉ E) ∧
+      Relation.ReflTransGen (fun x y => (x, y) ∈ E) x z := by
+  classical
+  let := partialOrderOfSO r
+  obtain ⟨z, hz⟩ := (s.filter (Relation.ReflTransGen (fun x y => (x, y) ∈ E) x)).exists_maximal
+    ⟨x, mem_filter.2 ⟨hx, .refl⟩⟩
+  obtain ⟨hzs, hxz⟩ := mem_filter.1 hz.prop
+  refine ⟨z, hzs, fun y hzy => ?_, hxz⟩
+  exact hz.not_gt (y := y) (mem_filter.2 ⟨(mem_product.1 (hE.subset hzy)).2, hxz.tail hzy⟩)
+    (hE.rel _ hzy)
+
+/-- **Weak duality for matchings.** An antichain in `s` and a matching in the split bipartite
+graph of a strict order on `s` have at most `#s` points and edges together. -/
+theorem card_add_card_le_card [IsStrictOrder α r] (hE : IsSplitMatching r s E)
+    (hA : IsAntichain r (A : Set α)) (hAs : A ⊆ s) : #A + #E ≤ #s := by
+  classical
+  let R : α → α → Prop := fun x y => (x, y) ∈ E
+  have hcard : #A ≤ #(s \ E.image Prod.fst) := by
+    refine card_le_card_of_forall_subsingleton (Relation.ReflTransGen R) (fun x hx => ?_)
+      fun z _ x hx y hy => ?_
+    · obtain ⟨z, hz, hzE, hxz⟩ := hE.exists_reflTransGen_forall_notMem (hAs hx)
+      exact ⟨z, mem_sdiff.2 ⟨hz, by simpa using hzE⟩, hxz⟩
+    · -- Two points of `A` reaching `z` lie on the same path ending at `z`, so they are comparable.
+      have hU : Relator.RightUnique (Function.swap R) := fun _ _ _ h₁ h₂ =>
+        congrArg Prod.fst (hE.injOn_snd h₁ h₂ rfl)
+      obtain ⟨hx, hxz⟩ := hx
+      obtain ⟨hy, hyz⟩ := hy
+      rcases hxz.swap.total_of_right_unique hU hyz.swap with h | h
+      · exact (hE.eq_or_rel_of_reflTransGen h.swap).elim Eq.symm fun h => (hA.eq hy hx h).symm
+      · exact (hE.eq_or_rel_of_reflTransGen h.swap).elim id fun h => hA.eq hx hy h
+  rw [card_sdiff_of_subset hE.image_fst_subset, card_image_of_injOn hE.injOn_fst] at hcard
+  have := hE.card_le_card
+  omega
+
+end IsSplitMatching
+
+end TauCeti
+
+/-! ### Matchings from chain partitions -/
+
+namespace Finpartition
+
+open Finset TauCeti
+
+variable {r : α → α → Prop} [DecidableEq α] {s : Finset α}
+
+/-- Two distinct points of a part of a partition into chains are related one way or the other. -/
+private theorem rel_or_rel_of_mem_part {P : Finpartition s}
+    (hP : ∀ c ∈ P.parts, IsChain r (c : Set α)) {x y z : α} (hx : x ∈ s) (hy : y ∈ P.part x)
+    (hz : z ∈ P.part x) : y = z ∨ r y z ∨ r z y := by
+  by_cases hyz : y = z
+  · exact Or.inl hyz
+  · exact Or.inr (hP _ (P.part_mem.2 hx) hy hz hyz)
+
+section DecidableRel
+
+variable [DecidableRel r]
+
+/-- The edges joining each point of a part of `P` to its successor in that part for `r`. -/
+private def succEdges (r : α → α → Prop) [DecidableRel r] (P : Finpartition s) :
+    Finset (α × α) :=
+  (s ×ˢ s).filter fun e => r e.1 e.2 ∧ e.2 ∈ P.part e.1 ∧ ∀ z ∈ P.part e.1, ¬(r e.1 z ∧ r z e.2)
+
+private theorem mem_succEdges {P : Finpartition s} {x y : α} :
+    (x, y) ∈ succEdges r P ↔ x ∈ s ∧ y ∈ s ∧ r x y ∧ y ∈ P.part x ∧
+      ∀ z ∈ P.part x, ¬(r x z ∧ r z y) := by
+  simp [succEdges, and_assoc]
+
+/-- Successor edges in a partition into chains form a split-graph matching. -/
+private theorem isSplitMatching_succEdges {P : Finpartition s}
+    (hP : ∀ c ∈ P.parts, IsChain r (c : Set α)) : IsSplitMatching r s (succEdges r P) := by
+  refine ⟨filter_subset _ _, fun e he => (mem_filter.1 he).2.1, ?_, ?_⟩
+  · rintro ⟨x, y⟩ hxy ⟨x', y'⟩ hxy' (rfl : x = x')
+    obtain ⟨hx, -, hr, hy, hmin⟩ := mem_succEdges.1 hxy
+    obtain ⟨-, -, hr', hy', hmin'⟩ := mem_succEdges.1 hxy'
+    rcases rel_or_rel_of_mem_part hP hx hy hy' with h | h | h
+    · rw [h]
+    · exact (hmin' y hy ⟨hr, h⟩).elim
+    · exact (hmin y' hy' ⟨hr', h⟩).elim
+  · rintro ⟨x, y⟩ hxy ⟨x', y'⟩ hxy' (rfl : y = y')
+    obtain ⟨hx, -, hr, hy, hmin⟩ := mem_succEdges.1 hxy
+    obtain ⟨hx', -, hr', hy', hmin'⟩ := mem_succEdges.1 hxy'
+    have hpart : P.part x' = P.part x :=
+      (P.part_eq_of_mem (P.part_mem.2 hx') hy').symm.trans (P.part_eq_of_mem (P.part_mem.2 hx) hy)
+    have hx'x : x' ∈ P.part x := hpart ▸ P.mem_part hx'
+    rcases rel_or_rel_of_mem_part hP hx (P.mem_part hx) hx'x with h | h | h
+    · rw [h]
+    · exact (hmin x' hx'x ⟨h, hr'⟩).elim
+    · exact (hmin' x (hpart ▸ P.mem_part hx) ⟨h, hr⟩).elim
+
+/-- A point is the first coordinate of a successor edge exactly when it is not the greatest point
+of its part. -/
+private theorem image_fst_succEdges [IsStrictOrder α r] (P : Finpartition s) :
+    (succEdges r P).image Prod.fst = s.filter fun x => ∃ y ∈ P.part x, r x y := by
+  let := partialOrderOfSO r
+  ext x
+  simp only [mem_image, mem_filter]
+  constructor
+  · rintro ⟨⟨x, y⟩, hxy, rfl⟩
+    obtain ⟨hx, -, hr, hy, -⟩ := mem_succEdges.1 hxy
+    exact ⟨hx, y, hy, hr⟩
+  · rintro ⟨hx, y₀, hy₀, hr₀⟩
+    obtain ⟨y, hy⟩ := ((P.part x).filter (r x)).exists_minimal ⟨y₀, mem_filter.2 ⟨hy₀, hr₀⟩⟩
+    obtain ⟨hyx, hry⟩ := mem_filter.1 hy.prop
+    refine ⟨(x, y), mem_succEdges.2 ⟨hx, P.part_subset x hyx, hry, hyx, fun z hz hxzy => ?_⟩, rfl⟩
+    exact hy.not_lt (y := z) (mem_filter.2 ⟨hz, hxzy.1⟩) hxzy.2
+
+/-- In a partition into chains, the greatest points of the parts are as many as the parts. -/
+private theorem card_filter_forall_not_rel [IsStrictOrder α r] {P : Finpartition s}
+    (hP : ∀ c ∈ P.parts, IsChain r (c : Set α)) :
+    #(s.filter fun x => ∀ y ∈ P.part x, ¬r x y) = #P.parts := by
+  let := partialOrderOfSO r
+  refine card_nbij P.part (fun x hx => P.part_mem.2 (mem_filter.1 hx).1) ?_ ?_
+  · intro x hx y hy hxy
+    obtain ⟨hx, hxmax⟩ := mem_filter.1 hx
+    obtain ⟨hy, hymax⟩ := mem_filter.1 hy
+    have hyx : y ∈ P.part x := hxy ▸ P.mem_part hy
+    rcases rel_or_rel_of_mem_part hP hx (P.mem_part hx) hyx with h | h | h
+    · exact h
+    · exact (hxmax y hyx h).elim
+    · exact (hymax x (hxy.symm ▸ P.mem_part hx) h).elim
+  · intro c hc
+    obtain ⟨g, hg⟩ := c.exists_maximal (P.nonempty_of_mem_parts hc)
+    have hgc : P.part g = c := P.part_eq_of_mem hc hg.prop
+    exact ⟨g, mem_filter.2 ⟨P.le hc hg.prop, fun y hy hgy => hg.not_gt (y := y) (hgc ▸ hy) hgy⟩,
+      hgc⟩
+
+end DecidableRel
+
+/-- Joining each point of a part of a partition `P` of `s` into chains of a strict order `r` to its
+successor in that part gives a matching of the split bipartite graph of `r` on `s` with
+`#s - #P.parts` edges. -/
+theorem exists_isSplitMatching_card_add_card_parts_eq [IsStrictOrder α r] (P : Finpartition s)
+    (hP : ∀ c ∈ P.parts, IsChain r (c : Set α)) :
+    ∃ E, IsSplitMatching r s E ∧ #E + #P.parts = #s := by
+  classical
+  refine ⟨succEdges r P, isSplitMatching_succEdges hP, ?_⟩
+  rw [← card_image_of_injOn (isSplitMatching_succEdges hP).injOn_fst, image_fst_succEdges,
+    ← card_filter_forall_not_rel hP, ← card_filter_add_card_filter_not (s := s)
+      fun x => ∃ y ∈ P.part x, r x y]
+  simp only [not_exists, not_and]
+
+end Finpartition
+
+namespace TauCeti
+
+open Finset
+
+/-- **Fulkerson's form of Dilworth's theorem.** For a strict order `r`, a finite set `s` contains an
+antichain `A` and carries a matching `E` of the split bipartite graph of `r` on `s` with
+`#A + #E = #s`. By `TauCeti.IsSplitMatching.card_add_card_le_card`, `A` is then a largest
+antichain and `E` a largest matching. -/
+theorem exists_isAntichain_isSplitMatching_card_add_card_eq (r : α → α → Prop)
+    [IsStrictOrder α r] (s : Finset α) :
+    ∃ A ⊆ s, IsAntichain r (A : Set α) ∧ ∃ E, IsSplitMatching r s E ∧ #A + #E = #s := by
+  classical
+  let := partialOrderOfSO r
+  obtain ⟨A, hAs, hA, P, hP, hAP⟩ := s.exists_isAntichain_card_eq_card_parts
+  obtain ⟨E, hE, hEP⟩ := P.exists_isSplitMatching_card_add_card_parts_eq (r := r)
+    fun c hc x hx y hy hxy =>
+      (hP c hc hx hy hxy).imp (·.resolve_left hxy) (·.resolve_left (Ne.symm hxy))
+  exact ⟨A, hAs, fun x hx y hy hxy h => hA hx hy hxy (Or.inr h), E, hE, by omega⟩
+
+end TauCeti

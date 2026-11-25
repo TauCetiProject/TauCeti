@@ -70,6 +70,8 @@ factors.
   quasi-isomorphism.
 * `TauCeti.cubicalChainComplexProdToSingular_naturality`,
   `TauCeti.singularHomologyKunnethPair_naturality`: naturality in both pairs.
+* `TauCeti.cubicalChainComplexProdComparison_comp_cubicalToSingularRel`: naturality in a map out
+  of the product.
 * `TauCeti.tensorHom_ι_cubicalHomologyKunnethPair_comp_cubicalChainComplexProdToSingular`: the
   cubical Künneth class of arbitrary pairs, read in the singular homology of the pairs it maps to.
 * `TauCeti.ι_singularHomologyKunnethPair`: on each summand the Künneth map is the cubical cross
@@ -291,6 +293,36 @@ theorem cubicalChainComplexProdToSingular_naturality :
   rw [π_cubicalChainComplexProdMap_assoc, π_cubicalChainComplexProdToSingular,
     π_cubicalChainComplexProdToSingular_assoc, cubicalToSingularRel_naturality_assoc,
     ← TopPair.singularChainComplexMap_comp, ← TopPair.singularChainComplexMap_comp, hpair]
+
+omit hg hh in
+/-- **Naturality of the comparison in a map out of the product.** For a continuous map
+`f : X × Y → Z` carrying `A × Y ∪ X × B` into `C`, carrying the cubical chains of the product of the
+pairs `(X, A)` and `(Y, B)` along `f` to the relative cubical chains of `(Z, C)` and then to
+singular chains is the comparison of the product with singular chains followed by the singular
+chain map of `f`. -/
+@[reassoc]
+theorem cubicalChainComplexProdComparison_comp_cubicalToSingularRel {Z : Type u}
+    [TopologicalSpace Z] {C : Set Z} (f : C(↑(X ⊗ Y), Z))
+    (hf : Set.MapsTo (TopCat.ofHom (X := ↑(X ⊗ Y)) f) (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B) C) :
+    (ofSubset A).cubicalChainComplexProdComparison k (ofSubset B) ≫
+        cubicalChainComplexMap k
+          (ofSubsetMap (TopCat.ofHom (X := ↑((ofSubset A).fst ⊗ (ofSubset B).fst)) f)
+            (hf.mono_left (Set.union_subset_union (Set.preimage_mono range_ofSubset_map.subset)
+              (Set.preimage_mono range_ofSubset_map.subset)))) ≫
+          cubicalToSingularRel k (ofSubset (X := TopCat.of Z) C) =
+      cubicalChainComplexProdToSingular k A B ≫
+        TopPair.singularChainComplexMap (ofSubsetMap (X := X ⊗ Y) _ hf) (ModuleCat.of k k) := by
+  refine coequalizer.hom_ext ?_
+  rw [π_cubicalChainComplexProdComparison_assoc, ← Category.assoc, ← cubicalChainComplexMap_comp,
+    cubicalToSingularRel_naturality, π_cubicalChainComplexProdToSingular_assoc,
+    ← TopPair.singularChainComplexMap_comp]
+  refine congrArg (_ ≫ TopPair.singularChainComplexMap · _) (hom_ext_of_fst _ ?_)
+  simp only [Hom.fst_comp, prodLeftToProdSubspace_fst, prodLeftToPreimageUnion_fst, ofSubsetMap_fst]
+  -- Both sides are `𝟙 _ ≫ TopCat.ofHom f`, with the identity typed on the ambient space of the
+  -- product subspace on the left and on `X ⊗ Y` on the right; these agree only up to unfolding,
+  -- so neither `rw [Category.id_comp]` nor `simp only [ofSubsetMap_fst]` can see the left
+  -- composite.
+  exact (Category.id_comp _).trans ((ofSubsetMap_fst _ _).trans (Category.id_comp _).symm)
 
 end Naturality
 

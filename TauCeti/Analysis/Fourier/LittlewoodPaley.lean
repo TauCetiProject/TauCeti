@@ -20,6 +20,7 @@ import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
+import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 import TauCeti.MeasureTheory.Function.Lp.Star
 import TauCeti.MeasureTheory.Function.Lp.One
 import TauCeti.MeasureTheory.Function.Lp.SequenceValued
@@ -674,7 +675,7 @@ private theorem exists_eLpNorm_le_mul_eLpNorm_tsum [DecidableEq ι]
   -- By duality, it suffices to bound the pairing of `f` with a bounded `g` of finite-measure
   -- support, which is an element `G` of `L²`.
   refine (Lp.aestronglyMeasurable f).eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ)
-    (q' := q) hp_top fun g s hs hgs hg ↦ ?_
+    (q' := q) fun g s hs hgs hg ↦ ?_
   have hg2 : MemLp g 2 volume := hg.mono_exponent_of_measure_support_ne_top hgs hs le_top
   set G := hg2.toLp g
   have hGg : (G : V → F) =ᵐ[volume] g := hg2.coeFn_toLp
@@ -1305,19 +1306,16 @@ theorem eLpNorm_dyadicMultiplier_le (σ : 𝓢(V, ℂ)) (j : ℤ) (f : Lp F 2 (v
 
 /-- **Dyadic multipliers in mixed norms.** For an almost everywhere strongly measurable
 `G : β → L²(V, F)`, the multiplier `Mⱼ` with symbol the `j`-th dyadic dilate of `σ` costs at most
-the factor `‖𝓕⁻ σ₀‖₁` in every mixed norm `L^p_b L^r_x` with `r ≥ 1`, uniformly in `j`. -/
+the factor `‖𝓕⁻ σ₀‖₁` in every mixed norm `L^p_b L^r_x` with `r ≥ 1`, uniformly in `j`; this is
+`MeasureTheory.eLpNorm_eLpNorm_apply_le` for `T = Mⱼ`. -/
 theorem eLpNorm_eLpNorm_dyadicMultiplier_le (σ : 𝓢(V, ℂ)) (j : ℤ) {β : Type*}
     [MeasurableSpace β] {ρ : Measure β} {G : β → Lp F 2 (volume : Measure V)}
-    (hG : AEStronglyMeasurable G ρ) {p r : ℝ≥0∞} (hp : 0 < p) (hr : 1 ≤ r) :
+    (hG : AEStronglyMeasurable G ρ) {p r : ℝ≥0∞} (hr : 1 ≤ r) :
     eLpNorm (fun b ↦ eLpNorm (φ.dyadicMultiplier F σ j (G b)) r volume) p ρ ≤
       eLpNorm (𝓕⁻ ⇑(φ.dyadicDilate σ 0)) 1 volume *
         eLpNorm (fun b ↦ eLpNorm (G b) r volume) p ρ :=
-  calc _ ≤ eLpNorm (fun b ↦ eLpNorm (𝓕⁻ ⇑(φ.dyadicDilate σ 0)) 1 volume *
-        eLpNorm (G b) r volume) p ρ :=
-      eLpNorm_mono_eNorm (((φ.dyadicMultiplier F σ j).continuous.comp_aestronglyMeasurable
-        hG).aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable fun b ↦ by
-        simpa only [eNorm_eq_self] using φ.eLpNorm_dyadicMultiplier_le σ j (G b) hr
-    _ = _ := eLpNorm_const_mul_ennreal_of_pos hp
+  eLpNorm_eLpNorm_apply_le (φ.dyadicMultiplier F σ j).continuous
+    (fun f ↦ φ.eLpNorm_dyadicMultiplier_le σ j f hr) hG
 
 /-- **Reassembling a block from squared blocks.** If the cutoffs whose indices differ by at least
 `L` have disjoint supports, as for the `L` of `ContDiffBump.exists_littlewoodPaley_mul_eq_zero φ`,

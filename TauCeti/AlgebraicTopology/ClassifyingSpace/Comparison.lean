@@ -109,7 +109,7 @@ include hY
 omit [CWType Y] in
 /-- A pointed map from the cellular classifying space to an aspherical space realizing a given
 isomorphism of fundamental groups is a weak homotopy equivalence, packaged with the map. -/
-private theorem exists_isWeakHomotopyEquivalence_mapOfEq_cellularClassifyingSpace :
+theorem exists_isWeakHomotopyEquivalence_mapOfEq_cellularClassifyingSpace :
     ∃ (f : C(cellularClassifyingSpace R, Y)) (hf : f (cellularClassifyingSpaceBasepoint R) = y),
       FundamentalGroup.mapOfEq f hf = φ.toMonoidHom ∧ f.IsWeakHomotopyEquivalence := by
   obtain ⟨f, hf, hfφ⟩ := exists_mapOfEq_cellularClassifyingSpace R

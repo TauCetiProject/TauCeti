@@ -146,17 +146,12 @@ both charts describe the same projective morphism. -/
 theorem isUnit_appTop_awayMk :
     IsUnit (((Scheme.ΓSpecIso _).inv ≫ q.appTop).hom
       (Away.mk 𝒜 hg 1 f (by simpa using hf))) := by
-  have hself : Away.mk 𝒜 hg 1 g (by simpa using hg) = 1 := by
-    apply val_injective
-    rw [Away.val_mk, val_one]
-    simpa only [pow_one] using Localization.mk_self
-      (⟨g ^ 1, 1, rfl⟩ : Submonoid.powers g)
   have he : ((Scheme.ΓSpecIso _).inv ≫ q.appTop).hom
         (Away.mk 𝒜 hg 1 f (by simpa using hf)) *
       ((Scheme.ΓSpecIso _).inv ≫ p.appTop).hom
         (Away.mk 𝒜 hf 1 g (by simpa using hg)) = 1 := by
     rw [mul_comm, ← appTop_awayMk_eq_mul 𝒜 hd hf hg p q h g (by simpa using hg)]
-    simp [hself]
+    simp
   exact ⟨⟨_, _, he, by rw [mul_comm]; exact he⟩, rfl⟩
 
 end Transition

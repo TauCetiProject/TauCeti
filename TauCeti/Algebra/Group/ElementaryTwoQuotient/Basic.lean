@@ -59,6 +59,9 @@ names around it. The cardinality identity is still expressed through the squarin
   model and the quotient by the additive form of `G²`.
 * `TauCeti.card_elementaryTwoQuotient_eq_index_square`: the quotient cardinality as the index of
   the subgroup of squares.
+* `TauCeti.card_elementaryTwoQuotientMk_fiber` and
+  `TauCeti.card_elementaryTwoQuotientMk_fiber_mul_card`: every square class has `|G²|` elements,
+  so `|fibre| · |G/G²| = |G|`.
 * `TauCeti.card_elementaryTwoQuotient_eq_card_twoTorsion`: `|G/G²| = |{g | g² = 1}|`.
 * `TauCeti.card_le_card_elementaryTwoQuotient_of_forall_sq_eq_one` and
   `TauCeti.le_twoRank_of_card_eq_two_pow`: a subgroup of exponent dividing two bounds the
@@ -359,6 +362,30 @@ theorem card_elementaryTwoQuotient_eq_index_square :
             Nat.card_congr (elementaryTwoQuotientEquivSquareQuotient (G := G)).toEquiv
     _ = (Subgroup.square G).index := by
           rw [← AddSubgroup.index_eq_card, Subgroup.index_toAddSubgroup]
+
+variable {G} in
+/-- **Every square class has as many elements as the subgroup of squares.** The fibre of the
+class map `G → G/G²` over any class is a coset of `G²`. -/
+theorem card_elementaryTwoQuotientMk_fiber (x : ElementaryTwoQuotient G) :
+    Nat.card {g : G // elementaryTwoQuotientMk g = x} = Nat.card (Subgroup.square G) := by
+  obtain ⟨g₀, rfl⟩ := elementaryTwoQuotientMk_surjective x
+  calc Nat.card {g : G // elementaryTwoQuotientMk g = elementaryTwoQuotientMk g₀}
+      = Nat.card (QuotientGroup.mk' (Subgroup.square G) ⁻¹' {QuotientGroup.mk' _ g₀}) :=
+        Nat.card_congr <| Equiv.subtypeEquivRight fun g => by
+          simp [elementaryTwoQuotientMk_eq_iff, QuotientGroup.eq_iff_div_mem]
+    _ = Nat.card (QuotientGroup.mk' (Subgroup.square G)).ker :=
+        Nat.card_congr (MonoidHom.fiberEquivKer _ g₀)
+    _ = Nat.card (Subgroup.square G) := by rw [QuotientGroup.ker_mk']
+
+variable {G} in
+/-- **All square classes have the same size, `|G| / |G/G²|`.** For every class, the fibre of
+`G → G/G²` over it satisfies `|fibre| · |G/G²| = |G|`. Cardinalities are read via `Nat.card`, so
+no finiteness is assumed; for an infinite `G` both sides are `0`. -/
+theorem card_elementaryTwoQuotientMk_fiber_mul_card (x : ElementaryTwoQuotient G) :
+    Nat.card {g : G // elementaryTwoQuotientMk g = x} * Nat.card (ElementaryTwoQuotient G) =
+      Nat.card G := by
+  rw [card_elementaryTwoQuotientMk_fiber, card_elementaryTwoQuotient_eq_index_square,
+    Subgroup.card_mul_index]
 
 /-- **The maximal elementary-2 quotient and the 2-torsion subgroup have the same cardinality.**
 `|G/G²| = |{g | g² = 1}|`. The squaring endomorphism `g ↦ g²` has range `G²` and kernel the
