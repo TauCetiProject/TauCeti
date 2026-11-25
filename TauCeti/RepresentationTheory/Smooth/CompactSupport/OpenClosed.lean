@@ -64,21 +64,23 @@ def compactlySupportedExtendByZero [T2Space X] (U : SubMulAction G X)
   toLinearMap := LocallyConstant.compactlySupported.extendByZero R M hU
   isIntertwining' g := LinearMap.ext fun f ↦ LocallyConstant.compactlySupported.ext fun x ↦ by
     by_cases hx : x ∈ U
-    · have hx' : g⁻¹ • x ∈ U := U.smul_mem g⁻¹ hx
-      simp only [LinearMap.coe_comp, comp_apply, compactlySupportedRep_apply_coe]
-      rw [LocallyConstant.compactlySupported.extendByZero_apply_coe hU _ ⟨x, hx⟩,
-        LocallyConstant.compactlySupported.extendByZero_apply_coe hU _ ⟨_, hx'⟩]
-      exact (compactlySupportedRep_apply_coe (R := R) (M := M) g f ⟨x, hx⟩).trans
-        (congrArg f.val (SetLike.mk_smul_mk U g⁻¹ x hx))
+    · lift x to U using hx
+      simp [LocallyConstant.compactlySupported.extendByZero_apply_coe hU,
+        ← LocallyConstant.compactlySupported.extendByZero_apply_coe hU f (g⁻¹ • x)]
     · have hx' : g⁻¹ • x ∉ U := fun h ↦ hx (by simpa using U.smul_mem g h)
-      simp only [LinearMap.coe_comp, comp_apply, compactlySupportedRep_apply_coe]
-      rw [LocallyConstant.compactlySupported.extendByZero_apply_of_notMem hU _ hx,
-        LocallyConstant.compactlySupported.extendByZero_apply_of_notMem hU _ hx']
+      simp [LocallyConstant.compactlySupported.extendByZero_apply_of_notMem hU, hx, hx']
 
 @[simp]
 theorem coe_compactlySupportedExtendByZero [T2Space X] (U : SubMulAction G X)
     (hU : IsOpen (U : Set X)) :
     ⇑(compactlySupportedExtendByZero (R := R) (M := M) U hU) =
+      LocallyConstant.compactlySupported.extendByZero R M hU :=
+  (rfl)
+
+@[simp]
+theorem toLinearMap_compactlySupportedExtendByZero [T2Space X] (U : SubMulAction G X)
+    (hU : IsOpen (U : Set X)) :
+    (compactlySupportedExtendByZero (R := R) (M := M) U hU).toLinearMap =
       LocallyConstant.compactlySupported.extendByZero R M hU :=
   (rfl)
 
@@ -88,14 +90,18 @@ def compactlySupportedRestrict (Z : SubMulAction G X) (hZ : IsClosed (Z : Set X)
     (compactlySupportedRep R G X M).IntertwiningMap (compactlySupportedRep R G Z M) where
   toLinearMap := LocallyConstant.compactlySupported.restrict R M hZ
   isIntertwining' g := LinearMap.ext fun f ↦ LocallyConstant.compactlySupported.ext fun z ↦ by
-    simp only [LinearMap.coe_comp, comp_apply]
-    rw [LocallyConstant.compactlySupported.restrict_apply hZ, compactlySupportedRep_apply_coe,
-      compactlySupportedRep_apply_coe, LocallyConstant.compactlySupported.restrict_apply hZ,
-      SubMulAction.val_smul]
+    simp [LocallyConstant.compactlySupported.restrict_apply hZ]
 
 @[simp]
 theorem coe_compactlySupportedRestrict (Z : SubMulAction G X) (hZ : IsClosed (Z : Set X)) :
     ⇑(compactlySupportedRestrict (R := R) (M := M) Z hZ) =
+      LocallyConstant.compactlySupported.restrict R M hZ :=
+  (rfl)
+
+@[simp]
+theorem toLinearMap_compactlySupportedRestrict (Z : SubMulAction G X)
+    (hZ : IsClosed (Z : Set X)) :
+    (compactlySupportedRestrict (R := R) (M := M) Z hZ).toLinearMap =
       LocallyConstant.compactlySupported.restrict R M hZ :=
   (rfl)
 
