@@ -618,6 +618,15 @@ theorem toFilterGerm_stalkEquivModelSpace_symm
           (e.continuous.continuousAt.comp (continuousAt_extChartAt x)).tendsto := by
   simp only [stalkEquivModelSpace_symm_apply, toFilterGerm_stalkPullback, Function.comp_apply]
 
+omit [I.Boundaryless] [IsManifold I ω X] in
+/-- The inverse of the chart comparison map `e ∘ extChartAt I x` tends to `x` at the image of `x`.
+-/
+theorem tendsto_extChartAt_symm_comp_symm (x : X) (e : E ≃L[ℂ] V) :
+    Tendsto ((extChartAt I x).symm ∘ e.symm) (𝓝 (e (extChartAt I x x))) (𝓝 x) := by
+  have he := e.symm.continuous.tendsto (e (extChartAt I x x))
+  rw [e.symm_apply_apply] at he
+  simpa only [extChartAt_to_inv] using (continuousAt_extChartAt_symm x).tendsto.comp he
+
 /-- On function germs, chart comparison is composition with the inverse chart and `e.symm`. -/
 @[simp↓]
 theorem toFilterGerm_stalkEquivModelSpace
@@ -625,11 +634,7 @@ theorem toFilterGerm_stalkEquivModelSpace
     toFilterGerm 𝓘(ℂ, V) V (e (extChartAt I x x))
         (𝓝 (e (extChartAt I x x))) le_rfl (stalkEquivModelSpace x e s) =
       (toFilterGerm I X x (𝓝 x) le_rfl s).compTendsto ((extChartAt I x).symm ∘ e.symm)
-        (by
-          have he := e.symm.continuous.tendsto (e (extChartAt I x x))
-          rw [e.symm_apply_apply] at he
-          simpa only [extChartAt_to_inv] using
-            (continuousAt_extChartAt_symm x).tendsto.comp he) := by
+        (tendsto_extChartAt_symm_comp_symm x e) := by
   exact (chartAt H x).toFilterGerm_holomorphicStalkEquivModelSpace
     (IsManifold.chart_mem_maximalAtlas x) x (mem_chart_source H x) e s
 

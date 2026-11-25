@@ -103,6 +103,9 @@ linear approximation error by the difference of the Hessians.
   interpolation inequalities for the first and second derivatives on a ball.
 * `HolderOnWith.norm_fderiv_le_of_contDiffOn` and
   `HolderOnWith.norm_iteratedFDeriv_two_le_of_contDiffOn`: the same for a `C²` function.
+* `HolderOnWith.norm_iteratedFDeriv_two_le_of_contDiffOn_of_mem` and
+  `HolderOnWith.norm_fderiv_le_of_contDiffOn_of_segment_subset`: the same at a point joined by a
+  segment to the centre of such a ball, as needed up to the boundary of a domain.
 * `HolderOnWith.norm_le_of_hasDerivWithinAt_Icc`: the interpolation inequality for derivatives
   within a closed interval.
 * `TauCeti.holderOnWith_Icc_of_hasFDerivAt_of_hasDerivWithinAt`: the temporal
@@ -434,6 +437,61 @@ theorem norm_iteratedFDeriv_two_le_of_contDiffOn {U s : Set E} {u : E → F} (hU
   have hH' := (TauCeti.holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two u).2 hH
   rw [← norm_iteratedFDeriv_fderiv (n := 1), norm_iteratedFDeriv_one]
   exact hH'.norm_le_of_hasFDerivWithinAt_of_closedBall_two_mul_subset hd1 hd2 hM hε hxs
+
+/-- **Interpolation of the Hessian away from the centre of a ball.** Let `u` be `C²` on an open
+set `U ⊇ s`, with `D²u` `α`-Hölder with constant `H` on `s` and `‖u‖ ≤ M` on `s`. If a closed ball
+of radius `2 ε > 0` about `y` lies in `s`, then at every `x ∈ s`
+
+`‖D²u(x)‖ ≤ 2 M / ε² + 3 H ε^α + H ‖x - y‖^α`.
+
+Near the boundary of a domain, `x` need not be the centre of a ball in `s`, but a ball nearby
+suffices. -/
+theorem norm_iteratedFDeriv_two_le_of_contDiffOn_of_mem {U s : Set E} {u : E → F}
+    (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hsU : s ⊆ U) {H α : ℝ≥0}
+    (hH : HolderOnWith H α (iteratedFDeriv ℝ 2 u) s) {M : ℝ} (hM : ∀ y ∈ s, ‖u y‖ ≤ M)
+    {x y : E} (hx : x ∈ s) {ε : ℝ} (hε : 0 < ε) (hys : Metric.closedBall y (2 * ε) ⊆ s) :
+    ‖iteratedFDeriv ℝ 2 u x‖ ≤
+      2 * M / ε ^ 2 + 3 * H * ε ^ (α : ℝ) + H * dist x y ^ (α : ℝ) := by
+  have hy := hH.norm_iteratedFDeriv_two_le_of_contDiffOn hU hu hsU hM hε hys
+  have hxy := hH.dist_le hx (hys (Metric.mem_closedBall_self (by positivity)))
+  rw [dist_eq_norm] at hxy
+  linarith [norm_le_norm_add_norm_sub' (iteratedFDeriv ℝ 2 u x) (iteratedFDeriv ℝ 2 u y)]
+
+/-- **Interpolation of the gradient away from the centre of a ball.** Let `u` be `C²` on an open
+set `U ⊇ s`, with `D²u` `α`-Hölder with constant `H` on `s` and `‖u‖ ≤ M` on `s`. If a closed ball
+of radius `2 ε > 0` about `y` lies in `s`, then at every `x` joined to `y` by a segment in `s`
+
+`‖Du(x)‖ ≤ M / ε + H ε^(1 + α) + ‖x - y‖ (2 M / ε² + 3 H ε^α + H ‖x - y‖^α)`:
+
+the gradient at `y` is controlled by interpolation on the ball, and its change along the segment
+by the Hessian bound of `HolderOnWith.norm_iteratedFDeriv_two_le_of_contDiffOn_of_mem`. -/
+theorem norm_fderiv_le_of_contDiffOn_of_segment_subset {U s : Set E} {u : E → F}
+    (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hsU : s ⊆ U) {H α : ℝ≥0}
+    (hH : HolderOnWith H α (iteratedFDeriv ℝ 2 u) s) {M : ℝ} (hM : ∀ y ∈ s, ‖u y‖ ≤ M)
+    {x y : E} (hxy : segment ℝ x y ⊆ s) {ε : ℝ} (hε : 0 < ε)
+    (hys : Metric.closedBall y (2 * ε) ⊆ s) :
+    ‖fderiv ℝ u x‖ ≤ M / ε + H * ε ^ (1 + (α : ℝ)) +
+      dist x y * (2 * M / ε ^ 2 + 3 * H * ε ^ (α : ℝ) + H * dist x y ^ (α : ℝ)) := by
+  have hy := hH.norm_fderiv_le_of_contDiffOn hU hu hsU hM hε
+    ((Metric.closedBall_subset_closedBall (by linarith)).trans hys)
+  -- Along the segment the Hessian is bounded by its value near `y`, since `‖z - y‖ ≤ ‖x - y‖`.
+  have hbound : ∀ z ∈ segment ℝ x y, ‖fderiv ℝ (fderiv ℝ u) z‖ ≤
+      2 * M / ε ^ 2 + 3 * H * ε ^ (α : ℝ) + H * dist x y ^ (α : ℝ) := by
+    intro z hz
+    have hzy : dist z y ≤ dist x y := (convex_closedBall y (dist x y)).segment_subset
+      (Metric.mem_closedBall.2 le_rfl) (Metric.mem_closedBall_self dist_nonneg) hz
+    rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
+    refine (hH.norm_iteratedFDeriv_two_le_of_contDiffOn_of_mem hU hu hsU hM (hxy hz) hε
+      hys).trans ?_
+    gcongr
+  have hmv := (convex_segment x y).norm_image_sub_le_of_norm_fderiv_le
+    (fun z hz => ((hu.contDiffAt (hU.mem_nhds (hsU (hxy hz)))).fderiv_right
+      (m := 1) le_rfl).differentiableAt one_ne_zero)
+    hbound (right_mem_segment ℝ x y) (left_mem_segment ℝ x y)
+  rw [← dist_eq_norm x y] at hmv
+  have hdist := norm_le_norm_add_norm_sub' (fderiv ℝ u x) (fderiv ℝ u y)
+  linarith [mul_comm (dist x y)
+    (2 * M / ε ^ 2 + 3 * H * ε ^ (α : ℝ) + H * dist x y ^ (α : ℝ))]
 
 end HolderOnWith
 

@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Derivation.Basic
 public import TauCeti.RingTheory.Kaehler.DeRham.Basic
 public import TauCeti.RingTheory.Kaehler.LieDeriv
-import TauCeti.LinearAlgebra.ExteriorAlgebra.Derivation
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Derivation.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!

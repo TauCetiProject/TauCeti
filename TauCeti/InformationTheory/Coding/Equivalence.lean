@@ -135,6 +135,17 @@ theorem signedEquiv_signedEquiv (u : ι → ℤˣ) (x : ι → R) :
   norm_cast
   simp
 
+/-- The inverse of a signed coordinate change is the signed coordinate change along the inverse
+relabelling, with the signs carried to the new coordinates: each sign is its own inverse. -/
+@[simp]
+theorem signedEquiv_symm (u : ι → ℤˣ) (e : ι ≃ κ) :
+    (signedEquiv (R := R) u e).symm = signedEquiv (u ∘ e.symm) e.symm := by
+  refine LinearEquiv.ext fun x ↦ (LinearEquiv.symm_apply_eq _).mpr (funext fun j ↦ ?_)
+  simp only [signedEquiv_apply, Function.comp_apply, Equiv.symm_symm, Equiv.apply_symm_apply,
+    ← mul_assoc]
+  norm_cast
+  simp
+
 /-- The additive homomorphism underlying a signed coordinate change has the same action as the
 ambient linear equivalence. -/
 @[simp]

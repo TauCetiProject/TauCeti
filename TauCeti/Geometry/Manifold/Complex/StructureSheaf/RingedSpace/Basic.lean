@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.SmoothComparison
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
-import TauCeti.Geometry.RingedSpace.LocallyRingedSpace
+import TauCeti.Geometry.RingedSpace.LocallyRingedSpace.Basic
 import TauCeti.Geometry.RingedSpace.PresheafedSpace.Basic
 
 /-!

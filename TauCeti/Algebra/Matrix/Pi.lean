@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Subalgebra.Center
+public import TauCeti.RingTheory.TensorProduct.Pi
 public import Mathlib.Algebra.Central.Matrix
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 -- `FiniteDimensional` is a hypothesis of, and a conclusion of, the presentation results below.
@@ -14,6 +15,7 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 -- as a linear quotient of its matrix block, and `Module.finrank_pos` together with
 -- `LinearMap.finrank_le_finrank_of_surjective` only to bound a block from below by the dimension of
 -- its coefficients and from above by that of the algebra presented.
+-- `Matrix.piRingEquiv` and `Matrix.algebraMap_matrix_apply` build `piLeftMatrixEquiv`.
 import Mathlib.Data.Matrix.Basic
 import Mathlib.LinearAlgebra.Dimension.Finite
 
@@ -46,6 +48,12 @@ coefficients to be division algebras.
   the bounds `nᵢ² ≤ finrank k A` on the degree of a single block with nontrivial coefficients — no
   other block plays any part, so the index need not even be finite — and, when every block is
   nonzero over nontrivial coefficients, `Nat.card ι ≤ finrank k A` on the number of blocks.
+
+Matrices over a finite product of commutative semirings are the product of the matrix algebras
+over the factors, so matrix splittings of a tensor product assemble over such a product:
+
+* `TauCeti.piLeftMatrixEquiv`: `A i`-algebra isomorphisms `A i ⊗[R] B ≃ₐ[A i] Matrix n n (A i)`
+  assemble into one `(∀ i, A i) ⊗[R] B ≃ₐ[∀ i, A i] Matrix n n (∀ i, A i)`.
 
 ## References
 
@@ -235,5 +243,52 @@ end Bounds
 end Presentation
 
 end Field
+
+section piLeftMatrixEquiv
+
+open scoped TensorProduct
+
+variable {R : Type*} {ι : Type*} {A : ι → Type*} {B : Type*} [CommSemiring R]
+  [∀ i, CommSemiring (A i)] [∀ i, Algebra R (A i)] [Semiring B] [Algebra R B]
+  [Fintype ι] [DecidableEq ι] {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- **Matrix splittings over the factors of a finite product assemble to one over the product.**
+Given `A i`-algebra isomorphisms `A i ⊗[R] B ≃ₐ[A i] Matrix n n (A i)`, this is the
+`(∀ i, A i)`-algebra isomorphism `(∀ i, A i) ⊗[R] B ≃ₐ[∀ i, A i] Matrix n n (∀ i, A i)`
+whose entry `(j, k)` in coordinate `i` is that of `e i` (`piLeftMatrixEquiv_apply`). -/
+def piLeftMatrixEquiv (e : ∀ i, A i ⊗[R] B ≃ₐ[A i] Matrix n n (A i)) :
+    (∀ i, A i) ⊗[R] B ≃ₐ[∀ i, A i] Matrix n n (∀ i, A i) :=
+  AlgEquiv.ofRingEquiv (f := ((Algebra.TensorProduct.piLeft R A B).toRingEquiv.trans
+      (RingEquiv.piCongrRight fun i ↦ (e i).toRingEquiv)).trans Matrix.piRingEquiv.symm)
+    fun a ↦ by
+      ext j k i
+      have h := (e i).commutes (a i)
+      simp only [_root_.Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_self,
+        RingHom.id_apply] at h
+      simp [_root_.Algebra.TensorProduct.algebraMap_apply, h, Matrix.algebraMap_matrix_apply,
+        apply_ite (fun f : ∀ i, A i ↦ f i)]
+
+/-- Entry `(j, k)` of `piLeftMatrixEquiv e x` in coordinate `i` is entry `(j, k)` of the image
+under `e i` of the `i`-th component of `x`. -/
+@[simp]
+theorem piLeftMatrixEquiv_apply (e : ∀ i, A i ⊗[R] B ≃ₐ[A i] Matrix n n (A i))
+    (x : (∀ i, A i) ⊗[R] B) (j k : n) (i : ι) :
+    piLeftMatrixEquiv e x j k i = e i (Algebra.TensorProduct.piLeft R A B x i) j k := by
+  simp [piLeftMatrixEquiv]
+
+/-- The inverse of `piLeftMatrixEquiv e` sends a matrix `M` over the product to the preimage
+under `piLeft` of the family whose `i`-th member is the preimage under `e i` of the `i`-th
+coordinate matrix `M.map fun x ↦ x i`. It is not a simp lemma, so that `simp` can cancel
+`piLeftMatrixEquiv e ((piLeftMatrixEquiv e).symm M)`. -/
+theorem piLeftMatrixEquiv_symm_apply (e : ∀ i, A i ⊗[R] B ≃ₐ[A i] Matrix n n (A i))
+    (M : Matrix n n (∀ i, A i)) :
+    (piLeftMatrixEquiv e).symm M =
+      (Algebra.TensorProduct.piLeft R A B).symm fun i ↦ (e i).symm (M.map fun x ↦ x i) := by
+  rw [AlgEquiv.symm_apply_eq]
+  ext j k i
+  rw [piLeftMatrixEquiv_apply, AlgEquiv.apply_symm_apply]
+  simp
+
+end piLeftMatrixEquiv
 
 end TauCeti
