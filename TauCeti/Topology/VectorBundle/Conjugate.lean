@@ -27,7 +27,8 @@ covering the identity of the base, conjugate-linear on each fibre
 (`TauCeti.ConjugateBundle.toConjHomeomorph`). Conjugating twice gives back `E`, by a homeomorphism
 that is complex-linear on each fibre (`TauCeti.ConjugateBundle.doubleConjugateHomeomorph`), and
 the conjugate of a direct sum is the direct sum of the conjugates
-(`TauCeti.ConjugateBundle.prodHomeomorph`).
+(`TauCeti.ConjugateBundle.prodHomeomorph`). Pullback commutes with conjugation through
+`TauCeti.ConjugateBundle.pullbackHomeomorph`, which preserves every base point and fibre entry.
 
 The conjugate bundle is the second piece of the doubled bundle of a bundle pair over a bordered
 Riemann surface: `E` over the surface is glued to its conjugate over the reflected copy, along the
@@ -90,6 +91,33 @@ theorem toConjHomeomorph_mk [∀ x, AddCommGroup (E x)] [∀ x, Module ℂ (E x)
     [∀ x, TopologicalSpace (E x)] (x : B) (v : E x) :
     toConjHomeomorph F E ⟨x, v⟩ = ⟨x, toConjL v⟩ := by
   rw [toConjHomeomorph_apply, coe_toConjL]
+
+section Pullback
+
+variable {X : Type*} [TopologicalSpace X]
+
+variable (F E) in
+/-- Pullback commutes with conjugation on actual total-space carriers. The map preserves the
+base and fibre entries; the two induced pullback topologies agree. -/
+def pullbackHomeomorph (f : X → B) :
+    TotalSpace (Conjugate F) (f *ᵖ (ConjugateBundle E)) ≃ₜ
+      TotalSpace (Conjugate F) (ConjugateBundle (f *ᵖ E)) where
+  toFun p := ⟨p.proj, p.snd⟩
+  invFun p := ⟨p.proj, p.snd⟩
+  left_inv p := by cases p; rfl
+  right_inv p := by cases p; rfl
+  continuous_toFun := continuous_id
+  continuous_invFun := continuous_id
+
+@[simp] theorem pullbackHomeomorph_apply (f : X → B)
+    (p : TotalSpace (Conjugate F) (f *ᵖ (ConjugateBundle E))) :
+    pullbackHomeomorph F E f p = ⟨p.proj, p.snd⟩ := by rfl
+
+@[simp] theorem pullbackHomeomorph_symm_apply (f : X → B)
+    (p : TotalSpace (Conjugate F) (ConjugateBundle (f *ᵖ E))) :
+    (pullbackHomeomorph F E f).symm p = ⟨p.proj, p.snd⟩ := by rfl
+
+end Pullback
 
 end ConjugateBundle
 
@@ -193,6 +221,16 @@ theorem _root_.Bundle.Trivialization.coordChangeL_conjugate (e e' : Trivializati
     ContinuousLinearMap.conjugate_apply, ContinuousLinearEquiv.coe_coe,
     Trivialization.coordChangeL_apply _ _ hb]
   rfl
+
+/-- The fibre linear coordinates of a conjugated chart are the conjugate linear coordinates. -/
+theorem _root_.Bundle.Trivialization.linearEquivAt_conjugate
+    (e : Trivialization F (π F E)) [e.IsLinear ℂ] {x : B} (hx : x ∈ e.baseSet) :
+    (e.conjugate.linearEquivAt ℂ x (e.baseSet_conjugate.symm ▸ hx)).toLinearMap =
+      (e.linearEquivAt ℂ x hx).toLinearMap.conjugateMap := by
+  ext v
+  simp only [LinearMap.conjugateMap_apply, LinearEquiv.coe_toLinearMap,
+    Trivialization.linearEquivAt_apply, Trivialization.conjugate_apply,
+    toConjHomeomorph_symm_apply]
 
 end TopologicalModule
 

@@ -43,7 +43,9 @@ GTM 176 (2018), Proposition 2.44 and the discussion of the Riemannian density fo
   coordinates, and `TauCeti.setLIntegral_riemannianVolume_inter_preimage`, its form over the
   chart preimage of an open coordinate set.
 * `TauCeti.setLIntegral_comp_extChartAt_symm_le_mul_lintegral`: where the chart density is at
-  least `m > 0`, coordinate integrals are at most `m⁻¹` times Riemannian integrals.
+  least `m > 0`, coordinate integrals are at most `m⁻¹` times Riemannian integrals, and
+  `TauCeti.setLIntegral_inter_preimage_le_mul_setLIntegral_comp_extChartAt_symm`: where it is at
+  most `m`, Riemannian integrals over a chart preimage are at most `m` times coordinate integrals.
 * `TauCeti.lintegral_riemannianVolume_eq_of_support_subset`: integration in coordinates of a
   function supported in the chart preimage of an open coordinate set, and
   `TauCeti.integral_riemannianVolume_le_mul_integral_of_support_subset`, the resulting upper bound
@@ -179,6 +181,23 @@ theorem setLIntegral_comp_extChartAt_symm_le_mul_lintegral (α : M) {Ω : Set E}
           setLIntegral_riemannianVolume_inter_preimage α hΩ hΩt]
     _ ≤ ENNReal.ofReal m⁻¹ * ∫⁻ x, φ x ∂riemannianVolume I M :=
         mul_le_mul_of_nonneg_left (setLIntegral_le_lintegral _ _) bot_le
+
+/-- **Riemannian integrals are controlled by coordinate integrals** where the chart density is
+bounded above: if the density is at most `m` on an open set `Ω` of the chart target, then the
+integral of `φ` over the chart preimage of `Ω` is at most `m` times the integral over `Ω` of `φ`
+read in the chart. -/
+theorem setLIntegral_inter_preimage_le_mul_setLIntegral_comp_extChartAt_symm (α : M) {Ω : Set E}
+    (hΩ : IsOpen Ω) (hΩt : Ω ⊆ (extChartAt I α).target) {m : ℝ}
+    (hρ : ∀ y ∈ Ω, chartVolumeDensity (I := I) α ((extChartAt I α).symm y) ≤ m)
+    (φ : M → ℝ≥0∞) :
+    ∫⁻ x in (extChartAt I α).source ∩ extChartAt I α ⁻¹' Ω, φ x ∂riemannianVolume I M ≤
+      ENNReal.ofReal m *
+        ∫⁻ y in Ω, φ ((extChartAt I α).symm y) ∂(Module.finBasis ℝ E).addHaar := by
+  rw [setLIntegral_riemannianVolume_inter_preimage α hΩ hΩt,
+    ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+  refine setLIntegral_mono' hΩ.measurableSet fun y hy ↦ ?_
+  gcongr
+  exact hρ y hy
 
 /-- **Integration in coordinates of a function supported in a chart**: if `φ` vanishes outside
 the chart preimage of an open set `Ω` of the chart target, its integral over `M` is the integral
