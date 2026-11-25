@@ -19,9 +19,9 @@ the congruence rule `TauCeti.mfderiv_apply_congr_point` comparing `mfderiv I J f
 
 ## Main results
 
-* `TauCeti.tangentSpaceCastModel_apply`, `TauCeti.tangentSpaceCastModel_symm_apply`, and
-  `TauCeti.coe_tangentSpaceCast`: explicit equations for the canonical identifications between
-  `TangentSpace I x` and the model vector space `E`.
+* `TauCeti.tangentSpaceCastModel_apply` and `TauCeti.tangentSpaceCastModel_symm_apply`: explicit
+  equations for `tangentSpaceCastModel` and its inverse between `TangentSpace I x` and the model
+  vector space `E`.
 * `TauCeti.mfderiv_apply_congr_point`: derivatives of a map at equal base points applied to tangent
   vectors with equal model coordinates have equal model coordinates.
 * `TauCeti.apply_of_eq_neg_id`, `TauCeti.eq_neg_id_of_apply`, and
@@ -57,11 +57,6 @@ theorem tangentSpaceCastModel_apply (x : M) (v : TangentSpace I x) :
 /-- The inverse of `tangentSpaceCastModel I x` preserves the underlying vector. -/
 theorem tangentSpaceCastModel_symm_apply (x : M) (v : E) :
     (tangentSpaceCastModel I x).symm v = v :=
-  (rfl)
-
-/-- `tangentSpaceCast I q p` preserves the underlying model-space vector. -/
-theorem coe_tangentSpaceCast (q p : M) (w : TangentSpace I q) :
-    (tangentSpaceCast I q p w : E) = w :=
   (rfl)
 
 end TangentSpaceCastModel

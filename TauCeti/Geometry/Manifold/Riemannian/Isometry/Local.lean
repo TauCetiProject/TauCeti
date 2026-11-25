@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Tangent.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
@@ -40,8 +41,10 @@ from Riccardo Brasca's `ForTauCeti` formalization.
   Riemannian isometry is a local diffeomorphism, by the inverse function theorem.
 * `TauCeti.IsLocalRiemannianIsometry.id` and `TauCeti.IsLocalRiemannianIsometry.comp`: the identity
   and composites.
-* `TauCeti.IsLocalRiemannianIsometry.of_comp_left`: cancel a local Riemannian isometry on the
-  left of a smooth composition.
+* `TauCeti.IsLocalRiemannianIsometry.of_comp_left` and
+  `TauCeti.IsLocalRiemannianIsometry.inner_mfderiv_of_comp_eq`: cancel a local Riemannian isometry
+  on the left of a smooth composition, and deduce inner-product preservation for a differentiable
+  map intertwined by local Riemannian isometries.
 * `TauCeti.RiemannianIsometry.isLocalRiemannianIsometry`: a Riemannian isometry is a local
   Riemannian isometry.
 * `Bundle.ContMDiffRiemannianMetric.isLocalRiemannianIsometry_smul`: with a metric `g` installed,
@@ -253,6 +256,45 @@ theorem of_comp_left {g : N → P} (hgf : IsLocalRiemannianIsometry I K (g ∘ f
       mfderiv_comp_apply x (hg.mdifferentiableAt (f x))
         (hf.mdifferentiableAt (by simp)), hg.inner_mfderiv] at h
     exact h
+
+/-- If `f₁` and `f₂` are local Riemannian isometries, `Φ` is a local Riemannian isometry, and `L`
+is differentiable at `z` with `f₂ ∘ L = Φ ∘ f₁`, then `dL_z` preserves inner products. -/
+theorem inner_mfderiv_of_comp_eq
+    {E₁ : Type*} [NormedAddCommGroup E₁] [NormedSpace ℝ E₁]
+    {H₁ : Type*} [TopologicalSpace H₁] {I₁ : ModelWithCorners ℝ E₁ H₁}
+    {M₁ : Type*} [TopologicalSpace M₁] [ChartedSpace H₁ M₁]
+    [RiemannianBundle (fun x : M₁ ↦ TangentSpace I₁ x)]
+    {E₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E₂]
+    {H₂ : Type*} [TopologicalSpace H₂] {I₂ : ModelWithCorners ℝ E₂ H₂}
+    {M₂ : Type*} [TopologicalSpace M₂] [ChartedSpace H₂ M₂]
+    [RiemannianBundle (fun x : M₂ ↦ TangentSpace I₂ x)]
+    {f₁ : M₁ → M} {f₂ : M₂ → N} {Φ : M → N} {L : M₁ → M₂} {z : M₁}
+    (hf₁ : IsLocalRiemannianIsometry I₁ I f₁)
+    (hf₂ : IsLocalRiemannianIsometry I₂ J f₂)
+    (hΦ : IsLocalRiemannianIsometry I J Φ)
+    (hLz : MDifferentiableAt I₁ I₂ L z) (hcomp : f₂ ∘ L = Φ ∘ f₁)
+    (u v : TangentSpace I₁ z) :
+    inner ℝ (mfderiv I₁ I₂ L z u) (mfderiv I₁ I₂ L z v) = inner ℝ u v := by
+  have hd : ∀ w : TangentSpace I₁ z,
+      (mfderiv I₂ J f₂ (L z) (mfderiv I₁ I₂ L z w) : F) =
+        mfderiv I J Φ (f₁ z) (mfderiv I₁ I f₁ z w) := fun w ↦ by
+    have h1 := DFunLike.congr_fun (mfderiv_comp z (hf₂.mdifferentiableAt (L z)) hLz) w
+    have h2 := DFunLike.congr_fun (mfderiv_comp z (hΦ.mdifferentiableAt (f₁ z))
+      (hf₁.mdifferentiableAt z)) w
+    have h12 : (mfderiv I₁ J (f₂ ∘ L) z w : F) = mfderiv I₁ J (Φ ∘ f₁) z w := by
+      rw [hcomp]
+    exact h1.symm.trans (h12.trans h2)
+  calc
+    inner ℝ (mfderiv I₁ I₂ L z u) (mfderiv I₁ I₂ L z v) =
+        inner ℝ (mfderiv I₂ J f₂ (L z) (mfderiv I₁ I₂ L z u))
+          (mfderiv I₂ J f₂ (L z) (mfderiv I₁ I₂ L z v)) :=
+      (hf₂.inner_mfderiv (L z) _ _).symm
+    _ = inner ℝ (mfderiv I J Φ (f₁ z) (mfderiv I₁ I f₁ z u))
+          (mfderiv I J Φ (f₁ z) (mfderiv I₁ I f₁ z v)) :=
+      inner_tangentSpace_congr (congrFun hcomp z) (hd u) (hd v)
+    _ = inner ℝ (mfderiv I₁ I f₁ z u) (mfderiv I₁ I f₁ z v) :=
+      hΦ.inner_mfderiv (f₁ z) _ _
+    _ = inner ℝ u v := hf₁.inner_mfderiv z u v
 
 end IsLocalRiemannianIsometry
 

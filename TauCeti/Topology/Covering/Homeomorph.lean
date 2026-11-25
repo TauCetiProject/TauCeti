@@ -8,16 +8,21 @@ module
 public import Mathlib.Topology.Covering.Basic
 
 /-!
-# Homeomorphisms are covering maps
+# Homeomorphisms and covering maps
 
 A homeomorphism is a covering map with one-point fibres: the whole base is evenly covered. In
-particular the identity of a space is a covering map, the trivial one-sheeted cover.
+particular the identity of a space is a covering map, the trivial one-sheeted cover. Conversely, on
+a preconnected covering space, two continuous lifts that cover a left-inverse pair and compose to
+the identity at a single point are left inverses everywhere
+(`IsCoveringMap.leftInverse_of_comp_eq`).
 
 ## Main results
 
 * `IsCoveringMap.id`: the identity of a space is a covering map.
 * `IsHomeomorph.isCoveringMap`: a homeomorphism is a covering map.
 * `Homeomorph.isCoveringMap`: the bundled form of the previous result.
+* `IsCoveringMap.leftInverse_of_comp_eq`: continuous lifts covering a left-inverse pair on a
+  preconnected covering space and satisfying `R (L x) = x` at one point satisfy `LeftInverse R L`.
 -/
 
 public section
@@ -40,3 +45,22 @@ theorem IsHomeomorph.isCoveringMap {f : X → Y} (hf : IsHomeomorph f) : IsCover
 /-- A bundled homeomorphism is a covering map; see `IsHomeomorph.isCoveringMap`. -/
 theorem Homeomorph.isCoveringMap (e : X ≃ₜ Y) : IsCoveringMap e := by
   simpa only [Function.comp_id] using IsCoveringMap.id.homeomorph_comp e
+
+/-- On a preconnected covering space, if continuous maps `L : M₁ → M₂` and `R : M₂ → M₁`
+intertwine `f₁ : M₁ → N₁` and `f₂ : M₂ → N₂` with maps `φ : N₁ → N₂` and `ψ : N₂ → N₁` satisfying
+`LeftInverse ψ φ`, and `R (L x) = x` at one point `x`, then `R` is a left inverse of `L`. -/
+theorem IsCoveringMap.leftInverse_of_comp_eq {M₁ M₂ N₁ N₂ : Type*}
+    [TopologicalSpace M₁] [TopologicalSpace M₂] [TopologicalSpace N₁]
+    [PreconnectedSpace M₁] {f₁ : M₁ → N₁} {f₂ : M₂ → N₂} (hcov : IsCoveringMap f₁)
+    {L : M₁ → M₂} {R : M₂ → M₁} {φ : N₁ → N₂} {ψ : N₂ → N₁}
+    (hL_cont : Continuous L) (hR_cont : Continuous R)
+    (hL : f₂ ∘ L = φ ∘ f₁) (hR : f₁ ∘ R = ψ ∘ f₂) (hψφ : Function.LeftInverse ψ φ)
+    {x : M₁} (hx : R (L x) = x) :
+    Function.LeftInverse R L := by
+  have hcomp : f₁ ∘ (R ∘ L) = f₁ ∘ id := by
+    funext z
+    calc
+      f₁ (R (L z)) = ψ (f₂ (L z)) := congrFun hR (L z)
+      _ = ψ (φ (f₁ z)) := congrArg ψ (congrFun hL z)
+      _ = f₁ z := hψφ (f₁ z)
+  exact congrFun (hcov.eq_of_comp_eq (hR_cont.comp hL_cont) continuous_id hcomp x hx)

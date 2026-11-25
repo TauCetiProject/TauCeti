@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors, Giada Franz
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import TauCeti.Analysis.InnerProductSpace.Reflection
 public import TauCeti.Geometry.Diffeomorphism.Sphere
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
@@ -32,6 +33,8 @@ manifold. With `E = EuclideanSpace ℝ (Fin 4)` this is the spherical model geom
 
 ## Main statements
 
+* `LinearIsometryEquiv.unitSphereRiemannianIsometry_reflection_apply_self`: orthogonal reflection
+  across `ℝ ∙ p` fixes `p` on the unit sphere.
 * `LinearIsometryEquiv.mvfderiv_coe_sphere_unitSphereEquiv`: the differential of the restriction
   to the spheres, read in the ambient space, is the linear isometry itself. Use
   `LinearIsometryEquiv.coe_unitSphereRiemannianIsometry` to apply it to the Riemannian isometry.
@@ -104,6 +107,13 @@ theorem coe_unitSphereRiemannianIsometry (e : E ≃ₗᵢ[ℝ] F) :
 theorem unitSphereRiemannianIsometry_apply (e : E ≃ₗᵢ[ℝ] E) (x : sphere (0 : E) 1) :
     unitSphereRiemannianIsometry (n := n) (k := n) e x = e • x :=
   Subtype.ext (by simp)
+
+/-- Orthogonal reflection across the radial line `ℝ ∙ p` fixes `p` on the unit sphere. -/
+theorem unitSphereRiemannianIsometry_reflection_apply_self (p : sphere (0 : E) 1) :
+    unitSphereRiemannianIsometry (n := n) (k := n) (ℝ ∙ (p : E)).reflection p = p := by
+  apply Subtype.ext
+  rw [coe_unitSphereRiemannianIsometry_apply]
+  exact Submodule.reflection_mem_subspace_eq_self (Submodule.mem_span_singleton_self (p : E))
 
 /-- The inverse of the isometry induced by `e` is the isometry induced by `e.symm`. -/
 @[simp]

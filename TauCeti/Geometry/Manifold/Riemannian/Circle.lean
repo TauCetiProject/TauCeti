@@ -37,15 +37,6 @@ open scoped ContDiff Manifold
 local instance circleFinrankFact : Fact (Module.finrank ℝ ℂ = 1 + 1) :=
   ⟨by norm_num [Complex.finrank_real_complex]⟩
 
-namespace Circle
-
-/-- The sphere chart structure made available through Circle's opaque type abbreviation. -/
-noncomputable local instance circleChartedSpace :
-    ChartedSpace (EuclideanSpace ℝ (Fin 1)) (Submonoid.unitSphere ℂ) :=
-  instChartedSpaceEuclideanSpaceRealFinOfNatNatCircle
-
-end Circle
-
 namespace TauCeti
 
 /-- The sphere chart structure made available through Circle's opaque type abbreviation. -/

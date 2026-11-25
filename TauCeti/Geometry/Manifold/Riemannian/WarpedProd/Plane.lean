@@ -32,7 +32,7 @@ is the warped-product metric `dx² + f(x)² dy²` on `ℝ × ℝ`. Its scalar cu
 * the underlying space is contractible (hence simply connected);
 * whenever `|f|` is bounded away from zero (`0 < c` and `c ≤ |f x|` for all `x`), the metric
   uniformly dominates a positive multiple of the standard complete product metric on `ℝ × ℝ`, and
-  is therefore metrically and geodesically complete;
+  is therefore geodesically complete;
 * whenever `f'' / f` is nonconstant, the scalar curvature is nonconstant, so the Levi-Civita
   connection fails to have parallel curvature (`¬ HasParallelCurvature`).
 

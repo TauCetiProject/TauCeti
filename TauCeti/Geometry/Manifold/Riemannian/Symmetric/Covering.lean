@@ -10,10 +10,11 @@ public import TauCeti.Geometry.Manifold.Riemannian.Covering.Universal
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Symmetric.Basic
 import Mathlib.Topology.Homotopy.Lifting
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.MFDeriv.Congr
-import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
+import TauCeti.Topology.Covering.Homeomorph
 
 /-!
 # Lifting symmetries along Riemannian coverings
@@ -31,11 +32,6 @@ Riemannian covering, and specifically to the universal cover equipped with the p
 
 ## Main results
 
-* `IsCoveringMap.leftInverse_of_comp_eq`: two continuous lifts along a covering map on a
-  preconnected space that cover a left-inverse pair and satisfy `R (L x) = x` at one point satisfy
-  `LeftInverse R L`.
-* `TauCeti.IsLocalRiemannianIsometry.inner_mfderiv_of_comp_eq`: a differentiable map intertwined
-  with a local Riemannian isometry by local Riemannian isometries preserves inner products.
 * `TauCeti.IsLocalRiemannianIsometry.existsUnique_lift_isom_of_isCoveringMap`: every Riemannian
   isometry of the base lifts uniquely to a Riemannian isometry of a simply connected covering space
   with prescribed value at one point.
@@ -66,26 +62,6 @@ open scoped ContDiff Manifold
 
 noncomputable section
 
-section CoveringLeftInverse
-
-/-- On a preconnected covering space, if continuous maps `L, R : M → M` lift maps `φ, ψ : N → N`
-with `LeftInverse ψ φ` and `R (L x) = x` at one point `x`, then `R` is a left inverse of `L`. -/
-theorem IsCoveringMap.leftInverse_of_comp_eq {M N : Type*} [TopologicalSpace M]
-    [TopologicalSpace N] [PreconnectedSpace M] {f : M → N} (hcov : IsCoveringMap f)
-    {L R : M → M} {φ ψ : N → N} (hL_cont : Continuous L) (hR_cont : Continuous R)
-    (hL : f ∘ L = φ ∘ f) (hR : f ∘ R = ψ ∘ f) (hψφ : Function.LeftInverse ψ φ)
-    {x : M} (hx : R (L x) = x) :
-    Function.LeftInverse R L := by
-  have hcomp : f ∘ (R ∘ L) = f ∘ id := by
-    funext z
-    calc
-      f (R (L z)) = ψ (f (L z)) := congrFun hR (L z)
-      _ = ψ (φ (f z)) := congrArg ψ (congrFun hL z)
-      _ = f z := hψφ (f z)
-  exact congrFun (hcov.eq_of_comp_eq (hR_cont.comp hL_cont) continuous_id hcomp x hx)
-
-end CoveringLeftInverse
-
 namespace TauCeti.IsLocalRiemannianIsometry
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -96,45 +72,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
-
-/-- If `f₁` and `f₂` are local Riemannian isometries, `Φ` is a local Riemannian isometry, and `L`
-is differentiable at `z` with `f₂ ∘ L = Φ ∘ f₁`, then `dL_z` preserves inner products. -/
-theorem inner_mfderiv_of_comp_eq
-    {E₁ : Type*} [NormedAddCommGroup E₁] [NormedSpace ℝ E₁]
-    {H₁ : Type*} [TopologicalSpace H₁] {I₁ : ModelWithCorners ℝ E₁ H₁}
-    {M₁ : Type*} [TopologicalSpace M₁] [ChartedSpace H₁ M₁]
-    [RiemannianBundle (fun x : M₁ ↦ TangentSpace I₁ x)]
-    {E₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E₂]
-    {H₂ : Type*} [TopologicalSpace H₂] {I₂ : ModelWithCorners ℝ E₂ H₂}
-    {M₂ : Type*} [TopologicalSpace M₂] [ChartedSpace H₂ M₂]
-    [RiemannianBundle (fun x : M₂ ↦ TangentSpace I₂ x)]
-    {f₁ : M₁ → M} {f₂ : M₂ → N} {Φ : M → N} {L : M₁ → M₂} {z : M₁}
-    (hf₁ : IsLocalRiemannianIsometry I₁ I f₁)
-    (hf₂ : IsLocalRiemannianIsometry I₂ J f₂)
-    (hΦ : IsLocalRiemannianIsometry I J Φ)
-    (hLz : MDifferentiableAt I₁ I₂ L z) (hcomp : f₂ ∘ L = Φ ∘ f₁)
-    (u v : TangentSpace I₁ z) :
-    inner ℝ (mfderiv I₁ I₂ L z u) (mfderiv I₁ I₂ L z v) = inner ℝ u v := by
-  have hd : ∀ w : TangentSpace I₁ z,
-      (mfderiv I₂ J f₂ (L z) (mfderiv I₁ I₂ L z w) : F) =
-        mfderiv I J Φ (f₁ z) (mfderiv I₁ I f₁ z w) := fun w ↦ by
-    have h1 := DFunLike.congr_fun (mfderiv_comp z (hf₂.mdifferentiableAt (L z)) hLz) w
-    have h2 := DFunLike.congr_fun (mfderiv_comp z (hΦ.mdifferentiableAt (f₁ z))
-      (hf₁.mdifferentiableAt z)) w
-    have h12 : (mfderiv I₁ J (f₂ ∘ L) z w : F) = mfderiv I₁ J (Φ ∘ f₁) z w := by
-      rw [hcomp]
-    exact h1.symm.trans (h12.trans h2)
-  calc
-    inner ℝ (mfderiv I₁ I₂ L z u) (mfderiv I₁ I₂ L z v) =
-        inner ℝ (mfderiv I₂ J f₂ (L z) (mfderiv I₁ I₂ L z u))
-          (mfderiv I₂ J f₂ (L z) (mfderiv I₁ I₂ L z v)) :=
-      (hf₂.inner_mfderiv (L z) _ _).symm
-    _ = inner ℝ (mfderiv I J Φ (f₁ z) (mfderiv I₁ I f₁ z u))
-          (mfderiv I J Φ (f₁ z) (mfderiv I₁ I f₁ z v)) :=
-      inner_tangentSpace_congr (congrFun hcomp z) (hd u) (hd v)
-    _ = inner ℝ (mfderiv I₁ I f₁ z u) (mfderiv I₁ I f₁ z v) :=
-      hΦ.inner_mfderiv (f₁ z) _ _
-    _ = inner ℝ u v := hf₁.inner_mfderiv z u v
 
 section Lifting
 

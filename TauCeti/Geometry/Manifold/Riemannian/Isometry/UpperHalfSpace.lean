@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Normed.Lp.ProdLp
 public import TauCeti.Geometry.Euclidean.Inversion
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Ext
-import TauCeti.Geometry.Manifold.MFDeriv.Congr
 
 /-!
 # The isometry group of the upper half-space model
@@ -50,8 +49,10 @@ exchanges the vertical vector with its image.
   `TauCeti.UpperHalfSpace.similarity_neg_mul_self`, and
   `TauCeti.UpperHalfSpace.similarity_one_comm_inversion_zero`: involutive horizontal orthogonal
   similarities and their commutation with inversions centred at the origin.
-* `TauCeti.UpperHalfSpace.tangentSpaceCastModel_mfderiv_inversion_zero_one_mul_similarity_one`: the
-  differential at `(0, 1)` of unit inversion composed with a horizontal orthogonal similarity.
+* `TauCeti.UpperHalfSpace.tangentSpaceCastModel_mfderiv_inversion_zero_one_zero_one` and
+  `TauCeti.UpperHalfSpace.tangentSpaceCastModel_mfderiv_inversion_zero_one_mul_similarity_one`: the
+  differentials at `(0, 1)` of unit inversion and of unit inversion composed with a horizontal
+  orthogonal similarity.
 * `TauCeti.UpperHalfSpace.inversion_eq_similarity_mul_inversion_mul_similarity`: every inversion
   is the horizontal translation by `-a`, then the unit inversion about the origin, then the
   scaling by `R ^ 2` about the origin, then the horizontal translation by `a`.
@@ -289,6 +290,36 @@ theorem inversion_zero_one_apply_zero_one :
   rw [coe_inversion_apply, Prod.mk_zero_zero, WithLp.toLp_zero]
   simp [EuclideanGeometry.inversion_def, dist_zero_right]
 
+/-- At `(0, 1)`, unit inversion about `(0, 0)` has differential `(u, s) ↦ (u, -s)` in model
+coordinates. -/
+theorem tangentSpaceCastModel_mfderiv_inversion_zero_one_zero_one
+    (v : TangentSpace 𝓘(ℝ, WithLp 2 (E × ℝ)) (mk (WithLp.toLp 2 (0, 1)) (by simp))) :
+    let p₀ : UpperHalfSpace E := mk (WithLp.toLp 2 (0, 1)) (by simp)
+    tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) (inversion (E := E) 0 1 one_ne_zero p₀)
+        (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ))
+          (inversion (E := E) 0 1 one_ne_zero) p₀ v) =
+      LinearIsometryEquiv.withLpProdCongr 2 (.refl ℝ E) (.neg ℝ)
+        (tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) p₀ v) := by
+  dsimp only
+  let p₀ : UpperHalfSpace E := mk (WithLp.toLp 2 (0, 1)) (by simp)
+  let u : WithLp 2 (E × ℝ) := tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) p₀ v
+  -- At `p₀ = (0, 1)`, the radius-one inversion factor `(1 / ‖p₀ - 0‖) ^ 2` equals `1`.
+  have hp₀_coe : (p₀ : WithLp 2 (E × ℝ)) = WithLp.toLp 2 (0, 1) := coe_mk _ _
+  have hnorm01 : ‖WithLp.toLp 2 ((0 : E), (1 : ℝ))‖ = 1 := by simp
+  have hdist : dist (p₀ : WithLp 2 (E × ℝ)) (WithLp.toLp 2 (0, 0)) = 1 := by
+    rw [hp₀_coe, Prod.mk_zero_zero, WithLp.toLp_zero, dist_zero_right, hnorm01]
+  have hsub : (p₀ : WithLp 2 (E × ℝ)) - WithLp.toLp 2 (0, 0) = WithLp.toLp 2 (0, 1) := by
+    rw [hp₀_coe, Prod.mk_zero_zero, WithLp.toLp_zero, sub_zero]
+  -- Evaluate reflection across `(ℝ ∙ (0, 1))ᗮ`, which negates the vertical component of `u`.
+  have hinner01 : inner ℝ (WithLp.toLp 2 ((0 : E), (1 : ℝ))) u = u.snd := by
+    simp [WithLp.prod_inner_apply]
+  rw [tangentSpaceCastModel_mfderiv_inversion, hdist, div_one, one_pow, one_smul, hsub,
+    Submodule.reflection_orthogonal_apply, Submodule.reflection_singleton_apply, hnorm01, hinner01]
+  simp only [RCLike.ofReal_real_eq_id, id_eq, one_pow, div_one]
+  refine (WithLp.ext_iff 2).2 (Prod.ext ?_ ?_)
+  · simp [u, p₀, LinearIsometryEquiv.withLpProdCongr_apply]
+  · simp [u, p₀, LinearIsometryEquiv.withLpProdCongr_apply, two_smul]
+
 /-- At `(0, 1)`, the composite of unit inversion about `(0, 0)` with a horizontal orthogonal
 similarity `(x, t) ↦ (A x, t)` has differential `(u, s) ↦ (A u, -s)` in model coordinates. -/
 theorem tangentSpaceCastModel_mfderiv_inversion_zero_one_mul_similarity_one (A : E ≃ₗᵢ[ℝ] E)
@@ -300,58 +331,14 @@ theorem tangentSpaceCastModel_mfderiv_inversion_zero_one_mul_similarity_one (A :
       LinearIsometryEquiv.withLpProdCongr 2 A (.neg ℝ)
         (tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) p₀ v) := by
   dsimp only
-  let p₀ : UpperHalfSpace E := mk (WithLp.toLp 2 (0, 1)) (by simp)
-  let S : Isom 𝓘(ℝ, WithLp 2 (E × ℝ)) (UpperHalfSpace E) := similarity 1 one_pos A 0
-  let J : Isom 𝓘(ℝ, WithLp 2 (E × ℝ)) (UpperHalfSpace E) := inversion (E := E) 0 1 one_ne_zero
-  have hp₀_coe : (p₀ : WithLp 2 (E × ℝ)) = WithLp.toLp 2 (0, 1) := coe_mk _ _
-  have hp₀_norm : ‖(p₀ : WithLp 2 (E × ℝ))‖ = 1 := by
-    have hsq : ‖(p₀ : WithLp 2 (E × ℝ))‖ ^ 2 = 1 := by
-      rw [hp₀_coe, WithLp.prod_norm_sq_eq_of_L2]
-      simp
-    exact (pow_left_inj₀ (norm_nonneg _) zero_le_one two_ne_zero).1 (by simpa using hsq)
-  have hS_p₀ : S p₀ = p₀ := similarity_one_apply_zero_one A
-  let u : WithLp 2 (E × ℝ) := tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) p₀ v
-  let w : WithLp 2 (E × ℝ) := LinearIsometryEquiv.withLpProdCongr 2 A (.refl ℝ ℝ) u
-  let w' : TangentSpace 𝓘(ℝ, WithLp 2 (E × ℝ)) p₀ :=
-    (tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) p₀).symm w
-  have hw' : tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) (S p₀)
-      (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) S p₀ v) =
-      tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) p₀ w' := by
-    rw [tangentSpaceCastModel_mfderiv_similarity, one_smul, ContinuousLinearEquiv.apply_symm_apply]
-  have hmul :
-      tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) ((J * S) p₀)
-          (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) (J * S) p₀ v) =
-        tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) (J (S p₀))
-          (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) J (S p₀)
-            (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) S p₀ v)) := by
-    have hc : mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) (J * S) p₀ =
-        (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) J (S p₀)).comp
-          (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) S p₀) := by
-      rw [RiemannianIsometry.coe_mul]
-      exact mfderiv_comp p₀ (J.mdifferentiableAt (S p₀)) (S.mdifferentiableAt p₀)
-    -- `(J * S) p₀ = J (S p₀)` definitionally via `RiemannianIsometry.mul_apply`.
-    exact congrArg (tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) (J (S p₀)))
-      (DFunLike.congr_fun hc v)
-  have hJS :
-      tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) ((J * S) p₀)
-          (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) (J * S) p₀ v) =
-        tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) (J p₀)
-          (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) J p₀ w') :=
-    hmul.trans (tangentSpaceCastModel_mfderiv_congr_point hS_p₀ hw')
-  rw [hJS, tangentSpaceCastModel_mfderiv_inversion, ContinuousLinearEquiv.apply_symm_apply]
-  have hdist : dist (p₀ : WithLp 2 (E × ℝ)) (WithLp.toLp 2 (0, 0)) = 1 := by
-    rw [Prod.mk_zero_zero, WithLp.toLp_zero, dist_zero_right, hp₀_norm]
-  have hsub : (p₀ : WithLp 2 (E × ℝ)) - WithLp.toLp 2 (0, 0) = WithLp.toLp 2 (0, 1) := by
-    rw [hp₀_coe, Prod.mk_zero_zero, WithLp.toLp_zero, sub_zero]
-  have hnorm01 : ‖WithLp.toLp 2 ((0 : E), (1 : ℝ))‖ = 1 := by rwa [← hp₀_coe]
-  have hinner01 : inner ℝ (WithLp.toLp 2 ((0 : E), (1 : ℝ))) w = u.snd := by
-    simp [w, LinearIsometryEquiv.withLpProdCongr_apply, WithLp.prod_inner_apply]
-  rw [hdist, div_one, one_pow, one_smul, hsub, Submodule.reflection_orthogonal_apply,
-    Submodule.reflection_singleton_apply, hnorm01, hinner01]
-  simp only [RCLike.ofReal_real_eq_id, id_eq, one_pow, div_one]
-  refine (WithLp.ext_iff 2).2 (Prod.ext ?_ ?_)
-  · simp [w, u, p₀, LinearIsometryEquiv.withLpProdCongr_apply]
-  · simp [w, u, p₀, LinearIsometryEquiv.withLpProdCongr_apply, two_smul]
+  -- Apply the fixed-point chain rule at `(0, 1)`, then substitute the model differentials of
+  -- unit inversion and the horizontal similarity.
+  rw [RiemannianIsometry.tangentSpaceCastModel_mfderiv_mul_of_apply_eq
+      (similarity_one_apply_zero_one A) v,
+    tangentSpaceCastModel_mfderiv_inversion_zero_one_zero_one,
+    ContinuousLinearEquiv.apply_symm_apply, tangentSpaceCastModel_mfderiv_similarity, one_smul]
+  refine (WithLp.ext_iff 2).2 (Prod.ext ?_ ?_) <;>
+    simp [LinearIsometryEquiv.withLpProdCongr_apply]
 
 section Classification
 

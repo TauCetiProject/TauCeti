@@ -13,6 +13,8 @@ public import TauCeti.Geometry.Manifold.Riemannian.Isometry.LocallySymmetric
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Prod.Basic
 
 import TauCeti.Algebra.Group.Subgroup.Normalizer
+import TauCeti.Algebra.Module.Basic
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Congr
 import TauCeti.Geometry.Manifold.Riemannian.Basic
@@ -94,12 +96,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-
-/-- In any module over a division ring of characteristic zero (such as `ℝ`), `-v = v` implies
-`v = 0`. -/
-theorem eq_zero_of_neg_eq_self (𝕜 : Type*) {V : Type*} [DivisionRing 𝕜] [CharZero 𝕜]
-    [AddCommGroup V] [Module 𝕜 V] {v : V} (h : -v = v) : v = 0 := by
-  rwa [neg_eq_iff_add_eq_zero, ← two_smul 𝕜, smul_eq_zero, or_iff_right (two_ne_zero' 𝕜)] at h
 
 /-! ### Geodesic symmetries at a point -/
 
@@ -240,7 +236,7 @@ theorem derivCurvatureTensor_eq_zero {Φ : Isom I M} {p : M} (hΦ : IsGeodesicSy
           (leviCivitaConnection I M) hΦ.apply_eq (hΦ.mfderiv_apply v) (hΦ.mfderiv_apply u)
           (hΦ.mfderiv_apply w) (hΦ.mfderiv_apply s)))
     simpa only [map_neg, LinearMap.neg_apply, neg_neg] using h1
-  exact eq_zero_of_neg_eq_self ℝ h
+  exact ((IsUnit.mk0 (2 : ℝ) two_ne_zero).isSMulRegular _).neg_eq_self_iff.1 h
 
 end IsGeodesicSymmetryAt
 
@@ -286,7 +282,8 @@ theorem exists_nhds_eq_of_apply_eq (hΦ : IsGeodesicSymmetryAt Φ p) :
   have hv_neg : -v = v := by
     rw [← hΦ.mfderiv_apply]
     exact (Φ.apply_riemannianExp_eq_self_iff hU hΦ.apply_eq hv hΦv).1 hq
-  rw [eq_zero_of_neg_eq_self ℝ hv_neg, riemannianExp_zero]
+  rw [((IsUnit.mk0 (2 : ℝ) two_ne_zero).isSMulRegular _).neg_eq_self_iff.1 hv_neg,
+    riemannianExp_zero]
 
 /-- In a punctured neighbourhood of `p`, a geodesic symmetry at `p` has no fixed points. -/
 theorem eventually_apply_ne (hΦ : IsGeodesicSymmetryAt Φ p) :
@@ -395,12 +392,7 @@ theorem tangentMap_of_alongCurve_eq_zero {γ : ℝ → M} {a : ℝ}
       (sectionCoord ℝ (F := E) (fun s ↦ γ (2 * a - s)) (fun s ↦ -V (2 * a - s))
         (γ (2 * a - r))) r := by
     intro r
-    have hsc : sectionCoord ℝ (F := E) (fun s ↦ γ (2 * a - s)) (fun s ↦ -V (2 * a - s))
-        (γ (2 * a - r)) =
-        fun s ↦ -(sectionCoord ℝ (F := E) γ V (γ (2 * a - r)) (2 * a - s)) := by
-      funext s
-      simp [sectionCoord_apply]
-    rw [hsc]
+    rw [sectionCoord_fun_neg, ← Function.comp_def (f := γ), sectionCoord_comp]
     exact ((hV (2 * a - r)).comp r ((differentiableAt_const (2 * a)).sub differentiableAt_id)).neg
   have hpar₁ : ∀ r, alongCurve (leviCivitaConnection I M) (Φ ∘ γ)
       (fun s ↦ mfderiv I I Φ (γ s) (V s)) r = 0 := fun r ↦ by
@@ -408,11 +400,7 @@ theorem tangentMap_of_alongCurve_eq_zero {γ : ℝ → M} {a : ℝ}
       hV₀ r, map_zero]
   have hpar₂ : ∀ r, alongCurve (leviCivitaConnection I M) (fun s ↦ γ (2 * a - s))
       (fun s ↦ -V (2 * a - s)) r = 0 := fun r ↦ by
-    have hneg : (fun s ↦ -V (2 * a - s)) = fun s ↦ (-1 : ℝ) • V (2 * a - s) := by
-      funext s
-      exact (neg_one_smul ℝ _).symm
-    rw [hneg, alongCurve_const_smul, alongCurve_comp_const_sub, hV₀ (2 * a - r), neg_zero,
-      smul_zero]
+    rw [alongCurve_neg, alongCurve_comp_const_sub, hV₀ (2 * a - r), neg_zero, neg_zero]
   have hinit : TotalSpace.mk' E ((Φ ∘ γ) a) (mfderiv I I Φ (γ a) (V a)) =
       TotalSpace.mk' E (γ (2 * a - a)) (-V (2 * a - a)) := by
     have h2a : 2 * a - a = a := by ring
@@ -439,18 +427,11 @@ theorem tangentMap_mul_of_alongCurve_eq_zero {γ : ℝ → M} {a b : ℝ}
       TotalSpace.mk' E (γ (t + 2 * (b - a))) (V (t + 2 * (b - a))) := by
   have hnegV : ∀ r, DifferentiableAt ℝ
       (sectionCoord ℝ (F := E) γ (fun s ↦ -V s) (γ r)) r := fun r ↦ by
-    have hsc : sectionCoord ℝ (F := E) γ (fun s ↦ -V s) (γ r) =
-        fun s ↦ -(sectionCoord ℝ (F := E) γ V (γ r) s) := by
-      funext s
-      simp [sectionCoord_apply]
-    rw [hsc]
+    rw [sectionCoord_fun_neg]
     exact (hV r).neg
   have hnegV₀ :
       ∀ r, alongCurve (leviCivitaConnection I M) γ (fun s ↦ -V s) r = 0 := fun r ↦ by
-    have hneg : (fun s ↦ -V s) = fun s ↦ (-1 : ℝ) • V s := by
-      funext s
-      exact (neg_one_smul ℝ _).symm
-    rw [hneg, alongCurve_const_smul, hV₀ r, smul_zero]
+    rw [alongCurve_neg, hV₀ r, neg_zero]
   rw [RiemannianIsometry.coe_mul,
     tangentMap_comp_at _ (Ψ.mdifferentiableAt _) (Φ.mdifferentiableAt _),
     hΦ.tangentMap_of_alongCurve_eq_zero hγ hV hV₀ t,

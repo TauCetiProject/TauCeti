@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
-public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 public import TauCeti.Geometry.Manifold.Riemannian.Circle
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Euclidean
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Sphere.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.UpperHalfSpace
 public import TauCeti.Geometry.Manifold.Riemannian.Symmetric.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.WarpedProd.Plane
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Congr
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Euclidean
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.Restriction
@@ -136,21 +136,15 @@ theorem isGeodesicSymmetryAt_unitSphereReflection (p : sphere (0 : E) 1) :
     IsGeodesicSymmetryAt (I := 𝓡 n)
       (LinearIsometryEquiv.unitSphereRiemannianIsometry (n := n) (k := n)
         (ℝ ∙ (p : E)).reflection) p where
-  apply_eq := by
-    apply Subtype.ext
-    rw [LinearIsometryEquiv.coe_unitSphereRiemannianIsometry_apply]
-    exact Submodule.reflection_mem_subspace_eq_self (Submodule.mem_span_singleton_self (p : E))
+  apply_eq := LinearIsometryEquiv.unitSphereRiemannianIsometry_reflection_apply_self p
   mul_self := by
     ext x
     simp [RiemannianIsometry.mul_apply]
   mfderiv_eq := by
     let e : E ≃ₗᵢ[ℝ] E := (ℝ ∙ (p : E)).reflection
     let Φ := LinearIsometryEquiv.unitSphereRiemannianIsometry (n := n) (k := n) e
-    have hep : Φ p = p := by
-      apply Subtype.ext
-      rw [LinearIsometryEquiv.coe_unitSphereRiemannianIsometry_apply]
-      exact Submodule.reflection_mem_subspace_eq_self (Submodule.mem_span_singleton_self (p : E))
-    refine eq_neg_id_of_apply hep fun v ↦ ?_
+    refine eq_neg_id_of_apply
+      (LinearIsometryEquiv.unitSphereRiemannianIsometry_reflection_apply_self p) fun v ↦ ?_
     have hcoe := LinearIsometryEquiv.mvfderiv_coe_sphere_unitSphereEquiv (n := n) (k := n) e p v
     rw [← LinearIsometryEquiv.coe_unitSphereRiemannianIsometry (n := n) (k := n)] at hcoe
     let w : TangentSpace (𝓡 n) p :=
@@ -160,7 +154,8 @@ theorem isGeodesicSymmetryAt_unitSphereReflection (p : sphere (0 : E) 1) :
     have hmv : mvfderiv (𝓡 n) (Subtype.val : sphere (0 : E) 1 → E) p w =
         e (mvfderiv (𝓡 n) (Subtype.val : sphere (0 : E) 1 → E) p v) := by
       rw [mvfderiv_apply_eq_mfderiv_apply,
-        ← mfderiv_apply_congr_point (f := (Subtype.val : sphere (0 : E) 1 → E)) hep hw,
+        ← mfderiv_apply_congr_point (f := (Subtype.val : sphere (0 : E) 1 → E))
+          (LinearIsometryEquiv.unitSphereRiemannianIsometry_reflection_apply_self p) hw,
         ← mvfderiv_apply_eq_mfderiv_apply]
       exact hcoe
     have horth :
@@ -198,14 +193,13 @@ theorem isGeodesicSymmetryAt_upperHalfSpace_base :
     IsGeodesicSymmetryAt (I := 𝓘(ℝ, WithLp 2 (E × ℝ)))
       (UpperHalfSpace.inversion (E := E) 0 1 one_ne_zero *
         UpperHalfSpace.similarity 1 one_pos (LinearIsometryEquiv.neg ℝ) 0)
-      (UpperHalfSpace.mk (WithLp.toLp 2 (0, 1)) (by simp)) where
-  apply_eq := by
-    rw [RiemannianIsometry.mul_apply, UpperHalfSpace.similarity_one_apply_zero_one,
-      UpperHalfSpace.inversion_zero_one_apply_zero_one]
-  mul_self := by
-    let S := UpperHalfSpace.similarity 1 one_pos (LinearIsometryEquiv.neg ℝ (E := E)) 0
-    let J := UpperHalfSpace.inversion (E := E) 0 1 one_ne_zero
-    calc
+      (UpperHalfSpace.mk (WithLp.toLp 2 (0, 1)) (by simp)) := by
+  let p₀ : UpperHalfSpace E := UpperHalfSpace.mk (WithLp.toLp 2 (0, 1)) (by simp)
+  let S := UpperHalfSpace.similarity 1 one_pos (LinearIsometryEquiv.neg ℝ (E := E)) 0
+  let J := UpperHalfSpace.inversion (E := E) 0 1 one_ne_zero
+  have hfix : (J * S) p₀ = p₀ := by simp [J, S, p₀]
+  refine ⟨hfix, ?_, ?_⟩
+  · calc
       (J * S) * (J * S) = J * (S * J) * S := by group
       _ = J * (J * S) * S := by
         rw [UpperHalfSpace.similarity_one_comm_inversion_zero (LinearIsometryEquiv.neg ℝ)
@@ -213,15 +207,7 @@ theorem isGeodesicSymmetryAt_upperHalfSpace_base :
       _ = (J * J) * (S * S) := by group
       _ = 1 := by
         rw [UpperHalfSpace.inversion_mul_self, UpperHalfSpace.similarity_neg_mul_self, mul_one]
-  mfderiv_eq := by
-    let p₀ : UpperHalfSpace E := UpperHalfSpace.mk (WithLp.toLp 2 (0, 1)) (by simp)
-    let Φ : Isom 𝓘(ℝ, WithLp 2 (E × ℝ)) (UpperHalfSpace E) :=
-      UpperHalfSpace.inversion (E := E) 0 1 one_ne_zero *
-        UpperHalfSpace.similarity 1 one_pos (LinearIsometryEquiv.neg ℝ) 0
-    have hfix : Φ p₀ = p₀ := by
-      rw [RiemannianIsometry.mul_apply, UpperHalfSpace.similarity_one_apply_zero_one,
-        UpperHalfSpace.inversion_zero_one_apply_zero_one]
-    refine eq_neg_id_of_tangentSpaceCastModel_apply hfix fun v ↦ ?_
+  · refine eq_neg_id_of_tangentSpaceCastModel_apply hfix fun v ↦ ?_
     rw [UpperHalfSpace.tangentSpaceCastModel_mfderiv_inversion_zero_one_mul_similarity_one]
     refine (WithLp.ext_iff 2).2 (Prod.ext ?_ ?_) <;>
       simp [p₀, LinearIsometryEquiv.withLpProdCongr_apply]
