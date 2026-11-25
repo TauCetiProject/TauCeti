@@ -20,6 +20,8 @@ This file bundles that correspondence as `MeasureTheory.Lp.piLpEquiv`
 on the fibres), together with `MeasureTheory.Lp.piLpSingleLI`,
 `MeasureTheory.Lp.eq_sum_piLpSingleLI`, `MeasureTheory.Lp.piLpEquiv_apply_eq_compLpL`,
 `MeasureTheory.Lp.piLpSingleLI_apply_eq_compLpL`, and `MeasureTheory.Lp.piLpEquiv_lpSMul`.
+It also bounds the norm of an `L∞` class of `PiLp 2`-valued functions by `√(card ι)` times a bound
+on its coordinates (`MeasureTheory.Lp.norm_le_sqrt_card_mul_of_ae_norm_apply_le`).
 -/
 
 public noncomputable section
@@ -175,5 +177,16 @@ theorem piLpSingleLI_apply_eq_compLpL [DecidableEq ι] (i : ι) (h : Lp (E i) p 
   rw [h₁, h₂, LinearIsometry.coe_toContinuousLinearMap, PiLp.singleLI_apply]
 
 end NontriviallyNormedField
+
+/-- An `L∞` class of `PiLp 2`-valued functions whose coordinates are almost everywhere bounded
+by `M ≥ 0` has norm at most `√(card ι) * M`. -/
+theorem norm_le_sqrt_card_mul_of_ae_norm_apply_le {E : ι → Type*}
+    [∀ i, NormedAddCommGroup (E i)] {μ : Measure α} {f : Lp (PiLp 2 E) ∞ μ} {M : ℝ}
+    (hM : 0 ≤ M) (hf : ∀ᵐ x ∂μ, ∀ i, ‖f x i‖ ≤ M) :
+    ‖f‖ ≤ √(Fintype.card ι) * M := by
+  refine Lp.norm_le_of_ae_bound_top (by positivity) (hf.mono fun x hx ↦ ?_)
+  have h := PiLp.dist_le_sqrt_card_mul_dist_ofLp (f x) 0
+  rw [dist_zero_right, WithLp.ofLp_zero, dist_zero_right] at h
+  exact h.trans (by gcongr; exact (pi_norm_le_iff_of_nonneg hM).2 hx)
 
 end MeasureTheory.Lp
