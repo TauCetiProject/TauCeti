@@ -99,6 +99,11 @@ theorem isMarked_iff {c : RelationalConfiguration markedGraphLanguage V} {v : V}
     IsMarked c v ↔ c.eval (atom markSymb ![v]) = true :=
   Iff.rfl
 
+/-- Each instance of the marking predicate is a measurable condition on codes. -/
+theorem measurableSet_setOf_isMarked (v : V) :
+    MeasurableSet {c : RelationalConfiguration markedGraphLanguage V | IsMarked c v} := by
+  simpa only [isMarked_iff] using measurableSet_setOf_eval (atom markSymb ![v]) true
+
 /-- Relabelling a code by `σ` transports its marked vertices along `σ`. -/
 @[simp]
 theorem isMarked_perm_smul (σ : Equiv.Perm V) (c : RelationalConfiguration markedGraphLanguage V)
@@ -139,6 +144,20 @@ def markedGraphIsoPermSmul (σ : Equiv.Perm V) (c : RelationalConfiguration mark
   toEquiv := σ
   map_rel_iff' {u v} := by simp
 
+/-- The graph isomorphism `markedGraphIsoPermSmul σ c` acts on vertices as `σ`. -/
+@[simp]
+theorem markedGraphIsoPermSmul_apply (σ : Equiv.Perm V)
+    (c : RelationalConfiguration markedGraphLanguage V) (v : V) :
+    markedGraphIsoPermSmul σ c v = σ v :=
+  (rfl)
+
+/-- The inverse of `markedGraphIsoPermSmul σ c` acts on vertices as `σ.symm`. -/
+@[simp]
+theorem markedGraphIsoPermSmul_symm_apply (σ : Equiv.Perm V)
+    (c : RelationalConfiguration markedGraphLanguage V) (v : V) :
+    (markedGraphIsoPermSmul σ c).symm v = σ.symm v :=
+  (rfl)
+
 /-! ### Marked trees -/
 
 /-- The **marked trees**: the codes whose relation is symmetric and irreflexive, whose graph is a
@@ -171,10 +190,6 @@ theorem isomorphismInvariant_markedTreeClass :
     simpa using congrArg σ (huniq _ hw')
 
 section Measurable
-
-private theorem measurableSet_setOf_isMarked (v : V) :
-    MeasurableSet {c : RelationalConfiguration markedGraphLanguage V | IsMarked c v} := by
-  simpa only [isMarked_iff] using measurableSet_setOf_eval (atom markSymb ![v]) true
 
 private theorem measurableSet_setOf_markedGraph_adj (x y : V) :
     MeasurableSet {c : RelationalConfiguration markedGraphLanguage V |
@@ -232,6 +247,17 @@ theorem relCovBy_iff {r : V → V → Prop} {u v : V} :
     RelCovBy r u v ↔ (r u v ∧ ¬ r v u) ∧ ∀ w, ¬ ((r u w ∧ ¬ r w u) ∧ (r w v ∧ ¬ r v w)) :=
   Iff.rfl
 
+/-- For the order of a preorder, `RelCovBy` is Mathlib's `CovBy`. -/
+@[simp]
+theorem relCovBy_le_iff_covBy {α : Type*} [Preorder α] {u v : α} :
+    RelCovBy (· ≤ ·) u v ↔ u ⋖ v := by
+  simp only [relCovBy_iff, ← lt_iff_le_not_ge, CovBy, not_and]
+
+/-- In the code of a preorder, `RelCovBy` for the relation of `leSymb` is Mathlib's `CovBy`. -/
+theorem relCovBy_codeRel_leSymb_ofStructure_orderStructure {α : Type*} [Preorder α] {u v : α} :
+    RelCovBy (codeRel leSymb (@ofStructure Language.order α (orderStructure α))) u v ↔ u ⋖ v := by
+  rw [codeRel_leSymb_ofStructure_orderStructure, relCovBy_le_iff_covBy]
+
 /-- The marked graph of a relation `r` read as an order: `u` and `v` are related when one
 covers the other, and the least elements, those below every element, are marked. -/
 @[instance_reducible]
@@ -239,6 +265,19 @@ def coverStructure (r : V → V → Prop) : markedGraphLanguage.Structure V wher
   RelMap
     | .adj => fun x => RelCovBy r (x 0) (x 1) ∨ RelCovBy r (x 1) (x 0)
     | .mark => fun x => ∀ w, r (x 0) w
+
+/-- The adjacency relation of `coverStructure r`: one entry covers the other. -/
+theorem coverStructure_relMap_adj (r : V → V → Prop) (x : Fin 2 → V) :
+    @Structure.RelMap markedGraphLanguage V (coverStructure r) 2 adjSymb x ↔
+      RelCovBy r (x 0) (x 1) ∨ RelCovBy r (x 1) (x 0) :=
+  -- The `adj` branch of the pattern match defining `coverStructure`.
+  Iff.rfl
+
+/-- The marking predicate of `coverStructure r`: the entry lies below every element. -/
+theorem coverStructure_relMap_mark (r : V → V → Prop) (x : Fin 1 → V) :
+    @Structure.RelMap markedGraphLanguage V (coverStructure r) 1 markSymb x ↔ ∀ w, r (x 0) w :=
+  -- The `mark` branch of the pattern match defining `coverStructure`.
+  Iff.rfl
 
 /-- The **cover graph** of a coded order `c`, with its least elements marked: the code of
 `coverStructure (codeRel leSymb c)`. -/
@@ -251,16 +290,16 @@ noncomputable def coverGraphCode (c : RelationalConfiguration Language.order V) 
 theorem codeRel_coverGraphCode (c : RelationalConfiguration Language.order V) (u v : V) :
     codeRel adjSymb (coverGraphCode c) u v ↔
       RelCovBy (codeRel leSymb c) u v ∨ RelCovBy (codeRel leSymb c) v u := by
-  rw [coverGraphCode, @codeRel_ofStructure _ _ (coverStructure _)]
-  rfl
+  rw [coverGraphCode, @codeRel_ofStructure _ _ (coverStructure _), coverStructure_relMap_adj,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
 
 /-- The cover graph marks the least elements. -/
 @[simp]
 theorem isMarked_coverGraphCode (c : RelationalConfiguration Language.order V) (v : V) :
     IsMarked (coverGraphCode c) v ↔ ∀ w, codeRel leSymb c v w := by
   classical
-  rw [isMarked_iff, coverGraphCode, @eval_ofStructure _ _ (coverStructure _), decide_eq_true_iff]
-  rfl
+  rw [isMarked_iff, coverGraphCode, @eval_ofStructure _ _ (coverStructure _), decide_eq_true_iff,
+    coverStructure_relMap_mark, Matrix.cons_val_fin_one]
 
 /-- Every atom of the language of marked graphs is an adjacency atom or a marking atom. -/
 private theorem atom_cases (a : Atom markedGraphLanguage V) :

@@ -26,10 +26,7 @@ noncomputable abbrev chain : RelationalConfiguration Language.order ℕ :=
   @ofStructure Language.order ℕ (orderStructure ℕ)
 
 private theorem relCovBy_chain (u v : ℕ) : RelCovBy (codeRel leSymb chain) u v ↔ u + 1 = v := by
-  simp only [relCovBy_iff, chain, codeRel_leSymb_ofStructure_orderStructure, not_le]
-  refine ⟨fun ⟨⟨_, _⟩, hw⟩ => ?_, fun h => ⟨⟨by omega, by omega⟩, fun w => by omega⟩⟩
-  by_contra hne
-  exact hw (u + 1) ⟨⟨by omega, by omega⟩, by omega, by omega⟩
+  rw [relCovBy_codeRel_leSymb_ofStructure_orderStructure, Nat.covBy_iff_add_one_eq]
 
 /-- In the cover graph of `(ℕ, ≤)`, two vertices are adjacent exactly when they differ by one. -/
 private theorem codeRel_coverGraphCode_chain (u v : ℕ) :
@@ -50,27 +47,11 @@ private theorem markedGraph_coverGraphCode_chain :
     Nat.covBy_iff_add_one_eq]
   omega
 
-/-- The Hasse diagram of `ℕ`, the ray, is a tree: every walk between adjacent vertices crosses
-the edge joining them. -/
-private theorem isTree_hasse_nat : (SimpleGraph.hasse ℕ).IsTree := by
-  refine ⟨⟨SimpleGraph.preconnected_hasse_of_succOrder ℕ⟩,
-    SimpleGraph.isAcyclic_iff_forall_adj_isBridge.2 fun u v huv => ?_⟩
-  rw [SimpleGraph.isBridge_iff_forall_walk_mem_edges]
-  intro p
-  rcases le_total u v with h | h
-  · have hd : (⟨(u, v), huv⟩ : (SimpleGraph.hasse ℕ).Dart) ∈ p.darts :=
-      SimpleGraph.Walk.mem_darts_hasse_of_ge_of_le_of_le ℕ p le_rfl h le_rfl
-    exact SimpleGraph.Walk.edge_mem_edges_of_mem_darts hd
-  · have hd : (⟨(v, u), huv.symm⟩ : (SimpleGraph.hasse ℕ).Dart) ∈ p.reverse.darts :=
-      SimpleGraph.Walk.mem_darts_hasse_of_ge_of_le_of_le ℕ p.reverse le_rfl h le_rfl
-    have he := SimpleGraph.Walk.edge_mem_edges_of_mem_darts hd
-    rw [SimpleGraph.Walk.edges_reverse, List.mem_reverse] at he
-    simpa [Sym2.eq_swap] using he
-
 /-- The cover graph of `(ℕ, ≤)` is a marked tree: the ray with its end `0` marked. -/
 example : coverGraphCode chain ∈ markedTreeClass := by
   refine mem_markedTreeClass.2 ⟨fun u v h => ?_, fun v h => ?_,
-    markedGraph_coverGraphCode_chain ▸ isTree_hasse_nat, 0, (isMarked_coverGraphCode_chain 0).2 rfl,
+    markedGraph_coverGraphCode_chain ▸ ⟨⟨SimpleGraph.preconnected_hasse_of_succOrder ℕ⟩,
+      SimpleGraph.isAcyclic_hasse_of_linearOrder ℕ⟩, 0, (isMarked_coverGraphCode_chain 0).2 rfl,
     fun v hv => (isMarked_coverGraphCode_chain v).1 hv⟩
   · rw [codeRel_coverGraphCode_chain] at h ⊢
     exact h.symm
