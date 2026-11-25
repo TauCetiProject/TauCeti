@@ -42,8 +42,8 @@ example (h : ℂ) : complexInnerForm.hForcing (ContinuousLinearMap.id ℂ ℂ) h
 /-- The dual-forcing map of `conj(u) v` is `F₀ ℓ = conj(ℓ 1)`. -/
 example (ℓ : StrongDual ℂ ℂ) : complexInnerForm.dualForcing ℓ = conj (ℓ 1) := by
   refine (complexInnerForm.eq_dualForcing_iff.2 fun v ↦ ?_).symm
-  rw [complexInnerForm_form_apply, Complex.conj_conj, mul_comm, ← smul_eq_mul, ← map_smul,
-    smul_eq_mul, mul_one]
+  rw [complexInnerForm_form_apply, Complex.conj_conj]
+  simpa [mul_comm] using (map_smul ℓ v 1).symm
 
 /-- The dual-forcing map is conjugate linear: `F₀ (i ℓ) = -i F₀ ℓ`. -/
 example (ℓ : StrongDual ℂ ℂ) :

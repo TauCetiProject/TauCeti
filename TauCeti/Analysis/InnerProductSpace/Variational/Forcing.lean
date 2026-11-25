@@ -33,8 +33,9 @@ also the real solution map `IsCoercive.formSolutionMap`
 
 ## Main declarations
 
-* `TauCeti.CoerciveHermitianForm.dualForcing`, with `form_dualForcing_apply`,
-  `eq_dualForcing_iff` and `norm_dualForcing_le`.
+* `TauCeti.CoerciveHermitianForm.dualForcing`, with `toEnergySpace_dualForcing` (the Riesz
+  representative in the energy space), `form_dualForcing_apply`, `eq_dualForcing_iff` and
+  `norm_dualForcing_le`.
 * `TauCeti.CoerciveHermitianForm.hForcing`, with `form_hForcing_apply`,
   `hForcing_apply_eq_dualForcing`, `eq_hForcing_iff` and `norm_hForcing_le`.
 * `TauCeti.CoerciveHermitianForm.dualForcing_eq_solutionOfFunctional` and
@@ -75,6 +76,8 @@ def dualForcing : StrongDual 𝕜 V →L⋆[𝕜] V :=
       ((ContinuousLinearMap.compL 𝕜 a.EnergySpace V 𝕜).flip
         (a.toEnergySpace.symm : a.EnergySpace →L[𝕜] V)))
 
+/-- **The dual-forcing map is a Riesz representative**: `a.toEnergySpace (F ℓ)` is the Riesz
+representative, in the energy space, of `ℓ` pulled back along `a.toEnergySpace.symm`. -/
 theorem toEnergySpace_dualForcing (ℓ : StrongDual 𝕜 V) :
     a.toEnergySpace (a.dualForcing ℓ) = (InnerProductSpace.toDual 𝕜 a.EnergySpace).symm
       (ℓ.comp (a.toEnergySpace.symm : a.EnergySpace →L[𝕜] V)) := by
