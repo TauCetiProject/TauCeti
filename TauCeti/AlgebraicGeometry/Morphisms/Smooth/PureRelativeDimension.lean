@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.PureRelativeDimension
 public import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Smooth
+public import Mathlib.CategoryTheory.MorphismProperty.Descent
+import Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 
 /-!
@@ -29,6 +31,8 @@ Cartier divisor.
   smooth of relative dimension `n` means smooth and of pure relative dimension `n`.
 * `AlgebraicGeometry.Scheme.Hom.smoothOfRelativeDimension_smoothLocus_ι_comp`: a morphism of
   pure relative dimension `n` is smooth of relative dimension `n` on its smooth locus.
+* `AlgebraicGeometry.SmoothOfRelativeDimension.descendsAlong_surjective_inf_flat_inf_quasiCompact`:
+  being smooth of relative dimension `n` descends along flat, surjective, quasi-compact morphisms.
 -/
 
 public section
@@ -79,3 +83,24 @@ instance smoothOfRelativeDimension_smoothLocus_ι_comp {n : ℕ} {X Y : Scheme.{
     _).mpr ⟨inferInstance, inferInstance⟩
 
 end AlgebraicGeometry.Scheme.Hom
+
+namespace AlgebraicGeometry.SmoothOfRelativeDimension
+
+universe u
+
+open CategoryTheory MorphismProperty TauCeti.AlgebraicGeometry
+
+/-- **Being smooth of relative dimension `n` descends along flat, surjective, quasi-compact
+morphisms.** Smoothness descends along such morphisms, and pure relative dimension descends along
+every surjective base change of a morphism locally of finite type. In particular a scheme over a
+field `k` is smooth of relative dimension `n` if its base change to an extension field is. -/
+instance descendsAlong_surjective_inf_flat_inf_quasiCompact (n : ℕ) :
+    DescendsAlong (@SmoothOfRelativeDimension n) (@Surjective.{u} ⊓ @Flat ⊓ @QuasiCompact) := by
+  refine ⟨fun {A X Y Z fst snd f g} h hf hfst ↦ ?_⟩
+  simp only [smoothOfRelativeDimension_iff_smooth_and_pureRelativeDimension] at hfst ⊢
+  have hg : Smooth g := of_isPullback_of_descendsAlong h hf hfst.1
+  have : Surjective f := hf.1.1
+  have : PureRelativeDimension n fst := hfst.2
+  exact ⟨hg, .of_isPullback_of_surjective h.flip⟩
+
+end AlgebraicGeometry.SmoothOfRelativeDimension

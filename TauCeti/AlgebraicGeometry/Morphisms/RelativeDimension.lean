@@ -24,7 +24,8 @@ topological. It is invariant under isomorphisms and local on both the source and
 the Zariski topology. For a morphism locally of finite type it is stable under arbitrary base
 change: the fibre of a base change at `y'` is the base change of the fibre at the image of `y'`
 along the extension of residue fields, which does not change the Krull dimension of a scheme
-locally of finite type over a field. Without a finiteness hypothesis the bound is not stable
+locally of finite type over a field. For the same reason it descends along surjective base
+changes. Without a finiteness hypothesis the bound is not stable
 under base change: `Spec K → Spec k` has relative dimension zero for every field extension
 `K / k`, while `Spec (K ⊗[k] K)` can have positive dimension when `K / k` is transcendental.
 
@@ -52,6 +53,8 @@ over the field `κ(z)`, so the inequality bounds its dimension by `e + d`.
   `TauCeti.AlgebraicGeometry.RelativeDimensionLE.isZariskiLocalAtTarget`: locality.
 * `TauCeti.AlgebraicGeometry.RelativeDimensionLE.of_isPullback`: stability under base change of
   morphisms locally of finite type.
+* `TauCeti.AlgebraicGeometry.RelativeDimensionLE.of_isPullback_of_surjective`: descent along
+  surjective base changes of morphisms locally of finite type.
 * `TauCeti.AlgebraicGeometry.relativeDimensionLE_iff_of_field`: over a field, the condition bounds
   the Krull dimension of the source, hence the coheight of every point
   (`TauCeti.AlgebraicGeometry.coheight_le_of_relativeDimensionLE_of_field`).
@@ -243,6 +246,24 @@ theorem RelativeDimensionLE.of_isPullback {P : Scheme.{u}} {fst : P ⟶ X} {snd 
     (topologicalKrullDim_pullback_Spec_map_of_field (K := Z.residueField (g y))
       (L := Y.residueField y) (f.fiberToSpecResidueField (g y))).trans_le
       (topologicalKrullDim_fiber_le (g y))
+
+/-- Having relative dimension at most `d` descends along surjective base changes of morphisms
+locally of finite type: if `snd` is the base change of `f` along a surjective `g`, and `snd` has
+relative dimension at most `d`, so does `f`. -/
+theorem RelativeDimensionLE.of_isPullback_of_surjective {P : Scheme.{u}} {fst : P ⟶ X}
+    {snd : P ⟶ Y} {f : X ⟶ Z} {g : Y ⟶ Z} (h : IsPullback fst snd f g) [Surjective g]
+    [LocallyOfFiniteType f] [RelativeDimensionLE d snd] : RelativeDimensionLE d f := by
+  refine ⟨fun z ↦ ?_⟩
+  obtain ⟨y, rfl⟩ := g.surjective z
+  have : LocallyOfFiniteType (f.fiberToSpecResidueField (g y)) :=
+    inferInstanceAs (LocallyOfFiniteType (pullback.snd f (Z.fromSpecResidueField (g y))))
+  let := (g.residueFieldMap y).hom.toAlgebra
+  -- The fibre of `snd` at `y` is the base change of the fibre of `f` at `g y` along the
+  -- extension of residue fields `κ(g y) → κ(y)`, which does not change the dimension.
+  exact (topologicalKrullDim_pullback_Spec_map_of_field (K := Z.residueField (g y))
+      (L := Y.residueField y) (f.fiberToSpecResidueField (g y))).symm.trans_le <|
+    ((isPullback_fiberToSpecResidueField_of_isPullback h y).isoPullback.hom.homeomorph
+      |>.isHomeomorph.topologicalKrullDim_eq).symm.trans_le (topologicalKrullDim_fiber_le y)
 
 /-- The base change `pullback.snd f g` of a morphism `f` locally of finite type has relative
 dimension at most that of `f`. -/
