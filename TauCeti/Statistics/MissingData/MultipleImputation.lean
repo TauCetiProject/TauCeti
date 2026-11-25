@@ -20,11 +20,11 @@ missing data `z ∈ M` is a kernel `κ : Kernel M ℝ`, and the posterior predic
 missing data is `ν : Measure M`, so that the observed-data posterior is the mixture `κ ∘ₘ ν`.
 From `D` imputations `z₁, …, z_D` of the missing data, Rubin's combining rules form
 
-* the multiple-imputation estimate `θ̄ = D⁻¹ ∑_d mean(κ z_d)` (`TauCeti.miMean`),
-* the within-imputation variance `V̄ = D⁻¹ ∑_d Var(κ z_d)` (`TauCeti.miWithin`),
-* the between-imputation variance `B = (D - 1)⁻¹ ∑_d (mean(κ z_d) - θ̄)²`
+* the multiple-imputation estimate `θ_MI = D⁻¹ ∑_d mean(κ z_d)` (`TauCeti.miMean`),
+* the within-imputation variance `V_W = D⁻¹ ∑_d Var(κ z_d)` (`TauCeti.miWithin`),
+* the between-imputation variance `B = (D - 1)⁻¹ ∑_d (mean(κ z_d) - θ_MI)²`
   (`TauCeti.miBetween`), and
-* the total variance `T = V̄ + (1 + D⁻¹) B` (`TauCeti.rubinTotalVariance`).
+* the total variance `T = V_W + (1 + D⁻¹) B` (`TauCeti.rubinTotalVariance`).
 
 The means and variances are Bochner integrals and Mathlib's `variance`, so they are the
 completed-data posterior moments when `κ z_d` is a probability measure with finite second moment.
@@ -35,30 +35,30 @@ When the imputations are drawn independently from `ν`, the following identities
 are moment identities given the observed data, not the Student-`t` approximation of the source.
 Write `B_∞ = Var_ν(z ↦ mean(κ z))` for the variance of the completed-data posterior means.
 
-* `E θ̄ = E(θ | Y_obs)`, the mean of `κ ∘ₘ ν`, for `D ≥ 1`.
-* `E V̄ = ∫ Var(κ z) dν`, for `D ≥ 1` when the completed-data variances are integrable, and
+* `E θ_MI = E(θ | Y_obs)`, the mean of `κ ∘ₘ ν`, for `D ≥ 1`.
+* `E V_W = ∫ Var(κ z) dν`, for `D ≥ 1` when the completed-data variances are integrable, and
   `E B = B_∞`, for `D ≥ 2`, the divisor `D - 1` making `B` unbiased.
-* `Var θ̄ = D⁻¹ B_∞`.
+* `Var θ_MI = D⁻¹ B_∞`.
 * `E T = Var(θ | Y_obs) + D⁻¹ B_∞`, for `D ≥ 2`, by the law of total variance
   `Var(κ ∘ₘ ν) = ∫ Var(κ z) dν + B_∞`.
 * For `θ` drawn from `κ ∘ₘ ν` independently of the imputations,
-  `E(θ - θ̄)² = Var(θ | Y_obs) + D⁻¹ B_∞`, for `D ≥ 1`. So for `D ≥ 2` the total variance is
-  an unbiased estimate of the mean-square error of `θ̄`.
+  `E(θ - θ_MI)² = Var(θ | Y_obs) + D⁻¹ B_∞`, for `D ≥ 1`. For `D ≥ 2`, the total variance is
+  an unbiased estimate of the mean-square error of `θ_MI`.
 
 ## Main definitions
 
 * `TauCeti.miMean`, `TauCeti.miWithin`, `TauCeti.miBetween`, `TauCeti.rubinTotalVariance`:
-  `θ̄`, `V̄`, `B` and `T`.
+  `θ_MI`, `V_W`, `B` and `T`.
 
 ## Main results
 
 * `TauCeti.integral_miMean`, `TauCeti.integral_miWithin`, `TauCeti.integral_miBetween`: the
-  expectations of `θ̄`, `V̄` and `B` over independent imputations.
-* `TauCeti.variance_miMean`: the variance of `θ̄`.
-* `TauCeti.integral_sub_miMean_sq`: the mean-square error of `θ̄` for an independent draw `θ`
+  expectations of `θ_MI`, `V_W` and `B` over independent imputations.
+* `TauCeti.variance_miMean`: the variance of `θ_MI`.
+* `TauCeti.integral_sub_miMean_sq`: the mean-square error of `θ_MI` for an independent draw `θ`
   from the observed-data posterior.
 * `TauCeti.integral_rubinTotalVariance`: Rubin's combining rules, exact form, collecting the
-  expectations of `θ̄`, `T` and `(θ - θ̄)²` (Little–Rubin, (10.12)–(10.14)).
+  expectations of `θ_MI`, `T` and `(θ - θ_MI)²` (Little–Rubin, (10.12)–(10.14)).
 
 The mixture step is Tau Ceti's law of total variance `ProbabilityTheory.Kernel.variance_comp`, and
 the unbiasedness of `B` is `TauCeti.integral_sum_sub_finiteMean_sq_pi`. There is no counterpart
@@ -84,12 +84,12 @@ variable {M : Type*} [MeasurableSpace M]
 
 section Definitions
 
-/-- The multiple-imputation estimate `θ̄`, the average of the completed-data posterior means
+/-- The multiple-imputation estimate `θ_MI`, the average of the completed-data posterior means
 `∫ x ∂κ (z d)` over the `D` imputations `z d`. It is `0` for `D = 0`. -/
 def miMean {D : ℕ} (κ : Kernel M ℝ) (z : Fin D → M) : ℝ :=
   (D : ℝ)⁻¹ * ∑ d, ∫ x, x ∂κ (z d)
 
-/-- The within-imputation variance `V̄`, the average of the completed-data posterior variances
+/-- The within-imputation variance `V_W`, the average of the completed-data posterior variances
 over the `D` imputations. It is `0` for `D = 0`. -/
 def miWithin {D : ℕ} (κ : Kernel M ℝ) (z : Fin D → M) : ℝ :=
   (D : ℝ)⁻¹ * ∑ d, variance id (κ (z d))
@@ -99,7 +99,7 @@ completed-data posterior means. It is `0` for `D ≤ 1`. -/
 def miBetween {D : ℕ} (κ : Kernel M ℝ) (z : Fin D → M) : ℝ :=
   ((D : ℝ) - 1)⁻¹ * ∑ d, (∫ x, x ∂κ (z d) - miMean κ z) ^ 2
 
-/-- Rubin's total variance `T = V̄ + (1 + D⁻¹) B`. -/
+/-- Rubin's total variance `T = V_W + (1 + D⁻¹) B`. -/
 def rubinTotalVariance {D : ℕ} (κ : Kernel M ℝ) (z : Fin D → M) : ℝ :=
   miWithin κ z + (1 + (D : ℝ)⁻¹) * miBetween κ z
 
@@ -287,7 +287,7 @@ theorem variance_miMean (hm : MemLp (fun z ↦ ∫ x, x ∂κ z) 2 ν) {D : ℕ}
 /-- **The mean-square error of the multiple-imputation estimate.** Let `θ` be drawn from the
 observed-data posterior `κ ∘ₘ ν`, with finite second moment, independently of `D ≥ 1`
 imputations drawn independently from `ν`. Then
-`E(θ - θ̄)² = Var(κ ∘ₘ ν) + D⁻¹ B_∞`, with `B_∞ = Var_ν(z ↦ ∫ x ∂κ z)`. -/
+`E(θ - θ_MI)² = Var(κ ∘ₘ ν) + D⁻¹ B_∞`, with `B_∞ = Var_ν(z ↦ ∫ x ∂κ z)`. -/
 theorem integral_sub_miMean_sq [IsMarkovKernel κ]
     (h2 : Integrable (fun x : ℝ ↦ x ^ 2) (κ ∘ₘ ν)) {D : ℕ} (hD : D ≠ 0) :
     ∫ p, (p.1 - miMean κ p.2) ^ 2 ∂((κ ∘ₘ ν).prod (Measure.pi fun _ : Fin D ↦ ν)) =
@@ -302,8 +302,8 @@ theorem integral_sub_miMean_sq [IsMarkovKernel κ]
   have hbar : MemLp (miMean κ) 2 P := memLp_miMean ν κ hm
   have hθ : MemLp (fun x : ℝ ↦ x - c) 2 (κ ∘ₘ ν) := hX.sub (memLp_const c)
   have hθ' : MemLp (fun z ↦ miMean κ z - c) 2 P := hbar.sub (memLp_const c)
-  -- Expand `(θ - θ̄)² = (θ - c)² + (θ̄ - c)² - 2 (θ - c) (θ̄ - c)`; the cross term has
-  -- expectation `0` by independence of the two coordinates of the product law.
+  -- Expand `(θ - θ_MI)² = (θ - c)² + (θ_MI - c)² - 2 (θ - c) (θ_MI - c)`.
+  -- The cross term has expectation `0` by independence under the product law.
   have hexp (p : ℝ × (Fin D → M)) : (p.1 - miMean κ p.2) ^ 2 = (p.1 - c) ^ 2 +
       (miMean κ p.2 - c) ^ 2 - 2 * ((p.1 - c) * (miMean κ p.2 - c)) := by ring
   have hcross : ∫ p, (p.1 - c) * (miMean κ p.2 - c) ∂((κ ∘ₘ ν).prod P) = 0 := by
@@ -328,8 +328,8 @@ theorem integral_sub_miMean_sq [IsMarkovKernel κ]
 /-- **Rubin's combining rules, exact form.** Given the observed data, let the `D ≥ 2` imputations
 be drawn independently from the posterior predictive law `ν`, and let `θ` be drawn from the
 observed-data posterior `κ ∘ₘ ν`, with finite second moment, independently of them. Then the
-multiple-imputation estimate `θ̄` has mean `E(θ | Y_obs)`, and both Rubin's total variance `T`
-and the mean-square error `(θ - θ̄)²` have mean `Var(θ | Y_obs) + D⁻¹ B_∞`, with
+multiple-imputation estimate `θ_MI` has mean `E(θ | Y_obs)`, and both Rubin's total variance `T`
+and the mean-square error `(θ - θ_MI)²` have mean `Var(θ | Y_obs) + D⁻¹ B_∞`, with
 `B_∞ = Var_ν(z ↦ ∫ x ∂κ z)` (Little–Rubin, (10.12)–(10.14)). -/
 theorem integral_rubinTotalVariance [IsMarkovKernel κ]
     (h2 : Integrable (fun x : ℝ ↦ x ^ 2) (κ ∘ₘ ν)) {D : ℕ} (hD : 2 ≤ D) :
