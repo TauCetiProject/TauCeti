@@ -130,6 +130,13 @@ theorem toSmooth_changeFamilyCLE {X : ι → LeftInvariantDerivation I G}
     (changeFamilyCLE I π h v).toSmooth = v.toSmooth :=
   toSmooth_changeFamily X Y v
 
+@[simp]
+theorem changeFamilyCLE_symm {X : ι → LeftInvariantDerivation I G}
+    {Y : κ → LeftInvariantDerivation I G}
+    (h : Submodule.span ℝ (Set.range X) = Submodule.span ℝ (Set.range Y)) :
+    (changeFamilyCLE I π h).symm = changeFamilyCLE I π h.symm :=
+  (rfl)
+
 variable (I π) in
 /-- **The topology of the smooth vectors does not depend on the basis.** For two real bases `b`
 and `b'` of the Lie algebra, the identity of the smooth vectors is a continuous linear
@@ -144,6 +151,12 @@ theorem toSmooth_basisCLE (b : Module.Basis ι ℝ (LeftInvariantDerivation I G)
     (b' : Module.Basis κ ℝ (LeftInvariantDerivation I G)) (v : LieSmoothSpace I π b) :
     (basisCLE I π b b' v).toSmooth = v.toSmooth :=
   toSmooth_changeFamily _ _ v
+
+@[simp]
+theorem basisCLE_symm (b : Module.Basis ι ℝ (LeftInvariantDerivation I G))
+    (b' : Module.Basis κ ℝ (LeftInvariantDerivation I G)) :
+    (basisCLE I π b b').symm = basisCLE I π b' b :=
+  (rfl)
 
 end LieSmoothSpace
 
