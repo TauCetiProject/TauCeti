@@ -10,7 +10,7 @@ public import Mathlib.Data.ZMod.Basic
 public import Mathlib.Topology.Instances.ZMod
 public import TauCeti.GroupTheory.GroupExtension.ZModFour
 public import TauCeti.Topology.Algebra.Group.Profinite.Section
-import TauCeti.Analysis.Complex.Circle.Basic
+import TauCeti.Topology.Circle.Degree
 
 /-!
 # Checks for continuous sections of coefficient surjections
@@ -32,7 +32,7 @@ homomorphism `f : A → B` from a profinite additive group onto a Hausdorff one 
 
 public section
 
-open Multiplicative Real
+open Multiplicative
 
 namespace TauCeti
 
@@ -61,28 +61,11 @@ continuous square root on the circle. -/
 theorem not_exists_continuous_section_circle_sq :
     ¬∃ s : Circle → Circle, Continuous s ∧ ∀ z, s z ^ 2 = z := by
   rintro ⟨s, hs, hsq⟩
-  -- Along `t ↦ s (exp (2πt)) / exp (πt)`, whose square is `1`, the real part takes only the
-  -- values `±1`, yet changes sign between `t = 0` and `t = 1`.
-  let u : ℝ → Circle := fun t ↦ s (Circle.exp (2 * π * t)) * (Circle.exp (π * t))⁻¹
-  have hu : Continuous u := by fun_prop
-  have hu2 : ∀ t, u t ^ 2 = 1 := fun t ↦ by
-    have hexp : Circle.exp (π * t) ^ 2 = Circle.exp (2 * π * t) := by
-      rw [sq, ← Circle.exp_add]
-      ring_nf
-    simp [u, mul_pow, hsq, hexp]
-  have hre : ∀ t, ((u t : ℂ)).re ≠ 0 := fun t ↦ by
-    rcases (Circle.sq_eq_one_iff (u t)).mp (hu2 t) with h1 | h1 <;> simp [h1]
-  let h : ℝ → ℝ := fun t ↦ ((u t : ℂ)).re
-  have hh : Continuous h := by fun_prop
-  have h0 : h 0 = ((s 1 : ℂ)).re := by simp [h, u]
-  have h1 : h 1 = -((s 1 : ℂ)).re := by simp [h, u, Circle.coe_inv]
-  have hmem : (0 : ℝ) ∈ Set.uIcc (h 0) (h 1) := by
-    rw [h0, h1, Set.mem_uIcc]
-    rcases le_total 0 ((s 1 : ℂ)).re with hc | hc
-    · exact Or.inr ⟨by linarith, hc⟩
-    · exact Or.inl ⟨hc, by linarith⟩
-  obtain ⟨t, -, ht⟩ := intermediate_value_uIcc hh.continuousOn hmem
-  exact hre t ht
+  -- The loop `s ∘ expLoop` squares to `expLoop`, of degree `1`, so its degree would be `1/2`.
+  have h := Circle.degree_congr ((Circle.expLoop.map hs).map (continuous_pow 2)) Circle.expLoop
+    fun t ↦ by simp [hsq]
+  rw [Circle.degree_map_pow, Circle.degree_expLoop] at h
+  omega
 
 /-- The identity of an additive group has the identity as its unique section. -/
 example {A : Type*} [AddGroup A] (s : A → A) (hs : ∀ a, AddMonoidHom.id A (s a) = a) : s = id :=
