@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
+import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -223,11 +224,9 @@ then `t ↦ γ (-t)` is an integral curve of `-grad (-f)`. -/
 theorem _root_.IsMIntegralCurve.comp_neg_neg_mgradient {γ : ℝ → M}
     (hγ : IsMIntegralCurve γ (-mgradient I f)) :
     IsMIntegralCurve (fun t ↦ γ (-t)) (-mgradient I (-f)) := by
-  convert hγ.comp_mul (-1) using 1
-  · funext t
-    simp only [Function.comp_apply, mul_neg_one]
-  · funext y
-    simp only [Pi.neg_apply, Pi.smul_apply, mgradient_neg, neg_neg, neg_smul, one_smul]
+  convert hγ.comp_neg using 1
+  funext y
+  simp only [Pi.neg_apply, mgradient_neg, neg_neg]
 
 variable {s : Set M}
 
