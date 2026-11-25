@@ -169,7 +169,8 @@ theorem rootNormalClosure_ker_le_comap_map_of_comp_eq {R' S' : Type*} [Ring R'] 
     {f : R →+* S} {f' : R' →+* S'} {g : R →+* R'} {h : S →+* S'} (hsq : h.comp f = f'.comp g) :
     rootNormalClosure ι (RingHom.ker f : Set R) ≤
       (rootNormalClosure ι (RingHom.ker f' : Set R')).comap (map g) :=
-  rootNormalClosure_le_comap_map g fun a (ha : f a = 0) ↦ show f' (g a) = 0 by
+  rootNormalClosure_le_comap_map g fun a ha ↦ by
+    rw [SetLike.mem_coe, RingHom.mem_ker] at ha ⊢
     rw [← RingHom.comp_apply, ← hsq, RingHom.comp_apply, ha, map_zero]
 
 /-! ### The Steinberg group of a quotient ring -/
