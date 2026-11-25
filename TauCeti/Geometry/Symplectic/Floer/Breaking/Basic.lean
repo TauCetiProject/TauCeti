@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Calculus.StripTranslate
 import TauCeti.Geometry.Symplectic.Floer.Translation.Basic
+import TauCeti.Topology.Separation.Periodic
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
@@ -335,10 +336,9 @@ theorem exists_periodic_hasDerivAt_of_tendsto_setLIntegral_comp_add
   have hmem (r : ℝ) : ∀ᶠ k in atTop, r + s k ∈ S :=
     (hsS r r).mono fun _ hk ↦ hk ⟨le_rfl, le_rfl⟩
   -- The limit is periodic in `t`, since the translates eventually are at each point.
-  have hvper (z : ℝ × ℝ) : v (z.1, z.2 + 1) = v z := by
-    refine tendsto_nhds_unique ((hv.tendsto_at (z.1, z.2 + 1)).congr' ?_) (hv.tendsto_at z)
-    filter_upwards [hmem z.1] with k hk
-    simpa only [hzs] using hper k _ hk z.2
+  have hvper (r : ℝ) : Periodic (fun t ↦ v (r, t)) 1 :=
+    periodic_of_tendsto ((hmem r).mono fun k hk ↦ by simpa only [hzs] using hper k _ hk)
+      fun t ↦ hv.tendsto_at (r, t)
   -- On the strip `ℝ × [0, 1]` the limit does not depend on `s`, and `x(t) = v(0, t)` solves
   -- Hamilton's equation on `[0, 1]`.
   have hEU : S ×ˢ Icc (0 : ℝ) 1 ⊆ S ×ˢ univ := prod_mono le_rfl (subset_univ _)
@@ -350,10 +350,10 @@ theorem exists_periodic_hasDerivAt_of_tendsto_setLIntegral_comp_add
   have hder := hasDerivWithinAt_of_tendstoLocallyUniformlyOn_comp_add hH (hS.prod isOpen_univ) hu
     hEU hc hJc hJM hfloer hW hen hv'
   set x : ℝ → V := fun t ↦ v (0, t)
-  have hxper : Periodic x 1 := fun t ↦ hvper (0, t)
+  have hxper : Periodic x 1 := hvper 0
   have hvx : v = fun z ↦ x z.2 := funext fun z ↦
     calc v z = v (z.1, Int.fract z.2) :=
-          (Periodic.apply_fract (f := fun t ↦ v (z.1, t)) (fun t ↦ hvper (z.1, t)) z.2).symm
+          ((hvper z.1).apply_fract z.2).symm
       _ = x (Int.fract z.2) := hstat z.1 _ ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩
       _ = x z.2 := hxper.apply_fract z.2
   -- By periodicity, `x` solves Hamilton's equation everywhere.
