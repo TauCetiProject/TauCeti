@@ -19,8 +19,7 @@ factor `u` of the polar decomposition `x = u |x|`, `|x| = √(x⋆x)`
 that `u` is joined to `x` by a path of invertible elements (`Units.joined_polarUnitary`):
 `t ↦ u ((1 - t)|x| + t)` stays invertible, since `(1 - t)|x| + t` is strictly positive for
 `t ∈ [0, 1]`. This straight-line path has the same endpoints as the polar deformation
-`t ↦ x (x⋆x)^(-t/2)`. For example, the polar unitary of the invertible `2 ∈ ℂ` is `1`
-(`TauCeti.polarUnitary_two_complex`).
+`t ↦ x (x⋆x)^(-t/2)`.
 
 The consequences for invertible matrices and the stable component group are in
 `TauCeti/Analysis/Matrix/GeneralLinearGroup/Polar.lean`.
@@ -86,12 +85,3 @@ theorem Units.exists_unitary_joined (x : Aˣ) : ∃ v : unitary A, Joined x (Uni
   ⟨_, x.joined_polarUnitary⟩
 
 end Polar
-
-namespace TauCeti
-
-open scoped ComplexOrder in
-/-- The polar unitary of the invertible `2 ∈ ℂ` is `1`. -/
-theorem polarUnitary_two_complex : (Units.mk0 (2 : ℂ) two_ne_zero).polarUnitary = 1 :=
-  Units.polarUnitary_eq_one (by norm_num)
-
-end TauCeti
