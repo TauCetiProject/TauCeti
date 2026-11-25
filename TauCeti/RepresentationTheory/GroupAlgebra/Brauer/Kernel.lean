@@ -45,22 +45,31 @@ variable {R G : Type*} [CommSemiring R] [Group G]
 
 /-! ### Traces from proper subgroups lie in the kernel -/
 
-/-- **The Brauer projection kills traces from proper subgroups.** For a `p`-subgroup `P` in
-characteristic `p` and `Q < P`, `Br_P(Tr_Q^P(a)) = 0`, since `|P : Q|` is a positive power of
-`p`. -/
-theorem brauerProjection_relTrace_eq_zero {p : ℕ} [Fact p.Prime] [CharP R p] {Q P : Subgroup G}
-    [(Q.subgroupOf P).FiniteIndex] (hP : IsPGroup p P) (hQP : Q < P) (a : conjInvariants R Q) :
+/-- **The Brauer projection kills traces from subgroups not containing `P`.** For a `p`-subgroup
+`P` in characteristic `p` and a subgroup `Q` not containing `P`, `Br_P(Tr_Q^P(a)) = 0`, where
+`Tr_Q^P` is the trace from `Q ∩ P`: `|P : Q ∩ P|` is a positive power of `p`. -/
+theorem brauerProjection_relTrace_eq_zero_of_not_le {p : ℕ} [Fact p.Prime] [CharP R p]
+    {Q P : Subgroup G} [(Q.subgroupOf P).FiniteIndex] (hP : IsPGroup p P) (hPQ : ¬ P ≤ Q)
+    (a : conjInvariants R Q) :
     brauerProjection P (relTrace R Q P a : MonoidAlgebra R G) = 0 := by
   obtain ⟨n, hn⟩ := hP.index (Q.subgroupOf P)
   have hn0 : n ≠ 0 := by
     rintro rfl
     rw [pow_zero, Subgroup.index_eq_one, Subgroup.subgroupOf_eq_top] at hn
-    exact hQP.not_ge hn
+    exact hPQ hn
   have hp : ((Q.subgroupOf P).index : R) = 0 := by
     rw [hn, Nat.cast_pow, CharP.cast_eq_zero, zero_pow hn0]
   ext c
   rw [coeff_brauerProjection, coeff_relTrace_of_mem_centralizer a c.property, nsmul_eq_mul, hp,
     zero_mul, coeff_zero, Finsupp.coe_zero, Pi.zero_apply]
+
+/-- **The Brauer projection kills traces from proper subgroups.** For a `p`-subgroup `P` in
+characteristic `p` and `Q < P`, `Br_P(Tr_Q^P(a)) = 0`, since `|P : Q|` is a positive power of
+`p`. -/
+theorem brauerProjection_relTrace_eq_zero {p : ℕ} [Fact p.Prime] [CharP R p] {Q P : Subgroup G}
+    [(Q.subgroupOf P).FiniteIndex] (hP : IsPGroup p P) (hQP : Q < P) (a : conjInvariants R Q) :
+    brauerProjection P (relTrace R Q P a : MonoidAlgebra R G) = 0 :=
+  brauerProjection_relTrace_eq_zero_of_not_le hP hQP.not_ge a
 
 /-! ### The kernel -/
 
