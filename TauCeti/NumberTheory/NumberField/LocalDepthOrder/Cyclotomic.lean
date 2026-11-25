@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal
+public import Mathlib.RingTheory.RootsOfUnity.CyclotomicUnits
 public import TauCeti.NumberTheory.NumberField.LocalDepthOrder.Basic
 
 /-!
@@ -26,8 +27,8 @@ through the denominator.
 
 * `TauCeti.NumberField.localDepthExponent_span_zeta_sub_one_pow`: the exponent at `p` of the level
   `𝔓 ^ h`.
-* `TauCeti.NumberField.localDepthExponent_span_zeta_sub_one_pow_of_ne`: the exponent at every other
-  `q` vanishes.
+* `TauCeti.NumberField.localDepthExponent_span_zeta_sub_one_pow_eq_zero_of_ne`: the exponent at
+  every other `q` vanishes.
 * `TauCeti.NumberField.localDepthOrder_span_zeta_sub_one_pow`: the local-depth order of `𝔓 ^ h`.
 
 ## References
@@ -72,15 +73,15 @@ theorem localDepthExponent_span_zeta_sub_one_pow (h : ℕ) :
       (normalizedFactors (span {hζ.toInteger - 1} ^ h)).count (span {hζ.toInteger - 1}) = h := by
     have hprime : Prime (span {hζ.toInteger - 1}) :=
       prime_of_isPrime (span_zeta_sub_one_ne_bot p k hζ) (isPrime_span_zeta_sub_one p k hζ)
-    rw [normalizedFactors_pow, normalizedFactors_irreducible hprime.irreducible, normalize_eq,
-      Multiset.count_nsmul, Multiset.count_singleton_self, mul_one]
+    rw [hprime.irreducible.normalizedFactors_pow, normalize_eq, Multiset.count_replicate_self]
   refine eq_of_forall_le_iff fun j ↦ ?_
   simp only [le_localDepthExponent_iff, hP, forall_eq, hm, hcount,
     ramificationIdx_span_zeta_sub_one p k hζ, le_min_iff]
 
-/-- At a prime `q ≠ p`, the truncated local-depth exponent of the level `(ζ - 1) ^ h` of
-`ℚ(ζ_{p ^ (k + 1)})` vanishes. -/
-theorem localDepthExponent_span_zeta_sub_one_pow_of_ne (h : ℕ) {q : ℕ} (hqp : q ≠ p) :
+omit [IsCyclotomicExtension {p ^ (k + 1)} ℚ K] in
+/-- At a prime `q ≠ p`, the truncated local-depth exponent of the level `(ζ - 1) ^ h` vanishes,
+for `ζ` a primitive `p ^ (k + 1)`-th root of unity in any number field `K`. -/
+theorem localDepthExponent_span_zeta_sub_one_pow_eq_zero_of_ne (h : ℕ) {q : ℕ} (hqp : q ≠ p) :
     localDepthExponent K (span {hζ.toInteger - 1} ^ h) q = 0 := by
   by_cases hq : q.Prime
   · have : Fact q.Prime := ⟨hq⟩
@@ -88,12 +89,16 @@ theorem localDepthExponent_span_zeta_sub_one_pow_of_ne (h : ℕ) {q : ℕ} (hqp 
     have : Q.IsPrime := hQ.1
     have : Q.LiesOver (span {(q : ℤ)}) := hQ.2
     refine localDepthExponent_eq_zero_of_not_le hQ fun hle ↦ hqp ?_
-    -- `(ζ - 1) ^ h ≤ Q` forces `Q = (ζ - 1)`, which lies over `p`, not `q`
-    have hmax := (isPrime_span_zeta_sub_one p k hζ).isMaximal (span_zeta_sub_one_ne_bot p k hζ)
-    have hQeq := hmax.eq_of_le hQ.1.ne_top (IsPrime.le_of_pow_le hle)
-    have hpq := (Q.over_def (span {(q : ℤ)})).trans
-      (hQeq ▸ (liesOver_span_zeta_sub_one p k hζ).over).symm
-    simpa using Int.associated_iff_natAbs.1 (span_singleton_eq_span_singleton.1 hpq)
+    -- `ζ - 1` divides `p ^ (k + 1)`, so `(ζ - 1) ^ h ≤ Q` puts `p ^ (k + 1)` in `Q`
+    have hmem : ((p ^ (k + 1) : ℕ) : 𝓞 K) ∈ Q :=
+      Q.mem_of_dvd (hζ.toInteger_isPrimitiveRoot.sub_one_dvd_natCast
+        (Nat.one_lt_pow k.succ_ne_zero hp.out.one_lt))
+        (IsPrime.le_of_pow_le hle (mem_span_singleton_self _))
+    have hdvd : ((p ^ (k + 1) : ℕ) : ℤ) ∈ span {(q : ℤ)} := by
+      rw [Q.over_def (span {(q : ℤ)}), mem_comap]
+      simpa using hmem
+    rw [mem_span_singleton, Int.natCast_dvd_natCast] at hdvd
+    exact (Nat.prime_dvd_prime_iff_eq hq hp.out).1 (hq.dvd_of_dvd_pow hdvd)
   · exact localDepthExponent_eq_zero_of_notMem_primeFactors _
       fun h ↦ hq (Nat.prime_of_mem_primeFactors h)
 
@@ -104,12 +109,11 @@ theorem localDepthOrder_span_zeta_sub_one_pow (h : ℕ) :
       p ^ min (k + 1) ⌊(h : ℚ) / (p ^ k * (p - 1) : ℕ) - 1 / ((p : ℚ) - 1)⌋.toNat := by
   refine Nat.eq_of_factorization_eq (localDepthOrder_pos _).ne'
     (pow_ne_zero _ hp.out.ne_zero) fun q ↦ ?_
-  rw [factorization_localDepthOrder, Nat.factorization_pow, Finsupp.smul_apply,
-    hp.out.factorization, smul_eq_mul]
+  rw [factorization_localDepthOrder, hp.out.factorization_pow]
   by_cases hqp : q = p
   · subst hqp
-    rw [localDepthExponent_span_zeta_sub_one_pow hζ, Finsupp.single_eq_same, mul_one]
-  · rw [localDepthExponent_span_zeta_sub_one_pow_of_ne hζ h hqp, Finsupp.single_eq_of_ne hqp,
-      mul_zero]
+    rw [localDepthExponent_span_zeta_sub_one_pow hζ, Finsupp.single_eq_same]
+  · rw [localDepthExponent_span_zeta_sub_one_pow_eq_zero_of_ne hζ h hqp,
+      Finsupp.single_eq_of_ne hqp]
 
 end TauCeti.NumberField

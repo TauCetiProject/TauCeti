@@ -210,15 +210,13 @@ theorem factorization_localDepthOrder (I : Ideal (𝓞 F)) (p : ℕ) :
   rw [localDepthOrder, Nat.factorization_prod fun q hq ↦
     pow_ne_zero _ (Nat.pos_of_mem_primeFactors hq).ne', Finsupp.finsetSum_apply]
   by_cases hp : p ∈ (torsionOrder F).primeFactors
-  · rw [Finset.sum_eq_single p (fun q hq hqp ↦ ?_) (absurd hp), Nat.factorization_pow,
-      Finsupp.smul_apply, (Nat.prime_of_mem_primeFactors hp).factorization_self, smul_eq_mul,
-      mul_one]
-    rw [Nat.factorization_pow, Finsupp.smul_apply, (Nat.prime_of_mem_primeFactors hq).factorization,
-      Finsupp.single_eq_of_ne hqp.symm, smul_zero]
+  · rw [Finset.sum_eq_single p (fun q hq hqp ↦ ?_) (absurd hp),
+      (Nat.prime_of_mem_primeFactors hp).factorization_pow, Finsupp.single_eq_same]
+    rw [(Nat.prime_of_mem_primeFactors hq).factorization_pow, Finsupp.single_eq_of_ne hqp.symm]
   · refine (Finset.sum_eq_zero fun q hq ↦ ?_).trans
       (localDepthExponent_eq_zero_of_notMem_primeFactors I hp).symm
-    rw [Nat.factorization_pow, Finsupp.smul_apply, (Nat.prime_of_mem_primeFactors hq).factorization,
-      Finsupp.single_eq_of_ne (ne_of_mem_of_not_mem hq hp).symm, smul_zero]
+    rw [(Nat.prime_of_mem_primeFactors hq).factorization_pow,
+      Finsupp.single_eq_of_ne (ne_of_mem_of_not_mem hq hp).symm]
 
 /-- The local-depth order `r(I)` divides the number `m` of roots of unity of `F`. -/
 theorem localDepthOrder_dvd_torsionOrder (I : Ideal (𝓞 F)) :
