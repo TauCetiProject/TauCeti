@@ -33,8 +33,6 @@ annihilators.
 
 * `localCohomology.degreeZeroToModule J M`: the canonical map `H⁰_J(M) ⟶ M`, natural in `M`
   (`localCohomology.degreeZeroToModule_naturality`).
-* `localCohomology.degreeZeroEquivPrimaryComponent J M`: the induced linear equivalence
-  `H⁰_J(M) ≃ₗ[R] J.primaryComponent M`.
 
 ## Main results
 
@@ -239,25 +237,5 @@ component of `M`. -/
 theorem range_hom_degreeZeroToModule :
     LinearMap.range (degreeZeroToModule J M).hom = Ideal.primaryComponent M J :=
   SetLike.coe_injective ((LinearMap.coe_range _).trans (range_degreeZeroToModule J M))
-
-end localCohomology
-
-namespace localCohomology
-
-variable {R : Type u} [CommRing R]
-
-/-- The degree-zero local cohomology module `H⁰_J(M)` is canonically linearly equivalent to the
-`J`-primary component `Ideal.primaryComponent M J`. -/
-noncomputable def degreeZeroEquivPrimaryComponent (J : Ideal R) (M : Type u) [AddCommGroup M]
-    [Module R M] : (localCohomology J 0).obj (ModuleCat.of R M) ≃ₗ[R] J.primaryComponent M :=
-  (LinearEquiv.ofInjective (degreeZeroToModule J (ModuleCat.of R M)).hom
-    (degreeZeroToModule_injective J (ModuleCat.of R M))).trans
-    (LinearEquiv.ofEq _ _ (range_hom_degreeZeroToModule J (ModuleCat.of R M)))
-
-@[simp]
-theorem coe_degreeZeroEquivPrimaryComponent_apply (J : Ideal R) (M : Type u) [AddCommGroup M]
-    [Module R M] (x : (localCohomology J 0).obj (ModuleCat.of R M)) :
-    (degreeZeroEquivPrimaryComponent J M x : M) =
-      degreeZeroToModule J (ModuleCat.of R M) x := (rfl)
 
 end localCohomology

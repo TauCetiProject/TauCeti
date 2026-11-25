@@ -16,6 +16,9 @@ The values on `1` and `I` determine a continuous real-linear map on every comple
 A real-linear map is the sum of its values at `1` and `I` weighted by the real and imaginary
 parts (`ContinuousLinearMap.eq_reCLM_smulRight_add_imCLM_smulRight`, and for families
 `ContinuousLinearMap.fun_eq_smulRightL_reCLM_add_smulRightL_imCLM`).
+For a real bilinear map `B` on `ℂ` with `B 1 I = B I 1`, the trace `B a a + B (I a) (I a)` over the
+orthogonal pair `a, I a` is `‖a‖²` times the trace over `1, I`
+(`ContinuousLinearMap.apply_add_apply_I_mul_eq_norm_sq_smul`).
 
 Multiplication by `c : ℂ` is a similarity of ratio `‖c‖`, so precomposing a real-linear map with
 it multiplies the operator norm by `‖c‖`
@@ -53,6 +56,22 @@ theorem fun_eq_smulRightL_reCLM_add_smulRightL_imCLM {X V : Type*} [SeminormedAd
   conv_lhs => rw [(D x).eq_reCLM_smulRight_add_imCLM_smulRight]
   ext z
   simp
+
+/-- For a real bilinear map `B` on `ℂ` with `B 1 I = B I 1`, the trace over the orthogonal pair
+`a, I a` is `‖a‖²` times the trace over `1, I`. -/
+theorem apply_add_apply_I_mul_eq_norm_sq_smul {V : Type*} [SeminormedAddCommGroup V]
+    [NormedSpace ℝ V] (B : ℂ →L[ℝ] ℂ →L[ℝ] V) (hB : B 1 Complex.I = B Complex.I 1) (a : ℂ) :
+    B a a + B (Complex.I * a) (Complex.I * a) = ‖a‖ ^ 2 • (B 1 1 + B Complex.I Complex.I) := by
+  obtain ⟨p, q, rfl⟩ : ∃ p q : ℝ, a = p • (1 : ℂ) + q • Complex.I :=
+    ⟨a.re, a.im, by simp⟩
+  have hIa : Complex.I * (p • (1 : ℂ) + q • Complex.I) = (-q) • (1 : ℂ) + p • Complex.I := by
+    simp [Complex.ext_iff]
+  have hn : ‖p • (1 : ℂ) + q • Complex.I‖ ^ 2 = p ^ 2 + q ^ 2 := by
+    rw [Complex.sq_norm, Complex.normSq_apply]
+    simp [sq]
+  rw [hIa, hn]
+  simp only [map_add, map_smul, add_apply, smul_apply, hB]
+  module
 
 /-- Precomposing a real-linear map out of the complex plane with multiplication by `c`, a
 similarity of ratio `‖c‖`, multiplies its operator norm by `‖c‖`. -/

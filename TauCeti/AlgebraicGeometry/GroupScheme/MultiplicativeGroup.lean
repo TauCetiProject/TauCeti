@@ -28,7 +28,8 @@ points of `𝔾_m` over `Spec ℤ` on arbitrary test schemes
 
 ## Main declarations
 
-* `TauCeti.GroupScheme.Gm`: the multiplicative group scheme `𝔾_{m,S}` over a scheme `S`.
+* `TauCeti.GroupScheme.Gm`: the multiplicative group scheme `𝔾_{m,S}` over a scheme `S`, and
+  `TauCeti.GroupScheme.GmCommGrp`: the same group scheme as a commutative group scheme.
 * `TauCeti.GroupScheme.Gm.pointsMulEquiv`: points of `𝔾_{m,S}` over `S` with values in an
   `S`-scheme `T` are the units of `Γ(T, 𝒪_T)`, as groups.
 * `TauCeti.GroupScheme.Gm.pointsMulEquiv_naturality`: this identification is natural in `T`.
@@ -57,6 +58,10 @@ noncomputable abbrev Gm (S : Scheme.{u}) : Grp (Over S) :=
 instance (S : Scheme.{u}) : IsCommMonObj (Gm S).X :=
   inferInstanceAs <| IsCommMonObj <| (Over.pullback (specULiftZIsTerminal.from S)).obj
     (DiagonalizableGroup.multiplicativeGroupScheme (ULift.{u} ℤ)).X
+
+/-- The multiplicative group scheme `𝔾_{m,S}` over a scheme `S`, as a commutative group scheme. -/
+noncomputable abbrev GmCommGrp (S : Scheme.{u}) : CommGrp (Over S) :=
+  CommGrp.mk (Gm S).X
 
 namespace Gm
 

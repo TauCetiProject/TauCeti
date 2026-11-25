@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
-public import TauCeti.Algebra.Algebra.NatCast
+public import TauCeti.Algebra.Algebra.Subalgebra.Basic
 import Mathlib.Algebra.Module.BigOperators
 import Mathlib.Data.Multiset.Fintype
 import Mathlib.RingTheory.Polynomial.Vieta

@@ -85,13 +85,17 @@ theorem amplitudeField_normSq (u : ℂ → ℝ) (f : ℂ → ℂ) (z : ℂ) :
   simp only [amplitudeField_apply_two, amplitudeField_apply_three, normSq_apply]
   ring
 
-/-- A `C^(n+1)` amplitude and a `C^n` factor give a `C^n` field, including at the zeros
-of the factor. -/
-theorem contDiff_amplitudeField {u : ℂ → ℝ} {f : ℂ → ℂ} {n : ℕ∞}
-    (hu : ContDiff ℝ (n + 1) u) (hf : ContDiff ℝ n f) :
-    ContDiff ℝ n (amplitudeField u f) := by
-  have hdu := hu.fderiv_right (m := n) (by simp)
-  have hu' : ContDiff ℝ n u := hu.of_le (by simp)
+/-- Amplitudes and factors depending on a parameter, `C^(n+1)` and `C^n` jointly in the parameter
+and the point, give fields that are `C^n` jointly in the parameter and the point, including at
+the zeros of the factors. -/
+theorem contDiff_parametric_amplitudeField {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    {u : P → ℂ → ℝ} {f : P → ℂ → ℂ} {n : ℕ∞}
+    (hu : ContDiff ℝ (n + 1) fun p : P × ℂ ↦ u p.1 p.2)
+    (hf : ContDiff ℝ n fun p : P × ℂ ↦ f p.1 p.2) :
+    ContDiff ℝ n fun p : P × ℂ ↦ amplitudeField (u p.1) (f p.1) p.2 := by
+  have hdu := (hu.comp (contDiff_fst.fst.prodMk contDiff_snd)).fderiv
+    (f := fun p z ↦ u p.1 z) contDiff_snd (n := n) le_rfl
+  have hu' : ContDiff ℝ n fun p : P × ℂ ↦ u p.1 p.2 := hu.of_le (by simp)
   apply (contDiff_piLp 2).2
   intro i
   fin_cases i
@@ -99,6 +103,15 @@ theorem contDiff_amplitudeField {u : ℂ → ℝ} {f : ℂ → ℂ} {n : ℕ∞}
   · exact hdu.clm_apply contDiff_const
   · exact (hu'.exp.mul (Complex.reCLM.contDiff.comp hf)).div_const 2
   · exact (hu'.exp.mul (Complex.imCLM.contDiff.comp hf)).div_const 2
+
+/-- A `C^(n+1)` amplitude and a `C^n` factor give a `C^n` field, including at the zeros
+of the factor. -/
+theorem contDiff_amplitudeField {u : ℂ → ℝ} {f : ℂ → ℂ} {n : ℕ∞}
+    (hu : ContDiff ℝ (n + 1) u) (hf : ContDiff ℝ n f) :
+    ContDiff ℝ n (amplitudeField u f) :=
+  (contDiff_parametric_amplitudeField (P := Unit) (u := fun _ ↦ u) (f := fun _ ↦ f)
+    (hu.comp contDiff_snd) (hf.comp contDiff_snd)).comp
+    ((contDiff_const (c := ())).prodMk contDiff_id)
 
 private theorem fderiv_amplitudeField_section {u : ℂ → ℝ} {f : ℂ → ℂ} {z : ℂ}
     (hu : DifferentiableAt ℝ u z) (hf : DifferentiableAt ℝ f z) (v : ℂ) :
