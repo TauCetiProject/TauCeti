@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Instances.CantorSet
+public import TauCeti.Analysis.CStarAlgebra.AF.Connected
 public import TauCeti.Analysis.CStarAlgebra.AF.ContinuousMap
 public import TauCeti.Analysis.CStarAlgebra.AF.InductiveLimit
 public import TauCeti.Analysis.CStarAlgebra.CARAlgebra
@@ -16,7 +17,9 @@ public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 
 These examples check the AF predicate `TauCeti.IsAF` on the zero algebra, the matrix algebras
 `M_n`, the CAR algebra and the continuous functions on the Cantor set, and its closure under
-products and minimal unitizations.
+products and minimal unitizations. The continuous functions on `[0, 1]` do not form an AF algebra:
+the finite-dimensional C⋆-subalgebras of `C([0, 1], ℂ)` consist of constants, so the identity
+function is not within `1 / 2` of any of them.
 -/
 
 public section
@@ -74,5 +77,28 @@ example (n : ℕ) : IsAF (CStarMatrix (Fin n) (Fin n) ℂ × CARAlgebra) :=
 /-- The minimal unitization of an AF algebra is AF, here for the CAR algebra. -/
 example : IsAF (Unitization ℂ CARAlgebra) :=
   (CStarInductiveLimit.isAF : IsAF CARAlgebra).unitization
+
+/-- The identity function of `[0, 1]` is at distance at least `1 / 2` from every element of a
+finite-dimensional C⋆-subalgebra of `C([0, 1], ℂ)`: such elements are constant. -/
+example (S : NonUnitalStarSubalgebra ℂ C(unitInterval, ℂ)) [FiniteDimensional ℂ S]
+    (b : C(unitInterval, ℂ)) (hb : b ∈ S) :
+    1 / 2 ≤ ‖(⟨fun t ↦ ((t : ℝ) : ℂ), by fun_prop⟩ - b : C(unitInterval, ℂ))‖ := by
+  set f : C(unitInterval, ℂ) := ⟨fun t ↦ ((t : ℝ) : ℂ), by fun_prop⟩ with hf
+  have hc : b 1 = b 0 :=
+    ContinuousMap.apply_eq_apply_of_mem_finiteDimensional S.toNonUnitalSubalgebra hb 1 0
+  have h₀ : ‖b 0‖ ≤ ‖f - b‖ := by
+    simpa [hf] using (f - b).norm_coe_le_norm 0
+  have h₁ : ‖1 - b 0‖ ≤ ‖f - b‖ := by
+    simpa [hf, hc] using (f - b).norm_coe_le_norm 1
+  have : (1 : ℝ) ≤ ‖b 0‖ + ‖1 - b 0‖ := by
+    simpa using norm_add_le (b 0) (1 - b 0)
+  linarith
+
+/-- `C([0, 1], ℂ)` is not AF: on the connected space `[0, 1]` an AF algebra of continuous
+functions would consist of constants. -/
+example : ¬ IsAF C(unitInterval, ℂ) := fun h ↦ by
+  have h₀₁ : (((0 : unitInterval) : ℝ) : ℂ) = (((1 : unitInterval) : ℝ) : ℂ) :=
+    h.continuousMap_apply_eq_apply ⟨fun t ↦ ((t : ℝ) : ℂ), by fun_prop⟩ 0 1
+  norm_num at h₀₁
 
 end TauCeti
