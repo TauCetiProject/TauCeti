@@ -55,43 +55,6 @@ namespace TauCeti.Hodge.HodgeStructureOn
 variable {W : Type*} [AddCommGroup W] [Module ℂ W] {ω : Conjugation W} {n : ℤ}
   (hs : HodgeStructureOn W ω n) {d : ℕ} {e : Module.Basis (Fin d) ℂ W}
 
-/-- The universal point of `S_ℂ ≅ 𝔾ₘ × 𝔾ₘ` sends the generic matrix, through `h`, to the matrix
-`∑ p, P p * X^{(-p, p - n)}` of the Hodge projections. -/
-theorem splittingPoint_realCoordinateBialgHom_genericMatrix (he : ∀ i, ω.toEquiv (e i) = e i)
-    (i j : Fin d) :
-    splittingPoint.ofConv (hs.realCoordinateBialgHom he (genericMatrix ℝ d i j)) =
-      hs.splitCoordinateMatrix e i j := by
-  rw [← splittingBialgEquiv_one_tmul, one_tmul_realCoordinateBialgHom, genericMatrix_apply,
-    complexCoordinateBialgHom_one_tmul_X, BialgEquiv.apply_symm_apply]
-
-/-- The matrix of the complexified action of `S` in the basis `e`, applied to the coordinates of a
-vector of `H^{p,n-p}`, multiplies them by the character `X^{(-p,p-n)}`. -/
-theorem splitCoordinateMatrix_mulVec_of_mem {p : ℤ} {v : W} (hv : v ∈ hs.piece p) :
-    hs.splitCoordinateMatrix e *ᵥ
-        (fun j ↦ algebraMap ℂ (MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) (e.repr v j)) =
-      MonoidAlgebra.single (Multiplicative.ofAdd (-p, p - n)) (1 : ℂ) •
-        fun j ↦ algebraMap ℂ (MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) (e.repr v j) := by
-  funext i
-  simp only [Matrix.mulVec, dotProduct, splitCoordinateMatrix_apply, Finset.sum_mul,
-    Pi.smul_apply, smul_eq_mul, MonoidAlgebra.coe_algebraMap, Function.comp_apply,
-    Algebra.algebraMap_self, RingHom.id_apply, MonoidAlgebra.single_mul_single, mul_one, one_mul]
-  rw [Finset.sum_comm]
-  have hp' (p' : ℤ) : ∑ j, MonoidAlgebra.single (Multiplicative.ofAdd (-p', p' - n))
-      (e.repr (hs.proj p' (e j)) i * e.repr v j) =
-        MonoidAlgebra.single (Multiplicative.ofAdd (-p', p' - n)) (e.repr (hs.proj p' v) i) := by
-    simp_rw [← MonoidAlgebra.singleAddHom_apply, ← map_sum,
-      ← LinearMap.toMatrix_mulVec_repr e e (hs.proj p') v, Matrix.mulVec, dotProduct,
-      LinearMap.toMatrix_apply]
-  simp_rw [hp']
-  by_cases hmem : p ∈ hs.hodgeSupport
-  · rw [Finset.sum_eq_single p (fun p' _ hp'p ↦ by
-      rw [hs.proj_apply_eq_zero_of_mem_of_ne hv (Ne.symm hp'p), map_zero, Finsupp.zero_apply,
-        MonoidAlgebra.single_zero]) (fun h ↦ absurd hmem h), hs.proj_apply_of_mem hv]
-  · have hv0 : v = 0 := by
-      have hbot : hs.piece p = ⊥ := by simpa [mem_hodgeSupport] using hmem
-      simpa [hbot] using hv
-    simp [hv0]
-
 /-- A vector of `H^{p,n-p}` lies in the Hodge component `(ℝ^d)^{p,n-p}` of the representation of
 `S` given by `h`. -/
 theorem tensorPiEquiv_symm_mem_hodgeComponent (he : ∀ i, ω.toEquiv (e i) = e i)
@@ -113,17 +76,10 @@ theorem tensorPiEquiv_symm_mem_hodgeComponent (he : ∀ i, ω.toEquiv (e i) = e 
     (toConv (splittingPoint.ofConv.comp
       (hs.realCoordinateBialgHom he : coordinateHopfAlgebra ℝ d →ₐ[ℝ] S))))
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at h
-  have hM : (pointToGeneralLinear d (toConv (splittingPoint.ofConv.comp
-      (hs.realCoordinateBialgHom he : coordinateHopfAlgebra ℝ d →ₐ[ℝ] S))) :
-        Matrix (Fin d) (Fin d) (MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))) =
-      hs.splitCoordinateMatrix e := by
-    refine Matrix.ext fun i j ↦ ?_
-    rw [pointToGeneralLinear_apply, toConv_ofConv, ← genericMatrix_apply, AlgHom.comp_apply]
-    exact hs.splittingPoint_realCoordinateBialgHom_genericMatrix he i j
-  rw [hend, h, map_smul, TensorProduct.piScalarRight_rTensor (S := ℂ),
-    e.piScalarRight_tensorPiEquiv_symm ℝ, Matrix.GeneralLinearGroup.toLin_apply,
-    Matrix.mulVecLin_apply, hM, neg_sub]
-  exact hs.splitCoordinateMatrix_mulVec_of_mem hv
+  rw [hend, h]
+  simpa [-TensorProduct.piScalarRight_apply, TensorProduct.piScalarRight_rTensor (S := ℂ),
+    hs.coe_pointToGeneralLinear_splittingPoint_comp_realCoordinateBialgHom he,
+    Function.comp_def] using hs.splitCoordinateMatrix_mulVec_of_mem e hv
 
 /-- **The Hodge components of the representation of `S` of a Hodge structure.** In a basis `e`
 fixed by the conjugation, `h : S → GL_{d,ℝ}` makes `ℝ^d` a representation of `S` whose Hodge
