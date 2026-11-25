@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Distribution.TestFunction
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousLinearMap
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
-public import TauCeti.Topology.Grassmannian.StarProjection
+public import TauCeti.Topology.Grassmannian.StarProjection.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Analysis.InnerProductSpace.Trace.OpNorm
 import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
