@@ -112,7 +112,7 @@ theorem tracelessRicci_eq_zero_of_finrank_le_one (r : FourTensor V)
 @[simp] theorem isSymm_tracelessRicci_iff {r : FourTensor V} :
     (tracelessRicci r).IsSymm ↔ (ricci r).IsSymm := by
   have hinner : BilinForm.IsSymm ((scalar r / Module.finrank ℝ V) • innerₗ V) :=
-    (BilinForm.isSymm_iff.mpr (isSymm_inner (E := V))).smul _
+    (isSymm_innerₗ (E := V)).smul _
   rw [tracelessRicci_apply]
   exact ⟨fun h ↦ by convert h.add hinner; abel, fun h ↦ h.sub hinner⟩
 
@@ -248,7 +248,7 @@ theorem isAlgebraicCurvature_tracelessRicciPart_of_isSymm_ricci {r : FourTensor 
     (h : (ricci r).IsSymm) : IsAlgebraicCurvature (tracelessRicciPart r) :=
   mem_algebraicCurvatureSubmodule.mp <| Submodule.smul_mem _ _
     (mem_algebraicCurvatureSubmodule.mpr (isAlgebraicCurvature_kulkarniNomizu
-      (isSymm_tracelessRicci_iff.mpr h) (LinearMap.BilinForm.isSymm_iff.mpr isSymm_inner)))
+      (isSymm_tracelessRicci_iff.mpr h) isSymm_innerₗ))
 
 /-- `tracelessRicciPart r` is an algebraic curvature tensor for bivector-symmetric `r`. -/
 theorem IsBivectorSymmetric.isAlgebraicCurvature_tracelessRicciPart {r : FourTensor V}

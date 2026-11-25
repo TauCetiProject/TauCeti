@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
-public import TauCeti.RingTheory.StableRange.Basic
+public import TauCeti.RingTheory.StableRange
 import TauCeti.Data.Matrix.Block
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stability.Surjective
 
