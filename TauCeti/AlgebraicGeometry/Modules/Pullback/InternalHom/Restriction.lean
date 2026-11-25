@@ -46,8 +46,9 @@ private theorem isIso_pullbackIhomComparison_app_of_restrictFunctor
       (σ.app M ⊗ₘ σ.app ((ihom M).obj N)) ≫
         μ (Scheme.Modules.restrictFunctor j) M ((ihom M).obj N) := by
     apply (cancel_epi (δ P M ((ihom M).obj N))).mp
-    -- The canonical oplax comparison is definitionally the one in the monoidal instance.
-    erw [Functor.Monoidal.δ_μ_assoc P M ((ihom M).obj N)]
+    have hδμ : δ P M ((ihom M).obj N) ≫ μ P M ((ihom M).obj N) = 𝟙 _ :=
+      Functor.Monoidal.δ_μ P M ((ihom M).obj N)
+    rw [reassoc_of% hδμ]
     rw [← Category.assoc,
       ← Scheme.Modules.restrictFunctorIsoPullback_inv_app_tensor,
       Category.assoc, IsIso.inv_hom_id, Category.comp_id]
