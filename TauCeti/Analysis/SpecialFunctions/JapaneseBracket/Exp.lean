@@ -21,6 +21,9 @@ large. The usual choice is `b = 1`, and changing `b` changes the weight by at mo
 factor. The truncated weights `W / (1 + ε W)`, `ε > 0`, are smooth, lie between `0` and
 `min W (1 / ε)`, and have logarithmic gradient at most that of `W`.
 
+The weighted norms `‖exp(c √(b + ‖z‖²)) g‖_p` of classes `g ∈ Lp` are subadditive for `1 ≤ p`
+(`eLpNorm_exp_mul_smul_add_le`) and invariant under negation (`eLpNorm_exp_mul_smul_neg`).
+
 The weights `exp(c √(b + ‖z‖²))` and `exp(-c √(b + ‖z‖²))` are reciprocal, so either can be moved
 across the `L²` pairing: `|⟪e, f⟫| ≤ ‖exp(-c ρ) e‖₂ ‖exp(c ρ) f‖₂`
 (`abs_inner_le_of_memLp_exp_mul_smul`). So if `‖u‖₂² ≤ |⟪e, A⟫|`, where the weight `exp(-c ρ)`
@@ -40,6 +43,12 @@ theorem contDiff_exp_mul_sqrt_add_norm_sq (c : ℝ) (hb : 0 < b) {n : WithTop �
   have hq : ContDiff ℝ n (fun z : E ↦ b + ‖z‖ ^ 2) :=
     contDiff_const.add (contDiff_id.norm_sq ℝ)
   exact (contDiff_const.mul (hq.sqrt (fun z ↦ by positivity))).exp
+
+omit [InnerProductSpace ℝ E] in
+/-- The regularized radial exponential weight is continuous. -/
+theorem continuous_exp_mul_sqrt_add_norm_sq (c : ℝ) :
+    Continuous fun z : E ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) :=
+  (continuous_const.mul (continuous_const.add (continuous_norm.pow 2)).sqrt).rexp
 
 /-- The derivative of the regularized radial exponential weight, as a real functional. -/
 theorem fderiv_exp_mul_sqrt_add_norm_sq (c : ℝ) (hb : 0 < b) (z : E) :
@@ -168,6 +177,33 @@ theorem sq_exp_mul_sqrt_add_norm_sq_le (c s t : ℝ) (z : E) :
       Real.exp (|c| * √|s - t|) ^ 2 * Real.exp (c * √(t + ‖z‖ ^ 2)) ^ 2 := by
   rw [← mul_pow]
   exact pow_le_pow_left₀ (Real.exp_pos _).le (exp_mul_sqrt_add_norm_sq_le c s t z) 2
+
+section Lp
+
+open MeasureTheory
+open scoped ENNReal
+
+variable {X F : Type*} [Norm X] [MeasurableSpace X] {μ : Measure X}
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℝ≥0∞}
+
+/-- The weighted norm `‖exp(c ρ) g‖_p`, `ρ(z) = √(b + ‖z‖²)`, is subadditive on `Lp`, `1 ≤ p`. -/
+theorem eLpNorm_exp_mul_smul_add_le (c : ℝ) (hp : 1 ≤ p) (g h : Lp F p μ) :
+    eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • (g + h) z) p μ ≤
+      eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • g z) p μ +
+        eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • h z) p μ := by
+  rw [eLpNorm_congr_ae ((Lp.coeFn_add g h).mono fun z hz ↦ by
+    rw [hz, Pi.add_apply, smul_add])]
+  exact eLpNorm_add_le hp
+
+/-- The weighted norm `‖exp(c ρ) g‖_p`, `ρ(z) = √(b + ‖z‖²)`, of the negative of `g ∈ Lp` is that
+of `g`. -/
+theorem eLpNorm_exp_mul_smul_neg (c : ℝ) (g : Lp F p μ) :
+    eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • (-g) z) p μ =
+      eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • g z) p μ := by
+  rw [eLpNorm_congr_ae ((Lp.coeFn_neg g).mono fun z hz ↦ by rw [hz, Pi.neg_apply, smul_neg])]
+  exact eLpNorm_neg (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • g z) p μ
+
+end Lp
 
 section L2
 

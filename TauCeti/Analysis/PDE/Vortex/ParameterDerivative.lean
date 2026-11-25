@@ -92,27 +92,6 @@ private theorem eLpNorm_restrict_top {F : Type*} [NormedAddCommGroup F] (g : ℂ
 private theorem integral_restrict_top (g : ℂ → ℝ) : ∫ z, g z ∂μ⊤ = ∫ z, g z := by
   rw [Measure.restrict_coe_opens_top]
 
-/-- The weight `exp(c ρ)` is continuous. -/
-private theorem continuous_exp_mul_sqrt (c : ℝ) :
-    Continuous fun z : ℂ ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) :=
-  (contDiff_exp_mul_sqrt_add_norm_sq (n := 0) c one_pos).continuous
-
-/-- The weighted norm is subadditive. -/
-private theorem eLpNorm_exp_mul_smul_add_le (c : ℝ) (g h : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
-    eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • (g + h) z) 2 μ⊤ ≤
-      eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • g z) 2 μ⊤ +
-        eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • h z) 2 μ⊤ := by
-  rw [eLpNorm_congr_ae ((Lp.coeFn_add g h).mono fun z hz ↦ by
-    rw [hz, Pi.add_apply, smul_add])]
-  exact eLpNorm_add_le one_le_two
-
-/-- The weighted norm of a negative. -/
-private theorem eLpNorm_exp_mul_smul_neg (c : ℝ) (g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
-    eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • (-g) z) 2 μ⊤ =
-      eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • g z) 2 μ⊤ := by
-  rw [eLpNorm_congr_ae ((Lp.coeFn_neg g).mono fun z hz ↦ by rw [hz, Pi.neg_apply, smul_neg])]
-  exact eLpNorm_neg (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • g z) 2 μ⊤
-
 /-- **The weighted norm of the zeroth-order part.** Multiplication by `Z(b, ·)`, for an essentially
 bounded coefficient `b`, costs at most `‖Z‖ ‖b‖∞` in every weighted norm. -/
 private theorem eLpNorm_exp_mul_smul_holderL_le (c : ℝ) (b : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤)
@@ -126,7 +105,7 @@ private theorem eLpNorm_exp_mul_smul_holderL_le (c : ℝ) (b : Lp (EuclideanSpac
   refine (eLpNorm_le_eLpNorm_mul_eLpNorm (p := ∞) (q := 2)
     (g := fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • g z) (fun v w ↦ gaugeFixedZerothOrder v w)
     ‖gaugeFixedZerothOrder‖₊ gaugeFixedZerothOrder.continuous₂ (Lp.aestronglyMeasurable b)
-    ((continuous_exp_mul_sqrt c).aestronglyMeasurable.smul (Lp.aestronglyMeasurable g))
+    ((continuous_exp_mul_sqrt_add_norm_sq c).aestronglyMeasurable.smul (Lp.aestronglyMeasurable g))
     (.of_forall fun _ ↦ gaugeFixedZerothOrder.le_opNorm₂ _ _)).trans_eq ?_
   rw [← Lp.eNorm_def, eNorm_eq_nnNorm]
 
@@ -282,10 +261,9 @@ private theorem eLpNorm_exp_mul_smul_sobolevFieldValues_le_of_abs_inner_le {c : 
   have hinner : ‖sobolevFieldValues (π y)‖ ^ 2 ≤
       |⟪sobolevFieldValues (Q (gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b
         (sobolevFieldValues (π y)))), A⟫| := by
-    have h := hπ.inner_sub_eq_zero y (π y) hp
-    rw [map_sub, inner_sub_left, sub_eq_zero] at h
-    rw [← real_inner_self_eq_norm_sq, ← h]
-    exact (le_abs_self _).trans (hpair _ hp)
+    have h := hπ.inner_apply_eq_norm_sq y
+    rw [RCLike.ofReal_real_eq_id, id] at h
+    exact h ▸ (le_abs_self _).trans (hpair _ hp)
   -- The weight `exp(-c ρ)` costs at most `qn ‖Z‖ ‖b‖∞ kn` on `Q (Z(b, π y))`, relative to `‖π y‖₂`.
   have hqe : eLpNorm (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues
       (Q (gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b (sobolevFieldValues (π y)))) z) 2 μ⊤ ≤
@@ -294,7 +272,7 @@ private theorem eLpNorm_exp_mul_smul_sobolevFieldValues_le_of_abs_inner_le {c : 
     refine (eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_le hQn b (π y)).trans
       ((mul_le_mul_right (hkn _ hp) _).trans_eq ?_)
     rw [ENNReal.coe_mul _ kn, mul_assoc _ (kn : ℝ≥0∞)]
-  refine (le_of_eq_of_le ?_ (eLpNorm_exp_mul_smul_add_le c _ _)).trans (add_le_add_left
+  refine (le_of_eq_of_le ?_ (eLpNorm_exp_mul_smul_add_le c one_le_two _ _)).trans (add_le_add_left
     (TauCeti.eLpNorm_exp_mul_smul_le_of_sq_le_abs_inner (hkc _ hp)
       (hqe.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top (Lp.eLpNorm_lt_top _))) hqe hA
         hinner) _)
@@ -345,7 +323,7 @@ following property, where `ρ(z) = √(1 + |z|²)`. Let `x` be a smooth plane vo
 degree-`m` end framing whose zeros lie in the closed disc of radius `R₀` and whose coordinates have
 bounded derivatives of every order, let `a` be its `L∞` class, and let `π` be the projection of
 `H¹(ℂ)⁴` onto the kernel of the realization `L_a` along its `L²`-orthogonal complement. Then every
-`e ∈ H¹(ℂ)⁴` with `exp(c ρ) e` square integrable satisfies `‖exp(c ρ) π e‖₂ ≤ K ‖exp(c ρ) e‖₂`. -/
+`e ∈ H¹(ℂ)⁴` satisfies `‖exp(c ρ) π e‖₂ ≤ K ‖exp(c ρ) e‖₂`, where either side may be infinite. -/
 theorem exists_forall_eLpNorm_exp_mul_smul_orthogonalKerProjection_le_of_forall_mem_norm_le
     (m : ℕ) (R₀ : ℝ) {c : ℝ} (hc : |c| < 1 / 2) :
     ∃ K : ℝ≥0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
@@ -355,13 +333,12 @@ theorem exists_forall_eLpNorm_exp_mul_smul_orthogonalKerProjection_le_of_forall_
       IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) → (∀ b ∈ D, ‖b‖ ≤ R₀) →
       ∀ a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤, a =ᵐ[μ⊤] x →
       ∀ e : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2,
-        MemLp (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues e z) 2 volume →
         eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues
           (orthogonalKerProjection sobolevFieldValues (sobolevGaugeFixedOperator a) e) z) 2 volume ≤
             K * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues e z) 2
               volume := by
   obtain ⟨kc, kn, _, _, hest⟩ := exists_forall_ker_and_orthogonalRightInverse_le m R₀ hc
-  refine ⟨kc * kn, fun x D hx hbound hsol hframe hD hD₀ a hax e he ↦ ?_⟩
+  refine ⟨kc * kn + 1, fun x D hx hbound hsol hframe hD hD₀ a hax e ↦ ?_⟩
   obtain ⟨hkc, hkn, -, -⟩ := hest x D hx hbound hsol hframe hD hD₀ a hax
   obtain ⟨hT, -⟩ := isFredholm_and_surjective_sobolevGaugeFixedOperator hx hsol hframe hax
   have := hT.finite_ker
@@ -370,15 +347,22 @@ theorem exists_forall_eLpNorm_exp_mul_smul_orthogonalKerProjection_le_of_forall_
   set π := orthogonalKerProjection sobolevFieldValues (sobolevGaugeFixedOperator a)
   have hk := hπ.mem_ker e
   have hqe := hkn (π e) hk
-  rw [memLp_iff, ← eLpNorm_restrict_top] at he
   rw [← eLpNorm_restrict_top, ← eLpNorm_restrict_top]
+  -- The bound is trivial when `exp(c ρ) e` is not square integrable.
+  rcases eq_or_ne (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues e z) 2 μ⊤)
+    ⊤ with hN | hN
+  · rw [hN, ENNReal.mul_top (by simp)]
+    exact le_top
   -- `‖π e‖₂² = ⟪π e, e⟫`, since `e - π e` is orthogonal to the kernel.
-  refine TauCeti.eLpNorm_exp_mul_smul_le_of_sq_le_abs_inner (hkc (π e) hk)
-    (hqe.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top (Lp.eLpNorm_lt_top _))) hqe he ?_
-  have h := hπ.inner_sub_eq_zero e (π e) hk
-  rw [map_sub, inner_sub_left, sub_eq_zero, real_inner_comm] at h
-  rw [h, real_inner_self_eq_norm_sq]
-  exact le_abs_self _
+  have hinner : ‖sobolevFieldValues (π e)‖ ^ 2 ≤
+      |⟪sobolevFieldValues (π e), sobolevFieldValues e⟫| := by
+    have h := hπ.inner_apply_eq_norm_sq e
+    rw [RCLike.ofReal_real_eq_id, id] at h
+    rw [real_inner_comm, h]
+    exact le_abs_self _
+  refine (TauCeti.eLpNorm_exp_mul_smul_le_of_sq_le_abs_inner (hkc (π e) hk)
+    (hqe.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top (Lp.eLpNorm_lt_top _))) hqe hN.lt_top
+    hinner).trans (mul_le_mul_left (ENNReal.coe_le_coe.2 le_self_add) _)
 
 /-- Along a family of coefficients differentiable at `p₀`, whose value at `p₀` is the class of a
 smooth plane vortex with the degree-`m` end framing, the realizations are differentiable at `p₀`,
@@ -518,7 +502,7 @@ theorem exists_forall_eLpNorm_exp_mul_smul_fderiv_orthogonalKerProjection_le_of_
     hT.inner_fderiv_orthogonalKerProjection_apply (T := fun p ↦ sobolevGaugeFixedOperator (a p))
       sobolevFieldValues_injective hsurj hd v e hk
   simp only [fderiv_sobolevGaugeFixedOperator_comp_apply ha v] at hsplit hpair
-  have hkπ' := hkπ x D hx hbound hsol hframe hD hD₀ (a p₀) hax e he
+  have hkπ' := hkπ x D hx hbound hsol hframe hD hD₀ (a p₀) hax e
   set b := fderiv ℝ a p₀ v
   set Q := orthogonalRightInverse sobolevFieldValues (sobolevGaugeFixedOperator (a p₀))
   set π := orthogonalKerProjection sobolevFieldValues (sobolevGaugeFixedOperator (a p₀))
@@ -538,7 +522,7 @@ theorem exists_forall_eLpNorm_exp_mul_smul_fderiv_orthogonalKerProjection_le_of_
   have hA : eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) •
       sobolevFieldValues (e - π e) z) 2 μ⊤ ≤ ((1 + kπ : ℝ≥0) : ℝ≥0∞) * N := by
     rw [map_sub, sub_eq_add_neg, ENNReal.coe_add, ENNReal.coe_one, add_mul, one_mul]
-    refine (eLpNorm_exp_mul_smul_add_le c _ _).trans (add_le_add le_rfl ?_)
+    refine (eLpNorm_exp_mul_smul_add_le c one_le_two _ _).trans (add_le_add le_rfl ?_)
     rwa [eLpNorm_exp_mul_smul_neg]
   refine (eLpNorm_exp_mul_smul_sobolevFieldValues_le_of_abs_inner_le hπ hkc' hkn' hqn' b y
     (hA.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top he))
