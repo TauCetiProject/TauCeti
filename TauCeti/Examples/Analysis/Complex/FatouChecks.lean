@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.Poisson.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 public import Mathlib.MeasureTheory.Measure.Decomposition.Lebesgue
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
 import TauCeti.Basic.Complex.OfRealSub
 
 /-!
@@ -88,34 +89,19 @@ theorem upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one (z : ℂ) :
   rw [upperHalfPlanePoissonIntegral_volume_restrict_Icc zero_le_one, zero_sub, neg_div,
     Real.arctan_neg, sub_neg_eq_add]
 
-/-- If `f → c > 0` along the approach to `x`, then `arctan (f z / Im z) → π / 2`. -/
-private theorem tendsto_arctan_div_im_of_pos {x : ℝ} {f : ℂ → ℝ} {c : ℝ} (hc : 0 < c)
-    (hf : Tendsto f (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 c)) :
-    Tendsto (fun z => Real.arctan (f z / z.im)) (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 (π / 2)) := by
-  refine (Real.tendsto_arctan_atTop.mono_right nhdsWithin_le_nhds).comp ?_
-  simp_rw [div_eq_mul_inv]
-  exact hf.pos_mul_atTop hc
-    (tendsto_inv_nhdsGT_zero.comp (tendsto_im_nhdsWithin_upperHalfPlaneSet x))
-
-/-- If `f → c < 0` along the approach to `x`, then `arctan (f z / Im z) → -π / 2`. -/
-private theorem tendsto_arctan_div_im_of_neg {x : ℝ} {f : ℂ → ℝ} {c : ℝ} (hc : c < 0)
-    (hf : Tendsto f (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 c)) :
-    Tendsto (fun z => Real.arctan (f z / z.im)) (𝓝[upperHalfPlaneSet] (x : ℂ))
-      (𝓝 (-(π / 2))) := by
-  refine (Real.tendsto_arctan_atBot.mono_right nhdsWithin_le_nhds).comp ?_
-  simp_rw [div_eq_mul_inv]
-  exact hf.neg_mul_atTop hc
-    (tendsto_inv_nhdsGT_zero.comp (tendsto_im_nhdsWithin_upperHalfPlaneSet x))
-
 /-- **Inside the interval the boundary limit is `1`**: for `0 < x < 1`, `P[1_{[0,1]}](z) → 1` as
 `z → x` through the upper half-plane. -/
 theorem tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_of_mem_Ioo {x : ℝ}
     (hx : x ∈ Ioo 0 1) :
     Tendsto (upperHalfPlanePoissonIntegral (volume.restrict (Icc 0 1)))
       (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 1) := by
-  have h₁ := tendsto_arctan_div_im_of_pos (sub_pos.2 hx.2)
-    (tendsto_const_nhds.sub (tendsto_re_nhdsWithin_upperHalfPlaneSet x))
-  have h₂ := tendsto_arctan_div_im_of_pos hx.1 (tendsto_re_nhdsWithin_upperHalfPlaneSet x)
+  have h₁ := Real.tendsto_arctan_div_of_tendsto_nhdsGT_zero
+    (tendsto_const_nhds.sub (tendsto_re_nhdsWithin_upperHalfPlaneSet x)) (sub_pos.2 hx.2).ne'
+    (tendsto_im_nhdsWithin_upperHalfPlaneSet x)
+  have h₂ := Real.tendsto_arctan_div_of_tendsto_nhdsGT_zero
+    (tendsto_re_nhdsWithin_upperHalfPlaneSet x) hx.1.ne' (tendsto_im_nhdsWithin_upperHalfPlaneSet x)
+  rw [Real.sign_of_pos (sub_pos.2 hx.2), mul_one] at h₁
+  rw [Real.sign_of_pos hx.1, mul_one] at h₂
   have := (h₁.add h₂).div_const π
   rw [add_halves, div_self Real.pi_ne_zero] at this
   simpa only [← upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one] using this
@@ -125,9 +111,14 @@ theorem tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_of_ne
     (hx : x < 0) :
     Tendsto (upperHalfPlanePoissonIntegral (volume.restrict (Icc 0 1)))
       (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 0) := by
-  have h₁ := tendsto_arctan_div_im_of_pos (by linarith : (0 : ℝ) < 1 - x)
-    (tendsto_const_nhds.sub (tendsto_re_nhdsWithin_upperHalfPlaneSet x))
-  have h₂ := tendsto_arctan_div_im_of_neg hx (tendsto_re_nhdsWithin_upperHalfPlaneSet x)
+  have hx' : (0 : ℝ) < 1 - x := by linarith
+  have h₁ := Real.tendsto_arctan_div_of_tendsto_nhdsGT_zero
+    (tendsto_const_nhds.sub (tendsto_re_nhdsWithin_upperHalfPlaneSet x)) hx'.ne'
+    (tendsto_im_nhdsWithin_upperHalfPlaneSet x)
+  have h₂ := Real.tendsto_arctan_div_of_tendsto_nhdsGT_zero
+    (tendsto_re_nhdsWithin_upperHalfPlaneSet x) hx.ne (tendsto_im_nhdsWithin_upperHalfPlaneSet x)
+  rw [Real.sign_of_pos hx', mul_one] at h₁
+  rw [Real.sign_of_neg hx, mul_neg_one] at h₂
   have := (h₁.add h₂).div_const π
   rw [add_neg_cancel, zero_div] at this
   simpa only [← upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one] using this
@@ -137,10 +128,14 @@ theorem tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_of_on
     (hx : 1 < x) :
     Tendsto (upperHalfPlanePoissonIntegral (volume.restrict (Icc 0 1)))
       (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 0) := by
-  have h₁ := tendsto_arctan_div_im_of_neg (sub_neg.2 hx)
-    (tendsto_const_nhds.sub (tendsto_re_nhdsWithin_upperHalfPlaneSet x))
-  have h₂ := tendsto_arctan_div_im_of_pos (by linarith : (0 : ℝ) < x)
-    (tendsto_re_nhdsWithin_upperHalfPlaneSet x)
+  have hx' : (0 : ℝ) < x := by linarith
+  have h₁ := Real.tendsto_arctan_div_of_tendsto_nhdsGT_zero
+    (tendsto_const_nhds.sub (tendsto_re_nhdsWithin_upperHalfPlaneSet x)) (sub_neg.2 hx).ne
+    (tendsto_im_nhdsWithin_upperHalfPlaneSet x)
+  have h₂ := Real.tendsto_arctan_div_of_tendsto_nhdsGT_zero
+    (tendsto_re_nhdsWithin_upperHalfPlaneSet x) hx'.ne' (tendsto_im_nhdsWithin_upperHalfPlaneSet x)
+  rw [Real.sign_of_neg (sub_neg.2 hx), mul_neg_one] at h₁
+  rw [Real.sign_of_pos hx', mul_one] at h₂
   have := (h₁.add h₂).div_const π
   rw [neg_add_cancel, zero_div] at this
   simpa only [← upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one] using this
