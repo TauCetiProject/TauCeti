@@ -243,7 +243,7 @@ theorem connectedComponentIn_annihilatorPunctured_eq_range [PreconnectedSpace M]
       range (α.symplectizationToAnnihilator hα) := by
   let := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
   have hα₀ : ∀ x, α.val x ≠ 0 :=
-    (SmoothForm.isContactForm_iff_isContactDistribution_kerDistribution.2 (hα ▸ hξ)).apply_ne_zero
+    fun x ↦ hξ.apply_ne_zero_of_kerDistribution_eq (congrFun hα x)
   have hsub : range (α.symplectizationToAnnihilator hα) ⊆ hξ.annihilatorPunctured := by
     rintro _ ⟨q, rfl⟩
     exact hξ.mem_annihilatorPunctured.2
@@ -272,7 +272,7 @@ theorem connectedComponentIn_annihilatorPunctured_eq_or [PreconnectedSpace M]
       connectedComponentIn (hξ.annihilatorPunctured : Set _) z =
         range ((-α).symplectizationToAnnihilator (SmoothForm.kerDistribution_neg.trans hα)) := by
   have hα₀ : ∀ x, α.val x ≠ 0 :=
-    (SmoothForm.isContactForm_iff_isContactDistribution_kerDistribution.2 (hα ▸ hξ)).apply_ne_zero
+    fun x ↦ hξ.apply_ne_zero_of_kerDistribution_eq (congrFun hα x)
   rcases (SmoothForm.mem_range_symplectizationToAnnihilator_or_neg_iff hα hα₀).2
     (hξ.mem_annihilatorPunctured.1 hz) with ⟨p, rfl⟩ | ⟨p, rfl⟩
   · exact .inl (hξ.connectedComponentIn_annihilatorPunctured_eq_range hα p)
