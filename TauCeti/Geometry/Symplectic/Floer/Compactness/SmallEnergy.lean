@@ -76,17 +76,11 @@ private theorem lintegral_ball_floerEnergyDensity_comp_add_le {H : ℝ → V →
   have hpre : (· + (s₀, (0 : ℝ))) ⁻¹' (univ ×ˢ Icc (-1 : ℝ) 2) = univ ×ˢ Icc (-1 : ℝ) 2 := by
     ext ⟨s, t⟩
     simp
-  have hu1 : (fun w ↦ u (w + ((0 : ℝ), (1 : ℝ)))) = u :=
-    funext fun ⟨s, t⟩ ↦ by simpa using hper s t
-  have hH1 : (fun w : ℝ × ℝ ↦ H (w + ((0 : ℝ), (1 : ℝ))).2) = fun w ↦ H w.2 :=
-    funext fun w ↦ by simpa using hHper w.2
   have hgper (s t : ℝ) : ENNReal.ofReal
       (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (s, t + 1)) =
       ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (s, t)) := by
-    have h := ω.floerEnergyDensity_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) u
-      ((0 : ℝ), (1 : ℝ)) (s, t)
-    simp only [hu1, hH1, Prod.mk_add_mk, add_zero] at h
-    rw [h]
+    rw [← floerEnergyDensity_constSmooth, ← floerEnergyDensity_constSmooth,
+      ω.constSmooth.floerEnergyDensity_add_one hHper hper]
   have htr := ω.constSmooth.lintegral_floerEnergyDensity_comp_add_right (fun _ _ ↦ 0)
     (fun w ↦ H w.2) u (s₀, 0) (univ ×ˢ Icc (-1) 2)
   rw [hpre] at htr

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Fin.Tuple.Basic
 public import Mathlib.RingTheory.TensorProduct.Basic
+public import Mathlib.RingTheory.TensorProduct.Maps
 
 /-!
 # Products of pure tensors
@@ -17,6 +18,8 @@ This is the multiplicative counterpart of `TensorProduct.sum_tmul` and `TensorPr
 and extends `Algebra.TensorProduct.tmul_pow` from powers to products. For ordered list products
 neither factor needs to be commutative. Likewise, multiplying two adjacent entries of a tuple of
 pure tensors (`Fin.contractNth`) multiplies the adjacent entries of both factor tuples.
+Commuting the factors turns the action of `a : A` on `A ⊗[R] B` into multiplication by `1 ⊗ₜ a`
+(`Algebra.TensorProduct.comm_smul_left`).
 
 For any `A ⊗[R] B`-algebra `Q` forming scalar towers with both `A` and `B`,
 `TauCeti.algebraMap_tensorProduct_tmul` expands `algebraMap (A ⊗[R] B) Q (a ⊗ₜ b)` as the product
@@ -49,6 +52,16 @@ theorem Algebra.TensorProduct.contractNth_tmul {R A B : Type*} [CommSemiring R] 
       Fin.contractNth j (· * ·) a i ⊗ₜ[R] Fin.contractNth j (· * ·) b i := by
   simp only [Fin.contractNth]
   split_ifs <;> simp [Algebra.TensorProduct.tmul_mul_tmul]
+
+/-- Commuting the factors of `A ⊗[R] B` turns the scalar action of `a : A` on the left factor
+into multiplication by `1 ⊗ₜ a`. Neither algebra is required to be commutative. -/
+theorem Algebra.TensorProduct.comm_smul_left {R A B : Type*} [CommSemiring R] [Semiring A]
+    [Algebra R A] [Semiring B] [Algebra R B] (a : A) (y : A ⊗[R] B) :
+    Algebra.TensorProduct.comm R A B (a • y) =
+      (1 ⊗ₜ[R] a) * Algebra.TensorProduct.comm R A B y := by
+  induction y using TensorProduct.inductionOn with
+  | add y y' hy hy' => simp only [smul_add, map_add, mul_add, hy, hy']
+  | tmul x b => simp [TensorProduct.smul_tmul', Algebra.TensorProduct.tmul_mul_tmul]
 
 namespace Algebra.TensorProduct
 

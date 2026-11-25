@@ -15,7 +15,9 @@ import Mathlib.Tactic.Linarith
 # Sums over finite types
 
 A sum of values that are all equal to `d` on the indices satisfying `p`, and zero elsewhere, is
-the number of such indices times `d` (`Fintype.sum_ite_eq_card_nsmul`).
+the number of such indices times `d` (`Fintype.sum_ite_eq_card_nsmul`). The pairs of elements
+with equal values of a function `f` are counted by the sum of the squares of the fibre sizes of
+`f` (`Fintype.card_subtype_apply_fst_eq_apply_snd`).
 
 For a finite type `ι` and finite coordinate sets `s i`, a sum over maps taking their `i`th value
 in `s i` of a quantity depending only on two distinct coordinates is a sum over the pairs of
@@ -70,6 +72,19 @@ theorem sum_ite_eq_card_nsmul {ι M : Type*} [Fintype ι] [AddCommMonoid M] {p :
     (∑ i, if p i then f i else 0) = Fintype.card {i // p i} • d := by
   rw [Fintype.card_subtype, ← sum_filter]
   exact sum_eq_card_nsmul fun i hi ↦ hf i (mem_filter.1 hi).2
+
+/-- The pairs of elements of a finite type with equal values of `f` are counted by the sum of the
+squares of the fibre sizes of `f`. -/
+theorem card_subtype_apply_fst_eq_apply_snd {α β : Type*} [Fintype α] [Fintype β] [DecidableEq β]
+    (f : α → β) :
+    Fintype.card {p : α × α // f p.1 = f p.2} = ∑ b, Fintype.card {a // f a = b} ^ 2 := by
+  simp_rw [Fintype.card_subtype, card_filter, Fintype.sum_prod_type, sq, sum_mul_sum, ite_mul,
+    one_mul, zero_mul]
+  conv_rhs => rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun a _ ↦ ?_
+  conv_rhs => rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun b _ ↦ ?_
+  simp [eq_comm]
 
 /-- Prescribing the values `a m ∈ s m` of the maps in a finite box at the coordinates `m` of a
 finset `I` leaves as many maps as the volume of the cells outside `I`. -/

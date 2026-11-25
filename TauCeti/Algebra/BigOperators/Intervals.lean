@@ -32,6 +32,7 @@ The sum of squares `∑_{r < n} r ^ 2 = n (n - 1) (2 n - 1) / 6` holds in `ℕ`,
 denominator cleared it holds in any ring, as does Gauss's sum `2 ∑_{r < n} r = n (n - 1)`.
 Counted with sign, the integers between `0` and any `k : ℤ` sum to `k (k - 1) / 2`, the signed
 form of Gauss's sum.
+A sum over `Icc 0 N` of a sequence vanishing at `0` is its sum over `Icc 1 N`.
 A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the shifts of `f` that read
 `f` at `j + d - L` where this index is defined, and vanish otherwise.
 
@@ -45,6 +46,8 @@ A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the sh
 * `Finset.sum_Ico_one_sub_one_const`: `∑ _k ∈ Ico 1 (n - 1), c = (n - 2) * c` for `2 ≤ n`.
 * `Finset.sum_Icc_eq_add_sum_range`: `(∑ i ∈ Icc (-(a : ℤ)) b, F i) + F 0` equals the sum of `F j`
   over `j ∈ range (b + 1)` plus the sum of `F (-(j : ℤ))` over `j ∈ range (a + 1)`.
+* `Finset.sum_Ioc_neg_zero_eq_sum_range`: the sum of `F j` over `-a < j ≤ 0` is the sum of
+  `F (-(k : ℤ))` over `k < a`.
 * `Finset.sum_range_natCast_mul_two`, `Finset.sum_range_id_sq_mul_six`, `Finset.sum_range_id_sq`,
   `Finset.sum_range_natCast_sq_mul_six`: Gauss's sum in a ring and the sum of squares below `n`.
 * `Finset.sum_range_sub_mul_two`: twice the sum of `r + 1 - j` over `j < e` is `e (2 r + 3 - e)`.
@@ -52,6 +55,8 @@ A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the sh
   `1` for odd `n`.
 * `Finset.two_mul_sum_Ico_zero_sub_sum_Ico_zero`: twice `∑_{0 ≤ j < k} j - ∑_{k ≤ j < 0} j` is
   `k (k - 1)` for every `k : ℤ`.
+* `Finset.sum_Icc_zero_eq_sum_Icc_one`: a sum over `Icc 0 N` of a sequence vanishing at `0` is
+  its sum over `Icc 1 N`.
 * `Finset.sum_Ico_sub_add_eq_sum_range_indicator`: a window sum `∑_{j - L ≤ k < j + L} f k` as the
   sum of `2 L` shifts of `f`.
 -/
@@ -150,6 +155,21 @@ theorem sum_Icc_eq_add_sum_range {M : Type*} [AddCommMonoid M] (F : ℤ → M) (
   rw [hkey, hs, ht, sum_image (fun _ _ _ _ h ↦ by exact_mod_cast h),
     sum_image (fun _ _ _ _ h ↦ by omega)]
 
+/-- Reindexing a nonpositive integer interval: the sum of `F j` over `-a < j ≤ 0` is the sum of
+`F (-(k : ℤ))` over `k < a`. -/
+theorem sum_Ioc_neg_zero_eq_sum_range {M : Type*} [AddCommMonoid M] (F : ℤ → M) (a : ℕ) :
+    ∑ j ∈ Ioc (-(a : ℤ)) 0, F j = ∑ k ∈ range a, F (-(k : ℤ)) := by
+  refine sum_nbij' (fun j ↦ (-j).toNat) (fun k ↦ -(k : ℤ)) (fun j hj ↦ ?_) (fun k hk ↦ ?_)
+    (fun j hj ↦ ?_) (fun k _ ↦ by simp) (fun j hj ↦ ?_)
+  · simp only [mem_Ioc, mem_range] at hj ⊢
+    omega
+  · simp only [mem_Ioc, mem_range] at hk ⊢
+    omega
+  · simp only [mem_Ioc] at hj
+    omega
+  · simp only [mem_Ioc] at hj
+    rw [Int.toNat_of_nonneg (by omega), neg_neg]
+
 /-- Gauss's sum cast into a not necessarily associative ring: twice the sum of the natural numbers
 below `n` is `n (n - 1)`. -/
 theorem sum_range_natCast_mul_two {R : Type*} [NonAssocRing R] (n : ℕ) :
@@ -239,5 +259,12 @@ theorem sum_Ico_sub_add_eq_sum_range_indicator {M : Type*} [AddCommMonoid M] (f 
     (fun k hk ↦ ?_) (fun d hd ↦ ?_) fun k hk ↦ ?_
   all_goals simp only [mem_Ico, mem_filter, mem_range] at *
   all_goals first | omega | (congr 1; omega)
+
+/-- A sum over `Finset.Icc 0 N` of a sequence vanishing at `0` is its sum over
+`Finset.Icc 1 N`. -/
+theorem sum_Icc_zero_eq_sum_Icc_one {M : Type*} [AddCommMonoid M] {f : ℕ → M} (h0 : f 0 = 0)
+    (N : ℕ) : ∑ k ∈ Icc 0 N, f k = ∑ k ∈ Icc 1 N, f k := by
+  rw [Icc_eq_cons_Ioc (Nat.zero_le _), sum_cons, h0, zero_add, ← Icc_add_one_left_eq_Ioc,
+    zero_add]
 
 end Finset

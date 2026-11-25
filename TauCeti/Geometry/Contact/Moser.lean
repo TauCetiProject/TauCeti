@@ -11,7 +11,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.SmulRight
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # The horizontal contact-Moser equation
@@ -20,7 +20,10 @@ For a contact form `α` and a one-form `β`, the horizontal contact-Moser equati
 `α(Y) = 0`, `(ι_Y dα + β)|ker α = 0`. Its unique solution is
 `Y = (α♭)⁻¹ (β(R_α) α - β)`, where `α♭` is the contact flat map.
 We construct this vector field, prove its smoothness, and characterize its value using only
-these equations. It vanishes precisely where `β` annihilates the contact hyperplane. For families
+these equations. The characterization holds at every point where `α` is a contact form, whether or
+not `α` is contact elsewhere
+(`TauCeti.SmoothForm.eq_contactMoserVectorField_iff_of_isContactFormAt`). It vanishes precisely
+where `β` annihilates the contact hyperplane. For families
 `α m`, `β m` depending smoothly on a parameter `m`, evaluated along a smooth map `b`, the vectors
 `Y_m(b m)` depend smoothly on `m`
 (`TauCeti.SmoothForm.contMDiffAt_sectionAlong_contactMoserVectorField`).
@@ -76,16 +79,15 @@ theorem contactMoserVectorField_zero (α : SmoothForm I M ℝ 1) :
   simp [contactMoserVectorField_def]
 
 /-- **Contact-Moser vector fields of smooth families.** Let `α m` and `β m` be one-forms on `M`,
-depending on a parameter `m ∈ N`, such that `α m` is a contact form for `m` near `m₀`, and let
-`b : N → M`. If the values
-`(α m)_(b m)`, `(β m)_(b m)` and the exterior derivatives `(dα m)_(b m)` depend `C^n` on `m`, as
-sections along `b`, then so do the contact-Moser vectors of `(α m, β m)` at `b m`, as a map to the
-tangent bundle. -/
+depending on a parameter `m ∈ N`, and let `b : N → M` be such that `α m` is a contact form at
+`b m` for `m` near `m₀`. If the values `(α m)_(b m)`, `(β m)_(b m)` and the exterior derivatives
+`(dα m)_(b m)` depend `C^n` on `m`, as sections along `b`, then so do the contact-Moser vectors of
+`(α m, β m)` at `b m`, as a map to the tangent bundle. -/
 theorem contMDiffAt_sectionAlong_contactMoserVectorField [FiniteDimensional ℝ E]
     {EN HN N : Type*} [NormedAddCommGroup EN] [NormedSpace ℝ EN] [TopologicalSpace HN]
     {J : ModelWithCorners ℝ EN HN} [TopologicalSpace N] [ChartedSpace HN N] {n : WithTop ℕ∞}
     {b : N → M} {α β : N → SmoothForm I M ℝ 1} {m₀ : N}
-    (hc : ∀ᶠ m in 𝓝 m₀, (α m).IsContactForm)
+    (hc : ∀ᶠ m in 𝓝 m₀, IsContactFormAt (α m).val (b m))
     (hα : ContMDiffAt J (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) n
       (fun m ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ)
         (E := fun x : M ↦ TangentSpace I x [⋀^Fin 1]→L[ℝ] Trivial M ℝ x) (b m) ((α m).val
@@ -100,8 +102,7 @@ theorem contMDiffAt_sectionAlong_contactMoserVectorField [FiniteDimensional ℝ 
         ((β m).val (b m))) m₀) :
     ContMDiffAt J I.tangent n
       (fun m ↦ (⟨b m, (α m).contactMoserVectorField (β m) (b m)⟩ : TangentBundle I M)) m₀ := by
-  have hR := contMDiffAt_sectionAlong_reebVectorField
-    (hc.mono fun m hm ↦ isContactForm_iff_forall_isContactFormAt.1 hm (b m)) hα hdα
+  have hR := contMDiffAt_sectionAlong_reebVectorField hc hα hdα
   have hβ₁ := (contMDiffAt_sectionAlong_degreeOneEquiv_iff (b := b) (α := β)).2 hβ
   -- The coefficient `β(R_α)`, read in the trivial line bundle.
   have hβR : ContMDiffAt J 𝓘(ℝ) n
@@ -109,10 +110,87 @@ theorem contMDiffAt_sectionAlong_contactMoserVectorField [FiniteDimensional ℝ 
     simpa [degreeOneEquiv_apply_apply_vec] using hβ₁.clm_bundle_apply_scalar hR
   have h := (ContMDiffAt.clm_bundle_inverse (x := m₀) (ϕ := fun m ↦ (α m).contactFlat (b m))
     (contMDiffAt_sectionAlong_contactFlat hα hdα)
-    (hc.self_of_nhds.isInvertible_contactFlat (b m₀))).clm_bundle_apply
+    (isInvertible_contactFlat_of_isContactFormAt hc.self_of_nhds)).clm_bundle_apply
       ((hβR.smul_totalSpace (contMDiffAt_sectionAlong_degreeOneEquiv_iff.2 hα)).sub_sectionAlong
         hβ₁)
   simpa only [contactMoserVectorField_def] using h
+
+/-! ### The contact-Moser equation at a contact point -/
+
+section Pointwise
+
+variable [FiniteDimensional ℝ E] {x : M}
+
+/-- At a point where `α` is a contact form, the contact flat map sends the contact-Moser vector to
+`β(R_α) α - β`. -/
+theorem contactFlat_contactMoserVectorField_of_isContactFormAt (h : IsContactFormAt α.val x)
+    (β : SmoothForm I M ℝ 1) :
+    α.contactFlat x (α.contactMoserVectorField β x) =
+      β.val x ![α.reebVectorField x] • degreeOneEquiv α x - degreeOneEquiv β x :=
+  (isInvertible_contactFlat_of_isContactFormAt h).self_apply_inverse _
+
+/-- At a point where `α` is a contact form, the contact-Moser vector lies in `ker α_x`. -/
+theorem apply_contactMoserVectorField_of_isContactFormAt (h : IsContactFormAt α.val x)
+    (β : SmoothForm I M ℝ 1) : α.val x ![α.contactMoserVectorField β x] = 0 := by
+  have h' := DFunLike.congr_fun (contactFlat_contactMoserVectorField_of_isContactFormAt h β)
+    (α.reebVectorField x)
+  simpa [contactFlat_apply, mextDeriv_reebVectorField_right_of_isContactFormAt h,
+    apply_reebVectorField_of_isContactFormAt h] using h'
+
+/-- At a point where `α` is a contact form, the full contraction identity for the contact-Moser
+vector. -/
+theorem mextDeriv_contactMoserVectorField_left_of_isContactFormAt (h : IsContactFormAt α.val x)
+    (β : SmoothForm I M ℝ 1) (v : TangentSpace I x) :
+    mextDeriv α.val x ![α.contactMoserVectorField β x, v] =
+      β.val x ![α.reebVectorField x] * α.val x ![v] - β.val x ![v] := by
+  have h' := DFunLike.congr_fun (contactFlat_contactMoserVectorField_of_isContactFormAt h β) v
+  simpa [contactFlat_apply, apply_contactMoserVectorField_of_isContactFormAt h] using h'
+
+/-- **Existence and uniqueness for the horizontal contact-Moser equation at a contact point.** At
+a point where `α` is a contact form, the contact-Moser vector is the unique `v ∈ ker α_x` with
+`(ι_v dα + β)|ker α_x = 0`. -/
+theorem eq_contactMoserVectorField_iff_of_isContactFormAt (h : IsContactFormAt α.val x)
+    {v : TangentSpace I x} :
+    v = α.contactMoserVectorField β x ↔ α.val x ![v] = 0 ∧
+      ∀ w ∈ α.kerDistribution x, mextDeriv α.val x ![v, w] + β.val x ![w] = 0 := by
+  constructor
+  · rintro rfl
+    refine ⟨apply_contactMoserVectorField_of_isContactFormAt h β, fun w hw ↦ ?_⟩
+    rw [mextDeriv_contactMoserVectorField_left_of_isContactFormAt h, mem_kerDistribution.1 hw]
+    ring
+  · rintro ⟨hv, hd⟩
+    apply sub_eq_zero.1
+    refine h.nondegenerate (v - α.contactMoserVectorField β x)
+      (RoughForm.mem_ker.2 (by simp [hv, apply_contactMoserVectorField_of_isContactFormAt h]))
+      fun w hw ↦ ?_
+    have h' := hd w (mem_kerDistribution.2 (RoughForm.mem_ker.1 hw))
+    rw [ContinuousAlternatingMap.map_vecCons_sub,
+      mextDeriv_contactMoserVectorField_left_of_isContactFormAt h, RoughForm.mem_ker.1 hw]
+    linarith
+
+/-- At a point where `α` is a contact form, the contact-Moser vector depends only on the
+restriction of the variation to `ker α_x`. -/
+theorem contactMoserVectorField_eq_iff_of_isContactFormAt (h : IsContactFormAt α.val x) :
+    α.contactMoserVectorField β x = α.contactMoserVectorField γ x ↔
+      ∀ w ∈ α.kerDistribution x, β.val x ![w] = γ.val x ![w] := by
+  rw [eq_contactMoserVectorField_iff_of_isContactFormAt h]
+  simp only [apply_contactMoserVectorField_of_isContactFormAt h,
+    mextDeriv_contactMoserVectorField_left_of_isContactFormAt h, true_and]
+  constructor <;> intro hβγ w hw
+  · have := hβγ w hw
+    rw [mem_kerDistribution.1 hw] at this
+    linarith
+  · rw [mem_kerDistribution.1 hw, hβγ w hw]
+    ring
+
+/-- At a point where `α` is a contact form, the contact-Moser vector vanishes if and only if the
+variation annihilates `ker α_x`. -/
+theorem contactMoserVectorField_eq_zero_iff_of_isContactFormAt (h : IsContactFormAt α.val x) :
+    α.contactMoserVectorField β x = 0 ↔
+      ∀ w ∈ α.kerDistribution x, β.val x ![w] = 0 := by
+  simpa using contactMoserVectorField_eq_iff_of_isContactFormAt (β := β) (γ := 0) h
+
+end Pointwise
 
 namespace IsContactForm
 
@@ -124,71 +202,53 @@ include hα
 theorem contactFlat_contactMoserVectorField (β : SmoothForm I M ℝ 1) (x : M) :
     α.contactFlat x (α.contactMoserVectorField β x) =
       β.val x ![α.reebVectorField x] • degreeOneEquiv α x - degreeOneEquiv β x :=
-  (hα.isInvertible_contactFlat x).self_apply_inverse _
+  contactFlat_contactMoserVectorField_of_isContactFormAt
+    (isContactForm_iff_forall_isContactFormAt.1 hα x) β
 
 /-- The contact-Moser vector field is horizontal. -/
 @[simp]
 theorem apply_contactMoserVectorField (β : SmoothForm I M ℝ 1) (x : M) :
-    α.val x ![α.contactMoserVectorField β x] = 0 := by
-  have h := DFunLike.congr_fun (hα.contactFlat_contactMoserVectorField β x)
-    (α.reebVectorField x)
-  simpa [contactFlat_apply, hα.mextDeriv_reebVectorField_right,
-    hα.apply_reebVectorField] using h
+    α.val x ![α.contactMoserVectorField β x] = 0 :=
+  apply_contactMoserVectorField_of_isContactFormAt
+    (isContactForm_iff_forall_isContactFormAt.1 hα x) β
 
 /-- The full contraction identity for the contact-Moser vector field. -/
 theorem mextDeriv_contactMoserVectorField_left (β : SmoothForm I M ℝ 1) (x : M)
     (v : TangentSpace I x) :
     mextDeriv α.val x ![α.contactMoserVectorField β x, v] =
-      β.val x ![α.reebVectorField x] * α.val x ![v] - β.val x ![v] := by
-  have h := DFunLike.congr_fun (hα.contactFlat_contactMoserVectorField β x) v
-  simpa [contactFlat_apply, hα.apply_contactMoserVectorField] using h
+      β.val x ![α.reebVectorField x] * α.val x ![v] - β.val x ![v] :=
+  mextDeriv_contactMoserVectorField_left_of_isContactFormAt
+    (isContactForm_iff_forall_isContactFormAt.1 hα x) β v
 
 /-- **Existence and uniqueness for the horizontal contact-Moser equation.** It suffices to
 prescribe the contraction on the contact hyperplane. -/
 theorem eq_contactMoserVectorField_iff {x : M} {v : TangentSpace I x} :
     v = α.contactMoserVectorField β x ↔ α.val x ![v] = 0 ∧
-      ∀ w ∈ α.kerDistribution x, mextDeriv α.val x ![v, w] + β.val x ![w] = 0 := by
-  constructor
-  · rintro rfl
-    refine ⟨hα.apply_contactMoserVectorField β x, fun w hw ↦ ?_⟩
-    rw [hα.mextDeriv_contactMoserVectorField_left, mem_kerDistribution.1 hw]
-    ring
-  · rintro ⟨hv, hd⟩
-    apply sub_eq_zero.1
-    refine (isContactForm_iff.1 hα x).2 (v - α.contactMoserVectorField β x)
-      (by simp [hv, hα.apply_contactMoserVectorField]) fun w hw ↦ ?_
-    have h := hd w (mem_kerDistribution.2 hw)
-    rw [ContinuousAlternatingMap.map_vecCons_sub, hα.mextDeriv_contactMoserVectorField_left,
-      hw]
-    linarith
+      ∀ w ∈ α.kerDistribution x, mextDeriv α.val x ![v, w] + β.val x ![w] = 0 :=
+  eq_contactMoserVectorField_iff_of_isContactFormAt
+    (isContactForm_iff_forall_isContactFormAt.1 hα x)
 
 /-- The contact-Moser vector depends only on the restriction of the variation to `ker α`. -/
 theorem contactMoserVectorField_eq_iff {x : M} :
     α.contactMoserVectorField β x = α.contactMoserVectorField γ x ↔
-      ∀ w ∈ α.kerDistribution x, β.val x ![w] = γ.val x ![w] := by
-  rw [hα.eq_contactMoserVectorField_iff]
-  simp only [hα.apply_contactMoserVectorField, hα.mextDeriv_contactMoserVectorField_left,
-    true_and]
-  constructor <;> intro h w hw
-  · have := h w hw
-    rw [mem_kerDistribution.1 hw] at this
-    linarith
-  · rw [mem_kerDistribution.1 hw, h w hw]
-    ring
+      ∀ w ∈ α.kerDistribution x, β.val x ![w] = γ.val x ![w] :=
+  contactMoserVectorField_eq_iff_of_isContactFormAt
+    (isContactForm_iff_forall_isContactFormAt.1 hα x)
 
 /-- In particular, the field vanishes wherever the variation annihilates the contact plane.
 This is the pointwise stationary-locus criterion for a relative contact deformation. -/
 theorem contactMoserVectorField_eq_zero_iff {x : M} :
     α.contactMoserVectorField β x = 0 ↔
-      ∀ w ∈ α.kerDistribution x, β.val x ![w] = 0 := by
-  simpa using (hα.contactMoserVectorField_eq_iff (β := β) (γ := 0) (x := x))
+      ∀ w ∈ α.kerDistribution x, β.val x ![w] = 0 :=
+  contactMoserVectorField_eq_zero_iff_of_isContactFormAt
+    (isContactForm_iff_forall_isContactFormAt.1 hα x)
 
 /-- The horizontal contact-Moser vector field of a smooth variation is smooth. -/
 theorem contMDiff_contactMoserVectorField (β : SmoothForm I M ℝ 1) :
     ContMDiff I I.tangent ∞ (T% (α.contactMoserVectorField β)) := fun x ↦
   contMDiffAt_sectionAlong_contactMoserVectorField (b := id) (α := fun _ ↦ α)
-    (β := fun _ ↦ β) (.of_forall fun _ ↦ hα) (α.contMDiff x) (contMDiff_mextDeriv α x)
-    (β.contMDiff x)
+    (β := fun _ ↦ β) (.of_forall (isContactForm_iff_forall_isContactFormAt.1 hα))
+    (α.contMDiff x) (contMDiff_mextDeriv α x) (β.contMDiff x)
 
 /-- The infinitesimal rescaling identity for the contact-Moser field:
 `L_Y α + β = β(R_α) α`, evaluated on a tangent vector. -/

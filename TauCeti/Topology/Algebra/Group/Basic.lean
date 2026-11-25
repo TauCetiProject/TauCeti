@@ -23,6 +23,9 @@ Over a compact subset of a topological group, conjugation is equicontinuous at t
 every identity neighbourhood `U`, a smaller identity neighbourhood `V` satisfies
 `x * y * x⁻¹ ∈ U` for all `x` in the compact set and `y ∈ V`.
 
+If the quotient `(x, y) ↦ u₁ x / u₂ y` of two maps from nonempty spaces is continuous, each map is
+continuous, being recovered from it by fixing the other variable.
+
 ## Main results
 
 * `Subgroup.separatelyContinuousMul`: a subgroup inherits `SeparatelyContinuousMul`.
@@ -34,6 +37,9 @@ every identity neighbourhood `U`, a smaller identity neighbourhood `V` satisfies
   multiplication is closed.
 * `IsCompact.exists_nhds_one_conj_subset` / `IsCompact.exists_nhds_zero_conj_subset`:
   equicontinuity of conjugation over a compact set at the identity.
+* `TauCeti.continuous_and_continuous_of_continuous_div` /
+  `TauCeti.continuous_and_continuous_of_continuous_sub`: maps whose quotient (or difference) on a
+  product of nonempty spaces is continuous are continuous.
 -/
 
 public section
@@ -94,3 +100,22 @@ theorem IsCompact.exists_nhds_one_conj_subset {G : Type*} [Group G] [Topological
   exact interior_subset (mem_preimage.mp (hAB (mk_mem_prod (hCA hx) hy)))
 
 end
+
+namespace TauCeti
+
+/-- If `(x, y) ↦ u₁ x / u₂ y` is continuous on a product of nonempty spaces, then `u₁` and `u₂`
+are continuous. -/
+@[to_additive /-- If `(x, y) ↦ u₁ x - u₂ y` is continuous on a product of nonempty spaces, then
+`u₁` and `u₂` are continuous. -/]
+theorem continuous_and_continuous_of_continuous_div {X Y G : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [Nonempty X] [Nonempty Y] [Group G] [TopologicalSpace G]
+    [IsTopologicalGroup G] {u₁ : X → G} {u₂ : Y → G}
+    (h : Continuous fun p : X × Y ↦ u₁ p.1 / u₂ p.2) : Continuous u₁ ∧ Continuous u₂ := by
+  obtain ⟨x₀⟩ := ‹Nonempty X›
+  obtain ⟨y₀⟩ := ‹Nonempty Y›
+  exact ⟨((h.comp (continuous_id.prodMk (continuous_const (y := y₀)))).mul
+      (continuous_const (y := u₂ y₀))).congr fun x ↦ div_mul_cancel (u₁ x) (u₂ y₀),
+    ((h.comp ((continuous_const (y := x₀)).prodMk continuous_id)).inv.mul
+      (continuous_const (y := u₁ x₀))).congr fun y ↦ by simp⟩
+
+end TauCeti

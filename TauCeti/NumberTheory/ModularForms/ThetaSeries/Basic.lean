@@ -51,6 +51,9 @@ the series `θ_{γ+y+M}` over those classes, and in particular `Θ_L` as the sum
 
 * `Complex.norm_exp_pi_mul_I_mul_ofReal_mul`: `‖exp (π i t z)‖ = exp (-π t im z)` for real `t`,
   so the term of index `v` has norm `exp (-π ‖γ + v‖² im τ)`.
+* `ZLattice.thetaCoset_eq_zero_of_not_discreteTopology`,
+  `ZLattice.thetaSeries_eq_zero_of_not_discreteTopology`: for a non-discrete subgroup `L`, both
+  `θ_{γ+L}` and `Θ_L` vanish identically.
 * `ZLattice.thetaSeries_bot`, `ZLattice.thetaSeries_of_subsingleton`: the theta series of the zero
   lattice, and of every lattice in the zero space, is `1`.
 * `ZLattice.thetaCoset_eq_of_sub_mem`, `ZLattice.thetaCoset_neg`: `θ_{γ+L}` depends only on
@@ -143,6 +146,20 @@ theorem thetaCoset_eq_zero_of_forall_not_summable (γ : E)
 theorem thetaCoset_zero : thetaCoset L 0 = thetaSeries L := by
   ext τ
   simp [thetaCoset_apply, thetaSeries_apply]
+
+/-- If `L` is not discrete, the theta series of every translate `γ + L` is identically `0`, since
+no Gaussian `exp (-π y ‖γ + v‖²)` (`y > 0`) is summable over `L`. -/
+@[simp]
+theorem thetaCoset_eq_zero_of_not_discreteTopology (hL : ¬ DiscreteTopology L) (γ : E) :
+    thetaCoset L γ = 0 :=
+  thetaCoset_eq_zero_of_forall_not_summable L γ fun _ _ hs =>
+    hL (discreteTopology_of_summable_exp_neg_mul_norm_add_sq L γ hs)
+
+/-- If `L` is not discrete, the theta series of `L` is identically `0`. -/
+@[simp]
+theorem thetaSeries_eq_zero_of_not_discreteTopology (hL : ¬ DiscreteTopology L) :
+    thetaSeries L = 0 := by
+  simpa using thetaCoset_eq_zero_of_not_discreteTopology L hL 0
 
 /-- Translating `γ` by a vector of `L` does not change the theta series of the translate `γ + L`:
 the series is reindexed by `v ↦ w + v`. -/
@@ -316,11 +333,7 @@ theorem differentiableOn_thetaCoset (γ : E) :
     filter_upwards [hU.mem_nhds hzU] with w hw
     have hw' : 0 < w.im := lt_trans (half_pos hz) hw
     simp [thetaCoset_apply, ofComplex_apply_of_im_pos hw']
-  · have h0 : thetaCoset L γ = 0 :=
-      thetaCoset_eq_zero_of_forall_not_summable L γ fun y hy hs =>
-        hL (discreteTopology_of_summable_exp_neg_mul_norm_add_sq L γ (c := π * y)
-          (by positivity) hs)
-    rw [h0]
+  · rw [thetaCoset_eq_zero_of_not_discreteTopology L hL]
     exact differentiableOn_const 0
 
 omit [DiscreteTopology L] in

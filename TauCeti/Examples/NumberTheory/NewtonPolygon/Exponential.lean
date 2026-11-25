@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NewtonPolygon.Convergence
-public import TauCeti.NumberTheory.Padics.ExponentialDisc
+public import TauCeti.NumberTheory.Padics.Exp.Disc
 public import TauCeti.NumberTheory.Padics.Factorial
 public import TauCeti.NumberTheory.Padics.LogGauge
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.ZeroCount
-import TauCeti.RingTheory.PowerSeries.Exp.Padic
+import TauCeti.RingTheory.PowerSeries.Exp.Padic.Basic
 
 /-!
 # The Newton polygon and radius of the `p`-adic exponential
@@ -32,7 +32,7 @@ the origin is therefore not attained, and the Newton polygon is the terminal ray
 constant one lies on the polygon.
 
 The intrinsic radius of `exp` is consequently `p ^ (-1 / (p - 1))`, the radius
-`r₀ = TauCeti.amiceRadius p 0` of `TauCeti.NumberTheory.Padics.ExponentialDisc`. The series is
+`r₀ = TauCeti.amiceRadius p 0` of `TauCeti.NumberTheory.Padics.Exp.Disc`. The series is
 not restricted at `r₀` itself: its terms of degree `pᵏ` all have weighted norm `r₀`. In every
 complete normed field `L` over `ℚ_[p]`, such as `ℂ_[p]`, it therefore converges exactly on the
 open disc `‖x‖ < r₀`, where it evaluates to the analytic exponential, which has norm one. So

@@ -8,7 +8,7 @@ module
 import TauCeti.NumberTheory.Padics.Factorial
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.RingTheory.Dagger.OneVariable.Basic
-import TauCeti.RingTheory.PowerSeries.Exp.Padic
+import TauCeti.RingTheory.PowerSeries.Exp.Padic.Basic
 
 /-!
 # Examples separating entire, overconvergent, restricted, and open-disc power series

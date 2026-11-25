@@ -55,6 +55,18 @@ theorem skeletonLT_univ_eq_univ_of_ne_zero {n : ℕ} (hn : n ≠ 0) :
     obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' ((Nat.one_le_iff_ne_zero.2 hn).trans hm)
     infer_instance
 
+/-- Every map from the base of a relative CW complex to a discrete space is cellular: it sends the
+part in the base of the boundary of an `n`-cell into the skeleton of dimension `n` of the discrete
+CW structure. Collapsing the base to a point is the case of `PUnit`. -/
+theorem mem_skeletonLT_univ_of_mem_cellFrontier {Z : Type*} [TopologicalSpace Z] {C D : Set Z}
+    [RelCWComplex C D] (g : D → X) (n : ℕ) (c : cell C n) (x : D)
+    (hx : (x : Z) ∈ cellFrontier n c) : g x ∈ (skeletonLT (univ : Set X) n : Set X) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · rw [cellFrontier_zero_eq_empty] at hx
+    exact hx.elim
+  · rw [skeletonLT_univ_eq_univ_of_ne_zero hn.ne']
+    exact mem_univ _
+
 /-- The zero-cells of the discrete CW structure on a discrete space are its points. -/
 theorem nat_card_cell_univ_zero :
     Nat.card (cell (univ : Set X) 0) = Nat.card X :=

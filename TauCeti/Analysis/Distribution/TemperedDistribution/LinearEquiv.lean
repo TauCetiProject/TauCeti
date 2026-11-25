@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Distribution.TemperedDistribution.ChangeOfVariables
 import Mathlib.Analysis.InnerProductSpace.NormDet
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Topology.Algebra.Module.Equiv.Basic
 
@@ -26,8 +27,9 @@ function `u` it is the distribution of `u ∘ e`.
 
 When `E` is an inner product space and `A` is a linear isometry, `|det A| = 1` and the pullback is
 `(A^* T) f = T (f ∘ A⁻¹)`. It then commutes with the Fourier transform, since the Fourier
-transform of `u ∘ A` is `𝓕 u ∘ A`, and hence with every Fourier multiplier whose symbol is
-invariant under `A`, in particular with the Bessel potentials `J^s`, whose symbol
+transform of `u ∘ A` is `𝓕 u ∘ A`. Hence it carries the Fourier multiplier with symbol `g` to the
+one with symbol `g ∘ A`, so commutes with every Fourier multiplier whose symbol is invariant under
+`A`, in particular with the Bessel potentials `J^s`, whose symbol
 `(1 + ‖ξ‖ ^ 2) ^ (s / 2)` only depends on `‖ξ‖`. Since `A` preserves Lebesgue measure, the pullback
 of an `Lᵖ` function is the `Lᵖ` function `u ∘ A`, of the same norm. Together these say that `A^*`
 preserves every Bessel-potential space `H^{s,p}`; the resulting isometries of `H^{s,p}` are built
@@ -42,13 +44,15 @@ space side.
   `compCLMOfContinuousLinearEquiv_toTemperedDistributionCLM`, and functoriality
   `compCLMOfContinuousLinearEquiv_trans`, `compCLMOfContinuousLinearEquiv_refl` and
   `compCLMOfContinuousLinearEquiv_symm_apply_apply`,
-  `compCLMOfContinuousLinearEquiv_apply_symm_apply`.
+  `compCLMOfContinuousLinearEquiv_apply_symm_apply`, and its interaction
+  `compCLMOfContinuousLinearEquiv_smulLeftCLM` with multiplication by a function.
 * `TemperedDistribution.compCLMOfContinuousLinearEquiv_linearIsometryEquiv_apply_apply`: for a
   linear isometry, `(A^* T) f = T (f ∘ A⁻¹)`.
 * `TemperedDistribution.fourier_compCLMOfContinuousLinearEquiv` and
   `TemperedDistribution.fourierInv_compCLMOfContinuousLinearEquiv`: the Fourier transform and its
   inverse commute with `A^*`.
-* `TemperedDistribution.fourierMultiplierCLM_compCLMOfContinuousLinearEquiv`: so does every
+* `TemperedDistribution.fourierMultiplierCLM_compCLMOfContinuousLinearEquiv`: `A^*` carries the
+  Fourier multiplier with symbol `g` to the one with symbol `g ∘ A`, so it commutes with every
   Fourier multiplier with an `A`-invariant symbol, and in particular
   `TemperedDistribution.besselPotential_compCLMOfContinuousLinearEquiv`: every Bessel potential.
 * `compCLMOfContinuousLinearEquiv_toTemperedDistribution_eq_compMeasurePreserving`: on `Lᵖ`, the
@@ -144,6 +148,13 @@ theorem compCLMOfContinuousLinearEquiv_apply_symm_apply (e : E ≃L[ℝ] E) (T :
     LinearEquiv.toEquiv_symm]
   exact compCLM_compCLM_symm _ _ _ T
 
+/-- The pullback of `g T` along `e` is `(g ∘ e) e^* T`. -/
+theorem compCLMOfContinuousLinearEquiv_smulLeftCLM (e : E ≃L[ℝ] E) {g : E → ℂ}
+    (hg : g.HasTemperateGrowth) (T : 𝓢'(E, F)) :
+    compCLMOfContinuousLinearEquiv F e (smulLeftCLM F g T) =
+      smulLeftCLM F (g ∘ e) (compCLMOfContinuousLinearEquiv F e T) := by
+  rw [compCLMOfContinuousLinearEquiv, compCLM_smulLeftCLM _ _ hg, ContinuousLinearEquiv.coe_toEquiv]
+
 end Pullback
 
 section Embedding
@@ -213,30 +224,31 @@ end TVS
 
 variable [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
 
-/-- A Fourier multiplier whose symbol `g` is invariant under the linear isometry `A`,
-`g (A ξ) = g ξ`, commutes with the pullback along `A`. -/
-theorem fourierMultiplierCLM_compCLMOfContinuousLinearEquiv (A : E ≃ₗᵢ[ℝ] E) {g : E → ℂ}
-    (hg : g.HasTemperateGrowth) (hgA : ∀ ξ, g (A ξ) = g ξ) (T : 𝓢'(E, F)) :
-    fourierMultiplierCLM F g (compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv T) =
+/-- The pullback along a linear isometry `A` intertwines Fourier multipliers, carrying the
+symbol `g` to `g ∘ A`: `T_{g ∘ A} (A^* T) = A^* (T_g T)`. In particular a Fourier multiplier whose
+symbol is invariant under `A` commutes with `A^*`. -/
+theorem fourierMultiplierCLM_compCLMOfContinuousLinearEquiv (A : E ≃ₗᵢ[ℝ] E) (g : E → ℂ)
+    (T : 𝓢'(E, F)) :
+    fourierMultiplierCLM F (g ∘ A) (compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv T) =
       compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv (fourierMultiplierCLM F g T) := by
-  have hcomp : g ∘ A.toContinuousLinearEquiv.toEquiv = g := by
-    rw [ContinuousLinearEquiv.coe_toEquiv, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
-    exact funext hgA
-  have hsmul (S : 𝓢'(E, F)) : smulLeftCLM F g (compCLMOfContinuousLinearEquiv F
-      A.toContinuousLinearEquiv S) =
-        compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv (smulLeftCLM F g S) := by
-    rw [compCLMOfContinuousLinearEquiv, compCLM_smulLeftCLM _ _ hg, hcomp]
-  rw [fourierMultiplierCLM_apply, fourierMultiplierCLM_apply,
-    fourier_compCLMOfContinuousLinearEquiv, hsmul, fourierInv_compCLMOfContinuousLinearEquiv]
+  by_cases hg : g.HasTemperateGrowth
+  · rw [fourierMultiplierCLM_apply, fourierMultiplierCLM_apply,
+      fourier_compCLMOfContinuousLinearEquiv, ← LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+      ← compCLMOfContinuousLinearEquiv_smulLeftCLM _ hg, fourierInv_compCLMOfContinuousLinearEquiv]
+  · have hgA : ¬(g ∘ A).HasTemperateGrowth :=
+      A.toContinuousLinearEquiv.hasTemperateGrowth_comp_iff.not.mpr hg
+    ext u
+    simp [fourierMultiplierCLM_apply_apply, hg, hgA]
 
 /-- The Bessel potential `J^s` commutes with the pullback along a linear isometry. -/
 theorem besselPotential_compCLMOfContinuousLinearEquiv (A : E ≃ₗᵢ[ℝ] E) (s : ℝ) (T : 𝓢'(E, F)) :
     besselPotential E F s (compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv T) =
       compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv (besselPotential E F s T) := by
+  have h := fourierMultiplierCLM_compCLMOfContinuousLinearEquiv A
+    (fun x ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) T
   rw [besselPotential]
-  exact fourierMultiplierCLM_compCLMOfContinuousLinearEquiv A
-    (Complex.hasTemperateGrowth_ofReal.comp (Function.hasTemperateGrowth_one_add_norm_sq_rpow E _))
-    (fun ξ ↦ by simp) T
+  rwa [show (fun x ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) ∘ A =
+    fun x ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) from funext fun x ↦ by simp] at h
 
 variable [CompleteSpace F]
 
