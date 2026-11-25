@@ -34,14 +34,16 @@ variable {𝕜 E F : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [InnerProdu
 gives a linear isometry equivalence `E ≃ₗᵢ[𝕜] F`. -/
 def rescaleLinearIsometryEquiv (T : E ≃ₗ[𝕜] F) {r : ℝ} (hr : 0 < r)
     (hT : ∀ x y, ⟪T x, T y⟫_𝕜 = (r : 𝕜) * ⟪x, y⟫_𝕜) : E ≃ₗᵢ[𝕜] F :=
-  have hc : (((Real.sqrt r)⁻¹ : ℝ) : 𝕜) ≠ 0 :=
-    RCLike.ofReal_ne_zero.mpr (inv_ne_zero (Real.sqrt_ne_zero'.mpr hr))
+  have hsqrt : Real.sqrt r ≠ 0 := Real.sqrt_ne_zero'.mpr hr
+  have hc : (((Real.sqrt r)⁻¹ : ℝ) : 𝕜) ≠ 0 := RCLike.ofReal_ne_zero.mpr (inv_ne_zero hsqrt)
   (T.trans (LinearEquiv.smulOfNeZero 𝕜 F (((Real.sqrt r)⁻¹ : ℝ) : 𝕜) hc)).isometryOfInner
     fun x y ↦ by
-      simp only [trans_apply, smulOfNeZero_apply, inner_smul_left, inner_smul_right,
-        RCLike.conj_ofReal, hT]
-      rw [← mul_assoc, ← mul_assoc, ← RCLike.ofReal_mul, ← RCLike.ofReal_mul, ← mul_inv,
-        Real.mul_self_sqrt hr.le, inv_mul_cancel₀ hr.ne', RCLike.ofReal_one, one_mul]
+      have hne : (Real.sqrt r : 𝕜) ≠ 0 := RCLike.ofReal_ne_zero.mpr hsqrt
+      have hr' : (r : 𝕜) = (Real.sqrt r : 𝕜) * (Real.sqrt r : 𝕜) := by
+        exact_mod_cast (Real.mul_self_sqrt hr.le).symm
+      simp only [trans_apply, smulOfNeZero_apply, inner_smul_left, inner_smul_right, hT,
+        RCLike.ofReal_inv, RCLike.conj_inv, RCLike.conj_ofReal, hr']
+      field_simp
 
 /-- Evaluating `T.rescaleLinearIsometryEquiv hr hT` scales `T x` by `(√r)⁻¹`. -/
 @[simp]
@@ -55,9 +57,8 @@ theorem rescaleLinearIsometryEquiv_apply (T : E ≃ₗ[𝕜] F) {r : ℝ} (hr : 
 theorem rescaleLinearIsometryEquiv_symm_apply (T : E ≃ₗ[𝕜] F) {r : ℝ} (hr : 0 < r)
     (hT : ∀ x y, ⟪T x, T y⟫_𝕜 = (r : 𝕜) * ⟪x, y⟫_𝕜) (y : F) :
     (T.rescaleLinearIsometryEquiv hr hT).symm y = ((Real.sqrt r : ℝ) : 𝕜) • T.symm y := by
-  rw [LinearIsometryEquiv.symm_apply_eq, rescaleLinearIsometryEquiv_apply, map_smul,
-    T.apply_symm_apply, smul_smul, ← RCLike.ofReal_mul,
-    inv_mul_cancel₀ (Real.sqrt_ne_zero'.mpr hr), RCLike.ofReal_one, one_smul]
+  rw [LinearIsometryEquiv.symm_apply_eq]
+  simp [smul_smul, Real.sqrt_ne_zero'.mpr hr]
 
 end LinearEquiv
 

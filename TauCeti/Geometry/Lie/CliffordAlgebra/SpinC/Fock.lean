@@ -104,38 +104,15 @@ theorem halfSpinLinearIsometryEquiv_realSpinCHalfSpinSmoothHom_apply
     halfSpinLinearIsometryEquiv o' ho hU ε (realSpinCHalfSpinSmoothHom o hQ b ρ ε x ψ) =
       realSpinCHalfSpinSmoothHom o' hQ' (b.map f) ρ' ε x
         (halfSpinLinearIsometryEquiv o' ho hU ε ψ) := by
-  rw [realSpinCHalfSpinSmoothHom_apply o hQ b ρ ε hQ₀,
-    realSpinCHalfSpinSmoothHom_apply o' hQ' (b.map f) ρ' ε ((b.map f).ne_zero_of_neg_norm_sq hQ'),
-    LinearMap.coe_toContinuousLinearMap', LinearMap.coe_toContinuousLinearMap']
   obtain ⟨⟨s, z⟩, rfl⟩ := spinCGroup.mk_surjective (realCliffordForm 4 0) hpos x
   let e : Q →qᵢ Q' :=
     { toLinearMap := f.toLinearMap
       map_app' v := by simp [hQ', hQ] }
-  have he (v : V) : e v = f v := by simp [← QuadraticMap.Isometry.coe_toLinearMap, e]
-  have he_comp : ((b.map f).negRealCliffordFormIsometryEquiv hQ').toIsometry =
-      e.comp (b.negRealCliffordFormIsometryEquiv hQ).toIsometry := by
-    ext c
-    simp [QuadraticMap.Isometry.comp_apply, OrthonormalBasis.negRealCliffordFormIsometryEquiv_apply,
-      map_sum, map_smul, OrthonormalBasis.map_apply, he]
-  have heven : (⟨CliffordAlgebra.map e
-      (b.realEvenCliffordEquiv hQ (spinGroupToEven _ s)),
-      map_mem_even e (b.realEvenCliffordEquiv hQ (spinGroupToEven _ s)).property⟩ : even Q') =
-      (b.map f).realEvenCliffordEquiv hQ' (spinGroupToEven _ s) := by
-    apply Subtype.ext
-    dsimp only
-    rw [b.coe_realEvenCliffordEquiv_apply hQ, (b.map f).coe_realEvenCliffordEquiv_apply hQ',
-      ← AlgHom.comp_apply, CliffordAlgebra.map_comp_map, ← he_comp]
-  have hstep := LinearMap.congr_fun
+  simp [spinCHalfSpinRep_apply, halfSpinRep_apply,
+    b.realEvenCliffordEquiv_map hQ hQ' f e (fun _ ↦ rfl)]
+  simpa using LinearMap.congr_fun
     (halfSpinLinearIsometryEquiv_comp_evenHalfSpinAction o' ho hU e (fun _ ↦ rfl) ε
       (b.realEvenCliffordEquiv hQ (spinGroupToEven _ s))) ψ
-  rw [OrthonormalBasis.realSpinCGroupHom_mk, OrthonormalBasis.realSpinCGroupHom_mk,
-    spinCGroupHalfSpinRep_mk, spinCGroupHalfSpinRep_mk,
-    spinCHalfSpinRep_apply, spinCHalfSpinRep_apply]
-  dsimp only
-  rw [LinearMap.smul_apply, LinearMap.smul_apply, map_smul, halfSpinRep_apply, halfSpinRep_apply,
-    b.spinGroupToEven_realSpinGroupEquiv hQ, (b.map f).spinGroupToEven_realSpinGroupEquiv hQ',
-    ← heven]
-  exact congrArg ((z : ℂ) • ·) hstep
 
 /-- Specialization of `halfSpinLinearIsometryEquiv_realSpinCHalfSpinSmoothHom_apply` to a unitary
 Clifford intertwiner between two representations `ρ` and `ρ'` on the same oriented four-space in a
@@ -162,8 +139,7 @@ end Hermitian
 
 section Fock
 
-/-- Four-dimensionality gives `FiniteDimensional ℝ V`. -/
-local instance : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
+open scoped TauCeti.FactFinrank
 
 /-- **Polarization independence of the smooth Fock `Spinᶜ(4)` half-spin representation**: for any
 two `Q`-orthogonal complex structures `J₁` and `J₂` on `(V, o)`, any orthonormal frame `b`, and

@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Intertwiner
 import Mathlib.Analysis.InnerProductSpace.Spectrum
-import TauCeti.Analysis.Normed.Module.QuadraticMap
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 import TauCeti.LinearAlgebra.Eigenspace.Transport
 
@@ -16,12 +15,10 @@ import TauCeti.LinearAlgebra.Eigenspace.Transport
 # Hermitian half-spinors and unitary chirality restrictions in dimension four
 
 In dimension four with `Q v = -‖v‖²`, skew-adjoint generators make the chirality eigenspaces
-mutually orthogonal (`CliffordAlgebra.inner_eq_zero_of_mem_eigenspace_chirality`), half-spin rank
-two forces fullness of the complexified Clifford action
-(`CliffordAlgebra.liftBaseChange_bijective_of_finrank_positiveHalfSpinors_eq_two`), and every
-unitary intertwiner along an orientation-preserving isometry restricts to unitary chirality
-equivalences (`CliffordAlgebra.halfSpinLinearIsometryEquiv`) whose operator conjugation is
-independent of the `Circle` phase (`CliffordAlgebra.conj_halfSpinLinearIsometryEquiv_eq`).
+mutually orthogonal (`CliffordAlgebra.inner_eq_zero_of_mem_eigenspace_chirality`), and every unitary
+intertwiner along an orientation-preserving isometry restricts to unitary chirality equivalences
+(`CliffordAlgebra.halfSpinLinearIsometryEquiv`) whose operator conjugation is independent of the
+`Circle` phase (`CliffordAlgebra.conj_halfSpinLinearIsometryEquiv_eq`).
 
 ## Main definitions
 
@@ -29,8 +26,6 @@ independent of the `Circle` phase (`CliffordAlgebra.conj_halfSpinLinearIsometryE
 
 ## Main results
 
-* `CliffordAlgebra.liftBaseChange_bijective_of_finrank_positiveHalfSpinors_eq_two`: fullness of
-  `liftBaseChange ℂ Q ρ` when `dim_ℂ W⁺ = 2`.
 * `CliffordAlgebra.inner_eq_zero_of_mem_eigenspace_chirality`: distinct eigenspaces of `Γ` are
   orthogonal.
 * `CliffordAlgebra.coe_adjoint_halfSpinCliffordMul_apply`,
@@ -61,21 +56,6 @@ section DimensionFour
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)]
   {Q : QuadraticForm ℝ V} (o : Orientation ℝ V (Fin 4))
-
-/-- The dimension `Fact` makes the oriented four-space finite-dimensional. -/
-local instance : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
-
-/-- **Half-spin rank two forces fullness of the complexified Clifford action** in dimension four. -/
-theorem liftBaseChange_bijective_of_finrank_positiveHalfSpinors_eq_two
-    {W : Type*} [AddCommGroup W] [Module ℂ W] [FiniteDimensional ℂ W]
-    (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W) (hQ : ∀ v, Q v = -‖v‖ ^ 2)
-    (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) :
-    Function.Bijective (liftBaseChange ℂ Q ρ) := by
-  refine liftBaseChange_bijective_of_finrank_eq ρ
-    (QuadraticForm.nondegenerate_of_eq_neg_norm_sq hQ) (m := 2)
-    (Fact.out : finrank ℝ V = 4) ?_
-  rw [finrank_eq_two_mul_finrank_positiveHalfSpinors o ρ hQ, h₂]
-  norm_num
 
 section HermitianModule
 

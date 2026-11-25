@@ -132,30 +132,21 @@ theorem exists_realSpinGroupEquiv_eq_conj (hc : c.toBasis.orientation = c'.toBas
       c'.realSpinGroupEquiv hQ s = c.realSpinGroupEquiv hQ (s₀ * s * s₀⁻¹) := by
   have hQneg : ∀ v, (-Q) v = ‖v‖ ^ 2 := fun v ↦ by simp [hQ]
   obtain ⟨s₀, hs₀⟩ := (c'.exists_spinVectorAction_eq_iff_orientation_eq c hQneg).mpr hc.symm
-  have hsymm_eq (f : OrthonormalBasis (Fin n) ℝ V) (v : V) :
-      f.isometryEquivRealCliffordFormZero hQneg v =
-        (f.negRealCliffordFormIsometryEquiv hQ).symm v := by
-    ext i
-    rw [isometryEquivRealCliffordFormZero_apply, f.negRealCliffordFormIsometryEquiv_symm_apply hQ]
   have hact (x : Fin (n + 0) → ℝ) :
       spinVectorAction Q (c.realSpinGroupEquiv hQ s₀)
         (c.negRealCliffordFormIsometryEquiv hQ x) =
         c'.negRealCliffordFormIsometryEquiv hQ x := by
     have hx := hs₀ (c'.negRealCliffordFormIsometryEquiv hQ x)
-    rw [hsymm_eq c', QuadraticMap.IsometryEquiv.symm_apply_apply, hsymm_eq c] at hx
+    rw [c'.isometryEquivRealCliffordFormZero_eq_negRealCliffordFormIsometryEquiv_symm hQ hQneg,
+      QuadraticMap.IsometryEquiv.symm_apply_apply,
+      c.isometryEquivRealCliffordFormZero_eq_negRealCliffordFormIsometryEquiv_symm hQ hQneg] at hx
     rw [c.spinVectorAction_realSpinGroupEquiv hQ s₀ x, hx,
       QuadraticMap.IsometryEquiv.apply_symm_apply]
-  have heq (s : spinGroup (realCliffordForm n 0)) (f : OrthonormalBasis (Fin n) ℝ V) :
-      f.realSpinGroupEquiv hQ s =
-        (f.negRealCliffordFormIsometryEquiv hQ).spinGroupEquiv
-          (spinGroupEquivNeg (realCliffordForm n 0) s) :=
-    Subtype.ext <| by
-      rw [← coe_spinGroupToEven_apply, f.spinGroupToEven_realSpinGroupEquiv hQ,
-        f.coe_realEvenCliffordEquiv_apply hQ, QuadraticMap.IsometryEquiv.spinGroupEquiv_apply,
-        QuadraticMap.Isometry.coe_spinGroupMap_apply, ← coe_spinGroupEquivNeg_apply]
   refine ⟨s₀, fun s ↦ ?_⟩
-  rw [heq s c', (c.negRealCliffordFormIsometryEquiv hQ).spinGroupEquiv_apply_eq_conj _
-      (c.realSpinGroupEquiv hQ s₀) hact, ← heq s c, ← map_inv, ← map_mul, ← map_mul]
+  rw [c'.realSpinGroupEquiv_apply hQ,
+    (c.negRealCliffordFormIsometryEquiv hQ).spinGroupEquiv_apply_eq_conj _
+      (c.realSpinGroupEquiv hQ s₀) hact,
+    ← c.realSpinGroupEquiv_apply hQ, ← map_inv, ← map_mul, ← map_mul]
 
 /-- For two equally oriented orthonormal frames `c` and `c'`, the descended `Spinᶜ(n)` frame
 comparisons `c.realSpinCGroupHom` and `c'.realSpinCGroupHom` differ by conjugation by a compact

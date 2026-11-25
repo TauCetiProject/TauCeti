@@ -169,6 +169,14 @@ noncomputable def realSpinGroupEquiv : spinGroup (realCliffordForm n 0) ≃* spi
   (spinGroupEquivNeg (realCliffordForm n 0)).trans
     (b.negRealCliffordFormIsometryEquiv hQ).spinGroupEquiv
 
+/-- `OrthonormalBasis.realSpinGroupEquiv` applies `spinGroupEquivNeg` followed by the Spin
+isomorphism of `negRealCliffordFormIsometryEquiv`. -/
+theorem realSpinGroupEquiv_apply (s : spinGroup (realCliffordForm n 0)) :
+    b.realSpinGroupEquiv hQ s =
+      (b.negRealCliffordFormIsometryEquiv hQ).spinGroupEquiv
+        (spinGroupEquivNeg (realCliffordForm n 0) s) :=
+  MulEquiv.trans_apply _ _ s
+
 /-- The Spin comparison `OrthonormalBasis.realSpinGroupEquiv` is compatible with the vector
 actions: a coordinate Spin element and its image rotate coordinates and vectors in the same way. -/
 @[simp]

@@ -10,35 +10,25 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange
 import Mathlib.Algebra.Central.End
-import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 import Mathlib.LinearAlgebra.GeneralLinearGroup.AlgEquiv
-import Mathlib.RingTheory.SimpleRing.Basic
 import TauCeti.Analysis.InnerProductSpace.LinearIsometry.Rescale
 import TauCeti.Analysis.Normed.Module.QuadraticMap
 import TauCeti.LinearAlgebra.CliffordAlgebra.CentralSimple.Basic
-import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
-import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Complex
-import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 
 /-!
-# Fullness of complexified spinor actions and unitary Clifford intertwiners
+# Unitary Clifford intertwiners in even dimension
 
-A real Clifford algebra map `ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W` extends by
-`CliffordAlgebra.liftBaseChange ℂ Q ρ` to `CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ W`,
-which is bijective when `Q` is nondegenerate in dimension `2 * m` and `dim_ℂ W = 2 ^ m`
-(`CliffordAlgebra.liftBaseChange_bijective_of_finrank_eq`).
-
-Combining Skolem–Noether (`AlgEquiv.eq_linearEquivConjAlgEquiv`) with uniqueness of the compatible
-Hermitian inner product (`CliffordAlgebra.existsUnique_pos_mul_inner_of_surjective`) classifies
-unitary Clifford intertwiners along linear isometries `f : V ≃ₗᵢ[ℝ] V'` as a `Circle`-torsor:
-existence (`CliffordAlgebra.exists_unitary_intertwiner_of_finrank_eq`) and uniqueness up to a
-phase in `Circle` (`CliffordAlgebra.existsUnique_circle_smul_intertwiner`).
+Combining fullness of complexified spinor actions
+(`CliffordAlgebra.liftBaseChange_bijective_of_finrank_eq`), Skolem–Noether
+(`AlgEquiv.eq_linearEquivConjAlgEquiv`), and uniqueness of the compatible Hermitian inner product
+(`CliffordAlgebra.existsUnique_pos_mul_inner_of_surjective`) classifies unitary Clifford
+intertwiners along linear isometries `f : V ≃ₗᵢ[ℝ] V'` as a `Circle`-torsor: existence
+(`CliffordAlgebra.exists_unitary_intertwiner_of_finrank_eq`) and uniqueness up to a phase in
+`Circle` (`CliffordAlgebra.existsUnique_circle_smul_intertwiner`).
 
 ## Main results
 
-* `CliffordAlgebra.liftBaseChange_bijective_of_finrank_eq`: fullness of `liftBaseChange ℂ Q ρ` in
-  even dimension `2 * m` at spinor rank `2 ^ m`.
 * `CliffordAlgebra.existsUnique_circle_smul_intertwiner`: any two unitary Clifford intertwiners of
   a surjective complexified action differ by a unique phase in `Circle`.
 * `CliffordAlgebra.exists_unitary_intertwiner_of_finrank_eq`: existence of a unitary Clifford
@@ -59,31 +49,6 @@ namespace CliffordAlgebra
 
 open Module Module.End
 open scoped InnerProductSpace TensorProduct ComplexOrder
-
-section Fullness
-
-variable {V W : Type*} [AddCommGroup V] [Module ℝ V] {Q : QuadraticForm ℝ V}
-  [AddCommGroup W] [Module ℂ W]
-
-/-- **Fullness of spinor actions in even dimension.** When `Q` is nondegenerate on a real space of
-dimension `2 * m` and `W` has complex dimension `2 ^ m`, the complexified Clifford action
-`liftBaseChange ℂ Q ρ` is bijective onto `Module.End ℂ W`. -/
-theorem liftBaseChange_bijective_of_finrank_eq [FiniteDimensional ℝ V] [FiniteDimensional ℂ W]
-    (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W) (hQnd : Q.Nondegenerate) {m : ℕ}
-    (hV : finrank ℝ V = 2 * m) (hW : finrank ℂ W = 2 ^ m) :
-    Function.Bijective (liftBaseChange ℂ Q ρ) := by
-  have : Nontrivial W := Module.nontrivial_of_finrank_pos (by rw [hW]; positivity)
-  have hsimple : IsSimpleRing (CliffordAlgebra (Q.baseChange ℂ)) :=
-    isSimpleRing_of_even_finrank (QuadraticForm.Nondegenerate.baseChange (A := ℂ) hQnd)
-      ⟨m, by rw [Module.finrank_baseChange, hV]; ring⟩
-  have hinj : Function.Injective (liftBaseChange ℂ Q ρ) :=
-    (liftBaseChange ℂ Q ρ).toRingHom.injective
-  refine ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
-    (f := (liftBaseChange ℂ Q ρ).toLinearMap) ?_).mp hinj⟩
-  rw [finrank_eq_two_pow, Module.finrank_baseChange, hV, Module.finrank_linearMap, hW, pow_mul']
-  ring
-
-end Fullness
 
 section Intertwiners
 

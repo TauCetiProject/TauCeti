@@ -7,8 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor
 public import TauCeti.RepresentationTheory.Spin.Polarization.Fock.Hilbert
-import Mathlib.LinearAlgebra.GeneralLinearGroup.AlgEquiv
-import TauCeti.Geometry.Symplectic.Finrank
 
 /-!
 # Dimension and dedicated Hilbert carrier of the Fock spinor module
@@ -87,34 +85,12 @@ structure FockSpinors : Type _ where
   toExterior : ExteriorAlgebra ℂ (J.spinPolarizationData hQJ hQnd).W
 
 /-- Additive group structure on `J.FockSpinors hQJ hQnd` transported from `⋀ W`. -/
-instance instAddCommGroupFockSpinors : AddCommGroup (J.FockSpinors hQJ hQnd) where
-  zero := ⟨0⟩
-  add x y := ⟨x.toExterior + y.toExterior⟩
-  neg x := ⟨-x.toExterior⟩
-  sub x y := ⟨x.toExterior - y.toExterior⟩
-  nsmul n x := ⟨n • x.toExterior⟩
-  zsmul n x := ⟨n • x.toExterior⟩
-  add_assoc _ _ _ := FockSpinors.ext (add_assoc _ _ _)
-  zero_add _ := FockSpinors.ext (zero_add _)
-  add_zero _ := FockSpinors.ext (add_zero _)
-  nsmul_zero _ := FockSpinors.ext (zero_smul ℕ _)
-  nsmul_succ n x := FockSpinors.ext (succ_nsmul x.toExterior n)
-  zsmul_zero' _ := FockSpinors.ext (zero_smul ℤ _)
-  zsmul_succ' n x := FockSpinors.ext (SubNegMonoid.zsmul_succ' n x.toExterior)
-  zsmul_neg' n x := FockSpinors.ext (SubNegMonoid.zsmul_neg' n x.toExterior)
-  sub_eq_add_neg _ _ := FockSpinors.ext (sub_eq_add_neg _ _)
-  neg_add_cancel _ := FockSpinors.ext (neg_add_cancel _)
-  add_comm _ _ := FockSpinors.ext (add_comm _ _)
+instance instAddCommGroupFockSpinors : AddCommGroup (J.FockSpinors hQJ hQnd) :=
+  (Equiv.mk FockSpinors.toExterior FockSpinors.mk (fun _ ↦ rfl) (fun _ ↦ rfl)).addCommGroup
 
 /-- Complex vector space structure on `J.FockSpinors hQJ hQnd` transported from `⋀ W`. -/
-instance instModuleFockSpinors : Module ℂ (J.FockSpinors hQJ hQnd) where
-  smul c x := ⟨c • x.toExterior⟩
-  one_smul _ := FockSpinors.ext (one_smul ℂ _)
-  mul_smul _ _ _ := FockSpinors.ext (mul_smul _ _ _)
-  smul_zero _ := FockSpinors.ext (smul_zero _)
-  smul_add _ _ _ := FockSpinors.ext (smul_add _ _ _)
-  add_smul _ _ _ := FockSpinors.ext (add_smul _ _ _)
-  zero_smul _ := FockSpinors.ext (zero_smul ℂ _)
+instance instModuleFockSpinors : Module ℂ (J.FockSpinors hQJ hQnd) :=
+  (Equiv.mk FockSpinors.toExterior FockSpinors.mk (fun _ ↦ rfl) (fun _ ↦ rfl)).addEquiv.module ℂ
 
 namespace FockSpinors
 
@@ -318,12 +294,11 @@ open CliffordAlgebra Module Module.End TauCeti
 
 section DimensionFour
 
+open scoped TauCeti.FactFinrank
+
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [Fact (finrank ℝ V = 4)] {Q : QuadraticForm ℝ V}
   (o : Orientation ℝ V (Fin 4)) (hQ : ∀ v, Q v = -‖v‖ ^ 2)
-
-/-- Four-dimensionality gives `FiniteDimensional ℝ V`. -/
-local instance : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
 
 include hQ in
 /-- In dimension four with `Q v = -‖v‖²`, both chirality eigenspaces (`ε = 1` and `ε = -1`) of

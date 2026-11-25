@@ -11,7 +11,6 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Neg
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.TorusCharacter
 import TauCeti.Algebra.Algebra.Prod
 import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.HalfSpinor
-import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 import TauCeti.RepresentationTheory.Quaternion.Complex
 
 /-!
@@ -112,7 +111,7 @@ include hQ in
 private theorem quaternionProdAction_zero_one (hb : b.toBasis.orientation = o) :
     quaternionProdAction o hQ b ρ 1 (0, 1) = 1 := by
   have h01 : ((0, 1) : ℍ[ℝ] × ℍ[ℝ]) = (2 : ℝ)⁻¹ • (1 + (-1, 1)) := by
-    ext <;> simp; norm_num
+    ext <;> simp [(by norm_num : (2 : ℝ)⁻¹ + 2⁻¹ = 1)]
   rw [h01, map_smul, map_add, map_one, quaternionProdAction_neg_one_one o hQ b ρ hb, map_one]
   module
 
@@ -120,7 +119,7 @@ include hQ in
 private theorem quaternionProdAction_one_zero (hb : b.toBasis.orientation = o) :
     quaternionProdAction o hQ b ρ (-1) (1, 0) = 1 := by
   have h10 : ((1, 0) : ℍ[ℝ] × ℍ[ℝ]) = (2 : ℝ)⁻¹ • (1 - (-1, 1)) := by
-    ext <;> simp; norm_num
+    ext <;> simp [(by norm_num : (2 : ℝ)⁻¹ + 2⁻¹ = 1)]
   rw [h10, map_smul, map_sub, map_one, quaternionProdAction_neg_one_one o hQ b ρ hb,
     map_neg, map_one]
   module

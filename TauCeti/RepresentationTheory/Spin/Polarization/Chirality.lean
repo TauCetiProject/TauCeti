@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Chirality
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
+public import TauCeti.LinearAlgebra.Dimension.FactFinrank
 public import TauCeti.RepresentationTheory.Spin.HalfSpin.Basic
 public import TauCeti.RepresentationTheory.Spin.Polarization.Fock.Basic
 -- Private: the involution eigenspaces, orthonormal-basis orthogonality, the parity of the
@@ -207,14 +208,13 @@ end ComplexVolume
 
 section Chirality
 
+open scoped TauCeti.FactFinrank
+
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)]
   {Q : QuadraticForm ℝ V} {o : Orientation ℝ V (Fin 4)}
   (J : AlmostComplexStructure V) (hQJ : ∀ v, Q (J v) = Q v) (hQnd : Q.Nondegenerate)
   (hQ : ∀ v, Q v = -‖v‖ ^ 2)
 include hQ
-
-/-- The dimension `Fact` makes the oriented four-space finite-dimensional. -/
-local instance : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
 
 /-- **Chirality is exterior parity on the Fock module.** If the orientation of `V` is induced by
 `J`, in the sense that some positively oriented orthonormal basis has the form
