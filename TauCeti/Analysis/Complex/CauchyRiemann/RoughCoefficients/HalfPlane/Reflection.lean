@@ -209,7 +209,7 @@ theorem MemLpLoc.twistedReflection {U : Set ℂ} (hU : MapsTo (starRingEnd ℂ) 
     (L : F →L[ℝ] F) (hf : MemLpLoc p (U ∩ {z | 0 ≤ z.im}) f) :
     MemLpLoc p U (TauCeti.twistedReflection L f) := by
   refine (hf.ite_conj hU L).congr_ae (ae_restrict_of_ae ?_)
-  filter_upwards [measure_eq_zero_iff_ae_notMem.1 (volume_setOf_im_eq 0)] with z hz
+  filter_upwards [Complex.ae_im_ne_zero] with z hz
   rcases lt_or_gt_of_ne hz with hz | hz
   · simp [hz, not_le.2 hz]
   · simp [hz, hz.le]
@@ -264,7 +264,7 @@ theorem ae_crReflectionCoeff_mul_self {W : Type*} [NormedAddCommGroup W] [Normed
       (measurableSet_le measurable_const measurable_im))).1 hJ2
   have hJ2c := conjLIE.measurePreserving.quasiMeasurePreserving.ae hJ2'
   refine (ae_restrict_iff' Ω.isOpen.measurableSet).2 ?_
-  filter_upwards [hJ2', hJ2c, measure_eq_zero_iff_ae_notMem.1 (volume_setOf_im_eq 0)]
+  filter_upwards [hJ2', hJ2c, Complex.ae_im_ne_zero]
     with z hz hzc hz0 hzΩ
   rcases lt_or_gt_of_ne hz0 with h0 | h0
   · have hJz := hzc ⟨hΩ hzΩ, by simpa using h0.le⟩
@@ -322,12 +322,16 @@ private theorem inner_crFormalAdjoint_crReflection_add (hΩ : MapsTo (starRingEn
       ((reflectTest hΩ φ).contDiff.differentiable (by simp) z),
       add_apply, fderiv_reflectTest]
   rw [inner_crFormalAdjoint, inner_crFormalAdjoint, inner_crFormalAdjoint, hd, hd]
+  -- Evaluate every reflection: the goal becomes a linear identity between inner products of
+  -- `φ`, its derivatives at `z` and `conj z`, their images under `R`, and `ξ z`, `J z (ξ z)`,
+  -- `DJ z I (ξ z)`, `S z (ξ z)`, in which `R` sits on either side of `⟪·, ·⟫`.
   simp [twistedReflection_of_im_pos hz, twistedReflection_of_im_neg hz',
     crReflectionCoeff_of_im_pos hz, crReflectionDeriv_of_im_pos hz,
     crReflectionZeroth_of_im_pos hz, crReflectionCoeff_apply_of_im_neg hz',
     crReflectionDeriv_apply_of_im_neg hz',
     crReflectionZeroth_apply_of_im_neg hz', reflectTest_apply,
-    LinearIsometryEquiv.symm_toContinuousLinearEquiv_apply_of_involutive hR, inner_add_left]
+    R.symm_apply_eq.2 (hR _).symm, inner_add_left]
+  -- Move every `R` to the left slot (`R` is self-adjoint); then both sides agree term by term.
   simp only [← LinearIsometryEquiv.inner_map_left_eq_of_involutive hR, hR _]
   ring
 
@@ -409,7 +413,7 @@ real axis. The twisted reflection of `z` by `conj` is `z` off the axis
 theorem crReflectionCoeff_conjLIE_const_I_smul_id_ae_eq :
     crReflectionCoeff conjLIE.toContinuousLinearEquiv (fun _ => I • ContinuousLinearMap.id ℝ ℂ)
       =ᵐ[volume] fun _ => I • ContinuousLinearMap.id ℝ ℂ := by
-  filter_upwards [measure_eq_zero_iff_ae_notMem.1 (volume_setOf_im_eq 0)] with z hz
+  filter_upwards [Complex.ae_im_ne_zero] with z hz
   rcases lt_or_gt_of_ne hz with hz | hz
   · ext v
     simp [crReflectionCoeff_apply_of_im_neg hz,

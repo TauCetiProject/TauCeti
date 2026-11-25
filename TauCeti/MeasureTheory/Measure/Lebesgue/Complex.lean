@@ -116,6 +116,10 @@ theorem setOf_le_im_ae_eq (c : ℝ) : {z : ℂ | c ≤ z.im} =ᵐ[volume] {z : �
   · have h1 : c < z.im := hz.1
     exact absurd h1.le hz.2
 
+/-- Almost every complex number is off the real axis. -/
+theorem ae_im_ne_zero : ∀ᵐ z : ℂ, z.im ≠ 0 :=
+  measure_eq_zero_iff_ae_notMem.1 (volume_setOf_im_eq 0)
+
 /-- Conjugation preserves the measure on `ℂ`, so it preserves integrability. -/
 theorem integrable_comp_conj {E : Type*} [NormedAddCommGroup E] {f : ℂ → E}
     (hf : Integrable f) : Integrable (fun z => f (starRingEnd ℂ z)) := by
