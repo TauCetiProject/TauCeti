@@ -22,6 +22,8 @@ all of which a construction transporting a group of matrices along a change of s
 
 * `Matrix.GeneralLinearGroup.map_injective`: entrywise application of an injective ring hom is
   injective on general linear groups.
+* `Matrix.GeneralLinearGroup.map_surjective`: a surjective ring hom that reflects units is
+  surjective on general linear groups.
 * `Matrix.GeneralLinearGroup.map_neg`: change of scalars commutes with negation.
 * `Matrix.GeneralLinearGroup.mem_ker_map_quotientMk_iff`: the kernel of reduction modulo an ideal
   `I` consists of the matrices congruent to the identity matrix entrywise modulo `I`.
@@ -47,6 +49,22 @@ is determined by its image over `S`, and a unit by its underlying matrix. -/
 theorem map_injective {f : R →+* S} (hf : Function.Injective f) :
     Function.Injective (Matrix.GeneralLinearGroup.map (n := n) f) :=
   Units.map_injective (Matrix.map_injective hf)
+
+/-- **Invertible matrices lift along a surjective local ring hom**: if `f` is surjective and
+reflects units, then entrywise application of `f` is surjective on general linear groups. -/
+theorem map_surjective {f : R →+* S} [IsLocalHom f] (hf : Function.Surjective f) :
+    Function.Surjective (Matrix.GeneralLinearGroup.map (n := n) f) := by
+  intro g
+  choose a ha using fun i j ↦ hf ((g : Matrix n n S) i j)
+  set M : Matrix n n R := Matrix.of a
+  have hM : M.map f = g := by
+    ext i j
+    simp [M, ha]
+  have hunit : IsUnit M.det := (isUnit_map_iff f M.det).1 <| by
+    rw [RingHom.map_det, RingHom.mapMatrix_apply, hM]
+    exact (Matrix.isUnit_iff_isUnit_det _).1 g.isUnit
+  exact ⟨Matrix.GeneralLinearGroup.mk'' M hunit, Units.ext <| by
+    simpa only [val_map_apply, val_mk''] using hM⟩
 
 /-- Change of scalars commutes with negation. Together with Mathlib's `map_one`, `map_mul` and
 `map_inv`, this lets subgroup constructions involving `-1`, such as `Subgroup.adjoinNegOne`, be

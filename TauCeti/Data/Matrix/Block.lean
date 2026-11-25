@@ -35,7 +35,11 @@ with `h'` shifted above every value of `h`. When the nonzero entries of square m
 The four blocks of a product `B * C` of rectangular block matrices are computed directly in terms
 of the blocks of `B` and `C` via `Matrix.toBlocks₁₁_mul`, `Matrix.toBlocks₁₂_mul`,
 `Matrix.toBlocks₂₁_mul`, and `Matrix.toBlocks₂₂_mul`, over any type with
-`[AddCommMonoid α] [Mul α]`.
+`[AddCommMonoid α] [Mul α]`. When the right factor has vanishing lower-left block, the upper-left
+block of the product is the product of the upper-left blocks
+(`Matrix.toBlocks₁₁_mul_of_toBlocks₂₁_eq_zero`). The blocks of the identity matrix are the
+identity and zero (`Matrix.toBlocks₁₁_one` and its companions), and taking a block commutes with
+entrywise maps (`Matrix.toBlocks₁₁_map` and its companions).
 
 For an upper two-block matrix, the diagonal blocks of its powers are the powers of the diagonal
 blocks. Its off-diagonal block is the finite convolution of the powers of the two diagonal
@@ -46,6 +50,8 @@ and empty blocks.
 
 * `Matrix.toBlocks₁₁_mul`, `Matrix.toBlocks₁₂_mul`, `Matrix.toBlocks₂₁_mul`,
   `Matrix.toBlocks₂₂_mul`: the four blocks of a product of block matrices.
+* `Matrix.toBlocks₁₁_one`, `Matrix.toBlocks₁₁_map` and their companions: the blocks of the
+  identity matrix and of an entrywise image.
 * `Matrix.fromBlocks_zero₂₁_pow`: the power formula for an upper two-block matrix.
 * `Matrix.fromBlocks₁₁NonUnitalStarAlgHom`: the corner embedding `y ↦ fromBlocks y 0 0 0` as a
   non-unital `⋆`-algebra homomorphism.
@@ -125,7 +131,66 @@ public theorem toBlocks₂₂_mul (B : Matrix (n ⊕ o) (l ⊕ m) α) (C : Matri
   simp only [toBlocks₂₁, toBlocks₁₂, toBlocks₂₂, of_apply, Matrix.mul_apply, Matrix.add_apply,
     Fintype.sum_sum_type]
 
+/-- The upper-left block of a product whose right factor has vanishing lower-left block is the
+product of the upper-left blocks. -/
+public theorem toBlocks₁₁_mul_of_toBlocks₂₁_eq_zero {β : Type*} [NonUnitalNonAssocSemiring β]
+    {B : Matrix (n ⊕ o) (l ⊕ m) β} {C : Matrix (l ⊕ m) (p ⊕ q) β} (hC : C.toBlocks₂₁ = 0) :
+    (B * C).toBlocks₁₁ = B.toBlocks₁₁ * C.toBlocks₁₁ := by
+  rw [toBlocks₁₁_mul, hC, Matrix.mul_zero, add_zero]
+
 end ToBlocksMul
+
+section ToBlocksOne
+
+variable {n m α : Type*} [DecidableEq n] [DecidableEq m] [Zero α] [One α]
+
+/-- The upper-left block of the identity matrix is the identity. -/
+@[simp]
+public theorem toBlocks₁₁_one : (1 : Matrix (n ⊕ m) (n ⊕ m) α).toBlocks₁₁ = 1 := by
+  rw [← fromBlocks_one, toBlocks_fromBlocks₁₁]
+
+/-- The upper-right block of the identity matrix is zero. -/
+@[simp]
+public theorem toBlocks₁₂_one : (1 : Matrix (n ⊕ m) (n ⊕ m) α).toBlocks₁₂ = 0 := by
+  rw [← fromBlocks_one, toBlocks_fromBlocks₁₂]
+
+/-- The lower-left block of the identity matrix is zero. -/
+@[simp]
+public theorem toBlocks₂₁_one : (1 : Matrix (n ⊕ m) (n ⊕ m) α).toBlocks₂₁ = 0 := by
+  rw [← fromBlocks_one, toBlocks_fromBlocks₂₁]
+
+/-- The lower-right block of the identity matrix is the identity. -/
+@[simp]
+public theorem toBlocks₂₂_one : (1 : Matrix (n ⊕ m) (n ⊕ m) α).toBlocks₂₂ = 1 := by
+  rw [← fromBlocks_one, toBlocks_fromBlocks₂₂]
+
+end ToBlocksOne
+
+section ToBlocksMap
+
+variable {n o l m α β : Type*} (M : Matrix (n ⊕ o) (l ⊕ m) α) (f : α → β)
+
+/-- The upper-left block of an entrywise image is the entrywise image of the upper-left block. -/
+@[simp]
+public theorem toBlocks₁₁_map : (M.map f).toBlocks₁₁ = M.toBlocks₁₁.map f :=
+  (rfl)
+
+/-- The upper-right block of an entrywise image is the entrywise image of the upper-right block. -/
+@[simp]
+public theorem toBlocks₁₂_map : (M.map f).toBlocks₁₂ = M.toBlocks₁₂.map f :=
+  (rfl)
+
+/-- The lower-left block of an entrywise image is the entrywise image of the lower-left block. -/
+@[simp]
+public theorem toBlocks₂₁_map : (M.map f).toBlocks₂₁ = M.toBlocks₂₁.map f :=
+  (rfl)
+
+/-- The lower-right block of an entrywise image is the entrywise image of the lower-right block. -/
+@[simp]
+public theorem toBlocks₂₂_map : (M.map f).toBlocks₂₂ = M.toBlocks₂₂.map f :=
+  (rfl)
+
+end ToBlocksMap
 
 /-- The power of an upper two-block matrix, with its off-diagonal block given by the finite
 convolution of the two diagonal-block powers. -/
