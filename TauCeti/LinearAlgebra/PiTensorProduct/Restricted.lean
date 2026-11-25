@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Colimit.Module
 public import Mathlib.Data.Finset.Update
 public import Mathlib.LinearAlgebra.Dual.Lemmas
-public import Mathlib.LinearAlgebra.Multilinear.TensorProduct
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
 
 /-!
