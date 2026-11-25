@@ -142,9 +142,11 @@ private theorem map_volume_add_weightMomentMap [Finite ι]
       rw [IsSmoothVertex.edgeBasis_repr, IsIntegralLattice.dualBasis_repr, hv.basis_apply]
   have hhaar : (hv.edgeBasis hi).addHaar = hi.dualMeasure := by
     rw [hedge, hi.addHaar_dualBasis]
-  rw [show (fun w ↦ v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k) w) =
-      (v + ·) ∘ weightMomentMap (-⇑(hv.edgeBasis hi)) from rfl,
-    ← Measure.map_map (measurable_const_add v) (continuous_weightMomentMap _).measurable,
+  have hcomp : (fun w ↦ v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k) w) =
+      (v + ·) ∘ weightMomentMap (-⇑(hv.edgeBasis hi)) := by
+    funext w
+    rw [Function.comp_apply, Pi.neg_def]
+  rw [hcomp, ← Measure.map_map (measurable_const_add v) (continuous_weightMomentMap _).measurable,
     Module.Basis.map_volume_weightMomentMap_neg, hhaar,
     Measure.map_smul _ (measurable_const_add v).aemeasurable]
 
