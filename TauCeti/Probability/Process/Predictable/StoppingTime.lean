@@ -27,8 +27,8 @@ the closed stochastic ray `{(t, ω) | τ ω ≤ t}` predictable, and these close
 predictable sigma-algebra without completeness or right continuity of the filtration.
 
 We also define almost-sure announcing sequences (`TauCeti.IsAEAnnouncingSequence`) with respect to a
-measure `P` and upgrade them to pointwise announcing sequences when `ℱ` is `P`-complete or when
-every ambient-measurable `P`-null set belongs to `ℱ 0`.
+measure `P` and upgrade them to pointwise announcing sequences when `ℱ` is `P`-complete or, for
+stopping times `τ`, when every ambient-measurable `P`-null set belongs to `ℱ 0`.
 
 ## References
 
@@ -683,9 +683,9 @@ private theorem isAnnouncingSequence_piecewise_fallbackStep {s : Set Ω} [Decida
     · simpa [hω] using (hs hω).2.2 n hpos
     · simpa [hω] using (fallbackStep_properties (τ ω)).2.2 n hpos
 
-/-- If `τ` is a stopping time and every ambient-measurable `P`-null set belongs to `ℱ 0` (for
-instance on `ℱ.ambientNullAugmentation P`), any random time admitting an almost-sure announcing
-sequence also admits a pointwise announcing sequence. -/
+/-- When every ambient-measurable `P`-null set belongs to `ℱ 0` (for instance on
+`ℱ.ambientNullAugmentation P`), a stopping time `τ` admitting an almost-sure announcing sequence
+also admits a pointwise announcing sequence. -/
 theorem exists_isAnnouncingSequence_of_null (h : IsAEAnnouncingSequence ℱ P σ τ)
     (hτ : IsStoppingTime ℱ τ)
     (hnull : ∀ s : Set Ω, MeasurableSet s → P s = 0 → MeasurableSet[ℱ 0] s) :

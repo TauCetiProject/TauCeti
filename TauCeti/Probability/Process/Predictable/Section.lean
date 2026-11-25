@@ -294,8 +294,8 @@ theorem mem_souslinClosure_predictablePaving_of_measurableSet_predictable {E : S
 
 /-- The debut of the intersection of an antitone sequence in `predictablePaving` is pointwise
 predictable. -/
-theorem isPredictableTime_debut_iInter {e : ℕ → Set (ℝ≥0 × Ω)} (hanti : Antitone e)
-    (he : ∀ k, e k ∈ ℱ.predictablePaving) :
+theorem isPredictableTime_debut_iInter_of_mem_predictablePaving {e : ℕ → Set (ℝ≥0 × Ω)}
+    (hanti : Antitone e) (he : ∀ k, e k ∈ ℱ.predictablePaving) :
     TauCeti.IsPredictableTime ℱ (TauCeti.debut (⋂ k, e k)) := by
   have heq : TauCeti.debut (⋂ k, e k) = fun ω ↦ ⨆ k, TauCeti.debut (e k) ω :=
     funext fun ω ↦ TauCeti.debut_iInter_eq_iSup_of_isCompact hanti
@@ -306,8 +306,8 @@ theorem isPredictableTime_debut_iInter {e : ℕ → Set (ℝ≥0 × Ω)} (hanti 
 
 /-- For an antitone sequence in `predictablePaving`, the debut sublevel of the intersection at time
 `t` is the intersection of the time-`t` truncated projections. -/
-theorem debut_iInter_le_coe_eq {e : ℕ → Set (ℝ≥0 × Ω)} (hanti : Antitone e)
-    (he : ∀ k, e k ∈ ℱ.predictablePaving) (t : ℝ≥0) :
+theorem setOf_debut_iInter_le_coe_eq_of_mem_predictablePaving {e : ℕ → Set (ℝ≥0 × Ω)}
+    (hanti : Antitone e) (he : ∀ k, e k ∈ ℱ.predictablePaving) (t : ℝ≥0) :
     {ω | TauCeti.debut (⋂ k, e k) ω ≤ t} = ⋂ k, Prod.snd '' (e k ∩ (Iic t ×ˢ univ)) := by
   ext ω
   rw [mem_ofPred_eq,
@@ -357,7 +357,8 @@ theorem exists_isPredictableTime_section_lt {E : Set (ℝ≥0 × Ω)}
       (fun _ hu _ hv ↦ ℱ.inter_mem_predictablePaving hu hv)
       hI_cont
       (ℱ.mem_souslinClosure_predictablePaving_of_measurableSet_predictable hE) hr
-  refine ⟨debut (⋂ k, e k), ℱ.isPredictableTime_debut_iInter he_anti he_mem, ?_, ?_⟩
+  refine ⟨debut (⋂ k, e k),
+    ℱ.isPredictableTime_debut_iInter_of_mem_predictablePaving he_anti he_mem, ?_, ?_⟩
   · intro ω t ht
     exact he_sub (debut_mem_of_isCompact
       (isCompact_fiber_iInter fun k ↦ ℱ.isCompact_fiber_of_mem_predictablePaving (he_mem k) ω) ht)
@@ -433,69 +434,38 @@ private theorem exists_predictable_graph_section
     ext ω; simp
   exact ⟨D, hD, hD_ge, hD_eq, heq ▸ hsdiff⟩
 
--- Bound the finite-lag failure event of an announcing sequence at tolerance `1 / (k + 1)`.
-private theorem exists_finite_lag_index {D : Ω → WithTop ℝ≥0} {a : ℕ → Ω → WithTop ℝ≥0}
-    (ha : TauCeti.IsAnnouncingSequence ℱ a D) (k : ℕ) :
-    ∃ M : ℕ,
-      P {ω | D ω ≠ ⊤ ∧ a M ω + ((1 / (k + 1 : ℝ≥0) : ℝ≥0) : WithTop ℝ≥0) < D ω} ≤
-        (2⁻¹ : ℝ≥0∞) ^ k := by
-  let c : ℝ≥0 := 1 / (k + 1 : ℝ≥0)
-  have hc : 0 < c := by positivity
-  let hD := ha.isStoppingTime_limit
-  let E : ℕ → Set Ω := fun m ↦ {ω | D ω ≠ ⊤ ∧ a m ω + (c : WithTop ℝ≥0) < D ω}
-  have hmeas (m : ℕ) : MeasurableSet (E m) := by
-    have hle : MeasurableSet {ω | D ω ≤ a m ω + (c : WithTop ℝ≥0)} :=
-      hD.measurableSpace_le _
-        (hD.measurableSet_le_stopping_time ((ha.isStoppingTime m).add_const_of_orderedSub c))
-    have hlt : MeasurableSet {ω | a m ω + (c : WithTop ℝ≥0) < D ω} := by
-      simpa only [compl_ofPred, not_le] using hle.compl
-    simpa only [E, compl_ofPred, ← ofPred_and] using hD.measurableSet_eq_top.compl.inter hlt
-  have hanti : Antitone E := fun _ _ hm _ ⟨h1, h2⟩ ↦
-    ⟨h1, (add_le_add (ha.monotone _ hm) le_rfl).trans_lt h2⟩
-  have hempty : (⋂ m, E m) = ∅ := by
-    ext ω
-    simp only [E, mem_iInter, mem_ofPred_eq, mem_empty_iff_false, iff_false, not_forall]
-    by_cases htop : D ω = ⊤
-    · exact ⟨0, fun h ↦ h.1 htop⟩
-    · obtain ⟨t, ht⟩ := WithTop.ne_top_iff_exists.mp htop
-      by_cases ht0 : t = 0
-      · exact ⟨0, fun h ↦ not_lt_of_ge (ht ▸ ht0 ▸ bot_le) h.2⟩
-      · have hlt : ((t - c : ℝ≥0) : WithTop ℝ≥0) < D ω :=
-          ht ▸ WithTop.coe_lt_coe.mpr (tsub_lt_self (pos_iff_ne_zero.mpr ht0) hc)
-        obtain ⟨m, hm⟩ := ((ha.tendsto ω).eventually (isOpen_Ioi.mem_nhds hlt)).exists
-        obtain ⟨u, hu⟩ := WithTop.ne_top_iff_exists.mp (ha.ne_top m ω)
-        have hle : D ω ≤ a m ω + (c : WithTop ℝ≥0) := by
-          rw [← ht, ← hu, ← WithTop.coe_add, WithTop.coe_le_coe]
-          exact tsub_le_iff_right.mp (WithTop.coe_lt_coe.mp (hu ▸ hm)).le
-        exact ⟨m, fun h ↦ not_lt_of_ge hle h.2⟩
-  have htend : Tendsto (P ∘ E) atTop (𝓝 0) := by
-    simpa [hempty] using tendsto_measure_iInter_atTop
-      (fun m ↦ (hmeas m).nullMeasurableSet) hanti ⟨0, measure_ne_top P _⟩
-  exact (htend.eventually (Iic_mem_nhds (ENNReal.pow_pos (by simp) k))).exists
-
--- Bound the infinite-escape failure event of an announcing sequence at height `k`.
-private theorem exists_infinite_escape_index {D : Ω → WithTop ℝ≥0} {a : ℕ → Ω → WithTop ℝ≥0}
-    (ha : TauCeti.IsAnnouncingSequence ℱ a D) (k : ℕ) :
-    ∃ M : ℕ, P {ω | D ω = ⊤ ∧ a M ω < ((k : ℝ≥0) : WithTop ℝ≥0)} ≤ (2⁻¹ : ℝ≥0∞) ^ k := by
-  let hD := ha.isStoppingTime_limit
-  let E : ℕ → Set Ω := fun m ↦ {ω | D ω = ⊤ ∧ a m ω < ((k : ℝ≥0) : WithTop ℝ≥0)}
-  have hmeas (m : ℕ) : MeasurableSet (E m) := by
-    have hk_lt : MeasurableSet {ω | a m ω < ((k : ℝ≥0) : WithTop ℝ≥0)} :=
-      (ha.isStoppingTime m).measurableSpace_le _ ((ha.isStoppingTime m).measurableSet_lt' k)
-    simpa only [E, ← ofPred_and] using hD.measurableSet_eq_top.inter hk_lt
-  have hanti : Antitone E := fun _ _ hm _ ⟨h1, h2⟩ ↦ ⟨h1, (ha.monotone _ hm).trans_lt h2⟩
-  have hempty : (⋂ m, E m) = ∅ := by
-    ext ω
-    simp only [E, mem_iInter, mem_ofPred_eq, mem_empty_iff_false, iff_false, not_forall]
-    by_cases htop : D ω = ⊤
-    · have hlt : ((k : ℝ≥0) : WithTop ℝ≥0) < D ω := htop ▸ WithTop.coe_lt_top (k : ℝ≥0)
+-- Along an announcing sequence, finite-lag failures above tolerance `c > 0` have empty
+-- intersection.
+private theorem iInter_finite_lag_eq_empty {D : Ω → WithTop ℝ≥0} {a : ℕ → Ω → WithTop ℝ≥0}
+    (ha : TauCeti.IsAnnouncingSequence ℱ a D) {c : ℝ≥0} (hc : 0 < c) :
+    (⋂ m, {ω | D ω ≠ ⊤ ∧ a m ω + (c : WithTop ℝ≥0) < D ω}) = ∅ := by
+  ext ω
+  simp only [mem_iInter, mem_ofPred_eq, mem_empty_iff_false, iff_false, not_forall]
+  by_cases htop : D ω = ⊤
+  · exact ⟨0, fun h ↦ h.1 htop⟩
+  · obtain ⟨t, ht⟩ := WithTop.ne_top_iff_exists.mp htop
+    by_cases ht0 : t = 0
+    · exact ⟨0, fun h ↦ not_lt_of_ge (ht ▸ ht0 ▸ bot_le) h.2⟩
+    · have hlt : ((t - c : ℝ≥0) : WithTop ℝ≥0) < D ω :=
+        ht ▸ WithTop.coe_lt_coe.mpr (tsub_lt_self (pos_iff_ne_zero.mpr ht0) hc)
       obtain ⟨m, hm⟩ := ((ha.tendsto ω).eventually (isOpen_Ioi.mem_nhds hlt)).exists
-      exact ⟨m, fun h ↦ not_lt_of_ge hm.le h.2⟩
-    · exact ⟨0, fun h ↦ htop h.1⟩
-  have htend : Tendsto (P ∘ E) atTop (𝓝 0) := by
-    simpa [hempty] using tendsto_measure_iInter_atTop
-      (fun m ↦ (hmeas m).nullMeasurableSet) hanti ⟨0, measure_ne_top P _⟩
-  exact (htend.eventually (Iic_mem_nhds (ENNReal.pow_pos (by simp) k))).exists
+      obtain ⟨u, hu⟩ := WithTop.ne_top_iff_exists.mp (ha.ne_top m ω)
+      have hle : D ω ≤ a m ω + (c : WithTop ℝ≥0) := by
+        rw [← ht, ← hu, ← WithTop.coe_add, WithTop.coe_le_coe]
+        exact tsub_le_iff_right.mp (WithTop.coe_lt_coe.mp (hu ▸ hm)).le
+      exact ⟨m, fun h ↦ not_lt_of_ge hle h.2⟩
+
+-- Along an announcing sequence, infinite-escape failures below height `k` have empty intersection.
+private theorem iInter_infinite_escape_eq_empty {D : Ω → WithTop ℝ≥0} {a : ℕ → Ω → WithTop ℝ≥0}
+    (ha : TauCeti.IsAnnouncingSequence ℱ a D) (k : ℕ) :
+    (⋂ m, {ω | D ω = ⊤ ∧ a m ω < ((k : ℝ≥0) : WithTop ℝ≥0)}) = ∅ := by
+  ext ω
+  simp only [mem_iInter, mem_ofPred_eq, mem_empty_iff_false, iff_false, not_forall]
+  by_cases htop : D ω = ⊤
+  · have hlt : ((k : ℝ≥0) : WithTop ℝ≥0) < D ω := htop ▸ WithTop.coe_lt_top (k : ℝ≥0)
+    obtain ⟨m, hm⟩ := ((ha.tendsto ω).eventually (isOpen_Ioi.mem_nhds hlt)).exists
+    exact ⟨m, fun h ↦ not_lt_of_ge hm.le h.2⟩
+  · exact ⟨0, fun h ↦ htop h.1⟩
 
 -- Choose a single index `M` simultaneously bounding both finite-lag and infinite-escape failures.
 private theorem exists_announcing_index {D : Ω → WithTop ℝ≥0} {a : ℕ → Ω → WithTop ℝ≥0}
@@ -504,12 +474,42 @@ private theorem exists_announcing_index {D : Ω → WithTop ℝ≥0} {a : ℕ �
       P {ω | D ω ≠ ⊤ ∧ a M ω + ((1 / (k + 1 : ℝ≥0) : ℝ≥0) : WithTop ℝ≥0) < D ω} ≤
         (2⁻¹ : ℝ≥0∞) ^ k ∧
       P {ω | D ω = ⊤ ∧ a M ω < ((k : ℝ≥0) : WithTop ℝ≥0)} ≤ (2⁻¹ : ℝ≥0∞) ^ k := by
-  obtain ⟨M₁, hM₁⟩ := exists_finite_lag_index (P := P) ha k
-  obtain ⟨M₂, hM₂⟩ := exists_infinite_escape_index (P := P) ha k
-  refine ⟨max M₁ M₂, le_trans (measure_mono ?_) hM₁, le_trans (measure_mono ?_) hM₂⟩
-  · exact fun ω ⟨h1, h2⟩ ↦
-      ⟨h1, (add_le_add (ha.monotone ω (le_max_left M₁ M₂)) le_rfl).trans_lt h2⟩
-  · exact fun ω ⟨h1, h2⟩ ↦ ⟨h1, (ha.monotone ω (le_max_right M₁ M₂)).trans_lt h2⟩
+  let c : ℝ≥0 := 1 / (k + 1 : ℝ≥0)
+  have hc : 0 < c := by positivity
+  let hD := ha.isStoppingTime_limit
+  let E₁ : ℕ → Set Ω := fun m ↦ {ω | D ω ≠ ⊤ ∧ a m ω + (c : WithTop ℝ≥0) < D ω}
+  let E₂ : ℕ → Set Ω := fun m ↦ {ω | D ω = ⊤ ∧ a m ω < ((k : ℝ≥0) : WithTop ℝ≥0)}
+  let E : ℕ → Set Ω := fun m ↦ E₁ m ∪ E₂ m
+  have hmeas (m : ℕ) : MeasurableSet (E m) := by
+    have hle : MeasurableSet {ω | D ω ≤ a m ω + (c : WithTop ℝ≥0)} :=
+      hD.measurableSpace_le _
+        (hD.measurableSet_le_stopping_time ((ha.isStoppingTime m).add_const_of_orderedSub c))
+    have hlt₁ : MeasurableSet {ω | a m ω + (c : WithTop ℝ≥0) < D ω} := by
+      simpa only [compl_ofPred, not_le] using hle.compl
+    have hlt₂ : MeasurableSet {ω | a m ω < ((k : ℝ≥0) : WithTop ℝ≥0)} :=
+      (ha.isStoppingTime m).measurableSpace_le _ ((ha.isStoppingTime m).measurableSet_lt' k)
+    have h₁ : MeasurableSet (E₁ m) := by
+      simpa only [E₁, compl_ofPred, ← ofPred_and] using hD.measurableSet_eq_top.compl.inter hlt₁
+    have h₂ : MeasurableSet (E₂ m) := by
+      simpa only [E₂, ← ofPred_and] using hD.measurableSet_eq_top.inter hlt₂
+    exact h₁.union h₂
+  have hanti : Antitone E := fun _ _ hm _ h ↦ h.elim
+    (fun ⟨h1, h2⟩ ↦ Or.inl ⟨h1, (add_le_add (ha.monotone _ hm) le_rfl).trans_lt h2⟩)
+    (fun ⟨h1, h2⟩ ↦ Or.inr ⟨h1, (ha.monotone _ hm).trans_lt h2⟩)
+  have hempty : (⋂ m, E m) = ∅ := subset_empty_iff.mp fun ω hω ↦ by
+    by_cases htop : D ω = ⊤
+    · have hmem : ω ∈ ⋂ m, E₂ m := mem_iInter.mpr fun m ↦
+        (mem_iInter.mp hω m).resolve_left fun h ↦ h.1 htop
+      exact iInter_infinite_escape_eq_empty ha k ▸ hmem
+    · have hmem : ω ∈ ⋂ m, E₁ m := mem_iInter.mpr fun m ↦
+        (mem_iInter.mp hω m).resolve_right fun h ↦ htop h.1
+      exact iInter_finite_lag_eq_empty ha hc ▸ hmem
+  have htend : Tendsto (P ∘ E) atTop (𝓝 0) := by
+    simpa [hempty] using tendsto_measure_iInter_atTop
+      (fun m ↦ (hmeas m).nullMeasurableSet) hanti ⟨0, measure_ne_top P _⟩
+  obtain ⟨M, hM⟩ :=
+    (htend.eventually (Iic_mem_nhds (ENNReal.pow_pos (a := (2⁻¹ : ℝ≥0∞)) (by simp) k))).exists
+  exact ⟨M, (measure_mono subset_union_left).trans hM, (measure_mono subset_union_right).trans hM⟩
 
 -- Stage-`k` failure event where either `D k` misses a finite value of `τ`, `b k` lags behind a
 -- finite `D k` by more than `1 / (k + 1)`, or `b k` stays below `k` when `D k = ⊤`.

@@ -14,7 +14,8 @@ import Mathlib.Data.Fin.Basic
 /-!
 # Suprema and infima in complete lattices
 
-This file adds supremum and infimum identities for complete lattices that are not in Mathlib.
+This file adds supremum, infimum, and monotonicity lemmas for complete lattices that are not in
+Mathlib.
 
 ## Main declarations
 
@@ -29,6 +30,8 @@ This file adds supremum and infimum identities for complete lattices that are no
   the supremum over `i ∈ [k, m]`.
 * `TauCeti.iInf_mem_range_succ_eq_iInf`: for a family with `S j₀ ≤ S j` for all `j ≥ j₀`, the
   infimum of the first `j₀ + 1` members is the infimum of all members.
+* `TauCeti.monotone_of_map_iSup_of_monotone`: a map between complete lattices that preserves
+  suprema of monotone `ℕ`-indexed sequences is monotone.
 -/
 
 public section
@@ -88,5 +91,24 @@ theorem iInf_mem_range_succ_eq_iInf {α : Type*} [CompleteLattice α] (S : ℕ �
   rcases le_total j j₀ with h | h
   · exact iInf₂_le j (Finset.mem_range.2 (by omega))
   · exact (iInf₂_le j₀ (Finset.mem_range.2 (by omega))).trans (hS j h)
+
+/-- A map between complete lattices that preserves suprema of monotone `ℕ`-indexed sequences is
+monotone. -/
+theorem monotone_of_map_iSup_of_monotone {α β : Type*} [CompleteLattice α] [CompleteLattice β]
+    {f : α → β} (hf : ∀ s : ℕ → α, Monotone s → f (⨆ n, s n) = ⨆ n, f (s n)) :
+    Monotone f := by
+  intro a b hab
+  let s : ℕ → α := fun
+    | 0 => a
+    | _ + 1 => b
+  have hs_mono : Monotone s := fun i j hij ↦ by
+    cases i with
+    | zero => cases j <;> [exact le_rfl; exact hab]
+    | succ _ => cases j with
+      | zero => exact (Nat.not_succ_le_zero _ hij).elim
+      | succ _ => exact le_rfl
+  have hs_sup : (⨆ n, s n) = b :=
+    le_antisymm (iSup_le fun | 0 => hab | _ + 1 => le_rfl) (le_iSup s 1)
+  exact (le_iSup (fun n ↦ f (s n)) 0).trans_eq ((hf s hs_mono).symm.trans (congrArg f hs_sup))
 
 end TauCeti

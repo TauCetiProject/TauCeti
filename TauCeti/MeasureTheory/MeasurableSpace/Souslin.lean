@@ -16,6 +16,7 @@ import Mathlib.Order.SupClosed
 import Mathlib.Topology.Compactness.Compact
 import Mathlib.Topology.Constructions
 import Mathlib.Topology.Order.Basic
+import TauCeti.Order.CompleteLattice.Basic
 
 /-!
 # The Souslin operation on families of sets
@@ -410,18 +411,8 @@ theorem exists_antitone_mem_of_lt_of_mem_souslinClosure {E : Set (Set α)}
     (hiUnion : ∀ A : ℕ → Set α, Monotone A → I (⋃ n, A n) = ⨆ n, I (A n))
     {s : Set α} (hs : s ∈ souslinClosure E) {r : ℝ≥0∞} (hr : r < I s) :
     ∃ e : ℕ → Set α, Antitone e ∧ (∀ k, e k ∈ E) ∧ (⋂ k, e k) ⊆ s ∧ r < ⨅ k, I (e k) := by
-  -- Upward continuity along `u, v, v, …` implies monotonicity of `I`.
-  have hmono : Monotone I := fun u v huv ↦ by
-    let A : ℕ → Set α := fun n ↦ if n = 0 then u else v
-    have hA_mono : Monotone A := fun i j hij ↦ by
-      by_cases hj : j = 0
-      · simp [A, hj, Nat.eq_zero_of_le_zero (hj ▸ hij)]
-      · by_cases hi : i = 0 <;> simp [A, hi, hj, huv]
-    have hA_union : (⋃ n, A n) = v := subset_antisymm
-      (iUnion_subset fun n ↦ by dsimp only [A]; split_ifs <;> [exact huv; exact Subset.rfl])
-      (subset_iUnion_of_subset 1 Subset.rfl)
-    simpa only [A, ↓reduceIte] using
-      (le_iSup (fun n ↦ I (A n)) 0).trans_eq ((hiUnion A hA_mono).symm.trans (congrArg I hA_union))
+  have hmono : Monotone I :=
+    monotone_of_map_iSup_of_monotone (by simpa only [iSup_eq_iUnion] using hiUnion)
   obtain ⟨f, hf, rfl⟩ := hs
   obtain ⟨p, hrp, hp⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp hr
   obtain ⟨q, hpq, hq⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp hp
