@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.Conformal.Weingarten
-import Mathlib.LinearAlgebra.Charpoly.ToMatrix
-import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 
 /-!
 # The principal curvatures of the boundary under a conformal change
@@ -24,14 +22,11 @@ is increasing, the principal curvatures of `ĝ`, listed in decreasing order, are
 
 The comparison rests on a characterisation of the principal curvatures that does not mention the
 metric: they are the unique decreasing family `μ` for which some basis `(bᵢ)` of `T_q∂M` satisfies
-`S_q bᵢ = μᵢ bᵢ` (`TauCeti.boundaryPrincipalCurvatures_eq_of_basis`), since both families are the
-roots of the characteristic polynomial of `S_q` (`TauCeti.charpoly_boundaryWeingarten`).
+`S_q bᵢ = μᵢ bᵢ` (`TauCeti.boundaryPrincipalCurvatures_eq_of_basis`). The principal basis of `g`
+is such a basis for `S^ĝ_q`, although it is not orthonormal for `ĝ` unless `f q = 1`.
 
 ## Main statements
 
-* `TauCeti.charpoly_boundaryWeingarten`: `char S_q = ∏ᵢ (X - κᵢ)`.
-* `TauCeti.boundaryPrincipalCurvatures_eq_of_basis`: a decreasing family of eigenvalues of `S_q`
-  on a basis is the family of principal curvatures.
 * `Bundle.ContMDiffRiemannianMetric.boundaryPrincipalCurvatures_rescale`:
   `κ^ĝᵢ = (√(f q))⁻¹ (κᵢ - (2 f q)⁻¹ df_q(ν_in))`.
 * `Bundle.ContMDiffRiemannianMetric.boundaryPrincipalCurvatures_rescale_const`: for a constant
@@ -47,66 +42,8 @@ public section
 
 noncomputable section
 
-open Bundle Polynomial
+open Bundle
 open scoped Manifold ContDiff
-
-/-! ### Principal curvatures through the characteristic polynomial -/
-
-namespace TauCeti
-
-variable {n : ℕ}
-
-/-- An endomorphism that is diagonal in a basis, with diagonal entries `μ`, has characteristic
-polynomial `∏ᵢ (X - μᵢ)`. -/
-private theorem charpoly_eq_prod_of_basis {V : Type*} [AddCommGroup V] [Module ℝ V]
-    [Module.Free ℝ V] [Module.Finite ℝ V] (T : Module.End ℝ V) (b : Module.Basis (Fin n) ℝ V)
-    (μ : Fin n → ℝ) (hb : ∀ i, T (b i) = μ i • b i) :
-    T.charpoly = ∏ i, (X - C (μ i)) := by
-  have hT : LinearMap.toMatrix b b T = Matrix.diagonal μ := by
-    ext i j
-    rw [LinearMap.toMatrix_apply, hb, map_smul, b.repr_self, Finsupp.smul_single, smul_eq_mul,
-      mul_one, Matrix.diagonal_apply, Finsupp.single_apply]
-    by_cases h : i = j
-    · simp [h]
-    · simp [h, Ne.symm h]
-  rw [← T.charpoly_toMatrix b, hT, Matrix.charpoly_diagonal]
-
-/-- Two decreasing families with the same polynomial `∏ᵢ (X - μᵢ)` are equal. -/
-private theorem eq_of_antitone_of_prod_eq {μ μ' : Fin n → ℝ} (hμ : Antitone μ)
-    (hμ' : Antitone μ') (h : ∏ i, (X - C (μ i)) = ∏ i, (X - C (μ' i))) : μ = μ' := by
-  have hroots (ν : Fin n → ℝ) :
-      (∏ i, (X - C (ν i))).roots = (List.ofFn ν : Multiset ℝ) := by
-    rw [Polynomial.roots_prod _ _ (by simp [Finset.prod_ne_zero_iff, X_sub_C_ne_zero])]
-    simp
-  have hperm : (List.ofFn μ).Perm (List.ofFn μ') := by
-    rw [← Multiset.coe_eq_coe, ← hroots, ← hroots, h]
-  exact List.ofFn_injective (hperm.eq_of_sortedGE hμ.sortedGE_ofFn hμ'.sortedGE_ofFn)
-
-variable {M : Type*} [TopologicalSpace M]
-  [ChartedSpace (EuclideanHalfSpace (n + 1)) M] [IsManifold (𝓡∂ (n + 1)) 2 M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
-  [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
-    (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
-
-/-- The characteristic polynomial of the Weingarten map is `∏ᵢ (X - κᵢ)`, over the principal
-curvatures `κᵢ`. -/
-theorem charpoly_boundaryWeingarten (q : (𝓡∂ (n + 1)).boundary M) :
-    (boundaryWeingarten q).charpoly = ∏ i, (X - C (boundaryPrincipalCurvatures q i)) :=
-  charpoly_eq_prod_of_basis _ (boundaryPrincipalBasis q) _ fun i ↦ by
-    rw [coe_boundaryPrincipalBasis, boundaryWeingarten_boundaryPrincipalDirection]
-
-/-- **The principal curvatures are the decreasing eigenvalues on any eigenbasis.** If a basis
-`(bᵢ)` of the tangent space of the boundary at `q` satisfies `S_q bᵢ = μᵢ bᵢ` for a decreasing
-family `μ`, then `μ` is the family of principal curvatures at `q`. The basis need not be
-orthonormal. -/
-theorem boundaryPrincipalCurvatures_eq_of_basis (q : (𝓡∂ (n + 1)).boundary M)
-    (b : Module.Basis (Fin n) ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q))
-    {μ : Fin n → ℝ} (hμ : Antitone μ) (hb : ∀ i, boundaryWeingarten q (b i) = μ i • b i) :
-    boundaryPrincipalCurvatures q = μ :=
-  eq_of_antitone_of_prod_eq (boundaryPrincipalCurvatures_antitone q) hμ <| by
-    rw [← charpoly_boundaryWeingarten, charpoly_eq_prod_of_basis _ b μ hb]
-
-end TauCeti
 
 /-! ### The conformal law -/
 
@@ -195,7 +132,7 @@ theorem boundaryPrincipalCurvatures_rescale_const (hk : 1 ≤ k) {c : ℝ} (hc :
         letI : IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
           (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x) := IsContMDiffRiemannianBundle.of_le hk;
         boundaryPrincipalCurvatures q i) / c := by
-  rw [boundaryPrincipalCurvatures_rescale g _ _ hk q i, mvfderiv_const, zero_apply,
-    mul_zero, sub_zero, Real.sqrt_sq hc.le, inv_mul_eq_div]
+  rw [boundaryPrincipalCurvatures_rescale g _ _ hk q i]
+  simp [mvfderiv_const, Real.sqrt_sq hc.le, div_eq_inv_mul]
 
 end Bundle.ContMDiffRiemannianMetric

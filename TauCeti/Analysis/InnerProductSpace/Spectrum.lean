@@ -547,7 +547,8 @@ theorem finrank_positiveSpectralSubspace_eq_finrank_negativeSpectralSubspace_of_
 order: the `i`-th largest eigenvalue of `-T` is minus the `i`-th smallest eigenvalue of `T`. -/
 theorem eigenvalues_neg (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n) (i : Fin n) :
     hT.neg.eigenvalues hn i = -hT.eigenvalues hn i.rev :=
-  congrFun (hT.neg.eigenvalues_eq_of_eigenbasis hn ((hT.eigenvectorBasis hn).reindex Fin.revPerm)
+  congrFun (hT.neg.eigenvalues_eq_of_basis hn
+    ((hT.eigenvectorBasis hn).reindex Fin.revPerm).toBasis
     (fun _ _ hjk ↦ neg_le_neg (hT.eigenvalues_antitone hn (Fin.rev_le_rev.2 hjk)))
     fun j ↦ by simp [hT.apply_eigenvectorBasis]) i
 
