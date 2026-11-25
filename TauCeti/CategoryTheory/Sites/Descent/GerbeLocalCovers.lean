@@ -22,22 +22,22 @@ sieves behind the locality conditions of a gerbe (Stacks, Definition 8.11.1 (06N
   fibre products or terminal object are needed.
 
 They are sieves for any pseudofunctor; the transport along composites uses the comparison
-isomorphisms `F.mapComp'`, so `F` need not be strict. They are stable under pullback, and when `F`
-is a gerbe for `J` they are `J`-covering, as are their intersections with any covering sieve. The
-covering conclusion for `objectCover` does not produce an object over `U`: if `F(U)` is empty, the
-identity of `U` is not in it.
+isomorphisms `F.mapComp'`, so `F` need not be strict. They are stable under pullback, and
+when `F` is a gerbe for `J` they are `J`-covering, as are their intersections with any covering
+sieve. The covering conclusion for `objectCover` does not produce an object over `U`: if `F(U)` is
+empty, the identity of `U` is not in it.
 
-These covers are where the local objects of a gerbe live and where two local objects can be
-compared; the chart comparisons for gerbes are built on them.
+These covers are where the local objects of a gerbe live: two local objects over different bases
+are compared on their overlap cover.
 
 ## Main declarations
 
 In the namespace `CategoryTheory.Pseudofunctor.GerbeLocalCovers`:
 
-* `objectCover`, `pullback_objectCover`, `objectCover_mem`, `inf_objectCover_mem`,
-  `id_notMem_objectCover`.
-* `isomCover`, `isomCover_comm`, `isomCover_self`, `pullback_isomCover`, `isomCover_mem`,
-  `inf_isomCover_mem`.
+* `objectCover`, `objectCover_eq_top_iff`, `objectCover_eq_bot_iff`, `pullback_objectCover`,
+  `objectCover_mem`, `inf_objectCover_mem`, `id_notMem_objectCover`.
+* `isomCover`, `isomCover_comm`, `isomCover_eq_top_of_iso`, `isomCover_self`, `pullback_isomCover`,
+  `isomCover_mem`, `inf_isomCover_mem`.
 * `overlapCover`, `overlapCover_comm`, `pullback_overlapCover`, `overlapCover_mem`,
   `pullback_overlapCover_mem`.
 
@@ -57,12 +57,6 @@ namespace CategoryTheory.Pseudofunctor.GerbeLocalCovers
 variable {C : Type u} [Category.{v} C] (F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'})
   {J : GrothendieckTopology C}
 
-/-- The comparison `F(g ≫ f) x ≅ F(g) (F(f) x)` of pullbacks along a composite. -/
-private noncomputable def compIso {U V W : C} (f : V ⟶ U) (g : W ⟶ V) (x : F.obj (.mk (op U))) :
-    (F.map (g ≫ f).op.toLoc).toFunctor.obj x ≅
-      (F.map g.op.toLoc).toFunctor.obj ((F.map f.op.toLoc).toFunctor.obj x) :=
-  (Cat.Hom.toNatIso (F.mapComp' f.op.toLoc g.op.toLoc (g ≫ f).op.toLoc)).app x
-
 /-! ### The object cover -/
 
 /-- The **object cover** of `U`: the sieve of arrows `f : V ⟶ U` whose source fibre `F(V)` is
@@ -77,6 +71,17 @@ variable {F}
 theorem mem_objectCover_iff {U V : C} (f : V ⟶ U) :
     objectCover F U f ↔ Nonempty (F.obj (.mk (op V))) :=
   Iff.rfl
+
+/-- The object cover of `U` is maximal exactly when the fibre over `U` is nonempty. -/
+theorem objectCover_eq_top_iff {U : C} : objectCover F U = ⊤ ↔ Nonempty (F.obj (.mk (op U))) :=
+  Sieve.id_mem_iff_eq_top.symm
+
+/-- The object cover of `U` is empty exactly when the fibre over every `V` mapping to `U` is
+empty. -/
+theorem objectCover_eq_bot_iff {U : C} :
+    objectCover F U = ⊥ ↔ ∀ ⦃V : C⦄ (_ : V ⟶ U), IsEmpty (F.obj (.mk (op V))) :=
+  ⟨fun h _ f ↦ ⟨fun x ↦ by simpa [h] using (show objectCover F U f from ⟨x⟩)⟩,
+    fun h ↦ eq_bot_iff.2 fun _ f ⟨x⟩ ↦ (h f).false x⟩
 
 /-- The pullback of the object cover of `U` along `f : V ⟶ U` is the object cover of `V`. -/
 @[simp]
@@ -108,7 +113,8 @@ which `x` and `y` become isomorphic. -/
 def isomCover {U : C} (x y : F.obj (.mk (op U))) : Sieve U where
   arrows _ f := Nonempty ((F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y)
   downward_closed {_ _} f := fun ⟨e⟩ g ↦
-    ⟨compIso F f g x ≪≫ (F.map g.op.toLoc).toFunctor.mapIso e ≪≫ (compIso F f g y).symm⟩
+    let c := Cat.Hom.toNatIso (F.mapComp' f.op.toLoc g.op.toLoc (g ≫ f).op.toLoc)
+    ⟨c.app x ≪≫ (F.map g.op.toLoc).toFunctor.mapIso e ≪≫ (c.app y).symm⟩
 
 @[simp]
 theorem mem_isomCover_iff {U V : C} (x y : F.obj (.mk (op U))) (f : V ⟶ U) :
@@ -120,10 +126,15 @@ theorem mem_isomCover_iff {U V : C} (x y : F.obj (.mk (op U))) (f : V ⟶ U) :
 theorem isomCover_comm {U : C} (x y : F.obj (.mk (op U))) : isomCover F x y = isomCover F y x :=
   Sieve.ext fun _ _ ↦ ⟨fun ⟨e⟩ ↦ ⟨e.symm⟩, fun ⟨e⟩ ↦ ⟨e.symm⟩⟩
 
+/-- The isomorphism cover of isomorphic objects is the maximal sieve, for any pseudofunctor. -/
+theorem isomCover_eq_top_of_iso {U : C} {x y : F.obj (.mk (op U))} (e : x ≅ y) :
+    isomCover F x y = ⊤ :=
+  eq_top_iff.2 fun _ f _ ↦ ⟨(F.map f.op.toLoc).toFunctor.mapIso e⟩
+
 /-- The isomorphism cover of an object with itself is the maximal sieve, for any pseudofunctor. -/
 @[simp]
 theorem isomCover_self {U : C} (x : F.obj (.mk (op U))) : isomCover F x x = ⊤ :=
-  eq_top_iff.2 fun _ _ _ ↦ ⟨Iso.refl _⟩
+  isomCover_eq_top_of_iso (Iso.refl x)
 
 /-- The pullback of the isomorphism cover of `x` and `y` along `f : V ⟶ U` is the isomorphism
 cover of their pullbacks. -/
@@ -132,8 +143,8 @@ theorem pullback_isomCover {U V : C} (x y : F.obj (.mk (op U))) (f : V ⟶ U) :
     (isomCover F x y).pullback f =
       isomCover F ((F.map f.op.toLoc).toFunctor.obj x) ((F.map f.op.toLoc).toFunctor.obj y) :=
   Sieve.ext fun _ g ↦
-    ⟨fun ⟨e⟩ ↦ ⟨(compIso F f g x).symm ≪≫ e ≪≫ compIso F f g y⟩,
-      fun ⟨e⟩ ↦ ⟨compIso F f g x ≪≫ e ≪≫ (compIso F f g y).symm⟩⟩
+    let c := Cat.Hom.toNatIso (F.mapComp' f.op.toLoc g.op.toLoc (g ≫ f).op.toLoc)
+    ⟨fun ⟨e⟩ ↦ ⟨(c.app x).symm ≪≫ e ≪≫ c.app y⟩, fun ⟨e⟩ ↦ ⟨c.app x ≪≫ e ≪≫ (c.app y).symm⟩⟩
 
 /-- For a gerbe, the isomorphism cover of any two objects over `U` is covering; no global
 isomorphism is assumed. -/
@@ -177,8 +188,11 @@ theorem pullback_overlapCover {S T V W : C} (i : T ⟶ V) (j : T ⟶ W) (x : F.o
     (y : F.obj (.mk (op W))) (q : S ⟶ T) :
     (overlapCover F i j x y).pullback q = overlapCover F (q ≫ i) (q ≫ j) x y :=
   Sieve.ext fun _ g ↦
-    let a := compIso F q g _ ≪≫ (F.map g.op.toLoc).toFunctor.mapIso (compIso F i q x).symm
-    let b := compIso F q g _ ≪≫ (F.map g.op.toLoc).toFunctor.mapIso (compIso F j q y).symm
+    let c := Cat.Hom.toNatIso (F.mapComp' q.op.toLoc g.op.toLoc (g ≫ q).op.toLoc)
+    let a := c.app _ ≪≫ (F.map g.op.toLoc).toFunctor.mapIso
+      ((Cat.Hom.toNatIso (F.mapComp' i.op.toLoc q.op.toLoc (q ≫ i).op.toLoc)).app x).symm
+    let b := c.app _ ≪≫ (F.map g.op.toLoc).toFunctor.mapIso
+      ((Cat.Hom.toNatIso (F.mapComp' j.op.toLoc q.op.toLoc (q ≫ j).op.toLoc)).app y).symm
     ⟨fun ⟨e⟩ ↦ ⟨a.symm ≪≫ e ≪≫ b⟩, fun ⟨e⟩ ↦ ⟨a ≪≫ e ≪≫ b.symm⟩⟩
 
 /-- For a gerbe, every overlap cover is covering, even when the local objects lie over different
