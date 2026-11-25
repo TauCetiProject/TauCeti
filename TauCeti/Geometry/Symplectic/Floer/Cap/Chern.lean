@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Cap.Area
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chern
+import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.UnitaryFrame
 import TauCeti.Topology.Homotopy.Extension.Cube
 import TauCeti.Topology.VectorBundle.FiberCast
 
@@ -48,18 +49,18 @@ loop `k` of complex-linear automorphisms of the model `G`, and `2π c₁(D' -ᵥ
 every continuous lift `θ` of `det_ℂ k / |det_ℂ k|`. Such frames exist along every smooth based cap
 (`TauCeti.Floer.IsSmoothBasedCap.exists_frame_eq_on_edges`): any frame along the cap becomes
 constant on the three edges after composing it with the change of frame read through a retraction
-of the plane onto these edges.
+of the plane onto these edges. When `J` is compatible with `σ`, the same normalization of a unitary
+frame gives frames over the cap which are moreover symplectic, hence unitary for `σ` and `J`
+(`TauCeti.Floer.IsSmoothBasedCap.exists_unitary_frame_eq_on_edges`).
 
 This is the topological half of the recapping law for the grading of capped orbits. The
 Conley–Zehnder index of a capped orbit, read in a symplectic trivialization over the cap, changes
 by twice the Maslov index of the change of trivialization
-(`TauCeti.SmoothTwoForm.frameConleyZehnderIndex_eq_add_maslovIndex`). That theorem takes symplectic
-frames, while the frames here are only complex linear for `J`. When the frames over the two caps
-are moreover symplectic for `σ`, hence unitary for `σ` and `J`, along the orbit, the change of
-trivialization along the orbit is the loop `k⁻¹` of unitary maps. Turning the statement here into
-the recapping law then also needs the comparison of the Maslov index of a loop of unitary maps
-with the winding of its complex determinant. Neither the unitary frames nor this comparison are
-made in this file.
+(`TauCeti.SmoothTwoForm.frameConleyZehnderIndex_eq_add_maslovIndex`). For unitary frames over the
+two caps, the change of trivialization along the orbit is the loop `k⁻¹` of unitary maps, whose
+Maslov index is minus the winding of its complex determinant; the recapping law that results is
+`TauCeti.Floer.IsSmoothBasedCap.frameConleyZehnderIndex_eq_sub_two_mul_firstChernHom`, in
+`TauCeti.Geometry.Symplectic.Floer.Cap.ConleyZehnder`.
 
 ## Main results
 
@@ -70,6 +71,8 @@ made in this file.
   over the caps.
 * `TauCeti.Floer.IsSmoothBasedCap.exists_frame_eq_on_edges`: complex frames of the tangent bundle
   along a smooth based cap, constant on the three edges at the base point, exist.
+* `TauCeti.Floer.IsSmoothBasedCap.exists_unitary_frame_eq_on_edges`: for a compatible almost
+  complex structure, such frames can moreover be taken unitary.
 
 ## References
 
@@ -446,6 +449,65 @@ private theorem exists_capEdgeRetraction :
     · exact Or.inr (Or.inl rfl)
     · exact Or.inr (Or.inr rfl)
 
+omit [FiniteDimensional ℂ G] [Fact (finrank ℝ E = 2 * finrank ℂ G)] [T2Space M]
+  [SigmaCompactSpace M] in
+/-- **Normalizing a frame over a cap on its edges.** Let `φ` be a continuous frame of the tangent
+bundle along a smooth based cap `u`, complex linear for `J`. Composing it with the change of frame
+`A z = φ(ρ z)⁻¹ ∘ φ(1, 0)`, read through a retraction `ρ` of the plane onto the three edges
+`s = 1`, `t = 0`, `t = 1` of the unit square, gives a frame `z ↦ φ z ∘ A z` which is still
+continuous and complex linear, and is constant on these edges. Each `A z` compares two values of
+`φ` at the base point: `φ y ∘ A z = φ (1, 0)` for a point `y` where `u` is at the base point. -/
+private theorem IsSmoothBasedCap.exists_frame_eq_on_edges_of_frame (hu : IsSmoothBasedCap I γ u)
+    {φ : ∀ z, G ≃L[ℝ] TangentSpace I (u z)}
+    (hφ : Continuous fun q : (ℝ × ℝ) × G ↦ (⟨u q.1, φ q.1 q.2⟩ : TangentBundle I M))
+    (hφJ : ∀ z v, φ z (Complex.I • v) = J (u z) (φ z v)) :
+    ∃ A : ℝ × ℝ → G ≃L[ℝ] G,
+      Continuous (fun q : (ℝ × ℝ) × G ↦
+        (⟨u q.1, (A q.1).trans (φ q.1) q.2⟩ : TangentBundle I M)) ∧
+      (∀ z v, (A z).trans (φ z) (Complex.I • v) = J (u z) ((A z).trans (φ z) v)) ∧
+      (∀ z, ∃ y, u y = u (1, 0) ∧ ∀ v, φ y (A z v) = φ (1, 0) v) ∧
+      ∀ s t : ℝ, s ∈ Icc 0 1 → t ∈ Icc 0 1 → (s = 1 ∨ t = 0 ∨ t = 1) → ∀ v,
+        (A (s, t)).trans (φ (s, t)) v = (A (1, 0)).trans (φ (1, 0)) v := by
+  obtain ⟨ρ, hρ, hρmem, hρeq⟩ := exists_capEdgeRetraction
+  have hcorner : (1 : ℝ) ∈ Icc (0 : ℝ) 1 ∧ (0 : ℝ) ∈ Icc (0 : ℝ) 1 :=
+    ⟨⟨zero_le_one, le_rfl⟩, ⟨le_rfl, zero_le_one⟩⟩
+  have hρx (z : ℝ × ℝ) : u (ρ z) = u (1, 0) := by
+    obtain ⟨h₁, h₂, h₃⟩ := hρmem z
+    exact (hu.apply_eq_of_edge h₁ h₂ h₃).trans
+      (hu.apply_eq_of_edge hcorner.1 hcorner.2 (Or.inl rfl)).symm
+  -- The change of frame from `φ` at the retraction of `z` back to `φ` at the corner `(1, 0)`.
+  let A : ℝ × ℝ → G ≃L[ℝ] G := fun z ↦ (φ (1, 0)).trans (φ (ρ z)).symm
+  -- `A z` composes frames at the points `(1, 0)` and `ρ z`, whose tangent spaces are equal only
+  -- definitionally, so `ContinuousLinearEquiv.trans_apply` does not rewrite it.
+  have hA_apply (z : ℝ × ℝ) (v : G) : A z v = (φ (ρ z)).symm (φ (1, 0) v) := rfl
+  have hA : Continuous fun z ↦ (A z : G →L[ℝ] G) := by
+    refine continuous_trans_symm_of_continuous_frame (f := u ∘ ρ) (φ := fun _ ↦ φ (1, 0))
+      (ψ := fun z ↦ φ (ρ z)) ?_ (hφ.comp ((hρ.comp continuous_fst).prodMk continuous_snd))
+    refine (hφ.comp ((continuous_const (y := ((1, 0) : ℝ × ℝ))).prodMk
+      continuous_snd)).congr fun q ↦ ?_
+    exact TotalSpace.ext (hρx q.1).symm HEq.rfl
+  -- On the edges the retraction is the identity, so the frame is `φ (1, 0)`.
+  have hfix {s t : ℝ} (hs : s ∈ Icc (0 : ℝ) 1) (ht : t ∈ Icc (0 : ℝ) 1)
+      (hst : s = 1 ∨ t = 0 ∨ t = 1) (w : G) : (A (s, t)).trans (φ (s, t)) w = φ (1, 0) w := by
+    rw [ContinuousLinearEquiv.trans_apply, hA_apply, hρeq s t hs ht hst]
+    exact (φ (s, t)).apply_symm_apply _
+  refine ⟨A, hφ.comp (continuous_fst.prodMk ((hA.comp continuous_fst).clm_apply continuous_snd)),
+    fun z v ↦ ?_, fun z ↦ ⟨ρ z, hρx z, fun v ↦ (φ (ρ z)).apply_symm_apply _⟩,
+    fun s t hs ht hst v ↦ ?_⟩
+  · -- `A z` is complex linear: both frames are complex linear for `J` at the same point `x`.
+    have hJ (w : E) : J (u (1, 0)) w = J (u (ρ z)) w := by
+      rw [hρx]
+    have hAI : A z (Complex.I • v) = Complex.I • A z v := by
+      rw [hA_apply, hA_apply, hφJ]
+      apply (φ (ρ z)).injective
+      rw [hφJ]
+      exact ((φ (ρ z)).apply_symm_apply _).trans ((hJ _).trans
+        (congrArg (J (u (ρ z))) ((φ (ρ z)).apply_symm_apply _).symm))
+    rw [ContinuousLinearEquiv.trans_apply, hAI, hφJ]
+    -- Both sides are `J (u z)` applied to `φ z (A z v)`.
+    rfl
+  · rw [hfix hs ht hst, hfix hcorner.1 hcorner.2 (Or.inl rfl)]
+
 omit [T2Space M] [SigmaCompactSpace M] in
 /-- **Frames over a cap.** Along every smooth based cap `u` of a loop at `x` there is a real frame
 of the tangent bundle, continuous into the tangent bundle and complex linear for an almost complex
@@ -460,51 +522,37 @@ theorem IsSmoothBasedCap.exists_frame_eq_on_edges (hu : IsSmoothBasedCap I γ u)
         χ (s, t) v = χ (1, 0) v := by
   obtain ⟨φ, hφ, hφJ⟩ :=
     (J.toContMDiff 0).exists_continuous_frame (G := G) hu.contMDiff.continuous
-  obtain ⟨ρ, hρ, hρmem, hρeq⟩ := exists_capEdgeRetraction
-  have hcorner : (1 : ℝ) ∈ Icc (0 : ℝ) 1 ∧ (0 : ℝ) ∈ Icc (0 : ℝ) 1 :=
-    ⟨⟨zero_le_one, le_rfl⟩, ⟨le_rfl, zero_le_one⟩⟩
-  have hρx (z : ℝ × ℝ) : u (ρ z) = u (1, 0) := by
-    obtain ⟨h₁, h₂, h₃⟩ := hρmem z
-    exact (hu.apply_eq_of_edge h₁ h₂ h₃).trans
-      (hu.apply_eq_of_edge hcorner.1 hcorner.2 (Or.inl rfl)).symm
-  -- The change of frame from `φ` at the retraction of `z` back to `φ` at the corner `(1, 0)`.
-  let A : ℝ × ℝ → G ≃L[ℝ] G := fun z ↦ (φ (1, 0)).trans (φ (ρ z)).symm
-  have hA : Continuous fun z ↦ (A z : G →L[ℝ] G) := by
-    refine continuous_trans_symm_of_continuous_frame (f := u ∘ ρ) (φ := fun _ ↦ φ (1, 0))
-      (ψ := fun z ↦ φ (ρ z)) ?_ (hφ.comp ((hρ.comp continuous_fst).prodMk continuous_snd))
-    refine (hφ.comp ((continuous_const (y := ((1, 0) : ℝ × ℝ))).prodMk
-      continuous_snd)).congr fun q ↦ ?_
-    exact TotalSpace.ext (hρx q.1).symm HEq.rfl
-  refine ⟨fun z ↦ (A z).trans (φ z),
-    hφ.comp (continuous_fst.prodMk ((hA.comp continuous_fst).clm_apply continuous_snd)),
-    fun z v ↦ ?_, fun s t hs ht hst v ↦ ?_⟩
-  · -- `A z` is complex linear: both frames are complex linear for `J` at the same point `x`.
-    have hJ (w : E) : J.toEndomorphism (u (1, 0)) w = J.toEndomorphism (u (ρ z)) w := by
-      rw [hρx]
-    have hAI : A z (Complex.I • v) = Complex.I • A z v := by
-      -- `A z` composes frames at the points `(1, 0)` and `ρ z`, whose tangent spaces are equal
-      -- only definitionally, so `ContinuousLinearEquiv.trans_apply` does not rewrite it.
-      change (φ (ρ z)).symm (φ (1, 0) (Complex.I • v)) =
-        Complex.I • (φ (ρ z)).symm (φ (1, 0) v)
-      rw [hφJ, SmoothAlmostComplexStructure.toContMDiff_apply]
-      apply (φ (ρ z)).injective
-      rw [hφJ, SmoothAlmostComplexStructure.toContMDiff_apply]
-      exact ((φ (ρ z)).apply_symm_apply _).trans ((hJ _).trans
-        (congrArg (J.toEndomorphism (u (ρ z))) ((φ (ρ z)).apply_symm_apply _).symm))
-    rw [ContinuousLinearEquiv.trans_apply, hAI, hφJ, SmoothAlmostComplexStructure.toContMDiff_apply]
-    -- Both sides are `J (u z)` applied to `φ z (A z v)`.
-    rfl
-  · -- On the edges the retraction is the identity, so the frame is `φ (1, 0)`.
-    have hfix {s t : ℝ} (hs : s ∈ Icc (0 : ℝ) 1) (ht : t ∈ Icc (0 : ℝ) 1)
-        (hst : s = 1 ∨ t = 0 ∨ t = 1) (w : G) : (A (s, t)).trans (φ (s, t)) w = φ (1, 0) w := by
-      -- As for `hAI`, the composite is unfolded by `change` since its tangent spaces are equal
-      -- only definitionally.
-      change φ (s, t) ((φ (ρ (s, t))).symm (φ (1, 0) w)) = φ (1, 0) w
-      rw [hρeq s t hs ht hst]
-      exact (φ (s, t)).apply_symm_apply _
-    -- Evaluate the frame `fun z ↦ (A z).trans (φ z)` at the two points.
-    change (A (s, t)).trans (φ (s, t)) v = (A (1, 0)).trans (φ (1, 0)) v
-    rw [hfix hs ht hst, hfix hcorner.1 hcorner.2 (Or.inl rfl)]
+  obtain ⟨A, hc, hJ, -, hedge⟩ := hu.exists_frame_eq_on_edges_of_frame hφ fun z v ↦
+    (hφJ z v).trans (SmoothAlmostComplexStructure.toContMDiff_apply J 0 _ _)
+  exact ⟨fun z ↦ (A z).trans (φ z), hc, hJ, hedge⟩
+
+omit [T2Space M] [SigmaCompactSpace M] in
+/-- **Unitary frames over a cap.** Let `J` be an almost complex structure compatible with a
+two-form `σ`, and `K` a complex inner product space of the right dimension. Along every smooth
+based cap `u` of a loop at `x` there is a real frame `χ z : K ≃ T_(u z) M`, continuous into the
+tangent bundle, complex linear for `J`, carrying the symplectic form `Im ⟪·, ·⟫_ℂ` of `K` to `σ`,
+and constant on the three edges `s = 1`, `t = 0`, `t = 1` of the unit square, where `u` is at
+`x`: a unitary trivialization of `(TM, σ, J)` over the disc. -/
+theorem IsSmoothBasedCap.exists_unitary_frame_eq_on_edges {K : Type*} [NormedAddCommGroup K]
+    [InnerProductSpace ℂ K] [FiniteDimensional ℂ K] [Fact (finrank ℝ E = 2 * finrank ℂ K)]
+    (hJ : σ.Compatible J) (hu : IsSmoothBasedCap I γ u) :
+    ∃ χ : ∀ z, K ≃L[ℝ] TangentSpace I (u z),
+      Continuous (fun q : (ℝ × ℝ) × K ↦ (⟨u q.1, χ q.1 q.2⟩ : TangentBundle I M)) ∧
+      (∀ z v, χ z (Complex.I • v) = J (u z) (χ z v)) ∧
+      (∀ z v w, σ.eval₂ (u z) (χ z v) (χ z w) = (inner ℂ v w).im) ∧
+      ∀ s t : ℝ, s ∈ Icc 0 1 → t ∈ Icc 0 1 → (s = 1 ∨ t = 0 ∨ t = 1) → ∀ v,
+        χ (s, t) v = χ (1, 0) v := by
+  obtain ⟨φ, hφ, hφJ, -, hφσ⟩ := hJ.exists_continuous_unitary_frame (G := K) hu.contMDiff.continuous
+  obtain ⟨A, hc, hJA, hpull, hedge⟩ := hu.exists_frame_eq_on_edges_of_frame hφ hφJ
+  refine ⟨fun z ↦ (A z).trans (φ z), hc, hJA, fun z v w ↦ ?_, hedge⟩
+  -- `A z` compares two values of the unitary frame `φ` at the base point, so it is unitary.
+  obtain ⟨y, hy, hyA⟩ := hpull z
+  calc σ.eval₂ (u z) ((A z).trans (φ z) v) ((A z).trans (φ z) w)
+      = (inner ℂ (A z v) (A z w)).im := hφσ z _ _
+    _ = σ.eval₂ (u y) (φ y (A z v)) (φ y (A z w)) := (hφσ y _ _).symm
+    _ = σ.eval₂ (u y) (φ (1, 0) v) (φ (1, 0) w) := by rw [hyA, hyA]
+    _ = σ.eval₂ (u (1, 0)) (φ (1, 0) v) (φ (1, 0) w) := by rw [hy]
+    _ = (inner ℂ v w).im := hφσ _ _ _
 
 end Symplectic
 
