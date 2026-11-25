@@ -9,7 +9,10 @@ public import TauCeti.Algebra.Lie.HighestWeight.FiniteDimensional
 public import TauCeti.Algebra.Lie.HighestWeight.Weight.Lattice
 public import TauCeti.Algebra.Lie.HighestWeight.Weyl.Character
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Dimension
+public import Mathlib.Algebra.Lie.Rank
+import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 import TauCeti.Algebra.Lie.Weights.Dimension
+import TauCeti.Algebra.Lie.Weights.Rank
 
 /-!
 # The Weyl dimension formula
@@ -44,6 +47,8 @@ passes from the field `K` to the integers through `TauCeti.intCast_coweightPairi
 * `TauCeti.finiteDimensional_irreducibleQuotient_weylVector` and
   `TauCeti.finrank_irreducibleQuotient_weylVector`: the irreducible module of highest weight `ρ` is
   finite-dimensional, of dimension `2 ^ ((dim L - dim H) / 2)`.
+* `TauCeti.finrank_end_irreducibleQuotient_weylVector`: its endomorphism algebra has dimension
+  `2 ^ (dim L - rank L)`.
 
 ## References
 
@@ -179,5 +184,17 @@ theorem finrank_irreducibleQuotient_weylVector
     have h := finrank_eq_finrank_cartan_add_two_mul_ncard_posRoots H b
     omega
   simpa only [hExponent] using hcard
+
+/-- **The endomorphism algebra of `L(ρ)` has dimension `2 ^ (d - l)`** for `L` of dimension `d`
+and rank `l`: `L(ρ)` has dimension `2 ^ ((d - l) / 2)` with `d - l` even. -/
+theorem finrank_end_irreducibleQuotient_weylVector (b : (IsKilling.rootSystem H).Base) :
+    finrank K (Module.End K (irreducibleQuotient b (weylVector (IsKilling.rootSystem H) b))) =
+      2 ^ (finrank K L - LieAlgebra.rank K L) := by
+  have := finiteDimensional_irreducibleQuotient_weylVector b
+  have hd := finrank_eq_finrank_cartan_add_two_mul_ncard_posRoots H b
+  rw [Module.finrank_linearMap, finrank_irreducibleQuotient_weylVector, ← pow_add,
+    H.rank_eq_finrank_cartan]
+  congr 1
+  omega
 
 end TauCeti

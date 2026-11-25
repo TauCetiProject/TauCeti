@@ -44,6 +44,8 @@ continuous extension `LinearMap.extendOfNorm`.
 * `ProjValMeasure.integral`: the integral against `P`, a unital star algebra homomorphism.
 * `ProjValMeasure.integral_ofSimpleFunc`: the integral of a simple symbol is the finite sum of
   its values times the projections of its fibres.
+* `ProjValMeasure.sum_proj_preimage_singleton`: the projections of the fibres of a simple symbol
+  sum to the identity.
 * `ProjValMeasure.eq_integral_of_continuous`: a continuous map agreeing with the integral on
   simple symbols is the integral.
 * `ProjValMeasure.integral_indicator`, `ProjValMeasure.proj_mul_integral`, and
@@ -287,6 +289,21 @@ theorem integral_indicator (P : ProjValMeasure X H) {B : Set X} (hB : Measurable
     ← BoundedBorelFunction.ofSimpleFunc_piecewise_const_zero,
     integral_ofSimpleFunc_eq_simpleIntegral]
   exact (P.setToSimpleFunc_smulProj_piecewise 1 hB).trans (one_smul ℂ _)
+
+/-- The projections `P(s ⁻¹' {c})` of the fibres of a simple symbol `s` sum to the identity: the
+fibres partition `X`. -/
+theorem sum_proj_preimage_singleton (P : ProjValMeasure X H) (s : SimpleFunc X ℂ) :
+    ∑ c ∈ s.range, P.proj (s ⁻¹' {c}) (s.measurableSet_fiber c) = 1 := by
+  -- The indicators of the fibres sum to the constant symbol `1`.
+  have h : ∑ c ∈ s.range, BoundedBorelFunction.indicator (s ⁻¹' {c}) (s.measurableSet_fiber c) 1
+      = 1 := by
+    ext x
+    rw [sum_apply, Finset.sum_eq_single_of_mem (s x) (s.mem_range_self x)]
+    · simp
+    · intro c _ hc
+      simp [Ne.symm hc]
+  rw [← map_one P.integral, ← h, map_sum]
+  simp
 
 /-- Multiplying an operator integral on the left by `P(B)` restricts the symbol to `B`. -/
 theorem proj_mul_integral (P : ProjValMeasure X H) {B : Set X} (hB : MeasurableSet B)

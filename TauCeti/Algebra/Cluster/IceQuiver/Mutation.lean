@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Cluster.IceQuiver.Basic
 public import TauCeti.Data.Int.Cast.Basic
-public import TauCeti.Algebra.Cluster.ExchangeMatrix.Mutation
+public import TauCeti.Algebra.Cluster.ExchangeMatrix.Mutation.Basic
 
 import Mathlib.Tactic.Ring
 

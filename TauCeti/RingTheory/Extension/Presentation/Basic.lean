@@ -30,6 +30,8 @@ by its values on the generators (`Algebra.Generators.algHom_ext`, in
 * `Algebra.Presentation.range_points_coordinates`: over a base `k`, the coefficient restrictions
   and generator values of the `k`-algebra homomorphisms out of `S` are exactly the solutions of
   the relations of `P`, with the coefficient homomorphism out of `R` varying.
+* `Algebra.Presentation.eval_relation_eq_zero`: the generator values of an `R`-point of `S` are a
+  zero of every relation.
 * `MvPolynomial.map_ker_aeval_eq_ker_aeval_tmul`: base change of the kernel of a surjection
   `R[ι] → S` is the kernel of the corresponding map `B[ι] → B ⊗[R] S`.
 * `Algebra.Presentation.ker_baseChange_eq_map`: the kernel of the base change of a presentation is
@@ -131,6 +133,24 @@ theorem range_points_coordinates :
     · simpa [f] using congrArg (fun g : MvPolynomial ι R →ₐ[k] E ↦ g (X i)) hx
 
 end Points
+
+section BaseRing
+
+/-- Over the base ring itself, the coefficient restriction of a point is the identity, so the
+tower evaluation at a point is plain evaluation of polynomials. -/
+theorem aevalTower_comp_eq_eval (x : S →ₐ[R] R) (p : MvPolynomial ι R) :
+    aevalTower (x.comp (IsScalarTower.toAlgHom R R S)) (fun i ↦ x (P.val i)) p =
+      eval (fun i ↦ x (P.val i)) p := by
+  rw [Subsingleton.elim (x.comp (IsScalarTower.toAlgHom R R S)) (Algebra.ofId R R),
+    MvPolynomial.aevalTower_ofId, MvPolynomial.aeval_eq_eval]
+
+/-- The values of a point `x : S →ₐ[R] R` at the generators are a zero of every relation. -/
+theorem eval_relation_eq_zero (x : S →ₐ[R] R) (j : σ) :
+    eval (fun i ↦ x (P.val i)) (P.relation j) = 0 := by
+  rw [← P.aevalTower_comp_eq_eval, P.aevalTower_comp_toAlgHom_val, P.aeval_val_relation,
+    map_zero]
+
+end BaseRing
 
 section BaseChange
 
