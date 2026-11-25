@@ -25,15 +25,16 @@ of Grassmann bundles (`TauCeti.grassmannBundle.map`). Over each point it is the 
 induces the identity (`TauCeti.grassmannBundle.map_id`), and composites induce composites
 (`TauCeti.grassmannBundle.map_comp`).
 
-When `f` is continuous and `U` and its inverse are continuous in the coordinates of the bundles,
-that is, `x ↦ e'_{f x} ∘ U_x ∘ e_x⁻¹` and `x ↦ e_x ∘ U_x⁻¹ ∘ e'_{f x}⁻¹` are continuous at each
-point for the local trivializations `e`, `e'` there (`ContinuousLinearMap.inCoordinates`), the map
-is continuous (`TauCeti.grassmannBundle.continuous_map`): in coordinates it is the product
-`(e' U e⁻¹) (e P e⁻¹) (e U⁻¹ e'⁻¹)` of continuous families of operators. When moreover `f` is a
-homeomorphism, `B'` is Hausdorff and `E` has finite rank and continuous fibre norm, the map is a
-homeomorphism `G_k(E) ≃ₜ G_k(E')` (`TauCeti.grassmannBundle.mapHomeomorph`): it is a continuous
-bijection, and it is proper since its composite with the continuous projection of `G_k(E')` is
-`f ∘ π`, proper because `f` is a homeomorphism and the projection `π` of `G_k(E)` is proper.
+When `f` is continuous and `U` is continuous in the coordinates of the bundles, that is,
+`x ↦ e'_{f x} ∘ U_x ∘ e_x⁻¹` is continuous at each point for the local trivializations `e`, `e'`
+there (`ContinuousLinearMap.inCoordinates`), the map is continuous
+(`TauCeti.grassmannBundle.continuous_map`): in coordinates it is the product
+`(e' U e⁻¹) (e P e⁻¹) (e U⁻¹ e'⁻¹)` of continuous families of operators, the inverses being
+continuous in coordinates because `U` is. When moreover `f` is a homeomorphism, `B'` is Hausdorff
+and `E` has finite rank and continuous fibre norm, the map is a homeomorphism `G_k(E) ≃ₜ G_k(E')`
+(`TauCeti.grassmannBundle.mapHomeomorph`): it is a continuous bijection, and it is proper since its
+composite with the continuous projection of `G_k(E')` is `f ∘ π`, proper because `f` is a
+homeomorphism and the projection `π` of `G_k(E)` is proper.
 
 For the tangent bundles of Riemannian manifolds and an isometry `f`, `U_x` is the differential
 `df_x`, a linear isometry `T_xM ≃ₗᵢ[ℝ] T_{f x}M'`, and the map is
@@ -155,12 +156,10 @@ theorem map_fiberIncl (b : B) (P : Euclidean.grassmannian ℝ (E b) k) :
       LinearIsometryEquiv.coe_grassmannianCongr_apply])
 
 /-- **The induced map of Grassmann bundles is continuous** when `f` is continuous and the fibre
-maps `U_x` and their inverses are continuous in the coordinates of the bundles near each point. -/
+maps `U_x` are continuous in the coordinates of the bundles near each point. -/
 theorem continuous_map (hf : Continuous f)
     (hU : ∀ x₀, ContinuousAt (fun x ↦ inCoordinates F E F' E' x₀ x (f x₀) (f x)
-      ((U x).toContinuousLinearEquiv : E x →L[ℝ] E' (f x))) x₀)
-    (hU' : ∀ x₀, ContinuousAt (fun x ↦ inCoordinates F' E' F E (f x₀) (f x) x₀ x
-      ((U x).symm.toContinuousLinearEquiv : E' (f x) →L[ℝ] E x)) x₀) :
+      ((U x).toContinuousLinearEquiv : E x →L[ℝ] E' (f x))) x₀) :
     Continuous (map f U : grassmannBundle F E k → grassmannBundle F' E' k) := by
   refine continuous_induced_rng.2 (continuous_iff_continuousAt.2 fun p₀ ↦ ?_)
   rw [Function.comp_def, continuousAt_hom_bundle]
@@ -174,8 +173,15 @@ theorem continuous_map (hf : Continuous f)
       continuous_subtypeVal.continuousAt).2
   have h₁ := (hU p₀.val.proj).comp (f := fun p : grassmannBundle F E k ↦ p.val.proj)
     hπ.continuousAt
-  have h₃ := (hU' p₀.val.proj).comp (f := fun p : grassmannBundle F E k ↦ p.val.proj)
-    hπ.continuousAt
+  -- The model fibre `F` is complete, being isomorphic to the fibre over `p₀`.
+  have : CompleteSpace F :=
+    let L := (trivializationAt F E p₀.val.proj).continuousLinearEquivAt ℝ p₀.val.proj
+      (mem_baseSet_trivializationAt F E p₀.val.proj)
+    (completeSpace_congr (e := L.toEquiv) L.isUniformEmbedding).1 inferInstance
+  -- Continuity of `U⁻¹` in coordinates follows from that of `U`.
+  have hU' := (hU p₀.val.proj).inCoordinates_clm_inverse (b₁ := id) isInvertible_equiv
+  simp only [inverse_equiv, ← LinearIsometryEquiv.toContinuousLinearEquiv_symm] at hU'
+  have h₃ := hU'.comp (f := fun p : grassmannBundle F E k ↦ p.val.proj) hπ.continuousAt
   -- In coordinates the fibre of the map is the composite `(e' U e⁻¹) (e P e⁻¹) (e U⁻¹ e'⁻¹)`.
   have h₂₃ := ContinuousAt.inCoordinates_clm_comp (V := E') (W := E) (U := E)
     (b₁ := fun p : grassmannBundle F E k ↦ f p.val.proj) (b₂ := fun p ↦ p.val.proj)
@@ -191,17 +197,15 @@ theorem continuous_map (hf : Continuous f)
 
 variable (k) in
 /-- **The homeomorphism of Grassmann bundles induced by a homeomorphism of the bases** covered by
-linear isometry equivalences of the fibres that are continuous in coordinates, together with
-their inverses: `(x, P) ↦ (f x, U_x P U_x⁻¹)`. -/
+linear isometry equivalences of the fibres that are continuous in coordinates:
+`(x, P) ↦ (f x, U_x P U_x⁻¹)`. -/
 def mapHomeomorph [T2Space B'] [FiniteDimensional ℝ F] [ContinuousFiberNorm F E] (f : B ≃ₜ B')
     (U : ∀ x, E x ≃ₗᵢ[ℝ] E' (f x))
     (hU : ∀ x₀, ContinuousAt (fun x ↦ inCoordinates F E F' E' x₀ x (f x₀) (f x)
-      ((U x).toContinuousLinearEquiv : E x →L[ℝ] E' (f x))) x₀)
-    (hU' : ∀ x₀, ContinuousAt (fun x ↦ inCoordinates F' E' F E (f x₀) (f x) x₀ x
-      ((U x).symm.toContinuousLinearEquiv : E' (f x) →L[ℝ] E x)) x₀) :
+      ((U x).toContinuousLinearEquiv : E x →L[ℝ] E' (f x))) x₀) :
     grassmannBundle F E k ≃ₜ grassmannBundle F' E' k :=
   have hc : Continuous (map f U : grassmannBundle F E k → grassmannBundle F' E' k) :=
-    continuous_map f.continuous hU hU'
+    continuous_map f.continuous hU
   -- The composite with the projection of `G_k(E')` is the proper map `f ∘ π`.
   have hp : IsProperMap (map f U : grassmannBundle F E k → grassmannBundle F' E' k) :=
     isProperMap_of_comp_of_t2 hc continuous_proj (by
@@ -215,10 +219,8 @@ def mapHomeomorph [T2Space B'] [FiniteDimensional ℝ F] [ContinuousFiberNorm F 
 theorem coe_mapHomeomorph [T2Space B'] [FiniteDimensional ℝ F] [ContinuousFiberNorm F E]
     (f : B ≃ₜ B') (U : ∀ x, E x ≃ₗᵢ[ℝ] E' (f x))
     (hU : ∀ x₀, ContinuousAt (fun x ↦ inCoordinates F E F' E' x₀ x (f x₀) (f x)
-      ((U x).toContinuousLinearEquiv : E x →L[ℝ] E' (f x))) x₀)
-    (hU' : ∀ x₀, ContinuousAt (fun x ↦ inCoordinates F' E' F E (f x₀) (f x) x₀ x
-      ((U x).symm.toContinuousLinearEquiv : E' (f x) →L[ℝ] E x)) x₀) :
-    (mapHomeomorph k f U hU hU' : grassmannBundle F E k → grassmannBundle F' E' k) = map f U :=
+      ((U x).toContinuousLinearEquiv : E x →L[ℝ] E' (f x))) x₀) :
+    (mapHomeomorph k f U hU : grassmannBundle F E k → grassmannBundle F' E' k) = map f U :=
   (rfl)
 
 end Continuity
