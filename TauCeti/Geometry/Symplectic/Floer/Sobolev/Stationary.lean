@@ -133,13 +133,11 @@ theorem continuous_stationaryJetCoeff
 essentially bounded on the cylinder. -/
 theorem memLp_stationaryJetCoeff
     (hJc : Continuous fun t ↦ (J t).toLinearMap.toContinuousLinearMap) (hSc : Continuous S) :
-    MemLp (stationaryJetCoeff J S) ∞ stripMeasure := by
+    MemLp (stationaryJetCoeff J S) ∞ stripMeasure :=
   -- The coefficient field depends only on `t`, through the loops `J_t` and `S_t`.
-  have hM : stationaryJetCoeff J S = (fun t ↦ stationaryJetCoeff J S (0, t)) ∘ Prod.snd :=
-    funext fun z ↦ stationaryJetCoeff_eq_of_snd_eq rfl
-  rw [hM]
-  exact memLp_top_comp_snd
+  memLp_top_of_eq_comp_snd
     ((continuous_stationaryJetCoeff hJc hSc).comp (continuous_const.prodMk continuous_id))
+    fun _ ↦ stationaryJetCoeff_eq_of_snd_eq rfl
 
 variable (J S) in
 /-- The stationary cylinder operator `D ξ = ∂s ξ + J_t (∂t ξ - S_t ξ)` as an operator from the
