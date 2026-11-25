@@ -12,11 +12,11 @@ public import Mathlib.RingTheory.Noetherian.Defs
 public import TauCeti.RingTheory.KrullSchmidt.Indecomposable
 import Mathlib.Algebra.Module.TransferInstance
 import Mathlib.RingTheory.Nakayama
+import TauCeti.Algebra.Module.LinearMap.CompHom
 import TauCeti.Algebra.Module.LinearMap.EndQuotient
 import TauCeti.Algebra.Module.Projective.Lift
 import TauCeti.Algebra.Module.Projective.Quotient
-import TauCeti.Algebra.Module.Projective.Reduction
-import TauCeti.Algebra.Module.Projective.Semilinear
+import TauCeti.Algebra.Module.Projective.Reduction.Basic
 import TauCeti.Algebra.Module.Projective.Top
 import TauCeti.RingTheory.AdicCompletion.Finite
 import TauCeti.RingTheory.Ideal.Extended
@@ -113,13 +113,15 @@ include hf hfker in
 as an `A`-module through `π`. -/
 private noncomputable def quotientEquiv [Module A Y] (hY : ∀ (a : A) (y : Y), a • y = π a • y) :
     (P ⧸ RingHom.ker π • (⊤ : Submodule A P)) ≃ₗ[A] Y :=
-  (Submodule.quotEquivOfEq _ _ (Submodule.ext fun x ↦ (hfker x).symm :
+  (Submodule.quotEquivOfEq _ _ (Submodule.ext fun x ↦ by
+      rw [LinearMap.mem_ker, LinearMap.coe_toLinearMapOfCompHom, hfker] :
       RingHom.ker π • ⊤ = LinearMap.ker (f.toLinearMapOfCompHom hY))).trans
-    ((f.toLinearMapOfCompHom hY).quotKerEquivOfSurjective hf)
+    ((f.toLinearMapOfCompHom hY).quotKerEquivOfSurjective
+      (by rwa [LinearMap.coe_toLinearMapOfCompHom]))
 
 private theorem quotientEquiv_mk [Module A Y] (hY : ∀ (a : A) (y : Y), a • y = π a • y) (x : P) :
-    quotientEquiv hf hfker hY (Submodule.Quotient.mk x) = f x :=
-  rfl
+    quotientEquiv hf hfker hY (Submodule.Quotient.mk x) = f x := by
+  simp [quotientEquiv]
 
 include hπ hf hfker in
 /-- **The reduction of a projective module is projective.** If `P` is a projective `A`-module and
@@ -186,7 +188,8 @@ private theorem exists_isIdempotentElem_map_eq [Module.Finite A P] [Module.Proje
   have : IsAdicComplete (Ideal.span {ϖ}) (Module.End A P) := .of_finite _ _
   let _ : Module A Y := Module.compHom Y π
   let qA := q.restrictScalarsOfCompHom (R := A) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
-  have hqA : IsIdempotentElem qA := LinearMap.ext fun y ↦ LinearMap.congr_fun hq y
+  have hqA : IsIdempotentElem qA := LinearMap.ext fun y ↦ by
+    simpa [qA] using LinearMap.congr_fun hq y
   -- Transport `q` along `P ⧸ ϖ P ≃ Y` and lift it to an idempotent of `P`.
   let E := (Submodule.quotEquivOfEq _ _ (by rw [hker])).trans
     (quotientEquiv hf hfker fun _ _ ↦ rfl)

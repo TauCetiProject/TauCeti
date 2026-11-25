@@ -14,7 +14,7 @@ public import Mathlib.RingTheory.AdicCompletion.Basic
 public import Mathlib.RingTheory.Jacobson.Radical
 public import TauCeti.RingTheory.KrullSchmidt.Indecomposable
 import Mathlib.RingTheory.LocalRing.ResidueField.Basic
-import TauCeti.Algebra.Module.Projective.ReductionLift
+import TauCeti.Algebra.Module.Projective.Reduction.Lift
 import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.RingTheory.Jacobson.Finite
 
@@ -24,7 +24,7 @@ import TauCeti.RingTheory.Jacobson.Finite
 Let `O` be a complete discrete valuation ring with residue field `k` and let `G` be a finite group.
 Reduction of coefficients `O[G] → k[G]` is a surjection with kernel `ϖ O[G]` for a uniformizer
 `ϖ`, and `O[G]` is a finite `O`-module, so the general theory of lifting projective modules along
-a reduction (`TauCeti/Algebra/Module/Projective/ReductionLift.lean`) applies:
+a reduction (`TauCeti/Algebra/Module/Projective/Reduction/Lift.lean`) applies:
 
 * a finitely generated projective `O[G]`-module is indecomposable exactly when its reduction is
   (`TauCeti.isIndecomposableModule_iff_of_reduction_residue`);
@@ -114,13 +114,6 @@ private theorem exists_uniformizer : ∃ ϖ : O, IsAdicComplete (Ideal.span {ϖ}
   refine ⟨ϖ, hϖ.maximalIdeal_eq ▸ inferInstance, MonoidAlgebra.ker_mapRingHom_eq_span_algebraMap ?_⟩
   rw [IsLocalRing.ker_residue, hϖ.maximalIdeal_eq]
 
-omit [IsAdicComplete (IsLocalRing.maximalIdeal O) O] [Finite G] in
-/-- Reduction of coefficients `O[G] → k[G]` is surjective. -/
-private theorem mapRingHom_residue_surjective :
-    Function.Surjective (MonoidAlgebra.mapRingHom G (IsLocalRing.residue O)) := by
-  rw [MonoidAlgebra.coe_mapRingHom]
-  exact MonoidAlgebra.map_surjective _ IsLocalRing.residue_surjective
-
 variable {P : Type*} [AddCommGroup P] [Module (MonoidAlgebra O G) P]
   [Module.Finite (MonoidAlgebra O G) P] [Module.Projective (MonoidAlgebra O G) P]
   {Y : Type*} [AddCommGroup Y] [Module (MonoidAlgebra (IsLocalRing.ResidueField O) G) Y]
@@ -136,7 +129,8 @@ theorem isIndecomposableModule_iff_of_reduction_residue
     IsIndecomposableModule (MonoidAlgebra O G) P ↔
       IsIndecomposableModule (MonoidAlgebra (IsLocalRing.ResidueField O) G) Y := by
   obtain ⟨ϖ, _, hker⟩ := exists_uniformizer (O := O) (G := G)
-  exact isIndecomposableModule_iff_of_reduction mapRingHom_residue_surjective hf hfker ϖ hker
+  exact isIndecomposableModule_iff_of_reduction
+    (MonoidAlgebra.map_surjective _ IsLocalRing.residue_surjective) hf hfker ϖ hker
 
 omit [Module.Finite (MonoidAlgebra O G) P] [Module.Projective (MonoidAlgebra O G) P] in
 /-- **Projective `k[G]`-modules lift to `O[G]`.** For a complete discrete valuation ring `O` with
@@ -153,7 +147,8 @@ theorem exists_projective_reduction_residue_of_projective
           x ∈ RingHom.ker (MonoidAlgebra.mapRingHom G (IsLocalRing.residue O)) •
             (⊤ : Submodule (MonoidAlgebra O G) X) := by
   obtain ⟨ϖ, _, hker⟩ := exists_uniformizer (O := O) (G := G)
-  exact exists_projective_reduction_of_projective mapRingHom_residue_surjective ϖ hker
+  exact exists_projective_reduction_of_projective
+    (MonoidAlgebra.map_surjective _ IsLocalRing.residue_surjective) ϖ hker
 
 end GroupAlgebra
 
