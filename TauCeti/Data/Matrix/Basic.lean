@@ -62,8 +62,8 @@ theorem mul_eq_of_map_fst_of_map_snd {A B ν : Type*} [NonUnitalNonAssocSemiring
     {R : Matrix m n (A × B)} (hfst : P.map Prod.fst * Q.map Prod.fst = R.map Prod.fst)
     (hsnd : P.map Prod.snd * Q.map Prod.snd = R.map Prod.snd) : P * Q = R := by
   refine (prodEquiv m n A B).injective (Prod.ext ?_ ?_)
-  · simpa [← NonUnitalRingHom.coe_fst, ← Matrix.map_mul] using hfst
-  · simpa [← NonUnitalRingHom.coe_snd, ← Matrix.map_mul] using hsnd
+  · simpa only [prodEquiv_apply, ← NonUnitalRingHom.coe_fst, ← Matrix.map_mul] using hfst
+  · simpa only [prodEquiv_apply, ← NonUnitalRingHom.coe_snd, ← Matrix.map_mul] using hsnd
 
 end Prod
 
