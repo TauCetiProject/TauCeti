@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Holder.Iterated
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
-import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Topology.MetricSpace.Holder
@@ -28,8 +27,7 @@ is `g` applied to the corresponding derivative of `f`. For instance, the real pa
 complex-valued bounded `C^{k,α}` map is a real-valued one. The same holds locally: on an open set,
 postcomposition by `T` multiplies the Hölder constant of the top derivative by `‖T‖`
 (`ContinuousLinearMap.holderOnWith_iteratedFDeriv_comp_left`), and the same holds for finite sums
-`x ↦ ∑ₗ A l (g l x)` (`TauCeti.holderOnWith_iteratedFDeriv_sum_comp_left`), whose derivatives are
-bounded pointwise by `∑ₗ ‖A l‖ ‖Dⁿ g l‖` (`TauCeti.norm_iteratedFDeriv_sum_comp_left_le`).
+`x ↦ ∑ₗ A l (g l x)` (`TauCeti.holderOnWith_iteratedFDeriv_sum_comp_left`).
 
 The constructions use Mathlib's `ContinuousLinearMap.iteratedFDeriv_comp_right`,
 `ContinuousMultilinearMap.compContinuousLinearMapL`,
@@ -62,20 +60,6 @@ theorem ContinuousLinearMap.holderOnWith_iteratedFDeriv_comp_left {X Y Z : Type*
   exact hLf.mono_const (mul_le_mul_of_nonneg_right hL zero_le) x hx y hy
 
 namespace TauCeti
-
-/-- The `n`-th derivative of a finite sum `x ↦ ∑ₗ A l (g l x)` of postcompositions with continuous
-linear maps is bounded at `x` by `∑ₗ ‖A l‖ ‖Dⁿ g l x‖`, when each `g l` is `Cⁿ` at `x`. -/
-theorem norm_iteratedFDeriv_sum_comp_left_le {ι X Y Z : Type*} [Fintype ι]
-    [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
-    [NormedAddCommGroup Z] [NormedSpace ℝ Z] (A : ι → Y →L[ℝ] Z) {g : ι → X → Y} {x : X}
-    {n : ℕ} (hg : ∀ l, ContDiffAt ℝ n (g l) x) :
-    ‖iteratedFDeriv ℝ n (fun x ↦ ∑ l, A l (g l x)) x‖ ≤
-      ∑ l, ‖A l‖ * ‖iteratedFDeriv ℝ n (g l) x‖ := by
-  have hc (l : ι) : ContDiffAt ℝ n (fun x ↦ A l (g l x)) x :=
-    (A l).contDiff.contDiffAt.comp x (hg l)
-  rw [iteratedFDeriv_fun_sum_apply fun l _ ↦ hc l]
-  exact (norm_sum_le _ _).trans
-    (Finset.sum_le_sum fun l _ ↦ (A l).norm_iteratedFDeriv_comp_left (hg l) le_rfl)
 
 /-- **Hölder bounds for finite sums of postcompositions.** If on an open set `s` each `g l` is
 `Cⁿ` and its `n`-th derivative is `α`-Hölder with constant `C l`, then the `n`-th derivative of
