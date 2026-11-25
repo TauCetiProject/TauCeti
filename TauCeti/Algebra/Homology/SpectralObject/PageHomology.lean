@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.SpectralObject.Stabilization
+public import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
 public import Mathlib.Algebra.Homology.SpectralObject.SpectralSequence
 -- The statement of `SpectralObject.spectralSequence_iso` refers to private auxiliary proofs of
 -- this file, so that it may only be used with access to its private declarations.
@@ -51,6 +52,12 @@ maps `E_r ⟶ E_{r+1}` of the spectral sequence itself.
 * `CategoryTheory.Abelian.SpectralObject.iCycles_spectralSequencePageXToPageX`: the canonical
   maps between pages of `X.spectralSequence coreE₂Cohomological` are the maps of the spectral
   sequence.
+* `CategoryTheory.Abelian.SpectralObject.isIso_spectralSequencePageXToEInfty_of_d_eq_zero` and
+  `CategoryTheory.Abelian.SpectralObject.isIso_spectralSequencePageXToEInfty_of_isZero`:
+  stabilization by degeneration. The map from the page `r` onto `X.EInfty q n` is an isomorphism
+  as soon as the differentials at `(p, q)` vanish on the pages `r ≤ r' < r₁`, where `r₁` is a page
+  from which the object is known to be the limit object, for instance when their sources and
+  targets vanish on the page `r`.
 
 ## References
 
@@ -229,6 +236,71 @@ lemma iCycles_spectralSequencePageXToPageX (r r' : ℤ) (hrr' : r + 1 = r') (hr 
   rw [spectralSequencePageXIsoEBot_inv, Category.assoc] at hE
   simp [spectralSequencePageXToPageX_def, spectralSequencePageXIsoEBot_inv,
     mapFourδ₁Toδ₀'_mapFourδ₃Toδ₃'_assoc, mapFourδ₁Toδ₀'_comp_assoc, reassoc_of% hE]
+
+/-- **Stabilization by degeneration.** Let `pq = (p, q)` and `n = p + q`, and `r ≤ r₁` two pages.
+Suppose that `H^{n+1}(⊥ ≤ q - r' + 2)` vanishes for `r ≤ r' ≤ r₁`, and that
+`H^{n-1}(q + r₁ - 1 ≤ ⊤)` vanishes, so that the object at `pq` is the limit object
+`X.EInfty q n` from the page `r₁` on. If on each page `r ≤ r' < r₁` the two differentials at `pq`
+vanish, then the map `spectralSequencePageXToEInfty` from the page `r` onto `X.EInfty q n` is
+already an isomorphism. -/
+theorem isIso_spectralSequencePageXToEInfty_of_d_eq_zero (r₁ : ℤ) (pq : ℤ × ℤ) (n : ℤ)
+    (hn : n = pq.1 + pq.2) (r : ℤ) (hr : 2 ≤ r) (hrr₁ : r ≤ r₁)
+    (h₀ : ∀ r' : ℤ, r ≤ r' → r' ≤ r₁ → IsZero ((X.H (n + 1)).obj
+      (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ((pq.2 - r' + 2 : ℤ) : EInt))))))
+    (h₃ : IsZero ((X.H (n - 1)).obj
+      (mk₁ (homOfLE (le_top : ((pq.2 + r₁ - 1 : ℤ) : EInt) ≤ ⊤)))))
+    (hd : ∀ (r' : ℤ) (hr' : r ≤ r'), r' < r₁ →
+      ((X.spectralSequence coreE₂Cohomological).page r' (hr.trans hr')).d
+          (pq.1 - r', pq.2 + r' - 1) pq = 0 ∧
+        ((X.spectralSequence coreE₂Cohomological).page r' (hr.trans hr')).d pq
+          (pq.1 + r', pq.2 - r' + 1) = 0) :
+    IsIso (X.spectralSequencePageXToEInfty r hr pq n hn (h₀ r le_rfl hrr₁)) := by
+  obtain ⟨m, hm⟩ : ∃ m : ℕ, r₁ = r + m := ⟨(r₁ - r).toNat, by omega⟩
+  induction m generalizing r with
+  | zero =>
+    obtain rfl : r₁ = r := by omega
+    rw [← X.spectralSequencePageXIsoEInfty_hom r₁ hr pq n hn (h₀ r₁ le_rfl le_rfl) h₃]
+    infer_instance
+  | succ m ih =>
+    have := ih (r + 1) (by omega) (by omega) (fun r' h h' ↦ h₀ r' (by omega) h')
+      (fun r' h₁ h₂ ↦ hd r' (by omega) h₂) (by omega)
+    -- on the page `r`, both differentials at `pq` vanish, so the passage to the page `r + 1` is an
+    -- isomorphism
+    have : IsIso (((X.spectralSequence coreE₂Cohomological).page r).iCycles pq) :=
+      HomologicalComplex.isIso_iCycles _ pq (pq.1 + r, pq.2 - r + 1)
+        ((ComplexShape.up' _).next_eq' (Prod.ext (by dsimp) (by dsimp; omega)))
+        (hd r le_rfl (by omega)).2
+    have : IsIso (((X.spectralSequence coreE₂Cohomological).page r).homologyπ pq) :=
+      HomologicalComplex.isIso_homologyπ _ (pq.1 - r, pq.2 + r - 1) pq
+        ((ComplexShape.up' _).prev_eq' (Prod.ext (by dsimp; omega) (by dsimp; omega)))
+        (hd r le_rfl (by omega)).1
+    have hPP := X.iCycles_spectralSequencePageXToPageX r (r + 1) rfl hr pq n hn
+      (h₀ r le_rfl hrr₁) (h₀ (r + 1) (by omega) (by omega))
+    rw [← IsIso.eq_inv_comp] at hPP
+    rw [← X.spectralSequencePageXToPageX_spectralSequencePageXToEInfty r (r + 1) hr (by omega) pq n
+      hn (h₀ r le_rfl hrr₁) (h₀ (r + 1) (by omega) (by omega)), hPP]
+    infer_instance
+
+/-- **Stabilization by degeneration, from vanishing objects.** The special case of
+`isIso_spectralSequencePageXToEInfty_of_d_eq_zero` where the sources and targets of the
+differentials at `pq` of the pages `r ≤ r' < r₁` already vanish on the page `r`: the map
+`spectralSequencePageXToEInfty` from the page `r` onto `X.EInfty q n` is an isomorphism. -/
+theorem isIso_spectralSequencePageXToEInfty_of_isZero (r₁ : ℤ) (pq : ℤ × ℤ) (n : ℤ)
+    (hn : n = pq.1 + pq.2) (r : ℤ) (hr : 2 ≤ r) (hrr₁ : r ≤ r₁)
+    (h₀ : ∀ r' : ℤ, r ≤ r' → r' ≤ r₁ → IsZero ((X.H (n + 1)).obj
+      (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ((pq.2 - r' + 2 : ℤ) : EInt))))))
+    (h₃ : IsZero ((X.H (n - 1)).obj
+      (mk₁ (homOfLE (le_top : ((pq.2 + r₁ - 1 : ℤ) : EInt) ≤ ⊤)))))
+    (hd : ∀ r' : ℤ, r ≤ r' → r' < r₁ →
+      IsZero (((X.spectralSequence coreE₂Cohomological).page r).X (pq.1 - r', pq.2 + r' - 1)) ∧
+        IsZero (((X.spectralSequence coreE₂Cohomological).page r).X (pq.1 + r', pq.2 - r' + 1))) :
+    IsIso (X.spectralSequencePageXToEInfty r hr pq n hn (h₀ r le_rfl hrr₁)) :=
+  X.isIso_spectralSequencePageXToEInfty_of_d_eq_zero r₁ pq n hn r hr hrr₁ h₀ h₃
+    fun r' hr' hr'₁ ↦
+      ⟨(X.spectralSequence coreE₂Cohomological).page_d_eq_zero_of_le hr
+          (Or.inl (hd r' hr' hr'₁).1) r' hr',
+        (X.spectralSequence coreE₂Cohomological).page_d_eq_zero_of_le hr
+          (Or.inr (hd r' hr' hr'₁).2) r' hr'⟩
 
 end EInt
 

@@ -32,7 +32,11 @@ it can be tested with a single cutoff equal to one near `x`
 (`Distribution.isLocallyMemBesovAt_iff_exists_memBesov_cutoffTempered`), since smooth multipliers
 preserve the Besov spaces (`TemperedDistribution.MemBesov.smulLeftCLM`). If `T` is `B^s_{p,q}` near
 every point of the support of a test function `ψ`, then `ψ T ∈ B^s_{p,q}`
-(`Distribution.memBesov_cutoffTempered_of_forall_isLocallyMemBesovAt`).
+(`Distribution.memBesov_cutoffTempered_of_forall_isLocallyMemBesovAt`). The notion is local: it
+is unchanged by restricting `T` to a smaller open set containing `x`
+(`Distribution.isLocallyMemBesovAt_restrictCLM_iff`), and a tempered distribution in `B^s_{p,q}`
+is `B^s_{p,q}` near every point
+(`TemperedDistribution.MemBesov.isLocallyMemBesovAt_toDistribution`).
 
 Every distribution has finite order on this scale: for `1 < p ≤ ∞` and `q ≠ 0`, every cut-off
 distribution `ψ T` lies in some `B^s_{p,q}` (`Distribution.exists_memBesov_cutoffTempered`). This is
@@ -41,7 +45,9 @@ distribution already known to lie in some `B^r_{p,q}`. For `1 < p < ∞` it foll
 order of `ψ T` on the Bessel-potential scale `H^{s,p}`
 (`Distribution.exists_memSobolev_cutoffTempered_of_one_lt`) and `H^{s,p} ⊆ B^s_{p,∞}`; for
 `p = ∞` from the finite `L²` Sobolev order of `ψ T` and the Bernstein embedding
-`B^s_{2,∞} ⊆ B^{s - n/2}_{∞,∞}`.
+`B^s_{2,∞} ⊆ B^{s - n/2}_{∞,∞}`. Hence, for `1 < p` and `1 ≤ q`, every distribution is
+`B^s_{p,q}` near each point of a compact set `K ⊆ Ω` for some `s` depending on `K`
+(`Distribution.exists_forall_isLocallyMemBesovAt`).
 
 ## References
 
@@ -144,6 +150,22 @@ theorem IsLocallyMemBesovAt.sub {S : 𝓓'(Ω, ℂ)} (hS : S.IsLocallyMemBesovAt
   rw [sub_eq_add_neg]
   exact hS.add (isLocallyMemBesovAt_neg_iff.2 hT)
 
+/-- At a point of an open subset `Ω' ≤ Ω`, the restriction `T|_{Ω'}` is `B^s_{p,q}` near `x`
+exactly when `T` is. -/
+theorem isLocallyMemBesovAt_restrictCLM_iff {Ω' : Opens E} (h : Ω' ≤ Ω) (hx : x ∈ Ω') :
+    (restrictCLM T : 𝓓'(Ω', ℂ)).IsLocallyMemBesovAt φ s p q x ↔
+      T.IsLocallyMemBesovAt φ s p q x := by
+  constructor
+  · rintro ⟨U, hU, hUΩ', hT⟩
+    refine ⟨U, hU, hUΩ'.trans h, fun ψ hψ ↦ ?_⟩
+    obtain ⟨ψ', rfl⟩ := TestFunction.exists_monoCLM_eq_of_tsupport_subset h (hψ.trans hUΩ')
+    rw [← cutoffTempered_restrictCLM]
+    exact hT ψ' (by rwa [TestFunction.coe_monoCLM_of_le le_rfl h] at hψ)
+  · rintro ⟨U, hU, -, hT⟩
+    refine ⟨U ∩ Ω', inter_mem hU (Ω'.isOpen.mem_nhds hx), inter_subset_right, fun ψ hψ ↦ ?_⟩
+    rw [cutoffTempered_restrictCLM]
+    exact hT _ (by rw [TestFunction.coe_monoCLM_of_le le_rfl h]; exact hψ.trans inter_subset_left)
+
 /-- A smooth multiple `g T` of a distribution `B^s_{p,q}` near `x` is `B^s_{p,q}` near `x`. -/
 theorem IsLocallyMemBesovAt.smulLeftCLM (h : T.IsLocallyMemBesovAt φ s p q x) {g : E → ℝ}
     (hg : ContDiff ℝ ∞ g) : (Distribution.smulLeftCLM hg T).IsLocallyMemBesovAt φ s p q x :=
@@ -152,6 +174,16 @@ theorem IsLocallyMemBesovAt.smulLeftCLM (h : T.IsLocallyMemBesovAt φ s p q x) {
     rw [cutoffTempered_smulLeftCLM]
     exact hT _ ((TestFunction.tsupport_smulLeftCLM_subset hg ψ).trans
       (inter_subset_right.trans hψ))⟩
+
+/-- Multiplying a tempered distribution in `B^s_{p,q}` by a test function keeps it in
+`B^s_{p,q}`. -/
+theorem _root_.TemperedDistribution.MemBesov.smulLeftCLM_testFunction {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] [Fact (1 ≤ q)] {u : 𝓢'(E, F)}
+    (hu : u.MemBesov φ s p q) (ψ : 𝓓(Ω, ℂ)) :
+    (TemperedDistribution.smulLeftCLM F (ψ : E → ℂ) u).MemBesov φ s p q := by
+  simpa [TestFunction.coe_toSchwartzMapCLM] using
+    hu.smulLeftCLM (g := TestFunction.toSchwartzMapCLM ℂ ψ) (SchwartzMap.hasTemperateGrowth _)
+      fun k _ ↦ ⟨_, SchwartzMap.norm_iteratedFDeriv_le_seminorm ℝ _ k⟩
 
 /-- **Testing with one cutoff.** A distribution is `B^s_{p,q}` near `x` exactly when `χ T` lies in
 `B^s_{p,q}` for some test function `χ` equal to one near `x`. -/
@@ -168,10 +200,16 @@ theorem isLocallyMemBesovAt_iff_exists_memBesov_cutoffTempered [Fact (1 ≤ q)] 
     refine ⟨{y | χ y = 1} ∩ Ω, inter_mem hχ (Ω.isOpen.mem_nhds hxΩ), inter_subset_right,
       fun ψ hψ ↦ ?_⟩
     rw [← smulLeftCLM_cutoffTempered T fun y hy ↦ (hψ hy).1]
-    simpa [TestFunction.coe_toSchwartzMapCLM] using
-      hT.smulLeftCLM (g := TestFunction.toSchwartzMapCLM ℂ ψ)
-        (SchwartzMap.hasTemperateGrowth _)
-        fun k _ ↦ ⟨_, SchwartzMap.norm_iteratedFDeriv_le_seminorm ℝ _ k⟩
+    exact hT.smulLeftCLM_testFunction ψ
+
+/-- A tempered distribution in `B^s_{p,q}` is `B^s_{p,q}` near every point, as a distribution on
+`Ω`. -/
+theorem _root_.TemperedDistribution.MemBesov.isLocallyMemBesovAt_toDistribution [Fact (1 ≤ q)]
+    {u : 𝓢'(E, ℂ)} (hu : u.MemBesov φ s p q) (hx : x ∈ Ω) :
+    (toDistribution Ω u).IsLocallyMemBesovAt φ s p q x := by
+  refine ⟨Ω, Ω.isOpen.mem_nhds hx, subset_rfl, fun ψ _ ↦ ?_⟩
+  rw [cutoffTempered_toDistribution]
+  exact hu.smulLeftCLM_testFunction ψ
 
 /-- **From local to global regularity.** If `T` is `B^s_{p,q}` near every point of the support of
 a test function `χ`, then `χ T ∈ B^s_{p,q}`. -/
@@ -201,5 +239,18 @@ theorem exists_memBesov_cutoffTempered (hp : 1 < p) (hq : q ≠ 0) (T : 𝓓'(Ω
     · obtain ⟨r, hr⟩ := exists_memSobolev_cutoffTempered_of_one_lt hp hp_top T χ
       exact ⟨r, hr.memBesov φ⟩
   exact ⟨s - 1, hs.of_lt (by linarith) hq⟩
+
+variable (φ) in
+/-- **Finite local order on the Besov scale.** Let `1 < p ≤ ∞` and `1 ≤ q`. For every compact set
+`K ⊆ Ω`, a distribution `T` on `Ω` is `B^s_{p,q}` near every point of `K` for some real order
+`s`. -/
+theorem exists_forall_isLocallyMemBesovAt [Fact (1 ≤ q)] (hp : 1 < p) (T : 𝓓'(Ω, ℂ)) {K : Set E}
+    (hK : IsCompact K) (hKΩ : K ⊆ Ω) : ∃ s : ℝ, ∀ x ∈ K, T.IsLocallyMemBesovAt φ s p q x := by
+  obtain ⟨χ, hχ1, -⟩ := TestFunction.exists_complex_cutoff_tsupport_subset (n := ⊤)
+    hK Ω.isOpen hKΩ subset_rfl
+  have hq : q ≠ 0 := (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ q)).ne'
+  obtain ⟨s, hs⟩ := exists_memBesov_cutoffTempered φ hp hq T χ
+  exact ⟨s, fun x hx ↦ isLocallyMemBesovAt_iff_exists_memBesov_cutoffTempered.2
+    ⟨χ, eventually_nhdsSet_iff_forall.1 hχ1 x hx, hs⟩⟩
 
 end Distribution

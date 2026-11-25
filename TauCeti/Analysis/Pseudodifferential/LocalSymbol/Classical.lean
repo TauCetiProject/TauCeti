@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.LocalSymbol.Homogeneous
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical.Basic
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
 /-!

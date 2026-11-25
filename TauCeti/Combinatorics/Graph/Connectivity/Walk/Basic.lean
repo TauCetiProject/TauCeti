@@ -66,6 +66,13 @@ protected def copy {x y x' y' : α} (p : G.Walk x y) (hx : x = x') (hy : y = y')
 theorem copy_rfl_rfl (p : G.Walk x y) : p.copy rfl rfl = p :=
   (rfl)
 
+/-- Changing the endpoints of a walk does not change it as a walk with bundled endpoints. -/
+@[simp]
+theorem sigma_mk_copy {x y x' y' : α} (p : G.Walk x y) (hx : x = x') (hy : y = y') :
+    (⟨x', y', p.copy hx hy⟩ : Σ a b : α, G.Walk a b) = ⟨x, y, p⟩ := by
+  subst hx hy
+  rfl
+
 @[simp]
 theorem copy_copy {x y x' y' x'' y'' : α} (p : G.Walk x y)
     (hx : x = x') (hy : y = y') (hx' : x' = x'') (hy' : y' = y'') :

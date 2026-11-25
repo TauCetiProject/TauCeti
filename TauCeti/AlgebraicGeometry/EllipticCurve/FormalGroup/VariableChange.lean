@@ -51,6 +51,8 @@ characteristics two and three and rings with nilpotents.
 
 * `WeierstrassCurve.VariableChange.formalCoordinate`: the transition `ψ`, with
   `formalCoordinate_mul` (the cocycle identity) and `map_formalCoordinate` (base change).
+* `WeierstrassCurve.VariableChange.formalCoordinate_mk`: for the scaling `(u, 0, 0, 0)` the
+  transition is the homothety `z ↦ u⁻¹ z`.
 * `WeierstrassCurve.VariableChange.subst_formalCoordinate_formalInvariantDifferentialDenom`:
   `G_W(ψ(z)) = u ψ'(z) G_{C • W}(z)` for the denominators `G` of the invariant differentials.
 * `WeierstrassCurve.VariableChange.subst_formalCoordinate_invariantDifferential_formalGroup`:
@@ -177,6 +179,23 @@ theorem formalCoordinate_one (W : WeierstrassCurve R) :
     simpa using mul_invOfUnit (1 : PowerSeries R) 1 (by simp)
   apply TauCeti.FormalCoordinate.ext
   simp [formalCoordinate_toPowerSeries, formalDenom_def, one_def, h]
+
+/-- The formal parameter transition of the scaling `(x, y) ↦ (u²x, u³y)`, the change of variables
+`(u, 0, 0, 0)`, is the homothety `z ↦ u⁻¹ z`. -/
+@[simp]
+theorem formalCoordinate_mk (W : WeierstrassCurve R) (u : Rˣ) :
+    (⟨u, 0, 0, 0⟩ : VariableChange R).formalCoordinate W =
+      TauCeti.FormalCoordinate.homothety u⁻¹ := by
+  -- The denominator `u³ - su²z - t w(z)` of the transition is the constant `u³`.
+  have hinv : invOfUnit (PowerSeries.C (u : R) ^ 3) (u ^ 3) = PowerSeries.C (↑u⁻¹ ^ 3 : R) :=
+    left_inv_eq_right_inv (invOfUnit_mul _ _ (by simp))
+      (by simp [← map_pow, ← map_mul, ← mul_pow])
+  have hu : (u : R) ^ 2 * ↑u⁻¹ ^ 3 = ↑u⁻¹ := by
+    simp [pow_succ, ← mul_assoc]
+  refine TauCeti.FormalCoordinate.ext ?_
+  simp only [formalCoordinate_toPowerSeries, formalDenom_def, map_zero, zero_mul, add_zero,
+    sub_zero, hinv, TauCeti.FormalCoordinate.toPowerSeries_homothety, smul_eq_C_mul]
+  simp [mul_right_comm _ X, ← map_pow, ← map_mul, hu]
 
 /-- Substitution into the old `w`-expansion gives the new `w`-expansion divided
 by `u³ - su²z - t w(z)`. This identifies the formal neighbourhoods in the two

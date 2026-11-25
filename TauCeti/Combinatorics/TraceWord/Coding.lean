@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.TraceWord.Counting
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Data.Fintype.Pi
 import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Algebra.BigOperators.Option
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import TauCeti.Data.Fin.Basic
@@ -42,9 +43,17 @@ discovery edges, are no more numerous. Hence at most `2 * (L - 2 * N)` steps jum
 `t = N + 1`. Weighting a discovery by `n⁻¹`, a closing step by `1`, and a jump to each of the `L`
 times by `γ` bounds the left side by the total weight `(2 + L * γ) ^ L` of all codes.
 
-## Main result
+The same coding bounds the walks that visit a prescribed set `A t` of vertices at each time `t`,
+with any weight `m ≥ 0` in place of `n`: a discovery at step `t` then chooses among the
+`#(A (t + 1))` vertices allowed next. The closed bipartite words of sample covariance matrices are
+such walks, alternating between rows and columns.
 
-* `TauCeti.sum_pow_div_pow_card_image_le_of_no_singleton_edge`: the weighted enumeration bound.
+## Main results
+
+* `TauCeti.sum_piFinset_pow_div_pow_card_image_le_of_no_singleton_edge`: the weighted enumeration
+  bound for walks with prescribed vertex sets, `#(A 0) / m * ∏ t, (#(A (t + 1)) / m + 1 + L * γ)`.
+* `TauCeti.sum_pow_div_pow_card_image_le_of_no_singleton_edge`: the weighted enumeration bound
+  `(2 + L * γ) ^ L` for all closed walks on `n` vertices.
 
 ## References
 
@@ -491,6 +500,17 @@ private theorem symbolWeight_nonneg {n γ : ℝ} (hn : 0 ≤ n) (hγ : 0 ≤ γ)
   · exact inv_nonneg.mpr hn
   · exact hγ
 
+/-- The code symbols allowed at a step whose target lies in `B`: a forced step, the discovery of a
+vertex of `B`, or a jump to one of the `L` times. -/
+private def allowedSymbols (B : Finset α) : Finset (Option (α ⊕ Fin L)) :=
+  insertNone (B.disjSum univ)
+
+private theorem sum_allowedSymbols_symbolWeight (n γ : ℝ) (B : Finset α) :
+    ∑ c ∈ allowedSymbols (L := L) B, symbolWeight n γ c = #B / n + 1 + L * γ := by
+  simp only [allowedSymbols, sum_insertNone, sum_disjSum, symbolWeight, sum_const, card_univ,
+    Fintype.card_fin, nsmul_eq_mul]
+  ring
+
 end Weight
 
 section Code
@@ -610,7 +630,100 @@ private theorem pow_div_pow_card_image_le_inv_mul_prod_symbolWeight [Finite α] 
         div_le_div_of_nonneg_right (pow_le_pow_of_le_one hγ₀ hγ₁ hexp) (pow_pos hn _).le
     _ = n⁻¹ * (n⁻¹ ^ N * γ ^ J) := by rw [div_eq_mul_inv, ← inv_pow, pow_succ]; ring
 
+/-- The code of a walk visiting `A t` at each time `t` starts in `A 0`, and its symbol at step `t`
+is allowed for the target set `A (finRotate L t)`. -/
+private theorem code_mem_of_mem_piFinset {A : Fin L → Finset α} {w : Fin L → α}
+    (hw : w ∈ Fintype.piFinset A) :
+    code w ∈ A 0 ×ˢ Fintype.piFinset fun t ↦ allowedSymbols (A (finRotate L t)) := by
+  rw [Fintype.mem_piFinset] at hw
+  refine mem_product.mpr ⟨hw 0, Fintype.mem_piFinset.mpr fun t ↦ ?_⟩
+  simp only [code, symbol]
+  split_ifs
+  · have : cyclicPath w (t.val + 1) = w (finRotate L t) := by
+      rw [cyclicPath, ← Fin.finRotate_ofNat]
+      exact congrArg (w ∘ finRotate L) (Fin.ext (by simp))
+    simpa [allowedSymbols, this] using hw (finRotate L t)
+  · simp [allowedSymbols]
+  · simp [allowedSymbols]
+
 end Code
+
+/-- The weighted enumeration of `sum_piFinset_pow_div_pow_card_image_le_of_no_singleton_edge`
+for a finite vertex type. -/
+private theorem sum_piFinset_pow_div_pow_card_image_le_of_finite [DecidableEq α] [Finite α]
+    {L : ℕ} [NeZero L] {γ m : ℝ} (hγ₀ : 0 ≤ γ) (hγ₁ : γ ≤ 1) (hm : 0 ≤ m)
+    (A : Fin L → Finset α) :
+    ∑ w ∈ Fintype.piFinset A with
+        ∀ t, ∃ s ≠ t, s(w s, w (finRotate L s)) = s(w t, w (finRotate L t)),
+      γ ^ (2 * (L + 2 - 2 * #(univ.image w))) / m ^ #(univ.image w) ≤
+        #(A 0) / m * ∏ t, (#(A (finRotate L t)) / m + 1 + L * γ) := by
+  classical
+  -- For `m = 0` both sides vanish, since every walk visits a vertex.
+  rcases hm.eq_or_lt with rfl | hm
+  · have : Nonempty (Fin L) := ⟨0⟩
+    rw [div_zero, zero_mul]
+    exact (sum_eq_zero fun w _ ↦ by
+      rw [zero_pow (card_pos.mpr (univ_nonempty.image w)).ne', div_zero]).le
+  let F : α × (Fin L → Option (α ⊕ Fin L)) → ℝ := fun c ↦ ∏ l, symbolWeight m γ (c.2 l)
+  have hF (c) : 0 ≤ F c := prod_nonneg fun l _ ↦ symbolWeight_nonneg hm.le hγ₀ _
+  let W := (Fintype.piFinset A).filter fun w : Fin L → α ↦
+    ∀ t, ∃ s ≠ t, s(w s, w (finRotate L s)) = s(w t, w (finRotate L t))
+  calc _ ≤ ∑ w ∈ W, m⁻¹ * F (code w) := sum_le_sum fun w hw ↦
+        pow_div_pow_card_image_le_inv_mul_prod_symbolWeight hm hγ₀ hγ₁ w (mem_filter.mp hw).2
+    _ = m⁻¹ * ∑ c ∈ W.image code, F c := by
+      rw [mul_sum, sum_image fun w _ w' _ h ↦ code_injective h]
+    _ ≤ m⁻¹ * ∑ c ∈ A 0 ×ˢ Fintype.piFinset fun t ↦ allowedSymbols (A (finRotate L t)), F c := by
+      refine mul_le_mul_of_nonneg_left (sum_le_sum_of_subset_of_nonneg ?_ fun c _ _ ↦ hF c)
+        (inv_nonneg.mpr hm.le)
+      intro c hc
+      obtain ⟨w, hw, rfl⟩ := mem_image.mp hc
+      exact code_mem_of_mem_piFinset (mem_filter.mp hw).1
+    _ = _ := by
+      -- The weight of a code is a product over its steps of the weights of its symbols.
+      simp only [F, sum_product, sum_const, nsmul_eq_mul]
+      rw [← prod_univ_sum]
+      simp only [sum_allowedSymbols_symbolWeight]
+      ring
+
+/-- **Weighted Füredi–Komlós enumeration with prescribed vertex sets.** Let `L ≠ 0`, `m ≥ 0`
+and `0 ≤ γ ≤ 1`, and prescribe a finite set `A t` of vertices for each time `t` of a closed walk
+of length `L`. Over the closed walks `w` with `w t ∈ A t` for every `t` that traverse each of their
+edges `s(w t, w (t + 1))` at least twice, the sum of `γ ^ (2 * (L + 2 - 2 * t)) / m ^ t`, where `t`
+is the number of vertices visited by `w`, is at most
+`#(A 0) / m * ∏ t, (#(A (t + 1)) / m + 1 + L * γ)`, the times `t + 1` being read cyclically.
+
+The factor of step `t` is the total weight of its possible code symbols: a discovery of one of the
+`#(A (t + 1))` vertices allowed next, weighted `m⁻¹`, a forced step, or a jump to one of the `L`
+times, weighted `γ`. For the closed bipartite words of sample covariance matrices, the sets
+`A t` alternate between rows and columns. -/
+theorem sum_piFinset_pow_div_pow_card_image_le_of_no_singleton_edge [DecidableEq α] {L : ℕ}
+    [NeZero L] {γ m : ℝ} (hγ₀ : 0 ≤ γ) (hγ₁ : γ ≤ 1) (hm : 0 ≤ m) (A : Fin L → Finset α) :
+    ∑ w ∈ Fintype.piFinset A with
+        ∀ t, ∃ s ≠ t, s(w s, w (finRotate L s)) = s(w t, w (finRotate L t)),
+      γ ^ (2 * (L + 2 - 2 * #(univ.image w))) / m ^ #(univ.image w) ≤
+        #(A 0) / m * ∏ t, (#(A (finRotate L t)) / m + 1 + L * γ) := by
+  classical
+  -- Restrict the vertices to the finite set `S` of all prescribed vertices.
+  set S := univ.biUnion A
+  have hS {t : Fin L} {x : α} (hx : x ∈ A t) : x ∈ S := mem_biUnion.mpr ⟨t, mem_univ _, hx⟩
+  let A' (t : Fin L) : Finset S := (A t).subtype (· ∈ S)
+  have hcard (t : Fin L) : #(A' t) = #(A t) := by
+    rw [card_subtype, filter_true_of_mem fun _ ↦ hS]
+  have key := sum_piFinset_pow_div_pow_card_image_le_of_finite hγ₀ hγ₁ hm A'
+  simp only [hcard] at key
+  -- The walks through the prescribed sets are the pointwise projections of the walks in `S`.
+  have hpi : Fintype.piFinset A = (Fintype.piFinset A').image (Subtype.val ∘ ·) := by
+    have hA : (fun t ↦ (A' t).image Subtype.val) = A := funext fun t ↦ by
+      rw [← Function.Embedding.coe_subtype, ← map_eq_image, subtype_map_of_mem fun _ ↦ hS]
+    rw [← hA]
+    exact Fintype.piFinset_image (fun _ ↦ Subtype.val) A'
+  rw [hpi, filter_image, sum_image Subtype.val_injective.comp_left.injOn]
+  refine le_of_eq_of_le (sum_congr (filter_congr fun w _ ↦ ?_) fun w _ ↦ ?_) key
+  · -- The projection is injective on edges, so it preserves the repeated edges.
+    simp only [Function.comp_apply, ← Sym2.map_mk,
+      (Sym2.map.injective Subtype.val_injective).eq_iff]
+  · -- The projected walk visits as many vertices as the walk itself.
+    rw [← image_image, card_image_of_injective _ Subtype.val_injective]
 
 /-- **Weighted Füredi–Komlós enumeration.** Let `α` be a finite type of cardinality `n` and let
 `0 ≤ γ ≤ 1`. Over the closed walks `w : Fin L → α` traversing each of their edges
@@ -627,38 +740,18 @@ theorem sum_pow_div_pow_card_image_le_of_no_singleton_edge [DecidableEq α] [Fin
         ∀ t, ∃ s ≠ t, s(w s, w (finRotate L s)) = s(w t, w (finRotate L t)),
       γ ^ (2 * (L + 2 - 2 * #(univ.image w))) / (Fintype.card α : ℝ) ^ #(univ.image w) ≤
         (2 + L * γ) ^ L := by
-  classical
   rcases Nat.eq_zero_or_pos L with rfl | hL
   · simpa using pow_le_one₀ hγ₀ hγ₁
   have : NeZero L := ⟨hL.ne'⟩
-  have hbase : 0 ≤ 2 + L * γ := add_nonneg zero_le_two (mul_nonneg (Nat.cast_nonneg _) hγ₀)
   rcases isEmpty_or_nonempty α with hα | hα
   · have : IsEmpty (Fin L → α) := inferInstance
-    simpa using pow_nonneg hbase L
-  set n : ℝ := ((Fintype.card α : ℕ) : ℝ) with hn_def
-  have hn : 0 < n := Nat.cast_pos.mpr Fintype.card_pos
-  let F : α × (Fin L → Option (α ⊕ Fin L)) → ℝ := fun c ↦ ∏ l, symbolWeight n γ (c.2 l)
-  have hF (c) : 0 ≤ F c := prod_nonneg fun l _ ↦ symbolWeight_nonneg hn.le hγ₀ _
-  calc _ ≤ ∑ w : Fin L → α with
-        ∀ t, ∃ s ≠ t, s(w s, w (finRotate L s)) = s(w t, w (finRotate L t)),
-        n⁻¹ * F (code w) := sum_le_sum fun w hw ↦
-      pow_div_pow_card_image_le_inv_mul_prod_symbolWeight hn hγ₀ hγ₁ w (mem_filter.mp hw).2
-    _ = n⁻¹ * ∑ c ∈ (univ.filter fun w : Fin L → α ↦
-        ∀ t, ∃ s ≠ t, s(w s, w (finRotate L s)) = s(w t, w (finRotate L t))).image
-          code, F c := by
-      rw [mul_sum, sum_image fun w _ w' _ h ↦ code_injective h]
-    _ ≤ n⁻¹ * ∑ c, F c :=
-      mul_le_mul_of_nonneg_left (sum_le_sum_of_subset_of_nonneg (subset_univ _)
-        fun c _ _ ↦ hF c) (inv_nonneg.mpr hn.le)
-    _ = (∑ c : Option (α ⊕ Fin L), symbolWeight n γ c) ^ L := by
-      rw [Fintype.sum_prod_type, Fintype.sum_pow]
-      simp only [F, sum_const, card_univ, nsmul_eq_mul]
-      rw [← hn_def, ← mul_assoc, inv_mul_cancel₀ hn.ne', one_mul]
-    _ = _ := by
-      congr 1
-      rw [Fintype.sum_option, Fintype.sum_sum_type]
-      simp only [symbolWeight, sum_const, card_univ, Fintype.card_fin, nsmul_eq_mul]
-      rw [← hn_def, mul_inv_cancel₀ hn.ne']
-      ring
+    simpa using pow_nonneg (add_nonneg zero_le_two (mul_nonneg (Nat.cast_nonneg L) hγ₀)) L
+  have hn : (0 : ℝ) < Fintype.card α := Nat.cast_pos.mpr Fintype.card_pos
+  have key := sum_piFinset_pow_div_pow_card_image_le_of_no_singleton_edge (L := L) hγ₀ hγ₁ hn.le
+    fun _ ↦ (univ : Finset α)
+  rw [Fintype.piFinset_univ] at key
+  simp only [card_univ, div_self hn.ne', one_mul, prod_const, Fintype.card_fin] at key
+  calc _ ≤ (1 + 1 + L * γ) ^ L := key
+    _ = (2 + L * γ) ^ L := by norm_num
 
 end TauCeti

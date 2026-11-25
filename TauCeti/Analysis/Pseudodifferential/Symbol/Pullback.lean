@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Diffeomorph
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical.Basic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Normed.Operator.CompactFamily

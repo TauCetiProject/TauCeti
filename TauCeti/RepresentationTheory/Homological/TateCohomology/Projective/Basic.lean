@@ -14,6 +14,7 @@ import TauCeti.RepresentationTheory.Coinvariants
 import TauCeti.RepresentationTheory.Invariants
 import TauCeti.RepresentationTheory.NormSplit.PGroup
 import TauCeti.RepresentationTheory.Homological.TateCohomology.HomologySequence
+import TauCeti.RepresentationTheory.Rep.Projective
 import TauCeti.RepresentationTheory.Rep.TensorShortExact
 
 /-!
@@ -104,8 +105,7 @@ degree. -/
 theorem isZero_res_tensor_of_projective (M P : Rep k G)
     [Module.Projective (MonoidAlgebra k G) P.ρ.asModule] (S : Subgroup G) [Fintype S] (n : ℤ) :
     IsZero (tateCohomology (res S.subtype (M ⊗ P)) n) := by
-  have : Projective P := by
-    rwa [← equivalenceModuleMonoidAlgebra.map_projective_iff, ← IsProjective.iff_projective]
+  have : Projective P := (projective_iff_moduleProjective P).2 ‹_›
   -- `M ⊗ P` is a retract of `M ⊗ Ind_⊥^G P`, whose Tate cohomology on `S` vanishes.
   have h := (((Retract.mk _ _ (Projective.factorThru_comp (𝟙 P) (indBotCounit P))).map
     (tensorLeft M)).map (resFunctor (k := k) S.subtype)).map (tateCohomologyFunctor n)

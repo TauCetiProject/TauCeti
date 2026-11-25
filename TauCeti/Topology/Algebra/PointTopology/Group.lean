@@ -38,7 +38,11 @@ homomorphism `AlgHom.mapValue`. Since the group of points carries the point topo
 underlying homomorphisms, `AlgHom.mapValue ψ` is an embedding or a closed embedding whenever `ψ`
 is, and an open embedding when `ψ` is and the coordinate algebra is of finite type. An
 isomorphism of topological coefficient algebras induces an isomorphism of topological monoids of
-points.
+points. No topology on the source of `ψ` is needed to locate its points among those with values in
+the target: when `ψ` is injective with closed image, its image on points is closed, and when the
+image of `ψ` is discrete and the coordinate algebra is commutative of finite type, its image on
+points is discrete. This is how the rational points of an affine group over a number field sit in
+its adelic points.
 
 ## Main declarations
 
@@ -53,6 +57,8 @@ points.
 * `AlgHom.isEmbedding_mapValue`, `AlgHom.isClosedEmbedding_mapValue` and
   `AlgHom.isOpenEmbedding_mapValue`: change of coefficients along an embedding, closed embedding
   or open embedding of coefficient rings.
+* `AlgHom.isClosed_range_mapValue` and `AlgHom.isDiscrete_range_mapValue`: change of
+  coefficients along an injective map with closed, respectively discrete, image.
 * `BialgHom.isClosedEmbedding_mapDomain_of_surjective`: a closed immersion of affine groups induces
   a closed embedding of groups of points over a T1 ring.
 * `ContinuousAlgEquiv.mapValueContinuousMulEquiv`: change of coefficients along an isomorphism of
@@ -192,6 +198,34 @@ theorem ContinuousAlgEquiv.mapValueContinuousMulEquiv_symm_apply_apply (e : R �
   simp
 
 end Functoriality
+
+section Range
+
+variable {k H R R' : Type*} [CommSemiring k] [CommSemiring R] [Algebra k R] [CommSemiring R']
+  [Algebra k R'] [TopologicalSpace R']
+
+open TauCeti.PointTopology
+
+/-- If an injective coefficient map `ψ : R → R'` has closed image, then the points with values in
+`R` form a closed subset of the convolution monoid of points with values in `R'`, with no topology
+on `R` and no finiteness assumption on the bialgebra. -/
+theorem AlgHom.isClosed_range_mapValue [Semiring H] [Bialgebra k H] {ψ : R →ₐ[k] R'}
+    (hψ : Function.Injective ψ) (hc : IsClosed (Set.range ψ)) :
+    IsClosed (Set.range (mapValue (H := H) ψ)) := by
+  rw [AlgHom.range_mapValue]
+  exact (isClosed_range_map_codomain ψ hψ hc).preimage isHomeomorph_ofConv.continuous
+
+/-- If an injective coefficient map `ψ : R → R'` has discrete image, then the points with values
+in `R` of a commutative bialgebra of finite type form a discrete subset of the convolution monoid of
+points with values in `R'`. -/
+theorem AlgHom.isDiscrete_range_mapValue [CommSemiring H] [Bialgebra k H] [Algebra.FiniteType k H]
+    {ψ : R →ₐ[k] R'} (hψ : Function.Injective ψ) (hd : IsDiscrete (Set.range ψ)) :
+    IsDiscrete (Set.range (mapValue (H := H) ψ)) := by
+  rw [AlgHom.range_mapValue]
+  exact (isDiscrete_range_map_codomain ψ hψ hd).preimage
+    isHomeomorph_ofConv.continuous.continuousOn WithConv.ofConv_injective
+
+end Range
 
 section ClosedImmersion
 
