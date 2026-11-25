@@ -94,11 +94,9 @@ theorem slRestrictedRoot_self (k : Fin (r + 1)) : slRestrictedRoot r A k k = 0 :
   LinearMap.ext fun H ↦ by rw [slRestrictedRoot_apply, sub_self, LinearMap.zero_apply]
 
 /-- The functionals `e_k - e_l` and `e_i - e_j` with `i ≠ j` coincide exactly when
-`(k, l) = (i, j)`: for `k ≠ l` both are the roots `εₖ - εₗ` and `εᵢ - εⱼ` read on `𝔞`
-(`TauCeti.specialLinearRoot_inj`), and for `k = l` the root `εᵢ - εⱼ` would vanish
-(`TauCeti.specialLinearRoot_isNonZero`). -/
+`(k, l) = (i, j)`. -/
 @[simp]
-theorem slRestrictedRoot_eq_iff {i j k l : Fin (r + 1)} (hij : i ≠ j) :
+theorem slRestrictedRoot_inj {i j k l : Fin (r + 1)} (hij : i ≠ j) :
     slRestrictedRoot r ℝ k l = slRestrictedRoot r ℝ i j ↔ k = i ∧ l = j := by
   refine ⟨fun h ↦ ?_, fun ⟨hki, hlj⟩ ↦ hki ▸ hlj ▸ rfl⟩
   by_cases hkl : k = l
@@ -185,7 +183,7 @@ theorem restrictedRootSpace_slRestrictedRoot {i j : Fin (r + 1)} (hij : i ≠ j)
     · rw [ite_eq_right hkl, mul_zero, eq_comm]
       -- Choose `H ∈ 𝔞` with `H k k - H l l ≠ H i i - H j j`.
       have hne : slRestrictedRoot r ℝ k l ≠ slRestrictedRoot r ℝ i j := fun h' ↦
-        hkl (((slRestrictedRoot_eq_iff hij).mp h').imp Eq.symm Eq.symm)
+        hkl (((slRestrictedRoot_inj hij).mp h').imp Eq.symm Eq.symm)
       obtain ⟨H, hH⟩ := not_forall.mp (mt LinearMap.ext hne)
       exact (mul_eq_zero.mp (h H k l)).resolve_left (sub_ne_zero.mpr hH)
   · rintro ⟨c, rfl⟩
@@ -215,7 +213,7 @@ theorem mem_restrictedRoots_specialLinearDiagonal_iff {μ : Dual ℝ (specialLin
     rw [hroot, h, slRestrictedRoot_self]
   · rintro ⟨i, j, hij, rfl⟩
     refine ⟨fun h ↦ ?_, ?_⟩
-    · exact hij ((slRestrictedRoot_eq_iff hij).mp ((slRestrictedRoot_self i).trans h.symm)).2
+    · exact hij ((slRestrictedRoot_inj hij).mp ((slRestrictedRoot_self i).trans h.symm)).2
     · rw [restrictedRootSpace_slRestrictedRoot hij, Ne, span_singleton_eq_bot]
       intro h
       have := congrFun (congrFun (congrArg Subtype.val h) i) j
