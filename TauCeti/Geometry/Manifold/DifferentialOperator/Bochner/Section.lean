@@ -534,9 +534,8 @@ theorem isMetricCompatible_of_sub_smul_smoothRoughLaplacian_mem
   -- Along a gradient `X` with `X x = w`, the difference `B = ∇⁰_X - ∇_X` of the covariant
   -- derivatives of `∇⁰ = ∇ + C` and `∇` is the operator of order zero `B σ = C(σ, X)`.
   obtain ⟨f, hf⟩ := exists_contMDiffMap_mgradient_eq x w
-  let X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ :=
-    ⟨mgradient I f, by simpa using contMDiff_mgradient_infty f.contMDiff⟩
-  have hX : ⇑X = mgradient I f := ContMDiffSection.coeFn_mk _ _
+  let X := smoothGradient I M f
+  have hX : ⇑X = mgradient I f := coe_smoothGradient f
   let N := cov.metricCorrected.alongVectorField X
   let L := Algebra.lsmul ℝ ℝ Cₛ^∞⟮I; F, V⟯ (smoothDivergence I M X)
   have hB (σ : Cₛ^∞⟮I; F, V⟯) (y : M) :

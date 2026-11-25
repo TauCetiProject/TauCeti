@@ -49,7 +49,8 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
 * `AddCircle.coe_eq_coe_iff_exists_zsmul`: two elements have the same class in `AddCircle p`
   exactly when they differ by an integer multiple of `p`, and
   `AddCircle.eq_of_coe_eq_of_abs_sub_lt`: two such elements closer than `p` are equal.
-* `AddCircle.exists_pi_coe_eq`: every point of a torus `(𝕜 / pℤ)^ι` lifts to `𝕜^ι`.
+* `AddCircle.exists_pi_coe_eq`: every point of a torus `(𝕜 / pℤ)^ι` lifts to `𝕜^ι`, and
+  `AddCircle.pi_coe_eq_zero_iff`: a lift of `0` is a family of integer multiples of `p`.
 * `AddCircle.intCast_floor_equivIco_add`: the floor of the sum of two representatives in
   `[0, 1)` is their defect of additivity.
 * `AddCircle.natCard_torsionBy_le` and `AddCircle.natCard_torsionBy_pi_le`: when
@@ -61,14 +62,16 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
   `p / 2`.
 * `AddCircle.addOrderOf_period_div_of_ne_zero`: for a nonzero period and positive `n`, the class
   of `p / n` has additive order `n`.
-* `AddCircle.infinite_of_neZero`: the instance that `AddCircle p` is infinite for a nonzero
-  period in characteristic zero.
+* `AddCircle.infinite`: the instance that `AddCircle p` is infinite for every period in
+  characteristic zero.
 * `AddCircle.natCard_torsionBy`: for positive `n`, the `n`-torsion of `AddCircle p` has exactly `n`
   elements; for `n = 0` the statement holds only through the junk value `Nat.card = 0` of the
   infinite group.
 * `AddCircle.eq_torsionBy_of_natCard_eq`: a subgroup of `AddCircle p` with `n` elements is the
   `n`-torsion; equivalently, `AddCircle.exists_eq_torsionBy` writes every finite subgroup as a
   torsion subgroup, and `AddCircle.isAddCyclic_of_finite` shows that it is cyclic.
+* `AddCircle.exists_isCoprime_zsmul_eq_of_addOrderOf_eq`: two points of the same positive
+  additive order are multiples of each other by an integer prime to that order.
 * `AddCircle.isCyclic_of_finite_multiplicative`: a finite subgroup of the multiplicative copy of a
   circle `𝕜 ⧸ p ℤ` over a characteristic-zero division ring is cyclic.
 * `AddCircle.torsionBy_le_torsionBy_iff` and `AddCircle.torsionBy_inj`: the torsion subgroups
@@ -174,6 +177,13 @@ coercion so that `obtain ⟨t, rfl⟩` leaves terms that lemmas about coerced an
 theorem exists_pi_coe_eq {𝕜 ι : Type*} [AddCommGroup 𝕜] {p : 𝕜} (θ : ι → AddCircle p) :
     ∃ t : ι → 𝕜, (fun j ↦ (t j : AddCircle p)) = θ :=
   QuotientAddGroup.mk_surjective.comp_left θ
+
+/-- A family of representatives vanishes in the torus `(𝕜 / pℤ)^ι` exactly when it is a family of
+integer multiples of the period. -/
+theorem pi_coe_eq_zero_iff {𝕜 ι : Type*} [AddCommGroup 𝕜] {p : 𝕜} {t : ι → 𝕜} :
+    (fun j ↦ (t j : AddCircle p)) = 0 ↔ ∃ v : ι → ℤ, (fun j ↦ v j • p) = t := by
+  simp only [funext_iff, Pi.zero_apply, coe_eq_zero_iff]
+  exact Classical.skolem
 
 /-- An integer reduces to zero in `AddCircle (1 : 𝕜)`. -/
 @[simp]
@@ -346,6 +356,18 @@ theorem isAddCyclic_of_finite (H : AddSubgroup (AddCircle p)) [Finite H] : IsAdd
   rw [hH]
   exact isAddCyclic_torsionBy p (Nat.cast_ne_zero.mpr hn.ne')
 
+/-- Two points of `AddCircle p` of the same positive additive order `n` are unit multiples of
+each other: both generate the `n`-torsion, the only subgroup of order `n`. -/
+theorem exists_isCoprime_zsmul_eq_of_addOrderOf_eq {u v : AddCircle p} (hu : 0 < addOrderOf u)
+    (h : addOrderOf u = addOrderOf v) : ∃ k : ℤ, IsCoprime k (addOrderOf u) ∧ k • u = v := by
+  have hn : ((addOrderOf u : ℕ) : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr hu.ne'
+  have huv : zmultiples u = zmultiples v := by
+    rw [eq_torsionBy_of_natCard_eq p hn (Nat.card_zmultiples u),
+      eq_torsionBy_of_natCard_eq p hn (H := zmultiples v) (by rw [Nat.card_zmultiples, h])]
+  obtain ⟨k, rfl⟩ := mem_zmultiples_iff.mp (huv ▸ mem_zmultiples v)
+  exact ⟨k, Int.isCoprime_iff_gcd_eq_one.mpr
+    (mem_zmultiples_zsmul_iff.mp (huv.symm ▸ mem_zmultiples u)), rfl⟩
+
 end FiniteSubgroups
 
 section ExactOrder
@@ -371,14 +393,33 @@ theorem addOrderOf_period_div_of_ne_zero (hn : 0 < n) :
   have hdvd : (n : ℤ) ∣ m := ⟨k, by rw [mul_comm]; exact_mod_cast hkm⟩
   exact hmn.not_ge (Nat.le_of_dvd hm (Int.natCast_dvd_natCast.mp hdvd))
 
-/-- For a nonzero period in characteristic zero, `AddCircle p` is infinite: the classes of
-`p / (k + 1)` have pairwise distinct additive orders. -/
-instance infinite_of_neZero : Infinite (AddCircle p) :=
-  Infinite.of_injective (fun k : ℕ ↦ ((p / (k + 1 : ℕ) : 𝕜) : AddCircle p)) fun a b h ↦ by
+end ExactOrder
+
+section Infinite
+
+variable {𝕜 : Type*} [DivisionRing 𝕜] [CharZero 𝕜] (p : 𝕜)
+
+/-- In characteristic zero, `AddCircle p` is infinite for every period `p`. For `p ≠ 0` the
+classes of `p / (k + 1)` have pairwise distinct additive orders; `AddCircle 0` is a copy of `𝕜`,
+in which the natural numbers are distinct. -/
+instance infinite : Infinite (AddCircle p) := by
+  rcases eq_or_ne p 0 with rfl | hp
+  · refine Infinite.of_injective (fun k : ℕ ↦ ((k : 𝕜) : AddCircle (0 : 𝕜))) fun a b h ↦ ?_
+    obtain ⟨k, hk⟩ := coe_eq_coe_iff_exists_zsmul.1 h
+    rw [smul_zero, eq_comm, sub_eq_zero] at hk
+    exact_mod_cast hk
+  · have : NeZero p := ⟨hp⟩
+    refine Infinite.of_injective (fun k : ℕ ↦ ((p / (k + 1 : ℕ) : 𝕜) : AddCircle p)) fun a b h ↦ ?_
     have := congrArg addOrderOf h
     rw [addOrderOf_period_div_of_ne_zero p (Nat.succ_pos _),
       addOrderOf_period_div_of_ne_zero p (Nat.succ_pos _)] at this
     exact Nat.succ_injective this
+
+end Infinite
+
+section ExactOrder
+
+variable {𝕜 : Type*} [DivisionRing 𝕜] [CharZero 𝕜] (p : 𝕜) [NeZero p] {m n : ℕ}
 
 /-- The `n`-torsion of `AddCircle p` has exactly `n` elements. For `n = 0` this is the junk value
 `Nat.card = 0` of the infinite group `AddCircle p`. -/

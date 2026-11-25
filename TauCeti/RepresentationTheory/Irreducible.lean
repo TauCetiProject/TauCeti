@@ -74,6 +74,9 @@ an algebra are those of the whole algebra.
   involutive equivariant endomorphism, over any field.
 * `Representation.asAlgebraHom_surjective_of_isIrreducible`: over an algebraically closed
   field, every finite-dimensional irreducible representation exhausts the endomorphisms.
+* `Representation.span_range_eq_top_of_isIrreducible`: equivalently, the image of such a
+  representation spans the endomorphisms; `Representation.span_range_eq_top_of_finrank_eq_one`
+  records the same for every one-dimensional representation, over any field.
 * `Representation.exists_ne_zero_forall_exists_rTensor_asAlgebraHom_eq_tmul`: consequently the
   monoid algebra, acting on the left factor of a nonzero tensor in `V ⊗ M`, reaches every
   `v ⊗ m` for one fixed nonzero `m`.
@@ -313,6 +316,23 @@ theorem asAlgebraHom_surjective_of_isIrreducible
   simpa only [Algebra.lsmul_apply, Representation.asModuleEquiv_map_smul, T',
     LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] using hx
 
+/-- **Burnside's theorem, spanning form.** Over an algebraically closed field, the image of a
+finite-dimensional irreducible representation spans all endomorphisms. -/
+theorem span_range_eq_top_of_isIrreducible [IsAlgClosed k] [FiniteDimensional k V]
+    {ρ : Representation k G V} (h : ρ.IsIrreducible) :
+    Submodule.span k (Set.range ρ) = ⊤ := by
+  rw [← toSubmodule_range_asAlgebraHom, Algebra.toSubmodule_eq_top, AlgHom.range_eq_top]
+  exact asAlgebraHom_surjective_of_isIrreducible ρ h
+
+/-- The image of a representation on a line spans its endomorphisms. -/
+theorem span_range_eq_top_of_finrank_eq_one (ρ : Representation k G V)
+    (h : Module.finrank k V = 1) : Submodule.span k (Set.range ρ) = ⊤ := by
+  have : FiniteDimensional k V := Module.finite_of_finrank_eq_succ h
+  have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ h
+  have h1 : Module.finrank k (Module.End k V) = 1 := by rw [Module.finrank_linearMap, h]
+  refine eq_top_mono (Submodule.span_mono (Set.singleton_subset_iff.mpr ⟨1, map_one ρ⟩)) ?_
+  exact (finrank_eq_one_iff_of_ne_zero _ one_ne_zero).mp h1
+
 open scoped MonoidAlgebra in
 /-- **Burnside density on a tensor product.** Let `ρ` be a finite-dimensional irreducible
 representation over an algebraically closed field and `M` any vector space. Acting on the left
@@ -441,23 +461,18 @@ theorem map_one_of_forall_apply_eq_smul [Nontrivial V] (ρ : Representation k G 
   exact smul_left_injective k hv (by simp [← hc])
 
 /-- **Two equivariant isomorphisms out of an irreducible representation differ by a unit
-scalar.**  If `a b : V ≃ₗ[k] W` both carry the action `ρ` to the same `σ`, then `b⁻¹ ∘ a` is an
-equivariant automorphism of `V`, hence a nonzero scalar by Schur's lemma
-(`Representation.IsIrreducible.exists_forall_apply_eq_smul`). -/
+scalar.**  If `a b : V ≃ₗ[k] W` both carry the action `ρ` to the same `σ`, they differ by a unit
+scalar (`Representation.exists_unit_smul_of_intertwines`), since every equivariant endomorphism of
+`V` is a scalar by Schur's lemma (`Representation.IsIrreducible.exists_forall_apply_eq_smul`). -/
 theorem IsIrreducible.exists_unit_smul_of_intertwines [IsAlgClosed k] [FiniteDimensional k V]
     {W : Type*} [AddCommGroup W] [Module k W] {ρ : Representation k G V} [hρ : ρ.IsIrreducible]
     {σ : Representation k G W} (a b : V ≃ₗ[k] W)
     (ha : ∀ g v, a (ρ g v) = σ g (a v)) (hb : ∀ g v, b (ρ g v) = σ g (b v)) :
     ∃ c : kˣ, ∀ v, a v = (c : k) • b v := by
   have : Nontrivial V := hρ.nontrivial
-  obtain ⟨c, hc⟩ := exists_forall_apply_eq_smul (ρ := ρ) (a.trans b.symm).toLinearMap
-    fun g v ↦ b.injective (by simp [ha, hb])
-  have hne : c ≠ 0 := by
-    rintro rfl
-    obtain ⟨v, hv⟩ := exists_ne (0 : V)
-    exact hv ((a.trans b.symm).injective (by simpa using hc v))
-  refine ⟨Units.mk0 c hne, fun v ↦ ?_⟩
-  simpa using congrArg b (hc v)
+  refine Representation.exists_unit_smul_of_intertwines (fun f hf ↦ ?_) a b ha hb
+  obtain ⟨c, hc⟩ := exists_forall_apply_eq_smul (ρ := ρ) f fun g v ↦ LinearMap.congr_fun (hf g) v
+  exact ⟨c, LinearMap.ext fun v ↦ by simp [hc]⟩
 
 /-- **Every nonzero finite-dimensional representation contains an irreducible subrepresentation.**
 Finite-dimensionality alone suffices; no semisimplicity is assumed.  This produces a single

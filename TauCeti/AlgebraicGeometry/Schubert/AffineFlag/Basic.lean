@@ -51,6 +51,13 @@ private noncomputable def flagFactors (i : Fin n) : Over (Spec (.of R)) :=
 noncomputable def flagGrassmannianProduct : Over (Spec (.of R)) :=
   ∏ᶜ flagFactors R M q
 
+/-- The ambient product is the product in `Over (Spec R)` of the Grassmannians
+`Module.Grassmannian.toSpec R M (q i)`. -/
+theorem flagGrassmannianProduct_def :
+    flagGrassmannianProduct R M q =
+      ∏ᶜ fun i ↦ Over.mk (Module.Grassmannian.toSpec R M (q i)) := by
+  rfl
+
 /-- The projection of the ambient product onto the Grassmannian of the `i`th quotient. -/
 noncomputable def flagGrassmannianProductπ (i : Fin n) :
     (flagGrassmannianProduct R M q).left ⟶ Module.Grassmannian.scheme R M (q i) :=
