@@ -178,21 +178,12 @@ namespace MulAction
 
 open scoped Pointwise
 
-/-- If `g • T = T`, every integer power of `g` fixes `T` setwise. -/
-theorem zpow_smul_finset_eq {G α : Type*} [Group G] [MulAction G α] [DecidableEq α]
-    {g : G} {T : Finset α} (hg : g • T = T) (k : ℤ) : g ^ k • T = T :=
-  (stabilizer G T).zpow_mem hg k
-
 /-- Membership in a `g`-invariant finset is invariant under `⟨g⟩`-orbits. -/
 theorem zpow_smul_mem_of_smul_eq {G α : Type*} [Group G] [MulAction G α] [DecidableEq α]
     {g : G} {T : Finset α} (hg : g • T = T) {x y : α}
     (h : orbitRel (Subgroup.zpowers g) α x y) : x ∈ T ↔ y ∈ T := by
   obtain ⟨⟨_, k, rfl⟩, rfl⟩ := mem_orbit_iff.mp (orbitRel_apply.mp h)
-  calc
-    (⟨g ^ k, Subgroup.zpow_mem_zpowers g k⟩ : Subgroup.zpowers g) • y ∈ T ↔ g ^ k • y ∈ T :=
-      Iff.rfl
-    _ ↔ g ^ k • y ∈ g ^ k • T := by rw [zpow_smul_finset_eq hg k]
-    _ ↔ y ∈ T := Finset.smul_mem_smul_finset_iff (g ^ k)
+  exact mem_stabilizer_finset.mp ((stabilizer G T).zpow_mem hg k) y
 
 /-- Translation preserves complements of invariant finsets. -/
 theorem smul_compl_eq_of_smul_eq {G α : Type*} [Group G] [MulAction G α] [Fintype α]
@@ -243,17 +234,13 @@ theorem fixedFinsetEquivOrbitFinset_apply {G α : Type*} [Group G] [MulAction G 
 @[expose] def subsetPermOn {G α : Type*} [Group G] [MulAction G α] [DecidableEq α]
     (H : Subgroup G) (T : Finset α) (hT : ∀ x : H, (x : G) • T = T) :
     H →* Equiv.Perm ↥T where
-  toFun x :=
-    { toFun := fun y ↦ ⟨(x : G) • y.val, by
-        have hm := Finset.smul_mem_smul_finset (a := (x : G)) y.property
-        rwa [hT x] at hm⟩
-      invFun := fun y ↦ ⟨(x⁻¹ : H).val • y.val, by
-        have hm := Finset.smul_mem_smul_finset (a := (x⁻¹ : H).val) y.property
-        rwa [hT x⁻¹] at hm⟩
-      left_inv := fun y ↦ Subtype.ext (by simp [inv_smul_smul])
-      right_inv := fun y ↦ Subtype.ext (by simp [smul_inv_smul]) }
-  map_one' := by ext y; simp
-  map_mul' x z := by ext y; simp [mul_smul]
+  toFun x := (toPermHom G α x).subtypePerm fun y ↦ mem_stabilizer_finset.mp (hT x) y
+  map_one' := by
+    simp only [OneMemClass.coe_one, map_one]
+    exact Equiv.Perm.subtypePerm_one _ _
+  map_mul' x z := by
+    simp only [Subgroup.coe_mul, map_mul]
+    exact (Equiv.Perm.subtypePerm_mul _ _ _ _).symm
 
 @[simp]
 theorem subsetPermOn_apply {G α : Type*} [Group G] [MulAction G α] [DecidableEq α]

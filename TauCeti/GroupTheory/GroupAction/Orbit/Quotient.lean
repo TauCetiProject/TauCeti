@@ -9,7 +9,10 @@ public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
+import Mathlib.GroupTheory.GroupAction.Period
 import Mathlib.Tactic.Group
+import TauCeti.GroupTheory.GroupAction.Orbit.Basic
+import TauCeti.GroupTheory.QuotientGroup.Basic
 
 /-!
 # Orbit monodromy on coset spaces and conjugate cyclic actions
@@ -38,14 +41,8 @@ then `r⁻¹ * g ^ Function.minimalPeriod (g • ·) q * r` lies in `U`. -/
 theorem conj_pow_minimalPeriod_mem {G : Type*} [Group G] (U : Subgroup G) (g : G)
     {q : G ⧸ U} {r : G} (hr : (QuotientGroup.mk r : G ⧸ U) = q) :
     r⁻¹ * g ^ Function.minimalPeriod (g • ·) q * r ∈ U := by
-  have hper : g ^ Function.minimalPeriod (g • ·) q • q = q := by
-    rw [← smul_iterate_apply]
-    exact Function.isPeriodicPt_minimalPeriod (g • ·) q
-  have hmk : (QuotientGroup.mk (g ^ Function.minimalPeriod (g • ·) q * r) : G ⧸ U) =
-      g ^ Function.minimalPeriod (g • ·) q • (QuotientGroup.mk r : G ⧸ U) :=
-    rfl
-  rw [mul_assoc, ← QuotientGroup.eq, hr, hmk, hr, eq_comm]
-  exact hper
+  rw [← TauCeti.smul_quotientGroup_mk_eq_self_iff, hr, ← MulAction.period_eq_minimalPeriod]
+  exact MulAction.pow_period_smul g q
 
 /-- **Monodromy orbit invariance.** A `U`-conjugation-invariant function `f : U → R` takes the
 same value on the coset monodromy elements attached to any two points `qx, qy : G ⧸ U` in the same
@@ -60,14 +57,8 @@ theorem apply_conj_pow_minimalPeriod_eq_of_orbitRel {R G : Type*} [Group G] {U :
   obtain ⟨⟨_, k, rfl⟩, hqk⟩ := MulAction.mem_orbit_iff.mp (MulAction.orbitRel_apply.mp horb)
   have hqk' : g ^ k • qy = qx := hqk
   have hm : Function.minimalPeriod (g • ·) qx = Function.minimalPeriod (g • ·) qy := by
-    have hsc : Function.Semiconj ((g ^ k) • ·) (g • ·) (g • ·) := fun z : G ⧸ U ↦ calc
-      (g ^ k) • (g • z) = (g ^ k * g) • z := (mul_smul (g ^ k) g z).symm
-      _ = (g * g ^ k) • z := by rw [(Commute.zpow_self g k).eq]
-      _ = g • ((g ^ k) • z) := mul_smul g (g ^ k) z
     rw [← hqk']
-    refine Function.minimalPeriod_eq_minimalPeriod_iff.mpr fun n ↦ ?_
-    simp only [Function.IsPeriodicPt, Function.IsFixedPt, ← (hsc.iterate_right n).eq]
-    exact (MulAction.injective (g ^ k)).eq_iff
+    simpa [(Commute.zpow_self g k).eq] using MulAction.minimalPeriod_conj_smul g (g ^ k) qy
   have hvmem : rx⁻¹ * (g ^ k * ry) ∈ U := by
     have hmk : (QuotientGroup.mk (g ^ k * ry) : G ⧸ U) =
         g ^ k • (QuotientGroup.mk ry : G ⧸ U) := rfl

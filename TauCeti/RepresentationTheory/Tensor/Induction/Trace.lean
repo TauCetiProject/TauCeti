@@ -10,6 +10,7 @@ public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 public import TauCeti.RepresentationTheory.Tensor.Induction.Basic
 
 import TauCeti.GroupTheory.GroupAction.Orbit.Basic
+import TauCeti.GroupTheory.QuotientGroup.Basic
 import TauCeti.GroupTheory.Perm.WreathProduct.Monomial
 import TauCeti.LinearAlgebra.PiTensorProduct.Trace
 import TauCeti.RepresentationTheory.Character.Basic
@@ -178,10 +179,7 @@ theorem trace_tensorInducedRepresentation {R G M : Type*} [CommSemiring R] [Grou
         change g ^ k • y = x at hy
         rwa [Subgroup.smul_def, Equiv.Perm.smul_def, monomialHom_right_zpow]
   refine Fintype.prod_equiv qEquiv _ _ fun q ↦ ?_
-  have hper : (g ^ Function.minimalPeriod (g • ·) q.out) • q.out = q.out := by
-    rw [← smul_iterate_apply]
-    exact Function.isPeriodicPt_minimalPeriod (g • ·) q.out
-  rw [monomialHom_orbit_prod U s g q.out hper]
+  rw [monomialHom_orbit_prod U s g q.out]
   refine apply_conj_pow_minimalPeriod_eq_of_orbitRel
     (f := fun u ↦ LinearMap.trace R M (ρ u)) (fun u v ↦ ρ.trace_conj u v) g ?_
     (U.leftTransversalRep_mk s (qEquiv q).out) (U.leftTransversalRep_mk s q.out)
@@ -200,55 +198,46 @@ theorem character_tensorInducedRepresentation {k G V : Type*} [Field k] [Group G
   ext g
   exact trace_tensorInducedRepresentation U s ρ g
 
+private theorem tensorIndClassFun_inv_mul_mul {R G : Type*} [CommMonoid R] [Group G]
+    (U : Subgroup G) [U.FiniteIndex] {f : U → R}
+    (hf : ∀ u v : U, f (v * u * v⁻¹) = f u) (g r : G) :
+    U.tensorIndClassFun f (r⁻¹ * g * r) = U.tensorIndClassFun f g := by
+  let := U.fintypeQuotientOfFiniteIndex
+  let := Fintype.ofFinite (MulAction.orbitRel.Quotient (Subgroup.zpowers (r⁻¹ * g * r)) (G ⧸ U))
+  let := Fintype.ofFinite (MulAction.orbitRel.Quotient (Subgroup.zpowers g) (G ⧸ U))
+  rw [tensorIndClassFun_def, tensorIndClassFun_def]
+  let e := MulAction.conjOrbitEquiv (α := G ⧸ U) g r
+  refine Fintype.prod_equiv e _ _ fun q ↦ ?_
+  have hrep : (QuotientGroup.mk (r * q.out.out) : G ⧸ U) = r • q.out := by
+    -- Rewrite left multiplication on cosets as the left action of `G` on `G ⧸ U`.
+    change r • (QuotientGroup.mk q.out.out : G ⧸ U) = r • q.out
+    rw [QuotientGroup.out_eq']
+  have hq : e q = Quotient.mk'' (r • q.out) := by
+    conv_lhs => rw [← Quotient.out_eq q]
+    exact MulAction.conjOrbitEquiv_mk g r q.out
+  have horb : MulAction.orbitRel (Subgroup.zpowers g) (G ⧸ U) (e q).out (r • q.out) :=
+    Quotient.exact' ((Quotient.out_eq (e q)).trans hq)
+  rw [← apply_conj_pow_minimalPeriod_eq_of_orbitRel hf g horb
+    (QuotientGroup.out_eq' (e q).out) hrep]
+  congr 1
+  apply Subtype.ext
+  dsimp only
+  have hm : Function.minimalPeriod ((r⁻¹ * g * r) • ·) q.out =
+      Function.minimalPeriod (g • ·) (r • q.out) := by
+    simpa [mul_assoc] using (MulAction.minimalPeriod_conj_smul (r⁻¹ * g * r) r q.out).symm
+  have hp : (r⁻¹ * g * r) ^ Function.minimalPeriod (g • ·) (r • q.out) =
+      r⁻¹ * g ^ Function.minimalPeriod (g • ·) (r • q.out) * r := by
+    simpa [inv_inv] using (conj_pow (a := r⁻¹) (b := g))
+  rw [hm, hp]
+  simp [mul_assoc]
+
 /-- **Conjugation invariance of `Subgroup.tensorIndClassFun`.** If `f : U → R` is invariant under
 `U`-conjugation, then `U.tensorIndClassFun f` is invariant under `G`-conjugation. -/
 theorem tensorIndClassFun_conj {R G : Type*} [CommMonoid R] [Group G]
     (U : Subgroup G) [U.FiniteIndex] {f : U → R}
     (hf : ∀ u v : U, f (v * u * v⁻¹) = f u) (g c : G) :
     U.tensorIndClassFun f (c * g * c⁻¹) = U.tensorIndClassFun f g := by
-  let := U.fintypeQuotientOfFiniteIndex
-  let := Fintype.ofFinite (MulAction.orbitRel.Quotient (Subgroup.zpowers (c * g * c⁻¹)) (G ⧸ U))
-  let := Fintype.ofFinite (MulAction.orbitRel.Quotient (Subgroup.zpowers g) (G ⧸ U))
-  rw [tensorIndClassFun_def, tensorIndClassFun_def]
-  have heq : ∀ (n : ℤ) (q : G ⧸ U), (c * g * c⁻¹) ^ n • (c • q) = c • (g ^ n • q) := by
-    intro n q
-    rw [conj_zpow, ← mul_smul, ← mul_smul, mul_assoc, inv_mul_cancel, mul_one, mul_smul]
-  let qEquiv : MulAction.orbitRel.Quotient (Subgroup.zpowers g) (G ⧸ U) ≃
-      MulAction.orbitRel.Quotient (Subgroup.zpowers (c * g * c⁻¹)) (G ⧸ U) :=
-    Quotient.congr (MulAction.toPerm c) fun x y ↦ by
-      simp only [MulAction.orbitRel_apply, MulAction.mem_orbit_iff, MulAction.toPerm_apply]
-      constructor
-      · rintro ⟨⟨_, k, rfl⟩, rfl⟩
-        refine ⟨⟨(c * g * c⁻¹) ^ k, k, rfl⟩, ?_⟩
-        -- Unfold the `zpowers` subtype action into group powers.
-        change (c * g * c⁻¹) ^ k • (c • y) = c • (g ^ k • y)
-        exact heq k y
-      · rintro ⟨⟨_, k, rfl⟩, h⟩
-        refine ⟨⟨g ^ k, k, rfl⟩, (MulAction.toPerm c).injective ?_⟩
-        -- Unfold the `zpowers` subtype action into group powers.
-        change (c * g * c⁻¹) ^ k • (c • y) = c • x at h
-        rw [MulAction.toPerm_apply]
-        -- Unfold the `zpowers` subtype action so `heq` rewrites the LHS.
-        change c • (g ^ k • y) = c • x
-        rwa [← heq]
-  refine (Fintype.prod_equiv qEquiv _ _ fun q ↦ ?_).symm
-  have hrep : (QuotientGroup.mk (c * q.out.out) : G ⧸ U) = c • q.out := by
-    -- Rewrite left multiplication on cosets as the left action of `G` on `G ⧸ U`.
-    change c • (QuotientGroup.mk q.out.out : G ⧸ U) = c • q.out
-    rw [QuotientGroup.out_eq']
-  have hq : qEquiv q = Quotient.mk'' (c • q.out) := by
-    conv_lhs => rw [← Quotient.out_eq q]
-    rfl
-  have horb : MulAction.orbitRel (Subgroup.zpowers (c * g * c⁻¹)) (G ⧸ U)
-      (qEquiv q).out (c • q.out) :=
-    Quotient.exact' ((Quotient.out_eq (qEquiv q)).trans hq)
-  rw [← apply_conj_pow_minimalPeriod_eq_of_orbitRel hf (c * g * c⁻¹) horb
-    (QuotientGroup.out_eq' (qEquiv q).out) hrep]
-  congr 1
-  apply Subtype.ext
-  dsimp only
-  rw [MulAction.minimalPeriod_conj_smul, conj_pow]
-  simp [mul_assoc]
+  simpa using tensorIndClassFun_inv_mul_mul U hf g c⁻¹
 
 /-- If `f` is a class function on a finite-index subgroup `U ≤ G`, then `U.tensorIndClassFun f`
 is a class function on `G`. -/
@@ -257,20 +246,6 @@ theorem tensorIndClassFun_mem_classFunction {k G : Type*} [CommSemiring k] [Grou
     U.tensorIndClassFun f ∈ TauCeti.ClassFunction k G := by
   refine TauCeti.ClassFunction.mem_iff.mpr fun g c ↦ ?_
   exact tensorIndClassFun_conj U (fun u v ↦ TauCeti.ClassFunction.mem_iff.mp hf u v) g c
-
-private theorem mem_normal_smul_quotient {G : Type*} [Group G] (H : Subgroup G) [H.Normal]
-    (h : H) (q : G ⧸ H) : (h : G) • q = q := by
-  induction q using Quotient.inductionOn' with | h y =>
-  refine Quotient.sound' (QuotientGroup.leftRel_apply.mpr ?_)
-  simpa [mul_assoc] using ‹H.Normal›.conj_mem _ (H.inv_mem h.property) y⁻¹
-
-private theorem zpow_smul_quotient_of_normal {G : Type*} [Group G] (H : Subgroup G) [H.Normal]
-    (h : H) (k : ℤ) (y : G ⧸ H) : ((h : G) ^ k) • y = y := by
-  induction k using Int.induction_on with
-  | zero => simp
-  | succ n ih => rw [zpow_add_one, mul_smul, mem_normal_smul_quotient, ih]
-  | pred n ih =>
-    rw [zpow_sub_one, mul_smul, inv_smul_eq_iff.mpr (mem_normal_smul_quotient H h _).symm, ih]
 
 /-- **Normal-subgroup evaluation on `H`.** For a finite-index normal subgroup `H ≤ G` and any
 function `f : H → R`, evaluating `H.tensorIndClassFun f` at `h : H` gives the product of `f` over
@@ -286,13 +261,14 @@ theorem tensorIndClassFun_apply_of_mem_of_normal {R G : Type*} [CommMonoid R] [G
   let qEquiv : MulAction.orbitRel.Quotient (Subgroup.zpowers (h : G)) (G ⧸ H) ≃ G ⧸ H :=
     { toFun := Quotient.lift id fun x y hxy ↦ by
         obtain ⟨⟨_, k, rfl⟩, rfl⟩ := MulAction.mem_orbit_iff.mp hxy
-        exact zpow_smul_quotient_of_normal H h k y
+        exact TauCeti.smul_quotient_eq_self_of_mem (H.zpow_mem h.property k) y
       invFun := Quotient.mk''
       left_inv := fun q ↦ Quotient.inductionOn' q fun _ ↦ rfl
       right_inv := fun _ ↦ rfl }
   refine Fintype.prod_equiv qEquiv _ _ fun q ↦ ?_
   have hper : Function.minimalPeriod (fun x : G ⧸ H ↦ (h : G) • x) q.out = 1 :=
-    Function.minimalPeriod_eq_one_iff_isFixedPt.mpr (mem_normal_smul_quotient H h q.out)
+    Function.minimalPeriod_eq_one_iff_isFixedPt.mpr
+      (TauCeti.smul_quotient_eq_self_of_mem h.property q.out)
   have hmk : q.out = qEquiv q := by
     conv_rhs => rw [← Quotient.out_eq q]
     rfl

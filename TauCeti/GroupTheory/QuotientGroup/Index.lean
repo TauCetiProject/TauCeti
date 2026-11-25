@@ -25,8 +25,8 @@ the original group. It is the `Nat.card` shadow of the coset-space bijection
 * `Subgroup.index_comap_subtype_eq_card_map`: the index of the preimage of `N` in `H` is the order
   of the image of `H` in `G ⧸ N`.
 * `Subgroup.orderOf_mk_eq_index_of_prime_of_notMem`, `Subgroup.quotientPrimeEquiv`: an element
-  outside a prime-index subgroup generates `G ⧸ H` of order `H.index`, giving an equivalence
-  between `G ⧸ H` and `Fin H.index`.
+  outside a normal subgroup `H` of prime index generates `G ⧸ H`, of order `H.index`, giving an
+  equivalence between `G ⧸ H` and `Fin H.index`.
 -/
 
 public section
@@ -51,48 +51,42 @@ theorem index_comap_subtype_eq_card_map (H N : Subgroup G) [N.Normal] :
   rw [← Subgroup.relIndex_ker H (QuotientGroup.mk' N), QuotientGroup.ker_mk', Subgroup.relIndex,
     ← Subgroup.comap_subtype]
 
-/-- In a quotient `G ⧸ H` of prime index `l`, every element `x ∉ H` projects to an element of
-order `l`. -/
+/-- In the quotient `G ⧸ H` by a normal subgroup of prime index `l`, every element `x ∉ H`
+generates the quotient. -/
+theorem zpowers_mk_eq_top_of_index_prime {G : Type*} [Group G] (H : Subgroup G) [H.Normal]
+    {l : ℕ} (hl : l.Prime) (hH : H.index = l) {x : G} (hx : x ∉ H) :
+    zpowers (QuotientGroup.mk x : G ⧸ H) = ⊤ :=
+  have : Fact l.Prime := ⟨hl⟩
+  zpowers_eq_top_of_prime_card (hH ▸ H.index_eq_card.symm)
+    fun h ↦ hx ((QuotientGroup.eq_one_iff x).mp h)
+
+/-- In the quotient `G ⧸ H` by a normal subgroup of prime index `l`, every element `x ∉ H`
+projects to an element of order `l`. -/
 theorem orderOf_mk_eq_index_of_prime_of_notMem {G : Type*} [Group G] (H : Subgroup G)
     [H.Normal] {l : ℕ} (hl : l.Prime) (hH : H.index = l) {x : G} (hx : x ∉ H) :
     orderOf (QuotientGroup.mk x : G ⧸ H) = l := by
-  have : H.FiniteIndex := ⟨hH.symm ▸ hl.ne_zero⟩
-  let := H.fintypeQuotientOfFiniteIndex
-  have hcard : Fintype.card (G ⧸ H) = l := by
-    simpa [Subgroup.index_eq_card, Nat.card_eq_fintype_card] using hH
-  have hdvd : orderOf (QuotientGroup.mk x : G ⧸ H) ∣ l :=
-    hcard ▸ orderOf_dvd_card
-  have hne : orderOf (QuotientGroup.mk x : G ⧸ H) ≠ 1 := by
-    intro h1
-    apply hx
-    rw [← QuotientGroup.eq_one_iff]
-    exact orderOf_eq_one_iff.mp h1
-  exact (hl.eq_one_or_self_of_dvd _ hdvd).resolve_left hne
+  rw [orderOf_eq_card_of_zpowers_eq_top (zpowers_mk_eq_top_of_index_prime H hl hH hx),
+    ← H.index_eq_card, hH]
 
 /-- For a normal subgroup `H ≤ G` of prime index `l` and `x ∉ H`, the map
-`i ↦ (x : G ⧸ H)⁻¹ ^ (i : ℕ)` is a bijection `Fin l ≃ G ⧸ H`. -/
+`i ↦ (x : G ⧸ H)⁻¹ ^ (i : ℕ)` is a bijection `Fin l ≃ G ⧸ H`: the powers of the generator
+`(x : G ⧸ H)⁻¹` below its order enumerate `G ⧸ H` (`finEquivZPowers`). -/
 noncomputable def quotientPrimeEquiv {G : Type*} [Group G] (H : Subgroup G) [H.Normal]
     {l : ℕ} (hl : l.Prime) (hH : H.index = l) {x : G} (hx : x ∉ H) : Fin l ≃ G ⧸ H :=
-  let : H.FiniteIndex := ⟨hH.symm ▸ hl.ne_zero⟩
-  let := H.fintypeQuotientOfFiniteIndex
-  let q : G ⧸ H := (QuotientGroup.mk x : G ⧸ H)⁻¹
-  have hq : orderOf q = l := by
-    simpa only [q, orderOf_inv] using orderOf_mk_eq_index_of_prime_of_notMem H hl hH hx
-  Equiv.ofBijective (fun i : Fin l ↦ q ^ (i : ℕ))
-    ((Fintype.bijective_iff_injective_and_card _).mpr ⟨fun i j hij ↦ by
-      have hi : (i : ℕ) < orderOf q := hq ▸ i.isLt
-      have hj : (j : ℕ) < orderOf q := hq ▸ j.isLt
-      have hmod := pow_eq_pow_iff_modEq.mp hij
-      rw [Nat.ModEq, Nat.mod_eq_of_lt hi, Nat.mod_eq_of_lt hj] at hmod
-      exact Fin.ext hmod, by
-      simpa [Fintype.card_fin, Subgroup.index_eq_card, Nat.card_eq_fintype_card] using hH.symm⟩)
+  have hq : orderOf (QuotientGroup.mk x : G ⧸ H)⁻¹ = l := by
+    rw [orderOf_inv, orderOf_mk_eq_index_of_prime_of_notMem H hl hH hx]
+  have htop : zpowers (QuotientGroup.mk x : G ⧸ H)⁻¹ = ⊤ := by
+    rw [zpowers_inv, zpowers_mk_eq_top_of_index_prime H hl hH hx]
+  (finCongr hq.symm).trans <| (finEquivZPowers (orderOf_pos_iff.mp (hq ▸ hl.pos))).trans <|
+    (MulEquiv.subgroupCongr htop).toEquiv.trans topEquiv.toEquiv
 
 /-- Explicit formula for `Subgroup.quotientPrimeEquiv`. -/
 @[simp]
 theorem quotientPrimeEquiv_apply {G : Type*} [Group G] (H : Subgroup G) [H.Normal]
     {l : ℕ} (hl : l.Prime) (hH : H.index = l) {x : G} (hx : x ∉ H) (i : Fin l) :
     quotientPrimeEquiv H hl hH hx i = QuotientGroup.mk ((x ^ (i : ℕ))⁻¹) := by
-  have hdef : quotientPrimeEquiv H hl hH hx i = (QuotientGroup.mk x : G ⧸ H)⁻¹ ^ (i : ℕ) := rfl
+  have hdef : quotientPrimeEquiv H hl hH hx i = (QuotientGroup.mk x : G ⧸ H)⁻¹ ^ (i : ℕ) := by
+    simp [quotientPrimeEquiv, finEquivZPowers_apply]
   rw [hdef, ← QuotientGroup.mk_inv, ← QuotientGroup.mk_pow, inv_pow]
 
 end Subgroup

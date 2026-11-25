@@ -12,8 +12,11 @@ import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Dynamics.PeriodicPts.Defs
 import Mathlib.GroupTheory.GroupAction.Defs
+import Mathlib.GroupTheory.GroupAction.Period
 import TauCeti.Data.Fin.Basic
+import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.GroupTheory.Perm.Cycle.Colouring
+import TauCeti.GroupTheory.Perm.Cycle.Enumeration
 import TauCeti.LinearAlgebra.Matrix.Trace.Pow
 import TauCeti.LinearAlgebra.PiTensorProduct.Basis.Basic
 import TauCeti.LinearAlgebra.Trace.Basic
@@ -60,14 +63,6 @@ private theorem trace_eq_zero_of_subsingleton {R M : Type*} [CommSemiring R] [Ad
     [Module R M] [Subsingleton M] (f : M →ₗ[R] M) : LinearMap.trace R M f = 0 := by
   rw [Subsingleton.elim f 0, map_zero]
 
-private theorem infinite_pi_of_nonempty_of_infinite {ι : Type*} {I : ι → Type*}
-    (hne : ∀ i, Nonempty (I i)) (i₀ : ι) [Infinite (I i₀)] : Infinite (∀ i, I i) := by
-  classical
-  refine Infinite.of_injective
-    (fun x j ↦ if h : j = i₀ then h ▸ x else Classical.arbitrary (I j)) ?_
-  intro x y hxy
-  simpa using congrFun hxy i₀
-
 private theorem not_finite_piTensorProduct_of_infinite {R ι : Type*} [CommSemiring R]
     [Finite ι] {M : ι → Type*} [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
     {I : ι → Type*} (b : ∀ i, Basis (I i) R (M i)) [Nontrivial R] (hinf : Infinite (∀ i, I i)) :
@@ -75,11 +70,6 @@ private theorem not_finite_piTensorProduct_of_infinite {R ι : Type*} [CommSemir
   hinf.not_finite ((Module.finite_finsupp_self_iff.mp
     ((Module.Finite.equiv_iff (Basis.piTensorProduct b).repr).mp h)).resolve_left
       (not_subsingleton R))
-
-private theorem finite_basisIndex_of_finite {R I M : Type*} [CommSemiring R] [AddCommMonoid M]
-    [Module R M] [Nontrivial R] (b : Basis I R M) (hfin : Module.Finite R M) : Finite I :=
-  (Module.finite_finsupp_self_iff.mp
-    ((Module.Finite.equiv_iff b.repr).mp hfin)).resolve_left (not_subsingleton R)
 
 private theorem infinite_basisIndex_of_not_finite {R I M : Type*} [CommSemiring R]
     [AddCommMonoid M] [Module R M] (b : Basis I R M)
@@ -109,7 +99,8 @@ private theorem trace_piTensorProduct_map_eq_zero_of_not_finite {R ι : Type*} [
   push Not at hemp
   have hInf0 : Infinite (I i₀) := infinite_basisIndex_of_not_finite (b i₀) hfin
   have hNotFinPi : ¬Module.Finite R (⨂[R] i, M i) :=
-    not_finite_piTensorProduct_of_infinite b (infinite_pi_of_nonempty_of_infinite hemp i₀)
+    have := hemp
+    not_finite_piTensorProduct_of_infinite b (Pi.infinite_of_exists_right i₀)
   rw [TauCeti.LinearMap.trace_eq_zero_of_not_finite hNotFinPi, LinearMap.zero_apply,
     Finset.prod_eq_zero (Finset.mem_univ i₀)
       (by simp [TauCeti.LinearMap.trace_eq_zero_of_not_finite hfin])]
@@ -131,7 +122,7 @@ theorem trace_piTensorProduct_map {R ι : Type*} [CommSemiring R] [Fintype ι] {
   · exact Subsingleton.elim _ _
   let b := fun i ↦ Module.Free.chooseBasis R (M i)
   have hFinI : ∀ i, Finite (Module.Free.ChooseBasisIndex R (M i)) :=
-    fun i ↦ finite_basisIndex_of_finite (b i) (hfin i)
+    fun i ↦ have := hfin i; Module.Finite.finite_basis (b i)
   let _ := fun i ↦ Fintype.ofFinite (Module.Free.ChooseBasisIndex R (M i))
   let B := Basis.piTensorProduct b
   rw [LinearMap.trace_eq_matrix_trace R B]
@@ -145,107 +136,59 @@ end TraceMap
 
 section ReindexTrace
 
-private theorem minimalPeriod_pos_of_finite {α : Type*} [Finite α] (σ : Equiv.Perm α)
-    (x : α) : 0 < Function.minimalPeriod (σ • ·) x := by
-  refine Function.minimalPeriod_pos_of_mem_periodicPts ?_
-  rw [Function.mem_periodicPts]
-  refine ⟨orderOf σ, orderOf_pos σ, ?_⟩
-  rw [Function.IsPeriodicPt, Function.IsFixedPt, smul_iterate_apply, pow_orderOf_eq_one,
-    one_smul]
+/-- A point lies in the `⟨σ⟩`-orbit `ω` exactly when it lies on the cycle of `ω.out`. -/
+private theorem sameCycle_out_iff {α : Type*} (σ : Equiv.Perm α) {x : α}
+    {ω : MulAction.orbitRel.Quotient (Subgroup.zpowers σ) α} :
+    σ.SameCycle ω.out x ↔
+      (Quotient.mk'' x : MulAction.orbitRel.Quotient (Subgroup.zpowers σ) α) = ω := by
+  rw [σ.sameCycle_iff_mem_orbit_zpowers, ← MulAction.orbitRel_apply, ← Quotient.eq'',
+    Quotient.out_eq']
 
-private theorem minimalPeriod_inv_eq {α : Type*} (σ : Equiv.Perm α) (x : α) :
-    Function.minimalPeriod (σ⁻¹ • ·) x = Function.minimalPeriod (σ • ·) x := by
-  refine Function.minimalPeriod_eq_minimalPeriod_iff.mpr fun n ↦ ?_
-  rw [Function.IsPeriodicPt, Function.IsFixedPt, Function.IsPeriodicPt, Function.IsFixedPt,
-    smul_iterate_apply, smul_iterate_apply, Equiv.Perm.smul_def, Equiv.Perm.smul_def, inv_pow,
-    Equiv.Perm.inv_def, (σ ^ n).symm_apply_eq, eq_comm]
+private theorem existsUnique_sameCycle_orbitRel_out {α : Type*} (σ : Equiv.Perm α) (x : α) :
+    ∃! ω : MulAction.orbitRel.Quotient (Subgroup.zpowers σ) α, σ.SameCycle ω.out x :=
+  ⟨Quotient.mk'' x, (sameCycle_out_iff σ).mpr rfl, fun _ h ↦ ((sameCycle_out_iff σ).mp h).symm⟩
 
-private theorem minimalPeriod_pow_smul_eq {α : Type*} (σ : Equiv.Perm α) (x : α) (d : ℕ) :
-    Function.minimalPeriod (σ • ·) ((σ ^ d) x) = Function.minimalPeriod (σ • ·) x := by
-  have hsc : Function.Semiconj (σ ^ d : Equiv.Perm α) (σ • ·) (σ • ·) := fun y : α ↦ calc
-    (σ ^ d) (σ • y) = (σ ^ d * σ) y := rfl
-    _ = (σ * σ ^ d) y := by rw [(Commute.pow_self σ d).eq]
-    _ = σ • (σ ^ d) y := rfl
-  refine Function.minimalPeriod_eq_minimalPeriod_iff.mpr fun n ↦ ?_
-  rw [Function.IsPeriodicPt, Function.IsFixedPt, Function.IsPeriodicPt, Function.IsFixedPt,
-    ← (hsc.iterate_right n).eq, (σ ^ d).injective.eq_iff]
-
-private theorem pow_smul_eq_iff_eq_of_lt_minimalPeriod {α : Type*} (σ : Equiv.Perm α) (x : α)
-    {a b : ℕ} (ha : a < Function.minimalPeriod (σ • ·) x)
-    (hb : b < Function.minimalPeriod (σ • ·) x) (h : (σ ^ a) x = (σ ^ b) x) : a = b := by
-  wlog hab : a ≤ b
-  · exact (this σ x hb ha h.symm (le_of_not_ge hab)).symm
-  have hsub : (σ ^ (b - a)) x = x := by
-    apply (σ ^ a).injective
-    rw [← Equiv.Perm.mul_apply, ← pow_add, Nat.add_sub_cancel' hab, h]
-  have hdvd : Function.minimalPeriod (σ • ·) x ∣ b - a := by
-    rw [← Function.isPeriodicPt_iff_minimalPeriod_dvd, Function.IsPeriodicPt, Function.IsFixedPt,
-      smul_iterate_apply, Equiv.Perm.smul_def]
-    exact hsub
-  have hlt : b - a < Function.minimalPeriod (σ • ·) x := lt_of_le_of_lt (Nat.sub_le b a) hb
-  have hzero : b - a = 0 := Nat.eq_zero_of_dvd_of_lt hdvd hlt
-  omega
-
-private theorem mem_orbit_zpowers_exists_nat_lt {α : Type*} [Finite α] (σ : Equiv.Perm α)
-    {x y : α} (h : y ∈ MulAction.orbit (Subgroup.zpowers σ) x) :
-    ∃ t : ℕ, t < Function.minimalPeriod (σ • ·) x ∧ (σ ^ t) x = y := by
-  obtain ⟨⟨_, k, rfl⟩, rfl⟩ := MulAction.mem_orbit_iff.mp h
-  set m := Function.minimalPeriod (σ • ·) x
-  have hm : 0 < m := minimalPeriod_pos_of_finite σ x
-  have hzper : (σ ^ (m : ℤ)) x = x := by
-    rw [zpow_natCast, ← Equiv.Perm.smul_def, ← smul_iterate_apply]
-    exact Function.isPeriodicPt_minimalPeriod (σ • ·) x
-  have hzper_inv : (σ ^ (m : ℤ))⁻¹ x = x := by
-    apply (σ ^ (m : ℤ)).injective
-    rw [← Equiv.Perm.mul_apply, mul_inv_cancel, Equiv.Perm.coe_one, id_eq, hzper]
-  have hzpow : ∀ q : ℤ, ((σ ^ (m : ℤ)) ^ q) x = x := fun q ↦ by
-    induction q using Int.induction_on with
-    | zero => simp
-    | succ q ih => rw [zpow_add_one, Equiv.Perm.mul_apply, hzper, ih]
-    | pred q ih => rw [zpow_sub_one, Equiv.Perm.mul_apply, hzper_inv, ih]
-  refine ⟨k.natMod m, Int.natMod_lt hm.ne', ?_⟩
-  have hdecomp : (m : ℤ) * (k / (m : ℤ)) + (k.natMod m : ℤ) = k := by
-    rw [Int.natMod, Int.toNat_of_nonneg (Int.emod_nonneg k (Int.natCast_ne_zero.mpr hm.ne')),
-      Int.mul_ediv_add_emod]
-  calc
-    (σ ^ k.natMod m) x = (σ ^ (k.natMod m : ℤ)) x := by rw [zpow_natCast]
-    _ = (σ ^ (k.natMod m : ℤ) * (σ ^ (m : ℤ)) ^ (k / (m : ℤ))) x := by
-      rw [Equiv.Perm.mul_apply, hzpow]
-    _ = (σ ^ k) x := by rw [← zpow_mul, ← zpow_add, add_comm, hdecomp]
-    _ = σ ^ k • x := rfl
-
+/-- The enumeration `⟨ω, t⟩ ↦ (σ ^ t) ω.out` of `ι` along the `⟨σ⟩`-orbits, obtained from
+`Equiv.Perm.sigmaCycleEquiv` with the representatives `Quotient.out`. -/
 private noncomputable def orbitElemEquiv {ι : Type*} [Finite ι] (σ : Equiv.Perm ι) :
     (Σ ω : MulAction.orbitRel.Quotient (Subgroup.zpowers σ) ι,
       Fin (Function.minimalPeriod (σ • ·) ω.out)) ≃ ι :=
-  Equiv.ofBijective (fun p ↦ (σ ^ (p.2 : ℕ)) p.1.out) ⟨by
-    rintro ⟨ω₁, t₁⟩ ⟨ω₂, t₂⟩ h
-    have hmk : ∀ (ω : MulAction.orbitRel.Quotient (Subgroup.zpowers σ) ι)
-        (t : Fin (Function.minimalPeriod (σ • ·) ω.out)),
-        Quotient.mk (MulAction.orbitRel (Subgroup.zpowers σ) ι) ((σ ^ (t : ℕ)) ω.out) = ω :=
-      fun ω t ↦ (@Quotient.sound _ (MulAction.orbitRel (Subgroup.zpowers σ) ι) _ _
-        ⟨⟨σ ^ (t : ℕ), (Subgroup.zpowers σ).pow_mem (Subgroup.mem_zpowers σ) _⟩, by
-          simp [Subgroup.smul_def, Equiv.Perm.smul_def]⟩).trans (Quotient.out_eq ω)
-    have hω : ω₁ = ω₂ := (hmk ω₁ t₁).symm.trans ((congrArg _ h).trans (hmk ω₂ t₂))
-    subst hω
-    exact Sigma.ext rfl (heq_of_eq (Fin.ext
-      (pow_smul_eq_iff_eq_of_lt_minimalPeriod σ ω₁.out t₁.isLt t₂.isLt h))), by
-    intro y
-    set ω := Quotient.mk (MulAction.orbitRel (Subgroup.zpowers σ) ι) y
-    have horb : y ∈ MulAction.orbit (Subgroup.zpowers σ) ω.out :=
-      MulAction.orbitRel_apply.mp (Quotient.exact' (Quotient.out_eq ω).symm)
-    obtain ⟨t, ht, hty⟩ := mem_orbit_zpowers_exists_nat_lt σ horb
-    exact ⟨⟨ω, ⟨t, ht⟩⟩, hty⟩⟩
+  (Equiv.sigmaCongrRight fun ω : MulAction.orbitRel.Quotient (Subgroup.zpowers σ) ι ↦
+      finCongr (σ.minimalPeriod_sub_one_add_one ω.out).symm).trans
+    (σ.sigmaCycleEquiv Quotient.out (existsUnique_sameCycle_orbitRel_out σ))
 
-private theorem iterate_succ_mod_minimalPeriod {α : Type*} (σ : Equiv.Perm α) (x : α)
+private theorem orbitElemEquiv_apply {ι : Type*} [Finite ι] (σ : Equiv.Perm ι)
+    (ω : MulAction.orbitRel.Quotient (Subgroup.zpowers σ) ι)
+    (t : Fin (Function.minimalPeriod (σ • ·) ω.out)) :
+    orbitElemEquiv σ ⟨ω, t⟩ = (σ ^ (t : ℕ)) ω.out :=
+  σ.sigmaCycleEquiv_apply _ _ ω _
+
+private theorem finCongr_finRotate {a b : ℕ} (h : a = b) (t : Fin a) :
+    finCongr h (finRotate a t) = finRotate b (finCongr h t) := by
+  subst h
+  rfl
+
+private theorem orbitElemEquiv_succ {ι : Type*} [Finite ι] (σ : Equiv.Perm ι)
+    (ω : MulAction.orbitRel.Quotient (Subgroup.zpowers σ) ι)
+    (t : Fin (Function.minimalPeriod (σ • ·) ω.out)) :
+    σ (orbitElemEquiv σ ⟨ω, t⟩) =
+      orbitElemEquiv σ ⟨ω, finRotate (Function.minimalPeriod (σ • ·) ω.out) t⟩ :=
+  (σ.sigmaCycleEquiv_finRotate _ _ ω _).symm.trans
+    (congrArg (fun i ↦ σ.sigmaCycleEquiv _ (existsUnique_sameCycle_orbitRel_out σ) ⟨ω, i⟩)
+      (finCongr_finRotate (σ.minimalPeriod_sub_one_add_one ω.out).symm t).symm)
+
+/-- Along a cycle of length `m + 1`, the cyclic shift `finRotate` on exponents is the successor. -/
+private theorem pow_finRotate_apply {α : Type*} (σ : Equiv.Perm α) (x : α)
     {m : ℕ} (hm : Function.minimalPeriod (σ • ·) x = m + 1) (t : Fin (m + 1)) :
-    (σ ^ ((t : ℕ) + 1)) x = (σ ^ ((finRotate (m + 1) t : ℕ))) x := by
-  refine Fin.lastCases ?_ (fun s ↦ ?_) t
-  · have hper : (σ ^ (m + 1)) x = x := by
-      rw [← hm, ← Equiv.Perm.smul_def, ← smul_iterate_apply]
-      exact Function.isPeriodicPt_minimalPeriod _ x
-    simp only [Fin.val_last, finRotate_last, Fin.val_zero, pow_zero, Equiv.Perm.coe_one, id_eq]
-    exact hper
-  · simp
+    (σ ^ ((finRotate (m + 1) t : ℕ))) x = (σ ^ ((t : ℕ) + 1)) x := by
+  have hm' : Function.minimalPeriod σ x = m + 1 := hm
+  rw [Equiv.Perm.coe_pow, Equiv.Perm.coe_pow, ← Function.iterate_mod_minimalPeriod_eq (n := _ + 1),
+    hm']
+  congr 1
+  rw [coe_finRotate]
+  split_ifs with h
+  · simp [h]
+  · rw [Nat.mod_eq_of_lt (by have := Fin.val_lt_last h; omega)]
 
 private theorem trace_list_ofFn_rot {R M : Type*} [CommSemiring R] [AddCommMonoid M]
     [Module R M] {k : ℕ} (A : Fin (k + 1) → M →ₗ[R] M) :
@@ -273,7 +216,7 @@ private theorem trace_list_ofFn_add_shift_succ {R ι M : Type*} [CommSemiring R]
       funext t
       congr 1
       rw [show (t : ℕ) + (d + 1) = d + ((t : ℕ) + 1) by omega, pow_add, Equiv.Perm.mul_apply,
-        iterate_succ_mod_minimalPeriod σ x hm t, ← Equiv.Perm.mul_apply, ← pow_add, add_comm d _]
+        ← pow_finRotate_apply σ x hm t, ← Equiv.Perm.mul_apply, ← pow_add, add_comm d _]
     rw [hfun]
     exact (trace_list_ofFn_rot fun s : Fin (m + 1) ↦ f ((σ ^ ((s : ℕ) + d)) x)).trans ih
 
@@ -284,10 +227,13 @@ private theorem trace_orbit_change_rep {R ι M : Type*} [CommSemiring R] [Finite
         f ((σ ^ (t : ℕ)) y)).prod =
       LinearMap.trace R M (List.ofFn fun t : Fin (Function.minimalPeriod (σ • ·) x) ↦
         f ((σ ^ (t : ℕ)) x)).prod := by
-  obtain ⟨d, -, rfl⟩ := mem_orbit_zpowers_exists_nat_lt σ (MulAction.orbitRel_apply.mp h)
-  have hper : Function.minimalPeriod (σ • ·) ((σ ^ d) x) = Function.minimalPeriod (σ • ·) x :=
-    minimalPeriod_pow_smul_eq σ x d
-  obtain ⟨m, hm⟩ := Nat.exists_eq_succ_of_ne_zero (minimalPeriod_pos_of_finite σ x).ne'
+  obtain ⟨d, rfl⟩ :=
+    (σ.sameCycle_iff_mem_orbit_zpowers.mpr (MulAction.orbitRel_apply.mp h)).exists_nat_pow_eq
+  have hper : Function.minimalPeriod (σ • ·) ((σ ^ d) x) = Function.minimalPeriod (σ • ·) x := by
+    rw [Equiv.Perm.coe_pow]
+    exact Function.minimalPeriod_apply_iterate (σ.injective.mem_periodicPts x) d
+  obtain ⟨m, hm⟩ := Nat.exists_eq_succ_of_ne_zero
+    (Function.minimalPeriod_pos_of_mem_periodicPts (σ.injective.mem_periodicPts x)).ne'
   have hm' : Function.minimalPeriod (σ • ·) x = m + 1 := hm
   have h1 :
       List.ofFn (fun t : Fin (Function.minimalPeriod (σ • ·) ((σ ^ d) x)) ↦
@@ -304,26 +250,6 @@ private theorem trace_orbit_change_rep {R ι M : Type*} [CommSemiring R] [Finite
       fun i _ _ ↦ by simp only [List.getElem_ofFn]
   rw [h1, ← h2]
   exact trace_list_ofFn_add_shift_succ σ f x hm d
-
-private theorem finRotate_cast_val {a b : ℕ} (h : a = b) (t : Fin a) :
-    (finRotate a t : ℕ) = (finRotate b (Fin.cast h t) : ℕ) := by
-  subst h
-  rfl
-
-open scoped Classical in
-private theorem orbitElemEquiv_succ {ι : Type*} [Finite ι] (σ : Equiv.Perm ι)
-    (ω : MulAction.orbitRel.Quotient (Subgroup.zpowers σ) ι)
-    (t : Fin (Function.minimalPeriod (σ • ·) ω.out)) :
-    σ (orbitElemEquiv σ ⟨ω, t⟩) =
-      orbitElemEquiv σ ⟨ω, finRotate (Function.minimalPeriod (σ • ·) ω.out) t⟩ := by
-  obtain ⟨m, hm⟩ := Nat.exists_eq_succ_of_ne_zero (minimalPeriod_pos_of_finite σ ω.out).ne'
-  have hs : σ ((σ ^ (t : ℕ)) ω.out) = (σ ^ ((t : ℕ) + 1)) ω.out := by
-    rw [← Equiv.Perm.mul_apply, ← pow_succ']
-  -- Transport `Fin (minimalPeriod ...)` to `Fin (m + 1)` to apply the modular period shift.
-  change σ ((σ ^ (t : ℕ)) ω.out) =
-    (σ ^ (finRotate (Function.minimalPeriod (σ • ·) ω.out) t : ℕ)) ω.out
-  rw [hs, finRotate_cast_val hm t]
-  exact iterate_succ_mod_minimalPeriod σ ω.out hm (Fin.cast hm t)
 
 open scoped Classical in
 /-- Splits a cyclic coordinate sum of matrix products over the orbits of a permutation into a
@@ -362,7 +288,7 @@ theorem sum_prod_coords_eq_sum_prod_orbit_coords {R ι κ : Type*} [CommSemiring
       simp [fEquiv]
       rfl
     simp only [hp1, hp2]
-    rfl
+    rw [show e ⟨ω, t⟩ = _ from orbitElemEquiv_apply σ ω t]
   rw [hstep]
   have hrhs :
       (∏ ω : MulAction.orbitRel.Quotient (Subgroup.zpowers σ) ι,
@@ -379,7 +305,7 @@ theorem sum_prod_coords_eq_sum_prod_orbit_coords {R ι κ : Type*} [CommSemiring
             A ((σ ^ (t : ℕ)) ω.out) (c_ω t) (c_ω (finRotate _ t)))
     · refine Finset.prod_congr rfl fun ω _ ↦ ?_
       have : NeZero (Function.minimalPeriod (σ • ·) ω.out) :=
-        ⟨(minimalPeriod_pos_of_finite σ ω.out).ne'⟩
+        ⟨(Function.minimalPeriod_pos_of_mem_periodicPts (σ.injective.mem_periodicPts ω.out)).ne'⟩
       rw [Matrix.trace_list_ofFn_prod]
     · rw [Fintype.prod_sum]
   rw [hrhs]
@@ -397,19 +323,11 @@ private theorem trace_piTensorProduct_map_comp_reindex_inv_zero {R ι M : Type*}
   rcases subsingleton_or_nontrivial R with _hR | _hR
   · exact Subsingleton.elim _ _
   let b := Module.Free.chooseBasis R M
-  have hSub : ¬Subsingleton M := fun h ↦
-    hfin (Module.finite_def.mpr ⟨∅, eq_top_iff.mpr fun m _ ↦ by
-      rw [@Subsingleton.elim M h m 0]
-      exact zero_mem _⟩)
-  have hne : Nonempty (Module.Free.ChooseBasisIndex R M) := by
-    by_contra hemp
-    rw [not_nonempty_iff] at hemp
-    exact hSub ((b.repr.toEquiv.subsingleton_congr).mpr inferInstance)
   have hInfI : Infinite (Module.Free.ChooseBasisIndex R M) :=
     infinite_basisIndex_of_not_finite b hfin
   have hNotFinPi : ¬Module.Finite R (⨂[R] _ : ι, M) :=
     not_finite_piTensorProduct_of_infinite (fun _ ↦ b)
-      (infinite_pi_of_nonempty_of_infinite (fun _ ↦ hne) (Classical.arbitrary ι))
+      Pi.infinite_of_right
   rw [TauCeti.LinearMap.trace_eq_zero_of_not_finite hNotFinPi, LinearMap.zero_apply]
   let ω₀ : MulAction.orbitRel.Quotient (Subgroup.zpowers σ) ι :=
     Quotient.mk (MulAction.orbitRel (Subgroup.zpowers σ) ι) (Classical.arbitrary ι)
@@ -444,7 +362,7 @@ theorem trace_piTensorProduct_map_comp_reindex_eq_prod_trace_inv_orbits {R ι M 
   rcases subsingleton_or_nontrivial R with _hR | _hR
   · exact Subsingleton.elim _ _
   let b := Module.Free.chooseBasis R M
-  have hFinI : Finite (Module.Free.ChooseBasisIndex R M) := finite_basisIndex_of_finite b hfin
+  have hFinI : Finite (Module.Free.ChooseBasisIndex R M) := Module.Finite.finite_basis b
   let _ := Fintype.ofFinite (Module.Free.ChooseBasisIndex R M)
   let B := Basis.piTensorProduct fun _ : ι ↦ b
   rw [LinearMap.trace_eq_matrix_trace R B]
@@ -505,8 +423,8 @@ theorem trace_piTensorProduct_map_comp_reindex {R ι M : Type*} [CommSemiring R]
     exact ⟨⟨g, hg⟩, hgx⟩
   refine (trace_orbit_change_rep σ⁻¹ f horb).trans ?_
   have hper : Function.minimalPeriod (σ⁻¹ • ·) (qEquiv ω).out =
-      Function.minimalPeriod (σ • ·) (qEquiv ω).out :=
-    minimalPeriod_inv_eq σ (qEquiv ω).out
+      Function.minimalPeriod (σ • ·) (qEquiv ω).out := by
+    simpa only [MulAction.period_eq_minimalPeriod] using MulAction.period_inv σ (qEquiv ω).out
   have hlist :
       (List.ofFn fun t : Fin (Function.minimalPeriod (σ⁻¹ • ·) (qEquiv ω).out) ↦
           f ((σ⁻¹ ^ (t : ℕ)) (qEquiv ω).out)) =

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.GroupTheory.Perm.WreathProduct.Basic
 public import TauCeti.GroupTheory.TransversalWord
+public import TauCeti.GroupTheory.GroupAction.Orbit.Quotient
+import Mathlib.GroupTheory.GroupAction.Period
 
 /-!
 # The monomial homomorphism of a subgroup transversal
@@ -170,10 +172,11 @@ theorem monomialHom_right_zpow (s : U.LeftTransversal) (g : G) (k : ℤ) (x : G 
   rw [MonoidHom.comp_apply, SemidirectProduct.rightHom_eq_right] at h
   rw [h, ← map_zpow, MulAction.toPermHom_apply, MulAction.toPerm_apply]
 
-/-- Telescoping product of `TauCeti.lWord` along `n` steps of the inverse orbit of `g`. -/
+/-- Telescoping product of `TauCeti.lWord` along `n` steps of the inverse orbit of `g`: by the
+cocycle law `TauCeti.lWord_mul_lWord`, it is the transversal word of `g ^ n`. -/
 theorem lWord_list_ofFn_prod (t : G ⧸ U → G) (g : G) (q : G ⧸ U) (n : ℕ) :
     (List.ofFn fun k : Fin n ↦ TauCeti.lWord U t ((g⁻¹ ^ (k : ℕ)) • q) g).prod =
-      (t q)⁻¹ * g ^ n * t ((g⁻¹ ^ n) • q) := by
+      TauCeti.lWord U t q (g ^ n) := by
   induction n generalizing q with
   | zero => simp
   | succ n ih =>
@@ -183,26 +186,18 @@ theorem lWord_list_ofFn_prod (t : G ⧸ U → G) (g : G) (q : G ⧸ U) (n : ℕ)
           fun k : Fin n ↦ TauCeti.lWord U t ((g⁻¹ ^ (k : ℕ)) • (g⁻¹ • q)) g := by
       funext k
       simp [pow_succ, mul_smul]
-    rw [hshift, ih (g⁻¹ • q), Fin.val_zero, pow_zero, one_smul, TauCeti.lWord_def]
-    simp only [pow_succ, mul_smul, mul_assoc]
-    group
+    rw [hshift, ih (g⁻¹ • q), Fin.val_zero, pow_zero, one_smul, TauCeti.lWord_mul_lWord,
+      ← pow_succ']
 
 /-- **Orbit monodromy of the monomial homomorphism.** The product of the base coordinates of
 `U.monomialHom s g` along a `⟨(U.monomialHom s g).right⟩`-orbit on `G ⧸ U` equals the coset
 monodromy element in `U`. -/
-theorem monomialHom_orbit_prod (s : U.LeftTransversal) (g : G) (q : G ⧸ U)
-    (hper : (g ^ Function.minimalPeriod (g • ·) q) • q = q) :
+theorem monomialHom_orbit_prod (s : U.LeftTransversal) (g : G) (q : G ⧸ U) :
     (List.ofFn fun t : Fin (Function.minimalPeriod ((monomialHom U s g).right • ·) q) ↦
         (monomialHom U s g).left (((monomialHom U s g).right⁻¹ ^ (t : ℕ)) q)).prod =
       ⟨(leftTransversalRep U s q)⁻¹ * g ^ Function.minimalPeriod (g • ·) q *
-          leftTransversalRep U s q, by
-        have hmk : (QuotientGroup.mk (g ^ Function.minimalPeriod (g • ·) q *
-            leftTransversalRep U s q) : G ⧸ U) =
-            g ^ Function.minimalPeriod (g • ·) q •
-              (QuotientGroup.mk (leftTransversalRep U s q) : G ⧸ U) :=
-          rfl
-        rw [mul_assoc, ← QuotientGroup.eq, leftTransversalRep_mk, hmk, leftTransversalRep_mk,
-          hper]⟩ := by
+          leftTransversalRep U s q,
+        conj_pow_minimalPeriod_mem U g (leftTransversalRep_mk U s q)⟩ := by
   apply Subtype.ext
   have hval :
       ((List.ofFn fun t : Fin (Function.minimalPeriod ((monomialHom U s g).right • ·) q) ↦
@@ -217,10 +212,8 @@ theorem monomialHom_orbit_prod (s : U.LeftTransversal) (g : G) (q : G ⧸ U)
       rw [h1, ← zpow_natCast, monomialHom_right_zpow, zpow_natCast]
     simp only [List.getElem_map, List.getElem_ofFn]
     rw [monomialHom_left, hinv]
-  rw [hval, lWord_list_ofFn_prod]
-  have hinv_per : (g⁻¹ ^ Function.minimalPeriod (g • ·) q) • q = q := by
-    rw [inv_pow]
-    exact inv_smul_eq_iff.mpr hper.symm
-  rw [hinv_per]
+  have hper : (g ^ Function.minimalPeriod (g • ·) q)⁻¹ • q = q := by
+    rw [inv_smul_eq_iff, ← MulAction.period_eq_minimalPeriod, MulAction.pow_period_smul]
+  rw [hval, lWord_list_ofFn_prod, TauCeti.lWord_def, hper]
 
 end Subgroup
