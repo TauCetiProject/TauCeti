@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.AlgebraicK1
 
 /-!
 # The determinant of algebraic `K₁` and `K₁` of Euclidean domains
@@ -35,7 +35,8 @@ is its element of order two.
 
 ## Main results
 
-* `TauCeti.AlgebraicK1.det_mk`: the determinant of the class of `u` is the determinant of `u`.
+* `TauCeti.AlgebraicK1.det_mk`, `TauCeti.AlgebraicK1.det_mkOfFintype`: the determinant of the
+  class of `u` is the determinant of `u`, also for `u` indexed by an arbitrary finite type.
 * `TauCeti.AlgebraicK1.det_ofUnits`: the determinant is a retraction of `ofUnits`.
 * `TauCeti.specialAlgebraicK1_eq_bot_of_ker_det_le`: `SK₁(R)` is trivial when every matrix of
   determinant one is elementary.
@@ -77,6 +78,13 @@ def det : AlgebraicK1 R →* Rˣ :=
 theorem det_mk (n : ℕ) (u : GL (Fin n) R) :
     det R (mk R n u) = GeneralLinearGroup.det u :=
   lift_mk ..
+
+/-- The determinant of the class of an invertible matrix over a commutative ring is its
+determinant. -/
+@[simp]
+theorem det_mkOfFintype {ι : Type*} [Fintype ι] [DecidableEq ι] (u : GL ι R) :
+    det R (mkOfFintype R ι u) = GeneralLinearGroup.det u := by
+  rw [mkOfFintype_eq_mk_reindexGL (Fintype.equivFin ι), det_mk, Equiv.det_reindexGL]
 
 /-- The determinant of the class of the `1 × 1` matrix `(u)` is `u`. -/
 @[simp]
