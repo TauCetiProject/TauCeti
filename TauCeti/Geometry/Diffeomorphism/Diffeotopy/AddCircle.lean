@@ -53,6 +53,7 @@ reflection `θ ↦ -θ`.
 
 * `AddCircle.prodDiffeomorphOfLift`: the level-preserving diffeomorphism
   `(a, [x]) ↦ (a, [L (κ a, x)])` of `N × AddCircle T`.
+* `AddCircle.prodRotation`: the rotation `(b, θ) ↦ (b, θ + ρ b)` of `B × AddCircle T`.
 * `AddCircle.diffeotopyOfLift`: the diffeotopy of `AddCircle T` which at time `t` is the circle
   map with lift `x ↦ x + sin (π t / 2) ^ 2 (F x - x)`, from the identity to the map with lift `F`.
 * `AddCircle.collarDiffeomorphOfLift`: the level-preserving diffeomorphism of `N × AddCircle T`
@@ -216,6 +217,40 @@ theorem prodDiffeomorphOfLift_symm_apply_coe (a : N) (x : ℝ) :
   rw [← prodDiffeomorphOfLift_apply_coe hL hn hper hpos κ hκ a x, Diffeomorph.symm_apply_apply]
 
 end Family
+
+/-! ### Rotations of a product with the circle -/
+
+section Rotation
+
+variable {B E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {J : ModelWithCorners ℝ E H} [TopologicalSpace B] [ChartedSpace H B]
+
+/-- The **rotation** of `B × AddCircle T` by a `C^n` function `ρ : B → ℝ`: the level-preserving
+`C^n` diffeomorphism `(b, θ) ↦ (b, θ + ρ b)`, which rotates the circle over `b` by `ρ b`. Its
+inverse is the rotation by `-ρ`. -/
+def prodRotation (ρ : B → ℝ) (hρ : ContMDiff J 𝓘(ℝ) n ρ) :
+    (B × AddCircle T) ≃ₘ^n⟮J.prod 𝓘(ℝ), J.prod 𝓘(ℝ)⟯ B × AddCircle T where
+  toFun p := (p.1, p.2 + (ρ p.1 : AddCircle T))
+  invFun p := (p.1, p.2 - (ρ p.1 : AddCircle T))
+  left_inv p := by simp
+  right_inv p := by simp
+  contMDiff_toFun :=
+    contMDiff_fst.prodMk (contMDiff_snd.add ((contMDiff_coe T n).comp (hρ.comp contMDiff_fst)))
+  contMDiff_invFun :=
+    contMDiff_fst.prodMk (contMDiff_snd.sub ((contMDiff_coe T n).comp (hρ.comp contMDiff_fst)))
+
+/-- The rotation by `ρ` rotates the circle over `b` by `ρ b`. -/
+@[simp]
+theorem prodRotation_apply {ρ : B → ℝ} (hρ : ContMDiff J 𝓘(ℝ) n ρ) (p : B × AddCircle T) :
+    prodRotation ρ hρ p = (p.1, p.2 + (ρ p.1 : AddCircle T)) := (rfl)
+
+/-- The inverse of the rotation by `ρ` rotates the circle over `b` by `-ρ b`. -/
+@[simp]
+theorem prodRotation_symm_apply {ρ : B → ℝ} (hρ : ContMDiff J 𝓘(ℝ) n ρ)
+    (p : B × AddCircle T) :
+    (prodRotation ρ hρ).symm p = (p.1, p.2 - (ρ p.1 : AddCircle T)) := (rfl)
+
+end Rotation
 
 /-! ### Interpolating a lift to the identity -/
 

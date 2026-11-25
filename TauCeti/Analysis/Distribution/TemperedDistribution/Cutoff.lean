@@ -54,6 +54,8 @@ on `Ω` be replaced by one acting on the tempered distribution `χ T`.
 * `Distribution.smulLeftCLM_cutoffTempered`,
   `Distribution.smulLeftCLM_iteratedLineDerivOp_cutoffTempered`: if `χ = 1` on the support of
   `φ`, then `φ (χ T) = φ T` and `φ ∂^m (χ T) = φ ∂^m T`.
+* `Distribution.smulLeftCLM_cutoffTempered_of_eqOn_one`: if `g = 1` on the support of `φ`, then
+  `g (φ T) = φ T`.
 * `Distribution.cutoffTempered_toDistribution`: for a tempered distribution `u`, restricted to `Ω`
   by `TemperedDistribution.toDistribution`, the tempered distribution `φ u` is the product of `u`
   with `φ`.
@@ -286,6 +288,16 @@ theorem smulLeftCLM_cutoffTempered (T : 𝓓'(Ω, ℂ)) {χ φ : 𝓓(Ω, ℂ)}
   · rw [h x hx]
     ring
   · simp [image_eq_zero_of_notMem_tsupport hx]
+
+/-- **Multiplying a cut-off distribution by a function equal to one on the cutoff.** If a function
+`g` of temperate growth equals `1` on the support of `φ`, then `g (φ T) = φ T`. -/
+theorem smulLeftCLM_cutoffTempered_of_eqOn_one (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) {g : E → ℂ}
+    (hg : g.HasTemperateGrowth) (h : EqOn g 1 (tsupport φ)) :
+    TemperedDistribution.smulLeftCLM ℂ g (T.cutoffTempered φ) = T.cutoffTempered φ := by
+  ext ψ
+  rw [TemperedDistribution.smulLeftCLM_apply_apply]
+  exact T.cutoffTempered_apply_congr φ fun x hx ↦ by
+    rw [SchwartzMap.smulLeftCLM_apply_apply hg, h hx, Pi.one_apply, one_smul]
 
 /-- **Derivatives of a cut-off distribution where the cutoff is one.** If `χ = 1` on the support
 of `φ`, then cutting the derivative `∂^m (χ T)` off by `φ` gives `φ ∂^m T`. -/

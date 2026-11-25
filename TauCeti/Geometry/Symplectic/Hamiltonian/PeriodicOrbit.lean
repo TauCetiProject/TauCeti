@@ -41,9 +41,9 @@ only these need to be nondegenerate: if they are, there are finitely many of the
 
 Shifting the time of `H` by `θ`, `H_θ (t) = H (t + θ)`, rotates its 1-periodic orbits: `γ` is an
 orbit of `H` exactly when `t ↦ γ (t + θ)` is an orbit of `H_θ`
-(`TauCeti.comp_add_right_mem_periodicSolutions_iff`). On a closed manifold the rotated orbit is
-nondegenerate exactly when `γ` is, although the time-one maps of `H_θ` and `H` differ: they are
-conjugate by the flow of `H` from time `0` to time `θ`
+(`TauCeti.comp_add_right_mem_periodicSolutions_iff`). The rotated orbit is nondegenerate exactly
+when `γ` is, although the time-one maps of `H_θ` and `H` differ: their differentials along the
+orbit are conjugate by the flow of `H` from time `0` to time `θ`
 (`isNondegenerateFixedPt_timeDependentFlowOf_comp_add_right_iff` in the namespace
 `TauCeti.SmoothTwoForm.IsNondegenerate`). So `H_θ` satisfies the nondegeneracy hypothesis of
 Floer theory exactly when `H` does. Such shifts arise when an end of a Floer solution is read with
@@ -64,7 +64,7 @@ the comparison of the Floer homology of a `C²`-small Morse function with its Mo
   time turns the 1-periodic orbits of the reversed Hamiltonian `-H(-t)` into those of `H`.
 * `isNondegenerateFixedPt_timeDependentFlowOf_comp_add_right_iff` and
   `forall_isNondegenerateFixedPt_contractiblePeriodicSolutions_comp_add_right_iff`, both in the
-  namespace `TauCeti.SmoothTwoForm.IsNondegenerate`: on a closed manifold, shifting the time of a
+  namespace `TauCeti.SmoothTwoForm.IsNondegenerate`: shifting the time of a `1`-periodic
   Hamiltonian preserves the nondegeneracy of its (contractible) 1-periodic orbits.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.finite_periodicSolutions_hamiltonianVectorField`: a
   time-dependent Hamiltonian on a closed manifold whose 1-periodic orbits are all nondegenerate has
@@ -161,19 +161,18 @@ theorem forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq
       (hnd γ hγ hγK)).mono fun _ hy γ' hγ' _ ↦ hy γ' (hP hγ')
 
 /-- **Finiteness of nondegenerate 1-periodic orbits.** Let `σ` be a nondegenerate two-form on a
-compact boundaryless manifold modelled on a finite-dimensional space, and `H` a time-dependent
-Hamiltonian, jointly `C²` and `1`-periodic in time. If every 1-periodic orbit `γ` of `H` is
-nondegenerate, in the sense that `γ 0` is a nondegenerate fixed point of the time-one map
-`timeDependentFlowOf X_H 0 1`, then `H` has only finitely many 1-periodic orbits. -/
+compact boundaryless manifold modelled on a finite-dimensional space, and `H` a jointly `C²`
+time-dependent Hamiltonian. If every 1-periodic orbit `γ` of `H` is nondegenerate, in the sense
+that `γ 0` is a nondegenerate fixed point of the time-one map `timeDependentFlowOf X_H 0 1`, then
+`H` has only finitely many 1-periodic orbits. -/
 theorem finite_periodicSolutions_hamiltonianVectorField [CompactSpace M] (h : σ.IsNondegenerate)
-    (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 2 (uncurry H)) (hP : Periodic H 1)
+    (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 2 (uncurry H))
     (hnd : ∀ γ ∈ periodicSolutions (fun t ↦ σ.hamiltonianVectorField (H t)) 1,
       IsNondegenerateFixedPt I (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (H t)) 0 1)
         (γ 0)) :
     (periodicSolutions (fun t ↦ σ.hamiltonianVectorField (H t)) 1).Finite :=
   finite_periodicSolutions (h.contMDiff_hamiltonianVectorField_uncurry (n := 1) (by simp)
-    (hH.of_le (by norm_num))) (fun t ↦ by rw [hP t]) one_ne_zero 0
-    (by simpa only [zero_add] using hnd)
+    (hH.of_le (by norm_num))) 0 (by simpa only [zero_add] using hnd)
 
 /-- **Small autonomous Hamiltonians have only constant 1-periodic orbits.** Let `σ` be a
 nondegenerate two-form on a compact boundaryless manifold modelled on a finite-dimensional space,
@@ -207,29 +206,27 @@ theorem exists_pos_forall_periodicSolutions_hamiltonianVectorField_smul_eq_image
 
 /-- **Finiteness of nondegenerate contractible 1-periodic orbits.** Let `σ` be a nondegenerate
 two-form on a compact boundaryless manifold modelled on a finite-dimensional space, and `H` a
-time-dependent Hamiltonian, jointly `C²` and `1`-periodic in time. If every contractible 1-periodic
-orbit `γ` of `H` is nondegenerate, in the sense that `γ 0` is a nondegenerate fixed point of the
-time-one map `timeDependentFlowOf X_H 0 1`, then `H` has only finitely many contractible
-1-periodic orbits. No assumption is made on the noncontractible orbits. -/
+jointly `C²` time-dependent Hamiltonian. If every contractible 1-periodic orbit `γ` of `H` is
+nondegenerate, in the sense that `γ 0` is a nondegenerate fixed point of the time-one map
+`timeDependentFlowOf X_H 0 1`, then `H` has only finitely many contractible 1-periodic orbits. No
+assumption is made on the noncontractible orbits. -/
 theorem finite_contractiblePeriodicSolutions_hamiltonianVectorField [CompactSpace M]
     (h : σ.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 2 (uncurry H))
-    (hP : Periodic H 1)
     (hnd : ∀ γ ∈ contractiblePeriodicSolutions (fun t ↦ σ.hamiltonianVectorField (H t)) 1,
       IsNondegenerateFixedPt I (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (H t)) 0 1)
         (γ 0)) :
     (contractiblePeriodicSolutions (fun t ↦ σ.hamiltonianVectorField (H t)) 1).Finite :=
   finite_contractiblePeriodicSolutions (h.contMDiff_hamiltonianVectorField_uncurry (n := 1)
-    (by simp) (hH.of_le (by norm_num))) (fun t ↦ by rw [hP t]) one_pos 0
-    (by simpa only [zero_add] using hnd)
+    (by simp) (hH.of_le (by norm_num))) 0 (by simpa only [zero_add] using hnd)
 
 /-- **Shifting the time of a Hamiltonian preserves nondegeneracy.** Let `σ` be a nondegenerate
-two-form on a compact boundaryless manifold modelled on a finite-dimensional space, and `H` a
+two-form on a boundaryless manifold modelled on a finite-dimensional space, and `H` a
 time-dependent Hamiltonian, jointly `C²` and `1`-periodic in time. If `γ` is a 1-periodic orbit of
 `H`, then its rotation `t ↦ γ (t + θ)` is a 1-periodic orbit of the shifted Hamiltonian
 `H_θ (t) = H (t + θ)` (`TauCeti.comp_add_right_mem_periodicSolutions`), and it is nondegenerate
-exactly when `γ` is: the time-one maps of `H_θ` and `H` are conjugate by the flow of `H` from time
-`0` to time `θ`. -/
-theorem isNondegenerateFixedPt_timeDependentFlowOf_comp_add_right_iff [CompactSpace M]
+exactly when `γ` is: the differentials of the time-one maps of `H_θ` and `H` along the orbit are
+conjugate by the flow of `H` from time `0` to time `θ`. -/
+theorem isNondegenerateFixedPt_timeDependentFlowOf_comp_add_right_iff
     (h : σ.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 2 (uncurry H))
     (hP : Periodic H 1) {γ : ℝ → M}
     (hγ : γ ∈ periodicSolutions (fun t ↦ σ.hamiltonianVectorField (H t)) 1) (θ : ℝ) :
@@ -238,12 +235,8 @@ theorem isNondegenerateFixedPt_timeDependentFlowOf_comp_add_right_iff [CompactSp
       IsNondegenerateFixedPt I
         (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (H t)) 0 1) (γ 0) := by
   have hX := h.contMDiff_hamiltonianVectorField_uncurry (n := 1) (by simp) (hH.of_le (by norm_num))
-  -- On a compact manifold the time-dependent flow is complete.
-  have hc := isCompleteVectorField_timeDependentSuspensionField
-    (X := fun t ↦ σ.hamiltonianVectorField (H t)) hX isCompact_univ
-    (fun _ _ hy ↦ (hy (Set.mem_univ _)).elim)
   simpa only [zero_add] using
-    TauCeti.isNondegenerateFixedPt_timeDependentFlowOf_comp_add_right_iff hX hc
+    TauCeti.isNondegenerateFixedPt_timeDependentFlowOf_comp_add_right_iff hX
       (fun t ↦ by rw [hP t]) hγ θ 0
 
 /-- **Shifting the time of a Hamiltonian preserves nondegeneracy of all orbits.** Under the
@@ -253,7 +246,7 @@ all contractible 1-periodic orbits of `H` are. These orbits generate the Floer c
 and `H`, and rotating by `θ` identifies them
 (`TauCeti.comp_add_right_mem_contractiblePeriodicSolutions_iff`). -/
 theorem forall_isNondegenerateFixedPt_contractiblePeriodicSolutions_comp_add_right_iff
-    [CompactSpace M] (h : σ.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 2 (uncurry H))
+    (h : σ.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 2 (uncurry H))
     (hP : Periodic H 1) (θ : ℝ) :
     (∀ γ ∈ contractiblePeriodicSolutions (fun t ↦ σ.hamiltonianVectorField (H (t + θ))) 1,
         IsNondegenerateFixedPt I
