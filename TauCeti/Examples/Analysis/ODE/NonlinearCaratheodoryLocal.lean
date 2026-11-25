@@ -11,11 +11,14 @@ import Mathlib.Analysis.Complex.ExponentialBounds
 /-!
 # Checks for the local nonlinear Carathéodory theorem
 
-Two examples for the nonlinear Carathéodory theorem on a ball
+Checks for the nonlinear Carathéodory theorem on a ball
 (`TauCeti.exists_continuousOn_mapsTo_closedBall_forall_mem_Icc_eq_picard`,
 `TauCeti.eqOn_of_mapsTo_closedBall_of_forall_mem_Icc_eq_picard`,
 `TauCeti.mapsTo_closedBall_of_forall_mem_Icc_eq_picard`).
 
+* **Agreement with Mathlib.** For a field satisfying `IsPicardLindelof` with a constant Lipschitz
+  bound, the solutions with values in the ball are Mathlib's solution
+  (`TauCeti.Examples.NonlinearCaratheodoryLocal.eqOn_of_isPicardLindelof`).
 * **A global Lipschitz bound is needed for the global statement.** The field `F(t, x) = x²` from
   `x₀ = 1` at `t₀ = 0` has the solution `1/(1 − t)` on `[0, 1)`
   (`TauCeti.Examples.NonlinearCaratheodoryLocal.inv_one_sub_eq_picard_sq`), which leaves every ball
@@ -47,6 +50,41 @@ open MeasureTheory Set intervalIntegral Real Metric
 open scoped NNReal Interval
 
 namespace TauCeti.Examples.NonlinearCaratheodoryLocal
+
+section PicardLindelof
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] {f : ℝ → E → E}
+  {tmin tmax : ℝ} {x₀ : E} {a L K : ℝ≥0}
+
+/-- **Agreement with Mathlib's Picard–Lindelöf theorem.** Let `f` satisfy the hypotheses
+`IsPicardLindelof` on `[tmin, tmax]` from `tmin`, with the constant Lipschitz bound `K` on the ball
+of radius `a` about `x₀`, and let `α` be a solution of the initial value problem in Mathlib's sense
+(`α tmin = x₀`, `α' = f(t, α)` on `[tmin, tmax]`, values in the ball), as given by
+`IsPicardLindelof.exists_eq_forall_mem_Icc_hasDerivWithinAt₀`. Then every curve continuous on
+`[tmin, tmax]` with values in the ball that solves the integral equation of the nonlinear
+Carathéodory theorem with `L = K` is `α`. -/
+theorem eqOn_of_isPicardLindelof (ht : tmin ≤ tmax)
+    (hf : IsPicardLindelof f ⟨tmin, left_mem_Icc.2 ht⟩ x₀ a 0 L K) {α : ℝ → E}
+    (hα₀ : α tmin = x₀)
+    (hα : ∀ t ∈ Icc tmin tmax, HasDerivWithinAt α (f t (α t)) (Icc tmin tmax) t)
+    (hαB : MapsTo α (Icc tmin tmax) (closedBall x₀ a)) {Y : ℝ → E}
+    (hY : ContinuousOn Y (Icc tmin tmax)) (hYB : MapsTo Y (Icc tmin tmax) (closedBall x₀ a))
+    (h : ∀ t ∈ Icc tmin tmax, Y t = ODE.picard f tmin x₀ Y t) :
+    EqOn Y α (Icc tmin tmax) := by
+  have ht₀ : tmin ∈ Icc tmin tmax := left_mem_Icc.2 ht
+  -- Mathlib's solution solves the integral equation, by the fundamental theorem of calculus.
+  have hαsol : ∀ t ∈ Icc tmin tmax, α t = ODE.picard f tmin x₀ α t := fun t htI ↦ by
+    have hsub : uIcc tmin t ⊆ Icc tmin tmax := uIcc_subset_Icc ht₀ htI
+    rw [← hα₀]
+    exact (ODE.picard_eq_of_hasDerivAt
+      (hf.continuousOn_uncurry.mono (prod_mono hsub subset_rfl))
+      (fun t' ht' ↦ (hα t' (hsub ht')).mono hsub) (hαB.mono_left hsub)).symm
+  exact eqOn_of_mapsTo_closedBall_of_forall_mem_Icc_eq_picard (L := fun _ ↦ K) ht₀
+    (fun x hx ↦ (hf.continuousOn x hx).integrableOn_compact isCompact_Icc)
+    (integrableOn_const (by simp)) (ae_restrict_of_forall_mem measurableSet_Icc hf.lipschitzOnWith)
+    hY (HasDerivWithinAt.continuousOn hα) hYB hαB h hαsol
+
+end PicardLindelof
 
 section Square
 
