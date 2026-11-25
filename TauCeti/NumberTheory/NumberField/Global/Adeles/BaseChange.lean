@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.FiniteBaseChange
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.InfiniteBaseChange
 public import Mathlib.LinearAlgebra.TensorProduct.Prod
-import TauCeti.NumberTheory.NumberField.RingOfIntegers.Basic
+import TauCeti.NumberTheory.NumberField.Countable
 import TauCeti.Topology.Algebra.Module.ModuleTopology
 import Mathlib.Topology.Algebra.Group.OpenMapping
 import Mathlib.Topology.Baire.LocallyCompactRegular

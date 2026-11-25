@@ -137,15 +137,12 @@ private theorem perturbation_ae (hb : AEStronglyMeasurable b volume)
 private theorem norm_perturbation_sub_le (hb : AEStronglyMeasurable b volume)
     (hbc : ∀ᵐ x ∂volume, ‖b x‖ ≤ c) (z z' : Wkp (volume : Measure E) ⊤ s 2) :
     ‖perturbation hb hbc z - perturbation hb hbc z'‖ ≤ ‖traceCLM ℝ E‖ * c * ‖z - z'‖ := by
-  have hD : Wkp.iteratedGradient 1 (z - z') =
-      Wkp.iteratedGradient 1 z - Wkp.iteratedGradient 1 z' := by
-    simp only [← Wkp.iteratedGradientL_apply, map_sub]
   have hc : 0 ≤ c := by
     obtain ⟨x, hx⟩ := hbc.exists
     exact (norm_nonneg _).trans hx
   refine (Lp.norm_le_mul_norm_of_ae_le_mul (g := Wkp.iteratedGradient 1 (z - z')) ?_).trans
     (mul_le_mul_of_nonneg_left (Wkp.norm_iteratedGradient_le 1 _) (by positivity))
-  rw [hD]
+  rw [Wkp.iteratedGradient_sub]
   filter_upwards [Lp.coeFn_sub (perturbation hb hbc z) (perturbation hb hbc z'),
     perturbation_ae hb hbc z, perturbation_ae hb hbc z',
     Lp.coeFn_sub (Wkp.iteratedGradient 1 z) (Wkp.iteratedGradient 1 z'),

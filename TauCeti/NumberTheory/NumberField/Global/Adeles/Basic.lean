@@ -33,9 +33,7 @@ adele ring is determined by its values on `K` and on that idempotent
 It also upgrades Mathlib's ring equivalence between the infinite adele ring and the Minkowski
 mixed space to an isomorphism of topological additive groups.  Each local factor is isometric to
 `ℝ` or `ℂ`, so the product equivalence and its inverse are continuous
-(`NumberField.InfiniteAdeleRing.continuousAddEquivMixedSpace`); in particular the infinite adele
-ring of a number field is second countable
-(`NumberField.InfiniteAdeleRing.instSecondCountableTopology`). The norm of the mixed space
+(`NumberField.InfiniteAdeleRing.continuousAddEquivMixedSpace`), and the norm of the mixed space
 (`NumberField.mixedEmbedding.norm`) is carried to the norm of the infinite adele ring.
 -/
 
@@ -131,12 +129,6 @@ theorem InfiniteAdeleRing.continuous_ringEquiv_mixedSpace_symm :
     Continuous (InfiniteAdeleRing.ringEquiv_mixedSpace K).symm :=
   (InfiniteAdeleRing.continuousAddEquivMixedSpace K).symm.continuous.congr fun x ↦
     InfiniteAdeleRing.continuousAddEquivMixedSpace_symm_apply K x
-
-/-- The infinite adele ring of a number field is second countable, being homeomorphic to the
-Minkowski mixed space. -/
-instance InfiniteAdeleRing.instSecondCountableTopology [NumberField K] :
-    SecondCountableTopology (InfiniteAdeleRing K) :=
-  (InfiniteAdeleRing.continuousAddEquivMixedSpace K).toHomeomorph.secondCountableTopology
 
 /-- Every infinite adele can be translated by the image of an algebraic integer into the closed
 fundamental parallelepiped of the Minkowski lattice. -/

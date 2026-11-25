@@ -6,19 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Basic
-import Mathlib.LinearAlgebra.Countable
 
 /-!
 # Basic facts about algebraic integers
 
-The ring of integers `𝓞 K` of a number field is countable, being a finitely generated
-`ℤ`-module. This file also records basic facts about tuples `y : ι → 𝓞 K` of algebraic integers
-and their images in `K`, and about the integers inside the ring of integers of a number field:
-an algebraic integer that is rational is an integer.
+Basic facts about tuples `y : ι → 𝓞 K` of algebraic integers and their images in `K`, and about
+the integers inside the ring of integers of a number field: an algebraic integer that is rational
+is an integer.
 
 ## Main results
 
-* `NumberField.instCountableRingOfIntegers`: the ring of integers of a number field is countable.
 * `NumberField.RingOfIntegers.coe_tuple_eq_zero_iff`: a tuple of algebraic integers is zero
   exactly when its image in `K` is zero.
 * `NumberField.RingOfIntegers.exists_intCast_eq_of_coe_mem_range`: an algebraic integer that is
@@ -26,16 +23,6 @@ an algebraic integer that is rational is an integer.
 -/
 
 public section
-
-namespace NumberField
-
-/-- The ring of integers of a number field is countable, being a finitely generated
-`ℤ`-module. -/
-instance instCountableRingOfIntegers (K : Type*) [Field K] [NumberField K] :
-    Countable (𝓞 K) :=
-  Countable.of_moduleFinite (R := ℤ)
-
-end NumberField
 
 namespace NumberField.RingOfIntegers
 

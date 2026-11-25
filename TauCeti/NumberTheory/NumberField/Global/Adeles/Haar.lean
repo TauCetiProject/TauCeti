@@ -9,7 +9,8 @@ public import Mathlib.MeasureTheory.Measure.Haar.Basic
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.Basic
 public import TauCeti.MeasureTheory.Measure.Haar.DistribChar.Prod
 public import TauCeti.MeasureTheory.Measure.Haar.RestrictedProduct.DistribChar
-public import TauCeti.NumberTheory.NumberField.Global.Adeles.Borel
+public import TauCeti.NumberTheory.LocalField.Topology
+public import TauCeti.NumberTheory.NumberField.Global.Adeles.BorelSpace
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.LocallyCompact
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Places.HaarCharacter

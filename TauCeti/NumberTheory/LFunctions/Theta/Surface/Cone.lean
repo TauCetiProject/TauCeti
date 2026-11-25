@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Haar
 public import TauCeti.Analysis.MellinTransform
-import TauCeti.NumberTheory.NumberField.RingOfIntegers.Basic
+import TauCeti.NumberTheory.NumberField.Countable
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.Prod
 

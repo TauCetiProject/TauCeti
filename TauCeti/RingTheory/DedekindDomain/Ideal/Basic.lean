@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
-public import TauCeti.RingTheory.Noetherian.Countable
 import Mathlib.RingTheory.DedekindDomain.Factorization
 import TauCeti.RingTheory.UniqueFactorizationDomain.FactorSet
 
@@ -39,8 +38,6 @@ ideals over any integral domain, with injectivity in the exponent over a Dedekin
 large finite set of primes. These constructions use only ideal arithmetic, independently of norms.
 `Ideal.span_singleton_sup_eq` computes `(y) + I = Q` for an element `y` of order one at a prime
 `Q ⊇ I` that avoids the other primes containing the nonzero ideal `I`.
-A countable Dedekind domain has countably many height-one primes
-(`IsDedekindDomain.HeightOneSpectrum.instCountable`).
 
 It also collects how an isomorphism `e : R ≃+* R'` moves ideals: `Ideal.map e` preserves
 divisibility (`Ideal.map_dvd_map_iff_of_ringEquiv`, `Ideal.map_pow_dvd_map_iff_of_ringEquiv`,
@@ -292,13 +289,6 @@ theorem primeIdealPow_injective {R : Type*} [CommRing R] [IsDedekindDomain R]
     (P : HeightOneSpectrum R) : Function.Injective (primeIdealPow P) := fun m n h ↦
   pow_injective_of_not_isUnit P.prime.not_isUnit P.prime.ne_zero
     (by simpa only [coe_primeIdealPow] using congrArg Subtype.val h)
-
-/-- A countable Dedekind domain has countably many height-one primes (its nonzero prime ideals),
-since a countable Noetherian ring has countably many ideals
-(`Submodule.instCountableOfIsNoetherian`). -/
-instance instCountable {R : Type*} [CommRing R] [IsDedekindDomain R] [Countable R] :
-    Countable (HeightOneSpectrum R) :=
-  Function.Injective.countable (f := asIdeal) fun _ _ ↦ HeightOneSpectrum.ext
 
 section Comap
 

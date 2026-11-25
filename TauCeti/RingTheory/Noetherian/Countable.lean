@@ -5,30 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Logic.Equiv.List
 public import Mathlib.RingTheory.Noetherian.Defs
+import Mathlib.Logic.Equiv.List
 
 /-!
 # Countably many submodules of a countable Noetherian module
 
-Every submodule of a Noetherian module `M` is spanned by a finite subset of `M`, and is determined
-by that subset. So if `M` is countable it has countably many submodules
-(`Submodule.instCountableOfIsNoetherian`). In particular a countable Noetherian ring has countably
-many ideals.
+Every submodule of a Noetherian module is spanned by a finite set, and choosing such a set for each
+submodule is injective. A Noetherian module with countably many elements therefore has only
+countably many submodules. In particular a countable Noetherian ring has countably many ideals.
+
+## Main results
+
+* `Submodule.countable_of_isNoetherian`: a countable Noetherian module has countably many
+  submodules.
 -/
 
 public section
 
-namespace Submodule
-
-/-- A countable Noetherian module has countably many submodules: each is spanned by a finite
-subset, which determines it. -/
-instance instCountableOfIsNoetherian {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
-    [IsNoetherian R M] [Countable M] : Countable (Submodule R M) := by
+/-- A Noetherian module with countably many elements has countably many submodules. -/
+instance Submodule.countable_of_isNoetherian {R M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [IsNoetherian R M] [Countable M] : Countable (Submodule R M) := by
   classical
-  refine Function.Injective.countable
-    (f := fun N : Submodule R M ↦ (IsNoetherian.noetherian N).choose) fun N N' h ↦ ?_
-  rw [← (IsNoetherian.noetherian N).choose_spec, ← (IsNoetherian.noetherian N').choose_spec]
-  exact congrArg (fun s : Finset M ↦ span R (s : Set M)) h
+  choose s hs using fun N : Submodule R M ↦ IsNoetherian.noetherian N
+  exact Function.Injective.countable (f := s) fun N N' h ↦ by rw [← hs N, ← hs N', h]
 
-end Submodule

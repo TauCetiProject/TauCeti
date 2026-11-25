@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Basic
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Extension
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
 import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.LocallyCompact
-import TauCeti.NumberTheory.NumberField.RingOfIntegers.Basic
+import TauCeti.NumberTheory.NumberField.Countable
 import TauCeti.Topology.Algebra.Module.ModuleTopology
 import Mathlib.Topology.Algebra.Group.OpenMapping
 import Mathlib.Topology.Baire.LocallyCompactRegular
