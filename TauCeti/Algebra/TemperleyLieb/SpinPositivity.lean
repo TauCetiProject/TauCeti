@@ -135,7 +135,7 @@ open scoped ComplexOrder
 /-- **Positivity for loop values at least two.** For a real loop value `δ ≥ 2`, the Hermitian
 forms `(x, y) ↦ tr n (x⋆ * y)` of a Markov trace on the complex Temperley–Lieb algebras are
 positive semidefinite on every number of strands. -/
-theorem IsMarkovTrace.map_star_mul_self_nonneg_of_two_le {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))]
+theorem IsMarkovTrace.map_star_mul_self_nonneg_of_two_le {δ : ℝ}
     {tr : ∀ n : ℕ, TemperleyLieb ℂ (δ : ℂ) n →ₗ[ℂ] ℂ} (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
     (hδ : 2 ≤ δ) (x : TemperleyLieb ℂ (δ : ℂ) n) : 0 ≤ tr n (star x * x) := by
   -- Write `δ = r + r⁻¹` with `r = (δ + √(δ ^ 2 - 4)) / 2 > 0`, and take `q = -r`.

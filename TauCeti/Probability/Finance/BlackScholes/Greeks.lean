@@ -35,11 +35,12 @@ In calendar time `t = T - τ` both `V(s, t) = C(s, T - t)` and `V(s, t) = P(s, T
 
 `∂V/∂t + σ² s² / 2 ∂²V/∂s² + r (s ∂V/∂s - V) = 0`
 
-for `s > 0` and `t ≠ T` (`TauCeti.BlackScholes.callPrice_pde`,
-`TauCeti.BlackScholes.putPrice_pde`). The formulas for the derivatives need `σ ≠ 0` and the signs
-of gamma need `σ > 0`. The equation holds for every `σ`: without a diffusion term (`σ √τ = 0`,
-that is `σ = 0` or `τ ≤ 0`) the closed-form formulas reduce, through Lean's conventions `x / 0 = 0`
-and `√τ = 0` for `τ ≤ 0`, to `(s - K e^{-rτ}) / 2` and `(K e^{-rτ} - s) / 2`
+for `s > 0` and `t ≠ T`: the Black–Scholes residual `TauCeti.BlackScholes.residual` vanishes
+(`TauCeti.BlackScholes.callPrice_pde`, `TauCeti.BlackScholes.putPrice_pde`). The formulas for
+the derivatives need `σ ≠ 0` and the signs of gamma need `σ > 0`. The equation holds for every
+`σ`: without a diffusion term (`σ √τ = 0`, that is `σ = 0` or `τ ≤ 0`) the closed-form formulas
+reduce, through Lean's conventions `x / 0 = 0` and `√τ = 0` for `τ ≤ 0`, to
+`(s - K e^{-rτ}) / 2` and `(K e^{-rτ} - s) / 2`
 (`TauCeti.BlackScholes.callPrice_of_mul_sqrt_eq_zero`,
 `TauCeti.BlackScholes.putPrice_of_mul_sqrt_eq_zero`), which satisfy
 `∂V/∂t + r (s ∂V/∂s - V) = 0`. So the equation also holds past the expiry, `t > T`; for `σ ≠ 0`
@@ -62,6 +63,7 @@ the formulas generally jump at `t = T`, where the equation can fail, so
 * The corresponding `putPrice` statements.
 * `TauCeti.BlackScholes.abs_callPrice_sub_callPrice_le` — the call is `1`-Lipschitz in the spot
   on `s > 0` (for `τ > 0`, `σ ≠ 0`, `K > 0`).
+* `TauCeti.BlackScholes.residual` — the Black–Scholes residual.
 * `TauCeti.BlackScholes.callPrice_pde`, `TauCeti.BlackScholes.putPrice_pde` — the Black–Scholes
   equation.
 
@@ -374,6 +376,23 @@ theorem deriv_deriv_putPrice_spot_strike_zero (s r σ τ : ℝ) :
 
 /-! ### The Black–Scholes equation -/
 
+/-- The residual of the Black–Scholes equation
+
+`∂C/∂t + σ² s² / 2 ∂²C/∂s² + r (s ∂C/∂s - C)`
+
+at spot `s` and calendar time `t`, for a spot-first price `C(s, t)`, short rate `r` and
+volatility `σ`. -/
+def residual (r σ : ℝ) (C : ℝ → ℝ → ℝ) (s t : ℝ) : ℝ :=
+  deriv (fun u => C s u) t + σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => C x t) s +
+    r * (s * deriv (fun x => C x t) s - C s t)
+
+/-- Unfold the Black–Scholes residual. -/
+theorem residual_def (r σ : ℝ) (C : ℝ → ℝ → ℝ) (s t : ℝ) :
+    residual r σ C s t =
+      deriv (fun u => C s u) t + σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => C x t) s +
+        r * (s * deriv (fun x => C x t) s - C s t) :=
+  (rfl)
+
 /-- At zero volatility, or past the expiry `T`, the diffusion term `σ √(T - u)` of the closed
 forms vanishes for every calendar time `u` near `t`. -/
 private theorem eventually_mul_sqrt_sub_eq_zero {T t : ℝ} (hd : σ = 0 ∨ T < t) :
@@ -388,9 +407,8 @@ private theorem eventually_mul_sqrt_sub_eq_zero {T t : ℝ} (hd : σ = 0 ∨ T <
 `∂C/∂t + σ² s² / 2 ∂²C/∂s² + r (s ∂C/∂s - C) = 0` at every spot `s > 0`. The closed form also
 satisfies it for `t > T`, where `√(T - t) = 0` makes it affine in the spot. -/
 theorem callPrice_pde (hs : 0 < s) (hK : 0 < K) {T t : ℝ} (ht : t ≠ T) :
-    deriv (fun u => callPrice s r σ K (T - u)) t +
-      σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => callPrice x r σ K (T - t)) s +
-      r * (s * deriv (fun x => callPrice x r σ K (T - t)) s - callPrice s r σ K (T - t)) = 0 := by
+    residual r σ (fun x u => callPrice x r σ K (T - u)) s t = 0 := by
+  simp only [residual_def]
   by_cases hd : σ = 0 ∨ T < t
   · -- Without a diffusion term the closed form is `(s - K e^{-rτ}) / 2` near `t`, which solves
     -- `∂C/∂t + r (s ∂C/∂s - C) = 0`.
@@ -420,9 +438,8 @@ theorem callPrice_pde (hs : 0 < s) (hK : 0 < K) {T t : ℝ} (ht : t ≠ T) :
 `∂P/∂t + σ² s² / 2 ∂²P/∂s² + r (s ∂P/∂s - P) = 0` at every spot `s > 0`. The closed form also
 satisfies it for `t > T`, where `√(T - t) = 0` makes it affine in the spot. -/
 theorem putPrice_pde (hs : 0 < s) (hK : 0 < K) {T t : ℝ} (ht : t ≠ T) :
-    deriv (fun u => putPrice s r σ K (T - u)) t +
-      σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => putPrice x r σ K (T - t)) s +
-      r * (s * deriv (fun x => putPrice x r σ K (T - t)) s - putPrice s r σ K (T - t)) = 0 := by
+    residual r σ (fun x u => putPrice x r σ K (T - u)) s t = 0 := by
+  simp only [residual_def]
   by_cases hd : σ = 0 ∨ T < t
   · -- Without a diffusion term the closed form is `(K e^{-rτ} - s) / 2` near `t`, which solves
     -- `∂P/∂t + r (s ∂P/∂s - P) = 0`.

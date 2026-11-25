@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Birational.Dominant
 public import Mathlib.AlgebraicGeometry.Noetherian
+public import TauCeti.AlgebraicGeometry.Birational.RationalMap.Basic
 public import TauCeti.AlgebraicGeometry.Birational.RationalMap.ValuationRing
 public import TauCeti.AlgebraicGeometry.Morphisms.Modification.Composition
 public import TauCeti.AlgebraicGeometry.Morphisms.Modification.GraphClosure
@@ -35,6 +36,15 @@ Mathlib's instances make the factorization `V → Γ_f` quasi-compact and domina
 `Scheme.Hom.range_imageι` (in `TauCeti/AlgebraicGeometry/SchemeTheoreticImage/Basic.lean`) shows
 that `Γ_f` is supported on the closure of the image of `V`, and Tau Ceti's
 `Scheme.Hom.isIntegral_image` (same file) gives that `Γ_f` is integral when `X` is integral.
+
+For `W` reduced, a morphism from an open of `W` into `X × Y` whose restriction to a dense open of
+`W` is `γ_f` after some morphism has its scheme-theoretic image inside `Γ_f`
+(`AlgebraicGeometry.Scheme.RationalMap.ker_graphLift_le_of_homOfLE_comp_eq`), since kernels can
+be compared on a dense open (`AlgebraicGeometry.Scheme.Hom.ker_le_ker_of_homOfLE_comp_eq`). In
+particular, for `X` reduced and `Y` separated, a morphism into `X × Y` which, on a dense open
+`U ⊆ X`, is the graph of the restriction of `f` to `U` has its image inside `Γ_f`
+(`AlgebraicGeometry.Scheme.RationalMap.ker_graphLift_le`), as the representative of `f` is the
+restriction of `toPartialMap` (`AlgebraicGeometry.Scheme.RationalMap.representative_hom_eq`).
 
 For `X` reduced, `Γ_f` does not depend on the representative: the graph of any partial map
 representing `f` has the same kernel as `γ_f`. If moreover `Y` is separated and `f` is a rational
@@ -69,6 +79,10 @@ Noetherian and `Y` separated, so all the hypotheses above hold.
 
 ## Main results
 
+* `AlgebraicGeometry.Scheme.RationalMap.ker_graphLift_le_of_homOfLE_comp_eq`: a morphism which,
+  on a dense open, is `γ_f` after some morphism has its image inside `Γ_f`.
+* `AlgebraicGeometry.Scheme.RationalMap.ker_graphLift_le`: a morphism agreeing on a dense open
+  with the graph of the restriction of `f` has its image inside `Γ_f`.
 * `AlgebraicGeometry.Scheme.RationalMap.isIntegral_graph`: the graph of a rational map out of an
   integral scheme is integral when `γ_f` is quasi-compact, for instance when `X` is Noetherian.
 * `AlgebraicGeometry.Scheme.RationalMap.ker_opensGraph_eq_ker_graphLift`: independence of the
@@ -329,5 +343,31 @@ theorem graph_isIntegral_and_projections {K : Type u} [Field K] (sX : X ⟶ Spec
   have := Scheme.IsSeparated.of_isSeparated sY
   exact ⟨inferInstance, topologicalKrullDim_graph f sX sY, isProper_graphFst f sX sY,
     inferInstance, fun _ ↦ (surjective_graphSnd f sX sY).surj⟩
+
+/-- For `X` reduced, let `a : U ⟶ Y × T` be a morphism out of an open `U ⊆ X` whose restriction
+to a dense open `V ⊆ U` is `γ_h` after some `m : V ⟶ V_h`, where `(V_h, g)` is the representative
+of `h : Y ⤏ T`. Then `a` has kernel containing that of `γ_h`: its image lies in the graph `Γ_h`. -/
+theorem ker_graphLift_le_of_homOfLE_comp_eq {X Y T : Scheme.{u}} [IsReduced X] (h : Y ⤏ T)
+    {U V : X.Opens} (hV : Dense (V : Set X)) (hVU : V ≤ U)
+    (a : U.toScheme ⟶ pullback (terminal.from Y) (terminal.from T))
+    (m : V.toScheme ⟶ h.representative.domain)
+    (hfst : X.homOfLE hVU ≫ a ≫ pullback.fst _ _ = m ≫ h.representative.domain.ι)
+    (hsnd : X.homOfLE hVU ≫ a ≫ pullback.snd _ _ = m ≫ h.representative.hom) :
+    (graphLift h).ker ≤ a.ker :=
+  Hom.ker_le_ker_of_homOfLE_comp_eq hV hVU a m _
+    (pullback.hom_ext (by simpa using hfst) (by simpa using hsnd))
+
+/-- For `X` reduced, let `c` be a morphism out of a dense open `U ⊆ X` and `p : Q ⟶ X × T` a
+morphism such that `c ≫ p` is the graph of the restriction of `h : X ⤏ T` to `U`. Then `c ≫ p`
+has kernel containing that of `γ_h`: its image lies in the graph `Γ_h`. -/
+theorem ker_graphLift_le {X T Q : Scheme.{u}} [IsReduced X] [T.IsSeparated] (h : X ⤏ T)
+    {U : X.Opens} (hU : Dense (U : Set X)) (hUh : U ≤ h.toPartialMap.domain)
+    (c : U.toScheme ⟶ Q) (p : Q ⟶ pullback (terminal.from X) (terminal.from T))
+    (hc : c ≫ p ≫ pullback.fst _ _ = U.ι)
+    (hc' : c ≫ p ≫ pullback.snd _ _ = X.homOfLE hUh ≫ h.toPartialMap.hom) :
+    (graphLift h).ker ≤ (c ≫ p).ker :=
+  ker_graphLift_le_of_homOfLE_comp_eq h
+    (hU.inter_of_isOpen_left h.representative.dense_domain U.isOpen) inf_le_left _
+    (X.homOfLE inf_le_right) (by simp [hc]) (by simp [hc', representative_hom_eq h])
 
 end AlgebraicGeometry.Scheme.RationalMap

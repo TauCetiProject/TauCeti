@@ -348,6 +348,19 @@ theorem pullback_congr
   subst h
   rfl
 
+/-- Pulling back along maps that agree near `x` gives the same inner product at `x`, whatever the
+regularity and injectivity proofs supplied. This is the local form of `pullback_congr`. -/
+theorem pullback_inner_congr_of_eventuallyEq
+    (g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)) {f₁ f₂ : M → N}
+    {x : M} (h : f₁ =ᶠ[𝓝 x] f₂) (hf₁ : ContMDiff I J (n + 1) f₁)
+    (hinj₁ : ∀ x, Function.Injective (mfderiv I J f₁ x)) (hf₂ : ContMDiff I J (n + 1) f₂)
+    (hinj₂ : ∀ x, Function.Injective (mfderiv I J f₂ x)) :
+    (g.pullback f₁ hf₁ hinj₁).inner x = (g.pullback f₂ hf₂ hinj₂).inner x := by
+  ext v w
+  rw [pullback_inner, pullback_inner, h.mfderiv_eq, h.eq_of_nhds]
+  -- `EventuallyEq.mfderiv_eq` inserts `tangentSpaceCast`, which is the identity by definition.
+  rfl
+
 /-- Pulling a Riemannian metric back along the identity leaves it unchanged. -/
 @[simp]
 theorem pullback_id

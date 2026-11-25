@@ -13,6 +13,7 @@ public import TauCeti.Algebra.Lie.GeneralLinear.HighestWeight
 
 import TauCeti.Algebra.Lie.UniversalEnveloping.Module
 import TauCeti.Algebra.Lie.Matrix.Single
+import TauCeti.Algebra.Order.BigOperators.Dominance
 
 /-!
 # The trace-form Casimir element of `gl n`
@@ -211,21 +212,9 @@ private theorem glCasimir_eigenvalue_eq (mu : Fin N → K) :
     (∑ i : Fin N, mu i * mu i) +
         ∑ i : Fin N, ∑ j ∈ Finset.Ioi i, (mu i - mu j) =
       ∑ i : Fin N, mu i * (mu i + (N : K) - 1 - 2 * (i : K)) := by
-  have hswap :
-      (∑ i : Fin N, ∑ j ∈ Finset.Ioi i, mu j) =
-        ∑ j : Fin N, ∑ _ ∈ Finset.Iio j, mu j := by
-    simp_rw [← Finset.filter_lt_eq_Ioi, Finset.sum_filter]
-    rw [Finset.sum_comm]
-    simp_rw [← Finset.sum_filter, Finset.filter_gt_eq_Iio]
-  simp_rw [Finset.sum_sub_distrib]
-  simp_rw [Finset.sum_const, nsmul_eq_mul, Fin.card_Ioi]
-  rw [hswap]
-  simp_rw [Finset.sum_const, nsmul_eq_mul, Fin.card_Iio]
-  rw [← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
-  apply Finset.sum_congr rfl
-  intro i _
-  have hi : (i : ℕ) + 1 ≤ N := by omega
-  rw [Nat.sub_sub, Nat.cast_sub (by simp [Nat.add_comm, hi])]
+  rw [← twoRhoPairing_def, twoRhoPairing_eq_sum_zsmul, ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [zsmul_eq_mul]
   push_cast
   ring
 
