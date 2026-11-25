@@ -32,7 +32,7 @@ by their analytic order `m(ρ)`.
 * `TauCeti.riemannZetaZerosClosedBall`: the zeros of `ζ` in a closed disc, as a `Finset`, and
   `TauCeti.finsum_window_eq_sum_filter`, which turns a sum over the zeros of a window into a
   `Finset` sum over any finite set containing them, such as the disc of radius `4` about
-  `2 + i t` (`TauCeti.mem_riemannZetaZerosClosedBall_two_add`).
+  `2 + i t` (`TauCeti.finsum_window_eq_sum_riemannZetaZerosClosedBall`).
 * `TauCeti.riemannZeta_logDeriv_window`: the window form of the local expansion of `ζ′/ζ`.
 * `TauCeti.riemannZeta_safe_height`: every `[T, T + 1]` with `T ≥ 2` contains a height `T′` with
   `ζ(σ ± i T′) ≠ 0` and `‖ζ′/ζ(σ ± i T′)‖ ≤ C log² (T + 2)` for `-1 ≤ σ ≤ 2`.
@@ -195,6 +195,17 @@ theorem finsum_window_eq_sum_filter {M : Type*} [AddCommMonoid M] {t : ℝ} {Z :
   rw [Finset.mem_filter]
   exact ⟨fun h ↦ ⟨hZ z h.1 h.2.1 h.2.2.1 h.2.2.2, h⟩, fun h ↦ h.2⟩
 
+/-- A sum over the zeros of the window at height `t`, as a `finsum` over a subtype, is the
+`Finset` sum over the window zeros in the disc of radius `4` about `2 + i t`. -/
+theorem finsum_window_eq_sum_riemannZetaZerosClosedBall {M : Type*} [AddCommMonoid M] (t : ℝ)
+    (f : ℂ → M)
+    [DecidablePred fun z : ℂ ↦ 0 < z.re ∧ z.re < 1 ∧ |z.im - t| ≤ 1 ∧ riemannZeta z = 0] :
+    ∑ᶠ ρ : {z : ℂ // 0 < z.re ∧ z.re < 1 ∧ |z.im - t| ≤ 1 ∧ riemannZeta z = 0}, f ρ =
+      ∑ z ∈ riemannZetaZerosClosedBall (2 + t * I) 4 with
+        0 < z.re ∧ z.re < 1 ∧ |z.im - t| ≤ 1 ∧ riemannZeta z = 0, f z :=
+  finsum_window_eq_sum_filter (fun _ h0 h1 him hζ ↦ mem_riemannZetaZerosClosedBall_two_add
+    (abs_le.mpr ⟨by linarith, by linarith⟩) (him.trans (by norm_num)) hζ) f
+
 /-- **The window form of the local expansion of `ζ′/ζ`.** There is a constant `C` such that for
 every `s ≠ 1` with `-1 ≤ Re s ≤ 2` and `ζ(s) ≠ 0`, `ζ′/ζ(s) + 1/(s - 1)` differs from
 `∑ m(ρ)/(s - ρ)` over the zeros `ρ` of `ζ` with `0 < Re ρ < 1` and `|Im ρ - Im s| ≤ 1`, counted
@@ -219,14 +230,10 @@ theorem riemannZeta_logDeriv_window :
   -- the zeros of `ζ` in the disc of radius `4` about `s₀`
   set Z := riemannZetaZerosClosedBall s₀ 4
   set W : ℂ → Prop := fun z ↦ 0 < z.re ∧ z.re < 1 ∧ |z.im - s.im| ≤ 1
-  have hWZ (z : ℂ) (h0 : 0 < z.re) (h1 : z.re < 1) (him : |z.im - s.im| ≤ 1)
-      (hζz : riemannZeta z = 0) : z ∈ Z :=
-    mem_riemannZetaZerosClosedBall_two_add (abs_le.mpr ⟨by linarith, by linarith⟩)
-      (him.trans (by norm_num)) hζz
   set f : ℂ → ℂ := fun z ↦ ((analyticOrderAt riemannZeta z).toNat : ℂ) / (s - z)
   have hwin : ∑ᶠ ρ : {z : ℂ // 0 < z.re ∧ z.re < 1 ∧ |z.im - s.im| ≤ 1 ∧ riemannZeta z = 0},
       f ρ = ∑ z ∈ Z with W z, f z := by
-    rw [finsum_window_eq_sum_filter hWZ f]
+    rw [finsum_window_eq_sum_riemannZetaZerosClosedBall s.im f]
     refine Finset.sum_congr (Finset.filter_congr fun z hz ↦ ?_) fun _ _ ↦ rfl
     exact ⟨fun h ↦ ⟨h.1, h.2.1, h.2.2.1⟩,
       fun h ↦ ⟨h.1, h.2.1, h.2.2, (mem_riemannZetaZerosClosedBall.mp hz).2⟩⟩

@@ -40,8 +40,8 @@ zero-free region `TauCeti.LFunctions.riemannZeta_zeroFreeRegion` every window ze
 `Re ρ ≤ 1 - 2β / L`, so `‖1/(s - ρ) - 1/(s₁ - ρ)‖ ≤ (2 + 1/(2β)) Re 1/(s₁ - ρ)`, and the sum of
 the `Re 1/(s₁ - ρ) ≥ 0` is at most the window sum at `s₁`, which is `O(L)`. The window sums at
 `s` and `s₁` are `Finset` sums over the zeros of `ζ` in the disc of radius `4` about `2 + i Im s`
-(`TauCeti.finsum_window_eq_sum_filter`). The choice `η = 1/(2L)` keeps `Re s₁ ≤ 2` at every
-height, so no compactness argument is needed at bounded height.
+(`TauCeti.finsum_window_eq_sum_riemannZetaZerosClosedBall`). The choice `η = 1/(2L)` keeps
+`Re s₁ ≤ 2` at every height, so no compactness argument is needed at bounded height.
 
 ## References
 
@@ -165,19 +165,22 @@ private lemma riemannZeta_ne_zero_of_one_sub_div_le {c β : ℝ}
     nlinarith
   exact hzf s hs1 (by linarith)
 
-/-- With a zero-free width `c` in the normalization `log (|Im s| + 3)`, every zero `z` of `ζ` with
-`|Im z - t| ≤ 1` has `Re z ≤ 1 - c / (2 log (|t| + 2))`. -/
-private lemma re_le_of_riemannZeta_eq_zero {c : ℝ}
+/-- With a zero-free width `c` in the normalization `log (|Im s| + 3)` and `β ≤ c / 4`, every
+zero `z` of `ζ` with `|Im z - t| ≤ 1` has `Re z ≤ 1 - 2β / log (|t| + 2)`. -/
+private lemma re_le_of_riemannZeta_eq_zero {c β : ℝ}
     (hzf : ∀ s : ℂ, s ≠ 1 → 1 - c / Real.log (|s.im| + 3) ≤ s.re → riemannZeta s ≠ 0)
-    {t : ℝ} {z : ℂ} (hzim : |z.im - t| ≤ 1) (hzζ : riemannZeta z = 0) :
-    z.re ≤ 1 - c / (2 * Real.log (|t| + 2)) := by
+    (hβc : β ≤ c / 4) {t : ℝ} {z : ℂ} (hzim : |z.im - t| ≤ 1) (hzζ : riemannZeta z = 0) :
+    z.re ≤ 1 - 2 * (β / Real.log (|t| + 2)) := by
+  have hLt : 0 < Real.log (|t| + 2) :=
+    (Real.log_pos one_lt_two).trans_le (Real.log_two_le_log_add_two (abs_nonneg t))
+  have hβ : 2 * (β / Real.log (|t| + 2)) ≤ c / (2 * Real.log (|t| + 2)) := by
+    rw [mul_div_assoc', div_le_div_iff₀ hLt (by positivity)]
+    nlinarith
+  suffices z.re ≤ 1 - c / (2 * Real.log (|t| + 2)) by linarith
   rcases le_or_gt c 0 with hc | hc
   · -- there are no zeros on `1 ≤ Re z`, and the width is not positive
     have hz1 : z.re < 1 := lt_of_not_ge fun h ↦ riemannZeta_ne_zero_of_one_le_re h hzζ
-    have : c / (2 * Real.log (|t| + 2)) ≤ 0 :=
-      div_nonpos_of_nonpos_of_nonneg hc (by
-        have := Real.log_nonneg (by linarith [abs_nonneg t] : (1 : ℝ) ≤ |t| + 2)
-        positivity)
+    have : c / (2 * Real.log (|t| + 2)) ≤ 0 := div_nonpos_of_nonpos_of_nonneg hc (by positivity)
     linarith
   have hz1' : z ≠ 1 := by rintro rfl; exact riemannZeta_one_ne_zero hzζ
   have hlt := lt_of_not_ge fun h ↦ hzf z hz1' h hzζ
@@ -224,20 +227,15 @@ private lemma norm_logDeriv_add_one_div_le_of_re_lt {Cw CN c β : ℝ}
   have hζ₁ : riemannZeta s₁ ≠ 0 := riemannZeta_ne_zero_of_one_lt_re (by linarith)
   -- both window sums run over the window zeros in the disc of radius `4` about `2 + i t`
   classical
-  have hZ (z : ℂ) (h0 : 0 < z.re) (h1 : z.re < 1) (him : |z.im - t| ≤ 1)
-      (hζz : riemannZeta z = 0) : z ∈ riemannZetaZerosClosedBall (2 + t * I) 4 :=
-    mem_riemannZetaZerosClosedBall_two_add (abs_le.mpr ⟨by linarith, by linarith⟩)
-      (him.trans (by norm_num)) hζz
   set W := {z ∈ riemannZetaZerosClosedBall (2 + t * I) 4 |
     0 < z.re ∧ z.re < 1 ∧ |z.im - t| ≤ 1 ∧ riemannZeta z = 0}
-  have hW (z : ℂ) (hz : z ∈ W) : |z.im - t| ≤ 1 ∧ riemannZeta z = 0 :=
-    (Finset.mem_filter.mp hz).2.2.2
   set m : ℂ → ℕ := fun z ↦ (analyticOrderAt riemannZeta z).toNat
   have hw := hCw s (by linarith) (by linarith) hs1
     (riemannZeta_ne_zero_of_one_sub_div_le hzf hβc hs)
   have hw₁ := hCw s₁ (by linarith) (by linarith) hs₁1 hζ₁
-  rw [← ht, finsum_window_eq_sum_filter hZ fun z ↦ (m z : ℂ) / (s - z)] at hw
-  rw [hs₁im, finsum_window_eq_sum_filter hZ fun z ↦ (m z : ℂ) / (s₁ - z)] at hw₁
+  rw [← ht, finsum_window_eq_sum_riemannZetaZerosClosedBall t fun z ↦ (m z : ℂ) / (s - z)] at hw
+  rw [hs₁im, finsum_window_eq_sum_riemannZetaZerosClosedBall t fun z ↦ (m z : ℂ) / (s₁ - z)]
+    at hw₁
   set H := deriv riemannZeta s / riemannZeta s + 1 / (s - 1)
   set H₁ := deriv riemannZeta s₁ / riemannZeta s₁ + 1 / (s₁ - 1)
   set S₀ := ∑ z ∈ W, (m z : ℂ) / (s - z)
@@ -251,12 +249,8 @@ private lemma norm_logDeriv_add_one_div_le_of_re_lt {Cw CN c β : ℝ}
   -- every window zero lies on `Re z ≤ 1 - 2β/L`
   have hzero : ∀ z ∈ W, z.re ≤ 1 - 2 * (β / L) := by
     intro z hz
-    obtain ⟨hzim, hzζ⟩ := hW z hz
-    have := re_le_of_riemannZeta_eq_zero hzf hzim hzζ
-    have : 2 * (β / L) ≤ c / (2 * L) := by
-      rw [mul_div_assoc', div_le_div_iff₀ (by linarith) (by linarith)]
-      nlinarith
-    linarith
+    obtain ⟨-, -, -, hzim, hzζ⟩ := Finset.mem_filter.mp hz
+    exact re_le_of_riemannZeta_eq_zero hzf hβc hzim hzζ
   have hS := norm_sum_div_sub_sub_sum_div_sub_le (div_pos hβ (by linarith)) hη hs₁re hs₁im
     (by linarith) hsη hzero m
   rw [show η / (β / L) = 1 / (2 * β) by simp only [η]; field_simp] at hS
