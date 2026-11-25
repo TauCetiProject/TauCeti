@@ -186,10 +186,10 @@ theorem nonempty_linearEquiv_semisimplification_prod_quotient (N : Submodule R M
 
 /-- The semisimplification of the zero module is zero. -/
 instance subsingleton_semisimplification [Subsingleton M] :
-    Subsingleton (semisimplification R M) := by
-  have h := compositionSeries_length_eq_zero_of_subsingleton
-    (exists_compositionSeries_of_isNoetherian_isArtinian R M).choose
-  refine ⟨fun x y ↦ funext fun i ↦ ?_⟩
-  exact absurd i.isLt (by omega)
+    Subsingleton (semisimplification R M) :=
+  have : IsEmpty (Fin (exists_compositionSeries_of_isNoetherian_isArtinian R M).choose.length) := by
+    rw [compositionSeries_length_eq_zero_of_subsingleton]
+    infer_instance
+  inferInstanceAs (Subsingleton (seriesSemisimplification _))
 
 end TauCeti
