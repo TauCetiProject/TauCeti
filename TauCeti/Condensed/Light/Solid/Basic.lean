@@ -23,7 +23,9 @@ condensed module `Z`. So solid modules are the local objects for an explicit fam
 indexed by light profinite sets, and they are closed under all limits.
 
 This is the null-sequence criterion of Rodríguez Camargo, *Notes on Solid Geometry*,
-Definition 3.2.1, over a commutative coefficient ring.
+Definition 3.2.1, over a commutative coefficient ring; see also Wagner, *q-de Rham cohomology and
+topological Hochschild homology over ku*, §2.1. The tensor criterion and the closure under limits
+are formal consequences of the tensor–Hom adjunction and of the general theory of local objects.
 -/
 
 public section
@@ -159,17 +161,8 @@ variable (R) in
 /-- The test map indexed by a light profinite set `S` is a null-sequence test map. -/
 lemma nullSeqTest_mk (S : LightProfinite.{u}) :
     nullSeqTest R
-      (𝟙 (nullSeq R ⊗ (free R).obj S.toCondensed) - nullShift R ▷ (free R).obj S.toCondensed) := by
-  rw [nullSeqTest_def]
-  exact MorphismProperty.ofHoms.mk S
-
-/-- A morphism is a null-sequence test map exactly when it is isomorphic, as an arrow, to the
-test map indexed by some light profinite set. -/
-lemma nullSeqTest_iff {X Y : LightCondMod R} (f : X ⟶ Y) :
-    nullSeqTest R f ↔ ∃ S : LightProfinite.{u}, Arrow.mk f =
-      Arrow.mk (𝟙 (nullSeq R ⊗ (free R).obj S.toCondensed) -
-        nullShift R ▷ (free R).obj S.toCondensed) := by
-  rw [nullSeqTest_def, MorphismProperty.ofHoms_iff]
+      (𝟙 (nullSeq R ⊗ (free R).obj S.toCondensed) - nullShift R ▷ (free R).obj S.toCondensed) :=
+  MorphismProperty.ofHoms.mk S
 
 variable (R) in
 /-- Solid modules are the local objects for the null-sequence test maps. -/

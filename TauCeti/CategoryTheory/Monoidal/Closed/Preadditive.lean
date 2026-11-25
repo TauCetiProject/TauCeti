@@ -85,17 +85,15 @@ end Linear
 additive. -/
 lemma uncurry_sub {C : Type*} [Category* C] [MonoidalCategory C] [Preadditive C] {A B X : C}
     [Closed A] [(tensorLeft A).Additive] (f g : B ⟶ A ⟶[C] X) :
-    uncurry (f - g) = uncurry f - uncurry g := by
-  have h : A ◁ (f - g) = A ◁ f - A ◁ g := (tensorLeft A).map_sub
-  rw [uncurry_eq, h, Preadditive.sub_comp, uncurry_eq, uncurry_eq]
+    uncurry (f - g) = uncurry f - uncurry g :=
+  (ihom.adjunction A).homAddEquiv_symm_sub _ _ f g
 
 /-- Currying commutes with subtraction when tensoring on the left by the closed object is
 additive. -/
 lemma curry_sub {C : Type*} [Category* C] [MonoidalCategory C] [Preadditive C] {A B X : C}
     [Closed A] [(tensorLeft A).Additive] (f g : A ⊗ B ⟶ X) :
-    curry (f - g) = curry f - curry g := by
-  apply uncurry_injective
-  rw [uncurry_sub, uncurry_curry, uncurry_curry, uncurry_curry]
+    curry (f - g) = curry f - curry g :=
+  (ihom.adjunction A).homAddEquiv_sub _ _ f g
 
 variable {C : Type*} [Category* C] [MonoidalCategory C] [BraidedCategory C] [Preadditive C]
 variable (X Y Z : C) [Closed Y] [(tensorLeft Y).Additive]
