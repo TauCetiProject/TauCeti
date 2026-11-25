@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import TauCeti.Analysis.ODE.DysonSeries
 public import TauCeti.LinearAlgebra.Determinant.Endomorphism
+public import TauCeti.Topology.Instances.AddCircle.Cover
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Analysis.Calculus.PeriodicDeriv
@@ -88,6 +89,11 @@ differ by the sign of `det (ε - P)`
 (`TauCeti.sign_detLineEndEquiv_detLineTwistedLinearOperatorEquiv`). For the orbit-torus operators
 this is the sign of `det (1 - P)` or `det (-1 - P)`.
 
+A loop `S` on `AddCircle d` traversed `n` times is the loop `AddCircle.coverPullback n S` of period
+`n d`, and its propagator over that period is `Ψ(d) ^ n`
+(`TauCeti.dysonSeriesLeft_coverPullback`): the return map of the `n`-fold iterate of a periodic
+orbit is the `n`-th power of its return map.
+
 ## Main definitions
 
 * `TauCeti.twistedContinuous X d ε`, `TauCeti.twistedContDiff X d ε`: the continuous and the `C¹`
@@ -120,6 +126,8 @@ this is the sign of `det (1 - P)` or `det (-1 - P)`.
   `det (ε - Ψ(d))`.
 * `TauCeti.exists_forall_integral_norm_sq_le_mul_integral_norm_sq`: the `L²` estimate for twisted
   solutions when `ε - Ψ(d)` is invertible.
+* `TauCeti.dysonSeriesLeft_coverPullback`: the return map of a loop traversed `n` times is
+  `Ψ(d) ^ n`.
 
 ## References
 
@@ -684,5 +692,20 @@ theorem sign_detLineEndEquiv_detLineTwistedLinearOperatorEquiv (hM : Continuous 
     TauCeti.sign_inv]
 
 end DeterminantLine
+
+section CoverPullback
+
+/-- **The return map of a loop traversed `n` times.** For a continuous loop `S` on `AddCircle d`,
+read with period `n d` through the `n`-sheeted covering (`AddCircle.coverPullback`), the propagator
+over the period `n d` is the `n`-th power of the return map `Ψ(d)` of `S`. -/
+theorem dysonSeriesLeft_coverPullback {B : Type*} [NormedRing B] [NormedAlgebra ℝ B]
+    [CompleteSpace B] (n : ℕ) (S : C(AddCircle d, B)) :
+    dysonSeriesLeft (fun t : ℝ ↦ AddCircle.coverPullback n S t) (n * d) =
+      dysonSeriesLeft (fun t : ℝ ↦ S t) d ^ n := by
+  simp only [AddCircle.coverPullback_coe]
+  exact dysonSeriesLeft_natCast_mul_of_periodic (AddCircle.continuous_comp_coe S)
+    (AddCircle.periodic_comp_coe S) n
+
+end CoverPullback
 
 end TauCeti
