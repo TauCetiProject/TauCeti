@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Shift
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.BalancedProduct
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.OrbitFiberProduct
 
+import TauCeti.Geometry.Manifold.Diffeomorph.Subtype
 import TauCeti.Geometry.Manifold.Submersion.Split
 
 /-!
@@ -53,15 +54,15 @@ identity `q_Y^* ω_red = i_Y^* σ - pr_Y^* ω_KKS` on `Y_O`
 (`existsUnique_isSymplectic_mpullback_orbitProj_eq_sub`), and pullback along a diffeomorphism is
 injective. Consequently `pr_M^* σ - pr_O^* ω_KKS` is a closed two-form on `W_O` whose null space at
 each point is the kernel of the differential of `q_W`
-(`isClosed_and_ker_bilinFormAt_sub_eq_ker_mfderiv_orbitFiberProductProj`): its null leaves are the
-`G`-orbits of `W_O`.
+(`isClosed_and_ker_bilinFormAt_sub_eq_ker_mfderiv_orbitFiberProductProj`): its null spaces are
+the tangent spaces of the fibres of `q_W`, which are the `G`-orbits of `W_O`.
 
 **The shifting construction.** The points of `W_O` are the zeros of the shifting map
 `Ψ(x, o) = μ(x) - ι_O(o)` on `M × O`, the moment map of the diagonal action on `M × O⁻`, where `O⁻`
 carries `-ω_KKS`. Zero is a regular value of `Ψ`
 (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.isRegularValue_sub_orbitMap`), and the identity of
 points is a diffeomorphism from the transverse fibre-product atlas of `W_O` to the regular-fibre
-atlas of `Ψ⁻¹(0)`
+atlas of `Ψ⁻¹(0)` (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.shiftingLevelChartedSpace`)
 (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitFiberProductDiffeomorphShiftingLevel`), since
 both make the inclusion into `M × O` a smooth embedding. Read on `Ψ⁻¹(0)` through it, the orbit
 projection `q_O (x, g G_c) = [g⁻¹ • x]` satisfies `q_O^* ω_red = pr_M^* σ - pr_O^* ω_KKS`, and
@@ -75,6 +76,8 @@ constructed here.
 
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitFiberProductProj`: the orbit projection
   `q_W : W_O → μ⁻¹(c) ⧸ G_c`, `(x, g G_c) ↦ [g⁻¹ • x]`.
+* `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.shiftingLevelChartedSpace`: the regular-fibre
+  atlas of the zero level `Ψ⁻¹(0)` of the shifting map.
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitFiberProductDiffeomorphShiftingLevel`: the
   identity of points `W_O ≃ Ψ⁻¹(0)` as a diffeomorphism of the two atlases.
 
@@ -190,10 +193,8 @@ theorem orbitFiberProductProj_eq_orbitFiberProductProj_iff {p p' : OrbitFiberPro
     obtain ⟨k, hk⟩ := Quotient.exact hq
     have hk' : (k : G) • g'⁻¹ • p'.val.1 = g⁻¹ • p.val.1 := congrArg Subtype.val hk
     refine ⟨g' * (k : G)⁻¹ * g⁻¹, Prod.ext ?_ ?_⟩
-    · rw [Prod.smul_fst, mul_smul, mul_smul, ← hk', inv_smul_smul, smul_inv_smul]
-    · rw [Prod.smul_snd, ← hg, ← hg', MulAction.Quotient.smul_mk, smul_eq_mul, inv_mul_cancel_right,
-        QuotientGroup.eq]
-      simp [mul_assoc]
+    · simp [mul_smul, ← hk']
+    · simp [← hg, ← hg', mul_assoc]
   · rintro ⟨k, hk⟩
     -- `k g G_c = g' G_c`, so `g' = k g h` for some `h ∈ G_c`, and `g'⁻¹ • x' = h⁻¹ • g⁻¹ • x`.
     have hx : k • p.val.1 = p'.val.1 := congrArg Prod.fst hk
@@ -420,7 +421,8 @@ theorem existsUnique_isSymplectic_mpullback_orbitFiberProductProj_eq_sub (hσ : 
 hypotheses of the Marsden–Weinstein–Meyer theorem, the two-form `pr_M^* σ - pr_O^* ω_KKS` on
 `W_O = {(x, o) ∈ M × O | μ(x) = ι_O(o)}` is closed, and its null space at each point is the kernel
 of the differential of the orbit projection `q_W : W_O → μ⁻¹(c) ⧸ G_c`. So the null distribution
-of this form is the vertical bundle `ker d q_W`, whose fibres are the `G`-orbits of `W_O`
+of this form is `ker d q_W`, the tangent distribution to the fibres of `q_W`, which are the
+`G`-orbits of `W_O`
 (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitFiberProductProj_eq_orbitFiberProductProj_iff`).
 -/
 theorem isClosed_and_ker_bilinFormAt_sub_eq_ker_mfderiv_orbitFiberProductProj
@@ -484,17 +486,61 @@ theorem isRegularValue_sub_orbitMap :
       (by simp))
     fun o ↦ ⟨o.out, by rw [← Representation.orbitMap_mk, QuotientGroup.out_eq']⟩
 
+variable (c) in
+/-- **The regular-fibre atlas on the zero level of the shifting map** `Ψ(x, o) = μ(x) - ι_O(o)` on
+`M × G ⧸ G_c`, read in the basis `b`: the atlas `TauCeti.regularFiberChartedSpace` of the regular
+value zero (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.isRegularValue_sub_orbitMap`). -/
+@[instance_reducible]
+def shiftingLevelChartedSpace :
+    ChartedSpace (Fin (finrank ℝ
+        (E' × Subgroup.QuotientModelSpace I ((Lie.coadjointRepresentation ℝ I G).stabilizer c)) -
+          finrank ℝ (κ → ℝ)) → ℝ)
+      {p : M × G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c //
+        (fun i ↦ μ p.1 (b i) - (Lie.coadjointRepresentation ℝ I G).orbitMap c p.2 (b i)) = 0} :=
+  regularFiberChartedSpace (by simp)
+    (h.toIsMomentMap.contMDiff_sub b (c.contMDiff_orbitMap_coadjointRepresentation_components b))
+    BoundarylessManifold.isInteriorPoint (h.isRegularValue_sub_orbitMap hreg b)
+
+/-- **The zero level of the shifting map is a smooth manifold**, for the atlas
+`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.shiftingLevelChartedSpace`. -/
+theorem isManifold_shiftingLevel :
+    letI := h.shiftingLevelChartedSpace c hreg b
+    IsManifold 𝓘(ℝ, Fin (finrank ℝ
+        (E' × Subgroup.QuotientModelSpace I ((Lie.coadjointRepresentation ℝ I G).stabilizer c)) -
+          finrank ℝ (κ → ℝ)) → ℝ) ∞
+      {p : M × G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c //
+        (fun i ↦ μ p.1 (b i) - (Lie.coadjointRepresentation ℝ I G).orbitMap c p.2 (b i)) = 0} :=
+  isManifold_regularFiber (by simp)
+    (h.toIsMomentMap.contMDiff_sub b (c.contMDiff_orbitMap_coadjointRepresentation_components b))
+    BoundarylessManifold.isInteriorPoint (h.isRegularValue_sub_orbitMap hreg b)
+
+/-- **The zero level of the shifting map is an embedded submanifold** of `M × G ⧸ G_c`: for the
+atlas `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.shiftingLevelChartedSpace`, its inclusion is a
+smooth embedding. -/
+theorem isSmoothEmbedding_coe_shiftingLevel :
+    letI := h.shiftingLevelChartedSpace c hreg b
+    IsSmoothEmbedding 𝓘(ℝ, Fin (finrank ℝ
+        (E' × Subgroup.QuotientModelSpace I ((Lie.coadjointRepresentation ℝ I G).stabilizer c)) -
+          finrank ℝ (κ → ℝ)) → ℝ)
+      (I'.prod
+        𝓘(ℝ, Subgroup.QuotientModelSpace I ((Lie.coadjointRepresentation ℝ I G).stabilizer c)))
+      ∞ (Subtype.val : {p : M × G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c //
+        (fun i ↦ μ p.1 (b i) - (Lie.coadjointRepresentation ℝ I G).orbitMap c p.2 (b i)) = 0} →
+          M × G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c) :=
+  isSmoothEmbedding_coe_regularFiber (by simp)
+    (h.toIsMomentMap.contMDiff_sub b (c.contMDiff_orbitMap_coadjointRepresentation_components b))
+    BoundarylessManifold.isInteriorPoint (h.isRegularValue_sub_orbitMap hreg b)
+
 /-- **The orbit fibre product is the zero level of the shifting map.** The pairs `(x, o)` of
 `M × G ⧸ G_c` with `μ(x) = ι_O(o)` are the zeros of the shifting map `Ψ(x, o) = μ(x) - ι_O(o)`,
 and the identity of these points is a diffeomorphism from the transverse fibre-product atlas of
 `W_O` (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitFiberProductChartedSpace`) to the
-regular-fibre atlas of `Ψ⁻¹(0)` (`TauCeti.regularFiberChartedSpace`), both maps being read in
-the basis `b`. -/
+regular-fibre atlas of `Ψ⁻¹(0)`
+(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.shiftingLevelChartedSpace`), both maps being read
+in the basis `b`. -/
 def orbitFiberProductDiffeomorphShiftingLevel :
     letI := h.orbitFiberProductChartedSpace c hreg b
-    letI := regularFiberChartedSpace (by simp)
-      (h.toIsMomentMap.contMDiff_sub b (c.contMDiff_orbitMap_coadjointRepresentation_components b))
-      BoundarylessManifold.isInteriorPoint (h.isRegularValue_sub_orbitMap hreg b)
+    letI := h.shiftingLevelChartedSpace c hreg b
     OrbitFiberProduct μ c b ≃ₘ⟮𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ
         (Subgroup.QuotientModelSpace I ((Lie.coadjointRepresentation ℝ I G).stabilizer c)) -
           finrank ℝ (κ → ℝ)) → ℝ),
@@ -504,30 +550,43 @@ def orbitFiberProductDiffeomorphShiftingLevel :
       {p : M × G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c //
         (fun i ↦ μ p.1 (b i) - (Lie.coadjointRepresentation ℝ I G).orbitMap c p.2 (b i)) = 0} :=
   letI := h.orbitFiberProductChartedSpace c hreg b
-  letI := regularFiberChartedSpace (by simp)
-    (h.toIsMomentMap.contMDiff_sub b (c.contMDiff_orbitMap_coadjointRepresentation_components b))
-    BoundarylessManifold.isInteriorPoint (h.isRegularValue_sub_orbitMap hreg b)
-  have hW := h.isSmoothEmbedding_coe_orbitFiberProduct hreg b
-  have hΨ := isSmoothEmbedding_coe_regularFiber (by simp)
-    (h.toIsMomentMap.contMDiff_sub b (c.contMDiff_orbitMap_coadjointRepresentation_components b))
-    BoundarylessManifold.isInteriorPoint (h.isRegularValue_sub_orbitMap hreg b)
-  -- Both atlases make the inclusion into `M × G ⧸ G_c` a smooth embedding, and the identity of
-  -- points commutes with the two inclusions.
-  { toEquiv := Equiv.subtypeEquivRight fun _ ↦ by simp [funext_iff, sub_eq_zero]
-    contMDiff_toFun := hΨ.contMDiff_iff_comp.2 hW.contMDiff
-    contMDiff_invFun := hW.contMDiff_iff_comp.2 hΨ.contMDiff }
+  letI := h.shiftingLevelChartedSpace c hreg b
+  -- Both atlases make the inclusion into `M × G ⧸ G_c` a smooth embedding, so the identity of
+  -- `M × G ⧸ G_c` restricts to a diffeomorphism between them.
+  (Diffeomorph.refl _ (M × G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c)
+    ∞).subtypeOfIsSmoothEmbedding
+    (s := {p | (fun i ↦ μ p.1 (b i)) =
+      fun i ↦ (Lie.coadjointRepresentation ℝ I G).orbitMap c p.2 (b i)})
+    (t := {p | (fun i ↦ μ p.1 (b i) - (Lie.coadjointRepresentation ℝ I G).orbitMap c p.2 (b i)) =
+      0})
+    (h.isSmoothEmbedding_coe_orbitFiberProduct hreg b)
+    (h.isSmoothEmbedding_coe_shiftingLevel hreg b) fun _ ↦ by simp [funext_iff, sub_eq_zero]
 
 /-- The identification of the orbit fibre product with the zero level of the shifting map is the
 identity on points. -/
 @[simp]
 theorem coe_orbitFiberProductDiffeomorphShiftingLevel (p : OrbitFiberProduct μ c b) :
     letI := h.orbitFiberProductChartedSpace c hreg b
-    letI := regularFiberChartedSpace (by simp)
-      (h.toIsMomentMap.contMDiff_sub b (c.contMDiff_orbitMap_coadjointRepresentation_components b))
-      BoundarylessManifold.isInteriorPoint (h.isRegularValue_sub_orbitMap hreg b)
+    letI := h.shiftingLevelChartedSpace c hreg b
     (h.orbitFiberProductDiffeomorphShiftingLevel hreg b p :
-        M × G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c) = p.val :=
-  (rfl)
+        M × G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c) = p.val := by
+  let _ := h.orbitFiberProductChartedSpace c hreg b
+  let _ := h.shiftingLevelChartedSpace c hreg b
+  exact Diffeomorph.subtypeOfIsSmoothEmbedding_apply_coe ..
+
+/-- The inverse identification of the zero level of the shifting map with the orbit fibre product
+is the identity on points. -/
+@[simp]
+theorem coe_orbitFiberProductDiffeomorphShiftingLevel_symm
+    (q : {p : M × G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c //
+      (fun i ↦ μ p.1 (b i) - (Lie.coadjointRepresentation ℝ I G).orbitMap c p.2 (b i)) = 0}) :
+    letI := h.orbitFiberProductChartedSpace c hreg b
+    letI := h.shiftingLevelChartedSpace c hreg b
+    (((h.orbitFiberProductDiffeomorphShiftingLevel hreg b).symm q : OrbitFiberProduct μ c b) :
+        M × G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c) = q.val := by
+  let _ := h.orbitFiberProductChartedSpace c hreg b
+  let _ := h.shiftingLevelChartedSpace c hreg b
+  exact Diffeomorph.subtypeOfIsSmoothEmbedding_symm_apply_coe ..
 
 variable [ProperSMul G M]
   [IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c)] {n : ℕ}
@@ -555,12 +614,8 @@ theorem existsUnique_isSymplectic_mpullback_orbitFiberProductProj_comp_symm_eq_s
       (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ) :
     letI := h.orbitFiberProductChartedSpace c hreg b
     haveI := h.isManifold_orbitFiberProduct hreg b
-    letI := regularFiberChartedSpace (by simp)
-      (h.toIsMomentMap.contMDiff_sub b (c.contMDiff_orbitMap_coadjointRepresentation_components b))
-      BoundarylessManifold.isInteriorPoint (h.isRegularValue_sub_orbitMap hreg b)
-    haveI := isManifold_regularFiber (by simp)
-      (h.toIsMomentMap.contMDiff_sub b (c.contMDiff_orbitMap_coadjointRepresentation_components b))
-      BoundarylessManifold.isInteriorPoint (h.isRegularValue_sub_orbitMap hreg b)
+    letI := h.shiftingLevelChartedSpace c hreg b
+    haveI := h.isManifold_shiftingLevel hreg b
     letI := h.orbitRelQuotientChartedSpace c hreg hn d
     haveI := h.isManifold_orbitRelQuotient hreg hn d
     ∃! η : SmoothTwoForm 𝓘(ℝ, ProperSMul.QuotientModelSpace F (Fin n → ℝ))
@@ -576,30 +631,18 @@ theorem existsUnique_isSymplectic_mpullback_orbitFiberProductProj_comp_symm_eq_s
               (fun p : {p : M × G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c //
                 (fun i ↦ μ p.1 (b i) - (Lie.coadjointRepresentation ℝ I G).orbitMap c p.2 (b i)) =
                   0} ↦ p.val.1)
-              (contMDiff_fst.comp (isSmoothEmbedding_coe_regularFiber (by simp)
-                (h.toIsMomentMap.contMDiff_sub b
-                  (c.contMDiff_orbitMap_coadjointRepresentation_components b))
-                BoundarylessManifold.isInteriorPoint
-                (h.isRegularValue_sub_orbitMap hreg b)).contMDiff)
+              (contMDiff_fst.comp (h.isSmoothEmbedding_coe_shiftingLevel hreg b).contMDiff)
               σ -
             SmoothForm.mpullback
               (fun p : {p : M × G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c //
                 (fun i ↦ μ p.1 (b i) - (Lie.coadjointRepresentation ℝ I G).orbitMap c p.2 (b i)) =
                   0} ↦ p.val.2)
-              (contMDiff_snd.comp (isSmoothEmbedding_coe_regularFiber (by simp)
-                (h.toIsMomentMap.contMDiff_sub b
-                  (c.contMDiff_orbitMap_coadjointRepresentation_components b))
-                BoundarylessManifold.isInteriorPoint
-                (h.isRegularValue_sub_orbitMap hreg b)).contMDiff)
+              (contMDiff_snd.comp (h.isSmoothEmbedding_coe_shiftingLevel hreg b).contMDiff)
               c.coadjointOrbitForm := by
   let _ := h.orbitFiberProductChartedSpace c hreg b
   have := h.isManifold_orbitFiberProduct hreg b
-  let _ := regularFiberChartedSpace (by simp)
-    (h.toIsMomentMap.contMDiff_sub b (c.contMDiff_orbitMap_coadjointRepresentation_components b))
-    BoundarylessManifold.isInteriorPoint (h.isRegularValue_sub_orbitMap hreg b)
-  have := isManifold_regularFiber (by simp)
-    (h.toIsMomentMap.contMDiff_sub b (c.contMDiff_orbitMap_coadjointRepresentation_components b))
-    BoundarylessManifold.isInteriorPoint (h.isRegularValue_sub_orbitMap hreg b)
+  let _ := h.shiftingLevelChartedSpace c hreg b
+  have := h.isManifold_shiftingLevel hreg b
   let _ := h.orbitRelQuotientChartedSpace c hreg hn d
   have := h.isManifold_orbitRelQuotient hreg hn d
   set e := h.orbitFiberProductDiffeomorphShiftingLevel hreg b
