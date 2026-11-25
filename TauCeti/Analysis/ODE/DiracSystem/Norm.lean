@@ -130,9 +130,9 @@ theorem norm_toEuclideanCLM_diracFundamentalMatrix_const_zero (c : ℂ) (ht : 0 
   have hMv : diracFundamentalMatrix (fun _ ↦ c) t 0 *ᵥ v = (Real.exp (t * ‖c‖) : ℂ) • v := by
     have h : Real.sinh (t * ‖c‖) / ‖c‖ * ‖c‖ = Real.sinh (t * ‖c‖) :=
       div_mul_cancel_of_imp fun h ↦ by simp [h]
-    rw [← Real.cosh_add_sinh, ← h, diracFundamentalMatrix_const_zero, ← diracCoeff_const_zero c 0,
-      add_mulVec, smul_mulVec, smul_mulVec, hKv, one_mulVec, smul_smul, ← add_smul]
-    norm_cast
+    rw [diracFundamentalMatrix_const_zero, ← diracCoeff_const_zero c 0]
+    simp only [add_mulVec, smul_mulVec, hKv, one_mulVec, smul_smul, ← add_smul,
+      ← Complex.ofReal_mul, h, ← Complex.ofReal_add, Real.cosh_add_sinh]
   have hvn : 0 < ‖(WithLp.toLp 2 v : EuclideanSpace ℂ (Fin 2))‖ :=
     norm_pos_iff.2 fun h ↦ hv (by simpa using congrArg WithLp.ofLp h)
   have hle := (toEuclideanCLM (n := Fin 2) (𝕜 := ℂ)
