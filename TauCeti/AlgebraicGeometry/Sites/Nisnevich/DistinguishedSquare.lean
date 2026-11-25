@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Subscheme
 public import TauCeti.AlgebraicGeometry.Sites.Nisnevich.Basic
 import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
+import TauCeti.CategoryTheory.MorphismProperty.Limits
 import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 
 /-!
@@ -198,12 +199,9 @@ noncomputable def pullback : ElementaryDistinguishedSquare Y where
       exact AlgebraicGeometry.Scheme.IdealSheafData.vanishingIdeal_le_ker_of_range_subset _ hrange
     -- `Z' ⟶ Y ⟶ X` factors through `Z ⟶ X`.
     have hh := IsClosedImmersion.lift_fac I.subschemeι (I'.subschemeι ≫ g) hker
-    -- Paste the base change of `p` to `Z'` with the base change of `p` along `g`, and cancel the
-    -- base change of `p` to `Z`.
-    have hpaste := (IsPullback.of_hasPullback (Limits.pullback.snd Q.p g) I'.subschemeι).paste_horiz
-      (IsPullback.of_hasPullback Q.p g)
-    rw [← hh] at hpaste
-    exact (hpaste.of_right' (IsPullback.of_hasPullback Q.p I.subschemeι)).isIso_snd_of_isIso
+    -- So the base change of `p` to `Z'` is a base change of the isomorphism `p⁻¹(Z) ⟶ Z`.
+    exact MorphismProperty.pullback_snd_pullback_snd (P := .isomorphisms _) Q.p g I'.subschemeι
+      I.subschemeι _ hh.symm Q.isIso_pullback_snd
 
 @[simp]
 lemma pullback_j : (Q.pullback g).j = Limits.pullback.snd Q.j g :=
