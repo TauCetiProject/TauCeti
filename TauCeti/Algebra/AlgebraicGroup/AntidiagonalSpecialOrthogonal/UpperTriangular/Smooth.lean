@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.AntidiagonalSpecialOrthogonal.UpperTriangular
+public import TauCeti.Algebra.AlgebraicGroup.AntidiagonalSpecialOrthogonal.UpperTriangular.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.SmoothConnected
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.CommHopfAlgCat
 public import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
