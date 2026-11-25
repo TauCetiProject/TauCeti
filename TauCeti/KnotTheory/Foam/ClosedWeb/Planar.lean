@@ -12,7 +12,6 @@ public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.GroupTheory.GroupAction.Closure
 import TauCeti.GroupTheory.Perm.SumCongr
-import TauCeti.GroupTheory.Perm.SwapFactors
 
 /-!
 # Compatible planarity of closed webs
