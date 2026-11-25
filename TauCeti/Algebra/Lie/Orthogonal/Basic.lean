@@ -42,6 +42,7 @@ hyperbolic pairs, and symmetry and invertibility of the split odd orthogonal Gra
 * `LieAlgebra.Orthogonal.isUnit_indefiniteDiagonal`: the Gram matrix of the indefinite form is
   invertible.
 * `LieAlgebra.Orthogonal.indefiniteDiagonal_mul_indefiniteDiagonal`,
+  `LieAlgebra.Orthogonal.indefiniteDiagonal_mul_indefiniteDiagonal_mul`,
   `LieAlgebra.Orthogonal.inv_indefiniteDiagonal`,
   `LieAlgebra.Orthogonal.indefiniteDiagonal_apply_self_eq_one_or_eq_neg_one`,
   `LieAlgebra.Orthogonal.indefiniteDiagonal_apply_self_ne_zero`,
@@ -53,6 +54,11 @@ hyperbolic pairs, and symmetry and invertibility of the split odd orthogonal Gra
 * `LieAlgebra.Orthogonal.indefiniteDiagonal_mulVec_apply` and
   `LieAlgebra.Orthogonal.vecMul_indefiniteDiagonal_apply`: it scales the coordinates of a vector by
   its diagonal entries.
+* `LieAlgebra.Orthogonal.mem_so'` and `LieAlgebra.Orthogonal.mem_so'_iff_forall`: membership in
+  the indefinite orthogonal Lie algebra is the matrix equation `Xᵀ J = J (-X)`, or entrywise.
+* `LieAlgebra.Orthogonal.transpose_mem_so'` and `LieAlgebra.Orthogonal.conjTranspose_mem_so'`: the
+  indefinite orthogonal Lie algebra is closed under transpose, and under conjugate transpose over
+  a star ring.
 * `LieAlgebra.Orthogonal.isSymm_JD`: the split even orthogonal Gram matrix is symmetric.
 * `LieAlgebra.Orthogonal.toBilin'_JD_comp_sumMap`: the split even orthogonal form is unchanged by
   renaming its hyperbolic pairs along an equivalence.
@@ -103,6 +109,14 @@ theorem indefiniteDiagonal_mul_indefiniteDiagonal :
   rw [indefiniteDiagonal, diagonal_mul_diagonal, ← diagonal_one]
   congr 1
   ext (i | i) <;> simp
+
+open Matrix in
+/-- Multiplying twice on the left by the Gram matrix `diag(1, …, 1, -1, …, -1)` of the indefinite
+form is the identity. -/
+@[simp]
+theorem indefiniteDiagonal_mul_indefiniteDiagonal_mul {m : Type*} (A : Matrix (p ⊕ q) m R) :
+    indefiniteDiagonal p q R * (indefiniteDiagonal p q R * A) = A := by
+  rw [← Matrix.mul_assoc, indefiniteDiagonal_mul_indefiniteDiagonal, Matrix.one_mul]
 
 open Matrix in
 /-- The Gram matrix `diag(1, …, 1, -1, …, -1)` of the indefinite form is its own inverse. -/
@@ -161,6 +175,44 @@ omit [Fintype p] [Fintype q] in
 theorem star_indefiniteDiagonal [StarRing R] :
     star (indefiniteDiagonal p q R) = indefiniteDiagonal p q R :=
   isHermitian_indefiniteDiagonal
+
+open Matrix in
+/-- Membership in `𝔰𝔬(p, q)` is skew-adjointness for the indefinite Gram matrix `J`:
+`Xᵀ J = J (-X)`. -/
+theorem mem_so' {X : Matrix (p ⊕ q) (p ⊕ q) R} :
+    X ∈ so' p q R ↔ Xᵀ * indefiniteDiagonal p q R = indefiniteDiagonal p q R * -X := by
+  rw [so', mem_skewAdjointMatricesLieSubalgebra, mem_skewAdjointMatricesSubmodule,
+    Matrix.IsSkewAdjoint, Matrix.IsAdjointPair]
+
+/-- Membership in the indefinite orthogonal Lie algebra `so' p q R`, entrywise: `Nᵀ D = -(D N)`
+for the diagonal Gram matrix `D = indefiniteDiagonal p q R`. -/
+theorem mem_so'_iff_forall (N : Matrix (p ⊕ q) (p ⊕ q) R) :
+    N ∈ so' p q R ↔
+      ∀ a b, N b a * indefiniteDiagonal p q R b b = -(indefiniteDiagonal p q R a a * N a b) := by
+  rw [mem_so', ← Matrix.ext_iff]
+  simp [indefiniteDiagonal, Matrix.mul_diagonal, Matrix.diagonal_mul]
+
+open Matrix in
+/-- The indefinite orthogonal Lie algebra `𝔰𝔬(p, q)` is closed under transpose. -/
+theorem transpose_mem_so' {X : Matrix (p ⊕ q) (p ⊕ q) R} (hX : X ∈ so' p q R) :
+    Xᵀ ∈ so' p q R := by
+  rw [mem_so'] at hX ⊢
+  set J := indefiniteDiagonal p q R
+  have hJ : J * J = 1 := indefiniteDiagonal_mul_indefiniteDiagonal
+  have h1 : J * X = -(Xᵀ * J) := by rw [hX, Matrix.mul_neg, neg_neg]
+  calc Xᵀᵀ * J = J * (J * X) * J := by
+        rw [transpose_transpose, ← Matrix.mul_assoc, hJ, Matrix.one_mul]
+    _ = J * -Xᵀ := by rw [h1]; simp [Matrix.mul_assoc, hJ]
+
+open Matrix in
+/-- The indefinite orthogonal Lie algebra `𝔰𝔬(p, q)` is closed under conjugate transpose over a
+star ring. -/
+theorem conjTranspose_mem_so' [StarRing R] {X : Matrix (p ⊕ q) (p ⊕ q) R}
+    (hX : X ∈ so' p q R) : Xᴴ ∈ so' p q R := by
+  have h := congrArg conjTranspose (mem_so'.mp (transpose_mem_so' hX))
+  rw [transpose_transpose, conjTranspose_mul, conjTranspose_mul, conjTranspose_neg,
+    isHermitian_indefiniteDiagonal.eq, conjTranspose_transpose_eq_transpose_conjTranspose] at h
+  rw [mem_so', Matrix.mul_neg, h, Matrix.neg_mul, neg_neg]
 
 variable {ι : Type*} [DecidableEq ι]
 

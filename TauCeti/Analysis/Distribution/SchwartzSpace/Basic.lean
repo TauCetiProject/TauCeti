@@ -13,6 +13,7 @@ import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 import Mathlib.Analysis.RCLike.Lemmas
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Weighted bounds and integrability of Schwartz functions
@@ -49,6 +50,7 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 * `SchwartzMap.integrable_iteratedFDeriv_comp_left`,
   `SchwartzMap.integral_norm_iteratedFDeriv_comp_left_le`: for a continuous linear map `L`, the
   derivatives of `L ∘ f` are integrable, with `∫ ‖D^k (L ∘ f)‖ ≤ ‖L‖ ∫ ‖D^k f‖`.
+* `SchwartzMap.norm_toLp_sq`: the squared `L²` norm of `f` is `∫ ‖f x‖²`.
 * `SchwartzMap.conjnegCLM`: the continuous conjugate-linear reversed-conjugation involution,
   with exact reflected-support, compact-support and near-origin cutoff laws.
 * `SchwartzMap.bilinLeftCLM_apply_eq_sum`: the pointwise product of Schwartz functions with
@@ -159,6 +161,12 @@ theorem integrable_norm_pow_mul_norm_sq (f : 𝓢(E, F)) (k : ℕ) :
     norm_iteratedFDeriv_zero]
   gcongr
   exact f.norm_le_seminorm ℝ x
+
+omit [BorelSpace E] [SecondCountableTopology E] in
+/-- The squared `L²` norm of a Schwartz function is the integral of its squared pointwise norm. -/
+theorem norm_toLp_sq [OpensMeasurableSpace E] [SecondCountableTopologyEither E F] (f : 𝓢(E, F)) :
+    ‖f.toLp 2 μ‖ ^ 2 = ∫ x, ‖f x‖ ^ 2 ∂μ :=
+  (f.memLp 2 μ).norm_toLp_sq
 
 omit [SecondCountableTopology E] in
 /-- A Schwartz function vanishes if and only if the integral of its squared norm does, against a
@@ -300,18 +308,20 @@ theorem integral_norm_iteratedFDeriv_comp_left_le (L : F →L[ℝ] G) (f : 𝓢(
     ((f.integrable_norm_iteratedFDeriv k).const_mul ‖L‖)
     (.of_forall fun _ ↦ L.norm_iteratedFDeriv_comp_left (f.smooth ⊤).contDiffAt (mod_cast le_top))
 
-section Smul
+section Postcomp
 
-variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {𝕜 E F G : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F]
+  [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedSpace 𝕜 G]
 
-/-- Multiplication by a function which is not of temperate growth is the zero map: Mathlib's
-`smulLeftCLM` is defined to be `0` there. -/
-theorem smulLeftCLM_of_not_hasTemperateGrowth {g : E → 𝕜} (hg : ¬g.HasTemperateGrowth) :
-    smulLeftCLM F g = 0 := by
-  simp [smulLeftCLM, hg]
+/-- As a function, the postcomposition of a Schwartz function `f` with a continuous linear map
+`L` is the composite `L ∘ f`. -/
+@[simp]
+theorem coe_postcompCLM (f : 𝓢(E, F)) (L : F →L[𝕜] G) : ⇑(f.postcompCLM L) = L ∘ f := by
+  ext x
+  rw [postcompCLM_apply, Function.comp_apply]
 
-end Smul
+end Postcomp
 
 open scoped ENNReal in
 /-- The closure of the Schwartz functions in `Lᵖ` is the topological closure of the range of the
@@ -495,6 +505,30 @@ end SchwartzMap
 namespace TauCeti
 
 open scoped SchwartzMap
+
+section Smul
+
+open SchwartzMap
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [NormedAddCommGroup E]
+  [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F]
+
+/-- Multiplication by a function which is not of temperate growth is the zero map: Mathlib's
+`SchwartzMap.smulLeftCLM` is defined to be `0` there. -/
+@[simp]
+theorem smulLeftCLM_of_not_hasTemperateGrowth {g : E → 𝕜} (hg : ¬g.HasTemperateGrowth) :
+    smulLeftCLM F g = 0 := by
+  simp [smulLeftCLM, hg]
+
+/-- Multiplication by a function `g` of temperate growth is the multiplier `bilinLeftCLM` of the
+flipped scalar multiplication `(a, c) ↦ c • a`, paired with `g`. -/
+theorem smulLeftCLM_eq_bilinLeftCLM {g : E → 𝕜} (hg : g.HasTemperateGrowth) :
+    smulLeftCLM F g = bilinLeftCLM (ContinuousLinearMap.lsmul 𝕜 𝕜).flip hg := by
+  ext f x
+  simp only [smulLeftCLM_apply_apply hg, bilinLeftCLM_apply, ContinuousLinearMap.flip_apply,
+    ContinuousLinearMap.lsmul_apply]
+
+end Smul
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [IsLocallyFiniteMeasure μ]

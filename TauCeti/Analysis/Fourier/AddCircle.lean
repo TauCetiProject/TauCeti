@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.Topology.Algebra.PontryaginDual
+public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Projection
 public import TauCeti.MeasureTheory.Function.Lp.PiLp
 
 import Mathlib.Analysis.Convolution
@@ -87,6 +88,8 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   multiplication, and conjugation of `Lᵖ` Fourier monomials.
 * `TauCeti.inner_fourierBasis_left`, `TauCeti.innerSL_fourierBasis_apply`: taking the inner product
   with the `n`-th Fourier basis vector in the first slot gives the `n`-th Fourier coefficient.
+* `TauCeti.fourierCoeff_fourierBasis_projection`, `TauCeti.fourierBasis_projection_fourierLp`:
+  projection onto a set of Fourier modes restricts the coefficients and modes to that set.
 * `TauCeti.fourierCoeff_smul_fourierBasis`: multiplying the `L²` Fourier mode `e_m` by an
   essentially bounded function `a` shifts the Fourier coefficients of `a` by `m`.
 * `TauCeti.fourierCoeff_fourierLp_smul`: multiplying an `Lᵖ` function by the monomial `e_n`
@@ -309,6 +312,21 @@ theorem inner_fourierBasis_left (f : Lp ℂ 2 (haarAddCircle (T := T))) (n : ℤ
 theorem innerSL_fourierBasis_apply (f : Lp ℂ 2 (haarAddCircle (T := T))) (n : ℤ) :
     innerSL ℂ (fourierBasis (T := T) n) f = fourierCoeff f n := by
   rw [innerSL_apply_apply, inner_fourierBasis_left]
+
+/-- Fourier coefficients of the projection onto a set of modes are restricted to that set. -/
+@[simp↓]
+theorem fourierCoeff_fourierBasis_projection (s : Set ℤ) (f : Lp ℂ 2 (haarAddCircle (T := T)))
+    (n : ℤ) : fourierCoeff ((fourierBasis (T := T)).projection s f) n =
+      s.indicator (fourierCoeff f) n := by
+  rw [← fourierBasis_repr, HilbertBasis.repr_projection]
+  exact congrArg (fun g : ℤ → ℂ ↦ s.indicator g n) (funext (fourierBasis_repr f))
+
+/-- The Fourier projection fixes the modes in the given set and kills those outside it. -/
+@[simp]
+theorem fourierBasis_projection_fourierLp (s : Set ℤ) (n : ℤ) :
+    (fourierBasis (T := T)).projection s (fourierLp (T := T) 2 n) =
+      s.indicator (fourierLp (T := T) 2) n := by
+  rw [← coe_fourierBasis, HilbertBasis.projection_apply_self]
 
 /-- The zero-frequency Fourier coefficient is the integral against normalized Haar measure. -/
 theorem fourierCoeff_zero_eq_integral {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.ObjectProperty.Small
 public import TauCeti.RepresentationTheory.FDRep.Continuous
 public import TauCeti.RepresentationTheory.RepresentationRing.Basic
 

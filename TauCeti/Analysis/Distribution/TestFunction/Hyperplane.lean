@@ -10,6 +10,7 @@ public import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Algebra.Module.LinearMap.DivisionRing
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
+import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Normed.Module.LipschitzHyperplane
 
