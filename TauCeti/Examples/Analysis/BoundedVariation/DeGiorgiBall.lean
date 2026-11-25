@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.DeGiorgi
 public import TauCeti.Analysis.BoundedVariation.ReducedBoundary.Ball
-public import TauCeti.Geometry.Euclidean.Volume.Sphere
 import TauCeti.Analysis.BoundedVariation.Ball
 
 /-!
