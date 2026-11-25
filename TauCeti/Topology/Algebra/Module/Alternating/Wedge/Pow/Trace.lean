@@ -59,9 +59,7 @@ private theorem pairedWedge_curry_wedgePow_succ_apply (ω α : E [⋀^Fin 2]→L
     (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (curryLeftTopological (n := 1) ω q)
     (pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
       (wedgePow ω m) α) p R (fun i ↦ by rw [curryLeftTopological_apply_apply]; simpa using hqR i)
-  rw [curryLeftTopological_apply_apply, ContinuousLinearMap.mul_apply'] at h
-  rw [show (Matrix.vecCons q ![p] : Fin 2 → E) = ![q, p] from rfl, hqp, one_mul] at h
-  exact h
+  simpa [curryLeftTopological_apply_apply, hqp] using h
 
 /-- Inserting `q` into `α` and wedging with `ω ^ (m + 1)`: when `ω(p, ·)` kills the vectors of
 `R`, the value on `(p, R)` is `α(q, p) ω ^ (m + 1)(R)`. -/
@@ -70,6 +68,8 @@ private theorem pairedWedge_wedgePow_succ_curry_apply (ω α : E [⋀^Fin 2]→L
     pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
         (wedgePow ω (m + 1)) (curryLeftTopological (n := 1) α q) (Matrix.vecCons p R) =
       wedgePow ω (m + 1) R * α ![q, p] := by
+  -- Peel `p` off the `(2 m + 3)`-form, splitting its degree as `(2 m + 1 + 1) + (0 + 1)` so that
+  -- the interior-product rule sees the `(2 m + 2)`-form `ω ^ (m + 1)` and the one-form `ι_q α`.
   rw [← curryLeftTopological_apply_apply (n := 2 * m + 1 + 1 + 0),
     curryLeftTopological_pairedWedge (k := 2 * m + 1) (l := 0)]
   -- The term with `ω(p, ·)` vanishes on vectors that it kills.
@@ -85,10 +85,8 @@ private theorem pairedWedge_wedgePow_succ_curry_apply (ω α : E [⋀^Fin 2]→L
     · simp
     · rw [curryLeftTopological_apply_apply]
       simpa using hw _
-  rw [hzero (R ∘ Fin.cast (by omega)) fun i ↦ hpR _, zero_add, pairedWedge_apply_zero_right,
-    ContinuousLinearMap.mul_apply', curryLeftTopological_apply_apply,
-    curryLeftTopological_apply_apply, Even.neg_one_pow ⟨m + 1, by ring⟩, one_smul,
-    Matrix.zero_empty]
+  rw [hzero (R ∘ Fin.cast (by omega)) fun i ↦ hpR _, zero_add, pairedWedge_apply_zero_right]
+  simp [curryLeftTopological_apply_apply, Even.neg_one_pow (n := 2 * m + 1 + 1) ⟨m + 1, by ring⟩]
 
 /-- **A two-form wedged with a power of a two-form on standard pairs.** If the vectors
 `qᵢ = b (i, 0)` and `pᵢ = b (i, 1)`, `i ≤ m`, satisfy `ω(qᵢ, qⱼ) = 0`, `ω(qᵢ, pⱼ) = δᵢⱼ` and
@@ -131,13 +129,18 @@ theorem pairedWedge_wedgePow_apply_finProdFinEquiv (ω α : E [⋀^Fin 2]→L[�
     have h₀₁' : ∀ i j, ω ![b' (i, 0), b' (j, 1)] = if i = j then 1 else 0 :=
       fun i j ↦ by simpa [hb'] using h₀₁ i.succ j.succ
     have h₁₁' : ∀ i j, ω ![b' (i, 1), b' (j, 1)] = 0 := fun i j ↦ h₁₁ _ _
+    -- Inserting `q₀` into `ω ^ (m + 1)`, then into `α`.
+    have hω := pairedWedge_curry_wedgePow_succ_apply ω α m (b (0, 0)) (b (0, 1)) R
+      (by simpa using h₀₁ 0 0) fun r ↦ hq _
+    have hα := pairedWedge_wedgePow_succ_curry_apply ω α m (b (0, 0)) (b (0, 1)) R fun r ↦ hp _
+    -- The values on the later pairs.
+    have hih := ih b' h₀₀' h₀₁' h₁₁'
+    have htop := wedgePow_apply_finProdFinEquiv ω b' h₀₀' h₀₁'
+    rw [← hR] at hih htop
+    -- Expand along `q₀`; the sign `(-1) ^ (2 m + 2)` is `1`.
     rw [← curryLeftTopological_apply_apply (n := 2 * (m + 1) + 1),
       curryLeftTopological_pairedWedge (k := 2 * m + 1) (l := 1),
-      Even.neg_one_pow ⟨m + 1, by ring⟩, one_smul,
-      pairedWedge_curry_wedgePow_succ_apply ω α m (b (0, 0)) (b (0, 1)) R
-        (by simpa using h₀₁ 0 0) fun r ↦ hq _,
-      pairedWedge_wedgePow_succ_curry_apply ω α m (b (0, 0)) (b (0, 1)) R fun r ↦ hp _,
-      hR, ih b' h₀₀' h₀₁' h₁₁', wedgePow_apply_finProdFinEquiv ω b' h₀₀' h₀₁',
+      Even.neg_one_pow ⟨m + 1, by ring⟩, one_smul, hω, hα, hih, htop,
       Fin.sum_univ_succ (f := fun i : Fin (m + 1 + 1) ↦ α ![b (i, 0), b (i, 1)]),
       Nat.factorial_succ]
     simp only [hb', Function.comp_apply, Prod.map_apply, id]
