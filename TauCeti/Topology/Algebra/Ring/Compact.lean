@@ -59,8 +59,7 @@ theorem isAdic_maximalIdeal : IsAdic (maximalIdeal R) := by
   · exact Ideal.pow_le_pow_right (le_max_right i j)
 
 /-- **The residue map is continuous when translations are continuous and the maximal ideal is
-open**, for every topology on the residue field: its kernel is the open maximal ideal, and since
-translations are continuous the cosets of `m` are open, so it is locally constant. -/
+open**, for every topology on the residue field. -/
 theorem continuous_residue {S : Type*} [CommRing S] [IsLocalRing S] [TopologicalSpace S]
     [ContinuousConstVAdd S S] [TopologicalSpace (ResidueField S)]
     (h : IsOpen (maximalIdeal S : Set S)) : Continuous (residue S) :=
