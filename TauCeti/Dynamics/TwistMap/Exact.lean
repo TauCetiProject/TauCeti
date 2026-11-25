@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Dynamics.TwistMap.OpenStrip
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+import Mathlib.Analysis.Calculus.ContDiff.Comp
+import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.FDeriv.Prod
@@ -68,18 +70,23 @@ height `y₀ ∈ J` the integral of `F*λ − λ` evaluated on `∂ₓ`, that is
 `g(F(x, y₀)) ∂ₓF₁(x, y₀) − g(x, y₀)`, over a period `[a, a + ℓ]` vanishes: it is the increment of
 the periodic function `S` over a period. -/
 theorem IsExactForPrimitive.integral_flux_eq_zero {ℓ : ℝ} {J : Set ℝ} {F : ℝ × ℝ → ℝ × ℝ}
-    {g : ℝ × ℝ → ℝ} (hF : IsExactForPrimitive ℓ J F g) {y₀ : ℝ} (hy₀ : y₀ ∈ J) (a : ℝ)
-    (hint : IntervalIntegrable
-      (fun x => g (F (x, y₀)) * (fderiv ℝ F (x, y₀) (1, 0)).1 - g (x, y₀)) volume a (a + ℓ)) :
+    {g : ℝ × ℝ → ℝ} (hF : IsExactForPrimitive ℓ J F g) {y₀ : ℝ} (hy₀ : y₀ ∈ J) (a : ℝ) :
     ∫ x in a..a + ℓ, (g (F (x, y₀)) * (fderiv ℝ F (x, y₀) (1, 0)).1 - g (x, y₀)) = 0 := by
-  obtain ⟨S, -, hper, hS⟩ := hF
+  obtain ⟨S, hC, hper, hS⟩ := hF
   -- Along the horizontal line, the derivative of `x ↦ S (x, y₀)` is the integrand.
   have hd (x : ℝ) : HasDerivAt (fun x => S (x, y₀))
       (g (F (x, y₀)) * (fderiv ℝ F (x, y₀) (1, 0)).1 - g (x, y₀)) x :=
     ((hS (x, y₀) ⟨mem_univ _, hy₀⟩).comp_hasDerivAt x
       (hasDerivAt_prodMk_left x y₀)).congr_deriv (by simp)
-  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun x _ => hd x) hint, hper a y₀ hy₀,
-    sub_self]
+  -- The restriction of the `C¹` function `S` to the line is `C¹`, so the integrand, its
+  -- derivative, is continuous.
+  have hC₀ : ContDiff ℝ 1 fun x => S (x, y₀) :=
+    contDiffOn_univ.1 <| hC.comp (contDiff_id.prodMk contDiff_const).contDiffOn
+      fun _ _ => ⟨mem_univ _, hy₀⟩
+  have hint : Continuous fun x => g (F (x, y₀)) * (fderiv ℝ F (x, y₀) (1, 0)).1 - g (x, y₀) := by
+    simpa only [funext fun x => (hd x).deriv] using hC₀.continuous_deriv le_rfl
+  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun x _ => hd x)
+    (hint.intervalIntegrable _ _), hper a y₀ hy₀, sub_self]
 
 /-- If `F` is exact for `λ = g dx` with period `ℓ ≠ 0` and, along a height `y₀ ∈ J`, the one-form
 `F*λ − λ` evaluated on `∂ₓ` is a constant `c`, that is
@@ -91,7 +98,7 @@ theorem IsExactForPrimitive.eq_zero_of_flux {ℓ : ℝ} {J : Set ℝ} {F : ℝ �
     c = 0 := by
   have hfun : (fun x => g (F (x, y₀)) * (fderiv ℝ F (x, y₀) (1, 0)).1 - g (x, y₀)) =
       fun _ => c := funext hc
-  have h := hF.integral_flux_eq_zero hy₀ 0 (hfun ▸ intervalIntegrable_const)
+  have h := hF.integral_flux_eq_zero hy₀ 0
   rw [hfun, intervalIntegral.integral_const, smul_eq_mul] at h
   simpa [hℓ] using h
 

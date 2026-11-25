@@ -83,14 +83,18 @@ theorem isMonotoneTwistMap_shiftedShear (c : ℝ) :
       nonempty := univ_nonempty
       isOpen := isOpen_univ
       ordConnected := ordConnected_univ
-      source_eq := univ_prod_univ.symm
-      target_eq := univ_prod_univ.symm
+      source_eq := by rw [Homeomorph.toOpenPartialHomeomorph_source, univ_prod_univ]
+      target_eq := by rw [Homeomorph.toOpenPartialHomeomorph_target, univ_prod_univ]
       apply_add_period := fun x y _ => ?_
       strictMonoOn_fst := fun x y₁ _ y₂ _ h => ?_
       lower_end := fun d _ => ⟨d - c, mem_univ _, fun x y _ hy => ?_⟩
       upper_end := fun d _ => ⟨d - c, mem_univ _, fun x y _ hy => ?_⟩
-      contDiffOn := hs.contDiffOn
-      contDiffOn_symm := hsymm.contDiffOn
+      contDiffOn := by
+        rw [Homeomorph.toOpenPartialHomeomorph_apply]
+        exact hs.contDiffOn
+      contDiffOn_symm := by
+        rw [Homeomorph.toOpenPartialHomeomorph_symm_apply]
+        exact hsymm.contDiffOn
       fderiv_fst_pos := fun p _ => ?_ }
   · simp only [Homeomorph.toOpenPartialHomeomorph_apply, shiftedShear_apply, Prod.mk_add_mk,
       add_zero]
