@@ -283,8 +283,8 @@ theorem tendsto_integral_normed_convolution_smul {H : Type*} [NormedAddCommGroup
       (𝓝 (∫ x, g x • w x ∂μ)) :=
   (tendstoUniformly_normed_convolution (μ := μ) hρ hg).tendsto_integral_smul_of_integrable
     (Eventually.of_forall fun i =>
-      ((ρ i).hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ) (ρ i).contDiff_normed
-        hg.continuous.locallyIntegrable (n := ⊤)).continuous.aestronglyMeasurable.smul hw.1)
+      ((ρ i).contDiff_normed_convolution hg.continuous.locallyIntegrable
+        (n := ⊤)).continuous.aestronglyMeasurable.smul hw.1)
     hw hgw
 
 /-- Normalized bumps of radius tending to zero along a filter approximate a function that is
@@ -491,8 +491,7 @@ theorem Continuous.exists_contDiff_norm_le_lintegral_sub_le {E F : Type*}
   let φ : ℕ → ContDiffBump (0 : E) := ContDiffBump.shrinking hδ
   set ψ : ℕ → E → F := fun n => (φ n).normed Measure.addHaar ⋆[lsmul ℝ ℝ, Measure.addHaar] h
   have hψd (n : ℕ) : ContDiff ℝ ∞ (ψ n) :=
-    (φ n).hasCompactSupport_normed.contDiff_convolution_left _ (φ n).contDiff_normed
-      hhc.locallyIntegrable
+    (φ n).contDiff_normed_convolution hhc.locallyIntegrable
   have hψs (n : ℕ) : tsupport (ψ n) ⊆ cthickening δ (tsupport h) := by
     refine (φ n).tsupport_normed_convolution_subset.trans ?_
     rintro _ ⟨a, ha, b, hb, rfl⟩

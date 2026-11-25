@@ -109,8 +109,8 @@ theorem tendsto_integral_fderiv_normed_convolution_apply_smul (hψ : LipschitzWi
       (𝓝 (∫ x, lineDeriv ℝ ψ x v • w x ∂μ)) :=
   tendsto_integral_filter_of_dominated_convergence (fun x => (K * ‖v‖) * ‖w x‖)
     (Eventually.of_forall fun i =>
-      ((((ρ i).hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ) (ρ i).contDiff_normed
-        hψ.continuous.locallyIntegrable (n := ⊤)).continuous_fderiv (by simp)).clm_apply
+      ((((ρ i).contDiff_normed_convolution hψ.continuous.locallyIntegrable
+        (n := ⊤)).continuous_fderiv (by simp)).clm_apply
           continuous_const).aestronglyMeasurable.smul hw.1)
     (Eventually.of_forall fun i => Eventually.of_forall fun x => by
       rw [norm_smul]
