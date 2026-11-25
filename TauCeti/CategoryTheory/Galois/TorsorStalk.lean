@@ -72,12 +72,8 @@ theorem smul_toPresheafFiber_torsorStalk (g : G) (S : ContAction FintypeCat.{u} 
 for `g : G`, `a` in the stalk of `𝒢` and `x` in the stalk of the torsor. -/
 theorem smul_torsorStalk_smul (g : G) (a : (point G).GrpStalk 𝒢.obj)
     (x : (point G).TorsorStalk P) : g • a • x = (g • a) • g • x := by
-  obtain ⟨X, s, b, rfl⟩ := (point G).exists_grpGerm_eq 𝒢.obj a
-  obtain ⟨Y, y, c, rfl⟩ := (point G).toPresheafFiber_jointly_surjective (P := P.sheaf.obj) x
-  obtain ⟨Z, z, f₁, f₂, rfl, rfl⟩ := (point G).exists_fiber_map_eq_fiber_map_eq s y
-  rw [← GrothendieckTopology.Point.grpGerm_map,
-    ← GrothendieckTopology.Point.toPresheafFiber_w_apply,
-    GrothendieckTopology.Point.grpGerm_smul_toPresheafFiber, smul_toPresheafFiber_torsorStalk,
+  obtain ⟨X, s, b, c, rfl, rfl⟩ := (point G).exists_grpGerm_eq_toPresheafFiber_eq P a x
+  rw [GrothendieckTopology.Point.grpGerm_smul_toPresheafFiber, smul_toPresheafFiber_torsorStalk,
     smul_grpGerm, smul_toPresheafFiber_torsorStalk,
     GrothendieckTopology.Point.grpGerm_smul_toPresheafFiber]
 
@@ -97,22 +93,6 @@ noncomputable def torsorStalkSmoothTorsor :
 
 variable {P} {Q : Sheaf.Torsor 𝒢}
 
-/-- The map of stalks induced by a morphism of torsors commutes with the action of the stalk
-of `𝒢`. -/
-theorem presheafFiber_map_smul (f : P ⟶ Q) (a : (point G).GrpStalk 𝒢.obj)
-    (x : (point G).TorsorStalk P) :
-    (point G).presheafFiber.map f.hom.hom (a • x) =
-      a • (point G).presheafFiber.map f.hom.hom x := by
-  obtain ⟨X, s, b, rfl⟩ := (point G).exists_grpGerm_eq 𝒢.obj a
-  obtain ⟨Y, y, c, rfl⟩ := (point G).toPresheafFiber_jointly_surjective (P := P.sheaf.obj) x
-  obtain ⟨Z, z, f₁, f₂, rfl, rfl⟩ := (point G).exists_fiber_map_eq_fiber_map_eq s y
-  rw [← GrothendieckTopology.Point.grpGerm_map,
-    ← GrothendieckTopology.Point.toPresheafFiber_w_apply,
-    GrothendieckTopology.Point.grpGerm_smul_toPresheafFiber,
-    GrothendieckTopology.Point.toPresheafFiber_naturality_apply,
-    GrothendieckTopology.Point.toPresheafFiber_naturality_apply, f.map_smul,
-    GrothendieckTopology.Point.grpGerm_smul_toPresheafFiber]
-
 /-- The map of stalks induced by a morphism of torsors commutes with the action of `G`. -/
 theorem presheafFiber_map_smul_G (f : P ⟶ Q) (g : G) (x : (point G).TorsorStalk P) :
     (point G).presheafFiber.map f.hom.hom (g • x) = g • (point G).presheafFiber.map f.hom.hom x :=
@@ -127,7 +107,7 @@ noncomputable def nonabelianH1ToStalk :
     Sheaf.NonabelianH1 𝒢 → TauCeti.NonabelianH1 G ((point G).GrpStalk 𝒢.obj) :=
   Sheaf.NonabelianH1.lift (fun P ↦ (torsorStalkSmoothTorsor P).cls) fun _ _ f ↦
     TauCeti.NonabelianH1.SmoothTorsor.cls_eq_cls_of_map ((point G).presheafFiber.map f.hom.hom)
-      (presheafFiber_map_smul f) (presheafFiber_map_smul_G f)
+      ((point G).presheafFiber_map_smul f) (presheafFiber_map_smul_G f)
 
 /-- The class of a torsor goes to the class of its stalk. -/
 @[simp]

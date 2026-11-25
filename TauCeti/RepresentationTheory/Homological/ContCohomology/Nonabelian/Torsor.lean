@@ -214,18 +214,17 @@ theorem cls_eq_one_iff : P.cls = 1 ↔ ∃ x : P.carrier, ∀ g : G, g • x = x
 
 variable {P} {Q : SmoothTorsor.{u, v, w'} G A}
 
-/-- An isomorphism of smooth torsors preserves cocycles. -/
-@[simp]
-theorem Iso.cocycle_eq (e : P.Iso Q) (x : P.carrier) : Q.cocycle (e.toEquiv x) = P.cocycle x :=
-  Cocycle.ext fun g ↦ by
-    rw [cocycle_apply_eq_iff, ← e.map_smul_G, ← e.map_smul_A, ← smul_eq_inv_cocycle_smul]
-
 /-- A map of smooth torsors commuting with the actions of `A` and `G` preserves cocycles. -/
 theorem cocycle_map_eq (φ : P.carrier → Q.carrier) (hA : ∀ (a : A) x, φ (a • x) = a • φ x)
     (hG : ∀ (g : G) x, φ (g • x) = g • φ x) (x : P.carrier) :
     Q.cocycle (φ x) = P.cocycle x :=
   Cocycle.ext fun g ↦ by
     rw [cocycle_apply_eq_iff, ← hG, ← hA, ← smul_eq_inv_cocycle_smul]
+
+/-- An isomorphism of smooth torsors preserves cocycles. -/
+@[simp]
+theorem Iso.cocycle_eq (e : P.Iso Q) (x : P.carrier) : Q.cocycle (e.toEquiv x) = P.cocycle x :=
+  cocycle_map_eq e.toEquiv e.map_smul_A e.map_smul_G x
 
 /-- Two smooth torsors related by a map commuting with the actions of `A` and `G` have the same
 class. -/
@@ -264,8 +263,7 @@ theorem cls_eq_cls_iff : P.cls = Q.cls ↔ Nonempty (P.Iso Q) := by
     obtain ⟨a, ha⟩ := h
     refine ⟨isoOfCocycleEq (x := a⁻¹ • x) (y := y) (Cocycle.ext fun g ↦ ?_)⟩
     rw [cocycle_smul, ha, smul_inv', inv_inv]
-  · obtain ⟨x⟩ := (inferInstance : Nonempty P.carrier)
-    rw [P.cls_eq x, Q.cls_eq (e.toEquiv x), e.cocycle_eq]
+  · exact cls_eq_cls_of_map e.toEquiv e.map_smul_A e.map_smul_G
 
 end SmoothTorsor
 
