@@ -33,18 +33,20 @@ augmentation `ε : K.X 0 ⟶ E` of the column `0`, the edge map followed by the 
 augmentation of the total complex is the map induced by `ε`
 (`HomologicalComplex₂.columnFiltrationSpectralSequenceFirstPageXIso_inv_columnFiltrationEdge`).
 
-**Collapse.** The differentials of the page `r` change the row by `r - 1`. If the second page
-(numbered `3`) vanishes in the rows `≥ 2`, no differential from the second page on reaches or leaves
-the rows `0` and `1`, so their objects on the second page are the limit objects
+**Collapse.** The differentials of the page `r` change the row by `r - 1`. If a page `r ≥ 3`
+vanishes in the rows `≥ 2`, no differential from the page `r` on reaches or leaves the rows `0`
+and `1`, so their objects on the page `r` are the limit objects
 (`HomologicalComplex₂.isIso_rowFiltrationSpectralSequencePageXToEInfty_of_isZero`), and the limit
 objects vanish in the rows `≥ 2`, so the rows `< 2` give the whole homology of the total complex.
+The main application is to the second page, numbered `r = 3`.
 
-* If the second page vanishes in the rows `≥ 1`, the edge map from the second page is an
-  isomorphism (`HomologicalComplex₂.isIso_rowFiltrationEdge_of_isZero`).
-* If it vanishes in the rows `≥ 2`, the homology of the total complex in degree `k` is an
-  extension of the object `E^{-k-1,1}` of the row `1` by the object `E^{-k,0}` of the row `0`: with
-  the map `HomologicalComplex₂.rowFiltrationToRowOne` onto the row `1`, the sequence
-  `0 ⟶ E^{-k,0} ⟶ H_k(Tot K) ⟶ E^{-k-1,1} ⟶ 0` is short exact
+* If a page `r ≥ 2` vanishes in the rows `≥ 1`, the edge map from the page `r` is an isomorphism
+  (`HomologicalComplex₂.isIso_rowFiltrationEdge_of_isZero`).
+* If a page `r ≥ 3` vanishes in the rows `≥ 2`, the homology of the total complex in degree `k` is
+  an extension of the object `E_r^{-k-1,1}` of the row `1` by the object `E_r^{-k,0}` of the row
+  `0`: with the map `HomologicalComplex₂.rowFiltrationToRowOne` onto the row `1`, characterized by
+  `HomologicalComplex₂.rowFiltrationToRowOne_comp_spectralSequencePageXToEInfty`, the sequence
+  `0 ⟶ E_r^{-k,0} ⟶ H_k(Tot K) ⟶ E_r^{-k-1,1} ⟶ 0` is short exact
   (`HomologicalComplex₂.rowFiltrationEdge_shortExact`).
 
 The same holds for the column filtration
@@ -66,7 +68,7 @@ The same holds for the column filtration
 * `HomologicalComplex₂.rowFiltrationToRowOne`, `HomologicalComplex₂.columnFiltrationToColumnOne`,
   `HomologicalComplex₂.rowFiltrationEdge_shortExact`,
   `HomologicalComplex₂.columnFiltrationEdge_shortExact`: the short exact sequence when only the rows
-  or columns `0` and `1` are nonzero on the second page.
+  or columns `0` and `1` are nonzero on a page `r ≥ 3`.
 -/
 
 public section
@@ -79,29 +81,6 @@ namespace HomologicalComplex₂
 
 variable {C : Type*} [Category* C] [Abelian C] (K : HomologicalComplex₂ C (down ℕ) (down ℕ))
 
-/-- The rows `≤ 0` of the filtration vanish, so the piece of the filtration of the abutment
-indexed by the row `0` of the position `pq = (-k, 0)` vanishes. -/
-lemma isZero_rowFiltrationEdge_abutmentFiltration (pq : ℤ × ℤ) (k : ℕ)
-    (hpq : pq = (-(k : ℤ), 0)) :
-    IsZero (K.rowFiltrationSpectralObject.abutmentFiltration pq.2 (pq.1 + pq.2)) :=
-  K.isZero_rowFiltration_abutmentFiltration _ (by subst hpq; simp) _
-
-/-- The spectral object of the row filtration has vanishing `H^n(⊥ ≤ a)` for `a ≤ 0`, since the
-rows `< 0` vanish. -/
-lemma isZero_rowFiltrationSpectralObject_H_bot (a n : ℤ) (ha : a ≤ 0) :
-    IsZero ((K.rowFiltrationSpectralObject.H n).obj
-      (ComposableArrows.mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ (a : EInt))))) :=
-  CochainComplex.isZero_spectralObject_H_bot _ _ _ _
-    (Subobject.isZero_homology_of_eq_bot _ (K.rowFiltration_eq_bot _ ha) _)
-
-/-- The vanishing of `H(⊥ ≤ pq.2 - r + 2)` needed for the map from the page `r` onto the limit
-object at the position `pq = (-k, 0)`. -/
-lemma isZero_rowFiltrationEdge_H (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (k : ℕ)
-    (hpq : pq = (-(k : ℤ), 0)) :
-    IsZero ((K.rowFiltrationSpectralObject.H (pq.1 + pq.2 + 1)).obj
-      (ComposableArrows.mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ((pq.2 - r + 2 : ℤ) : EInt))))) :=
-  K.isZero_rowFiltrationSpectralObject_H_bot _ _ (by subst hpq; simp; omega)
-
 /-- **The edge map of the spectral sequence of the row filtration.** The object at
 `pq = (-k, 0)` on the page `r ≥ 2` maps onto the limit object `E^{-k}(⊥ ≤ 0 ≤ 1 ≤ ⊤)`, which is the
 bottom piece of the filtration of the abutment since the rows `< 0` vanish; this piece embeds in the
@@ -109,9 +88,9 @@ abutment, the homology of the total complex in degree `k`. -/
 def rowFiltrationEdge (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (k : ℕ) (hpq : pq = (-(k : ℤ), 0)) :
     (K.rowFiltrationSpectralSequence.page r).X pq ⟶ (K.total (down ℕ)).homology k :=
   K.rowFiltrationSpectralObject.spectralSequencePageXToEInfty r hr pq (pq.1 + pq.2) rfl
-      (K.isZero_rowFiltrationEdge_H r hr pq k hpq) ≫
+      (K.isZero_rowFiltrationSpectralObject_H_bot _ _ (by subst hpq; dsimp; omega)) ≫
     K.rowFiltrationSpectralObject.EInftyToAbutment pq.2 (pq.1 + pq.2)
-      (K.isZero_rowFiltrationEdge_abutmentFiltration pq k hpq) ≫
+      (K.isZero_rowFiltration_abutmentFiltration _ (by subst hpq; simp) _) ≫
     (CochainComplex.filtrationAbutmentIso _ K.monotone_rowFiltration (pq.1 + pq.2)).hom ≫
     ((K.total (down ℕ)).extendHomologyIso embeddingDownNat (by subst hpq; simp)).hom
 
@@ -122,25 +101,12 @@ lemma rowFiltrationEdge_def (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (k : ℕ)
     (hpq : pq = (-(k : ℤ), 0)) :
     K.rowFiltrationEdge r hr pq k hpq =
       K.rowFiltrationSpectralObject.spectralSequencePageXToEInfty r hr pq (pq.1 + pq.2) rfl
-          (K.isZero_rowFiltrationEdge_H r hr pq k hpq) ≫
+          (K.isZero_rowFiltrationSpectralObject_H_bot _ _ (by subst hpq; dsimp; omega)) ≫
         K.rowFiltrationSpectralObject.EInftyToAbutment pq.2 (pq.1 + pq.2)
-          (K.isZero_rowFiltrationEdge_abutmentFiltration pq k hpq) ≫
+          (K.isZero_rowFiltration_abutmentFiltration _ (by subst hpq; simp) _) ≫
         (CochainComplex.filtrationAbutmentIso _ K.monotone_rowFiltration (pq.1 + pq.2)).hom ≫
         ((K.total (down ℕ)).extendHomologyIso embeddingDownNat (by subst hpq; simp)).hom :=
   (rfl)
-
-/-- The inclusion of the row `0` into the total complex of the rows `≥ 0` is the inclusion
-`HomologicalComplex₂.rowZeroι` of the row `0` into the total complex. -/
-lemma totalRowι_zero : K.totalRowι 0 = K.rowZeroι := by
-  ext n : 1
-  have h₀ := K.totalRowXIso_inv_totalRowι_f 0 n
-  rw [totalRowXIso_zero] at h₀
-  -- the identity `Iso.refl` has inverse `𝟙`, and `n + 0` is `n`, by definition
-  have h : (K.totalRowι 0).f n = K.ιTotalRowsGE 0 n 0 n le_rfl (by simp) :=
-    (Category.id_comp _).symm.trans h₀
-  have h' := K.ιTotal_toTotalRowsGE_f 0 n 0 n le_rfl (by simp)
-  rw [toTotalRowsGE_zero, HomologicalComplex.id_f, Category.comp_id] at h'
-  rw [h, ← h', rowZeroι_f]
 
 /-- **The edge map of the row filtration on the first page.** On the first page, whose object at
 `(-k, 0)` is the homology of the row `0` in degree `k`, the edge map is the map induced on homology
@@ -153,8 +119,7 @@ theorem rowFiltrationSpectralSequenceFirstPageXIso_inv_rowFiltrationEdge (p : �
   have hF := CochainComplex.homologyMap_comp_spectralSequencePageXToEInfty_EInftyToAbutment
     K.rowFiltration K.monotone_rowFiltration (p, ((0 : ℕ) : ℤ)) _ rfl
     (Subobject.isZero_homology_of_eq_bot _ (K.rowFiltration_eq_bot _ (by simp)) _)
-    (K.isZero_rowFiltrationEdge_abutmentFiltration (p, ((0 : ℕ) : ℤ)) k
-      (Prod.ext (by simp; omega) (by simp)))
+    (K.isZero_rowFiltration_abutmentFiltration _ (by simp) _)
   -- reduce the projections of the pair `(p, 0)`
   dsimp only at hF
   have hG := K.π_rowFiltrationGradedIso_hom_totalRowι 0
@@ -174,11 +139,9 @@ theorem rowFiltrationSpectralSequenceFirstPageXIso_inv_rowFiltrationEdge (p : �
       (CochainComplex.spectralSequenceFirstPageXIsoCokernel _ (p, (0 : ℕ)) (0 : ℕ) ((0 : ℕ) + 1)
         rfl rfl (p + (0 : ℕ)) rfl).inv ≫
       K.rowFiltrationSpectralObject.spectralSequencePageXToEInfty 2 le_rfl (p, (0 : ℕ))
-        (p + (0 : ℕ)) rfl (K.isZero_rowFiltrationEdge_H 2 le_rfl (p, (0 : ℕ)) k
-          (Prod.ext (by simp; omega) (by simp))) ≫
+        (p + (0 : ℕ)) rfl (K.isZero_rowFiltrationSpectralObject_H_bot _ _ (by simp)) ≫
       K.rowFiltrationSpectralObject.EInftyToAbutment ((0 : ℕ) : ℤ) (p + (0 : ℕ))
-        (K.isZero_rowFiltrationEdge_abutmentFiltration (p, (0 : ℕ)) k
-          (Prod.ext (by simp; omega) (by simp))) ≫
+        (K.isZero_rowFiltration_abutmentFiltration _ (by simp) _) ≫
       (CochainComplex.filtrationAbutmentIso _ K.monotone_rowFiltration (p + (0 : ℕ))).hom =
       HomologicalComplex.homologyMap
         (HomologicalComplex.extendMap (K.totalRowι 0) embeddingDownNat) (p + (0 : ℕ)) := by
@@ -213,82 +176,91 @@ lemma homologyπ_iso_hom_rowFiltrationEdge (r r' : ℤ) (hrr' : r + 1 = r') (hr 
         K.rowFiltrationEdge r' (by omega) pq k hpq =
       (K.rowFiltrationSpectralSequence.page r).iCycles pq ≫ K.rowFiltrationEdge r hr pq k hpq := by
   rw [← Abelian.SpectralObject.iCycles_spectralSequencePageXToPageX_assoc _ r r' hrr' hr pq
-      (pq.1 + pq.2) rfl (K.isZero_rowFiltrationEdge_H r hr pq k hpq)
-      (K.isZero_rowFiltrationEdge_H r' (by omega) pq k hpq),
+      (pq.1 + pq.2) rfl
+      (K.isZero_rowFiltrationSpectralObject_H_bot _ _ (by subst hpq; dsimp; omega))
+      (K.isZero_rowFiltrationSpectralObject_H_bot _ _ (by subst hpq; dsimp; omega)),
     rowFiltrationEdge_def, rowFiltrationEdge_def,
     Abelian.SpectralObject.spectralSequencePageXToPageX_spectralSequencePageXToEInfty_assoc]
 
 /-! ### Collapse -/
 
-/-- An object of the second page (numbered `3`) of the spectral sequence of the row filtration
-which vanishes has vanishing limit object: the limit object is a subquotient of it. -/
-lemma isZero_rowFiltrationSpectralObject_EInfty (pq : ℤ × ℤ)
-    (h : IsZero ((K.rowFiltrationSpectralSequence.page 3).X pq)) :
+/-- An object of the page `r ≥ 2` of the spectral sequence of the row filtration which vanishes
+has vanishing limit object: the limit object is a subquotient of it. -/
+lemma isZero_rowFiltrationSpectralObject_EInfty (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ)
+    (h : IsZero ((K.rowFiltrationSpectralSequence.page r).X pq)) :
     IsZero (K.rowFiltrationSpectralObject.EInfty pq.2 (pq.1 + pq.2)) :=
-  (K.rowFiltrationSpectralSequence.isZero_page_X_of_le (by norm_num) h
-    (3 + pq.1.natAbs + 2 * pq.2.natAbs) (by omega)).of_iso
+  (K.rowFiltrationSpectralSequence.isZero_page_X_of_le hr h
+    (r + 1 + pq.1.natAbs + 2 * pq.2.natAbs) (by omega)).of_iso
     (K.rowFiltrationSpectralSequencePageXIsoEInfty _ (by omega) pq _ rfl (by omega)
       (by omega)).symm
 
-/-- **Degeneration from the second page in the rows `0` and `1`.** If the second page (numbered
-`3`) of the spectral sequence of the row filtration vanishes in the rows `≥ 2`, then no differential
-from the second page on reaches or leaves the rows `0` and `1`, so their objects on the second page
-are the limit objects: the map `spectralSequencePageXToEInfty` from the page `3` is an
-isomorphism. -/
-lemma isIso_rowFiltrationSpectralSequencePageXToEInfty_of_isZero (pq : ℤ × ℤ) (n : ℤ)
-    (hn : n = pq.1 + pq.2) (hpq₀ : 0 ≤ pq.2) (hpq₁ : pq.2 ≤ 1)
-    (h : ∀ pq' : ℤ × ℤ, 2 ≤ pq'.2 → IsZero ((K.rowFiltrationSpectralSequence.page 3).X pq')) :
-    IsIso (K.rowFiltrationSpectralObject.spectralSequencePageXToEInfty 3 (by norm_num) pq n hn
+/-- **Degeneration in the rows `0` and `1`.** If the page `r ≥ 3` of the spectral sequence of the
+row filtration vanishes in the rows `≥ 2`, then no differential from the page `r` on reaches or
+leaves the rows `0` and `1`, so their objects on the page `r` are the limit objects: the map
+`spectralSequencePageXToEInfty` from the page `r` is an isomorphism. -/
+lemma isIso_rowFiltrationSpectralSequencePageXToEInfty_of_isZero (r : ℤ) (hr : 3 ≤ r)
+    (pq : ℤ × ℤ) (n : ℤ) (hn : n = pq.1 + pq.2) (hpq₀ : 0 ≤ pq.2) (hpq₁ : pq.2 ≤ 1)
+    (h : ∀ pq' : ℤ × ℤ, 2 ≤ pq'.2 → IsZero ((K.rowFiltrationSpectralSequence.page r).X pq')) :
+    IsIso (K.rowFiltrationSpectralObject.spectralSequencePageXToEInfty r (by omega) pq n hn
       (K.isZero_rowFiltrationSpectralObject_H_bot _ _ (by omega))) :=
   K.rowFiltrationSpectralObject.isIso_spectralSequencePageXToEInfty_of_isZero
-    (3 + pq.1.natAbs + 2 * pq.2.natAbs) pq n hn 3 (by norm_num) (by omega)
+    (r + pq.1.natAbs + 2 * pq.2.natAbs) pq n hn r (by omega) (by omega)
     (fun r' _ _ ↦ K.isZero_rowFiltrationSpectralObject_H_bot _ _ (by omega))
     (CochainComplex.isZero_spectralObject_H_top _ _ _ _
       (K.isZero_homology_cokernel_rowFiltration_arrow _ _ (by omega)))
     (fun r' hr' _ ↦ ⟨h _ (by dsimp; omega),
-      K.isZero_rowFiltrationSpectralSequence_page_X 3 (by norm_num) _ _ (Or.inl (by omega))⟩)
+      K.isZero_rowFiltrationSpectralSequence_page_X r (by omega) _ _ (Or.inl (by omega))⟩)
 
-/-- If the second page (numbered `3`) of the spectral sequence of the row filtration vanishes in the
-rows `≥ s`, `s ≥ 0`, then the piece `F_s H_k` of the filtration of the homology of the total complex
-coming from the rows `< s` is everything. -/
-lemma isIso_rowFiltration_abutmentFiltrationι_of_isZero (s : ℤ) (hs : 0 ≤ s) (n : ℤ)
-    (h : ∀ pq' : ℤ × ℤ, s ≤ pq'.2 → IsZero ((K.rowFiltrationSpectralSequence.page 3).X pq')) :
+/-- If the page `r ≥ 2` of the spectral sequence of the row filtration vanishes in the rows `≥ s`,
+`s ≥ 0`, then the piece `F_s H_k` of the filtration of the homology of the total complex coming
+from the rows `< s` is everything. -/
+lemma isIso_rowFiltration_abutmentFiltrationι_of_isZero (r : ℤ) (hr : 2 ≤ r) (s : ℤ) (hs : 0 ≤ s)
+    (n : ℤ)
+    (h : ∀ pq' : ℤ × ℤ, s ≤ pq'.2 → IsZero ((K.rowFiltrationSpectralSequence.page r).X pq')) :
     IsIso (K.rowFiltrationSpectralObject.abutmentFiltrationι s n) :=
   K.rowFiltrationSpectralObject.isIso_abutmentFiltrationι_of_isZero_EInfty
     (b := s + n.natAbs + 1) (by omega)
     (K.isIso_rowFiltration_abutmentFiltrationι _ _ (by omega))
     (fun s' h₁ _ ↦ by
       simpa using
-        K.isZero_rowFiltrationSpectralObject_EInfty (n - s', s') (h _ (by simpa using h₁)))
+        K.isZero_rowFiltrationSpectralObject_EInfty r hr (n - s', s') (h _ (by simpa using h₁)))
 
-/-- **Collapse onto the row `0`.** If the second page (numbered `3`) of the spectral sequence of the
-row filtration vanishes in the rows `≥ 1`, the edge map from the second page is an isomorphism: the
-homology of the total complex is the object of the row `0` of the second page. -/
-theorem isIso_rowFiltrationEdge_of_isZero (pq : ℤ × ℤ) (k : ℕ) (hpq : pq = (-(k : ℤ), 0))
-    (h : ∀ pq' : ℤ × ℤ, 1 ≤ pq'.2 → IsZero ((K.rowFiltrationSpectralSequence.page 3).X pq')) :
-    IsIso (K.rowFiltrationEdge 3 (by norm_num) pq k hpq) := by
-  have := K.isIso_rowFiltrationSpectralSequencePageXToEInfty_of_isZero pq _ rfl
-    (by subst hpq; simp) (by subst hpq; simp) (fun pq' h' ↦ h pq' (by omega))
-  have := K.isIso_rowFiltration_abutmentFiltrationι_of_isZero (pq.2 + 1) (by subst hpq; simp)
-    (pq.1 + pq.2) (fun pq' h' ↦ h pq' (by subst hpq; simp at h'; omega))
+/-- **Collapse onto the row `0`.** If the page `r ≥ 2` of the spectral sequence of the row
+filtration vanishes in the rows `≥ 1`, the edge map from the page `r` is an isomorphism: the
+homology of the total complex is the object of the row `0` of the page `r`. -/
+theorem isIso_rowFiltrationEdge_of_isZero (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (k : ℕ)
+    (hpq : pq = (-(k : ℤ), 0))
+    (h : ∀ pq' : ℤ × ℤ, 1 ≤ pq'.2 → IsZero ((K.rowFiltrationSpectralSequence.page r).X pq')) :
+    IsIso (K.rowFiltrationEdge r hr pq k hpq) := by
+  -- no differential from the page `r` on reaches or leaves the row `0`
+  have := K.rowFiltrationSpectralObject.isIso_spectralSequencePageXToEInfty_of_isZero
+    (r + 1 + pq.1.natAbs + 2 * pq.2.natAbs) pq _ rfl r hr (by omega)
+    (fun r' _ _ ↦ K.isZero_rowFiltrationSpectralObject_H_bot _ _ (by subst hpq; dsimp; omega))
+    (CochainComplex.isZero_spectralObject_H_top _ _ _ _
+      (K.isZero_homology_cokernel_rowFiltration_arrow _ _ (by subst hpq; dsimp; omega)))
+    (fun r' hr' _ ↦ ⟨h _ (by subst hpq; dsimp; omega),
+      K.isZero_rowFiltrationSpectralSequence_page_X r hr _ _
+        (Or.inl (by subst hpq; dsimp; omega))⟩)
+  have := K.isIso_rowFiltration_abutmentFiltrationι_of_isZero r hr (pq.2 + 1)
+    (by subst hpq; simp) (pq.1 + pq.2) (fun pq' h' ↦ h pq' (by subst hpq; simp at h'; omega))
   have := K.rowFiltrationSpectralObject.isIso_EInftyToAbutment pq.2 (pq.1 + pq.2)
-    (K.isZero_rowFiltrationEdge_abutmentFiltration pq k hpq)
+    (K.isZero_rowFiltration_abutmentFiltration _ (by subst hpq; simp) _)
   rw [rowFiltrationEdge_def]
   infer_instance
 
-/-- **The map onto the row `1`.** If the second page (numbered `3`) of the spectral sequence of the
-row filtration vanishes in the rows `≥ 2`, the homology of the total complex in degree `k` maps
-onto the object at `(-k - 1, 1)` of the second page: it is the projection onto the graded piece
+/-- **The map onto the row `1`.** If the page `r ≥ 3` of the spectral sequence of the row
+filtration vanishes in the rows `≥ 2`, the homology of the total complex in degree `k` maps onto
+the object at `(-k - 1, 1)` of the page `r`: it is the projection onto the graded piece
 `F_2 H_k / F_1 H_k`, identified with the limit object of the row `1`, which is the object of the
-second page. -/
-def rowFiltrationToRowOne (pq : ℤ × ℤ) (k : ℕ) (hpq : pq = (-(k : ℤ), 0))
-    (h : ∀ pq' : ℤ × ℤ, 2 ≤ pq'.2 → IsZero ((K.rowFiltrationSpectralSequence.page 3).X pq')) :
+page `r`. -/
+def rowFiltrationToRowOne (r : ℤ) (hr : 3 ≤ r) (pq : ℤ × ℤ) (k : ℕ) (hpq : pq = (-(k : ℤ), 0))
+    (h : ∀ pq' : ℤ × ℤ, 2 ≤ pq'.2 → IsZero ((K.rowFiltrationSpectralSequence.page r).X pq')) :
     (K.total (down ℕ)).homology k ⟶
-      (K.rowFiltrationSpectralSequence.page 3).X (pq.1 - 1, pq.2 + 1) :=
-  have := K.isIso_rowFiltration_abutmentFiltrationι_of_isZero (pq.2 + 1 + 1)
+      (K.rowFiltrationSpectralSequence.page r).X (pq.1 - 1, pq.2 + 1) :=
+  have := K.isIso_rowFiltration_abutmentFiltrationι_of_isZero r (by omega) (pq.2 + 1 + 1)
     (by subst hpq; simp) (pq.1 + pq.2) (fun pq' h' ↦ h pq' (by subst hpq; simp at h'; omega))
-  have hiso := K.isIso_rowFiltrationSpectralSequencePageXToEInfty_of_isZero (pq.1 - 1, pq.2 + 1)
-    (pq.1 + pq.2) (by dsimp; omega) (by subst hpq; simp) (by subst hpq; simp) h
+  have hiso := K.isIso_rowFiltrationSpectralSequencePageXToEInfty_of_isZero r hr
+    (pq.1 - 1, pq.2 + 1) (pq.1 + pq.2) (by dsimp; omega) (by subst hpq; simp) (by subst hpq; simp) h
   ((K.total (down ℕ)).extendHomologyIso embeddingDownNat (by subst hpq; simp)).inv ≫
     (CochainComplex.filtrationAbutmentIso _ K.monotone_rowFiltration (pq.1 + pq.2)).inv ≫
     K.rowFiltrationSpectralObject.abutmentToEInfty pq.2 (pq.1 + pq.2) ≫
@@ -296,34 +268,64 @@ def rowFiltrationToRowOne (pq : ℤ × ℤ) (k : ℕ) (hpq : pq = (-(k : ℤ), 0
     -- `pq.2 + 1`
     @inv _ _ _ _ _ hiso
 
+/-- The map `HomologicalComplex₂.rowFiltrationToRowOne`, followed by the isomorphism
+`spectralSequencePageXToEInfty` from the object of the row `1` to its limit object, is the
+identification of the homology of the total complex with the abutment, followed by the
+projection `abutmentToEInfty` onto the graded piece of the row `1`. -/
+@[reassoc]
+lemma rowFiltrationToRowOne_comp_spectralSequencePageXToEInfty (r : ℤ) (hr : 3 ≤ r)
+    (pq : ℤ × ℤ) (k : ℕ) (hpq : pq = (-(k : ℤ), 0))
+    (h : ∀ pq' : ℤ × ℤ, 2 ≤ pq'.2 → IsZero ((K.rowFiltrationSpectralSequence.page r).X pq')) :
+    haveI := K.isIso_rowFiltration_abutmentFiltrationι_of_isZero r (by omega) (pq.2 + 1 + 1)
+      (by subst hpq; simp) (pq.1 + pq.2) (fun pq' h' ↦ h pq' (by subst hpq; simp at h'; omega))
+    K.rowFiltrationToRowOne r hr pq k hpq h ≫
+        K.rowFiltrationSpectralObject.spectralSequencePageXToEInfty r (by omega)
+          (pq.1 - 1, pq.2 + 1) (pq.1 + pq.2) (by dsimp; omega)
+          (K.isZero_rowFiltrationSpectralObject_H_bot _ _ (by subst hpq; dsimp; omega)) =
+      ((K.total (down ℕ)).extendHomologyIso embeddingDownNat (by subst hpq; simp)).inv ≫
+        (CochainComplex.filtrationAbutmentIso _ K.monotone_rowFiltration (pq.1 + pq.2)).inv ≫
+        K.rowFiltrationSpectralObject.abutmentToEInfty pq.2 (pq.1 + pq.2) := by
+  simp only [rowFiltrationToRowOne, Category.assoc, IsIso.inv_hom_id, Category.comp_id]
+
 /-- The edge map followed by the map onto the row `1` vanishes. -/
 @[reassoc (attr := simp)]
-lemma rowFiltrationEdge_rowFiltrationToRowOne (pq : ℤ × ℤ) (k : ℕ) (hpq : pq = (-(k : ℤ), 0))
-    (h : ∀ pq' : ℤ × ℤ, 2 ≤ pq'.2 → IsZero ((K.rowFiltrationSpectralSequence.page 3).X pq')) :
-    K.rowFiltrationEdge 3 (by norm_num) pq k hpq ≫ K.rowFiltrationToRowOne pq k hpq h = 0 := by
-  simp [rowFiltrationEdge_def, rowFiltrationToRowOne]
+lemma rowFiltrationEdge_rowFiltrationToRowOne (r : ℤ) (hr : 3 ≤ r) (pq : ℤ × ℤ) (k : ℕ)
+    (hpq : pq = (-(k : ℤ), 0))
+    (h : ∀ pq' : ℤ × ℤ, 2 ≤ pq'.2 → IsZero ((K.rowFiltrationSpectralSequence.page r).X pq')) :
+    K.rowFiltrationEdge r (by omega) pq k hpq ≫ K.rowFiltrationToRowOne r hr pq k hpq h = 0 := by
+  have := K.isIso_rowFiltrationSpectralSequencePageXToEInfty_of_isZero r hr (pq.1 - 1, pq.2 + 1)
+    (pq.1 + pq.2) (by dsimp; omega) (by subst hpq; simp) (by subst hpq; simp) h
+  rw [← cancel_mono (K.rowFiltrationSpectralObject.spectralSequencePageXToEInfty r (by omega)
+      (pq.1 - 1, pq.2 + 1) (pq.1 + pq.2) (by dsimp; omega)
+      (K.isZero_rowFiltrationSpectralObject_H_bot _ _ (by subst hpq; dsimp; omega))),
+    Category.assoc, rowFiltrationToRowOne_comp_spectralSequencePageXToEInfty, zero_comp]
+  simp [rowFiltrationEdge_def]
 
-/-- **The two-row short exact sequence.** If the second page (numbered `3`) of the spectral sequence
-of the row filtration vanishes in the rows `≥ 2`, the sequence
-`0 ⟶ E^{-k,0} ⟶ H_k(Tot K) ⟶ E^{-k-1,1} ⟶ 0` of the edge map and of the map onto the row `1` is
-short exact. -/
-theorem rowFiltrationEdge_shortExact (pq : ℤ × ℤ) (k : ℕ) (hpq : pq = (-(k : ℤ), 0))
-    (h : ∀ pq' : ℤ × ℤ, 2 ≤ pq'.2 → IsZero ((K.rowFiltrationSpectralSequence.page 3).X pq')) :
-    (ShortComplex.mk _ _ (K.rowFiltrationEdge_rowFiltrationToRowOne pq k hpq h)).ShortExact := by
-  have := K.isIso_rowFiltration_abutmentFiltrationι_of_isZero (pq.2 + 1 + 1)
+/-- **The two-row short exact sequence.** If the page `r ≥ 3` of the spectral sequence of the row
+filtration vanishes in the rows `≥ 2`, the sequence `0 ⟶ E^{-k,0} ⟶ H_k(Tot K) ⟶ E^{-k-1,1} ⟶ 0`
+of the edge map and of the map onto the row `1` is short exact. -/
+theorem rowFiltrationEdge_shortExact (r : ℤ) (hr : 3 ≤ r) (pq : ℤ × ℤ) (k : ℕ)
+    (hpq : pq = (-(k : ℤ), 0))
+    (h : ∀ pq' : ℤ × ℤ, 2 ≤ pq'.2 → IsZero ((K.rowFiltrationSpectralSequence.page r).X pq')) :
+    (ShortComplex.mk _ _
+      (K.rowFiltrationEdge_rowFiltrationToRowOne r hr pq k hpq h)).ShortExact := by
+  have := K.isIso_rowFiltration_abutmentFiltrationι_of_isZero r (by omega) (pq.2 + 1 + 1)
     (by subst hpq; simp) (pq.1 + pq.2) (fun pq' h' ↦ h pq' (by subst hpq; simp at h'; omega))
-  have h₀ := K.isIso_rowFiltrationSpectralSequencePageXToEInfty_of_isZero pq _ rfl
+  have h₀ := K.isIso_rowFiltrationSpectralSequencePageXToEInfty_of_isZero r hr pq _ rfl
     (by subst hpq; simp) (by subst hpq; simp) h
-  have h₁ := K.isIso_rowFiltrationSpectralSequencePageXToEInfty_of_isZero (pq.1 - 1, pq.2 + 1)
+  have h₁ := K.isIso_rowFiltrationSpectralSequencePageXToEInfty_of_isZero r hr (pq.1 - 1, pq.2 + 1)
     (pq.1 + pq.2) (by dsimp; omega) (by subst hpq; simp) (by subst hpq; simp) h
   refine ShortComplex.shortExact_of_iso (ShortComplex.isoMk (@asIso _ _ _ _ _ h₀).symm
     (CochainComplex.filtrationAbutmentIso _ K.monotone_rowFiltration (pq.1 + pq.2) ≪≫
       (K.total (down ℕ)).extendHomologyIso embeddingDownNat (by subst hpq; simp))
     (@asIso _ _ _ _ _ h₁).symm ?_ ?_)
     (K.rowFiltrationSpectralObject.EInftyToAbutment_shortExact pq.2 (pq.1 + pq.2)
-      (K.isZero_rowFiltrationEdge_abutmentFiltration pq k hpq))
+      (K.isZero_rowFiltration_abutmentFiltration _ (by subst hpq; simp) _))
   · simp [rowFiltrationEdge_def]
-  · simp [rowFiltrationToRowOne]
+  · rw [← cancel_mono (K.rowFiltrationSpectralObject.spectralSequencePageXToEInfty r (by omega)
+      (pq.1 - 1, pq.2 + 1) (pq.1 + pq.2) (by dsimp; omega)
+      (K.isZero_rowFiltrationSpectralObject_H_bot _ _ (by subst hpq; dsimp; omega)))]
+    simp [rowFiltrationToRowOne_comp_spectralSequencePageXToEInfty]
 
 /-! ### The column filtration -/
 
@@ -378,51 +380,64 @@ theorem columnFiltrationSpectralSequenceFirstPageXIso_inv_columnFiltrationEdge
     reassoc_of% (K.flip.rowFiltrationSpectralSequenceFirstPageXIso_inv_rowFiltrationEdge _ k _)]
   simp only [← HomologicalComplex.homologyMap_comp, h]
 
-/-- **Collapse onto the column `0`.** If the second page (numbered `3`) of the spectral sequence of
-the column filtration vanishes in the columns `≥ 1`, the edge map from the second page is an
-isomorphism. -/
-theorem isIso_columnFiltrationEdge_of_isZero (pq : ℤ × ℤ) (k : ℕ) (hpq : pq = (-(k : ℤ), 0))
-    (h : ∀ pq' : ℤ × ℤ, 1 ≤ pq'.2 → IsZero ((K.columnFiltrationSpectralSequence.page 3).X pq')) :
-    IsIso (K.columnFiltrationEdge 3 (by norm_num) pq k hpq) := by
-  have := K.flip.isIso_rowFiltrationEdge_of_isZero pq k hpq h
+/-- **Collapse onto the column `0`.** If the page `r ≥ 2` of the spectral sequence of the column
+filtration vanishes in the columns `≥ 1`, the edge map from the page `r` is an isomorphism. -/
+theorem isIso_columnFiltrationEdge_of_isZero (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (k : ℕ)
+    (hpq : pq = (-(k : ℤ), 0))
+    (h : ∀ pq' : ℤ × ℤ, 1 ≤ pq'.2 → IsZero ((K.columnFiltrationSpectralSequence.page r).X pq')) :
+    IsIso (K.columnFiltrationEdge r hr pq k hpq) := by
+  have := K.flip.isIso_rowFiltrationEdge_of_isZero r hr pq k hpq h
   rw [columnFiltrationEdge_def]
   infer_instance
 
-/-- **The map onto the column `1`.** If the second page (numbered `3`) of the spectral sequence of
-the column filtration vanishes in the columns `≥ 2`, the homology of the total complex in degree
-`k` maps onto the object at `(-k - 1, 1)` of the second page: it is the map
+/-- **The map onto the column `1`.** If the page `r ≥ 3` of the spectral sequence of the column
+filtration vanishes in the columns `≥ 2`, the homology of the total complex in degree `k` maps
+onto the object at `(-k - 1, 1)` of the page `r`: it is the map
 `HomologicalComplex₂.rowFiltrationToRowOne` of the flipped bicomplex, after the comparison of the
 total complexes of `K` and `K.flip`. -/
-def columnFiltrationToColumnOne (pq : ℤ × ℤ) (k : ℕ) (hpq : pq = (-(k : ℤ), 0))
-    (h : ∀ pq' : ℤ × ℤ, 2 ≤ pq'.2 → IsZero ((K.columnFiltrationSpectralSequence.page 3).X pq')) :
+def columnFiltrationToColumnOne (r : ℤ) (hr : 3 ≤ r) (pq : ℤ × ℤ) (k : ℕ)
+    (hpq : pq = (-(k : ℤ), 0))
+    (h : ∀ pq' : ℤ × ℤ, 2 ≤ pq'.2 → IsZero ((K.columnFiltrationSpectralSequence.page r).X pq')) :
     (K.total (down ℕ)).homology k ⟶
-      (K.columnFiltrationSpectralSequence.page 3).X (pq.1 - 1, pq.2 + 1) :=
+      (K.columnFiltrationSpectralSequence.page r).X (pq.1 - 1, pq.2 + 1) :=
   HomologicalComplex.homologyMap (K.totalFlipIso (down ℕ)).inv k ≫
-    K.flip.rowFiltrationToRowOne pq k hpq h
+    K.flip.rowFiltrationToRowOne r hr pq k hpq h
+
+/-- The map `HomologicalComplex₂.columnFiltrationToColumnOne` is the map induced on homology by the
+inverse of `HomologicalComplex₂.totalFlipIso`, followed by the map onto the row `1` of the row
+filtration of `K.flip`. -/
+lemma columnFiltrationToColumnOne_def (r : ℤ) (hr : 3 ≤ r) (pq : ℤ × ℤ) (k : ℕ)
+    (hpq : pq = (-(k : ℤ), 0))
+    (h : ∀ pq' : ℤ × ℤ, 2 ≤ pq'.2 → IsZero ((K.columnFiltrationSpectralSequence.page r).X pq')) :
+    K.columnFiltrationToColumnOne r hr pq k hpq h =
+      HomologicalComplex.homologyMap (K.totalFlipIso (down ℕ)).inv k ≫
+        K.flip.rowFiltrationToRowOne r hr pq k hpq h :=
+  (rfl)
 
 /-- The edge map of the column filtration followed by the map onto the column `1` vanishes. -/
 @[reassoc (attr := simp)]
-lemma columnFiltrationEdge_columnFiltrationToColumnOne (pq : ℤ × ℤ) (k : ℕ)
+lemma columnFiltrationEdge_columnFiltrationToColumnOne (r : ℤ) (hr : 3 ≤ r) (pq : ℤ × ℤ) (k : ℕ)
     (hpq : pq = (-(k : ℤ), 0))
-    (h : ∀ pq' : ℤ × ℤ, 2 ≤ pq'.2 → IsZero ((K.columnFiltrationSpectralSequence.page 3).X pq')) :
-    K.columnFiltrationEdge 3 (by norm_num) pq k hpq ≫ K.columnFiltrationToColumnOne pq k hpq h =
+    (h : ∀ pq' : ℤ × ℤ, 2 ≤ pq'.2 → IsZero ((K.columnFiltrationSpectralSequence.page r).X pq')) :
+    K.columnFiltrationEdge r (by omega) pq k hpq ≫ K.columnFiltrationToColumnOne r hr pq k hpq h =
       0 := by
-  rw [columnFiltrationEdge_def, columnFiltrationToColumnOne, Category.assoc,
+  rw [columnFiltrationEdge_def, columnFiltrationToColumnOne_def, Category.assoc,
     ← HomologicalComplex.homologyMap_comp_assoc, Iso.hom_inv_id, HomologicalComplex.homologyMap_id,
     Category.id_comp, rowFiltrationEdge_rowFiltrationToRowOne]
 
-/-- **The two-column short exact sequence.** If the second page (numbered `3`) of the spectral
-sequence of the column filtration vanishes in the columns `≥ 2`, the sequence
+/-- **The two-column short exact sequence.** If the page `r ≥ 3` of the spectral sequence of the
+column filtration vanishes in the columns `≥ 2`, the sequence
 `0 ⟶ E^{-k,0} ⟶ H_k(Tot K) ⟶ E^{-k-1,1} ⟶ 0` of the edge map and of the map onto the column `1`
 is short exact. -/
-theorem columnFiltrationEdge_shortExact (pq : ℤ × ℤ) (k : ℕ) (hpq : pq = (-(k : ℤ), 0))
-    (h : ∀ pq' : ℤ × ℤ, 2 ≤ pq'.2 → IsZero ((K.columnFiltrationSpectralSequence.page 3).X pq')) :
+theorem columnFiltrationEdge_shortExact (r : ℤ) (hr : 3 ≤ r) (pq : ℤ × ℤ) (k : ℕ)
+    (hpq : pq = (-(k : ℤ), 0))
+    (h : ∀ pq' : ℤ × ℤ, 2 ≤ pq'.2 → IsZero ((K.columnFiltrationSpectralSequence.page r).X pq')) :
     (ShortComplex.mk _ _
-      (K.columnFiltrationEdge_columnFiltrationToColumnOne pq k hpq h)).ShortExact := by
-  refine ShortComplex.shortExact_of_iso ?_ (K.flip.rowFiltrationEdge_shortExact pq k hpq h)
+      (K.columnFiltrationEdge_columnFiltrationToColumnOne r hr pq k hpq h)).ShortExact := by
+  refine ShortComplex.shortExact_of_iso ?_ (K.flip.rowFiltrationEdge_shortExact r hr pq k hpq h)
   refine ShortComplex.isoMk (Iso.refl _)
     (HomologicalComplex.homologyMapIso (K.totalFlipIso (down ℕ)) k) (Iso.refl _) ?_ ?_
   · simp [columnFiltrationEdge_def]
-  · simp [columnFiltrationToColumnOne, ← HomologicalComplex.homologyMap_comp_assoc]
+  · simp [columnFiltrationToColumnOne_def, ← HomologicalComplex.homologyMap_comp_assoc]
 
 end HomologicalComplex₂
