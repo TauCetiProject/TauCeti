@@ -191,7 +191,7 @@ theorem norm_coeff_restrictedAnalyticSubst_le [NormOneClass R] {ρ : τ → ℝ}
     ‖coeff e (restrictedAnalyticSubst g hg f : MvPowerSeries τ R)‖ ≤ ‖f‖ * e.prod (ρ · ^ ·) := by
   rw [coeff_restrictedAnalyticSubst]
   refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
-    (mul_nonneg (norm_nonneg f) (Finset.prod_nonneg fun j _ ↦ pow_nonneg (hρ j) _)) fun t ↦ ?_
+    (mul_nonneg (norm_nonneg f) (prod_pow_nonneg hρ e)) fun t ↦ ?_
   -- The term of `t` is `fₜ gᵗ`, and `‖fₜ‖ ∏ᵢ rᵢ ^ tᵢ ≤ ‖f‖` bounds its coefficients.
   have hgt : ‖coeff e (∏ i, (g i : MvPowerSeries τ R) ^ t i)‖ ≤
       t.prod (r · ^ ·) * e.prod (ρ · ^ ·) := by
@@ -204,7 +204,7 @@ theorem norm_coeff_restrictedAnalyticSubst_le [NormOneClass R] {ρ : τ → ℝ}
     _ = ‖coeff t (f : MvPowerSeries (Fin k) R)‖ * t.prod (r · ^ ·) * e.prod (ρ · ^ ·) :=
         (mul_assoc _ _ _).symm
     _ ≤ ‖f‖ * e.prod (ρ · ^ ·) := mul_le_mul_of_nonneg_right (norm_coeff_mul_prod_le f t)
-        (Finset.prod_nonneg fun j _ ↦ pow_nonneg (hρ j) _)
+        (prod_pow_nonneg hρ e)
 
 /-- Analytic substitution is continuous for the Gauss norms. -/
 theorem continuous_restrictedAnalyticSubst : Continuous (restrictedAnalyticSubst g hg) :=

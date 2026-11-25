@@ -34,6 +34,7 @@ families of automorphic forms.
 
 ## Main results
 
+* `MvPowerSeries.prod_pow_nonneg`: the rate `∏ i, s i ^ t i` is nonnegative.
 * `MvPowerSeries.norm_coeff_monomial_le_prod_pow`: the bound of a monomial.
 * `MvPowerSeries.norm_coeff_mul_le_mul_prod_pow`: the bounds multiply under multiplication.
 * `MvPowerSeries.norm_coeff_pow_le_pow_mul_prod_pow` and
@@ -48,6 +49,12 @@ namespace MvPowerSeries
 open Finset
 
 variable {σ R : Type*}
+
+/-- The geometric rate `∏ i, s i ^ t i` of nonnegative rates `s` is nonnegative. -/
+theorem prod_pow_nonneg {s : σ → ℝ} (hs : ∀ i, 0 ≤ s i) (t : σ →₀ ℕ) :
+    0 ≤ t.prod (s · ^ ·) := by
+  rw [Finsupp.prod]
+  exact Finset.prod_nonneg fun i _ ↦ pow_nonneg (hs i) _
 
 section Ring
 
@@ -77,7 +84,7 @@ theorem norm_coeff_monomial_le_prod_pow (hs : ∀ i, 0 ≤ s i) {e : σ →₀ �
   split_ifs with ht
   · exact ht ▸ hx
   · rw [norm_zero]
-    exact Finset.prod_nonneg fun i _ ↦ pow_nonneg (hs i) _
+    exact prod_pow_nonneg hs t
 
 variable [NormOneClass R]
 
@@ -90,7 +97,7 @@ theorem norm_coeff_one_le_prod_pow (hs : ∀ i, 0 ≤ s i) (t : σ →₀ ℕ) :
   split_ifs with ht
   · simp [ht]
   · rw [norm_zero]
-    exact Finset.prod_nonneg fun i _ ↦ pow_nonneg (hs i) _
+    exact prod_pow_nonneg hs t
 
 /-- Raising a series to the `n`-th power raises its geometric coefficient bound `a` to `a ^ n`. -/
 theorem norm_coeff_pow_le_pow_mul_prod_pow (hs : ∀ i, 0 ≤ s i) {f : MvPowerSeries σ R} {a : ℝ}
@@ -134,8 +141,6 @@ theorem norm_coeff_invOfUnit_le_mul_prod_pow (hs : ∀ i, 0 ≤ s i) {φ : MvPow
     {u : Rˣ} (hφ : ∀ t ≠ 0, ‖(↑u⁻¹ : R)‖ * ‖coeff t φ‖ ≤ t.prod (s · ^ ·)) (t : σ →₀ ℕ) :
     ‖coeff t (invOfUnit φ u)‖ ≤ ‖(↑u⁻¹ : R)‖ * t.prod (s · ^ ·) := by
   classical
-  have hprod (t : σ →₀ ℕ) : 0 ≤ t.prod (s · ^ ·) :=
-    Finset.prod_nonneg fun i _ ↦ pow_nonneg (hs i) _
   induction t using WellFoundedLT.induction with | _ t ih => ?_
   rw [coeff_invOfUnit]
   split_ifs with ht
@@ -143,7 +148,7 @@ theorem norm_coeff_invOfUnit_le_mul_prod_pow (hs : ∀ i, 0 ≤ s i) {φ : MvPow
   refine (norm_mul_le _ _).trans ?_
   rw [norm_neg]
   refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
-  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (hprod t) fun x hx ↦ ?_
+  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (prod_pow_nonneg hs t) fun x hx ↦ ?_
   split_ifs with hlt
   · -- In the recursion `x.1 + x.2 = t` with `x.2 < t`, so `x.1 ≠ 0` and `ih` applies to `x.2`.
     have hx1 : x.1 ≠ 0 := by
@@ -157,9 +162,9 @@ theorem norm_coeff_invOfUnit_le_mul_prod_pow (hs : ∀ i, 0 ≤ s i) {φ : MvPow
           (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left (ih x.2 hlt) (norm_nonneg _))
       _ = ‖(↑u⁻¹ : R)‖ * ‖coeff x.1 φ‖ * x.2.prod (s · ^ ·) := by ring
       _ ≤ x.1.prod (s · ^ ·) * x.2.prod (s · ^ ·) :=
-          mul_le_mul_of_nonneg_right (hφ x.1 hx1) (hprod _)
+          mul_le_mul_of_nonneg_right (hφ x.1 hx1) (prod_pow_nonneg hs _)
   · rw [norm_zero]
-    exact hprod t
+    exact prod_pow_nonneg hs t
 
 end Inverse
 
