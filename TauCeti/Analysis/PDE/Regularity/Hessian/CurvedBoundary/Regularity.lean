@@ -289,7 +289,7 @@ private theorem exists_wkp_value_ae_eq_of_norm_le (hp : 1 < p) (hp_top : p ≠ �
       hf'q hvq hgvq (by
         filter_upwards [hpull] with x hx
         rw [← hv_def] at hx
-        rw [← hx, Pi.zero_apply, zero_mul, add_zero, sub_zero, add_sub_cancel_right])
+        simp [← hx])
   -- Back to `Ω` along `Ψ`.
   exact exists_wkp_value_ae_eq_of_value_ae_eq_compL hΦ' hΨ' hΨ.differentiableOn.continuousOn hΦΨ'
     hx₀ hρ u w hwv
