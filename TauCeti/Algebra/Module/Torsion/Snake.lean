@@ -62,6 +62,8 @@ class of `l` in `Λ ⧸ rΛ`, so this class does not depend on the representativ
 * `LinearMap.orbitRelQuotientTorsionByδ_eq`, `LinearMap.quotSMulTop_mk_eq_mk_of_smul_eq`: the
   connecting map of an orbit space sends `[β]` to the class of `l` when `r • β = f l`, and this
   class is independent of the representative `β`.
+* `LinearMap.injective_orbitRelQuotientTorsionByδ`: the connecting map of an orbit space is
+  injective when multiplication by `r` is injective on `E`.
 -/
 
 public section
@@ -234,9 +236,7 @@ and its torus: the connecting map `TauCeti.torsionByδ` of the exact sequence
 noncomputable def orbitRelQuotientTorsionByδ :
     torsionBy ℤ (AddAction.orbitRel.Quotient (range f) E) r →ₗ[ℤ] QuotSMulTop r Λ :=
   torsionByδ r (g := (range f).orbitRelQuotientMkHom.toIntLinearMap)
-    (exact_orbitRelQuotientMkHom_range f) hf <| by
-      rw [AddMonoidHom.coe_toIntLinearMap, Submodule.coe_orbitRelQuotientMkHom]
-      exact Quotient.mk_surjective
+    (exact_orbitRelQuotientMkHom_range f) hf (range f).orbitRelQuotientMkHom_surjective
 
 /-- **The characterization of the connecting map of an orbit space**: if `x` is the class of `β`
 and `r • β = f l`, then `x` is sent to the class of `l`. -/
@@ -245,6 +245,15 @@ theorem orbitRelQuotientTorsionByδ_eq (x : torsionBy ℤ (AddAction.orbitRel.Qu
     (hl : f l = r • β) :
     f.orbitRelQuotientTorsionByδ hf r x = Submodule.Quotient.mk l :=
   torsionByδ_eq _ hf _ x (by simpa using hx.symm) hl
+
+/-- The class of `β` in the orbit space `E / f(Λ)` is `r`-torsion if and only if `r • β` lies in
+the range of `f`. -/
+theorem mk_mem_torsionBy_orbitRelQuotient_iff {β : E} :
+    (Quotient.mk _ β : AddAction.orbitRel.Quotient (range f) E) ∈ torsionBy ℤ _ r ↔
+      ∃ l, f l = r • β := by
+  have h := map_zsmul (range f).orbitRelQuotientMkHom r β
+  rw [Submodule.coe_orbitRelQuotientMkHom] at h
+  rw [mem_torsionBy_iff, ← h, Submodule.orbitRelQuotient_mk_eq_zero_iff, mem_range]
 
 /-- The connecting map of an orbit space is injective when multiplication by `r` is injective on
 `E`, as for a real vector space and `r ≠ 0`. -/
@@ -259,11 +268,7 @@ theorem quotSMulTop_mk_eq_mk_of_smul_eq {β₁ β₂ : E}
     (hβ : (Quotient.mk _ β₁ : AddAction.orbitRel.Quotient (range f) E) = Quotient.mk _ β₂)
     {l₁ l₂ : Λ} (hl₁ : f l₁ = r • β₁) (hl₂ : f l₂ = r • β₂) :
     (Submodule.Quotient.mk l₁ : QuotSMulTop r Λ) = Submodule.Quotient.mk l₂ := by
-  have hx : (Quotient.mk _ β₁ : AddAction.orbitRel.Quotient (range f) E) ∈ torsionBy ℤ _ r := by
-    have h := map_zsmul (range f).orbitRelQuotientMkHom r β₁
-    rw [Submodule.coe_orbitRelQuotientMkHom, ← hl₁] at h
-    rw [mem_torsionBy_iff, ← h, Submodule.orbitRelQuotient_mk_eq_zero_iff]
-    exact mem_range_self f l₁
+  have hx := (f.mk_mem_torsionBy_orbitRelQuotient_iff r).2 ⟨l₁, hl₁⟩
   rw [← f.orbitRelQuotientTorsionByδ_eq hf r ⟨_, hx⟩ rfl hl₁,
     f.orbitRelQuotientTorsionByδ_eq hf r ⟨_, hx⟩ hβ hl₂]
 
