@@ -31,6 +31,8 @@ therefore needed for extensions of modules with an infinitesimal character.
 
 * `TauCeti.UniversalEnvelopingAlgebra.jordanAction`: the action `t ↦ t • (c • 1 + N)` of the
   one-dimensional abelian Lie algebra `R` on `M`.
+* `TauCeti.UniversalEnvelopingAlgebra.jordanNilpotent`: the matrix unit `E₀₁` on `R²`, the
+  nilpotent part of the two-by-two Jordan block.
 
 ## Main results
 
@@ -213,9 +215,9 @@ theorem isGeneralizedCharacterFinite_jordanAction (c : R) {N : End R M} (hN : N 
   have hdev : ∀ r : R, toEnd R R M r - algebraMap R (End R M)
       (LieAlgebra.lieCharacterEquivLinearDual.symm (c • LinearMap.id) r) = r • N := by
     intro r
-    rw [toEnd_jordanAction, ← LieHom.coe_toLinearMap,
-      ← LieAlgebra.lieCharacterEquivLinearDual_apply, Equiv.apply_symm_apply,
-      Algebra.algebraMap_eq_smul_one, LinearMap.smul_apply, LinearMap.id_apply, smul_eq_mul]
+    rw [toEnd_jordanAction, LieAlgebra.lieCharacterEquivLinearDual_symm_apply_apply,
+      Algebra.algebraMap_eq_smul_one]
+    simp only [LinearMap.smul_apply, LinearMap.id_apply, smul_eq_mul]
     module
   rw [hdev, hdev, smul_mul_smul_comm, hN, smul_zero]
 
@@ -236,14 +238,17 @@ theorem mem_span_one_of_centerEigenspace_jordanAction_eq_top {c : R} {N : End R 
   exact ⟨χ ⟨_, ι_mem_center R R 1⟩ - c, by rw [sub_smul, Module.End.one_eq_id]⟩
 
 /-- The nilpotent part `E₀₁` of the two-by-two Jordan block on `R²`. -/
-noncomputable abbrev jordanNilpotent (R : Type u) [CommRing R] : End R (Fin 2 → R) :=
+noncomputable def jordanNilpotent (R : Type u) [CommRing R] : End R (Fin 2 → R) :=
   Matrix.toLin' (Matrix.single 0 1 1)
 
+/-- The nilpotent part of the Jordan block sends `v` to `(v 1, 0)`. -/
+@[simp]
+theorem jordanNilpotent_apply (v : Fin 2 → R) : jordanNilpotent R v = Pi.single 0 (v 1) := by
+  rw [jordanNilpotent, Matrix.toLin'_apply, Matrix.single_mulVec, one_mul, Pi.single]
+
 /-- The nilpotent part of the Jordan block squares to zero. -/
-theorem jordanNilpotent_mul_self : jordanNilpotent R * jordanNilpotent R = 0 := by
-  rw [Module.End.mul_eq_comp, ← Matrix.toLin'_mul,
-    Matrix.single_mul_single_of_ne (i := (0 : Fin 2)) (j := 1) (k := 0) (h := by decide),
-    map_zero]
+theorem jordanNilpotent_mul_self : jordanNilpotent R * jordanNilpotent R = 0 :=
+  LinearMap.ext fun v => by simp
 
 /-- **The two-by-two Jordan block is generalized-character-finite but has no infinitesimal
 character.** On `R²` with `t` acting by `t` times the Jordan block with eigenvalue `c`, every
@@ -262,7 +267,7 @@ theorem isGeneralizedCharacterFinite_and_centerEigenspace_ne_top_jordanNilpotent
   obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp
     (mem_span_one_of_centerEigenspace_jordanAction_eq_top h)
   have := congr_fun (LinearMap.congr_fun ha (Pi.single 1 1)) 0
-  simp [Matrix.toLin'_apply, Matrix.mulVec, dotProduct, Matrix.single_apply] at this
+  simp at this
 
 end Jordan
 
