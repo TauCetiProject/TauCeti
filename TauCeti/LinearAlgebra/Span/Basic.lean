@@ -31,7 +31,10 @@ the spans of initial segments and of the whole family. A ring homomorphism carri
 scalars in `A` to scalars in `B`. Over a scalar extension, the image span of a semilinear map is
 spanned by its values on any spanning family of the domain. A property closed under `u + a • v`
 extends from a submodule `S` and a vector `x` to `S ⊔ (R ∙ x)`. The span of any countable set
-admits a spanning sequence indexed by `ℕ` (`Set.Countable.exists_span_range_eq_top`).
+admits a spanning sequence indexed by `ℕ` (`Set.Countable.exists_span_range_eq_top`). If
+`r ↦ r • x` is injective, then `r ↦ r • x` identifies `R` with the line `R ∙ x`
+(`LinearEquiv.toSpanSingletonOfInjective`); for instance a non-zero-divisor `x` of a commutative
+ring identifies the ring with the principal ideal it generates.
 -/
 
 public section
@@ -245,3 +248,34 @@ theorem Set.Countable.exists_span_range_eq_top (R : Type*) {M : Type*} [Semiring
     rw [← hf, Submodule.span_insert_zero]⟩
 
 end Countable
+
+namespace LinearEquiv
+
+variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M] (x : M)
+  (hx : Function.Injective fun r : R ↦ r • x)
+
+/-- If `r ↦ r • x` is injective, the natural isomorphism `R ≃ₗ[R] R ∙ x`, `r ↦ r • x`. This
+extends Mathlib's `LinearEquiv.toSpanNonzeroSingleton` from torsion-free modules over domains; for
+instance it applies to a non-zero-divisor `x` of a commutative ring `R`, identifying `R` with the
+principal ideal `x R`. -/
+noncomputable def toSpanSingletonOfInjective : R ≃ₗ[R] R ∙ x :=
+  (LinearEquiv.ofInjective (LinearMap.toSpanSingleton R M x) hx).trans
+    (LinearEquiv.ofEq _ _ (LinearMap.range_toSpanSingleton x))
+
+@[simp]
+theorem coe_toSpanSingletonOfInjective_apply (r : R) :
+    (toSpanSingletonOfInjective x hx r : M) = r • x :=
+  (rfl)
+
+@[simp]
+theorem toSpanSingletonOfInjective_symm_apply_smul (y : R ∙ x) :
+    (toSpanSingletonOfInjective x hx).symm y • x = y :=
+  congrArg Subtype.val ((toSpanSingletonOfInjective x hx).apply_symm_apply y)
+
+@[simp]
+theorem toSpanSingletonOfInjective_symm_mk_smul (r : R) :
+    (toSpanSingletonOfInjective x hx).symm
+      ⟨r • x, Submodule.smul_mem _ r (Submodule.mem_span_singleton_self x)⟩ = r :=
+  (toSpanSingletonOfInjective x hx).symm_apply_apply r
+
+end LinearEquiv

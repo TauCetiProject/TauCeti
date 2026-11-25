@@ -21,7 +21,9 @@ root group in `SU₃`, including in characteristic two.
 
 Multiplication and inversion are inherited from the Heisenberg group, so the parameters obey
 `(x,z)(x',z') = (x+x', z+z'+x σ(x'))`. The commutator has parameters
-`(0, x σ(x') - x' σ(x))` and is central. No division by two is used.
+`(0, x σ(x') - x' σ(x))` and is central. These formulas use no division by two. Over a
+nontrivial commutative ring with an involution the group is nontrivial
+(`TauCeti.HeisenbergGroup.nontrivial_unitarySubgroup`).
 
 ## References
 
@@ -233,5 +235,17 @@ theorem commutatorElement_unitaryMk (x z x' z' : R)
         ring) := by
   apply Subtype.ext
   exact (unitarySubgroup.coe_commutatorElement _ _).trans (by simp)
+
+/-- **The unitary root group is nontrivial** over every nontrivial commutative ring with an
+involution `σ`, including `σ = id`. -/
+theorem nontrivial_unitarySubgroup [Nontrivial R] (hσ : Function.Involutive σ) :
+    Nontrivial (unitarySubgroup σ) := by
+  -- The parameters `(2, 2)` satisfy the trace equation, and are nontrivial unless `2 = 0`, in
+  -- which case the parameters `(0, 1)` do.
+  by_cases h₂ : (2 : R) = 0
+  · refine nontrivial_of_ne (unitaryMk σ hσ 0 1 (by simp [one_add_one_eq_two, h₂])) 1 ?_
+    simp
+  · refine nontrivial_of_ne (unitaryMk σ hσ 2 2 (by rw [map_ofNat]; ring)) 1 ?_
+    simpa using h₂
 
 end TauCeti.HeisenbergGroup

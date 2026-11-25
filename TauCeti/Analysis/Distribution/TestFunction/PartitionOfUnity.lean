@@ -192,6 +192,13 @@ theorem exists_eventually_eq_one {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω
   obtain ⟨χ, hχ01, hχ1, -⟩ := exists_cutoff_tsupport_subset (n := n) hK Ω.isOpen hKΩ subset_rfl
   exact ⟨χ, hχ1, hχ01⟩
 
+/-- Two test functions on `Ω` have a common cutoff test function on `Ω` equal to one on a
+neighbourhood of the union of their supports. -/
+theorem exists_eventually_eq_one_nhdsSet_tsupport_union (φ ψ : 𝓓^{n}(Ω, F)) :
+    ∃ χ : 𝓓^{n}(Ω, ℝ), ∀ᶠ x in 𝓝ˢ (tsupport φ ∪ tsupport ψ), χ x = 1 :=
+  (exists_eventually_eq_one (φ.hasCompactSupport.isCompact.union ψ.hasCompactSupport.isCompact)
+    (union_subset φ.tsupport_subset ψ.tsupport_subset)).imp fun _ h ↦ h.1
+
 /-- Every point of the domain has a test function taking a prescribed value at it and supported
 in a given neighbourhood of it. -/
 theorem exists_tsupport_subset_apply_eq {x : E} {s : Set E} (hs : s ∈ 𝓝 x) (hsΩ : s ⊆ Ω)

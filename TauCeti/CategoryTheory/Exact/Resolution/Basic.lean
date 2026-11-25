@@ -269,6 +269,29 @@ theorem prop_syzygy {X : C} (r : FiniteResolution E P X) {n : ℕ} (hn : r.lengt
 theorem prop_syzygy_length {X : C} (r : FiniteResolution E P X) : P (r.syzygy r.length) :=
   r.prop_syzygy le_rfl
 
+section Eq
+
+variable {E' : ExactStructure C}
+
+/-- Transport a resolution along an equality of exact structures. -/
+def ofEq (h : E = E') {X : C} (r : FiniteResolution E P X) : FiniteResolution E' P X :=
+  h ▸ r
+
+/-- Transport along an equality of exact structures preserves the length. -/
+@[simp] theorem length_ofEq (h : E = E') {X : C} (r : FiniteResolution E P X) :
+    (ofEq h r).length = r.length := by
+  subst h
+  rfl
+
+/-- Transport along an equality of exact structures preserves the alternating fold. -/
+@[simp] theorem foldAlternating_ofEq {A : Type*} [AddGroup A] (f : ∀ Z : C, P Z → A)
+    (h : E = E') {X : C} (r : FiniteResolution E P X) :
+    (ofEq h r).foldAlternating f = r.foldAlternating f := by
+  subst h
+  rfl
+
+end Eq
+
 section Iso
 
 variable [P.IsClosedUnderIsomorphisms]
