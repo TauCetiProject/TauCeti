@@ -254,8 +254,7 @@ theorem isCompactConjugation_compactConjugation :
           ∑ γ ∈ H.root, Complex.normSq (γ h) : ℝ) : ℂ) := by
       rw [hx.killingHermitianForm_compactConjugation_self b]
       push_cast
-      simp only [hrB]
-      rfl
+      simp only [hrB, hh, c]
     rw [key, Complex.zero_lt_real]
     have h1 : 0 ≤ ∑ α : H.root, Complex.normSq (c.repr v (Sum.inl α)) * r α :=
       Finset.sum_nonneg fun α _ ↦ mul_nonneg (Complex.normSq_nonneg _) (hr α).le

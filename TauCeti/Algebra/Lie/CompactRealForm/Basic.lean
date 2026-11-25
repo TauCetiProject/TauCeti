@@ -33,8 +33,8 @@ Killing form of `𝔲` is the restriction of the complex Killing form of `L`
 
 The *Hermitian Killing form* `H_τ(x, y) = -B(x, τ y)` of `τ` is linear in `x` and conjugate-linear
 in `y`. Since `τ` conjugates traces (`LinearMap.trace_comp_comp_of_involutive`), it conjugates the
-Killing form, `B(τ x, τ y) = conj B(x, y)`, so `H_τ` is Hermitian
-symmetric (`TauCeti.killingHermitianForm_conj_symm`). The conjugation is *compact*
+Killing form, `B(τ x, τ y) = conj B(x, y)`, so `H_τ` is Hermitian symmetric
+(`TauCeti.IsLieConjugation.killingHermitianForm_conj_symm`). The conjugation is *compact*
 (`TauCeti.IsCompactConjugation`) when `H_τ` is positive definite; its fixed points are then a
 *compact real form* of `L`, on which the real Killing form is negative definite, because
 `B(X, X) = -H_τ(X, X)` for `τ X = X` (`TauCeti.IsCompactConjugation.killingForm_realForm_neg`).
@@ -56,7 +56,7 @@ complex subalgebra, and `-B(x, ω y)` is bilinear rather than Hermitian.
 ## Main results
 
 * `TauCeti.IsLieConjugation.killingForm_map`: `B(τ x, τ y) = conj B(x, y)`.
-* `TauCeti.killingHermitianForm_conj_symm`: `H_τ(y, x) = conj H_τ(x, y)`, and
+* `TauCeti.IsLieConjugation.killingHermitianForm_conj_symm`: `H_τ(y, x) = conj H_τ(x, y)`, and
   `TauCeti.IsLieConjugation.killingHermitianForm_lie_left`: `H_τ(⁅z, x⁆, y) = -H_τ(x, ⁅τ z, y⁆)`.
 * `TauCeti.IsLieConjugation.killingForm_realForm`: the Killing form of the real form is the
   restriction of the Killing form of `L`.
@@ -93,9 +93,10 @@ structure IsLieConjugation (τ : L →ₛₗ[starRingEnd ℂ] L) : Prop where
   involutive : Function.Involutive τ
 
 /-- The **Hermitian Killing form** `H_τ(x, y) = -B(x, τ y)` of a conjugate-linear map `τ`, with
-`B` the Killing form. It is linear in `x` and conjugate-linear in `y`. -/
-noncomputable def killingHermitianForm (τ : L →ₛₗ[starRingEnd ℂ] L) (x y : L) : ℂ :=
-  -killingForm ℂ L x (τ y)
+`B` the Killing form: a sesquilinear form, linear in `x` and conjugate-linear in `y`. -/
+noncomputable def killingHermitianForm (τ : L →ₛₗ[starRingEnd ℂ] L) :
+    L →ₗ[ℂ] L →ₛₗ[starRingEnd ℂ] ℂ :=
+  -(killingForm ℂ L).compl₂ τ
 
 /-- The defining formula `H_τ(x, y) = -B(x, τ y)` of the Hermitian Killing form. -/
 theorem killingHermitianForm_def (τ : L →ₛₗ[starRingEnd ℂ] L) (x y : L) :
@@ -252,81 +253,9 @@ end IsLieConjugation
 
 variable {τ : L →ₛₗ[starRingEnd ℂ] L}
 
-/-- The Hermitian Killing form vanishes when its first argument does. -/
-@[simp]
-theorem killingHermitianForm_zero_left (y : L) : killingHermitianForm τ 0 y = 0 := by
-  simp [killingHermitianForm_def]
-
-/-- The Hermitian Killing form vanishes when its second argument does. -/
-@[simp]
-theorem killingHermitianForm_zero_right (x : L) : killingHermitianForm τ x 0 = 0 := by
-  simp [killingHermitianForm_def]
-
-/-- The Hermitian Killing form is additive in the first argument. -/
-@[simp]
-theorem killingHermitianForm_add_left (x x' y : L) :
-    killingHermitianForm τ (x + x') y =
-      killingHermitianForm τ x y + killingHermitianForm τ x' y := by
-  simp only [killingHermitianForm_def, map_add, LinearMap.add_apply, neg_add]
-
-/-- The Hermitian Killing form is additive in the second argument. -/
-@[simp]
-theorem killingHermitianForm_add_right (x y y' : L) :
-    killingHermitianForm τ x (y + y') =
-      killingHermitianForm τ x y + killingHermitianForm τ x y' := by
-  simp only [killingHermitianForm_def, map_add, neg_add]
-
-/-- The Hermitian Killing form is linear in the first argument. -/
-@[simp]
-theorem killingHermitianForm_smul_left (c : ℂ) (x y : L) :
-    killingHermitianForm τ (c • x) y = c * killingHermitianForm τ x y := by
-  simp [killingHermitianForm_def]
-
-/-- The Hermitian Killing form is conjugate-linear in the second argument. -/
-@[simp]
-theorem killingHermitianForm_smul_right (c : ℂ) (x y : L) :
-    killingHermitianForm τ x (c • y) = star c * killingHermitianForm τ x y := by
-  simp [killingHermitianForm_def]
-
-/-- The Hermitian Killing form is odd in the first argument. -/
-@[simp]
-theorem killingHermitianForm_neg_left (x y : L) :
-    killingHermitianForm τ (-x) y = -killingHermitianForm τ x y := by
-  simp [killingHermitianForm_def]
-
-/-- The Hermitian Killing form is odd in the second argument. -/
-@[simp]
-theorem killingHermitianForm_neg_right (x y : L) :
-    killingHermitianForm τ x (-y) = -killingHermitianForm τ x y := by
-  simp [killingHermitianForm_def]
-
-/-- The Hermitian Killing form is subtractive in the first argument. -/
-@[simp]
-theorem killingHermitianForm_sub_left (x x' y : L) :
-    killingHermitianForm τ (x - x') y =
-      killingHermitianForm τ x y - killingHermitianForm τ x' y := by
-  simp only [killingHermitianForm_def, map_sub, LinearMap.sub_apply, neg_sub_neg, neg_sub]
-
-/-- The Hermitian Killing form is subtractive in the second argument. -/
-@[simp]
-theorem killingHermitianForm_sub_right (x y y' : L) :
-    killingHermitianForm τ x (y - y') =
-      killingHermitianForm τ x y - killingHermitianForm τ x y' := by
-  simp only [killingHermitianForm_def, map_sub, neg_sub_neg, neg_sub]
-
-/-- The Hermitian Killing form is additive over finite sums in the first argument. -/
-theorem killingHermitianForm_sum_left {ι : Type*} (s : Finset ι) (f : ι → L) (y : L) :
-    killingHermitianForm τ (∑ i ∈ s, f i) y = ∑ i ∈ s, killingHermitianForm τ (f i) y := by
-  simp only [killingHermitianForm_def, map_sum, LinearMap.sum_apply, Finset.sum_neg_distrib]
-
-/-- The Hermitian Killing form is additive over finite sums in the second argument. -/
-theorem killingHermitianForm_sum_right {ι : Type*} (s : Finset ι) (x : L) (g : ι → L) :
-    killingHermitianForm τ x (∑ i ∈ s, g i) = ∑ i ∈ s, killingHermitianForm τ x (g i) := by
-  simp only [killingHermitianForm_def, map_sum, Finset.sum_neg_distrib]
-
 /-- **The Hermitian Killing form of a conjugation is Hermitian**: `H_τ(y, x) = conj H_τ(x, y)`. -/
-theorem killingHermitianForm_conj_symm (hτ : IsLieConjugation τ)
-    (x y : L) : killingHermitianForm τ y x = star (killingHermitianForm τ x y) := by
+theorem IsLieConjugation.killingHermitianForm_conj_symm (hτ : IsLieConjugation τ) (x y : L) :
+    killingHermitianForm τ y x = star (killingHermitianForm τ x y) := by
   rw [killingHermitianForm_def, killingHermitianForm_def, star_neg, ← hτ.killingForm_map,
     hτ.apply_apply, LieModule.traceForm_comm]
 

@@ -93,7 +93,8 @@ theorem killingForm_eq_sum_root (h h' : H) :
   have := LinearMap.congr_fun₂ (restrict_killingForm_eq_sum (K := K) (L := L) (H := H)) h h'
   simp only [LinearMap.BilinForm.restrict_apply, LinearMap.sum_apply, LinearMap.smulRight_apply,
     LinearMap.smul_apply, smul_eq_mul] at this
-  exact this.trans (Finset.sum_congr rfl fun _ _ ↦ rfl)
+  exact this.trans <| Finset.sum_congr rfl fun γ _ ↦
+    congrArg₂ (· * ·) (Weight.toLinear_apply K H L γ h) (Weight.toLinear_apply K H L γ h')
 
 /-- **The roots separate the points of the Cartan subalgebra**: a point on which every root
 vanishes is zero. -/
