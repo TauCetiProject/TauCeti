@@ -132,30 +132,16 @@ theorem rowWeight_rowSubset (I : Finset (Fin n)) :
   rw [rowWeight_eq_rowSum_sub, rowSum_rowSubset I r.isLt, rowSum_rowSubset I r.isLt.le, h]
   split_ifs <;> simp
 
-/-- In the pattern of `I`, row `j ≤ n` has exactly `#{r ∈ I | r < j}` nonzero entries. -/
-private theorem card_filter_rowSubset_ne_zero (I : Finset (Fin n)) {j : ℕ} (hj : j ≤ n) :
-    #{c ∈ range j | rowSubset I c j ≠ 0} = #{r ∈ I | r.val < j} := by
-  have hk := card_filter_val_lt_le I j
-  have : {c ∈ range j | rowSubset I c j ≠ 0} = range #{r ∈ I | r.val < j} := by
-    ext c
-    simp only [mem_filter, mem_range, rowSubset_apply, hj, true_and, ne_eq, ite_eq_right_iff,
-      one_ne_zero, imp_false, not_not]
-    omega
-  rw [this, card_range]
-
 /-- **Distinct row subsets give distinct patterns**, so the row-subset patterns are `2 ^ n`
 distinct patterns. -/
 theorem rowSubset_injective : Function.Injective (rowSubset (n := n)) := by
   intro I J h
-  have hcount : ∀ j, j ≤ n → #{r ∈ I | r.val < j} = #{r ∈ J | r.val < j} := fun j hj => by
-    rw [← card_filter_rowSubset_ne_zero I hj, ← card_filter_rowSubset_ne_zero J hj, h]
-  -- A row `r` belongs to `I` exactly when the count increases from row `r` to row `r + 1`.
+  -- The weight of the pattern of `I` is the indicator of `I`.
+  have hw := congrArg rowWeight h
+  simp only [rowWeight_rowSubset] at hw
   ext r
-  have hI := card_filter_castSucc_lt_succ I r
-  have hJ := card_filter_castSucc_lt_succ J r
-  simp only [Fin.lt_def, Fin.val_castSucc, Fin.val_succ] at hI hJ
-  rw [hcount _ r.isLt, hcount _ r.isLt.le] at hI
-  split_ifs at hI hJ <;> simp_all
+  have := congrFun hw r
+  by_cases hI : r ∈ I <;> by_cases hJ : r ∈ J <;> simp_all
 
 /-! ### The row-subset patterns generate the nonnegative patterns -/
 
