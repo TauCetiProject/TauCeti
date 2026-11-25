@@ -81,23 +81,7 @@ theorem mem_quotientPointsSubgroup_antidiagPinning_borel_iff (A : Type v) [CommR
         ((CommHopfAlgCat.Hom.mapPointsFunctor
           (ConstantForm.coordinateMap R (m + m) (JAntidiag m R))).app (CommAlgCat.of R A) f) :
           GL (Fin (m + m)) A) : Matrix (Fin (m + m)) (Fin (m + m)) A).BlockTriangular id := by
-  rw [mem_quotientPointsSubgroup_constantFormPinning_borel_iff, map_antidiagCongr]
-  suffices ∀ M : Matrix (Fin (m + m)) (Fin (m + m)) A,
-      (∀ i j, flagOrder m j < flagOrder m i →
-        ((antidiagCongr m A : Matrix (Fin (m + m)) (Fin (m + m)) A) * M *
-          (((antidiagCongr m A)⁻¹ : GL (Fin (m + m)) A) :
-            Matrix (Fin (m + m)) (Fin (m + m)) A)) i j = 0) ↔ M.BlockTriangular id from this _
-  intro M
-  have h := blockTriangular_antidiagCongr_inv_mul_mul_iff
-    ((antidiagCongr m A : Matrix (Fin (m + m)) (Fin (m + m)) A) * M *
-      (((antidiagCongr m A)⁻¹ : GL (Fin (m + m)) A) : Matrix (Fin (m + m)) (Fin (m + m)) A))
-  rw [Matrix.mul_assoc, Matrix.mul_assoc, Units.inv_mul, Matrix.mul_one,
-    Units.inv_mul_cancel_left] at h
-  rw [h]
-  constructor
-  · intro h a b hab
-    exact h _ _ (by rwa [flagOrder_flagOrder, flagOrder_flagOrder])
-  · intro h i j hij
-    simpa only [submatrix_apply, flagOrder_flagOrder] using @h (flagOrder m i) (flagOrder m j) hij
+  rw [mem_quotientPointsSubgroup_constantFormPinning_borel_iff, map_antidiagCongr,
+    forall_flagOrder_lt_antidiagCongr_mul_mul_inv_eq_zero_iff]
 
 end TauCeti.Symplectic

@@ -112,8 +112,8 @@ theorem constantFormPinning_torus_points [Nontrivial R] [ConnectedSpace (PrimeSp
       (CommAlgCat.of R A) _)).trans ?_
   rw [splitMaximalTorus_coordinateMap, mapPointsFunctor_diagonalTorusCoordinateMap_app,
     ConstantForm.mapPointsFunctor_coordinateMap_app, pointsMulEquiv_coe,
-    pointsMulEquiv_diagonalTorusPoints, GLSymplecticFin.coe_diagonal, map_inv, inv_inv,
-    Units.val_mul, Units.val_mul, diagGL_coe]
+    pointsMulEquiv_diagonalTorusPoints]
+  simp only [GLSymplecticFin.coe_diagonal, map_inv, inv_inv, Units.val_mul, diagGL_coe]
 
 /-- **The Borel subgroup of the transported pinning on points.** A point of the subgroup scheme
 preserving `C` with matrix `M` lies in the transported Borel subgroup exactly when `P M P⁻¹`, with
@@ -143,18 +143,15 @@ theorem mem_quotientPointsSubgroup_constantFormPinning_borel_iff [Nontrivial R]
   -- Every point of the subgroup scheme preserving `C` comes from a point of `Sp₂ₘ` along `e`.
   obtain ⟨g, rfl⟩ : ∃ g : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R m)
       (CommAlgCat.of R A),
-      (CommHopfAlgCat.Hom.mapPointsFunctor e.hom).app (CommAlgCat.of R A) g = f := by
-    refine ⟨(CommHopfAlgCat.Hom.mapPointsFunctor e.inv).app (CommAlgCat.of R A) f, ?_⟩
-    rw [← CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply, e.hom_inv_id,
-      CommHopfAlgCat.Hom.mapPointsFunctor_id, NatTrans.id_app]
-    exact GrpCat.id_apply _ f
+      (CommHopfAlgCat.Hom.mapPointsFunctor e.hom).app (CommAlgCat.of R A) g = f :=
+    (CommHopfAlgCat.mapPointsFunctor_app_bijective_of_isIso e.hom (CommAlgCat.of R A)).2 f
   refine (BialgHom.mapDomain_mem_quotientPointsSubgroup_comapOfSurjective_iff e.hom.hom _ _ _
     g).trans ?_
   rw [IsotropicFlag.mem_definingPointsSubgroup_iff,
     GLSymplecticFin.IsotropicFlag.mem_matrixSubgroup_iff_flagOrder,
-    ConstantForm.pointsMulEquiv_mapPointsFunctor_coordinateHopfAlgebraCongr, map_inv, inv_inv,
-    Units.val_mul, Units.val_mul, ConstantForm.mapPointsFunctor_coordinateMap_app,
-    pointsMulEquiv_coe]
-  simp only [Matrix.mul_assoc, Units.mul_inv, Matrix.mul_one, Units.mul_inv_cancel_left]
+    ConstantForm.pointsMulEquiv_mapPointsFunctor_coordinateHopfAlgebraCongr,
+    ConstantForm.mapPointsFunctor_coordinateMap_app, pointsMulEquiv_coe]
+  simp only [map_inv, inv_inv, Units.val_mul, Matrix.mul_assoc, Units.mul_inv, Matrix.mul_one,
+    Units.mul_inv_cancel_left]
 
 end TauCeti.Symplectic
