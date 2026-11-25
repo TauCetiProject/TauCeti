@@ -236,7 +236,7 @@ theorem groupSchemeIsoSpecialOrthogonal_hom_comp_inclusion (hi : i * i = -1) :
     Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, ← Functor.map_comp_assoc,
     ← op_comp, coordinateMap_comp_coordinateHopfAlgebraIsoSpecialOrthogonal_inv]
 
-/-- **On points, the isomorphism `SO_l^J ≅ SO_l` is conjugation by the congruence matrix.**
+/-- **On points, the inverse isomorphism `SO_l ≅ SO_l^J` is conjugation by `P⁻¹`.**
 Precomposing with `coordinateHopfAlgebraIsoSpecialOrthogonal l hi` sends an `A`-valued point of
 `SO_l` with ambient matrix `M` to the point of `SO_l^J` with ambient matrix `P⁻¹ M P`. -/
 theorem pointsMulEquiv_mapPointsFunctor_coordinateHopfAlgebraIsoSpecialOrthogonal_hom
