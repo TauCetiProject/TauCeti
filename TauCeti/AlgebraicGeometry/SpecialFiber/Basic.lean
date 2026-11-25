@@ -32,6 +32,11 @@ special fibre (`TauCeti.range_genericFiberι_eq_setOf_ne_closedPoint`,
 `TauCeti.range_genericFiberι_of_isDiscreteValuationRing`), showing that any point outside the
 special fibre witnesses nonemptiness of the generic fibre
 (`AlgebraicGeometry.Scheme.Hom.nonempty_genericFiber_of_base_ne_closedPoint`).
+
+For a local homomorphism `φ : R →+* R'` of local rings, the residue field map makes the square of
+spectra `Spec κ(R') ⟶ Spec R' ⟶ Spec R = Spec κ(R') ⟶ Spec κ(R) ⟶ Spec R` commute
+(`TauCeti.specMap_residue_comp_specMap`), so the special fibre over `R'` lies over the special fibre
+over `R`.
 -/
 
 public section
@@ -236,5 +241,17 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.nonempty_genericFiber_of_base_ne_clo
       genericPoint_eq_bot_of_affine]
     exact (IsLocalRing.Ring.KrullDimLE.eq_bot_or_eq_top (toBase x)).resolve_right hx
   exact ⟨y⟩
+
+/-- For a local homomorphism `φ : R →+* R'` of local rings, `Spec κ(R') ⟶ Spec R' ⟶ Spec R` is
+`Spec κ(R') ⟶ Spec κ(R) ⟶ Spec R`: the special fibre over `R'` lies over the special fibre over
+`R`. -/
+@[reassoc]
+theorem specMap_residue_comp_specMap {R R' : Type u} [CommRing R] [CommRing R'] [IsLocalRing R]
+    [IsLocalRing R'] (φ : R →+* R') [IsLocalHom φ] :
+    Spec.map (CommRingCat.ofHom (residue R')) ≫ Spec.map (CommRingCat.ofHom φ) =
+      Spec.map (CommRingCat.ofHom (ResidueField.map φ)) ≫
+        Spec.map (CommRingCat.ofHom (residue R)) := by
+  rw [← Spec.map_comp, ← Spec.map_comp, ← CommRingCat.ofHom_comp, ← CommRingCat.ofHom_comp,
+    ResidueField.map_comp_residue]
 
 end TauCeti

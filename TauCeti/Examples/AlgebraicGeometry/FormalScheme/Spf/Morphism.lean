@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Morphism
+public import TauCeti.RingTheory.AdicRing.Padic
 public import TauCeti.RingTheory.AdicRing.Quotient
-public import TauCeti.RingTheory.Huber.Padic.Basic
 
 /-!
 # Examples of morphisms of formal spectra

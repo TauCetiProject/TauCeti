@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
+public import TauCeti.Analysis.InnerProductSpace.GramSchmidt.Ortho
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
 public import TauCeti.Analysis.Matrix.EuclideanLin
 public import TauCeti.Topology.Grassmannian.Basic

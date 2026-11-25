@@ -37,7 +37,8 @@ comparisons of powers of two comparable quantities, such as a time and a time st
   `x ^ s ≤ max (a ^ s) (b ^ s) y ^ s`. For `0 < y`, so that `a ≤ b`, the factor is `b ^ s` for
   `s ≥ 0` and `a ^ s` for `s ≤ 0`; for `y = 0` the hypotheses force `x = 0`, and `b` is
   unconstrained. At `y = 1` this bounds a power on an interval `[a, b]` by its larger endpoint
-  value.
+  value. For `a = 1 / 2` and `b = 2` it gives `TauCeti.rpow_le_two_rpow_abs_mul`:
+  `y ^ p ≤ 2 ^ |p| x ^ p` for `x / 2 ≤ y ≤ 2 x` and every real `p`.
 -/
 
 public section
@@ -173,6 +174,21 @@ theorem rpow_le_max_mul_rpow {a b x y : ℝ} (ha : 0 < a) (hy : 0 ≤ y) (hax : 
 end Real
 
 namespace TauCeti
+
+/-- If `x / 2 ≤ y ≤ 2 x`, then `y ^ p ≤ 2 ^ |p| x ^ p`, for positive and negative exponents
+alike: the case `a = 1 / 2`, `b = 2` of `Real.rpow_le_max_mul_rpow`. -/
+theorem rpow_le_two_rpow_abs_mul {x y p : ℝ} (hxy : x / 2 ≤ y) (hyx : y ≤ 2 * x) :
+    y ^ p ≤ 2 ^ |p| * x ^ p := by
+  rcases (by linarith : (0 : ℝ) ≤ x).eq_or_lt with rfl | hx
+  · have hy : y = 0 := by linarith
+    rw [hy]
+    exact le_mul_of_one_le_left (Real.rpow_nonneg le_rfl p)
+      (Real.one_le_rpow (by norm_num) (abs_nonneg p))
+  refine (Real.rpow_le_max_mul_rpow (a := 1 / 2) (b := 2) (by norm_num) hx.le (by linarith)
+    hyx p).trans (mul_le_mul_of_nonneg_right (max_le ?_ ?_) (Real.rpow_nonneg hx.le p))
+  · rw [one_div, Real.inv_rpow (by norm_num), ← Real.rpow_neg (by norm_num)]
+    exact Real.rpow_le_rpow_of_exponent_le (by norm_num) (neg_le_abs p)
+  · exact Real.rpow_le_rpow_of_exponent_le (by norm_num) (le_abs_self p)
 
 /-- If `x` lies within `c t ^ β` and `y` within `c t' ^ β` of a point `z`, where `0 ≤ c`,
 `0 ≤ β`, `0 ≤ t ≤ A h` and `0 ≤ t' ≤ h`, then `dist x y ≤ (A ^ β + 1) c h ^ β`. -/

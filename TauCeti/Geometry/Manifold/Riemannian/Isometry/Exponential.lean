@@ -63,6 +63,9 @@ Riemannian Manifolds*, 2nd ed., Chapter 5 (naturality of the exponential map), a
 * `TauCeti.riemannianExp_mfderiv_smul_of_smul_eq` and
   `TauCeti.smul_riemannianExp_image_ball_of_smul_eq`: the specializations at a point `x` with
   `a • x = x`.
+* `TauCeti.mfderiv_smul_mfderiv_riemannianExp`: at a point `x` with `a • x = x` and a tangent
+  vector `w` fixed by `d(a •)_x`, the differential of `exp_x` at `w` intertwines `d(a •)_x` with
+  `d(a •)_{exp_x w}`.
 
 ## References
 
@@ -322,6 +325,40 @@ theorem riemannianExp_mfderiv_smul_of_smul_eq
   have h := riemannianExp_mfderiv_smul ha x v
   rw [hx] at h
   exact h
+
+/-- **The exponential map intertwines differentials at fixed points.** Let `a` act by an isometry
+fixing `x` and a tangent vector `w` at `x`. Then the differential `D` of `exp_x` at `w` satisfies
+`d(a •)_y ∘ D = D ∘ d(a •)_x` at `y = exp_x w`. -/
+theorem mfderiv_smul_mfderiv_riemannianExp
+    (ha : ∀ (y : M) (v w : TangentSpace I y),
+      inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w)
+    {x : M} (hx : a • x = x) {w : TangentSpace I x} (hw : mfderiv I I (a • ·) x w = w)
+    (v : TangentSpace I x) :
+    mfderiv I I (a • ·) (riemannianExp I M x w)
+        (mfderiv 𝓘(ℝ, TangentSpace I x) I (riemannianExp I M x) w v) =
+      mfderiv 𝓘(ℝ, TangentSpace I x) I (riemannianExp I M x) w (mfderiv I I (a • ·) x v) := by
+  by_cases hexp : MDifferentiableAt 𝓘(ℝ, TangentSpace I x) I (riemannianExp I M x) w
+  swap
+  · -- Both sides vanish: the differential of `exp_x` at `w` is zero.
+    rw [mfderiv_zero_of_not_mdifferentiableAt hexp]
+    exact map_zero (mfderiv I I (a • ·) (riemannianExp I M x w))
+  have hk : MDifferentiableAt I I (a • ·) (riemannianExp I M x w) :=
+    (contMDiff_const_smul (I := I) (n := ∞) a).mdifferentiableAt (by simp)
+  -- `d(a •)_x` as an endomorphism of `T_x M`: as `a` fixes `x`, the two tangent spaces agree.
+  let A : TangentSpace I x →L[ℝ] TangentSpace I x := mfderiv I I (a • ·) x
+  -- Naturality of the exponential map: `a • exp_x v = exp_x (d(a •)_x v)` for every `v`.
+  have hfun : (a • ·) ∘ riemannianExp I M x = riemannianExp I M x ∘ A := by
+    ext v
+    exact (riemannianExp_mfderiv_smul_of_smul_eq ha hx v).symm
+  have hAw : A w = w := hw
+  have h₁ := mfderiv_comp (I' := I) w hk hexp
+  have h₂ := mfderiv_comp_of_eq hexp A.mdifferentiableAt hAw
+  have h : mfderiv 𝓘(ℝ, TangentSpace I x) I ((a • ·) ∘ riemannianExp I M x) w =
+      mfderiv 𝓘(ℝ, TangentSpace I x) I (riemannianExp I M x ∘ A) w :=
+    by rw [hfun]
+  rw [h₁, h₂, A.mfderiv_eq] at h
+  have hv := DFunLike.congr_fun h v
+  rwa [hAw] at hv
 
 /-- At a point `x` fixed by `a`, if the differential of the action of `a` preserves the metric,
 then the image under `exp_x` of every ball about the origin of `T_x M` is invariant under `a`. -/

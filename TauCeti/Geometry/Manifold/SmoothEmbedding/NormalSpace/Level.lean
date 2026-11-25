@@ -70,8 +70,8 @@ onto the tangent space of the target of `π` at `π (f x)`
 (`TauCeti.SmoothEmbedding.normalSpaceEquivOfSurjective_normalClass`). This applies to a fibre of
 `π` through a regular point. -/
 noncomputable def normalSpaceEquivOfSurjective (hsurj : IsRegularPoint J J' π (f x))
-    (htan : f.tangentRange x hn = (mfderiv J J' π (f x)).ker) :
-    f.NormalSpace x hn ≃ₗ[𝕜] TangentSpace J' (π (f x)) :=
+    (htan : f.isImmersion.tangentRange x hn = (mfderiv J J' π (f x)).ker) :
+    f.isImmersion.NormalSpace x hn ≃ₗ[𝕜] TangentSpace J' (π (f x)) :=
   (Submodule.quotEquivOfEq _ _ htan).trans
     ((mfderiv J J' π (f x)).toLinearMap.quotKerEquivOfSurjective (isRegularPoint_iff.1 hsurj))
 
@@ -79,10 +79,11 @@ noncomputable def normalSpaceEquivOfSurjective (hsurj : IsRegularPoint J J' π (
 vector `v` to the differential of `π` applied to `v`. -/
 @[simp]
 theorem normalSpaceEquivOfSurjective_normalClass (hsurj : IsRegularPoint J J' π (f x))
-    (htan : f.tangentRange x hn = (mfderiv J J' π (f x)).ker) (v : TangentSpace J (f x)) :
-    f.normalSpaceEquivOfSurjective x hn hsurj htan (f.normalClass x hn v) =
+    (htan : f.isImmersion.tangentRange x hn = (mfderiv J J' π (f x)).ker)
+        (v : TangentSpace J (f x)) :
+    f.normalSpaceEquivOfSurjective x hn hsurj htan (f.isImmersion.normalClass x hn v) =
       mfderiv J J' π (f x) v := by
-  rw [normalClass_def]
+  rw [Manifold.IsImmersion.normalClass_def]
   -- `quotEquivOfEq` fixes classes, so this is the first isomorphism theorem on the class of `v`.
   exact (mfderiv J J' π (f x)).toLinearMap.quotKerEquivOfSurjective_apply_mk
     (isRegularPoint_iff.1 hsurj) v
@@ -100,7 +101,7 @@ If `g` is constant on the image of the embedding `f` near `x`, has surjective di
 `f x`, and the dimension of the source of `f` plus that of the target of `g` is the ambient
 dimension, then the tangent range of `f` at `x` is the kernel of the differential of `g`. -/
 theorem tangentRange_eq_ker_mfderiv :
-    f.tangentRange x hn = (mfderiv J 𝓘(𝕜, V) g (f x)).ker :=
+    f.isImmersion.tangentRange x hn = (mfderiv J 𝓘(𝕜, V) g (f x)).ker :=
   hsurj.range_mfderiv_eq_ker_mfderiv hgf (f.isImmersion.mfderiv_injective hn x) hdim
 
 /-- **The tangent sequence of an embedding cut out by equations is exact in the middle.** Under the
@@ -116,7 +117,7 @@ variable [CompleteSpace 𝕜]
 `TauCeti.SmoothEmbedding.tangentRange_eq_ker_mfderiv`, the differential of `g` at `f x` induces a
 continuous linear equivalence from the normal space of `f` at `x` onto `V`
 (`TauCeti.SmoothEmbedding.normalSpaceEquivOfLevel_normalClass`). -/
-noncomputable def normalSpaceEquivOfLevel : f.NormalSpace x hn ≃L[𝕜] V :=
+noncomputable def normalSpaceEquivOfLevel : f.isImmersion.NormalSpace x hn ≃L[𝕜] V :=
   (f.normalSpaceEquivOfSurjective x hn hsurj
     (f.tangentRange_eq_ker_mfderiv x hn hgf hsurj hdim)).toContinuousLinearEquiv
 
@@ -124,7 +125,7 @@ noncomputable def normalSpaceEquivOfLevel : f.NormalSpace x hn ≃L[𝕜] V :=
 vector `v` to the differential of `g` applied to `v`. -/
 @[simp]
 theorem normalSpaceEquivOfLevel_normalClass (v : TangentSpace J (f x)) :
-    f.normalSpaceEquivOfLevel x hn hgf hsurj hdim (f.normalClass x hn v) =
+    f.normalSpaceEquivOfLevel x hn hgf hsurj hdim (f.isImmersion.normalClass x hn v) =
       mfderiv J 𝓘(𝕜, V) g (f x) v := by
   rw [normalSpaceEquivOfLevel]
   exact (congrFun (LinearEquiv.coe_toContinuousLinearEquiv'
