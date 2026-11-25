@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Group.AddCircle
 public import Mathlib.Dynamics.TopologicalEntropy.CoverEntropy
 public import Mathlib.Topology.MetricSpace.Isometry
 public import Mathlib.Topology.UniformSpace.Equicontinuity
+import TauCeti.Topology.MetricSpace.Equicontinuity
 
 /-!
 # Equicontinuous maps and isometries have zero topological entropy
@@ -19,18 +20,19 @@ A totally bounded set `F` is covered by finitely many `V`-balls, so the minimal 
 of `F` have bounded cardinality and the topological entropy of `T` on `F` is at most `0`
 (`TauCeti.coverEntropy_nonpos_of_uniformEquicontinuous`), and equal to `0` when `F` is nonempty.
 
-The iterates of an isometry are isometries, hence uniformly equicontinuous: an isometry of a
-compact pseudo-emetric space has topological entropy `0`
-(`TauCeti.coverEntropy_univ_eq_zero_of_isometry`). This covers the identity and the rotations
-of the circle.
+The iterates of an isometry are uniformly equicontinuous (`Isometry.uniformEquicontinuous_iterate`),
+so an isometry has topological entropy `0` on every nonempty totally bounded set
+(`TauCeti.coverEntropy_eq_zero_of_isometry`); in particular an isometry of a nonempty compact
+pseudo-emetric space has topological entropy `0` (`TauCeti.coverEntropy_univ_eq_zero_of_isometry`).
+This covers the identity and the rotations of the circle.
 
 ## Main results
 
 * `TauCeti.coverEntropy_nonpos_of_uniformEquicontinuous`,
   `TauCeti.coverEntropy_eq_zero_of_uniformEquicontinuous`: zero entropy on totally bounded sets
   for uniformly equicontinuous iterates.
-* `TauCeti.uniformEquicontinuous_iterate_of_isometry`: the iterates of an isometry are uniformly
-  equicontinuous.
+* `TauCeti.coverEntropy_eq_zero_of_isometry`: an isometry has topological entropy `0` on a
+  nonempty totally bounded set.
 * `TauCeti.coverEntropy_univ_eq_zero_of_isometry`: an isometry of a nonempty compact
   pseudo-emetric space has topological entropy `0`.
 * `TauCeti.coverEntropy_id_eq_zero`, `TauCeti.coverEntropy_addCircle_add_right_eq_zero`: the
@@ -90,25 +92,16 @@ theorem coverEntropyInf_eq_zero_of_uniformEquicontinuous
   ((coverEntropyInf_le_coverEntropy T F).trans
     (coverEntropy_nonpos_of_uniformEquicontinuous hT hF)).antisymm (coverEntropyInf_nonneg T hne)
 
-/-- The iterates of an isometry are uniformly equicontinuous. -/
-theorem uniformEquicontinuous_iterate_of_isometry {Y : Type*} [PseudoEMetricSpace Y]
-    {S : Y → Y} (hS : Isometry S) : UniformEquicontinuous fun n : ℕ ↦ S^[n] := by
-  intro U hU
-  obtain ⟨ε, hε, hεU⟩ := mem_uniformity_edist.1 hU
-  filter_upwards [edist_mem_uniformity hε] with p hp n
-  refine hεU ?_
-  have hn : Isometry S^[n] := by
-    induction n with
-    | zero => exact isometry_id
-    | succ n ih => rw [Function.iterate_succ]; exact ih.comp hS
-  rw [hn.edist_eq]
-  exact hp
+/-- An isometry has topological entropy `0` on every nonempty totally bounded set. -/
+theorem coverEntropy_eq_zero_of_isometry {Y : Type*} [PseudoEMetricSpace Y] {S : Y → Y}
+    {F : Set Y} (hS : Isometry S) (hF : TotallyBounded F) (hne : F.Nonempty) :
+    coverEntropy S F = 0 :=
+  coverEntropy_eq_zero_of_uniformEquicontinuous hS.uniformEquicontinuous_iterate hF hne
 
 /-- An isometry of a nonempty compact pseudo-emetric space has topological entropy `0`. -/
 theorem coverEntropy_univ_eq_zero_of_isometry {Y : Type*} [PseudoEMetricSpace Y] [CompactSpace Y]
     [Nonempty Y] {S : Y → Y} (hS : Isometry S) : coverEntropy S univ = 0 :=
-  coverEntropy_eq_zero_of_uniformEquicontinuous (uniformEquicontinuous_iterate_of_isometry hS)
-    isCompact_univ.totallyBounded univ_nonempty
+  coverEntropy_eq_zero_of_isometry hS isCompact_univ.totallyBounded univ_nonempty
 
 /-- The identity has topological entropy `0` on every nonempty totally bounded set. -/
 theorem coverEntropy_id_eq_zero (hF : TotallyBounded F) (hne : F.Nonempty) :

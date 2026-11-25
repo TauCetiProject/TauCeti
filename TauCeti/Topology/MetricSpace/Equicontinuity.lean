@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.Topology.MetricSpace.Equicontinuity
+public import Mathlib.Topology.MetricSpace.Isometry
+import Mathlib.Topology.MetricSpace.UniformConvergence
+import TauCeti.Topology.MetricSpace.Isometry.Group
 
 /-!
 # Equicontinuity from slice distance bounds, and uniform attainment from rate bounds
@@ -22,6 +25,9 @@ Separately, uniform equicontinuity of a family `(g_k)` turns a bound `F k p ≤ 
 valid whenever `g_k` moves by at most `η` over distances at most `√(s p)`, into the uniform
 smallness `F k p < ε` for all `k` once `s p` is small enough.
 
+Finally, the iterates of an isometry are isometries, hence `1`-Lipschitz, so they form a uniformly
+equicontinuous family.
+
 ## Main statements
 
 * `Metric.equicontinuous_of_forall_dist_le`: a family `F : ι → X → W` controlled linearly by every
@@ -29,6 +35,8 @@ smallness `F k p < ε` for all `k` once `s p` is small enough.
   equicontinuous.
 * `UniformEquicontinuous.exists_forall_lt_of_le_mul_add_mul`: a bound of the form
   `C (η + s L)` over a uniformly equicontinuous family gives uniform attainment as `s → 0`.
+* `Isometry.uniformEquicontinuous_iterate`: the iterates of an isometry are uniformly
+  equicontinuous.
 -/
 
 public section
@@ -116,3 +124,8 @@ theorem exists_forall_lt_of_le_mul_add_mul {κ X P : Type*} [PseudoMetricSpace X
     _ < ε := by linarith
 
 end UniformEquicontinuous
+
+/-- The iterates of an isometry are uniformly equicontinuous. -/
+theorem Isometry.uniformEquicontinuous_iterate {X : Type*} [PseudoEMetricSpace X] {f : X → X}
+    (hf : Isometry f) : UniformEquicontinuous fun n : ℕ ↦ f^[n] :=
+  LipschitzWith.uniformEquicontinuous _ 1 fun n ↦ (hf.iterate n).lipschitzWith
