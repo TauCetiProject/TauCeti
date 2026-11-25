@@ -13,17 +13,22 @@ import TauCeti.LinearAlgebra.Dimension.Localization
 import TauCeti.LinearAlgebra.Matrix.Diagonal.Length
 
 /-!
-# The cokernel length of an injective endomorphism
+# Cokernel lengths of endomorphisms
 
 For an injective endomorphism `φ` of an `A`-module `M`, the length of its cokernel `M ⧸ φ(M)` is
 the invariant `e_A(φ, M)` of Fulton, *Intersection Theory*, Appendix A.2, in the case where the
 kernel vanishes. This file records the two properties of it on which the comparison of orders of
-vanishing with norms rests:
+vanishing with norms rests, subadditivity bounds for endomorphisms that need not be injective, and
+bounds on the colength of submodules containing `aM`. The two properties are:
 
 * `TauCeti.length_quotient_range_comp`: it is additive under composition,
   `e(φ ∘ ψ) = e(φ) + e(ψ)`;
 * `TauCeti.length_quotient_range_restrict`: it does not change when `M` is replaced by a submodule
   `N` with `φ(N) ⊆ N` and `M ⧸ N` of finite length.
+
+These two properties are read off the length of a quotient of `M` along two filtrations. An
+injective `φ` maps `M` isomorphically onto `φ(M)`, carrying any submodule `N` to `φ(N)`, so that
+`φ(M) ⧸ φ(N) ≃ M ⧸ N` (`TauCeti.length_quotient_comap_subtype_range_map`).
 
 For endomorphisms that need not be injective, the cokernel length is subadditive:
 `length (M ⧸ φψ(M)) ≤ length (M ⧸ φ(M)) + length (M ⧸ ψ(M))`
@@ -33,16 +38,14 @@ For endomorphisms that need not be injective, the cokernel length is subadditive
 of `N ⊓ φ(N)` in `N` in place of the cokernel and no hypothesis `φ(N) ⊆ N`
 (`TauCeti.length_quotient_comap_subtype_map_comp_le`,
 `TauCeti.length_quotient_comap_subtype_map_list_prod_le`,
-`TauCeti.length_quotient_comap_subtype_map_pow_le`).
+`TauCeti.length_quotient_comap_subtype_map_pow_le`). The cokernel forms are the case `N = ⊤` of
+the submodule forms.
 
-Both are read off the length of a quotient of `M` along two filtrations. An injective `φ` maps `M`
-isomorphically onto `φ(M)`, carrying any submodule `N` to `φ(N)`, so that
-`φ(M) ⧸ φ(N) ≃ M ⧸ N` (`TauCeti.length_quotient_comap_subtype_range_map`).
-
-For a non-zero-divisor `a` and an ideal `I` with `A ⧸ I` of finite length, the second property
-gives `length (I ⧸ aI) = ord_A a` (`TauCeti.length_quotient_lsmul_ideal_eq_ord`). For the scalar
-endomorphisms of a finitely generated torsion-free module `M` over a Noetherian domain of dimension
-at most one, `length (M ⧸ aM) = rank M * ord_A a`
+For a non-zero-divisor `a` and an ideal `I` with `A ⧸ I` of finite length,
+`TauCeti.length_quotient_range_restrict` gives `length (I ⧸ aI) = ord_A a`
+(`TauCeti.length_quotient_lsmul_ideal_eq_ord`). For the scalar endomorphisms of a finitely
+generated torsion-free module `M` over a Noetherian domain of dimension at most one,
+`length (M ⧸ aM) = rank M * ord_A a`
 (`TauCeti.length_quotient_lsmul_eq_finrank_mul_ord`). The proof replaces `M` by a free submodule
 of full rank with torsion quotient (`TauCeti.exists_linearIndependent_smul_mem_span`, a
 repackaging of Mathlib's `exists_linearIndepOn_smul_mem_span`), on which the cokernel is
@@ -69,46 +72,6 @@ theorem length_quotient_range_comp {φ : M →ₗ[A] M} (hφ : Function.Injectiv
       Module.length A (M ⧸ LinearMap.range φ) + Module.length A (M ⧸ LinearMap.range ψ) := by
   rw [LinearMap.range_comp, length_quotient_eq_length_quotient_comap_subtype_add
     (LinearMap.map_le_range (f := φ)), length_quotient_comap_subtype_range_map hφ, add_comm]
-
-/-- **Subadditivity of cokernel length.** For endomorphisms `φ, ψ` of `M`,
-`length (M ⧸ φψ(M)) ≤ length (M ⧸ φ(M)) + length (M ⧸ ψ(M))` in `ℕ∞`. For injective `φ` this is
-the equality `TauCeti.length_quotient_range_comp`. -/
-theorem length_quotient_range_comp_le (φ ψ : M →ₗ[A] M) :
-    Module.length A (M ⧸ LinearMap.range (φ ∘ₗ ψ)) ≤
-      Module.length A (M ⧸ LinearMap.range φ) + Module.length A (M ⧸ LinearMap.range ψ) := by
-  -- `M ⧸ φψ(M)` is filtered by `φ(M) ⧸ φψ(M)`, the range of `M → M ⧸ φψ(M)`, `x ↦ φ x`, whose
-  -- kernel contains `ψ(M)`, and by `M ⧸ φ(M)`.
-  set f := (LinearMap.range (φ ∘ₗ ψ)).mkQ ∘ₗ φ
-  have hker : LinearMap.range ψ ≤ LinearMap.ker f := by
-    rintro _ ⟨y, rfl⟩
-    simp [f]
-  rw [length_quotient_eq_length_map_add_length_quotient_sup (LinearMap.range φ),
-    ← LinearMap.range_comp, sup_eq_right.2 (LinearMap.range_comp_le_range ψ φ), add_comm]
-  refine add_le_add_right ?_ _
-  rw [← f.quotKerEquivRange.length_eq]
-  exact length_quotient_anti hker
-
-/-- **Cokernel length of a product.** For a list `l` of endomorphisms of `M`, the cokernel of
-their product has length at most the sum of the lengths of their cokernels, in `ℕ∞`. -/
-theorem length_quotient_range_list_prod_le (l : List (Module.End A M)) :
-    Module.length A (M ⧸ LinearMap.range l.prod) ≤
-      (l.map fun φ ↦ Module.length A (M ⧸ LinearMap.range φ)).sum := by
-  induction l with
-  | nil =>
-    rw [List.prod_nil, Module.End.one_eq_id, LinearMap.range_id]
-    simp [Module.length_eq_zero]
-  | cons φ l ih =>
-    rw [List.prod_cons, List.map_cons, List.sum_cons]
-    exact (length_quotient_range_comp_le φ l.prod).trans (add_le_add_right ih _)
-
-/-- **Cokernel length of a power.** For an endomorphism `φ` of `M` and `m : ℕ`,
-`length (M ⧸ φ ^ m (M)) ≤ m * length (M ⧸ φ(M))` in `ℕ∞`. -/
-theorem length_quotient_range_pow_le (φ : Module.End A M) (m : ℕ) :
-    Module.length A (M ⧸ LinearMap.range (φ ^ m)) ≤
-      m * Module.length A (M ⧸ LinearMap.range φ) := by
-  rw [← List.prod_replicate]
-  simpa [List.map_replicate, List.sum_replicate, nsmul_eq_mul] using
-    length_quotient_range_list_prod_le (List.replicate m φ)
 
 /-- **Subadditivity of colength in a submodule.** For a submodule `N` of `M` and endomorphisms
 `φ, ψ` of `M`, the colength of `N ⊓ φψ(N)` in `N` is at most the sum of those of `N ⊓ φ(N)` and
@@ -143,14 +106,8 @@ theorem length_quotient_comap_subtype_map_comp_le (N : Submodule A M) (φ ψ : M
       Submodule.Quotient.mk_eq_zero, Submodule.mem_comap, Submodule.subtype_apply,
       LinearMap.coe_restrict_apply]
     exact ⟨y, hy, by rw [LinearMap.comp_apply, hyx, Submodule.subtype_apply]⟩
-  calc Module.length A (LinearMap.range f)
-      = Module.length A (↥W ⧸ LinearMap.ker f) := f.quotKerEquivRange.length_eq.symm
-    _ ≤ Module.length A (↥W ⧸ (N.map ψ).comap W.subtype) := length_quotient_anti hK
-    _ = Module.length A (W.map (N.map ψ).mkQ) := (length_map_mkQ _ _).symm
-    _ ≤ Module.length A (N.map (N.map ψ).mkQ) :=
-      Module.length_le_of_injective _ (Submodule.inclusion_injective
-        (Submodule.map_mono inf_le_left))
-    _ = Module.length A (↥N ⧸ (N.map ψ).comap N.subtype) := length_map_mkQ _ _
+  exact (length_range_le_length_quotient f hK).trans
+    (length_quotient_comap_subtype_mono inf_le_left _)
 
 /-- **Colength of a product in a submodule.** For a submodule `N` of `M` and a list `l` of
 endomorphisms of `M`, the colength of `N ⊓ (l.prod)(N)` in `N` is at most the sum over `φ ∈ l` of
@@ -176,6 +133,39 @@ theorem length_quotient_comap_subtype_map_pow_le (N : Submodule A M) (φ : Modul
   rw [← List.prod_replicate]
   simpa [List.map_replicate, List.sum_replicate, nsmul_eq_mul] using
     length_quotient_comap_subtype_map_list_prod_le N (List.replicate m φ)
+
+/-- **Subadditivity of cokernel length.** For endomorphisms `φ, ψ` of `M`,
+`length (M ⧸ φψ(M)) ≤ length (M ⧸ φ(M)) + length (M ⧸ ψ(M))` in `ℕ∞`. For injective `φ` this is
+the equality `TauCeti.length_quotient_range_comp`. This is the case `N = ⊤` of
+`TauCeti.length_quotient_comap_subtype_map_comp_le`. -/
+theorem length_quotient_range_comp_le (φ ψ : M →ₗ[A] M) :
+    Module.length A (M ⧸ LinearMap.range (φ ∘ₗ ψ)) ≤
+      Module.length A (M ⧸ LinearMap.range φ) + Module.length A (M ⧸ LinearMap.range ψ) := by
+  have h := length_quotient_comap_subtype_map_comp_le ⊤ φ ψ
+  rwa [length_quotient_comap_subtype_top, length_quotient_comap_subtype_top,
+    length_quotient_comap_subtype_top, Submodule.map_top, Submodule.map_top,
+    Submodule.map_top] at h
+
+/-- **Cokernel length of a product.** For a list `l` of endomorphisms of `M`, the cokernel of
+their product has length at most the sum of the lengths of their cokernels, in `ℕ∞`. -/
+theorem length_quotient_range_list_prod_le (l : List (Module.End A M)) :
+    Module.length A (M ⧸ LinearMap.range l.prod) ≤
+      (l.map fun φ ↦ Module.length A (M ⧸ LinearMap.range φ)).sum := by
+  have h := length_quotient_comap_subtype_map_list_prod_le ⊤ l
+  simp only [length_quotient_comap_subtype_top] at h
+  rw [Submodule.map_top] at h
+  convert h using 3
+  funext φ
+  rw [Submodule.map_top]
+
+/-- **Cokernel length of a power.** For an endomorphism `φ` of `M` and `m : ℕ`,
+`length (M ⧸ φ ^ m (M)) ≤ m * length (M ⧸ φ(M))` in `ℕ∞`. -/
+theorem length_quotient_range_pow_le (φ : Module.End A M) (m : ℕ) :
+    Module.length A (M ⧸ LinearMap.range (φ ^ m)) ≤
+      m * Module.length A (M ⧸ LinearMap.range φ) := by
+  have h := length_quotient_comap_subtype_map_pow_le ⊤ φ m
+  rwa [length_quotient_comap_subtype_top, length_quotient_comap_subtype_top, Submodule.map_top,
+    Submodule.map_top] at h
 
 /-- **Cokernel length is insensitive to finite-length enlargement.** Let `φ` be an injective
 endomorphism of `M` and `N` a submodule with `φ(N) ⊆ N` and `M ⧸ N` of finite length. Then the

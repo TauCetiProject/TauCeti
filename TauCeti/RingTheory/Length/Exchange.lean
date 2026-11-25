@@ -85,14 +85,8 @@ theorem length_quotient_smul_map_inf_le_add {S B P : Submodule R M} {U D : M →
         Submodule.Quotient.mk_eq_zero, W, Submodule.mem_comap, Submodule.subtype_apply,
         LinearMap.coe_restrict_apply, hUx]
       exact Submodule.smul_mem_pointwise_smul _ _ _ (Submodule.mem_map_of_mem ⟨hs, hsP⟩)
-    calc Module.length R (LinearMap.range f)
-        = Module.length R (↥B' ⧸ LinearMap.ker f) := f.quotKerEquivRange.length_eq.symm
-      _ ≤ Module.length R (↥B' ⧸ (d • S).comap B'.subtype) := length_quotient_anti hK
-      _ = Module.length R (B'.map (d • S).mkQ) := (length_map_mkQ _ _).symm
-      _ ≤ Module.length R (B.map (d • S).mkQ) :=
-        Module.length_le_of_injective _ (Submodule.inclusion_injective
-          (Submodule.map_mono (inf_le_left.trans inf_le_left)))
-      _ = Module.length R (↥B ⧸ (d • S).comap B.subtype) := length_map_mkQ _ _
+    exact (length_range_le_length_quotient f hK).trans
+      (length_quotient_comap_subtype_mono (inf_le_left.trans inf_le_left) _)
   · -- `c • x = U (D x)` with `D x ∈ B'`.
     rintro _ ⟨x, rfl⟩
     have hx : U (D x) = c • x := hUD x x.property
