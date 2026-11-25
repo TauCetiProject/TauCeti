@@ -81,6 +81,7 @@ theorem continuous_extended_frame_of_fixed_support
       ⟨fun x ↦ ⟨⟨((x : D) : M), x.property⟩, (x : D).property⟩,
         (TauCeti.ContMDiff.subtypeVal_comp_iff DU _).mp
           ((TauCeti.ContMDiff.subtypeVal_comp_iff U _).mp (by
+            -- The composite with both subtype projections is the double inclusion into `M`.
             change ContMDiff I I n (fun x : W true ↦ ((x : D) : M))
             exact contMDiff_subtypeVal.comp contMDiff_subtypeVal))⟩
     have h := ContMDiffMap.continuous_comp_manifoldWeakWhitney.comp
@@ -163,97 +164,6 @@ theorem continuous_extendByZero_compactlySupported :
   -- Read the fixed-support inclusion through its underlying compactly supported section.
   change (extendByZeroLinearMap (ofSupportedIn K s)).val = _
   erw [extendByZeroLinearMap_apply]
-
-variable [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M]
-
-omit [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M] in
-/-- Intermediate extension is continuous for arbitrary frame families at every regularity order.
-This raw all-order statement does not assume the native smooth-final-topology hypotheses. -/
-theorem continuous_extendByZeroToOpenLinearMap (h : U ≤ D) :
-    let cU : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
-    let cD : C(D, M) := ⟨Subtype.val, continuous_subtypeVal⟩
-    let eU := fun i ↦ (es i).pullback cU
-    let eD := fun i ↦ (es i).pullback cD
-    let AU := fun i ↦ Opens.comap cU (A i)
-    let AD := fun i ↦ Opens.comap cD (A i)
-    let hAU : ∀ i, (AU i : Set U) ⊆ (eU i).baseSet := fun i _ hx ↦ hA i hx
-    let hAD : ∀ i, (AD i : Set D) ⊆ (eD i).baseSet := fun i _ hx ↦ hA i hx
-    letI := compactlySupportedTopology (I := I) (n := n) eU AU hAU
-    letI := compactlySupportedTopology (I := I) (n := n) eD AD hAD
-    Continuous (extendByZeroToOpenLinearMap (I := I) (F := F) (n := n) (V := V) h) := by
-  let cU : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
-  let cD : C(D, M) := ⟨Subtype.val, continuous_subtypeVal⟩
-  let eU := fun i ↦ (es i).pullback cU
-  let eD := fun i ↦ (es i).pullback cD
-  let AU := fun i ↦ Opens.comap cU (A i)
-  let AD := fun i ↦ Opens.comap cD (A i)
-  let hAU : ∀ i, (AU i : Set U) ⊆ (eU i).baseSet := fun i _ hx ↦ hA i hx
-  let hAD : ∀ i, (AD i : Set D) ⊆ (eD i).baseSet := fun i _ hx ↦ hA i hx
-  let := frameTopology (I := I) (n := n) eU AU hAU
-  let := frameTopology (I := I) (n := n) es A hA
-  let := frameTopology (I := I) (n := n) eD AD hAD
-  let := compactlySupportedTopology (I := I) (n := n) eU AU hAU
-  let := compactlySupportedTopology (I := I) (n := n) eD AD hAD
-  let := isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := n) eD AD hAD
-  let := continuousSMul_compactlySupportedTopology (I := I) (n := n) eD AD hAD
-  let := locallyConvexSpace_compactlySupportedTopology (I := I) (n := n) eD AD hAD
-  apply (continuous_compactlySupportedTopology_iff eU AU hAU (extendByZeroToOpenLinearMap h)).2
-  intro K
-  let L : Compacts D := K.map (Opens.inclusion h) (continuous_subtypeVal.subtype_mk _)
-  have hg0 : Continuous (fun s : supportedIn I F n (cU *ᵖ V) K ↦
-      (extendByZeroToOpenLinearMap h (ofSupportedIn K s)).val) :=
-    by
-      have hc := (continuous_restrict_frameTopology (I := I) (n := n) es A hA D).comp
-        (continuous_extendByZero_ofSupportedIn (I := I) (n := n) es A hA K)
-      apply hc.congr
-      intro s
-      exact (extendByZeroToOpenLinearMap_val h (ofSupportedIn K s)).symm
-  let g : supportedIn I F n (cU *ᵖ V) K → supportedIn I F n (cD *ᵖ V) L := fun s ↦
-    ⟨(extendByZeroToOpenLinearMap h (ofSupportedIn K s)).val, by
-      rw [mem_supportedIn, tsupport_extendByZeroToOpenLinearMap, ofSupportedIn_apply]
-      exact image_mono (mem_supportedIn.mp s.property)⟩
-  have hg : Continuous g := hg0.subtype_mk _
-  convert (continuous_ofSupportedIn (I := I) (n := n) eD AD hAD L).comp hg using 1
-  funext s
-  apply Subtype.ext
-  simp only [Function.comp_apply, ofSupportedIn_apply, g]
-
-omit [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M] in
-omit [T2Space M] in
-/-- Universal restriction is continuous for arbitrary frame families at every regularity order.
-Unlike native smooth localization, this raw statement also omits Hausdorffness of the base. -/
-theorem continuous_restrictUniv_compactlySupported :
-    let U : Opens M := ⊤
-    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
-    let eU := fun i ↦ (es i).pullback c
-    let AU := fun i ↦ Opens.comap c (A i)
-    let hAU : ∀ i, (AU i : Set U) ⊆ (eU i).baseSet := fun i _ hx ↦ hA i hx
-    letI := compactlySupportedTopology (I := I) (n := n) es A hA
-    letI := compactlySupportedTopology (I := I) (n := n) eU AU hAU
-    Continuous (restrictUnivLinearMap (I := I) (F := F) (n := n) (V := V)) := by
-  intro U c eU AU hAU
-  let := frameTopology (I := I) (n := n) es A hA
-  let := frameTopology (I := I) (n := n) eU AU hAU
-  let := compactlySupportedTopology (I := I) (n := n) es A hA
-  let := compactlySupportedTopology (I := I) (n := n) eU AU hAU
-  let := isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := n) eU AU hAU
-  let := continuousSMul_compactlySupportedTopology (I := I) (n := n) eU AU hAU
-  let := locallyConvexSpace_compactlySupportedTopology (I := I) (n := n) eU AU hAU
-  apply (continuous_compactlySupportedTopology_iff es A hA _).2
-  intro K
-  let L : Compacts U :=
-    ⟨c ⁻¹' (K : Set M), (Homeomorph.Set.univ M).isCompact_preimage.mpr K.isCompact⟩
-  let g : supportedIn I F n V K → supportedIn I F n (c *ᵖ V) L := fun s ↦
-    ⟨s.val.restrict U, by
-      rw [mem_supportedIn, tsupport_restrict]
-      exact preimage_mono (mem_supportedIn.mp s.property)⟩
-  have hg : Continuous g :=
-    ((continuous_restrict_frameTopology es A hA U).comp continuous_subtypeVal).subtype_mk _
-  convert (continuous_ofSupportedIn (I := I) (n := n) eU AU hAU L).comp hg using 1
-  funext s
-  apply Subtype.ext
-  simp only [Function.comp_apply, ofSupportedIn_apply]
-  erw [restrictUnivLinearMap_val, ofSupportedIn_apply]
 
 end ContMDiffSection
 
@@ -467,9 +377,8 @@ omit [LocallyCompactSpace E] [T2Space M] [T2Space N] in
 private theorem relocalizeLinearMap_val (s : TauCeti.BundleTest I G Z) :
     (relocalizeLinearMap T q hT s).val =
       ((TauCeti.BundleTest.ofCompactlySupported I F V).symm (T s)).val.restrict U := by
-  -- codRestrict changes only the support certificate; its section carrier is ordinary restriction.
-  change (restrictLinearMap I F ∞ V U)
-    ((TauCeti.BundleTest.ofCompactlySupported I F V).symm (T s)).val = _
+  simp only [relocalizeLinearMap, LinearMap.codRestrict_apply, LinearMap.comp_apply,
+    Submodule.subtype_apply, LinearEquiv.coe_toLinearMap, ContinuousLinearMap.coe_coe]
   erw [restrictLinearMap_apply]
 
 private def relocalizeStageLinearMap (K : Compacts N) : supportedIn I G ∞ Z K →ₗ[ℝ]

@@ -43,8 +43,7 @@ theorem exists_nonzero_proper_open_extension :
   · erw [TauCeti.BundleTest.extendByZeroCLM_apply_of_mem s x]
     exact hs
   · apply TauCeti.BundleTest.extendByZeroCLM_apply_of_notMem s
-    change ¬ ((-2 : ℝ) < 3 ∧ 3 < 2)
-    norm_num
+    norm_num [properRealOpen]
 
 /-- A native test with zero-rank fibre is zero. -/
 theorem zero_rank_test (s : TauCeti.BundleTest 𝓘(ℝ, ℝ) (Fin 0 → ℝ) (Bundle.Trivial ℝ (Fin 0 → ℝ))) :
@@ -64,7 +63,6 @@ theorem empty_open_extension :
   apply TauCeti.BundleTest.ext
   intro x
   exact TauCeti.BundleTest.extendByZeroCLM_apply_of_notMem s (by simp [U])
-
 
 /-- The actual intrinsic dual-density coefficient family on the proper interval. -/
 abbrev localCoefficients := TauCeti.DensityBundle.localCoefficients (I := 𝓘(ℝ, ℝ))
@@ -114,7 +112,6 @@ theorem exists_nonzero_boundary_test_extension :
   refine ⟨s, ?_⟩
   erw [TauCeti.BundleTest.extendByZeroCLM_apply_of_mem s x]
   exact hs
-
 
 
 /-- A larger proper interval for the independently instantiated nesting client. -/
