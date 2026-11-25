@@ -445,10 +445,9 @@ private theorem biprodIsoProd_hom_lift_homologyMap_apply (U V : Opens M) (k : �
             (inf_le_right : U ⊓ V ≤ V)) k) x) =
       mayerVietorisToProd I U V k x := by
   rw [ModuleCat.biprodIsoProd_hom_apply, ← ConcreteCategory.comp_apply,
-    ← ConcreteCategory.comp_apply, biprod.lift_fst, biprod.lift_snd,
-    HomologicalComplex.homologyMap_neg, compactlySupportedDeRhamComplex.homologyMap_extendByZero,
-    compactlySupportedDeRhamComplex.homologyMap_extendByZero, mayerVietorisToProd_apply]
-  rfl
+    ← ConcreteCategory.comp_apply, biprod.lift_fst, biprod.lift_snd]
+  simp [HomologicalComplex.homologyMap_neg,
+    compactlySupportedDeRhamComplex.homologyMap_extendByZero]
 
 /-- Under the identification of the biproduct with the product module, the map induced on
 cohomology by the second map of the compactly supported Mayer–Vietoris short complex is

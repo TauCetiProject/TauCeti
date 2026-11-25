@@ -803,8 +803,8 @@ private theorem biprodIsoProd_hom_lift_homologyMap_apply (U V : Opens M) (k : �
       mayerVietorisToProd I U V k x := by
   rw [ModuleCat.biprodIsoProd_hom_apply, ← ConcreteCategory.comp_apply,
     ← ConcreteCategory.comp_apply, biprod.lift_fst, biprod.lift_snd, deRhamComplex.homologyMap_map,
-    deRhamComplex.homologyMap_map, mayerVietorisToProd_apply]
-  rfl
+    deRhamComplex.homologyMap_map, ModuleCat.ofHom_apply, ModuleCat.ofHom_apply,
+    mayerVietorisToProd_apply]
 
 /-- Under the identification of the biproduct with the product module, the map induced on
 cohomology by the second map of the Mayer–Vietoris short complex is `mayerVietorisFromProd`. -/
@@ -832,12 +832,10 @@ theorem mayerVietorisToProd_zero_injective (U V : Opens M) :
     Function.Injective (mayerVietorisToProd I U V 0) := by
   refine (injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_
   obtain ⟨φ, rfl⟩ := mk_surjective I 0 x
-  rw [mayerVietorisToProd_apply, map_mk, map_mk, Prod.mk_eq_zero, mk_eq_zero_iff, mk_eq_zero_iff,
-    exactForms_zero, exactForms_zero, Submodule.mem_bot, Submodule.mem_bot] at hx
-  rw [mk_eq_zero_iff, exactForms_zero, Submodule.mem_bot]
+  simp only [mayerVietorisToProd_apply, map_mk, Prod.mk_eq_zero, mk_eq_zero_iff, exactForms_zero,
+    Submodule.mem_bot] at hx ⊢
   refine SmoothForm.injective_mayerVietoris (I := I) (F := ℝ) U V ?_
-  rw [map_zero, LinearMap.prod_apply, Function.prod_apply, ← closedForms.coe_mpullback,
-    ← closedForms.coe_mpullback, hx.1, hx.2, Prod.mk_zero_zero]
+  simp [← closedForms.coe_mpullback, hx.1, hx.2]
 
 end Maps
 
