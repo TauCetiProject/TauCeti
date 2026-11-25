@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.UniformSpace.UniformConvergence
 public import TauCeti.Geometry.Manifold.Flow.TimeDependent
 public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
 public import TauCeti.Topology.Homotopy.AddCircle
 import TauCeti.Algebra.Ring.Periodic
-import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.PeriodicLoop
+import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.On
 import TauCeti.Geometry.Manifold.Immersion.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.MFDeriv.Translation
@@ -104,6 +103,13 @@ orbit at that end.
 * `TauCeti.comp_add_right_mem_periodicSolutions_iff`,
   `TauCeti.comp_add_right_mem_contractiblePeriodicSolutions_iff`: shifting time identifies the
   (contractible) periodic solutions of `X` and of the shifted field `t ↦ X (t + θ)`.
+* `TauCeti.mem_contractiblePeriodicSolutions_of_tendstoUniformly`,
+  `TauCeti.mem_contractiblePeriodicSolutions_of_tendstoUniformly_Ioi`,
+  `TauCeti.mem_contractiblePeriodicSolutions_iff_of_tendstoUniformly`,
+  `TauCeti.mem_contractiblePeriodicSolutions_iff_of_tendstoUniformly_comp`: uniform convergence
+  (through an inducing map, or an injective continuous map on a compact set) characterizes
+  contractibility of a limit `T`-periodic solution, and in particular transfers contractibility
+  along a half-cylinder `(a, ∞) × ℝ` with one contractible slice.
 * `TauCeti.exists_mem_periodicSolutions_comp_eq`: periodic solutions in `e(K)` of a field agreeing
   there with the pushforward `d e (X_t)` are read through `e` from periodic solutions in `K`.
 * `TauCeti.timeDependentFlowOf_add_period_add_period`,
@@ -131,9 +137,6 @@ orbit at that end.
   whose `T`-periodic solutions are all nondegenerate has finitely many of them.
 * `TauCeti.finite_contractiblePeriodicSolutions`: the same for the contractible `T`-periodic
   solutions, assuming only that they are nondegenerate.
-* `TauCeti.mem_contractiblePeriodicSolutions_iff_of_tendstoUniformly_comp`: uniform convergence
-  through an injective map on a compact set characterizes contractibility of a limit periodic
-  solution.
 
 ## References
 
@@ -374,6 +377,74 @@ theorem contractiblePeriodicSolutions_zero (X : ℝ → (x : M) → TangentSpace
       map_zero_left x := by simp
       map_one_left x := by simp }⟩⟩,
     fun t ↦ rfl⟩
+
+/-- **Uniform limits of contractible periodic curves are contractible periodic solutions**
+(`Function.Periodic.exists_nullhomotopic_addCircle_of_tendstoUniformly` on a charted space). -/
+theorem mem_contractiblePeriodicSolutions_of_tendstoUniformly {ι F : Type*} {l : Filter ι}
+    [UniformSpace F] {K : Set M} {e : M → F} (hT : 0 < T)
+    (he : Topology.IsInducing (K.domRestrict e)) {u : ι → ℝ → M}
+    (huc : ∀ᶠ i in l, Continuous (u i)) (huper : ∀ᶠ i in l, Periodic (u i) T)
+    (huK : ∀ᶠ i in l, ∀ t, u i t ∈ K) {γ : ℝ → M} (hγ : γ ∈ periodicSolutions X T)
+    (hγK : ∀ t, γ t ∈ K) (hconv : TendstoUniformly (fun i t ↦ e (u i t)) (e ∘ γ) l)
+    (hnull : ∃ᶠ i in l, ∃ g : C(AddCircle T, M), g.Nullhomotopic ∧ ∀ t : ℝ, g t = u i t) :
+    γ ∈ contractiblePeriodicSolutions X T :=
+  let _ := I.locallyPathConnectedSpace_of_chartedSpace M
+  let _ := I.semilocallySimplyConnectedSpace M
+  ⟨hγ, (periodic_of_mem_periodicSolutions hγ).exists_nullhomotopic_addCircle_of_tendstoUniformly
+    (continuous_of_mem_periodicSolutions hγ) hT he huc huper huK hγK hconv hnull⟩
+
+/-- **Uniform slice limits along a half-cylinder with a contractible slice are contractible**
+(`Function.Periodic.exists_nullhomotopic_addCircle_of_tendstoUniformly_Ioi` on a charted space). -/
+theorem mem_contractiblePeriodicSolutions_of_tendstoUniformly_Ioi {ι F : Type*} {l : Filter ι}
+    [l.NeBot] [UniformSpace F] [T2Space F] {K : Set M} {e : M → F} (hT : 0 < T) (he : Continuous e)
+    (hK : IsCompact K) (he_inj : InjOn e K) {a : ℝ} {u : ℝ × ℝ → M}
+    (hu : ContinuousOn u (Ioi a ×ˢ univ)) (huper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) T)
+    (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K)
+    (hnull : ∃ s > a, ∃ g : C(AddCircle T, M), g.Nullhomotopic ∧ ∀ t : ℝ, g t = u (s, t))
+    {φ : ι → ℝ} (hφ : ∀ᶠ i in l, a < φ i) {γ : ℝ → M} (hγ : γ ∈ periodicSolutions X T)
+    (hγK : ∀ t, γ t ∈ K) (hconv : TendstoUniformly (fun i t ↦ e (u (φ i, t))) (e ∘ γ) l) :
+    γ ∈ contractiblePeriodicSolutions X T :=
+  let _ := I.locallyPathConnectedSpace_of_chartedSpace M
+  let _ := I.semilocallySimplyConnectedSpace M
+  ⟨hγ, (periodic_of_mem_periodicSolutions hγ).exists_nullhomotopic_addCircle_of_tendstoUniformly_Ioi
+    (continuous_of_mem_periodicSolutions hγ) hT he hK he_inj hu huper huK hnull hφ hγK hconv⟩
+
+/-- **Uniform convergence through an inducing map characterizes contractibility of a limit orbit.**
+If `γ ∈ periodicSolutions X T` (`0 < T`) lies in `K ⊆ M`, `e : M → F` restricts to a topological
+inducing map on `K` into a uniform space `F`, and eventually continuous `T`-periodic `u i` in `K`
+satisfy `e ∘ u i → e ∘ γ` uniformly along a nontrivial `l`, then
+`γ ∈ contractiblePeriodicSolutions X T` if and only if `u i` is eventually contractible on
+`AddCircle T`. -/
+theorem mem_contractiblePeriodicSolutions_iff_of_tendstoUniformly {ι F : Type*} {l : Filter ι}
+    [l.NeBot] [UniformSpace F] {K : Set M} {e : M → F} (hT : 0 < T)
+    (he : Topology.IsInducing (K.domRestrict e)) {u : ι → ℝ → M}
+    (huc : ∀ᶠ i in l, Continuous (u i)) (huper : ∀ᶠ i in l, Periodic (u i) T)
+    (huK : ∀ᶠ i in l, ∀ t, u i t ∈ K) {γ : ℝ → M} (hγ : γ ∈ periodicSolutions X T)
+    (hγK : ∀ t, γ t ∈ K) (hconv : TendstoUniformly (fun i t ↦ e (u i t)) (e ∘ γ) l) :
+    γ ∈ contractiblePeriodicSolutions X T ↔
+      ∀ᶠ i in l, ∃ g : C(AddCircle T, M), g.Nullhomotopic ∧ ∀ t : ℝ, g t = u i t := by
+  let _ := I.locallyPathConnectedSpace_of_chartedSpace M
+  let _ := I.semilocallySimplyConnectedSpace M
+  have hev := (periodic_of_mem_periodicSolutions hγ)
+    |>.eventually_exists_nullhomotopic_addCircle_iff_of_tendstoUniformly
+      (continuous_of_mem_periodicSolutions hγ) hT he huc huper huK hγK hconv
+  exact ⟨fun hx ↦ hev.mono fun _ hi ↦ hi.2 hx.2,
+    fun h ↦ ⟨hγ, let ⟨_, hi, hn⟩ := (hev.and h).exists; hi.1 hn⟩⟩
+
+/-- **Uniform convergence through an injective map on a compact set characterizes contractibility of
+a limit orbit.** Specialization of `mem_contractiblePeriodicSolutions_iff_of_tendstoUniformly` to a
+map `e : M → F` continuous and injective on a compact set `K ⊆ M` into a Hausdorff uniform space. -/
+theorem mem_contractiblePeriodicSolutions_iff_of_tendstoUniformly_comp {F : Type*}
+    [UniformSpace F] [T2Space F] {e : M → F} {K : Set M} (hK : IsCompact K)
+    (he : ContinuousOn e K) (he_inj : InjOn e K) (hT : 0 < T) {γ₀ : ℝ → M}
+    (hγ₀ : γ₀ ∈ periodicSolutions X T) (hγ₀K : ∀ t, γ₀ t ∈ K) {ι : Type*} {l : Filter ι}
+    [l.NeBot] {γ : ι → ℝ → M} (hγc : ∀ᶠ i in l, Continuous (γ i))
+    (hγp : ∀ᶠ i in l, Periodic (γ i) T) (hγK : ∀ᶠ i in l, ∀ t, γ i t ∈ K)
+    (hconv : TendstoUniformly (fun i t ↦ e (γ i t)) (e ∘ γ₀) l) :
+    γ₀ ∈ contractiblePeriodicSolutions X T ↔
+      ∀ᶠ i in l, ∃ g : C(AddCircle T, M), g.Nullhomotopic ∧ ∀ t : ℝ, g t = γ i t :=
+  mem_contractiblePeriodicSolutions_iff_of_tendstoUniformly hT
+    (hK.isClosedEmbedding_domRestrict he he_inj).isInducing hγc hγp hγK hγ₀ hγ₀K hconv
 
 section Flow
 
@@ -832,32 +903,5 @@ theorem finite_contractiblePeriodicSolutions (s : ℝ)
 end Compact
 
 end Flow
-
-section Nullhomotopy
-
-open Filter Topology
-
-/-- **Uniform convergence of periodic loops characterizes contractibility of a limit orbit.** If
-`γ₀ ∈ periodicSolutions X T` (`0 < T`) lies in a compact `K ⊆ M` and eventually continuous
-`T`-periodic `γ_i` in `K` satisfy `e ∘ γ_i → e ∘ γ₀` uniformly along a nontrivial `l` for
-`e : M → F` continuous and injective on `K` into a Hausdorff uniform space, then
-`γ₀ ∈ contractiblePeriodicSolutions X T` iff `γ_i` is eventually null-homotopic on `AddCircle T`. -/
-theorem mem_contractiblePeriodicSolutions_iff_of_tendstoUniformly_comp {F : Type*}
-    [UniformSpace F] [T2Space F] {e : M → F} {K : Set M} (hK : IsCompact K)
-    (he : ContinuousOn e K) (he_inj : InjOn e K) (hT : 0 < T) {γ₀ : ℝ → M}
-    (hγ₀ : γ₀ ∈ periodicSolutions X T) (hγ₀K : ∀ t, γ₀ t ∈ K) {ι : Type*} {l : Filter ι}
-    [NeBot l] {γ : ι → ℝ → M} (hγc : ∀ᶠ i in l, Continuous (γ i))
-    (hγp : ∀ᶠ i in l, Periodic (γ i) T) (hγK : ∀ᶠ i in l, ∀ t, γ i t ∈ K)
-    (hconv : TendstoUniformly (fun i t ↦ e (γ i t)) (e ∘ γ₀) l) :
-    γ₀ ∈ contractiblePeriodicSolutions X T ↔
-      ∀ᶠ i in l, ∃ g : C(AddCircle T, M), g.Nullhomotopic ∧ ∀ t : ℝ, g t = γ i t := by
-  have := I.locallyPathConnectedSpace_of_chartedSpace M
-  have := I.semilocallySimplyConnectedSpace M
-  have hev := eventually_exists_nullhomotopic_iff_of_tendstoUniformly_comp hK he he_inj hT
-    (continuous_of_mem_periodicSolutions hγ₀) (mem_periodicSolutions.1 hγ₀).2 hγ₀K hγc hγp hγK hconv
-  exact ⟨fun hx ↦ hev.mono fun _ hi ↦ hi.2 (mem_contractiblePeriodicSolutions.1 hx).2, fun h ↦
-    mem_contractiblePeriodicSolutions.2 ⟨hγ₀, let ⟨_, hi, hn⟩ := (hev.and h).exists; hi.1 hn⟩⟩
-
-end Nullhomotopy
 
 end TauCeti
