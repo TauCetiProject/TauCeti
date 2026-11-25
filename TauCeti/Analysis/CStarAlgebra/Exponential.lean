@@ -25,7 +25,7 @@ the exponential unitary of a real multiple of a star projection
 (`IsStarProjection.coe_expUnitary_smul`, `.coe_expUnitary_pi_smul`), express every self-adjoint
 unitary as an exponential unitary (`Unitary.expUnitary_pi_half_one_sub`), and connect every
 self-adjoint unitary in a unital C⋆-algebra to `1` by an explicit exponential path
-(`Unitary.expUnitaryPathOfIsSelfAdjoint`, `Unitary.joined_one_of_isSelfAdjoint`).
+(`Unitary.expUnitaryPathOfIsSelfAdjoint`).
 
 ## Main declarations
 
@@ -33,9 +33,8 @@ self-adjoint unitary in a unital C⋆-algebra to `1` by an explicit exponential 
 * `IsStarProjection.coe_expUnitary_smul`, `IsStarProjection.coe_expUnitary_pi_smul`: evaluating
   `expUnitary` on a real multiple of a star projection.
 * `Unitary.expUnitary_pi_half_one_sub`: expressing a self-adjoint unitary as `expUnitary`.
-* `Unitary.expUnitaryPathOfIsSelfAdjoint`, `Unitary.coe_expUnitaryPathOfIsSelfAdjoint_apply`,
-  `Unitary.joined_one_of_isSelfAdjoint`: explicit exponential path from `1` to a self-adjoint
-  unitary in a unital C⋆-algebra.
+* `Unitary.expUnitaryPathOfIsSelfAdjoint`, `Unitary.coe_expUnitaryPathOfIsSelfAdjoint_apply`:
+  explicit exponential path from `1` to a self-adjoint unitary in a unital C⋆-algebra.
 
 ## References
 
@@ -144,8 +143,3 @@ theorem Unitary.coe_expUnitaryPathOfIsSelfAdjoint_apply {A : Type*} [CStarAlgebr
     hsub
   rw [hr.coe_expUnitary_smul ((t : ℝ) * π)] at hexp
   simpa only [r, a] using hexp
-
-/-- Every self-adjoint unitary in a unital C⋆-algebra lies in the identity path component. -/
-theorem Unitary.joined_one_of_isSelfAdjoint {A : Type*} [CStarAlgebra A]
-    (u : unitary A) (hu : IsSelfAdjoint (u : A)) : Joined (1 : unitary A) u :=
-  ⟨Unitary.expUnitaryPathOfIsSelfAdjoint u hu⟩

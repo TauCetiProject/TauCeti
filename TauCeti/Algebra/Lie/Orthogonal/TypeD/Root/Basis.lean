@@ -28,7 +28,7 @@ variable {R : Type*} [CommRing R] [Invertible (2 : R)]
 noncomputable def pinnedRootBasis (n : ℕ) (hn : 4 ≤ n) :
     Module.Basis (RootEntryIndex (Fin n)) R (LieAlgebra.Orthogonal.typeD (Fin n) R) :=
   basisOfDiagonal (isUnit_of_invertible (2 : R)).eq_zero_of_add_self_eq_zero
-    (DynkinType.typeDSimpleRootBasis R n hn)
+    (DynkinType.typeDSimpleRootBasis R n (by omega))
 
 /-- Diagonal slots are exactly the numbered Cartan generators. -/
 @[simp]
@@ -49,7 +49,7 @@ theorem pinnedRootBasis_repr_diagonal (n : ℕ) (hn : 4 ≤ n)
           X.val (.inl ⟨n - 1, by omega⟩) (.inl ⟨n - 1, by omega⟩)
       else ⅟ (2 : R) * (∑ j, X.val (.inl j) (.inl j)) := by
   rw [pinnedRootBasis, basisOfDiagonal_repr_diagonal]
-  exact DynkinType.typeDSimpleRootBasis_repr_apply R hn _ k
+  exact DynkinType.typeDSimpleRootBasis_repr_apply R (by omega) _ k
 
 /-- Off-diagonal slots retain their difference-root vectors. -/
 @[simp]

@@ -200,7 +200,7 @@ same local index as `F` at `x`: the real Jacobian determinant `|det_ℂ|²` of t
 positive. -/
 theorem localIndex_eq_of_apply_eq_sub_of_hasStrictFDerivAt {M G : Type} [TopologicalSpace M]
     [T2Space M] [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
-    [ChartedSpace G M] (o₀ : HomologicalOrientation M G n) (hG : finrank ℝ G = n)
+    [ChartedSpace G M] (o₀ : HomologicalOrientation M G n)
     {F G' : C(M, E)} {a b : M → E} {Ψ : E → E} {L : E →L[ℂ] E} {x : M}
     (hF : ∀ p, F p = a p - b p) (hG' : ∀ p, G' p = Ψ (a p) - Ψ (b p))
     (ha : ContinuousAt a x) (hb : ContinuousAt b x) (hab : a x = b x)
@@ -208,7 +208,7 @@ theorem localIndex_eq_of_apply_eq_sub_of_hasStrictFDerivAt {M G : Type} [Topolog
     o₀.localIndex o G' x = o₀.localIndex o F x := by
   have hpos : 0 < (L.restrictScalars ℝ).det :=
     LinearMap.det_restrictScalars_pos_iff_injective.2 hL
-  rw [o₀.localIndex_eq_sign_det_mul_of_apply_eq_sub o hG hE hF hG' ha hb hab hΨ hpos.ne',
+  rw [o₀.localIndex_eq_sign_det_mul_of_apply_eq_sub o hE hF hG' ha hb hab hΨ hpos.ne',
     sign_pos hpos, SignType.coe_one, one_mul]
 
 include hE in

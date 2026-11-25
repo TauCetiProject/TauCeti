@@ -115,7 +115,7 @@ theorem _root_.IsStarProjection.murrayVonNeumannEquiv_reindex {m' R : Type*} [Fi
     MurrayVonNeumannEquiv p (reindexₐ R A e p) := by
   rw [murrayVonNeumannEquiv_iff_isMurrayVonNeumannEquivalent]
   simpa only [ofMatrix_symm_reindexₐ] using
-    ((isStarProjection_ofMatrix_symm_iff p).mpr hp).isMurrayVonNeumannEquivalent_reindex e
+    (isStarProjection_ofMatrix_symm_iff.mpr hp).isMurrayVonNeumannEquivalent_reindex e
 
 /-- Block-diagonal sums of equivalent projections are equivalent. -/
 theorem fromBlocks {p' : CStarMatrix k k A} {q' : CStarMatrix l l A}
@@ -161,7 +161,7 @@ theorem pad_zero (hp : IsStarProjection p) :
     MurrayVonNeumannEquiv p (CStarMatrix.fromBlocks p 0 0 (0 : CStarMatrix k k A)) := by
   rw [murrayVonNeumannEquiv_iff_isMurrayVonNeumannEquivalent]
   simpa only [ofMatrix_symm_fromBlocks, ofMatrix_symm_zero] using
-    ((isStarProjection_ofMatrix_symm_iff p).mpr hp).isMurrayVonNeumannEquivalent_fromBlocks_zero
+    (isStarProjection_ofMatrix_symm_iff.mpr hp).isMurrayVonNeumannEquivalent_fromBlocks_zero
 
 /-- Commutativity of block sums up to Murray–von Neumann equivalence. -/
 theorem fromBlocks_comm (hp : IsStarProjection p) (hq : IsStarProjection q) :
@@ -169,8 +169,8 @@ theorem fromBlocks_comm (hp : IsStarProjection p) (hq : IsStarProjection q) :
   rw [murrayVonNeumannEquiv_iff_isMurrayVonNeumannEquivalent]
   simpa only [ofMatrix_symm_fromBlocks, ofMatrix_symm_zero] using
     Matrix.isMurrayVonNeumannEquivalent_fromBlocks_comm
-      ((isStarProjection_ofMatrix_symm_iff p).mpr hp)
-      ((isStarProjection_ofMatrix_symm_iff q).mpr hq)
+      (isStarProjection_ofMatrix_symm_iff.mpr hp)
+      (isStarProjection_ofMatrix_symm_iff.mpr hq)
 
 /-- Associativity of block sums up to Murray–von Neumann equivalence. -/
 theorem fromBlocks_assoc (hp : IsStarProjection p) (hq : IsStarProjection q)
@@ -180,9 +180,9 @@ theorem fromBlocks_assoc (hp : IsStarProjection p) (hq : IsStarProjection q)
   rw [murrayVonNeumannEquiv_iff_isMurrayVonNeumannEquivalent]
   simpa only [ofMatrix_symm_fromBlocks, ofMatrix_symm_zero] using
     Matrix.isMurrayVonNeumannEquivalent_fromBlocks_assoc
-      ((isStarProjection_ofMatrix_symm_iff p).mpr hp)
-      ((isStarProjection_ofMatrix_symm_iff q).mpr hq)
-      ((isStarProjection_ofMatrix_symm_iff r).mpr hr)
+      (isStarProjection_ofMatrix_symm_iff.mpr hp)
+      (isStarProjection_ofMatrix_symm_iff.mpr hq)
+      (isStarProjection_ofMatrix_symm_iff.mpr hr)
 
 /-- A Murray–von Neumann equivalence is implemented by a matrix supported on its initial
 projection. -/

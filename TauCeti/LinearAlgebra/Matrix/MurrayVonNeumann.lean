@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.Orthogonal
 public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import Mathlib.LinearAlgebra.Matrix.Rank
 public import TauCeti.Algebra.Star.PartialIsometry
@@ -43,10 +44,11 @@ spectral order (`Matrix.conjTranspose_mul_self_eq_zero`).
 * `IsStarProjection.isMurrayVonNeumannEquivalent_mul_mul_star`: unitary conjugacy implies
   equivalence. More generally, `IsStarProjection.isMurrayVonNeumannEquivalent_mul_mul_conjTranspose`
   compresses by a rectangular matrix that is isometric on the range of the projection.
-* `Matrix.IsMurrayVonNeumannEquivalent.reindex`, `Matrix.IsMurrayVonNeumannEquivalent.fromBlocks`,
-  `Matrix.IsMurrayVonNeumannEquivalent.add` and `Matrix.IsMurrayVonNeumannEquivalent.map`: the
-  relation is preserved by reindexing, by block sums, by orthogonal sums and by entrywise star ring
-  homomorphisms.
+* `Matrix.IsMurrayVonNeumannEquivalent.reindex`, `Matrix.IsMurrayVonNeumannEquivalent.fromBlocks`
+  and `Matrix.IsMurrayVonNeumannEquivalent.map`: the relation is preserved by reindexing, by block
+  sums and by entrywise star ring homomorphisms.
+* `Matrix.IsMurrayVonNeumannEquivalent.add`: equivalence is compatible with orthogonal sums
+  `p + q` of projections in a single matrix algebra.
 * `IsStarProjection.isMurrayVonNeumannEquivalent_fromBlocks_zero`,
   `Matrix.isMurrayVonNeumannEquivalent_fromBlocks_comm` and
   `Matrix.isMurrayVonNeumannEquivalent_fromBlocks_assoc`: padding by a zero block, and
@@ -313,47 +315,11 @@ theorem IsMurrayVonNeumannEquivalent.exists_mul_conjTranspose_mul_self_eq_suppor
   · rw [← hvp, ← Matrix.mul_assoc, hv]
   · rw [← hvq, hv]
 
-private lemma conjTranspose_mul_eq_of_isStarProjection {m n R : Type*} [Fintype m]
-    [NonUnitalSemiring R] [StarRing R] {p : Matrix m m R} (hp : IsStarProjection p)
-    {x : Matrix m n R} (hpx : p * x = x) : xᴴ * p = xᴴ := by
-  simpa only [conjTranspose_mul, ← star_eq_conjTranspose, hp.isSelfAdjoint.star_eq] using
-    congr_arg conjTranspose hpx
-
 private lemma mul_conjTranspose_eq_of_isStarProjection {m n R : Type*} [Fintype n]
     [NonUnitalSemiring R] [StarRing R] {p : Matrix n n R} (hp : IsStarProjection p)
     {x : Matrix m n R} (hxp : x * p = x) : p * xᴴ = xᴴ := by
   simpa only [conjTranspose_mul, ← star_eq_conjTranspose, hp.isSelfAdjoint.star_eq] using
     congr_arg conjTranspose hxp
-
-/-- **Orthogonal sums.** Murray–von Neumann equivalence is compatible with sums of orthogonal star
-projections. -/
-theorem IsMurrayVonNeumannEquivalent.add {p₁ p₂ : Matrix m m R} {q₁ q₂ : Matrix n n R}
-    (h₁ : IsMurrayVonNeumannEquivalent p₁ q₁) (h₂ : IsMurrayVonNeumannEquivalent p₂ q₂)
-    (hp : p₁ * p₂ = 0) (hq : q₁ * q₂ = 0) :
-    IsMurrayVonNeumannEquivalent (p₁ + p₂) (q₁ + q₂) := by
-  have hp₁ := h₁.isStarProjection_left
-  have hq₁ := h₁.isStarProjection_right
-  have hp₂ := h₂.isStarProjection_left
-  have hq₂ := h₂.isStarProjection_right
-  obtain ⟨v₁, hv₁, hw₁, hv₁p, hq₁v₁⟩ := h₁.exists_mul_conjTranspose_mul_self_eq_support
-  obtain ⟨v₂, hv₂, hw₂, hv₂p, hq₂v₂⟩ := h₂.exists_mul_conjTranspose_mul_self_eq_support
-  have hv₁q₁ : v₁ᴴ * q₁ = v₁ᴴ := conjTranspose_mul_eq_of_isStarProjection hq₁ hq₁v₁
-  have hp₂v₂ : p₂ * v₂ᴴ = v₂ᴴ := mul_conjTranspose_eq_of_isStarProjection hp₂ hv₂p
-  have h12 : v₁ᴴ * v₂ = 0 := by
-    rw [← hv₁q₁, ← hq₂v₂, Matrix.mul_assoc, ← Matrix.mul_assoc q₁ q₂, hq,
-      Matrix.zero_mul, Matrix.mul_zero]
-  have h21 : v₂ᴴ * v₁ = 0 := by
-    simpa only [conjTranspose_mul, conjTranspose_conjTranspose, conjTranspose_zero] using
-      congr_arg conjTranspose h12
-  have h12' : v₁ * v₂ᴴ = 0 := by
-    rw [← hv₁p, ← hp₂v₂, Matrix.mul_assoc, ← Matrix.mul_assoc p₁ p₂, hp,
-      Matrix.zero_mul, Matrix.mul_zero]
-  have h21' : v₂ * v₁ᴴ = 0 := by
-    simpa only [conjTranspose_mul, conjTranspose_conjTranspose, conjTranspose_zero] using
-      congr_arg conjTranspose h12'
-  refine ⟨hp₁.add hp₂ hp, hq₁.add hq₂ hq, v₁ + v₂, ?_, ?_⟩ <;>
-    simp [conjTranspose_add, Matrix.add_mul, Matrix.mul_add, hv₁, hv₂, hw₁, hw₂,
-      h12, h21, h12', h21']
 
 /-- Square matrix projections are equivalent exactly when they are the initial and final
 projections of a partial isometry. -/
@@ -365,6 +331,38 @@ theorem isMurrayVonNeumannEquivalent_iff_exists_isPartialIsometry {p q : Matrix 
     exact ⟨v, isPartialIsometry_iff.mpr hv, hvp, hvq⟩
   · rintro ⟨v, hv, rfl, rfl⟩
     exact hv.isMurrayVonNeumannEquivalent
+
+/-- **Orthogonal sums.** If `p ∼ p'` and `q ∼ q'`, where `p` is orthogonal to `q` and `p'` to `q'`,
+then `p + q ∼ p' + q'`. -/
+theorem IsMurrayVonNeumannEquivalent.add {p q : Matrix m m R} {p' q' : Matrix n n R}
+    (h₁ : IsMurrayVonNeumannEquivalent p p') (h₂ : IsMurrayVonNeumannEquivalent q q')
+    (hpq : p * q = 0) (hpq' : p' * q' = 0) : IsMurrayVonNeumannEquivalent (p + q) (p' + q') := by
+  have hp := h₁.isStarProjection_left
+  have hp' := h₁.isStarProjection_right
+  have hq := h₂.isStarProjection_left
+  have hq' := h₂.isStarProjection_right
+  have hqp : q * p = 0 :=
+    ((hp.isSelfAdjoint.isStarOrtho_iff_mul_eq_zero hq.isSelfAdjoint).mpr hpq).mul_eq_zero
+      hq.isSelfAdjoint
+  have hqp' : q' * p' = 0 :=
+    ((hp'.isSelfAdjoint.isStarOrtho_iff_mul_eq_zero hq'.isSelfAdjoint).mpr hpq').mul_eq_zero
+      hq'.isSelfAdjoint
+  -- Partial isometries `v` and `w` implementing the two equivalences have orthogonal ranges and
+  -- orthogonal initial spaces, so `v + w` implements the sum.
+  obtain ⟨v, hvp, hvp', hv⟩ := h₁.exists_mul_conjTranspose_mul_self_eq
+  obtain ⟨w, hwq, hwq', hw⟩ := h₂.exists_mul_conjTranspose_mul_self_eq
+  -- `v` maps the range of `p` onto that of `p'`, and `w` that of `q` onto that of `q'`.
+  have hvr : v * p = v := by rw [← hvp, ← Matrix.mul_assoc, hv]
+  have hvl : p' * v = v := by rw [← hvp', hv]
+  have hwr : w * q = w := by rw [← hwq, ← Matrix.mul_assoc, hw]
+  have hwl : q' * w = w := by rw [← hwq', hw]
+  refine ⟨hp.add hq hpq, hp'.add hq' hpq', v + w, ?_, ?_⟩
+  · rw [conjTranspose_add, Matrix.add_mul, Matrix.mul_add, Matrix.mul_add, hvp, hwq,
+      conjTranspose_mul_eq_zero_of_mul_eq_zero hp'.isSelfAdjoint hvl hwl hpq',
+      conjTranspose_mul_eq_zero_of_mul_eq_zero hq'.isSelfAdjoint hwl hvl hqp', add_zero, zero_add]
+  · rw [conjTranspose_add, Matrix.mul_add, Matrix.add_mul, Matrix.add_mul, hvp', hwq',
+      mul_conjTranspose_eq_zero_of_mul_eq_zero hq.isSelfAdjoint hvr hwr hpq,
+      mul_conjTranspose_eq_zero_of_mul_eq_zero hp.isSelfAdjoint hwr hvr hqp, add_zero, zero_add]
 
 end NonUnitalSemiring
 

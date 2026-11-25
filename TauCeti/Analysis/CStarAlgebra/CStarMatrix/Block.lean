@@ -217,9 +217,9 @@ end Apply
     {u : CStarMatrix m₁ m₁ A} {v : CStarMatrix m₂ m₂ A} :
     fromBlocks u 0 0 v ∈ unitary (CStarMatrix (m₁ ⊕ m₂) (m₁ ⊕ m₂) A) ↔
       u ∈ unitary (CStarMatrix m₁ m₁ A) ∧ v ∈ unitary (CStarMatrix m₂ m₂ A) := by
-  rw [mem_unitary_iff_ofMatrix_symm, ofMatrix_symm_fromBlocks, ofMatrix_symm_zero,
+  rw [← ofMatrix_symm_mem_unitary_iff, ofMatrix_symm_fromBlocks, ofMatrix_symm_zero,
     ofMatrix_symm_zero, Matrix.fromBlocks_zero_zero_mem_unitaryGroup_iff,
-    ← mem_unitary_iff_ofMatrix_symm u, ← mem_unitary_iff_ofMatrix_symm v]
+    ofMatrix_symm_mem_unitary_iff (M := u), ofMatrix_symm_mem_unitary_iff (M := v)]
 
 end FromBlocks
 
