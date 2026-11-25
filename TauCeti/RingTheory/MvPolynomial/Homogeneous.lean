@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Order.Antidiag.Finsupp
 public import Mathlib.Algebra.Polynomial.Degree.Operations
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
+public import TauCeti.Algebra.MvPolynomial.Equiv
 import Mathlib.Algebra.MvPolynomial.NoZeroDivisors
 import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 -- `IsPrimitiveRoot.sum_zpow_pow_eq`, the orthogonality of the characters of `ℤ ⧸ n`.
@@ -62,8 +63,11 @@ coefficients in `K`. If `a` is quasi-regular, `Ideal.mem_span_pow_of_mul_mem_spa
 nonzerodivisor modulo `I` to a nonzerodivisor modulo every power of `I`, and `hp.eval_mem_pow`
 records that a degree-`ν` form takes values in `Iᵛ` on families in `I`. A homogeneous polynomial
 of positive degree splits as `G + H * X_last`, with `G` free of the last variable
-(`hp.exists_eq_rename_castSucc_add_mul_X_last`). These are the polynomial descriptions of ideal
-powers used for associated graded rings.
+(`hp.exists_eq_rename_castSucc_add_mul_X_last`), and singling out any variable `X p` via
+`MvPolynomial.finSuccEquiv'` gives homogeneous coefficients of degrees `d - r` up to the constant
+top coefficient `C (eval (Pi.single p 1) f)` (`hp.coeff_finSuccEquiv'`,
+`hp.coeff_finSuccEquiv'_eq_zero_of_lt`, `hp.coeff_finSuccEquiv'_self`). These are the polynomial
+descriptions of ideal powers used for associated graded rings.
 -/
 
 public section
@@ -523,3 +527,48 @@ theorem MvPolynomial.IsHomogeneous.exists_eq_rename_castSucc_add_mul_X_last {R :
   rw [← homogeneousComponent_eq_self hF, hGH, map_add, ← rename_homogeneousComponent,
     (isHomogeneous_X R _).homogeneousComponent_mul_right]
   simp
+
+/-- Singling out `X p` in a homogeneous polynomial `f` of degree `d` yields a univariate polynomial
+whose `r`-th coefficient (`r ≤ d`) is homogeneous of degree `d - r` in the remaining variables. -/
+theorem MvPolynomial.IsHomogeneous.coeff_finSuccEquiv' {R : Type*} [CommSemiring R] {n d r : ℕ}
+    (p : Fin (n + 1)) {f : MvPolynomial (Fin (n + 1)) R} (hf : f.IsHomogeneous d) (hr : r ≤ d) :
+    ((_root_.MvPolynomial.finSuccEquiv' R p f).coeff r).IsHomogeneous (d - r) := by
+  refine _root_.MvPolynomial.IsHomogeneous.coeff_isHomogeneous_of_optionEquivLeft_symm ?_
+    r (d - r) (Nat.add_sub_of_le hr)
+  rw [_root_.MvPolynomial.finSuccEquiv'_apply, AlgEquiv.symm_apply_apply]
+  exact hf.rename_isHomogeneous
+
+/-- Singling out `X p` in a homogeneous polynomial `f` of degree `d` yields a univariate polynomial
+whose `r`-th coefficient vanishes for `d < r`. -/
+theorem MvPolynomial.IsHomogeneous.coeff_finSuccEquiv'_eq_zero_of_lt {R : Type*} [CommSemiring R]
+    {n d r : ℕ} (p : Fin (n + 1)) {f : MvPolynomial (Fin (n + 1)) R} (hf : f.IsHomogeneous d)
+    (hr : d < r) :
+    (_root_.MvPolynomial.finSuccEquiv' R p f).coeff r = 0 := by
+  rcases eq_or_ne f 0 with rfl | hf0
+  · simp
+  refine Polynomial.coeff_eq_zero_of_natDegree_lt (lt_of_le_of_lt ?_ hr)
+  rw [_root_.MvPolynomial.finSuccEquiv'_apply, _root_.MvPolynomial.natDegree_optionEquivLeft]
+  exact (_root_.MvPolynomial.degreeOf_le_totalDegree _ _).trans
+    ((_root_.MvPolynomial.totalDegree_rename_le _ _).trans_eq (hf.totalDegree hf0))
+
+/-- Singling out `X p` in a homogeneous polynomial `f` of degree `d` gives top (`d`-th) univariate
+coefficient equal to the constant `C (eval (Pi.single p 1) f)`. -/
+theorem MvPolynomial.IsHomogeneous.coeff_finSuccEquiv'_self {R : Type*} [CommSemiring R]
+    {n d : ℕ} (p : Fin (n + 1)) {f : MvPolynomial (Fin (n + 1)) R} (hf : f.IsHomogeneous d) :
+    (_root_.MvPolynomial.finSuccEquiv' R p f).coeff d =
+      _root_.MvPolynomial.C (_root_.MvPolynomial.eval (Pi.single p 1) f) := by
+  have h0 : ((_root_.MvPolynomial.finSuccEquiv' R p f).coeff d).IsHomogeneous 0 := by
+    simpa using hf.coeff_finSuccEquiv' p le_rfl
+  have hC : (_root_.MvPolynomial.finSuccEquiv' R p f).coeff d =
+      _root_.MvPolynomial.C (((_root_.MvPolynomial.finSuccEquiv' R p f).coeff d).coeff 0) :=
+    _root_.MvPolynomial.totalDegree_eq_zero_iff_eq_C.mp
+      ((_root_.MvPolynomial.totalDegree_zero_iff_isHomogeneous _).mpr h0)
+  rw [hC, ← hf.coeff_single_eq_eval p]
+  congr 1
+  rw [_root_.MvPolynomial.finSuccEquiv'_apply, _root_.MvPolynomial.optionEquivLeft_coeff_coeff]
+  have hopt : (0 : Fin n →₀ ℕ).optionElim d =
+      (Finsupp.single p d).mapDomain (_root_.finSuccEquiv' p) := by
+    rw [Finsupp.mapDomain_single, _root_.finSuccEquiv'_at]
+    ext x
+    cases x <;> simp
+  rw [hopt, _root_.MvPolynomial.coeff_rename_mapDomain _ (_root_.finSuccEquiv' p).injective]

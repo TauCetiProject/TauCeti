@@ -176,9 +176,7 @@ theorem star_fischerInner (p q : MvPolynomial σ R) :
   classical
   rw [fischerInner_eq_sum_inter p q, fischerInner_eq_sum_inter q p, Finset.inter_comm, star_sum]
   refine Finset.sum_congr rfl fun m _ ↦ ?_
-  have hfact : star (∏ i, ((m i).factorial : R)) = ∏ i, ((m i).factorial : R) := by
-    rw [← Nat.cast_prod, star_natCast]
-  rw [star_mul, star_mul, star_star, hfact]
+  simp only [star_mul, star_prod, star_natCast, star_star]
   ring
 
 theorem fischerInner_monomial_left (m : σ →₀ ℕ) (a : R) (q : MvPolynomial σ R) :
@@ -192,9 +190,7 @@ theorem fischerInner_monomial_right (p : MvPolynomial σ R) (m : σ →₀ ℕ) 
     fischerInner p (monomial m b) = (∏ i, ((m i).factorial : R)) * star (p.coeff m) * b := by
   apply star_injective
   rw [star_fischerInner, fischerInner_monomial_left]
-  have hfact : star (∏ i, ((m i).factorial : R)) = ∏ i, ((m i).factorial : R) := by
-    rw [← Nat.cast_prod, star_natCast]
-  rw [star_mul, star_mul, star_star, hfact]
+  simp only [star_mul, star_prod, star_natCast, star_star]
   ring
 
 @[simp]

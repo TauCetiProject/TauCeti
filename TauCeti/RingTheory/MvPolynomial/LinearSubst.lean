@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.Algebra.MvPolynomial.PDeriv
+public import TauCeti.LinearAlgebra.Matrix.BlockSucc
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.MvPolynomial.Rescale
 import Mathlib.Algebra.MvPolynomial.Coeff
@@ -57,6 +58,11 @@ degree `d` it is the representation `TauCeti.polynomialRep` of the general linea
   determinant preserves nonvanishing of the gradient at nonzero zeros over a faithful algebra
   without zero divisors.
 * `MvPolynomial.map_linearSubst`: changing coefficients commutes with substitution.
+* `MvPolynomial.rename_linearSubst_submatrix`: relabeling variables along an equivalence
+  conjugates `linearSubst` by `Matrix.submatrix`.
+* `MvPolynomial.finSuccEquiv'_last_linearSubst_blockSucc`,
+  `MvPolynomial.coeff_finSuccEquiv'_last_linearSubst_blockSucc`: singling out the last variable
+  intertwines `linearSubst (Matrix.blockSucc M)` with mapping coefficients by `linearSubst M`.
 * `MvPolynomial.linearSubst_diagonal`: a diagonal matrix rescales the variables by its
   diagonal entries.
 * `MvPolynomial.linearSubst_diagonal_monomial`: a diagonal matrix scales each monomial by
@@ -115,6 +121,59 @@ theorem map_linearSubst {S : Type*} [CommSemiring S] (f : R →+* S) (M : Matrix
   | C a => simp [linearSubst_eq_aeval]
   | add p q hp hq => simp [hp, hq]
   | mul_X p i hp => simp [hp]
+
+/-- Relabeling variables along an equivalence `e : σ ≃ τ` conjugates `linearSubst` by
+`Matrix.submatrix e e`. -/
+theorem rename_linearSubst_submatrix {τ : Type*} [Fintype τ] (e : σ ≃ τ) (M : Matrix τ τ R)
+    (p : MvPolynomial σ R) :
+    rename e (linearSubst (M.submatrix e e) p) = linearSubst M (rename e p) := by
+  rw [← AlgHom.comp_apply, ← AlgHom.comp_apply]
+  congr 1
+  refine algHom_ext fun i ↦ ?_
+  simp only [AlgHom.comp_apply, linearSubst_X, rename_X, map_sum, map_mul, algHom_C,
+    algebraMap_eq, submatrix_apply, ← e.sum_comp]
+
+omit [Fintype σ] in
+/-- Singling out the last variable intertwines `linearSubst (Matrix.blockSucc M)` with mapping the
+coefficients in the first `n` variables by `linearSubst M`. -/
+theorem finSuccEquiv'_last_linearSubst_blockSucc {n : ℕ}
+    (M : Matrix (Fin n) (Fin n) R) (p : MvPolynomial (Fin (n + 1)) R) :
+    finSuccEquiv' R (Fin.last n) (linearSubst (Matrix.blockSucc M) p) =
+      (finSuccEquiv' R (Fin.last n) p).map (linearSubst M).toRingHom := by
+  induction p using MvPolynomial.induction_on with
+  | C a => simp
+  | add p q hp hq => simp [map_add, Polynomial.map_add, hp, hq]
+  | mul_X p j hp =>
+    rw [map_mul, map_mul, map_mul, Polynomial.map_mul, hp]
+    congr 1
+    induction j using Fin.lastCases with
+    | last =>
+      have hX : linearSubst (Matrix.blockSucc M) (X (Fin.last n)) = X (Fin.last n) := by
+        rw [linearSubst_X, Fin.sum_univ_castSucc]
+        simp
+      rw [hX, finSuccEquiv'_X_self, Polynomial.map_X]
+    | cast i =>
+      have hX : linearSubst (Matrix.blockSucc M) (X i.castSucc) =
+          ∑ j : Fin n, C (M i j) * X j.castSucc := by
+        rw [linearSubst_X, Fin.sum_univ_castSucc]
+        simp
+      have hcast (k : Fin n) : finSuccEquiv' R (Fin.last n) (X k.castSucc) = Polynomial.C (X k) :=
+        by simpa only [Fin.succAbove_last] using finSuccEquiv'_X_succAbove (Fin.last n) k
+      rw [hX, map_sum, hcast, Polynomial.map_C, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+        linearSubst_X, map_sum]
+      refine Finset.sum_congr rfl fun j _ ↦ ?_
+      simp [hcast]
+
+omit [Fintype σ] in
+/-- Under `linearSubst (Matrix.blockSucc M)`, each univariate coefficient in the last variable
+transforms by `linearSubst M`. -/
+@[simp]
+theorem coeff_finSuccEquiv'_last_linearSubst_blockSucc {n : ℕ}
+    (M : Matrix (Fin n) (Fin n) R) (p : MvPolynomial (Fin (n + 1)) R) (r : ℕ) :
+    (finSuccEquiv' R (Fin.last n) (linearSubst (Matrix.blockSucc M) p)).coeff r =
+      linearSubst M ((finSuccEquiv' R (Fin.last n) p).coeff r) := by
+  rw [finSuccEquiv'_last_linearSubst_blockSucc, Polynomial.coeff_map, AlgHom.toRingHom_eq_coe,
+    RingHom.coe_coe]
 
 /-- A diagonal change of variables is the rescaling of the variables by the diagonal entries. -/
 theorem linearSubst_diagonal [DecidableEq σ] (v : σ → R) :

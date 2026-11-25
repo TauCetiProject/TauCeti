@@ -36,6 +36,9 @@ list, as happens to the coefficient ring of a grid complex when a grid diagram i
 * `MvPolynomial.polynomial_eval_finSuccEquiv'`: evaluating the polynomial variable at `a`
   substitutes `a` for `X p`.
 * `MvPolynomial.finSuccEquiv'_zero`: for `p = 0` this is Mathlib's `MvPolynomial.finSuccEquiv`.
+* `MvPolynomial.finSuccEquiv'_pderiv`, `MvPolynomial.coeff_finSuccEquiv'_pderiv_succAbove`:
+  differentiating in `X p` becomes the univariate derivative, and differentiating in any other
+  variable commutes with taking univariate coefficients.
 * `MvPolynomial.degreeOf_eval_C_finSuccEquiv_le`: specializing `X₀ = a` via `finSuccEquiv` bounds
   the degree in `Xⱼ` by `P.degreeOf j.succ`.
 * `MvPolynomial.finSuccEquiv'_map`, `MvPolynomial.finSuccEquiv_map`: singling out a variable
@@ -76,6 +79,12 @@ noncomputable def finSuccEquiv' (p : Fin (n + 1)) :
   (renameEquiv R (_root_.finSuccEquiv' p)).trans (optionEquivLeft R (Fin n))
 
 variable {R}
+
+/-- `finSuccEquiv' R p` renames along `_root_.finSuccEquiv' p` and singles out `none` via
+`optionEquivLeft`. -/
+theorem finSuccEquiv'_apply (p : Fin (n + 1)) (f : MvPolynomial (Fin (n + 1)) R) :
+    finSuccEquiv' R p f = optionEquivLeft R (Fin n) (rename (_root_.finSuccEquiv' p) f) :=
+  (rfl)
 
 /-- The singled-out variable becomes the polynomial variable. -/
 @[simp]
@@ -154,6 +163,33 @@ theorem finSuccEquiv'_pderiv (f : MvPolynomial (Fin (n + 1)) R) (p : Fin (n + 1)
     obtain rfl | ⟨i, rfl⟩ := Fin.eq_self_or_eq_succAbove p i <;>
       simp [Derivation.leibniz, smul_eq_mul, pderiv_X, hf, Polynomial.derivative_mul,
         mul_comm]
+
+/-- Singling out `X p` commutes coefficientwise with differentiating in any other variable
+`X (p.succAbove i)`. -/
+@[simp]
+theorem coeff_finSuccEquiv'_pderiv_succAbove (p : Fin (n + 1)) (i : Fin n)
+    (f : MvPolynomial (Fin (n + 1)) R) (r : ℕ) :
+    (finSuccEquiv' R p (pderiv (p.succAbove i) f)).coeff r =
+      pderiv i ((finSuccEquiv' R p f).coeff r) := by
+  induction f using MvPolynomial.induction_on generalizing r with
+  | C a =>
+    rw [pderiv_C, map_zero, Polynomial.coeff_zero, finSuccEquiv'_C, Polynomial.coeff_C]
+    split_ifs <;> simp
+  | add f g hf hg =>
+    simp [map_add, hf, hg]
+  | mul_X f j hf =>
+    obtain rfl | ⟨k, rfl⟩ := Fin.eq_self_or_eq_succAbove p j
+    · rw [pderiv_mul, pderiv_X_of_ne (Fin.succAbove_ne j i).symm, mul_zero, add_zero, map_mul,
+        map_mul, finSuccEquiv'_X_self]
+      cases r with
+      | zero => simp
+      | succ m => simp [hf m]
+    · rw [pderiv_mul, map_add, map_mul, map_mul, map_mul, finSuccEquiv'_X_succAbove,
+        Polynomial.coeff_add, Polynomial.coeff_mul_C, Polynomial.coeff_mul_C, hf r, pderiv_mul]
+      by_cases hik : i = k
+      · subst hik; simp
+      · simp [pderiv_X_of_ne (Ne.symm (Fin.succAbove_right_injective.ne hik)),
+          pderiv_X_of_ne (Ne.symm hik)]
 
 section Map
 

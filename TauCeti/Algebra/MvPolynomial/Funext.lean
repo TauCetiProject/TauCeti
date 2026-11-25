@@ -16,7 +16,9 @@ import Mathlib.LinearAlgebra.Dual.Lemmas
 
 Over an infinite integral domain `R`, a nonzero multivariate polynomial takes a nonzero value at
 some assignment of the variables (`MvPolynomial.exists_eval_ne_zero`), the contrapositive of
-Mathlib's `MvPolynomial.funext`.
+Mathlib's `MvPolynomial.funext`. More generally, two polynomials over an integral domain `R` that
+agree on the image of an injective map from an infinite type are equal
+(`MvPolynomial.funext_of_injective`, `MvPolynomial.funext_algebraMap`).
 
 A polynomial map `z ↦ ∑ α ∈ s, (∏ i, z i ^ α i) • c α` from `ι → K` to a `K`-vector space `V`,
 over an infinite field `K`, determines its coefficients: if it vanishes everywhere, every
@@ -35,6 +37,25 @@ theorem exists_eval_ne_zero {σ R : Type*} [CommRing R] [IsDomain R] [Infinite R
     {p : MvPolynomial σ R} (hp : p ≠ 0) : ∃ x : σ → R, eval x p ≠ 0 := by
   contrapose! hp
   exact funext fun x ↦ by simp [hp x]
+
+/-- Two multivariate polynomials over an integral domain are equal if they agree at all points with
+coordinates in the image of an injective map from an infinite type. -/
+theorem funext_of_injective {σ S R : Type*} [Infinite S] [CommRing R] [IsDomain R]
+    {f : S → R} (hf : Function.Injective f) {p q : MvPolynomial σ R}
+    (h : ∀ x : σ → S, eval (f ∘ x) p = eval (f ∘ x) q) : p = q := by
+  refine funext_set (fun _ ↦ Set.range f) (fun _ ↦ Set.infinite_range_of_injective hf) fun y hy ↦ ?_
+  choose x hx using fun i ↦ hy i (Set.mem_univ i)
+  have hxy : y = f ∘ x := by ext i; exact (hx i).symm
+  rw [hxy]
+  exact h x
+
+/-- Two multivariate polynomials over an integral domain `R` that is a faithful algebra over an
+infinite commutative semiring `S` (for instance any nontrivial algebra over an infinite field such
+as `ℝ`) are equal if they agree at all `S`-points. -/
+theorem funext_algebraMap {σ S R : Type*} [CommSemiring S] [Infinite S] [CommRing R] [IsDomain R]
+    [Algebra S R] [FaithfulSMul S R] {p q : MvPolynomial σ R}
+    (h : ∀ x : σ → S, eval (algebraMap S R ∘ x) p = eval (algebraMap S R ∘ x) q) : p = q :=
+  funext_of_injective (FaithfulSMul.algebraMap_injective S R) h
 
 end MvPolynomial
 
