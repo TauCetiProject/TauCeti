@@ -39,7 +39,7 @@ In the namespace `CategoryTheory.Pseudofunctor.BandFixtures`:
 * [The Stacks Project, Lemma 8.11.8 (0CJY)](https://stacks.math.columbia.edu/tag/0CJY)
 -/
 
-@[expose] public section
+public section
 
 universe u v
 
@@ -47,7 +47,15 @@ open CategoryTheory
 
 namespace CategoryTheory.Pseudofunctor.BandFixtures
 
-variable {I : Type u} {G : Type v} [CommGroup G]
+variable {I : Type u} {G : Type v}
+
+/-- A central endomorphism of `Discrete I × SingleObj G` is determined by its group components. -/
+theorem catCenter_ext_discrete_prod_singleObj [Monoid G]
+    {z w : CatCenter (Discrete I × SingleObj G)}
+    (h : ∀ x : Discrete I × SingleObj G, (z.app x).2 = (w.app x).2) : z = w :=
+  CatCenter.ext _ _ fun x ↦ Prod.hom_ext (Subsingleton.elim _ _) (h x)
+
+variable [CommGroup G]
 
 /-- The **centre of a profile** `a : I → G`: the natural endomorphism of the identity of
 `Discrete I × SingleObj G` with component `(𝟙, a i)` at an object over the label `i`. It is natural
@@ -66,52 +74,39 @@ def componentCenter (a : I → G) : CatCenter (Discrete I × SingleObj G) :=
 /-- The component of the centre of a profile at an object over the label `i` is `(𝟙, a i)`. -/
 theorem componentCenter_app (a : I → G) (x : Discrete I × SingleObj G) :
     (componentCenter a).app x = (𝟙 x.1, (a x.1.as : SingleObj.star G ⟶ SingleObj.star G)) :=
-  rfl
+  (rfl)
 
 /-- The group component of the centre of a profile at an object over `i` is `a i`. -/
 @[simp]
 theorem componentCenter_app_snd (a : I → G) (x : Discrete I × SingleObj G) :
     ((componentCenter a).app x).2 = (a x.1.as : SingleObj.star G ⟶ SingleObj.star G) :=
-  rfl
-
-/-- **Naturality**: every morphism of the groupoid commutes with the centre of a profile. -/
-theorem componentCenter_naturality (a : I → G) {x y : Discrete I × SingleObj G} (f : x ⟶ y) :
-    f ≫ (componentCenter a).app y = (componentCenter a).app x ≫ f :=
-  CatCenter.naturality _ f
-
-/-- A central endomorphism of `Discrete I × SingleObj G` is determined by its group components. -/
-theorem catCenter_ext {z w : CatCenter (Discrete I × SingleObj G)}
-    (h : ∀ x : Discrete I × SingleObj G, (z.app x).2 = (w.app x).2) : z = w :=
-  CatCenter.ext _ _ fun x ↦ Prod.hom_ext (Subsingleton.elim _ _) (h x)
+  (rfl)
 
 /-- The centre of the pointwise product of profiles is the product of their centres. -/
 theorem componentCenter_mul (a b : I → G) :
     componentCenter (a * b) = componentCenter a * componentCenter b :=
-  catCenter_ext fun x ↦ by
-    rw [CatCenter.mul_app', prod_comp_snd, componentCenter_app_snd, componentCenter_app_snd,
-      componentCenter_app_snd, SingleObj.comp_as_mul, Pi.mul_apply, mul_comm]
+  catCenter_ext_discrete_prod_singleObj fun x ↦ by
+    simp [CatCenter.mul_app', SingleObj.comp_as_mul]
 
 /-- The centre of the trivial profile is the identity. -/
 @[simp]
 theorem componentCenter_one : componentCenter (1 : I → G) = 1 :=
-  catCenter_ext fun _ ↦ rfl
+  catCenter_ext_discrete_prod_singleObj fun _ ↦ rfl
 
 /-- The **centre unit of a profile** `a`, with inverse the centre of the pointwise inverse
 profile. -/
-def componentCenterUnit (a : I → G) : (CatCenter (Discrete I × SingleObj G))ˣ where
-  val := componentCenter a
-  inv := componentCenter a⁻¹
-  val_inv := by rw [← componentCenter_mul, mul_inv_cancel a, componentCenter_one]
-  inv_val := by rw [← componentCenter_mul, inv_mul_cancel a, componentCenter_one]
+def componentCenterUnit (a : I → G) : (CatCenter (Discrete I × SingleObj G))ˣ :=
+  MonoidHom.toHomUnits
+    { toFun := componentCenter, map_one' := componentCenter_one, map_mul' := componentCenter_mul } a
 
 @[simp]
 theorem val_componentCenterUnit (a : I → G) : (componentCenterUnit a).val = componentCenter a :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem inv_componentCenterUnit (a : I → G) :
     (componentCenterUnit a)⁻¹.val = componentCenter a⁻¹ :=
-  rfl
+  (rfl)
 
 variable (I G) in
 /-- **The centre units of `Discrete I × SingleObj G` are the profiles** `I → G`, for a commutative
@@ -120,18 +115,18 @@ def componentCenterEquiv : (I → G) ≃* (CatCenter (Discrete I × SingleObj G)
   toFun := componentCenterUnit
   invFun z i := (z.val.app (⟨i⟩, SingleObj.star G)).2
   left_inv _ := rfl
-  right_inv _ := Units.ext <| catCenter_ext fun _ ↦ rfl
+  right_inv _ := Units.ext <| catCenter_ext_discrete_prod_singleObj fun _ ↦ rfl
   map_mul' a b := Units.ext (componentCenter_mul a b)
 
 @[simp]
 theorem componentCenterEquiv_apply (a : I → G) :
     componentCenterEquiv I G a = componentCenterUnit a :=
-  rfl
+  (rfl)
 
 /-- The inverse of `componentCenterEquiv` reads the group component at `(i, ⋆)`. -/
 @[simp]
 theorem componentCenterEquiv_symm_apply (z : (CatCenter (Discrete I × SingleObj G))ˣ) (i : I) :
     (componentCenterEquiv I G).symm z i = (z.val.app (⟨i⟩, SingleObj.star G)).2 :=
-  rfl
+  (rfl)
 
 end CategoryTheory.Pseudofunctor.BandFixtures
