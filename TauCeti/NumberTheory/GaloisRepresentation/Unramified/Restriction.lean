@@ -29,9 +29,6 @@ characteristic polynomial of `ρ(Φ_K)^f`, and the geometric one that of `ρ(Φ_
 
 All names are in the namespace `TauCeti.ContinuousRep`.
 
-* `IsUnramified.apply_eq_pow_of_restrictMaximalUnramifiedHom_eq_pow`: an unramified
-  representation takes the value `ρ(σ₀)^m` at every `σ` acting on `K^{ur}` as the `m`-th power
-  of `σ₀`.
 * `IsUnramified.res_continuousAbsoluteGaloisGroupExtend`,
   `IsTamelyRamified.res_continuousAbsoluteGaloisGroupExtend`: restriction preserves
   unramifiedness and tame ramification;
@@ -62,18 +59,6 @@ namespace ContinuousRep
 
 variable {A M : Type*} [Semiring A] [AddCommMonoid M] [Module A M] [TopologicalSpace M]
   {ρ : ContinuousRep (Field.absoluteGaloisGroup K) A M}
-
-/-- **Unramified representations factor through `Gal(K^{ur}/K)`.** If `σ` acts on the maximal
-unramified extension as the `m`-th power of `σ₀`, then an unramified representation takes the
-value `ρ(σ₀)^m` at `σ`, since `σ₀^{-m} σ` lies in inertia. -/
-theorem IsUnramified.apply_eq_pow_of_restrictMaximalUnramifiedHom_eq_pow (h : ρ.IsUnramified)
-    {σ σ₀ : Field.absoluteGaloisGroup K} {m : ℕ}
-    (hσ : restrictMaximalUnramifiedHom K σ = restrictMaximalUnramifiedHom K σ₀ ^ m) :
-    ρ σ = ρ σ₀ ^ m := by
-  have hmem : (σ₀ ^ m)⁻¹ * σ ∈ inertiaSubgroup K := by
-    rw [← ker_restrictMaximalUnramifiedHom, MonoidHom.mem_ker, map_mul, map_inv, map_pow, hσ,
-      inv_mul_cancel]
-  rw [← mul_inv_cancel_left (σ₀ ^ m) σ, map_mul, isUnramified_iff.1 h _ hmem, mul_one, map_pow]
 
 variable (ι : L →ₐ[K] SeparableClosure K)
 
