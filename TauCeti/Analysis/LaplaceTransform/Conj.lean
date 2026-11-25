@@ -13,9 +13,10 @@ import TauCeti.Analysis.Meromorphic.Identity
 /-!
 # Conjugation of Laplace transforms and their meromorphic continuations
 
-Conjugating a scalar Laplace transform conjugates both the input and the spectral parameter.
-For a real input the symmetry persists after meromorphic continuation to a right half-plane:
-conjugate points have the same order, and at real poles the leading Laurent coefficient is real.
+Conjugating a scalar Laplace transform conjugates both the input and the spectral parameter
+(`TauCeti.HasLaplace.conj`). For a real input the symmetry persists after meromorphic
+continuation to a right half-plane: conjugate points have the same order, and at real poles the
+leading Laurent coefficient is real.
 Normal form is essential for the pointwise identity, since the transform does not prescribe the
 values assigned at removable singularities or poles by an arbitrary meromorphic representative.
 -/
@@ -26,17 +27,6 @@ open Complex Filter MeasureTheory Set
 open scoped ComplexConjugate Topology
 
 namespace TauCeti
-
-/-- Complex conjugation of a scalar Laplace integral conjugates its input and parameter. -/
-theorem HasLaplace.conj {f : ℝ → ℂ} {s z : ℂ} {μ : Measure ℝ}
-    (h : HasLaplace f s z μ) : HasLaplace (fun u ↦ conj (f u)) (conj s) (conj z) μ := by
-  have hconj (u : ℝ) : exp (-conj s * u) • conj (f u) = conj (exp (-s * u) • f u) := by
-    simp only [smul_eq_mul, map_mul, ← exp_conj, map_neg, conj_ofReal]
-  rw [hasLaplace_iff]
-  simp only [hconj]
-  refine ⟨?_, ?_⟩
-  · exact conjCLE.toContinuousLinearEquiv.integrable_comp_iff.mpr h.integrable
-  · rw [integral_conj, h.integral_eq]
 
 /-- A meromorphic continuation of a real Laplace transform agrees with its conjugate reflection
 as a punctured germ throughout its half-plane of meromorphicity. -/

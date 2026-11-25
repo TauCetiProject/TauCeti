@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
 public import TauCeti.Analysis.Complex.Laurent.MeromorphicGerm
 public import TauCeti.Analysis.Meromorphic.Conj
 import TauCeti.Topology.ContinuousOn.PuncturedNhds
@@ -64,29 +63,5 @@ theorem meromorphicGerms.coeff_laurentSeries_conj_conj {f : ℂ → ℂ} {c d : 
   obtain ⟨r, hr, hf'⟩ := ((eventually_coeff_laurentSeries_eq_circleLaurentCoeff (coe_mk _ hR)).and
     (eventually_coeff_laurentSeries_eq_circleLaurentCoeff (coe_mk _ hf))).exists
   rw [hr n, hf' n, circleLaurentCoeff_conj_conj]
-
-/-- The leading Laurent coefficient is conjugated under reflection, including the totalized
-zero coefficient for a zero germ or a nonmeromorphic function. -/
-@[simp]
-theorem meromorphicTrailingCoeffAt_conj_conj (f : ℂ → ℂ) (c : ℂ) :
-    meromorphicTrailingCoeffAt (conj ∘ f ∘ conj) c =
-      conj (meromorphicTrailingCoeffAt f (conj c)) := by
-  by_cases hf : MeromorphicAt f (conj c)
-  · by_cases h : meromorphicOrderAt f (conj c) = ⊤
-    · simp [MeromorphicAt.meromorphicTrailingCoeffAt_of_order_eq_top h,
-        MeromorphicAt.meromorphicTrailingCoeffAt_of_order_eq_top
-          (meromorphicOrderAt_conj_conj.trans h)]
-    · obtain ⟨g, hg, hg₀, hfg⟩ := (meromorphicOrderAt_ne_top_iff hf).mp h
-      have hconj : Tendsto conj (𝓝[≠] c) (𝓝[≠] (conj c)) :=
-        continuous_conj.continuousAt.tendsto_nhdsNE (starRingEnd ℂ).injective
-      have he : (conj ∘ f ∘ conj) =ᶠ[𝓝[≠] c] fun z ↦
-          (z - c) ^ (meromorphicOrderAt f (conj c)).untop₀ • (conj ∘ g ∘ conj) z := by
-        filter_upwards [hconj.eventually hfg] with z hz
-        simp [hz]
-      rw [hg.meromorphicTrailingCoeffAt_of_ne_zero_of_eq_nhdsNE hg₀ hfg]
-      exact (analyticAt_conj_conj_iff.mpr hg).meromorphicTrailingCoeffAt_of_eq_nhdsNE
-        (by simpa only [meromorphicOrderAt_conj_conj] using he)
-  · simp [meromorphicTrailingCoeffAt_of_not_MeromorphicAt hf,
-      meromorphicTrailingCoeffAt_of_not_MeromorphicAt (meromorphicAt_conj_conj_iff.not.mpr hf)]
 
 end TauCeti
