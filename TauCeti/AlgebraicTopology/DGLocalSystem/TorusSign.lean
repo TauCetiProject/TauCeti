@@ -146,9 +146,7 @@ theorem monodromy_torusSign (γ : MooreFreeLoopSpace Q) :
 /-- The torus sign of the zero map is trivial. -/
 @[simp]
 theorem torusSign_zero (γ : MooreFreeLoopSpace Q) : torusSign R 0 γ = 1 :=
-  RankOneLocalSystem.ext <| MonoidHom.ext fun Λ ↦ by
-    rw [torusSign_ρ_apply, AddMonoidHom.zero_apply, hilbertSign_zero, map_one, one_ρ,
-      MonoidHom.one_apply]
+  RankOneLocalSystem.ext <| MonoidHom.ext fun Λ ↦ by simp [torusSign_ρ_apply]
 
 /-- **The torus sign is additive in the class**: `σ_{c + c'} = σ_c ⊗ σ_{c'}`. -/
 theorem torusSign_add
@@ -156,8 +154,7 @@ theorem torusSign_add
       (TopCat.of Q) →+ ZMod 2) (γ : MooreFreeLoopSpace Q) :
     torusSign R (c + c') γ = torusSign R c γ * torusSign R c' γ :=
   RankOneLocalSystem.ext <| MonoidHom.ext fun Λ ↦ by
-    rw [mul_ρ, MonoidHom.mul_apply, torusSign_ρ_apply, torusSign_ρ_apply, torusSign_ρ_apply,
-      AddMonoidHom.add_apply, hilbertSign_add, map_mul]
+    simp [torusSign_ρ_apply, hilbertSign_add]
 
 /-- **The torus sign is its own inverse.** -/
 @[simp]
@@ -184,18 +181,10 @@ theorem torusSign_const_eq_one_iff (x : Q) :
     torusSign R c (const x) = 1 ↔
       (∀ a : HomotopyGroup (Fin 2) Q x,
         c (HomotopyGroup.hurewiczIntHom Q x 1 (Additive.ofMul a)) = 0) ∨ (2 : R) = 0 := by
-  rw [torusSign_eq_one_iff]
-  refine or_congr_left ⟨fun h a ↦ ?_, fun h g ↦ ?_⟩
-  · obtain ⟨g, hg⟩ : HomotopyGroup.hurewiczIntHom Q x 1 (Additive.ofMul a) ∈
-        (const x).torusClassHom.range :=
-      (range_torusClassHom_const x).symm ▸ ⟨_, rfl⟩
-    rw [← hg]
-    exact h g.toMul
-  · obtain ⟨a, ha⟩ : (const x).torusClassHom (Additive.ofMul g) ∈
-        (HomotopyGroup.hurewiczIntHom Q x 1).range :=
-      range_torusClassHom_const x ▸ ⟨_, rfl⟩
-    rw [← ha]
-    exact h a.toMul
+  have h := congrArg (fun S ↦ ∀ y ∈ S, c y = 0) (range_torusClassHom_const x)
+  simp only [AddMonoidHom.mem_range, forall_exists_index, forall_apply_eq_imp_iff] at h
+  rw [← Additive.ofMul.forall_congr_right, ← Additive.ofMul.forall_congr_right] at h
+  exact (torusSign_eq_one_iff c _).trans (or_congr_left h.to_iff)
 
 /-- **Along the constant loops the torus sign is trivial**: its pullback along the inclusion
 `Q → 𝓛Q` of the constant loops is the trivial local system, since a loop of constant loops sweeps
@@ -204,9 +193,7 @@ out a degenerate torus. -/
 theorem pullback_constMap_torusSign (x : Q) :
     pullback (constMap Q) (constMap_apply x) (torusSign R c (const x)) = 1 :=
   RankOneLocalSystem.ext <| MonoidHom.ext fun δ ↦ by
-    rw [pullback_ρ_apply, torusSign_ρ_apply, MooreLoopSpace.fundamentalGroupHom_map,
-      torusClassHom_mapOfEq_constMap, map_zero, hilbertSign_zero, map_one, one_ρ,
-      MonoidHom.one_apply]
+    simp [torusSign_ρ_apply, MooreLoopSpace.fundamentalGroupHom_map]
 
 end RankOneLocalSystem
 
