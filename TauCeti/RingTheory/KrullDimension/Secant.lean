@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.KrullDimension.Regular
 public import TauCeti.RingTheory.Regular.PrefixQuotient
-import TauCeti.Data.ENat.Monoid
 import TauCeti.RingTheory.Depth.Basic
 import TauCeti.RingTheory.KrullDimension.Module
 import TauCeti.RingTheory.KrullDimension.Regular
@@ -188,14 +187,18 @@ variable [IsNoetherianRing R] [Module.Finite R M]
 
 /-- **The secant dimension formula.** Along a secant list the dimension of the support drops by
 exactly one at each step: `dim Supp M ⧸ (rs) M + length rs = dim Supp M`. -/
-theorem IsSecant.supportDim_add_length_eq [Nontrivial M] {rs : List R} (h : IsSecant M rs) :
+theorem IsSecant.supportDim_add_length_eq {rs : List R} (h : IsSecant M rs) :
     supportDim R (prefixQuotient M rs) + rs.length = supportDim R M := by
+  rcases subsingleton_or_nontrivial M with _ | _
+  · obtain rfl := isSecant_iff_eq_nil.1 h
+    simp
   induction rs generalizing M with
   | nil => simp
   | cons r rs ih =>
     obtain ⟨hr, hlt, hrs⟩ := (isSecant_cons_iff r rs).1 h
     have := nontrivial_quotSMulTop_of_mem_maximalIdeal M hr
-    rw [supportDim_prefixQuotient_cons, List.length_cons, Nat.cast_add_one, ← add_assoc, ih hrs]
+    rw [supportDim_prefixQuotient_cons, List.length_cons, Nat.cast_add_one, ← add_assoc,
+      ih hrs this]
     exact supportDim_quotSMulTop_succ_eq_supportDim_of_lt hr hlt
 
 /-- **The secant dimension formula.** For a nonzero finite module `M` over a Noetherian local ring,

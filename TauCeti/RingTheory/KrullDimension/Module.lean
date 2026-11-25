@@ -123,7 +123,7 @@ theorem lt_supportDim_of_add_one_eq [FiniteRingKrullDim R] [Nontrivial M] {d : W
   exact ENat.WithBot.lt_natCast_of_add_one_eq h
 
 /-- A module whose support has at most one point has support of dimension at most zero. -/
-theorem supportDim_nonpos_of_subsingleton (h : (support R M).Subsingleton) :
+theorem supportDim_nonpos_of_support_subsingleton (h : (support R M).Subsingleton) :
     supportDim R M ≤ 0 :=
   have := (Set.subsingleton_coe _).2 h
   Order.krullDim_nonpos_of_subsingleton
@@ -133,7 +133,7 @@ module `M`, then it is the only point of the support, so the support of `M` has 
 zero. -/
 theorem supportDim_nonpos_of_maximalIdeal_mem_minimalPrimes [IsLocalRing R] [Module.Finite R M]
     (h : maximalIdeal R ∈ (annihilator R M).minimalPrimes) : supportDim R M ≤ 0 := by
-  refine supportDim_nonpos_of_subsingleton
+  refine supportDim_nonpos_of_support_subsingleton
     (Set.subsingleton_singleton (a := closedPoint R) |>.anti fun q hq ↦ PrimeSpectrum.ext ?_)
   exact le_antisymm (le_maximalIdeal q.isPrime.ne_top)
     (h.2 ⟨q.isPrime, mem_support_iff_of_finite.1 hq⟩ (le_maximalIdeal q.isPrime.ne_top))
@@ -172,7 +172,7 @@ theorem supportDim_localizedModule_nonpos_iff [IsNoetherianRing R] [Module.Finit
     exact absurd (hdim.trans h) (by decide)
   · -- Every prime `Q` of the support of `M_p` contracts to a prime between the annihilator of `M`
     -- and `p`, hence to `p`, so `Q` is the maximal ideal and the support is a single point.
-    refine supportDim_nonpos_of_subsingleton
+    refine supportDim_nonpos_of_support_subsingleton
       (Set.subsingleton_singleton (a := closedPoint (Localization.AtPrime p)) |>.anti
         fun Q hQ ↦ PrimeSpectrum.ext ?_)
     have hQp : Q.asIdeal.under R ≤ p :=
