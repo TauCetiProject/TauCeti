@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.Basic
+-- Private: `Path.Homotopy.reflTransSymm_apply` is used only in the proof of
+-- `Homotopic.trans_symm`, so this import is not re-exported.
+import TauCeti.Topology.Homotopy.Path
 
 /-!
 # Homotopies between homotopies
@@ -121,15 +124,6 @@ theorem homotopic_iff_exists {F G : Homotopy f₀ f₁} :
     exact Homotopic.of_continuous (fun p ↦ H p) H.continuous (fun s x ↦ H.apply_zero (s, x))
       (fun s x ↦ H.apply_one (s, x)) h₀ h₁
 
-/-- The value of Mathlib's `Path.Homotopy.reflTransSymm p` at `(s, t)`: the path `p` at time
-`Path.Homotopy.reflTransSymmAux (s, t)`. Mathlib defines `reflTransSymm` as a plain `def` with no
-`simps` lemmas, so this unfolds its body, once, for the continuity argument in
-`Homotopic.trans_symm`. -/
-private theorem reflTransSymm_apply {y₀ y₁ : Y} (p : Path y₀ y₁) (x : I × I) :
-    Path.Homotopy.reflTransSymm p x =
-      p ⟨Path.Homotopy.reflTransSymmAux x, Path.Homotopy.reflTransSymmAux_mem_I x⟩ :=
-  (rfl)
-
 namespace Homotopic
 
 /-- Homotopic homotopies trace homotopic paths through every point. -/
@@ -203,7 +197,7 @@ theorem trans_refl (F : Homotopy f₀ f₁) : (F.trans (Homotopy.refl f₁)).Hom
 
 /-- The constant homotopy is a left unit for concatenation up to homotopy relative to the ends. -/
 theorem refl_trans (F : Homotopy f₀ f₁) : ((Homotopy.refl f₀).trans F).Homotopic F := by
-  simpa [symm_trans] using (trans_refl F.symm).symm₂
+  simpa [Homotopy.symm_trans] using (trans_refl F.symm).symm₂
 
 /-- A homotopy followed by its reversal is homotopic, relative to the ends, to the constant
 homotopy. -/
@@ -213,7 +207,7 @@ theorem trans_symm (F : Homotopy f₀ f₁) : (F.trans F.symm).Homotopic (Homoto
     (fun s x ↦ (Path.Homotopy.reflTransSymm (F.evalAt x)).source s)
     (fun s x ↦ (Path.Homotopy.reflTransSymm (F.evalAt x)).target s)
     (fun t x ↦ by simp) (fun t x ↦ by simp [← evalAt_symm, ← evalAt_trans])).symm
-  simp only [reflTransSymm_apply, evalAt_apply]
+  simp only [Path.Homotopy.reflTransSymm_apply, evalAt_apply]
   fun_prop
 
 /-- The reversal of a homotopy followed by the homotopy is homotopic, relative to the ends, to the
@@ -309,7 +303,7 @@ theorem evalAtEquiv_trans {y₀ y₁ y₂ : Y} (F : Homotopy (const X y₀) (con
 
 /-- Reversing a homotopy between constant maps reverses its family of paths. -/
 @[simp]
-theorem evalAtEquiv_symm {y₀ y₁ : Y} (F : Homotopy (const X y₀) (const X y₁)) :
+theorem evalAtEquiv_homotopySymm {y₀ y₁ : Y} (F : Homotopy (const X y₀) (const X y₁)) :
     evalAtEquiv F.symm = (evalAtEquiv F).pathSymm := by
   ext x : 1
   simp

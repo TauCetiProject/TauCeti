@@ -84,6 +84,8 @@ endpoints composes the cast images of the factors (`Path.Homotopic.Quotient.map_
 `Path.refl_trans_eq_reparam`, the left counterpart of Mathlib's
 `Path.Homotopy.trans_refl_reparam`, and `map_trans_cast` are used by the gluing of caps along a
 pair of pants in `Geometry/Symplectic/Floer/Cap/Loop.lean`.
+`Path.Homotopy.reflTransSymm_apply` evaluates Mathlib's homotopy from the constant path to
+`p.trans p.symm`, which has no `simps` lemmas of its own.
 
 Every point of a path lies in the path component of its source (`Path.mem_pathComponent`). So the
 paths in a subspace `S` starting at a point whose path component lies in `S` are the paths of the
@@ -686,6 +688,15 @@ theorem refl_trans_eq_reparam {y z : X} (p : Path y z) :
   · rw [refl_apply, Set.projIcc_of_le_left _ (by linarith)]
     exact p.source.symm
   · exact congrArg p (Set.projIcc_of_mem _ ⟨by linarith, by linarith [t.property.2]⟩).symm
+
+/-- The value of Mathlib's `Path.Homotopy.reflTransSymm p` at `(s, t)`: the path `p` at time
+`Path.Homotopy.reflTransSymmAux (s, t)`. Mathlib defines `reflTransSymm` as a plain `def` with no
+`simps` lemmas. -/
+@[simp]
+theorem Homotopy.reflTransSymm_apply {y z : X} (p : Path y z) (x : I × I) :
+    Homotopy.reflTransSymm p x =
+      p ⟨Homotopy.reflTransSymmAux x, Homotopy.reflTransSymmAux_mem_I x⟩ :=
+  (rfl)
 
 namespace Homotopic.Quotient
 
