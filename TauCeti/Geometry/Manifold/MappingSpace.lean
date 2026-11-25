@@ -68,21 +68,29 @@ variable {K M E H : Type*} [TopologicalSpace K] [CompactSpace K] [TopologicalSpa
 namespace ContinuousMap
 
 include I in
-/-- A map from a nonempty compact space into a manifold takes values in an open subset `W` such
-that `C(K, W)` is locally path-connected and semilocally simply connected: `W` is a neighbourhood
-retract of a Euclidean space. -/
-private theorem exists_opens_locallyPathConnectedSpace [Nonempty K] (f : C(K, M)) :
-    ∃ W : Opens M, (∀ k, f k ∈ W) ∧ LocallyPathConnectedSpace C(K, W) ∧
-      TauCeti.SemilocallySimplyConnectedSpace C(K, W) := by
+/-- Every map from a nonempty compact space into a manifold has a neighbourhood in `C(K, M)` that
+is locally path-connected and semilocally simply connected. The map takes values in an open subset
+`W` that is a neighbourhood retract of a Euclidean space, and the image of `C(K, W)` is an open
+neighbourhood of the map in `C(K, M)`. -/
+private theorem exists_mem_nhds_locallyPathConnectedSpace_semilocallySimplyConnectedSpace
+    [Nonempty K] (f : C(K, M)) :
+    ∃ U ∈ 𝓝 f, LocallyPathConnectedSpace U ∧ TauCeti.SemilocallySimplyConnectedSpace U := by
   obtain ⟨W, hfW, -, n, ⟨e⟩⟩ :=
     (isCompact_range f.continuous).exists_opens_nonempty_smoothEmbedding_euclidean (I := I)
   have hf (k : K) : f k ∈ W := hfW (mem_range_self k)
   have : Nonempty W := ⟨⟨f (Classical.arbitrary K), hf _⟩⟩
   obtain ⟨O, hO, heO, -, r, hr, hre⟩ := e.exists_contMDiffOn_retraction isOpen_univ (subset_univ _)
   have hiO (x : W) : e x ∈ O := heO (mem_range_self x)
-  exact ⟨W, hf,
-    locallyPathConnectedSpace_of_leftInverse K (map_continuous e) hO hiO hr.continuousOn hre,
-    semilocallySimplyConnectedSpace_of_leftInverse K (map_continuous e) hO hiO hr.continuousOn hre⟩
+  have := locallyPathConnectedSpace_of_leftInverse K (map_continuous e) hO hiO hr.continuousOn hre
+  have := semilocallySimplyConnectedSpace_of_leftInverse K (map_continuous e) hO hiO
+    hr.continuousOn hre
+  have he := isOpenEmbedding_postcomp (X := K) ⟨_, continuous_subtypeVal⟩
+    W.isOpen.isOpenEmbedding_subtypeVal
+  let h := he.isEmbedding.toHomeomorph
+  exact ⟨_, he.isOpen_range.mem_nhds (by
+    rw [range_postcomp _ IsInducing.subtypeVal]; exact fun k ↦ ⟨⟨f k, hf k⟩, rfl⟩),
+    h.locallyPathConnectedSpace,
+    LeftInverse.semilocallySimplyConnectedSpace h.apply_symm_apply h.continuous h.symm.continuous⟩
 
 include I in
 variable (K M) in
@@ -93,12 +101,9 @@ theorem locallyPathConnectedSpace_of_isManifold : LocallyPathConnectedSpace C(K,
   rcases isEmpty_or_nonempty K with hK | hK
   · infer_instance
   refine .of_forall_exists_mem_nhds fun f ↦ ?_
-  obtain ⟨W, hf, hW, -⟩ := exists_opens_locallyPathConnectedSpace I f
-  have he := isOpenEmbedding_postcomp (X := K) ⟨_, continuous_subtypeVal⟩
-    W.isOpen.isOpenEmbedding_subtypeVal
-  exact ⟨_, he.isOpen_range.mem_nhds (by
-    rw [range_postcomp _ IsInducing.subtypeVal]; exact fun k ↦ ⟨⟨f k, hf k⟩, rfl⟩),
-    he.isEmbedding.toHomeomorph.locallyPathConnectedSpace⟩
+  obtain ⟨U, hU, hUl, -⟩ :=
+    exists_mem_nhds_locallyPathConnectedSpace_semilocallySimplyConnectedSpace I f
+  exact ⟨U, hU, hUl⟩
 
 include I in
 variable (K M) in
@@ -111,14 +116,9 @@ theorem semilocallySimplyConnectedSpace_of_isManifold :
   rcases isEmpty_or_nonempty K with hK | hK
   · infer_instance
   refine .of_forall_exists_mem_nhds fun f ↦ ?_
-  obtain ⟨W, hf, -, hW⟩ := exists_opens_locallyPathConnectedSpace I f
-  have he := isOpenEmbedding_postcomp (X := K) ⟨_, continuous_subtypeVal⟩
-    W.isOpen.isOpenEmbedding_subtypeVal
-  let h := he.isEmbedding.toHomeomorph
-  exact ⟨_, he.isOpen_range.mem_nhds (by
-    rw [range_postcomp _ IsInducing.subtypeVal]; exact fun k ↦ ⟨⟨f k, hf k⟩, rfl⟩),
-    (LeftInverse.semilocallySimplyConnectedSpace h.apply_symm_apply h.continuous
-      h.symm.continuous)⟩
+  obtain ⟨U, hU, -, hUs⟩ :=
+    exists_mem_nhds_locallyPathConnectedSpace_semilocallySimplyConnectedSpace I f
+  exact ⟨U, hU, hUs⟩
 
 end ContinuousMap
 
