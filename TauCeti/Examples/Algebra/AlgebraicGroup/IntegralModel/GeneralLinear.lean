@@ -11,33 +11,32 @@ public import TauCeti.Algebra.AlgebraicGroup.IntegralModel.GeneralLinear
 /-!
 # Checks for the standard integral model of `GL_n`
 
-ReductiveGroupsPartII RG2.3.1, *SmoothModel.integral_inverse*: for `ℤ ⊂ ℚ`, the `ℚ`-point of
-`GL₁` with matrix `(2)` has an integral entry but is not an integral point of `GL_{1,ℤ}`, because
-its inverse `1/2` is not integral; the criterion
-`TauCeti.IntegralModel.mem_integralPoints_generalLinear_iff` needs both the matrix and its
-inverse to be integral.
+For `ℤ ⊂ ℚ`, the `ℚ`-point of `GL₁` with matrix `(2)` has an integral entry but is not an integral
+point of the standard model `GL_{1,ℤ}`, because its inverse `1/2` is not integral; the criterion
+`TauCeti.IntegralModel.SmoothModel.mem_integralPoints_generalLinear_iff` needs both the matrix and
+its inverse to be integral.
 -/
 
 public section
 
 namespace TauCeti.Examples
 
-open IntegralModel
+open CategoryTheory IntegralModel
 
 /-- The `ℚ`-point of `GL₁` with matrix `(2)` has an integral entry but is not an integral point
 of `GL_{1,ℤ}`: its inverse `1/2` is not integral. -/
 example (two : GL (Fin 1) ℚ) (htwo : (two : Matrix (Fin 1) (Fin 1) ℚ) = !![2]) :
     WithConv.toConv ((GeneralLinear.generalLinearToPoint (R := ℚ) 1 two).ofConv.comp
-      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso.{0, 0} ℤ ℚ 1).hom.hom.toAlgHom) ∉
-      integralPoints ℤ ℚ (GeneralLinear.coordinateHopfAlgebra ℤ 1) := by
-  rw [mem_integralPoints_generalLinear_iff]
+      (eqToHom (GeneralLinear.finiteTypeCoordinateHopfAlgebra_obj ℚ 1)).hom.toAlgHom) ∉
+      (SmoothModel.generalLinear ℤ ℚ 1).integralPoints := by
+  rw [SmoothModel.mem_integralPoints_generalLinear_iff]
   rintro ⟨M, hM⟩
   have hcomp : ((GeneralLinear.generalLinearToPoint (R := ℚ) 1 two).ofConv.comp
-      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso.{0, 0} ℤ ℚ 1).hom.hom.toAlgHom).comp
-      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso.{0, 0} ℤ ℚ 1).inv.hom.toAlgHom =
+      (eqToHom (GeneralLinear.finiteTypeCoordinateHopfAlgebra_obj ℚ 1)).hom.toAlgHom).comp
+      (eqToHom (GeneralLinear.finiteTypeCoordinateHopfAlgebra_obj ℚ 1).symm).hom.toAlgHom =
       (GeneralLinear.generalLinearToPoint (R := ℚ) 1 two).ofConv := by
     ext x
-    simp
+    simp [← BialgHom.comp_apply, ← _root_.CommHopfAlgCat.hom_comp]
   rw [hcomp, WithConv.toConv_ofConv, GeneralLinear.pointToGeneralLinear_generalLinearToPoint]
     at hM
   have h00 : ((M : Matrix (Fin 1) (Fin 1) ℤ) 0 0 : ℚ) = 2 := by
