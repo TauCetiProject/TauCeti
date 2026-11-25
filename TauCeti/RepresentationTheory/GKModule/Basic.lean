@@ -11,12 +11,14 @@ public import Mathlib.RepresentationTheory.Irreducible
 public import Mathlib.RingTheory.SimpleModule.Isotypic
 public import TauCeti.RepresentationTheory.GFinite
 public import TauCeti.RepresentationTheory.Irreducible
+public import TauCeti.RepresentationTheory.LieHom
 
 /-!
 # `(𝔤, K)`-modules
 
 Let `𝔤` be a Lie algebra over a field `k` and let a group `K` act on `𝔤` by Lie algebra
-endomorphisms through a representation `Ad`; the definitions only use that `K` is a monoid. A
+endomorphisms through a representation `Ad` (`TauCeti.IsLieAction Ad`, from
+`TauCeti/RepresentationTheory/LieHom.lean`); the definitions only use that `K` is a monoid. A
 `(𝔤, K)`-module is a `𝔤`-module `V` (a Lie module over `k`) with a representation `ρ` of `K` on `V`
 which is covariant, `ρ g ⁅x, v⁆ = ⁅Ad g x, ρ g v⁆`, and locally finite: every vector is `K`-finite
 (`Representation.IsGFinite`), that is, its orbit spans a finite-dimensional subspace.
@@ -30,9 +32,6 @@ condition is the further predicate `TauCeti.GKModule.IsCompatible` on a `TauCeti
 
 ## Main definitions
 
-* `TauCeti.IsLieAction Ad`: `K` acts on `𝔤` by Lie algebra endomorphisms. By
-  `TauCeti.IsLieAction.of_lieEquiv`, this holds when every `Ad g` underlies a Lie algebra
-  automorphism.
 * `TauCeti.GKModule Ad V`: a `(𝔤, K)`-module structure on the `𝔤`-module `V`.
 * `TauCeti.GKSubmodule M`: a `(𝔤, K)`-submodule, a Lie submodule stable under `K`.
 * `TauCeti.GKModule.submodule`, `TauCeti.GKModule.quotient`: the `(𝔤, K)`-module structures on a
@@ -87,28 +86,6 @@ universe v w
 
 variable {k 𝔤 K : Type*} [Field k] [LieRing 𝔤] [LieAlgebra k 𝔤] [Monoid K]
 
-/-- A representation `Ad` of a monoid `K` on a Lie algebra `𝔤` **acts by Lie algebra
-endomorphisms** when every `Ad g` preserves the Lie bracket. -/
-class IsLieAction (Ad : Representation k K 𝔤) : Prop where
-  /-- Every `Ad g` preserves the Lie bracket. -/
-  map_lie (g : K) (x y : 𝔤) : Ad g ⁅x, y⁆ = ⁅Ad g x, Ad g y⁆
-
-/-- A representation whose operators are the linear maps underlying Lie algebra endomorphisms
-`φ g` acts by Lie algebra endomorphisms. -/
-theorem IsLieAction.of_lieHom {Ad : Representation k K 𝔤} (φ : K → 𝔤 →ₗ⁅k⁆ 𝔤)
-    (h : ∀ g x, φ g x = Ad g x) : IsLieAction Ad where
-  map_lie g x y := by simp only [← h, LieHom.map_lie]
-
-/-- A representation whose operators are the linear maps underlying Lie algebra automorphisms
-`φ g` acts by Lie algebra endomorphisms. -/
-theorem IsLieAction.of_lieEquiv {Ad : Representation k K 𝔤} (φ : K → 𝔤 ≃ₗ⁅k⁆ 𝔤)
-    (h : ∀ g x, φ g x = Ad g x) : IsLieAction Ad :=
-  .of_lieHom (fun g ↦ (φ g : 𝔤 →ₗ⁅k⁆ 𝔤)) h
-
-/-- The trivial representation acts by Lie algebra endomorphisms. -/
-instance IsLieAction.instTrivial : IsLieAction (Representation.trivial k K 𝔤) :=
-  .of_lieHom (fun _ ↦ 1) fun _ _ ↦ rfl
-
 /-- A **`(𝔤, K)`-module** structure on a `𝔤`-module `V`, for a monoid `K` acting on the Lie algebra
 `𝔤` by Lie algebra endomorphisms through `Ad`: a representation `ρ` of `K` on `V` with
 `ρ g ⁅x, v⁆ = ⁅Ad g x, ρ g v⁆`, under which every vector is `K`-finite. -/
@@ -123,6 +100,14 @@ structure GKModule (Ad : Representation k K 𝔤) [IsLieAction Ad] (V : Type v) 
 
 variable {Ad : Representation k K 𝔤} [IsLieAction Ad] {V : Type v} [AddCommGroup V]
   [Module k V] [LieRingModule 𝔤 V] [LieModule k 𝔤 V]
+
+/-- A `(𝔤, K)`-module structure is determined by its action of `K`. -/
+@[ext]
+theorem GKModule.ext {M M' : GKModule Ad V} (h : M.ρ = M'.ρ) : M = M' := by
+  cases M
+  cases M'
+  cases h
+  rfl
 
 /-- A **`(𝔤, K)`-submodule** of a `(𝔤, K)`-module: a Lie submodule stable under `K`. -/
 structure GKSubmodule (M : GKModule Ad V) where
@@ -139,6 +124,12 @@ theorem toLieSubmodule_injective :
     Function.Injective (toLieSubmodule : GKSubmodule M → LieSubmodule k 𝔤 V) := by
   rintro ⟨_, _⟩ ⟨_, _⟩ rfl
   rfl
+
+/-- A `(𝔤, K)`-submodule is determined by its underlying Lie submodule. -/
+@[simp]
+theorem toLieSubmodule_inj {N N' : GKSubmodule M} :
+    N.toLieSubmodule = N'.toLieSubmodule ↔ N = N' :=
+  toLieSubmodule_injective.eq_iff
 
 instance instSetLike : SetLike (GKSubmodule M) V where
   coe N := N.toLieSubmodule
@@ -176,24 +167,10 @@ variable (N : GKSubmodule M)
 
 /-- The `(𝔤, K)`-module structure on a `(𝔤, K)`-submodule. -/
 def submodule : GKModule Ad N.toLieSubmodule where
-  ρ :=
-    { toFun g :=
-        { toFun v := ⟨M.ρ g v, N.apply_mem g v.property⟩
-          map_add' _ _ := Subtype.ext (map_add _ _ _)
-          map_smul' _ _ := Subtype.ext (map_smul _ _ _) }
-      map_one' := by ext; simp
-      map_mul' _ _ := by ext; simp }
+  ρ := N.toSubrepresentation.toRepresentation
   map_lie g x v := Subtype.ext (M.map_lie g x v)
-  isGFinite v := by
-    let f : N.toLieSubmodule →ₗ[k] V := N.toLieSubmodule.toSubmodule.subtype
-    have hf : Function.Injective f := Subtype.val_injective
-    have hv := M.isGFinite (v : V)
-    rw [isGFinite_iff] at hv ⊢
-    have : FiniteDimensional k ((Submodule.span k (Set.range fun g : K =>
-        (⟨M.ρ g v, N.apply_mem g v.property⟩ : N.toLieSubmodule))).map f) := by
-      rw [Submodule.map_span, ← Set.range_comp]
-      exact hv
-    exact LinearEquiv.finiteDimensional (Submodule.equivMapOfInjective f hf _).symm
+  isGFinite v := IsGFinite.of_injective (ρ := N.toSubrepresentation.toRepresentation)
+    ⟨N.toLieSubmodule.toSubmodule.subtype, fun _ ↦ rfl⟩ Subtype.val_injective (M.isGFinite v)
 
 @[simp]
 theorem submodule_ρ_apply_coe (g : K) (v : N.toLieSubmodule) :
@@ -208,8 +185,7 @@ def quotient : GKModule Ad (V ⧸ N.toLieSubmodule) where
     exact congrArg (Submodule.Quotient.mk (p := N.toLieSubmodule.toSubmodule)) (M.map_lie g x v)
   isGFinite v := by
     induction v using Submodule.Quotient.induction_on with | H v => ?_
-    have hv := M.isGFinite v
-    rw [isGFinite_iff] at hv
+    have := (isGFinite_iff _ _).1 (M.isGFinite v)
     exact IsGFinite.of_apply_eq (N.toLieSubmodule.toSubmodule.mkQ) fun g ↦ rfl
 
 @[simp]
@@ -240,8 +216,7 @@ noncomputable def directSum (M : ∀ i, GKModule Ad (V i)) : GKModule Ad (⨁ i,
     induction v using DirectSum.induction_on with
     | zero => exact IsGFinite.zero
     | of i v =>
-      have hv := (M i).isGFinite v
-      rw [isGFinite_iff] at hv
+      have := (isGFinite_iff _ _).1 ((M i).isGFinite v)
       exact IsGFinite.of_apply_eq (lof k ι V i) (u := fun g ↦ (M i).ρ g v) fun g ↦ by
         simp [lof_eq_of]
     | add v v' hv hv' => exact hv.add hv'
@@ -316,6 +291,9 @@ theorem mem_isotypic_iff [σ.IsIrreducible] {v : V} :
     · rintro ⟨m, ⟨e⟩⟩ x hx
       let f := (IntertwiningMap.equivLinearMapAsModule σ M.ρ).symm (m.subtype ∘ₗ e.symm.toLinearMap)
       have : M.ρ.asModuleEquiv x = f (σ.asModuleEquiv (e ⟨x, hx⟩)) := by
+        -- Mathlib has no apply lemmas for `IntertwiningMap.equivLinearMapAsModule`, whose maps
+        -- have the same underlying functions on the type synonyms `asModule`, nor for
+        -- `Representation.asModuleEquiv`, which is the identity; so `f` is unfolded by `change`.
         change _ = M.ρ.asModuleEquiv (m.subtype (e.symm (e ⟨x, hx⟩)))
         rw [LinearEquiv.symm_apply_apply]
         rfl
@@ -441,8 +419,8 @@ theorem finiteDimensional (hM : M.IsAdmissible) {W : Type w} [AddCommGroup W] [M
       map_smul' _ _ := rfl }
   refine Module.Finite.of_injective c fun φ φ' h ↦ ?_
   ext w
-  have h' := congr($h (e w))
-  change φ (e.symm (e w)) = φ' (e.symm (e w)) at h'
+  have h' : φ.comp e.symm.toIntertwiningMap (e w) = φ'.comp e.symm.toIntertwiningMap (e w) :=
+    congr($h (e w))
   simpa using h'
 
 /-- A `(𝔤, K)`-module in which `Hom_K(σ, V)` is finite-dimensional for every irreducible `σ` on a

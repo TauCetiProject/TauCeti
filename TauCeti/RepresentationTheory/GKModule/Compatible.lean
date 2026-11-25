@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.GroupLieAlgebra
-public import Mathlib.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
+public import TauCeti.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 public import TauCeti.RepresentationTheory.GKModule.Basic
 
 /-!
@@ -15,7 +15,7 @@ public import TauCeti.RepresentationTheory.GKModule.Basic
 Let `K` be a Lie group modelled on `I` over `ℝ`, let `𝔤` be a Lie algebra over a normed field
 extension `k` of `ℝ` (in the analytic theory `k = ℂ` and `𝔤` is a complexified Lie algebra) and let
 `ι : Lie K → 𝔤` be the differentiated inclusion: for a Lie group `G` containing `K` through
-`j : K →* G`, this is `TauCeti.GKModule.lieInclusion j c`, the differential of `j` at `1` followed
+`j : K →* G`, this is `MonoidHom.mfderivOneComp j c`, the differential of `j` at `1` followed
 by a linear map `c : Lie G → 𝔤` (in the analytic theory, the inclusion of `Lie G` into its
 complexification). A `(𝔤, K)`-module `M` in the sense of harmonic
 analysis is a `TauCeti.GKModule` whose `K`-action is smooth on each finite-dimensional `K`-stable
@@ -34,11 +34,13 @@ harmonic analysis is a `TauCeti.GKModule` `M` with `M.IsCompatible ι` and
 
 ## Main definitions
 
-* `TauCeti.GKModule.lieInclusion j c`: the differentiated inclusion `Lie K → 𝔤` of a Lie group
-  homomorphism `j : K →* G`, followed by `c : Lie G → 𝔤`.
+* `MonoidHom.mfderivOneComp j c`: the differential at `1` of a Lie group homomorphism
+  `j : K →* G`, followed by `c : Lie G → 𝔤`; for an inclusion `j`, the differentiated inclusion
+  `Lie K → 𝔤`.
 * `TauCeti.GKModule.IsCompatible M ι`: the `K`-action of `M` is smooth on finite-dimensional
   `K`-stable subspaces, with differential the action of `Lie K` through `ι`.
-* `TauCeti.GKModule.EndLie V`: `End(V)` as the Lie algebra `𝔤𝔩(V)` acting on `V`.
+* `TauCeti.GKModule.EndLie V`: `End(V)` as the Lie algebra `𝔤𝔩(V)` acting on `V`, identified with
+  the algebra `Module.End ℝ V` by `TauCeti.GKModule.EndLie.equiv`.
 * `TauCeti.GKModule.glStd V`: for a finite-dimensional real normed space `V`, the defining
   representation of `GL(V)` on `V` as a `(𝔤𝔩(V), GL(V))`-module, with `GL(V)` acting on `𝔤𝔩(V)` by
   conjugation (`TauCeti.GKModule.glConj`).
@@ -79,33 +81,43 @@ structure IsCompatible (M : GKModule Ad V) (ι : GroupLieAlgebra I K →ₗ[ℝ]
   mfderiv_apply (f : Module.Dual k V) (v : V) (X : GroupLieAlgebra I K) :
     mfderiv I 𝓘(ℝ, k) (fun g ↦ f (M.ρ g v)) 1 X = f ⁅ι X, v⁆
 
-section LieInclusion
+end TauCeti.GKModule
 
-variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+namespace MonoidHom
+
+variable {𝔤 : Type*} [AddCommGroup 𝔤] [Module ℝ 𝔤]
+  {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} {K : Type*} [TopologicalSpace K] [ChartedSpace H K] [Group K]
+  {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {I' : ModelWithCorners ℝ E' H'} {G : Type*} [TopologicalSpace G] [ChartedSpace H' G] [Group G]
 
-/-- The **differentiated inclusion** `Lie K → 𝔤` of a Lie group pair: the differential at `1` of
-a homomorphism `j : K →* G` (the inclusion of `K` in the Lie group `G`), followed by a linear map
-`c : Lie G → 𝔤`, such as the inclusion of `Lie G` into its complexification. A `(𝔤, K)`-module in
-the sense of harmonic analysis for the pair `(G, K)` is one with
-`M.IsCompatible (lieInclusion j c)`. -/
-noncomputable def lieInclusion (j : K →* G) (c : GroupLieAlgebra I' G →ₗ[ℝ] 𝔤) :
+/-- The differential at `1` of a homomorphism `j : K →* G`, followed by a linear map
+`c : Lie G → 𝔤`. For the inclusion `j` of `K` in a Lie group `G` and the inclusion `c` of `Lie G`
+into its complexification `𝔤`, this is the differentiated inclusion `Lie K → 𝔤` of the pair
+`(G, K)`, and a `(𝔤, K)`-module in the sense of harmonic analysis for that pair is one with
+`M.IsCompatible (j.mfderivOneComp c)`. -/
+noncomputable def mfderivOneComp (j : K →* G) (c : GroupLieAlgebra I' G →ₗ[ℝ] 𝔤) :
     GroupLieAlgebra I K →ₗ[ℝ] 𝔤 :=
   c ∘ₗ (show E →L[ℝ] E' from mfderiv I I' j 1).toLinearMap
 
-theorem lieInclusion_apply (j : K →* G) (c : GroupLieAlgebra I' G →ₗ[ℝ] 𝔤)
-    (X : GroupLieAlgebra I K) : lieInclusion j c X = c (mfderiv I I' j 1 X) :=
+/-- `j.mfderivOneComp c` applies `c` to the differential of `j` at `1`. -/
+@[simp]
+theorem mfderivOneComp_apply (j : K →* G) (c : GroupLieAlgebra I' G →ₗ[ℝ] 𝔤)
+    (X : GroupLieAlgebra I K) : j.mfderivOneComp c X = c (mfderiv I I' j 1 X) :=
   (rfl)
 
-end LieInclusion
+end MonoidHom
+
+namespace TauCeti.GKModule
 
 section GeneralLinear
 
 variable (V : Type*) [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- `End(V)` as the Lie algebra `𝔤𝔩(V)`, with the commutator bracket, acting on `V`. -/
--- The body is exposed so that the algebraic structure of `Module.End ℝ V` and its action on `V`
--- transfer to the synonym.
+/-- `End(V)` as the Lie algebra `𝔤𝔩(V)`, with the commutator bracket, acting on `V`. It is
+identified with the algebra `Module.End ℝ V` by `TauCeti.GKModule.EndLie.equiv`. -/
+-- The body is exposed because the module system unfolds only exposed definitions when checking
+-- public declarations, and the instances below are those of `Module.End ℝ V`.
 @[expose] def EndLie : Type _ := Module.End ℝ V
 
 noncomputable instance instRingEndLie : Ring (EndLie V) := inferInstanceAs (Ring (Module.End ℝ V))
@@ -119,15 +131,37 @@ noncomputable instance instLieRingModuleEndLie : LieRingModule (EndLie V) V :=
 noncomputable instance instLieModuleEndLie : LieModule ℝ (EndLie V) V :=
   Module.End.instLieModule
 
+/-- The identification of `𝔤𝔩(V)` with the algebra `Module.End ℝ V`. -/
+noncomputable def EndLie.equiv : EndLie V ≃ₐ[ℝ] Module.End ℝ V :=
+  AlgEquiv.refl
+
 /-- A continuous endomorphism of `V` as an element of `𝔤𝔩(V)`. -/
 noncomputable def toEndLie : (V →L[ℝ] V) →ₐ[ℝ] EndLie V :=
-  { ContinuousLinearMap.toLinearMapRingHom with commutes' := fun _ ↦ rfl }
+  (EndLie.equiv V).symm.toAlgHom.comp
+    { ContinuousLinearMap.toLinearMapRingHom with commutes' := fun _ ↦ rfl }
 
-variable {V} in
-/-- An element of `𝔤𝔩(V)` acts on `V` by evaluation. -/
+variable {V}
+
+/-- A continuous endomorphism, as an element of `𝔤𝔩(V)`, corresponds to its underlying linear
+map. -/
 @[simp]
-theorem EndLie.lie_apply (X : EndLie V) (v : V) :
-    ⁅X, v⁆ = (show Module.End ℝ V from X) v := (rfl)
+theorem toEndLie_apply (A : V →L[ℝ] V) :
+    toEndLie V A = (EndLie.equiv V).symm (A : Module.End ℝ V) :=
+  (rfl)
+
+/-- An element of `𝔤𝔩(V)` acts on `V` as the corresponding endomorphism. -/
+@[simp]
+theorem EndLie.lie_apply (X : EndLie V) (v : V) : ⁅X, v⁆ = EndLie.equiv V X v :=
+  (rfl)
+
+/-- The bracket of `𝔤𝔩(V)` is the commutator of endomorphisms. -/
+@[simp]
+theorem EndLie.equiv_lie (X Y : EndLie V) :
+    EndLie.equiv V ⁅X, Y⁆ =
+      EndLie.equiv V X * EndLie.equiv V Y - EndLie.equiv V Y * EndLie.equiv V X := by
+  rw [LieRing.of_associative_ring_bracket, map_sub, map_mul, map_mul]
+
+variable (V)
 
 /-- The action of `GL(V)` on `𝔤𝔩(V)` by conjugation, `g • X = g X g⁻¹`. -/
 noncomputable def glConj : Representation ℝ (V →L[ℝ] V)ˣ (EndLie V) where
@@ -135,17 +169,34 @@ noncomputable def glConj : Representation ℝ (V →L[ℝ] V)ˣ (EndLie V) where
   map_one' := by ext; simp
   map_mul' g h := by ext; simp [mul_assoc]
 
+variable {V}
+
 /-- Conjugation by `g` sends `X` to `g X g⁻¹`. -/
+@[simp]
 theorem glConj_apply (g : (V →L[ℝ] V)ˣ) (X : EndLie V) :
     glConj V g X = toEndLie V g * X * toEndLie V ↑g⁻¹ := by
-  simp [glConj, mul_assoc]
+  simp only [glConj, MonoidHom.coe_mk, OneHom.coe_mk, LinearMap.coe_comp, Function.comp_apply,
+    LinearMap.mulRight_apply, LinearMap.mulLeft_apply, mul_assoc]
 
-/-- Conjugation acts on `𝔤𝔩(V)` by Lie algebra endomorphisms. -/
-instance instIsLieActionGlConj : IsLieAction (glConj V) where
-  map_lie g X Y := by
-    have h : toEndLie V ↑g⁻¹ * toEndLie V g = 1 := by rw [← map_mul, Units.inv_mul, map_one]
-    simp only [glConj_apply, LieRing.of_associative_ring_bracket, mul_sub, sub_mul, mul_assoc]
-    simp only [← mul_assoc (toEndLie V ↑g⁻¹) (toEndLie V g), h, one_mul]
+variable (V)
+
+-- `LinearEquiv.lieConj` and `AlgEquiv.toLieEquiv` use the commutator Lie algebra structure on
+-- `Module.End ℝ V`, which Mathlib provides only as a local instance.
+attribute [local instance] LieRing.ofAssociativeRing LieAlgebra.ofAssociativeAlgebra in
+/-- Conjugation acts on `𝔤𝔩(V)` by Lie algebra endomorphisms: transported along
+`TauCeti.GKModule.EndLie.equiv`, it is Mathlib's conjugation `LinearEquiv.lieConj`. -/
+instance instIsLieActionGlConj : IsLieAction (glConj V) :=
+  .of_lieEquiv (fun g ↦ (EndLie.equiv V).toLieEquiv.trans
+      ((ContinuousLinearEquiv.unitsEquiv ℝ V g).toLinearEquiv.lieConj.trans
+        (EndLie.equiv V).toLieEquiv.symm)) fun g X ↦ (EndLie.equiv V).injective <| by
+    ext v
+    simp only [LieEquiv.trans_apply, AlgEquiv.toLieEquiv_apply, AlgEquiv.toLieEquiv_symm_apply,
+      AlgEquiv.apply_symm_apply, LinearEquiv.lieConj_apply, LinearEquiv.conj_apply,
+      LinearMap.comp_apply, glConj_apply, map_mul, toEndLie_apply, mul_apply_eq_comp,
+      ContinuousLinearMap.coe_coe]
+    -- Mathlib has no lemma for the inverse of `ContinuousLinearEquiv.unitsEquiv ℝ V g`, which is
+    -- `g⁻¹` by definition.
+    rfl
 
 variable [FiniteDimensional ℝ V]
 
@@ -154,37 +205,41 @@ noncomputable def glStd : GKModule (glConj V) V where
   ρ := (ContinuousLinearMap.toLinearMapRingHom : (V →L[ℝ] V) →+* Module.End ℝ V).toMonoidHom.comp
     (Units.coeHom _)
   map_lie g X v := by
-    have hv : (↑g⁻¹ : V →L[ℝ] V) ((g : V →L[ℝ] V) v) = v := congrArg (· v) (Units.inv_mul g)
-    exact congrArg (fun w ↦ (g : V →L[ℝ] V) ((show Module.End ℝ V from X) w)) hv.symm
+    have hv : (↑g⁻¹ : V →L[ℝ] V) ((g : V →L[ℝ] V) v) = v := by
+      rw [← mul_apply_eq_comp, Units.inv_mul, one_apply_eq_self]
+    simp [hv]
   isGFinite v := .of_finiteDimensional v
+
+variable {V} in
+/-- `GL(V)` acts on `V` by evaluation. -/
+@[simp]
+theorem glStd_ρ_apply (g : (V →L[ℝ] V)ˣ) (v : V) : (glStd V).ρ g v = (g : V →L[ℝ] V) v :=
+  (rfl)
 
 /-- The defining representation of `GL(V)` is compatible with the differentiated inclusion of
 `GL(V)` in itself: its matrix coefficients `g ↦ f (g v)` are smooth, with differential
 `X ↦ f (X v)` at `1`. -/
 theorem isCompatible_glStd : (glStd V).IsCompatible (I := 𝓘(ℝ, V →L[ℝ] V))
-    (lieInclusion (I' := 𝓘(ℝ, V →L[ℝ] V)) (MonoidHom.id _) (toEndLie V).toLinearMap) := by
+    ((MonoidHom.id _).mfderivOneComp (I' := 𝓘(ℝ, V →L[ℝ] V)) (toEndLie V).toLinearMap) := by
   have key (f : Module.Dual ℝ V) (v : V) : (fun g : (V →L[ℝ] V)ˣ ↦ f ((glStd V).ρ g v)) =
-      (LinearMap.toContinuousLinearMap f ∘L ContinuousLinearMap.apply ℝ V v) ∘ Units.val :=
-    rfl
-  have hval : HasMFDerivAt 𝓘(ℝ, V →L[ℝ] V) 𝓘(ℝ, V →L[ℝ] V) (Units.val : (V →L[ℝ] V)ˣ → _) 1
-      (ContinuousLinearMap.id ℝ _) := by
-    refine ⟨Units.continuous_val.continuousAt, ?_⟩
-    simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, modelWithCornersSelf_coe,
-      Set.range_id, hasFDerivWithinAt_univ]
-    refine (hasFDerivAt_id _).congr_of_eventuallyEq ?_
-    filter_upwards [Units.isOpenEmbedding_val.isOpen_range.mem_nhds ⟨1, rfl⟩] with _ ⟨u, hu⟩
-    subst hu
-    exact congrArg Units.val ((extChartAt 𝓘(ℝ, V →L[ℝ] V) (1 : (V →L[ℝ] V)ˣ)).left_inv
-      (by simp))
+      (LinearMap.toContinuousLinearMap f ∘L ContinuousLinearMap.apply ℝ V v) ∘ Units.val := by
+    funext g
+    simp
   refine ⟨fun f v ↦ ?_, fun f v X ↦ ?_⟩
   · rw [key]
     exact (ContinuousLinearMap.contMDiff _).comp Units.contMDiff_val
-  · rw [key, ((ContinuousLinearMap.hasMFDerivAt _).comp 1 hval).mfderiv]
+  · rw [key, ((ContinuousLinearMap.hasMFDerivAt _).comp 1 (Units.hasMFDerivAt_val 1)).mfderiv]
+    -- `GroupLieAlgebra 𝓘(ℝ, V →L[ℝ] V) (V →L[ℝ] V)ˣ` is the tangent space at `1`, which is
+    -- `V →L[ℝ] V` only by definition: the statement passes `toEndLie V` as a linear map on it, and
+    -- this goal typechecks only up to unfolding the tangent space, so `rw` and `simp` cannot
+    -- rewrite inside it. The differentiated inclusion is therefore evaluated by
+    -- `MonoidHom.mfderivOneComp_apply` and `mfderiv_id` through `congrArg`; both sides are then
+    -- `f (X v)`.
     have hid : mfderiv 𝓘(ℝ, V →L[ℝ] V) 𝓘(ℝ, V →L[ℝ] V) (MonoidHom.id (V →L[ℝ] V)ˣ) 1 =
         ContinuousLinearMap.id ℝ _ := by
       rw [MonoidHom.coe_id]
       exact mfderiv_id
-    refine Eq.trans ?_ (congrArg (fun Y ↦ f ⁅Y, v⁆) (lieInclusion_apply _ _ X)).symm
+    refine Eq.trans ?_ (congrArg (fun Y ↦ f ⁅Y, v⁆) (MonoidHom.mfderivOneComp_apply _ _ X)).symm
     exact congrArg (fun A ↦ f ⁅(toEndLie V).toLinearMap A, v⁆) (congrArg (· X) hid).symm
 
 end GeneralLinear
