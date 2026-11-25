@@ -132,7 +132,7 @@ theorem _root_.TauCeti.relIndex_diagonalTorus_GL2SplitCartanNormalizer [Nontrivi
     simp_all [w, Matrix.mul_apply, Fin.sum_univ_two]
 
 /-- Conjugating a diagonal matrix by a monomial one gives a diagonal matrix. -/
-theorem mul_mul_inv_mem {g h : GL (Fin 2) R} (hg : g ∈ GL2SplitCartanNormalizer R)
+theorem mul_mul_inv_mem_diagonalTorus {g h : GL (Fin 2) R} (hg : g ∈ GL2SplitCartanNormalizer R)
     (hh : h ∈ diagonalTorus R 2) : g * h * g⁻¹ ∈ diagonalTorus R 2 := by
   rw [mem_diagonalTorus_two_iff] at hh ⊢
   rcases hg with ⟨hg₁, hg₂⟩ | ⟨hg₁, hg₂⟩ <;>
@@ -142,8 +142,9 @@ theorem mul_mul_inv_mem {g h : GL (Fin 2) R} (hg : g ∈ GL2SplitCartanNormalize
 /-- The monomial subgroup normalizes the split Cartan subgroup, over every commutative ring. -/
 theorem le_normalizer :
     GL2SplitCartanNormalizer R ≤ Subgroup.normalizer (diagonalTorus R 2 : Set (GL (Fin 2) R)) := by
-  refine fun g hg ↦ Subgroup.mem_normalizer_iff.mpr fun h ↦ ⟨mul_mul_inv_mem hg, fun hh ↦ ?_⟩
-  simpa [mul_assoc] using mul_mul_inv_mem (inv_mem hg) hh
+  refine fun g hg ↦ Subgroup.mem_normalizer_iff.mpr fun h ↦
+    ⟨mul_mul_inv_mem_diagonalTorus hg, fun hh ↦ ?_⟩
+  simpa [mul_assoc] using mul_mul_inv_mem_diagonalTorus (inv_mem hg) hh
 
 /-- **The monomial subgroup is the normalizer of the split Cartan subgroup** when `R` has no zero
 divisors (`IsCancelMulZero R`) and a unit other than `1`, for instance over `𝔽_ℓ` for an odd prime

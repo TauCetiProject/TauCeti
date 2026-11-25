@@ -44,8 +44,9 @@ the Cartan subgroup has index `2` in its normalizer: an element `g` of the norma
 a root of `X² - b X - a` in `F[ω]`, which is `ω` or its conjugate `b - ω`. In the first case `g`
 commutes with `ω` and lies in the Cartan subgroup
 (`QuadraticAlgebra.mem_periodMatrixGroup_iff_commute`); in the second, so does `σ g`, where
-`σ = !![1, -b; 0, -1]` is the matrix of the conjugation `ω ↦ b - ω`. Over a finite field an
-irreducible quadratic is automatically separable.
+`σ = !![1, -b; 0, -1]` is, up to sign, the matrix `!![-1, b; 0, 1]` of the conjugation
+`ω ↦ b - ω` (conjugating by `σ` or `-σ` has the same effect). Over a finite field an irreducible
+quadratic is automatically separable.
 
 `TauCeti.GL2NonSplitTorus F E` is the same construction for an abstract quadratic extension `E/F`
 with a chosen basis, hence conjugate to this subgroup when `E ≅ F[ω]`; the explicit entries here
@@ -134,7 +135,8 @@ private theorem coe_omega (ha : a ≠ 0) :
     ((omega b ha : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) = !![b, a; 1, 0] :=
   GeneralLinearGroup.val_mkOfDetNeZero _ _
 
-/-- The matrix `!![1, -b; 0, -1]` of the conjugation `ω ↦ b - ω` of `F[ω]`. -/
+/-- The matrix `!![1, -b; 0, -1]`, the negative of the matrix `!![-1, b; 0, 1]` of the
+conjugation `ω ↦ b - ω` of `F[ω]`; both have the same conjugation action. -/
 private noncomputable def conjMatrix (b : F) : GL (Fin 2) F :=
   GeneralLinearGroup.mkOfDetNeZero !![1, -b; 0, -1] (by simp [det_fin_two_of])
 
@@ -232,7 +234,7 @@ end GL2NonSplitCartanNormalizer
 open GL2NonSplitCartanNormalizer in
 /-- **`[C_ns⁺ : C_ns] = 2`** when `X² - b X - a` has no root in `F` and is separable, that is
 `b ≠ 0` or `2 ≠ 0`. Over a finite field separability is automatic
-(`TauCeti.GL2NonSplitCartanNormalizer.two_mul_index`); for an inseparable `X² - a` the
+(`TauCeti.FiniteField.ne_zero_or_two_ne_zero_of_forall_sq_ne`); for an inseparable `X² - a` the
 conjugation `!![1, 0; 0, -1]` is the identity. -/
 theorem relIndex_periodMatrixGroup_GL2NonSplitCartanNormalizer
     (hirr : ∀ r : F, r ^ 2 ≠ a + b * r) (hsep : b ≠ 0 ∨ (2 : F) ≠ 0) :
