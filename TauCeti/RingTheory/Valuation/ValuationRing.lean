@@ -34,6 +34,8 @@ In a valuation ring an irreducible element `ϖ` generates the maximal ideal, wit
 hypothesis; so for a valuation subring `s` of a commutative ring the powers of the maximal ideal
 are, inside that ring, the scaled copies `ϖ ^ k • s`.
 
+In a valuation ring a proper radical ideal is prime, since of two elements one divides the other.
+
 For a subfield `L` of a field `K` containing a commutative ring `V`, the trace `V ∩ L` (the preimage
 of `L` in `V`) is a valuation ring when `V` is one, and its inclusion into `V` is always a local
 homomorphism. Traces on algebraically closed subfields give small absolutely integrally closed
@@ -60,6 +62,7 @@ as soon as they are domains.
   of a valuation ring generates its maximal ideal.
 * `Irreducible.image_maximalIdeal_pow_eq_smul`: for an irreducible `ϖ` of a valuation subring `s`
   of a commutative ring, the image of the `k`-th power of the maximal ideal is `ϖ ^ k • s`.
+* `Ideal.IsRadical.isPrime_of_ne_top`: a proper radical ideal of a valuation ring is prime.
 * `Subfield.valuationRing_comap`, `Subfield.isLocalHom_subtype_comap`: the trace of a ring on a
   subfield of a field containing it is a valuation ring if the ring is, and its inclusion is local.
 * `Irreducible.setOf_valuation_eq_one_eq_sdiff`: for an irreducible `ϖ` of the ring of integers
@@ -255,6 +258,14 @@ end ValuationRing
 
 end TauCeti
 
+/-- In a valuation ring a proper radical ideal is prime. -/
+theorem Ideal.IsRadical.isPrime_of_ne_top {S : Type*} [CommSemiring S] [PreValuationRing S]
+    {I : Ideal S} (hI : I.IsRadical) (htop : I ≠ ⊤) : I.IsPrime := by
+  refine ⟨htop, fun {x y} hxy ↦ ?_⟩
+  -- One of `x` and `y` divides the other, and then the square of the multiple lies in `I`.
+  obtain ⟨c, rfl⟩ | ⟨c, rfl⟩ := ValuationRing.dvd_total x y
+  · exact .inr (hI ⟨2, by simpa [pow_two, mul_assoc, mul_left_comm] using I.mul_mem_right c hxy⟩)
+  · exact .inl (hI ⟨2, by simpa [pow_two, mul_assoc, mul_left_comm] using I.mul_mem_right c hxy⟩)
 namespace ValuationRing
 
 variable {A K : Type*} [CommRing A] [IsDomain A] [ValuationRing A] [Field K] [Algebra A K]
