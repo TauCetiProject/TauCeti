@@ -195,6 +195,19 @@ theorem cubeState_resolveCrossingVertex (S : Finset (Fin n)) :
   · cases t <;> simp [cubeState_apply]
   · simp [cubeState_apply]
 
+/-- Away from `c`, the states of the vertices over `S` on any two faces agree. -/
+theorem cubeState_resolveCrossingVertex_of_ne (S : Finset (Fin n)) (t' : Bool) (i : Fin (n + 1))
+    (hi : i ≠ c) :
+    cubeState (resolveCrossingVertex c t S) i = cubeState (resolveCrossingVertex c t' S) i := by
+  obtain ⟨k, rfl⟩ := Fin.exists_succAbove_eq hi
+  simp
+
+/-- At `c`, the states of the vertices over `S` on the two faces differ. -/
+theorem cubeState_resolveCrossingVertex_self_ne (S : Finset (Fin n)) :
+    cubeState (resolveCrossingVertex c t S) c ≠ cubeState (resolveCrossingVertex c (!t) S) c := by
+  rw [cubeState_resolveCrossingVertex, cubeState_resolveCrossingVertex]
+  cases t <;> simp
+
 /-- The vertex over `S` has as many crossings as `S` on the `A`-face and one more on the
 `B`-face. -/
 @[simp]

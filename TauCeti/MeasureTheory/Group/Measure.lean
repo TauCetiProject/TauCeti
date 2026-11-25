@@ -27,7 +27,9 @@ line of a fixed direction in boundedly many points is null. It also records that
 negating a probability measure gives a probability measure, so that the law of `X⁻¹` or `-X` can
 be used wherever a probability law is expected, that pulling a left- or right-invariant measure
 back along a group homomorphism, in particular to a subgroup, keeps it left- or right-invariant
-without any measurability hypotheses (for subgroups as typeclass instances), and that restricting
+without any measurability hypotheses (for subgroups as typeclass instances), that the product
+`volume` of left- or right-invariant measure spaces (such as Lebesgue measure on `ℝ × ℝ`) is
+left- or right-invariant, and that restricting
 an inversion-invariant measure to a symmetric set, or weighting it by an even density, keeps it
 inversion-invariant. A surjective homomorphism onto a finite group with measurable kernel splits
 a left-invariant measure evenly among its fibres, the translates of the kernel. Finally, for an
@@ -64,6 +66,9 @@ sets forces the group to be locally compact
   `Measure.isMulRightInvariant_comap_subtype`, `Measure.isAddRightInvariant_comap_subtype`: the
   instances for the pullback of an invariant measure to a subgroup, without measurability
   hypotheses on the subgroup.
+* `Measure.isMulLeftInvariant_volume_prod`, `Measure.isAddLeftInvariant_volume_prod`,
+  `Measure.isMulRightInvariant_volume_prod`, `Measure.isAddRightInvariant_volume_prod`: the
+  instances for the `volume` of a product of invariant measure spaces.
 * `IsOpen.measure_mul_sdiff_eq_zero_of_quasiMeasurePreserving`,
   `IsOpen.measure_add_sdiff_eq_zero_of_quasiMeasurePreserving`,
   `IsOpen.measure_mul_sdiff_eq_zero`, `IsOpen.measure_add_sdiff_eq_zero`: if an open set `U` has
@@ -240,6 +245,30 @@ instance isMulRightInvariant_comap_subtype {G S : Type*} [Group G] [MeasurableSp
     [MeasurableMul G] [SetLike S G] [SubgroupClass S G] (H : S) (μ : Measure G)
     [μ.IsMulRightInvariant] : (μ.comap ((↑) : H → G)).IsMulRightInvariant :=
   isMulRightInvariant_comap μ (SubgroupClass.subtype H)
+
+/-- **The product volume of left-invariant measure spaces is left-invariant**: the `volume`
+form of Mathlib's `Measure.prod.instIsMulLeftInvariant`, which instance search does not find
+through the definition of `volume` on a product. -/
+@[to_additive /-- **The product volume of additively left-invariant measure spaces is
+left-invariant**, for instance Lebesgue measure on `ℝ × ℝ`: the `volume` form of Mathlib's
+`Measure.prod.instIsAddLeftInvariant`. -/]
+instance isMulLeftInvariant_volume_prod {G H : Type*} [Mul G] [MeasureSpace G] [MeasurableMul G]
+    [(volume : Measure G).IsMulLeftInvariant] [Mul H] [MeasureSpace H] [MeasurableMul H]
+    [(volume : Measure H).IsMulLeftInvariant] [SFinite (volume : Measure H)] :
+    (volume : Measure (G × H)).IsMulLeftInvariant :=
+  prod.instIsMulLeftInvariant
+
+/-- **The product volume of right-invariant measure spaces is right-invariant**: the `volume`
+form of Mathlib's `Measure.prod.instIsMulRightInvariant`, which instance search does not find
+through the definition of `volume` on a product. -/
+@[to_additive /-- **The product volume of additively right-invariant measure spaces is
+right-invariant**, for instance Lebesgue measure on `ℝ × ℝ`: the `volume` form of Mathlib's
+`Measure.prod.instIsAddRightInvariant`. -/]
+instance isMulRightInvariant_volume_prod {G H : Type*} [Mul G] [MeasureSpace G] [MeasurableMul G]
+    [(volume : Measure G).IsMulRightInvariant] [Mul H] [MeasureSpace H] [MeasurableMul H]
+    [(volume : Measure H).IsMulRightInvariant] [SFinite (volume : Measure H)] :
+    (volume : Measure (G × H)).IsMulRightInvariant :=
+  prod.instIsMulRightInvariant
 
 /-- The inverse of a probability measure is a probability measure. -/
 @[to_additive /-- The negation of a probability measure is a probability measure. -/]

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DeRham.Relative.Basic
-public import TauCeti.Geometry.Manifold.SmoothSingular.DeRham
+public import TauCeti.Geometry.Manifold.SmoothSingular.DeRham.Basic
 import TauCeti.Algebra.Homology.Embedding.Extend
 import TauCeti.Algebra.Homology.ModuleCat.LinearYoneda
 import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coproduct
