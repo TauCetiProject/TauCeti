@@ -10,7 +10,7 @@ public import Mathlib.CategoryTheory.Monoidal.Tor
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.CartanEilenberg
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Projective
 public import TauCeti.Algebra.Homology.SpectralSequence.Bicomplex.FirstDifferential
-public import TauCeti.CategoryTheory.Monoidal.Tor
+public import TauCeti.CategoryTheory.Monoidal.Tor.Basic
 
 /-!
 # The Künneth spectral sequence
