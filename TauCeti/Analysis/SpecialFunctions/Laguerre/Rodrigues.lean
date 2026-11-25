@@ -25,22 +25,30 @@ is a natural number), so the formula is stated for real functions, with `Real.rp
 cover every real parameter `α` at once, and with the hypothesis `0 < x`; it is not an identity of
 polynomials.
 
-The formula is the case `β = n + α`, `j = n` of a formula for every derivative of
-`exp (-t) * t ^ β`: for every real `β` and every `t ≠ 0`,
+The formula follows from a formula for every derivative of `exp (-t) * t ^ β`: for every real `β`
+and every `t` with `t ≠ 0` or `j ≤ β`,
 
 `dʲ/dtʲ (exp (-t) * t ^ β) = j! * (exp (-t) * t ^ (β - j)) * L_j^{(β - j)}(t)`.
 
-It is proved by induction on `j`; the inductive step is the raising relation
-`TauCeti.X_mul_derivative_laguerre_add_one`. The derivatives of order `j < n` of
+This identity holds away from the origin, and at the origin when `j ≤ β`. Setting `β = n + α`,
+`j = n` gives `dⁿ/dtⁿ (exp (-t) * t ^ (n + α)) = n! * (exp (-t) * t ^ α) * Lₙ^{(α)}(t)`, and the
+Rodrigues formula is this identity restricted to `t > 0` (where `t ^ α ≠ 0` and `t ^ (-α)` is its
+inverse) and rearranged by cancelling the weight `exp (-t) * t ^ α`. It does not hold at `t = 0`
+for every `α`, since `0 ^ (-α) = 0` for `Real.rpow` when `α ≠ 0`.
+
+The derivative formula is proved by induction on `j`; the inductive step is the raising relation
+`Polynomial.X_mul_derivative_laguerre_add_one`. The derivatives of order `j < n` of
 `exp (-t) * t ^ (n + α)` are the boundary terms of the integration by parts that proves the
 Laguerre orthogonality relation, so the general formula is stated for every `j`.
 
 ## Main statements
 
-* `TauCeti.hasDerivAt_exp_neg_mul_rpow_mul_laguerre`: for `t ≠ 0`, the derivative at `t` of
-  `exp (-s) * s ^ (γ + 1) * L_j^{(γ + 1)}(s)` is `(j + 1) * (exp (-t) * t ^ γ) * L_{j+1}^{(γ)}(t)`.
-* `TauCeti.iteratedDeriv_exp_neg_mul_rpow_eq_laguerre`: for `t ≠ 0`, every real `β` and every
-  `j`, the `j`-th derivative of `exp (-t) * t ^ β` at `t`.
+* `TauCeti.hasDerivAt_exp_neg_mul_rpow_mul_laguerre`: for `t ≠ 0` or `0 ≤ γ`, the derivative at
+  `t` of `exp (-s) * s ^ (γ + 1) * L_j^{(γ + 1)}(s)` is
+  `(j + 1) * (exp (-t) * t ^ γ) * L_{j+1}^{(γ)}(t)`.
+* `TauCeti.iteratedDeriv_exp_neg_mul_rpow_eq_mul_eval_laguerre`: for `t ≠ 0` or `j ≤ β`, the
+  `j`-th derivative of `exp (-t) * t ^ β` at `t`, as `j! * (exp (-t) * t ^ (β - j))` times the
+  value of `L_j^{(β - j)}` at `t`.
 * `TauCeti.laguerre_rodrigues`: the Rodrigues formula, for `0 < x` and every real `α`.
 
 ## References
@@ -56,51 +64,71 @@ namespace TauCeti
 
 open Polynomial Real
 
-/-- One step of the Rodrigues formula: at every `t ≠ 0`, differentiating
-`exp (-t) * t ^ (γ + 1) * L_j^{(γ + 1)}(t)` lowers the parameter and raises the index. -/
-theorem hasDerivAt_exp_neg_mul_rpow_mul_laguerre (γ : ℝ) (j : ℕ) {t : ℝ} (ht : t ≠ 0) :
+/-- One step of the derivative formula: at every `t ≠ 0`, and at `t = 0` when `0 ≤ γ`,
+differentiating `exp (-t) * t ^ (γ + 1) * L_j^{(γ + 1)}(t)` lowers the parameter and raises the
+index. -/
+theorem hasDerivAt_exp_neg_mul_rpow_mul_laguerre (γ : ℝ) (j : ℕ) {t : ℝ} (ht : t ≠ 0 ∨ 0 ≤ γ) :
     HasDerivAt (fun s : ℝ => exp (-s) * s ^ (γ + 1) * (laguerre (γ + 1) j).eval s)
       ((j + 1) * (exp (-t) * t ^ γ) * (laguerre γ (j + 1)).eval t) t := by
   have h₁ : HasDerivAt (fun s : ℝ => exp (-s)) (-exp (-t)) t := by
     simpa using (hasDerivAt_neg t).exp
   have h₂ : HasDerivAt (fun s : ℝ => s ^ (γ + 1)) ((γ + 1) * t ^ γ) t := by
-    simpa using hasDerivAt_rpow_const (p := γ + 1) (Or.inl ht)
+    simpa using hasDerivAt_rpow_const (p := γ + 1) (ht.imp_right fun h => by linarith)
   have h := congrArg (eval t) (X_mul_derivative_laguerre_add_one γ j)
   simp only [eval_mul, eval_X, eval_sub, eval_C, eval_add, eval_one, eval_natCast, nsmul_eq_mul,
     Nat.cast_add, Nat.cast_one] at h
   refine ((h₁.fun_mul h₂).fun_mul ((laguerre (γ + 1) j).hasDerivAt t)).congr_deriv ?_
-  rw [rpow_add_one ht]
+  have hpow : t ^ (γ + 1) = t ^ γ * t := by
+    by_cases ht₀ : t = 0
+    · have hγ : 0 ≤ γ := ht.resolve_left (not_not.2 ht₀)
+      exact rpow_add_one' (ht₀ ▸ le_rfl) (by linarith)
+    · exact rpow_add_one ht₀ γ
+  rw [hpow]
   linear_combination (exp (-t) * t ^ γ) * h
 
-/-- The derivatives of `exp (-t) * t ^ β` away from the origin: for real `β` and `t ≠ 0`,
+/-- The derivatives of `exp (-t) * t ^ β`: for real `β` and `t ≠ 0` (or `j ≤ β`, where the
+origin is allowed),
 `dʲ/dtʲ (exp (-t) * t ^ β) = j! * (exp (-t) * t ^ (β - j)) * L_j^{(β - j)}(t)`.
-At `β = n + α`, `j = n` this is the Rodrigues formula `TauCeti.laguerre_rodrigues`. -/
-theorem iteratedDeriv_exp_neg_mul_rpow_eq_laguerre (β : ℝ) (j : ℕ) {t : ℝ} (ht : t ≠ 0) :
+The right-hand side is `j! * (exp (-t) * t ^ (β - j))` times a value of a Laguerre polynomial, not
+a bare Laguerre value. At `β = n + α`, `j = n` it reads
+`dⁿ/dtⁿ (exp (-t) * t ^ (n + α)) = n! * (exp (-t) * t ^ α) * Lₙ^{(α)}(t)`, which rearranges to the
+Rodrigues formula `TauCeti.laguerre_rodrigues` only for `t > 0`. -/
+theorem iteratedDeriv_exp_neg_mul_rpow_eq_mul_eval_laguerre (β : ℝ) (j : ℕ) {t : ℝ}
+    (ht : t ≠ 0 ∨ (j : ℝ) ≤ β) :
     iteratedDeriv j (fun s : ℝ => exp (-s) * s ^ β) t =
       j.factorial * (exp (-t) * t ^ (β - j)) * (laguerre (β - j) j).eval t := by
   induction j generalizing t with
   | zero => simp
   | succ j ih =>
     have hβ : β - j = β - (j + 1 : ℕ) + 1 := by push_cast; ring
+    have hev : ∀ᶠ s in nhds t, s ≠ 0 ∨ (j : ℝ) ≤ β := by
+      rcases ht with ht | ht
+      · filter_upwards [eventually_ne_nhds ht] with s hs using Or.inl hs
+      · exact Filter.Eventually.of_forall fun _ => Or.inr (by push_cast at ht; linarith)
     have h : iteratedDeriv j (fun s : ℝ => exp (-s) * s ^ β) =ᶠ[nhds t] fun s =>
         j.factorial * (exp (-s) * s ^ (β - (j + 1 : ℕ) + 1) *
           (laguerre (β - (j + 1 : ℕ) + 1) j).eval s) := by
-      filter_upwards [eventually_ne_nhds ht] with s hs
+      filter_upwards [hev] with s hs
       rw [ih hs, hβ, mul_assoc]
+    have hγ : t ≠ 0 ∨ 0 ≤ β - (j + 1 : ℕ) :=
+      ht.imp_right fun h => by push_cast at h ⊢; linarith
     rw [iteratedDeriv_succ, h.deriv_eq,
-      ((hasDerivAt_exp_neg_mul_rpow_mul_laguerre _ j ht).const_mul _).deriv, Nat.factorial_succ]
+      ((hasDerivAt_exp_neg_mul_rpow_mul_laguerre _ j hγ).const_mul _).deriv, Nat.factorial_succ]
     push_cast
     ring
 
 /-- The **Rodrigues formula** for the generalized Laguerre polynomials (DLMF 18.5.5 with
 Table 18.5.1), as an identity of real functions on `(0, ∞)`:
-`Lₙ^{(α)}(x) = x ^ (-α) * exp x / n! * dⁿ/dxⁿ (exp (-x) * x ^ (n + α))`. -/
+`Lₙ^{(α)}(x) = x ^ (-α) * exp x / n! * dⁿ/dxⁿ (exp (-x) * x ^ (n + α))`. It is the case
+`β = n + α`, `j = n` of `TauCeti.iteratedDeriv_exp_neg_mul_rpow_eq_mul_eval_laguerre` for `x > 0`,
+after multiplying by `x ^ (-α) * exp x` to cancel the weight; the hypothesis `0 < x` is needed
+(at `x = 0`, `α = 1`, `n = 0` the left side is `1` and the right side is `0`). -/
 theorem laguerre_rodrigues (α : ℝ) (n : ℕ) {x : ℝ} (hx : 0 < x) :
     (laguerre α n).eval x =
       x ^ (-α) * exp x / n.factorial *
         iteratedDeriv n (fun t : ℝ => exp (-t) * t ^ ((n : ℝ) + α)) x := by
-  rw [iteratedDeriv_exp_neg_mul_rpow_eq_laguerre _ n hx.ne', add_sub_cancel_left, rpow_neg hx.le,
-    exp_neg]
+  rw [iteratedDeriv_exp_neg_mul_rpow_eq_mul_eval_laguerre _ n (Or.inl hx.ne'), add_sub_cancel_left,
+    rpow_neg hx.le, exp_neg]
   have h₁ : x ^ α ≠ 0 := (rpow_pos_of_pos hx α).ne'
   have h₂ : (n.factorial : ℝ) ≠ 0 := Nat.cast_ne_zero.2 n.factorial_ne_zero
   field_simp
