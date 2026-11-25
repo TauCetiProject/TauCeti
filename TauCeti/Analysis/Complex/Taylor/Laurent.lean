@@ -55,6 +55,19 @@ private theorem one_le_cast_choose_add (k m : ℕ) : (1 : ℝ) ≤ ((k + m).choo
 private theorem cast_choose_add_ne_zero (k m : ℕ) : (((k + m).choose m : ℕ) : ℂ) ≠ 0 :=
   Nat.cast_ne_zero.mpr (Nat.choose_pos (m.le_add_left k)).ne'
 
+/-- **Removable singularity for a continuous remainder.** If `h` is holomorphic on `U \ {ρ}` for
+an open `U ∋ ρ` and agrees with `g` off `ρ` near `ρ`, then continuity of `g` at `ρ` makes `g`
+analytic there. -/
+private theorem analyticAt_of_differentiableOn_sdiff_of_eventuallyEq {h g : ℂ → ℂ} {U : Set ℂ}
+    {ρ : ℂ} (hU : IsOpen U) (hρ : ρ ∈ U) (hh : DifferentiableOn ℂ h (U \ {ρ}))
+    (hg : ContinuousAt g ρ) (hhg : h =ᶠ[𝓝[≠] ρ] g) : AnalyticAt ℂ g ρ := by
+  refine _root_.Complex.analyticAt_of_differentiable_on_punctured_nhds_of_continuousAt ?_ hg
+  filter_upwards [eventually_eventually_nhdsWithin.mpr hhg,
+    mem_nhdsWithin_of_mem_nhds (hU.mem_nhds hρ), self_mem_nhdsWithin] with s hs hsU hsρ
+  rw [isOpen_compl_singleton.nhdsWithin_eq hsρ] at hs
+  exact (hh s ⟨hsU, hsρ⟩).differentiableAt ((hU.sdiff isClosed_singleton).mem_nhds ⟨hsU, hsρ⟩)
+    |>.congr_of_eventuallyEq (hs.mono fun _ h ↦ h.symm)
+
 /-- Subtracting the contribution of a finite principal part leaves Taylor coefficients bounded
 by `M / r' ^ k` on any smaller circle of radius `r'`. The coefficient `c i` multiplies the
 pole term of order `i + 1`. Continuity of the remainder `g` at `ρ` suffices: off `ρ` it agrees
@@ -74,24 +87,15 @@ theorem exists_norm_neg_one_pow_mul_iteratedDeriv_div_factorial_sub_laurent_le
       (s - ρ) ^ (i.val + 1) ≠ 0)
   have hP {s : ℂ} (hs : s ≠ ρ) : AnalyticAt ℂ P s :=
     Finset.analyticAt_fun_sum _ fun i _ ↦ hterm hs i
+  have hfP : DifferentiableOn ℂ (fun s ↦ f s - P s) (ball z r \ {ρ}) :=
+    hf.sub fun s hs ↦ (hP hs.2).differentiableAt.differentiableWithinAt
   obtain ⟨G, hG, hGeq⟩ := exists_differentiableOn_eqOn_of_analyticAt_nhdsNE
-    (compl_singleton_mem_codiscreteWithin ρ) (f := fun s ↦ f s - P s)
-    (hf.sub fun s hs ↦ (hP hs.2).differentiableAt.differentiableWithinAt)
-    (by
+    (compl_singleton_mem_codiscreteWithin ρ) hfP (by
       rintro a ⟨ha, ha'⟩
       obtain rfl : a = ρ := ha'
-      -- The remainder `g` agrees with `f - P` off `ρ`, so it is holomorphic on a punctured
-      -- neighbourhood of `ρ`; continuity at `ρ` makes the singularity removable.
       have hfg : (fun s ↦ f s - P s) =ᶠ[𝓝[≠] a] g := heq.mono fun s hs ↦ sub_eq_of_eq_add hs
-      refine ⟨g, _root_.Complex.analyticAt_of_differentiable_on_punctured_nhds_of_continuousAt
-        ?_ hg, hfg⟩
-      filter_upwards [eventually_eventually_nhdsWithin.mpr hfg,
-        mem_nhdsWithin_of_mem_nhds (isOpen_ball.mem_nhds ha), self_mem_nhdsWithin]
-        with s hs hsb hsa
-      rw [isOpen_compl_singleton.nhdsWithin_eq hsa] at hs
-      exact ((hf.sub fun w hw ↦ (hP hw.2).differentiableAt.differentiableWithinAt) s
-        ⟨hsb, hsa⟩).differentiableAt ((isOpen_ball.sdiff isClosed_singleton).mem_nhds
-          ⟨hsb, hsa⟩) |>.congr_of_eventuallyEq (hs.mono fun _ h ↦ h.symm))
+      exact ⟨g, analyticAt_of_differentiableOn_sdiff_of_eventuallyEq isOpen_ball ha hfP hg hfg,
+        hfg⟩)
   have hloc : f =ᶠ[𝓝 z] fun s ↦ G s + P s := by
     filter_upwards [(isOpen_ball.sdiff isClosed_singleton).mem_nhds
       ⟨mem_ball_self (hr'.trans hrr), hzρ⟩] with s hs
