@@ -539,10 +539,12 @@ theorem exists_enorm_setIntegral_inner_halfWavePropagator_sub_fourierMultiplierC
   -- Substitute `z = μ z'`: the region becomes `μ⁻¹ R` and `U(μ t) = V(t)`.
   have hsub : ∫ z in R, g z ∂(volume.prod volume) =
       (μ * μ) • ∫ z in μ⁻¹ • R, g (μ • z) ∂(volume.prod volume) := by
-    rw [Measure.setIntegral_comp_smul (volume.prod volume) _ _ hμ.ne',
-      smul_inv_smul₀ hμ.ne', smul_smul, Module.finrank_prod, Module.finrank_self, abs_inv,
-      abs_of_pos (by positivity), show μ ^ (1 + 1) = μ * μ by ring,
-      mul_inv_cancel₀ (by positivity), one_smul]
+    rw [Measure.setIntegral_comp_smul (volume.prod volume) _ _ hμ.ne', smul_inv_smul₀ hμ.ne',
+      smul_smul]
+    -- `finrank ℝ (ℝ × ℝ) = 2`, so the Jacobian `|μ⁻²|` cancels `μ * μ`.
+    convert (one_smul ℝ _).symm using 2
+    simp [Module.finrank_prod, abs_of_pos hμ]
+    field_simp
   simp_rw [hg]
   rw [hsub, eNorm_smul]
   have h := hC j m hm (μ⁻¹ • R) (hR.const_smul₀ μ⁻¹) (fun s ↦ F (μ * s)) (fun t ↦ G (μ * t))

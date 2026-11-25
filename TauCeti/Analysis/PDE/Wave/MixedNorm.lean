@@ -608,6 +608,28 @@ private theorem eq_two_and_eq_of_waveEndpoint {r₂ r₂' : ℝ≥0∞} [p.Holde
     ENNReal.HolderConjugate.unique (p := 2) (q := p₁) 2, rfl,
     ENNReal.HolderConjugate.unique (p := r) (q := r') r₂'⟩
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- Two time exponents `2 ≤ q, q₁`, each equal to `2` only at the endpoint in dimension `n ≥ 4`,
+are either both `2`, and then the two pairs agree at the endpoint with `p = p₁ = 2`, or one of them
+exceeds `2`. This splits the retarded estimate into the Keel–Tao and the Christ–Kiselev cases. -/
+private theorem eq_two_and_waveEndpoint_or_two_lt (hq : 2 ≤ q)
+    (hq2 : q = 2 → 3 < Module.finrank ℝ E ∧
+      1 + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal = ((Module.finrank ℝ E : ℝ) - 1) / 2)
+    (hq₁ : 2 ≤ q₁)
+    (hq₁2 : q₁ = 2 → 3 < Module.finrank ℝ E ∧
+      1 + ((Module.finrank ℝ E : ℝ) - 1) * (r₁⁻¹).toReal = ((Module.finrank ℝ E : ℝ) - 1) / 2) :
+    (q = 2 ∧ q₁ = 2 ∧ p = 2 ∧ p₁ = 2 ∧ r = r₁ ∧ r' = r₁' ∧ 3 < Module.finrank ℝ E ∧
+      1 + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal = ((Module.finrank ℝ E : ℝ) - 1) / 2) ∨
+      2 < q ∨ 2 < q₁ := by
+  by_cases h22 : q = 2 ∧ q₁ = 2
+  · obtain ⟨rfl, rfl⟩ := h22
+    obtain ⟨hn, hre⟩ := hq2 rfl
+    obtain ⟨rfl, rfl, rfl, rfl⟩ := eq_two_and_eq_of_waveEndpoint (p := p) (p₁ := p₁) (r' := r')
+      (r₂' := r₁') (by omega) hre (hq₁2 rfl).2
+    exact Or.inl ⟨rfl, rfl, rfl, rfl, rfl, rfl, hn, hre⟩
+  rw [not_and_or] at h22
+  exact Or.inr (h22.imp hq.lt_of_ne' hq₁.lt_of_ne')
+
 /-- For integrable `H`, the dual integrands `s ↦ W₊(σ(s)) Pⱼ H(s)` are integrable. -/
 private theorem integrable_halfWavePropagator_fourierMultiplierCLM
     (m : Lp ℂ ∞ (volume : Measure E)) {H : ℝ → Lp ℂ 2 (volume : Measure E)} (hH : Integrable H)
@@ -689,20 +711,20 @@ private theorem
   set k : ℝ × ℝ → ℂ := fun z ↦ ⟪halfWavePropagator ℂ (-(z.2 - z.1))
     (Lp.fourierMultiplierCLM ℂ m (Lp.fourierMultiplierCLM ℂ m (F z.1))), G z.2⟫_ℂ
   rw [integral_setIntegral_Iio_eq_setIntegral (f := k) hint.integrableOn]
-  -- Reflect time: `z ↦ -z` maps the region `R = -{s < t}` onto `{s < t}`.
-  set R : Set (ℝ × ℝ) := (-1 : ℝ) • {z : ℝ × ℝ | z.1 < z.2}
-  have hrefl := Measure.setIntegral_comp_smul (volume.prod volume) k R (by norm_num : (-1 : ℝ) ≠ 0)
-  rw [smul_smul, show (-1 : ℝ) * -1 = 1 by norm_num, one_smul, Module.finrank_prod,
-    Module.finrank_self, show |((-1 : ℝ) ^ (1 + 1))⁻¹| = 1 by norm_num, one_smul] at hrefl
+  -- Reflect time: `z ↦ -z` maps the region `{t < s} = -{s < t}` onto `{s < t}`.
+  have hrefl := Measure.setIntegral_comp_smul (volume.prod volume) k
+    ((-1 : ℝ) • {z : ℝ × ℝ | z.1 < z.2}) (by norm_num : (-1 : ℝ) ≠ 0)
+  norm_num [Module.finrank_prod] at hrefl
   rw [← hrefl]
   have hFn : Integrable fun s ↦ F (-s) := hF.comp_neg
   have hGn : Integrable fun t ↦ G (-t) := hG.comp_neg
-  have h := hC j m hm R ((measurableSet_lt measurable_fst measurable_snd).const_smul₀ _) _ _ hFn hGn
+  have h := hC j m hm {z : ℝ × ℝ | z.2 < z.1} (measurableSet_lt measurable_snd measurable_fst) _ _
+    hFn hGn
   rw [hF.aestronglyMeasurable.eLpNorm_eLpNorm_comp_neg,
     hG.aestronglyMeasurable.eLpNorm_eLpNorm_comp_neg] at h
   refine le_of_eq_of_le (congrArg _ (setIntegral_congr_fun ?_ fun z _ ↦ ?_)) h
-  · exact (measurableSet_lt measurable_fst measurable_snd).const_smul₀ _
-  · simp only [k, neg_one_smul, Prod.fst_neg, Prod.snd_neg, neg_sub_neg, neg_sub]
+  · exact measurableSet_lt measurable_snd measurable_fst
+  · simp only [k, Prod.fst_neg, Prod.snd_neg, neg_sub_neg, neg_sub]
 
 /-- The retarded estimate for the frequency-localized half-wave propagator `W₊` with two
 wave-admissible pairs `(q, r)` and `(q₁, r₁)`, `2 ≤ q, q₁ ≤ ∞`, where `q = 2` or `q₁ = 2` only at
@@ -731,22 +753,16 @@ private theorem exists_enorm_integral_setIntegral_Iio_inner_halfWavePropagator_s
             Module.finrank ℝ E * (r₁⁻¹).toReal - (q₁⁻¹).toReal))) *
             eLpNorm (fun s ↦ eLpNorm (F s) r₁' volume) p₁ volume *
             eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume := by
-  by_cases h22 : q = 2 ∧ q₁ = 2
+  obtain ⟨rfl, rfl, rfl, rfl, rfl, rfl, hn, hre⟩ | h2 :=
+    eq_two_and_waveEndpoint_or_two_lt (p := p) (p₁ := p₁) (r' := r') (r₁' := r₁') hq hq2 hq₁ hq₁2
   · -- Both pairs at the endpoint: the Keel–Tao estimate.
-    obtain ⟨rfl, rfl⟩ := h22
-    obtain ⟨hn, hre⟩ := hq2 rfl
-    obtain ⟨rfl, rfl, rfl, rfl⟩ := eq_two_and_eq_of_waveEndpoint (p := p) (p₁ := p₁) (r' := r')
-      (r₂' := r₁') (by omega) hre (hq₁2 rfl).2
     obtain ⟨C, hC⟩ :=
       φ.exists_enorm_integral_setIntegral_Iio_inner_halfWavePropagator_sub_le_of_endpoint
         (r' := r') hn hre
     refine ⟨C, fun j m hm F G hF hG ↦ (hC j m hm F G hF hG).trans_eq ?_⟩
-    rw [show ((2 : ℝ≥0∞)⁻¹).toReal = 2⁻¹ by simp]
-    ring_nf
+    -- Only the exponents differ, as `2 * γ` against `γ + γ` with `γ = n / 2 - n / r - 1 / 2`.
+    rw [show ((2 : ℝ≥0∞)⁻¹).toReal = 2⁻¹ by simp, two_mul]
   -- Otherwise the Christ–Kiselev step applies.
-  have h2 : 2 < q ∨ 2 < q₁ := by
-    rw [not_and_or] at h22
-    exact h22.imp hq.lt_of_ne' hq₁.lt_of_ne'
   obtain ⟨C₁, hC₁⟩ := φ.exists_enorm_integral_adjoint_halfWavePropagator_comp_le (p := p₁)
     (r' := r₁') hq₁ hr₁ hqr₁ hq₁2
   obtain ⟨C, hC⟩ := φ.exists_enorm_integral_adjoint_halfWavePropagator_comp_le (p := p)
@@ -785,22 +801,16 @@ private theorem exists_enorm_integral_setIntegral_Iio_inner_halfWavePropagator_n
             Module.finrank ℝ E * (r₁⁻¹).toReal - (q₁⁻¹).toReal))) *
             eLpNorm (fun s ↦ eLpNorm (F s) r₁' volume) p₁ volume *
             eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume := by
-  by_cases h22 : q = 2 ∧ q₁ = 2
+  obtain ⟨rfl, rfl, rfl, rfl, rfl, rfl, hn, hre⟩ | h2 :=
+    eq_two_and_waveEndpoint_or_two_lt (p := p) (p₁ := p₁) (r' := r') (r₁' := r₁') hq hq2 hq₁ hq₁2
   · -- Both pairs at the endpoint: the Keel–Tao estimate after reflecting time.
-    obtain ⟨rfl, rfl⟩ := h22
-    obtain ⟨hn, hre⟩ := hq2 rfl
-    obtain ⟨rfl, rfl, rfl, rfl⟩ := eq_two_and_eq_of_waveEndpoint (p := p) (p₁ := p₁) (r' := r')
-      (r₂' := r₁') (by omega) hre (hq₁2 rfl).2
     obtain ⟨C, hC⟩ :=
       φ.exists_enorm_integral_setIntegral_Iio_inner_halfWavePropagator_neg_sub_le_of_endpoint
         (r' := r') hn hre
     refine ⟨C, fun j m hm F G hF hG ↦ (hC j m hm F G hF hG).trans_eq ?_⟩
-    rw [show ((2 : ℝ≥0∞)⁻¹).toReal = 2⁻¹ by simp]
-    ring_nf
+    -- Only the exponents differ, as `2 * γ` against `γ + γ` with `γ = n / 2 - n / r - 1 / 2`.
+    rw [show ((2 : ℝ≥0∞)⁻¹).toReal = 2⁻¹ by simp, two_mul]
   -- Otherwise the Christ–Kiselev step applies to the reversed operators.
-  have h2 : 2 < q ∨ 2 < q₁ := by
-    rw [not_and_or] at h22
-    exact h22.imp hq.lt_of_ne' hq₁.lt_of_ne'
   obtain ⟨C₁, hC₁⟩ := φ.exists_enorm_integral_adjoint_halfWavePropagator_comp_le (p := p₁)
     (r' := r₁') hq₁ hr₁ hqr₁ hq₁2
   obtain ⟨C, hC⟩ := φ.exists_enorm_integral_adjoint_halfWavePropagator_comp_le (p := p)
@@ -1100,8 +1110,9 @@ mixed norm, with the forcing measured along a second admissible pair. Let `E` ha
 let `Pⱼ` be the `L²` Fourier multiplier with the Littlewood–Paley cutoff `ψⱼ` built from `φ` as
 symbol, let `(q, r)` be wave-admissible, `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with `2 ≤ q < ∞`,
 and let `(q₁, r₁)` be wave-admissible with `2 ≤ q₁ ≤ ∞`, with Hölder conjugates `p₁` and `r₁'`.
-The time exponent `2` is allowed only at the endpoint `1 + (n - 1) / r = (n - 1) / 2` in dimension
-`n ≥ 4`, on either side or on both.
+The time exponent `2` is allowed only at the endpoint in dimension `n ≥ 4`, on either side or on
+both: `q = 2` only if `1 + (n - 1) / r = (n - 1) / 2`, and `q₁ = 2` only if
+`1 + (n - 1) / r₁ = (n - 1) / 2`.
 Put `γ = n / 2 - n / r - 1 / q` and `γ₁ = n / 2 - n / r₁ - 1 / q₁`. There is `C` such that for
 every `j ∈ ℤ` and every forcing term `F : ℝ → L²(E)` that is integrable in time,
 

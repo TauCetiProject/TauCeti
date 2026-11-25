@@ -24,8 +24,9 @@ with zero data at `t = -∞` is the retarded Duhamel integral
 
 (`TauCeti.waveSinPropagator`). Let `(q, r)` be wave-admissible, `2 / q + (n - 1) / r ≤ (n - 1) / 2`,
 with `2 ≤ q < ∞`, and let `(q₁, r₁)` be wave-admissible with `2 ≤ q₁ ≤ ∞`, with Hölder conjugates
-`p₁` and `r₁'`, where the time exponent `2` is allowed only at the endpoint
-`1 + (n - 1) / r = (n - 1) / 2` in dimension `n ≥ 4`, on either side or on both. Put
+`p₁` and `r₁'`, where the time exponent `2` is allowed only at the endpoint in dimension
+`n ≥ 4`, on either side or on both: `q = 2` only if `1 + (n - 1) / r = (n - 1) / 2`, and
+`q₁ = 2` only if `1 + (n - 1) / r₁ = (n - 1) / 2`. Put
 `γ = n / 2 - n / r - 1 / q` and `γ₁ = n / 2 - n / r₁ - 1 / q₁`. This file proves the **retarded
 Strichartz estimate** for every integrable forcing term `F : ℝ → L²(E)`:
 
@@ -130,9 +131,10 @@ nontrivial of dimension `n`, let `Pⱼ` be the `L²` Fourier multiplier with the
 cutoff `ψⱼ` built from `φ` as symbol, let `(q, r)` be wave-admissible,
 `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with `2 ≤ q < ∞`, and let `(q₁, r₁)` be wave-admissible with
 `2 ≤ q₁ ≤ ∞`, with Hölder conjugates `p₁` and `r₁'`, where the time exponent `2` is allowed only at
-the endpoint `1 + (n - 1) / r = (n - 1) / 2` in dimension `n ≥ 4`, on either side or on
-both. Put `γ = n / 2 - n / r - 1 / q` and `γ₁ = n / 2 - n / r₁ - 1 / q₁`. There is `C` such that
-for every integrable forcing term `F : ℝ → L²(E)`, the retarded Duhamel integral
+the endpoint in dimension `n ≥ 4`, on either side or on both: `q = 2` only if
+`1 + (n - 1) / r = (n - 1) / 2`, and `q₁ = 2` only if `1 + (n - 1) / r₁ = (n - 1) / 2`. Put
+`γ = n / 2 - n / r - 1 / q` and `γ₁ = n / 2 - n / r₁ - 1 / q₁`. There is `C` such that for every
+integrable forcing term `F : ℝ → L²(E)`, the retarded Duhamel integral
 `u(t) = ∫_{s < t} D⁻¹ sin((t - s)D) F(s) ds`, the solution of `∂ₜ²u - Δu = F` with zero data at
 `t = -∞`, satisfies
 
