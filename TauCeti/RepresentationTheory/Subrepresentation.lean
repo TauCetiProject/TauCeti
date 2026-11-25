@@ -99,6 +99,7 @@ along a monoid homomorphism whose image spans the algebra keeps the invariant su
 * `Subrepresentation.instIsModularLattice`
 * `Subrepresentation.toRepresentation_apply`
 * `Subrepresentation.coe_toRepresentation_apply`
+* `Subrepresentation.instIsTrivialToRepresentation`
 * `Representation.IntertwiningMap.eq_zero_iff_range_eq_bot`
 * `Representation.IntertwiningMap.surjective_iff_range_eq_top`
 * `Subrepresentation.subtype`
@@ -208,6 +209,11 @@ theorem toRepresentation_apply (S : Subrepresentation ρ) (g : G) :
 theorem coe_toRepresentation_apply (S : Subrepresentation ρ) (g : G) (v : S.toSubmodule) :
     (S.toRepresentation g v : W) = ρ g v :=
   rfl
+
+/-- A subrepresentation of a trivial representation is trivial. -/
+instance instIsTrivialToRepresentation [ρ.IsTrivial] (S : Subrepresentation ρ) :
+    S.toRepresentation.IsTrivial :=
+  ⟨fun g ↦ LinearMap.ext fun v ↦ Subtype.ext (ρ.isTrivial_apply g v)⟩
 
 /-- An intertwining map is zero exactly when its range is the bottom subrepresentation. -/
 theorem _root_.Representation.IntertwiningMap.eq_zero_iff_range_eq_bot

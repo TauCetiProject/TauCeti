@@ -25,6 +25,7 @@ invertible pro-orders, and is not proved here.
 
 ## Main results
 
+* `Representation.IsLocallyAdmissible.isSmooth`: locally admissible representations are smooth.
 * `Representation.IsAdmissible.isLocallyAdmissible`: over a noetherian ring, admissible
   representations are locally admissible.
 * `Representation.isLocallyAdmissible_of_isTrivial`: trivial representations are locally
@@ -57,6 +58,12 @@ theorem isLocallyAdmissible_iff :
     IsLocallyAdmissible ρ ↔ ∀ v : V, IsAdmissible (cyclicSubrepresentation ρ v).toRepresentation :=
   Iff.rfl
 
+/-- A locally admissible representation is smooth: each `v` lies in the admissible, hence smooth,
+subrepresentation `A[G] · v`, whose stabilizers are those of `ρ`. -/
+theorem IsLocallyAdmissible.isSmooth (h : IsLocallyAdmissible ρ) : IsSmooth ρ :=
+  ⟨fun v ↦ (cyclicSubrepresentation ρ v).stabilizer_toRepresentation
+    ⟨v, mem_cyclicSubrepresentation_self v⟩ ▸ (h v).isOpen_stabilizer _⟩
+
 /-- **Admissible representations are locally admissible** over a noetherian ring. -/
 theorem IsAdmissible.isLocallyAdmissible [IsNoetherianRing A] [IsAdmissible ρ] :
     IsLocallyAdmissible ρ :=
@@ -65,8 +72,6 @@ theorem IsAdmissible.isLocallyAdmissible [IsNoetherianRing A] [IsAdmissible ρ] 
 /-- A trivial representation is locally admissible: each `A[G] · v` is the `A`-span of `v`, a
 finitely generated module with trivial action. -/
 theorem isLocallyAdmissible_of_isTrivial [ρ.IsTrivial] : IsLocallyAdmissible ρ := fun v ↦
-  have : (cyclicSubrepresentation ρ v).toRepresentation.IsTrivial :=
-    ⟨fun g ↦ LinearMap.ext fun w ↦ Subtype.ext (ρ.isTrivial_apply g w)⟩
   have : Module.Finite A (cyclicSubrepresentation ρ v).toSubmodule := by
     have h : (fun g ↦ ρ g v) = fun _ ↦ v := funext (ρ.isTrivial_apply · v)
     rw [toSubmodule_cyclicSubrepresentation, h, Set.range_const]
