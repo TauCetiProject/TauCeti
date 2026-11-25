@@ -37,6 +37,11 @@ meromorphic functions. Its kernel at `x` consists of the principal parts with po
 `E` (`TauCeti.RiemannSurface.LocalPrincipalPart.boundedBy`): the classes of germs of order at
 least `-E x`.
 
+On a connected surface, a meromorphic function `f` with `ord f ≥ D - E` multiplies Mittag-Leffler
+distributions relative to `D` into those relative to `E`
+(`TauCeti.RiemannSurface.PrincipalParts.meromorphicMul`), compatibly with taking principal parts
+(`TauCeti.RiemannSurface.PrincipalParts.meromorphicMul_principalParts`).
+
 Every local principal part `p` relative to `D` has a least pole bound
 `TauCeti.RiemannSurface.LocalPrincipalPart.poleBound D p ≥ D x`, and every Mittag-Leffler
 distribution `μ` a least bounding divisor
@@ -465,5 +470,113 @@ theorem ker_principalParts (D : WeilDivisor X) :
   exact forall_congr' fun x ↦ principalParts_apply_eq_zero_iff
 
 end MeromorphicFunction
+
+/-! ### Multiplication by meromorphic functions -/
+
+section MeromorphicMul
+
+variable [IsManifold 𝓘(ℂ) 1 X] [ConnectedSpace X] {D E F : WeilDivisor X}
+
+namespace LocalPrincipalPart
+
+/-- If `ord_x f ≥ D x - E x`, multiplication by the coordinate germ of `f` sends germs of order at
+least `-D x` to germs of order at least `-E x`. -/
+theorem toChartGerm_mul_mem_orderGE {f : MeromorphicFunction X} {x : X}
+    (hf : ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x f)
+    {φ : meromorphicGerms ℂ (chartAt ℂ x x)}
+    (hφ : φ ∈ meromorphicGerms.orderGE (chartAt ℂ x x) (-D x)) :
+    MeromorphicFunction.toChartGerm x f * φ ∈ meromorphicGerms.orderGE (chartAt ℂ x x) (-E x) := by
+  rw [meromorphicGerms.mem_orderGE] at hφ ⊢
+  rw [meromorphicGerms.order_mul, MeromorphicFunction.order_toChartGerm]
+  calc ((-E x : ℤ) : WithTop ℤ) = ((D x - E x : ℤ) : WithTop ℤ) + ((-D x : ℤ) : WithTop ℤ) := by
+        norm_cast
+        ring
+    _ ≤ _ := add_le_add hf hφ
+
+/-- **Multiplication of local principal parts by a meromorphic function** `f` with
+`ord_x f ≥ D x - E x`: the class of a germ `φ` relative to `D` goes to the class of `f φ` relative
+to `E`. -/
+def meromorphicMul (f : MeromorphicFunction X) (x : X)
+    (hf : ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x f) :
+    LocalPrincipalPart D x →ₗ[ℂ] LocalPrincipalPart E x :=
+  Submodule.mapQ _ _ (LinearMap.mulLeft ℂ (MeromorphicFunction.toChartGerm x f))
+    fun _ hφ ↦ toChartGerm_mul_mem_orderGE hf hφ
+
+@[simp]
+theorem meromorphicMul_mk (f : MeromorphicFunction X) (x : X)
+    (hf : ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x f)
+    (φ : meromorphicGerms ℂ (chartAt ℂ x x)) :
+    meromorphicMul f x hf (Submodule.Quotient.mk φ) =
+      Submodule.Quotient.mk (MeromorphicFunction.toChartGerm x f * φ) :=
+  (rfl)
+
+end LocalPrincipalPart
+
+namespace PrincipalParts
+
+/-- **Multiplication of Mittag-Leffler distributions by a meromorphic function** `f` with
+`ord f ≥ D - E`, pointwise by `TauCeti.RiemannSurface.LocalPrincipalPart.meromorphicMul`. -/
+def meromorphicMul (f : MeromorphicFunction X)
+    (hf : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x f) :
+    PrincipalParts D →ₗ[ℂ] PrincipalParts E :=
+  DFinsupp.mapRange.linearMap fun x ↦ LocalPrincipalPart.meromorphicMul f x (hf x)
+
+@[simp]
+theorem meromorphicMul_apply (f : MeromorphicFunction X)
+    (hf : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x f)
+    (μ : PrincipalParts D) (x : X) :
+    meromorphicMul f hf μ x = LocalPrincipalPart.meromorphicMul f x (hf x) (μ x) :=
+  (rfl)
+
+/-- Multiplication of Mittag-Leffler distributions is additive in the meromorphic function. -/
+theorem meromorphicMul_add {f g h : MeromorphicFunction X}
+    (hf : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x f)
+    (hg : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g)
+    (hh : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x h) (hfg : h = f + g) :
+    meromorphicMul h hh = meromorphicMul f hf + meromorphicMul g hg := by
+  subst hfg
+  ext μ x : 2
+  simp only [LinearMap.add_apply, DFinsupp.coe_add, Pi.add_apply, meromorphicMul_apply]
+  induction μ x using Submodule.Quotient.induction_on with
+  | _ φ => simp only [LocalPrincipalPart.meromorphicMul_mk, map_add, add_mul,
+    Submodule.Quotient.mk_add]
+
+/-- Multiplication of Mittag-Leffler distributions is homogeneous in the meromorphic function. -/
+theorem meromorphicMul_smul {f g : MeromorphicFunction X} (c : ℂ)
+    (hf : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x f)
+    (hg : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g) (hfg : g = c • f) :
+    meromorphicMul g hg = c • meromorphicMul f hf := by
+  subst hfg
+  ext μ x : 2
+  simp only [LinearMap.smul_apply, DFinsupp.coe_smul, Pi.smul_apply, meromorphicMul_apply]
+  induction μ x using Submodule.Quotient.induction_on with
+  | _ φ => simp only [LocalPrincipalPart.meromorphicMul_mk, map_smul, smul_mul_assoc,
+    Submodule.Quotient.mk_smul]
+
+/-- Multiplying by `g` and then by `f` with `f g = 1` is the projection to the larger divisor. -/
+theorem meromorphicMul_meromorphicMul_eq_mapOfLE {f g : MeromorphicFunction X}
+    (hf : ∀ x, ((E x - F x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x f)
+    (hg : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g) (hfg : f * g = 1)
+    (h : D ≤ F) (μ : PrincipalParts D) :
+    meromorphicMul f hf (meromorphicMul g hg μ) = mapOfLE h μ := by
+  ext x
+  simp only [meromorphicMul_apply, mapOfLE_apply]
+  induction μ x using Submodule.Quotient.induction_on with
+  | _ φ => rw [LocalPrincipalPart.meromorphicMul_mk, LocalPrincipalPart.meromorphicMul_mk,
+    LocalPrincipalPart.mapOfLE_mk, ← mul_assoc, ← map_mul, hfg, map_one, one_mul]
+
+/-- Multiplication by `f` sends the principal parts of `g` to the principal parts of `f g`. -/
+theorem meromorphicMul_principalParts [CompactSpace X] (f : MeromorphicFunction X)
+    (hf : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x f)
+    (g : MeromorphicFunction X) :
+    meromorphicMul f hf (MeromorphicFunction.principalParts D g) =
+      MeromorphicFunction.principalParts E (f * g) :=
+  DFinsupp.ext fun x ↦ by
+    rw [meromorphicMul_apply, MeromorphicFunction.principalParts_apply,
+      MeromorphicFunction.principalParts_apply, LocalPrincipalPart.meromorphicMul_mk, map_mul]
+
+end PrincipalParts
+
+end MeromorphicMul
 
 end TauCeti.RiemannSurface

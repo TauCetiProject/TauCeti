@@ -362,6 +362,17 @@ theorem order_toOneForm_ne_top [IsManifold 𝓘(ℂ) 1 X] [PreconnectedSpace X]
   exact ht.eventually
     (OneForm.eventually_apply_eq_zero_of_order_eq_top (eq_univ_iff_forall.1 hu y))
 
+/-- Two global sections of `Ω_D` whose `1`-forms agree on a punctured neighbourhood of every
+point are equal: their values are normalized at the remaining points. -/
+theorem ext_of_eventually_nhdsNE [IsManifold 𝓘(ℂ) 1 X] {s t : differentialSections D ⊤}
+    (h : ∀ x, ∀ᶠ y in 𝓝[≠] x, toOneForm D s y = toOneForm D t y) : s = t := by
+  refine toOneForm_injective D (funext fun x ↦ ?_)
+  have hs := isDifferentialSectionAt_toOneForm s x
+  have ht := isDifferentialSectionAt_toOneForm t x
+  rcases lt_or_ge 0 (D x) with hD | hD
+  · rw [hs.apply_eq_zero hD, ht.apply_eq_zero hD]
+  · exact (hs.holomorphicAt hD).apply_eq_of_eventually (ht.holomorphicAt hD) (h x)
+
 end differentialSections
 
 /-- **`H⁰(X, Ω) ≅` holomorphic `1`-forms.** The global sections of `Ω_0` are the holomorphic

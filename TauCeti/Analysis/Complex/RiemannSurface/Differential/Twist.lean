@@ -44,8 +44,13 @@ Consequently, on a compact Riemann surface the holomorphic `1`-forms are the glo
 finite-dimensionality of the global sections of every `Ω_D` is in
 `TauCeti.Analysis.Complex.RiemannSurface.Differential.FiniteDimensional`.
 
+The same normalization turns every `1`-form which is meromorphic with order at least `-D` into a
+global section of `Ω_D` (`TauCeti.RiemannSurface.differentialSections.normalize`).
+
 ## Main definitions
 
+* `TauCeti.RiemannSurface.differentialSections.normalize`: the global section of `Ω_D` of a
+  meromorphic `1`-form with order at least `-D`.
 * `TauCeti.RiemannSurface.differentialSectionsEquivDivisorSections`: division by `ω` on sections
   over an open set.
 * `TauCeti.RiemannSurface.differentialSheafIsoDivisorSheaf`: the isomorphism `Ω_D ≅ 𝒪_E`.
@@ -136,6 +141,24 @@ private theorem isDivisorSectionAt_toDivisorSection_ratio (hη : IsDifferentialS
   | coe r =>
     norm_cast at hle ⊢
     omega
+
+variable (D) in
+/-- The **normalization** of a `1`-form `θ` which is meromorphic with order at least `-D x` at
+every point `x`, as a global section of `Ω_D`: the values of `θ` are reset at the poles allowed by
+`D` and removable singularities are filled in, so it agrees with `θ` off a closed discrete set
+(`TauCeti.RiemannSurface.differentialSections.toOneForm_normalize_eventuallyEq`). -/
+def differentialSections.normalize (θ : OneForm X) (hθ : ∀ x, θ.MeromorphicAt x)
+    (ho : ∀ x, ((-D x : ℤ) : WithTop ℤ) ≤ θ.order x) : differentialSections D ⊤ :=
+  ⟨fun y ↦ normalizeForm D θ y,
+    restrict_mem_differentialSections fun x _ ↦ isDifferentialSectionAt_normalizeForm (hθ x) (ho x)⟩
+
+/-- The normalization of `θ` agrees with `θ` on a punctured neighbourhood of every point. -/
+theorem differentialSections.toOneForm_normalize_eventuallyEq (hθ : ∀ x, θ.MeromorphicAt x)
+    (ho : ∀ x, ((-D x : ℤ) : WithTop ℤ) ≤ θ.order x) (x : X) :
+    ∀ᶠ y in 𝓝[≠] x, toOneForm D (normalize D θ hθ ho) y = θ y :=
+  (normalizeForm_eventuallyEq (D := D) (hθ x)).mono fun y hy ↦ by
+    rw [toOneForm_apply]
+    exact hy
 
 end Normalize
 
