@@ -244,14 +244,20 @@ variable {N : Type uN} [AddCommGroup N] [Module R N] [Module A N]
 modules with the semi-free resolution of `N`, as a morphism of localizers for the
 quasi-isomorphisms. Its `LocalizerMorphism.localizedFunctor` is the derived functor on the
 localizations, such as the derived categories. -/
--- Exposed so that it reduces to the `coefficientLocalizerMorphism` of the semi-free resolution,
--- through which homologous cocycles give isomorphic localized functors.
-@[expose]
 def derivedTensorLocalizerMorphism :
     LocalizerMorphism (DGRightModuleCat.quasiIsos.{uR, uA, uM} hA)
       (HomologicalComplex.quasiIso (ModuleCat.{max (max uA uN) uM} R) (ComplexShape.up ℤ)) :=
   (semifreeResolution 𝒜 d 𝒩 dN).coefficientLocalizerMorphism hA
     wellFounded_mem_support_semifreeResolution
+
+/-- The derived tensor product is the morphism of localizers of the semi-free resolution, through
+which homologous cocycles give isomorphic localized functors
+(`TauCeti.RowFiniteHomologous.localizedFunctorIso`). -/
+theorem derivedTensorLocalizerMorphism_eq :
+    derivedTensorLocalizerMorphism.{uR, uA, uM} hA 𝒩 dN =
+      (semifreeResolution 𝒜 d 𝒩 dN).coefficientLocalizerMorphism hA
+        wellFounded_mem_support_semifreeResolution :=
+  (rfl)
 
 @[simp]
 theorem derivedTensorLocalizerMorphism_functor :

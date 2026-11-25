@@ -117,6 +117,20 @@ def derivedTensorLocalizerMorphism :
       (loopChainAugmentation B (β.point c) R).bimoduleDifferential)
     fun _ ↦ wellFounded_mem_support_semifreeResolution
 
+/-- The derived tensor product over the path components is the morphism of localizers of the
+family of semi-free resolutions, through which families of homologous cocycles give isomorphic
+localized functors (`TauCeti.DGLocalSystemFamily.twistedComplexLocalizedFunctorIso`). -/
+theorem derivedTensorLocalizerMorphism_eq :
+    DGLocalSystemFamily.derivedTensorLocalizerMorphism β R =
+      twistedComplexLocalizerMorphism
+        (fun c ↦ semifreeResolution (R := R) (A := loopChainAlgebra B (β.point c) R)
+          (cubicalChainGrading (MooreLoopSpace B (β.point c)) R)
+          (cubicalChainDifferential (MooreLoopSpace B (β.point c)) R)
+          (loopChainAugmentation B (β.point c) R).bimoduleGrading
+          (loopChainAugmentation B (β.point c) R).bimoduleDifferential)
+        fun _ ↦ wellFounded_mem_support_semifreeResolution :=
+  (rfl)
+
 @[simp]
 theorem derivedTensorLocalizerMorphism_functor :
     (DGLocalSystemFamily.derivedTensorLocalizerMorphism β R).functor =
