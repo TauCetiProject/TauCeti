@@ -31,8 +31,10 @@ whose finite-dimensional, finitely supported objects form the pointed category `
 ## Main definitions
 
 * `TauCeti.GradedObject.TwistingCocycle I R`: a normalized `3`-cocycle on `I` with values in `Rˣ`
-  for the trivial action, bundled, with coefficient pushforward `TwistingCocycle.map` and complete
-  `ZMod 2` classification `TwistingCocycle.zmod2` / `TwistingCocycle.zmod2Equiv`.
+  for the trivial action, bundled, with trivial cocycle `1`, grading pullback
+  `TwistingCocycle.comap` and equivalence `TwistingCocycle.domCongr`, coefficient pushforward
+  `TwistingCocycle.map`, and complete `ZMod 2` classification `TwistingCocycle.zmod2` /
+  `TwistingCocycle.zmod2Equiv`.
 * `CategoryTheory.GradedObject.Monoidal.scaleTensorObj₃`: the endomorphism of
   `X₁ ⊗ (X₂ ⊗ X₃)` acting on the summand `X₁ i₁ ⊗ X₂ i₂ ⊗ X₃ i₃` by a scalar `u i₁ i₂ i₃`.
 * `TauCeti.TwistedGradedObject c C`: a type synonym for `GradedObject I C`, carrying the monoidal
@@ -87,6 +89,12 @@ attribute [simp] ω_zero
 
 variable {I : Type*} [AddMonoid I] {R : Type*} [Monoid R] (c : TwistingCocycle I R)
 
+/-- The trivial normalized `3`-cocycle with `ω _ _ _ = 1`. -/
+instance : One (TwistingCocycle I R) where
+  one := ⟨fun _ _ _ ↦ 1, fun _ _ _ _ ↦ by simp, fun _ _ ↦ rfl⟩
+
+@[simp] lemma one_ω (i₁ i₂ i₃ : I) : (1 : TwistingCocycle I R).ω i₁ i₂ i₃ = 1 := (rfl)
+
 /-- A twisting cocycle is normalized in the first variable. -/
 @[simp]
 lemma ω_zero_left (i₂ i₃ : I) : c.ω 0 i₂ i₃ = 1 := by
@@ -96,6 +104,43 @@ lemma ω_zero_left (i₂ i₃ : I) : c.ω 0 i₂ i₃ = 1 := by
 @[simp]
 lemma ω_zero_right (i₁ i₂ : I) : c.ω i₁ i₂ 0 = 1 := by
   simpa using c.cocycle i₁ i₂ 0 0
+
+/-- Pull a twisting cocycle back along an additive monoid homomorphism `f : J →+ I`. -/
+def comap {J : Type*} [AddMonoid J] (f : J →+ I) (c : TwistingCocycle I R) :
+    TwistingCocycle J R where
+  ω j₁ j₂ j₃ := c.ω (f j₁) (f j₂) (f j₃)
+  cocycle j₁ j₂ j₃ j₄ := by simpa only [map_add] using c.cocycle (f j₁) (f j₂) (f j₃) (f j₄)
+  ω_zero _ _ := by simp
+
+@[simp] lemma comap_ω {J : Type*} [AddMonoid J] (f : J →+ I) (c : TwistingCocycle I R)
+    (j₁ j₂ j₃ : J) : (c.comap f).ω j₁ j₂ j₃ = c.ω (f j₁) (f j₂) (f j₃) := (rfl)
+
+@[simp] lemma comap_id (c : TwistingCocycle I R) : c.comap (AddMonoidHom.id I) = c := by ext; rfl
+
+@[simp] lemma comap_comp {J K : Type*} [AddMonoid J] [AddMonoid K] (f : J →+ I) (g : K →+ J)
+    (c : TwistingCocycle I R) : (c.comap f).comap g = c.comap (f.comp g) := by ext; rfl
+
+lemma comap_symm_comap {J : Type*} [AddMonoid J] (e : I ≃+ J) (c : TwistingCocycle I R) :
+    (c.comap (e.symm : J →+ I)).comap (e : I →+ J) = c := by
+  ext; simp
+
+lemma comap_comap_symm {J : Type*} [AddMonoid J] (e : I ≃+ J) (c : TwistingCocycle J R) :
+    (c.comap (e : I →+ J)).comap (e.symm : J →+ I) = c := by
+  ext; simp
+
+/-- Equivalence of normalized `3`-cocycles induced by an additive isomorphism `e : I ≃+ J`. -/
+def domCongr {J : Type*} [AddMonoid J] (e : I ≃+ J) :
+    TwistingCocycle I R ≃ TwistingCocycle J R where
+  toFun := comap (e.symm : J →+ I)
+  invFun := comap (e : I →+ J)
+  left_inv := comap_symm_comap e
+  right_inv := comap_comap_symm e
+
+@[simp] lemma domCongr_apply {J : Type*} [AddMonoid J] (e : I ≃+ J) (c : TwistingCocycle I R) :
+    domCongr e c = c.comap (e.symm : J →+ I) := (rfl)
+
+@[simp] lemma domCongr_symm {J : Type*} [AddMonoid J] (e : I ≃+ J) :
+    (domCongr e : TwistingCocycle I R ≃ TwistingCocycle J R).symm = domCongr e.symm := (rfl)
 
 /-- Push a twisting cocycle forward along a monoid homomorphism `f : R →* S`. -/
 def map {S : Type*} [Monoid S] (f : R →* S) (c : TwistingCocycle I R) : TwistingCocycle I S where

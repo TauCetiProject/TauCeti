@@ -232,6 +232,9 @@ def ofMulEquiv (e : M ≃* M') : (ofMul M).Equiv (ofMul M') where
 @[simp]
 theorem ofMulEquiv_apply (e : M ≃* M') (a : M) : ofMulEquiv e a = e a := (rfl)
 
+@[simp]
+theorem ofMulEquiv_symm (e : M ≃* M') : (ofMulEquiv e).symm = ofMulEquiv e.symm := (rfl)
+
 end ofMul
 
 end Equiv

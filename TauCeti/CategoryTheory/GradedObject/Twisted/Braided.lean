@@ -21,8 +21,9 @@ pointed category of `I`-graded objects (Joyal–Street, §3; Quinn, §5); the st
 `PointedBraiding` records the same equations over any commutative additive monoid `I`.
 
 * `TauCeti.GradedObject.PointedBraiding c`: scalar braiding data `r : I → I → Kˣ` extending `c`,
-  with derived unit laws `r_zero_right` and `r_zero_left` and coefficient pushforward
-  `PointedBraiding.map`.
+  with trivial braiding `1` on `c = 1`, derived unit laws `r_zero_right` and `r_zero_left`,
+  transport `PointedBraiding.cast`, grading pullback `PointedBraiding.comap` and equivalence
+  `PointedBraiding.comapEquiv`, and coefficient pushforward `PointedBraiding.map`.
 * `TauCeti.GradedObject.PointedBraiding.zmod2` and `PointedBraiding.zmod2Equiv`: complete
   classification on `ZMod 2`, identifying pointed braidings on `TwistingCocycle.zmod2 u hu` with
   `{ r : Kˣ // r * r = u }` via `B ↦ B.r 1 1`.
@@ -39,14 +40,12 @@ public section
 
 namespace TauCeti.GradedObject
 
-universe u v
-
 /-- A scalar braiding datum `r : I → I → Kˣ` on a commutative additive monoid `I` compatible with
 a normalized `3`-cocycle `c : TwistingCocycle I K`. When `I` is an abelian group, this is an
 Eilenberg–MacLane abelian `3`-cocycle extending `c` (Joyal–Street, *Braided tensor categories*,
 §3), parametrizing braidings in the pointed case. -/
 @[ext]
-structure PointedBraiding {I : Type u} [AddCommMonoid I] {K : Type v} [Monoid K]
+structure PointedBraiding {I : Type*} [AddCommMonoid I] {K : Type*} [Monoid K]
     (c : TwistingCocycle I K) where
   /-- The scalar braiding entries `r a b`. -/
   r : I → I → Kˣ
@@ -61,12 +60,66 @@ namespace PointedBraiding
 
 section General
 
-variable {I : Type u} [AddCommMonoid I] {K : Type v} [Monoid K] {c : TwistingCocycle I K}
+variable {I : Type*} [AddCommMonoid I] {K : Type*} [Monoid K] {c : TwistingCocycle I K}
+
+/-- The trivial scalar braiding datum `r _ _ = 1` on the trivial twisting cocycle `1`. -/
+instance : One (PointedBraiding (1 : TwistingCocycle I K)) where
+  one := ⟨fun _ _ ↦ 1, fun _ _ _ ↦ by simp, fun _ _ _ ↦ by simp⟩
+
+@[simp] theorem one_r (a b : I) : (1 : PointedBraiding (1 : TwistingCocycle I K)).r a b = 1 := (rfl)
 
 @[simp] theorem r_zero_right (B : PointedBraiding c) (a : I) : B.r a 0 = 1 := by
   simpa using (B.hexagon_forward a 0 0).symm
 @[simp] theorem r_zero_left (B : PointedBraiding c) (a : I) : B.r 0 a = 1 := by
   simpa using (B.hexagon_reverse 0 0 a).symm
+
+/-- Transport a scalar braiding datum along an equality of twisting cocycles. -/
+def cast {c₁ c₂ : TwistingCocycle I K} (h : c₁ = c₂) (B : PointedBraiding c₁) :
+    PointedBraiding c₂ :=
+  h ▸ B
+
+@[simp] theorem cast_r {c₁ c₂ : TwistingCocycle I K} (h : c₁ = c₂) (B : PointedBraiding c₁)
+    (a b : I) : (B.cast h).r a b = B.r a b := by
+  cases h; rfl
+
+@[simp] theorem cast_rfl (B : PointedBraiding c) : B.cast rfl = B := (rfl)
+
+@[simp] theorem cast_cast {c₁ c₂ c₃ : TwistingCocycle I K} (h₁ : c₁ = c₂) (h₂ : c₂ = c₃)
+    (B : PointedBraiding c₁) : (B.cast h₁).cast h₂ = B.cast (h₁.trans h₂) := by
+  cases h₁; cases h₂; rfl
+
+/-- Pull a scalar braiding datum back along an additive monoid homomorphism `f : J →+ I`. -/
+def comap {J : Type*} [AddCommMonoid J] (f : J →+ I) (B : PointedBraiding c) :
+    PointedBraiding (c.comap f) where
+  r j₁ j₂ := B.r (f j₁) (f j₂)
+  hexagon_forward j₁ j₂ j₃ := by
+    simpa only [TwistingCocycle.comap_ω, map_add] using B.hexagon_forward (f j₁) (f j₂) (f j₃)
+  hexagon_reverse j₁ j₂ j₃ := by
+    simpa only [TwistingCocycle.comap_ω, map_add] using B.hexagon_reverse (f j₁) (f j₂) (f j₃)
+
+@[simp] theorem comap_r {J : Type*} [AddCommMonoid J] (f : J →+ I) (B : PointedBraiding c)
+    (j₁ j₂ : J) : (B.comap f).r j₁ j₂ = B.r (f j₁) (f j₂) := (rfl)
+
+@[simp] theorem comap_cast {J : Type*} [AddCommMonoid J] {c₁ c₂ : TwistingCocycle I K}
+    (h : c₁ = c₂) (f : J →+ I) (B : PointedBraiding c₁) :
+    (B.cast h).comap f = (B.comap f).cast (congrArg (TwistingCocycle.comap f) h) := by
+  ext; simp
+
+/-- Equivalence of scalar braiding data induced by an additive isomorphism `e : J ≃+ I`. -/
+def comapEquiv {J : Type*} [AddCommMonoid J] (e : J ≃+ I) (c : TwistingCocycle I K) :
+    PointedBraiding (c.comap (e : J →+ I)) ≃ PointedBraiding c where
+  toFun B := (B.comap (e.symm : I →+ J)).cast (c.comap_comap_symm e)
+  invFun := comap (e : J →+ I)
+  left_inv B := by ext; simp
+  right_inv B := by ext; simp
+
+@[simp] theorem comapEquiv_apply {J : Type*} [AddCommMonoid J] (e : J ≃+ I)
+    (c : TwistingCocycle I K) (B : PointedBraiding (c.comap (e : J →+ I))) :
+    comapEquiv e c B = (B.comap (e.symm : I →+ J)).cast (c.comap_comap_symm e) := (rfl)
+
+@[simp] theorem comapEquiv_symm_apply {J : Type*} [AddCommMonoid J] (e : J ≃+ I)
+    (c : TwistingCocycle I K) (B : PointedBraiding c) :
+    (comapEquiv e c).symm B = B.comap (e : J →+ I) := (rfl)
 
 /-- Push a scalar braiding datum forward along a monoid homomorphism `f : K →* L`. -/
 def map {L : Type*} [Monoid L] (f : K →* L) (B : PointedBraiding c) :
@@ -86,7 +139,7 @@ end General
 
 section ZMod2
 
-variable {K : Type v} [Monoid K]
+variable {K : Type*} [Monoid K]
 
 private theorem mul_mid_eq_one {u r : Kˣ} (hu : u * u = 1) (hr : r * r = u) : r * u * r = 1 := by
   rw [← hr, ← mul_assoc, mul_assoc (r * r), hr, hu]
