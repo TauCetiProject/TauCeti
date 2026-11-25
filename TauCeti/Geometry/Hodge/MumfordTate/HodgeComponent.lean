@@ -65,21 +65,14 @@ theorem tensorPiEquiv_symm_mem_hodgeComponent (he : ∀ i, ω.toEquiv (e i) = e 
   rw [mem_hodgeComponent_iff]
   apply (TensorProduct.piScalarRight ℝ (MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
     (MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) (Fin d)).injective
-  have hend : Comodule.endOfPoint (Fin d → ℝ) splittingPoint.ofConv =
-      (let _ := standardComodule ℝ d
-       Comodule.endOfPoint (Fin d → ℝ)
-        (splittingPoint.ofConv.comp
-          (hs.realCoordinateBialgHom he : coordinateHopfAlgebra ℝ d →ₐ[ℝ] S))) := by
-    let _ := standardComodule ℝ d
-    exact Comodule.endOfPoint_corestrict _ _
-  have h := LinearMap.congr_fun (piScalarRight_comp_endOfPoint ℝ d
-    (toConv (splittingPoint.ofConv.comp
-      (hs.realCoordinateBialgHom he : coordinateHopfAlgebra ℝ d →ₐ[ℝ] S))))
+  have h := LinearMap.congr_fun (piScalarRight_comp_endOfPoint_corestrictStandardComodule ℝ d
+    (hs.realCoordinateBialgHom he) splittingPoint.ofConv)
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at h
-  rw [hend, h]
-  simpa [-TensorProduct.piScalarRight_apply, TensorProduct.piScalarRight_rTensor (S := ℂ),
+  rw [h, LinearEquiv.map_smul, Matrix.GeneralLinearGroup.toLin_apply,
     hs.coe_pointToGeneralLinear_splittingPoint_comp_realCoordinateBialgHom he,
-    Function.comp_def] using hs.splitCoordinateMatrix_mulVec_of_mem e hv
+    TensorProduct.piScalarRight_rTensor (S := ℂ), Module.Basis.tensorPiEquiv_symm_apply,
+    LinearEquiv.apply_symm_apply, neg_sub]
+  exact hs.splitCoordinateMatrix_mulVec_of_mem e hv
 
 /-- **The Hodge components of the representation of `S` of a Hodge structure.** In a basis `e`
 fixed by the conjugation, `h : S → GL_{d,ℝ}` makes `ℝ^d` a representation of `S` whose Hodge

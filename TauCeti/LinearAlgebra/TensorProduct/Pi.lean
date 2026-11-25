@@ -60,8 +60,6 @@ equivalence and is compatible with identities, composition and inverses.
 * `TensorProduct.piScalarRight_symm_algebraMap_comp`: conversely, `algebraMap R N ∘ v`
   corresponds to the pure tensor `1 ⊗ v`.
 * `TensorProduct.piScalarRight_rTensor`: `piScalarRight` is natural in the module.
-* `Module.Basis.piScalarRight_tensorPiEquiv_symm`: read in `ι → A`, the inverse of
-  `e.tensorPiEquiv R` takes a vector to its coordinates in `e`.
 
 ## References
 
@@ -257,12 +255,6 @@ theorem tensorPiEquiv_tmul (e : Basis ι A W) (a : A) (x : ι → R) :
 @[simp]
 theorem tensorPiEquiv_symm_apply (e : Basis ι A W) (v : W) :
     (e.tensorPiEquiv R).symm v = (TensorProduct.piScalarRight R A A ι).symm (e.repr v) := by
-  simp [tensorPiEquiv]
-
-/-- Read in `ι → A`, the inverse of `e.tensorPiEquiv R` takes a vector to its coordinates
-in `e`. -/
-theorem piScalarRight_tensorPiEquiv_symm (e : Basis ι A W) (v : W) :
-    TensorProduct.piScalarRight R A A ι ((e.tensorPiEquiv R).symm v) = e.repr v := by
   simp [tensorPiEquiv]
 
 end Module.Basis
