@@ -25,7 +25,8 @@ degree at most `T₀` in `m` variables.
 In the rank argument of the proof, the grid points are confined to a subspace: one takes the
 columns with `s` in a subspace `V ⊆ Kᵐ` of dimension `d` containing the coefficient vector
 `(β₁, …, β_{m-1}, -1)` of the normalized linear form. The grid points `s · y`, `s ∈ V`, together
-with the direction `e₀` of the derivatives then span a subspace `W` of dimension at most `d`.
+with the direction `e₀` of the derivatives then span a subspace `W` of dimension exactly `d`
+(`TauCeti.finrank_map_waldschmidtPointMap_sup`).
 The restriction to `W` of a polynomial of total degree at most `T₀` is a polynomial of total
 degree at most `T₀` in `d` coordinates, and `∂/∂z₀` is a derivative along `W`, so each row of the
 matrix on these columns is determined by such a restricted polynomial and by `t`. Hence these
@@ -139,7 +140,7 @@ private theorem exists_row_waldschmidtInterpolationMatrix_mem_map {ι κ : Type*
   refine ⟨fun t' ↦ LinearMap.pi fun c ↦ (∏ j, α j ^ (t' * s c j)) •
     ∑ k ∈ range ((P c).natDegree + 1), (Polynomial.hasseDeriv k (P c)).eval (t' : K) •
       ((aeval (u c)).toLinearMap ∘ₗ D.toLinearMap ^ k), fun r ↦ ?_⟩
-  refine ⟨aeval f (F r), aeval_mem_restrictTotalDegree hf (hF r), ?_⟩
+  refine ⟨aeval f (F r), aeval_mem_restrictTotalDegree (F r) (fun i _ ↦ hf i) (hF r), ?_⟩
   ext c
   simp [waldschmidtOperatorEntry_eq_sum_hasseDeriv, pow_apply_eq_iterate, hDk, heval, mul_comm]
 
@@ -149,7 +150,7 @@ columns lie in a subspace `W ⊆ Kᵐ` containing the direction `e₀` of the de
 interpolation matrix has rank at most `(T₀ + dim W choose dim W) · #T`: each row is determined by
 `t r` and by the restriction of `F r` to `W`, a polynomial of total degree at most `T₀` in
 `dim W` coordinates. -/
-theorem rank_waldschmidtInterpolationMatrix_le_of_mem {ι κ : Type*} [Finite ι] [Fintype κ]
+theorem rank_waldschmidtInterpolationMatrix_le_of_mem {ι κ : Type*} [Finite ι] [Finite κ]
     (α b : Fin (n + 1) → K) {F : ι → MvPolynomial (Fin (n + 1)) K} {t : ι → ℤ}
     (P : κ → Polynomial K) {s : κ → Fin (n + 1) → ℤ} {T₀ : ℕ} {T : Finset ℤ}
     (hF : ∀ r, F r ∈ restrictTotalDegree (Fin (n + 1)) K T₀) (ht : ∀ r, t r ∈ T)
@@ -158,6 +159,7 @@ theorem rank_waldschmidtInterpolationMatrix_le_of_mem {ι κ : Type*} [Finite ι
     (waldschmidtInterpolationMatrix α b F t P s).rank ≤
       (T₀ + finrank K W).choose (finrank K W) * #T := by
   classical
+  have := Fintype.ofFinite κ
   obtain ⟨Φ, hΦ⟩ := exists_row_waldschmidtInterpolationMatrix_mem_map α b t P hF hW hs
   set U : ℤ → Submodule K (κ → K) := fun t' ↦ (restrictTotalDegree _ K T₀).map (Φ t')
   have hle : Submodule.span K (Set.range (waldschmidtInterpolationMatrix α b F t P s).row) ≤
@@ -179,7 +181,7 @@ theorem rank_waldschmidtInterpolationMatrix_le_of_mem {ι κ : Type*} [Finite ι
       refine (Submodule.finrank_add_le_finrank_add_finrank _ _).trans ?_
       rw [mul_add_one]
       lia
-  rw [Matrix.rank_eq_finrank_span_row]
+  rw [← Matrix.finrank_span_range_row]
   exact (Submodule.finrank_mono hle).trans (hsup T)
 
 /-- **Rank of the interpolation matrix on a residual subspace.** Let the polynomials `F r` have
@@ -188,7 +190,7 @@ total degree at most `T₀` and the exponents `t r` lie in a finite set `T`. If 
 normalized linear form, then the interpolation matrix has rank at most
 `(T₀ + d choose d) · #T` with `d = dim V`; for `T = [-T₁, T₁]` this is
 `L_d = (T₀ + d choose d) (2 T₁ + 1)`. -/
-theorem rank_waldschmidtInterpolationMatrix_le {ι κ : Type*} [Finite ι] [Fintype κ]
+theorem rank_waldschmidtInterpolationMatrix_le {ι κ : Type*} [Finite ι] [Finite κ]
     (α b : Fin (n + 1) → K) {F : ι → MvPolynomial (Fin (n + 1)) K} {t : ι → ℤ}
     (P : κ → Polynomial K) {s : κ → Fin (n + 1) → ℤ} {T₀ : ℕ} {T : Finset ℤ}
     (hF : ∀ r, F r ∈ restrictTotalDegree (Fin (n + 1)) K T₀) (ht : ∀ r, t r ∈ T)
@@ -196,39 +198,11 @@ theorem rank_waldschmidtInterpolationMatrix_le {ι κ : Type*} [Finite ι] [Fint
     (hs : ∀ c, (fun i ↦ (s c i : K)) ∈ V) :
     (waldschmidtInterpolationMatrix α b F t P s).rank ≤
       (T₀ + finrank K V).choose (finrank K V) * #T := by
-  set Y := waldschmidtPointMap b
-  set e₀ : Fin (n + 1) → K := Pi.single 0 1
-  -- The grid points and `e₀` span `W = Y(V) + K e₀`, of dimension at most `dim V`.
-  set W := V.map Y ⊔ K ∙ e₀
-  have hsW (c : κ) : waldschmidtPoint b (s c) ∈ W := by
-    rw [← waldschmidtPointMap_intCast]
-    exact Submodule.mem_sup_left (Submodule.mem_map_of_mem (hs c))
-  have hW : finrank K W ≤ finrank K V := by
-    have hc := waldschmidtPointMap_snoc b
-    by_cases hb : b 0 = 0
-    · -- The coefficient vector is a nonzero vector of `V` in the kernel of `Y`.
-      rw [hb, neg_zero, Pi.single_zero] at hc
-      have hker : 1 ≤ finrank K (LinearMap.ker (Y ∘ₗ V.subtype)) := by
-        refine Submodule.one_le_finrank_iff.2 ((Submodule.ne_bot_iff _).2
-          ⟨⟨_, hV⟩, by simpa using hc, fun h ↦ ?_⟩)
-        have := congrFun (congrArg Subtype.val h) (Fin.last n)
-        simp at this
-      have hrank := LinearMap.finrank_range_add_finrank_ker (Y ∘ₗ V.subtype)
-      rw [LinearMap.range_comp, Submodule.range_subtype] at hrank
-      refine (Submodule.finrank_add_le_finrank_add_finrank _ _).trans ?_
-      have := finrank_span_le_card (R := K) ({e₀} : Set (Fin (n + 1) → K))
-      simp only [Set.toFinset_singleton, Finset.card_singleton] at this
-      lia
-    · -- `e₀` is the image of a multiple of the coefficient vector, so `W = Y(V)`.
-      have he₀ : e₀ ∈ V.map Y := by
-        refine ⟨(-b 0)⁻¹ • Fin.snoc (fun k : Fin n ↦ b k.succ) (-1), V.smul_mem _ hV, ?_⟩
-        rw [map_smul, hc, ← Pi.single_smul, smul_eq_mul, inv_mul_cancel₀ (neg_ne_zero.2 hb)]
-      rw [show W = V.map Y from sup_eq_left.2 ((Submodule.span_singleton_le_iff_mem _ _).2 he₀)]
-      exact Submodule.finrank_map_le Y V
-  refine (rank_waldschmidtInterpolationMatrix_le_of_mem α b P hF ht
-    (Submodule.mem_sup_right (Submodule.mem_span_singleton_self e₀)) hsW).trans
-    (Nat.mul_le_mul_right _ ?_)
-  rw [← Nat.choose_symm_add, ← Nat.choose_symm_add]
-  exact Nat.choose_le_choose _ (Nat.add_le_add_left hW _)
+  -- The grid points and `e₀` span `W = Y(V) + K e₀`, of dimension `dim V`.
+  rw [← finrank_map_waldschmidtPointMap_sup b hV]
+  refine rank_waldschmidtInterpolationMatrix_le_of_mem α b P hF ht
+    (Submodule.mem_sup_right (Submodule.mem_span_singleton_self _)) fun c ↦ ?_
+  rw [← waldschmidtPointMap_intCast]
+  exact Submodule.mem_sup_left (Submodule.mem_map_of_mem (hs c))
 
 end TauCeti

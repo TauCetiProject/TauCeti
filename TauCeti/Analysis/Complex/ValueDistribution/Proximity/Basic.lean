@@ -7,18 +7,22 @@ module
 
 public import Mathlib.Analysis.Complex.ValueDistribution.Proximity.Basic
 public import TauCeti.Analysis.SpecialFunctions.Integrability.PosLog
+import TauCeti.MeasureTheory.Integral.Circle.Average
 
 /-!
 # Single-circle properties of the Nevanlinna proximity function
 
-Mathlib develops the arithmetic and inversion properties of `ValueDistribution.proximity` under a
-global `Meromorphic f` hypothesis on `ℂ`. However, for a fixed radius `r`, `proximity f a r` depends
-only on the values of `f` along `sphere 0 |r|`. Functions meromorphic only on an open disc (such as
-`ball 0 1`, where boundary singularities prevent any global meromorphic extension) still satisfy
-`MeromorphicOn f (sphere 0 |r|)` on every interior circle.
+Mathlib develops the arithmetic, inversion, and continuity properties of
+`ValueDistribution.proximity` under a global `Meromorphic f` or `Continuous f` hypothesis on `ℂ`.
+However, for a fixed radius `r`, `proximity f a r` depends only on the values of `f` along
+`sphere 0 |r|`. Functions meromorphic only on an open disc (such as `ball 0 1`, where boundary
+singularities prevent any global meromorphic extension) still satisfy
+`MeromorphicOn f (sphere 0 |r|)` on every interior circle, and are continuous on a neighbourhood of
+`sphere 0 |r|` at every radius whose circle avoids their poles.
 
-This file localizes the single-circle proximity identities and bounds to `CircleIntegrable` and
-`MeromorphicOn · (sphere 0 |r|)`:
+This file localizes the single-circle proximity identities, bounds, and radial continuity to
+`CircleIntegrable`, `MeromorphicOn · (sphere 0 |r|)`, and `ContinuousOn` on a neighbourhood of
+`sphere 0 |r|`:
 
 * `TauCeti.proximity_neg_top`: negation invariance `proximity (-f) ⊤ = proximity f ⊤`.
 * `CircleIntegrable.abs_proximity_sub_const_sub_proximity_top_le` and
@@ -35,12 +39,16 @@ This file localizes the single-circle proximity identities and bounds to `Circle
   `proximity · ⊤ r` by at most `log⁺ ‖s‖ + log⁺ ‖s⁻¹‖`.
 * `MeromorphicOn.proximity_top_sub_proximity_inv_top_eq_circleAverage`: on `sphere 0 |r|`,
   `proximity f ⊤ r - proximity f⁻¹ ⊤ r = circleAverage (Real.log ‖f ·‖) 0 r`.
+* `ContinuousOn.continuousAt_proximity_top`: local radial continuity of
+  `ValueDistribution.proximity g ⊤` at `R` when `g` is continuous on a neighbourhood of
+  `sphere 0 |R|` (including across interior poles and boundary zeros).
 
 ## Implementation notes
 
 The arithmetic and reciprocal statements localize the global theorems in
 `Mathlib.Analysis.Complex.ValueDistribution.Proximity.Basic` (by Stefan Kebekus) from `Meromorphic`
-on `ℂ` to circle integrability and `MeromorphicOn` on `sphere 0 |r|`.
+on `ℂ` to circle integrability and `MeromorphicOn` on `sphere 0 |r|`. Local radial continuity
+delegates to `ContinuousOn.continuousAt_circleAverage`.
 
 ## References
 
@@ -49,7 +57,7 @@ on `ℂ` to circle integrability and `MeromorphicOn` on `sphere 0 |r|`.
 * S. Lang, *Introduction to Complex Hyperbolic Spaces*, Springer, 1987, §VI.2.
 -/
 
-open scoped Finset
+open scoped Finset Topology
 
 public section
 
@@ -252,3 +260,21 @@ theorem MeromorphicOn.proximity_top_sub_proximity_inv_top_eq_circleAverage {f : 
   ring
 
 end MeromorphicOn
+
+/-- If `g : ℂ → E` is continuous on a set `s` that is a neighbourhood of `sphere 0 |R|`, then its
+Nevanlinna proximity function `ValueDistribution.proximity g ⊤` is continuous at `R` (including
+when `g` has poles inside `ball 0 |R|` or zeros on `sphere 0 |R|`). -/
+theorem ContinuousOn.continuousAt_proximity_top {E : Type*} [NormedAddCommGroup E]
+    {g : ℂ → E} {s : Set ℂ} {R : ℝ} (hg : ContinuousOn g s) (hs : s ∈ 𝓝ˢ (sphere 0 |R|)) :
+    ContinuousAt (ValueDistribution.proximity g ⊤) R := by
+  rw [ValueDistribution.proximity_top]
+  exact (continuous_posLog.comp_continuousOn hg.norm).continuousAt_circleAverage hs
+
+-- `z ↦ z⁻¹` has an interior pole at `0`, yet `proximity (·⁻¹) ⊤` is continuous at `R = 1`.
+example : ContinuousAt (ValueDistribution.proximity (fun z : ℂ ↦ z⁻¹) ⊤) 1 := by
+  have hs : ({0}ᶜ : Set ℂ) ∈ 𝓝ˢ (sphere (0 : ℂ) |1|) :=
+    isOpen_compl_singleton.mem_nhdsSet.mpr fun z hz ↦ by
+      rw [mem_compl_singleton_iff]
+      rintro rfl
+      simp at hz
+  exact continuousOn_inv₀.continuousAt_proximity_top hs

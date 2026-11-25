@@ -243,7 +243,7 @@ is `1` and all others vanish. -/
 theorem conjugateResidues_one {α : ZMod p} : conjugateResidues α (1 : Cyclotomic e) = 1 := by
   rcases Nat.eq_zero_or_pos e with rfl | he
   · funext j
-    exact absurd j.2 (by simp)
+    exact absurd j.isLt (by simp)
   · have : NeZero e := ⟨he.ne'⟩
     funext j
     have h1 : (1 : Cyclotomic e) = ((1 : ℤ) : Cyclotomic e) := by rw [Int.cast_one]
@@ -278,7 +278,7 @@ theorem conjugateResidues_mul [Fact p.Prime] {α : ZMod p}
     conjugateResidues α (x * y) = conjugateResidues α x * conjugateResidues α y := by
   rcases Nat.eq_zero_or_pos e with rfl | he
   · funext j
-    exact absurd j.2 (by simp)
+    exact absurd j.isLt (by simp)
   · have : NeZero e := ⟨he.ne'⟩
     rw [← conjugateResiduesRingHom_apply hα, map_mul, conjugateResiduesRingHom_apply,
       conjugateResiduesRingHom_apply]

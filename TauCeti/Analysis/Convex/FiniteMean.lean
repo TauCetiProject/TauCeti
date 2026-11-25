@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Analysis.Convex.Combination
+public import Mathlib.Topology.Algebra.Module.Basic
 import Mathlib.Tactic.Field
 import Mathlib.Tactic.Module
 
@@ -57,10 +58,30 @@ theorem finiteMean_eq_inv_smul_sum (z : ι → E) :
     finiteMean R z = (Fintype.card ι : R)⁻¹ • ∑ i, z i := by
   simp [finiteMean_def, centerMass]
 
+/-- The finite mean is continuous in the input family. -/
+@[fun_prop]
+theorem continuous_finiteMean [TopologicalSpace E] [ContinuousAdd E] [ContinuousConstSMul R E] :
+    Continuous (finiteMean R : (ι → E) → E) := by
+  have h : Continuous (fun z : ι → E ↦ (Fintype.card ι : R)⁻¹ • ∑ i, z i) := by fun_prop
+  simpa only [← finiteMean_eq_inv_smul_sum] using h
+
 /-- The mean of the empty family is `0`. -/
 @[simp]
 theorem finiteMean_of_isEmpty [IsEmpty ι] (z : ι → E) : finiteMean R z = 0 := by
   simp [finiteMean_eq_inv_smul_sum]
+
+/-- Centering two scalar families subtracts the product of their means from their mean
+product. This also holds for an empty family, and in arbitrary characteristic. -/
+theorem finiteMean_sub_mul_sub (f g : ι → R) :
+    finiteMean R (fun i ↦ (f i - finiteMean R f) * (g i - finiteMean R g)) =
+      finiteMean R (fun i ↦ f i * g i) - finiteMean R f * finiteMean R g := by
+  classical
+  by_cases hN : (Fintype.card ι : R) = 0
+  · simp [finiteMean_eq_inv_smul_sum, hN]
+  simp only [finiteMean_eq_inv_smul_sum, smul_eq_mul, sub_mul, mul_sub,
+    sum_sub_distrib, ← sum_mul, ← mul_sum, sum_const, card_univ, nsmul_eq_mul]
+  field_simp
+  ring
 
 variable [CharZero R]
 

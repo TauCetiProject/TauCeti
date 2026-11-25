@@ -33,6 +33,8 @@ composition (`Finset.neg_one_pow_card_inversions_comp`).
 
 * `Finset.inversions_univ`: on a whole finite type, the inversions are all pairs `a < b` with
   `f b < f a`.
+* `Finset.notMem_inversions_iff`: for an injective map, a pair `i < j` of elements of `s` is not an
+  inversion exactly when `f i < f j`.
 * `Finset.card_inversions_insert`: adjoining a new element `a` to `s` adds the inversions
   involving `a`.
 * `Finset.card_inversions_insert_add_card_filter_lt`: for an injective map, the same comparison
@@ -48,6 +50,9 @@ composition (`Finset.neg_one_pow_card_inversions_comp`).
   the inversions involving `k`.
 * `Finset.neg_one_pow_card_univ_inversions_comp_succAbove`: the inversion sign of a tuple compared
   with the inversion sign of the tuple with its entry at `k` deleted.
+* `Finset.card_univ_inversions_rev`: the reversal of `Fin n` has `n.choose 2` inversions.
+* `Finset.neg_one_pow_card_univ_inversions_comp_rev`: reversing an injective tuple of length `n`
+  multiplies its inversion sign by `(-1) ^ n.choose 2`.
 -/
 
 public section
@@ -67,6 +72,19 @@ def inversions (f : α → β) (s : Finset α) : Finset (α × α) :=
 theorem mem_inversions {f : α → β} {s : Finset α} {p : α × α} :
     p ∈ s.inversions f ↔ p.1 ∈ s ∧ p.2 ∈ s ∧ p.1 < p.2 ∧ f p.2 < f p.1 := by
   simp [inversions, and_assoc]
+
+/-- For an injective map, a pair `i < j` of elements of `s` fails to be an inversion of `f` on `s`
+exactly when `f` keeps it in order. -/
+theorem notMem_inversions_iff {f : α → β} (hf : Injective f) {s : Finset α} {i j : α}
+    (hi : i ∈ s) (hj : j ∈ s) (hij : i < j) : (i, j) ∉ s.inversions f ↔ f i < f j := by
+  have hne : f i ≠ f j := fun h ↦ ne_of_lt hij (hf h)
+  constructor
+  · intro h
+    exact lt_of_le_of_ne (not_lt.mp fun hlt ↦
+      h (mem_inversions.mpr ⟨hi, hj, hij, hlt⟩)) hne
+  · intro h h'
+    obtain ⟨_, _, _, hlt⟩ := mem_inversions.mp h'
+    exact (not_lt_of_ge h.le) hlt
 
 @[simp]
 theorem inversions_empty (f : α → β) : (∅ : Finset α).inversions f = ∅ := by
@@ -317,6 +335,29 @@ theorem neg_one_pow_card_univ_inversions_comp_succAbove {R : Type*} [Monoid R] [
   rw [← pow_add, ← pow_add, show #{i | b i < b k} + (k : ℕ) + #(univ.inversions (b ∘ k.succAbove)) =
     #(univ.inversions b) + #{i | i < k ∧ b i = b k} + 2 * #{i | i < k ∧ b i < b k} by omega,
     pow_add _ _ (2 * _), pow_mul, neg_one_sq, one_pow, mul_one]
+
+/-- Every pair of positions is an inversion of the reversal of `Fin n`, so it has
+`n.choose 2` inversions. -/
+theorem card_univ_inversions_rev (n : ℕ) : #(univ.inversions (Fin.rev : Fin n → Fin n)) =
+    n.choose 2 := by
+  have h : univ.filter (fun p : Fin n × Fin n ↦ p.1 < p.2 ∧ p.2.rev < p.1.rev) =
+      univ.filter fun p : Fin n × Fin n ↦ p.1 < p.2 :=
+    filter_congr fun p _ ↦ by simp
+  rw [inversions_univ, h, Fintype.card_product_filter_lt, Fintype.card_fin]
+
+/-- **Reversing a tuple multiplies its inversion sign by the sign of the reversal.** For an
+injective tuple `k` of length `n`, the inversion sign of `k ∘ Fin.rev` is that of `k` times
+`(-1) ^ n.choose 2`. -/
+theorem neg_one_pow_card_univ_inversions_comp_rev {R : Type*} [Monoid R] [HasDistribNeg R]
+    {k : Fin n → β} (hk : Injective k) :
+    (-1 : R) ^ n.choose 2 * (-1) ^ #(univ.inversions (k ∘ Fin.rev)) =
+      (-1) ^ #(univ.inversions k) := by
+  have h := neg_one_pow_card_inversions_comp (R := R) Fin.revPerm.toEmbedding hk univ
+  rw [map_univ_equiv] at h
+  -- the embedding `Fin.revPerm.toEmbedding` is the function `Fin.rev`
+  change (-1 : R) ^ #(univ.inversions (k ∘ Fin.rev)) =
+    (-1) ^ #(univ.inversions (Fin.rev : Fin n → Fin n)) * _ at h
+  rw [h, card_univ_inversions_rev, ← mul_assoc, ← pow_add, Even.neg_one_pow ⟨_, rfl⟩, one_mul]
 
 end Tuple
 

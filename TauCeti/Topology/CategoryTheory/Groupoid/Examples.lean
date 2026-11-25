@@ -9,6 +9,10 @@ public import TauCeti.Topology.CategoryTheory.Groupoid.Basic
 public import TauCeti.CategoryTheory.Codiscrete
 public import Mathlib.CategoryTheory.SingleObj
 public import Mathlib.Topology.Algebra.Group.Basic
+public import Mathlib.Topology.Maps.Proper.Basic
+public import Mathlib.Topology.Metrizable.Basic
+
+import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
 # Unit, pair and one-object topological groupoids
@@ -23,6 +27,10 @@ to triples (final, middle, initial), and composition discards the middle coordin
 group over a point, categorical composition of the arrow labelled `h` followed by the arrow
 labelled `g` has label `g * h`. These descriptions make both the topology and the order of
 multiplication explicit for subsequent smooth constructions.
+
+The unit groupoid `Discrete X` is always étale, and proper when `X` is Hausdorff. The one-object
+groupoid `SingleObj G` is étale when `G` is discrete, and proper when `G` is compact (for
+instance, finite and discrete).
 
 ## References
 
@@ -95,14 +103,14 @@ instance isTopologicalGroupoid : IsTopologicalGroupoid (Discrete X) where
   continuous_comp := by
     apply (arrowHomeomorph X).isInducing.continuous_iff.mpr
     simpa only [Function.comp_def, arrowHomeomorph_apply, Quiver.Total.comp_left] using
-      (arrowHomeomorph X).continuous.comp (continuous_fst.comp continuous_subtype_val)
+      (arrowHomeomorph X).continuous.comp (continuous_fst.comp continuous_subtypeVal)
 
 /-- Composable pairs in the unit groupoid are pairs of the same unit, with the topology
 of the object space, not a discrete topology. -/
 def composablePairsHomeomorph :
     {p : Quiver.Total (Discrete X) × Quiver.Total (Discrete X) //
       p.1.right = p.2.left} ≃ₜ X where
-  toFun p := p.1.1.left.as
+  toFun p := p.val.1.left.as
   invFun x := ⟨((arrowHomeomorph X).symm x, (arrowHomeomorph X).symm x), rfl⟩
   left_inv := by
     rintro ⟨⟨⟨⟨x⟩, ⟨y⟩, f⟩, ⟨⟨y'⟩, ⟨z⟩, g⟩⟩, h⟩
@@ -112,7 +120,7 @@ def composablePairsHomeomorph :
     rfl
   right_inv _ := rfl
   continuous_toFun := (arrowHomeomorph X).continuous.comp
-    (continuous_fst.comp continuous_subtype_val)
+    (continuous_fst.comp continuous_subtypeVal)
   continuous_invFun := ((arrowHomeomorph X).symm.continuous.prodMk
     (arrowHomeomorph X).symm.continuous).subtype_mk _
 
@@ -120,12 +128,62 @@ def composablePairsHomeomorph :
 theorem composablePairsHomeomorph_apply
     (p : {p : Quiver.Total (Discrete X) × Quiver.Total (Discrete X) //
       p.1.right = p.2.left}) :
-    composablePairsHomeomorph X p = p.1.1.left.as := (rfl)
+    composablePairsHomeomorph X p = p.val.1.left.as := (rfl)
 
 @[simp]
 theorem composablePairsHomeomorph_symm_apply (x : X) :
     (composablePairsHomeomorph X).symm x =
       ⟨((arrowHomeomorph X).symm x, (arrowHomeomorph X).symm x), by simp⟩ := (rfl)
+
+instance instT2SpaceObjects [T2Space X] : T2Space (Discrete X) :=
+  (objectHomeomorph X).symm.t2Space
+
+instance instT2SpaceArrows [T2Space X] : T2Space (Quiver.Total (Discrete X)) :=
+  (arrowHomeomorph X).symm.t2Space
+
+instance instSecondCountableTopologyObjects [SecondCountableTopology X] :
+    SecondCountableTopology (Discrete X) :=
+  (objectHomeomorph X).isInducing.secondCountableTopology
+
+instance instSecondCountableTopologyArrows [SecondCountableTopology X] :
+    SecondCountableTopology (Quiver.Total (Discrete X)) :=
+  (arrowHomeomorph X).isInducing.secondCountableTopology
+
+omit [TopologicalSpace X] in
+/-- Every arrow of the unit groupoid is an identity, so target and source coincide. -/
+@[simp]
+theorem right_eq_left (a : Quiver.Total (Discrete X)) : a.right = a.left :=
+  Discrete.ext (Discrete.eq_of_hom a.hom).symm
+
+omit [TopologicalSpace X] in
+/-- The target map of the unit groupoid equals its source map. -/
+theorem target_eq_source :
+    (Quiver.Total.right : Quiver.Total (Discrete X) → Discrete X) = Quiver.Total.left :=
+  funext (right_eq_left X)
+
+/-- The source map of the unit groupoid is a local homeomorphism. -/
+theorem isLocalHomeomorph_source :
+    IsLocalHomeomorph (Quiver.Total.left : Quiver.Total (Discrete X) → Discrete X) := by
+  convert ((arrowHomeomorph X).trans (objectHomeomorph X).symm).isLocalHomeomorph using 1
+  funext a
+  simp
+
+/-- The target map of the unit groupoid is a local homeomorphism. -/
+theorem isLocalHomeomorph_target :
+    IsLocalHomeomorph (Quiver.Total.right : Quiver.Total (Discrete X) → Discrete X) :=
+  target_eq_source X ▸ isLocalHomeomorph_source X
+
+/-- On a Hausdorff space, the source-target map of the unit groupoid is proper. -/
+theorem isProperMap_source_target [T2Space X] :
+    IsProperMap fun a : Quiver.Total (Discrete X) ↦ (a.left, a.right) := by
+  have hli : Function.LeftInverse
+      (fun p : Discrete X × Discrete X ↦ (arrowHomeomorph X).symm (objectHomeomorph X p.1))
+      (fun a : Quiver.Total (Discrete X) ↦ (a.left, a.right)) := fun a ↦ by
+    simp only [objectHomeomorph_apply, ← arrowHomeomorph_apply, Homeomorph.symm_apply_apply]
+  refine (hli.isClosedEmbedding ?_ ?_).isProperMap
+  · exact (arrowHomeomorph X).symm.continuous.comp
+      ((objectHomeomorph X).continuous.comp continuous_fst)
+  · exact IsTopologicalGroupoid.continuous_source.prodMk IsTopologicalGroupoid.continuous_target
 
 end UnitGroupoid
 
@@ -187,17 +245,31 @@ instance isTopologicalGroupoid : IsTopologicalGroupoid (Codiscrete X) where
     have h : Continuous (fun p :
         {p : Quiver.Total (Codiscrete X) × Quiver.Total (Codiscrete X) //
           p.1.right = p.2.left} ↦
-        ((arrowHomeomorph X p.1.2).1, (arrowHomeomorph X p.1.1).2)) := by fun_prop
+        ((arrowHomeomorph X p.val.2).1, (arrowHomeomorph X p.val.1).2)) := by fun_prop
     simpa only [Function.comp_def, arrowHomeomorph_apply,
       Quiver.Total.comp_left, Quiver.Total.comp_right] using h
+
+instance instT2SpaceObjects [T2Space X] : T2Space (Codiscrete X) :=
+  (objectHomeomorph X).symm.t2Space
+
+instance instT2SpaceArrows [T2Space X] : T2Space (Quiver.Total (Codiscrete X)) :=
+  (arrowHomeomorph X).symm.t2Space
+
+instance instSecondCountableTopologyObjects [SecondCountableTopology X] :
+    SecondCountableTopology (Codiscrete X) :=
+  (objectHomeomorph X).isInducing.secondCountableTopology
+
+instance instSecondCountableTopologyArrows [SecondCountableTopology X] :
+    SecondCountableTopology (Quiver.Total (Codiscrete X)) :=
+  (arrowHomeomorph X).isInducing.secondCountableTopology
 
 /-- Composable arrows, in categorical order, have coordinates `(z, y, x)` when they run
 from `x` to `y` and then from `y` to `z`. The topology is the inherited subspace topology. -/
 def composablePairsHomeomorph :
     {p : Quiver.Total (Codiscrete X) × Quiver.Total (Codiscrete X) //
       p.1.right = p.2.left} ≃ₜ X × X × X where
-  toFun p := ((arrowHomeomorph X p.1.2).1,
-    (arrowHomeomorph X p.1.1).1, (arrowHomeomorph X p.1.1).2)
+  toFun p := ((arrowHomeomorph X p.val.2).1,
+    (arrowHomeomorph X p.val.1).1, (arrowHomeomorph X p.val.1).2)
   invFun p := ⟨((arrowHomeomorph X).symm (p.2.1, p.2.2),
     (arrowHomeomorph X).symm (p.1, p.2.1)), rfl⟩
   left_inv := by
@@ -213,7 +285,7 @@ theorem composablePairsHomeomorph_apply
     (p : {p : Quiver.Total (Codiscrete X) × Quiver.Total (Codiscrete X) //
       p.1.right = p.2.left}) :
     composablePairsHomeomorph X p =
-      (p.1.2.right.as, p.1.1.right.as, p.1.1.left.as) := (rfl)
+      (p.val.2.right.as, p.val.1.right.as, p.val.1.left.as) := (rfl)
 
 @[simp]
 theorem composablePairsHomeomorph_symm_apply (p : X × X × X) :
@@ -256,7 +328,7 @@ categorical: the first label is traversed first. -/
 def composablePairsHomeomorph :
     {p : Quiver.Total (SingleObj G) × Quiver.Total (SingleObj G) //
       p.1.right = p.2.left} ≃ₜ G × G where
-  toFun p := (arrowHomeomorph G p.1.1, arrowHomeomorph G p.1.2)
+  toFun p := (arrowHomeomorph G p.val.1, arrowHomeomorph G p.val.2)
   invFun p := ⟨((arrowHomeomorph G).symm p.1, (arrowHomeomorph G).symm p.2), rfl⟩
   left_inv := by
     rintro ⟨⟨⟨x, y, h⟩, ⟨y', z, g⟩⟩, _⟩
@@ -264,8 +336,8 @@ def composablePairsHomeomorph :
     rfl
   right_inv _ := rfl
   continuous_toFun := ((arrowHomeomorph G).continuous.comp
-    (continuous_fst.comp continuous_subtype_val)).prodMk
-    ((arrowHomeomorph G).continuous.comp (continuous_snd.comp continuous_subtype_val))
+    (continuous_fst.comp continuous_subtypeVal)).prodMk
+    ((arrowHomeomorph G).continuous.comp (continuous_snd.comp continuous_subtypeVal))
   continuous_invFun := (((arrowHomeomorph G).symm.continuous.comp continuous_fst).prodMk
     ((arrowHomeomorph G).symm.continuous.comp continuous_snd)).subtype_mk _
 
@@ -273,7 +345,7 @@ def composablePairsHomeomorph :
 theorem composablePairsHomeomorph_apply
     (p : {p : Quiver.Total (SingleObj G) × Quiver.Total (SingleObj G) //
       p.1.right = p.2.left}) :
-    composablePairsHomeomorph G p = (p.1.1.hom, p.1.2.hom) := (rfl)
+    composablePairsHomeomorph G p = (p.val.1.hom, p.val.2.hom) := (rfl)
 
 @[simp]
 theorem composablePairsHomeomorph_symm_apply (p : G × G) :
@@ -296,6 +368,66 @@ theorem arrowHomeomorph_inverse [Group G] (a : Quiver.Total (SingleObj G)) :
     arrowHomeomorph G ⟨a.right, a.left, inv a.hom⟩ = (arrowHomeomorph G a)⁻¹ := by
   simp [SingleObj.inv_as_inv]
 
+instance instDiscreteTopologyArrows [DiscreteTopology G] :
+    DiscreteTopology (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.discreteTopology
+
+instance instT2SpaceArrows [T2Space G] : T2Space (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).symm.t2Space
+
+instance instSecondCountableTopologyArrows [SecondCountableTopology G] :
+    SecondCountableTopology (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isInducing.secondCountableTopology
+
+instance instCompactSpaceArrows [CompactSpace G] : CompactSpace (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).symm.compactSpace
+
+instance instT0SpaceArrows [T0Space G] : T0Space (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.t0Space
+
+instance instT1SpaceArrows [T1Space G] : T1Space (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.t1Space
+
+instance instRegularSpaceArrows [RegularSpace G] : RegularSpace (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.regularSpace
+
+instance instFirstCountableTopologyArrows [FirstCountableTopology G] :
+    FirstCountableTopology (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.firstCountableTopology
+
+instance instMetrizableSpaceArrows [TopologicalSpace.MetrizableSpace G] :
+    TopologicalSpace.MetrizableSpace (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.metrizableSpace
+
+/-- For a discrete label space, the source map of `SingleObj G` is a local homeomorphism. -/
+theorem isLocalHomeomorph_source [DiscreteTopology G] :
+    IsLocalHomeomorph (Quiver.Total.left : Quiver.Total (SingleObj G) → SingleObj G) :=
+  isLocalHomeomorph_of_discreteTopology
+
+/-- For a discrete label space, the target map of `SingleObj G` is a local homeomorphism. -/
+theorem isLocalHomeomorph_target [DiscreteTopology G] :
+    IsLocalHomeomorph (Quiver.Total.right : Quiver.Total (SingleObj G) → SingleObj G) :=
+  isLocalHomeomorph_of_discreteTopology
+
+/-- For a compact label space, the source-target map of `SingleObj G` is proper. -/
+theorem isProperMap_source_target [CompactSpace G] :
+    IsProperMap fun a : Quiver.Total (SingleObj G) ↦ (a.left, a.right) :=
+  (continuous_of_const fun _ _ ↦ Subsingleton.elim _ _).isProperMap
+
+/-- The identity arrows of `SingleObj G` form a closed subset of `Quiver.Total (SingleObj G)`
+if and only if `{1}` is closed in `G`. -/
+@[simp]
+theorem isClosed_range_unit_iff [Monoid G] :
+    IsClosed (Set.range fun x : SingleObj G ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total (SingleObj G))) ↔
+      IsClosed ({(1 : G)} : Set G) := by
+  have himg : arrowHomeomorph G ''
+      (Set.range fun x : SingleObj G ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total (SingleObj G))) =
+      ({(1 : G)} : Set G) := by
+    rw [← Set.range_comp]
+    exact Set.range_eq_singleton fun x ↦ by
+      simp only [Function.comp_apply, arrowHomeomorph_apply, SingleObj.id_as_one]
+  rw [← (arrowHomeomorph G).isClosed_image, himg]
+
 end OneObjectGroupoid
 
 namespace OneObjectGroupoid
@@ -317,10 +449,10 @@ instance isTopologicalGroupoid : IsTopologicalGroupoid (SingleObj G) where
   continuous_comp := by
     apply (arrowHomeomorph G).isInducing.continuous_iff.mpr
     convert
-      ((arrowHomeomorph G).continuous.comp (continuous_snd.comp continuous_subtype_val)).mul
-        ((arrowHomeomorph G).continuous.comp (continuous_fst.comp continuous_subtype_val)) using 1
+      ((arrowHomeomorph G).continuous.comp (continuous_snd.comp continuous_subtypeVal)).mul
+        ((arrowHomeomorph G).continuous.comp (continuous_fst.comp continuous_subtypeVal)) using 1
     funext p
-    exact arrowHomeomorph_comp G p.1.1 p.1.2 p.2
+    exact arrowHomeomorph_comp G p.val.1 p.val.2 p.property
 
 end OneObjectGroupoid
 end TauCeti

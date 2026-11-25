@@ -193,8 +193,7 @@ lemma mk_tensorProduct_trivial_left (P : RigidifiedLineBundle s) :
   refine ⟨InvertibleSheaf.tensorProductObjIso _ _ ≪≫ λ_ P.lineBundle.obj, ?_⟩
   simp only [Iso.trans_hom, tensorIso_hom, Functor.mapIso_hom, asIso_hom, Functor.map_comp,
     Category.assoc, ← Scheme.Modules.pullback_η]
-  rw [δ_comp_η_tensorHom_assoc, ← leftUnitor_inv_naturality_assoc, Iso.inv_hom_id,
-    Category.comp_id]
+  rw [δ_comp_η_tensorHom_comp_leftUnitor_hom]
 
 /-- The tensor product of a rigidified line bundle with its dual is isomorphic to the canonically
 rigidified trivial line bundle. -/
@@ -322,8 +321,8 @@ private lemma pullbackRigidification_tensorProduct (w : s' ≫ h = g ≫ s)
           (Scheme.Modules.pullbackComp g s).inv.app Q.lineBundle.obj) ≫ k = k := by
     rw [tensorHom_comp_tensorHom_assoc, Iso.hom_inv_id_app, Iso.hom_inv_id_app,
       id_tensorHom_id, Category.id_comp]
-  rw [hc, δ_natural_assoc, ← Scheme.Modules.pullback_η, δ_comp_η_tensorHom_assoc,
-    leftUnitor_naturality, Iso.inv_hom_id_assoc]
+  rw [hc, δ_natural_assoc, ← Scheme.Modules.pullback_η,
+    δ_comp_η_tensorHom_comp_leftUnitor_hom]
   have h₁ := (Scheme.Modules.pullbackComp s' h).hom.naturality
     (InvertibleSheaf.tensorProductObjIso P.lineBundle Q.lineBundle).hom
   have h₂ := (Scheme.Modules.pullbackCongr w).hom.naturality
@@ -339,24 +338,46 @@ lemma mk_pullback_tensorProduct (w : s' ≫ h = g ≫ s) (P Q : RigidifiedLineBu
     mk (RigidifiedLineBundle.pullback w (tensorProduct P Q)) =
       mk (tensorProduct (RigidifiedLineBundle.pullback w P)
         (RigidifiedLineBundle.pullback w Q)) := by
-  refine mk_eq_mk_iff.mpr ⟨((Scheme.Modules.pullback h).mapIso
-      (InvertibleSheaf.tensorProductObjIso P.lineBundle Q.lineBundle) ≪≫
-    asIso (δ (Scheme.Modules.pullback h) P.lineBundle.obj Q.lineBundle.obj)) ≪≫
-    (InvertibleSheaf.tensorProductObjIso ((InvertibleSheaf.pullback h).obj P.lineBundle)
-      ((InvertibleSheaf.pullback h).obj Q.lineBundle)).symm, ?_⟩
+  refine mk_eq_mk_iff.mpr ⟨(SheafOfModules.isInvertible Y').ι.mapIso
+    (InvertibleSheaf.pullbackTensorProductIso h P.lineBundle Q.lineBundle), ?_⟩
   rw [RigidifiedLineBundle.pullback_rigidification, pullbackRigidification_tensorProduct]
   -- The line bundles of the pulled-back rigidified line bundles are the pulled-back line bundles
   -- only after unfolding `RigidifiedLineBundle.pullback`, which `simp` does not do. So the
-  -- identification of the tensor product with the monoidal one is cancelled by a lemma applied up
-  -- to that unfolding, and the two sides then agree after unfolding the composite isomorphisms and
-  -- the pulled-back rigidifications (`RigidifiedLineBundle.pullback_rigidification`).
-  have hcancel {A B C : Y'.Modules} {Z : T'.Modules} (e : A ≅ B) (i : C ≅ B)
-      (R : (Scheme.Modules.pullback s').obj B ⟶ Z) :
-      (Scheme.Modules.pullback s').map (e ≪≫ i.symm).hom ≫
-        (Scheme.Modules.pullback s').map i.hom ≫ R =
-          (Scheme.Modules.pullback s').map e.hom ≫ R := by
-    simp
-  exact (hcancel _ _ _).trans rfl
+  -- identification of the tensor product with the monoidal one is cancelled by
+  -- `pullbackTensorProductIso_hom_hom_comp_tensorProductObjIso_hom` in a lemma applied up to that
+  -- unfolding, where the transports along `InvertibleSheaf.pullback_obj_obj`, which is `rfl`, are
+  -- identities. The two sides then agree after unfolding the composite isomorphisms and the
+  -- pulled-back rigidifications (`RigidifiedLineBundle.pullback_rigidification`).
+  have hcancel {Z : T'.Modules} (R : (Scheme.Modules.pullback s').obj
+      (((InvertibleSheaf.pullback h).obj P.lineBundle).obj ⊗
+        ((InvertibleSheaf.pullback h).obj Q.lineBundle).obj) ⟶ Z) :
+      (Scheme.Modules.pullback s').map
+          (InvertibleSheaf.pullbackTensorProductIso h P.lineBundle Q.lineBundle).hom.hom ≫
+        (Scheme.Modules.pullback s').map (InvertibleSheaf.tensorProductObjIso _ _).hom ≫ R =
+          (Scheme.Modules.pullback s').map
+            ((Scheme.Modules.pullback h).map
+                (InvertibleSheaf.tensorProductObjIso P.lineBundle Q.lineBundle).hom ≫
+              δ (Scheme.Modules.pullback h) P.lineBundle.obj Q.lineBundle.obj) ≫ R := by
+    have h₁ : eqToHom (InvertibleSheaf.pullback_obj_obj h
+        (InvertibleSheaf.tensorProduct P.lineBundle Q.lineBundle)) =
+          𝟙 ((Scheme.Modules.pullback h).obj
+            (InvertibleSheaf.tensorProduct P.lineBundle Q.lineBundle).obj) :=
+      eqToHom_refl _ _
+    have h₂ : (eqToHom (InvertibleSheaf.pullback_obj_obj h P.lineBundle).symm ⊗ₘ
+        eqToHom (InvertibleSheaf.pullback_obj_obj h Q.lineBundle).symm) =
+          𝟙 ((Scheme.Modules.pullback h).obj P.lineBundle.obj ⊗
+            (Scheme.Modules.pullback h).obj Q.lineBundle.obj) := by
+      have hP : eqToHom (InvertibleSheaf.pullback_obj_obj h P.lineBundle).symm =
+          𝟙 ((Scheme.Modules.pullback h).obj P.lineBundle.obj) := eqToHom_refl _ _
+      have hQ : eqToHom (InvertibleSheaf.pullback_obj_obj h Q.lineBundle).symm =
+          𝟙 ((Scheme.Modules.pullback h).obj Q.lineBundle.obj) := eqToHom_refl _ _
+      rw [hP, hQ]
+      exact id_tensorHom_id _ _
+    rw [← Functor.map_comp_assoc,
+      InvertibleSheaf.pullbackTensorProductIso_hom_hom_comp_tensorProductObjIso_hom, h₁, h₂]
+    refine congrArg (fun φ ↦ (Scheme.Modules.pullback s').map φ ≫ R) ?_
+    exact (Category.id_comp _).trans (congrArg (_ ≫ ·) (Category.comp_id _))
+  exact (hcancel _).trans rfl
 
 /-- Pullback of classes of rigidified line bundles along a commutative square is compatible with
 products. -/

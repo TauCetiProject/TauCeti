@@ -20,6 +20,10 @@ of the subgroup, for use both in exponential charts and in subgroup atlases.
 * `TauCeti.isInducing_iff_nhds_one` characterises inducing group homomorphisms by the neighbourhood
   filters at the identity, assuming only continuous left translations on both groups.
 * `TauCeti.isInducing_iff_nhds_zero` is the additive counterpart.
+* `TauCeti.preimage_mul_mem_nhds_one` and `TauCeti.frontier_preimage_mul` move a neighbourhood
+  of `p` to one of the identity, and a frontier, along left multiplication by `p`;
+  `TauCeti.preimage_add_mem_nhds_zero` and `TauCeti.frontier_preimage_add` are the additive
+  counterparts.
 * `Subgroup.eventually_mem_iff_exists_mul_eq_of_mem` transports an eventual identity-neighbourhood
   characterisation `f y = x` to the translated form `g * f y = x` near `g ∈ K`.
 * `AddSubgroup.eventually_mem_iff_exists_add_eq_of_mem` is the additive counterpart.
@@ -63,6 +67,24 @@ theorem isInducing_iff_nhds_one {H : Type*} [Group H] [TopologicalSpace H]
   congr 1
   ext y
   simp
+
+/-- The preimage of a neighbourhood of `p` under left multiplication by `p` is a neighbourhood of
+the identity. -/
+@[to_additive
+  /-- The preimage of a neighbourhood of `p` under left addition of `p` is a neighbourhood of
+  zero. -/]
+theorem preimage_mul_mem_nhds_one {s : Set G} {p : G} (hp : s ∈ 𝓝 p) :
+    (p * ·) ⁻¹' s ∈ 𝓝 (1 : G) :=
+  (continuous_const_smul p).continuousAt.preimage_mem_nhds (by simpa using hp)
+
+/-- The frontier of the preimage of `s` under left multiplication by `p` is the preimage of the
+frontier of `s`. -/
+@[to_additive
+  /-- The frontier of the preimage of `s` under left addition of `p` is the preimage of the
+  frontier of `s`. -/]
+theorem frontier_preimage_mul (s : Set G) (p : G) :
+    frontier ((p * ·) ⁻¹' s) = (p * ·) ⁻¹' frontier s :=
+  ((Homeomorph.smul p).preimage_frontier s).symm
 
 end TauCeti
 

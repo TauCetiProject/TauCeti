@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Sphere.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Tangent
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Tangent.Basic
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!

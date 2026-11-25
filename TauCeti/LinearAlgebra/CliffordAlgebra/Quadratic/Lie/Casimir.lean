@@ -38,6 +38,8 @@ The value of the scalar comes from the trace form of the lift: the scalar part o
   `q x * q y` is `κ(x, y) / 8`.
 * `CliffordAlgebra.sum_adjointCliffordHom_mul_adjointCliffordHom_killingDualBasis`: the image of
   the Casimir element under the lift is the scalar `dim L / 8`.
+* `CliffordAlgebra.lift_adjointCliffordHom_casimirElement`: the lift of the Casimir element is the
+  scalar `dim L / 8`.
 * `CliffordAlgebra.representation_casimirElement_kostant_apply`: the Casimir element acts on
   Kostant's module by that scalar.
 * `CliffordAlgebra.casimirScalar_eq_of_isHighestWeightVector_kostant`: the Casimir scalar of a
@@ -310,23 +312,27 @@ theorem sum_adjointCliffordHom_mul_adjointCliffordHom_killingDualBasis [NeZero (
     Finset.card_univ, nsmul_eq_mul] at hvalue
   rw [hr, ← hvalue, Module.finrank_eq_card_basis b, mul_one_div]
 
+/-- **The Casimir element maps to the scalar `dim L / 8`** under the lift of the adjoint quadratic
+map to the enveloping algebra. -/
+@[simp]
+theorem lift_adjointCliffordHom_casimirElement [NeZero (3 : K)] :
+    _root_.UniversalEnvelopingAlgebra.lift K (adjointCliffordHom K L) (casimirElement K L) =
+      algebraMap K (CliffordAlgebra (killingQuadraticForm K L)) ((Module.finrank K L : K) / 8) := by
+  classical
+  let b := Module.finBasis K L
+  rw [casimirElement_eq_sum b, map_sum,
+    ← sum_adjointCliffordHom_mul_adjointCliffordHom_killingDualBasis b]
+  simp only [map_mul, _root_.UniversalEnvelopingAlgebra.lift_ι_apply]
+
 /-- **The Casimir element acts on Kostant's module by the scalar `dim L / 8`.** This holds on every
 vector of the left-regular module, so every highest weight occurring in it satisfies the same
 quadratic equation. -/
-@[simp]
 theorem representation_casimirElement_kostant_apply [NeZero (3 : K)]
     (c : CliffordAlgebra (killingQuadraticForm K L)) :
     UniversalEnvelopingAlgebra.representation K L (CliffordAlgebra (killingQuadraticForm K L))
         (casimirElement K L) c =
       ((Module.finrank K L : K) / 8) • c := by
-  classical
-  let b := Module.finBasis K L
-  rw [casimirElement_eq_sum b, map_sum, LinearMap.sum_apply, Algebra.smul_def,
-    ← sum_adjointCliffordHom_mul_adjointCliffordHom_killingDualBasis b, Finset.sum_mul]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [map_mul, mul_apply_eq_comp, UniversalEnvelopingAlgebra.representation_ι,
-    UniversalEnvelopingAlgebra.representation_ι, LieModule.toEnd_apply_apply,
-    LieModule.toEnd_apply_apply, kostant_lie_def, kostant_lie_def, mul_assoc]
+  rw [representation_kostant_apply, lift_adjointCliffordHom_casimirElement, Algebra.smul_def]
 
 /-- **The quadratic equation for the highest weights of Kostant's module.** The Casimir scalar
 `⟨μ + ρ, μ + ρ⟩ - ⟨ρ, ρ⟩` of any highest weight `μ` occurring in Kostant's module is `dim L / 8`. -/

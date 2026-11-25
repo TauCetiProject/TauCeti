@@ -47,6 +47,8 @@ The growth bound is obtained by applying semigroup results to both halves. The g
   contracts in both time directions is a group of isometries.
 * `TauCeti.Semigroups.StronglyContinuousGroup.tendsto_apply`: joint strong continuity
   `U (f i) (g i) → U r z`, at every real time and without a sign restriction.
+* `TauCeti.Semigroups.StronglyContinuousGroup.continuous_uncurry`: joint strong continuity as
+  continuity of `(t, x) ↦ U t x` on `ℝ × X`.
 
 ## References
 
@@ -140,8 +142,9 @@ theorem map_apply_map_neg_apply (U : StronglyContinuousGroup X) (t : ℝ) (x : X
 /-- The group operator at time `t`, packaged as a continuous linear equivalence whose inverse is
 the operator at time `-t`. -/
 def toContinuousLinearEquiv (U : StronglyContinuousGroup X) (t : ℝ) : X ≃L[ℝ] X :=
-  ContinuousLinearEquiv.equivOfInverse (U t) (U (-t)) (U.map_neg_apply_map_apply t)
-    (U.map_apply_map_neg_apply t)
+  ContinuousLinearEquiv.ofContinuousLinearMap (U t) (U (-t))
+    (ContinuousLinearMap.ext (U.map_apply_map_neg_apply t))
+    (ContinuousLinearMap.ext (U.map_neg_apply_map_apply t))
 
 @[simp]
 theorem toContinuousLinearEquiv_apply (U : StronglyContinuousGroup X) (t : ℝ) (x : X) :
@@ -229,6 +232,20 @@ theorem reflect_toSemigroup_realOperator_of_nonneg
     U.reflect.toSemigroup.realOperator t = U (-t) := by
   rw [U.reflect.toSemigroup_realOperator_of_nonneg ht, reflect_apply]
 
+/-- A C₀-group is uniquely determined by its forward semigroup: positive times agree directly
+and negative times agree as their inverses. -/
+theorem toSemigroup_injective : Function.Injective (toSemigroup (X := X)) := by
+  intro U V h
+  ext t x
+  rcases le_or_gt 0 t with ht | ht
+  · rw [← U.toSemigroup_realOperator_of_nonneg ht, ← V.toSemigroup_realOperator_of_nonneg ht, h]
+  · have hneg : U (-t) = V (-t) := by
+      rw [← U.toSemigroup_realOperator_of_nonneg (neg_nonneg.mpr ht.le),
+        ← V.toSemigroup_realOperator_of_nonneg (neg_nonneg.mpr ht.le), h]
+    calc U t x = U t (V (-t) (V t x)) := by rw [V.map_neg_apply_map_apply]
+      _ = U t (U (-t) (V t x)) := by rw [hneg]
+      _ = V t x := U.map_apply_map_neg_apply t _
+
 /-! ## Two-sided growth bounds -/
 
 /-- A C₀-group has exponential growth bound `(ω, M)`, with `M ≥ 1`, if `‖U t‖ ≤ M e^{ω |t|}` at
@@ -287,6 +304,20 @@ theorem HasGrowthBound.reflect {U : StronglyContinuousGroup X} {ω M : ℝ}
     (hb : U.HasGrowthBound ω M) : U.reflect.HasGrowthBound ω M :=
   ⟨hb.one_le, fun t => by simpa [abs_neg] using hb.bound (-t)⟩
 
+/-- Assemble a two-sided growth bound on a C₀-group from matching growth bounds on its forward and
+time-reversed semigroups. -/
+theorem hasGrowthBound_of_toSemigroup {U : StronglyContinuousGroup X} {ω M : ℝ}
+    (hfwd : U.toSemigroup.HasGrowthBound ω M) (hrev : U.reflect.toSemigroup.HasGrowthBound ω M) :
+    U.HasGrowthBound ω M := by
+  refine hasGrowthBound_of_bound hfwd.one_le fun t => ?_
+  rcases le_or_gt 0 t with ht | ht
+  · rw [← U.toSemigroup_realOperator_of_nonneg ht, abs_of_nonneg ht]
+    exact hfwd.bound t ht
+  · have hnt : 0 ≤ -t := neg_nonneg.mpr ht.le
+    rw [← neg_neg t, ← U.reflect_toSemigroup_realOperator_of_nonneg hnt, abs_neg,
+      abs_of_nonneg hnt]
+    exact hrev.bound (-t) hnt
+
 /-- Growth bound `(0, 1)` is exactly contractivity at every real time. -/
 theorem hasGrowthBound_zero_one_iff (U : StronglyContinuousGroup X) :
     U.HasGrowthBound 0 1 ↔ ∀ t : ℝ, ‖U t‖ ≤ 1 := by
@@ -321,16 +352,9 @@ theorem existsGrowthBound (U : StronglyContinuousGroup X) :
     ∃ ω M : ℝ, U.HasGrowthBound ω M := by
   obtain ⟨ω₁, M₁, hb₁⟩ := U.toSemigroup.existsGrowthBound
   obtain ⟨ω₂, M₂, hb₂⟩ := U.reflect.toSemigroup.existsGrowthBound
-  have hb₁' := hb₁.mono (le_max_left ω₁ ω₂) (le_max_left M₁ M₂)
-  have hb₂' := hb₂.mono (le_max_right ω₁ ω₂) (le_max_right M₁ M₂)
-  refine ⟨max ω₁ ω₂, max M₁ M₂, le_max_of_le_left hb₁.one_le, fun t => ?_⟩
-  rcases le_or_gt 0 t with ht | ht
-  · rw [← U.toSemigroup_realOperator_of_nonneg ht, abs_of_nonneg ht]
-    exact hb₁'.bound t ht
-  · have hnt : 0 ≤ -t := by linarith
-    rw [← neg_neg t, ← U.reflect_toSemigroup_realOperator_of_nonneg hnt, abs_neg,
-      abs_of_nonneg hnt]
-    exact hb₂'.bound (-t) hnt
+  exact ⟨max ω₁ ω₂, max M₁ M₂, hasGrowthBound_of_toSemigroup
+    (hb₁.mono (le_max_left ω₁ ω₂) (le_max_left M₁ M₂))
+    (hb₂.mono (le_max_right ω₁ ω₂) (le_max_right M₁ M₂))⟩
 
 /-- **Joint strong continuity of a C₀-group**: if `f i → r` and `g i → z`, then
 `U (f i) (g i) → U r z`.
@@ -357,6 +381,15 @@ theorem tendsto_apply {ι : Type*} {l : Filter ι} (U : StronglyContinuousGroup 
   have h2 : Tendsto (fun i => U (f i) z) l (𝓝 (U r z)) :=
     ((U.continuous_orbit z).tendsto r).comp hf
   exact ContinuousLinearMap.tendsto_apply_of_eventually_norm_le hbound h2 hg
+
+/-- Joint strong continuity of a C₀-group as continuity of the map `(t, x) ↦ U t x` on `ℝ × X`.
+
+This is the two-sided counterpart of
+`TauCeti.Semigroups.StronglyContinuousSemigroup.continuous_realOperator_uncurry`. -/
+theorem continuous_uncurry (U : StronglyContinuousGroup X) :
+    Continuous fun p : ℝ × X => U p.1 p.2 :=
+  continuous_iff_continuousAt.2 fun _ =>
+    U.tendsto_apply continuous_fst.continuousAt continuous_snd.continuousAt
 
 end StronglyContinuousGroup
 

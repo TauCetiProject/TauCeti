@@ -186,7 +186,7 @@ intersection-chart inclusion. -/
   -- The embedding homeomorphisms land in `Set.range`, which matches the overlap subtypes
   -- only after unfolding `analyticOverlapOpens`; restate the goal in the range subtypes.
   change ((eL.symm.trans (s.trans eR))
-    ⟨Φ.analyticOverlapLeft σ τ x, _⟩).1 = Φ.analyticOverlapRight σ τ x
+    ⟨Φ.analyticOverlapLeft σ τ x, _⟩).val = Φ.analyticOverlapRight σ τ x
   rw [Homeomorph.trans_apply, Homeomorph.trans_apply, IsEmbedding.toHomeomorph_symm_apply]
   exact (Φ.analyticOverlapRight_apply_eq_left_swapIso_hom_apply σ τ x).symm
 
@@ -230,7 +230,7 @@ theorem analyticOverlapHomeomorph_apply_of_le {γ σ τ : Φ.cones} (hγσ : γ 
     (hγτ : γ ≤ τ) (z : (Φ.analyticAffineChartDiagram).obj γ) :
     ((Φ.analyticOverlapHomeomorph hΦ σ τ)
       ⟨(Φ.analyticAffineChartDiagram).map (homOfLE hγσ) z,
-        Φ.mem_analyticOverlapOpens_of_le hΦ hγσ hγτ z⟩).1 =
+        Φ.mem_analyticOverlapOpens_of_le hΦ hγσ hγτ z⟩).val =
         (Φ.analyticAffineChartDiagram).map (homOfLE hγτ) z := by
   let hγ : γ ≤ σ ⊓ τ := le_inf hγσ hγτ
   have he : (Φ.analyticAffineChartDiagram).map (homOfLE hγσ) z =

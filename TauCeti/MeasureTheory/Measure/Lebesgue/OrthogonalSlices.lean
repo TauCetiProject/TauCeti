@@ -23,7 +23,9 @@ of a Lebesgue-measurable set is the integral of the lengths of its parallel line
 Replacing a set by a volume-a.e. equal representative changes almost every section only
 on a one-dimensional null set. This permits line-section arguments for measurable sets
 without choosing a Borel representative permanently.
-The length of a line section is independent of its base point along the line, in any real module.
+The length of a line section is independent of its base point along the line, in any real module,
+and the restriction of an indicator to a line is the indicator of the line section
+(`Set.indicator_one_line`).
 
 Dually, the volume is the integral over heights `t` of the volumes of the hyperplane sections
 `{y ∈ (ℝ ∙ e)ᗮ | y + t • e ∈ s}`, and restricting the heights to a Borel set gives the volume
@@ -285,7 +287,7 @@ theorem volume_hyperplaneSection_pos (e : E) (he : ‖e‖ = 1) {s : Set E} {c :
   dsimp only
   -- The transverse coordinate of `x` lies in the open preimage of the interior of `s`.
   have hU : IsOpen {y : (ℝ ∙ e)ᗮ | (y : E) + ⟪e, x⟫ • e ∈ interior s} :=
-    isOpen_interior.preimage (continuous_subtype_val.add continuous_const)
+    isOpen_interior.preimage (continuous_subtypeVal.add continuous_const)
   refine (hU.measure_pos volume ⟨((orthogonalLineEquiv e he).symm x).1, ?_⟩).trans_le
     (measure_mono fun y (hy : (y : E) + ⟪e, x⟫ • e ∈ interior s) ↦
       (interior_subset hy : (y : E) + ⟪e, x⟫ • e ∈ s))
@@ -382,6 +384,12 @@ theorem lintegral_line_indicator_norm_sq_eq (e : E) (he : ‖e‖ = 1) {u : Set 
   simp only [Set.indicator_apply, Set.mem_ofPred_eq, norm_add_smul_sq e he]
 
 end TauCeti
+
+/-- The restriction of the indicator of a set to the line `t ↦ y + t • e` is the indicator of the
+line section. -/
+theorem Set.indicator_one_line {E : Type*} [Add E] [SMul ℝ E] (s : Set E) (y e : E) :
+    (fun t : ℝ ↦ s.indicator (1 : E → ℝ) (y + t • e)) = {t : ℝ | y + t • e ∈ s}.indicator 1 :=
+  funext fun _ ↦ (indicator_comp_right (fun t : ℝ ↦ y + t • e)).symm
 
 namespace Submodule
 

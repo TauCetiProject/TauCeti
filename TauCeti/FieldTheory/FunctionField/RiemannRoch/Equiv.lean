@@ -59,10 +59,10 @@ constants. Its underlying map is the restriction of `τ`. -/
 noncomputable def riemannRochSpaceEquivOfRingEquiv (D : Divisor k F) :
     riemannRochSpace D ≃ₛₗ[(σ : k →+* k')]
       riemannRochSpace (Finsupp.domCongr (Place.equivOfRingEquiv σ τ h) D) where
-  toFun z := ⟨τ z, (mem_riemannRochSpace_domCongr_equivOfRingEquiv_iff σ τ h D z).mpr z.2⟩
+  toFun z := ⟨τ z, (mem_riemannRochSpace_domCongr_equivOfRingEquiv_iff σ τ h D z).mpr z.property⟩
   invFun z := ⟨τ.symm z,
     (mem_riemannRochSpace_domCongr_equivOfRingEquiv_iff σ τ h D (τ.symm z)).mp (by
-      simpa only [RingEquiv.apply_symm_apply] using z.2)⟩
+      simpa only [RingEquiv.apply_symm_apply] using z.property)⟩
   left_inv z := Subtype.ext (τ.symm_apply_apply z)
   right_inv z := Subtype.ext (τ.apply_symm_apply z)
   map_add' z w := Subtype.ext (map_add τ (z : F) (w : F))
