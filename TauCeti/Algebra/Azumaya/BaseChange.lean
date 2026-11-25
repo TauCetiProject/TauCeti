@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.TensorProduct.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Projective
 public import Mathlib.RingTheory.TensorProduct.Finite
 public import TauCeti.LinearAlgebra.TensorProduct.Hom
+import TauCeti.Algebra.TensorProduct.BaseChange
 
 /-!
 # Base change of the defining map of an Azumaya algebra
@@ -46,27 +47,26 @@ universe u v w
 variable (R : Type u) (A : Type v) (S : Type w) [CommSemiring R] [Semiring A] [Algebra R A]
   [CommSemiring S] [Algebra R S]
 
-/-- The identification `S ⊗[R] (A ⊗[R] Aᵐᵒᵖ) ≅ (S ⊗[R] A) ⊗[S] (S ⊗[R] A)ᵐᵒᵖ` of `S`-modules,
-sending `s ⊗ (a ⊗ op b)` to `(s ⊗ a) ⊗ op (1 ⊗ b)`. -/
+/-- The identification `S ⊗[R] (A ⊗[R] Aᵐᵒᵖ) ≅ (S ⊗[R] A) ⊗[S] (S ⊗[R] A)ᵐᵒᵖ` of `S`-algebras,
+sending `s ⊗ (a ⊗ op b)` to `(s ⊗ a) ⊗ op (1 ⊗ b)`: base change distributes over the tensor
+product (`TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv`) and commutes with passing to
+the opposite algebra (`TauCeti.Algebra.TensorProduct.baseChangeOpAlgEquiv`). -/
 noncomputable def mulLeftRightBaseChangeEquiv :
-    S ⊗[R] (A ⊗[R] Aᵐᵒᵖ) ≃ₗ[S] (S ⊗[R] A) ⊗[S] (S ⊗[R] A)ᵐᵒᵖ :=
-  AlgebraTensorModule.distribBaseChange R S A Aᵐᵒᵖ ≪≫ₗ
-    AlgebraTensorModule.congr (LinearEquiv.refl S (S ⊗[R] A))
-      ((LinearEquiv.baseChange R S _ _ (MulOpposite.opLinearEquiv R).symm) ≪≫ₗ
-        MulOpposite.opLinearEquiv S)
+    S ⊗[R] (A ⊗[R] Aᵐᵒᵖ) ≃ₐ[S] (S ⊗[R] A) ⊗[S] (S ⊗[R] A)ᵐᵒᵖ :=
+  (Algebra.TensorProduct.baseChangeTensorAlgEquiv R S A Aᵐᵒᵖ).trans
+    (Algebra.TensorProduct.congr AlgEquiv.refl (Algebra.TensorProduct.baseChangeOpAlgEquiv R S A))
 
 @[simp]
 theorem mulLeftRightBaseChangeEquiv_tmul (s : S) (a : A) (b : Aᵐᵒᵖ) :
     mulLeftRightBaseChangeEquiv R A S (s ⊗ₜ (a ⊗ₜ b)) =
       (s ⊗ₜ a) ⊗ₜ MulOpposite.op ((1 : S) ⊗ₜ b.unop) := by
-  simp [mulLeftRightBaseChangeEquiv, AlgebraTensorModule.distribBaseChange]
+  simp [mulLeftRightBaseChangeEquiv]
 
 @[simp]
 theorem mulLeftRightBaseChangeEquiv_symm_tmul (s s' : S) (a b : A) :
     (mulLeftRightBaseChangeEquiv R A S).symm ((s ⊗ₜ a) ⊗ₜ MulOpposite.op (s' ⊗ₜ b)) =
       (s * s') ⊗ₜ (a ⊗ₜ MulOpposite.op b) := by
-  rw [LinearEquiv.symm_apply_eq, tmul_eq_smul_one_tmul s', MulOpposite.op_smul, ← smul_tmul]
-  simp [smul_tmul', mul_comm]
+  simp [mulLeftRightBaseChangeEquiv]
 
 variable [Module.Finite R A] [Module.Projective R A]
 
