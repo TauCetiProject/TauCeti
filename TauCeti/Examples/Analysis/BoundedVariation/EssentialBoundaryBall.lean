@@ -109,8 +109,6 @@ theorem euclideanHausdorffMeasure_frontier_ballUnionRational [NeZero n] :
 theorem perimeter_ball_sdiff_singleton [NeZero n] :
     perimeter volume ⊤ (ball (0 : EuclideanSpace ℝ (Fin n)) 1 \ {0}) =
       n * volume (ball (0 : EuclideanSpace ℝ (Fin n)) 1) := by
-  have : Nontrivial (EuclideanSpace ℝ (Fin n)) :=
-    ⟨⟨EuclideanSpace.single 0 1, 0, by simp⟩⟩
   rw [perimeter_congr_ae (ae_restrict_of_ae (sdiff_null_ae_eq_self (measure_singleton _))),
     perimeter_ball one_pos]
   simp
