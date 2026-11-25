@@ -217,11 +217,6 @@ the members with `p` columns. -/
 def chainComplexXIso (p : ℕ) : (F.chainComplex k).X p ≅ Rep.ofMulAction k G (F.carrier p) :=
   Iso.refl _
 
-/-- The differential of the augmented chain complex is the alternating sum of the faces, by
-definition of the complex. -/
-private theorem chainComplex_d_eq (p : ℕ) : (F.chainComplex k).d (p + 1) p = F.d k p :=
-  ChainComplex.of_d (fun p => Rep.ofMulAction k G (F.carrier p)) (F.d k) p
-
 /-- The differential of the augmented chain complex is the alternating sum of the faces, through
 the identifications `chainComplexXIso` of its objects. -/
 @[simp]
@@ -231,7 +226,7 @@ theorem chainComplex_d (p : ℕ) :
   -- The identifications are identities, which the category laws then remove.
   change _ = 𝟙 _ ≫ F.d k p ≫ 𝟙 _
   rw [Category.id_comp, Category.comp_id]
-  exact F.chainComplex_d_eq k p
+  exact ChainComplex.of_d (fun p => Rep.ofMulAction k G (F.carrier p)) (F.d k) p
 
 /-- Two members with one column are **adjacent** when they are the two faces of a member with two
 columns: `x` is its first column and `y` its second, `x = face 1 e` and `y = face 0 e`. -/
@@ -258,7 +253,10 @@ theorem chainComplex_exactAt_zero (h : (F.carrier 1).Nonempty) :
   have hg : (F.chainComplex k).d 0 0 = 0 := (F.chainComplex k).shape _ _ (by simp)
   intro x
   simp only [HomologicalComplex.shortComplexFunctor'_obj_g,
-    HomologicalComplex.shortComplexFunctor'_obj_f, hg, chainComplex_d_eq]
+    HomologicalComplex.shortComplexFunctor'_obj_f, hg, chainComplex_d,
+    chainComplexXIso, Iso.refl_hom, Iso.refl_inv]
+  -- The identifications `chainComplexXIso` are identities, and composing with an identity leaves
+  -- the underlying map unchanged by definition.
   exact ⟨fun _ => hsurj x, fun _ => rfl⟩
 
 /-- A boundary is a cycle. -/
@@ -314,7 +312,10 @@ theorem chainComplex_exactAt_one (x₀ : F.carrier 1)
     (h : ∀ x, Relation.EqvGen F.Adjacent x₀ x) : (F.chainComplex k).ExactAt 1 := by
   rw [HomologicalComplex.exactAt_iff' _ 2 1 0 (by simp) (by simp), Rep.exact_iff_function_exact]
   simp only [HomologicalComplex.shortComplexFunctor'_obj_g,
-    HomologicalComplex.shortComplexFunctor'_obj_f, chainComplex_d_eq]
+    HomologicalComplex.shortComplexFunctor'_obj_f, chainComplex_d,
+    chainComplexXIso, Iso.refl_hom, Iso.refl_inv]
+  -- The identifications `chainComplexXIso` are identities, and composing with an identity leaves
+  -- the underlying map unchanged by definition.
   exact F.exact_d_one_d_zero k x₀ h
 
 end ColumnSystem
