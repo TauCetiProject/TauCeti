@@ -900,6 +900,7 @@ theorem singularCohomologyδ_comp_eulerClass (l m : ℕ) (hl : l + 1 = m) :
 
 /-- Pulling the Euler class of a relative class `u ∈ Hⁿ(E, E₀)` back along the projection gives
 the image of `u` in `Hⁿ(E)`. -/
+@[simp]
 theorem singularCohomologyMap_thomPairProj_eulerClass (n : ℕ)
     (u : (thomPair F E).singularCohomology R k M n) :
     TopCat.singularCohomologyMap (thomPairProj F E) n (eulerClass R k M F E n u) =

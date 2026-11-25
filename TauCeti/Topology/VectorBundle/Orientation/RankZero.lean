@@ -128,9 +128,12 @@ def rankZeroEulerClass :
     (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) 0 :=
   eulerClass (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) F E 0 (o.rankZeroThomClass K)
 
-theorem rankZeroEulerClass_def :
-    o.rankZeroEulerClass K =
-      eulerClass (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) F E 0 (o.rankZeroThomClass K) :=
+/-- The Euler class of the Thom class of an oriented rank-zero bundle is its Euler class
+`TauCeti.VectorBundleOrientation.rankZeroEulerClass`. -/
+@[simp]
+theorem eulerClass_rankZeroThomClass :
+    eulerClass (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) F E 0 (o.rankZeroThomClass K) =
+      o.rankZeroEulerClass K :=
   (rfl)
 
 open scoped Classical in
@@ -142,7 +145,7 @@ value directly. -/
 theorem singularCohomologyZeroEval_rankZeroEulerClass (b : B) :
     singularCohomologyZeroEval b (o.rankZeroEulerClass K) =
       if o b = positiveOrientation then 1 else -1 := by
-  rw [rankZeroEulerClass_def, rankZeroThomClass, IsIso.inv_hom_id_apply]
+  rw [← eulerClass_rankZeroThomClass, rankZeroThomClass, IsIso.inv_hom_id_apply]
   exact (exists_singularCohomologyZeroEval_eq_sign o K).choose_spec b
 
 /-- The Euler class of an oriented rank-zero bundle has the value `1` at a point where the
@@ -186,7 +189,7 @@ theorem isThomClass_rankZeroThomClass :
       (thomPair F E).singularCohomology (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K))
         (finrank ℝ F)) := by
   refine (isThomClass_iff_forall_isUnit _).2 fun b ↦ ?_
-  rw [← rankZeroEulerClass_def]
+  rw [eulerClass_rankZeroThomClass]
   exact .of_mul_eq_one _ (o.singularCohomologyZeroEval_rankZeroEulerClass_mul_self K b)
 
 /-- The positive orientation of a rank-zero bundle has the unit class as Euler class. -/
@@ -204,7 +207,7 @@ theorem singularCohomologyπ_rankZeroThomClass_positive :
     (thomPair F E).singularCohomologyπ (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) 0
         ((positive F E ι).rankZeroThomClass K) =
       (thomPair F E).fst.singularCohomologyZeroOne := by
-  rw [← singularCohomologyMap_thomPairProj_eulerClass, ← rankZeroEulerClass_def,
+  rw [← singularCohomologyMap_thomPairProj_eulerClass, eulerClass_rankZeroThomClass,
     rankZeroEulerClass_positive, singularCohomologyMap_singularCohomologyZeroOne]
 
 /-- Reversing the orientation negates the Euler class. -/
@@ -226,7 +229,7 @@ theorem rankZeroEulerClass_neg : (-o).rankZeroEulerClass K = -o.rankZeroEulerCla
 @[simp]
 theorem rankZeroThomClass_neg : (-o).rankZeroThomClass K = -o.rankZeroThomClass K := by
   symm
-  rw [eq_rankZeroThomClass_iff, map_neg, ← rankZeroEulerClass_def, rankZeroEulerClass_neg]
+  rw [eq_rankZeroThomClass_iff, map_neg, eulerClass_rankZeroThomClass, rankZeroEulerClass_neg]
 
 /-- **The Euler class is a unit**: it squares to the unit class for the cup product, since its
 values are `±1`. -/
