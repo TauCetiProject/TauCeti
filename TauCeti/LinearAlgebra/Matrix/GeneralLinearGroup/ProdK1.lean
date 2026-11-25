@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable
 
 /-!
-# Algebraic `K₁` of a product of rings and of the zero ring
+# Algebraic `K₁` of a product of rings
 
 A matrix over a product ring `A × B` is a pair of matrices of the same size, one over `A` and one
 over `B`, and it is invertible exactly when both are. So `GL n (A × B) ≃* GL n A × GL n B`
@@ -18,8 +18,6 @@ over `B`, and it is invertible exactly when both are. So `GL n (A × B) ≃* GL 
 homomorphisms of `K₁` induced by the projections `A × B → A` and `A × B → B`. The inverse sends
 the pair of classes of `u ∈ GL (Fin n) A` and `v ∈ GL (Fin n) B` to the class of the invertible
 matrix over `A × B` with components `u` and `v`. The rings may be noncommutative.
-
-Over the zero ring every general linear group is trivial, hence so are `GL_∞` and `K₁`.
 
 ## Main definitions
 
@@ -36,8 +34,8 @@ Over the zero ring every general linear group is trivial, hence so are `GL_∞` 
   the homomorphisms of `K₁` induced by the two projections.
 * `TauCeti.AlgebraicK1.prodEquiv_symm_mk`: the inverse sends the pair of classes `([u], [v])` to
   the class of the matrix with components `u` and `v`.
-* `TauCeti.StableGeneralLinearGroup.instSubsingleton`, `TauCeti.AlgebraicK1.instSubsingleton`:
-  over a zero ring `A`, `GL_∞(A)` and `K₁(A)` are trivial; that is, `K₁(0) = 0`.
+* `TauCeti.AlgebraicK1.map_fst_prodEquiv_symm`, `TauCeti.AlgebraicK1.map_snd_prodEquiv_symm`:
+  the projections recover the two components from the inverse.
 
 ## References
 
@@ -121,23 +119,7 @@ theorem stabilizeGL_prodGL_symm {m n : ℕ} (h : m ≤ n) (p : GL (Fin m) A × G
       (prodGL (Fin n) A B).symm (Prod.map (stabilizeGL A h) (stabilizeGL B h) p) := by
   rw [MulEquiv.eq_symm_apply, prodGL_stabilizeGL, MulEquiv.apply_symm_apply]
 
-/-! ## The zero ring -/
-
-/-- The stable general linear group of the zero ring is trivial. -/
-instance StableGeneralLinearGroup.instSubsingleton [Subsingleton A] :
-    Subsingleton (StableGeneralLinearGroup A) := by
-  refine ⟨fun x y ↦ ?_⟩
-  obtain ⟨n, u, v, rfl, rfl⟩ := StableGeneralLinearGroup.exists_of₂ x y
-  rw [Subsingleton.elim u v]
-
 namespace AlgebraicK1
-
-/-- Algebraic `K₁` of the zero ring is trivial. -/
-instance instSubsingleton [Subsingleton A] : Subsingleton (AlgebraicK1 A) := by
-  refine ⟨fun x y ↦ ?_⟩
-  obtain ⟨m, u, rfl⟩ := exists_mk x
-  obtain ⟨n, v, rfl⟩ := exists_mk y
-  rw [Subsingleton.elim u 1, Subsingleton.elim v 1, map_one, map_one]
 
 /-! ## Products of rings -/
 
@@ -210,6 +192,22 @@ theorem prodEquiv_symm_mk {n : ℕ} (u : GL (Fin n) A) (v : GL (Fin n) B) :
       mk (A × B) n ((prodGL (Fin n) A B).symm (u, v)) := by
   rw [MulEquiv.symm_apply_eq, prodEquiv_apply]
   simp
+
+/-- The homomorphism of `K₁` induced by the first projection recovers the first component from
+the inverse of `K₁(A × B) ≃* K₁(A) × K₁(B)`. -/
+@[simp]
+theorem map_fst_prodEquiv_symm (p : AlgebraicK1 A × AlgebraicK1 B) :
+    map (RingHom.fst A B) ((prodEquiv A B).symm p) = p.1 := by
+  have h := congrArg Prod.fst ((prodEquiv A B).apply_symm_apply p)
+  rwa [prodEquiv_apply] at h
+
+/-- The homomorphism of `K₁` induced by the second projection recovers the second component from
+the inverse of `K₁(A × B) ≃* K₁(A) × K₁(B)`. -/
+@[simp]
+theorem map_snd_prodEquiv_symm (p : AlgebraicK1 A × AlgebraicK1 B) :
+    map (RingHom.snd A B) ((prodEquiv A B).symm p) = p.2 := by
+  have h := congrArg Prod.snd ((prodEquiv A B).apply_symm_apply p)
+  rwa [prodEquiv_apply] at h
 
 end Prod
 
