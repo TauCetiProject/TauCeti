@@ -30,8 +30,8 @@ of pointwise limits of measurable maps, available for matrix-valued functions wi
 matrix norm.
 
 Matrices with countably many rows and columns are second countable when their entries are, and
-matrices with finitely many rows and columns are σ-compact when their entries are. Matrices over
-a compact space are compact.
+matrices with finitely many rows and columns are σ-compact, respectively locally compact, when
+their entries are. Matrices over a compact space are compact.
 
 Square matrices act jointly continuously on column vectors by `Matrix.mulVec`, the action of
 `Mathlib.LinearAlgebra.Matrix.Action`; through the unit group, so does `GL n R`
@@ -108,6 +108,12 @@ instance {m n α : Type*} [Countable m] [Countable n] [TopologicalSpace α]
 instance {m n α : Type*} [Finite m] [Finite n] [TopologicalSpace α] [SigmaCompactSpace α] :
     SigmaCompactSpace (Matrix m n α) :=
   inferInstanceAs (SigmaCompactSpace (m → n → α))
+
+/-- Matrices with finitely many rows and columns over a locally compact space form a locally
+compact space. -/
+instance {m n α : Type*} [Finite m] [Finite n] [TopologicalSpace α] [LocallyCompactSpace α] :
+    LocallyCompactSpace (Matrix m n α) :=
+  inferInstanceAs (LocallyCompactSpace (m → n → α))
 
 /-- Matrices over a compact space form a compact space (Tychonoff). -/
 instance {m n α : Type*} [TopologicalSpace α] [CompactSpace α] :

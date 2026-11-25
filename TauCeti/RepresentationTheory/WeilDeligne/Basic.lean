@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Semisimple
 public import Mathlib.RepresentationTheory.Intertwining
-public import Mathlib.Topology.Defs.Basic
+public import Mathlib.Topology.Constructions
 
 /-!
 # Raw Weil–Deligne parameters
@@ -92,6 +92,13 @@ variable {E W V V' V'' V''' : Type*} [Field E] [Group W] [TopologicalSpace W]
   [AddCommGroup V] [Module E V] [AddCommGroup V'] [Module E V']
   [AddCommGroup V''] [Module E V''] [AddCommGroup V'''] [Module E V''']
   {deg : W →* Multiplicative ℤ} {q : ℕ}
+
+/-- For a continuous degree map, a homomorphism factoring through the degree has open kernel,
+because `Multiplicative ℤ` is discrete. -/
+theorem isOpen_ker_comp_deg {G : Type*} [MulOneClass G] (hdeg : Continuous deg)
+    (f : Multiplicative ℤ →* G) : IsOpen ((f.comp deg).ker : Set W) := by
+  rw [← MonoidHom.comap_ker, Subgroup.coe_comap]
+  exact hdeg.isOpen_preimage _ (isOpen_discrete _)
 
 /-- The conjugation relation in the form `r(w) N = q ^ deg w • N r(w)`. -/
 theorem r_mul_N (D : WeilDeligneParameter E W V deg q) (w : W) :

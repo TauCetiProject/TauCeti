@@ -42,6 +42,9 @@ adding these regularity requirements to any local property does not change local
 
 Enlarging a filtration preserves its localizing sequences. The stopping-time property
 transports to the larger filtration, while monotonicity and divergence are unchanged.
+An absolutely continuous change of measure also preserves localizing sequences, since their
+stopping-time conditions do not involve the measure and their path conditions hold almost surely.
+This does not assert preservation of the martingale property of stopped processes.
 
 ## References
 
@@ -55,6 +58,24 @@ open MeasureTheory Filter TopologicalSpace
 open scoped Topology
 
 namespace ProbabilityTheory
+
+/-- An absolutely continuous change of measure preserves a pre-localizing sequence. No
+finiteness of either measure is needed. -/
+theorem IsPreLocalizingSequence.mono_ac {ι Ω : Type*} [Preorder ι]
+    [TopologicalSpace ι] [OrderTopology ι] {mΩ : MeasurableSpace Ω}
+    {ℱ : Filtration ι mΩ} {P Q : Measure Ω} {τ : ℕ → Ω → WithTop ι}
+    (hτ : IsPreLocalizingSequence ℱ τ P) (hQP : Q ≪ P) :
+    IsPreLocalizingSequence ℱ τ Q :=
+  ⟨hτ.isStoppingTime, hQP.ae_le hτ.tendsto_top⟩
+
+/-- An absolutely continuous change of measure preserves a native localizing sequence,
+including its almost-sure monotonicity. It need not preserve any localized martingale identities. -/
+theorem IsLocalizingSequence.mono_ac {ι Ω : Type*} [Preorder ι]
+    [TopologicalSpace ι] [OrderTopology ι] {mΩ : MeasurableSpace Ω}
+    {ℱ : Filtration ι mΩ} {P Q : Measure Ω} {τ : ℕ → Ω → WithTop ι}
+    (hτ : IsLocalizingSequence ℱ τ P) (hQP : Q ≪ P) :
+    IsLocalizingSequence ℱ τ Q :=
+  ⟨hτ.toIsPreLocalizingSequence.mono_ac hQP, hQP.ae_le hτ.mono⟩
 
 /-- Cutting a localizing sequence off at the initial time outside increasing initial-measurable
 events which eventually contain almost every sample point preserves localization. -/
