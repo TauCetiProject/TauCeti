@@ -53,22 +53,8 @@ variable {Γ I S : Type*} [Group Γ] [MulAction Γ I] [TopologicalSpace S] [Meas
 
 namespace Specification
 
-variable {X : Subshift Γ I S} (γ : Specification X)
-
-/-- A specification is quasilocal when the mass `γ_Λ (C | ω)` of every cylinder event `C` is a
-continuous function of the boundary condition `ω`. -/
-def IsQuasilocal : Prop :=
-  ∀ (Λ s : Finset I) (t : Set (s → S)), MeasurableSet t →
-    Continuous fun ω : X => γ.kernel Λ ω ((↑) ⁻¹' cylinder (α := fun _ : I => S) s t)
-
-variable {γ}
-
-theorem isQuasilocal_iff :
-    γ.IsQuasilocal ↔ ∀ (Λ s : Finset I) (t : Set (s → S)), MeasurableSet t →
-      Continuous fun ω : X => γ.kernel Λ ω ((↑) ⁻¹' cylinder (α := fun _ : I => S) s t) :=
-  Iff.rfl
-
-variable [Countable I] [Countable S] [DiscreteTopology S] [DiscreteMeasurableSpace S]
+variable {X : Subshift Γ I S} {γ : Specification X} [Countable I] [Countable S] [DiscreteTopology S]
+  [DiscreteMeasurableSpace S]
 
 /-- For a quasilocal specification, `μ ↦ ∫ γ_Λ (C | ω) dμ(ω)` is weakly continuous on the
 probability measures, for every measurable cylinder `C`. -/
@@ -77,7 +63,7 @@ private theorem continuous_lintegral_kernel (hγ : γ.IsQuasilocal) (Λ : Finset
     Continuous fun μ : ProbabilityMeasure X => ∫⁻ ω, γ.kernel Λ ω ((↑) ⁻¹' A) ∂(μ : Measure X) := by
   have hc : Continuous fun ω : X => γ.kernel Λ ω ((↑) ⁻¹' A) := by
     obtain ⟨s, t, ht, rfl⟩ := (mem_measurableCylinders A).1 hA
-    exact hγ Λ s t ht
+    exact isQuasilocal_iff.1 hγ Λ s t ht
   have hle (ω : X) : ((γ.kernel Λ ω ((↑) ⁻¹' A)).toNNReal : ℝ) ≤ 1 :=
     NNReal.coe_le_one.2 <| (ENNReal.toNNReal_mono ENNReal.one_ne_top prob_le_one).trans_eq
       ENNReal.toNNReal_one
@@ -91,8 +77,7 @@ private theorem continuous_lintegral_kernel (hγ : γ.IsQuasilocal) (Λ : Finset
   have hf (ω : X) : (f ω : ℝ≥0∞) = γ.kernel Λ ω ((↑) ⁻¹' A) :=
     ENNReal.coe_toNNReal (measure_ne_top _ _)
   simp only [← hf]
-  exact continuous_iff_continuousAt.2 fun μ =>
-    ProbabilityMeasure.tendsto_iff_forall_lintegral_tendsto.1 tendsto_id f
+  exact ProbabilityMeasure.continuous_lintegral_boundedContinuousFunction f
 
 /-- **Gibbs measures are weakly closed.** For a quasilocal specification on a subshift over a
 countable discrete alphabet, the Gibbs probability measures form a weakly closed set. -/
@@ -111,6 +96,8 @@ theorem isClosed_setOf_isGibbs (hγ : γ.IsQuasilocal) :
   obtain ⟨s, t, -, rfl⟩ := (mem_measurableCylinders A).1 hA
   simp_rw [← ProbabilityMeasure.ennreal_coeFn_eq_coeFn_toMeasure]
   refine ENNReal.continuous_coe.comp ?_
+  -- `↥X` is definitionally, though not syntactically, the set subtype `↥(X : Set (I → S))`,
+  -- so the clopen cylinder lemma for subtypes of `I → S` applies with `X` read as a set.
   exact continuous_iff_continuousAt.2 fun μ =>
     ProbabilityMeasure.tendsto_measure_of_isClopen_of_tendsto tendsto_id
       (isClopen_preimage_cylinder (X := (X : Set (I → S))) s t)
