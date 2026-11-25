@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Smooth.Dual
+public import TauCeti.RepresentationTheory.Smooth.Dual.Basic
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 import Mathlib.LinearAlgebra.Dimension.Finite
 

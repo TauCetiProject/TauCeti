@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Smooth.Category
-public import TauCeti.RepresentationTheory.Smooth.Dual
+public import TauCeti.RepresentationTheory.Smooth.Dual.Basic
 
 /-!
 # The smooth dual as a contravariant functor
