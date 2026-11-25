@@ -289,6 +289,7 @@ theorem norm_restrictedEval₂OfPowBound_le (f : IsRestricted.subring (R := R) c
       (mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le f t) (mul_nonneg hC hD))
 
 /-- Evaluation at arguments with bounded powers is continuous for the Gauss norm. -/
+@[continuity]
 theorem continuous_restrictedEval₂OfPowBound :
     Continuous (restrictedEval₂OfPowBound φ a hφ hpow) :=
   AddMonoidHomClass.continuous_of_bound _ (C * D) (norm_restrictedEval₂OfPowBound_le φ a hφ hpow)
