@@ -162,30 +162,17 @@ private noncomputable abbrev gluingData : 𝒰.RelativeGluingData where
     exact isPullback_functor_map D 𝒰 h
 
 private instance {U V : 𝒰.I₀} (h : U ⟶ V) : IsOpenImmersion ((functor D 𝒰).map h) :=
-  MorphismProperty.of_isPullback (isPullback_functor_map D 𝒰 h).flip (𝒰.property_trans h)
+  Scheme.Cover.RelativeGluingData.instIsOpenImmersionMapI₀Functor
+    (gluingData D 𝒰) h
 
 variable [Quiver.IsThin 𝒰.I₀] [Small.{u} 𝒰.I₀]
 
 private instance : (functor D 𝒰 ⋙ Scheme.forget).IsLocallyDirected :=
-  AlgebraicGeometry.Scheme.isLocallyDirected_of_equifibered_of_injective (natTrans D 𝒰)
-    (fun _ _ h ↦ isPullback_functor_map D 𝒰 h) fun h ↦ ((functor D 𝒰).map h).injective
-
-/-- (Implementation) The glued scheme. -/
-private noncomputable abbrev glued : Scheme.{u} := colimit (functor D 𝒰)
-
-/-- (Implementation) The glued scheme maps to `Dᵢ`. -/
-private noncomputable def toBase : glued D 𝒰 ⟶ D.obj i := (gluingData D 𝒰).toBase
-
-private lemma ι_toBase (U : 𝒰.I₀) :
-    colimit.ι (functor D 𝒰) U ≫ toBase D 𝒰 = toCover D 𝒰 U ≫ 𝒰.f U :=
-  (gluingData D 𝒰).ι_toBase U
-
-private lemma isPullback_toCover_ι (U : 𝒰.I₀) :
-    IsPullback (toCover D 𝒰 U) (colimit.ι (functor D 𝒰) U) (𝒰.f U) (toBase D 𝒰) :=
-  (gluingData D 𝒰).isPullback_natTrans_ι_toBase U
+  Scheme.Cover.RelativeGluingData.instIsLocallyDirectedI₀CompFunctorForgetOfIsThin
+    (gluingData D 𝒰)
 
 /-- (Implementation) The projection from the glued scheme to a member `Dⱼ` over `i`. -/
-private noncomputable def π (j : Over i) : glued D 𝒰 ⟶ D.obj j.left :=
+private noncomputable def π (j : Over i) : (gluingData D 𝒰).glued ⟶ D.obj j.left :=
   colimit.desc (functor D 𝒰)
     { pt := D.obj j.left
       ι :=
@@ -197,9 +184,11 @@ private lemma ι_π (U : 𝒰.I₀) (j : Over i) :
     colimit.ι (functor D 𝒰) U ≫ π D 𝒰 j = limit.π ((diagram D 𝒰).obj U) j ≫ pullback.fst _ _ :=
   colimit.ι_desc _ _
 
-private lemma π_comp_map_hom (j : Over i) : π D 𝒰 j ≫ D.map j.hom = toBase D 𝒰 := by
+private lemma π_comp_map_hom (j : Over i) :
+    π D 𝒰 j ≫ D.map j.hom = (gluingData D 𝒰).toBase := by
   refine colimit.hom_ext fun U ↦ ?_
-  rw [ι_π_assoc, ι_toBase, pullback.condition, toCover_eq D 𝒰 U j, Category.assoc]
+  rw [ι_π_assoc, pullback.condition, ← Category.assoc, π_snd]
+  exact ((gluingData D 𝒰).ι_toBase U).symm
 
 private lemma π_comp_map {j k : Over i} (f : j ⟶ k) : π D 𝒰 j ≫ D.map f.left = π D 𝒰 k := by
   refine colimit.hom_ext fun U ↦ ?_
@@ -207,24 +196,26 @@ private lemma π_comp_map {j k : Over i} (f : j ⟶ k) : π D 𝒰 j ≫ D.map f
 
 /-- (Implementation) The cone over the members of `D` over `i` with point the glued scheme. -/
 private noncomputable def cone : Cone (Over.forget i ⋙ D) where
-  pt := glued D 𝒰
+  pt := (gluingData D 𝒰).glued
   π :=
     { app := π D 𝒰
       naturality _ _ f := (Category.id_comp _).trans (π_comp_map D 𝒰 f).symm }
 
 /-- (Implementation) Morphisms to the glued scheme agreeing after every projection agree. -/
-private lemma hom_ext {W : Scheme.{u}} {a b : W ⟶ glued D 𝒰}
+private lemma hom_ext {W : Scheme.{u}} {a b : W ⟶ (gluingData D 𝒰).glued}
     (h : ∀ j, a ≫ π D 𝒰 j = b ≫ π D 𝒰 j) : a = b := by
-  have hab : a ≫ toBase D 𝒰 = b ≫ toBase D 𝒰 := by
+  have hab : a ≫ (gluingData D 𝒰).toBase = b ≫ (gluingData D 𝒰).toBase := by
     rw [← π_comp_map_hom D 𝒰 (Over.mk (𝟙 i)), reassoc_of% h]
-  refine AlgebraicGeometry.Scheme.Cover.hom_ext (𝒰.pullback₁ (a ≫ toBase D 𝒰)) _ _
-    fun (U : 𝒰.I₀) ↦ ?_
-  have hP := isPullback_toCover_ι D 𝒰 U
-  have wa : pullback.snd (a ≫ toBase D 𝒰) (𝒰.f U) ≫ 𝒰.f U =
-      (pullback.fst _ _ ≫ a) ≫ toBase D 𝒰 := by
+  refine AlgebraicGeometry.Scheme.Cover.hom_ext (𝒰.pullback₁ (a ≫ (gluingData D 𝒰).toBase))
+    _ _ fun (U : 𝒰.I₀) ↦ ?_
+  have hP : IsPullback (toCover D 𝒰 U) (colimit.ι (functor D 𝒰) U) (𝒰.f U)
+      (gluingData D 𝒰).toBase :=
+    (gluingData D 𝒰).isPullback_natTrans_ι_toBase U
+  have wa : pullback.snd (a ≫ (gluingData D 𝒰).toBase) (𝒰.f U) ≫ 𝒰.f U =
+      (pullback.fst _ _ ≫ a) ≫ (gluingData D 𝒰).toBase := by
     rw [Category.assoc, ← pullback.condition]
-  have wb : pullback.snd (a ≫ toBase D 𝒰) (𝒰.f U) ≫ 𝒰.f U =
-      (pullback.fst _ _ ≫ b) ≫ toBase D 𝒰 := by
+  have wb : pullback.snd (a ≫ (gluingData D 𝒰).toBase) (𝒰.f U) ≫ 𝒰.f U =
+      (pullback.fst _ _ ≫ b) ≫ (gluingData D 𝒰).toBase := by
     rw [Category.assoc, ← hab, ← pullback.condition]
   have hc : hP.lift _ _ wa = hP.lift _ _ wb := by
     refine limit.hom_ext fun j ↦ pullback.hom_ext ?_ ?_
@@ -267,7 +258,8 @@ private lemma liftAux_comp_eq (s : Cone (Over.forget i ⋙ D)) {U V : 𝒰.I₀}
 
 /-- (Implementation) The lift of a cone over the members of `D` over `i` to the glued scheme,
 glued from the lifts over the preimages of the members of the cover. -/
-private noncomputable def lift (s : Cone (Over.forget i ⋙ D)) : s.pt ⟶ glued D 𝒰 :=
+private noncomputable def lift (s : Cone (Over.forget i ⋙ D)) :
+    s.pt ⟶ (gluingData D 𝒰).glued :=
   AlgebraicGeometry.Scheme.Cover.glueMorphisms (𝒰.pullback₁ (s.π.app (Over.mk (𝟙 i))))
     (fun U ↦ liftAux D 𝒰 s U ≫ colimit.ι (functor D 𝒰) U) fun _ _ ↦
       liftAux_comp_eq D 𝒰 s _ _ pullback.condition
