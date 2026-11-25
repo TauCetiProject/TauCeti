@@ -51,6 +51,8 @@ connecting homomorphisms such as `K₂(R/I) → K₁(R, I)`, which lift Steinber
   surjection of Steinberg groups.
 * `TauCeti.IndexedSteinbergGroup.ker_map_of_surjective`: for surjective `f`, the kernel of
   `St_ι(f)` is the root normal closure of the kernel of `f`.
+* `TauCeti.IndexedSteinbergGroup.quotientRootNormalClosureEquivOfSurjective_symm_map`: the
+  inverse isomorphism lifts `St_ι(f)(z)` to the class of `z`.
 * `TauCeti.IndexedSteinbergGroup.quotientRootNormalClosureEquivOfSurjective_map`: the quotient
   isomorphisms are natural for commutative squares of ring homomorphisms.
 
@@ -161,6 +163,15 @@ theorem rootNormalClosure_ker_le_ker_map (f : R →+* S) :
   rootNormalClosure_le_iff.2 fun _ _ hij a ha ↦ by
     rw [MonoidHom.mem_ker, map_x, (RingHom.mem_ker).1 ha, x_zero]
 
+/-- For a commutative square of ring homomorphisms `h ∘ f = f' ∘ g`, the homomorphism `St_ι(g)`
+maps the root normal closure of the kernel of `f` into that of the kernel of `f'`. -/
+theorem rootNormalClosure_ker_le_comap_map_of_comp_eq {R' S' : Type*} [Ring R'] [Ring S']
+    {f : R →+* S} {f' : R' →+* S'} {g : R →+* R'} {h : S →+* S'} (hsq : h.comp f = f'.comp g) :
+    rootNormalClosure ι (RingHom.ker f : Set R) ≤
+      (rootNormalClosure ι (RingHom.ker f' : Set R')).comap (map g) :=
+  rootNormalClosure_le_comap_map g fun a (ha : f a = 0) ↦ show f' (g a) = 0 by
+    rw [← RingHom.comp_apply, ← hsq, RingHom.comp_apply, ha, map_zero]
+
 /-! ### The Steinberg group of a quotient ring -/
 
 section Surjective
@@ -195,7 +206,8 @@ private theorem liftGen_mul {i j k : ι} (hij : i ≠ j) (hjk : j ≠ k) (hik : 
   unfold liftGen
   rw [mk_x_eq_mk_x_of_map_eq hik (b := Function.surjInv hf b * Function.surjInv hf c)
     (by simp only [map_mul, Function.surjInv_eq hf]), ← commutatorElement_x hij hjk hik]
-  exact map_commutatorElement (QuotientGroup.mk' _) _ _
+  simpa only [QuotientGroup.mk'_apply] using
+    map_commutatorElement (QuotientGroup.mk' (rootNormalClosure ι (RingHom.ker f : Set R))) _ _
 
 /-- The inverse of `St_ι(f)` on the quotient by the root normal closure of the kernel, defined
 on the root presentation of `St_ι(S)` by lifting the coefficients. -/
@@ -205,7 +217,9 @@ private def quotientInv :
   lift (liftGen hf) (fun _ _ hij b c ↦ liftGen_add hf hij b c)
     (fun _ _ _ _ hij hkl hjk hli _ _ ↦ by
       unfold liftGen
-      exact (commute_x hij hkl hjk hli _ _).map (QuotientGroup.mk' _))
+      simpa only [QuotientGroup.mk'_apply] using
+        (commute_x hij hkl hjk hli _ _).map
+          (QuotientGroup.mk' (rootNormalClosure ι (RingHom.ker f : Set R))))
     (fun _ _ _ hij hjk hik b c ↦ (liftGen_mul hf hij hjk hik b c).symm)
 
 private theorem quotientInv_x {i j : ι} (hij : i ≠ j) (a : R) :
@@ -236,6 +250,13 @@ theorem quotientRootNormalClosureEquivOfSurjective_symm_x {i j : ι} (hij : i �
     (quotientRootNormalClosureEquivOfSurjective hf).symm (x hij (f a)) = x hij a :=
   quotientInv_x hf hij a
 
+/-- The inverse of the quotient isomorphism sends `St_ι(f)(z)` to the class of `z`: this lifts
+Steinberg words along `St_ι(R) → St_ι(S)`. -/
+@[simp]
+theorem quotientRootNormalClosureEquivOfSurjective_symm_map (z : IndexedSteinbergGroup ι R) :
+    (quotientRootNormalClosureEquivOfSurjective hf).symm (map f z) = z :=
+  (MulEquiv.symm_apply_eq _).2 (quotientRootNormalClosureEquivOfSurjective_mk hf z).symm
+
 /-- **Naturality of the quotient isomorphism.** For a commutative square of ring homomorphisms
 `h ∘ f = f' ∘ g` with `f` and `f'` surjective, the isomorphisms for `f` and `f'` intertwine the map
 of quotients induced by `St_ι(g)` with `St_ι(h)`. -/
@@ -244,9 +265,7 @@ theorem quotientRootNormalClosureEquivOfSurjective_map {R' S' : Type*} [Ring R']
     (hsq : h.comp f = f'.comp g)
     (z : IndexedSteinbergGroup ι R ⧸ rootNormalClosure ι (RingHom.ker f : Set R)) :
     quotientRootNormalClosureEquivOfSurjective hf'
-        (QuotientGroup.map _ _ (map g) (rootNormalClosure_le_comap_map g fun a ha ↦ by
-          rw [SetLike.mem_coe, RingHom.mem_ker, ← RingHom.comp_apply, ← hsq, RingHom.comp_apply,
-            (RingHom.mem_ker).1 ha, map_zero]) z) =
+        (QuotientGroup.map _ _ (map g) (rootNormalClosure_ker_le_comap_map_of_comp_eq hsq) z) =
       map h (quotientRootNormalClosureEquivOfSurjective hf z) := by
   induction z using QuotientGroup.induction_on with
   | H z =>
