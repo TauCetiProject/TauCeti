@@ -75,9 +75,7 @@ equals `ρ.stabilizer v` for a single general-position vector `v ∈ U`, via sub
   stabilizers in direct sums, where only the finitely many nonzero components of a vector
   constrain its stabilizer.
 * `Subrepresentation.le_stabilizer_quotient_mk`
-* `Representation.stabilizer_ofMulAction_single`,
-  `Representation.le_stabilizer_ofMulAction_single_one` and
-  `Representation.finite_stabilizer_leftRegular`
+* `Representation.stabilizer_ofMulAction_single` and `Representation.finite_stabilizer_leftRegular`
 * `Representation.isTrivial_comp_subtype_iff` and
   `Representation.le_stabilizer_of_isTrivial_comp_subtype`
 * `Representation.mem_invariants_comp_subtype_iff`
@@ -213,13 +211,6 @@ theorem le_stabilizer_ofMulAction_single (x : X) (a : A) :
   intro g hg
   rw [mem_stabilizer]
   simp [MulAction.mem_stabilizer_iff.mp hg]
-
-variable (A) in
-/-- The basis vector of the coset `U` in `A[G ⧸ U]` is fixed by `U`: the case of
-`Representation.le_stabilizer_ofMulAction_single` at the coset `U`, whose stabilizer is `U`. -/
-theorem le_stabilizer_ofMulAction_single_one {U : Subgroup G} :
-    U ≤ (ofMulAction A G (G ⧸ U)).stabilizer (MonoidAlgebra.single ((1 : G) : G ⧸ U) 1) :=
-  (MulAction.stabilizer_quotient U).ge.trans (le_stabilizer_ofMulAction_single _ 1)
 
 /-- The stabilizer of a basis vector of a permutation representation is the stabilizer of the
 point, for nonzero coefficient. -/

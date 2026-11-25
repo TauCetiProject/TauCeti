@@ -11,6 +11,7 @@ public import TauCeti.RepresentationTheory.Coset
 public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 public import TauCeti.GroupTheory.QuotientGroup.Basic
 import TauCeti.GroupTheory.Coset.Basic
+import TauCeti.RepresentationTheory.Intertwining
 
 /-!
 # The relative norm and the relative transfer of a subgroup
@@ -127,7 +128,7 @@ theorem IntertwiningMap.map_relNorm_comp {K W : Type*} [Group K] [AddCommMonoid 
     {σ : Representation R G W} (f : IntertwiningMap ρ σ) (φ : K →* G) (L : Subgroup K)
     [Fintype (K ⧸ L)] (x : V) :
     f (relNorm (ρ.comp φ) L x) = relNorm (σ.comp φ) L (f x) := by
-  simp only [relNorm_apply, map_sum, MonoidHom.comp_apply, f.isIntertwining]
+  simpa only [IntertwiningMap.coe_res] using (f.res φ).map_relNorm L x
 
 end Defs
 

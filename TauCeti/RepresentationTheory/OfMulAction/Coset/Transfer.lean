@@ -62,7 +62,8 @@ variable (A) in
 /-- The **projection** `A[G ⧸ U'] → A[G ⧸ U]`, `g U' ↦ g U`, for `U' ≤ U`. -/
 def cosetProjection (hU : U' ≤ U) :
     IntertwiningMap (ofMulAction A G (G ⧸ U')) (ofMulAction A G (G ⧸ U)) :=
-  (ofMulAction A G (G ⧸ U)).cosetLift U' _ (hU.trans (le_stabilizer_ofMulAction_single_one A))
+  (ofMulAction A G (G ⧸ U)).cosetLift U' _
+    (hU.trans (IntertwiningMap.id _).le_stabilizer_apply_single_one)
 
 @[simp]
 theorem cosetProjection_single (hU : U' ≤ U) (g : G) (c : A) :
@@ -85,7 +86,7 @@ private theorem comp_subtype_apply_single_one {H : Subgroup G} (u : H) (hu : (u 
     (ofMulAction A G (G ⧸ U)).comp H.subtype u (MonoidAlgebra.single ((1 : G) : G ⧸ U) 1) =
       MonoidAlgebra.single ((1 : G) : G ⧸ U) 1 := by
   rw [MonoidHom.comp_apply, Subgroup.subtype_apply]
-  exact mem_stabilizer.1 (le_stabilizer_ofMulAction_single_one A hu)
+  exact mem_stabilizer.1 ((IntertwiningMap.id _).le_stabilizer_apply_single_one hu)
 
 private theorem le_stabilizer_cosetSum :
     U ≤ (ofMulAction A G (G ⧸ U')).stabilizer (cosetSum A U' U) := fun u hu ↦ by
