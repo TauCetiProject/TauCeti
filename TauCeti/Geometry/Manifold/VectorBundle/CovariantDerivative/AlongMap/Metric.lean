@@ -224,22 +224,6 @@ private lemma mdifferentiableAt_coord_sectionCoord {Q : ∀ y, B (f y)}
   (LinearMap.toContinuousLinearMap ((Module.finBasis ℝ F₀).coord i)).differentiableAt
     |>.comp_mdifferentiableAt hQ
 
-omit [∀ x, IsTopologicalAddGroup (B x)] [∀ x, ContinuousSMul ℝ (B x)]
-  [ContMDiffVectorBundle 1 F₀ B I] in
-/-- Near `x`, a field along a map continuous at `x` is the combination of the pulled-back
-local-frame fields around `f x`, with the basis coordinates of its coordinate reading as
-coefficients. -/
-private lemma eventually_sum_coord_smul_localFrame (hf : ContinuousAt f x)
-    (Q : ∀ y, B (f y)) :
-    ∀ᶠ y in 𝓝 x, ∑ i, (Module.finBasis ℝ F₀).coord i (sectionCoord ℝ (F := F₀) f Q (f x) y) •
-      (trivializationAt F₀ B (f x)).localFrame (Module.finBasis ℝ F₀) i (f y) =
-        Q y := by
-  let e := trivializationAt F₀ B (f x)
-  filter_upwards [hf.preimage_mem_nhds (e.open_baseSet.mem_nhds
-    (FiberBundle.mem_baseSet_trivializationAt F₀ B (f x)))] with y hy
-  simp only [(Module.finBasis ℝ F₀).coord_apply, sectionCoord_apply]
-  exact ((Module.finBasis ℝ F₀).eq_sum_repr_continuousLinearMapAt_smul_localFrame hy (Q y)).symm
-
 variable {b : (z : M) → B z →L[ℝ] B z →L[ℝ] ℝ}
 
 /-- The product rule along `f` for fields pulled back from ambient differentiable vector
@@ -257,10 +241,10 @@ private theorem hasPairingProductRuleAt_pullback
     HasPairingProductRuleAt (J := J) cov f x (fun z ↦ (b z).toLinearMap₁₂) (fun y ↦ X (f y))
       (fun y ↦ Y (f y)) := by
   refine ⟨(hdiff hX hY).comp x hf, fun v ↦ ?_⟩
+  have hcomp := mvfderiv_comp_apply x (hdiff hX hY) hf v
+  simp only [Function.comp_def] at hcomp
   simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply]
-  rw [show (fun y ↦ b (f y) (X (f y)) (Y (f y))) = (fun z ↦ b z (X z) (Y z)) ∘ f from rfl,
-    mvfderiv_comp_apply x (hdiff hX hY) hf v, hcompat hX hY, alongMap_pullback cov f hf hX,
-    alongMap_pullback cov f hf hY]
+  rw [hcomp, hcompat hX hY, alongMap_pullback cov f hf hX, alongMap_pullback cov f hf hY]
   simp only [ContinuousLinearMap.comp_apply]
 
 /-- The product rule along `f` at `x` for a pairing `b` satisfying the ambient product rule, for
@@ -303,8 +287,13 @@ private theorem hasPairingProductRuleAt
   have hsum := HasPairingProductRuleAt.finsetSum_left (A := Finset.univ)
     (fun i _ ↦ HasPairingProductRuleAt.finsetSum_right (A := Finset.univ)
       (fun j _ ↦ hterm i j) fun j _ ↦ hcTerm W hW j) fun i _ ↦ hcTerm V hV i
-  exact hsum.congr_of_eventuallyEq (eventually_sum_coord_smul_localFrame hf.continuousAt V)
-    (eventually_sum_coord_smul_localFrame hf.continuousAt W)
+  have hexp (Q : ∀ y, B (f y)) : ∀ᶠ y in 𝓝 x,
+      ∑ i, β.coord i (sectionCoord ℝ (F := F₀) f Q (f x) y) • e.localFrame β i (f y) = Q y :=
+    (eventually_eq_sum_repr_sectionCoord_smul_localFrame f Q β hf.continuousAt
+      (FiberBundle.mem_baseSet_trivializationAt F₀ B (f x))).mono fun _ hy ↦ by
+        simp only [Module.Basis.coord_apply]
+        exact hy.symm
+  exact hsum.congr_of_eventuallyEq (hexp V) (hexp W)
 
 omit [∀ x, IsTopologicalAddGroup (B x)] [∀ x, ContinuousSMul ℝ (B x)] in
 /-- **The product rule along a map**, differentiability part: for a pointwise bilinear pairing `b`
@@ -335,11 +324,13 @@ theorem mdifferentiableAt_apply_alongMap
         ((mdifferentiableAt_coord_sectionCoord hV i).smul
           ((hdiff (hframe i) (hframe j)).comp x hf))
   refine hsum.congr_of_eventuallyEq ?_
-  filter_upwards [eventually_sum_coord_smul_localFrame (F₀ := F₀) hf.continuousAt V,
-    eventually_sum_coord_smul_localFrame (F₀ := F₀) hf.continuousAt W] with y hVy hWy
-  rw [← hVy, ← hWy]
+  have hbase := FiberBundle.mem_baseSet_trivializationAt F₀ B (f x)
+  filter_upwards [eventually_eq_sum_repr_sectionCoord_smul_localFrame f V (Module.finBasis ℝ F₀)
+    hf.continuousAt hbase, eventually_eq_sum_repr_sectionCoord_smul_localFrame f W
+    (Module.finBasis ℝ F₀) hf.continuousAt hbase] with y hVy hWy
+  rw [hVy, hWy]
   simp only [map_sum, map_smul, FunLike.coe_sum, FunLike.coe_smul,
-    Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Finset.mul_sum]
+    Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Finset.mul_sum, Module.Basis.coord_apply]
 
 /-- **The product rule along a map.** Let `b` be a pointwise bilinear pairing of fibre vectors
 of `B` that pairs sections differentiable at `f x` to a function differentiable at `f x`, such that

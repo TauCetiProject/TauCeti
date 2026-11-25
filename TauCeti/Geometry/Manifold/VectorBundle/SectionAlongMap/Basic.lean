@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
+public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
+import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -20,7 +22,9 @@ space. A section continuous into the total space has a continuous coordinate rea
 trivialization containing the image point. For a differentiable base map, differentiability of
 the total-space section at a point is equivalent to differentiability of its coordinate reading
 in any trivialization containing the image point. The corresponding equivalences within a set
-hold both for differentiability and for higher manifold regularity.
+hold both for differentiability and for higher manifold regularity. On the base set, a section
+expands in the local frame of a model-fibre basis with coefficients read from its coordinate
+reading (`TauCeti.Manifold.eq_sum_repr_sectionCoord_smul_localFrame`).
 -/
 
 public section
@@ -170,6 +174,29 @@ theorem symmL_sectionCoord_self (t : N) :
     (trivializationAt F V (γ t)).symmL 𝕜 (γ t)
       (sectionCoord 𝕜 (F := F) γ W (γ t) t) = W t :=
   symmL_sectionCoord γ W (γ t) t (FiberBundle.mem_baseSet_trivializationAt F V (γ t))
+
+/-! ### Local-frame expansion -/
+
+/-- At a parameter where `γ t` lies in the trivialization base set at `x`, `W t` expands in the
+local frame of a finite model-fibre basis `b` with coefficients read from `sectionCoord γ W x t`. -/
+theorem eq_sum_repr_sectionCoord_smul_localFrame {ι : Type*} [Fintype ι]
+    (b : Module.Basis ι 𝕜 F) {x : M} {t : N}
+    (hx : γ t ∈ (trivializationAt F V x).baseSet) :
+    W t = ∑ i, b.repr (sectionCoord 𝕜 (F := F) γ W x t) i •
+      (trivializationAt F V x).localFrame b i (γ t) := by
+  simpa only [sectionCoord_apply] using
+    b.eq_sum_repr_continuousLinearMapAt_smul_localFrame (𝕜 := 𝕜) hx (W t)
+
+/-- Along a filter `l` where `γ` tends to a point `y` in the trivialization base set at `x`, `W`
+eventually expands in the local frame of a finite model-fibre basis `b` with coefficients read from
+`sectionCoord γ W x`. -/
+theorem eventually_eq_sum_repr_sectionCoord_smul_localFrame {ι : Type*} [Fintype ι]
+    (b : Module.Basis ι 𝕜 F) {x y : M} {l : Filter N}
+    (hγ : Tendsto γ l (𝓝 y)) (hy : y ∈ (trivializationAt F V x).baseSet) :
+    ∀ᶠ r in l, W r = ∑ i, b.repr (sectionCoord 𝕜 (F := F) γ W x r) i •
+      (trivializationAt F V x).localFrame b i (γ r) :=
+  (hγ.eventually ((trivializationAt F V x).open_baseSet.mem_nhds hy)).mono fun _ hr ↦
+    eq_sum_repr_sectionCoord_smul_localFrame γ W b hr
 
 section Continuity
 
