@@ -59,6 +59,10 @@ respect to Euclidean surface measure.
   `TauCeti.euclideanHausdorffMeasure_normalGraphEmbedding_id_image_Ioo`: the graph of a linear
   function `ℓ` over `s` has surface measure `sqrt (1 + ‖ℓ‖²) |s|`; in particular the diagonal
   segment over `(0, 1)` has length `√2`.
+* `LipschitzWith.euclideanHausdorffMeasure_graph_image`: the **area of a Lipschitz graph in every
+  codimension**. For a Lipschitz `φ : E → F` between finite-dimensional real inner product spaces
+  and a measurable `s ⊆ E`, the `dim E`-dimensional Euclidean Hausdorff measure of the graph
+  `x ↦ (x, φ x)` over `s` is `∫_s sqrt (det (I + Dφ(x)† Dφ(x))) dx`.
 
 The graph Jacobian itself, `DifferentiableAt.normDet_fderiv_normalGraphEmbedding`, is in
 `TauCeti.Analysis.Calculus.FDeriv.WithLp`. For a Lipschitz `φ`, the graph parametrization is
@@ -69,10 +73,16 @@ where `φ` is differentiable, almost every point by Rademacher's theorem
 on an open set `U` agrees on `U` with a Lipschitz function on the whole space
 (`LipschitzOnWith.extend_real`), with the same derivative at the points of `U`.
 
+In higher codimension the same argument applies to `x ↦ (x, φ x)`, whose derivative is the linear
+graph of `Dφ(x)` (`DifferentiableAt.fderiv_graph`), with Jacobian `sqrt (det (I + A† A))`
+(`ContinuousLinearMap.normDet_graphL`).
+
 ## References
 
 * L. C. Evans, R. F. Gariepy, *Measure Theory and Fine Properties of Functions*, revised edition,
   §3.3 (the area formula and Lipschitz graphs).
+* L. Simon, *Lectures on Geometric Measure Theory*, Proceedings of the Centre for Mathematical
+  Analysis 3, Australian National University, 1983, §8, 8.6(3) (the area of a `C¹` graph).
 -/
 
 public section
@@ -368,5 +378,30 @@ theorem restrict_euclideanHausdorffMeasure_normalGraphEmbedding_image_eq_map_wit
   exact (ae_restrict_iff' hs).2 (Filter.Eventually.of_forall fun x hx => (heq (hsU hx)).symm)
 
 end LipschitzOnWith
+
+/-! ### Lipschitz graphs in every codimension -/
+
+namespace LipschitzWith
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+  [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] {K : ℝ≥0} {φ : E → F} {s : Set E}
+
+/-- **The area of a Lipschitz graph.** For a Lipschitz `φ : E → F` and a measurable `s ⊆ E`, the
+`dim E`-dimensional Euclidean Hausdorff measure of the graph of `φ` over `s` is
+`∫_s sqrt (det (I + Dφ(x)† Dφ(x))) dx`. Here `Dφ(x)` is `fderiv ℝ φ x`, which is the true
+derivative at almost every point by Rademacher's theorem; the remaining null set does not affect
+the integral. -/
+theorem euclideanHausdorffMeasure_graph_image (hφ : LipschitzWith K φ) (hs : MeasurableSet s) :
+    μHE[finrank ℝ E] ((fun x ↦ WithLp.toLp 2 (x, φ x)) '' s) =
+      ∫⁻ x in s, ENNReal.ofReal (Real.sqrt (LinearMap.det
+        (1 + LinearMap.adjoint (fderiv ℝ φ x : E →ₗ[ℝ] F) ∘ₗ (fderiv ℝ φ x : E →ₗ[ℝ] F)))) := by
+  rw [← hφ.graph.lintegral_normDet_fderiv_eq_euclideanHausdorffMeasure_image hs
+    (fun x _ y _ hxy ↦ congrArg Prod.fst (WithLp.toLp_injective 2 hxy))]
+  refine setLIntegral_congr_fun_ae hs ?_
+  filter_upwards [hφ.ae_differentiableAt] with x hx _
+  rw [hx.fderiv_graph, ContinuousLinearMap.normDet_graphL]
+
+end LipschitzWith
 
 end

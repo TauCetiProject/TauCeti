@@ -26,7 +26,9 @@ normal line or one tangential slice at a time, as in Fubini-type proofs of the d
 theorem. A map `w ↦ (f w, g w)` into the product is differentiated componentwise. The file also
 computes the derivative of the normal graph parametrization
 `y ↦ (φ y, y)`: it is the graph `x ↦ (A x, x)` of the derivative `A` of `φ`, so its
-geometric Jacobian is the classical surface factor `sqrt (1 + ‖A‖²)`.
+geometric Jacobian is the classical surface factor `sqrt (1 + ‖A‖²)`. In every codimension, the
+derivative of the graph parametrization `x ↦ (x, φ x)` of `φ : V → W` is the linear graph
+`v ↦ (v, A v)` of its derivative `A`.
 
 ## Main declarations
 
@@ -53,6 +55,9 @@ geometric Jacobian is the classical surface factor `sqrt (1 + ‖A‖²)`.
   linear tangent graph.
 * `DifferentiableAt.normDet_fderiv_normalGraphEmbedding`: the geometric Jacobian of a graph
   parametrization is `sqrt (1 + ‖Dφ‖²)`.
+* `HasFDerivAt.graph`, `DifferentiableAt.fderiv_graph`: the derivative of the graph
+  parametrization `x ↦ (x, φ x)` is the linear graph `ContinuousLinearMap.graphL` of the
+  derivative.
 -/
 
 public section
@@ -224,6 +229,27 @@ theorem _root_.DifferentiableAt.normDet_fderiv_normalGraphEmbedding {U : Type*}
   rw [hφ.fderiv_normalGraphEmbedding, ContinuousLinearMap.normDet_normalGraphL]
 
 end NormalGraph
+
+section Graph
+
+variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W]
+  [NormedSpace ℝ W]
+
+/-- The derivative of the graph parametrization `x ↦ (x, φ x)` into `WithLp 2 (V × W)` is the
+linear graph of the derivative of `φ`. -/
+theorem _root_.HasFDerivAt.graph {φ : V → W} {φ' : V →L[ℝ] W} {x : V}
+    (hφ : HasFDerivAt φ φ' x) :
+    HasFDerivAt (fun y ↦ WithLp.toLp 2 (y, φ y)) φ'.graphL x :=
+  ((WithLp.prodContinuousLinearEquiv 2 ℝ V W).symm.hasFDerivAt.comp x
+    ((hasFDerivAt_id x).prodMk hφ)).congr_fderiv (by ext v; simp)
+
+/-- At a differentiability point, the Fréchet derivative of the graph parametrization
+`x ↦ (x, φ x)` is the continuous linear graph of the derivative. -/
+theorem _root_.DifferentiableAt.fderiv_graph {φ : V → W} {x : V} (hφ : DifferentiableAt ℝ φ x) :
+    fderiv ℝ (fun y ↦ WithLp.toLp 2 (y, φ y)) x = (fderiv ℝ φ x).graphL :=
+  hφ.hasFDerivAt.graph.fderiv
+
+end Graph
 
 end TauCeti
 
