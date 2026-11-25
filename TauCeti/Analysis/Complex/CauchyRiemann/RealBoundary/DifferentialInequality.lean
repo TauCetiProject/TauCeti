@@ -106,8 +106,9 @@ theorem HasWeakConjWirtingerDerivRealBoundaryOn.exists_coeff_of_norm_le
       · simp only [hG'_def, h0, ite_false]
         exact div_le_of_le_mul₀ (norm_nonneg _) (abs_nonneg _)
           (hz.trans (mul_le_mul_of_nonneg_right (le_abs_self _) (norm_nonneg _)))
-    rw [Real.norm_eq_abs, Pi.smul_apply, smul_eq_mul, abs_mul, abs_of_nonneg (by positivity),
-      norm_smul, ContinuousLinearMap.norm_restrictScalars, norm_neg, Complex.norm_two, mul_assoc]
+    simp only [Real.norm_eq_abs, Pi.smul_apply, smul_eq_mul, abs_mul, norm_smul,
+      ContinuousLinearMap.norm_restrictScalars, norm_neg, Complex.norm_two, abs_two,
+      abs_of_nonneg hc0, mul_assoc]
     gcongr
     exact (hCn z).trans (by gcongr)
   · -- `-½ C ξ = G' = G` almost everywhere

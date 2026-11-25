@@ -182,8 +182,10 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 finite-dimensional real normed space `E`, `A² = -1`, and `L` a maximal totally real subspace for
 `A`, so that `E = L ⊕ A L`. Some real-linear isomorphism `Φ : ℂⁿ → E` turns `A` into
 multiplication by `i`, `A Φ = Φ i`, and carries the real vectors of `ℂⁿ`, those fixed by the
-coordinatewise conjugation `star`, exactly onto `L`. It sends `v` to `x + A y`, where `x` and `y`
-are the vectors of `L` with coordinates the real and imaginary parts of `v` in a basis of `L`. -/
+coordinatewise conjugation `star`, exactly onto `L`. It sends the complex basis `(eᵢ, i eᵢ)` of
+`ℂⁿ` to the doubled basis `(bᵢ, A bᵢ)` of a basis `b` of `L`
+(`TauCeti.IsMaximalTotallyReal.doubledBasis`), so `v` goes to `x + A y`, where `x` and `y` are the
+vectors of `L` with coordinates the real and imaginary parts of `v` in `b`. -/
 theorem exists_continuousLinearEquiv_pi_comp_eq_comp_I_smul_and_mem_iff
     (hL : IsMaximalTotallyReal (A : E →ₗ[ℝ] E) L) (hA : A ∘L A = -ContinuousLinearMap.id ℝ E) :
     ∃ (n : ℕ) (Φ : (Fin n → ℂ) ≃L[ℝ] E),
@@ -193,51 +195,48 @@ theorem exists_continuousLinearEquiv_pi_comp_eq_comp_I_smul_and_mem_iff
   have hA' (v : E) : A (A v) = -v := congr($hA v)
   have hAinj : Function.Injective A := fun x y h ↦ by simpa [hA'] using congr(A $h)
   let b := Module.finBasis ℝ L
-  -- the vectors of `L` whose coordinates are the real and the imaginary parts of `v`
-  let re' : (Fin (Module.finrank ℝ L) → ℂ) →ₗ[ℝ] L :=
-    b.equivFun.symm.toLinearMap ∘ₗ LinearMap.pi fun i ↦ Complex.reLm ∘ₗ LinearMap.proj i
-  let im' : (Fin (Module.finrank ℝ L) → ℂ) →ₗ[ℝ] L :=
-    b.equivFun.symm.toLinearMap ∘ₗ LinearMap.pi fun i ↦ Complex.imLm ∘ₗ LinearMap.proj i
-  have hre (v : Fin (Module.finrank ℝ L) → ℂ) : re' v = b.equivFun.symm fun i ↦ (v i).re := by
-    simp [re']
-  have him (v : Fin (Module.finrank ℝ L) → ℂ) : im' v = b.equivFun.symm fun i ↦ (v i).im := by
-    simp [im']
-  have hP : Function.Bijective (re'.prod im') := by
-    refine ⟨fun v w h ↦ funext fun i ↦ ?_,
-      fun xy ↦ ⟨fun i ↦ ⟨b.equivFun xy.1 i, b.equivFun xy.2 i⟩, ?_⟩⟩
-    · have h1 := congr(b.equivFun ($h).1 i)
-      have h2 := congr(b.equivFun ($h).2 i)
-      simp only [LinearMap.prod_apply, Function.prod, hre, him, LinearEquiv.apply_symm_apply]
-        at h1 h2
-      exact Complex.ext h1 h2
-    · simp [hre, him]
-  -- the doubled frame `(x, y) ↦ x + A y` of `L` is bijective
-  have hD := (by rwa [Submodule.range_subtype] :
-    IsMaximalTotallyReal (A : E →ₗ[ℝ] E) (LinearMap.range L.subtype)).bijective_coprod
-      L.injective_subtype (hAinj.comp L.injective_subtype)
-  let Φ : (Fin (Module.finrank ℝ L) → ℂ) ≃ₗ[ℝ] E :=
-    LinearEquiv.ofBijective ((L.subtype.coprod ((A : E →ₗ[ℝ] E) ∘ₗ L.subtype)) ∘ₗ re'.prod im')
-      (by rw [LinearMap.coe_comp]; exact hD.comp hP)
-  have hΦ (v : Fin (Module.finrank ℝ L) → ℂ) : Φ v = (re' v : E) + A (im' v) := by
-    simp [Φ]
-  refine ⟨Module.finrank ℝ L, Φ.toContinuousLinearEquiv, ContinuousLinearMap.ext fun v ↦ ?_,
-    fun v ↦ ?_⟩
-  · have h1 : re' (I • v) = -im' v := by rw [hre, him, ← map_neg]; congr 1; funext i; simp
-    have h2 : im' (I • v) = re' v := by rw [hre, him]; congr 1; funext i; simp
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      LinearEquiv.coe_toContinuousLinearEquiv', hΦ, map_add, hA', _root_.smul_apply,
-      ContinuousLinearMap.id_apply, h1, h2, Submodule.coe_neg]
-    abel
-  · -- `x + A y ∈ L` forces `A y ∈ L ∩ A L = 0`, that is `y = 0`
-    have hstar : star v = v ↔ im' v = 0 := by
-      rw [him, LinearEquiv.map_eq_zero_iff, funext_iff, funext_iff]
-      simp [Complex.conj_eq_iff_im]
-    simp only [LinearEquiv.coe_toContinuousLinearEquiv', hΦ, hstar]
-    rw [Submodule.add_mem_iff_right _ (re' v).property]
-    refine ⟨fun hmem ↦ ?_, fun h ↦ by simp [h]⟩
-    have h0 := Submodule.disjoint_def.1 hL.disjoint _ hmem
-      (Submodule.mem_map_of_mem (im' v).property)
-    exact Subtype.ext (hAinj (by simpa using h0))
+  -- the frame sending the complex basis `(eᵢ, i eᵢ)` of `ℂⁿ` to the doubled basis `(bᵢ, A bᵢ)`
+  let c := (Pi.basis fun _ : Fin (Module.finrank ℝ L) ↦ Complex.basisOneI).reindex
+    (Equiv.sigmaEquivProd _ _)
+  let d := hL.doubledBasis (hAinj.comp L.injective_subtype) b
+  let Φ := c.equiv d (Equiv.refl _)
+  have hΦ (i : Fin (Module.finrank ℝ L)) (k : Fin 2) :
+      Φ (Pi.single i (Complex.basisOneI k)) = d (i, k) := by
+    simpa [c] using c.equiv_apply (i, k) d (Equiv.refl _)
+  have hΦ0 (i : Fin (Module.finrank ℝ L)) : Φ (Pi.single i 1) = b i := by
+    simpa using (hΦ i 0).trans (doubledBasis_apply_zero ..)
+  have hΦ1 (i : Fin (Module.finrank ℝ L)) : Φ (Pi.single i I) = A (b i) := by
+    simpa using (hΦ i 1).trans (doubledBasis_apply_one ..)
+  have hΦI (w : Fin (Module.finrank ℝ L) → ℂ) : Φ (I • w) = A (Φ w) := by
+    refine LinearMap.congr_fun (c.ext (f₁ := Φ.toLinearMap ∘ₗ (I • LinearMap.id))
+      (f₂ := (A : E →ₗ[ℝ] E) ∘ₗ Φ.toLinearMap) fun ⟨i, k⟩ ↦ ?_) w
+    fin_cases k <;> simp [c, hΦ0, hΦ1, hA', ← Pi.single_smul, Pi.single_neg]
+  -- `Φ` carries the real vector with coordinates `x` to the vector of `L` with coordinates `x`
+  have hre (x : Fin (Module.finrank ℝ L) → ℝ) :
+      Φ (fun i ↦ (x i : ℂ)) = b.equivFun.symm x := by
+    have : (fun i ↦ (x i : ℂ)) = ∑ i, x i • Pi.single i 1 := by
+      ext j
+      simp [Finset.sum_apply, Pi.single_apply]
+    simp [this, hΦ0, Module.Basis.equivFun_symm_apply]
+  refine ⟨Module.finrank ℝ L, Φ.toContinuousLinearEquiv,
+    ContinuousLinearMap.ext fun w ↦ by simpa using (hΦI w).symm, fun v ↦ ?_⟩
+  -- `Φ v = x + A y` for the vectors `x`, `y` of `L` with coordinates the real and imaginary
+  -- parts of `v`; `x + A y ∈ L` forces `A y ∈ L ∩ A L = 0`, that is `y = 0`
+  have hΦv : Φ v =
+      b.equivFun.symm (fun i ↦ (v i).re) + A (b.equivFun.symm fun i ↦ (v i).im) := by
+    rw [← hre, ← hre, ← hΦI, ← map_add]
+    congr 1
+    funext i
+    simp [mul_comm I]
+  have hstar : star v = v ↔ b.equivFun.symm (fun i ↦ (v i).im) = 0 := by
+    rw [LinearEquiv.map_eq_zero_iff, funext_iff, funext_iff]
+    simp [Complex.conj_eq_iff_im]
+  simp only [LinearEquiv.coe_toContinuousLinearEquiv', hΦv, hstar]
+  rw [Submodule.add_mem_iff_right _ (Submodule.coe_mem _)]
+  refine ⟨fun hmem ↦ ?_, fun h ↦ by simp [h]⟩
+  have h0 := Submodule.disjoint_def.1 hL.disjoint _ hmem
+    (Submodule.mem_map_of_mem (b.equivFun.symm fun i ↦ (v i).im).property)
+  exact Subtype.ext (hAinj (by simpa using h0))
 
 end IsMaximalTotallyReal
 

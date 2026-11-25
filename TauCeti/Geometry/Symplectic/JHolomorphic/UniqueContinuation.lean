@@ -320,8 +320,8 @@ private theorem conjWirtingerDeriv_symm_sub {V : Type*} [NormedAddCommGroup V] [
       (2 : ℂ)⁻¹ • (Ψ.symm (fderiv ℝ u z 1) + I • Ψ.symm (fderiv ℝ u z I)) := by
   have hD : fderiv ℝ (fun w ↦ Ψ.symm (u w - x₀)) z = (Ψ.symm : E →L[ℝ] V) ∘L fderiv ℝ u z :=
     ((Ψ.symm : E →L[ℝ] V).hasFDerivAt.comp z (hu.hasFDerivAt.sub_const x₀)).fderiv
-  rw [conjWirtingerDeriv_apply, hD, smul_eq_mul, mul_one, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
+  rw [conjWirtingerDeriv_apply, hD]
+  simp
 
 omit [FiniteDimensional ℝ E] in
 /-- Off the real axis, the conjugate Wirtinger derivative of `η = Ψ⁻¹ (u - x₀)` is bounded by
@@ -341,19 +341,12 @@ private theorem norm_conjWirtingerDeriv_symm_sub_le {V : Type*} [NormedAddCommGr
         exact (norm_add_le _ _).trans (by rw [norm_smul, Complex.norm_I, one_mul])
     _ ≤ _ := by linarith [hv 1 norm_one, hv I Complex.norm_I]
 
-/-- Off the real axis, a point of `Ω` is an interior point of the closed upper part
-`Ω ∩ {0 ≤ im}`. -/
-private theorem inter_setOf_lt_im_subset_interior (hΩ : IsOpen Ω) :
-    Ω ∩ {z | 0 < z.im} ⊆ interior (Ω ∩ {z | 0 ≤ z.im}) :=
-  interior_maximal (fun _ hw ↦ ⟨hw.1, hw.2.out.le⟩)
-    (hΩ.inter (isOpen_lt continuous_const continuous_im))
-
 omit [FiniteDimensional ℝ E] in
 /-- A map `C¹` up to the real axis on `Ω ∩ {0 ≤ im}` is differentiable off the axis. -/
 private theorem differentiableAt_of_mem_inter_setOf_lt_im (hΩ : IsOpen Ω)
     (hu : ContDiffOn ℝ 1 u (Ω ∩ {z | 0 ≤ z.im})) {z : ℂ} (hz : z ∈ Ω ∩ {z | 0 < z.im}) :
     DifferentiableAt ℝ u z :=
-  (hu.contDiffAt (mem_interior_iff_mem_nhds.1 (inter_setOf_lt_im_subset_interior hΩ hz))
+  (hu.contDiffAt (mem_interior_iff_mem_nhds.1 ((interior_inter_setOf_im_nonneg hΩ).ge hz))
     ).differentiableAt_one
 
 omit [FiniteDimensional ℝ E] in
@@ -381,7 +374,7 @@ private theorem exists_eventually_norm_conjWirtingerDeriv_div_le {n : ℕ}
     refine ⟨(2 : ℝ)⁻¹ * (‖(Ψ.symm : E →L[ℝ] (Fin n → ℂ))‖ * ‖J x₀‖ * K *
       ‖(Ψ : (Fin n → ℂ) →L[ℝ] E)‖ * B), by positivity, ?_⟩
     filter_upwards [hB, hut] with w hwB hwt hw
-    obtain ⟨hwd, hwB⟩ := hwB (inter_setOf_lt_im_subset_interior hΩ hw)
+    obtain ⟨hwd, hwB⟩ := hwB ((interior_inter_setOf_im_nonneg hΩ).ge hw)
     have hJw : ‖J (u w) - J x₀‖ ≤ K * ‖u w - x₀‖ := by
       simpa only [dist_eq_norm] using
         lipschitzOnWith_iff_dist_le_mul.1 hK _ hwt _ (mem_of_mem_nhds ht)
@@ -408,7 +401,7 @@ private theorem exists_eventually_norm_conjWirtingerDeriv_div_le {n : ℕ}
     refine ⟨‖(Ψ.symm : E →L[ℝ] (Fin n → ℂ))‖ * B / (‖Ψ.symm (u z₁ - x₀)‖ / 2), by positivity,
       ?_⟩
     filter_upwards [hB, hη] with w hwB hwη hw
-    obtain ⟨hwd, hwB⟩ := hwB (inter_setOf_lt_im_subset_interior hΩ hw)
+    obtain ⟨hwd, hwB⟩ := hwB ((interior_inter_setOf_im_nonneg hΩ).ge hw)
     exact div_le_div₀ (by positivity)
       ((norm_conjWirtingerDeriv_symm_sub_le Ψ hwd).trans (by gcongr)) (by positivity) hwη.le
 
@@ -483,9 +476,9 @@ private theorem exists_frame_realBoundary (hJ : ∃ K, ∃ t ∈ 𝓝 x₀, Lips
     · rw [div_mul_cancel₀ _ (norm_ne_zero_iff.2 hη0)]
 
 omit [FiniteDimensional ℝ E] in
-/-- **A conjugation-invariant domain with the same upper part.** The open set
-`Ω' = {z | re z + i |im z| ∈ Ω}` is invariant under conjugation and has the same closed upper part
-`Ω ∩ {0 ≤ im}` as `Ω`, so the equation and the boundary condition pass from `Ω` to `Ω'`. -/
+/-- **A conjugation-invariant domain with the same upper part.** The equation and the boundary
+condition pass from `Ω` to the conjugation-invariant open set `Ω'` with the same closed upper part
+given by `TauCeti.exists_isOpen_mapsTo_conj_inter_setOf_im_nonneg_eq`. -/
 private theorem exists_mapsTo_conj_realBoundary (hΩ : IsOpen Ω)
     (hCR : ∀ z ∈ Ω, 0 < z.im → fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
     (hbd : ∀ x : ℝ, (x : ℂ) ∈ Ω → u x - x₀ ∈ L) :
@@ -493,16 +486,11 @@ private theorem exists_mapsTo_conj_realBoundary (hΩ : IsOpen Ω)
       Ω' ∩ {z | 0 ≤ z.im} = Ω ∩ {z | 0 ≤ z.im} ∧
       (∀ z ∈ Ω', 0 < z.im → fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1)) ∧
       ∀ x : ℝ, (x : ℂ) ∈ Ω' → u x - x₀ ∈ L := by
-  set Ω' := (fun z : ℂ ↦ (z.re : ℂ) + |z.im| * I) ⁻¹' Ω
-  have heq : Ω' ∩ {z | 0 ≤ z.im} = Ω ∩ {z | 0 ≤ z.im} := by
-    ext z
-    exact and_congr_left fun h ↦ by
-      rw [mem_preimage, abs_of_nonneg (show 0 ≤ z.im from h), re_add_im]
+  obtain ⟨Ω', hΩ', hΩs, heq⟩ := exists_isOpen_mapsTo_conj_inter_setOf_im_nonneg_eq hΩ
   have hsub {z : ℂ} (hz : z ∈ Ω') (h : 0 ≤ z.im) : z ∈ Ω :=
-    (heq ▸ (⟨hz, h⟩ : z ∈ Ω' ∩ {z | 0 ≤ z.im}) : z ∈ Ω ∩ {z | 0 ≤ z.im}).1
-  refine ⟨Ω', hΩ.preimage (by fun_prop), fun z hz ↦ ?_, heq,
-    fun z hz h ↦ hCR z (hsub hz h.le) h, fun x hx ↦ hbd x (hsub hx (by simp))⟩
-  simpa [Ω'] using hz
+    (heq.subset (show z ∈ Ω' ∩ {z | 0 ≤ z.im} from ⟨hz, h⟩)).1
+  exact ⟨Ω', hΩ', hΩs, heq, fun z hz h ↦ hCR z (hsub hz h.le) h,
+    fun x hx ↦ hbd x (hsub hx (by simp))⟩
 
 /-- **Unique continuation up to a totally real boundary.** Let `Ω` be an open set
 with `Ω ∩ {0 ≤ im}` connected, and `u` a map of class `C¹` up to the real axis on
