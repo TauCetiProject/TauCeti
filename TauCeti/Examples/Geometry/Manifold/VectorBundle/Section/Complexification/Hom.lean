@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Complexification.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Trivial
+import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 
 /-!
 # Native density-valued Hom test coefficients
@@ -136,17 +137,18 @@ example : ∃ T : BundleTest 𝓘(ℝ, ℝ) ℝ (Bundle.Trivial ℝ ℝ) ≃L[�
     ext s x
     simp only [mapEquiv_apply, φ, LinearEquiv.neg_apply, ContMDiffSection.coe_neg, Pi.neg_apply]
   let T := BundleTest.mapCLE (I := 𝓘(ℝ, ℝ)) e e U he he hcover φ hφ hφ'
-    (fun _ ↦ -ContinuousLinearMap.id ℝ ℝ) (fun _ ↦ -ContinuousLinearMap.id ℝ ℝ)
+    (fun _ ↦ ContMDiffMap.const (-ContinuousLinearMap.id ℝ ℝ))
+    (fun _ ↦ ContMDiffMap.const (-ContinuousLinearMap.id ℝ ℝ))
     (by
       intro i s x
       rw [hsec, LinearEquiv.neg_apply, map_neg]
-      simp only [neg_apply, ContinuousLinearMap.id_apply, ContMDiffMap.coe_neg,
-        Pi.neg_apply])
+      simp only [ContMDiffMap.const_apply, neg_apply, ContinuousLinearMap.id_apply,
+        ContMDiffMap.coe_neg, Pi.neg_apply])
     (by
       intro i s x
       rw [hsec, LinearEquiv.symm_neg, LinearEquiv.neg_apply, map_neg]
-      simp only [neg_apply, ContinuousLinearMap.id_apply, ContMDiffMap.coe_neg,
-        Pi.neg_apply])
+      simp only [ContMDiffMap.const_apply, neg_apply, ContinuousLinearMap.id_apply,
+        ContMDiffMap.coe_neg, Pi.neg_apply])
   obtain ⟨s, hs⟩ := BundleTest.exists_apply_eq (I := 𝓘(ℝ, ℝ)) (F := ℝ)
     (V := Bundle.Trivial ℝ ℝ) 0 1
   refine ⟨T, s, ?_⟩

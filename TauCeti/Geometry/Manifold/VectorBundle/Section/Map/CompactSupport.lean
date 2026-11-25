@@ -11,8 +11,8 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution
 /-!
 # Continuous transport of compactly supported sections and native bundle tests
 
-A smooth fibrewise linear equivalence whose expressions in common frame domains are fixed
-continuous linear maps in both directions is continuous on every fixed-support stage
+A smooth fibrewise linear equivalence whose expressions in common frame domains are smooth families
+of continuous linear maps in both directions is continuous on every fixed-support stage
 (`ContMDiffSection.mapSupportedInCLE`). It therefore transports the final locally convex
 compact-support topologies (`ContMDiffSection.mapCompactlySupportedCLE`) and native smooth bundle
 tests (`TauCeti.BundleTest.mapCLE`). The frames and domains are arbitrary. Only the comparison
@@ -45,15 +45,16 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [∀ i, MemTrivializationAtlas (e i)] [∀ i, MemTrivializationAtlas (d i)]
   (U : ι → Opens M) (he : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
   (hd : ∀ i, (U i : Set M) ⊆ (d i).baseSet)
-  (A : ι → F →L[ℝ] G) (B : ι → G →L[ℝ] F)
+  (A : ∀ i, C^n⟮I, U i; 𝓘(ℝ, F →L[ℝ] G), F →L[ℝ] G⟯)
+  (B : ∀ i, C^n⟮I, U i; 𝓘(ℝ, G →L[ℝ] F), G →L[ℝ] F⟯)
   (hA : ∀ i s (x : U i), (d i).frameCoordinates (hd i) (mapEquiv φ hφ hφ' s) x =
-    A i ((e i).frameCoordinates (he i) s x))
+    A i x ((e i).frameCoordinates (he i) s x))
   (hB : ∀ i s (x : U i), (e i).frameCoordinates (he i) ((mapEquiv φ hφ hφ').symm s) x =
-    B i ((d i).frameCoordinates (hd i) s x))
+    B i x ((d i).frameCoordinates (hd i) s x))
 
 include A hA in
-/-- Fixed linear expressions in common frames make compact-support transport continuous for the
-existing final locally convex topologies. -/
+/-- Smooth linear frame expressions in common frames make compact-support transport continuous
+for the existing final locally convex topologies. -/
 theorem continuous_mapCompactlySupportedEquiv :
     let _ := compactlySupportedTopology (I := I) (n := n) e U he
     let _ := compactlySupportedTopology (I := I) (n := n) d U hd
@@ -73,7 +74,7 @@ theorem continuous_mapCompactlySupportedEquiv :
     (mapCompactlySupportedEquiv_ofSupportedIn φ hφ hφ' K s).symm
 
 include B hB in
-/-- The inverse fixed frame expressions give continuous inverse compact-support transport. -/
+/-- Inverse smooth linear frame expressions give continuous inverse compact-support transport. -/
 theorem continuous_mapCompactlySupportedEquiv_symm :
     let _ := compactlySupportedTopology (I := I) (n := n) e U he
     let _ := compactlySupportedTopology (I := I) (n := n) d U hd
@@ -178,14 +179,15 @@ variable (φ : ∀ x, V x ≃ₗ[ℝ] W x)
     (fun p : TotalSpace F V ↦ (⟨p.proj, φ p.proj p.snd⟩ : TotalSpace G W)))
   (hφ' : ContMDiff (I.prod 𝓘(ℝ, G)) (I.prod 𝓘(ℝ, F)) ∞
     (fun p : TotalSpace G W ↦ (⟨p.proj, (φ p.proj).symm p.snd⟩ : TotalSpace F V)))
-  (A : ι → F →L[ℝ] G) (B : ι → G →L[ℝ] F)
+  (A : ∀ i, C^∞⟮I, U i; 𝓘(ℝ, F →L[ℝ] G), F →L[ℝ] G⟯)
+  (B : ∀ i, C^∞⟮I, U i; 𝓘(ℝ, G →L[ℝ] F), G →L[ℝ] F⟯)
   (hA : ∀ i s (x : U i), (d i).frameCoordinates (hd i) (mapEquiv φ hφ hφ' s) x =
-    A i ((e i).frameCoordinates (he i) s x))
+    A i x ((e i).frameCoordinates (he i) s x))
   (hB : ∀ i s (x : U i), (e i).frameCoordinates (he i) ((mapEquiv φ hφ hφ').symm s) x =
-    B i ((d i).frameCoordinates (hd i) s x))
+    B i x ((d i).frameCoordinates (hd i) s x))
 
 include A B hA hB in
-/-- Smooth fibre transport with fixed continuous linear frame expressions in both directions is a
+/-- Smooth fibre transport with smooth linear frame expressions in both directions is a
 real continuous linear equivalence on the existing native bundle-test spaces. -/
 def mapCLE : BundleTest I F V ≃L[ℝ] BundleTest I G W := by
   let _ := compactlySupportedTopology (I := I) (n := ∞) e U he

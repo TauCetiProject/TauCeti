@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Topology
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Map.Basic
 import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
+import TauCeti.Geometry.Manifold.ContMDiffMap.CLMApply
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Prod
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Comp
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Restriction
@@ -34,10 +35,10 @@ the image section are a fixed smooth map of the base point and the source coeffi
 topology, and continuity is local on the target frame domain
 (`ContMDiffMap.continuous_of_forall_continuous_restrict`).
 
-A smooth fibrewise linear equivalence whose expressions in common frame domains are fixed
-continuous linear maps in both directions is a homeomorphism for the frame topologies, with no
-covering or local compactness assumption. It is therefore a continuous linear equivalence on every
-fixed-support stage (`ContMDiffSection.mapSupportedInCLE`).
+A smooth fibrewise linear equivalence whose expressions in common frame domains are smooth
+families of continuous linear maps in both directions is a homeomorphism for the frame topologies,
+with no covering or local compactness assumption. It is therefore a continuous linear equivalence
+on every fixed-support stage (`ContMDiffSection.mapSupportedInCLE`).
 
 ## References
 
@@ -147,20 +148,24 @@ variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜]
   [∀ i, MemTrivializationAtlas (e i)] [∀ i, MemTrivializationAtlas (d i)]
   (U : ι → Opens M) (he : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
   (hd : ∀ i, (U i : Set M) ⊆ (d i).baseSet)
-  (A : ι → F →L[𝕜] G) (B : ι → G →L[𝕜] F)
+  (A : ∀ i, C^n⟮I, U i; 𝓘(𝕜, F →L[𝕜] G), F →L[𝕜] G⟯)
+  (B : ∀ i, C^n⟮I, U i; 𝓘(𝕜, G →L[𝕜] F), G →L[𝕜] F⟯)
   (hA : ∀ i s (x : U i), (d i).frameCoordinates (hd i) (mapEquiv φ hφ hφ' s) x =
-    A i ((e i).frameCoordinates (he i) s x))
+    A i x ((e i).frameCoordinates (he i) s x))
   (hB : ∀ i s (x : U i), (e i).frameCoordinates (he i) ((mapEquiv φ hφ hφ').symm s) x =
-    B i ((d i).frameCoordinates (hd i) s x))
+    B i x ((d i).frameCoordinates (hd i) s x))
 
 include A hA in
-/-- Fixed linear frame expressions make fibre transport continuous for the frame topologies.
+/-- Smooth linear frame expressions make fibre transport continuous for the frame topologies.
 Unlike `continuous_map_frameTopology`, the frame domains need not cover the base. -/
 theorem continuous_mapEquiv_frameTopology :
     let _ := frameTopology (I := I) (n := n) e U he
     let _ := frameTopology (I := I) (n := n) d U hd
     Continuous (mapEquiv φ hφ hφ') :=
-  continuous_frameTopology_of_frameCoordinates_eq_clm_apply e U he d hd A hA
+  continuous_frameTopology_of_frameCoordinates_eq_clmApplyLinearMap e U he d hd A fun i s ↦
+    ContMDiffMap.ext fun x ↦ by
+      rw [ContMDiffMap.clmApplyLinearMap_apply]
+      exact hA i s x
 
 include B hB in
 /-- The inverse frame expressions make inverse transport continuous for the frame topologies. -/
@@ -168,10 +173,13 @@ theorem continuous_mapEquiv_symm_frameTopology :
     let _ := frameTopology (I := I) (n := n) e U he
     let _ := frameTopology (I := I) (n := n) d U hd
     Continuous (mapEquiv φ hφ hφ').symm :=
-  continuous_frameTopology_of_frameCoordinates_eq_clm_apply d U hd e he B hB
+  continuous_frameTopology_of_frameCoordinates_eq_clmApplyLinearMap d U hd e he B fun i s ↦
+    ContMDiffMap.ext fun x ↦ by
+      rw [ContMDiffMap.clmApplyLinearMap_apply]
+      exact hB i s x
 
 include A hA in
-/-- Fixed linear frame expressions make fibre transport continuous on every support stage, for
+/-- Smooth linear frame expressions make fibre transport continuous on every support stage, for
 the subspace topologies of the frame topologies. -/
 theorem continuous_mapSupportedInEquiv (K : Set M) :
     let _ := frameTopology (I := I) (n := n) e U he

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Complexification.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Map.CompactSupport
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupport.Complexification
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupport.Complexification.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution
 
 /-!
@@ -463,9 +463,9 @@ def SupportedIn.homComplexificationCLE (K : Set M) :
     (fun i ↦ (e i).complexification.continuousLinearMap (RingHom.id ℂ) (d i).complexification) U
     (subset_baseSet_complexification_continuousLinearMap e d U hU)
     (subset_baseSet_continuousLinearMap_complexification e d U hU)
-    (fun _ ↦
+    (fun _ ↦ ContMDiffMap.const <|
       (Complexification.continuousLinearMapEquiv F G).toContinuousLinearMap.restrictScalars ℝ)
-    (fun _ ↦
+    (fun _ ↦ ContMDiffMap.const <|
       (Complexification.continuousLinearMapEquiv F G).symm.toContinuousLinearMap.restrictScalars ℝ)
     (frameCoordinates_homComplexificationEquiv e d U hU)
     (frameCoordinates_homComplexificationEquiv_symm e d U hU) K
@@ -489,9 +489,9 @@ def CompactlySupported.homComplexificationCLE :
     (fun i ↦ (e i).complexification.continuousLinearMap (RingHom.id ℂ) (d i).complexification) U
     (subset_baseSet_complexification_continuousLinearMap e d U hU)
     (subset_baseSet_continuousLinearMap_complexification e d U hU)
-    (fun _ ↦
+    (fun _ ↦ ContMDiffMap.const <|
       (Complexification.continuousLinearMapEquiv F G).toContinuousLinearMap.restrictScalars ℝ)
-    (fun _ ↦
+    (fun _ ↦ ContMDiffMap.const <|
       (Complexification.continuousLinearMapEquiv F G).symm.toContinuousLinearMap.restrictScalars ℝ)
     (frameCoordinates_homComplexificationEquiv e d U hU)
     (frameCoordinates_homComplexificationEquiv_symm e d U hU)
@@ -585,9 +585,9 @@ def _root_.TauCeti.BundleTest.homComplexificationCLE :
     (bundleHomComplexificationLinearEquiv (F := F) (G := G))
     contMDiff_bundleHomComplexificationLinearEquiv
     contMDiff_bundleHomComplexificationLinearEquiv_symm
-    (fun _ ↦
+    (fun _ ↦ ContMDiffMap.const <|
       (Complexification.continuousLinearMapEquiv F G).toContinuousLinearMap.restrictScalars ℝ)
-    (fun _ ↦
+    (fun _ ↦ ContMDiffMap.const <|
       (Complexification.continuousLinearMapEquiv F G).symm.toContinuousLinearMap.restrictScalars ℝ)
     (frameCoordinates_homComplexificationEquiv e d U hU)
     (frameCoordinates_homComplexificationEquiv_symm e d U hU)
