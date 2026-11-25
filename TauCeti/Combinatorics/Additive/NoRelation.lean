@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Additive.AP.Three.Behrend
+import TauCeti.Combinatorics.Additive.AP.Three.Behrend
 import TauCeti.Data.Int.Digits
 import Mathlib.Analysis.Complex.ExponentialBounds
 
@@ -35,12 +36,12 @@ least `D ^ n / (n D ^ 2)` points (`Behrend.exists_large_sphere`) gives the bound
 
 ## Main results
 
+* `TauCeti.noRelation_iff`: the defining property of `NoRelation`, for use in other files.
 * `TauCeti.NoRelation.mono`, `TauCeti.NoRelation.of_le`: the predicate passes to subsets and to
   shorter lengths.
 * `TauCeti.NoRelation.threeAPFree`: for `L ≠ 0`, a set with no relation of length `L` is
   `ThreeAPFree`.
 * `TauCeti.noRelation_vadd_set`: the predicate is invariant under translation.
-* `Behrend.map_lt_pow`: digits below `d` give a value of `Behrend.map d` below `d ^ n`.
 * `TauCeti.noRelation_image_map_sphere`: for `2 L (D - 1) < B`, the image of
   `Behrend.sphere n D R` under `Behrend.map B` has no relation of length `L`.
 * `TauCeti.exists_noRelation_of_two_mul_lt`: for `2 L (D - 1) < B` and `D ≤ B` there is
@@ -59,28 +60,13 @@ least `D ^ n / (n D ^ 2)` points (`Behrend.exists_large_sphere`) gives the bound
   https://github.com/leanprover-community/riemann-hypothesis: the predicate is
   `Formalism.FrobeniusOrbits.NoRel` and the existence theorem
   `Formalism.FrobeniusOrbits.HostThickExists` (proved as
-  `Formalism.FrobeniusOrbits.hostThickExists`). They are the source of the statements here; that
-  development has no licence file and was not read, and the proofs here are independent.
+  `Formalism.FrobeniusOrbits.hostThickExists`). They are the source of the statements here.
 -/
 
 public section
 
 open Finset Real
 open scoped Pointwise
-
-namespace Behrend
-
-/-- If every coordinate of `x` is less than `d`, then `Behrend.map d x < d ^ n`. -/
-theorem map_lt_pow {n d : ℕ} {x : Fin n → ℕ} (hx : ∀ k, x k < d) : map d x < d ^ n := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    have h := ih (x := x ∘ Fin.succ) fun k => hx k.succ
-    have h0 := hx 0
-    rw [map_succ', pow_succ]
-    linarith [Nat.mul_le_mul_right d (Nat.succ_le_of_lt h)]
-
-end Behrend
 
 namespace TauCeti
 
@@ -91,6 +77,13 @@ def NoRelation (L : ℕ) (T : Set ℤ) : Prop :=
     0 < |i| → |i| ≤ L → 0 < |j| → |j| ≤ L → j * (s₂ - s₁) ≠ i * (s₃ - s₁)
 
 variable {L L' : ℕ} {T T' : Set ℤ}
+
+/-- Unfolding lemma for `NoRelation`: no pairwise distinct `s₁, s₂, s₃ ∈ T` and integers `i ≠ j`
+with `0 < |i|, |j| ≤ L` satisfy `j (s₂ - s₁) = i (s₃ - s₁)`. -/
+theorem noRelation_iff : NoRelation L T ↔
+    ∀ s₁ ∈ T, ∀ s₂ ∈ T, ∀ s₃ ∈ T, s₁ ≠ s₂ → s₁ ≠ s₃ → s₂ ≠ s₃ → ∀ i j : ℤ, i ≠ j →
+      0 < |i| → |i| ≤ L → 0 < |j| → |j| ≤ L → j * (s₂ - s₁) ≠ i * (s₃ - s₁) :=
+  Iff.rfl
 
 /-- A subset of a set with no relation of length `L` has no relation of length `L`. -/
 theorem NoRelation.mono (hT : T' ⊆ T) (h : NoRelation L T) : NoRelation L T' :=
@@ -103,6 +96,7 @@ theorem NoRelation.of_le (hL : L' ≤ L) (h : NoRelation L T) : NoRelation L' T 
       (hjL.trans (by exact_mod_cast hL))
 
 /-- The empty set has no relation of any length. -/
+@[simp]
 theorem noRelation_empty : NoRelation L ∅ := fun _ h => h.elim
 
 /-- A set with at most one element has no relation of any length. -/
@@ -110,6 +104,7 @@ theorem _root_.Set.Subsingleton.noRelation (hT : T.Subsingleton) : NoRelation L 
   fun _ h₁ _ h₂ _ _ h₁₂ => (h₁₂ (hT h₁ h₂)).elim
 
 /-- A singleton has no relation of any length. -/
+@[simp]
 theorem noRelation_singleton (a : ℤ) : NoRelation L {a} :=
   Set.subsingleton_singleton.noRelation
 
