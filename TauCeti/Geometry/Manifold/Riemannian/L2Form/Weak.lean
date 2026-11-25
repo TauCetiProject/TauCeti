@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
 public import TauCeti.Geometry.Manifold.Riemannian.L2Form.Adjoint
 public import TauCeti.Geometry.Manifold.Riemannian.L2Form.Density
+public import TauCeti.LinearAlgebra.LinearPMap.CommonDomain
 
 /-!
 # The weak exterior derivative and codifferential on `L²` forms
@@ -84,50 +85,32 @@ variable [IsManifold I 1 M] [IsContinuousRiemannianBundle E (fun x : M ↦ Tange
 /-- The partial linear map `L²Ωᵏ(M) → L²Ωᵏ'(M)` induced by a linear map `T` of compactly
 supported smooth forms: its domain is the image of the compactly supported smooth `k`-forms in
 `L²Ωᵏ(M)`, and it sends the class of `α` to the class of `T α`. -/
-def toL2Operator : L2Form I M k →ₗ.[ℝ] L2Form I M k' where
-  domain := LinearMap.range (toL2Form I M k)
-  toFun := toL2Form I M k' ∘ₗ T ∘ₗ
-    (LinearEquiv.ofInjective (toL2Form I M k) toL2Form_injective).symm.toLinearMap
+def toL2Operator : L2Form I M k →ₗ.[ℝ] L2Form I M k' :=
+  (toL2Form I M k).domainOperator (toL2Form I M k' ∘ₗ T) toL2Form_injective
 
 /-- The domain of `toL2Operator T` is the image of the compactly supported smooth forms. -/
 @[simp]
 theorem domain_toL2Operator : (toL2Operator T).domain = LinearMap.range (toL2Form I M k) :=
-  (rfl)
+  LinearMap.domain_domainOperator _ _ _
 
 /-- `toL2Operator T` sends the class of a compactly supported smooth form `α` to the class
 of `T α`. -/
 @[simp]
 theorem toL2Operator_apply (α : compactlySupportedForms I M k)
     (h : toL2Form I M k α ∈ (toL2Operator T).domain) :
-    toL2Operator T ⟨toL2Form I M k α, h⟩ = toL2Form I M k' (T α) := by
-  have hα : (⟨toL2Form I M k α, h⟩ : LinearMap.range (toL2Form I M k)) =
-      LinearEquiv.ofInjective (toL2Form I M k) toL2Form_injective α :=
-    Subtype.ext (LinearEquiv.ofInjective_apply _ α).symm
-  simp only [toL2Operator, LinearPMap.mk_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, hα,
-    LinearEquiv.symm_apply_apply]
+    toL2Operator T ⟨toL2Form I M k α, h⟩ = toL2Form I M k' (T α) :=
+  LinearMap.domainOperator_apply_mk _ _ _ α h
 
 /-- The graph of `toL2Operator T` consists of the pairs of classes of `α` and `T α`. -/
 theorem mem_graph_toL2Operator_iff {u : L2Form I M k} {v : L2Form I M k'} :
     (u, v) ∈ (toL2Operator T).graph ↔
-      ∃ α, toL2Form I M k α = u ∧ toL2Form I M k' (T α) = v := by
-  rw [LinearPMap.mem_graph_iff]
-  constructor
-  · rintro ⟨⟨_, hu⟩, rfl, rfl⟩
-    obtain ⟨α, rfl⟩ := LinearMap.mem_range.1 hu
-    exact ⟨α, rfl, (toL2Operator_apply T α hu).symm⟩
-  · rintro ⟨α, rfl, rfl⟩
-    exact ⟨⟨_, LinearMap.mem_range_self _ α⟩, rfl, toL2Operator_apply T α _⟩
+      ∃ α, toL2Form I M k α = u ∧ toL2Form I M k' (T α) = v :=
+  LinearMap.mem_graph_domainOperator_iff _ _ _
 
 /-- The range of `toL2Operator T` is the image of the classes of `T α`. -/
 theorem range_toL2Operator :
-    LinearMap.range (toL2Operator T).toFun = LinearMap.range (toL2Form I M k' ∘ₗ T) := by
-  ext v
-  constructor
-  · rintro ⟨⟨u, hu⟩, rfl⟩
-    obtain ⟨α, rfl⟩ := LinearMap.mem_range.1 hu
-    exact ⟨α, (toL2Operator_apply T α hu).symm⟩
-  · rintro ⟨α, rfl⟩
-    exact ⟨⟨_, LinearMap.mem_range_self _ α⟩, toL2Operator_apply T α _⟩
+    LinearMap.range (toL2Operator T).toFun = LinearMap.range (toL2Form I M k' ∘ₗ T) :=
+  LinearMap.range_domainOperator _ _ _
 
 /-- If `T` and `S` are formally adjoint for the `L²` inner product on compactly supported smooth
 forms, then so are the partial linear maps they induce. -/
@@ -137,8 +120,8 @@ theorem isFormalAdjoint_toL2Operator
       ⟪toL2Form I M k α, toL2Form I M k (S β)⟫_ℝ) :
     (toL2Operator T).IsFormalAdjoint (toL2Operator S) := by
   rintro ⟨u, hu⟩ ⟨v, hv⟩
-  obtain ⟨α, rfl⟩ := LinearMap.mem_range.1 hu
-  obtain ⟨β, rfl⟩ := LinearMap.mem_range.1 hv
+  obtain ⟨α, rfl⟩ := (LinearMap.mem_domain_domainOperator_iff _ _ _).1 hu
+  obtain ⟨β, rfl⟩ := (LinearMap.mem_domain_domainOperator_iff _ _ _).1 hv
   rw [toL2Operator_apply, toL2Operator_apply]
   exact h α β
 
@@ -166,13 +149,14 @@ theorem mem_graph_adjoint_toL2Operator_iff {u : L2Form I M k'} {v : L2Form I M k
   rw [LinearPMap.mem_graph_iff]
   constructor
   · rintro ⟨w, rfl, rfl⟩ α
-    rw [← toL2Operator_apply T α (LinearMap.mem_range_self _ α)]
-    exact LinearPMap.adjoint_isFormalAdjoint hd w ⟨_, LinearMap.mem_range_self _ α⟩
+    rw [← toL2Operator_apply T α (LinearMap.apply_mem_domain_domainOperator _ _ _ α)]
+    exact LinearPMap.adjoint_isFormalAdjoint hd w
+      ⟨_, LinearMap.apply_mem_domain_domainOperator _ _ _ α⟩
   · intro h
     have hpair : ∀ w : (toL2Operator T).domain,
         ⟪v, (w : L2Form I M k)⟫_ℝ = ⟪u, toL2Operator T w⟫_ℝ := by
       rintro ⟨_, hw⟩
-      obtain ⟨α, rfl⟩ := LinearMap.mem_range.1 hw
+      obtain ⟨α, rfl⟩ := (LinearMap.mem_domain_domainOperator_iff _ _ _).1 hw
       rw [toL2Operator_apply]
       exact h α
     exact ⟨⟨u, LinearPMap.mem_adjoint_domain_of_exists _ ⟨v, hpair⟩⟩, rfl,
@@ -306,7 +290,7 @@ theorem weakExtDeriv_toL2Form (o : Manifold.Orientation I M (Fin m)) (hkl : k + 
     (α : compactlySupportedForms I M k) (h : toL2Form I M k α ∈ (weakExtDeriv o hkl).domain) :
     weakExtDeriv o hkl ⟨toL2Form I M k α, h⟩ =
       toL2Form I M (k + 1) (compactlySupportedForms.mextDerivₗ I M k α) := by
-  rw [← toL2Operator_apply _ α (LinearMap.mem_range_self _ α)]
+  rw [← toL2Operator_apply _ α (LinearMap.apply_mem_domain_domainOperator _ _ _ α)]
   exact ((toL2Operator_mextDerivₗ_le_weakExtDeriv o hkl).2 rfl).symm
 
 /-- On an oriented boundaryless manifold, the weak codifferential of the class of a compactly
@@ -316,7 +300,7 @@ theorem weakCodifferential_toL2Form (o : Manifold.Orientation I M (Fin m)) (hkl 
     (h : toL2Form I M (k + 1) β ∈ (weakCodifferential I M k).domain) :
     weakCodifferential I M k ⟨toL2Form I M (k + 1) β, h⟩ =
       toL2Form I M k (codifferential o hkl β) := by
-  rw [← toL2Operator_apply _ β (LinearMap.mem_range_self _ β)]
+  rw [← toL2Operator_apply _ β (LinearMap.apply_mem_domain_domainOperator _ _ _ β)]
   exact ((toL2Operator_codifferential_le_weakCodifferential o hkl).2 rfl).symm
 
 /-- On an oriented boundaryless manifold, the weak exterior derivative is densely defined. -/
@@ -336,7 +320,8 @@ theorem toL2Form_mem_ker_weakExtDeriv_iff (o : Manifold.Orientation I M (Fin m))
     (hkl : k + 1 + l = m) (α : compactlySupportedForms I M k) :
     toL2Form I M k α ∈ (weakExtDeriv o hkl).ker ↔
       compactlySupportedForms.mextDerivₗ I M k α = 0 := by
-  have hα := (toL2Operator_mextDerivₗ_le_weakExtDeriv o hkl).1 (LinearMap.mem_range_self _ α)
+  have hα := (toL2Operator_mextDerivₗ_le_weakExtDeriv o hkl).1
+    (LinearMap.apply_mem_domain_domainOperator _ _ _ α)
   rw [LinearPMap.coe_mem_ker_iff (x := ⟨_, hα⟩), weakExtDeriv_toL2Form,
     LinearMap.map_eq_zero_iff _ toL2Form_injective]
 
@@ -346,7 +331,7 @@ theorem toL2Form_mem_ker_weakCodifferential_iff (o : Manifold.Orientation I M (F
     (hkl : k + 1 + l = m) (β : compactlySupportedForms I M (k + 1)) :
     toL2Form I M (k + 1) β ∈ (weakCodifferential I M k).ker ↔ codifferential o hkl β = 0 := by
   have hβ := (toL2Operator_codifferential_le_weakCodifferential o hkl).1
-    (LinearMap.mem_range_self _ β)
+    (LinearMap.apply_mem_domain_domainOperator _ _ _ β)
   rw [LinearPMap.coe_mem_ker_iff (x := ⟨_, hβ⟩), weakCodifferential_toL2Form o hkl,
     LinearMap.map_eq_zero_iff _ toL2Form_injective]
 

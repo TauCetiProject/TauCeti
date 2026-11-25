@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.LinearPMap
+public import TauCeti.LinearAlgebra.LinearPMap.CommonDomain
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Compact
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
@@ -38,7 +39,8 @@ inner product space are in `TauCeti.Analysis.InnerProductSpace.LinearPMap.Common
   resolvent point (`ContinuousLinearMap.mem_resolventSet_domainOperator_of_isInvertible`).
 
 When `ι` is the identity, the partial operator is the everywhere defined operator `A`
-(`ContinuousLinearMap.domainOperator_id`).
+(`ContinuousLinearMap.domainOperator_id`). The construction and its graph API only use the
+underlying linear maps and come from `LinearMap.domainOperator`.
 
 ## Main definitions
 
@@ -68,35 +70,31 @@ variable {R D H K : Type*} [Ring R] [AddCommGroup D] [Module R D] [TopologicalSp
 
 /-- The partial linear operator from `H` to `K` with domain the range of an injective map
 `ι : D →L H`, acting by `ι x ↦ A x`. For `K = H`, this is the unbounded operator on `H` described
-by a bounded operator `A : D →L H` on the common domain `D`. -/
-def domainOperator : H →ₗ.[R] K where
-  domain := LinearMap.range (ι : D →ₗ[R] H)
-  toFun := (A : D →ₗ[R] K) ∘ₗ (LinearEquiv.ofInjective (ι : D →ₗ[R] H) hι).symm.toLinearMap
+by a bounded operator `A : D →L H` on the common domain `D`. It is the partial linear map
+`LinearMap.domainOperator` of the underlying linear maps. -/
+def domainOperator : H →ₗ.[R] K :=
+  LinearMap.domainOperator (ι : D →ₗ[R] H) (A : D →ₗ[R] K) hι
 
 /-- The domain of `domainOperator ι A hι` is the range of `ι`. -/
 @[simp]
 theorem domain_domainOperator :
-    (domainOperator ι A hι).domain = LinearMap.range (ι : D →ₗ[R] H) := (rfl)
+    (domainOperator ι A hι).domain = LinearMap.range (ι : D →ₗ[R] H) :=
+  LinearMap.domain_domainOperator _ _ hι
 
 /-- A vector lies in the domain of `domainOperator ι A hι` exactly when it is in the range of
 `ι`. -/
 theorem mem_domain_domainOperator_iff {y : H} :
     y ∈ (domainOperator ι A hι).domain ↔ ∃ x, ι x = y :=
-  LinearMap.mem_range
+  LinearMap.mem_domain_domainOperator_iff _ (A : D →ₗ[R] K) hι
 
 /-- Every `ι x` lies in the domain of `domainOperator ι A hι`. -/
 theorem apply_mem_domain_domainOperator (x : D) : ι x ∈ (domainOperator ι A hι).domain :=
-  (mem_domain_domainOperator_iff ι A hι).2 ⟨x, rfl⟩
+  LinearMap.apply_mem_domain_domainOperator _ (A : D →ₗ[R] K) hι x
 
 /-- `domainOperator ι A hι` sends `ι x` to `A x`. -/
 theorem domainOperator_apply {y : (domainOperator ι A hι).domain} {x : D} (hx : ι x = y) :
-    domainOperator ι A hι y = A x := by
-  have hy : y = LinearEquiv.ofInjective (ι : D →ₗ[R] H) hι x :=
-    Subtype.ext (hx.symm.trans (LinearEquiv.ofInjective_apply _ x).symm)
-  -- This lemma is where the definition of `domainOperator` is deliberately unfolded: its value at
-  -- `ofInjective ι hι x` is `A ((ofInjective ι hι).symm (ofInjective ι hι x))`.
-  rw [hy]
-  exact congrArg A ((LinearEquiv.ofInjective (ι : D →ₗ[R] H) hι).symm_apply_apply x)
+    domainOperator ι A hι y = A x :=
+  LinearMap.domainOperator_apply _ (A : D →ₗ[R] K) hι hx
 
 /-- `domainOperator ι A hι` sends `ι x` to `A x`. -/
 @[simp]
@@ -107,33 +105,19 @@ theorem domainOperator_apply_mk (x : D) (hx : ι x ∈ (domainOperator ι A hι)
 /-- A pair `(y, z)` lies on the graph of `domainOperator ι A hι` exactly when `y = ι x` and
 `z = A x` for some `x : D`. -/
 theorem mem_graph_domainOperator_iff {p : H × K} :
-    p ∈ (domainOperator ι A hι).graph ↔ ∃ x, ι x = p.1 ∧ A x = p.2 := by
-  rw [LinearPMap.mem_graph_iff]
-  constructor
-  · rintro ⟨⟨y, hy⟩, hy₁, hy₂⟩
-    obtain ⟨x, rfl⟩ := (mem_domain_domainOperator_iff ι A hι).1 hy
-    exact ⟨x, hy₁, (domainOperator_apply_mk ι A hι x hy).symm.trans hy₂⟩
-  · rintro ⟨x, hx₁, hx₂⟩
-    exact ⟨⟨ι x, apply_mem_domain_domainOperator ι A hι x⟩, hx₁,
-      (domainOperator_apply_mk ι A hι x _).trans hx₂⟩
+    p ∈ (domainOperator ι A hι).graph ↔ ∃ x, ι x = p.1 ∧ A x = p.2 :=
+  LinearMap.mem_graph_domainOperator_iff _ (A : D →ₗ[R] K) hι
 
 /-- The graph of `domainOperator ι A hι` is the range of `x ↦ (ι x, A x)`. -/
 theorem graph_domainOperator :
-    (domainOperator ι A hι).graph = LinearMap.range ((ι : D →ₗ[R] H).prod (A : D →ₗ[R] K)) := by
-  ext p
-  rw [mem_graph_domainOperator_iff]
-  simp [Prod.ext_iff]
+    (domainOperator ι A hι).graph = LinearMap.range ((ι : D →ₗ[R] H).prod (A : D →ₗ[R] K)) :=
+  LinearMap.graph_domainOperator _ _ hι
 
 /-- For the identity inclusion, `domainOperator` is the everywhere defined operator `A`. -/
 theorem domainOperator_id (A : H →L[R] K) :
     domainOperator (.id R H) A (by intro x y h; simpa using h) =
-      (A : H →ₗ[R] K).toPMap ⊤ := by
-  refine LinearPMap.ext ?_ fun y hy hy' ↦ ?_
-  · rw [domain_domainOperator, LinearMap.toPMap_domain, coe_id, LinearMap.range_id]
-  · -- `rw [LinearMap.toPMap_apply]` does not find the coercion of `LinearMap.toPMap`, so the two
-    -- formulas are composed as terms.
-    exact (domainOperator_apply _ A _ (x := y) (by simp)).trans
-      (LinearMap.toPMap_apply (A : H →ₗ[R] K) ⊤ ⟨y, hy'⟩).symm
+      (A : H →ₗ[R] K).toPMap ⊤ :=
+  LinearMap.domainOperator_id (A : H →ₗ[R] K)
 
 end Basic
 
@@ -200,7 +184,8 @@ theorem bijective_smul_sub_domainOperator_iff :
     Bijective (fun y : (domainOperator ι A hι).domain ↦ c • (y : H) - domainOperator ι A hι y) ↔
       Bijective (c • ι - A) := by
   let e : D ≃ (domainOperator ι A hι).domain :=
-    (LinearEquiv.ofInjective (ι : D →ₗ[R] H) hι).toEquiv
+    (LinearEquiv.ofInjective (ι : D →ₗ[R] H) hι).toEquiv.trans
+      (Equiv.subtypeEquivRight fun y ↦ by rw [domain_domainOperator])
   rw [← e.bijective_comp]
   refine iff_of_eq (congrArg Bijective (funext fun x ↦ ?_))
   exact smul_sub_domainOperator_apply (LinearEquiv.ofInjective_apply (h := hι) _ x).symm

@@ -125,9 +125,8 @@ theorem harmonicSpace_eq_orthogonal (o : Manifold.Orientation I M (Fin m))
 /-- The harmonic space is closed. -/
 theorem isClosed_harmonicSpace (o : Manifold.Orientation I M (Fin m))
     (hkl : k + 1 + 1 + l = m) :
-    IsClosed (harmonicSpace o hkl : Set (L2Form I M (k + 1))) := by
-  rw [harmonicSpace_eq_orthogonal]
-  exact Submodule.isClosed_orthogonal _
+    IsClosed (harmonicSpace o hkl : Set (L2Form I M (k + 1))) :=
+  LinearPMap.isClosed_harmonicSpace (dense_domain_toL2Operator _) (isClosed_weakExtDeriv o hkl)
 
 /-- The closure of the exterior derivatives of compactly supported smooth forms is orthogonal to
 the harmonic space. -/
