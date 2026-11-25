@@ -418,7 +418,7 @@ theorem form_glueWordVector_self_of_getD_lt {n : ℕ} (t : Fin n → DynkinType)
     (hl : ∀ i : Fin n, l.getD i 0 < (t i).glueLabelCount) :
     (pi fun i ↦ (t i).rootLattice (ht i)).form (glueWordVector t l) (glueWordVector t l) =
       glueWordMinimum t l := by
-  rw [pi_form, piForm_apply, glueWordMinimum_def]
+  rw [pi_form, LinearMap.BilinForm.pi_apply, glueWordMinimum_def]
   exact Finset.sum_congr rfl fun i _ ↦
     (t i).form_glueLabelVector_self (hv i) (ht i) ⟨_, hl i⟩
 

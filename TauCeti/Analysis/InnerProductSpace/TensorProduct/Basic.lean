@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.TensorProduct
 public import TauCeti.Analysis.InnerProductSpace.Dual
+public import TauCeti.Analysis.InnerProductSpace.SesquilinearForm
 public import Mathlib.Analysis.InnerProductSpace.Trace
 
 /-!
@@ -41,9 +42,11 @@ when endomorphisms are identified with tensors, without adding an instance on th
 * `TensorProduct.instCompleteSpaceOfFiniteDimensional`: the tensor product of two
   finite-dimensional inner product spaces is complete, which discharges completeness hypotheses
   on tensor products in adjoint statements for finite-dimensional factors.
-* `TensorProduct.norm_mapL`: the tensor product `f ⊗ g` of bounded operators has norm
-  `‖f‖ * ‖g‖`; `ContinuousLinearMap.norm_rTensor` and `ContinuousLinearMap.norm_lTensor` are the
-  cases `f ⊗ 1` and `1 ⊗ g` for a nonzero other factor.
+* `TensorProduct.norm_mapL` and `TensorProduct.denseRange_mapL`: the tensor product `f ⊗ g` of
+  bounded operators has norm `‖f‖ * ‖g‖` and preserves dense range;
+  `ContinuousLinearMap.norm_rTensor` and `ContinuousLinearMap.norm_lTensor` (`rTensorₗᵢ`,
+  `lTensorₗᵢ`, `rTensor_inj`, `lTensor_inj`) are the cases `f ⊗ 1` and `1 ⊗ g` for a nonzero other
+  factor (`rTensor_of_subsingleton`, `lTensor_of_subsingleton` on subsingletons).
 * `TensorProduct.inner_mapL_left`: if `f'` and `g'` are formal adjoints of `f` and `g`, then
   `mapL f' g'` is a formal adjoint of `mapL f g`.
 * `ContinuousLinearMap.rTensor_lTensor_apply_comm`: `f ⊗ 1` and `1 ⊗ g` commute.
@@ -54,7 +57,8 @@ when endomorphisms are identified with tensors, without adding an instance on th
 * `rTensor_adjoint_comp_self_apply_add_lTensor_adjoint_comp_self_apply_eq_zero_iff`, in the
   `ContinuousLinearMap` namespace: the positive tensor sum `A†A ⊗ 1 + 1 ⊗ B†B` vanishes exactly
   on the common kernel of `A ⊗ 1` and `1 ⊗ B`.
-* `ContinuousLinearMap.denseRange_rTensor`: if `f` has dense range then so does `f ⊗ 1`.
+* `ContinuousLinearMap.denseRange_rTensor` and `ContinuousLinearMap.denseRange_lTensor`: if `f` has
+  dense range then so do `f ⊗ 1` and `1 ⊗ f`.
 * `InnerProductSpace.tensorDualMetric_tmul`: on pure tensors, the metric on `F ⊗ E*` is the
   product of the inner product of `F` and the dual metric of `E`.
 * `InnerProductSpace.tensorDualMetric_eq_trace`: evaluation carries this metric to the
@@ -95,21 +99,6 @@ section Sesquilinear
 
 variable {W₁ W₂ : Type*} [AddCommGroup W₁] [Module 𝕜 W₁] [AddCommGroup W₂] [Module 𝕜 W₂]
 
-/-- The inner product space core of a positive definite Hermitian form. -/
-private noncomputable abbrev coreOfPos (h : W₁ →ₗ⋆[𝕜] W₁ →ₗ[𝕜] 𝕜) (hh : h.IsSymm)
-    (hpos : ∀ x, x ≠ 0 → 0 < h x x) : InnerProductSpace.Core 𝕜 W₁ where
-  inner x y := h x y
-  conj_inner_symm x y := hh.eq y x
-  re_inner_nonneg x := by
-    rcases eq_or_ne x 0 with rfl | hx
-    · simp
-    · exact (RCLike.pos_iff.mp (hpos x hx)).1.le
-  add_left x y z := by simp
-  smul_left x y r := by simp
-  definite x hx := by
-    by_contra hne
-    exact (hpos x hne).ne' hx
-
 /-- **The tensor product of two positive definite Hermitian forms is positive definite.** A
 sesquilinear form `H` on `W₁ ⊗[𝕜] W₂` with `H (a ⊗ b) (c ⊗ d) = h₁ a c * h₂ b d`, for positive
 definite Hermitian forms `h₁` and `h₂`, is positive on every nonzero vector. -/
@@ -120,8 +109,8 @@ theorem apply_self_pos_of_apply_tmul_tmul {h₁ : W₁ →ₗ⋆[𝕜] W₁ →�
     {x : W₁ ⊗[𝕜] W₂} (hx : x ≠ 0) : 0 < H x x := by
   -- Make `h₁` and `h₂` the inner products of `W₁` and `W₂`; then `H` is Mathlib's inner product
   -- on the tensor product, which is positive definite.
-  let c₁ := coreOfPos h₁ hh₁ hpos₁
-  let c₂ := coreOfPos h₂ hh₂ hpos₂
+  let c₁ := hh₁.innerProductCore fun x hx ↦ (RCLike.pos_iff.mp (hpos₁ x hx)).1
+  let c₂ := hh₂.innerProductCore fun x hx ↦ (RCLike.pos_iff.mp (hpos₂ x hx)).1
   let : NormedAddCommGroup W₁ := c₁.toNormedAddCommGroup
   let : NormedAddCommGroup W₂ := c₂.toNormedAddCommGroup
   let : InnerProductSpace 𝕜 W₁ := InnerProductSpace.ofCore c₁.toCore
@@ -133,8 +122,8 @@ theorem apply_self_pos_of_apply_tmul_tmul {h₁ : W₁ →ₗ⋆[𝕜] W₁ →�
       induction z with
       | tmul c d =>
         rw [hH, TensorProduct.inner_tmul]
-        -- The inner products of the two factors are `h₁` and `h₂` by construction.
-        rfl
+        exact congrArg₂ (· * ·) (hh₁.inner_ofCore_innerProductCore _ a c).symm
+          (hh₂.inner_ofCore_innerProductCore _ b d).symm
       | add z z' hz hz' => rw [map_add, hz, hz', inner_add_right]
     | add y y' hy hy' => rw [map_add, LinearMap.add_apply, hy, hy', inner_add_left]
   rw [hinner]
@@ -236,6 +225,23 @@ theorem inner_mapL_left {f : E →L[𝕜] E'} {f' : E' →L[𝕜] E} {g : F →L
     | add v₁ v₂ h₁ h₂ => simp only [map_add, inner_add_right, h₁, h₂]
     | tmul x' y' => simp [hf, hg]
 
+/-- The tensor product of two bounded linear maps with dense range has dense range. -/
+theorem denseRange_mapL {f : E →L[𝕜] E'} {g : F →L[𝕜] F'} (hf : DenseRange f) (hg : DenseRange g) :
+    DenseRange (mapL f g) := by
+  let R : Submodule 𝕜 (E' ⊗[𝕜] F') := LinearMap.range (mapL f g).toLinearMap
+  have hmem (z : E' ⊗[𝕜] F') : z ∈ R.topologicalClosure := by
+    induction z using TensorProduct.inductionOn with
+    | tmul y w =>
+      refine hf.induction_on y
+        (R.isClosed_topologicalClosure.preimage ((mkL 𝕜 E' F').flip w).continuous)
+        fun x ↦ hg.induction_on w
+          (R.isClosed_topologicalClosure.preimage (mkL 𝕜 E' F' (f x)).continuous)
+          fun z ↦ R.le_topologicalClosure ⟨x ⊗ₜ[𝕜] z, rfl⟩
+    | add _ _ hz₁ hz₂ => exact add_mem hz₁ hz₂
+  intro z
+  have hz : z ∈ (R.topologicalClosure : Set (E' ⊗[𝕜] F')) := hmem z
+  rwa [Submodule.topologicalClosure_coe, LinearMap.coe_range, ContinuousLinearMap.coe_coe] at hz
+
 end mapL
 
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
@@ -272,22 +278,63 @@ Mathlib's `ContinuousLinearMap.norm_lTensor_le`. -/
 theorem norm_lTensor [Nontrivial X₀] (g : Y₀ →L[𝕜] Y₁) : ‖g.lTensor X₀‖ = ‖g‖ := by
   rw [lTensor_eq_mapL, TensorProduct.norm_mapL, norm_id, one_mul]
 
+variable (𝕜 X₀ X₁ Y₀) in
+/-- Tensoring on the right with the identity of a nontrivial space, as a linear isometry. -/
+noncomputable def rTensorₗᵢ [Nontrivial Y₀] :
+    (X₀ →L[𝕜] X₁) →ₗᵢ[𝕜] ((X₀ ⊗[𝕜] Y₀) →L[𝕜] (X₁ ⊗[𝕜] Y₀)) where
+  toLinearMap := ⟨⟨fun f ↦ f.rTensor Y₀, rTensor_add Y₀⟩, rTensor_smul Y₀⟩
+  norm_map' := norm_rTensor
+
+@[simp]
+theorem rTensorₗᵢ_apply [Nontrivial Y₀] (f : X₀ →L[𝕜] X₁) :
+    rTensorₗᵢ 𝕜 X₀ X₁ Y₀ f = f.rTensor Y₀ := (rfl)
+
+variable (𝕜 X₀ Y₀ Y₁) in
+/-- Tensoring on the left with the identity of a nontrivial space, as a linear isometry. -/
+noncomputable def lTensorₗᵢ [Nontrivial X₀] :
+    (Y₀ →L[𝕜] Y₁) →ₗᵢ[𝕜] ((X₀ ⊗[𝕜] Y₀) →L[𝕜] (X₀ ⊗[𝕜] Y₁)) where
+  toLinearMap := ⟨⟨fun g ↦ g.lTensor X₀, lTensor_add X₀⟩, lTensor_smul X₀⟩
+  norm_map' := norm_lTensor
+
+@[simp]
+theorem lTensorₗᵢ_apply [Nontrivial X₀] (g : Y₀ →L[𝕜] Y₁) :
+    lTensorₗᵢ 𝕜 X₀ Y₀ Y₁ g = g.lTensor X₀ := (rfl)
+
+/-- Tensoring on the right with the identity of a nontrivial inner product space is injective. -/
+@[simp]
+theorem rTensor_inj [Nontrivial Y₀] {f g : X₀ →L[𝕜] X₁} :
+    f.rTensor Y₀ = g.rTensor Y₀ ↔ f = g :=
+  (rTensorₗᵢ 𝕜 X₀ X₁ Y₀).injective.eq_iff
+
+/-- Tensoring on the left with the identity of a nontrivial inner product space is injective. -/
+@[simp]
+theorem lTensor_inj [Nontrivial X₀] {f g : Y₀ →L[𝕜] Y₁} :
+    f.lTensor X₀ = g.lTensor X₀ ↔ f = g :=
+  (lTensorₗᵢ 𝕜 X₀ Y₀ Y₁).injective.eq_iff
+
+/-- Tensoring on the right with a subsingleton space produces the zero operator. -/
+@[simp]
+theorem rTensor_of_subsingleton [Subsingleton Y₀] (f : X₀ →L[𝕜] X₁) : f.rTensor Y₀ = 0 :=
+  Subsingleton.elim _ _
+
+/-- Tensoring on the left with a subsingleton space produces the zero operator. -/
+@[simp]
+theorem lTensor_of_subsingleton [Subsingleton X₀] (g : Y₀ →L[𝕜] Y₁) : g.lTensor X₀ = 0 :=
+  Subsingleton.elim _ _
+
 variable (Y₀) in
-/-- If `f` has dense range then so does `f ⊗ 1`: the pure tensors `c ⊗ₜ y` span `X₁ ⊗[𝕜] Y₀`, and
-each lies in the closure of the range of `f ⊗ 1`. -/
+/-- If `f` has dense range then so does `f ⊗ 1`. -/
 theorem denseRange_rTensor {f : X₀ →L[𝕜] X₁} (hf : DenseRange f) :
     DenseRange (f.rTensor Y₀) := by
-  let T := LinearMap.range (f.rTensor Y₀).toLinearMap
-  have htmul (c : X₁) (y : Y₀) : c ⊗ₜ[𝕜] y ∈ T.topologicalClosure := by
-    induction c using hf.induction_on with
-    | hp =>
-      exact T.isClosed_topologicalClosure.preimage
-        ((TensorProduct.mkL 𝕜 X₁ Y₀).flip y).continuous
-    | ih x => exact T.le_topologicalClosure ⟨x ⊗ₜ[𝕜] y, by simp⟩
-  have hT : T.topologicalClosure = ⊤ := eq_top_iff.2 <|
-    (TensorProduct.span_tmul_eq_top 𝕜 X₁ Y₀).ge.trans <|
-      Submodule.span_le.2 fun _ ⟨c, y, h⟩ ↦ h ▸ htmul c y
-  exact Submodule.dense_iff_topologicalClosure_eq_top.2 hT
+  rw [rTensor_eq_mapL]
+  exact TensorProduct.denseRange_mapL hf denseRange_id
+
+variable (X₀) in
+/-- If `g` has dense range then so does `1 ⊗ g`. -/
+theorem denseRange_lTensor {g : Y₀ →L[𝕜] Y₁} (hg : DenseRange g) :
+    DenseRange (g.lTensor X₀) := by
+  rw [lTensor_eq_mapL]
+  exact TensorProduct.denseRange_mapL denseRange_id hg
 
 section Adjoint
 

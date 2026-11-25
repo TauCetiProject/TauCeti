@@ -44,6 +44,8 @@ monic rational minimal polynomial does not satisfy the identity.
   at every nonarchimedean absolute value.
 * `Polynomial.gaussNorm_X_sub_C`: the Gauss norm of `X - C b` is `max c (v b)`.
 * `Polynomial.gaussNorm_multiset_prod`: the Gauss norm is multiplicative over finite products.
+* `Polynomial.gaussNorm_comp_le`: composing with a polynomial of Gauss norm at most `c` at
+  radius `c` does not increase the Gauss norm of radius `c`.
 * `Polynomial.IsPrimitive.mul_multiset_prod_max_one_eq_one`: if a primitive integer polynomial
   factors as `C a * ∏_{b ∈ s} (X - C b)`, then `v a * ∏_{b ∈ s} max 1 (v b) = 1`.
 * `Polynomial.IsPrimitive.leadingCoeff_mul_prod_roots_max_one_eq_one`: the same identity over a
@@ -158,6 +160,27 @@ theorem IsPrimitive.mul_multiset_prod_max_one_eq_one [Nontrivial R] (hna : IsNon
     v a * (s.map fun b ↦ max 1 (v b)).prod = 1 := by
   simpa [h, gaussNorm_mul hna one_pos, gaussNorm_multiset_prod hna zero_le_one, Function.comp_def,
     gaussNorm_X_sub_C zero_le_one] using hp.gaussNorm_map_eq_one hna
+
+/-- **Composition with a small polynomial.** At a nonarchimedean absolute value, if `Q` has Gauss
+norm at most `c` at radius `c ≥ 0`, then `(F.comp Q).gaussNorm v c ≤ F.gaussNorm v c`: each term
+`C (F.coeff n) * Q ^ n` has Gauss norm at most `v (F.coeff n) * c ^ n`. -/
+theorem gaussNorm_comp_le (hna : IsNonarchimedean v) (hc : 0 ≤ c) (F : R[X]) {Q : R[X]}
+    (hQ : Q.gaussNorm v c ≤ c) : (F.comp Q).gaussNorm v c ≤ F.gaussNorm v c := by
+  cases subsingleton_or_nontrivial R
+  · rw [Subsingleton.elim (F.comp Q) F]
+  have hQn (n : ℕ) : (Q ^ n).gaussNorm v c ≤ c ^ n := by
+    induction n with
+    | zero => simp [← C_1, -map_one]
+    | succ n ih =>
+      rw [pow_succ, pow_succ]
+      exact (gaussNorm_mul_le v hna _ _ hc).trans
+        (mul_le_mul ih hQ (gaussNorm_nonneg v _ hc) (pow_nonneg hc n))
+  rw [comp_eq_sum_left, Polynomial.sum_def]
+  obtain ⟨n, -, hsum⟩ := (isNonarchimedean_gaussNorm v hna hc).finset_image_add
+    (fun n ↦ C (F.coeff n) * Q ^ n) F.support fun P ↦ by simpa using gaussNorm_nonneg v P hc
+  refine hsum.trans <| (gaussNorm_mul_le v hna _ _ hc).trans ?_
+  rw [gaussNorm_C]
+  exact (mul_le_mul_of_nonneg_left (hQn n) (v.nonneg _)).trans (le_gaussNorm v F hc n)
 
 /-- Let `P` be a primitive integer polynomial whose image in `R[X]` splits, with leading coefficient
 `a` and roots `b` in the domain `R`, counted with multiplicity. Then `v a * ∏_b max 1 (v b) = 1` at

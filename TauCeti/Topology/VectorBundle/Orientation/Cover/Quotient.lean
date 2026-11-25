@@ -16,7 +16,8 @@ public import TauCeti.Topology.VectorBundle.Orientation.Cover
 Let `E → B` be a real vector bundle with model fibre `F`, and let `ι` have cardinality the rank of
 `E`. The units `ℤˣ = {1, -1}` act on the orientation double cover `B'` of `E`, with `-1` reversing
 the orientation and fixing the base point, so that `-1` acts by the deck involution
-(`TauCeti.VectorBundleOrientationCover.neg_one_smul_eq_deck`). The projection `B' → B` is then
+(`TauCeti.VectorBundleOrientationCover.neg_one_smul_eq_deck`), a continuous action since the deck
+involution is continuous. The projection `B' → B` is then
 the quotient map of this action in the strong sense of Mathlib's `IsQuotientCoveringMap`: its
 fibres are the orbits, and every point has a neighbourhood disjoint from its image under the deck
 involution, namely its sheet in a trivialization
@@ -39,9 +40,10 @@ both spaces of the Thom pair `(E', E'₀)`
 `TauCeti.VectorBundleOrientationCover.thomPairSndMulAction`), continuously
 (`TauCeti.VectorBundleOrientationCover.thomPairFstMulAction_continuousConstSMul`,
 `TauCeti.VectorBundleOrientationCover.thomPairSndMulAction_continuousConstSMul`), the embedding
-`E'₀ → E'` commutes with the actions (`TauCeti.VectorBundleOrientationCover.thomPair_map_smul`), and
-both maps underlying the map of Thom pairs `(E', E'₀) ⟶ (E, E₀)` (`TauCeti.pullbackThomPairMap`)
-are quotient covering maps
+`E'₀ → E'` and the projection `E' → B'` commute with the actions
+(`TauCeti.VectorBundleOrientationCover.thomPair_map_smul`,
+`TauCeti.VectorBundleOrientationCover.thomPairProj_smul`), and both maps underlying the
+map of Thom pairs `(E', E'₀) ⟶ (E, E₀)` (`TauCeti.pullbackThomPairMap`) are quotient covering maps
 (`TauCeti.VectorBundleOrientationCover.isQuotientCoveringMap_pullbackThomPairMap_fst` and
 `TauCeti.VectorBundleOrientationCover.isQuotientCoveringMap_pullbackThomPairMap_snd`, the second by
 restricting the first, `IsQuotientCoveringMap.restrict`). These are the hypotheses under which the
@@ -267,6 +269,16 @@ theorem thomPair_map_smul (u : ℤˣ)
     (thomPair F _).map (u • v) = u • (thomPair F _).map v := by
   rw [TopPair.ofSubset_map]
   exact coe_thomPairSnd_smul u v
+
+/-- The projection `E' → B'` of the bundle pulled back to the orientation double cover commutes
+with the action `thomPairFstMulAction` of `ℤˣ` on the total space of its Thom pair and the action
+on the cover. -/
+theorem thomPairProj_smul (u : ℤˣ)
+    (v : (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst) :
+    thomPairProj F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) (u • v) =
+      u • thomPairProj F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) v :=
+  (thomPairProj_apply F _ (u • v)).trans
+    ((proj_smul_totalSpace u v).trans (congrArg (u • ·) (thomPairProj_apply F _ v).symm))
 
 /-- The action `thomPairFstMulAction` of `ℤˣ` on the total space of the Thom pair of the bundle
 pulled back to the orientation double cover is continuous: it acts continuously on the cover and

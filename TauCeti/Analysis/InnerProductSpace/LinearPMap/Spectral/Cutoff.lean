@@ -95,10 +95,8 @@ theorem HasCompactResolvent.northcott_norm_of_orthonormal (h : A.HasCompactResol
       exact resolvent_apply_of_apply_eq_smul hz ⟨v i, hi⟩ hAi
     -- `z` lies in the resolvent set, so it is not an eigenvalue.
     have hne (i : ι) : z - lam i ≠ 0 := by
-      intro hzi
       obtain ⟨hi, hAi⟩ := hA i
-      rw [← sub_eq_zero.1 hzi] at hAi
-      exact hv.ne_zero i (congrArg Subtype.val (eq_zero_of_apply_eq_smul hz _ hAi))
+      exact sub_ne_zero_of_apply_eq_smul hz ⟨v i, hi⟩ (hv.ne_zero i) hAi
     set M := ‖z‖ + |R| + 1
     have hM : 0 < M := by positivity
     refine (hK.finite_setOf_le_norm_of_orthonormal (T := (A.resolvent z : E →ₗ[𝕜] E)) hv hR
