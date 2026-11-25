@@ -170,6 +170,18 @@ def baseChangeDualIso (ρ : ContinuousRep Γ A M) :
       refine TensorProduct.AlgebraTensorModule.ext fun c x ↦ ?_
       simp [Module.Dual.transpose_apply])
 
+/-- The dual base-change isomorphism is the scalar-extended evaluation
+`TauCeti.Module.Dual.baseChangeEvaluation`. -/
+theorem baseChangeDualIso_apply (ρ : ContinuousRep Γ A M) (z : B ⊗[A] Module.Dual A M) :
+    baseChangeDualIso B ρ z = TauCeti.Module.Dual.baseChangeEvaluation (R := A) (A := B) z := by
+  simp [baseChangeDualIso]
+
+@[simp]
+theorem baseChangeDualIso_symm_baseChange (ρ : ContinuousRep Γ A M) (ψ : Module.Dual A M) :
+    (baseChangeDualIso B ρ).symm (Module.Dual.baseChange B ψ) = 1 ⊗ₜ ψ := by
+  rw [← TauCeti.Module.Dual.baseChangeEvaluation_one_tmul, ← baseChangeDualIso_apply B ρ,
+    Iso.symm_apply_apply]
+
 @[simp]
 theorem baseChangeDualIso_tmul_tmul (ρ : ContinuousRep Γ A M) (b c : B) (ψ : Module.Dual A M)
     (x : M) : baseChangeDualIso B ρ (b ⊗ₜ ψ) (c ⊗ₜ x) = b * c * algebraMap A B (ψ x) := by
