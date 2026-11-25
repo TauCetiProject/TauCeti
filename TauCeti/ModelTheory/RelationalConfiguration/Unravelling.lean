@@ -234,7 +234,7 @@ theorem isoSetoid_iff_exists_orderIso_unravelColor
   refine ⟨fun h ↦ ?_, fun ⟨Φ, hΦ⟩ ↦ ?_⟩
   · obtain ⟨σ, rfl⟩ := isoSetoid_iff_exists_perm_smul_eq.1 h
     obtain ⟨π, hπ⟩ := exists_orderIso_ratColor σ
-    exact ⟨π.listMap, funext fun x ↦ by simp [unravelColor_map hπ]⟩
+    exact ⟨π.listCongr, funext fun x ↦ by simp [unravelColor_map hπ]⟩
   · have hlen (x : List ℚ) : (Φ x).length = x.length :=
       length_eq_of_unravelColor_eq (congrFun hΦ x)
     exact isoSetoid_of_perm_dropLast Φ.toEquiv (Φ.map_dropLast hlen) hΦ

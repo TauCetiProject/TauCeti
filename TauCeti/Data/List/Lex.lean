@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.List.Lex
+public import Mathlib.Logic.Equiv.List
 public import Mathlib.Order.BoundedOrder.Basic
 public import Mathlib.Order.Hom.Basic
 public import Mathlib.Order.Max
@@ -23,7 +24,7 @@ element `[]`. The parent `l.dropLast` of a nonempty list `l` is definable from t
 lengths: it is the unique list `p` of length `l.length - 1` with `p < l` such that every `z` with
 `p < z < l` has length at least `l.length` (`List.eq_dropLast_iff`). Hence an order isomorphism
 `List α ≃o List β` preserving lengths preserves the parent (`OrderIso.map_dropLast`); an order
-isomorphism `e : α ≃o β` induces one entrywise (`OrderIso.listMap`).
+isomorphism `e : α ≃o β` induces one entrywise (`OrderIso.listCongr`).
 
 ## References
 
@@ -153,11 +154,8 @@ variable {α β : Type*} [LinearOrder α] [LinearOrder β]
 
 /-- An order isomorphism `e : α ≃o β`, applied entrywise, as an order isomorphism of the
 lexicographic orders on `List α` and `List β`. -/
-def listMap (e : α ≃o β) : List α ≃o List β where
-  toFun := List.map e
-  invFun := List.map e.symm
-  left_inv l := by simp [List.map_map, Function.comp_def]
-  right_inv l := by simp [List.map_map, Function.comp_def]
+def listCongr (e : α ≃o β) : List α ≃o List β where
+  toEquiv := e.toEquiv.listEquivOfEquiv
   map_rel_iff' := by
     have hmono : StrictMono (List.map e) := fun l l' h ↦ by
       refine (List.lt_iff_lex_lt _ _).2 ?_
@@ -168,13 +166,13 @@ def listMap (e : α ≃o β) : List α ≃o List β where
       | rel hab => exact List.Lex.rel (e.strictMono hab)
     exact fun {_ _} ↦ hmono.le_iff_le
 
-/-- `e.listMap` applies `e` to every entry. -/
+/-- `e.listCongr` applies `e` to every entry. -/
 @[simp]
-theorem listMap_apply (e : α ≃o β) (l : List α) : e.listMap l = l.map e := (rfl)
+theorem listCongr_apply (e : α ≃o β) (l : List α) : e.listCongr l = l.map e := (rfl)
 
-/-- The inverse of `e.listMap` applies `e.symm` to every entry. -/
+/-- The inverse of `e.listCongr` applies `e.symm` to every entry. -/
 @[simp]
-theorem listMap_symm (e : α ≃o β) : e.listMap.symm = e.symm.listMap := (rfl)
+theorem listCongr_symm (e : α ≃o β) : e.listCongr.symm = e.symm.listCongr := (rfl)
 
 /-- An order isomorphism of lexicographic orders on lists that preserves lengths preserves the
 parent `l.dropLast`, which the order and the lengths determine (`List.eq_dropLast_iff`). -/
