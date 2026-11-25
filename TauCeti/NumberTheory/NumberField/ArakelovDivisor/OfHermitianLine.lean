@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.ArakelovDivisor.HermitianLine
 public import TauCeti.NumberTheory.NumberField.HermitianBundle.Line
 public import TauCeti.NumberTheory.NumberField.HermitianBundle.Submodule
-public import TauCeti.RingTheory.PicardGroup.RankOne
+public import TauCeti.RingTheory.PicardGroup.Contraction
 
 /-!
 # Every hermitian line is the line of an Arakelov divisor
