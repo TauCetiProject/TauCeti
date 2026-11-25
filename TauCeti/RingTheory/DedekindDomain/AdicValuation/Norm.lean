@@ -105,15 +105,6 @@ theorem norm_norm_adicCompletion
   simp only [hcard, Nat.cast_pow, NNReal.coe_zpow,
     ← zpow_natCast, ← zpow_mul, mul_comm]
 
-omit [Ring.HasFiniteQuotients R] [Ring.HasFiniteQuotients B] in
-/-- When the local degree `[L_w : K_v]` is `1`, the canonical map `K_v → L_w` is bijective. -/
-theorem adicCompletionExtension_bijective_of_finrank_eq_one
-    (v : HeightOneSpectrum R) (w : HeightOneSpectrum B) [w.asIdeal.LiesOver v.asIdeal]
-    (h : Module.finrank (v.adicCompletion K) (w.adicCompletion L) = 1) :
-    Function.Bijective (v.adicCompletionExtension K L w) := by
-  rw [← algebraMap_adicCompletionExtensionAlgebra]
-  exact Algebra.finrank_eq_one_iff_bijective_algebraMap.1 h
-
 /-- **Completions of local degree one.** When the local degree `[L_w : K_v]` is `1`, the canonical
 map `K_v → L_w` is an isomorphism of topological `K_v`-algebras, for the algebra structure of the
 `AdicCompletionExtension` scope. Its inverse is continuous because the map preserves the normalized
