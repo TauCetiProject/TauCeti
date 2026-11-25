@@ -7,10 +7,11 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.Data.Growth
 public import TauCeti.NumberTheory.LFunctions.Data.Series
-public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completion
+public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completed
 import TauCeti.Data.Finsupp.Order
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
 import TauCeti.NumberTheory.LFunctions.Data.PolarDivisor
+import TauCeti.NumberTheory.NumberField.Discriminant.Basic
 
 /-!
 # The completed L-function card of the Dedekind zeta function
@@ -136,7 +137,7 @@ theorem dedekindZetaData_hasDirichletAgreement :
       rw [dedekindZeta_eq_LSeries_dedekindZetaCoeff]
       exact congrArg (LSeries · s) (funext (dedekindZetaData_coeff K))
     rw [dedekindZetaData_completed, dedekindZetaData_gammaFactor, hdiscr, hL,
-      completedDedekindZeta_eq hs]
+      completedDedekindZeta_eq_mul_dedekindZeta K hs]
     ring
 
 /-- The completed Dedekind zeta function is meromorphic, with simple poles at `0` and `1` and no
@@ -153,7 +154,7 @@ theorem dedekindZetaData_hasMeromorphicContinuation :
   analyticAt p hp := by
     rw [dedekindZetaData_polarOrder] at hp
     obtain ⟨h0, h1⟩ := (Finsupp.single_add_single_eq_zero_iff one_ne_zero one_ne_zero p).mp hp
-    simpa only [dedekindZetaData_completed] using analyticAt_completedDedekindZeta h0 h1
+    simpa only [dedekindZetaData_completed] using analyticAt_completedDedekindZeta K h0 h1
 
 /-- The functional equation `Λ_K(1 - s) = Λ_K(s)` of the completed Dedekind zeta function, with
 root number `1`. -/
@@ -179,10 +180,10 @@ theorem ofSeries_dedekindZetaData :
   · rw [dedekindZetaData_polarOrder]
     exact (Finsupp.single_add_single_eq_zero_iff one_ne_zero one_ne_zero 2).mpr
       ⟨by norm_num, by norm_num⟩
-  rw [dedekindZetaData_completed, completedDedekindZeta_eq (by norm_num)]
+  rw [dedekindZetaData_completed, completedDedekindZeta_eq_mul_dedekindZeta K (by norm_num)]
   have hdiscr : ((|discr K| : ℤ) : ℂ) ^ ((2 : ℂ) / 2) ≠ 0 := by
     rw [div_self two_ne_zero, Complex.cpow_one]
-    exact_mod_cast (abs_pos.mpr (discr_ne_zero K)).ne'
+    exact Int.cast_ne_zero.mpr (abs_discr_pos K).ne'
   have hGℝ : Gammaℝ 2 ≠ 0 := Gammaℝ_ne_zero_of_re_pos (by norm_num)
   have hGℂ : Gammaℂ 2 ≠ 0 := Gammaℂ_ne_zero_of_re_pos (by norm_num)
   exact mul_ne_zero

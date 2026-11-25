@@ -43,7 +43,7 @@ theorem completedDedekindZeta_rat_eq_toMeromorphicNFOn :
   have hGℝ : Gammaℝ s ≠ 0 := Gammaℝ_ne_zero_of_re_pos (by linarith)
   rw [toMeromorphicNFOn_apply_of_analyticAt meromorphic_completedRiemannZeta
       (analyticAt_completedRiemannZeta h0 h1)]
-  rw [completedDedekindZeta_eq hs, dedekindZeta_rat_eq_riemannZeta hs,
+  rw [completedDedekindZeta_eq_mul_dedekindZeta ℚ hs, dedekindZeta_rat_eq_riemannZeta hs,
     riemannZeta_def_of_ne_zero h0]
   simp only [discr_rat, nrRealPlaces_eq_one_of_finrank_eq_one (Module.finrank_self ℚ),
     nrComplexPlaces_eq_zero_of_finrank_eq_one (Module.finrank_self ℚ),

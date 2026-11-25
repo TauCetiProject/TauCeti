@@ -27,12 +27,16 @@ Verma module lie in `λ - Q₊`, category `O` is cut out by finitely many such c
 finite-height intervals make characters supported on them multiplicable. For a rational
 realization of an integral matrix the root lattice lies in every weight lattice
 `TauCeti.CartanRealization.CoweightLattice.weightLattice`, and a weight is dominant exactly when its
-integral coroot coordinates are nonnegative, so dominance is decidable on the weight lattice.
+integral coroot coordinates are nonnegative, so dominance is decidable on the weight lattice. The
+simple roots also span a positive root cone inside the weight lattice; it is pointed, finitely
+generated for a finite index set, and consists of the elements of `Q₊` that lie in the lattice.
 
 ## Main definitions
 
 * `TauCeti.CartanRealization.rootLattice`: the root lattice `Q`.
 * `TauCeti.CartanRealization.posRootCone`: the positive root cone `Q₊`.
+* `TauCeti.CartanRealization.CoweightLattice.posRootCone`: the positive root cone of the weight
+  lattice `P`, the natural span of the simple roots in `P`.
 * `TauCeti.CartanRealization.height`: the height on `Q₊`.
 * `TauCeti.CartanRealization.RootLE`: the order `μ ≤ λ` given by `λ - μ ∈ Q₊`.
 * `TauCeti.CartanRealization.IsDominant`: the dominance predicate `λ(hᵢ) ≥ 0` for all `i`.
@@ -44,11 +48,15 @@ integral coroot coordinates are nonnegative, so dominance is decidable on the we
 * `TauCeti.CartanRealization.linearIndependent_nat_root`: the simple roots are independent over
   `ℕ`, so `Q₊` is the natural span of an independent family.
 * `TauCeti.CartanRealization.isPointed_posRootCone`: `Q₊ ∩ (-Q₊) = 0`.
+* `TauCeti.CartanRealization.isAddFG_posRootCone`: for a finite index set `Q₊` is finitely
+  generated.
 * `TauCeti.CartanRealization.height_eq_sum`: `ht(∑ᵢ nᵢ αᵢ) = ∑ᵢ nᵢ`.
 * `TauCeti.CartanRealization.RootLE.antisymm`: the order on weights is antisymmetric.
 * `TauCeti.CartanRealization.finite_setOf_rootLE_height_le`: **finite-height intervals**, the set
   of `μ ≤ λ` with `ht(λ - μ) ≤ n` is finite.
 * `TauCeti.CartanRealization.CoweightLattice.rootLattice_le_weightLattice`: `Q ⊆ P`.
+* `TauCeti.CartanRealization.CoweightLattice.coe_mem_posRootCone_iff`: the positive root cone of
+  `P` is the part of `Q₊` in `P`.
 * `TauCeti.CartanRealization.CoweightLattice.isDominant_coe_iff`: dominance of an integral weight
   is nonnegativity of its coroot coordinates.
 
@@ -114,6 +122,12 @@ theorem rootLattice_eq_bot [IsEmpty I] : R.rootLattice = ⊥ := by
 @[simp]
 theorem posRootCone_eq_bot [IsEmpty I] : R.posRootCone = ⊥ := by
   simp [posRootCone]
+
+/-- For a finite index set the positive root cone is finitely generated, so every function on
+weights supported in finitely many cones `λ - Q₊` is a character (`HahnSeries.ofConeBounded`). -/
+instance isAddFG_posRootCone [Finite I] : IsAddFG R.posRootCone.toAddSubmonoid := by
+  rw [posRootCone_def, Submodule.span_nat_eq_addSubmonoidClosure]
+  infer_instance
 
 section Restrict
 
@@ -321,6 +335,39 @@ theorem isDominant_coe_iff (lam : L.weightLattice) :
   simp only [isDominant_iff, Pi.le_def, Pi.zero_apply, corootCoordinates_apply]
   refine forall_congr' fun i ↦ ?_
   rw [← L.coe_coroot i, ← L.cast_pairing, Int.cast_nonneg_iff]
+
+/-- The positive root cone of the weight lattice: the natural span of the simple roots in `P`. -/
+def posRootCone : Submodule ℕ L.weightLattice :=
+  Submodule.span ℕ (Set.range L.root)
+
+theorem posRootCone_def : L.posRootCone = Submodule.span ℕ (Set.range L.root) := (rfl)
+
+/-- The positive root cone of the weight lattice is pointed. -/
+theorem isPointed_posRootCone : L.posRootCone.toAddSubmonoid.IsPointed :=
+  fun _ h h' ↦
+    (L.linearIndependent_root.restrict_scalars' ℕ).eq_zero_of_mem_natSpan_of_neg_mem h h'
+
+/-- A weight lies in the positive root cone of the weight lattice exactly when it lies in the
+positive root cone of the realization. -/
+theorem coe_mem_posRootCone_iff {φ : L.weightLattice} :
+    (φ : Dual ℚ H) ∈ R.posRootCone ↔ φ ∈ L.posRootCone := by
+  let ι : L.weightLattice →ₗ[ℕ] Dual ℚ H := L.weightLattice.subtype.restrictScalars ℕ
+  have hι : Function.Injective ι := Subtype.val_injective
+  have h : R.posRootCone = L.posRootCone.map ι := by
+    rw [posRootCone_def, CartanRealization.posRootCone_def, ← Submodule.span_image,
+      ← Set.range_comp]
+    congr 2
+    funext i
+    exact (L.coe_root i).symm
+  rw [h]
+  exact ⟨fun ⟨ψ, hψ, he⟩ ↦ hι he ▸ hψ, fun hφ ↦ ⟨φ, hφ, rfl⟩⟩
+
+/-- For a finite index set the positive root cone of the weight lattice is finitely generated, so
+every function on `P` supported in finitely many cones `λ - Q₊` is a character supported on the
+weight lattice (`HahnSeries.ofConeBounded`). -/
+instance isAddFG_posRootCone [Finite I] : IsAddFG L.posRootCone.toAddSubmonoid := by
+  rw [posRootCone_def, Submodule.span_nat_eq_addSubmonoidClosure]
+  infer_instance
 
 end CoweightLattice
 

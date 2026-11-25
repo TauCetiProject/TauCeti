@@ -91,7 +91,7 @@ variable [I.Boundaryless] [IsManifold I 2 M]
 omit [FiniteDimensional ℝ P] in
 /-- A bilinear form representing the normal Hessian through a linear equivalence is symmetric. -/
 private theorem symm_of_normalHessian_eq (h : i.IsCriticalSubmanifold f) {s : S}
-    (L : P ≃ₗ[ℝ] i.NormalSpace s hn) {Q : P →L[ℝ] P →L[ℝ] ℝ}
+    (L : P ≃ₗ[ℝ] i.isImmersion.NormalSpace s hn) {Q : P →L[ℝ] P →L[ℝ] ℝ}
     (hQ : ∀ u v, h.normalHessian hn s (L u) (L v) = Q u v) (u v : P) :
     Q u v = Q v u := by
   rw [← hQ, ← hQ, (h.isSymm_normalHessian hn s).eq]
@@ -99,7 +99,7 @@ private theorem symm_of_normalHessian_eq (h : i.IsCriticalSubmanifold f) {s : S}
 /-- A bilinear form on an inner product space `P` representing the normal Hessian of a critical
 submanifold through a linear equivalence `L` has a self-adjoint Riesz operator. -/
 theorem isSelfAdjoint_continuousLinearMapOfBilin (h : i.IsCriticalSubmanifold f) {s : S}
-    (L : P ≃ₗ[ℝ] i.NormalSpace s hn) {Q : P →L[ℝ] P →L[ℝ] ℝ}
+    (L : P ≃ₗ[ℝ] i.isImmersion.NormalSpace s hn) {Q : P →L[ℝ] P →L[ℝ] ℝ}
     (hQ : ∀ u v, h.normalHessian hn s (L u) (L v) = Q u v) : IsSelfAdjoint Q♯ :=
   InnerProductSpace.isSelfAdjoint_continuousLinearMapOfBilin <|
     h.symm_of_normalHessian_eq hn L hQ
@@ -114,7 +114,8 @@ variable [I.Boundaryless] [IsManifold I 2 M]
 Morse–Bott critical submanifold through a linear equivalence `L`, the negative and positive
 spectral subspaces of its Riesz operator are complementary, so `P` is their direct sum. -/
 theorem isCompl_pointSpectralSubspace_Iio_Ioi_continuousLinearMapOfBilin
-    (h : i.IsNondegenerateCriticalSubmanifold f) {s : S} (L : P ≃ₗ[ℝ] i.NormalSpace s hn)
+    (h : i.IsNondegenerateCriticalSubmanifold f) {s : S}
+        (L : P ≃ₗ[ℝ] i.isImmersion.NormalSpace s hn)
     {Q : P →L[ℝ] P →L[ℝ] ℝ} (hQ : ∀ u v, h.normalHessian hn s (L u) (L v) = Q u v) :
     IsCompl (Module.End.pointSpectralSubspace Q♯.toLinearMap (Iio 0))
       (Module.End.pointSpectralSubspace Q♯.toLinearMap (Ioi 0)) :=
@@ -126,7 +127,7 @@ omit [FiniteDimensional ℝ P] in
 /-- The quadratic form of a bilinear form representing the normal Hessian through `L` is
 isometric to the quadratic form of the normal Hessian. -/
 private theorem equivalent_toQuadraticMap (h : i.IsNondegenerateCriticalSubmanifold f) {s : S}
-    (L : P ≃ₗ[ℝ] i.NormalSpace s hn) {Q : P →L[ℝ] P →L[ℝ] ℝ}
+    (L : P ≃ₗ[ℝ] i.isImmersion.NormalSpace s hn) {Q : P →L[ℝ] P →L[ℝ] ℝ}
     (hQ : ∀ u v, h.normalHessian hn s (L u) (L v) = Q u v) :
     Q.toBilinForm.toQuadraticMap.Equivalent (h.normalHessian hn s).toQuadraticMap :=
   ⟨{ L with map_app' := fun u ↦ by simp [hQ] }⟩
@@ -138,7 +139,8 @@ inner product space `P` represents the normal Hessian of a Morse–Bott critical
 through a linear equivalence, the negative spectral subspace of its Riesz operator, on which `Q`
 is negative definite, has dimension the Morse index of `f` at `i s`. -/
 theorem finrank_pointSpectralSubspace_Iio_continuousLinearMapOfBilin
-    (h : i.IsNondegenerateCriticalSubmanifold f) {s : S} (L : P ≃ₗ[ℝ] i.NormalSpace s hn)
+    (h : i.IsNondegenerateCriticalSubmanifold f) {s : S}
+        (L : P ≃ₗ[ℝ] i.isImmersion.NormalSpace s hn)
     {Q : P →L[ℝ] P →L[ℝ] ℝ} (hQ : ∀ u v, h.normalHessian hn s (L u) (L v) = Q u v) :
     Module.finrank ℝ (Module.End.pointSpectralSubspace Q♯.toLinearMap (Iio 0)) =
       manifoldMorseIndex I f (i s) := by
@@ -151,7 +153,8 @@ an inner product space `P` represents the normal Hessian of a Morse–Bott criti
 `s` through a linear equivalence, the positive spectral subspace of its Riesz operator, on which
 `Q` is positive definite, has dimension the Morse index of `-f` at `i s`. -/
 theorem finrank_pointSpectralSubspace_Ioi_continuousLinearMapOfBilin
-    (h : i.IsNondegenerateCriticalSubmanifold f) {s : S} (L : P ≃ₗ[ℝ] i.NormalSpace s hn)
+    (h : i.IsNondegenerateCriticalSubmanifold f) {s : S}
+        (L : P ≃ₗ[ℝ] i.isImmersion.NormalSpace s hn)
     {Q : P →L[ℝ] P →L[ℝ] ℝ} (hQ : ∀ u v, h.normalHessian hn s (L u) (L v) = Q u v) :
     Module.finrank ℝ (Module.End.pointSpectralSubspace Q♯.toLinearMap (Ioi 0)) =
       manifoldMorseIndex I (-f) (i s) := by
