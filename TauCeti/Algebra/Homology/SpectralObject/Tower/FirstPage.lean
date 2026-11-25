@@ -30,6 +30,10 @@ page `r`. Through this identification, the cycle and boundary towers of
   kernel of `H^n(i₁ ≤ i₂) ⟶ H^n(i₁ ≤ i₃)`
   (`SpectralObject.boundariesSubobject_spectralSequence_eq_kernelSubobject`).
 
+For `i ≤ i₀`, the kernel of `δ : H^n(i₁ ≤ i₂) ⟶ H^{n+1}(i ≤ i₁)` is contained in `Z_r(pq)`
+(`SpectralObject.kernelSubobject_δ_le_cyclesSubobject_spectralSequence`); for `ι = EInt` and
+`i = ⊥` it lies in every `Z_r`.
+
 The indices are given by equations, so that the statements specialize to each recipe with its
 explicit indices: for `coreE₂Cohomological` at `(p, q)`, `n = p + q`, `i₀ = q - r + 2`, `i₁ = q`,
 `i₂ = q + 1` and `i₃ = q + r - 1`; for `coreE₂CohomologicalFin l` the clamped indices
@@ -171,5 +175,33 @@ theorem boundariesSubobject_spectralSequence_eq_imageSubobject_δ (r : ℤ) (hr 
     hn]
   exact ((X.exact₁ (homOfLE (data.le₁₂' pq h₁ h₂)) (homOfLE (data.le₂₃' r hr pq h₂ h₃)) _ rfl
     (n - 1) n).imageSubobject_comp_inv_eq_kernelSubobject_hom_comp _).symm
+
+/-- **Kernels of `δ` with a smaller source index lie in every cycle subobject.** For `i ≤ i₀`,
+through `spectralSequenceFirstPageXIso`, the kernel of the connecting map
+`δ : H^n(i₁ ≤ i₂) ⟶ H^{n+1}(i ≤ i₁)` is contained in `Z_r(pq)`, the kernel of
+`δ : H^n(i₁ ≤ i₂) ⟶ H^{n+1}(i₀ ≤ i₁)`, where `i₀ = data.i₀ r pq`: the second `δ` is the first one
+followed by the map `H^{n+1}(i ≤ i₁) ⟶ H^{n+1}(i₀ ≤ i₁)`. For `ι = EInt` and `i = ⊥`, this kernel
+lies in every `Z_r`, so in their intersection. -/
+theorem kernelSubobject_δ_le_cyclesSubobject_spectralSequence (r : ℤ) (hr : r₀ ≤ r)
+    (i i₁ i₂ : ι) (hi : i ≤ data.i₀ r pq) (h₁ : i₁ = data.i₁ pq) (h₂ : i₂ = data.i₂ pq)
+    (n : ℤ) (hn : n = data.deg pq) :
+    kernelSubobject ((X.spectralSequenceFirstPageXIso data pq i₁ i₂ h₁ h₂ n hn).hom ≫
+        X.δ (homOfLE (hi.trans (data.le₀₁' r hr pq rfl h₁))) (homOfLE (data.le₁₂' pq h₁ h₂))
+          n (n + 1)) ≤
+      (X.spectralSequence data).cyclesSubobject pq r hr := by
+  rw [X.cyclesSubobject_spectralSequence_eq_kernelSubobject_δ data pq r hr _ i₁ i₂ rfl h₁ h₂ n
+    hn]
+  -- The map `H^{n+1}(i ≤ i₁) ⟶ H^{n+1}(i₀ ≤ i₁)` induced by `i ≤ i₀`.
+  let α : mk₁ (homOfLE (hi.trans (data.le₀₁' r hr pq rfl h₁))) ⟶
+      mk₁ (homOfLE (data.le₀₁' r hr pq rfl h₁)) :=
+    homMk₁ (homOfLE hi) (𝟙 _) (Subsingleton.elim _ _)
+  have hnat := X.δ_naturality (homOfLE (hi.trans (data.le₀₁' r hr pq rfl h₁)))
+    (homOfLE (data.le₁₂' pq h₁ h₂)) (homOfLE (data.le₀₁' r hr pq rfl h₁))
+    (homOfLE (data.le₁₂' pq h₁ h₂)) α (𝟙 _) n (n + 1) rfl
+  rw [Functor.map_id, Category.id_comp] at hnat
+  simpa only [Category.assoc, ← hnat] using kernelSubobject_comp_le
+    ((X.spectralSequenceFirstPageXIso data pq i₁ i₂ h₁ h₂ n hn).hom ≫
+      X.δ (homOfLE (hi.trans (data.le₀₁' r hr pq rfl h₁))) (homOfLE (data.le₁₂' pq h₁ h₂))
+        n (n + 1)) ((X.H (n + 1)).map α)
 
 end CategoryTheory.Abelian.SpectralObject
