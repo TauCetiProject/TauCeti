@@ -121,10 +121,10 @@ private theorem exists_kummerCoverFiberEquiv_smul (n : ℕ) (hn : IsUnit (n : R)
   ring
 
 /-- **Level-`n` Kummer monodromy**, the Kummer character of the unit `t` at the geometric point
-`x : Spec Ω ⟶ Spec R`. If every `n`-th root of unity of `Ω` comes from `R`, an element `σ` of the
-étale fundamental group `π₁(Spec R, x) = Aut (fiber x)` multiplies every `n`-th root of `t` in the
-geometric fibre of the Kummer cover by the same root of unity
-`kummerMonodromyLevel t Ω n hn hdeck σ` (`kummerCoverFiberEquiv_smul`). -/
+`x : Spec Ω ⟶ Spec R`. For `n` invertible in `R`, assume every `n`-th root of unity of `Ω` comes
+from `R`. Then an element `σ` of the étale fundamental group `π₁(Spec R, x) = Aut (fiber x)`
+multiplies every `n`-th root of `t` in the geometric fibre of the Kummer cover by the same root of
+unity `kummerMonodromyLevel t Ω n hn hdeck σ` (`kummerCoverFiberEquiv_smul`). -/
 noncomputable def kummerMonodromyLevel (n : ℕ) (hn : IsUnit (n : R))
     (hdeck : Function.Surjective (restrictRootsOfUnity (algebraMap R Ω) n)) :
     Aut (fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))) →* rootsOfUnity n Ω :=
@@ -231,9 +231,10 @@ theorem kummerMonodromyLevel_pow_div {n m : ℕ} (hn : IsUnit (n : R)) (hm : IsU
     simp only [kummerCoverFiberEquiv_map_kummerCoverMap,
       kummerCoverFiberEquiv_smul t Ω m hm hdeck_m, mul_pow, Units.val_pow_eq_pow_val]
 
-/-- **Surjectivity of the Kummer character.** If the Kummer cover is connected, the fundamental
-group acts transitively on its geometric fibre, so every `n`-th root of unity of `Ω` is a value of
-the Kummer character. -/
+/-- **Surjectivity of the Kummer character.** Under the hypotheses defining the Kummer character
+(`n` invertible in `R` and every `n`-th root of unity of `Ω` coming from `R`), if moreover the
+Kummer cover is connected, the fundamental group acts transitively on its geometric fibre, so every
+`n`-th root of unity of `Ω` is a value of the Kummer character. -/
 theorem kummerMonodromyLevel_surjective (n : ℕ) (hn : IsUnit (n : R))
     (hdeck : Function.Surjective (restrictRootsOfUnity (algebraMap R Ω) n))
     [hconn : IsConnected (kummerCover t n hn)] :
@@ -278,9 +279,10 @@ theorem proj_kummerMonodromy (p : ℕ)
       kummerMonodromyLevel t Ω m (hunit m) (hdeck m) σ :=
   PrimeToPTateModule.proj_lift _ _ m σ
 
-/-- **Surjectivity of Kummer monodromy.** If the Kummer covers of all nonzero orders prime to `p`
-are connected, `kummerMonodromy` maps the profinite group `π₁(Spec R, x)` onto the prime-to-`p`
-Tate module of `Ω`. -/
+/-- **Surjectivity of Kummer monodromy.** Under the hypotheses defining `kummerMonodromy` (every
+nonzero `m` prime to `p` invertible in `R`, and every `m`-th root of unity of `Ω` coming from `R`),
+if moreover the Kummer covers of all these orders are connected, `kummerMonodromy` maps the
+profinite group `π₁(Spec R, x)` onto the prime-to-`p` Tate module of `Ω`. -/
 theorem kummerMonodromy_surjective (p : ℕ)
     (hunit : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}, IsUnit ((m : ℕ) : R))
     (hdeck : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime p},
