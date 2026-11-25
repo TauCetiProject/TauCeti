@@ -36,6 +36,7 @@ homomorphism `K₀(A) → K₀(B)` through the unitization `Unitization.starMap 
 * `TauCeti.UnitizationKZero.augmentation_comp_inl`: the scalar inclusion splits `K₀(ε)`.
 * `TauCeti.UnitizationKZero.augmentation_comp_map_starMap`: `K₀(ε)` is natural for unitized star
   homomorphisms.
+* `TauCeti.UnitizationKZero.inl_comp_map_starMap`: so is the scalar inclusion `K₀(ι)`.
 
 ## References
 
@@ -164,6 +165,23 @@ theorem augmentation_map_starMap (φ : A →⋆ₙₐ[R] B) (x : ProjectionKZero
         (ProjectionKZero.map (NonUnitalStarRingHom.ofClass (Unitization.starMap φ)) x) =
       augmentation R A x :=
   DFunLike.congr_fun (augmentation_comp_map_starMap φ) x
+
+/-- **Naturality of the scalar inclusion.** The homomorphism induced by the unitization of a star
+homomorphism commutes with the scalar inclusions. -/
+theorem inl_comp_map_starMap (φ : A →⋆ₙₐ[R] B) :
+    (ProjectionKZero.map (NonUnitalStarRingHom.ofClass (Unitization.starMap φ))).comp
+        (inl R A) =
+      inl R B := by
+  rw [inl, inl, ← ProjectionKZero.map_comp]
+  congr 1
+  exact NonUnitalStarRingHom.ext fun r ↦ AlgHomClass.commutes (Unitization.starMap φ) r
+
+/-- **Naturality of the scalar inclusion**, pointwise. -/
+@[simp]
+theorem map_starMap_inl (φ : A →⋆ₙₐ[R] B) (x : ProjectionKZero R) :
+    ProjectionKZero.map (NonUnitalStarRingHom.ofClass (Unitization.starMap φ)) (inl R A x) =
+      inl R B x :=
+  DFunLike.congr_fun (inl_comp_map_starMap φ) x
 
 /-- **Functoriality.** A star homomorphism `φ : A →⋆ₙₐ[R] B`, unital or not, induces a
 homomorphism `K₀(A) →+ K₀(B)` through its unitization `Unitization.starMap φ`. -/
