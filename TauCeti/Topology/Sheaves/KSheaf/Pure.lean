@@ -144,7 +144,8 @@ private theorem eq_zero_of_forall_map_inf_eq_zero (G : KPresheaf (ModuleCat.{w} 
     refine Types.ext_of_isPullback ((CategoryTheory.forget _).map_isPullback (hpb sq hKW))
       (x₁ := x) (y₁ := 0) (by simpa using hx a (Finset.mem_insert_self a s)) ?_
     suffices (G.map (opHomOfLE sq.le₃₄)).hom x = 0 by simpa using this
-    refine ih K' (Set.inter_subset_left.trans hKW) (by simp [K', Compacts.coe_finset_sup])
+    refine ih K' (by rw [Compacts.coe_inf]; exact Set.inter_subset_left.trans hKW)
+      (by simp [K', Compacts.coe_finset_sup])
       _ fun b hb ↦ ?_
     -- restricting from `K` to `K' ∩ L b` factors through `K ∩ L b`
     rw [map_opHomOfLE_comp_map_opHomOfLE_apply, ← map_opHomOfLE_comp_map_opHomOfLE_apply G
@@ -215,8 +216,8 @@ theorem IsHomotopyKSheaf.exactAt_of_forall_exactAt_singleton
     (hF.acyclic_bot j).isZero_homology (fun _ _ _ _ h hW ↦ ?_) (fun K ↦ ?_)
     (fun x hx ↦ (exactAt_iff_isZero_homology _ _).1 (hj x hx)) K hKW
   · have := hF.quasiIso_mayerVietorisDesc h
-    have h₁ : (_ : Set X) ⊆ _ := h.le₁₂.trans h.le₂₄
-    exact F.isPullback_homologyMap h hij (hi _ (h₁.trans hW))
+    exact F.isPullback_homologyMap h hij
+      (hi _ ((SetLike.coe_subset_coe.2 (h.le₁₂.trans h.le₂₄)).trans hW))
   · obtain ⟨_, hc, _⟩ := hF.exists_isColimit_quasiIso_desc K
     exact F.nonempty_isColimit_coconeOfCompacts_homology K hc j
 
