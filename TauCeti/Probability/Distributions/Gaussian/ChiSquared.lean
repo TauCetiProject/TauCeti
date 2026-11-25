@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Distributions.ChiSquared.Basic
 public import TauCeti.Probability.Distributions.Gaussian.Cdf
 public import TauCeti.Probability.Moments.Pi
-import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # Squares of Gaussian variables

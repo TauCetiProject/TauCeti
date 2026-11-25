@@ -76,7 +76,7 @@ private noncomputable def assignment (n : ℕ) : Assignment Hom K :=
     excessAt (assignment n) v =
       toLex (0, if v = 0 then -(n : ℤ) else if v = 3 then (n : ℤ) else 0) := by
   fin_cases v <;>
-    simp [assignment, excessAt_add, ← toLex_add, ← toLex_sub, ← toLex_zero,
+    simp [assignment, excessAt_add_apply, ← toLex_add, ← toLex_sub, ← toLex_zero,
       Prod.ext_iff] <;> omega
 
 private theorem assignment_feasible (n : ℕ) : assignment n ∈ Set.Icc 0 capacity := by
@@ -200,7 +200,7 @@ private noncomputable def fastAssignment (i : Fin 3) : Assignment Hom K :=
       if v = 0 then -((if i = 0 then 0 else big) + (if i = 2 then big else 0))
       else if v = 3 then (if i = 0 then 0 else big) + (if i = 2 then big else 0)
       else 0 := by
-  fin_cases v <;> simp [fastAssignment, excessAt_add, add_comm]
+  fin_cases v <;> simp [fastAssignment, excessAt_add_apply, add_comm]
 
 /-- The three states of the two-step shortest augmentation. -/
 noncomputable def fastFlow (i : Fin 3) : Flow capacity 0 3 where

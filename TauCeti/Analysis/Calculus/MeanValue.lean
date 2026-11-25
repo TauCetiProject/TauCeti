@@ -17,9 +17,10 @@ public import Mathlib.Topology.MetricSpace.Thickening
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Topology.Order.Compact
 import Mathlib.Topology.Order.IntermediateValue
-import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # Mean value estimates
@@ -62,16 +63,18 @@ For a map whose derivative is `α`-Hölder with constant `H` on the closed ball 
 `x`, the linearization error at `x` of an increment between two points of that ball is at most
 `H R^α` times the increment (`TauCeti.norm_sub_sub_le_of_holderOnWith`).
 
-For a function on the real line with derivative of norm at most `D r ^ (β - 1)` at every `r > 0`,
-where `0 ≤ β ≤ 1`, the increments satisfy `‖u b - u a‖ ≤ 2 D |b - a| a ^ (β - 1)` for `a > 0` and
-`a / 2 ≤ b` (`TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt`).
-
 ## Integrating a little-o derivative bound
 
 If `f` is differentiable near `a` and `Df(x) = o(‖x - a‖ ^ r)` as `x → a`, where `r ≥ 0`, then
 `f(x) - f(a) = o(‖x - a‖ ^ (r + 1))`, by the mean value inequality on balls about `a`
 (`TauCeti.sub_isLittleO_norm_rpow_add_one_of_fderiv`). This is the little-o counterpart of
 Mathlib's `sub_isBigO_norm_rpow_add_one_of_fderiv`.
+
+## Along a polygonal path
+
+On a set that is not convex, the mean value inequality still bounds the increment of a function
+along any polygonal path inside the set by the derivative bound times the length of the path
+(`TauCeti.norm_image_sub_le_of_norm_fderiv_le_of_segment_subset`, for three segments).
 
 ## Space-time functions vanishing outside a time interval
 
@@ -119,6 +122,12 @@ only depends on the `π` component (`TauCeti.apply_proj_eq_of_fderiv_apply_eq_ze
 compactly supported differentiable map whose derivative kills a nonzero `v` everywhere is zero
 (`HasCompactSupport.eq_zero_of_fderiv_apply_eq_zero`).
 
+## Constancy from a vanishing derivative
+
+A function on a preconnected subset of `ℝ` whose derivative within the set vanishes is constant
+there (`IsPreconnected.eq_of_hasDerivWithinAt_zero`). A function `𝕜 → G`, `𝕜 = ℝ` or `𝕜 = ℂ`,
+with zero derivative at every point is constant (`TauCeti.is_const_of_hasDerivAt_zero`).
+
 ## Signs from monotonicity on the real line
 
 A real function continuous on `[x, ∞)`, with nonpositive (negative) derivative on `(x, ∞)` and
@@ -152,6 +161,22 @@ into `b'` at the base point `a`; the second moves the base point of `y ↦ f (y 
 derivative `Df(y + b') - Df(y)` is at most `L ‖b'‖`, from `a'` to `a`. Both steps are Mathlib's
 mean value inequality `Convex.norm_image_sub_le_of_norm_hasFDerivWithin_le`. This is the estimate
 that makes a nonlinear coefficient `x ↦ J(u(x))` Lipschitz in the map `u` for Hölder norms.
+
+## The descent lemma
+
+Let `f` be a real function with derivative `D y` within the segment from `x` to `x + h` at each
+point `y` of that segment, and suppose `‖D y - D x‖ ≤ L * ‖y - x‖` there. Then `f` lies below
+its first-order expansion at `x` plus a quadratic term,
+
+`f (x + h) ≤ f x + D x h + L / 2 * ‖h‖ ^ 2`
+
+(`TauCeti.le_add_apply_add_of_norm_sub_le`, and `TauCeti.le_add_fderiv_add_of_lipschitz` for
+`D = fderiv ℝ f`). The hypothesis compares the derivative only with its value at the base point,
+and only along the segment, so no global Lipschitz bound and no continuity of the derivative are
+assumed, and `L` is an arbitrary real number. Applied to `f` and to `-f`, the lemma bounds the
+first-order Taylor remainder of a function with `L`-Lipschitz derivative by `L / 2 * ‖h‖ ^ 2`,
+the inequality behind the convergence analysis of gradient methods (Y. Nesterov, *Lectures on
+convex optimization*, 2nd ed., Springer, 2018, Lemma 1.2.3).
 -/
 
 public section
@@ -359,31 +384,6 @@ theorem norm_sub_le_of_norm_fderiv_sub_id_le {c : E} {h : E → E} {r δ : ℝ}
   rw [hhc, sub_self, sub_zero] at this
   exact this.trans (mul_le_mul_of_nonneg_left (mem_closedBall_iff_norm.1 hx) hδ0)
 
-open Real in
-/-- Mean value bound near `a > 0`: if `u` has derivative `f' r` of norm at most `D r^(β - 1)` at
-every `r > 0` (`0 ≤ β ≤ 1`), then `‖u b - u a‖ ≤ 2 D |b - a| a^(β - 1)` for `a / 2 ≤ b`. -/
-theorem norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {u f' : ℝ → F} {β D : ℝ} (hβ₀ : 0 ≤ β) (hβ₁ : β - 1 ≤ 0)
-    (hderiv : ∀ r, 0 < r → HasDerivAt u (f' r) r) (hbound : ∀ r, 0 < r → ‖f' r‖ ≤ D * r ^ (β - 1))
-    {a b : ℝ} (ha : 0 < a) (hb : a / 2 ≤ b) : ‖u b - u a‖ ≤ 2 * D * (|b - a| * a ^ (β - 1)) := by
-  have ha2 : 0 < a / 2 := half_pos ha
-  have hD : 0 ≤ D := by simpa using (norm_nonneg _).trans (hbound 1 one_pos)
-  have hmv := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le (f := u) (s := Ici (a / 2))
-    (f' := f') (C := D * (a / 2) ^ (β - 1))
-    (fun r hr => (hderiv r (ha2.trans_le hr)).hasDerivWithinAt)
-    (fun r hr => (hbound r (ha2.trans_le hr)).trans
-      (mul_le_mul_of_nonneg_left (rpow_le_rpow_of_nonpos ha2 hr hβ₁) hD))
-    (convex_Ici _) (x := a) (y := b) (mem_Ici.2 (by linarith)) (mem_Ici.2 hb)
-  have hhalf : (a / 2) ^ (β - 1) ≤ 2 * a ^ (β - 1) := by
-    rw [div_rpow ha.le zero_le_two, div_eq_mul_inv, ← rpow_neg zero_le_two, neg_sub, mul_comm]
-    gcongr
-    calc (2 : ℝ) ^ (1 - β) ≤ 2 ^ (1 : ℝ) := rpow_le_rpow_of_exponent_le one_le_two (by linarith)
-      _ = 2 := rpow_one 2
-  rw [Real.norm_eq_abs] at hmv
-  calc ‖u b - u a‖ ≤ D * (a / 2) ^ (β - 1) * |b - a| := hmv
-    _ ≤ D * (2 * a ^ (β - 1)) * |b - a| := by gcongr
-    _ = _ := by ring
-
 open Metric in
 open scoped NNReal in
 /-- **The linearization error of a map with a Hölder derivative.** If on the closed ball of radius
@@ -484,6 +484,25 @@ theorem _root_.HasCompactSupport.eq_zero_of_fderiv_apply_eq_zero {g : F → G}
   linarith [le_abs_self R]
 
 end Direction
+
+/-- **The mean value inequality along three segments.** If the segments `[x, p]`, `[p, q]` and
+`[q, y]` lie in a set `s` on which `g` is differentiable with derivative bounded by `L`, then
+`‖g y - g x‖ ≤ L (‖x - p‖ + ‖p - q‖ + ‖q - y‖)`. Compare
+`Convex.norm_image_sub_le_of_norm_fderiv_le` for a single segment. -/
+theorem norm_image_sub_le_of_norm_fderiv_le_of_segment_subset {F G : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G] {s : Set F} {g : F → G} {L : ℝ}
+    (hg : ∀ z ∈ s, DifferentiableAt ℝ g z) (hL : ∀ z ∈ s, ‖fderiv ℝ g z‖ ≤ L) {x p q y : F}
+    (hxp : segment ℝ x p ⊆ s) (hpq : segment ℝ p q ⊆ s) (hqy : segment ℝ q y ⊆ s) :
+    ‖g y - g x‖ ≤ L * (dist x p + dist p q + dist q y) := by
+  have hseg : ∀ {a b : F}, segment ℝ a b ⊆ s → ‖g b - g a‖ ≤ L * dist a b := fun {a b} hab ↦ by
+    rw [dist_comm, dist_eq_norm]
+    exact (convex_segment a b).norm_image_sub_le_of_norm_fderiv_le (fun z hz ↦ hg z (hab hz))
+      (fun z hz ↦ hL z (hab hz)) (left_mem_segment ℝ a b) (right_mem_segment ℝ a b)
+  calc ‖g y - g x‖ = ‖(g p - g x) + (g q - g p) + (g y - g q)‖ := by abel_nf
+    _ ≤ ‖g p - g x‖ + ‖g q - g p‖ + ‖g y - g q‖ := norm_add₃_le
+    _ ≤ L * dist x p + L * dist p q + L * dist q y := by
+      gcongr <;> exact hseg ‹_›
+    _ = _ := by ring
 
 /-- A function with derivative bounded by `C` that vanishes outside the time interval `(a, b)` is
 bounded by `C * (b - a)`, by the mean value inequality from its value at the time `a`. -/
@@ -629,10 +648,16 @@ theorem Differentiable.abs_sub_le_of_basis_bound {P : Type*}
     have hvnorm : ‖fderiv ℝ φ (a + t • (b - a)) (b - a)‖ ≤ C * ‖b - a‖ :=
       (ContinuousLinearMap.le_opNorm _ _).trans
         (mul_le_mul_of_nonneg_right (hbound _ hball) (norm_nonneg _))
-    have hcoord_bound := (fderiv ℝ f (φ (a + t • (b - a)))).abs_apply_le_card_mul_norm
-      (fderiv ℝ φ (a + t • (b - a)) (b - a)) (hcoord t ht)
+    have hcoord_bound := ((LinearMap.norm_apply_le_sum_norm_mul
+      (fderiv ℝ f (φ (a + t • (b - a)))).toLinearMap (fderiv ℝ φ (a + t • (b - a)) (b - a))).trans
+      ((Finset.sum_le_sum fun j _ ↦ mul_le_mul_of_nonneg_left
+        ((Real.norm_eq_abs _).trans_le (hcoord t ht j)) (norm_nonneg _)).trans_eq
+        (Finset.sum_mul _ _ _).symm)).trans <|
+      mul_le_mul_of_nonneg_right ((Pi.sum_norm_apply_le_norm
+        (fderiv ℝ φ (a + t • (b - a)) (b - a))).trans_eq (nsmul_eq_mul _ _)) hD
     have hscalar : |g' t| ≤ n * ‖fderiv ℝ φ (a + t • (b - a)) (b - a)‖ * D := by
-      simpa only [g', Fintype.card_fin] using hcoord_bound
+      simpa only [g', Fintype.card_fin, Real.norm_eq_abs, ContinuousLinearMap.coe_coe]
+        using hcoord_bound
     exact hscalar.trans
       (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hvnorm (Nat.cast_nonneg n)) hD)
   have hmain := norm_image_sub_le_of_norm_deriv_le_segment'
@@ -675,6 +700,12 @@ theorem eq_of_hasDerivWithinAt_zero (hs : IsPreconnected s)
   simpa [sub_eq_zero, eq_comm] using h
 
 end IsPreconnected
+
+/-- A function `f : 𝕜 → G`, `𝕜 = ℝ` or `𝕜 = ℂ`, with zero derivative at every point is constant.
+This is the `HasDerivAt` form of Mathlib's `is_const_of_deriv_eq_zero`. -/
+theorem TauCeti.is_const_of_hasDerivAt_zero {𝕜 G : Type*} [RCLike 𝕜] [NormedAddCommGroup G]
+    [NormedSpace 𝕜 G] {f : 𝕜 → G} (hf : ∀ t, HasDerivAt f 0 t) (t s : 𝕜) : f t = f s :=
+  is_const_of_deriv_eq_zero (fun t ↦ (hf t).differentiableAt) (fun t ↦ (hf t).deriv) t s
 
 namespace TauCeti
 
@@ -837,3 +868,65 @@ theorem Convex.norm_image_sub_sub_sub_le_of_norm_fderiv_le (hs : Convex ℝ s)
     _ ≤ _ := (norm_add_le _ _).trans (add_le_add hfirst hsecond)
 
 end SecondDifference
+
+namespace TauCeti
+
+section Descent
+
+open Set
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : E → ℝ} {x h : E} {L : ℝ}
+
+/-- **The descent lemma**, for a derivative within the segment. If `f` has derivative `D y`
+within the segment from `x` to `x + h` at each point `y` of that segment, and
+`‖D y - D x‖ ≤ L * ‖y - x‖` there, then `f (x + h) ≤ f x + D x h + L / 2 * ‖h‖ ^ 2`. -/
+theorem le_add_apply_add_of_norm_sub_le {D : E → E →L[ℝ] ℝ}
+    (hf : ∀ y ∈ segment ℝ x (x + h), HasFDerivWithinAt f (D y) (segment ℝ x (x + h)) y)
+    (hL : ∀ y ∈ segment ℝ x (x + h), ‖D y - D x‖ ≤ L * ‖y - x‖) :
+    f (x + h) ≤ f x + D x h + L / 2 * ‖h‖ ^ 2 := by
+  have hmaps : MapsTo (AffineMap.lineMap x (x + h)) (Icc (0 : ℝ) 1) (segment ℝ x (x + h)) :=
+    fun t ht ↦ lineMap_mem_segment ℝ x (x + h) ht
+  -- The restriction of `f` to the segment has derivative `D (lineMap x (x + h) t) h` at `t`.
+  have hg : ∀ t ∈ Icc (0 : ℝ) 1, HasDerivWithinAt (f ∘ AffineMap.lineMap x (x + h))
+      (D (AffineMap.lineMap x (x + h) t) h) (Icc 0 1) t := fun t ht ↦ by
+    simpa using (hf _ (hmaps ht)).comp_hasDerivWithinAt t
+      (AffineMap.hasDerivWithinAt_lineMap (a := x) (b := x + h)) hmaps
+  -- Compare it with the quadratic `t ↦ f x + t * D x h + L / 2 * ‖h‖ ^ 2 * t ^ 2` on `[0, 1]`.
+  have hB : ∀ t : ℝ, HasDerivAt (fun t : ℝ ↦ f x + t * D x h + L / 2 * ‖h‖ ^ 2 * t ^ 2)
+      (D x h + L / 2 * ‖h‖ ^ 2 * (2 * t)) t := fun t ↦ by
+    have hlin : HasDerivAt (fun t : ℝ ↦ f x + t * D x h) (D x h) t := by
+      simpa using ((hasDerivAt_id t).mul_const (D x h)).const_add (f x)
+    have hquad : HasDerivAt (fun t : ℝ ↦ L / 2 * ‖h‖ ^ 2 * t ^ 2)
+        (L / 2 * ‖h‖ ^ 2 * (2 * t)) t := by
+      simpa using (hasDerivAt_pow 2 t).const_mul (L / 2 * ‖h‖ ^ 2)
+    exact hlin.add hquad
+  have hbound : ∀ t ∈ Ico (0 : ℝ) 1,
+      D (AffineMap.lineMap x (x + h) t) h ≤ D x h + L / 2 * ‖h‖ ^ 2 * (2 * t) := fun t ht ↦ by
+    have hnorm : ‖AffineMap.lineMap x (x + h) t - x‖ = t * ‖h‖ := by
+      rw [AffineMap.lineMap_apply_module', add_sub_cancel_left, add_sub_cancel_right, norm_smul,
+        Real.norm_of_nonneg ht.1]
+    have hop : (D (AffineMap.lineMap x (x + h) t) - D x) h ≤ L * (t * ‖h‖) * ‖h‖ :=
+      (le_abs_self _).trans <| ((D (AffineMap.lineMap x (x + h) t) - D x).le_opNorm h).trans <|
+        mul_le_mul_of_nonneg_right
+          ((hL _ (hmaps (Ico_subset_Icc_self ht))).trans_eq (by rw [hnorm])) (norm_nonneg h)
+    rw [sub_apply] at hop
+    linarith
+  have key := image_le_of_deriv_right_le_deriv_boundary
+    (fun t ht ↦ (hg t ht).continuousWithinAt)
+    (fun t ht ↦ (hg t (Ico_subset_Icc_self ht)).mono_of_mem_nhdsWithin (Icc_mem_nhdsGE_of_mem ht))
+    (by simp) (fun t _ ↦ (hB t).continuousAt.continuousWithinAt)
+    (fun t _ ↦ (hB t).hasDerivWithinAt) hbound (right_mem_Icc.2 zero_le_one)
+  simpa using key
+
+/-- **The descent lemma.** If `f` is differentiable at every point of the segment from `x` to
+`x + h` and `‖fderiv ℝ f y - fderiv ℝ f x‖ ≤ L * ‖y - x‖` for every `y` on that segment, then
+`f (x + h) ≤ f x + fderiv ℝ f x h + L / 2 * ‖h‖ ^ 2`. -/
+theorem le_add_fderiv_add_of_lipschitz
+    (hf : ∀ y ∈ segment ℝ x (x + h), DifferentiableAt ℝ f y)
+    (hL : ∀ y ∈ segment ℝ x (x + h), ‖fderiv ℝ f y - fderiv ℝ f x‖ ≤ L * ‖y - x‖) :
+    f (x + h) ≤ f x + fderiv ℝ f x h + L / 2 * ‖h‖ ^ 2 :=
+  le_add_apply_add_of_norm_sub_le (fun y hy ↦ (hf y hy).hasFDerivAt.hasFDerivWithinAt) hL
+
+end Descent
+
+end TauCeti

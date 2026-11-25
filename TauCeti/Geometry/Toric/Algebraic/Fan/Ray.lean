@@ -28,6 +28,11 @@ boundary components under toric isomorphisms and restriction to invariant open s
 * `TauCeti.Toric.Fan.Ray.ofToricRay`: a ray of a cone of the fan, viewed as a fan ray.
 * `TauCeti.Toric.Fan.Ray.toToricRay`: a fan ray contained in a cone, viewed as a ray of that cone.
 * `TauCeti.Toric.Fan.rayEquiv`: the equivalence between rays below a cone and its toric rays.
+* `TauCeti.Toric.Fan.Ray.primitiveGenerator`: the primitive lattice generator of a fan ray, which
+  is its canonical primitive generator as a ray of every cone of the fan containing it.
+* `TauCeti.Toric.Fan.mem_dualSemigroup_iff_forall_ray_le`: dual-semigroup membership is
+  nonnegativity on the primitive generators of the fan rays in the cone.
+* `TauCeti.Toric.Fan.isEmpty_ray_ofCone_bot`: the fan of the zero cone has no rays.
 * `TauCeti.Toric.Fan.exists_ray_le_of_ne_bot`: every nonzero cone of a fan contains a ray.
 * `TauCeti.Toric.Fan.le_iff_forall_ray_le`: containment of cones is detected by their rays.
 * `TauCeti.Toric.Fan.exists_cone_rays_eq`: a collection of rays in a simplicial cone is exactly
@@ -93,7 +98,102 @@ theorem toPointedCone_toToricRay (rho : Phi.Ray) (sigma : Phi.cones)
 theorem toCone_ne_bot (rho : Phi.Ray) : rho.toCone.val ≠ ⊥ := by
   exact (rho.toToricRay Phi rho.toCone le_rfl).toPointedCone_ne_bot
 
+/-- Viewing a fan ray as a ray of a cone containing it, and then again as a fan ray, recovers the
+original fan ray. -/
+@[simp]
+theorem ofToricRay_toToricRay (rho : Phi.Ray) (sigma : Phi.cones) (h : rho.toCone ≤ sigma) :
+    ofToricRay Phi sigma (rho.toToricRay Phi sigma h) = rho :=
+  (rfl)
+
+variable {Phi}
+
+/-- The primitive lattice generator of a fan ray: the primitive lattice vector pointing along the
+ray, which is the canonical primitive generator of the ray viewed as a ray of any cone of the fan
+containing it (`TauCeti.Toric.Fan.Ray.primitiveGenerator_toToricRay`). -/
+noncomputable def primitiveGenerator (rho : Phi.Ray) : N :=
+  Toric.primitiveGenerator Phi.lattice (Phi.isToricCone rho.toCone.property)
+    (rho.toToricRay Phi rho.toCone le_rfl)
+
+/-- The primitive generator of a fan ray is a primitive generator of that ray viewed as a ray of
+any cone of the fan containing it. -/
+theorem isPrimitiveGenerator_primitiveGenerator (rho : Phi.Ray) (sigma : Phi.cones)
+    (h : rho.toCone ≤ sigma) :
+    IsPrimitiveGenerator i (rho.toToricRay Phi sigma h) rho.primitiveGenerator := by
+  -- Both toric rays have the fan ray's cone as underlying cone, so membership transfers.
+  have h' := Toric.isPrimitiveGenerator_primitiveGenerator Phi.lattice
+    (Phi.isToricCone rho.toCone.property) (rho.toToricRay Phi rho.toCone le_rfl)
+  exact isPrimitiveGenerator_iff.2 ⟨h'.mem, h'.isPrimitive⟩
+
+/-- The canonical primitive generator of a fan ray, viewed as a ray of a cone of the fan containing
+it, is the primitive generator of the fan ray. -/
+@[simp]
+theorem primitiveGenerator_toToricRay (rho : Phi.Ray) (sigma : Phi.cones)
+    (h : rho.toCone ≤ sigma) :
+    Toric.primitiveGenerator Phi.lattice (Phi.isToricCone sigma.property)
+      (rho.toToricRay Phi sigma h) = rho.primitiveGenerator :=
+  ((rho.isPrimitiveGenerator_primitiveGenerator sigma h).eq_primitiveGenerator Phi.lattice
+    (Phi.isToricCone sigma.property)).symm
+
+/-- The primitive generator of a ray of a cone of the fan, viewed as a fan ray, is its canonical
+primitive generator as a ray of that cone. -/
+@[simp]
+theorem primitiveGenerator_ofToricRay (sigma : Phi.cones) (rho : ToricRay sigma.val) :
+    (ofToricRay Phi sigma rho).primitiveGenerator =
+      Toric.primitiveGenerator Phi.lattice (Phi.isToricCone sigma.property) rho :=
+  ((ofToricRay Phi sigma rho).primitiveGenerator_toToricRay sigma
+    (toCone_ofToricRay_le Phi sigma rho)).symm
+
+/-- A lattice vector is the primitive generator of a fan ray exactly when it is a primitive vector
+lying on the ray. -/
+theorem primitiveGenerator_eq_iff (rho : Phi.Ray) {v : N} :
+    rho.primitiveGenerator = v ↔ i v ∈ rho.toCone.val ∧ IsPrimitive v := by
+  refine ⟨fun h ↦ h ▸ ⟨(rho.isPrimitiveGenerator_primitiveGenerator rho.toCone le_rfl).mem,
+    (rho.isPrimitiveGenerator_primitiveGenerator rho.toCone le_rfl).isPrimitive⟩, fun h ↦ ?_⟩
+  have hv : IsPrimitiveGenerator i (rho.toToricRay Phi rho.toCone le_rfl) v :=
+    isPrimitiveGenerator_iff.2 h
+  exact (hv.eq_primitiveGenerator Phi.lattice (Phi.isToricCone rho.toCone.property)).symm
+
+/-- The image of the primitive generator of a fan ray lies on the ray. -/
+@[simp]
+theorem primitiveGenerator_mem (rho : Phi.Ray) : i rho.primitiveGenerator ∈ rho.toCone.val :=
+  (rho.isPrimitiveGenerator_primitiveGenerator rho.toCone le_rfl).mem
+
+/-- The primitive generator of a fan ray is primitive. -/
+@[simp]
+theorem primitiveGenerator_isPrimitive (rho : Phi.Ray) : IsPrimitive rho.primitiveGenerator :=
+  (rho.isPrimitiveGenerator_primitiveGenerator rho.toCone le_rfl).isPrimitive
+
 end Ray
+
+/-- An integral character lies in the dual semigroup of a cone of a fan exactly when it is
+nonnegative on the primitive generator of every fan ray contained in the cone. -/
+theorem mem_dualSemigroup_iff_forall_ray_le (sigma : Phi.cones) (u : N →+ ℤ) :
+    u ∈ dualSemigroup Phi.lattice sigma.val ↔
+      ∀ rho : Phi.Ray, rho.toCone ≤ sigma → 0 ≤ u rho.primitiveGenerator := by
+  rw [mem_dualSemigroup_iff_primitiveGenerator Phi.lattice (Phi.isToricCone sigma.property)]
+  refine ⟨fun h rho hrho ↦ ?_, fun h rho ↦ ?_⟩
+  · simpa using h (rho.toToricRay Phi sigma hrho)
+  · simpa using h (Ray.ofToricRay Phi sigma rho) (Ray.toCone_ofToricRay_le Phi sigma rho)
+
+/-- A character exposing a face is strictly positive on the primitive generator of every ray
+of the larger cone outside the face. -/
+theorem apply_primitiveGenerator_pos_of_inf_ker_eq_face {sigma tau : Phi.cones} {m : N →+ ℤ}
+    (hm : m ∈ dualSemigroup Phi.lattice sigma.val)
+    (htau : sigma.val ⊓
+      PointedCone.ofSubmodule (LinearMap.ker (Phi.lattice.realCharacter m)) = tau.val)
+    {rho : Phi.Ray} (hσ : rho.toCone ≤ sigma) (hτ : ¬rho.toCone ≤ tau) :
+    0 < m rho.primitiveGenerator := by
+  have hnonneg := (Phi.mem_dualSemigroup_iff_forall_ray_le sigma m).1 hm rho hσ
+  refine lt_of_le_of_ne hnonneg fun hz ↦ hτ ?_
+  have hgen : i rho.primitiveGenerator ∈ tau.val := by
+    rw [← htau]
+    exact ⟨hσ rho.primitiveGenerator_mem, by simp [Phi.lattice.realCharacter_apply, ← hz]⟩
+  let r := rho.toToricRay Phi rho.toCone le_rfl
+  exact r.toPointedCone_le_of_mem
+    ((Phi.isToricCone rho.toCone.property).salient.anti r.val.isFaceOf.le)
+    (rho.isPrimitiveGenerator_primitiveGenerator rho.toCone le_rfl).mem
+    (by simpa only [map_zero] using
+      Phi.lattice.injective.ne rho.primitiveGenerator_isPrimitive.ne_zero) hgen
 
 /-- The fan rays contained in a cone are exactly the toric rays of that cone. -/
 def rayEquiv (sigma : Phi.cones) :
@@ -130,6 +230,12 @@ theorem exists_ray_le_of_ne_bot (sigma : Phi.cones) (hσ : sigma.val ≠ ⊥) :
   let rho := Classical.choice (ToricRay.nonempty_of_ne_bot
     (Phi.isToricCone sigma.property).fg (Phi.isToricCone sigma.property).salient hσ)
   exact ⟨Ray.ofToricRay Phi sigma rho, rho.val.isFaceOf.le⟩
+
+/-- The fan of the zero cone, whose toric variety is the dense torus, has no rays. -/
+instance isEmpty_ray_ofCone_bot (hi : IsIntegralLattice i) :
+    IsEmpty (ofCone hi (isToricCone_bot i)).Ray :=
+  ⟨fun rho ↦ rho.toCone_ne_bot _
+    (le_antisymm ((mem_ofCone_cones hi _).1 rho.toCone.property).le bot_le)⟩
 
 /-- Containment of fan cones is detected by their rays. No regularity is needed. -/
 theorem le_iff_forall_ray_le {sigma tau : Phi.cones} :

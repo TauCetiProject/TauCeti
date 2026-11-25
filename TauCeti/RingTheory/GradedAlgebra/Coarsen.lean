@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Operations
-public import Mathlib.Data.ZMod.IntUnitsPower
 public import Mathlib.RingTheory.GradedAlgebra.Basic
+public import Mathlib.RingTheory.GradedAlgebra.RingHom
 public import TauCeti.Algebra.Module.GradedModule.Coarsen
 import TauCeti.Data.ZMod.IntUnitsPower
 
@@ -33,11 +33,14 @@ of a unit of `ℤ` by an element of `ZMod 2`.
 * The instances `SetLike.GradedMul (coarsenGrading 𝒜 f)`, over a nonunital algebra,
   `SetLike.GradedMonoid (coarsenGrading 𝒜 f)` and `GradedAlgebra (coarsenGrading 𝒜 f)`, which
   apply in particular to `parityGrading 𝒜`.
+* `GradedRingHom.coarsenGrading`: a graded ring homomorphism is graded for the coarsened
+  gradings.
 * `TauCeti.mul_eq_uzpow_smul_mul_of_mem_coarsenGrading` and
   `TauCeti.mul_eq_uzpow_smul_mul_of_mem_parityGrading`: Koszul graded commutativity passes to
   sign-preserving coarsenings, and in particular from integer degree to parity.
-* `TauCeti.leibniz_coarsenGrading_of_leibniz`: the graded Leibniz rule passes to sign-preserving
-  coarsenings.
+* `TauCeti.leibniz_coarsenGrading_of_leibniz` and `TauCeti.leibniz_parityGrading_of_leibniz`:
+  the graded Leibniz rule passes to sign-preserving coarsenings, and in particular from integer
+  degree to parity.
 -/
 
 public section
@@ -165,6 +168,46 @@ theorem mul_eq_uzpow_smul_mul_of_mem_parityGrading
   mul_eq_uzpow_smul_mul_of_mem_coarsenGrading (f := Int.castAddHom (ZMod 2))
     (fun p ↦ by rw [Int.coe_castAddHom]; exact uzpow_intCast (-1) p) hcomm ha hb
 
+/-- **The integer Leibniz rule implies the parity Leibniz rule.** If `d` satisfies the graded
+Leibniz rule with the sign `(-1) ^ p` on a left factor of degree `p`, it satisfies the graded
+Leibniz rule with the sign `(-1) ^ i` on a left factor of parity `i`. -/
+theorem leibniz_parityGrading_of_leibniz {d : A →ₗ[R] A}
+    (hl : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + p.negOnePow • (a * d b))
+    {i : ZMod 2} {a : A} (ha : a ∈ parityGrading 𝒜 i) (b : A) :
+    d (a * b) = d a * b + ((-1 : ℤˣ) ^ i) • (a * d b) :=
+  leibniz_coarsenGrading_of_leibniz (f := Int.castAddHom (ZMod 2))
+    (fun p ↦ by rw [Int.coe_castAddHom]; exact uzpow_intCast (-1) p) hl ha b
+
 end ParityComm
 
 end TauCeti
+
+namespace GradedRingHom
+
+open TauCeti
+
+variable {R S A B ι κ : Type*} [Semiring R] [Semiring S] [Semiring A] [Semiring B] [Module R A]
+  [Module S B] {𝒜 : ι → Submodule R A} {ℬ : ι → Submodule S B}
+
+/-- A graded ring homomorphism `φ : 𝒜 →+*ᵍ ℬ` is graded for the gradings coarsened along any map
+`f` of index types. -/
+def coarsenGrading (φ : 𝒜 →+*ᵍ ℬ) (f : ι → κ) :
+    TauCeti.coarsenGrading 𝒜 f →+*ᵍ TauCeti.coarsenGrading ℬ f where
+  __ := φ.toRingHom
+  map_mem {k x} hx :=
+    coarsenGrading_induction (motive := fun x ↦ φ x ∈ TauCeti.coarsenGrading ℬ f k) hx
+      (fun _ hi _ hy ↦ hi ▸ mem_coarsenGrading_of_mem f (φ.map_mem hy)) (by simp)
+      fun _ _ hy hz ↦ by rw [map_add]; exact add_mem hy hz
+
+/-- The coarsened graded ring homomorphism has the same underlying function. -/
+@[simp]
+theorem coe_coarsenGrading (φ : 𝒜 →+*ᵍ ℬ) (f : ι → κ) : ⇑(φ.coarsenGrading f) = φ :=
+  (rfl)
+
+/-- The coarsened graded ring homomorphism has the same underlying ring homomorphism. -/
+@[simp]
+theorem toRingHom_coarsenGrading (φ : 𝒜 →+*ᵍ ℬ) (f : ι → κ) :
+    (φ.coarsenGrading f).toRingHom = φ.toRingHom :=
+  (rfl)
+
+end GradedRingHom

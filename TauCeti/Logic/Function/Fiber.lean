@@ -6,25 +6,34 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Logic.Equiv.Set
+public import Mathlib.Basic.Finite.Defs
+public import Mathlib.Order.SetNotation
+import Mathlib.Data.Set.Finite.Lattice
 
 /-!
 # Fibres of a map over a base
 
-For `p : E → X`, the fibre of `p` over `x` is the set `p ⁻¹' {x}`. This file collects the
-elementary constructions on such fibres that the covering-space development uses. None needs a
-topology, so they are stated for bare functions and equivalences; a `ContinuousMap` or a
-`Homeomorph` is applied through its underlying function or equivalence.
+For `p : E → X`, the fibre of `p` over `x` is the set `p ⁻¹' {x}`. This file gives elementary
+fibre constructions used in covering-space development and finite-preimage criteria used for
+finite-branch fibres. These results are stated for bare functions and equivalences. A
+`ContinuousMap` or a `Homeomorph` is applied through its underlying function or equivalence.
 
 * `Function.fiberMap`: a map `f : E → F` commuting with the projections to `X` restricts to the
   fibres over each point. It is `Set.MapsTo.restrict` for the fibre inclusion, so its application,
   identity and composition laws are the generic `Subtype.map` ones.
 * `Equiv.compFiberEquiv`: relabelling the base along `h : X ≃ Y` identifies the fibre of `h ∘ p`
   over `y` with the fibre of `p` over `h.symm y`. It is the identity on underlying points.
+* `Set.finite_preimage_of_subset_iUnion`: the preimage of a finite target is finite when
+  finitely many pieces cover it and the map is injective on each piece's intersection with that
+  preimage.
+* `Set.finite_fiber_of_subset_iUnion`: the single-target specialization.
 
 ## Main declarations
 
 * `Function.mapsTo_fiber`: a map over `X` sends each fibre into the corresponding fibre.
 * `Function.fiberMap`: the restriction of a map over `X` to the fibre over `x`.
+* `Function.bijective_fiberMap_of_comp_eq`: a map of double covers, intertwining the involutions
+  exchanging the two points of each fibre, is a bijection on every fibre.
 * `Equiv.compFiberEquiv`: the relabelling of fibres under an equivalence of bases.
 * `Equiv.fiberEquivOfPreimage`: an equivalence onto the preimage of a subset, commuting with
   projections, identifies the fibres over points of that subset. This transfers sheet counts
@@ -85,6 +94,37 @@ theorem fiberMap_ne_self {f : E → E} (hfix : ∀ e, f e ≠ e) (hf : p ∘ f =
     (e : p ⁻¹' {x}) : fiberMap f hf x e ≠ e :=
   fun h ↦ hfix e ((fiberMap_apply_coe f hf x e).symm.trans (congrArg Subtype.val h))
 
+/-- A map over `X` intertwining maps `σ` and `τ` over `X` intertwines their restrictions to each
+fibre. -/
+theorem fiberMap_fiberMap_of_comp_eq {σ : E → E} {τ : F → F} {f : E → F} (hσ : p ∘ σ = p)
+    (hτ : q ∘ τ = q) (hf : q ∘ f = p) (hfστ : f ∘ σ = τ ∘ f) {x : X} (e : p ⁻¹' {x}) :
+    fiberMap f hf x (fiberMap σ hσ x e) = fiberMap τ hτ x (fiberMap f hf x e) :=
+  Subtype.ext (by simp only [fiberMap_apply_coe]; exact congrFun hfστ e)
+
+/-- A map of double covers is a bijection on every fibre. Let `σ` and `τ` be maps over `X` whose
+fibres are the pairs `{e, σ e}` and `{e, τ e}`, with `τ` fixed-point free, and let the fibres of
+`p` be nonempty. Then a map over `X` intertwining `σ` and `τ` is a bijection on every fibre. -/
+theorem bijective_fiberMap_of_comp_eq {σ : E → E} {τ : F → F} {f : E → F} (hσ : p ∘ σ = p)
+    (hf : q ∘ f = p) (hfστ : f ∘ σ = τ ∘ f) (hfixτ : ∀ e, τ e ≠ e)
+    (hfib : ∀ e e', p e' = p e → e' = e ∨ e' = σ e)
+    (hfibτ : ∀ e e', q e' = q e → e' = e ∨ e' = τ e) (hsurj : Surjective p) (x : X) :
+    Bijective (fiberMap f hf x) := by
+  refine ⟨fun d₁ d₂ h ↦ ?_, fun e' ↦ ?_⟩
+  · have h' : f d₁ = f d₂ := by
+      simpa only [fiberMap_apply_coe] using congrArg Subtype.val h
+    rcases hfib d₁ d₂ (d₂.property.trans d₁.property.symm) with h₂ | h₂
+    · exact Subtype.ext h₂.symm
+    · -- Otherwise `f d₂ = f (σ d₁) = τ (f d₁)` would be a fixed point of `τ`.
+      have : f d₂ = τ (f d₁) := by rw [h₂]; exact congrFun hfστ d₁
+      exact (hfixτ (f d₁) (this.symm.trans h'.symm)).elim
+  · obtain ⟨d, hd⟩ := hsurj x
+    have hfd : q (f d) = x := (congrFun hf d).trans hd
+    rcases hfibτ (f d) e' (e'.property.trans hfd.symm) with h | h
+    · exact ⟨⟨d, hd⟩, Subtype.ext (by rw [fiberMap_apply_coe]; exact h.symm)⟩
+    · refine ⟨⟨σ d, (congrFun hσ d).trans hd⟩, Subtype.ext ?_⟩
+      rw [fiberMap_apply_coe, h]
+      exact congrFun hfστ d
+
 end Function
 
 namespace Equiv
@@ -138,3 +178,21 @@ theorem compFiberEquiv_symm_apply_coe (h : X ≃ Y) (y : Y) (e : p ⁻¹' {h.sym
   (rfl)
 
 end Equiv
+
+/-- A finite target has finite preimage if that preimage is covered by finitely many
+pieces on whose portions over the target the function is injective. -/
+theorem Set.finite_preimage_of_subset_iUnion {α β κ : Type*} [Finite κ] {f : α → β}
+    {t : Set β} (ht : t.Finite) {S : κ → Set α} (hS : f ⁻¹' t ⊆ ⋃ k, S k)
+    (hf : ∀ k, Set.InjOn f (S k ∩ f ⁻¹' t)) : (f ⁻¹' t).Finite := by
+  have hpiece (k : κ) : (S k ∩ f ⁻¹' t).Finite :=
+    Set.Finite.of_injOn (f := f) (fun _ hx => hx.2) (hf k) ht
+  apply (Set.finite_iUnion hpiece).subset
+  rw [← Set.iUnion_inter]
+  exact fun x hx => ⟨hS hx, hx⟩
+
+/-- A fiber covered by finitely many pieces is finite when the function is injective
+on the part of each piece lying in that fiber. No condition is imposed elsewhere. -/
+theorem Set.finite_fiber_of_subset_iUnion {α β κ : Type*} [Finite κ] {f : α → β}
+    {S : κ → Set α} (w : β) (hS : f ⁻¹' {w} ⊆ ⋃ k, S k)
+    (hf : ∀ k, Set.InjOn f (S k ∩ f ⁻¹' {w})) : Finite {x : α // f x = w} :=
+  (Set.finite_preimage_of_subset_iUnion (Set.finite_singleton w) hS hf).to_subtype

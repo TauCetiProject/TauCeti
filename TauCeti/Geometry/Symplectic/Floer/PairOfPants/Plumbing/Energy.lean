@@ -406,7 +406,7 @@ theorem hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTrunca
       exact hzR (mem_plumbedTruncation_iff.2 (Or.inl ⟨mem_truncation.2 ⟨hz.1.1, hz.1.2, h⟩, hle⟩))
     rw [hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_lt ω hq hab hzc (by linarith)]
     exact ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hHb hHbs hz.1
-      (by linarith) x
+      (by rw [fst_positiveEndCoord]; linarith) x
   · -- Beyond it the point is the image under the plumbing map of a point `w` of the inserted pair
     -- of pants outside the circle `s_∞ = -L/2`, lying beyond height `R ≥ 2` on some end of it.
     set w := (Complex.equivRealProdCLM.symm z - q.endCenter) / q.plumbingFactor L with hw
@@ -433,7 +433,7 @@ theorem hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTrunca
       (by rw [ContinuousLinearEquiv.symm_apply_apply, endSign_inf]; linarith) x
     rw [ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hHa hHas
       (by rw [ContinuousLinearEquiv.symm_apply_apply]; exact hw₀) (q := r)
-      (by rw [ContinuousLinearEquiv.symm_apply_apply]; linarith), hwz] at h
+      (by rw [fst_positiveEndCoord, ContinuousLinearEquiv.symm_apply_apply]; linarith), hwz] at h
     exact ((mul_eq_zero.1 h.symm).resolve_left hdet)
 
 end TauCeti.SmoothTwoForm
@@ -450,31 +450,30 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 /-- The cutoff `1 - β(±s_r - R)` along the end `r`, in real coordinates: it is `1` where the signed
 longitudinal coordinate `±s_r` is at most `R` and `0` where it is at least `R + 1`. -/
 private noncomputable def endCutoff (r : Puncture) (R : ℝ) (z : ℝ × ℝ) : ℝ :=
-  1 - smoothTransition (r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re - R)
+  1 - smoothTransition ((positiveEndCoord r z).1 - R)
 
 private theorem contDiffAt_endCutoff {r : Puncture} {R : ℝ} {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z ≠ r.endCenter) {n : ℕ∞} :
     ContDiffAt ℝ n (endCutoff r R) z :=
   contDiffAt_const.sub (smoothTransition.contDiffAt.comp z
-    ((contDiffAt_const.mul ((r.contDiffAt_re_endCoord hz).comp z
-      Complex.equivRealProdCLM.symm.contDiff.contDiffAt)).sub contDiffAt_const))
+    ((contDiffAt_fst_positiveEndCoord r hz).sub contDiffAt_const))
 
 /-- Near a point at which `±s_r < R`, the cutoff is `1`. -/
 private theorem endCutoff_eventuallyEq_one {r : Puncture} {R : ℝ} {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z ≠ r.endCenter)
-    (h : r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re < R) :
+    (h : (positiveEndCoord r z).1 < R) :
     endCutoff r R =ᶠ[𝓝 z] fun _ ↦ 1 := by
-  filter_upwards [(continuousAt_endSign_mul_re_endCoord r hz).eventually (gt_mem_nhds h)]
-    with z' hz'
+  filter_upwards [(contDiffAt_fst_positiveEndCoord r hz (n := 0)).continuousAt.eventually
+    (gt_mem_nhds h)] with z' hz'
   rw [endCutoff, smoothTransition.zero_of_nonpos (by linarith), sub_zero]
 
 /-- Near a point at which `±s_r > R + 1`, the cutoff is `0`. -/
 private theorem endCutoff_eventuallyEq_zero {r : Puncture} {R : ℝ} {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z ≠ r.endCenter)
-    (h : R + 1 < r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re) :
+    (h : R + 1 < (positiveEndCoord r z).1) :
     endCutoff r R =ᶠ[𝓝 z] fun _ ↦ 0 := by
-  filter_upwards [(continuousAt_endSign_mul_re_endCoord r hz).eventually (lt_mem_nhds h)]
-    with z' hz'
+  filter_upwards [(contDiffAt_fst_positiveEndCoord r hz (n := 0)).continuousAt.eventually
+    (lt_mem_nhds h)] with z' hz'
   rw [endCutoff, smoothTransition.one_of_one_le (by linarith), sub_self]
 
 /-- The cutoffs at height `L/2 + 1` are `1` on the boundary circles `±s = L/2` of the ends. -/
@@ -483,25 +482,10 @@ private theorem endCutoff_cylindricalEndLift (hL : 0 < L) (r r' : Puncture) (t :
       (r.cylindricalEndLift (↑(r.endSign * (L / 2)) + ↑t * Complex.I))) = 1 := by
   have h := (mem_truncation.1
     (cylindricalEndLift_mem_truncation r (R := L / 2) (by linarith) t)).2.2 r'
-  rw [endCutoff, ContinuousLinearEquiv.symm_apply_apply,
+  rw [endCutoff, fst_positiveEndCoord, ContinuousLinearEquiv.symm_apply_apply,
     smoothTransition.zero_of_nonpos (by linarith), sub_zero]
 
 /-! ### The receiving and inserted pieces of a map -/
-
-/-- The components of the plumbed perturbation are `C¹` on the plumbed four-punctured sphere times
-the target. -/
-private theorem contDiffOn_uncurry_plumbedPerturbation (hq : q ≠ inf)
-    (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
-    (hHas : ∀ r, ContDiff ℝ 1 (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r)))
-    (hab : Hb q = Ha inf) (hL : 4 < L) (v : ℂ) :
-    ContDiffOn ℝ 1
-      (uncurry fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x v)
-      ({z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1) ∧
-        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} ×ˢ univ) := by
-  rintro ⟨z, x⟩ ⟨hz, -⟩
-  exact (contDiffAt_uncurry_plumbedPerturbation (n := 1) hq hHa hHb hHas hHbs hab hL hz x
-    v).contDiffWithinAt
 
 /-- The receiving piece `(1 - β(s_q - L/2 - 1)) u` of a map `u` that is `C²` on the plumbed
 four-punctured sphere vanishes near the puncture `ψ(1)`, and so is `C²` on `S`. -/
@@ -518,7 +502,7 @@ private theorem contDiffOn_receivingPiece (hq : q ≠ inf) (hL : 4 < L) {u : ℝ
     by_contra h
     exact hzP ⟨hz, h⟩
   refine endCutoff_eventuallyEq_zero (ne_endCenter hz q) ?_
-  rw [h₁, endSign_eq_one hq, one_mul, re_endCoord_plumbingMap q L one_ne_zero]
+  rw [fst_positiveEndCoord, h₁, endSign_eq_one hq, one_mul, re_endCoord_plumbingMap q L one_ne_zero]
   linarith [re_endCoord_inf_one_pos]
 
 /-- The inserted piece `(1 - β(-s_∞ - L/2 - 1)) (u ∘ ψ)` of a map `u` that is `C²` on the plumbed
@@ -553,7 +537,7 @@ private theorem contDiffOn_insertedPiece (hq : q ≠ inf) (hL : 4 < L) {u : ℝ 
   refine endCutoff_eventuallyEq_zero (by simpa using hw.1) ?_
   have h := re_endCoord_lt_zero hq hv hvq
   rw [re_endCoord_plumbingMap q L hw.1] at h
-  rw [endSign_inf]
+  rw [fst_positiveEndCoord, endSign_inf]
   linarith
 
 /-- On the receiving truncation `S_{L/2}`, the receiving piece agrees with the map near every
@@ -563,7 +547,8 @@ private theorem receivingPiece_eventuallyEq (u : ℝ × ℝ → V) {z : ℝ × �
     (fun z ↦ endCutoff q (L / 2 + 1) z • u z) =ᶠ[𝓝 z] u := by
   have hz' := mem_truncation.1 hz
   filter_upwards [endCutoff_eventuallyEq_one (ne_endCenter ⟨hz'.1, hz'.2.1⟩ q)
-    (by linarith [hz'.2.2 q] : q.endSign * (q.endCoord _).re < L / 2 + 1)] with z' hz''
+    (by rw [fst_positiveEndCoord]; linarith [hz'.2.2 q] : (positiveEndCoord q z).1 < L / 2 + 1)]
+    with z' hz''
   rw [hz'', one_smul]
 
 /-- On the inserted truncation `S_{L/2}`, the inserted piece agrees with `u ∘ ψ` near every
@@ -574,7 +559,8 @@ private theorem insertedPiece_eventuallyEq (u : ℝ × ℝ → V) {w : ℝ × �
       fun w ↦ u (realChart (q.plumbingMap L) w) := by
   have hw' := mem_truncation.1 hw
   filter_upwards [endCutoff_eventuallyEq_one (ne_endCenter ⟨hw'.1, hw'.2.1⟩ inf)
-    (by linarith [hw'.2.2 inf] : inf.endSign * (inf.endCoord _).re < L / 2 + 1)] with w' hw''
+    (by rw [fst_positiveEndCoord]; linarith [hw'.2.2 inf] : (positiveEndCoord inf w).1 < L / 2 + 1)]
+    with w' hw''
   rw [hw'', one_smul]
 
 /-! ### The energy and curvature of the two pieces -/

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Affinoid.Subdomain.Basic
 
+import Mathlib.RingTheory.Filtration
 import TauCeti.RingTheory.Affinoid.FiniteQuotient
 import TauCeti.RingTheory.Ideal.KrullIntersection
 

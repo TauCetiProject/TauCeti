@@ -28,7 +28,8 @@ isomorphism `Subcomodule.convolutionSubmoduleOrderIso` transports simplicity to
 `IsSimpleModule`. This lets module-theoretic results, such as the Jacobson density
 theorem, apply to simple comodules and their matrix coefficients.
 `Subcomodule.isSimpleModule_convolution_iff_isAtom` also compares an atom with
-the convolution-dual module on its inherited comodule carrier.
+the convolution-dual module on its inherited comodule carrier, so an atom subcomodule is a
+simple comodule (`Subcomodule.isSimpleOrder_of_isAtom`).
 
 This is a fully faithful passage to modules, not an equivalence with all modules over
 the convolution dual of an infinite-dimensional coalgebra.
@@ -289,6 +290,11 @@ theorem isSimpleModule_convolution_iff_isAtom (S : Subcomodule R C M) :
       (M := S) (N := LinearMap.range f) (LinearEquiv.ofInjective f hf),
     isSimpleModule_iff_isAtom, hr, ← convolutionSubmoduleOrderIso_apply,
     OrderIso.isAtom_iff]
+
+/-- An atom among the subcomodules is a simple comodule. -/
+theorem isSimpleOrder_of_isAtom {S : Subcomodule R C M} (hS : IsAtom S) :
+    IsSimpleOrder (Subcomodule R C S) :=
+  Comodule.isSimpleModule_convolution_iff.mp (S.isSimpleModule_convolution_iff_isAtom.mpr hS)
 
 end TauCeti.Subcomodule
 

@@ -12,7 +12,8 @@ public import Mathlib.RingTheory.PicardGroup
 
 A submodule whose underlying module is invertible is free exactly when it is principal.
 This identifies trivial invertible-module classes with principal submodules, over any
-commutative semiring.
+commutative semiring. An invertible ideal is principal near each prime
+(`Ideal.exists_mul_mem_span_singleton`).
 -/
 
 public section
@@ -41,3 +42,28 @@ theorem free_iff_isPrincipal (I : Submodule R P) [Module.Invertible R I] :
     exact ⟨(LinearEquiv.ofBijective f (Module.Invertible.bijective_of_surjective hf)).symm⟩
 
 end Submodule
+
+namespace Ideal
+
+/-- An invertible ideal is principal near each prime: for `J` invertible and `m` prime there are
+`e ∈ J` and `s ∉ m` such that `s x ∈ (e)` for every `x ∈ J`. -/
+theorem exists_mul_mem_span_singleton {B : Type*} [CommSemiring B] (J : Ideal B)
+    [Module.Invertible B J] (m : Ideal B) [m.IsPrime] :
+    ∃ e ∈ J, ∃ s ∉ m, ∀ x ∈ J, s * x ∈ Ideal.span {e} := by
+  classical
+  obtain ⟨t, ht⟩ := (Module.Invertible.bijective (R := B) (M := J)).2 1
+  obtain ⟨S, rfl⟩ := t.exists_finset
+  have h1 : (1 : B) = ∑ i ∈ S, i.1 i.2 := by
+    rw [← ht]
+    simp [map_sum]
+  obtain ⟨i, -, hi⟩ : ∃ i ∈ S, i.1 i.2 ∉ m := by
+    by_contra! h
+    exact ‹m.IsPrime›.ne_top ((Ideal.eq_top_iff_one m).mpr (h1 ▸ m.sum_mem h))
+  refine ⟨i.2, i.2.property, i.1 i.2, hi, fun x hx ↦
+    Ideal.mem_span_singleton'.mpr ⟨i.1 ⟨x, hx⟩, ?_⟩⟩
+  have h2 : x • i.2 = (i.2 : B) • (⟨x, hx⟩ : J) := Subtype.ext (by simp [mul_comm])
+  have h3 := i.1.map_smul x i.2
+  rw [h2, map_smul, smul_eq_mul, smul_eq_mul] at h3
+  rw [mul_comm (i.1 i.2), ← h3, mul_comm]
+
+end Ideal
