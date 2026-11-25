@@ -35,7 +35,10 @@ holds at the unit, is preserved by isomorphisms, and is closed under tensor prod
 circle value central on a generating object is central on every interpreted tensor word in that
 object, without requiring it to be central on every object of the ambient category. Agreement is
 also closed under composition of scalars, so any finite number of such circles can be moved
-between the two sides.
+between the two sides, and it is carried along strong monoidal functors, the image of a scalar
+being read through the unit comparisons (`TauCeti.CirclesCommuteAt.map`). For a strong monoidal
+functor, centrality of the image scalar at the image object is the equality of the images of the
+two actions (`TauCeti.circlesCommuteAt_map_iff`).
 
 ## References
 
@@ -166,6 +169,28 @@ theorem CirclesCommuteAt.comp {d e : 𝟙_ C ⟶ 𝟙_ C} {X : C}
     _ = ((λ_ X).inv ≫ d ▷ X ≫ (λ_ X).hom) ≫
           ((λ_ X).inv ≫ e ▷ X ≫ (λ_ X).hom) := by rw [hd, he]
     _ = (λ_ X).inv ≫ (d ≫ e) ▷ X ≫ (λ_ X).hom := by simp
+
+/-- Under a strong monoidal functor, centrality at `F.obj X` of the image of `d`, viewed as a
+scalar of the target through the unit comparisons, is equality of the images of the two scalar
+actions of `d` on `X`. -/
+theorem circlesCommuteAt_map_iff {D : Type*} [Category* D] [MonoidalCategory D] (F : C ⥤ D)
+    [F.Monoidal] (d : 𝟙_ C ⟶ 𝟙_ C) (X : C) :
+    CirclesCommuteAt (Functor.LaxMonoidal.ε F ≫ F.map d ≫ Functor.OplaxMonoidal.η F)
+        (F.obj X) ↔
+      F.map ((ρ_ X).inv ≫ X ◁ d ≫ (ρ_ X).hom) = F.map ((λ_ X).inv ≫ d ▷ X ≫ (λ_ X).hom) := by
+  simp only [circlesCommuteAt_iff, Functor.map_comp, Functor.Monoidal.map_rightUnitor_inv,
+    Functor.Monoidal.map_whiskerLeft, Functor.Monoidal.map_rightUnitor,
+    Functor.Monoidal.map_leftUnitor_inv, Functor.Monoidal.map_whiskerRight,
+    Functor.Monoidal.map_leftUnitor, MonoidalCategory.whiskerLeft_comp,
+    MonoidalCategory.comp_whiskerRight, Category.assoc, Functor.Monoidal.μ_δ_assoc]
+
+/-- A strong monoidal functor carries a scalar central at `X` to a scalar central at the image
+of `X`: the image of `d`, viewed as a scalar of the target through the unit comparisons. -/
+theorem CirclesCommuteAt.map {D : Type*} [Category* D] [MonoidalCategory D] (F : C ⥤ D)
+    [F.Monoidal] {d : 𝟙_ C ⟶ 𝟙_ C} {X : C} (h : CirclesCommuteAt d X) :
+    CirclesCommuteAt (Functor.LaxMonoidal.ε F ≫ F.map d ≫ Functor.OplaxMonoidal.η F)
+      (F.obj X) :=
+  (circlesCommuteAt_map_iff F d X).2 (congrArg F.map h)
 
 /-- A scalar multiple of the identity of the unit is central at every object of a monoidal
 linear category. Thus prescribing a loop value `δ • 𝟙` needs no separate centrality assumption. -/

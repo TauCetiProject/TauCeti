@@ -63,6 +63,8 @@ perimeter has neither defect (`TauCeti.weightedPerimeter_compl`,
 * `TauCeti.weightedVariation_le_mul_totalVariationOn` and
   `TauCeti.mul_totalVariationOn_le_weightedVariation`: comparison with the Euclidean variation
   under bounds `m ≤ e^{−W} ≤ M` on `Ω`.
+* `TauCeti.exists_mul_totalVariationOn_le_weightedVariation`: every compact subset of `Ω` has an
+  open neighbourhood `U` and a constant `m > 0` with `m |Du|(U) ≤ V_μ(u; Ω)` for all `u`.
 * `TauCeti.exists_totalVariationOn_ne_top_of_weightedVariation_ne_top`: a function of finite
   weighted variation on `Ω` has locally finite Euclidean variation on `Ω`.
 * `TauCeti.weightedVariation_congr_ae`, `TauCeti.weightedVariation_mono`,
@@ -118,6 +120,15 @@ theorem contDiff_gaussianWeight {n : WithTop ℕ∞} : ContDiff ℝ n (gaussianW
     funext gaussianWeight_def
   rw [h]
   exact ((contDiff_norm_sq ℝ).div_const _).add contDiff_const
+
+/-- The Gaussian density on the sphere of radius `r` about the origin is
+`(2π)^{−n/2} e^{−r²/2}`. -/
+theorem exp_neg_gaussianWeight_of_norm_eq {r : ℝ} {x : E} (hx : ‖x‖ = r) :
+    Real.exp (-gaussianWeight E x) =
+      (2 * Real.pi) ^ (-(Module.finrank ℝ E : ℝ) / 2) * Real.exp (-(r ^ 2 / 2)) := by
+  rw [gaussianWeight_def, hx, Real.rpow_def_of_pos (by positivity), ← Real.exp_add]
+  congr 1
+  ring
 
 /-- The Gaussian weight is invariant under linear isometry equivalences:
 `W_{E'}(e x) = W_E(x)`. -/
@@ -574,6 +585,28 @@ theorem mul_totalVariationOn_le_weightedVariation (hW : ContDiff ℝ 1 W)
       exact (Real.exp_pos _).le
   exact le_iSup₂_of_le ((m : ℝ) • X) hmX (ofReal_integral_divergenceCLM_smul_mul m X).ge
 
+/-- **Local comparison with the Euclidean variation.** For a `C¹` weight, every compact subset
+`K` of `Ω` has an open neighbourhood `U ≤ Ω` and a constant `m > 0` such that
+`m |Du|(U) ≤ V_μ(u; Ω)` for every `u` locally integrable on `Ω`, where
+`|Du|(U) = TauCeti.totalVariationOn volume U u`: `e^{−W}` is bounded below by a positive constant
+near `K`. -/
+theorem exists_mul_totalVariationOn_le_weightedVariation (hW : ContDiff ℝ 1 W) {K : Set E}
+    (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
+    ∃ U : Opens E, K ⊆ (U : Set E) ∧ U ≤ Ω ∧ ∃ m : ℝ≥0, m ≠ 0 ∧
+      ∀ v : E → ℝ, LocallyIntegrableOn v Ω →
+        m * totalVariationOn volume U v ≤ weightedVariation W Ω v := by
+  obtain ⟨δ, hδ, hδΩ⟩ := hK.exists_cthickening_subset_open Ω.isOpen hKΩ
+  let U : Opens E := ⟨Metric.thickening δ K, Metric.isOpen_thickening⟩
+  have hUΩ : U ≤ Ω := (Metric.thickening_subset_cthickening δ K).trans hδΩ
+  -- `e^{−W}` has a positive lower bound `m` on the compact set `cthickening δ K ⊇ U`.
+  obtain ⟨m, hm, hmW⟩ := hK.cthickening.exists_forall_le'
+    (contDiff_exp_neg hW).continuous.continuousOn fun x _ => Real.exp_pos (-W x)
+  refine ⟨U, Metric.self_subset_thickening hδ K, hUΩ, ⟨m, hm.le⟩, NNReal.coe_ne_zero.1 hm.ne',
+    fun v hv => ?_⟩
+  exact (mul_totalVariationOn_le_weightedVariation (m := ⟨m, hm.le⟩) hW (hv.mono_set hUΩ)
+    fun x hx => hmW x (Metric.thickening_subset_cthickening δ K hx)).trans
+    (weightedVariation_mono hUΩ)
+
 /-- **Finite weighted variation gives locally bounded variation.** For a `C¹` weight and `u`
 locally integrable on `Ω`, if `V_μ(u; Ω) < ∞`, then every compact subset of `Ω` has an open
 neighbourhood on which `u` has finite Euclidean variation `TauCeti.totalVariationOn volume`. -/
@@ -582,21 +615,11 @@ theorem exists_totalVariationOn_ne_top_of_weightedVariation_ne_top (hW : ContDif
     ∀ K, IsCompact K → K ⊆ Ω →
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn volume U u ≠ ∞ := by
   intro K hK hKΩ
-  obtain ⟨δ, hδ, hδΩ⟩ := hK.exists_cthickening_subset_open Ω.isOpen hKΩ
-  let U : Opens E := ⟨Metric.thickening δ K, Metric.isOpen_thickening⟩
-  have hUΩ : U ≤ Ω := (Metric.thickening_subset_cthickening δ K).trans hδΩ
-  -- `e^{−W}` has a positive lower bound `m` on the compact set `cthickening δ K ⊇ U`.
-  obtain ⟨m', hm', hm'W⟩ := hK.cthickening.exists_forall_le'
-    (contDiff_exp_neg hW).continuous.continuousOn fun x _ => Real.exp_pos (-W x)
-  let m : ℝ≥0 := ⟨m', hm'.le⟩
-  have hm0 : m ≠ 0 := NNReal.coe_ne_zero.1 hm'.ne'
-  have hm (x : E) (hx : x ∈ U) : (m : ℝ) ≤ Real.exp (-W x) :=
-    hm'W x (Metric.thickening_subset_cthickening δ K hx)
-  have hle := (mul_totalVariationOn_le_weightedVariation hW (hu.mono_set hUΩ) hm).trans
-    (weightedVariation_mono hUΩ)
-  refine ⟨U, Metric.self_subset_thickening hδ K, fun htop => h ?_⟩
-  rw [htop, ENNReal.mul_top (ENNReal.coe_ne_zero.2 hm0)] at hle
-  exact top_le_iff.1 hle
+  obtain ⟨U, hKU, -, m, hm0, hle⟩ := exists_mul_totalVariationOn_le_weightedVariation hW hK hKΩ
+  refine ⟨U, hKU, fun htop => h ?_⟩
+  have hmu := hle u hu
+  rw [htop, ENNReal.mul_top (ENNReal.coe_ne_zero.2 hm0)] at hmu
+  exact top_le_iff.1 hmu
 
 /-! ### The Gaussian perimeter -/
 

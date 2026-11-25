@@ -40,6 +40,8 @@ real part of `f` at every point, and it determines the dual norm: `‖f‖ ^ 2 /
   norm is at most `u`.
 * `StrongDual.exists_mul_norm_lt_re_apply_iff`: for `0 ≤ r`, the real part of `f` exceeds
   `r * ‖x‖` at some point `x` if and only if `r < ‖f‖`.
+* `StrongDual.norm_apply_le_of_norm_le_one`, `StrongDual.re_apply_le_norm_of_norm_le_one`: a
+  functional of norm at most `1` bounds its values, and their real parts, by the norm.
 * `StrongDual.norm_comp_inl_add_norm_comp_inr`: on `E × F` over `RCLike` scalars, the operator
   norm of `Ψ` equals the sum of the norms of its restrictions `Ψ.comp (.inl 𝕜 E F)` and
   `Ψ.comp (.inr 𝕜 E F)`.
@@ -106,6 +108,16 @@ theorem exists_mul_norm_lt_re_apply_iff (f : StrongDual 𝕜 E) {r : ℝ} (hr₀
   refine ⟨a • x, ?_⟩
   rw [map_smul, smul_eq_mul, ← hax, ofReal_re, norm_smul, ha, one_mul]
   exact hx
+
+/-- A functional of norm at most `1` does not increase norms. -/
+theorem norm_apply_le_of_norm_le_one {f : StrongDual 𝕜 E} (hf : ‖f‖ ≤ 1) (x : E) :
+    ‖f x‖ ≤ ‖x‖ :=
+  (f.le_of_opNorm_le hf x).trans_eq (one_mul _)
+
+/-- The real part of a functional of norm at most `1` is bounded by the norm. -/
+theorem re_apply_le_norm_of_norm_le_one {f : StrongDual 𝕜 E} (hf : ‖f‖ ≤ 1) (x : E) :
+    re (f x) ≤ ‖x‖ :=
+  (re_le_norm _).trans (norm_apply_le_of_norm_le_one hf x)
 
 /-- On an `ℓ^∞`-normed product `E × F` over `RCLike` scalars, the operator norm of `Ψ` equals the
 sum of the norms of its restrictions to the two factors. -/

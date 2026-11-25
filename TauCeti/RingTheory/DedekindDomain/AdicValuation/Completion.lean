@@ -61,7 +61,9 @@ Everything here concerns one completion. The comparison of two completions along
   residue field of `v` is the residue field of `𝒪_v`;
   `residueFieldEquivAdicCompletionIntegers_apply_mk` describes that isomorphism on a quotient
   representative, and `residue_algebraMap_adicCompletionIntegers_surjective` (in the same
-  namespace) states that `R` maps onto the residue field of `𝒪_v`.
+  namespace) states that `R` maps onto the residue field of `𝒪_v`;
+  `residue_algebraMap_adicCompletionIntegers_eq_iff` (in the same namespace) states that two
+  elements of `R` have the same reduction exactly when their difference lies in `v`.
 * `IsDedekindDomain.HeightOneSpectrum.charP_residueField_adicCompletionIntegers`: when `v`
   contains the prime `p`, the residue field of `𝒪_v` has characteristic `p`.
 * `IsDedekindDomain.HeightOneSpectrum.exists_isUnit_adicCompletionIntegers_of_valuation_eq_one`:
@@ -598,6 +600,16 @@ theorem charP_residueField_adicCompletionIntegers (p : ℕ) [Fact p.Prime]
     rw [← Ideal.mem_comap, ← Ideal.under_def, under_maximalIdeal_adicCompletionIntegers]
     exact hp
   simpa using (IsLocalRing.residue_eq_zero_iff _).2 this
+
+/-- Two elements of `R` have the same reduction in the residue field of the completion at `v`
+exactly when their difference lies in `v`. -/
+theorem residue_algebraMap_adicCompletionIntegers_eq_iff {x y : R} :
+    IsLocalRing.residue (v.adicCompletionIntegers K) (algebraMap R (v.adicCompletionIntegers K) x) =
+        IsLocalRing.residue (v.adicCompletionIntegers K)
+          (algebraMap R (v.adicCompletionIntegers K) y) ↔
+      x - y ∈ v.asIdeal := by
+  rw [← v.under_maximalIdeal_adicCompletionIntegers (K := K), Ideal.under_def, Ideal.mem_comap,
+    map_sub, ← IsLocalRing.residue_eq_zero_iff, map_sub, sub_eq_zero]
 
 end SingleCompletion
 
