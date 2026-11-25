@@ -48,6 +48,7 @@ them by open sets of almost the same measure.
   sets and its total mass.
 * `Distribution.massMeasure_eq_zero_of_not_finiteDimensional`: on an infinite-dimensional space
   the mass measure is zero.
+* The mass measure is regular and σ-finite (instances).
 * `Distribution.lintegral_massMeasure_le_mul_mass`: a function bounded by `L` has integral at most
   `L M(T)`.
 * `Distribution.enorm_apply_le_lintegral_massMeasure`: the domination `|T φ| ≤ ∫ ‖φ‖ d‖T‖`.
@@ -274,6 +275,15 @@ instance : (massMeasure T).Regular := by
   · have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
     unfold massMeasure
     split_ifs <;> infer_instance
+  · rw [massMeasure_eq_zero_of_not_finiteDimensional hE]
+    infer_instance
+
+/-- The mass measure is σ-finite. In finite dimension `Ω` is locally compact and second countable,
+so the locally finite mass measure is σ-finite; otherwise the mass measure is zero. -/
+instance : SigmaFinite (massMeasure T) := by
+  by_cases hE : FiniteDimensional ℝ E
+  · have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
+    infer_instance
   · rw [massMeasure_eq_zero_of_not_finiteDimensional hE]
     infer_instance
 
