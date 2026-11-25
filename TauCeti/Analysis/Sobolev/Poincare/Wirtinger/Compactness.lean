@@ -44,6 +44,8 @@ zero over `S`, but does not vanish.
   preconnected domain of finite measure with compact value map.
 * `TauCeti.W1p.exists_pos_mul_norm_le_norm_gradient_of_isCompactOperator`: the equivalent form
   `c ‖u‖ ≤ ‖∇u‖` for the functions with vanishing integral over `S`.
+* `TauCeti.W1p.exists_pos_mul_norm_le_norm_gradient_of_isCompactOperator_self`: the same for
+  `S = Ω`, with no positivity hypothesis on the measure of `Ω`.
 
 ## References
 
@@ -128,6 +130,25 @@ theorem W1p.exists_pos_mul_norm_le_norm_gradient_of_isCompactOperator
     _ ≤ C * ‖W1p.gradient u‖ + ‖W1p.gradient u‖ :=
         add_le_add_left (hCV u (LinearMap.mem_ker.2 ((hℓ u).trans hu))) _
     _ = (C + 1) * ‖W1p.gradient u‖ := by ring
+
+/-- **The gradient controls the Sobolev norm on functions of integral zero over `Ω`.** Let `Ω` be
+preconnected and of finite measure, and let `1 ≤ p`. If the value map `W^{1,p}(Ω) → Lᵖ(Ω)` is
+compact, there is `c > 0` with `c ‖u‖ ≤ ‖∇u‖` for every `u ∈ W^{1,p}(Ω)` whose integral over `Ω`
+vanishes. This is `TauCeti.W1p.exists_pos_mul_norm_le_norm_gradient_of_isCompactOperator` for
+`S = Ω`, with no positivity hypothesis: on a null set every Sobolev function vanishes. -/
+theorem W1p.exists_pos_mul_norm_le_norm_gradient_of_isCompactOperator_self
+    (hK : IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := p)))
+    (hconn : IsPreconnected (Omega : Set E)) (hfin : mu Omega ≠ ∞) :
+    ∃ c : ℝ, 0 < c ∧ ∀ u : W1p mu Omega p, ∫ y in Omega, W1p.value u y ∂mu = 0 →
+      c * ‖u‖ ≤ ‖W1p.gradient u‖ := by
+  rcases eq_or_ne (mu Omega) 0 with h0 | h0
+  · refine ⟨1, one_pos, fun u _ ↦ ?_⟩
+    have hu : u = 0 := by
+      refine W1p.ext_value (Lp.ext ?_)
+      rw [Filter.EventuallyEq, ae_eq_bot.2 (Measure.restrict_eq_zero.2 h0)]
+      exact Filter.eventually_bot
+    simp [hu]
+  exact W1p.exists_pos_mul_norm_le_norm_gradient_of_isCompactOperator hK hconn hfin subset_rfl h0
 
 /-- **The Poincaré–Wirtinger inequality from compactness.** Let `Ω` be preconnected and of finite
 measure, let `S ⊆ Ω` have positive measure, and let `1 ≤ p`. If the value map

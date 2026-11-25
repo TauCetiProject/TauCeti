@@ -29,7 +29,7 @@ bounded Lipschitz domain, and that the solution is then unique up to an additive
 
 The proof follows the classical route. On the closed subspace of `H¹(Ω)` of functions with
 integral zero over `Ω`, the gradient controls the full `H¹` norm by the Poincaré–Wirtinger
-inequality `TauCeti.W1p.exists_pos_mul_norm_le_norm_gradient_of_isCompactOperator`. So `B` is
+inequality `TauCeti.W1p.exists_pos_mul_norm_le_norm_gradient_of_isCompactOperator_self`. So `B` is
 coercive on that subspace and Lax–Milgram gives a unique solution there. Every `v ∈ H¹(Ω)` is a
 function of integral zero plus a constant, and both `B(u, ·)` and `ℓ` vanish on constants, so the
 solution tests correctly against all of `H¹(Ω)`. Two solutions differ by a function `w` with
@@ -104,24 +104,6 @@ private theorem sub_smul_const_one_mem_ker_setIntegralL (v : W1p mu Omega 2) :
   rw [measureReal_eq_zero_iff (isFiniteMeasure_restrict.1 inferInstance)] at h0
   rw [W1p.setIntegralL_apply_of_subset _ subset_rfl, setIntegral_measure_zero _ h0]
 
-/-- **Poincaré–Wirtinger for functions of integral zero.** On a connected domain with compact
-value map, the gradient controls the `H¹` norm on the functions of integral zero over `Ω`. -/
-private theorem exists_pos_mul_norm_le_norm_gradient
-    (hK : IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := 2)))
-    (hconn : IsPreconnected (Omega : Set (EuclideanSpace ℝ ι))) :
-    ∃ c : ℝ, 0 < c ∧ ∀ u : W1p mu Omega 2, ∫ x in Omega, W1p.value u x ∂mu = 0 →
-      c * ‖u‖ ≤ ‖W1p.gradient u‖ := by
-  rcases eq_or_ne (mu Omega) 0 with h0 | h0
-  · -- On a null set every Sobolev function vanishes.
-    refine ⟨1, one_pos, fun u _ => ?_⟩
-    have hu : u = 0 := by
-      refine W1p.ext_value (Lp.ext ?_)
-      rw [Filter.EventuallyEq, ae_eq_bot.2 (Measure.restrict_eq_zero.2 h0)]
-      exact Filter.eventually_bot
-    simp [hu]
-  exact W1p.exists_pos_mul_norm_le_norm_gradient_of_isCompactOperator hK hconn
-    (isFiniteMeasure_restrict.1 inferInstance) subset_rfl h0
-
 /-- **The Neumann problem has a unique solution of integral zero.** Let `Ω` be connected with
 compact value map `H¹(Ω) → L²(Ω)`, let `a` be essentially bounded with `λ‖ξ‖² ≤ ξ · a(x) ξ` almost
 everywhere on `Ω` for some `λ > 0`, and let `ℓ` be a continuous linear functional on `H¹(Ω)` with
@@ -137,7 +119,8 @@ theorem existsUnique_setIntegral_eq_zero_and_forall_energyFormH1_eq
     ∃! u : W1p mu Omega 2, ∫ x in Omega, W1p.value u x ∂mu = 0 ∧
       ∀ v : W1p mu Omega 2, energyFormH1 a 0 0 u v = ℓ v := by
   -- The energy form is coercive on the functions of integral zero.
-  obtain ⟨c, hc, hcM⟩ := exists_pos_mul_norm_le_norm_gradient hK hconn
+  obtain ⟨c, hc, hcM⟩ := W1p.exists_pos_mul_norm_le_norm_gradient_of_isCompactOperator_self hK
+    hconn (isFiniteMeasure_restrict.1 inferInstance)
   set I := W1p.setIntegralL (mu := mu) (Omega := Omega) (p := 2)
     (Omega : Set (EuclideanSpace ℝ ι)) (measure_lt_top _ _)
   set M := LinearMap.ker (I : W1p mu Omega 2 →ₗ[ℝ] ℝ)
