@@ -165,28 +165,13 @@ theorem exists_epi_biproduct_of_generatingSections {F P Q : X.Modules}
     (e : P ⊗ Q ≅ 𝟙_ X.Modules) (G : (F ⊗ P).GeneratingSections) [hG : G.IsFiniteType] :
     ∃ (k : ℕ) (p : (⨁ fun _ : Fin k ↦ Q) ⟶ F), Epi p := by
   have : Finite G.I := hG.finite
-  have : Fintype G.I := .ofFinite G.I
-  obtain ⟨k, ⟨ek⟩⟩ := Finite.exists_equiv_fin G.I
+  have : Epi (C := X.Modules) G.π := G.epi
   have : (tensorRight Q).IsEquivalence :=
     MonoidalCategory.isEquivalence_tensorRight_of_iso (β_ Q P ≪≫ e)
-  have : (tensorRight Q).Additive := Functor.additive_of_preserves_binary_products _
-  have hbp : HasBiproduct (C := X.Modules) fun _ : G.I ↦ 𝟙_ X.Modules :=
-    HasBiproduct.of_hasCoproduct _
-  let e₀ : Iso (C := X.Modules) (@biproduct G.I X.Modules _ _ (fun _ : G.I ↦ 𝟙_ X.Modules) hbp)
-      (SheafOfModules.free G.I) :=
-    TauCeti.SheafOfModules.biproductIsoFree (R := X.sheaf) G.I
-  let eFin : (⨁ fun _ : Fin k ↦ (𝟙_ X.Modules : X.Modules)) ≅
-      (SheafOfModules.free G.I : X.Modules) :=
-    biproduct.whiskerEquiv (f := fun _ : Fin k ↦ (𝟙_ X.Modules : X.Modules))
-      (g := fun _ : G.I ↦ (𝟙_ X.Modules : X.Modules)) ek.symm (fun _ ↦ Iso.refl _) ≪≫
-    (biproduct.isColimit (C := X.Modules)
-      (fun _ : G.I ↦ (𝟙_ X.Modules : X.Modules))).coconePointUniqueUpToIso
-      (@biproduct.isColimit G.I X.Modules _ _ (fun _ : G.I ↦ 𝟙_ X.Modules) hbp) ≪≫ e₀
-  let q : (⨁ fun _ : Fin k ↦ (𝟙_ X.Modules : X.Modules)) ⟶ F ⊗ P := eFin.hom ≫ G.π
-  have : Epi q := @epi_comp X.Modules _ _ _ _ eFin.hom
-    (@IsIso.epi_of_iso _ _ _ _ eFin.hom (Iso.isIso_hom eFin)) G.π G.epi
-  exact ⟨k, (biproduct.mapIso fun _ : Fin k ↦ (λ_ Q).symm).hom ≫
-    ((tensorRight Q).mapBiproduct fun _ : Fin k ↦ (𝟙_ X.Modules : X.Modules)).inv ≫
-    (tensorRight Q).map q ≫ (α_ F P Q).hom ≫ F ◁ e.hom ≫ (ρ_ F).hom, inferInstance⟩
+  obtain ⟨k, ⟨ek⟩⟩ := Finite.exists_equiv_fin G.I
+  exact ⟨k, ((biproduct.whiskerEquiv (f := fun _ : Fin k ↦ Q) (g := fun _ : G.I ↦ Q)
+      ek.symm (fun _ ↦ Iso.refl Q) ≪≫ (freeTensorIsoBiproduct G.I Q).symm).hom ≫
+    (tensorRight Q).map G.π) ≫ (α_ F P Q ≪≫ whiskerLeftIso F e ≪≫ ρ_ F).hom,
+    epi_comp' (epi_comp' inferInstance ((tensorRight Q).map_epi G.π)) inferInstance⟩
 
 end AlgebraicGeometry.Scheme.Modules

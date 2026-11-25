@@ -112,7 +112,8 @@ private theorem span_range_map_eq_top_of_iso_tmulRight {G H M : X.Modules}
       simpa only [mapPresheaf_app, unop_op] using
         (Φ.hom.mapPresheaf.naturality_apply U.leTop.op (t' j)).symm
     rw [hnat, LinearEquiv.trans_apply, LinearEquiv.ofBijective_apply,
-      sectionsLinearEquiv_apply, ← ht' j]; rfl
+      sectionsLinearEquiv_apply, ← ht' j,
+      Subsingleton.elim (homOfLE (M.nonvanishingLocus_le s)) U.leTop]
   have hrange : (Set.range fun j ↦ H.presheaf.map U.leTop.op (Φ.hom.app ⊤ (t' j))) =
       e.toLinearMap '' Set.range g := by
     rw [← Set.range_comp]; exact congrArg Set.range (funext fun j ↦ (hmap j).symm)

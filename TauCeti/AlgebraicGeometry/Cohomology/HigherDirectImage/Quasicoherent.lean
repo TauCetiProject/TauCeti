@@ -314,8 +314,7 @@ theorem higherDirectImageSectionsAddEquiv_top_smul (r : Γ(Y, ⊤))
     f.higherDirectImageSectionsAddEquiv M n (isAffineOpen_top Y) (f.appTop r • x) =
       r • f.higherDirectImageSectionsAddEquiv M n (isAffineOpen_top Y) x := by
   refine (f.higherDirectImageSectionsAddEquiv_smul M n (isAffineOpen_top Y) r x).trans ?_
-  rw [Subsingleton.elim (⊤ : Y.Opens).leTop (𝟙 _), op_id, CategoryTheory.Functor.map_id]
-  rfl
+  rw [TopCat.Presheaf.map_apply_eq_self]
 
 /-- For a quasi-compact quasi-separated morphism `f : X ⟶ Y` over `Spec R` with affine target `Y`
 and a quasi-coherent `𝒪_X`-module `M`, the cohomology `Hⁿ(X, M)` is `R`-linearly equivalent to the

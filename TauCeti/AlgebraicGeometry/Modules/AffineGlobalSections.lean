@@ -15,6 +15,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Cokernels
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Kernels
+import TauCeti.Topology.Sheaves.Presheaf
 
 /-!
 # Global sections of quasicoherent modules on an affine scheme
@@ -40,14 +41,14 @@ isomorphism, and on a spectrum they are the inverse of the tilde equivalence (St
 26.7.5, Tag 01I7).
 
 The file also identifies the global sections of a free module on `Spec R` with a direct sum of
-copies of `R`, and records the base-ring action on affine global sections, the `R`-linear
-identification `Scheme.Modules.globalSectionsModuleSpecΓLinearEquiv` of `Γ(N, ⊤)` with
-`(moduleSpecΓFunctor (R := .of R)).obj N` for `N : (Spec (.of R)).Modules`, and extensionality of
-sections by restriction to basic opens. On an affine scheme, a map of abelian presheaves into a
-sheaf of modules that is linear over global functions is linear over all functions
-(`Scheme.Modules.app_smul_of_isAffine`). For `Spec R` over `Spec k`, the `k`-algebra structure
-`Scheme.algebraOfOver` on sections factors through `R` (`Scheme.algebraMap_spec_eq`) and acts
-pointwise on the localizations of `R` (`Scheme.spec_sections_smul_apply`).
+copies of `R`, and records the base-ring action on affine global sections, the additive
+identification `Scheme.Modules.moduleSpecΓAddEquiv` and `R`-linear identification
+`Scheme.Modules.globalSectionsModuleSpecΓLinearEquiv` of `Γ(N, ⊤)` with `moduleSpecΓFunctor.obj N`,
+and extensionality of sections by restriction to basic opens. On an affine scheme, a map of
+abelian presheaves into a sheaf of modules that is linear over global functions is linear over all
+functions (`Scheme.Modules.app_smul_of_isAffine`). For `Spec R` over `Spec k`, the `k`-algebra
+structure `Scheme.algebraOfOver` on sections factors through `R` (`Scheme.algebraMap_spec_eq`) and
+acts pointwise on the localizations of `R` (`Scheme.spec_sections_smul_apply`).
 -/
 
 public section
@@ -222,16 +223,49 @@ end
 
 noncomputable section
 
-private lemma moduleSpecΓ_smul_aux (A : CommRingCat.{u}) (N : (Spec A).Modules) (r : A)
-    (x : Γ(N, ⊤)) :
-    @HSMul.hSMul A ((moduleSpecΓFunctor (R := A)).obj N)
-        ((moduleSpecΓFunctor (R := A)).obj N) instHSMul r x =
-      (Scheme.ΓSpecIso A).inv r • x := by
+/-- On `Spec A`, `(moduleSpecΓFunctor (R := A)).obj N` has `Γ(N, ⊤)` as underlying additive group,
+with morphisms acting via `Hom.app ⊤`. -/
+def _root_.AlgebraicGeometry.Scheme.Modules.moduleSpecΓAddEquiv
+    {A : CommRingCat.{u}} (N : (Spec A).Modules) :
+    (moduleSpecΓFunctor (R := A)).obj N ≃+ Γ(N, ⊤) :=
+  -- `moduleSpecΓFunctor` evaluates `modulesSpecToSheaf.obj N` at `⊤`, whose underlying additive
+  -- group is `Γ(N, ⊤)` by definition in `Mathlib.AlgebraicGeometry.Modules.Tilde`.
+  AddEquiv.refl _
+
+/-- `moduleSpecΓAddEquiv` intertwines `moduleSpecΓFunctor.map ψ` with `ψ.app ⊤`. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.moduleSpecΓAddEquiv_naturality
+    {A : CommRingCat.{u}} {N₁ N₂ : (Spec A).Modules} (ψ : N₁ ⟶ N₂)
+    (x : (moduleSpecΓFunctor (R := A)).obj N₁) :
+    N₂.moduleSpecΓAddEquiv ((moduleSpecΓFunctor (R := A)).map ψ x) =
+      ψ.app ⊤ (N₁.moduleSpecΓAddEquiv x) :=
+  -- `moduleSpecΓFunctor` only restricts scalars on sections over `⊤`, leaving the underlying map
+  -- `ψ.val.app (.op ⊤)` unchanged.
+  (rfl)
+
+/-- `moduleSpecΓAddEquiv.symm` intertwines `ψ.app ⊤` with `moduleSpecΓFunctor.map ψ`. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.moduleSpecΓAddEquiv_symm_naturality
+    {A : CommRingCat.{u}} {N₁ N₂ : (Spec A).Modules} (ψ : N₁ ⟶ N₂) (y : Γ(N₁, ⊤)) :
+    N₂.moduleSpecΓAddEquiv.symm (ψ.app ⊤ y) =
+      (moduleSpecΓFunctor (R := A)).map ψ (N₁.moduleSpecΓAddEquiv.symm y) :=
+  (N₂.moduleSpecΓAddEquiv.symm_apply_eq.mpr
+    (ψ.moduleSpecΓAddEquiv_naturality _).symm).trans
+    (congrArg ((moduleSpecΓFunctor (R := A)).map ψ)
+      (N₁.moduleSpecΓAddEquiv.symm_apply_apply y))
+
+/-- Under `moduleSpecΓAddEquiv.symm`, multiplication by `(Scheme.ΓSpecIso A).inv r` on `Γ(N, ⊤)`
+becomes scalar multiplication by `r : A` on `(moduleSpecΓFunctor (R := A)).obj N`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.moduleSpecΓAddEquiv_symm_smul
+    {A : CommRingCat.{u}} (N : (Spec A).Modules) (r : A) (y : Γ(N, ⊤)) :
+    N.moduleSpecΓAddEquiv.symm ((Scheme.ΓSpecIso A).inv r • y) =
+      r • N.moduleSpecΓAddEquiv.symm y := by
   -- `moduleSpecΓFunctor.obj N` and `Γ(N, ⊤)` share `Tilde`'s `A`-module structure.
-  change r • x = (Scheme.ΓSpecIso A).inv r • x
-  rw [Scheme.Modules.smul_Spec_def, Subsingleton.elim (⊤ : (Spec A).Opens).leTop (𝟙 _), op_id,
-    CategoryTheory.Functor.map_id]
-  rfl
+  let eL : (moduleSpecΓFunctor (R := A)).obj N ≃ₗ[A] Γ(N, ⊤) := LinearEquiv.refl A _
+  have he : ⇑N.moduleSpecΓAddEquiv.symm = ⇑eL.symm := rfl
+  have h : (Scheme.ΓSpecIso A).inv r • y = r • y := by
+    rw [Scheme.Modules.smul_Spec_def, TopCat.Presheaf.map_apply_eq_self]
+  rw [he, h, eL.symm.map_smul]
 
 /-- For a sheaf of modules `N` on `Spec R`, the global sections `Γ(N, ⊤)` (equipped with the
 base-ring `R`-module structure from `Spec R` over `Spec R`) are `R`-linearly equivalent to
@@ -240,21 +274,27 @@ def _root_.AlgebraicGeometry.Scheme.Modules.globalSectionsModuleSpecΓLinearEqui
     {R : Type u} [CommRing R] (N : (Spec (.of R)).Modules) :
     Γ(N, ⊤) ≃ₗ[R] (moduleSpecΓFunctor (R := .of R)).obj N :=
   have hid : ((Spec (.of R)) ↘ Spec (.of R)) = 𝟙 _ := by simp [specOverSpec_over]
-  -- `moduleSpecΓFunctor.obj N` and `Γ(N, ⊤)` have the same underlying additive group.
-  let eΓ : Γ(N, ⊤) ≃+ (moduleSpecΓFunctor (R := .of R)).obj N := AddEquiv.refl _
-  eΓ.toLinearEquiv fun r y ↦ by
+  N.moduleSpecΓAddEquiv.symm.toLinearEquiv fun r y ↦ by
     rw [Scheme.Modules.base_smul_globalSections, Scheme.Modules.baseRingToGlobalSections_apply, hid,
       Scheme.Hom.id_appTop, CommRingCat.id_apply]
-    exact (moduleSpecΓ_smul_aux (.of R) N r y).symm
+    exact N.moduleSpecΓAddEquiv_symm_smul r y
+
+/-- `globalSectionsModuleSpecΓLinearEquiv` acts as `moduleSpecΓAddEquiv.symm`. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Modules.globalSectionsModuleSpecΓLinearEquiv_apply
+    {R : Type u} [CommRing R] (N : (Spec (.of R)).Modules) (y : Γ(N, ⊤)) :
+    N.globalSectionsModuleSpecΓLinearEquiv y = N.moduleSpecΓAddEquiv.symm y := by
+  simp [Scheme.Modules.globalSectionsModuleSpecΓLinearEquiv]
 
 /-- `globalSectionsModuleSpecΓLinearEquiv` commutes with morphisms `ψ : N₁ ⟶ N₂` of
 `𝒪_{Spec R}`-modules. -/
 theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.globalSectionsModuleSpecΓLinearEquiv_naturality
     {R : Type u} [CommRing R] {N₁ N₂ : (Spec (.of R)).Modules} (ψ : N₁ ⟶ N₂) (y : Γ(N₁, ⊤)) :
     N₂.globalSectionsModuleSpecΓLinearEquiv (ψ.app ⊤ y) =
-      (moduleSpecΓFunctor (R := .of R)).map ψ (N₁.globalSectionsModuleSpecΓLinearEquiv y) :=
-  -- Both sides evaluate `ψ.val.app (.op ⊤)` on `y`; `moduleSpecΓFunctor` only restricts scalars.
-  (rfl)
+      (moduleSpecΓFunctor (R := .of R)).map ψ (N₁.globalSectionsModuleSpecΓLinearEquiv y) := by
+  rw [N₂.globalSectionsModuleSpecΓLinearEquiv_apply,
+    N₁.globalSectionsModuleSpecΓLinearEquiv_apply,
+    ψ.moduleSpecΓAddEquiv_symm_naturality]
 
 end
 

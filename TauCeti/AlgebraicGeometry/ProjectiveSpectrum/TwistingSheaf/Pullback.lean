@@ -256,22 +256,23 @@ def pullbackTwistingSheafMapSymmetricAlgebraIso (φ : P →ₗ[R] M)
     (pullback (mapSymmetricAlgebraOfSurjective φ hφ)).obj
         (twistingSheaf (homogeneousSubmodule R P) n) ≅
       twistingSheaf (homogeneousSubmodule R M) n :=
-  pullbackTwistingSheafIso (SymmetricAlgebra.gradedMap R φ) _
-    (_root_.SymmetricAlgebra.ι R P) (ι_mem_homogeneousSubmodule R P)
-    (iSup_basicOpen_ι_eq_top R P id (by simp)) n
+  (Scheme.Modules.pullbackCongr (mapSymmetricAlgebraOfSurjective_def φ hφ)).app _ ≪≫
+    pullbackTwistingSheafIso (SymmetricAlgebra.gradedMap R φ) _
+      (_root_.SymmetricAlgebra.ι R P) (ι_mem_homogeneousSubmodule R P)
+      (iSup_basicOpen_ι_eq_top R P id (by simp)) n
 
 /-- The forward morphism of `pullbackTwistingSheafMapSymmetricAlgebraIso` is
-`pullbackTwistingSheafMap` along `SymmetricAlgebra.gradedMap R φ`. -/
+`pullbackTwistingSheafMap` along `SymmetricAlgebra.gradedMap R φ` after transporting along
+`mapSymmetricAlgebraOfSurjective_def`. -/
 @[simp]
 theorem pullbackTwistingSheafMapSymmetricAlgebraIso_hom (φ : P →ₗ[R] M)
     (hφ : Function.Surjective φ) (n : ℤ) :
     (pullbackTwistingSheafMapSymmetricAlgebraIso φ hφ n).hom =
-      pullbackTwistingSheafMap (SymmetricAlgebra.gradedMap R φ)
-        (HomogeneousIdeal.irrelevant_le_map_of_surjective _
-          (SymmetricAlgebra.gradedMap_surjective R hφ)) n :=
-  pullbackTwistingSheafIso_hom (SymmetricAlgebra.gradedMap R φ) _
-    (_root_.SymmetricAlgebra.ι R P) (ι_mem_homogeneousSubmodule R P)
-    (iSup_basicOpen_ι_eq_top R P id (by simp)) n
+      (Scheme.Modules.pullbackCongr (mapSymmetricAlgebraOfSurjective_def φ hφ)).hom.app _ ≫
+        pullbackTwistingSheafMap (SymmetricAlgebra.gradedMap R φ)
+          (HomogeneousIdeal.irrelevant_le_map_of_surjective _
+            (SymmetricAlgebra.gradedMap_surjective R hφ)) n := by
+  simp [pullbackTwistingSheafMapSymmetricAlgebraIso]
 
 end SymmetricAlgebra
 

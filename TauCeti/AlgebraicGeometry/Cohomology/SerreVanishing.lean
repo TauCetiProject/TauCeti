@@ -14,8 +14,8 @@ public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Basic
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.FinitePresentation
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Monoidal
-import TauCeti.AlgebraicGeometry.Cohomology.Biproduct
 import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.ProjectionFormula
+import TauCeti.AlgebraicGeometry.Cohomology.DimensionShifting
 import TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence
 import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.HigherCohomology
 import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Vanishing
@@ -82,31 +82,13 @@ variable {R P : Type u} [CommRing R] [AddCommMonoid P] [Module R P]
 local notation "𝒜" => homogeneousSubmodule R P
 local notation "𝒪(" m ")" => (Proj.twistingSheaf 𝒜 m : Scheme.Modules (Proj 𝒜))
 
-private theorem subsingleton_cohomology_free_tensor (I : Type u) [Finite I]
-    (L : (Proj 𝒜).Modules) (q : ℕ) [Subsingleton (Cohomology L q)] :
-    Subsingleton (Cohomology ((SheafOfModules.free I : (Proj 𝒜).Modules) ⊗ L) q) := by
-  have : Fintype I := .ofFinite I
-  have : MonoidalPreadditive (Proj 𝒜).Modules :=
-    TauCeti.SheafOfModules.monoidalPreadditive (Proj 𝒜).sheaf
-  have : HasBiproduct (C := (Proj 𝒜).Modules) fun _ : I ↦ L := HasBiproduct.of_hasCoproduct _
-  have : HasBiproduct (C := (Proj 𝒜).Modules) fun _ : I ↦ 𝟙_ (Proj 𝒜).Modules :=
-    HasBiproduct.of_hasCoproduct _
-  let e₀ : Iso (C := (Proj 𝒜).Modules) (SheafOfModules.free I)
-      (⨁ fun _ : I ↦ 𝟙_ (Proj 𝒜).Modules) :=
-    (TauCeti.SheafOfModules.biproductIsoFree (R := (Proj 𝒜).sheaf) I).symm
-  let e : Iso (C := (Proj 𝒜).Modules)
-      ((SheafOfModules.free I : (Proj 𝒜).Modules) ⊗ L) (⨁ fun _ : I ↦ L) :=
-    whiskerRightIso e₀ L ≪≫ (tensorRight L).mapBiproduct _ ≪≫ biproduct.mapIso fun _ ↦ λ_ L
-  have := (cohomologyBiproductLinearEquiv R (fun _ : I ↦ L) q).subsingleton
-  exact subsingleton_cohomology_of_iso e q
-
 private theorem subsingleton_cohomology_free_tensor_twistingSheaf {κ : Type*} [Fintype κ]
     (b : Module.Basis κ R P) (I : Type u) [Finite I] (n m : ℤ)
     (hm : -(Fintype.card κ : ℤ) < -n + m) {q : ℕ} (hq : 0 < q) :
     Subsingleton (Cohomology (((SheafOfModules.free I : (Proj 𝒜).Modules) ⊗ 𝒪(-n)) ⊗ 𝒪(m)) q) := by
   have : Subsingleton (Cohomology 𝒪(-n + m) q) :=
     b.subsingleton_cohomology_twistingSheaf_of_neg_card_lt hm hq
-  have := subsingleton_cohomology_free_tensor (R := R) (P := P) I 𝒪(-n + m) q
+  have := Scheme.Modules.subsingleton_cohomology_free_tensor I 𝒪(-n + m) q
   let e₁ : ((SheafOfModules.free I : (Proj 𝒜).Modules) ⊗ 𝒪(-n)) ⊗ 𝒪(m) ≅
       (SheafOfModules.free I : (Proj 𝒜).Modules) ⊗ 𝒪(-n + m) :=
     α_ _ _ _ ≪≫ whiskerLeftIso _ (Proj.twistingSheaf.tensorObjIso
