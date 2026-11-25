@@ -83,7 +83,7 @@ private theorem exists_coeff_of_norm_le (hg : MemLpLoc p Ω g) (hξ : Continuous
   refine ⟨C, (hg.const_smul 2).of_le hCm ?_, hG.congr_ae_deriv ?_⟩
   · -- `‖C z‖ = 2 ‖G z‖ / ‖ξ z‖ ≤ 2 |g z|`
     filter_upwards [hle] with z hz
-    rw [hC_def, ContinuousLinearMap.norm_restrictScalars, norm_smul, norm_rankOneDivNormSq,
+    simp only [hC_def, ContinuousLinearMap.norm_restrictScalars, norm_smul, norm_rankOneDivNormSq,
       norm_neg, Complex.norm_two, Pi.smul_apply, smul_eq_mul, norm_mul, Real.norm_two]
     gcongr
     exact div_le_of_le_mul₀ (norm_nonneg _) (norm_nonneg _)
@@ -182,6 +182,8 @@ theorem exists_eventually_eq_mul_of_hasWeakConjWirtingerDerivOn_of_norm_le (hp :
       ∀ᶠ z in 𝓝 z₀, f z = v z * σ z := by
   obtain ⟨r, hr, -, Φ, σ, hΦ, hΦu, hσ, hfσ⟩ :=
     exists_similarity_of_hasWeakConjWirtingerDerivOn_of_norm_le hp hg hf hG hle hz₀
-  exact exists_eventually_eq_mul_of_eqOn_ball hr hΦ hΦu hσ hfσ
+  have hball : ball z₀ r ∈ 𝓝 z₀ := ball_mem_nhds z₀ hr
+  exact exists_eventually_eq_mul_of_eventually_eq_clm_apply (hΦ.continuousAt hball)
+    (hΦu z₀ (mem_ball_self hr)) (hσ.analyticAt hball) (eventually_of_mem hball hfσ)
 
 end TauCeti
