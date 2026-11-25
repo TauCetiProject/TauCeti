@@ -10,10 +10,10 @@ public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ModEq
 /-!
 # Checks for congruence of finite adeles
 
-The Checks of AdelicAlgebraicGroups §5.2, *Integral adelic congruence*, over `ℤ ⊆ ℚ`: modulo
-zero congruence is equality; `1 ≡ 0` modulo `1`; `1` is not congruent to `0` modulo `2`; and the
-inverse-based expression `(x - y) / N` at `N = 0` is `0`, hence integral, even for the pair
-`(1, 0)`, which is not congruent modulo zero.
+Examples of congruence of finite adeles over `ℤ ⊆ ℚ`: modulo zero congruence is equality;
+`1 ≡ 0` modulo `1`; `1` is not congruent to `0` modulo `2`; and the inverse-based expression
+`(x - y) / N` at `N = 0` is `0`, hence integral, even for the pair `(1, 0)`, which is not
+congruent modulo zero.
 -/
 
 public section
@@ -34,8 +34,9 @@ example : ModEq (1 : ℤ) (1 : FiniteAdeleRing ℤ ℚ) 0 :=
 example : ¬ ModEq (2 : ℤ) (1 : FiniteAdeleRing ℤ ℚ) 0 := by
   rw [modEq_iff_mul_inv_mem two_ne_zero, sub_zero, mul_one, algebraMap_mem_integralAdeles_iff]
   rintro ⟨n, hn⟩
+  simp only [eq_intCast] at hn
   have h : (2 : ℚ) * n = 1 := by
-    rw [show ((n : ℤ) : ℚ) = algebraMap ℤ ℚ n from rfl, hn]
+    rw [hn]
     norm_num
   have h' : (2 * n : ℤ) = 1 := by exact_mod_cast h
   omega
