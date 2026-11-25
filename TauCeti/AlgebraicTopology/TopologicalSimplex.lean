@@ -64,6 +64,10 @@ universe u
 
 namespace SimplexCategory
 
+/-- Every topological simplex is small in any universe `v`. -/
+instance small.{v} (n : SimplexCategory) : Small.{v} (toTop.{u}.obj n) :=
+  inferInstanceAs (Small.{v} (ULift.{u} (StdSimplex ℝ (Fin (n.len + 1)))))
+
 /-- Every topological simplex is compact. -/
 instance compactSpace (n : SimplexCategory) : CompactSpace (toTop.{u}.obj n) :=
   (Homeomorph.ulift (X := StdSimplex ℝ (Fin (n.len + 1)))).symm.compactSpace

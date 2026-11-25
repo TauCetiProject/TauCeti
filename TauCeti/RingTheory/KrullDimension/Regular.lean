@@ -7,6 +7,8 @@ module
 
 public import Mathlib.RingTheory.KrullDimension.Regular
 import Mathlib.RingTheory.Flat.TorsionFree
+import TauCeti.Order.KrullDimension
+import TauCeti.RingTheory.KrullDimension.Module
 
 /-!
 # Krull dimension of a principal quotient
@@ -25,7 +27,11 @@ for such `r₁, …, rₙ` (`Module.supportDim_le_supportDim_quotient_add_length
 particular for `r₁, …, rₙ ∈ 𝔪` over a local ring
 (`Module.supportDim_le_supportDim_quotient_add_length`). This is the inequality
 that the regular case `Module.supportDim_add_length_eq_supportDim_of_isRegular` turns into an
-equality.
+equality. An element of `𝔪` that lowers the dimension at all therefore lowers it by exactly one
+(`Module.supportDim_quotSMulTop_succ_eq_supportDim_of_lt`).
+
+The support of `M ⧸ r s M` is the union of the supports of `M ⧸ r M` and `M ⧸ s M`, so its
+dimension is the larger of their dimensions (`Module.supportDim_quotSMulTop_mul`).
 
 Over any commutative ring, an `M`-regular element lies outside every minimal prime of the
 annihilator of `M` and so lowers the dimension of the support by at least one; by induction, the
@@ -123,6 +129,36 @@ theorem supportDim_le_supportDim_quotient_add_length {R M : Type*} [CommRing R]
     supportDim R M ≤ supportDim R (M ⧸ ofList rs • (⊤ : Submodule R M)) + rs.length :=
   supportDim_le_supportDim_quotient_add_length_of_mem_jacobson rs
     fun r hr ↦ maximalIdeal_le_jacobson _ (hrs r hr)
+
+/-- Over a Noetherian local ring, an element `x ∈ 𝔪` that lowers the dimension of the support of
+a finite module `M` lowers it by exactly one: `dim M ⧸ x M + 1 = dim M`. -/
+theorem supportDim_quotSMulTop_succ_eq_supportDim_of_lt {R M : Type*} [CommRing R]
+    [IsNoetherianRing R] [IsLocalRing R] [AddCommGroup M] [Module R M] [Module.Finite R M] {x : R}
+    (hx : x ∈ maximalIdeal R) (hlt : supportDim R (QuotSMulTop x M) < supportDim R M) :
+    supportDim R (QuotSMulTop x M) + 1 = supportDim R M := by
+  have : Nontrivial M := (supportDim_ne_bot_iff_nontrivial R M).1 (ne_bot_of_gt hlt)
+  have := nontrivial_quotSMulTop_of_mem_maximalIdeal M hx
+  obtain ⟨k, hk⟩ := exists_supportDim_eq_natCast (R := R) (M := M)
+  obtain ⟨j, hj⟩ := exists_supportDim_eq_natCast (R := R) (M := QuotSMulTop x M)
+  have hle := supportDim_le_supportDim_quotSMulTop_succ (M := M) hx
+  rw [hk, hj] at hlt hle ⊢
+  norm_cast at hlt hle ⊢
+  omega
+
+/-- The support of `M ⧸ r s M` is the union of the supports of `M ⧸ r M` and `M ⧸ s M`, so its
+dimension is the larger of their dimensions. -/
+theorem supportDim_quotSMulTop_mul {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    [Module.Finite R M] (r s : R) :
+    supportDim R (QuotSMulTop (r * s) M) =
+      max (supportDim R (QuotSMulTop r M)) (supportDim R (QuotSMulTop s M)) := by
+  have hup (x : R) : IsUpperSet (support R (QuotSMulTop x M)) :=
+    fun _ _ hpq hp ↦ mem_support_mono hpq hp
+  have hsupp : support R (QuotSMulTop (r * s) M) =
+      support R (QuotSMulTop r M) ∪ support R (QuotSMulTop s M) := by
+    simp only [support_quotSMulTop, PrimeSpectrum.zeroLocus_singleton_mul,
+      Set.inter_union_distrib_left]
+  rw [supportDim, hsupp]
+  exact Order.krullDim_union_of_isUpperSet (hup r) (hup s)
 
 end Module
 

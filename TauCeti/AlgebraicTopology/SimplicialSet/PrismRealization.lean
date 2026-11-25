@@ -14,6 +14,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.WeakEquivalence
 import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Algebra.BigOperators.Finset.PartialSum
 import TauCeti.AlgebraicTopology.SimplicialSet.ProdStdSimplex.Basic
+import TauCeti.Data.Set.Function
 import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
 /-!
@@ -275,20 +276,26 @@ private lemma support_prismMeasure_subset {k : Fin (p + 1)} {z : StdSimplex ℝ 
 point of the `k`th piece of the prism. -/
 private noncomputable def pieceWeights (k : Fin (p + 1)) (z : StdSimplex ℝ (Fin (p + 1)) × I)
     (hz : z ∈ piece k) : StdSimplex ℝ (Fin (p + 2)) :=
-  StdSimplex.comap (injective_objEquiv_nonDegenerateEquiv.{u} k) _
-    (support_prismMeasure_subset hz)
+  StdSimplex.comap (f := prodStdSimplex.objEquiv (nonDegenerateEquiv.{u} k).val)
+    (prismMeasure z.1 z.2)
+    (Set.bijOn_preimage_iff.2
+      ⟨(injective_objEquiv_nonDegenerateEquiv.{u} k).injOn, support_prismMeasure_subset hz⟩)
 
 private lemma map_pieceWeights (k : Fin (p + 1)) (z : StdSimplex ℝ (Fin (p + 1)) × I)
     (hz : z ∈ piece k) :
     StdSimplex.map (prodStdSimplex.objEquiv (nonDegenerateEquiv.{u} k).val)
       (pieceWeights.{u} k z hz) = prismMeasure z.1 z.2 :=
-  StdSimplex.map_comap _ _ _
+  StdSimplex.map_comap _ _
 
 private lemma continuous_pieceWeights (k : Fin (p + 1)) :
     Continuous fun z : piece k ↦ pieceWeights.{u} k z.val z.property := by
   rw [(StdSimplex.isEmbedding_toFun_comp_weights ℝ (Fin (p + 2))).continuous_iff]
   refine continuous_pi fun j ↦ ?_
-  simp only [Function.comp_apply, pieceWeights, StdSimplex.weights_comap_apply]
+  have h : (fun z : piece k ↦ (pieceWeights.{u} k z.val z.property).weights j) =
+      fun z ↦ (prismMeasure z.val.1 z.val.2).weights
+        (prodStdSimplex.objEquiv (nonDegenerateEquiv.{u} k).val j) :=
+    funext fun z ↦ StdSimplex.weights_comap_apply _ _ j
+  simp only [Function.comp_apply, h, prismMeasure_weights]
   exact (continuous_prismWeights _).comp continuous_subtypeVal
 
 /-- The underlying function of `SSet.prodStdSimplex₁.prism`. -/
