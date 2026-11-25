@@ -154,6 +154,31 @@ theorem im_cayleyChart_eq_zero_iff {z : 𝕔𝔻} (hz : z ∈ (cayleyChart ζ h�
   rw [im_cayleyChart_apply, div_eq_zero_iff, or_iff_left hz0, sub_eq_zero, eq_comm,
     pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero]
 
+/-- The norm of a Cayley chart: `‖I (ζ - z) / (ζ + z)‖ = ‖ζ - z‖ / ‖ζ + z‖`. -/
+theorem norm_coe_cayleyChart_apply (z : 𝕔𝔻) :
+    ‖(cayleyChart ζ hζ z : ℂ)‖ = ‖ζ - z‖ / ‖ζ + z‖ := by
+  rw [coe_cayleyChart_apply, norm_div, norm_mul, norm_I, one_mul]
+
+/-- **Half-disc charts.** The Cayley chart centered at `ζ` maps the points `z` of the closed disc
+with `‖ζ - z‖ < r ‖ζ + z‖` onto the half-disc `{w : ‖w‖ < r}` of the closed upper half-plane. -/
+theorem cayleyChart_image_setOf_lt (r : ℝ) :
+    cayleyChart ζ hζ '' {z | ‖ζ - z‖ < r * ‖ζ + z‖} =
+      {w : ClosedUpperHalfPlane | ‖(w : ℂ)‖ < r} := by
+  have hset : {z : 𝕔𝔻 | ‖ζ - z‖ < r * ‖ζ + z‖} =
+      (cayleyChart ζ hζ).source ∩ cayleyChart ζ hζ ⁻¹' {w | ‖(w : ℂ)‖ < r} := by
+    ext z
+    simp only [mem_ofPred_eq, mem_inter_iff, cayleyChart_source, mem_preimage,
+      norm_coe_cayleyChart_apply]
+    refine ⟨fun h ↦ ?_, fun ⟨hz, h⟩ ↦ (div_lt_iff₀ (norm_pos_iff.2 (add_ne_zero_of_ne_neg hz))).1 h⟩
+    have hz : (z : ℂ) ≠ -ζ := fun hz ↦ by
+      rw [hz] at h
+      simp only [sub_neg_eq_add, add_neg_cancel, norm_zero, mul_zero] at h
+      exact (norm_nonneg _).not_gt h
+    exact ⟨hz, (div_lt_iff₀ (norm_pos_iff.2 (add_ne_zero_of_ne_neg hz))).2 h⟩
+  rw [hset, OpenPartialHomeomorph.image_source_inter_eq', cayleyChart_target, univ_inter]
+  ext w
+  simp only [mem_preimage, (cayleyChart ζ hζ).right_inv (mem_univ w)]
+
 /-! ### The atlas -/
 
 /-- The center of the preferred chart at `z`: `1` if `0 ≤ re z`, and `-1` otherwise. -/
