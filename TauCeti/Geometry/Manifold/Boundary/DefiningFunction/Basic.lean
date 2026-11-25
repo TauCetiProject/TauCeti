@@ -46,6 +46,9 @@ along them (`TauCeti.IsBoundaryDefiningFunctionOn.comp_isLocalDiffeomorph`).
   chart.
 * `TauCeti.isBoundaryDefiningFunctionOn_finsum_smul` and
   `TauCeti.exists_isBoundaryDefiningFunctionOn_univ`: gluing and global existence.
+* `TauCeti.IsBoundaryDefiningFunctionOn.mul_left`: a positive smooth multiple of a boundary
+  defining function is one; `TauCeti.IsBoundaryDefiningFunctionOn.not_mul_self` and
+  `TauCeti.IsBoundaryDefiningFunctionOn.not_neg`: its square and its negative are not.
 * `TauCeti.IsBoundaryDefiningFunctionOn.mono`, `TauCeti.IsBoundaryDefiningFunctionOn.congr`,
   `TauCeti.IsBoundaryDefiningFunctionOn.comp_isLocalDiffeomorph` and
   `TauCeti.IsBoundaryDefiningFunctionOn.comp_diffeomorph`: restriction to open subsets, congruence
@@ -205,6 +208,41 @@ theorem comp_diffeomorph {M' : Type*} [TopologicalSpace M']
     (hρ : IsBoundaryDefiningFunctionOn n ρ U) :
     IsBoundaryDefiningFunctionOn n (ρ ∘ Φ) (Φ ⁻¹' U) :=
   hρ.comp_isLocalDiffeomorph Φ.isLocalDiffeomorph
+
+/-- The product `u ρ` of a boundary defining function `ρ` with a smooth function `u` that is
+positive on its domain is a boundary defining function: at a boundary point its differential is
+`u dρ`. -/
+theorem mul_left (hρ : IsBoundaryDefiningFunctionOn n ρ U) {u : M → ℝ}
+    (hu : ContMDiffOn (𝓡∂ (n + 1)) 𝓘(ℝ) ∞ u U) (hpos : ∀ x ∈ U, 0 < u x) :
+    IsBoundaryDefiningFunctionOn n (fun x ↦ u x * ρ x) U where
+  isOpen := hρ.isOpen
+  contMDiffOn := hu.smul hρ.contMDiffOn
+  pos x hx hint := mul_pos (hpos x hx) (hρ.pos x hx hint)
+  eq_zero x hx hb := by rw [hρ.eq_zero x hx hb, mul_zero]
+  mvfderiv_ne_zero x hx hb := by
+    have hud : MDifferentiableAt (𝓡∂ (n + 1)) 𝓘(ℝ) u x :=
+      ((hu x hx).contMDiffAt (hρ.isOpen.mem_nhds hx)).mdifferentiableAt (by simp)
+    rw [mvfderiv_fun_mul hud (hρ.mdifferentiableAt hx), hρ.eq_zero x hx hb, zero_smul, add_zero]
+    exact smul_ne_zero (hpos x hx).ne' (hρ.mvfderiv_ne_zero x hx hb)
+
+/-- The square `ρ²` of a boundary defining function is not a boundary defining function on a
+domain containing a boundary point `q`: its differential `2 ρ(q) dρ_q` vanishes there. -/
+theorem not_mul_self (hρ : IsBoundaryDefiningFunctionOn n ρ U) {q : M} (hqU : q ∈ U)
+    (hq : q ∈ (𝓡∂ (n + 1)).boundary M) :
+    ¬IsBoundaryDefiningFunctionOn n (fun x ↦ ρ x * ρ x) U := fun h ↦ by
+  have hd := h.mvfderiv_ne_zero q hqU hq
+  rw [mvfderiv_fun_mul (hρ.mdifferentiableAt hqU) (hρ.mdifferentiableAt hqU),
+    hρ.eq_zero q hqU hq, zero_smul, add_zero] at hd
+  exact hd rfl
+
+/-- The negative `-ρ` of a boundary defining function is not a boundary defining function on a
+domain containing an interior point, where it is negative. -/
+theorem not_neg (hρ : IsBoundaryDefiningFunctionOn n ρ U) {x : M} (hxU : x ∈ U)
+    (hx : x ∈ (𝓡∂ (n + 1)).interior M) :
+    ¬IsBoundaryDefiningFunctionOn n (fun y ↦ -ρ y) U := fun h ↦ by
+  have h₁ := h.pos x hxU hx
+  have h₂ := hρ.pos x hxU hx
+  linarith
 
 end IsBoundaryDefiningFunctionOn
 
