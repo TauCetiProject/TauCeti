@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Cylinder.Slice.Average
 public import TauCeti.Analysis.Sobolev.GraphStep.Basic
+import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.Sobolev.GraphStep.Density
 import TauCeti.MeasureTheory.Function.Lp.LinearIsometry
 
@@ -34,6 +35,9 @@ weak-derivative graph `TauCeti.WeakDerivStep` over `L²(ℝ, V)`.
   exactly when it lies in the range of `zeroModeL`
   (`TauCeti.CylinderSobolev.sliceAverageL_eq_self_iff`): the slice average of the jet of a test
   section is the jet of a section that does not depend on `t`, and these jets are dense.
+  Likewise a square-integrable section of the strip is its own slice average exactly when it lies
+  in the range of `zeroModeLp` (`TauCeti.CylinderSobolev.sliceAverageLp_eq_self_iff`): the slice
+  average `s ↦ ∫₀¹ x(s, t) dt` is a square-integrable map on the line.
 
 Through this identification, a first-order operator on the cylinder whose coefficients do not
 depend on `t` restricts on the zero mode to an operator on the line; for the linearized Floer
@@ -300,5 +304,52 @@ theorem sliceAverageL_eq_self_iff {x : H1 V} :
   refine ⟨fun h ↦ h ▸ sliceAverageL_mem_range_zeroModeL x, ?_⟩
   rintro ⟨u, rfl⟩
   exact sliceAverageL_zeroModeL u
+
+/-! ### The range of the zero mode of `L²` is the image of the slice average -/
+
+/-- The zero mode of a square-integrable map on the line does not depend on `t`: it is its own
+`L²` slice average. -/
+theorem sliceAverageLp_zeroModeLp (f : Lp V 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))) :
+    sliceAverageLp (zeroModeLp V f) = zeroModeLp V f := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_sliceAverageLp (zeroModeLp V f),
+    sliceAverage_congr_ae (coeFn_zeroModeLp f), coeFn_zeroModeLp f] with z h₁ h₂ h₃
+  rw [h₁, h₂, h₃]
+  simp [sliceAverage_apply]
+
+omit [CompleteSpace V] in
+/-- The `L²` slice average of a section of the strip lies in the range of the zero mode: it is
+represented by `(s, t) ↦ g(s)` for the square-integrable map `g(s) = ∫₀¹ x(s, t) dt` on the
+line. -/
+theorem sliceAverageLp_mem_range_zeroModeLp (x : Lp V 2 stripMeasure) :
+    sliceAverageLp x ∈ range (zeroModeLp V) := by
+  set g : ℝ → V := fun s ↦ sliceAverage x (s, 0)
+  have hgx : sliceAverage x = fun z ↦ g z.1 := funext fun z ↦ sliceAverage_mk _ z.1 z.2
+  -- `g` is a parametric integral of a strongly measurable section, so it is strongly measurable.
+  have hg : StronglyMeasurable g := by
+    have h := StronglyMeasurable.integral_prod_right' (ν := volume.restrict (Icc (0 : ℝ) 1))
+      (Lp.stronglyMeasurable x)
+    convert h using 1
+    funext s
+    exact sliceAverage_eq_integral _ (s, 0)
+  have hmap := measurePreserving_fst_stripMeasure.map_eq
+  have hgL : MemLp g 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) := by
+    rw [← hmap, memLp_map_measure_iff (hmap ▸ hg.aestronglyMeasurable) measurable_fst.aemeasurable]
+    have h := memLp_sliceAverage (Lp.memLp x)
+    rw [hgx] at h
+    exact h
+  refine ⟨hgL.toLp g, Lp.ext ?_⟩
+  filter_upwards [coeFn_zeroModeLp (hgL.toLp g), ae_eq_comp_fst hgL.coeFn_toLp,
+    coeFn_sliceAverageLp x] with z h₁ h₂ h₃
+  rw [h₁, h₂, h₃, hgx]
+
+/-- **The zero mode of `L²` is the range of `zeroModeLp`.** A square-integrable section of the
+strip is its own slice average, a section that does not depend on `t`, exactly when it is the zero
+mode of a square-integrable map on the line. -/
+theorem sliceAverageLp_eq_self_iff {x : Lp V 2 stripMeasure} :
+    sliceAverageLp x = x ↔ x ∈ range (zeroModeLp V) := by
+  refine ⟨fun h ↦ h ▸ sliceAverageLp_mem_range_zeroModeLp x, ?_⟩
+  rintro ⟨f, rfl⟩
+  exact sliceAverageLp_zeroModeLp f
 
 end TauCeti.CylinderSobolev
