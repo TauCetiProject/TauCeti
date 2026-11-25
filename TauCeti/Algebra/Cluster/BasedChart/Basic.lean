@@ -312,6 +312,19 @@ theorem monomial_single_of_self_eq_zero {I : Type*} {Λ : LinearMap.BilinForm �
     M.monomial (Finsupp.single i n) = M.monomial (Finsupp.single i 1) ^ n := by
   simpa using M.monomial_zsmul_of_self_eq_zero hi n
 
+/-- When `Λ (single k 1) (single k 1) = 0`, every chart monomial `M.monomial a` factors into its
+complementary monomial `M.monomial (a.erase k)` and `M.monomial (single k 1) ^ a k` up to the
+scalar twist `u ^ (-Λ (a.erase k) (single k (a k)))`. -/
+theorem monomial_eq_erase_mul_zpow {I : Type*} {Λ : LinearMap.BilinForm ℤ (I →₀ ℤ)}
+    (M : BasedChart u Λ B) {k : I} (hkk : Λ (Finsupp.single k 1) (Finsupp.single k 1) = 0)
+    (a : I →₀ ℤ) :
+    M.monomial a =
+      Units.map (algebraMap R B) (u ^ (-Λ (a.erase k) (Finsupp.single k (a k)))) *
+        (M.monomial (a.erase k) * M.monomial (Finsupp.single k 1) ^ a k) := by
+  rw [← M.monomial_single_of_self_eq_zero hkk (a k), M.monomial_mul,
+    Finsupp.erase_add_single k a, ← mul_assoc, ← map_mul, ← zpow_add, neg_add_cancel, zpow_zero,
+    map_one, one_mul]
+
 /-- For alternating forms, integer powers of a chart monomial simplify to monomials. -/
 @[simp]
 theorem monomial_zpow (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (a : L) (n : ℤ) :

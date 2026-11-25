@@ -392,38 +392,6 @@ namespace TauCeti.QuantumTorus
 variable {R B I : Type*} [CommSemiring R] [Semiring B] [Algebra R B]
   {u : Rˣ} {Λ Λ' : LinearMap.BilinForm ℤ (I →₀ ℤ)}
 
-/-- Two quantum-torus algebra maps `χ'` and `χ` agreeing on all generators `monomial (single i 1)`
-away from `k` (for forms agreeing off `k` with zero diagonal off `k`) agree on every monomial
-`monomial a` with `a k = 0`. -/
-theorem algHom_monomial_eq_of_apply_eq_zero
-    (hΛ_diag : ∀ i ≠ k, Λ (Finsupp.single i 1) (Finsupp.single i 1) = 0)
-    (hΛ'_diag : ∀ i ≠ k, Λ' (Finsupp.single i 1) (Finsupp.single i 1) = 0)
-    {χ : QuantumTorus R (I →₀ ℤ) u Λ →ₐ[R] B}
-    {χ' : QuantumTorus R (I →₀ ℤ) u Λ' →ₐ[R] B}
-    (h_off : ∀ i ≠ k, χ' (monomial u Λ' (Finsupp.single i 1)) =
-      χ (monomial u Λ (Finsupp.single i 1)))
-    (hoff : ∀ a b : I →₀ ℤ, a k = 0 → b k = 0 → Λ' a b = Λ a b)
-    {a : I →₀ ℤ} (ha : a k = 0) :
-    χ' (monomial u Λ' a) = χ (monomial u Λ a) := by
-  classical
-  suffices Units.map χ'.toMonoidHom (monomialUnit u Λ' a) =
-      Units.map χ.toMonoidHom (monomialUnit u Λ a) by
-    simpa using congrArg (Units.val : Bˣ → B) this
-  induction a using Finsupp.induction with
-  | zero => ext; simp
-  | single_add i n f hif hn ih =>
-    have hik : i ≠ k := by rintro rfl; simp [Finsupp.notMem_support_iff.mp hif, hn] at ha
-    have hfk : f k = 0 := by simpa [Finsupp.add_apply, Finsupp.single_eq_of_ne hik.symm] using ha
-    have hsingle : Units.map χ'.toMonoidHom (monomialUnit u Λ' (Finsupp.single i n)) =
-        Units.map χ.toMonoidHom (monomialUnit u Λ (Finsupp.single i n)) := by
-      rw [← Finsupp.smul_single_one i n, monomialUnit_zsmul_of_self_eq_zero (hΛ'_diag i hik),
-        monomialUnit_zsmul_of_self_eq_zero (hΛ_diag i hik), map_zpow, map_zpow]
-      exact congrArg (· ^ n) (Units.ext <| by simpa using h_off i hik)
-    have hmul₁ := map_monomialUnit_mul χ' (Finsupp.single i n) f
-    rw [hoff _ _ (Finsupp.single_eq_of_ne hik.symm) hfk] at hmul₁
-    exact mul_left_cancel
-      (hmul₁.symm.trans (by rw [hsingle, ih hfk, map_monomialUnit_mul χ (Finsupp.single i n) f]))
-
 /-- Given an injective torus map `χ : QuantumTorus R (I →₀ ℤ) u Λ →ₐ[R] B` and a map
 `χ' : QuantumTorus R (I →₀ ℤ) u Λ' →ₐ[R] B` agreeing off `k` with
 `χ' (X_k) * χ (X_k) ∈ (BasedChart.ofInjective χ hχ).offAlgebra k`, `χ'` arises as `eval` of a

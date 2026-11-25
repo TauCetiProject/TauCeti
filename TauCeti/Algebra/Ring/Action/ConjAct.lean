@@ -54,10 +54,10 @@ end Subsemiring
 namespace Units
 
 /-- Left multiplication by `x ^ m` rewrites as right multiplication after conjugating by `x ^ m`. -/
-theorem zpow_mul_eq_conj_mul_zpow {B : Type*} [Semiring B] (x : Bˣ) (m : ℤ) (c : B) :
-    ((x ^ m : Bˣ) : B) * c =
-      (((x ^ m : Bˣ) : B) * c * ((x ^ (-m) : Bˣ) : B)) * ((x ^ m : Bˣ) : B) := by
-  rw [mul_assoc (((x ^ m : Bˣ) : B) * c), ← Units.val_mul, ← zpow_add, neg_add_cancel, zpow_zero,
+theorem zpow_mul_eq_conj_mul_zpow {M : Type*} [Monoid M] (x : Mˣ) (m : ℤ) (c : M) :
+    ((x ^ m : Mˣ) : M) * c =
+      (((x ^ m : Mˣ) : M) * c * ((x ^ (-m) : Mˣ) : M)) * ((x ^ m : Mˣ) : M) := by
+  rw [mul_assoc (((x ^ m : Mˣ) : M) * c), ← Units.val_mul, ← zpow_add, neg_add_cancel, zpow_zero,
     Units.val_one, mul_one]
 
 end Units

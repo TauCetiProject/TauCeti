@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Cluster.OneExchange.Independence
-import TauCeti.Data.Finsupp.MapDomain
+import TauCeti.Data.Finsupp.Single
 
 /-!
 # One-step skew Laurent intersection and positive exchange normal forms
@@ -64,6 +64,19 @@ theorem coe_zpow_mem_laurentAdjoin (C : Subsemiring B) (x : Bˣ) (m : ℤ) :
   | zero => simp [(C.laurentAdjoin x).one_mem]
   | succ _ hk => rw [zpow_add_one, Units.val_mul]; exact mul_mem hk (C.coe_mem_laurentAdjoin x)
   | pred _ hk => rw [zpow_sub_one, Units.val_mul]; exact mul_mem hk (C.coe_inv_mem_laurentAdjoin x)
+
+/-- Universal property of `Subsemiring.laurentAdjoin`: `C.laurentAdjoin x ≤ T` if and only if
+`C ≤ T` and both `x` and `x⁻¹` belong to `T`. -/
+theorem laurentAdjoin_le_iff {C T : Subsemiring B} {x : Bˣ} :
+    C.laurentAdjoin x ≤ T ↔ C ≤ T ∧ (x : B) ∈ T ∧ ((x⁻¹ : Bˣ) : B) ∈ T := by
+  rw [laurentAdjoin_def, sup_le_iff, closure_le, Set.insert_subset_iff, Set.singleton_subset_iff,
+    SetLike.mem_coe, SetLike.mem_coe]
+
+/-- `Subsemiring.laurentAdjoin` is monotone in the base subsemiring `C`. -/
+@[gcongr]
+theorem laurentAdjoin_mono {C₁ C₂ : Subsemiring B} (h : C₁ ≤ C₂) (x : Bˣ) :
+    C₁.laurentAdjoin x ≤ C₂.laurentAdjoin x :=
+  sup_le_sup_right h _
 
 /-- Evaluation of finite left Laurent expansions `f ↦ ∑_m f(m) * x^m` with coefficients in `C`. -/
 def skewLaurentSum (C : Subsemiring B) (x : Bˣ) : (ℤ →₀ C) →+ B where
@@ -140,9 +153,8 @@ theorem range_skewLaurentSum {C : Subsemiring B} {x : Bˣ} (hx : ConjAct.toConjA
         simp only [mul_assoc]
   let S : Subsemiring B := { M with one_mem' := ⟨Finsupp.single 0 1, by simp⟩, mul_mem' := hmul }
   suffices C.laurentAdjoin x ≤ S from this
-  refine sup_le (fun c hc ↦ ⟨Finsupp.single 0 ⟨c, hc⟩, by simp⟩) (closure_le.mpr ?_)
-  rintro _ (rfl | rfl)
-  exacts [⟨Finsupp.single 1 1, by simp⟩, ⟨Finsupp.single (-1) 1, by simp⟩]
+  exact laurentAdjoin_le_iff.mpr ⟨fun c hc ↦ ⟨Finsupp.single 0 ⟨c, hc⟩, by simp⟩,
+    ⟨Finsupp.single 1 1, by simp⟩, ⟨Finsupp.single (-1) 1, by simp⟩⟩
 
 /-- Evaluation of finite two-sided positive normal forms
 `(c₀, c⁺, c⁻) ↦ c₀ + ∑_r c⁺(r) * x^{r + 1} + ∑_r c⁻(r) * y^{r + 1}`. -/

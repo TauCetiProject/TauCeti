@@ -276,6 +276,26 @@ theorem isAlt_finsuppBilinForm_iff_isAlt_toBilin' [Fintype I] [DecidableEq I] :
       simpa [finsuppBilinForm_apply_eq_toBilin'] using h (Finsupp.equivFunOnFinite.symm x),
     fun h x ↦ (A.finsuppBilinForm_apply_eq_toBilin' x x).trans (h x)⟩
 
+/-- Pairing `r • eᵢ` on the left with `x` under `A.strictUpper` agrees with `A.finsuppBilinForm`
+whenever every index in `x.support` is strictly greater than `i`. -/
+theorem finsuppBilinForm_strictUpper_single_left_of_lt [LT I] [DecidableLT I] {i : I} (r : R)
+    {x : I →₀ R} (hx : ∀ j ∈ x.support, i < j) :
+    A.strictUpper.finsuppBilinForm (Finsupp.single i r) x =
+      A.finsuppBilinForm (Finsupp.single i r) x := by
+  rw [finsuppBilinForm_apply, Finsupp.sum_single_index (by simp),
+    finsuppBilinForm_apply, Finsupp.sum_single_index (by simp)]
+  exact Finset.sum_congr rfl fun j hj ↦ by simp [hx j hj]
+
+/-- Pairing `x` with `r • eᵢ` on the right under `A.strictUpper` vanishes whenever every index in
+`x.support` is at least `i`. -/
+theorem finsuppBilinForm_strictUpper_single_right_eq_zero [Preorder I] [DecidableLT I] {i : I}
+    (r : R) {x : I →₀ R} (hx : ∀ j ∈ x.support, i ≤ j) :
+    A.strictUpper.finsuppBilinForm x (Finsupp.single i r) = 0 := by
+  rw [finsuppBilinForm_apply, Finsupp.sum]
+  exact Finset.sum_eq_zero fun j hj ↦ by
+    rw [Finsupp.sum_single_index (by simp)]
+    simp [(hx j hj).not_gt]
+
 end CommSemiring
 
 section CommRing
@@ -403,6 +423,15 @@ theorem finsuppBilinForm_updateSkew_single_left [DecidableEq I] (A : Matrix I I 
     Finsupp.linearCombination_apply, Finsupp.linearCombination_apply]
   refine congrArg (r * ·) (Finsupp.sum_congr fun j hj ↦ ?_)
   rw [updateSkew_apply_left_of_ne A k ℓ (by rintro rfl; exact Finsupp.mem_support_iff.mp hj hy)]
+
+/-- Pairing `eₖ` on the left with `y` (`y k = 0`) under `A.updateSkew k (fun j ↦ φ (single j 1))`
+recovers `φ y` for any linear functional `φ : (I →₀ R) →ₗ[R] R`. -/
+theorem finsuppBilinForm_updateSkew_single_one_left [DecidableEq I] (A : Matrix I I R) (k : I)
+    (φ : (I →₀ R) →ₗ[R] R) {y : I →₀ R} (hy : y k = 0) :
+    (A.updateSkew k fun j ↦ φ (Finsupp.single j 1)).finsuppBilinForm (Finsupp.single k 1) y =
+      φ y := by
+  rw [finsuppBilinForm_updateSkew_single_left A k _ 1 hy, one_mul]
+  exact LinearMap.congr_fun (Finsupp.lhom_ext' fun _ ↦ LinearMap.ext_ring <| by simp) y
 
 /-- Two matrices with alternating `finsuppBilinForm` are equal as soon as their forms agree on
 vectors vanishing at `k` and on pairs `(eₖ, y)` with `y k = 0`. -/

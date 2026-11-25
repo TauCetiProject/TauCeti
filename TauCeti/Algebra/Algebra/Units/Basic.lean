@@ -6,16 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Basic
-import Mathlib.Tactic.Ring
 
 /-!
 # Central scalar units and quasi-commutation in an algebra
 
 For a commutative semiring `R` and an `R`-algebra `B`, units pushed forward along `algebraMap R B`
 are central in `Bˣ`. Consequently, central-unit factors collect cleanly in products of scaled units
-(`Units.map_algebraMap_mul_mul_map_algebraMap_mul`), and integer powers inherit central-unit
+(`Units.map_algebraMap_mul_mul_map_algebraMap_mul`), integer powers inherit central-unit
 quasi-commutation `x * y = w • (y * x)` (`Units.zpow_mul_of_map_algebraMap_mul`,
-`Units.zpow_mul_zpow_of_map_algebraMap_mul`).
+`Units.zpow_mul_zpow_of_map_algebraMap_mul`), and inverse conjugation scales quasi-commuting
+elements by `w⁻¹` (`Units.inv_mul_mul_of_mul_eq_algebraMap_mul`).
 -/
 
 public section
@@ -84,5 +84,23 @@ theorem zpow_mul_zpow_of_map_algebraMap_mul {w : Rˣ} {x y : Bˣ}
   have hyn : x * y ^ n = Units.map (algebraMap R B) (w ^ n) * (y ^ n * x) :=
     ((eq_map_algebraMap_inv_mul_iff (w ^ n) (y ^ n * x) (x * y ^ n)).mp hyn').symm
   rw [zpow_mul_of_map_algebraMap_mul hyn m, ← zpow_mul, mul_comm n m]
+
+/-- If `x : Bˣ` quasi-commutes past `z : B` by a central scalar unit `w : Rˣ`, then inverse
+conjugation `x⁻¹ * z * x` scales `z` by `w⁻¹`. -/
+theorem inv_mul_mul_of_mul_eq_algebraMap_mul {w : Rˣ} {x : Bˣ} {z : B}
+    (h : (x : B) * z = algebraMap R B w * (z * (x : B))) :
+    ((x⁻¹ : Bˣ) : B) * z * (x : B) = algebraMap R B (w⁻¹ : Rˣ) * z := by
+  calc
+    ((x⁻¹ : Bˣ) : B) * z * (x : B)
+      = (algebraMap R B (w⁻¹ : Rˣ) * algebraMap R B w) *
+          (((x⁻¹ : Bˣ) : B) * z * (x : B)) := by
+        rw [← map_mul, ← Units.val_mul, inv_mul_cancel, Units.val_one, map_one, one_mul]
+    _ = algebraMap R B (w⁻¹ : Rˣ) *
+          ((algebraMap R B w * ((x⁻¹ : Bˣ) : B)) * (z * (x : B))) := by
+        simp only [mul_assoc]
+    _ = algebraMap R B (w⁻¹ : Rˣ) * (((x⁻¹ : Bˣ) : B) * ((x : B) * z)) := by
+        rw [Algebra.commutes (w : R), mul_assoc ((x⁻¹ : Bˣ) : B), h]
+    _ = algebraMap R B (w⁻¹ : Rˣ) * z := by
+        rw [x.inv_mul_cancel_left]
 
 end Units

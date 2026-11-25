@@ -10,7 +10,6 @@ public import TauCeti.Algebra.Cluster.BasedChart.OrderedProduct
 public import TauCeti.Algebra.MvPolynomial.Laurent.Basic
 import Mathlib.LinearAlgebra.Matrix.Notation
 import Mathlib.Tactic.FinCases
-import TauCeti.Data.Finsupp.MapDomain
 
 /-!
 # Sharpness and worked examples for ordered chart products and one-step exchange
@@ -188,13 +187,7 @@ example {R B : Type*} [CommSemiring R] [Semiring B] [Algebra R B]
     ((exchangeProduct x E 2 : Bˣ) : B) =
       (1 + z) * (1 + algebraMap R B ((v ^ (-2 : ℤ) : Rˣ) : R) * z) := by
   have hconj : ((x⁻¹ : Bˣ) : B) * z * (x : B) = algebraMap R B ((v ^ (-2 : ℤ) : Rˣ) : R) * z := by
-    have h1 : ((x⁻¹ : Bˣ) : B) * ((x : B) * z) = z := by rw [← mul_assoc, Units.inv_mul, one_mul]
-    rw [hxz, ← mul_assoc ((x⁻¹ : Bˣ) : B), ← Algebra.commutes ((v ^ 2 : Rˣ) : R), mul_assoc,
-      ← mul_assoc ((x⁻¹ : Bˣ) : B) z] at h1
-    have h2 := congrArg (algebraMap R B ((v ^ (-2 : ℤ) : Rˣ) : R) * ·) h1
-    rw [← mul_assoc, ← map_mul, ← Units.val_mul,
-      (by simp [zpow_ofNat] : v ^ (-2 : ℤ) * v ^ 2 = 1), Units.val_one, map_one, one_mul] at h2
-    exact h2
+    simpa [zpow_neg] using Units.inv_mul_mul_of_mul_eq_algebraMap_mul hxz
   rw [exchangeProduct_two, Units.val_mul, Units.val_mul, Units.val_mul, hE]
   congr 1
   rw [mul_add, mul_one, add_mul, Units.inv_mul, hconj]
