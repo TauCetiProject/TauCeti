@@ -137,4 +137,25 @@ theorem isFredholm_iff_finite_ker_coker (T : E →L[𝕜] F) :
   ⟨fun h => ⟨h.finite_ker, h.finite_coker⟩,
     fun h => .of_finite_ker_coker T h.1 h.2⟩
 
+/-- **Fredholm operators from surjective stabilizations.** If adjoining finitely many domain
+directions `B : S → F` makes `T` surjective with a finite-dimensional kernel, then `T` is Fredholm:
+its kernel embeds into that of `T.coprod B`, and its cokernel is the image of `S`. -/
+theorem _root_.ContinuousLinearMap.IsFredholm.of_surjective_coprod {S : Type*}
+    [NormedAddCommGroup S] [NormedSpace 𝕜 S] [FiniteDimensional 𝕜 S] (T : E →L[𝕜] F)
+    (B : S →L[𝕜] F) (h : Function.Surjective (T.coprod B))
+    (hker : FiniteDimensional 𝕜 (T.coprod B).ker) : ContinuousLinearMap.IsFredholm T := by
+  refine ContinuousLinearMap.IsFredholm.of_finite_ker_coker T ?_ ?_
+  · have := isNoetherian_of_isNoetherianRing_of_finite 𝕜 (T.coprod B).ker
+    refine Module.Finite.of_injective (LinearMap.codRestrict (T.coprod B).ker
+      ((LinearMap.inl 𝕜 E S) ∘ₗ (LinearMap.ker (T : E →ₗ[𝕜] F)).subtype) fun x ↦ ?_)
+      fun x y hxy ↦ ?_
+    · simp
+    · exact Subtype.ext (congrArg (fun v : (T.coprod B).ker ↦ (v : E × S).1) hxy)
+  · refine Module.Finite.of_surjective ((LinearMap.range (T : E →ₗ[𝕜] F)).mkQ ∘ₗ
+      (B : S →ₗ[𝕜] F)) fun y ↦ ?_
+    obtain ⟨y, rfl⟩ := Submodule.mkQ_surjective _ y
+    obtain ⟨⟨x, s⟩, rfl⟩ := h y
+    refine ⟨s, (Submodule.Quotient.eq _).2 ⟨-x, ?_⟩⟩
+    simp
+
 end TauCeti

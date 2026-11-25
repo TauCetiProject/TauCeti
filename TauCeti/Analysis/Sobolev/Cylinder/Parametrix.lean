@@ -147,6 +147,22 @@ theorem norm_cutoffL_apply_le {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β) {B : 
   rw [← Submodule.norm_coe, coe_cutoffL, ← Submodule.norm_coe x]
   exact h
 
+/-- Multiplications by `β(s)` and by `1 - β(s)` add up to the identity of `H1 V`. -/
+theorem cutoffL_add_cutoffL_one_sub {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β) {B : ℝ}
+    (hβB : ∀ s, |β s| ≤ B) (hβ'B : ∀ s, |deriv β s| ≤ B) (hβ' : ContDiff ℝ 2 fun s ↦ 1 - β s)
+    {B' : ℝ} (hβB' : ∀ s, |1 - β s| ≤ B') (hβ'B' : ∀ s, |deriv (fun s ↦ 1 - β s) s| ≤ B')
+    (x : H1 V) : cutoffL hβ hβB hβ'B x + cutoffL hβ' hβB' hβ'B' x = x := by
+  refine Subtype.ext (Lp.ext ?_)
+  filter_upwards [Lp.coeFn_add (cutoffL hβ hβB hβ'B x : Lp (V × V × V) 2 stripMeasure)
+      (cutoffL hβ' hβB' hβ'B' x : Lp (V × V × V) 2 stripMeasure),
+    coeFn_jetOperator (memLp_cutoffCoeff (hβ.of_le one_le_two) hβB hβ'B)
+      (x : Lp (V × V × V) 2 stripMeasure),
+    coeFn_jetOperator (memLp_cutoffCoeff (hβ'.of_le one_le_two) hβB' hβ'B')
+      (x : Lp (V × V × V) 2 stripMeasure)] with z h₁ h₂ h₃
+  rw [Submodule.coe_add, h₁, Pi.add_apply, coe_cutoffL, coe_cutoffL, h₂, h₃,
+    cutoffCoeff_apply, cutoffCoeff_apply, deriv_const_sub]
+  ext <;> simp only [Prod.fst_add, Prod.snd_add] <;> module
+
 end Cutoff
 
 /-! ### Zeroth-order operators with small or compactly supported coefficients -/
