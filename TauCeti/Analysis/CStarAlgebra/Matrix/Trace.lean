@@ -33,9 +33,10 @@ norm come from the C⋆-order: `y⋆(x⋆x)y ≤ ‖x‖² y⋆y` and the trace 
 * `CStarMatrix.normalizedTrace`: the normalized trace `tr_k`, with `tr_k(1) = 1` for `k ≠ 0`,
   `tr_k(xy) = tr_k(yx)` and monotonicity for the C⋆-order; `CStarMatrix.normalizedTrace_matrixUnit`
   evaluates it on matrix units.
-* `CStarMatrix.normalizedTraceMap`: `tr_k` as a positive continuous linear functional, of norm
-  at most `1` (`CStarMatrix.norm_normalizedTraceMap_le`), with equality for `k ≠ 0`, and
-  invariant under reindexing (`CStarMatrix.normalizedTraceMap_comp_reindexₐ`).
+* `CStarMatrix.normalizedTraceMap`: `tr_k` as a positive continuous linear functional, tracial
+  (`CStarMatrix.normalizedTraceMap_mul_comm`), of norm at most `1`
+  (`CStarMatrix.norm_normalizedTraceMap_le`), with equality for `k ≠ 0`, and invariant under
+  reindexing (`CStarMatrix.normalizedTraceMap_comp_reindexₐ`).
 * `CStarMatrix.normalizedTwoNorm`: the normalized 2-norm `‖x‖₂`.
 * `CStarMatrix.normalizedTwoNorm_eq_inv_sqrt_mul_frobenius_norm`: `‖x‖₂ = k^{-1/2}‖x‖_F`.
 * `CStarMatrix.normalizedTwoNorm_matrixUnit`: `‖e_ij‖₂ = k^{-1/2}`.
@@ -447,6 +448,11 @@ def normalizedTraceMap : CStarMatrix n n ℂ →P[ℂ] ℂ where
 theorem normalizedTraceMap_apply (x : CStarMatrix n n ℂ) :
     normalizedTraceMap n x = normalizedTrace x :=
   (rfl)
+
+/-- `normalizedTraceMap n` is tracial: `tr_k(xy) = tr_k(yx)`. -/
+theorem normalizedTraceMap_mul_comm (x y : CStarMatrix n n ℂ) :
+    normalizedTraceMap n (x * y) = normalizedTraceMap n (y * x) := by
+  rw [normalizedTraceMap_apply, normalizedTraceMap_apply, normalizedTrace_mul_comm]
 
 variable (n) in
 /-- The normalized trace has operator norm at most `1`. -/
