@@ -18,7 +18,9 @@ on `Ioi a`. These identities let a Mellin transform be split into tails over `(0
 
 The substitution `t = e^{-u}` turns the Mellin integrand of `f` at `s` into
 `e^{-su} f(e^{-u})` on the whole real line, and the substitution `t ↦ 1/t` relates the Mellin
-transform of `t⁻¹ f(t⁻¹)` at `s` to that of `f` at `1 - s`.
+transform of `t⁻¹ f(t⁻¹)` at `s` to that of `f` at `1 - s`, and exchanges the Mellin integrals
+over `(0, 1]` and `(1, ∞)`. Power bounds at `0+` and `+∞` give absolute convergence and
+holomorphy of these two partial Mellin integrals.
 
 The Mellin transform reads a function only on `(0, ∞)`, so functions agreeing there have the same
 transform, with the same convergence. Kernels that are extended by zero off `(0, ∞)` are compared
@@ -31,6 +33,20 @@ with their unextended forms this way.
   upper-tail indicator is integrability of the upper Mellin integrand.
 * `TauCeti.mellin_indicator_Ioi`, `TauCeti.mellin_indicator_Ici`: the Mellin transform of an
   open or closed upper-tail indicator is the upper Mellin integral.
+* `TauCeti.mellinConvergent_indicator_iff_of_subset_Ioi`,
+  `TauCeti.mellin_indicator_of_subset_Ioi`: the same for the indicator of any measurable subset of
+  `(0, ∞)`.
+* `TauCeti.mellinConvergent_comp_inv_iff`: the Mellin transform of `t ↦ f t⁻¹` converges at `s`
+  exactly when that of `f` converges at `-s`.
+* `TauCeti.integral_Ioc_cpow_smul_eq_integral_Ioi_comp_inv`,
+  `TauCeti.integrableOn_Ioc_cpow_smul_iff_integrableOn_Ioi_comp_inv`: the substitution `t ↦ t⁻¹`
+  exchanges the Mellin integrals over `(0, 1]` and `(1, ∞)`, with their absolute convergence.
+* `TauCeti.integrableOn_Ioc_cpow_smul_cpow_smul`, `TauCeti.integral_Ioc_cpow_smul_cpow_smul`: for
+  `0 < Re (z + w)`, `∫₀¹ t^{z-1} t^w c dt = c / (z + w)`, with absolute convergence.
+* `TauCeti.integrableOn_Ioc_cpow_smul_of_isBigO`, `TauCeti.integrableOn_Ioi_cpow_smul_of_isBigO`,
+  `TauCeti.differentiableAt_integral_Ioc_cpow_smul_of_isBigO`,
+  `TauCeti.differentiableAt_integral_Ioi_cpow_smul_of_isBigO`: absolute convergence and
+  holomorphy of the Mellin integrals over `(0, 1]` and `(1, ∞)` from power bounds.
 * `TauCeti.mellin_ofReal_zero`, `TauCeti.mellinConvergent_ofReal_zero_iff`: at `s = 0` the
   Mellin transform of a real function is the real integral `∫_{(0,∞)} f(x) dx/x`.
 * `MellinConvergent.of_support_inter_Ioi_subset_Icc`: for a function vanishing on `(0, ∞)` off a
@@ -66,20 +82,33 @@ theorem hasMellin_congr {f g : ℝ → E} (h : EqOn f g (Ioi 0)) {s : ℂ} {m : 
     MeasureTheory.integrableOn_congr_fun h' measurableSet_Ioi,
     MeasureTheory.setIntegral_congr_fun measurableSet_Ioi h']
 
+/-- For a measurable `s ⊆ (0, ∞)`, the Mellin transform of `s.indicator f` converges exactly when
+the Mellin integrand of `f` is integrable on `s`. -/
+theorem mellinConvergent_indicator_iff_of_subset_Ioi {f : ℝ → E} {s : Set ℝ}
+    (hs : MeasurableSet s) (hs0 : s ⊆ Ioi 0) {z : ℂ} :
+    MellinConvergent (s.indicator f) z ↔ IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (z - 1) • f t) s := by
+  simp_rw [MellinConvergent, ← indicator_smul, integrableOn_indicator_iff hs.nullMeasurableSet,
+    inter_eq_left.mpr hs0]
+
+/-- For a measurable `s ⊆ (0, ∞)`, the Mellin transform of `s.indicator f` is the Mellin integral
+of `f` over `s`. -/
+theorem mellin_indicator_of_subset_Ioi (f : ℝ → E) {s : Set ℝ} (hs : MeasurableSet s)
+    (hs0 : s ⊆ Ioi 0) (z : ℂ) :
+    mellin (s.indicator f) z = ∫ t : ℝ in s, (t : ℂ) ^ (z - 1) • f t := by
+  simp_rw [mellin, ← indicator_smul, setIntegral_indicator hs, inter_eq_right.mpr hs0]
+
 /-- For `0 ≤ a`, the Mellin transform of `(Ioi a).indicator f` converges at `s` exactly when the
 upper Mellin integrand `u ^ (s - 1) • f u` is integrable on `Ioi a`. -/
 theorem mellinConvergent_indicator_Ioi_iff {f : ℝ → E} {a : ℝ} (ha : 0 ≤ a) {s : ℂ} :
     MellinConvergent ((Ioi a).indicator f) s ↔
-      IntegrableOn (fun u : ℝ ↦ (u : ℂ) ^ (s - 1) • f u) (Ioi a) := by
-  simp_rw [MellinConvergent, ← indicator_smul, integrableOn_indicator_iff
-    measurableSet_Ioi.nullMeasurableSet, inter_eq_left.mpr (Ioi_subset_Ioi ha)]
+      IntegrableOn (fun u : ℝ ↦ (u : ℂ) ^ (s - 1) • f u) (Ioi a) :=
+  mellinConvergent_indicator_iff_of_subset_Ioi measurableSet_Ioi (Ioi_subset_Ioi ha)
 
 /-- For `0 ≤ a`, the Mellin transform of `(Ioi a).indicator f` is the upper Mellin integral of
 `f` over `Ioi a`. -/
 theorem mellin_indicator_Ioi (f : ℝ → E) {a : ℝ} (ha : 0 ≤ a) (s : ℂ) :
-    mellin ((Ioi a).indicator f) s = ∫ (u : ℝ) in Ioi a, (u : ℂ) ^ (s - 1) • f u := by
-  simp_rw [mellin, ← indicator_smul, setIntegral_indicator measurableSet_Ioi,
-    inter_eq_right.mpr (Ioi_subset_Ioi ha)]
+    mellin ((Ioi a).indicator f) s = ∫ (u : ℝ) in Ioi a, (u : ℂ) ^ (s - 1) • f u :=
+  mellin_indicator_of_subset_Ioi f measurableSet_Ioi (Ioi_subset_Ioi ha) s
 
 /-- The Mellin transform of an upper closed-ray indicator equals the upper Mellin integral.
 The boundary point has measure zero; the cutoff may be zero. -/
@@ -91,6 +120,141 @@ theorem mellin_indicator_Ici (f : ℝ → E) {a : ℝ} (ha : 0 ≤ a) (s : ℂ) 
   filter_upwards [ae_restrict_of_ae (indicator_ae_eq_of_ae_eq_set (f := f)
     (Ioi_ae_eq_Ici (a := a)))] with t ht
   rw [ht]
+
+/-- The Mellin integral of `t ↦ f t⁻¹` converges absolutely at `s` exactly when that of `f`
+converges absolutely at `-s`; this is the convergence companion of `mellin_comp_inv`. -/
+theorem mellinConvergent_comp_inv_iff (f : ℝ → E) (s : ℂ) :
+    MellinConvergent (fun t ↦ f t⁻¹) s ↔ MellinConvergent f (-s) := by
+  have hs : s / ((-1 : ℝ) : ℂ) = -s := by push_cast; ring
+  simpa only [Real.rpow_neg_one, hs] using
+    MellinConvergent.comp_rpow (f := f) (s := s) (a := -1) (by norm_num)
+
+/-- Restricting `t ↦ f t⁻¹` to `(1, ∞)` and substituting `t⁻¹` restricts `f` to `(0, 1)`. -/
+private theorem indicator_Ioi_one_comp_inv {F : Type*} [Zero F] (f : ℝ → F) :
+    (fun t : ℝ ↦ (Ioi 1).indicator (fun u ↦ f u⁻¹) t⁻¹) = (Ioo 0 1).indicator f := by
+  ext t
+  rcases lt_or_ge 0 t with ht | ht
+  · simp only [indicator_apply, mem_Ioi, mem_Ioo, inv_inv, one_lt_inv₀ ht, ht, true_and]
+  · rw [indicator_of_notMem fun h ↦ (inv_nonpos.mpr ht).not_gt (zero_lt_one.trans h),
+      indicator_of_notMem fun (h : t ∈ Ioo 0 1) ↦ ht.not_gt h.1]
+
+/-- The substitution `t ↦ t⁻¹` exchanges the Mellin integrals over `(0, 1]` and `(1, ∞)`:
+`∫₀¹ t^{z-1} f(t) dt = ∫₁^∞ t^{-z-1} f(t⁻¹) dt`. -/
+theorem integral_Ioc_cpow_smul_eq_integral_Ioi_comp_inv (f : ℝ → E) (z : ℂ) :
+    ∫ t : ℝ in Ioc 0 1, (t : ℂ) ^ (z - 1) • f t = ∫ t : ℝ in Ioi 1, (t : ℂ) ^ (-z - 1) • f t⁻¹ := by
+  rw [integral_Ioc_eq_integral_Ioo, ← mellin_indicator_of_subset_Ioi f measurableSet_Ioo
+    Ioo_subset_Ioi_self, ← indicator_Ioi_one_comp_inv, mellin_comp_inv,
+    mellin_indicator_Ioi _ zero_le_one]
+
+/-- The substitution `t ↦ t⁻¹` exchanges absolute convergence of the Mellin integrals over
+`(0, 1]` and `(1, ∞)`. -/
+theorem integrableOn_Ioc_cpow_smul_iff_integrableOn_Ioi_comp_inv (f : ℝ → E) (z : ℂ) :
+    IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (z - 1) • f t) (Ioc 0 1) ↔
+      IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (-z - 1) • f t⁻¹) (Ioi 1) := by
+  rw [integrableOn_Ioc_iff_integrableOn_Ioo, ← mellinConvergent_indicator_iff_of_subset_Ioi
+    measurableSet_Ioo Ioo_subset_Ioi_self, ← indicator_Ioi_one_comp_inv,
+    ← mellinConvergent_indicator_Ioi_iff zero_le_one, mellinConvergent_comp_inv_iff]
+
+/-- For `0 < Re (z + w)`, the function `t ↦ t^{z-1} t^w c` is integrable on `(0, 1]`. -/
+theorem integrableOn_Ioc_cpow_smul_cpow_smul {z w : ℂ} (hzw : 0 < (z + w).re) (c : E) :
+    IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (z - 1) • ((t : ℂ) ^ w • c)) (Ioc 0 1) := by
+  have h := ((mellinConvergent_indicator_iff_of_subset_Ioi measurableSet_Ioc
+    Ioc_subset_Ioi_self).mp (hasMellin_cpow_Ioc w (by rwa [← add_re])).1).smul_const c
+  simpa only [smul_assoc, IntegrableOn] using h
+
+/-- For `0 < Re (z + w)`, `∫₀¹ t^{z-1} t^w c dt = c / (z + w)`. -/
+theorem integral_Ioc_cpow_smul_cpow_smul [CompleteSpace E] {z w : ℂ}
+    (hzw : 0 < (z + w).re) (c : E) :
+    ∫ t : ℝ in Ioc 0 1, (t : ℂ) ^ (z - 1) • ((t : ℂ) ^ w • c) = (z + w)⁻¹ • c := by
+  have h := (hasMellin_cpow_Ioc w (s := z) (by rwa [← add_re])).2
+  rw [mellin_indicator_of_subset_Ioi _ measurableSet_Ioc Ioc_subset_Ioi_self] at h
+  simp_rw [← smul_assoc]
+  rw [integral_smul_const, h, one_div]
+
+/-! ### Mellin integrals over `(0, 1]` and `(1, ∞)` from power bounds -/
+
+section Truncated
+
+open Filter Asymptotics
+open scoped Topology
+
+variable {g : ℝ → E}
+
+omit [NormedSpace ℂ E] in
+/-- The restriction of `g` to `(0, 1]` keeps the Mellin hypotheses of `g` at `0+` and has every
+power decay at `+∞`. -/
+private theorem indicator_Ioc_mellin_hyp (hg : LocallyIntegrableOn g (Ioi 0)) {b : ℝ}
+    (hg0 : g =O[𝓝[>] 0] (· ^ (-b))) (a : ℝ) :
+    LocallyIntegrableOn ((Ioc 0 1).indicator g) (Ioi 0) ∧
+      (Ioc 0 1).indicator g =O[atTop] (· ^ (-a)) ∧
+      (Ioc 0 1).indicator g =O[𝓝[>] 0] (· ^ (-b)) := by
+  refine ⟨?_, ?_, ?_⟩
+  · rw [locallyIntegrableOn_iff isOpen_Ioi.isLocallyClosed] at hg ⊢
+    exact fun k hk hkc ↦ (hg k hk hkc).indicator measurableSet_Ioc
+  · refine (isBigO_zero _ _).congr' ?_ EventuallyEq.rfl
+    filter_upwards [eventually_gt_atTop 1] with t ht
+    exact (indicator_of_notMem (fun (h : t ∈ Ioc 0 1) ↦ ht.not_ge h.2) g).symm
+  · refine hg0.congr' ?_ EventuallyEq.rfl
+    filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with t ht
+    exact (indicator_of_mem (Ioo_subset_Ioc_self ht) g).symm
+
+omit [NormedSpace ℂ E] in
+/-- The restriction of `g` to `(1, ∞)` keeps the Mellin hypotheses of `g` at `+∞` and has every
+power bound at `0+`. -/
+private theorem indicator_Ioi_mellin_hyp (hg : LocallyIntegrableOn g (Ioi 0)) {a : ℝ}
+    (hg1 : g =O[atTop] (· ^ (-a))) (b : ℝ) :
+    LocallyIntegrableOn ((Ioi 1).indicator g) (Ioi 0) ∧
+      (Ioi 1).indicator g =O[atTop] (· ^ (-a)) ∧
+      (Ioi 1).indicator g =O[𝓝[>] 0] (· ^ (-b)) := by
+  refine ⟨?_, ?_, ?_⟩
+  · rw [locallyIntegrableOn_iff isOpen_Ioi.isLocallyClosed] at hg ⊢
+    exact fun k hk hkc ↦ (hg k hk hkc).indicator measurableSet_Ioi
+  · refine hg1.congr' ?_ EventuallyEq.rfl
+    filter_upwards [eventually_gt_atTop 1] with t ht
+    exact (indicator_of_mem ht g).symm
+  · refine (isBigO_zero _ _).congr' ?_ EventuallyEq.rfl
+    filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with t ht
+    exact (indicator_of_notMem (fun (h : 1 < t) ↦ ht.2.not_gt h) g).symm
+
+/-- The Mellin integral over `(0, 1]` converges absolutely on `b < Re z` when the function is
+locally integrable on `(0, ∞)` and `O(t^{-b})` as `t → 0+`. -/
+theorem integrableOn_Ioc_cpow_smul_of_isBigO (hg : LocallyIntegrableOn g (Ioi 0)) {b : ℝ}
+    (hg0 : g =O[𝓝[>] 0] (· ^ (-b))) {z : ℂ} (hz : b < z.re) :
+    IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (z - 1) • g t) (Ioc 0 1) := by
+  obtain ⟨h₁, h₂, h₃⟩ := indicator_Ioc_mellin_hyp hg hg0 (z.re + 1)
+  exact (mellinConvergent_indicator_iff_of_subset_Ioi measurableSet_Ioc Ioc_subset_Ioi_self).mp
+    (mellinConvergent_of_isBigO_rpow h₁ h₂ (lt_add_one _) h₃ hz)
+
+/-- The Mellin integral over `(1, ∞)` converges absolutely on `Re z < a` when the function is
+locally integrable on `(0, ∞)` and `O(t^{-a})` as `t → +∞`. -/
+theorem integrableOn_Ioi_cpow_smul_of_isBigO (hg : LocallyIntegrableOn g (Ioi 0)) {a : ℝ}
+    (hg1 : g =O[atTop] (· ^ (-a))) {z : ℂ} (hz : z.re < a) :
+    IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (z - 1) • g t) (Ioi 1) := by
+  obtain ⟨h₁, h₂, h₃⟩ := indicator_Ioi_mellin_hyp hg hg1 (z.re - 1)
+  exact (mellinConvergent_indicator_iff_of_subset_Ioi measurableSet_Ioi
+    (Ioi_subset_Ioi zero_le_one)).mp (mellinConvergent_of_isBigO_rpow h₁ h₂ hz h₃ (sub_one_lt _))
+
+/-- The Mellin integral over `(0, 1]` is holomorphic on `b < Re z` when the function is locally
+integrable on `(0, ∞)` and `O(t^{-b})` as `t → 0+`. -/
+theorem differentiableAt_integral_Ioc_cpow_smul_of_isBigO (hg : LocallyIntegrableOn g (Ioi 0))
+    {b : ℝ} (hg0 : g =O[𝓝[>] 0] (· ^ (-b))) {z : ℂ} (hz : b < z.re) :
+    DifferentiableAt ℂ (fun w : ℂ ↦ ∫ t : ℝ in Ioc 0 1, (t : ℂ) ^ (w - 1) • g t) z := by
+  obtain ⟨h₁, h₂, h₃⟩ := indicator_Ioc_mellin_hyp hg hg0 (z.re + 1)
+  have h := mellin_differentiableAt_of_isBigO_rpow h₁ h₂ (lt_add_one _) h₃ hz
+  rwa [show mellin ((Ioc 0 1).indicator g) = _ from
+    funext (mellin_indicator_of_subset_Ioi g measurableSet_Ioc Ioc_subset_Ioi_self)] at h
+
+/-- The Mellin integral over `(1, ∞)` is holomorphic on `Re z < a` when the function is locally
+integrable on `(0, ∞)` and `O(t^{-a})` as `t → +∞`. -/
+theorem differentiableAt_integral_Ioi_cpow_smul_of_isBigO (hg : LocallyIntegrableOn g (Ioi 0))
+    {a : ℝ} (hg1 : g =O[atTop] (· ^ (-a))) {z : ℂ} (hz : z.re < a) :
+    DifferentiableAt ℂ (fun w : ℂ ↦ ∫ t : ℝ in Ioi 1, (t : ℂ) ^ (w - 1) • g t) z := by
+  obtain ⟨h₁, h₂, h₃⟩ := indicator_Ioi_mellin_hyp hg hg1 (z.re - 1)
+  have h := mellin_differentiableAt_of_isBigO_rpow h₁ h₂ hz h₃ (sub_one_lt _)
+  rwa [show mellin ((Ioi 1).indicator g) = _ from
+    funext (mellin_indicator_Ioi g zero_le_one)] at h
+
+end Truncated
 
 /-- For a real function `f`, the Mellin transform of `f` at `0` is the real integral
 `∫_{(0,∞)} f(x) dx/x`. -/
@@ -144,11 +308,8 @@ theorem mellin_eq_integral_exp_smul (f : ℝ → E) (s : ℂ) :
 theorem mellinConvergent_inv_smul_comp_inv {f : ℝ → E} {s : ℂ}
     (hf : MellinConvergent f (1 - s)) :
     MellinConvergent (fun t : ℝ ↦ (t : ℂ)⁻¹ • f t⁻¹) s := by
-  have hi : MellinConvergent (fun t ↦ f t⁻¹) (s - 1) := by
-    have hs : (s - 1) / ((-1 : ℝ) : ℂ) = 1 - s := by push_cast; ring
-    simpa only [Real.rpow_neg_one] using
-      (MellinConvergent.comp_rpow (f := f) (s := s - 1) (a := -1) (by norm_num)).mpr
-        (by rwa [hs])
+  have hi : MellinConvergent (fun t ↦ f t⁻¹) (s - 1) :=
+    (mellinConvergent_comp_inv_iff f (s - 1)).mpr (by rwa [neg_sub])
   simpa only [cpow_neg_one] using
     (MellinConvergent.cpow_smul (f := fun t ↦ f t⁻¹) (s := s) (a := -1)).mpr
       (by rwa [← sub_eq_add_neg])

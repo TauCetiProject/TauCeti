@@ -24,6 +24,7 @@ which it takes each value.
 * `Finsupp.toMultiset_add_single_one`: `toMultiset (e + single a 1) = a ::ₘ toMultiset e`.
 * `Finsupp.induction_add_single_one`: induction on exponent vectors by unit steps.
 * `Finsupp.toMultiset_sum_single_one`: `toMultiset (∑ i ∈ s, single (p i) 1) = s.val.map p`.
+* `Finsupp.sum_single_one_injective`: a finset is determined by the sum of its unit steps.
 * `Finsupp.sum_single_one_apply`: along a family `f` indexed by a finite type, the coefficient of
   `a` in `∑ t, single (f t) 1` is the number of indices `t` with `f t = a`;
   `Finsupp.sum_sum_single_one_apply` and `Finsupp.sum_single_one_apply_ne_zero_iff` record that
@@ -82,6 +83,12 @@ theorem toMultiset_sum_single_one {α ι : Type*} (s : Finset ι) (p : ι → α
     toMultiset (∑ i ∈ s, single (p i) 1) = s.val.map p := by
   simpa [toMultiset_sum, one_nsmul, Finset.sum_map_val] using
     Multiset.sum_map_singleton (s.val.map p)
+
+/-- A finite set is determined by the sum of the unit steps at its elements, the exponent vector
+of its squarefree monomial. -/
+theorem sum_single_one_injective {ι : Type*} :
+    Function.Injective fun s : Finset ι ↦ ∑ i ∈ s, single i (1 : ℕ) := fun s t h ↦
+  Finset.val_inj.1 (by simpa [toMultiset_sum_single] using congr(toMultiset $h))
 
 /-- The letter counts of a family: the coefficient of `a` in `∑ₜ single (f t) 1` is the
 number of indices `t` with `f t = a`. -/
