@@ -138,6 +138,31 @@ private theorem map_mfderiv_eq {x : M} (hFx : (mfderiv I I₁ F x).IsInvertible)
     ⟨_, hFD' v hv, hFx.self_apply_inverse v⟩
 
 omit [CompleteSpace E] [IsManifold I 2 M] [CompleteSpace E₁] [IsManifold I₁ 2 M₁] in
+/-- An invertible differential mapping `D x` into `D₁ (F x)`, whose inverse maps `D₁ (F x)` into
+`D x`, induces an injective map of contact lines `T_x M ⧸ D x → T_(F x) M₁ ⧸ D₁ (F x)`. -/
+private theorem injective_mapQ_mfderiv {x : M} (hFx : (mfderiv I I₁ F x).IsInvertible)
+    (hFD : ∀ u ∈ D x, mfderiv I I₁ F x u ∈ D₁ (F x))
+    (hFD' : ∀ v ∈ D₁ (F x), (mfderiv I I₁ F x).inverse v ∈ D x) :
+    Function.Injective ((D x).mapQ (D₁ (F x)) (mfderiv I I₁ F x).toLinearMap hFD) := by
+  refine (injective_iff_map_eq_zero _).2 fun a ha ↦ ?_
+  induction a using Submodule.Quotient.induction_on with
+  | H u =>
+    rw [Submodule.mapQ_apply, Submodule.Quotient.mk_eq_zero] at ha
+    rw [Submodule.Quotient.mk_eq_zero, ← hFx.inverse_apply_self u]
+    exact hFD' _ ha
+
+omit [CompleteSpace E] [IsManifold I 2 M] [CompleteSpace E₁] [IsManifold I₁ 2 M₁] in
+/-- The restriction of the invertible differential to an equivalence `D x ≃ D₁ (F x)` agrees with
+the restriction of the differential to a map `D x → D₁ (F x)`. -/
+private theorem ofSubmodules_ofBijective_mfderiv_apply {x : M}
+    (hFx : (mfderiv I I₁ F x).IsInvertible) (hFD : ∀ u ∈ D x, mfderiv I I₁ F x u ∈ D₁ (F x))
+    (hmap : (D x).map (LinearEquiv.ofBijective (mfderiv I I₁ F x).toLinearMap hFx.bijective :
+      TangentSpace I x →ₗ[ℝ] TangentSpace I₁ (F x)) = D₁ (F x)) (u : D x) :
+    (LinearEquiv.ofBijective (mfderiv I I₁ F x).toLinearMap hFx.bijective).ofSubmodules _ _ hmap u =
+      (mfderiv I I₁ F x).toLinearMap.restrict hFD u :=
+  Subtype.ext (by simp)
+
+omit [CompleteSpace E] [IsManifold I 2 M] [CompleteSpace E₁] [IsManifold I₁ 2 M₁] in
 /-- A map which is `C^n` at a point, for some `n ≥ 2`, is differentiable there. -/
 private theorem mdifferentiableAt_of_two_le {n : ℕ∞ω} {x : M} (hF : ContMDiffAt I I₁ n F x)
     (hn : 2 ≤ n) : MDifferentiableAt I I₁ F x :=
@@ -177,8 +202,14 @@ def conformalSymplecticNormalEquiv {n : ℕ∞ω} (hD : IsContMDiffDistribution 
   LinearMap.symplecticNormalCongr _ _
     ((LinearEquiv.ofBijective (mfderiv I I₁ F (f y)).toLinearMap hFx.bijective).ofSubmodules _ _
       hmap)
-    (ℓ := (Submodule.Quotient.equiv _ _ _ hmap).toLinearMap) (LinearEquiv.injective _)
-    (fun u v ↦ distributionLeviForm_restrict_mfderiv hD hD₁ hF hn hFx hFD hFD' u v)
+    (ℓ := (D (f y)).mapQ (D₁ (F (f y))) (mfderiv I I₁ F (f y)).toLinearMap hFD)
+    (injective_mapQ_mfderiv hFx hFD hFD'.self_of_nhds)
+    -- The target distribution is indexed by `(F ∘ f) y`, which `rw` does not unfold to
+    -- `F (f y)`, so the restrictions are identified in term mode.
+    (fun u v ↦ (congrArg₂ (distributionLeviForm D₁ (F (f y)) · ·)
+      (ofSubmodules_ofBijective_mfderiv_apply hFx hFD hmap u)
+      (ofSubmodules_ofBijective_mfderiv_apply hFx hFD hmap v)).trans
+      (distributionLeviForm_restrict_mfderiv hD hD₁ hF hn hFx hFD hFD' u v))
     (map_comap_range_mfderiv hFx hmap (mdifferentiableAt_of_two_le hF hn) hf)
 
 /-- The isomorphism of conformal symplectic normal spaces induced by `F` sends the class of `u` to
