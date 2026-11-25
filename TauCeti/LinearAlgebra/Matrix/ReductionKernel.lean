@@ -96,16 +96,23 @@ private theorem det_eq_zero_of_forall_exists_eq_row [DecidableEq κ] {A : Matrix
       simpa [hi] using hA i j
     · simpa [nsmul_eq_mul] using (Nat.cast_lt (α := ℤ)).2 hp
 
+omit [Finite ι] in
+/-- A vector spanning the kernel of a matrix lies in that kernel. -/
+private theorem mulVec_eq_zero_of_ker_eq_span {R : Type*} [CommRing R] {A : Matrix ι κ R}
+    {x : κ → R} (hker : LinearMap.ker A.mulVecLin = R ∙ x) : A *ᵥ x = 0 := by
+  simpa using (hker ▸ Submodule.mem_span_singleton_self x : x ∈ LinearMap.ker A.mulVecLin)
+
 /-- If the kernel of the reduction of `A` modulo `p` is the line through `x`, there is a square
-integer matrix `M` with a row `Pi.single j₀ 1`, where `x j₀ ≠ 0`, whose other rows are rows of
-`A`, and whose determinant is nonzero modulo `p`. -/
+integer matrix `M` with a row `Pi.single j₀ 1`, whose other rows are rows of `A`, and whose
+determinant is nonzero modulo `p`. -/
 private theorem exists_det_map_ne_zero [DecidableEq κ] {A : Matrix ι κ ℤ} {x : κ → ZMod p}
-    (hx : x ≠ 0) (hAx : A.map (Int.castRingHom (ZMod p)) *ᵥ x = 0)
+    (hx : x ≠ 0)
     (hker : LinearMap.ker (A.map (Int.castRingHom (ZMod p))).mulVecLin = ZMod p ∙ x) :
     ∃ (M : Matrix κ κ ℤ) (k₀ j₀ : κ), M k₀ = Pi.single j₀ 1 ∧ (∀ k ≠ k₀, ∃ i, M k = A i) ∧
-      x j₀ ≠ 0 ∧ (M.map (Int.castRingHom (ZMod p))).det ≠ 0 := by
+      (M.map (Int.castRingHom (ZMod p))).det ≠ 0 := by
   classical
   set A' := A.map (Int.castRingHom (ZMod p))
+  have hAx : A' *ᵥ x = 0 := mulVec_eq_zero_of_ker_eq_span hker
   obtain ⟨j₀, hj₀⟩ : ∃ j, x j ≠ 0 := by simpa [funext_iff] using hx
   have hcard : 0 < Fintype.card κ := Fintype.card_pos_iff.2 ⟨j₀⟩
   -- The reduction has rank `N - 1`: choose `N - 1` independent rows.
@@ -133,7 +140,7 @@ private theorem exists_det_map_ne_zero [DecidableEq κ] {A : Matrix ι κ ℤ} {
     exact hj₀ (by simpa using key _ hmem)
   let σ : κ ≃ Option (Fin (Fintype.card κ - 1)) := Fintype.equivOfCardEq (by simp; omega)
   let M : Matrix κ κ ℤ := Matrix.of fun k ↦ Option.casesOn' (σ k) (Pi.single j₀ 1) fun t ↦ A (r t)
-  refine ⟨M, σ.symm none, j₀, funext fun j ↦ by simp [M], fun k hk ↦ ?_, hj₀, ?_⟩
+  refine ⟨M, σ.symm none, j₀, funext fun j ↦ by simp [M], fun k hk ↦ ?_, ?_⟩
   · obtain ⟨t, ht⟩ := Option.ne_none_iff_exists'.1 fun h ↦ hk (σ.eq_symm_apply.2 h)
     exact ⟨r t, funext fun j ↦ by simp [M, ht]⟩
   · have hM : M.map (Int.castRingHom (ZMod p)) =
@@ -190,10 +197,8 @@ theorem exists_primitive_mulVec_eq_zero_of_ker_map_eq_span (A : Matrix ι κ ℤ
       (∀ j, |v j| ≤ ((Fintype.card κ)! * max B 1 ^ Fintype.card κ : ℕ)) ∧
       ∃ c : ZMod p, c ≠ 0 ∧ (fun j ↦ (v j : ZMod p)) = c • x := by
   classical
-  have hAx : A.map (Int.castRingHom (ZMod p)) *ᵥ x = 0 := by
-    simpa using (hker ▸ Submodule.mem_span_singleton_self x :
-      x ∈ LinearMap.ker (A.map (Int.castRingHom (ZMod p))).mulVecLin)
-  obtain ⟨M, k₀, j₀, hMk₀, hM, -, hdet⟩ := exists_det_map_ne_zero hx hAx hker
+  have hAx : A.map (Int.castRingHom (ZMod p)) *ᵥ x = 0 := mulVec_eq_zero_of_ker_eq_span hker
+  obtain ⟨M, k₀, j₀, hMk₀, hM, hdet⟩ := exists_det_map_ne_zero hx hker
   -- The cofactors `w` along row `k₀`: pairing with `w` is the determinant with row `k₀` replaced.
   set w : κ → ℤ := Mᵀ.adjugate k₀
   have hw (a : κ → ℤ) : (M.updateRow k₀ a).det = w ⬝ᵥ a := by
