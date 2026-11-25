@@ -52,8 +52,9 @@ uniqueness theorems, and in fact a homeomorphism
 orbit of any vortex with that divisor
 (`TauCeti.Vortex.SobolevFieldSpace.vortexModuliHomeomorph_symm_apply_mk`).
 
-Whether the divisor is a diffeomorphism onto `Sym ℂ m`, with its smooth structure through the
-coefficients of the monic polynomial with those roots, is not treated here.
+For this atlas the divisor is a diffeomorphism onto `Sym ℂ m` in the coefficients of the monic
+polynomial with those roots (`TauCeti.Vortex.SobolevFieldSpace.vortexModuliDiffeomorph`, in
+`TauCeti.Analysis.PDE.Vortex.FramedGauge.SmoothDivisor`).
 
 ## Main results
 
