@@ -17,7 +17,7 @@ Let `F = (H, J)` be the energy–momentum map of the spherical pendulum, and let
 `γ(t) = (1 + r cos t, r sin t)` be a circle about its focus–focus value `(1, 0)`. Let `U` be any
 open set of regular values of `F` containing `γ`, so that over `U` the map `F` is a regular
 Lagrangian torus fibration
-(`TauCeti.isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec_of_le`). This file proves
+(`TauCeti.isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec`). This file proves
 that this fibration has **no global action–angle coordinates**
 (`TauCeti.not_exists_actionAngle_sphericalPendulumEnergyMomentumVec`): there is no injective local
 diffeomorphism `Φ` from the states over `U` into the cotangent bundle of a torus `(ℝ/pℤ)^ι`
@@ -87,10 +87,10 @@ theorem mem_hamiltonianFlowStabilizer_sphericalPendulum_iff_mem_periodLattice
         isIntegrableSystem_sphericalPendulumEnergyMomentumVec.contMDiff
         isIntegrableSystem_sphericalPendulumEnergyMomentumVec.poissonBracket_eq_zero
         isCompleteVectorField_hamiltonianVectorField_sphericalPendulumEnergyMomentumVec y ↔
-      α ∈ (isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec_of_le hU).periodLattice
+      α ∈ (isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec hU).periodLattice
         (isSymplectic_sphericalPendulumSymplecticForm.mpullback_subtype_val _).isClosed
         ⟨sphericalPendulumEnergyMomentumVec y, y.property⟩ := by
-  set h := isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec_of_le hU
+  set h := isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec hU
   have hκ : ContMDiff 𝓘(ℝ, Fin 2 → ℝ) 𝓘(ℝ, Fin 2 → ℝ) ∞ (Subtype.val : U → Fin 2 → ℝ) :=
     contMDiff_subtypeVal
   -- The covector `α` is the differential of `c ↦ v ⬝ᵥ c`, the composite of the linear map
@@ -135,7 +135,7 @@ private theorem mem_hamiltonianFlowStabilizer_of_smul_comp_mem_periodLattice
     (y : U.comap ⟨_, isIntegrableSystem_sphericalPendulumEnergyMomentumVec.contMDiff.continuous⟩)
     {ι : Type*} {p : ℝ} {D : (Fin 2 → ℝ) →L[ℝ] ι → ℝ} {j : ι}
     (hD : p • (ContinuousLinearMap.proj j).comp D ∈
-      (isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec_of_le hU).periodLattice
+      (isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec hU).periodLattice
         (isSymplectic_sphericalPendulumSymplecticForm.mpullback_subtype_val _).isClosed
         ⟨sphericalPendulumEnergyMomentumVec y, y.property⟩) :
     (fun i ↦ p * D (Pi.single i 1) j) ∈
@@ -157,7 +157,7 @@ private theorem not_forall_periodLattice_eq_closure_of_pos (hr : 0 < r)
     (hU : U ≤ sphericalPendulumRegularValues) (hγU : ∀ t, ![1 + r * cos t, r * sin t] ∈ U)
     {ι : Type*} [Fintype ι] (p : ℝ) {a : U → ι → ℝ}
     (ha : ContMDiff 𝓘(ℝ, Fin 2 → ℝ) 𝓘(ℝ, ι → ℝ) 1 a) :
-    ¬ ∀ b, (isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec_of_le hU).periodLattice
+    ¬ ∀ b, (isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec hU).periodLattice
         (isSymplectic_sphericalPendulumSymplecticForm.mpullback_subtype_val _).isClosed b =
       AddSubgroup.closure (range fun j ↦ p • (ContinuousLinearMap.proj j).comp
         (mfderiv 𝓘(ℝ, Fin 2 → ℝ) 𝓘(ℝ, ι → ℝ) a b : (Fin 2 → ℝ) →L[ℝ] ι → ℝ)) := by
@@ -165,7 +165,7 @@ private theorem not_forall_periodLattice_eq_closure_of_pos (hr : 0 < r)
   -- States `y t` over the circle `γ(t) = (1 + r cos t, r sin t)`.
   let γ : ℝ → U := fun t ↦ ⟨_, hγU t⟩
   choose y hy using fun t ↦
-    (isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec_of_le hU).surjective (γ t)
+    (isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec hU).surjective (γ t)
   have hb (t : ℝ) : (⟨sphericalPendulumEnergyMomentumVec (y t), (y t).property⟩ : U) = γ t := hy t
   have hx (t : ℝ) : sphericalPendulumEnergyMomentum (y t : sphericalPendulumPhaseSpace) =
       (1 + r * cos t, r * sin t) := by
@@ -221,7 +221,7 @@ theorem not_forall_periodLattice_eq_closure_sphericalPendulum
     (hU : U ≤ sphericalPendulumRegularValues) (hγU : ∀ t, ![1 + r * cos t, r * sin t] ∈ U)
     {ι : Type*} [Fintype ι] (p : ℝ) {a : U → ι → ℝ}
     (ha : ContMDiff 𝓘(ℝ, Fin 2 → ℝ) 𝓘(ℝ, ι → ℝ) 1 a) :
-    ¬ ∀ b, (isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec_of_le hU).periodLattice
+    ¬ ∀ b, (isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec hU).periodLattice
         (isSymplectic_sphericalPendulumSymplecticForm.mpullback_subtype_val _).isClosed b =
       AddSubgroup.closure (range fun j ↦ p • (ContinuousLinearMap.proj j).comp
         (mfderiv 𝓘(ℝ, Fin 2 → ℝ) 𝓘(ℝ, ι → ℝ) a b : (Fin 2 → ℝ) →L[ℝ] ι → ℝ)) := by
@@ -260,7 +260,7 @@ theorem not_exists_actionAngle_sphericalPendulumEnergyMomentumVec
         ∀ y, CotangentBundle.torusActions p (Φ y) =
           a ⟨sphericalPendulumEnergyMomentumVec y, y.property⟩ := by
   rintro ⟨a, Φ, hΦ, hΦi, hΦσ, hΦa⟩
-  have h := isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec_of_le hU
+  have h := isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec hU
   -- Global action–angle coordinates frame the period lattices by the exact forms `p • daⱼ`.
   exact not_forall_periodLattice_eq_closure_sphericalPendulum hU hγU p
     ((h.contMDiff_of_actionAngle p hΦ hΦa).of_le (by simp))
