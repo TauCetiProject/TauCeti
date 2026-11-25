@@ -9,10 +9,11 @@ public import TauCeti.RingTheory.Dagger.FringePresentation.Basic
 
 import TauCeti.Analysis.Normed.Ring.Finsupp
 import TauCeti.Analysis.Normed.Unbundled.RootBound
+import TauCeti.RingTheory.Dagger.DaggerAlgebra.Continuity
 import TauCeti.RingTheory.Dagger.DaggerAlgebra.FaithfullyFlat
 import TauCeti.RingTheory.Dagger.DaggerAlgebra.WeakCompleteness
+import TauCeti.RingTheory.Dagger.FringePresentation.Topology
 import TauCeti.RingTheory.Dagger.Radius
-import TauCeti.RingTheory.Dagger.TateLift
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.BoundedEval
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.ClosedIdeal
 
@@ -66,8 +67,8 @@ public section
 namespace TauCeti.Dagger.FringePresentation
 
 open Filter Topology _root_.MvPowerSeries Polynomial
-open TauCeti.MvPowerSeries (restrictedRadiusAlgHom restrictedRadiusAlgHom_apply
-  polynomialToRestricted polynomialToRestricted_X denseRange_polynomialToRestricted)
+open TauCeti.MvPowerSeries (polynomialToRestricted polynomialToRestricted_X
+  denseRange_polynomialToRestricted)
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
   {A B : Type*} [CommRing A] [Algebra K A] [CommRing B] [Algebra K B]
@@ -79,17 +80,6 @@ private local instance fact_pos_coe {R : ℝ} (ρ : Set.Ioc (1 : ℝ) R) : Fact 
 section Lift
 
 variable (Q : FringePresentation K B)
-
-omit [CompleteSpace K] in
-/-- A property holding at all real radii close enough to `1` holds at all radii of `Q` close
-enough to `1`. -/
-private theorem eventually_atBot_of_nhdsGT {p : ℝ → Prop} (h : ∀ᶠ ρ in 𝓝[>] (1 : ℝ), p ρ) :
-    ∀ᶠ ρ in atBot, p ((ρ : Set.Ioc (1 : ℝ) Q.radius) : ℝ) := by
-  obtain ⟨u, hu, hpu⟩ := (mem_nhdsGT_iff_exists_Ioo_subset' Q.one_lt_radius).mp h
-  refine eventually_atBot.mpr ⟨⟨min ((1 + u) / 2) Q.radius, ?_, min_le_right _ _⟩,
-    fun ρ hρ ↦ hpu ⟨ρ.property.1, ?_⟩⟩
-  · exact lt_min (by linarith [hu.out]) Q.one_lt_radius
-  · exact (Subtype.coe_le_coe.mpr hρ).trans_lt ((min_le_left _ _).trans_lt (by linarith [hu.out]))
 
 omit [CompleteSpace K] in
 /-- A monic polynomial over `W_m` whose coefficients are restricted at a radius `ρ` of `Q`, with
@@ -172,45 +162,6 @@ private theorem eventually_exists_ofStage_eq_norm_pow_le {b : B} (hb : supSemino
   exact congrArg Q.proj (Subtype.ext (washnitzerAlgebra.coe_ofRestricted _ _ _))
 
 end Lift
-
-section Continuity
-
-variable [IsDaggerAlgebra K B]
-
-/-- A homomorphism `W_k → B` into a dagger algebra, restricted to the series of `T_k(r)` for a
-radius `r > 1`, is continuous into the completion of `B`: it extends to the Tate algebra `T_k`,
-and maps between affinoid algebras are continuous. -/
-private theorem continuous_toCompletion_comp_ofRestricted {k : ℕ}
-    (χ : washnitzerAlgebra (Fin k) K →ₐ[K] B) {r : ℝ} (hr : 1 < r) :
-    letI (_ : Fin k) : Fact (0 < r) := ⟨zero_lt_one.trans hr⟩
-    Continuous ((toCompletion K B).comp (χ.comp (washnitzerAlgebra.ofRestricted hr
-      fun _ : Fin k ↦ le_rfl))) := by
-  let (_ : Fin k) : Fact (0 < r) := ⟨zero_lt_one.trans hr⟩
-  have hB := isAffinoidAlgebra_completion (K := K) (A := B)
-  have := (isAffinoidAlgebra_tate (K := K) (σ := Fin k)).isNoetherianRing
-  convert (IsAffinoidAlgebra.continuous_algHom (K := K) (A := completion K B)
-      (B := IsRestricted.subring (R := K) (fun _ : Fin k ↦ (1 : ℝ))) hB
-      (washnitzerAlgebra.liftToTate hB ((toCompletion K B).comp χ))).comp
-    (TauCeti.MvPowerSeries.continuous_restrictedRadiusHom (R := K)
-      (fun _ ↦ zero_le_one) fun _ ↦ hr.le) using 1
-  funext f
-  rw [Function.comp_apply, ← restrictedRadiusAlgHom_apply,
-    ← washnitzerAlgebra.toTate_ofRestricted hr fun _ ↦ le_rfl,
-    washnitzerAlgebra.liftToTate_toTate, AlgHom.comp_apply, AlgHom.comp_apply, AlgHom.comp_apply]
-
-variable (Q : FringePresentation K B)
-
-/-- The stage maps `B_ρ → B` of a fringe presentation of a dagger algebra are continuous for the
-topology of its completion: their composites with the completion map `B → B̂` are continuous for
-the quotient Gauss norms of the stages. -/
-private theorem continuous_toCompletion_comp_ofStage (ρ : Set.Ioc (1 : ℝ) Q.radius) :
-    Continuous ((toCompletion K B).comp (Q.ofStage ρ)) := by
-  refine (QuotientAddGroup.isQuotientMap_mk (Q.stageIdeal ρ).toAddSubgroup).continuous_iff.mpr ?_
-  convert continuous_toCompletion_comp_ofRestricted Q.proj ρ.property.1 using 1
-  funext f
-  exact congrArg (toCompletion K B) (Q.ofStage_mk ρ f)
-
-end Continuity
 
 section Factorisation
 
