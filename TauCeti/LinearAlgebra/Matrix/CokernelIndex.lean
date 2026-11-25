@@ -17,6 +17,7 @@ import TauCeti.Algebra.Group.Subgroup.Pi
 import TauCeti.Algebra.Module.Submodule.Map
 import TauCeti.GroupTheory.Index.Endomorphism
 import TauCeti.GroupTheory.Index.Pi
+import TauCeti.SetTheory.Cardinal.Finite
 import Mathlib.Data.ZMod.QuotientRing
 
 /-!
@@ -235,21 +236,17 @@ theorem card_quotient_range_mulVecLin_subring [DecidableEq ι] {A : Matrix ι ι
   have hcomp : f.comp H.subtype = H.subtype.comp g := by
     ext w i
     simp [H, f, g, e, mulVec, dotProduct]
-  rw [Nat.card_congr eQuot.toEquiv,
-    AddSubgroup.natCard_quotient_range_eq_of_comp_subtype (H := H) hinj hcomp]
-  rfl
+  rw [Nat.card_congr eQuot.toEquiv, ← AddSubgroup.index,
+    AddSubgroup.index_range_eq_of_comp_subtype (H := H) hinj hcomp,
+    ← LinearMap.range_toAddSubgroup, ← Submodule.cardQuot, Submodule.cardQuot_apply]
 
 /-- If `S` has finite additive index in `R` and `(A.det : R) ∈ nonZeroDivisors R`, the cokernel of
 `A` over `S` is finite if and only if the cokernel of `A.map S.subtype` over `R` is finite. -/
 theorem finite_quotient_range_mulVecLin_subring_iff [DecidableEq ι] {A : Matrix ι ι S}
     (hA : (A.det : R) ∈ nonZeroDivisors R) :
     Finite ((ι → S) ⧸ LinearMap.range A.mulVecLin) ↔
-      Finite ((ι → R) ⧸ LinearMap.range (A.map S.subtype).mulVecLin) := by
-  have h1 : Nonempty ((ι → S) ⧸ LinearMap.range A.mulVecLin) := ⟨0⟩
-  have h2 : Nonempty ((ι → R) ⧸ LinearMap.range (A.map S.subtype).mulVecLin) := ⟨0⟩
-  exact (and_iff_right h1).symm.trans <| Nat.card_ne_zero.symm.trans <|
-    (eq_iff_iff.mp (congrArg (· ≠ 0) (card_quotient_range_mulVecLin_subring hA))).trans <|
-      Nat.card_ne_zero.trans (and_iff_right h2)
+      Finite ((ι → R) ⧸ LinearMap.range (A.map S.subtype).mulVecLin) :=
+  TauCeti.finite_iff_of_natCard_eq (card_quotient_range_mulVecLin_subring hA)
 
 end Subring
 
@@ -337,7 +334,7 @@ private theorem card_quotient_range_mulVecLin_eq_of_infinite_pid [∀ k, Infinit
         have hk : ((A.map S.subtype).map (Pi.evalRingHom D k)).det = (A.det : ∀ k, D k) k := by
           rw [← RingHom.mapMatrix_apply, ← RingHom.map_det,
             ← RingHom.mapMatrix_apply, ← RingHom.map_det]
-          rfl
+          simp
         rw [card_quotient_range_mulVecLin_eq_card_quotient_span_det (hk ▸ hdet_ne k), hk]
     _ = Nat.card ((∀ k, D k) ⧸ Ideal.span {(A.det : ∀ k, D k)}) := by
         rw [← Nat.card_pi,
@@ -360,13 +357,9 @@ theorem card_quotient_range_mulVecLin_eq_card_quotient_span_det_of_subring_pi
   let e : S ⧸ K ≃+* φ.range := RingHom.quotientKerEquivRange φ
   have hmk_det : Ideal.Quotient.mk K A.det ∈ nonZeroDivisors (S ⧸ K) :=
     Ideal.Quotient.mk_mem_nonZeroDivisors_of_finite K hA
-  have hAbar_det : (A.map (Ideal.Quotient.mk K)).det = Ideal.Quotient.mk K A.det := by
-    rw [← RingHom.mapMatrix_apply, ← RingHom.map_det]
   let A' : Matrix ι ι φ.range := (A.map (Ideal.Quotient.mk K)).map e.toRingHom
   have hA'_det_eq : A'.det = e (Ideal.Quotient.mk K A.det) := by
-    dsimp only [A']
-    rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, hAbar_det]
-    rfl
+    simp [A', ← RingHom.mapMatrix_apply, ← RingHom.map_det]
   have hA'_det : A'.det ∈ nonZeroDivisors φ.range := by
     rw [hA'_det_eq, mem_nonZeroDivisors_iff_left]
     intro y hy
@@ -395,11 +388,9 @@ theorem finite_quotient_range_mulVecLin_iff_finite_quotient_span_det_of_subring_
     {S : Subring (∀ k, D k)} [S.toAddSubgroup.FiniteIndex]
     {A : Matrix ι ι S} (hA : A.det ∈ nonZeroDivisors S) :
     Finite ((ι → S) ⧸ LinearMap.range A.mulVecLin) ↔
-      Finite (S ⧸ Ideal.span {A.det}) := by
-  have h1 : Nonempty ((ι → S) ⧸ LinearMap.range A.mulVecLin) := ⟨0⟩
-  have h2 : Nonempty (S ⧸ Ideal.span {A.det}) := ⟨0⟩
-  have hcard := card_quotient_range_mulVecLin_eq_card_quotient_span_det_of_subring_pi hA
-  simpa [Nat.card_ne_zero, h1, h2] using congrArg (· ≠ 0) hcard
+      Finite (S ⧸ Ideal.span {A.det}) :=
+  TauCeti.finite_iff_of_natCard_eq
+    (card_quotient_range_mulVecLin_eq_card_quotient_span_det_of_subring_pi hA)
 
 end SubringPiPID
 

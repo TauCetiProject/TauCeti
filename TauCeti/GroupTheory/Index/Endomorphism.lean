@@ -112,7 +112,7 @@ spaces `H ⧸ g.range` and `G ⧸ f.range` have the same cardinality (`0` when i
 the quotients `H ⧸ g.range` and `G ⧸ f.range` have the same cardinality (`0` when infinite). -/]
 theorem natCard_quotient_range_eq_of_comp_subtype [H.FiniteIndex] {g : H →* H} {f : G →* G}
     (hf : Function.Injective f) (hgf : f.comp H.subtype = H.subtype.comp g) :
-    Nat.card (H ⧸ g.range) = Nat.card (G ⧸ f.range) :=
-  index_range_eq_of_comp_subtype hf hgf
+    Nat.card (H ⧸ g.range) = Nat.card (G ⧸ f.range) := by
+  simpa only [index] using index_range_eq_of_comp_subtype hf hgf
 
 end Subgroup

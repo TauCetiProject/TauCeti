@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.Presentation.Quadratic
 public import TauCeti.LinearAlgebra.Matrix.CokernelIndex
+import TauCeti.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.Field.ZMod
 
 /-!
@@ -100,10 +101,8 @@ theorem card_eq [Module.Finite S N] (P : QuadraticPresentation S N) {x : S}
 `S ⧸ Ideal.span {x}` is finite. -/
 theorem finite_iff_finite_quotient_span [Module.Finite S N] (P : QuadraticPresentation S N)
     {x : S} (hx : x ∈ nonZeroDivisors S) (hfitt : fittingIdeal S N 0 = Ideal.span {x}) :
-    Finite N ↔ Finite (S ⧸ Ideal.span {x}) := by
-  have h1 : Nonempty N := ⟨0⟩
-  have h2 : Nonempty (S ⧸ Ideal.span {x}) := ⟨0⟩
-  simpa [Nat.card_ne_zero, h1, h2] using congrArg (· ≠ 0) (P.card_eq hx hfitt)
+    Finite N ↔ Finite (S ⧸ Ideal.span {x}) :=
+  finite_iff_of_natCard_eq (P.card_eq hx hfitt)
 
 end SubringPiPID
 

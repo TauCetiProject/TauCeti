@@ -10,24 +10,34 @@ public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 import TauCeti.Algebra.Module.Submodule.Pointwise
 import Mathlib.Data.ZMod.QuotientRing
+import Mathlib.LinearAlgebra.Isomorphisms
 
 /-!
-# Regular elements modulo finite ideals
+# Regular elements: finite ideals and principal-quotient cardinalities
 
-Let `R` be a commutative ring and `I` an ideal of `R` whose underlying set is finite (rather than
-merely of finite index in `R`). If `a ∈ nonZeroDivisors R`, multiplication by `a` is an injective
-endomorphism of the finite set `I`, hence surjective, so `a • I = I`. Consequently:
+Let `R` be a commutative ring and `a ∈ nonZeroDivisors R`.
 
-1. `I ≤ Ideal.span {a}` (`Ideal.le_span_singleton_of_finite`), so the Third Isomorphism Theorem
-   identifies `(R ⧸ I) ⧸ Ideal.span {mk I a}` with `R ⧸ Ideal.span {a}`
-   (`Ideal.quotientSpanSingletonQuotientEquivOfFinite`).
-2. The image of `a` in `R ⧸ I` remains a non-zero-divisor
-   (`Ideal.Quotient.mk_mem_nonZeroDivisors_of_finite`): if `a * r ∈ I = a • I`, then `a * r = a * y`
-   for some `y ∈ I`, and cancelling `a` gives `r = y ∈ I`.
+1. **Modulo a finite ideal.** If `I` is an ideal of `R` whose underlying set is finite (rather than
+   merely of finite index in `R`), multiplication by `a` is an injective endomorphism of the finite
+   set `I`, hence surjective, so `a • I = I` (`Ideal.smul_eq_self_of_finite`). Consequently:
+   * `I ≤ Ideal.span {a}` (`Ideal.le_span_singleton_of_finite`), so the Third Isomorphism Theorem
+     identifies `(R ⧸ I) ⧸ Ideal.span {mk I a}` with `R ⧸ Ideal.span {a}`
+     (`Ideal.quotientSpanSingletonQuotientEquivOfFinite`).
+   * The image of `a` in `R ⧸ I` remains a non-zero-divisor
+     (`Ideal.Quotient.mk_mem_nonZeroDivisors_of_finite`): if `a * r ∈ I = a • I`, then
+     `a * r = a * y` for some `y ∈ I`, and cancelling `a` gives `r = y ∈ I`.
 
-This applies to the finite torsion ideal killed when projecting an order inside a finite product of
-domains onto its infinite factors. Finiteness of `I` itself is essential: in `ℤ`, the ideal `2ℤ`
-has finite index (`ℤ ⧸ 2ℤ` is finite), yet `2 ∈ nonZeroDivisors ℤ` maps to `0` in `ℤ ⧸ 2ℤ`.
+   This applies to the finite torsion ideal killed when projecting an order inside a finite product
+   of domains onto its infinite factors. Finiteness of `I` itself is essential: in `ℤ`, the ideal
+   `2ℤ` has finite index (`ℤ ⧸ 2ℤ` is finite), yet `2 ∈ nonZeroDivisors ℤ` maps to `0` in `ℤ ⧸ 2ℤ`.
+
+2. **Multiplicativity of principal-quotient cardinalities.** For any ideal `I : Ideal R` (finite or
+   infinite), multiplication by `a ∈ nonZeroDivisors R` identifies `R ⧸ I` with the image of `(a)`
+   inside `R ⧸ ((a) * I)`, so `Nat.card (R ⧸ (Ideal.span {a} * I)) =
+   Nat.card (R ⧸ Ideal.span {a}) * Nat.card (R ⧸ I)`
+   (`Ideal.natCard_quotient_span_singleton_mul_ideal`). In particular, `Nat.card (R ⧸ (x))` is
+   multiplicative on regular elements (`Ideal.natCard_quotient_span_singleton_mul`,
+   `Ideal.natCard_quotient_span_singleton_prod`), without requiring `R` to be a Dedekind domain.
 
 ## Main results
 
@@ -37,6 +47,9 @@ has finite index (`ℤ ⧸ 2ℤ` is finite), yet `2 ∈ nonZeroDivisors ℤ` map
   finite and `a ∈ nonZeroDivisors R`.
 * `Ideal.Quotient.mk_mem_nonZeroDivisors_of_finite`: a non-zero-divisor of `R` maps to a
   non-zero-divisor in `R ⧸ I` whenever `I` is finite as a set.
+* `Ideal.natCard_quotient_span_singleton_mul_ideal`, `Ideal.natCard_quotient_span_singleton_mul`,
+  `Ideal.natCard_quotient_span_singleton_prod`: multiplicativity of `Nat.card` of quotients by
+  products with regular principal ideals.
 -/
 
 public section
@@ -44,6 +57,8 @@ public section
 open scoped Pointwise
 
 namespace Ideal
+
+section FiniteIdeal
 
 variable {R : Type*} [CommRing R] (I : Ideal R) [Finite I]
 
@@ -106,6 +121,70 @@ theorem mk_mem_nonZeroDivisors_of_finite {a : R} (ha : a ∈ nonZeroDivisors R) 
   exact Ideal.Quotient.eq_zero_iff_mem.mpr (hry ▸ hy)
 
 end Quotient
+
+end FiniteIdeal
+
+section Cardinality
+
+variable {R : Type*} [CommRing R]
+
+/-- **Multiplicativity of quotient cardinality by a regular principal ideal.** For any ideal `I`
+and `a ∈ nonZeroDivisors R`, multiplication by `a` identifies `R ⧸ I` with the image of `(a)` in
+`R ⧸ ((a) * I)`, so `Nat.card (R ⧸ (Ideal.span {a} * I)) =
+Nat.card (R ⧸ Ideal.span {a}) * Nat.card (R ⧸ I)` (`0` when infinite). -/
+theorem natCard_quotient_span_singleton_mul_ideal (I : Ideal R) {a : R}
+    (ha : a ∈ nonZeroDivisors R) :
+    Nat.card (R ⧸ (Ideal.span {a} * I)) =
+      Nat.card (R ⧸ Ideal.span {a}) * Nat.card (R ⧸ I) := by
+  let T : Ideal R := Ideal.span {a} * I
+  let f : R →ₗ[R] R ⧸ T := T.mkQ.comp (LinearMap.mul R R a)
+  have hrange : LinearMap.range f = Submodule.map T.mkQ (Ideal.span {a}) := by
+    ext y
+    simp only [f, LinearMap.mem_range, LinearMap.comp_apply, LinearMap.mul_apply',
+      Submodule.mem_map, Ideal.mem_span_singleton]
+    exact ⟨fun ⟨r, hr⟩ ↦ ⟨a * r, ⟨r, rfl⟩, hr⟩,
+      by rintro ⟨_, ⟨r, rfl⟩, hr⟩; exact ⟨r, hr⟩⟩
+  have hker : LinearMap.ker f = I := by
+    ext r
+    simp only [f, LinearMap.mem_ker, LinearMap.comp_apply, LinearMap.mul_apply',
+      Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero, T, Ideal.mem_span_singleton_mul]
+    refine ⟨?_, fun hr ↦ ⟨r, hr, rfl⟩⟩
+    rintro ⟨z, hz, haz⟩
+    have hzr : z = r :=
+      sub_eq_zero.mp
+        (mem_nonZeroDivisors_iff_left.mp ha _ (by rw [mul_sub, sub_eq_zero]; exact haz))
+    exact hzr ▸ hz
+  have e : (R ⧸ I) ≃ₗ[R] Submodule.map T.mkQ (Ideal.span {a}) :=
+    (Submodule.quotEquivOfEq _ _ hker.symm).trans
+      (f.quotKerEquivRange.trans (LinearEquiv.ofEq _ _ hrange))
+  rw [← Submodule.card_quotient_mul_card_quotient (Ideal.span {a}) T Ideal.mul_le_left,
+    ← Nat.card_congr e.toEquiv, mul_comm]
+
+/-- For `a ∈ nonZeroDivisors R` and any `b : R`,
+`Nat.card (R ⧸ Ideal.span {a * b}) = Nat.card (R ⧸ Ideal.span {a}) * Nat.card (R ⧸ Ideal.span {b})`
+(`0` when infinite). -/
+theorem natCard_quotient_span_singleton_mul {a : R} (ha : a ∈ nonZeroDivisors R) (b : R) :
+    Nat.card (R ⧸ Ideal.span {a * b}) =
+      Nat.card (R ⧸ Ideal.span {a}) * Nat.card (R ⧸ Ideal.span {b}) := by
+  rw [← Ideal.span_singleton_mul_span_singleton,
+    (Ideal.span {b}).natCard_quotient_span_singleton_mul_ideal ha]
+
+/-- **Multiplicativity of principal-quotient cardinalities along a finite product of regular
+elements.** If `f i ∈ nonZeroDivisors R` for every `i ∈ s`, then
+`Nat.card (R ⧸ Ideal.span {∏ i ∈ s, f i}) = ∏ i ∈ s, Nat.card (R ⧸ Ideal.span {f i})`. -/
+theorem natCard_quotient_span_singleton_prod {ι : Type*} (s : Finset ι) (f : ι → R)
+    (hf : ∀ i ∈ s, f i ∈ nonZeroDivisors R) :
+    Nat.card (R ⧸ Ideal.span {∏ i ∈ s, f i}) =
+      ∏ i ∈ s, Nat.card (R ⧸ Ideal.span {f i}) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    rw [Finset.prod_insert hi, Finset.prod_insert hi,
+      natCard_quotient_span_singleton_mul (hf i (Finset.mem_insert_self i s)),
+      ih fun j hj ↦ hf j (Finset.mem_insert_of_mem hj)]
+
+end Cardinality
 
 end Ideal
 

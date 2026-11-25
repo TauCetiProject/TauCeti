@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import Mathlib.RingTheory.Ideal.Span
 import TauCeti.GroupTheory.Index.Endomorphism
+import TauCeti.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.Regular.Pi
 import Mathlib.Algebra.Ring.NonZeroDivisors
 import Mathlib.Data.Fintype.Pigeonhole
@@ -76,7 +77,7 @@ theorem natCard_quotient_span_singleton {x : S} (hx : (x : R) ∈ nonZeroDivisor
   have hcomp : (AddMonoidHom.mulRight (x : R)).comp S.toAddSubgroup.subtype =
       S.toAddSubgroup.subtype.comp (AddMonoidHom.mulRight x) := by
     ext y
-    rfl
+    simpa using (Subring.coe_mul S y x).symm
   have h := AddSubgroup.natCard_quotient_range_eq_of_comp_subtype
     (H := S.toAddSubgroup) (g := AddMonoidHom.mulRight x) hinj hcomp
   rwa [hrange x, hrange (x : R)] at h
@@ -84,10 +85,8 @@ theorem natCard_quotient_span_singleton {x : S} (hx : (x : R) ∈ nonZeroDivisor
 /-- If `S` has finite additive index in `R` and `(x : R)` is a non-zero-divisor in `R`, then
 `S ⧸ Ideal.span {x}` is finite if and only if `R ⧸ Ideal.span {(x : R)}` is finite. -/
 theorem finite_quotient_span_singleton_iff {x : S} (hx : (x : R) ∈ nonZeroDivisors R) :
-    Finite (S ⧸ Ideal.span {x}) ↔ Finite (R ⧸ Ideal.span {(x : R)}) := by
-  have h1 : Nonempty (S ⧸ Ideal.span {x}) := ⟨0⟩
-  have h2 : Nonempty (R ⧸ Ideal.span {(x : R)}) := ⟨0⟩
-  simpa [Nat.card_ne_zero, h1, h2] using congrArg (· ≠ 0) (S.natCard_quotient_span_singleton hx)
+    Finite (S ⧸ Ideal.span {x}) ↔ Finite (R ⧸ Ideal.span {(x : R)}) :=
+  TauCeti.finite_iff_of_natCard_eq (S.natCard_quotient_span_singleton hx)
 
 end PrincipalQuotient
 

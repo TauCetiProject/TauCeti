@@ -9,8 +9,9 @@ public import TauCeti.Algebra.Module.Presentation.Card
 public import TauCeti.Algebra.MonoidAlgebra.CharGroupRing.Lattice
 public import TauCeti.RingTheory.Ideal.Quotient.Pi
 public import TauCeti.RingTheory.Subring.FiniteIndex
-public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
+import TauCeti.RingTheory.Ideal.Quotient.Regular
+import TauCeti.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.GroupWithZero.Units.Fintype
 import Mathlib.Algebra.Regular.Pi
 import Mathlib.Data.ZMod.QuotientRing
@@ -18,21 +19,22 @@ import Mathlib.Data.ZMod.QuotientRing
 /-!
 # The order of principal quotients and quadratically presented modules over character group rings
 
-Let `G` be a finite commutative group, `O` a Dedekind domain in which `#G ≠ 0`, and
+Let `G` be a finite commutative group, `O` an integral domain in which `#G ≠ 0`, and
 `Ψ : Set (G →* Oˣ)` a set of characters with character group ring `R_Ψ = Set.charGroupRing Ψ`.
 Following Dasgupta and Kakde (Lemma 2.5), for any `x ∈ nonZeroDivisors (charGroupRing Ψ)`, if
 `O ⧸ (#G)` is finite then `R_Ψ` has finite additive index in `Ψ → O`, `x` remains a non-zero-divisor
 in `Ψ → O` (`Set.charGroupRing.mem_nonZeroDivisors_iff`), and comparing principal quotients via
 `Subring.natCard_quotient_span_singleton`, `Ideal.quotientSpanSingletonPiEquiv`, and the
-multiplicativity of `Ideal.absNorm` yields
+multiplicativity of principal-quotient cardinalities (`Ideal.natCard_quotient_span_singleton_prod`)
+yields
 `Nat.card (charGroupRing Ψ ⧸ Ideal.span {x}) = Nat.card (O ⧸ Ideal.span {∏ ψ : Ψ, (x : Ψ → O) ψ})`
 (`Set.charGroupRing.card_quotient_span`).
 
-Notice that neither `[Infinite O]` nor `[Ring.HasFiniteQuotients O]` is required for the cardinality
-equality once `[Finite (O ⧸ Ideal.span {(Nat.card G : O)})]` holds, so the theorem applies directly
-both to rings of integers of number fields (where `Ring.HasFiniteQuotients O` holds; see
-`Set.charGroupRing.finite_quotient_span_of_hasFiniteQuotients`) and to discrete valuation rings with
-finite residue field such as `ℤ_p` and its finite extensions.
+Notice that neither `[IsDedekindDomain O]`, `[Infinite O]`, nor `[Ring.HasFiniteQuotients O]` is
+required for the cardinality equality once `[Finite (O ⧸ Ideal.span {(Nat.card G : O)})]` holds, so
+the theorem applies directly to orders in number fields (where `Ring.HasFiniteQuotients O` holds;
+see `Set.charGroupRing.finite_quotient_span_of_hasFiniteQuotients`) as well as to discrete valuation
+rings with finite residue field such as `ℤ_p` and its finite extensions.
 
 When `O` is a principal ideal domain, combining Lemma 2.5 with Lemma 2.4
 (`TauCeti.IsQuadraticallyPresented.card_eq`) expresses the order of any quadratically presented
@@ -60,12 +62,12 @@ public section
 
 namespace Set.charGroupRing
 
-section DedekindDomain
+section Domain
 
-variable {O G : Type*} [CommRing O] [IsDedekindDomain O] [CommGroup G] [Finite G]
+variable {O G : Type*} [CommRing O] [IsDomain O] [CommGroup G] [Finite G]
 
 /-- **The order of a principal quotient of a character group ring** (Dasgupta–Kakde, Lemma 2.5).
-Let `O` be a Dedekind domain in which `#G ≠ 0` and `O ⧸ (#G)` is finite. For any
+Let `O` be an integral domain in which `#G ≠ 0` and `O ⧸ (#G)` is finite. For any
 `x ∈ nonZeroDivisors (charGroupRing Ψ)`, the quotient `charGroupRing Ψ ⧸ Ideal.span {x}` has the
 same `Nat.card` as `O ⧸ Ideal.span {∏ ψ : Ψ, (x : Ψ → O) ψ}` (`0` when infinite). -/
 theorem card_quotient_span [Finite (O ⧸ Ideal.span {(Nat.card G : O)})]
@@ -76,23 +78,14 @@ theorem card_quotient_span [Finite (O ⧸ Ideal.span {(Nat.card G : O)})]
   have hcoord : ∀ ψ : Ψ, (x : Ψ → O) ψ ≠ 0 := (mem_nonZeroDivisors_iff Ψ hG x).mp hx
   have hx_pi : (x : Ψ → O) ∈ nonZeroDivisors (Ψ → O) :=
     (Pi.isRegular_iff.mpr fun ψ ↦ isRegular_iff_ne_zero.mpr (hcoord ψ)).mem_nonZeroDivisors
-  have hprod : ∏ ψ : Ψ, (x : Ψ → O) ψ ≠ 0 :=
-    Finset.prod_ne_zero_iff.mpr fun ψ _ ↦ hcoord ψ
-  have hnorm {a : O} (ha : a ≠ 0) :
-      Ideal.absNorm (Ideal.span {a}) = Nat.card (O ⧸ Ideal.span {a}) := by
-    rw [Ideal.absNorm_of_ne_bot (by simpa using ha), Submodule.cardQuot_apply]
-  have hsub : Nat.card (charGroupRing Ψ ⧸ Ideal.span {x}) =
-      Nat.card ((Ψ → O) ⧸ Ideal.span {(x : Ψ → O)}) :=
-    (charGroupRing Ψ).toSubring.natCard_quotient_span_singleton hx_pi
   calc Nat.card (charGroupRing Ψ ⧸ Ideal.span {x})
-      = Nat.card ((Ψ → O) ⧸ Ideal.span {(x : Ψ → O)}) := hsub
+      = Nat.card ((Ψ → O) ⧸ Ideal.span {(x : Ψ → O)}) :=
+        (charGroupRing Ψ).toSubring.natCard_quotient_span_singleton hx_pi
     _ = ∏ ψ : Ψ, Nat.card (O ⧸ Ideal.span {(x : Ψ → O) ψ}) := by
         rw [Nat.card_congr (Ideal.quotientSpanSingletonPiEquiv (x : Ψ → O)).toEquiv, Nat.card_pi]
-    _ = Ideal.absNorm (∏ ψ : Ψ, Ideal.span {(x : Ψ → O) ψ}) := by
-        rw [map_prod]
-        exact Finset.prod_congr rfl fun ψ _ ↦ (hnorm (hcoord ψ)).symm
-    _ = Nat.card (O ⧸ Ideal.span {∏ ψ : Ψ, (x : Ψ → O) ψ}) := by
-        rw [Ideal.prod_span_singleton, hnorm hprod]
+    _ = Nat.card (O ⧸ Ideal.span {∏ ψ : Ψ, (x : Ψ → O) ψ}) :=
+        (Ideal.natCard_quotient_span_singleton_prod Finset.univ (x : Ψ → O) fun ψ _ ↦
+          mem_nonZeroDivisors_of_ne_zero (hcoord ψ)).symm
 
 /-- Under the hypotheses of `card_quotient_span`, `charGroupRing Ψ ⧸ Ideal.span {x}` is finite if
 and only if `O ⧸ Ideal.span {∏ ψ : Ψ, (x : Ψ → O) ψ}` is finite. -/
@@ -100,12 +93,10 @@ theorem finite_quotient_span_iff [Finite (O ⧸ Ideal.span {(Nat.card G : O)})]
     (hG : (Nat.card G : O) ≠ 0) {Ψ : Set (G →* Oˣ)} [Fintype Ψ]
     {x : charGroupRing Ψ} (hx : x ∈ nonZeroDivisors (charGroupRing Ψ)) :
     Finite (charGroupRing Ψ ⧸ Ideal.span {x}) ↔
-      Finite (O ⧸ Ideal.span {∏ ψ : Ψ, (x : Ψ → O) ψ}) := by
-  have h1 : Nonempty (charGroupRing Ψ ⧸ Ideal.span {x}) := ⟨0⟩
-  have h2 : Nonempty (O ⧸ Ideal.span {∏ ψ : Ψ, (x : Ψ → O) ψ}) := ⟨0⟩
-  simpa [Nat.card_ne_zero, h1, h2] using congrArg (· ≠ 0) (card_quotient_span hG hx)
+      Finite (O ⧸ Ideal.span {∏ ψ : Ψ, (x : Ψ → O) ψ}) :=
+  TauCeti.finite_iff_of_natCard_eq (card_quotient_span hG hx)
 
-/-- Over a Dedekind domain with `Ring.HasFiniteQuotients O` in which `#G ≠ 0`, every principal
+/-- Over an integral domain with `Ring.HasFiniteQuotients O` in which `#G ≠ 0`, every principal
 quotient `charGroupRing Ψ ⧸ Ideal.span {x}` by a non-zero-divisor `x` is finite. -/
 theorem finite_quotient_span_of_hasFiniteQuotients [Ring.HasFiniteQuotients O]
     (hG : (Nat.card G : O) ≠ 0) {Ψ : Set (G →* Oˣ)}
@@ -122,7 +113,7 @@ theorem finite_quotient_span_of_hasFiniteQuotients [Ring.HasFiniteQuotients O]
     Ring.HasFiniteQuotients.finiteQuotient (Ideal.span_singleton_eq_bot.not.mpr hprod)
   exact (finite_quotient_span_iff hG hx).mpr ‹_›
 
-end DedekindDomain
+end Domain
 
 section PrincipalIdealRing
 
@@ -169,10 +160,8 @@ example :
     decide
   have _ : Finite (ℤ ⧸ Ideal.span {(Nat.card ℤˣ : ℤ)}) :=
     Ring.HasFiniteQuotients.finiteQuotient (Ideal.span_singleton_eq_bot.not.mpr hG)
-  have hne : (1 : ℤˣ →* ℤˣ) ≠ MonoidHom.id ℤˣ := fun h ↦ by
-    have := DFunLike.congr_fun h (-1 : ℤˣ)
-    revert this
-    decide
+  have hne : (1 : ℤˣ →* ℤˣ) ≠ MonoidHom.id ℤˣ :=
+    fun h ↦ absurd (DFunLike.congr_fun h (-1 : ℤˣ)) (by decide)
   have hx : x ∈ nonZeroDivisors (charGroupRing Ψ) := by
     rw [mem_nonZeroDivisors_iff Ψ hG]
     rintro ⟨ψ, rfl | rfl⟩ <;> simp [x]
