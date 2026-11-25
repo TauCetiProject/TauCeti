@@ -313,12 +313,6 @@ theorem ofFinite_injective {K : Type*} [Field K] {V : ι → Type*} [∀ i, AddC
     Function.Injective (ofFinite K V v S) :=
   ofFinite_injective' S fun i hi ↦ Module.Projective.exists_dual_eq_one K (hv i hi)
 
-omit [DecidableEq ι] [∀ i, AddCommMonoid (W i)] in
-/-- A family equals the references off the finite set of places where it differs from them. -/
-private theorem notMem_toFinset_iff {f : ∀ i, W i} (hf : {i | f i ≠ w i}.Finite) {i : ι} :
-    i ∉ hf.toFinset ↔ f i = w i := by
-  simp
-
 variable (R w) in
 /-- The pure tensor `⨂ₜ f` of a family `f` equal to the references at all but finitely many
 places, computed at the finite stage of the places where `f` differs from the references. -/
@@ -330,8 +324,7 @@ the places where the family differs from the references. -/
 theorem tprod_eq_ofFinite (f : ∀ i, W i) (hf : {i | f i ≠ w i}.Finite) (S : Finset ι)
     (hS : ∀ i ∉ S, f i = w i) :
     tprod R w f hf = ofFinite R W w S (PiTensorProduct.tprod R fun i ↦ f i) := by
-  have hsub : hf.toFinset ⊆ S := fun i hi ↦
-    by_contra fun h ↦ (notMem_toFinset_iff hf).mpr (hS i h) hi
+  have hsub : hf.toFinset ⊆ S := fun i hi ↦ by_contra fun h ↦ by simp [hS i h] at hi
   have key : ∀ U (h : U ⊆ S), (∀ i ∉ U, f i = w i) →
       stageMap R w h (PiTensorProduct.tprod R fun i : U ↦ f i) =
         PiTensorProduct.tprod R fun i : S ↦ f i := by
@@ -342,7 +335,7 @@ theorem tprod_eq_ofFinite (f : ∀ i, W i) (hf : {i | f i ≠ w i}.Finite) (S : 
     by_cases hi : i.val ∈ U
     · simp [Function.updateFinset, hi]
     · simp [Function.updateFinset, hi, hU i hi]
-  rw [tprod, ← key hf.toFinset hsub fun i ↦ (notMem_toFinset_iff hf).mp, ofFinite_stageMap]
+  rw [tprod, ← key hf.toFinset hsub fun i hi ↦ by simpa using hi, ofFinite_stageMap]
 
 /-- The pure tensor of the reference family is the image of the empty pure tensor at the empty
 stage. -/
@@ -362,7 +355,7 @@ private theorem exists_tprod_update (f : ∀ i, W i) (j : ι) {z₀ : W j}
     ← Function.update_comp_eq_of_injective' f Subtype.val_injective]
   obtain ⟨hij, hi⟩ := not_or.mp (Finset.mem_insert.not.mp hi)
   rw [Function.update_of_ne hij, ← Function.update_of_ne hij z₀ f]
-  exact (notMem_toFinset_iff h₀).mp hi
+  simpa using hi
 
 /-- A pure tensor is additive in each entry. -/
 theorem tprod_update_add (f : ∀ i, W i) (j : ι) (x y : W j)
@@ -387,7 +380,7 @@ theorem tprod_coord_zero (f : ∀ i, W i) (hf : {i | f i ≠ w i}.Finite) (j : �
     tprod R w f hf = 0 := by
   rw [tprod_eq_ofFinite f hf (insert j hf.toFinset) fun i hi ↦ ?_,
     MultilinearMap.map_coord_zero _ ⟨j, Finset.mem_insert_self j _⟩ hj, map_zero]
-  exact (notMem_toFinset_iff hf).mp (not_or.mp (Finset.mem_insert.not.mp hi)).2
+  simpa using (not_or.mp (Finset.mem_insert.not.mp hi)).2
 
 section map
 
@@ -430,7 +423,7 @@ theorem map_tprod (f : ∀ i, W i →ₗ[R] W' i) (hf : ∀ i, f i (w i) = w' i)
       (hg.subset fun i hi h ↦ hi (by rw [h, hf])) := by
   rw [tprod, map_ofFinite, PiTensorProduct.map_tprod,
     tprod_eq_ofFinite _ _ hg.toFinset fun i hi ↦ ?_]
-  rw [(notMem_toFinset_iff hg).mp hi, hf]
+  rw [show g i = w i by simpa using hi, hf]
 
 variable (w) in
 /-- The identity maps of the factors induce the identity. -/
