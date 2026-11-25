@@ -51,6 +51,7 @@ conjugate of `P`, since by the Mackey formula the other summands of `Tr_P^G(a)` 
   with `x ∈ Tr_P^G(R[G]^P)` is a `p`-group.
 * `TauCeti.exists_le_conj_of_mem_relTraceIdeal`: a `p`-subgroup `Q` with `Br_Q(x) ≠ 0` for
   `x ∈ Tr_P^G(R[G]^P)` lies in a conjugate of `P`.
+* `TauCeti.eq_of_le_of_mem_relTraceIdeal`: such a `Q` containing `P` equals `P`.
 * `TauCeti.brauerProjection_ne_zero_of_minimal_mem_relTraceIdeal`: for a primitive idempotent `e`
   of `R[G]^G` and `P` minimal with `e ∈ Tr_P^G(R[G]^P)`, `Br_P(e) ≠ 0`.
 * `TauCeti.isDefectGroup_iff_exists_eq_conj`, `TauCeti.isDefectGroup_iff_minimal`,
@@ -223,15 +224,17 @@ theorem exists_le_conj_of_mem_relTraceIdeal {P Q : Subgroup G}
   exact Finset.sum_eq_zero fun q _ =>
     brauerProjection_relTrace_eq_zero_of_not_le hQ (h (q.out : G)) _
 
-/-- A `p`-subgroup `Q` with `Br_Q(e) ≠ 0` containing a conjugate of a subgroup `P` with
-`e ∈ Tr_P^G(R[G]^P)` is that conjugate. -/
-private theorem eq_conj_of_conj_le {P Q : Subgroup G} {e : conjInvariants R (⊤ : Subgroup G)}
-    (hP : e ∈ relTraceIdeal R (le_top : P ≤ ⊤))
-    (hQ : IsPGroup p Q) (hQe : brauerProjection Q (e : MonoidAlgebra R G) ≠ 0) {g : G}
-    (hgQ : MulAut.conj g • P ≤ Q) : Q = MulAut.conj g • P := by
-  obtain ⟨h, hh⟩ := exists_le_conj_of_mem_relTraceIdeal hP hQ hQe
-  refine (Subgroup.eq_of_le_of_card_ge hgQ ((Subgroup.card_le_of_le hh).trans ?_)).symm
-  rw [card_conj_smul_eq h P, card_conj_smul_eq g P]
+/-- **A `p`-subgroup detecting a trace is no larger than the source.** If
+`x ∈ Tr_P^G(R[G]^P)` and `Q ≥ P` is a `p`-subgroup with `Br_Q(x) ≠ 0`, then `Q = P`: `Q` lies in
+a conjugate of `P` (`TauCeti.exists_le_conj_of_mem_relTraceIdeal`), which has the same order as
+`P`. -/
+theorem eq_of_le_of_mem_relTraceIdeal {P Q : Subgroup G}
+    {x : conjInvariants R (⊤ : Subgroup G)} (hx : x ∈ relTraceIdeal R (le_top : P ≤ ⊤))
+    (hQ : IsPGroup p Q) (hQx : brauerProjection Q (x : MonoidAlgebra R G) ≠ 0) (hPQ : P ≤ Q) :
+    Q = P := by
+  obtain ⟨g, hg⟩ := exists_le_conj_of_mem_relTraceIdeal hx hQ hQx
+  exact (Subgroup.eq_of_le_of_card_ge hPQ
+    ((Subgroup.card_le_of_le hg).trans (card_conj_smul_eq g P).le)).symm
 
 end Conjugacy
 
@@ -300,8 +303,8 @@ theorem isDefectGroup_iff_exists_eq_conj (he : IsPrimitiveIdempotent e) {P : Sub
       hD.brauerProjection_ne_zero
     exact ⟨g, hD.eq_of_le ⟨hconj g, hconjPe g⟩ hg⟩
   · rintro ⟨g, rfl⟩
-    exact isDefectGroup_iff.2 ⟨hconj g, hconjPe g,
-      fun Q hQ hQe hgQ => eq_conj_of_conj_le hP.prop hQ hQe hgQ⟩
+    exact isDefectGroup_iff.2 ⟨hconj g, hconjPe g, fun Q hQ hQe hgQ =>
+      eq_of_le_of_mem_relTraceIdeal (mem_relTraceIdeal_conj hP.prop g) hQ hQe hgQ⟩
 
 /-- **Defect groups are the minimal trace subgroups.** For a primitive idempotent `e` of
 `R[G]^G = Z(R[G])`, with `R` an Artinian ring of characteristic `p`, the defect groups of `e` are
@@ -313,10 +316,8 @@ theorem isDefectGroup_iff_minimal (he : IsPrimitiveIdempotent e) {D : Subgroup G
   refine ⟨fun hD => ?_, fun hD => (isDefectGroup_iff_exists_eq_conj he hD).2 ⟨1, by simp⟩⟩
   obtain ⟨P, hP⟩ := exists_minimal_mem_relTraceIdeal e
   obtain ⟨g, rfl⟩ := (isDefectGroup_iff_exists_eq_conj he hP).1 hD
-  refine ⟨mem_relTraceIdeal_conj hP.prop g, fun Q hQ hQg => ?_⟩
-  obtain ⟨h, hh⟩ := exists_le_conj_of_mem_relTraceIdeal hQ hD.isPGroup hD.brauerProjection_ne_zero
-  exact (Subgroup.eq_of_le_of_card_ge hQg
-    ((Subgroup.card_le_of_le hh).trans (card_conj_smul_eq h Q).le)).ge
+  exact ⟨mem_relTraceIdeal_conj hP.prop g, fun Q hQ hQg =>
+    (eq_of_le_of_mem_relTraceIdeal hQ hD.isPGroup hD.brauerProjection_ne_zero hQg).le⟩
 
 /-- **Defect groups are conjugate.** Any two defect groups of a primitive idempotent `e` of
 `R[G]^G = Z(R[G])`, with `R` an Artinian ring of characteristic `p`, are conjugate in `G` (Webb,
