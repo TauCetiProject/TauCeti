@@ -15,7 +15,7 @@ import TauCeti.Analysis.InnerProductSpace.PiL2
 /-!
 # Checks for `ACL` and `ACL^p` maps
 
-Checks of QuasiregularMaps §5.1 for the formal derivative `TauCeti.formalDeriv`, the line
+Checks for the formal derivative `TauCeti.formalDeriv`, the line
 function `TauCeti.lineFunction` and the class `TauCeti.IsACLOn`, on `ℝ² = EuclideanSpace ℝ (Fin 2)`
 with coordinates `x₁ = x 0` and `x₂ = x 1`.
 
@@ -23,19 +23,22 @@ with coordinates `x₁ = x 0` and `x₂ = x 1`.
   derivative is `e₁ ↦ sign x₁`, `e₂ ↦ 0`; on that line the first partial derivative does not
   exist and the formal derivative sends `e₁` to `0`; the line is a null set
   (`TauCeti.ACLChecks.volume_setOf_fst_eq_zero`).
-* `c(x₁)`, for the Cantor function `c`, has formal derivative `0` almost everywhere
-  (`TauCeti.ACLChecks.ae_formalDeriv_cantorFst_eq_zero`) but is not `ACL`
+* `c(x₁)`, for the Cantor function `c`, has both partial derivatives `0` almost everywhere
+  (`TauCeti.ACLChecks.ae_hasLineDerivAt_cantorFst`), so its formal derivative vanishes almost
+  everywhere (`TauCeti.ACLChecks.ae_formalDeriv_cantorFst_eq_zero`), but it is not `ACL`
   (`TauCeti.ACLChecks.not_isACLOn_cantorFst`): every line function in the first direction on the
   box `[0, 1]²` is `c` on `[0, 1]`.
 * The indicator of `{0}` is absolutely continuous on every coordinate segment missing `0`
   (`TauCeti.ACLChecks.absolutelyContinuousOnInterval_lineFunction_indicatorZero`) but is not
   `ACL`, since it is not continuous (`TauCeti.ACLChecks.not_isACLOn_indicatorZero`).
 * The formal derivative takes partial derivatives as columns: for `u(x₁, x₂) = (x₂, 0)` it is
-  `e₁ ↦ 0`, `e₂ ↦ e₁`, which is `fderiv ℝ u x` (`TauCeti.ACLChecks.formalDeriv_swapFst`).
+  `e₁ ↦ 0`, `e₂ ↦ e₁`, which is `fderiv ℝ u x`
+  (`TauCeti.ACLChecks.formalDeriv_sndSmulSingleZero`).
 * The segment of the line function is the one of the box: through `(1/2, 1/2)` in the second
-  direction, the line function is `t ↦ u(1/2, t)`, and on `[0, 1]` it stays in `[0, 1]²`, while
-  the unshifted `t ↦ u(x + t e₂)` leaves the box at `t = 1`
-  (`TauCeti.ACLChecks.lineFunction_half_half`).
+  direction, the line function is `t ↦ u(1/2, t)` (`TauCeti.ACLChecks.lineFunction_halfHalf`),
+  and on `[0, 1]` it stays in `[0, 1]²` (`TauCeti.ACLChecks.equiv_symm_half_mem_coordinateBox`),
+  while the unshifted `t ↦ u(x + t e₂)` leaves the box at `t = 1`
+  (`TauCeti.ACLChecks.halfHalf_add_one_smul_single_notMem_coordinateBox`).
 -/
 
 public section
@@ -50,11 +53,15 @@ namespace TauCeti.ACLChecks
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 local notation "e" => EuclideanSpace.single
 
-/-- If `f` has derivative `f'` at `a`, then `t ↦ f(a + t)` has derivative `f'` at `0`. -/
-theorem hasDerivAt_comp_const_add_zero {f : ℝ → ℝ} {f' a : ℝ} (h : HasDerivAt f f' a) :
-    HasDerivAt (fun t ↦ f (a + t)) f' 0 := by
-  have h' : HasDerivAt f f' (a + 0) := by rwa [add_zero]
-  exact HasDerivAt.comp_const_add a 0 h'
+/-- If `u(x + t eᵢ) = g(xᵢ + t)` for all `t` and `g` has derivative `g'` at `xᵢ`, then the `i`-th
+partial derivative of `u` at `x` is `g'`. -/
+private theorem hasLineDerivAt_single_of_hasDerivAt {u : ℝ² → ℝ} {x : ℝ²} {i : Fin 2}
+    {g : ℝ → ℝ} {g' : ℝ} (hg : HasDerivAt g g' (x i))
+    (hu : ∀ t : ℝ, u (x + t • e i 1) = g (x i + t)) :
+    HasLineDerivAt ℝ u g' x (e i 1) := by
+  unfold HasLineDerivAt
+  rw [← add_zero (x i)] at hg
+  exact (hg.comp_const_add (x i) 0).congr_of_eventuallyEq (Eventually.of_forall hu)
 
 /-! ### `|x₁|` -/
 
@@ -79,25 +86,22 @@ theorem isACLpOn_absFst : IsACLpOn absFst ∞ univ :=
 theorem formalDeriv_absFst_single_zero {x : ℝ²} (hx : x 0 ≠ 0) :
     formalDeriv absFst x (e 0 1) = SignType.sign (x 0) := by
   rw [formalDeriv_apply_single]
-  refine HasLineDerivAt.lineDeriv ?_
-  refine (hasDerivAt_comp_const_add_zero (hasDerivAt_abs hx)).congr_of_eventuallyEq
-    (Eventually.of_forall fun t ↦ ?_)
-  simp [absFst_apply]
+  exact (hasLineDerivAt_single_of_hasDerivAt (hasDerivAt_abs hx) fun t ↦ by
+    simp [absFst_apply]).lineDeriv
 
 /-- The formal derivative of `|x₁|` sends `e₂` to `0`. -/
 theorem formalDeriv_absFst_single_one (x : ℝ²) : formalDeriv absFst x (e 1 1) = 0 := by
   rw [formalDeriv_apply_single]
-  refine HasLineDerivAt.lineDeriv ?_
-  refine (hasDerivAt_const (0 : ℝ) |x 0|).congr_of_eventuallyEq (Eventually.of_forall fun t ↦ ?_)
-  simp [absFst_apply]
+  exact (hasLineDerivAt_single_of_hasDerivAt (hasDerivAt_const (x 1) |x 0|) fun t ↦ by
+    simp [absFst_apply]).lineDeriv
 
 /-- On the line `x₁ = 0`, the first partial derivative of `|x₁|` does not exist. -/
 theorem not_lineDifferentiableAt_absFst {x : ℝ²} (hx : x 0 = 0) :
     ¬ LineDifferentiableAt ℝ absFst x (e 0 1) := by
   intro h
+  unfold LineDifferentiableAt at h
   refine not_differentiableAt_abs_zero ?_
-  have h' : DifferentiableAt ℝ (fun t : ℝ ↦ absFst (x + t • e 0 1)) 0 := h
-  refine h'.congr_of_eventuallyEq (Eventually.of_forall fun t ↦ ?_)
+  refine h.congr_of_eventuallyEq (Eventually.of_forall fun t ↦ ?_)
   simp [absFst_apply, hx]
 
 /-- On the line `x₁ = 0`, the formal derivative of `|x₁|` sends `e₁` to `0`. -/
@@ -135,9 +139,7 @@ theorem lineFunction_cantorFst (x : ℝ²) : lineFunction cantorFst x 0 = cantor
 /-- The closed box `[0, 1]²` has measure `1`. -/
 theorem volume_coordinateBox_zero_one :
     volume (coordinateBox (fun _ : Fin 2 ↦ (0 : ℝ)) fun _ ↦ 1) = 1 := by
-  rw [coordinateBox_eq_preimage_Icc]
-  rw [show ((EuclideanSpace.equiv (Fin 2) ℝ) ⁻¹' Icc (fun _ ↦ (0 : ℝ)) fun _ ↦ 1) =
-    WithLp.ofLp ⁻¹' Icc (fun _ ↦ (0 : ℝ)) fun _ ↦ 1 from rfl,
+  rw [coordinateBox_eq_preimage_Icc, PiLp.coe_continuousLinearEquiv,
     (PiLp.volume_preserving_ofLp (Fin 2)).measure_preimage measurableSet_Icc.nullMeasurableSet,
     Real.volume_Icc_pi]
   simp
@@ -156,9 +158,10 @@ theorem not_isACLOn_cantorFst : ¬ IsACLOn cantorFst univ := by
   rw [Measure.restrict_apply_univ, volume_coordinateBox_zero_one] at h0
   exact one_ne_zero h0
 
-/-- The formal derivative of `c(x₁)` vanishes almost everywhere: a definition of `ACL` asking only
-for partial derivatives almost everywhere would accept `c(x₁)`. -/
-theorem ae_formalDeriv_cantorFst_eq_zero : ∀ᵐ x : ℝ², formalDeriv cantorFst x = 0 := by
+/-- Almost everywhere, both partial derivatives of `c(x₁)` exist and are `0`: a definition of
+`ACL` asking only for partial derivatives almost everywhere would accept `c(x₁)`. -/
+theorem ae_hasLineDerivAt_cantorFst :
+    ∀ᵐ x : ℝ², ∀ i, HasLineDerivAt ℝ cantorFst 0 x (e i 1) := by
   have hnull : volume {x : ℝ² | ¬ HasDerivAt cantorFunction 0 (x 0)} = 0 := by
     have hpi := Measure.pi_eval_preimage_null (μ := fun _ : Fin 2 ↦ (volume : Measure ℝ))
       (i := 0) (ae_iff.1 ae_hasDerivAt_cantorFunction)
@@ -168,24 +171,23 @@ theorem ae_formalDeriv_cantorFst_eq_zero : ∀ᵐ x : ℝ², formalDeriv cantorF
   simp only [mem_ofPred_eq] at hx ⊢
   intro h
   apply hx
-  refine EuclideanSpace.ext_continuousLinearMap_single fun i ↦ ?_
-  rw [formalDeriv_apply_single, zero_apply]
-  refine HasLineDerivAt.lineDeriv ?_
+  intro i
   fin_cases i
-  · refine (hasDerivAt_comp_const_add_zero h).congr_of_eventuallyEq
-      (Eventually.of_forall fun t ↦ ?_)
-    simp [cantorFst_apply]
-  · refine (hasDerivAt_const (0 : ℝ) (cantorFunction (x 0))).congr_of_eventuallyEq
-      (Eventually.of_forall fun t ↦ ?_)
-    simp [cantorFst_apply]
+  · exact hasLineDerivAt_single_of_hasDerivAt h fun t ↦ by simp [cantorFst_apply]
+  · exact hasLineDerivAt_single_of_hasDerivAt (hasDerivAt_const (x 1) (cantorFunction (x 0)))
+      fun t ↦ by simp [cantorFst_apply]
+
+/-- The formal derivative of `c(x₁)` vanishes almost everywhere. -/
+theorem ae_formalDeriv_cantorFst_eq_zero : ∀ᵐ x : ℝ², formalDeriv cantorFst x = 0 :=
+  ae_hasLineDerivAt_cantorFst.mono fun _ hx ↦ EuclideanSpace.ext_continuousLinearMap_single
+    fun i ↦ by rw [formalDeriv_apply_single, zero_apply, (hx i).lineDeriv]
 
 /-! ### The indicator of the origin -/
 
 /-- The indicator of `{0}` in `ℝ²`. -/
 def indicatorZero : ℝ² → ℝ := ({0} : Set ℝ²).indicator 1
 
-/-- The indicator of `{0}` is not continuous at `0`, so it is not `ACL` on any set containing a
-neighbourhood of `0`. -/
+/-- The indicator of `{0}` is not continuous at `0`, so it is not `ACL` on `ℝ²`. -/
 theorem not_isACLOn_indicatorZero : ¬ IsACLOn indicatorZero univ := by
   intro h
   have hc : ContinuousAt indicatorZero 0 := h.continuousOn.continuousAt univ_mem
@@ -221,23 +223,25 @@ theorem absolutelyContinuousOnInterval_lineFunction_indicatorZero {x : ℝ²} {i
 /-! ### Columns -/
 
 /-- The linear map `(x₁, x₂) ↦ (x₂, 0)` on `ℝ²`. -/
-def swapFst : ℝ² →L[ℝ] ℝ² := (EuclideanSpace.proj (1 : Fin 2)).smulRight (e 0 (1 : ℝ))
+def sndSmulSingleZero : ℝ² →L[ℝ] ℝ² := (EuclideanSpace.proj (1 : Fin 2)).smulRight (e 0 (1 : ℝ))
 
 /-- The value of `(x₁, x₂) ↦ (x₂, 0)` at `x`. -/
-theorem swapFst_apply (x : ℝ²) : swapFst x = x 1 • e 0 1 := (rfl)
+theorem sndSmulSingleZero_apply (x : ℝ²) : sndSmulSingleZero x = x 1 • e 0 1 := (rfl)
 
 /-- The formal derivative takes partial derivatives as columns: for `u(x₁, x₂) = (x₂, 0)`, it sends
 `e₁ ↦ 0` and `e₂ ↦ e₁`, the matrix `[[0, 1], [0, 0]]`, and it is the Fréchet derivative. The rows
 would give `e₁ ↦ e₂`, which is not the derivative. -/
-theorem formalDeriv_swapFst (x : ℝ²) :
-    formalDeriv swapFst x (e 0 1) = 0 ∧ formalDeriv swapFst x (e 1 1) = e 0 1 ∧
-      formalDeriv swapFst x = fderiv ℝ swapFst x ∧ formalDeriv swapFst x (e 0 1) ≠ e 1 1 := by
-  have hd : formalDeriv swapFst x = swapFst :=
-    (formalDeriv_eq_fderiv swapFst.differentiableAt).trans swapFst.fderiv
-  refine ⟨?_, ?_, formalDeriv_eq_fderiv swapFst.differentiableAt, ?_⟩
-  · simp [hd, swapFst_apply]
-  · simp [hd, swapFst_apply]
-  · rw [hd, swapFst_apply]
+theorem formalDeriv_sndSmulSingleZero (x : ℝ²) :
+    formalDeriv sndSmulSingleZero x (e 0 1) = 0 ∧
+      formalDeriv sndSmulSingleZero x (e 1 1) = e 0 1 ∧
+      formalDeriv sndSmulSingleZero x = fderiv ℝ sndSmulSingleZero x ∧
+      formalDeriv sndSmulSingleZero x (e 0 1) ≠ e 1 1 := by
+  have hd : formalDeriv sndSmulSingleZero x = sndSmulSingleZero :=
+    (formalDeriv_eq_fderiv sndSmulSingleZero.differentiableAt).trans sndSmulSingleZero.fderiv
+  refine ⟨?_, ?_, formalDeriv_eq_fderiv sndSmulSingleZero.differentiableAt, ?_⟩
+  · simp [hd, sndSmulSingleZero_apply]
+  · simp [hd, sndSmulSingleZero_apply]
+  · rw [hd, sndSmulSingleZero_apply]
     intro h
     have := congrArg (fun y : ℝ² ↦ y 1) h
     simp at this
@@ -247,22 +251,28 @@ theorem formalDeriv_swapFst (x : ℝ²) :
 /-- The point `(1/2, 1/2)` of `ℝ²`. -/
 def halfHalf : ℝ² := (EuclideanSpace.equiv (Fin 2) ℝ).symm fun _ ↦ 1 / 2
 
-/-- Through `x = (1/2, 1/2)` in the second direction, the line function of any `u` is
-`t ↦ u(1/2, t)`, reading `u` on the segment of the box `[0, 1]²` for `t ∈ [0, 1]`; the unshifted
-`t ↦ u(x + t e₂)` reads `u` at `(1/2, 3/2)` at `t = 1`, outside the box. -/
-theorem lineFunction_half_half {F : Type*} (u : ℝ² → F) (t : ℝ) :
-    lineFunction u halfHalf 1 t = u ((EuclideanSpace.equiv (Fin 2) ℝ).symm ![1 / 2, t]) ∧
-      (t ∈ Icc 0 1 → (EuclideanSpace.equiv (Fin 2) ℝ).symm ![1 / 2, t] ∈
-        coordinateBox (fun _ ↦ 0) fun _ ↦ 1) ∧
-      halfHalf + (1 : ℝ) • e 1 1 ∉ coordinateBox (fun _ ↦ 0) fun _ ↦ 1 := by
-  refine ⟨?_, fun ht ↦ mem_coordinateBox.2 fun j ↦ ?_, fun h ↦ ?_⟩
-  · rw [lineFunction_apply]
-    congr 1
-    ext j
-    fin_cases j <;> simp [halfHalf]
-  · fin_cases j <;> norm_num [ht.1, ht.2]
-  · have := (mem_coordinateBox.1 h 1).2
-    simp [halfHalf] at this
-    norm_num at this
+/-- Through `(1/2, 1/2)` in the second direction, the line function of any `u` is
+`t ↦ u(1/2, t)`. -/
+theorem lineFunction_halfHalf {F : Type*} (u : ℝ² → F) (t : ℝ) :
+    lineFunction u halfHalf 1 t = u ((EuclideanSpace.equiv (Fin 2) ℝ).symm ![1 / 2, t]) := by
+  rw [lineFunction_apply]
+  congr 1
+  ext j
+  fin_cases j <;> simp [halfHalf]
+
+/-- For `t ∈ [0, 1]`, the point `(1/2, t)` lies in the box `[0, 1]²`, so the line function through
+`(1/2, 1/2)` in the second direction reads `u` on the segment of the box. -/
+theorem equiv_symm_half_mem_coordinateBox {t : ℝ} (ht : t ∈ Icc 0 1) :
+    (EuclideanSpace.equiv (Fin 2) ℝ).symm ![1 / 2, t] ∈ coordinateBox (fun _ ↦ 0) fun _ ↦ 1 :=
+  mem_coordinateBox.2 fun j ↦ by fin_cases j <;> norm_num [ht.1, ht.2]
+
+/-- The unshifted `t ↦ u(x + t e₂)` through `x = (1/2, 1/2)` reads `u` at `(1/2, 3/2)` at `t = 1`,
+outside the box `[0, 1]²`. -/
+theorem halfHalf_add_one_smul_single_notMem_coordinateBox :
+    halfHalf + (1 : ℝ) • e 1 1 ∉ coordinateBox (fun _ ↦ 0) fun _ ↦ 1 := by
+  intro h
+  have := (mem_coordinateBox.1 h 1).2
+  simp [halfHalf] at this
+  norm_num at this
 
 end TauCeti.ACLChecks
