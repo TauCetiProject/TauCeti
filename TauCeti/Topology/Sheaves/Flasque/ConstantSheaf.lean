@@ -140,7 +140,7 @@ theorem constantSheafSectionsIso_hom_comp_map
   rw [constantSheafSectionsIso_hom, constantSheafSectionsIso_hom, toSheafify_app_const_comp_map]
 
 /-- On an irreducible space, the constant sheaf with values in a concrete category with zero
-morphisms is flasque.
+morphisms in which sheafification is locally bijective (e.g. abelian groups, modules) is flasque.
 
 This is a theorem rather than an instance, because instance search for it times out for
 `AddCommGrpCat`. To get the vanishing of positive-degree cohomology from

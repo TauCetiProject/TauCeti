@@ -68,7 +68,7 @@ variable {C : Type*} [Category* C] (J : GrothendieckTopology C) {D : Type*} [Cat
 /-- On any site, restricting the image of `A` in the sections of the constant sheaf over `U`
 along `i : U ⟶ V` gives the image of `A` over `V`, since the constant presheaf has identity
 restrictions. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem toSheafify_app_const_comp_map (A : D) {U V : Cᵒᵖ} (i : U ⟶ V) :
     (toSheafify J ((Functor.const _).obj A)).app U ≫ ((constantSheaf J D).obj A).obj.map i =
       (toSheafify J ((Functor.const _).obj A)).app V :=
