@@ -100,6 +100,14 @@ theorem toContinuousLinearMap_inclusionInDoubleDualEquiv :
     (inclusionInDoubleDualEquiv 𝕜 E).toContinuousLinearMap = inclusionInDoubleDual 𝕜 E :=
   ContinuousLinearMap.ext inclusionInDoubleDualEquiv_apply
 
+/-- The inverse of the finite-dimensional double-dual equivalence sends a functional `Φ` on the
+dual to the point at which every functional `f` takes the value `Φ f`. -/
+@[simp]
+theorem apply_inclusionInDoubleDualEquiv_symm (Φ : StrongDual 𝕜 (StrongDual 𝕜 E))
+    (f : StrongDual 𝕜 E) : f ((inclusionInDoubleDualEquiv 𝕜 E).symm Φ) = Φ f := by
+  conv_rhs => rw [← (inclusionInDoubleDualEquiv 𝕜 E).apply_symm_apply Φ]
+  rw [inclusionInDoubleDualEquiv_apply, dual_def]
+
 end FiniteDimensional
 
 section Complete
