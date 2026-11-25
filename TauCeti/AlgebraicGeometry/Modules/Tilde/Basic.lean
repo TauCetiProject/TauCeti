@@ -47,6 +47,8 @@ out of `M~` is determined by where it sends the global sections coming from `M`.
   finite limits, hence (with its preservation of colimits) short exact sequences;
 * `TauCeti.AlgebraicGeometry.subsingleton_tilde_basicOpen_of_smul_eq_zero`: the sections of
   `M~` over `D(f)` vanish when `f` annihilates `M`;
+* `TauCeti.AlgebraicGeometry.subsingleton_tilde_of_forall_subsingleton`: the sections of `M~`
+  over `U` vanish when `M_p = 0` for every `p ∈ U`;
 * `Scheme.Modules.tildeKernelIso`: the affine computation of ambient kernels of morphisms
   between quasicoherent sheaves, with `tildeKernelIso_hom_comp_ι` identifying the kernel inclusion;
 * `TauCeti.AlgebraicGeometry.tildeFunctorCompPullbackIso`: the isomorphism
@@ -180,6 +182,13 @@ theorem subsingleton_tilde_basicOpen_of_smul_eq_zero {M : ModuleCat.{u} R} (f : 
   (IsLocalizedModule.subsingleton_iff (Submonoid.powers f)
     (tilde.toOpen M (PrimeSpectrum.basicOpen f)).hom).2
     fun m ↦ ⟨f, Submonoid.mem_powers f, hf m⟩
+
+/-- If the localization `M_p` vanishes at every point `p` of an open `U`, the sections of `M~` over
+`U` vanish: they are families of elements of the localizations `M_p`, `p ∈ U`. -/
+theorem subsingleton_tilde_of_forall_subsingleton {M : ModuleCat.{u} R} {U : (Spec R).Opens}
+    (h : ∀ p : PrimeSpectrum R, p ∈ U → Subsingleton (LocalizedModule p.asIdeal.primeCompl M)) :
+    Subsingleton Γ(tilde M, U) :=
+  ⟨fun _ _ ↦ Subtype.ext (funext fun p ↦ (h p.val p.property).elim _ _)⟩
 
 end Exactness
 
