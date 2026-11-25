@@ -148,7 +148,7 @@ theorem IsFormalAdjoint.mul_norm_sq_le_re_inner_of_hilbertBasis (hA : A.IsFormal
     (hb : ∀ k, ∃ hk : b k ∈ A.domain, A ⟨b k, hk⟩ = (lam k : 𝕜) • b k) {c : ℝ} (u : A.domain)
     (hu : ∀ k, lam k < c → ⟪b k, (u : E)⟫_𝕜 = 0) :
     c * ‖(u : E)‖ ^ 2 ≤ re ⟪A u, (u : E)⟫_𝕜 := by
-  refine hasSum_le (fun k ↦ ?_) ((b.hasSum_norm_sq_inner u).mul_left c)
+  refine hasSum_le (fun k ↦ ?_) ((b.hasSum_norm_inner_sq u).mul_left c)
     (hA.hasSum_re_inner_of_hilbertBasis b hb u)
   rcases lt_or_ge (lam k) c with hk | hk
   · simp [hu k hk]
@@ -171,8 +171,8 @@ theorem IsFormalAdjoint.mul_norm_le_norm_apply_of_hilbertBasis (hA : A.IsFormalA
     rw [← h1, hAk, inner_smul_left, conj_ofReal]
   have hsq : (c * ‖(u : E)‖) ^ 2 ≤ ‖A u‖ ^ 2 := by
     rw [mul_pow]
-    refine hasSum_le (fun k ↦ ?_) ((b.hasSum_norm_sq_inner u).mul_left (c ^ 2))
-      (b.hasSum_norm_sq_inner (A u))
+    refine hasSum_le (fun k ↦ ?_) ((b.hasSum_norm_inner_sq u).mul_left (c ^ 2))
+      (b.hasSum_norm_inner_sq (A u))
     rw [hcoef, norm_mul, norm_ofReal, mul_pow]
     rcases lt_or_ge |lam k| c with hk | hk
     · simp [hu k hk]

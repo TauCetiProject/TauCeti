@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.AddCircle
+public import TauCeti.AlgebraicTopology.Singular.MappingTorus.BaseCircle
 public import TauCeti.AlgebraicTopology.Singular.MappingTorus.FirstCohomology
 public import TauCeti.AlgebraicTopology.Singular.MappingTorus.SecondCohomology
 import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
 import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
 
 /-!
-# The second cohomology of `(ℝ / pℤ) × Y_φ` modulo torsion
+# The first and second cohomology of `(ℝ / pℤ) × Y_φ`
 
 Let `F` be a closed connected oriented surface and `φ : F ≃ₜ F` an orientation-preserving
 homeomorphism with `det (1 - φ_*) ≠ 0` on `H₁(F; ℤ)`, so that the mapping torus `Y_φ` has
@@ -55,8 +56,34 @@ change of chain coefficients `TopCat.singularCohomologyChainCoefficientMap` alon
 `TauCeti.uliftIntIso`, an isomorphism
 (`TauCeti.MappingTorus.isOfFinAddOrder_sub_evalFundamentalClass_chainCoefficientMap_smul`).
 
-The intersection numbers `v · v = t · t = 0` and `v · t = 1` of the two classes are not proved
-here.
+For the generator `a` one may take the base class `[dt] = proj^* θ_1` of the mapping torus
+(`TauCeti.MappingTorus.baseClass`), which generates `H¹(Y_φ; ℤ)` by
+`TauCeti.MappingTorus.exists_eq_zsmul_baseClass`; then `t = pr₁^* θ_p ⌣ pr₂^* [dt]`.
+
+Against the homology cross product `[ℝ / pℤ] × y` of the circuit class with a class
+`y ∈ H₃(Y_φ; ℤ)`, the cup pairings of the two classes are `v · v = t · t = 0` and
+`v · t = t · v = ⟨v ⌣ a, y⟩`
+(`TopCat.singularCupPairing_snd_snd_addCircle_singularHomologyCross`,
+`TopCat.singularCupPairing_fst_snd_fst_snd_addCircle_singularHomologyCross`,
+`TopCat.singularCupPairing_snd_fst_snd_addCircle_singularHomologyCross` and
+`TopCat.singularCupPairing_fst_snd_snd_addCircle_singularHomologyCross`). That
+`⟨v ⌣ a, [Y_φ]⟩ = 1` for the fundamental class of `Y_φ` and a suitable generator `a`, which makes
+`v, t` a hyperbolic pair of the intersection form, is not proved here.
+
+**The first cohomology.** For a path-connected `Y`, the same slant decomposition in degree one,
+`H¹((ℝ / pℤ) × Y; ℤ) ≃ H¹(Y; ℤ) × H⁰(Y; ℤ)`, together with `H⁰(Y; ℤ) ≅ ℤ`
+(`TauCeti.singularCohomologyZeroEvalEquiv`), extends a basis of `H¹(Y; ℤ)` by `pr₁^* θ_p` to a basis
+of `H¹((ℝ / pℤ) × Y; ℤ)` (`TopCat.singularCohomologyOneAddCircleProdBasis`). Since `H¹(Y_φ; ℤ)`
+has the basis `[dt]` (`TauCeti.MappingTorus.basisBaseClass`), the angular class `pr₁^* θ_p` of the
+circle factor and the base class `pr₂^* [dt]` form a basis of `H¹((ℝ / pℤ) × Y_φ; ℤ)`
+(`TauCeti.MappingTorus.basisAddCircleProd`). This only needs a path-connected fibre with
+`H₁(F; ℤ)` free of finite rank and `det (1 - φ_*) ≠ 0`. For `p = 1` the basis is `([ds], [dt])`,
+in the order of the product homology orientation `e₀ ∧ i[ds] ∧ i[dt] ∧ e₊`. It is meant to give
+the coordinates `νₛ, νₜ` in which the Seiberg–Witten wall class of the suspension is `q νₛ νₜ`
+(`TauCeti.SmoothMappingTorus.halfCupInsertionForm_two_smul_sub_eq_smul_det`). That theorem is
+stated in the model `TopCat.integralCohomology` of integral cohomology, with chains in `ULift ℤ`;
+reading the basis there, through the change of chain coefficients along
+`TauCeti.integralCoeffIso`, is not done here.
 
 ## Main results
 
@@ -64,6 +91,8 @@ here.
   `t` span `H²((ℝ / pℤ) × Y_φ; ℤ)` modulo torsion.
 * `TauCeti.MappingTorus.isOfFinAddOrder_smul_add_smul_addCircleProd_iff`: they are independent
   modulo torsion.
+* `TauCeti.MappingTorus.basisAddCircleProd`: the basis `(pr₁^* θ_p, pr₂^* [dt])` of
+  `H¹((ℝ / pℤ) × Y_φ; ℤ)`.
 
 ## References
 
@@ -83,6 +112,97 @@ attribute [local instance 1100] ModuleCat.instLinear
 namespace TauCeti.MappingTorus
 
 variable {F : Type} [TopologicalSpace F] (φ : F ≃ₜ F)
+
+/-! ### The first cohomology of `(ℝ / pℤ) × Y_φ` -/
+
+section FirstCohomology
+
+variable (p : ℝ) [Fact (0 < p)]
+
+variable [PathConnectedSpace F]
+  [Module.Free ℤ ((((singularChainComplexFunctor (ModuleCat.{0} ℤ)).obj
+    (ModuleCat.of ℤ ℤ)).obj (TopCat.of F)).homology 1)]
+  [Module.Finite ℤ ((((singularChainComplexFunctor (ModuleCat.{0} ℤ)).obj
+    (ModuleCat.of ℤ ℤ)).obj (TopCat.of F)).homology 1)]
+
+/-- **The basis `([ds], [dt])` of `H¹((ℝ / pℤ) × Y_φ; ℤ)`.** If `F` is path-connected, `H₁(F; ℤ)`
+is free of finite rank and `det (1 - φ_*) ≠ 0` on it, the angular class `pr₁^* θ_p` of the circle
+factor and the base class `pr₂^* [dt]` of the mapping torus form a basis, in this order: the basis
+`TopCat.singularCohomologyOneAddCircleProdBasis` built from the basis `[dt]` of `H¹(Y_φ; ℤ)`
+(`TauCeti.MappingTorus.basisBaseClass`). For `p = 1` these are the classes `[ds]` and `[dt]` of the
+symplectic suspension `(ℝ / ℤ)_s × Y_φ`. The basis lives in the cohomology computed from chains
+with coefficients in `ℤ`. It is meant to supply the basis `(aₛ, aₜ)` of
+`TauCeti.SmoothMappingTorus.halfCupInsertionForm_two_smul_sub_eq_smul_det`, which is stated in
+`TopCat.integralCohomology`, once it is transported there; that comparison is not done here. -/
+def basisAddCircleProd
+    (hdet : (LinearMap.id -
+      (homologyMap (monodromyChainMap φ (ModuleCat.of ℤ ℤ)) 1).hom).det ≠ 0) :
+    Module.Basis (Fin 2) ℤ
+      ((TopCat.of (AddCircle p) ⊗ TopCat.of (MappingTorus φ)).singularCohomology
+        (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1) :=
+  -- `basisBaseClass` is a basis of the cohomology with coefficients `ModuleCat.of ℤ ℤ`, used here
+  -- for the coefficients `𝟙_ (ModuleCat ℤ)`: the two objects agree by definition.
+  (TopCat.singularCohomologyOneAddCircleProdBasis _ (basisBaseClass φ hdet)).reindex
+    (finSuccEquiv 1).symm
+
+/-- The first vector of `basisAddCircleProd` is the angular class `[ds] = pr₁^* θ_p`. -/
+@[simp]
+lemma basisAddCircleProd_zero
+    (hdet : (LinearMap.id -
+      (homologyMap (monodromyChainMap φ (ModuleCat.of ℤ ℤ)) 1).hom).det ≠ 0) :
+    basisAddCircleProd φ p hdet 0 = TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst
+      (TopCat.of (AddCircle p)) (TopCat.of (MappingTorus φ))) 1 (AddCircle.angularClass p) := by
+  simp [basisAddCircleProd]
+
+/-- The second vector of `basisAddCircleProd` is the base class `[dt] = pr₂^* [dt]`. -/
+@[simp]
+lemma basisAddCircleProd_one
+    (hdet : (LinearMap.id -
+      (homologyMap (monodromyChainMap φ (ModuleCat.of ℤ ℤ)) 1).hom).det ≠ 0) :
+    basisAddCircleProd φ p hdet 1 = TopCat.singularCohomologyMap (M := 𝟙_ (ModuleCat.{0} ℤ))
+      (CartesianMonoidalCategory.snd (TopCat.of (AddCircle p)) (TopCat.of (MappingTorus φ))) 1
+      (baseClass φ) := by
+  simp only [basisAddCircleProd, Module.Basis.reindex_apply, Equiv.symm_symm,
+    show finSuccEquiv 1 1 = some 0 from rfl, TopCat.singularCohomologyOneAddCircleProdBasis_some]
+  -- `baseClass` has coefficients `ModuleCat.of ℤ ℤ`, read here as `𝟙_ (ModuleCat ℤ)`: the two
+  -- objects agree by definition but not syntactically, so `simp` cannot use
+  -- `basisBaseClass_apply`.
+  exact congrArg _ (basisBaseClass_apply φ hdet 0)
+
+/-- The first coordinate of `x` in `basisAddCircleProd`, the coefficient of `[ds]`, is the value at
+any point `y` of the slant product `x / [ℝ / pℤ] ∈ H⁰(Y_φ; ℤ)` by the circuit class. -/
+lemma basisAddCircleProd_repr_zero
+    (hdet : (LinearMap.id -
+      (homologyMap (monodromyChainMap φ (ModuleCat.of ℤ ℤ)) 1).hom).det ≠ 0)
+    (x : (TopCat.of (AddCircle p) ⊗ TopCat.of (MappingTorus φ)).singularCohomology
+      (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1) (y : MappingTorus φ) :
+    (basisAddCircleProd φ p hdet).repr x 0 =
+      singularCohomologyZeroEval (X := TopCat.of (MappingTorus φ)) y
+        (TopCat.singularSlant ℤ (𝟙_ (ModuleCat.{0} ℤ)) _ (TopCat.of (MappingTorus φ))
+          (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 0 1 (add_comm 1 0) (AddCircle.fundamentalClass p)
+          x) := by
+  rw [basisAddCircleProd, Module.Basis.repr_reindex_apply, Equiv.symm_symm, finSuccEquiv_zero,
+    TopCat.singularCohomologyOneAddCircleProdBasis_repr_none _ _ _ y]
+
+/-- The second coordinate of `x` in `basisAddCircleProd`, the coefficient of `[dt]`, is the
+coordinate in `basisBaseClass` of the slant product `x / [0]` by the class of `0`. -/
+@[simp]
+lemma basisAddCircleProd_repr_one
+    (hdet : (LinearMap.id -
+      (homologyMap (monodromyChainMap φ (ModuleCat.of ℤ ℤ)) 1).hom).det ≠ 0)
+    (x : (TopCat.of (AddCircle p) ⊗ TopCat.of (MappingTorus φ)).singularCohomology
+      (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1) :
+    (basisAddCircleProd φ p hdet).repr x 1 =
+      (basisBaseClass φ hdet).repr
+        (TopCat.singularSlant ℤ (𝟙_ (ModuleCat.{0} ℤ)) _ (TopCat.of (MappingTorus φ))
+          (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 0 1 1 (zero_add _)
+          (TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{0} ℤ)) (0 : AddCircle p) (1 : ℤ)) x)
+        0 := by
+  rw [basisAddCircleProd, Module.Basis.repr_reindex_apply, Equiv.symm_symm,
+    show finSuccEquiv 1 1 = some 0 from rfl,
+    TopCat.singularCohomologyOneAddCircleProdBasis_repr_some]
+
+end FirstCohomology
 
 variable [Module.Free ℤ ((((singularChainComplexFunctor (ModuleCat.{0} ℤ)).obj
     (ModuleCat.of ℤ ℤ)).obj (TopCat.of F)).homology 1)]
