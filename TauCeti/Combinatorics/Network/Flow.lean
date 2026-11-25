@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
+public import TauCeti.Algebra.Order.Group.ZMultiples
 public import TauCeti.Combinatorics.Network.Residual
 import TauCeti.Combinatorics.Network.Shift
 
@@ -64,6 +64,8 @@ flows is assembled.
   `f` by a flow of its residual network.
 * `TauCeti.Flow.exists_nsmul_eq_val`: a flow with arrow values in `zmultiples d` has value
   `n • d` for a natural number `n`.
+* `TauCeti.Flow.exists_nsmul_eq_val_and_nsmul_eq_arrowSum_and_le`: a compatible flow value and
+  the capacity of any source--sink cut have natural multipliers `n ≤ m`.
 
 ## References
 
@@ -522,15 +524,28 @@ natural number `n`. -/
 theorem Flow.exists_nsmul_eq_val [Preorder K] [AddLeftMono K] {cap : Assignment Q K}
     {s t : V} {d : K} (hd : 0 < d) {f : Flow cap s t}
     (hf : ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ AddSubgroup.zmultiples d) :
-    ∃ n : ℕ, n • d = f.val := by
-  obtain ⟨k, hk⟩ := AddSubgroup.mem_zmultiples_iff.1 (excessAt_mem hf t)
-  rw [← BoundedFlow.val_def] at hk
-  rcases k with n | n
-  · exact ⟨n, by simpa using hk⟩
-  · have hn := nsmul_pos hd (Nat.succ_ne_zero n)
-    have h := f.val_nonneg
-    rw [← hk, negSucc_zsmul, neg_nonneg] at h
-    exact (hn.not_ge h).elim
+    ∃ n : ℕ, n • d = f.val :=
+  exists_nsmul_eq_of_nonneg_of_mem_zmultiples hd f.val_nonneg <| by
+    rw [BoundedFlow.val_def]
+    exact excessAt_mem hf t
+
+/-- For positive `d`, a flow whose capacities and arrow values lie in `zmultiples d` has value
+`n • d`, while the capacity of any source--sink cut is `m • d`, for natural numbers `n ≤ m`.
+When `s ≠ t`, taking the cut `{s}` bounds the multiplier of the flow value by that of the total
+capacity leaving the source. -/
+theorem Flow.exists_nsmul_eq_val_and_nsmul_eq_arrowSum_and_le [Preorder K] [AddLeftMono K]
+    [DecidableEq V] {cap : Assignment Q K} {s t : V} {d : K} (hd : 0 < d)
+    (hcap : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ AddSubgroup.zmultiples d) {f : Flow cap s t}
+    (hf : ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ AddSubgroup.zmultiples d) {S : Finset V}
+    (hs : s ∈ S) (ht : t ∉ S) :
+    ∃ n m : ℕ, n • d = f.val ∧ m • d = arrowSum cap S Sᶜ ∧ n ≤ m := by
+  have hcap_nonneg : 0 ≤ cap := fun v w e ↦
+    (f.mem_Icc.1 v w e).trans (f.mem_Icc.2 v w e)
+  obtain ⟨n, hn⟩ := f.exists_nsmul_eq_val hd hf
+  obtain ⟨m, hm⟩ := exists_nsmul_eq_arrowSum hd hcap_nonneg hcap S Sᶜ
+  refine ⟨n, m, hn, hm, (nsmul_strictMono_of_pos hd).le_iff_le.mp ?_⟩
+  rw [hn, hm]
+  exact f.val_le_arrowSum hs ht
 
 end BoundedFlow
 
