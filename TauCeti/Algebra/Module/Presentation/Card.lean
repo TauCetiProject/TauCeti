@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Module.Presentation.Quadratic
 public import TauCeti.LinearAlgebra.Matrix.CokernelIndex
-public import TauCeti.RingTheory.Ideal.RegularPrincipal
 import Mathlib.Algebra.Field.ZMod
 
 /-!
@@ -33,8 +32,6 @@ projecting `S` onto the infinite factors kills a finite torsion ideal `K`, lifts
 
 ## Main results
 
-* `TauCeti.QuadraticPresentation.det_mem_nonZeroDivisors_of_fittingIdeal_eq_span`: if
-  `Fitt₀(N) = (x)` with `x ∈ nonZeroDivisors R`, then `P.rel.det ∈ nonZeroDivisors R`.
 * `TauCeti.QuadraticPresentation.card_eq_of_isPrincipalIdealRing`: over a single PID `D`, when
   `P.rel.det ≠ 0`, `Nat.card N = Nat.card (D ⧸ Ideal.span {P.rel.det})`.
 * `TauCeti.QuadraticPresentation.card_eq_card_quotient_span_det`: over a finite-index subring `S` of
@@ -56,22 +53,6 @@ public section
 namespace TauCeti
 
 namespace QuadraticPresentation
-
-section CommRing
-
-variable {R N : Type*} [CommRing R] [AddCommGroup N] [Module R N]
-
-/-- If the zeroth Fitting ideal of `N` equals `Ideal.span {x}` for a non-zero-divisor `x`, then the
-determinant of the relation matrix of any quadratic presentation of `N` is also a non-zero-divisor.
--/
-theorem det_mem_nonZeroDivisors_of_fittingIdeal_eq_span [Module.Finite R N]
-    (P : QuadraticPresentation R N) {x : R} (hx : x ∈ nonZeroDivisors R)
-    (hfitt : fittingIdeal R N 0 = Ideal.span {x}) :
-    P.rel.det ∈ nonZeroDivisors R :=
-  Ideal.mem_nonZeroDivisors_of_span_eq_of_mem_spanSubmonoid
-    (hfitt ▸ Ideal.span_singleton_mem_spanSubmonoid hx) P.fittingIdeal_eq.symm
-
-end CommRing
 
 section PID
 

@@ -168,35 +168,35 @@ end FiniteIdeal
 
 section RingEquiv
 
-variable {R₁ R₂ ι : Type*} [CommRing R₁] [CommRing R₂] [Fintype ι]
+variable {R₁ R₂ m n : Type*} [CommRing R₁] [CommRing R₂] [Fintype n]
 
-/-- Transport of a square matrix cokernel along a ring isomorphism. -/
-noncomputable def cokernelMapRingEquiv (e : R₁ ≃+* R₂) (A : Matrix ι ι R₁) :
-    ((ι → R₁) ⧸ LinearMap.range A.mulVecLin) ≃+
-      ((ι → R₂) ⧸ LinearMap.range (A.map e).mulVecLin) :=
+/-- Transport of a matrix cokernel along a ring isomorphism. -/
+noncomputable def cokernelMapRingEquiv (e : R₁ ≃+* R₂) (A : Matrix m n R₁) :
+    ((m → R₁) ⧸ LinearMap.range A.mulVecLin) ≃+
+      ((m → R₂) ⧸ LinearMap.range (A.map e).mulVecLin) :=
   QuotientAddGroup.congr (LinearMap.range A.mulVecLin).toAddSubgroup
     (LinearMap.range (A.map e).mulVecLin).toAddSubgroup
-    (AddEquiv.piCongrRight fun _ : ι ↦ e.toAddEquiv) <| by
+    (AddEquiv.piCongrRight fun _ : m ↦ e.toAddEquiv) <| by
       ext w
       simp only [AddSubgroup.mem_map, Submodule.mem_toAddSubgroup, LinearMap.mem_range]
       refine ⟨?_, ?_⟩
       · rintro ⟨x, ⟨u, rfl⟩, rfl⟩
-        refine ⟨fun i ↦ e (u i), funext fun i ↦ ?_⟩
+        refine ⟨fun j ↦ e (u j), funext fun i ↦ ?_⟩
         simp [mulVec, dotProduct]
       · rintro ⟨u, rfl⟩
-        refine ⟨A.mulVecLin fun i ↦ e.symm (u i), ⟨_, rfl⟩, funext fun i ↦ ?_⟩
+        refine ⟨A.mulVecLin fun j ↦ e.symm (u j), ⟨_, rfl⟩, funext fun i ↦ ?_⟩
         simp [mulVec, dotProduct]
 
 /-- `cokernelMapRingEquiv e A` acts coordinatewise by `e` on representatives. -/
 @[simp]
-theorem cokernelMapRingEquiv_mk (e : R₁ ≃+* R₂) (A : Matrix ι ι R₁) (v : ι → R₁) :
+theorem cokernelMapRingEquiv_mk (e : R₁ ≃+* R₂) (A : Matrix m n R₁) (v : m → R₁) :
     cokernelMapRingEquiv e A (Submodule.Quotient.mk v) =
       Submodule.Quotient.mk (fun i ↦ e (v i)) :=
   (rfl)
 
 /-- `(cokernelMapRingEquiv e A).symm` acts coordinatewise by `e.symm` on representatives. -/
 @[simp]
-theorem cokernelMapRingEquiv_symm_mk (e : R₁ ≃+* R₂) (A : Matrix ι ι R₁) (v : ι → R₂) :
+theorem cokernelMapRingEquiv_symm_mk (e : R₁ ≃+* R₂) (A : Matrix m n R₁) (v : m → R₂) :
     (cokernelMapRingEquiv e A).symm (Submodule.Quotient.mk v) =
       Submodule.Quotient.mk (fun i ↦ e.symm (v i)) :=
   (rfl)
@@ -256,16 +256,16 @@ end Subring
 
 section Pi
 
-variable {κ ι : Type*} {R : κ → Type*} [∀ k, CommRing (R k)] [Fintype ι]
+variable {κ m n : Type*} {R : κ → Type*} [∀ k, CommRing (R k)] [Fintype n]
 
-/-- Over a product of commutative rings `∏ k, R k`, the cokernel of a square matrix `A` decomposes
-as the product of the cokernels of its projections `A.map (Pi.evalRingHom R k)`. Neither
-`[DecidableEq ι]` nor finiteness of `κ` is needed. -/
-noncomputable def cokernelPiLinearEquiv (A : Matrix ι ι (∀ k, R k)) :
-    ((ι → ∀ k, R k) ⧸ LinearMap.range A.mulVecLin) ≃ₗ[∀ k, R k]
-      ∀ k, ((ι → R k) ⧸ LinearMap.range (A.map (Pi.evalRingHom R k)).mulVecLin) := by
-  let φ : (ι → ∀ k, R k) →ₗ[∀ k, R k]
-      ∀ k, ((ι → R k) ⧸ LinearMap.range (A.map (Pi.evalRingHom R k)).mulVecLin) :=
+/-- Over a product of commutative rings `∏ k, R k`, the cokernel of a matrix `A` decomposes as the
+product of the cokernels of its projections `A.map (Pi.evalRingHom R k)`. Neither decidable
+equality nor finiteness of `m` or `κ` is needed. -/
+noncomputable def cokernelPiLinearEquiv (A : Matrix m n (∀ k, R k)) :
+    ((m → ∀ k, R k) ⧸ LinearMap.range A.mulVecLin) ≃ₗ[∀ k, R k]
+      ∀ k, ((m → R k) ⧸ LinearMap.range (A.map (Pi.evalRingHom R k)).mulVecLin) := by
+  let φ : (m → ∀ k, R k) →ₗ[∀ k, R k]
+      ∀ k, ((m → R k) ⧸ LinearMap.range (A.map (Pi.evalRingHom R k)).mulVecLin) :=
     { toFun := fun v k ↦ Submodule.Quotient.mk fun i ↦ v i k
       map_add' := fun u v ↦ funext fun k ↦ by
         simp only [Pi.add_apply, ← Submodule.Quotient.mk_add]
@@ -282,20 +282,20 @@ noncomputable def cokernelPiLinearEquiv (A : Matrix ι ι (∀ k, R k)) :
     · rintro ⟨u, rfl⟩
       ext k
       rw [Pi.zero_apply, Submodule.Quotient.mk_eq_zero, LinearMap.mem_range]
-      refine ⟨fun i ↦ u i k, funext fun i ↦ ?_⟩
+      refine ⟨fun j ↦ u j k, funext fun i ↦ ?_⟩
       simp [mulVec, dotProduct]
     · have hmem (k : κ) : (fun i ↦ v i k) ∈
           LinearMap.range (A.map (Pi.evalRingHom R k)).mulVecLin := by
         simpa [Submodule.Quotient.mk_eq_zero] using congr_fun h k
       choose u hu using hmem
-      refine ⟨fun i k ↦ u k i, funext fun i ↦ funext fun k ↦ ?_⟩
+      refine ⟨fun j k ↦ u k j, funext fun i ↦ funext fun k ↦ ?_⟩
       have hik := congr_fun (hu k) i
       simpa [mulVec, dotProduct] using hik
   exact (Submodule.quotEquivOfEq _ _ hker).trans (φ.quotKerEquivOfSurjective hsurj)
 
 /-- Evaluating `cokernelPiLinearEquiv A` on `mk v` at factor `k` gives `mk (fun i ↦ v i k)`. -/
 @[simp]
-theorem cokernelPiLinearEquiv_mk (A : Matrix ι ι (∀ k, R k)) (v : ι → ∀ k, R k) (k : κ) :
+theorem cokernelPiLinearEquiv_mk (A : Matrix m n (∀ k, R k)) (v : m → ∀ k, R k) (k : κ) :
     cokernelPiLinearEquiv A (Submodule.Quotient.mk v) k =
       Submodule.Quotient.mk (fun i ↦ v i k) :=
   (rfl)
@@ -303,7 +303,7 @@ theorem cokernelPiLinearEquiv_mk (A : Matrix ι ι (∀ k, R k)) (v : ι → ∀
 /-- `(cokernelPiLinearEquiv A).symm` assembles factorwise classes `mk (v k)` into
 `mk (fun i k ↦ v k i)`. -/
 @[simp]
-theorem cokernelPiLinearEquiv_symm_mk (A : Matrix ι ι (∀ k, R k)) (v : ∀ k, ι → R k) :
+theorem cokernelPiLinearEquiv_symm_mk (A : Matrix m n (∀ k, R k)) (v : ∀ k, m → R k) :
     (cokernelPiLinearEquiv A).symm (fun k ↦ Submodule.Quotient.mk (v k)) =
       Submodule.Quotient.mk (fun i k ↦ v k i) :=
   (cokernelPiLinearEquiv A).symm_apply_eq.mpr (rfl)
