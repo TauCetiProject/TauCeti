@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Basis.Defs
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Derivation.Basic
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
 public import TauCeti.RingTheory.Kaehler.MapSemilinear
+import Mathlib.LinearAlgebra.TensorProduct.Tower
 import Mathlib.RingTheory.TensorProduct.Free
 
 /-!
@@ -27,9 +28,11 @@ Both directions come from the two universal properties:
 * the `R`-linear map `m ↦ d(ι m)` extends by base change along `R → SymmetricAlgebra R M` to
   `SymmetricAlgebra R M ⊗[R] M →ₗ[SymmetricAlgebra R M] Ω[SymmetricAlgebra R M⁄R]`.
 
-When `M` carries an `R`-basis `b`, base change transports `b` along this equivalence to a basis of
-`Ω[SymmetricAlgebra R M⁄R]` consisting of the differentials `d(ι (b i))`
-(`Module.Basis.kaehlerDifferentialSymmetricAlgebra`).
+Base-changing `Ω[SymmetricAlgebra R M⁄R]` back to `R` along any `R`-algebra retract
+`SymmetricAlgebra R M → R` (such as the augmentation `SymmetricAlgebra.algebraMapInv`) recovers `M`
+(`SymmetricAlgebra.tensorKaehlerDifferentialEquiv`). When `M` carries an `R`-basis `b`, base change
+transports `b` along `kaehlerDifferentialEquiv` to a basis of `Ω[SymmetricAlgebra R M⁄R]` consisting
+of the differentials `d(ι (b i))` (`Module.Basis.kaehlerDifferentialSymmetricAlgebra`).
 
 ## Main definitions and results
 
@@ -40,6 +43,9 @@ When `M` carries an `R`-basis `b`, base change transports `b` along this equival
   on pure tensors.
 * `SymmetricAlgebra.kaehlerDifferentialEquiv_mapSemilinear_map`: naturality with respect to
   `SymmetricAlgebra.map` and `KaehlerDifferential.mapSemilinear`.
+* `SymmetricAlgebra.tensorKaehlerDifferentialEquiv`: the `R`-linear equivalence
+  `R ⊗[SymmetricAlgebra R M] Ω[SymmetricAlgebra R M⁄R] ≃ₗ[R] M` along any `R`-algebra retract
+  `SymmetricAlgebra R M → R`, with `@[simp]` lemmas on `r ⊗ₜ d(ι m)` and `.symm m`.
 * `Module.Basis.kaehlerDifferentialSymmetricAlgebra`: the basis of `Ω[SymmetricAlgebra R M⁄R]`
   induced by a basis of `M`.
 -/
@@ -133,6 +139,35 @@ theorem kaehlerDifferentialEquiv_mapSemilinear_map {N : Type w} [AddCommGroup N]
     LinearEquiv.coe_coe] at hω
   conv_lhs => rw [hmap, mapSemilinear_toAlgHom_apply]
   exact hω.trans (hrhs _)
+
+variable (R M) in
+/-- Along any `R`-algebra retract `SymmetricAlgebra R M → R` (such as the augmentation
+`SymmetricAlgebra.algebraMapInv`), base-changing `Ω[SymmetricAlgebra R M⁄R]` to `R` recovers `M`,
+sending `r ⊗ₜ d(ι m)` to `r • m`. -/
+def tensorKaehlerDifferentialEquiv [Algebra (SymmetricAlgebra R M) R]
+    [IsScalarTower R (SymmetricAlgebra R M) R] :
+    R ⊗[SymmetricAlgebra R M] Ω[SymmetricAlgebra R M⁄R] ≃ₗ[R] M :=
+  LinearEquiv.baseChange (SymmetricAlgebra R M) R _ _ (kaehlerDifferentialEquiv R M) ≪≫ₗ
+    TensorProduct.AlgebraTensorModule.cancelBaseChange R (SymmetricAlgebra R M) R R M ≪≫ₗ
+    TensorProduct.lid R M
+
+/-- `tensorKaehlerDifferentialEquiv` sends `r ⊗ₜ d(ι R M m)` to `r • m` (and in particular
+`1 ⊗ₜ d(ι R M m)` to `m`). -/
+@[simp]
+theorem tensorKaehlerDifferentialEquiv_tmul_D_ι [Algebra (SymmetricAlgebra R M) R]
+    [IsScalarTower R (SymmetricAlgebra R M) R] (r : R) (m : M) :
+    tensorKaehlerDifferentialEquiv R M
+        (r ⊗ₜ[SymmetricAlgebra R M] D R (SymmetricAlgebra R M) (ι R M m)) =
+      r • m := by
+  simp [tensorKaehlerDifferentialEquiv]
+
+/-- The inverse of `tensorKaehlerDifferentialEquiv` sends `m` to `1 ⊗ₜ d(ι R M m)`. -/
+@[simp]
+theorem tensorKaehlerDifferentialEquiv_symm_apply [Algebra (SymmetricAlgebra R M) R]
+    [IsScalarTower R (SymmetricAlgebra R M) R] (m : M) :
+    (tensorKaehlerDifferentialEquiv R M).symm m =
+      1 ⊗ₜ[SymmetricAlgebra R M] D R (SymmetricAlgebra R M) (ι R M m) := by
+  simp [tensorKaehlerDifferentialEquiv]
 
 end SymmetricAlgebra
 

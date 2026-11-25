@@ -8,7 +8,6 @@ module
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import Mathlib.RingTheory.Smooth.Basic
 import Mathlib.LinearAlgebra.TensorProduct.Projective
-import Mathlib.LinearAlgebra.TensorProduct.Tower
 import Mathlib.RingTheory.TensorProduct.Finite
 import TauCeti.LinearAlgebra.SymmetricAlgebra.FiniteType
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
@@ -28,10 +27,10 @@ free module `F`, making `SymmetricAlgebra R M` an `R`-algebra retract of the pol
 presented (`Module.finitePresentation_of_projective`), giving finite presentation of
 `SymmetricAlgebra R M` (`TauCeti.SymmetricAlgebra.instFinitePresentation`).
 
-Necessity uses `SymmetricAlgebra.kaehlerDifferentialEquiv` (`Ω[Sym M⁄R] ≃ Sym M ⊗[R] M`)
-together with base change along the augmentation `SymmetricAlgebra.algebraMapInv : Sym M →ₐ[R] R` to
-descend projectivity (`Module.Projective.tensorProduct`) and finiteness
-(`Module.Finite.base_change`) of `Ω[Sym M⁄R]` over `Sym M` back to `M` over `R`.
+Necessity uses `SymmetricAlgebra.tensorKaehlerDifferentialEquiv` along the augmentation
+`SymmetricAlgebra.algebraMapInv : Sym M →ₐ[R] R` (`R ⊗[Sym M] Ω[Sym M⁄R] ≃ₗ[R] M`) to descend
+projectivity (`Module.Projective.tensorProduct`) and finiteness (`Module.Finite.base_change`) of
+`Ω[Sym M⁄R]` over `Sym M` back to `M` over `R`.
 
 ## Main declarations
 
@@ -46,8 +45,6 @@ descend projectivity (`Module.Projective.tensorProduct`) and finiteness
 -/
 
 public section
-
-open TensorProduct
 
 namespace TauCeti.SymmetricAlgebra
 
@@ -76,28 +73,15 @@ instance instSmooth [Module.Projective R M] [Module.Finite R M] :
   letI : Module.FinitePresentation R M := Module.finitePresentation_of_projective R M
   ⟨inferInstance, inferInstance⟩
 
-/-- Base change of `Ω[SymmetricAlgebra R M⁄R]` along the augmentation
-`SymmetricAlgebra.algebraMapInv : SymmetricAlgebra R M →ₐ[R] R` recovers `M`. -/
-private noncomputable def augKaehlerEquiv :
-    letI : Algebra (SymmetricAlgebra R M) R :=
-      (_root_.SymmetricAlgebra.algebraMapInv (R := R) (M := M)).toRingHom.toAlgebra
-    R ⊗[SymmetricAlgebra R M] Ω[SymmetricAlgebra R M⁄R] ≃ₗ[R] M :=
-  letI : Algebra (SymmetricAlgebra R M) R :=
-    (_root_.SymmetricAlgebra.algebraMapInv (R := R) (M := M)).toRingHom.toAlgebra
-  haveI : IsScalarTower R (SymmetricAlgebra R M) R :=
-    .of_algebraMap_eq fun r ↦ (_root_.SymmetricAlgebra.algebraMap_leftInverse M r).symm
-  LinearEquiv.baseChange (SymmetricAlgebra R M) R _ _
-      (_root_.SymmetricAlgebra.kaehlerDifferentialEquiv R M) ≪≫ₗ
-    TensorProduct.AlgebraTensorModule.cancelBaseChange R (SymmetricAlgebra R M) R R M ≪≫ₗ
-    TensorProduct.lid R M
-
 /-- `SymmetricAlgebra R M` is formally smooth over `R` if and only if `M` is projective over `R`. -/
 theorem formallySmooth_iff :
     Algebra.FormallySmooth R (SymmetricAlgebra R M) ↔ Module.Projective R M := by
   refine ⟨fun _ ↦ ?_, fun _ ↦ inferInstance⟩
   let : Algebra (SymmetricAlgebra R M) R :=
     (_root_.SymmetricAlgebra.algebraMapInv (R := R) (M := M)).toRingHom.toAlgebra
-  exact .of_equiv (augKaehlerEquiv R M)
+  have : IsScalarTower R (SymmetricAlgebra R M) R :=
+    .of_algebraMap_eq fun r ↦ (_root_.SymmetricAlgebra.algebraMap_leftInverse M r).symm
+  exact .of_equiv (_root_.SymmetricAlgebra.tensorKaehlerDifferentialEquiv R M)
 
 /-- `SymmetricAlgebra R M` is smooth over `R` if and only if `M` is projective and finite over
 `R`. -/
@@ -106,6 +90,8 @@ theorem smooth_iff :
   refine ⟨fun h ↦ ⟨(formallySmooth_iff R M).mp h.formallySmooth, ?_⟩, fun ⟨_, _⟩ ↦ inferInstance⟩
   let : Algebra (SymmetricAlgebra R M) R :=
     (_root_.SymmetricAlgebra.algebraMapInv (R := R) (M := M)).toRingHom.toAlgebra
-  exact .equiv (augKaehlerEquiv R M)
+  have : IsScalarTower R (SymmetricAlgebra R M) R :=
+    .of_algebraMap_eq fun r ↦ (_root_.SymmetricAlgebra.algebraMap_leftInverse M r).symm
+  exact .equiv (_root_.SymmetricAlgebra.tensorKaehlerDifferentialEquiv R M)
 
 end TauCeti.SymmetricAlgebra

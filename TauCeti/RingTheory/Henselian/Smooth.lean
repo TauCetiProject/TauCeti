@@ -29,7 +29,8 @@ under `R`, every `R`-algebra map `A → S ⧸ J` lifts to an `R`-algebra map `A 
 `R`-algebra homomorphism `f : S →ₐ[R] T` whose kernel is a Henselian ideal of `S` has the
 `R`-algebra lifting property against smooth `R`-algebras
 (`TauCeti.HenselianRing.comp_surjective_of_surjective`). Compare
-`Algebra.FormallySmooth.comp_surjective`, which lifts formal smoothness along nilpotent kernels.
+`Algebra.FormallySmooth.comp_surjective`, which lifts algebra maps out of formally smooth algebras
+along square-zero kernels.
 
 Applying this to the nonzero powers `J ^ n` (`Ideal.henselianRing_pow`) approximates completed
 points of smooth algebras over arbitrary Henselian pairs (`exists_algHom_comp_eq_evalₐ`): for every
@@ -137,7 +138,7 @@ variable {R : Type*} [CommRing R] {S : Type u} {T : Type*} [CommRing S] [CommRin
   [Algebra R S] [Algebra R T] {A : Type v} [CommRing A] [Algebra R A] [Algebra.Smooth R A]
 
 /-- **Smooth lifting along a surjective homomorphism with Henselian kernel.** Compare
-`Algebra.FormallySmooth.comp_surjective` for nilpotent kernels: for a smooth `R`-algebra `A` and a
+`Algebra.FormallySmooth.comp_surjective` for square-zero kernels: for a smooth `R`-algebra `A` and a
 surjective `R`-algebra map `f : S →ₐ[R] T` with `HenselianRing S (RingHom.ker f)`, every `R`-algebra
 map `A →ₐ[R] T` lifts along `f` to `A →ₐ[R] S`. -/
 theorem comp_surjective_of_surjective (f : S →ₐ[R] T) (hf : Function.Surjective f)
