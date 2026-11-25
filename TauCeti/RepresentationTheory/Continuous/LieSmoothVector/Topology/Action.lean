@@ -108,13 +108,15 @@ theorem continuous_lieSmoothVectorsAction {X : ι → LeftInvariantDerivation I 
   choose c hc using fun j ↦
     (Submodule.mem_span_range_iff_exists_fun ℝ).mp (hX ▸ Submodule.mem_top :
       Ad (I := I) g⁻¹ (X j) ∈ Submodule.span ℝ (Set.range X))
-  let L : V →L[ℝ] V := (π g).toLinearMap.toAddMonoidHom.toRealLinearMap (π g).continuous
+  let L : V →L[ℝ] V := (π g).restrictScalars ℝ
   refine WithSeminorms.continuous_of_isBounded (withSeminorms I π X) (withSeminorms I π X) _
     (Seminorm.IsBounded.of_real fun k ↦
       ⟨{k}, ‖L‖ * (1 + ∑ j, ∑ i, |c j i|) ^ k, fun v ↦ ?_⟩)
   simp only [Finset.sup_singleton, seminormFamily_apply, LinearMap.comp_apply,
     LinearEquiv.coe_coe, linearEquiv_apply, linearEquiv_symm_apply]
-  refine (wordSeminorm_lieSmoothVectorsAction_le X k g (fun u ↦ L.le_opNorm u) _).trans ?_
+  refine (wordSeminorm_lieSmoothVectorsAction_le X k g
+    (fun u ↦ by simpa only [L, ContinuousLinearMap.coe_restrictScalars'] using L.le_opNorm u)
+    _).trans ?_
   rw [mul_assoc]
   exact mul_le_mul_of_nonneg_left
     (wordSeminorm_le_of_eq_sum X c (fun j ↦ (hc j).symm) k v.toSmooth) (norm_nonneg L)
