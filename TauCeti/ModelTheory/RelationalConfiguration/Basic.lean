@@ -37,6 +37,8 @@ configuration by deciding its relations (`ofStructure`).
 
 * `TauCeti.RelationalConfiguration.Atom L V` — a relation symbol of `L` with a tuple of vertices;
 * `TauCeti.RelationalConfiguration L V` — a truth value for every atom;
+* `TauCeti.RelationalConfiguration.equivFun` — a configuration is its truth-value function on
+  atoms;
 * `TauCeti.RelationalConfiguration.restrict` — pulling a configuration back along a vertex map;
 * `FirstOrder.Language.LHom.onAtom` — renaming the relation symbol of an atom along a language
   map;
@@ -119,12 +121,25 @@ theorem Atom.induction_atom {motive : Atom L V → Prop}
 theorem Atom.eta (p : Atom L V) : atom p.2.1 p.2.2 = p :=
   (rfl)
 
+/-- Over an empty vertex type, every atom is nullary. -/
+theorem Atom.exists_eq_atom_of_isEmpty [IsEmpty V] (a : Atom L V) :
+    ∃ R : L.Relations 0, a = atom R Fin.elim0 := by
+  obtain ⟨n, R, x⟩ := a
+  cases n with
+  | zero => exact ⟨R, by rw [Subsingleton.elim x Fin.elim0]; exact (Atom.eta _).symm⟩
+  | succ n => exact isEmptyElim (x 0)
+
 /-- Relabel the arguments of an atom along a vertex map. -/
 def Atom.map (f : V → W) (a : Atom L V) : Atom L W := ⟨a.1, a.2.1, f ∘ a.2.2⟩
 
 @[simp]
 theorem Atom.map_atom (f : V → W) {n : ℕ} (R : L.Relations n) (x : Fin n → V) :
     (atom R x).map f = atom R (f ∘ x) := (rfl)
+
+/-- Relabelling a unary atom `R(v)` along `f` gives `R(f v)`. -/
+theorem Atom.map_atom_unary (f : V → W) (R : L.Relations 1) (v : V) :
+    (atom R ![v]).map f = atom R ![f v] := by
+  rw [Atom.map_atom, Matrix.vec_single_eq_const, Matrix.vec_single_eq_const, Function.comp_def]
 
 @[simp]
 theorem Atom.map_id (a : Atom L V) : a.map id = a := (rfl)
@@ -208,6 +223,19 @@ theorem eval_mk (c : Atom L V → Bool) (a : Atom L V) : (mk c).eval a = c a := 
 @[ext]
 theorem ext {c d : RelationalConfiguration L V} (h : ∀ a, c.eval a = d.eval a) : c = d :=
   funext h
+
+/-- A configuration is its truth-value function on atoms, through `eval` and `mk`. -/
+def equivFun : RelationalConfiguration L V ≃ (Atom L V → Bool) where
+  toFun c := c.eval
+  invFun := mk
+  left_inv _ := ext fun a => eval_mk _ a
+  right_inv f := funext (eval_mk f)
+
+@[simp]
+theorem equivFun_apply (c : RelationalConfiguration L V) : equivFun c = c.eval := (rfl)
+
+@[simp]
+theorem equivFun_symm_apply (f : Atom L V → Bool) : equivFun.symm f = mk f := (rfl)
 
 /-- A language with countably many relation symbols of each arity has countably many atoms over a
 countable vertex type. -/
