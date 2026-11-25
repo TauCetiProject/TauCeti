@@ -5,16 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.Analysis.Normed.Module.Normalize
-import Mathlib.Data.Finset.Sort
 import Mathlib.LinearAlgebra.Eigenspace.Charpoly
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Extension
-import TauCeti.LinearAlgebra.Matrix.Intertwining
-import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
+import TauCeti.LinearAlgebra.Matrix.Triangular.Intertwining
+import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
+import TauCeti.RingTheory.Polynomial.RootEnumeration
 
 /-!
 # Unitary Schur triangularization
@@ -22,9 +20,10 @@ import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
 Every complex square matrix is unitarily similar to an upper triangular matrix. Any prescribed
 ordering of the characteristic roots, with their algebraic multiplicities, can be put on the
 diagonal. When the eigenvalues are distinct and their order is fixed, the unitary matrix is
-determined up to right multiplication by the diagonal torus. This is the triangular
-representation used in the spectral change of variables for complex Ginibre matrices.
-The ordered existence statement also works over the real numbers when the roots are real.
+determined up to right multiplication by the diagonal torus. Every representative of the coset
+gives the same ordered diagonal. This is the triangular representation used in the spectral
+change of variables for complex Ginibre matrices. Existence also holds for real matrices with
+split characteristic polynomial.
 
 ## References
 
@@ -64,11 +63,9 @@ private theorem exists_unitary_schur_first_column {n : ℕ}
     (by rw [finrank_euclideanSpace, Fintype.card_fin]) (NormedSpace.norm_normalize hv.2)
   let U : unitaryGroup (Fin (n + 1)) 𝕜 :=
     ⟨std.toBasis.toMatrix b.toBasis, std.toMatrix_orthonormalBasis_mem_unitary b⟩
-  have hstar : star U.val = b.toBasis.toMatrix std.toBasis := by
-    have hinv : U.val * b.toBasis.toMatrix std.toBasis = 1 :=
-      std.toBasis.toMatrix_mul_toMatrix_flip b.toBasis
-    rw [← Matrix.mul_one (star U.val), ← hinv, ← Matrix.mul_assoc,
-      mem_unitaryGroup_iff'.mp U.property, Matrix.one_mul]
+  have hstar : star U.val = b.toBasis.toMatrix std.toBasis :=
+    left_inv_eq_right_inv (Unitary.coe_star_mul_self U)
+      (std.toBasis.toMatrix_mul_toMatrix_flip b.toBasis)
   have hmatrix : star U.val * A * U.val = LinearMap.toMatrix b.toBasis b.toBasis T := by
     rw [hstar, ← hA]
     exact basis_toMatrix_mul_linearMap_toMatrix_mul_basis_toMatrix
@@ -111,9 +108,7 @@ private theorem exists_unitary_initial_schur_block {n : ℕ}
   have hc : (B.submatrix e e).charpoly = A.charpoly := calc
     _ = (reindex e.symm e.symm B).charpoly := by simp [reindex_apply]
     _ = B.charpoly := charpoly_reindex e.symm B
-    _ = A.charpoly := by
-      simpa only [B, Unitary.val_toUnits_apply, inv_eq_left_inv (Unitary.coe_star_mul_self U)]
-        using charpoly_units_conj' (Unitary.toUnits U) A
+    _ = A.charpoly := charpoly_unitary_conj A U
   rw [hB, charpoly_fromBlocks_zero₂₁, charpoly_diagonal, Fin.prod_univ_one, hd,
     Fin.prod_univ_succ] at hc
   exact mul_left_cancel₀ (X_sub_C_ne_zero (d 0)) hc
@@ -139,9 +134,7 @@ private theorem exists_unitary_isUpperTriangular_diag_fin {n : ℕ}
     have hW : W.val.submatrix e e =
         fromBlocks 1 0 0 V.val := by
       rw [UnitaryGroup.coe_prodBlockSucc]
-      -- Name the shared reindexing equivalence so its composition with its inverse simplifies.
-      change (reindex e e (fromBlocks 1 0 0 V.val)).submatrix e e = _
-      simp only [reindex_apply, submatrix_submatrix, Equiv.symm_comp_self, submatrix_id_id]
+      exact (reindex e e).symm_apply_apply _
     let B := star (U * W).val * A * (U * W).val
     have hC : B.submatrix e e =
         fromBlocks (diagonal fun _ : Fin 1 ↦ d 0) (F * V.val) 0 (star V.val * D * V.val) := by
@@ -174,10 +167,7 @@ theorem exists_unitary_isUpperTriangular_diag_iff {ι : Type*} [Fintype ι] [Lin
     A.charpoly = ∏ i, (X - C (d i)) := by
   constructor
   · rintro ⟨U, hU, hdiag⟩
-    have hc : (star U.val * A * U.val).charpoly = A.charpoly := by
-      simpa only [Unitary.val_toUnits_apply, inv_eq_left_inv (Unitary.coe_star_mul_self U)]
-        using charpoly_units_conj' (Unitary.toUnits U) A
-    rw [← hc, charpoly_of_isUpperTriangular _ hU]
+    rw [← charpoly_unitary_conj A U, charpoly_of_isUpperTriangular _ hU]
     exact Finset.prod_congr rfl fun i _ ↦ congrArg (fun z ↦ X - C z) (congrFun hdiag i)
   · intro hd
     let e := Fintype.orderIsoFinOfCardEq ι rfl
@@ -189,9 +179,8 @@ theorem exists_unitary_isUpperTriangular_diag_iff {ι : Type*} [Fintype ι] [Lin
     obtain ⟨U, hU, hdiag⟩ := exists_unitary_isUpperTriangular_diag_fin _ _ he
     let V : unitaryGroup ι 𝕜 :=
       ⟨U.val.submatrix e.symm e.symm, submatrix_equiv_mem_unitary.mpr (SetLike.coe_mem U)⟩
-    have hA : (A.submatrix e e).submatrix e.symm e.symm = A := by
-      have heid : (e : Fin (Fintype.card ι) → ι) ∘ e.symm = id := funext e.apply_symm_apply
-      rw [submatrix_submatrix, heid, submatrix_id_id]
+    have hA : (A.submatrix e e).submatrix e.symm e.symm = A :=
+      (reindex e.toEquiv e.toEquiv).apply_symm_apply A
     have hmatrix : star V.val * A * V.val =
         (star U.val * A.submatrix e e * U.val).submatrix e.symm e.symm := by
       simp only [V, star_eq_conjTranspose, conjTranspose_submatrix]
@@ -205,27 +194,49 @@ theorem exists_unitary_isUpperTriangular_diag_iff {ι : Type*} [Fintype ι] [Lin
       ext i
       simpa using congrFun hdiag (e.symm i)
 
+/-- A square matrix over an `RCLike` field with split characteristic polynomial has an upper
+triangular unitary conjugate. -/
+theorem exists_unitary_isUpperTriangular_of_splits {ι : Type*} [Fintype ι] [LinearOrder ι]
+    (A : Matrix ι ι 𝕜) (hs : A.charpoly.Splits) :
+    ∃ U : unitaryGroup ι 𝕜, (star U.val * A * U.val).IsUpperTriangular := by
+  have hdeg : (A.charpoly.map (algebraMap 𝕜 𝕜)).natDegree = Fintype.card ι := by
+    simp
+  obtain ⟨d, hd⟩ := (exists_isRootEnumeration_iff_splits hdeg).mpr (by simpa using hs)
+  have hprod : A.charpoly = ∏ i, (X - C (d i)) := by
+    simpa [A.charpoly_monic.leadingCoeff] using hd.eq_C_mul_prod_X_sub_C hdeg.le
+  obtain ⟨U, hU, -⟩ := (exists_unitary_isUpperTriangular_diag_iff A d).mpr hprod
+  exact ⟨U, hU⟩
+
 end Ordered
 
 /-- **Schur triangularization.** Every complex square matrix has an upper triangular unitary
 conjugate. -/
 theorem exists_unitary_isUpperTriangular {ι : Type*} [Fintype ι] [LinearOrder ι]
-    (A : Matrix ι ι ℂ) : ∃ U : unitaryGroup ι ℂ, (star U.val * A * U.val).IsUpperTriangular := by
-  have hs := IsAlgClosed.splits A.charpoly
-  let l := A.charpoly.roots.toList
-  have hl : l.length = Fintype.card ι := by
-    simp [l, ← hs.natDegree_eq_card_roots]
-  let e := Fintype.equivFinOfCardEq hl.symm
-  let d := l.get ∘ e
-  have hprod : A.charpoly = ∏ i, (X - C (d i)) := by
-    rw [hs.eq_prod_roots_of_monic A.charpoly_monic, ← Multiset.coe_toList A.charpoly.roots]
-    calc
-      _ = ∏ i : Fin l.length, (X - C (l.get i)) := by
-        rw [Multiset.map_coe, Multiset.prod_coe, ← Fin.prod_univ_fun_getElem]
-        rfl
-      _ = _ := (Fintype.prod_equiv e _ _ fun _ ↦ rfl).symm
-  obtain ⟨U, hU, -⟩ := (exists_unitary_isUpperTriangular_diag_iff A d).mpr hprod
-  exact ⟨U, hU⟩
+    (A : Matrix ι ι ℂ) : ∃ U : unitaryGroup ι ℂ, (star U.val * A * U.val).IsUpperTriangular :=
+  A.exists_unitary_isUpperTriangular_of_splits (IsAlgClosed.splits A.charpoly)
+
+/-- Every representative of the same diagonal torus coset as a unitary triangularizer also
+triangularizes the matrix and gives the same ordered diagonal, even with repeated roots. -/
+theorem isUpperTriangular_diag_of_inv_mul_mem_unitaryTorus {ι : Type*}
+    [Fintype ι] [DecidableEq ι] [LT ι] (A : Matrix ι ι ℂ) {U V : unitaryGroup ι ℂ}
+    (hU : (star U.val * A * U.val).IsUpperTriangular) (hV : U⁻¹ * V ∈ TauCeti.unitaryTorus ι) :
+    (star V.val * A * V.val).IsUpperTriangular ∧
+      (star V.val * A * V.val).diag = (star U.val * A * U.val).diag := by
+  obtain ⟨z, hz⟩ := TauCeti.mem_unitaryTorus_iff_exists_unitaryTorusHom.mp hV
+  have hVeq : V = U * TauCeti.unitaryTorusHom ι z := by
+    rw [hz]
+    simp
+  have hconj : star V.val * A * V.val =
+      diagonal (star fun i ↦ (z i : ℂ)) * (star U.val * A * U.val) *
+        diagonal (fun i ↦ (z i : ℂ)) := by
+    rw [hVeq]
+    simp only [Submonoid.coe_mul, star_mul, TauCeti.coe_unitaryTorusHom, Matrix.mul_assoc]
+    rw [star_eq_conjTranspose, diagonal_conjTranspose]
+  rw [hconj]
+  refine ⟨fun i j hji ↦ ?_, funext fun i ↦ ?_⟩
+  · simp [hU hji]
+  · simp only [diag_apply, mul_diagonal, diagonal_mul, Pi.star_apply, mul_right_comm _ _ (z i : ℂ),
+      Complex.star_def, Circle.conj_coe_mul_self, one_mul]
 
 /-- Two unitary triangularizations with the same distinct diagonal entries in the same order
 differ by a diagonal unitary change of basis. -/

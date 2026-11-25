@@ -10,17 +10,19 @@ public import Mathlib.LinearAlgebra.Matrix.Block
 /-!
 # Intertwiners of upper triangular matrices
 
-An intertwiner of two upper triangular matrices is itself upper triangular if the diagonal
-entries at each position below the diagonal satisfy the indicated separation. This controls
-changes of basis between triangular forms with a fixed ordering of distinct eigenvalues.
+Over a commutative semiring where nonzero factors can be cancelled, an intertwiner of two upper
+triangular matrices is upper triangular if the diagonal entries satisfy the indicated separation.
+This controls changes of basis between triangular forms with a fixed ordering of distinct
+eigenvalues.
 -/
 
 public section
 
 namespace Matrix
 
-/-- If upper triangular matrices A and B satisfy Aᵢᵢ ≠ Bⱼⱼ whenever j < i, then every
-intertwiner P satisfying AP = PB is upper triangular. -/
+/-- Over a commutative semiring where nonzero factors can be cancelled, if upper triangular
+matrices `A` and `B` satisfy `A i i ≠ B j j` whenever `j < i`, then every intertwiner `P`
+satisfying `A * P = P * B` is upper triangular. -/
 theorem IsUpperTriangular.isUpperTriangular_of_mul_eq_mul {ι R : Type*}
     [Fintype ι] [LinearOrder ι] [CommSemiring R] [IsRightCancelMulZero R] {A B P : Matrix ι ι R}
     (hA : A.IsUpperTriangular) (hB : B.IsUpperTriangular) (hP : A * P = P * B)
