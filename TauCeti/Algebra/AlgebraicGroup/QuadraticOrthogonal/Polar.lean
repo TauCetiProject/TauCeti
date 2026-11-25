@@ -71,10 +71,9 @@ private theorem polar_relation (g : Matrix (Fin n) (Fin n) A) :
           (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R A)) +
         (gᵀ * (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R A) * g -
           (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R A))ᵀ := by
-  rw [toMatrix_polarBilin_eq_coefficientMatrix_add_transpose,
-    Matrix.map_add _ (map_add (algebraMap R A)), transpose_sub, transpose_mul, transpose_mul,
-    transpose_transpose, transpose_map, Matrix.mul_add, Matrix.add_mul, Matrix.mul_assoc gᵀ,
-    Matrix.mul_assoc gᵀ]
+  rw [toMatrix_polarBilin_eq_coefficientMatrix_add_transpose]
+  simp only [Matrix.map_add _ (map_add (algebraMap R A)), transpose_sub, transpose_mul,
+    transpose_transpose, transpose_map, Matrix.mul_add, Matrix.add_mul, Matrix.mul_assoc]
   abel
 
 /-- **Points of `O(q)` preserve the polar form**: if `g ∈ O(q)(A)`, then `gᵀ B g = B` for `B` the

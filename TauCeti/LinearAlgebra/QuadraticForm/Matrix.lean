@@ -94,9 +94,9 @@ theorem toMatrix_polarBilin_eq_coefficientMatrix_add_transpose (q : QuadraticFor
       coefficientMatrix q b + (coefficientMatrix q b)ᵀ := by
   conv_lhs => rw [← QuadraticMap.toQuadraticMap_toBilin q b]
   ext i j
-  rw [LinearMap.BilinMap.polarBilin_toQuadraticMap, LinearMap.BilinForm.toMatrix_apply,
+  simp only [LinearMap.BilinMap.polarBilin_toQuadraticMap, LinearMap.BilinForm.toMatrix_apply,
     Matrix.add_apply, Matrix.transpose_apply, coefficientMatrix, LinearMap.toMatrix₂_apply,
-    LinearMap.toMatrix₂_apply, LinearMap.add_apply, LinearMap.add_apply, LinearMap.flip_apply]
+    LinearMap.add_apply, LinearMap.flip_apply]
 
 /-- The form `q_A` on `A^ι` with the same coefficients as a form `q` on `R^ι`: `x ↦ xᵀ M x` for
 the coefficient matrix `M` of `q` in the standard basis, read in `A`. -/

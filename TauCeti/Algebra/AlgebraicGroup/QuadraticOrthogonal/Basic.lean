@@ -343,6 +343,7 @@ theorem hopfIdealPointsSubgroup_definingHopfIdeal :
 variable {R n q A} in
 /-- **The membership criterion on quotient points**: an ambient point lies in the subgroup cut out
 by the Hopf ideal of `O(q)` exactly when its matrix lies in `O(q)(A)`. -/
+@[simp↓]
 theorem mem_definingPointsSubgroup_iff
     (g : HopfAlgebra.points (R := R)
       (H := GeneralLinear.coordinateHopfAlgebra R n) (CommAlgCat.of R A)) :
