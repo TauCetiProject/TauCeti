@@ -29,7 +29,7 @@ with `C ≠ 0`, `e(x) = exp(2 π i x)`, the principal square root, and
 quotient a modular form or a cusp form.
 
 For a cusp with denominator `d ∣ N`, of width `w = N / gcd(N, d²)` for `Γ₀(N)`
-(`TauCeti.conj_T_zpow_mem_Gamma0_iff_width_dvd`), the file proves the arithmetic identity
+(`TauCeti.conj_T_zpow_mem_Gamma0_iff_cuspWidthGamma0_dvd`), the file proves the arithmetic identity
 
   `w L = (N / 24) ∑_{δ ∣ N} gcd(d, δ)² r_δ / (gcd(d, N / d) d δ)`,
 
@@ -326,8 +326,8 @@ theorem forall_etaQuotientOrder_iff (N : ℕ) [NeZero N] (r : ℕ → ℤ) {p : 
 Interpretation (not formalized here): `etaQuotientOrder N r d` is the order of
 `∏_{δ ∣ N} η(δ τ) ^ r δ` in the parameter `e(τ)` at a cusp `a / d`
 (`orderAtInfty_etaQuotient_slash`), and `w` is the width of that cusp of `Γ₀(N)`
-(`TauCeti.conj_T_zpow_mem_Gamma0_iff_width_dvd`), so the left side is read as the order in the
-local parameter `e(τ / w)`. -/
+(`TauCeti.conj_T_zpow_mem_Gamma0_iff_cuspWidthGamma0_dvd`), so the left side is read as the order
+in the local parameter `e(τ / w)`. -/
 theorem natCast_div_gcd_mul_etaQuotientOrder (N : ℕ) (r : ℕ → ℤ) {d : ℕ} (hd : d ∣ N) :
     ((N / Nat.gcd N (d ^ 2) : ℕ) : ℚ) * etaQuotientOrder N r d = N / 24 *
       ∑ δ ∈ N.divisors, (Nat.gcd d δ ^ 2 * r δ : ℚ) / (Nat.gcd d (N / d) * d * δ) := by

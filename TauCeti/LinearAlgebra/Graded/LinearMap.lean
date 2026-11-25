@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.GradedMulAction
+public import Mathlib.Algebra.Module.Submodule.Lattice
 public import Mathlib.Algebra.Module.Submodule.LinearMap
 public import Mathlib.Algebra.Module.Submodule.Range
 
@@ -92,6 +93,12 @@ theorem IsHomogeneous.map_mem {f : M →ₗ[R] N} {𝒜 : ι → σM}
     {ℬ : ι → σN} {q p : ι} (hf : IsHomogeneous f 𝒜 ℬ q) {x : M} (hx : x ∈ 𝒜 p) :
     f x ∈ ℬ (p + q) :=
   hf hx
+
+/-- A homogeneous linear map kills a homogeneous element whose target piece is trivial. -/
+theorem IsHomogeneous.apply_eq_zero_of_eq_bot {f : M →ₗ[R] N} {𝒜 : ι → σM}
+    {ℬ : ι → Submodule R N} {q p : ι} (hf : IsHomogeneous f 𝒜 ℬ q) (hbot : ℬ (p + q) = ⊥)
+    {x : M} (hx : x ∈ 𝒜 p) : f x = 0 :=
+  (Submodule.mem_bot R).mp (hbot ▸ hf.map_mem hx)
 
 /-- The zero linear map is homogeneous of every degree. -/
 @[simp]

@@ -43,6 +43,8 @@ representation, and its irreducibility is what the Mackey criterion decides.
 * `Representation.ofLinearCharacter_unitsMap_intCastRingHom`: the sign character of `ℤˣ` gives
   the multiplication action of `ℤˣ` on `k`.
 * `Representation.ofLinearCharacter_injective`: the representation remembers its character.
+* `Representation.ofLinearCharacter_apply_eq_one_iff`: `g` acts trivially exactly when
+  `χ g = 1`.
 * `Representation.ofLinearCharacter_one`: the trivial character carries the trivial
   representation.
 * `Representation.char_ofLinearCharacter` and `FDRep.char_ofLinearCharacter`: the trace character
@@ -118,6 +120,14 @@ theorem ofLinearCharacter_injective [CommSemiring k] [Monoid G] :
   have := congrArg (fun ρ : Representation k G k => ρ g 1) h
   simpa using this
 
+/-- The one-dimensional representation associated to `χ` is trivial exactly on the kernel
+of `χ`. -/
+@[simp]
+theorem ofLinearCharacter_apply_eq_one_iff [CommSemiring k] [Monoid G] (χ : G →* kˣ) {g : G} :
+    ofLinearCharacter χ g = 1 ↔ χ g = 1 := by
+  refine ⟨fun h ↦ Units.ext ?_, fun h ↦ LinearMap.ext fun x ↦ by simp [h]⟩
+  simpa using LinearMap.congr_fun h 1
+
 /-- **The trivial linear character carries the trivial representation.** This is the sanity check
 that fixes the convention: `χ = 1` acts by the scalar `1`. -/
 @[simp]
@@ -146,10 +156,7 @@ theorem ofLinearCharacterIntCastEquivOfDistribMulAction_apply [CommRing k] (x : 
 theorem ker_ofLinearCharacter [CommSemiring k] [Group G] (χ : G →* kˣ) :
     (ofLinearCharacter χ).ker = χ.ker := by
   ext g
-  simp only [MonoidHom.mem_ker]
-  refine ⟨fun h ↦ Units.ext ?_, fun h ↦ LinearMap.ext fun a ↦ ?_⟩
-  · simpa using LinearMap.congr_fun h 1
-  · simp [h]
+  simpa only [MonoidHom.mem_ker] using ofLinearCharacter_apply_eq_one_iff χ
 
 /-- **The sign character of `ℤˣ` carries the multiplication action of `ℤˣ`.** Over a commutative
 ring `k`, the character `ℤˣ →* kˣ` induced by `ℤ → k` acts on `k` by `u • a`, so its
