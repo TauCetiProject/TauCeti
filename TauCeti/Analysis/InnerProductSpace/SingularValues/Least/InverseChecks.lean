@@ -21,32 +21,24 @@ basis `e`, writing `toLin e e M` for the operator with matrix `M` in that basis:
 
 public section
 
-open Module Matrix
+open Module Matrix LinearMap
 
-namespace LinearMap.MinimalStretchInverseChecks
+namespace TauCeti.Examples.MinimalStretchInverse
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   (e : OrthonormalBasis (Fin 2) ℝ E)
 
-/-- The linear equivalence with matrix `diag(3, 1/2)` in the basis `e`, with inverse
-`diag(1/3, 2)`. -/
-noncomputable def diagEquiv : E ≃ₗ[ℝ] E :=
-  LinearEquiv.ofLinearMap (toLin e.toBasis e.toBasis (diagonal ![3, 1 / 2]))
-    (toLin e.toBasis e.toBasis (diagonal ![1 / 3, 2]))
-    (by
-      rw [← toLin_mul, diagonal_mul_diagonal, ← toLin_one e.toBasis]
-      congr 1
-      ext i j
-      fin_cases i <;> fin_cases j <;> norm_num [diagonal])
-    (by
-      rw [← toLin_mul, diagonal_mul_diagonal, ← toLin_one e.toBasis]
-      congr 1
-      ext i j
-      fin_cases i <;> fin_cases j <;> norm_num [diagonal])
+/-- The matrix `diag(1/3, 2)` is a right inverse of `diag(3, 1/2)`. -/
+private theorem diagonal_three_half_mul_inverse :
+    diagonal ![(3 : ℝ), 1 / 2] * diagonal ![1 / 3, 2] = 1 := by
+  rw [diagonal_mul_diagonal, ← diagonal_one]
+  congr 1
+  ext i
+  fin_cases i <;> norm_num
 
 /-- The minimal stretch of `diag(3, 1/2)` is `1/2`. -/
-theorem minimalStretch_diag : (toLin e.toBasis e.toBasis (diagonal ![3, 1 / 2])).minimalStretch =
-    1 / 2 := by
+theorem minimalStretch_toLin_diagonal_three_half :
+    (toLin e.toBasis e.toBasis (diagonal ![3, 1 / 2])).minimalStretch = 1 / 2 := by
   rw [minimalStretch_def, finrank_eq_card_basis e.toBasis,
     singularValues_toLin_diagonal_fin_two e (by norm_num)]
   norm_num
@@ -55,20 +47,25 @@ theorem minimalStretch_diag : (toLin e.toBasis e.toBasis (diagonal ![3, 1 / 2]))
 example : ‖toContinuousLinearMap (toLin e.toBasis e.toBasis (diagonal ![(1 : ℝ) / 3, 2]))‖ = 2 := by
   have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ
     (by rw [finrank_eq_card_basis e.toBasis, Fintype.card_fin])
-  have h := minimalStretch_mul_norm_symm (diagEquiv e)
-  change (toLin e.toBasis e.toBasis (diagonal ![3, 1 / 2])).minimalStretch *
-    ‖toContinuousLinearMap (toLin e.toBasis e.toBasis (diagonal ![(1 : ℝ) / 3, 2]))‖ = 1 at h
-  rw [minimalStretch_diag] at h
+  set A := toLinearEquiv e.toBasis _ (isUnit_det_of_right_inverse diagonal_three_half_mul_inverse)
+  have hA : (A : E →ₗ[ℝ] E) = toLin e.toBasis e.toBasis (diagonal ![3, 1 / 2]) :=
+    LinearMap.ext (toLinearEquiv_apply _ _ _)
+  have hA_symm : (A.symm : E →ₗ[ℝ] E) = toLin e.toBasis e.toBasis (diagonal ![1 / 3, 2]) :=
+    LinearMap.ext fun x => A.symm_apply_eq.2 <| by
+      rw [toLinearEquiv_apply, ← LinearMap.comp_apply, ← toLin_mul,
+        diagonal_three_half_mul_inverse, toLin_one, LinearMap.id_apply]
+  have h := minimalStretch_mul_norm_symm A
+  rw [hA, hA_symm, minimalStretch_toLin_diagonal_three_half] at h
   linarith
 
 /-- Postcomposing `diag(3, 1/2)` with the coordinate swap keeps its minimal stretch `1/2`. -/
 example : ((e.equiv e (Equiv.swap 0 1) : E →ₗ[ℝ] E) ∘ₗ
       toLin e.toBasis e.toBasis (diagonal ![3, 1 / 2])).minimalStretch = 1 / 2 := by
-  rw [minimalStretch_linearIsometryEquiv_comp, minimalStretch_diag]
+  rw [minimalStretch_linearIsometryEquiv_comp, minimalStretch_toLin_diagonal_three_half]
 
 /-- Precomposing `diag(3, 1/2)` with the coordinate swap keeps its minimal stretch `1/2`. -/
 example : (toLin e.toBasis e.toBasis (diagonal ![3, 1 / 2]) ∘ₗ
       (e.equiv e (Equiv.swap 0 1) : E →ₗ[ℝ] E)).minimalStretch = 1 / 2 := by
-  rw [minimalStretch_comp_linearIsometryEquiv, minimalStretch_diag]
+  rw [minimalStretch_comp_linearIsometryEquiv, minimalStretch_toLin_diagonal_three_half]
 
-end LinearMap.MinimalStretchInverseChecks
+end TauCeti.Examples.MinimalStretchInverse
