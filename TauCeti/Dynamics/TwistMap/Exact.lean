@@ -36,7 +36,7 @@ For `g = y` this is the convention of exact symplectic twist maps of the annulus
   `F*λ − λ` over a period of a horizontal line vanishes.
 * `TauCeti.IsExactForPrimitive.eq_zero_of_flux`: in particular, a constant flux along a
   horizontal line is zero.
-* `TauCeti.IsExactForPrimitive.comp_fibre`: exactness is invariant under fibre-preserving changes
+* `TauCeti.IsExactForPrimitive.comp_fiber`: exactness is invariant under fibre-preserving changes
   of coordinates `(x, y) ↦ (x, φ(x, y))` that transport the primitive.
 
 ## References
@@ -106,13 +106,13 @@ theorem IsExactForPrimitive.eq_zero_of_flux {ℓ : ℝ} {J : Set ℝ} {F : ℝ �
   simpa [hℓ] using h
 
 /-- **Exactness is invariant under fibre-preserving changes of coordinates.** Let
-`Φ(x, y) = (x, φ(x, y))` map the strip `ℝ × J` to `ℝ × J'`, with inverse `Ψ(x, y) = (x, ψ(x, y))`
-on `ℝ × J'` (`φ(x, ψ(x, y)) = y` and `ψ(x, y) ∈ J` for `y ∈ J'`), where `ψ` is `C¹`, differentiable
-and `ℓ`-periodic in `x` on `ℝ × J'` and `φ` is differentiable on `ℝ × J`. Let `Φ` transport the
-primitive `λ' = g' dx` to `λ = g dx`, that is `g' ∘ Φ = g` on `ℝ × J` (`Φ*λ' = λ` because `Φ`
-preserves `x`). If `F` maps `ℝ × J` to itself, is differentiable there and is exact for `λ` with
-primitive `S`, then `Φ ∘ F ∘ Ψ` is exact for `λ'` with primitive `S ∘ Ψ`. -/
-theorem IsExactForPrimitive.comp_fibre {ℓ : ℝ} {J J' : Set ℝ} {F : ℝ × ℝ → ℝ × ℝ}
+`Φ(x, y) = (x, φ(x, y))` and `Ψ(x, y) = (x, ψ(x, y))`, where `Ψ` maps `ℝ × J'` into `ℝ × J` and is
+a right inverse of `Φ` there (`ψ(x, y) ∈ J` and `φ(x, ψ(x, y)) = y` for `y ∈ J'`), `ψ` is `C¹`,
+differentiable and `ℓ`-periodic in `x` on `ℝ × J'`, and `φ` is differentiable on `ℝ × J`. Let `Φ`
+transport the primitive `λ' = g' dx` to `λ = g dx`, that is `g' ∘ Φ = g` on `ℝ × J` (`Φ*λ' = λ`
+because `Φ` preserves `x`). If `F` maps `ℝ × J` to itself, is differentiable there and is exact
+for `λ`, then `Φ ∘ F ∘ Ψ` is exact for `λ'`. -/
+theorem IsExactForPrimitive.comp_fiber {ℓ : ℝ} {J J' : Set ℝ} {F : ℝ × ℝ → ℝ × ℝ}
     {g g' φ ψ : ℝ × ℝ → ℝ} (hF : IsExactForPrimitive ℓ J F g)
     (hFJ : MapsTo F (univ ×ˢ J) (univ ×ˢ J)) (hFd : ∀ p ∈ univ ×ˢ J, DifferentiableAt ℝ F p)
     (hφd : ∀ p ∈ univ ×ˢ J, DifferentiableAt ℝ φ p) (hψ : ContDiffOn ℝ 1 ψ (univ ×ˢ J'))
