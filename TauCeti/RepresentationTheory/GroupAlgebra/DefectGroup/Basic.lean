@@ -45,6 +45,8 @@ conjugate of `P`, since by the Mackey formula the other summands of `Tr_P^G(a)` 
 
 * `TauCeti.IsDefectGroup.conj`: defect groups of a `g`-fixed element are permuted by `g`.
 * `TauCeti.exists_isDefectGroup`: every nonzero element of `R[G]` has a defect group.
+* `TauCeti.isDefectGroup_iff_eq_bot_of_not_dvd_natCard`: if `p ∤ |G|`, every nonzero element of
+  `R[G]` has the single defect group `1`.
 * `TauCeti.exists_minimal_mem_relTraceIdeal`: every `x ∈ R[G]^G` has a subgroup `P` minimal
   with `x ∈ Tr_P^G(R[G]^P)`.
 * `TauCeti.isPGroup_of_minimal_mem_relTraceIdeal`: in characteristic `p`, a subgroup `P` minimal
@@ -141,6 +143,18 @@ theorem exists_isDefectGroup (p : ℕ) {e : MonoidAlgebra R G} (he : e ≠ 0) :
       fun _ => le_sSup⟩)
     ⊥ ⟨IsPGroup.of_bot, mt brauerProjection_bot_eq_zero_iff.1 he⟩
   exact ⟨P, hP⟩
+
+/-- **Defect groups when `p ∤ |G|`.** If `p` does not divide `|G|`, then `1` is the only
+`p`-subgroup of `G`, so a nonzero `e ∈ R[G]` has the single defect group `1`. -/
+theorem isDefectGroup_iff_eq_bot_of_not_dvd_natCard {p : ℕ} [Fact p.Prime]
+    (hp : ¬ p ∣ Nat.card G) {e : MonoidAlgebra R G} (he : e ≠ 0) {D : Subgroup G} :
+    IsDefectGroup R p e D ↔ D = ⊥ := by
+  have hbot (Q : Subgroup G) (hQ : IsPGroup p Q) : Q = ⊥ :=
+    top_disjoint.1 (disjoint_of_not_dvd_natCard_of_isPGroup (by rwa [Subgroup.card_top]) hQ)
+  refine ⟨fun h => hbot D h.isPGroup, ?_⟩
+  rintro rfl
+  exact isDefectGroup_iff.2 ⟨IsPGroup.of_bot, mt brauerProjection_bot_eq_zero_iff.1 he,
+    fun Q hQ _ _ => hbot Q hQ⟩
 
 end DefectGroup
 

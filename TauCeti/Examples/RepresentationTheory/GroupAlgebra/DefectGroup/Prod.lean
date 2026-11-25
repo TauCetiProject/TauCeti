@@ -13,8 +13,8 @@ public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup.Prod
 /-!
 # Defect groups of direct products: `S₃ × C₂` and `𝔽₂[C₃ × C₃]`
 
-Checks of ModularCharactersAndBlocks §6.2 "Direct products", for the defect groups of `x ⊗ y`
-(`TauCeti.isDefectGroup_tensorEquiv_tmul_iff`).
+Worked examples of the defect groups of `x ⊗ y` in `k[G₁ × G₂]`
+(`TauCeti.isDefectGroup_tensorEquiv_tmul_iff`), and of a field that does not split the factors.
 
 * **`S₃ × C₂` at `p = 3`.** `1` is the only block of `𝔽₃[S₃]`
   (`TauCeti.GroupAlgebraBlockExamples.isBlockIdempotent_iff_eq_one_zmod_three_s₃`), with defect
@@ -35,31 +35,26 @@ open _root_.MonoidAlgebra TensorProduct GroupAlgebraBlockExamples
 
 /-! ### `S₃ × C₂` at `p = 3` -/
 
-/-- The subgroup `⟨ρ⟩` has order `3 = |S₃|₃`. -/
-theorem card_zpowers_ρ : Nat.card (Subgroup.zpowers ρ) = 3 ^ (Nat.card S₃).factorization 3 := by
-  have hρ : Nat.card (Subgroup.zpowers ρ) = 3 := by
-    rw [Nat.card_zpowers, orderOf_eq_prime (p := 3) (by decide) (by decide)]
-  -- `|S₃| = 3! = 6`, and `3 ∣ 6` while `3 ^ 2 ∤ 6`.
-  have hS₃ : (Nat.card S₃).factorization 3 = 1 := by
-    rw [Nat.card_perm, Nat.card_fin, Nat.factorization_def _ Nat.prime_three]
-    exact multiplicity_eq_of_dvd_of_not_dvd (by decide) (by decide)
-  rw [hρ, hS₃, pow_one]
+/-- The subgroup `⟨ρ⟩` has order `3`. -/
+theorem card_zpowers_ρ : Nat.card (Subgroup.zpowers ρ) = 3 := by
+  rw [Nat.card_zpowers, orderOf_eq_prime (p := 3) (by decide) (by decide)]
 
-/-- `⟨ρ⟩` is the only Sylow `3`-subgroup of `S₃`: it has index `2`, so it is normal. -/
+/-- The subgroup `⟨ρ⟩` has index `2` in `S₃`. -/
+theorem index_zpowers_ρ : (Subgroup.zpowers ρ).index = 2 := by
+  have h := (Subgroup.zpowers ρ).card_mul_index
+  rw [card_zpowers_ρ, Nat.card_perm, Nat.card_fin] at h
+  simp [Nat.factorial] at h
+  omega
+
+/-- `⟨ρ⟩` is the only Sylow `3`-subgroup of `S₃`: it is a `3`-group of index `2`, so it is a
+normal Sylow `3`-subgroup. -/
 theorem sylow_eq_zpowers_ρ (S : Sylow 3 S₃) : (S : Subgroup S₃) = Subgroup.zpowers ρ := by
-  set P := Sylow.ofCard _ card_zpowers_ρ
-  have hindex : (Subgroup.zpowers ρ).index = 2 := by
-    have h := (Subgroup.zpowers ρ).card_mul_index
-    rw [Nat.card_zpowers, orderOf_eq_prime (p := 3) (by decide) (by decide), Nat.card_perm,
-      Nat.card_fin] at h
-    have h6 : Nat.factorial 3 = 3 * 2 := rfl
-    rw [h6] at h
-    exact Nat.eq_of_mul_eq_mul_left (by norm_num) h
-  have hP : (P : Subgroup S₃).Normal := by
-    rw [Sylow.coe_ofCard]
-    exact Subgroup.normal_of_index_eq_two hindex
-  have := Sylow.unique_of_normal P hP
-  rw [Subsingleton.elim S P, Sylow.coe_ofCard]
+  have hρ : IsPGroup 3 (Subgroup.zpowers ρ) :=
+    IsPGroup.of_card (n := 1) (by rw [card_zpowers_ρ, pow_one])
+  set P := hρ.toSylow (by rw [index_zpowers_ρ]; decide)
+  have := Sylow.unique_of_normal P
+    (by rw [IsPGroup.toSylow_coe]; exact Subgroup.normal_of_index_eq_two index_zpowers_ρ)
+  rw [Subsingleton.elim S P, IsPGroup.toSylow_coe]
 
 /-- **The defect group of `1` in `𝔽₃[S₃]`** is the Sylow `3`-subgroup `⟨ρ⟩`: `1` is central with
 augmentation `1`. -/
@@ -68,24 +63,13 @@ theorem isDefectGroup_one_s₃_iff {D : Subgroup S₃} :
   rw [isDefectGroup_iff_sylow_of_augmentation_ne_zero (Subalgebra.one_mem _)
     (by rw [map_one]; exact one_ne_zero)]
   refine ⟨fun ⟨S, hS⟩ ↦ hS.trans (sylow_eq_zpowers_ρ S), fun hD ↦ ?_⟩
-  exact ⟨Sylow.ofCard _ card_zpowers_ρ, by rw [hD, Sylow.coe_ofCard]⟩
+  exact ⟨default, hD.trans (sylow_eq_zpowers_ρ default).symm⟩
 
-/-- Every `3`-subgroup of `C₂` is trivial. -/
-theorem eq_bot_of_isPGroup_three {Q : Subgroup C₂} (hQ : IsPGroup 3 Q) : Q = ⊥ := by
-  obtain ⟨n, hn⟩ := hQ.exists_card_eq
-  have h2 : Nat.card Q ∣ 2 := by
-    simpa using Subgroup.card_subgroup_dvd_card Q
-  rw [hn] at h2
-  exact Subgroup.eq_bot_of_card_eq Q <| hn.trans <|
-    Nat.Coprime.eq_one_of_dvd (Nat.Coprime.pow_left n (by norm_num)) h2
-
-/-- **Defect groups in `𝔽₃[C₂]`**: every nonzero element has the single defect group `1`. -/
+/-- **Defect groups in `𝔽₃[C₂]`**: every nonzero element has the single defect group `1`, since
+`3 ∤ |C₂|`. -/
 theorem isDefectGroup_c₂_iff {y : MonoidAlgebra (ZMod 3) C₂} (hy : y ≠ 0) {D : Subgroup C₂} :
-    IsDefectGroup (ZMod 3) 3 y D ↔ D = ⊥ := by
-  refine ⟨fun hD ↦ eq_bot_of_isPGroup_three hD.isPGroup, ?_⟩
-  rintro rfl
-  exact isDefectGroup_iff.2 ⟨IsPGroup.of_bot, mt brauerProjection_bot_eq_zero_iff.1 hy,
-    fun Q hQ _ _ ↦ eq_bot_of_isPGroup_three hQ⟩
+    IsDefectGroup (ZMod 3) 3 y D ↔ D = ⊥ :=
+  isDefectGroup_iff_eq_bot_of_not_dvd_natCard (by simp) hy
 
 /-- **Defect groups of `1 ⊗ y` in `𝔽₃[S₃ × C₂]`**: for nonzero `y ∈ 𝔽₃[C₂]`, the single defect
 group of `1 ⊗ y` is `C₃ × 1`. -/
@@ -104,13 +88,13 @@ theorem ePlus_ne_zero : ePlus ≠ 0 := fun h ↦
 theorem eMinus_ne_zero : eMinus ≠ 0 := fun h ↦
   isBlockIdempotent_eMinus.ne_zero (by rw [h, map_zero])
 
-/-- **Check.** The defect group of `1 ⊗ e₊` in `𝔽₃[S₃ × C₂]` is `C₃ × 1`. -/
+/-- The defect group of `1 ⊗ e₊` in `𝔽₃[S₃ × C₂]` is `C₃ × 1`. -/
 theorem isDefectGroup_one_tmul_ePlus_iff {Q : Subgroup (S₃ × C₂)} :
     IsDefectGroup (ZMod 3) 3 (tensorEquiv (ZMod 3) ((1 : MonoidAlgebra (ZMod 3) S₃) ⊗ₜ ePlus))
       Q ↔ Q = (Subgroup.zpowers ρ).prod ⊥ :=
   isDefectGroup_one_tmul_iff ePlus_ne_zero
 
-/-- **Check.** The defect group of `1 ⊗ e₋` in `𝔽₃[S₃ × C₂]` is `C₃ × 1`. -/
+/-- The defect group of `1 ⊗ e₋` in `𝔽₃[S₃ × C₂]` is `C₃ × 1`. -/
 theorem isDefectGroup_one_tmul_eMinus_iff {Q : Subgroup (S₃ × C₂)} :
     IsDefectGroup (ZMod 3) 3 (tensorEquiv (ZMod 3) ((1 : MonoidAlgebra (ZMod 3) S₃) ⊗ₜ eMinus))
       Q ↔ Q = (Subgroup.zpowers ρ).prod ⊥ :=
@@ -180,7 +164,7 @@ theorem f₂_ne_zero : f₂ ≠ 0 := fun h ↦ by
   simp only [coeff_f₂, coeff_zero, Finsupp.zero_apply] at this
   exact absurd this (by decide)
 
-/-- **Check.** `e ⊗ e` is not a block of `𝔽₂[C₃ × C₃]`, although `e = r + r²` is a block of
+/-- **`e ⊗ e` is not a block** of `𝔽₂[C₃ × C₃]`, although `e = r + r²` is a block of
 `𝔽₂[C₃]` (`TauCeti.GroupAlgebraBlockExamples.isBlockIdempotent_r_add_r_sq`): `𝔽₂` does not split
 `C₃`, and `e ⊗ e = f₁ + f₂` with `f₁`, `f₂` orthogonal nonzero idempotents. -/
 theorem not_isBlockIdempotent_tensorEquiv_e_tmul_e :
