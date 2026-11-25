@@ -124,18 +124,18 @@ theorem not_cexp_neg_isLittleO_one_rightHalfPlane :
   intro h
   have ht := tendsto_exp_nhds_zero_iff.mp ((isLittleO_one_iff ℂ).mp h)
   set γ : ℝ → ℂ := fun t => 1 + t * I with hγ
+  -- The coordinates of `γ t`, computed once.
+  have hre (t : ℝ) : (γ t).re = 1 := by simp [hγ]
+  have him (t : ℝ) : (γ t).im = t := by simp [hγ]
   have hγt : Tendsto γ atTop (Bornology.cobounded ℂ ⊓ 𝓟 {z | |arg z| < π / 2}) := by
     refine tendsto_inf.mpr ⟨tendsto_norm_atTop_iff_cobounded.mp ?_, tendsto_principal.mpr
-      (Eventually.of_forall fun t => abs_arg_lt_pi_div_two_iff.mpr (Or.inl (by simp [hγ])))⟩
+      (Eventually.of_forall fun t => abs_arg_lt_pi_div_two_iff.mpr (Or.inl (by simp [hre])))⟩
     refine tendsto_atTop_mono (fun t => ?_) tendsto_id
-    calc t ≤ |t| := le_abs_self t
-      _ = |(γ t).im| := by simp [hγ]
+    calc t ≤ |(γ t).im| := by rw [him]; exact le_abs_self t
       _ ≤ ‖γ t‖ := abs_im_le_norm _
   -- Along `γ` the real part of `-z` is constantly `-1`, which does not tend to `-∞`.
-  have h2 := ht.comp hγt
-  simp only [Function.comp_def, hγ, neg_re, add_re, one_re, mul_re, ofReal_re, I_re, mul_zero,
-    ofReal_im, I_im, mul_one, sub_self, add_zero] at h2
-  exact not_tendsto_const_atBot (-1 : ℝ) atTop h2
+  refine not_tendsto_const_atBot (-1 : ℝ) (atTop : Filter ℝ) ?_
+  simpa [Function.comp_def, hre] using ht.comp hγt
 
 end Sector
 

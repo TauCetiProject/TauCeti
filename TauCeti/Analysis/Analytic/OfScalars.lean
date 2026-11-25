@@ -423,9 +423,8 @@ theorem tsum_tail_isBigO_pow {𝕜 : Type*} [NontriviallyNormedField 𝕜] {a : 
   have heq : (fun z : 𝕜 ↦ (∑' s, a s * (0 + z) ^ s) - p.partialSum n z) =ᶠ[𝓝 0]
       fun z ↦ ∑' s, a (s + n) * z ^ (s + n) := by
     filter_upwards [ha] with z hz
-    simp only [zero_add, FormalMultilinearSeries.partialSum, hp,
-      FormalMultilinearSeries.ofScalars_apply_eq, smul_eq_mul]
-    rw [← hz.sum_add_tsum_nat_add n]; ring
+    rw [zero_add, ← hz.sum_add_tsum_nat_add n]
+    simp [FormalMultilinearSeries.partialSum, hp, mul_comm (_ ^ _)]
   refine (h.congr' heq EventuallyEq.rfl).trans ?_
   simpa [norm_pow] using (isBigO_refl (fun z : 𝕜 ↦ z ^ n) (𝓝 0)).norm_left
 
