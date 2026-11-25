@@ -7,10 +7,10 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Notation
 public import TauCeti.Analysis.Matrix.EuclideanLin
+public import TauCeti.Analysis.Matrix.Exponential.EuclideanCLM
 public import TauCeti.Analysis.Normed.Algebra.MatrixExponential
 public import TauCeti.Analysis.ODE.Propagator.Liouville
 public import TauCeti.Examples.Analysis.ODE.Propagator.Basic
-import TauCeti.Analysis.Normed.Algebra.Basic
 import TauCeti.Analysis.Normed.Algebra.NilpotentExponential
 import Mathlib.Tactic.FinCases
 
@@ -99,17 +99,13 @@ theorem det_propagator_coeff_two_zero_eq_exp :
 
 /-! ### Constant coefficients -/
 
-/-- The operator of the exponential of a real square matrix is the exponential of its operator. -/
-private theorem toEuclideanCLM_exp {n : Type*} [Fintype n] [DecidableEq n] (M : Matrix n n ℝ) :
-    Matrix.toEuclideanCLM (𝕜 := ℝ) (exp M) = exp (Matrix.toEuclideanCLM (𝕜 := ℝ) M) := by
-  let _ : NormedRing (Matrix n n ℝ) := Matrix.linftyOpNormedRing
-  let _ : NormedAlgebra ℝ (Matrix n n ℝ) := Matrix.linftyOpNormedAlgebra
-  let _ : NormedAlgebra ℚ (Matrix n n ℝ) := TauCeti.normedAlgebraRatOfReal
-  let _ : NormedAlgebra ℚ (EuclideanSpace ℝ n →L[ℝ] EuclideanSpace ℝ n) :=
-    TauCeti.normedAlgebraRatOfReal
-  exact map_exp (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := n))
-    (LinearMap.continuous_of_finiteDimensional
-      (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := n)).toAlgEquiv.toLinearMap) M
+/-- A constant matrix coefficient `A` has propagator the operator of `exp ((t - s) A)`. -/
+private theorem propagator_const_toEuclideanCLM {n : Type*} [Fintype n] [DecidableEq n]
+    (A : Matrix n n ℝ) (t s : ℝ) :
+    propagator (fun _ ↦ Matrix.toEuclideanCLM (𝕜 := ℝ) A) t s =
+      Matrix.toEuclideanCLM (𝕜 := ℝ) (exp ((t - s) • A)) := by
+  simp only [propagator_const, RCLike.ofReal_real_eq_id, id_eq, map_smul,
+    Matrix.toEuclideanCLM_exp]
 
 /-- **Constant coefficients agree with `Matrix.det_exp`.** For a constant coefficient `A`,
 Liouville's formula gives `det N_A(t, s) = e^{∫_s^t tr A}`, while
@@ -126,8 +122,7 @@ theorem det_propagator_const_eq_det_exp {n : Type*} [Fintype n] [DecidableEq n]
     (exp ((t - s) • A)).det = Real.exp ((t - s) * A.trace) := by
   refine ⟨det_propagator (a := min s t) (b := max s t) continuousOn_const.integrableOn_Icc
     ⟨min_le_left _ _, le_max_left _ _⟩ ⟨min_le_right _ _, le_max_right _ _⟩, ?_, ?_⟩
-  · rw [propagator_const, RCLike.ofReal_real_eq_id, id, ← map_smul, ← toEuclideanCLM_exp,
-      ← ContinuousLinearMap.det, Matrix.det_toEuclideanCLM]
+  · rw [propagator_const_toEuclideanCLM, ← ContinuousLinearMap.det, Matrix.det_toEuclideanCLM]
   · rw [Matrix.det_exp, Matrix.trace_smul, smul_eq_mul, Real.exp_eq_exp_ℝ]
 
 /-- The matrix `[[1, 1], [0, 1]]`. -/
@@ -159,19 +154,22 @@ theorem det_propagator_jordan (t : ℝ) :
       Real.exp (2 * t) = Real.exp (t * jordan.trace) := by
   have hN : propagator (fun _ ↦ Matrix.toEuclideanCLM (𝕜 := ℝ) jordan) t 0 =
       Matrix.toEuclideanCLM (𝕜 := ℝ) (Real.exp t • !![1, t; 0, 1]) := by
-    rw [propagator_const, RCLike.ofReal_real_eq_id, id, sub_zero, ← map_smul,
-      ← toEuclideanCLM_exp, exp_smul_jordan]
+    rw [propagator_const_toEuclideanCLM, sub_zero, exp_smul_jordan]
   refine ⟨hN, ?_, by rw [Matrix.trace_fin_two_of]; ring_nf⟩
-  rw [← ContinuousLinearMap.det, hN, Matrix.det_toEuclideanCLM, Matrix.det_smul,
-    Fintype.card_fin, Matrix.det_fin_two_of, ← Real.exp_natCast_mul]
-  ring_nf
+  rw [← ContinuousLinearMap.det, hN, Matrix.det_toEuclideanCLM]
+  simp [Matrix.det_fin_two_of, ← Real.exp_add, two_mul]
 
 /-- **The trace is the right invariant.** For `t ≠ 0`, `det N_A(t, 0) = e^{2t}` differs from
 `e^{3t}`, where `3` is the sum of the entries of `A = [[1, 1], [0, 1]]`, and from `e^t`, where
 `1 = det A`. -/
 theorem det_propagator_jordan_ne {t : ℝ} (ht : t ≠ 0) :
-    Real.exp (2 * t) ≠ Real.exp (t * ∑ i, ∑ j, jordan i j) ∧
-      Real.exp (2 * t) ≠ Real.exp (t * jordan.det) := by
+    LinearMap.det (propagator (fun _ ↦ Matrix.toEuclideanCLM (𝕜 := ℝ) jordan) t 0 :
+        EuclideanSpace ℝ (Fin 2) →ₗ[ℝ] EuclideanSpace ℝ (Fin 2)) ≠
+        Real.exp (t * ∑ i, ∑ j, jordan i j) ∧
+      LinearMap.det (propagator (fun _ ↦ Matrix.toEuclideanCLM (𝕜 := ℝ) jordan) t 0 :
+        EuclideanSpace ℝ (Fin 2) →ₗ[ℝ] EuclideanSpace ℝ (Fin 2)) ≠
+        Real.exp (t * jordan.det) := by
+  rw [(det_propagator_jordan t).2.1]
   simp only [Fin.sum_univ_two, Matrix.det_fin_two_of, Ne, Real.exp_eq_exp, Matrix.of_apply,
     Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
   constructor <;> intro h <;> apply ht <;> linarith
