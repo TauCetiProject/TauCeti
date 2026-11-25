@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import TauCeti.Algebra.Star.SelfAdjoint.BaseChange
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.RingTheory.Complex
+import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.LinearAlgebra.Matrix.Kronecker.MulLeftMulRight
 
 /-!
@@ -160,8 +161,7 @@ real determinant `|det C| ^ (2 n)`, written `normSq (det C) ^ n`. -/
 theorem det_selfAdjointConjugate_complex [DecidableEq n] (C : Matrix n n ℂ) :
     LinearMap.det (selfAdjointConjugate ℝ C) = Complex.normSq C.det ^ Fintype.card n := by
   rw [← Algebra.norm_complex_apply]
-  refine det_selfAdjointConjugate (fun c hc ↦ ⟨c.re, Complex.conj_eq_iff_re.mp hc⟩)
-    (t := Units.mk0 Complex.I Complex.I_ne_zero) ?_ C
-  simp [skewAdjoint.mem_iff]
+  exact det_selfAdjointConjugate Complex.mem_range_algebraMap_of_isSelfAdjoint
+    (t := Units.mk0 Complex.I Complex.I_ne_zero) Complex.I_mem_skewAdjoint C
 
 end Matrix

@@ -182,9 +182,8 @@ private theorem exists_one_tmul_add_tmul_eq
   | tmul c s =>
     obtain ⟨a, b, rfl⟩ := exists_algebraMap_add_algebraMap_mul_eq hfix ht c
     refine ⟨a • s, b • s, ?_⟩
-    rw [TensorProduct.tmul_smul, TensorProduct.tmul_smul, TensorProduct.smul_tmul',
-      TensorProduct.smul_tmul', ← TensorProduct.add_tmul, Algebra.smul_def, Algebra.smul_def,
-      mul_one]
+    simp only [TensorProduct.tmul_smul, TensorProduct.smul_tmul', ← TensorProduct.add_tmul,
+      Algebra.smul_def, mul_one]
   | add x y hx hy =>
     obtain ⟨p, q, rfl⟩ := hx
     obtain ⟨p', q', rfl⟩ := hy
@@ -267,8 +266,8 @@ variable (F) in
 self-adjoint elements. -/
 def restrictSelfAdjoint (f : A →ₗ[E] A) (hf : ∀ x, f (star x) = star (f x)) :
     selfAdjoint.submodule F A →ₗ[F] selfAdjoint.submodule F A :=
-  (f.restrictScalars F).restrict fun x (hx : IsSelfAdjoint x) ↦
-    ((hf x).symm.trans (congrArg f hx) : IsSelfAdjoint (f x))
+  (f.restrictScalars F).restrict fun x hx ↦
+    selfAdjoint.mem_iff.mpr (by rw [restrictScalars_apply, ← hf, selfAdjoint.mem_iff.mp hx])
 
 @[simp]
 theorem coe_restrictSelfAdjoint_apply (f : A →ₗ[E] A) (hf : ∀ x, f (star x) = star (f x))
@@ -280,8 +279,9 @@ variable (F) in
 skew-adjoint elements. -/
 def restrictSkewAdjoint (f : A →ₗ[E] A) (hf : ∀ x, f (star x) = star (f x)) :
     skewAdjoint.submodule F A →ₗ[F] skewAdjoint.submodule F A :=
-  (f.restrictScalars F).restrict fun x (hx : star x = -x) ↦
-    ((hf x).symm.trans ((congrArg f hx).trans (map_neg f x)) : star (f x) = -f x)
+  (f.restrictScalars F).restrict fun x hx ↦
+    skewAdjoint.mem_iff.mpr
+      (by rw [restrictScalars_apply, ← hf, skewAdjoint.mem_iff.mp hx, map_neg])
 
 @[simp]
 theorem coe_restrictSkewAdjoint_apply (f : A →ₗ[E] A) (hf : ∀ x, f (star x) = star (f x))
@@ -324,10 +324,9 @@ theorem algebraMap_det_restrictSelfAdjoint
   · have hcomm : f ∘ₗ e.toLinearMap = e.toLinearMap ∘ₗ g.baseChange E := by
       ext x
       simp [e, g]
-    have hf' : f = e.toLinearMap ∘ₗ g.baseChange E ∘ₗ e.symm.toLinearMap := by
-      rw [← LinearMap.comp_assoc, ← hcomm, LinearMap.comp_assoc, LinearEquiv.comp_coe,
-        LinearEquiv.symm_trans_self, LinearEquiv.refl_toLinearMap, LinearMap.comp_id]
-    conv_rhs => rw [hf']
+    have hf' : f = (e.toLinearMap ∘ₗ g.baseChange E) ∘ₗ e.symm.toLinearMap :=
+      (LinearEquiv.eq_comp_toLinearMap_symm _ _).mpr hcomm
+    conv_rhs => rw [hf', LinearMap.comp_assoc]
     rw [LinearMap.det_conj, LinearMap.det_baseChange]
   · have := isQuadraticExtension_of_mem_skewAdjoint hfix ht
     have : Module.Finite F E := Module.finite_of_finrank_eq_succ

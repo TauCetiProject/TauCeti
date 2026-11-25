@@ -149,8 +149,8 @@ dimension is the complex dimension `n²` of all `n × n` matrices. -/
 theorem finrank_unitaryLieAlgebra :
     finrank ℝ (unitaryLieAlgebra ι) = Fintype.card ι * Fintype.card ι := by
   rw [(unitaryLieAlgebraEquivSelfAdjoint ι).finrank_eq,
-    finrank_selfAdjoint_submodule_eq ℝ _ (fun c hc ↦ ⟨c.re, Complex.conj_eq_iff_re.mp hc⟩)
-      (t := Units.mk0 I I_ne_zero) (by simp [skewAdjoint.mem_iff]),
+    finrank_selfAdjoint_submodule_eq ℝ _ Complex.mem_range_algebraMap_of_isSelfAdjoint
+      (t := Units.mk0 I I_ne_zero) Complex.I_mem_skewAdjoint,
     finrank_matrix, finrank_self, mul_one]
 
 /-! ### The adjoint and coadjoint representations -/

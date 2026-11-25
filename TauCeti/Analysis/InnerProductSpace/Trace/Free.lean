@@ -12,6 +12,7 @@ public import TauCeti.Topology.Algebra.Module.Trace
 import TauCeti.Algebra.Star.SelfAdjoint.BaseChange
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 import TauCeti.Analysis.InnerProductSpace.Positive.Definite
+import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # Trace-free self-adjoint endomorphisms
@@ -350,8 +351,8 @@ theorem finrank_traceFreeSelfAdjoint :
     have him : (LinearMap.trace ℂ E T).im = 0 := Complex.conj_eq_iff_im.1 hT.conj_trace
     simp [hφ, hT, Complex.ext_iff, him]
   have hS : finrank ℝ S = finrank ℂ E ^ 2 := by
-    rw [finrank_selfAdjoint_submodule_eq ℝ _ (fun c hc ↦ ⟨c.re, Complex.conj_eq_iff_re.mp hc⟩)
-        (t := Units.mk0 Complex.I Complex.I_ne_zero) (by simp [skewAdjoint.mem_iff]),
+    rw [finrank_selfAdjoint_submodule_eq ℝ _ Complex.mem_range_algebraMap_of_isSelfAdjoint
+        (t := Units.mk0 Complex.I Complex.I_ne_zero) Complex.I_mem_skewAdjoint,
       ← (LinearMap.toContinuousLinearMap (𝕜 := ℂ) (E := E) (F' := E)).finrank_eq,
       Module.finrank_linearMap, sq]
   have : FiniteDimensional ℝ (E →L[ℂ] E) := Module.Finite.trans ℂ _
