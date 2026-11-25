@@ -61,6 +61,10 @@ Splitting off these summands one at a time shows that `M` is free.
 * `TauCeti.IsLocalRing.free_ker_of_apply_eq_one` and
   `TauCeti.IsLocalRing.finrank_ker_add_one_of_apply_eq_one`: the kernel of a linear form taking the
   value `1` on a finite projective module is free of rank one less.
+* `TauCeti.IsLocalRing.not_surjective_of_smul_add_smul_eq_zero` and
+  `TauCeti.IsLocalRing.not_surjective_pi_of_smul_add_smul_eq_zero`: a module spanned by `m₁`,
+  `m₂` with a relation `p • m₁ + q • m₂ = 0`, where neither of `p`, `q` divides the other, has no
+  surjection onto `R ^ d` with `d ≠ 0`.
 * `Module.free_of_projective_of_isLocalRing`: a finitely generated projective module over a
   possibly noncommutative local ring is free, for any `AddCommMonoid` module.
 
@@ -223,6 +227,37 @@ theorem mem_maximalIdeal_of_smul_eq_zero {R M : Type*} [CommSemiring R] [_root_.
     r ∈ _root_.IsLocalRing.maximalIdeal R := by
   by_contra hr
   exact hm (((_root_.IsLocalRing.notMem_maximalIdeal.mp hr).smul_eq_zero).mp h)
+
+/-- **No free quotient from a relation between two generators.** Let `M` be a module over a local
+ring `R`, spanned by `m₁` and `m₂`, and let `p • m₁ + q • m₂ = 0` with `p ∉ (q)` and `q ∉ (p)`.
+Then no `R`-linear map `M → R` is surjective. -/
+theorem not_surjective_of_smul_add_smul_eq_zero {m₁ m₂ : M} {p q : R}
+    (hspan : Submodule.span R {m₁, m₂} = ⊤) (hrel : p • m₁ + q • m₂ = 0)
+    (hp : p ∉ Ideal.span {q}) (hq : q ∉ Ideal.span {p}) (g : M →ₗ[R] R) :
+    ¬ Function.Surjective g := by
+  intro hg
+  obtain ⟨ω, hω⟩ := hg 1
+  obtain ⟨α, β, rfl⟩ := Submodule.mem_span_pair.mp (hspan ▸ Submodule.mem_top (x := ω))
+  have h1 : α * g m₁ + β * g m₂ = 1 := by simpa using hω
+  have h0 : p * g m₁ + q * g m₂ = 0 := by simpa using congrArg g hrel
+  rcases _root_.IsLocalRing.isUnit_or_isUnit_of_add_one h1 with h | h
+  · refine hp ((Ideal.mul_unit_mem_iff_mem _ (isUnit_of_mul_isUnit_right h)).mp ?_)
+    rw [eq_neg_of_add_eq_zero_left h0, ← mul_neg]
+    exact Ideal.mul_mem_right _ _ (Ideal.mem_span_singleton_self q)
+  · refine hq ((Ideal.mul_unit_mem_iff_mem _ (isUnit_of_mul_isUnit_right h)).mp ?_)
+    rw [eq_neg_of_add_eq_zero_right h0, ← mul_neg]
+    exact Ideal.mul_mem_right _ _ (Ideal.mem_span_singleton_self p)
+
+/-- Let `M` be a module over a local ring `R`, spanned by `m₁` and `m₂`, and let
+`p • m₁ + q • m₂ = 0` with `p ∉ (q)` and `q ∉ (p)`. Then no `R`-linear map `M → R ^ d` with
+`d ≠ 0` is surjective. -/
+theorem not_surjective_pi_of_smul_add_smul_eq_zero {m₁ m₂ : M} {p q : R}
+    (hspan : Submodule.span R {m₁, m₂} = ⊤) (hrel : p • m₁ + q • m₂ = 0)
+    (hp : p ∉ Ideal.span {q}) (hq : q ∉ Ideal.span {p}) {d : ℕ} (hd : d ≠ 0)
+    (g : M →ₗ[R] (Fin d → R)) : ¬ Function.Surjective g := fun hg ↦
+  not_surjective_of_smul_add_smul_eq_zero hspan hrel hp hq
+    (LinearMap.proj ⟨0, Nat.pos_of_ne_zero hd⟩ ∘ₗ g)
+    ((Function.surjective_eval _).comp hg)
 
 end TauCeti.IsLocalRing
 
