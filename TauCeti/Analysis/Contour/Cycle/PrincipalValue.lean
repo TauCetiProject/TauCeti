@@ -149,7 +149,6 @@ theorem hasCauchyPV_of_iff (γ : AbsolutelyContinuousClosedCurve) {v : ℂ} :
 
 /-- Existence of the principal value along a raw closed curve bundled as a one-generator cycle is
 existence along the raw curve. -/
-@[simp]
 theorem cauchyPVExists_of_raw_iff {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hclosed : γ a = γ b) :
     CauchyPVExists (FreeAddCommGroup.of (AbsolutelyContinuousClosedCurve.of γ hγ hclosed)) f ↔
@@ -162,7 +161,6 @@ theorem cauchyPVExists_of_raw_iff {a b : ℝ} (γ : ℝ → ℂ) (hγ : Absolute
 
 /-- A raw closed curve bundled as a one-generator cycle has principal value `v` exactly when the raw
 curve does. -/
-@[simp]
 theorem hasCauchyPV_of_raw_iff {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hclosed : γ a = γ b) {v : ℂ} :
     HasCauchyPV (FreeAddCommGroup.of (AbsolutelyContinuousClosedCurve.of γ hγ hclosed)) f v ↔
