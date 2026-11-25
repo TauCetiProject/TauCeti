@@ -167,6 +167,30 @@ theorem cutoffPushforward_apply (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
     e.cutoffPushforward he φ h y = φ y * h (e.symm y) :=
   (rfl)
 
+/-- **Functions supported in a chart are cutoffs.** A smooth function `g` on `M` with compact
+support in the chart source is the pullback `ρ ∘ e`, extended by `0`, of a cutoff `ρ` with compact
+support in the chart target. This turns a partition of unity subordinate to chart sources into
+cutoffs in the charts. -/
+theorem exists_cutoffPullback_one_eq [FiniteDimensional ℝ E] {g : C^∞⟮𝓘(ℝ, E), M; ℝ⟯}
+    (hgc : HasCompactSupport g) (hg : tsupport g ⊆ e.source) :
+    ∃ ρ : 𝓓(⟨e.target, e.open_target⟩, ℝ), e.cutoffPullback he ρ 1 = g := by
+  -- A cutoff `θ` equal to `1` near the image `e (supp g)`, and `ρ = θ · (g ∘ e⁻¹)`.
+  obtain ⟨θ, hθ, -⟩ := TestFunction.exists_eventually_eq_one
+    (Ω := ⟨e.target, e.open_target⟩) (n := ⊤)
+    (hgc.isCompact.image_of_continuousOn (e.continuousOn.mono hg))
+    (image_subset_iff.2 fun p hp ↦ e.map_source (hg hp))
+  refine ⟨⟨fun y ↦ θ y * g (e.symm y),
+    contMDiff_iff_contDiff.1 (e.cutoffPushforward he θ g).contMDiff, θ.hasCompactSupport.mul_right,
+    tsupport_mul_subset_left.trans θ.tsupport_subset⟩, ?_⟩
+  ext p
+  by_cases hp : p ∈ e.source
+  · rw [cutoffPullback_one_apply_of_mem he _ hp, TestFunction.coe_mk, e.left_inv hp]
+    by_cases hgp : g p = 0
+    · rw [hgp, mul_zero]
+    · rw [hθ.self_of_nhdsSet _ (mem_image_of_mem e (subset_tsupport _ hgp)), one_mul]
+  · rw [cutoffPullback_apply_of_notMem he _ _ hp,
+      image_eq_zero_of_notMem_tsupport fun h ↦ hp (hg h)]
+
 /-! ### Chart compressions -/
 
 /-- The **chart compression** of an operator `D` on the smooth functions on `M` by cutoffs `φ`
@@ -388,6 +412,14 @@ theorem complexCutoffPullback_apply_of_notMem (ψ : 𝓓(⟨e.target, e.open_tar
     (f : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, ℂ), ℂ⟯) {x : M} (hx : x ∉ e.source) :
     e.complexCutoffPullback he ψ f x = 0 := by
   simp [complexCutoffPullback, cutoffPullback_apply_of_notMem he _ _ hx]
+
+/-- The complex pullback of the constant `1` by a cutoff is the real pullback of `1`, read as a
+complex number. -/
+theorem complexCutoffPullback_one_apply (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (x : M) :
+    e.complexCutoffPullback he ψ 1 x = (e.cutoffPullback he ψ 1 x : ℂ) := by
+  by_cases hx : x ∈ e.source
+  · simp [complexCutoffPullback_apply_of_mem he _ _ hx, cutoffPullback_apply_of_mem he _ _ hx]
+  · simp [complexCutoffPullback_apply_of_notMem he _ _ hx, cutoffPullback_apply_of_notMem he _ _ hx]
 
 /-- The complex pullback `(ψ f) ∘ e` is supported in the image of the support of `ψ` under the
 inverse of the chart. -/
