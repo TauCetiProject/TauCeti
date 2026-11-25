@@ -153,19 +153,16 @@ embedding of `K` is `ι_K` or its complex conjugate. -/
 theorem ringHom_eq_complexEmbeddingOfSqrt_or_eq_conjugate (φ : K →+* ℂ) :
     φ = (complexEmbeddingOfSqrt d hd θ hθ hK : K →+* ℂ) ∨
       φ = ComplexEmbedding.conjugate (complexEmbeddingOfSqrt d hd θ hθ hK : K →+* ℂ) := by
-  have hpos := sqrt_neg_intCast_pos hd
-  have hφ : φ θ ^ 2 = (d : ℂ) := sq_map_of_sq_eq_intCast φ hθ
-  have hs : ((√(-(d : ℝ)) : ℝ) : ℂ) ^ 2 = -(d : ℂ) := by
-    rw [← ofReal_pow, Real.sq_sqrt (by simpa using hd.le), ofReal_neg, ofReal_intCast]
-  have hsq : φ θ * φ θ = ((√(-(d : ℝ)) : ℂ) * I) * ((√(-(d : ℝ)) : ℂ) * I) := by
-    linear_combination hφ + hs - ((√(-(d : ℝ)) : ℂ) ^ 2) * I_sq
-  rcases mul_self_eq_mul_self_iff.mp hsq with h | h
-  · exact Or.inl ((ringHom_eq_complexEmbeddingOfSqrt_iff hd hθ hK φ).mpr (by simpa [h] using hpos))
-  · refine Or.inr ?_
-    rw [← ComplexEmbedding.involutive_conjugate K φ]
-    congr 1
-    refine (ringHom_eq_complexEmbeddingOfSqrt_iff hd hθ hK _).mpr ?_
-    simpa [ComplexEmbedding.conjugate_coe_eq, h] using hpos
+  have : Fact (¬ IsSquare d) := ⟨not_isSquare_of_neg hd⟩
+  set e := algEquivOfSqrt d θ hθ hK
+  rcases ringHom_eq_or_eq_conjugate (by exact_mod_cast hd.le)
+      (φ.comp (e : QuadraticAlgebra ℚ (d : ℚ) 0 →+* K)) with h | h
+  · refine Or.inl (RingHom.ext fun x ↦ ?_)
+    rw [RingHom.coe_coe, complexEmbeddingOfSqrt_apply]
+    simpa [e] using RingHom.congr_fun h (e.symm x)
+  · refine Or.inr (RingHom.ext fun x ↦ ?_)
+    rw [ComplexEmbedding.conjugate_coe_eq, RingHom.coe_coe, complexEmbeddingOfSqrt_apply]
+    simpa [e, ComplexEmbedding.conjugate_coe_eq] using RingHom.congr_fun h (e.symm x)
 
 end Basic
 
