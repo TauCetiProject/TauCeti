@@ -37,6 +37,8 @@ configuration by deciding its relations (`ofStructure`).
 
 * `TauCeti.RelationalConfiguration.Atom L V` — a relation symbol of `L` with a tuple of vertices;
 * `TauCeti.RelationalConfiguration L V` — a truth value for every atom;
+* `TauCeti.RelationalConfiguration.equivFun` — a configuration is its truth-value function on
+  atoms;
 * `TauCeti.RelationalConfiguration.restrict` — pulling a configuration back along a vertex map;
 * `FirstOrder.Language.LHom.onAtom` — renaming the relation symbol of an atom along a language
   map;
@@ -84,6 +86,28 @@ variable {L : Language} {V W X : Type*}
 /-- The atom with relation symbol `R` and argument tuple `x`. -/
 def atom {n : ℕ} (R : L.Relations n) (x : Fin n → V) : Atom L V := ⟨n, R, x⟩
 
+/-- Two atoms are equal exactly when they have the same relation symbol, together with its arity,
+and the same argument tuple. -/
+@[simp]
+theorem atom_eq_atom_iff {n m : ℕ} {R : L.Relations n} {S : L.Relations m} {x : Fin n → V}
+    {y : Fin m → V} :
+    atom R x = atom S y ↔ (⟨n, R⟩ : Σ n, L.Relations n) = ⟨m, S⟩ ∧ x ≍ y := by
+  constructor
+  · intro h
+    cases h
+    exact ⟨rfl, .rfl⟩
+  · rintro ⟨h, hxy⟩
+    cases h
+    cases hxy
+    rfl
+
+/-- The relation symbol of an atom, together with its arity. -/
+def Atom.symbol (a : Atom L V) : Σ n, L.Relations n := ⟨a.1, a.2.1⟩
+
+@[simp]
+theorem Atom.symbol_atom {n : ℕ} (R : L.Relations n) (x : Fin n → V) :
+    (atom R x).symbol = ⟨n, R⟩ := (rfl)
+
 /-- Every atom is `atom R x` for its relation symbol and tuple. -/
 @[elab_as_elim]
 theorem Atom.induction_atom {motive : Atom L V → Prop}
@@ -97,6 +121,14 @@ theorem Atom.induction_atom {motive : Atom L V → Prop}
 theorem Atom.eta (p : Atom L V) : atom p.2.1 p.2.2 = p :=
   (rfl)
 
+/-- Over an empty vertex type, every atom is nullary. -/
+theorem Atom.exists_eq_atom_of_isEmpty [IsEmpty V] (a : Atom L V) :
+    ∃ R : L.Relations 0, a = atom R Fin.elim0 := by
+  obtain ⟨n, R, x⟩ := a
+  cases n with
+  | zero => exact ⟨R, by rw [Subsingleton.elim x Fin.elim0]; exact (Atom.eta _).symm⟩
+  | succ n => exact isEmptyElim (x 0)
+
 /-- Relabel the arguments of an atom along a vertex map. -/
 def Atom.map (f : V → W) (a : Atom L V) : Atom L W := ⟨a.1, a.2.1, f ∘ a.2.2⟩
 
@@ -104,11 +136,20 @@ def Atom.map (f : V → W) (a : Atom L V) : Atom L W := ⟨a.1, a.2.1, f ∘ a.2
 theorem Atom.map_atom (f : V → W) {n : ℕ} (R : L.Relations n) (x : Fin n → V) :
     (atom R x).map f = atom R (f ∘ x) := (rfl)
 
+/-- Relabelling a unary atom `R(v)` along `f` gives `R(f v)`. -/
+theorem Atom.map_atom_unary (f : V → W) (R : L.Relations 1) (v : V) :
+    (atom R ![v]).map f = atom R ![f v] := by
+  rw [Atom.map_atom, Matrix.vec_single_eq_const, Matrix.vec_single_eq_const, Function.comp_def]
+
 @[simp]
 theorem Atom.map_id (a : Atom L V) : a.map id = a := (rfl)
 
 theorem Atom.map_comp (g : W → X) (f : V → W) (a : Atom L V) :
     a.map (g ∘ f) = (a.map f).map g := (rfl)
+
+/-- Relabelling the arguments of an atom keeps its relation symbol. -/
+@[simp]
+theorem Atom.symbol_map (f : V → W) (a : Atom L V) : (a.map f).symbol = a.symbol := (rfl)
 
 /-- Rename the relation symbol of an atom along a language map, keeping its arguments. -/
 def _root_.FirstOrder.Language.LHom.onAtom {L' : Language} (g : L →ᴸ L') (a : Atom L V) :
@@ -126,6 +167,11 @@ theorem _root_.FirstOrder.Language.LHom.onAtom_map {L' : Language} (g : L →ᴸ
 @[simp]
 theorem _root_.FirstOrder.Language.LHom.id_onAtom (a : Atom L V) :
     (FirstOrder.Language.LHom.id L).onAtom a = a := (rfl)
+
+/-- Renaming the relation symbol of an atom renames its symbol, keeping the arity. -/
+@[simp]
+theorem _root_.FirstOrder.Language.LHom.symbol_onAtom {L' : Language} (g : L →ᴸ L')
+    (a : Atom L V) : (g.onAtom a).symbol = ⟨a.symbol.1, g.onRelation a.symbol.2⟩ := (rfl)
 
 theorem _root_.FirstOrder.Language.LHom.comp_onAtom {L' L'' : Language} (g : L' →ᴸ L'')
     (f : L →ᴸ L') (a : Atom L V) : (g.comp f).onAtom a = g.onAtom (f.onAtom a) := (rfl)
@@ -177,6 +223,19 @@ theorem eval_mk (c : Atom L V → Bool) (a : Atom L V) : (mk c).eval a = c a := 
 @[ext]
 theorem ext {c d : RelationalConfiguration L V} (h : ∀ a, c.eval a = d.eval a) : c = d :=
   funext h
+
+/-- A configuration is its truth-value function on atoms, through `eval` and `mk`. -/
+def equivFun : RelationalConfiguration L V ≃ (Atom L V → Bool) where
+  toFun c := c.eval
+  invFun := mk
+  left_inv _ := ext fun a => eval_mk _ a
+  right_inv f := funext (eval_mk f)
+
+@[simp]
+theorem equivFun_apply (c : RelationalConfiguration L V) : equivFun c = c.eval := (rfl)
+
+@[simp]
+theorem equivFun_symm_apply (f : Atom L V → Bool) : equivFun.symm f = mk f := (rfl)
 
 /-- A language with countably many relation symbols of each arity has countably many atoms over a
 countable vertex type. -/

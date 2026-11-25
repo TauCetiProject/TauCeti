@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder
+public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder.Basic
 public import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
 import Mathlib.Analysis.Normed.Operator.NormedSpace
 import Mathlib.Topology.Algebra.Module.FiniteDimension
@@ -25,7 +25,7 @@ with Sobolev coefficients `J ∈ W^{max 1 k, p}_loc(Ω; V →L[ℝ] V)` satisfyi
 everywhere on `Ω` and `S ∈ W^{k,p}_loc(Ω; V →L[ℝ] V)` for `2 < p ≤ ∞`.
 
 Building on the higher-order interior regularity theorem `TauCeti.IsWeakCRSolution.memWkpLoc_succ`
-of `TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder`, this file proves:
+of `TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder.Basic`, this file proves:
 
 1. **`C^k` representatives for weak solutions**
    (`TauCeti.IsWeakCRSolution.exists_contDiffOn_ae_eq`). When `2 < r ≤ p`, `p⁻¹ + q⁻¹ < 1`, and

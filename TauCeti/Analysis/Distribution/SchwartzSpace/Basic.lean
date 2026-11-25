@@ -29,6 +29,8 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 
 * `SchwartzMap.one_add_norm_smul_sq_rpow_mul_norm_le`: `⟨c x⟩ ^ m ‖f x‖` is bounded by a finite
   supremum of Schwartz seminorms of `f` times `(1 + ‖x‖) ^ (-k)`.
+* `SchwartzMap.norm_le_add_seminorm_mul_inv_one_add_norm_pow`: `‖f x‖` is bounded by the sum of its
+  `(0, 0)` and `(k, 0)` seminorms times `(1 + ‖x‖ ^ k)⁻¹`.
 * `SchwartzMap.integrable_norm_pow_mul_norm_sq`: `‖x‖ ^ k ‖f x‖²` is integrable.
 * `SchwartzMap.integrable_inner`: `⟪f x, g x⟫` is integrable.
 * `SchwartzMap.integrable_mul`: `f x * g x` is integrable for Schwartz functions with values in a
@@ -86,6 +88,13 @@ section Weight
 
 variable {𝕜 E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
   [NormedSpace ℝ F] [NormedField 𝕜] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
+
+/-- Pointwise decay of a Schwartz function against `1 + ‖x‖ ^ k`, bounded by the sum of its
+`(0, 0)` and `(k, 0)` seminorms. -/
+theorem norm_le_add_seminorm_mul_inv_one_add_norm_pow (k : ℕ) (f : 𝓢(E, F)) (x : E) :
+    ‖f x‖ ≤ (SchwartzMap.seminorm 𝕜 0 0 f + SchwartzMap.seminorm 𝕜 k 0 f) * (1 + ‖x‖ ^ k)⁻¹ := by
+  rw [le_mul_inv_iff₀ (by positivity), mul_add, mul_one, mul_comm ‖f x‖]
+  exact add_le_add (f.norm_le_seminorm 𝕜 x) (f.norm_pow_mul_le_seminorm 𝕜 k x)
 
 /-- A Schwartz function absorbs the polynomial weight `⟨c x⟩ ^ m = (1 + ‖c x‖²) ^ (m / 2)` and
 still decays like `(1 + ‖x‖) ^ (-k)`, with a constant given by a finite supremum of Schwartz

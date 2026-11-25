@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Instances.Real.Lemmas
 public import Mathlib.Topology.Order.LeftRightNhds
+import TauCeti.Topology.Closure
 
 /-!
 # Right-continuous functions on dense subsets
@@ -19,6 +20,12 @@ right. In a second countable space `D` may be taken countable and `C` is countab
 replaces a supremum over uncountably many times by a countable one. Likewise, for a function into
 a regular space that is eventually right-continuous along `𝓝[>] a`, convergence along `𝓝[>] a` is
 equivalent to convergence along `𝓝[(D ∪ C) ∩ (a, ∞)] a`.
+
+For an arbitrary topological codomain, right-continuity at `u` into a neighbourhood `U` of `f u`
+together with nontriviality of `𝓝[>] u` puts `f x ∈ U` at a dense point `x ∈ D ∩ (u, v)`. On a
+densely ordered linear order with the order topology, this implies that a function right-continuous
+on `[a, t)` visits an open set `U` somewhere in `[a, t]` if and only if either `f t ∈ U` or `f`
+visits `U` at some point of `D ∩ [a, t]`.
 
 ## Main declarations
 
@@ -36,6 +43,12 @@ equivalent to convergence along `𝓝[(D ∪ C) ∩ (a, ∞)] a`.
   every `s ∈ 𝓝[>] a` contains a countable `S ⊆ s ∩ Ioi a` with `(𝓝[S] a).NeBot ↔ (𝓝[>] a).NeBot`
   along which convergence of any eventually right-continuous function is equivalent to convergence
   along `𝓝[>] a`.
+* `Dense.exists_mem_Ioo_apply_mem`: right-continuity at `u` pushes membership in a neighbourhood of
+  `f u` onto a point of a dense set `D` in `(u, v)`.
+* `Dense.exists_mem_Icc_apply_mem_iff_of_isOpen`: on a densely ordered space, visiting an open set
+  `U` on `[a, t]` is equivalent to visiting `U` at `t` or at a point of `D ∩ [a, t]`.
+* `TopologicalSpace.exists_denseRange_isCofinal`: every nonempty separable linear order with closed
+  lower rays admits a sequence with dense, cofinal range.
 * `TauCeti.le_of_forall_rat_add_le`: a function right-continuous at `t + h` that does not
   increase along rational increments from `t` does not increase along the real increment `h`.
 -/
@@ -43,6 +56,8 @@ equivalent to convergence along `𝓝[(D ∪ C) ∩ (a, ∞)] a`.
 public section
 
 open Set
+
+section OrderTopology
 
 variable {ι : Type*} [LinearOrder ι] [TopologicalSpace ι] [OrderTopology ι]
 
@@ -175,6 +190,59 @@ theorem TopologicalSpace.exists_countable_subset_tendsto_nhdsGT_iff [SecondCount
     exact hD.tendsto_nhdsGT_iff hg
 
 end RegularSpace
+
+end OrderTopology
+
+section OpenTarget
+
+open scoped Topology
+
+/-- If `D` is dense, `𝓝[>] u` is nontrivial, `u < v`, and `f` is right-continuous at `u`, then
+every neighbourhood `U` of `f u` contains `f x` for some `x ∈ D` with `x ∈ Ioo u v`. -/
+theorem Dense.exists_mem_Ioo_apply_mem {ι α : Type*} [LinearOrder ι] [TopologicalSpace ι]
+    [ClosedIicTopology ι] [ClosedIciTopology ι] [TopologicalSpace α] {D : Set ι} (hD : Dense D)
+    {f : ι → α} {u v : ι} [(𝓝[>] u).NeBot] (huv : u < v)
+    (hf : ContinuousWithinAt f (Ioi u) u) {U : Set α} (hU : U ∈ 𝓝 (f u)) :
+    ∃ x ∈ D, x ∈ Ioo u v ∧ f x ∈ U :=
+  ((hD.frequently_mem_nhdsWithin isOpen_Ioi).and_eventually
+    (Filter.inter_mem (Ioo_mem_nhdsGT huv) (hf hU))).exists
+
+/-- On a densely ordered linear order with the order topology, a function right-continuous on
+`[a, t)` visits an open set `U` somewhere in `[a, t]` if and only if either `f t ∈ U` or `f x ∈ U`
+at some point `x ∈ D` with `x ∈ [a, t]`, for any dense set `D`. -/
+theorem Dense.exists_mem_Icc_apply_mem_iff_of_isOpen {ι α : Type*} [LinearOrder ι]
+    [TopologicalSpace ι] [OrderTopology ι] [DenselyOrdered ι] [TopologicalSpace α]
+    {D : Set ι} (hD : Dense D) {f : ι → α} {a t : ι} (hat : a ≤ t)
+    (hf : ∀ u ∈ Ico a t, ContinuousWithinAt f (Ioi u) u) {U : Set α} (hU : IsOpen U) :
+    (∃ u ∈ Icc a t, f u ∈ U) ↔ f t ∈ U ∨ ∃ x ∈ D, x ∈ Icc a t ∧ f x ∈ U := by
+  constructor
+  · rintro ⟨u, ⟨hau, hut⟩, hu⟩
+    rcases hut.eq_or_lt with rfl | hut
+    · exact Or.inl hu
+    · have : (𝓝[>] u).NeBot := nhdsGT_neBot_of_exists_gt ⟨t, hut⟩
+      obtain ⟨x, hxD, hx, hfx⟩ :=
+        hD.exists_mem_Ioo_apply_mem hut (hf u ⟨hau, hut⟩) (hU.mem_nhds hu)
+      exact Or.inr ⟨x, hxD, ⟨hau.trans hx.1.le, hx.2.le⟩, hfx⟩
+  · rintro (ht | ⟨x, -, hx, hfx⟩)
+    · exact ⟨t, ⟨hat, le_rfl⟩, ht⟩
+    · exact ⟨x, hx, hfx⟩
+
+/-- Every nonempty separable linear order with closed lower rays admits a sequence with dense,
+cofinal range. -/
+theorem TopologicalSpace.exists_denseRange_isCofinal {ι : Type*} [LinearOrder ι]
+    [TopologicalSpace ι] [ClosedIicTopology ι] [TopologicalSpace.SeparableSpace ι] [Nonempty ι] :
+    ∃ d : ℕ → ι, DenseRange d ∧ IsCofinal (range d) := by
+  classical
+  by_cases h : ∃ m : ι, IsMax m
+  · obtain ⟨m, hm⟩ := h
+    exact ⟨fun n ↦ Nat.casesOn n m (TopologicalSpace.denseSeq ι),
+      (TopologicalSpace.denseRange_denseSeq ι).mono (by rintro _ ⟨n, rfl⟩; exact ⟨n + 1, rfl⟩),
+      fun x ↦ ⟨m, ⟨0, rfl⟩, hm.isTop x⟩⟩
+  · have : NoMaxOrder ι := ⟨fun x ↦ not_isMax_iff.mp fun hx ↦ h ⟨x, hx⟩⟩
+    exact ⟨TopologicalSpace.denseSeq ι, TopologicalSpace.denseRange_denseSeq ι,
+      Dense.exists_ge (TopologicalSpace.denseRange_denseSeq ι)⟩
+
+end OpenTarget
 
 section Rational
 
