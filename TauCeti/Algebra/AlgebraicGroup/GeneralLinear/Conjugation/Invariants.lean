@@ -225,8 +225,8 @@ theorem charpolyQuotientMap_eq :
   rw [← HopfAlgebra.conjugationQuotientMap_def, conjugationQuotientMap_comp_charpolyQuotientMap,
     HopfAlgebra.conjugationQuotientMap_def, ComoduleAlgebra.AffineQuotient.projection_def,
     ← Category.assoc, key (HopfAlgebra.conjugationInvariants_def R _).symm, charpolyMap_def,
-    Spec.algebraMap, ← Spec.map_comp]
-  rfl
+    Spec.algebraMap, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+  exact congrArg (fun f ↦ Spec.map (CommRingCat.ofHom f)) (RingHom.ext fun x ↦ by simp)
 
 end Scheme
 
