@@ -24,8 +24,9 @@ coerces to it, when an intertwining map is zero and when it is surjective in ter
 subrepresentation its range is,
 the inclusion of a subrepresentation as an intertwining map, that the group-algebra action on a
 subrepresentation coerces to the original action, the canonical equivalence between the module of
-the restricted representation and the corresponding submodule, and that a subrepresentation is
-minimal exactly when the `A[G]`-submodule it carries is simple.
+the restricted representation and the corresponding submodule, that membership in a supremum of
+subrepresentations is the same in the lattices of `A[G]`-submodules and of `A`-submodules, and
+that a subrepresentation is minimal exactly when the `A[G]`-submodule it carries is simple.
 
 They are stated at the typeclasses `Subrepresentation` itself asks for, so they apply wherever
 the abstraction does. The `⊥` and `⊤` lemmas let proofs about extreme subrepresentations avoid
@@ -77,14 +78,19 @@ containing `v` (`Representation.cyclicSubrepresentation_le_iff`), and its vector
 (`Representation.toSubmodule_cyclicSubrepresentation`), whose span is invariant under `ρ`
 (`Representation.apply_mem_span_range_apply`).
 
-Restriction along a surjective monoid homomorphism identifies the lattices of invariant
-submodules, keeping the underlying submodule in both directions. In particular it preserves
-irreducibility, as does restriction along a monoid isomorphism. Restriction of an algebra action
-along a monoid homomorphism whose image spans the algebra keeps the invariant submodules too
+Restriction along any monoid homomorphism keeps the underlying submodule of a subrepresentation
+(`Subrepresentation.res`), and the restricted subrepresentation carries the restricted
+representation (`Subrepresentation.toRepresentation_res`). Restriction along a surjective monoid
+homomorphism identifies the lattices of invariant submodules, keeping the underlying submodule in
+both directions. In particular it preserves irreducibility, as does restriction along a monoid
+isomorphism. Restriction of an algebra action along a monoid homomorphism whose image spans the
+algebra keeps the invariant submodules too
 (`AlgHom.mem_invtSubmodule_toMonoidHom_comp_iff_of_span_eq_top`).
 
 ## Main results
 
+* `Subrepresentation.res`
+* `Subrepresentation.toRepresentation_res`
 * `MonoidHom.resSubrepresentationOrderIso`
 * `MonoidHom.isIrreducible_comp_surjective_iff`
 * `MulEquiv.isIrreducible_comp_equiv_iff`
@@ -129,6 +135,7 @@ along a monoid homomorphism whose image spans the algebra keeps the invariant su
 * `Subrepresentation.coe_toRepresentation_asAlgebraHom_apply`
 * `Subrepresentation.asModuleEquivAsSubmodule`
 * `Subrepresentation.intertwiningMapEquivLinearMapAsSubmodule`
+* `Subrepresentation.mem_iSup_asSubmodule_iff`
 * `Subrepresentation.isSimpleModule_asSubmodule_iff`
 * `Subrepresentation.equivProdOfIsCompl`
 * `Subrepresentation.isIntertwiningMap_projectionOnto`
@@ -457,6 +464,16 @@ theorem intertwiningMapEquivLinearMapAsSubmodule_apply (σ : Subrepresentation �
         (σ.asModuleEquivAsSubmodule.symm x) :=
   (rfl)
 
+/-- **Membership in a supremum of subrepresentations.** A vector of `ρ`, read in `ρ.asModule`,
+lies in the supremum of the `A[G]`-submodules `(σ i).asSubmodule` exactly when it lies in the
+supremum of the underlying `A`-submodules `(σ i).toSubmodule`. -/
+theorem mem_iSup_asSubmodule_iff {ι : Sort*} {σ : ι → Subrepresentation ρ} {v : W} :
+    ρ.asModuleEquiv.symm v ∈ ⨆ i, (σ i).asSubmodule ↔ v ∈ ⨆ i, (σ i).toSubmodule := by
+  rw [← Submodule.restrictScalars_mem A, Submodule.restrictScalars_iSup]
+  -- `ρ.asModule` is a type synonym for `W` and each `(σ i).asSubmodule` is built from
+  -- `(σ i).toSubmodule`, so restricting its scalars to `A` gives back `(σ i).toSubmodule`.
+  rfl
+
 end AsSubmoduleEquiv
 
 section AsSubmodule
@@ -549,6 +566,42 @@ instance instInhabitedFG : Inhabited {σ : Subrepresentation ρ // σ.toSubmodul
 
 end FG
 
+section Res
+
+variable {k : Type*} [Semiring k] {H K : Type*} [Monoid H] [Monoid K]
+  {V : Type*} [AddCommMonoid V] [Module k V] {ρ : Representation k K V}
+
+/-- The restriction of a subrepresentation of `ρ` along a monoid homomorphism `f`: the same
+underlying submodule, as a subrepresentation of `ρ.comp f`. Its body is exposed so that
+`Subrepresentation.toRepresentation_res` can be stated. -/
+@[expose] def res (f : H →* K) (σ : Subrepresentation ρ) : Subrepresentation (ρ.comp f) where
+  toSubmodule := σ.toSubmodule
+  apply_mem_toSubmodule h _ hv := σ.apply_mem_toSubmodule (f h) hv
+
+/-- Restriction along a monoid homomorphism keeps the underlying submodule. -/
+@[simp]
+theorem toSubmodule_res (f : H →* K) (σ : Subrepresentation ρ) :
+    (σ.res f).toSubmodule = σ.toSubmodule :=
+  rfl
+
+/-- Restriction along a monoid homomorphism keeps the underlying set. -/
+@[simp]
+theorem coe_res (f : H →* K) (σ : Subrepresentation ρ) : (σ.res f : Set V) = σ :=
+  rfl
+
+/-- A vector lies in the restriction of `σ` along `f` exactly when it lies in `σ`. -/
+@[simp]
+theorem mem_res {f : H →* K} {σ : Subrepresentation ρ} {v : V} : v ∈ σ.res f ↔ v ∈ σ :=
+  Iff.rfl
+
+/-- The representation carried by the restriction of `σ` along `f` is the restriction along `f` of
+the representation carried by `σ`. -/
+theorem toRepresentation_res (f : H →* K) (σ : Subrepresentation ρ) :
+    (σ.res f).toRepresentation = σ.toRepresentation.comp f :=
+  rfl
+
+end Res
+
 end Subrepresentation
 
 namespace Representation
@@ -631,9 +684,7 @@ def resSubrepresentationOrderIso (f : H →* K) (hf : Function.Surjective f)
       apply_mem_toSubmodule := fun h v hv ↦ by
         obtain ⟨g, rfl⟩ := hf h
         exact S.apply_mem_toSubmodule g hv }
-  invFun S :=
-    { toSubmodule := S.toSubmodule
-      apply_mem_toSubmodule := fun h v hv ↦ S.apply_mem_toSubmodule (f h) hv }
+  invFun S := S.res f
   left_inv S := by ext; rfl
   right_inv S := by ext; rfl
   map_rel_iff' := by rfl
