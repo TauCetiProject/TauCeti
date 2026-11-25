@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Semisimple
-public import TauCeti.RepresentationTheory.Subrepresentation
+public import TauCeti.RepresentationTheory.AsModule
 
 /-!
 # Subrepresentations of a semisimple representation
 
 A representation is semisimple when every subrepresentation has a complementary subrepresentation
-(`Representation.IsSemisimpleRepresentation`). This file records two consequences.
+(`Representation.IsSemisimpleRepresentation`). This file records consequences and criteria.
 
 A representation that maps injectively and equivariantly into a semisimple one is semisimple
 (`Representation.IntertwiningMap.isSemisimpleRepresentation_of_injective`), and so is the image of
@@ -29,6 +29,14 @@ Every subrepresentation `S` of a semisimple representation has an equivariant pr
 (`Subrepresentation.exists_equivariant_projection`): the first component of the splitting
 `Subrepresentation.equivProdOfIsCompl` along a complement of `S`.
 
+A representation spanned by subrepresentations that carry semisimple representations is semisimple
+(`Representation.isSemisimpleRepresentation_of_iSup_eq_top`), and conversely a semisimple
+representation is spanned by its atoms
+(`Representation.IsSemisimpleRepresentation.iSup_atoms_eq_top`). Both are Mathlib's statements
+for the modules over the group algebra, carried across the supremum by
+`Subrepresentation.mem_iSup_asSubmodule_iff`. Restriction along a surjective homomorphism does not
+change semisimplicity (`MonoidHom.isSemisimpleRepresentation_comp_surjective_iff`).
+
 ## Main results
 
 * `Representation.IntertwiningMap.isSemisimpleRepresentation_of_injective`: a representation with
@@ -39,9 +47,17 @@ Every subrepresentation `S` of a semisimple representation has an equivariant pr
   representation is semisimple.
 * `Subrepresentation.exists_equivariant_projection`: a subrepresentation of a semisimple
   representation has an equivariant projection onto it.
+* `MonoidHom.isSemisimpleRepresentation_comp_surjective_iff`: restriction along a surjective
+  homomorphism preserves and reflects semisimplicity.
+* `Representation.isSemisimpleRepresentation_of_iSup_eq_top`: a representation spanned by
+  semisimple subrepresentations is semisimple.
+* `Representation.IsSemisimpleRepresentation.iSup_atoms_eq_top`: a semisimple representation is
+  spanned by its minimal nonzero subrepresentations.
 -/
 
 public section
+
+open scoped MonoidAlgebra
 
 variable {k G V W : Type*} [Field k] [Monoid G] [AddCommGroup V] [Module k V] [AddCommGroup W]
   [Module k W] {ρ : Representation k G W}
@@ -80,6 +96,30 @@ instance Representation.isSemisimpleRepresentation_dual {G : Type*} [Group G]
 
 namespace Subrepresentation
 
+/-- **Membership in a supremum of subrepresentations.** A vector of `ρ`, read in `ρ.asModule`,
+lies in the supremum of the `k[G]`-submodules `(σ i).asSubmodule` exactly when it lies in the
+supremum of the underlying `k`-submodules `(σ i).toSubmodule`. -/
+theorem mem_iSup_asSubmodule_iff {ι : Sort*} {σ : ι → Subrepresentation ρ} {v : W} :
+    ρ.asModuleEquiv.symm v ∈ ⨆ i, (σ i).asSubmodule ↔ v ∈ ⨆ i, (σ i).toSubmodule := by
+  refine ⟨fun hv ↦ ?_, fun hv ↦ ?_⟩
+  · rw [← ρ.asModuleEquiv.apply_symm_apply v]
+    refine Submodule.iSup_induction _
+      (motive := fun x ↦ ρ.asModuleEquiv x ∈ ⨆ i, (σ i).toSubmodule) hv
+      (fun i x hx ↦ Submodule.mem_iSup_of_mem i ?_) (by rw [map_zero]; exact zero_mem _)
+      (fun x y hx hy ↦ ?_)
+    · rw [Representation.asModuleEquiv_apply]
+      exact mem_asSubmodule_iff.mp hx
+    · rw [map_add]
+      exact add_mem hx hy
+  · refine Submodule.iSup_induction _
+      (motive := fun v ↦ ρ.asModuleEquiv.symm v ∈ ⨆ i, (σ i).asSubmodule) hv
+      (fun i x hx ↦ Submodule.mem_iSup_of_mem i ?_) (by rw [map_zero]; exact zero_mem _)
+      (fun x y hx hy ↦ ?_)
+    · simp only [Representation.asModuleEquiv_symm_apply]
+      exact (mem_asSubmodule_iff (v := x)).mpr hx
+    rw [map_add]
+    exact add_mem hx hy
+
 /-- **Equivariant projection onto a subrepresentation.** Every subrepresentation `S` of a
 semisimple representation `ρ` has a `G`-equivariant linear projection `P : W → S`. It is the first
 component of the splitting of `ρ` along a complement of `S`. -/
@@ -95,3 +135,47 @@ theorem exists_equivariant_projection [ρ.IsSemisimpleRepresentation] (S : Subre
     simp [he, toRepresentation_apply]
 
 end Subrepresentation
+
+/-- **Restriction along a surjective homomorphism preserves semisimplicity.** Semisimplicity is
+complementedness of the lattice of subrepresentations, and `MonoidHom.resSubrepresentationOrderIso`
+identifies the two lattices. -/
+@[simp]
+theorem MonoidHom.isSemisimpleRepresentation_comp_surjective_iff {H K : Type*} [Monoid H]
+    [Monoid K] (f : H →* K) (hf : Function.Surjective f) (ρ : Representation k K W) :
+    Representation.IsSemisimpleRepresentation (ρ.comp f) ↔
+      Representation.IsSemisimpleRepresentation ρ :=
+  OrderIso.complementedLattice_iff (f.resSubrepresentationOrderIso hf ρ)
+
+/-- **Semisimplicity from a spanning family.** A representation spanned by a family of
+subrepresentations, each of which carries a semisimple representation, is semisimple. -/
+theorem Representation.isSemisimpleRepresentation_of_iSup_eq_top {ι : Type*}
+    {σ : ι → Subrepresentation ρ} (hσ : ∀ i, (σ i).toRepresentation.IsSemisimpleRepresentation)
+    (hspan : ⨆ i, (σ i).toSubmodule = ⊤) : ρ.IsSemisimpleRepresentation := by
+  rw [isSemisimpleRepresentation_iff_isSemisimpleModule_asModule]
+  refine isSemisimpleModule_of_isSemisimpleModule_submodule' (p := fun i ↦ (σ i).asSubmodule)
+    (fun i ↦ ?_) (Submodule.eq_top_iff'.mpr fun x ↦ ?_)
+  · have := (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule _).mp (hσ i)
+    exact IsSemisimpleModule.congr (σ i).asModuleEquivAsSubmodule.symm
+  · rw [← ρ.asModuleEquiv.symm_apply_apply x, Subrepresentation.mem_iSup_asSubmodule_iff, hspan]
+    exact Submodule.mem_top
+
+/-- **A semisimple representation is spanned by its atoms.** The minimal nonzero
+subrepresentations of a semisimple representation span it; this is
+`IsSemisimpleModule.sSup_simples_eq_top` for the associated `k[G]`-module. -/
+theorem Representation.IsSemisimpleRepresentation.iSup_atoms_eq_top (ρ : Representation k G W)
+    [ρ.IsSemisimpleRepresentation] :
+    ⨆ σ : {σ : Subrepresentation ρ // IsAtom σ}, (σ : Subrepresentation ρ).toSubmodule = ⊤ := by
+  have := (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule ρ).mp ‹_›
+  -- Each simple `k[G]`-submodule is the `asSubmodule` of an atom.
+  have hle : sSup {m : Submodule k[G] ρ.asModule | IsSimpleModule k[G] m} ≤
+      ⨆ σ : {σ : Subrepresentation ρ // IsAtom σ}, (σ : Subrepresentation ρ).asSubmodule := by
+    refine sSup_le fun m hm ↦ ?_
+    have hm' : (Subrepresentation.ofSubmodule' m).asSubmodule = m := by
+      rw [← Subrepresentation.subrepresentationSubmoduleOrderIso_apply,
+        ← Subrepresentation.subrepresentationSubmoduleOrderIso_symm_apply]
+      exact Subrepresentation.subrepresentationSubmoduleOrderIso.apply_symm_apply m
+    refine le_iSup_of_le ⟨Subrepresentation.ofSubmodule' m,
+      Subrepresentation.isSimpleModule_asSubmodule_iff.mp (hm'.symm ▸ hm)⟩ hm'.ge
+  refine Submodule.eq_top_iff'.mpr fun v ↦ Subrepresentation.mem_iSup_asSubmodule_iff.mp (hle ?_)
+  rw [IsSemisimpleModule.sSup_simples_eq_top]
+  exact Submodule.mem_top
