@@ -29,7 +29,9 @@ Coordinate lines and continuous graphs over compact intervals have zero planar L
 so a half-disc `Ω ∩ {0 ≤ im}` agrees almost everywhere with its interior
 (`TauCeti.inter_setOf_im_nonneg_ae_eq_interior`), and an integral over `ℂ` is the integral over
 the open upper half-plane of the function plus its composition with conjugation
-(`Complex.integral_eq_setIntegral_add_comp_conj`).
+(`Complex.integral_eq_setIntegral_add_comp_conj`). An almost-everywhere property on the upper part
+of a conjugation-invariant set reflects to the lower part
+(`Complex.ae_restrict_of_ae_restrict_inter_setOf_im_nonneg`).
 Interchanging the real and imaginary coordinates preserves planar area. On a rectangle
 `s ×ℂ t`, planar measure is the product of the restrictions to the sides
 (`Complex.volume_reProdIm`, `Complex.volume_real_reProdIm_Icc` for the area), so a function of the
@@ -120,6 +122,22 @@ theorem setOf_le_im_ae_eq (c : ℝ) : {z : ℂ | c ≤ z.im} =ᵐ[volume] {z : �
 /-- Almost every complex number is off the real axis. -/
 theorem ae_im_ne_zero : ∀ᵐ z : ℂ, z.im ≠ 0 :=
   measure_eq_zero_iff_ae_notMem.1 (volume_setOf_im_eq 0)
+
+/-- **Reflecting an almost-everywhere property across the real axis.** Let `Ω` be measurable and
+invariant under conjugation. If `P` holds almost everywhere on `Ω ∩ {0 ≤ im}`, then for almost
+every `z ∈ Ω`, `P` holds at `z` if `0 ≤ im z` and at `conj z` if `im z ≤ 0`: conjugation preserves
+the measure. -/
+theorem ae_restrict_of_ae_restrict_inter_setOf_im_nonneg {Ω : Set ℂ} (hΩm : MeasurableSet Ω)
+    (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) {P : ℂ → Prop}
+    (h : ∀ᵐ z ∂volume.restrict (Ω ∩ {z | 0 ≤ z.im}), P z) :
+    ∀ᵐ z ∂volume.restrict Ω, (0 ≤ z.im → P z) ∧ (z.im ≤ 0 → P (starRingEnd ℂ z)) := by
+  have hH : MeasurableSet {z : ℂ | 0 ≤ z.im} := measurableSet_le measurable_const measurable_im
+  have h' := (ae_restrict_iff' (hΩm.inter hH)).1 h
+  have hc := conjLIE.measurePreserving.quasiMeasurePreserving.ae h'
+  simp only [conjLIE_apply] at hc
+  refine (ae_restrict_iff' hΩm).2 ?_
+  filter_upwards [h', hc] with z hz hcz hzΩ
+  exact ⟨fun h0 => hz ⟨hzΩ, h0⟩, fun h0 => hcz ⟨hΩ hzΩ, by simpa using h0⟩⟩
 
 /-- An integral over `ℂ` is the integral over the open upper half-plane of the function plus its
 composition with conjugation: the real axis is null and `z ↦ conj z` preserves the measure. -/

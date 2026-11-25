@@ -77,6 +77,9 @@ a continuous `J` with weak derivative up to the boundary it holds when `J(s)` an
   boundary values.
 * `TauCeti.MemLpLoc.twistedReflection`, `TauCeti.MemLpLoc.of_twistedReflection`: local `Lᵖ`
   bounds pass to and from twisted reflections.
+* `TauCeti.MemWkpLoc.twistedSchwarzReflection`: a continuous `W^{1,p}_loc` map up to the axis,
+  with values on the axis fixed by `L`, has a `W^{1,p}_loc` twisted reflection on the doubled
+  domain.
 
 ## References
 
@@ -229,6 +232,21 @@ theorem MemLpLoc.of_twistedReflection {U : Set ℂ} {L : F →L[ℝ] F}
   (hf.mono_set inter_subset_left).congr_ae
     (ae_restrict_of_ae_restrict_of_subset inter_subset_right (twistedReflection_ae_eq_restrict L f))
 
+/-- **Local Sobolev class of a twisted reflection.** Let `Ω` be invariant under conjugation and
+`1 ≤ p`. If `g ∈ W^{1,p}_loc(Ω ∩ {0 ≤ im})` is continuous there and the continuous linear map `L`
+fixes the values of `g` on `Ω ∩ ℝ`, then `TauCeti.twistedSchwarzReflection L g`, equal to
+`L (g (conj z))` below the axis, is in `W^{1,p}_loc(Ω)`. -/
+theorem MemWkpLoc.twistedSchwarzReflection {Ω : Opens ℂ} (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
+    (hp : 1 ≤ p) (L : F →L[ℝ] F) (hf : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 f)
+    (hfc : ContinuousOn f ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))
+    (hfL : ∀ x : ℝ, (x : ℂ) ∈ Ω → L (f x) = f x) :
+    MemWkpLoc p Ω 1 (TauCeti.twistedSchwarzReflection L f) := by
+  obtain ⟨-, Df, hDf, hDfp⟩ := memWkpLoc_succ_iff.1 hf
+  rw [memWkpLoc_zero_iff] at hDfp
+  exact memWkpLoc_succ_iff_of_isOpen.2 ⟨(continuousOn_twistedSchwarzReflection hΩ hfc hfL).memLpLoc,
+    _, hDf.twistedSchwarzReflection (fun z hz _ => hΩ hz) L hfc hfL (hDfp.mono_exponent hp),
+    memWkpLoc_zero_iff.2 (hDfp.twistedReflection hΩ _)⟩
+
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] {R : W ≃L[ℝ] W}
   {J S : ℂ → W →L[ℝ] W} {DJ : ℂ → ℂ →L[ℝ] W →L[ℝ] W} {U : Set ℂ}
 
@@ -300,19 +318,12 @@ theorem ae_crReflectionCoeff_mul_self {W : Type*} [NormedAddCommGroup W] [Normed
     {R : W ≃L[ℝ] W} {J : ℂ → W →L[ℝ] W} (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
     (hJ2 : ∀ᵐ z ∂volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}), J z * J z = -1) :
     ∀ᵐ z ∂volume.restrict Ω, crReflectionCoeff R J z * crReflectionCoeff R J z = -1 := by
-  have hJ2' : ∀ᵐ z ∂volume, z ∈ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} → J z * J z = -1 :=
-    (ae_restrict_iff' (Ω.isOpen.measurableSet.inter
-      (measurableSet_le measurable_const measurable_im))).1 hJ2
-  have hJ2c := conjLIE.measurePreserving.quasiMeasurePreserving.ae hJ2'
-  refine (ae_restrict_iff' Ω.isOpen.measurableSet).2 ?_
-  filter_upwards [hJ2', hJ2c, Complex.ae_im_ne_zero]
-    with z hz hzc hz0 hzΩ
+  filter_upwards [Complex.ae_restrict_of_ae_restrict_inter_setOf_im_nonneg
+    Ω.isOpen.measurableSet hΩ hJ2, ae_restrict_of_ae Complex.ae_im_ne_zero] with z hz hz0
   rcases lt_or_gt_of_ne hz0 with h0 | h0
-  · have hJz := hzc ⟨hΩ hzΩ, by simpa using h0.le⟩
-    simp only [conjLIE_apply] at hJz
-    exact crReflectionCoeff_mul_self_of_im_neg h0 hJz
+  · exact crReflectionCoeff_mul_self_of_im_neg h0 (hz.2 h0.le)
   · rw [crReflectionCoeff_of_im_pos h0]
-    exact hz ⟨hzΩ, h0.le⟩
+    exact hz.1 h0.le
 
 /-! ### The reflection theorem -/
 
