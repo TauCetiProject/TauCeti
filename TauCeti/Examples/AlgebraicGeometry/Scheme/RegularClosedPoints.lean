@@ -34,24 +34,19 @@ example (k : Type u) [Field k] [PerfectField k] (n : Type u) [Finite n] :
   (Scheme.Hom.smooth_iff_isRegularLocalRing_closedPoints (𝔸(n; Spec (.of k)) ↘ Spec (.of k))).mp
     inferInstance
 
-/-- A field extension `K / k` for which `Spec K ⟶ Spec k` is smooth is separable: the residue
-field at the unique maximal ideal of a smooth `k`-algebra can be chosen separable. -/
-theorem isSeparable_of_smooth (k K : Type u) [Field k] [Field K] [Algebra k K]
-    [Smooth (Spec.map (CommRingCat.ofHom (algebraMap k K)))] : Algebra.IsSeparable k K := by
-  have : Algebra.Smooth k K := by
-    have := HasRingHomProperty.Spec_iff (P := @Smooth) |>.mp
-      ‹Smooth (Spec.map (CommRingCat.ofHom (algebraMap k K)))›
-    exact RingHom.smooth_algebraMap.mp this
-  obtain ⟨m, hm, -, hsep⟩ := TauCeti.Algebra.Smooth.exists_isMaximal_isSeparable k K
-  obtain rfl : m = ⊥ := Ideal.eq_bot_of_prime m
-  exact AlgEquiv.Algebra.isSeparable (AlgEquiv.quotientBot k K)
-
 -- Over an imperfect field the closed-point criterion fails: `Spec K` has regular local rings at
--- all of its points, yet it is not smooth over `k` when `K / k` is inseparable.
-example (k K : Type u) [Field k] [Field K] [Algebra k K]
+-- all of its points, yet it is not smooth over `k` when the finite extension `K / k` is
+-- inseparable, although `Spec K ⟶ Spec k` is locally of finite type.
+example (k K : Type u) [Field k] [Field K] [Algebra k K] [Module.Finite k K]
     (hK : ¬ Algebra.IsSeparable k K) :
-    (∀ x ∈ closedPoints (Spec (.of K)), IsRegularLocalRing ((Spec (.of K)).presheaf.stalk x)) ∧
-      ¬ Smooth (Spec.map (CommRingCat.ofHom (algebraMap k K))) :=
-  ⟨fun _ _ ↦ inferInstance, fun _ ↦ hK (isSeparable_of_smooth k K)⟩
+    LocallyOfFiniteType (Spec.map (CommRingCat.ofHom (algebraMap k K))) ∧
+      (∀ x ∈ closedPoints (Spec (.of K)), IsRegularLocalRing ((Spec (.of K)).presheaf.stalk x)) ∧
+      ¬ Smooth (Spec.map (CommRingCat.ofHom (algebraMap k K))) := by
+  refine ⟨?_, fun _ _ ↦ inferInstance, fun h ↦ hK ?_⟩
+  · exact HasRingHomProperty.Spec_iff.mpr
+      (RingHom.finiteType_algebraMap.mpr inferInstance)
+  · have : Algebra.Smooth k K :=
+      RingHom.smooth_algebraMap.mp (HasRingHomProperty.Spec_iff (P := @Smooth) |>.mp h)
+    exact TauCeti.Algebra.Smooth.isSeparable k K
 
 end TauCeti.SmoothClosedPointsExample
