@@ -605,6 +605,14 @@ theorem map_sub [AddGroup K] [AddGroup L] [AddMonoidHomClass F K L] (φ : F)
   funext _ _ e
   simp
 
+/-- Reading natural values in `K` and then applying an additive map `φ` with `φ 1 = 1` reads them
+in `L`. -/
+theorem map_map_natCast [AddMonoidWithOne K] [AddMonoidWithOne L] [AddMonoidHomClass F K L]
+    (φ : F) (hφ : φ 1 = 1) (a : Assignment Q ℕ) :
+    (a.map (Nat.cast : ℕ → K)).map φ = a.map Nat.cast := by
+  funext x y e
+  exact map_natCast' φ hφ (a e)
+
 end Algebra
 
 section Order

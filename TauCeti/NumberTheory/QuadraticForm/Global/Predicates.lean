@@ -28,7 +28,8 @@ at least two, representation of regular forms is controlled only by dimension, a
 of equal dimension are equivalent.  `TauCeti.NumberTheory.QuadraticForm.Global.ComplexPlaces`
 makes this omission explicit.
 
-If a form locally represents a scalar `a`, adjoining `⟨-a⟩` makes it locally isotropic.
+If a form locally represents a scalar `a`, adjoining `⟨-a⟩` makes it locally isotropic. Adjoining a
+zero orthogonal summand does not change which scalars a form locally represents.
 
 -/
 
@@ -196,6 +197,19 @@ theorem LocallyRepresentsScalar.of_represents {Q : _root_.QuadraticForm K V} {a 
     let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
     rw [QuadraticForm.atRealPlace_def]
     simpa only [RingHom.algebraMap_toAlgebra] using h.baseChange (A := ℝ)
+
+/-- Adjoining a zero orthogonal summand does not change local scalar representation: a form
+whose orthogonal sum with a zero form locally represents `a` already locally represents `a`. -/
+theorem LocallyRepresentsScalar.of_prod_zero {Q : _root_.QuadraticForm K V} {a : K}
+    (h : LocallyRepresentsScalar (Q.prod (0 : _root_.QuadraticForm K W)) a) :
+    Q.LocallyRepresentsScalar a := by
+  refine ⟨fun v ↦ ?_, fun w ↦ ?_⟩
+  · obtain ⟨x, hx⟩ := (QuadraticMap.represents_iff _ _).mp
+      (((atFinitePlaceProd Q 0 v).represents_iff _).mp (h.1 v))
+    exact (QuadraticMap.represents_iff _ _).mpr ⟨x.1, by simpa using hx⟩
+  · obtain ⟨x, hx⟩ := (QuadraticMap.represents_iff _ _).mp
+      (((atRealPlaceProd Q 0 w).represents_iff _).mp (h.2 w))
+    exact (QuadraticMap.represents_iff _ _).mpr ⟨x.1, by simpa using hx⟩
 
 /-- Globally equivalent quadratic forms are locally equivalent. -/
 theorem LocallyEquivalent.of_equivalent {Q : _root_.QuadraticForm K V}

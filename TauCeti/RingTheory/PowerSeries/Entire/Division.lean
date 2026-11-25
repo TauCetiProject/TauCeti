@@ -16,6 +16,7 @@ import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Polynomial.Div
 import TauCeti.RingTheory.AdjoinRoot.Basic
+import TauCeti.RingTheory.PowerSeries.Basic
 import TauCeti.RingTheory.PowerSeries.Inverse
 import TauCeti.RingTheory.PowerSeries.Trunc
 
@@ -580,10 +581,8 @@ theorem divByMonic_modByMonic_unique (q : R⟦X⟧) (r : Polynomial R) (hp : p.M
   set c := 1 + ∑ i ∈ p.support, ‖p.coeff i‖
   have hc0 : 0 < c := by positivity
   have hrem (r' : Polynomial R) (hr' : r'.degree < p.degree) :
-      ∀ m, p.natDegree ≤ m → coeff m (r' : R⟦X⟧) = 0 := fun m hm ↦ by
-    rw [Polynomial.coeff_coe]
-    exact Polynomial.coeff_eq_zero_of_degree_lt
-      (hr'.trans_le (Polynomial.degree_le_natDegree.trans (by exact_mod_cast hm)))
+      ∀ m, p.natDegree ≤ m → coeff m (r' : R⟦X⟧) = 0 := fun _ ↦
+    Polynomial.coeff_coe_eq_zero_of_degree_lt (hr'.trans_le Polynomial.degree_le_natDegree)
   have hmul : ∀ x, ‖x * coeff p.natDegree (p : R⟦X⟧)‖ = ‖x‖ * ‖coeff p.natDegree (p : R⟦X⟧)‖ := by
     simp [hp.coeff_natDegree]
   have hdiv := hf.modByMonic_add_divByMonic hp

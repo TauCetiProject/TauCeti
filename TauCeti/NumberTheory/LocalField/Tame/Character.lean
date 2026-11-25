@@ -10,7 +10,7 @@ public import TauCeti.FieldTheory.Kummer.Character
 public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.NumberTheory.LocalField.Units.Decomposition
-public import TauCeti.NumberTheory.LocalField.WildInertia
+public import TauCeti.NumberTheory.LocalField.WildInertia.Basic
 public import TauCeti.RingTheory.RootsOfUnity.TateModule
 
 /-!

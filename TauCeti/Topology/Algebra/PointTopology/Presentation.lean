@@ -80,4 +80,36 @@ theorem pointsHomeomorph_symm_apply_val
   have h := P.pointsHomeomorph_apply_coe (P.pointsHomeomorph.symm z)
   simpa using (congrArg (fun w ↦ w.2 i) h).symm
 
+section BaseRing
+
+variable {K S ι σ : Type*} [CommRing K] [CommRing S] [Algebra K S] [TopologicalSpace K]
+  [IsTopologicalRing K] (P : Presentation K S ι σ)
+
+/-- Over the base ring `K`, a presentation identifies the points `S →ₐ[K] K`, in the evaluation
+topology, with the zero set of its relations in `ι → K`. This is
+`Algebra.Presentation.pointsHomeomorph` with the unique coefficient point `K →ₐ[K] K` dropped. -/
+noncomputable def pointsHomeomorphZeroSet :
+    (S →ₐ[K] K) ≃ₜ {y : ι → K | (fun j ↦ eval y (P.relation j)) = 0} :=
+  letI : Unique (K →ₐ[K] K) :=
+    { default := Algebra.ofId K K, uniq := fun _ ↦ Subsingleton.elim _ _ }
+  P.pointsHomeomorph.trans <| (Homeomorph.uniqueProd (K →ₐ[K] K) (ι → K)).subtype fun z ↦ by
+    simp only [Subsingleton.elim z.1 (Algebra.ofId K K), MvPolynomial.aevalTower_ofId,
+      MvPolynomial.aeval_eq_eval, Homeomorph.coe_uniqueProd, Set.mem_ofPred_eq, funext_iff,
+      Pi.zero_apply]
+
+/-- The zero of the relations attached to a point is its vector of generator values. -/
+@[simp]
+theorem coe_pointsHomeomorphZeroSet_apply (x : S →ₐ[K] K) :
+    (P.pointsHomeomorphZeroSet x : ι → K) = fun i ↦ x (P.val i) := (rfl)
+
+/-- Recovering a point from a zero of the relations gives the prescribed generator values. -/
+@[simp]
+theorem pointsHomeomorphZeroSet_symm_apply_val
+    (y : {y : ι → K | (fun j ↦ eval y (P.relation j)) = 0}) (i : ι) :
+    P.pointsHomeomorphZeroSet.symm y (P.val i) = y.val i := by
+  have h := P.coe_pointsHomeomorphZeroSet_apply (P.pointsHomeomorphZeroSet.symm y)
+  simpa using (congrArg (fun w ↦ w i) h).symm
+
+end BaseRing
+
 end Algebra.Presentation

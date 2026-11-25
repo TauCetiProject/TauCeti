@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical.Basic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Topology
 public import TauCeti.Analysis.Pseudodifferential.Symbol.UniformlySmoothing
 import Mathlib.Algebra.Order.Field.GeomSum
