@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.CMType.Basic
-public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.FieldTheory.IntermediateField.Algebraic
 
 /-!
@@ -15,7 +14,7 @@ public import Mathlib.FieldTheory.IntermediateField.Algebraic
 A CM type `Φ` on a field `E` is induced from a subfield `F` when it is the type
 `TauCeti.CMType.induced` of a CM type `Φ₀` on `F`; the pair `(E, Φ)` is **primitive** when `Φ` is
 induced from no proper subfield. Along an algebraic extension `E / F` every complex embedding of
-`F` extends to `E`, so the inducing type `Φ₀` is unique
+`F` extends to `E` (`NumberField.ComplexEmbedding.lift`), so the inducing type `Φ₀` is unique
 (`TauCeti.CMType.induced_algebraMap_injective`), and `Φ` is induced from `F` exactly when
 membership in `Φ` depends only on the restriction to `F`
 (`TauCeti.CMType.exists_induced_algebraMap_eq_iff`). Choosing a subfield of least degree from which
@@ -32,8 +31,6 @@ proper CM subfield".
 
 ## Main results
 
-* `TauCeti.CMType.exists_comp_algebraMap_eq`: complex embeddings extend along algebraic
-  extensions.
 * `TauCeti.CMType.induced_algebraMap_injective`: inducing along an algebraic extension is
   injective.
 * `TauCeti.CMType.exists_induced_algebraMap_eq_iff`: the fibre criterion for being induced.
@@ -55,19 +52,14 @@ section Extension
 
 variable {F E : Type*} [Field F] [Field E] [Algebra F E] [Algebra.IsAlgebraic F E]
 
-/-- Every complex embedding of `F` extends to `E` along an algebraic extension `E / F`. -/
-theorem exists_comp_algebraMap_eq (φ₀ : F →+* ℂ) :
-    ∃ φ : E →+* ℂ, φ.comp (algebraMap F E) = φ₀ := by
-  let := φ₀.toAlgebra
-  exact ⟨(IsAlgClosed.lift : E →ₐ[F] ℂ).toRingHom, (IsAlgClosed.lift : E →ₐ[F] ℂ).comp_algebraMap⟩
-
 /-- Inducing along an algebraic extension of fields is injective: a CM type on `F` is recovered
 from the type it induces on `E`, since every embedding of `F` extends to `E`. -/
 theorem induced_algebraMap_injective :
     Function.Injective fun Φ₀ : CMType F ↦ Φ₀.induced (algebraMap F E) := by
   intro Φ₀ Φ₁ h
   ext φ₀
-  obtain ⟨φ, rfl⟩ := exists_comp_algebraMap_eq (E := E) φ₀
+  obtain ⟨φ, rfl⟩ : ∃ φ : E →+* ℂ, φ.comp (algebraMap F E) = φ₀ :=
+    ⟨_, NumberField.ComplexEmbedding.lift_comp_algebraMap E φ₀⟩
   simpa using SetLike.ext_iff.1 h φ
 
 /-- **The fibre criterion.** A CM type `Φ` on `E` is induced from a CM type on the subextension
@@ -83,7 +75,8 @@ theorem exists_induced_algebraMap_eq_iff (Φ : CMType E) :
     simp [this]
   · intro h
     refine ⟨⟨{φ₀ | ∃ φ ∈ Φ, φ.comp (algebraMap F E) = φ₀}, fun φ₀ ↦ ?_⟩, ?_⟩
-    · obtain ⟨φ, rfl⟩ := exists_comp_algebraMap_eq (E := E) φ₀
+    · obtain ⟨φ, rfl⟩ : ∃ φ : E →+* ℂ, φ.comp (algebraMap F E) = φ₀ :=
+        ⟨_, NumberField.ComplexEmbedding.lift_comp_algebraMap E φ₀⟩
       have hstar : (star φ).comp (algebraMap F E) = star (φ.comp (algebraMap F E)) :=
         RingHom.ext fun _ ↦ by simp [RingHom.star_apply]
       have key (ψ : E →+* ℂ) (χ : E →+* ℂ) (hψχ : ψ.comp (algebraMap F E) = χ.comp
