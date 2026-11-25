@@ -12,7 +12,6 @@ public import TauCeti.Analysis.Complex.Runge.Operator
 public import TauCeti.Analysis.Normed.Module.Exhaustion
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Complex.SummableUniformlyOn
-import Mathlib.Analysis.Normed.Module.DoubleDual
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
 import TauCeti.Analysis.Complex.PowerSeries.Approximation
@@ -117,18 +116,8 @@ theorem IsRungeCompactPair.exists_differentiableOn_norm_sub_lt {W : Type*} [Norm
   obtain ⟨N, ζ, w, g, -, hg_diff, hbound⟩ := hop (ε / 2 / B) (by positivity)
   refine ⟨fun z => ∑ j : Fin N, (w j * g j z) • f (ζ j), ?_, fun z hz => ?_⟩
   · exact DifferentiableOn.fun_sum fun j _ => ((hg_diff j).const_mul (w j)).smul_const (f (ζ j))
-  -- The scalar estimate for `φ ∘ f`, for every continuous linear functional `φ`, bounds the norm.
-  refine (NormedSpace.norm_le_dual_bound ℂ _ (by positivity) fun φ => ?_).trans_lt
+  exact (norm_sub_sum_smul_le_of_scalar hbound hf hB1.le hLB hz).trans_lt
     ((div_mul_cancel₀ _ hB1.ne').trans_lt (half_lt_self hε))
-  have hφ := hbound (fun z => φ (f z)) (φ.differentiable.comp_differentiableOn hf)
-    (‖φ‖ * B) (by positivity) (fun z hz => (φ.le_opNorm _).trans (by gcongr; exact hLB z hz)) z hz
-  calc ‖φ (f z - ∑ j : Fin N, (w j * g j z) • f (ζ j))‖
-      = ‖φ (f z) - ∑ j : Fin N, w j * φ (f (ζ j)) * g j z‖ := by
-        simp only [map_sub, map_sum, map_smul, smul_eq_mul]
-        congr 2
-        exact Finset.sum_congr rfl fun j _ => by ring
-    _ ≤ ε / 2 / B * (‖φ‖ * B) := hφ
-    _ = ε / 2 / B * B * ‖φ‖ := by ring
 
 /-- A series of functions holomorphic on an open set `Y ⊆ Ω`, whose `k`-th term is bounded by
 `u k` on the stage `filledExhaustion Ω k` for a summable `u`, has a holomorphic sum on `Y`: each

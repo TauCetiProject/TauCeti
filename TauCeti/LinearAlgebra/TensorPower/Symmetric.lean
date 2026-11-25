@@ -229,11 +229,7 @@ theorem symmetricTensorsZeroEquiv_mapSymmetricTensors (f : M →ₗ[R] N)
     (t : symmetricTensors R M 0) :
     symmetricTensorsZeroEquiv R N (mapSymmetricTensors f 0 t) =
       symmetricTensorsZeroEquiv R M t := by
-  have h : (algebraMap₀ (M := N)).symm.toLinearMap ∘ₗ PiTensorProduct.map (fun _ ↦ f) =
-      (algebraMap₀ (M := M)).symm.toLinearMap := by
-    ext
-    simp [algebraMap₀]
-  simpa [symmetricTensorsZeroEquiv_apply] using congr($h (t : ⨂[R]^0 M))
+  simp [symmetricTensorsZeroEquiv_apply]
 
 /-- In degree one the induced map is `f`, through the identification with the vectors. -/
 @[simp]
@@ -241,11 +237,7 @@ theorem symmetricTensorsOneEquiv_mapSymmetricTensors (f : M →ₗ[R] N)
     (t : symmetricTensors R M 1) :
     symmetricTensorsOneEquiv R N (mapSymmetricTensors f 1 t) =
       f (symmetricTensorsOneEquiv R M t) := by
-  have h : (TauCeti.TensorPower.oneEquiv R N).toLinearMap ∘ₗ PiTensorProduct.map (fun _ ↦ f) =
-      f ∘ₗ (TauCeti.TensorPower.oneEquiv R M).toLinearMap := by
-    ext
-    simp
-  simpa [symmetricTensorsOneEquiv_apply] using congr($h (t : ⨂[R]^1 M))
+  simp [symmetricTensorsOneEquiv_apply]
 
 end map
 
