@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.BoundedVariation.OneDimensional.Weighted
-import TauCeti.Analysis.BoundedVariation.Real
 import TauCeti.MeasureTheory.Covering.EssentialBoundary.Ball
 
 /-!
@@ -29,16 +28,7 @@ open TauCeti TauCeti.Real
 
 /-- `(0, 1) ∪ (1, 2)` agrees with `(0, 2)` almost everywhere. -/
 theorem Ioo_union_Ioo_ae_eq : (Ioo (0 : ℝ) 1 ∪ Ioo 1 2 : Set ℝ) =ᵐ[volume] Ioo 0 2 := by
-  have h : (Ioo (0 : ℝ) 1 ∪ Ioo 1 2 : Set ℝ) = Ioo 0 2 \ {1} := by
-    ext x
-    simp only [mem_union, mem_Ioo, mem_sdiff, mem_singleton_iff]
-    constructor
-    · rintro (⟨h1, h2⟩ | ⟨h1, h2⟩) <;> refine ⟨⟨by linarith, by linarith⟩, by linarith⟩
-    · rintro ⟨⟨h1, h2⟩, h3⟩
-      rcases lt_or_gt_of_ne h3 with h | h
-      · exact Or.inl ⟨h1, h⟩
-      · exact Or.inr ⟨h, h2⟩
-  rw [h]
+  rw [Ioo_union_Ioo_eq_Ioo_sdiff_singleton zero_le_one one_le_two]
   exact sdiff_null_ae_eq_self (measure_singleton 1)
 
 /-- The essential boundary of `(0, 1) ∪ (1, 2)` is `{0, 2}`. -/
@@ -61,13 +51,8 @@ theorem essentialBoundary_Ioo_union_Ioo :
 theorem gaussianPerimeter_Ioo_union_Ioo :
     gaussianPerimeter (Ioo (0 : ℝ) 1 ∪ Ioo 1 2) =
       ENNReal.ofReal (gaussianPDFReal 0 1 0) + ENNReal.ofReal (gaussianPDFReal 0 1 2) := by
-  have hs : NullMeasurableSet (Ioo (0 : ℝ) 1 ∪ Ioo 1 2) :=
-    (measurableSet_Ioo.union measurableSet_Ioo).nullMeasurableSet
-  -- `(0, 1) ∪ (1, 2)` has the perimeter `2` of `(0, 2)`
-  have hP : perimeter volume ⊤ (Ioo (0 : ℝ) 1 ∪ Ioo 1 2) ≠ ∞ := by
-    rw [perimeter_congr_ae (ae_restrict_of_ae Ioo_union_Ioo_ae_eq), perimeter_Ioo (by norm_num)]
-    exact ENNReal.ofNat_ne_top
-  rw [gaussianPerimeter_eq_tsum_essentialBoundary hs fun K _ => ⟨⊤, subset_univ K, hP⟩,
+  rw [gaussianPerimeter_eq_tsum_essentialBoundary
+      (measurableSet_Ioo.union measurableSet_Ioo).nullMeasurableSet,
     essentialBoundary_Ioo_union_Ioo,
     show ({0, 2} : Set ℝ) = ((({0, 2} : Finset ℝ)) : Set ℝ) by simp]
   exact (Finset.tsum_subtype' ({0, 2} : Finset ℝ)

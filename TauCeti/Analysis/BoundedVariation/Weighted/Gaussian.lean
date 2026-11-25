@@ -16,7 +16,8 @@ The measure `e^{−W} · volume` of the Gaussian weight `W = TauCeti.gaussianWei
 Gaussian measure `ProbabilityTheory.stdGaussian E`
 (`TauCeti.withDensity_exp_neg_gaussianWeight`), so the Gaussian perimeter
 `TauCeti.gaussianPerimeter` is the weighted perimeter of this measure. The density comes from
-`TauCeti.Probability.stdGaussian_eq_withDensity_norm`.
+`TauCeti.Probability.stdGaussian_eq_withDensity_norm`. On the line, `e^{−W}` is the standard
+normal density `φ` (`TauCeti.Real.exp_neg_gaussianWeight`).
 -/
 
 public section
@@ -36,6 +37,16 @@ theorem withDensity_exp_neg_gaussianWeight :
   congr 1 with x
   rw [Real.rpow_def_of_pos (by positivity), ← Real.exp_add, gaussianWeight_def]
   congr 2
+  ring
+
+/-- On the line, the Gaussian density `e^{−W}` is the standard normal density `φ`. -/
+theorem Real.exp_neg_gaussianWeight (x : ℝ) :
+    Real.exp (-gaussianWeight ℝ x) = ProbabilityTheory.gaussianPDFReal 0 1 x := by
+  simp only [gaussianWeight_def, ProbabilityTheory.gaussianPDFReal_def, Module.finrank_self,
+    Real.norm_eq_abs, sq_abs, NNReal.coe_one, mul_one, sub_zero, Nat.cast_one]
+  rw [Real.sqrt_eq_rpow, Real.rpow_def_of_pos (by positivity), ← Real.exp_neg, one_div,
+    ← Real.exp_add]
+  congr 1
   ring
 
 end TauCeti
