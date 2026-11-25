@@ -236,6 +236,19 @@ theorem frameConleyZehnderIndex_trans [FiniteDimensional ℝ W] [FiniteDimension
     rw [Path.map_coe, Function.comp_apply]
     simp
 
+omit [IsManifold I ∞ M] [FiniteDimensional ℝ E] in
+/-- The change of frame `t ↦ χ(t)⁻¹ ∘ χ'(t)` between two frames along `γ` takes the same value at
+the two ends when both frames do: this is the loop condition of
+`TauCeti.SmoothTwoForm.transitionLoop`. -/
+theorem trans_symm_zero_eq_trans_symm_one (h : ∀ v, χ 0 v = χ 1 v) (h' : ∀ v, χ' 0 v = χ' 1 v) :
+    (χ' 0).trans (χ 0).symm = (χ' 1).trans (χ 1).symm := by
+  ext v
+  rw [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.trans_apply, h']
+  apply (χ 0).injective
+  -- `χ 0` and `χ 1` take values in the tangent spaces at `γ 0` and `γ 1`, equal only
+  -- definitionally, so the inverses are cancelled by explicit terms rather than `rw`.
+  exact ((χ 0).apply_symm_apply _).trans ((h _).trans ((χ 1).apply_symm_apply _)).symm
+
 /-- The change of frame from `χ` to `χ'` along `γ`, the path `t ↦ χ(t)⁻¹ ∘ χ'(t)` of linear
 automorphisms of the model, as a loop when it is one (`hper`). -/
 def transitionLoop (hχ : Continuous fun q : unitInterval × W ↦

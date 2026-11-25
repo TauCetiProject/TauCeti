@@ -8,7 +8,11 @@ module
 public import TauCeti.Analysis.Complex.Wirtinger.Forms
 public import TauCeti.Analysis.Complex.Wirtinger.Potential
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
+import TauCeti.Analysis.Complex.PowerSeries.Polydisc
+import TauCeti.Analysis.Complex.UniformLimit
 import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
+import TauCeti.Topology.MetricSpace.Pseudo.Pi
 
 /-!
 # The `bar∂`-Poincaré lemma on polydiscs
@@ -21,9 +25,10 @@ coefficients in a complex Banach space `F` is recorded by its coefficients
 `bar∂` (see `TauCeti.Analysis.Complex.Wirtinger.Forms`).
 
 This file proves the Dolbeault–Grothendieck lemma for such forms in coordinates: for `q ≥ 1`, a
-smooth `bar∂`-closed `(0,q)`-form on a product domain `∏ U_i` of open sets `U_i ⊆ ℂ`, in
-particular on a polydisc, is `bar∂`-exact near every compact product `∏ K_i` with `K_i ⊆ U_i`.
-That is, some `(0,q-1)`-form `u`, smooth there, satisfies `bar∂ u = f` there. Taking coefficients
+smooth `bar∂`-closed `(0,q)`-form on a product domain `∏ U_i` of open sets `U_i ⊆ ℂ` is
+`bar∂`-exact near every compact product `∏ K_i` with `K_i ⊆ U_i`, and on a polydisc it is
+`bar∂`-exact on the whole polydisc. That is, some `(0,q-1)`-form `u`, smooth there, satisfies
+`bar∂ u = f` there. Taking coefficients
 in `Finset ι → F` gives the same statement for `(p,q)`-forms, whose `bar∂` is `(-1)^p` times the
 `bar∂` of the corresponding `(0,q)`-form with these vector coefficients. For `q = 1` the lemma
 reads: a `(0,1)`-form `∑ j, f_j d(conj z_j)` with `∂f_j/∂(conj z_i) = ∂f_i/∂(conj z_j)` for all
@@ -43,6 +48,13 @@ of `f` makes the coefficients of `g` holomorphic in the coordinates outside `ins
 elimination step gives a `(0,q-1)`-form `γ` with `∂γ_J/∂(conj z_k) = g_J`, holomorphic in those
 coordinates; then `f - bar∂ γ` is closed and only involves the `d(conj z_j)`, `j ∈ S`.
 
+On a polydisc, local solutions on an exhaustion by smaller concentric polydiscs are corrected so
+that they converge on the whole polydisc, as in Hörmander's Theorem 2.3.3. For `(0,1)`-forms the
+corrections are partial sums of multivariate Cauchy expansions of the holomorphic differences of
+consecutive solutions (`DifferentiableOn.exists_differentiable_norm_sub_lt_of_pi`); in higher
+degree they are `bar∂` of local primitives of the `bar∂`-closed differences, and the corrected
+solutions stabilize.
+
 ## Main results
 
 * `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_single_eventually_eq_of_pi`: the
@@ -51,9 +63,8 @@ coordinates; then `f - bar∂ γ` is closed and only involves the `d(conj z_j)`,
 * `TauCeti.exists_contDiffAt_delBarCoeff_eventually_eq_of_pi`: a smooth `bar∂`-closed
   `(0,q+1)`-form on a product of open subsets of `ℂ` is `bar∂`-exact near every compact product
   inside it.
-* `TauCeti.exists_contDiffOn_delBarCoeff_eq_of_polydisc`: the same on polydiscs. A smooth
-  `bar∂`-closed `(0,q+1)`-form on a polydisc of polyradius `r` is `bar∂`-exact on the concentric
-  polydisc of every smaller polyradius.
+* `TauCeti.exists_contDiffOn_delBarCoeff_eq_of_polydisc`: a smooth `bar∂`-closed `(0,q+1)`-form
+  on a polydisc is `bar∂`-exact on the whole polydisc.
 * `TauCeti.exists_contDiffAt_conjWirtingerDeriv_apply_single_eventually_eq_of_pi`,
   `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_single_eq_of_polydisc`: the case of
   `(0,1)`-forms `∑ j, f_j d(conj z_j)`, for any finite index type.
@@ -498,28 +509,6 @@ theorem exists_contDiffAt_delBarCoeff_eventually_eq_of_pi {q : ℕ} {U : ι → 
   exists_contDiffAt_delBarCoeff_eventually_eq_of_pi_of_eq_zero q Finset.univ hU hf hclosed
     (fun I _ h ↦ absurd (Finset.subset_univ I) h) hK hKU
 
-/-- **The Dolbeault–Grothendieck lemma for `(0,q)`-forms on polydiscs.** A smooth `bar∂`-closed
-`(0,q+1)`-form on the polydisc `∏ B(c_i, r_i)`, with coefficients in a complex Banach space, is
-`bar∂`-exact on every concentric polydisc `∏ B(c_i, r'_i)` with `r'_i < r_i`: some `(0,q)`-form
-`u`, smooth there, satisfies `bar∂ u = f` there. -/
-theorem exists_contDiffOn_delBarCoeff_eq_of_polydisc {q : ℕ} {c : ι → ℂ} {r r' : ι → ℝ}
-    (hr : ∀ i, r' i < r i) {f : Finset ι → (ι → ℂ) → F}
-    (hf : ∀ I, #I = q + 1 → ContDiffOn ℝ ∞ (f I) (univ.pi fun i ↦ Metric.ball (c i) (r i)))
-    (hclosed : ∀ z ∈ univ.pi fun i ↦ Metric.ball (c i) (r i), ∀ I, #I = q + 2 →
-      delBarCoeff f I z = 0) :
-    ∃ u : Finset ι → (ι → ℂ) → F,
-      (∀ J, ContDiffOn ℝ ∞ (u J) (univ.pi fun i ↦ Metric.ball (c i) (r' i))) ∧
-      ∀ z ∈ univ.pi fun i ↦ Metric.ball (c i) (r' i), ∀ I, #I = q + 1 →
-        delBarCoeff u I z = f I z := by
-  obtain ⟨u, hu⟩ := exists_contDiffAt_delBarCoeff_eventually_eq_of_pi
-    (fun i ↦ Metric.isOpen_ball) hf hclosed (fun i ↦ isCompact_closedBall (c i) (r' i))
-    fun i ↦ Metric.closedBall_subset_ball (hr i)
-  have hsub : (univ.pi fun i ↦ Metric.ball (c i) (r' i)) ⊆
-      univ.pi fun i ↦ Metric.closedBall (c i) (r' i) :=
-    pi_mono fun i _ ↦ Metric.ball_subset_closedBall
-  exact ⟨u, fun J z hz ↦ ((hu.self_of_nhdsSet z (hsub hz)).1 J).contDiffWithinAt,
-    fun z hz ↦ (hu.self_of_nhdsSet z (hsub hz)).2⟩
-
 end Forms
 
 /-! ### The `bar∂`-Poincaré lemma for `(0,1)`-forms -/
@@ -557,28 +546,240 @@ theorem exists_contDiffAt_conjWirtingerDeriv_apply_single_eventually_eq_of_pi {U
   simpa only [delBarCoeff_singleton, Finset.sum_singleton] using
     hz.2 {j} (Finset.card_singleton j)
 
+end OneForms
+
+/-! ### Whole polydiscs
+
+The polydisc `∏ B(c_i, r_i)` is the increasing union of the concentric polydiscs `D_k` of
+polyradius `r_i - 1 / (k + 1)`, each with closure inside the next. The local lemmas solve
+`bar∂ u_k = f` on `D_k`, and the local solutions are corrected so that they converge on the whole
+polydisc. For `(0,1)`-forms consecutive solutions differ by a holomorphic function on `D_k`,
+which is approximated within `2⁻ᵏ` on `D_(k-1)` by an entire function, a partial sum of its
+multivariate Cauchy expansion; subtracting these makes the solutions converge, and on each `D_m`
+the limit is `u_m` plus a uniform limit of holomorphic functions. For `(0,q+2)`-forms the
+difference of consecutive solutions is a `bar∂`-closed `(0,q+1)`-form on `D_k`, hence `bar∂` of a
+`(0,q)`-form `g_k` near `D_(k-1)`; subtracting `bar∂ g_k`, which does not change `bar∂`, makes
+consecutive solutions agree on `D_(k-1)`, so the solutions stabilize. -/
+
+section WholePolydisc
+
+open Metric
+
+variable {ι : Type*}
+
+section OneForms
+
+variable [Fintype ι] [DecidableEq ι] [CompleteSpace F]
+
 /-- **The `bar∂`-Poincaré lemma for `(0,1)`-forms on polydiscs.** A smooth `bar∂`-closed
-`(0,1)`-form `∑ j, f_j d(conj z_j)` on the polydisc `∏ B(c_i, r_i)` is `bar∂`-exact on every
-concentric polydisc `∏ B(c_i, r'_i)` with `r'_i < r_i`: some `u`, smooth there, satisfies
+`(0,1)`-form `∑ j, f_j d(conj z_j)` on the polydisc `∏ B(c_i, r_i)`, with coefficients in a
+complex Banach space, is `bar∂`-exact on the whole polydisc: some `u`, smooth there, satisfies
 `∂u/∂(conj z_j) = f_j` for every `j`. -/
 theorem exists_contDiffOn_conjWirtingerDeriv_apply_single_eq_of_polydisc {c : ι → ℂ}
-    {r r' : ι → ℝ} (hr : ∀ i, r' i < r i) {f : ι → (ι → ℂ) → F}
-    (hf : ∀ j, ContDiffOn ℝ ∞ (f j) (univ.pi fun i ↦ Metric.ball (c i) (r i)))
-    (hclosed : ∀ z ∈ univ.pi fun i ↦ Metric.ball (c i) (r i), ∀ i j,
+    {r : ι → ℝ} {f : ι → (ι → ℂ) → F}
+    (hf : ∀ j, ContDiffOn ℝ ∞ (f j) (univ.pi fun i ↦ ball (c i) (r i)))
+    (hclosed : ∀ z ∈ univ.pi fun i ↦ ball (c i) (r i), ∀ i j,
       conjWirtingerDeriv (f j) z (Pi.single i 1) = conjWirtingerDeriv (f i) z (Pi.single j 1)) :
-    ∃ u : (ι → ℂ) → F, ContDiffOn ℝ ∞ u (univ.pi fun i ↦ Metric.ball (c i) (r' i)) ∧
-      ∀ z ∈ univ.pi fun i ↦ Metric.ball (c i) (r' i), ∀ j,
+    ∃ u : (ι → ℂ) → F, ContDiffOn ℝ ∞ u (univ.pi fun i ↦ ball (c i) (r i)) ∧
+      ∀ z ∈ univ.pi fun i ↦ ball (c i) (r i), ∀ j,
         conjWirtingerDeriv u z (Pi.single j 1) = f j z := by
-  obtain ⟨u, hu⟩ :=
-    exists_contDiffAt_conjWirtingerDeriv_apply_single_eventually_eq_of_pi
-      (fun i ↦ Metric.isOpen_ball) hf hclosed (fun i ↦ isCompact_closedBall (c i) (r' i))
-      fun i ↦ Metric.closedBall_subset_ball (hr i)
-  have hsub : (univ.pi fun i ↦ Metric.ball (c i) (r' i)) ⊆
-      univ.pi fun i ↦ Metric.closedBall (c i) (r' i) :=
-    pi_mono fun i _ ↦ Metric.ball_subset_closedBall
-  exact ⟨u, fun z hz ↦ (hu.self_of_nhdsSet z (hsub hz)).1.contDiffWithinAt,
-    fun z hz ↦ (hu.self_of_nhdsSet z (hsub hz)).2⟩
+  obtain ⟨s, hs_succ, hs_mono, hs_lt, hs_cov⟩ := exists_polyradius_exhaustion c r
+  set D : (ι → ℝ) → Set (ι → ℂ) := fun ρ ↦ univ.pi fun i ↦ ball (c i) (ρ i)
+  have hDo (ρ : ι → ℝ) : IsOpen (D ρ) := isOpen_set_pi finite_univ fun i _ ↦ isOpen_ball
+  have hDmono {ρ ρ' : ι → ℝ} (h : ρ ≤ ρ') : D ρ ⊆ D ρ' :=
+    pi_mono fun i _ ↦ ball_subset_ball (h i)
+  -- Local solutions `h k`, smooth with `bar∂ (h k) = f` on `D (s (k + 1))`.
+  have hloc (k : ℕ) : ∃ h : (ι → ℂ) → F, ContDiffOn ℝ ∞ h (D (s (k + 1))) ∧
+      ∀ z ∈ D (s (k + 1)), ∀ j, conjWirtingerDeriv h z (Pi.single j 1) = f j z := by
+    obtain ⟨u, hu⟩ := exists_contDiffAt_conjWirtingerDeriv_apply_single_eventually_eq_of_pi
+      (fun i ↦ isOpen_ball) hf hclosed (fun i ↦ isCompact_closedBall (c i) (s (k + 1) i))
+      fun i ↦ closedBall_subset_ball (hs_lt (k + 1) i)
+    have hu' {z : ι → ℂ} (hz : z ∈ D (s (k + 1))) :=
+      hu.self_of_nhdsSet z (pi_mono (fun i _ ↦ ball_subset_closedBall) hz)
+    exact ⟨u, fun z hz ↦ (hu' hz).1.contDiffWithinAt, fun z hz ↦ (hu' hz).2⟩
+  choose h hh hh_eq using hloc
+  have hdiffAt {k : ℕ} {z : ι → ℂ} (hz : z ∈ D (s (k + 1))) : DifferentiableAt ℝ (h k) z :=
+    ((hh k).contDiffAt ((hDo _).mem_nhds hz)).differentiableAt (by simp)
+  -- Consecutive local solutions differ by a holomorphic function.
+  have hdiff (k : ℕ) : DifferentiableOn ℂ (h (k + 1) - h k) (D (s (k + 1))) := fun z hz ↦ by
+    have hz' : z ∈ D (s (k + 1 + 1)) := hDmono (hs_mono (k + 1).le_succ) hz
+    refine ((differentiableAt_iff_forall_conjWirtingerDeriv_apply_single_eq_zero
+      ((hdiffAt hz').sub (hdiffAt hz))).2 fun j ↦ ?_).differentiableWithinAt
+    rw [conjWirtingerDeriv_sub (hdiffAt hz') (hdiffAt hz), sub_apply,
+      hh_eq (k + 1) z hz' j, hh_eq k z hz j, sub_self]
+  -- Polynomial corrections `P k`, approximating the differences within `2⁻ᵏ` on `D (s k)`.
+  have happrox (k : ℕ) : ∃ P : (ι → ℂ) → F, Differentiable ℂ P ∧
+      ∀ z ∈ univ.pi fun i ↦ closedBall (c i) (s k i),
+        ‖(h (k + 1) - h k) z - P z‖ < (1 / 2 : ℝ) ^ k :=
+    (hdiff k).exists_differentiable_norm_sub_lt_of_pi (hs_succ k) (by positivity)
+  choose P hP hP_lt using happrox
+  -- On `D (s m)`, the corrected limit is `h m` plus a holomorphic function.
+  set u : (ι → ℂ) → F := fun z ↦ h 0 z + ∑' k, (h (k + 1) - h k - P k) z
+  have hkey (m : ℕ) : ∃ K : (ι → ℂ) → F, DifferentiableOn ℂ K (D (s m)) ∧
+      EqOn u (h m + K) (D (s m)) :=
+    (hDo _).exists_differentiableOn_eqOn_add_tsum (fun k ↦ (hP k).differentiableOn)
+      (fun k hk ↦ (hdiff k).mono (hDmono (hs_mono (hk.trans k.le_succ))))
+      fun k hk z hz ↦ (hP_lt k z fun i _ ↦ ball_subset_closedBall
+        (ball_subset_ball (hs_mono hk i) (hz i trivial))).le
+  -- Every point lies in some `D (s m)`, where `u` is `h m` plus a holomorphic function.
+  exact ⟨u, contDiffOn_and_conjWirtingerDeriv_eq_of_locally_eq_add (G := u) (U := D r)
+    (v := fun j ↦ Pi.single j 1) (f := f) (n := ∞) (by simp) fun z hz ↦ by
+      obtain ⟨m, hm⟩ := hs_cov z hz
+      obtain ⟨K, hK, huK⟩ := hkey m
+      have hsub : D (s m) ⊆ D (s (m + 1)) := hDmono (hs_mono m.le_succ)
+      exact ⟨D (s m), hDo _, hm, h m, K, (hh m).mono hsub,
+        fun w hw ↦ hh_eq m w (hsub hw), hK.contDiffOn_of_finiteDimensional (hDo _), huK⟩⟩
 
 end OneForms
+
+section Forms
+
+variable [LinearOrder ι] [Fintype ι] [CompleteSpace F]
+
+/-- A smooth `bar∂`-closed `(0,q+1)`-form on the polydisc `∏ B(c_i, r_i)` is, on the concentric
+polydisc of every smaller polyradius, `bar∂` of a `(0,q)`-form whose coefficients are smooth on all
+of `ι → ℂ`. -/
+private theorem exists_contDiff_delBarCoeff_eq_of_lt {q : ℕ} {c : ι → ℂ} {r ρ : ι → ℝ}
+    (hρ : ∀ i, ρ i < r i) {f : Finset ι → (ι → ℂ) → F}
+    (hf : ∀ I, #I = q + 1 → ContDiffOn ℝ ∞ (f I) (univ.pi fun i ↦ ball (c i) (r i)))
+    (hclosed : ∀ z ∈ univ.pi fun i ↦ ball (c i) (r i), ∀ I, #I = q + 2 →
+      delBarCoeff f I z = 0) :
+    ∃ u : Finset ι → (ι → ℂ) → F, (∀ J, ContDiff ℝ ∞ (u J)) ∧
+      ∀ z ∈ univ.pi fun i ↦ ball (c i) (ρ i), ∀ I, #I = q + 1 → delBarCoeff u I z = f I z := by
+  have hK : IsCompact (univ.pi fun i ↦ closedBall (c i) (ρ i)) :=
+    isCompact_univ_pi fun i ↦ isCompact_closedBall (c i) (ρ i)
+  obtain ⟨u, hu⟩ := exists_contDiffAt_delBarCoeff_eventually_eq_of_pi (fun i ↦ isOpen_ball) hf
+    hclosed (fun i ↦ isCompact_closedBall (c i) (ρ i)) fun i ↦ closedBall_subset_ball (hρ i)
+  obtain ⟨V, hV, hKV, hVu⟩ := eventually_nhdsSet_iff_exists.1 hu
+  -- Extend the coefficients from a neighbourhood of the closed polydisc to all of `ι → ℂ`.
+  have hext (J : Finset ι) : ∃ g : (ι → ℂ) → F, ContDiff ℝ ∞ g ∧
+      ∀ z ∈ univ.pi fun i ↦ closedBall (c i) (ρ i), g =ᶠ[𝓝 z] u J := by
+    have huV : ContDiffOn ℝ ∞ (u J) V := fun z hz ↦ ((hVu z hz).1 J).contDiffWithinAt
+    obtain ⟨g, hg, -, -, -, hgu⟩ := huV.exists_contDiff_eventuallyEq_on_isCompact hK hV hKV
+    exact ⟨g, hg, hgu⟩
+  choose g hg hgu using hext
+  refine ⟨g, hg, fun z hz I hI ↦ ?_⟩
+  have hz' : z ∈ univ.pi fun i ↦ closedBall (c i) (ρ i) :=
+    pi_mono (fun i _ ↦ ball_subset_closedBall) hz
+  rw [delBarCoeff_congr fun j _ ↦ hgu _ z hz', (hVu z (hKV hz')).2 I hI]
+
+/-- **The correction step.** Let `u` and `v` be `(0,q+1)`-forms with smooth coefficients whose
+`bar∂` agree on the polydisc `∏ B(c_i, σ_i)`. Subtracting from `u` the `bar∂` of a `(0,q)`-form
+gives a form `v'` with smooth coefficients and the same `bar∂` as `u` everywhere, whose coefficients
+agree with those of `v` on the concentric polydisc of every smaller polyradius `ρ`. -/
+private theorem exists_delBarCoeff_eq_and_eq_of_delBarCoeff_eq {q : ℕ} {c : ι → ℂ}
+    {ρ σ : ι → ℝ} (hρσ : ∀ i, ρ i < σ i) {u v : Finset ι → (ι → ℂ) → F}
+    (hu : ∀ J, ContDiff ℝ ∞ (u J)) (hv : ∀ J, ContDiff ℝ ∞ (v J))
+    (huv : ∀ z ∈ univ.pi fun i ↦ ball (c i) (σ i), ∀ I, #I = q + 2 →
+      delBarCoeff u I z = delBarCoeff v I z) :
+    ∃ v' : Finset ι → (ι → ℂ) → F, (∀ J, ContDiff ℝ ∞ (v' J)) ∧
+      (∀ z I, delBarCoeff v' I z = delBarCoeff u I z) ∧
+      ∀ z ∈ univ.pi fun i ↦ ball (c i) (ρ i), ∀ J, #J = q + 1 → v' J z = v J z := by
+  have hd {w : Finset ι → (ι → ℂ) → F} (hw : ∀ J, ContDiff ℝ ∞ (w J)) (I : Finset ι)
+      (z : ι → ℂ) : ∀ j ∈ I, DifferentiableAt ℝ (w (I.erase j)) z :=
+    fun j _ ↦ (hw _).differentiable (by simp) z
+  -- `u - v` is `bar∂`-closed on `∏ B(c_i, σ_i)`, hence `bar∂ g` on `∏ B(c_i, ρ_i)`.
+  obtain ⟨g, hg, hgf⟩ := exists_contDiff_delBarCoeff_eq_of_lt (q := q) hρσ (f := u - v)
+    (fun J _ ↦ ((hu J).sub (hv J)).contDiffOn) fun z hz I hI ↦ by
+      rw [delBarCoeff_sub (hd hu I z) (hd hv I z), huv z hz I hI, sub_self]
+  have hdg (J : Finset ι) : ContDiff ℝ ∞ (delBarCoeff g J) :=
+    contDiff_iff_contDiffAt.2 fun z ↦ contDiffAt_delBarCoeff (fun j _ ↦ (hg _).contDiffAt)
+      (by simp)
+  refine ⟨u - delBarCoeff g, fun J ↦ (hu J).sub (hdg J), fun z I ↦ ?_, fun z hz J hJ ↦ ?_⟩
+  · rw [delBarCoeff_sub (hd hu I z) (hd hdg I z),
+      delBarCoeff_delBarCoeff fun j _ i _ ↦ ((hg _).of_le (by simp)).contDiffAt, sub_zero]
+  · rw [Pi.sub_apply, Pi.sub_apply, hgf z hz J hJ, Pi.sub_apply, Pi.sub_apply, sub_sub_cancel]
+
+/-- The case of `(0,q+2)`-forms of `TauCeti.exists_contDiffOn_delBarCoeff_eq_of_polydisc`. -/
+private theorem exists_contDiffOn_delBarCoeff_eq_of_polydisc_succ {q : ℕ} {c : ι → ℂ}
+    {r : ι → ℝ} {f : Finset ι → (ι → ℂ) → F}
+    (hf : ∀ I, #I = q + 2 → ContDiffOn ℝ ∞ (f I) (univ.pi fun i ↦ ball (c i) (r i)))
+    (hclosed : ∀ z ∈ univ.pi fun i ↦ ball (c i) (r i), ∀ I, #I = q + 3 →
+      delBarCoeff f I z = 0) :
+    ∃ u : Finset ι → (ι → ℂ) → F,
+      (∀ J, ContDiffOn ℝ ∞ (u J) (univ.pi fun i ↦ ball (c i) (r i))) ∧
+      ∀ z ∈ univ.pi fun i ↦ ball (c i) (r i), ∀ I, #I = q + 2 → delBarCoeff u I z = f I z := by
+  classical
+  obtain ⟨s, hs_succ, hs_mono, hs_lt, hs_cov⟩ := exists_polyradius_exhaustion c r
+  set D : (ι → ℝ) → Set (ι → ℂ) := fun ρ ↦ univ.pi fun i ↦ ball (c i) (ρ i)
+  have hDo (ρ : ι → ℝ) : IsOpen (D ρ) := isOpen_set_pi finite_univ fun i _ ↦ isOpen_ball
+  have hDmono {ρ ρ' : ι → ℝ} (h : ρ ≤ ρ') : D ρ ⊆ D ρ' :=
+    pi_mono fun i _ ↦ ball_subset_ball (h i)
+  -- `Sol k v`: the coefficients of `v` are smooth, and `bar∂ v = f` on `D (s (k + 1))`.
+  let Sol (k : ℕ) (v : Finset ι → (ι → ℂ) → F) : Prop :=
+    (∀ J, ContDiff ℝ ∞ (v J)) ∧ ∀ z ∈ D (s (k + 1)), ∀ I, #I = q + 2 → delBarCoeff v I z = f I z
+  have hloc (k : ℕ) : ∃ v, Sol k v :=
+    exists_contDiff_delBarCoeff_eq_of_lt (hs_lt (k + 1)) hf hclosed
+  -- A solution at stage `k + 1` agreeing on `D (s k)` with a given one at stage `k`.
+  have hstep (k : ℕ) (v : {v // Sol k v}) : ∃ v' : {v' // Sol (k + 1) v'},
+      ∀ z ∈ D (s k), ∀ J, #J = q + 1 → v'.val J z = v.val J z := by
+    obtain ⟨u, hu, huf⟩ := hloc (k + 1)
+    obtain ⟨v', hv', hv'u, hv'v⟩ := exists_delBarCoeff_eq_and_eq_of_delBarCoeff_eq (hs_succ k) hu
+      v.property.1 fun z hz I hI ↦ by
+        rw [huf z (hDmono (hs_mono (k + 1).le_succ) hz) I hI, v.property.2 z hz I hI]
+    exact ⟨⟨v', hv', fun z hz I hI ↦ by rw [hv'u z I, huf z hz I hI]⟩, hv'v⟩
+  obtain ⟨v₀, hv₀⟩ := hloc 0
+  choose next hnext using hstep
+  -- The corrected solutions `w k`, which stabilize on each `D (s m)`.
+  let w (k : ℕ) : {v // Sol k v} := Nat.rec (motive := fun k ↦ {v // Sol k v}) ⟨v₀, hv₀⟩ next k
+  have hstab {m k : ℕ} (hmk : m ≤ k) {z : ι → ℂ} (hz : z ∈ D (s m)) {J : Finset ι}
+      (hJ : #J = q + 1) : (w k).val J z = (w m).val J z := by
+    induction k, hmk using Nat.le_induction with
+    | base => rfl
+    | succ k hmk ih => exact (hnext k (w k) z (hDmono (hs_mono hmk) hz) J hJ).trans ih
+  -- The limit: at a point, the value of `w m` for the first `m` with the point in `D (s m)`.
+  let N (z : ι → ℂ) : ℕ := if h : ∃ m, z ∈ D (s m) then Nat.find h else 0
+  let u (J : Finset ι) (z : ι → ℂ) : F := if #J = q + 1 then (w (N z)).val J z else 0
+  have hu {m : ℕ} {z : ι → ℂ} (hz : z ∈ D (s m)) {J : Finset ι} (hJ : #J = q + 1) :
+      u J z = (w m).val J z := by
+    have h : ∃ m, z ∈ D (s m) := ⟨m, hz⟩
+    simp only [u, N, hJ, ↓reduceIte]
+    rw [dite_eq_left h]
+    exact (hstab (Nat.find_min' h hz) (Nat.find_spec h) hJ).symm
+  refine ⟨u, fun J z hz ↦ ?_, fun z hz I hI ↦ ?_⟩
+  · obtain ⟨m, hm⟩ := hs_cov z hz
+    by_cases hJ : #J = q + 1
+    · refine (((w m).property.1 J).contDiffAt.congr_of_eventuallyEq ?_).contDiffWithinAt
+      filter_upwards [(hDo _).mem_nhds hm] with y hy using hu hy hJ
+    · simp only [u, hJ, ↓reduceIte]
+      exact contDiffWithinAt_const
+  · obtain ⟨m, hm⟩ := hs_cov z hz
+    rw [delBarCoeff_congr (w := (w m).val) fun j hj ↦ ?_,
+      (w m).property.2 z (hDmono (hs_mono m.le_succ) hm) I hI]
+    filter_upwards [(hDo _).mem_nhds hm] with y hy
+    exact hu hy (by rw [Finset.card_erase_of_mem hj, hI]; rfl)
+
+/-- **The Dolbeault–Grothendieck lemma for `(0,q)`-forms on polydiscs.** A smooth `bar∂`-closed
+`(0,q+1)`-form on the polydisc `∏ B(c_i, r_i)`, with coefficients in a complex Banach space, is
+`bar∂`-exact on the whole polydisc: some `(0,q)`-form `u`, smooth there, satisfies `bar∂ u = f`
+there. -/
+theorem exists_contDiffOn_delBarCoeff_eq_of_polydisc {q : ℕ} {c : ι → ℂ} {r : ι → ℝ}
+    {f : Finset ι → (ι → ℂ) → F}
+    (hf : ∀ I, #I = q + 1 → ContDiffOn ℝ ∞ (f I) (univ.pi fun i ↦ ball (c i) (r i)))
+    (hclosed : ∀ z ∈ univ.pi fun i ↦ ball (c i) (r i), ∀ I, #I = q + 2 →
+      delBarCoeff f I z = 0) :
+    ∃ u : Finset ι → (ι → ℂ) → F,
+      (∀ J, ContDiffOn ℝ ∞ (u J) (univ.pi fun i ↦ ball (c i) (r i))) ∧
+      ∀ z ∈ univ.pi fun i ↦ ball (c i) (r i), ∀ I, #I = q + 1 → delBarCoeff u I z = f I z := by
+  cases q with
+  | succ q => exact exists_contDiffOn_delBarCoeff_eq_of_polydisc_succ hf hclosed
+  | zero =>
+    -- A `(0,1)`-form is a family of functions indexed by the singletons.
+    obtain ⟨u, hu, huf⟩ := exists_contDiffOn_conjWirtingerDeriv_apply_single_eq_of_polydisc
+      (f := fun j ↦ f {j}) (fun j ↦ hf {j} (Finset.card_singleton j)) fun z hz i j ↦ by
+        rcases lt_trichotomy i j with h | rfl | h
+        · have := hclosed z hz {i, j} (Finset.card_pair h.ne)
+          rwa [delBarCoeff_pair _ h, sub_eq_zero] at this
+        · rfl
+        · have := hclosed z hz {j, i} (Finset.card_pair h.ne)
+          rw [delBarCoeff_pair _ h, sub_eq_zero] at this
+          exact this.symm
+    refine ⟨fun _ ↦ u, fun _ ↦ hu, fun z hz I hI ↦ ?_⟩
+    obtain ⟨j, rfl⟩ := Finset.card_eq_one.1 hI
+    rw [delBarCoeff_singleton, huf z hz j]
+
+end Forms
+
+end WholePolydisc
 
 end TauCeti
