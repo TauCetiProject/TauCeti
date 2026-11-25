@@ -88,12 +88,12 @@ theorem relIndex_componentGroupPSL_ne_zero
     (hU' : IsOpen (U' : Set (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))))
     (g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)) :
     (componentGroupPSL U' g).relIndex (componentGroupPSL U g) ≠ 0 := by
-  rw [componentGroupPSL_eq_map, componentGroupPSL_eq_map, ← Subgroup.relIndex_comap]
-  intro h
-  have hdvd := Subgroup.relIndex_dvd_of_le_left ((componentGroup U g).subgroupOf (GLPos _ _))
-    (Subgroup.le_comap_map ratPosToPSL2R ((componentGroup U' g).subgroupOf (GLPos _ _)))
-  rw [h, zero_dvd_iff, Subgroup.relIndex_subgroupOf (componentGroup_le_glpos U g)] at hdvd
-  exact relIndex_componentGroup_ne_zero hU hU' g hdvd
+  have hfin : ((componentGroup U' g).subgroupOf (GLPos _ _)).IsFiniteRelIndex
+      ((componentGroup U g).subgroupOf (GLPos _ _)) :=
+    ⟨by rw [Subgroup.relIndex_subgroupOf (componentGroup_le_glpos U g)]
+        exact relIndex_componentGroup_ne_zero hU hU' g⟩
+  rw [componentGroupPSL_def, componentGroupPSL_def]
+  exact (hfin.map ratPosToPSL2R).relIndex_ne_zero
 
 /-- **Change of level on the components.** For `U' ≤ U`, the map `Γ_{g,U'}\ℍ → Γ_{g,U}\ℍ`
 sending the orbit of `z` to the orbit of `z`. -/

@@ -66,7 +66,7 @@ def componentGroupPSL (U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ)))
 
 /-- The image of `Γ_{g,U}` in `PSL₂(ℝ)` is the image of `Γ_{g,U}`, viewed in `GL₂(ℚ)^+`, along
 `GL₂(ℚ)^+ → PSL₂(ℝ)`. -/
-theorem componentGroupPSL_eq_map (U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ)))
+theorem componentGroupPSL_def (U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ)))
     (g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)) :
     componentGroupPSL U g = ((componentGroup U g).subgroupOf (GLPos (Fin 2) ℚ)).map ratPosToPSL2R :=
   (rfl)
