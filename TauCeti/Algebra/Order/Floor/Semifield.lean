@@ -30,9 +30,13 @@ For closed intervals `[0, W]` subdivided into `n > 0` equal cells of step `W / n
 floor index `⌊x / (W / n)⌋₊` at `n - 1` keeps the right endpoint `W` inside the last cell while
 preserving `[k * (W / n), (k + 1) * (W / n)]` for all `x ∈ [0, W]`. Similarly, `max 1 ⌈t⌉₊` gives
 a positive cell count bounded by `t + 1` for `t ≥ 0`, and strictly below `t + 1` whenever `t > 0`.
+In an ordered ring, the integers `a ≤ k ≤ ⌊y⌋₊` number at most `(y + 1 − a)⁺`, which bounds a sum
+of terms at most `M ≥ 0` over them by `(y + 1 − a)⁺ M`. For `0 ≤ z ≤ y`, the natural numbers
+strictly between `⌊z⌋₊` and `⌈y⌉₊` number at most `y - z + 1`.
 
 ## Main results
 
+* `TauCeti.natFloor_natCast_add_inv_two`: `⌊N + 1/2⌋₊ = N`.
 * `TauCeti.le_ceil_div_mul`: `t ≤ ⌈t / τ⌉₊ * τ` for `τ > 0`.
 * `TauCeti.ceil_div_mul_lt_add`: `⌈t / τ⌉₊ * τ < t + τ` for `t ≥ 0` and `τ > 0`.
 * `TauCeti.natCast_ceil_div_sub_ceil_div_lt`: `⌈t / τ⌉₊ - ⌈s / τ⌉₊ < (t - s) / τ + 1`.
@@ -49,6 +53,10 @@ a positive cell count bounded by `t + 1` for `t ≥ 0`, and strictly below `t + 
   the closed cell of step `W / n` indexed by `min (n - 1) ⌊x / (W / n)⌋₊`.
 * `TauCeti.natCast_max_one_ceil_lt_add_one` and `TauCeti.natCast_max_one_ceil_le_add_one`:
   `max 1 ⌈t⌉₊ < t + 1` for `0 < t`, and `max 1 ⌈t⌉₊ ≤ t + 1` for `0 ≤ t`.
+* `TauCeti.sum_Icc_floor_le_max_mul`: a sum of terms at most `M ≥ 0` over the integers
+  `a ≤ k ≤ y` is at most `(y + 1 − a)⁺ M`, for `y ≥ 0`.
+* `TauCeti.card_Ioo_floor_ceil_le`: the natural numbers strictly between `⌊z⌋₊` and `⌈y⌉₊`
+  number at most `y - z + 1`, for `z ≤ y` with `0 ≤ y`.
 -/
 
 public section
@@ -57,6 +65,12 @@ namespace TauCeti
 
 variable {K : Type*} [DivisionSemiring K] [LinearOrder K] [IsStrictOrderedRing K] [FloorSemiring K]
   {τ s t B : K}
+
+/-- The natural floor of a half-integer: `⌊N + 1/2⌋₊ = N`. -/
+@[simp]
+theorem natFloor_natCast_add_inv_two (N : ℕ) : ⌊(N : K) + 2⁻¹⌋₊ = N := by
+  rw [add_comm, Nat.floor_add_natCast (by positivity),
+    Nat.floor_eq_zero.mpr (inv_lt_one_of_one_lt₀ one_lt_two), zero_add]
 
 /-- For a positive step `τ`, `t ≤ ⌈t / τ⌉₊ * τ`. -/
 theorem le_ceil_div_mul (hτ : 0 < τ) : t ≤ (⌈t / τ⌉₊ : K) * τ :=
@@ -203,5 +217,37 @@ theorem natCast_max_one_ceil_le_add_one {t : R} (ht : 0 ≤ t) :
   · exact (natCast_max_one_ceil_lt_add_one ht).le
 
 end Semiring
+
+section Ring
+
+variable {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R] [FloorSemiring R]
+
+/-- A sum of terms at most `M ≥ 0` over the integers `a ≤ k ≤ y` is at most `(y + 1 − a)⁺ M`, for
+`y ≥ 0`: there are at most `(y + 1 − a)⁺` such `k`. -/
+theorem sum_Icc_floor_le_max_mul {y M : R} (hy : 0 ≤ y) (hM : 0 ≤ M) (a : ℕ)
+    {f : ℕ → R} (hf : ∀ k ∈ Finset.Icc a ⌊y⌋₊, f k ≤ M) :
+    ∑ k ∈ Finset.Icc a ⌊y⌋₊, f k ≤ max (y + 1 - a) 0 * M := by
+  refine (Finset.sum_le_card_nsmul _ _ _ hf).trans ?_
+  rw [nsmul_eq_mul, Nat.card_Icc]
+  gcongr
+  rcases le_total (⌊y⌋₊ + 1) a with h | h
+  · rw [Nat.sub_eq_zero_of_le h, Nat.cast_zero]
+    exact le_max_right _ _
+  · rw [Nat.cast_sub h, Nat.cast_add, Nat.cast_one]
+    exact le_max_of_le_left (by gcongr; exact Nat.floor_le hy)
+
+/-- For `z ≤ y` with `0 ≤ y`, the natural numbers strictly between `⌊z⌋₊` and `⌈y⌉₊` number at
+most `y - z + 1`. -/
+theorem card_Ioo_floor_ceil_le {y z : R} (hy : 0 ≤ y) (hzy : z ≤ y) :
+    ((Finset.Ioo ⌊z⌋₊ ⌈y⌉₊).card : R) ≤ y - z + 1 := by
+  rw [Nat.card_Ioo, Nat.sub_sub]
+  rcases le_or_gt ⌈y⌉₊ (⌊z⌋₊ + 1) with h | h
+  · rw [Nat.sub_eq_zero_of_le h, Nat.cast_zero]
+    exact add_nonneg (sub_nonneg.2 hzy) zero_le_one
+  · rw [Nat.cast_sub h.le, sub_add_eq_add_sub]
+    push_cast
+    exact (sub_lt_sub (Nat.ceil_lt_add_one hy) (Nat.lt_floor_add_one z)).le
+
+end Ring
 
 end TauCeti

@@ -27,6 +27,10 @@ sequence with `P₁` and `P₀` projective. Then
 * `Torₙ(X, M)` vanishes for `n ≥ 2`
   (`CategoryTheory.ShortComplex.ShortExact.isZero_Tor_add_two`).
 
+Symmetrically, `Tor'₁(M, X)`, for Mathlib's `CategoryTheory.Tor'` deriving the first variable, is
+the kernel of `S.f ▷ X : P₁ ⊗ X ⟶ P₀ ⊗ X`
+(`CategoryTheory.ShortComplex.ShortExact.tor'OneIsoKernel`).
+
 Over a principal ideal domain the boundaries and cycles of a complex of free modules are free, so
 the homology `Hⱼ` has the presentation `0 ⟶ Bⱼ ⟶ Zⱼ ⟶ Hⱼ ⟶ 0`. This identifies the `Tor₁` terms
 of the Künneth short exact sequence `0 ⟶ ⨁ Hᵢ ⊗ Hⱼ ⟶ Hₙ(K ⊗ L) ⟶ ⨁ Tor₁(Hᵢ, Hⱼ) ⟶ 0` with the
@@ -39,6 +43,10 @@ If `e • 𝟙 X = 0` for a natural number `e`, then `e` kills every `Torₙ(X, 
 (`CategoryTheory.nsmul_id_Tor_eq_zero`): the objects killed by `e`
 (`CategoryTheory.ObjectProperty.isKilledBy`) are closed under subobjects and quotients and contain
 every `X ⊗ P`.
+
+Through a projective resolution `P` of `Y`, the map `Torₙ(f, Y)` is the map induced on the
+homology of `X ⊗ P` by `f ▷ P`
+(`CategoryTheory.ProjectiveResolution.Tor_map_app_comp_isoLeftDerivedObj_hom`).
 
 When colimits of shape `J` are exact and preserved by tensoring on the right, `Torₙ(-, Y)`
 preserves colimits of shape `J` (`CategoryTheory.preservesColimitsOfShape_Tor_flip_obj`), and in
@@ -88,6 +96,21 @@ lemma homologyπ_comp_isoLeftDerivedObj_inv_comp_torOneIsoKernel_hom_comp_ι (X 
       (hS.projectiveResolution.isoLeftDerivedObj ((tensoringLeft C).obj X) 1).inv ≫
         (hS.torOneIsoKernel X).hom ≫ kernel.ι (X ◁ S.f) =
       ((((tensoringLeft C).obj X).mapHomologicalComplex _).obj S.resolutionComplex).iCycles 1 :=
+  hS.homologyπ_comp_isoLeftDerivedObj_inv_comp_leftDerivedOneIsoKernel_hom_comp_ι _
+
+/-- For a projective presentation `0 ⟶ P₁ ⟶ P₀ ⟶ M ⟶ 0`, `Tor'₁(M, X)`, which derives the first
+variable, is the kernel of `S.f ▷ X : P₁ ⊗ X ⟶ P₀ ⊗ X`. -/
+def tor'OneIsoKernel (X : C) : ((Tor' C 1).obj S.X₃).obj X ≅ kernel (S.f ▷ X) :=
+  hS.leftDerivedOneIsoKernel ((tensoringRight C).obj X)
+
+/-- The identification of `Tor'₁(M, X)` with the kernel of `S.f ▷ X` sends the homology class of a
+cycle of `- ⊗ X` applied to the resolution to that cycle. -/
+@[reassoc (attr := simp)]
+lemma homologyπ_comp_isoLeftDerivedObj_inv_comp_tor'OneIsoKernel_hom_comp_ι (X : C) :
+    ((((tensoringRight C).obj X).mapHomologicalComplex _).obj S.resolutionComplex).homologyπ 1 ≫
+      (hS.projectiveResolution.isoLeftDerivedObj ((tensoringRight C).obj X) 1).inv ≫
+        (hS.tor'OneIsoKernel X).hom ≫ kernel.ι (S.f ▷ X) =
+      ((((tensoringRight C).obj X).mapHomologicalComplex _).obj S.resolutionComplex).iCycles 1 :=
   hS.homologyπ_comp_isoLeftDerivedObj_inv_comp_leftDerivedOneIsoKernel_hom_comp_ι _
 
 include hS in
@@ -144,6 +167,25 @@ lemma isZero_Tor'_succ_tensorUnit (X : C) (n : ℕ) :
       ShortComplex.exact_of_iso (S.mapNatIso (rightUnitorNatIso C)).symm hS
   exact Functor.isZero_leftDerived_succ _ X n
 
+/-- **`Tor` computed by a projective resolution, naturally in the first variable.** For a
+projective resolution `P` of `Y` and a morphism `f : X₁ ⟶ X₂`, through the identifications
+`ProjectiveResolution.isoLeftDerivedObj` of `Torₙ(Xᵢ, Y)` with the homology of `Xᵢ ⊗ P`, the map
+`Torₙ(f, Y)` is the map induced on homology by `f ▷ P`. -/
+@[reassoc]
+lemma ProjectiveResolution.Tor_map_app_comp_isoLeftDerivedObj_hom {X₁ X₂ Y : C} (f : X₁ ⟶ X₂)
+    (P : ProjectiveResolution Y) (n : ℕ) :
+    ((Tor C n).map f).app Y ≫ (P.isoLeftDerivedObj ((tensoringLeft C).obj X₂) n).hom =
+      (P.isoLeftDerivedObj ((tensoringLeft C).obj X₁) n).hom ≫
+        HomologicalComplex.homologyMap
+          ((NatTrans.mapHomologicalComplex ((tensoringLeft C).map f) _).app P.complex) n := by
+  -- `Tor C n` is by definition `leftDerived` of `tensoringLeft` in the second variable; unfold
+  -- it so that `isoLeftDerivedObj` cancels
+  change (NatTrans.leftDerived ((tensoringLeft C).map f) n).app Y ≫
+    (P.isoLeftDerivedObj ((tensoringLeft C).obj X₂) n).hom = _
+  rw [P.leftDerived_app_eq, Category.assoc, Category.assoc, Iso.inv_hom_id, Category.comp_id]
+  -- `homologyMap` is the action of the homology functor on morphisms by definition
+  rfl
+
 /-- The functor sending `X` to the complex `X ⊗ P` for a projective resolution `P` of `Y`. -/
 private def tensorResolutionFunctor {Y : C} (P : ProjectiveResolution Y) :
     C ⥤ ChainComplex C ℕ where
@@ -166,12 +208,11 @@ instance preservesColimitsOfShape_Tor_flip_obj {J : Type*} [Category* J] [HasCol
       (HomologicalComplex.shortComplexFunctor C _ n ⋙ ShortComplex.homologyFunctor C))
   let e : (Tor C n).flip.obj Y ≅
       tensorResolutionFunctor P ⋙ HomologicalComplex.homologyFunctor C _ n :=
-    NatIso.ofComponents (fun X ↦ P.isoLeftDerivedObj ((tensoringLeft C).obj X) n) fun {X₁ X₂} f ↦ by
-      -- Unfold `Tor` to `leftDerived` of `tensoringLeft` so `isoLeftDerivedObj` cancels.
-      change (NatTrans.leftDerived ((tensoringLeft C).map f) n).app Y ≫
-        (P.isoLeftDerivedObj ((tensoringLeft C).obj X₂) n).hom = _
-      rw [P.leftDerived_app_eq, Category.assoc, Category.assoc, Iso.inv_hom_id, Category.comp_id]
-      rfl
+    NatIso.ofComponents (fun X ↦ P.isoLeftDerivedObj ((tensoringLeft C).obj X) n) fun f ↦
+      -- `((Tor C n).flip.obj Y).map f` is `((Tor C n).map f).app Y`, and the image of `f` under
+      -- `tensorResolutionFunctor P ⋙ homologyFunctor` is the map induced on homology by `f ▷ P`,
+      -- both by definition
+      P.Tor_map_app_comp_isoLeftDerivedObj_hom f n
   exact preservesColimitsOfShape_of_natIso e.symm
 
 /-- If colimits of shape `J` are exact and preserved by tensoring on the right, and `Torₙ(-, Y)`

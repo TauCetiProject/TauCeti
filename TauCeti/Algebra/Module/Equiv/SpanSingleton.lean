@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.TensorProduct.Associator
 public import Mathlib.RingTheory.Ideal.Span
 
 /-!
@@ -13,9 +14,9 @@ public import Mathlib.RingTheory.Ideal.Span
 A generator of a module `N`, that is an element `x` with `span K {x} = ⊤`, is carried by a linear
 isomorphism `N ≃ₗ[K] K` to a generator of the ideal `⊤`, that is to a unit of `K`
 (`Submodule.span_image_linearEquiv`, `Ideal.span_singleton_eq_top`). So when `1` is the only unit
-of the commutative semiring `K`, as for `ZMod 2`, a module isomorphic to `K` has exactly one
-generator. This is what makes Thom classes with such coefficients unique on every fibre, without
-any orientation.
+of the semiring `K`, as for `ZMod 2`, and one-sided inverses in `K` are inverses, a module
+isomorphic to `K` has exactly one generator. This is what makes Thom classes with such
+coefficients unique on every fibre, without any orientation.
 
 Conversely, a linear functional `Ψ` on a module `N ≃ₗ[K] K` taking the value `1` on `x` makes `x`
 a generator: `Ψ` factors through the isomorphism as multiplication by `Ψ (e⁻¹ 1)`, so `e x` is a
@@ -27,10 +28,12 @@ unit of `K` and `a ↦ a • x` is bijective.
   generators.
 * `LinearEquiv.span_singleton_eq_top_iff_isUnit`: an element of a module isomorphic to the base
   ring generates it exactly when its image is a unit.
+* `LinearEquiv.span_singleton_tmul_eq_top_iff`: a pure tensor generates a tensor product of two
+  modules isomorphic to the base ring exactly when both factors generate.
 * `LinearEquiv.exists_units_smul_eq_of_span_singleton_eq_top`: any two generators of a module
   isomorphic to the base ring differ by a unit.
-* `LinearEquiv.eq_of_span_singleton_eq_top`: a module isomorphic to a commutative semiring whose
-  only unit is `1` has a single generator.
+* `LinearEquiv.eq_of_span_singleton_eq_top`: a module isomorphic to a Dedekind-finite semiring
+  (for instance a commutative one) whose only unit is `1` has a single generator.
 * `LinearEquiv.isUnit_apply_of_apply_eq_one`, `LinearEquiv.bijective_smul_of_apply_eq_one`: an
   element on which a linear functional takes the value `1` is carried to a unit, and generates
   freely.
@@ -80,9 +83,9 @@ theorem exists_units_smul_eq_of_span_singleton_eq_top {R M : Type*} [Semiring R]
 
 /-- **A module isomorphic to `K` has a single generator when `1` is the only unit of `K`**: two
 elements `x` and `y` of a module `N ≃ₗ[K] K` with `span K {x} = ⊤` and `span K {y} = ⊤` are
-equal. -/
-theorem eq_of_span_singleton_eq_top {K N : Type*} [CommSemiring K] [Subsingleton Kˣ]
-    [AddCommMonoid N] [Module K N] (φ : N ≃ₗ[K] K) {x y : N}
+equal. Over a noncommutative ring this needs every left inverse to be a two-sided inverse. -/
+theorem eq_of_span_singleton_eq_top {K N : Type*} [Semiring K] [IsDedekindFiniteMonoid K]
+    [Subsingleton Kˣ] [AddCommMonoid N] [Module K N] (φ : N ≃ₗ[K] K) {x y : N}
     (hx : Submodule.span K {x} = ⊤) (hy : Submodule.span K {y} = ⊤) : x = y := by
   obtain ⟨u, rfl⟩ := φ.exists_units_smul_eq_of_span_singleton_eq_top hx hy
   rw [Subsingleton.elim u 1, Units.val_one, one_smul]
@@ -105,6 +108,19 @@ theorem bijective_smul_of_apply_eq_one {K N : Type*} [CommSemiring K] [AddCommMo
     (Units.mulRight (e.isUnit_apply_of_apply_eq_one Ψ hx).unit).bijective using 1
   funext a
   simp [← smul_eq_mul]
+
+open scoped TensorProduct in
+/-- **A pure tensor generates a tensor product of modules isomorphic to the base ring exactly when
+both factors generate.** For `eM : M ≃ₗ[R] R` and `eN : N ≃ₗ[R] R`, the pure tensor `x ⊗ y` spans
+`M ⊗[R] N` if and only if `x` spans `M` and `y` spans `N`. -/
+theorem span_singleton_tmul_eq_top_iff {R M N : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] [AddCommMonoid N] [Module R N] (eM : M ≃ₗ[R] R) (eN : N ≃ₗ[R] R) {x : M}
+    {y : N} :
+    Submodule.span R {x ⊗ₜ[R] y} = ⊤ ↔
+      Submodule.span R {x} = ⊤ ∧ Submodule.span R {y} = ⊤ := by
+  rw [span_singleton_eq_top_iff_isUnit ((TensorProduct.congr eM eN).trans (TensorProduct.lid R R)),
+    span_singleton_eq_top_iff_isUnit eM, span_singleton_eq_top_iff_isUnit eN]
+  simp [IsUnit.mul_iff]
 
 end LinearEquiv
 

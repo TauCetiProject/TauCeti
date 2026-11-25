@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.GroupLaw
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.GroupLaw
-import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Criterion
+import TauCeti.CategoryTheory.Monoidal.Cartesian.Over
 import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 import TauCeti.AlgebraicGeometry.RationalPoint.Basic
@@ -22,10 +22,10 @@ the two structure morphisms is a pullback square, and carrying the zero section 
 `P' ≫ g = f ≫ P`. This file shows that base change of points is a homomorphism for the group laws
 on points (`EllipticCurveGeom.pointsPullback`), that it is functorial in the pullback square, and
 that it is compatible with the ideal sheaves of sections: the divisor `[P']` on `E'` is the inverse
-image of the divisor `[P]` on `E` (`EllipticCurveGeom.ker_pointsPullback_left`), and the inverse
-image of a closed subgroup scheme of `E` is a closed subgroup scheme of `E'`
-(`EllipticCurveGeom.exists_grpObj_isMonHom_comap`). This is what makes level structures defined
-through divisors of points, such as points of exact order `N`, pull back along base change.
+image of the divisor `[P]` on `E` (`EllipticCurveGeom.ker_pointsPullback_left`). This is what makes
+level structures defined through divisors of points, such as points of exact order `N`, pull back
+along base change; closed subgroup schemes are treated in
+`TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.ClosedSubgroup.Basic`.
 
 ## Main definitions
 
@@ -58,10 +58,11 @@ through divisors of points, such as points of exact order `N`, pull back along b
   section of `E` there; in particular (`pointsPullback_left_apply_eq_zero_iff`) the base change
   `P'` of `P` meets the zero section at a point `s'` of `S'` exactly when `P` meets the zero
   section at `f s'`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pow_eq_one_iff_of_isPullback` and
+  `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pow_left_apply_eq_zero_iff_of_isPullback`:
+  compatible sections have multiples vanishing along the same base maps and base points.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.ker_pointsPullback_left`: the ideal sheaf of `P'`
   is the inverse image of the ideal sheaf of `P` along `g`.
-* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.exists_grpObj_isMonHom_comap`: the inverse image of
-  a closed subgroup scheme of `E` along `g` is a closed subgroup scheme of `E'`.
 
 ## References
 
@@ -112,10 +113,10 @@ addition morphism of `E`, of the composites of `x` and `y` with `g`. -/
 theorem mul_left_comp_of_isPullback {Z : Over S'} (x y : Z ⟶ Over.mk E'.structureMap) :
     (x * y).left ≫ g = pullback.lift (x.left ≫ g) (y.left ≫ g)
       (by have hx := Over.w x; have hy := Over.w y; dsimp at hx hy
-          simp [hg.w, reassoc_of% hx, reassoc_of% hy]) ≫ E.addition := by
-  rw [hom_mul_left, Category.assoc, addition_comp_of_isPullback hg h0, ← Category.assoc]
-  congr 1
-  apply pullback.hom_ext <;> simp
+          simp [hg.w, reassoc_of% hx, reassoc_of% hy]) ≫ E.addition :=
+  Over.mul_left_comp_of_mul_left_comp (G := Over.mk E.structureMap)
+    (G' := Over.mk E'.structureMap) hg.w
+    (by simpa only [mul_left, Over.mk_hom] using addition_comp_of_isPullback hg h0) x y
 
 include hg h0 in
 /-- **Base change carries sums of points to sums of points**, in terms of the group law on points
@@ -341,6 +342,29 @@ theorem pointsPullback_left_apply_eq_zero_iff (P : 𝟙_ (Over S) ⟶ Over.mk E.
   rw [left_apply_eq_zero_iff_of_isPullback hg h0, ← Scheme.Hom.comp_apply,
     pointsPullback_left_comp, Scheme.Hom.comp_apply]
 
+include hg h0 in
+/-- For compatible sections in a cartesian square of pointed elliptic curves, a multiple of
+the pulled-back section is zero exactly when the original multiple is zero along the base map. -/
+theorem pow_eq_one_iff_of_isPullback
+    {P : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap}
+    {Q : 𝟙_ (Over S) ⟶ Over.mk E.structureMap}
+    (hP : P.left ≫ g = f ≫ Q.left) (n : ℕ) :
+    P ^ n = 1 ↔ f ≫ (Q ^ n).left = f ≫ E.zero := by
+  rw [(eq_pointsPullback_iff hg h0).mpr hP, ← map_pow]
+  simpa [Over.OverMorphism.ext_iff, hom_one_left] using
+    comp_pointsPullback_left_eq_comp_zero_iff hg h0 (Q ^ n) (𝟙 S')
+
+include hg h0 in
+/-- For compatible sections in a cartesian square of pointed elliptic curves, their multiples
+meet the zero sections at corresponding points of the bases. -/
+theorem pow_left_apply_eq_zero_iff_of_isPullback
+    {P : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap}
+    {Q : 𝟙_ (Over S) ⟶ Over.mk E.structureMap}
+    (hP : P.left ≫ g = f ≫ Q.left) (n : ℕ) (s' : S') :
+    (P ^ n).left s' = E'.zero s' ↔ (Q ^ n).left (f s') = E.zero (f s') := by
+  rw [(eq_pointsPullback_iff hg h0).mpr hP, ← map_pow]
+  exact pointsPullback_left_apply_eq_zero_iff hg h0 (Q ^ n) s'
+
 /-- **The divisor of a base-changed point.** The ideal sheaf of the base change `P'` of an
 `S`-point `P` of `E`, which cuts out the divisor `[P']` on `E'`, is the inverse image along `g` of
 the ideal sheaf of `P`. -/
@@ -353,65 +377,6 @@ theorem ker_pointsPullback_left (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) 
   refine IsPullback.of_right ?_ (pointsPullback_left_comp hg h0 P) hg.flip
   rw [left_comp_structureMap, left_comp_structureMap]
   exact IsPullback.of_horiz_isIso ⟨by simp⟩
-
-include hg h0 in
-/-- **Closed subgroup schemes are stable under base change.** Let `g : E' ⟶ E` be a morphism of
-elliptic curves lying over `f : S' ⟶ S`, forming a pullback square with the structure morphisms and
-carrying the zero section of `E'` to that of `E`. If the closed subscheme of `E` cut out by an
-ideal sheaf `D` is a subgroup scheme, then so is the closed subscheme of `E'` cut out by the
-inverse image of `D` along `g`. -/
-theorem exists_grpObj_isMonHom_comap (D : E.carrier.IdealSheafData)
-    (hD : ∃ _ : GrpObj (Over.mk (D.subschemeι ≫ E.structureMap)),
-      IsMonHom (Over.homMk D.subschemeι :
-        Over.mk (D.subschemeι ≫ E.structureMap) ⟶ Over.mk E.structureMap)) :
-    ∃ _ : GrpObj (Over.mk ((D.comap g).subschemeι ≫ E'.structureMap)),
-      IsMonHom (Over.homMk (D.comap g).subschemeι :
-        Over.mk ((D.comap g).subschemeι ≫ E'.structureMap) ⟶ Over.mk E'.structureMap) := by
-  let i : Over.mk (D.subschemeι ≫ E.structureMap) ⟶ Over.mk E.structureMap :=
-    Over.homMk D.subschemeι
-  let i' : Over.mk ((D.comap g).subschemeι ≫ E'.structureMap) ⟶ Over.mk E'.structureMap :=
-    Over.homMk (D.comap g).subschemeι
-  have : IsClosedImmersion i.left := inferInstanceAs (IsClosedImmersion D.subschemeι)
-  have : IsClosedImmersion i'.left := inferInstanceAs (IsClosedImmersion (D.comap g).subschemeι)
-  have hi : i.left.ker = D := Scheme.IdealSheafData.ker_subschemeι _
-  have hi' : i'.left.ker = D.comap g := Scheme.IdealSheafData.ker_subschemeι _
-  rw [GroupScheme.exists_grpObj_isMonHom_iff_ker_le i, hi] at hD
-  rw [GroupScheme.exists_grpObj_isMonHom_iff_ker_le i', hi']
-  obtain ⟨he, hm, hj⟩ := hD
-  -- The morphism `ρ` from the closed subscheme of `D.comap g` to that of `D` induced by `g`.
-  let ρ := Scheme.IdealSheafData.subschemeMap (D.comap g) D g (D.le_map_comap g)
-  have hρ : ρ ≫ D.subschemeι = (D.comap g).subschemeι ≫ g :=
-    Scheme.IdealSheafData.subschemeMap_subschemeι _ _ _ _
-  -- `D.comap g` lies in the ideal sheaf of a morphism `h` exactly when `D` lies in that of `h ≫ g`.
-  simp only [← Scheme.IdealSheafData.le_map_iff_comap_le, Scheme.IdealSheafData.map_ker]
-  refine ⟨?_, ?_, ?_⟩
-  · rw [one_left, h0]
-    exact he.trans (Scheme.Hom.le_ker_comp _ _)
-  · -- The two points `fst ≫ i'` and `snd ≫ i'` of `E'` with values in `D' ×_{S'} D'`, composed
-    -- with `g`, factor through `ρ` as points `σ₁` and `σ₂` of `D` over `S`.
-    let A := Over.mk ((D.comap g).subschemeι ≫ E'.structureMap)
-    let Z := Over.mk ((A ⊗ A).hom ≫ f)
-    have hw (p : A ⊗ A ⟶ A) : (p.left ≫ ρ) ≫ D.subschemeι ≫ E.structureMap = Z.hom := by
-      have := Over.w p
-      dsimp [A, Z] at this ⊢
-      simp only [Category.assoc, reassoc_of% hρ, hg.w, reassoc_of% this]
-    let σ₁ : Z ⟶ Over.mk (D.subschemeι ≫ E.structureMap) :=
-      Over.homMk ((fst A A).left ≫ ρ) (hw _)
-    let σ₂ : Z ⟶ Over.mk (D.subschemeι ≫ E.structureMap) :=
-      Over.homMk ((snd A A).left ≫ ρ) (hw _)
-    have key : ((i' ⊗ₘ i') ≫ μ[Over.mk E'.structureMap]).left ≫ g =
-        (lift σ₁ σ₂).left ≫ ((i ⊗ₘ i) ≫ μ[Over.mk E.structureMap]).left := by
-      -- Both sides are composites of tensor products with `μ`, i.e. products of points.
-      simp only [← Over.comp_left, mul_eq_mul, comp_mul, tensorHom_fst, tensorHom_snd]
-      exact mul_left_comp_eq_of_isPullback hg h0 rfl (by simp [σ₁, i, i', A, ← hρ])
-        (by simp [σ₂, i, i', A, ← hρ])
-    rw [key]
-    exact hm.trans (Scheme.Hom.le_ker_comp _ _)
-  · have key : (i' ≫ ι[Over.mk E'.structureMap]).left ≫ g =
-        ρ ≫ (i ≫ ι[Over.mk E.structureMap]).left := by
-      simp [i, i', neg_comp_of_isPullback hg h0, reassoc_of% hρ]
-    rw [key]
-    exact hj.trans (Scheme.Hom.le_ker_comp _ _)
 
 end EllipticCurveGeom
 

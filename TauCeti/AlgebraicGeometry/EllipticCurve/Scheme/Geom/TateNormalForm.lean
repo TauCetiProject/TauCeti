@@ -245,56 +245,6 @@ theorem specMap_comp_pointHom_pow_four_eq_zero_iff {R : Type u} [CommRing R]
     exact tateNormalForm_projModelMulBy_four_eq_projModelZero_iff
   exact key (UniversalTate.map_curveULift φ) (UniversalTate.equation_curveULift_zero.map φ)
 
-section
-
-variable {R : Type*} [CommRing R]
-
-/-- The classifying homomorphism `ULift ℤ[A, B][Δ⁻¹] →+* R` of an elliptic Tate normal form. -/
-noncomputable def liftULift {a b : R} (h : IsUnit (tateNormalForm a b).Δ) :
-    ULift.{u} WeierstrassCurve.UniversalTate.Ring →+* R :=
-  (WeierstrassCurve.UniversalTate.lift h).comp ULift.ringEquiv.toRingHom
-
-/-- Applying `liftULift h` to a lifted element evaluates `WeierstrassCurve.UniversalTate.lift h` on
-its underlying element. -/
-@[simp]
-theorem liftULift_apply {a b : R} (h : IsUnit (tateNormalForm a b).Δ)
-    (x : ULift.{u} WeierstrassCurve.UniversalTate.Ring) :
-    liftULift h x = WeierstrassCurve.UniversalTate.lift h x.down := by
-  simp [liftULift, ULift.ringEquiv]
-
-/-- The base change of `curveULift` along `liftULift h` is `tateNormalForm a b`. -/
-theorem map_liftULift {a b : R} (h : IsUnit (tateNormalForm a b).Δ) :
-    WeierstrassCurve.UniversalTate.curveULift.map (liftULift h) = tateNormalForm a b := by
-  simp [liftULift, ULift.ringEquiv]
-
-/-- A ring homomorphism out of `ULift ℤ[A, B][Δ⁻¹]` is the classifying homomorphism of the Tate
-normal form with the images of `A` and `B` as coefficients. -/
-theorem eq_liftULift (φ : ULift.{u} WeierstrassCurve.UniversalTate.Ring →+* R) :
-    ∃ h : IsUnit (tateNormalForm (φ WeierstrassCurve.UniversalTate.curveULift.a₁)
-      (φ WeierstrassCurve.UniversalTate.curveULift.a₃)).Δ, φ = liftULift h := by
-  have hφ : WeierstrassCurve.UniversalTate.curveULift.map φ =
-      tateNormalForm (φ WeierstrassCurve.UniversalTate.curveULift.a₁)
-        (φ WeierstrassCurve.UniversalTate.curveULift.a₃) := by simp
-  have h : IsUnit (tateNormalForm (φ WeierstrassCurve.UniversalTate.curveULift.a₁)
-      (φ WeierstrassCurve.UniversalTate.curveULift.a₃)).Δ := by
-    rw [← hφ, map_Δ]
-    exact WeierstrassCurve.UniversalTate.curveULift.isUnit_Δ.map φ
-  refine ⟨h, ?_⟩
-  have := WeierstrassCurve.UniversalTate.eq_lift h
-      (f := φ.comp (ULift.ringEquiv.symm : _ ≃+* ULift.{u} _).toRingHom) <| by
-    rw [← map_map, ← WeierstrassCurve.UniversalTate.curveULift_eq, hφ]
-  ext x
-  simpa [liftULift, ULift.ringEquiv] using congr($this x.down)
-
-/-- Congruence for `liftULift` with respect to the Tate normal form parameters `a` and `b`. -/
-theorem liftULift_congr {a b a' b' : R} (h : IsUnit (tateNormalForm a b).Δ)
-    (h' : IsUnit (tateNormalForm a' b').Δ) (ha : a = a') (hb : b = b') :
-    liftULift h = liftULift h' := by
-  subst ha hb
-  rfl
-
-end
-
 end TauCeti.AlgebraicGeometry.UniversalTate
 
 namespace TauCeti.AlgebraicGeometry

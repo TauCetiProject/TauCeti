@@ -246,6 +246,20 @@ theorem memBesov_iff_memℓp {u : 𝓢'(E, F)} {f : ℕ → Lp F p (volume : Mea
       simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply, ← hg, hf]
   rwa [hgf] at hmem
 
+/-- **A distribution with a single block.** If the Littlewood–Paley blocks of `u` vanish except
+for the block of index `m`, which is the `Lᵖ` function `f`, then `u ∈ B^s_{p,q}` for every `s` and
+`q`. -/
+theorem memBesov_of_littlewoodPaleyBlock_eq_ite {u : 𝓢'(E, F)} {m : ℕ}
+    {f : Lp F p (volume : Measure E)}
+    (hu : ∀ k, littlewoodPaleyBlock F φ k u = if k = m then (f : 𝓢'(E, F)) else 0) :
+    u.MemBesov φ s p q := by
+  refine memBesov_iff.2 ⟨fun k ↦ if k = m then f else 0, fun k ↦ ?_, ?_⟩
+  · rw [hu k]
+    by_cases hk : k = m <;> simp [hk]
+  · refine (memℓp_zero ((Set.finite_singleton m).subset fun k hk ↦ ?_)).of_exponent_ge bot_le
+    by_contra hkm
+    exact hk (by simp [Set.mem_singleton_iff.not.1 hkm])
+
 theorem MemBesov.zero : (0 : 𝓢'(E, F)).MemBesov φ s p q :=
   ⟨0, fun j ↦ by simp⟩
 
@@ -261,6 +275,14 @@ theorem MemBesov.smul {u : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) (c : ℂ) :
   obtain ⟨a, ha⟩ := hu
   refine ⟨c • a, fun j ↦ ?_⟩
   rw [lp.coeFn_smul, Pi.smul_apply, Lp.toTemperedDistribution_smul, ha, map_smul, smul_comm]
+
+/-- `B^s_{p,q}` is closed under scalar multiplication by any scalars acting on tempered
+distributions through `ℂ`, such as real numbers. -/
+theorem MemBesov.smul_of_tower {R : Type*} [SMul R ℂ] [SMul R 𝓢'(E, F)]
+    [IsScalarTower R ℂ 𝓢'(E, F)] {u : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) (c : R) :
+    (c • u).MemBesov φ s p q := by
+  rw [← smul_one_smul ℂ c u]
+  exact hu.smul _
 
 /-- **Monotonicity of the Besov scale.** `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' ≤ s` and `q ≤ q'`. -/
 theorem MemBesov.mono {u : 𝓢'(E, F)} {s' : ℝ} {q' : ℝ≥0∞} (hu : u.MemBesov φ s p q)

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Normalization
-public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
+public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint.Basic
 public import TauCeti.AlgebraicGeometry.Scheme.IntegrallyClosed
 
 /-!

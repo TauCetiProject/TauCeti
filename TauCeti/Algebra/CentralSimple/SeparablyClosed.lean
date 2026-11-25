@@ -88,7 +88,6 @@ theorem algebraMap_baseFieldAlgEquivOfIsSepClosed (x : D) :
 
 /-- An algebraic central division algebra over a separably closed field is
 one-dimensional over that field. -/
-@[simp]
 theorem finrank_eq_one_of_isSepClosed : Module.finrank K D = 1 := by
   rw [(baseFieldAlgEquivOfIsSepClosed K D).toLinearEquiv.finrank_eq, Module.finrank_self]
 
