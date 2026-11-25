@@ -17,6 +17,7 @@ import TauCeti.Analysis.Sobolev.Local.Compactness.ContDiff
 import TauCeti.Analysis.Sobolev.Local.Wkp.Norm
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 import TauCeti.Data.ENNReal.Holder
+import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 
 /-!
 # Uniform estimates and compactness for the nonlinear Cauchy–Riemann equation in the plane
@@ -374,27 +375,6 @@ private theorem isWeakCauchyRiemannOn_of_tendsto {p : ℝ≥0∞} {J : ℕ → �
     _).comp ((hJ z hz).prodMk_nhds (hD z hz I)))).congr fun n => ?_) (hη z hz)
   exact heq n
 
-omit [FiniteDimensional ℝ V] in
-/-- Bounds for weak derivatives in `Lᵖ(W)` give bounds in `L^q(W)` for `0 < q ≤ p` with `q` finite,
-on an open set `W` of finite measure. -/
-private theorem exists_eLpNorm_le_of_le_exponent {p q : ℝ≥0∞} (hq : 0 < q) (hq' : q ≠ ⊤)
-    (hqp : q ≤ p) {u : ℕ → ℂ → V} {W : Opens ℂ} (hW : volume (W : Set ℂ) ≠ ∞) {c : ℝ≥0}
-    (hc : ∀ n, ∃ D, HasWeakFDerivOn volume W (u n) D ∧ eLpNorm D p (volume.restrict W) ≤ c) :
-    ∃ c' : ℝ≥0, ∀ n, ∃ D, HasWeakFDerivOn volume W (u n) D ∧
-      eLpNorm D q (volume.restrict W) ≤ c' := by
-  have hr : 0 ≤ 1 / q.toReal - 1 / p.toReal := by
-    rcases eq_or_ne p ⊤ with rfl | hp
-    · simp only [ENNReal.toReal_top, div_zero, sub_zero]; positivity
-    · exact sub_nonneg.2 (one_div_le_one_div_of_le (ENNReal.toReal_pos hq.ne' hq')
-        (ENNReal.toReal_mono hp hqp))
-  have hV := ENNReal.rpow_ne_top_of_nonneg hr hW
-  refine ⟨c * (volume (W : Set ℂ) ^ (1 / q.toReal - 1 / p.toReal)).toNNReal, fun n => ?_⟩
-  obtain ⟨D, hD, hDc⟩ := hc n
-  refine ⟨D, hD, (eLpNorm_le_eLpNorm_mul_rpow_measure_univ hqp
-    hD.locallyIntegrableOn_deriv.aestronglyMeasurable).trans ?_⟩
-  rw [Measure.restrict_apply_univ, ENNReal.coe_mul, ENNReal.coe_toNNReal hV]
-  gcongr
-
 /-- The compactness part for a finite exponent: under the hypotheses of the uniform estimates,
 with data bounded in `C^ℓ` on compact sets, a subsequence of the `u n` converges in `C^ℓ` on
 compact subsets of `Ω` to a map of class `C^ℓ` on `Ω`, by Rellich's theorem. -/
@@ -455,12 +435,21 @@ theorem exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn {p : �
   have hq' : min p 3 ≠ ⊤ := ((min_le_right _ _).trans_lt (by norm_num)).ne
   -- The data are bounded in `C^ℓ` on compact sets, so the uniform estimates apply; read in the
   -- coordinates of a basis, they are bounds in the spaces `Wkp`.
+  have hdq (W : Opens ℂ) (hWc : IsCompact (closure (W : Set ℂ)))
+      (hWΩ : closure (W : Set ℂ) ⊆ Ω) : ∃ c : ℝ≥0, ∀ n, ∃ D, HasWeakFDerivOn volume W (u n) D ∧
+        eLpNorm D (min p 3) (volume.restrict W) ≤ c := by
+    obtain ⟨c, hc⟩ := hd W hWc hWΩ
+    have : IsFiniteMeasure (volume.restrict (W : Set ℂ)) := isFiniteMeasure_restrict.2
+      ((measure_mono subset_closure).trans_lt hWc.measure_lt_top).ne
+    obtain ⟨c', hc'⟩ := MeasureTheory.exists_eLpNorm_le_mul_eLpNorm_of_le
+      (μ := volume.restrict (W : Set ℂ)) (E := ℂ →L[ℝ] V) (min_le_left p 3)
+    refine ⟨c' * c, fun n => ?_⟩
+    obtain ⟨D, hD, hDc⟩ := hc n
+    exact ⟨D, hD, (hc' D).trans (by push_cast; gcongr)⟩
   obtain ⟨φ, v, hφ, hv, hconv⟩ := exists_subseq_tendstoLocallyUniformlyOn_iteratedFDeriv hq hq'
     hJ hη (fun _ => exists_forall_norm_iteratedFDeriv_le_of_tendstoLocallyUniformly hJ hJt)
     (fun _ => exists_forall_norm_iteratedFDeriv_le_of_tendstoLocallyUniformly hη hηt) hJ2
-    (fun n => (hu n).mono_exponent (min_le_left _ _)) hK fun W hWc hWΩ =>
-      (hd W hWc hWΩ).elim fun _ hc => exists_eLpNorm_le_of_le_exponent (zero_lt_two.trans hq) hq'
-        (min_le_left _ _) ((measure_mono subset_closure).trans_lt hWc.measure_lt_top).ne hc
+    (fun n => (hu n).mono_exponent (min_le_left _ _)) hK hdq
   refine ⟨φ, v, hφ, hv, ?_, hconv⟩
   -- Each `u n` is `C^ℓ`, and its pointwise equation passes to the limit.
   have hℓ1 : (1 : WithTop ℕ∞) ≤ ℓ := by exact_mod_cast hℓ
