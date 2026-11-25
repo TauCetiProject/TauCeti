@@ -143,12 +143,6 @@ theorem neg_mul_rpow_le_subcriticalYamabeQuotient {q K : ℝ} (hq : 2 ≤ q)
   · rw [subcriticalYamabeQuotient_zero]
     exact mul_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 hK) (Real.rpow_nonneg hV _)
   set f := ⇑(SobolevH1.toLp w)
-  -- The energy is at least `-K ‖w‖²_{L²}`, since the Dirichlet term is nonnegative.
-  have hE : -K * ‖SobolevH1.toLp w‖ ^ 2 ≤ energyForm I w w := by
-    rw [energyForm_apply]
-    exact le_add_of_nonneg_of_le (mul_nonneg (conformalCoefficient_nonneg _)
-      (SobolevH1.dirichletForm_self_nonneg w))
-      (neg_mul_norm_toLp_sq_le_integral_scalarCurvature_mul hS w)
   -- Hölder's inequality compares `‖w‖²_{L²}` with the `q`-th moment.
   have h2 := norm_toLp_sq_le hq hqp w
   rw [subcriticalYamabeQuotient_def,
@@ -159,7 +153,7 @@ theorem neg_mul_rpow_le_subcriticalYamabeQuotient {q K : ℝ} (hq : 2 ≤ q)
         riemannianTotalVolume I M ^ (1 - 2 / q)) := by ring
     _ ≤ -K * ‖SobolevH1.toLp w‖ ^ 2 :=
       mul_le_mul_of_nonpos_left h2 (neg_nonpos.2 hK)
-    _ ≤ energyForm I w w := hE
+    _ ≤ energyForm I w w := neg_mul_norm_toLp_sq_le_energyForm hS w
 
 /-- On a closed manifold of dimension `n > 2`, the subcritical Yamabe quotients of nonzero `H¹`
 elements are bounded below for every exponent `2 ≤ q ≤ pₙ`. -/

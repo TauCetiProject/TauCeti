@@ -13,7 +13,7 @@ import TauCeti.MeasureTheory.Integral.ContinuousMap
 /-!
 # The bottom of the spectrum of the conformal Laplacian
 
-Let `(M, g)` be a closed smooth Riemannian manifold of dimension `n > 2`, with conformal Laplacian
+Let `(M, g)` be a closed smooth Riemannian manifold of dimension `n`, with conformal Laplacian
 `L_g = aₙ Δ⁺_g + Scal_g` and weak energy form `E_g(w, w) = aₙ ∫ |∇w|² dV + ∫ Scal_g w² dV` on
 `H¹(M)` (`TauCeti.Yamabe.energyForm`). At the exponent `q = 2` the subcritical Yamabe quotient is
 the **Rayleigh quotient** of `L_g`,
@@ -44,8 +44,8 @@ properties of `λ₁(L_g)` that need no compactness:
   If `Scal_g` is constant, then the constant function is a positive eigenfunction. Conversely, in
   the equality case the constant function is a minimizer, hence a weak eigenfunction, and
   `L_g 1 = Scal_g`.
-* **The sign of the Yamabe invariant.** The Yamabe invariant `Y = inf {Q_g(w) | w ≠ 0}` has the
-  sign of `λ₁(L_g)` (`sign_sInf_weakYamabeQuotient_eq`), by
+* **The sign of the Yamabe invariant.** In dimension `n > 2`, the Yamabe invariant
+  `Y = inf {Q_g(w) | w ≠ 0}` has the sign of `λ₁(L_g)` (`sign_sInf_weakYamabeQuotient_eq`), by
   `TauCeti.Yamabe.sign_sInf_subcriticalYamabeQuotient_eq` at the exponents `pₙ` and `2`.
 
 That the infimum `λ₁(L_g)` is attained, by a positive smooth eigenfunction, needs the compactness of
@@ -106,34 +106,38 @@ theorem firstEigenvalue_eq_sInf_subcriticalYamabeQuotient_two :
   rw [firstEigenvalue_def]
   simp only [subcriticalYamabeQuotient_two]
 
-/-- **The Rayleigh inequality.** On a closed manifold of dimension `n > 2`, the first eigenvalue
-`λ₁` of the conformal Laplacian satisfies `λ₁ ‖w‖²_{L²} ≤ E_g(w, w)` for every `w ∈ H¹(M)`. -/
-theorem firstEigenvalue_mul_le_energyForm (hn : 2 < finrank ℝ E) (w : SobolevH1 I M) :
+/-- **The Rayleigh inequality.** On a closed manifold, the first eigenvalue `λ₁` of the conformal
+Laplacian satisfies `λ₁ ‖w‖²_{L²} ≤ E_g(w, w)` for every `w ∈ H¹(M)`. -/
+theorem firstEigenvalue_mul_le_energyForm (w : SobolevH1 I M) :
     firstEigenvalue I M * ‖SobolevH1.toLp w‖ ^ 2 ≤ energyForm I w w := by
   rcases eq_or_ne w 0 with rfl | hw
   · simp
-  rw [firstEigenvalue_eq_sInf_subcriticalYamabeQuotient_two,
-    ← le_div_iff₀ (pow_pos (SobolevH1.norm_toLp_pos_iff.2 hw) 2), ← subcriticalYamabeQuotient_two]
-  exact csInf_le (bddBelow_image_subcriticalYamabeQuotient le_rfl (two_lt_criticalExponent hn).le)
-    ⟨w, hw, rfl⟩
+  -- The Rayleigh quotients are bounded below by `-K` whenever `Scal_g ≥ -K`.
+  obtain ⟨K, -, hS⟩ :=
+    (CovariantDerivative.leviCivitaConnection I M).exists_nonneg_forall_neg_le_scalarCurvature
+  rw [firstEigenvalue_def, ← le_div_iff₀ (pow_pos (SobolevH1.norm_toLp_pos_iff.2 hw) 2)]
+  refine csInf_le ⟨-K, ?_⟩ ⟨w, hw, rfl⟩
+  rintro _ ⟨v, hv, rfl⟩
+  exact (le_div_iff₀ (pow_pos (SobolevH1.norm_toLp_pos_iff.2 hv) 2)).2
+    (neg_mul_norm_toLp_sq_le_energyForm hS v)
 
-/-- **The variational characterization of the first eigenvalue.** On a nonempty closed manifold of
-dimension `n > 2`, a real number `c` is at most the first eigenvalue `λ₁` of the conformal Laplacian
-if and only if `c ‖w‖²_{L²} ≤ E_g(w, w)` for every `w ∈ H¹(M)`. -/
-theorem le_firstEigenvalue_iff [Nonempty M] (hn : 2 < finrank ℝ E) {c : ℝ} :
+/-- **The variational characterization of the first eigenvalue.** On a nonempty closed manifold, a
+real number `c` is at most the first eigenvalue `λ₁` of the conformal Laplacian if and only if
+`c ‖w‖²_{L²} ≤ E_g(w, w)` for every `w ∈ H¹(M)`. -/
+theorem le_firstEigenvalue_iff [Nonempty M] {c : ℝ} :
     c ≤ firstEigenvalue I M ↔
       ∀ w : SobolevH1 I M, c * ‖SobolevH1.toLp w‖ ^ 2 ≤ energyForm I w w := by
   refine ⟨fun h w ↦ (mul_le_mul_of_nonneg_right h (sq_nonneg _)).trans
-    (firstEigenvalue_mul_le_energyForm hn w), fun h ↦ ?_⟩
+    (firstEigenvalue_mul_le_energyForm w), fun h ↦ ?_⟩
   rw [firstEigenvalue_def]
   exact le_csInf ⟨_, _, SobolevH1.ofSmooth_one_ne_zero, rfl⟩ fun _ ⟨w, hw, hw'⟩ ↦ hw' ▸
     (le_div_iff₀ (pow_pos (SobolevH1.norm_toLp_pos_iff.2 hw) 2)).2 (h w)
 
-/-- **Rayleigh minimizers are weak eigenfunctions.** On a closed manifold of dimension `n > 2`, if
-`w ∈ H¹(M)` attains the first eigenvalue `λ₁` of the conformal Laplacian, in the sense that
-`E_g(w, w) = λ₁ ‖w‖²_{L²}`, then `E_g(w, v) = λ₁ ⟪w, v⟫_{L²}` for every `v ∈ H¹(M)`: `w` is a weak
-solution of `L_g w = λ₁ w`. -/
-theorem energyForm_eq_firstEigenvalue_mul_inner (hn : 2 < finrank ℝ E) {w : SobolevH1 I M}
+/-- **Rayleigh minimizers are weak eigenfunctions.** On a closed manifold, if `w ∈ H¹(M)` attains
+the first eigenvalue `λ₁` of the conformal Laplacian, in the sense that `E_g(w, w) = λ₁ ‖w‖²_{L²}`,
+then `E_g(w, v) = λ₁ ⟪w, v⟫_{L²}` for every `v ∈ H¹(M)`: `w` is a weak solution of
+`L_g w = λ₁ w`. -/
+theorem energyForm_eq_firstEigenvalue_mul_inner {w : SobolevH1 I M}
     (hw : energyForm I w w = firstEigenvalue I M * ‖SobolevH1.toLp w‖ ^ 2) (v : SobolevH1 I M) :
     energyForm I w v = firstEigenvalue I M * inner ℝ (SobolevH1.toLp w) (SobolevH1.toLp v) := by
   set l := firstEigenvalue I M
@@ -142,7 +146,7 @@ theorem energyForm_eq_firstEigenvalue_mul_inner (hn : 2 < finrank ℝ E) {w : So
   -- The Rayleigh inequality along the line `w + t v` is a nonnegative quadratic in `t` that
   -- vanishes at `t = 0`, so its linear coefficient vanishes.
   have hquad (t : ℝ) : 0 ≤ a * (t * t) + b * t + 0 := by
-    have h := firstEigenvalue_mul_le_energyForm hn (w + t • v)
+    have h := firstEigenvalue_mul_le_energyForm (w + t • v)
     rw [← real_inner_self_eq_norm_sq] at h hw
     simp only [a, b, ← real_inner_self_eq_norm_sq, map_add, map_smul, add_apply, smul_apply,
       smul_eq_mul, inner_add_left, inner_add_right, real_inner_smul_left, real_inner_smul_right,
@@ -212,10 +216,10 @@ private theorem mul_norm_toLp_sq_le_energyForm_ofSmooth {u : C^∞⟮I, M; ℝ�
           (mul_nonneg (sq_nonneg (u x)) (sq_nonneg ‖mgradient I v x‖))]
 
 /-- **The eigenvalue of a positive eigenfunction is the first eigenvalue.** On a nonempty closed
-manifold of dimension `n > 2`, if a smooth positive function `u` satisfies `L_g u = c u`, then `c`
-is the first eigenvalue `λ₁` of the conformal Laplacian. -/
-theorem firstEigenvalue_eq_of_conformalLaplacian_eq_mul [Nonempty M]
-    (hn : 2 < finrank ℝ E) {u : M → ℝ} (hu : ContMDiff I 𝓘(ℝ) ∞ u) (hu_pos : ∀ x, 0 < u x)
+manifold, if a smooth positive function `u` satisfies `L_g u = c u`, then `c` is the first
+eigenvalue `λ₁` of the conformal Laplacian. -/
+theorem firstEigenvalue_eq_of_conformalLaplacian_eq_mul [Nonempty M] {u : M → ℝ}
+    (hu : ContMDiff I 𝓘(ℝ) ∞ u) (hu_pos : ∀ x, 0 < u x)
     {c : ℝ} (hc : ∀ x, conformalLaplacian I u x = c * u x) :
     firstEigenvalue I M = c := by
   let U : C^∞⟮I, M; ℝ⟯ := ⟨u, hu⟩
@@ -228,8 +232,8 @@ theorem firstEigenvalue_eq_of_conformalLaplacian_eq_mul [Nonempty M]
   have hU0 : SobolevH1.ofSmooth U ≠ 0 := SobolevH1.ofSmooth_eq_zero_iff.not.2
     fun h ↦ (hu_pos (Classical.arbitrary M)).ne' <| by
       simpa [U] using congrArg (· (Classical.arbitrary M)) h
-  refine le_antisymm ?_ ((le_firstEigenvalue_iff hn).2 hle)
-  have h := firstEigenvalue_mul_le_energyForm hn (SobolevH1.ofSmooth U)
+  refine le_antisymm ?_ (le_firstEigenvalue_iff.2 hle)
+  have h := firstEigenvalue_mul_le_energyForm (SobolevH1.ofSmooth U)
   rw [energyForm_ofSmooth_eq_mul_inner (u := U) hc, real_inner_self_eq_norm_sq] at h
   exact le_of_mul_le_mul_right h (pow_pos (SobolevH1.norm_toLp_pos_iff.2 hU0) 2)
 
@@ -244,21 +248,21 @@ private theorem energyForm_ofSmooth_one_self :
   rw [energyForm_ofSmooth_self]
   simp [ContMDiffMap.coe_one, Pi.one_def, mgradient_const]
 
-/-- **The mean scalar curvature bounds the bottom of the spectrum.** On a nonempty closed manifold
-of dimension `n > 2`, the first eigenvalue `λ₁` of the conformal Laplacian is at most the mean
-scalar curvature `∫ Scal_g dV / Vol(M, g)`. -/
-theorem firstEigenvalue_le_integral_scalarCurvature_div [Nonempty M] (hn : 2 < finrank ℝ E) :
+/-- **The mean scalar curvature bounds the bottom of the spectrum.** On a nonempty closed manifold,
+the first eigenvalue `λ₁` of the conformal Laplacian is at most the mean scalar curvature
+`∫ Scal_g dV / Vol(M, g)`. -/
+theorem firstEigenvalue_le_integral_scalarCurvature_div [Nonempty M] :
     firstEigenvalue I M ≤
       (∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x
         ∂riemannianVolume I M) / riemannianTotalVolume I M := by
   rw [le_div_iff₀ riemannianTotalVolume_pos, ← SobolevH1.norm_toLp_ofSmooth_one_sq,
     ← energyForm_ofSmooth_one_self]
-  exact firstEigenvalue_mul_le_energyForm hn _
+  exact firstEigenvalue_mul_le_energyForm _
 
-/-- **Equality case of the mean scalar curvature bound.** On a nonempty closed manifold of
-dimension `n > 2`, the first eigenvalue `λ₁` of the conformal Laplacian equals the mean scalar
-curvature `∫ Scal_g dV / Vol(M, g)` if and only if `Scal_g` is constant. -/
-theorem firstEigenvalue_eq_integral_scalarCurvature_div_iff [Nonempty M] (hn : 2 < finrank ℝ E) :
+/-- **Equality case of the mean scalar curvature bound.** On a nonempty closed manifold, the first
+eigenvalue `λ₁` of the conformal Laplacian equals the mean scalar curvature
+`∫ Scal_g dV / Vol(M, g)` if and only if `Scal_g` is constant. -/
+theorem firstEigenvalue_eq_integral_scalarCurvature_div_iff [Nonempty M] :
     firstEigenvalue I M =
         (∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x
           ∂riemannianVolume I M) / riemannianTotalVolume I M ↔
@@ -280,7 +284,7 @@ theorem firstEigenvalue_eq_integral_scalarCurvature_div_iff [Nonempty M] (hn : 2
       refine ae_eq_zero_of_integral_contMDiff_smul_eq_zero I hcont.locallyIntegrable
         fun φ hφ _ ↦ ?_
       let φ' : C^∞⟮I, M; ℝ⟯ := ⟨φ, hφ⟩
-      have he := energyForm_eq_firstEigenvalue_mul_inner hn h1
+      have he := energyForm_eq_firstEigenvalue_mul_inner h1
         (SobolevH1.ofSmooth φ')
       rw [energyForm_ofSmooth, SobolevH1.inner_toLp_ofSmooth] at he
       simp only [φ', ContMDiffMap.coe_one, Pi.one_def, mgradient_const, Pi.zero_apply,
@@ -297,7 +301,7 @@ theorem firstEigenvalue_eq_integral_scalarCurvature_div_iff [Nonempty M] (hn : 2
       simp only [hc, integral_const_riemannianVolume, mul_div_cancel_right₀ _ hV.ne']
     -- The constant function `1` is a positive eigenfunction: `L_g 1 = Scal_g = c`.
     rw [hmean]
-    exact firstEigenvalue_eq_of_conformalLaplacian_eq_mul hn contMDiff_const
+    exact firstEigenvalue_eq_of_conformalLaplacian_eq_mul contMDiff_const
       (fun _ ↦ one_pos) fun x ↦ by rw [conformalLaplacian_const, mul_one, mul_one]; exact hc x
 
 /-- **The sign of the Yamabe invariant is the sign of the first eigenvalue.** On a closed manifold

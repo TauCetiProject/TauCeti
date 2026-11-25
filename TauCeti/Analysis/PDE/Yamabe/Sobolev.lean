@@ -44,7 +44,7 @@ finite, norm-continuous, and positive away from `0`. We establish:
 * **Coercivity** (`isCoercive_energyForm_of_forall_mul_norm_toLp_sq_le`): a lower bound
   `E_g(w, w) ≥ μ ‖w‖²_{L²}` with `μ > 0` makes `E_g` coercive on `H¹(M)`, since `Scal_g` is
   bounded below (`CovariantDerivative.exists_nonneg_forall_neg_le_scalarCurvature`,
-  `neg_mul_norm_toLp_sq_le_integral_scalarCurvature_mul`);
+  `neg_mul_norm_toLp_sq_le_integral_scalarCurvature_mul`, `neg_mul_norm_toLp_sq_le_energyForm`);
 * **Absolute values** (`energyForm_self_le_of_toLp_eq_abs`,
   `weakYamabeQuotient_le_of_toLp_eq_abs`, `exists_toLp_eq_abs_and_weakYamabeQuotient_le`,
   `sInf_weakYamabeQuotient_nonneg_eq`): replacing `w` by its absolute value in `H¹(M)`
@@ -220,6 +220,16 @@ theorem neg_mul_norm_toLp_sq_le_integral_scalarCurvature_mul {K : ℝ}
   dsimp only
   rw [mul_assoc, ← sq]
   exact mul_le_mul_of_nonneg_right (hS x) (sq_nonneg _)
+
+/-- If `Scal_g ≥ -K`, then `E_g(w, w) ≥ -K ‖w‖²_{L²}`, since the Dirichlet term is nonnegative. -/
+theorem neg_mul_norm_toLp_sq_le_energyForm {K : ℝ}
+    (hS : ∀ x, -K ≤ (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x)
+    (w : SobolevH1 I M) :
+    -K * ‖SobolevH1.toLp w‖ ^ 2 ≤ energyForm I w w := by
+  rw [energyForm_apply]
+  exact le_add_of_nonneg_of_le (mul_nonneg (conformalCoefficient_nonneg _)
+    (SobolevH1.dirichletForm_self_nonneg w))
+    (neg_mul_norm_toLp_sq_le_integral_scalarCurvature_mul hS w)
 
 /-- **An `L²` lower bound makes the energy form coercive.** In dimension `n > 2`, if
 `μ ‖w‖²_{L²} ≤ E_g(w, w)` for some `μ > 0` and every `w ∈ H¹(M)`, then `E_g` is coercive on
