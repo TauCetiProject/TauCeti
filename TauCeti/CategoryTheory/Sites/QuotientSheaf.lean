@@ -165,6 +165,13 @@ theorem quotientSheaf.inv_π_self :
     inv (quotientSheaf.π.{w} J s s) = quotientSheaf.desc (𝟙 _) rfl :=
   IsIso.inv_eq_of_hom_inv_id (quotientSheaf.π_desc _ _)
 
+/-- For the pre-relation `(s, s)`, the factorisation of the identity of `h_U` through the quotient
+sheaf, composed with the projection, is the identity of `U/R`. -/
+@[reassoc (attr := simp)]
+theorem quotientSheaf.desc_π_self :
+    quotientSheaf.desc (𝟙 _) rfl ≫ quotientSheaf.π.{w} J s s = 𝟙 _ := by
+  rw [← quotientSheaf.inv_π_self, IsIso.inv_hom_id]
+
 /-- The projection onto the quotient sheaf is `J`-locally surjective: every section of `U/R` is,
 `J`-locally, the class of a point of `U`. -/
 theorem quotientSheaf.isLocallySurjective_π [HasSheafify J (Type (max v w))] :
