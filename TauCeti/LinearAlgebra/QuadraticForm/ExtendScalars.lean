@@ -37,7 +37,8 @@ unique quadratic form with `a ⊗ v ↦ a² Q(v)`, and when `2` is invertible it
   and `QuadraticMap.eq_extendScalars_iff` says that this characterizes it.
 * `QuadraticMap.toMatrix'_polarBilin_extendScalars`: the Gram matrix of its polar form is the
   image of the Gram matrix of the polar form of `Q`.
-* `QuadraticMap.nondegenerate_polarBilin_extendScalars_iff`: extension preserves and reflects
+* `QuadraticMap.nondegenerate_polarBilin_extendScalars_iff`: along an injective algebra map into
+  an integral domain (for instance a field extension), extension preserves and reflects
   nonsingularity.
 * `QuadraticMap.extendScalars_self`, `QuadraticMap.extendScalars_extendScalars`: the identity
   extension and towers.
