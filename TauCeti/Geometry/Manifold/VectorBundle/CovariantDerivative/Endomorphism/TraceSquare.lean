@@ -88,20 +88,12 @@ theorem laplaceBeltrami_trace_comp_self
       2 * LinearMap.trace ℝ (V x) ((A x).comp
         ((cov.hom cov).roughLaplacian (leviCivitaConnection I M) A x)).toLinearMap := by
   classical
-  have hsum : (A x).toLinearMap.comp
-      (∑ i, ((cov.hom cov).secondCovariantDerivative (leviCivitaConnection I M)
-        A x (b i) (b i)).toLinearMap) =
-      ∑ i, (A x).toLinearMap.comp
-        (((cov.hom cov).secondCovariantDerivative (leviCivitaConnection I M)
-          A x (b i) (b i)).toLinearMap) := by
-    ext w
-    simp
   rw [laplaceBeltrami_eq_sum_hessian I _ x b,
     (cov.hom cov).roughLaplacian_eq_sum (leviCivitaConnection I M) A x b]
   simp_rw [cov.hessian_trace_comp_self hA x]
-  simp only [ContinuousLinearMap.comp_neg,
+  simp only [ContinuousLinearMap.comp_neg, ContinuousLinearMap.comp_finsetSum,
     ContinuousLinearMap.toLinearMap_neg, ContinuousLinearMap.toLinearMap_sum,
-    ContinuousLinearMap.toLinearMap_comp, hsum, map_neg, map_sum,
+    ContinuousLinearMap.toLinearMap_comp, map_neg, map_sum,
     Finset.sum_add_distrib, ← Finset.mul_sum]
   ring
 
