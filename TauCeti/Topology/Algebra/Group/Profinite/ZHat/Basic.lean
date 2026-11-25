@@ -391,8 +391,6 @@ theorem lift_injective_of_forall_orderOf (a : P) (G : ℕ+ → Type w) [∀ n, G
   rw [MulEquiv.trans_apply, zmodMulEquivOfGenerator_symm_apply_generator]
   exact zmodMulEquivOfGenerator_apply_ofAdd_one (mem_zpowers_mk_up_ofAdd_one H.toSubgroup) rfl
 
-variable [T2Space P]
-
 /-- **Identifying a profinite group with `ℤ̂`.** When the lift of `a` is bijective, it is a
 homeomorphism, being a continuous bijection from a compact space to a Hausdorff one; its inverse
 is a continuous multiplicative equivalence from `P` to `ℤ̂` sending `a` to `zHat.gen`. -/

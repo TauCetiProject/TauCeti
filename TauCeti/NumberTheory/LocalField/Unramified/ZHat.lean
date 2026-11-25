@@ -144,7 +144,6 @@ private theorem maximalUnramifiedFrobeniusLift_bijective :
 continuous multiplicative equivalence sends arithmetic Frobenius to `zHat.gen`. -/
 noncomputable def maximalUnramifiedGaloisGroupEquivZHat :
     Gal(maximalUnramifiedExtension K Ω/K) ≃ₜ* zHat.{max u v} :=
-  haveI : T2Space Gal(maximalUnramifiedExtension K Ω/K) := krullTopology_t2
   zHat.liftContinuousMulEquiv _ (maximalUnramifiedFrobeniusLift_bijective K Ω)
 
 /-- The inverse isomorphism is the lift of arithmetic Frobenius to `ℤ̂`. -/

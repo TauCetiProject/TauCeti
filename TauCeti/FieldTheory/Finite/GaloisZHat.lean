@@ -96,7 +96,6 @@ private theorem frobeniusAlgEquivOfAlgebraic_lift_bijective :
 `k` and a separably closed algebraic extension `L`, the continuous multiplicative equivalence
 `Gal(L/k) ≃ₜ* ℤ̂` sends the arithmetic Frobenius `x ↦ x ^ q` to `zHat.gen`. -/
 def galoisGroupEquivZHat : Gal(L/k) ≃ₜ* zHat.{v} :=
-  haveI : T2Space Gal(L/k) := krullTopology_t2
   zHat.liftContinuousMulEquiv _ (frobeniusAlgEquivOfAlgebraic_lift_bijective k L)
 
 /-- The inverse equivalence is the lift of the arithmetic Frobenius to `ℤ̂`. -/
