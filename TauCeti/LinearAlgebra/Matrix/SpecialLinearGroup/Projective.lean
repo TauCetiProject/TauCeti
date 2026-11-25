@@ -80,7 +80,7 @@ theorem map_center_le_comap_center (f : R →+* S) :
   · rw [Matrix.SpecialLinearGroup.map_apply_coe, ← hrg]
     ext i j
     by_cases hij : i = j <;>
-      simp [RingHom.mapMatrix_apply, Matrix.scalar_apply, hij]
+      simp [Matrix.scalar_apply, hij]
 
 /-- Extension of scalars on projective special linear groups. -/
 noncomputable def projectiveMap (f : R →+* S) :
@@ -282,3 +282,21 @@ theorem finiteIndex_map_mk'_center_iff :
   · exact ⟨two_mul_index_map_mk'_of_neg_one_notMem hΓ ▸ mul_ne_zero two_ne_zero h.index_ne_zero⟩
 
 end Matrix.SpecialLinearGroup
+
+namespace Matrix.ProjectiveSpecialLinearGroup
+
+variable {n : Type*} [Fintype n] [DecidableEq n] {F : Type*} [Field F] [IsAlgClosed F]
+
+/-- The inverse of Mathlib's isomorphism `PGL(n, F) ≃* PSL(n, F)` over an algebraically closed
+field is the natural map `PSL(n, F) → PGL(n, F)`, for every index type `n`, including the empty
+one, where Mathlib's `isoPSLOfAlgClosed` takes a junk branch. -/
+@[simp]
+theorem isoPSLOfAlgClosed_symm_apply (x : ProjectiveSpecialLinearGroup n F) :
+    (isoPSLOfAlgClosed (n := n) (F := F)).symm x = toPGL x := by
+  classical
+  unfold isoPSLOfAlgClosed
+  split_ifs
+  · rfl
+  · rfl
+
+end Matrix.ProjectiveSpecialLinearGroup

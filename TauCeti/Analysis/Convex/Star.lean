@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Basic
+public import Mathlib.Analysis.LocallyConvex.Basic
 public import Mathlib.Tactic.Linarith
 
 /-!
@@ -21,7 +22,10 @@ For a subspace `W` of a vector space `E` over a linearly ordered field and a lin
 star-convex about any `v ∈ W` with `0 < φ v`
 (`TauCeti.starConvex_compl_setOf_mem_and_nonpos`): a segment from `v` that ends outside `W`
 leaves `W` at once, and one that ends in `W` stays where `φ` is positive. This is the
-subspace analogue of Mathlib's `starConvex_compl_Iic`.
+subspace analogue of Mathlib's `starConvex_compl_Iic`. Every neighbourhood of `0` in a real
+topological vector space contains such a centre outside the closed half-subspace, a small
+positive multiple of any `v ∈ W` with `0 < φ v`
+(`TauCeti.exists_mem_starConvex_compl_setOf_mem_and_nonpos`).
 
 ## References
 
@@ -52,6 +56,22 @@ theorem starConvex_compl_setOf_mem_and_nonpos {W : Submodule 𝕜 E} {φ : E →
       have h : b • x ∈ W := by simpa using W.sub_mem hmem (W.smul_mem a hv)
       exact (W.smul_mem_iff hb.ne').1 h
     exact hx ⟨hxW, by nlinarith⟩
+
+open Topology in
+/-- A neighbourhood `K` of `0` in a real topological vector space contains a point `c` outside the
+closed half-subspace `{x ∈ W | φ x ≤ 0}` about which its complement is star-convex, as soon as
+`0 < φ v` for some `v ∈ W`: `K` is absorbent, so it contains a positive multiple of `v`. -/
+theorem exists_mem_starConvex_compl_setOf_mem_and_nonpos {F : Type*} [AddCommGroup F]
+    [Module ℝ F] [TopologicalSpace F] [ContinuousSMul ℝ F] {K : Set F} (hK : K ∈ 𝓝 (0 : F))
+    {W : Submodule ℝ F} {φ : F →ₗ[ℝ] ℝ} {v : F} (hv : v ∈ W) (hφv : 0 < φ v) :
+    ∃ c ∈ K, c ∉ {x | x ∈ W ∧ φ x ≤ 0} ∧ StarConvex ℝ c {x | x ∈ W ∧ φ x ≤ 0}ᶜ := by
+  have hev : ∀ᶠ t in 𝓝[>] (0 : ℝ), t • v ∈ K :=
+    ((absorbent_nhds_zero hK).eventually_nhdsNE_zero v).filter_mono
+      (nhdsWithin_mono _ fun _ h ↦ ne_of_gt h)
+  obtain ⟨t, htK, ht : 0 < t⟩ := (hev.and self_mem_nhdsWithin).exists
+  have htv : 0 < φ (t • v) := by simpa using mul_pos ht hφv
+  exact ⟨t • v, htK, fun h ↦ (not_le.2 htv) h.2,
+    starConvex_compl_setOf_mem_and_nonpos (W.smul_mem t hv) htv⟩
 
 end TauCeti
 

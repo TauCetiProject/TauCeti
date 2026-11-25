@@ -39,9 +39,9 @@ Extension of scalars is another example of the chain-level statement, since it p
   naturally in `X`.
 * `CategoryTheory.Functor.singularHomologyFunctorObjCompIso`: `F (Hₙ(X; R)) ≅ Hₙ(X; F R)`,
   naturally in `X`.
-* `CategoryTheory.Functor.isZero_singularHomologyFunctor_obj_iff` and
-  `CategoryTheory.Functor.mono_singularHomologyFunctor_map_of_mono`: when `F` is also faithful, it
-  preserves and reflects vanishing of `Hₙ(X; R)` and reflects monomorphisms induced on `Hₙ`.
+* `CategoryTheory.Functor.isZero_singularHomologyFunctor_iff` and
+  `CategoryTheory.Functor.mono_singularHomologyFunctor_map_of_mono`: when `F` is also faithful,
+  `Hₙ(X; F R) = 0` if and only if `Hₙ(X; R) = 0`, and `F` reflects monomorphisms induced on `Hₙ`.
 -/
 
 public section
@@ -91,15 +91,13 @@ lemma singularHomologyFunctorObjCompIso_hom_app (n : ℕ) (X : TopCat.{w}) :
           n :=
   (rfl)
 
-/-- A faithful additive functor preserving coproducts and homology preserves and reflects vanishing
-of singular homology: `Hₙ(X; F R) = 0 ↔ Hₙ(X; R) = 0`. -/
-theorem isZero_singularHomologyFunctor_obj_iff [F.Faithful] (n : ℕ) (X : TopCat.{w}) :
+/-- For a faithful additive functor `F : C ⥤ D` preserving coproducts and homology,
+`Hₙ(X; F R) = 0` if and only if `Hₙ(X; R) = 0`. -/
+lemma isZero_singularHomologyFunctor_iff [F.Faithful] (n : ℕ) (X : TopCat.{w}) :
     IsZero (((singularHomologyFunctor D n).obj (F.obj R)).obj X) ↔
       IsZero (((singularHomologyFunctor C n).obj R).obj X) := by
-  rw [← ((F.singularHomologyFunctorObjCompIso R n).app X).isZero_iff]
-  refine ⟨fun hF ↦ ?_, fun hX ↦ F.map_isZero hX⟩
-  rw [IsZero.iff_id_eq_zero] at hF ⊢
-  exact F.map_injective (by rw [F.map_id, F.map_zero]; exact hF)
+  rw [← ((singularHomologyFunctorObjCompIso F R n).app X).isZero_iff,
+    IsZero.iff_id_eq_zero, IsZero.iff_id_eq_zero, Functor.comp_obj, ← F.map_id, F.map_eq_zero_iff]
 
 /-- A faithful additive functor preserving coproducts and homology reflects monomorphisms induced by
 continuous maps on singular homology. -/

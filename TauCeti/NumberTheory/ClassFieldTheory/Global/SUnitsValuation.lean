@@ -36,7 +36,7 @@ variable {K L : Type} [Field K] [NumberField K] [Field L] [NumberField L]
 /-- The valuation of a Galois translate at the translated prime is the original valuation. -/
 theorem valuationOfNeZero_smul_primesAbove (S : Set (HeightOneSpectrum (𝓞 K)))
     (σ : L ≃ₐ[K] L) (w : ↥(primesAbove (𝓞 K) (𝓞 L) S)) (u : Lˣ) :
-    (σ • w).1.valuationOfNeZero (σ • u) = w.1.valuationOfNeZero u := by
+    (σ • w).val.valuationOfNeZero (σ • u) = w.val.valuationOfNeZero u := by
   apply WithZero.coe_injective
   rw [valuationOfNeZero_eq, valuationOfNeZero_eq]
   simpa only [AlgEquiv.smul_units_def, Units.coe_map, MonoidHom.coe_ofClass] using

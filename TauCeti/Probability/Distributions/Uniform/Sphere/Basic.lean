@@ -170,22 +170,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 /-- The uniform law on the sphere has embedded mean zero. -/
 theorem integral_coe_uniformSphereMeasure :
     ∫ x, (x : E) ∂uniformSphereMeasure E = 0 := by
-  let f : E ≃ₗᵢ[ℝ] E := LinearIsometryEquiv.neg ℝ
-  set g : sphere (0 : E) 1 → sphere (0 : E) 1 := Subtype.map f fun x hx ↦ by simpa using hx
-  have hg : Measurable g := f.continuous.measurable.subtype_map _
-  have h := integral_map (μ := uniformSphereMeasure E) hg.aemeasurable
-    (continuous_subtype_val.aestronglyMeasurable (f := ((↑) : sphere (0 : E) 1 → E)))
-  rw [f.map_uniformSphereMeasure] at h
-  have hg' : ∀ x : sphere (0 : E) 1, (g x : E) = -(x : E) := fun x ↦ by
-    simp only [g]
-    rw [Subtype.map_coe]
-    simp [f]
-  simp_rw [hg', integral_neg] at h
-  have h2 : (2 : ℝ) • ∫ x, (x : E) ∂uniformSphereMeasure E = 0 := by
-    rw [two_smul]
-    nth_rewrite 1 [h]
-    exact neg_add_cancel _
-  exact (smul_eq_zero.1 h2).resolve_left two_ne_zero
+  rw [uniformSphereMeasure_def, integral_smul_measure, Measure.integral_coe_toSphere, smul_zero]
 
 end Mean
 

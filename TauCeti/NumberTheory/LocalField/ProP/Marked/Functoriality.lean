@@ -176,14 +176,13 @@ theorem isQNeTwoCase_iff_of_algEquiv (e : K ≃ₐ[ℚ_[p]] K') :
 
 end Branches
 
-section DyadicOdd
+section Dyadic
 
-variable {K K' : Type*} [Field K] [Algebra ℚ_[2] K] [FiniteDimensional ℚ_[2] K]
+variable {K K' : Type*} [Field K] [Algebra ℚ_[2] K]
   [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
-  [Field K'] [Algebra ℚ_[2] K'] [FiniteDimensional ℚ_[2] K'] [ValuativeRel K']
-  [TopologicalSpace K'] [IsNonarchimedeanLocalField K']
+  [Field K'] [Algebra ℚ_[2] K'] [ValuativeRel K'] [TopologicalSpace K']
+  [IsNonarchimedeanLocalField K']
 
-omit [FiniteDimensional ℚ_[2] K] [FiniteDimensional ℚ_[2] K'] in
 /-- **The odd dyadic branch is an invariant of the field.** An isomorphism of local fields over
 `ℚ₂` preserves the number of `2`-power roots of unity and the parity of the degree over `ℚ₂`
 (`LinearEquiv.finrank_eq`). -/
@@ -206,15 +205,6 @@ theorem isDyadicOddCase_iff_of_algEquiv (e : K ≃ₐ[ℚ_[2]] K') :
     have hodd := ((isDyadicOddCase_iff (K := K')).mp h).2
     have hroot := ((isDyadicOddCase_iff (K := K')).mp h).1
     exact (isDyadicOddCase_iff (K := K)).mpr ⟨hq.symm ▸ hroot, hf.symm ▸ hodd⟩
-
-end DyadicOdd
-
-section DyadicEven
-
-variable {K K' : Type*} [Field K] [Algebra ℚ_[2] K]
-  [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
-  [Field K'] [Algebra ℚ_[2] K'] [ValuativeRel K'] [TopologicalSpace K']
-  [IsNonarchimedeanLocalField K']
 
 /-- **The even dyadic branch whose cyclotomic image contains `-1` is an invariant of the field.**
 Besides the number of `2`-power roots of unity and the parity of the degree over `ℚ₂`, the branch
@@ -274,7 +264,7 @@ theorem isDyadicEvenPrincipalCase_iff_of_algEquiv (e : K ≃ₐ[ℚ_[2]] K') :
     exact (isDyadicEvenPrincipalCase_iff (K := K)).mpr
       ⟨hq.symm ▸ hroot, hf.symm ▸ heven, hr.symm ▸ hneg⟩
 
-end DyadicEven
+end Dyadic
 
 section MarkedQNeTwo
 

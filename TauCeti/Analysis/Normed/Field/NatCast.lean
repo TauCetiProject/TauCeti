@@ -33,6 +33,9 @@ convergence radius; the norm estimates themselves hold in every characteristic.
 
 * `NormedField.exists_norm_inv_natCast_le_rpow`: `‖(n : K)⁻¹‖ ≤ n ^ c` for some `c ≥ 0`.
 * `NormedField.tendsto_norm_inv_natCast_mul_pow`: `‖(n : K)⁻¹‖ * q ^ n → 0` for `0 ≤ q < 1`.
+* `NormedField.tendsto_norm_inv_intCast_mul_zpow_atTop`,
+  `NormedField.tendsto_norm_inv_intCast_mul_zpow_atBot`: the same along the integers, as `n → ∞`
+  for `0 ≤ q < 1` and as `n → -∞` for `1 < q`.
 -/
 
 public section
@@ -128,5 +131,24 @@ theorem tendsto_norm_inv_natCast_mul_pow {q : ℝ} (hq₀ : 0 ≤ q) (hq₁ : q 
     _ ≤ (n : ℝ) ^ (⌈c⌉₊ : ℝ) := Real.rpow_le_rpow_of_exponent_le (by exact_mod_cast hn)
           (Nat.le_ceil c)
     _ = (n : ℝ) ^ ⌈c⌉₊ := Real.rpow_natCast _ _
+
+/-- In a normed field, `‖(n : K)⁻¹‖ * q ^ n → 0` as the integer `n` tends to `∞`, for every
+`0 ≤ q < 1`. -/
+theorem tendsto_norm_inv_intCast_mul_zpow_atTop {q : ℝ} (hq₀ : 0 ≤ q) (hq₁ : q < 1) :
+    Tendsto (fun n : ℤ ↦ ‖(n : K)⁻¹‖ * q ^ n) atTop (𝓝 0) := by
+  refine ((tendsto_norm_inv_natCast_mul_pow K hq₀ hq₁).comp
+    (tendsto_atTop_atTop.2 fun m ↦ ⟨m, fun n hn ↦ by omega⟩ : Tendsto Int.toNat atTop atTop)).congr'
+      ?_
+  filter_upwards [eventually_ge_atTop 0] with n hn
+  obtain ⟨m, rfl⟩ := Int.eq_ofNat_of_zero_le hn
+  simp
+
+/-- In a normed field, `‖(n : K)⁻¹‖ * q ^ n → 0` as the integer `n` tends to `-∞`, for every
+`q > 1`. -/
+theorem tendsto_norm_inv_intCast_mul_zpow_atBot {q : ℝ} (hq : 1 < q) :
+    Tendsto (fun n : ℤ ↦ ‖(n : K)⁻¹‖ * q ^ n) atBot (𝓝 0) := by
+  refine ((tendsto_norm_inv_intCast_mul_zpow_atTop K (inv_nonneg.2 (zero_le_one.trans hq.le))
+    (inv_lt_one_of_one_lt₀ hq)).comp tendsto_neg_atBot_atTop).congr fun n ↦ ?_
+  simp [inv_zpow', norm_neg]
 
 end NormedField

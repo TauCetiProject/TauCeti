@@ -105,8 +105,8 @@ theorem complementEquiv_mem_stage_iff {n : ℕ} {x : InfiniteTypeAHeckeAlgebra R
 
 /-- The complement symmetry restricted to the stage on `n` strands. -/
 def stageComplementEquiv (n : ℕ) : stage R q n ≃ₐ[R] stage R q n where
-  toFun x := ⟨complementEquiv q x, complementEquiv_mem_stage_iff q |>.2 x.2⟩
-  invFun x := ⟨complementEquiv q x, complementEquiv_mem_stage_iff q |>.2 x.2⟩
+  toFun x := ⟨complementEquiv q x, complementEquiv_mem_stage_iff q |>.2 x.property⟩
+  invFun x := ⟨complementEquiv q x, complementEquiv_mem_stage_iff q |>.2 x.property⟩
   left_inv x := Subtype.ext (complementEquiv_complementEquiv q x)
   right_inv x := Subtype.ext (complementEquiv_complementEquiv q x)
   map_mul' x y := Subtype.ext (map_mul (complementEquiv q) (x : InfiniteTypeAHeckeAlgebra R q) y)

@@ -163,7 +163,7 @@ theorem coe_splitNegativeFstEquiv_symm_apply (hW : Maximal IsSplitNegative W) {T
     ((splitNegativeFstEquiv hW).symm u : E × F) = (u, T u) := by
   set w := (splitNegativeFstEquiv hW).symm u
   have h1 : (w : E × F).1 = u := fst_splitNegativeFstEquiv_symm_apply hW u
-  have h2 : (w : E × F).2 = T (w : E × F).1 := (LinearMap.mem_graph_iff _ _).1 (hT ▸ w.2)
+  have h2 : (w : E × F).2 = T (w : E × F).1 := (LinearMap.mem_graph_iff _ _).1 (hT ▸ w.property)
   exact Prod.ext h1 (h2.trans (h1 ▸ rfl))
 
 /-- **Comparison of orientations of a maximal negative subspace.** Let `e : E ≃ W` identify `E`
@@ -195,18 +195,18 @@ split-negative subspaces of `E × F`. -/
 private theorem bijective_graph_ball :
     Function.Bijective fun T : Metric.ball (0 : E →L[ℝ] F) 1 ↦
       (⟨LinearMap.graph ((T : E →L[ℝ] F) : E →ₗ[ℝ] F),
-        maximal_isSplitNegative_iff_exists_eq_graph.2 ⟨T, mem_ball_zero_iff.1 T.2, rfl⟩⟩ :
+        maximal_isSplitNegative_iff_exists_eq_graph.2 ⟨T, mem_ball_zero_iff.1 T.property, rfl⟩⟩ :
         {W : Submodule ℝ (E × F) // Maximal IsSplitNegative W}) := by
   refine ⟨fun T₁ T₂ h ↦ Subtype.ext ?_, fun W ↦ ?_⟩
   · -- Graph coordinates are unique on a full-dimensional negative subspace.
     set W := LinearMap.graph ((T₁ : E →L[ℝ] F) : E →ₗ[ℝ] F)
     have h' : W = LinearMap.graph ((T₂ : E →L[ℝ] F) : E →ₗ[ℝ] F) := congrArg Subtype.val h
     have hW : Maximal IsSplitNegative W :=
-      maximal_isSplitNegative_iff_exists_eq_graph.2 ⟨T₁, mem_ball_zero_iff.1 T₁.2, rfl⟩
+      maximal_isSplitNegative_iff_exists_eq_graph.2 ⟨T₁, mem_ball_zero_iff.1 T₁.property, rfl⟩
     obtain ⟨hneg, hdim⟩ := maximal_isSplitNegative_iff.1 hW
     exact ((existsUnique_eq_graph_iff_finrank_eq_and_isSplitNegative W).2 ⟨hdim, hneg⟩).unique
-      ⟨mem_ball_zero_iff.1 T₁.2, rfl⟩ ⟨mem_ball_zero_iff.1 T₂.2, h'⟩
-  · obtain ⟨T, hT, hW⟩ := maximal_isSplitNegative_iff_exists_eq_graph.1 W.2
+      ⟨mem_ball_zero_iff.1 T₁.property, rfl⟩ ⟨mem_ball_zero_iff.1 T₂.property, h'⟩
+  · obtain ⟨T, hT, hW⟩ := maximal_isSplitNegative_iff_exists_eq_graph.1 W.property
     exact ⟨⟨T, mem_ball_zero_iff.2 hT⟩, Subtype.ext hW.symm⟩
 
 /-- **Graph coordinates on maximal negative subspaces.** Over a finite-dimensional inner product

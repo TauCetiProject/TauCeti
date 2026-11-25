@@ -94,36 +94,38 @@ private lemma larger_top : h.larger (⊤ : Subobject X) = ⊤ := by
 
 variable {J : Type w} [LinearOrder J] [OrderBot J] [SuccOrder J] [WellFoundedLT J]
 
+omit [OrderBot J] [SuccOrder J] in
 /-- The transfinite iteration of `IsEnlargeable.larger` is monotone. -/
 private lemma transfiniteIterate_le (A₀ : Subobject X) {k k' : J} (hkk' : k ≤ k') :
-    transfiniteIterate h.larger k A₀ ≤ transfiniteIterate h.larger k' A₀ :=
-  monotone_transfiniteIterate _ _ h.le_larger hkk'
+    supTransfiniteIterate h.larger k A₀ ≤ supTransfiniteIterate h.larger k' A₀ :=
+  supTransfiniteIterate_mono _ h.le_larger hkk'
 
 /-- Every stage of the transfinite iteration of `IsEnlargeable.larger` starting from a
 subobject satisfying `Q` satisfies `Q`. -/
 private lemma prop_transfiniteIterate {A₀ : Subobject X} (hA₀ : Q A₀) (j : J) :
-    Q (transfiniteIterate h.larger j A₀) := by
+    Q (supTransfiniteIterate h.larger j A₀) := by
   induction j using SuccOrder.limitRecOn with
   | isMin j hj =>
     obtain rfl := hj.eq_bot
     simpa using hA₀
   | succ j hj hj' =>
-    rw [transfiniteIterate_succ _ _ _ hj]
-    by_cases hA : transfiniteIterate h.larger j A₀ = ⊤
+    rw [supTransfiniteIterate_succ_of_not_isMax _ _ hj]
+    by_cases hA : supTransfiniteIterate h.larger j A₀ = ⊤
     · rw [hA, larger_top]
       exact h.top
     · rw [h.larger_of_ne_top _ hj' hA]
       exact (h.exists_lt _ hj' hA).choose_spec.choose_spec.1
   | isSuccLimit j hj hj' =>
-    rw [transfiniteIterate_limit _ _ _ hj]
+    rw [supTransfiniteIterate_limit _ _ hj]
     have : Nonempty (Set.Iio j) := ⟨⟨⊥, hj.bot_lt⟩⟩
     exact h.iSup _ (fun k k' hkk' ↦ h.transfiniteIterate_le A₀ hkk')
-      (fun k ↦ hj' k.1 k.2)
+      (fun k ↦ hj' k.val k.property)
 
+omit [OrderBot J] [SuccOrder J] in
 private lemma exists_transfiniteIterate_eq_top (A₀ : Subobject X)
     (hJ : HasCardinalLT (Subobject X) (Cardinal.mk J)) :
-    ∃ j : J, transfiniteIterate h.larger j A₀ = ⊤ :=
-  top_mem_range_transfiniteIterate h.larger A₀ h.lt_larger (by simp)
+    ∃ j : J, supTransfiniteIterate h.larger j A₀ = ⊤ :=
+  top_mem_range_supTransfiniteIterate h.lt_larger (by simp)
     (fun h' ↦ by simpa [hasCardinalLT_iff_cardinal_mk_lt] using hJ.of_injective _ h')
 
 variable (J) (A₀ : Subobject X)
@@ -132,18 +134,19 @@ variable (J) (A₀ : Subobject X)
 `IsEnlargeable.larger` starting from `A₀`. -/
 @[simps]
 private noncomputable def functorToMonoOver : J ⥤ MonoOver X where
-  obj j := MonoOver.mk (transfiniteIterate h.larger j A₀).arrow
-  map {j j'} f := MonoOver.homMk (Subobject.ofLE (transfiniteIterate h.larger j A₀)
-    (transfiniteIterate h.larger j' A₀) (h.transfiniteIterate_le A₀ (leOfHom f)))
+  obj j := MonoOver.mk (supTransfiniteIterate h.larger j A₀).arrow
+  map {j j'} f := MonoOver.homMk (Subobject.ofLE (supTransfiniteIterate h.larger j A₀)
+    (supTransfiniteIterate h.larger j' A₀) (h.transfiniteIterate_le A₀ (leOfHom f)))
 
 /-- The functor `J ⥤ C` induced by `IsEnlargeable.functorToMonoOver`. -/
 private noncomputable abbrev functor : J ⥤ C :=
   h.functorToMonoOver J A₀ ⋙ MonoOver.forget _ ⋙ Over.forget _
 
+omit [OrderBot J] [SuccOrder J] in
 variable {J} in
 private lemma functor_map {k k' : J} (f : k ⟶ k') :
-    (h.functor J A₀).map f = Subobject.ofLE (transfiniteIterate h.larger k A₀)
-      (transfiniteIterate h.larger k' A₀)
+    (h.functor J A₀).map f = Subobject.ofLE (supTransfiniteIterate h.larger k A₀)
+      (supTransfiniteIterate h.larger k' A₀)
         (h.transfiniteIterate_le A₀ (leOfHom f)) :=
   (rfl)
 
@@ -155,10 +158,10 @@ private instance : (h.functor J A₀).IsWellOrderContinuous where
     apply IsGrothendieckAbelian.isColimitMapCoconeOfSubobjectMkEqISup
       ((Set.principalSegIio m).monotone.functor ⋙ h.functorToMonoOver J A₀) c
     have (j : J) : Subobject.mk ((h.functorToMonoOver J A₀).obj j).obj.hom =
-        transfiniteIterate h.larger j A₀ :=
+        supTransfiniteIterate h.larger j A₀ :=
       Subobject.mk_arrow _
     dsimp [c]
-    simpa only [this] using transfiniteIterate_limit h.larger A₀ m hm⟩
+    simpa only [this] using supTransfiniteIterate_limit h.larger A₀ hm⟩
 
 variable {J A₀} in
 /-- The inclusion of a subobject `A` satisfying `Q` and different from `⊤` into its enlargement
@@ -173,28 +176,28 @@ variable {J} in
 /-- If no stage of the transfinite iteration before `j` is `⊤`, the inclusion of `A₀` into the
 `j`-th stage is a transfinite composition of morphisms in `W`, indexed by `Set.Iic j`. -/
 private noncomputable def transfiniteCompositionOfShapeMapFromBot (hA₀ : Q A₀) (j : J)
-    (hj : ∀ k < j, transfiniteIterate h.larger k A₀ ≠ ⊤) :
+    (hj : ∀ k < j, supTransfiniteIterate h.larger k A₀ ≠ ⊤) :
     W.TransfiniteCompositionOfShape (Set.Iic j)
       ((h.functor J A₀).map (homOfLE bot_le : ⊥ ⟶ j)) where
   F := (Set.initialSegIic j).monotone.functor ⋙ h.functor J A₀
   isoBot := Iso.refl _
   incl :=
-    { app k := (h.functor J A₀).map (homOfLE k.2)
+    { app k := (h.functor J A₀).map (homOfLE k.property)
       naturality k k' f := by
         have := (h.functor J A₀).map_comp (homOfLE (leOfHom f) : (k : J) ⟶ k')
-          (homOfLE (k'.2 : (k' : J) ≤ j))
+          (homOfLE (k'.property : (k' : J) ≤ j))
         exact (this.symm.trans (congrArg _ (Subsingleton.elim _ _))).trans
           (Category.comp_id _).symm }
   isColimit := colimitOfDiagramTerminal isTerminalTop _
   fac := Category.id_comp _
   map_mem k hk := by
-    have hkj : (k : J) < j := lt_of_le_of_ne k.2 (fun h' ↦ hk (by
+    have hkj : (k : J) < j := lt_of_le_of_ne k.property (fun h' ↦ hk (by
       rw [isMax_iff_eq_top]
       exact Subtype.ext h'))
     rw [Functor.comp_map, functor_map]
     exact h.mem_ofLE_larger (h.prop_transfiniteIterate hA₀ (k : J)) (hj k hkj)
       (by simp [Set.Iic.succ_eq_of_not_isMax hk,
-        transfiniteIterate_succ _ _ _ (Set.not_isMax_coe _ hk)]) _
+        supTransfiniteIterate_succ_of_not_isMax _ _ (Set.not_isMax_coe _ hk)]) _
 
 include h in
 /-- Let `C` be a Grothendieck abelian category and `X : C`. Assume that every proper subobject of
@@ -211,20 +214,20 @@ theorem exists_transfiniteCompositionOfShape {A : C} (f : A ⟶ X)
   obtain ⟨j, hj⟩ := h.exists_transfiniteIterate_eq_top (J := κ.ord.ToType) (Subobject.mk f)
     (lt_of_lt_of_le (Order.lt_succ _) (by simp [κ]))
   obtain ⟨j₀, hj₀, hmin⟩ := WellFounded.has_min wellFounded_lt
-    {k : κ.ord.ToType | transfiniteIterate h.larger k (Subobject.mk f) = ⊤} ⟨j, hj⟩
-  have ht : IsIso (transfiniteIterate h.larger j₀ (Subobject.mk f)).arrow :=
+    {k : κ.ord.ToType | supTransfiniteIterate h.larger k (Subobject.mk f) = ⊤} ⟨j, hj⟩
+  have ht : IsIso (supTransfiniteIterate h.larger j₀ (Subobject.mk f)).arrow :=
     (Subobject.isIso_arrow_iff_eq_top _).2 hj₀
   refine ⟨Set.Iic j₀, inferInstance, inferInstance, inferInstance, inferInstance, ⟨?_⟩⟩
   have key : Subobject.ofLE _ _ (h.transfiniteIterate_le (Subobject.mk f) bot_le) ≫
-      (transfiniteIterate h.larger j₀ (Subobject.mk f)).arrow =
-        (Subobject.isoOfEq _ _ (transfiniteIterate_bot _ _) ≪≫ Subobject.underlyingIso f).hom ≫
+      (supTransfiniteIterate h.larger j₀ (Subobject.mk f)).arrow =
+        (Subobject.isoOfEq _ _ (supTransfiniteIterate_bot _ _) ≪≫ Subobject.underlyingIso f).hom ≫
           f := by
     rw [Subobject.ofLE_arrow, Iso.trans_hom, Category.assoc,
       Subobject.underlyingIso_hom_comp_eq_mk, Subobject.isoOfEq_hom, Subobject.ofLE_arrow]
   exact (h.transfiniteCompositionOfShapeMapFromBot _ hf j₀
     (fun k hk hk' ↦ hmin k hk' hk)).ofArrowIso (Arrow.isoMk ((Subobject.isoOfEq _ _
-      (transfiniteIterate_bot _ _) ≪≫ Subobject.underlyingIso f))
-      (@asIso _ _ _ _ (transfiniteIterate h.larger j₀ (Subobject.mk f)).arrow ht) key.symm)
+      (supTransfiniteIterate_bot _ _) ≪≫ Subobject.underlyingIso f))
+      (@asIso _ _ _ _ (supTransfiniteIterate h.larger j₀ (Subobject.mk f)).arrow ht) key.symm)
 
 end IsEnlargeable
 

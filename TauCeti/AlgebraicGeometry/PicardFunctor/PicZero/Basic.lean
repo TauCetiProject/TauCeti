@@ -400,11 +400,11 @@ def relativePicardDegreeZeroFunctor : (Over S)ᵒᵖ ⥤ CommGrpCat.{u + 1} wher
   obj T := CommGrpCat.of (relativePicardDegreeZeroSubgroup f T)
   map φ := CommGrpCat.ofHom <|
     (((relativePicardPresheaf f).map φ).hom.comp (Subgroup.subtype _)).codRestrict _
-      fun c ↦ (relativePicardDegreeZeroSubfunctor f).map φ c.2
+      fun c ↦ (relativePicardDegreeZeroSubfunctor f).map φ c.property
   map_id T := CommGrpCat.ext fun c ↦ Subtype.ext <|
-    ConcreteCategory.congr_hom ((relativePicardPresheaf f).map_id T) c.1
+    ConcreteCategory.congr_hom ((relativePicardPresheaf f).map_id T) c.val
   map_comp φ ψ := CommGrpCat.ext fun c ↦ Subtype.ext <|
-    ConcreteCategory.congr_hom ((relativePicardPresheaf f).map_comp φ ψ) c.1
+    ConcreteCategory.congr_hom ((relativePicardPresheaf f).map_comp φ ψ) c.val
 
 /-- The value of the degree-zero Picard functor at `T` is the subgroup `Pic⁰_{X/S}(T)` of
 `Pic(X_T) / Pic(T)`. -/
@@ -475,7 +475,7 @@ lemma relativePicardDegreeZeroFunctorι_app_mem {T : (Over S)ᵒᵖ}
     (relativePicardDegreeZeroFunctorι f).app T c ∈
       (relativePicardDegreeZeroSubfunctor f).obj T := by
   unfold relativePicardDegreeZeroFunctorι relativePicardDegreeZeroFunctor at *
-  exact c.2
+  exact c.property
 
 /-- The inclusion `relativePicardDegreeZeroFunctorι` is injective on sections. -/
 lemma relativePicardDegreeZeroFunctorι_app_injective (T : (Over S)ᵒᵖ) :
@@ -565,17 +565,17 @@ def relativePicardDegreeZeroSubfunctorIsoFunctor :
       relativePicardDegreeZeroFunctor f ⋙ forget CommGrpCat :=
   NatIso.ofComponents (fun T ↦
     ({
-      toFun c := relativePicardDegreeZeroFunctor.mk f c.1 c.2
+      toFun c := relativePicardDegreeZeroFunctor.mk f c.val c.property
       invFun c := ⟨(relativePicardDegreeZeroFunctorι f).app T c,
         relativePicardDegreeZeroFunctorι_app_mem f c⟩
-      left_inv c := Subtype.ext (relativePicardDegreeZeroFunctorι_app_mk f c.1 c.2)
+      left_inv c := Subtype.ext (relativePicardDegreeZeroFunctorι_app_mk f c.val c.property)
       right_inv c := relativePicardDegreeZeroFunctorι_app_injective f T <| by
         rw [relativePicardDegreeZeroFunctorι_app_mk]
     } : (relativePicardDegreeZeroSubfunctor f).obj T ≃
       (relativePicardDegreeZeroFunctor f).obj T).toIso) (by
         intro T T' φ
         ext c
-        exact (relativePicardDegreeZeroFunctor_map_mk f φ c.1 c.2).symm)
+        exact (relativePicardDegreeZeroFunctor_map_mk f φ c.val c.property).symm)
 
 /-- The comparison from the set-valued degree-zero subfunctor to the underlying group-valued
 functor sends a section to the same class with its degree-zero proof. -/
@@ -586,7 +586,7 @@ lemma relativePicardDegreeZeroSubfunctorIsoFunctor_hom_app {T : (Over S)ᵒᵖ}
         (X := (relativePicardDegreeZeroSubfunctor f).obj T)
         (Y := ToType ((relativePicardDegreeZeroFunctor f).obj T))
         ((relativePicardDegreeZeroSubfunctorIsoFunctor f).hom.app T) c =
-      relativePicardDegreeZeroFunctor.mk f c.1 c.2 := by
+      relativePicardDegreeZeroFunctor.mk f c.val c.property := by
   rfl
 
 /-- **The `n`-torsion of `Pic⁰_{X/S}(T)` is the `n`-torsion of `Pic(X_T) / Pic(T)`** for a smooth
@@ -600,14 +600,14 @@ def relativePicardDegreeZeroTorsionMulEquiv (T : (Over S)ᵒᵖ) {n : ℤ} (hn :
     (((relativePicardDegreeZeroFunctorι f).app T).hom.comp (Subgroup.subtype _)).codRestrict _
       fun c ↦ by
         have hc : (c : (relativePicardDegreeZeroFunctor f).obj T) ^ n = 1 :=
-          MonoidHom.mem_ker.mp c.2
+          MonoidHom.mem_ker.mp c.property
         rw [MonoidHom.mem_ker, zpowGroupHom_apply, MonoidHom.comp_apply, Subgroup.coe_subtype,
           ← map_zpow, hc, map_one]
   MulEquiv.ofBijective φ ⟨fun c d h ↦ Subtype.ext
     (relativePicardDegreeZeroFunctorι_app_injective f T
       (congrArg (fun x : (zpowGroupHom n : (relativePicardPresheaf f).obj T →* _).ker ↦
         (x : (relativePicardPresheaf f).obj T)) h)), fun d ↦ by
-      have hd : (d : (relativePicardPresheaf f).obj T) ^ n = 1 := MonoidHom.mem_ker.mp d.2
+      have hd : (d : (relativePicardPresheaf f).obj T) ^ n = 1 := MonoidHom.mem_ker.mp d.property
       -- `d` is a section of `Pic⁰_{X/S}(T)` because it is torsion.
       let c := relativePicardDegreeZeroFunctor.mk f d
         (mem_relativePicardDegreeZeroSubfunctor_obj_of_zpow_eq_one f (T := T) hn hd)
@@ -634,7 +634,7 @@ lemma coe_relativePicardDegreeZeroTorsionMulEquiv_symm_apply (T : (Over S)ᵒᵖ
         (relativePicardDegreeZeroFunctor f).obj T) =
       relativePicardDegreeZeroFunctor.mk f d
         (mem_relativePicardDegreeZeroSubfunctor_obj_of_zpow_eq_one f (T := T) hn
-          (MonoidHom.mem_ker.mp d.2)) := by
+          (MonoidHom.mem_ker.mp d.property)) := by
   apply relativePicardDegreeZeroFunctorι_app_injective f T
   rw [relativePicardDegreeZeroFunctorι_app_mk,
     ← coe_relativePicardDegreeZeroTorsionMulEquiv_apply f T hn, MulEquiv.apply_symm_apply]
@@ -684,7 +684,7 @@ lemma coe_relativePicardDegreeZeroTorsionLineBundleClassMulEquiv_symm_apply (T :
         (relativePicardDegreeZeroFunctor f).obj T) =
       relativePicardDegreeZeroFunctor.mk f ((relativePicardPresheafObjMulEquiv f T).symm a)
         (mem_relativePicardDegreeZeroSubfunctor_obj_of_zpow_eq_one f (T := T) hn
-          ((map_zpow _ _ _).symm.trans ((congrArg _ (MonoidHom.mem_ker.mp a.2)).trans
+          ((map_zpow _ _ _).symm.trans ((congrArg _ (MonoidHom.mem_ker.mp a.property)).trans
             (map_one _)))) := by
   apply relativePicardDegreeZeroFunctorι_app_injective f T
   apply (relativePicardPresheafObjMulEquiv f T).injective

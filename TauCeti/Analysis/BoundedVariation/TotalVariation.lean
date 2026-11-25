@@ -40,7 +40,9 @@ For `u` not locally integrable on `Ω` the integrals in the supremum may be Math
 
 * `TauCeti.totalVariationOn μ Ω u`: the total variation of `u` on `Ω`.
 * `TauCeti.ofReal_abs_integral_le_totalVariationOn`: every admissible pairing is bounded by the
-  total variation, and `TauCeti.totalVariationOn_le_iff` characterises upper bounds.
+  total variation, and `TauCeti.totalVariationOn_le_iff` characterises upper bounds; a finite
+  total variation is approached by admissible pairings
+  (`TauCeti.exists_toReal_totalVariationOn_sub_lt_integral`).
 * `TauCeti.ofReal_abs_integral_le_ofReal_mul_totalVariationOn`: a test vector field bounded by `c`
   pairs to at most `c |Du|(Ω)`.
 * `TauCeti.totalVariationOn_congr_ae`: the total variation only sees `u` almost everywhere on
@@ -62,8 +64,11 @@ For `u` not locally integrable on `Ω` the integrals in the supremum may be Math
   under convergence in `L¹_loc(Ω)`.
 * `TauCeti.tendsto_totalVariationOn_of_le_add`: variations converge along an `L¹_loc(Ω)`
   approximation whose variations exceed the limit's by amounts tending to zero.
-* `TauCeti.totalVariationOn_le_of_tendsto_L1`: a total-variation bound holding frequently along
-  a filter is preserved under convergence in `L¹(Ω)` along it.
+* `TauCeti.totalVariationOn_smul_measure`: scaling the measure by `c : ℝ≥0` scales the total
+  variation by `c`.
+* `TauCeti.totalVariationOn_le_liminf_of_tendsto_L1` and
+  `TauCeti.totalVariationOn_le_of_tendsto_L1`: lower semicontinuity and preservation of frequent
+  upper bounds under convergence in `L¹(Ω)`.
 * `TauCeti.HasWeakFDerivOn.totalVariationOn_le_setLIntegral_enorm`: a weakly differentiable
   function has total variation at most the integral of the norm of its weak derivative, hence
   locally finite variation (`TauCeti.HasWeakFDerivOn.exists_totalVariationOn_ne_top`).
@@ -120,6 +125,17 @@ theorem totalVariationOn_le_iff {c : ℝ≥0∞} : totalVariationOn μ Ω u ≤ 
     ∀ φ : 𝓓(Ω, E), (∀ x, ‖φ x‖ ≤ 1) → ENNReal.ofReal (∫ x, divergenceCLM φ x * u x ∂μ) ≤ c :=
   iSup₂_le_iff
 
+/-- A finite total variation is approached by admissible pairings: for every `δ > 0`, some test
+vector field of norm at most one pairs with `u` to more than `|Du|(Ω) - δ`. -/
+theorem exists_toReal_totalVariationOn_sub_lt_integral (h : totalVariationOn μ Ω u ≠ ∞) {δ : ℝ}
+    (hδ : 0 < δ) : ∃ φ : 𝓓(Ω, E), (∀ x, ‖φ x‖ ≤ 1) ∧
+      (totalVariationOn μ Ω u).toReal - δ < ∫ x, divergenceCLM φ x * u x ∂μ := by
+  by_contra! hφ
+  have h0 : 0 ≤ (totalVariationOn μ Ω u).toReal - δ := by simpa using hφ 0 (by simp)
+  have := (ENNReal.ofReal_toReal h).le.trans
+    (totalVariationOn_le_iff.2 fun φ hφ' => ENNReal.ofReal_le_ofReal (hφ φ hφ'))
+  linarith [(ENNReal.ofReal_le_ofReal_iff h0).1 this]
+
 /-- Every admissible pairing is bounded in absolute value by the total variation. -/
 theorem ofReal_abs_integral_le_totalVariationOn (φ : 𝓓(Ω, E)) (hφ : ∀ x, ‖φ x‖ ≤ 1) :
     ENNReal.ofReal |∫ x, divergenceCLM φ x * u x ∂μ| ≤ totalVariationOn μ Ω u := by
@@ -135,6 +151,13 @@ theorem ofReal_abs_integral_le_totalVariationOn (φ : 𝓓(Ω, E)) (hφ : ∀ x,
 @[simp]
 theorem totalVariationOn_zero : totalVariationOn μ Ω 0 = 0 := by
   simp [totalVariationOn_def]
+
+/-- In dimension zero the only test vector field is zero, so every function has total variation
+zero, for every measure. -/
+@[simp]
+theorem totalVariationOn_of_subsingleton [Subsingleton E] : totalVariationOn μ Ω u = 0 :=
+  nonpos_iff_eq_zero.1 <| totalVariationOn_le_iff.2 fun φ _ => by
+    simp [show φ = 0 from TestFunction.ext fun _ => Subsingleton.elim _ _]
 
 /-- **Locality.** The total variation on `Ω` only depends on `u` almost everywhere on `Ω`. -/
 theorem totalVariationOn_congr_ae (h : u =ᵐ[μ.restrict Ω] v) :
@@ -211,6 +234,39 @@ theorem totalVariationOn_sup_le [OpensMeasurableSpace E]
     (by rwa [iSup_bool_eq])
   rwa [iSup_bool_eq, tsum_fintype, Fintype.sum_bool, Bool.cond_true, Bool.cond_false] at h
 
+/-- For admissible test vector fields `φ₁` on `Ω` and `φ₂` on `Ω'` (`‖φᵢ x‖ ≤ 1`) with disjoint
+supports, the positive parts of their pairings with `u` add up to at most `|Du|(Ω ∪ Ω')`. -/
+private theorem ofReal_integral_add_ofReal_integral_le_totalVariationOn_sup_of_disjoint_tsupport
+    {φ₁ : 𝓓(Ω, E)} {φ₂ : 𝓓(Ω', E)} (h : Disjoint (tsupport φ₁) (tsupport φ₂))
+    (h₁ : ∀ x, ‖φ₁ x‖ ≤ 1) (h₂ : ∀ x, ‖φ₂ x‖ ≤ 1) :
+    ENNReal.ofReal (∫ x, divergenceCLM φ₁ x * u x ∂μ) +
+      ENNReal.ofReal (∫ x, divergenceCLM φ₂ x * u x ∂μ) ≤ totalVariationOn μ (Ω ⊔ Ω') u := by
+  have h₁Ω : tsupport φ₁ ⊆ (Ω ⊔ Ω' : Opens E) := φ₁.tsupport_subset.trans (by simp)
+  have h₂Ω : tsupport φ₂ ⊆ (Ω ⊔ Ω' : Opens E) := φ₂.tsupport_subset.trans (by simp)
+  -- If one pairing is not positive, the other field alone is admissible on `Ω ∪ Ω'`.
+  rcases le_or_gt (∫ x, divergenceCLM φ₁ x * u x ∂μ) 0 with ha₁ | ha₁
+  · rw [ENNReal.ofReal_of_nonpos ha₁, zero_add]
+    exact ofReal_integral_le_totalVariationOn_of_tsupport_subset φ₂ h₂ h₂Ω
+  rcases le_or_gt (∫ x, divergenceCLM φ₂ x * u x ∂μ) 0 with ha₂ | ha₂
+  · rw [ENNReal.ofReal_of_nonpos ha₂, add_zero]
+    exact ofReal_integral_le_totalVariationOn_of_tsupport_subset φ₁ h₁ h₁Ω
+  -- Otherwise both pairings are integrals of integrable functions, and the sum of the two fields
+  -- is admissible, as their supports are disjoint.
+  let φ : 𝓓(Ω ⊔ Ω', E) := monoCLM ℝ φ₁ + monoCLM ℝ φ₂
+  have hφ (x : E) : φ x = φ₁ x + φ₂ x := by simp [φ]
+  have hdiv (x : E) : divergenceCLM φ x = divergenceCLM φ₁ x + divergenceCLM φ₂ x := by
+    simp only [φ, map_add, _root_.add_apply, divergenceCLM_monoCLM le_sup_left,
+      divergenceCLM_monoCLM le_sup_right]
+  have hφ1 (x : E) : ‖φ x‖ ≤ 1 := by
+    rw [hφ]
+    by_cases hx : x ∈ tsupport φ₁
+    · simpa [image_eq_zero_of_notMem_tsupport (Set.disjoint_left.1 h hx)] using h₁ x
+    · simpa [image_eq_zero_of_notMem_tsupport hx] using h₂ x
+  rw [← ENNReal.ofReal_add ha₁.le ha₂.le]
+  convert ofReal_integral_le_totalVariationOn (μ := μ) (u := u) φ hφ1 using 2
+  simp_rw [hdiv, add_mul]
+  exact (integral_add (.of_integral_ne_zero ha₁.ne') (.of_integral_ne_zero ha₂.ne')).symm
+
 /-- **Additivity on disjoint open sets.** For `u` locally integrable on `Ω ∪ Ω'` with `Ω` and `Ω'`
 disjoint, `|Du|(Ω ∪ Ω') = |Du|(Ω) + |Du|(Ω')`. -/
 theorem totalVariationOn_sup_of_disjoint [OpensMeasurableSpace E]
@@ -221,39 +277,9 @@ theorem totalVariationOn_sup_of_disjoint [OpensMeasurableSpace E]
   simp only [iSup_subtype']
   have : Nonempty {φ : 𝓓(Ω, E) // ∀ x, ‖φ x‖ ≤ 1} := ⟨⟨0, by simp⟩⟩
   have : Nonempty {φ : 𝓓(Ω', E) // ∀ x, ‖φ x‖ ≤ 1} := ⟨⟨0, by simp⟩⟩
-  refine ENNReal.iSup_add_iSup_le fun ⟨φ₁, h₁⟩ ⟨φ₂, h₂⟩ => ?_
-  have h₁Ω : tsupport φ₁ ⊆ (Ω ⊔ Ω' : Opens E) := φ₁.tsupport_subset.trans (by simp)
-  have h₂Ω : tsupport φ₂ ⊆ (Ω ⊔ Ω' : Opens E) := φ₂.tsupport_subset.trans (by simp)
-  -- If one pairing is negative, the other one alone is admissible on `Ω ∪ Ω'`.
-  rcases le_total (∫ x, divergenceCLM φ₁ x * u x ∂μ) 0 with ha₁ | ha₁
-  · rw [ENNReal.ofReal_of_nonpos ha₁, zero_add]
-    exact ofReal_integral_le_totalVariationOn_of_tsupport_subset φ₂ h₂ h₂Ω
-  rcases le_total (∫ x, divergenceCLM φ₂ x * u x ∂μ) 0 with ha₂ | ha₂
-  · rw [ENNReal.ofReal_of_nonpos ha₂, add_zero]
-    exact ofReal_integral_le_totalVariationOn_of_tsupport_subset φ₁ h₁ h₁Ω
-  -- Otherwise the sum of the two fields is admissible, as their supports are disjoint.
-  let φ₁' : 𝓓(Ω ⊔ Ω', E) := monoCLM ℝ φ₁
-  let φ₂' : 𝓓(Ω ⊔ Ω', E) := monoCLM ℝ φ₂
-  let φ : 𝓓(Ω ⊔ Ω', E) := φ₁' + φ₂'
-  have hφ (x : E) : φ x = φ₁ x + φ₂ x := by simp [φ, φ₁', φ₂']
-  have hdiv (x : E) : divergenceCLM φ x = divergenceCLM φ₁ x + divergenceCLM φ₂ x := by
-    simp only [φ, φ₁', φ₂', map_add, _root_.add_apply, divergenceCLM_monoCLM le_sup_left,
-      divergenceCLM_monoCLM le_sup_right]
-  have hφ1 (x : E) : ‖φ x‖ ≤ 1 := by
-    rw [hφ]
-    by_cases hx : x ∈ (Ω : Set E)
-    · have : φ₂ x = 0 := image_eq_zero_of_notMem_tsupport fun hx' =>
-        Set.disjoint_left.1 (Opens.coe_disjoint.2 h) hx (φ₂.tsupport_subset hx')
-      simpa [this] using h₁ x
-    · simpa [image_eq_zero_of_notMem_tsupport fun hx' => hx (φ₁.tsupport_subset hx')] using h₂ x
-  have hint (ψ : 𝓓(Ω ⊔ Ω', ℝ)) : Integrable (fun x => ψ x * u x) μ := by
-    simpa using ψ.integrable_smul hu
-  rw [← ENNReal.ofReal_add ha₁ ha₂]
-  convert ofReal_integral_le_totalVariationOn (μ := μ) (u := u) φ hφ1 using 2
-  simp_rw [hdiv, add_mul]
-  rw [integral_add]
-  · simpa [φ₁', divergenceCLM_monoCLM le_sup_left] using hint (divergenceCLM φ₁')
-  · simpa [φ₂', divergenceCLM_monoCLM le_sup_right] using hint (divergenceCLM φ₂')
+  exact ENNReal.iSup_add_iSup_le fun ⟨φ₁, h₁⟩ ⟨φ₂, h₂⟩ =>
+    ofReal_integral_add_ofReal_integral_le_totalVariationOn_sup_of_disjoint_tsupport
+      ((Opens.coe_disjoint.2 h).mono φ₁.tsupport_subset φ₂.tsupport_subset) h₁ h₂
 
 /-- The total variation of `-u` is that of `u`. -/
 @[simp]
@@ -284,6 +310,15 @@ theorem totalVariationOn_smul (c : ℝ) :
   · rw [abs_of_nonneg hc, totalVariationOn_smul_of_nonneg hc]
   · rw [abs_of_nonpos hc, ← totalVariationOn_smul_of_nonneg (neg_nonneg.mpr hc), neg_smul,
       totalVariationOn_neg]
+
+/-- Scaling the measure by a nonnegative real scales the total variation by the same factor. -/
+@[simp]
+theorem totalVariationOn_smul_measure (c : ℝ≥0) :
+    totalVariationOn (c • μ) Ω u = (c : ℝ≥0∞) * totalVariationOn μ Ω u := by
+  simp_rw [totalVariationOn_def, ENNReal.mul_iSup]
+  refine iSup_congr fun φ => iSup_congr fun _ => ?_
+  rw [integral_smul_nnreal_measure, NNReal.smul_def, smul_eq_mul, ENNReal.ofReal_mul c.coe_nonneg,
+    ENNReal.ofReal_coe_nnreal]
 
 /-- A test vector field bounded by `c` pairs to at most `c |Du|(Ω)`. -/
 theorem ofReal_abs_integral_le_ofReal_mul_totalVariationOn (φ : 𝓓(Ω, E)) {c : ℝ}
@@ -423,18 +458,15 @@ theorem tendsto_totalVariationOn_of_le_add [OpensMeasurableSpace E] {ι : Type*}
   rw [add_zero] at hbound
   exact (limsup_le_limsup (.of_forall hwb)).trans_eq hbound.limsup_eq
 
-/-- A bound on the total variation holding frequently along `l` is preserved under convergence
-in `L¹(Ω)` along `l`. -/
-theorem totalVariationOn_le_of_tendsto_L1 [OpensMeasurableSpace E] {ι : Type*}
+/-- **Lower semicontinuity under `L¹(Ω)` convergence.** If `u i → v` in `L¹(Ω)`, then
+`|Dv|(Ω) ≤ liminf |Du i|(Ω)`. -/
+theorem totalVariationOn_le_liminf_of_tendsto_L1 [OpensMeasurableSpace E] {ι : Type*}
     {l : Filter ι} {u : ι → E →₁[μ.restrict Ω] ℝ}
-    {v : E →₁[μ.restrict Ω] ℝ} {C : ℝ≥0∞} (h : Tendsto u l (𝓝 v))
-    (hC : ∃ᶠ i in l, totalVariationOn μ Ω (u i) ≤ C) :
-    totalVariationOn μ Ω v ≤ C := by
-  refine (totalVariationOn_le_liminf
+    {v : E →₁[μ.restrict Ω] ℝ} (h : Tendsto u l (𝓝 v)) :
+    totalVariationOn μ Ω v ≤ liminf (fun i => totalVariationOn μ Ω (u i)) l := by
+  refine totalVariationOn_le_liminf
     (.of_forall fun i => IntegrableOn.locallyIntegrableOn (L1.integrable_coeFn (u i)))
-    (IntegrableOn.locallyIntegrableOn (L1.integrable_coeFn v)) ?_).trans
-      (liminf_le_of_frequently_le' hC)
-  intro K _ hK
+    (IntegrableOn.locallyIntegrableOn (L1.integrable_coeFn v)) fun K _ hK => ?_
   have hd := tendsto_iff_edist_tendsto_0.mp h
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hd
     (fun _ => zero_le) fun i => ?_
@@ -442,6 +474,15 @@ theorem totalVariationOn_le_of_tendsto_L1 [OpensMeasurableSpace E] {ι : Type*}
   simpa only [eDist_eq_eNorm_sub] using
     (lintegral_mono_set hK :
       (∫⁻ x in K, ‖u i x - v x‖ₑ ∂μ) ≤ ∫⁻ x in Ω, ‖u i x - v x‖ₑ ∂μ)
+
+/-- A bound on the total variation holding frequently along `l` is preserved under convergence
+in `L¹(Ω)` along `l`. -/
+theorem totalVariationOn_le_of_tendsto_L1 [OpensMeasurableSpace E] {ι : Type*}
+    {l : Filter ι} {u : ι → E →₁[μ.restrict Ω] ℝ}
+    {v : E →₁[μ.restrict Ω] ℝ} {C : ℝ≥0∞} (h : Tendsto u l (𝓝 v))
+    (hC : ∃ᶠ i in l, totalVariationOn μ Ω (u i) ≤ C) :
+    totalVariationOn μ Ω v ≤ C :=
+  (totalVariationOn_le_liminf_of_tendsto_L1 h).trans (liminf_le_of_frequently_le' hC)
 
 /-! ### Weakly differentiable functions -/
 

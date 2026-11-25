@@ -99,7 +99,7 @@ private theorem involutive_mob1InfFun : Function.Involutive mob1InfFun := fun z 
   ring
 
 private theorem continuous_mob1InfFun : Continuous mob1InfFun :=
-  (continuous_subtype_val.div (continuous_subtype_val.sub continuous_const)
+  (continuous_subtypeVal.div (continuous_subtypeVal.sub continuous_const)
     fun z : ThricePuncturedSphere ↦ sub_ne_zero.mpr z.ne_one).subtype_mk _
 
 /-- The self-homeomorphism `z ↦ z / (z − 1)` of the thrice-punctured sphere. It is the anharmonic

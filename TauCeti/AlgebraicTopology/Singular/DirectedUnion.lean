@@ -15,10 +15,10 @@ public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
 public import Mathlib.CategoryTheory.Limits.ConcreteCategory.WithAlgebraicStructures
 public import TauCeti.Topology.Category.TopCat.Subspace
 public import TauCeti.Topology.Category.TopPair
+public import TauCeti.Topology.Sets.Compacts
+public import Mathlib.Topology.Category.TopCat.Opens
 public import TauCeti.AlgebraicTopology.Singular.Relative
 public import TauCeti.CategoryTheory.Limits.Shapes.Kernels
-import Mathlib.Topology.Compactness.LocallyCompact
-import Mathlib.Topology.Sets.Opens
 
 /-!
 # Singular homology of a directed union
@@ -51,8 +51,13 @@ cokernels commute with colimits (`TauCeti.isColimitOfIsColimitCokernelCofork`).
 * `TauCeti.exists_singularHomologyMap_inclusion_eq_zero`: with coefficients in a module, a class of
   one member of an increasing cover of a subspace by relatively open sets that vanishes in the
   subspace already vanishes in some larger member.
-* `TauCeti.exists_isOpen_isCompact_closure_singularHomologyMap_eq`: every singular homology class of
-  a weakly locally compact Hausdorff space comes from an open subset with compact closure.
+* `TauCeti.isColimitMapCoconeOpensInclusionCocone`: singular homology of a space covered by a
+  directed family of open sets is the colimit of the singular homology of the members.
+* `TauCeti.exists_singularHomologyMap_inclusion'_eq_of_iSup_eq_top` and
+  `TauCeti.exists_singularHomologyMap_toTopCat_map_eq_zero_of_iSup_eq_top`: with coefficients in a
+  module, the elements of the colimit over a directed open cover of a space: every class of the
+  space comes from a member, and a class of a member vanishing in the space vanishes in a larger
+  member.
 * `TopPair.isColimitMapCoconeSingularChainComplex` and `TopPair.isColimitMapCoconeSingularHomology`:
   for a cocone over a filtered diagram of topological pairs whose legs are embeddings of the
   ambient spaces, such that every compact subset of the ambient space and of the subspace of the
@@ -147,9 +152,9 @@ theorem exists_singularHomologyMap_inclusion_eq_zero {i : J}
   -- A compact subset of `V` is covered by finitely many of the `U j`, hence by one.
   have hK (K : Set c.pt) (hK : IsCompact K) : ∃ j, K ⊆ Set.range (c.ι.app j) := by
     obtain ⟨j, hj⟩ := hK.elim_directed_cover (fun j ↦ (Subtype.val ⁻¹' U j : Set V)) hopen
-      (fun x _ ↦ Set.mem_iUnion.2 (Set.mem_iUnion.1 (hcover x.2) : ∃ j, x.1 ∈ U j))
+      (fun x _ ↦ Set.mem_iUnion.2 (Set.mem_iUnion.1 (hcover x.property) : ∃ j, x.val ∈ U j))
       (Monotone.directed_le fun _ _ h ↦ Set.preimage_mono (hU h))
-    exact ⟨j, fun x hx ↦ ⟨⟨x.1, hj hx⟩, rfl⟩⟩
+    exact ⟨j, fun x hx ↦ ⟨⟨x.val, hj hx⟩, rfl⟩⟩
   obtain ⟨j, f, g, hfg⟩ := Concrete.isColimit_exists_of_rep_eq (j := i) _
     (isColimitMapCoconeSingularHomology M n c (fun j ↦ IsEmbedding.inclusion (hUV j)) hK) x 0
     (by rw [map_zero]; exact hx)
@@ -158,60 +163,65 @@ theorem exists_singularHomologyMap_inclusion_eq_zero {i : J}
 
 end Module
 
-section CompactSupport
+section Opens
 
-/-- The open subsets of `X` with compact closure, ordered by inclusion. -/
-private abbrev RelCompactOpens (X : Type w) [TopologicalSpace X] : Type w :=
-  {U : TopologicalSpace.Opens X // IsCompact (closure (U : Set X))}
+open TopologicalSpace
 
-private instance {X : Type w} [TopologicalSpace X] : SemilatticeSup (RelCompactOpens X) where
-  sup U V := ⟨U.1 ⊔ V.1, by
-    simpa only [TopologicalSpace.Opens.coe_sup, closure_union] using U.2.union V.2⟩
-  le_sup_left _ _ := le_sup_left (α := TopologicalSpace.Opens X)
-  le_sup_right _ _ := le_sup_right (α := TopologicalSpace.Opens X)
-  sup_le _ _ _ := sup_le (α := TopologicalSpace.Opens X)
+variable {A : Type w} [Ring A] (M : ModuleCat.{w} A) (n : ℕ) {X : TopCat.{w}} {J : Type}
+  [Preorder J] {U : J → Opens X} (hU : Monotone U) (hcover : ⨆ j, U j = ⊤)
 
-private instance {X : Type w} [TopologicalSpace X] : OrderBot (RelCompactOpens X) where
-  bot := ⟨⊥, by simp⟩
-  bot_le _ := bot_le (α := TopologicalSpace.Opens X)
+/-- The inclusions of the members of a monotone family of open sets of `X`, as a cocone with apex
+`X`. -/
+-- Its point and legs must compute, so that the legs are the inclusions on the nose.
+@[expose, simps]
+def opensInclusionCocone : Cocone (hU.functor ⋙ Opens.toTopCat X) where
+  pt := X
+  ι := { app j := Opens.inclusion' (U j) }
 
-/-- **Singular homology classes of a locally compact Hausdorff space live on relatively compact open
-subsets.** Every class in `Hₖ(X; N)` is the image of a class in `Hₖ(U; N)` for some open subset
-`U ⊆ X` whose closure is compact. -/
-theorem exists_isOpen_isCompact_closure_singularHomologyMap_eq
-    {Λ : Type*} [Ring Λ] (N : ModuleCat.{w} Λ)
-    {X : Type w} [TopologicalSpace X] [T2Space X] [WeaklyLocallyCompactSpace X] (k : ℕ)
-    (γ : (((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).obj (TopCat.of X) :
-      ModuleCat.{w} Λ)) :
-    ∃ U : Set X, IsOpen U ∧ IsCompact (closure U) ∧
-      ∃ γU : (((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).obj (TopCat.of U) :
-        ModuleCat.{w} Λ),
-        ((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).map
-          (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩) γU = γ := by
-  let D : RelCompactOpens X ⥤ TopCat.{w} :=
-    { obj U := TopCat.of (U.1 : Set X)
-      map f := TopCat.ofHom (ContinuousMap.inclusion f.le) }
-  let G := D ⋙ (singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N
-  have : PreservesColimit G
-      (forget₂ (ModuleCat.{w} Λ) AddCommGrpCat.{w} ⋙ forget AddCommGrpCat.{w}) :=
-    Limits.comp_preservesColimit (forget₂ (ModuleCat.{w} Λ) AddCommGrpCat.{w})
-      (forget AddCommGrpCat.{w})
-  have : PreservesColimit G (forget (ModuleCat.{w} Λ)) :=
-    preservesColimit_of_natIso G
-      (eqToIso (HasForget₂.forget_comp (C := ModuleCat.{w} Λ) (D := AddCommGrpCat.{w})))
-  let c : Cocone D :=
-    { pt := TopCat.of X
-      ι := { app U := TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ } }
-  have hK (K : Set c.pt) (hKc : IsCompact K) : ∃ U, K ⊆ Set.range (c.ι.app U) := by
-    obtain ⟨L, hLc, hKL⟩ := exists_compact_superset hKc
-    refine ⟨⟨⟨interior L, isOpen_interior⟩, hLc.of_isClosed_subset isClosed_closure
-        (hLc.isClosed.closure_subset_iff.2 interior_subset)⟩,
-      fun x hx ↦ ⟨⟨x, hKL hx⟩, rfl⟩⟩
-  obtain ⟨U, γU, hγU⟩ := Concrete.isColimit_exists_rep _
-    (isColimitMapCoconeSingularHomology N k c (fun _ ↦ IsEmbedding.subtypeVal) hK) γ
-  exact ⟨(U.1 : Set X), U.1.isOpen, U.2, γU, hγU⟩
+include hcover in
+/-- **Singular homology of a directed union of open sets.** Singular homology of a space covered by
+a directed family of open sets is the colimit of the singular homology of its members, along the
+inclusions. -/
+def isColimitMapCoconeOpensInclusionCocone [IsDirected J (· ≤ ·)] [Nonempty J] :
+    IsColimit (((singularHomologyFunctor (ModuleCat.{w} A) n).obj M).mapCocone
+      (opensInclusionCocone hU)) :=
+  isColimitMapCoconeSingularHomology M n _ (fun j ↦ (U j).isOpenEmbedding.isEmbedding)
+    fun K hK ↦ by
+      obtain ⟨j, hj⟩ :=
+        Compacts.exists_subset_of_iSup_eq_top hU.directed_le hcover ⟨K, hK⟩
+      exact ⟨j, fun x hx ↦ ⟨⟨x, hj hx⟩, rfl⟩⟩
 
-end CompactSupport
+include hU hcover in
+/-- **Every homology class comes from a member of a directed open cover.** With coefficients in a
+module, every singular homology class of a space covered by a directed family of open sets is the
+image of a class of one of its members. -/
+theorem exists_singularHomologyMap_inclusion'_eq_of_iSup_eq_top [IsDirected J (· ≤ ·)]
+    [Nonempty J] (x : ((singularHomologyFunctor (ModuleCat.{w} A) n).obj M).obj X) :
+    ∃ j y, ((singularHomologyFunctor _ n).obj M).map (Opens.inclusion' (U j)) y = x := by
+  have : PreservesFilteredColimitsOfSize.{0, 0} (forget (ModuleCat.{w} A)) :=
+    preservesSmallestFilteredColimits_of_preservesFilteredColimits _
+  exact Concrete.isColimit_exists_rep _ (isColimitMapCoconeOpensInclusionCocone M n hU hcover) x
+
+include hcover in
+/-- **Vanishing of a homology class is detected in a member of a directed open cover.** With
+coefficients in a module, a singular homology class of one member `U i` of a directed open cover of
+a space that vanishes in the space already vanishes in some larger member `U j`. -/
+theorem exists_singularHomologyMap_toTopCat_map_eq_zero_of_iSup_eq_top [IsDirected J (· ≤ ·)]
+    {i : J}
+    (y : ((singularHomologyFunctor (ModuleCat.{w} A) n).obj M).obj ((Opens.toTopCat X).obj (U i)))
+    (hy : ((singularHomologyFunctor _ n).obj M).map (Opens.inclusion' (U i)) y = 0) :
+    ∃ j, ∃ hij : i ≤ j,
+      ((singularHomologyFunctor _ n).obj M).map ((Opens.toTopCat X).map (homOfLE (hU hij))) y =
+        0 := by
+  have : Nonempty J := ⟨i⟩
+  have : PreservesFilteredColimitsOfSize.{0, 0} (forget (ModuleCat.{w} A)) :=
+    preservesSmallestFilteredColimits_of_preservesFilteredColimits _
+  obtain ⟨j, f, g, hfg⟩ := Concrete.isColimit_exists_of_rep_eq (j := i) _
+    (isColimitMapCoconeOpensInclusionCocone M n hU hcover) y 0 (by rw [map_zero]; exact hy)
+  rw [map_zero] at hfg
+  exact ⟨j, f.le, hfg⟩
+
+end Opens
 
 end TauCeti
 

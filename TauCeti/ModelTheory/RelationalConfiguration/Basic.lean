@@ -84,6 +84,28 @@ variable {L : Language} {V W X : Type*}
 /-- The atom with relation symbol `R` and argument tuple `x`. -/
 def atom {n : ℕ} (R : L.Relations n) (x : Fin n → V) : Atom L V := ⟨n, R, x⟩
 
+/-- Two atoms are equal exactly when they have the same relation symbol, together with its arity,
+and the same argument tuple. -/
+@[simp]
+theorem atom_eq_atom_iff {n m : ℕ} {R : L.Relations n} {S : L.Relations m} {x : Fin n → V}
+    {y : Fin m → V} :
+    atom R x = atom S y ↔ (⟨n, R⟩ : Σ n, L.Relations n) = ⟨m, S⟩ ∧ x ≍ y := by
+  constructor
+  · intro h
+    cases h
+    exact ⟨rfl, .rfl⟩
+  · rintro ⟨h, hxy⟩
+    cases h
+    cases hxy
+    rfl
+
+/-- The relation symbol of an atom, together with its arity. -/
+def Atom.symbol (a : Atom L V) : Σ n, L.Relations n := ⟨a.1, a.2.1⟩
+
+@[simp]
+theorem Atom.symbol_atom {n : ℕ} (R : L.Relations n) (x : Fin n → V) :
+    (atom R x).symbol = ⟨n, R⟩ := (rfl)
+
 /-- Every atom is `atom R x` for its relation symbol and tuple. -/
 @[elab_as_elim]
 theorem Atom.induction_atom {motive : Atom L V → Prop}
@@ -91,6 +113,11 @@ theorem Atom.induction_atom {motive : Atom L V → Prop}
     motive a := by
   obtain ⟨n, R, x⟩ := a
   exact h R x
+
+/-- An atom is the atom of its relation symbol and its tuple. -/
+@[simp]
+theorem Atom.eta (p : Atom L V) : atom p.2.1 p.2.2 = p :=
+  (rfl)
 
 /-- Relabel the arguments of an atom along a vertex map. -/
 def Atom.map (f : V → W) (a : Atom L V) : Atom L W := ⟨a.1, a.2.1, f ∘ a.2.2⟩
@@ -104,6 +131,10 @@ theorem Atom.map_id (a : Atom L V) : a.map id = a := (rfl)
 
 theorem Atom.map_comp (g : W → X) (f : V → W) (a : Atom L V) :
     a.map (g ∘ f) = (a.map f).map g := (rfl)
+
+/-- Relabelling the arguments of an atom keeps its relation symbol. -/
+@[simp]
+theorem Atom.symbol_map (f : V → W) (a : Atom L V) : (a.map f).symbol = a.symbol := (rfl)
 
 /-- Rename the relation symbol of an atom along a language map, keeping its arguments. -/
 def _root_.FirstOrder.Language.LHom.onAtom {L' : Language} (g : L →ᴸ L') (a : Atom L V) :
@@ -121,6 +152,11 @@ theorem _root_.FirstOrder.Language.LHom.onAtom_map {L' : Language} (g : L →ᴸ
 @[simp]
 theorem _root_.FirstOrder.Language.LHom.id_onAtom (a : Atom L V) :
     (FirstOrder.Language.LHom.id L).onAtom a = a := (rfl)
+
+/-- Renaming the relation symbol of an atom renames its symbol, keeping the arity. -/
+@[simp]
+theorem _root_.FirstOrder.Language.LHom.symbol_onAtom {L' : Language} (g : L →ᴸ L')
+    (a : Atom L V) : (g.onAtom a).symbol = ⟨a.symbol.1, g.onRelation a.symbol.2⟩ := (rfl)
 
 theorem _root_.FirstOrder.Language.LHom.comp_onAtom {L' L'' : Language} (g : L' →ᴸ L'')
     (f : L →ᴸ L') (a : Atom L V) : (g.comp f).onAtom a = g.onAtom (f.onAtom a) := (rfl)

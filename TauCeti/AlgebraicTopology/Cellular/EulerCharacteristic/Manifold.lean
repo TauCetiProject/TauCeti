@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.ChartedSpace
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWType
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Noncompact
 import TauCeti.Algebra.Category.ModuleCat.Finrank
-import TauCeti.AlgebraicTopology.Singular.LocalHomology.Noncompact
+import TauCeti.AlgebraicTopology.Singular.Reduced
 
 /-!
 # Euler characteristic of a manifold as a sum of Betti numbers
@@ -16,7 +16,7 @@ import TauCeti.AlgebraicTopology.Singular.LocalHomology.Noncompact
 The Euler--Poincaré formula expresses the Euler characteristic of a space `M` of finite CW type
 as the alternating sum of the dimensions of its singular homology over any division ring `k`. If
 `M` is a Hausdorff space charted on a real normed space of dimension `n`, its homology vanishes
-above degree `n` (`TauCeti.isZero_singularHomology_of_finrank_lt`), so
+above degree `n` (`TauCeti.isZero_singularHomology_of_lt`), so
 `eulerChar M = ∑ᵢ₌₀ⁿ (-1)ⁱ dim Hᵢ(M; k)`. If moreover `M` is a connected surface then
 `H₀(M; k) = k`, and this reads `eulerChar M = 1 - b₁ + b₂`.
 
@@ -27,8 +27,8 @@ Betti number, which needs compactness and an orientation (see
 
 ## Main results
 
-* `TauCeti.eulerChar_eq_sum_range_finrank_singularHomology`: the Euler characteristic of a manifold
-  of finite CW type is the alternating sum of its Betti numbers up to its dimension.
+* `TauCeti.eulerChar_eq_sum_range_finrank_singularHomology`: the Euler characteristic of a
+  manifold of finite CW type is the alternating sum of its Betti numbers up to its dimension.
 * `TauCeti.eulerChar_eq_one_sub_finrank_add_finrank`: a connected surface of finite CW type has
   `eulerChar M = 1 - b₁ + b₂`.
 
@@ -52,15 +52,15 @@ variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensio
   [FiniteCWType M] (k : Type u) [DivisionRing k]
 
 /-- **The Euler characteristic of a manifold as an alternating sum of Betti numbers.**
-For a Hausdorff space `M` of finite CW type charted on a real normed space of dimension `n`, and
-any division ring `k`, `eulerChar M = ∑ᵢ₌₀ⁿ (-1)ⁱ dim Hᵢ(M; k)`. -/
+For a Hausdorff space `M` of finite CW type charted on a real normed space of dimension
+`n`, and any division ring `k`, `eulerChar M = ∑ᵢ₌₀ⁿ (-1)ⁱ dim Hᵢ(M; k)`. -/
 theorem eulerChar_eq_sum_range_finrank_singularHomology :
     eulerChar M = ∑ i ∈ Finset.range (finrank ℝ E + 1), (-1 : ℤ) ^ i *
       finrank k (((singularHomologyFunctor (ModuleCat.{u} k) i).obj (ModuleCat.of k k)).obj
         (TopCat.of M)) := by
   rw [eulerChar_eq_finsum_finrank_singularHomology M k,
     ModuleCat.finsum_neg_one_pow_finrank_eq_sum_range (N := finrank ℝ E + 1) fun i hi ↦
-      isZero_singularHomology_of_finrank_lt (M := M) (E := E) _ (by omega)]
+      isZero_singularHomology_of_lt (M := M) (E := E) _ rfl (by omega)]
 
 /-- **The Euler characteristic of a connected surface of finite CW type is `1 - b₁ + b₂`.** For a
 connected Hausdorff space `M` of finite CW type charted on a real normed space of dimension `2`,
@@ -74,11 +74,7 @@ theorem eulerChar_eq_one_sub_finrank_add_finrank [ConnectedSpace M] (hE : finran
         (TopCat.of M)) := by
   have := ChartedSpace.locallyPathConnectedSpace E M
   have : PathConnectedSpace M := pathConnectedSpace_iff_connectedSpace.mpr inferInstance
-  have h₀ : finrank k
-      (((singularHomologyFunctor (ModuleCat.{u} k) 0).obj (ModuleCat.of k k)).obj
-        (TopCat.of M)) = 1 := by
-    rw [(asIso ((TopCat.of M).singularHomology₀ε (ModuleCat.of k k))).toLinearEquiv.finrank_eq]
-    exact finrank_self k
+  have h₀ := finrank_singularHomology₀_eq_one (k := k) (TopCat.of M)
   rw [eulerChar_eq_sum_range_finrank_singularHomology (E := E) M k, hE]
   simp [Finset.sum_range_succ, h₀]
   ring
