@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Faithful.Product
-public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.LineFibers
+public import TauCeti.Algebra.AlgebraicGroup.Representation.ExteriorStabilizer.Character
 
 /-!
 # Faithful Chevalley line representations
