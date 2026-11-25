@@ -267,12 +267,7 @@ theorem pullback_sub (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : MapsTo f Ω Ω') {S 
 
 /-- **The wave front set of the pullback, pointwise** (Hörmander I, Theorem 8.2.4). Let `x₀ ∈ Ω`
 and `ξ₀ ≠ 0`. If `T` is microlocally smooth at `(f x₀, η)` for every `η` with
-`Df(x₀)ᵀ η = ξ₀`, then `f^* T` is microlocally smooth at `(x₀, ξ₀)`.
-
-The pullback along the submersion `g (x, y) = f x + y` is microlocally smooth at every covector
-`((x₀, 0), (ξ₀, η))`, since `Dg(x₀, 0)ᵀ η' = (Df(x₀)ᵀ η', η')` equals `(ξ₀, η)` only for
-`η' = η` with `Df(x₀)ᵀ η = ξ₀`; so its restriction to `E × {0}` is microlocally smooth at
-`(x₀, ξ₀)`. -/
+`Df(x₀)ᵀ η = ξ₀`, then `f^* T` is microlocally smooth at `(x₀, ξ₀)`. -/
 theorem isMicrolocallySmoothAt_pullback (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : MapsTo f Ω Ω')
     {T : 𝓓'(Ω', ℂ)}
     (h : ∀ x ∈ Ω, ∀ η, (f x, η) ∈ T.waveFrontSet → (fderiv ℝ f x).adjoint η ≠ 0) {x₀ ξ₀ : E}
@@ -319,9 +314,7 @@ theorem waveFrontSet_pullback_subset (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : Maps
 /-- **Pulling back twice.** Let `k` be differentiable on an open set `Ω₀` with values in `Ω`, and
 let the wave front set of `T` not meet the normal set of `f`. If it does not meet the normal set
 of `f ∘ k` either, then the wave front set of `f^* T` does not meet the normal set of `k`, so
-that, for `k` smooth, `k^* (f^* T)` is defined. Indeed a covector of `WF(f^* T)` over `k x` is
-`Df(k x)ᵀ η` with `(f (k x), η) ∈ WF(T)` (`Distribution.waveFrontSet_pullback_subset`), and
-`Dk(x)ᵀ Df(k x)ᵀ η = D(f ∘ k)(x)ᵀ η ≠ 0`. -/
+that, for `k` smooth, `k^* (f^* T)` is defined. -/
 theorem adjoint_fderiv_apply_ne_zero_of_comp {E₀ : Type*} [NormedAddCommGroup E₀]
     [InnerProductSpace ℝ E₀] [CompleteSpace E₀] {Ω₀ : Opens E₀} {k : E₀ → E}
     (hk : DifferentiableOn ℝ k Ω₀) (hkΩ : MapsTo k Ω₀ Ω) (hf : ContDiffOn ℝ ∞ f Ω)
