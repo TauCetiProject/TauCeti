@@ -7,7 +7,10 @@ module
 
 public import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
 public import Mathlib.Topology.Category.TopCat.Limits.Basic
+public import Mathlib.Topology.Category.TopCat.Limits.Products
 public import Mathlib.Topology.Homotopy.Basic
+import TauCeti.Topology.Category.TopCat.Limits.Basic
+import TauCeti.Topology.Homotopy.Sigma
 
 /-!
 # Homotopies out of colimits in `TopCat`
@@ -27,6 +30,9 @@ make the map of colimits induced by `ψ` a left homotopy inverse of the one indu
 
 The pushout case, with homotopies given on the two legs of a pushout square, is
 `CategoryTheory.IsPushout.homotopyDesc`.
+
+For a coproduct `∐ X` in `TopCat`, two maps `∐ X ⟶ Y` are homotopic as soon as their composites
+with every coprojection are (`TauCeti.TopCat.homotopic_of_homotopic_ι_comp`).
 -/
 
 public section
@@ -117,3 +123,17 @@ theorem map_comp_map_homotopic_id {cX : Cocone X} (hcX : IsColimit cX) {cZ : Coc
     show hcX.map cX (𝟙 X) = 𝟙 cX.pt from hcX.hom_ext fun j => by simp] at h
 
 end CategoryTheory.Limits.IsColimit
+
+namespace TauCeti.TopCat
+
+/-- **Maps out of a coproduct in `TopCat` are homotopic if their restrictions to the summands
+are.** If `Sigma.ι X i ≫ φ` and `Sigma.ι X i ≫ ψ` are homotopic for every `i`, then so are
+`φ, ψ : ∐ X ⟶ Y`. -/
+theorem homotopic_of_homotopic_ι_comp {ι : Type u} {X : ι → TopCat.{u}} {Y : TopCat.{u}}
+    {φ ψ : ∐ X ⟶ Y}
+    (h : ∀ i, (Sigma.ι X i ≫ φ).hom.Homotopic (Sigma.ι X i ≫ ψ).hom) :
+    φ.hom.Homotopic ψ.hom := by
+  rw [hom_eq_sigma_comp_sigmaIsoSigma_hom φ, hom_eq_sigma_comp_sigmaIsoSigma_hom ψ]
+  exact (ContinuousMap.Homotopic.sigma h).comp (ContinuousMap.Homotopic.refl _)
+
+end TauCeti.TopCat

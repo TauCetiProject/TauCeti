@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Classical
+public import Mathlib.Algebra.Lie.InvariantForm
 public import Mathlib.LinearAlgebra.CrossProduct
 public import Mathlib.LinearAlgebra.Matrix.Dual
+public import TauCeti.Algebra.Lie.BracketNorm
 public import TauCeti.Algebra.Lie.Coadjoint
 public import TauCeti.LinearAlgebra.CrossProduct
 public import TauCeti.LinearAlgebra.Matrix.CrossProduct
@@ -15,6 +17,7 @@ import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.Matrix.DotProduct
 
 /-!
 # The orthogonal Lie algebra `so(3)` and the cross product
@@ -47,7 +50,9 @@ tangent model `so(3) ⧸ so(3)_ν` of the coadjoint orbit through `ν_n` has dim
 orbit derivative `[ξ̂] ↦ ν_(ξ ⨯₃ n)` maps it onto the plane `n^⊥`
 (`TauCeti.soThreeDualEquiv_mem_range_coadjointTangentMap_iff`). Over `ℝ`, `n^⊥` is the tangent
 plane at `n` of the sphere of radius `r = ‖n‖` about the origin; this sphere is the coadjoint orbit
-of the rotation group `SO(3)` through `ν_n`, a fact about the group action not treated here.
+of the rotation group `SO(3)` through `ν_n`
+(`TauCeti.range_specialOrthogonalCoadjointRepresentation_soThreeDualEquiv`, in
+`TauCeti.Algebra.Lie.Orthogonal.CoadjointOrbit`).
 
 The Kirillov–Kostant–Souriau form of `ν_n` is the triple product
 
@@ -63,10 +68,19 @@ normal, by
 the KKS form is `1 / r` times the area form, and its total KKS area is `4πr² / r = 4πr`; that
 integral is not formalized here.
 
+## The invariant form
+
+Read through the hat map, the dot product is a bilinear form `B(û, v̂) = u ⬝ᵥ v` on `so(3)`
+(`TauCeti.soThreeForm`), with `B û = ν_u`. It is symmetric, nondegenerate, and invariant, since
+`⁅ξ̂, ν_n⁆ = ν_(ξ ⨯₃ n)` (`TauCeti.lieInvariant_soThreeForm`). Over `ℝ` it is an inner product
+for which the bracket has norm `1` (`TauCeti.lieBracketNorm_soThreeForm`): Lagrange's identity
+gives `|u ⨯₃ v| ≤ |u| |v|`, with equality for orthonormal `u` and `v`.
+
 ## Main definitions
 
 * `TauCeti.soThreeEquiv R`: the isomorphism `u ↦ û` from `R³` onto `so(3)`.
 * `TauCeti.soThreeDualEquiv R`: the identification of `R³` with `so(3)*` by the dot product.
+* `TauCeti.soThreeForm R`: the dot product on `so(3)`, read through the hat map.
 
 ## Main results
 
@@ -81,6 +95,10 @@ integral is not formalized here.
   is `n^⊥`.
 * `TauCeti.kksForm_soThreeDualEquiv_mk`, `TauCeti.dotProduct_self_mul_kksForm_soThreeDualEquiv_mk`:
   the KKS form is the triple product, and it is `1 / ‖n‖` times the area form of the sphere.
+* `TauCeti.isSymm_soThreeForm`, `TauCeti.lieInvariant_soThreeForm`,
+  `TauCeti.separatingLeft_soThreeForm`: the dot product on `so(3)` is a symmetric, invariant,
+  nondegenerate form.
+* `TauCeti.lieBracketNorm_soThreeForm`: for the dot product, the bracket of `so(3)` has norm `1`.
 
 ## References
 
@@ -323,5 +341,81 @@ theorem dotProduct_self_mul_kksForm_soThreeDualEquiv_mk (n ξ η : Fin 3 → R) 
     triple_product_permutation n ξ η, mul_comm]
 
 end KKS
+
+/-! ### The invariant dot product -/
+
+section Form
+
+variable (R : Type*) [CommRing R] [NoZeroDivisors R] [NeZero (2 : R)]
+
+/-- The dot product on `so(3)`, read through the hat map: `B(û, v̂) = u ⬝ᵥ v`. -/
+def soThreeForm : LinearMap.BilinForm R (so (Fin 3) R) :=
+  ((soThreeEquiv R).symm.trans (soThreeDualEquiv R)).toLinearMap
+
+variable {R}
+
+/-- The dot product of `A, C ∈ so(3)` is that of their vectors `A = û`, `C = v̂`. -/
+theorem soThreeForm_apply (A C : so (Fin 3) R) :
+    soThreeForm R A C = (soThreeEquiv R).symm A ⬝ᵥ (soThreeEquiv R).symm C :=
+  (rfl)
+
+/-- The dot product pairs `û` with the functional `ν_u`. -/
+@[simp]
+theorem soThreeForm_soThreeEquiv (u : Fin 3 → R) :
+    soThreeForm R (soThreeEquiv R u) = soThreeDualEquiv R u := by
+  simp [soThreeForm]
+
+/-- The dot product on `so(3)` pairs `û` and `v̂` to `u ⬝ᵥ v`. -/
+theorem soThreeForm_apply_soThreeEquiv (u v : Fin 3 → R) :
+    soThreeForm R (soThreeEquiv R u) (soThreeEquiv R v) = u ⬝ᵥ v := by
+  simp
+
+/-- The dot product on `so(3)` is symmetric. -/
+theorem isSymm_soThreeForm : (soThreeForm R).IsSymm :=
+  ⟨fun A C ↦ by rw [soThreeForm_apply, soThreeForm_apply, dotProduct_comm]⟩
+
+/-- **The dot product on `so(3)` is invariant**, because the coadjoint action is the infinitesimal
+rotation: `B ⁅û, v̂⁆ = ν_(u ⨯₃ v) = ⁅û, ν_v⁆ = ⁅û, B v̂⁆`. -/
+theorem lieInvariant_soThreeForm : (soThreeForm R).lieInvariant (so (Fin 3) R) := by
+  intro x y z
+  obtain ⟨u, rfl⟩ := (soThreeEquiv R).surjective x
+  obtain ⟨v, rfl⟩ := (soThreeEquiv R).surjective y
+  rw [lie_soThreeEquiv, soThreeForm_soThreeEquiv, soThreeForm_soThreeEquiv,
+    ← lie_soThreeEquiv_soThreeDualEquiv, Dual.lie_apply]
+
+/-- The dot product on `so(3)` is nondegenerate: `û ↦ ν_u` is a linear equivalence. -/
+theorem separatingLeft_soThreeForm : (soThreeForm R).SeparatingLeft :=
+  LinearMap.separatingLeft_iff_ker_eq_bot.mpr (LinearEquiv.ker _)
+
+end Form
+
+/-! ### The norm of the bracket -/
+
+/-- **The norm of the bracket of `so(3)` for the dot product is `1`**: Lagrange's identity
+`|u ⨯₃ v|² = |u|² |v|² - (u ⬝ᵥ v)²` gives `|u ⨯₃ v| ≤ |u| |v|`, with equality for orthonormal
+`u` and `v`. -/
+theorem lieBracketNorm_soThreeForm : (soThreeForm ℝ).toQuadraticMap.lieBracketNorm = 1 := by
+  have hQ (u : Fin 3 → ℝ) : (soThreeForm ℝ).toQuadraticMap (soThreeEquiv ℝ u) = u ⬝ᵥ u := by
+    simp
+  have hpos : (soThreeForm ℝ).toQuadraticMap.PosDef := by
+    intro A hA
+    obtain ⟨u, rfl⟩ := (soThreeEquiv ℝ).surjective A
+    rw [hQ]
+    exact (Matrix.dotProduct_self_nonneg u).lt_of_ne'
+      (dotProduct_self_eq_zero.not.mpr (by rintro rfl; simp at hA))
+  refine le_antisymm ?_ ?_
+  · refine QuadraticMap.lieBracketNorm_le_of_forall_apply_le hpos.nonneg zero_le_one
+      fun A C ↦ ?_
+    obtain ⟨u, rfl⟩ := (soThreeEquiv ℝ).surjective A
+    obtain ⟨v, rfl⟩ := (soThreeEquiv ℝ).surjective C
+    rw [lie_soThreeEquiv, hQ, hQ, hQ, cross_dot_cross, dotProduct_comm v u]
+    nlinarith [sq_nonneg (u ⬝ᵥ v)]
+  · have hc : ![(1 : ℝ), 0, 0] ⨯₃ ![0, 1, 0] = ![0, 0, 1] := by
+      simp [cross_apply]
+    have h := QuadraticMap.sqrt_apply_lie_le_lieBracketNorm hpos
+      (X := soThreeEquiv ℝ ![1, 0, 0]) (Y := soThreeEquiv ℝ ![0, 1, 0])
+      (by simp [hQ, dotProduct, Fin.sum_univ_three]) (by simp [hQ, dotProduct, Fin.sum_univ_three])
+    rwa [lie_soThreeEquiv, hQ, hc, show ![(0 : ℝ), 0, 1] ⬝ᵥ ![0, 0, 1] = 1 by
+      simp [dotProduct, Fin.sum_univ_three], Real.sqrt_one] at h
 
 end TauCeti

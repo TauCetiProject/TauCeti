@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 
@@ -26,12 +27,21 @@ vector of `W`, that is, when the restriction of `Q` to `W` is zero.
   the image under `f`.
 * `QuadraticMap.maximal_isTotallyIsotropic_bot_iff`: the zero submodule is maximal totally
   isotropic exactly when the form is anisotropic.
-* `QuadraticMap.IsTotallyIsotropic.eq_zero_of_polar_eq_zero`: for a nondegenerate form and
+* `QuadraticMap.IsTotallyIsotropic.eq_zero_of_polar_eq_zero`: for a form with trivial radical and
   `W ⊔ W' = ⊤` with `W'` totally isotropic, a vector of `W'` which is polar-orthogonal to `W`
   vanishes.
 * `QuadraticMap.IsTotallyIsotropic.finrank_eq_of_codisjoint`: two totally isotropic subspaces
-  spanning a nondegenerate quadratic space have the same `finrank` (the dimension when finite,
-  and `0` for both otherwise).
+  spanning a quadratic space with trivial radical have the same `finrank` (the dimension when
+  finite, and `0` for both otherwise).
+* `QuadraticMap.IsTotallyIsotropic.le_orthogonal_polarBilin`,
+  `QuadraticMap.IsTotallyIsotropic.two_mul_finrank_le_finrank`,
+  `QuadraticMap.IsTotallyIsotropic.orthogonal_polarBilin_eq_self_iff`: a totally isotropic subspace
+  lies in its polar orthogonal complement, has at most half the ambient dimension when `Q` has
+  trivial radical, and then equals its polar orthogonal complement precisely at half the ambient
+  dimension.
+
+The only nondegeneracy hypothesis these results need is `Q.radical = ⊥`. Both `Q.Nondegenerate`
+and the nondegeneracy of `Q.polarBilin` imply it.
 
 The Witt-index comparison for maximal totally isotropic subspaces (Lam I.4.4) is in
 `TauCeti.LinearAlgebra.QuadraticForm.Witt.TotallyIsotropic`.
@@ -62,7 +72,7 @@ theorem IsTotallyIsotropic.apply_eq_zero (hW : Q.IsTotallyIsotropic W) {v : M} (
 
 /-- A submodule is totally isotropic exactly when the restriction of the form to it is zero. -/
 theorem isTotallyIsotropic_iff_restrict_eq_zero : Q.IsTotallyIsotropic W ↔ Q.restrict W = 0 :=
-  ⟨fun h ↦ QuadraticMap.ext fun v ↦ h v v.2, fun h v hv ↦ by
+  ⟨fun h ↦ QuadraticMap.ext fun v ↦ h v v.property, fun h v hv ↦ by
     simpa using congr($h ⟨v, hv⟩)⟩
 
 /-- A submodule is totally isotropic for `Q.comp f` exactly when its image under `f` is totally
@@ -71,6 +81,14 @@ theorem isTotallyIsotropic_comp_iff {f : M' →ₗ[R] M} {T : Submodule R M'} :
     (Q.comp f).IsTotallyIsotropic T ↔ Q.IsTotallyIsotropic (T.map f) := by
   simp only [isTotallyIsotropic_iff, Submodule.mem_map, forall_exists_index, and_imp,
     forall_apply_eq_imp_iff₂, comp_apply]
+
+/-- The image of a totally isotropic submodule under an isometric equivalence `e : Q ≃ Q'` is
+totally isotropic for `Q'`. -/
+theorem IsTotallyIsotropic.map_isometryEquiv {Q' : QuadraticMap R M' N}
+    (hW : Q.IsTotallyIsotropic W) (e : Q.IsometryEquiv Q') :
+    Q'.IsTotallyIsotropic (W.map e.toLinearEquiv.toLinearMap) := by
+  rintro _ ⟨v, hv, rfl⟩
+  exact (e.map_app v).trans (hW v hv)
 
 /-- The preimage of a totally isotropic submodule under a linear map `f` is totally isotropic
 for `Q.comp f`. -/
@@ -92,10 +110,8 @@ theorem IsTotallyIsotropic.restrict (hW : Q.IsTotallyIsotropic W) (U : Submodule
 
 /-- The zero submodule is totally isotropic. -/
 @[simp]
-theorem isTotallyIsotropic_bot : Q.IsTotallyIsotropic ⊥ := by
-  intro v hv
-  rw [Submodule.mem_bot] at hv
-  rw [hv, map_zero]
+theorem isTotallyIsotropic_bot : Q.IsTotallyIsotropic ⊥ := fun v hv ↦ by
+  rw [(Submodule.mem_bot R).mp hv, map_zero]
 
 /-- A submodule of a totally isotropic submodule is totally isotropic. -/
 theorem IsTotallyIsotropic.mono (hW : Q.IsTotallyIsotropic W) (h : W' ≤ W) :
@@ -139,27 +155,33 @@ section Ring
 variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
   [AddCommGroup N] [Module R N] {Q : QuadraticMap R M N} {W W' : Submodule R M}
 
-/-- For a nondegenerate `Q`, if `W ⊔ W' = ⊤` with `W'` totally isotropic, a vector of `W'`
+/-- For `Q` with trivial radical, if `W ⊔ W' = ⊤` with `W'` totally isotropic, a vector of `W'`
 which is polar-orthogonal to `W` vanishes: it is then polar-orthogonal to all of `M = W + W'`,
 hence lies in the radical. -/
 theorem IsTotallyIsotropic.eq_zero_of_polar_eq_zero (hW' : Q.IsTotallyIsotropic W')
-    (hQ : Q.Nondegenerate) (hWW' : Codisjoint W W') {y : M} (hy : y ∈ W')
+    (hQ : Q.radical = ⊥) (hWW' : Codisjoint W W') {y : M} (hy : y ∈ W')
     (hyW : ∀ x ∈ W, polar Q x y = 0) : y = 0 := by
   have hpolar (z : M) : polar Q y z = 0 := by
     obtain ⟨x, hx, z', hz', rfl⟩ := Submodule.mem_sup.mp (hWW'.eq_top ▸
       Submodule.mem_top : z ∈ W ⊔ W')
     rw [polar_add_right, hW'.polar_eq_zero hy hz', polar_comm, hyW x hx, add_zero]
   have hrad : y ∈ Q.radical := ⟨hW'.apply_eq_zero hy, LinearMap.ext hpolar⟩
-  simpa [hQ.radical_eq_bot] using hrad
+  simpa [hQ] using hrad
 
-/-- For a nondegenerate `Q` and `W ⊔ W' = ⊤` with `W'` totally isotropic, the polar pairing of
-`W'` with `W` is injective in the `W'` variable. -/
+/-- For `Q` with trivial radical and `W ⊔ W' = ⊤` with `W'` totally isotropic, the polar pairing
+of `W'` with `W` is injective in the `W'` variable. -/
 theorem IsTotallyIsotropic.polarBilin_compl₁₂_flip_injective (hW' : Q.IsTotallyIsotropic W')
-    (hQ : Q.Nondegenerate) (hWW' : Codisjoint W W') :
+    (hQ : Q.radical = ⊥) (hWW' : Codisjoint W W') :
     Function.Injective ((polarBilin Q).compl₁₂ W.subtype W'.subtype).flip := by
   refine (injective_iff_map_eq_zero _).mpr fun y hy => Subtype.ext ?_
-  refine hW'.eq_zero_of_polar_eq_zero hQ hWW' y.2 fun x hx => ?_
+  refine hW'.eq_zero_of_polar_eq_zero hQ hWW' y.property fun x hx => ?_
   simpa using LinearMap.congr_fun hy ⟨x, hx⟩
+
+/-- A submodule on which `Q` vanishes is polar-orthogonal to itself. -/
+theorem IsTotallyIsotropic.le_orthogonal_polarBilin {Q : QuadraticForm R M}
+    (hW : Q.IsTotallyIsotropic W) :
+    W ≤ LinearMap.BilinForm.orthogonal Q.polarBilin W :=
+  fun _ hx _ hy ↦ hW.polar_eq_zero hy hx
 
 end Ring
 
@@ -168,27 +190,27 @@ section Field
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
   {Q : QuadraticForm K V} {W W' : Submodule K V}
 
-/-- If `W` is finite-dimensional and `W ⊔ W' = ⊤` with `W'` totally isotropic in a nondegenerate
-space, then `W'` is finite-dimensional: the polar pairing embeds `W'` into the dual of `W`. -/
+/-- If `W` is finite-dimensional and `W ⊔ W' = ⊤` with `W'` totally isotropic for `Q` with trivial
+radical, then `W'` is finite-dimensional: the polar pairing embeds `W'` into the dual of `W`. -/
 theorem IsTotallyIsotropic.finiteDimensional_of_codisjoint (hW' : Q.IsTotallyIsotropic W')
-    (hQ : Q.Nondegenerate) (hWW' : Codisjoint W W') [FiniteDimensional K W] :
+    (hQ : Q.radical = ⊥) (hWW' : Codisjoint W W') [FiniteDimensional K W] :
     FiniteDimensional K W' :=
   Module.Finite.of_injective _ (hW'.polarBilin_compl₁₂_flip_injective hQ hWW')
 
-/-- If `W` is finite-dimensional and `W ⊔ W' = ⊤` with `W'` totally isotropic in a nondegenerate
-space, then `W'` has dimension at most that of `W`: the polar pairing embeds `W'` into the dual
+/-- If `W` is finite-dimensional and `W ⊔ W' = ⊤` with `W'` totally isotropic for `Q` with trivial
+radical, then `W'` has dimension at most that of `W`: the polar pairing embeds `W'` into the dual
 of `W`. -/
 theorem IsTotallyIsotropic.finrank_le_of_codisjoint (hW' : Q.IsTotallyIsotropic W')
-    (hQ : Q.Nondegenerate) (hWW' : Codisjoint W W') [FiniteDimensional K W] :
+    (hQ : Q.radical = ⊥) (hWW' : Codisjoint W W') [FiniteDimensional K W] :
     Module.finrank K W' ≤ Module.finrank K W := by
   simpa [Subspace.dual_finrank_eq] using
     LinearMap.finrank_le_finrank_of_injective (hW'.polarBilin_compl₁₂_flip_injective hQ hWW')
 
-/-- Two totally isotropic subspaces spanning a nondegenerate quadratic space have the same
+/-- Two totally isotropic subspaces spanning a quadratic space with trivial radical have the same
 `Module.finrank`: the polar pairing embeds each into the dual of the other.  This is the equality
 of their dimensions when they are finite-dimensional, and otherwise both `finrank`s are `0`. -/
 theorem IsTotallyIsotropic.finrank_eq_of_codisjoint (hW : Q.IsTotallyIsotropic W)
-    (hW' : Q.IsTotallyIsotropic W') (hQ : Q.Nondegenerate) (hWW' : Codisjoint W W') :
+    (hW' : Q.IsTotallyIsotropic W') (hQ : Q.radical = ⊥) (hWW' : Codisjoint W W') :
     Module.finrank K W' = Module.finrank K W := by
   by_cases hfW : FiniteDimensional K W
   · have := hW'.finiteDimensional_of_codisjoint hQ hWW'
@@ -197,6 +219,40 @@ theorem IsTotallyIsotropic.finrank_eq_of_codisjoint (hW : Q.IsTotallyIsotropic W
   · by_cases hfW' : FiniteDimensional K W'
     · exact absurd (hW.finiteDimensional_of_codisjoint hQ hWW'.symm) hfW
     · rw [Module.finrank_of_not_finite hfW, Module.finrank_of_not_finite hfW']
+
+/-- For `Q` with trivial radical, a `Q`-totally-isotropic subspace `W` meets the kernel of the
+polar form trivially (a vector there lies in the radical), so `W` and its polar orthogonal
+complement have complementary dimensions. -/
+private theorem IsTotallyIsotropic.finrank_add_finrank_orthogonal_polarBilin
+    [FiniteDimensional K V] (hW : Q.IsTotallyIsotropic W) (hQ : Q.radical = ⊥) :
+    Module.finrank K W + Module.finrank K (LinearMap.BilinForm.orthogonal Q.polarBilin W) =
+      Module.finrank K V := by
+  have hker : W ⊓ LinearMap.ker Q.polarBilin = ⊥ :=
+    eq_bot_iff.mpr fun v hv ↦ hQ ▸ ⟨hW v hv.1, hv.2⟩
+  have h := LinearMap.BilinForm.finrank_add_finrank_orthogonal' (B := Q.polarBilin) W
+  rwa [hker, finrank_bot, add_zero] at h
+
+/-- In a finite-dimensional quadratic space with trivial radical, a `Q`-totally-isotropic subspace
+has at most half the ambient dimension. -/
+theorem IsTotallyIsotropic.two_mul_finrank_le_finrank [FiniteDimensional K V]
+    (hW : Q.IsTotallyIsotropic W) (hQ : Q.radical = ⊥) :
+    2 * Module.finrank K W ≤ Module.finrank K V := by
+  have hdim := hW.finrank_add_finrank_orthogonal_polarBilin hQ
+  have hmono := Submodule.finrank_mono hW.le_orthogonal_polarBilin
+  omega
+
+/-- In a finite-dimensional quadratic space with trivial radical, a `Q`-totally-isotropic subspace
+equals its own polar orthogonal complement if and only if its dimension is half the ambient
+dimension. -/
+theorem IsTotallyIsotropic.orthogonal_polarBilin_eq_self_iff [FiniteDimensional K V]
+    (hW : Q.IsTotallyIsotropic W) (hQ : Q.radical = ⊥) :
+    LinearMap.BilinForm.orthogonal Q.polarBilin W = W ↔
+      2 * Module.finrank K W = Module.finrank K V := by
+  have hdim := hW.finrank_add_finrank_orthogonal_polarBilin hQ
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · rw [h] at hdim
+    omega
+  · exact (Submodule.eq_of_le_of_finrank_eq hW.le_orthogonal_polarBilin (by omega)).symm
 
 end Field
 

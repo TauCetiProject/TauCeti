@@ -10,6 +10,7 @@ public import TauCeti.Algebra.TemperleyLieb.Trace.Radical
 -- Private: functoriality of Clifford involutions and even subalgebras, grade-involution parity
 -- criteria, and `Fin.snoc` linear equivalences are used only inside proofs and internal
 -- constructions.
+import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 import TauCeti.LinearAlgebra.Pi
@@ -163,7 +164,7 @@ theorem cliffordIncl_mem_even (m : ℕ) {a : CliffordAlgebra (cliffordForm m)}
 noncomputable def evenCliffordIncl (m : ℕ) :
     EvenClifford m →ₐ[ℂ] EvenClifford (m + 1) :=
   ((cliffordIncl m).comp (EvenClifford m).val).codRestrict (EvenClifford (m + 1)) fun x ↦
-    cliffordIncl_mem_even m x.2
+    cliffordIncl_mem_even m x.property
 
 /-- Coercing `evenCliffordIncl` to the ambient Clifford algebra recovers `cliffordIncl`. -/
 @[simp]
@@ -188,9 +189,9 @@ coordinates. -/
 @[simp]
 theorem cliffordIncl_cliffordProjection (m : ℕ) (j : Fin (m - 1)) :
     cliffordIncl m (cliffordProjection m j) =
-      cliffordProjection (m + 1) ⟨j.1, by omega⟩ := by
-  have h0 : (⟨j.1, by omega⟩ : Fin m).castSucc = ⟨j.1, by omega⟩ := Fin.ext (by simp)
-  have h1 : (⟨j.1 + 1, by omega⟩ : Fin m).castSucc = ⟨j.1 + 1, by omega⟩ := Fin.ext (by simp)
+      cliffordProjection (m + 1) ⟨j.val, by omega⟩ := by
+  have h0 : (⟨j.val, by omega⟩ : Fin m).castSucc = ⟨j.val, by omega⟩ := Fin.ext (by simp)
+  have h1 : (⟨j.val + 1, by omega⟩ : Fin m).castSucc = ⟨j.val + 1, by omega⟩ := Fin.ext (by simp)
   simp [cliffordProjection_def, h0, h1]
 
 /-- `cliffordIncl` intertwines `cliffordAdjoint` across adjacent dimensions. -/
@@ -259,7 +260,7 @@ theorem evenCliffordHom_strandIncl (n : ℕ)
     apply TemperleyLieb.hom_ext
     intro i
     apply Subtype.ext
-    have hi : (⟨i.1, by omega⟩ : Fin (n + 1)) = i.castSucc := Fin.ext (by simp)
+    have hi : (⟨i.val, by omega⟩ : Fin (n + 1)) = i.castSucc := Fin.ext (by simp)
     simp only [AlgHom.comp_apply, strandIncl_e, coe_evenCliffordHom_e, coe_evenCliffordIncl,
       map_smul, cliffordIncl_cliffordProjection, hi]
   exact AlgHom.congr_fun hhom x
@@ -280,9 +281,9 @@ theorem scalarTrace_cliffordIncl_mul_cliffordProjection_last (n : ℕ)
     refine Fin.lastCases ?_ (fun k ↦ ?_) k
     · simp
     · simp [(Fin.castSucc_lt_last k).ne]
-  have hcast : (⟨(Fin.last n).1, by omega⟩ : Fin (n + 2)) = (Fin.last n).castSucc :=
+  have hcast : (⟨(Fin.last n).val, by omega⟩ : Fin (n + 2)) = (Fin.last n).castSucc :=
     Fin.ext (by simp)
-  have hlast : (⟨(Fin.last n).1 + 1, by omega⟩ : Fin (n + 2)) = Fin.last (n + 1) :=
+  have hlast : (⟨(Fin.last n).val + 1, by omega⟩ : Fin (n + 2)) = Fin.last (n + 1) :=
     Fin.ext (by simp)
   have hterm : CliffordAlgebra.scalarTrace (cliffordForm (n + 2))
       (cliffordIncl (n + 1) a *
@@ -320,8 +321,6 @@ theorem isMarkovTrace_evenCliffordTrace :
       scalarTrace_cliffordIncl, pow_succ']
     ring
   map_strandIncl_mul_e_last n x := by
-    have hsqrt : (Real.sqrt 2 : ℂ) * (Real.sqrt 2 : ℂ) = 2 := by
-      exact_mod_cast Real.mul_self_sqrt zero_le_two
     simp only [evenCliffordTrace_apply, map_mul, Subalgebra.coe_mul, evenCliffordHom_strandIncl,
       coe_evenCliffordIncl, coe_evenCliffordHom_e, mul_smul_comm, map_smul,
       scalarTrace_cliffordIncl_mul_cliffordProjection_last, smul_eq_mul]
@@ -337,7 +336,7 @@ theorem isMarkovTrace_evenCliffordTrace :
             ring
       _ = (Real.sqrt 2 : ℂ) ^ (n + 1) *
             CliffordAlgebra.scalarTrace (cliffordForm (n + 1)) (evenCliffordHom (n + 1) x) := by
-            rw [hsqrt]
+            rw [Complex.mul_self_ofReal_sqrt zero_le_two]
             norm_num
 
 namespace IsMarkovTrace
@@ -535,10 +534,9 @@ theorem exists_evenCliffordModel
 @[simp]
 theorem evenCliffordHom_jonesWenzl_three :
     evenCliffordHom 3 (jonesWenzl (Real.sqrt 2 : ℂ) 3) = 0 := by
-  have hsqrt : (Real.sqrt 2 : ℂ) * (Real.sqrt 2 : ℂ) = 2 := by
-    exact_mod_cast Real.mul_self_sqrt zero_le_two
   have hq3 : qInt ℂ (Real.sqrt 2 : ℂ) 3 = 1 := by
-    rw [qInt_add_two (Real.sqrt 2 : ℂ) 1, qInt_two, qInt_one, hsqrt]
+    rw [qInt_add_two (Real.sqrt 2 : ℂ) 1, qInt_two, qInt_one,
+      Complex.mul_self_ofReal_sqrt zero_le_two]
     norm_num
   have hq4 : qInt ℂ (Real.sqrt 2 : ℂ) 4 = 0 := by
     rw [qInt_add_two (Real.sqrt 2 : ℂ) 2, hq3, qInt_two]

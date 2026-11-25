@@ -29,6 +29,8 @@ the orthogonal group of an isotropic nondegenerate form is not compact.
 
 * `TauCeti.QuadraticMap.hyperbolicPairTorus Q hu hv huv`: the homomorphism `Rˣ →* O(Q)`
   attached to a hyperbolic pair `u`, `v`.
+* `QuadraticMap.IsHyperbolicFamily Q e f`: `(e i, f i)` is a family of mutually orthogonal
+  hyperbolic pairs.
 
 ## Main results
 
@@ -196,7 +198,7 @@ two reflections. -/
 theorem hyperbolicPairTorus_mem_specialOrthogonalGroup
     (hu : Q u = 0) (hv : Q v = 0) (huv : polar Q u v = 1) (t : Rˣ) :
     (hyperbolicPairTorus Q hu hv huv t : M ≃ₗ[R] M) ∈ specialOrthogonalGroup Q := by
-  refine mem_specialOrthogonalGroup_iff.mpr ⟨(hyperbolicPairTorus Q hu hv huv t).2, ?_⟩
+  refine mem_specialOrthogonalGroup_iff.mpr ⟨(hyperbolicPairTorus Q hu hv huv t).property, ?_⟩
   by_cases hb : ∃ s : Finset M, Nonempty (Module.Basis s R M)
   · obtain ⟨s, ⟨b⟩⟩ := hb
     have := Module.Free.of_basis b
@@ -215,3 +217,24 @@ theorem hyperbolicPairTorus_mem_specialOrthogonalGroup
 end QuadraticMap
 
 end TauCeti
+
+namespace QuadraticMap
+
+variable {ι R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- `(e i, f i)` is a family of mutually orthogonal hyperbolic pairs: `Q (e i) = Q (f i) = 0`,
+`polar Q (e i) (f i) = 1`, and vectors from different pairs are orthogonal. -/
+structure IsHyperbolicFamily (Q : QuadraticForm R M) (e f : ι → M) : Prop where
+  left_isotropic : ∀ i, Q (e i) = 0
+  right_isotropic : ∀ i, Q (f i) = 0
+  polar_left_right : ∀ i, polar Q (e i) (f i) = 1
+  polar_left_left : Pairwise fun i j => polar Q (e i) (e j) = 0
+  polar_left_right_of_ne : Pairwise fun i j => polar Q (e i) (f j) = 0
+  polar_right_right : Pairwise fun i j => polar Q (f i) (f j) = 0
+
+/-- In a hyperbolic family, `f i` is orthogonal to `e j` for `i ≠ j`. -/
+theorem IsHyperbolicFamily.polar_right_left_of_ne {Q : QuadraticForm R M} {e f : ι → M}
+    (h : IsHyperbolicFamily Q e f) : Pairwise fun i j => polar Q (f i) (e j) = 0 :=
+  fun _ _ hij => (polar_comm _ _ _).trans (h.polar_left_right_of_ne hij.symm)
+
+end QuadraticMap

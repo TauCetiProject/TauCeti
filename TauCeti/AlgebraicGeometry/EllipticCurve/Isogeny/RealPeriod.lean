@@ -199,8 +199,8 @@ private theorem exists_pointMap_eq_of_mem_fibre (φ : Isogeny W₁ W₂) {P : W�
   have h0 : (Hom.ofIsogeny φ).pointMap (.some x y h) ≠ 0 :=
     (pointMap_ofIsogeny_some_eq_zero_iff h).not.mpr hD
   -- `φ(x, y)` has the abscissa of `P`, so it is `P` or `-P`
-  rcases Point.eq_or_eq_neg_of_xCoord_eq h0 hP ((xCoord_pointMap_ofIsogeny_some h hD).trans hr)
-    with he | he
+  rcases (Point.xCoord_eq_xCoord_iff h0 hP).mp
+      ((xCoord_pointMap_ofIsogeny_some h hD).trans hr) with he | he
   · exact ⟨.some x y h, Point.xCoord_some h, he⟩
   · exact ⟨-.some x y h, (Point.xCoord_neg _).trans (Point.xCoord_some h),
       by rw [Hom.pointMap_neg, he, neg_neg]⟩
@@ -230,7 +230,8 @@ theorem injOn_xCoord_preimage_pointMap (φ : Isogeny W₁ W₂) {P : W₂.Point}
   have h0 (Q : W₁.Point) (hQ : (Hom.ofIsogeny φ).pointMap Q = P) : Q ≠ 0 := by
     rintro rfl
     exact (Point.neg_ne_self_iff_ne_zero_and_pos_eval_Ψ₂Sq.mp hP).1 (hQ ▸ Hom.pointMap_zero _)
-  refine (Point.eq_or_eq_neg_of_xCoord_eq (h0 _ hQ₁) (h0 _ hQ₂) hx).resolve_right fun he ↦ hP ?_
+  refine ((Point.xCoord_eq_xCoord_iff (h0 _ hQ₁) (h0 _ hQ₂)).mp hx).resolve_right
+    fun he ↦ hP ?_
   rw [← hQ₂, ← Hom.pointMap_neg, ← he, hQ₁, hQ₂]
 
 /-- **Over the image of `φ`, the fibre of `x ↦ N(x) / D(x)` is counted by the kernel.** For a real
@@ -326,7 +327,7 @@ private theorem encard_inter_preimage_eq_indicator (φ : Isogeny W₁ W₂) {y :
     rw [he, encard_empty, indicator_of_notMem]
     -- the only other point with abscissa `x'` is `-P`, which is not in the image either
     rintro ⟨-, Q, hQ, hQ0, hQy⟩
-    rcases Point.eq_or_eq_neg_of_xCoord_eq hQ0 (Point.some_ne_zero h)
+    rcases (Point.xCoord_eq_xCoord_iff hQ0 (Point.some_ne_zero h)).mp
       (hQy.trans (Point.xCoord_some h).symm) with rfl | rfl
     · exact hφ hQ
     · exact hφ (neg_neg (Point.some y y' h) ▸ neg_mem hQ)
@@ -554,8 +555,8 @@ theorem mem_range_pointMapHom_of_le_xCoord {e : ℝ} (hpos : ∀ ⦃y⦄, e < y 
   obtain ⟨y, h⟩ := exists_nonsingular_of_nonneg_eval_Ψ₂Sq hx
   have h0 : (Hom.ofIsogeny φ).pointMap (.some x y h) ≠ 0 :=
     (pointMap_ofIsogeny_some_eq_zero_iff h).not.mpr hD
-  rcases Point.eq_or_eq_neg_of_xCoord_eq h0 hP ((xCoord_pointMap_ofIsogeny_some h hD).trans hr)
-    with he | he
+  rcases (Point.xCoord_eq_xCoord_iff h0 hP).mp
+      ((xCoord_pointMap_ofIsogeny_some h hD).trans hr) with he | he
   · exact ⟨_, (Hom.pointMapHom_apply _ _).trans he⟩
   · exact ⟨-.some x y h, by rw [map_neg, Hom.pointMapHom_apply, he, neg_neg]⟩
 

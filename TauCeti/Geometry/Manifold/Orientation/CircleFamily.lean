@@ -56,14 +56,14 @@ namespace CircleFamily
 /-- The **positive orientation** of the family of positive-period circles: the orientation on which
 the nowhere-vanishing total form `dp ∧ η` is positive. -/
 protected def orientation : Manifold.Orientation (𝓘(ℝ).prod 𝓘(ℝ)) CircleFamily (Fin 2) :=
-  Manifold.Orientation.ofTopForm (by simp) totalForm.1 (totalForm.isSmoothForm.of_le zero_le)
+  Manifold.Orientation.ofTopForm (by simp) totalForm.val (totalForm.isSmoothForm.of_le zero_le)
     totalForm_apply_ne_zero
 
 /-- A tangent basis of the family is positive for `TauCeti.CircleFamily.orientation` exactly when
 the total form `dp ∧ η` is positive on it. -/
 theorem orientation_eq_orientationAt_orientation_iff {z : CircleFamily}
     (b : Module.Basis (Fin 2) ℝ (TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) z)) :
-    b.orientation = CircleFamily.orientation.orientationAt z ↔ 0 < totalForm.1 z b :=
+    b.orientation = CircleFamily.orientation.orientationAt z ↔ 0 < totalForm.val z b :=
   Manifold.Orientation.orientation_eq_orientationAt_ofTopForm_iff _ _ _ b
 
 /-- A tangent basis is positive for the orientation of the family when it is positive for the
@@ -85,7 +85,7 @@ theorem orientation_eq_orientationAt_orientation_iff_of_mfderiv_mk {p : Positive
     b.orientation = CircleFamily.orientation.orientationAt (mk p x) ↔
       0 < mextDeriv (RoughForm.ofFunction (𝓘(ℝ).prod 𝓘(ℝ))
           fun z : CircleFamily ↦ (z.period : ℝ)) (mk p x) ![b 0] *
-        (AddCircle.timeForm (p : ℝ)).1 x ![w] := by
+        (AddCircle.timeForm (p : ℝ)).val x ![w] := by
   rw [orientation_eq_orientationAt_orientation_iff_eval₂, hb, eval₂_totalForm_mfderiv_mk]
 
 /-- **The real cover.** The covering map `Q(p, t) = (p, [t]_p)` sends a tangent basis `(v, w)` of

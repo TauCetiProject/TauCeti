@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PSeries
 public import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 public import Mathlib.Algebra.Star.Unitary
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Normed.Ring.InfiniteSum
+import TauCeti.Analysis.PSeries.Shifted
 
 /-!
 # The smooth noncommutative two-torus

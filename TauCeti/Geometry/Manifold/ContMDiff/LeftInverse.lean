@@ -7,11 +7,12 @@ module
 
 public import Mathlib.Analysis.Normed.Module.ContinuousInverse
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
+public import TauCeti.Analysis.Normed.Operator.Splitting.RangeComplement
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 
 /-!
-# Smoothly varying left inverses
+# Smoothly varying left and right inverses
 
 Let `𝕜 → 𝕜'` be a normed field extension. Let `A x` be a continuous `𝕜'`-linear map from a Banach
 space `G` to a normed space `F`, depending `C^n` over `𝕜` on a point `x` of a manifold. If `A x₀`
@@ -20,7 +21,8 @@ invertible near `x₀`, and `(P ∘ A x)⁻¹ ∘ P` is a left inverse of `A x` 
 inversion is analytic over the ground field on the invertible operators, so this left inverse is
 again `C^n` over `𝕜` at `x₀`, while retaining its `𝕜'`-linearity. The supplied ground-field scalar
 structures are preserved. This is the smooth counterpart of
-`ContinuousAt.exists_continuousAt_leftInverse`.
+`ContinuousAt.exists_continuousAt_leftInverse`. Dually, if `F` is complete and `A x₀` has a
+continuous right inverse `B`, then `B ∘ (A x ∘ B)⁻¹` is a `C^n` right inverse of `A x` near `x₀`.
 
 For `G = (𝕜')ᵏ` and `A x` the operator `c ↦ ∑ i, c i • X i x` of a family of linearly independent
 vectors depending smoothly on `x`, the left inverse sends a vector of the span of the `X i x` to
@@ -32,8 +34,10 @@ smoothly compatible.
 
 * `ContMDiffAt.exists_contMDiffAt_leftInverse`: `C^n` varying left inverses of a `C^n` family of
   operators whose member at `x₀` has a continuous left inverse.
+* `ContMDiffAt.exists_contMDiffAt_rightInverse`: dually, `C^n` varying right inverses of a `C^n`
+  family of operators into a Banach space whose member at `x₀` has a continuous right inverse.
 * `ContMDiffAt.of_clm_apply`: regularity can be tested after a smoothly varying split injection.
-* `ContMDiffOn.exists_isOpen_contMDiffOn_sub_comp_inverse_comp`: near a point where a left
+* `ContMDiffOn.exists_isOpen_contMDiffOn_sub_comp_leftInverseAlong`: near a point where a left
   inverse compresses a smooth family of operators to the identity, the projections of a fixed
   covector annihilating the central member are smooth and nonzero, and the compression stays
   invertible, on an open neighborhood.
@@ -76,12 +80,43 @@ theorem ContMDiffAt.exists_contMDiffAt_leftInverse {A : M → G →L[𝕜'] F} {
   have hinv : ContDiffAt 𝕜 n Ring.inverse (P ∘L A x₀) := by
     rw [hQ₀]
     exact contDiffAt_ringInverse 𝕜 1
-  refine ⟨fun x ↦ Ring.inverse (P ∘L A x) ∘L P,
-    (((ContinuousLinearMap.compL 𝕜' F G G).flip P).restrictScalars 𝕜).contDiff.comp_contMDiffAt
-      (hinv.comp_contMDiffAt (f := fun x ↦ P ∘L A x) hQ), ?_⟩
-  filter_upwards [hQ.continuousAt.preimage_mem_nhds (hQ₀ ▸ Units.nhds 1)] with x hx v
-  have := congrArg (fun T : G →L[𝕜'] G ↦ T v) (Ring.inverse_mul_cancel _ hx)
-  simpa using this
+  have hi : (P ∘L A x₀).IsInvertible := by
+    rw [hQ₀]
+    exact ⟨ContinuousLinearEquiv.refl 𝕜' G, rfl⟩
+  refine ⟨fun x ↦ (A x).leftInverseAlong P, ?_,
+    (hQ.continuousAt.eventually hi.eventually_nhds).mono fun x hx ↦
+      ContinuousLinearMap.leftInverseAlong_apply_self hx⟩
+  simp_rw [ContinuousLinearMap.leftInverseAlong_def, ← ContinuousLinearMap.ringInverse_eq_inverse]
+  exact (((ContinuousLinearMap.compL 𝕜' F G G).flip P).restrictScalars 𝕜).contDiff.comp_contMDiffAt
+    (hinv.comp_contMDiffAt (f := fun x ↦ P ∘L A x) hQ)
+
+omit [CompleteSpace G] in
+/-- **Right inverses vary smoothly.** Let `A x` be a continuous linear map from a normed space to
+a Banach space, linear over the extension field `𝕜'` and depending `C^n` over the ground field
+`𝕜` on a manifold point `x` at `x₀`. If `A x₀` has a continuous `𝕜'`-linear right inverse, then
+there are continuous `𝕜'`-linear maps `R x`, depending `C^n` over `𝕜` on `x` at `x₀`, such that
+`R x` is a right inverse of `A x` for all `x` near `x₀`. -/
+theorem ContMDiffAt.exists_contMDiffAt_rightInverse [CompleteSpace F] {A : M → G →L[𝕜'] F}
+    {x₀ : M} (hA : ContMDiffAt I 𝓘(𝕜, G →L[𝕜'] F) n A x₀) (h : (A x₀).HasRightInverse) :
+    ∃ R : M → F →L[𝕜'] G, ContMDiffAt I 𝓘(𝕜, F →L[𝕜'] G) n R x₀ ∧
+      ∀ᶠ x in 𝓝 x₀, RightInverse (R x) (A x) := by
+  -- Retain the original ground-field module on extension-linear endomorphisms.
+  let : NormedAlgebra 𝕜 (F →L[𝕜'] F) :=
+    { Algebra.ofModule smul_mul_assoc mul_smul_comm with norm_smul_le := norm_smul_le }
+  obtain ⟨B, hB⟩ := h
+  -- The compression `A x ∘ B` is the identity at `x₀`, hence invertible near `x₀`.
+  have hQ : ContMDiffAt I 𝓘(𝕜, F →L[𝕜'] F) n (fun x ↦ A x ∘L B) x₀ :=
+    (((ContinuousLinearMap.compL 𝕜' F G F).flip B).restrictScalars 𝕜).contDiff.comp_contMDiffAt hA
+  have hQ₀ : A x₀ ∘L B = ((1 : (F →L[𝕜'] F)ˣ) : F →L[𝕜'] F) := ContinuousLinearMap.ext hB
+  have hinv : ContDiffAt 𝕜 n Ring.inverse (A x₀ ∘L B) := by
+    rw [hQ₀]
+    exact contDiffAt_ringInverse 𝕜 1
+  have hunit : ∀ᶠ x in 𝓝 x₀, IsUnit (A x ∘L B) :=
+    hQ.continuousAt.preimage_mem_nhds (Units.isOpen.mem_nhds (by rw [hQ₀]; exact Units.isUnit 1))
+  refine ⟨fun x ↦ B ∘L Ring.inverse (A x ∘L B),
+    ((ContinuousLinearMap.compL 𝕜' F F G B).restrictScalars 𝕜).contDiff.comp_contMDiffAt
+      (hinv.comp_contMDiffAt (f := fun x ↦ A x ∘L B) hQ), hunit.mono fun x hx v ↦ ?_⟩
+  exact congr($(Ring.mul_inverse_cancel _ hx) v)
 
 /-- Ground-field smoothness can be tested after a smoothly varying extension-linear split
 injection. No regularity of `v` is assumed in advance. -/
@@ -98,26 +133,26 @@ theorem ContMDiffAt.of_clm_apply {A : M → G →L[𝕜'] F} {v : M → G} {x₀
 `P` to the identity and `a` is a covector killing `A x`, the covectors
 `a - a (A y) (P (A y))⁻¹ P` are smooth and nonzero, and the compression `P (A y)` is invertible,
 on an open neighborhood of `x` inside the domain of smoothness. They annihilate `A y` by
-`ContinuousLinearMap.sub_comp_inverse_comp_comp_eq_zero`. -/
-theorem ContMDiffOn.exists_isOpen_contMDiffOn_sub_comp_inverse_comp
+`ContinuousLinearMap.leftInverseAlong_comp_self`. -/
+theorem ContMDiffOn.exists_isOpen_contMDiffOn_sub_comp_leftInverseAlong
     {A : M → G →L[𝕜] F} {S : Set M}
     (hA : ContMDiffOn I 𝓘(𝕜, G →L[𝕜] F) n A S) (hS : IsOpen S) {x : M} (hxS : x ∈ S)
     {P : F →L[𝕜] G} (hP : LeftInverse P (A x)) {a : F →L[𝕜] 𝕜} (ha : a ≠ 0)
     (haA : a ∘L A x = 0) :
     ∃ W : Set M, IsOpen W ∧ x ∈ W ∧ W ⊆ S ∧
       ContMDiffOn I 𝓘(𝕜, F →L[𝕜] 𝕜) n
-        (fun y ↦ a - a ∘L A y ∘L (P ∘L A y).inverse ∘L P) W ∧
-      ∀ y ∈ W, (P ∘L A y).IsInvertible ∧ a - a ∘L A y ∘L (P ∘L A y).inverse ∘L P ≠ 0 := by
+        (fun y ↦ a - a ∘L A y ∘L (A y).leftInverseAlong P) W ∧
+      ∀ y ∈ W, (P ∘L A y).IsInvertible ∧ a - a ∘L A y ∘L (A y).leftInverseAlong P ≠ 0 := by
   -- The compressed frame is the identity at x, hence invertible on a neighborhood.
   let Q : M → G →L[𝕜] G := fun y ↦ P ∘L A y
   have hQ : ContMDiffOn I 𝓘(𝕜, G →L[𝕜] G) n Q S :=
     contMDiffOn_const.clm_comp hA
   have hQx : Q x = 1 := ContinuousLinearMap.ext hP
   -- Project the annihilator at x to the annihilators of the nearby frame images.
-  let c : M → F →L[𝕜] 𝕜 := fun y ↦ a - a ∘L A y ∘L (Q y).inverse ∘L P
+  let c : M → F →L[𝕜] 𝕜 := fun y ↦ a - a ∘L A y ∘L (A y).leftInverseAlong P
   have hcx : c x = a := by
     dsimp only [c]
-    rw [← ContinuousLinearMap.comp_assoc, ← ContinuousLinearMap.comp_assoc, haA]
+    rw [← ContinuousLinearMap.comp_assoc, haA]
     simp
   have hQunit : ∀ᶠ y in 𝓝 x, (Q y).IsInvertible := by
     have hi : (Q x).IsInvertible := by
@@ -127,9 +162,10 @@ theorem ContMDiffOn.exists_isOpen_contMDiffOn_sub_comp_inverse_comp
   obtain ⟨W, hWQ, hW, hxW⟩ := eventually_nhds_iff.mp hQunit
   have hc : ContMDiffOn I 𝓘(𝕜, F →L[𝕜] 𝕜) n c (S ∩ W) := by
     apply contMDiffOn_const.sub
-    exact ((contMDiffOn_const.clm_comp (hA.mono Set.inter_subset_left)).clm_comp
-      (fun y hy ↦ (hWQ y hy.2).contDiffAt_map_inverse.comp_contMDiffWithinAt
-        ((hQ y hy.1).mono Set.inter_subset_left))).clm_comp contMDiffOn_const
+    refine (contMDiffOn_const.clm_comp (hA.mono Set.inter_subset_left)).clm_comp fun y hy ↦ ?_
+    exact (ContinuousLinearMap.contDiffAt_leftInverseAlong (hWQ y hy.2)).comp_contMDiffWithinAt
+      (f := fun y ↦ (A y, P)) (((hA y hy.1).mono Set.inter_subset_left).prodMk_space
+        contMDiffWithinAt_const)
   have hcn : ∀ᶠ y in 𝓝 x, c y ≠ 0 :=
     (hc.continuousOn.continuousAt ((hS.inter hW).mem_nhds ⟨hxS, hxW⟩)).eventually_ne
       (by rwa [hcx])

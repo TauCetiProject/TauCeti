@@ -85,10 +85,11 @@ theorem smul_kummerCoeff_eq_nsmul_localCyclotomicCharacter {j : ℕ}
     exact Additive.toMul.injective (Subsingleton.elim _ _)
   have : NeZero (p : K) := ⟨hp⟩
   set σ := (absoluteGaloisGroupRestrictEquiv K).symm τ
-  set u : (SeparableClosure K)ˣ := x.toMul.1
+  set u : (SeparableClosure K)ˣ := x.toMul.val
   -- the defining equation of the cyclotomic character, in the algebraic closure
   have hu : ((u : SeparableClosure K) : AlgebraicClosure K) ^ p ^ j = 1 := by
-    rw [← IntermediateField.coe_pow, ← Units.val_pow_eq_pow_val, (mem_rootsOfUnity _ _).1 x.toMul.2,
+    rw [← IntermediateField.coe_pow, ← Units.val_pow_eq_pow_val,
+        (mem_rootsOfUnity _ _).1 x.toMul.property,
       Units.val_one, IntermediateField.coe_one]
   have hspec := cyclotomicCharacter.spec p σ.toRingEquiv _ hu
   refine Additive.toMul.injective (Subtype.ext (Units.ext (Subtype.ext ?_)))

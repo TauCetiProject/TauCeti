@@ -121,15 +121,15 @@ def orderWindowResiduePairing (a : ℂ) (n m : ℤ) :
     OrderWindow a n m →ₗ[ℂ] OrderWindow a (-m) (-n) →ₗ[ℂ] ℂ :=
   (residuePairingRestrict a n m).liftQ₂ _ _
     (fun φ hφ ↦ LinearMap.ext fun ψ ↦
-      residue_mul_eq_zero_of_mem_orderGE hφ ψ.2 (by omega))
+      residue_mul_eq_zero_of_mem_orderGE hφ ψ.property (by omega))
     (fun ψ hψ ↦ LinearMap.ext fun φ ↦
-      residue_mul_eq_zero_of_mem_orderGE φ.2 hψ (by omega))
+      residue_mul_eq_zero_of_mem_orderGE φ.property hψ (by omega))
 
 /-- On representatives, the quotient pairing is the residue of their product. -/
 @[simp]
 theorem orderWindowResiduePairing_mk (n m : ℤ) (φ : orderGE a n) (ψ : orderGE a (-m)) :
     orderWindowResiduePairing a n m (Submodule.Quotient.mk φ) (Submodule.Quotient.mk ψ) =
-      residue a (φ.1 * ψ.1) := by
+      residue a (φ.val * ψ.val) := by
   simp [orderWindowResiduePairing, residuePairingRestrict, LinearMap.liftQ₂_mk]
 
 /-- **Nondegeneracy of the quotient residue pairing.** Both radicals vanish, without any
@@ -141,7 +141,7 @@ theorem orderWindowResiduePairing_nondegenerate (a : ℂ) (n m : ℤ) :
     induction φ using Submodule.Quotient.induction_on with
     | _ φ =>
       apply (Submodule.Quotient.mk_eq_zero _).mpr
-      have h := (forall_residue_mul_eq_zero_iff φ.1 (-m)).1 fun ψ hψ ↦ by
+      have h := (forall_residue_mul_eq_zero_iff φ.val (-m)).1 fun ψ hψ ↦ by
         simpa only [orderWindowResiduePairing_mk, mul_comm] using
           hφ (Submodule.Quotient.mk (⟨ψ, hψ⟩ : orderGE a (-m)))
       simpa only [Submodule.mem_comap, Submodule.subtype_apply, neg_neg] using h
@@ -149,7 +149,7 @@ theorem orderWindowResiduePairing_nondegenerate (a : ℂ) (n m : ℤ) :
     induction ψ using Submodule.Quotient.induction_on with
     | _ ψ =>
       apply (Submodule.Quotient.mk_eq_zero _).mpr
-      exact (forall_residue_mul_eq_zero_iff ψ.1 n).1 fun φ hφ ↦ by
+      exact (forall_residue_mul_eq_zero_iff ψ.val n).1 fun φ hφ ↦ by
         simpa only [LinearMap.flip_apply, orderWindowResiduePairing_mk] using
           hψ (Submodule.Quotient.mk (⟨φ, hφ⟩ : orderGE a n))
 

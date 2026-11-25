@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Nijenhuis
 public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 public import TauCeti.Geometry.Manifold.DifferentialForm.Squared
+public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Trivial.Basic
 
 /-!
 # The operators `∂` and `∂bar` on an almost complex manifold
@@ -48,6 +49,10 @@ smooth forms.
   `TauCeti.SmoothAlmostComplexStructure.del_del_apply`: the squares of `∂bar` and `∂` on functions
   through the Nijenhuis tensor.
 * `TauCeti.SmoothAlmostComplexStructure.del_delBar_add_delBar_del`: `∂ ∂bar f + ∂bar ∂f = 0`.
+* `TauCeti.SmoothAlmostComplexStructure.del_apply_apply_eq_delFunction`,
+  `TauCeti.SmoothAlmostComplexStructure.delBar_apply_apply_eq_dbarFunction`: on functions, `∂`
+  and `∂bar` are the operators `TauCeti.SmoothAlmostComplexStructure.delFunction` and
+  `TauCeti.SmoothAlmostComplexStructure.dbarFunction` on the underlying function.
 * `TauCeti.SmoothAlmostComplexStructure.del_apply_apply`,
   `TauCeti.SmoothAlmostComplexStructure.delBar_apply_apply`: on functions,
   `∂f(v) = (df(v) - i df(J v)) / 2` and `∂bar f(v) = (df(v) + i df(J v)) / 2`.
@@ -179,12 +184,12 @@ variable (J : SmoothAlmostComplexStructure I M)
 def delBarType (p q : ℕ) :
     J.typeForms (F := F) p q →ₗ[ℂ] J.typeForms (F := F) p (q + 1) :=
   (J.delBar.comp (J.typeForms (F := F) p q).subtype).codRestrict _ fun φ ↦
-    (J.mem_typeForms p (q + 1) _).mpr ((J.mem_typeForms p q _).mp φ.2).delBar
+    (J.mem_typeForms p (q + 1) _).mpr ((J.mem_typeForms p q _).mp φ.property).delBar
 
 /-- The differential on type forms agrees with `∂bar` on the underlying smooth forms. -/
 @[simp]
 theorem coe_delBarType (p q : ℕ) (φ : J.typeForms (F := F) p q) :
-    (J.delBarType p q φ : SmoothForm I M F (p + (q + 1))) = J.delBar φ.1 := (rfl)
+    (J.delBarType p q φ : SmoothForm I M F (p + (q + 1))) = J.delBar φ.val := (rfl)
 
 /-! ### Type components of `∂` and `∂bar` -/
 
@@ -295,6 +300,14 @@ theorem mpullback_delBar (hu : ContMDiff I I' ∞ u) (hJ : IsPseudoholomorphic J
   simp only [delBar_apply, map_sum, mpullback_typeProjection hu hJ,
     ← SmoothForm.mextDerivₗ_mpullback]
 
+/-- Pullback of type forms along a smooth pseudoholomorphic map commutes with `∂bar`. -/
+theorem delBarType_mpullbackType (hu : ContMDiff I I' ∞ u) (hJ : IsPseudoholomorphic J J' u)
+    (p q : ℕ) (φ : J'.typeForms (F := F) p q) :
+    J.delBarType p q (mpullbackType hu hJ p q φ) =
+      mpullbackType hu hJ p (q + 1) (J'.delBarType p q φ) :=
+  Subtype.ext <| by
+    simp only [coe_delBarType, coe_mpullbackType, mpullback_delBar _ hu hJ]
+
 end Pullback
 
 /-! ### Squares when `d = ∂ + ∂bar` -/
@@ -383,46 +396,63 @@ theorem del_delBar_add_delBar_del (f : SmoothForm I M F 0) :
   have hf := SmoothForm.isOfType_zero_zero f J
   rw [hf.delBar.del_eq, hf.del.delBar_eq, mextDerivₗ_delBar, map_neg, neg_add_cancel]
 
-/-- **`∂` on functions.** For a smooth function `f`, `∂f(v) = (df(v) - i df(J v)) / 2`. -/
-theorem del_apply_apply (f : SmoothForm I M F 0) (x : M) (v : TangentSpace I x) :
-    (J.del f).1 x ![v] = (2 : ℂ)⁻¹ • (mvfderiv I (fun y ↦ f.1 y 0) x v -
-      Complex.I • mvfderiv I (fun y ↦ f.1 y 0) x (J x v)) := by
-  rw [(SmoothForm.isOfType_zero_zero f J).del_eq]
+/-- On functions, `∂` of the `0`-form `f` is the operator `∂` on the function `y ↦ f y`:
+`∂f(v) = (J.delFunction f)(v)`. -/
+theorem del_apply_apply_eq_delFunction (f : SmoothForm I M F 0) (x : M) (v : TangentSpace I x) :
+    (J.del f).val x ![v] = J.delFunction (fun y ↦ f.val y 0) x v := by
+  rw [(SmoothForm.isOfType_zero_zero f J).del_eq, delFunction_apply, ← Complex.coe_smul,
+    Complex.ofReal_inv, Complex.ofReal_ofNat]
   simp only [coe_typeProjection, zero_add, ContinuousLinearMap.typeProjection_one_zero,
     LinearMap.smul_apply, LinearMap.sub_apply, one_apply_eq_self,
     ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.sub_apply]
   rw [ContinuousLinearMap.alternatingDerivation_apply_vecCons_fin_one, mextDerivₗ_zero_apply,
     mextDerivₗ_zero_apply]
 
-/-- **`∂bar` on functions.** For a smooth function `f`, `∂bar f(v) = (df(v) + i df(J v)) / 2`. -/
-theorem delBar_apply_apply (f : SmoothForm I M F 0) (x : M) (v : TangentSpace I x) :
-    (J.delBar f).1 x ![v] = (2 : ℂ)⁻¹ • (mvfderiv I (fun y ↦ f.1 y 0) x v +
-      Complex.I • mvfderiv I (fun y ↦ f.1 y 0) x (J x v)) := by
-  rw [(SmoothForm.isOfType_zero_zero f J).delBar_eq]
+/-- On functions, `∂bar` of the `0`-form `f` is the operator `∂bar` on the function `y ↦ f y`:
+`∂bar f(v) = (J.dbarFunction f)(v)`. -/
+theorem delBar_apply_apply_eq_dbarFunction (f : SmoothForm I M F 0) (x : M)
+    (v : TangentSpace I x) :
+    (J.delBar f).val x ![v] = J.dbarFunction (fun y ↦ f.val y 0) x v := by
+  rw [(SmoothForm.isOfType_zero_zero f J).delBar_eq, dbarFunction_apply, ← Complex.coe_smul,
+    Complex.ofReal_inv, Complex.ofReal_ofNat]
   simp only [coe_typeProjection, zero_add, ContinuousLinearMap.typeProjection_zero_one,
     LinearMap.smul_apply, LinearMap.add_apply, one_apply_eq_self,
     ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.add_apply]
   rw [ContinuousLinearMap.alternatingDerivation_apply_vecCons_fin_one, mextDerivₗ_zero_apply,
     mextDerivₗ_zero_apply]
 
+/-- **`∂` on functions.** For a smooth function `f`, `∂f(v) = (df(v) - i df(J v)) / 2`. -/
+theorem del_apply_apply (f : SmoothForm I M F 0) (x : M) (v : TangentSpace I x) :
+    (J.del f).val x ![v] = (2 : ℂ)⁻¹ • (mvfderiv I (fun y ↦ f.val y 0) x v -
+      Complex.I • mvfderiv I (fun y ↦ f.val y 0) x (J x v)) := by
+  rw [del_apply_apply_eq_delFunction, delFunction_apply, ← Complex.coe_smul, Complex.ofReal_inv,
+    Complex.ofReal_ofNat]
+
+/-- **`∂bar` on functions.** For a smooth function `f`, `∂bar f(v) = (df(v) + i df(J v)) / 2`. -/
+theorem delBar_apply_apply (f : SmoothForm I M F 0) (x : M) (v : TangentSpace I x) :
+    (J.delBar f).val x ![v] = (2 : ℂ)⁻¹ • (mvfderiv I (fun y ↦ f.val y 0) x v +
+      Complex.I • mvfderiv I (fun y ↦ f.val y 0) x (J x v)) := by
+  rw [delBar_apply_apply_eq_dbarFunction, dbarFunction_apply, ← Complex.coe_smul,
+    Complex.ofReal_inv, Complex.ofReal_ofNat]
+
+/-- `∂bar f` vanishes at a point exactly when `∂bar` of the function `y ↦ f y` does. -/
+theorem delBar_apply_eq_zero_iff_dbarFunction_eq_zero (f : SmoothForm I M F 0) (x : M) :
+    (J.delBar f).val x = 0 ↔ J.dbarFunction (fun y ↦ f.val y 0) x = 0 := by
+  rw [ContinuousAlternatingMap.eq_zero_iff_forall_apply_fin_one, ContinuousLinearMap.ext_iff]
+  simp only [delBar_apply_apply_eq_dbarFunction, zero_apply]
+
 /-- `∂bar f` vanishes at a point exactly when the differential of `f` there is complex linear
 for `J`: `df(J v) = i df(v)`. -/
 theorem delBar_apply_eq_zero_iff (f : SmoothForm I M F 0) (x : M) :
-    (J.delBar f).1 x = 0 ↔ ∀ v, mvfderiv I (fun y ↦ f.1 y 0) x (J x v) =
-      Complex.I • mvfderiv I (fun y ↦ f.1 y 0) x v := by
-  refine (ContinuousAlternatingMap.eq_zero_iff_forall_apply_fin_one _).trans
-    (forall_congr' fun v ↦ ?_)
-  rw [delBar_apply_apply, smul_eq_zero, or_iff_right (by norm_num)]
-  constructor <;> intro h
-  · rw [eq_neg_of_add_eq_zero_left h, smul_neg, smul_smul, Complex.I_mul_I, neg_one_smul,
-      _root_.neg_neg]
-  · rw [h, smul_smul, Complex.I_mul_I, neg_one_smul, add_neg_cancel]
+    (J.delBar f).val x = 0 ↔ ∀ v, mvfderiv I (fun y ↦ f.val y 0) x (J x v) =
+      Complex.I • mvfderiv I (fun y ↦ f.val y 0) x v :=
+  (J.delBar_apply_eq_zero_iff_dbarFunction_eq_zero f x).trans (J.dbarFunction_eq_zero_iff _ x)
 
 /-- `∂f` vanishes at a point exactly when the differential of `f` there is conjugate linear for
 `J`: `df(J v) = -i df(v)`. -/
 theorem del_apply_eq_zero_iff (f : SmoothForm I M F 0) (x : M) :
-    (J.del f).1 x = 0 ↔ ∀ v, mvfderiv I (fun y ↦ f.1 y 0) x (J x v) =
-      -Complex.I • mvfderiv I (fun y ↦ f.1 y 0) x v := by
+    (J.del f).val x = 0 ↔ ∀ v, mvfderiv I (fun y ↦ f.val y 0) x (J x v) =
+      -Complex.I • mvfderiv I (fun y ↦ f.val y 0) x v := by
   refine (ContinuousAlternatingMap.eq_zero_iff_forall_apply_fin_one _).trans
     (forall_congr' fun v ↦ ?_)
   rw [del_apply_apply, smul_eq_zero, or_iff_right (by norm_num)]
@@ -435,7 +465,7 @@ variable [FiniteDimensional ℝ E]
 /-- **`∂bar²` on functions is the Nijenhuis tensor.** For a smooth function `f`,
 `∂bar ∂bar f(v, w) = -∂f(N_J(v, w)) / 4`. -/
 theorem delBar_delBar_apply (f : SmoothForm I M F 0) (x : M) (v w : TangentSpace I x) :
-    (J.delBar (J.delBar f)).1 x ![v, w] = -(4 : ℂ)⁻¹ • (J.del f).1 x ![J.nijenhuis x v w] := by
+    (J.delBar (J.delBar f)).val x ![v, w] = -(4 : ℂ)⁻¹ • (J.del f).val x ![J.nijenhuis x v w] := by
   have hf := SmoothForm.isOfType_zero_zero f J
   rw [hf.delBar.delBar_eq, mextDerivₗ_delBar, map_neg, SmoothForm.neg_toRoughForm, Pi.neg_apply,
     ContinuousAlternatingMap.neg_apply, neg_smul]
@@ -444,7 +474,7 @@ theorem delBar_delBar_apply (f : SmoothForm I M F 0) (x : M) (v w : TangentSpace
 /-- **`∂²` on functions is the Nijenhuis tensor.** For a smooth function `f`,
 `∂∂f(v, w) = -∂bar f(N_J(v, w)) / 4`. -/
 theorem del_del_apply (f : SmoothForm I M F 0) (x : M) (v w : TangentSpace I x) :
-    (J.del (J.del f)).1 x ![v, w] = -(4 : ℂ)⁻¹ • (J.delBar f).1 x ![J.nijenhuis x v w] := by
+    (J.del (J.del f)).val x ![v, w] = -(4 : ℂ)⁻¹ • (J.delBar f).val x ![J.nijenhuis x v w] := by
   have hf := SmoothForm.isOfType_zero_zero f J
   rw [hf.del.del_eq, ← neg_eq_iff_eq_neg.2 (mextDerivₗ_delBar J f), map_neg,
     SmoothForm.neg_toRoughForm, Pi.neg_apply, ContinuousAlternatingMap.neg_apply, neg_smul]

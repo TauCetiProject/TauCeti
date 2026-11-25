@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.ScalarChange
 public import TauCeti.Algebra.Module.Projective.FreeComplement
 public import TauCeti.Algebra.Module.StableEquivalent
-public import TauCeti.CategoryTheory.GrothendieckGroup.Split
 
 /-!
 # Equality in the split `K₀` of finitely generated projective modules
@@ -129,8 +128,7 @@ theorem of_eq_nsmul_of_linearEquiv_fin {X R' : (finiteProjectiveModules R).FullS
       X (ModuleCat.isZero_of_subsingleton _))
   | succ n ih =>
     -- Split `Rⁿ⁺¹ ≃ R × Rⁿ` and use additivity on products.
-    let Y : (finiteProjectiveModules R).FullSubcategory :=
-      ⟨ModuleCat.of R (Fin n → R), finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩
+    let Y := FiniteProjectiveModules.of R (Fin n → R)
     rw [of_eq_add_of_linearEquiv_prod (P := R') (Q := Y)
       (e.trans ((Fin.consLinearEquiv R fun _ ↦ R).symm.trans (e'.symm.prodCongr (.refl _ _)))),
       ih (X := Y) (.refl _ _), succ_nsmul']
@@ -150,9 +148,7 @@ theorem of_eq_of_iff_stableEquivalent {P Q : (finiteProjectiveModules R).FullSub
       (e.prodCongr (LinearEquiv.refl R N)).trans <|
       (LinearEquiv.prodAssoc R Q.obj T.obj N).trans <| (LinearEquiv.refl R Q.obj).prodCongr c⟩⟩
   · rintro ⟨n, h⟩
-    exact ⟨⟨ModuleCat.of R (Fin n → R),
-      finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩,
-      nonempty_biprod_iso_biprod_iff.2 h⟩
+    exact ⟨FiniteProjectiveModules.of R (Fin n → R), nonempty_biprod_iso_biprod_iff.2 h⟩
 
 /-- **Classes of finite free modules in projective `K₀`.** If `Q ≃ₗ[R] Rⁿ`, then a finitely
 generated projective module `P` has the class of `Q` in split `K₀` if and only if
@@ -173,38 +169,28 @@ variable (Λ : Type u) [Ring Λ]
   (M : Type u) [AddCommGroup M] [Module Λ M] [Module.Finite Λ M] [Module.Projective Λ M]
   {N : Type u} [AddCommGroup N] [Module Λ N] [Module.Finite Λ N] [Module.Projective Λ N]
 
-/-- A finitely generated projective module as an object of the subcategory of finitely generated
-projective modules. -/
-private abbrev obj (P : Type u) [AddCommGroup P] [Module Λ P] [Module.Finite Λ P]
-    [Module.Projective Λ P] : (finiteProjectiveModules Λ).FullSubcategory :=
-  ⟨ModuleCat.of Λ P, finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩
-
 /-- The class `[M] - n[Λ]` of a finitely generated projective `Λ`-module `M` in the split `K₀` of
 finitely generated projective `Λ`-modules. For a locally free `Λ`-lattice of rank `n` over a
 Dedekind domain `A` with `¬IsField A`, this is its class in the locally free class group. -/
 noncomputable def classOf (n : ℕ) : SplitK0.{u} (finiteProjectiveModules Λ).FullSubcategory :=
-  SplitK0.of ⟨ModuleCat.of Λ M, finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩ -
-    n • SplitK0.of ⟨ModuleCat.of Λ Λ, finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩
+  SplitK0.of.{u} (of Λ M) - n • SplitK0.of.{u} (of Λ Λ)
 
 theorem classOf_def (n : ℕ) :
-    classOf Λ M n =
-      SplitK0.of ⟨ModuleCat.of Λ M, finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩ -
-        n • SplitK0.of
-          ⟨ModuleCat.of Λ Λ, finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩ :=
+    classOf Λ M n = SplitK0.of.{u} (of Λ M) - n • SplitK0.of.{u} (of Λ Λ) :=
   (rfl)
 
 variable {Λ M}
 
 /-- Isomorphic modules have the same class. -/
 theorem classOf_congr (e : M ≃ₗ[Λ] N) (n : ℕ) : classOf Λ M n = classOf Λ N n := by
-  rw [classOf, classOf, SplitK0.of_congr.{u} (X := obj Λ M) (Y := obj Λ N)
+  rw [classOf, classOf, SplitK0.of_congr.{u} (X := of Λ M) (Y := of Λ N)
     (ObjectProperty.isoMk _ e.toModuleIso)]
 
 /-- **Stably free classes.** The class `[M] - n[Λ]` vanishes if and only if `M` is stably free of
 rank `n`: `M × Λᵏ ≃ Λⁿ⁺ᵏ` for some `k`. -/
 theorem classOf_eq_zero_iff (n : ℕ) :
     classOf Λ M n = 0 ↔ ∃ k : ℕ, Nonempty ((M × (Fin k → Λ)) ≃ₗ[Λ] (Fin (n + k) → Λ)) := by
-  rw [classOf, sub_eq_zero, ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := obj Λ (Fin n → Λ))
+  rw [classOf, sub_eq_zero, ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := of Λ (Fin n → Λ))
     (.refl _ _) (.refl _ _)]
   exact SplitK0.of_eq_of_iff_exists_prod_linearEquiv_fin (.refl _ _)
 
@@ -217,8 +203,8 @@ theorem classOf_eq_classOf_iff (n : ℕ) :
 
 /-- The class of a product is the sum of the classes, the ranks adding. -/
 theorem classOf_prod (n m : ℕ) : classOf Λ (M × N) (n + m) = classOf Λ M n + classOf Λ N m := by
-  rw [classOf, classOf, classOf, SplitK0.of_eq_add_of_linearEquiv_prod (X := obj Λ (M × N))
-    (P := obj Λ M) (Q := obj Λ N) (.refl _ _), add_nsmul]
+  rw [classOf, classOf, classOf, SplitK0.of_eq_add_of_linearEquiv_prod (X := of Λ (M × N))
+    (P := of Λ M) (Q := of Λ N) (.refl _ _), add_nsmul]
   abel
 
 variable (Λ) in
@@ -226,8 +212,19 @@ variable (Λ) in
 @[simp]
 theorem classOf_free (n : ℕ) : classOf Λ (Fin n → Λ) n = 0 := by
   rw [classOf, sub_eq_zero]
-  exact SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := obj Λ (Fin n → Λ)) (R' := obj Λ Λ)
+  exact SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := of Λ (Fin n → Λ)) (R' := of Λ Λ)
     (.refl _ _) (.refl _ _)
+
+/-- Extension of scalars on split `K₀` sends `[M] - n[Λ]` to `[Λ' ⊗_Λ M] - n[Λ']`, for every
+finitely generated projective `Λ`-module `M`. -/
+@[simp]
+theorem map_extendScalars_classOf {Λ' : Type u} [Ring Λ'] (f : Λ →+* Λ') (n : ℕ) :
+    SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars (classOf Λ M n) =
+      classOf Λ' (BalancedExtension f M) n := by
+  rw [classOf_def, classOf_def, map_sub, map_nsmul,
+    SplitK0.map_of, SplitK0.map_of,
+    SplitK0.of_extendScalars_obj (Q := of Λ' (BalancedExtension f M)) (.refl _ _),
+    SplitK0.of_extendScalars_obj (Q := of Λ' Λ') (BalancedExtension.rid f)]
 
 end ClassOf
 

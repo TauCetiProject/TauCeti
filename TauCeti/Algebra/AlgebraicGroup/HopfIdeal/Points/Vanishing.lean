@@ -36,6 +36,8 @@ commutator. The trivial point subgroup generates the trivial closed subgroup.
   closures lie in the closure of the commutator.
 * `TauCeti.HopfIdeal.quotientPointsSubgroup_vanishingIdeal_bot`: the closure of the trivial
   subgroup is trivial.
+* `TauCeti.HopfIdeal.vanishingIdeal_toIdeal_eq_ker`: the closure of the image of a morphism from a
+  reduced finite-type scheme over an algebraically closed field is cut out by its kernel.
 
 ## References
 
@@ -160,7 +162,7 @@ theorem le_vanishingIdeal_iff (S : Subgroup (WithConv (H →ₐ[k] k))) (I : Hop
     apply (mem_vanishingIdeal S x).mpr
     intro g
     exact (CommHopfAlgCat.mem_quotientPointsSubgroup_iff
-      (_root_.CommHopfAlgCat.of k H) I (CommAlgCat.of k k) g.val).mp (h g.2) x hx
+      (_root_.CommHopfAlgCat.of k H) I (CommAlgCat.of k k) g.val).mp (h g.property) x hx
 
 /-- Evaluating the coordinate commutator at the points `g` and `h` is the same as first
 contracting its left leg against `g` and then evaluating at `h`. -/
@@ -209,7 +211,7 @@ theorem commutator_quotientPointsSubgroup_vanishingIdeal_le
       Algebra.TensorProduct.productMap s.val.ofConv t.val.ofConv (c x) = 0 := by
     rw [← hval]
     exact (mem_vanishingIdeal _ x).mp hx
-      ⟨_, Subgroup.commutator_mem_commutator s.2 t.2⟩
+      ⟨_, Subgroup.commutator_mem_commutator s.property t.property⟩
   -- Fixing the first argument in `S`, vanishing on `T` extends to its closure.
   have hSh (s : S) :
       Algebra.TensorProduct.productMap s.val.ofConv h.ofConv (c x) = 0 := by
@@ -233,7 +235,7 @@ theorem quotientPointsSubgroup_vanishingIdeal_bot :
   have hx : x - algebraMap k H (Coalgebra.counit (R := k) x) ∈
       vanishingIdeal (⊥ : Subgroup (WithConv (H →ₐ[k] k))) := by
     refine (mem_vanishingIdeal _ _).mpr fun s ↦ ?_
-    rw [Subgroup.mem_bot.mp s.2, AlgHom.convOne_apply]
+    rw [Subgroup.mem_bot.mp s.property, AlgHom.convOne_apply]
     simp
   have hzero := (CommHopfAlgCat.mem_quotientPointsSubgroup_iff _ _ _ g).mp hg _ hx
   rw [map_sub, sub_eq_zero] at hzero
@@ -272,6 +274,31 @@ algebraically closed field. -/
   intro f
   exact ((mem_vanishingIdeal _ x).mp hx ⟨toConv f, Subgroup.mem_top _⟩).trans
     (map_zero f).symm
+
+/-- **The closure of the image of a morphism is cut out by its kernel.** Let `φ : H →ₐ[k] B`
+be the coordinate map of a morphism of schemes `Spec B → G` from a reduced finite-type scheme
+over an algebraically closed field. If its rational points map onto a subgroup `S` of the
+rational points of `G`, then the functions vanishing on `S` are exactly the kernel of `φ`. -/
+theorem vanishingIdeal_toIdeal_eq_ker [IsAlgClosed k] {B : Type*} [CommRing B] [Algebra k B]
+    [Algebra.FiniteType k B] [IsReduced B] (φ : H →ₐ[k] B)
+    (S : Subgroup (WithConv (H →ₐ[k] k)))
+    (hS : (S : Set (WithConv (H →ₐ[k] k))) = Set.range fun b : B →ₐ[k] k ↦ toConv (b.comp φ)) :
+    (vanishingIdeal S).toIdeal = RingHom.ker φ := by
+  ext x
+  rw [mem_toIdeal, mem_vanishingIdeal, RingHom.mem_ker]
+  constructor
+  · intro hx
+    refine eq_of_forall_algHom_apply_eq (k := k) (K := k) fun b ↦ ?_
+    rw [map_zero]
+    have hb : toConv (b.comp φ) ∈ S := by
+      rw [← SetLike.mem_coe, hS]
+      exact ⟨b, rfl⟩
+    exact hx ⟨_, hb⟩
+  · intro hx g
+    have hg : g.val ∈ (S : Set (WithConv (H →ₐ[k] k))) := g.property
+    rw [hS] at hg
+    obtain ⟨b, hb⟩ := hg
+    rw [← hb, ofConv_toConv, AlgHom.comp_apply, hx, map_zero]
 
 end
 

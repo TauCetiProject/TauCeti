@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Basis.Bilinear
+public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.DegreeScaling
 public import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
@@ -28,7 +29,15 @@ for which the wedge basis is orthonormal. Over `ℝ` and `ℂ` this is the exter
 This file proves that **exterior multiplication by `x` is adjoint to contraction by `h(x, ·)`**:
 `H (x ∧ s) t = H s (h(x, ·) ⌋ t)`. Since `⋀ M` is generated from `1` by exterior multiplication,
 the adjointness and the normalization `H 1 1 = 1` determine `H`, so `H` depends only on `h`
-and not on the orthonormal basis used to build it.
+and not on the orthonormal basis used to build it. From that adjointness follow the two intrinsic
+properties that characterize `H` as the exterior Gram metric of `h`
+(`ExteriorAlgebra.eq_toLinearMapₛₗ₂_of_ιMulti`):
+
+* **distinct exterior degrees are orthogonal**
+  (`ExteriorAlgebra.toLinearMapₛₗ₂_eq_zero_of_mem_exteriorPower`);
+* **on decomposable `p`-vectors, `H` is the `p × p` Gram determinant**
+  `H (x₁ ∧ ⋯ ∧ xₚ) (y₁ ∧ ⋯ ∧ yₚ) = det (h (xᵢ, yⱼ))` in every degree `p`, including degree zero
+  and degrees at or above the rank (`ExteriorAlgebra.toLinearMapₛₗ₂_ιMulti_ιMulti`).
 
 These are the identities behind the creation and annihilation operators of a Fock space: in the
 spinor module `⋀ W` of a complex structure, the Clifford action of a vector is a sum of a
@@ -45,6 +54,13 @@ normalized Fock actions compare.
 * `ExteriorAlgebra.toLinearMapₛₗ₂_apply_one_one`: `H 1 1 = 1`.
 * `ExteriorAlgebra.toLinearMapₛₗ₂_eq_of_toLinearMapₛₗ₂_eq`: two bases with the same
   Hermitian form on `M` give the same Hermitian form on `⋀ M`.
+* `ExteriorAlgebra.toLinearMapₛₗ₂_eq_zero_of_mem_exteriorPower`: `⋀^p M` and `⋀^q M` are
+  `H`-orthogonal for `p ≠ q`.
+* `ExteriorAlgebra.toLinearMapₛₗ₂_ιMulti_ιMulti`: the Gram-determinant formula
+  `H (x₁ ∧ ⋯ ∧ xₚ) (y₁ ∧ ⋯ ∧ yₚ) = det (h (xᵢ, yⱼ))`, specialized to degree `1` in
+  `ExteriorAlgebra.toLinearMapₛₗ₂_ι_ι`.
+* `ExteriorAlgebra.eq_toLinearMapₛₗ₂_of_ιMulti`: `H` is the unique sesquilinear form on `⋀ M`
+  with orthogonal exterior degrees and Gram-determinant values on decomposable wedges.
 * `ExteriorAlgebra.toLinearMapₛₗ₂_degreeScaling_left`: `H (T_r s) t = H s (T_{star r} t)`.
 * `ExteriorAlgebra.toLinearMapₛₗ₂_degreeScaling_degreeScaling_of_mem_exteriorPower`:
   `H (T_r s) (T_r t) = (star r * r) ^ p * H s t` for `s` in the `p`-th exterior power.
@@ -53,6 +69,7 @@ normalized Fock actions compare.
 
 * W. Greub, *Multilinear Algebra*, 2nd ed., Springer (1978), Chapter 5.
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §5.
+* L. Nicolaescu, *Lectures on the Geometry of Manifolds*, 3rd ed., World Scientific (2020), §2.2.4.
 -/
 
 public section
@@ -161,6 +178,90 @@ theorem toLinearMapₛₗ₂_eq_of_toLinearMapₛₗ₂_eq {I' : Type*} [Fintype
   | ι_mul s m hs =>
     refine LinearMap.ext fun t ↦ ?_
     rw [toLinearMapₛₗ₂_ι_mul_left, toLinearMapₛₗ₂_ι_mul_left, hs, h]
+
+/-- **Distinct exterior powers are orthogonal**: for `p ≠ q`, `H s t = 0` whenever `s ∈ ⋀[R]^p M`
+and `t ∈ ⋀[R]^q M`. -/
+theorem toLinearMapₛₗ₂_eq_zero_of_mem_exteriorPower {p q : ℕ} (hpq : p ≠ q)
+    {s t : _root_.ExteriorAlgebra R M} (hs : s ∈ ⋀[R]^p M) (ht : t ∈ ⋀[R]^q M) :
+    toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
+      (1 : Matrix (Finset I) (Finset I) R) s t = 0 := by
+  have hone {k : ℕ} (hk : k ≠ 0) {u : _root_.ExteriorAlgebra R M} (hu : u ∈ ⋀[R]^k M) :
+      toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
+        (1 : Matrix (Finset I) (Finset I) R) 1 u = 0 := by
+    induction hu using Submodule.pow_induction_on_left' with
+    | algebraMap _ => exact (hk rfl).elim
+    | add _ _ _ _ _ ihx ihy => rw [map_add, ihx hk, ihy hk, add_zero]
+    | mem_mul m hm _ _ _ _ =>
+      obtain ⟨v, rfl⟩ := hm
+      rw [toLinearMapₛₗ₂_ι_mul_right, contractLeft_one, map_zero, LinearMap.zero_apply]
+  induction hs using Submodule.pow_induction_on_left' generalizing q t with
+  | algebraMap r =>
+    rw [Algebra.algebraMap_eq_smul_one, map_smulₛₗ, LinearMap.smul_apply, hone hpq.symm ht,
+      smul_zero]
+  | add _ _ _ _ _ ihx ihy =>
+    rw [map_add, LinearMap.add_apply, ihx hpq ht, ihy hpq ht, add_zero]
+  | mem_mul m hm _ _ _ ih =>
+    obtain ⟨v, rfl⟩ := hm
+    rw [toLinearMapₛₗ₂_ι_mul_left]
+    rcases q with _ | j
+    · rw [contractLeft_eq_zero_of_mem_exteriorPower_zero _ ht, map_zero]
+    · exact ih (Nat.succ_ne_succ_iff.mp hpq) (contractLeft_mem_exteriorPower _ ht)
+
+/-- **In degree one, the exterior Hermitian form restricts to the Hermitian form on `M`.** -/
+theorem toLinearMapₛₗ₂_ι_ι (x y : M) :
+    toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
+        (1 : Matrix (Finset I) (Finset I) R)
+        (_root_.ExteriorAlgebra.ι R x) (_root_.ExteriorAlgebra.ι R y) =
+      toLinearMapₛₗ₂ (starRingEnd R) b b (1 : Matrix I I R) x y := by
+  have hx : _root_.ExteriorAlgebra.ι R x = _root_.ExteriorAlgebra.ι R x * 1 := (mul_one _).symm
+  rw [hx, toLinearMapₛₗ₂_ι_mul_left, contractLeft_ι, Algebra.algebraMap_eq_smul_one, map_smul,
+    toLinearMapₛₗ₂_apply_one_one, smul_eq_mul, mul_one]
+
+/-- **The Gram-determinant formula**: on decomposable wedges of every degree `p`, including degree
+zero and degrees above the rank, `H (x₁ ∧ ⋯ ∧ xₚ) (y₁ ∧ ⋯ ∧ yₚ) = det (h(xᵢ, yⱼ))`. -/
+theorem toLinearMapₛₗ₂_ιMulti_ιMulti (p : ℕ) (x y : Fin p → M) :
+    toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
+        (1 : Matrix (Finset I) (Finset I) R)
+        (_root_.ExteriorAlgebra.ιMulti R p x) (_root_.ExteriorAlgebra.ιMulti R p y) =
+      (Matrix.of fun i j ↦
+        toLinearMapₛₗ₂ (starRingEnd R) b b (1 : Matrix I I R) (x i) (y j)).det := by
+  induction p with
+  | zero =>
+    rw [_root_.ExteriorAlgebra.ιMulti_zero_apply, _root_.ExteriorAlgebra.ιMulti_zero_apply,
+      toLinearMapₛₗ₂_apply_one_one, Matrix.det_fin_zero]
+  | succ n ih =>
+    rw [_root_.ExteriorAlgebra.ιMulti_succ_apply, toLinearMapₛₗ₂_ι_mul_left,
+      contractLeft_ιMulti, map_sum, Matrix.det_succ_row_zero]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [map_smul, smul_eq_mul, ih]
+    refine congrArg (_ * ·) (congrArg Matrix.det ?_)
+    ext i k
+    simp [Matrix.vecTail, Fin.removeNth_apply]
+
+/-- **Characterization of the exterior Gram metric**: the form making the wedge basis of `b`
+orthonormal is the unique sesquilinear form on `⋀ M` for which distinct exterior powers are
+orthogonal and decomposable `p`-vectors pair by the `p × p` Gram determinant of `h`. -/
+theorem eq_toLinearMapₛₗ₂_of_ιMulti
+    (B : _root_.ExteriorAlgebra R M →ₗ⋆[R] _root_.ExteriorAlgebra R M →ₗ[R] R)
+    (horth : ∀ {p q : ℕ}, p ≠ q → ∀ {s : _root_.ExteriorAlgebra R M}, s ∈ ⋀[R]^p M →
+      ∀ {t : _root_.ExteriorAlgebra R M}, t ∈ ⋀[R]^q M → B s t = 0)
+    (hdet : ∀ (p : ℕ) (x y : Fin p → M),
+      B (_root_.ExteriorAlgebra.ιMulti R p x) (_root_.ExteriorAlgebra.ιMulti R p y) =
+        (Matrix.of fun i j ↦
+          toLinearMapₛₗ₂ (starRingEnd R) b b (1 : Matrix I I R) (x i) (y j)).det) :
+    B = toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
+      (1 : Matrix (Finset I) (Finset I) R) := by
+  refine LinearMap.ext_basis b.ExteriorAlgebra b.ExteriorAlgebra fun S T ↦ ?_
+  have hmem (U : Finset I) : b.ExteriorAlgebra U ∈ ⋀[R]^U.card M := by
+    rw [_root_.ExteriorAlgebra.basis_apply_ofCard b (rfl : U.card = U.card),
+      ← _root_.exteriorPower.ιMulti_family_apply_coe]
+    exact SetLike.coe_mem _
+  by_cases hcard : S.card = T.card
+  · rw [_root_.ExteriorAlgebra.basis_apply_ofCard b (rfl : S.card = S.card),
+      _root_.ExteriorAlgebra.basis_apply_ofCard b hcard.symm]
+    simp only [_root_.ExteriorAlgebra.ιMulti_family, hdet, toLinearMapₛₗ₂_ιMulti_ιMulti]
+  · rw [horth hcard (hmem S) (hmem T),
+      toLinearMapₛₗ₂_eq_zero_of_mem_exteriorPower b hcard (hmem S) (hmem T)]
 
 /-- **The adjoint of the degree scaling by `r` is the degree scaling by `star r`**: for the form `H`
 making the wedge basis orthonormal, `H (T_r s) t = H s (T_{star r} t)`. -/

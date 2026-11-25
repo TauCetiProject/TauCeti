@@ -194,7 +194,7 @@ private theorem coordinateMap_toAlgHom_surjective :
       obtain ⟨a, ha⟩ := hp
       let xij := GeneralLinear.coordinateHopfAlgebraAlgEquiv R n
         (GeneralLinear.coordinateRingMap R n
-          (MvPolynomial.X (ij.1.1, ij.1.2)))
+          (MvPolynomial.X (ij.val.1, ij.val.2)))
       refine ⟨a * xij, ?_⟩
       calc
         (coordinateMap R n).hom (a * xij) =
@@ -202,11 +202,11 @@ private theorem coordinateMap_toAlgHom_surjective :
           (coordinateMap R n).hom.map_mul a xij
         _ = coordinateHopfAlgebraAlgEquiv R (Fin n) p *
             coordinateHopfAlgebraAlgEquiv R (Fin n)
-              (genericMatrix R (Fin n) ij.1.1 ij.1.2) :=
+              (genericMatrix R (Fin n) ij.val.1 ij.val.2) :=
           congrArg₂ (fun x y ↦ x * y) ha
-            (coordinateMap_genericMatrix_apply R n ij.1.1 ij.1.2)
+            (coordinateMap_genericMatrix_apply R n ij.val.1 ij.val.2)
         _ = coordinateHopfAlgebraAlgEquiv R (Fin n) (p * MvPolynomial.X ij) := by
-          rw [genericMatrix_apply_of_lt R (Fin n) ij.2, map_mul]
+          rw [genericMatrix_apply_of_lt R (Fin n) ij.property, map_mul]
 
 /-- The coordinate morphism `O(GL_n) ⟶ O(U_n)` is surjective. -/
 theorem coordinateMap_surjective : Function.Surjective (coordinateMap R n).hom :=

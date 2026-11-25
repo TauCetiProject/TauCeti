@@ -51,7 +51,8 @@ bounded by the open mapping theorem, but it is in general not an isometry: the q
   at most the norm of any representative, and is approached by representatives.
 * `Ideal.Quotient.norm_one_le` and `Ideal.Quotient.one_le_norm_one`: bounds for the norm of the
   identity of a quotient.
-* `Ideal.Quotient.norm_liftA_apply_le`: a norm bound for an induced homomorphism.
+* `Ideal.Quotient.norm_lift_apply_le` and `Ideal.Quotient.norm_liftA_apply_le`: norm bounds for
+  induced ring and algebra homomorphisms.
 
 Kernels of continuous algebra homomorphisms into normed algebras are closed
 (`ContinuousAlgHom.isClosed_ker`), so the quotient by such a kernel is a normed algebra.
@@ -111,6 +112,22 @@ noncomputable instance normedRing [IsClosed (I : Set R)] : NormedRing (R ⧸ I) 
 theorem norm_one_le : ‖(1 : R ⧸ I)‖ ≤ ‖(1 : R)‖ :=
   norm_mk_le_norm I 1
 
+/-- A ring homomorphism bounded by `C` on `R` and vanishing on `I` descends to a homomorphism on
+`R ⧸ I` with the same norm bound `C`. -/
+theorem norm_lift_apply_le {S : Type*} [SeminormedRing S] (f : R →+* S) (hI : ∀ a ∈ I, f a = 0)
+    {C : ℝ} (hC : ∀ a, ‖f a‖ ≤ C * ‖a‖) (x : R ⧸ I) :
+    ‖Ideal.Quotient.lift I f hI x‖ ≤ C * ‖x‖ := by
+  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
+  rw [Ideal.Quotient.lift_mk]
+  rcases le_or_gt C 0 with hC0 | hC0
+  · -- For `C ≤ 0` any representative `a` works, since `‖x‖ ≤ ‖a‖`.
+    exact (hC a).trans (mul_le_mul_of_nonpos_left (norm_mk_le_norm I a) hC0)
+  · -- For `C > 0`, this is the bound for lifts of bounded additive group homomorphisms.
+    exact (QuotientAddGroup.norm_lift_apply_le (S := I.toAddSubgroup)
+      ((f : R →+ S).mkNormedAddGroupHom C hC) hI (Ideal.Quotient.mk I a)).trans
+      (mul_le_mul_of_nonneg_right (AddMonoidHom.mkNormedAddGroupHom_norm_le _ hC0.le hC)
+        (norm_nonneg _))
+
 variable (𝕜 : Type*) [NormedField 𝕜] [NormedAlgebra 𝕜 R]
 
 /-- The quotient of a seminormed `𝕜`-algebra by a two-sided ideal is a normed `𝕜`-algebra. -/
@@ -156,15 +173,10 @@ theorem norm_liftA_apply_le [SeminormedRing B] [Algebra R B] (f : A →A[R] B)
     (hI : ∀ a ∈ I, f a = 0) {C : ℝ} (hC : ∀ a, ‖f a‖ ≤ C * ‖a‖) (x : A ⧸ I) :
     ‖liftA I f hI x‖ ≤ C * ‖x‖ := by
   obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
+  have h := norm_lift_apply_le I (f : A →+* B) hI hC (Ideal.Quotient.mk I a)
+  rw [Ideal.Quotient.lift_mk I (f : A →+* B) hI] at h
   rw [liftA_mk]
-  rcases le_or_gt C 0 with hC0 | hC0
-  · -- For `C ≤ 0` any representative `a` works, since `‖x‖ ≤ ‖a‖`.
-    exact (hC a).trans (mul_le_mul_of_nonpos_left (norm_mk_le_norm I a) hC0)
-  · -- For `C > 0`, this is the bound for lifts of bounded additive group homomorphisms.
-    exact (QuotientAddGroup.norm_lift_apply_le (S := I.toAddSubgroup)
-      ((f : A →+ B).mkNormedAddGroupHom C hC) hI (Ideal.Quotient.mk I a)).trans
-      (mul_le_mul_of_nonneg_right (AddMonoidHom.mkNormedAddGroupHom_norm_le _ hC0.le hC)
-        (norm_nonneg _))
+  exact h
 
 end ContinuousAlgHom
 

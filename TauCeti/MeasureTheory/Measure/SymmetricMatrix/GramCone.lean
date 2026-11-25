@@ -32,7 +32,7 @@ theorem isClosed_setOf_posSemidef_rank_le (r : ℕ) :
     IsClosed {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
       (A : Matrix (Fin p) (Fin p) ℝ).PosSemidef ∧
         (A : Matrix (Fin p) (Fin p) ℝ).rank ≤ r} :=
-  (isClosed_setOfPred_posSemidef.preimage continuous_subtype_val).inter
+  (isClosed_setOfPred_posSemidef.preimage continuous_subtypeVal).inter
     (isClosed_setOfPred_rank_le r)
 
 end TauCeti

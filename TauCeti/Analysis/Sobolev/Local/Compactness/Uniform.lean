@@ -238,18 +238,6 @@ private theorem exists_opens_of_isCompact {K : Set ℂ} (hK : IsCompact K) (hKΩ
   obtain ⟨W, hKW, hWΩ, hWc⟩ := Opens.exists_between_and_isCompact_closure hK hKΩ
   exact ⟨W, hKW, hWc, hWΩ, SetLike.coe_subset_coe.1 (subset_closure.trans hWΩ)⟩
 
-/-- Under the boundedness hypothesis of `TauCeti.exists_subseq_memWkpLoc_tendsto_wkp`, every `u m`
-lies in `MemWkpLoc p Ω (k + 1)`. -/
-private theorem memWkpLoc_of_forall_exists_wkp_norm_le {u : ℕ → ℂ → ℝ}
-    (hu : ∀ W : Opens ℂ, IsCompact (closure (W : Set ℂ)) → closure (W : Set ℂ) ⊆ Ω →
-      ∃ R : ℝ, ∀ m, ∃ y : Wkp volume W p (k + 1),
-        ‖y‖ ≤ R ∧ Wkp.value (k + 1) y =ᵐ[volume.restrict W] u m) (m : ℕ) :
-    MemWkpLoc p Ω (k + 1) (u m) :=
-  memWkpLoc_of_forall_wkp fun W hWc hWΩ => by
-    obtain ⟨R, hR⟩ := hu W hWc hWΩ
-    obtain ⟨y, -, hy⟩ := hR m
-    exact ⟨y, hy⟩
-
 /-- Under the boundedness hypothesis of `TauCeti.exists_subseq_memWkpLoc_tendsto_wkp`, the fields
 of chains `G m` of iterated weak gradients of the `u m` on `Ω` lie in `Lᵖ(K)`, with bounds uniform
 in `m`, for every compact `K ⊆ Ω`. -/

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import TauCeti.Geometry.Manifold.VectorBundle.MaximalAtlas
+public import TauCeti.Topology.FiberBundle.Trivial
 
 /-!
 # A real-smooth gauge that is not holomorphic
@@ -111,7 +112,7 @@ noncomputable def expReTrivialization : Trivialization ℂ (π ℂ (Bundle.Trivi
 
 @[simp]
 theorem expReTrivialization_apply (p : TotalSpace ℂ (Bundle.Trivial ℂ ℂ)) :
-    expReTrivialization p = (p.proj, p.2 * Real.exp p.proj.re) := by
+    expReTrivialization p = (p.proj, p.snd * Real.exp p.proj.re) := by
   simp [expReTrivialization]
 
 @[simp]
@@ -124,7 +125,6 @@ theorem expReTrivialization_notMem_maximalAtlas {n : ℕ∞ω} (hn : n ≠ 0) :
     expReTrivialization.toOpenPartialHomeomorph ∉
       (contMDiffFiberwiseLinear ℂ ℂ 𝓘(ℂ, ℂ) n).maximalAtlas
         (TotalSpace ℂ (Bundle.Trivial ℂ ℂ)) := by
-  have : MemTrivializationAtlas (Bundle.Trivial.trivialization ℂ ℂ) := ⟨mem_singleton _⟩
   intro h
   have hφ := ((Trivialization.transFiberwiseLinear_mem_maximalAtlas_iff
     (Trivialization.mem_maximalAtlas_of_memTrivializationAtlas 𝓘(ℂ, ℂ) n _) _ _ _).1 h).1
@@ -139,7 +139,6 @@ theorem not_contMDiffAt_section_one_iff_expReTrivialization {n : ℕ∞ω} (hn :
     ¬ (ContMDiffAt 𝓘(ℂ, ℂ) (𝓘(ℂ, ℂ).prod 𝓘(ℂ, ℂ)) n
           (fun w ↦ TotalSpace.mk' ℂ (E := Bundle.Trivial ℂ ℂ) w 1) z ↔
         ContMDiffAt 𝓘(ℂ, ℂ) 𝓘(ℂ, ℂ) n (fun w ↦ (expReTrivialization ⟨w, 1⟩).2) z) := by
-  have : MemTrivializationAtlas (Bundle.Trivial.trivialization ℂ ℂ) := ⟨mem_singleton _⟩
   rw [(Bundle.Trivial.trivialization ℂ ℂ).contMDiffAt_section_iff (mem_univ z)]
   simp only [Bundle.Trivial.trivialization_apply, expReTrivialization_apply, one_mul,
     contMDiffAt_iff_contDiffAt]
