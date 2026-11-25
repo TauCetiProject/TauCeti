@@ -19,7 +19,8 @@ import TauCeti.Analysis.CStarAlgebra.State.Space
 This file supplies operations on completely positive maps into the matrix algebras
 `CStarMatrix n n B` over a C⋆-algebra `B`, indexed by finite types, that are used in matrix
 approximation arguments for traces on C⋆-algebras, and the Choi–Effros factorization of a
-completely positive map into a unital C⋆-algebra.
+completely positive map from a nonzero unital C⋆-algebra into a matrix algebra, or more generally
+into a unital C⋆-algebra in which `φ 1` has finite spectrum.
 
 * `CompletelyPositiveMap.blockDiagonal`: the block-diagonal sum `a ↦ diag(φ_i(a))` of completely
   positive maps into matrix algebras over a C⋆-algebra, built from the corner embeddings
@@ -88,14 +89,13 @@ theorem blockDiagonal_apply (φ : ∀ i, A →CP CStarMatrix (n i) (n i) B) (a :
 @[simp]
 theorem blockDiagonal_apply_apply (φ : ∀ i, A →CP CStarMatrix (n i) (n i) B) (a : A) (i : ι)
     (j k : n i) : blockDiagonal φ a ⟨i, j⟩ ⟨i, k⟩ = φ i a j k := by
-  rw [blockDiagonal_apply]
-  exact Matrix.blockDiagonal'_apply_eq (fun i => ofMatrix.symm (φ i a)) i j k
+  rw [blockDiagonal_apply, CStarMatrix.ofMatrix_apply, Matrix.blockDiagonal'_apply_eq,
+    CStarMatrix.ofMatrix_symm_apply]
 
 /-- The block-diagonal sum vanishes off the diagonal blocks. -/
 theorem blockDiagonal_apply_ne (φ : ∀ i, A →CP CStarMatrix (n i) (n i) B) (a : A) {i i' : ι}
     (j : n i) (k : n i') (h : i ≠ i') : blockDiagonal φ a ⟨i, j⟩ ⟨i', k⟩ = 0 := by
-  rw [blockDiagonal_apply]
-  exact Matrix.blockDiagonal'_apply_ne (fun i => ofMatrix.symm (φ i a)) j k h
+  rw [blockDiagonal_apply, CStarMatrix.ofMatrix_apply, Matrix.blockDiagonal'_apply_ne _ j k h]
 
 /-- The normalized trace of the block-diagonal sum weights the trace of `φ_i` by
 `|n i| / |Σ i, n i|`: for blocks of sizes `1` and `3` the weights are `1/4` and `3/4`. -/

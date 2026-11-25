@@ -498,8 +498,8 @@ theorem blockDiagonalSingle_apply_of_ne [Fintype ι] {i j : ι} (h : j ≠ i)
 /-- The corner embedding vanishes off the diagonal blocks. -/
 theorem blockDiagonalSingle_apply_ne [Fintype ι] (i : ι) (x : CStarMatrix (n i) (n i) B)
     {j j' : ι} (p : n j) (q : n j') (h : j ≠ j') :
-    blockDiagonalSingle R B i x ⟨j, p⟩ ⟨j', q⟩ = 0 :=
-  Matrix.blockDiagonal'_apply_ne _ p q h
+    blockDiagonalSingle R B i x ⟨j, p⟩ ⟨j', q⟩ = 0 := by
+  rw [blockDiagonalSingle_apply, ofMatrix_apply, Matrix.blockDiagonal'_apply_ne _ p q h]
 
 /-- Corner embeddings at distinct blocks are orthogonal. -/
 theorem blockDiagonalSingle_mul_of_ne [Fintype ι] {i j : ι} (h : i ≠ j)
@@ -532,8 +532,9 @@ end NonUnital
 theorem sum_blockDiagonalSingle_one [Fintype ι] [∀ i, DecidableEq (n i)] (R : Type*)
     {B : Type*} [Monoid R] [NonAssocSemiring B] [StarAddMonoid B] [DistribMulAction R B] :
     ∑ i, blockDiagonalSingle R B i (1 : CStarMatrix (n i) (n i) B) = 1 := by
-  rw [sum_blockDiagonalSingle]
-  exact congrArg ofMatrix Matrix.blockDiagonal'_one
+  apply ofMatrix.symm.injective
+  simp only [sum_blockDiagonalSingle, Equiv.symm_apply_apply, ofMatrix_symm_one]
+  rw [← Pi.one_def, Matrix.blockDiagonal'_one]
 
 end BlockDiagonal
 
