@@ -45,8 +45,6 @@ of Cartan type `Dₙ` has Weyl group of order `2ⁿ⁻¹ · n!`.
 
 ## Main results
 
-* `TauCeti.DynkinType.typeDWeylSubgroup_le`: transpositions and double sign changes generate the
-  even-sign subgroup.
 * `TauCeti.DynkinType.closure_range_typeDRootReflectionEquiv`: the classical reflections generate
   the image of the even-sign subgroup in the permutations of the classical roots.
 * `TauCeti.DynkinType.coe_typeDWeylGroupEquiv_ofIdx_typeDRootSub` and
@@ -105,41 +103,6 @@ theorem card_typeDWeylSubgroup (hn : 1 ≤ n) :
   apply Nat.eq_of_mul_eq_mul_right (show 0 < 2 by norm_num)
   rw [typeDWeylSubgroup, h, Nat.add_sub_cancel, pow_succ]
   ring
-
-/-- **Generators of the even-sign subgroup.** A subgroup of `ℤˣ ≀ Sym(n)` containing the
-transpositions of the coordinates and the sign changes of any two distinct coordinates contains
-every signed permutation with an even number of sign changes. -/
-theorem typeDWeylSubgroup_le {H : Subgroup (WreathProduct ℤˣ (Fin n))}
-    (hswap : ∀ i j : Fin n, i ≠ j → SemidirectProduct.inr (Equiv.swap i j) ∈ H)
-    (hdouble : ∀ i j : Fin n, i ≠ j →
-      SemidirectProduct.inl (Pi.mulSingle i (-1) * Pi.mulSingle j (-1)) ∈ H) :
-    typeDWeylSubgroup n ≤ H := by
-  intro w hw
-  rw [mem_typeDWeylSubgroup_iff] at hw
-  rw [← SemidirectProduct.inl_left_mul_inr_right w]
-  refine H.mul_mem ?_ ?_
-  · rcases isEmpty_or_nonempty (Fin n) with _ | ⟨⟨i₀⟩⟩
-    · rw [Subsingleton.elim w.left 1, map_one]
-      exact H.one_mem
-    -- Write the signs as a product of double sign changes at `i₀` and another coordinate; the
-    -- signs at `i₀` multiply to `1` because the product of all signs is `1`.
-    have hdecomp : w.left = ∏ i, Pi.mulSingle i₀ (w.left i) * Pi.mulSingle i (w.left i) := by
-      have h := map_prod (MonoidHom.mulSingle (fun _ : Fin n ↦ ℤˣ) i₀) w.left Finset.univ
-      simp only [MonoidHom.mulSingle_apply] at h
-      rw [Finset.prod_mul_distrib, Finset.univ_prod_mulSingle, ← h, hw, Pi.mulSingle_one, one_mul]
-    rw [← Subgroup.mem_comap, hdecomp]
-    refine Subgroup.prod_mem _ fun i _ ↦ ?_
-    rcases Int.units_eq_one_or (w.left i) with hi | hi
-    · rw [hi, Pi.mulSingle_one, Pi.mulSingle_one, mul_one]
-      exact Subgroup.one_mem _
-    · rw [hi]
-      rcases eq_or_ne i₀ i with rfl | hi₀
-      · rw [← Pi.mulSingle_mul, Int.units_mul_self, Pi.mulSingle_one]
-        exact Subgroup.one_mem _
-      · exact hdouble i₀ i hi₀
-  · induction w.right using Equiv.Perm.swap_induction_on with
-    | one => rw [map_one]; exact H.one_mem
-    | swap_mul σ i j hij hσ => rw [map_mul]; exact H.mul_mem (hswap i j hij) hσ
 
 /-! ## The action on the classical roots -/
 
@@ -273,7 +236,9 @@ theorem closure_range_typeDRootReflectionEquiv :
       Subgroup.subset_closure ⟨typeDRootAdd hij,
         typeDRootReflectionEquiv_eq_negSwap hij (Or.inl (coe_typeDRootAdd hij))⟩
     -- A double sign change is a signed transposition followed by the transposition.
-    refine typeDWeylSubgroup_le hswap fun i j hij ↦ ?_
+    rw [typeDWeylSubgroup]
+    refine WreathProduct.ker_baseProd_le_of_inl_mulSingle_mul_mulSingle_mem_of_inr_swap_mem hswap
+      fun i j hij ↦ ?_
     rw [show SemidirectProduct.inl (Pi.mulSingle i (-1) * Pi.mulSingle j (-1)) =
         negSwap i j * SemidirectProduct.inr (Equiv.swap i j) by
       rw [negSwap, mul_assoc, ← map_mul SemidirectProduct.inr, Equiv.swap_mul_self, map_one,
