@@ -50,8 +50,8 @@ theorem not_fg_closure_range_pow_X_pow {x : G} (hx : Function.Injective (powHom 
     ext
     simp [φ, powHom_apply]
   have hrange : Subgroup.closure (Set.range fun k : ℕ => x ^ (X ^ k : ℤ[X])) = φ.range := by
-    rw [← hS, ← MonoidHom.map_closure, ← AddSubgroup.toSubgroup_closure, hX, OrderIso.map_top,
-      MonoidHom.range_eq_map]
+    rw [← hS, ← MonoidHom.map_closure, MonoidHom.range_eq_map]
+    simp [← AddSubgroup.toSubgroup_closure, hX]
   -- the range of `φ` is isomorphic to the additive group of `ℤ[t]`, which is not finitely generated
   rw [hrange, ← Group.fg_iff_subgroup_fg]
   intro hfg

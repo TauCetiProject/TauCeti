@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.ExponentialGroup.Polynomial.Finiteness
-public import TauCeti.GroupTheory.ExponentialGroup.Polynomial.InfiniteOrder
+public import TauCeti.GroupTheory.ExponentialGroup.Polynomial.Completion.InfiniteOrder
 
 /-!
 # Finite generation in completions with exponents in `ℤ[t]`

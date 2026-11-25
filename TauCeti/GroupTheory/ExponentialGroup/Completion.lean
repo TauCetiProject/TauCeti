@@ -264,7 +264,7 @@ theorem retraction_pow (h : IsCompletion.{w} A μ) (f : A →+* ℤ) (x : K) (a 
     h.retraction f (x ^ a) = h.retraction f x ^ f a :=
   letI := compPow G f
   haveI := isExponentialGroup_compPow G f
-  (h.lift (.id G)).map_pow x a
+  ((h.lift (.id G)).map_pow x a).trans (compPow_def f _ a)
 
 /-- The retraction of an `A`-completion `μ : G →* K` along `f : A →+* ℤ` is the only homomorphism
 `r : K →* G` with `r ∘ μ = id` and `r (x ^ a) = r x ^ f a`. -/
@@ -273,7 +273,8 @@ theorem eq_retraction (h : IsCompletion.{w} A μ) (f : A →+* ℤ) {r : K →* 
     r = h.retraction f :=
   letI := compPow G f
   haveI := isExponentialGroup_compPow G f
-  congrArg ExponentialHom.toMonoidHom (h.eq_lift (ψ := ⟨r, hpow⟩) hr)
+  congrArg ExponentialHom.toMonoidHom
+    (h.eq_lift (ψ := ⟨r, fun x a => (hpow x a).trans (compPow_def f _ a).symm⟩) hr)
 
 /-- In an `A`-completion `μ : G →* K` of a group `G` in the universe `w` of its universal property,
 the power `μ g ^ a` is not the identity as soon as `g ^ f a ≠ 1` in `G` for a ring homomorphism
@@ -282,7 +283,7 @@ theorem pow_ne_one_of_zpow_ne_one (h : IsCompletion.{w} A μ) (f : A →+* ℤ) 
     (hg : g ^ f a ≠ 1) : μ g ^ a ≠ 1 :=
   letI := compPow G f
   haveI := isExponentialGroup_compPow G f
-  h.pow_ne_one_of_pow_ne_one (.id G) hg
+  h.pow_ne_one_of_pow_ne_one (.id G) (by rwa [compPow_def])
 
 end IsCompletion
 

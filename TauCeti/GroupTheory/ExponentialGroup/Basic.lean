@@ -241,7 +241,8 @@ variable {A B : Type*} (G : Type*)
 
 /-- The exponentiation `g ^ a = g ^ f a` by the elements of `A`, pulled back from an
 exponentiation by `B` along a map `f : A → B`. It is not an instance. -/
-abbrev compPow (f : A → B) [Pow G B] : Pow G A :=
+@[instance_reducible]
+def compPow (f : A → B) [Pow G B] : Pow G A :=
   ⟨fun g a => g ^ f a⟩
 
 variable {G} in

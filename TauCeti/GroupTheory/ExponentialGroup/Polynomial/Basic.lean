@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import TauCeti.GroupTheory.ExponentialGroup.Basic
+import Mathlib.Algebra.Polynomial.Module.AEval
 import TauCeti.Algebra.Group.Basic
 
 /-!
@@ -189,17 +190,18 @@ private theorem isExponentialGroup_polynomialPow_of_comm {Z : Type*} [Group Z]
     letI := polynomialPow τ
     IsExponentialGroup ℤ[X] Z := by
   let : CommGroup Z := { (inferInstance : Group Z) with mul_comm := hZ }
-  let : Module ℤ[X] (Additive Z) := .compHom _ (aeval τ.toAdditive.toIntLinearMap).toRingHom
-  -- a polynomial `p` acts on `Additive Z` by the evaluation of `p` at `τ`
-  have hsmul (p : ℤ[X]) (x : Additive Z) : p • x = aeval τ.toAdditive.toIntLinearMap p x := rfl
+  -- `Z` is, written multiplicatively, the `ℤ[t]`-module `AEval' φ` in which `t` acts by `τ`
+  let φ := τ.toAdditive.toIntLinearMap
   have hpow (z : Z) (p : ℤ[X]) : (letI := polynomialPow τ; z ^ p) =
-      (Multiplicative.ofAdd (Additive.ofMul z) ^ p).toAdd.toMul := by
-    rw [Multiplicative.multiplicativePow_def, toAdd_ofAdd, toAdd_ofAdd, hsmul,
-      polynomialPow_eq_aeval]
-  have h : polynomialPow τ = (MultiplicativePow.instPow : Pow (Multiplicative (Additive Z)) ℤ[X]) :=
+      ((Module.AEval'.of φ).symm
+        (Multiplicative.ofAdd (Module.AEval'.of φ (.ofMul z)) ^ p).toAdd).toMul := by
+    rw [Multiplicative.multiplicativePow_def, toAdd_ofAdd, Module.AEval.of_symm_smul, toAdd_ofAdd,
+      LinearEquiv.symm_apply_apply, Module.End.smul_def, polynomialPow_eq_aeval]
+  have h : polynomialPow τ =
+      (MultiplicativePow.instPow : Pow (Multiplicative (Module.AEval' φ)) ℤ[X]) :=
     congrArg Pow.mk (funext₂ hpow)
   rw [h]
-  exact MultiplicativePow.instIsExponentialGroup (A := ℤ[X]) (M := Additive Z)
+  exact MultiplicativePow.instIsExponentialGroup (A := ℤ[X]) (M := Module.AEval' φ)
 
 section Hyp
 
@@ -263,10 +265,10 @@ theorem pow_eq_polynomialPow [Pow G ℤ[X]] [IsExponentialGroup ℤ[X] G] (g : G
   induction p using Polynomial.induction_on with
   | C a => rw [polynomialPow_C, eq_intCast C a, pow_intCast]
   | add p q hp hq =>
-    rw [IsExponentialGroup.pow_add, hp, hq, @IsExponentialGroup.pow_add _ _ _ _ _ hT]
+    rw [IsExponentialGroup.pow_add, hp, hq, IsExponentialGroup.pow_add (self := hT)]
   | monomial n a ih =>
     rw [pow_succ, ← mul_assoc, IsExponentialGroup.pow_mul g _ X, ih,
-      @IsExponentialGroup.pow_mul _ _ _ _ _ hT g _ X, polynomialPow_X]
+      IsExponentialGroup.pow_mul (self := hT) g _ X, polynomialPow_X]
 
 /-- Every `ℤ[t]`-group structure is the exponentiation determined by its `t`-th power. -/
 theorem eq_polynomialPow [inst : Pow G ℤ[X]] [IsExponentialGroup ℤ[X] G] :
