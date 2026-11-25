@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.Tangent
 import TauCeti.Analysis.Calculus.FDeriv.Comp
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 
 /-!
 # Manifold derivatives and regularity read in charts
@@ -476,12 +477,9 @@ theorem mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
   obtain ⟨L, hL⟩ := isInvertible_mfderiv_extend he hx
   rw [hcomp, mvfderiv_comp_of_eq hg.mdifferentiableAt
     ((e.contMDiffAt_extend he hx).mdifferentiableAt one_ne_zero) rfl, mvfderiv_eq_fderiv, ← hL]
-  have h := (L.eq_comp_toContinuousLinearMap_symm
-    (fderiv 𝕜 (f ∘ (e.extend I).symm) (e.extend I x)) 0).symm
-  rw [ContinuousLinearMap.zero_comp] at h
   -- `NormedSpace.fromTangentSpace` is definitionally the identity on `E`, and
   -- `TangentSpace 𝓘(𝕜, E) _` unfolds to `E`.
-  exact h
+  exact ContinuousLinearMap.comp_continuousLinearEquiv_eq_zero_iff _ L
 
 end TauCeti
 
@@ -688,11 +686,8 @@ theorem mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero
       fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x y) = 0 := by
   obtain ⟨L, hL⟩ := isInvertible_mfderiv_extChartAt hy
   rw [mfderiv_eq_fderiv_comp_mfderiv_extChartAt hy hg, ← hL]
-  have h := (L.eq_comp_toContinuousLinearMap_symm
-    (fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x y)) 0).symm
-  rw [ContinuousLinearMap.zero_comp] at h
   -- `TangentSpace 𝓘(𝕜, E) _` and `TangentSpace 𝓘(𝕜, F) _` unfold to `E` and `F`.
-  exact h
+  exact ContinuousLinearMap.comp_continuousLinearEquiv_eq_zero_iff _ L
 
 /-- Read in a chart whose source contains `y`, two maps into a normed space have the same
 differential at `y` exactly when, near the chart image of `y`, their coordinate expressions agree
