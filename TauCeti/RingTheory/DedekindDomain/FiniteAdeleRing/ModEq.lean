@@ -20,7 +20,7 @@ used to define the congruence subgroups of `GL₂(𝔸_f)`.
 Congruence modulo `N` is `SModEq` for the `Ô`-submodule `NÔ` of `𝔸_f`, so it is an equivalence
 relation compatible with addition and with multiplication by integral finite adeles, and it
 passes to divisors of the modulus (`ModEq.of_dvd`). For `N ≠ 0`
-it says that `(x - y) / N` is integral (`modEq_iff_mul_inv_mem`); modulo `0` it is equality
+it says that `(x - y) / N` is integral (`modEq_iff_inv_mul_mem`); modulo `0` it is equality
 (`modEq_zero_iff`), since `0Ô = {0}`. The formula `(x - y) / N` cannot define congruence modulo
 `0`: there it is `0` for every pair. For integral `x` and `y`, congruence modulo `N` is membership
 of `x - y` in the completed ideal `NÔ` of `(N)` (`modEq_iff_sub_mem_completedIdeal`).
@@ -28,7 +28,7 @@ of `x - y` in the completed ideal `NÔ` of `(N)` (`modEq_iff_sub_mem_completedId
 ## Main declarations
 
 * `IsDedekindDomain.FiniteAdeleRing.ModEq`: congruence modulo `N`, `x - y ∈ NÔ`.
-* `IsDedekindDomain.FiniteAdeleRing.modEq_iff_mul_inv_mem`: for `N ≠ 0`, `(x - y) / N ∈ Ô`.
+* `IsDedekindDomain.FiniteAdeleRing.modEq_iff_inv_mul_mem`: for `N ≠ 0`, `(x - y) / N ∈ Ô`.
 * `IsDedekindDomain.FiniteAdeleRing.modEq_zero_iff`: congruence modulo `0` is equality.
 * `IsDedekindDomain.FiniteAdeleRing.ModEq.of_dvd`: congruence modulo `M` implies congruence
   modulo every divisor `N` of `M`.
@@ -79,7 +79,7 @@ theorem ModEq.of_dvd {N M : R} {x y : FiniteAdeleRing R K} (h : N ∣ M) (hxy : 
   rw [Subalgebra.smul_def, smul_eq_mul, map_mul, mul_comm]
 
 /-- **For `N ≠ 0`, congruence modulo `N` says that `(x - y) / N` is integral.** -/
-theorem modEq_iff_mul_inv_mem {N : R} (hN : N ≠ 0) {x y : FiniteAdeleRing R K} :
+theorem modEq_iff_inv_mul_mem {N : R} (hN : N ≠ 0) {x y : FiniteAdeleRing R K} :
     ModEq N x y ↔
       algebraMap K (FiniteAdeleRing R K) (algebraMap R K N)⁻¹ * (x - y) ∈ integralAdeles R K := by
   have hN' := TauCeti.algebraMap_mul_algebraMap_inv (A := FiniteAdeleRing R K)

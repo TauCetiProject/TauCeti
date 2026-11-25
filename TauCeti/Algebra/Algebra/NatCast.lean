@@ -93,9 +93,9 @@ case of a natural number. -/
 theorem algebraMap_mul_algebraMap_inv {R K A : Type*} [CommSemiring R] [Semifield K] [Semiring A]
     [Algebra R K] [Algebra K A] [Algebra R A] [IsScalarTower R K A] {a : R}
     (ha : algebraMap R K a ≠ 0) : algebraMap R A a * algebraMap K A (algebraMap R K a)⁻¹ = 1 := by
-  rw [Algebra.algebraMap_eq_smul_one a, ← smul_one_smul K a (1 : A),
-    ← Algebra.algebraMap_eq_smul_one, ← Algebra.algebraMap_eq_smul_one, ← map_mul,
-    mul_inv_cancel₀ ha, map_one]
+  have h : algebraMap R A a = algebraMap K A (algebraMap R K a) := by
+    simp only [Algebra.algebraMap_eq_smul_one, smul_one_smul]
+  rw [h, ← map_mul, mul_inv_cancel₀ ha, map_one]
 
 /-- Multiplying by a natural number `m` and by the image of `m⁻¹ : K` cancel in an algebra over a
 semifield `K`, provided `m` is nonzero in `K`. -/

@@ -32,7 +32,7 @@ example : ModEq (1 : ℤ) (1 : FiniteAdeleRing ℤ ℚ) 0 :=
 
 /-- `1` is not congruent to `0` modulo `2`: `1 / 2` is not integral. -/
 example : ¬ ModEq (2 : ℤ) (1 : FiniteAdeleRing ℤ ℚ) 0 := by
-  rw [modEq_iff_mul_inv_mem two_ne_zero, sub_zero, mul_one, algebraMap_mem_integralAdeles_iff]
+  rw [modEq_iff_inv_mul_mem two_ne_zero, sub_zero, mul_one, algebraMap_mem_integralAdeles_iff]
   rintro ⟨n, hn⟩
   simp only [eq_intCast] at hn
   have h : (2 : ℚ) * n = 1 := by
