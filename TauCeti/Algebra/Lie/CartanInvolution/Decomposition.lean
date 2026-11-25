@@ -76,6 +76,13 @@ theorem cartanP_eq_eigenspace :
   (rfl)
 
 variable (θ) in
+/-- An automorphism and its inverse have the same `-1`-eigenspace. -/
+@[simp]
+theorem cartanP_symm : θ.symm.cartanP = θ.cartanP := by
+  ext x
+  rw [mem_cartanP, mem_cartanP, θ.symm_apply_eq, map_neg, ← neg_eq_iff_eq_neg, eq_comm]
+
+variable (θ) in
 /-- For an involution of a Lie algebra over a ring in which `2` is a unit, the fixed subalgebra
 `𝔨` and the `-1`-eigenspace `𝔭` are complementary: `L = 𝔨 ⊕ 𝔭`. -/
 theorem isCompl_fixedSubalgebra_cartanP (h2 : IsUnit (2 : R)) (hθ : Function.Involutive θ) :

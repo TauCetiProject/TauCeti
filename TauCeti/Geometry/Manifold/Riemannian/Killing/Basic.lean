@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.SecondCovariantDerivative
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Acceleration
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
@@ -29,6 +30,9 @@ works with the infinitesimal condition, which involves only the metric and the L
 metric-compatible torsion-free connection `∇`, such as the Levi-Civita connection, the Lie
 derivative of the metric is `(𝓛_X g)(Y, Z) = ⟪∇_Y X, Z⟫ + ⟪Y, ∇_Z X⟫`, so a
 smooth field is Killing exactly when `∇X` is skew-adjoint at every point (the *Killing equation*).
+In particular a parallel vector field, `∇X = 0`, is Killing, a Killing field of constant length
+satisfies `∇_X X = 0`, and a Killing field is divergence-free, since its divergence is the trace
+of the skew-adjoint map `∇X`.
 
 Differentiating the Killing equation and combining it with the Ricci identity and the first
 Bianchi identity determines the whole second covariant derivative of `X` by the curvature:
@@ -47,6 +51,11 @@ restriction of a Killing field to every geodesic is a Jacobi field.
   Killing equation `⟪∇_u X, v⟫ = -⟪u, ∇_v X⟫`.
 * `CovariantDerivative.IsMetricCompatible.isKillingField_iff_inner_self`: the equivalent
   diagonal equation `⟪∇_u X, u⟫ = 0`.
+* `CovariantDerivative.IsMetricCompatible.isKillingField_of_forall_eq_zero`: a smooth parallel
+  vector field is a Killing field.
+* `TauCeti.Manifold.IsKillingField.covariantDerivative_self_eq_zero`: a Killing field of constant
+  length is geodesic, `∇_X X = 0`.
+* `TauCeti.Manifold.IsKillingField.divergence_eq_zero`: a Killing field is divergence-free.
 * `TauCeti.Manifold.isKillingField_zero`, `TauCeti.Manifold.IsKillingField.add` and
   `TauCeti.Manifold.IsKillingField.const_smul`: Killing fields form a real vector space.
 * `TauCeti.Manifold.IsKillingField.secondCovariantDerivative_eq_curvatureTensor`: the identity
@@ -184,7 +193,51 @@ theorem IsKillingField.inner_covariantDerivative_eq_neg (h : IsKillingField I X)
     inner ℝ (cov X x u) v = -inner ℝ u (cov X x v) :=
   ((hcov.isKillingField_iff ht).1 h).2 x u v
 
+/-- **A Killing field of constant length is geodesic**: for a metric-compatible torsion-free
+connection, a Killing field `X` of constant norm satisfies `∇_X X = 0`. Indeed, by the Killing
+equation, `⟪∇_X X, v⟫ = -⟪X, ∇_v X⟫`, which is half the derivative of the constant `‖X‖²` along
+`v`. On a product `S¹ × Y` with the product metric, the unit field `∂ₛ` is such a field. -/
+theorem IsKillingField.covariantDerivative_self_eq_zero (h : IsKillingField I X)
+    (hcov : CovariantDerivative.IsMetricCompatible (V := fun y : M ↦ TangentSpace I y) cov)
+    (ht : cov.torsion = 0) {c : ℝ} (hc : ∀ x, ‖X x‖ = c) (x : M) :
+    cov X x (X x) = 0 := by
+  have hXd : MDiffAt (T% X) x := h.contMDiff.mdifferentiableAt (by simp)
+  refine ext_inner_right ℝ fun v ↦ ?_
+  rw [h.inner_covariantDerivative_eq_neg hcov ht, inner_zero_left, neg_eq_zero]
+  -- Metric compatibility differentiates the constant function `⟪X, X⟫ = c²` along `v`.
+  have hd := hcov.mvfderiv_inner_eq (FiberBundle.extend E v) hXd hXd
+  have hconst : (fun y ↦ inner ℝ (X y) (X y)) = fun _ ↦ c ^ 2 :=
+    funext fun y ↦ by rw [real_inner_self_eq_norm_sq, hc]
+  simp only [FiberBundle.extend_apply_self, hconst, mvfderiv_const,
+    zero_apply] at hd
+  linarith [real_inner_comm (X x) (cov X x v)]
+
+/-- **Parallel vector fields are Killing.** For a metric-compatible torsion-free connection `∇`,
+a smooth vector field with `∇X = 0` is a Killing field. On a product `S¹ × Y` with the product
+metric, the unit field `∂ₛ` is such a field. -/
+theorem _root_.CovariantDerivative.IsMetricCompatible.isKillingField_of_forall_eq_zero
+    (hcov : CovariantDerivative.IsMetricCompatible (V := fun y : M ↦ TangentSpace I y) cov)
+    (ht : cov.torsion = 0) (hX : CMDiff ∞ (T% X)) (h : ∀ x, cov X x = 0) :
+    IsKillingField I X :=
+  (hcov.isKillingField_iff ht).2 ⟨hX, fun x u v ↦ by simp [h x]⟩
+
 end Connection
+
+section Divergence
+
+variable [FiniteDimensional ℝ E] [T2Space M]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+
+/-- **A Killing field is divergence-free.** The divergence is the trace of the Levi-Civita
+covariant derivative `∇X`, which is skew-adjoint for a Killing field. -/
+theorem IsKillingField.divergence_eq_zero (h : IsKillingField I X) (x : M) :
+    divergence I X x = 0 := by
+  have hX := ((isMetricCompatible_leviCivitaConnection I).isKillingField_iff_inner_self
+    (torsion_leviCivitaConnection_eq_zero I)).1 h
+  rw [divergence_eq_sum_inner I X x (stdOrthonormalBasis ℝ (TangentSpace I x))]
+  exact Finset.sum_eq_zero fun i _ ↦ hX.2 x _
+
+end Divergence
 
 section SecondDerivative
 

@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.RingTheory.HahnSeries.PowerSeries
 import Mathlib.Algebra.Polynomial.Eval.Degree
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import Mathlib.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.HahnSeries.Multiplication
 
 /-!
@@ -39,12 +40,16 @@ constructions on Laurent series are natural.
 * `HahnSeries.map_embDomain`: coefficientwise maps commute with exponent embeddings.
 * `HahnSeries.map_ofPowerSeries`: coefficientwise maps commute with the inclusion of power
   series, `PowerSeries.map` on the source side.
+* `HahnSeries.mapRingHom_ofPowerSeries_eq_ofPowerSeries_iff`: comparing a mapped power series
+  with another power series inside Hahn series, coefficient by coefficient.
 * `HahnSeries.map_aeval`: coefficientwise algebra maps commute with evaluating multivariate
   polynomials at Hahn series.
 * `HahnSeries.mem_map_rangeS`: the range of a coefficientwise map consists of the series
   with all coefficients in the range of the coefficient map.
 * `HahnSeries.eqLocusS_mapRingHom`: coefficientwise maps preserve equalizers; for a faithfully
   flat `R → S` this describes `R⟦Γ⟧` inside `S⟦Γ⟧` by the two maps to `(S ⊗[R] S)⟦Γ⟧`.
+* `HahnSeries.coeff_mem_of_coeff_pow_mem`: if a prime ideal contains every coefficient of `yⁿ`,
+  then it contains every coefficient of `y`, by reduction modulo the prime ideal.
 * `HahnSeries.support_map_eq`, `HahnSeries.orderTop_map_eq`, `HahnSeries.order_map_eq`: a
   coefficient map sending only `0` to `0` preserves the support and the order; the
   `_of_injective` versions, also for `mapRingHom` and `mapAlgHom`, are the simp lemmas for
@@ -210,6 +215,27 @@ theorem eqLocusS_mapRingHom {f : R →+* S} {g₁ g₂ : S →+* T} (h : g₁.eq
 
 end NonAssocSemiring
 
+section PrimeIdeal
+
+variable [LinearOrder Γ] [AddCommMonoid Γ] [IsOrderedCancelAddMonoid Γ] [CommRing R]
+
+/-- If a prime ideal `P` contains every coefficient of `y ^ n`, then it contains every coefficient
+of `y`: the Hahn series over the domain `R ⧸ P` have no nonzero nilpotent elements. (For `n = 0`
+the hypothesis fails, since `P` does not contain the constant coefficient `1` of `y ^ 0`.) -/
+theorem coeff_mem_of_coeff_pow_mem {P : Ideal R} [hP : P.IsPrime] {y : R⟦Γ⟧} {n : ℕ}
+    (h : ∀ g, (y ^ n).coeff g ∈ P) (g : Γ) : y.coeff g ∈ P := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact absurd (by simpa using h 0) hP.one_notMem
+  have hy : mapRingHom (Ideal.Quotient.mk P) y = 0 := by
+    refine (pow_eq_zero_iff hn).mp ?_
+    rw [← map_pow (mapRingHom (Ideal.Quotient.mk P)) y n]
+    ext g
+    rw [coeff_mapRingHom, coeff_zero, Ideal.Quotient.eq_zero_iff_mem]
+    exact h g
+  simpa [Ideal.Quotient.eq_zero_iff_mem] using congr(($hy).coeff g)
+
+end PrimeIdeal
+
 section Algebra
 
 variable [PartialOrder Γ] [AddCommMonoid Γ] [IsOrderedCancelAddMonoid Γ] [CommSemiring R]
@@ -340,6 +366,14 @@ theorem map_ofPowerSeries (f : R →+* S) (p : R⟦X⟧) :
   rw [ofPowerSeries_apply, ofPowerSeries_apply, map_embDomain]
   refine congrArg _ (HahnSeries.ext <| funext fun n ↦ ?_)
   simp
+
+/-- A coefficientwise map sends the Hahn series of a power series `p` to that of `q` exactly
+when it sends every coefficient of `p` to the corresponding coefficient of `q`. -/
+theorem mapRingHom_ofPowerSeries_eq_ofPowerSeries_iff {f : R →+* S} {p : R⟦X⟧} {q : S⟦X⟧} :
+    mapRingHom f (ofPowerSeries Γ R p) = ofPowerSeries Γ S q ↔
+      ∀ n, f (p.coeff n) = q.coeff n := by
+  rw [mapRingHom_apply, map_ofPowerSeries, ofPowerSeries_injective.eq_iff, PowerSeries.ext_iff]
+  simp only [PowerSeries.coeff_map]
 
 end PowerSeries
 

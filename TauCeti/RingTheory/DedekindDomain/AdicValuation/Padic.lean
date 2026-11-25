@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
 public import TauCeti.NumberTheory.Padics.HeightOneSpectrum
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.InertiaDegree
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.RamificationIndex
-import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
 import TauCeti.NumberTheory.LocalField.InertiaDegree
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.LocalDegree
@@ -44,8 +44,9 @@ From this tower `ℚ_[p] → ℚ_(w ∩ ℤ) → K_w` we read off:
 
 ## Main results
 
-* `IsDedekindDomain.HeightOneSpectrum.prime_ringChar_quotient`: `ringChar (B ⧸ w.asIdeal)` is prime
-  whenever `B ⧸ w.asIdeal` is finite.
+* `IsDedekindDomain.HeightOneSpectrum.prime_ringChar_quotient` and
+  `IsDedekindDomain.HeightOneSpectrum.fact_prime_ringChar_quotient`: `ringChar (B ⧸ w.asIdeal)` is
+  prime whenever `B ⧸ w.asIdeal` is finite.
 * `IsDedekindDomain.HeightOneSpectrum.natCard_quotient_eq_pow_inertiaDeg_int`:
   `Nat.card (B ⧸ w.asIdeal) = p ^ w.asIdeal.inertiaDeg ℤ`.
 * `IsDedekindDomain.HeightOneSpectrum.isScalarTower_padic_adicCompletion`: the scalar tower
@@ -71,10 +72,6 @@ public section
 
 open IsDedekindDomain ValuativeRel
 
-local instance (q : ℕ) [Fact q.Prime] : StrongRankCondition ℚ_[q] :=
-  let hfield : Field ℚ_[q] := @NormedField.toField _ (Padic.normedField q)
-  @commRing_strongRankCondition _ hfield.toCommRing (@Field.toNontrivial _ hfield)
-
 namespace IsDedekindDomain.HeightOneSpectrum
 
 section UnderInt
@@ -87,6 +84,12 @@ theorem prime_ringChar_quotient (w : HeightOneSpectrum B) [Finite (B ⧸ w.asIde
   have : Ideal.IsMaximal w.asIdeal := w.isMaximal
   let _ : Field (B ⧸ w.asIdeal) := Ideal.Quotient.field w.asIdeal
   exact CharP.prime_ringChar (B ⧸ w.asIdeal)
+
+/-- At a height-one prime `w` with finite residue field, `Fact (ringChar (B ⧸ w.asIdeal)).Prime`
+holds; registered as a scoped instance in `AdicCompletionPadic`. -/
+theorem fact_prime_ringChar_quotient (w : HeightOneSpectrum B) [Finite (B ⧸ w.asIdeal)] :
+    Fact (ringChar (B ⧸ w.asIdeal)).Prime :=
+  ⟨w.prime_ringChar_quotient⟩
 
 /-- The height-one prime `w.asIdeal.under ℤ` of `ℤ` lying below a height-one prime `w` with finite
 residue field. -/
@@ -171,6 +174,16 @@ noncomputable def adicCompletion.padicAlgebra (w : HeightOneSpectrum B) (K : Typ
     (Rat.HeightOneSpectrum.adicCompletion.padicRingEquivOfCharP w.underInt p).symm.toRingHom
   ).toAlgebra
 
+private theorem algebraMap_padicAlgebra (w : HeightOneSpectrum B) [Finite (B ⧸ w.asIdeal)]
+    (p : ℕ) [Fact p.Prime] [CharP (B ⧸ w.asIdeal) p] :
+    haveI : CharP (ℤ ⧸ w.underInt.asIdeal) p := w.charP_quotient_underInt p
+    @algebraMap ℚ_[p] (w.adicCompletion K) _ _ (adicCompletion.padicAlgebra w K p) =
+      (adicCompletionExtension ℚ K w.underInt w).comp
+        (Rat.HeightOneSpectrum.adicCompletion.padicRingEquivOfCharP
+          w.underInt p).symm.toRingHom := by
+  unfold adicCompletion.padicAlgebra
+  exact RingHom.algebraMap_toAlgebra _
+
 /-- Equip a characteristic-zero adic completion `w.adicCompletion K` with finite residue field of
 prime characteristic `p` as a finite compatible extension of `ℚ_[p]`, available in the
 `AdicCompletionPadic` scope. -/
@@ -179,25 +192,19 @@ noncomputable def adicCompletion.finitePadicExtension (w : HeightOneSpectrum B) 
     [Field K] [CharZero K] [Algebra B K] [IsFractionRing B K] [Finite (B ⧸ w.asIdeal)]
     (p : ℕ) [Fact p.Prime] [CharP (B ⧸ w.asIdeal) p] :
     TauCeti.FinitePadicExtension (w.adicCompletion K) p :=
-  have hvle : @ValuativeExtension ℚ_[p] (w.adicCompletion K) _ _ _ _
-      (adicCompletion.padicAlgebra w K p) := by
-    unfold adicCompletion.padicAlgebra
-    have : CharP (ℤ ⧸ w.underInt.asIdeal) p := w.charP_quotient_underInt p
-    let e₀ : ℚ_[p] →+* w.underInt.adicCompletion ℚ :=
-      (Rat.HeightOneSpectrum.adicCompletion.padicRingEquivOfCharP w.underInt p).symm.toRingHom
-    let _ : Algebra ℚ_[p] (w.adicCompletion K) :=
-      ((adicCompletionExtension ℚ K w.underInt w).comp e₀).toAlgebra
-    exact ⟨fun {a b} ↦
-      (adicCompletionExtension_vle_iff_vle ℚ K w.underInt w (e₀ a) (e₀ b)).trans
-        (Rat.HeightOneSpectrum.adicCompletion.padicRingEquivOfCharP_symm_vle_iff_vle
-          w.underInt p a b)⟩
-  { algebra := adicCompletion.padicAlgebra w K p
-    toValuativeExtension := hvle
-    toModuleFinite := by
-      let _ : Algebra ℚ_[p] (w.adicCompletion K) := adicCompletion.padicAlgebra w K p
-      exact TauCeti.finite_of_valuativeExtension ℚ_[p] (w.adicCompletion K) }
+  letI : Algebra ℚ_[p] (w.adicCompletion K) := adicCompletion.padicAlgebra w K p
+  haveI : CharP (ℤ ⧸ w.underInt.asIdeal) p := w.charP_quotient_underInt p
+  haveI : ValuativeExtension ℚ_[p] (w.adicCompletion K) :=
+    ⟨fun {a b} ↦ by
+      rw [w.algebraMap_padicAlgebra (K := K) p, RingHom.comp_apply, RingHom.comp_apply,
+        adicCompletionExtension_vle_iff_vle, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
+        Rat.HeightOneSpectrum.adicCompletion.padicRingEquivOfCharP_symm_vle_iff_vle]⟩
+  { algebra := inferInstance
+    toValuativeExtension := inferInstance
+    toModuleFinite := TauCeti.finite_of_valuativeExtension ℚ_[p] (w.adicCompletion K) }
 
 scoped[AdicCompletionPadic] attribute [instance]
+  IsDedekindDomain.HeightOneSpectrum.fact_prime_ringChar_quotient
   IsDedekindDomain.HeightOneSpectrum.charP_quotient_underInt
   IsDedekindDomain.HeightOneSpectrum.adicCompletion.finitePadicExtension
 
@@ -211,10 +218,8 @@ theorem algebraMap_padic_adicCompletion (w : HeightOneSpectrum B) [Finite (B ⧸
     algebraMap ℚ_[p] (w.adicCompletion K) =
       (adicCompletionExtension ℚ K w.underInt w).comp
         (Rat.HeightOneSpectrum.adicCompletion.padicRingEquivOfCharP
-          w.underInt p).symm.toRingHom := by
-  unfold TauCeti.FinitePadicExtension.toAlgebra adicCompletion.finitePadicExtension
-    adicCompletion.padicAlgebra
-  exact RingHom.algebraMap_toAlgebra _
+          w.underInt p).symm.toRingHom :=
+  w.algebraMap_padicAlgebra p
 
 /-- On a height-one prime `v` of `ℤ`, the `AdicCompletionPadic` algebra map agrees with
 `(padicRingEquivOfCharP v p).symm`. -/
@@ -258,7 +263,16 @@ private theorem finrank_padic_adicCompletion_int (v : HeightOneSpectrum ℤ)
     AlgEquiv.ofRingEquiv
       (f := (Rat.HeightOneSpectrum.adicCompletion.padicRingEquivOfCharP v p).symm)
       fun x ↦ (DFunLike.congr_fun (algebraMap_padic_adicCompletion_int v p) x).symm
-  rw [← e.toLinearEquiv.finrank_eq, Module.finrank_self]
+  have hself (k : Type) [Field k] : Module.finrank k k = 1 := Module.finrank_self k
+  exact (LinearEquiv.finrank_eq (R := ℚ_[p]) e.toLinearEquiv).symm.trans (hself ℚ_[p])
+
+private theorem ramificationIndex_and_inertiaDegree_padic_adicCompletion_int
+    (v : HeightOneSpectrum ℤ) (p : ℕ) [Fact p.Prime] [CharP (ℤ ⧸ v.asIdeal) p] :
+    TauCeti.ramificationIndex ℚ_[p] (v.adicCompletion ℚ) = 1 ∧
+      TauCeti.inertiaDegree ℚ_[p] (v.adicCompletion ℚ) = 1 := by
+  have hef := TauCeti.ramificationIndex_mul_inertiaDegree ℚ_[p] (v.adicCompletion ℚ)
+  rw [finrank_padic_adicCompletion_int v p] at hef
+  exact mul_eq_one.mp hef
 
 /-- The local degree `[w.adicCompletion K : ℚ_[p]]` is
 `w.asIdeal.ramificationIdx ℤ * w.asIdeal.inertiaDeg ℤ`. -/
@@ -285,11 +299,10 @@ theorem ramificationIndex_padic_adicCompletion (w : HeightOneSpectrum B) [Finite
     (p : ℕ) [Fact p.Prime] [CharP (B ⧸ w.asIdeal) p] :
     TauCeti.ramificationIndex ℚ_[p] (w.adicCompletion K) =
       w.asIdeal.ramificationIdx ℤ := by
-  have hef := TauCeti.ramificationIndex_mul_inertiaDegree ℚ_[p] (w.underInt.adicCompletion ℚ)
-  rw [finrank_padic_adicCompletion_int w.underInt p] at hef
   rw [TauCeti.ramificationIndex_tower (K := ℚ_[p]) (L := w.underInt.adicCompletion ℚ)
       (w.adicCompletion K),
-    Nat.eq_one_of_mul_eq_one_right hef, one_mul, ramificationIndex_adicCompletion w.underInt w]
+    (ramificationIndex_and_inertiaDegree_padic_adicCompletion_int w.underInt p).1, one_mul,
+    ramificationIndex_adicCompletion w.underInt w]
 
 /-- The residue degree `[𝓀[w.adicCompletion K] : 𝓀[ℚ_[p]]]` is `w.asIdeal.inertiaDeg ℤ`. -/
 @[simp]
@@ -297,13 +310,11 @@ theorem finrank_residueField_padic_adicCompletion (w : HeightOneSpectrum B)
     [Finite (B ⧸ w.asIdeal)] (p : ℕ) [Fact p.Prime] [CharP (B ⧸ w.asIdeal) p] :
     Module.finrank 𝓀[ℚ_[p]] 𝓀[w.adicCompletion K] =
       w.asIdeal.inertiaDeg ℤ := by
-  have hef := TauCeti.ramificationIndex_mul_inertiaDegree ℚ_[p] (w.underInt.adicCompletion ℚ)
-  rw [finrank_padic_adicCompletion_int w.underInt p] at hef
   rw [← TauCeti.inertiaDegree_def,
     TauCeti.inertiaDegree_tower (K := ℚ_[p]) (L := w.underInt.adicCompletion ℚ)
       (M := w.adicCompletion K),
-    Nat.eq_one_of_mul_eq_one_left hef, one_mul, TauCeti.inertiaDegree_def,
-    finrank_residueField_adicCompletion w.underInt w]
+    (ramificationIndex_and_inertiaDegree_padic_adicCompletion_int w.underInt p).2, one_mul,
+    TauCeti.inertiaDegree_def, finrank_residueField_adicCompletion w.underInt w]
 
 /-- The absolute ramification index of `w.adicCompletion K` over `ℚ_[p]` is the global ramification
 index `w.asIdeal.ramificationIdx ℤ`. -/

@@ -14,7 +14,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Finiteness
 public import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 public import Mathlib.Topology.Algebra.ClopenNhdofOne
 import TauCeti.RepresentationTheory.Homological.ContCohomology.ContinuousMulEquiv
-import TauCeti.RepresentationTheory.Homological.ContCohomology.NatCardComparison
+import TauCeti.RepresentationTheory.Homological.ContCohomology.RestrictScalars
 
 /-!
 # Finiteness of `H⁰` and `H¹` of a finite Galois module over a local field
@@ -187,14 +187,23 @@ theorem finite_H1_of_nsmul_eq_zero (hn : (n : F) ≠ 0) (M : Type u) [AddCommGro
       Field.absoluteGaloisGroup F →* AbsoluteGaloisGroup F) A
   have hX : IsSmoothDiscrete (ZMod n) X :=
     (ofDiscreteModule_isSmoothDiscrete _ _ _).res r.continuous
-  have hA : IsSmoothDiscrete (ZMod n) A := ofDiscreteModule_isSmoothDiscrete _ _ _
-  have : Finite X.V := ‹Finite M›
+  have hXV : X.V = M := (TopRep.of_V A.V _).trans (ofDiscreteModule_V _ _ _)
+  have : Finite X.V := hXV ▸ ‹Finite M›
   have : Finite (continuousCohomology 1 X) :=
     finite_continuousCohomology_of_le_one hn X hX le_rfl
-  -- Supply the discrete topology and action continuity explicitly on the bundled carrier.
-  have hc₁ := @TopRep.natCard_H1_eq_natCard_continuousCohomology
-    _ _ _ _ _ _ _ A hA.discreteTopology hA.continuousSMul
-  exact Nat.finite_of_card_ne_zero
-    ((hc₁.trans (r.natCard_continuousCohomology_res A 1).symm) ▸ Nat.card_pos.ne')
+  have : Finite (continuousCohomology 1 A) :=
+    Finite.of_equiv _ (r.continuousCohomologyIso A 1).toContinuousLinearEquiv.symm.toEquiv
+  have : Finite (continuousCohomology 1 (TopRep.restrictScalarsInt.obj A)) :=
+    Finite.of_equiv _ (restrictScalarsIntEquiv A 1).symm.toEquiv
+  -- Both `ofDiscreteModule ℤ _ M` and `restrictScalarsInt.obj A` act on `M` by `g ↦ (m ↦ g • m)`.
+  have hobj : ofDiscreteModule ℤ (AbsoluteGaloisGroup F) M = TopRep.restrictScalarsInt.obj A :=
+    congrArg (TopRep.of (X := M)) <| DFunLike.ext _ _ fun g ↦ ContinuousLinearMap.ext fun m ↦
+      (ofDiscreteModule_ρ_apply_apply (R := ℤ) (G := AbsoluteGaloisGroup F) (M := M) g m).trans
+        ((ofDiscreteModule_ρ_apply_apply (R := ZMod n) (G := AbsoluteGaloisGroup F) (M := M)
+          g m).symm.trans (TopRep.restrictScalarsInt_obj_ρ_apply A g m).symm)
+  have : Finite (continuousCohomology 1 (ofDiscreteModule ℤ (AbsoluteGaloisGroup F) M)) :=
+    hobj ▸ this
+  exact Finite.of_equiv _
+    (explicitH1AddEquivContinuousCohomology (AbsoluteGaloisGroup F) M).symm.toEquiv
 
 end TauCeti.ClassFieldTheory

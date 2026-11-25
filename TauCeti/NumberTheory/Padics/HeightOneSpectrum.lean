@@ -5,42 +5,45 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.ZMod.QuotientRing
 public import Mathlib.NumberTheory.Padics.HeightOneSpectrum
-public import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
+public import Mathlib.NumberTheory.Padics.ValuativeRel
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
-import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
-import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
-import TauCeti.NumberTheory.LocalField.InertiaDegree
+import Mathlib.Data.ZMod.QuotientRing
+import TauCeti.NumberTheory.LocalField.Padic
+import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 
 /-!
-# Valuative and `p`-adic local-field structure at the height-one primes of `ℚ`
+# Valuative and residue-field structure at the height-one primes of `ℚ`
 
 Let `R` be the ring of integers of `ℚ` in the sense of `IsIntegralClosure R ℤ ℚ`, and let `v` be a
 height-one prime of `R`, corresponding to the rational prime
 `p = Rat.HeightOneSpectrum.primesEquiv v`.
 This file records that `ℤ` has infinitely many height-one prime ideals, compares the `v`-adic
-valuation with the `p`-adic valuation `padicValRat p`, identifies the residue field
-`R ⧸ v.asIdeal` with `ZMod p`, shows that Mathlib's continuous `ℚ`-algebra equivalences
+valuation with the `p`-adic valuation `padicValRat p`, identifies the height-one prime of `R`
+corresponding to a rational prime `p` with the ideal `(p)`, identifies the residue field
+`R ⧸ v.asIdeal` with `ZMod p`, and shows that Mathlib's continuous `ℚ`-algebra equivalences
 `Rat.HeightOneSpectrum.adicCompletion.padicEquiv` and `Padic.adicCompletionEquiv` preserve and
-reflect the valuative relations on `v.adicCompletion ℚ` and `ℚ_[p]`, and packages
-`v.adicCompletion ℚ` as a degree-one `TauCeti.FinitePadicExtension` over `ℚ_[p]` in the
-`RatAdicCompletionPadic` scope.
+reflect the valuative relations on `v.adicCompletion ℚ` and `ℚ_[p]`.
 
 ## Main definitions
 
 * `Rat.HeightOneSpectrum.quotientEquivZMod`: the ring isomorphism `(R ⧸ v.asIdeal) ≃+* ZMod p`.
-* `Rat.HeightOneSpectrum.adicCompletion.padicAlgebra` and
-  `Rat.HeightOneSpectrum.adicCompletion.finitePadicExtension`: the `ℚ_[p]`-algebra and
-  `TauCeti.FinitePadicExtension` structures on `v.adicCompletion ℚ` over `ℚ_[p]` induced by
-  `(padicRingEquivOfCharP v p).symm` (activated as a scoped instance via
-  `open scoped RatAdicCompletionPadic`).
+* `Rat.HeightOneSpectrum.adicCompletion.padicRingEquiv`,
+  `Rat.HeightOneSpectrum.adicCompletion.padicRingEquivOfCharP`, and
+  `Padic.adicCompletionRingEquiv`: the underlying ring isomorphisms between `v.adicCompletion ℚ`
+  and `ℚ_[p]`.
 
 ## Main results
 
 * `Infinite (HeightOneSpectrum ℤ)`: `ℤ` has infinitely many height-one prime ideals.
+* `Rat.HeightOneSpectrum.fact_prime_natGenerator`: the rational prime `natGenerator v` of `v` is
+  prime, as an instance.
 * `Rat.HeightOneSpectrum.valuation_eq_one_iff_padicValRat_eq_zero`: a nonzero rational number is
   a unit at `v` exactly when its `p`-adic valuation vanishes.
+* `Rat.HeightOneSpectrum.asIdeal_primesEquiv_symm`: the height-one prime of `R` corresponding to
+  the prime `p` is `(p)`.
+* `Rat.HeightOneSpectrum.liesOver_asIdeal_primesEquiv_symm_iff`: a proper ideal lies over it
+  exactly when it contains `p`.
 * `Rat.HeightOneSpectrum.quotientEquivZMod_mk`, `Rat.HeightOneSpectrum.finite_quotient`,
   `Rat.HeightOneSpectrum.natCard_quotient`, `Rat.HeightOneSpectrum.charP_quotient`: action on
   quotient classes, finiteness, cardinality, and characteristic of `R ⧸ v.asIdeal`.
@@ -50,12 +53,6 @@ reflect the valuative relations on `v.adicCompletion ℚ` and `ℚ_[p]`, and pac
   `Rat.HeightOneSpectrum.adicCompletion.continuous_padicRingEquivOfCharP`: `≤ᵥ`-compatibility,
   agreement at `primesEquiv v`, and continuity of the canonical equivalences between
   `v.adicCompletion ℚ` and `ℚ_[p]`.
-* `Rat.HeightOneSpectrum.adicCompletion.finrank_padic`,
-  `Rat.HeightOneSpectrum.adicCompletion.ramificationIndex_padic`,
-  `Rat.HeightOneSpectrum.adicCompletion.finrank_residueField_padic`, and
-  `Rat.HeightOneSpectrum.adicCompletion.absoluteRamificationIndex_eq_one`: in the
-  `RatAdicCompletionPadic` scope, the local degree, ramification index, residue degree, and
-  absolute ramification index of `v.adicCompletion ℚ` over `ℚ_[p]` are `1`.
 -/
 
 public section
@@ -63,9 +60,6 @@ public section
 open IsDedekindDomain ValuativeRel
 
 local instance (p : Nat.Primes) : Fact (p : ℕ).Prime := ⟨p.property⟩
-local instance (q : ℕ) [Fact q.Prime] : StrongRankCondition ℚ_[q] :=
-  let hfield : Field ℚ_[q] := @NormedField.toField _ (Padic.normedField q)
-  @commRing_strongRankCondition _ hfield.toCommRing (@Field.toNontrivial _ hfield)
 attribute [local instance high] HeightOneSpectrum.instAlgebraAdicCompletion
 
 namespace TauCeti
@@ -81,6 +75,10 @@ namespace Rat.HeightOneSpectrum
 section IntegralClosure
 
 variable {R : Type*} [CommRing R] [Algebra R ℚ] [IsIntegralClosure R ℤ ℚ]
+
+/-- The rational prime of a height-one prime of the ring of integers of `ℚ` is prime. -/
+instance fact_prime_natGenerator (v : HeightOneSpectrum R) : Fact (natGenerator v).Prime :=
+  ⟨prime_natGenerator v⟩
 
 /-- The residue ring `R ⧸ v.asIdeal` at a height-one prime `v` of an integral closure `R` of `ℤ`
 in `ℚ` is canonically isomorphic to `ZMod (natGenerator v)`. -/
@@ -103,7 +101,6 @@ theorem quotientEquivZMod_mk (v : HeightOneSpectrum R) (r : R) :
 
 /-- The residue field `R ⧸ v.asIdeal` at a height-one prime of `R` is finite. -/
 instance finite_quotient (v : HeightOneSpectrum R) : Finite (R ⧸ v.asIdeal) :=
-  have : NeZero (natGenerator v) := ⟨(prime_natGenerator v).ne_zero⟩
   Finite.of_equiv _ (quotientEquivZMod v).symm.toEquiv
 
 /-- The residue field `R ⧸ v.asIdeal` has cardinality `natGenerator v`. -/
@@ -140,31 +137,52 @@ theorem valuation_eq_one_iff_padicValRat_eq_zero (v : HeightOneSpectrum R) {x : 
   rw [(valuation_equiv_padicValuation v).eq_one_iff_eq_one]
   simp [Rat.padicValuation, hx]
 
-/-- Cast `ℚ_[q]` to `ℚ_[p]` as a ring isomorphism along `q = p`. -/
-private noncomputable def padicCastRingEquiv {q p : ℕ} [hq : Fact q.Prime] [hp : Fact p.Prime]
-    (h : q = p) : ℚ_[q] ≃+* ℚ_[p] := by
+omit [IsFractionRing R ℚ] in
+/-- The height-one prime of `R` corresponding to the prime `p` under `primesEquiv` is the ideal
+`(p)`. -/
+@[simp]
+theorem asIdeal_primesEquiv_symm (p : Nat.Primes) :
+    ((primesEquiv (R := R)).symm p).asIdeal = Ideal.span {((p : ℕ) : R)} := by
+  -- Mathlib defines the inverse of `primesEquiv` as the image of `(p)` under `intEquiv.symm`.
+  change (Ideal.span {((p : ℕ) : ℤ)}).map (IsIntegralClosure.intEquiv R).symm = _
+  rw [Ideal.map_span, Set.image_singleton, map_natCast]
+
+omit [IsFractionRing R ℚ] in
+/-- A proper ideal `P` of an `R`-algebra lies over the height-one prime of `R` corresponding to
+the prime `p` exactly when `p ∈ P`. -/
+theorem liesOver_asIdeal_primesEquiv_symm_iff {S : Type*} [CommRing S] [Algebra R S] {P : Ideal S}
+    (hP : P ≠ ⊤) (p : Nat.Primes) :
+    P.LiesOver ((primesEquiv (R := R)).symm p).asIdeal ↔ ((p : ℕ) : S) ∈ P := by
+  have hp : Prime ((p : ℕ) : R) := by
+    rw [← map_natCast (IsIntegralClosure.intEquiv R).symm, MulEquiv.prime_iff]
+    exact Nat.prime_iff_prime_int.1 p.property
+  rw [asIdeal_primesEquiv_symm, Ideal.liesOver_span_iff hP hp]
+  simp
+
+/-- Cast `ℚ_[q]` to `ℚ_[p]` as a continuous `ℚ`-algebra isomorphism along `q = p`. -/
+private noncomputable def padicCastEquiv {q p : ℕ} [hq : Fact q.Prime] [hp : Fact p.Prime]
+    (h : q = p) : ℚ_[q] ≃A[ℚ] ℚ_[p] := by
+  cases h
+  exact Subsingleton.elim hq hp ▸ ContinuousAlgEquiv.refl ℚ ℚ_[q]
+
+private theorem padicCastEquiv_elim {q p : ℕ} [hq : Fact q.Prime] [hp : Fact p.Prime] (h : q = p)
+    (P : ∀ (r : ℕ) [Fact r.Prime], (ℚ_[q] ≃A[ℚ] ℚ_[r]) → Prop)
+    (hrefl : P q (ContinuousAlgEquiv.refl ℚ ℚ_[q])) :
+    P p (padicCastEquiv h) := by
   cases h
   obtain rfl : hq = hp := Subsingleton.elim _ _
-  exact RingEquiv.refl ℚ_[q]
+  exact hrefl
 
-private theorem padicCastRingEquiv_vle_iff_vle {q p : ℕ} [hq : Fact q.Prime] [hp : Fact p.Prime]
+@[simp]
+private theorem padicCastEquiv_self {q : ℕ} {hq₁ hq₂ : Fact q.Prime}
+    (h : q = q) : padicCastEquiv (hq := hq₁) (hp := hq₂) h = ContinuousAlgEquiv.refl ℚ ℚ_[q] :=
+  eq_of_heq <| padicCastEquiv_elim h
+    (fun _ _ e ↦ HEq e (ContinuousAlgEquiv.refl ℚ ℚ_[q])) HEq.rfl
+
+private theorem padicCastEquiv_vle_iff_vle {q p : ℕ} [Fact q.Prime] [Fact p.Prime]
     (h : q = p) (a b : ℚ_[q]) :
-    padicCastRingEquiv h a ≤ᵥ padicCastRingEquiv h b ↔ a ≤ᵥ b := by
-  cases h
-  obtain rfl : hq = hp := Subsingleton.elim _ _
-  rfl
-
-private theorem continuous_padicCastRingEquiv {q p : ℕ} [hq : Fact q.Prime] [hp : Fact p.Prime]
-    (h : q = p) : Continuous (padicCastRingEquiv h) := by
-  cases h
-  obtain rfl : hq = hp := Subsingleton.elim _ _
-  exact continuous_id
-
-private theorem continuous_padicCastRingEquiv_symm {q p : ℕ} [hq : Fact q.Prime]
-    [hp : Fact p.Prime] (h : q = p) : Continuous (padicCastRingEquiv h).symm := by
-  cases h
-  obtain rfl : hq = hp := Subsingleton.elim _ _
-  exact continuous_id
+    padicCastEquiv h a ≤ᵥ padicCastEquiv h b ↔ a ≤ᵥ b :=
+  padicCastEquiv_elim h (fun _ _ e ↦ e a ≤ᵥ e b ↔ a ≤ᵥ b) Iff.rfl
 
 /-- The underlying ring isomorphism `v.adicCompletion ℚ ≃+* ℚ_[primesEquiv v]` of
 `Rat.HeightOneSpectrum.adicCompletion.padicEquiv`, avoiding `ℚ`-algebra instance synthesis on
@@ -224,9 +242,9 @@ characteristic `p`. -/
 noncomputable def adicCompletion.padicRingEquivOfCharP (v : HeightOneSpectrum R)
     (p : ℕ) [Fact p.Prime] [CharP (R ⧸ v.asIdeal) p] :
     v.adicCompletion ℚ ≃+* ℚ_[p] :=
-  (adicCompletion.padicRingEquiv v).trans <|
-    padicCastRingEquiv ((primesEquiv_eq_ringChar_quotient v).trans
-      (ringChar.eq (R ⧸ v.asIdeal) p))
+  (adicCompletion.padicRingEquiv v).trans
+    (padicCastEquiv ((primesEquiv_eq_ringChar_quotient v).trans
+      (ringChar.eq (R ⧸ v.asIdeal) p))).toRingEquiv
 
 /-- At `p = primesEquiv v`, `padicRingEquivOfCharP v (primesEquiv v)` agrees with
 `padicRingEquiv v`. -/
@@ -236,27 +254,27 @@ theorem adicCompletion.padicRingEquivOfCharP_primesEquiv (v : HeightOneSpectrum 
     adicCompletion.padicRingEquivOfCharP v (primesEquiv v) = adicCompletion.padicRingEquiv v := by
   have := charP_quotient v
   ext x
-  simp [padicRingEquivOfCharP, padicCastRingEquiv]
+  simp [padicRingEquivOfCharP]
 
 /-- `padicRingEquivOfCharP v p` is continuous. -/
 theorem adicCompletion.continuous_padicRingEquivOfCharP (v : HeightOneSpectrum R)
     (p : ℕ) [Fact p.Prime] [CharP (R ⧸ v.asIdeal) p] :
     Continuous (adicCompletion.padicRingEquivOfCharP v p) :=
-  (continuous_padicCastRingEquiv _).comp (continuous_padicRingEquiv v)
+  (padicCastEquiv _).continuous.comp (continuous_padicRingEquiv v)
 
 /-- The inverse of `padicRingEquivOfCharP v p` is continuous. -/
 theorem adicCompletion.continuous_padicRingEquivOfCharP_symm (v : HeightOneSpectrum R)
     (p : ℕ) [Fact p.Prime] [CharP (R ⧸ v.asIdeal) p] :
     Continuous (adicCompletion.padicRingEquivOfCharP v p).symm :=
-  (continuous_padicRingEquiv_symm v).comp (continuous_padicCastRingEquiv_symm _)
+  (continuous_padicRingEquiv_symm v).comp (padicCastEquiv _).symm.continuous
 
 /-- `padicRingEquivOfCharP v p` preserves and reflects the valuative relation. -/
 @[simp]
 theorem adicCompletion.padicRingEquivOfCharP_vle_iff_vle (v : HeightOneSpectrum R)
     (p : ℕ) [Fact p.Prime] [CharP (R ⧸ v.asIdeal) p] (a b : v.adicCompletion ℚ) :
     adicCompletion.padicRingEquivOfCharP v p a ≤ᵥ
-      adicCompletion.padicRingEquivOfCharP v p b ↔ a ≤ᵥ b := by
-  simp [padicRingEquivOfCharP, padicCastRingEquiv_vle_iff_vle]
+      adicCompletion.padicRingEquivOfCharP v p b ↔ a ≤ᵥ b :=
+  (padicCastEquiv_vle_iff_vle _ _ _).trans (padicRingEquiv_vle_iff_vle v a b)
 
 /-- The inverse of `padicRingEquivOfCharP v p` preserves and reflects the valuative relation. -/
 @[simp]
@@ -266,93 +284,6 @@ theorem adicCompletion.padicRingEquivOfCharP_symm_vle_iff_vle (v : HeightOneSpec
       (adicCompletion.padicRingEquivOfCharP v p).symm b ↔ a ≤ᵥ b :=
   (adicCompletion.padicRingEquivOfCharP v p).symm_vle_iff_vle
     (padicRingEquivOfCharP_vle_iff_vle v p) a b
-
-/-- The `ℚ_[p]`-algebra structure on `v.adicCompletion ℚ` induced by
-`(padicRingEquivOfCharP v p).symm` when `R ⧸ v.asIdeal` has prime characteristic `p`.
-Marked `@[irreducible]` so unification of `ResidueField` module instances does not unfold
-`RingHom.toAlgebra` across distinct `ℚ_[p]`-algebra structures. -/
-@[irreducible]
-noncomputable def adicCompletion.padicAlgebra (v : HeightOneSpectrum R)
-    (p : ℕ) [Fact p.Prime] [CharP (R ⧸ v.asIdeal) p] :
-    Algebra ℚ_[p] (v.adicCompletion ℚ) :=
-  (adicCompletion.padicRingEquivOfCharP v p).symm.toRingHom.toAlgebra
-
-/-- Equip `v.adicCompletion ℚ` as a finite compatible extension of `ℚ_[p]` via
-`(padicRingEquivOfCharP v p).symm` when `R ⧸ v.asIdeal` has prime characteristic `p`.
-Registered as a scoped instance in `RatAdicCompletionPadic`. -/
-@[instance_reducible]
-noncomputable def adicCompletion.finitePadicExtension (v : HeightOneSpectrum R)
-    (p : ℕ) [Fact p.Prime] [CharP (R ⧸ v.asIdeal) p] :
-    TauCeti.FinitePadicExtension (v.adicCompletion ℚ) p :=
-  have hvle : @ValuativeExtension ℚ_[p] (v.adicCompletion ℚ) _ _ _ _
-      (adicCompletion.padicAlgebra v p) := by
-    unfold adicCompletion.padicAlgebra
-    let _ : Algebra ℚ_[p] (v.adicCompletion ℚ) :=
-      (padicRingEquivOfCharP v p).symm.toRingHom.toAlgebra
-    exact ⟨fun {a b} ↦ padicRingEquivOfCharP_symm_vle_iff_vle v p a b⟩
-  { algebra := adicCompletion.padicAlgebra v p
-    toValuativeExtension := hvle
-    toModuleFinite := by
-      let _ : Algebra ℚ_[p] (v.adicCompletion ℚ) := adicCompletion.padicAlgebra v p
-      exact TauCeti.finite_of_valuativeExtension ℚ_[p] (v.adicCompletion ℚ) }
-
-scoped[RatAdicCompletionPadic] attribute [instance]
-  Rat.HeightOneSpectrum.adicCompletion.finitePadicExtension
-
-section ScopedPadic
-
-open scoped RatAdicCompletionPadic
-
-/-- The `ℚ_[p]`-algebra map of `finitePadicExtension` is `(padicRingEquivOfCharP v p).symm`. -/
-@[simp]
-theorem adicCompletion.algebraMap_padic (v : HeightOneSpectrum R)
-    (p : ℕ) [Fact p.Prime] [CharP (R ⧸ v.asIdeal) p] :
-    algebraMap ℚ_[p] (v.adicCompletion ℚ) = (padicRingEquivOfCharP v p).symm.toRingHom := by
-  unfold TauCeti.FinitePadicExtension.toAlgebra adicCompletion.finitePadicExtension
-    adicCompletion.padicAlgebra
-  exact RingHom.algebraMap_toAlgebra _
-
-/-- The local degree `[v.adicCompletion ℚ : ℚ_[p]]` is `1`. -/
-@[simp]
-theorem adicCompletion.finrank_padic (v : HeightOneSpectrum R)
-    (p : ℕ) [Fact p.Prime] [CharP (R ⧸ v.asIdeal) p] :
-    Module.finrank ℚ_[p] (v.adicCompletion ℚ) = 1 := by
-  let e : ℚ_[p] ≃ₐ[ℚ_[p]] v.adicCompletion ℚ :=
-    AlgEquiv.ofRingEquiv (f := (padicRingEquivOfCharP v p).symm) fun x ↦
-      (DFunLike.congr_fun (algebraMap_padic v p) x).symm
-  rw [← e.toLinearEquiv.finrank_eq, Module.finrank_self]
-
-/-- The ramification index of `v.adicCompletion ℚ` over `ℚ_[p]` is `1`. -/
-@[simp]
-theorem adicCompletion.ramificationIndex_padic (v : HeightOneSpectrum R)
-    (p : ℕ) [Fact p.Prime] [CharP (R ⧸ v.asIdeal) p] :
-    TauCeti.ramificationIndex ℚ_[p] (v.adicCompletion ℚ) = 1 := by
-  have hef := TauCeti.ramificationIndex_mul_inertiaDegree ℚ_[p] (v.adicCompletion ℚ)
-  rw [finrank_padic v p] at hef
-  exact Nat.eq_one_of_mul_eq_one_right hef
-
-/-- The residue degree `[𝓀[v.adicCompletion ℚ] : 𝓀[ℚ_[p]]]` is `1`. -/
-@[simp]
-theorem adicCompletion.finrank_residueField_padic (v : HeightOneSpectrum R)
-    (p : ℕ) [Fact p.Prime] [CharP (R ⧸ v.asIdeal) p] :
-    Module.finrank 𝓀[ℚ_[p]] 𝓀[v.adicCompletion ℚ] = 1 := by
-  rw [← TauCeti.inertiaDegree_def]
-  have hef := TauCeti.ramificationIndex_mul_inertiaDegree ℚ_[p] (v.adicCompletion ℚ)
-  rw [finrank_padic v p] at hef
-  exact Nat.eq_one_of_mul_eq_one_left hef
-
-/-- The absolute ramification index of `v.adicCompletion ℚ` over `ℚ_[p]` is `1`. -/
--- Not `@[simp]`: `TauCeti.absoluteRamificationIndex_eq_natCastValuation` already simplifies the
--- left-hand side.
-theorem adicCompletion.absoluteRamificationIndex_eq_one (v : HeightOneSpectrum R)
-    (p : ℕ) [Fact p.Prime] [CharP (R ⧸ v.asIdeal) p] :
-    TauCeti.absoluteRamificationIndex (v.adicCompletion ℚ) p = 1 := by
-  rw [TauCeti.absoluteRamificationIndex_eq_natCastValuation,
-    TauCeti.natCastValuation_eq_ramificationIndex_mul (K := ℚ_[p]) p
-      (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero),
-    Padic.natCastValuation_self, ramificationIndex_padic, mul_one]
-
-end ScopedPadic
 
 end Rat.HeightOneSpectrum
 

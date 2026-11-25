@@ -94,6 +94,11 @@ open IsDedekindDomain TauCeti TauCeti.ContCohomology
 
 namespace WeierstrassCurve
 
+private theorem natCard_submodule_torsionBy_eq {G : Type*} [AddCommGroup G] (m : ℕ) :
+    Nat.card (Submodule.torsionBy ℤ G m) = Nat.card (AddSubgroup.torsionBy G m) :=
+  Nat.card_congr <| Equiv.subtypeEquivRight fun _ ↦ by
+    rw [Submodule.mem_torsionBy_iff, AddSubgroup.torsionBy.nsmul_iff, natCast_zsmul]
+
 section FinitePadicExtension
 
 variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
@@ -112,8 +117,9 @@ theorem natCard_range_kummerMap_sq_eq_natCard_H1 [DecidableEq K] :
     exact hm.ne_zero Nat.cast_zero
   rw [W.natCard_range_kummerMap m hm,
     W.index_range_nsmul_eq_natCard_torsionBy_mul_of_localField hm.ne_zero,
-    natCard_quotient_span_natCast_eq_pow_finrank_mul_padicValNat K p m hm0]
-  exact (W.natCard_H1_torsionCoeff hm0 p).symm
+    natCard_submodule_torsionBy_eq,
+    natCard_quotient_span_natCast_eq_pow_finrank_mul_padicValNat K p m hm0,
+    W.natCard_H1_torsionCoeff hm0 p]
 
 include p in
 /-- **The local `[m]`-Kummer image is its own exact annihilator under local Tate duality**: over a
@@ -159,6 +165,11 @@ theorem natCard_quotient_range_kummerMap_eq_natCard_range_kummerMap [DecidableEq
 
 end FinitePadicExtension
 
+private theorem natCast_ne_zero_of_isUnit_adicCompletion {A F : Type*} [CommRing A]
+    [IsDedekindDomain A] [Field F] [Algebra A F] [IsFractionRing A F] (u : HeightOneSpectrum A)
+    {m : ℕ} (hm : IsUnit (m : u.adicCompletion F)) : (m : A) ≠ 0 := fun h ↦
+  hm.ne_zero (by rw [← map_natCast (algebraMap A (u.adicCompletion F)), h, map_zero])
+
 section AdicKummerCard
 
 variable {A F : Type*} [CommRing A] [IsDedekindDomain A] [Field F] [Algebra A F]
@@ -174,22 +185,22 @@ theorem natCard_range_kummerMap_adicCompletion :
       Nat.card (AddSubgroup.torsionBy W.toAffine.Point m) *
         Nat.card (u.adicCompletionIntegers F ⧸
           Ideal.span {(m : u.adicCompletionIntegers F)}) := by
-  have hmA : (m : A) ≠ 0 := fun h ↦
-    hm.ne_zero (by rw [← map_natCast (algebraMap A (u.adicCompletion F)), h, map_zero])
-  rw [W.natCard_range_kummerMap m hm, W.index_range_nsmul_eq_natCard_torsionBy_mul u hmA]
-  rfl
+  rw [W.natCard_range_kummerMap m hm,
+    W.index_range_nsmul_eq_natCard_torsionBy_mul u (natCast_ne_zero_of_isUnit_adicCompletion u hm),
+    natCard_submodule_torsionBy_eq]
 
 /-- The local `[m]`-Kummer image in `H¹(F_u, E[m])` is finite whenever `m` is invertible in
 `F_u`. -/
 theorem finite_range_kummerMap_adicCompletion :
-    Finite (W.kummerMap m hm).range := by
-  have hmA : (m : A) ≠ 0 := fun h ↦
-    hm.ne_zero (by rw [← map_natCast (algebraMap A (u.adicCompletion F)), h, map_zero])
-  exact (W.finite_range_kummerMap_iff m hm).2 (W.finiteIndex_range_nsmul u hmA)
+    Finite (W.kummerMap m hm).range :=
+  (W.finite_range_kummerMap_iff m hm).2
+    (W.finiteIndex_range_nsmul u (natCast_ne_zero_of_isUnit_adicCompletion u hm))
 
 end AdicKummerCard
 
 section AdicAnnihilator
+
+open scoped AdicCompletionPadic
 
 variable {A : Type*} {F : Type} [CommRing A] [IsDedekindDomain A] [Field F] [CharZero F]
   [Algebra A F] [IsFractionRing A F] (u : HeightOneSpectrum A) [Finite (A ⧸ u.asIdeal)]
@@ -202,20 +213,16 @@ when `u` divides `m`. -/
 theorem natCard_range_kummerMap_sq_eq_natCard_H1_adicCompletion
     [DecidableEq (u.adicCompletion F)] :
     Nat.card (W.kummerMap m hm).range ^ 2 =
-      Nat.card (H1 (AbsoluteGaloisGroup (u.adicCompletion F)) (W.TorsionCoeff m)) := by
-  open scoped AdicCompletionPadic in
-  have : Fact (ringChar (A ⧸ u.asIdeal)).Prime := ⟨u.prime_ringChar_quotient⟩
-  exact W.natCard_range_kummerMap_sq_eq_natCard_H1 (ringChar (A ⧸ u.asIdeal)) m hm
+      Nat.card (H1 (AbsoluteGaloisGroup (u.adicCompletion F)) (W.TorsionCoeff m)) :=
+  W.natCard_range_kummerMap_sq_eq_natCard_H1 (ringChar (A ⧸ u.asIdeal)) m hm
 
 /-- **The local `[m]`-Kummer image at a finite place `u` is its own exact annihilator** under local
 Tate duality (including when `u` divides `m`). -/
 theorem range_kummerMap_eq_ker_compl₂_localTateWeilPairing_adicCompletion
     [DecidableEq (u.adicCompletion F)] :
     (W.kummerMap m hm).range =
-      ((W.localTateWeilPairing m hm).compl₂ (W.kummerMap m hm).range.subtype).ker := by
-  open scoped AdicCompletionPadic in
-  have : Fact (ringChar (A ⧸ u.asIdeal)).Prime := ⟨u.prime_ringChar_quotient⟩
-  exact W.range_kummerMap_eq_ker_compl₂_localTateWeilPairing_subtype (ringChar (A ⧸ u.asIdeal)) m hm
+      ((W.localTateWeilPairing m hm).compl₂ (W.kummerMap m hm).range.subtype).ker :=
+  W.range_kummerMap_eq_ker_compl₂_localTateWeilPairing_subtype (ringChar (A ⧸ u.asIdeal)) m hm
 
 /-- **The `[m]`-Selmer local condition at a finite place `u` is its own exact annihilator** under
 local Tate duality, stated without `DecidableEq` on `F_u`. -/
@@ -224,10 +231,8 @@ theorem ker_explicitCoeff1_torsionCoeffIncl_eq_ker_compl₂_localTateWeilPairing
         (W.torsionCoeffIncl m) continuous_of_discreteTopology).ker =
       ((W.localTateWeilPairing m hm).compl₂
         (explicitCoeff1 (AbsoluteGaloisGroup (u.adicCompletion F)) (W.TorsionCoeff m)
-          (W.torsionCoeffIncl m) continuous_of_discreteTopology).ker.subtype).ker := by
-  open scoped AdicCompletionPadic in
-  have : Fact (ringChar (A ⧸ u.asIdeal)).Prime := ⟨u.prime_ringChar_quotient⟩
-  exact W.ker_explicitCoeff1_torsionCoeffIncl_eq_ker_compl₂_localTateWeilPairing_subtype
+          (W.torsionCoeffIncl m) continuous_of_discreteTopology).ker.subtype).ker :=
+  W.ker_explicitCoeff1_torsionCoeffIncl_eq_ker_compl₂_localTateWeilPairing_subtype
     (ringChar (A ⧸ u.asIdeal)) m hm
 
 /-- At every finite place `u` in mixed characteristic, the local obstruction quotient
@@ -236,11 +241,8 @@ theorem natCard_quotient_range_kummerMap_eq_natCard_range_kummerMap_adicCompleti
     [DecidableEq (u.adicCompletion F)] :
     Nat.card (H1 (AbsoluteGaloisGroup (u.adicCompletion F)) (W.TorsionCoeff m) ⧸
         (W.kummerMap m hm).range) =
-      Nat.card (W.kummerMap m hm).range := by
-  open scoped AdicCompletionPadic in
-  have : Fact (ringChar (A ⧸ u.asIdeal)).Prime := ⟨u.prime_ringChar_quotient⟩
-  exact W.natCard_quotient_range_kummerMap_eq_natCard_range_kummerMap
-    (ringChar (A ⧸ u.asIdeal)) m hm
+      Nat.card (W.kummerMap m hm).range :=
+  W.natCard_quotient_range_kummerMap_eq_natCard_range_kummerMap (ringChar (A ⧸ u.asIdeal)) m hm
 
 end AdicAnnihilator
 
@@ -404,6 +406,8 @@ end FinitePadicExtension
 
 section AdicAnnihilator
 
+open scoped AdicCompletionPadic
+
 variable {A : Type*} {F : Type} [CommRing A] [IsDedekindDomain A] [Field F] [CharZero F]
   [Algebra A F] [IsFractionRing A F] (u : HeightOneSpectrum A) [Finite (A ⧸ u.asIdeal)]
   {W₁ W₂ : WeierstrassCurve (u.adicCompletion F)} [W₁.IsElliptic] [W₂.IsElliptic]
@@ -414,10 +418,8 @@ finite place `u` in mixed characteristic (including places dividing `deg φ`),
 `#H¹_φ(F_u) · #H¹_φ̂(F_u) = #H¹(F_u, E₁[φ])`. -/
 theorem natCard_localKummerCondition_mul_dual_eq_natCard_H1_adicCompletion :
     Nat.card φ.localKummerCondition * Nat.card φ.dual.localKummerCondition =
-      Nat.card (H1 (AbsoluteGaloisGroup (u.adicCompletion F)) (ofIsogeny φ).KerCoeff) := by
-  open scoped AdicCompletionPadic in
-  have : Fact (ringChar (A ⧸ u.asIdeal)).Prime := ⟨u.prime_ringChar_quotient⟩
-  exact φ.natCard_localKummerCondition_mul_dual_eq_natCard_H1 (ringChar (A ⧸ u.asIdeal))
+      Nat.card (H1 (AbsoluteGaloisGroup (u.adicCompletion F)) (ofIsogeny φ).KerCoeff) :=
+  φ.natCard_localKummerCondition_mul_dual_eq_natCard_H1 (ringChar (A ⧸ u.asIdeal))
 
 /-- **Order product of the local `φ`- and `φ̂`-Kummer images at a finite place**: at every finite
 place `u` in mixed characteristic (including places dividing `deg φ`), the orders of the local
@@ -425,20 +427,16 @@ Kummer images of `φ` and of its dual `φ̂` multiply to `#H¹(F_u, E₁[φ])`. 
 theorem natCard_range_kummerMap_mul_dual_eq_natCard_H1_adicCompletion
     [DecidableEq (u.adicCompletion F)] :
     Nat.card φ.kummerMap.range * Nat.card φ.dual.kummerMap.range =
-      Nat.card (H1 (AbsoluteGaloisGroup (u.adicCompletion F)) (ofIsogeny φ).KerCoeff) := by
-  open scoped AdicCompletionPadic in
-  have : Fact (ringChar (A ⧸ u.asIdeal)).Prime := ⟨u.prime_ringChar_quotient⟩
-  exact φ.natCard_range_kummerMap_mul_dual_eq_natCard_H1 (ringChar (A ⧸ u.asIdeal))
+      Nat.card (H1 (AbsoluteGaloisGroup (u.adicCompletion F)) (ofIsogeny φ).KerCoeff) :=
+  φ.natCard_range_kummerMap_mul_dual_eq_natCard_H1 (ringChar (A ⧸ u.asIdeal))
 
 /-- **The `φ`-Selmer local condition at a finite place `u` is the exact annihilator of the
 `φ̂`-Selmer local condition** under local Tate duality, stated without `DecidableEq` on `F_u`. -/
 theorem localKummerCondition_eq_ker_compl₂_localTateKerWeilPairing_dual_subtype_adicCompletion
     (hn : IsUnit (φ.degree : u.adicCompletion F)) :
     φ.localKummerCondition =
-      ((φ.localTateKerWeilPairing hn).compl₂ φ.dual.localKummerCondition.subtype).ker := by
-  open scoped AdicCompletionPadic in
-  have : Fact (ringChar (A ⧸ u.asIdeal)).Prime := ⟨u.prime_ringChar_quotient⟩
-  exact φ.localKummerCondition_eq_ker_compl₂_localTateKerWeilPairing_dual_subtype
+      ((φ.localTateKerWeilPairing hn).compl₂ φ.dual.localKummerCondition.subtype).ker :=
+  φ.localKummerCondition_eq_ker_compl₂_localTateKerWeilPairing_dual_subtype
     (ringChar (A ⧸ u.asIdeal))
 
 /-- **The local `φ`-Kummer image at a finite place `u` is the exact annihilator of the local
@@ -446,10 +444,8 @@ theorem localKummerCondition_eq_ker_compl₂_localTateKerWeilPairing_dual_subtyp
 theorem range_kummerMap_eq_ker_compl₂_localTateKerWeilPairing_dual_subtype_adicCompletion
     [DecidableEq (u.adicCompletion F)] (hn : IsUnit (φ.degree : u.adicCompletion F)) :
     φ.kummerMap.range =
-      ((φ.localTateKerWeilPairing hn).compl₂ φ.dual.kummerMap.range.subtype).ker := by
-  open scoped AdicCompletionPadic in
-  have : Fact (ringChar (A ⧸ u.asIdeal)).Prime := ⟨u.prime_ringChar_quotient⟩
-  exact φ.range_kummerMap_eq_ker_compl₂_localTateKerWeilPairing_dual_subtype
+      ((φ.localTateKerWeilPairing hn).compl₂ φ.dual.kummerMap.range.subtype).ker :=
+  φ.range_kummerMap_eq_ker_compl₂_localTateKerWeilPairing_dual_subtype
     (ringChar (A ⧸ u.asIdeal))
 
 /-- **The `φ̂`-Selmer local condition at a finite place `u` is the exact annihilator of the
@@ -458,10 +454,8 @@ on `F_u`. -/
 theorem localKummerCondition_dual_eq_ker_compl₂_flip_localTateKerWeilPairing_subtype_adicCompletion
     (hn : IsUnit (φ.degree : u.adicCompletion F)) :
     φ.dual.localKummerCondition =
-      ((φ.localTateKerWeilPairing hn).flip.compl₂ φ.localKummerCondition.subtype).ker := by
-  open scoped AdicCompletionPadic in
-  have : Fact (ringChar (A ⧸ u.asIdeal)).Prime := ⟨u.prime_ringChar_quotient⟩
-  exact φ.localKummerCondition_dual_eq_ker_compl₂_flip_localTateKerWeilPairing_subtype
+      ((φ.localTateKerWeilPairing hn).flip.compl₂ φ.localKummerCondition.subtype).ker :=
+  φ.localKummerCondition_dual_eq_ker_compl₂_flip_localTateKerWeilPairing_subtype
     (ringChar (A ⧸ u.asIdeal))
 
 /-- **The local `φ̂`-Kummer image at a finite place `u` is the exact annihilator of the local
@@ -470,10 +464,8 @@ theorem localKummerCondition_dual_eq_ker_compl₂_flip_localTateKerWeilPairing_s
 theorem range_kummerMap_dual_eq_ker_compl₂_flip_localTateKerWeilPairing_subtype_adicCompletion
     [DecidableEq (u.adicCompletion F)] (hn : IsUnit (φ.degree : u.adicCompletion F)) :
     φ.dual.kummerMap.range =
-      ((φ.localTateKerWeilPairing hn).flip.compl₂ φ.kummerMap.range.subtype).ker := by
-  open scoped AdicCompletionPadic in
-  have : Fact (ringChar (A ⧸ u.asIdeal)).Prime := ⟨u.prime_ringChar_quotient⟩
-  exact φ.range_kummerMap_dual_eq_ker_compl₂_flip_localTateKerWeilPairing_subtype
+      ((φ.localTateKerWeilPairing hn).flip.compl₂ φ.kummerMap.range.subtype).ker :=
+  φ.range_kummerMap_dual_eq_ker_compl₂_flip_localTateKerWeilPairing_subtype
     (ringChar (A ⧸ u.asIdeal))
 
 /-- **Order of the local isogeny obstruction quotient at a finite place**: at every finite place `u`
@@ -483,11 +475,8 @@ theorem natCard_quotient_range_kummerMap_eq_natCard_range_kummerMap_dual_adicCom
     [DecidableEq (u.adicCompletion F)] :
     Nat.card (H1 (AbsoluteGaloisGroup (u.adicCompletion F)) (ofIsogeny φ).KerCoeff ⧸
         φ.kummerMap.range) =
-      Nat.card φ.dual.kummerMap.range := by
-  open scoped AdicCompletionPadic in
-  have : Fact (ringChar (A ⧸ u.asIdeal)).Prime := ⟨u.prime_ringChar_quotient⟩
-  exact φ.natCard_quotient_range_kummerMap_eq_natCard_range_kummerMap_dual
-    (ringChar (A ⧸ u.asIdeal))
+      Nat.card φ.dual.kummerMap.range :=
+  φ.natCard_quotient_range_kummerMap_eq_natCard_range_kummerMap_dual (ringChar (A ⧸ u.asIdeal))
 
 end AdicAnnihilator
 

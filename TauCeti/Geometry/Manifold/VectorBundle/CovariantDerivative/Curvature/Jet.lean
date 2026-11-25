@@ -154,6 +154,13 @@ theorem riemannOfJet_def (g : Matrix ι ι ℝ) (dg : ι → ι → ι → ℝ) 
           christoffelOfJet g dg i k m * christoffelOfJet g dg j m l) :=
   (rfl)
 
+/-- The curvature coefficients of a coordinate jet vanish when the two differentiation indices
+agree. -/
+@[simp]
+theorem riemannOfJet_self (g : Matrix ι ι ℝ) (dg : ι → ι → ι → ℝ) (ddg : ι → ι → ι → ι → ℝ)
+    (i k l : ι) : riemannOfJet g dg ddg i i k l = 0 := by
+  simp [riemannOfJet_def]
+
 /-- The **scalar curvature of a coordinate jet** `(g, ∂g, ∂²g)`: the contraction
 `Σⱼₖ g^(jk) Σᵢ Rⁱᵢⱼₖ` of the curvature coefficients `riemannOfJet` against the inverse of the
 Gram matrix `g`. -/
