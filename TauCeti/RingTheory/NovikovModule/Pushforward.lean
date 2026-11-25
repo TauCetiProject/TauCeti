@@ -23,7 +23,9 @@ nonzero coefficient, and the result is again finite above every potential thresh
 finiteness of the fibres is needed. The fibrewise sum is the formula of Mathlib's pushforward of
 functions with locally finite support, `Function.locallyFinsupp.map` in
 `Mathlib/Topology/LocallyFinsupp/Pushforward.lean`, with the potential cutoffs in place of a
-topology. The pushforward is `ρ`-semilinear, sends the point mass `r`
+topology. The pushforward is the coefficient change `TauCeti.NovikovModule.mapRange ρ` followed
+by the kernel map `TauCeti.NovikovModule.kernelMap` of the graph kernel of `π`, with coefficient
+`1` from `s` to `π s`. It is `ρ`-semilinear, sends the point mass `r`
 at `s` to the point mass `ρ r` at `π s`, and extends the pushforward
 `Finsupp.mapDomain π ∘ Finsupp.mapRange ρ` of finite combinations
 (`TauCeti.NovikovModule.pushforward_ofFinsupp`). It keeps every potential cutoff, hence is
@@ -90,78 +92,47 @@ variable [Semiring R] [Semiring R'] [Semiring R''] {F : S → ℝ} {F' : S' → 
   {π : S → S'} (hπ : ∀ s, F' (π s) = F s)
 
 include hπ in
-/-- All generators in a fibre of a potential-preserving map have the same potential, so a
-completed combination has only finitely many nonzero coefficients in each fibre. -/
-theorem finite_support_inter_preimage_singleton (a : NovikovModule R F) (s' : S') :
-    (support a.val ∩ π ⁻¹' {s'}).Finite :=
-  (finite_ge a (F' s')).subset fun s hs => ⟨hs.1, by
-    rw [← hπ s, mem_singleton_iff.1 (mem_preimage.1 hs.2)]⟩
+/-- The graph kernel of a potential-preserving map `π`, with coefficient `1` from `s` to `π s` and
+`0` elsewhere, satisfies the potential bound with constant `0`. -/
+private theorem potential_le_of_indicator_preimage_ne_zero (s : S) (s' : S')
+    (h : (π ⁻¹' {s'}).indicator (1 : S → R') s ≠ 0) : F' s' ≤ F s + 0 := by
+  have hs : π s = s' := mem_of_indicator_ne_zero h
+  rw [add_zero, ← hπ s, hs]
 
-/-- For `f` with `f 0 = 0`, a generator of a fibre whose coefficient has nonzero image under `f`
-has nonzero coefficient. -/
-private theorem preimage_singleton_inter_support_subset {f : R → R'} (hf : f 0 = 0)
-    (a : NovikovModule R F) (s' : S') :
-    π ⁻¹' {s'} ∩ support (fun s => f (a.val s)) ⊆ support a.val ∩ π ⁻¹' {s'} :=
-  fun _ hs => ⟨fun h => hs.2 (by simp only [h, hf]), hs.1⟩
-
-include hπ in
-/-- Summing the coefficients of a completed combination along the fibres of a potential-preserving
-map gives a completed combination. -/
-private theorem finsum_mem_preimage_singleton_mem (ρ : R →+* R') (a : NovikovModule R F) :
-    (fun s' => ∑ᶠ s ∈ π ⁻¹' {s'}, ρ (a.val s)) ∈ NovikovModule R' F' := mem_iff.2 fun C =>
-  ((finite_gt a C).image π).subset fun s' hs' => by
-    obtain ⟨s, hs, hρ⟩ := exists_ne_zero_of_finsum_mem_ne_zero hs'.1
-    refine ⟨s, ⟨fun h => hρ (by rw [h, map_zero]), ?_⟩, hs⟩
-    rw [← hπ s, mem_singleton_iff.1 (mem_preimage.1 hs)]
-    exact hs'.2
-
-/-- A sum along a fibre is the sum over any finite set of generators in the fibre containing those
-of nonzero coefficient. -/
-private theorem finsum_mem_preimage_singleton_eq_sum (ρ : R →+* R') (a : NovikovModule R F)
-    {s' : S'} (t : Finset S) (ht : support a.val ∩ π ⁻¹' {s'} ⊆ t)
-    (htπ : ∀ s ∈ t, π s = s') :
-    ∑ᶠ s ∈ π ⁻¹' {s'}, ρ (a.val s) = ∑ s ∈ t, ρ (a.val s) :=
-  finsum_mem_eq_sum_of_subset _
-    ((preimage_singleton_inter_support_subset (map_zero ρ) a s').trans ht) htπ
+/-- Each row of the graph kernel of a map of generators is a point mass, hence a completed
+combination. -/
+private theorem indicator_preimage_mem (s : S) :
+    (fun s' => (π ⁻¹' {s'}).indicator (1 : S → R') s) ∈ NovikovModule R' F' :=
+  mem_of_finite_support <| (finite_singleton (π s)).subset fun s' h =>
+    (mem_of_indicator_ne_zero (mem_support.1 h) : π s = s').symm
 
 /-- The **pushforward** of completed combinations along a coefficient map `ρ` and a map `π` of
 generators preserving potentials: the coefficient at `s'` is the sum of the images under `ρ` of
-the coefficients at the generators of the fibre of `π` over `s'`. -/
+the coefficients at the generators of the fibre of `π` over `s'`
+(`TauCeti.NovikovModule.pushforward_apply_val`). It is the coefficient change
+`TauCeti.NovikovModule.mapRange ρ` followed by the kernel map of the graph kernel of `π`. -/
 def pushforward (ρ : R →+* R') (π : S → S') (hπ : ∀ s, F' (π s) = F s) :
-    NovikovModule R F →ₛₗ[ρ] NovikovModule R' F' where
-  toFun a := ⟨fun s' => ∑ᶠ s ∈ π ⁻¹' {s'}, ρ (a.val s), finsum_mem_preimage_singleton_mem hπ ρ a⟩
-  map_add' a b := Subtype.ext <| funext fun s' => by
-    simp only [Submodule.coe_add, Pi.add_apply, map_add]
-    exact finsum_mem_add_distrib'
-      ((finite_support_inter_preimage_singleton hπ a s').subset
-        (preimage_singleton_inter_support_subset (map_zero ρ) a s'))
-      ((finite_support_inter_preimage_singleton hπ b s').subset
-        (preimage_singleton_inter_support_subset (map_zero ρ) b s'))
-  map_smul' c a := Subtype.ext <| funext fun s' => by
-    classical
-    have hfin := finite_support_inter_preimage_singleton hπ a s'
-    have ht (s : S) (hs : s ∈ hfin.toFinset) : π s = s' := ((Finite.mem_toFinset _).1 hs).2
-    simp only [SetLike.val_smul, Pi.smul_apply, smul_eq_mul, map_mul]
-    rw [finsum_mem_preimage_singleton_eq_sum (π := π) ρ a hfin.toFinset
-      (fun s hs => (Finite.mem_toFinset _).2 hs) ht, Finset.mul_sum]
-    exact finsum_mem_eq_sum_of_subset _
-      (fun s hs => (Finite.mem_toFinset _).2 <| preimage_singleton_inter_support_subset
-        (f := fun x => ρ c * ρ x) (by rw [map_zero, mul_zero]) a s' hs) ht
+    NovikovModule R F →ₛₗ[ρ] NovikovModule R' F' :=
+  (kernelMap (potential_le_of_indicator_preimage_ne_zero (R' := R') hπ)
+    indicator_preimage_mem).comp (mapRange ρ)
 
 variable (ρ : R →+* R')
 
 /-- The coefficient of a pushforward at `s'` is the sum of the images under `ρ` of the
 coefficients in the fibre of `π` over `s'`. -/
 theorem pushforward_apply_val (a : NovikovModule R F) (s' : S') :
-    (pushforward ρ π hπ a).val s' = ∑ᶠ s ∈ π ⁻¹' {s'}, ρ (a.val s) :=
-  (rfl)
+    (pushforward ρ π hπ a).val s' = ∑ᶠ s ∈ π ⁻¹' {s'}, ρ (a.val s) := by
+  rw [pushforward, LinearMap.comp_apply, kernelMap_apply_val, finsum_mem_def]
+  exact finsum_congr fun s => by by_cases hs : s ∈ π ⁻¹' {s'} <;> simp [hs]
 
 /-- A coefficient of a pushforward is the sum over any finite set of generators in the fibre
 containing the generators of nonzero coefficient there. -/
 theorem pushforward_apply_val_eq_sum (a : NovikovModule R F) {s' : S'} (t : Finset S)
     (ht : support a.val ∩ π ⁻¹' {s'} ⊆ t) (htπ : ∀ s ∈ t, π s = s') :
-    (pushforward ρ π hπ a).val s' = ∑ s ∈ t, ρ (a.val s) :=
-  finsum_mem_preimage_singleton_eq_sum ρ a t ht htπ
+    (pushforward ρ π hπ a).val s' = ∑ s ∈ t, ρ (a.val s) := by
+  rw [pushforward_apply_val]
+  exact finsum_mem_eq_sum_of_subset _
+    (fun s hs => ht ⟨fun h => hs.2 (by simp [h]), hs.1⟩) htπ
 
 /-- Along an injective map of generators, the pushforward moves each coefficient to the image
 generator. -/
@@ -175,7 +146,8 @@ theorem pushforward_apply_val_of_injective (hinj : Injective π) (a : NovikovMod
 /-- A pushforward vanishes at generators outside the range of `π`. -/
 theorem pushforward_apply_val_eq_zero_of_notMem_range (a : NovikovModule R F) {s' : S'}
     (hs' : s' ∉ range π) : (pushforward ρ π hπ a).val s' = 0 :=
-  finsum_mem_eq_zero_of_forall_eq_zero fun s hs => (hs' ⟨s, hs⟩).elim
+  (pushforward_apply_val hπ ρ a s').trans <|
+    finsum_mem_eq_zero_of_forall_eq_zero fun s hs => (hs' ⟨s, hs⟩).elim
 
 /-- The pushforward of the point mass `r` at `s` is the point mass `ρ r` at `π s`. -/
 @[simp]
@@ -232,29 +204,24 @@ theorem pushforward_pushforward {π' : S' → S''} (hπ' : ∀ s', F'' (π' s') 
     (a : NovikovModule R F) :
     pushforward ρ' π' hπ' (pushforward ρ π hπ a) =
       pushforward (ρ'.comp ρ) (π' ∘ π) (fun s => (hπ' (π s)).trans (hπ s)) a := by
-  classical
-  refine Subtype.ext (funext fun s'' => ?_)
-  have hπ'π : ∀ s, F'' ((π' ∘ π) s) = F s := fun s => (hπ' (π s)).trans (hπ s)
-  set T := (finite_support_inter_preimage_singleton hπ'π a s'').toFinset
-  have hT {s : S} : s ∈ T ↔ a.val s ≠ 0 ∧ π' (π s) = s'' := by simp [T]
-  rw [pushforward_apply_val_eq_sum hπ'π _ a T (fun s hs => hT.2 hs) fun s hs => (hT.1 hs).2,
-    pushforward_apply_val_eq_sum hπ' ρ' _ (T.image π) ?_ ?_]
-  · rw [← Finset.sum_fiberwise_of_maps_to (g := π) (t := T.image π)
-      fun s hs => Finset.mem_image_of_mem π hs]
-    refine Finset.sum_congr rfl fun s' hs' => ?_
-    obtain ⟨s₀, hs₀, rfl⟩ := Finset.mem_image.1 hs'
-    rw [pushforward_apply_val_eq_sum hπ ρ a (T.filter fun s => π s = π s₀)
-      (fun s hs => Finset.mem_filter.2 ⟨hT.2 ⟨hs.1, by rw [mem_singleton_iff.1 hs.2,
-        (hT.1 hs₀).2]⟩, hs.2⟩) fun s hs => (Finset.mem_filter.1 hs).2, map_sum]
-    rfl
-  · rintro s' ⟨hs', hs's''⟩
-    obtain ⟨s, hs, hρ⟩ := exists_ne_zero_of_finsum_mem_ne_zero hs'
-    refine Finset.mem_image.2 ⟨s, hT.2 ⟨fun h => hρ (by rw [h, map_zero]), ?_⟩,
-      mem_singleton_iff.1 hs⟩
-    rw [mem_singleton_iff.1 hs, mem_singleton_iff.1 hs's'']
-  · intro s' hs'
-    obtain ⟨s, hs, rfl⟩ := Finset.mem_image.1 hs'
-    exact (hT.1 hs).2
+  have hk : kernelComp (fun s s' => ρ' ((π ⁻¹' {s'}).indicator (1 : S → R') s))
+      (fun s' s'' => (π' ⁻¹' {s''}).indicator (1 : S' → R'') s') =
+      fun s s'' => ((π' ∘ π) ⁻¹' {s''}).indicator 1 s := by
+    ext s s''
+    rw [kernelComp_apply, finsum_eq_single _ (π s) fun s' hs' => by simp [Ne.symm hs']]
+    by_cases h : π' (π s) = s'' <;> simp [h]
+  have hm (s : S) (s' : S') (h : ρ' ((π ⁻¹' {s'}).indicator (1 : S → R') s) ≠ 0) :
+      F' s' ≤ F s + 0 :=
+    potential_le_of_indicator_preimage_ne_zero hπ s s' fun h' => h (by rw [h', map_zero])
+  rw [pushforward, pushforward, pushforward, LinearMap.comp_apply, LinearMap.comp_apply,
+    mapRange_kernelMap ρ' _ _ hm fun s => comp_mem (map_zero ρ') (indicator_preimage_mem s),
+    LinearMap.comp_apply, mapRange_mapRange]
+  refine (kernelMap_kernelMap (C'' := 0 + 0) _ _ _ _
+    (fun s s'' h => (potential_le_of_kernelComp_ne_zero (D := F s + 0) (hm s)
+      (potential_le_of_indicator_preimage_ne_zero hπ' · s'') h).trans_eq (add_assoc _ _ _))
+    (fun s => kernelComp_mem (potential_le_of_indicator_preimage_ne_zero hπ')
+      indicator_preimage_mem (comp_mem (map_zero ρ') (indicator_preimage_mem s))) _).trans ?_
+  exact LinearMap.congr_fun ((kernelMap_inj _ _ _ _).2 hk) _
 
 end Semiring
 
@@ -267,15 +234,12 @@ variable [Ring R] [Ring R'] {F : S → ℝ} {F' : S' → ℝ}
 combination vanishing above `C`. -/
 theorem pushforward_mem_potentialFiltration {C : ℝ} {a : NovikovModule R F}
     (ha : a ∈ potentialFiltration R F C) : pushforward ρ π hπ a ∈ potentialFiltration R' F' C :=
-  mem_potentialFiltration.2 fun s' hs' => finsum_mem_eq_zero_of_forall_eq_zero fun s hs => by
-    rw [mem_potentialFiltration.1 ha s
-      (by rwa [← hπ s, mem_singleton_iff.1 (mem_preimage.1 hs)]), map_zero]
+  add_zero C ▸ kernelMap_mem_potentialFiltration _ _ (mapRange_mem_potentialFiltration ρ ha)
 
 /-- The pushforward is continuous for the potential-cutoff topologies. -/
 @[fun_prop]
 theorem continuous_pushforward : Continuous (pushforward ρ π hπ) :=
-  continuous_of_forall_mem_potentialFiltration (pushforward ρ π hπ) fun C =>
-    ⟨C, fun _ ha => pushforward_mem_potentialFiltration hπ ρ ha⟩
+  (continuous_kernelMap _ _).comp (continuous_mapRange ρ)
 
 end Ring
 

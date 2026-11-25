@@ -12,15 +12,15 @@ public import TauCeti.RingTheory.NovikovSeries.ActionField
 # The action-field specialization of completed combinations
 
 For torsors under the action-weighted exponent group `G × ℝ`, with period
-`E_R (g, r) = E g + r`, chosen lifts `r i` identify each orbit with a copy of `ℝ` through
+`E_R (g, r) = E g + r`, chosen lifts `r i` map each orbit onto a copy of `ℝ` through
 `p ↦ E_R (p -ᵥ r i)`. The pushforward `TauCeti.NovikovModule.pushforward` along these maps
-(`TauCeti.NovikovModule.actionFieldMap`) is a completed combination over the Novikov series
-`Nov(k, ℝ, id)`, with one generator for each energy in each orbit. Its coordinates are the
-images of the coordinates under the action-field map of Novikov series
-(`TauCeti.NovikovModule.coordinates_actionFieldMap`), and matrices go to their entrywise
-images (`TauCeti.NovikovModule.actionFieldMap_novikovMapOfMatrix`). This specializes a finite
-Floer complex over the action-weighted Novikov ring to a finite complex over `Nov(k, ℝ, id)`,
-which is the Novikov field when `k` is a field.
+(`TauCeti.NovikovModule.actionFieldMap`), which sums the coefficients of points of equal
+energy, is a completed combination over the Novikov series `Nov(k, ℝ, id)`, with one generator
+for each energy in each orbit. Its coordinates are the images of the coordinates under the
+action-field map of Novikov series (`TauCeti.NovikovModule.coordinates_actionFieldMap`), and
+matrices go to their entrywise images (`TauCeti.NovikovModule.actionFieldMap_novikovMapOfMatrix`).
+This specializes a finite Floer complex over the action-weighted Novikov ring to a finite
+complex over `Nov(k, ℝ, id)`, which is the Novikov field when `k` is a field.
 
 ## Main definitions
 
