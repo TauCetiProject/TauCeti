@@ -8,6 +8,8 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
+public import TauCeti.Topology.FiberBundle.Countable
+public import TauCeti.Topology.FiberBundle.LocallyCompact
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
@@ -29,7 +31,8 @@ space structures of the fibres.
 This file computes the trivializations and charts in coordinates. The canonical trivialization at
 `x` reads a covector `p` at `y` as `p ∘ (dφ_y)⁻¹`, where `φ` is the extended chart at `x`
 (`TauCeti.CotangentBundle.trivializationAt_mk_snd`), and it is the identity over `x` itself
-(`TauCeti.CotangentBundle.continuousLinearMapAt_trivializationAt_self`,
+(`TauCeti.CotangentBundle.inCoordinates_self`,
+`TauCeti.CotangentBundle.continuousLinearMapAt_trivializationAt_self`,
 `TauCeti.CotangentBundle.symmL_trivializationAt_self`). The preferred chart at a covector over
 `x₀` sends a covector `p` at `x` to `(φ₀ x, p ∘ d(φ₀⁻¹))`, where `φ₀` is the extended chart of `M`
 at `x₀` (`TauCeti.CotangentBundle.extChartAt_apply`,
@@ -46,7 +49,8 @@ This is the transformation law of covector components, dual to that of tangent v
 A map into the single fibre over a fixed point `q` moves only the fibre coordinate in these
 charts, so its derivative is that of its covector part (`TauCeti.CotangentBundle.hasMFDerivAt_mk`),
 and it is stationary exactly when its covector part is
-(`TauCeti.CotangentBundle.mfderiv_mk_apply_eq_zero_iff`).
+(`TauCeti.CotangentBundle.mfderiv_mk_apply_eq_zero_iff`). The inclusion of that fibre is smooth
+(`TauCeti.CotangentBundle.contMDiff_mk`).
 
 Covectors pull back along the differential of a map `f : M → N`: a covector `p` at `f x` gives the
 covector `p ∘ df_x` at `x`. For a family of covectors over a parameter manifold this is smooth:
@@ -61,6 +65,10 @@ continuous when `f` is `C¹` (`TauCeti.CotangentBundle.continuousAt_snd_apply_mf
 Pairing a covector field along a map `u` with the image of a tangent field under a section `B` of
 `End(TM)` is continuous wherever both fields are continuous into their bundles
 (`ContMDiffSection.continuousAt_apply_apply`).
+
+In a chart `c` into a normed space, differentiable with its inverse, a covector `ξ` at `x` is read
+as the covector `ξ ∘ D(c⁻¹)(c x)` of the model space, and this reading is a bijection
+(`OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_bijective`).
 
 The construction follows the Zulip discussion `Cotangent Bundle as a Manifold` in the channel
 `Is there code for X?`, which observed that Mathlib's continuous-linear-map bundle operations
@@ -103,6 +111,16 @@ theorem ext {z w : CotangentBundle I M} (hproj : z.proj = w.proj)
 
 variable [IsManifold I 1 M]
 
+/-- Read in the tangent trivialization at `x`, a covector at `x` itself is its own coordinate
+covector, as tangent vectors at `x` are their own coordinates there. -/
+@[simp]
+theorem inCoordinates_self (x : M) (p : TangentSpace I x →L[𝕜] 𝕜) :
+    ContinuousLinearMap.inCoordinates E (TangentSpace I) 𝕜 (fun _ : M ↦ 𝕜) x x x x p = p := by
+  ext v
+  simp only [ContinuousLinearMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
+    Trivial.continuousLinearMapAt_trivialization, ContinuousLinearMap.id_comp]
+  exact congrArg p (Manifold.symmL_trivializationAt_self x v)
+
 /-- Read in the canonical trivialization at `x`, a covector at `x` itself is its own coordinate
 covector, as tangent vectors at `x` are in the tangent trivialization at `x`. -/
 @[simp]
@@ -112,11 +130,19 @@ theorem continuousLinearMapAt_trivializationAt_self (x : M) (p : TangentSpace I 
   refine (Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) _
     (FiberBundle.mem_baseSet_trivializationAt (E →L[𝕜] 𝕜)
       (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x) p).trans ?_
-  ext v
-  simp only [hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates,
-    Trivial.fiberBundle_trivializationAt', Trivial.continuousLinearMapAt_trivialization,
-    ContinuousLinearMap.id_comp, ContinuousLinearMap.comp_apply]
-  exact congrArg p (Manifold.symmL_trivializationAt_self x v)
+  rw [hom_trivializationAt_apply]
+  exact inCoordinates_self x p
+
+/-- **The inclusion of a fibre is smooth.** The covectors at a fixed point `x` form a smooth
+family: the inclusion of the fibre over `x` into the cotangent bundle is smooth. -/
+theorem contMDiff_mk (x : M) {n : WithTop ℕ∞} :
+    ContMDiff 𝓘(𝕜, E →L[𝕜] 𝕜) (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) n
+      fun p : E →L[𝕜] 𝕜 ↦
+        TotalSpace.mk' (E →L[𝕜] 𝕜) (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x p := by
+  intro p₀
+  rw [contMDiffAt_hom_bundle]
+  exact ⟨contMDiffAt_const, contMDiffAt_id.congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun p ↦ inCoordinates_self x p)⟩
 
 /-- The canonical trivialization at `x` reads a covector at `y` as its precomposition with the
 inverse of the tangent trivialization at `x`, from model vectors to tangent vectors at `y`. -/
@@ -393,6 +419,25 @@ theorem continuousAt_snd_apply_mfderiv {S : Type*} [TopologicalSpace S]
 
 end Pullback
 
+section SigmaCompact
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I 1 M]
+
+/-- The cotangent bundle of a σ-compact manifold with a finite-dimensional real model is
+σ-compact: the base is second countable and locally compact, so the total space is too, as a fibre
+bundle with finite-dimensional fibre (`TauCeti.FiberBundle.secondCountableTopology_totalSpace`,
+`TauCeti.FiberBundle.locallyCompactSpace_totalSpace`). -/
+instance sigmaCompactSpace [SigmaCompactSpace M] : SigmaCompactSpace (CotangentBundle I M) := by
+  have : SecondCountableTopology H := I.secondCountableTopology
+  have : SecondCountableTopology M := ChartedSpace.secondCountable_of_sigmaCompact H M
+  have : LocallyCompactSpace H := I.locallyCompactSpace
+  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
+  infer_instance
+
+end SigmaCompact
+
 end CotangentBundle
 
 end TauCeti
@@ -421,3 +466,23 @@ theorem continuousAt_apply_apply
     ((Bundle.Trivial.homeomorphProd M 𝕜).continuous.continuousAt.comp h)
 
 end ContMDiffSection
+
+namespace OpenPartialHomeomorph.MDifferentiable
+
+variable {𝕜 E H G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {M : Type*} [TopologicalSpace M]
+  [ChartedSpace H M] [NormedAddCommGroup G] [NormedSpace 𝕜 G] {c : OpenPartialHomeomorph M G}
+
+/-- **Covectors read in a chart.** For an open partial homeomorphism `c` into a normed space,
+differentiable with its inverse, and `x` in its source, reading a covector `ξ` at `x` in `c` as
+`ξ ∘ D(c⁻¹)(c x)` is a bijection onto the covectors of `G`. -/
+theorem comp_mfderiv_symm_bijective (hc : c.MDifferentiable I 𝓘(𝕜, G)) {x : M}
+    (hx : x ∈ c.source) :
+    Function.Bijective fun ξ : TangentSpace I x →L[𝕜] 𝕜 ↦ ξ ∘L mfderiv 𝓘(𝕜, G) I c.symm (c x) := by
+  refine ⟨fun ξ₁ ξ₂ h ↦ ContinuousLinearMap.ext fun w ↦ ?_, fun η ↦ ?_⟩
+  · obtain ⟨u, rfl⟩ := hc.symm.mfderiv_surjective (c.map_source hx) w
+    exact congr($h u)
+  · refine ⟨η ∘L mfderiv I 𝓘(𝕜, G) c (c.symm (c x)), ContinuousLinearMap.ext fun u ↦ ?_⟩
+    exact congr_arg η congr($(hc.comp_symm_deriv (c.map_source hx)) u)
+
+end OpenPartialHomeomorph.MDifferentiable

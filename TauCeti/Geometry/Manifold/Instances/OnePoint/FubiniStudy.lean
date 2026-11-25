@@ -47,8 +47,9 @@ integrates to `1` over the affine chart
 (`OnePoint.integral_fubiniStudyDensity`), which is the whole sphere except the point `∞`. The area
 `π` of the unit disc and the polar integral `∫₀^∞ 2r / (1 + r²)² dr = 1` give this value. The
 integral of the form itself over the sphere with its complex orientation is then `1`
-(`OnePoint.integralTopForm_fubiniStudyForm`, in
-`TauCeti.Geometry.Manifold.DifferentialForm.Integration.RiemannSphere`).
+(`OnePoint.integralTopForm_fubiniStudyForm`), and its measure `|ω_FS|` gives the sphere total mass
+one (`OnePoint.measure_fubiniStudyForm_univ`), both in
+`TauCeti.Geometry.Manifold.DifferentialForm.Integration.RiemannSphere`.
 
 This is the area form with which symplectic and holomorphic-curve arguments on the sphere are
 normalized; other areas are obtained by scaling it.
@@ -269,6 +270,14 @@ theorem fubiniStudyForm_apply_ne_zero (x : OnePoint ℂ) : fubiniStudyForm.val x
 theorem isSymplectic_fubiniStudyForm : fubiniStudyForm.IsSymplectic :=
   (SmoothTwoForm.isSymplectic_iff_forall_ne_zero_of_finrank_eq_two
     Complex.finrank_real_complex).2 fubiniStudyForm_apply_ne_zero
+
+/-- The Fubini–Study form is `C¹`, the regularity at which forms are integrated over spheres. -/
+theorem isSmoothForm_fubiniStudyForm : IsSmoothForm 𝓘(ℝ, ℂ) 1 fubiniStudyForm.val :=
+  fubiniStudyForm.isSmoothForm.of_le (by simp)
+
+/-- The Fubini–Study form is closed: its manifold exterior derivative vanishes. -/
+theorem mextDeriv_fubiniStudyForm : mextDeriv fubiniStudyForm.val = 0 :=
+  (SmoothForm.isClosed_def _).1 isSymplectic_fubiniStudyForm.isClosed
 
 /-- **The Fubini–Study form is compatible with the complex structure** of the Riemann sphere: it
 is invariant under multiplication by `i`, and `ω_FS(v, i v) = ρ |v|² > 0` for `v ≠ 0`. -/

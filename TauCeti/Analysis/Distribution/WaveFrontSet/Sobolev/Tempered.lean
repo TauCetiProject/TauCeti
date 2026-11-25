@@ -10,13 +10,14 @@ public import Mathlib.Analysis.Fourier.LpSpace
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import TauCeti.Analysis.Distribution.TemperedDistribution.Cutoff
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.SingularSupport
+public import TauCeti.Analysis.Sobolev.BesselPotential.Postcomp
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.Distribution.Regularization
 import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
-import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
+import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import TauCeti.MeasureTheory.Measure.Comap
@@ -80,7 +81,9 @@ elliptic regularity argument provides it, assembles into membership of a Bessel-
 * `Distribution.isLocallySobolevAt_iff_exists_memSobolev_cutoffTempered`,
   `Distribution.IsLocallySobolevAt.exists_nhds_forall_memSobolev_cutoffTempered`: being `H^s` near
   a point in terms of Mathlib's Bessel-potential spaces.
-* `Distribution.exists_memSobolev_cutoffTempered`: every `φ T` has a finite Sobolev order.
+* `Distribution.exists_memSobolev_cutoffTempered`: every `φ T` has a finite Sobolev order, and
+  `Distribution.exists_toDistr_postcomp_coord_eq_cutoffTempered` is the same for distributions with
+  values in a finite-dimensional space, read in a basis.
 * `Distribution.memSobolev_cutoffTempered_of_forall_isLocallySobolevAt`: if `T` is `H^s` near every
   point of the support of `φ`, then `φ T ∈ H^s`.
 * `Distribution.sobolevSingularSupport_eq_empty_iff_forall_memSobolev_cutoffTempered`: the
@@ -219,6 +222,20 @@ theorem integral_fourierInv_mul_localFourier (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω,
     FourierTransform.fourier_fourierInv_eq]
   simp only [smul_eq_mul]
 
+/-- **Fourier inversion for `φ T`, shifted.** Averaging the localized Fourier transform of `T`
+against the inverse Fourier transform of a Schwartz function `a` multiplies the cutoff by `a`:
+`∫ 𝓕⁻ a ζ T (φ e_(η + ζ)) dζ = T (a φ e_η)`. -/
+theorem integral_fourierInv_mul_localFourier_add (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (a : 𝓢(E, ℂ))
+    {φa : 𝓓(Ω, ℂ)} (hφa : ∀ x, φa x = a x * φ x) (η : E) :
+    ∫ ζ, 𝓕⁻ a ζ * T.localFourier φ (η + ζ) = T.localFourier φa η := by
+  simp_rw [← localFourier_bilinLeftCLM_fourierAtom T φ η]
+  rw [integral_fourierInv_mul_localFourier, localFourier_def,
+    cutoffTempered_apply (χ := bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ)
+      (TauCeti.contDiff_fourierAtom η) φa)]
+  intro x
+  simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply', hφa]
+  ring
+
 /-! ### Bessel-potential spaces -/
 
 section Sobolev
@@ -322,19 +339,42 @@ theorem exists_memSobolev_cutoffTempered (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ
   (T.exists_memLp_one_add_norm_sq_rpow_smul_localFourier φ).imp fun _ h ↦
     memSobolev_cutoffTempered_iff.2 h
 
+/-- **Finite Sobolev order of a vector-valued distribution.** For a distribution `T` with values in
+a finite-dimensional space `V`, a basis `(e_j)` of `V` with dual basis `(c_j)` and a test function
+`φ`, some `u` in the Bessel-potential space `H^s(E, V)` of some real order `s` has the cut-off
+components `φ (c_j ∘ T)` as its coordinates `c_j ∘ u`. -/
+theorem exists_toDistr_postcomp_coord_eq_cutoffTempered {V ι : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℂ V] [CompleteSpace V] [FiniteDimensional ℂ V] (b : Module.Basis ι ℂ V)
+    (T : 𝓓'(Ω, V))
+    (φ : 𝓓(Ω, ℂ)) :
+    ∃ (s : ℝ) (u : BesselPotentialSpace E V s 2), ∀ j,
+      (BesselPotentialSpace.postcomp E s 2 (b.coord j).toContinuousLinearMap u).toDistr =
+        (mapCLM ((b.coord j).toContinuousLinearMap.restrictScalars ℝ) T).cutoffTempered φ := by
+  have := FiniteDimensional.fintypeBasisIndex b
+  choose r hr using fun j ↦ exists_memSobolev_cutoffTempered
+    (mapCLM ((b.coord j).toContinuousLinearMap.restrictScalars ℝ) T) φ
+  -- The order `-∑ⱼ |rⱼ|` lies below every `rⱼ`.
+  have hle (j : ι) : -∑ i, |r i| ≤ r j :=
+    (neg_le_neg (Finset.single_le_sum (fun i _ ↦ abs_nonneg (r i)) (Finset.mem_univ j))).trans
+      (neg_abs_le (r j))
+  refine ⟨-∑ i, |r i|, ∑ i, BesselPotentialSpace.postcomp E _ 2
+    (ContinuousLinearMap.toSpanSingleton ℂ (b i)) ((hr i).mono (hle i)).toBesselPotentialSpace,
+    fun j ↦ ?_⟩
+  rw [map_sum, ← BesselPotentialSpace.toDistrCLM_apply, map_sum]
+  ext f
+  simp only [_root_.sum_apply, BesselPotentialSpace.toDistrCLM_apply,
+    BesselPotentialSpace.toDistr_postcomp_apply, MemSobolev.toBesselPotentialSpace_toDistr,
+    ContinuousLinearMap.toSpanSingleton_apply, LinearMap.coe_toContinuousLinearMap', map_smul,
+    Module.Basis.coord_apply, Module.Basis.repr_self, smul_eq_mul]
+  rw [Finset.sum_eq_single j (fun i _ hij ↦ by simp [hij]) (by simp)]
+  simp
+
 /-- **From local to global regularity.** If `T` is `H^s` near every point of the support of a test
 function `φ`, then `φ T ∈ H^s`. -/
 theorem memSobolev_cutoffTempered_of_forall_isLocallySobolevAt
-    (h : ∀ x ∈ tsupport φ, T.IsLocallySobolevAt s x) : MemSobolev s 2 (T.cutoffTempered φ) := by
-  -- Each point of `tsupport φ` has a neighbourhood on which every cutoff gives an `H^s` product.
-  choose U hU hUs using fun x : tsupport φ ↦
-    (h x x.property).exists_nhds_forall_memSobolev_cutoffTempered
-  -- Split `φ` into finitely many test functions supported in these neighbourhoods.
-  obtain ⟨t, ψ, hψU, hψφ, -⟩ := φ.exists_sum_subordinate (fun x ↦ interior (U x))
-    (fun _ ↦ isOpen_interior) fun x hx ↦
-      mem_iUnion.2 ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.2 (hU ⟨x, hx⟩)⟩
-  rw [← hψφ, cutoffTempered_sum_cutoff]
-  exact MemSobolev.sum fun i _ ↦ hUs i _ ((hψU i).trans interior_subset)
+    (h : ∀ x ∈ tsupport φ, T.IsLocallySobolevAt s x) : MemSobolev s 2 (T.cutoffTempered φ) :=
+  cutoffTempered_induction _ (memSobolev_fun_zero E ℂ s 2) (fun _ _ ↦ MemSobolev.add)
+    fun x hx ↦ (h x hx).exists_nhds_forall_memSobolev_cutoffTempered
 
 /-- **Local `H^s` regularity on all of `Ω`.** A distribution has empty `H^s` singular support,
 that is, it is `H^s` near every point of `Ω`, exactly when `φ T ∈ H^s` for every test function

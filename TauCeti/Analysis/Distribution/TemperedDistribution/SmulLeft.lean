@@ -60,7 +60,7 @@ theorem smulLeftCLM_eq_zero_of_not_hasTemperateGrowth {g : E → ℂ}
     (hg : ¬ g.HasTemperateGrowth) : smulLeftCLM F g = 0 := by
   refine ContinuousLinearMap.ext fun u => ?_
   ext f'
-  simp [SchwartzMap.smulLeftCLM_of_not_hasTemperateGrowth hg]
+  simp [hg]
 
 /-- **Multiplication by a function equal to `1` on an open set.** If `g` has temperate growth
 and `g = 1` on an open set `O`, then `u - g u` vanishes on `O`, for every tempered distribution
@@ -92,7 +92,7 @@ theorem lineDerivOp_smulLeftCLM {g : E → ℂ} (hg : g.HasTemperateGrowth) (f :
     ∂_{v} (smulLeftCLM F g f) =
       smulLeftCLM F (fun x ↦ fderiv ℝ g x v) f + smulLeftCLM F g (∂_{v} f) := by
   ext u
-  simp [SchwartzMap.lineDerivOp_smulLeftCLM hg, ← map_add]
+  simp [SchwartzMap.lineDerivOp_smulLeftCLM _ hg, ← map_add]
 
 end Deriv
 
@@ -124,6 +124,6 @@ theorem smulLeftCLM_toTemperedDistributionCLM_eq {μ : Measure E} [μ.HasTempera
   by_cases hg : g.HasTemperateGrowth
   · simp only [smulLeftCLM_apply_apply, SchwartzMap.toTemperedDistributionCLM_apply_apply,
       SchwartzMap.smulLeftCLM_apply_apply hg, smul_smul, smul_eq_mul, mul_comm]
-  · simp [SchwartzMap.smulLeftCLM_of_not_hasTemperateGrowth hg]
+  · simp [hg]
 
 end TemperedDistribution

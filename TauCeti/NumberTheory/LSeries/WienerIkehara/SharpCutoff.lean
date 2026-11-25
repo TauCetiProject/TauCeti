@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LSeries.WienerIkehara.Chebyshev
+public import TauCeti.Analysis.Asymptotics.Sum.Window
+public import TauCeti.NumberTheory.LSeries.WienerIkehara.Approximation
 import Mathlib.NumberTheory.LSeries.WienerIkehara
-import TauCeti.Analysis.Asymptotics.Sum.Window
+import TauCeti.NumberTheory.LSeries.WienerIkehara.Chebyshev
 
 /-!
 # The Wiener--Ikehara theorem
@@ -17,20 +18,30 @@ Let `a n ≥ 0` have Dirichlet series `F s = ∑ a n n⁻ˢ` convergent on `Re s
 Wiener--Ikehara theorem says that the partial sums then grow like `κ x`:
 `x⁻¹ ∑_{1 ≤ n ≤ x} a n → κ` as `x → ∞`.
 
-The Chebyshev bound `TauCeti.LSeries.isBigO_sum_Icc_norm_id_of_boundary` supplies the linear
-growth bound required by Mathlib's `WienerIkehara.tendsto_sum_div`, which gives the sharp-cutoff
-limit after absorbing and subtracting the `n = 0` term. (For the complex-valued smoothed asymptotic
-on `(0, ∞)`, see `TauCeti.LSeries.tendsto_inv_mul_tsum_mul_div_atTop` in
-`TauCeti.NumberTheory.LSeries.WienerIkehara.Approximation`.)
+The analytic input is the smoothed asymptotic
+`TauCeti.LSeries.tendsto_tsum_term_mul_fourier_schwartz_atTop`, which evaluates the limit of
+`∑ a n / n * 𝓕 g (log (n / x) / 2π)` for a Schwartz function `g`. This file makes two passes.
 
-For the sharp-cutoff theorems in this file, the coefficients are real and nonnegative, the
-hypothesis on the series is `LSeriesHasSum` on the open half-plane (Mathlib's `LSeries` is a total
-function, zero where the series diverges), and the continuous extension is a separately named
-function `G`, so no junk value of `F` at `s = 1` or on the line `Re s = 1` is ever used. The sign
-of `κ` is not assumed: it is forced by the conclusion.
+* **Smooth cutoffs.** For a smooth function `Ψ` with compact support inside `(0, ∞)`, the weight
+  `W v = e^{2πv} Ψ(e^{2πv})` is smooth and compactly supported, hence the Fourier transform of the
+  Schwartz function `g = 𝓕⁻ W`, and `a n / n * W (log (n / x) / 2π) = x⁻¹ a n Ψ (n / x)`. Since
+  `g 0 = ∫ W = (2π)⁻¹ ∫_{(0, ∞)} Ψ`, this gives `x⁻¹ ∑ a n Ψ (n / x) → A ∫_{(0, ∞)} Ψ`.
+* **The sharp cutoff.** For nonnegative real coefficients, the Chebyshev bound
+  `TauCeti.LSeries.isBigO_sum_Icc_norm_id_of_boundary` supplies the linear growth bound required by
+  Mathlib's `WienerIkehara.tendsto_sum_div`, which gives the sharp-cutoff limit after absorbing and
+  subtracting the `n = 0` term.
+
+The smooth-cutoff step holds for complex coefficients under a Chebyshev bound. For the sharp
+cutoff, the coefficients are real and nonnegative, the hypothesis on the series is `LSeriesHasSum`
+on the open half-plane (Mathlib's `LSeries` is a total function, zero where the series diverges),
+and the continuous extension is a separately named function `G`, so no junk value of `F` at `s = 1`
+or on the line `Re s = 1` is ever used. The sign of `κ` is not assumed: it is forced by the
+conclusion.
 
 ## Main results
 
+* `TauCeti.LSeries.tendsto_inv_mul_tsum_mul_div_atTop`: the smoothed asymptotic
+  `x⁻¹ ∑ a n Ψ (n / x) → A ∫_{(0, ∞)} Ψ` for a smooth `Ψ` with compact support in `(0, ∞)`.
 * `TauCeti.LSeries.wienerIkehara`: **the Wiener--Ikehara theorem**,
   `x⁻¹ ∑_{1 ≤ n ≤ x} a n → κ`.
 * `TauCeti.LSeries.wienerIkehara_zero`: the case `κ = 0`, in which `F` itself extends continuously
@@ -38,8 +49,12 @@ of `κ` is not assumed: it is forced by the conclusion.
 
 ## Provenance
 
-`TauCeti.LSeries.wienerIkehara` delegates the sharp-cutoff Tauberian step to Mathlib's
-`WienerIkehara.tendsto_sum_div` via the Chebyshev bound
+The passage from Schwartz test functions to smooth cutoffs on `(0, ∞)` follows
+`WienerIkeharaSmooth` in `PrimeNumberTheoremAnd/Wiener.lean` of the Apache-2.0
+`AxiomMath/PrimeNumberTheoremAnd` repository, revision `2667e414c38e5a5dc9aa1946f16f13001e5cd3ed`,
+the same source as the sibling files in this directory, derived from the Schwartz-function
+asymptotic by Fourier inversion on `𝓢(ℝ, ℂ)`. For the sharp cutoff, `TauCeti.LSeries.wienerIkehara`
+delegates to Mathlib's `WienerIkehara.tendsto_sum_div` via the Chebyshev bound
 `TauCeti.LSeries.isBigO_sum_Icc_norm_id_of_boundary`.
 
 ## References
@@ -50,10 +65,93 @@ of `κ` is not assumed: it is forced by the conclusion.
 
 public section
 
-open Filter
-open scoped Topology
+open Asymptotics Complex Filter FourierTransform MeasureTheory Real Set
+open scoped ContDiff SchwartzMap Topology
 
 namespace TauCeti.LSeries
+
+/-! ### Smooth cutoffs on the positive half-line -/
+
+section Smooth
+
+variable {Ψ : ℝ → ℂ}
+
+/-- The weight `v ↦ e^{2πv} Ψ(e^{2πv})`, which turns the logarithmic frequency `log (n / x) / 2π`
+of the smoothed asymptotic back into the ratio `n / x`. -/
+private noncomputable def expWeight (Ψ : ℝ → ℂ) (v : ℝ) : ℂ :=
+  Real.exp (2 * π * v) • Ψ (Real.exp (2 * π * v))
+
+private lemma contDiff_expWeight (hΨ : ContDiff ℝ ∞ Ψ) : ContDiff ℝ ∞ (expWeight Ψ) := by
+  have he : ContDiff ℝ ∞ fun v : ℝ ↦ Real.exp (2 * π * v) := by fun_prop
+  exact he.smul (hΨ.comp he)
+
+/-- A compact support inside `(0, ∞)` becomes a compact support after the substitution
+`y = e^{2πv}`: it is the image of `tsupport Ψ` under `y ↦ log y / 2π`. -/
+private lemma hasCompactSupport_expWeight (hΨc : HasCompactSupport Ψ)
+    (hΨpos : tsupport Ψ ⊆ Ioi 0) : HasCompactSupport (expWeight Ψ) := by
+  refine HasCompactSupport.intro (K := (fun y ↦ Real.log y / (2 * π)) '' tsupport Ψ)
+    (hΨc.isCompact.image_of_continuousOn fun y hy ↦
+      ((Real.continuousAt_log (hΨpos hy).ne').div_const _).continuousWithinAt) fun v hv ↦ ?_
+  by_contra h
+  refine hv ⟨Real.exp (2 * π * v), subset_tsupport _ fun h0 ↦ h ?_, ?_⟩
+  · simp [expWeight, h0]
+  · simp only [Real.log_exp]
+    field_simp
+
+private lemma term_mul_expWeight (a : ℕ → ℂ) (hΨ0 : Ψ 0 = 0) {x : ℝ} (hx : 0 < x) (n : ℕ) :
+    _root_.LSeries.term a 1 n * expWeight Ψ (1 / (2 * π) * Real.log (n / x)) =
+      (x : ℂ)⁻¹ * (a n * Ψ (n / x)) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp [hΨ0]
+  have hexp : Real.exp (2 * π * (1 / (2 * π) * Real.log (n / x))) = n / x := by
+    rw [← mul_assoc, mul_one_div_cancel (by positivity), one_mul, Real.exp_log (by positivity)]
+  rw [_root_.LSeries.term_of_ne_zero hn, expWeight, hexp, cpow_one, Complex.real_smul]
+  push_cast
+  field_simp
+
+/-- The substitution `y = e^{2πv}`: `∫ W = (2π)⁻¹ ∫_{(0, ∞)} Ψ`. -/
+private lemma integral_expWeight :
+    ∫ v, expWeight Ψ v = (2 * π : ℂ)⁻¹ * ∫ y in Ioi 0, Ψ y := by
+  have h := Measure.integral_comp_mul_left (fun u ↦ Real.exp u • Ψ (Real.exp u)) (2 * π)
+  simp only [expWeight]
+  rw [h, integral_comp_exp, abs_of_pos (by positivity), Complex.real_smul]
+  push_cast
+  rfl
+
+variable {a : ℕ → ℂ} {A : ℂ} {G : ℂ → ℂ}
+
+/-- **The smoothed Wiener--Ikehara asymptotic for a cutoff on `(0, ∞)`.** Let `a : ℕ → ℂ` satisfy
+the Chebyshev bound `∑_{1 ≤ n ≤ x} ‖a n‖ = O(x)`, with a boundary remainder
+`G = LSeries a - A / (s - 1)` continuous on `Re s ≥ 1`. For every smooth `Ψ` whose support is a
+compact subset of `(0, ∞)`, `x⁻¹ ∑ a n Ψ (n / x) → A ∫_{(0, ∞)} Ψ` as `x → ∞`. -/
+theorem tendsto_inv_mul_tsum_mul_div_atTop
+    (hcheby : (fun x : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, ‖a n‖) =O[atTop] fun x ↦ x)
+    (hG : ContinuousOn G {z : ℂ | 1 ≤ z.re})
+    (hG' : ∀ z : ℂ, 1 < z.re → G z = LSeries a z - A / (z - 1))
+    (hΨ : ContDiff ℝ ∞ Ψ) (hΨc : HasCompactSupport Ψ) (hΨpos : tsupport Ψ ⊆ Ioi 0) :
+    Tendsto (fun x : ℝ ↦ (x : ℂ)⁻¹ * ∑' n : ℕ, a n * Ψ (n / x)) atTop
+      (𝓝 (A * ∫ y in Ioi 0, Ψ y)) := by
+  set W : 𝓢(ℝ, ℂ) := (hasCompactSupport_expWeight hΨc hΨpos).toSchwartzMap
+    (contDiff_expWeight hΨ)
+  have hFg : 𝓕 ((𝓕⁻ W : 𝓢(ℝ, ℂ)) : ℝ → ℂ) = expWeight Ψ := by
+    rw [← SchwartzMap.fourier_coe, fourier_fourierInv_eq]
+    rfl
+  have hg0 : (𝓕⁻ W : 𝓢(ℝ, ℂ)) 0 = (2 * π : ℂ)⁻¹ * ∫ y in Ioi 0, Ψ y := by
+    rw [SchwartzMap.fourierInv_coe, Real.fourierInv_eq, ← integral_expWeight]
+    simp [W]
+  have hΨ0 : Ψ 0 = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ lt_irrefl (0 : ℝ) (hΨpos h)
+  have key := tendsto_tsum_term_mul_fourier_schwartz_atTop hcheby hG hG' (𝓕⁻ W)
+  have hscale : 2 * (π : ℂ) * A * ((2 * π : ℂ)⁻¹ * ∫ y in Ioi 0, Ψ y) =
+      A * ∫ y in Ioi 0, Ψ y := by
+    field_simp
+  rw [hFg, hg0, hscale] at key
+  refine key.congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with x hx
+  simp_rw [term_mul_expWeight a hΨ0 hx, tsum_mul_left]
+
+end Smooth
+
+/-! ### The sharp cutoff -/
 
 section Sharp
 

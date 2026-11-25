@@ -6,29 +6,30 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
-public import TauCeti.NumberTheory.LSeries.WienerIkehara.Chebyshev
+public import TauCeti.NumberTheory.LSeries.WienerIkehara.Asymptotic
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.Analysis.SumIntegralComparisons
-import Mathlib.NumberTheory.LSeries.WienerIkehara
 import TauCeti.Algebra.Order.BigOperators.Sum.ByParts
 import TauCeti.Algebra.Order.Field.Basic
-import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Asymptotics.Sum.Window
-import TauCeti.NumberTheory.LSeries.Positivity
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
+import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
+import TauCeti.NumberTheory.LSeries.CoefficientGrowth
 
 /-!
 # Approximating the test function in the smoothed Wiener--Ikehara asymptotic
 
-`TauCeti.LSeries.tendsto_tsum_term_mul_fourier_atTop_of_nonneg` evaluates the limit of
+`TauCeti.LSeries.tendsto_tsum_term_mul_fourier_atTop_of_contDiff` evaluates the limit of
 `∑ a n / n * 𝓕 psi (log (n / x) / 2π)` for a *smooth compactly supported* test function `psi`.
-Passing from compactly supported test functions `psi` to general Schwartz test functions `g`
-(and hence to smooth compactly supported weights `W`, which are Fourier transforms of Schwartz
-functions but never of compactly supported ones when nonzero) requires the same limit for weights
-`W` that are not of the form `𝓕 psi` with `psi` compactly supported. This file passes the limit
-from `𝓕 psi` to any weight `W` that such transforms approximate in the weighted sup norm
-`sup_v (1 + v ^ 2) ‖W v - 𝓕 psi v‖`.
+The Tauberian step of Wiener--Ikehara needs the same limit for weights `W` that are not of this
+form. A nonzero smooth compactly supported weight `W` is one: it is the Fourier transform of a
+Schwartz function, but never of a compactly supported one, since a nonzero function and its
+Fourier transform cannot both have compact support. This file passes the limit from `𝓕 psi` to
+any weight `W` that such transforms approximate in the weighted sup norm
+`sup_v (1 + v ^ 2) ‖W v - 𝓕 psi v‖`, for complex coefficients `a : ℕ → ℂ` satisfying the
+Chebyshev bound `∑_{1 ≤ n ≤ x} ‖a n‖ = O(x)`.
 
 The approximation step rests on a uniform bound. If the partial sums of `‖a‖` satisfy the
 Chebyshev bound `∑_{1 ≤ n ≤ N} ‖a n‖ ≤ C N`, then
@@ -38,14 +39,10 @@ The weight `t ↦ (t (1 + (log (t / x) / 2π) ^ 2))⁻¹` is antitone on `t > 0`
 weight, and the integral test bounds the latter by `1 + ∫ = 1 + 2π (arctan - arctan) ≤ 1 + 2π²`.
 Consequently a weight `W` with `‖W v‖ ≤ M (1 + v ^ 2)⁻¹` gives a series of size at most
 `M C (1 + 2π²)`, uniformly in `x`, and a small error in the weighted sup norm costs little in the
-limit. For nonnegative coefficients with Wiener--Ikehara boundary data the Chebyshev bound is
+limit. Under the Chebyshev bound, `TauCeti.LSeries.LSeriesSummable_of_isBigO_sum_Icc_norm_id` also
+supplies the convergence of `LSeries a` on `Re s > 1`. For nonnegative coefficients with
+Wiener--Ikehara boundary data the Chebyshev bound is
 `TauCeti.LSeries.isBigO_sum_Icc_norm_id_of_boundary`.
-
-Applying this approximation to truncations of a Schwartz function `g` yields the smoothed
-asymptotic for `𝓕 g` (`TauCeti.LSeries.tendsto_tsum_term_mul_fourier_schwartz_atTop`). For a
-complex-valued smooth cutoff `Ψ` with compact support in `(0, ∞)`,
-`TauCeti.LSeries.tendsto_inv_mul_tsum_mul_div_atTop` obtains `x⁻¹ ∑ a n Ψ (n / x) → A ∫_{(0, ∞)} Ψ`
-by deriving the Chebyshev bound and delegating to Mathlib's `WienerIkehara.tendsto_sum_div_smooth`.
 
 ## Main results
 
@@ -57,12 +54,8 @@ by deriving the Chebyshev bound and delegating to Mathlib's `WienerIkehara.tends
 * `TauCeti.LSeries.tendsto_tsum_term_mul_atTop_of_approx_fourier`: the smoothed Wiener--Ikehara
   asymptotic for a weight `W` approximable by Fourier transforms of smooth compactly supported
   functions `psi` whose values `psi 0` approximate `L`; the limit is `2π A L`.
-* `TauCeti.LSeries.tendsto_tsum_term_mul_fourier_schwartz_atTop`: the smoothed asymptotic for
-  a Schwartz test function `g`.
-* `TauCeti.LSeries.residue_im_eq_zero`: the residue of a nonnegative Dirichlet series with a
-  boundary remainder continuous from the right at `1` is real (`A.im = 0`).
-* `TauCeti.LSeries.tendsto_inv_mul_tsum_mul_div_atTop`: the smoothed asymptotic
-  `x⁻¹ ∑ a n Ψ (n / x) → A ∫_{(0, ∞)} Ψ` for a smooth `Ψ` with compact support in `(0, ∞)`.
+* `TauCeti.LSeries.tendsto_tsum_term_mul_fourier_schwartz_atTop`: the smoothed Wiener--Ikehara
+  asymptotic for Schwartz test functions, under a Chebyshev bound.
 
 ## Provenance
 
@@ -72,15 +65,14 @@ The uniform bound and the truncation argument follow `bound_sum_log`, `bound_I1`
 `2667e414c38e5a5dc9aa1946f16f13001e5cd3ed`, the same source as the sibling files in this
 directory. Here the summation by parts is the general `TauCeti.sum_range_smul_le_sum_range_smul`,
 the integral of the weight is bounded on finite intervals by the fundamental theorem of calculus
-rather than evaluated on `(0, ∞)`, and the approximation hypothesis is stated for an arbitrary
-weight `W` instead of a fixed truncation of a `W^{2,1}` function. For a Schwartz function `g`
-(`limiting_cor_schwartz` there) the approximants are the truncations `χ (R⁻¹ • ·) • g`, which
-converge to `g` in the Schwartz topology (Mathlib's `SchwartzMap.tendsto_smulLeftCLM_comp_smul`);
-the weighted sup norm of a Fourier transform is bounded by two Schwartz seminorms, so it is the
-continuity of the Fourier transform on `𝓢(ℝ, ℂ)` that makes the truncation error small.
-`TauCeti.LSeries.tendsto_inv_mul_tsum_mul_div_atTop` delegates the smooth-cutoff Tauberian step to
-Mathlib's `WienerIkehara.tendsto_sum_div_smooth` via the Chebyshev bound
-`TauCeti.LSeries.isBigO_sum_Icc_norm_id_of_boundary`.
+rather than evaluated on `(0, ∞)`, `LSeriesSummable` on `Re s > 1` is derived from the Chebyshev
+bound rather than assumed separately, the residue `A` is complex, and the approximation hypothesis
+is stated for an arbitrary weight `W` instead of a fixed truncation of a `W^{2,1}` function. For a
+Schwartz function `g` (`limiting_cor_schwartz` there) the approximants are the truncations
+`χ (R⁻¹ • ·) • g`, which converge to `g` in the Schwartz topology (Mathlib's
+`SchwartzMap.tendsto_smulLeftCLM_comp_smul`); the weighted sup norm of a Fourier transform is
+bounded by two Schwartz seminorms, so it is the continuity of the Fourier transform on `𝓢(ℝ, ℂ)`
+that makes the truncation error small.
 
 ## References
 
@@ -91,7 +83,7 @@ public section
 
 namespace TauCeti.LSeries
 
-open Complex Filter FourierTransform Real Set
+open Asymptotics Complex Filter FourierTransform Real Set
 open scoped ComplexOrder ContDiff SchwartzMap Topology
 
 variable {a : ℕ → ℂ} {C x : ℝ}
@@ -315,12 +307,37 @@ theorem norm_tsum_term_mul_comp_log_div_le
 
 variable {G : ℂ → ℂ} {A L : ℂ}
 
-/-- Splitting the series for an approximable weight `W` into the part carried by the Fourier
-transform of a smooth compactly supported `psi` and the error `W - 𝓕 psi`. -/
-private lemma tsum_term_mul_eq_add_tsum_sub {psi : ℝ → ℂ} (ha : 0 ≤ a)
+private lemma LSeriesSummable_mul_fourier_of_sum_Icc_le {psi : ℝ → ℂ}
+    (hC : ∀ N : ℕ, ∑ n ∈ Finset.Icc 1 N, ‖a n‖ ≤ C * N)
+    (hpsi : ContDiff ℝ ∞ psi) (hsupp : HasCompactSupport psi) (hx : 0 < x) :
+    LSeriesSummable (fun n : ℕ ↦ a n * 𝓕 psi (1 / (2 * π) * Real.log (n / x))) 1 := by
+  set u : 𝓢(ℝ, ℂ) := hsupp.toSchwartzMap hpsi
+  have hu : (u : ℝ → ℂ) = psi := funext (hsupp.toSchwartzMap_toFun hpsi)
+  refine LSeriesSummable_mul_comp_log_div hC
+    (M := SchwartzMap.seminorm ℝ 0 0 (𝓕 u) + SchwartzMap.seminorm ℝ 2 0 (𝓕 u)) (fun v ↦ ?_) hx
+  rw [← hu, ← SchwartzMap.fourier_coe, ← sq_abs v, ← Real.norm_eq_abs]
+  exact (𝓕 u).norm_le_add_seminorm_mul_inv_one_add_norm_pow (𝕜 := ℝ) 2 v
+
+/-- The smoothed Wiener--Ikehara asymptotic for a smooth compactly supported test function, under
+the Chebyshev bound `∑_{1 ≤ n ≤ x} ‖a n‖ = O(x)`. No sign of `a` is assumed. -/
+theorem tendsto_tsum_term_mul_fourier_atTop_of_isBigO_sum_Icc_norm_id {psi : ℝ → ℂ}
+    (hcheby : (fun x : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, ‖a n‖) =O[atTop] fun x ↦ x)
     (hG : ContinuousOn G {z : ℂ | 1 ≤ z.re})
     (hG' : ∀ z : ℂ, 1 < z.re → G z = LSeries a z - A / (z - 1))
-    (hsum : ∀ sigma : ℝ, 1 < sigma → LSeriesSummable a sigma)
+    (hpsi : ContDiff ℝ ∞ psi) (hsupp : HasCompactSupport psi) :
+    Tendsto (fun x : ℝ ↦
+        ∑' n : ℕ, _root_.LSeries.term a 1 n * 𝓕 psi (1 / (2 * π) * Real.log (n / x)))
+      atTop (𝓝 (2 * (π : ℂ) * A * psi 0)) := by
+  obtain ⟨C, hC⟩ := exists_sum_Icc_le_mul_of_isBigO hcheby
+  refine tendsto_tsum_term_mul_fourier_atTop_of_contDiff hG hG'
+    (fun σ hσ ↦ LSeriesSummable_of_isBigO_sum_Icc_norm_id hcheby (by simpa using hσ))
+    hpsi hsupp ?_
+  filter_upwards [eventually_gt_atTop (0 : ℝ)] with x hx
+  exact LSeriesSummable_mul_fourier_of_sum_Icc_le hC hpsi hsupp hx
+
+/-- Splitting the series for an approximable weight `W` into the part carried by the Fourier
+transform of a smooth compactly supported `psi` and the error `W - 𝓕 psi`. -/
+private lemma tsum_term_mul_eq_add_tsum_sub {psi : ℝ → ℂ}
     (hpsi : ContDiff ℝ ∞ psi) (hsupp : HasCompactSupport psi)
     (hC : ∀ N : ℕ, ∑ n ∈ Finset.Icc 1 N, ‖a n‖ ≤ C * N)
     (hW : ∀ v, ‖W v - 𝓕 psi v‖ ≤ M * (1 + v ^ 2)⁻¹) (hxpos : 0 < x) :
@@ -330,10 +347,7 @@ private lemma tsum_term_mul_eq_add_tsum_sub {psi : ℝ → ℂ} (ha : 0 ≤ a)
           (W (1 / (2 * π) * Real.log (n / x)) - 𝓕 psi (1 / (2 * π) * Real.log (n / x))) := by
   have hsumpsi : Summable fun n : ℕ ↦
       _root_.LSeries.term a 1 n * 𝓕 psi (1 / (2 * π) * Real.log (n / x)) := by
-    have := LSeriesSummable_mul_fourier_of_nonneg (x := x) ha
-      (hG.comp Complex.continuous_ofReal.continuousOn fun r hr ↦ by simpa using hr.1)
-      (fun sigma h1 _ ↦ hG' sigma (by simpa using h1)) (fun sigma h1 _ ↦ hsum sigma h1)
-      hpsi hsupp hxpos
+    have := LSeriesSummable_mul_fourier_of_sum_Icc_le (x := x) hC hpsi hsupp hxpos
     rwa [LSeriesSummable, term_mul_comp_log_div] at this
   have hsumerr : Summable fun n : ℕ ↦ _root_.LSeries.term a 1 n *
       (W (1 / (2 * π) * Real.log (n / x)) - 𝓕 psi (1 / (2 * π) * Real.log (n / x))) := by
@@ -343,26 +357,25 @@ private lemma tsum_term_mul_eq_add_tsum_sub {psi : ℝ → ℂ} (ha : 0 ≤ a)
   rw [← hsumpsi.tsum_add hsumerr]
   exact tsum_congr fun n ↦ by ring
 
-/-- **The smoothed Wiener--Ikehara asymptotic for an approximable weight.** Let `a` be
-nonnegative, with Dirichlet series summable on `Re s > 1` and a boundary remainder
+/-- **The smoothed Wiener--Ikehara asymptotic for an approximable weight.** Let `a : ℕ → ℂ`
+satisfy the Chebyshev bound `∑_{1 ≤ n ≤ x} ‖a n‖ = O(x)`, with a boundary remainder
 `G = LSeries a - A / (s - 1)` continuous on `Re s ≥ 1`. Suppose that for every `ε > 0` some smooth
 compactly supported `psi` satisfies `‖W v - 𝓕 psi v‖ ≤ ε (1 + v ^ 2)⁻¹` for all `v` and
 `‖L - psi 0‖ ≤ ε`. Then `∑ a n / n * W (log (n / x) / 2π) → 2π A L` as `x → ∞`.
 
-For `W = 𝓕 psi` itself this is `TauCeti.LSeries.tendsto_tsum_term_mul_fourier_atTop_of_nonneg`
-with `L = psi 0`; the point is that `W` need not be the Fourier transform of a compactly
-supported function. -/
-theorem tendsto_tsum_term_mul_atTop_of_approx_fourier (ha : 0 ≤ a)
+For `W = 𝓕 psi` itself this is
+`TauCeti.LSeries.tendsto_tsum_term_mul_fourier_atTop_of_isBigO_sum_Icc_norm_id` with `L = psi 0`;
+the point is that `W` need not be the Fourier transform of a compactly supported function. -/
+theorem tendsto_tsum_term_mul_atTop_of_approx_fourier
+    (hcheby : (fun x : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, ‖a n‖) =O[atTop] fun x ↦ x)
     (hG : ContinuousOn G {z : ℂ | 1 ≤ z.re})
     (hG' : ∀ z : ℂ, 1 < z.re → G z = LSeries a z - A / (z - 1))
-    (hsum : ∀ sigma : ℝ, 1 < sigma → LSeriesSummable a sigma)
     (happrox : ∀ ε > 0, ∃ psi : ℝ → ℂ, ContDiff ℝ ∞ psi ∧ HasCompactSupport psi ∧
       (∀ v, ‖W v - 𝓕 psi v‖ ≤ ε * (1 + v ^ 2)⁻¹) ∧ ‖L - psi 0‖ ≤ ε) :
     Tendsto (fun x : ℝ ↦
         ∑' n : ℕ, _root_.LSeries.term a 1 n * W (1 / (2 * π) * Real.log (n / x)))
       atTop (𝓝 (2 * (π : ℂ) * A * L)) := by
-  obtain ⟨C₀, hC⟩ :=
-    exists_sum_Icc_le_mul_of_isBigO (isBigO_sum_Icc_norm_id_of_boundary ha hG hG' hsum)
+  obtain ⟨C₀, hC⟩ := exists_sum_Icc_le_mul_of_isBigO hcheby
   set C := max C₀ 0
   replace hC : ∀ N : ℕ, ∑ n ∈ Finset.Icc 1 N, ‖a n‖ ≤ C * N := fun N ↦
     (hC N).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) N.cast_nonneg)
@@ -375,12 +388,12 @@ theorem tendsto_tsum_term_mul_atTop_of_approx_fourier (ha : 0 ≤ a)
   intro ε hε
   obtain ⟨psi, hpsi, hsupp, hW, hL⟩ := happrox (ε / (2 * K)) (by positivity)
   obtain ⟨x₀, hx₀⟩ := Metric.tendsto_atTop.1
-    (tendsto_tsum_term_mul_fourier_atTop_of_nonneg ha hG hG' hsum hpsi hsupp) (ε / 2)
-    (by positivity)
+    (tendsto_tsum_term_mul_fourier_atTop_of_isBigO_sum_Icc_norm_id hcheby hG hG' hpsi hsupp)
+    (ε / 2) (by positivity)
   refine ⟨max x₀ 1, fun x hx ↦ ?_⟩
   have hxpos : 0 < x := lt_of_lt_of_le one_pos ((le_max_right _ _).trans hx)
   have hmain := hx₀ x ((le_max_left _ _).trans hx)
-  have hsplit := tsum_term_mul_eq_add_tsum_sub ha hG hG' hsum hpsi hsupp hC hW hxpos
+  have hsplit := tsum_term_mul_eq_add_tsum_sub hpsi hsupp hC hW hxpos
   have herr := norm_tsum_term_mul_comp_log_div_le hC hW hxpos
   have hconst : ‖2 * (π : ℂ) * A * psi 0 - 2 * (π : ℂ) * A * L‖ ≤
       ‖2 * (π : ℂ) * A‖ * (ε / (2 * K)) := by
@@ -406,22 +419,22 @@ theorem tendsto_tsum_term_mul_atTop_of_approx_fourier (ha : 0 ≤ a)
 
 /-! ### Schwartz test functions -/
 
-/-- **The smoothed Wiener--Ikehara asymptotic for a Schwartz test function.** Let `a` be
-nonnegative, with Dirichlet series summable on `Re s > 1` and a boundary remainder
+/-- **The smoothed Wiener--Ikehara asymptotic for a Schwartz test function.** Let `a : ℕ → ℂ`
+satisfy the Chebyshev bound `∑_{1 ≤ n ≤ x} ‖a n‖ = O(x)`, with a boundary remainder
 `G = LSeries a - A / (s - 1)` continuous on `Re s ≥ 1`. For every Schwartz function `g` on `ℝ`,
 `∑ a n / n * 𝓕 g (log (n / x) / 2π) → 2π A g 0` as `x → ∞`.
 
-This extends `TauCeti.LSeries.tendsto_tsum_term_mul_fourier_atTop_of_nonneg` from smooth
-compactly supported test functions to Schwartz functions. In particular it applies to every
+This extends `TauCeti.LSeries.tendsto_tsum_term_mul_fourier_atTop_of_isBigO_sum_Icc_norm_id` from
+smooth compactly supported test functions to Schwartz functions. In particular it applies to every
 smooth compactly supported weight `W`, since `W = 𝓕 (𝓕⁻ W)` with `𝓕⁻ W` a Schwartz function. -/
-theorem tendsto_tsum_term_mul_fourier_schwartz_atTop (ha : 0 ≤ a)
+theorem tendsto_tsum_term_mul_fourier_schwartz_atTop
+    (hcheby : (fun x : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, ‖a n‖) =O[atTop] fun x ↦ x)
     (hG : ContinuousOn G {z : ℂ | 1 ≤ z.re})
-    (hG' : ∀ z : ℂ, 1 < z.re → G z = LSeries a z - A / (z - 1))
-    (hsum : ∀ sigma : ℝ, 1 < sigma → LSeriesSummable a sigma) (g : 𝓢(ℝ, ℂ)) :
+    (hG' : ∀ z : ℂ, 1 < z.re → G z = LSeries a z - A / (z - 1)) (g : 𝓢(ℝ, ℂ)) :
     Tendsto (fun x : ℝ ↦
         ∑' n : ℕ, _root_.LSeries.term a 1 n * 𝓕 (g : ℝ → ℂ) (1 / (2 * π) * Real.log (n / x)))
       atTop (𝓝 (2 * (π : ℂ) * A * g 0)) := by
-  refine tendsto_tsum_term_mul_atTop_of_approx_fourier ha hG hG' hsum fun ε hε ↦ ?_
+  refine tendsto_tsum_term_mul_atTop_of_approx_fourier hcheby hG hG' fun ε hε ↦ ?_
   -- Truncate `g` by a bump function rescaled by `R`; the truncations tend to `g` in `𝓢(ℝ, ℂ)`,
   -- hence so do their Fourier transforms.
   let b : ContDiffBump (0 : ℝ) := ⟨1, 2, one_pos, one_lt_two⟩
@@ -438,75 +451,17 @@ theorem tendsto_tsum_term_mul_fourier_schwartz_atTop (ha : 0 ≤ a)
   refine ⟨u R, (u R).smooth ⊤, SchwartzMap.hasCompactSupport_smulLeftCLM_comp_inv_smul
     b.hasCompactSupport hR.ne' g, fun v ↦ ?_, ?_⟩
   · -- The weighted sup norm of `𝓕 g - 𝓕 (u R)` is at most two seminorms of it.
-    have hv0 := SchwartzMap.norm_le_seminorm ℝ (𝓕 (u R) - 𝓕 g) v
-    have hv2 := SchwartzMap.norm_pow_mul_le_seminorm ℝ (𝓕 (u R) - 𝓕 g) 2 v
-    rw [sub_apply, SchwartzMap.fourier_coe, SchwartzMap.fourier_coe, norm_sub_rev] at hv0 hv2
-    rw [Real.norm_eq_abs, sq_abs] at hv2
-    rw [le_mul_inv_iff₀ (by positivity)]
-    linarith
+    have hv : ‖(𝓕 (u R) - 𝓕 g) v‖ ≤
+        (SchwartzMap.seminorm ℝ 0 0 (𝓕 (u R) - 𝓕 g) +
+          SchwartzMap.seminorm ℝ 2 0 (𝓕 (u R) - 𝓕 g)) * (1 + v ^ 2)⁻¹ := by
+      simpa [Real.norm_eq_abs, sq_abs] using
+        (𝓕 (u R) - 𝓕 g).norm_le_add_seminorm_mul_inv_one_add_norm_pow (𝕜 := ℝ) 2 v
+    rw [sub_apply, SchwartzMap.fourier_coe, SchwartzMap.fourier_coe, norm_sub_rev] at hv
+    exact hv.trans (mul_le_mul_of_nonneg_right (by linarith) (by positivity))
   · -- The truncation does not change the value at the origin.
     rw [SchwartzMap.smulLeftCLM_comp_inv_smul_apply
         (b.hasCompactSupport.hasTemperateGrowth b.contDiff),
       smul_zero, b.one_of_mem_closedBall (by simp [b]), one_smul, sub_self, norm_zero]
     exact hε.le
-
-/-! ### Smooth cutoffs on the positive half-line -/
-
-section Smooth
-
-variable {Ψ : ℝ → ℂ} {a : ℕ → ℂ} {A : ℂ} {G : ℂ → ℂ}
-
-/-- If a Dirichlet series with nonnegative coefficients has a boundary remainder `G` continuous
-from the right at `1` along `[1, ∞)`, then the residue `A` is real (`A.im = 0`), allowing
-complex-valued Wiener--Ikehara hypotheses to reduce to real-residue statements. -/
-theorem residue_im_eq_zero (ha : 0 ≤ a)
-    (hG : ContinuousWithinAt (fun σ : ℝ ↦ G σ) (Ici 1) 1)
-    (hG' : ∀ σ : ℝ, 1 < σ → G σ = LSeries a σ - A / (σ - 1)) :
-    A.im = 0 := by
-  have hG1 : Tendsto (fun σ : ℝ ↦ (((σ : ℂ) - 1) * G σ).im) (𝓝[>] 1) (𝓝 0) := by
-    have ht : Tendsto (fun σ : ℝ ↦ ((σ : ℂ) - 1) * G σ) (𝓝[>] 1)
-        (𝓝 (((1 : ℂ) - 1) * G 1)) :=
-      ((Complex.continuous_ofReal.continuousAt.sub
-        (continuousAt_const (y := (1 : ℂ)))).tendsto.mono_left nhdsWithin_le_nhds).mul
-        (hG.mono_left (nhdsWithin_mono _ Ioi_subset_Ici_self))
-    simpa [Function.comp_def] using (Complex.continuous_im.tendsto _).comp ht
-  have hc : Tendsto (fun _ : ℝ ↦ -A.im) (𝓝[>] 1) (𝓝 0) := by
-    refine hG1.congr' ?_
-    filter_upwards [self_mem_nhdsWithin] with σ (hσ : 1 < σ)
-    have hne : (σ : ℂ) - 1 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hσ.ne')
-    have hL : (_root_.LSeries a σ).im = 0 := by
-      rw [LSeries_eq_ofReal_tsum_norm_of_nonneg ha σ, Complex.ofReal_im]
-    rw [hG' σ hσ, mul_sub, mul_div_cancel₀ _ hne]
-    simp [Complex.sub_im, Complex.mul_im, hL]
-  exact neg_eq_zero.mp (tendsto_const_nhds_iff.mp hc)
-
-/-- **The smoothed Wiener--Ikehara asymptotic for a cutoff on `(0, ∞)`.** Let `a` be
-nonnegative, with Dirichlet series summable on `Re s > 1` and a boundary remainder
-`G = LSeries a - A / (s - 1)` continuous on `Re s ≥ 1`. For every smooth `Ψ` whose support is a
-compact subset of `(0, ∞)`, `x⁻¹ ∑ a n Ψ (n / x) → A ∫_{(0, ∞)} Ψ` as `x → ∞`. -/
-theorem tendsto_inv_mul_tsum_mul_div_atTop (ha : 0 ≤ a)
-    (hG : ContinuousOn G {z : ℂ | 1 ≤ z.re})
-    (hG' : ∀ z : ℂ, 1 < z.re → G z = LSeries a z - A / (z - 1))
-    (hsum : ∀ sigma : ℝ, 1 < sigma → LSeriesSummable a sigma)
-    (hΨ : ContDiff ℝ ∞ Ψ) (hΨc : HasCompactSupport Ψ) (hΨpos : tsupport Ψ ⊆ Ioi 0) :
-    Tendsto (fun x : ℝ ↦ (x : ℂ)⁻¹ * ∑' n : ℕ, a n * Ψ (n / x)) atTop
-      (𝓝 (A * ∫ y in Ioi 0, Ψ y)) := by
-  obtain ⟨C, hbound⟩ :=
-    exists_sum_range_le_mul_of_isBigO (isBigO_sum_Icc_norm_id_of_boundary ha hG hG' hsum)
-  have hAim : A.im = 0 := residue_im_eq_zero ha
-    ((hG.comp Complex.continuous_ofReal.continuousOn fun r hr ↦ by simpa using hr) 1 le_rfl)
-    (fun σ hσ ↦ hG' σ (by simpa using hσ))
-  have hA : (A.re : ℂ) = A := Complex.ext (by simp) (by simp [hAim])
-  have ha_eq : (fun n ↦ (‖a n‖ : ℂ)) = a :=
-    funext fun n ↦ (Complex.eq_coe_norm_of_nonneg (ha n)).symm
-  have hmain := WienerIkehara.tendsto_sum_div_smooth (f := fun n ↦ ‖a n‖) (A := A.re)
-    hbound hG (fun s hs ↦ by dsimp only; rw [hG' s hs, hA, ha_eq])
-    (fun n ↦ norm_nonneg (a n)) hΨ hΨc hΨpos
-  rw [hA] at hmain
-  refine hmain.congr fun x ↦ ?_
-  simp only [div_eq_inv_mul]
-  simp_rw [← Complex.eq_coe_norm_of_nonneg (ha _)]
-
-end Smooth
 
 end TauCeti.LSeries

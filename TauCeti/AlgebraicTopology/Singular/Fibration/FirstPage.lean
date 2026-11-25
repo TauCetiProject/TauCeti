@@ -76,6 +76,20 @@ def serreSpectralSequenceFirstPageXIsoSigma (k q : ℕ) (pq : ℤ × ℤ) (hb : 
       (ofInclusion_preimageSkeleton_eq_preimageSkeletonPair k pq.2 hb)) ≪≫
     preimageSkeletonPairSingularHomologyIsoSigma C hp R k q
 
+/-- The forward map of `TauCeti.TopCat.serreSpectralSequenceFirstPageXIsoSigma`: the first-page
+identification of the filtered space, followed by the identification of the pair of consecutive
+stages with `(p⁻¹(Xᵏ), p⁻¹(Xᵏ⁻¹))` and its splitting into the sum over the `k`-cells. -/
+lemma serreSpectralSequenceFirstPageXIsoSigma_hom (k q : ℕ) (pq : ℤ × ℤ) (hb : pq.2 = k - 1)
+    (ha : pq.1 + pq.2 = -(q + k : ℕ)) :
+    (serreSpectralSequenceFirstPageXIsoSigma C hp R k q pq hb ha).hom =
+      (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R)
+          (monotone_preimageSkeleton p) pq pq.2 (pq.2 + 1) rfl rfl (pq.1 + pq.2) rfl (q + k)
+          ha).hom ≫
+        eqToHom (congrArg (fun P : TopPair.{u} ↦ P.singularHomology (ModuleCat.of R R) (q + k))
+          (ofInclusion_preimageSkeleton_eq_preimageSkeletonPair k pq.2 hb)) ≫
+        (preimageSkeletonPairSingularHomologyIsoSigma C hp R k q).hom := by
+  simp only [serreSpectralSequenceFirstPageXIsoSigma, Iso.trans_hom, eqToIso.hom]
+
 /-- On the summand of the `k`-cell `j`, the inverse of
 `TauCeti.TopCat.serreSpectralSequenceFirstPageXIsoSigma` is induced by the pullback of `p` along the
 characteristic map of `j`, `Hq(p⁻¹(χⱼ(0))) ≅ Hq+k(Pⱼ, ∂Pⱼ) ⟶ Hq+k(p⁻¹(Xᵏ), p⁻¹(Xᵏ⁻¹))`. -/

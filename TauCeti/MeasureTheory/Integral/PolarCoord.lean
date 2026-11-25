@@ -25,13 +25,17 @@ import TauCeti.Topology.MetricSpace.Annulus
 # Polar-coordinate derivatives and integration over a closed annulus
 
 The polar-coordinate change of variables for a translated closed annulus is the integral on
-`[a, b] × [-π, π]` with radial Jacobian `r`, when `a ≥ 0`. The two angular endpoints have
+`[a, b] × [-π, π]` with radial Jacobian `r`, when `a ≥ 0`; for its closed upper half
+`{z | z₀.im ≤ z.im}` it is the integral on `[a, b] × [0, π]`
+(`Complex.integral_comp_polarCoord_symm_Icc_zero_pi`). The two angular endpoints have
 measure zero, so the closed polar rectangle gives the same integral as the slit-plane chart.
 This form of Mathlib's `Complex.integral_comp_polarCoord_symm` is suitable for combining polar
 integration with Green's formula on a rectangle, without extending a map across the inner disc.
 For a density in a real normed space that is integrable on the closed annulus,
 `TauCeti.integral_annulus_eq_integral_circleMap` expresses the same integral as an iterated
-integral with the radial variable outermost. The complex polar pullback with radial Jacobian is
+integral with the radial variable outermost, and
+`TauCeti.integral_upperHalfAnnulus_eq_integral_circleMap` does the same on its closed upper half,
+with the angular variable running over `[0, π]`. The complex polar pullback with radial Jacobian is
 integrable on the polar chart exactly when the planar function is integrable
 (`TauCeti.integrableOn_comp_complexPolarCoord_symm_iff`). For a radial function,
 `TauCeti.integral_fun_norm_complex` reduces the integral over `ℂ` to `2π` times its radial
@@ -68,6 +72,25 @@ theorem add_polarCoord_symm_mem_annulus (z₀ : ℂ) {a b : ℝ} (ha : 0 ≤ a)
     z₀ + Complex.polarCoord.symm p ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
   rw [add_polarCoord_symm_eq_circleMap]
   exact circleMap_mem_setOf_le_norm_sub_le ha hp p.2
+
+/-- A polar point of the rectangle `[a, b] × [0, π]`, with `0 ≤ a`, maps into the closed upper
+half of the annulus. -/
+theorem add_polarCoord_symm_mem_upperHalfAnnulus (z₀ : ℂ) {a b : ℝ} (ha : 0 ≤ a)
+    {p : ℝ × ℝ} (hp : p ∈ Icc (a, 0) (b, π)) :
+    z₀ + Complex.polarCoord.symm p ∈ {z : ℂ | z₀.im ≤ z.im ∧ a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
+  rw [add_polarCoord_symm_eq_circleMap]
+  exact circleMap_mem_upperHalfAnnulus ha ⟨hp.1.1, hp.2.1⟩ ⟨hp.1.2, hp.2.2⟩
+
+/-- A polar point of the open rectangle `(a, b) × (0, π)`, with `0 ≤ a`, maps into the open
+upper half-annulus of radii `a` and `b` about `z₀`. -/
+theorem add_polarCoord_symm_mem_openUpperHalfAnnulus (z₀ : ℂ) {a b : ℝ} (ha : 0 ≤ a)
+    {p : ℝ × ℝ} (hp : p ∈ Ioo a b ×ˢ Ioo 0 π) :
+    z₀ + Complex.polarCoord.symm p ∈ {z : ℂ | z₀.im < z.im ∧ a < ‖z - z₀‖ ∧ ‖z - z₀‖ < b} := by
+  obtain ⟨⟨hr₁, hr₂⟩, hθ₁, hθ₂⟩ := hp
+  have hr : 0 < p.1 := ha.trans_lt hr₁
+  rw [mem_ofPred_eq, add_sub_cancel_left, Complex.norm_polarCoord_symm, abs_of_pos hr,
+    add_polarCoord_symm_eq_circleMap, circleMap_im, lt_add_iff_pos_right]
+  exact ⟨mul_pos hr (Real.sin_pos_of_pos_of_lt_pi hθ₁ hθ₂), hr₁, hr₂⟩
 
 /-- The derivative of the translated inverse complex polar-coordinate map at any `(r, θ)`.
 No restriction to the positive-radius chart is needed for this derivative formula. -/
@@ -147,39 +170,82 @@ theorem _root_.MeasureTheory.Integrable.integral_eq_integral_circleMap {f : ℂ 
     ← integral_Ioc_eq_integral_Ioo,
     intervalIntegral.integral_of_le (by linarith [Real.pi_pos] : -π ≤ π)]
 
+/-- Polar integration over a region `S` whose polar points in the slit-plane chart are exactly
+those of `[a, b] × T`, for an angular set `T` that agrees almost everywhere with its part in
+`(-π, π)`. -/
+private theorem integral_comp_polarCoord_symm_prod (f : ℂ → W) (z₀ : ℂ) {a b : ℝ} (ha : 0 ≤ a)
+    {T : Set ℝ} (hT : MeasurableSet T) (hTae : Ioo (-π) π ∩ T =ᵐ[volume] T) {S : Set ℂ}
+    (hS : MeasurableSet S)
+    (hST : ∀ r θ, 0 < r → θ ∈ Ioo (-π) π →
+      (z₀ + Complex.polarCoord.symm (r, θ) ∈ S ↔ r ∈ Icc a b ∧ θ ∈ T)) :
+    (∫ p in Icc a b ×ˢ T, p.1 • f (z₀ + Complex.polarCoord.symm p)) = ∫ z in S, f z := by
+  rw [← integral_indicator hS, ← integral_add_left_eq_self (S.indicator f) z₀,
+    ← Complex.integral_comp_polarCoord_symm]
+  have hEq : EqOn (fun p : ℝ × ℝ ↦ p.1 • S.indicator f (z₀ + Complex.polarCoord.symm p))
+      ((Icc a b ×ˢ T).indicator (fun p : ℝ × ℝ ↦ p.1 • f (z₀ + Complex.polarCoord.symm p)))
+      _root_.polarCoord.target := by
+    rintro ⟨r, θ⟩ ⟨hr, hθ⟩
+    dsimp only
+    by_cases h : z₀ + Complex.polarCoord.symm (r, θ) ∈ S
+    · rw [indicator_of_mem h, indicator_of_mem ((hST r θ hr hθ).1 h)]
+    · rw [indicator_of_notMem h, indicator_of_notMem (mt (hST r θ hr hθ).2 h), smul_zero]
+  rw [setIntegral_congr_fun (by simp [_root_.polarCoord_target]; measurability) hEq,
+    setIntegral_indicator (measurableSet_Icc.prod hT)]
+  have he : _root_.polarCoord.target ∩ (Icc a b ×ˢ T) =
+      (Ioi 0 ∩ Icc a b) ×ˢ (Ioo (-π) π ∩ T) := by
+    ext ⟨r, θ⟩
+    simp only [_root_.polarCoord_target, mem_inter_iff, mem_prod]
+    tauto
+  have hrad : Ioi (0 : ℝ) ∩ Icc a b =ᵐ[volume] Icc a b :=
+    (Ioi_ae_eq_Ici.inter .rfl).trans
+      (inter_eq_right.mpr (Icc_subset_Ici_self.trans (Ici_subset_Ici.mpr ha))).eventuallyEqSet
+  rw [he, Measure.volume_eq_prod]
+  exact setIntegral_congr_set (Measure.set_prod_ae_eq hrad hTae).symm
+
 /-- Polar integration over the closed annulus of radii `a` and `b` about `z₀`, with radial
 Jacobian `p.1`, including the disc case `a = 0`. The angular interval includes both endpoints,
 whose contribution is null. -/
 theorem integral_comp_polarCoord_symm_Icc (f : ℂ → W) (z₀ : ℂ) {a b : ℝ} (ha : 0 ≤ a) :
     (∫ p in Icc (a, -π) (b, π), p.1 • f (z₀ + Complex.polarCoord.symm p)) =
       ∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, f z := by
-  let S : Set ℂ := {z | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}
-  have hS : MeasurableSet S :=
+  have hS : MeasurableSet {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} :=
     (TauCeti.isCompact_setOf_le_norm_sub_le z₀ a b).isClosed.measurableSet
-  rw [← integral_indicator hS, ← integral_add_left_eq_self (S.indicator f) z₀,
-    ← Complex.integral_comp_polarCoord_symm]
-  have hEq : EqOn (fun p : ℝ × ℝ ↦ p.1 • S.indicator f (z₀ + Complex.polarCoord.symm p))
-      ((Icc a b ×ˢ (univ : Set ℝ)).indicator
-        (fun p : ℝ × ℝ ↦ p.1 • f (z₀ + Complex.polarCoord.symm p)))
-      _root_.polarCoord.target := by
-    rintro ⟨r, θ⟩ ⟨hr, _⟩
-    have hn : ‖z₀ + Complex.polarCoord.symm (r, θ) - z₀‖ = r := by
-      simp only [add_sub_cancel_left, Complex.norm_polarCoord_symm, abs_of_pos (mem_Ioi.mp hr)]
-    simp only [S, indicator_apply, mem_ofPred_eq, hn, mem_prod, mem_Icc, mem_univ, and_true]
-    split_ifs <;> simp
-  rw [setIntegral_congr_fun (by simp [_root_.polarCoord_target]; measurability) hEq,
-    setIntegral_indicator (measurableSet_Icc.prod MeasurableSet.univ)]
-  have he : _root_.polarCoord.target ∩ (Icc a b ×ˢ (univ : Set ℝ)) =
-      (Ioi 0 ∩ Icc a b) ×ˢ Ioo (-π) π := by
-    ext ⟨r, θ⟩
-    simp only [_root_.polarCoord_target, mem_inter_iff, mem_prod, mem_univ, and_true]
-    tauto
-  have hrad : Ioi (0 : ℝ) ∩ Icc a b =ᵐ[volume] Icc a b :=
-    (Ioi_ae_eq_Ici.inter .rfl).trans
-      (inter_eq_right.mpr (Icc_subset_Ici_self.trans (Ici_subset_Ici.mpr ha))).eventuallyEqSet
-  rw [he, Icc_prod_eq, Measure.volume_eq_prod]
-  exact setIntegral_congr_set
-    (Measure.set_prod_ae_eq hrad Ioo_ae_eq_Icc).symm
+  rw [Icc_prod_eq]
+  refine integral_comp_polarCoord_symm_prod f z₀ ha measurableSet_Icc ?_ hS
+    fun r θ hr hθ ↦ ?_
+  · rw [inter_eq_left.2 Ioo_subset_Icc_self]
+    exact Ioo_ae_eq_Icc
+  · simp only [mem_ofPred_eq, add_sub_cancel_left, Complex.norm_polarCoord_symm, abs_of_pos hr]
+    exact ⟨fun h ↦ ⟨h, Ioo_subset_Icc_self hθ⟩, And.left⟩
+
+/-- Polar integration over the closed upper half of the annulus of radii `a` and `b` about `z₀`,
+with radial Jacobian `p.1`, including the half-disc case `a = 0`. The angular interval `[0, π]`
+includes both endpoints, whose contribution is null. -/
+theorem integral_comp_polarCoord_symm_Icc_zero_pi (f : ℂ → W) (z₀ : ℂ) {a b : ℝ} (ha : 0 ≤ a) :
+    (∫ p in Icc (a, 0) (b, π), p.1 • f (z₀ + Complex.polarCoord.symm p)) =
+      ∫ z in {z : ℂ | z₀.im ≤ z.im ∧ a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, f z := by
+  have hS : MeasurableSet {z : ℂ | z₀.im ≤ z.im ∧ a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} :=
+    (TauCeti.isClosed_upperHalfAnnulus z₀ a b).measurableSet
+  have hang : Ioo (-π) π ∩ Icc 0 π =ᵐ[volume] Icc (0 : ℝ) π := by
+    have : Ioo (-π) π ∩ Icc 0 π = Ico 0 π := by
+      ext θ
+      simp only [mem_inter_iff, mem_Ioo, mem_Icc, mem_Ico]
+      constructor
+      · rintro ⟨⟨_, h⟩, h0, _⟩
+        exact ⟨h0, h⟩
+      · rintro ⟨h0, h⟩
+        exact ⟨⟨by linarith [Real.pi_pos], h⟩, h0, h.le⟩
+    rw [this]
+    exact Ico_ae_eq_Icc
+  rw [Icc_prod_eq]
+  refine integral_comp_polarCoord_symm_prod f z₀ ha measurableSet_Icc hang hS
+    fun r θ hr hθ ↦ ?_
+  have him : z₀.im ≤ (z₀ + Complex.polarCoord.symm (r, θ)).im ↔ θ ∈ Icc 0 π := by
+    rw [TauCeti.add_polarCoord_symm_eq_circleMap]
+    exact TauCeti.im_le_circleMap_im_iff hr (Ioo_subset_Ioc_self hθ)
+  simp only [mem_ofPred_eq, him, add_sub_cancel_left, Complex.norm_polarCoord_symm,
+    abs_of_pos hr, mem_Icc]
+  tauto
 
 end Complex
 
@@ -188,6 +254,23 @@ namespace TauCeti
 open Complex
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- The radial step of polar Fubini over a region `S` meeting each circle of radius `r > 0` only
+when `r ∈ [a, b]`: if, for such radii, the angular integral of `S.indicator f` over the whole
+circle is a quantity `G r`, then the integral of `f` over `S` is the radial integral of `r • G r`
+over `[a, b]`. -/
+private theorem integral_eq_intervalIntegral_of_eqOn_indicator {f : ℂ → F} {z₀ : ℂ} {a b : ℝ}
+    {S : Set ℂ} {G : ℝ → F} (ha : 0 ≤ a) (hab : a ≤ b) (hS : MeasurableSet S)
+    (hf : IntegrableOn f S)
+    (hslice : EqOn (fun r : ℝ ↦ r • ∫ θ in -π..π, S.indicator f (circleMap z₀ r θ))
+      ((Icc a b).indicator fun r ↦ r • G r) (Ioi 0)) :
+    (∫ z in S, f z) = ∫ r in a..b, r • G r := by
+  rw [← integral_indicator hS, (hf.integrable_indicator hS).integral_eq_integral_circleMap z₀]
+  -- The radial integral over `Ioi 0` is one over `Ici 0 ⊇ Icc a b` up to the null point `0`.
+  rw [setIntegral_congr_fun measurableSet_Ioi hslice, setIntegral_congr_set Ioi_ae_eq_Ici,
+    setIntegral_indicator measurableSet_Icc,
+    inter_eq_right.mpr (Icc_subset_Ici_self.trans (Ici_subset_Ici.mpr ha))]
+  rw [integral_Icc_eq_integral_Ioc, intervalIntegral.integral_of_le hab]
 
 /-- Polar Fubini for a density integrable on a closed annulus in a real normed space, including
 the disc case `a = 0`, with the radial integral outermost and the angular variable running once
@@ -198,22 +281,52 @@ theorem integral_annulus_eq_integral_circleMap {f : ℂ → F} {z₀ : ℂ} {a b
     (∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, f z) =
       ∫ r in a..b, r • ∫ θ in -π..π, f (circleMap z₀ r θ) := by
   set S := {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}
-  have hS : MeasurableSet S := (isCompact_setOf_le_norm_sub_le z₀ a b).isClosed.measurableSet
-  rw [← integral_indicator hS, (hf.integrable_indicator hS).integral_eq_integral_circleMap z₀]
+  refine integral_eq_intervalIntegral_of_eqOn_indicator (z₀ := z₀) ha hab
+    (isCompact_setOf_le_norm_sub_le z₀ a b).isClosed.measurableSet hf fun r hr ↦ ?_
   -- A circle of positive radius `r` lies in `S` when `r ∈ [a, b]` and misses it otherwise.
-  have hslice : EqOn (fun r : ℝ ↦ r • ∫ θ in -π..π, S.indicator f (circleMap z₀ r θ))
-      ((Icc a b).indicator fun r ↦ r • ∫ θ in -π..π, f (circleMap z₀ r θ)) (Ioi 0) := by
-    intro r hr
-    have hmem (θ : ℝ) : circleMap z₀ r θ ∈ S ↔ r ∈ Icc a b := by
-      simp only [S, mem_ofPred_eq, norm_circleMap_sub_center z₀ (le_of_lt hr), mem_Icc]
-    by_cases h : r ∈ Icc a b
-    · simp [indicator_of_mem h, indicator_of_mem ((hmem _).2 h)]
-    · simp [indicator_of_notMem h, indicator_of_notMem (mt (hmem _).1 h)]
-  -- The radial integral over `Ioi 0` is one over `Ici 0 ⊇ Icc a b` up to the null point `0`.
-  rw [setIntegral_congr_fun measurableSet_Ioi hslice, setIntegral_congr_set Ioi_ae_eq_Ici,
-    setIntegral_indicator measurableSet_Icc,
-    inter_eq_right.mpr (Icc_subset_Ici_self.trans (Ici_subset_Ici.mpr ha))]
-  rw [integral_Icc_eq_integral_Ioc, intervalIntegral.integral_of_le hab]
+  have hmem (θ : ℝ) : circleMap z₀ r θ ∈ S ↔ r ∈ Icc a b := by
+    simp only [S, mem_ofPred_eq, norm_circleMap_sub_center z₀ (le_of_lt hr), mem_Icc]
+  by_cases h : r ∈ Icc a b
+  · simp [indicator_of_mem h, indicator_of_mem ((hmem _).2 h)]
+  · simp [indicator_of_notMem h, indicator_of_notMem (mt (hmem _).1 h)]
+
+/-- Polar Fubini for a density integrable on the closed upper half of an annulus in a real normed
+space, including the half-disc case `a = 0`, with the radial integral outermost and the angular
+variable running over the half-circle `[0, π]`. Angular slices are understood almost everywhere
+in the radius. -/
+theorem integral_upperHalfAnnulus_eq_integral_circleMap {f : ℂ → F} {z₀ : ℂ} {a b : ℝ}
+    (ha : 0 ≤ a) (hab : a ≤ b)
+    (hf : IntegrableOn f {z : ℂ | z₀.im ≤ z.im ∧ a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}) :
+    (∫ z in {z : ℂ | z₀.im ≤ z.im ∧ a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, f z) =
+      ∫ r in a..b, r • ∫ θ in 0..π, f (circleMap z₀ r θ) := by
+  set S := {z : ℂ | z₀.im ≤ z.im ∧ a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}
+  refine integral_eq_intervalIntegral_of_eqOn_indicator (z₀ := z₀) ha hab
+    (isClosed_upperHalfAnnulus z₀ a b).measurableSet hf fun r hr ↦ ?_
+  have hr : 0 < r := hr
+  -- On `(-π, π]`, the circle of radius `r ∈ [a, b]` meets `S` exactly over `[0, π]`.
+  have hmem (θ : ℝ) (hθ : θ ∈ Ioc (-π) π) :
+      circleMap z₀ r θ ∈ S ↔ r ∈ Icc a b ∧ θ ∈ Icc 0 π := by
+    simp only [S, mem_ofPred_eq, im_le_circleMap_im_iff hr hθ,
+      norm_circleMap_sub_center z₀ hr.le, ← mem_Icc]
+    exact and_comm
+  dsimp only
+  rw [intervalIntegral.integral_of_le (by linarith [Real.pi_pos])]
+  by_cases h : r ∈ Icc a b
+  · have hint : (∫ θ in Ioc (-π) π, S.indicator f (circleMap z₀ r θ)) =
+        ∫ θ in Ioc (-π) π, (Icc 0 π).indicator (fun θ ↦ f (circleMap z₀ r θ)) θ := by
+      refine setIntegral_congr_fun measurableSet_Ioc fun θ hθ ↦ ?_
+      have hθS : circleMap z₀ r θ ∈ S ↔ θ ∈ Icc 0 π := by simpa [h] using hmem θ hθ
+      by_cases h' : θ ∈ Icc 0 π
+      · rw [indicator_of_mem (hθS.2 h'), indicator_of_mem h']
+      · rw [indicator_of_notMem (mt hθS.1 h'), indicator_of_notMem h']
+    have hset : Ioc (-π) π ∩ Icc 0 π = Icc 0 π :=
+      inter_eq_right.mpr (Icc_subset_Ioc_iff Real.pi_pos.le |>.mpr
+        ⟨by linarith [Real.pi_pos], le_rfl⟩)
+    rw [hint, setIntegral_indicator measurableSet_Icc, hset, indicator_of_mem h,
+      intervalIntegral.integral_of_le Real.pi_pos.le, integral_Icc_eq_integral_Ioc]
+  · rw [indicator_of_notMem h]
+    refine (smul_eq_zero_of_right _ (setIntegral_eq_zero_of_forall_eq_zero fun θ hθ ↦ ?_))
+    exact indicator_of_notMem (fun h' ↦ h ((hmem θ hθ).1 h').1) _
 
 /-- Polar coordinates on `ℂ` for a radial function: the integral of a function of `‖z‖` is `2π`,
 the length of the unit circle, times its radial integral against `r`. No integrability is
