@@ -39,11 +39,12 @@ intertwines `g^* J` with `J`. Read in a chart `φ` of `P` and the chart `g ≫ �
   laws `TauCeti.InhomogeneousTerm.pullback_refl` and `TauCeti.InhomogeneousTerm.pullback_trans`
   use `ofEq` to identify the pulled-back target structures.
 * `TauCeti.InhomogeneousTerm.mvfderiv_val_tangentHom_pullback`: the pointwise transport of values
-  in charts of the targets, from which `TauCeti.InhomogeneousTerm.chartTerm_pullback`,
-  `TauCeti.InhomogeneousTerm.chartTerm_pullback_trans`: transport in charts;
-  `TauCeti.InhomogeneousTerm.chartTermExtend_pullback` and
-  `TauCeti.InhomogeneousTerm.chartTermExtend_pullback_trans` in the extended charts of domains
-  with boundary or corners.
+  in charts of the targets.
+* `TauCeti.InhomogeneousTerm.chartTerm_pullback`,
+  `TauCeti.InhomogeneousTerm.chartTerm_pullback_trans`: transport in charts, and
+  `TauCeti.InhomogeneousTerm.chartTermExtend_pullback`,
+  `TauCeti.InhomogeneousTerm.chartTermExtend_pullback_trans`: transport in the extended charts of
+  domains with boundary or corners. Both follow from the pointwise transport.
 
 ## References
 

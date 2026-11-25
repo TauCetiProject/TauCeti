@@ -22,7 +22,8 @@ invariance of the weak equation under diffeomorphisms of the target, with `J` an
 transported along. As a Check, `z ↦ 2 z` solves the equation on `ℂ` for the structure `i`, since
 `i` pulls back to itself along `z ↦ 2 z` (`TauCeti.twoSMulDiffeomorph`,
 `TauCeti.pullback_twoSMulDiffeomorph_ofComplexManifold`, and for domain-dependent structures
-`ContMDiffAlmostComplexStructureFamily.const_ofComplexManifold_eq_pullback_twoSMulDiffeomorph`)
+`const_ofComplexManifold_eq_pullback_twoSMulDiffeomorph` in the namespace
+`TauCeti.ContMDiffAlmostComplexStructureFamily`, whose fully qualified name is longer than a line)
 and the identity solves it (`TauCeti.isWeakPseudoholomorphic_two_mul`).
 
 The predicate tests every chart `ψ` of the maximal atlas of `M` and every chart `χ` of that of
