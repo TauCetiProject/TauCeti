@@ -23,9 +23,9 @@ cover, whose deck group is the opposite of its fundamental group, the free group
 
 (`TauCeti.WedgeSum.deckCircleMulEquiv`). Free groups are torsion-free, so no deck transformation
 of the universal cover of a wedge of circles other than the identity has finite order
-(`TauCeti.WedgeSum.isMulTorsionFree_deck_circle`). For two circles this is the check of
-TeichmullerGeometry §4.2 that a free-group deck transformation is never of finite order, the
-torsion-freeness of the geometric group of a wedge of two circles, before any metric.
+(`TauCeti.WedgeSum.isMulTorsionFree_deck_circle`). The generator `i` of the free group
+corresponds to the deck transformation given by the inverse of the loop around the `i`-th circle
+(`TauCeti.WedgeSum.deckCircleMulEquiv_symm_op_of`).
 -/
 
 public section
@@ -34,17 +34,9 @@ noncomputable section
 
 namespace TauCeti.WedgeSum
 
-universe u v
+universe u
 
-variable {ι : Type u} {X : ι → Type v} [∀ i, TopologicalSpace (X i)] (x : ∀ i, X i)
-
-/-- **A wedge sum of locally path-connected spaces is locally path-connected**, as a quotient of
-the disjoint union of a point and the summands. -/
-instance locallyPathConnectedSpace [∀ i, LocallyPathConnectedSpace (X i)] :
-    LocallyPathConnectedSpace (WedgeSum x) :=
-  (isQuotientMap_sumElim (x := x)).locallyPathConnectedSpace
-
-variable (ι)
+variable (ι : Type u)
 
 /-- The deck group of the universal cover of a wedge of circles is the opposite of the free group
 on the circles. -/
@@ -53,13 +45,24 @@ def deckCircleMulEquiv :
       (FreeGroup ι)ᵐᵒᵖ :=
   (UniversalCover.deckFundamentalGroupEquiv _).trans (circleFundamentalGroupMulEquiv ι).op
 
+variable {ι} in
+/-- The generator `i` of the free group corresponds to the deck transformation given by the inverse
+of the loop going once counterclockwise around the `i`-th circle. -/
+@[simp]
+theorem deckCircleMulEquiv_symm_op_of (i : ι) :
+    (deckCircleMulEquiv ι).symm (MulOpposite.op (FreeGroup.of i)) =
+      UniversalCover.loopDeck _
+        (FundamentalGroup.mapOfEq (incl _ i) (incl_apply_self i)
+          (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk Circle.expLoop)))⁻¹ := by
+  simp [deckCircleMulEquiv,
+    (MulEquiv.symm_apply_eq _).2 (circleFundamentalGroupMulEquiv_expLoop i).symm]
+
 /-- **The universal cover of a wedge of circles has no deck transformation of finite order** other
 than the identity: its deck group is the opposite of a free group, which is torsion-free. -/
 instance isMulTorsionFree_deck_circle :
     IsMulTorsionFree
       (deck (UniversalCover.proj : UniversalCover (base fun _ : ι ↦ (1 : Circle)) → _)) :=
-  Function.Injective.isMulTorsionFree
-    ((deckCircleMulEquiv ι).trans (MulEquiv.inv' (FreeGroup ι)).symm).toMonoidHom
-    ((deckCircleMulEquiv ι).trans (MulEquiv.inv' (FreeGroup ι)).symm).injective
+  Function.Injective.isMulTorsionFree (deckCircleMulEquiv ι).toMonoidHom
+    (deckCircleMulEquiv ι).injective
 
 end TauCeti.WedgeSum
