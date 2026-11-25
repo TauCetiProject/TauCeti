@@ -64,6 +64,10 @@ Since these pairings are nondegenerate, `N¹(X/S)_ℚ` is also `Pic(X) ⊗ ℚ` 
 * B. Bhatt, L. Ma, Z. Patakfalvi, K. Schwede, K. Tucker, J. Waldron and J. Witaszek, *Globally
   `+`-regular varieties and the minimal model program for threefolds in mixed characteristic*,
   Publ. Math. IHÉS 138 (2023); arXiv:2012.15801v3, Remark 2.22, p. 19.
+* C. Hacon and J. Witaszek, *On the relative minimal model program for fourfolds in positive and
+  mixed characteristic*, Forum Math. Pi 11 (2023), §1: `N¹(X) = Pic(X) ⊗ ℚ / ≡`, the
+  isomorphisms `LineBundleClass.picQuotientRatNumericallyTrivialEquiv` and
+  `LineBundleClass.picQuotientRelRatNumericallyTrivialEquiv`.
 -/
 
 public section
@@ -224,12 +228,23 @@ def ratNumericallyTrivialClasses : Submodule ℚ (ℚ ⊗[ℤ] Additive (LineBun
   zero_mem' _ _ _ _ _ _ _ := map_zero _
   smul_mem' c v hv C _ _ i _ hi hC := by simp [hv C i hi hC]
 
+/-- A class of `Pic(X) ⊗ ℚ` is `ℚ`-numerically trivial iff it has zero degree on every integral
+closed curve of `X`. -/
+@[simp]
+theorem mem_ratNumericallyTrivialClasses {v : ℚ ⊗[ℤ] Additive (LineBundleClass X)} :
+    v ∈ ratNumericallyTrivialClasses k x ↔
+      ∀ (C : Scheme.{u}) [IsIntegral C] [C.Over (Spec (.of k))] (i : C ⟶ X)
+        [IsClosedImmersion i] (hi : C ↘ Spec (.of k) = i ≫ x) (hC : topologicalKrullDim C = 1),
+          picRatIntersectionNumber x hi hC v = 0 :=
+  Iff.rfl
+
 variable (k) in
 /-- **The kernel of `Pic(X) ⊗ ℚ ⟶ N¹(X/k)_ℚ` is the kernel of the degree pairing**: a class of
 `Pic(X) ⊗ ℚ` vanishes in `N¹(X/k)_ℚ` iff it has zero degree on every integral closed curve. -/
 theorem ker_picToRatNumericalClasses :
     LinearMap.ker (picToRatNumericalClasses k x) = ratNumericallyTrivialClasses k x := by
   ext v
+  rw [mem_ratNumericallyTrivialClasses]
   refine ⟨fun hv C _ _ i _ hi hC ↦ ?_, fun hv ↦
     eq_zero_of_forall_numericalIntersectionNumberBaseChange_eq_zero k x _ hv⟩
   rw [LinearMap.mem_ker] at hv
@@ -415,6 +430,17 @@ def relRatNumericallyTrivialClasses : Submodule ℚ (ℚ ⊗[ℤ] Additive (Line
   zero_mem' _ _ _ _ _ _ _ _ := map_zero _
   smul_mem' c v hv s C _ _ i _ hi hC := by simp [hv s C i hi hC]
 
+/-- A class of `Pic(X) ⊗ ℚ` is `ℚ`-numerically trivial relative to `f` iff it has zero degree on
+every integral curve in every fibre of `f`. -/
+@[simp]
+theorem mem_relRatNumericallyTrivialClasses {v : ℚ ⊗[ℤ] Additive (LineBundleClass X)} :
+    v ∈ relRatNumericallyTrivialClasses f ↔
+      ∀ (s : S) (C : Scheme.{u}) [IsIntegral C]
+        [C.Over (Spec (.of (S.residueField s)))] (i : C ⟶ f.fiber s) [IsClosedImmersion i]
+        (hi : C ↘ Spec (.of (S.residueField s)) = i ≫ f.fiberToSpecResidueField s)
+        (hC : topologicalKrullDim C = 1), picRatRelIntersectionNumber hi hC v = 0 :=
+  Iff.rfl
+
 variable (f) in
 /-- **The kernel of `Pic(X) ⊗ ℚ ⟶ N¹(X/S)_ℚ` is the kernel of the degree pairing**: a class of
 `Pic(X) ⊗ ℚ` vanishes in `N¹(X/S)_ℚ` iff it has zero degree on every integral curve in every
@@ -422,6 +448,7 @@ fibre of `f`. -/
 theorem ker_picToRelRatNumericalClasses :
     LinearMap.ker (picToRelRatNumericalClasses f) = relRatNumericallyTrivialClasses f := by
   ext v
+  rw [mem_relRatNumericallyTrivialClasses]
   refine ⟨fun hv s C _ _ i _ hi hC ↦ ?_, fun hv ↦
     eq_zero_of_forall_relNumericalIntersectionNumberBaseChange_eq_zero f _ hv⟩
   rw [LinearMap.mem_ker] at hv
