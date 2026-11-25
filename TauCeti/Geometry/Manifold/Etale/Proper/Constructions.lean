@@ -129,15 +129,9 @@ theorem IsProperEtaleGroupoid.prod :
   refine of_isTopologicalGroupoid ?_ ?_
     (isProperMap_source_target_prod (isProperMap_source_target (I := I) (J := J))
       (isProperMap_source_target (I := I') (J := J')))
-  · have h : Prod.map Quiver.Total.left Quiver.Total.left ∘ e = Quiver.Total.left := by
-      funext a
-      simp [e, Prod.map]
-    rw [← h]
+  · rw [← prodMap_left_comp_totalProdHomeomorph]
     exact (e.isLocalDiffeomorph_comp_pullbackChartedSpace_iff).2 hs
-  · have h : Prod.map Quiver.Total.right Quiver.Total.right ∘ e = Quiver.Total.right := by
-      funext a
-      simp [e, Prod.map]
-    rw [← h]
+  · rw [← prodMap_right_comp_totalProdHomeomorph]
     exact (e.isLocalDiffeomorph_comp_pullbackChartedSpace_iff).2 ht
 
 end Product
