@@ -33,7 +33,8 @@ namespace TauCeti.Examples.ClosedForm
 variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
 
 /-- On `ℂ` with `j = id`, the form `q(u, v) = 2 conj(u) v` represents `A = 2 I`. -/
-theorem closedFormOperator_two_innerSL (hj : Function.Injective (ContinuousLinearMap.id ℂ ℂ))
+theorem closedFormOperator_id_two_smul_innerSL
+    (hj : Function.Injective (ContinuousLinearMap.id ℂ ℂ))
     (hd : DenseRange (ContinuousLinearMap.id ℂ ℂ)) :
     closedFormOperator (ContinuousLinearMap.id ℂ ℂ) hj hd ((2 : ℂ) • innerSL ℂ) =
       ((2 : ℂ) • LinearMap.id).toPMap ⊤ := by
@@ -56,7 +57,7 @@ theorem two_mul_norm_sq_le_re_shiftedForm_id_two_smul_innerSL_self (u : H) :
   mul_norm_sq_le_re_shiftedForm_self (ω := 0) _ le_rfl (fun u => by simp) u
 
 /-- With `j = id`, the zero form represents the zero operator. -/
-theorem closedFormOperator_zero (hj : Function.Injective (ContinuousLinearMap.id 𝕜 H))
+theorem closedFormOperator_id_zero (hj : Function.Injective (ContinuousLinearMap.id 𝕜 H))
     (hd : DenseRange (ContinuousLinearMap.id 𝕜 H)) :
     closedFormOperator (ContinuousLinearMap.id 𝕜 H) hj hd 0 = (0 : H →ₗ[𝕜] H).toPMap ⊤ := by
   have := closedFormOperator_smul_id_smul_innerSL (𝕜 := 𝕜) (H := H) (a := 1) one_ne_zero 0
@@ -75,7 +76,7 @@ theorem one_mul_norm_sq_le_re_shiftedForm_id_zero_self (u : H) :
     mul_norm_sq_le_re_shiftedForm_self (ω := 1) _ one_le_two (fun u => ?_) u⟩ <;> simp
 
 /-- On `ℂ` with `j = 2 id`, the form `q(u, v) = conj(u) v` represents `A = (1 / 4) I`. -/
-theorem closedFormOperator_two_smul_innerSL
+theorem closedFormOperator_two_smul_id_innerSL
     (hj : Function.Injective ((2 : ℂ) • ContinuousLinearMap.id ℂ ℂ))
     (hd : DenseRange ((2 : ℂ) • ContinuousLinearMap.id ℂ ℂ)) :
     closedFormOperator ((2 : ℂ) • ContinuousLinearMap.id ℂ ℂ) hj hd (innerSL ℂ) =
