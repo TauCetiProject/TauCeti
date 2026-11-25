@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.InnerProductSpace.NormDet
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Analysis.Normed.Operator.Conformal
@@ -71,10 +70,8 @@ basis `b` of `U`, and hence by `‖A‖ ^ Module.finrank 𝕜 U`. Equality holds
   `IsConformalMap.normDet_eq_norm_pow`, `ContinuousLinearMap.norm_apply_eq_of_normDet_eq_norm_pow`,
   `ContinuousLinearMap.normDet_eq_norm_pow_iff`: Hadamard's inequality for `normDet` and its
   conformality equality characterization.
-* `ContinuousLinearMap.normDet_adjoint_le_norm_pow`,
-  `LipschitzOnWith.normDet_adjoint_fderiv_le`, `LipschitzWith.normDet_adjoint_fderiv_le`: the coarea
-  Jacobian `f.adjoint.normDet` is at most `‖f‖ ^ dim F`, and `(fderiv ℝ f x)†.normDet` of a
-  `K`-Lipschitz map is at most `K ^ dim F`.
+* `ContinuousLinearMap.normDet_adjoint_le_norm_pow`: the coarea Jacobian `f.adjoint.normDet` is at
+  most `‖f‖ ^ dim F`.
 * `LinearMap.pow_finrank_le_normDet_of_mul_norm_le`, `LinearMap.normDet_le_pow_finrank_of_norm_le`,
   `LinearMap.normDet_eq_pow_finrank_of_norm_eq`: uniform lower, upper, and exact norm bounds on a
   linear map control its `normDet` by the `finrank`-th power of the factor.
@@ -448,24 +445,6 @@ theorem ContinuousLinearMap.normDet_adjoint_le_norm_pow {𝕜 E F : Type*} [RCLi
     [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F] [CompleteSpace F] (f : E →L[𝕜] F) :
     f.adjoint.normDet ≤ ‖f‖ ^ Module.finrank 𝕜 F :=
   f.adjoint.normDet_le_norm_pow.trans_eq (by rw [LinearIsometryEquiv.norm_map])
-
-/-- If `f` is `K`-Lipschitz on a neighbourhood `U ∈ 𝓝 x`, then its coarea Jacobian at `x` is
-bounded by `K ^ dim F`. The domain need only be complete, not finite-dimensional. -/
-theorem LipschitzOnWith.normDet_adjoint_fderiv_le {E F : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    [FiniteDimensional ℝ F] {K : ℝ≥0} {f : E → F} {U : Set E} {x : E}
-    (hf : LipschitzOnWith K f U) (hU : U ∈ 𝓝 x) :
-    (fderiv ℝ f x).adjoint.normDet ≤ (K : ℝ) ^ Module.finrank ℝ F :=
-  (fderiv ℝ f x).normDet_adjoint_le_norm_pow.trans
-    (pow_le_pow_left₀ (norm_nonneg _) (norm_fderiv_le_of_lipschitzOn ℝ hU hf) _)
-
-/-- The coarea Jacobian `(fderiv ℝ f x)†.normDet` of a `K`-Lipschitz map `f : E → F` is everywhere
-at most `K ^ dim F`. The domain need only be complete, not finite-dimensional. -/
-theorem LipschitzWith.normDet_adjoint_fderiv_le {E F : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    [FiniteDimensional ℝ F] {K : ℝ≥0} {f : E → F} (hf : LipschitzWith K f) (x : E) :
-    (fderiv ℝ f x).adjoint.normDet ≤ (K : ℝ) ^ Module.finrank ℝ F :=
-  hf.lipschitzOnWith.normDet_adjoint_fderiv_le Filter.univ_mem
 
 namespace LinearMap
 

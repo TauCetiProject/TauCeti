@@ -84,20 +84,24 @@ section Module
 
 variable [AddCommGroup F] [Module ℝ F]
 
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- Translation of `ker L` by `w` into `E` is an isometry. -/
+private theorem isometry_add_ker (L : E →ₗ[ℝ] F) (w : E) :
+    Isometry fun a : ker L ↦ w + (a : E) :=
+  (isometry_add_left w).comp isometry_subtypeVal
+
 /-- The normalized Hausdorff measure of dimension `dim (ker L)` restricted to the affine fibre
 `L ⁻¹' {L w}` is the pushforward of Lebesgue measure on `ker L` by translation by `w`. -/
 private theorem restrict_preimage_singleton_eq_map_ker (L : E →ₗ[ℝ] F)
     [FiniteDimensional ℝ (ker L)] (w : E) :
     μHE[finrank ℝ (ker L)].restrict (L ⁻¹' {L w}) =
       (volume : Measure (ker L)).map (fun a : ker L ↦ w + a) := by
-  let φ : ker L → E := fun a ↦ w + a
-  have hφ : Isometry φ := (isometry_add_left w).comp isometry_subtypeVal
-  have hrange : Set.range φ = L ⁻¹' {L w} := by
+  have hrange : Set.range (fun a : ker L ↦ w + (a : E)) = L ⁻¹' {L w} := by
     ext x
-    refine ⟨?_, fun hx ↦ ⟨⟨x - w, by simp_all⟩, by simp [φ]⟩⟩
+    refine ⟨?_, fun hx ↦ ⟨⟨x - w, by simp_all⟩, by simp⟩⟩
     rintro ⟨a, rfl⟩
-    simp [φ]
-  rw [← hrange, ← hφ.map_euclideanHausdorffMeasure,
+    simp
+  rw [← hrange, ← (L.isometry_add_ker w).map_euclideanHausdorffMeasure,
     InnerProductSpace.euclideanHausdorffMeasure_eq_volume]
 
 /-- The integral of `g` over the fibre `L ⁻¹' {L w}`, with Hausdorff measure of the dimension of
@@ -106,27 +110,23 @@ be finite-dimensional; the codomain is an arbitrary real module. -/
 theorem setLIntegral_preimage_singleton_eq_lintegral_ker (L : E →ₗ[ℝ] F)
     [FiniteDimensional ℝ (ker L)] (w : E) (g : E → ℝ≥0∞) :
     ∫⁻ x in L ⁻¹' {L w}, g x ∂μHE[finrank ℝ (ker L)] = ∫⁻ a : ker L, g (w + a) := by
-  let φ : ker L → E := fun a ↦ w + a
-  have hφ : Isometry φ := (isometry_add_left w).comp isometry_subtypeVal
   rw [L.restrict_preimage_singleton_eq_map_ker w,
-    hφ.isClosedEmbedding.measurableEmbedding.lintegral_map]
+    (L.isometry_add_ker w).isClosedEmbedding.measurableEmbedding.lintegral_map]
 
 private theorem integrableOn_preimage_singleton_iff_integrable_ker (L : E →ₗ[ℝ] F)
     [FiniteDimensional ℝ (ker L)] (w : E) {V : Type*} [NormedAddCommGroup V] (g : E → V) :
     IntegrableOn g (L ⁻¹' {L w}) μHE[finrank ℝ (ker L)] ↔
       Integrable (fun a : ker L ↦ g (w + a)) volume := by
-  let φ : ker L → E := fun a ↦ w + a
-  have hφ : Isometry φ := (isometry_add_left w).comp isometry_subtypeVal
   rw [IntegrableOn, L.restrict_preimage_singleton_eq_map_ker w,
-    hφ.isClosedEmbedding.measurableEmbedding.integrable_map_iff, Function.comp_def]
+    (L.isometry_add_ker w).isClosedEmbedding.measurableEmbedding.integrable_map_iff,
+    Function.comp_def]
 
 private theorem setIntegral_preimage_singleton_eq_integral_ker (L : E →ₗ[ℝ] F)
     [FiniteDimensional ℝ (ker L)] (w : E) {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     (g : E → V) :
     ∫ x in L ⁻¹' {L w}, g x ∂μHE[finrank ℝ (ker L)] = ∫ a : ker L, g (w + a) := by
-  let φ : ker L → E := fun a ↦ w + a
-  have hφ : Isometry φ := (isometry_add_left w).comp isometry_subtypeVal
-  rw [L.restrict_preimage_singleton_eq_map_ker w, hφ.isClosedEmbedding.integral_map]
+  rw [L.restrict_preimage_singleton_eq_map_ker w,
+    (L.isometry_add_ker w).isClosedEmbedding.integral_map]
 
 end Module
 
@@ -167,16 +167,21 @@ private theorem exists_orthogonal_ker_equiv (L : E →ₗ[ℝ] F) (hL : Function
   exact ⟨fun hy ↦ ⟨e.symm y, by simpa [M, ← he] using hy, e.apply_symm_apply y⟩,
     by rintro ⟨w, hw, rfl⟩; simpa [M, ← he] using hw⟩
 
+omit [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] in
+private theorem setLIntegral_preimage_singleton_eq_lintegral_ker_of_section (L : E →ₗ[ℝ] F)
+    {e : (ker L)ᗮ ≃L[ℝ] F} (hsec : ∀ y : F, L (e.symm y : E) = y)
+    (hdim : finrank ℝ E - finrank ℝ F = finrank ℝ (ker L)) (g : E → ℝ≥0∞) (y : F) :
+    ∫⁻ x in L ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F] =
+      ∫⁻ a : ker L, g ((e.symm y : E) + a) := by
+  rw [← L.setLIntegral_preimage_singleton_eq_lintegral_ker (e.symm y), hsec y, hdim]
+
 /-- The fibre integrals of a measurable function along a surjective linear map depend measurably
 on the fibre. -/
 theorem measurable_setLIntegral_preimage_singleton (L : E →ₗ[ℝ] F) (hL : Function.Surjective L)
     {g : E → ℝ≥0∞} (hg : Measurable g) :
     Measurable fun y ↦ ∫⁻ x in L ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F] := by
   obtain ⟨e, -, hsec, hdim⟩ := L.exists_orthogonal_ker_equiv hL
-  have hfib (y : F) : ∫⁻ x in L ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F] =
-      ∫⁻ a : ker L, g ((e.symm y : E) + a) := by
-    rw [← L.setLIntegral_preimage_singleton_eq_lintegral_ker (e.symm y), hsec y, hdim]
-  simp_rw [hfib]
+  simp_rw [L.setLIntegral_preimage_singleton_eq_lintegral_ker_of_section hsec hdim g]
   exact (Measurable.lintegral_prod_right' (f := fun q : (ker L)ᗮ × ker L ↦ g (q.1 + q.2))
     (hg.comp (measurable_fst.subtypeVal.add measurable_snd.subtypeVal))).comp
     e.symm.continuous.measurable
@@ -190,10 +195,7 @@ theorem lintegral_setLIntegral_preimage_singleton (L : E →ₗ[ℝ] F) {g : E �
       ENNReal.ofReal L.adjoint.normDet * ∫⁻ x, g x := by
   by_cases hL : Function.Surjective L
   · obtain ⟨e, hvol, hsec, hdim⟩ := L.exists_orthogonal_ker_equiv hL
-    have hfib (y : F) : ∫⁻ x in L ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F] =
-        ∫⁻ a : ker L, g ((e.symm y : E) + a) := by
-      rw [← L.setLIntegral_preimage_singleton_eq_lintegral_ker (e.symm y), hsec y, hdim]
-    simp_rw [hfib]
+    simp_rw [L.setLIntegral_preimage_singleton_eq_lintegral_ker_of_section hsec hdim g]
     rw [hvol, lintegral_smul_measure, lintegral_map_equiv, smul_eq_mul,
       (ker L).lintegral_eq_lintegral_lintegral_add hg]
     simp
@@ -364,6 +366,15 @@ theorem ae_integrableOn_preimage_singleton (L : E →ₗ[ℝ] F) {V : Type*} [No
   · filter_upwards [L.ae_preimage_singleton_eq_empty volume hL] with y hy
     simp [hy]
 
+omit [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] in
+private theorem setIntegral_preimage_singleton_eq_integral_ker_of_section (L : E →ₗ[ℝ] F)
+    {e : (ker L)ᗮ ≃L[ℝ] F} (hsec : ∀ y : F, L (e.symm y : E) = y)
+    (hdim : finrank ℝ E - finrank ℝ F = finrank ℝ (ker L)) {V : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] (g : E → V) (y : F) :
+    ∫ x in L ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F] =
+      ∫ a : ker L, g ((e.symm y : E) + a) := by
+  rw [← L.setIntegral_preimage_singleton_eq_integral_ker (e.symm y), hsec y, hdim]
+
 /-- For any linear map `L : E →ₗ[ℝ] F` and Bochner-integrable `g : E → V`, the fibre integral
 `y ↦ ∫ x in L ⁻¹' {y}, g x ∂μHE[dim E - dim F]` is Bochner integrable on `F`. -/
 theorem integrable_setIntegral_preimage_singleton (L : E →ₗ[ℝ] F) {V : Type*}
@@ -371,10 +382,7 @@ theorem integrable_setIntegral_preimage_singleton (L : E →ₗ[ℝ] F) {V : Typ
     Integrable (fun y : F ↦ ∫ x in L ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F]) volume := by
   by_cases hL : Surjective L
   · obtain ⟨e, hvol, hsec, hdim⟩ := L.exists_orthogonal_ker_equiv hL
-    have hfib (y : F) : ∫ x in L ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F] =
-        ∫ a : ker L, g ((e.symm y : E) + a) := by
-      rw [← L.setIntegral_preimage_singleton_eq_integral_ker (e.symm y), hsec y, hdim]
-    simp_rw [hfib]
+    simp_rw [L.setIntegral_preimage_singleton_eq_integral_ker_of_section hsec hdim g]
     rw [hvol]
     refine Integrable.smul_measure ?_ ENNReal.ofReal_ne_top
     rw [integrable_map_equiv]
@@ -394,9 +402,6 @@ theorem integral_setIntegral_preimage_singleton (L : E →ₗ[ℝ] F) {V : Type*
       L.adjoint.normDet • ∫ x, g x := by
   by_cases hL : Surjective L
   · obtain ⟨e, hvol, hsec, hdim⟩ := L.exists_orthogonal_ker_equiv hL
-    have hfib (y : F) : ∫ x in L ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F] =
-        ∫ a : ker L, g ((e.symm y : E) + a) := by
-      rw [← L.setIntegral_preimage_singleton_eq_integral_ker (e.symm y), hsec y, hdim]
     have hcalc : ∫ y : F, (∫ a : ker L, g ((e.symm y : E) + a))
           ∂(ENNReal.ofReal L.adjoint.normDet •
             (volume : Measure (ker L)ᗮ).map e.toHomeomorph.toMeasurableEquiv) =
@@ -405,7 +410,8 @@ theorem integral_setIntegral_preimage_singleton (L : E →ₗ[ℝ] F) {V : Type*
         ENNReal.toReal_ofReal L.adjoint.normDet_nonneg,
         (ker L).integral_eq_integral_integral_add hg]
       simp
-    simpa only [← hvol, hfib] using hcalc
+    simpa only [← hvol,
+      L.setIntegral_preimage_singleton_eq_integral_ker_of_section hsec hdim g] using hcalc
   · rw [L.normDet_adjoint_eq_zero_iff.2 hL, zero_smul]
     refine integral_eq_zero_of_ae ?_
     filter_upwards [L.ae_preimage_singleton_eq_empty volume hL] with y hy

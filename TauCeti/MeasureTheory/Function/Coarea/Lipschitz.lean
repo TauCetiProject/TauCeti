@@ -84,10 +84,11 @@ points form the Borel regular locus where `Coarea.Basic` and `Coarea.Integral` a
   `map_withDensity_normDet_adjoint_fderiv_eq_withDensity_euclideanHausdorffMeasure_inter_preimage`
   (in `LocallyLipschitzOn`, `LocallyLipschitz`, and `LipschitzWith`): unweighted, weighted `ℝ≥0∞`,
   and Radon-Nikodym pushforward coarea formulas.
-* `LipschitzOnWith.integrableOn_normDet_adjoint_fderiv`,
+* `LipschitzOnWith.normDet_adjoint_fderiv_le`, `LipschitzWith.normDet_adjoint_fderiv_le`,
+  `LipschitzOnWith.integrableOn_normDet_adjoint_fderiv`,
   `LipschitzWith.integrableOn_normDet_adjoint_fderiv`,
-  `LocallyLipschitzOn.integrableOn_normDet_adjoint_fderiv_of_isCompact`: integrability of the
-  coarea Jacobian on finite-measure or compact sets.
+  `LocallyLipschitzOn.integrableOn_normDet_adjoint_fderiv_of_isCompact`: Hadamard bounds and
+  integrability of the coarea Jacobian on finite-measure or compact sets.
 * `ae_euclideanHausdorffMeasure_inter_preimage_lt_top_of_integrableOn`,
   `integrable_euclideanHausdorffMeasure_real_inter_preimage`, and
   `integral_euclideanHausdorffMeasure_real_inter_preimage_eq_integral_normDet_adjoint_fderiv` (in
@@ -399,9 +400,6 @@ theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_not_surjective_fd
 
 end TauCeti
 
-private alias lintegral_coarea_surj :=
-  lintegral_euclideanHausdorffMeasure_inter_preimage_eq_lintegral_normDet_adjoint_fderiv
-
 /-! ### Locally Lipschitz maps -/
 
 namespace LocallyLipschitzOn
@@ -472,6 +470,17 @@ theorem ae_restrict_inter_setOf_regular_preimage_eq
   refine measure_mono_null (fun x ⟨⟨hxs, hxy⟩, hx⟩ ↦ ?_) hy
   exact ⟨⟨hsU hxs, fun hxG ↦ hx ⟨⟨hxs, hxG⟩, hxy⟩⟩, hxy⟩
 
+/-- For `s ⊆ U` with `U` open and `f` locally Lipschitz on `U`, the fibre integral of `w` over
+`s ∩ f ⁻¹' {y}` agrees for almost every `y : F` with that over its regular part. -/
+private theorem ae_setLIntegral_fiber_eq_inter_setOf_regular
+    (hf : LocallyLipschitzOn U f) (hU : IsOpen U) (hsU : s ⊆ U) (w : E → ℝ≥0∞) :
+    (fun y : F ↦ ∫⁻ x in s ∩ f ⁻¹' {y}, w x ∂μHE[finrank ℝ E - finrank ℝ F]) =ᵐ[volume]
+      fun y : F ↦
+        ∫⁻ x in (s ∩ {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)}) ∩ f ⁻¹' {y},
+          w x ∂μHE[finrank ℝ E - finrank ℝ F] :=
+  (hf.ae_restrict_inter_setOf_regular_preimage_eq hU hsU).mono fun _ hy ↦
+    congrArg (fun μ ↦ ∫⁻ x, w x ∂μ) hy
+
 omit [MeasurableSpace F] [BorelSpace F] in
 /-- On the non-regular part `s \ G` of a subset `s ⊆ U` of an open set `U` where `f` is locally
 Lipschitz, the coarea Jacobian `(fderiv ℝ f x)†.normDet` vanishes almost everywhere. -/
@@ -489,6 +498,14 @@ theorem ae_restrict_sdiff_setOf_regular_normDet_adjoint_fderiv_eq_zero
   exact ae_mono (Measure.restrict_mono (sdiff_le_sdiff_right hsU) le_rfl) hUG
 
 omit [MeasurableSpace F] [BorelSpace F] in
+private theorem ae_restrict_sdiff_setOf_regular_ofReal_normDet_adjoint_fderiv_mul_eq_zero
+    (hf : LocallyLipschitzOn U f) (hU : IsOpen U) (hsU : s ⊆ U) (w : E → ℝ≥0∞) :
+    (fun x ↦ ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet * w x) =ᵐ[
+      volume.restrict (s \ {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)})] 0 :=
+  (hf.ae_restrict_sdiff_setOf_regular_normDet_adjoint_fderiv_eq_zero hU hsU).mono fun _ hx ↦ by
+    simp [hx]
+
+omit [MeasurableSpace F] [BorelSpace F] in
 /-- On a Lebesgue-measurable set where `fderiv ℝ f` is surjective, almost-everywhere measurability
 of `x ↦ ENNReal.ofReal (fderiv ℝ f x)†.normDet * w x` implies almost-everywhere measurability of
 `w`. -/
@@ -497,37 +514,11 @@ private theorem aemeasurable_of_aemeasurable_normDet_adjoint_fderiv_mul
     (hw : AEMeasurable (fun x ↦ ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet * w x)
       (volume.restrict s)) :
     AEMeasurable w (volume.restrict s) := by
-  have hJinv : Measurable fun x : E ↦ (ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet)⁻¹ :=
-    (ENNReal.measurable_ofReal.comp (measurable_normDet_adjoint_fderiv f)).inv
-  refine (hJinv.aemeasurable.restrict.mul hw).congr ?_
+  refine ((measurable_ofReal_normDet_adjoint_fderiv f).inv.aemeasurable.restrict.mul hw).congr ?_
   filter_upwards [ae_restrict_mem₀ hs] with x hx
   exact ENNReal.inv_mul_cancel_left
     (ENNReal.ofReal_pos.2 (ContinuousLinearMap.normDet_adjoint_pos_iff.2 (hsurj x hx))).ne'
     ENNReal.ofReal_ne_top
-
-/-- **The coarea formula for locally Lipschitz maps on open sets.** If `f : E → F` is locally
-Lipschitz on an open set `U` containing a Lebesgue-measurable set `s`, then the integral over `F` of
-the `(dim E - dim F)`-dimensional Euclidean Hausdorff measures of `s ∩ f ⁻¹' {y}` equals the
-integral over `s` of the coarea Jacobian `(fderiv ℝ f x)†.normDet`. -/
-theorem lintegral_euclideanHausdorffMeasure_inter_preimage_eq_lintegral_normDet_adjoint_fderiv
-    (hf : LocallyLipschitzOn U f) (hU : IsOpen U) (hsU : s ⊆ U) (hs : NullMeasurableSet s) :
-    ∫⁻ y : F, μHE[finrank ℝ E - finrank ℝ F] (s ∩ f ⁻¹' {y}) =
-      ∫⁻ x in s, ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet := by
-  set G := {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)}
-  have hGm : MeasurableSet G := measurableSet_setOf_differentiableAt_surjective_fderiv f
-  have hfib : ∫⁻ y : F, μHE[finrank ℝ E - finrank ℝ F] (s ∩ f ⁻¹' {y}) =
-      ∫⁻ y : F, μHE[finrank ℝ E - finrank ℝ F] ((s ∩ G) ∩ f ⁻¹' {y}) := by
-    refine lintegral_congr_ae ?_
-    filter_upwards [hf.ae_restrict_inter_setOf_regular_preimage_eq hU hsU] with y hy
-    simpa only [Measure.restrict_apply_univ] using congrArg (fun μ ↦ μ univ) hy
-  have hzero : ∫⁻ x in s \ G, ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet = 0 := by
-    refine (lintegral_congr_ae ?_).trans lintegral_zero
-    filter_upwards [hf.ae_restrict_sdiff_setOf_regular_normDet_adjoint_fderiv_eq_zero hU hsU]
-      with x hx
-    simp [hx]
-  rw [hfib,
-    lintegral_coarea_surj (hs.inter hGm.nullMeasurableSet) (fun _ hx ↦ hx.2.1) (fun _ hx ↦ hx.2.2),
-    ← lintegral_inter_add_sdiff _ s hGm, hzero, add_zero]
 
 /-- **Weighted `ℝ≥0∞` coarea formula for locally Lipschitz maps on open sets (product-measurability
 form).** Only `volume.restrict s`-almost-everywhere measurability of the product
@@ -540,22 +531,18 @@ theorem lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber_of_
       (volume.restrict s)) :
     ∫⁻ x in s, ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet * w x =
       ∫⁻ y : F, ∫⁻ x in s ∩ f ⁻¹' {y}, w x ∂μHE[finrank ℝ E - finrank ℝ F] := by
-  set G := {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)}
-  have hGm : MeasurableSet G := measurableSet_setOf_differentiableAt_surjective_fderiv f
-  have hwG : AEMeasurable w (volume.restrict (s ∩ G)) :=
+  have hGm := measurableSet_setOf_differentiableAt_surjective_fderiv f
+  have hwG : AEMeasurable w
+      (volume.restrict (s ∩ {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)})) :=
     aemeasurable_of_aemeasurable_normDet_adjoint_fderiv_mul (hs.inter hGm.nullMeasurableSet)
       (fun _ hx ↦ hx.2.2) (hw.mono_measure (Measure.restrict_mono inter_subset_left le_rfl))
-  have hzero : ∫⁻ x in s \ G, ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet * w x = 0 := by
-    refine (lintegral_congr_ae ?_).trans lintegral_zero
-    filter_upwards [hf.ae_restrict_sdiff_setOf_regular_normDet_adjoint_fderiv_eq_zero hU hsU]
-      with x hx
-    simp [hx]
-  have hfib : (∫⁻ y : F, ∫⁻ x in s ∩ f ⁻¹' {y}, w x ∂μHE[finrank ℝ E - finrank ℝ F]) =
-      ∫⁻ y : F, ∫⁻ x in (s ∩ G) ∩ f ⁻¹' {y}, w x ∂μHE[finrank ℝ E - finrank ℝ F] := by
-    refine lintegral_congr_ae ?_
-    filter_upwards [hf.ae_restrict_inter_setOf_regular_preimage_eq hU hsU] with y hy
-    rw [hy]
-  rw [← lintegral_inter_add_sdiff _ s hGm, hzero, add_zero, hfib]
+  have hzero : ∫⁻ x in s \ {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)},
+      ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet * w x = 0 :=
+    (lintegral_congr_ae
+      (hf.ae_restrict_sdiff_setOf_regular_ofReal_normDet_adjoint_fderiv_mul_eq_zero hU hsU w)).trans
+      lintegral_zero
+  rw [← lintegral_inter_add_sdiff _ s hGm, hzero, add_zero,
+    lintegral_congr_ae (hf.ae_setLIntegral_fiber_eq_inter_setOf_regular hU hsU w)]
   exact MeasureTheory.lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber
     (hs.inter hGm.nullMeasurableSet) (fun _ hx ↦ hx.2.1) (fun _ hx ↦ hx.2.2) hwG
 
@@ -569,9 +556,18 @@ theorem lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber
     ∫⁻ x in s, ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet * w x =
       ∫⁻ y : F, ∫⁻ x in s ∩ f ⁻¹' {y}, w x ∂μHE[finrank ℝ E - finrank ℝ F] :=
   hf.lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber_of_aemeasurable_mul
-    hU hsU hs
-    ((ENNReal.measurable_ofReal.comp
-      (measurable_normDet_adjoint_fderiv f)).aemeasurable.restrict.mul hw)
+    hU hsU hs ((measurable_ofReal_normDet_adjoint_fderiv f).aemeasurable.restrict.mul hw)
+
+/-- **The coarea formula for locally Lipschitz maps on open sets.** If `f : E → F` is locally
+Lipschitz on an open set `U` containing a Lebesgue-measurable set `s`, then the integral over `F` of
+the `(dim E - dim F)`-dimensional Euclidean Hausdorff measures of `s ∩ f ⁻¹' {y}` equals the
+integral over `s` of the coarea Jacobian `(fderiv ℝ f x)†.normDet`. -/
+theorem lintegral_euclideanHausdorffMeasure_inter_preimage_eq_lintegral_normDet_adjoint_fderiv
+    (hf : LocallyLipschitzOn U f) (hU : IsOpen U) (hsU : s ⊆ U) (hs : NullMeasurableSet s) :
+    ∫⁻ y : F, μHE[finrank ℝ E - finrank ℝ F] (s ∩ f ⁻¹' {y}) =
+      ∫⁻ x in s, ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet := by
+  simpa using (hf.lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber hU hsU hs
+    (aemeasurable_const (b := (1 : ℝ≥0∞)))).symm
 
 /-- **Measure-disintegration form of the coarea formula (product-measurability form)** for a locally
 Lipschitz map on an open set `U ⊇ s` (adapting
@@ -590,30 +586,19 @@ theorem
         fun x ↦ ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet * w x) =
       volume.withDensity fun y ↦
         ∫⁻ x in s ∩ f ⁻¹' {y}, w x ∂μHE[finrank ℝ E - finrank ℝ F] := by
-  set G := {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)}
-  have hGm : MeasurableSet G := measurableSet_setOf_differentiableAt_surjective_fderiv f
-  have hwG : AEMeasurable w (volume.restrict (s ∩ G)) :=
+  have hGm := measurableSet_setOf_differentiableAt_surjective_fderiv f
+  have hwG : AEMeasurable w
+      (volume.restrict (s ∩ {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)})) :=
     aemeasurable_of_aemeasurable_normDet_adjoint_fderiv_mul (hs.inter hGm.nullMeasurableSet)
       (fun _ hx ↦ hx.2.2) (hw.mono_measure (Measure.restrict_mono inter_subset_left le_rfl))
-  have hsdiff : (volume.restrict (s \ G)).withDensity
-      (fun x ↦ ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet * w x) = 0 := by
-    refine (withDensity_congr_ae (g := 0) ?_).trans withDensity_zero
-    filter_upwards [hf.ae_restrict_sdiff_setOf_regular_normDet_adjoint_fderiv_eq_zero hU hsU]
-      with x hx
-    simp [hx]
-  have hlhs : (volume.restrict s).withDensity
-      (fun x ↦ ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet * w x) =
-      (volume.restrict (s ∩ G)).withDensity
-        (fun x ↦ ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet * w x) := by
-    rw [← Measure.restrict_inter_add_sdiff s hGm, withDensity_add_measure, hsdiff, add_zero]
-  have hrhs : (volume.withDensity fun y ↦
-      ∫⁻ x in (s ∩ G) ∩ f ⁻¹' {y}, w x ∂μHE[finrank ℝ E - finrank ℝ F]) =
-      volume.withDensity fun y ↦
-        ∫⁻ x in s ∩ f ⁻¹' {y}, w x ∂μHE[finrank ℝ E - finrank ℝ F] := by
-    refine withDensity_congr_ae ?_
-    filter_upwards [hf.ae_restrict_inter_setOf_regular_preimage_eq hU hsU] with y hy
-    rw [hy]
-  rw [hlhs, ← hrhs]
+  have hsdiff : (volume.restrict
+      (s \ {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)})).withDensity
+      (fun x ↦ ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet * w x) = 0 :=
+    (withDensity_congr_ae
+      (hf.ae_restrict_sdiff_setOf_regular_ofReal_normDet_adjoint_fderiv_mul_eq_zero hU hsU w)).trans
+      withDensity_zero
+  rw [← Measure.restrict_inter_add_sdiff s hGm, withDensity_add_measure, hsdiff, add_zero,
+    withDensity_congr_ae (hf.ae_setLIntegral_fiber_eq_inter_setOf_regular hU hsU w)]
   exact MeasureTheory.map_withDensity_normDet_adjoint_fderiv_mul_eq_withDensity_setLIntegral_fiber
     (hs.inter hGm.nullMeasurableSet) (fun _ hx ↦ hx.2.1) (fun _ hx ↦ hx.2.2) hwG
 
@@ -629,9 +614,7 @@ theorem map_withDensity_normDet_adjoint_fderiv_mul_eq_withDensity_setLIntegral_f
         ∫⁻ x in s ∩ f ⁻¹' {y}, w x ∂μHE[finrank ℝ E - finrank ℝ F] :=
   open LocallyLipschitzOn in
   map_withDensity_normDet_adjoint_fderiv_mul_eq_withDensity_setLIntegral_fiber_of_aemeasurable_mul
-    hf hU hsU hs
-    ((ENNReal.measurable_ofReal.comp
-      (measurable_normDet_adjoint_fderiv f)).aemeasurable.restrict.mul hw)
+    hf hU hsU hs ((measurable_ofReal_normDet_adjoint_fderiv f).aemeasurable.restrict.mul hw)
 
 /-- **Radon-Nikodym form of the coarea formula** for a locally Lipschitz map on an open set `U ⊇ s`:
 the pushforward of `(volume.restrict s).withDensity (ENNReal.ofReal (J f ·))` under `f` has density
@@ -699,6 +682,16 @@ end LocallyLipschitzOn
 /-! ### Integrability of the coarea Jacobian -/
 
 namespace LipschitzOnWith
+
+/-- If `f` is `K`-Lipschitz on a neighbourhood `U ∈ 𝓝 x`, then its coarea Jacobian at `x` is
+bounded by `K ^ dim F`. The domain need only be complete, not finite-dimensional. -/
+theorem normDet_adjoint_fderiv_le {E F : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [FiniteDimensional ℝ F] {K : ℝ≥0} {f : E → F} {U : Set E} {x : E}
+    (hf : LipschitzOnWith K f U) (hU : U ∈ 𝓝 x) :
+    (fderiv ℝ f x).adjoint.normDet ≤ (K : ℝ) ^ finrank ℝ F :=
+  (fderiv ℝ f x).normDet_adjoint_le_norm_pow.trans
+    (pow_le_pow_left₀ (norm_nonneg _) (norm_fderiv_le_of_lipschitzOn ℝ hU hf) _)
 
 /-- If `f` is `K`-Lipschitz on an open set `U` containing a finite-measure set `s`, then the coarea
 Jacobian `x ↦ (fderiv ℝ f x)†.normDet` is integrable on `s`. Neither measurability of `s` nor
@@ -956,6 +949,8 @@ end LocallyLipschitz
 
 namespace LipschitzWith
 
+section Coarea
+
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
   [MeasurableSpace E] [BorelSpace E] [MeasurableSpace F] [BorelSpace F]
@@ -1041,6 +1036,23 @@ theorem map_withDensity_normDet_adjoint_fderiv_eq_withDensity_euclideanHausdorff
   hf.locallyLipschitz
     |>.map_withDensity_normDet_adjoint_fderiv_eq_withDensity_euclideanHausdorffMeasure_preimage
 
+end Coarea
+
+/-- The coarea Jacobian `(fderiv ℝ f x)†.normDet` of a `K`-Lipschitz map `f : E → F` is everywhere
+at most `K ^ dim F`. The domain need only be complete, not finite-dimensional. -/
+theorem normDet_adjoint_fderiv_le {E F : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [FiniteDimensional ℝ F] {K : ℝ≥0} {f : E → F} (hf : LipschitzWith K f) (x : E) :
+    (fderiv ℝ f x).adjoint.normDet ≤ (K : ℝ) ^ finrank ℝ F :=
+  hf.lipschitzOnWith.normDet_adjoint_fderiv_le Filter.univ_mem
+
+section Finiteness
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+  [MeasurableSpace E] [BorelSpace E] [MeasurableSpace F] [BorelSpace F]
+  {s : Set E} {f : E → F} {K : ℝ≥0}
+
 /-- For a Lipschitz map, the coarea Jacobian is integrable on every set of finite Lebesgue
 measure. -/
 theorem integrableOn_normDet_adjoint_fderiv (hf : LipschitzWith K f) (hs : volume s ≠ ∞) :
@@ -1083,6 +1095,8 @@ theorem integral_euclideanHausdorffMeasure_real_preimage_eq_integral_normDet_adj
   simpa using
     hf.integral_euclideanHausdorffMeasure_real_inter_preimage_eq_integral_normDet_adjoint_fderiv
       MeasurableSet.univ.nullMeasurableSet hint.integrableOn
+
+end Finiteness
 
 end LipschitzWith
 

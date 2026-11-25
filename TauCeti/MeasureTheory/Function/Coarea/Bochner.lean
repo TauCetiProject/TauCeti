@@ -39,7 +39,8 @@ formulas:
    `NullMeasurableSet s` and `IntegrableOn (fun x ↦ J f x • g x) s`.
 3. **Specializations (`LipschitzOnWith`, `LocallyLipschitz`, `LipschitzWith`).** For a `K`-Lipschitz
    map on an open set `U`, `J f x ≤ K ^ dim F` on `U`
-   (`LipschitzOnWith.normDet_adjoint_fderiv_le` in `TauCeti.Analysis.InnerProductSpace.NormDet`),
+   (`LipschitzOnWith.normDet_adjoint_fderiv_le` in
+   `TauCeti.MeasureTheory.Function.Coarea.Lipschitz`),
    so `IntegrableOn g s μ` alone implies `IntegrableOn (fun x ↦ J f x • g x) s μ`. Specializing to
    `volume` yields unweighted-hypothesis Bochner coarea formulas for Lipschitz maps on open sets and
    on `E` (for linear maps and orthogonal projections, see
@@ -109,9 +110,8 @@ private theorem integrable_withDensity_normDet_adjoint_fderiv_iff {u : E → V} 
     Integrable u ((volume.restrict s).withDensity
         fun x ↦ ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet) ↔
       IntegrableOn (fun x ↦ (fderiv ℝ f x).adjoint.normDet • u x) s := by
-  have hw_meas : Measurable fun x : E ↦ ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet :=
-    ENNReal.measurable_ofReal.comp (TauCeti.measurable_normDet_adjoint_fderiv f)
-  rw [integrable_withDensity_iff_integrable_smul' hw_meas
+  rw [integrable_withDensity_iff_integrable_smul'
+    (TauCeti.measurable_ofReal_normDet_adjoint_fderiv f)
     (Eventually.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
   simp only [IntegrableOn, ENNReal.toReal_ofReal (LinearMap.normDet_nonneg _)]
 
@@ -173,12 +173,11 @@ private theorem lintegral_setLIntegral_enorm_eq_lintegral_withDensity
     (∫⁻ y : F, ∫⁻ x in s ∩ f ⁻¹' {y}, ‖u x‖ₑ ∂μHE[finrank ℝ E - finrank ℝ F]) =
       ∫⁻ x, ‖u x‖ₑ ∂(volume.restrict s).withDensity
         fun x ↦ ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet := by
-  have hw_meas : Measurable fun x : E ↦ ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet :=
-    ENNReal.measurable_ofReal.comp (TauCeti.measurable_normDet_adjoint_fderiv f)
   have hum : AEStronglyMeasurable u (volume.restrict s) :=
     aestronglyMeasurable_of_integrable_withDensity hs hsurj hu
   rw [← lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber hs hd hsurj hum.eNorm,
-    lintegral_withDensity_eq_lintegral_mul_non_measurable _ hw_meas
+    lintegral_withDensity_eq_lintegral_mul_non_measurable _
+      (TauCeti.measurable_ofReal_normDet_adjoint_fderiv f)
       (Eventually.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
   simp only [Pi.mul_apply]
 
@@ -290,8 +289,6 @@ private theorem integral_withDensity_eq
   let w : E → ℝ≥0∞ := fun x ↦ ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet
   let ν := (volume.restrict s).withDensity w
   set k := finrank ℝ E - finrank ℝ F
-  have hw_meas : Measurable w :=
-    ENNReal.measurable_ofReal.comp (TauCeti.measurable_normDet_adjoint_fderiv f)
   have hdw (x : E) (hx : x ∈ s) : HasFDerivWithinAt f (fderiv ℝ f x) s x :=
     (hd x hx).hasFDerivAt.hasFDerivWithinAt
   refine Integrable.induction
@@ -318,7 +315,7 @@ private theorem integral_withDensity_eq
       _ = ∫ y : F, ∫ x in s ∩ f ⁻¹' {y}, (u₁ + u₂) x ∂μHE[k] := integral_congr_ae hadd.symm
   · intro u₁ u₂ hu₁₂ _ ih₁
     have hae_s : u₁ =ᵐ[volume.restrict s] u₂ :=
-      (withDensity_ae_eq hw_meas.aemeasurable
+      (withDensity_ae_eq (TauCeti.measurable_ofReal_normDet_adjoint_fderiv f).aemeasurable
         ((ae_restrict_mem₀ hs).mono fun x hxs ↦
           (ENNReal.ofReal_pos.2
             (ContinuousLinearMap.normDet_adjoint_pos_iff.2 (hsurj x hxs))).ne')).1 hu₁₂
@@ -339,11 +336,10 @@ theorem integral_normDet_adjoint_fderiv_smul_eq_integral_setIntegral_fiber
     (hint : IntegrableOn (fun x ↦ (fderiv ℝ f x).adjoint.normDet • g x) s) :
     ∫ x in s, (fderiv ℝ f x).adjoint.normDet • g x =
       ∫ y : F, ∫ x in s ∩ f ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F] := by
-  have hw_meas : Measurable fun x : E ↦ ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet :=
-    ENNReal.measurable_ofReal.comp (TauCeti.measurable_normDet_adjoint_fderiv f)
   have hco := integral_withDensity_eq hs hd hsurj
     (integrable_withDensity_normDet_adjoint_fderiv_iff.2 hint)
-  rw [integral_withDensity_eq_integral_toReal_smul hw_meas
+  rw [integral_withDensity_eq_integral_toReal_smul
+    (TauCeti.measurable_ofReal_normDet_adjoint_fderiv f)
     (Eventually.of_forall fun _ ↦ ENNReal.ofReal_lt_top)] at hco
   simpa only [ENNReal.toReal_ofReal (LinearMap.normDet_nonneg _)] using hco
 
@@ -379,6 +375,17 @@ variable {E F V : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Finit
   [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
   [NormedAddCommGroup V] [NormedSpace ℝ V] {U s : Set E} {f : E → F}
 
+/-- For `s ⊆ U` with `U` open and `f` locally Lipschitz on `U`, the Bochner fiber integral of `g`
+over `s ∩ f ⁻¹' {y}` agrees for almost every `y : F` with that over its regular part. -/
+private theorem ae_setIntegral_fiber_eq_inter_setOf_regular
+    (hf : LocallyLipschitzOn U f) (hU : IsOpen U) (hsU : s ⊆ U) (g : E → V) :
+    (fun y : F ↦ ∫ x in s ∩ f ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F]) =ᵐ[volume]
+      fun y : F ↦
+        ∫ x in (s ∩ {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)}) ∩ f ⁻¹' {y},
+          g x ∂μHE[finrank ℝ E - finrank ℝ F] :=
+  (hf.ae_restrict_inter_setOf_regular_preimage_eq hU hsU).mono fun _ hy ↦
+    congrArg (fun μ ↦ ∫ x, g x ∂μ) hy
+
 /-- If `f` is locally Lipschitz on an open set `U ⊇ s` with `s` Lebesgue measurable and
 `(fderiv ℝ f x)†.normDet • g x` is integrable on `s`, then `g` is `μHE[dim E - dim F]`-integrable
 on almost every fiber `s ∩ f ⁻¹' {y}`. -/
@@ -386,12 +393,11 @@ theorem ae_integrableOn_fiber (hf : LocallyLipschitzOn U f) (hU : IsOpen U) (hsU
     (hs : NullMeasurableSet s) {g : E → V}
     (hint : IntegrableOn (fun x ↦ (fderiv ℝ f x).adjoint.normDet • g x) s) :
     ∀ᵐ y : F, IntegrableOn g (s ∩ f ⁻¹' {y}) μHE[finrank ℝ E - finrank ℝ F] := by
-  set G := {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)}
-  have hGm : MeasurableSet G := TauCeti.measurableSet_setOf_differentiableAt_surjective_fderiv f
-  have hfibG := ae_integrableOn_fiber_of_integrableOn_normDet_adjoint_fderiv_smul
-    (hs.inter hGm.nullMeasurableSet) (fun _ hx ↦ hx.2.1) (fun _ hx ↦ hx.2.2)
-    (hint.mono_set inter_subset_left)
-  filter_upwards [hf.ae_restrict_inter_setOf_regular_preimage_eq hU hsU, hfibG] with y hy hyG
+  filter_upwards [hf.ae_restrict_inter_setOf_regular_preimage_eq hU hsU,
+    ae_integrableOn_fiber_of_integrableOn_normDet_adjoint_fderiv_smul
+      (hs.inter
+        (TauCeti.measurableSet_setOf_differentiableAt_surjective_fderiv f).nullMeasurableSet)
+      (fun _ hx ↦ hx.2.1) (fun _ hx ↦ hx.2.2) (hint.mono_set inter_subset_left)] with y hy hyG
   rwa [IntegrableOn, hy]
 
 /-- If `f` is locally Lipschitz on an open set `U ⊇ s` with `s` Lebesgue measurable and
@@ -403,16 +409,11 @@ theorem aestronglyMeasurable_setIntegral_fiber (hf : LocallyLipschitzOn U f) (hU
     (hgm : AEStronglyMeasurable (fun x ↦ (fderiv ℝ f x).adjoint.normDet • g x)
       (volume.restrict s)) :
     AEStronglyMeasurable
-      (fun y : F ↦ ∫ x in s ∩ f ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F]) volume := by
-  set G := {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)}
-  have hGm : MeasurableSet G := TauCeti.measurableSet_setOf_differentiableAt_surjective_fderiv f
-  have hreg :=
-    aestronglyMeasurable_setIntegral_fiber_of_aestronglyMeasurable_normDet_adjoint_fderiv_smul
-      (hs.inter hGm.nullMeasurableSet) (fun _ hx ↦ hx.2.1) (fun _ hx ↦ hx.2.2)
-      (hgm.mono_set inter_subset_left)
-  refine hreg.congr ?_
-  filter_upwards [hf.ae_restrict_inter_setOf_regular_preimage_eq hU hsU] with y hy
-  rw [hy]
+      (fun y : F ↦ ∫ x in s ∩ f ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F]) volume :=
+  (aestronglyMeasurable_setIntegral_fiber_of_aestronglyMeasurable_normDet_adjoint_fderiv_smul
+    (hs.inter (TauCeti.measurableSet_setOf_differentiableAt_surjective_fderiv f).nullMeasurableSet)
+    (fun _ hx ↦ hx.2.1) (fun _ hx ↦ hx.2.2) (hgm.mono_set inter_subset_left)).congr
+    (hf.ae_setIntegral_fiber_eq_inter_setOf_regular hU hsU g).symm
 
 /-- If `f` is locally Lipschitz on an open set `U ⊇ s` with `s` Lebesgue measurable and
 `(fderiv ℝ f x)†.normDet • g x` is integrable on `s`, then the Bochner fiber integral
@@ -420,14 +421,11 @@ theorem aestronglyMeasurable_setIntegral_fiber (hf : LocallyLipschitzOn U f) (hU
 theorem integrable_setIntegral_fiber (hf : LocallyLipschitzOn U f) (hU : IsOpen U) (hsU : s ⊆ U)
     (hs : NullMeasurableSet s) {g : E → V}
     (hint : IntegrableOn (fun x ↦ (fderiv ℝ f x).adjoint.normDet • g x) s) :
-    Integrable (fun y : F ↦ ∫ x in s ∩ f ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F]) volume := by
-  set G := {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)}
-  have hGm : MeasurableSet G := TauCeti.measurableSet_setOf_differentiableAt_surjective_fderiv f
-  refine (integrable_setIntegral_fiber_of_integrableOn_normDet_adjoint_fderiv_smul
-    (hs.inter hGm.nullMeasurableSet) (fun _ hx ↦ hx.2.1) (fun _ hx ↦ hx.2.2)
-    (hint.mono_set inter_subset_left)).congr ?_
-  filter_upwards [hf.ae_restrict_inter_setOf_regular_preimage_eq hU hsU] with y hy
-  rw [hy]
+    Integrable (fun y : F ↦ ∫ x in s ∩ f ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F]) volume :=
+  (integrable_setIntegral_fiber_of_integrableOn_normDet_adjoint_fderiv_smul
+    (hs.inter (TauCeti.measurableSet_setOf_differentiableAt_surjective_fderiv f).nullMeasurableSet)
+    (fun _ hx ↦ hx.2.1) (fun _ hx ↦ hx.2.2) (hint.mono_set inter_subset_left)).congr
+    (hf.ae_setIntegral_fiber_eq_inter_setOf_regular hU hsU g).symm
 
 /-- **Bochner coarea formula for locally Lipschitz maps on open sets.** Let `f : E → F` be locally
 Lipschitz on an open set `U` containing a Lebesgue-measurable set `s`, and let `g : E → V` take
@@ -440,19 +438,14 @@ theorem integral_normDet_adjoint_fderiv_smul_eq_integral_setIntegral_fiber
     {g : E → V} (hint : IntegrableOn (fun x ↦ (fderiv ℝ f x).adjoint.normDet • g x) s) :
     ∫ x in s, (fderiv ℝ f x).adjoint.normDet • g x =
       ∫ y : F, ∫ x in s ∩ f ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F] := by
-  set G := {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)}
-  have hGm : MeasurableSet G := TauCeti.measurableSet_setOf_differentiableAt_surjective_fderiv f
-  have hzero : ∫ x in s \ G, (fderiv ℝ f x).adjoint.normDet • g x = 0 := by
-    refine integral_eq_zero_of_ae ?_
-    filter_upwards [hf.ae_restrict_sdiff_setOf_regular_normDet_adjoint_fderiv_eq_zero hU hsU]
-      with x hx
-    simp [hx]
-  have hfib : (∫ y : F, ∫ x in s ∩ f ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F]) =
-      ∫ y : F, ∫ x in (s ∩ G) ∩ f ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F] := by
-    refine integral_congr_ae ?_
-    filter_upwards [hf.ae_restrict_inter_setOf_regular_preimage_eq hU hsU] with y hy
-    rw [hy]
-  rw [← integral_inter_add_sdiff hGm hint, hzero, add_zero, hfib]
+  have hGm := TauCeti.measurableSet_setOf_differentiableAt_surjective_fderiv f
+  have hzero : ∫ x in s \ {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)},
+      (fderiv ℝ f x).adjoint.normDet • g x = 0 :=
+    integral_eq_zero_of_ae
+      ((hf.ae_restrict_sdiff_setOf_regular_normDet_adjoint_fderiv_eq_zero hU hsU).mono
+        fun _ hx ↦ by simp [hx])
+  rw [← integral_inter_add_sdiff hGm hint, hzero, add_zero,
+    integral_congr_ae (hf.ae_setIntegral_fiber_eq_inter_setOf_regular hU hsU g)]
   exact MeasureTheory.integral_normDet_adjoint_fderiv_smul_eq_integral_setIntegral_fiber
     (hs.inter hGm.nullMeasurableSet) (fun _ hx ↦ hx.2.1) (fun _ hx ↦ hx.2.2)
     (hint.mono_set inter_subset_left)

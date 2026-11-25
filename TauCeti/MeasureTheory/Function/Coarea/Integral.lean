@@ -77,8 +77,7 @@ private theorem lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_f
   have hdw (x : E) (hx : x ∈ s) : HasFDerivWithinAt f (fderiv ℝ f x) s x :=
     (hd x hx).hasFDerivAt.hasFDerivWithinAt
   have hJ : Measurable fun x ↦ ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet :=
-    ENNReal.measurable_ofReal.comp (ContinuousLinearMap.continuous_normDet.measurable.comp
-      (ContinuousLinearMap.adjoint.continuous.measurable.comp (measurable_fderiv ℝ f)))
+    TauCeti.measurable_ofReal_normDet_adjoint_fderiv f
   -- Indicator weights use the set formula; addition and monotone limits give all weights.
   refine Measurable.ennreal_induction ?_ ?_ ?_ hg
   · intro c t ht
