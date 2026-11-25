@@ -11,8 +11,6 @@ import TauCeti.Algebra.AlgebraicGroup.Representation.DefiningSubcomodule
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Normal.SubgroupWeights
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer
 import TauCeti.Algebra.Coalgebra.Subcomodule.ExteriorPower
-import Mathlib.LinearAlgebra.Basis.VectorSpace
-public import Mathlib.LinearAlgebra.Unimodular
 
 /-!
 # The subgroup character of a Chevalley line

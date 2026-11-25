@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Faithful.Basic
-public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Product
 
 /-!
 # Faithful direct-sum representations
