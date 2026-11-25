@@ -273,16 +273,22 @@ open Set Filter
 variable {ι : Type*} {l : Filter ι} {J : ι → W → W →L[𝕜] W} {J₀ : W → W →L[𝕜] W} {γ : V → W}
   {U : Set V} {Ω : Set W} {ℓ : ℕ}
 
-/-- **The adapted extensions converge in `C^ℓ`.** Let `γ` be `C^(ℓ+1)` on an open `U`, mapping
-it into an open `Ω` on which `J₀` and eventually all `J i` are `C^ℓ`. If `J i → J₀` in `C^ℓ` at
-`γ x` for some `x ∈ U`, then the adapted extensions `adaptedNormalExtension γ (J i)` converge in
-`C^ℓ` to `adaptedNormalExtension γ J₀` at every point `(x, y)`. -/
-theorem tendstoContDiffAt_adaptedNormalExtension (hU : IsOpen U) (hΩ : IsOpen Ω)
-    (hγ : ContDiffOn 𝕜 (ℓ + 1) γ U) (hγΩ : MapsTo γ U Ω)
-    (hJ : ∀ᶠ i in l, ContDiffOn 𝕜 ℓ (J i) Ω) (hJ₀ : ContDiffOn 𝕜 ℓ J₀ Ω) {p : V × V}
+/-- **The adapted extensions converge in `C^ℓ`.** Let `γ` be `C^(m+1)` on an open `U`, mapping
+it into an open `Ω` on which `J₀` and eventually all `J i` are `C^m`, for `m : ℕ∞` and a finite
+order `ℓ ≤ m`. If `J i → J₀` in `C^ℓ` at `γ x` for some `x ∈ U`, then the adapted extensions
+`adaptedNormalExtension γ (J i)` converge in `C^ℓ` to `adaptedNormalExtension γ J₀` at every point
+`(x, y)`. -/
+theorem tendstoContDiffAt_adaptedNormalExtension {m : ℕ∞} (hℓm : (ℓ : ℕ∞) ≤ m) (hU : IsOpen U)
+    (hΩ : IsOpen Ω) (hγ : ContDiffOn 𝕜 ((m : ℕ∞ω) + 1) γ U) (hγΩ : MapsTo γ U Ω)
+    (hJ : ∀ᶠ i in l, ContDiffOn 𝕜 m (J i) Ω) (hJ₀ : ContDiffOn 𝕜 m J₀ Ω) {p : V × V}
     (hp : p.1 ∈ U) (hconv : TendstoContDiffAt 𝕜 ℓ J J₀ l (γ p.1)) :
     TendstoContDiffAt 𝕜 ℓ (fun i ↦ adaptedNormalExtension γ (J i))
       (adaptedNormalExtension γ J₀) l p := by
+  -- Only the regularity of order `ℓ` is used.
+  have hℓm' : ((ℓ : ℕ∞) : ℕ∞ω) ≤ m := by exact_mod_cast hℓm
+  replace hγ : ContDiffOn 𝕜 (ℓ + 1) γ U := hγ.of_le (by exact_mod_cast add_le_add_left hℓm' 1)
+  replace hJ : ∀ᶠ i in l, ContDiffOn 𝕜 ℓ (J i) Ω := hJ.mono fun i hi ↦ hi.of_le hℓm'
+  replace hJ₀ : ContDiffOn 𝕜 ℓ J₀ Ω := hJ₀.of_le hℓm'
   -- Write the extension as a fixed smooth map of `(J (γ q.1), (Dγ q.1 q.2, γ q.1))`.
   let G : (W →L[𝕜] W) × (W × W) → W := fun x ↦ x.2.2 + x.1 x.2.1
   let H : V × V → W × W := fun q ↦ (fderiv 𝕜 γ q.1 q.2, γ q.1)
