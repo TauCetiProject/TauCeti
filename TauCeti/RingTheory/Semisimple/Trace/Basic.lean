@@ -246,7 +246,7 @@ theorem natCast_jordanHolderMultiplicity_eq_of_trace_eq [Module.Finite A M] [Mod
     fun γ => by
       rw [← trace_lsmul_eq_sum (k := k) hT hM, ← trace_lsmul_eq_sum (k := k) hT hN]
       exact h γ
-  exact forall_jordanHolderMultiplicity_eq (Nat.cast : ℕ → k) hM hN hmult S
+  exact apply_jordanHolderMultiplicity_eq_of_forall_eq (Nat.cast : ℕ → k) hM hN hmult S
 
 end Multiplicity
 

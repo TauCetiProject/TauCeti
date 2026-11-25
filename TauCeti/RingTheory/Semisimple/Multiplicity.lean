@@ -62,8 +62,8 @@ finite-dimensional semisimple algebra it suffices to compare the maps out of sim
   covering the simple submodules of two finitely generated semisimple modules.
 * `IsSemisimpleModule.exists_linearEquiv_pi_natCard_eq`: given such a family, a finitely
   generated semisimple module is a product of copies of its members, each occurring with its
-  multiplicity; `TauCeti.forall_jordanHolderMultiplicity_eq` compares multiplicities on the
-  family.
+  multiplicity; `TauCeti.apply_jordanHolderMultiplicity_eq_of_forall_eq` compares
+  multiplicities on the family.
 * `TauCeti.natCard_eq_natCard_of_linearEquiv_pi`: equivalent finite products of simple modules
   over any ring have equally many factors isomorphic to `S`; applied to two decompositions of
   one module, this says that the multiplicity is well defined.
@@ -442,8 +442,8 @@ theorem jordanHolderMultiplicity_eq_zero_of_forall_isEmpty
 /-- **Comparing multiplicities on a covering family.** If every simple submodule of `M` and of `N`
 is isomorphic to some `T i`, then a function of the multiplicities that agrees on every `T i`
 agrees on every module: a module isomorphic to no `T i` occurs in neither `M` nor `N`. -/
-theorem forall_jordanHolderMultiplicity_eq {α : Type*} (φ : ℕ → α) {N : Type*} [AddCommGroup N]
-    [Module R N] [IsSemisimpleModule R N] [Module.Finite R N]
+theorem apply_jordanHolderMultiplicity_eq_of_forall_eq {α : Type*} (φ : ℕ → α) {N : Type*}
+    [AddCommGroup N] [Module R N] [IsSemisimpleModule R N] [Module.Finite R N]
     (hM : ∀ P : Submodule R M, IsSimpleModule R P → ∃ i, Nonempty (P ≃ₗ[R] T i))
     (hN : ∀ P : Submodule R N, IsSimpleModule R P → ∃ i, Nonempty (P ≃ₗ[R] T i))
     (h : ∀ i, φ (jordanHolderMultiplicity R M (T i)) = φ (jordanHolderMultiplicity R N (T i)))

@@ -107,13 +107,13 @@ theorem nonempty_linearEquiv_of_charpoly_eq {Γ : Type*} {g : Γ → A}
     .of_injective ((T i).subtype.restrictScalars k) Subtype.val_injective
   have (i : ι) : IsSimpleModule A (T i) := hTs i
   have hmult := eq_of_forall_prod_pow_eq (fun i γ => (Algebra.lsmul k k (T i) (g γ)).charpoly)
-    (fun _ _ => LinearMap.charpoly_monic _)
+    (fun _ _ => (LinearMap.charpoly_monic _).ne_zero)
     (fun c d hcd => natCast_eq_of_sum_trace_eq hT hg c d fun γ => by
       rw [LinearMap.sum_nsmul_trace_eq_neg_nextCoeff_prod,
         LinearMap.sum_nsmul_trace_eq_neg_nextCoeff_prod, hcd γ])
     (fun i => jordanHolderMultiplicity A M (T i)) (fun i => jordanHolderMultiplicity A N (T i))
     fun γ => by rw [← charpoly_lsmul_eq_prod hT hM, ← charpoly_lsmul_eq_prod hT hN, h γ]
   exact nonempty_linearEquiv_of_jordanHolderMultiplicity_eq M N fun S _ _ _ =>
-    forall_jordanHolderMultiplicity_eq id hM hN (congrFun hmult) S
+    apply_jordanHolderMultiplicity_eq_of_forall_eq id hM hN (congrFun hmult) S
 
 end IsSemisimpleModule

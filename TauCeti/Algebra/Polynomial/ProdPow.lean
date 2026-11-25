@@ -11,7 +11,7 @@ public import Mathlib.Algebra.Polynomial.BigOperators
 /-!
 # Recovering exponents from products of powers of polynomials
 
-Let `P i γ` be monic polynomials over a field `k`, indexed by a finite type `ι` and a parameter
+Let `P i γ` be nonzero polynomials over a field `k`, indexed by a finite type `ι` and a parameter
 `γ`. Suppose the products `∏ i, P i γ ^ c i` for all `γ` determine an exponent vector
 `c : ι → ℕ` after casting into `k`. This file shows that they then determine `c` itself
 (`Polynomial.eq_of_forall_prod_pow_eq`). In characteristic `p` the cast forgets multiples of `p`;
@@ -24,14 +24,14 @@ polynomials, with `P i γ` the characteristic polynomials of the simple modules.
 ## Main results
 
 * `Polynomial.eq_of_forall_prod_pow_eq`: exponent vectors giving the same products of powers of
-  monic polynomials agree, given that they agree after casting into `k`.
+  nonzero polynomials agree, given that they agree after casting into `k`.
 -/
 
 public section
 
 namespace Polynomial
 
-variable {k ι Γ : Type*} [Field k] [Fintype ι] (P : ι → Γ → k[X]) (hP : ∀ i γ, (P i γ).Monic)
+variable {k ι Γ : Type*} [Field k] [Fintype ι] (P : ι → Γ → k[X]) (hP : ∀ i γ, P i γ ≠ 0)
 variable (hsep : ∀ c d : ι → ℕ, (∀ γ, ∏ i, P i γ ^ c i = ∏ i, P i γ ^ d i) → ∀ i, (c i : k) = d i)
 include hsep
 
@@ -83,13 +83,13 @@ private theorem eq_zero_of_forall_prod_pow_eq :
   exact h0 ⟨funext fun i => by simp [hu i, hu0], funext fun i => by simp [hv i, hv0]⟩
 
 include hP in
-/-- **Cancelling exponents against a separating family.** Let `P i γ` be monic polynomials over a
-field `k` such that exponent vectors `c, d` giving the same products `∏ i, P i γ ^ c i` for every
-`γ` agree after casting into `k`. Then such exponent vectors agree: cancelling their common part
-`min (c i) (d i)` leaves exponent vectors with disjoint supports, which vanish by
-`Polynomial.eq_zero_of_forall_prod_pow_eq`. -/
+/-- **Cancelling exponents against a separating family.** Let `P i γ` be nonzero polynomials over
+a field `k` such that exponent vectors `c, d` giving the same products `∏ i, P i γ ^ c i` for every
+`γ` agree after casting into `k`. Then such exponent vectors agree. -/
 theorem eq_of_forall_prod_pow_eq (c d : ι → ℕ)
     (h : ∀ γ, ∏ i, P i γ ^ c i = ∏ i, P i γ ^ d i) : c = d := by
+  -- Cancelling the common part `min (c i) (d i)` leaves exponent vectors with disjoint supports,
+  -- which vanish by the disjoint-support case above.
   have key (e : ι → ℕ) (he : ∀ i, min (c i) (d i) ≤ e i) (γ : Γ) : ∏ i, P i γ ^ e i =
       (∏ i, P i γ ^ min (c i) (d i)) * ∏ i, P i γ ^ (e i - min (c i) (d i)) := by
     rw [← Finset.prod_mul_distrib]
@@ -98,7 +98,7 @@ theorem eq_of_forall_prod_pow_eq (c d : ι → ℕ)
     (fun i => d i - min (c i) (d i)) (fun i => by omega) fun γ => by
       have := h γ
       rw [key c (fun i => min_le_left _ _), key d (fun i => min_le_right _ _)] at this
-      exact mul_left_cancel₀ (monic_prod_of_monic _ _ fun i _ => (hP i γ).pow _).ne_zero this
+      exact mul_left_cancel₀ (Finset.prod_ne_zero_iff.mpr fun i _ => pow_ne_zero _ (hP i γ)) this
   funext i
   have := congrFun hc i
   have := congrFun hd i
