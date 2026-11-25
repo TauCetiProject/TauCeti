@@ -73,7 +73,7 @@ theorem isIdempotentElem_comp {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p �
     IsIdempotentElem (i ∘ₗ p : Module.End A M) := by
   unfold IsIdempotentElem
   ext x
-  simp [show ∀ y, p (i y) = y from LinearMap.congr_fun hip]
+  simp [← LinearMap.comp_apply p i, hip]
 
 /-- **Maps factoring through a retract.** An endomorphism `u ∘ v` of `M` factoring through its
 retract `X`, with inclusion `i` and retraction `p`, lies in the two-sided ideal of `End_A M`
@@ -84,7 +84,7 @@ theorem comp_mem_span_comp {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘�
   have key : (u ∘ₗ v : Module.End A M) =
       (u ∘ₗ p : Module.End A M) * (i ∘ₗ p : Module.End A M) * (i ∘ₗ v : Module.End A M) := by
     ext x
-    simp [show ∀ y, p (i y) = y from LinearMap.congr_fun hip]
+    simp [← LinearMap.comp_apply p i, hip]
   rw [key]
   exact TwoSidedIdeal.mul_mem_right _ _ _
     (TwoSidedIdeal.mul_mem_left _ _ _ (TwoSidedIdeal.subset_span rfl))
@@ -123,7 +123,7 @@ private theorem corner_val_comp {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p
 def smulTopRetractAddEquiv {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id) :
     X ≃+ ↥((i ∘ₗ p : Module.End A M) • (⊤ : Submodule ℤ M)) where
   toFun x := ⟨i x, (isIdempotentElem_comp hip).mem_smul_top_iff_smul_eq_self.2
-    (by simp [Module.End.smul_def, show ∀ y, p (i y) = y from LinearMap.congr_fun hip])⟩
+    (by simp [Module.End.smul_def, ← LinearMap.comp_apply p i, hip])⟩
   invFun z := p z
   left_inv := LinearMap.congr_fun hip
   right_inv z := Subtype.ext
@@ -156,11 +156,10 @@ noncomputable def cornerEndRetractAlgEquiv {i : X →ₗ[A] M} {p : M →ₗ[A] 
   left_inv c := by
     apply Subtype.ext
     ext x
-    simp [show ∀ y, p (i y) = y from LinearMap.congr_fun hip, comp_corner_val hip c,
-      corner_val_comp hip c]
+    simp [← LinearMap.comp_apply p i, hip, comp_corner_val hip c, corner_val_comp hip c]
   right_inv g := by
     ext x
-    simp [show ∀ y, p (i y) = y from LinearMap.congr_fun hip]
+    simp [← LinearMap.comp_apply p i, hip]
   map_mul' c c' := by
     ext x
     simp [corner_val_comp hip c]
@@ -169,7 +168,7 @@ noncomputable def cornerEndRetractAlgEquiv {i : X →ₗ[A] M} {p : M →ₗ[A] 
     simp
   commutes' r := by
     ext x
-    simp [show ∀ y, p (i y) = y from LinearMap.congr_fun hip]
+    simp [← LinearMap.comp_apply p i, hip]
 
 /-- The endomorphism of `X` underlying the image of a corner element `c` is `p ∘ c ∘ i`. -/
 @[simp]
@@ -185,7 +184,7 @@ theorem val_cornerEndRetractAlgEquiv_symm_apply {i : X →ₗ[A] M} {p : M →�
     ((cornerEndRetractAlgEquiv R hip).symm g).val = i ∘ₗ g ∘ₗ p := by
   refine ((isIdempotentElem_comp hip).val_compress _).trans ?_
   ext x
-  simp [show ∀ y, p (i y) = y from LinearMap.congr_fun hip]
+  simp [← LinearMap.comp_apply p i, hip]
 
 /-- The copy `smulTopRetractAddEquiv` of `X` in `M` turns the action of the corner on `eM` into
 the action of `End_A X` on `X`. -/
@@ -203,7 +202,7 @@ theorem smulTopRetractAddEquiv_symm_smul {i : X →ₗ[A] M} {p : M →ₗ[A] X}
       g ((smulTopRetractAddEquiv hip).symm z) := by
   rw [smulTopRetractAddEquiv_symm_apply, IsIdempotentElem.Corner.coe_smul,
     val_cornerEndRetractAlgEquiv_symm_apply]
-  simp [Module.End.smul_def, show ∀ y, p (i y) = y from LinearMap.congr_fun hip]
+  simp [Module.End.smul_def, ← LinearMap.comp_apply p i, hip]
 
 /-! ### Corners of the opposite endomorphism ring -/
 

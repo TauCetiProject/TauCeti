@@ -11,7 +11,6 @@ public import TauCeti.RingTheory.Morita.Progenerator
 import TauCeti.Algebra.Category.FGModuleCat.Generator.Endomorphism
 import TauCeti.Algebra.Category.ModuleCat.Injective.AdditiveClosure
 import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
-import TauCeti.Algebra.Category.ModuleCat.RestrictScalarsIso
 
 /-!
 # The Morita-Tachikawa correspondence: injectivity on marked pairs

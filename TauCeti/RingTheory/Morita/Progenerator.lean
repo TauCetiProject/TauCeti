@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Module.Generator
 public import TauCeti.RingTheory.Idempotents.Corner.Retract
 public import TauCeti.RingTheory.Morita.Corner.Basic
 
-import TauCeti.Algebra.Category.ModuleCat.RestrictScalarsIso
+import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 import TauCeti.LinearAlgebra.Pi.Retract
 
 /-!
@@ -144,13 +144,20 @@ theorem exists_moritaEquivalence_moduleEnd_of_comp_eq_id {m n : ℕ}
       -- is already unfolded to the `smulTop` subtype; passed as a plain term, unifying the two
       -- carriers times out at `whnf`.
       fun g z ↦ by exact smulTopRetractAddEquiv_symm_smul R hY g z
+  -- The functors of the corner Morita equivalences are the corner functors `V ↦ eV`.
+  have hCp : Cp.eqv.functor = eX.cornerFunctor := by
+    simp only [Cp, IsIdempotentElem.moritaEquivalenceCorner_eqv,
+      IsIdempotentElem.cornerEquivalence_functor]
+  have hCq : Cq.eqv.functor = eY.cornerFunctor := by
+    simp only [Cq, IsIdempotentElem.moritaEquivalenceCorner_eqv,
+      IsIdempotentElem.cornerEquivalence_functor]
   refine ⟨F₁.trans R ((Cp.symm R).trans R (Cq.trans R F₂)), ⟨?_⟩⟩
   -- `X ↦ eX ↦ N ↦ eY ↦ Y`, through the unit of the first corner equivalence.
   -- The steps are kept opaque: unfolding them against the goal is slow.
-  have J₁ := (Cp.symm R).eqv.functor.mapIso I₁
+  have J₁ := (Cp.symm R).eqv.functor.mapIso (I₁ ≪≫ eqToIso (congrArg (·.obj N) hCp.symm))
   have J₂ := (Cp.eqv.unitIso.app N).symm
   have J₃ := F₂.eqv.functor.mapIso (Cq.eqv.functor.mapIso (J₁ ≪≫ J₂))
-  exact J₃ ≪≫ I₂
+  exact J₃ ≪≫ F₂.eqv.functor.mapIso (eqToIso (congrArg (·.obj N) hCq)) ≪≫ I₂
 
 end Linking
 
