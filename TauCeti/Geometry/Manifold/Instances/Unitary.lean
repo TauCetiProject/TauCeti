@@ -15,6 +15,7 @@ import TauCeti.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
+import TauCeti.Topology.Algebra.Star.RealModule
 
 /-!
 # The unitary group of a finite-dimensional real normed star algebra
@@ -251,8 +252,7 @@ theorem tangentSpaceCastModel_mfderiv_val_mem_skewAdjoint
     tangentSpaceCastModel 𝓘(ℝ, R) (1 : R) (mfderiv (model R) 𝓘(ℝ, R) Subtype.val 1 ξ) ∈
       skewAdjoint R := by
   -- A continuous additive involution is real-linear, so `star` is a continuous linear map.
-  have : StarModule ℝ R :=
-    ⟨fun r x ↦ by simpa using map_real_smul (starAddEquiv (R := R)) continuous_star r x⟩
+  have : StarModule ℝ R := ContinuousStar.starModule_real
   have hF := (starL' ℝ : R ≃L[ℝ] R).hasFDerivAt.mul' (hasFDerivAt_id (1 : R))
   have hconst : (⇑(starL' ℝ : R ≃L[ℝ] R) * id) ∘ (Subtype.val : unitary R → R) = fun _ ↦ 1 :=
     funext fun u ↦ by simp
