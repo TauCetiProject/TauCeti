@@ -29,12 +29,11 @@ values `(-1, 0)` and `(1, 0)` of the equilibria and the values of the relative e
 (`TauCeti.mem_sphericalPendulumRegularValues_iff_mem_image_and_ne`); off the axis `j = 0` they lie
 strictly above the curve of relative equilibria
 (`TauCeti.mem_sphericalPendulumTurningPointDomain_of_mem_sphericalPendulumRegularValues`). The
-energy–momentum map is proper and its fibres are connected, so over `B`, that is on the open set
-`TauCeti.sphericalPendulumRegularPart` of states over `B`, it is a regular Lagrangian torus
-fibration, and so is it over every smaller open set `U` of regular values, on the states over `U`
-(`TauCeti.isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec`), an instance of
-`TauCeti.SmoothTwoForm.IsIntegrableSystem.isLagrangianTorusFibration_restrictPreimage`. So its
-fibres are two-tori (`IsLagrangianTorusFibration.nonempty_homeomorph_unitAddTorus`), and it
+energy–momentum map is proper and its fibres are connected, so over every open set `U ⊆ B` of
+regular values, for instance `B` itself, it is a regular Lagrangian torus fibration on the open set
+of states over `U` (`TauCeti.isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec`), an
+instance of `TauCeti.SmoothTwoForm.IsIntegrableSystem.isLagrangianTorusFibration_restrictPreimage`.
+So its fibres are two-tori (`IsLagrangianTorusFibration.nonempty_homeomorph_unitAddTorus`), and it
 carries the fibrewise action of `T*U` and the period lattices
 (`IsLagrangianTorusFibration.periodLattice`) of Lagrangian torus fibrations.
 
@@ -46,7 +45,6 @@ such a loop is the Hamiltonian monodromy of the spherical pendulum.
 ## Main declarations
 
 * `TauCeti.sphericalPendulumRegularValues`: the open set of regular values in the image of `F`.
-* `TauCeti.sphericalPendulumRegularPart`: the open set of states over it.
 * `TauCeti.mem_sphericalPendulumRegularValues_iff_mem_image_and_ne`: its explicit description.
 * `TauCeti.mem_sphericalPendulumTurningPointDomain_of_mem_sphericalPendulumRegularValues`: a regular
   value off the axis lies strictly above the curve of relative equilibria.
@@ -135,21 +133,6 @@ theorem eventually_mem_sphericalPendulumRegularValues_nhdsNE :
   rw [mem_sphericalPendulumRegularValues_iff, isRegularValue_sphericalPendulumEnergyMomentumVec_iff]
   obtain ⟨y, hy, hyc⟩ := interior_subset hc
   exact ⟨⟨⟨y, hy⟩, (sphericalPendulumEnergyMomentumVec_eq_iff ⟨y, hy⟩ c).2 hyc⟩, hreg⟩
-
-/-- **The regular part of the phase space of the spherical pendulum**: the open set of states whose
-value of the energy–momentum map `![H, J]` is a regular value, the preimage of
-`sphericalPendulumRegularValues`. -/
-noncomputable def sphericalPendulumRegularPart : Opens sphericalPendulumPhaseSpace :=
-  sphericalPendulumRegularValues.comap
-    ⟨_, isIntegrableSystem_sphericalPendulumEnergyMomentumVec.contMDiff.continuous⟩
-
-/-- A state lies in the regular part of the phase space of the spherical pendulum exactly when its
-value of `![H, J]` is a regular value. -/
-@[simp]
-theorem mem_sphericalPendulumRegularPart_iff {x : sphericalPendulumPhaseSpace} :
-    x ∈ sphericalPendulumRegularPart ↔
-      sphericalPendulumEnergyMomentumVec x ∈ sphericalPendulumRegularValues :=
-  Iff.rfl
 
 /-- **The spherical pendulum is a Lagrangian torus fibration over every open set of regular
 values.** Let `U` be an open set of regular values in the image of the energy–momentum map `![H, J]`
