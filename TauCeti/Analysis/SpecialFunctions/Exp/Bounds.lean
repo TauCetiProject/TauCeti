@@ -45,10 +45,6 @@ is bounded on `x ≥ 0`.
 * `TauCeti.exp_neg_le_factorial_div_pow`: `exp (-y) ≤ n! / yⁿ` for `0 < y`.
 * `TauCeti.exists_rpow_mul_exp_neg_mul_le`: `x ^ σ exp (-c x)` is bounded on `x ≥ 0`, for `0 ≤ σ`,
   `0 < c`.
-* `TauCeti.exists_four_pow_rpow_mul_exp_neg_le`: `(4^j)^σ exp (-c (4^j - 1) t)` is at most a
-  constant times `max 1 (t^{-σ})`, uniformly in `j` and `t > 0`, and
-  `TauCeti.exists_two_rpow_mul_exp_neg_le`, its form `2^{js'} exp (-c (4^j - 1) t) ≤
-  A max 1 (t^{-σ}) 2^{js}` for `s' ≤ s + 2σ`, on the weights of Besov norms.
 * `TauCeti.abs_exp_sub_one_le_mul_exp_abs`: `|exp t - 1| ≤ |t| exp |t|` for every real `t`.
 * `TauCeti.exp_neg_mul_abs_sub_le_abs_exp_sub_exp`: `exp (-M) |a - b| ≤ |exp a - exp b|` for
   `a, b ≥ -M`.
@@ -221,68 +217,6 @@ theorem exists_rpow_mul_exp_neg_mul_le {σ c : ℝ} (hσ : 0 ≤ σ) (hc : 0 < c
   · exact (neg_mul c x ▸ hX x h).trans (le_max_left _ _)
   · exact (mul_le_of_le_one_right (by positivity) (exp_le_one_iff.2 (by nlinarith))).trans
       ((rpow_le_rpow hx (h.trans (le_max_left _ _)) hσ).trans (le_max_right _ _))
-
-/-- **The gain of the heat flow on dyadic weights.** For `σ ≥ 0` and `c > 0` there is `A ≥ 0` with
-`(4^j)^σ exp (-c (4^j - 1) t) ≤ A max 1 (t^{-σ})` for every `j` and every `t > 0`. On the
-`j`-th Littlewood–Paley block the heat flow at time `t` decays like `exp (-c (4^j - 1) t)`, and
-raising the regularity index by `2σ` multiplies the weight of that block by `(4^j)^σ`. -/
-theorem exists_four_pow_rpow_mul_exp_neg_le {σ c : ℝ} (hσ : 0 ≤ σ) (hc : 0 < c) :
-    ∃ A, 0 ≤ A ∧ ∀ (j : ℕ) {t : ℝ}, 0 < t →
-      ((4 : ℝ) ^ j) ^ σ * exp (-(c * ((4 ^ j - 1) * t))) ≤ A * max 1 (t ^ (-σ)) := by
-  obtain ⟨M, hM0, hM⟩ := exists_rpow_mul_exp_neg_mul_le hσ hc
-  refine ⟨exp c * M, by positivity, fun j t ht ↦ ?_⟩
-  have h4 : (1 : ℝ) ≤ 4 ^ j := one_le_pow₀ (by norm_num)
-  rcases le_total t 1 with h1 | h1
-  · -- For `t ≤ 1`, write `(4^j)^σ = (4^j t)^σ t^{-σ}` and use the bound at `x = 4^j t`.
-    have hx : ((4 : ℝ) ^ j) ^ σ = (4 ^ j * t) ^ σ * t ^ (-σ) := by
-      rw [mul_rpow (by positivity) ht.le, mul_assoc, ← rpow_add ht, add_neg_cancel, rpow_zero,
-        mul_one]
-    have he : -(c * ((4 ^ j - 1) * t)) = c * t + -(c * (4 ^ j * t)) := by ring
-    calc ((4 : ℝ) ^ j) ^ σ * exp (-(c * ((4 ^ j - 1) * t)))
-        = exp (c * t) * ((4 ^ j * t) ^ σ * exp (-(c * (4 ^ j * t)))) * t ^ (-σ) := by
-          rw [hx, he, exp_add]
-          ring
-      _ ≤ exp c * M * t ^ (-σ) := by
-          have hct : exp (c * t) ≤ exp c := exp_le_exp.2 (by nlinarith)
-          have hMx := hM (4 ^ j * t) (by positivity)
-          gcongr
-      _ ≤ exp c * M * max 1 (t ^ (-σ)) := by gcongr; exact le_max_right _ _
-  · -- For `t ≥ 1` the exponential only decreases in `t`, so use the bound at `x = 4^j`.
-    have he : -(c * ((4 ^ j - 1) * 1)) = c + -(c * 4 ^ j) := by ring
-    calc ((4 : ℝ) ^ j) ^ σ * exp (-(c * ((4 ^ j - 1) * t)))
-        ≤ ((4 : ℝ) ^ j) ^ σ * exp (-(c * ((4 ^ j - 1) * 1))) := by
-          gcongr
-      _ = exp c * (((4 : ℝ) ^ j) ^ σ * exp (-(c * 4 ^ j))) := by
-          rw [he, exp_add]
-          ring
-      _ ≤ exp c * M := by gcongr; exact hM _ (by positivity)
-      _ ≤ exp c * M * max 1 (t ^ (-σ)) := le_mul_of_one_le_right (by positivity)
-          (le_max_left _ _)
-
-/-- **The gain of the heat flow on dyadic Besov weights.** For `σ ≥ 0` and `c > 0` there is
-`A ≥ 0` with `2^{js'} exp (-c (4^j - 1) t) ≤ A max 1 (t^{-σ}) 2^{js}` for every `j`, every `t > 0`
-and all orders `s' ≤ s + 2σ`: a Littlewood–Paley block decaying under the heat flow like
-`exp (-c (4^j - 1) t)` gains `2σ` orders of regularity at the cost of `max 1 (t^{-σ})`. -/
-theorem exists_two_rpow_mul_exp_neg_le {σ c : ℝ} (hσ : 0 ≤ σ) (hc : 0 < c) :
-    ∃ A, 0 ≤ A ∧ ∀ {s s' : ℝ}, s' ≤ s + 2 * σ → ∀ (j : ℕ) {t : ℝ}, 0 < t →
-      (2 : ℝ) ^ (s' * j) * exp (-(c * ((4 ^ j - 1) * t))) ≤ A * max 1 (t ^ (-σ)) * 2 ^ (s * j) := by
-  obtain ⟨A, hA0, hA⟩ := exists_four_pow_rpow_mul_exp_neg_le hσ hc
-  refine ⟨A, hA0, fun {s s'} hs' j t ht ↦ ?_⟩
-  -- Raising the order from `s` to `s + 2σ` multiplies the weight `2^{js}` by `(4^j)^σ`.
-  have h4 : (4 : ℝ) ^ j = 2 ^ (2 * j : ℝ) := by
-    rw [rpow_mul zero_le_two, rpow_natCast, rpow_two]
-    norm_num
-  have hw : (2 : ℝ) ^ ((s + 2 * σ) * j) = ((4 : ℝ) ^ j) ^ σ * 2 ^ (s * j) := by
-    rw [h4, ← rpow_mul zero_le_two, ← rpow_add two_pos]
-    ring_nf
-  have hs'j : (2 : ℝ) ^ (s' * j) ≤ ((4 : ℝ) ^ j) ^ σ * 2 ^ (s * j) :=
-    (rpow_le_rpow_of_exponent_le one_le_two
-      (mul_le_mul_of_nonneg_right hs' j.cast_nonneg)).trans_eq hw
-  calc (2 : ℝ) ^ (s' * j) * exp (-(c * ((4 ^ j - 1) * t)))
-      ≤ ((4 : ℝ) ^ j) ^ σ * 2 ^ (s * j) * exp (-(c * ((4 ^ j - 1) * t))) := by gcongr
-    _ = ((4 : ℝ) ^ j) ^ σ * exp (-(c * ((4 ^ j - 1) * t))) * 2 ^ (s * j) := by ring
-    _ ≤ A * max 1 (t ^ (-σ)) * 2 ^ (s * j) :=
-        mul_le_mul_of_nonneg_right (hA j ht) (by positivity)
 
 /-- `|exp t - 1| ≤ |t| exp |t|` for every real `t`, a global form of the mean value inequality for
 the exponential. -/

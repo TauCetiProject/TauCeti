@@ -12,7 +12,6 @@ public import TauCeti.Analysis.PDE.HeatKernel.TemperedDistribution
 import Mathlib.Analysis.Normed.Group.Tannery
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.PDE.HeatKernel.FrequencyLocalized
-import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 
 /-!
 # The heat semigroup on Besov spaces

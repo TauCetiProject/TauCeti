@@ -11,7 +11,6 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 import TauCeti.Analysis.Fourier.Torus.SchwartzMultiplier
 import TauCeti.Analysis.PDE.HeatKernel.Basic
 import TauCeti.Analysis.PDE.HeatKernel.FrequencyLocalized
-import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 
 /-!
 # The heat semigroup on periodic Besov spaces
