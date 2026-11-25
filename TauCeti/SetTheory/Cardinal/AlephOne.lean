@@ -127,11 +127,8 @@ theorem countable_toType_add_one_of_lt_omega_one {α : Ordinal.{w}} (hα : α < 
 theorem not_countable_Ico_omega_one {a : Ordinal.{w}} (ha : a < ω₁) :
     ¬ (Ico a ω₁ : Set Ordinal.{w}).Countable := by
   intro h
-  have hIio : (Iio ω₁ : Set Ordinal.{w}).Countable := by
-    refine ((countable_Iio_of_lt_omega_one ha).union h).mono fun β hβ ↦ ?_
-    by_cases hβa : β < a
-    · exact .inl hβa
-    · exact .inr ⟨not_lt.1 hβa, hβ⟩
+  have hIio : (Iio ω₁ : Set Ordinal.{w}).Countable :=
+    Iio_union_Ico_eq_Iio ha.le ▸ (countable_Iio_of_lt_omega_one ha).union h
   rw [← le_aleph0_iff_set_countable, cardinalMk_Iio, card_omega, lift_le_aleph0] at hIio
   exact aleph0_lt_aleph_one.not_ge hIio
 
