@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.Semireal.Defs
 public import Mathlib.Analysis.Complex.Basic
 
 /-!
@@ -82,6 +83,9 @@ On the closed right half-plane `0 ≤ z.re`, `1 + z` has real part and norm at l
 (`Complex.one_le_re_one_add`, `Complex.one_le_norm_one_add`).
 
 A real linear isometry from the plane maps `i` to a unit vector (`LinearIsometry.norm_map_I`).
+
+There is no ring homomorphism from `ℂ` to a semireal semiring, such as `ℝ` or any linearly
+ordered ring (`Complex.instIsEmptyRingHom`).
 -/
 
 public section
@@ -498,6 +502,14 @@ theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + �
     rw [add_im, ← eq_neg_iff_add_eq_zero] at h0
     rw [h0, abs_neg] at h
     exact h.false
+
+/-- There is no ring homomorphism from `ℂ` to a semireal semiring `R` (one in which `1 + s ≠ 0`
+for every sum of squares `s`), such as `ℝ` or any linearly ordered ring: it would send
+`1 + I * I = 0` to `1 + f I * f I = 0`. -/
+instance instIsEmptyRingHom {R : Type*} [NonAssocSemiring R] [IsSemireal R] :
+    IsEmpty (ℂ →+* R) :=
+  ⟨fun f => IsSemireal.one_add_ne_zero (IsSumSq.mul_self (f I)) <| by
+    rw [← map_one f, ← map_mul, ← map_add, I_mul_I, add_neg_cancel, map_zero]⟩
 
 end Complex
 
