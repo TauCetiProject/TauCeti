@@ -45,11 +45,8 @@ variable {R : CommRingCat.{u}} (M : ModuleCat.{u} R) (k : ℕ)
 
 /-- Changing the base ring along `R ≅ Γ(Spec R, ⊤)` is an isomorphism of Grassmannians. -/
 instance isIso_grassmannianSchemeHom_tildeToTop :
-    IsIso ((isBaseChange_tildeToTop M).grassmannianSchemeHom k) := by
-  have : IsIso (Spec.map (CommRingCat.ofHom (algebraMap R Γ(Spec R, ⊤)))) := by
-    rw [Spec_map_algebraMap_Spec_top, IsAffineOpen.fromSpec_top]
-    infer_instance
-  exact ((isBaseChange_tildeToTop M).isPullback_grassmannianSchemeHom k).flip.isIso_snd_of_isIso
+    IsIso ((isBaseChange_tildeToTop M).grassmannianSchemeHom k) :=
+  (isBaseChange_tildeToTop M).isIso_grassmannianSchemeHom k bijective_algebraMap_Spec_top
 
 /-- **The relative Grassmannian of `M~` is the Grassmannian of `M`.** For a module `M` over a
 commutative ring `R`, the relative Grassmannian `G(k, M~)` of the quasi-coherent sheaf `M~` on

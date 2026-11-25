@@ -212,8 +212,10 @@ theorem IsAffineOpen.fromSpec_comp_eq_SpecMap {X : Scheme.{u}} {R : CommRingCat.
   rw [← IsAffineOpen.SpecMap_appLE_fromSpec f (isAffineOpen_top _) hU le_top,
     IsAffineOpen.fromSpec_top, Scheme.isoSpec_Spec_inv, ← Spec.map_comp]
 
-/-- The structure map `R → Γ(Spec R, ⊤)` is the inverse of `Γ(Spec R, ⊤) ≅ R`. -/
-theorem algebraMap_Spec_top {R : CommRingCat.{u}} :
+/-- The structure map `R → Γ(Spec R, ⊤)` is the inverse of `Γ(Spec R, ⊤) ≅ R`. This is Mathlib's
+`Scheme.ΓSpecIso_inv`, whose right-hand side uses the algebra structure of the structure sheaf
+rather than the one of `Γ(Spec R, ⊤)`, so it does not rewrite the statements below. -/
+private theorem algebraMap_Spec_top {R : CommRingCat.{u}} :
     algebraMap R Γ(Spec R, ⊤) = (Scheme.ΓSpecIso R).inv.hom := by
   simp only [IsAffineOpen.algebraMap_Spec_obj, homOfLE_refl, op_id, CategoryTheory.Functor.map_id,
     Category.comp_id]
