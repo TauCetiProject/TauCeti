@@ -98,12 +98,34 @@ attribute [local instance] instSeminormedAddCommGroupW1p instNormedSpaceW1p
 
 /-! ### Reduction to `H¹_Γ(Ω)` -/
 
-/-- For `w ∈ H¹_Γ(Ω)`, the function `g + w` has Dirichlet datum `g` on `Γ`. -/
-private theorem add_coe_sub_mem_w1pVanishingOnSubmodule (g : W1p mu Omega 2)
-    (w : W1pVanishingOn mu Omega 2 Γ) :
-    g + (w : W1p mu Omega 2) - g ∈ w1pVanishingOnSubmodule mu Omega 2 Γ := by
-  rw [add_sub_cancel_left, ← ClosedSubmodule.mem_toSubmodule_iff]
-  exact w.property
+/-- If `u` solves the mixed problem `B(u, ·) = ℓ` with datum `g`, then `u - g ∈ H¹_Γ(Ω)` solves the
+problem `B(w, ·) = ℓ - B(g, ·)`. -/
+private theorem forall_energyFormH1LVanishingOn_mk_sub_eq_sub
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    {g u : W1p mu Omega 2} {ℓ : StrongDual ℝ (W1pVanishingOn mu Omega 2 Γ)}
+    (hu : u - g ∈ w1pVanishingOnSubmodule mu Omega 2 Γ)
+    (hu' : ∀ v : W1pVanishingOn mu Omega 2 Γ, energyFormH1 a b c u (v : W1p mu Omega 2) = ℓ v)
+    (v : W1pVanishingOn mu Omega 2 Γ) :
+    energyFormH1LVanishingOn hcoeff Γ ⟨u - g, (ClosedSubmodule.mem_toSubmodule_iff _ _).2 hu⟩ v =
+      ℓ v - energyFormH1 a b c g (v : W1p mu Omega 2) := by
+  rw [energyFormH1LVanishingOn_apply, Submodule.coe_mk, energyFormH1_sub_left hcoeff, hu' v]
+
+/-- If `w ∈ H¹_Γ(Ω)` solves the problem `B(w, ·) = ℓ - B(g, ·)`, then `g + w` solves the mixed
+problem `B(u, ·) = ℓ` with datum `g`. -/
+private theorem add_coe_sub_mem_w1pVanishingOnSubmodule_and_forall_energyFormH1_eq
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    {g : W1p mu Omega 2} {ℓ : StrongDual ℝ (W1pVanishingOn mu Omega 2 Γ)}
+    (w : W1pVanishingOn mu Omega 2 Γ)
+    (hw : ∀ v : W1pVanishingOn mu Omega 2 Γ,
+      energyFormH1LVanishingOn hcoeff Γ w v = ℓ v - energyFormH1 a b c g (v : W1p mu Omega 2)) :
+    g + (w : W1p mu Omega 2) - g ∈ w1pVanishingOnSubmodule mu Omega 2 Γ ∧
+      ∀ v : W1pVanishingOn mu Omega 2 Γ,
+        energyFormH1 a b c (g + (w : W1p mu Omega 2)) (v : W1p mu Omega 2) = ℓ v := by
+  refine ⟨?_, fun v => ?_⟩
+  · rw [add_sub_cancel_left, ← ClosedSubmodule.mem_toSubmodule_iff]
+    exact w.property
+  · rw [energyFormH1_add_left hcoeff, ← energyFormH1LVanishingOn_apply hcoeff, hw v,
+      add_sub_cancel]
 
 /-- **The mixed problem with datum `g` as a problem in `H¹_Γ(Ω)`.** For `g ∈ H¹(Ω)` and
 `ℓ ∈ (H¹_Γ(Ω))*`, the problem `B(u, ·) = ℓ` on `H¹_Γ(Ω)` with `u - g ∈ H¹_Γ(Ω)` has a solution `u`
@@ -116,15 +138,10 @@ theorem exists_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq_iff_exists
         ∀ v : W1pVanishingOn mu Omega 2 Γ, energyFormH1 a b c u (v : W1p mu Omega 2) = ℓ v) ↔
       ∃ w : W1pVanishingOn mu Omega 2 Γ, ∀ v : W1pVanishingOn mu Omega 2 Γ,
         energyFormH1LVanishingOn hcoeff Γ w v =
-          ℓ v - energyFormH1 a b c g (v : W1p mu Omega 2) := by
-  simp only [energyFormH1LVanishingOn_apply]
-  constructor
-  · rintro ⟨u, hu, hu'⟩
-    refine ⟨⟨u - g, (ClosedSubmodule.mem_toSubmodule_iff _ _).2 hu⟩, fun v => ?_⟩
-    rw [Submodule.coe_mk, energyFormH1_sub_left hcoeff, hu' v]
-  · rintro ⟨w, hw⟩
-    refine ⟨g + w, add_coe_sub_mem_w1pVanishingOnSubmodule g w, fun v => ?_⟩
-    rw [energyFormH1_add_left hcoeff, hw v, add_sub_cancel]
+          ℓ v - energyFormH1 a b c g (v : W1p mu Omega 2) :=
+  ⟨fun ⟨_, hu, hu'⟩ => ⟨_, forall_energyFormH1LVanishingOn_mk_sub_eq_sub hcoeff hu hu'⟩,
+    fun ⟨w, hw⟩ => ⟨g + w,
+      add_coe_sub_mem_w1pVanishingOnSubmodule_and_forall_energyFormH1_eq hcoeff w hw⟩⟩
 
 /-- **Unique solvability with datum `g`, reduced to `H¹_Γ(Ω)`.** For `g ∈ H¹(Ω)` and
 `ℓ ∈ (H¹_Γ(Ω))*`, the problem `B(u, ·) = ℓ` on `H¹_Γ(Ω)` with `u - g ∈ H¹_Γ(Ω)` has exactly one
@@ -138,27 +155,17 @@ theorem existsUnique_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq_iff_
       ∃! w : W1pVanishingOn mu Omega 2 Γ, ∀ v : W1pVanishingOn mu Omega 2 Γ,
         energyFormH1LVanishingOn hcoeff Γ w v =
           ℓ v - energyFormH1 a b c g (v : W1p mu Omega 2) := by
-  simp only [energyFormH1LVanishingOn_apply]
-  -- `u ↦ u - g` is a bijection from the functions with datum `g` onto `H¹_Γ(Ω)`.
-  have hsol (w : W1pVanishingOn mu Omega 2 Γ)
-      (hw : ∀ v : W1pVanishingOn mu Omega 2 Γ, energyFormH1 a b c (w : W1p mu Omega 2)
-        (v : W1p mu Omega 2) = ℓ v - energyFormH1 a b c g (v : W1p mu Omega 2)) :
-      g + (w : W1p mu Omega 2) - g ∈ w1pVanishingOnSubmodule mu Omega 2 Γ ∧
-        ∀ v : W1pVanishingOn mu Omega 2 Γ,
-          energyFormH1 a b c (g + (w : W1p mu Omega 2)) (v : W1p mu Omega 2) = ℓ v :=
-    ⟨add_coe_sub_mem_w1pVanishingOnSubmodule g w, fun v => by
-      rw [energyFormH1_add_left hcoeff, hw v, add_sub_cancel]⟩
   constructor
   · rintro ⟨u, ⟨hu, hu'⟩, huniq⟩
-    refine ⟨⟨u - g, (ClosedSubmodule.mem_toSubmodule_iff _ _).2 hu⟩, fun v => ?_,
+    refine ⟨_, forall_energyFormH1LVanishingOn_mk_sub_eq_sub hcoeff hu hu',
       fun w hw => Subtype.ext ?_⟩
-    · rw [Submodule.coe_mk, energyFormH1_sub_left hcoeff, hu' v]
-    · exact eq_sub_of_add_eq' (huniq _ (hsol w hw))
+    exact eq_sub_of_add_eq'
+      (huniq _ (add_coe_sub_mem_w1pVanishingOnSubmodule_and_forall_energyFormH1_eq hcoeff w hw))
   · rintro ⟨w, hw, hwuniq⟩
-    refine ⟨g + w, hsol w hw, fun u ⟨hu, hu'⟩ => ?_⟩
-    have := hwuniq ⟨u - g, (ClosedSubmodule.mem_toSubmodule_iff _ _).2 hu⟩ fun v => by
-      rw [Submodule.coe_mk, energyFormH1_sub_left hcoeff, hu' v]
-    rw [← this, Submodule.coe_mk, add_sub_cancel]
+    refine ⟨g + w, add_coe_sub_mem_w1pVanishingOnSubmodule_and_forall_energyFormH1_eq hcoeff w hw,
+      fun u ⟨hu, hu'⟩ => ?_⟩
+    rw [← hwuniq _ (forall_energyFormH1LVanishingOn_mk_sub_eq_sub hcoeff hu hu'), Submodule.coe_mk,
+      add_sub_cancel]
 
 /-! ### The structure of the solution set -/
 
