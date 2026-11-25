@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Local.Norm
 import TauCeti.Analysis.Sobolev.Local.ChainRule.Continuity
 import TauCeti.Analysis.Sobolev.Local.Multiplication.Bound.Higher
+import TauCeti.Analysis.Sobolev.Local.Norm.LinearIsometryEquiv
 import TauCeti.Analysis.Sobolev.WeakDeriv.ChainRule
 
 /-!
@@ -22,9 +23,7 @@ set `U` whose closure is compact and contained in `Ω` there is a constant `C`, 
 
 for every `u` continuous on `Ω` with `u(Ω) ⊆ L` (`TauCeti.exists_eLpNormWkp_succ_comp_le`). This is
 the local bound that accompanies the membership statement
-`TauCeti.MemWkpLoc.contDiffOn_comp_succ`. The constant depends on `g` only through bounds for its
-derivatives through order `k + 1` on `L`. For `p > 2` the continuity of `u` is no restriction,
-by Morrey's embedding.
+`TauCeti.MemWkpLoc.contDiffOn_comp_succ`.
 
 ## Proof
 
@@ -156,21 +155,11 @@ theorem exists_eLpNormWkp_succ_comp_le (hp : 2 < p) (k : ℕ) {g : F → G} {W L
       eLpNormWkp p U (k + 1) (fun z => g (u z)) ≤
         C * (1 + eLpNormWkp p Ω (k + 1) u) ^ (k + 1) := by
   -- Move the values to `ULift G`, which lies in a universe at least that of `F`.
-  let e : G ≃L[ℝ] ULift.{uF} G := (LinearIsometryEquiv.ulift ℝ G).symm.toContinuousLinearEquiv
+  let e : G ≃ₗᵢ[ℝ] ULift.{uF} G := (LinearIsometryEquiv.ulift ℝ G).symm
   obtain ⟨C, hC⟩ := exists_eLpNormWkp_succ_comp_le_aux hp k (g := fun x => e (g x)) hW
-    (e.contDiff.comp_contDiffOn hg) hL hLW hU hUΩ
-  refine ⟨‖(e.symm : ULift.{uF} G →L[ℝ] G)‖₊ * C, fun u huc huL => ?_⟩
-  calc
-    _ ≤ ‖(e.symm : ULift.{uF} G →L[ℝ] G)‖ₑ *
-        eLpNormWkp p U (k + 1) (fun z => e (g (u z))) := by
-      convert eLpNormWkp_clm_comp_le (e.symm : ULift.{uF} G →L[ℝ] G) using 2
-      simp
-    _ ≤ ‖(e.symm : ULift.{uF} G →L[ℝ] G)‖ₑ * (C * (1 + eLpNormWkp p Ω (k + 1) u) ^ (k + 1)) := by
-      gcongr
-      exact hC u huc huL
-    _ = _ := by
-      rw [eNorm_eq_nnNorm]
-      push_cast
-      ring
+    (e.toContinuousLinearEquiv.contDiff.comp_contDiffOn hg) hL hLW hU hUΩ
+  refine ⟨C, fun u huc huL => ?_⟩
+  rw [← eLpNormWkp_linearIsometryEquiv_comp e]
+  exact hC u huc huL
 
 end TauCeti

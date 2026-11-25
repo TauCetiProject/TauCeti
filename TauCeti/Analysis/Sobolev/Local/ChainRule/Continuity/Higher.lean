@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Local.ChainRule.Continuity
 import TauCeti.Analysis.Sobolev.Local.ChainRule.Higher
 import TauCeti.Analysis.Sobolev.Local.Multiplication.Bound.Higher
+import TauCeti.Analysis.Sobolev.Local.Norm.LinearIsometryEquiv
 import TauCeti.Analysis.Sobolev.WeakDeriv.ChainRule
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
@@ -227,21 +228,19 @@ theorem MemWkpLoc.tendsto_eLpNormWkp_succ_comp_sub {G : Type uG} [NormedAddCommG
       Tendsto (fun n => eLpNormWkp p K (k + 1) (u n - u₀)) l (𝓝 0)) :
     ∀ K ⊆ (Ω : Set ℂ), IsCompact K →
       Tendsto (fun n => eLpNormWkp p K (k + 1) (g ∘ u n - g ∘ u₀)) l (𝓝 0) := by
-  -- Move the values to `ULift G`, which lies in a universe at least that of `F`.
-  let e : G ≃L[ℝ] ULift.{uF} G := (LinearIsometryEquiv.ulift ℝ G).symm.toContinuousLinearEquiv
-  have hg' : ContDiffOn ℝ (k + 1) (fun x => e (g x)) W := e.contDiff.comp_contDiffOn hg
+  -- Move the values to `ULift G`, which lies in a universe at least that of `F`; this does not
+  -- change any `W^{k,p}` size.
+  let e : G ≃ₗᵢ[ℝ] ULift.{uF} G := (LinearIsometryEquiv.ulift ℝ G).symm
+  have hg' : ContDiffOn ℝ (k + 1) (fun x => e (g x)) W :=
+    e.toContinuousLinearEquiv.contDiff.comp_contDiffOn hg
   intro K hKΩ hK
   have h := tendsto_eLpNormWkp_succ_comp_sub_aux hp k (g := fun x => e (g x)) hu₀ hW hg' hu₀W
     huc hunif hlim K hKΩ hK
-  have hle (n : ι) : eLpNormWkp p K (k + 1) (g ∘ u n - g ∘ u₀) ≤
-      ‖(e.symm : ULift.{uF} G →L[ℝ] G)‖ₑ *
-        eLpNormWkp p K (k + 1) ((fun x => e (g x)) ∘ u n - (fun x => e (g x)) ∘ u₀) := by
-    convert eLpNormWkp_clm_comp_le (e.symm : ULift.{uF} G →L[ℝ] G) using 2
-    ext z
+  have heq (n : ι) : eLpNormWkp p K (k + 1) ((fun x => e (g x)) ∘ u n - (fun x => e (g x)) ∘ u₀) =
+      eLpNormWkp p K (k + 1) (g ∘ u n - g ∘ u₀) := by
+    rw [← eLpNormWkp_linearIsometryEquiv_comp e]
+    refine congrArg _ (funext fun z => ?_)
     simp
-  have h' := ENNReal.Tendsto.const_mul (a := ‖(e.symm : ULift.{uF} G →L[ℝ] G)‖ₑ) h
-    (Or.inr eNorm_ne_top)
-  rw [mul_zero] at h'
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h' (fun _ => zero_le) hle
+  simpa only [heq] using h
 
 end TauCeti
