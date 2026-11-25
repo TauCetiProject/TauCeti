@@ -44,7 +44,8 @@ curvatures `1` and `H = 1`.
 * `TauCeti.boundaryMeanCurvature`: the mean curvature `H(q) = tr S_q / n`, with
   `TauCeti.sum_boundarySecondFundamentalForm_eq_mul_boundaryMeanCurvature`: `tr_h II = n H`, the
   sum of `II_q(e_i, e_i)` over every `h`-orthonormal basis `(e_i)`, and
-  `TauCeti.mul_boundaryMeanCurvature`: `n H` is the sum of the principal curvatures.
+  `TauCeti.mul_boundaryMeanCurvature`, `TauCeti.boundaryMeanCurvature_eq_sum_div`: `n H` is the
+  sum of the principal curvatures, `H` their average.
 
 ## References
 
@@ -95,47 +96,18 @@ theorem boundaryInducedForm_apply (q : (𝓡∂ (n + 1)).boundary M)
           (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q w⟫_ℝ :=
   (rfl)
 
+/-- The induced metric is symmetric. -/
+theorem boundaryInducedForm_isSymm (q : (𝓡∂ (n + 1)).boundary M) :
+    (boundaryInducedForm q).IsSymm :=
+  ⟨fun u w ↦ by rw [boundaryInducedForm_apply, real_inner_comm, ← boundaryInducedForm_apply]⟩
+
 /-- The induced metric is nondegenerate: the differential of the inclusion is injective. -/
 theorem boundaryInducedForm_nondegenerate (q : (𝓡∂ (n + 1)).boundary M) :
     (boundaryInducedForm q).Nondegenerate := by
-  have hrefl : (boundaryInducedForm q).IsRefl := fun u w h ↦ by
-    rwa [boundaryInducedForm_apply, real_inner_comm, ← boundaryInducedForm_apply]
-  refine hrefl.nondegenerate_iff_separatingLeft.mpr fun u hu ↦ ?_
+  refine (boundaryInducedForm_isSymm q).isRefl.nondegenerate_iff_separatingLeft.mpr fun u hu ↦ ?_
   have h := hu u
   rw [boundaryInducedForm_apply, real_inner_self_eq_norm_sq, sq_eq_zero_iff, norm_eq_zero] at h
   exact injective_mfderiv_subtypeVal_boundary q (h.trans (map_zero _).symm)
-
-omit [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)] in
-/-- The tangent space of the boundary manifold is finite-dimensional. -/
-private theorem finiteDimensional_tangentSpace_boundary (q : (𝓡∂ (n + 1)).boundary M) :
-    FiniteDimensional ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :=
-  inferInstanceAs (FiniteDimensional ℝ (EuclideanSpace ℝ (Fin n)))
-
-omit [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)] in
-/-- The tangent space `T_q∂M ⊆ T_qM` of the boundary is finite-dimensional. -/
-private theorem finiteDimensional_boundaryTangentSpace (q : (𝓡∂ (n + 1)).boundary M) :
-    FiniteDimensional ℝ (boundaryTangentSpace q) :=
-  have : FiniteDimensional ℝ (TangentSpace (𝓡∂ (n + 1)) (q : M)) :=
-    inferInstanceAs (FiniteDimensional ℝ (EuclideanSpace ℝ (Fin (n + 1))))
-  FiniteDimensional.finiteDimensional_submodule _
-
-/-- The differential `dι_q` of the boundary inclusion, as a linear isomorphism from the tangent
-space of the boundary manifold onto the tangent space `T_q∂M ⊆ T_qM` of the boundary. It is an
-isometry for the induced metric (`TauCeti.boundaryInducedForm_eq_inner_boundaryTangentEquiv`). -/
-def boundaryTangentEquiv (q : (𝓡∂ (n + 1)).boundary M) :
-    TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q ≃ₗ[ℝ] boundaryTangentSpace q :=
-  (LinearEquiv.ofInjective _ (injective_mfderiv_subtypeVal_boundary q)).trans
-    (LinearEquiv.ofEq _ _ (boundaryTangentSpace_def q).symm)
-
-omit [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)] in
-/-- The isomorphism `TauCeti.boundaryTangentEquiv` is the differential of the inclusion. -/
-@[simp]
-theorem coe_boundaryTangentEquiv_apply (q : (𝓡∂ (n + 1)).boundary M)
-    (u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
-    (boundaryTangentEquiv q u : TangentSpace (𝓡∂ (n + 1)) (q : M)) =
-      mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
-        (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u :=
-  (rfl)
 
 /-- The induced metric is the inner product of `T_q∂M ⊆ T_qM`, transported along
 `TauCeti.boundaryTangentEquiv`. -/
@@ -153,16 +125,14 @@ end InducedForm
 `h(S_q u, w) = II_q(u, w)` for the induced metric `h` and the second fundamental form `II`. -/
 def boundaryWeingarten (q : (𝓡∂ (n + 1)).boundary M) :
     Module.End ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :=
-  letI := finiteDimensional_tangentSpace_boundary q
   (boundarySecondFundamentalForm q).symmCompOfNondegenerate (boundaryInducedForm q)
     (boundaryInducedForm_nondegenerate q)
 
 /-- **The defining property of the Weingarten map**: `h(S_q u, w) = II_q(u, w)`. -/
 theorem boundaryInducedForm_boundaryWeingarten (q : (𝓡∂ (n + 1)).boundary M)
     (u w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
-    boundaryInducedForm q (boundaryWeingarten q u) w = boundarySecondFundamentalForm q u w := by
-  have := finiteDimensional_tangentSpace_boundary q
-  exact LinearMap.BilinForm.symmCompOfNondegenerate_left_apply _ _ w u
+    boundaryInducedForm q (boundaryWeingarten q u) w = boundarySecondFundamentalForm q u w :=
+  LinearMap.BilinForm.symmCompOfNondegenerate_left_apply _ _ w u
 
 /-- The Weingarten map is the unique endomorphism `S` of `T_q∂M` with `h(S u, w) = II_q(u, w)`. -/
 theorem eq_boundaryWeingarten_iff (q : (𝓡∂ (n + 1)).boundary M)
@@ -179,9 +149,8 @@ theorem boundaryInducedForm_boundaryWeingarten_comm (q : (𝓡∂ (n + 1)).bound
     (u w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
     boundaryInducedForm q (boundaryWeingarten q u) w =
       boundaryInducedForm q u (boundaryWeingarten q w) := by
-  rw [boundaryInducedForm_boundaryWeingarten, boundaryInducedForm_apply, real_inner_comm,
-    ← boundaryInducedForm_apply, boundaryInducedForm_boundaryWeingarten,
-    (boundarySecondFundamentalForm_isSymm q).eq]
+  rw [boundaryInducedForm_boundaryWeingarten, (boundaryInducedForm_isSymm q).eq,
+    boundaryInducedForm_boundaryWeingarten, (boundarySecondFundamentalForm_isSymm q).eq]
 
 /-! ### The Weingarten equation -/
 
@@ -224,8 +193,7 @@ theorem leviCivitaConnection_eq_mfderiv_boundaryWeingarten (q : (𝓡∂ (n + 1)
     linarith
   rw [boundaryTangentSpace_def] at hmem
   obtain ⟨v, hv⟩ := hmem
-  change mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
-    (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q v = _ at hv
+  rw [ContinuousLinearMap.coe_coe] at hv
   rw [← hv]
   congr 1
   -- `h(v, w) = ⟨∇_{dι u} N, dι w⟩ = II_q(u, w) = h(S_q u, w)` for every `w`.
@@ -245,6 +213,7 @@ def boundaryWeingartenTangent (q : (𝓡∂ (n + 1)).boundary M) :
   (boundaryTangentEquiv q).conj (boundaryWeingarten q)
 
 /-- `TauCeti.boundaryWeingartenTangent` is conjugate to the Weingarten map. -/
+@[simp]
 theorem boundaryWeingartenTangent_boundaryTangentEquiv (q : (𝓡∂ (n + 1)).boundary M)
     (u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
     boundaryWeingartenTangent q (boundaryTangentEquiv q u) =
@@ -266,7 +235,6 @@ theorem isSymmetric_boundaryWeingartenTangent (q : (𝓡∂ (n + 1)).boundary M)
 /-- The **principal curvatures** `κ₁ ≥ ⋯ ≥ κₙ` of the boundary at `q ∈ ∂M`: the eigenvalues of the
 Weingarten map `S_q`, which is self-adjoint for the induced metric, in decreasing order. -/
 def boundaryPrincipalCurvatures (q : (𝓡∂ (n + 1)).boundary M) : Fin n → ℝ :=
-  letI := finiteDimensional_boundaryTangentSpace q
   (isSymmetric_boundaryWeingartenTangent q).eigenvalues (finrank_boundaryTangentSpace q)
 
 /-- The **principal directions** of the boundary at `q ∈ ∂M`: a basis of the tangent space of the
@@ -274,34 +242,29 @@ boundary, orthonormal for the induced metric, of eigenvectors of the Weingarten 
 `i`-th with eigenvalue the `i`-th principal curvature. -/
 def boundaryPrincipalDirection (q : (𝓡∂ (n + 1)).boundary M) (i : Fin n) :
     TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q :=
-  letI := finiteDimensional_boundaryTangentSpace q
   (boundaryTangentEquiv q).symm
     ((isSymmetric_boundaryWeingartenTangent q).eigenvectorBasis (finrank_boundaryTangentSpace q) i)
 
 /-- The principal curvatures are listed in decreasing order. -/
 theorem boundaryPrincipalCurvatures_antitone (q : (𝓡∂ (n + 1)).boundary M) :
-    Antitone (boundaryPrincipalCurvatures q) := by
-  have := finiteDimensional_boundaryTangentSpace q
-  exact LinearMap.IsSymmetric.eigenvalues_antitone _ _
+    Antitone (boundaryPrincipalCurvatures q) :=
+  LinearMap.IsSymmetric.eigenvalues_antitone _ _
 
 /-- The `i`-th principal direction is an eigenvector of the Weingarten map for the `i`-th
 principal curvature: `S_q eᵢ = κᵢ eᵢ`. -/
 theorem boundaryWeingarten_boundaryPrincipalDirection (q : (𝓡∂ (n + 1)).boundary M) (i : Fin n) :
     boundaryWeingarten q (boundaryPrincipalDirection q i) =
       boundaryPrincipalCurvatures q i • boundaryPrincipalDirection q i := by
-  have := finiteDimensional_boundaryTangentSpace q
   apply (boundaryTangentEquiv q).injective
   rw [← boundaryWeingartenTangent_boundaryTangentEquiv, boundaryPrincipalDirection,
     LinearEquiv.apply_symm_apply, LinearMap.IsSymmetric.apply_eigenvectorBasis, map_smul,
-    LinearEquiv.apply_symm_apply, boundaryPrincipalCurvatures]
-  rfl
+    LinearEquiv.apply_symm_apply, boundaryPrincipalCurvatures, RCLike.ofReal_real_eq_id, id]
 
 /-- The principal directions are orthonormal for the induced metric. -/
 theorem boundaryInducedForm_boundaryPrincipalDirection (q : (𝓡∂ (n + 1)).boundary M)
     (i j : Fin n) :
     boundaryInducedForm q (boundaryPrincipalDirection q i) (boundaryPrincipalDirection q j) =
       if i = j then 1 else 0 := by
-  have := finiteDimensional_boundaryTangentSpace q
   rw [boundaryInducedForm_eq_inner_boundaryTangentEquiv, boundaryPrincipalDirection,
     boundaryPrincipalDirection, LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply,
     OrthonormalBasis.inner_eq_ite]
@@ -327,7 +290,6 @@ theorem boundaryPrincipalDirection_ne_zero (q : (𝓡∂ (n + 1)).boundary M) (i
 theorem hasEigenvalue_boundaryWeingarten_iff (q : (𝓡∂ (n + 1)).boundary M) (μ : ℝ) :
     Module.End.HasEigenvalue (boundaryWeingarten q) μ ↔
       ∃ i, boundaryPrincipalCurvatures q i = μ := by
-  have := finiteDimensional_boundaryTangentSpace q
   constructor
   · intro hμ
     obtain ⟨x, hx⟩ := hμ.exists_hasEigenvector
@@ -350,21 +312,29 @@ principal curvatures (`TauCeti.mul_boundaryMeanCurvature`). It is meaningful for
 def boundaryMeanCurvature (q : (𝓡∂ (n + 1)).boundary M) : ℝ :=
   LinearMap.trace ℝ _ (boundaryWeingarten q) / n
 
+/-- The defining formula of `TauCeti.boundaryMeanCurvature`: `H(q) = tr S_q / n`. -/
+theorem boundaryMeanCurvature_def (q : (𝓡∂ (n + 1)).boundary M) :
+    boundaryMeanCurvature q = LinearMap.trace ℝ _ (boundaryWeingarten q) / n :=
+  (rfl)
+
 /-- The trace of the Weingarten map is the sum of the principal curvatures. -/
 theorem trace_boundaryWeingarten (q : (𝓡∂ (n + 1)).boundary M) :
     LinearMap.trace ℝ _ (boundaryWeingarten q) = ∑ i, boundaryPrincipalCurvatures q i := by
-  have := finiteDimensional_boundaryTangentSpace q
   rw [← LinearMap.trace_conj' (boundaryWeingarten q) (boundaryTangentEquiv q)]
   exact (isSymmetric_boundaryWeingartenTangent q).trace_eq_sum_eigenvalues
     (finrank_boundaryTangentSpace q)
+
+/-- The mean curvature is the average of the principal curvatures, `H = (∑ᵢ κᵢ) / n`. -/
+theorem boundaryMeanCurvature_eq_sum_div (q : (𝓡∂ (n + 1)).boundary M) :
+    boundaryMeanCurvature q = (∑ i, boundaryPrincipalCurvatures q i) / n := by
+  rw [boundaryMeanCurvature_def, trace_boundaryWeingarten]
 
 /-- `n H` is the sum of the principal curvatures. -/
 theorem mul_boundaryMeanCurvature (q : (𝓡∂ (n + 1)).boundary M) :
     (n : ℝ) * boundaryMeanCurvature q = ∑ i, boundaryPrincipalCurvatures q i := by
   rcases eq_or_ne n 0 with rfl | hn
   · simp
-  · rw [boundaryMeanCurvature, trace_boundaryWeingarten,
-      mul_div_cancel₀ _ (Nat.cast_ne_zero.mpr hn)]
+  · rw [boundaryMeanCurvature_eq_sum_div, mul_div_cancel₀ _ (Nat.cast_ne_zero.mpr hn)]
 
 /-- **`tr_h II = n H`**: for every basis `(eᵢ)` of the tangent space of the boundary at `q`,
 orthonormal for the induced metric, `∑ᵢ II_q(eᵢ, eᵢ) = n H(q)`. -/
@@ -372,7 +342,6 @@ theorem sum_boundarySecondFundamentalForm_eq_mul_boundaryMeanCurvature
     (q : (𝓡∂ (n + 1)).boundary M) (e : Fin n → TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q)
     (he : ∀ i j, boundaryInducedForm q (e i) (e j) = if i = j then 1 else 0) :
     ∑ i, boundarySecondFundamentalForm q (e i) (e i) = n * boundaryMeanCurvature q := by
-  have := finiteDimensional_boundaryTangentSpace q
   have hon : Orthonormal ℝ fun i ↦ boundaryTangentEquiv q (e i) := by
     rw [orthonormal_iff_ite]
     intro i j
