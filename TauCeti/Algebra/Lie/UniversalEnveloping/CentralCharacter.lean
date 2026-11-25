@@ -55,8 +55,9 @@ not from Schur's lemma.
   a central element acts by its central character, which is the only scalar doing so
   (`centralCharacterOfForallExistsSmul_eq_of_representation_eq_smul`) and its eigenvalue on any
   nonzero vector (`centralCharacterOfForallExistsSmul_eq_of_ne_zero_of_representation_eq_smul`).
-  Equivalent modules have the same central character
-  (`centralCharacterOfForallExistsSmul_congr`).
+  It is `TauCeti.centralCharacterOfBijectiveAlgebraMap` of `M` as a `U(L)`-module
+  (`centralCharacterOfForallExistsSmul_eq_centralCharacterOfBijectiveAlgebraMap`), so equivalent
+  modules have the same central character (`centralCharacterOfForallExistsSmul_congr`).
 * `TauCeti.UniversalEnvelopingAlgebra.centralCharacter_eq_centralCharacterOfForallExistsSmul`: over
   an algebraically closed field the two constructions agree.
 * `TauCeti.UniversalEnvelopingAlgebra.representation_eq_centralCharacter_smul`: a central element
@@ -145,19 +146,34 @@ theorem centerEigenspace_centralCharacterOfForallExistsSmul :
     centerEigenspace R L M (centralCharacterOfForallExistsSmul R L M h) = ⊤ :=
   centerEigenspace_eq_top_iff.2 (representation_eq_centralCharacterOfForallExistsSmul_smul R L M h)
 
-/-- **Equivalent modules have the same central character.** -/
+/-- The central character of `M` is `TauCeti.centralCharacterOfBijectiveAlgebraMap` of `M` as a
+`U(L)`-module. -/
+theorem centralCharacterOfForallExistsSmul_eq_centralCharacterOfBijectiveAlgebraMap
+    (hb : Function.Bijective (algebraMap R (Subalgebra.center R (Module.End (U R L) M)))) :
+    centralCharacterOfForallExistsSmul R L M h =
+      centralCharacterOfBijectiveAlgebraMap R (U R L) M hb := by
+  ext z
+  exact (centralCharacterOfBijectiveAlgebraMap_eq_of_smul_eq fun m =>
+    (asModule_smul_def R L M (z : U R L) m).trans
+      (representation_eq_centralCharacterOfForallExistsSmul_smul R L M h z m)).symm
+
+/-- **Equivalent modules have the same central character.** This is
+`TauCeti.centralCharacterOfBijectiveAlgebraMap_congr`, read through the enveloping-algebra
+dictionary for equivalences. -/
 theorem centralCharacterOfForallExistsSmul_congr {N : Type x} [AddCommGroup N] [Module R N]
     [LieRingModule L N] [LieModule R L N] [FaithfulSMul R N]
     {hN : ∀ f : N →ₗ⁅R,L⁆ N, (∀ g : N →ₗ⁅R,L⁆ N, f.comp g = g.comp f) →
       ∃ c : R, ∀ n, f n = c • n}
     (e : M ≃ₗ⁅R,L⁆ N) :
     centralCharacterOfForallExistsSmul R L M h = centralCharacterOfForallExistsSmul R L N hN := by
-  ext z
-  refine (centralCharacterOfForallExistsSmul_eq_of_representation_eq_smul fun n => ?_).symm
-  obtain ⟨m, rfl⟩ := e.surjective n
-  refine (map_representation R L M N e (z : U R L) m).symm.trans ?_
-  rw [representation_eq_centralCharacterOfForallExistsSmul_smul R L M h z m]
-  exact map_smul _ _ _
+  have := isCentral_end_of_forall_exists_smul (asModule_ι_smul R L M) h
+  have := isCentral_end_of_forall_exists_smul (asModule_ι_smul R L N) hN
+  rw [centralCharacterOfForallExistsSmul_eq_centralCharacterOfBijectiveAlgebraMap
+      (bijective_algebraMap_center_end_of_isCentral R (U R L) M),
+    centralCharacterOfForallExistsSmul_eq_centralCharacterOfBijectiveAlgebraMap
+      (bijective_algebraMap_center_end_of_isCentral R (U R L) N)]
+  exact centralCharacterOfBijectiveAlgebraMap_congr
+    (lieModuleEquivEquivLinearEquiv (asModule_ι_smul R L M) (asModule_ι_smul R L N) e)
 
 end Scalar
 
@@ -205,18 +221,30 @@ theorem centerEigenspace_centralCharacter :
     centerEigenspace K L M (centralCharacter K L M) = ⊤ :=
   centerEigenspace_eq_top_iff.2 (representation_eq_centralCharacter_smul K L M)
 
-/-- **Equivalent modules have the same central character.** -/
+/-- The central character of `M` is `TauCeti.centralCharacterOfBijectiveAlgebraMap` of `M` as a
+`U(L)`-module. -/
+theorem centralCharacter_eq_centralCharacterOfBijectiveAlgebraMap
+    (hb : Function.Bijective (algebraMap K (Subalgebra.center K (Module.End (U K L) M)))) :
+    centralCharacter K L M = centralCharacterOfBijectiveAlgebraMap K (U K L) M hb := by
+  ext z
+  exact (centralCharacterOfBijectiveAlgebraMap_eq_of_smul_eq fun m =>
+    (asModule_smul_def K L M (z : U K L) m).trans
+      (representation_eq_centralCharacter_smul K L M z m)).symm
+
+/-- **Equivalent modules have the same central character.** This is
+`TauCeti.centralCharacterOfBijectiveAlgebraMap_congr`, read through the enveloping-algebra
+dictionary for equivalences. -/
 theorem centralCharacter_congr {N : Type x} [AddCommGroup N] [Module K N] [LieRingModule L N]
     [LieModule K L N] [FiniteDimensional K N] [LieModule.IsIrreducible K L N]
     (e : M ≃ₗ⁅K,L⁆ N) : centralCharacter K L M = centralCharacter K L N := by
-  ext z
-  have := LieModule.nontrivial_of_isIrreducible K L M
-  obtain ⟨m, hm⟩ := exists_ne (0 : M)
-  refine (centralCharacter_eq_of_ne_zero_of_representation_eq_smul (m := e m)
-    (by simpa using hm) ?_).symm
-  refine (map_representation K L M N e (z : U K L) m).symm.trans ?_
-  rw [representation_eq_centralCharacter_smul K L M z m]
-  exact map_smul _ _ _
+  rw [centralCharacter_eq_centralCharacterOfBijectiveAlgebraMap
+      (bijective_algebraMap_center_of_bijective
+        (IsSimpleModule.algebraMap_end_bijective_of_isAlgClosed K (A := U K L) (V := M))),
+    centralCharacter_eq_centralCharacterOfBijectiveAlgebraMap
+      (bijective_algebraMap_center_of_bijective
+        (IsSimpleModule.algebraMap_end_bijective_of_isAlgClosed K (A := U K L) (V := N)))]
+  exact centralCharacterOfBijectiveAlgebraMap_congr
+    (lieModuleEquivEquivLinearEquiv (asModule_ι_smul K L M) (asModule_ι_smul K L N) e)
 
 /-- Over an algebraically closed field, the central character of a finite-dimensional irreducible
 module is its central character as a module with scalar central endomorphisms. -/

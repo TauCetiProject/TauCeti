@@ -183,9 +183,7 @@ theorem centralCharacterOfBijectiveAlgebraMap_eq_of_smul_eq {z : Subalgebra.cent
     (hc : ∀ m : M, (z : A) • m = c • m) : centralCharacterOfBijectiveAlgebraMap k A M h z = c :=
   h.1 <| Subtype.ext <| by
     ext m
-    rw [Subalgebra.coe_algebraMap, Subalgebra.coe_algebraMap,
-      algebraMap_centralCharacterOfBijectiveAlgebraMap, centerToEnd_apply,
-      Module.algebraMap_end_apply, hc]
+    simp [hc]
 
 /-- **Isomorphic modules have the same central character.** -/
 theorem centralCharacterOfBijectiveAlgebraMap_congr {N : Type*} [AddCommMonoid N] [Module A N]

@@ -352,6 +352,12 @@ theorem complementedLattice_lieSubmodule_iff_isSemisimpleModule
   (lieSubmoduleOrderIso hcompat).complementedLattice_iff.trans
     (isSemisimpleModule_iff U M).symm
 
+/-- A `U(L)`-module structure compatible with the `R`-structure and with the Lie action makes the
+bracket `R`-bilinear: `M` is a Lie module. -/
+theorem lieModule_of_ι_smul (hM : ∀ (x : L) (m : M), ι R x • m = ⁅x, m⁆) : LieModule R L M where
+  smul_lie t x m := by rw [← hM, ← hM, map_smul, smul_assoc]
+  lie_smul t x m := by rw [← hM, ← hM, smul_comm]
+
 section Hom
 
 -- `[LieModule R L N]` is what carries Mathlib's `Module R (M →ₗ⁅R,L⁆ N)` instance
@@ -432,9 +438,7 @@ theorem isCentral_end_of_forall_exists_smul (hM : ∀ (x : L) (m : M), ι R x �
       ∃ c : R, ∀ m, f m = c • m) :
     Algebra.IsCentral R (Module.End U M) := by
   -- The compatibility `hM` makes the bracket `R`-bilinear, which `lieModuleHomEquiv` needs.
-  have : LieModule R L M :=
-    { smul_lie := fun t x m => by rw [← hM, ← hM, map_smul, smul_assoc]
-      lie_smul := fun t x m => by rw [← hM, ← hM, smul_comm] }
+  have := lieModule_of_ι_smul hM
   refine ⟨fun f hf => ?_⟩
   obtain ⟨c, hc⟩ := h ((lieModuleHomEquiv hM hM).symm f) fun g => by
     ext m
