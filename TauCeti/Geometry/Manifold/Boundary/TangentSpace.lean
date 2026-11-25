@@ -58,6 +58,10 @@ the image point.
   minimum and nonzero differential at `q` has differential vanishing exactly on `T_q∂M`.
 * `TauCeti.curveVelocity_mem_boundaryTangentSpace`: velocities of curves through the boundary.
 * `TauCeti.map_mfderiv_boundaryTangentSpace`: naturality under diffeomorphisms.
+* `TauCeti.mfderiv_mem_boundaryTangentSpace_iff`,
+  `TauCeti.eventually_mpullback_mem_boundaryTangentSpace`: a diffeomorphism sends `v` into
+  `T_{Φ q}∂M'` exactly when `v ∈ T_q∂M`, so pullbacks of fields tangent to `∂M'` are tangent to
+  `∂M`.
 
 ## References
 
@@ -374,6 +378,36 @@ theorem map_mfderiv_boundaryTangentSpace {k : WithTop ℕ∞} (hk : k ≠ 0)
     (Φ.isInvertible_mfderiv hk).injective
   rw [← (Submodule.equivMapOfInjective _ hinj _).finrank_eq, finrank_boundaryTangentSpace]
   exact (finrank_boundaryTangentSpace _).symm
+
+/-- The differential at `q ∈ ∂M` of a diffeomorphism `Φ` of manifolds with boundary, of class
+`C^k` with `k ≠ 0`, sends `v ∈ T_q M` into `T_{Φ q}∂M'` exactly when `v ∈ T_q∂M`. -/
+theorem mfderiv_mem_boundaryTangentSpace_iff {k : WithTop ℕ∞} (hk : k ≠ 0)
+    (Φ : M ≃ₘ^k⟮𝓡∂ (n + 1), 𝓡∂ (n + 1)⟯ M') (q : (𝓡∂ (n + 1)).boundary M)
+    {v : TangentSpace (𝓡∂ (n + 1)) (q : M)} :
+    mfderiv (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) Φ q v ∈
+        boundaryTangentSpace (⟨Φ q, Φ.image_boundary hk ▸ mem_image_of_mem Φ q.property⟩ :
+          (𝓡∂ (n + 1)).boundary M') ↔
+      v ∈ boundaryTangentSpace q := by
+  rw [← map_mfderiv_boundaryTangentSpace hk Φ q]
+  refine ⟨fun ⟨u, hu, huv⟩ ↦ ?_, fun hv ↦ ⟨v, hv, rfl⟩⟩
+  rwa [← (Φ.isInvertible_mfderiv hk).injective huv]
+
+/-- The pullback along a diffeomorphism `Φ` of manifolds with boundary, of class `C^k` with
+`k ≠ 0`, of a vector field tangent to `∂M'` near `Φ q` is tangent to `∂M` near `q`. -/
+theorem eventually_mpullback_mem_boundaryTangentSpace {k : WithTop ℕ∞} (hk : k ≠ 0)
+    (Φ : M ≃ₘ^k⟮𝓡∂ (n + 1), 𝓡∂ (n + 1)⟯ M') {q : (𝓡∂ (n + 1)).boundary M}
+    {V : (y : M') → TangentSpace (𝓡∂ (n + 1)) y}
+    (hV : ∀ᶠ p in 𝓝 (⟨Φ q, Φ.image_boundary hk ▸ mem_image_of_mem Φ q.property⟩ :
+      (𝓡∂ (n + 1)).boundary M'), V p ∈ boundaryTangentSpace p) :
+    ∀ᶠ p in 𝓝 q, VectorField.mpullback (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) Φ V p ∈
+      boundaryTangentSpace p := by
+  have hbd : Continuous fun p : (𝓡∂ (n + 1)).boundary M ↦
+      (⟨Φ p, Φ.image_boundary hk ▸ mem_image_of_mem Φ p.property⟩ :
+        (𝓡∂ (n + 1)).boundary M') :=
+    (Φ.continuous.comp continuous_subtypeVal).subtype_mk _
+  filter_upwards [hbd.continuousAt.eventually hV] with p hp
+  rwa [← mfderiv_mem_boundaryTangentSpace_iff hk Φ p, VectorField.mpullback_apply,
+    (Φ.isInvertible_mfderiv hk).self_apply_inverse]
 
 end Naturality
 

@@ -14,9 +14,26 @@ Two star projections `p` and `q` in a ring with a proper star (for instance a C�
 as soon as `p * q * p = q * p * q`: the commutator `x = p * q - q * p` then satisfies
 `star x * x = 0`. This is the degenerate case `τ = 0` of the relation
 `p * q * p - τ • p = q * p * q - τ • q` between projections.
+
+In a star semigroup, if a self-adjoint `s` commutes with a star projection `p`, then
+`star (s * p) * (s * p) = s * s * p`. In a C⋆-algebra this is how the square root of a positive
+element of the corner of `p` produces a factorization `a = star g * g` with `g` in the corner.
 -/
 
 public section
+
+section Semigroup
+
+variable {R : Type*} [Semigroup R] {p s : R}
+
+/-- If a self-adjoint `s` commutes with a star projection `p`, then
+`star (s * p) * (s * p) = s * s * p`. -/
+theorem IsStarProjection.star_mul_self_eq_of_commute [StarMul R] (hp : IsStarProjection p)
+    (hs : IsSelfAdjoint s) (hsp : Commute s p) : star (s * p) * (s * p) = s * s * p := by
+  simp only [star_mul, hp.isSelfAdjoint.star_eq, hs.star_eq, mul_assoc, hsp.symm.left_comm,
+    hp.isIdempotentElem.eq]
+
+end Semigroup
 
 namespace IsStarProjection
 

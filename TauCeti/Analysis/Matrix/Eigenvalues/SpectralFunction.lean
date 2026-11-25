@@ -220,10 +220,8 @@ theorem hasFDerivAt_spectralFunction (hM : ∀ x, (M x).IsHermitian)
       (0 : E →L[ℝ] ℝ) x₀ := by
     refine HasFDerivAt.of_isLittleO ?_
     have hlin (μ : Fin (Fintype.card n) → ℝ) : fderiv ℝ f μ₀ μ = ∑ j, y j * μ j := by
-      conv_lhs => rw [← univ_sum_single μ]
-      refine (map_sum _ _ _).trans (sum_congr rfl fun j _ ↦ ?_)
-      rw [show (Pi.single j (μ j) : Fin (Fintype.card n) → ℝ) = μ j • Pi.single j 1 by
-        ext k; simp [Pi.single_apply], map_smul, smul_eq_mul, mul_comm]
+      conv_lhs => rw [pi_eq_sum_univ' μ, map_sum]
+      exact sum_congr rfl fun j _ ↦ by rw [map_smul, smul_eq_mul, mul_comm]
     have htend : Tendsto (fun x ↦ (hM x).eigenvalues₀) (𝓝 x₀) (𝓝 μ₀) :=
       tendsto_pi_nhds.2 fun i ↦
         continuousAt_eigenvalues₀ hM (fun a b ↦ (hMd a b).continuousAt) i
