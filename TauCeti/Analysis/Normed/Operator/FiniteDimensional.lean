@@ -25,6 +25,8 @@ dense range. On a finite-dimensional domain over a locally compact field, such a
   every nonzero vector of a finite-dimensional domain over a locally compact field.
 * `IsCompact.isCompact_setOfPred_mapsTo`: out of a finite-dimensional space over a complete field,
   the operators sending a neighbourhood of `0` into a compact set form a compact set.
+* `LinearMap.norm_toContinuousLinearMap_pos`: a nonzero linear map out of a finite-dimensional
+  space has positive operator norm.
 * `LinearMap.norm_toContinuousLinearMap_linearIsometry_comp`,
   `LinearMap.norm_toContinuousLinearMap_comp_linearIsometryEquiv`: the operator norm of a linear
   map out of a finite-dimensional space is unchanged by a linear isometry on the left and an
@@ -141,6 +143,12 @@ namespace LinearMap
 variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- A nonzero linear map out of a finite-dimensional space has positive operator norm. -/
+theorem norm_toContinuousLinearMap_pos {A : E →ₗ[𝕜] F} (hA : A ≠ 0) :
+    0 < ‖toContinuousLinearMap A‖ := by
+  rw [norm_pos_iff]
+  exact (map_ne_zero_iff _ toContinuousLinearMap.injective).mpr hA
 
 /-- Composing a linear map out of a finite-dimensional space on the left with a linear isometry
 leaves its operator norm unchanged. -/
