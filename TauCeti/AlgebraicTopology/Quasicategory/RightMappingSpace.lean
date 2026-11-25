@@ -928,19 +928,19 @@ with its endpoints written as images under `q` of vertices of `Y`. -/
 def map {q : Y ⟶ S} (F : X ⟶ Y) (hF : F ≫ q = p) {e : Edge (p.app _ x) (p.app _ y)}
     {e' : Edge (q.app _ (F.app _ x)) (q.app _ (F.app _ y))} (he : e'.edge = e.edge) :
     (rightMappingSpaceOver p e : SSet.{u}) ⟶ (rightMappingSpaceOver q e' : SSet.{u}) :=
-  Subcomplex.lift ((rightMappingSpaceOver p e).ι ≫ rightMappingSpace.map x y F) (by
+  by
     subst hF
     obtain rfl : e' = e := Edge.ext he
-    unfold rightMappingSpaceOver
-    rw [range_le_fiber_iff, Category.assoc, ← rightMappingSpace.map_comp]
-    exact fiber.ι_comp _ _)
+    exact fiber.map (rightMappingSpace.map x y F) (rightMappingSpace.map_comp x y F q).symm _
 
 @[reassoc (attr := simp)]
 lemma map_ι {q : Y ⟶ S} (F : X ⟶ Y) (hF : F ≫ q = p) {e : Edge (p.app _ x) (p.app _ y)}
     {e' : Edge (q.app _ (F.app _ x)) (q.app _ (F.app _ y))} (he : e'.edge = e.edge) :
     map F hF he ≫ (rightMappingSpaceOver q e').ι =
-      (rightMappingSpaceOver p e).ι ≫ rightMappingSpace.map x y F :=
-  Subcomplex.lift_ι _ _
+      (rightMappingSpaceOver p e).ι ≫ rightMappingSpace.map x y F := by
+  subst hF
+  obtain rfl : e' = e := Edge.ext he
+  exact fiber.map_ι (rightMappingSpace.map x y F) (rightMappingSpace.map_comp x y F q).symm _
 
 end rightMappingSpaceOver
 
