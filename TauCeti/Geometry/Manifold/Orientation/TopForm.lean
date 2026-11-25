@@ -33,6 +33,8 @@ between nowhere-vanishing top forms and orientations; it holds at boundary and c
   form.
 * `TauCeti.Manifold.Orientation.orientation_eq_orientationAt_ofTopForm_iff`: a tangent basis is
   positive for it exactly when the form is positive on the basis.
+* `TauCeti.Manifold.Orientation.ofTopForm_eq_of_eq_smul`: a pointwise positive multiple of a top
+  form defines the same orientation.
 * `TauCeti.Manifold.Orientation.ofTopForm_eq_neg_of_eq_smul`: a pointwise negative multiple of a
   top form defines the opposite orientation.
 * `TauCeti.Manifold.Orientation.isOrientationPreservingAt_ofTopForm_of_mpullback_eq_smul`,
@@ -241,6 +243,20 @@ theorem ofTopForm_eq_neg_of_eq_smul [IsManifold I 1 M] (hk : Module.finrank ℝ 
   · rw [ite_eq_left hb] at h₁
     rw [ite_eq_right (mul_neg_of_neg_of_pos (hc x) hb).not_gt] at h₂
     rw [← h₁, h₂, neg_neg (G := _root_.Orientation ℝ (TangentSpace I x) (Fin k))]
+
+/-- A top form that is a pointwise positive multiple of another one defines the same
+orientation. -/
+theorem ofTopForm_eq_of_eq_smul [IsManifold I 1 M] (hk : Module.finrank ℝ E = k)
+    {φ φ' : RoughForm I M ℝ k} (hφ : IsSmoothForm I 0 φ) (h0 : ∀ x, φ x ≠ 0)
+    (hφ' : IsSmoothForm I 0 φ') (h0' : ∀ x, φ' x ≠ 0) {c : M → ℝ} (hc : ∀ x, 0 < c x)
+    (h : ∀ x, φ' x = c x • φ x) : ofTopForm hk φ' hφ' h0' = ofTopForm hk φ hφ h0 := by
+  -- Compare both forms with `-φ`, a negative multiple of each.
+  have hneg : IsSmoothForm I 0 (-φ) := hφ.neg
+  have h0neg : ∀ x, (-φ) x ≠ 0 := fun x ↦ neg_ne_zero.2 (h0 x)
+  rw [ofTopForm_eq_neg_of_eq_smul hk hneg h0neg hφ' h0' (c := fun x ↦ -c x)
+      (fun x ↦ neg_lt_zero.2 (hc x)) (fun x ↦ by rw [h, Pi.neg_apply, neg_smul_neg]),
+    ofTopForm_eq_neg_of_eq_smul hk hφ h0 hneg h0neg (c := fun _ ↦ -1) (fun _ ↦ by norm_num)
+      (fun x ↦ (neg_one_smul ℝ (φ x)).symm), neg_neg]
 
 variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
   [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M']

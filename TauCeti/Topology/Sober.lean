@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.NoetherianSpace
 public import Mathlib.Topology.Sober
 public import TauCeti.Logic.Equiv.Set
 
@@ -17,7 +18,8 @@ In a sober space, the generic points of irreducible components are precisely the
 with no proper generization. Every point of a closed subset is a specialization of such a
 generic point of that subset, which has no proper generization in the subset
 (`IsClosed.exists_maximal_specializes`). These facts let one choose component-generic points
-without Noetherianity or a dimension argument.
+without Noetherianity or a dimension argument. In a Noetherian space, every dense open set contains
+all the component-generic points.
 
 In a quasi-sober space where the closure of every component-generic point has nonempty
 interior, a generization-stable subset is dense exactly when it contains all component-generic
@@ -125,6 +127,18 @@ theorem IsClosed.exists_maximal_specializes {X : Type*} [TopologicalSpace X] [Qu
   refine ⟨z, z.property, hzx, fun y hy hyz ↦ ?_⟩
   exact congrArg Subtype.val ((TauCeti.mem_genericPoints_iff.mp hz) ⟨y, hy⟩
     ((subtype_specializes_iff _ _).mpr hyz))
+
+/-- In a Noetherian space, a dense open set contains the generic point of every irreducible
+component. -/
+theorem Dense.genericPoints_subset {X : Type*} [TopologicalSpace X]
+    [TopologicalSpace.NoetherianSpace X] {U : Set X} (hU : Dense U) (hUo : IsOpen U) :
+    genericPoints X ⊆ U := by
+  -- Each irreducible component contains a nonempty open set, which meets `U`.
+  intro η hη
+  obtain ⟨o, ho, hne, hoC⟩ :=
+    TopologicalSpace.NoetherianSpace.exists_isOpen_nonempty_subset_irreducibleComponent _ hη
+  obtain ⟨y, hyo, hyU⟩ := hU.inter_open_nonempty o ho hne
+  exact (isGenericPoint_closure (x := η)).mem_open_set_iff hUo |>.mpr ⟨y, hoC hyo, hyU⟩
 
 section Maps
 

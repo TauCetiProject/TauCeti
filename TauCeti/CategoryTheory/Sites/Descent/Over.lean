@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Sites.Descent.IsStack
 public import TauCeti.CategoryTheory.Sites.Descent.IsPrestack
-public import TauCeti.CategoryTheory.Sites.Over
+public import TauCeti.CategoryTheory.Sites.Over.Basic
 
 /-!
 # Restricting a pseudofunctor to a slice site
