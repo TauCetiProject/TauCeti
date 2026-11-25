@@ -76,6 +76,7 @@ theorem IsQuasiHomogeneous.congr_degree {a : ParameterSymbol n Λ V W m}
     (ha : a.IsQuasiHomogeneous μ) (h : μ = μ') : a.IsQuasiHomogeneous μ' :=
   h ▸ ha
 
+@[simp]
 theorem isQuasiHomogeneous_zero : (0 : ParameterSymbol n Λ V W m).IsQuasiHomogeneous μ :=
   fun _ _ _ _ _ => by simp
 
@@ -87,9 +88,14 @@ theorem IsQuasiHomogeneous.smul {a : ParameterSymbol n Λ V W m} (ha : a.IsQuasi
     (c : ℂ) : (c • a).IsQuasiHomogeneous μ := fun p hp t ht htp => by
   rw [coefficient_smul, Pi.smul_apply, Pi.smul_apply, ha p hp t ht htp, smul_comm]
 
+@[simp]
+theorem isQuasiHomogeneous_neg_iff {a : ParameterSymbol n Λ V W m} :
+    (-a).IsQuasiHomogeneous μ ↔ a.IsQuasiHomogeneous μ := by
+  simp only [IsQuasiHomogeneous, coefficient_neg, Pi.neg_apply, smul_neg, neg_inj]
+
 theorem IsQuasiHomogeneous.neg {a : ParameterSymbol n Λ V W m} (ha : a.IsQuasiHomogeneous μ) :
-    (-a).IsQuasiHomogeneous μ := fun p hp t ht htp => by
-  rw [coefficient_neg, Pi.neg_apply, Pi.neg_apply, ha p hp t ht htp, smul_neg]
+    (-a).IsQuasiHomogeneous μ :=
+  isQuasiHomogeneous_neg_iff.2 ha
 
 theorem IsQuasiHomogeneous.sub {a b : ParameterSymbol n Λ V W m} (ha : a.IsQuasiHomogeneous μ)
     (hb : b.IsQuasiHomogeneous μ) : (a - b).IsQuasiHomogeneous μ := fun p hp t ht htp => by
@@ -101,9 +107,14 @@ theorem IsQuasiHomogeneous.sum {ι : Type*} {s : Finset ι} {f : ι → Paramete
     simp only [coefficient_sum, Finset.sum_apply, Finset.smul_sum]
     exact Finset.sum_congr rfl fun i hi => hf i hi p hp t ht htp
 
+@[simp]
+theorem isQuasiHomogeneous_inclusion_iff {a : ParameterSymbol n Λ V W m} (h : m ≤ m') :
+    (inclusion h a).IsQuasiHomogeneous μ ↔ a.IsQuasiHomogeneous μ := by
+  simp only [IsQuasiHomogeneous, coefficient_inclusion]
+
 theorem IsQuasiHomogeneous.inclusion {a : ParameterSymbol n Λ V W m} (ha : a.IsQuasiHomogeneous μ)
-    (h : m ≤ m') : (inclusion h a).IsQuasiHomogeneous μ := by
-  simpa only [IsQuasiHomogeneous, coefficient_inclusion] using ha
+    (h : m ≤ m') : (inclusion h a).IsQuasiHomogeneous μ :=
+  (isQuasiHomogeneous_inclusion_iff h).2 ha
 
 /-- The pointwise composition of quasi-homogeneous symbols of degrees `μ'` and `μ` is
 quasi-homogeneous of degree `μ' + μ`. -/

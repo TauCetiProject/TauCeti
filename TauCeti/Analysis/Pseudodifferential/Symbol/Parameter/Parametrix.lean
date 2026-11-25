@@ -722,8 +722,8 @@ private theorem exists_oneTermExpansion :
     ⟨fun x ξ z hz => by simpa using ha.isInvertible x ξ z hz,
       fun K hK => by simpa using ha.exists_bound K hK⟩, by simp, by simp, fun μ hμ j => ?_⟩
   rcases j with _ | j
-  · simpa using hμ.inclusion (m' := m - ((0 : ℕ) : ℝ)) (by simp)
-  · simpa using isQuasiHomogeneous_zero
+  · simpa using hμ
+  · simp
 
 /-- **Homogeneity of the left parametrix.** If `a` is homogeneous of degree `μ` under
 `(ξ, z) ↦ (t ξ, t² z)`, the term `bₖ` of its left parametrix is homogeneous of degree `-μ - k`. -/
