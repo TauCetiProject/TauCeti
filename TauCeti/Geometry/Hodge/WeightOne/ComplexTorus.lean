@@ -146,27 +146,24 @@ variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E'] [FiniteDimens
 into `Λ'`, the real extension of its restriction `Λ → Λ'` corresponds to `f` under the
 identifications `ℝ ⊗[ℤ] Λ ≃ E` and `ℝ ⊗[ℤ] Λ' ≃ E'`. -/
 @[simp]
-theorem realificationEquiv_baseChange_restrict (f : E →ₗ[ℂ] E') (hf : ∀ x ∈ Λ, f x ∈ Λ')
-    (x : Hodge.Realification Λ) :
+theorem realificationEquiv_baseChange_restrict (f : E →ₗ[ℂ] E')
+    (hf : ∀ x ∈ Λ, f.restrictScalars ℤ x ∈ Λ') (x : Hodge.Realification Λ) :
     realificationEquiv Λ' (LinearMap.baseChange ℝ ((f.restrictScalars ℤ).restrict hf) x) =
       f (realificationEquiv Λ x) := by
   induction x using TensorProduct.inductionOn with
-  | tmul r x =>
-    rw [LinearMap.baseChange_tmul, realificationEquiv_tmul, realificationEquiv_tmul,
-      LinearMap.coe_restrict_apply (f := f.restrictScalars ℤ) hf,
-      LinearMap.restrictScalars_apply, LinearMap.map_smul_of_tower]
+  | tmul r x => simp
   | add x y hx hy => simp [hx, hy]
 
 /-- **Complex-linear maps of tori give complex-linear maps of realifications**: if a complex-linear
 map `f : E → E'` carries `Λ` into `Λ'`, the real extension of its restriction `Λ → Λ'` is complex
 linear for the complex structures of the two tori. -/
-theorem isComplexLinearMap_baseChange (f : E →ₗ[ℂ] E') (hf : ∀ x ∈ Λ, f x ∈ Λ') :
+theorem isComplexLinearMap_baseChange (f : E →ₗ[ℂ] E')
+    (hf : ∀ x ∈ Λ, f.restrictScalars ℤ x ∈ Λ') :
     IsComplexLinearMap (almostComplexStructure Λ) (almostComplexStructure Λ')
       (LinearMap.baseChange ℝ ((f.restrictScalars ℤ).restrict hf)) := by
   rw [isComplexLinearMap_iff_apply]
   intro x
   apply (realificationEquiv Λ').injective
-  rw [realificationEquiv_baseChange_restrict, realificationEquiv_almostComplexStructure,
-    realificationEquiv_almostComplexStructure, realificationEquiv_baseChange_restrict, map_smul]
+  simp
 
 end TauCeti.ComplexTorus
