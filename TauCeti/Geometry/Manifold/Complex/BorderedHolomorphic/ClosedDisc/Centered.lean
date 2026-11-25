@@ -152,6 +152,12 @@ theorem coe_cayleyChart_apply {ζ : ℂ} {hζ : ‖ζ‖ = 1} (z : CenteredClose
     (cayleyChart ζ hζ z : ℂ) = I * (ζ - z) / (ζ + z) :=
   Complex.UnitClosedDisc.coe_cayleyChart_apply _
 
+/-- The inverse of a Cayley chart is `w ↦ ζ (I - w) / (w + I)`. -/
+@[simp]
+theorem coe_cayleyChart_symm_apply {ζ : ℂ} {hζ : ‖ζ‖ = 1} (w : ClosedUpperHalfPlane) :
+    ((cayleyChart ζ hζ).symm w : ℂ) = ζ * (I - w) / (w + I) :=
+  Complex.UnitClosedDisc.coe_cayleyChart_symm_apply _
+
 @[simp]
 theorem cayleyChart_source {ζ : ℂ} {hζ : ‖ζ‖ = 1} :
     (cayleyChart ζ hζ).source = {z : CenteredClosedDisc | (z : ℂ) ≠ -ζ} :=
@@ -161,11 +167,15 @@ theorem cayleyChart_source {ζ : ℂ} {hζ : ‖ζ‖ = 1} :
 theorem cayleyChart_target {ζ : ℂ} {hζ : ‖ζ‖ = 1} : (cayleyChart ζ hζ).target = univ :=
   Complex.UnitClosedDisc.cayleyChart_target
 
-/-- A point of the source of a Cayley chart has image of positive imaginary part exactly when it
-lies in the open unit disc. -/
-theorem im_cayleyChart_pos_iff {ζ : ℂ} {hζ : ‖ζ‖ = 1} {z : CenteredClosedDisc}
-    (hz : z ∈ (cayleyChart ζ hζ).source) : 0 < (cayleyChart ζ hζ z : ℂ).im ↔ ‖(z : ℂ)‖ < 1 :=
-  Complex.UnitClosedDisc.im_cayleyChart_pos_iff hz
+/-- The image of a point under a Cayley chart has positive imaginary part exactly when the point
+lies in the open unit disc. At `z = -ζ`, outside the source, the chart takes the value `0` and
+`‖z‖ = 1`, so both sides fail there too. -/
+theorem im_cayleyChart_pos_iff {ζ : ℂ} {hζ : ‖ζ‖ = 1} {z : CenteredClosedDisc} :
+    0 < (cayleyChart ζ hζ z : ℂ).im ↔ ‖(z : ℂ)‖ < 1 := by
+  by_cases hz : (z : ℂ) = -ζ
+  · simp [hz, hζ]
+  · exact Complex.UnitClosedDisc.im_cayleyChart_pos_iff
+      (show z ∈ (cayleyChart ζ hζ).source by rw [cayleyChart_source]; exact hz)
 
 /-- The closed unit disc with the Cayley charts as atlas, the preferred chart at `z` being centered
 at `TauCeti.CenteredClosedDisc.center z`. -/
@@ -195,6 +205,12 @@ theorem mem_atlas_iff {e : OpenPartialHomeomorph CenteredClosedDisc ClosedUpperH
     e ∈ atlas ClosedUpperHalfPlane CenteredClosedDisc ↔
       ∃ (ζ : ℂ) (hζ : ‖ζ‖ = 1), e = cayleyChart ζ hζ :=
   Iff.rfl
+
+/-- Every Cayley chart belongs to the atlas. -/
+@[simp]
+theorem cayleyChart_mem_atlas (ζ : ℂ) (hζ : ‖ζ‖ = 1) :
+    cayleyChart ζ hζ ∈ atlas ClosedUpperHalfPlane CenteredClosedDisc :=
+  mem_atlas_iff.2 ⟨ζ, hζ, rfl⟩
 
 /-- The closed disc with Cayley charts centered at boundary points is a Riemann surface with
 boundary. -/

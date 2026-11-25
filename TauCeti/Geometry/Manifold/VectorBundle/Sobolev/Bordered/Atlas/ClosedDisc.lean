@@ -277,14 +277,10 @@ theorem image_fiveChartAtlas_zero_subset :
     (FiniteBundleAtlas.mem_image (A := fiveChartAtlas F) (i := (0 : Fin 5))).1 hw
   simp only [fiveChartAtlas_dom, fiveDom_zero, mem_innerDom] at hz
   have hz1 : ‖(z : ℂ)‖ < 1 := hz.trans (by norm_num)
-  have hsrc : z ∈ (cayleyChart 1 norm_one).source := by
-    rw [cayleyChart_source]
-    intro h
-    simp [h] at hz1
   have hc : chartAt ClosedUpperHalfPlane (mk 0 (by simp)) = cayleyChart 1 norm_one :=
     chartAt_eq_cayleyChart _ center_mk_zero
   simp only [FiniteBundleAtlas.chart, fiveChartAtlas_center, fiveCenter_zero, hc]
-  exact (im_cayleyChart_pos_iff hsrc).2 hz1
+  exact im_cayleyChart_pos_iff.2 hz1
 
 variable [FiniteDimensional ℝ F] (p : ℝ≥0∞) [Fact (1 ≤ p)] (k : ℕ)
 
@@ -310,10 +306,19 @@ def fiveEightAtlasEquiv : BorderedSobolevSection (fiveChartAtlas F) p k ≃L[ℝ
 
 /-- `fiveEightAtlasEquiv` acts as `TauCeti.BorderedSobolevSection.changeAtlas`; its chart data are
 described by `TauCeti.BorderedSobolevSection.chartValueL_changeAtlas_ae`. -/
+@[simp]
 theorem fiveEightAtlasEquiv_apply (w : BorderedSobolevSection (fiveChartAtlas F) p k) :
     fiveEightAtlasEquiv F p k w =
       BorderedSobolevSection.changeAtlas (transfersTo_disc F p k _ _) w :=
   BorderedSobolevSection.atlasEquiv_apply _ _ w
+
+/-- The inverse of `fiveEightAtlasEquiv` acts as `TauCeti.BorderedSobolevSection.changeAtlas`
+from the eight-chart atlas back to the five-chart atlas. -/
+@[simp]
+theorem fiveEightAtlasEquiv_symm_apply (w : BorderedSobolevSection (eightChartAtlas F) p k) :
+    (fiveEightAtlasEquiv F p k).symm w =
+      BorderedSobolevSection.changeAtlas (transfersTo_disc F p k _ _) w :=
+  BorderedSobolevSection.atlasEquiv_symm_apply _ _ w
 
 /-- **Equivalence of norms on the closed disc.** The Sobolev norms of the five-chart atlas and the
 eight-chart atlas are equivalent: some constant `C > 0` bounds each by `C` times the other, and
