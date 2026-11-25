@@ -297,4 +297,14 @@ lemma overIsoRestrict_hom_hom_app {F F' : Sheaf J A} {Y V : C} (e : F.over Y ≅
   -- `Category.id_comp` applies up to that unfolding.
   exact (Category.id_comp _).trans (Category.comp_id _)
 
+@[simp]
+lemma overIsoRestrict_inv_hom_app {F F' : Sheaf J A} {Y V : C} (e : F.over Y ≅ F'.over Y)
+    (f : V ⟶ Y) (W : (Over V)ᵒᵖ) :
+    (overIsoRestrict e f).inv.hom.app W = e.inv.hom.app (op ((Over.map f).obj W.unop)) := by
+  simp only [overIsoRestrict, Iso.trans_inv, Iso.symm_inv, Functor.mapIso_inv,
+    ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
+    Sheaf.pushforwardOverMapIso_inv_hom_app, Sheaf.pushforwardOverMapIso_hom_hom_app]
+  -- As in `overIsoRestrict_hom_hom_app`, the identities only match up to unfolding `Over.map`.
+  exact (Category.comp_id _).trans (Category.id_comp _)
+
 end CategoryTheory.Sheaf

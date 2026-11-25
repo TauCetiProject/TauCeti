@@ -13,7 +13,9 @@ public import Mathlib.CategoryTheory.Sites.PreservesLocallyBijective
 public import Mathlib.RingTheory.Noetherian.Basic
 public import TauCeti.Algebra.Category.ModuleCat.ForgetCorepresentable
 public import TauCeti.CategoryTheory.Sites.Continuous
+public import TauCeti.CategoryTheory.Sites.Grothendieck
 public import TauCeti.CategoryTheory.Sites.Limits
+public import TauCeti.CategoryTheory.Sites.LocallyBijective
 public import TauCeti.CategoryTheory.Sites.LocallyConstant.Basic
 
 /-!
@@ -108,32 +110,18 @@ theorem exists_mem_comp_app_eq {M N : ModuleCat.{w} Λ} [Module.Finite Λ M]
   refine ⟨R, ?_, fun Z f hf ↦ hf⟩
   obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := Λ) (M := M)
   -- A covering sieve over which the images of the generators are constant sections.
-  have hcov (t : Finset M) : ∃ S ∈ J Y, ∀ ⦃Z : C⦄ (f : Z ⟶ Y), S f → ∀ m ∈ t,
-      Presheaf.imageSieve q (L Y m) f := by
-    induction t using Finset.induction_on with
-    | empty => exact ⟨⊤, J.top_mem Y, by simp⟩
-    | insert m t _ ih =>
-      obtain ⟨S, hS, hSt⟩ := ih
-      refine ⟨S ⊓ Presheaf.imageSieve q (L Y m), J.intersection_covering hS
-        (Presheaf.imageSieve_mem J q (L Y m)), fun Z f hf m' hm' ↦ ?_⟩
-      obtain rfl | hm' := Finset.mem_insert.1 hm'
-      exacts [hf.2, hSt f hf.1 m' hm']
-  obtain ⟨S, hS, hSs⟩ := hcov s
+  let S : Sieve Y := s.inf fun m ↦ Presheaf.imageSieve q (L Y m)
+  have hS : S ∈ J Y := J.finset_inf_mem fun m _ ↦ Presheaf.imageSieve_mem J q (L Y m)
   refine J.transitive hS R fun Z f hf ↦ ?_
   by_cases hbot : ⊥ ∈ J Z
   · exact J.superset_covering bot_le hbot
   refine J.covering_of_eq_top (Sieve.pullback_eq_top_of_mem R ?_)
-  -- Over `Z`, the map `q` is injective, since covering sieves of `Z` are nonempty.
-  have hinj : Function.Injective (q.app (op Z)).hom := fun x y hxy ↦ by
-    have hmem := Presheaf.equalizerSieve_mem J q x y hxy
-    by_contra hne
-    refine hbot (J.superset_covering (fun W k hk ↦ hne ?_) hmem)
-    -- The constant presheaf on `N` maps `k.op` to the identity of `N`.
-    simpa using hk
+  have hinj : Function.Injective (q.app (op Z)).hom :=
+    Presheaf.injective_app_of_isLocallyInjective_const J q hbot
   have hrange : LinearMap.range (L Z) ≤ LinearMap.range (q.app (op Z)).hom := by
     rw [LinearMap.range_eq_map, ← hs, Submodule.map_span_le]
     intro m hm
-    obtain ⟨n, hn⟩ := hSs f hf m hm
+    obtain ⟨n, hn⟩ := Finset.inf_le (f := fun m ↦ Presheaf.imageSieve q (L Y m)) hm f hf
     exact ⟨n, hn.trans (hL f m).symm⟩
   let e := LinearEquiv.ofInjective (q.app (op Z)).hom hinj
   refine ⟨ModuleCat.ofHom (e.symm.toLinearMap ∘ₗ (L Z).codRestrict _ fun m ↦ hrange ⟨m, rfl⟩), ?_⟩
@@ -268,15 +256,7 @@ end Constant
 
 section Closure
 
-variable [HasSheafify J (ModuleCat.{w} Λ)]
-
-/-- The constant sheaf functor preserves finite colimits: it is the constant presheaf functor
-followed by sheafification, both of which preserve finite colimits. -/
-instance preservesFiniteColimits_constantSheaf :
-    PreservesFiniteColimits (constantSheaf J (ModuleCat.{w} Λ)) :=
-  inferInstanceAs (PreservesFiniteColimits (Functor.const Cᵒᵖ ⋙ presheafToSheaf J _))
-
-variable [J.WEqualsLocallyBijective (ModuleCat.{w} Λ)]
+variable [HasSheafify J (ModuleCat.{w} Λ)] [J.WEqualsLocallyBijective (ModuleCat.{w} Λ)]
 
 /-- **Kernels of locally constant sheaves.** Over a Noetherian ring `Λ`, the kernel of a morphism
 between sheaves of `Λ`-modules that are locally constant of finite type is locally constant of
