@@ -35,7 +35,10 @@ A degree-preserving linear map `f` commuting with the endomorphisms, which inter
 products up to coboundaries on cocycles and sends the unit to the unit up to a coboundary, induces
 an `R`-algebra homomorphism of cohomology rings (`LinearMap.cohomologyAlgHom`), given in each
 degree by the induced map `LinearMap.cohomologyMap`. If the induced map is bijective in every
-degree, it is an isomorphism of `R`-algebras (`LinearMap.cohomologyAlgEquiv`).
+degree, it is an isomorphism of `R`-algebras (`LinearMap.cohomologyAlgEquiv`). The condition on
+the units is automatic once the induced map is onto in degree zero
+(`LinearMap.sub_mem_coboundaries_of_surjective_cohomologyMap`): a multiplicative map onto the
+cohomology of a unital product sends the unit to the unit.
 
 The degree-wise cohomology is that of `TauCeti.Algebra.Homology.SquareZero.Graded`, where `M` need
 not be the direct sum of the pieces `G i`; the ring is the direct sum of the cohomology groups of
@@ -321,6 +324,34 @@ variable {N : Type*} [AddCommGroup N] [Module R N] {E : N →ₗ[R] N} {H : ℤ 
   (hfmul : ∀ {i j : ℤ} {a b : M}, a ∈ D.cocycles G i → b ∈ D.cocycles G j →
     f (μ a b) - ν (f a) (f b) ∈ E.coboundaries H (i + j))
   (hfone : f e - e' ∈ E.coboundaries H 0)
+
+include he he' hμone_mul hνdeg hνL hνmul_one hfmul in
+/-- **A multiplicative map onto degree-zero cohomology preserves the unit.** Let `f` be a
+degree-preserving linear map commuting with the endomorphisms such that `f (μ a b) - ν (f a) (f b)`
+is a coboundary for all cocycles `a` and `b`, where `e` is a left unit of `μ` and `e'` a right unit
+of `ν` up to coboundaries. If the map induced by `f` on degree-zero cohomology is onto, then
+`f e - e'` is a coboundary: if `[f a] = [e']`, then
+`[f e] = [f e] [e'] = [f e] [f a] = [f (μ e a)] = [f a] = [e']`. -/
+theorem sub_mem_coboundaries_of_surjective_cohomologyMap
+    (hsurj : Function.Surjective (cohomologyMap (G₁ := G) (G₀ := H) f hfdeg hfD 0)) :
+    f e - e' ∈ E.coboundaries H 0 := by
+  obtain ⟨x, hx⟩ := hsurj (Submodule.Quotient.mk ⟨e', he'⟩)
+  induction x using Submodule.Quotient.induction_on with | H a => ?_
+  rw [cohomologyMap_mk, cohomology_mk_eq_mk_iff] at hx
+  have hfe := apply_mem_cocycles_of_mem_cocycles f hfdeg hfD he
+  -- `ν (f e) (f a - e')` is the product of a cocycle and a coboundary.
+  have hprod : ν (f e) (f a - e') ∈ E.coboundaries H 0 :=
+    apply_mem_coboundaries_of_right ν (apply_mem_add_zero ν hνdeg) hνL (by norm_num) hfe hx
+  have hmul : f (μ e a) - ν (f e) (f a) ∈ E.coboundaries H 0 := by
+    simpa only [add_zero] using hfmul he a.property
+  have hone : f (μ e a - a) ∈ E.coboundaries H 0 :=
+    apply_mem_coboundaries_of_mem_coboundaries f hfdeg hfD (hμone_mul a.property)
+  have heq : f e - e' = -(ν (f e) e' - f e) - ν (f e) (f a - e') -
+      (f (μ e a) - ν (f e) (f a)) + f (μ e a - a) + (f a - e') := by
+    simp only [map_sub]
+    abel
+  rw [heq]
+  exact add_mem (add_mem (sub_mem (sub_mem (neg_mem (hνmul_one hfe)) hprod) hmul) hone) hx
 
 /-- **The algebra homomorphism of cohomology rings induced by a multiplicative map.** Let `f` be a
 degree-preserving linear map commuting with the endomorphisms. If `f (μ a b) - ν (f a) (f b)` is a
