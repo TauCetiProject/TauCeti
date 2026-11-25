@@ -105,4 +105,23 @@ theorem grpObjOfMono_inv (i : H ⟶ G) [Mono i]
     (hj : j ≫ i = i ≫ ι[G]) :
     (grpObjOfMono i e m j he hm hj).inv = j := (rfl)
 
+omit [GrpObj G] in
+/-- A group structure on the source of a morphism into a monoid object for which the morphism is a
+homomorphism transports along an isomorphism of sources compatible with the two morphisms. -/
+theorem exists_grpObj_isMonHom_iff_of_iso [MonObj G] {K : C} (e : H ≅ K) {i : H ⟶ G}
+    {j : K ⟶ G} (h : e.hom ≫ j = i) :
+    (∃ _ : GrpObj H, IsMonHom i) ↔ ∃ _ : GrpObj K, IsMonHom j := by
+  constructor
+  · rintro ⟨_, _⟩
+    let : GrpObj K := .ofIso e
+    refine ⟨this, ?_⟩
+    rw [← Iso.inv_hom_id_assoc e j, h]
+    infer_instance
+  · rintro ⟨_, _⟩
+    let : GrpObj H := .ofIso e.symm
+    refine ⟨this, ?_⟩
+    have : IsMonHom e.hom := inferInstanceAs (IsMonHom e.symm.inv)
+    rw [← h]
+    infer_instance
+
 end TauCeti
