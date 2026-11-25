@@ -55,6 +55,8 @@ of `A` run over the whole basis without splitting off the kernel.
 * `LinearMap.sq_singularValues_antitone`: the squared singular values are nonincreasing.
 * `LinearMap.sq_singularValues_eq_of_adjoint_comp_self_eigenbasis`: any sorted orthonormal
   Gram eigenbasis recovers the squared singular values, with a zero tail.
+* `LinearMap.IsPositive.eigenvalues_eq_singularValues`: the sorted eigenvalues of a positive
+  endomorphism are its singular values.
 * `LinearMap.norm_apply_le_of_mem_spanIndices_of_adjoint_comp_self_eigenbasis`: an upper bound
   for `‖A x‖` on a span of Gram eigenvectors with bounded eigenvalues.
 * `LinearMap.adjoint_comp_self_rightSingularBasis`: `A† A vᵢ = σᵢ² vᵢ`.
@@ -63,6 +65,8 @@ of `A` run over the whole basis without splitting off the kernel.
 * `LinearMap.singularValues_mul_norm_le_norm_apply`,
   `LinearMap.norm_apply_le_singularValues_mul_norm`: `σₙ ‖x‖ ≤ ‖A x‖` on the span of the `vᵢ`
   with `i ≤ n`, and `‖A x‖ ≤ σₙ ‖x‖` on the span of the `vᵢ` with `n ≤ i`.
+* `LinearMap.exists_unit_vector_norm_apply_le_singularValues`: every subspace of dimension at
+  least `k + 1` contains a unit vector `x` with `‖A x‖ ≤ σₖ`.
 * `LinearMap.apply_rightSingularBasis`: `A vᵢ = σᵢ uᵢ`.
 * `LinearMap.adjoint_leftSingularVector`: `A† uᵢ = σᵢ vᵢ`.
 * `LinearMap.self_comp_adjoint_leftSingularVector`: `A A† uᵢ = σᵢ² uᵢ`.
@@ -357,6 +361,19 @@ theorem sq_singularValues_eq_of_adjoint_comp_self_eigenbasis (A : E →ₗ[𝕜]
   rw [A.sq_singularValues_fin hm k,
     A.isSymmetric_adjoint_comp_self.eigenvalues_eq_of_eigenbasis hm e hμ he]
 
+/-- The sorted eigenvalues of a positive endomorphism are its singular values. -/
+theorem IsPositive.eigenvalues_eq_singularValues {P : E →ₗ[𝕜] E} (hP : P.IsPositive) {n : ℕ}
+    (hn : finrank 𝕜 E = n) (j : Fin n) :
+    hP.isSymmetric.eigenvalues hn j = P.singularValues j := by
+  -- The eigenbasis of `P` is a Gram eigenbasis with the sorted eigenvalues `λᵢ²`.
+  have hsq := P.sq_singularValues_eq_of_adjoint_comp_self_eigenbasis
+    (hP.isSymmetric.eigenvectorBasis hn) (μ := fun i ↦ hP.isSymmetric.eigenvalues hn i ^ 2)
+    (fun _ k hik ↦ pow_le_pow_left₀ (hP.nonneg_eigenvalues hn k)
+      (hP.isSymmetric.eigenvalues_antitone hn hik) 2)
+    (fun i ↦ by
+      simp [hP.isSymmetric.adjoint_eq, hP.isSymmetric.apply_eigenvectorBasis, smul_smul, sq]) j
+  exact (sq_eq_sq₀ (hP.nonneg_eigenvalues hn j) (P.singularValues_nonneg j)).mp hsq.symm
+
 /-- On the span of the right singular vectors `vᵢ` with `n ≤ i`, `A` stretches every vector by at
 most the `n`-th singular value: `‖A x‖ ≤ σₙ ‖x‖`. -/
 theorem norm_apply_le_singularValues_mul_norm {n : ℕ} {x : E}
@@ -365,6 +382,19 @@ theorem norm_apply_le_singularValues_mul_norm {n : ℕ} {x : E}
   exact A.norm_apply_le_of_mem_spanIndices_of_adjoint_comp_self_eigenbasis
     A.rightSingularBasis A.adjoint_comp_self_rightSingularBasis (A.singularValues_nonneg n)
     (fun i hi ↦ A.sq_singularValues_antitone hi) hx
+
+/-- **Courant–Fischer for singular values, upper direction.** Every subspace `V` of dimension at
+least `k + 1` contains a unit vector `x` with `‖A x‖ ≤ σₖ(A)`. -/
+theorem exists_unit_vector_norm_apply_le_singularValues {k : ℕ} (V : Submodule 𝕜 E)
+    (hV : k + 1 ≤ finrank 𝕜 V) : ∃ x ∈ V, ‖x‖ = 1 ∧ ‖A x‖ ≤ A.singularValues k := by
+  have hk : k < finrank 𝕜 E := hV.trans (Submodule.finrank_le V)
+  obtain ⟨x, hxV, hx1, hx⟩ :=
+    A.isSymmetric_adjoint_comp_self.exists_unit_vector_re_inner_le_eigenvalue_of_le_finrank rfl
+      ⟨k, hk⟩ V hV
+  refine ⟨x, hxV, hx1, ?_⟩
+  rw [← A.sq_singularValues_of_lt rfl hk, comp_apply, adjoint_inner_left,
+    inner_self_eq_norm_sq] at hx
+  exact (pow_le_pow_iff_left₀ (norm_nonneg _) (A.singularValues_nonneg k) two_ne_zero).mp hx
 
 /-- A right singular vector with singular value zero lies in the kernel, so `A vᵢ` is fixed by
 the scalar `σᵢ⁻² σᵢ²` (with total field inversion) even when `σᵢ = 0`. -/
