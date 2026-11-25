@@ -66,25 +66,6 @@ namespace DetBundle
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {B : Type*} {F : Type*} [NormedAddCommGroup F]
   [NormedSpace 𝕜 F]
 
-/-- A fibrewise family of maps is continuous on total spaces when, read in the trivializations at
-every base point, it is a fixed continuous map `Λ` between the model fibres. -/
-private theorem continuous_totalSpaceMk_of_trivializationAt [TopologicalSpace B]
-    {F₁ F₂ : Type*} [TopologicalSpace F₁] [TopologicalSpace F₂] {E₁ E₂ : B → Type*}
-    [TopologicalSpace (TotalSpace F₁ E₁)] [∀ x, TopologicalSpace (E₁ x)] [FiberBundle F₁ E₁]
-    [TopologicalSpace (TotalSpace F₂ E₂)] [∀ x, TopologicalSpace (E₂ x)] [FiberBundle F₂ E₂]
-    (φ : ∀ x, E₁ x → E₂ x) {Λ : F₁ → F₂} (hΛ : Continuous Λ)
-    (h : ∀ (y x : B) (v : E₁ x), x ∈ (trivializationAt F₁ E₁ y).baseSet →
-      x ∈ (trivializationAt F₂ E₂ y).baseSet →
-        (trivializationAt F₂ E₂ y ⟨x, φ x v⟩).2 = Λ (trivializationAt F₁ E₁ y ⟨x, v⟩).2) :
-    Continuous fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (φ p.proj p.snd) :=
-  FiberBundle.continuous_of_forall_trivialization _ (fun _ ↦ rfl) fun p ↦
-    ⟨trivializationAt F₁ E₁ p.proj, trivializationAt F₂ E₂ p.proj, fun _ ↦ Λ,
-      mem_baseSet_trivializationAt F₁ E₁ p.proj, mem_baseSet_trivializationAt F₂ E₂ p.proj,
-      hΛ.continuousAt.comp ((trivializationAt F₁ E₁ p.proj).continuousOn.continuousAt
-        ((trivializationAt F₁ E₁ p.proj).open_source.mem_nhds
-          (FiberBundle.mem_trivializationAt_proj_source))).snd,
-      fun q hq₁ hq₂ ↦ h p.proj q.proj q.snd hq₁ hq₂⟩
-
 /-! ### The determinant line of a line bundle -/
 
 section Line
@@ -152,7 +133,7 @@ def lineHomeomorph (hF : finrank 𝕜 F = 1) : TotalSpace 𝕜 (DetBundle 𝕜 F
     let Λ : 𝕜 →ₗ[𝕜] F := (exteriorPower.oneEquiv 𝕜 F).toLinearMap ∘ₗ
       (LinearEquiv.ofEq _ _ (congrArg (⋀[𝕜]^· F) hF)).toLinearMap ∘ₗ
         (modelCoord F).symm.toLinearMap
-    refine continuous_totalSpaceMk_of_trivializationAt (fun x ↦ lineEquiv hF x)
+    refine FiberBundle.continuous_totalSpaceMk_of_trivializationAt (fun x ↦ lineEquiv hF x)
       Λ.continuous_of_finiteDimensional
       fun y x v _ (hx : x ∈ (trivializationAt F E y).baseSet) ↦ ?_
     rw [trivializationAt_eq, trivialization_apply_mk _ hx]
@@ -271,11 +252,11 @@ variable (𝕜 B F) in
 def trivialHomeomorph :
     TotalSpace 𝕜 (DetBundle 𝕜 F (Trivial B F)) ≃ₜ TotalSpace 𝕜 (Trivial B 𝕜) :=
   bundleHomeomorph (trivialEquiv 𝕜 B F) <|
-    continuous_totalSpaceMk_of_trivializationAt (fun x ↦ trivialEquiv 𝕜 B F x) continuous_id
-      fun y x v _ _ ↦ by
+    FiberBundle.continuous_totalSpaceMk_of_trivializationAt (fun x ↦ trivialEquiv 𝕜 B F x)
+      continuous_id fun y x v _ _ ↦ by
       have hx : x ∈ (trivializationAt F (Trivial B F) y).baseSet := Set.mem_univ x
       rw [trivializationAt_eq, trivialization_apply_mk _ hx, chartCoord_trivializationAt]
-      rfl
+      simp only [Trivial.fiberBundle_trivializationAt', Trivial.trivialization_apply, id]
 
 @[simp]
 theorem trivialHomeomorph_apply (p : TotalSpace 𝕜 (DetBundle 𝕜 F (Trivial B F))) :

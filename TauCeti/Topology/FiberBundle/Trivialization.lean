@@ -39,6 +39,8 @@ fibre is a bijection onto the base.
   projection `Z → B` over all of `B`.
 * `FiberBundle.continuous_of_forall_trivialization`: chart formulas continuous at each point give
   continuity of a map of total spaces over the identity.
+* `FiberBundle.continuous_totalSpaceMk_of_trivializationAt`: a fibrewise family of maps that is a
+  fixed continuous map in the coordinates of the preferred trivializations is continuous.
 * `FiberBundle.exists_trivialization_mem_baseSet`: the projection of a fibre bundle is locally
   trivial.
 * `Bundle.Trivialization.continuousOn_coordChange`: coordinate changes are jointly continuous over
@@ -263,6 +265,25 @@ theorem continuous_of_forall_trivialization {F₁ F₂ : Type*} [TopologicalSpac
   refine (e₂.tendsto_nhds_iff (e₂.mem_source.2 (by rw [hΦ]; exact hp₂))).2
     ⟨?_, (hψ.congr_of_eventuallyEq hev).tendsto⟩
   simpa only [Function.comp_def, hΦ] using hπ.tendsto
+
+/-- A fibrewise family of maps `φ x : E₁ x → E₂ x` is continuous on total spaces when, read in the
+trivializations at every base point, it is a fixed continuous map `Λ` between the model fibres. -/
+theorem continuous_totalSpaceMk_of_trivializationAt {F₁ F₂ : Type*} [TopologicalSpace F₁]
+    [TopologicalSpace F₂] {E₁ E₂ : B → Type*}
+    [TopologicalSpace (TotalSpace F₁ E₁)] [∀ x, TopologicalSpace (E₁ x)] [FiberBundle F₁ E₁]
+    [TopologicalSpace (TotalSpace F₂ E₂)] [∀ x, TopologicalSpace (E₂ x)] [FiberBundle F₂ E₂]
+    (φ : ∀ x, E₁ x → E₂ x) {Λ : F₁ → F₂} (hΛ : Continuous Λ)
+    (h : ∀ (y x : B) (v : E₁ x), x ∈ (trivializationAt F₁ E₁ y).baseSet →
+      x ∈ (trivializationAt F₂ E₂ y).baseSet →
+        (trivializationAt F₂ E₂ y ⟨x, φ x v⟩).2 = Λ (trivializationAt F₁ E₁ y ⟨x, v⟩).2) :
+    Continuous fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (φ p.proj p.snd) :=
+  continuous_of_forall_trivialization _ (fun _ ↦ rfl) fun p ↦
+    ⟨trivializationAt F₁ E₁ p.proj, trivializationAt F₂ E₂ p.proj, fun _ ↦ Λ,
+      mem_baseSet_trivializationAt F₁ E₁ p.proj, mem_baseSet_trivializationAt F₂ E₂ p.proj,
+      hΛ.continuousAt.comp ((trivializationAt F₁ E₁ p.proj).continuousOn.continuousAt
+        ((trivializationAt F₁ E₁ p.proj).open_source.mem_nhds
+          mem_trivializationAt_proj_source)).snd,
+      fun q hq₁ hq₂ ↦ h p.proj q.proj q.snd hq₁ hq₂⟩
 
 end FiberBundle
 
