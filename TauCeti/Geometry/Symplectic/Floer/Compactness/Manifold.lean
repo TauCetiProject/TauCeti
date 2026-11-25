@@ -54,7 +54,10 @@ atlas, which needs no closedness of `ω` and no inner product on `E`, and for a 
   (`TauCeti.SmoothTwoForm.exists_forall_floerEnergyDensity_le_norm_fderiv_extChartAt_comp_sq`).
   Both comparisons hold with constants uniform over a compact window of parameters, for families
   of data continuous jointly in the parameter. With the coordinate Floer equation for `∂ₜv`, a
-  bound on the energy density bounds the whole derivative of `v`
+  bound on the energy density bounds the whole derivative of `v`, uniformly over a compact window
+  of parameters
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_forall_norm_fderiv_extChartAt_comp_le_parametric`),
+  and for a single datum as its one-point case
   (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_forall_norm_fderiv_extChartAt_comp_le`).
 * **Compactness in a chart** (in the namespace `TauCeti.SmoothTwoForm`,
   `IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_extChartAt_subseq_off_finset`):

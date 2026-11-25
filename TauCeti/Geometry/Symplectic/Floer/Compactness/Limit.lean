@@ -38,7 +38,12 @@ The first point is the `C¹` convergence theorem for the coordinate equation
 `∂ₜu - X(z, u)(0, 1) = J(z, u)(∂ₛu - X(z, u)(1, 0))` on `ℝ × ℝ`, with `C¹` data `J` and `X`, where
 `J² = -1` along the solutions, and a finite-dimensional normed target, it is
 `TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub`; this form also applies
-to the coordinate expressions of Floer solutions in a chart of a manifold. In the form of the Floer
+to the coordinate expressions of Floer solutions in a chart of a manifold. When the data also depend
+on a parameter `pₙ → p₀` in a finite-dimensional normed space, as do the data
+`J(cₙ + εₙ z, x)` and `εₙ X(cₙ + εₙ z, x)` of rescaled solutions, the derivatives converge to a
+solution of the equation at `p₀`
+(`TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub_parametric`, by adjoining
+the parameter to the target); this is the form used for rescaled solutions. In the form of the Floer
 equation used here it is `TauCeti.SymplecticForm.tendstoLocallyUniformlyOn_fderiv_of_floer`. The
 Floer equation is the coordinate equation for the Hamiltonian one-form `X = X_K`
 (`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_iff_fderiv_stdComplexLineImag_sub`).
@@ -69,6 +74,9 @@ The same holds for solutions in a symplectic chart of a manifold, in the namespa
 * `TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub`: smooth solutions of
   the coordinate Floer equation on `ℝ × ℝ` with locally bounded derivatives converging pointwise
   converge in `C¹` to a solution.
+* `TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub_parametric`: the same
+  `C¹` convergence over converging parameters `pₙ → p₀`, for a finite-dimensional normed target,
+  by adjoining the parameter.
 * `TauCeti.SymplecticForm.tendstoLocallyUniformlyOn_fderiv_of_floer`: smooth Floer solutions
   with locally bounded derivatives converging pointwise converge in `C¹` to a Floer solution.
 * `TauCeti.SymplecticForm.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset`:

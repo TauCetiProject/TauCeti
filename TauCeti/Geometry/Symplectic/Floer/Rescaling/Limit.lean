@@ -69,7 +69,8 @@ smooth enough.
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., Section 4.2
-  (rescaling at a point where the derivatives blow up) and Section 4.6 (bubbling off).
+  (rescaling at a point where the derivatives blow up), Section 4.6 (bubbling off) and Section 8.1
+  (inhomogeneous equations and bubbles for the frozen structure).
 -/
 
 public section
@@ -218,16 +219,6 @@ open Metric
 
 variable [FiniteDimensional ℝ E] [I.Boundaryless]
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] in
-/-- The Hamiltonian vector field of the rescaled Hamiltonian `ε K(c + ε w)`, read in a chart, is
-`ε` times that of `K` at `c + ε w`. -/
-theorem hamiltonianVectorFieldInChartAt_rescale (ω : SmoothTwoForm I M) (α : M)
-    (K : ℝ × ℝ → M → ℝ) (c : ℝ × ℝ) (ε : ℝ) (w : ℝ × ℝ) (y : E) :
-    ω.hamiltonianVectorFieldInChartAt α (fun w x ↦ ε * K (c + ε • w) x) (w, y) =
-      ε • ω.hamiltonianVectorFieldInChartAt α K (c + ε • w, y) := by
-  rw [hamiltonianVectorFieldInChartAt_apply, hamiltonianVectorFieldInChartAt_apply, ← map_smul]
-  exact congrArg _ (ω.hamiltonianVectorField_const_smul (f := K (c + ε • w)) ε _)
-
 omit [I.Boundaryless] in
 /-- **Rescaled solutions in a chart.** If `u` is smooth on an open set `U` of the domain and the
 rescaled map `w ↦ u(c + ε w)` solves the rescaled Floer equation on an open set `S` with
@@ -255,15 +246,16 @@ private theorem contDiffOn_extChartAt_comp_rescale_and_fderiv_stdComplexLineImag
   have hur : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) (fun w ↦ u (c + ε • w)) S :=
     hu.comp (by fun_prop : ContDiff ℝ (⊤ : ℕ∞) (fun w : ℝ × ℝ ↦ c + ε • w)).contMDiff.contMDiffOn
       hSU
-  have hmd (w : ℝ × ℝ) (hw : w ∈ S) :=
-    (hur.mdifferentiableOn (by simp)).mdifferentiableAt (hS.mem_nhds hw)
   refine ⟨contMDiffOn_iff_contDiffOn.1 <| contMDiffOn_extChartAt.comp hur fun w hw ↦ by
     rw [mem_preimage, ← extChartAt_source I]
-    exact hsrc w hw, hmd, fun w hw ↦ ?_⟩
-  have h := (ω.isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComplexLineImag_sub
-    (J := fun w ↦ J (c + ε • w)) (hmd w hw) (hsrc w hw)).1 (hsol w hw)
-  rwa [hamiltonianVectorFieldInChartAt_rescale, hamiltonianVectorFieldInChartAt_rescale,
-    Floer.almostComplexInChartAt_comp] at h
+    exact hsrc w hw, fun w hw ↦ (hur.mdifferentiableOn (by simp)).mdifferentiableAt
+      (hS.mem_nhds hw), fun w hw ↦ ?_⟩
+  -- The coordinate Floer equation for the rescaled data, with the data read back at `c + ε w`.
+  simpa only [Function.comp_apply, hamiltonianOneFormInChartAt_stdComplexLineReal,
+    hamiltonianOneFormInChartAt_stdComplexLineImag, hamiltonianVectorFieldInChartAt_rescale,
+    Floer.almostComplexInChartAt_comp] using
+    (ω.contDiffOn_extChartAt_comp_and_fderiv_stdComplexLineImag_sub (J := fun w ↦ J (c + ε • w))
+      hS (hur.of_le (by norm_cast)) hsrc hsol).2 w hw
 
 omit [I.Boundaryless] in
 /-- **A bound on the energy density bounds the derivatives of rescaled solutions in a chart.** For
@@ -499,19 +491,12 @@ private theorem contMDiff_and_tendsto_mfderiv_of_forall_exists_ball
       ∀ w (a : ℝ × ℝ), Tendsto
         (fun n ↦ (⟨Q n w, mfderiv 𝓘(ℝ, ℝ × ℝ) I (Q n) w a⟩ : TangentBundle I M))
         atTop (𝓝 ⟨v w, mfderiv 𝓘(ℝ, ℝ × ℝ) I v w a⟩) := by
-  refine ⟨fun y ↦ ?_, fun α hα ↦ ?_, fun w ↦ ?_, fun w a ↦ ?_⟩
-  · -- `v` is `C¹`, read in the chart at its value.
-    set χ := extChartAt I (v y)
-    obtain ⟨r, hr, hvα, hv1, -, -⟩ := hloc _ (hvK y) y (mem_extChartAt_source (v y))
-    have hvB : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 v (ball y r) :=
-      ((contMDiffOn_extChartAt_symm (n := 1) (v y)).comp (contMDiffOn_iff_contDiffOn.2 hv1)
-        fun z hz ↦ χ.map_source (hvα hz)).congr fun z hz ↦ (χ.left_inv (hvα hz)).symm
-    exact hvB.contMDiffAt (ball_mem_nhds y hr)
-  · -- The convergence of the derivatives is local.
-    rw [((isOpen_extChartAt_source α).preimage hv).tendstoLocallyUniformlyOn_iff_forall_tendsto]
-    intro y hy
-    obtain ⟨r, hr, -, -, hd, -⟩ := hloc α hα y hy
-    exact isOpen_ball.tendstoLocallyUniformlyOn_iff_forall_tendsto.1 hd y (mem_ball_self hr)
+  -- `v` is `C¹` and the derivatives converge in the charts, as both are local.
+  obtain ⟨hv1, hd⟩ :=
+    contMDiffOn_and_tendstoLocallyUniformlyOn_fderiv_extChartAt_comp_of_forall_exists_ball
+      isOpen_univ hv.continuousOn (fun w _ ↦ hvK w) (Q := Q) fun α hα y _ hyα ↦
+        (hloc α hα y hyα).imp fun _ ⟨hr, h₁, h₂, h₃, _⟩ ↦ ⟨hr, h₁, h₂, h₃⟩
+  refine ⟨contMDiffOn_univ.1 hv1, fun α hα ↦ by simpa using hd α hα, fun w ↦ ?_, fun w a ↦ ?_⟩
   · -- Read the coordinate equation back in the tangent spaces.
     have hw := mem_extChartAt_source (I := I) (v w)
     obtain ⟨r, hr, -, -, -, heq⟩ := hloc _ (hvK w) w hw

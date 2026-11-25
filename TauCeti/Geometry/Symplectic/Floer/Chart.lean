@@ -59,7 +59,9 @@ In the chart at a point `α`, the equation becomes a coordinate Floer equation o
   (`TauCeti.SmoothTwoForm.continuousOn_hamiltonianVectorFieldInChartAt_of_uncurry`), and a single
   datum, as a constant family, is as regular as the datum
   (`TauCeti.Floer.contDiffOn_almostComplexInChartAt_uncurry_const`,
-  `TauCeti.SmoothTwoForm.contDiffOn_hamiltonianVectorFieldInChartAt_uncurry_const`).
+  `TauCeti.SmoothTwoForm.contDiffOn_hamiltonianVectorFieldInChartAt_uncurry_const`). The
+  Hamiltonian vector field in the chart of the rescaled family `ε K(c + ε w)` is `ε` times that of
+  `K` at `c + ε w` (`TauCeti.SmoothTwoForm.hamiltonianVectorFieldInChartAt_rescale`).
 * `TauCeti.SmoothTwoForm.associatedBilinFormInChartAt ω α J` is the bilinear form
   `ω(·, J(z, x) ·)` read in the chart, at `x = (extChartAt I α).symm y` and on tangent coordinates
   (`TauCeti.SmoothTwoForm.associatedBilinFormInChartAt_extChartAt`), that is, the coordinate
@@ -417,6 +419,16 @@ theorem hamiltonianVectorFieldInChartAt_zero (ω : SmoothTwoForm I M) (α : M) {
   funext ⟨z, y⟩
   rw [hamiltonianVectorFieldInChartAt_apply, hamiltonianVectorField_const]
   exact map_zero _
+
+omit [FiniteDimensional ℝ E] in
+/-- The Hamiltonian vector field of the rescaled Hamiltonian `ε K(c + ε w)`, read in a chart, is
+`ε` times that of `K` at `c + ε w`. -/
+theorem hamiltonianVectorFieldInChartAt_rescale (ω : SmoothTwoForm I M) (α : M)
+    (K : ℝ × ℝ → M → ℝ) (c : ℝ × ℝ) (ε : ℝ) (w : ℝ × ℝ) (y : E) :
+    ω.hamiltonianVectorFieldInChartAt α (fun w x ↦ ε * K (c + ε • w) x) (w, y) =
+      ε • ω.hamiltonianVectorFieldInChartAt α K (c + ε • w, y) := by
+  rw [hamiltonianVectorFieldInChartAt_apply, hamiltonianVectorFieldInChartAt_apply, ← map_smul]
+  exact congrArg _ (ω.hamiltonianVectorField_const_smul (f := K (c + ε • w)) ε _)
 
 /-- The bilinear forms `ω(·, J(z, x) ·)` of the structures `J(z, x)`, read in the chart at `α`: at
 `(z, y)`, the form at the point `x = (extChartAt I α).symm y` with both arguments in the tangent
