@@ -48,6 +48,7 @@ scalar `a ≠ 1` only when `n ≠ 0`.
 
 * `AlgHom.algebraMap_toAlgebra_apply`: `algebraMap A B z = f z` for the algebra structure
   `f.toRingHom.toAlgebra` induced by `f : A →ₐ[R] B`.
+* `Algebra.coe_ofId`: `Algebra.ofId R A` is `algebraMap R A` as a function.
 * `RingHom.toIntAlgHom_id`, `RingHom.toIntAlgHom_comp`: `RingHom.toIntAlgHom` is functorial.
 * `RingHom.toIntAlgHom_toRingHom`, `AlgHom.toRingHom_toIntAlgHom`: it is inverse to
   `AlgHom.toRingHom` in both directions.
@@ -62,6 +63,8 @@ scalar `a ≠ 1` only when `n ≠ 0`.
 * `AlgHom.range_comp_left_of_injective`, `AlgHom.range_comp_left_eq_of_adjoin_eq_top` and
   `AlgHom.range_comp_right_of_surjective`: ranges of composition maps on algebra homomorphisms,
   characterized by lifting values and by vanishing on a kernel.
+* `AlgHom.range_comp_left_eq_fixedPoints`: when the image of an injective coefficient map is the
+  fixed ring of an endomorphism `τ`, the homomorphisms lifting through it are those fixed by `τ`.
 * `AlgHom.descend`: an algebra homomorphism constant on the fibres of a surjective algebra
   homomorphism descends along it, over arbitrary semirings; `AlgHom.descend_unique` says the
   descent is the only homomorphism factoring it.
@@ -106,6 +109,14 @@ theorem AlgHom.algebraMap_toAlgebra_apply {R A B : Type*} [CommSemiring R] [Comm
     [CommSemiring B] [Algebra R A] [Algebra R B] (f : A →ₐ[R] B) (z : A) :
     @algebraMap A B _ _ f.toRingHom.toAlgebra z = f z := by
   rw [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
+
+/-- **`Algebra.ofId R A` is `algebraMap R A`** as a function. Mathlib's `Algebra.ofId_apply` is
+the pointwise form; this unapplied form rewrites the function itself, for instance inside
+`Matrix.map M ⇑(Algebra.ofId R A)` as produced by `AlgHom.mapMatrix_apply`. -/
+@[simp]
+theorem Algebra.coe_ofId (R A : Type*) [CommSemiring R] [Semiring A] [Algebra R A] :
+    ⇑(Algebra.ofId R A) = algebraMap R A :=
+  funext (Algebra.ofId_apply A)
 
 /-! ### Functoriality of `RingHom.toIntAlgHom` -/
 
@@ -226,6 +237,17 @@ theorem AlgHom.range_comp_left_eq_of_adjoin_eq_top (ψ : R →ₐ[k] S)
   have hle : Algebra.adjoin k (Set.range a) ≤ ψ.range.comap x :=
     Algebra.adjoin_le (Set.range_subset_iff.2 hx)
   exact hle (ha ▸ Algebra.mem_top)
+
+/-- When the image of an injective coefficient map `ψ : R → S` is exactly the set of fixed points
+of an endomorphism `τ` of `S`, a homomorphism lifts through `ψ` exactly when it is fixed by
+postcomposition with `τ`: descent of points along an extension of coefficients whose fixed ring is
+the base, such as a field over the fixed field of an automorphism. -/
+theorem AlgHom.range_comp_left_eq_fixedPoints (ψ : R →ₐ[k] S) (hψ : Function.Injective ψ)
+    {τ : S →ₐ[k] S} (hτ : {s | τ s = s} = Set.range ψ) :
+    Set.range (fun x : A →ₐ[k] R ↦ ψ.comp x) = {x : A →ₐ[k] S | τ.comp x = x} := by
+  rw [AlgHom.range_comp_left_of_injective ψ hψ, ← hτ]
+  ext x
+  simp [AlgHom.ext_iff]
 
 end Ranges
 

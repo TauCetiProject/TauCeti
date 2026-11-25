@@ -73,9 +73,9 @@ theorem length_getD_getElem?_toRows (T : StandardYoungTableau μ) (i : ℕ) :
 /-- Looking up the coordinates of a cell in the row representation recovers its label. -/
 @[simp]
 theorem getElem?_getD_getElem?_toRows (T : StandardYoungTableau μ) (c : ↥μ.cells) :
-    (T.toRows[c.1.1]?.getD [])[c.1.2]? = some (T c) := by
-  have hi : c.1.1 < T.toRows.length := by simpa using μ.lt_colLen_zero_of_mem c.2
-  have hj : c.1.2 < μ.rowLen c.1.1 := YoungDiagram.mem_iff_lt_rowLen.mp c.2
+    (T.toRows[c.val.1]?.getD [])[c.val.2]? = some (T c) := by
+  have hi : c.val.1 < T.toRows.length := by simpa using μ.lt_colLen_zero_of_mem c.property
+  have hj : c.val.2 < μ.rowLen c.val.1 := YoungDiagram.mem_iff_lt_rowLen.mp c.property
   rw [getElem?_eq_getElem hi]
   simp [hj]
 
@@ -109,10 +109,10 @@ theorem flatten_toRows_perm (T : StandardYoungTableau μ) :
     T.toRows.flatten.Perm (finRange μ.card) := by
   have hmem (x : Fin μ.card) : x ∈ T.toRows.flatten := by
     obtain ⟨c, rfl⟩ := T.surjective x
-    have hj : c.1.2 < μ.rowLen c.1.1 := YoungDiagram.mem_iff_lt_rowLen.mp c.2
+    have hj : c.val.2 < μ.rowLen c.val.1 := YoungDiagram.mem_iff_lt_rowLen.mp c.property
     simp only [toRows, mem_flatten, mem_ofFn]
-    refine ⟨_, ⟨⟨c.1.1, μ.lt_colLen_zero_of_mem c.2⟩, rfl⟩, ?_⟩
-    exact mem_ofFn.mpr ⟨⟨c.1.2, hj⟩, rfl⟩
+    refine ⟨_, ⟨⟨c.val.1, μ.lt_colLen_zero_of_mem c.property⟩, rfl⟩, ?_⟩
+    exact mem_ofFn.mpr ⟨⟨c.val.2, hj⟩, rfl⟩
   have hlen : T.toRows.flatten.length = μ.card := by
     rw [length_flatten, map_length_toRows, YoungDiagram.sum_rowLens_eq_card]
   exact ((subperm_of_subset (nodup_finRange μ.card) (fun x _ => hmem x)).perm_of_length_le
@@ -123,15 +123,15 @@ theorem flatten_toRows_perm (T : StandardYoungTableau μ) :
 theorem findIdx?_mem_toRows (T : StandardYoungTableau μ) (l : Fin μ.card) :
     T.toRows.findIdx? (fun row => l ∈ row) = some (YoungTableau.rowIndex T.toTableau l) := by
   obtain ⟨c, rfl⟩ := T.surjective l
-  have hmem (i : ℕ) (hi : i < T.toRows.length) : T c ∈ T.toRows[i] ↔ i = c.1.1 := by
+  have hmem (i : ℕ) (hi : i < T.toRows.length) : T c ∈ T.toRows[i] ↔ i = c.val.1 := by
     rw [getElem_toRows, mem_ofFn]
     constructor
     · rintro ⟨j, hj⟩
-      exact congrArg (fun d : ↥μ.cells => d.1.1) (T.injective hj)
+      exact congrArg (fun d : ↥μ.cells => d.val.1) (T.injective hj)
     · rintro rfl
-      exact ⟨⟨c.1.2, YoungDiagram.mem_iff_lt_rowLen.mp c.2⟩, rfl⟩
-  have hlt : c.1.1 < T.toRows.length := by simpa using μ.lt_colLen_zero_of_mem c.2
-  rw [findIdx?_eq_some_iff_getElem, show YoungTableau.rowIndex T.toTableau (T c) = c.1.1 from
+      exact ⟨⟨c.val.2, YoungDiagram.mem_iff_lt_rowLen.mp c.property⟩, rfl⟩
+  have hlt : c.val.1 < T.toRows.length := by simpa using μ.lt_colLen_zero_of_mem c.property
+  rw [findIdx?_eq_some_iff_getElem, show YoungTableau.rowIndex T.toTableau (T c) = c.val.1 from
     YoungTableau.rowIndex_apply T.toTableau c]
   exact ⟨hlt, by simpa using (hmem _ hlt).mpr rfl,
     fun j hj => by
@@ -143,7 +143,7 @@ theorem toRows_injective : Function.Injective (toRows (μ := μ)) := by
   intro T U h
   apply ext
   intro c
-  have heq := congrArg (fun rows => (rows[c.1.1]?.getD [])[c.1.2]?) h
+  have heq := congrArg (fun rows => (rows[c.val.1]?.getD [])[c.val.2]?) h
   simpa only [getElem?_getD_getElem?_toRows T c, getElem?_getD_getElem?_toRows U c,
     Option.some.injEq] using heq
 
@@ -172,7 +172,8 @@ private theorem lt_length_getElem_of_mem (hshape : rows.map length = μ.rowLens)
 
 /-- The cell labeling read off a list of rows of shape `μ`. -/
 private def ofRowsFun (hshape : rows.map length = μ.rowLens) (c : ↥μ.cells) : Fin μ.card :=
-  (rows[c.1.1]'(lt_length_of_mem hshape c.2))[c.1.2]'(lt_length_getElem_of_mem hshape c.2)
+  (rows[c.val.1]'(lt_length_of_mem hshape c.property))[c.val.2]'(lt_length_getElem_of_mem hshape
+      c.property)
 
 /-- Full content makes the cell labeling surjective. -/
 private theorem ofRowsFun_surjective (hshape : rows.map length = μ.rowLens)
@@ -252,7 +253,7 @@ noncomputable def rowsEquiv (μ : YoungDiagram) :
   Equiv.ofBijective
     (fun T => ⟨T.toRows, exists_toRows_eq_iff.mp ⟨T, rfl⟩⟩)
     ⟨fun _ _ h => toRows_injective (congrArg Subtype.val h), fun rows =>
-      (exists_toRows_eq_iff.mpr rows.2).imp fun _ h => Subtype.ext h⟩
+      (exists_toRows_eq_iff.mpr rows.property).imp fun _ h => Subtype.ext h⟩
 
 /-- The forward row equivalence lists the entries of the tableau by rows. -/
 @[simp]
@@ -273,13 +274,14 @@ column. -/
 theorem rowsEquiv_symm_apply (rows : {rows : List (List (Fin μ.card)) //
     rows.IsTableauRows ∧ rows.map length = μ.rowLens ∧
       rows.flatten.Perm (finRange μ.card)}) (c : ↥μ.cells) :
-    (rowsEquiv μ).symm rows c = (rows.val[c.1.1]'(by
-      simpa [← length_map (f := length), rows.2.2.1] using μ.lt_colLen_zero_of_mem c.2))[c.1.2]'(by
-      rw [← getElem_map length, getElem_of_eq rows.2.2.1, YoungDiagram.get_rowLens]
-      · exact YoungDiagram.mem_iff_lt_rowLen.mp c.2
-      · simpa [rows.2.2.1] using μ.lt_colLen_zero_of_mem c.2) := by
+    (rowsEquiv μ).symm rows c = (rows.val[c.val.1]'(by
+      simpa [← length_map (f := length), rows.property.2.1] using μ.lt_colLen_zero_of_mem
+          c.property))[c.val.2]'(by
+      rw [← getElem_map length, getElem_of_eq rows.property.2.1, YoungDiagram.get_rowLens]
+      · exact YoungDiagram.mem_iff_lt_rowLen.mp c.property
+      · simpa [rows.property.2.1] using μ.lt_colLen_zero_of_mem c.property) := by
   have key (rs : List (List (Fin μ.card))) (h : ((rowsEquiv μ).symm rows).toRows = rs) h₁ h₂ :
-      (rowsEquiv μ).symm rows c = (rs[c.1.1]'h₁)[c.1.2]'h₂ := by
+      (rowsEquiv μ).symm rows c = (rs[c.val.1]'h₁)[c.val.2]'h₂ := by
     subst h
     simp only [getElem_toRows, List.getElem_ofFn]
   exact key _ (toRows_rowsEquiv_symm rows) _ _

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
 import TauCeti.Analysis.Asymptotics.Lemmas
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
 /-!
 # Directional derivative estimates for scalar multiplication
@@ -24,10 +25,17 @@ instance, to a norm, which is Lipschitz but need not be differentiable. As in Ma
 rule `fderiv_smul`, the scalar factor may take values in a normed ring acting on the codomain,
 not only in the base field.
 
+At a zero of a differentiable scalar factor, continuity of the vector factor suffices for
+Fréchet differentiability of their product, including scalars in a normed algebra.
+
 ## Main results
 
+* `HasFDerivWithinAt.smul_of_eq_zero` and `HasFDerivAt.smul_of_eq_zero`: the scalar-multiplication
+  rule at a zero of the scalar factor, with only continuity of the vector factor.
 * `TauCeti.fderiv_smul_apply`: the Leibniz rule for the derivative of a scalar multiple, applied to
   a direction.
+* `TauCeti.norm_fderiv_fun_smul_le`: the Leibniz estimate for the norm of the derivative of a
+  scalar multiple.
 * `TauCeti.cutoff_sq_mul_norm_fderiv_sq_le`: the two-direction cutoff derivative estimate.
 * `TauCeti.hasStrictFDerivAt_smul_of_isBigO_sub`: a product of two Lipschitz factors vanishing
   at a point is strictly differentiable there, with derivative zero.
@@ -43,12 +51,45 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E F : Type*} [NormedAddC
   [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {𝕜' : Type*} [NormedRing 𝕜']
   [NormedAlgebra 𝕜 𝕜'] [Module 𝕜' F] [IsBoundedSMul 𝕜' F] [IsScalarTower 𝕜 𝕜' F]
 
+/-- At a zero of a differentiable scalar factor, the vector factor need only be continuous
+within the parameter set to differentiate their scalar multiple. Scalars may take values in a
+normed algebra over the base field. -/
+theorem _root_.HasFDerivWithinAt.smul_of_eq_zero {c : E → 𝕜'} {c' : E →L[𝕜] 𝕜'} {f : E → F}
+    {s : Set E} {x : E} (hc : HasFDerivWithinAt c c' s x)
+    (hf : ContinuousWithinAt f s x) (hc0 : c x = 0) :
+    HasFDerivWithinAt (fun y ↦ c y • f y) (c'.smulRight (f x)) s x := by
+  have hd := HasFDerivWithinAt.clm_apply_of_eq_zero
+    (ContinuousAt.comp_continuousWithinAt
+      (ContinuousLinearMap.lsmul 𝕜 𝕜' (E := F)).flip.continuous.continuousAt hf)
+    hc hc0
+  simpa only [Function.comp_apply, ContinuousLinearMap.flip_apply,
+    ContinuousLinearMap.lsmul_apply] using
+    hd.congr_fderiv (f' := c'.smulRight (f x)) (by ext v; simp)
+
+/-- At a zero of a differentiable scalar factor, the vector factor need only be continuous
+to differentiate their scalar multiple. Scalars may take values in a normed algebra over the
+base field. -/
+theorem _root_.HasFDerivAt.smul_of_eq_zero {c : E → 𝕜'} {c' : E →L[𝕜] 𝕜'} {f : E → F}
+    {x : E} (hc : HasFDerivAt c c' x) (hf : ContinuousAt f x) (hc0 : c x = 0) :
+    HasFDerivAt (fun y ↦ c y • f y) (c'.smulRight (f x)) x := by
+  rw [← hasFDerivWithinAt_univ]
+  exact hc.hasFDerivWithinAt.smul_of_eq_zero hf.continuousWithinAt hc0
+
 /-- **The Leibniz rule for the directional derivative of a scalar multiple.** The derivative of
 `c • f` at `x` in the direction `e` is `c x` times that of `f`, plus that of `c` times `f x`. -/
 theorem fderiv_smul_apply {c : E → 𝕜'} {f : E → F} {x : E} (hc : DifferentiableAt 𝕜 c x)
     (hf : DifferentiableAt 𝕜 f x) (e : E) :
     fderiv 𝕜 (c • f) x e = c x • fderiv 𝕜 f x e + fderiv 𝕜 c x e • f x := by
   simp [fderiv_smul hc hf]
+
+/-- **The Leibniz estimate.** The derivative of a scalar multiple `c • f` at `x` is bounded by
+`‖c x‖ ‖Df(x)‖ + ‖Dc(x)‖ ‖f x‖`. -/
+theorem norm_fderiv_fun_smul_le {c : E → 𝕜} {f : E → F} {x : E}
+    (hc : DifferentiableAt 𝕜 c x) (hf : DifferentiableAt 𝕜 f x) :
+    ‖fderiv 𝕜 (fun y => c y • f y) x‖ ≤ ‖c x‖ * ‖fderiv 𝕜 f x‖ + ‖fderiv 𝕜 c x‖ * ‖f x‖ := by
+  rw [fderiv_fun_smul hc hf]
+  refine (norm_add_le _ _).trans_eq ?_
+  rw [norm_smul, ContinuousLinearMap.norm_smulRight_apply]
 
 end Leibniz
 
@@ -80,6 +121,16 @@ section Strict
 
 open Asymptotics Filter Topology
 
+/-- The difference estimate `u y - u y' = O(y - y')` near `(x, x)` of a strictly differentiable
+map gives continuity at `x`: fixing `y' = x` leaves `dist (u y) (u x) = O(dist y x)`. -/
+private theorem continuousAt_of_isBigO_sub_sub {X Y : Type*} [SeminormedAddCommGroup X]
+    [SeminormedAddCommGroup Y] {u : X → Y} {x : X}
+    (hu : (fun p : X × X ↦ u p.1 - u p.2) =O[𝓝 (x, x)] fun p ↦ p.1 - p.2) :
+    ContinuousAt u x :=
+  continuousAt_of_isBigO_dist <| by
+    simpa only [dist_eq_norm_sub, Function.comp_apply, id] using
+      (hu.comp_tendsto (tendsto_id.prodMk_nhds tendsto_const_nhds)).norm_norm
+
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E F : Type*} [NormedAddCommGroup E]
   [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {R : Type*} [NormedRing R]
   [Module R F] [IsBoundedSMul R F]
@@ -98,12 +149,12 @@ theorem hasStrictFDerivAt_smul_of_isBigO_sub {c : E → R} {f : E → F} {x : E}
   -- term one factor tends to zero and the other is controlled by `y - y'`.
   have h₁ : (fun p : E × E ↦ c p.1 • (f p.1 - f p.2)) =o[𝓝 (x, x)] fun p ↦ p.1 - p.2 := by
     have hc₁ : Tendsto (fun p : E × E ↦ c p.1) (𝓝 (x, x)) (𝓝 0) := by
-      have h := (continuousAt_of_isBigO_sub hc).tendsto.comp (continuous_fst.tendsto (x, x))
+      have h := (continuousAt_of_isBigO_sub_sub hc).tendsto.comp (continuous_fst.tendsto (x, x))
       rwa [hcx] at h
     simpa using ((isLittleO_one_iff 𝕜).2 hc₁).smul_isBigO hf
   have h₂ : (fun p : E × E ↦ (c p.1 - c p.2) • f p.2) =o[𝓝 (x, x)] fun p ↦ p.1 - p.2 := by
     have hf₂ : Tendsto (fun p : E × E ↦ f p.2) (𝓝 (x, x)) (𝓝 0) := by
-      have h := (continuousAt_of_isBigO_sub hf).tendsto.comp (continuous_snd.tendsto (x, x))
+      have h := (continuousAt_of_isBigO_sub_sub hf).tendsto.comp (continuous_snd.tendsto (x, x))
       rwa [hfx] at h
     have h := hc.norm_right.smul_isLittleO ((isLittleO_one_iff ℝ).2 hf₂)
     simp only [smul_eq_mul, mul_one] at h

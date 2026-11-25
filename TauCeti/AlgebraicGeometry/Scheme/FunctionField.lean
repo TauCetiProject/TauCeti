@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 public import TauCeti.FieldTheory.FunctionField.Basic
-import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
+import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
 
 /-!
 # The function field of an integral scheme of finite type over a field

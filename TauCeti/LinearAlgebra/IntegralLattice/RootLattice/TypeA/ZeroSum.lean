@@ -169,7 +169,7 @@ noncomputable def zeroSumBasis : Basis (Fin n) ℚ (singleParityCheckCode ℚ (F
     fun x _ ↦ by
       rw [Submodule.mem_span_range_iff_exists_fun]
       exact ⟨fun k ↦ ∑ j ∈ Iic k.castSucc, (x : Fin (n + 1) → ℚ) j, Subtype.ext <| by
-        simpa using sum_smul_zeroSumSimpleRoot n x.2⟩
+        simpa using sum_smul_zeroSumSimpleRoot n x.property⟩
 
 @[simp]
 theorem coe_zeroSumBasis_apply (i : Fin n) :
@@ -237,7 +237,7 @@ theorem mem_zeroSumLattice_carrier_iff (x : singleParityCheckCode ℚ (Fin (n + 
     choose m hm using hx
     rw [Submodule.mem_span_range_iff_exists_fun]
     refine ⟨fun k ↦ ∑ j ∈ Iic k.castSucc, m j, Subtype.ext ?_⟩
-    conv_rhs => rw [← sum_smul_zeroSumSimpleRoot n x.2]
+    conv_rhs => rw [← sum_smul_zeroSumSimpleRoot n x.property]
     rw [Submodule.coe_sum]
     refine sum_congr rfl fun k _ ↦ ?_
     rw [Submodule.coe_smul_of_tower, coe_zeroSumBasis_apply, ← Int.cast_smul_eq_zsmul ℚ,

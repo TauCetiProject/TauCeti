@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Morrey
+public import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.Frontier
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.Embedding
+import TauCeti.Data.ENNReal.Inv
 
 /-!
 # Higher-order Morrey embeddings on bounded Lipschitz domains
@@ -42,6 +44,11 @@ compact operator for every `β` below the respective exponent.
   embedding `W^{k,p}(Ω) →L[ℝ] C^{0,1-n/(k p)}(closure Ω)`.
 * `TauCeti.Wkp.exists_isCompactOperator_holder_of_isLipschitzDomainWith`: the embedding into
   `C^{0,β}(closure Ω)` is compact for every `β < 1 - n/(k p)`.
+* `TauCeti.Wkp.exists_continuousOn_closure_ae_eq_of_isLipschitzDomainWith`: for `n < k p` every
+  `u ∈ W^{k,p}(Ω)` has a representative continuous on `closure Ω`.
+* `TauCeti.Wkp.exists_continuousOn_closure_ae_eq_and_eqOn_frontier`: for `n < 2 p` and `p < ∞`,
+  every `u ∈ W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)` has a representative continuous on `closure Ω` that
+  vanishes on `frontier Ω`.
 
 ## References
 
@@ -112,26 +119,6 @@ theorem Wkp.exists_isCompactOperator_morrey_of_isLipschitzDomainWith (k : ℕ) {
     with x h₁ h₂ hx
   rw [ContinuousLinearMap.comp_apply, h₁ hx, h₂ hx]
 
-/-- For `n < (j + 1) p`, the exponent `q = (j + 1) p` satisfies the hypotheses
-`1/p - j/n ≤ 1/q ≤ 1/p` of `TauCeti.Wkp.exists_morreyEmbeddingL_of_isLipschitzDomainWith`: the
-ladder with equal steps `1/((j + 1) p)` ends there. -/
-private theorem inv_le_inv_mul_add_and_inv_mul_le_inv {n j : ℕ} {p : ℝ≥0}
-    (hkp : (n : ℝ≥0) < (j + 1 : ℕ) * p) :
-    (p : ℝ≥0∞)⁻¹ ≤ (((j + 1 : ℕ) * p : ℝ≥0) : ℝ≥0∞)⁻¹ + j * (n : ℝ≥0∞)⁻¹ ∧
-      (((j + 1 : ℕ) * p : ℝ≥0) : ℝ≥0∞)⁻¹ ≤ (p : ℝ≥0∞)⁻¹ := by
-  have hkp0 : ((j + 1 : ℕ) * p : ℝ≥0) ≠ 0 := (zero_le.trans_lt hkp).ne'
-  have hp0 : p ≠ 0 := right_ne_zero_of_mul hkp0
-  have heq : (((j + 1 : ℕ) * p : ℝ≥0) : ℝ≥0∞)⁻¹ + j * (((j + 1 : ℕ) * p : ℝ≥0) : ℝ≥0∞)⁻¹ =
-      (p : ℝ≥0∞)⁻¹ := by
-    rw [← ENNReal.coe_inv hkp0, ← ENNReal.coe_inv hp0]
-    norm_cast
-    field_simp
-    push_cast
-    ring
-  refine ⟨heq.symm.le.trans ?_, le_self_add.trans_eq heq⟩
-  gcongr
-  exact_mod_cast hkp.le
-
 /-- **Hölder embedding of `W^{k,p}` with `n < k p` on bounded Lipschitz domains.** If
 `Ω ⊆ ℝ × E` is a bounded Lipschitz domain of dimension `n`, `1 ≤ p < ∞` and `n < k p`, then
 every `u ∈ W^{k,p}(Ω)` agrees almost everywhere on `Ω` with a function on `closure Ω` which is
@@ -148,7 +135,7 @@ theorem Wkp.exists_holderEmbeddingL_of_isLipschitzDomainWith {p : ℝ≥0} [Fact
   obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := Nat.exists_eq_succ_of_ne_zero (by
     rintro rfl
     simp at hkp)
-  obtain ⟨hq₁, hq₂⟩ := inv_le_inv_mul_add_and_inv_mul_le_inv hkp
+  obtain ⟨hq₁, hq₂⟩ := ENNReal.inv_le_inv_mul_add_and_inv_mul_le_inv hkp.le
   exact Wkp.exists_morreyEmbeddingL_of_isLipschitzDomainWith j hkp hq₁ hq₂ hΩ hb
 
 /-- **Hölder compactness of `W^{k,p}` with `n < k p` on bounded Lipschitz domains.** Under the
@@ -166,8 +153,48 @@ theorem Wkp.exists_isCompactOperator_holder_of_isLipschitzDomainWith {p : ℝ≥
   obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := Nat.exists_eq_succ_of_ne_zero (by
     rintro rfl
     simp at hkp)
-  obtain ⟨hq₁, hq₂⟩ := inv_le_inv_mul_add_and_inv_mul_le_inv hkp
+  obtain ⟨hq₁, hq₂⟩ := ENNReal.inv_le_inv_mul_add_and_inv_mul_le_inv hkp.le
   exact Wkp.exists_isCompactOperator_morrey_of_isLipschitzDomainWith j hkp hq₁ hq₂ hΩ hb hβ
+
+/-- **Continuous representatives of `W^{k,p}` up to the boundary.** If `Ω ⊆ ℝ × E` is a bounded
+Lipschitz domain of dimension `n`, `1 ≤ p < ∞` and `n < k p`, then every `u ∈ W^{k,p}(Ω)` agrees
+almost everywhere on `Ω` with a function continuous on `closure Ω`. -/
+theorem Wkp.exists_continuousOn_closure_ae_eq_of_isLipschitzDomainWith {p : ℝ≥0}
+    [Fact (1 ≤ (p : ℝ≥0∞))] {k : ℕ} (hkp : (finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0) < k * p)
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) (u : Wkp volume Ω p k) :
+    ∃ f : WithLp 2 (ℝ × E) → ℝ, ContinuousOn f (closure (Ω : Set (WithLp 2 (ℝ × E)))) ∧
+      Wkp.value k u =ᵐ[volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))] f := by
+  obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := Nat.exists_eq_succ_of_ne_zero (by
+    rintro rfl
+    simp at hkp)
+  -- Lower the order to `W^{1,k p}(Ω)` and use the first-order representative, `n < k p`.
+  obtain ⟨hq₁, hq₂⟩ := ENNReal.inv_le_inv_mul_add_and_inv_mul_le_inv hkp.le
+  have : Fact (1 ≤ ((((j + 1 : ℕ) : ℝ≥0) * p : ℝ≥0) : ℝ≥0∞)) :=
+    ⟨ENNReal.inv_le_one.1 (hq₂.trans (ENNReal.inv_le_one.2 Fact.out))⟩
+  obtain ⟨T, hT⟩ :=
+    Wkp.exists_w1pEmbeddingL_of_isLipschitzDomainWith j ENNReal.coe_ne_top hq₁ hq₂ hΩ hb
+  obtain ⟨f, hf, hTf⟩ :=
+    W1p.exists_continuousOn_closure_ae_eq_of_isLipschitzDomainWith hkp hΩ hb (T u)
+  exact ⟨f, hf, (hT u).symm.trans hTf⟩
+
+/-- **Continuous representatives with zero boundary values.** If `Ω ⊆ ℝ × E` is a bounded
+Lipschitz domain of dimension `n` and `n < 2 p`, `p < ∞`, then every `u ∈ W^{2,p}(Ω)` whose
+first-order part lies in `W^{1,p}_0(Ω)` agrees almost everywhere on `Ω` with a function continuous
+on `closure Ω` that vanishes on `frontier Ω`. -/
+theorem Wkp.exists_continuousOn_closure_ae_eq_and_eqOn_frontier (hp_top : p ≠ ⊤)
+    (hpn : (finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0∞) < 2 * p)
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) {u : Wkp volume Ω p 2}
+    (hu0 : Wkp.firstOrder 1 u ∈ w1p0Submodule volume Ω p) :
+    ∃ ū : WithLp 2 (ℝ × E) → ℝ, ContinuousOn ū (closure (Ω : Set (WithLp 2 (ℝ × E)))) ∧
+      Wkp.value 2 u =ᵐ[volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))] ū ∧
+      EqOn ū 0 (frontier (Ω : Set (WithLp 2 (ℝ × E)))) := by
+  lift p to ℝ≥0 using hp_top
+  obtain ⟨ū, hcont, huū⟩ := Wkp.exists_continuousOn_closure_ae_eq_of_isLipschitzDomainWith
+    (k := 2) (by exact_mod_cast hpn) hΩ hb u
+  exact ⟨ū, hcont, huū, (W1p.mem_w1p0Submodule_iff_eqOn_frontier ENNReal.coe_ne_top hΩ hb hcont
+    (by rw [Wkp.value_firstOrder]; exact huū)).1 hu0⟩
 
 end TauCeti
 

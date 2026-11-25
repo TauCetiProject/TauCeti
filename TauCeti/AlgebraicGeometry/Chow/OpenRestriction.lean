@@ -13,9 +13,10 @@ import TauCeti.AlgebraicGeometry.Scheme.LocalDimension
 /-!
 # Restriction of cycles to an open subscheme, and the localization sequence for cycles
 
-Let `k` be a field and `j : U ⟶ X` an open immersion of schemes locally of finite type over `k`.
-The restriction of a cycle `α` on `X` to `U` is `α ∘ j`, which sends `[V]` to `[V ∩ U]`: the flat
-pullback along the open immersion `j`, of relative dimension zero. Over a field, `j` preserves the
+Let `k` be a field, `X` a scheme locally of finite type over `k` and `j : U ⟶ X` an open
+immersion; no structure over `k` is needed on `U`. The restriction of a cycle `α` on `X` to `U`
+is `α ∘ j`, which sends `[V]` to `[V ∩ U]`: the flat pullback along the open immersion `j`, of
+relative dimension zero. Over a field, `j` preserves the
 dimension of points (`TauCeti.AlgebraicGeometry.height_apply_of_isOpenImmersion`, since its
 residue degrees are one), so restriction sends `n`-cycles to `n`-cycles.
 
@@ -39,12 +40,11 @@ universe u
 namespace TauCeti.AlgebraicGeometry.Chow
 
 variable (k : Type u) [Field k] {X U V : Scheme.{u}}
-  [X.Over (Spec (.of k))] [U.Over (Spec (.of k))] [V.Over (Spec (.of k))]
-  [LocallyOfFiniteType (X ↘ Spec (.of k))] [LocallyOfFiniteType (U ↘ Spec (.of k))]
-  [LocallyOfFiniteType (V ↘ Spec (.of k))]
+  [X.Over (Spec (.of k))] [LocallyOfFiniteType (X ↘ Spec (.of k))]
 
+include k in
 /-- Over a field, restricting an `n`-cycle along an open immersion gives an `n`-cycle. -/
-lemma comap_mem_cyclesOfDimension (j : U ⟶ X) [IsOpenImmersion j] [j.IsOver (Spec (.of k))]
+lemma comap_mem_cyclesOfDimension (j : U ⟶ X) [IsOpenImmersion j]
     {n : ℤ} {α : AlgebraicCycle X ℤ} (hα : α ∈ cyclesOfDimension X n) :
     Function.locallyFinsupp.comap j j.continuous j.isOpenEmbedding.injective α ∈
       cyclesOfDimension U n := by
@@ -55,18 +55,18 @@ lemma comap_mem_cyclesOfDimension (j : U ⟶ X) [IsOpenImmersion j] [j.IsOver (S
 
 /-- The restriction `Z_n(X) →+ Z_n(U)`, `α ↦ α ∘ j`, of `n`-cycles along an open immersion over a
 field: the flat pullback along `j`, sending `[V]` to `[V ∩ U]`. -/
-noncomputable def cyclesRestrict (j : U ⟶ X) [IsOpenImmersion j] [j.IsOver (Spec (.of k))]
-    {n : ℤ} : cyclesOfDimension X n →+ cyclesOfDimension U n :=
+noncomputable def cyclesRestrict (j : U ⟶ X) [IsOpenImmersion j] {n : ℤ} :
+    cyclesOfDimension X n →+ cyclesOfDimension U n :=
   AddMonoidHom.mk'
     (fun α ↦ ⟨Function.locallyFinsupp.comap j j.continuous j.isOpenEmbedding.injective
-      (α : AlgebraicCycle X ℤ), comap_mem_cyclesOfDimension k j α.2⟩)
+      (α : AlgebraicCycle X ℤ), comap_mem_cyclesOfDimension k j α.property⟩)
     fun _ _ ↦ Subtype.ext (Function.locallyFinsupp.comap_add _ _ _ _ _)
 
 variable {k}
 
 /-- The coefficient of a restriction at `u` is the coefficient of the cycle at `j u`. -/
 @[simp]
-lemma cyclesRestrict_apply (j : U ⟶ X) [IsOpenImmersion j] [j.IsOver (Spec (.of k))] {n : ℤ}
+lemma cyclesRestrict_apply (j : U ⟶ X) [IsOpenImmersion j] {n : ℤ}
     (α : cyclesOfDimension X n) (u : U) :
     (cyclesRestrict k j α : AlgebraicCycle U ℤ) u = (α : AlgebraicCycle X ℤ) (j u) :=
   Function.locallyFinsupp.comap_apply _ _ _ _ _
@@ -82,8 +82,8 @@ lemma cyclesRestrict_id {n : ℤ} : cyclesRestrict k (𝟙 X) (n := n) = AddMono
   rfl
 
 /-- Restriction is functorial: `(j' ≫ j)^* = j'^* ∘ j^*`. -/
-lemma cyclesRestrict_comp (j' : V ⟶ U) (j : U ⟶ X) [IsOpenImmersion j'] [IsOpenImmersion j]
-    [j'.IsOver (Spec (.of k))] [j.IsOver (Spec (.of k))] {n : ℤ} :
+lemma cyclesRestrict_comp [U.Over (Spec (.of k))] [LocallyOfFiniteType (U ↘ Spec (.of k))]
+    (j' : V ⟶ U) (j : U ⟶ X) [IsOpenImmersion j'] [IsOpenImmersion j] {n : ℤ} :
     cyclesRestrict k (j' ≫ j) (n := n) = (cyclesRestrict k j').comp (cyclesRestrict k j) := by
   ext α : 1
   refine Subtype.ext (Function.locallyFinsuppWithin.ext fun v ↦ ?_)
@@ -92,23 +92,30 @@ lemma cyclesRestrict_comp (j' : V ⟶ U) (j : U ⟶ X) [IsOpenImmersion j'] [IsO
 
 /-- Restriction along a quasi-compact open immersion is a left inverse of pushforward along it. -/
 @[simp]
-lemma cyclesRestrict_cyclesMap (j : U ⟶ X) [IsOpenImmersion j] [QuasiCompact j]
-    [j.IsOver (Spec (.of k))] {n : ℤ} (β : cyclesOfDimension U n) :
+lemma cyclesRestrict_cyclesMap [U.Over (Spec (.of k))] [LocallyOfFiniteType (U ↘ Spec (.of k))]
+    (j : U ⟶ X) [IsOpenImmersion j] [QuasiCompact j] [j.IsOver (Spec (.of k))] {n : ℤ}
+    (β : cyclesOfDimension U n) :
     cyclesRestrict k j (cyclesMap k j β) = β := by
   refine Subtype.ext (Function.locallyFinsuppWithin.ext fun u ↦ ?_)
   rw [cyclesRestrict_apply, cyclesMap_apply, ← Set.image_singleton,
     j.isOpenEmbedding.injective.preimage_image, finsum_mem_singleton,
     Scheme.Hom.residueDegree_eq_one_of_surjectiveOnStalks, Nat.cast_one, mul_one]
 
-/-- Restriction of cycles along a quasi-compact open immersion is surjective. -/
-lemma cyclesRestrict_surjective (j : U ⟶ X) [IsOpenImmersion j] [QuasiCompact j]
-    [j.IsOver (Spec (.of k))] {n : ℤ} :
-    Function.Surjective (cyclesRestrict k j (n := n)) :=
-  fun β ↦ ⟨cyclesMap k j β, cyclesRestrict_cyclesMap k j β⟩
+/-- Restriction of cycles along an open immersion is surjective: a cycle on `U` is the restriction
+of its pushforward along `j` (which is quasi-compact, as `X` is locally Noetherian), for the
+structure over `k` that `U` inherits from `X`. -/
+lemma cyclesRestrict_surjective (j : U ⟶ X) [IsOpenImmersion j] {n : ℤ} :
+    Function.Surjective (cyclesRestrict k j (n := n)) := by
+  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+  let : U.Over (Spec (.of k)) := ⟨j ≫ X ↘ Spec (.of k)⟩
+  have : LocallyOfFiniteType (U ↘ Spec (.of k)) :=
+    inferInstanceAs (LocallyOfFiniteType (j ≫ X ↘ Spec (.of k)))
+  have : j.IsOver (Spec (.of k)) := ⟨rfl⟩
+  exact fun β ↦ ⟨cyclesMap k j β, cyclesRestrict_cyclesMap k j β⟩
 
 /-- A cycle restricts to zero on `U` exactly when it is supported off the image of `U`. -/
-lemma cyclesRestrict_eq_zero_iff (j : U ⟶ X) [IsOpenImmersion j] [j.IsOver (Spec (.of k))]
-    {n : ℤ} {α : cyclesOfDimension X n} :
+lemma cyclesRestrict_eq_zero_iff (j : U ⟶ X) [IsOpenImmersion j] {n : ℤ}
+    {α : cyclesOfDimension X n} :
     cyclesRestrict k j α = 0 ↔ (α : AlgebraicCycle X ℤ).support ⊆ (Set.range j)ᶜ := by
   refine ⟨fun h x hx ⟨u, hu⟩ ↦ hx ?_, fun h ↦ Subtype.ext
     (Function.locallyFinsuppWithin.ext fun u ↦ ?_)⟩
@@ -124,8 +131,8 @@ on `U` exactly when it is pushed forward from `Z`: the sequence `Z_n(Z) → Z_n(
 exact (Fulton, *Intersection Theory*, Proposition 1.8; Stacks, Lemma 42.19.3 (02RX)). -/
 @[stacks 02RX]
 lemma range_cyclesPushforward_eq_ker_cyclesRestrict {Z : Scheme.{u}} (i : Z ⟶ X)
-    [IsClosedImmersion i] (j : U ⟶ X) [IsOpenImmersion j] [j.IsOver (Spec (.of k))]
-    (hij : Set.range i = (Set.range j)ᶜ) {n : ℤ} :
+    [IsClosedImmersion i] (j : U ⟶ X) [IsOpenImmersion j] (hij : Set.range i = (Set.range j)ᶜ)
+    {n : ℤ} :
     (cyclesPushforward i (k := n)).range = (cyclesRestrict k j (n := n)).ker := by
   ext α
   rw [mem_range_cyclesPushforward_iff, AddMonoidHom.mem_ker, cyclesRestrict_eq_zero_iff, hij]
