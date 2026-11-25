@@ -15,15 +15,13 @@ built from local symbols (Hörmander III, §18.1; Melrose, §5.3): with a locall
 partition of unity `φᵢ` and cutoffs `ψᵢ` equal to `1` near the supports of the `φᵢ`, the operator
 `∑ᵢ φᵢ Op(aᵢ) ψᵢ` is the patched quantization of the local symbols `aᵢ`. Each summand is a
 classical pseudodifferential operator
-(`OpenPartialHomeomorph.chartQuantization_mem_classicalPseudodifferentialOperators`); this file
-shows that the locally finite sum is one too.
+(`OpenPartialHomeomorph.chartQuantization_mem_classicalPseudodifferentialOperators`), and a
+locally finite sum of such operators is one too
+(`TauCeti.locallyFiniteSum_mem_classicalPseudodifferentialOperators`); this file shows that the
+patched quantization is one.
 
 ## Main results
 
-* `TauCeti.locallyFiniteSum_mem_classicalPseudodifferentialOperators`: a locally finite sum
-  `TauCeti.locallyFiniteSum P hP = ∑ᵢ Pᵢ` of classical pseudodifferential operators of order `m`
-  is one, provided each `Pᵢ` has outputs supported in a compact set `Sᵢ` and only sees its input
-  near `Sᵢ`, with `(Sᵢ)` locally finite. Near a compact set only finitely many `Pᵢ` matter.
 * `TauCeti.patchedQuantization`: the **patched quantization** `∑ᵢ φᵢ Op(aᵢ) ψᵢ` of classical
   symbols `aᵢ` in charts `eᵢ`, for cutoffs whose supports form a locally finite family on `M`.
 * `TauCeti.patchedQuantization_mem_classicalPseudodifferentialOperators`: the patched quantization
@@ -44,39 +42,10 @@ noncomputable section
 open Filter Set TauCeti
 open scoped ContDiff Manifold Distributions SchwartzMap Topology
 
-/-! ### Locally finite sums -/
-
 namespace TauCeti
 
 variable {n : ℕ} {m : ℝ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpace n) M]
   [T2Space M] {ι : Type*}
-  {P : ι → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
-    C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
-  {hP : ∀ f, LocallyFinite fun i ↦ Function.support (P i f)} {S : ι → Set M}
-
-/-- **Locally finite sums of pseudodifferential operators.** Let `Pᵢ` be classical
-pseudodifferential operators of order `m` on `M`, and `Sᵢ` compact sets forming a locally finite
-family, such that the outputs of `Pᵢ` are supported in `Sᵢ` and `Pᵢ f = 0` whenever `f` vanishes
-near `Sᵢ`. Then the locally finite sum `f ↦ ∑ᵢ Pᵢ f` is a classical pseudodifferential operator of
-order `m`. -/
-theorem locallyFiniteSum_mem_classicalPseudodifferentialOperators (hS : LocallyFinite S)
-    (hSc : ∀ i, IsCompact (S i)) (hPm : ∀ i, P i ∈ classicalPseudodifferentialOperators m)
-    (hsupp : ∀ i f, tsupport (P i f) ⊆ S i)
-    (hloc : ∀ i f, (∀ᶠ y in 𝓝ˢ (S i), f y = 0) → P i f = 0) :
-    locallyFiniteSum P hP ∈ classicalPseudodifferentialOperators m := by
-  classical
-  refine mem_classicalPseudodifferentialOperators_iff.2
-    ⟨isProperlySupported_locallyFiniteSum hS hSc hsupp hloc, fun e he φ ψ ↦ ?_⟩
-  -- In a chart, only the finitely many `Pᵢ` with `Sᵢ` meeting `e⁻¹(supp φ)` contribute.
-  have hK := e.isCompact_symm_image_tsupport φ
-  set I := (hS.finite_nonempty_inter_compact hK).toFinset
-  choose a ha using fun i ↦ (mem_classicalPseudodifferentialOperators_iff.1 (hPm i)).2 e he φ ψ
-  refine ⟨∑ i ∈ I, a i, fun u x ↦ ?_⟩
-  rw [ClassicalSymbol.toSymbol_sum, Symbol.quantizeSchwartzValue_sum_left]
-  simp only [ha, OpenPartialHomeomorph.complexChartCompression_apply, ← Finset.smul_sum]
-  by_cases hx : φ x = 0
-  · simp [hx]
-  rw [locallyFiniteSum_apply_eq_sum hS hsupp hK _ ⟨x, subset_tsupport _ hx, rfl⟩]
 
 /-! ### Patched quantization -/
 
