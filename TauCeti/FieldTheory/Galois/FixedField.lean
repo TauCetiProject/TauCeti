@@ -11,6 +11,7 @@ public import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 public import TauCeti.Algebra.Group.Subgroup.ZPowers
 import Mathlib.FieldTheory.Galois.Infinite
 import Mathlib.RingTheory.Invariant.Basic
+import Mathlib.Topology.Algebra.OpenSubgroup
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.GroupTheory.GroupAction.Hom
 
@@ -86,6 +87,13 @@ the closure of `H`.
 * `IntermediateField.finiteDimensional_fixedField` and `IntermediateField.isGalois_fixedField`:
   Artin's theorem on the fixed field of a finite subgroup, with no hypothesis on `M / K`
 * `IntermediateField.finite_of_finiteDimensional_fixedField`
+* `IntermediateField.fixedField_le_iff_fixingSubgroup_le_of_isClosed` and
+  `IntermediateField.finiteDimensional_fixedField_of_isOpen`: the infinite Galois correspondence
+  for a closed subgroup, and finiteness of the field fixed by an open one
+* `IntermediateField.fixingSubgroup_fixedField_of_isOpen`,
+  `IntermediateField.finrank_fixedField_of_isOpen` and
+  `IntermediateField.finrank_fixedField_stabilizer_of_isOpen`: an open subgroup is the fixing
+  subgroup of its fixed field, whose degree is the index, or the orbit size for a stabilizer
 * `IntermediateField.card_fixingSubgroup_le`
 * `IntermediateField.fixingSubgroup_adjoin_simple`, with
   `IntermediateField.mem_fixedField_stabilizer`,
@@ -131,24 +139,6 @@ theorem mem_fixedField_zpowers_iff (σ : M ≃ₐ[K] M) (x : M) :
     x ∈ fixedField (Subgroup.zpowers σ) ↔ σ x = x := by
   rw [mem_fixedField_iff, Subgroup.forall_mem_zpowers]
   exact (MulAction.mem_fixedBy_zpowers_iff_mem_fixedBy (g := σ) (a := x))
-
-/-- The degree of a cyclic fixed field times the order of its generator is the total degree. When
-`σ` has infinite order, `M / K` is infinite-dimensional and both sides are `0`. -/
-theorem finrank_fixedField_zpowers_mul_orderOf (σ : M ≃ₐ[K] M) :
-    Module.finrank K (fixedField (Subgroup.zpowers σ)) * orderOf σ = Module.finrank K M := by
-  by_cases hfin : Finite (Subgroup.zpowers σ)
-  · have := Fintype.ofFinite (Subgroup.zpowers σ)
-    have h : Module.finrank (fixedField (Subgroup.zpowers σ)) M = orderOf σ := by
-      rw [← Nat.card_zpowers, Nat.card_eq_fintype_card]
-      exact FixedPoints.finrank_eq_card (Subgroup.zpowers σ) M
-    rw [← h, Module.finrank_mul_finrank]
-  · have hσ : orderOf σ = 0 := by
-      rw [orderOf_eq_zero_iff, ← finite_zpowers]
-      exact hfin
-    rw [hσ, mul_zero]
-    by_contra hne
-    have : FiniteDimensional K M := Module.finite_of_finrank_pos (Nat.pos_of_ne_zero (Ne.symm hne))
-    exact hfin inferInstance
 
 /-- The Galois connection between fixing subgroups and fixed intermediate fields. -/
 theorem fixingSubgroup_fixedField_gc :
@@ -203,6 +193,51 @@ Mathlib's `IsGalois.of_fixed_field` on the fixed field of the Galois corresponde
 instance isGalois_fixedField (H : Subgroup (M ≃ₐ[K] M)) [Finite H] :
     IsGalois (fixedField H) M :=
   IsGalois.of_fixed_field M H
+
+/-- **The fixed field of a closed subgroup lies in `E` exactly when the fixers of `E` lie in the
+subgroup**, for a Galois extension `M / K` of any degree. Mathlib's
+`IsGalois.fixedField_le_iff_fixingSubgroup_le` is the finite-dimensional case, in which every
+subgroup is closed for the Krull topology. -/
+theorem fixedField_le_iff_fixingSubgroup_le_of_isClosed [IsGalois K M]
+    {H : Subgroup (M ≃ₐ[K] M)} (hH : IsClosed (H : Set (M ≃ₐ[K] M)))
+    {E : IntermediateField K M} :
+    fixedField H ≤ E ↔ E.fixingSubgroup ≤ H :=
+  ⟨fun h ↦ (fixingSubgroup_antitone h).trans
+      (InfiniteGalois.fixingSubgroup_fixedField ⟨H, hH⟩).le,
+    fun h ↦ (fixedField_le h).trans (InfiniteGalois.fixedField_fixingSubgroup E).le⟩
+
+/-- **An open subgroup is recovered from its fixed field**, for a Galois extension `M / K` of any
+degree: an open subgroup is closed for the Krull topology, and Mathlib's
+`InfiniteGalois.fixingSubgroup_fixedField` recovers closed subgroups. -/
+theorem fixingSubgroup_fixedField_of_isOpen [IsGalois K M]
+    {H : Subgroup (M ≃ₐ[K] M)} (hH : IsOpen (H : Set (M ≃ₐ[K] M))) :
+    (fixedField H).fixingSubgroup = H :=
+  InfiniteGalois.fixingSubgroup_fixedField ⟨H, Subgroup.isClosed_of_isOpen H hH⟩
+
+/-- **The fixed field of an open subgroup is finite** over the base, for a Galois extension
+`M / K` of any degree: the open subgroup is the fixing subgroup of its fixed field, and Mathlib's
+`InfiniteGalois.isOpen_iff_finite` identifies the intermediate fields with open fixers. -/
+theorem finiteDimensional_fixedField_of_isOpen [IsGalois K M]
+    {H : Subgroup (M ≃ₐ[K] M)} (hH : IsOpen (H : Set (M ≃ₐ[K] M))) :
+    FiniteDimensional K (fixedField H) := by
+  rw [← InfiniteGalois.isOpen_iff_finite, fixingSubgroup_fixedField_of_isOpen hH]
+  exact hH
+
+/-- **The degree of the fixed field of an open subgroup is its index**, for a Galois extension
+`M / K` of any degree. -/
+theorem finrank_fixedField_of_isOpen [IsGalois K M]
+    {H : Subgroup (M ≃ₐ[K] M)} (hH : IsOpen (H : Set (M ≃ₐ[K] M))) :
+    Module.finrank K (fixedField H) = H.index := by
+  rw [finrank_eq_fixingSubgroup_index, fixingSubgroup_fixedField_of_isOpen hH]
+
+/-- **The degree of the field fixed by an open point stabilizer is the size of the orbit**, for
+an action of the automorphisms of a Galois extension `M / K` of any degree. -/
+theorem finrank_fixedField_stabilizer_of_isOpen [IsGalois K M] {X : Type*}
+    [MulAction (M ≃ₐ[K] M) X] {x : X}
+    (hx : IsOpen (MulAction.stabilizer (M ≃ₐ[K] M) x : Set (M ≃ₐ[K] M))) :
+    Module.finrank K (fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)) =
+      Nat.card (MulAction.orbit (M ≃ₐ[K] M) x) := by
+  rw [finrank_fixedField_of_isOpen hx, MulAction.index_stabilizer, Nat.card_coe_set_eq]
 
 end IntermediateField
 
@@ -554,6 +589,27 @@ end Subgroup
 namespace IntermediateField
 
 variable {K M : Type*} [Field K] [Field M] [Algebra K M]
+
+/-- By Artin's theorem, `M` has degree `orderOf σ` over the field fixed by an automorphism `σ`.
+When `σ` has infinite order both sides are `0`. -/
+theorem finrank_fixedField_zpowers_eq_orderOf (σ : M ≃ₐ[K] M) :
+    Module.finrank (fixedField (Subgroup.zpowers σ)) M = orderOf σ :=
+  (Subgroup.finrank_fixedField_eq_card _).trans (Nat.card_zpowers σ)
+
+/-- Over the field fixed by a nontrivial automorphism `σ` of finite order, `M` has degree
+`orderOf σ > 1`. -/
+theorem one_lt_finrank_fixedField_zpowers {σ : M ≃ₐ[K] M} (hσ : IsOfFinOrder σ) (h1 : σ ≠ 1) :
+    1 < Module.finrank (fixedField (Subgroup.zpowers σ)) M := by
+  have hne : orderOf σ ≠ 1 := mt orderOf_eq_one_iff.1 h1
+  have := hσ.orderOf_pos
+  rw [finrank_fixedField_zpowers_eq_orderOf]
+  omega
+
+/-- The degree of a cyclic fixed field times the order of its generator is the total degree. When
+`σ` has infinite order, `M / K` is infinite-dimensional and both sides are `0`. -/
+theorem finrank_fixedField_zpowers_mul_orderOf (σ : M ≃ₐ[K] M) :
+    Module.finrank K (fixedField (Subgroup.zpowers σ)) * orderOf σ = Module.finrank K M := by
+  rw [← finrank_fixedField_zpowers_eq_orderOf σ, Module.finrank_mul_finrank]
 
 /-- Translating a point along an action of `M ≃ₐ[K] M` maps the fixed field of its stabilizer by
 the translating automorphism. -/

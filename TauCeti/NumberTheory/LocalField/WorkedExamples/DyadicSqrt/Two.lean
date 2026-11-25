@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.LocalField.Eisenstein.TotallyRamified
 public import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
 public import TauCeti.NumberTheory.LocalField.Squares
 public import TauCeti.RingTheory.AdjoinRoot.Basic
-import TauCeti.FieldTheory.Galois.SquareRoot
+import TauCeti.FieldTheory.Galois.SquareRoot.Basic
 import TauCeti.FieldTheory.Kummer.Extension
 
 /-!
@@ -136,6 +136,12 @@ theorem finrank_eq_two : Module.finrank ℚ_[2] DyadicSqrtTwo = 2 := by
   rw [powerBasis.finrank, powerBasis, AdjoinRoot.powerBasis_dim, natDegree_X_pow_sub_C]
 
 instance : Algebra.IsQuadraticExtension ℚ_[2] DyadicSqrtTwo := ⟨finrank_eq_two⟩
+
+-- A direct instance: with the separable-closure instances in scope, searching for
+-- `IsGalois` through `Algebra.IsSeparable` exceeds the typeclass heartbeat budget.
+instance : IsGalois ℚ_[2] DyadicSqrtTwo :=
+  have : Algebra.IsSeparable ℚ_[2] DyadicSqrtTwo := Algebra.IsSeparable.of_integral _ _
+  Algebra.IsQuadraticExtension.isGalois _ _
 
 private theorem integral_sqrtTwo : IsIntegral 𝒪[ℚ_[2]] sqrtTwo :=
   ⟨X ^ 2 - C 2, by monicity!, by simp [map_ofNat]⟩

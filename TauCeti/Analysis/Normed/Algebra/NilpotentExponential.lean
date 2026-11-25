@@ -45,6 +45,9 @@ upper unitriangular matrices are of this form, with `𝔲` its Lie algebra.
 
 ## Main results
 
+* `NormedSpace.exp_eq_sum_of_pow_eq_zero`: if `a ^ n = 0`, then `NormedSpace.exp a` is the
+  truncated exponential series, over any field of characteristic zero;
+  `NormedSpace.exp_eq_one_add_of_sq_eq_zero` is the square-zero case `exp a = 1 + a`.
 * `IsNilpotent.normedSpace_exp_eq_exp`: on a nilpotent element, `NormedSpace.exp` is the finite
   exponential.
 * `IsNilpotent.normedSpace_log_eq_log`: on a unipotent element, `NormedSpace.log` is the finite
@@ -74,6 +77,26 @@ public section
 
 open Finset Set
 
+namespace NormedSpace
+
+variable (𝕂 : Type*) {A : Type*} [Field 𝕂] [CharZero 𝕂] [Ring A] [Algebra 𝕂 A]
+  [TopologicalSpace A] [IsTopologicalRing A]
+
+/-- If `a ^ n = 0`, the exponential series terminates: `NormedSpace.exp a` is its truncation
+`∑ i < n, a ^ i / i!`, with coefficients in any field `𝕂` of characteristic zero over which `A`
+is an algebra. -/
+theorem exp_eq_sum_of_pow_eq_zero {a : A} {n : ℕ} (ha : a ^ n = 0) :
+    exp a = ∑ i ∈ range n, (i.factorial : 𝕂)⁻¹ • a ^ i := by
+  rw [exp_eq_tsum 𝕂]
+  exact tsum_eq_sum fun i hi => by rw [pow_eq_zero_of_le (by simpa using hi) ha, smul_zero]
+
+include 𝕂 in
+/-- An element of square zero has exponential `1 + a`. -/
+theorem exp_eq_one_add_of_sq_eq_zero {a : A} (ha : a ^ 2 = 0) : exp a = 1 + a := by
+  simp [exp_eq_sum_of_pow_eq_zero 𝕂 ha, sum_range_succ]
+
+end NormedSpace
+
 namespace IsNilpotent
 
 section TopologicalAlgebra
@@ -84,8 +107,7 @@ variable {A : Type*} [Ring A] [Algebra ℚ A] [TopologicalSpace A] [IsTopologica
 finite exponential. -/
 theorem normedSpace_exp_eq_exp {a : A} (ha : IsNilpotent a) : NormedSpace.exp a = exp a := by
   obtain ⟨n, hn⟩ := ha
-  rw [NormedSpace.exp_eq_tsum_rat, exp_eq_sum hn]
-  exact tsum_eq_sum fun i hi => by rw [pow_eq_zero_of_le (by simpa using hi) hn, smul_zero]
+  rw [NormedSpace.exp_eq_sum_of_pow_eq_zero ℚ hn, exp_eq_sum hn]
 
 /-- On a unipotent element the logarithm series terminates: `NormedSpace.log` agrees with the
 finite logarithm. -/

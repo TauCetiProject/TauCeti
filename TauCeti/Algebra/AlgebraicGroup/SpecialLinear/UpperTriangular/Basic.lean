@@ -79,14 +79,8 @@ theorem definingHopfIdeal_toIdeal :
 
 /-- The upper-triangular Hopf ideal of `SLₙ` is finitely generated as an ideal. -/
 theorem definingHopfIdeal_toIdeal_fg : (definingHopfIdeal R n).toIdeal.FG := by
-  rw [definingHopfIdeal_toIdeal]
-  refine Submodule.fg_span (Set.Finite.image _ ?_)
-  refine (Set.finite_range fun p : Fin n × Fin n ↦
-    GeneralLinear.coordinateHopfAlgebraAlgEquiv R n
-      (GeneralLinear.coordinateRingMap R n (MvPolynomial.X p))).subset ?_
-  intro x hx
-  obtain ⟨i, j, -, rfl⟩ := (GeneralLinear.UpperTriangular.mem_definingRelationSet_iff R n x).mp hx
-  exact ⟨(i, j), rfl⟩
+  rw [definingHopfIdeal, HopfIdeal.map_toIdeal]
+  exact (GeneralLinear.weightParabolicDefiningHopfIdeal_toIdeal_fg R _).map _
 
 /-- The coordinate Hopf algebra of the upper-triangular closed subgroup scheme of `SLₙ`. -/
 noncomputable abbrev coordinateHopfAlgebra : _root_.CommHopfAlgCat.{u} R :=

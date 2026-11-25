@@ -8,8 +8,10 @@ module
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Classical.EssImage
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Fibration
 public import TauCeti.AlgebraicTopology.LocalCoefficient.Covering
+public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Augmentation
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.TotallyDisconnected
 public import TauCeti.Topology.Circle.DoubleCover
+public import TauCeti.Topology.Covering.AddCircle
 public import TauCeti.Topology.PathSpace.Moore.Covering
 
 /-!
@@ -40,10 +42,21 @@ acts on the point chains of `C_*(F)_Φ` by swapping `[1]` and `[-1]`
 permutation module `R[ℤ/2]` with the generator acting by the swap, not the trivial module and not
 the rank-one sign representation.
 
+In the basis of points of the fibre (`IsCoveringMap.liftingLocalSystemEquiv`), the point chain of
+a Moore loop `ω` moves each point of the fibre to the end of its lift along `ω`
+(`IsCoveringMap.op_cubicalChainPoint_smul_liftingLocalSystemEquiv`), and a class
+`g ∈ π₁(B, b)` acts through Mathlib's monodromy permutation `IsCoveringMap.monodromyPerm`
+(`IsCoveringMap.representation_liftingLocalSystemEquiv_single`). For the double cover
+`x ↦ 2 • x` of the circle `ℝ ⧸ ℤ` (`TauCeti.addCircleDoubleCover`), whose fibre over `0` is
+`{0, 1 / 2}`, the generator swaps the two basis vectors
+(`TauCeti.representation_liftingLocalSystemEquiv_addCircleDoubleCover`).
+
 ## Main definitions
 
 * `IsCoveringMap.liftingLocalSystemPermutationIso`: the DG local system of a covering map is the DG
   local system of its permutation local system.
+* `IsCoveringMap.liftingLocalSystemEquiv`: the DG local system of a covering map is, as a module,
+  the free module on the points of the fibre.
 
 ## Main results
 
@@ -55,12 +68,19 @@ the rank-one sign representation.
   sheet to the `0`-chain of that sheet.
 * `Circle.representation_liftingLocalSystem_sq`: for the double cover of the circle, the generator
   of the fundamental group exchanges the two point chains of the DG local system.
+* `IsCoveringMap.op_cubicalChainPoint_smul_liftingLocalSystemEquiv`: a Moore loop acts on the
+  basis of points by lifting.
+* `IsCoveringMap.representation_liftingLocalSystemEquiv_single`: the representation of the
+  fundamental group on it is the permutation representation of the monodromy.
+* `TauCeti.representation_liftingLocalSystemEquiv_addCircleDoubleCover`: for the double cover of
+  `ℝ ⧸ ℤ`, the generator swaps the two basis vectors.
 
 ## References
 
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Morse homology with differential graded
   coefficients*, Progress in Mathematics 360, Birkhäuser, 2025, §7.1.
-* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Section 3.H.
+* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, §1.3 (the monodromy action
+  on the fibre of a covering) and Section 3.H.
 -/
 
 public section
@@ -87,7 +107,69 @@ theorem isConcentratedInDegreeZero_liftingLocalSystem (Φ : MooreLiftingFunction
   have : DiscreteTopology {e // p e = b} := (hp b).discreteTopology_fiber
   isConcentratedInDegreeZero_cubicalChainModuleDG _ _ R
 
+variable (Φ : MooreLiftingFunction p) (b : B)
+
+/-- **The DG local system of a covering map is the free module on the fibre**: the basis vector at a
+point `f` of the fibre is its point chain. -/
+def liftingLocalSystemEquiv :
+    ({e // p e = b} →₀ R) ≃ₗ[R] liftingLocalSystem (R := R) (hp.isTransitive Φ) b :=
+  have : DiscreteTopology {e // p e = b} := (hp b).discreteTopology_fiber
+  (cubicalChainModuleFinsuppEquiv _ _ R).symm
+
+variable {R}
+
+/-- The basis vector at a point of the fibre is the point chain of that point. -/
+@[simp]
+theorem liftingLocalSystemEquiv_single (f : {e // p e = b}) (r : R) :
+    hp.liftingLocalSystemEquiv R Φ b (Finsupp.single f r) =
+      r • cubicalChainModulePoint {e // p e = b} (MooreLoopSpace B b) R f := by
+  have : DiscreteTopology {e // p e = b} := (hp b).discreteTopology_fiber
+  rw [liftingLocalSystemEquiv, cubicalChainModuleFinsuppEquiv_symm_single,
+    cubicalChainModulePoint_def]
+
+/-- **A Moore loop acts on the fibre of a covering map by lifting**: the point chain of a Moore loop
+`ω` at `b` acts on the DG local system, read in the basis of points of the fibre, by sending each
+point `f` to the end of the lift of `ω` from `f`. -/
+theorem op_cubicalChainPoint_smul_liftingLocalSystemEquiv (ω : MooreLoopSpace B b)
+    (x : {e // p e = b} →₀ R) :
+    letI := (hp.isTransitive Φ).mulAction b
+    letI := (hp.isTransitive Φ).continuousSMul b
+    op (cubicalChainPoint (MooreLoopSpace B b) R ω) • hp.liftingLocalSystemEquiv R Φ b x =
+      hp.liftingLocalSystemEquiv R Φ b (Finsupp.mapDomain (Φ.fiberAct b · ω) x) := by
+  have : DiscreteTopology {e // p e = b} := (hp b).discreteTopology_fiber
+  let := (hp.isTransitive Φ).mulAction b
+  let := (hp.isTransitive Φ).continuousSMul b
+  apply (cubicalChainModuleFinsuppEquiv _ (MooreLoopSpace B b) R).injective
+  simp only [liftingLocalSystemEquiv, cubicalChainPoint_def, cubicalChainModuleFinsuppEquiv_op_smul,
+    LinearEquiv.apply_symm_apply, MooreLiftingFunction.IsTransitive.op_smul_eq_fiberAct]
+
 end Degree
+
+section Basis
+
+variable {E : Type u} {B : TopCat.{u}} [TopologicalSpace E] {p : C(E, B)} (hp : IsCoveringMap p)
+  (Φ : MooreLiftingFunction p) (b : B) {R : Type u} [CommRing R]
+
+/-- **The DG local system of a covering map is the permutation module of the monodromy**: the
+representation of `π₁(B, b)` through which the DG local system, concentrated in degree zero, is
+classical sends the basis vector at a point `f` of the fibre to the basis vector at the image of `f`
+under the monodromy permutation of the class. -/
+theorem representation_liftingLocalSystemEquiv_single (g : FundamentalGroup B b)
+    (f : {e // p e = b}) (r : R) :
+    (hp.isConcentratedInDegreeZero_liftingLocalSystem R Φ b).representation g
+        (hp.liftingLocalSystemEquiv R Φ b (Finsupp.single f r)) =
+      hp.liftingLocalSystemEquiv R Φ b (Finsupp.single
+        ⟨hp.monodromyPerm b g ⟨f, f.property⟩, (hp.monodromyPerm b g ⟨f, f.property⟩).property⟩
+        r) := by
+  obtain ⟨γ, hγ⟩ := MooreLoopSpace.fundamentalGroupHom_surjective b g⁻¹
+  obtain rfl : g = (MooreLoopSpace.fundamentalGroupHom b γ)⁻¹ := by rw [hγ, inv_inv]
+  rw [DGRightModuleCat.IsConcentratedInDegreeZero.representation_fundamentalGroupHom_inv_apply]
+  refine (hp.op_cubicalChainPoint_smul_liftingLocalSystemEquiv Φ b γ _).trans ?_
+  rw [Finsupp.mapDomain_single]
+  congr 2
+  exact Subtype.ext (hp.coe_fiberAct_eq_monodromyPerm Φ b f γ)
+
+end Basis
 
 section Permutation
 
@@ -106,7 +188,8 @@ theorem representation_liftingLocalSystem_lof_ofCube_point (g : FundamentalGroup
         ⟨_, (hp.monodromy g.asHom ⟨f, f.property⟩).property⟩)) := by
   obtain ⟨γ, hγ⟩ := MooreLoopSpace.fundamentalGroupHom_surjective b g⁻¹
   rw [← inv_inv g, ← hγ,
-    DGRightModuleCat.IsConcentratedInDegreeZero.representation_fundamentalGroupHom_inv_apply]
+    DGRightModuleCat.IsConcentratedInDegreeZero.representation_fundamentalGroupHom_inv_apply,
+    cubicalChainPoint_def]
   let _ := (hp.isTransitive Φ).mulAction b
   let _ := (hp.isTransitive Φ).continuousSMul b
   refine (op_lof_smul_cubicalChainModuleLof (Y := {e // p.hom e = b}) _ _).trans ?_
@@ -235,3 +318,33 @@ theorem representation_liftingLocalSystem_sq (z : Circle) (hz : z ^ 2 = 1) {R : 
   exact Subtype.ext (coe_monodromy_sq_expLoop z hz)
 
 end Circle
+
+namespace TauCeti
+
+/-! ### The double cover of `ℝ ⧸ ℤ` -/
+
+/-- **The DG local system of the double cover of `ℝ ⧸ ℤ` is the permutation module of the
+fibre**: the generator of the fundamental group exchanges the basis vectors at the two points `0`
+and `1 / 2` of the fibre over `0`. So the DG local system is `R²` in degree zero with the generator
+acting by the swap, not by a sign. The target of the double cover is read in `TopCat`, where the
+DG local systems of a covering live. -/
+theorem representation_liftingLocalSystemEquiv_addCircleDoubleCover {R : Type} [CommRing R]
+    (Φ : MooreLiftingFunction (B := TopCat.of (AddCircle (1 : ℝ))) addCircleDoubleCover) (r : R) :
+    let hM := isCoveringMap_addCircleDoubleCover.isConcentratedInDegreeZero_liftingLocalSystem R Φ
+      (B := TopCat.of (AddCircle (1 : ℝ))) ((0 : ℝ) : AddCircle (1 : ℝ))
+    let e := isCoveringMap_addCircleDoubleCover.liftingLocalSystemEquiv R Φ
+      (B := TopCat.of (AddCircle (1 : ℝ))) ((0 : ℝ) : AddCircle (1 : ℝ))
+    let g := FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (AddCircle.zsmulLoop 1 0 1))
+    hM.representation g (e (Finsupp.single ⟨_, addCircleDoubleCover_zero⟩ r)) =
+        e (Finsupp.single ⟨_, addCircleDoubleCover_half⟩ r) ∧
+      hM.representation g (e (Finsupp.single ⟨_, addCircleDoubleCover_half⟩ r)) =
+        e (Finsupp.single ⟨_, addCircleDoubleCover_zero⟩ r) := by
+  constructor
+  · rw [IsCoveringMap.representation_liftingLocalSystemEquiv_single]
+    congr 2
+    exact Subtype.ext coe_monodromyPerm_addCircleDoubleCover_zero
+  · rw [IsCoveringMap.representation_liftingLocalSystemEquiv_single]
+    congr 2
+    exact Subtype.ext coe_monodromyPerm_addCircleDoubleCover_half
+
+end TauCeti

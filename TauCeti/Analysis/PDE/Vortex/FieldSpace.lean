@@ -42,9 +42,9 @@ represent `a = i (b₁ ds + b₂ dt)` and `α = 2 (p + i q)`.
   (`TemperedDistribution.realSobolevFunctions`). This is the componentwise complexification on
   which the tempered vacuum operator `TauCeti.Vortex.temperedVacuumOperator` acts. For `s ≥ 0` a
   field lies in it exactly when its coordinates are almost everywhere the `L²` functions of
-  elements of `H^s(ℂ)` (`mem_sobolevFields_iff_exists_inclusionLp_ae_eq`), and its `L²` norm is
-  then at most `4` times the norm of these coordinates
-  (`eLpNorm_le_of_forall_inclusionLp_ae_eq`).
+  elements of `H^s(ℂ)` (`mem_sobolevFields_iff_exists_inclusionLp_ae_eq`). Such a field is then
+  square integrable (`memLp_of_forall_inclusionLp_ae_eq`), with `L²` norm at most `4` times the
+  norm of these coordinates (`eLpNorm_le_of_forall_inclusionLp_ae_eq`).
 * `framedFieldSpace f m s` is `A_m^s`, the affine subspace through `referenceField f m` with
   direction `sobolevFields s`.
 
@@ -360,14 +360,21 @@ theorem memLp_of_mem_sobolevFields {s : ℝ} {y : ℂ → EuclideanSpace ℝ (Fi
   memLp_piLp_iff.2 fun i ↦ memLp_of_mem_realSobolevFunctions (mem_sobolevFields.1 hy i)
 
 open BesselPotentialSpace in
+/-- A real field whose four coordinates are represented by `v : Fin 4 → H^s(ℂ)`, `s ≥ 0`, is
+square integrable. -/
+theorem memLp_of_forall_inclusionLp_ae_eq {s : ℝ} (hs : 0 ≤ s)
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} {v : Fin 4 → H^{s}(ℂ)}
+    (hv : ∀ a, ⇑(inclusionLp hs (v a)) =ᵐ[volume] fun z ↦ (y z a : ℂ)) : MemLp y 2 volume :=
+  memLp_of_mem_sobolevFields ((mem_sobolevFields_iff_exists_inclusionLp_ae_eq hs).2 ⟨v, hv⟩)
+
+open BesselPotentialSpace in
 /-- A real field whose four coordinates are represented by `v : Fin 4 → H^s(ℂ)`, `s ≥ 0`, has
 `L²` norm at most `4 ‖v‖`. -/
 theorem eLpNorm_le_of_forall_inclusionLp_ae_eq {s : ℝ} (hs : 0 ≤ s)
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} {v : Fin 4 → H^{s}(ℂ)}
     (hv : ∀ a, ⇑(inclusionLp hs (v a)) =ᵐ[volume] fun z ↦ (y z a : ℂ)) :
     eLpNorm y 2 volume ≤ ENNReal.ofReal (4 * ‖v‖) := by
-  have hy : MemLp y 2 volume := memLp_of_mem_sobolevFields
-    ((mem_sobolevFields_iff_exists_inclusionLp_ae_eq hs).2 ⟨v, hv⟩)
+  have hy : MemLp y 2 volume := memLp_of_forall_inclusionLp_ae_eq hs hv
   let b := (EuclideanSpace.basisFun (Fin 4) ℝ).toBasis
   calc eLpNorm y 2 volume
       ≤ ∑ a, ‖b a‖ₑ * eLpNorm (fun z ↦ b.coord a (y z)) 2 volume :=

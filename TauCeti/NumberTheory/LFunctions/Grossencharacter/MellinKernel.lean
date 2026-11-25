@@ -384,7 +384,7 @@ theorem heckeMellinKernel_ofRayClassCharacter_one (D : Set (realSpace K))
   congr 1
   refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
   rw [hlev]
-  exact heckeTheta_ofRayClassCharacter_one I
+  exact heckeTheta_eq_latticeTheta _ heckeEpsilon_ofRayClassCharacter_one I
     (surfaceScale_pos (mem_normOneSurface.mp x.property).1 (by positivity))
 
 end TauCeti.LFunctions.Grossencharacter
