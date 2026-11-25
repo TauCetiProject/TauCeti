@@ -982,7 +982,7 @@ theorem integral_norm_le_mul_rpow_add_of_eq_zero_off_closedBall {X E : Type*}
     {s r K μ : ℝ} (hs : 0 < s) (hr : 0 ≤ r) (hfK : ∀ ξ ∈ closedBall 0 (s * r), ‖f ξ‖ ≤ K * s ^ μ)
     (hf0 : ∀ ξ ∉ closedBall 0 (s * r), f ξ = 0) :
     ∫ ξ, ‖f ξ‖ ∂mu ≤ K * r ^ finrank ℝ X * mu.real (ball 0 1) * s ^ (μ + finrank ℝ X) := by
-  refine (integral_norm_le_of_eq_zero_off_closedBall hfK hf0).trans_eq ?_
+  refine (integral_norm_le_of_forall_compl_eq_zero measure_closedBall_lt_top hfK hf0).trans_eq ?_
   rw [Measure.addHaar_real_closedBall _ _ (by positivity), Real.rpow_add hs, Real.rpow_natCast,
     mul_pow]
   ring
