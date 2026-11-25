@@ -50,6 +50,15 @@ theorem shiftedShear_symm_apply (c : ℝ) (p : ℝ × ℝ) :
     (shiftedShear c).symm p = (p.1 - p.2 + c, p.2 - c) :=
   (rfl)
 
+/-- The shifted shear as an explicit function. -/
+theorem coe_shiftedShear (c : ℝ) : ⇑(shiftedShear c) = fun p => (p.1 + p.2, p.2 + c) :=
+  funext (shiftedShear_apply c)
+
+/-- The inverse of the shifted shear as an explicit function. -/
+theorem coe_shiftedShear_symm (c : ℝ) :
+    ⇑(shiftedShear c).symm = fun p => (p.1 - p.2 + c, p.2 - c) :=
+  funext (shiftedShear_symm_apply c)
+
 /-- The derivative of the shifted shear is `(u, v) ↦ (u + v, v)`. -/
 theorem hasFDerivAt_shiftedShear (c : ℝ) (p : ℝ × ℝ) :
     HasFDerivAt (shiftedShear c) ((ContinuousLinearMap.fst ℝ ℝ ℝ +
@@ -58,9 +67,8 @@ theorem hasFDerivAt_shiftedShear (c : ℝ) (p : ℝ × ℝ) :
     hasFDerivAt_fst
   have hsnd : HasFDerivAt (Prod.snd : ℝ × ℝ → ℝ) (ContinuousLinearMap.snd ℝ ℝ ℝ) p :=
     hasFDerivAt_snd
-  have h := (hfst.add hsnd).prodMk (hsnd.add_const c)
-  rw [show ⇑(shiftedShear c) = _ from funext (shiftedShear_apply c)]
-  exact h
+  rw [coe_shiftedShear]
+  exact (hfst.add hsnd).prodMk (hsnd.add_const c)
 
 /-- The first component of the derivative of the shifted shear is `dx + dy`. -/
 theorem fst_comp_fderiv_shiftedShear (c : ℝ) (p : ℝ × ℝ) :
@@ -73,10 +81,10 @@ theorem fst_comp_fderiv_shiftedShear (c : ℝ) (p : ℝ × ℝ) :
 theorem isMonotoneTwistMap_shiftedShear (c : ℝ) :
     IsMonotoneTwistMap 1 univ (shiftedShear c).toOpenPartialHomeomorph := by
   have hs : ContDiff ℝ 1 (shiftedShear c) := by
-    rw [show ⇑(shiftedShear c) = _ from funext (shiftedShear_apply c)]
+    rw [coe_shiftedShear]
     fun_prop
   have hsymm : ContDiff ℝ 1 (shiftedShear c).symm := by
-    rw [show ⇑(shiftedShear c).symm = _ from funext (shiftedShear_symm_apply c)]
+    rw [coe_shiftedShear_symm]
     fun_prop
   refine
     { period_pos := one_pos
@@ -113,9 +121,12 @@ theorem isMonotoneTwistMap_shiftedShear (c : ℝ) :
 /-- The shifted shear preserves Lebesgue measure on the plane. -/
 theorem measurePreserving_shiftedShear (c : ℝ) :
     MeasurePreserving (shiftedShear c) volume volume := by
-  exact ((MeasurePreserving.id (volume : Measure ℝ)).prod
+  rw [coe_shiftedShear]
+  convert ((MeasurePreserving.id (volume : Measure ℝ)).prod
     (measurePreserving_add_right (volume : Measure ℝ) c)).comp
-    (measurePreserving_add_prod (volume : Measure ℝ) volume)
+    (measurePreserving_add_prod (volume : Measure ℝ) volume) using 1
+  funext p
+  simp
 
 /-- The shear `(x, y) ↦ (x + y, y)` is exact for `λ = y dx`, with `S = y²/2`. -/
 example : IsExactForPrimitive 1 univ (shiftedShear 0) fun p => p.2 := by
