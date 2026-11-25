@@ -20,7 +20,7 @@ where `B = Complex.betaIntegral` is Euler's Beta integral of the first kind (DLM
 
 ## Main results
 
-* `Complex.hasMellin_cpow_mul_one_sub_cpow_Ioc`: the Mellin transform of the Beta weight
+* `TauCeti.hasMellin_cpow_mul_one_sub_cpow_Ioc`: the Mellin transform of the Beta weight
   `t^a (1 - t)^b` on `(0, 1]` is `B(s + a, b + 1)`.
 
 ## References
@@ -30,9 +30,9 @@ where `B = Complex.betaIntegral` is Euler's Beta integral of the first kind (DLM
 
 public section
 
-open Set MeasureTheory
+open Set MeasureTheory Complex
 
-namespace Complex
+namespace TauCeti
 
 /-- **The Mellin transform of the Beta weight.** For `0 < Re (s + a)` and `-1 < Re b`, the
 function `t ↦ t^a (1 - t)^b` on `(0, 1]`, extended by zero, has Mellin transform `B(s + a, b + 1)`
@@ -62,4 +62,4 @@ theorem hasMellin_cpow_mul_one_sub_cpow_Ioc {a b s : ℂ} (hsa : 0 < (s + a).re)
     setIntegral_indicator measurableSet_Ioc, inter_eq_right.mpr Ioc_subset_Ioi_self,
     ← intervalIntegral.integral_of_le zero_le_one, betaIntegral]
 
-end Complex
+end TauCeti

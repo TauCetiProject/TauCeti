@@ -26,7 +26,7 @@ regularized Gauss function `𝐅(a, b; c; -x)`. The proof writes `E(a, b, c, -x)
 `h(u) = (1 + u)^{-a}`, and applies `TauCeti.hasMellin_integral_mul_comp_mul`: the Mellin transform
 of `h` at `s` is the Beta integral of the second kind `Complex.hasMellin_one_add_cpow_neg`
 (DLMF 5.12.3), and that of `f` at `1 - s` is the Beta integral `B(b - s, c - b)` by
-`Complex.hasMellin_cpow_mul_one_sub_cpow_Ioc`.
+`TauCeti.hasMellin_cpow_mul_one_sub_cpow_Ioc`.
 
 ## Main results
 
@@ -57,7 +57,7 @@ theorem hasMellin_eulerIntegral_neg {a b c s : ℂ} (hs : 0 < s.re) (hsa : s.re 
       (Gamma s * Gamma (a - s) * Gamma (b - s) / (Gamma a * Gamma b * Gamma (c - s))) := by
   have hbs : 0 < (b - s).re := by simpa using hsb
   have hcb : 0 < (c - b).re := by simpa using hbc
-  have hf := hasMellin_cpow_mul_one_sub_cpow_Ioc (s := 1 - s) (a := b - 1) (b := c - b - 1)
+  have hf := TauCeti.hasMellin_cpow_mul_one_sub_cpow_Ioc (s := 1 - s) (a := b - 1) (b := c - b - 1)
     (by simpa using hsb) (by simp only [sub_re, one_re]; linarith)
   rw [show 1 - s + (b - 1) = b - s by ring, show c - b - 1 + 1 = c - b by ring] at hf
   have hh := hasMellin_one_add_cpow_neg hs hsa
