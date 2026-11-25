@@ -87,6 +87,8 @@ Borel measurable structure on the scalar field.
   (`EuclideanSpace.adjoint_piLpExtendByZero_castLEEmb_apply`).
 * `EuclideanSpace.finCastLEEquiv`: the first `m` coordinates of `𝕜ⁿ`, indexed by `Fin m`, as the
   first factor of the splitting along `j < m`.
+* `OrthonormalBasis.singleton_repr_symm`: the inverse coordinate equivalence of
+  `OrthonormalBasis.singleton` evaluates at `default`.
 * `TauCeti.euclideanLinearEquivHom 𝕜 ι`: a unitary transformation of `EuclideanSpace 𝕜 ι` as a
   linear automorphism of `ι → 𝕜`.
 * `LinearEquiv.toEuclideanIsometry`: a linear automorphism of `ι → 𝕜` preserving the Euclidean
@@ -104,6 +106,16 @@ public section
 noncomputable section
 
 open scoped BigOperators
+
+/-- The inverse coordinate equivalence of `OrthonormalBasis.singleton` reads the unique coordinate
+of `EuclideanSpace 𝕜 ι`. -/
+@[simp]
+theorem OrthonormalBasis.singleton_repr_symm {ι 𝕜 : Type*} [Unique ι] [RCLike 𝕜]
+    (v : EuclideanSpace 𝕜 ι) :
+    (OrthonormalBasis.singleton ι 𝕜).repr.symm v = v default := by
+  have h := OrthonormalBasis.singleton_repr (ι := ι) (𝕜 := 𝕜)
+    ((OrthonormalBasis.singleton ι 𝕜).repr.symm v) default
+  rwa [(OrthonormalBasis.singleton ι 𝕜).repr.apply_symm_apply, eq_comm] at h
 
 namespace EuclideanSpace
 
