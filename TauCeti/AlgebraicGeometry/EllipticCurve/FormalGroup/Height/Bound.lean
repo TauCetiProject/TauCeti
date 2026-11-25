@@ -26,8 +26,10 @@ when they equal the unit ideal, with no characteristic, Noetherian, or reducedne
   contains `(p, c₄, Δ)` (`WeierstrassCurve.heightIdeal_formalGroup_le_prime_iff`,
   `WeierstrassCurve.iSup_heightIdeal_formalGroup_le_prime_iff`), so `√I_n(Ê) = √(p, c₄, Δ)`
   (`WeierstrassCurve.radical_heightIdeal_formalGroup`,
-  `WeierstrassCurve.radical_iSup_heightIdeal_formalGroup`) and `I_n(Ê) = R` if and only if
-  `(p, c₄, Δ) = R` (`WeierstrassCurve.heightIdeal_formalGroup_eq_top_iff`). Equivalently,
+  `WeierstrassCurve.radical_iSup_heightIdeal_formalGroup`) and `I_n(Ê) = R` (as well as
+  `⨆ n, I_n(Ê) = R`) if and only if `(p, c₄, Δ) = R`
+  (`WeierstrassCurve.heightIdeal_formalGroup_eq_top_iff`,
+  `WeierstrassCurve.iSup_heightIdeal_formalGroup_eq_top_iff`). Equivalently,
   Landweber's `v₂` is a unit modulo `I₂(Ê) = (p, v₁)` if and only if `(p, c₄, Δ) = R`
   (`WeierstrassCurve.isUnit_mk_coeff_nsmulSeries_formalGroup_iff`).
 * In particular, for any smooth-or-nodal Weierstrass family (`(c₄, Δ) = R`) — and hence for every
@@ -52,8 +54,9 @@ does not assert the separate regularity of `p` and `v₁` for an arbitrary famil
 * `WeierstrassCurve.heightIdeal_formalGroup_le_prime_iff` and
   `WeierstrassCurve.radical_heightIdeal_formalGroup`: for `n ≥ 3`, `I_n(Ê) ≤ P ↔ (p, c₄, Δ) ≤ P`
   for every prime ideal `P`, and `√I_n(Ê) = √(p, c₄, Δ)` (with supremum counterparts
-  `WeierstrassCurve.iSup_heightIdeal_formalGroup_le_prime_iff` and
-  `WeierstrassCurve.radical_iSup_heightIdeal_formalGroup`).
+  `WeierstrassCurve.iSup_heightIdeal_formalGroup_le_prime_iff`,
+  `WeierstrassCurve.radical_iSup_heightIdeal_formalGroup`, and
+  `WeierstrassCurve.iSup_heightIdeal_formalGroup_eq_top_iff`).
 * `WeierstrassCurve.heightIdeal_formalGroup_eq_top_iff`: for `n ≥ 3`, `I_n(Ê) = ⊤` iff
   `(p, c₄, Δ) = ⊤`.
 * `WeierstrassCurve.isUnit_mk_coeff_nsmulSeries_formalGroup_iff`: `v₂` is a unit modulo
@@ -84,6 +87,13 @@ public section
 
 namespace WeierstrassCurve
 
+private theorem algebraMap_fractionRing_quotient_eq_zero {R : Type*} [CommRing R] {P : Ideal R}
+    {x : R} :
+    algebraMap R (FractionRing (R ⧸ P)) x = 0 ↔ x ∈ P := by
+  rw [IsScalarTower.algebraMap_apply R (R ⧸ P) (FractionRing (R ⧸ P)),
+    map_eq_zero_iff _ (IsFractionRing.injective (R ⧸ P) (FractionRing (R ⧸ P))),
+    Ideal.Quotient.algebraMap_eq, Ideal.Quotient.eq_zero_iff_mem]
+
 variable {R : Type*} [CommRing R] (W : WeierstrassCurve R) {p n : ℕ}
 
 /-- **Prime ideals containing `I_n(Ê)` for `n ≥ 3`.** Over an arbitrary commutative ring `R`, at
@@ -94,25 +104,26 @@ theorem heightIdeal_formalGroup_le_prime_iff (hp : p.Prime) (hn : 3 ≤ n) {P : 
     (formalGroup W).heightIdeal p n ≤ P ↔ Ideal.span {(p : R), W.c₄, W.Δ} ≤ P := by
   have : Fact p.Prime := ⟨hp⟩
   let K := FractionRing (R ⧸ P)
-  let φ : R →+* K := (algebraMap (R ⧸ P) K).comp (Ideal.Quotient.mk P)
-  have hmem {x : R} : φ x = 0 ↔ x ∈ P := by
-    simp [φ, map_eq_zero_iff _ (IsFractionRing.injective (R ⧸ P) K), Ideal.Quotient.eq_zero_iff_mem]
+  let φ : R →+* K := algebraMap R K
   rw [(formalGroup W).heightIdeal_le_prime_iff hp, ← map_formalGroup]
   simp only [Ideal.span_le, Set.insert_subset_iff, Set.singleton_subset_iff]
   by_cases hpP : (p : R) ∈ P
-  · have : CharP K p :=
-      (CharP.charP_iff_prime_eq_zero hp).mpr (by rw [← map_natCast φ]; exact hmem.mpr hpP)
+  · have : CharP K p := (CharP.charP_iff_prime_eq_zero hp).mpr
+      (by rw [← map_natCast φ]; exact algebraMap_fractionRing_quotient_eq_zero.mpr hpP)
     refine ⟨fun hnh ↦ ⟨hpP, ?_⟩, fun ⟨_, hc₄P, hΔP⟩ ↦ ?_⟩
     · have hnotle : ¬ (formalGroup (W.map φ)).height p ≤ 2 := fun h2 ↦
         absurd (le_trans (by exact_mod_cast hn) (hnh.trans h2) : (3 : ℕ∞) ≤ 2) (by decide)
       have hcΔ : (W.map φ).c₄ = 0 ∧ (W.map φ).Δ = 0 := by
         simpa only [not_or, not_ne_iff] using
           mt (W.map φ).height_formalGroup_le_two_iff.mpr hnotle
-      exact ⟨hmem.mp (by simpa using hcΔ.1), hmem.mp (by simpa using hcΔ.2)⟩
+      exact ⟨algebraMap_fractionRing_quotient_eq_zero.mp (by simpa [φ] using hcΔ.1),
+        algebraMap_fractionRing_quotient_eq_zero.mp (by simpa [φ] using hcΔ.2)⟩
     · rw [(W.map φ).height_formalGroup_eq_top_of_Δ_eq_zero_of_c₄_eq_zero
-        (by simpa using hmem.mpr hΔP) (by simpa using hmem.mpr hc₄P)]
+        (by simpa [φ] using algebraMap_fractionRing_quotient_eq_zero.mpr hΔP)
+        (by simpa [φ] using algebraMap_fractionRing_quotient_eq_zero.mpr hc₄P)]
       exact le_top
-  · have hpK : (p : K) ≠ 0 := by rw [← map_natCast φ]; exact mt hmem.mp hpP
+  · have hpK : (p : K) ≠ 0 := by
+      rw [← map_natCast φ]; exact mt algebraMap_fractionRing_quotient_eq_zero.mp hpP
     rw [(formalGroup (W.map φ)).height_eq_zero_of_natCast_ne_zero hpK]
     exact iff_of_false (by simpa using (by omega : n ≠ 0)) (fun h ↦ hpP h.1)
 
@@ -141,6 +152,12 @@ theorem radical_iSup_heightIdeal_formalGroup (hp : p.Prime) :
   congr 1
   ext P
   exact and_congr_left fun hP ↦ W.iSup_heightIdeal_formalGroup_le_prime_iff hp (P := P)
+
+/-- **Exact characterization of `⨆ n, I_n(Ê) = ⊤`.** At any prime `p`, the supremum of the height
+ideals of the formal group of `W` is the unit ideal if and only if `(p, c₄, Δ) = R`. -/
+theorem iSup_heightIdeal_formalGroup_eq_top_iff (hp : p.Prime) :
+    ⨆ n, (formalGroup W).heightIdeal p n = ⊤ ↔ Ideal.span {(p : R), W.c₄, W.Δ} = ⊤ := by
+  rw [← Ideal.radical_eq_top, W.radical_iSup_heightIdeal_formalGroup hp, Ideal.radical_eq_top]
 
 /-- **Exact characterization of `I_n(Ê) = ⊤` for `n ≥ 3`.** Over an arbitrary commutative ring `R`
 and at any prime `p`, every height ideal `I_n` (`n ≥ 3`) of the formal group of a Weierstrass curve
@@ -203,24 +220,24 @@ theorem heightIdeal_formalGroup_le_prime_iff_of_Δ_eq_zero (hΔ : W.Δ = 0) (hp 
     (formalGroup W).heightIdeal p n ≤ P ↔ Ideal.span {(p : R), W.c₄} ≤ P := by
   have : Fact p.Prime := ⟨hp⟩
   let K := FractionRing (R ⧸ P)
-  let φ : R →+* K := (algebraMap (R ⧸ P) K).comp (Ideal.Quotient.mk P)
-  have hmem {x : R} : φ x = 0 ↔ x ∈ P := by
-    simp [φ, map_eq_zero_iff _ (IsFractionRing.injective (R ⧸ P) K), Ideal.Quotient.eq_zero_iff_mem]
+  let φ : R →+* K := algebraMap R K
   have hΔφ : (W.map φ).Δ = 0 := by rw [map_Δ, hΔ, map_zero]
   rw [(formalGroup W).heightIdeal_le_prime_iff hp, ← map_formalGroup]
   simp only [Ideal.span_le, Set.insert_subset_iff, Set.singleton_subset_iff]
   by_cases hpP : (p : R) ∈ P
-  · have : CharP K p :=
-      (CharP.charP_iff_prime_eq_zero hp).mpr (by rw [← map_natCast φ]; exact hmem.mpr hpP)
+  · have : CharP K p := (CharP.charP_iff_prime_eq_zero hp).mpr
+      (by rw [← map_natCast φ]; exact algebraMap_fractionRing_quotient_eq_zero.mpr hpP)
     refine ⟨fun hnh ↦ ⟨hpP, ?_⟩, fun ⟨_, hc₄P⟩ ↦ ?_⟩
     · by_contra hc₄P
-      have hc₄φ : (W.map φ).c₄ ≠ 0 := by rw [map_c₄]; exact mt hmem.mp hc₄P
+      have hc₄φ : (W.map φ).c₄ ≠ 0 := by
+        rw [map_c₄]; exact mt algebraMap_fractionRing_quotient_eq_zero.mp hc₄P
       rw [(W.map φ).height_formalGroup_eq_one_of_Δ_eq_zero_of_c₄_ne_zero hΔφ hc₄φ] at hnh
       exact absurd (le_trans (by exact_mod_cast hn) hnh : (2 : ℕ∞) ≤ 1) (by decide)
     · rw [(W.map φ).height_formalGroup_eq_top_of_Δ_eq_zero_of_c₄_eq_zero hΔφ
-        (by simpa using hmem.mpr hc₄P)]
+        (by simpa [φ] using algebraMap_fractionRing_quotient_eq_zero.mpr hc₄P)]
       exact le_top
-  · have hpK : (p : K) ≠ 0 := by rw [← map_natCast φ]; exact mt hmem.mp hpP
+  · have hpK : (p : K) ≠ 0 := by
+      rw [← map_natCast φ]; exact mt algebraMap_fractionRing_quotient_eq_zero.mp hpP
     rw [(formalGroup (W.map φ)).height_eq_zero_of_natCast_ne_zero hpK]
     exact iff_of_false (by simpa using (by omega : n ≠ 0)) (fun h ↦ hpP h.1)
 

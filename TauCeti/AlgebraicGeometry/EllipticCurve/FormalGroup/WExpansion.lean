@@ -42,12 +42,8 @@ equation at the substituted parameter rather than at `z`.
   satisfies the displayed equation, as an identity of power series.
 * `WeierstrassCurve.Projective.equation_neg_one_iff_wEquation`: the projective Weierstrass
   equation at `[q : -1 : v]` is the `w`-equation at the parameter `q`.
-* `WeierstrassCurve.equation_formalW_point`, `WeierstrassCurve.nonsingular_map_comp_formalW`,
-  `WeierstrassCurve.nonsingular_baseChange_comp_formalW`, and
-  `WeierstrassCurve.map_subst_formalW_eq_zero_iff`: over a commutative ring, the `w`-expansion gives
-  the projective point `[z : -1 : w(z)]` on the Weierstrass equation, and for any substitutable
-  parameter `q`, `[q : -1 : w(q)]` is nonsingular in every nontrivial algebra (with no discriminant
-  hypothesis) and has `Z`-coordinate `w(q)` vanishing in a reduced algebra iff `q` vanishes there.
+* `WeierstrassCurve.equation_formalW_point`: over a commutative ring, the `w`-expansion
+  gives the projective point `[z : -1 : w(z)]` on the Weierstrass equation.
 * `WeierstrassCurve.eq_formalW_of_wEquation`: **Silverman AEC IV.1.1(a), uniqueness** — any
   power series with vanishing constant coefficient satisfying that equation equals `w(z)`. The
   two together are the full statement, that `w(z)` is *the* such series.
@@ -606,82 +602,6 @@ theorem eq_subst_formalW_of_wEquation {q v : PowerSeries R}
   have ha : PowerSeries.HasSubst q := PowerSeries.HasSubst.of_constantCoeff_zero' hq
   refine eq_of_wEquation W hq hv ?_ h (subst_formalW_wEquation W ha)
   exact PowerSeries.constantCoeff_subst_eq_zero hq (formalW W) (constantCoeff_formalW W)
-
-/-- In any reduced commutative ring `S`, the image of `w(q)` under `ρ : MvPowerSeries σ R →+* S`
-vanishes if and only if `ρ q = 0`, for any substitutable parameter series `q`. -/
-theorem map_subst_formalW_eq_zero_iff {σ S : Type*} [CommRing S] [IsReduced S]
-    (ρ : MvPowerSeries σ R →+* S) {q : MvPowerSeries σ R} (hq : PowerSeries.HasSubst q) :
-    ρ (PowerSeries.subst q (formalW W)) = 0 ↔ ρ q = 0 := by
-  have hU₀ : IsUnit W.formalU :=
-    MvPowerSeries.isUnit_iff_constantCoeff.mpr (by
-      rw [← PowerSeries.constantCoeff_eq, W.constantCoeff_formalU]
-      exact isUnit_one)
-  have hU : IsUnit (PowerSeries.subst q W.formalU) := by
-    simpa only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, PowerSeries.coe_substAlgHom] using
-      hU₀.map (PowerSeries.substAlgHom hq).toRingHom
-  have hW : PowerSeries.subst q (formalW W) = q ^ 3 * PowerSeries.subst q W.formalU := by
-    rw [W.formalW_eq_X_pow_mul_formalU, PowerSeries.subst_mul hq, PowerSeries.subst_pow hq,
-      PowerSeries.subst_X hq]
-  rw [hW, map_mul, map_pow, (hU.map ρ).mul_left_eq_zero]
-  exact ⟨fun h ↦ isNilpotent_iff_eq_zero.mp ⟨3, h⟩, fun h ↦ by simp [h]⟩
-
-/-- For any substitutable parameter series `q`, the projective point `[q : -1 : w(q)]` pushed along
-`ρ : MvPowerSeries σ R →+* S` into any nontrivial commutative ring `S` is nonsingular, with no
-discriminant hypothesis on `W`. -/
-theorem nonsingular_map_comp_formalW {σ S : Type*} [CommRing S] [Nontrivial S]
-    (ρ : MvPowerSeries σ R →+* S) {q : MvPowerSeries σ R} (hq : PowerSeries.HasSubst q) :
-    (W.map (ρ.comp (algebraMap R (MvPowerSeries σ R)))).toProjective.Nonsingular
-      (ρ ∘ ![q, -1, PowerSeries.subst q (formalW W)]) := by
-  refine (Projective.nonsingular_iff _).mpr ⟨?_, Or.inr (Or.inr ?_)⟩
-  · rw [← map_map]
-    exact ((W.toProjective.equation_neg_one_iff_wEquation q _).mpr
-      (W.subst_formalW_wEquation hq)).map ρ
-  · set w : MvPowerSeries σ R := PowerSeries.subst q (formalW W)
-    set z : MvPowerSeries σ R :=
-      1 - (MvPowerSeries.C W.a₁ * q + 2 * MvPowerSeries.C W.a₃ * w +
-        (MvPowerSeries.C W.a₂ * q ^ 2 + 2 * MvPowerSeries.C W.a₄ * q * w +
-          3 * MvPowerSeries.C W.a₆ * w ^ 2))
-    have hq_nil : MvPowerSeries.constantCoeff q ∈ nilradical R := hq
-    have hw_nil : MvPowerSeries.constantCoeff w ∈ nilradical R := by
-      rw [mem_nilradical]
-      dsimp only [w]
-      rw [PowerSeries.subst_def]
-      exact MvPowerSeries.IsNilpotent_subst hq.const (by
-        rw [← PowerSeries.constantCoeff_eq, W.constantCoeff_formalW]
-        exact IsNilpotent.zero)
-    have ht_nil : IsNilpotent
-        (W.a₁ * MvPowerSeries.constantCoeff q + 2 * W.a₃ * MvPowerSeries.constantCoeff w +
-          (W.a₂ * MvPowerSeries.constantCoeff q ^ 2 +
-            2 * W.a₄ * MvPowerSeries.constantCoeff q * MvPowerSeries.constantCoeff w +
-            3 * W.a₆ * MvPowerSeries.constantCoeff w ^ 2)) := by
-      rw [← mem_nilradical]
-      refine add_mem (add_mem (Ideal.mul_mem_left _ _ hq_nil) (Ideal.mul_mem_left _ _ hw_nil))
-        (add_mem (add_mem ?_ ?_) ?_)
-      · rw [pow_two, ← mul_assoc]
-        exact Ideal.mul_mem_left _ _ hq_nil
-      · exact Ideal.mul_mem_left _ _ hw_nil
-      · rw [pow_two, ← mul_assoc]
-        exact Ideal.mul_mem_left _ _ hw_nil
-    have hz : IsUnit z := by
-      rw [MvPowerSeries.isUnit_iff_constantCoeff]
-      simpa [z, map_sub, map_add, map_mul, map_pow, map_ofNat] using ht_nil.isUnit_one_sub
-    refine ne_of_eq_of_ne ?_ (hz.map ρ).ne_zero
-    simp only [z, w, toProjective, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆, RingHom.comp_apply,
-      Function.comp_apply, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val,
-      ← MvPowerSeries.c_eq_algebraMap, map_sub, map_add, map_mul, map_pow, map_one, map_neg,
-      map_ofNat]
-    ring
-
-/-- For any substitutable parameter series `q`, the projective point `[q : -1 : w(q)]` on
-`W.baseChange S` is nonsingular in every nontrivial commutative `R`-algebra `S` compatible with
-`R → MvPowerSeries σ R → S`, with no discriminant hypothesis on `W`. -/
-theorem nonsingular_baseChange_comp_formalW {σ S : Type*} [CommRing S] [Nontrivial S]
-    [Algebra R S] [Algebra (MvPowerSeries σ R) S] [IsScalarTower R (MvPowerSeries σ R) S]
-    {q : MvPowerSeries σ R} (hq : PowerSeries.HasSubst q) :
-    (W.baseChange S).toProjective.Nonsingular
-      (algebraMap (MvPowerSeries σ R) S ∘ ![q, -1, PowerSeries.subst q (formalW W)]) := by
-  rw [WeierstrassCurve.baseChange, IsScalarTower.algebraMap_eq R (MvPowerSeries σ R) S]
-  exact W.nonsingular_map_comp_formalW (algebraMap (MvPowerSeries σ R) S) hq
 
 /-! ### Base change
 

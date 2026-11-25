@@ -66,9 +66,10 @@ cubic has height `1` when `c₄ ≠ 0` and `⊤` when `c₄ = 0`.
   `WeierstrassCurve.height_formalGroup_eq_top_iff`,
   `WeierstrassCurve.height_formalGroup_le_two_iff`,
   `WeierstrassCurve.height_formalGroup_eq_one_or_eq_two_iff`, and
-  `WeierstrassCurve.height_formalGroup_eq_one_or_eq_two_or_eq_top`: complete trichotomy and
-  exact characterizations of each height stratum for arbitrary Weierstrass curves over fields of
-  prime characteristic.
+  `WeierstrassCurve.height_formalGroup_eq_one_or_eq_two_or_eq_top`: complete `{1, 2, ⊤}` trichotomy
+  and exact characterizations of each height stratum for arbitrary Weierstrass curves (with the
+  `{1, 2, ⊤}` trichotomy, cuspidal `⊤`, and height-`2` characterizations holding in characteristic
+  `p = 0` as well).
 
 ## References
 
@@ -185,16 +186,19 @@ theorem height_formalGroup_eq_one_or_eq_two_of_c₄_ne_zero_or_Δ_ne_zero [Fact 
   · have : W.IsElliptic := W.isElliptic_iff.mpr (isUnit_iff_ne_zero.mpr hΔ)
     exact W.height_formalGroup_eq_one_or_eq_two
 
-/-- **Trichotomy of formal-group heights for Weierstrass curves.** Over a field of prime
-characteristic `p`, the formal group of any Weierstrass curve has height `1`, `2`, or `⊤`. -/
-theorem height_formalGroup_eq_one_or_eq_two_or_eq_top [Fact p.Prime] :
+/-- **Trichotomy of formal-group heights for Weierstrass curves.** Over a field of characteristic
+`p`, the formal group of any Weierstrass curve has `p`-height `1`, `2`, or `⊤`. -/
+theorem height_formalGroup_eq_one_or_eq_two_or_eq_top :
     (formalGroup W).height p = 1 ∨ (formalGroup W).height p = 2 ∨ (formalGroup W).height p = ⊤ := by
-  by_cases h : W.c₄ ≠ 0 ∨ W.Δ ≠ 0
-  · rcases W.height_formalGroup_eq_one_or_eq_two_of_c₄_ne_zero_or_Δ_ne_zero h with h1 | h2
-    · exact Or.inl h1
-    · exact Or.inr (Or.inl h2)
-  · push Not at h
-    exact Or.inr (Or.inr (W.height_formalGroup_eq_top_of_Δ_eq_zero_of_c₄_eq_zero h.2 h.1))
+  rcases CharP.char_is_prime_or_zero K p with hp | rfl
+  · have : Fact p.Prime := ⟨hp⟩
+    by_cases h : W.c₄ ≠ 0 ∨ W.Δ ≠ 0
+    · rcases W.height_formalGroup_eq_one_or_eq_two_of_c₄_ne_zero_or_Δ_ne_zero h with h1 | h2
+      · exact Or.inl h1
+      · exact Or.inr (Or.inl h2)
+    · push Not at h
+      exact Or.inr (Or.inr (W.height_formalGroup_eq_top_of_Δ_eq_zero_of_c₄_eq_zero h.2 h.1))
+  · exact Or.inr (Or.inr ((formalGroup W).height_eq_top_iff.mpr (by simp)))
 
 /-- **Characterization of formal-group height `2`.** Over a field of characteristic `p`, a
 Weierstrass curve has formal group of height `2` at `p` exactly when it is elliptic (`Δ ≠ 0`) and

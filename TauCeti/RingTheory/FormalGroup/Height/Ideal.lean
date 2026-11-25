@@ -88,10 +88,13 @@ of `v_n` modulo `I_n`.
   commutative `F` and prime `p`, `⨆ n, I_n(F) = (v₀, v₁, v₂, …)`.
 * `FormalGroup.heightIdeal_eq_bot_iff_le_height`: over a field of characteristic `p`, `I_n = 0`
   exactly when `F` has height at least `n`.
-* `FormalGroup.heightIdeal_le_prime_iff` and `FormalGroup.iSup_heightIdeal_le_prime_iff`: a prime
-  ideal `P` contains `I_n(F)` (for commutative `F` and prime `p`) exactly when the specialization
-  of `F` to `FractionRing (R ⧸ P)` has `p`-height at least `n`, and contains `⨆ n, I_n(F)` (for
-  `1 < p`) exactly when that specialization has infinite `p`-height.
+* `FormalGroup.heightIdeal_le_ker_iff_le_height`,
+  `FormalGroup.iSup_heightIdeal_le_ker_iff_height_eq_top`,
+  `FormalGroup.heightIdeal_le_prime_iff`, and `FormalGroup.iSup_heightIdeal_le_prime_iff`: a
+  homomorphism into a field kills `I_n(F)` (for commutative `F` and prime `p`) iff the base-changed
+  law has `p`-height at least `n` and kills `⨆ n, I_n(F)` (for `1 < p`) iff that law has infinite
+  `p`-height; in particular this characterizes the prime ideals `P` containing `I_n(F)` and
+  `⨆ n, I_n(F)` through `FractionRing (R ⧸ P)`.
 * `FormalGroup.heightIdeal_eq_top_iff_forall_height_lt`: positive-index height ideals are the
   unit ideal exactly when all characteristic-`p` field specializations have height below the index.
 * `FormalGroup.isUnit_mk_coeff_nsmulSeries_iff`: `v_n` is a unit modulo `I_n` exactly when
@@ -625,21 +628,28 @@ universe u
 
 variable {R : Type u} [CommRing R] (F : FormalGroup R) {p : ℕ}
 
+/-- For `1 < p`, a homomorphism `φ : R →+* K` into a field kills `⨆ n, F.heightIdeal p n` if and
+only if the base change `F.map φ` has infinite `p`-height. -/
+theorem iSup_heightIdeal_le_ker_iff_height_eq_top {K : Type*} [Field K] (hp : 1 < p)
+    (φ : R →+* K) :
+    ⨆ n, F.heightIdeal p n ≤ RingHom.ker φ ↔ (F.map φ).height p = ⊤ := by
+  rw [iSup_heightIdeal_le_ker_iff hp, height_eq_top_iff]
+
+private theorem ker_algebraMap_fractionRing_quotient (P : Ideal R) :
+    RingHom.ker (algebraMap R (FractionRing (R ⧸ P))) = P := by
+  ext x
+  rw [RingHom.mem_ker, IsScalarTower.algebraMap_apply R (R ⧸ P) (FractionRing (R ⧸ P)),
+    map_eq_zero_iff _ (IsFractionRing.injective (R ⧸ P) (FractionRing (R ⧸ P))),
+    Ideal.Quotient.algebraMap_eq, Ideal.Quotient.eq_zero_iff_mem]
+
 /-- **Prime ideals containing `⨆ n, I_n(F)`.** For `1 < p`, a prime ideal `P` of `R` contains the
 supremum `⨆ n, F.heightIdeal p n` if and only if the specialization of `F` to
 `FractionRing (R ⧸ P)` has infinite `p`-height. -/
 theorem iSup_heightIdeal_le_prime_iff (hp : 1 < p) {P : Ideal R} [P.IsPrime] :
     ⨆ n, F.heightIdeal p n ≤ P ↔
-      (F.map ((algebraMap (R ⧸ P) (FractionRing (R ⧸ P))).comp
-        (Ideal.Quotient.mk P))).height p = ⊤ := by
-  let K := FractionRing (R ⧸ P)
-  let φ : R →+* K := (algebraMap (R ⧸ P) K).comp (Ideal.Quotient.mk P)
-  have hker : RingHom.ker φ = P := by
-    ext x
-    simp [φ, RingHom.mem_ker, map_eq_zero_iff _ (IsFractionRing.injective (R ⧸ P) K),
-      Ideal.Quotient.eq_zero_iff_mem]
-  nth_rw 1 [← hker]
-  rw [iSup_heightIdeal_le_ker_iff hp, height_eq_top_iff]
+      (F.map (algebraMap R (FractionRing (R ⧸ P)))).height p = ⊤ := by
+  nth_rw 1 [← ker_algebraMap_fractionRing_quotient P]
+  exact F.iSup_heightIdeal_le_ker_iff_height_eq_top hp _
 
 variable [F.IsComm]
 
@@ -669,38 +679,33 @@ theorem heightIdeal_eq_top_iff_forall_height_lt (hp : p.Prime) {n : ℕ} (hn : n
       exact Ideal.map_mk_eq_bot_of_le hle
     exact bot_ne_top (hbot.symm.trans htop)
 
+/-- For a commutative formal group law `F`, a prime `p`, and any `n : ℕ`, a homomorphism
+`φ : R →+* K` into a field kills `F.heightIdeal p n` if and only if the base change `F.map φ` has
+`p`-height at least `n`. -/
+theorem heightIdeal_le_ker_iff_le_height {K : Type*} [Field K] (hp : p.Prime) {n : ℕ}
+    (φ : R →+* K) :
+    F.heightIdeal p n ≤ RingHom.ker φ ↔ (n : ℕ∞) ≤ (F.map φ).height p := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  by_cases hpK : (p : K) = 0
+  · have : CharP K p := (CharP.charP_iff_prime_eq_zero hp).mpr hpK
+    rw [heightIdeal_le_ker_iff, ← heightIdeal_eq_bot_iff, heightIdeal_eq_bot_iff_le_height]
+  · have hpφ : (p : R) ∉ RingHom.ker φ := by rwa [RingHom.mem_ker, map_natCast]
+    have hnot : ¬ F.heightIdeal p n ≤ RingHom.ker φ := fun hle ↦ hpφ <|
+      hle <| F.heightIdeal_mono (Nat.one_le_iff_ne_zero.mpr hn) <| by
+        rw [F.heightIdeal_one hp]
+        exact Ideal.mem_span_singleton_self _
+    rw [(F.map φ).height_eq_zero_of_natCast_ne_zero hpK]
+    exact iff_of_false hnot (by simpa using hn)
+
 /-- **Prime ideals containing `I_n(F)`.** For a commutative formal group law `F` over `R`, a prime
 `p`, any `n : ℕ`, and a prime ideal `P` of `R`, `P` contains `F.heightIdeal p n` if and only if the
 specialization of `F` to the residue field `FractionRing (R ⧸ P)` of `P` has `p`-height at least
 `n`. -/
 theorem heightIdeal_le_prime_iff (hp : p.Prime) {n : ℕ} {P : Ideal R} [P.IsPrime] :
     F.heightIdeal p n ≤ P ↔
-      (n : ℕ∞) ≤
-        (F.map ((algebraMap (R ⧸ P) (FractionRing (R ⧸ P))).comp
-          (Ideal.Quotient.mk P))).height p := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  let K := FractionRing (R ⧸ P)
-  let φ : R →+* K := (algebraMap (R ⧸ P) K).comp (Ideal.Quotient.mk P)
-  have hker : RingHom.ker φ = P := by
-    ext x
-    simp [φ, RingHom.mem_ker, map_eq_zero_iff _ (IsFractionRing.injective (R ⧸ P) K),
-      Ideal.Quotient.eq_zero_iff_mem]
-  by_cases hpP : (p : R) ∈ P
-  · have hpK : (p : K) = 0 := by
-      rw [← map_natCast φ, ← RingHom.mem_ker, hker]
-      exact hpP
-    have : CharP K p := (CharP.charP_iff_prime_eq_zero hp).mpr hpK
-    nth_rw 1 [← hker]
-    rw [heightIdeal_le_ker_iff, ← heightIdeal_eq_bot_iff, heightIdeal_eq_bot_iff_le_height]
-  · have hpK : (p : K) ≠ 0 := by
-      rw [← map_natCast φ, Ne, ← RingHom.mem_ker, hker]
-      exact hpP
-    have hnot : ¬ F.heightIdeal p n ≤ P := fun hle ↦ hpP <|
-      hle <| F.heightIdeal_mono (Nat.one_le_iff_ne_zero.mpr hn) <| by
-        rw [F.heightIdeal_one hp]
-        exact Ideal.mem_span_singleton_self _
-    rw [(F.map φ).height_eq_zero_of_natCast_ne_zero hpK]
-    exact iff_of_false hnot (by simpa using hn)
+      (n : ℕ∞) ≤ (F.map (algebraMap R (FractionRing (R ⧸ P)))).height p := by
+  nth_rw 1 [← ker_algebraMap_fractionRing_quotient P]
+  exact F.heightIdeal_le_ker_iff_le_height hp _
 
 end FormalGroup

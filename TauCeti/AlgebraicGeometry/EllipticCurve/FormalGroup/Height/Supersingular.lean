@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Supersingular
 public import TauCeti.RingTheory.FormalGroup.ZSMul
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.IsAlgClosed
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FormalSeries.Hom
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FormalSeries.Order
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.IsElliptic
@@ -32,7 +31,8 @@ complete formal-group height stratification at every prime `p` (including `p = 2
 Silverman V.3.1):
 
 * `W` is ordinary at `p` if and only if `Ê` has height `1`, equivalently if and only if the
-  coefficient of `T ^ (p - 1)` in the invariant differential of `Ê` is nonzero;
+  coefficient of `T ^ (p - 1)` in the invariant differential of `Ê` is nonzero (with the
+  invariant-differential equivalence holding in characteristic `p = 0` as well);
 * `W` is supersingular at `p` if and only if `Ê` has height `2`, equivalently if and only if its
   height exceeds `1`, equivalently if and only if the coefficient of `T ^ (p - 1)` in the invariant
   differential vanishes (with the height-`2` and invariant-differential equivalences holding in
@@ -182,13 +182,8 @@ theorem isSupersingular_iff_height_formalGroup_eq_two :
     · rwa [h, one_mul] at hdeg
     · rw [h] at hdeg
       exact (Nat.mul_eq_right hp2.ne').mp hdeg
-  · classical
-    have htop : (formalGroup W).height 0 = ⊤ := (formalGroup W).height_eq_top_iff.mpr (by simp)
-    refine iff_of_false (fun hss ↦ ?_) (by rw [htop]; exact ENat.top_ne_natCast 2)
-    obtain ⟨y, heq⟩ := (W.baseChange (AlgebraicClosure K)).toAffine.exists_point_on_curve 0
-    have hns : (W.baseChange (AlgebraicClosure K)).toAffine.Nonsingular 0 y :=
-      Affine.equation_iff_nonsingular.mp heq
-    exact Affine.Point.some_ne_zero hns (isSupersingular_iff_forall.mp hss _ (zero_nsmul _))
+  · rw [(formalGroup W).height_eq_top_iff.mpr (by simp)]
+    exact iff_of_false W.not_isSupersingular_zero (ENat.top_ne_natCast 2)
 
 /-- **The formal group of an elliptic curve in prime characteristic `p` has height `1` or `2`.** -/
 theorem height_formalGroup_eq_one_or_eq_two [Fact p.Prime] :
@@ -211,23 +206,21 @@ theorem isSupersingular_iff_one_lt_height_formalGroup [Fact p.Prime] :
   rw [← not_isOrdinary, isOrdinary_iff_height_formalGroup_eq_one,
     (formalGroup W).one_le_height.lt_iff_ne', Ne]
 
-/-- **An elliptic curve in prime characteristic `p` is ordinary if and only if the coefficient of
+/-- **An elliptic curve in characteristic `p` is ordinary at `p` if and only if the coefficient of
 `T ^ (p - 1)` in the invariant differential of its formal group is nonzero** (Hasse invariant
 criterion; Katz–Mazur §12.4, Silverman IV.4, IV.7 and V.3.1). -/
-theorem isOrdinary_iff_coeff_invariantDifferential_formalGroup_ne_zero [Fact p.Prime] :
+theorem isOrdinary_iff_coeff_invariantDifferential_formalGroup_ne_zero :
     W.IsOrdinary p ↔ PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential ≠ 0 := by
-  rw [isOrdinary_iff_height_formalGroup_eq_one, height_formalGroup_eq_one_iff]
+  rcases CharP.char_is_prime_or_zero K p with hp | rfl
+  · have : Fact p.Prime := ⟨hp⟩
+    rw [isOrdinary_iff_height_formalGroup_eq_one, height_formalGroup_eq_one_iff]
+  · exact iff_of_true W.isOrdinary_zero (by simp)
 
 /-- **An elliptic curve in characteristic `p` is supersingular at `p` if and only if the coefficient
 of `T ^ (p - 1)` in the invariant differential of its formal group vanishes.** -/
 theorem isSupersingular_iff_coeff_invariantDifferential_formalGroup_eq_zero :
     W.IsSupersingular p ↔ PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential = 0 := by
-  rcases CharP.char_is_prime_or_zero K p with hp | rfl
-  · have : Fact p.Prime := ⟨hp⟩
-    rw [← not_isOrdinary, isOrdinary_iff_coeff_invariantDifferential_formalGroup_ne_zero, not_not]
-  · rw [W.isSupersingular_iff_height_formalGroup_eq_two,
-      (formalGroup W).height_eq_top_iff.mpr (by simp)]
-    exact iff_of_false (ENat.top_ne_natCast 2) (by simp)
+  rw [← not_isOrdinary, isOrdinary_iff_coeff_invariantDifferential_formalGroup_ne_zero, not_not]
 
 end CharP
 

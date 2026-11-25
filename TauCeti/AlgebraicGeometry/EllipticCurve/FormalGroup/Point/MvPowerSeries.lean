@@ -9,7 +9,9 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Gener
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.AdditionLaw.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
+import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Assoc
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Addition.FormalPoint
+import TauCeti.RingTheory.MvPowerSeries.NonZeroDivisors
 import TauCeti.RingTheory.MvPowerSeries.Rename
 
 /-!
@@ -17,45 +19,33 @@ import TauCeti.RingTheory.MvPowerSeries.Rename
 
 Let `W` be a Weierstrass curve over a commutative ring `R`, with `w`-expansion `w = formalW W` and
 formal group law `formalGroup W`. Over any field `KK` equipped with a compatible
-`MvPowerSeries σ R`-algebra structure, the homogeneous triple `[q : -1 : w(q)]` at any formal-group
-point `q : (formalGroup W).Point σ` is nonsingular
-(`WeierstrassCurve.nonsingular_baseChange_comp_formalW`), with no discriminant hypothesis on `W`
-(including nodal and cuspidal cubics). Sending `q` to the represented affine point defines a group
-homomorphism `WeierstrassCurve.mvPowerSeriesPointHom : (formalGroup W).Point σ →+
-(W.baseChange KK).toAffine.Point`.
+`MvPowerSeries σ R`-algebra structure such that `W.baseChange KK` is elliptic, sending a
+formal-group point `q : (formalGroup W).Point σ` to the affine point represented by the homogeneous
+triple `[q : -1 : w(q)]` defines a group homomorphism `WeierstrassCurve.mvPowerSeriesPointHom :
+(formalGroup W).Point σ →+ (W.baseChange KK).toAffine.Point`.
 
 Unlike `WeierstrassCurve.formalPointHom` for adic ideals, additivity holds without auxiliary-point
 or distinctness hypotheses: specializing the universal Bosma–Lenstra formal-point identities
 `WeierstrassCurve.isUnit_dblAddY_formalW` and `WeierstrassCurve.dblAddXYZ_formalW_eq_smul` along
 `MvPowerSeries.pairSubstitution q₁ q₂` shows that `dblAddXYZ` has invertible `Y`-coordinate at every
-pair of formal-group points and represents `(formalGroup W)(q₁, q₂)` up to that unit scalar. For any
-`q` whose image in `KK` is nonzero, `mvPowerSeriesPointHom` has affine coordinates
-`(q / w(q), -1 / w(q))` (`WeierstrassCurve.xCoord_mvPowerSeriesPointHom_of_algebraMap_ne_zero`,
-`WeierstrassCurve.yCoord_mvPowerSeriesPointHom_of_algebraMap_ne_zero`), vanishes if and only if the
-image of `q` in `KK` vanishes
-(`WeierstrassCurve.mvPowerSeriesPointHom_eq_zero_iff_algebraMap_eq_zero`), and determines that image
-(`WeierstrassCurve.algebraMap_eq_of_mvPowerSeriesPointHom_eq`); when `MvPowerSeries σ R` embeds
-faithfully into `KK`, `mvPowerSeriesPointHom` is injective
-(`WeierstrassCurve.mvPowerSeriesPointHom_injective`). Over a ground field `K`, any `K`-algebra map
+pair of formal-group points and represents `(formalGroup W)(q₁, q₂)` up to that unit scalar. When
+`MvPowerSeries σ R` embeds faithfully into `KK`, `mvPowerSeriesPointHom` is injective
+(`WeierstrassCurve.mvPowerSeriesPointHom_injective`) and exposes explicit affine coordinates at
+nonzero formal points (`WeierstrassCurve.xCoord_mvPowerSeriesPointHom`,
+`WeierstrassCurve.yCoord_mvPowerSeriesPointHom`). Over a ground field `K`, any `K`-algebra map
 `K(W) →ₐ[K] KK` expanding `-x / y` to `q` and `-1 / y` to `w(q)` carries `W.toAffine.genericPoint`
 to `mvPowerSeriesPointHom q` (`WeierstrassCurve.map_genericPoint_eq_mvPowerSeriesPointHom`).
 
 ## Main definitions
 
 * `WeierstrassCurve.mvPowerSeriesPointHom`: the additive homomorphism
-  `(formalGroup W).Point σ →+ (W.baseChange KK).toAffine.Point` sending `q` to `[q : -1 : w(q)]`,
-  for any Weierstrass curve `W` (smooth or singular).
+  `(formalGroup W).Point σ →+ (W.baseChange KK).toAffine.Point` sending `q` to `[q : -1 : w(q)]`.
 
 ## Main results
 
 * `WeierstrassCurve.isUnit_dblAddY_subst_formalW` and
   `WeierstrassCurve.dblAddXYZ_subst_formalW_eq_smul`: the Bosma–Lenstra addition law `dblAddXYZ`
   evaluated at `[q₁ : -1 : w(q₁)]` and `[q₂ : -1 : w(q₂)]` over `MvPowerSeries σ R`.
-* `WeierstrassCurve.xCoord_mvPowerSeriesPointHom_of_algebraMap_ne_zero`,
-  `WeierstrassCurve.yCoord_mvPowerSeriesPointHom_of_algebraMap_ne_zero`,
-  `WeierstrassCurve.mvPowerSeriesPointHom_eq_zero_iff_algebraMap_eq_zero`, and
-  `WeierstrassCurve.algebraMap_eq_of_mvPowerSeriesPointHom_eq`: affine coordinates, vanishing
-  criterion, and parameter-image injectivity of `mvPowerSeriesPointHom` over any `R` and `KK`.
 * `WeierstrassCurve.xCoord_mvPowerSeriesPointHom`, `WeierstrassCurve.yCoord_mvPowerSeriesPointHom`,
   and `WeierstrassCurve.mvPowerSeriesPointHom_injective`: coordinates at nonzero formal points and
   injectivity of `mvPowerSeriesPointHom` when `[FaithfulSMul (MvPowerSeries σ R) KK]`.
@@ -180,12 +170,26 @@ end PairSubst
 section PointHom
 
 variable {R : Type*} [CommRing R] (W : WeierstrassCurve R) (σ : Type*) (KK : Type*)
-  [Field KK] [DecidableEq KK] [Algebra R KK] [Algebra (MvPowerSeries σ R) KK]
+  [Field KK] [Algebra R KK] [Algebra (MvPowerSeries σ R) KK]
   [IsScalarTower R (MvPowerSeries σ R) KK]
+
+private theorem nonsingular_formalPointVec [(W.baseChange KK).IsElliptic]
+    (q : (formalGroup W).Point σ) :
+    (W.baseChange KK).toProjective.Nonsingular
+      (algebraMap (MvPowerSeries σ R) KK ∘ ![q.val, -1, PowerSeries.subst q.val W.formalW]) := by
+  have hΔ : (W.baseChange KK).toProjective.Δ ≠ 0 := (W.baseChange KK).isUnit_Δ.ne_zero
+  refine (Projective.equation_iff_nonsingular_of_Δ_ne_zero_of_ne_zero hΔ
+    fun h ↦ by simpa using congrFun h 1).mp ?_
+  rw [← congrArg WeierstrassCurve.toProjective
+    (W.map_baseChange (IsScalarTower.toAlgHom R (MvPowerSeries σ R) KK))]
+  exact ((W.toProjective.equation_neg_one_iff_wEquation q.val _).mpr
+    (W.subst_formalW_wEquation q.prop)).map _
+
+variable [DecidableEq KK] [(W.baseChange KK).IsElliptic]
 
 /-- **Sending a formal-group point `q : (formalGroup W).Point σ` to the affine point with
 homogeneous coordinates `[q : -1 : w(q)]` in `(W.baseChange KK).toAffine.Point` is an additive
-homomorphism**, for any Weierstrass curve `W` (smooth or singular). -/
+homomorphism**, whenever `W.baseChange KK` is elliptic. -/
 noncomputable def mvPowerSeriesPointHom :
     (formalGroup W).Point σ →+ (W.baseChange KK).toAffine.Point where
   toFun q := Projective.Point.toAffine (W.baseChange KK).toProjective
@@ -216,8 +220,8 @@ noncomputable def mvPowerSeriesPointHom :
       intro h0
       have h1 := congrFun h0 1
       simp [P₁₂, hu.ne_zero] at h1
-    have hN₁ := W.nonsingular_baseChange_comp_formalW (S := KK) q₁.prop
-    have hN₂ := W.nonsingular_baseChange_comp_formalW (S := KK) q₂.prop
+    have hN₁ := nonsingular_formalPointVec W σ KK q₁
+    have hN₂ := nonsingular_formalPointVec W σ KK q₂
     symm
     rw [← Projective.Point.toAffine_add hN₁ hN₂,
       ← Projective.Point.toAffine_of_equiv (Projective.dblAddXYZ_equiv_add hN₁ hN₂ hD0), keyKK]
@@ -230,75 +234,6 @@ theorem mvPowerSeriesPointHom_apply (q : (formalGroup W).Point σ) :
       (algebraMap (MvPowerSeries σ R) KK ∘ ![q.val, -1, PowerSeries.subst q.val W.formalW]) :=
   (rfl)
 
-/-- **The `x`-coordinate of `W.mvPowerSeriesPointHom σ KK q`** when the image of `q` in `KK` is
-nonzero is `q / w(q)` in `KK`. -/
-theorem xCoord_mvPowerSeriesPointHom_of_algebraMap_ne_zero {q : (formalGroup W).Point σ}
-    (hq : algebraMap (MvPowerSeries σ R) KK q.val ≠ 0) :
-    (W.mvPowerSeriesPointHom σ KK q).xCoord =
-      algebraMap (MvPowerSeries σ R) KK q.val /
-        algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q.val W.formalW) := by
-  have hz : (algebraMap (MvPowerSeries σ R) KK ∘
-      ![q.val, -1, PowerSeries.subst q.val W.formalW]) 2 ≠ 0 :=
-    (W.map_subst_formalW_eq_zero_iff (algebraMap (MvPowerSeries σ R) KK) q.prop).not.mpr hq
-  rw [mvPowerSeriesPointHom_apply,
-    Projective.Point.toAffine_of_Z_ne_zero
-      (W.nonsingular_baseChange_comp_formalW (S := KK) q.prop) hz,
-    Affine.Point.xCoord_some]
-  rfl
-
-/-- **The `y`-coordinate of `W.mvPowerSeriesPointHom σ KK q`** when the image of `q` in `KK` is
-nonzero is `-w(q)⁻¹` in `KK`. -/
-theorem yCoord_mvPowerSeriesPointHom_of_algebraMap_ne_zero {q : (formalGroup W).Point σ}
-    (hq : algebraMap (MvPowerSeries σ R) KK q.val ≠ 0) :
-    (W.mvPowerSeriesPointHom σ KK q).yCoord =
-      -(algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q.val W.formalW))⁻¹ := by
-  have hz : (algebraMap (MvPowerSeries σ R) KK ∘
-      ![q.val, -1, PowerSeries.subst q.val W.formalW]) 2 ≠ 0 :=
-    (W.map_subst_formalW_eq_zero_iff (algebraMap (MvPowerSeries σ R) KK) q.prop).not.mpr hq
-  rw [mvPowerSeriesPointHom_apply,
-    Projective.Point.toAffine_of_Z_ne_zero
-      (W.nonsingular_baseChange_comp_formalW (S := KK) q.prop) hz,
-    Affine.Point.yCoord_some]
-  simp [neg_div, one_div]
-
-/-- `W.mvPowerSeriesPointHom σ KK q` vanishes if and only if the image of `q` in `KK` vanishes. -/
-theorem mvPowerSeriesPointHom_eq_zero_iff_algebraMap_eq_zero {q : (formalGroup W).Point σ} :
-    W.mvPowerSeriesPointHom σ KK q = 0 ↔ algebraMap (MvPowerSeries σ R) KK q.val = 0 := by
-  refine ⟨fun h ↦ ?_, fun h ↦ Projective.Point.toAffine_of_Z_eq_zero
-    ((W.map_subst_formalW_eq_zero_iff (algebraMap (MvPowerSeries σ R) KK) q.prop).mpr h)⟩
-  by_contra hq
-  have hy := congrArg Affine.Point.yCoord h
-  rw [W.yCoord_mvPowerSeriesPointHom_of_algebraMap_ne_zero σ KK hq, Affine.Point.yCoord_zero,
-    neg_eq_zero, inv_eq_zero,
-    W.map_subst_formalW_eq_zero_iff (algebraMap (MvPowerSeries σ R) KK) q.prop] at hy
-  exact hq hy
-
-/-- Two formal points yielding the same affine point on `W.baseChange KK` have equal images in
-`KK`. -/
-theorem algebraMap_eq_of_mvPowerSeriesPointHom_eq {q₁ q₂ : (formalGroup W).Point σ}
-    (h : W.mvPowerSeriesPointHom σ KK q₁ = W.mvPowerSeriesPointHom σ KK q₂) :
-    algebraMap (MvPowerSeries σ R) KK q₁.val = algebraMap (MvPowerSeries σ R) KK q₂.val := by
-  set ρ := algebraMap (MvPowerSeries σ R) KK
-  by_cases h1 : ρ q₁.val = 0
-  · have hp1 := (W.mvPowerSeriesPointHom_eq_zero_iff_algebraMap_eq_zero σ KK).mpr h1
-    exact h1.trans
-      ((W.mvPowerSeriesPointHom_eq_zero_iff_algebraMap_eq_zero σ KK).mp (h.symm.trans hp1)).symm
-  · by_cases h2 : ρ q₂.val = 0
-    · have hp2 := (W.mvPowerSeriesPointHom_eq_zero_iff_algebraMap_eq_zero σ KK).mpr h2
-      exact False.elim
-        (h1 ((W.mvPowerSeriesPointHom_eq_zero_iff_algebraMap_eq_zero σ KK).mp (h.trans hp2)))
-    · have hy : (W.mvPowerSeriesPointHom σ KK q₁).yCoord =
-          (W.mvPowerSeriesPointHom σ KK q₂).yCoord := congrArg Affine.Point.yCoord h
-      rw [W.yCoord_mvPowerSeriesPointHom_of_algebraMap_ne_zero σ KK h1,
-        W.yCoord_mvPowerSeriesPointHom_of_algebraMap_ne_zero σ KK h2, neg_inj, inv_inj] at hy
-      have hx : (W.mvPowerSeriesPointHom σ KK q₁).xCoord =
-          (W.mvPowerSeriesPointHom σ KK q₂).xCoord := congrArg Affine.Point.xCoord h
-      rw [W.xCoord_mvPowerSeriesPointHom_of_algebraMap_ne_zero σ KK h1,
-        W.xCoord_mvPowerSeriesPointHom_of_algebraMap_ne_zero σ KK h2, hy] at hx
-      have hw2 : ρ (PowerSeries.subst q₂.val W.formalW) ≠ 0 :=
-        (W.map_subst_formalW_eq_zero_iff ρ q₂.prop).not.mpr h2
-      exact (div_left_inj₀ hw2).mp hx
-
 /-- **The `x`-coordinate of `W.mvPowerSeriesPointHom σ KK q`** at a nonzero formal point `q` is
 `q / w(q)` in `KK`. -/
 @[simp]
@@ -306,9 +241,16 @@ theorem xCoord_mvPowerSeriesPointHom [FaithfulSMul (MvPowerSeries σ R) KK]
     {q : (formalGroup W).Point σ} (hq : q.val ≠ 0) :
     (W.mvPowerSeriesPointHom σ KK q).xCoord =
       algebraMap (MvPowerSeries σ R) KK q.val /
-        algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q.val W.formalW) :=
-  W.xCoord_mvPowerSeriesPointHom_of_algebraMap_ne_zero σ KK
-    ((map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective (MvPowerSeries σ R) KK)).mpr hq)
+        algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q.val W.formalW) := by
+  have := IsDomain.of_faithfulSMul (MvPowerSeries σ R) KK
+  have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := R)
+  have hz : (algebraMap (MvPowerSeries σ R) KK ∘
+      ![q.val, -1, PowerSeries.subst q.val W.formalW]) 2 ≠ 0 :=
+    W.algebraMap_subst_formalW_ne_zero (KK := KK) q.prop.eq_zero hq
+  rw [mvPowerSeriesPointHom_apply,
+    Projective.Point.toAffine_of_Z_ne_zero (nonsingular_formalPointVec W σ KK q) hz,
+    Affine.Point.xCoord_some]
+  rfl
 
 /-- **The `y`-coordinate of `W.mvPowerSeriesPointHom σ KK q`** at a nonzero formal point `q` is
 `-w(q)⁻¹` in `KK`. -/
@@ -316,16 +258,31 @@ theorem xCoord_mvPowerSeriesPointHom [FaithfulSMul (MvPowerSeries σ R) KK]
 theorem yCoord_mvPowerSeriesPointHom [FaithfulSMul (MvPowerSeries σ R) KK]
     {q : (formalGroup W).Point σ} (hq : q.val ≠ 0) :
     (W.mvPowerSeriesPointHom σ KK q).yCoord =
-      -(algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q.val W.formalW))⁻¹ :=
-  W.yCoord_mvPowerSeriesPointHom_of_algebraMap_ne_zero σ KK
-    ((map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective (MvPowerSeries σ R) KK)).mpr hq)
+      -(algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q.val W.formalW))⁻¹ := by
+  have := IsDomain.of_faithfulSMul (MvPowerSeries σ R) KK
+  have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := R)
+  have hz : (algebraMap (MvPowerSeries σ R) KK ∘
+      ![q.val, -1, PowerSeries.subst q.val W.formalW]) 2 ≠ 0 :=
+    W.algebraMap_subst_formalW_ne_zero (KK := KK) q.prop.eq_zero hq
+  rw [mvPowerSeriesPointHom_apply,
+    Projective.Point.toAffine_of_Z_ne_zero (nonsingular_formalPointVec W σ KK q) hz,
+    Affine.Point.yCoord_some]
+  simp [neg_div, one_div]
 
-/-- **When `MvPowerSeries σ R` embeds faithfully into `KK`, `mvPowerSeriesPointHom` is
-injective**, for any Weierstrass curve `W` (smooth or singular). -/
+/-- **When `MvPowerSeries σ R` embeds faithfully into `KK` and `W.baseChange KK` is elliptic,
+`mvPowerSeriesPointHom` is injective.** -/
 theorem mvPowerSeriesPointHom_injective [FaithfulSMul (MvPowerSeries σ R) KK] :
-    Function.Injective (W.mvPowerSeriesPointHom σ KK) := fun _ _ h ↦
-  Subtype.ext (FaithfulSMul.algebraMap_injective (MvPowerSeries σ R) KK
-    (W.algebraMap_eq_of_mvPowerSeriesPointHom_eq σ KK h))
+    Function.Injective (W.mvPowerSeriesPointHom σ KK) := by
+  -- At any nonzero `q` the `y`-coordinate is `-w(q)⁻¹ ≠ 0`, so the point is nonzero.
+  refine (injective_iff_map_eq_zero _).mpr fun q hq0 ↦ ?_
+  by_contra hq
+  have hval : q.val ≠ 0 := fun h ↦ hq (Subtype.ext h)
+  have := IsDomain.of_faithfulSMul (MvPowerSeries σ R) KK
+  have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := R)
+  have hy := congrArg Affine.Point.yCoord hq0
+  rw [W.yCoord_mvPowerSeriesPointHom σ KK hval, Affine.Point.yCoord_zero, neg_eq_zero,
+    inv_eq_zero] at hy
+  exact W.algebraMap_subst_formalW_ne_zero (KK := KK) q.prop.eq_zero hval hy
 
 /-- Under `[FaithfulSMul (MvPowerSeries σ R) KK]`, two formal points have the same image under
 `mvPowerSeriesPointHom` if and only if they are equal. -/
@@ -377,8 +334,7 @@ theorem map_genericPoint_eq_mvPowerSeriesPointHom
     exact eq_div_of_mul_eq hw0 hparam
   have hz : (ρ ∘ ![q.val, -1, PowerSeries.subst q.val W.formalW]) 2 ≠ 0 := hw0
   rw [mvPowerSeriesPointHom_apply,
-    Projective.Point.toAffine_of_Z_ne_zero
-      (W.nonsingular_baseChange_comp_formalW (S := KK) q.prop) hz]
+    Projective.Point.toAffine_of_Z_ne_zero (nonsingular_formalPointVec W σ KK q) hz]
   refine Point.eq_of_coords ?_ (Affine.Point.some_ne_zero _) ?_ ?_
   · rw [genericPoint_eq_some, Point.map_some]
     exact Affine.Point.some_ne_zero _

@@ -84,10 +84,8 @@ coordinate points `X 0`, `X 1` and their sum `(formalGroup W₁)(X 0, X 1)` via 
   `TauCeti.Isogeny.formalGroupHom_negIsogeny`, and `TauCeti.Isogeny.formalGroupHom_mulByIntIsogeny`:
   functoriality of `Isogeny.formalGroupHom` and its values on `[-1]` and `[n]`.
 * `TauCeti.Isogeny.Hom.formalGroupHom_injective`, `TauCeti.Isogeny.Hom.formalGroupHom_comp`,
-  `TauCeti.Isogeny.Hom.formalGroupHom_zsmul`,
-  `TauCeti.Isogeny.Hom.formalGroupHom_add_applyPoint`,
-  `TauCeti.Isogeny.Hom.formalGroupHom_nsmul_applyPoint`, and
-  `TauCeti.Isogeny.Hom.formalGroupHom_zsmul_applyPoint`: `Hom.formalGroupHom` is injective and
+  `TauCeti.Isogeny.Hom.formalGroupHom_zsmul`, and
+  `TauCeti.Isogeny.Hom.formalGroupHom_add_applyPoint`: `Hom.formalGroupHom` is injective and
   functorial, and sums and scalar multiples of morphisms act on formal points through the group law
   of `formalGroup W₂`.
 
@@ -615,22 +613,6 @@ theorem formalGroupHom_sub_applyPoint (f g : Hom W₁.toAffine W₂.toAffine) {�
       f.formalGroupHom.applyPoint x - g.formalGroupHom.applyPoint x := by
   rw [sub_eq_add_neg, formalGroupHom_add_applyPoint, formalGroupHom_neg_applyPoint,
     ← sub_eq_add_neg]
-
--- Not `@[simp]`: `simp` already reduces the left-hand side via `formalGroupHom_nsmul`.
-/-- Natural scalar multiplication of a morphism acts by scalar multiplication on formal
-power-series points. -/
-theorem formalGroupHom_nsmul_applyPoint (n : ℕ) (f : Hom W₁.toAffine W₂.toAffine) {σ : Type*}
-    (x : (formalGroup W₁).Point σ) :
-    (n • f).formalGroupHom.applyPoint x = n • f.formalGroupHom.applyPoint x := by
-  simp
-
--- Not `@[simp]`: `simp` already reduces the left-hand side via `formalGroupHom_zsmul`.
-/-- Integer scalar multiplication of a morphism acts by scalar multiplication on formal
-power-series points. -/
-theorem formalGroupHom_zsmul_applyPoint (n : ℤ) (f : Hom W₁.toAffine W₂.toAffine) {σ : Type*}
-    (x : (formalGroup W₁).Point σ) :
-    (n • f).formalGroupHom.applyPoint x = n • f.formalGroupHom.applyPoint x := by
-  simp
 
 end Hom
 

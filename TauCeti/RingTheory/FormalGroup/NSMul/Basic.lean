@@ -61,8 +61,7 @@ off the invariant differential.
   in degree `k`.
 * `FormalGroup.nsmulSeries_add`: `[m + n]_F(T) = F([m]_F(T), [n]_F(T))`.
 * `FormalGroup.nsmulSeries_mul`: `[m n]_F(T) = [m]_F([n]_F(T))`.
-* `FormalGroup.subst_nsmulSeries` and `FormalGroup.nsmulHom_applyPoint`: `[n]_F(x) = n • x` for
-  every power-series point `x` of `F`.
+* `FormalGroup.subst_nsmulSeries`: `[n]_F(x) = n • x` for every power-series point `x` of `F`.
 * `FormalGroup.subst_toPowerSeries_nsmulSeries`: for commutative `F`, `[n]_F` is an endomorphism,
   `[n]_F(F(X, Y)) = F([n]_F(X), [n]_F(Y))`.
 * `FormalGroup.nsmulSeries_𝔾ₐ` and `FormalGroup.nsmulSeries_𝔾ₘ`: `[n](T) = n T` on the additive
@@ -226,13 +225,6 @@ noncomputable def nsmulHom [F.IsComm] (n : ℕ) : TauCeti.FormalGroupHom F F whe
 @[simp]
 theorem nsmulHom_toPowerSeries [F.IsComm] (n : ℕ) :
     (F.nsmulHom n).toPowerSeries = F.nsmulSeries n := (rfl)
-
-/-- The bundled multiplication-by-`n` endomorphism acts by `n • ·` on points. -/
-@[simp]
-theorem nsmulHom_applyPoint [F.IsComm] {σ : Type*} (x : F.Point σ) (n : ℕ) :
-    (F.nsmulHom n).applyPoint x = n • x := by
-  apply Subtype.ext
-  simp [F.subst_nsmulSeries]
 
 /-- Multiplication by `n` on the additive formal group law `X + Y` is `[n](T) = n T`. -/
 @[simp]
