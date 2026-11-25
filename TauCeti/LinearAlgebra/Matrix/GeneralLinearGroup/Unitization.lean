@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.Algebra.Algebra.Quasiregular
+public import TauCeti.Algebra.Algebra.Unitization.Matrix
 public import TauCeti.Algebra.Algebra.Unitization
 
 /-!
@@ -84,65 +85,13 @@ theorem mem_unitizationGLFstOne_iff {u : GL n (Unitization R A)} :
       (fstHom R A : Unitization R A →+* R).mapMatrix (u : Matrix n n (Unitization R A)) = 1 := by
   simp [unitizationGLFstOne, Units.ext_iff]
 
-section Helpers
-
-omit [Module R A] [IsScalarTower R A A] [SMulCommClass R A A] [Fintype n]
-
-/-- A matrix over `A⁺` with identity scalar part is `1 + x`, for `x` its matrix of components in
-`A`. -/
-private theorem one_add_map_snd {M : Matrix n n (Unitization R A)}
-    (hM : M.map (fun x ↦ x.fst) = 1) :
-    1 + (M.map fun x ↦ x.snd).map ((↑) : A → Unitization R A) = M := by
-  ext i j : 1
-  have h := congr_fun₂ hM i j
-  simp only [Matrix.map_apply, Matrix.one_apply] at h
-  refine Unitization.ext ?_ ?_ <;> by_cases hij : i = j <;> simp_all
-
-private theorem map_fst_one_add (x : Matrix n n A) :
-    (1 + x.map ((↑) : A → Unitization R A)).map (fun x ↦ x.fst) = 1 := by
-  ext i j
-  by_cases hij : i = j <;> simp [Matrix.one_apply, hij]
-
-private theorem map_snd_one_add (x : Matrix n n A) :
-    (1 + x.map ((↑) : A → Unitization R A)).map (fun x ↦ x.snd) = x := by
-  ext i j
-  by_cases hij : i = j <;> simp [hij]
-
-private theorem map_snd_one :
-    (1 : Matrix n n (Unitization R A)).map (fun x ↦ x.snd) = 0 := by
-  ext i j
-  by_cases hij : i = j <;> simp [hij]
-
-end Helpers
-
-omit [IsScalarTower R A A] [SMulCommClass R A A] [DecidableEq n] in
-private theorem map_inr_mul (x y : Matrix n n A) :
-    x.map ((↑) : A → Unitization R A) * y.map (↑) = (x * y).map (↑) :=
-  (Matrix.map_mul (L := x) (M := y) (f := inrNonUnitalAlgHom R A)).symm
-
-/-- The product of `1 + x` and `1 + y` is `1 + (y + x + x * y)`, the quasi-product of `x` and
-`y`. -/
-private theorem one_add_map_inr_mul (x y : Matrix n n A) :
-    (1 + x.map ((↑) : A → Unitization R A)) * (1 + y.map (↑)) =
-      1 + (y + x + x * y).map (↑) := by
-  rw [Matrix.map_add _ (inr_add R), Matrix.map_add _ (inr_add R), ← map_inr_mul]
-  simp only [mul_add, add_mul, one_mul, mul_one]
-  abel
-
-/-- The components in `A` of a product of matrices with identity scalar part form the
-quasi-product of the components. -/
-private theorem map_snd_mul {M N : Matrix n n (Unitization R A)}
-    (hM : M.map (fun x ↦ x.fst) = 1) (hN : N.map (fun x ↦ x.fst) = 1) :
-    (M * N).map (fun x ↦ x.snd) =
-      N.map (fun x ↦ x.snd) + M.map (fun x ↦ x.snd) +
-        M.map (fun x ↦ x.snd) * N.map (fun x ↦ x.snd) := by
-  conv_lhs => rw [← one_add_map_snd hM, ← one_add_map_snd hN]
-  rw [one_add_map_inr_mul, map_snd_one_add]
-
+/-- An invertible matrix in `unitizationGLFstOne` has identity scalar part, stated entrywise with
+`Matrix.map` rather than `RingHom.mapMatrix`. -/
 private theorem map_fst_of_mem {u : GL n (Unitization R A)}
     (hu : u ∈ unitizationGLFstOne R A n) :
-    (u : Matrix n n (Unitization R A)).map (fun x ↦ x.fst) = 1 :=
-  mem_unitizationGLFstOne_iff.1 hu
+    (u : Matrix n n (Unitization R A)).map (fun x ↦ x.fst) = 1 := by
+  ext i j
+  simpa using congr_fun₂ (mem_unitizationGLFstOne_iff.1 hu) i j
 
 /-- The matrix of components in `A` of a matrix with identity scalar part, as a quasi-unit. -/
 private def toQuasiregular (u : unitizationGLFstOne R A n) :
@@ -152,22 +101,35 @@ private def toQuasiregular (u : unitizationGLFstOne R A n) :
   inv := PreQuasiregular.equiv ((((u⁻¹ : unitizationGLFstOne R A n) : GL n (Unitization R A)) :
     Matrix n n (Unitization R A)).map fun x ↦ x.snd)
   val_inv := PreQuasiregular.equiv.symm.injective <| by
-    have h := map_snd_mul (map_fst_of_mem u.property) (map_fst_of_mem u⁻¹.property)
-    simp only [InvMemClass.coe_inv, Units.mul_inv, map_snd_one] at h
-    simpa [eq_comm] using h
+    simp only [PreQuasiregular.equiv_symm_apply, PreQuasiregular.val_mul,
+      PreQuasiregular.val_one]
+    exact Matrix.map_snd_add_map_snd_add_mul_eq_zero (map_fst_of_mem u.property)
+      (map_fst_of_mem u⁻¹.property) (by simp)
   inv_val := PreQuasiregular.equiv.symm.injective <| by
-    have h := map_snd_mul (map_fst_of_mem u⁻¹.property) (map_fst_of_mem u.property)
-    simp only [InvMemClass.coe_inv, Units.inv_mul, map_snd_one] at h
-    simpa [eq_comm] using h
+    simp only [PreQuasiregular.equiv_symm_apply, PreQuasiregular.val_mul,
+      PreQuasiregular.val_one]
+    exact Matrix.map_snd_add_map_snd_add_mul_eq_zero (map_fst_of_mem u⁻¹.property)
+      (map_fst_of_mem u.property) (by simp)
+
+private theorem val_val_toQuasiregular (u : unitizationGLFstOne R A n) :
+    (toQuasiregular u).val.val =
+      ((u : GL n (Unitization R A)) : Matrix n n (Unitization R A)).map fun x ↦ x.snd :=
+  (rfl)
 
 /-- The matrix `1 + x` over `A⁺` of a quasi-unit `x` of `Mₙ(A)`. -/
 private def ofQuasiregular (x : (PreQuasiregular (Matrix n n A))ˣ) :
     unitizationGLFstOne R A n :=
   ⟨{ val := 1 + x.val.val.map (↑)
      inv := 1 + x⁻¹.val.val.map (↑)
-     val_inv := by simp [one_add_map_inr_mul, Matrix.map_zero _ (inr_zero R)]
-     inv_val := by simp [one_add_map_inr_mul, Matrix.map_zero _ (inr_zero R)] },
-    mem_unitizationGLFstOne_iff.2 (map_fst_one_add _)⟩
+     val_inv := by simp [Matrix.one_add_map_inr_mul_one_add_map_inr, Matrix.map_zero _ (inr_zero R)]
+     inv_val := by
+      simp [Matrix.one_add_map_inr_mul_one_add_map_inr, Matrix.map_zero _ (inr_zero R)] },
+    mem_unitizationGLFstOne_iff.2 (Matrix.map_fst_one_add_map_inr _)⟩
+
+private theorem coe_ofQuasiregular (x : (PreQuasiregular (Matrix n n A))ˣ) :
+    (((ofQuasiregular x : unitizationGLFstOne R A n) : GL n (Unitization R A)) :
+      Matrix n n (Unitization R A)) = 1 + x.val.val.map (↑) :=
+  (rfl)
 
 variable (R A n)
 
@@ -178,10 +140,17 @@ def unitizationGLFstOneEquiv :
     unitizationGLFstOne R A n ≃* (PreQuasiregular (Matrix n n A))ˣ where
   toFun := toQuasiregular
   invFun := ofQuasiregular
-  left_inv u := Subtype.ext <| Units.ext <| one_add_map_snd (map_fst_of_mem u.property)
-  right_inv _ := Units.ext <| PreQuasiregular.equiv.symm.injective <| map_snd_one_add _
-  map_mul' u v := Units.ext <| PreQuasiregular.equiv.symm.injective <|
-    map_snd_mul (map_fst_of_mem u.property) (map_fst_of_mem v.property)
+  left_inv u := Subtype.ext <| Units.ext <| by
+    rw [coe_ofQuasiregular, val_val_toQuasiregular]
+    exact Matrix.one_add_map_inr_map_snd (map_fst_of_mem u.property)
+  right_inv x := Units.ext <| PreQuasiregular.equiv.symm.injective <| by
+    simp only [PreQuasiregular.equiv_symm_apply, val_val_toQuasiregular, coe_ofQuasiregular]
+    exact Matrix.map_snd_one_add_map_inr _
+  map_mul' u v := Units.ext <| PreQuasiregular.equiv.symm.injective <| by
+    simp only [PreQuasiregular.equiv_symm_apply, Units.val_mul, PreQuasiregular.val_mul,
+      val_val_toQuasiregular, Subgroup.coe_mul]
+    exact Matrix.map_snd_mul_of_map_fst_eq_one (map_fst_of_mem u.property)
+      (map_fst_of_mem v.property)
 
 variable {R A n}
 

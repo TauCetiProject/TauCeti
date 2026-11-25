@@ -286,18 +286,10 @@ private theorem coe_unitizationGLFstOneEquivGL_symm_stabilizeGL {m n : ℕ} (h :
     ((unitizationGLFstOneEquivGL R B (Fin n)).symm (stabilizeGL B h u) :
         GL (Fin n) (Unitization R B)) =
       stabilizeGL (Unitization R B) h ((unitizationGLFstOneEquivGL R B (Fin m)).symm u) := by
-  set w := (unitizationGLFstOneEquivGL R B (Fin m)).symm u
-  have hw₁ : Units.map ((Unitization.fstHom R B : Unitization R B →+* R).mapMatrix
-      (m := Fin m)).toMonoidHom (w : GL (Fin m) (Unitization R B)) = 1 := by
-    simpa only [unitizationGLFstOne_def, MonoidHom.mem_ker] using w.property
-  have hw : stabilizeGL (Unitization R B) h (w : GL (Fin m) (Unitization R B)) ∈
-      unitizationGLFstOne R B (Fin n) := by
-    rw [unitizationGLFstOne_def, MonoidHom.mem_ker, ← stabilizeGL_map, hw₁, map_one]
-  have := (MulEquiv.symm_apply_eq (unitizationGLFstOneEquivGL R B (Fin n))
-    (x := stabilizeGL B h u) (y := ⟨_, hw⟩)).2 <| by
-      rw [unitizationGLFstOneEquivGL_apply, Subgroup.coe_mk, ← stabilizeGL_map,
-        ← unitizationGLFstOneEquivGL_apply, MulEquiv.apply_symm_apply]
-  exact congr_arg Subtype.val this
+  ext i j : 2
+  simp only [coe_unitizationGLFstOneEquivGL_symm_apply, coe_stabilizeGL_apply, Matrix.add_apply,
+    Matrix.map_apply, Matrix.sub_apply]
+  split_ifs with hij <;> simp [Matrix.one_apply, Fin.ext_iff]
 
 variable (R B) in
 /-- The inverse of `relativeAlgebraicK1.equivAlgebraicK1`, `[u] ↦ [1 + (u - 1)]`. -/
