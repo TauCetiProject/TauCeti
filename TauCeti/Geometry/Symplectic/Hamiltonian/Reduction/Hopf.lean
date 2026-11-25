@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Sphere
 public import TauCeti.Geometry.Symplectic.Manifold.LiouvilleMeasure
 import TauCeti.Geometry.Symplectic.Manifold.Sphere.Area
-import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!
 # Hopf reduction: the reduced spaces of `ℂ²` by the diagonal circle
@@ -20,8 +19,8 @@ Give `ℂ²` its Kähler form `Ω(v, w) = Im ⟪v, w⟫_ℂ`, which in the coord
 `dq₀ ∧ dp₀ + dq₁ ∧ dp₁`. The statements below take any symplectic form `Ω` with this formula, such
 as `(AlmostComplexStructure.ofComplexModule ℂ²).symplecticForm`, `⟪i v, w⟫_ℝ`. The diagonal circle
 action `z ↦ e^(-iθ) z` is Hamiltonian with moment map `μ(z) = ‖z‖² / 2`
-(`TauCeti.hamiltonianVectorField_half_norm_sq_eq_neg_I_smul`). This file computes its
-symplectic reductions. For `c > 0` the level `μ⁻¹(c)` is the sphere of radius `√(2c)`, which
+(`TauCeti.SymplecticForm.hamiltonianVectorField_half_norm_sq_eq_neg_I_smul`). This file computes
+its symplectic reductions. For `c > 0` the level `μ⁻¹(c)` is the sphere of radius `√(2c)`, which
 `z ↦ √(2c) z` parametrizes by the unit sphere `S³`
 (`TauCeti.range_sqrt_two_mul_smul_coe_sphere_eq_setOf_half_norm_sq_eq`), and the quotient of the
 level by the circle is the two-sphere, through the Hopf map `h : S³ → S²` (`TauCeti.hopfMap`),
@@ -52,8 +51,6 @@ reflection of `ℝ³`, and reduces `Ω` to `-(c / 2) σ`.
 * `TauCeti.mfderiv_hopfMap_surjective`: the Hopf map is a submersion.
 * `TauCeti.range_sqrt_two_mul_smul_coe_sphere_eq_setOf_half_norm_sq_eq`: `z ↦ √(2c) z`
   parametrizes the level `‖x‖² / 2 = c`.
-* `TauCeti.hamiltonianVectorField_half_norm_sq_eq_neg_I_smul`: `‖x‖² / 2` is the moment map of the
-  diagonal circle action.
 * `TauCeti.mpullback_sqrt_two_mul_smul_coe_sphere_constSmooth_eq_mpullback_hopfMap`: the reduced
   form of the level `c` is `(c / 2) σ`.
 * `TauCeti.mpullback_hopfMap_eq_iff`: it is the unique form with this property.
@@ -133,25 +130,6 @@ theorem mfderiv_hopfMap_surjective (z : S³) :
   · exact ⟨(1 / 4 : ℝ) • a, map_smul _ _ _⟩
 
 /-! ### The reduced space of a level -/
-
-/-- **`‖x‖² / 2` generates the reversed diagonal rotation.** For a symplectic form `Ω` on
-`EuclideanSpace ℂ ι` with `Ω(v, w) = Im ⟪v, w⟫_ℂ`, and the convention `ι_(X_H) Ω = dH`, the
-Hamiltonian vector field of `‖x‖² / 2` is `-i x`, the generator of the circle action
-`x ↦ e^(-iθ) x`. So `‖x‖² / 2` is the moment map of that action. -/
-theorem hamiltonianVectorField_half_norm_sq_eq_neg_I_smul {ι : Type*} [Fintype ι]
-    {Ω : SymplecticForm (EuclideanSpace ℂ ι)} (hΩ : ∀ v w, Ω v w = (⟪v, w⟫_ℂ).im)
-    (x : EuclideanSpace ℂ ι) :
-    Ω.hamiltonianVectorField (fun y ↦ ‖y‖ ^ 2 / 2) x = -(I • x) := by
-  refine ((Ω.eq_hamiltonianVectorField_iff _ x _).2 fun v ↦ ?_).symm
-  have hd : HasFDerivAt (fun y : EuclideanSpace ℂ ι ↦ ‖y‖ ^ 2 / 2) (innerSL ℝ x) x := by
-    convert (hasStrictFDerivAt_norm_sq x).hasFDerivAt.mul_const (1 / 2 : ℝ) using 1
-    · ext y
-      ring
-    · ext v
-      simp
-  rw [hd.fderiv, innerSL_apply_apply, EuclideanSpace.real_inner_eq_re_inner, hΩ, inner_neg_left,
-    inner_smul_left]
-  simp
 
 /-- The parametrization `z ↦ √(2c) z` of the level `‖x‖² / 2 = c` of `ℂ²` by `S³` is smooth. -/
 theorem contMDiff_sqrt_two_mul_smul_coe_sphere (c : ℝ) :

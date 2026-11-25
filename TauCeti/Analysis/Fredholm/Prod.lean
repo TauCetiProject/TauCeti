@@ -24,7 +24,8 @@ and cokernels and is provided by `TauCeti.Topology.Algebra.Module.ContinuousLine
 ## Main declarations
 
 * `ContinuousLinearMap.IsFredholm.prodMap`: a product of Fredholm operators is Fredholm.
-* `ContinuousLinearMap.index_prodMap`: the Fredholm index is additive under products.
+* `ContinuousLinearMap.index_prodMap`: the Fredholm index is additive under products, and
+  `ContinuousLinearMap.IsFredholm.index_prodMap` is its form for Fredholm factors.
 * `ContinuousLinearMap.isFredholm_prodMap_iff`: conversely, a product is Fredholm only if both
   factors are.
 * `ContinuousLinearMap.isFredholm_withLpProdMap_iff`: the same for the block sum on an `L^p`
@@ -77,6 +78,16 @@ lemma IsFredholm.prodMap
       apply Subtype.ext
       simp only [P, coe_codRestrict_apply, comp_apply, coe_prodMap', Prod.map_apply,
         Submodule.subtypeL_apply, hPT ⟨x, hx⟩, hPS ⟨y, hy⟩]
+
+omit [IsTopologicalAddGroup E₁] [IsTopologicalAddGroup E₂] in
+/-- The index of a Cartesian product of two Fredholm operators is the sum of their indices. -/
+lemma IsFredholm.index_prodMap (hT : IsFredholm T) (hS : IsFredholm S) :
+    (T.prodMap S).index = T.index + S.index := by
+  have := hT.finite_ker
+  have := hT.finite_coker
+  have := hS.finite_ker
+  have := hS.finite_coker
+  exact ContinuousLinearMap.index_prodMap T S
 
 /-- If a Cartesian product of operators is Fredholm, so is its first factor: each of the five
 Fredholm conditions on `T.prodMap S` restricts to the first factor. -/
