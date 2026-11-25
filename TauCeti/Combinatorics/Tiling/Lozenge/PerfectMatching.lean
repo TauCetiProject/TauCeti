@@ -90,9 +90,8 @@ theorem tilingSubgraph_inter_interiorEdges :
     tilingSubgraph R (M ∩ interiorEdges R) = tilingSubgraph R M := by
   refine le_antisymm (tilingSubgraph_mono Set.inter_subset_left) ⟨subset_rfl, fun f g hfg => ?_⟩
   obtain ⟨hne, e, he, h₁, h₂⟩ := tilingSubgraph_adj.1 hfg
-  refine tilingSubgraph_adj.2 ⟨hne, e, ⟨he, mem_interiorEdges.2 fun k hk => ?_⟩, h₁, h₂⟩
-  rcases TriFace.eq_or_eq_of_mem_edges (fun h => hne (Subtype.ext h)) h₁ h₂ hk with rfl | rfl
-  exacts [f.property, g.property]
+  exact tilingSubgraph_adj.2 ⟨hne, e, ⟨he, mem_interiorEdges_of_mem_edges
+    (fun h => hne (Subtype.ext h)) h₁ h₂ f.property g.property⟩, h₁, h₂⟩
 
 /-- The subgraph of `M` lies in that of `M'` exactly when every interior edge of `R` in `M` lies
 in `M'`. -/
@@ -160,10 +159,10 @@ private theorem adj_of_mem_matchingEdges {P : (SimpleGraph.induce R hexGraph).Su
 private theorem isTiling_matchingEdges {P : (SimpleGraph.induce R hexGraph).Subgraph}
     (hP : P.IsPerfectMatching) : IsTiling R (matchingEdges P) := by
   have hR : ∀ e ∈ matchingEdges P, ∀ k : TriFace, e ∈ k.edges → k ∈ R := by
-    intro e he k hk
+    intro e he
     obtain ⟨f, g, hfg, hf, hg⟩ := mem_matchingEdges.1 he
-    rcases TriFace.eq_or_eq_of_mem_edges (fun h => hfg.ne (Subtype.ext h)) hf hg hk with rfl | rfl
-    exacts [f.property, g.property]
+    exact mem_interiorEdges.1 (mem_interiorEdges_of_mem_edges (fun h => hfg.ne (Subtype.ext h))
+      hf hg f.property g.property)
   refine isTiling_def.2 ⟨hR, fun f hf => ?_⟩
   obtain ⟨g, hfg, huniq⟩ := SimpleGraph.Subgraph.isPerfectMatching_iff.1 hP ⟨f, hf⟩
   obtain ⟨e, ⟨hfe, hge⟩, -⟩ := existsUnique_mem_edges_of_hexGraph_adj (P.adj_sub hfg)

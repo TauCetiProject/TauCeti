@@ -305,8 +305,9 @@ theorem toPlacedTile_def (e : TriEdge) :
 
 @[simp] theorem toPlacedTile_vadd (w : ℤ × ℤ) (e : TriEdge) :
     (w +ᵥ e).toPlacedTile = Multiplicative.ofAdd w • e.toPlacedTile := by
-  rw [toPlacedTile_def, toPlacedTile_def, DiscreteTiling.PlacedTile.smul_mk_coe, TriEdge.vadd_v,
-    TriEdge.vadd_k, ofAdd_add]
+  -- Destructuring `e` makes the index `(w +ᵥ e).k` reduce to `k`, on which the coset depends.
+  obtain ⟨v, k⟩ := e
+  simp [toPlacedTile_def, ofAdd_add]
 
 theorem toPlacedTile_bijective : Function.Bijective toPlacedTile := by
   refine ⟨fun e e' h => faces_injective (Finset.coe_injective ?_), fun pt => ?_⟩

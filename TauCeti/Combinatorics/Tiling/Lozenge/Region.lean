@@ -147,6 +147,12 @@ theorem mem_interiorEdges_iff : e ∈ interiorEdges R ↔ e.whiteFace ∈ R ∧ 
   simp only [mem_interiorEdges, TriFace.mem_edges_iff]
   exact ⟨fun h => ⟨h _ (Or.inl rfl), h _ (Or.inr rfl)⟩, by rintro ⟨h, h'⟩ f (rfl | rfl) <;> simpa⟩
 
+/-- An edge lying in two distinct faces of `R` is an interior edge of `R`. -/
+theorem mem_interiorEdges_of_mem_edges {g : TriFace} (hfg : f ≠ g) (hf : e ∈ f.edges)
+    (hg : e ∈ g.edges) (hfR : f ∈ R) (hgR : g ∈ R) : e ∈ interiorEdges R :=
+  mem_interiorEdges.2 fun _ hk =>
+    (TriFace.eq_or_eq_of_mem_edges hfg hf hg hk).elim (· ▸ hfR) (· ▸ hgR)
+
 /-- A boundary edge has exactly one of its two faces in `R`. -/
 theorem mem_boundaryEdges_iff : e ∈ boundaryEdges R ↔ (e.whiteFace ∈ R ↔ e.blackFace ∉ R) := by
   simp only [mem_boundaryEdges, mem_regionEdges_iff, TriFace.mem_edges_iff]
