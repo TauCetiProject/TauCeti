@@ -9,6 +9,7 @@ public import Mathlib.Data.Finset.NatAntidiagonal
 public import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 public import TauCeti.RingTheory.HochschildCohomology.Bimodule
 import TauCeti.Algebra.BigOperators.NatAntidiagonal
+import TauCeti.Order.Monotone.Splice
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.BigOperators.NatAntidiagonal
 import Mathlib.Algebra.BigOperators.Group.Finset.Lemmas
@@ -196,11 +197,17 @@ theorem _root_.MultilinearMap.gerstenhaberComp_smul_right (c : R)
 def deformationAssociator (φ : ℕ → (Fin 2 → A) →ₘₗ[R] A) (k : ℕ) : (Fin 3 → A) →ₘₗ[R] A :=
   ∑ x ∈ Finset.antidiagonal k, MultilinearMap.gerstenhaberComp (φ x.1) (φ x.2)
 
+/-- Unfolding `TauCeti.deformationAssociator`. -/
+theorem deformationAssociator_def (φ : ℕ → (Fin 2 → A) →ₘₗ[R] A) (k : ℕ) :
+    deformationAssociator φ k =
+      ∑ x ∈ Finset.antidiagonal k, (φ x.1).gerstenhaberComp (φ x.2) :=
+  (rfl)
+
 /-- Evaluating the coefficients of the associator. -/
 theorem deformationAssociator_apply (φ : ℕ → (Fin 2 → A) →ₘₗ[R] A) (k : ℕ) (v : Fin 3 → A) :
     deformationAssociator φ k v = ∑ x ∈ Finset.antidiagonal k,
       (φ x.1 ![φ x.2 ![v 0, v 1], v 2] - φ x.1 ![v 0, φ x.2 ![v 1, v 2]]) := by
-  simp [deformationAssociator, MultilinearMap.gerstenhaberComp_apply]
+  simp [deformationAssociator_def, MultilinearMap.gerstenhaberComp_apply]
 
 /-- The coefficient of `tᵏ` only depends on the coefficients `φ 0, …, φ k`. -/
 theorem deformationAssociator_congr {φ ψ : ℕ → (Fin 2 → A) →ₘₗ[R] A} {k : ℕ}
@@ -244,7 +251,7 @@ theorem algebraDeformationObstruction_congr {φ ψ : ℕ → (Fin 2 → A) →�
 @[simp]
 theorem algebraDeformationObstruction_zero (φ : ℕ → (Fin 2 → A) →ₘₗ[R] A) :
     algebraDeformationObstruction φ 0 = 0 := by
-  simp [algebraDeformationObstruction_def, deformationAssociator,
+  simp [algebraDeformationObstruction_def, deformationAssociator_def,
     Finset.Nat.sum_antidiagonal_succ]
 
 end Composition
@@ -392,8 +399,8 @@ theorem deformationAssociator_succ {φ : ℕ → (Fin 2 → A) →ₘₗ[R] A}
     · have ha' : a ≤ n := by omega
       have hb' : b ≤ n := by omega
       simp [ha, hb, ha', hb']
-  rw [deformationAssociator, Finset.sum_congr rfl key, Finset.sum_add_distrib,
-    Finset.sum_add_distrib, algebraDeformationObstruction_def, deformationAssociator,
+  rw [deformationAssociator_def, Finset.sum_congr rfl key, Finset.sum_add_distrib,
+    Finset.sum_add_distrib, algebraDeformationObstruction_def, deformationAssociator_def,
     sub_eq_add_neg,
     ← MultilinearMap.mkPiAlgebraFin_gerstenhaberComp_add_gerstenhaberComp_mkPiAlgebraFin, ← h₀]
   simp
@@ -500,16 +507,12 @@ theorem IsAlgebraDeformationOfOrder.exists_isFormalAlgebraDeformation
   -- Extend `φ` one order at a time.
   let seq : (j : ℕ) → {χ // IsAlgebraDeformationOfOrder R A (n + j) χ} :=
     fun j ↦ Nat.rec ⟨φ, h⟩ (fun j χ ↦ ⟨next (n + j) χ, hnext (n + j) χ⟩) j
-  have hseq (j : ℕ) : (seq (j + 1)).val = next (n + j) (seq j) := rfl
-  have hstable {j j' : ℕ} (hj : j ≤ j') : ∀ i ≤ n + j, (seq j').val i = (seq j).val i := by
-    induction j', hj using Nat.le_induction with
-    | base => exact fun _ _ ↦ rfl
-    | succ j' hj ih =>
-      intro i hi
-      rw [hseq, hagree _ _ i (by omega), ih i hi]
-  refine ⟨fun i ↦ (seq i).val i, fun m ↦ ?_, fun i hi ↦ ?_⟩
-  · exact ((seq m).property.mono (by omega)).congr fun i hi ↦ hstable hi i (by omega)
-  · exact hstable (Nat.zero_le i) i (by omega)
+  -- The stages agree on ever longer initial segments, so they splice into one sequence.
+  obtain ⟨φ', hφ'⟩ := exists_forall_lt_eq_of_strictMono (fun j ↦ (seq j).val)
+    (N := fun j ↦ n + j + 1) (fun _ _ hj ↦ by dsimp only; omega)
+    fun j i hi ↦ hagree _ _ i (by omega)
+  refine ⟨φ', fun m ↦ ?_, fun i hi ↦ hφ' 0 i (by omega)⟩
+  exact ((seq m).property.mono (by omega)).congr fun i hi ↦ (hφ' m i (by omega)).symm
 
 end Cohomology
 
