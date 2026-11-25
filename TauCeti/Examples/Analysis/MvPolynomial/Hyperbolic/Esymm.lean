@@ -1,0 +1,113 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.MvPolynomial.Hyperbolic.Esymm
+
+/-!
+# Checks: hyperbolic polynomials and the cones `Γ_k`
+
+* `x² + y²` is positive at `(1, 0)` but not hyperbolic in that direction: on the line through
+  `(0, 1)` it is `t² + 1`, with no real root (`not_isHyperbolic_sq_add_sq`).
+* In `ℝ³`, `λ = (3, 3, −1)` has `σ₁ = 5`, `σ₂ = 3`, `σ₃ = −9`, so it lies in
+  `Γ₂ = Γ(σ₂, e)` but not in `Γ₃ = Γ(σ₃, e)` (`mem_gardingCone_esymm_two`,
+  `not_mem_gardingCone_esymm_three`).
+* `σ₂(−e) = 3 > 0` in `ℝ³`, but `−e ∉ Γ₂` since `σ₁(−e) = −3`; as `σ₂(0) = 0`, the set
+  `{σ₂ > 0}` contains `e` and `−e` but not their midpoint, so `Γ₂` needs the condition on `σ₁`
+  (`eval_neg_one_esymm_two`, `neg_one_not_mem_gardingCone_esymm_two`).
+* For `n = 2`, `(1, −1/2)` lies in the half-plane `Γ₁` but not in the quadrant `Γ₂`
+  (`mem_gardingCone_esymm_one_two`, `not_mem_gardingCone_esymm_two_two`).
+-/
+
+public section
+
+open MvPolynomial
+
+namespace TauCeti.HyperbolicChecks
+
+/-- `x² + y²` is not hyperbolic in the direction `(1, 0)`, although it is positive there. -/
+theorem not_isHyperbolic_sq_add_sq :
+    ¬ IsHyperbolic (X 0 ^ 2 + X 1 ^ 2 : MvPolynomial (Fin 2) ℝ) 2 ![1, 0] := by
+  intro h
+  have hcard := h.card_roots ![0, 1]
+  obtain ⟨r, hr⟩ := Multiset.card_pos_iff_exists_mem.1 (by rw [hcard]; norm_num)
+  have h0 := Polynomial.isRoot_of_mem_roots hr
+  rw [Polynomial.IsRoot.def, eval_aeval_C_add_C_mul_X] at h0
+  simp only [map_add, map_pow, eval_X, Pi.add_apply, Pi.smul_apply, smul_eq_mul] at h0
+  norm_num at h0
+  nlinarith [sq_nonneg r]
+
+/-- `σ₂(3, 3, −1) = 3`. -/
+theorem eval_esymm_two : eval ![(3 : ℝ), 3, -1] (esymm (Fin 3) ℝ 2) = 3 := by
+  simp [esymm_eq_multiset_esymm, Multiset.esymm, Fin.univ_val_map, Multiset.powersetCard_coe,
+    List.sublistsLen, List.sublistsLenAux]
+  norm_num
+
+/-- `σ₃(3, 3, −1) = −9`. -/
+theorem eval_esymm_three : eval ![(3 : ℝ), 3, -1] (esymm (Fin 3) ℝ 3) = -9 := by
+  simp [esymm_eq_multiset_esymm, Multiset.esymm, Fin.univ_val_map, Multiset.powersetCard_coe,
+    List.sublistsLen, List.sublistsLenAux]
+  norm_num
+
+/-- `σ₁(3, 3, −1) = 5`. -/
+theorem eval_esymm_one : eval ![(3 : ℝ), 3, -1] (esymm (Fin 3) ℝ 1) = 5 := by
+  simp [Fin.sum_univ_three]
+  norm_num
+
+/-- `(3, 3, −1) ∈ Γ₂`. -/
+theorem mem_gardingCone_esymm_two : ![(3 : ℝ), 3, -1] ∈ gardingCone (esymm (Fin 3) ℝ 2) 1 := by
+  rw [gardingCone_esymm _]
+  intro j hj1 hj2
+  interval_cases j
+  · rw [eval_esymm_one]
+    norm_num
+  · rw [eval_esymm_two]
+    norm_num
+
+/-- `(3, 3, −1) ∉ Γ₃`, since `σ₃(3, 3, −1) = −9 < 0`. -/
+theorem not_mem_gardingCone_esymm_three :
+    ![(3 : ℝ), 3, -1] ∉ gardingCone (esymm (Fin 3) ℝ 3) 1 := by
+  rw [gardingCone_esymm _]
+  intro h
+  have := h 3 (by norm_num) le_rfl
+  rw [eval_esymm_three] at this
+  norm_num at this
+
+/-- `σ₂(−e) = 3` in `ℝ³`. -/
+theorem eval_neg_one_esymm_two : eval (-1 : Fin 3 → ℝ) (esymm (Fin 3) ℝ 2) = 3 := by
+  simp [esymm_eq_multiset_esymm, Multiset.esymm, Fin.univ_val_map, Multiset.powersetCard_coe,
+    List.sublistsLen, List.sublistsLenAux]
+  norm_num
+
+/-- `−e ∉ Γ₂` in `ℝ³`, since `σ₁(−e) = −3`. -/
+theorem neg_one_not_mem_gardingCone_esymm_two :
+    (-1 : Fin 3 → ℝ) ∉ gardingCone (esymm (Fin 3) ℝ 2) 1 := by
+  rw [gardingCone_esymm _]
+  intro h
+  have := h 1 le_rfl (by norm_num)
+  simp [Fin.sum_univ_three] at this
+  norm_num at this
+
+/-- `(1, −1/2) ∈ Γ₁` for `n = 2`. -/
+theorem mem_gardingCone_esymm_one_two :
+    ![(1 : ℝ), -1 / 2] ∈ gardingCone (esymm (Fin 2) ℝ 1) 1 := by
+  rw [gardingCone_esymm _]
+  intro j hj1 hj2
+  obtain rfl : j = 1 := by omega
+  simp [Fin.sum_univ_two]
+  norm_num
+
+/-- `(1, −1/2) ∉ Γ₂` for `n = 2`, since `σ₂(1, −1/2) = −1/2`. -/
+theorem not_mem_gardingCone_esymm_two_two :
+    ![(1 : ℝ), -1 / 2] ∉ gardingCone (esymm (Fin 2) ℝ 2) 1 := by
+  rw [gardingCone_esymm _]
+  intro h
+  have := h 2 (by norm_num) le_rfl
+  simp [esymm_eq_multiset_esymm, Multiset.esymm, Fin.univ_val_map, Multiset.powersetCard_coe,
+    List.sublistsLen, List.sublistsLenAux] at this
+  norm_num at this
+
+end TauCeti.HyperbolicChecks
