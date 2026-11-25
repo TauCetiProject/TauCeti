@@ -96,8 +96,10 @@ vector space.
   (`TauCeti.IsAdaptedPseudoGradient.mapsTo_levelPoint`), it is a bijection from the middle slice
   onto the slice on the level
   (`TauCeti.IsAdaptedPseudoGradient.bijOn_levelPoint_midpoint`) and determines the trajectory
-  (`TauCeti.IsAdaptedPseudoGradient.eq_of_levelPoint_eq_of_mem_midpoint`), and it depends
-  continuously on the point (`TauCeti.IsAdaptedPseudoGradient.tendsto_levelPoint`).
+  (`TauCeti.IsAdaptedPseudoGradient.eq_of_levelPoint_eq_of_mem_midpoint`). At a point `w` of a
+  trajectory crossing the level, the level point of `w` is the limit of the level points along
+  points tending to `w` whose orbits eventually meet the level
+  (`TauCeti.IsAdaptedPseudoGradient.tendsto_levelPoint`).
 * `TauCeti.IsAdaptedPseudoGradient.upperLevelPoint` and
   `TauCeti.IsAdaptedPseudoGradient.lowerLevelPoint`: the point `x` itself on one side of the
   level `c` and its level point on the other. For `x` in `W^u(p)` with `c < f p`, resp. in
