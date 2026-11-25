@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Sites.Big.StructureSheaf
-public import TauCeti.AlgebraicGeometry.Sites.Etale.Subcanonical
+public import TauCeti.AlgebraicGeometry.Sites.Fpqc
 
 /-!
 # The sheaves `𝔾_m` and `μ_n` on the small étale site
@@ -14,10 +14,9 @@ public import TauCeti.AlgebraicGeometry.Sites.Etale.Subcanonical
 Let `S` be a scheme. A sheaf on the big fpqc site `Over S` restricts to the small étale site
 `S.Etale` of schemes étale over `S`, along the forgetful functor `S.Etale ⥤ Over S`: its value on
 an étale `U ⟶ S` is its value on `U` as an `S`-scheme
-(`AlgebraicGeometry.Scheme.restrictSmallEtale`, in
-`TauCeti.AlgebraicGeometry.Sites.Etale.Subcanonical`). The restriction is a sheaf for the small
-étale topology, since a sheaf for the fpqc topology is one for the coarser étale topology and the
-forgetful functor is continuous for the étale topology
+(`AlgebraicGeometry.Scheme.restrictSmallEtale`, in `TauCeti.AlgebraicGeometry.Sites.Fpqc`). The
+restriction is a sheaf for the small étale topology, since a sheaf for the fpqc topology is one
+for the coarser étale topology and the forgetful functor is continuous for the étale topology
 (`AlgebraicGeometry.Scheme.isContinuous_etaleForget_fpqcTopology`).
 
 Restricting the sheaves `𝔾_m : T ↦ Γ(T, 𝒪_T)ˣ` and `μ_n : T ↦ {t ∈ Γ(T, 𝒪_T)ˣ | tⁿ = 1}` of the
