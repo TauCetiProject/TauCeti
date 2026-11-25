@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.Constancy.CoordPlane
 public import TauCeti.Analysis.Distribution.Rectifiable.Integral
-import TauCeti.Analysis.Distribution.TestFunction.NormDuality
+import TauCeti.Analysis.Distribution.AELeOfIntegral
 import TauCeti.Analysis.InnerProductSpace.AlternatingForm
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 import TauCeti.Geometry.Euclidean.Volume.Measure
@@ -32,11 +32,11 @@ integer-rectifiable, in particular locally integral, then `c` is an integer
 
 Write `T = ∫ θ ξ dμHE[k]` with integer multiplicity `θ` and orientation `ξ = τ₁ ∧ ⋯ ∧ τₖ` for
 orthonormal frames `τ`. The `k`-vector field `D = θ ξ − c 1_P e_I` integrates to zero against
-every test field of `k`-vectors, so by the duality
-`MeasureTheory.LocallyIntegrableOn.iSup_ofReal_integral_apply_eq_setLIntegral_enorm`, which holds
-for every measure, `∫_U ‖D‖ dμHE[k] = 0`. The plane meets `U` in a set of positive `μHE[k]`
-measure, so at some point `y ∈ P ∩ U` we have `θ(y) ξ(y) = c e_I`, and taking norms gives
-`|c| = |θ(y)|`.
+every test field of `k`-vectors, so by the fundamental lemma for vector fields
+`TauCeti.ae_eq_zero_of_forall_integral_inner_eq_zero`, which holds for every measure, `D = 0` for
+`μHE[k]`-almost every point of `U`. The plane meets `U` in a set of
+positive `μHE[k]` measure, so at some point `y ∈ P ∩ U` we have `θ(y) ξ(y) = c e_I`, and taking
+norms gives `|c| = |θ(y)|`.
 
 ## Main declarations
 
@@ -72,16 +72,9 @@ theorem coordPlaneCurrent_apply_eq_setIntegral (I : Fin k ↪ Fin n)
     (ω : 𝓓(U, EuclideanSpace ℝ (Fin n) [⋀^Fin k]→L[ℝ] ℝ)) :
     coordPlaneCurrent I x U ω =
       ∫ y in range (coordPlaneMap I x), ω y (fun j ↦ EuclideanSpace.single (I j) 1) ∂μHE[k] := by
-  rw [coordPlaneCurrent_apply, ← image_univ,
-    ← (isometry_coordPlaneMap I x).map_euclideanHausdorffMeasure_restrict, Measure.restrict_univ,
+  rw [coordPlaneCurrent_apply, ← (isometry_coordPlaneMap I x).map_euclideanHausdorffMeasure,
     EuclideanSpace.euclideanHausdorffMeasure_eq_volume,
     (isometry_coordPlaneMap I x).isClosedEmbedding.measurableEmbedding.integral_map]
-
-/-- The standard basis vectors indexed by an injection form an orthonormal family. -/
-theorem orthonormal_single_comp (I : Fin k ↪ Fin n) :
-    Orthonormal ℝ (fun j ↦ EuclideanSpace.single (I j) (1 : ℝ)) := by
-  simpa [Function.comp_def] using
-    (EuclideanSpace.basisFun (Fin n) ℝ).orthonormal.comp I I.injective
 
 /-- The restriction of `μHE[k]` to a coordinate `k`-plane is locally finite. -/
 instance isLocallyFiniteMeasure_euclideanHausdorffMeasure_restrict_range_coordPlaneMap
@@ -91,8 +84,8 @@ instance isLocallyFiniteMeasure_euclideanHausdorffMeasure_restrict_range_coordPl
   have := Measure.isFiniteMeasureOnCompacts_map_of_isProperMap
     (volume : Measure (EuclideanSpace ℝ (Fin k)))
     (isometry_coordPlaneMap I x).isClosedEmbedding.isProperMap
-  rw [← image_univ, ← (isometry_coordPlaneMap I x).map_euclideanHausdorffMeasure_restrict,
-    Measure.restrict_univ, EuclideanSpace.euclideanHausdorffMeasure_eq_volume]
+  rw [← (isometry_coordPlaneMap I x).map_euclideanHausdorffMeasure,
+    EuclideanSpace.euclideanHausdorffMeasure_eq_volume]
   infer_instance
 
 /-- The indicator function of a coordinate `k`-plane is locally integrable for `μHE[k]`. -/
@@ -117,22 +110,36 @@ theorem coordPlaneCurrent_eq_frameCurrent (I : Fin k ↪ Fin n) (x : EuclideanSp
       fun _ j ↦ EuclideanSpace.single (I j) 1 := by
   ext ω
   rw [coordPlaneCurrent_apply_eq_setIntegral, Distribution.frameCurrent_apply
+    (τ := fun _ j ↦ EuclideanSpace.single (I j) 1)
     ((locallyIntegrable_indicator_range_coordPlaneMap I x).locallyIntegrableOn _) measurable_const
-    fun _ _ ↦ orthonormal_single_comp I, ← integral_indicator
+    fun _ _ ↦ EuclideanSpace.orthonormal_single.comp _ I.injective, ← integral_indicator
     (isometry_coordPlaneMap I x).isClosedEmbedding.isClosed_range.measurableSet]
   congr 1
   funext y
   by_cases hy : y ∈ range (coordPlaneMap I x) <;> simp [hy]
 
-/-- `μHE[k]` gives the part of a coordinate `k`-plane in an open set `U` the volume of its preimage
-in `ℝᵏ`. -/
-theorem euclideanHausdorffMeasure_inter_range_coordPlaneMap (I : Fin k ↪ Fin n)
-    (x : EuclideanSpace ℝ (Fin n)) {U : Set (EuclideanSpace ℝ (Fin n))} (hU : IsOpen U) :
-    μHE[k] (U ∩ range (coordPlaneMap I x)) = volume (coordPlaneMap I x ⁻¹' U) := by
-  rw [← Measure.restrict_apply hU.measurableSet, ← image_univ,
-    ← (isometry_coordPlaneMap I x).map_euclideanHausdorffMeasure_restrict, Measure.restrict_univ,
-    EuclideanSpace.euclideanHausdorffMeasure_eq_volume,
-    Measure.map_apply (isometry_coordPlaneMap I x).continuous.measurable hU.measurableSet]
+/-- A property that holds `μHE[k]`-almost everywhere on an open set `U` holds at some point of a
+coordinate `k`-plane meeting `U`, since the plane meets `U` in a set of positive measure. -/
+private theorem exists_mem_range_coordPlaneMap_of_ae_restrict {I : Fin k ↪ Fin n}
+    {x : EuclideanSpace ℝ (Fin n)} {U : Opens (EuclideanSpace ℝ (Fin n))}
+    (hU : (coordPlaneMap I x ⁻¹' U).Nonempty) {p : EuclideanSpace ℝ (Fin n) → Prop}
+    (h : ∀ᵐ y ∂(μHE[k] : Measure (EuclideanSpace ℝ (Fin n))).restrict U, p y) :
+    ∃ y ∈ range (coordPlaneMap I x), p y := by
+  have : (ae ((μHE[k] : Measure (EuclideanSpace ℝ (Fin n))).restrict
+      ((U : Set (EuclideanSpace ℝ (Fin n))) ∩ range (coordPlaneMap I x)))).NeBot := by
+    rw [ae_neBot, Ne, Measure.restrict_eq_zero,
+      ← (isometry_coordPlaneMap I x).euclideanHausdorffMeasure_preimage,
+      EuclideanSpace.euclideanHausdorffMeasure_eq_volume]
+    exact ((U.isOpen.preimage (coordPlaneMap I x).continuous).measure_pos volume hU).ne'
+  have hae : ∀ᵐ y ∂(μHE[k] : Measure (EuclideanSpace ℝ (Fin n))).restrict
+      ((U : Set (EuclideanSpace ℝ (Fin n))) ∩ range (coordPlaneMap I x)),
+      y ∈ range (coordPlaneMap I x) ∧ p y := by
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset inter_subset_left h,
+      ae_restrict_mem (U.isOpen.measurableSet.inter
+        (isometry_coordPlaneMap I x).isClosedEmbedding.isClosed_range.measurableSet)]
+      with y hy hyP
+    exact ⟨hyP.2, hy⟩
+  exact hae.exists
 
 end TauCeti
 
@@ -154,6 +161,22 @@ private theorem vectorForm_apply (φ : 𝓓(U, ⋀[ℝ]^(k + 1) (EuclideanSpace 
     vectorForm φ y v = ⟪φ y, ιMulti ℝ (k + 1) v⟫ := by
   simp [vectorForm, postcompCLM_apply]
 
+/-- If `m (v₀ ∧ ⋯ ∧ vₖ) = c (e₀ ∧ ⋯ ∧ eₖ)` for an integer `m`, an orthonormal family `e`, and a
+family `v` that is orthonormal unless `m = 0`, then taking norms gives `|c| = |m|`, so `c` is an
+integer. -/
+private theorem exists_int_eq_of_intCast_smul_ιMulti_eq_smul {m : ℤ}
+    {v e : Fin (k + 1) → EuclideanSpace ℝ (Fin n)} (hv : m ≠ 0 → Orthonormal ℝ v)
+    (he : Orthonormal ℝ e) {c : ℝ} (h : (m : ℝ) • ιMulti ℝ (k + 1) v = c • ιMulti ℝ (k + 1) e) :
+    ∃ m : ℤ, c = m := by
+  have hn := congrArg norm h
+  rw [norm_smul, norm_smul, he.norm_ιMulti, mul_one, Real.norm_eq_abs, Real.norm_eq_abs] at hn
+  by_cases hm : m = 0
+  · exact ⟨0, by simpa [hm, eq_comm] using hn⟩
+  · rw [(hv hm).norm_ιMulti, mul_one] at hn
+    rcases abs_eq_abs.1 hn with h' | h'
+    · exact ⟨m, h'.symm⟩
+    · exact ⟨-m, by push_cast; linarith⟩
+
 /-- If the frame current of an integer multiplicity is a real multiple `c` of the current of a
 coordinate plane meeting `U`, then `c` is an integer. -/
 private theorem exists_int_eq_of_frameCurrent_eq_smul_coordPlaneCurrent
@@ -167,7 +190,7 @@ private theorem exists_int_eq_of_frameCurrent_eq_smul_coordPlaneCurrent
     ∃ m : ℤ, c = m := by
   set P := range (coordPlaneMap I x)
   set e : Fin (k + 1) → EuclideanSpace ℝ (Fin n) := fun j ↦ EuclideanSpace.single (I j) 1
-  have he : Orthonormal ℝ e := orthonormal_single_comp I
+  have he : Orthonormal ℝ e := EuclideanSpace.orthonormal_single.comp _ I.injective
   have hτo' : ∀ y, (θ y : ℝ) ≠ 0 → Orthonormal ℝ (τ y) := fun y hy ↦ hτo y (by exact_mod_cast hy)
   have hP : LocallyIntegrableOn (P.indicator 1) U μHE[k + 1] :=
     (locallyIntegrable_indicator_range_coordPlaneMap I x).locallyIntegrableOn _
@@ -177,72 +200,35 @@ private theorem exists_int_eq_of_frameCurrent_eq_smul_coordPlaneCurrent
   have hD : LocallyIntegrableOn D U μHE[k + 1] :=
     (locallyIntegrableOn_frameDensity hθ hτ hτo').sub
       ((locallyIntegrableOn_frameDensity hP measurable_const fun _ _ ↦ he).smul c)
-  have hG : LocallyIntegrableOn (fun y ↦ innerSL ℝ (D y)) U μHE[k + 1] := fun y hy ↦ by
-    obtain ⟨t, ht, hi⟩ := hD y hy
-    exact ⟨t, ht, (innerSL ℝ).integrable_comp hi⟩
   -- `D` integrates to zero against every test field of `k`-vectors.
   have hzero (φ : 𝓓(U, ⋀[ℝ]^(k + 1) (EuclideanSpace ℝ (Fin n)))) :
-      ∫ y, ⟪D y, φ y⟫ ∂μHE[k + 1] = 0 := by
+      ∫ y, ⟪φ y, D y⟫ ∂μHE[k + 1] = 0 := by
     have h1 := DFunLike.congr_fun h (vectorForm φ)
     rw [smul_apply, coordPlaneCurrent_eq_frameCurrent, smul_eq_mul,
       frameCurrent_apply hθ hτ hτo', frameCurrent_apply hP measurable_const fun _ _ ↦ he] at h1
-    have hi1 := integrable_frameCurrent_integrand hθ hτ hτo' (vectorForm φ)
-    have hi2 := integrable_frameCurrent_integrand hP measurable_const (fun _ _ ↦ he)
-      (vectorForm φ)
-    calc ∫ y, ⟪D y, φ y⟫ ∂μHE[k + 1]
+    calc ∫ y, ⟪φ y, D y⟫ ∂μHE[k + 1]
         = ∫ y, ((θ y : ℝ) * vectorForm φ y (τ y) -
             c * (P.indicator 1 y * vectorForm φ y e)) ∂μHE[k + 1] := by
           congr 1
           funext y
-          have h₁ : ⟪φ y, (θ y : ℝ) • ιMulti ℝ (k + 1) (τ y)⟫ =
-              θ y * ⟪φ y, ιMulti ℝ (k + 1) (τ y)⟫ :=
-            real_inner_smul_right (F := ⋀[ℝ]^(k + 1) (EuclideanSpace ℝ (Fin n))) _ _ _
-          have h₂ : ⟪φ y, c • P.indicator 1 y • ιMulti ℝ (k + 1) e⟫ =
-              c * (P.indicator 1 y * ⟪φ y, ιMulti ℝ (k + 1) e⟫) :=
-            (real_inner_smul_right (F := ⋀[ℝ]^(k + 1) (EuclideanSpace ℝ (Fin n))) _ _ _).trans
-              (congrArg (c * ·)
-                (real_inner_smul_right (F := ⋀[ℝ]^(k + 1) (EuclideanSpace ℝ (Fin n))) _ _ _))
-          simp only [D, frameDensity_apply, vectorForm_apply, real_inner_comm (φ y),
-            inner_sub_right]
-          exact congrArg₂ (· - ·) h₁ h₂
+          simp only [D, frameDensity_apply, vectorForm_apply, inner_sub_right,
+            real_inner_smul_right (F := ⋀[ℝ]^(k + 1) (EuclideanSpace ℝ (Fin n)))]
       _ = 0 := by
-          rw [integral_sub hi1 (hi2.const_mul c), integral_const_mul, h1, sub_self]
-  -- Hence `∫_U ‖D‖ = 0`.
-  have hnorm : ∫⁻ y in U, ‖innerSL ℝ (D y)‖ₑ ∂μHE[k + 1] = 0 := by
-    rw [← hG.iSup_ofReal_integral_apply_eq_setLIntegral_enorm]
-    simp only [innerSL_apply_apply, hzero, ENNReal.ofReal_zero]
-    simp
-  have hae : ∀ᵐ y ∂(μHE[k + 1] : Measure (EuclideanSpace ℝ (Fin n))).restrict
-      ((U : Set (EuclideanSpace ℝ (Fin n))) ∩ P), y ∈ P ∧ D y = 0 := by
-    have h0 := (lintegral_eq_zero_iff' hG.aestronglyMeasurable.eNorm).1 hnorm
-    filter_upwards [ae_restrict_of_ae_restrict_of_subset inter_subset_left h0,
-      ae_restrict_mem (U.isOpen.measurableSet.inter
-        (isometry_coordPlaneMap I x).isClosedEmbedding.isClosed_range.measurableSet)]
-      with y hy hyP
-    refine ⟨hyP.2, ?_⟩
-    rw [Pi.zero_apply, ← ofReal_norm, ENNReal.ofReal_eq_zero, innerSL_apply_norm] at hy
-    exact norm_le_zero_iff.1 hy
-  -- The plane meets `U` in a set of positive measure.
-  have hpos : (μHE[k + 1] : Measure (EuclideanSpace ℝ (Fin n))).restrict
-      ((U : Set (EuclideanSpace ℝ (Fin n))) ∩ P) ≠ 0 := by
-    rw [Ne, Measure.restrict_eq_zero, euclideanHausdorffMeasure_inter_range_coordPlaneMap I x
-      U.isOpen]
-    exact ((U.isOpen.preimage (coordPlaneMap I x).continuous).measure_pos volume hU).ne'
-  have : (ae ((μHE[k + 1] : Measure (EuclideanSpace ℝ (Fin n))).restrict
-      ((U : Set (EuclideanSpace ℝ (Fin n))) ∩ P))).NeBot := ae_neBot.2 hpos
-  obtain ⟨y, hyP, hy⟩ := hae.exists
-  -- At such a point `θ(y) ξ(y) = c e_I`; taking norms, `|θ(y)| = |c|`.
-  have hyD : frameDensity (fun y ↦ (θ y : ℝ)) τ y = c • ιMulti ℝ (k + 1) e := by
-    simpa [D, sub_eq_zero, frameDensity_apply, indicator_of_mem hyP] using hy
-  have hn := congrArg norm hyD
-  rw [norm_smul, he.norm_ιMulti, mul_one, Real.norm_eq_abs, frameDensity_apply] at hn
-  by_cases hθy : θ y = 0
-  · refine ⟨0, ?_⟩
-    simpa [hθy, eq_comm] using hn
-  · rw [norm_smul, (hτo y hθy).norm_ιMulti, mul_one, Real.norm_eq_abs] at hn
-    rcases abs_eq_abs.1 hn with h' | h'
-    · exact ⟨θ y, h'.symm⟩
-    · exact ⟨-θ y, by push_cast; linarith⟩
+          rw [integral_sub (integrable_frameCurrent_integrand hθ hτ hτo' _)
+            ((integrable_frameCurrent_integrand hP measurable_const (fun _ _ ↦ he) _).const_mul c),
+            integral_const_mul, h1, sub_self]
+  -- Hence `D = 0` almost everywhere on `U`.
+  have hDU : ∀ᵐ y ∂(μHE[k + 1] : Measure (EuclideanSpace ℝ (Fin n))).restrict U, D y = 0 := by
+    rw [ae_restrict_iff_subtype U.isOpen.measurableSet]
+    refine TauCeti.ae_eq_zero_of_forall_integral_inner_eq_zero
+      ((locallyIntegrable_comap U.isOpen.measurableSet).2 hD) fun φ ↦ ?_
+    refine (integral_subtype_comap U.isOpen.measurableSet fun y ↦ ⟪φ y, D y⟫).trans
+      ((setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ ?_).trans (hzero φ))
+    rw [image_eq_zero_of_notMem_tsupport fun hmem ↦ hy (φ.tsupport_subset hmem), inner_zero_left]
+  obtain ⟨y, hyP, hy⟩ := exists_mem_range_coordPlaneMap_of_ae_restrict hU hDU
+  -- At such a point `θ(y) ξ(y) = c e_I`.
+  refine exists_int_eq_of_intCast_smul_ιMulti_eq_smul (hτo y) he ?_
+  simpa [D, sub_eq_zero, frameDensity_apply, indicator_of_mem (show y ∈ P from hyP)] using hy
 
 /-- **Integral constancy in a coordinate plane.** An integer-rectifiable `(k + 1)`-current `T` on
 `U`, supported in `U` in a coordinate plane whose part in `U` is connected, with `∂T = 0` in `U`,
