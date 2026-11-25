@@ -26,8 +26,8 @@ This file defines the state space `TauCeti.stateSpace A` as a subset of the weak
   linear maps `A →ₚ[ℂ] ℂ` of norm one, through the automatic continuity of positive maps.
 * `TauCeti.convex_stateSpace`: the state space is convex. No unit is needed, because the norm of
   a positive functional is its limit along an approximate unit.
-* `TauCeti.map_eq_zero_of_mem_openSegment`: if a functional in an open segment between two
-  states vanishes at a nonnegative element, so do both states.
+* `TauCeti.map_eq_zero_of_mem_openSegment_of_mem_stateSpace`: if a functional in an open
+  segment between two states vanishes at a nonnegative element, so do both states.
 * `TauCeti.pullbackFunctional`: precomposition with a star homomorphism, as a continuous
   complex-linear map of weak-* duals, injective along surjective star homomorphisms
   (`TauCeti.pullbackFunctional_injective_of_surjective`). By
@@ -121,9 +121,9 @@ theorem _root_.PositiveContinuousLinearMap.toWeakDual_mem_stateSpace_iff (ω : A
 
 /-- **States vanishing at a nonnegative element form a face.** If a functional in an open segment
 between two states vanishes at a nonnegative element `x`, both endpoints vanish at `x`. -/
-theorem map_eq_zero_of_mem_openSegment {ψ₁ ψ₂ : WeakDual ℂ A} (hψ₁ : ψ₁ ∈ stateSpace A)
-    (hψ₂ : ψ₂ ∈ stateSpace A) {x : A} (hx : 0 ≤ x) (hφ : φ ∈ openSegment ℝ ψ₁ ψ₂)
-    (hφx : φ x = 0) : ψ₁ x = 0 ∧ ψ₂ x = 0 := by
+theorem map_eq_zero_of_mem_openSegment_of_mem_stateSpace {ψ₁ ψ₂ : WeakDual ℂ A}
+    (hψ₁ : ψ₁ ∈ stateSpace A) (hψ₂ : ψ₂ ∈ stateSpace A) {x : A} (hx : 0 ≤ x)
+    (hφ : φ ∈ openSegment ℝ ψ₁ ψ₂) (hφx : φ x = 0) : ψ₁ x = 0 ∧ ψ₂ x = 0 := by
   obtain ⟨s, t, hs, ht, -, rfl⟩ := hφ
   have hsum : (s : ℂ) * ψ₁ x + (t : ℂ) * ψ₂ x = 0 := by simpa [Complex.real_smul] using hφx
   -- Both terms are nonnegative, and their sum vanishes.

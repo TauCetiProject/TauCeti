@@ -86,7 +86,8 @@ theorem mem_extremePoints_stateSpace_of_mul_mul_eq_smul (hω : ω ∈ stateSpace
   refine mem_extremePoints.2 ⟨hω, fun φ hφ ψ hψ hseg ↦ ?_⟩
   have hq := hp.one_sub
   have hωq : ω (1 - p) = 0 := by rw [map_sub, map_one_of_mem_stateSpace hω, hωp, sub_self]
-  obtain ⟨hφ0, hψ0⟩ := map_eq_zero_of_mem_openSegment hφ hψ hq.nonneg hseg hωq
+  obtain ⟨hφ0, hψ0⟩ :=
+    map_eq_zero_of_mem_openSegment_of_mem_stateSpace hφ hψ hq.nonneg hseg hωq
   exact ⟨eq_of_mem_stateSpace_of_map_one_sub_eq_zero hp hpap hφ hφ0,
     eq_of_mem_stateSpace_of_map_one_sub_eq_zero hp hpap hψ hψ0⟩
 
@@ -108,7 +109,8 @@ theorem pullbackFunctional_mem_extremePoints_stateSpace (f : F) (hf : Function.S
     fun ψ₁ hψ₁ ψ₂ hψ₂ hseg ↦ ?_⟩
   -- both states vanish on `star k * k` for `k` in the kernel, as their combination does
   have hker (k : A) (hk : f k = 0) : ψ₁ (star k * k) = 0 ∧ ψ₂ (star k * k) = 0 :=
-    map_eq_zero_of_mem_openSegment hψ₁ hψ₂ (star_mul_self_nonneg k) hseg (by simp [hk])
+    map_eq_zero_of_mem_openSegment_of_mem_stateSpace hψ₁ hψ₂ (star_mul_self_nonneg k) hseg
+      (by simp [hk])
   -- so, by Cauchy–Schwarz, on the kernel, and they factor through `f`
   have hfac {ψ : WeakDual ℂ A} (hψ : ψ ∈ stateSpace A)
       (h0 : ∀ k, f k = 0 → ψ (star k * k) = 0) : ψ ∈ pullbackFunctional A f '' stateSpace B :=
