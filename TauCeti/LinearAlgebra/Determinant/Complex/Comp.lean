@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Determinant.Comp
+public import TauCeti.LinearAlgebra.Determinant.Comp.Basic
 public import TauCeti.LinearAlgebra.Determinant.Complex.LinearMap
 
 /-!

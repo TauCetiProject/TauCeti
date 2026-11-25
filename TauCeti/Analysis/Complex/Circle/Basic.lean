@@ -46,6 +46,7 @@ that the circle is two closed intervals glued at their endpoints `±1`.
   `Multiplicative ℝ →ₜ* Circle`.
 * `Circle.coordinate`: the coordinate function `z ↦ z` in `C(S¹, ℂ)`, and
   `Circle.coordinate_mem_unitary`.
+* `Circle.conj_coe_mul_mul_coe_mul`: `conj (a z) * (a w) = conj z * w` for `a` on the circle.
 * `Circle.re_sq_add_im_sq`, `Circle.coe_mul_conj` and `Circle.coe_add_inv_coe`:
   `Re z ^ 2 + Im z ^ 2 = 1`, `z * conj z = 1` and `z + z⁻¹ = 2 Re z` on the circle,
   and `Complex.re_sq_add_im_sq_of_mem_sphere`, the first identity for a point of
@@ -59,6 +60,7 @@ that the circle is two closed intervals glued at their endpoints `±1`.
 * `Circle.exp_pow_eq_neg_one` and `Circle.mixed_power_rotation_factor`: power identities for
   complex exponentials on the circle.
 * `Circle.exists_pow_nat_eq`: every point of the circle has an `n`-th root on the circle.
+* `Circle.isSquare`: every point of the circle is a square.
 * `Circle.exp_pow_eq_one_iff`: `exp (i θ)` is an `n`-th root of unity exactly when `θ` is an
   integer multiple of `2π / n`.
 * `Circle.isOfFinOrder_exp_two_pi_mul_iff`: `exp (2π i x)` has finite order exactly when `x` is
@@ -155,6 +157,13 @@ theorem _root_.Complex.zpow_mul_conj_sub_eq_neg_of_mem_sphere {z : ℂ}
 /-- For a point of the circle, `z + z⁻¹ = 2 Re z`. -/
 theorem coe_add_inv_coe (z : Circle) : (z : ℂ) + (z : ℂ)⁻¹ = 2 * (z : ℂ).re := by
   rw [← coe_inv, coe_inv_eq_conj, Complex.add_conj, Complex.ofReal_mul, Complex.ofReal_ofNat]
+
+/-- Rotating both factors of the Hermitian product `conj z * w` by a point `a` of the circle does
+not change it. In particular the cross product `Im (conj z * w)` is invariant under rotations. -/
+theorem conj_coe_mul_mul_coe_mul (a : Circle) (z w : ℂ) :
+    conj ((a : ℂ) * z) * ((a : ℂ) * w) = conj z * w := by
+  rw [map_mul, mul_mul_mul_comm, ← Complex.normSq_eq_conj_mul_self, normSq_coe,
+    Complex.ofReal_one, one_mul]
 
 /-- Raising `exp (π * I / d)` to a nonzero natural power `d` gives `-1`. -/
 theorem exp_pow_eq_neg_one (d : ℕ) (hd : d ≠ 0) :
@@ -263,6 +272,10 @@ theorem exp_neg_arg_mul_self (x : ℂ) : (exp (-Complex.arg x) : ℂ) * x = ‖x
   push_cast
   rw [neg_mul, neg_add_cancel, Complex.exp_zero, mul_one]
 
+/-- Every point of the circle is a square on the circle. -/
+theorem isSquare (z : Circle) : IsSquare z :=
+  (z.exists_pow_nat_eq two_ne_zero).imp fun y hy ↦ by rw [← hy, sq]
+
 /-- For unit complex numbers, `a⁻¹ b - 1 = a⁻¹ (b - a)`. -/
 theorem coe_inv_mul_sub_one (a b : Circle) :
     ((a⁻¹ * b : Circle) : ℂ) - 1 = ((a⁻¹ : Circle) : ℂ) * ((b : ℂ) - a) := by
@@ -308,6 +321,14 @@ theorem contDiff_coe_inv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     ContDiff ℝ n fun w ↦ ((u⁻¹ w : Circle) : ℂ) := by
   simpa only [Pi.inv_apply, coe_inv_eq_conj, Function.comp_def, Complex.conjCLE_apply] using
     Complex.conjCLE.contDiff.comp hu
+
+/-- The pointwise inverse of a circle-valued map that is `Cⁿ` at `z`, as a map into `ℂ`, is `Cⁿ`
+at `z`. -/
+theorem contDiffAt_coe_inv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {n : WithTop ℕ∞} {u : E → Circle} {z : E} (hu : ContDiffAt ℝ n (fun w ↦ (u w : ℂ)) z) :
+    ContDiffAt ℝ n (fun w ↦ ((u⁻¹ w : Circle) : ℂ)) z := by
+  simpa only [Pi.inv_apply, coe_inv_eq_conj, Function.comp_def, Complex.conjCLE_apply] using
+    Complex.conjCLE.contDiff.contDiffAt.comp z hu
 
 /-- The map `t ↦ exp (i t)` from the real line to the circle, as a continuous homomorphism
 from `Multiplicative ℝ`. -/

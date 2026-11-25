@@ -204,6 +204,13 @@ theorem isRestricted_rescale_exp_iff {x : K} {c : ℝ} (hc : 0 ≤ c) :
   obtain ⟨k, hk⟩ := (hlim.eventually (gt_mem_nhds hρ)).exists
   exact (not_lt_of_ge (hbound k)) hk
 
+/-- The exact criterion for the p-adic exponential to be restricted at a nonnegative real radius:
+the case `x = 1` of `isRestricted_rescale_exp_iff`. The boundary is excluded. -/
+theorem isRestricted_exp_iff {c : ℝ} (hc : 0 ≤ c) :
+    (exp K).IsRestricted c ↔ c < (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹) := by
+  have h := isRestricted_rescale_exp_iff (p := p) (x := (1 : K)) hc
+  rwa [rescale_one, RingHom.id_apply, norm_one, one_mul] at h
+
 /-- The exact criterion for a rescaled p-adic exponential to have a Gauss norm at a real radius.
 Unlike restrictedness, the boundary is included. The case `x = 0` is included. -/
 theorem hasGaussNorm_rescale_exp_iff {x : K} {c : ℝ} (hc : 0 ≤ c) :

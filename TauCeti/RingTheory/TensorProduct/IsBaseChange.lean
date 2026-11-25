@@ -56,6 +56,8 @@ The image of a base change map spans its target over the extended scalars, and f
   that is compatible with the base-change maps is bijective.
 * `IsBaseChange.injective_of_tensorProduct_mk_injective`: a base-change map is injective when
   the scalar-unit map `M → S ⊗[R] M` is injective.
+* `IsBaseChange.of_surjective_algebraMap`: along a surjective `algebraMap R S`, every bijective
+  `R`-linear map to an `S`-module is a base-change map.
 * `LinearMap.liftBaseChange_comp_baseChange`: naturality of the induced map `S ⊗[R] M → N`.
 * `LinearMap.liftBaseChange_pi_injective`: injectivity of the induced map on finite products.
 * `LinearMap.liftBaseChange_injective`: extension to a localization preserves injectivity of a
@@ -157,6 +159,26 @@ theorem IsBaseChange.injective_of_tensorProduct_mk_injective {f : M →ₗ[R] N}
   apply hinj
   apply hf.equiv.injective
   simpa only [TensorProduct.mk_apply, hf.equiv_tmul, one_smul] using hxy
+
+/-- **Base change along a surjection.** If `algebraMap R S` is surjective, every bijective
+`R`-linear map `f : M → N` to an `S`-module exhibits `N` as the base change of `M` to `S`. -/
+theorem IsBaseChange.of_surjective_algebraMap (hS : Function.Surjective (algebraMap R S))
+    {f : M →ₗ[R] N} (hf : Function.Bijective f) : IsBaseChange S f := by
+  let e := LinearEquiv.ofBijective f hf
+  refine IsBaseChange.of_lift_unique _ fun Q _ _ _ _ g ↦ ⟨?_, ?_, ?_⟩
+  · -- `g ∘ f⁻¹` is `S`-linear: every scalar of `S` comes from `R`.
+    refine
+      { toFun := g ∘ e.symm
+        map_add' := fun x y ↦ by simp only [Function.comp_apply, map_add]
+        map_smul' := fun s x ↦ ?_ }
+    obtain ⟨r, rfl⟩ := hS s
+    simp only [Function.comp_apply, RingHom.id_apply, algebraMap_smul, map_smul]
+  · ext m
+    exact congrArg g (e.symm_apply_apply m)
+  · intro g' hg'
+    ext n
+    obtain ⟨m, rfl⟩ := hf.surjective n
+    simpa [e] using LinearMap.congr_fun hg' m
 
 section
 
