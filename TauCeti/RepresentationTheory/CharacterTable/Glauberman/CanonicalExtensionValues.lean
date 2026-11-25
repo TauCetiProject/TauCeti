@@ -30,7 +30,7 @@ through a power map `j` fixing `χ`, so by uniqueness of the canonical extension
 fixes `ψ`: by the Chinese remainder theorem a power `j` coprime to `|Γ ⋊ S|` agrees on `S` with a
 power `j'` that is `1` modulo `|Γ|`, and `j'` fixes `χ`. So `ψ(s)` is a rational algebraic integer,
 an integer (`TauCeti.IsCanonicalExtension.exists_int_eq_apply_inr`). The Chinese remainder step
-stands in for Glauberman's Lemma 1 (`ℚ(ζ_m) ⊓ ℚ(ζ_n) = ℚ` for coprime `m`, `n`, on main as
+stands in for Glauberman's Lemma 1 (`ℚ(ζ_m) ⊓ ℚ(ζ_n) = ℚ` for coprime `m`, `n`,
 `TauCeti.Cyclotomic.complexField_inf_eq_bot`): all power maps are read in the one cyclotomic field
 of order `|Γ ⋊ S|`. The two statements together are `TauCeti.canonicalExtension_values`.
 
@@ -63,7 +63,6 @@ canonical extension of `χ`, then `x ↦ ψ (x ^ j)` is the canonical extension 
 theorem IsCanonicalExtension.pow {χ : Γ → k} {ψ : Γ ⋊[φ] S → k}
     (hψ : IsCanonicalExtension φ χ ψ) {j : ℕ} (hj : j.Coprime (Nat.card (Γ ⋊[φ] S))) :
     IsCanonicalExtension φ (fun g => χ (g ^ j)) fun x => ψ (x ^ j) := by
-  have : Finite (Γ ⋊[φ] S) := Finite.of_equiv _ SemidirectProduct.equivProd.symm
   obtain ⟨hirr, hinl, n, ρ, hρ, hdet⟩ := isCanonicalExtension_iff.1 hψ
   have hirr' := pow_mem_irreducibleCharacters hirr hj
   obtain ⟨m, ρ', -, hρ'⟩ := mem_irreducibleCharacters_iff.1 hirr'
@@ -85,11 +84,18 @@ theorem IsCanonicalExtension.apply_pow_eq_self (hcop : (Nat.card Γ).Coprime (Na
   rw [show (fun g => χ (g ^ j)) = χ from funext hχj] at h
   exact congrFun ((existsUnique_canonicalExtension hcop hχ hinv).unique h hψ) x
 
-/-- An irreducible character is a virtual character. -/
-private theorem mem_virtualCharacters_of_mem_irreducibleCharacters {G : Type*} [Group G]
-    [Finite G] {f : G → k} (hf : f ∈ irreducibleCharacters k G) : f ∈ virtualCharacters k G := by
-  rw [virtualCharacters_eq_closure_irreducibleCharacters]
-  exact AddSubgroup.subset_closure hf
+variable (k φ) in
+/-- A subfield of `k`, Galois and finite-dimensional over `ℚ`, containing a primitive
+`|Γ ⋊ S|`-th root of unity: the cyclotomic field in which the power maps of `Γ ⋊[φ] S` act. -/
+private theorem exists_isPrimitiveRoot_natCard : ∃ (K : IntermediateField ℚ k) (ζ : K),
+    IsGalois ℚ K ∧ FiniteDimensional ℚ K ∧ IsPrimitiveRoot ζ (Nat.card (Γ ⋊[φ] S)) := by
+  have : NeZero (Nat.card (Γ ⋊[φ] S)) := ⟨Nat.card_pos.ne'⟩
+  have : NeZero (Nat.card (Γ ⋊[φ] S) : k) := ⟨Nat.cast_ne_zero.2 Nat.card_pos.ne'⟩
+  obtain ⟨ζ, hζ₀⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot k (Nat.card (Γ ⋊[φ] S))
+  have := hζ₀.intermediateField_adjoin_isCyclotomicExtension ℚ
+  exact ⟨ℚ⟮ζ⟯, _, IsCyclotomicExtension.isGalois {Nat.card (Γ ⋊[φ] S)} ℚ _,
+    IsCyclotomicExtension.finiteDimensional {Nat.card (Γ ⋊[φ] S)} ℚ _,
+    IsCyclotomicExtension.zeta_spec (Nat.card (Γ ⋊[φ] S)) ℚ ℚ⟮ζ⟯⟩
 
 omit [Finite Γ] [Finite S] in
 /-- A power `j'` that is `1` modulo `|Γ|` and `j` modulo `|S|`, for `j` coprime to `|Γ ⋊ S|`:
@@ -114,22 +120,17 @@ theorem IsCanonicalExtension.adjoin_range_eq (hcop : (Nat.card Γ).Coprime (Nat.
     {χ : Γ → k} (hχ : χ ∈ irreducibleCharacters k Γ) (hinv : ∀ s g, χ (φ s g) = χ g)
     {ψ : Γ ⋊[φ] S → k} (hψ : IsCanonicalExtension φ χ ψ) :
     adjoin ℚ (Set.range ψ) = adjoin ℚ (Set.range χ) := by
-  have : Finite (Γ ⋊[φ] S) := Finite.of_equiv _ SemidirectProduct.equivProd.symm
   have : NeZero (Nat.card (Γ ⋊[φ] S)) := ⟨Nat.card_pos.ne'⟩
-  have : NeZero (Nat.card (Γ ⋊[φ] S) : k) := ⟨Nat.cast_ne_zero.2 Nat.card_pos.ne'⟩
-  obtain ⟨ζ, hζ₀⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot k (Nat.card (Γ ⋊[φ] S))
-  have := hζ₀.intermediateField_adjoin_isCyclotomicExtension ℚ
-  have : IsGalois ℚ ℚ⟮ζ⟯ := IsCyclotomicExtension.isGalois {Nat.card (Γ ⋊[φ] S)} ℚ _
-  have hζ := IsCyclotomicExtension.zeta_spec (Nat.card (Γ ⋊[φ] S)) ℚ ℚ⟮ζ⟯
+  obtain ⟨K, ζ, _, _, hζ⟩ := exists_isPrimitiveRoot_natCard k φ
   have hΓ : Monoid.exponent Γ ∣ Nat.card (Γ ⋊[φ] S) :=
     (Group.exponent_dvd_nat_card (G := Γ)).trans
       (SemidirectProduct.card (φ := φ) ▸ dvd_mul_right _ _)
   refine le_antisymm ?_ (adjoin.mono _ _ _ ?_)
   · rw [hζ.adjoin_range_eq_map_fixedField_cyclotomicPowerStabilizer
         (Group.exponent_dvd_nat_card (G := Γ ⋊[φ] S))
-        (mem_virtualCharacters_of_mem_irreducibleCharacters (isCanonicalExtension_iff.1 hψ).1),
+        (irreducibleCharacters_subset_virtualCharacters (isCanonicalExtension_iff.1 hψ).1),
       hζ.adjoin_range_eq_map_fixedField_cyclotomicPowerStabilizer hΓ
-        (mem_virtualCharacters_of_mem_irreducibleCharacters hχ)]
+        (irreducibleCharacters_subset_virtualCharacters hχ)]
     exact map_mono _ (IntermediateField.fixedField_le fun σ hσ =>
       (IsPrimitiveRoot.mem_cyclotomicPowerStabilizer_iff _ _ _ _).2 <|
         hψ.apply_pow_eq_self hcop hχ hinv (ZMod.val_coe_unit_coprime _)
@@ -144,15 +145,8 @@ theorem IsCanonicalExtension.exists_int_eq_apply_inr (hcop : (Nat.card Γ).Copri
     {χ : Γ → k} (hχ : χ ∈ irreducibleCharacters k Γ) (hinv : ∀ s g, χ (φ s g) = χ g)
     {ψ : Γ ⋊[φ] S → k} (hψ : IsCanonicalExtension φ χ ψ) (s : S) :
     ∃ z : ℤ, ψ (inr s) = z := by
-  have : Finite (Γ ⋊[φ] S) := Finite.of_equiv _ SemidirectProduct.equivProd.symm
   have : NeZero (Nat.card (Γ ⋊[φ] S)) := ⟨Nat.card_pos.ne'⟩
-  have : NeZero (Nat.card (Γ ⋊[φ] S) : k) := ⟨Nat.cast_ne_zero.2 Nat.card_pos.ne'⟩
-  obtain ⟨ζ, hζ₀⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot k (Nat.card (Γ ⋊[φ] S))
-  have := hζ₀.intermediateField_adjoin_isCyclotomicExtension ℚ
-  have : IsGalois ℚ ℚ⟮ζ⟯ := IsCyclotomicExtension.isGalois {Nat.card (Γ ⋊[φ] S)} ℚ _
-  have hζ := IsCyclotomicExtension.zeta_spec (Nat.card (Γ ⋊[φ] S)) ℚ ℚ⟮ζ⟯
-  have : FiniteDimensional ℚ ℚ⟮ζ⟯ :=
-    IsCyclotomicExtension.finiteDimensional {Nat.card (Γ ⋊[φ] S)} ℚ _
+  obtain ⟨K, ζ, _, _, hζ⟩ := exists_isPrimitiveRoot_natCard k φ
   have hS : Monoid.exponent S ∣ Nat.card (Γ ⋊[φ] S) :=
     (Group.exponent_dvd_nat_card (G := S)).trans
       (SemidirectProduct.card (φ := φ) ▸ dvd_mul_left _ _)
@@ -167,7 +161,7 @@ theorem IsCanonicalExtension.exists_int_eq_apply_inr (hcop : (Nat.card Γ).Copri
   have hirr := (isCanonicalExtension_iff.1 hψ).1
   have hmem : ψ (inr s) ∈ adjoin ℚ (Set.range (ψ ∘ inr)) := subset_adjoin _ _ ⟨s, rfl⟩
   rw [hζ.adjoin_range_eq_map_fixedField_cyclotomicPowerStabilizer hS
-      (comp_mem_virtualCharacters _ (mem_virtualCharacters_of_mem_irreducibleCharacters hirr)),
+      (comp_mem_virtualCharacters _ (irreducibleCharacters_subset_virtualCharacters hirr)),
     hstab, ← fixingSubgroup_bot, IsGalois.fixedField_fixingSubgroup, IntermediateField.map_bot,
     mem_bot] at hmem
   obtain ⟨q, hq⟩ := hmem
