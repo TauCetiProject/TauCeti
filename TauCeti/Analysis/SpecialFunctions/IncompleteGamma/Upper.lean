@@ -10,6 +10,7 @@ import TauCeti.Analysis.Complex.ParametricIntegralHolomorphy
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.Pow.ParametricIntegral
+import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
 # The complex upper incomplete Gamma function
@@ -164,29 +165,19 @@ theorem upperIncompleteGamma_ofReal_im (a : ℝ) {x : ℝ} (hx : 0 ≤ x) :
     (upperIncompleteGamma a x).im = 0 := by
   rw [upperIncompleteGamma_ofReal_eq_ofReal_integral a hx, ofReal_im]
 
-/-- For `0 < x` the real tail integrand `t^{a−1} e^{−t}` is continuous on `[x, ∞)`. -/
-private theorem continuousOn_rpow_mul_exp_neg_Ici (a : ℝ) {x : ℝ} (hx : 0 < x) :
-    ContinuousOn (fun t : ℝ => t ^ (a - 1) * Real.exp (-t)) (Ici x) := fun _ ht =>
-  ((continuousAt_id.rpow_const (Or.inl (hx.trans_le ht).ne')).mul
-    (Real.continuous_exp.comp continuous_neg).continuousAt).continuousWithinAt
-
-/-- For `0 < x` the real tail integrand `t^{a−1} e^{−t}` is integrable on `(x, ∞)`. -/
-private theorem integrableOn_rpow_mul_exp_neg_Ioi (a : ℝ) {x : ℝ} (hx : 0 < x) :
-    IntegrableOn (fun t : ℝ => t ^ (a - 1) * Real.exp (-t)) (Ioi x) :=
-  integrable_of_isBigO_exp_neg one_half_pos (continuousOn_rpow_mul_exp_neg_Ici a hx)
-    ((Real.Gamma_integrand_isLittleO _).isBigO.congr_left fun _ => mul_comm _ _)
-
 /-- For real `a`, `x ↦ Γ(a, x)` is strictly decreasing on `(0, ∞)`. -/
 theorem strictAntiOn_upperIncompleteGamma_ofReal_re (a : ℝ) :
     StrictAntiOn (fun x : ℝ => (upperIncompleteGamma a x).re) (Ioi 0) := by
   intro x (hx : 0 < x) y _ hxy
   simp only [upperIncompleteGamma_ofReal_eq_ofReal_integral a hx.le,
     upperIncompleteGamma_ofReal_eq_ofReal_integral a (hx.trans hxy).le, ofReal_re]
-  rw [← sub_pos,
-    intervalIntegral.integral_Ioi_sub_Ioi (integrableOn_rpow_mul_exp_neg_Ioi a hx) hxy.le]
+  have hint : IntegrableOn (fun t : ℝ => t ^ (a - 1) * Real.exp (-t)) (Ioi x) := by
+    simpa using TauCeti.integrableOn_rpow_mul_exp_neg_mul_Ioi_of_pos (a := 1) (s := a - 1) hx
+      (Or.inl zero_lt_one)
+  rw [← sub_pos, intervalIntegral.integral_Ioi_sub_Ioi hint hxy.le]
   refine intervalIntegral.intervalIntegral_pos_of_pos_on
-    (ContinuousOn.intervalIntegrable_of_Icc hxy.le
-      ((continuousOn_rpow_mul_exp_neg_Ici a hx).mono Icc_subset_Ici_self)) (fun t ht => ?_) hxy
+    ((intervalIntegrable_iff_integrableOn_Ioc_of_le hxy.le).2 (hint.mono_set Ioc_subset_Ioi_self))
+    (fun t ht => ?_) hxy
   have ht0 := hx.trans ht.1
   positivity
 
@@ -205,10 +196,13 @@ theorem upperIncompleteGamma_ofReal_re_pos (a : ℝ) {x : ℝ} (hx : 0 < x) :
 /-- **DLMF 8.10.1**: for `a ≤ 1` and `0 < x`, `Γ(a, x) ≤ x^{a−1} e^{−x}`. -/
 theorem upperIncompleteGamma_ofReal_re_le_rpow_mul_exp_neg {a x : ℝ} (ha : a ≤ 1) (hx : 0 < x) :
     (upperIncompleteGamma a x).re ≤ x ^ (a - 1) * Real.exp (-x) := by
+  have hint : IntegrableOn (fun t : ℝ => t ^ (a - 1) * Real.exp (-t)) (Ioi x) := by
+    simpa using TauCeti.integrableOn_rpow_mul_exp_neg_mul_Ioi_of_pos (a := 1) (s := a - 1) hx
+      (Or.inl zero_lt_one)
   rw [upperIncompleteGamma_ofReal_eq_ofReal_integral a hx.le, ofReal_re, ← integral_exp_neg_Ioi,
     ← integral_const_mul]
-  refine setIntegral_mono_on (integrableOn_rpow_mul_exp_neg_Ioi a hx)
-    ((integrableOn_exp_neg_Ioi x).const_mul _) measurableSet_Ioi fun t ht => ?_
+  refine setIntegral_mono_on hint ((integrableOn_exp_neg_Ioi x).const_mul _) measurableSet_Ioi
+    fun t ht => ?_
   exact mul_le_mul_of_nonneg_right (Real.rpow_le_rpow_of_nonpos hx ht.le (by linarith))
     (Real.exp_pos _).le
 
