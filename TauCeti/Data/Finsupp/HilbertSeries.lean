@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Finsupp.PWO
 public import TauCeti.Data.Finsupp.Weight
 public import TauCeti.RingTheory.PowerSeries.InvOneSubPow
+import TauCeti.Order.WellFounded.Set
 
 /-!
 # Hilbert series of upper and lower sets of exponents
@@ -156,17 +157,16 @@ theorem IsUpperSet.exists_mk_ncard_inter_setOf_degree_eq_mul_invOneSubPow {U : S
     (hU : IsUpperSet U) :
     ∃ p : R[X], PowerSeries.mk (fun n ↦ ((U ∩ {c : ι →₀ ℕ | c.degree = n}).ncard : R)) =
       p * invOneSubPow R (Fintype.card ι) := by
-  -- By Dickson's lemma `U` has finitely many minimal elements, and lies above them.
-  have hfin : {f | Minimal (· ∈ U) f}.Finite :=
-    WellQuasiOrderedLE.finite_of_isAntichain (setOfPred_minimal_antichain _)
-  have hU' : {c | ∃ f ∈ hfin.toFinset, f ≤ c} = U := by
+  -- By Dickson's lemma `U` lies above finitely many of its elements.
+  obtain ⟨t, htU, hcov⟩ := (Set.isPWO_of_wellQuasiOrderedLE U).exists_finset_subset_biUnion_Ici
+  have hU' : {c | ∃ f ∈ t, f ≤ c} = U := by
     ext c
-    simp only [mem_ofPred_eq, Finite.mem_toFinset]
-    refine ⟨fun ⟨f, hf, hfc⟩ ↦ hU hfc hf.prop, fun hc ↦ ?_⟩
-    obtain ⟨f, hfc, hf⟩ := exists_minimal_le_of_wellFoundedLT (· ∈ U) c hc
+    simp only [mem_ofPred_eq]
+    refine ⟨fun ⟨f, hf, hfc⟩ ↦ hU hfc (htU hf), fun hc ↦ ?_⟩
+    obtain ⟨f, hf, hfc⟩ := mem_iUnion₂.mp (hcov hc)
     exact ⟨f, hf, hfc⟩
   rw [← hU']
-  exact exists_mk_ncard_setOf_exists_le_inter_setOf_degree_eq R hfin.toFinset
+  exact exists_mk_ncard_setOf_exists_le_inter_setOf_degree_eq R t
 
 /-- **Rationality of the Hilbert series of a monomial quotient.** For a lower set `L` of exponents
 `c : ι →₀ ℕ`, such as the standard monomials of an ideal for a monomial order, the series

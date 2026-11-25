@@ -37,6 +37,11 @@ identifies the image of the unit cube under positive coordinatewise scaling.
 `TauCeti.piSigmaConstContinuousLinearEquiv` regroups a family of tuples along a bijection of its
 sigma index. Its underlying homeomorphism is `TauCeti.piSigmaConstHomeomorph`, which is linear
 coordinatewise, so coordinate calculations can use both the homeomorphism and the linear API.
+
+Over an empty index type, `ContinuousLinearMap.piMap T` is a continuous linear equivalence
+between zero spaces (`ContinuousLinearMap.piMap_eq_of_isEmpty`), and
+`ContinuousLinearMap.piCongrLeft_symm_comp_piMap` reindexes a product operator along an
+equivalence of index types.
 -/
 
 public section
@@ -260,6 +265,45 @@ theorem negCoord_single_of_ne {k i : ι} (h : i ≠ k) (v : Q i) :
 end NegCoord
 
 end ContinuousLinearEquiv
+
+namespace ContinuousLinearMap
+
+variable {R : Type*} [Semiring R]
+
+section IsEmpty
+
+variable {ι : Type*} [IsEmpty ι] {E F : ι → Type*}
+variable [∀ i, AddCommMonoid (E i)] [∀ i, TopologicalSpace (E i)] [∀ i, Module R (E i)]
+variable [∀ i, AddCommMonoid (F i)] [∀ i, TopologicalSpace (F i)] [∀ i, Module R (F i)]
+
+/-- Over an empty index type the product operator is the unique map between zero spaces, which
+is a continuous linear equivalence. -/
+theorem piMap_eq_of_isEmpty (T : ∀ i, E i →L[R] F i) :
+    piMap T = ((ContinuousLinearEquiv.piCongrRight fun i ↦ isEmptyElim i :
+      (∀ i, E i) ≃L[R] ∀ i, F i) : (∀ i, E i) →L[R] ∀ i, F i) := by
+  ext x i
+  exact isEmptyElim i
+
+end IsEmpty
+
+section Reindex
+
+variable {ι ι' : Type*} {E F : ι → Type*}
+variable [∀ i, AddCommMonoid (E i)] [∀ i, TopologicalSpace (E i)] [∀ i, Module R (E i)]
+variable [∀ i, AddCommMonoid (F i)] [∀ i, TopologicalSpace (F i)] [∀ i, Module R (F i)]
+
+/-- Reindexing a product operator along `e : ι' ≃ ι` gives the product of the reindexed family. -/
+theorem piCongrLeft_symm_comp_piMap (e : ι' ≃ ι) (T : ∀ i, E i →L[R] F i) :
+    ((ContinuousLinearEquiv.piCongrLeft R F e).symm : (∀ i, F i) →L[R] ∀ i', F (e i')) ∘L
+        piMap T =
+      piMap (fun i' ↦ T (e i')) ∘L
+        ((ContinuousLinearEquiv.piCongrLeft R E e).symm : (∀ i, E i) →L[R] ∀ i', E (e i')) :=
+  -- the inverse of `piCongrLeft` reads the coordinate `i'` of a vector at `e i'` by definition
+  (rfl)
+
+end Reindex
+
+end ContinuousLinearMap
 
 namespace TauCeti
 
