@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Morphisms.Modification.StrictTransform.Basic
-public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.SupportedKernel
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.SupportedKernel.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
 
 /-!
