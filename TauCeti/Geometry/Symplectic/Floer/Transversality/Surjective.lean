@@ -44,9 +44,10 @@ argument follow the Morse analogue
   The sum of the range of `D_u` and the span of the variation terms is therefore all of `L²` as
   soon as its orthogonal complement is trivial.
 * **The variation terms.** A variation `δK` that is `C¹`, of compact support and supported over
-  `U` changes the Floer operator by `-X_{δK}(u)` over `U` and not at all elsewhere
-  (`TauCeti.SymplecticForm.floerOperator_add_sub_eq_zero`), so its variation term is continuous
-  with compact support, and lies in every `Lᵖ` of the strip
+  `U` changes the Floer operator by `-X_{δK}(u)`
+  (`TauCeti.SymplecticForm.floerOperator_add_const_mul_left_of_tsupport_subset`), and not at all
+  off `U` (`TauCeti.SymplecticForm.floerOperator_add_sub_eq_zero`), so its variation term is
+  continuous with compact support, and lies in every `Lᵖ` of the strip
   (`TauCeti.SymplecticForm.memLp_floerOperator_add_sub`).
 * **Weak cokernel elements.** Let `h ∈ L²` be orthogonal to the range of `D_u` and to every
   variation term, and let `η = ⟪h, ·⟫` be the covector field it defines. A smooth map `ξ` with
@@ -114,19 +115,17 @@ theorem memLp_floerOperator_add_sub (hU : IsOpen U)
   have hoff (z : ℝ × ℝ) (hz : z ∉ C) : f z = 0 :=
     ω.floerOperator_add_sub_eq_zero J Ks Kt δK u fun y ↦
       image_eq_zero_of_notMem_tsupport (f := uncurry δK) fun h ↦ hz ⟨(z, y), h, rfl⟩
-  -- Over `U` the variation term is `-X_{δK}(u)`.
-  have hon (z : ℝ × ℝ) (hz : z ∈ U) : f z = -ω.hamiltonianVectorField (δK z) (u z) := by
-    have hδ : DifferentiableAt ℝ (δK z) (u z) := (hδK.differentiable one_ne_zero (z, u z)).comp
-      (u z) ((differentiableAt_const z).prodMk differentiableAt_id)
-    have h := ω.floerOperator_add_const_mul_left J Ks Kt δK u z (hKs z hz) hδ 1
+  -- The variation term is `-X_{δK}(u)`.
+  have hon (z : ℝ × ℝ) : f z = -ω.hamiltonianVectorField (δK z) (u z) := by
+    have h := ω.floerOperator_add_const_mul_left_of_tsupport_subset J Ks Kt u hKs hδK hδKU z 1
     simp only [one_mul, one_smul] at h
-    simp only [f, h]
-    abel
+    simp only [f, h, sub_sub_cancel_left]
   have hX : Continuous fun w : (ℝ × ℝ) × V ↦ ω.hamiltonianVectorField (δK w.1) w.2 :=
     (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hδK)).continuous
   have hcont : Continuous f := continuous_iff_continuousAt.2 fun z ↦ by
     by_cases hz : z ∈ U
-    · exact ((hX.comp_continuousOn (continuousOn_id.prodMk hu)).neg.congr hon).continuousAt
+    · exact ((hX.comp_continuousOn (continuousOn_id.prodMk hu)).neg.congr
+        fun z _ ↦ hon z).continuousAt
         (hU.mem_nhds hz)
     · exact continuousAt_const.congr (Filter.eventually_of_mem
         ((isOpen_compl_iff.2 hC.isClosed).mem_nhds fun h ↦ hz (hCU h)) fun w hw ↦ (hoff w hw).symm)
@@ -263,11 +262,9 @@ theorem range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top
   -- The covector field `η = ⟪h, ·⟫` is a weak cokernel element of the universal operator.
   set η : ℝ × ℝ → V →L[ℝ] ℝ := fun z ↦ innerSL ℝ (h z)
   have hΩo : IsOpen Ω := isOpen_univ.prod isOpen_Ioo
-  have hη : MemLpLoc 2 Ω η := memLpLoc_iff.2 fun K hK _ ↦ by
-    have hμ : stripMeasure.restrict K = volume.restrict K := by
-      rw [stripMeasure_eq_restrict_univ_prod_Ioo, Measure.restrict_restrict_of_subset hK]
-    rw [← hμ]
-    exact ((innerSL ℝ).comp_memLp' (Lp.memLp h)).restrict K
+  have hη : MemLpLoc 2 Ω η := MemLp.memLpLoc (by
+    rw [← stripMeasure_eq_restrict_univ_prod_Ioo]
+    exact (innerSL ℝ).comp_memLp' (Lp.memLp h))
   have hDη (ξ : ℝ × ℝ → V) (hξ : ContDiff ℝ (⊤ : ℕ∞) ξ) (hξc : HasCompactSupport ξ)
       (hξΩ : tsupport ξ ⊆ Ω) : ∫ z, η z (ω.floerLinearization J Ks Kt u ξ z) = 0 := by
     simpa only [η, innerSL_apply_apply] using integral_inner_floerLinearization_eq_zero hM
