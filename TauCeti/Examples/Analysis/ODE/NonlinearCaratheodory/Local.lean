@@ -17,7 +17,8 @@ Checks for the nonlinear Carathéodory theorem on a ball
 `TauCeti.mapsTo_closedBall_of_forall_mem_Icc_eq_picard`).
 
 * **Agreement with Mathlib.** For a field satisfying `IsPicardLindelof` with a constant Lipschitz
-  bound, the solutions with values in the ball are Mathlib's solution
+  bound, the solutions with values in the ball are Mathlib's solution, provided that solution also
+  takes values in the ball
   (`TauCeti.Examples.NonlinearCaratheodoryLocal.eqOn_of_isPicardLindelof`).
 * **A global Lipschitz bound is needed for the global statement.** The field `F(t, x) = x²` from
   `x₀ = 1` at `t₀ = 0` has the solution `1/(1 − t)` on `[0, 1)`
@@ -39,8 +40,8 @@ Checks for the nonlinear Carathéodory theorem on a ball
   the equation on `[0, 2]`
   (`TauCeti.Examples.NonlinearCaratheodoryLocal.min_eq_picard_switch`,
   `TauCeti.Examples.NonlinearCaratheodoryLocal.escape_eq_picard_switch`); the second leaves the
-  ball (`TauCeti.Examples.NonlinearCaratheodoryLocal.escape_two`). For `τ < 1` the inequality is
-  strict and `t` is the only solution on `[0, τ]`
+  ball (`TauCeti.Examples.NonlinearCaratheodoryLocal.escape_two_notMem_closedBall`). For `τ < 1`
+  the inequality is strict and `t` is the only solution on `[0, τ]`
   (`TauCeti.Examples.NonlinearCaratheodoryLocal.eqOn_id_of_picard_switch`).
 -/
 
@@ -230,7 +231,7 @@ private theorem integral_ite_lt_one {g : ℝ → ℝ} (hg : Continuous g) {t : �
       max_eq_left h1, integral_congr_ae (hae zero_le_one le_rfl), integral_congr hfg]
     simp
 
-/-- The curve `min t 1` solves the equation of `switch` on `[0, 2]`, staying in the ball. -/
+/-- The curve `min t 1` solves the equation of `switch` on `[0, 2]`. -/
 theorem min_eq_picard_switch {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 2) :
     min t 1 = ODE.picard switch 0 0 (fun s ↦ min s 1) t := by
   rw [ODE.picard_apply, zero_add]
@@ -270,11 +271,9 @@ theorem escape_eq_picard_switch {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 2) :
       simp only [smul_eq_mul, mul_one]
       ring
 
-/-- The curve `escape` leaves the ball `[−1, 1]`: `escape 2 = 2`. -/
-theorem escape_two : escape 2 = 2 ∧ escape 2 ∉ closedBall (0 : ℝ) 1 := by
-  have h : escape 2 = 2 := by norm_num [escape]
-  refine ⟨h, ?_⟩
-  rw [h, mem_closedBall, Real.dist_eq]
+/-- The curve `escape` leaves the ball `[−1, 1]`, since `escape 2 = 2`. -/
+theorem escape_two_notMem_closedBall : escape 2 ∉ closedBall (0 : ℝ) 1 := by
+  rw [show escape 2 = 2 by norm_num [escape], mem_closedBall, Real.dist_eq]
   norm_num
 
 /-- **With the strict inequality the solution is unique.** For `0 ≤ τ < 1`,
