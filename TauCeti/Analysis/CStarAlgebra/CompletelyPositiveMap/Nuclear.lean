@@ -207,24 +207,11 @@ theorem IsNuclear.smul {φ : A →CP B} (h : φ.IsNuclear) (c : ℝ≥0) : (c �
   obtain ⟨d, ψ, hψ, rfl⟩ := h
   exact ⟨c * d, ψ, hψ, (mul_smul c d ψ).symm⟩
 
-/-- Every completely positive map is a nonnegative multiple of a completely positive contraction,
-since positive maps between C⋆-algebras are bounded. -/
-private theorem exists_eq_smul_of_norm_apply_le (ψ : A →CP B) :
-    ∃ (K : ℝ≥0) (ψ' : A →CP B), (∀ a, ‖ψ' a‖ ≤ ‖a‖) ∧ ψ = K • ψ' := by
-  obtain ⟨K, hK⟩ := PositiveLinearMap.exists_norm_apply_le (.ofClass ψ)
-  have hK₁ : (0 : ℝ) < (K + 1 : ℝ≥0) := by positivity
-  refine ⟨K + 1, (K + 1)⁻¹ • ψ, fun a ↦ ?_, ?_⟩
-  · rw [smul_apply, NNReal.smul_def, norm_smul, Real.norm_of_nonneg (by positivity),
-      NNReal.coe_inv, inv_mul_le_iff₀ hK₁]
-    calc ‖ψ a‖ ≤ K * ‖a‖ := hK a
-      _ ≤ ((K + 1 : ℝ≥0) : ℝ) * ‖a‖ := by gcongr; simp
-  · rw [smul_smul, mul_inv_cancel₀ (by positivity), one_smul]
-
 /-- Composing a nuclear map with a completely positive map on the left gives a nuclear map. -/
 theorem IsNuclear.comp_left {φ : A →CP B} (h : φ.IsNuclear) (ψ : B →CP C) :
     (ψ.comp φ).IsNuclear := by
   obtain ⟨c, θ, hθ, rfl⟩ := h
-  obtain ⟨K, ψ', hψ', rfl⟩ := exists_eq_smul_of_norm_apply_le ψ
+  obtain ⟨K, ψ', hψ', rfl⟩ := exists_norm_apply_le_and_eq_smul ψ
   refine ⟨K * c, ψ'.comp θ, hθ.comp_left ψ' hψ', ext fun a ↦ ?_⟩
   rw [comp_apply, smul_apply, smul_apply, smul_apply, comp_apply, mul_smul,
     LinearMapClass.map_smul_of_tower ψ' c (θ a)]
@@ -233,7 +220,7 @@ theorem IsNuclear.comp_left {φ : A →CP B} (h : φ.IsNuclear) (ψ : B →CP C)
 theorem IsNuclear.comp_right {φ : A →CP B} (h : φ.IsNuclear) (θ : D →CP A) :
     (φ.comp θ).IsNuclear := by
   obtain ⟨c, ψ, hψ, rfl⟩ := h
-  obtain ⟨K, θ', hθ', rfl⟩ := exists_eq_smul_of_norm_apply_le θ
+  obtain ⟨K, θ', hθ', rfl⟩ := exists_norm_apply_le_and_eq_smul θ
   refine ⟨c * K, ψ.comp θ', hψ.comp_right θ' hθ', ext fun d ↦ ?_⟩
   rw [comp_apply, smul_apply, smul_apply, smul_apply, comp_apply, mul_smul,
     LinearMapClass.map_smul_of_tower ψ K (θ' d)]

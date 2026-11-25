@@ -19,6 +19,8 @@ composition, algebra conjugation `CompletelyPositiveMap.conj` (`a ↦ star b * a
 compression `ContinuousLinearMap.conjAdjoint` (`V.conjAdjoint : T ↦ V† ∘L T ∘L V`). Every positive
 linear functional is completely positive (`PositiveLinearMap.toCompletelyPositiveMap`), and so is
 `a ↦ ω a • 1` into any unital C⋆-algebra (`PositiveLinearMap.toCompletelyPositiveMapOfId`).
+Every completely positive map is a nonnegative multiple of a completely positive contraction
+(`CompletelyPositiveMap.exists_norm_apply_le_and_eq_smul`).
 Equipping `A₁ →CP A₂` with the *completely positive order* `ψ ≤ φ ↔ ∃ θ : A₁ →CP A₂, φ = ψ + θ`
 makes it a partially ordered cancellative `ℝ≥0`-cone with bottom element `0`, used in Arveson's
 Radon–Nikodym theorem.
@@ -132,6 +134,19 @@ noncomputable instance instModuleNNReal : Module ℝ≥0 (A₁ →CP A₂) :=
   toLinearMap_injective.module ℝ≥0
     { toFun := toLinearMap, map_zero' := toLinearMap_zero, map_add' := toLinearMap_add }
     toLinearMap_smul
+
+/-- Every completely positive map is a nonnegative multiple `K • ψ'` of a completely positive
+contraction `ψ'`, since positive maps between C⋆-algebras are bounded. -/
+theorem exists_norm_apply_le_and_eq_smul (ψ : A₁ →CP A₂) :
+    ∃ (K : ℝ≥0) (ψ' : A₁ →CP A₂), (∀ a, ‖ψ' a‖ ≤ ‖a‖) ∧ ψ = K • ψ' := by
+  obtain ⟨K, hK⟩ := PositiveLinearMap.exists_norm_apply_le (.ofClass ψ)
+  have hK₁ : (0 : ℝ) < (K + 1 : ℝ≥0) := by positivity
+  refine ⟨K + 1, (K + 1)⁻¹ • ψ, fun a ↦ ?_, ?_⟩
+  · rw [smul_apply, NNReal.smul_def, norm_smul, Real.norm_of_nonneg (by positivity),
+      NNReal.coe_inv, inv_mul_le_iff₀ hK₁]
+    calc ‖ψ a‖ ≤ K * ‖a‖ := hK a
+      _ ≤ ((K + 1 : ℝ≥0) : ℝ) * ‖a‖ := by gcongr; simp
+  · rw [smul_smul, mul_inv_cancel₀ (by positivity), one_smul]
 
 variable (A₁) in
 /-- The identity completely positive map on a C⋆-algebra. -/
