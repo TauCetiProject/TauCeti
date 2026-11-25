@@ -175,13 +175,11 @@ theorem toConv_algEquivSelf_comp_adDerivation (g : WithConv (H →ₐ[R] B))
       toConv g.ofConv.toLinearMap *
         toConv ((Bialgebra.CounitAlgebra.algEquivSelf R H B).toLinearMap ∘ₗ ↑d) *
           toConv (g⁻¹).ofConv.toLinearMap := by
-  -- The distributivity lemma is stated for the linear map of an `AlgHom`; that of the underlying
-  -- `AlgHom` of an `AlgEquiv` is its own linear map by definition, so they agree by `rfl`.
-  rw [coe_adDerivation_linearMap, ← map_inv,
-    show (Bialgebra.CounitAlgebra.algEquivSelf R H B).toLinearMap =
-      (Bialgebra.CounitAlgebra.algEquivSelf R H B).toAlgHom.toLinearMap from rfl,
-    LinearMap.algHom_comp_convMul_distrib, ofConv_toConv, LinearMap.algHom_comp_convMul_distrib,
-    ofConv_toConv, toConv_ofConv]
+  -- The distributivity lemma is stated for the linear map of an `AlgHom`, so first
+  -- rewrite the linear map of the `AlgEquiv` as that of its underlying `AlgHom`.
+  rw [coe_adDerivation_linearMap, ← map_inv, ← AlgEquiv.toLinearEquiv_toLinearMap,
+    ← AlgEquiv.toAlgHom_toLinearMap, LinearMap.algHom_comp_convMul_distrib, ofConv_toConv,
+    LinearMap.algHom_comp_convMul_distrib, ofConv_toConv, toConv_ofConv]
   simp only [AlgEquiv.toAlgHom_toLinearMap, WithConv.algEquivSelf_comp_pointsMulEquiv_symm]
 
 /-- The identity point has zero logarithmic derivative. -/
