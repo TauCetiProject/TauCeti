@@ -143,10 +143,10 @@ theorem exists_isQF_realize_iff_sign {ι : Type*} [Finite ι]
   choose t ht using fun i ↦ Term.toMvPolynomial_surjective (L := Language.order) (p i)
   -- The disjunction, over the sign vectors `s` satisfying `Φ`, of the statements that the
   -- polynomials have the signs `s`.
-  refine ⟨iSup fun s : {s // Φ s} ↦ iInf fun i ↦ (t i).signFormula (s.1 i),
+  refine ⟨iSup fun s : {s // Φ s} ↦ iInf fun i ↦ (t i).signFormula (s.val i),
     IsQF.iSup fun _ ↦ IsQF.iInf fun _ ↦ Term.isQF_signFormula _ _, fun R _ _ _ _ _ v xs ↦ ?_⟩
   simp only [realize_iSup, realize_iInf, Term.realize_signFormula,
     Term.realize_eq_aeval_toMvPolynomial, ht]
-  exact ⟨fun ⟨s, hs⟩ ↦ (funext hs : _ = s.1) ▸ s.2, fun h ↦ ⟨⟨_, h⟩, fun _ ↦ rfl⟩⟩
+  exact ⟨fun ⟨s, hs⟩ ↦ (funext hs : _ = s.val) ▸ s.property, fun h ↦ ⟨⟨_, h⟩, fun _ ↦ rfl⟩⟩
 
 end FirstOrder.Language.BoundedFormula

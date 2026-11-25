@@ -69,11 +69,11 @@ variable {R : Type uR} {M : Type uM} [Semiring R] [AddCommMonoid M] [Module R M]
 /-- Evaluate an arity-`k` operation on the first `k` entries of a family indexed by the naturals. -/
 def evalNat {k : ℕ} {N : Type uN} [AddCommMonoid N] [Module R N]
     (f : MultilinearMap (RingHom.id R) (fun _ : Fin k ↦ M) N) (x : ℕ → M) : N :=
-  f fun i ↦ x i.1
+  f fun i ↦ x i.val
 
 theorem evalNat_def {k : ℕ} {N : Type uN} [AddCommMonoid N] [Module R N]
     (f : MultilinearMap (RingHom.id R) (fun _ : Fin k ↦ M) N) (x : ℕ → M) :
-    evalNat f x = f (fun i ↦ x i.1) := (rfl)
+    evalNat f x = f (fun i ↦ x i.val) := (rfl)
 
 /-- `evalNat` only reads the entries whose indices are below the operation's arity. -/
 theorem evalNat_congr {k : ℕ} {N : Type uN} [AddCommMonoid N] [Module R N]
@@ -378,8 +378,8 @@ theorem evalNat_replaceBlock_smul {u : ℕ} {N : Type uN}
     (f : MultilinearMap (RingHom.id R) (fun _ : Fin u ↦ A) N)
     (x : ℕ → A) {p : ℕ} (s : ℕ) (hp : p < u) (c : R) (v : A) :
     evalNat f (replaceBlock x p s (c • v)) = c • evalNat f (replaceBlock x p s v) := by
-  have hupd (w : A) : (fun i : Fin u ↦ replaceBlock x p s w i.1) =
-      Function.update (fun i : Fin u ↦ replaceBlock x p s v i.1) ⟨p, hp⟩ w := by
+  have hupd (w : A) : (fun i : Fin u ↦ replaceBlock x p s w i.val) =
+      Function.update (fun i : Fin u ↦ replaceBlock x p s v i.val) ⟨p, hp⟩ w := by
     funext i
     by_cases hi : i = ⟨p, hp⟩
     · subst i
@@ -438,7 +438,7 @@ theorem oneSlotEquiv_suffix_val (p t : ℕ) (j : Fin t) :
 
 end Fin
 
-namespace TauCeti.MultilinearMap
+namespace MultilinearMap
 
 section Homogeneous
 
@@ -477,10 +477,6 @@ theorem IsHomogeneous.oneSlot {α : Type uα} {β : Type uβ} {γ : Type uγ}
   ac_rfl
 
 end Homogeneous
-
-end TauCeti.MultilinearMap
-
-namespace MultilinearMap
 
 section Signed
 
@@ -540,10 +536,6 @@ end SignedOneSlot
 
 end Signed
 
-end MultilinearMap
-
-namespace TauCeti.MultilinearMap
-
 section SignedHomogeneous
 
 variable {R : Type uR} {M : Type uM} {N : Type uN}
@@ -569,4 +561,4 @@ grind_pattern IsHomogeneous.signedOneSlot =>
 
 end SignedHomogeneous
 
-end TauCeti.MultilinearMap
+end MultilinearMap

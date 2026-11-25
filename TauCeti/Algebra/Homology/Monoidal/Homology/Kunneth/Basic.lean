@@ -6,6 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
+public import Mathlib.Algebra.Category.ModuleCat.Products
+public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
+public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import TauCeti.Algebra.Category.ModuleCat.AB
 public import Mathlib.RingTheory.Flat.CategoryTheory
 public import TauCeti.Algebra.Homology.Bifunctor.Homotopy
 public import TauCeti.Algebra.Homology.CyclesComplex
@@ -53,14 +58,24 @@ by the projections onto the complexes of homology objects, which induce isomorph
 (`HomologicalComplex.isIso_homologyMap_toHomologyComplex`).  This retraction need not be natural.
 
 When only one factor has zero differentials, the Künneth map is still an isomorphism provided that
-factor has flat terms (`HomologicalComplex.isIso_homologyKunneth_of_d_eq_zero_of_flat`), here for
-complexes of modules indexed by `ℕ` and an arbitrary second factor `L`.  Since the terms of `K`
-are flat, tensoring with `K` preserves the short exact sequence `0 ⟶ Z(L) ⟶ L ⟶ L / Z(L) ⟶ 0` of
+factor has flat terms (`HomologicalComplex.isIso_homologyKunneth_of_d_eq_zero_of_flat`), here
+for chain complexes of modules indexed by any additive right cancellative monoid `I` carrying
+tensor signs, such as `ℕ`, and an arbitrary second factor `L`.  Since the terms of `K` are flat,
+tensoring with `K` preserves the short exact sequence `0 ⟶ Z(L) ⟶ L ⟶ L / Z(L) ⟶ 0` of
 `HomologicalComplex.cyclesComplexShortComplex`, whose outer terms have zero differentials.  By
 `HomologicalComplex.homologyCross_comp_δ`, the connecting morphisms of the tensored sequence are,
 up to sign, the tensor products of the flat modules `Kₚ` with the connecting morphisms of the
 cycle sequence of `L`, which are monomorphisms.  The long exact homology sequence therefore
-identifies `Hₙ(K ⊗ L)` with a cokernel, which is `⨁ Kₚ ⊗ H_q(L)` by right exactness.
+identifies `Hₙ(K ⊗ L)` with a cokernel, which is `⨁ Kₚ ⊗ H_q(L)` by right exactness.  The same
+argument, tensoring the cycle sequence of `K` on the right with `L` and using
+`HomologicalComplex.homologyCross_comp_δ_right`, gives the theorem when the second factor has zero
+differentials and flat terms, for indices which in addition commute
+(`HomologicalComplex.isIso_homologyKunneth_of_d_eq_zero_of_flat_right`).
+
+When the Künneth map is an isomorphism and the homology modules are free of finite rank, the ranks
+of the homology of `K ⊗ L` follow from the ranks of the degree `n` part of a tensor product of
+graded modules (`CategoryTheory.GradedObject.Monoidal.finrank_tensorObj`):
+`rank Hₙ(K ⊗ L) = ∑_{p + q = n} rank Hₚ(K) · rank H_q(L)`.
 
 ## Main definitions and results
 
@@ -78,8 +93,11 @@ identifies `Hₙ(K ⊗ L)` with a cokernel, which is `⨁ Kₚ ⊗ H_q(L)` by ri
   instance complexes of vector spaces over a field.
 * `HomologicalComplex.isSplitMono_homologyKunneth`: the Künneth map is a split monomorphism for
   complexes of modules whose cycles split off.
-* `HomologicalComplex.isIso_homologyKunneth_of_d_eq_zero_of_flat`: the Künneth theorem when one
-  complex of modules has zero differentials and flat terms.
+* `HomologicalComplex.isIso_homologyKunneth_of_d_eq_zero_of_flat` and
+  `HomologicalComplex.isIso_homologyKunneth_of_d_eq_zero_of_flat_right`: the Künneth theorem when
+  the first, respectively the second, complex of modules has zero differentials and flat terms.
+* `CategoryTheory.GradedObject.Monoidal.finrank_tensorObj`: the rank of the degree `n` part of
+  the tensor product of graded modules that are free of finite rank in each degree.
 
 ## References
 
@@ -317,12 +335,13 @@ section EqToHom
 
 universe u
 
-variable {R : Type u} [CommRing R] (K : ChainComplex (ModuleCat.{u} R) ℕ)
-  {L L' : ChainComplex (ModuleCat.{u} R) ℕ}
+variable {R : Type u} [CommRing R] {I : Type*} [Small.{u} I] [AddMonoid I] {c : ComplexShape I}
+  [c.TensorSigns] [DecidableEq I] (K : HomologicalComplex (ModuleCat.{u} R) c)
+  {L L' : HomologicalComplex (ModuleCat.{u} R) c}
 
 /-- The Künneth map is compatible with replacing the second complex by an equal one. -/
 @[reassoc]
-lemma homologyKunneth_comp_eqToHom (e : L' = L) (n : ℕ) :
+lemma homologyKunneth_comp_eqToHom (e : L' = L) (n : I) :
     homologyKunneth K L' n ≫ eqToHom (congrArg (fun M ↦ (tensorObj K M).homology n) e) =
       GradedObject.Monoidal.tensorHom (𝟙 (fun p ↦ K.homology p))
         (fun q ↦ eqToHom (congrArg (fun M ↦ M.homology q) e)) n ≫ homologyKunneth K L n := by
@@ -332,23 +351,46 @@ lemma homologyKunneth_comp_eqToHom (e : L' = L) (n : ℕ) :
 
 end EqToHom
 
+section EqToHomLeft
+
+universe u
+
+variable {R : Type u} [CommRing R] {I : Type*} [Small.{u} I] [AddMonoid I] {c : ComplexShape I}
+  [c.TensorSigns] [DecidableEq I] {K K' : HomologicalComplex (ModuleCat.{u} R) c}
+  (L : HomologicalComplex (ModuleCat.{u} R) c)
+
+/-- The Künneth map is compatible with replacing the first complex by an equal one. -/
+@[reassoc]
+lemma homologyKunneth_comp_eqToHom_left (e : K' = K) (n : I) :
+    homologyKunneth K' L n ≫ eqToHom (congrArg (fun M ↦ (tensorObj M L).homology n) e) =
+      GradedObject.Monoidal.tensorHom (fun p ↦ eqToHom (congrArg (fun M ↦ M.homology p) e))
+        (𝟙 (fun q ↦ L.homology q)) n ≫ homologyKunneth K L n := by
+  subst e
+  refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ ?_
+  simp
+
+end EqToHomLeft
+
 section FlatZeroDifferential
 
 /-! ### One factor with zero differentials and flat terms -/
 
 universe u
 
-variable {R : Type u} [CommRing R] (K L : ChainComplex (ModuleCat.{u} R) ℕ)
+variable {R : Type u} [CommRing R] {I : Type*} [Small.{u} I] [AddRightCancelMonoid I] [One I]
+  [(ComplexShape.down I).TensorSigns] [DecidableEq I] (K L : ChainComplex (ModuleCat.{u} R) I)
 
-/-- The automorphism of the graded object `H(K)` which is multiplication by the sign
-`ε(p) = (-1)ᵖ` in degree `p`. -/
+/-- The automorphism of the graded object `H(K)` which is multiplication by the sign `ε(p)` of the
+tensor product of chain complexes in degree `p`, for instance `(-1)ᵖ` for complexes indexed
+by `ℕ`. -/
 abbrev homologySign : (fun p ↦ K.homology p) ⟶ (fun p ↦ K.homology p) :=
-  fun p ↦ ((ComplexShape.down ℕ).ε p : ℤ) • 𝟙 (K.homology p)
+  fun p ↦ ((ComplexShape.down I).ε p : ℤ) • 𝟙 (K.homology p)
 
+omit [DecidableEq I] in
 /-- On the summand `Hₚ(K) ⊗ H_{q + 1}(L / Z(L))`, the connecting morphism of
 `Z(L) ⟶ L ⟶ L / Z(L)` followed by the map `H(Z(L)) ⟶ H(L)` vanishes, and hence so does the
 composite of the corresponding maps of tensor products of graded objects. -/
-private lemma tensorHom_δ_comp_tensorHom (n : ℕ) :
+private lemma tensorHom_δ_comp_tensorHom (n : I) :
     GradedObject.Monoidal.tensorHom (homologySign K)
         (fun q ↦ L.cyclesComplexShortComplex_shortExact.δ (q + 1) q (by simp)) n ≫
       GradedObject.Monoidal.tensorHom (𝟙 fun p ↦ K.homology p)
@@ -362,23 +404,27 @@ private lemma tensorHom_δ_comp_tensorHom (n : ℕ) :
 variable {K L} in
 /-- The connecting morphisms of `K ⊗ Z(L) ⟶ K ⊗ L ⟶ K ⊗ (L / Z(L))`, read through the Künneth
 maps, whenever this sequence is short exact: on the summand `Hₚ(K) ⊗ H_{q + 1}(L / Z(L))` it is
-`ε(p)` times `Hₚ(K)` tensored with the connecting morphism of `Z(L) ⟶ L ⟶ L / Z(L)`. -/
+`ε(p)` times `Hₚ(K)` tensored with the connecting morphism of `Z(L) ⟶ L ⟶ L / Z(L)`.  The summands
+`Hₚ(K) ⊗ H_q(L / Z(L))` with `q` not of the form `q' + 1` vanish. -/
 lemma homologyKunneth_comp_δ
-    (hKS : (tensorLeftShortComplex K L.cyclesComplexShortComplex).ShortExact) (m : ℕ) :
+    (hKS : (tensorLeftShortComplex K L.cyclesComplexShortComplex).ShortExact) (m : I) :
     homologyKunneth K L.cyclesComplexShortComplex.X₃ (m + 1) ≫ hKS.δ (m + 1) m (by simp) =
       (GradedObject.Monoidal.tensorObjSuccIso (fun p ↦ K.homology p)
           (fun q ↦ L.cyclesComplexShortComplex.X₃.homology q)
-          L.isZero_homology_cyclesComplexShortComplex_X₃_zero m).inv ≫
+          (fun _ ↦ L.isZero_homology_cyclesComplexShortComplex_X₃_of_forall_add_one_ne) m).inv ≫
         GradedObject.Monoidal.tensorHom (homologySign K)
           (fun q ↦ L.cyclesComplexShortComplex_shortExact.δ (q + 1) q (by simp)) m ≫
         homologyKunneth K L.cyclesComplexShortComplex.X₁ m := by
   refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ ?_
-  obtain _ | q := q
-  · exact ((tensorLeft _).map_isZero
-      L.isZero_homology_cyclesComplexShortComplex_X₃_zero).eq_of_src _ _
-  · rw [ι_homologyKunneth_assoc, homologyCross_comp_δ K L.cyclesComplexShortComplex_shortExact
-      _ (q' := q) (by simp) h (by omega : p + q = m)]
+  by_cases hq : ∃ q', q' + 1 = q
+  · obtain ⟨q, rfl⟩ := hq
+    have h' : p + q = m := add_right_cancel (b := 1) (by rw [add_assoc, h])
+    rw [ι_homologyKunneth_assoc, homologyCross_comp_δ K L.cyclesComplexShortComplex_shortExact
+      _ (q' := q) (by simp) h h']
     simp [zsmul_tensorHom, id_tensorHom]
+  · exact ((tensorLeft _).map_isZero
+      (L.isZero_homology_cyclesComplexShortComplex_X₃_of_forall_add_one_ne
+        (not_exists.1 hq))).eq_of_src _ _
 
 variable [∀ p, Module.Flat R (K.X p)]
 
@@ -387,32 +433,30 @@ variable [∀ p, Module.Flat R (K.X p)]
 private lemma shortExact_tensorLeft_cyclesComplexShortComplex :
     (tensorLeftShortComplex K L.cyclesComplexShortComplex).ShortExact :=
   shortExact_tensorLeftShortComplex_of_preservesFiniteLimits K
-    L.cyclesComplexShortComplex_shortExact fun n ↦
-      (Finset.antidiagonal n).finite_toSet.subset fun x hx ↦ by simpa using hx
+    L.cyclesComplexShortComplex_shortExact
 
 variable (hK : ∀ i j, K.d i j = 0)
 include hK
 
 /-- If `K` has zero differentials and flat terms, the connecting morphisms of
 `K ⊗ Z(L) ⟶ K ⊗ L ⟶ K ⊗ (L / Z(L))` are monomorphisms. -/
-private lemma mono_δ (m : ℕ) :
+private lemma mono_δ (m : I) :
     Mono ((shortExact_tensorLeft_cyclesComplexShortComplex K L).δ
       (m + 1) m (by simp)) := by
-  have (p : ℕ) : Module.Flat R (K.homology p) :=
+  have (p : I) : Module.Flat R (K.homology p) :=
     .of_linearEquiv (K.XIsoHomologyOfDEqZero p (hK _ _) (hK _ _)).symm.toLinearEquiv
   -- each summand is `±` the flat module `Hₚ(K)` tensored with a monomorphism
-  have (p q : ℕ) : Mono (homologySign K p ⊗ₘ
+  have (p q : I) : Mono (homologySign K p ⊗ₘ
       L.cyclesComplexShortComplex_shortExact.δ (q + 1) q (by simp)) := by
     have := L.mono_δ_cyclesComplexShortComplex (i := q + 1) (j := q) (by simp)
     have : Mono (K.homology p ◁ L.cyclesComplexShortComplex_shortExact.δ (q + 1) q (by simp)) :=
       (tensorLeft (K.homology p)).map_mono _
-    rcases Int.units_eq_one_or ((ComplexShape.down ℕ).ε p) with h | h <;>
+    rcases Int.units_eq_one_or ((ComplexShape.down I).ε p) with h | h <;>
       simp only [h, Units.val_one, Units.val_neg, one_smul, neg_smul, zsmul_tensorHom,
         id_tensorHom] <;> infer_instance
   have : Mono (GradedObject.Monoidal.tensorHom (homologySign K)
       (fun q ↦ L.cyclesComplexShortComplex_shortExact.δ (q + 1) q (by simp)) m) :=
-    GradedObject.Monoidal.mono_tensorHom _ _ m ((Finset.antidiagonal m).finite_toSet.subset
-      fun x hx ↦ by simpa using hx)
+    GradedObject.Monoidal.mono_tensorHom _ _ m
   have := isIso_homologyKunneth_of_d_eq_zero m hK (L := L.cyclesComplexShortComplex.X₁)
     L.cyclesComplexShortComplex_X₁_d
   have := isIso_homologyKunneth_of_d_eq_zero (m + 1) hK (L := L.cyclesComplexShortComplex.X₃)
@@ -422,34 +466,35 @@ private lemma mono_δ (m : ℕ) :
   infer_instance
 
 /-- If `K` has zero differentials and flat terms, the map `K ⊗ L ⟶ K ⊗ (L / Z(L))` induces zero
-on homology: in positive degrees it is followed by the monomorphism `δ`, and in degree zero the
-target `H₀(K ⊗ (L / Z(L)))` vanishes. -/
-private lemma homologyMap_tensorHom_g_eq_zero (m : ℕ) :
+on homology: in a degree `m + 1` it is followed by the monomorphism `δ`, and in a degree not of
+this form, such as degree zero for complexes indexed by `ℕ`, the target `Hₘ(K ⊗ (L / Z(L)))`
+vanishes. -/
+private lemma homologyMap_tensorHom_g_eq_zero (m : I) :
     homologyMap (tensorHom (𝟙 K) L.cyclesComplexShortComplex.g) m = 0 := by
-  cases m with
-  | zero =>
-    have := isIso_homologyKunneth_of_d_eq_zero 0 hK (L := L.cyclesComplexShortComplex.X₃)
-      L.cyclesComplexShortComplex_X₃_d
-    refine IsZero.eq_of_tgt (IsZero.of_iso ?_
-      (asIso (homologyKunneth K L.cyclesComplexShortComplex.X₃ 0)).symm) _ _
-    rw [IsZero.iff_id_eq_zero]
-    refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ ?_
-    obtain rfl : q = 0 := by omega
-    exact ((tensorLeft _).map_isZero
-      L.isZero_homology_cyclesComplexShortComplex_X₃_zero).eq_of_src _ _
-  | succ m =>
+  by_cases hm : ∃ m', m' + 1 = m
+  · obtain ⟨m, rfl⟩ := hm
     have := mono_δ K L hK m
-    have hm : (ComplexShape.down ℕ).Rel (m + 1) m := by simp
+    have hm : (ComplexShape.down I).Rel (m + 1) m := by simp
     rw [← cancel_mono ((shortExact_tensorLeft_cyclesComplexShortComplex K L).δ (m + 1) m hm),
       zero_comp]
     exact (shortExact_tensorLeft_cyclesComplexShortComplex K L).comp_δ _ _ _
+  · have := isIso_homologyKunneth_of_d_eq_zero m hK (L := L.cyclesComplexShortComplex.X₃)
+      L.cyclesComplexShortComplex_X₃_d
+    refine IsZero.eq_of_tgt (IsZero.of_iso ?_
+      (asIso (homologyKunneth K L.cyclesComplexShortComplex.X₃ m)).symm) _ _
+    rw [IsZero.iff_id_eq_zero]
+    refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ ?_
+    -- each summand `Hₚ(K) ⊗ H_q(L / Z(L))` vanishes, since `q` is not of the form `q' + 1`
+    have hq (q' : I) : q' + 1 ≠ q := fun hq ↦ hm ⟨p + q', by rw [add_assoc, hq, h]⟩
+    exact ((tensorLeft _).map_isZero
+      (L.isZero_homology_cyclesComplexShortComplex_X₃_of_forall_add_one_ne hq)).eq_of_src _ _
 
 /-- **The Künneth theorem when one factor has zero differentials and flat terms.**  If `K` is a
 complex of flat modules with zero differentials, so that `Hₚ(K) = Kₚ`, then for every complex `L`
 the Künneth map `⨁_{p + q = n} Hₚ(K) ⊗ H_q(L) ⟶ Hₙ(K ⊗ L)` is an
 isomorphism.  For instance, for a flat module `M` placed in degree zero this says that tensoring
 `L` with `M` commutes with homology. -/
-theorem isIso_homologyKunneth_of_d_eq_zero_of_flat (n : ℕ) : IsIso (homologyKunneth K L n) := by
+theorem isIso_homologyKunneth_of_d_eq_zero_of_flat (n : I) : IsIso (homologyKunneth K L n) := by
   -- `L` is the middle term of `S = L.cyclesComplexShortComplex`; we write it as such so that the
   -- three terms of `S` appear uniformly
   rw [← L.cyclesComplexShortComplex_X₂]
@@ -458,9 +503,9 @@ theorem isIso_homologyKunneth_of_d_eq_zero_of_flat (n : ℕ) : IsIso (homologyKu
     L.cyclesComplexShortComplex_X₁_d
   -- `Hₙ(K ⊗ L)` is the cokernel of `δ : Hₙ₊₁(K ⊗ (L / Z(L))) ⟶ Hₙ(K ⊗ Z(L))`, since the map
   -- `Hₙ(K ⊗ L) ⟶ Hₙ(K ⊗ (L / Z(L)))` vanishes
-  have (m : ℕ) : Epi (homologyMap (tensorHom (𝟙 K) L.cyclesComplexShortComplex.f) m) :=
+  have (m : I) : Epi (homologyMap (tensorHom (𝟙 K) L.cyclesComplexShortComplex.f) m) :=
     (hKS.homology_exact₂ m).epi_f (homologyMap_tensorHom_g_eq_zero K L hK m)
-  have hn : (ComplexShape.down ℕ).Rel (n + 1) n := by simp
+  have hn : (ComplexShape.down I).Rel (n + 1) n := by simp
   have hcoker := (hKS.homology_exact₁ (n + 1) n hn).gIsCokernel
   -- the inverse of the Künneth map is induced by `Z(L) ⟶ L` through this cokernel
   let T := GradedObject.Monoidal.tensorHom (𝟙 fun p ↦ K.homology p)
@@ -503,6 +548,186 @@ theorem isIso_homologyKunneth_of_d_eq_zero_of_flat (n : ℕ) : IsIso (homologyKu
 
 end FlatZeroDifferential
 
+section FlatZeroDifferentialRight
+
+/-! ### The second factor with zero differentials and flat terms -/
+
+universe u
+
+variable {R : Type u} [CommRing R] {I : Type*} [Small.{u} I] [AddCancelCommMonoid I] [One I]
+  [(ComplexShape.down I).TensorSigns] [DecidableEq I] (K L : ChainComplex (ModuleCat.{u} R) I)
+
+omit [(ComplexShape.down I).TensorSigns] [DecidableEq I] in
+/-- On the summand `H_{p + 1}(K / Z(K)) ⊗ H_q(L)`, the connecting morphism of
+`Z(K) ⟶ K ⟶ K / Z(K)` followed by the map `H(Z(K)) ⟶ H(K)` vanishes, and hence so does the
+composite of the corresponding maps of tensor products of graded objects. -/
+private lemma tensorHom_δ_comp_tensorHom_right (n : I) :
+    GradedObject.Monoidal.tensorHom
+        (fun p ↦ K.cyclesComplexShortComplex_shortExact.δ (p + 1) p (by simp))
+        (𝟙 fun q ↦ L.homology q) n ≫
+      GradedObject.Monoidal.tensorHom (fun p ↦ homologyMap K.cyclesComplexShortComplex.f p)
+        (𝟙 fun q ↦ L.homology q) n = 0 := by
+  refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ ?_
+  simp only [GradedObject.Monoidal.ι_tensorHom_assoc, GradedObject.Monoidal.ι_tensorHom,
+    Pi.id_apply, tensorHom_id, ← comp_whiskerRight_assoc, ShortComplex.ShortExact.δ_comp,
+    MonoidalPreadditive.zero_whiskerRight, zero_comp, comp_zero]
+
+variable {K L} in
+/-- The connecting morphisms of `Z(K) ⊗ L ⟶ K ⊗ L ⟶ (K / Z(K)) ⊗ L`, read through the Künneth
+maps, whenever this sequence is short exact: on the summand `H_{p + 1}(K / Z(K)) ⊗ H_q(L)` it is
+the connecting morphism of `Z(K) ⟶ K ⟶ K / Z(K)` tensored with `H_q(L)`.  The summands
+`Hₚ(K / Z(K)) ⊗ H_q(L)` with `p` not of the form `p' + 1` vanish. -/
+lemma homologyKunneth_comp_δ_right
+    (hSL : (tensorRightShortComplex L K.cyclesComplexShortComplex).ShortExact) (m : I) :
+    homologyKunneth K.cyclesComplexShortComplex.X₃ L (m + 1) ≫ hSL.δ (m + 1) m (by simp) =
+      (GradedObject.Monoidal.succTensorObjIso
+          (fun p ↦ K.cyclesComplexShortComplex.X₃.homology p) (fun q ↦ L.homology q)
+          (fun _ ↦ K.isZero_homology_cyclesComplexShortComplex_X₃_of_forall_add_one_ne) m).inv ≫
+        GradedObject.Monoidal.tensorHom
+          (fun p ↦ K.cyclesComplexShortComplex_shortExact.δ (p + 1) p (by simp))
+          (𝟙 fun q ↦ L.homology q) m ≫
+        homologyKunneth K.cyclesComplexShortComplex.X₁ L m := by
+  refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ ?_
+  by_cases hp : ∃ p', p' + 1 = p
+  · obtain ⟨p, rfl⟩ := hp
+    have h' : p + q = m := add_right_cancel (b := 1) (by rw [← h, add_right_comm])
+    rw [ι_homologyKunneth_assoc, homologyCross_comp_δ_right L
+      K.cyclesComplexShortComplex_shortExact _ (p' := p) (by simp) h h']
+    simp [tensorHom_id]
+  · exact ((tensorRight _).map_isZero
+      (K.isZero_homology_cyclesComplexShortComplex_X₃_of_forall_add_one_ne
+        (not_exists.1 hp))).eq_of_src _ _
+
+variable [∀ q, Module.Flat R (L.X q)]
+
+/-- If `L` has flat terms, tensoring on the right with `L` preserves the short exact sequence
+`0 ⟶ Z(K) ⟶ K ⟶ K / Z(K) ⟶ 0`. -/
+private lemma shortExact_tensorRight_cyclesComplexShortComplex :
+    (tensorRightShortComplex L K.cyclesComplexShortComplex).ShortExact :=
+  shortExact_tensorRightShortComplex_of_preservesFiniteLimits L
+    K.cyclesComplexShortComplex_shortExact
+
+variable (hL : ∀ i j, L.d i j = 0)
+include hL
+
+/-- If `L` has zero differentials and flat terms, the connecting morphisms of
+`Z(K) ⊗ L ⟶ K ⊗ L ⟶ (K / Z(K)) ⊗ L` are monomorphisms. -/
+private lemma mono_δ_right (m : I) :
+    Mono ((shortExact_tensorRight_cyclesComplexShortComplex K L).δ
+      (m + 1) m (by simp)) := by
+  have (q : I) : Module.Flat R (L.homology q) :=
+    .of_linearEquiv (L.XIsoHomologyOfDEqZero q (hL _ _) (hL _ _)).symm.toLinearEquiv
+  -- each summand is a monomorphism tensored with the flat module `H_q(L)`
+  have (p q : I) : Mono (K.cyclesComplexShortComplex_shortExact.δ (p + 1) p (by simp) ⊗ₘ
+      𝟙 (L.homology q)) := by
+    have := K.mono_δ_cyclesComplexShortComplex (i := p + 1) (j := p) (by simp)
+    rw [tensorHom_id]
+    exact (tensorRight (L.homology q)).map_mono _
+  have : Mono (GradedObject.Monoidal.tensorHom
+      (fun p ↦ K.cyclesComplexShortComplex_shortExact.δ (p + 1) p (by simp))
+      (𝟙 fun q ↦ L.homology q) m) :=
+    GradedObject.Monoidal.mono_tensorHom _ _ m
+  have := isIso_homologyKunneth_of_d_eq_zero m (K := K.cyclesComplexShortComplex.X₁)
+    K.cyclesComplexShortComplex_X₁_d hL
+  have := isIso_homologyKunneth_of_d_eq_zero (m + 1) (K := K.cyclesComplexShortComplex.X₃)
+    K.cyclesComplexShortComplex_X₃_d hL
+  rw [← mono_comp_iff_of_isIso (homologyKunneth K.cyclesComplexShortComplex.X₃ L (m + 1)),
+    homologyKunneth_comp_δ_right (shortExact_tensorRight_cyclesComplexShortComplex K L)]
+  infer_instance
+
+/-- If `L` has zero differentials and flat terms, the map `K ⊗ L ⟶ (K / Z(K)) ⊗ L` induces zero
+on homology: in a degree `m + 1` it is followed by the monomorphism `δ`, and in a degree not of
+this form the target `Hₘ((K / Z(K)) ⊗ L)` vanishes. -/
+private lemma homologyMap_tensorHom_g_eq_zero_right (m : I) :
+    homologyMap (tensorHom K.cyclesComplexShortComplex.g (𝟙 L)) m = 0 := by
+  by_cases hm : ∃ m', m' + 1 = m
+  · obtain ⟨m, rfl⟩ := hm
+    have := mono_δ_right K L hL m
+    have hm : (ComplexShape.down I).Rel (m + 1) m := by simp
+    rw [← cancel_mono ((shortExact_tensorRight_cyclesComplexShortComplex K L).δ (m + 1) m hm),
+      zero_comp]
+    exact (shortExact_tensorRight_cyclesComplexShortComplex K L).comp_δ _ _ _
+  · have := isIso_homologyKunneth_of_d_eq_zero m (K := K.cyclesComplexShortComplex.X₃)
+      K.cyclesComplexShortComplex_X₃_d hL
+    refine IsZero.eq_of_tgt (IsZero.of_iso ?_
+      (asIso (homologyKunneth K.cyclesComplexShortComplex.X₃ L m)).symm) _ _
+    rw [IsZero.iff_id_eq_zero]
+    refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ ?_
+    -- each summand `Hₚ(K / Z(K)) ⊗ H_q(L)` vanishes, since `p` is not of the form `p' + 1`
+    have hp (p' : I) : p' + 1 ≠ p := fun hp ↦ hm ⟨p' + q, by rw [add_right_comm, hp, h]⟩
+    exact ((tensorRight _).map_isZero
+      (K.isZero_homology_cyclesComplexShortComplex_X₃_of_forall_add_one_ne hp)).eq_of_src _ _
+
+/-- The connecting morphism `Hₙ₊₁((K / Z(K)) ⊗ L) ⟶ Hₙ(Z(K) ⊗ L)`, read through the Künneth
+isomorphism of `Z(K)` and `L`, is killed by the map induced by the inclusion `Z(K) ⟶ K`. -/
+private lemma δ_comp_inv_homologyKunneth_comp_tensorHom_right (n : I) :
+    (shortExact_tensorRight_cyclesComplexShortComplex K L).δ (n + 1) n (by simp) ≫
+      (have := isIso_homologyKunneth_of_d_eq_zero n (K := K.cyclesComplexShortComplex.X₁)
+        K.cyclesComplexShortComplex_X₁_d hL
+      inv (homologyKunneth K.cyclesComplexShortComplex.X₁ L n)) ≫
+      GradedObject.Monoidal.tensorHom (fun p ↦ homologyMap K.cyclesComplexShortComplex.f p)
+        (𝟙 fun q ↦ L.homology q) n = 0 := by
+  have := isIso_homologyKunneth_of_d_eq_zero (n + 1) (K := K.cyclesComplexShortComplex.X₃)
+    K.cyclesComplexShortComplex_X₃_d hL
+  rw [← cancel_epi (homologyKunneth K.cyclesComplexShortComplex.X₃ L (n + 1)),
+    reassoc_of% (homologyKunneth_comp_δ_right
+      (shortExact_tensorRight_cyclesComplexShortComplex K L) n)]
+  simp [tensorHom_δ_comp_tensorHom_right]
+
+/-- **The Künneth theorem when the second factor has zero differentials and flat terms.**  If `L`
+is a complex of flat modules with zero differentials, so that `H_q(L) = L_q`, then for every
+complex `K` the Künneth map `⨁_{p + q = n} Hₚ(K) ⊗ H_q(L) ⟶ Hₙ(K ⊗ L)` is an isomorphism.  This
+is `HomologicalComplex.isIso_homologyKunneth_of_d_eq_zero_of_flat` with the factors interchanged,
+proved by tensoring the cycle sequence of `K` on the right with `L`. -/
+theorem isIso_homologyKunneth_of_d_eq_zero_of_flat_right (n : I) :
+    IsIso (homologyKunneth K L n) := by
+  -- `K` is the middle term of `S = K.cyclesComplexShortComplex`; we write it as such so that the
+  -- three terms of `S` appear uniformly
+  rw [← K.cyclesComplexShortComplex_X₂]
+  have hSL := shortExact_tensorRight_cyclesComplexShortComplex K L
+  have := isIso_homologyKunneth_of_d_eq_zero n (K := K.cyclesComplexShortComplex.X₁)
+    K.cyclesComplexShortComplex_X₁_d hL
+  -- `Hₙ(K ⊗ L)` is the cokernel of `δ : Hₙ₊₁((K / Z(K)) ⊗ L) ⟶ Hₙ(Z(K) ⊗ L)`, since the map
+  -- `Hₙ(K ⊗ L) ⟶ Hₙ((K / Z(K)) ⊗ L)` vanishes
+  have (m : I) : Epi (homologyMap (tensorHom K.cyclesComplexShortComplex.f (𝟙 L)) m) :=
+    (hSL.homology_exact₂ m).epi_f (homologyMap_tensorHom_g_eq_zero_right K L hL m)
+  have hn : (ComplexShape.down I).Rel (n + 1) n := by simp
+  have hcoker := (hSL.homology_exact₁ (n + 1) n hn).gIsCokernel
+  -- the inverse of the Künneth map is induced by `Z(K) ⟶ K` through this cokernel
+  let T := GradedObject.Monoidal.tensorHom
+    (fun p ↦ homologyMap K.cyclesComplexShortComplex.f p) (𝟙 fun q ↦ L.homology q) n
+  have hT := δ_comp_inv_homologyKunneth_comp_tensorHom_right K L hL n
+  let ψ : (tensorObj K.cyclesComplexShortComplex.X₂ L).homology n ⟶
+      GradedObject.Monoidal.tensorObj (fun p ↦ K.cyclesComplexShortComplex.X₂.homology p)
+        (fun q ↦ L.homology q) n :=
+    hcoker.desc (CokernelCofork.ofπ (inv (homologyKunneth K.cyclesComplexShortComplex.X₁ L n) ≫ T)
+      hT)
+  have hψ : homologyMap (tensorHom K.cyclesComplexShortComplex.f (𝟙 L)) n ≫ ψ =
+      inv (homologyKunneth K.cyclesComplexShortComplex.X₁ L n) ≫ T :=
+    hcoker.fac _ WalkingParallelPair.one
+  refine ⟨ψ, GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ ?_, ?_⟩
+  · -- check on the classes of cycles of `K`, which come from `Z(K)`
+    have : Epi (homologyMap K.cyclesComplexShortComplex.f p ▷ L.homology q) :=
+      (tensorRight (L.homology q)).map_epi _
+    -- the naturality of the cross product in `Z(K) ⟶ K`
+    have hnat : (homologyMap K.cyclesComplexShortComplex.f p ▷ L.homology q) ≫
+        homologyCross K.cyclesComplexShortComplex.X₂ L p q n h =
+          homologyCross K.cyclesComplexShortComplex.X₁ L p q n h ≫
+            homologyMap (tensorHom K.cyclesComplexShortComplex.f (𝟙 L)) n := by
+      simpa using homologyCross_naturality K.cyclesComplexShortComplex.f (𝟙 L) p q n h
+    rw [← cancel_epi (homologyMap K.cyclesComplexShortComplex.f p ▷ L.homology q),
+      ι_homologyKunneth_assoc, reassoc_of% hnat, hψ, ← ι_homologyKunneth_assoc]
+    simp [T]
+  · -- `homologyKunneth_naturality` is stated for the graded map `q ↦ homologyMap (𝟙 L) q`
+    have hid : (fun q ↦ homologyMap (𝟙 L) q) = 𝟙 fun q ↦ L.homology q :=
+      funext fun q ↦ homologyMap_id L q
+    have hnat := homologyKunneth_naturality K.cyclesComplexShortComplex.f (𝟙 L) n
+    rw [hid] at hnat
+    rw [← cancel_epi (homologyMap (tensorHom K.cyclesComplexShortComplex.f (𝟙 L)) n),
+      reassoc_of% hψ, Category.comp_id, IsIso.inv_comp_eq, hnat]
+
+end FlatZeroDifferentialRight
+
 section ModuleCatCross
 
 /-! ### The cross product on classes of cycles of complexes of modules -/
@@ -537,3 +762,38 @@ theorem moduleCat_homologyMap_homologyCross_tmul (φ : tensorObj K L ⟶ M) (z :
 end ModuleCatCross
 
 end HomologicalComplex
+
+namespace CategoryTheory.GradedObject.Monoidal
+
+universe u v
+
+variable {k : Type u} [CommRing k] {I : Type v} [AddMonoid I] [Finset.HasAntidiagonal I]
+  (A B : GradedObject I (ModuleCat.{u} k)) [HasTensor A B]
+  [∀ p, Module.Free k (A p)] [∀ p, Module.Finite k (A p)]
+  [∀ q, Module.Free k (B q)] [∀ q, Module.Finite k (B q)]
+
+/-- **The rank of a tensor product of graded modules.** Over a nontrivial commutative ring, if `A`
+and `B` are free of finite rank in each degree, then the degree `n` part
+`⨁_{p + q = n} Aₚ ⊗ B_q` of their tensor product has rank `∑_{p + q = n} rank Aₚ · rank B_q`.
+Composed with a Künneth isomorphism, this computes the ranks of the homology of a tensor product
+of complexes. -/
+theorem finrank_tensorObj [Nontrivial k] (n : I) :
+    Module.finrank k (tensorObj A B n : ModuleCat.{u} k) =
+      ∑ x ∈ Finset.antidiagonal n, Module.finrank k (A x.1) * Module.finrank k (B x.2) := by
+  classical
+  let P := (fun x : I × I ↦ x.1 + x.2) ⁻¹' {n}
+  let e : P ≃ Finset.antidiagonal n := Equiv.subtypeEquivRight fun x ↦ by simp [P]
+  have := Fintype.ofEquiv _ e.symm
+  let ε := (Fintype.equivFin P).symm
+  -- The degree `n` part of the tensor product is by definition the coproduct of the summands.
+  -- Reindexing it by `Fin _` keeps the index type in universe `0`, as `coprodIsoDirectSum`
+  -- requires the index universe to be at most the module universe.
+  have iso : (tensorObj A B n : ModuleCat.{u} k) ≅ ModuleCat.of k
+      (DirectSum (Fin (Fintype.card P)) fun j ↦ TensorProduct k (A (ε j).val.1) (B (ε j).val.2)) :=
+    (Sigma.reindex ε fun i : P ↦ A i.val.1 ⊗ B i.val.2).symm ≪≫
+      ModuleCat.coprodIsoDirectSum fun j ↦ A (ε j).val.1 ⊗ B (ε j).val.2
+  rw [iso.toLinearEquiv.finrank_eq, Module.finrank_directSum,
+    ← Finset.sum_coe_sort (Finset.antidiagonal n)]
+  exact Fintype.sum_equiv (ε.trans e) _ _ fun x ↦ Module.finrank_tensorProduct
+
+end CategoryTheory.GradedObject.Monoidal

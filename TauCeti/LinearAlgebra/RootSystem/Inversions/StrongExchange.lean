@@ -36,7 +36,8 @@ reflection, so the leading letter is the one deleted.
 
 ## Main results
 
-* `TauCeti.exists_wordProd_eraseIdx_eq_mul_ofIdx` is the strong exchange condition.
+* `RootPairing.exists_wordProd_drop_apply_eq_and_wordProd_eraseIdx_eq_mul_ofIdx` is the strong
+  exchange condition.
 * `TauCeti.eq_one_of_inversions_eq_empty` and `TauCeti.inversions_eq_empty_iff_eq_one` say that the
   inversion set of a Weyl-group element is empty exactly when the element is the identity.
 * `TauCeti.eq_one_of_mapsTo_posRoots` restates this as: a Weyl-group element keeping every positive
@@ -56,9 +57,11 @@ J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9
 
 public section
 
-namespace TauCeti
-
 open Set
+
+namespace RootPairing
+
+open TauCeti
 
 universe u v w x
 
@@ -67,14 +70,16 @@ variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
   (P : RootPairing ι R M N) [Finite ι] [CharZero R] [IsDomain R]
   [P.IsCrystallographic] [P.IsReduced] (b : P.Base)
 
-/-- **The strong exchange condition.** If the word `l` spells a Weyl-group element sending the
-positive root `αₖ` to a negative root, then the word `l` with the reflection `sₖ` appended is
-spelled by `l` with one of its letters deleted. The root `αₖ` is an arbitrary positive root, not
-necessarily a simple one, and the shorter word is a subword of `l`. -/
-theorem exists_wordProd_eraseIdx_eq_mul_ofIdx {k : ι} (hk : b.IsPos k)
+/-- **The strong exchange condition with crossing suffix.** If the word `l` spells a Weyl-group
+element sending the positive root `αₖ` to a negative root, then there is an index `j < l.length`
+such that the suffix `l.drop (j + 1)` carries `αₖ` to the simple root `l[j]` and the deleted word
+`l.eraseIdx j` spells `l` with the reflection `sₖ` appended. The root `αₖ` is an arbitrary
+positive root, not necessarily a simple one. -/
+theorem exists_wordProd_drop_apply_eq_and_wordProd_eraseIdx_eq_mul_ofIdx {k : ι} (hk : b.IsPos k)
     (l : List b.support) (h : ¬ b.IsPos (P.weylGroupToPerm (wordProd P b l) k)) :
-    ∃ j < l.length,
-      wordProd P b (l.eraseIdx j) = wordProd P b l * RootPairing.weylGroup.ofIdx P k := by
+    ∃ (j : ℕ) (hj : j < l.length),
+      P.weylGroupToPerm (wordProd P b (l.drop (j + 1))) k = (l[j] : ι) ∧
+        wordProd P b (l.eraseIdx j) = wordProd P b l * RootPairing.weylGroup.ofIdx P k := by
   induction l with
   | nil =>
     exact absurd (by simpa using hk) h
@@ -82,20 +87,31 @@ theorem exists_wordProd_eraseIdx_eq_mul_ofIdx {k : ι} (hk : b.IsPos k)
     rw [wordProd_cons, RootPairing.weylGroupToPerm_ofIdx_mul_apply] at h
     by_cases hpos : b.IsPos (P.weylGroupToPerm (wordProd P b l) k)
     · -- The shorter word keeps `αₖ` positive, so the image is the simple root `αⱼ` itself.
-      refine ⟨0, by simp, ?_⟩
       have hkey : P.weylGroupToPerm (wordProd P b l) k = (j : ι) := by
         by_contra hne
         have hmem : P.weylGroupToPerm (wordProd P b l) k ∈ posRoots P b \ {(j : ι)} :=
           ⟨(mem_posRoots P b _).mpr hpos, by simpa using hne⟩
         exact h ((mem_posRoots P b _).mp
-          ((reflectionPerm_mem_posRoots_diff_singleton_iff P b j.2 _).mpr hmem).1)
+          ((reflectionPerm_mem_posRoots_diff_singleton_iff P b j.property _).mpr hmem).1)
+      refine ⟨0, by simp, by simpa using hkey, ?_⟩
       rw [List.eraseIdx_cons_zero, wordProd_cons, ← hkey,
         RootPairing.weylGroup.ofIdx_weylGroupToPerm_eq_conj,
         inv_mul_cancel_right, mul_assoc, RootPairing.weylGroup.ofIdx_mul_self, mul_one]
     · -- The shorter word already makes `αₖ` negative, so a letter is deleted from it.
-      obtain ⟨j', hj', hl'⟩ := ih hpos
-      refine ⟨j' + 1, by simpa using hj', ?_⟩
+      obtain ⟨j', hj', hdrop, hl'⟩ := ih hpos
+      refine ⟨j' + 1, by simpa using hj', by simpa using hdrop, ?_⟩
       rw [List.eraseIdx_cons_succ, wordProd_cons, hl', wordProd_cons, mul_assoc]
+
+end RootPairing
+
+namespace TauCeti
+
+universe u v w x
+
+variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
+  [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  (P : RootPairing ι R M N) [Finite ι] [CharZero R] [IsDomain R]
+  [P.IsCrystallographic] [P.IsReduced] (b : P.Base)
 
 variable {P b}
 
@@ -114,14 +130,14 @@ theorem eq_one_of_inversions_eq_empty {w : P.weylGroup} (h : inversions P b w = 
     -- Split off the final letter: `w = v * sₖ`, where `v` is spelled by the word `l₁`.
     rw [List.concat_eq_append, wordProd_append, wordProd_cons, wordProd_nil, mul_one] at hl
     -- The final simple root is not an inversion of `w`, so it is an inversion of `v`.
-    have hkw : k.1 ∉ inversions P b w := by simp [h]
-    have hkv : k.1 ∈ inversions P b (wordProd P b l₁) := by
+    have hkw : k.val ∉ inversions P b w := by simp [h]
+    have hkv : k.val ∈ inversions P b (wordProd P b l₁) := by
       by_contra hc
       exact hkw (hl ▸ (mem_inversions_mul_ofIdx_iff_not_mem P _ b
-        (b.isPos_of_mem_support k.2)).mpr hc)
-    obtain ⟨j, hj, hl'w⟩ :=
-      exists_wordProd_eraseIdx_eq_mul_ofIdx P b (b.isPos_of_mem_support k.2) l₁
-        ((mem_inversions P b _ _).mp hkv).2
+        (b.isPos_of_mem_support k.property)).mpr hc)
+    obtain ⟨j, hj, -, hl'w⟩ :=
+      P.exists_wordProd_drop_apply_eq_and_wordProd_eraseIdx_eq_mul_ofIdx
+        b (b.isPos_of_mem_support k.property) l₁ ((mem_inversions P b _ _).mp hkv).2
     -- The resulting word spells `w` and is two letters shorter, contradicting minimality.
     refine Nat.find_min hex (m := (l₁.eraseIdx j).length) ?_ ⟨l₁.eraseIdx j, rfl, hl'w.trans hl⟩
     have hlen' := List.length_eraseIdx_add_one hj
@@ -141,7 +157,7 @@ theorem eq_one_of_mapsTo_posRoots {w : P.weylGroup}
 /-- A Weyl-group element other than the identity sends some positive root to a negative root. -/
 theorem inversions_nonempty_of_ne_one {w : P.weylGroup} (hw : w ≠ 1) :
     (inversions P b w).Nonempty :=
-  Set.nonempty_iff_ne_empty.mpr fun h ↦ hw (eq_one_of_inversions_eq_empty h)
+  Set.ne_empty_iff_nonempty.mp fun h ↦ hw (eq_one_of_inversions_eq_empty h)
 
 /-- A Weyl-group element other than the identity has at least one inversion. -/
 theorem ncard_inversions_pos_of_ne_one {w : P.weylGroup} (hw : w ≠ 1) :

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Projective
-public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.CubePair
+public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Cube.Pair
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Kunneth
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Kunneth.Relative
 
@@ -53,9 +53,10 @@ same way the isomorphism
 
 (`TauCeti.cubicalHomologyCubeBoundaryPairProdLeftEquiv`), sending the class of a cycle `z` to the
 class of the relative cycle `z × [Iᵐ⁺¹]`
-(`TauCeti.cubicalHomologyCubeBoundaryPairProdLeftEquiv_homologyπ`). This is the form in which
-chains on a monoid acting from the left meet the cell, since such chains act through the cross
-product with the chain in the second factor.
+(`TauCeti.cubicalHomologyCubeBoundaryPairProdLeftEquiv_homologyπ`), and the relative homology
+vanishes below degree `m + 1` (`TauCeti.isZero_cubicalHomology_cubeBoundaryPair_prodLeft_of_lt`).
+This is the form in which chains on a monoid acting from the left meet the cell, since such chains
+act through the cross product with the chain in the second factor.
 
 ## Main definitions and results
 
@@ -69,6 +70,8 @@ product with the chain in the second factor.
   `H_q(Y; k) ≃ₗ[k] Hₘ₊₁₊q(Iᵐ⁺¹ × Y, ∂Iᵐ⁺¹ × Y; k)`, `x ↦ [Iᵐ⁺¹] × x`.
 * `TauCeti.cubicalHomologyCubeBoundaryPairProdLeftEquiv`: the isomorphism
   `H_q(Y; k) ≃ₗ[k] H_{q+m+1}(Y × Iᵐ⁺¹, Y × ∂Iᵐ⁺¹; k)`, `x ↦ x × [Iᵐ⁺¹]`.
+* `TauCeti.isZero_cubicalHomology_cubeBoundaryPair_prodLeft_of_lt`: below degree `m + 1`, the
+  relative homology of `(Y × Iᵐ⁺¹, Y × ∂Iᵐ⁺¹)` vanishes.
 
 ## References
 
@@ -122,7 +125,7 @@ def cubicalCrossProduct :
     (TauCeti.cubicalCrossProduct k P.fst Y ≫
       cokernel.π ((normalizedCubicalChainComplex k).map (P.prodRight Y).map))
     ((whiskerRight_comp_cubicalCrossProduct_assoc k P Y _).trans ((Category.assoc _ _ _).trans
-      ((TauCeti.cubicalCrossProduct k P.snd Y ≫= cokernel.condition _).trans comp_zero)))).1
+      ((TauCeti.cubicalCrossProduct k P.snd Y ≫= cokernel.condition _).trans comp_zero)))).val
 
 /-- The relative cross product of the classes of chains of `X` and `Y` is the class of their
 cross product. -/
@@ -133,7 +136,8 @@ theorem cokernelπ_whiskerRight_cubicalCrossProduct :
       TauCeti.cubicalCrossProduct k P.fst Y ≫
         cokernel.π ((normalizedCubicalChainComplex k).map (P.prodRight Y).map) :=
   (CokernelCofork.IsColimit.desc'
-    (P.shortExact_tensorRightShortComplex_cubicalChainComplexShortComplex k Y).gIsCokernel _ _).2
+    (P.shortExact_tensorRightShortComplex_cubicalChainComplexShortComplex k Y).gIsCokernel _
+        _).property
 
 /-- The cross products of `A × Y`, of `X × Y` and of the pair, as a morphism from the chain
 sequence of `P` tensored with `N(Y)` to the chain sequence of the pair `(X × Y, A × Y)`. -/
@@ -318,5 +322,16 @@ theorem cubicalHomologyCubeBoundaryPairProdLeftEquiv_homologyπ (q : ℕ)
             (z ⊗ₜ cubeBoundaryPairCycle k m))) := by
   rw [cubicalHomologyCubeBoundaryPairProdLeftEquiv_apply,
     moduleCat_homologyMap_homologyCross_tmul]
+
+/-- **The relative homology of the product of a space with the cube pair vanishes below the
+dimension of the cube**: `Hⱼ(X × Iᵐ⁺¹, X × ∂Iᵐ⁺¹; k) = 0` for `j < m + 1`, over every commutative
+ring `k`. By the relative Künneth theorem it is a sum of terms `Hₚ(X) ⊗ H_q(Iᵐ⁺¹, ∂Iᵐ⁺¹)` with
+`q ≤ j`, and the relative homology of the cube pair vanishes outside degree `m + 1`. -/
+theorem isZero_cubicalHomology_cubeBoundaryPair_prodLeft_of_lt {j : ℕ} (hj : j < m + 1) :
+    IsZero ((((cubeBoundaryPair.{0} (m + 1)).prodLeft X).cubicalChainComplex k).homology j) :=
+  have := isIso_cubicalHomologyKunnethRel_of_projective k X (cubeBoundaryPair.{0} (m + 1)) j
+  (GradedObject.Monoidal.isZero_tensorObj_of_isZero_right _ _ fun _ _ h ↦
+    isZero_cubicalHomology_cubeBoundaryPair_of_ne k (by omega)).of_iso
+    (asIso (cubicalHomologyKunnethRel k X (cubeBoundaryPair.{0} (m + 1)) j)).symm
 
 end TauCeti

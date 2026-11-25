@@ -9,7 +9,6 @@ public import TauCeti.RepresentationTheory.Crystal.Similarity
 public import TauCeti.RepresentationTheory.LSPath.CappedReflection
 public import TauCeti.RepresentationTheory.LSPath.Crystal.Operations
 public import TauCeti.RepresentationTheory.LSPath.RationalChain
-public import TauCeti.RepresentationTheory.LSPath.Word
 import TauCeti.Data.Option.Basic
 
 /-!
@@ -235,7 +234,7 @@ private theorem normalCrystalOn_wt_of_val_eq_map_natCast_smul {S T : Set (PLPath
     (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b f F T)
-    {n : ℕ} {π : S} {π' : T} (hπ' : π'.1 = π.1.map ((n : 𝕜) • LinearMap.id)) :
+    {n : ℕ} {π : S} {π' : T} (hπ' : π'.val = π.val.map ((n : 𝕜) • LinearMap.id)) :
     (normalCrystalOn hf hF hT).wt π' = n • (normalCrystalOn hf hF hS).wt π :=
   hf <| by
     rw [apply_normalCrystalOn_wt, hπ', map_nsmul, apply_normalCrystalOn_wt, endpoint_map,
@@ -246,7 +245,7 @@ private theorem normalCrystalOn_ε_of_val_eq_map_natCast_smul {S T : Set (PLPath
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b f F T)
     (i : b.support) {n : ℕ} {π : S} {π' : T}
-    (hπ' : π'.1 = π.1.map ((n : 𝕜) • LinearMap.id)) :
+    (hπ' : π'.val = π.val.map ((n : 𝕜) • LinearMap.id)) :
     (normalCrystalOn hf hF hT).ε i π' = n * (normalCrystalOn hf hF hS).ε i π :=
   Nat.cast_injective (R := 𝕜) <| by
     rw [cast_normalCrystalOn_ε, hπ', Nat.cast_mul, cast_normalCrystalOn_ε,
@@ -257,7 +256,7 @@ private theorem unattach_normalCrystalOn_eIter_of_val_eq_map_natCast_smul {S T :
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b f F T)
     (i : b.support) {n : ℕ} (hn : 0 < n) {π : S} {π' : T}
-    (hπ' : π'.1 = π.1.map ((n : 𝕜) • LinearMap.id)) :
+    (hπ' : π'.val = π.val.map ((n : 𝕜) • LinearMap.id)) :
     ((normalCrystalOn hf hF hT).eIter i n π').unattach =
       (((normalCrystalOn hf hF hS).e i π).unattach).map (·.map ((n : 𝕜) • LinearMap.id)) := by
   rw [unattach_normalCrystalOn_eIter, hπ', unattach_normalCrystalOn_e,
@@ -270,11 +269,11 @@ noncomputable def dilationSimilarityHom {S T : Set (PLPath 𝕜 V)} (hf : Functi
     (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b f F T)
     {n : ℕ} (hn : 0 < n) (hST : ∀ ⦃π⦄, π ∈ S → π.map ((n : 𝕜) • LinearMap.id) ∈ T) :
     NormalCrystal.SimilarityHom n (normalCrystalOn hf hF hS) (normalCrystalOn hf hF hT) where
-  toFun π := ⟨π.1.map ((n : 𝕜) • LinearMap.id), hST π.2⟩
+  toFun π := ⟨π.val.map ((n : 𝕜) • LinearMap.id), hST π.property⟩
   wt_toFun _ := normalCrystalOn_wt_of_val_eq_map_natCast_smul hf hF hS hT rfl
   ε_toFun i _ := normalCrystalOn_ε_of_val_eq_map_natCast_smul hf hF hS hT i rfl
   eIter_toFun i _ := Option.unattach_inj.mp <| by
-    simpa only [Option.unattach_map, Option.map_unattach] using
+    simpa only [Option.unattach_map, Option.map_unattach_eq_map_val] using
       unattach_normalCrystalOn_eIter_of_val_eq_map_natCast_smul hf hF hS hT i hn rfl
 
 @[simp]
@@ -282,7 +281,7 @@ theorem dilationSimilarityHom_apply {S T : Set (PLPath 𝕜 V)} (hf : Function.I
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b f F T)
     {n : ℕ} (hn : 0 < n) (hST : ∀ ⦃π⦄, π ∈ S → π.map ((n : 𝕜) • LinearMap.id) ∈ T) (π : S) :
-    (dilationSimilarityHom hf hF hS hT hn hST π).1 = π.1.map ((n : 𝕜) • LinearMap.id) := (rfl)
+    (dilationSimilarityHom hf hF hS hT hn hST π).val = π.val.map ((n : 𝕜) • LinearMap.id) := (rfl)
 
 /-- Positive-integer dilation of crystal-admissible path sets is injective. -/
 theorem dilationSimilarityHom_injective {S T : Set (PLPath 𝕜 V)} (hf : Function.Injective f)
@@ -307,9 +306,9 @@ private theorem reflTransGen_rootStep_of_mem_connectedComponentMk_map_natCast_sm
     (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     {n : ℕ} {x x' y : {π : PLPath 𝕜 V | IsIntegralPath b f F π}}
-    (hx' : x.1.map ((n : 𝕜) • LinearMap.id) = x'.1)
+    (hx' : x.val.map ((n : 𝕜) • LinearMap.id) = x'.val)
     (hy : y ∈ (normalCrystal hf hF).graph.connectedComponentMk x) :
-    ReflTransGen (RootStep b f F) x'.1 (y.1.map ((n : 𝕜) • LinearMap.id)) :=
+    ReflTransGen (RootStep b f F) x'.val (y.val.map ((n : 𝕜) • LinearMap.id)) :=
   hx' ▸ reflTransGen_rootStep_map_natCast_smul (apply_root_eq_two hF) n
     ((mem_supp_connectedComponentMk_normalCrystalOn_iff x y).mp hy)
 
@@ -320,12 +319,13 @@ connected path crystal component `normalCrystalComponent hf hF x` into
 noncomputable def componentDilationSimilarityHom (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     {x x' : {π : PLPath 𝕜 V | IsIntegralPath b f F π}} {n : ℕ} (hn : 0 < n)
-    (hx' : x.1.map ((n : 𝕜) • LinearMap.id) = x'.1) :
+    (hx' : x.val.map ((n : 𝕜) • LinearMap.id) = x'.val) :
     NormalCrystal.SimilarityHom n
       (normalCrystalComponent hf hF x) (normalCrystalComponent hf hF x') where
   toFun y :=
-    have hwalk := reflTransGen_rootStep_of_mem_connectedComponentMk_map_natCast_smul hf hF hx' y.2
-    ⟨⟨y.1.1.map ((n : 𝕜) • LinearMap.id), x'.2.of_reflTransGen_rootStep hwalk⟩,
+    have hwalk := reflTransGen_rootStep_of_mem_connectedComponentMk_map_natCast_smul hf hF hx'
+        y.property
+    ⟨⟨y.val.val.map ((n : 𝕜) • LinearMap.id), x'.property.of_reflTransGen_rootStep hwalk⟩,
       (mem_supp_connectedComponentMk_normalCrystalOn_iff x' _).mpr hwalk⟩
   wt_toFun _ := by
     rw [NormalCrystal.component_wt, NormalCrystal.component_wt]
@@ -336,27 +336,28 @@ noncomputable def componentDilationSimilarityHom (hf : Function.Injective f)
   eIter_toFun i y := Option.unattach_inj.mp <| Option.unattach_inj.mp <| by
     rw [NormalCrystal.unattach_component_eIter,
       unattach_normalCrystalOn_eIter_of_val_eq_map_natCast_smul hf hF
-        isCrystalSet_setOf_isIntegralPath _ i hn (π := y.1) rfl,
+        isCrystalSet_setOf_isIntegralPath _ i hn (π := y.val) rfl,
       ← NormalCrystal.unattach_component_e]
-    simp only [Option.unattach_map, Option.map_unattach]
+    simp only [Option.unattach_map, Option.map_unattach_eq_map_val]
 
 @[simp]
 theorem componentDilationSimilarityHom_apply (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     {x x' : {π : PLPath 𝕜 V | IsIntegralPath b f F π}} {n : ℕ} (hn : 0 < n)
-    (hx' : x.1.map ((n : 𝕜) • LinearMap.id) = x'.1)
+    (hx' : x.val.map ((n : 𝕜) • LinearMap.id) = x'.val)
     (y : (normalCrystal hf hF).graph.connectedComponentMk x) :
-    (componentDilationSimilarityHom hf hF hn hx' y).1.1 = y.1.1.map ((n : 𝕜) • LinearMap.id) :=
+    (componentDilationSimilarityHom hf hF hn hx' y).val.val = y.val.val.map ((n : 𝕜) • LinearMap.id)
+        :=
   (rfl)
 
 theorem componentDilationSimilarityHom_injective (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     {x x' : {π : PLPath 𝕜 V | IsIntegralPath b f F π}} {n : ℕ} (hn : 0 < n)
-    (hx' : x.1.map ((n : 𝕜) • LinearMap.id) = x'.1) :
+    (hx' : x.val.map ((n : 𝕜) • LinearMap.id) = x'.val) :
     Function.Injective (componentDilationSimilarityHom hf hF hn hx') :=
   fun _ _ h ↦ Subtype.ext <| Subtype.ext <|
     map_smul_id_injective (Nat.cast_pos.mpr hn).ne' <|
-      congrArg (fun z ↦ z.1.1) h
+      congrArg (fun z ↦ z.val.val) h
 
 /-- **Kashiwara–Littelmann similarity embedding `B(π_λ) ↪ B(π_{n λ})`** on straight-path crystal
 components: for every integral straight path `straight 𝕜 (f lam)` and every `n > 0`, dilating paths
@@ -377,8 +378,8 @@ theorem straightComponentDilationSimilarityHom_apply (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     {lam : X} (hlam : IsIntegralPath b f F (straight 𝕜 (f lam))) {n : ℕ} (hn : 0 < n)
     (y : (normalCrystal hf hF).graph.connectedComponentMk ⟨straight 𝕜 (f lam), hlam⟩) :
-    (straightComponentDilationSimilarityHom hf hF hlam hn y).1.1 =
-      y.1.1.map ((n : 𝕜) • LinearMap.id) :=
+    (straightComponentDilationSimilarityHom hf hF hlam hn y).val.val =
+      y.val.val.map ((n : 𝕜) • LinearMap.id) :=
   (rfl)
 
 theorem straightComponentDilationSimilarityHom_injective (hf : Function.Injective f)
@@ -392,7 +393,7 @@ component of `straight 𝕜 (f (P.root i))` for any isolated simple node `i` (in
 rank-one root datum), sending the length-`2` simple-root string into a string of length `2 n`. -/
 noncomputable def simpleRootStringDilationSimilarityHom (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
-    (i : b.support) (hi : ∀ j : b.support, j ≠ i → P.pairing i.1 j.1 = 0)
+    (i : b.support) (hi : ∀ j : b.support, j ≠ i → P.pairing i.val j.val = 0)
     {n : ℕ} (hn : 0 < n) :
     NormalCrystal.SimilarityHom n
       (normalCrystalComponent hf hF
@@ -405,17 +406,17 @@ noncomputable def simpleRootStringDilationSimilarityHom (hf : Function.Injective
 @[simp]
 theorem simpleRootStringDilationSimilarityHom_apply (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
-    (i : b.support) (hi : ∀ j : b.support, j ≠ i → P.pairing i.1 j.1 = 0)
+    (i : b.support) (hi : ∀ j : b.support, j ≠ i → P.pairing i.val j.val = 0)
     {n : ℕ} (hn : 0 < n)
     (y : (normalCrystal hf hF).graph.connectedComponentMk
       ⟨straight 𝕜 (f (P.root i)), isIntegralPath_straight_root hF i hi⟩) :
-    (simpleRootStringDilationSimilarityHom hf hF i hi hn y).1.1 =
-      y.1.1.map ((n : 𝕜) • LinearMap.id) :=
+    (simpleRootStringDilationSimilarityHom hf hF i hi hn y).val.val =
+      y.val.val.map ((n : 𝕜) • LinearMap.id) :=
   (rfl)
 
 theorem simpleRootStringDilationSimilarityHom_injective (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
-    (i : b.support) (hi : ∀ j : b.support, j ≠ i → P.pairing i.1 j.1 = 0)
+    (i : b.support) (hi : ∀ j : b.support, j ≠ i → P.pairing i.val j.val = 0)
     {n : ℕ} (hn : 0 < n) :
     Function.Injective (simpleRootStringDilationSimilarityHom hf hF i hi hn) :=
   straightComponentDilationSimilarityHom_injective hf hF
@@ -531,7 +532,7 @@ variable {l : ℕ}
   (dir : Fin (l + 1) →
     {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w})
   (hdir : ∀ j : Fin l,
-    (weylCoxeterSystem P b).BruhatLE (dir j.succ).1 (dir j.castSucc).1)
+    (weylCoxeterSystem P b).BruhatLE (dir j.succ).val (dir j.castSucc).val)
   (hne : ∀ j : Fin l, dir j.succ ≠ dir j.castSucc)
   (time : Fin (l + 2) → ℚ) (hzero : time 0 = 0) (hlast : time (Fin.last _) = 1)
   (htime : StrictMono time) (n : ℕ) (hn : 0 < n)
@@ -544,7 +545,7 @@ theorem lowerIter_toPLPath_ofBruhatChain {F : Module.Dual 𝕜 V} {x : V} (hx : 
     PLPath.lowerIter F x n
         ((ofBruhatChain dir hdir hne time hzero hlast htime n hn hden).toPLPath 𝕜 f) =
       (PLPath.lower F x (PLPath.ofSegments 𝕜 (List.ofFn fun j : Fin (l + 1) ↦
-        ((time j.succ - time j.castSucc : ℚ) : 𝕜) • f ((dir j).1 • lam)))).map
+        ((time j.succ - time j.castSucc : ℚ) : 𝕜) • f ((dir j).val • lam)))).map
           (·.map ((n : 𝕜) • LinearMap.id)) := by
   rw [toPLPath_ofBruhatChain, PLPath.lowerIter_map_natCast_smul hx hn]
 
@@ -554,7 +555,7 @@ theorem raiseIter_toPLPath_ofBruhatChain {F : Module.Dual 𝕜 V} {x : V} (hx : 
     PLPath.raiseIter F x n
         ((ofBruhatChain dir hdir hne time hzero hlast htime n hn hden).toPLPath 𝕜 f) =
       (PLPath.raise F x (PLPath.ofSegments 𝕜 (List.ofFn fun j : Fin (l + 1) ↦
-        ((time j.succ - time j.castSucc : ℚ) : 𝕜) • f ((dir j).1 • lam)))).map
+        ((time j.succ - time j.castSucc : ℚ) : 𝕜) • f ((dir j).val • lam)))).map
           (·.map ((n : 𝕜) • LinearMap.id)) := by
   rw [toPLPath_ofBruhatChain, PLPath.raiseIter_map_natCast_smul hx hn]
 
@@ -568,7 +569,7 @@ theorem lowerWord_flatMap_replicate_toPLPath_ofBruhatChain_eq_some_iff {α : Typ
       some ((ofBruhatChain dir hdir hne time hzero hlast htime n hn hden).toPLPath 𝕜 f) ↔
     PLPath.lowerWord F x w (PLPath.straight 𝕜 (f lam)) =
       some (PLPath.ofSegments 𝕜 (List.ofFn fun j : Fin (l + 1) ↦
-        ((time j.succ - time j.castSucc : ℚ) : 𝕜) • f ((dir j).1 • lam))) := by
+        ((time j.succ - time j.castSucc : ℚ) : 𝕜) • f ((dir j).val • lam))) := by
   have hstr : (straight (n • lam) : LSPath P b (n • lam)).toPLPath 𝕜 f =
       (PLPath.straight 𝕜 (f lam)).map ((n : 𝕜) • LinearMap.id) := by
     rw [← stretch_straight lam n hn, toPLPath_stretch, toPLPath_straight]
@@ -584,7 +585,7 @@ theorem raiseWord_flatMap_replicate_toPLPath_ofBruhatChain_eq_some_iff {α : Typ
         ((ofBruhatChain dir hdir hne time hzero hlast htime n hn hden).toPLPath 𝕜 f) =
       some ((straight (n • lam) : LSPath P b (n • lam)).toPLPath 𝕜 f) ↔
     PLPath.raiseWord F x w (PLPath.ofSegments 𝕜 (List.ofFn fun j : Fin (l + 1) ↦
-        ((time j.succ - time j.castSucc : ℚ) : 𝕜) • f ((dir j).1 • lam))) =
+        ((time j.succ - time j.castSucc : ℚ) : 𝕜) • f ((dir j).val • lam))) =
       some (PLPath.straight 𝕜 (f lam)) := by
   have hstr : (straight (n • lam) : LSPath P b (n • lam)).toPLPath 𝕜 f =
       (PLPath.straight 𝕜 (f lam)).map ((n : 𝕜) • LinearMap.id) := by

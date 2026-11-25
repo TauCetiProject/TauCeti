@@ -7,6 +7,7 @@ module
 
 import Mathlib.RingTheory.Artinian.Module
 import TauCeti.LinearAlgebra.Dimension.Tower
+import TauCeti.RingTheory.Ideal.Operations
 public import TauCeti.RingTheory.PicardGroup.Quotient
 public import TauCeti.RingTheory.Ideal.Quotient.Finite
 

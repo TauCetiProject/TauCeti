@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 public import TauCeti.NumberTheory.QuadraticForm.Global.Operations
+import TauCeti.LinearAlgebra.QuadraticForm.Basic
 
 /-!
 # Local properties of quadratic forms over number fields
@@ -17,15 +18,18 @@ extensions of the global forms, so their witnesses compare actual localizations 
 independently chosen family of local quadratic spaces.
 
 Global witnesses base-change to local witnesses.  The resulting API also records invariance
-under global equivalence and the rank constraint imposed by local equivalence.  These are the
-common hypotheses used in local-to-global statements for quadratic forms.
+under global equivalence, invariance of `IsLocallyIsotropic` under nonzero scalar multiplication,
+the `c⁻¹`-shift law for `LocallyRepresentsScalar` under nonzero scalar multiplication, and the
+rank constraint imposed by local equivalence.  These are the common hypotheses used in
+local-to-global statements for quadratic forms.
 
 Complex places do not occur in the definitions: over `ℂ`, isotropy is automatic in dimension
 at least two, representation of regular forms is controlled only by dimension, and regular forms
 of equal dimension are equivalent.  `TauCeti.NumberTheory.QuadraticForm.Global.ComplexPlaces`
 makes this omission explicit.
 
-If a form locally represents a scalar `a`, adjoining `⟨-a⟩` makes it locally isotropic.
+If a form locally represents a scalar `a`, adjoining `⟨-a⟩` makes it locally isotropic. Adjoining a
+zero orthogonal summand does not change which scalars a form locally represents.
 
 -/
 
@@ -84,7 +88,7 @@ def LocallyRepresentsScalar (Q : _root_.QuadraticForm K V) (a : K) : Prop :=
       QuadraticMap.Represents (Q.atFinitePlace v)
         (algebraMap K (v.adicCompletion K) a)) ∧
     ∀ w : {w : InfinitePlace K // w.IsReal},
-      QuadraticMap.Represents (Q.atRealPlace w) (embedding_of_isReal w.2 a)
+      QuadraticMap.Represents (Q.atRealPlace w) (embedding_of_isReal w.property a)
 
 /-- Local scalar representation is the conjunction of its finite-place and real-place clauses. -/
 @[simp]
@@ -94,7 +98,7 @@ theorem locallyRepresentsScalar_iff (Q : _root_.QuadraticForm K V) (a : K) :
           QuadraticMap.Represents (Q.atFinitePlace v)
             (algebraMap K (v.adicCompletion K) a)) ∧
         ∀ w : {w : InfinitePlace K // w.IsReal},
-          QuadraticMap.Represents (Q.atRealPlace w) (embedding_of_isReal w.2 a) :=
+          QuadraticMap.Represents (Q.atRealPlace w) (embedding_of_isReal w.property a) :=
   Iff.rfl
 
 /-- If a quadratic form represents a scalar at every finite and real place, then its
@@ -114,7 +118,7 @@ theorem LocallyRepresentsScalar.isLocallyIsotropic_smul_sq_prod
       have h := congrArg (TensorProduct.AlgebraTensorModule.rid K (v.adicCompletion K)
         (v.adicCompletion K)) hz
       simp at h
-    · let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+    · let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
       rw [QuadraticMap.Equivalent.anisotropic_iff ⟨atRealPlaceProd _ W w⟩]
       intro hani
       have hleft := (QuadraticMap.anisotropic_of_prod hani).1
@@ -131,10 +135,10 @@ theorem LocallyRepresentsScalar.isLocallyIsotropic_smul_sq_prod
       ((QuadraticMap.represents_iff _ _).mpr ⟨1 ⊗ₜ 1, ?_⟩) (by rw [neg_neg]; exact h.1 v)
       (by simpa using ha)
     simp
-  · let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  · let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
     rw [QuadraticMap.Equivalent.anisotropic_iff ⟨atRealPlaceProd _ W w⟩]
     refine QuadraticMap.not_anisotropic_prod_of_represents_neg
-      (a := -embedding_of_isReal w.2 a)
+      (a := -embedding_of_isReal w.property a)
       ((QuadraticMap.represents_iff _ _).mpr ⟨1 ⊗ₜ 1, ?_⟩) (by rw [neg_neg]; exact h.2 w)
       (by simpa using ha)
     simp
@@ -165,7 +169,7 @@ theorem isLocallyIsotropic_of_not_anisotropic (Q : _root_.QuadraticForm K V)
     rw [QuadraticForm.atFinitePlace_def]
     exact QuadraticForm.not_anisotropic_baseChange (A := v.adicCompletion K) hQ
   · intro w
-    let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+    let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
     rw [QuadraticForm.atRealPlace_def]
     exact QuadraticForm.not_anisotropic_baseChange (A := ℝ) hQ
 
@@ -178,7 +182,7 @@ theorem LocallyRepresents.of_isRepresentedBy {Q : _root_.QuadraticForm K V}
     rw [QuadraticForm.atFinitePlace_def, QuadraticForm.atFinitePlace_def]
     exact h.baseChange (A := v.adicCompletion K)
   · intro w
-    let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+    let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
     rw [QuadraticForm.atRealPlace_def, QuadraticForm.atRealPlace_def]
     exact h.baseChange (A := ℝ)
 
@@ -190,9 +194,22 @@ theorem LocallyRepresentsScalar.of_represents {Q : _root_.QuadraticForm K V} {a 
     rw [QuadraticForm.atFinitePlace_def]
     exact h.baseChange (A := v.adicCompletion K)
   · intro w
-    let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+    let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
     rw [QuadraticForm.atRealPlace_def]
     simpa only [RingHom.algebraMap_toAlgebra] using h.baseChange (A := ℝ)
+
+/-- Adjoining a zero orthogonal summand does not change local scalar representation: a form
+whose orthogonal sum with a zero form locally represents `a` already locally represents `a`. -/
+theorem LocallyRepresentsScalar.of_prod_zero {Q : _root_.QuadraticForm K V} {a : K}
+    (h : LocallyRepresentsScalar (Q.prod (0 : _root_.QuadraticForm K W)) a) :
+    Q.LocallyRepresentsScalar a := by
+  refine ⟨fun v ↦ ?_, fun w ↦ ?_⟩
+  · obtain ⟨x, hx⟩ := (QuadraticMap.represents_iff _ _).mp
+      (((atFinitePlaceProd Q 0 v).represents_iff _).mp (h.1 v))
+    exact (QuadraticMap.represents_iff _ _).mpr ⟨x.1, by simpa using hx⟩
+  · obtain ⟨x, hx⟩ := (QuadraticMap.represents_iff _ _).mp
+      (((atRealPlaceProd Q 0 w).represents_iff _).mp (h.2 w))
+    exact (QuadraticMap.represents_iff _ _).mpr ⟨x.1, by simpa using hx⟩
 
 /-- Globally equivalent quadratic forms are locally equivalent. -/
 theorem LocallyEquivalent.of_equivalent {Q : _root_.QuadraticForm K V}
@@ -282,6 +299,28 @@ theorem QuadraticMap.Equivalent.locallyRepresentsScalar_iff
     (h : Q.Equivalent R) (a : K) :
     Q.LocallyRepresentsScalar a ↔ R.LocallyRepresentsScalar a :=
   (LocallyEquivalent.of_equivalent h).locallyRepresentsScalar_iff a
+
+/-- Scaling a quadratic form by a nonzero global scalar does not change local isotropy. -/
+theorem isLocallyIsotropic_smul_iff {c : K} (hc : c ≠ 0) (Q : _root_.QuadraticForm K V) :
+    (c • Q).IsLocallyIsotropic ↔ Q.IsLocallyIsotropic := by
+  rw [isLocallyIsotropic_iff, isLocallyIsotropic_iff]
+  refine and_congr (forall_congr' fun v => not_congr ?_) (forall_congr' fun w => not_congr ?_)
+  · rw [atFinitePlace_smul]
+    exact QuadraticMap.anisotropic_smul_iff (hc.isUnit.map _) _
+  · rw [atRealPlace_smul]
+    exact QuadraticMap.anisotropic_smul_iff (hc.isUnit.map _) _
+
+/-- Scaling a quadratic form by a nonzero global scalar `c` locally represents `a` if and only if
+the unscaled form locally represents `c⁻¹ * a`. -/
+theorem locallyRepresentsScalar_smul_iff {c : K} (hc : c ≠ 0)
+    (Q : _root_.QuadraticForm K V) (a : K) :
+    (c • Q).LocallyRepresentsScalar a ↔ Q.LocallyRepresentsScalar (c⁻¹ * a) := by
+  rw [locallyRepresentsScalar_iff, locallyRepresentsScalar_iff]
+  refine and_congr (forall_congr' fun v => ?_) (forall_congr' fun w => ?_)
+  · rw [atFinitePlace_smul,
+      QuadraticMap.represents_smul_iff ((map_ne_zero _).mpr hc), map_mul, map_inv₀]
+  · rw [atRealPlace_smul,
+      QuadraticMap.represents_smul_iff ((map_ne_zero _).mpr hc), map_mul, map_inv₀]
 
 /-- Replacing both global forms by equivalent forms preserves local representation. -/
 theorem QuadraticMap.Equivalent.locallyRepresents_congr

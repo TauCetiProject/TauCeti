@@ -5,15 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Abelian.ShortExact
 public import TauCeti.CategoryTheory.AlmostSplit.Sequence
 
 /-!
 # Almost-split sequences and equivalences
 
 Equivalences preserve and reflect almost-split morphisms and almost-split sequences.
-The essential surjectivity is needed for preservation: the factorization property must hold
-for every object of the target category. This allows almost-split sequences to be transported
-between module categories and equivalent categories of representations.
+For almost-split morphisms, reflection holds for any fully faithful functor, for instance the
+inclusion of a full subcategory (`CategoryTheory.Functor.isRightAlmostSplit_of_map`,
+`CategoryTheory.Functor.isLeftAlmostSplit_of_map`), and between abelian categories it reflects
+almost-split sequences (`CategoryTheory.Functor.isAlmostSplit_of_map`); almost-split sequences
+whose terms lie in its essential image descend along it
+(`CategoryTheory.Functor.exists_isAlmostSplit_of_obj_iso`). The essential
+surjectivity is needed for preservation: the factorization property must hold for every object of
+the target category. This allows almost-split sequences to be transported between module categories
+and equivalent categories of representations.
 -/
 
 public section
@@ -25,19 +32,31 @@ namespace CategoryTheory.Functor
 universe u₁ u₂ v₁ v₂
 
 variable {C : Type u₁} {D : Type u₂} [Category.{v₁} C] [Category.{v₂} D]
-  (F : C ⥤ D) [F.IsEquivalence] {X Y : C} (f : X ⟶ Y)
+  (F : C ⥤ D) {X Y : C} (f : X ⟶ Y)
+
+/-- A fully faithful functor reflects right almost-split morphisms. -/
+theorem isRightAlmostSplit_of_map [F.Full] [F.Faithful] (hf : IsRightAlmostSplit (F.map f)) :
+    IsRightAlmostSplit f := by
+  refine isRightAlmostSplit_iff.mpr ⟨fun hs ↦ hf.not_isSplitEpi
+    ((F.isSplitEpi_iff f).mpr hs), fun Z g hg ↦ ?_⟩
+  obtain ⟨h, hh⟩ := hf.factors (F.obj Z) (F.map g)
+    (fun hs ↦ hg ((F.isSplitEpi_iff g).mp hs))
+  exact ⟨F.preimage h, F.map_injective (by simpa using hh)⟩
+
+/-- A fully faithful functor reflects left almost-split morphisms. -/
+theorem isLeftAlmostSplit_of_map [F.Full] [F.Faithful] (hf : IsLeftAlmostSplit (F.map f)) :
+    IsLeftAlmostSplit f :=
+  isRightAlmostSplit_op_iff.mp
+    (F.op.isRightAlmostSplit_of_map f.op (isRightAlmostSplit_op_iff.mpr hf))
+
+variable [F.IsEquivalence]
 
 /-- An equivalence preserves and reflects right almost-split morphisms. -/
 @[simp]
 theorem isRightAlmostSplit_map_iff : IsRightAlmostSplit (F.map f) ↔ IsRightAlmostSplit f := by
   classical
   constructor
-  · intro hf
-    refine isRightAlmostSplit_iff.mpr ⟨fun hs ↦ hf.not_isSplitEpi
-      ((F.isSplitEpi_iff f).mpr hs), fun Z g hg ↦ ?_⟩
-    obtain ⟨h, hh⟩ := hf.factors (F.obj Z) (F.map g)
-      (fun hs ↦ hg ((F.isSplitEpi_iff g).mp hs))
-    exact ⟨F.preimage h, F.map_injective (by simpa using hh)⟩
+  · exact F.isRightAlmostSplit_of_map f
   · intro hf
     refine isRightAlmostSplit_iff.mpr ⟨fun hs ↦ hf.not_isSplitEpi
       ((F.isSplitEpi_iff f).mp hs), fun Z g hg ↦ ?_⟩
@@ -85,3 +104,35 @@ theorem isAlmostSplit_map_iff : (S.map F).IsAlmostSplit ↔ S.IsAlmostSplit := b
       (F.isRightAlmostSplit_map_iff S.g).mpr h.isRightAlmostSplit_g⟩
 
 end CategoryTheory.ShortComplex
+
+namespace CategoryTheory.Functor
+
+/-- **A fully faithful functor between abelian categories reflects almost-split sequences**, for
+instance the inclusion of finitely generated modules into all modules over a Noetherian ring:
+faithfulness reflects short exactness, and fullness reflects the two lifting properties. -/
+theorem isAlmostSplit_of_map {C D : Type*} [Category* C] [Category* D] [Abelian C] [Abelian D]
+    (F : C ⥤ D) [F.PreservesZeroMorphisms] [F.Full] [F.Faithful] {S : ShortComplex C}
+    (h : (S.map F).IsAlmostSplit) : S.IsAlmostSplit :=
+  ⟨ShortExact.reflects_shortExact_of_faithful F h.shortExact,
+    F.isLeftAlmostSplit_of_map S.f h.isLeftAlmostSplit_f,
+    F.isRightAlmostSplit_of_map S.g h.isRightAlmostSplit_g⟩
+
+/-- **Descending an almost-split sequence along a fully faithful functor.** Let `F` be a fully
+faithful functor between abelian categories, and `S` an almost-split sequence whose terms are
+isomorphic to `F.obj X₁`, `F.obj X₂` and `F.obj X₃`. Then there is an almost-split sequence
+`X₁ ⟶ X₂ ⟶ X₃`, the preimage of `S` under `F`: its arrows are sent by `F` to those of `S` up to
+the given isomorphisms. -/
+theorem exists_isAlmostSplit_of_obj_iso {C D : Type*} [Category* C] [Category* D] [Abelian C]
+    [Abelian D] (F : C ⥤ D) [F.PreservesZeroMorphisms] [F.Full] [F.Faithful]
+    {S : ShortComplex D} (hS : S.IsAlmostSplit) {X₁ X₂ X₃ : C} (e₁ : F.obj X₁ ≅ S.X₁)
+    (e₂ : F.obj X₂ ≅ S.X₂) (e₃ : F.obj X₃ ≅ S.X₃) :
+    ∃ (i : X₁ ⟶ X₂) (p : X₂ ⟶ X₃) (h : i ≫ p = 0), (ShortComplex.mk i p h).IsAlmostSplit ∧
+      F.map i ≫ e₂.hom = e₁.hom ≫ S.f ∧ F.map p ≫ e₃.hom = e₂.hom ≫ S.g := by
+  let i := F.preimage (e₁.hom ≫ S.f ≫ e₂.inv)
+  let p := F.preimage (e₂.hom ≫ S.g ≫ e₃.inv)
+  have h : i ≫ p = 0 := F.map_injective (by simp [i, p])
+  exact ⟨i, p, h, F.isAlmostSplit_of_map (ShortComplex.isAlmostSplit_of_iso
+    (ShortComplex.isoMk e₁.symm e₂.symm e₃.symm (by simp [i]) (by simp [p])) hS),
+    by simp [i], by simp [p]⟩
+
+end CategoryTheory.Functor

@@ -28,7 +28,9 @@ the second fundamental form and the normal connection of an immersion take value
 The normal spaces are closed (`TauCeti.isClosed_orthogonalNormalSpace`). When the range of the
 differential admits an orthogonal projection, for instance for a finite-dimensional source, so do
 the normal spaces, and their orthogonal complements are the tangent ranges
-(`TauCeti.orthogonal_orthogonalNormalSpace`). For a finite-dimensional source, the orthogonal
+(`TauCeti.orthogonal_orthogonalNormalSpace`). The normal space is then isometric to the quotient
+`T_{f x} N ⧸ range df_x` by `w ↦ [w]` (`TauCeti.orthogonalNormalSpaceEquivQuotient`, the inverse of
+Mathlib's `Submodule.quotientEquivOrthogonal`). For a finite-dimensional source, the orthogonal
 projection onto the normal space is `v ↦ v - df ((df* df)⁻¹ (df* v))`, where `df* df` is the
 pullback metric on `T_x M` (`TauCeti.starProjection_orthogonalNormalSpace_eq_sub_mfderiv_inverse`).
 It is a `C^m` self-map of `f *ᵖ TN` near every point where `f` is `C^n` with injective
@@ -118,7 +120,7 @@ theorem isClosed_orthogonalNormalSpace (f : M → N) (x : M) :
 theorem inner_mfderiv_coe_orthogonalNormalSpace {f : M → N} {x : M} (u : TangentSpace I x)
     (w : orthogonalNormalSpace I J f x) :
     inner ℝ (mfderiv I J f x u) (w : TangentSpace J (f x)) = 0 :=
-  mem_orthogonalNormalSpace_iff.mp w.2 u
+  mem_orthogonalNormalSpace_iff.mp w.property u
 
 /-- A normal vector is orthogonal to the differential of every tangent vector. -/
 @[simp]
@@ -208,6 +210,44 @@ theorem starProjection_orthogonalNormalSpace :
 
 end OrthogonalProjection
 
+section QuotientComparison
+
+variable (f : M → N) (x : M)
+  [(LinearMap.range (mfderiv I J f x).toLinearMap).HasOrthogonalProjection]
+
+/-- The normal space `(range df_x)ᗮ` of a map at `x` is isometric to the quotient
+`T_{f x} N ⧸ range df_x` by `w ↦ [w]`, whenever the range of the differential admits an orthogonal
+projection, for instance for a finite-dimensional source. It is the inverse of Mathlib's isometry
+`Submodule.quotientEquivOrthogonal` between a quotient and the orthogonal complement of the
+subspace. The inverse is the orthogonal projection onto the normal space
+(`TauCeti.orthogonalNormalSpaceEquivQuotient_symm_mk`). -/
+def orthogonalNormalSpaceEquivQuotient :
+    orthogonalNormalSpace I J f x ≃ₗᵢ[ℝ]
+      TangentSpace J (f x) ⧸ LinearMap.range (mfderiv I J f x).toLinearMap :=
+  (LinearMap.range (mfderiv I J f x).toLinearMap).quotientEquivOrthogonal.symm
+
+/-- The comparison takes a normal vector to its class. -/
+@[simp]
+theorem orthogonalNormalSpaceEquivQuotient_apply (w : orthogonalNormalSpace I J f x) :
+    orthogonalNormalSpaceEquivQuotient f x w =
+      Submodule.Quotient.mk (w : TangentSpace J (f x)) := by
+  rw [orthogonalNormalSpaceEquivQuotient]
+  exact (LinearMap.range (mfderiv I J f x).toLinearMap).quotientEquivOrthogonal_symm_eq_mk _
+    w.property
+
+/-- The inverse comparison takes the class of an ambient vector to its orthogonal projection onto
+the normal space; in particular this projection depends only on the class. -/
+@[simp]
+theorem orthogonalNormalSpaceEquivQuotient_symm_mk (v : TangentSpace J (f x)) :
+    (orthogonalNormalSpaceEquivQuotient f x).symm (Submodule.Quotient.mk v) =
+      (orthogonalNormalSpace I J f x).orthogonalProjectionOnto v := by
+  rw [LinearIsometryEquiv.symm_apply_eq, orthogonalNormalSpaceEquivQuotient_apply,
+    Submodule.Quotient.eq, Submodule.coe_orthogonalProjectionOnto_apply]
+  have h := (orthogonalNormalSpace I J f x).sub_starProjection_mem_orthogonal v
+  rwa [orthogonal_orthogonalNormalSpace] at h
+
+end QuotientComparison
+
 section FiniteDimensionalSource
 
 variable [FiniteDimensional ℝ E]
@@ -251,7 +291,7 @@ theorem contMDiffAt_starProjection_orthogonalNormalSpace {f : K}
     (hinj : Function.Injective (mfderiv I J f p.proj)) (hm : m + 1 ≤ n) :
     ContMDiffAt (I.prod 𝓘(ℝ, V)) (I.prod 𝓘(ℝ, V)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) ↦
-        (⟨p.proj, (orthogonalNormalSpace I J f p.proj).starProjection p.2⟩ :
+        (⟨p.proj, (orthogonalNormalSpace I J f p.proj).starProjection p.snd⟩ :
           TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)))) p := by
   have hfm : ContMDiffAt I J m f p.proj := hf.of_le (le_self_add.trans hm)
   have hbase : ContMDiffAt (I.prod 𝓘(ℝ, V)) I m
@@ -268,7 +308,7 @@ theorem contMDiff_starProjection_orthogonalNormalSpace {f : K} (hf : ContMDiff I
     (hinj : ∀ x, Function.Injective (mfderiv I J f x)) (hm : m + 1 ≤ n) :
     ContMDiff (I.prod 𝓘(ℝ, V)) (I.prod 𝓘(ℝ, V)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) ↦
-        (⟨p.proj, (orthogonalNormalSpace I J f p.proj).starProjection p.2⟩ :
+        (⟨p.proj, (orthogonalNormalSpace I J f p.proj).starProjection p.snd⟩ :
           TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)))) := fun p ↦
   contMDiffAt_starProjection_orthogonalNormalSpace (hf p.proj) (hinj p.proj) hm
 
@@ -303,7 +343,7 @@ theorem hasLocalContMDiffSubbundleFrames_orthogonalNormalSpace {r : ℕ} {f : K}
     omega
   have hP : ContMDiff (I.prod 𝓘(ℝ, V)) (I.prod 𝓘(ℝ, V)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) ↦
-        (⟨p.proj, (orthogonalNormalSpace I J f p.proj).starProjection p.2⟩ :
+        (⟨p.proj, (orthogonalNormalSpace I J f p.proj).starProjection p.snd⟩ :
           TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)))) := fun p ↦ by
     have := finiteDimensional_of_injective_mfderiv (hinj p.proj)
     exact contMDiffAt_starProjection_orthogonalNormalSpace (hf p.proj) (hinj p.proj) hm
@@ -382,7 +422,7 @@ theorem contMDiff_orthogonalNormalSpace_inclusion {r : ℕ} {f : K} (hf : ContMD
     letI := orthogonalNormalVectorBundle hf hinj hm hr
     ContMDiff (I.prod 𝓘(ℝ, Fin r → ℝ)) (I.prod 𝓘(ℝ, V)) m
       (fun v : TotalSpace (Fin r → ℝ) (fun x ↦ orthogonalNormalSpace I J f x) ↦
-        (⟨v.proj, (v.2 : TangentSpace J (f v.proj))⟩ :
+        (⟨v.proj, (v.snd : TangentSpace J (f v.proj))⟩ :
           TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)))) := by
   have := TangentBundle.contMDiffVectorBundle (I := J) (M := N) (n := m)
   have := Pullback.contMDiffVectorBundle (F := V) (E := TangentSpace J)
@@ -398,7 +438,7 @@ theorem contMDiff_orthogonalNormalSpace_inclusion_tangentBundle {r : ℕ} {f : K
     letI := orthogonalNormalVectorBundle hf hinj hm hr
     ContMDiff (I.prod 𝓘(ℝ, Fin r → ℝ)) (J.prod 𝓘(ℝ, V)) m
       (fun v : TotalSpace (Fin r → ℝ) (fun x ↦ orthogonalNormalSpace I J f x) ↦
-        (⟨f v.proj, (v.2 : TangentSpace J (f v.proj))⟩ : TangentBundle J N)) := by
+        (⟨f v.proj, (v.snd : TangentSpace J (f v.proj))⟩ : TangentBundle J N)) := by
   let := orthogonalNormalFiberBundle hf hinj hm hr
   let := orthogonalNormalVectorBundle hf hinj hm hr
   let fc : C^m⟮I, M; J, N⟯ := ⟨f, hf.of_le (le_self_add.trans hm)⟩
@@ -600,14 +640,14 @@ theorem contMDiff_orthogonalProjectionOnto_orthogonalNormalSpace {r : ℕ} {f : 
     letI := orthogonalNormalVectorBundle hf hinj hm hr
     ContMDiff (I.prod 𝓘(ℝ, V)) (I.prod 𝓘(ℝ, Fin r → ℝ)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) ↦
-        (⟨p.proj, (orthogonalNormalSpace I J f p.proj).orthogonalProjectionOnto p.2⟩ :
+        (⟨p.proj, (orthogonalNormalSpace I J f p.proj).orthogonalProjectionOnto p.snd⟩ :
           TotalSpace (Fin r → ℝ) fun x ↦ orthogonalNormalSpace I J f x)) := fun p ↦ by
   have := finiteDimensional_of_injective_mfderiv (hinj p.proj)
   -- The values in `f *ᵖ TN` are the normal projections (`Submodule.starProjection_apply`).
   have hw := (contMDiffAt_starProjection_orthogonalNormalSpace (hf p.proj) (hinj p.proj) hm
     ).congr_of_eventuallyEq <| .of_forall fun q ↦ congrArg (TotalSpace.mk q.proj)
-      ((orthogonalNormalSpace I J f q.proj).starProjection_apply (q.2 : TangentSpace J _)).symm
+      ((orthogonalNormalSpace I J f q.proj).starProjection_apply (q.snd : TangentSpace J _)).symm
   exact contMDiffAt_orthogonalNormalSpace_mk hf hinj hm hr le_rfl hw
-    fun q ↦ ((orthogonalNormalSpace I J f q.proj).orthogonalProjectionOnto q.2).2
+    fun q ↦ ((orthogonalNormalSpace I J f q.proj).orthogonalProjectionOnto q.snd).property
 
 end TauCeti

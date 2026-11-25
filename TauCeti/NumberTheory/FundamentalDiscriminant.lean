@@ -20,10 +20,14 @@ prime-discriminant theory.
 
 * `Int.decidablePredIsFundamentalDiscr`: being a fundamental discriminant is decidable, through
   congruences mod `4` and squarefreeness of natural numbers, so the kernel can check it.
+* `Int.isFundamentalDiscr_one`, `Int.IsFundamentalDiscr.natAbs_eq_one_iff`: `1` is the unique
+  fundamental discriminant of absolute value `1`.
 * `Int.IsFundamentalDiscr.not_sixteen_dvd`: a fundamental discriminant is not divisible by `16`.
 * `Int.IsFundamentalDiscr.mul`: coprime fundamental discriminants have fundamental product.
 * `Int.IsFundamentalDiscr.not_isSquare_rat`: a fundamental discriminant other than `1` is not a
   rational square, so `ℚ(√D)` is a genuine quadratic field.
+* `Int.exists_isFundamentalDiscr_eq_sq_mul`: every nonzero discriminant `D ≡ 0, 1 (mod 4)` is
+  `f² D₀` for a fundamental discriminant `D₀`.
 -/
 
 public section
@@ -36,6 +40,19 @@ instance decidablePredIsFundamentalDiscr : DecidablePred IsFundamentalDiscr := f
   decidable_of_iff ((D % 4 = 1 ∧ Squarefree D.natAbs) ∨
       (D % 4 = 0 ∧ Squarefree (D / 4).natAbs ∧ (D / 4 % 4 = 2 ∨ D / 4 % 4 = 3))) <| by
     rw [isFundamentalDiscr_iff_squarefree, squarefree_natAbs, squarefree_natAbs]
+
+/-- `1` is a fundamental discriminant, corresponding to the trivial quadratic extension. -/
+@[simp]
+theorem isFundamentalDiscr_one : IsFundamentalDiscr 1 :=
+  isFundamentalDiscr_iff_squarefree.mpr (Or.inl ⟨rfl, squarefree_one⟩)
+
+/-- Among fundamental discriminants, `1` is the only one of absolute value `1`, since `-1 ≡ 3`
+modulo `4`. -/
+theorem IsFundamentalDiscr.natAbs_eq_one_iff {D : ℤ} (hD : IsFundamentalDiscr D) :
+    D.natAbs = 1 ↔ D = 1 := by
+  refine ⟨fun h ↦ (Int.natAbs_eq_iff.mp h).resolve_right fun hneg ↦ ?_, fun h ↦ by simp [h]⟩
+  have := hD.emod_four_eq_zero_or_one
+  omega
 
 /-- The absolute value of a fundamental discriminant is a nonzero Dirichlet-character level. -/
 theorem IsFundamentalDiscr.neZero_natAbs {D : ℤ} (hD : IsFundamentalDiscr D) :
@@ -87,5 +104,25 @@ theorem IsFundamentalDiscr.not_isSquare_rat {D : ℤ} (hD : IsFundamentalDiscr D
     rw [hcast]
     exact fun h => not_isSquare_intCast_of_squarefree_of_ne_one hmsf hm1
       (by simpa using h.div (⟨2, by norm_num⟩ : IsSquare (4 : ℚ)))
+
+/-- **Every nonzero discriminant is a square times a fundamental discriminant.** If
+`D ≡ 0, 1 (mod 4)` and `D ≠ 0`, then `D = f² D₀` for a natural number `f` and a fundamental
+discriminant `D₀`. Write `D = a b²` with `a` squarefree: if `a ≡ 1 (mod 4)` take `D₀ = a`;
+otherwise `a ≡ 2, 3 (mod 4)` forces `b` to be even, and `D₀ = 4 a`. -/
+theorem exists_isFundamentalDiscr_eq_sq_mul {D : ℤ} (hD : D % 4 = 0 ∨ D % 4 = 1)
+    (hD₀ : D ≠ 0) : ∃ (f : ℕ) (D₀ : ℤ), IsFundamentalDiscr D₀ ∧ D = f ^ 2 * D₀ := by
+  obtain ⟨a, b, ha, -, rfl⟩ := Int.exists_squarefree_mul_sq hD₀
+  by_cases ha1 : a % 4 = 1
+  · exact ⟨b.natAbs, a, isFundamentalDiscr_iff_squarefree.mpr (Or.inl ⟨ha1, ha⟩),
+      by rw [Int.natAbs_sq, mul_comm]⟩
+  have ha23 := TauCeti.Int.emod_four_eq_two_or_three_of_squarefree ha ha1
+  obtain ⟨c, rfl⟩ : 2 ∣ b := by
+    by_contra hb
+    have hsq := Int.sq_emod_four b
+    have hb2 : b % 2 = 1 := by omega
+    rw [Int.mul_emod, hsq, hb2, mul_one, Int.emod_emod] at hD
+    omega
+  exact ⟨c.natAbs, 4 * a, isFundamentalDiscr_four_mul.mpr ⟨ha, ha23⟩,
+    by rw [Int.natAbs_sq]; ring⟩
 
 end Int

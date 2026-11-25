@@ -128,9 +128,9 @@ private theorem shiftHomotopyLinear_eq_zero_of_mem {p : ℤ} (hp : p ≠ ((m + 1
     exact shiftHomotopyLinear_lof_of_ne hX m φ (fun h ↦ hp (congrArg _ h)) y
 
 private theorem isHomogeneous_shiftHomotopyLinear :
-    TauCeti.LinearMap.IsHomogeneous (shiftHomotopyLinear hX m φ) X.gradedResolutionPiece
+    LinearMap.IsHomogeneous (shiftHomotopyLinear hX m φ) X.gradedResolutionPiece
       X.gradedResolutionPiece (-1) := by
-  refine TauCeti.LinearMap.isHomogeneous_def.2 fun p v hv ↦ ?_
+  refine LinearMap.isHomogeneous_def.2 fun p v hv ↦ ?_
   by_cases hp : p = ((m + 1 : ℕ) : ℤ)
   · subst hp
     rw [gradedResolutionPiece_natCast] at hv
@@ -171,7 +171,7 @@ private theorem shift_hom_apply (v : X.gradedResolutionModule) :
   rfl
 
 private theorem isHomogeneous_shift :
-    TauCeti.LinearMap.IsHomogeneous (shift hX m φ).hom.toLinearMap X.gradedResolutionPiece
+    LinearMap.IsHomogeneous (shift hX m φ).hom.toLinearMap X.gradedResolutionPiece
       X.gradedResolutionPiece 0 := by
   have hD := X.isHomogeneous_gradedResolutionDifferential
   have hh := isHomogeneous_shiftHomotopyLinear hX m φ
@@ -184,7 +184,7 @@ private theorem isHomogeneous_shift :
       LinearMap.id + X.gradedResolutionDifferential ∘ₗ shiftHomotopyLinear hX m φ +
         shiftHomotopyLinear hX m φ ∘ₗ X.gradedResolutionDifferential :=
     LinearMap.ext (shift_hom_apply hX m φ)
-  exact e ▸ ((TauCeti.LinearMap.isHomogeneous_id _).add h₁).add h₂
+  exact e ▸ ((LinearMap.isHomogeneous_id _).add h₁).add h₂
 
 end Homotopy
 
@@ -218,7 +218,7 @@ theorem exists_gradedResolutionTopRep_hom_apply_eq_add_of_forall_exists_apply_eq
     ∃ Φ : X.gradedResolutionTopRep ⟶ X.gradedResolutionTopRep,
       X.gradedResolutionTopRepDifferential ≫ Φ = Φ ≫ X.gradedResolutionTopRepDifferential ∧
       (∀ x, Φ.hom (X.gradedResolutionAugmentation x) = X.gradedResolutionAugmentation x) ∧
-      TauCeti.LinearMap.IsHomogeneous Φ.hom.toLinearMap X.gradedResolutionPiece
+      LinearMap.IsHomogeneous Φ.hom.toLinearMap X.gradedResolutionPiece
         X.gradedResolutionPiece 0 ∧
       Φ.hom z = z + X.gradedResolutionDifferential w := by
   rw [gradedResolutionPiece_natCast] at hz hw
@@ -275,7 +275,7 @@ theorem exists_gradedResolutionTopRep_hom_apply_eq_add (hX : TauCeti.IsSmoothDis
     ∃ Φ : X.gradedResolutionTopRep ⟶ X.gradedResolutionTopRep,
       X.gradedResolutionTopRepDifferential ≫ Φ = Φ ≫ X.gradedResolutionTopRepDifferential ∧
       (∀ x, Φ.hom (X.gradedResolutionAugmentation x) = X.gradedResolutionAugmentation x) ∧
-      TauCeti.LinearMap.IsHomogeneous Φ.hom.toLinearMap X.gradedResolutionPiece
+      LinearMap.IsHomogeneous Φ.hom.toLinearMap X.gradedResolutionPiece
         X.gradedResolutionPiece 0 ∧
       Φ.hom z = z + X.gradedResolutionDifferential w :=
   have ⟨f, hf⟩ := Module.Projective.exists_dual_eq_one R hz0
@@ -324,7 +324,7 @@ theorem exists_gradedResolutionTopRep_hom_apply_eq_add_of_add_self_eq_zero
     ∃ Φ : X.gradedResolutionTopRep ⟶ X.gradedResolutionTopRep,
       X.gradedResolutionTopRepDifferential ≫ Φ = Φ ≫ X.gradedResolutionTopRepDifferential ∧
       (∀ x, Φ.hom (X.gradedResolutionAugmentation x) = X.gradedResolutionAugmentation x) ∧
-      TauCeti.LinearMap.IsHomogeneous Φ.hom.toLinearMap X.gradedResolutionPiece
+      LinearMap.IsHomogeneous Φ.hom.toLinearMap X.gradedResolutionPiece
         X.gradedResolutionPiece 0 ∧
       Φ.hom z = z + X.gradedResolutionDifferential w := by
   refine exists_gradedResolutionTopRep_hom_apply_eq_add_of_forall_exists_apply_eq hX hz hzinv hw

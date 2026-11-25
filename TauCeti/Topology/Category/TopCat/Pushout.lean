@@ -12,7 +12,7 @@ import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
 import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Pullbacks
 import Mathlib.CategoryTheory.Limits.Types.Pushouts
 import Mathlib.Topology.LocallyFinite
-import TauCeti.Topology.ContinuousMap.GlueClosedEmbeddings
+import TauCeti.Topology.ContinuousMap.Glue.ClosedEmbeddings
 
 /-!
 # Maps and homotopies out of pushouts in `TopCat`
@@ -48,6 +48,8 @@ closed embedding.
   closed pieces meeting it along prescribed subspaces is a pushout square.
 * `CategoryTheory.IsPushout.of_isClosedEmbedding_of_range_union_range`: a cover by two closed
   subspaces meeting along a prescribed subspace is a pushout square.
+* `CategoryTheory.IsPushout.of_isPushout_forget`: a square whose underlying square of sets is a
+  pushout, and whose corner carries the final topology of the two maps into it, is a pushout.
 * `TauCeti.TopCat.range_union_iUnion_range_of_isPushout_sigma`,
   `TauCeti.TopCat.exists_eq_inl_or_exists_eq_inr_of_isPushout_sigma`: every point of a pushout of
   `L` and `⨆ᵢ D i` comes from `L` or from one of the `D i`.
@@ -304,6 +306,29 @@ theorem of_isClosedEmbedding_of_range_union_range {S A B X : TopCat.{u}} {g : S 
         (ConcreteCategory.congr_hom h₂)))
 
 end ClosedCover
+
+section Forget
+
+open Limits
+
+/-- **Pushouts in `TopCat` from pushouts of sets.** A commutative square in `TopCat` is a pushout
+when its underlying square of sets is a pushout and the corner `P` carries the final topology of
+the two maps into it: a set is open as soon as its preimages under `i` and `j` are open. -/
+theorem of_isPushout_forget {S A B P : TopCat.{u}} {f : S ⟶ A} {g : S ⟶ B} {i : A ⟶ P}
+    {j : B ⟶ P}
+    (h : IsPushout ((forget TopCat).map f) ((forget TopCat).map g) ((forget TopCat).map i)
+      ((forget TopCat).map j))
+    (hP : ∀ s : Set P, IsOpen (i ⁻¹' s) → IsOpen (j ⁻¹' s) → IsOpen s) : IsPushout f g i j := by
+  have w : f ≫ i = g ≫ j :=
+    (forget TopCat).map_injective (by rw [Functor.map_comp, Functor.map_comp]; exact h.w)
+  refine ⟨⟨w⟩, ⟨Classical.choice <| (TopCat.nonempty_isColimit_iff_eq_coinduced _
+    ((isColimitMapCoconePushoutCoconeEquiv _ w).symm h.isColimit)).2 ?_⟩⟩
+  refine le_antisymm (TopologicalSpace.le_def.2 fun s hs ↦ ?_)
+    (iSup_le fun k ↦ (PushoutCocone.mk i j w).ι.app k |>.hom.continuous.coinduced_le)
+  rw [isOpen_iSup_iff] at hs
+  exact hP s (hs WalkingSpan.left) (hs WalkingSpan.right)
+
+end Forget
 
 end CategoryTheory.IsPushout
 
