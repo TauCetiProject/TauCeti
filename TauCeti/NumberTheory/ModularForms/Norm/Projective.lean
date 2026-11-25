@@ -306,8 +306,9 @@ private lemma doubleWidthOrder_eq_of_mk_eq (f : F)
           QuotientGroup.mk ((Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict (-1) * x₂) := by
       rw [MulAction.Quotient.smul_mk, smul_eq_mul, eq_comm, QuotientGroup.eq,
         Subgroup.mem_subgroupOf]
-      convert hgx using 1
-      simp
+      rw [Subgroup.coe_mul, InvMemClass.coe_inv, Subgroup.coe_mul] at hgx
+      rwa [Subgroup.coe_mul, InvMemClass.coe_inv, Subgroup.coe_mul, coe_rangeRestrict_neg_one_mul,
+        mul_neg, inv_neg, neg_mul]
     rw [hq, doubleWidthOrder_TSL_zpow_smul, doubleWidthOrder_neg_one_mul]
 
 /-- `doubleWidthOrder` is twice the geometric order at the cusp below the coset. -/

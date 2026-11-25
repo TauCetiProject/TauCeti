@@ -365,7 +365,9 @@ theorem ellipticOrderOnSubgroupOrbit_top_mk (p : ℍ) :
       ellipticOrder (Quotient.mk'' p) := by
   rw [ellipticOrderOnSubgroupOrbit_mk, ellipticOrder_mk,
     Subgroup.map_top_of_surjective _ (QuotientGroup.mk'_surjective _)]
-  exact (card_stabilizer_congr Subgroup.topEquiv (f := id) p (fun _ ↦ rfl) fun _ h ↦ h).symm
+  -- `⊤` acts on `ℍ` through its inclusion, which is `Subgroup.topEquiv`
+  exact (card_stabilizer_congr Subgroup.topEquiv (f := id) p
+    (fun g ↦ by rw [id_eq, id_eq, Subgroup.topEquiv_apply, Subgroup.smul_def]) fun _ h ↦ h).symm
 
 /-- **The matrix stabiliser order is `|Γ ∩ {±I}|` times the effective elliptic order.** -/
 theorem cardStabilizerOnOrbit_eq_card_center_mul_ellipticOrderOnSubgroupOrbit
