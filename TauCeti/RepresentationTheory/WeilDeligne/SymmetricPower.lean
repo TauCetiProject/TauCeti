@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.SymmetricPower.Derivation
 public import TauCeti.LinearAlgebra.SymmetricPower.Algebra
+public import TauCeti.RepresentationTheory.Intertwining
 public import TauCeti.RepresentationTheory.SymmetricPower
 public import TauCeti.RepresentationTheory.WeilDeligne.Operations
 
@@ -76,7 +77,7 @@ def sym (D : WeilDeligneParameter E W V deg q) (m : ℕ) :
   isOpen_ker := Subgroup.isOpen_mono (D.r.ker_le_ker_symmetricPower m) D.isOpen_ker
   N := SymmetricPower.differential E V m D.N
   isNilpotent_N := SymmetricPower.isNilpotent_differential m D.isNilpotent_N
-  conj_N w := conj_N_of_mul_eq_smul_mul <| by
+  conj_N w := Representation.mul_mul_inv_eq_smul_of_mul_eq_smul_mul <| by
     simpa [Module.End.mul_eq_comp, LinearMap.smul_comp] using
       SymmetricPower.map_comp_differential m (f := D.r w) (Y := (q : E) ^ (deg w).toAdd • D.N)
         (by simpa [Module.End.mul_eq_comp, LinearMap.smul_comp] using D.r_mul_N w)
@@ -170,13 +171,12 @@ theorem sym_transport (e : V ≃ₗ[E] V₁) :
 /-! ### Low symmetric powers, twists and zero monodromy -/
 
 /-- The zeroth symmetric power has trivial Weil action. -/
-theorem sym_zero_r (w : W) : (D.sym 0).r w = 1 :=
-  SymmetricPower.ext fun v ↦ by
-    simp [Representation.symmetricPower_apply, Subsingleton.elim (fun i ↦ D.r w (v i)) v]
+theorem sym_zero_r (w : W) : (D.sym 0).r w = 1 := by
+  simp
 
 /-- The zeroth symmetric power has zero monodromy. -/
-theorem sym_zero_N : (D.sym 0).N = 0 :=
-  SymmetricPower.ext fun v ↦ by simp
+theorem sym_zero_N : (D.sym 0).N = 0 := by
+  simp
 
 /-- `Sym^m ∘ (r, 0)` has zero monodromy. -/
 theorem sym_N_eq_zero (h : D.N = 0) : (D.sym m).N = 0 := by

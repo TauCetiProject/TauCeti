@@ -68,6 +68,12 @@ theorem symmetricPower_apply_tprod (ρ : Representation R G M) (d : ℕ) (g : G)
     ρ.symmetricPower d g (⨂ₛ[R] i, m i) = ⨂ₛ[R] i, ρ g (m i) := by
   rw [symmetricPower_apply, SymmetricPower.map_tprod]
 
+/-- The zeroth symmetric power of a representation is trivial. -/
+@[simp]
+theorem symmetricPower_zero (ρ : Representation R G M) : ρ.symmetricPower 0 = 1 := by
+  ext g v
+  simp [Subsingleton.elim (fun i ↦ ρ g (v i)) v]
+
 /-- A pure symmetric tensor of eigenvectors of `ρ g` is an eigenvector of the symmetric-power
 action of `g`, whose eigenvalue is the product of the eigenvalues of its factors. -/
 theorem symmetricPower_apply_tprod_of_apply_eq_smul (ρ : Representation R G M) {d : ℕ} {g : G}
@@ -184,9 +190,7 @@ theorem symmetricPower_symm (e : ρ.Equiv σ) (d : ℕ) :
     e.symm.symmetricPower d = (e.symmetricPower d).symm := by
   have h : (e.symm.symmetricPower d).toLinearMap =
       ((e.symmetricPower d).symm).toLinearMap := by
-    rw [symmetricPower_toLinearMap, toLinearMap_symm (e.symmetricPower d),
-      symmetricPower_toLinearEquiv, SymmetricPower.congr_symm, toLinearMap_symm e,
-      SymmetricPower.congr_toLinearMap]
+    simp [toLinearMap_symm]
   exact Equiv.ext (funext fun x => LinearMap.congr_fun h x)
 
 /-- Symmetric powers preserve composition of equivalences. -/
