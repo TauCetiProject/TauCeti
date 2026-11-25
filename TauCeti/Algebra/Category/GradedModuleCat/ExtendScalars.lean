@@ -21,10 +21,12 @@ Let `A` be a commutative `k`-algebra and `B` an `A`-algebra, graded by `𝒜` an
 
 Extension of scalars is a functor `GradedModuleCat 𝒜 ⥤ GradedModuleCat ℬ`, left adjoint to
 restriction of scalars `TauCeti.GradedModuleCat.restrictScalars`: a degree-zero `B`-linear map
-`B ⊗[A] M → N` is the same as a degree-zero `A`-linear map `M → N`. It commutes with the grading
-shifts `M{n}`, with identity components on underlying modules. When `B` is commutative, it is a
-strong symmetric monoidal functor for the tensor products over `A` and over `B`: the comparison
-`B ⊗[A] (M ⊗[A] N) ≅ (B ⊗[A] M) ⊗[B] (B ⊗[A] N)` is Mathlib's
+`B ⊗[A] M → N` is the same as a degree-zero `A`-linear map `M → N`. Neither the functor nor the
+adjunction needs `B` to be commutative, since `A` acts through the centre of `B`. Extension of
+scalars commutes with the grading shifts `M{n}`, with identity components on underlying modules.
+When `B` is commutative, lives in the same universe as `A`, and the graded `𝒜`-modules live in
+that universe too, it is a strong symmetric monoidal functor for the tensor products over `A` and
+over `B`: the comparison `B ⊗[A] (M ⊗[A] N) ≅ (B ⊗[A] M) ⊗[B] (B ⊗[A] N)` is Mathlib's
 `TensorProduct.AlgebraTensorModule.distribBaseChange`, which preserves total degree, and it
 intertwines the unsigned symmetries.
 
@@ -47,6 +49,8 @@ of degree two to `1`, is not graded and is not covered here.
 ## Main results
 
 * `TauCeti.GradedModuleCat.tmul_mem_extendScalarsObj_piece`: `b ⊗ₜ m` has degree `|b| + |m|`.
+* `TauCeti.GradedModuleCat.isHomogeneous_of_tmul_mem_extendScalarsObj`: a `B`-linear map out of
+  `B ⊗[A] M` is homogeneous as soon as it shifts the degrees of homogeneous pure tensors.
 * `TauCeti.GradedModuleCat.extendScalars_hom_ext`: morphisms out of `B ⊗[A] M` are determined
   by their values on the tensors `1 ⊗ₜ m`.
 * `TauCeti.GradedModuleCat.mem_extendScalarsObj_shiftObj_piece_iff`: shifting `M` by `n` shifts
@@ -60,6 +64,14 @@ of degree two to `1`, is not graded and is not covered here.
 * `TauCeti.GradedModuleCat.extendScalars_μ`, `TauCeti.GradedModuleCat.extendScalars_δ`,
   `TauCeti.GradedModuleCat.extendScalars_ε` and `TauCeti.GradedModuleCat.extendScalars_η`: the
   structure maps of the monoidal functor are the explicit comparisons.
+
+## Implementation notes
+
+The strong monoidal structure follows Mathlib's monoidal instance on `ModuleCat.extendScalars` in
+`Mathlib/Algebra/Category/ModuleCat/Monoidal/Adjunction.lean` (Joël Riou): it is built with
+`Functor.CoreMonoidal.mk'` from `distribBaseChange` and `AlgebraTensorModule.rid`, and the
+structure-map lemmas `extendScalars_μ`, `extendScalars_δ`, `extendScalars_ε` and `extendScalars_η`
+mirror Mathlib's.
 
 ## References
 
@@ -144,6 +156,20 @@ theorem extendScalarsObj_piece_le_of_add_eq {d : ℤ} {C : Submodule k (B ⊗[A]
   (InternalGrading.ofDecomposition ℬ).tensorProductOver_piece_le_of_add_eq 𝒜 M.grading
     fun p q hpq b hb m hm ↦ h p q hpq b (by rwa [InternalGrading.ofDecomposition_piece] at hb) m hm
 
+/-- A `B`-linear map out of `B ⊗[A] M` that shifts the degree of every homogeneous pure tensor by
+`s` is homogeneous of degree `s`. This is the form of
+`TauCeti.InternalGrading.isHomogeneous_of_tmul_mem_tensorProductOver` for `B`-linear maps, whose
+targets need not be `A`-modules. -/
+theorem isHomogeneous_of_tmul_mem_extendScalarsObj {Q : Type*} [AddCommMonoid Q] [Module k Q]
+    [Module B Q] [IsScalarTower k B Q] (𝓠 : ℤ → Submodule k Q) (f : B ⊗[A] M →ₗ[B] Q) (s : ℤ)
+    (h : ∀ {p q : ℤ} {b : B} {m : M}, b ∈ ℬ p → m ∈ M.grading.piece q →
+      f (b ⊗ₜ[A] m) ∈ 𝓠 (p + q + s)) :
+    LinearMap.IsHomogeneous f (extendScalarsObj hf M).grading.piece 𝓠 s :=
+  LinearMap.isHomogeneous_def.2 fun d _ hz ↦
+    (extendScalarsObj_piece_le_of_add_eq hf M (C := (𝓠 (d + s)).comap (f.restrictScalars k))
+      fun p q hpq _ hb _ hm ↦ by
+        simpa only [Submodule.mem_comap, LinearMap.restrictScalars_apply, ← hpq] using h hb hm) hz
+
 /-- **Extension of scalars** of graded modules along a homomorphism `A → B` sending each `𝒜ᵢ`
 into `ℬᵢ`: the functor `M ↦ B ⊗[A] M`, with the total-degree grading.
 Its objects compute during type inference, agreeing with `extendScalarsObj` in morphism types. -/
@@ -151,13 +177,13 @@ Its objects compute during type inference, agreeing with `extendScalarsObj` in m
 noncomputable def extendScalars : GradedModuleCat.{v} 𝒜 ⥤ GradedModuleCat.{max uB v} ℬ where
   obj := extendScalarsObj hf
   map {M N} g := ofHom (M := extendScalarsObj hf M) (N := extendScalarsObj hf N)
-    (g.hom.baseChange B) <| LinearMap.isHomogeneous_def.2 fun d z hz ↦ by
-      rw [add_zero]
-      refine extendScalarsObj_piece_le_of_add_eq hf M
-        (C := ((extendScalarsObj hf N).grading.piece d).comap
-          ((g.hom.baseChange B).restrictScalars k)) (fun p q hpq b hb m hm ↦ ?_) hz
-      rw [Submodule.mem_comap, LinearMap.restrictScalars_apply, LinearMap.baseChange_tmul, ← hpq]
-      exact tmul_mem_extendScalarsObj_piece hf N hb (map_mem g hm)
+    (g.hom.baseChange B) <|
+      haveI := gradedSMul_ofDecomposition_of_algebraMap_mem hf
+      LinearMap.isHomogeneous_def.2 fun _ _ hz ↦
+        -- `g.baseChange B` is `id ⊗ g` on underlying elements.
+        (LinearMap.IsHomogeneous.tensorProductOver_zero 𝒜
+          (LinearMap.isHomogeneous_id (InternalGrading.ofDecomposition ℬ).piece)
+          g.isHomogeneous).map_mem hz
   map_id _ := hom_ext LinearMap.baseChange_id
   map_comp _ _ := hom_ext (LinearMap.baseChange_comp _ _)
 
@@ -242,7 +268,7 @@ end ExtendScalars
 section Adjunction
 
 variable {k : Type uk} [CommRing k] {A : Type uA} [CommRing A] [Algebra k A]
-  {B : Type uB} [CommRing B] [Algebra k B] [Algebra A B] [IsScalarTower k A B]
+  {B : Type uB} [Ring B] [Algebra k B] [Algebra A B] [IsScalarTower k A B]
   {𝒜 : ℤ → Submodule k A} {ℬ : ℤ → Submodule k B} [GradedAlgebra 𝒜] [GradedAlgebra ℬ]
   (hf : ∀ ⦃i : ℤ⦄ ⦃a : A⦄, a ∈ 𝒜 i → algebraMap A B a ∈ ℬ i)
 
@@ -275,14 +301,14 @@ private noncomputable def extendScalarsHomEquivInvFun
   haveI : IsScalarTower A B N := ⟨fun a b n ↦ by
     rw [Algebra.smul_def, mul_smul]
     rfl⟩
-  ofHom (M := (extendScalars hf).obj M) (h.hom.liftBaseChange B) <|
-    LinearMap.isHomogeneous_def.2 fun d z hz ↦ by
+  -- `A` acts through the centre of `B`, so `B` acts on `A`-linear maps `M → N`.
+  haveI : SMulCommClass A B N := ⟨fun a b n ↦ by
+    change algebraMap A B a • b • n = b • algebraMap A B a • n
+    rw [smul_smul, smul_smul, Algebra.commutes]⟩
+  ofHom (M := (extendScalars hf).obj M)
+    (AlgebraTensorModule.lift (LinearMap.toSpanSingleton B (M →ₗ[A] N) h.hom)) <|
+    isHomogeneous_of_tmul_mem_extendScalarsObj hf M _ _ 0 fun {p q b m} hb hm ↦ by
       rw [add_zero]
-      refine extendScalarsObj_piece_le_of_add_eq hf M
-        (C := (N.grading.piece d).comap ((h.hom.liftBaseChange B).restrictScalars k))
-        (fun p q hpq b hb m hm ↦ ?_) hz
-      rw [Submodule.mem_comap, LinearMap.restrictScalars_apply, LinearMap.liftBaseChange_tmul,
-        ← hpq]
       exact N.gradedSMul.smul_mem hb (by simpa using h.isHomogeneous.map_mem hm)
 
 variable (M N) in
@@ -323,15 +349,23 @@ theorem extendRestrictScalarsAdj_homEquiv_symm_apply_hom_tmul
     (((extendRestrictScalarsAdj hf).homEquiv M N).symm h).hom (b ⊗ₜ[A] m) = b • h.hom m :=
   (rfl)
 
-/-- The unit of the adjunction is `m ↦ 1 ⊗ₜ m`. -/
+/-- The unit of the adjunction is `m ↦ 1 ⊗ₜ m`. The source and target are written explicitly, so
+that the left-hand side is in simp normal form. -/
+@[simp]
 theorem extendRestrictScalarsAdj_unit_app_hom (M : GradedModuleCat.{max v uB} 𝒜) (m : M) :
-    ((extendRestrictScalarsAdj hf).unit.app M).hom m = (1 : B) ⊗ₜ[A] m :=
+    Hom.hom (M := M) (N := (restrictScalars (IsScalarTower.toAlgHom k A B) (toAlgHom_mem hf)).obj
+      ((extendScalars hf).obj M)) ((extendRestrictScalarsAdj hf).unit.app M) m =
+        (1 : B) ⊗ₜ[A] m :=
   (rfl)
 
-/-- The counit of the adjunction is `b ⊗ₜ n ↦ b • n`. -/
+/-- The counit of the adjunction is `b ⊗ₜ n ↦ b • n`. The source and target are written
+explicitly, so that the left-hand side is in simp normal form. -/
+@[simp]
 theorem extendRestrictScalarsAdj_counit_app_hom_tmul (N : GradedModuleCat.{max v uB} ℬ) (b : B)
     (n : restrictScalarsObj (IsScalarTower.toAlgHom k A B) (toAlgHom_mem hf) N) :
-    ((extendRestrictScalarsAdj hf).counit.app N).hom (b ⊗ₜ[A] n) = b • n :=
+    Hom.hom (M := (extendScalars hf).obj
+      ((restrictScalars (IsScalarTower.toAlgHom k A B) (toAlgHom_mem hf)).obj N)) (N := N)
+      ((extendRestrictScalarsAdj hf).counit.app N) (b ⊗ₜ[A] n) = b • n :=
   (rfl)
 
 end Adjunction
@@ -347,29 +381,21 @@ variable {k : Type uk} [CommRing k] {A B : Type uA} [CommRing A] [Algebra k A]
 `(b ⊗ₜ m) ⊗ₜ (1 ⊗ₜ n)`. It preserves total degree. -/
 noncomputable def extendScalarsTensorIso (M N : GradedModuleCat.{uA} 𝒜) :
     (extendScalars hf).obj (M ⊗ N) ≅ (extendScalars hf).obj M ⊗ (extendScalars hf).obj N :=
-  isoMk (AlgebraTensorModule.distribBaseChange A B M N) fun d z ↦ by
-    refine (LinearMap.IsHomogeneous.linearEquiv_mem_piece_iff ?_ d z).symm
-    refine LinearMap.isHomogeneous_def.2 fun p z hz ↦ ?_
-    rw [add_zero]
-    refine extendScalarsObj_piece_le_of_add_eq hf (M ⊗ N)
-      (C := (((extendScalars hf).obj M ⊗ (extendScalars hf).obj N).grading.piece p).comap
-        ((AlgebraTensorModule.distribBaseChange A B M N).toLinearMap.restrictScalars k))
-      (fun p₁ p₂ hp b hb x hx ↦ ?_) hz
-    -- Fix `b` and check the second factor on homogeneous pure tensors `m ⊗ₜ n`.
-    rw [tensorObj_grading] at hx
-    refine M.grading.tensorProductOver_piece_le_of_add_eq 𝒜 N.grading
-      (C := (((extendScalars hf).obj M ⊗ (extendScalars hf).obj N).grading.piece p).comap
-        ((AlgebraTensorModule.distribBaseChange A B M N).toLinearMap.restrictScalars k ∘ₗ
-          (TensorProduct.mk A B (M ⊗[A] N) b).restrictScalars k))
-      (fun q₁ q₂ hq m hm n hn ↦ ?_) hx
-    rw [Submodule.mem_comap, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
-      LinearMap.restrictScalars_apply, TensorProduct.mk_apply, LinearEquiv.coe_coe,
-      AlgebraTensorModule.distribBaseChange_tmul]
-    have h := ((extendScalars hf).obj M).grading.tmul_mem_tensorProductOver ℬ
-      ((extendScalars hf).obj N).grading (tmul_mem_extendScalarsObj_piece hf M hb hm)
-      (tmul_mem_extendScalarsObj_piece hf N SetLike.GradedOne.one_mem hn)
-    convert h using 2
-    omega
+  isoMk (AlgebraTensorModule.distribBaseChange A B M N) fun d z ↦
+    (LinearMap.IsHomogeneous.linearEquiv_mem_piece_iff
+      (isHomogeneous_of_tmul_mem_extendScalarsObj hf (M ⊗ N) _ _ 0 fun {p q b x} hb hx ↦ by
+        -- Fix `b` and check the second factor on homogeneous pure tensors `m ⊗ₜ n`.
+        rw [add_zero, add_comm]
+        rw [tensorObj_grading] at hx
+        refine (M.grading.isHomogeneous_of_tmul_mem_tensorProductOver 𝒜 N.grading _
+          ((AlgebraTensorModule.distribBaseChange A B M N).toLinearMap.restrictScalars A ∘ₗ
+            TensorProduct.mk A B (M ⊗[A] N) b) p fun {q₁ q₂ m n} hm hn ↦ ?_).map_mem hx
+        simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, mk_apply,
+          LinearEquiv.coe_coe, AlgebraTensorModule.distribBaseChange_tmul]
+        convert ((extendScalars hf).obj M).grading.tmul_mem_tensorProductOver ℬ
+          ((extendScalars hf).obj N).grading (tmul_mem_extendScalarsObj_piece hf M hb hm)
+          (tmul_mem_extendScalarsObj_piece hf N SetLike.GradedOne.one_mem hn) using 2
+        omega) d z).symm
 
 /-- The comparison `B ⊗[A] (M ⊗ N) ≅ (B ⊗[A] M) ⊗ (B ⊗[A] N)` on pure tensors. -/
 @[simp]
@@ -390,22 +416,17 @@ theorem extendScalarsTensorIso_inv_tmul (M N : GradedModuleCat.{uA} 𝒜) (b b' 
 degree. -/
 noncomputable def extendScalarsUnitIso :
     (extendScalars hf).obj (𝟙_ (GradedModuleCat.{uA} 𝒜)) ≅ 𝟙_ (GradedModuleCat.{uA} ℬ) :=
-  isoMk (AlgebraTensorModule.rid A B B) fun d z ↦ by
-    refine (LinearMap.IsHomogeneous.linearEquiv_mem_piece_iff ?_ d z).symm
-    refine LinearMap.isHomogeneous_def.2 fun p z hz ↦ ?_
-    rw [add_zero]
-    refine extendScalarsObj_piece_le_of_add_eq hf (𝟙_ (GradedModuleCat.{uA} 𝒜))
-      (C := ((𝟙_ (GradedModuleCat.{uA} ℬ)).grading.piece p).comap
-        ((AlgebraTensorModule.rid A B B).toLinearMap.restrictScalars k))
-      (fun p₁ p₂ hp b hb a ha ↦ ?_) hz
-    rw [Submodule.mem_comap, LinearMap.restrictScalars_apply, LinearEquiv.coe_coe,
-      AlgebraTensorModule.rid_tmul, Algebra.smul_def, ← hp, add_comm]
-    -- The tensor units are the regular modules, graded by `𝒜` and by `ℬ`.
-    have ha' : a ∈ (InternalGrading.ofDecomposition 𝒜).piece p₂ := ha
-    have h : algebraMap A B a * b ∈ (InternalGrading.ofDecomposition ℬ).piece (p₂ + p₁) := by
-      rw [InternalGrading.ofDecomposition_piece] at ha' ⊢
-      exact SetLike.GradedMul.mul_mem (hf ha') hb
-    exact h
+  haveI := gradedSMul_ofDecomposition_of_algebraMap_mem hf
+  isoMk (AlgebraTensorModule.rid A B B) fun d z ↦
+    (LinearMap.IsHomogeneous.linearEquiv_mem_piece_iff
+      (LinearMap.isHomogeneous_def.2 fun p z hz ↦ by
+        -- `B ⊗[A] A` carries the total-degree grading, as in `extendScalarsObj_grading`.
+        change z ∈ ((InternalGrading.ofDecomposition ℬ).tensorProductOver 𝒜
+          (𝟙_ (GradedModuleCat.{uA} 𝒜)).grading).piece p at hz
+        simp only [tensorUnit_grading] at hz ⊢
+        -- `AlgebraTensorModule.rid A B B` and `TensorProduct.rid A B` agree on elements.
+        exact ((InternalGrading.ofDecomposition ℬ).isHomogeneous_rid_tensorProductOver 𝒜).map_mem
+          hz) d z).symm
 
 /-- The unit comparison `B ⊗[A] A ≅ B` sends `b ⊗ₜ a` to `a • b`. -/
 @[simp]
