@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.Newforms.Newform
+public import TauCeti.NumberTheory.ModularForms.Newforms.Conjugate
 public import TauCeti.NumberTheory.ModularForms.Twist.Basic
 import TauCeti.NumberTheory.ModularForms.Newforms.Coefficient
 import TauCeti.NumberTheory.ModularForms.Newforms.Decomposition
+import TauCeti.NumberTheory.ModularForms.Newforms.PeterssonAdjoint
 import TauCeti.NumberTheory.ModularForms.Newforms.RingEigenvalue
 import TauCeti.NumberTheory.ModularForms.Newforms.StrongMultiplicityOne.Basic
 import TauCeti.NumberTheory.ModularForms.Twist.Hecke
@@ -41,6 +42,11 @@ The uniqueness gives the basic algebra of twisting: twisting by a trivial charac
 is twisting by `ψψ'`, read at any common multiple of their moduli, so twisting by `ψ⁻¹` undoes
 twisting by `ψ`. The sharp level of the primitive twist is not determined here.
 
+Twisting interacts with the conjugate newform `f_ρ`, whose coefficients are the complex conjugates
+of those of `f` and whose nebentypus is `χ⁻¹`. At a prime `p ∤ N`, `a_p = χ(p) conj a_p`, so the
+primitive twist of `f` by `χ⁻¹` is `f_ρ`: every newform equals its conjugate up to a primitive
+twist. Likewise the twist of `f_ρ` by `ψ` is the conjugate of the twist of `f` by `ψ⁻¹`.
+
 ## Main definitions
 
 * `HeckeRing.GL2.Newform.primitiveTwist`: the primitive twist of a newform by a Dirichlet
@@ -64,6 +70,12 @@ twisting by `ψ`. The sharp level of the primitive twist is not determined here.
   `HeckeRing.GL2.Newform.coe_primitiveTwist_primitiveTwist_inv`: twisting by a trivial character,
   by a character of raised modulus, by a product of characters of possibly different moduli, and
   back by the inverse character, with the corresponding level identities.
+* `HeckeRing.GL2.Newform.qExpansion_coeff_eq_zero_of_coe_primitiveTwist_eq`: a newform that is its
+  own primitive twist by `ψ` has `a_p = 0` at every good prime `p` with `ψ(p) ≠ 1`.
+* `HeckeRing.GL2.Newform.coe_primitiveTwist_dirichletLift_inv`: the primitive twist of `f` by the
+  inverse of its nebentypus is the conjugate newform `f_ρ`.
+* `HeckeRing.GL2.Newform.coe_primitiveTwist_conj`: the primitive twist of `f_ρ` by `ψ` is the
+  conjugate of the primitive twist of `f` by `ψ⁻¹`.
 
 ## References
 
@@ -72,6 +84,8 @@ twisting by `ψ`. The sharp level of the primitive twist is not determined here.
 * [F. Diamond and J. Shurman, *A first course in modular forms*][diamondshurman2005],
   Proposition 5.8.4.
 * [T. Miyake, *Modular forms*][miyake1989], Theorem 4.6.19, for the uniqueness across levels.
+* K. A. Ribet, *Twists of modular forms and endomorphisms of abelian varieties*, Math. Ann. 253
+  (1980), for complex conjugation as the inner twist by the inverse nebentypus.
 -/
 
 public section
@@ -392,5 +406,84 @@ theorem coe_primitiveTwist_primitiveTwist_inv [NeZero M] (f : Newform N k)
     (ψ : DirichletCharacter ℂ M) :
     ⇑((f.primitiveTwist ψ).primitiveTwist ψ⁻¹).toCuspForm = ⇑f.toCuspForm := by
   rw [coe_primitiveTwist_primitiveTwist, mul_inv_cancel, coe_primitiveTwist_one]
+
+/-- **Coefficients of a self-twist vanish where the twisting character is not `1`**: if a newform
+`f` is its own primitive twist by `ψ`, then `a_p(f) = 0` at every prime `p ∤ NM` with
+`ψ(p) ≠ 1`, since `a_p = ψ(p) a_p` (`qExpansion_coeff_primitiveTwist`). -/
+theorem qExpansion_coeff_eq_zero_of_coe_primitiveTwist_eq [NeZero M] (f : Newform N k)
+    (ψ : DirichletCharacter ℂ M) (h : ⇑(f.primitiveTwist ψ).toCuspForm = ⇑f.toCuspForm) {p : ℕ}
+    (hp : p.Prime) (hpN : p.Coprime N) (hpM : p.Coprime M) (hψ : ψ p ≠ 1) :
+    (qExpansion 1 f.toCuspForm).coeff p = 0 := by
+  have ha := f.qExpansion_coeff_primitiveTwist ψ hp hpN hpM
+  rw [h] at ha
+  exact by_contra fun ha₀ ↦ hψ ((mul_eq_right₀ ha₀).mp ha.symm)
+
+/-! ### Twisting and the conjugate newform -/
+
+private theorem level_eq_and_coe_eq_primitiveTwist_dirichletLift_inv (f : Newform N k) :
+    N = f.primitiveTwistLevel f.dirichletLift⁻¹ ∧
+      ⇑f.conj.toCuspForm = ⇑(f.primitiveTwist f.dirichletLift⁻¹).toCuspForm := by
+  refine f.level_eq_primitiveTwistLevel_and_coe_eq_primitiveTwist f.dirichletLift⁻¹ f.conj
+    (dvd_refl N) (dvd_refl N) (dvd_refl N) ?_ (S := ∅) fun p hp hpN _ ↦ ?_
+  · -- the nebentypus `χ⁻¹` of `f_ρ` is `χ (χ⁻¹)²`
+    rw [← dirichletLift_conj, dirichletLift_toUnitHom, χ_conj, ZMod.unitsMap_self]
+    ext u
+    simp [sq]
+  · -- `a_p = χ(p) conj a_p` at a good prime, so `conj a_p = χ(p)⁻¹ a_p`
+    have ha := f.qExpansion_coeff_eq_eigenvalue ⟨p, hp.pos⟩ hpN
+    rw [PNat.mk_coe] at ha
+    rw [qExpansion_coeff_conj, ha, MulChar.inv_apply_eq_inv',
+      f.dirichletLift_apply_of_coprime hpN]
+    exact (eq_inv_mul_iff_mul_eq₀ (Units.ne_zero _)).mpr
+      (f.toEigenformAwayFromLevel.eigenvalue_eq_mul_conj hp hpN).symm
+
+/-- **Twisting by the inverse nebentypus** does not change the level of a newform: the primitive
+twist of `f` by `χ⁻¹` is the conjugate newform `f_ρ` (`coe_primitiveTwist_dirichletLift_inv`). -/
+@[simp]
+theorem primitiveTwistLevel_dirichletLift_inv (f : Newform N k) :
+    f.primitiveTwistLevel f.dirichletLift⁻¹ = N :=
+  f.level_eq_and_coe_eq_primitiveTwist_dirichletLift_inv.1.symm
+
+/-- **The conjugate newform is the twist by the inverse nebentypus**: for a newform `f` of
+nebentypus `χ`, the primitive twist `f ⊗ χ⁻¹` is the conjugate newform `f_ρ`, whose coefficients
+are the complex conjugates of those of `f`. At a prime `p ∤ N`, `a_p = χ(p) conj a_p`, so
+`conj a_p = χ(p)⁻¹ a_p`; both newforms have nebentypus `χ⁻¹ = χ (χ⁻¹)²`. In particular every
+newform equals its contragredient up to a primitive twist. -/
+@[simp]
+theorem coe_primitiveTwist_dirichletLift_inv (f : Newform N k) :
+    ⇑(f.primitiveTwist f.dirichletLift⁻¹).toCuspForm = ⇑f.conj.toCuspForm :=
+  f.level_eq_and_coe_eq_primitiveTwist_dirichletLift_inv.2.symm
+
+private theorem level_eq_and_coe_eq_primitiveTwist_conj [NeZero M] (f : Newform N k)
+    (ψ : DirichletCharacter ℂ M) :
+    f.primitiveTwistLevel ψ⁻¹ = f.conj.primitiveTwistLevel ψ ∧
+      ⇑(f.primitiveTwist ψ⁻¹).conj.toCuspForm = ⇑(f.conj.primitiveTwist ψ).toCuspForm := by
+  have : NeZero (N * M * M) := ⟨by simp [NeZero.ne N, NeZero.ne M]⟩
+  have hM := dvd_mul_mul_self' N M
+  refine f.conj.level_eq_primitiveTwistLevel_and_coe_eq_primitiveTwist ψ
+    (f.primitiveTwist ψ⁻¹).conj (f.primitiveTwistLevel_dvd_mul_mul ψ⁻¹) (dvd_mul_mul_self N M) hM
+    ?_ (S := ∅) fun p hp hpL _ ↦ ?_
+  · -- the nebentypus `(χ (ψ⁻¹)²)⁻¹` of the conjugate is `χ⁻¹ ψ²`
+    rw [χ_conj, χ_conj, MonoidHom.inv_comp, primitiveTwist_χ_comp_unitsMap_mul_mul]
+    ext u
+    simp [MulChar.inv_apply_eq_inv', mul_comm]
+  · -- `conj (ψ⁻¹(p) a_p) = ψ(p) conj a_p`
+    simp only [qExpansion_coeff_conj]
+    rw [qExpansion_coeff_primitiveTwist f ψ⁻¹ hp (hpL.coprime_dvd_right (dvd_mul_mul_self N M))
+      (hpL.coprime_dvd_right hM), map_mul, ← Complex.star_def, MulChar.star_apply', inv_inv]
+
+/-- **Conjugation and twisting**: the level of the primitive twist of the conjugate newform `f_ρ`
+by `ψ` is the level of the primitive twist of `f` by `ψ⁻¹`. -/
+@[simp]
+theorem primitiveTwistLevel_conj [NeZero M] (f : Newform N k) (ψ : DirichletCharacter ℂ M) :
+    f.conj.primitiveTwistLevel ψ = f.primitiveTwistLevel ψ⁻¹ :=
+  (f.level_eq_and_coe_eq_primitiveTwist_conj ψ).1.symm
+
+/-- **Conjugation and twisting**: the primitive twist of the conjugate newform `f_ρ` by `ψ` is the
+conjugate of the primitive twist of `f` by `ψ⁻¹`, since `conj (ψ⁻¹(p) a_p) = ψ(p) conj a_p`. -/
+@[simp]
+theorem coe_primitiveTwist_conj [NeZero M] (f : Newform N k) (ψ : DirichletCharacter ℂ M) :
+    ⇑(f.conj.primitiveTwist ψ).toCuspForm = ⇑(f.primitiveTwist ψ⁻¹).conj.toCuspForm :=
+  (f.level_eq_and_coe_eq_primitiveTwist_conj ψ).2.symm
 
 end HeckeRing.GL2.Newform
