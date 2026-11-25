@@ -52,10 +52,10 @@ from the part of the hypersurface section `f = 0` over `U` uniquely to the part 
 * `TauCeti.Algebra.existsUnique_lift_of_isUnit`: if `C_c` is formally étale over `A` for some
   `c : C`, then `A`-algebra maps `g : C → T ⧸ J` with `g c` a unit lift uniquely along nilpotent
   ideals `J`.
-* `TauCeti.Algebra.existsUnique_lift_of_isWeaklyRegular`: if `C_a` and `C_b` are formally étale
+* `RingTheory.Sequence.IsWeaklyRegular.existsUnique_lift`: if `C_a` and `C_b` are formally étale
   over `A` and `a, b` is weakly regular on `R`, then `A`-algebra maps `C → R ⧸ I` lift uniquely to
   `C → R` for every nilpotent ideal `I` with `a` regular on `R ⧸ I`.
-* `TauCeti.Algebra.existsUnique_lift_of_isAdicComplete`: if `C_a` and `C_b` are formally étale
+* `Ideal.existsUnique_lift_of_isAdicComplete`: if `C_a` and `C_b` are formally étale
   over `A`, `R` is `J`-adically complete and `a, b` is weakly regular on `R ⧸ J ^ (n + 1)` for
   every `n`, then `A`-algebra maps `C → R ⧸ J` lift uniquely to `C → R`.
 
@@ -78,13 +78,9 @@ public section
 
 open RingTheory.Sequence
 
-namespace TauCeti
+variable {A R C : Type*} [CommRing A] [CommRing R] [Algebra A R] [CommRing C] [Algebra A C]
 
-variable {A R : Type*} [CommRing A] [CommRing R] [Algebra A R]
-
-namespace Algebra
-
-variable {C : Type*} [CommRing C] [Algebra A C]
+namespace TauCeti.Algebra
 
 /-- **Lifting where `c` is a unit.** If `C_c` is formally étale over `A` for some `c : C`, then
 every `A`-algebra map `g : C → T ⧸ J`, where `g c` is a unit and `J` is a nilpotent ideal, lifts
@@ -129,7 +125,7 @@ private lemma existsUnique_lift_quotientMapₐ {x : A}
     rw [AlgHom.commutes, IsScalarTower.algebraMap_apply A S (S ⧸ _), ← ι.commutes]
     exact hx.map _)
 
-/-- The gluing step of `TauCeti.Algebra.existsUnique_lift_of_isWeaklyRegular`: a lift `fa` of `g`
+/-- The gluing step of `RingTheory.Sequence.IsWeaklyRegular.existsUnique_lift`: a lift `fa` of `g`
 over `D(a)` takes values in `R`. Indeed, `g` also lifts over `D(b)`, the two lifts agree over
 `D(ab)` by uniqueness, and their values glue across the weakly regular sequence `a, b`. -/
 private lemma mem_range_of_lift_away {a b : A}
@@ -174,11 +170,17 @@ private lemma mem_range_of_lift_away {a b : A}
   obtain ⟨r, ⟨hr, -⟩, -⟩ := hR.existsUnique_algebraMap_eq (fa c) (fb c) congr($hab c)
   exact ⟨r, hr⟩
 
+end TauCeti.Algebra
+
+namespace RingTheory.Sequence.IsWeaklyRegular
+
+open TauCeti.Algebra
+
 /-- **Lifting across a weakly regular sequence.** Let `a, b ∈ A` be such that `C_a` and `C_b` are
 formally étale over `A`, and let `R` be an `A`-algebra on which `a, b` is a weakly regular
 sequence. If `I` is a nilpotent ideal of `R` with `a` regular on `R ⧸ I`, then every `A`-algebra
 map `C → R ⧸ I` lifts uniquely to an `A`-algebra map `C → R`. -/
-theorem existsUnique_lift_of_isWeaklyRegular {a b : A}
+theorem existsUnique_lift {a b : A}
     [Algebra.FormallyEtale A (Localization.Away (algebraMap A C a))]
     [Algebra.FormallyEtale A (Localization.Away (algebraMap A C b))]
     (hR : IsWeaklyRegular R [a, b]) (I : Ideal R) (hI : IsNilpotent I)
@@ -223,7 +225,11 @@ theorem existsUnique_lift_of_isWeaklyRegular {a b : A}
     rw [← hf] at this
     exact this
 
-/-- The finite levels of `TauCeti.Algebra.existsUnique_lift_of_isAdicComplete`: an `A`-algebra map
+end RingTheory.Sequence.IsWeaklyRegular
+
+namespace TauCeti.Algebra
+
+/-- The finite levels of `Ideal.existsUnique_lift_of_isAdicComplete`: an `A`-algebra map
 `C → R ⧸ J` lifts uniquely to `C → R ⧸ J ^ (n + 1)`, as `J ⧸ J ^ (n + 1)` is nilpotent. -/
 private lemma existsUnique_lift_pow {a b : A}
     [Algebra.FormallyEtale A (Localization.Away (algebraMap A C a))]
@@ -243,7 +249,7 @@ private lemma existsUnique_lift_pow {a b : A}
   have haK : IsSMulRegular ((R ⧸ J ^ (n + 1)) ⧸ K) a :=
     (e.toLinearEquiv.isSMulRegular_congr a).2 hJ
   obtain ⟨f, hf, huniq⟩ :=
-    existsUnique_lift_of_isWeaklyRegular hR K hK haK ((e.symm : R ⧸ J →ₐ[A] _).comp g)
+    hR.existsUnique_lift K hK haK ((e.symm : R ⧸ J →ₐ[A] _).comp g)
   -- A map lifts `g` along `R ⧸ J ^ (n + 1) → R ⧸ J` iff it lifts `e⁻¹ ∘ g` modulo `K`.
   have key (f' : C →ₐ[A] R ⧸ J ^ (n + 1)) :
       (Ideal.Quotient.factorₐ A hle).comp f' = g ↔
@@ -255,6 +261,12 @@ private lemma existsUnique_lift_pow {a b : A}
     · intro h
       rw [h, ← AlgHom.comp_assoc, AlgEquiv.comp_symm, AlgHom.id_comp]
   exact ⟨f, (key f).2 hf, fun f' hf' ↦ huniq f' ((key f').1 hf')⟩
+
+end TauCeti.Algebra
+
+namespace Ideal
+
+open TauCeti.Algebra
 
 /-- **Lifting to a complete algebra.** Let `a, b ∈ A` be such that `C_a` and `C_b` are formally
 étale over `A`, and let `R` be an `A`-algebra which is complete along an ideal `J`, such that `a, b`
@@ -296,6 +308,4 @@ theorem existsUnique_lift_of_isAdicComplete {a b : A}
     rw [← Ideal.Quotient.factorₐ_comp_mk A
       (Ideal.pow_le_pow_right n.le_succ : J ^ (n + 1) ≤ J ^ n), AlgHom.comp_assoc, hn]
 
-end Algebra
-
-end TauCeti
+end Ideal

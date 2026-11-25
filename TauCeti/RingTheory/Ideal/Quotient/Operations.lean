@@ -61,6 +61,7 @@ namespace Ideal
 
 /-- `Ideal.quotientMapₐ` is functorial: the map induced by a composite of algebra maps is the
 composite of the induced maps. -/
+@[simp]
 theorem quotientMapₐ_comp {R₁ A B C : Type*} [CommSemiring R₁] [Ring A] [Ring B] [Ring C]
     [Algebra R₁ A] [Algebra R₁ B] [Algebra R₁ C] {I : Ideal A} {J : Ideal B} (K : Ideal C)
     [I.IsTwoSided] [J.IsTwoSided] [K.IsTwoSided] (g : B →ₐ[R₁] C) (f : A →ₐ[R₁] B)
