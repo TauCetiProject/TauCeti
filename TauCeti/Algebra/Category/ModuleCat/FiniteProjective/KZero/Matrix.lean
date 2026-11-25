@@ -9,6 +9,7 @@ public import Mathlib.Data.ZMod.QuotientGroup
 public import Mathlib.RingTheory.Morita.Matrix
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Morita
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Rank
+import TauCeti.RingTheory.Idempotents.Matrix
 import TauCeti.RingTheory.Semisimple.MatrixDivisionRing
 
 /-!
