@@ -684,12 +684,14 @@ theorem singularHomology_prodThomPair_hom_ext {T : C}
 
 section Generator
 
-variable (K : Type w) [CommRing K]
+variable (K : Type w)
 
 /-- The point class of `1` generates `Hᵣ(F, F ∖ {0}; K) ≅ K`. -/
-theorem span_complZeroPairPointHom_one :
+theorem span_complZeroPairPointHom_one [Ring K] :
     Submodule.span K {complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K)} = ⊤ :=
   (ModuleCat.span_singleton_apply_eq_top_iff _).2 Ideal.span_singleton_one
+
+variable [CommRing K]
 
 /-- Every generator of `Hᵣ(F, F ∖ {0}; K) ≅ K` is a unit multiple of the point class of `1`. -/
 theorem exists_eq_units_smul_complZeroPairPointHom_one {x : ((TopPair.ofSubset

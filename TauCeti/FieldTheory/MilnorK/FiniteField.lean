@@ -8,12 +8,13 @@ module
 public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.Algebra.Field.Defs
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
-public import TauCeti.FieldTheory.MilnorK.Basic
-public import TauCeti.FieldTheory.MilnorK.SteinbergPairing
+public import TauCeti.RingTheory.MilnorK.Basic
+public import TauCeti.RingTheory.MilnorK.SteinbergPairing
 
 import Mathlib.Algebra.Ring.Parity
 import Mathlib.RingTheory.IntegralDomain
 import TauCeti.FieldTheory.Finite.Nonsquare
+import TauCeti.RingTheory.MilnorK.Grading
 
 /-!
 # Vanishing of Milnor K-theory and Steinberg pairings over finite fields
@@ -169,7 +170,7 @@ theorem symbol_eq_zero_of_finite [Finite F] {l : List Fˣ} (hl : 2 ≤ l.length)
 `2 ≤ n`. -/
 theorem degree_eq_bot_of_finite (F : Type u) [Field F] [Finite F] {n : ℕ} (hn : 2 ≤ n) :
     degree F n = ⊥ := by
-  rw [degree_eq_span_symbol, Submodule.span_eq_bot]
+  rw [degree_eq_span, Submodule.span_eq_bot]
   rintro _ ⟨l, rfl, rfl⟩
   exact symbol_eq_zero_of_finite hn
 

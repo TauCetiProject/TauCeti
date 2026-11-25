@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Inseparable
 public import Mathlib.Topology.NhdsWithin
+public import Mathlib.Topology.Separation.Basic
 
 /-!
 # Closures and neighbourhoods
@@ -26,6 +28,9 @@ A set containing a punctured neighbourhood of a non-isolated point `x` has `x` i
 Membership in a closed set passes to limits, so pointwise limits of maps into a closed set map
 into it.
 
+In a T1 space, when the closure of a set `P` adds only finitely many points, near any point the
+closure adds only that point.
+
 ## Main declarations
 
 * `TauCeti.interior_compl_union_interior_eq_univ_iff`: the interiors of `sᶜ` and `t` cover the
@@ -42,6 +47,16 @@ into it.
   it.
 * `TauCeti.subset_closure_range_domRestrict_preimage`: the values of a family that lie in an open
   set contained in the closure of its range are dense in that set.
+* `TauCeti.subset_closure_range_subtypeVal_inter`: the points of `L` lying in an open set
+  contained in the closure of `L` are dense in that set.
+* `TauCeti.subset_closure_range_subtypeVal_inter_of_subset`: if the points of `L` lying in `s`
+  are dense in `s`, those lying in an open subset of `s` are dense in it.
+* `TauCeti.nhdsWithin_closure_le_nhdsWithin_insert`: if the closure of `P` adds finitely many
+  points, then near any point `w` it contains only `w` and points of `P`.
+* `Dense.mem_of_nonempty_interior_closure_singleton`: a dense set stable under generization
+  contains every point whose closure has nonempty interior.
+* `Dense.frequently_mem_nhdsWithin`: a dense set occurs frequently in `𝓝[t] x` for any open set
+  `t` whose filter `𝓝[t] x` is nontrivial.
 -/
 
 public section
@@ -104,4 +119,48 @@ theorem subset_closure_range_domRestrict_preimage {α : Type*} {c : α → X} {s
   rw [range_domRestrict, image_preimage_eq_inter_range]
   exact fun x hx ↦ hs.inter_closure ⟨hx, h hx⟩
 
+/-- When an open set `s` lies in the closure of `L`, the points of `L` lying in `s` are dense in
+`s`. -/
+theorem subset_closure_range_subtypeVal_inter {L s : Set X} (hs : IsOpen s)
+    (h : s ⊆ closure L) : s ⊆ closure (range (Subtype.val : ↥(L ∩ s) → X)) := by
+  rw [Subtype.range_coe, inter_comm]
+  exact fun x hx ↦ hs.inter_closure ⟨hx, h hx⟩
+
+/-- When the points of `L` lying in `s` are dense in `s`, the points of `L` lying in an open subset
+`t` of `s` are dense in `t`. -/
+theorem subset_closure_range_subtypeVal_inter_of_subset {L s t : Set X} (ht : IsOpen t)
+    (hts : t ⊆ s) (h : s ⊆ closure (range (Subtype.val : ↥(L ∩ s) → X))) :
+    t ⊆ closure (range (Subtype.val : ↥(L ∩ t) → X)) :=
+  subset_closure_range_subtypeVal_inter ht fun _ hx ↦
+    closure_mono (range_subset_iff.2 fun d ↦ d.property.1) (h (hts hx))
+
+/-- If the closure of `P` adds only finitely many points to `P`, then near any point `w` the
+closure of `P` contains only `w` and points of `P`. -/
+theorem nhdsWithin_closure_le_nhdsWithin_insert [T1Space X] {P : Set X}
+    (hP : (closure P \ P).Finite) (w : X) : 𝓝[closure P] w ≤ 𝓝[insert w P] w := by
+  have hfar : ((closure P \ P) \ {w})ᶜ ∈ 𝓝 w := hP.sdiff.isClosed.isOpen_compl.mem_nhds (by simp)
+  refine nhdsWithin_le_of_mem (mem_nhdsWithin_iff_exists_mem_nhds_inter.2
+    ⟨_, hfar, fun x ⟨hx, hxc⟩ ↦ ?_⟩)
+  by_contra hxP
+  rw [mem_insert_iff, not_or] at hxP
+  exact hx ⟨⟨hxc, hxP.2⟩, hxP.1⟩
+
 end TauCeti
+
+/-- A dense set stable under generization contains every point whose closure has nonempty
+interior. -/
+theorem Dense.mem_of_nonempty_interior_closure_singleton
+    {X : Type*} [TopologicalSpace X] {s : Set X} (hd : Dense s)
+    (hs : StableUnderGeneralization s) {x : X} (hx : (interior (closure {x})).Nonempty) :
+    x ∈ s := by
+  obtain ⟨y, hys, hy⟩ := hd.exists_mem_open isOpen_interior hx
+  exact hs (specializes_iff_mem_closure.mpr (interior_subset hy)) hys
+
+/-- A dense set `D` occurs frequently in `𝓝[t] x` whenever `t` is open and `𝓝[t] x` is
+nontrivial. -/
+theorem Dense.frequently_mem_nhdsWithin {X : Type*} [TopologicalSpace X] {D t : Set X}
+    (hD : Dense D) (ht : IsOpen t) {x : X} [h : (𝓝[t] x).NeBot] :
+    ∃ᶠ y in 𝓝[t] x, y ∈ D := by
+  rw [Filter.frequently_mem_iff_neBot, ← nhdsWithin_inter', ← mem_closure_iff_nhdsWithin_neBot]
+  exact closure_minimal (hD.open_subset_closure_inter ht) isClosed_closure
+    (mem_closure_iff_nhdsWithin_neBot.mpr h)

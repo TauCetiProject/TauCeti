@@ -212,8 +212,7 @@ multiplicatively distinguished of degree `d` at `c`, then `P` and `G` are coprim
 entire series. -/
 theorem IsEntirePreparation.isCoprime [CompleteSpace R] (h : IsEntirePreparation c d F P G)
     (hF : IsMulDistinguished c d F) (hc : 0 < c) :
-    IsCoprime (⟨P, IsEntire.mem_subring.mpr (isEntire_coe P)⟩ : IsEntire.subring R)
-      ⟨G, IsEntire.mem_subring.mpr h.isEntire⟩ := by
+    IsCoprime (IsEntire.polynomialHom P) ⟨G, IsEntire.mem_subring.mpr h.isEntire⟩ := by
   have hFe : F.IsEntire := h.eq_mul ▸ (isEntire_coe P).mul h.isEntire
   obtain ⟨e, ω, he, hω, hωd, heω⟩ :=
     hF.exists_isUnit_isMonicOfDegree_isMulDistinguished_mul_eq hc (hFe.isRestricted c)
@@ -230,7 +229,7 @@ theorem IsEntirePreparation.isCoprime [CompleteSpace R] (h : IsEntirePreparation
   set u := h.isUnit_leadingCoeff.unit
   refine ⟨⟨((u⁻¹ : Rˣ) : R) • (G * q), IsEntire.mem_subring.mpr (hGq.smul _)⟩,
     ⟨b, IsEntire.mem_subring.mpr hbE⟩, Subtype.ext ?_⟩
-  simp only [Subring.coe_add, Subring.coe_mul, Subring.coe_one]
+  simp only [Subring.coe_add, Subring.coe_mul, Subring.coe_one, IsEntire.coe_polynomialHom]
   rw [hP, Polynomial.coe_smul, smul_mul_smul_comm, h.isUnit_leadingCoeff.val_inv_mul, one_smul]
   linear_combination hωGq
 
@@ -241,13 +240,12 @@ is coprime to `a * G` in the ring of entire series. -/
 theorem IsEntirePreparation.isCoprime_of_isCoprime_mul_eq [CompleteSpace R]
     (h : IsEntirePreparation c d F P G) (hF : IsMulDistinguished c d F) (hc : 0 < c)
     {g a : Polynomial R} (hga : IsCoprime g a) (hgaP : g * a = P) :
-    IsCoprime (⟨g, IsEntire.mem_subring.mpr (isEntire_coe g)⟩ : IsEntire.subring R)
+    IsCoprime (IsEntire.polynomialHom g)
       ⟨a * G, IsEntire.mem_subring.mpr ((isEntire_coe a).mul h.isEntire)⟩ := by
   -- `g` is coprime to `a`, and to `G` since `g ∣ P`.
-  have hgP : IsEntire.polynomialHom g ∣ ⟨P, IsEntire.mem_subring.mpr (isEntire_coe P)⟩ :=
-    ⟨IsEntire.polynomialHom a, Subtype.ext (by simp [← hgaP])⟩
   convert (hga.map IsEntire.polynomialHom).mul_right
-    ((h.isCoprime hF hc).of_isCoprime_of_dvd_left hgP) using 1 <;> exact Subtype.ext (by simp)
+    ((h.isCoprime hF hc).of_isCoprime_of_dvd_left (map_dvd _ ⟨a, hgaP.symm⟩)) using 1
+  exact Subtype.ext (by simp)
 
 /-- **Nested normalised preparations.** Over an ultrametric normed commutative ring with
 multiplicative norm, let `F` be distinguished of degree `d` at a positive radius `c ≤ c'`. Then the

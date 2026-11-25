@@ -99,9 +99,7 @@ def subrepresentationOrderIso (h : IsRationalRep ρ) :
     { toSubmodule := S.toSubmodule
       apply_mem_toSubmodule g _ hv :=
         h.apply_mem_of_forall_unitary (fun u _ hw => S.apply_mem_toSubmodule u hw) g hv }
-  invFun S :=
-    { toSubmodule := S.toSubmodule
-      apply_mem_toSubmodule u _ hv := S.apply_mem_toSubmodule (Unitary.toUnits u) hv }
+  invFun S := S.res Unitary.toUnits
   left_inv S := by ext; rfl
   right_inv S := by ext; rfl
   map_rel_iff' := by rfl

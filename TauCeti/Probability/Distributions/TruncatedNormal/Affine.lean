@@ -144,4 +144,96 @@ theorem affine_truncatedNormalMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Mea
   rw [← gaussianReal_map_const_add_const_mul]
   exact hX.affine_cond a hb
 
+/-- If `X` has a Gaussian law with location `m` and variance `v` truncated to a closed interval,
+then `a + b * X` for `0 < b` has the truncated Gaussian law with location `a + b * m`, variance
+`v` scaled by `b ^ 2`, and closed interval with endpoints `a + b * l` and `a + b * r`. -/
+theorem affine_truncatedNormalMeasure_Icc_pos {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0} (hX : HasLaw X (truncatedNormalMeasure m v (Icc l r)) P)
+    (a : ℝ) {b : ℝ} (hb : 0 < b) :
+    HasLaw (fun ω ↦ a + b * X ω)
+      (truncatedNormalMeasure (a + b * m) (NNReal.mk (b ^ 2) (sq_nonneg b) * v)
+        (Icc (a + b * l) (a + b * r))) P :=
+  (HasLaw.mk (by fun_prop) (map_affine_truncatedNormalMeasure_Icc_pos m v a hb l r)).fun_comp hX
+
+/-- If `X` has a Gaussian law with location `m` and variance `v` truncated to an open interval,
+then `a + b * X` for `0 < b` has the truncated Gaussian law with location `a + b * m`, variance
+`v` scaled by `b ^ 2`, and open interval with endpoints `a + b * l` and `a + b * r`. -/
+theorem affine_truncatedNormalMeasure_Ioo_pos {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0} (hX : HasLaw X (truncatedNormalMeasure m v (Ioo l r)) P)
+    (a : ℝ) {b : ℝ} (hb : 0 < b) :
+    HasLaw (fun ω ↦ a + b * X ω)
+      (truncatedNormalMeasure (a + b * m) (NNReal.mk (b ^ 2) (sq_nonneg b) * v)
+        (Ioo (a + b * l) (a + b * r))) P :=
+  (HasLaw.mk (by fun_prop) (map_affine_truncatedNormalMeasure_Ioo_pos m v a hb l r)).fun_comp hX
+
+/-- If `X` has a Gaussian law with location `m` and variance `v` truncated to a lower-closed,
+upper-open interval, then `a + b * X` for `0 < b` has the truncated Gaussian law with location
+`a + b * m`, variance `v` scaled by `b ^ 2`, and the same endpoint conventions at `a + b * l` and
+`a + b * r`. -/
+theorem affine_truncatedNormalMeasure_Ico_pos {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0} (hX : HasLaw X (truncatedNormalMeasure m v (Ico l r)) P)
+    (a : ℝ) {b : ℝ} (hb : 0 < b) :
+    HasLaw (fun ω ↦ a + b * X ω)
+      (truncatedNormalMeasure (a + b * m) (NNReal.mk (b ^ 2) (sq_nonneg b) * v)
+        (Ico (a + b * l) (a + b * r))) P :=
+  (HasLaw.mk (by fun_prop) (map_affine_truncatedNormalMeasure_Ico_pos m v a hb l r)).fun_comp hX
+
+/-- If `X` has a Gaussian law with location `m` and variance `v` truncated to a lower-open,
+upper-closed interval, then `a + b * X` for `0 < b` has the truncated Gaussian law with location
+`a + b * m`, variance `v` scaled by `b ^ 2`, and the same endpoint conventions at `a + b * l` and
+`a + b * r`. -/
+theorem affine_truncatedNormalMeasure_Ioc_pos {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0} (hX : HasLaw X (truncatedNormalMeasure m v (Ioc l r)) P)
+    (a : ℝ) {b : ℝ} (hb : 0 < b) :
+    HasLaw (fun ω ↦ a + b * X ω)
+      (truncatedNormalMeasure (a + b * m) (NNReal.mk (b ^ 2) (sq_nonneg b) * v)
+        (Ioc (a + b * l) (a + b * r))) P :=
+  (HasLaw.mk (by fun_prop) (map_affine_truncatedNormalMeasure_Ioc_pos m v a hb l r)).fun_comp hX
+
+/-- If `X` has a Gaussian law with location `m` and variance `v` truncated to a closed interval,
+then `a + b * X` for `b < 0` has the truncated Gaussian law with location `a + b * m`, variance
+`v` scaled by `b ^ 2`, and closed interval with reversed endpoints `a + b * r` and `a + b * l`. -/
+theorem affine_truncatedNormalMeasure_Icc_neg {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0} (hX : HasLaw X (truncatedNormalMeasure m v (Icc l r)) P)
+    (a : ℝ) {b : ℝ} (hb : b < 0) :
+    HasLaw (fun ω ↦ a + b * X ω)
+      (truncatedNormalMeasure (a + b * m) (NNReal.mk (b ^ 2) (sq_nonneg b) * v)
+        (Icc (a + b * r) (a + b * l))) P :=
+  (HasLaw.mk (by fun_prop) (map_affine_truncatedNormalMeasure_Icc_neg m v a hb l r)).fun_comp hX
+
+/-- If `X` has a Gaussian law with location `m` and variance `v` truncated to an open interval,
+then `a + b * X` for `b < 0` has the truncated Gaussian law with location `a + b * m`, variance
+`v` scaled by `b ^ 2`, and open interval with reversed endpoints `a + b * r` and `a + b * l`. -/
+theorem affine_truncatedNormalMeasure_Ioo_neg {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0} (hX : HasLaw X (truncatedNormalMeasure m v (Ioo l r)) P)
+    (a : ℝ) {b : ℝ} (hb : b < 0) :
+    HasLaw (fun ω ↦ a + b * X ω)
+      (truncatedNormalMeasure (a + b * m) (NNReal.mk (b ^ 2) (sq_nonneg b) * v)
+        (Ioo (a + b * r) (a + b * l))) P :=
+  (HasLaw.mk (by fun_prop) (map_affine_truncatedNormalMeasure_Ioo_neg m v a hb l r)).fun_comp hX
+
+/-- If `X` has a Gaussian law with location `m` and variance `v` truncated to a lower-closed,
+upper-open interval, then `a + b * X` for `b < 0` has the truncated Gaussian law with location
+`a + b * m`, variance `v` scaled by `b ^ 2`, and the lower-open, upper-closed interval with reversed
+endpoints `a + b * r` and `a + b * l`. -/
+theorem affine_truncatedNormalMeasure_Ico_neg {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0} (hX : HasLaw X (truncatedNormalMeasure m v (Ico l r)) P)
+    (a : ℝ) {b : ℝ} (hb : b < 0) :
+    HasLaw (fun ω ↦ a + b * X ω)
+      (truncatedNormalMeasure (a + b * m) (NNReal.mk (b ^ 2) (sq_nonneg b) * v)
+        (Ioc (a + b * r) (a + b * l))) P :=
+  (HasLaw.mk (by fun_prop) (map_affine_truncatedNormalMeasure_Ico_neg m v a hb l r)).fun_comp hX
+
+/-- If `X` has a Gaussian law with location `m` and variance `v` truncated to a lower-open,
+upper-closed interval, then `a + b * X` for `b < 0` has the truncated Gaussian law with location
+`a + b * m`, variance `v` scaled by `b ^ 2`, and the lower-closed, upper-open interval with reversed
+endpoints `a + b * r` and `a + b * l`. -/
+theorem affine_truncatedNormalMeasure_Ioc_neg {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0} (hX : HasLaw X (truncatedNormalMeasure m v (Ioc l r)) P)
+    (a : ℝ) {b : ℝ} (hb : b < 0) :
+    HasLaw (fun ω ↦ a + b * X ω)
+      (truncatedNormalMeasure (a + b * m) (NNReal.mk (b ^ 2) (sq_nonneg b) * v)
+        (Ico (a + b * r) (a + b * l))) P :=
+  (HasLaw.mk (by fun_prop) (map_affine_truncatedNormalMeasure_Ioc_neg m v a hb l r)).fun_comp hX
+
 end ProbabilityTheory.HasLaw

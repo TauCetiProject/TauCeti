@@ -14,6 +14,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.WeakEquivalence
 import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Algebra.BigOperators.Finset.PartialSum
 import TauCeti.AlgebraicTopology.SimplicialSet.ProdStdSimplex.Basic
+import TauCeti.Data.Set.Function
 import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
 /-!
@@ -98,16 +99,16 @@ private lemma exists_injective_toTopObjMk_eq {n : ℕ} (x : (Δ[p] ⊗ Δ[q] : S
     obtain ⟨j, hj⟩ := h0
     obtain _ | n := n
     · simp at hj
-    have hsupp : ↑w.weights.support ⊆ Set.range j.succAbove := by
-      intro i hi
-      exact Fin.exists_succAbove_eq (fun h ↦ by simp [h, hj] at hi)
+    have hsupp : Set.BijOn j.succAbove (j.succAbove ⁻¹' ↑w.weights.support) ↑w.weights.support :=
+      Set.bijOn_preimage_iff.2 ⟨Fin.succAbove_right_injective.injOn, by
+        simp [Fin.range_succAbove, Set.subset_compl_singleton_iff, hj]⟩
     obtain ⟨r, y, w'', hy, hw'', h₁, h₂⟩ :=
-      ih n (by lia) ((Δ[p] ⊗ Δ[q]).δ j x) (StdSimplex.comap Fin.succAbove_right_injective w hsupp)
+      ih n (by lia) ((Δ[p] ⊗ Δ[q]).δ j x) (StdSimplex.comap w hsupp)
     refine ⟨r, y, w'', hy, hw'', ?_, ?_⟩
     · rw [← h₁, SimplicialObject.δ, toTopObjMk_map]
-      exact congrArg _ (StdSimplex.map_comap _ w hsupp).symm
+      exact congrArg _ (StdSimplex.map_comap w hsupp).symm
     · rw [← h₂]
-      conv_lhs => rw [← StdSimplex.map_comap Fin.succAbove_right_injective w hsupp]
+      conv_lhs => rw [← StdSimplex.map_comap w hsupp]
       rw [StdSimplex.map_map, objEquiv_δ, Function.comp_def]
   · push Not at h0
     by_cases hi : Function.Injective (objEquiv x)
@@ -313,20 +314,26 @@ private lemma support_prismMeasure_subset {k : Fin (p + 1)} {z : StdSimplex ℝ 
 point of the `k`th piece of the prism. -/
 private noncomputable def pieceWeights (k : Fin (p + 1)) (z : StdSimplex ℝ (Fin (p + 1)) × I)
     (hz : z ∈ piece k) : StdSimplex ℝ (Fin (p + 2)) :=
-  StdSimplex.comap (injective_objEquiv_nonDegenerateEquiv.{u} k) _
-    (support_prismMeasure_subset hz)
+  StdSimplex.comap (f := prodStdSimplex.objEquiv (nonDegenerateEquiv.{u} k).val)
+    (prismMeasure z.1 z.2)
+    (Set.bijOn_preimage_iff.2
+      ⟨(injective_objEquiv_nonDegenerateEquiv.{u} k).injOn, support_prismMeasure_subset hz⟩)
 
 private lemma map_pieceWeights (k : Fin (p + 1)) (z : StdSimplex ℝ (Fin (p + 1)) × I)
     (hz : z ∈ piece k) :
     StdSimplex.map (prodStdSimplex.objEquiv (nonDegenerateEquiv.{u} k).val)
       (pieceWeights.{u} k z hz) = prismMeasure z.1 z.2 :=
-  StdSimplex.map_comap _ _ _
+  StdSimplex.map_comap _ _
 
 private lemma continuous_pieceWeights (k : Fin (p + 1)) :
     Continuous fun z : piece k ↦ pieceWeights.{u} k z.val z.property := by
   rw [(StdSimplex.isEmbedding_toFun_comp_weights ℝ (Fin (p + 2))).continuous_iff]
   refine continuous_pi fun j ↦ ?_
-  simp only [Function.comp_apply, pieceWeights, StdSimplex.weights_comap_apply]
+  have h : (fun z : piece k ↦ (pieceWeights.{u} k z.val z.property).weights j) =
+      fun z ↦ (prismMeasure z.val.1 z.val.2).weights
+        (prodStdSimplex.objEquiv (nonDegenerateEquiv.{u} k).val j) :=
+    funext fun z ↦ StdSimplex.weights_comap_apply _ _ j
+  simp only [Function.comp_apply, h, prismMeasure_weights]
   exact (continuous_prismWeights _).comp continuous_subtypeVal
 
 /-- The underlying function of `SSet.prodStdSimplex₁.prism`. -/

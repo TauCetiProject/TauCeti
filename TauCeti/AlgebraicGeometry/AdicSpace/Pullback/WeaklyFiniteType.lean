@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Pullback.Cover
 public import TauCeti.AlgebraicGeometry.AdicSpace.Pullback.OpenImmersion
 
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.TensorProduct.Sheafy
+import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Mono
 import TauCeti.RingTheory.Huber.TensorProduct.TopologicallyFiniteType
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Cancel
 
@@ -76,6 +77,8 @@ then follows directly from `LocallyOfWeaklyFiniteType.of_isPullback` via composi
   `TauCeti.AdicSpace.hasPullback_of_locallyOfWeaklyFiniteType_right`: existence of `X ×_S Y` in
   `AdicSpace`, together with specializations to `+`weakly finite type, finite type, analytic bases,
   and locally noetherian analytic factors.
+* `TauCeti.AdicSpace.hasPullback_snd_comp`, `TauCeti.AdicSpace.hasPullback_fst_comp`: existence of
+  the iterated fibre products `(X ×_S Y) ×_S Z` and `X ×_S (Y ×_S Z)`.
 * `TauCeti.AdicSpace.LocallyOfWeaklyFiniteType.of_isPullback`,
   `TauCeti.AdicSpace.LocallyOfPlusWeaklyFiniteType.of_isPullback`,
   `TauCeti.AdicSpace.locallyOfFiniteType_of_isPullback`,
@@ -526,10 +529,7 @@ private theorem chartLocally_of_isPullback
     rw [Category.assoc, Category.assoc, Iso.hom_inv_id_assoc, Iso.hom_inv_id_assoc, hg_W_fac]
   have hpull_aff : IsPullback (πC ≫ eU.inv) (πB ≫ eW.inv)
       (X.ofRestrict U ≫ f) (Y.ofRestrict W ≫ g) := by
-    have hbot : IsPullback (eW.hom ≫ g₀ ≫ eV.inv) (𝟙 _) (S.ofRestrict V) (Y.ofRestrict W ≫ g) :=
-      IsPullback.of_vert_isIso_mono
-        ⟨by simpa only [Category.id_comp, Category.assoc] using hfac_g'⟩
-    simpa only [Category.comp_id, Category.assoc, hfac_f'] using hpull₁.paste_vert hbot
+    simpa only [Category.assoc, hfac_f', hfac_g'] using hpull₁.comp_mono (S.ofRestrict V)
   -- 4. Identify `Z.restrict O` (`O = p⁻¹(U) ∩ q⁻¹(W)`) with `Spa(WE)` via `isoIsPullback`.
   let O : Opens Z.obj := (Opens.map p.hom.base).obj U ⊓ (Opens.map q.hom.base).obj W
   have hzO : z ∈ O := ⟨hzpU, hzqW⟩
@@ -719,6 +719,32 @@ theorem isLocallyStablySheafy_pullback_of_locallyOfWeaklyFiniteType_right
     {f : X ⟶ S} {g : Y ⟶ S} [HasPullback f g] (hf : IsAdic f) (hg : LocallyOfWeaklyFiniteType g)
     (hX : X.IsLocallyStablySheafy) : (pullback f g).IsLocallyStablySheafy :=
   hX.of_isPullback_of_locallyOfWeaklyFiniteType_flip (.of_hasPullback f g) hf hg
+
+/-- The iterated fibre product `(X ×_S Y) ×_S Z` exists when `f` is adic, `g`, `h` are locally of
+weakly finite type and `X` is locally stably sheafy; so does the inner `X ×_S Y`. -/
+theorem hasPullback_snd_comp {f : X ⟶ S} {g : Y ⟶ S} {h : Z ⟶ S}
+    (hf : IsAdic f) (hg : LocallyOfWeaklyFiniteType g) (hh : LocallyOfWeaklyFiniteType h)
+    (hX : X.IsLocallyStablySheafy) :
+    haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf hg hX
+    HasPullback (pullback.snd f g ≫ g) h :=
+  haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf hg hX
+  hasPullback_of_locallyOfWeaklyFiniteType_right
+    (IsAdic.isMultiplicative.comp_mem _ _
+      (IsAdic.pullback_snd_of_locallyOfWeaklyFiniteType hf hg hX) hg.isAdic) hh
+    (isLocallyStablySheafy_pullback_of_locallyOfWeaklyFiniteType_right hf hg hX)
+
+/-- The iterated fibre product `X ×_S (Y ×_S Z)` exists when `f`, `g` are locally of weakly finite
+type, `h` is adic and `Z` is locally stably sheafy; so does the inner `Y ×_S Z`. -/
+theorem hasPullback_fst_comp {f : X ⟶ S} {g : Y ⟶ S} {h : Z ⟶ S}
+    (hf : LocallyOfWeaklyFiniteType f) (hg : LocallyOfWeaklyFiniteType g) (hh : IsAdic h)
+    (hZ : Z.IsLocallyStablySheafy) :
+    haveI := hasPullback_of_locallyOfWeaklyFiniteType_left hg hh hZ
+    HasPullback f (pullback.fst g h ≫ g) :=
+  haveI := hasPullback_of_locallyOfWeaklyFiniteType_left hg hh hZ
+  hasPullback_of_locallyOfWeaklyFiniteType_left hf
+    (IsAdic.isMultiplicative.comp_mem _ _
+      (IsAdic.pullback_fst_of_locallyOfWeaklyFiniteType hg hh hZ) hg.isAdic)
+    (isLocallyStablySheafy_pullback_of_locallyOfWeaklyFiniteType_left hg hh hZ)
 
 /-- **Fibre products over a locally noetherian factor inherit `IsLocallyNoetherian`** (Huber 1994,
 Proposition 3.7): if `f` is locally of weakly finite type, `g` is adic, and `Y` is both locally

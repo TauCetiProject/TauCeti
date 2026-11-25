@@ -8,6 +8,8 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
+public import TauCeti.Topology.FiberBundle.Countable
+public import TauCeti.Topology.FiberBundle.LocallyCompact
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
@@ -63,6 +65,10 @@ continuous when `f` is `C¹` (`TauCeti.CotangentBundle.continuousAt_snd_apply_mf
 Pairing a covector field along a map `u` with the image of a tangent field under a section `B` of
 `End(TM)` is continuous wherever both fields are continuous into their bundles
 (`ContMDiffSection.continuousAt_apply_apply`).
+
+In a chart `c` into a normed space, differentiable with its inverse, a covector `ξ` at `x` is read
+as the covector `ξ ∘ D(c⁻¹)(c x)` of the model space, and this reading is a bijection
+(`OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_bijective`).
 
 The construction follows the Zulip discussion `Cotangent Bundle as a Manifold` in the channel
 `Is there code for X?`, which observed that Mathlib's continuous-linear-map bundle operations
@@ -413,6 +419,25 @@ theorem continuousAt_snd_apply_mfderiv {S : Type*} [TopologicalSpace S]
 
 end Pullback
 
+section SigmaCompact
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I 1 M]
+
+/-- The cotangent bundle of a σ-compact manifold with a finite-dimensional real model is
+σ-compact: the base is second countable and locally compact, so the total space is too, as a fibre
+bundle with finite-dimensional fibre (`TauCeti.FiberBundle.secondCountableTopology_totalSpace`,
+`TauCeti.FiberBundle.locallyCompactSpace_totalSpace`). -/
+instance sigmaCompactSpace [SigmaCompactSpace M] : SigmaCompactSpace (CotangentBundle I M) := by
+  have : SecondCountableTopology H := I.secondCountableTopology
+  have : SecondCountableTopology M := ChartedSpace.secondCountable_of_sigmaCompact H M
+  have : LocallyCompactSpace H := I.locallyCompactSpace
+  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
+  infer_instance
+
+end SigmaCompact
+
 end CotangentBundle
 
 end TauCeti
@@ -441,3 +466,23 @@ theorem continuousAt_apply_apply
     ((Bundle.Trivial.homeomorphProd M 𝕜).continuous.continuousAt.comp h)
 
 end ContMDiffSection
+
+namespace OpenPartialHomeomorph.MDifferentiable
+
+variable {𝕜 E H G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {M : Type*} [TopologicalSpace M]
+  [ChartedSpace H M] [NormedAddCommGroup G] [NormedSpace 𝕜 G] {c : OpenPartialHomeomorph M G}
+
+/-- **Covectors read in a chart.** For an open partial homeomorphism `c` into a normed space,
+differentiable with its inverse, and `x` in its source, reading a covector `ξ` at `x` in `c` as
+`ξ ∘ D(c⁻¹)(c x)` is a bijection onto the covectors of `G`. -/
+theorem comp_mfderiv_symm_bijective (hc : c.MDifferentiable I 𝓘(𝕜, G)) {x : M}
+    (hx : x ∈ c.source) :
+    Function.Bijective fun ξ : TangentSpace I x →L[𝕜] 𝕜 ↦ ξ ∘L mfderiv 𝓘(𝕜, G) I c.symm (c x) := by
+  refine ⟨fun ξ₁ ξ₂ h ↦ ContinuousLinearMap.ext fun w ↦ ?_, fun η ↦ ?_⟩
+  · obtain ⟨u, rfl⟩ := hc.symm.mfderiv_surjective (c.map_source hx) w
+    exact congr($h u)
+  · refine ⟨η ∘L mfderiv I 𝓘(𝕜, G) c (c.symm (c x)), ContinuousLinearMap.ext fun u ↦ ?_⟩
+    exact congr_arg η congr($(hc.comp_symm_deriv (c.map_source hx)) u)
+
+end OpenPartialHomeomorph.MDifferentiable

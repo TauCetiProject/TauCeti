@@ -35,11 +35,22 @@ quotients have topologically isomorphic profinite completions
 (`nonempty_continuousMulEquiv_of_forall_exists_surjective_iff`); in fact finite generation of one
 of the two groups suffices.
 
+A family `𝒩` of finite-index normal subgroups of `G` defines a coarser completion
+`lim_{N ∈ 𝒩} G ⧸ N`, such as the congruence completion of an arithmetic group, and the profinite
+completion maps to it through its coordinates at the members of `𝒩`. The kernel of this
+comparison is `familyKernel G 𝒩`, a closed normal subgroup which is the intersection of the
+closures of the members of `𝒩` (`familyKernel_eq_iInf_topologicalClosure`). For a nonempty
+downward directed family it is trivial exactly when every finite-index subgroup of `G` contains a
+member of `𝒩` (`familyKernel_eq_bot_iff_forall_finiteIndex`).
+
 ## References
 
 * J. D. Dixon, E. W. Formanek, J. C. Poland and L. Ribes, *Profinite completions and isomorphic
   finite quotients*, J. Pure Appl. Algebra 23 (1982), 227–231.
 * L. Ribes and P. Zalesskii, *Profinite Groups*, Section 3.2.
+* H. Bass, J. Milnor and J.-P. Serre, *Solution of the congruence subgroup problem for
+  `SLₙ (n ≥ 3)` and `Sp₂ₙ (n ≥ 2)`*, Publ. Math. IHÉS 33 (1967), §14, for the kernel of the
+  comparison with a coarser completion.
 -/
 
 public section
@@ -314,6 +325,161 @@ theorem nonempty_continuousMulEquiv_of_forall_exists_surjective_iff {H : Type u}
       exact h Q
 
 end FiniteQuotients
+
+
+section FamilyKernel
+
+/-! ### Completion relative to a family of finite-index normal subgroups
+
+A family `𝒩` of finite-index normal subgroups of `G` defines the coarser completion
+`lim_{N ∈ 𝒩} G ⧸ N`; the profinite completion maps onto it through its coordinates at the
+members of `𝒩`. The kernel of that comparison is `familyKernel G 𝒩`. -/
+
+variable {G} in
+/-- The coordinates of an element of the profinite completion are compatible: for `H ≤ K`, the
+`K`-coordinate is the image of the `H`-coordinate under `G ⧸ H → G ⧸ K`. -/
+theorem coordinateHom_eq_map {H K : FiniteIndexNormalSubgroup G} (h : H ≤ K)
+    (x : ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G)) :
+    coordinateHom G K x = QuotientGroup.map _ _ (MonoidHom.id G) h (coordinateHom G H x) := by
+  rw [coordinateHom_apply, coordinateHom_apply]
+  exact (x.property (homOfLE h)).symm
+
+/-- A smaller finite-index normal subgroup has a smaller coordinate kernel. -/
+theorem ker_coordinateHom_mono {H K : FiniteIndexNormalSubgroup G} (h : H ≤ K) :
+    (coordinateHom G H).ker ≤ (coordinateHom G K).ker := by
+  intro x hx
+  rw [MonoidHom.mem_ker] at hx ⊢
+  rw [coordinateHom_eq_map h, hx, map_one]
+
+/-- The kernel of a coordinate projection is open in the profinite completion. -/
+theorem isOpen_ker_coordinateHom (H : FiniteIndexNormalSubgroup G) :
+    IsOpen (SetLike.coe (coordinateHom G H).ker) :=
+  -- every set is open in the discrete topology `⊥` of the finite quotient
+  @Continuous.isOpen_preimage _ _ _ ⊥ _ (continuous_coordinateHom G H) {1} trivial
+
+/-- The kernel of a coordinate projection is closed in the profinite completion. -/
+theorem isClosed_ker_coordinateHom (H : FiniteIndexNormalSubgroup G) :
+    IsClosed (SetLike.coe (coordinateHom G H).ker) :=
+  Subgroup.isClosed_of_isOpen _ (isOpen_ker_coordinateHom G H)
+
+/-- The canonical image of `g` lies in the kernel of the `H`-coordinate exactly when `g ∈ H`. -/
+theorem etaFn_mem_ker_coordinateHom_iff (H : FiniteIndexNormalSubgroup G) {g : G} :
+    ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of G) g ∈ (coordinateHom G H).ker ↔ g ∈ H := by
+  rw [MonoidHom.mem_ker, coordinateHom_etaFn, QuotientGroup.eq_one_iff,
+    FiniteIndexNormalSubgroup.mem_toSubgroup_iff]
+
+/-- The kernel of the `H`-coordinate is the closure of the canonical image of `H`. -/
+theorem topologicalClosure_map_eta (H : FiniteIndexNormalSubgroup G) :
+    (H.toSubgroup.map
+      (ProfiniteGrp.ProfiniteCompletion.eta (GrpCat.of G)).hom).topologicalClosure =
+      (coordinateHom G H).ker := by
+  refine le_antisymm (Subgroup.topologicalClosure_minimal _ ?_
+    (isClosed_ker_coordinateHom G H)) fun x hx ↦ ?_
+  · rintro _ ⟨g, hg, rfl⟩
+    exact (etaFn_mem_ker_coordinateHom_iff G H).2 hg
+  · -- the open kernel lies in the closure of its intersection with the dense image of `G`
+    rw [← SetLike.mem_coe, Subgroup.topologicalClosure_coe]
+    refine closure_mono ?_
+      ((ProfiniteGrp.ProfiniteCompletion.denseRange (G := GrpCat.of G)).open_subset_closure_inter
+        (isOpen_ker_coordinateHom G H) hx)
+    rintro _ ⟨hgH, g, rfl⟩
+    exact ⟨g, (etaFn_mem_ker_coordinateHom_iff G H).1 hgH, rfl⟩
+
+/-- The kernel of the comparison from the profinite completion of `G` to its completion
+`lim_{N ∈ 𝒩} G ⧸ N` relative to a family `𝒩` of finite-index normal subgroups: the elements
+whose coordinates at all members of `𝒩` are trivial. For the principal congruence subgroups of an
+arithmetic group this is the congruence kernel. -/
+def familyKernel (𝒩 : Set (FiniteIndexNormalSubgroup G)) :
+    Subgroup (ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G)) :=
+  ⨅ H ∈ 𝒩, (coordinateHom G H).ker
+
+variable {G}
+
+theorem mem_familyKernel_iff {𝒩 : Set (FiniteIndexNormalSubgroup G)}
+    {x : ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G)} :
+    x ∈ familyKernel G 𝒩 ↔ ∀ H ∈ 𝒩, coordinateHom G H x = 1 := by
+  simp [familyKernel]
+
+instance familyKernel_normal (𝒩 : Set (FiniteIndexNormalSubgroup G)) :
+    (familyKernel G 𝒩).Normal :=
+  Subgroup.normal_iInf_normal fun _ ↦ Subgroup.normal_iInf_normal fun _ ↦ inferInstance
+
+theorem isClosed_familyKernel (𝒩 : Set (FiniteIndexNormalSubgroup G)) :
+    IsClosed (SetLike.coe (familyKernel G 𝒩)) := by
+  simp only [familyKernel, Subgroup.coe_iInf]
+  exact isClosed_iInter fun H ↦ isClosed_iInter fun _ ↦ isClosed_ker_coordinateHom G H
+
+/-- The canonical image of `g` lies in the family kernel exactly when `g` lies in every member of
+the family. -/
+@[simp]
+theorem etaFn_mem_familyKernel_iff {𝒩 : Set (FiniteIndexNormalSubgroup G)} {g : G} :
+    ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of G) g ∈ familyKernel G 𝒩 ↔ ∀ H ∈ 𝒩, g ∈ H := by
+  simp only [familyKernel, Subgroup.mem_iInf, etaFn_mem_ker_coordinateHom_iff]
+
+/-- The family kernel is the intersection of the closures in the profinite completion of the
+canonical images of the members of the family. -/
+theorem familyKernel_eq_iInf_topologicalClosure (𝒩 : Set (FiniteIndexNormalSubgroup G)) :
+    familyKernel G 𝒩 = ⨅ H ∈ 𝒩, (H.toSubgroup.map
+      (ProfiniteGrp.ProfiniteCompletion.eta (GrpCat.of G)).hom).topologicalClosure := by
+  unfold familyKernel
+  exact iInf_congr fun H ↦ iInf_congr fun _ ↦ (topologicalClosure_map_eta G H).symm
+
+/-- Passing to a cofinal family can only shrink the family kernel: if every member of `𝒩`
+contains a member of `𝒩'`, the kernel of `𝒩'` lies in that of `𝒩`. In particular mutually
+cofinal families have the same kernel. -/
+theorem familyKernel_le_of_forall_exists_le {𝒩 𝒩' : Set (FiniteIndexNormalSubgroup G)}
+    (h : ∀ H ∈ 𝒩, ∃ K ∈ 𝒩', K ≤ H) : familyKernel G 𝒩' ≤ familyKernel G 𝒩 := by
+  intro x hx
+  rw [mem_familyKernel_iff] at hx ⊢
+  intro H hH
+  obtain ⟨K, hK, hKH⟩ := h H hH
+  exact ker_coordinateHom_mono G hKH (hx K hK)
+
+/-- **The family kernel is trivial exactly when the family is cofinal.** For a nonempty
+downward directed family `𝒩` of finite-index normal subgroups, the comparison from the profinite
+completion to the completion relative to `𝒩` is injective exactly when every finite-index normal
+subgroup contains a member of `𝒩`. -/
+theorem familyKernel_eq_bot_iff {𝒩 : Set (FiniteIndexNormalSubgroup G)} (hne : 𝒩.Nonempty)
+    (hdir : DirectedOn (· ≥ ·) 𝒩) :
+    familyKernel G 𝒩 = ⊥ ↔ ∀ M : FiniteIndexNormalSubgroup G, ∃ H ∈ 𝒩, H ≤ M := by
+  refine ⟨fun h M ↦ ?_, fun h ↦ (Subgroup.eq_bot_iff_forall _).2 fun x hx ↦ ?_⟩
+  · have : Nonempty 𝒩 := hne.to_subtype
+    -- The complement of the open subgroup `ker (coordinateHom G M)` is compact and misses the
+    -- intersection of the directed family of closed kernels at the members of `𝒩`, so it
+    -- misses one of them.
+    have hdisj : Disjoint (SetLike.coe (coordinateHom G M).ker)ᶜ
+        (⋂ H : 𝒩, (SetLike.coe (coordinateHom G H).ker)) := by
+      refine Set.disjoint_left.2 fun x hxM hx ↦ hxM ?_
+      have hx' : x ∈ familyKernel G 𝒩 := mem_familyKernel_iff.2 fun H hH ↦
+        Set.mem_iInter.1 hx ⟨H, hH⟩
+      rw [h, Subgroup.mem_bot] at hx'
+      exact hx' ▸ one_mem _
+    have hdir' : Directed (· ⊇ ·) fun H : 𝒩 ↦ (SetLike.coe (coordinateHom G H).ker) := by
+      rintro ⟨H₁, h₁⟩ ⟨H₂, h₂⟩
+      obtain ⟨H, hH, hH₁, hH₂⟩ := hdir H₁ h₁ H₂ h₂
+      exact ⟨⟨H, hH⟩, ker_coordinateHom_mono G hH₁, ker_coordinateHom_mono G hH₂⟩
+    obtain ⟨⟨H, hH⟩, hHM⟩ := (isOpen_ker_coordinateHom G M).isClosed_compl.isCompact
+      |>.elim_directed_family_closed _ (fun H : 𝒩 ↦ isClosed_ker_coordinateHom G H) hdisj hdir'
+    refine ⟨H, hH, fun g hg ↦ (etaFn_mem_ker_coordinateHom_iff G M).1 ?_⟩
+    by_contra hgM
+    exact Set.disjoint_left.1 hHM hgM ((etaFn_mem_ker_coordinateHom_iff G H).2 hg)
+  · -- an element with trivial coordinates at a cofinal family has all coordinates trivial
+    refine ProfiniteGrp.limit_ext _ _ _ fun M ↦ ?_
+    obtain ⟨H, hH, hHM⟩ := h M
+    rw [← coordinateHom_apply G M x, ← coordinateHom_apply G M 1, map_one]
+    exact ker_coordinateHom_mono G hHM (mem_familyKernel_iff.1 hx H hH)
+
+/-- The family kernel is trivial exactly when every finite-index subgroup, normal or not,
+contains a member of the nonempty downward directed family `𝒩`. -/
+theorem familyKernel_eq_bot_iff_forall_finiteIndex {𝒩 : Set (FiniteIndexNormalSubgroup G)}
+    (hne : 𝒩.Nonempty) (hdir : DirectedOn (· ≥ ·) 𝒩) :
+    familyKernel G 𝒩 = ⊥ ↔ ∀ H : Subgroup G, H.FiniteIndex → ∃ N ∈ 𝒩, N.toSubgroup ≤ H := by
+  rw [familyKernel_eq_bot_iff hne hdir]
+  refine ⟨fun h H _ ↦ ?_, fun h M ↦ h M.toSubgroup inferInstance⟩
+  obtain ⟨N, hN, hNH⟩ := h (.ofSubgroup H.normalCore)
+  exact ⟨N, hN, le_trans hNH H.normalCore_le⟩
+
+end FamilyKernel
 
 end ProfiniteCompletion
 
