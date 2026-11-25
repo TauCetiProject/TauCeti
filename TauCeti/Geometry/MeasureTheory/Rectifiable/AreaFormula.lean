@@ -7,13 +7,8 @@ module
 
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.Rademacher
 import Mathlib.Analysis.Calculus.Rademacher
-import TauCeti.Geometry.Euclidean.Volume.Measure
-import TauCeti.MeasureTheory.Function.AreaFormula.Lipschitz
 import TauCeti.MeasureTheory.Function.AreaFormula.Multiplicity
-import TauCeti.MeasureTheory.Function.AreaFormula.Real
-import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
 import TauCeti.Topology.Algebra.InfiniteSum.Extend
-import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
 # The tangential area formula on countably rectifiable sets
@@ -23,7 +18,7 @@ restricted measure `μHE[k].restrict E`, and let `g : V → W` be locally Lipsch
 tangential area formula transports `k`-dimensional Euclidean Hausdorff measure along `g` via
 `tangentialJacobian k E g`: for every `μHE[k].restrict E`-a.e. measurable weight `w : V → ℝ≥0∞`,
 `∫⁻ x in E, ofReal (tangentialJacobian k E g x) * w x ∂μHE[k]` equals the `μHE[k]`-integral of
-the fiber sums `y ↦ ∑' x : (E ∩ g ⁻¹' {y}), w x` (with `encard` multiplicity when `w = 1`, and
+the fiber sums `y ↦ ∑' x : ↥(E ∩ g ⁻¹' {y}), w x` (with `encard` multiplicity when `w = 1`, and
 real-valued `∫` and `ncard` versions under `IntegrableOn`).
 
 Each Borel bi-Lipschitz patch reduces the integral to the Euclidean area formula with
@@ -70,9 +65,8 @@ private lemma lintegral_patch_tangentialJacobian_mul (w : V → ℝ≥0∞) : (�
     u).normDet := by
     simpa only [U, finrank_euclideanSpace_fin] using
       hf_diff.hasFDerivAt.hasFDerivWithinAt.tangentialJacobian_mul_normDet hinj_df hf_anti huB hsub
-        hdens (by
-          simpa only [U, finrank_euclideanSpace_fin, ← volume_closedBall_eq_euclidean (0 : U)] using
-            hdiff) (hgf_diff.hasFDerivAt.hasFDerivWithinAt.congr
+        hdens (by rwa [finrank_euclideanSpace_fin])
+        (hgf_diff.hasFDerivAt.hasFDerivWithinAt.congr
           (fun _ hv => hgExt_eq (mem_image_of_mem f hv)) (hgExt_eq (mem_image_of_mem f huB)))
   rw [← mul_assoc, mul_comm (ENNReal.ofReal (fderiv ℝ f u).normDet), ← ENNReal.ofReal_mul
     (tangentialJacobian_nonneg _ _ _ _), hmul]
@@ -99,25 +93,25 @@ variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteD
     [FiniteDimensional ℝ W] [MeasurableSpace W] [BorelSpace W] {k : ℕ} {E : Set V} {g : V → W}
 local notation "J" => tangentialJacobian k E g
 local notation "D" => tangentialFDeriv k E g
-local notation "F[" y "]" => Set.Elem (min E (Set.preimage g (singleton y)))
 local notation "ofReal" => ENNReal.ofReal
 namespace LocallyLipschitzOn
 variable (hg : LocallyLipschitzOn E g) (hE : CountablyRectifiable k E)
     (hEm : NullMeasurableSet E μHE[k]) [IsLocallyFiniteMeasure (μHE[k].restrict E)]
 include hg hE hEm
 private lemma aemeasurable_and_lintegral_tsum_fiber {w : V → ℝ≥0∞}
-    (hw : AEMeasurable w (μHE[k].restrict E)) : AEMeasurable (fun y => ∑' x : F[y], w x) μHE[k] ∧
-    (∫⁻ x in E, ofReal (J x) * w x ∂μHE[k]) = ∫⁻ y, ∑' x : F[y], w x ∂μHE[k] := by
+    (hw : AEMeasurable w (μHE[k].restrict E)) :
+    AEMeasurable (fun y => ∑' x : ↥(E ∩ g ⁻¹' {y}), w x) μHE[k] ∧
+      (∫⁻ x in E, ofReal (J x) * w x ∂μHE[k]) = ∫⁻ y, ∑' x : ↥(E ∩ g ⁻¹' {y}), w x ∂μHE[k] := by
   let w' := hw.mk w; have hw_ae := hg.tsum_fiber_congr_ae_fun hw.ae_eq_mk
   obtain ⟨B, f, gExt, _, _, _, hBm, hTm, hbi, hgExt, hdisj, hsubE, hcover_ae⟩ :=
     hg.exists_disjoint_measurable_bilipschitz_extension_cover hE hEm
   have hp (n : ℕ) := patch_area_formula hEm (hgExt n).1 (hgExt n).2 (hBm n) (hbi n).1 (hbi n).2
-    ((subset_iUnion (fun m => f m '' B m) n).trans hsubE) hw.measurable_mk
+    (hsubE n) hw.measurable_mk
   have hunion (y : W) : (∑' x : ↥((⋃ n, f n '' B n) ∩ g ⁻¹' {y}), w' x) = ∑' n, ∑' x : ↥((f n '' B
     n) ∩ g ⁻¹' {y}), w' x := by
     rw [iUnion_inter, _root_.tsum_iUnion]
     exact fun _ _ _ _ hij => (hdisj hij).mono inter_subset_left inter_subset_left
-  have hcov_w := hg.tsum_fiber_congr_ae_set hsubE Subset.rfl hcover_ae w'
+  have hcov_w := hg.tsum_fiber_congr_ae_set (iUnion_subset hsubE) Subset.rfl hcover_ae w'
   refine ⟨((AEMeasurable.tsum fun n => (hp n).1).congr (hcov_w.mono fun y hy => (hunion
     y).symm.trans hy)).congr hw_ae.symm, ?_⟩
   rw [lintegral_congr_ae (hw.ae_eq_mk.mono fun x hx => congrArg (ofReal (J x) * ·) hx),
@@ -127,12 +121,13 @@ private lemma aemeasurable_and_lintegral_tsum_fiber {w : V → ℝ≥0∞}
     ((lintegral_congr_ae hcov_w).trans (lintegral_congr_ae hw_ae.symm))
 /-- Measurability of weighted fiber sums for `LocallyLipschitzOn`. -/
 theorem aemeasurable_tsum_fiber {w : V → ℝ≥0∞} (hw : AEMeasurable w (μHE[k].restrict E)) :
-    AEMeasurable (fun y => ∑' x : F[y], w x) μHE[k] :=
+    AEMeasurable (fun y => ∑' x : ↥(E ∩ g ⁻¹' {y}), w x) μHE[k] :=
   (hg.aemeasurable_and_lintegral_tsum_fiber hE hEm hw).1
 /-- Weighted tangential area formula with multiplicity for `LocallyLipschitzOn`. -/
 theorem lintegral_tangentialJacobian_mul_eq_lintegral_tsum {w : V → ℝ≥0∞}
-    (hw : AEMeasurable w (μHE[k].restrict E)) : (∫⁻ x in E, ofReal (J x) * w x ∂μHE[k]) = ∫⁻ y,
-    ∑' x : F[y], w x ∂μHE[k] := (hg.aemeasurable_and_lintegral_tsum_fiber hE hEm hw).2
+    (hw : AEMeasurable w (μHE[k].restrict E)) :
+    (∫⁻ x in E, ofReal (J x) * w x ∂μHE[k]) = ∫⁻ y, ∑' x : ↥(E ∩ g ⁻¹' {y}), w x ∂μHE[k] :=
+  (hg.aemeasurable_and_lintegral_tsum_fiber hE hEm hw).2
 /-- Measurability of extended fiber cardinalities for `LocallyLipschitzOn`. -/
 theorem aemeasurable_encard_fiber : AEMeasurable (fun y => ((E ∩ g ⁻¹' {y}).encard : ℝ≥0∞)) μHE[k]
     := by simpa only [ENNReal.tsum_set_one] using
@@ -147,24 +142,23 @@ theorem lintegral_image_eq_lintegral_tangentialJacobian_mul (hinj : InjOn g E) (
   obtain ⟨B, f, gExt, _, _, _, hBm, hTm, hbi, hgExt, hdisj, hsubE, hcover_ae⟩ :=
     hg.exists_disjoint_measurable_bilipschitz_extension_cover hE hEm
   have himg_ae : g '' E =ᵐ[μHE[k]] g '' (⋃ n, f n '' B n) := by
-    nth_rw 1 [(union_sdiff_cancel hsubE).symm]; rw [image_union]
+    nth_rw 1 [(union_sdiff_cancel (iUnion_subset hsubE)).symm]; rw [image_union]
     exact union_ae_eq_left_of_ae_eq_empty (ae_eq_empty.mpr
       (hg.euclideanHausdorffMeasure_image_eq_zero_of_subset sdiff_subset k
-        (measure_mono_null (fun _ h => Or.inr h) (measure_symmDiff_eq_zero_iff.mpr hcover_ae))))
-  have hsub_n (n : ℕ) : f n '' B n ⊆ E := (subset_iUnion (fun m => f m '' B m) n).trans hsubE
+        (ae_eq_set.mp hcover_ae).2))
   have hinj_gf (n : ℕ) : InjOn (gExt n ∘ f n) (B n) := fun u₁ hu₁ u₂ hu₂ h =>
-    injOn_iff_injective.mpr (hbi n).2.injective hu₁ hu₂ (hinj (hsub_n n (mem_image_of_mem _ hu₁))
-      (hsub_n n (mem_image_of_mem _ hu₂)) (((hgExt n).2 (mem_image_of_mem _ hu₁)).trans
+    injOn_iff_injective.mpr (hbi n).2.injective hu₁ hu₂ (hinj (hsubE n (mem_image_of_mem _ hu₁))
+      (hsubE n (mem_image_of_mem _ hu₂)) (((hgExt n).2 (mem_image_of_mem _ hu₁)).trans
         (h.trans ((hgExt n).2 (mem_image_of_mem _ hu₂)).symm)))
   have himg_eq (n : ℕ) : g '' (f n '' B n) = (gExt n ∘ f n) '' B n :=
     (image_comp g (f n) (B n)).symm ▸ image_congr fun u hu => (hgExt n).2 (mem_image_of_mem _ hu)
   rw [setLIntegral_congr himg_ae, image_iUnion, lintegral_iUnion (fun n => himg_eq n ▸ (hBm
     n).image_of_continuousOn_injOn ((hgExt n).1.comp (hbi n).1).continuous.continuousOn (hinj_gf n))
-    (fun i j hij => Disjoint.image (hdisj hij) hinj (hsub_n i) (hsub_n j)),
+    (fun i j hij => Disjoint.image (hdisj hij) hinj (hsubE i) (hsubE j)),
     setLIntegral_congr hcover_ae.symm, lintegral_iUnion hTm hdisj]
   refine tsum_congr fun n => ?_
   rw [himg_eq n, lintegral_patch_tangentialJacobian_mul hEm (hgExt n).1 (hgExt n).2 (hBm n) (hbi
-    n).1 (hbi n).2 (hsub_n n) (fun x => w (g x))]
+    n).1 (hbi n).2 (hsubE n) (fun x => w (g x))]
   exact (by simpa only [finrank_euclideanSpace_fin, comp_apply] using ((hgExt n).1.comp (hbi
     n).1).lintegral_image_eq_lintegral_normDet_fderiv_mul (hBm n) (hinj_gf n) w : _ = ∫⁻ u in B n,
     ofReal (fderiv ℝ (gExt n ∘ f n) u).normDet * w (gExt n (f n u))).trans (setLIntegral_congr_fun
@@ -190,28 +184,33 @@ theorem euclideanHausdorffMeasure_image_eq_zero_of_finrank_range_tangentialFDeri
     (hrank.mono fun _ hlt hxE => tangentialJacobian_eq_zero_of_finrank_range_lt (hlt hxE))
 /-- Finiteness of the `μHE[k]` integral of extended weighted fiber sums. -/
 theorem lintegral_tsum_fiber_ne_top {w : V → ℝ≥0} (hw : AEMeasurable w (μHE[k].restrict E)) (hint :
-    IntegrableOn (fun x => J x * (w x : ℝ)) E μHE[k]) : (∫⁻ y, ∑' x : F[y], (w x : ℝ≥0∞) ∂μHE[k]) ≠
-    ∞ := by
+    IntegrableOn (fun x => J x * (w x : ℝ)) E μHE[k]) :
+    (∫⁻ y, ∑' x : ↥(E ∩ g ⁻¹' {y}), (w x : ℝ≥0∞) ∂μHE[k]) ≠ ∞ := by
   rw [← hg.lintegral_tangentialJacobian_mul_eq_lintegral_tsum hE hEm hw.coe_nnreal_ennreal]
   simpa only [ENNReal.ofReal_mul (tangentialJacobian_nonneg _ _ _ _), ENNReal.ofReal_coe_nnreal]
     using hint.lintegral_lt_top.ne
 /-- Almost-everywhere summability of real weights on fibers. -/
 theorem ae_summable_fiber {w : V → ℝ≥0} (hw : AEMeasurable w (μHE[k].restrict E)) (hint :
-    IntegrableOn (fun x => J x * (w x : ℝ)) E μHE[k]) : ∀ᵐ y ∂μHE[k], Summable fun x : F[y] => (w x
-    : ℝ) := (ae_lt_top' (hg.aemeasurable_tsum_fiber hE hEm hw.coe_nnreal_ennreal)
+    IntegrableOn (fun x => J x * (w x : ℝ)) E μHE[k]) :
+    ∀ᵐ y ∂μHE[k], Summable fun x : ↥(E ∩ g ⁻¹' {y}) => (w x : ℝ) :=
+  (ae_lt_top' (hg.aemeasurable_tsum_fiber hE hEm hw.coe_nnreal_ennreal)
     (hg.lintegral_tsum_fiber_ne_top hE hEm hw hint)).mono fun _ hy =>
     ENNReal.tsum_coe_ne_top_iff_summable_coe.mp hy.ne
 /-- Integrability of the real weighted fiber sum on `W`. -/
 theorem integrable_tsum_fiber {w : V → ℝ≥0} (hw : AEMeasurable w (μHE[k].restrict E)) (hint :
-    IntegrableOn (fun x => J x * (w x : ℝ)) E μHE[k]) : Integrable (fun y => ∑' x : F[y], (w x : ℝ))
-    μHE[k] := (integrable_toReal_of_lintegral_ne_top (hg.aemeasurable_tsum_fiber hE hEm
-    hw.coe_nnreal_ennreal) (hg.lintegral_tsum_fiber_ne_top hE hEm hw hint)).congr <| .of_forall
-    fun y => by simpa only [ENNReal.coe_toReal] using ENNReal.tsum_toReal_eq (f := fun x : F[y] =>
-      (w x : ℝ≥0∞)) fun _ => ENNReal.coe_ne_top
+    IntegrableOn (fun x => J x * (w x : ℝ)) E μHE[k]) :
+    Integrable (fun y => ∑' x : ↥(E ∩ g ⁻¹' {y}), (w x : ℝ)) μHE[k] :=
+  (integrable_toReal_of_lintegral_ne_top (hg.aemeasurable_tsum_fiber hE hEm
+    hw.coe_nnreal_ennreal) (hg.lintegral_tsum_fiber_ne_top hE hEm hw hint)).congr <|
+    .of_forall fun y => by
+      simpa only [ENNReal.coe_toReal] using
+        ENNReal.tsum_toReal_eq (f := fun x : ↥(E ∩ g ⁻¹' {y}) => (w x : ℝ≥0∞))
+          fun _ => ENNReal.coe_ne_top
 /-- Real weighted tangential area formula with multiplicity for `LocallyLipschitzOn`. -/
 theorem integral_tangentialJacobian_mul_eq_integral_tsum {w : V → ℝ≥0}
     (hw : AEMeasurable w (μHE[k].restrict E)) (hint : IntegrableOn (fun x => J x * (w x : ℝ)) E
-    μHE[k]) : (∫ x in E, J x * (w x : ℝ) ∂μHE[k]) = ∫ y, ∑' x : F[y], (w x : ℝ) ∂μHE[k] := by
+    μHE[k]) :
+    (∫ x in E, J x * (w x : ℝ) ∂μHE[k]) = ∫ y, ∑' x : ↥(E ∩ g ⁻¹' {y}), (w x : ℝ) ∂μHE[k] := by
   have hA : AEMeasurable (fun x => ofReal (J x) * (w x : ℝ≥0∞)) (μHE[k].restrict E) :=
     (ENNReal.measurable_ofReal.comp_aemeasurable
       (hg.aemeasurable_tangentialJacobian hE hEm)).mul hw.coe_nnreal_ennreal
@@ -223,7 +222,8 @@ theorem integral_tangentialJacobian_mul_eq_integral_tsum {w : V → ℝ≥0}
     ← integral_toReal hG (ae_lt_top' hG (hg.lintegral_tsum_fiber_ne_top hE hEm hw hint))]
   exact integral_congr_ae <| .of_forall fun y => by
     simpa only [ENNReal.coe_toReal] using
-      ENNReal.tsum_toReal_eq (f := fun x : F[y] => (w x : ℝ≥0∞)) fun _ => ENNReal.coe_ne_top
+      ENNReal.tsum_toReal_eq (f := fun x : ↥(E ∩ g ⁻¹' {y}) => (w x : ℝ≥0∞))
+        fun _ => ENNReal.coe_ne_top
 /-- Almost-everywhere finiteness of fibers when `tangentialJacobian` is integrable on `E`. -/
 theorem ae_finite_fiber (hint : IntegrableOn (J) E μHE[k]) : ∀ᵐ y ∂μHE[k], (E ∩ g ⁻¹' {y}).Finite :=
   (hg.ae_summable_fiber hE hEm (w := fun _ => 1) aemeasurable_const (by simpa using hint)).mono
@@ -232,126 +232,14 @@ theorem ae_finite_fiber (hint : IntegrableOn (J) E μHE[k]) : ∀ᵐ y ∂μHE[k
 theorem integrable_ncard_fiber (hint : IntegrableOn (J) E μHE[k]) : Integrable (fun y => ((E ∩ g ⁻¹'
     {y}).ncard : ℝ)) μHE[k] := (hg.integrable_tsum_fiber hE hEm (w := fun _ => 1) aemeasurable_const
     (by simpa using hint)).congr ((hg.ae_finite_fiber hE hEm hint).mono fun y hy => by
-      let _ : Finite F[y] := Set.finite_coe_iff.mpr hy; simp)
+      let _ : Finite ↥(E ∩ g ⁻¹' {y}) := Set.finite_coe_iff.mpr hy; simp)
 /-- Real unweighted tangential area formula for `LocallyLipschitzOn`. -/
 theorem integral_tangentialJacobian_eq_integral_ncard (hint : IntegrableOn (J) E μHE[k]) : (∫ x in
     E, J x ∂μHE[k]) = ∫ y, ((E ∩ g ⁻¹' {y}).ncard : ℝ) ∂μHE[k] := by
-  refine (?_ : _ = ∫ y, ∑' _ : F[y], (1 : ℝ) ∂μHE[k]).trans (integral_congr_ae <|
+  refine (?_ : _ = ∫ y, ∑' _ : ↥(E ∩ g ⁻¹' {y}), (1 : ℝ) ∂μHE[k]).trans (integral_congr_ae <|
     (hg.ae_finite_fiber hE hEm hint).mono fun y hy => by
-      let _ : Finite F[y] := Set.finite_coe_iff.mpr hy; simp)
+      let _ : Finite ↥(E ∩ g ⁻¹' {y}) := Set.finite_coe_iff.mpr hy; simp)
   simpa using hg.integral_tangentialJacobian_mul_eq_integral_tsum hE hEm (w := fun _ => 1)
     aemeasurable_const (by simpa using hint)
 end LocallyLipschitzOn
-namespace LipschitzOnWith
-variable {K : ℝ≥0} (hg : LipschitzOnWith K g E) (hE : CountablyRectifiable k E)
-    (hEm : NullMeasurableSet E μHE[k]) [IsLocallyFiniteMeasure (μHE[k].restrict E)]
-include hg hE hEm
-/-- Measurability of weighted fiber sums for `LipschitzOnWith`. -/
-theorem aemeasurable_tsum_fiber {w : V → ℝ≥0∞} (hw : AEMeasurable w (μHE[k].restrict E)) :
-    AEMeasurable (fun y => ∑' x : F[y], w x) μHE[k] :=
-  hg.locallyLipschitzOn.aemeasurable_tsum_fiber hE hEm hw
-/-- Weighted tangential area formula with multiplicity for `LipschitzOnWith`. -/
-theorem lintegral_tangentialJacobian_mul_eq_lintegral_tsum {w : V → ℝ≥0∞}
-    (hw : AEMeasurable w (μHE[k].restrict E)) : (∫⁻ x in E, ofReal (J x) * w x ∂μHE[k]) = ∫⁻ y,
-    ∑' x : F[y], w x ∂μHE[k] :=
-  hg.locallyLipschitzOn.lintegral_tangentialJacobian_mul_eq_lintegral_tsum hE hEm hw
-/-- Weighted injective tangential area formula for `LipschitzOnWith`. -/
-theorem lintegral_image_eq_lintegral_tangentialJacobian_mul (hinj : InjOn g E) (w : W → ℝ≥0∞) :
-    (∫⁻ y in g '' E, w y ∂μHE[k]) = ∫⁻ x in E, ofReal (J x) * w (g x) ∂μHE[k] :=
-  hg.locallyLipschitzOn.lintegral_image_eq_lintegral_tangentialJacobian_mul hE hEm hinj w
-/-- Unweighted tangential area formula with multiplicity for `LipschitzOnWith`. -/
-theorem lintegral_tangentialJacobian_eq_lintegral_encard : (∫⁻ x in E, ofReal (J x) ∂μHE[k]) = ∫⁻ y,
-    ((E ∩ g ⁻¹' {y}).encard : ℝ≥0∞) ∂μHE[k] :=
-  hg.locallyLipschitzOn.lintegral_tangentialJacobian_eq_lintegral_encard hE hEm
-/-- Injective tangential area formula for `LipschitzOnWith`. -/
-theorem lintegral_tangentialJacobian_eq_euclideanHausdorffMeasure_image (hinj : InjOn g E) : (∫⁻ x
-    in E, ofReal (J x) ∂μHE[k]) = μHE[k] (g '' E) :=
-  hg.locallyLipschitzOn.lintegral_tangentialJacobian_eq_euclideanHausdorffMeasure_image hE hEm hinj
-/-- Rank-deficient tangential derivatives have null images (`LipschitzOnWith`). -/
-theorem euclideanHausdorffMeasure_image_eq_zero_of_finrank_range_tangentialFDeriv_lt (hrank : ∀ᵐ x
-    ∂μHE[k], x ∈ E → finrank ℝ (LinearMap.range (D x).toLinearMap) < k) : μHE[k] (g '' E) = 0 :=
-  hg.locallyLipschitzOn.euclideanHausdorffMeasure_image_eq_zero_of_finrank_range_tangentialFDeriv_lt
-    hE hEm hrank
-/-- Real weighted tangential area formula with multiplicity for `LipschitzOnWith`. -/
-theorem integral_tangentialJacobian_mul_eq_integral_tsum {w : V → ℝ≥0}
-    (hw : AEMeasurable w (μHE[k].restrict E)) (hint : IntegrableOn (fun x => J x * (w x : ℝ)) E
-    μHE[k]) : (∫ x in E, J x * (w x : ℝ) ∂μHE[k]) = ∫ y, ∑' x : F[y], (w x : ℝ) ∂μHE[k] :=
-  hg.locallyLipschitzOn.integral_tangentialJacobian_mul_eq_integral_tsum hE hEm hw hint
-/-- Real unweighted tangential area formula for `LipschitzOnWith`. -/
-theorem integral_tangentialJacobian_eq_integral_ncard (hint : IntegrableOn (J) E μHE[k]) : (∫ x in
-    E, J x ∂μHE[k]) = ∫ y, ((E ∩ g ⁻¹' {y}).ncard : ℝ) ∂μHE[k] :=
-  hg.locallyLipschitzOn.integral_tangentialJacobian_eq_integral_ncard hE hEm hint
-end LipschitzOnWith
-namespace LipschitzWith
-variable {K : ℝ≥0} (hg : LipschitzWith K g) (hE : CountablyRectifiable k E)
-    (hEm : NullMeasurableSet E μHE[k]) [IsLocallyFiniteMeasure (μHE[k].restrict E)]
-include hg hE hEm
-/-- Weighted tangential area formula with multiplicity for `K`-Lipschitz maps. -/
-theorem lintegral_tangentialJacobian_mul_eq_lintegral_tsum {w : V → ℝ≥0∞}
-    (hw : AEMeasurable w (μHE[k].restrict E)) : (∫⁻ x in E, ofReal (J x) * w x ∂μHE[k]) = ∫⁻ y,
-    ∑' x : F[y], w x ∂μHE[k] :=
-  hg.lipschitzOnWith.lintegral_tangentialJacobian_mul_eq_lintegral_tsum hE hEm hw
-/-- Unweighted tangential area formula with multiplicity for `K`-Lipschitz maps. -/
-theorem lintegral_tangentialJacobian_eq_lintegral_encard : (∫⁻ x in E, ofReal (J x) ∂μHE[k]) = ∫⁻ y,
-    ((E ∩ g ⁻¹' {y}).encard : ℝ≥0∞) ∂μHE[k] :=
-  hg.lipschitzOnWith.lintegral_tangentialJacobian_eq_lintegral_encard hE hEm
-/-- Weighted injective tangential area formula for `K`-Lipschitz maps. -/
-theorem lintegral_image_eq_lintegral_tangentialJacobian_mul (hinj : InjOn g E) (w : W → ℝ≥0∞) :
-    (∫⁻ y in g '' E, w y ∂μHE[k]) = ∫⁻ x in E, ofReal (J x) * w (g x) ∂μHE[k] :=
-  hg.lipschitzOnWith.lintegral_image_eq_lintegral_tangentialJacobian_mul hE hEm hinj w
-/-- Injective tangential area formula for `K`-Lipschitz maps. -/
-theorem lintegral_tangentialJacobian_eq_euclideanHausdorffMeasure_image (hinj : InjOn g E) : (∫⁻ x
-    in E, ofReal (J x) ∂μHE[k]) = μHE[k] (g '' E) :=
-  hg.lipschitzOnWith.lintegral_tangentialJacobian_eq_euclideanHausdorffMeasure_image hE hEm hinj
-/-- Rank-deficient tangential derivatives have null images (`LipschitzWith`). -/
-theorem euclideanHausdorffMeasure_image_eq_zero_of_finrank_range_tangentialFDeriv_lt (hrank : ∀ᵐ x
-    ∂μHE[k], x ∈ E → finrank ℝ (LinearMap.range (D x).toLinearMap) < k) : μHE[k] (g '' E) = 0 :=
-  hg.lipschitzOnWith.euclideanHausdorffMeasure_image_eq_zero_of_finrank_range_tangentialFDeriv_lt hE
-    hEm hrank
-/-- Real weighted tangential area formula with multiplicity for `K`-Lipschitz maps. -/
-theorem integral_tangentialJacobian_mul_eq_integral_tsum {w : V → ℝ≥0}
-    (hw : AEMeasurable w (μHE[k].restrict E)) (hint : IntegrableOn (fun x => J x * (w x : ℝ)) E
-    μHE[k]) : (∫ x in E, J x * (w x : ℝ) ∂μHE[k]) = ∫ y, ∑' x : F[y], (w x : ℝ) ∂μHE[k] :=
-  hg.lipschitzOnWith.integral_tangentialJacobian_mul_eq_integral_tsum hE hEm hw hint
-/-- Real unweighted tangential area formula for `K`-Lipschitz maps. -/
-theorem integral_tangentialJacobian_eq_integral_ncard (hint : IntegrableOn (J) E μHE[k]) : (∫ x in
-    E, J x ∂μHE[k]) = ∫ y, ((E ∩ g ⁻¹' {y}).ncard : ℝ) ∂μHE[k] :=
-  hg.lipschitzOnWith.integral_tangentialJacobian_eq_integral_ncard hE hEm hint
-end LipschitzWith
-namespace LocallyLipschitz
-variable (hg : LocallyLipschitz g) (hE : CountablyRectifiable k E)
-    (hEm : NullMeasurableSet E μHE[k]) [IsLocallyFiniteMeasure (μHE[k].restrict E)]
-include hg hE hEm
-/-- Weighted tangential area formula with multiplicity for locally Lipschitz maps. -/
-theorem lintegral_tangentialJacobian_mul_eq_lintegral_tsum {w : V → ℝ≥0∞}
-    (hw : AEMeasurable w (μHE[k].restrict E)) : (∫⁻ x in E, ofReal (J x) * w x ∂μHE[k]) = ∫⁻ y,
-    ∑' x : F[y], w x ∂μHE[k] :=
-  hg.locallyLipschitzOn.lintegral_tangentialJacobian_mul_eq_lintegral_tsum hE hEm hw
-/-- Unweighted tangential area formula with multiplicity for locally Lipschitz maps. -/
-theorem lintegral_tangentialJacobian_eq_lintegral_encard : (∫⁻ x in E, ofReal (J x) ∂μHE[k]) = ∫⁻ y,
-    ((E ∩ g ⁻¹' {y}).encard : ℝ≥0∞) ∂μHE[k] :=
-  hg.locallyLipschitzOn.lintegral_tangentialJacobian_eq_lintegral_encard hE hEm
-/-- Weighted injective tangential area formula for locally Lipschitz maps. -/
-theorem lintegral_image_eq_lintegral_tangentialJacobian_mul (hinj : InjOn g E) (w : W → ℝ≥0∞) :
-    (∫⁻ y in g '' E, w y ∂μHE[k]) = ∫⁻ x in E, ofReal (J x) * w (g x) ∂μHE[k] :=
-  hg.locallyLipschitzOn.lintegral_image_eq_lintegral_tangentialJacobian_mul hE hEm hinj w
-/-- Injective tangential area formula for locally Lipschitz maps. -/
-theorem lintegral_tangentialJacobian_eq_euclideanHausdorffMeasure_image (hinj : InjOn g E) : (∫⁻ x
-    in E, ofReal (J x) ∂μHE[k]) = μHE[k] (g '' E) :=
-  hg.locallyLipschitzOn.lintegral_tangentialJacobian_eq_euclideanHausdorffMeasure_image hE hEm hinj
-/-- Rank-deficient tangential derivatives have null images (`LocallyLipschitz`). -/
-theorem euclideanHausdorffMeasure_image_eq_zero_of_finrank_range_tangentialFDeriv_lt (hrank : ∀ᵐ x
-    ∂μHE[k], x ∈ E → finrank ℝ (LinearMap.range (D x).toLinearMap) < k) : μHE[k] (g '' E) = 0 :=
-  hg.locallyLipschitzOn.euclideanHausdorffMeasure_image_eq_zero_of_finrank_range_tangentialFDeriv_lt
-    hE hEm hrank
-/-- Real weighted tangential area formula with multiplicity for locally Lipschitz maps. -/
-theorem integral_tangentialJacobian_mul_eq_integral_tsum {w : V → ℝ≥0}
-    (hw : AEMeasurable w (μHE[k].restrict E)) (hint : IntegrableOn (fun x => J x * (w x : ℝ)) E
-    μHE[k]) : (∫ x in E, J x * (w x : ℝ) ∂μHE[k]) = ∫ y, ∑' x : F[y], (w x : ℝ) ∂μHE[k] :=
-  hg.locallyLipschitzOn.integral_tangentialJacobian_mul_eq_integral_tsum hE hEm hw hint
-/-- Real unweighted tangential area formula for locally Lipschitz maps. -/
-theorem integral_tangentialJacobian_eq_integral_ncard (hint : IntegrableOn (J) E μHE[k]) : (∫ x in
-    E, J x ∂μHE[k]) = ∫ y, ((E ∩ g ⁻¹' {y}).ncard : ℝ) ∂μHE[k] :=
-  hg.locallyLipschitzOn.integral_tangentialJacobian_eq_integral_ncard hE hEm hint
-end LocallyLipschitz
 end RectifiableAreaFormula

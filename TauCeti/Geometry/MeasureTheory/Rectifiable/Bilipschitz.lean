@@ -117,7 +117,7 @@ theorem CountablyRectifiable.exists_disjoint_measurable_bilipschitz_cover {k : �
     ∃ (B : ℕ → Set (EuclideanSpace ℝ (Fin k))) (f : ℕ → EuclideanSpace ℝ (Fin k) → V)
       (K_f L_f : ℕ → ℝ≥0), (∀ n, MeasurableSet (B n)) ∧ (∀ n, MeasurableSet (f n '' B n)) ∧
       (∀ n, LipschitzWith (K_f n) (f n) ∧ AntilipschitzWith (L_f n) ((B n).domRestrict (f n))) ∧
-      Pairwise (Disjoint on fun n ↦ f n '' B n) ∧ (⋃ n, f n '' B n) ⊆ s ∧
+      Pairwise (Disjoint on fun n ↦ f n '' B n) ∧ (∀ n, f n '' B n ⊆ s) ∧
       (⋃ n, f n '' B n : Set V) =ᵐ[μHE[k]] s := by
   classical
   obtain ⟨s₀, hs₀_sub, hs₀m, hs₀_ae⟩ := hsm.exists_measurable_subset_ae_eq
@@ -125,7 +125,7 @@ theorem CountablyRectifiable.exists_disjoint_measurable_bilipschitz_cover {k : �
   let S (n : ℕ) : Set V := (f n '' A n) ∩ s₀
   have hSm (n : ℕ) := ((hAm n).image_of_continuousOn_injOn (hLip n).continuous.continuousOn
     (injOn_iff_injective.mpr (hAnti n).injective)).inter hs₀m
-  let B (n : ℕ) : Set (EuclideanSpace ℝ (Fin k)) := A n ∩ (f n) ⁻¹' disjointed S n
+  let B (n : ℕ) := A n ∩ (f n) ⁻¹' disjointed S n
   have hBm (n : ℕ) := (hAm n).inter ((MeasurableSet.disjointed hSm n).preimage
     (hLip n).continuous.measurable)
   have himg (n : ℕ) : f n '' B n = disjointed S n := (image_inter_preimage _ _ _).trans <|
@@ -135,7 +135,8 @@ theorem CountablyRectifiable.exists_disjoint_measurable_bilipschitz_cover {k : �
   have hsub_s : (⋃ n, f n '' B n) ⊆ s := hUnion ▸ inter_subset_right.trans hs₀_sub
   refine ⟨B, f, K_f, L_f, hBm, fun n ↦ (himg n).symm ▸ MeasurableSet.disjointed hSm n,
     fun n ↦ ⟨hLip n, fun u v ↦ (hAnti n) ⟨u, u.property.1⟩ ⟨v, v.property.1⟩⟩,
-    fun m n hmn ↦ by simpa only [Function.onFun, himg] using disjoint_disjointed S hmn, hsub_s, ?_⟩
+    fun m n hmn ↦ by simpa only [Function.onFun, himg] using disjoint_disjointed S hmn,
+    fun n ↦ (subset_iUnion (fun m ↦ f m '' B m) n).trans hsub_s, ?_⟩
   refine Filter.EventuallySubset.antisymm (Filter.Eventually.of_forall fun _ hx ↦ hsub_s hx) ?_
   simpa only [inter_self, hUnion] using (ae_subset.mpr hc).inter hs₀_ae.symm.subset
 

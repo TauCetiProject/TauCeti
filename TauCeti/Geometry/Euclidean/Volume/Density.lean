@@ -15,6 +15,7 @@ import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import TauCeti.Geometry.Euclidean.Volume.Measure
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
 
 /-!
@@ -176,7 +177,7 @@ theorem tendsto_volume_div_zero_of_antilipschitzWith {U V : Type*} [NormedAddCom
       (Or.inr (ENNReal.pow_ne_top (ENNReal.coe_ne_top (r := L * C)) (n := finrank ℝ U))))
     (.of_forall fun _ => zero_le) ?_
   filter_upwards [eventually_mem_nhdsWithin, hinc] with ρ (hρ0 : 0 < ρ) hsub
-  rw [volume_closedBall_eq_euclidean (0 : U) ρ]
+  rw [volume_closedBall_eq_of_finrank_eq finrank_euclideanSpace_fin.symm (0 : U) 0 ρ]
   refine (ENNReal.div_le_div_right
     ((volume_le_mul_euclideanHausdorffMeasure_image_of_antilipschitzWith hi
       inter_subset_left).trans (mul_le_mul' le_rfl (measure_mono hsub))) _).trans_eq ?_
@@ -205,7 +206,7 @@ private lemma euclideanHausdorffMeasure_closedBall_slab_div_le {V : Type*} [Norm
   refine (ENNReal.div_le_div_right (measure_mono hinc) _).trans_eq ?_
   rw [(IsometryEquiv.vaddConst x).isometry.euclideanHausdorffMeasure_image,
     InnerProductSpace.euclideanHausdorffMeasure_eq_volume, addHaar_smul_of_nonneg volume hr.le,
-    ← volume_closedBall_eq_euclidean (0 : V) r, (by
+    ← volume_closedBall_eq_of_finrank_eq finrank_euclideanSpace_fin.symm (0 : V) 0 r, (by
       simpa only [mul_one, ENNReal.ofReal_pow hr.le] using addHaar_closedBall_mul volume (0 : V)
         hr.le zero_le_one : volume (closedBall (0 : V) r) = ENNReal.ofReal (r ^ finrank ℝ V) *
           volume (closedBall (0 : V) 1)), ENNReal.mul_div_mul_left _ _

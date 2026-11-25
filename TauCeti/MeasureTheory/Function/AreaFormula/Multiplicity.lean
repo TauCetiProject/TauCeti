@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Function.AreaFormula.Lipschitz
-public import TauCeti.Topology.EMetricSpace.Lipschitz
 import TauCeti.MeasureTheory.Function.Jacobian.Decomposition
 import TauCeti.Topology.Algebra.InfiniteSum.Extend
 import TauCeti.MeasureTheory.Function.AreaFormula.Integral

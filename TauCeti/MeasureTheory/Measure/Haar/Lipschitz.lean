@@ -8,8 +8,8 @@ module
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import TauCeti.MeasureTheory.Measure.Hausdorff
 public import Mathlib.Geometry.Euclidean.Volume.Measure
-public import TauCeti.Topology.EMetricSpace.Lipschitz
 import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
 # Hausdorff measure and null-set transport under Lipschitz maps

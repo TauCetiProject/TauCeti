@@ -8,10 +8,12 @@ module
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.Tangent.Plane
 public import TauCeti.Analysis.InnerProductSpace.NormDet
 public import TauCeti.Analysis.InnerProductSpace.RangeProjection
+import TauCeti.Analysis.Calculus.FDeriv.Remainder
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Geometry.Euclidean.Volume.Density
 import TauCeti.LinearAlgebra.Dimension.Submodule
+import TauCeti.Topology.MetricSpace.Antilipschitz
 
 /-!
 # Tangential differentiation and the tangential Jacobian on rectifiable sets
@@ -24,7 +26,8 @@ first-order error exceeds `ε * dist z x` on a subset of `E` with `k`-dimensiona
 zero on `Pᗮ`, making `L` unconditionally unique (`HasTangentialFDerivAt.unique`).
 
 From uniqueness we define the canonical tangential derivative `tangentialFDeriv k E g x` (with
-fallback `0` where none exists) and the `k`-dimensional tangential Jacobian
+fallback `0` where none exists, commuting unconditionally with scalar multiplication and negation
+and additively at tangentially differentiable points) and the `k`-dimensional tangential Jacobian
 `tangentialJacobian k E g x` (`normDet` of its restriction to `P`, also defaulting to `0`). Both
 are invariant under `μHE[k]`-null changes and local germs of `E` as well as a.e. modifications of
 `g`. On an inverse-Lipschitz patch `f '' s ⊆ E` at a regular density-one point with
@@ -204,8 +207,7 @@ theorem of_hasFDerivWithinAt (hu : ∃! P : Submodule ℝ V, IsApproximateTangen
   refine ⟨hu, by ext v; simp [approximateTangentProjection_eq,
       Submodule.starProjection_eq_self_iff.2 (Submodule.starProjection_apply_mem _ _)],
     fun ε hε => ?_⟩
-  obtain ⟨δ, hδ, hδb⟩ := eventually_nhds_iff_ball.mp
-    (eventually_nhdsWithin_iff.mp (hg.isLittleO.bound (half_pos hε)))
+  obtain ⟨δ, hδ, hδb⟩ := hg.exists_ball_remainder_le (half_pos hε)
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
     (densityZeroOutsideCones_iff.mp hP.densityZeroOutsideCones
       (ε / (2 * (‖L‖ + 1))) (by positivity))
@@ -307,11 +309,50 @@ theorem hasTangentialFDerivAt_tangentialFDeriv
   rw [← tangentialFDeriv_comp_approximateTangentProjection 0 E g x,
     approximateTangentProjection_zero, ContinuousLinearMap.comp_zero]
 
+/-- Sum rule for `tangentialFDeriv` when both functions are tangentially differentiable at `x`. -/
+theorem tangentialFDeriv_add (h₁ : ∃ L, HasTangentialFDerivAt k E g₁ L x)
+    (h₂ : ∃ L, HasTangentialFDerivAt k E g₂ L x) :
+    TFD[k, E, g₁ + g₂, x] = TFD[k, E, g₁, x] + TFD[k, E, g₂, x] :=
+  ((hasTangentialFDerivAt_tangentialFDeriv h₁).add
+    (hasTangentialFDerivAt_tangentialFDeriv h₂)).tangentialFDeriv_eq
+
+/-- Scalar multiplication rule for `tangentialFDeriv`. Because `ℝ` is a field and `tangentialFDeriv`
+defaults to `0`, no differentiability hypothesis is needed. -/
+theorem tangentialFDeriv_const_smul (c : ℝ) (g : V → W) (x : V) :
+    TFD[k, E, c • g, x] = c • TFD[k, E, g, x] := by
+  obtain rfl | hc := eq_or_ne c 0
+  · rw [zero_smul, zero_smul]
+    by_cases h : ∃ L : V →L[ℝ] W, HasTangentialFDerivAt k E 0 L x
+    · refine HasTangentialFDerivAt.tangentialFDeriv_eq ⟨h.choose_spec.existsUnique_plane,
+        ContinuousLinearMap.zero_comp _, fun ε hε => tendsto_const_nhds.congr' (.of_forall fun _ =>
+          (ENNReal.div_eq_zero_iff.mpr (.inl (measure_mono_null ?_ measure_empty))).symm)⟩
+      rintro _ ⟨_, hlt⟩; simp [not_lt.mpr (mul_nonneg hε.le dist_nonneg)] at hlt
+    · exact tangentialFDeriv_eq_zero_of_not_exists h
+  · by_cases h : ∃ L : V →L[ℝ] W, HasTangentialFDerivAt k E g L x
+    · exact ((hasTangentialFDerivAt_tangentialFDeriv h).const_smul c).tangentialFDeriv_eq
+    · rw [tangentialFDeriv_eq_zero_of_not_exists h, smul_zero]
+      exact tangentialFDeriv_eq_zero_of_not_exists fun ⟨L, hL⟩ =>
+        h ⟨c⁻¹ • L, by simpa [inv_smul_smul₀ hc] using hL.const_smul c⁻¹⟩
+
+/-- Negation rule for `tangentialFDeriv`, holding unconditionally without differentiability
+hypotheses. -/
+theorem tangentialFDeriv_neg (g : V → W) (x : V) :
+    TFD[k, E, -g, x] = -TFD[k, E, g, x] := by
+  simpa only [neg_one_smul] using tangentialFDeriv_const_smul (-1 : ℝ) g x
+
+/-- Subtraction rule for `tangentialFDeriv` when both functions are tangentially differentiable
+at `x`. -/
+theorem tangentialFDeriv_sub (h₁ : ∃ L, HasTangentialFDerivAt k E g₁ L x)
+    (h₂ : ∃ L, HasTangentialFDerivAt k E g₂ L x) :
+    TFD[k, E, g₁ - g₂, x] = TFD[k, E, g₁, x] - TFD[k, E, g₂, x] :=
+  ((hasTangentialFDerivAt_tangentialFDeriv h₁).sub
+    (hasTangentialFDerivAt_tangentialFDeriv h₂)).tangentialFDeriv_eq
+
 private lemma tangentialFDeriv_eq_of_iff {E₁ E₂ : Set V} {g₁ g₂ : V → W} {x : V}
     (hiff : ∀ L, HasTangentialFDerivAt k E₁ g₁ L x ↔ HasTangentialFDerivAt k E₂ g₂ L x) :
-    TFD[k, E₁, g₁, x] = TFD[k, E₂, g₂, x] :=
-  congrArg (fun p : (V →L[ℝ] W) → Prop => by classical exact if h : ∃ L, p L then h.choose else 0)
-    (funext fun L => propext (hiff L))
+    TFD[k, E₁, g₁, x] = TFD[k, E₂, g₂, x] := by
+  unfold tangentialFDeriv
+  rw [funext fun L => propext (hiff L)]
 
 /-- Null-set invariance of `tangentialFDeriv` in `E`. -/
 theorem tangentialFDeriv_congr_ae_set (h : E₁ =ᵐ[μHE[k]] E₂) (g : V → W) (x : V) :
@@ -456,18 +497,14 @@ theorem hasTangentialFDerivAt_of_comp (hgf : HasFDerivWithinAt (g ∘ f) B s u�
     -- tangential error below `ε * dist z (f u₀)`, leaving `E \ f '' s` which has density zero.
     have hLf1 : (0 : ℝ) < (L_f : ℝ) + 1 := by positivity
     set η₁ := ε / (2 * ((L_f : ℝ) + 1)); set η₂ := ε / (2 * (‖L‖ + 1) * ((L_f : ℝ) + 1))
-    obtain ⟨δ₁, hδ₁, hδ₁b⟩ := eventually_nhds_iff_ball.mp (eventually_nhdsWithin_iff.mp
-      (hgf.isLittleO.bound (by positivity : 0 < η₁)))
-    obtain ⟨δ₂, hδ₂, hδ₂b⟩ := eventually_nhds_iff_ball.mp (eventually_nhdsWithin_iff.mp
-      (hf.isLittleO.bound (by positivity : 0 < η₂)))
+    obtain ⟨δ₁, hδ₁, hδ₁b⟩ := hgf.exists_ball_remainder_le (by positivity : 0 < η₁)
+    obtain ⟨δ₂, hδ₂, hδ₂b⟩ := hf.exists_ball_remainder_le (by positivity : 0 < η₂)
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hdiff
       (.of_forall fun _ => zero_le) ?_
     filter_upwards [Ioo_mem_nhdsGT (div_pos (lt_min hδ₁ hδ₂) hLf1)] with r ⟨_, hrδ⟩
     gcongr; rintro z ⟨⟨hzE, hzr⟩, hzerr⟩; refine ⟨⟨hzE, ?_⟩, hzr⟩; rintro ⟨u, hus, rfl⟩
-    have hnorm_u : ‖u - u₀‖ ≤ ((L_f : ℝ) + 1) * dist (f u) (f u₀) := by
-      have hdu : dist u u₀ ≤ L_f * dist (f u) (f u₀) := by
-        simpa [Subtype.dist_eq] using hi.le_mul_dist ⟨u, hus⟩ ⟨u₀, hu₀⟩
-      rw [← dist_eq_norm]; nlinarith [L_f.coe_nonneg, dist_nonneg (x := f u) (y := f u₀)]
+    have hnorm_u : ‖u - u₀‖ ≤ ((L_f : ℝ) + 1) * dist (f u) (f u₀) :=
+      dist_eq_norm u u₀ ▸ hi.dist_le_add_one_mul_of_domRestrict hus hu₀
     have hu_lt : dist u u₀ < min δ₁ δ₂ := ((dist_eq_norm u u₀ ▸ hnorm_u).trans
       (mul_le_mul_of_nonneg_left (mem_closedBall.mp hzr) hLf1.le)).trans_lt
       ((lt_div_iff₀' hLf1).mp hrδ)

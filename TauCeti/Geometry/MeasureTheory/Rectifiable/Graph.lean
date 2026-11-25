@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.TangentCone.Graph
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.TangentialFDeriv
 public import Mathlib.Geometry.Euclidean.Volume.Measure
-import TauCeti.MeasureTheory.Covering.EssentialBoundary
+import TauCeti.MeasureTheory.Covering.EssentialBoundary.Basic
 
 /-!
 # Approximate tangency of differentiable normal graphs
@@ -130,6 +130,12 @@ theorem tangentialJacobian_snd_normalGraphEmbedding :
   have hm := hφ.tangentialJacobian_normalGraphEmbedding_mul_sqrt hx hdens (ψ := WithLp.snd) hid
   rw [ContinuousLinearMap.coe_id, LinearMap.normDet_id] at hm; exact eq_inv_of_mul_eq_one_left hm
 end HasFDerivWithinAt
+private lemma tendsto_volume_inter_closedBall_div_of_mem_nhds (hs : s ∈ 𝓝 x) :
+    Tendsto (fun r => volume (s ∩ closedBall x r) / volume (closedBall (0 : E) r))
+      (𝓝[>] 0) (𝓝 1) :=
+  (hasDensityAt_iff.mp (mem_essentialInterior.mp
+    (interior_subset_essentialInterior (μ := volume) (mem_interior_iff_mem_nhds.mpr hs)))).congr
+    fun _ => by rw [addHaar_closedBall_center]
 namespace HasFDerivAt
 variable (hφ : HasFDerivAt φ A x)
 include hφ
@@ -137,9 +143,7 @@ include hφ
 theorem isApproximateTangentPlane_normalGraphEmbedding_image_iff (hs : s ∈ 𝓝 x) {Q : Submodule ℝ
     (WithLp 2 (ℝ × E))} : IsApproximateTangentPlane kE (Gφ '' s) (Gφ x) Q ↔ Q = R[A] :=
   hφ.hasFDerivWithinAt.isApproximateTangentPlane_normalGraphEmbedding_image_iff (mem_of_mem_nhds hs)
-    ((hasDensityAt_iff.mp (mem_essentialInterior.mp
-      (interior_subset_essentialInterior (μ := volume) (mem_interior_iff_mem_nhds.mpr hs)))).congr
-      fun _ => by rw [addHaar_closedBall_center])
+    (tendsto_volume_inter_closedBall_div_of_mem_nhds hs)
 /-- Canonical approximate tangent `(dim E)`-plane over `s ∈ 𝓝 x`. -/
 theorem approximateTangentPlane_normalGraphEmbedding_image_eq (hs : s ∈ 𝓝 x) :
     approximateTangentPlane kE (Gφ '' s) (Gφ x) = R[A] :=
@@ -171,8 +175,6 @@ theorem tangentialJacobian_snd_range_normalGraphEmbedding :
     tangentialJacobian kE (range Gφ) WithLp.snd (Gφ x) = (Real.sqrt (1 + ‖A‖ ^ 2))⁻¹ :=
   image_univ (f := Gφ) ▸
     (hφ.hasFDerivWithinAt (s := univ)).tangentialJacobian_snd_normalGraphEmbedding (mem_univ x)
-      ((hasDensityAt_iff.mp (mem_essentialInterior.mp (interior_subset_essentialInterior
-        (μ := volume) (mem_interior_iff_mem_nhds.mpr (univ_mem : univ ∈ 𝓝 x))))).congr
-        fun _ => by rw [addHaar_closedBall_center])
+      (tendsto_volume_inter_closedBall_div_of_mem_nhds univ_mem)
 end HasFDerivAt
 end InnerProductParameter
