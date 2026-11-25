@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 public import TauCeti.Analysis.SpecialFunctions.Complex.Circle.Character
 public import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.GL2Coefficient
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Decomposition
 public import TauCeti.RepresentationTheory.GL2.CompactCayley
+import Mathlib.Analysis.SpecialFunctions.Exponential
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo.Basic
 
 /-!
 # Compact weights of representations of `GL₂(ℂ)`
@@ -32,13 +35,16 @@ multiplicity one.
 
 ## Main definitions
 
-* `TauCeti.gl2Rotation θ`: the rotation `r_θ` as an element of `GL₂(ℂ)`.
-* `TauCeti.gl2Cayley`: the Cayley matrix `TauCeti.compactCayley` as an element of `GL₂(ℂ)`.
+* `TauCeti.gl2Rotation θ`: the rotation `r_θ` (`Matrix.SpecialLinearGroup.rotation θ`) as an
+  element of `GL₂(ℂ)`.
 * `TauCeti.compactWeightSpace ρ ℓ`: the vectors on which every `ρ(r_θ)` acts by `e^{iℓθ}`.
 
 ## Main results
 
-* `TauCeti.gl2Rotation_mul_gl2Cayley`: `r_θ C = C diag(e^{iθ}, e^{-iθ})`.
+* `TauCeti.gl2Rotation_add`: `r_{θ + φ} = r_θ r_φ`.
+* `TauCeti.gl2Rotation_mul_gl2Cayley`: `r_θ C = C diag(e^{iθ}, e^{-iθ})`, with
+  `C = TauCeti.gl2Cayley`.
+* `TauCeti.coe_gl2Rotation_eq_exp`: `r_θ = exp(θJ)`.
 * `TauCeti.iSupIndep_compactWeightSpace`: the compact weight spaces are independent.
 * `TauCeti.IsRationalRep.compactWeightSpace_eq_iSup`: for a rational representation, the compact
   weight space of `ℓ` is the image under `ρ(C)` of the weight spaces with `l 0 - l 1 = ℓ`.
@@ -56,26 +62,26 @@ open Complex Matrix Module
 namespace TauCeti
 
 /-- The rotation `r_θ = exp(θJ) = [[cos θ, sin θ], [-sin θ, cos θ]]`, with
-`J = TauCeti.gl2RotationGenerator`, as an element of `GL₂(ℂ)`. -/
+`J = TauCeti.gl2RotationGenerator`, as an element of `GL₂(ℂ)`: the image of
+`Matrix.SpecialLinearGroup.rotation θ ∈ SL(2, ℝ)`. -/
 def gl2Rotation (θ : ℝ) : GL (Fin 2) ℂ :=
-  GeneralLinearGroup.mkOfDetNeZero !![cos θ, sin θ; -sin θ, cos θ] (by
-    simp [det_fin_two_of, ← sq, cos_sq_add_sin_sq])
+  SpecialLinearGroup.mapGL ℂ (SpecialLinearGroup.rotation θ)
 
 /-- The matrix of `gl2Rotation θ`. -/
 @[simp]
 theorem coe_gl2Rotation (θ : ℝ) :
     (gl2Rotation θ : Matrix (Fin 2) (Fin 2) ℂ) = !![cos θ, sin θ; -sin θ, cos θ] := by
-  simp [gl2Rotation, GeneralLinearGroup.mkOfDetNeZero]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [gl2Rotation]
 
-/-- The Cayley matrix `C = [[1, 1], [i, -i]]` (`TauCeti.compactCayley`) as an element of
-`GL₂(ℂ)`. -/
-def gl2Cayley : GL (Fin 2) ℂ :=
-  GeneralLinearGroup.mkOfDetNeZero compactCayley (by simp [I_ne_zero])
-
-/-- The matrix of `gl2Cayley`. -/
+/-- The rotation by `0` is the identity. -/
 @[simp]
-theorem coe_gl2Cayley : (gl2Cayley : Matrix (Fin 2) (Fin 2) ℂ) = compactCayley := by
-  simp [gl2Cayley, GeneralLinearGroup.mkOfDetNeZero]
+theorem gl2Rotation_zero : gl2Rotation 0 = 1 := by
+  simp [gl2Rotation]
+
+/-- The rotations form a one-parameter subgroup: `r_{θ + φ} = r_θ r_φ`. -/
+theorem gl2Rotation_add (θ φ : ℝ) : gl2Rotation (θ + φ) = gl2Rotation θ * gl2Rotation φ := by
+  rw [gl2Rotation, SpecialLinearGroup.rotation_add, map_mul, gl2Rotation, gl2Rotation]
 
 /-- **The Cayley matrix diagonalizes the rotations**: `r_θ C = C diag(e^{iθ}, e^{-iθ})`. -/
 theorem gl2Rotation_mul_gl2Cayley (θ : ℝ) :
@@ -84,7 +90,31 @@ theorem gl2Rotation_mul_gl2Cayley (θ : ℝ) :
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [compactCayley_def, mul_diagonal, ← neg_mul, -Circle.exp_neg, exp_mul_I] <;>
-    ring_nf <;> simp only [I_sq] <;> ring
+    grind [I_sq]
+
+/-- **The rotations are the exponentials of the generator `J`**: `r_θ = exp(θJ)`. Since
+`θJ = C diag(iθ, -iθ) C⁻¹`, this is `TauCeti.gl2Rotation_mul_gl2Cayley`. -/
+theorem coe_gl2Rotation_eq_exp (θ : ℝ) :
+    (gl2Rotation θ : Matrix (Fin 2) (Fin 2) ℂ) =
+      NormedSpace.exp ((θ : ℂ) • gl2RotationGenerator) := by
+  have hJC : (θ : ℂ) • gl2RotationGenerator * compactCayley =
+      compactCayley * diagonal ![θ * I, -(θ * I)] := by
+    rw [gl2RotationGenerator_def, compactCayley_def]
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [mul_diagonal] <;> grind [I_sq]
+  have hJ : (θ : ℂ) • gl2RotationGenerator =
+      compactCayley * diagonal ![θ * I, -(θ * I)] * compactCayley⁻¹ := by
+    rw [← hJC, mul_nonsing_inv_cancel_right _ _ isUnit_det_compactCayley]
+  have h := congrArg (fun g : GL (Fin 2) ℂ ↦ (g : Matrix (Fin 2) (Fin 2) ℂ) * compactCayley⁻¹)
+    (gl2Rotation_mul_gl2Cayley θ)
+  simp only [Units.val_mul, coe_gl2Cayley, mul_assoc, mul_nonsing_inv _ isUnit_det_compactCayley,
+    mul_one] at h
+  rw [h, hJ, exp_conj _ _ ((isUnit_iff_isUnit_det _).mpr isUnit_det_compactCayley), exp_diagonal,
+    mul_assoc]
+  congr 2
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [Pi.exp_def, ← Complex.exp_eq_exp_ℂ, -Circle.exp_neg, ← neg_mul]
 
 variable {W : Type*} [AddCommGroup W] [Module ℂ W]
 
@@ -112,15 +142,15 @@ theorem map_weightSpace_le_compactWeightSpace (ρ : Representation ℂ (GL (Fin 
   rintro _ ⟨v, hv, rfl⟩
   rw [mem_compactWeightSpace_iff]
   intro θ
+  -- The weight character of `l` at `diag(e^{iθ}, e^{-iθ})` is `e^{i(l 0 - l 1)θ}`.
+  have hchar : (weightChar ℂ l ![Circle.toUnits (Circle.exp θ), Circle.toUnits (Circle.exp (-θ))] :
+      ℂ) = exp ((l 0 - l 1 : ℤ) * θ * I) := by
+    simp [weightChar_apply, torusCharacter_def, Fin.prod_univ_two, -Circle.exp_neg,
+      ← exp_intCast_mul, ← exp_add]
+    congr 1
+    ring
   rw [← mul_apply_eq_comp, ← map_mul, gl2Rotation_mul_gl2Cayley, map_mul, mul_apply_eq_comp,
-    apply_of_mem_weightSpace hv, map_smul]
-  congr 1
-  simp only [weightChar_apply, torusCharacter_def, Fin.prod_univ_two, Matrix.cons_val_zero,
-    Matrix.cons_val_one, Units.val_mul, Units.val_zpow_eq_zpow_val, Circle.toUnits_apply,
-    Units.val_mk0, Circle.coe_exp]
-  rw [← exp_intCast_mul, ← exp_intCast_mul, ← exp_add]
-  push_cast
-  ring_nf
+    apply_of_mem_weightSpace hv, map_smul, hchar]
 
 /-- **The compact weight spaces of a rational representation.** For a rational representation of
 `GL₂(ℂ)`, the compact weight space of `ℓ` is the image under the Cayley matrix of the sum of the
@@ -147,12 +177,6 @@ theorem isRationalRep_gl2CoefficientRep (a b : ℤ) : IsRationalRep (gl2Coeffici
   IsRationalRep.tprod (IsPolynomialRep.isRationalRep (isPolynomialRep_symPowerRep _ _))
     (isRationalRep_detPowerRep b)
 
-/-- The weights of `V_(a,b)` over `ℂ`, whose weight characters separate weights. -/
-private theorem weightSpace_gl2CoefficientRep_ne_bot_iff' (hab : b ≤ a) (l : Fin 2 → ℤ) :
-    weightSpace (W := GL2CoefficientSpace ℂ a b) (gl2CoefficientRep ℂ a b) l ≠ ⊥ ↔
-      b ≤ l 0 ∧ b ≤ l 1 ∧ l 0 + l 1 = a + b :=
-  weightSpace_gl2CoefficientRep_ne_bot_iff weightChar_injective hab l
-
 /-- **The compact weights of `V_(a,b)`** are the `a - b - 2i` with `0 ≤ i ≤ a - b`. -/
 theorem compactWeightSpace_gl2CoefficientRep_ne_bot_iff (hab : b ≤ a) (ℓ : ℤ) :
     compactWeightSpace (W := GL2CoefficientSpace ℂ a b) (gl2CoefficientRep ℂ a b) ℓ ≠ ⊥ ↔
@@ -162,11 +186,11 @@ theorem compactWeightSpace_gl2CoefficientRep_ne_bot_iff (hab : b ≤ a) (ℓ : �
     ((gl2CoefficientRep ℂ a b).apply_bijective gl2Cayley).injective).eq_iff' (Submodule.map_bot _)]
   constructor
   · rintro ⟨l, hl, h⟩
-    have := (weightSpace_gl2CoefficientRep_ne_bot_iff' hab l).mp h
+    have := (weightSpace_gl2CoefficientRep_ne_bot_iff weightChar_injective hab l).mp h
     exact ⟨a - l 0, by omega, by omega, by omega⟩
   · rintro ⟨i, hi₀, hi, rfl⟩
     refine ⟨![a - i, b + i], by simp; omega, ?_⟩
-    exact (weightSpace_gl2CoefficientRep_ne_bot_iff' hab _).mpr (by simp; omega)
+    exact (weightSpace_gl2CoefficientRep_ne_bot_iff weightChar_injective hab _).mpr (by simp; omega)
 
 /-- The compact weight space of `V_(a,b)` of compact weight `a - b - 2i` is the image under the
 Cayley matrix of the weight space of weight `(a - i, b + i)`. -/
@@ -179,7 +203,7 @@ theorem compactWeightSpace_gl2CoefficientRep_eq_map (hab : b ≤ a) (i : ℤ) :
     (le_iSup₂_of_le ![a - i, b + i] (by simp; omega) le_rfl)
   by_cases h : weightSpace (W := GL2CoefficientSpace ℂ a b) (gl2CoefficientRep ℂ a b) l = ⊥
   · simp [h]
-  · have := (weightSpace_gl2CoefficientRep_ne_bot_iff' hab l).mp h
+  · have := (weightSpace_gl2CoefficientRep_ne_bot_iff weightChar_injective hab l).mp h
     have hl' : l = ![a - i, b + i] := by
       ext j
       fin_cases j <;> simp <;> omega
