@@ -22,23 +22,16 @@ automorphism of `L` for all of them: it is `complexConj K` on `K` and inversion 
 
 The typical radicand is `u = a / conj a` for a unit `a` of `K`. In any CM field `L`, a unit `x`
 is a totally real unit times an `n`-th power exactly when `x / conj x` is an `n`-th power
-(`IsCMField.exists_mem_maximalRealSubfield_div_eq_pow_iff`): an `n`-th root `β` of `x / conj x`
-satisfies `β * conj β = 1`, so `β = b / conj b` by Hilbert's Theorem 90, and then `x / bⁿ` is
-fixed by complex conjugation. Applied to the splitting field of `Xⁿ - a / conj a`, this is the
-descent of a Weierstrass discriminant (with `n = 6`) to a totally real one after a solvable CM
-extension
+(`IsCMField.exists_mem_maximalRealSubfield_div_eq_pow_iff`, in
+`TauCeti/NumberTheory/NumberField/CMField/Basic.lean`). Applied to the splitting field of
+`Xⁿ - a / conj a`, this is the descent of a Weierstrass discriminant (with `n = 6`) to a totally
+real one after a solvable CM extension
 (`IsCMField.exists_mem_maximalRealSubfield_algebraMap_div_eq_pow`). That the extension is
 solvable is `TauCeti.isSolvable_of_isSplittingField_X_pow_sub_C`; it is Galois since it is a
 splitting field in characteristic zero.
 
 ## Main results
 
-* `NumberField.IsCMField.div_complexConj_mul_complexConj_div_complexConj_eq_one`: for a unit `x`,
-  `u = x / conj x` satisfies `u * conj u = 1`.
-* `NumberField.IsCMField.mul_complexConj_eq_one_of_pow_eq`: `n`-th roots of elements with
-  `x * conj x = 1` satisfy the same identity.
-* `NumberField.IsCMField.exists_mem_maximalRealSubfield_div_eq_pow_iff`: a unit `x` of a CM field
-  is a totally real unit times an `n`-th power if and only if `x / conj x` is an `n`-th power.
 * `NumberField.IsCMField.of_isSplittingField_X_pow_sub_C`: the splitting field of `Xⁿ - u` over a
   CM field, with `u * conj u = 1`, is CM.
 * `NumberField.IsCMField.exists_mem_maximalRealSubfield_algebraMap_div_eq_pow`: over the
@@ -55,65 +48,6 @@ public section
 open Polynomial NumberField ComplexEmbedding
 
 namespace NumberField.IsCMField
-
-section CMField
-
-variable {L : Type*} [Field L] [CharZero L] [IsCMField L] [Algebra.IsIntegral ℚ L]
-
-local notation3 "L⁺" => maximalRealSubfield L
-
-/-- For a unit `x` of a CM field, `u = x / conj x` satisfies `u * conj u = 1`. -/
-theorem div_complexConj_mul_complexConj_div_complexConj_eq_one (x : Lˣ) :
-    x / complexConj L x * complexConj L (x / complexConj L x) = 1 := by
-  have hcx : complexConj L (x : L) ≠ 0 := by simp
-  rw [map_div₀, complexConj_apply_apply]
-  field_simp
-
-/-- An `n`-th root `β`, `n ≠ 0`, of an element `x` with `x * conj x = 1` again satisfies
-`β * conj β = 1`. -/
-theorem mul_complexConj_eq_one_of_pow_eq {β x : L} {n : ℕ} (hn : n ≠ 0) (hβ : β ^ n = x)
-    (hx : x * complexConj L x = 1) : β * complexConj L β = 1 := by
-  let φ : L →+* ℂ := Classical.choice (inferInstance : Nonempty _)
-  have h := Complex.conj_eq_inv_of_pow_eq hn (z := φ β) (w := φ x) (by rw [← map_pow, hβ])
-    (by rw [← complexEmbedding_complexConj, ← map_mul, hx, map_one])
-  have hβ0 : β ≠ 0 := by
-    rintro rfl
-    simp [← hβ, zero_pow hn] at hx
-  apply φ.injective
-  rw [map_mul, complexEmbedding_complexConj, h, map_one,
-    mul_inv_cancel₀ ((map_ne_zero φ).2 hβ0)]
-
-/-- **Real-times-power decomposition in a CM field.** A unit `x` of a CM field is a totally real
-unit times an `n`-th power if and only if `x / conj x` is an `n`-th power. -/
-theorem exists_mem_maximalRealSubfield_div_eq_pow_iff {x : Lˣ} {n : ℕ} :
-    (∃ z : Lˣ, (z : L) ∈ L⁺ ∧ ∃ b : Lˣ, (x : L) / z = b ^ n) ↔
-      ∃ β : L, β ^ n = x / complexConj L x := by
-  have hcx : complexConj L (x : L) ≠ 0 := by simp
-  constructor
-  · rintro ⟨z, hz, b, hb⟩
-    have hcz : complexConj L (z : L) = z := (complexConj_eq_self_iff L _).2 hz
-    have hcb : complexConj L (b : L) ≠ 0 := by simp
-    have hx : (x : L) = z * b ^ n := by rw [← hb]; field_simp
-    refine ⟨b / complexConj L b, ?_⟩
-    rw [hx, map_mul, map_pow, hcz, div_pow]
-    field_simp
-  rintro ⟨β, hβ⟩
-  rcases eq_or_ne n 0 with rfl | hn
-  · refine ⟨x, (complexConj_eq_self_iff L _).1 ?_, 1, by simp⟩
-    rw [pow_zero, eq_comm, div_eq_one_iff_eq hcx] at hβ
-    exact hβ.symm
-  have hβ1 : β * complexConj L β = 1 := mul_complexConj_eq_one_of_pow_eq hn hβ
-    (div_complexConj_mul_complexConj_div_complexConj_eq_one x)
-  obtain ⟨y, hy⟩ := (exists_complexConj_div_eq_iff L (x := Units.mk0 β
-    (left_ne_zero_of_mul_eq_one hβ1))).2 hβ1
-  rw [Units.val_mk0, div_eq_iff y.ne_zero] at hy
-  refine ⟨x * y ^ n, (complexConj_eq_self_iff L _).1 ?_, y⁻¹, ?_⟩
-  · rw [Units.val_mul, Units.val_pow_eq_pow_val, map_mul, map_pow, hy, mul_pow, hβ]
-    field_simp
-  · simp only [Units.val_mul, Units.val_pow_eq_pow_val, Units.val_inv_eq_inv_val, inv_pow]
-    field_simp
-
-end CMField
 
 section SplittingField
 
