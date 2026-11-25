@@ -361,8 +361,7 @@ theorem exists_tendsto_inter_preimage_singleton_eq_singleton_of_tendstoContDiffA
       ∃ z : ι → E, Tendsto z l (𝓝 x₀) ∧
         ∀ᶠ i in l, U ∩ Φ i ⁻¹' {y} = {z i} ∧ (fderiv 𝕜 (Φ i) (z i)).IsInvertible := by
   obtain ⟨e₀, e, T, -, hT, he₀, hx₀e, hes, hTe, -, hev, hsymm⟩ :=
-    exists_openPartialHomeomorph_tendstoContDiffAt_symm (n := 1) hs hx₀ le_rfl hΦ hΦ₀
-      (fun k hk x hx ↦ (hconv x hx).of_le (by exact_mod_cast hk)) hinv
+    exists_openPartialHomeomorph_tendstoContDiffAt_symm hs hx₀ le_rfl hΦ hΦ₀ hconv hinv
   rw [hy] at hT
   have hsymm₀ : e₀.symm y = x₀ := by rw [← hy, ← he₀, e₀.left_inv hx₀e]
   refine ⟨e₀.source, e₀.open_source, hx₀e, hes, ?_, fun i ↦ (e i).symm y, ?_, ?_⟩
@@ -372,7 +371,7 @@ theorem exists_tendsto_inter_preimage_singleton_eq_singleton_of_tendstoContDiffA
     simp only [he₀, mem_preimage, mem_singleton_iff] at hxy ⊢
     rw [hxy, hy]
   · -- The inverses converge continuously at `y`.
-    have h := (hsymm 1 le_rfl y hT).tendsto.comp (tendsto_id.prodMk (tendsto_const_nhds (x := y)))
+    have h := (hsymm y hT).tendsto.comp (tendsto_id.prodMk (tendsto_const_nhds (x := y)))
     rwa [hsymm₀] at h
   · filter_upwards [hev, hΦ] with i ⟨hei, hsrc, hT', hsymmc⟩ hΦi
     have hyT : y ∈ (e i).target := hT' hT

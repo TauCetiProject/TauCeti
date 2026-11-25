@@ -36,8 +36,8 @@ convergence of the derivatives of order at most `ℓ` (`TauCeti.TendstoContDiffA
 sets is locally uniform convergence of these derivatives
 (`TauCeti.tendstoContDiffAt_iff_tendstoLocallyUniformlyOn`).
 
-The regularity is `ℓ : ℕ∞`, and `C^ℓ` convergence means `C^k` convergence for every finite
-`k ≤ ℓ`. In particular, for smooth structures converging in `C^∞`, the adapted charts can be
+The regularity is `ℓ : ℕ∞`, and for `ℓ = ∞` the convergence is at every finite order. In
+particular, for smooth structures converging in `C^∞`, the adapted charts can be
 chosen to converge in `C^∞`.
 
 ## Main declarations
@@ -64,18 +64,18 @@ variable {𝕜 V W : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace �
 
 /-- **Adapted charts converging in `C^ℓ`.** Let `γ` be `C^(ℓ+1)` on an open `U`, for `ℓ : ℕ∞`
 (possibly `∞`) with `1 ≤ ℓ`, mapping `U` into an open `Ω`, and let `J₀` and eventually all `J i` be
-`C^ℓ` on `Ω` with `J i → J₀` in `C^k` at every point of `γ (U)`, for every finite `k ≤ ℓ`. If at
+`C^ℓ` on `Ω` with `J i → J₀` in `C^ℓ` at every point of `γ (U)`. If at
 `x₀ ∈ U` the tangent map `Dγ x₀` is injective with image maximal totally real for `J₀ (γ x₀)`, and
 `J₀ (γ x₀)² = -1`, then the adapted extensions of `J₀` and, eventually along `l`, of all `J i`
 restrict to partial homeomorphisms with a common source containing `(x₀, 0)` inside `U × V`, whose
 inverses are `C^ℓ` on their targets, and whose targets contain a common open neighbourhood
 `T ⊆ Ω` of `γ x₀`. On `T` the inverses `(e i)⁻¹` of these adapted charts converge to `e₀⁻¹` in
-`C^k` for every finite `k ≤ ℓ`. -/
+`C^ℓ`. -/
 theorem exists_adaptedChart_family [CompleteSpace V] [CompleteSpace W] (hU : IsOpen U)
     (hΩ : IsOpen Ω) {x₀ : V} (hx₀ : x₀ ∈ U) (hℓ : 1 ≤ ℓ)
     (hγ : ContDiffOn 𝕜 ((ℓ : ℕ∞ω) + 1) γ U) (hγΩ : MapsTo γ U Ω)
     (hJ : ∀ᶠ i in l, ContDiffOn 𝕜 ℓ (J i) Ω) (hJ₀ : ContDiffOn 𝕜 ℓ J₀ Ω)
-    (hconv : ∀ k : ℕ, (k : ℕ∞) ≤ ℓ → ∀ x ∈ U, TendstoContDiffAt 𝕜 k J J₀ l (γ x))
+    (hconv : ∀ x ∈ U, TendstoContDiffAt 𝕜 ℓ J J₀ l (γ x))
     (hsq : ∀ v, J₀ (γ x₀) (J₀ (γ x₀) v) = -v) (hinj : Function.Injective (fderiv 𝕜 γ x₀))
     (htr : IsMaximalTotallyReal (J₀ (γ x₀)).toLinearMap (fderiv 𝕜 γ x₀).range) :
     ∃ (e₀ : OpenPartialHomeomorph (V × V) W) (e : ι → OpenPartialHomeomorph (V × V) W)
@@ -84,8 +84,7 @@ theorem exists_adaptedChart_family [CompleteSpace V] [CompleteSpace W] (hU : IsO
       T ⊆ e₀.target ∧ ContDiffOn 𝕜 ℓ e₀.symm e₀.target ∧
       (∀ᶠ i in l, ⇑(e i) = adaptedNormalExtension γ (J i) ∧ (e i).source = e₀.source ∧
         T ⊆ (e i).target ∧ ContDiffOn 𝕜 ℓ (e i).symm (e i).target) ∧
-      ∀ k : ℕ, (k : ℕ∞) ≤ ℓ → ∀ y ∈ T,
-        TendstoContDiffAt 𝕜 k (fun i ↦ ⇑(e i).symm) e₀.symm l y := by
+      ∀ y ∈ T, TendstoContDiffAt 𝕜 ℓ (fun i ↦ ⇑(e i).symm) e₀.symm l y := by
   have hℓ₁ : ((1 : ℕ∞) : ℕ∞ω) ≤ (ℓ : ℕ∞ω) + 1 := by exact_mod_cast hℓ.trans le_self_add
   have hγ₁ : ContDiffAt 𝕜 1 γ x₀ := (hγ.contDiffAt (hU.mem_nhds hx₀)).of_le hℓ₁
   have hJc : ContinuousAt J₀ (γ x₀) := hJ₀.continuousOn.continuousAt (hΩ.mem_nhds (hγΩ hx₀))
@@ -96,12 +95,12 @@ theorem exists_adaptedChart_family [CompleteSpace V] [CompleteSpace W] (hU : IsO
       ⟨hx₀, mem_univ (0 : V)⟩ hℓ
       (by filter_upwards [hJ] with i hi using contDiffOn_adaptedNormalExtension hU hγ hi hγΩ)
       (contDiffOn_adaptedNormalExtension hU hγ hJ₀ hγΩ)
-      (fun k hk p hp ↦ tendstoContDiffAt_adaptedNormalExtension hk hU hΩ hγ hγΩ hJ hJ₀ hp.1
-        (hconv k hk _ hp.1)) hinv
+      (fun p hp ↦ tendstoContDiffAt_adaptedNormalExtension hU hΩ hγ hγΩ hJ hJ₀ hp.1
+        (hconv _ hp.1)) hinv
   rw [adaptedNormalExtension_zero] at hx₀T
   refine ⟨e₀, e, T ∩ Ω, hT.inter hΩ, ⟨hx₀T, hγΩ hx₀⟩, inter_subset_right, he₀, hx₀s, hs,
-    inter_subset_left.trans hT₀, hc₀, ?_, fun k hk y hy ↦ hlim k hk y hy.1⟩
-  filter_upwards [hev] with i hi
-  exact ⟨hi.1, hi.2.1, inter_subset_left.trans hi.2.2.1, hi.2.2.2⟩
+    inter_subset_left.trans hT₀, hc₀, ?_, fun y hy ↦ hlim y hy.1⟩
+  filter_upwards [hev] with i ⟨hei, hes, hiT, hic⟩
+  exact ⟨hei, hes, inter_subset_left.trans hiT, hic⟩
 
 end TauCeti

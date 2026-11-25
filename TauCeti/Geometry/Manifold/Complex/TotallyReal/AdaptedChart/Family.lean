@@ -32,8 +32,8 @@ adapted extensions share one source, so the shrinking of the chart sources that 
 Convergence is `TauCeti.TendstoContDiffAt`: continuous convergence of the derivatives of order at
 most `ℓ`, which on open sets is locally uniform convergence of these derivatives.
 
-The regularity is `ℓ : ℕ∞`, and `C^ℓ` convergence means `C^j` convergence for every finite
-`j ≤ ℓ`, in hypothesis and conclusion. In particular, for smooth structures `J i → J₀` in `C^∞`,
+The regularity is `ℓ : ℕ∞`, and for `ℓ = ∞` the convergence, in hypothesis and conclusion, is at
+every finite order. In particular, for smooth structures `J i → J₀` in `C^∞`,
 the adapted charts can be chosen to converge in `C^∞`.
 
 ## Main declarations
@@ -67,15 +67,15 @@ variable {E H M F H' N : Type*}
 and `ι x₀`, and `γ` for `ι` read in them. Under the hypotheses of
 `TauCeti.IsTotallyRealEmbedding.exists_adaptedChart_family`, the adapted extensions of `J₀` and,
 eventually, of the `J i`, read in `χ`, restrict to partial homeomorphisms `e₀` and `e i` with one
-source inside the domain of `γ`, whose inverses converge in `C^j` on a neighbourhood `T₀` of
-`χ (ι x₀)` and which themselves converge in `C^j` on the source, for every finite `j ≤ ℓ`. There
+source inside the domain of `γ`, whose inverses converge in `C^ℓ` on a neighbourhood `T₀` of
+`χ (ι x₀)` and which themselves converge in `C^ℓ` on the source. There
 are also an open `O ∋ ι x₀` whose points of `ι (N)` have their zero-section point in the source,
 and an open `W ∋ (φ x₀, 0)` that the `e i` eventually map into `χ (O)`. -/
 private theorem exists_adaptedChart_family_model [IsManifold I' k N]
     (h : IsTotallyRealEmbedding I' I k J₀.almostComplexStructureAt ι) (hℓ : 1 ≤ ℓ)
     (hk : (ℓ : ℕ∞ω) + 1 ≤ k) (x₀ : N)
-    (hconv : ∀ᶠ z in 𝓝 x₀, ∀ j : ℕ, (j : ℕ∞) ≤ ℓ →
-      TendstoContDiffAt ℝ j (fun i ↦ (J i).inChart (ι x₀)) (J₀.inChart (ι x₀)) l
+    (hconv : ∀ᶠ z in 𝓝 x₀,
+      TendstoContDiffAt ℝ ℓ (fun i ↦ (J i).inChart (ι x₀)) (J₀.inChart (ι x₀)) l
         (extChartAt I (ι x₀) (ι z))) :
     ∃ (e₀ : OpenPartialHomeomorph (F × F) E) (e : α → OpenPartialHomeomorph (F × F) E)
       (T₀ : Set E) (O : Set M) (W : Set (F × F)),
@@ -87,9 +87,8 @@ private theorem exists_adaptedChart_family_model [IsManifold I' k N]
       e₀.source ⊆ ((extChartAt I' x₀).target ∩
         (extChartAt I' x₀).symm ⁻¹' (ι ⁻¹' (extChartAt I (ι x₀)).source)) ×ˢ univ ∧
       IsOpen T₀ ∧ extChartAt I (ι x₀) (ι x₀) ∈ T₀ ∧ T₀ ⊆ e₀.target ∧
-      (∀ j : ℕ, (j : ℕ∞) ≤ ℓ → ∀ z ∈ T₀,
-        TendstoContDiffAt ℝ j (fun i ↦ ⇑(e i).symm) e₀.symm l z) ∧
-      (∀ j : ℕ, (j : ℕ∞) ≤ ℓ → ∀ p ∈ e₀.source, TendstoContDiffAt ℝ j (fun i ↦ ⇑(e i)) e₀ l p) ∧
+      (∀ z ∈ T₀, TendstoContDiffAt ℝ ℓ (fun i ↦ ⇑(e i).symm) e₀.symm l z) ∧
+      (∀ p ∈ e₀.source, TendstoContDiffAt ℝ ℓ (fun i ↦ ⇑(e i)) e₀ l p) ∧
       IsOpen O ∧ ι x₀ ∈ O ∧
       (∀ z, ι z ∈ O → z ∈ (extChartAt I' x₀).source ∧ (extChartAt I' x₀ z, 0) ∈ e₀.source) ∧
       IsOpen W ∧ (extChartAt I' x₀ x₀, 0) ∈ W ∧
@@ -119,12 +118,11 @@ private theorem exists_adaptedChart_family_model [IsManifold I' k N]
   have hJ := Eventually.of_forall (f := l) fun i ↦ (J i).contDiffOn_inChart (ι x₀)
   have hJ₀ := J₀.contDiffOn_inChart (ι x₀)
   -- The extensions converge at every point of `U × F`.
-  have hext (j : ℕ) (hj : (j : ℕ∞) ≤ ℓ) (p : F × F) (hp : p.1 ∈ U) :=
-    tendstoContDiffAt_adaptedNormalExtension hj hU hΩ hγ hγΩ hJ hJ₀ hp
-      (hN₀conv (φ.symm p.1) hp.2 j hj)
+  have hext (p : F × F) (hp : p.1 ∈ U) :=
+    tendstoContDiffAt_adaptedNormalExtension hU hΩ hγ hγΩ hJ hJ₀ hp (hN₀conv (φ.symm p.1) hp.2)
   obtain ⟨e₀, e, T₀, hT₀, hγT₀, -, he₀, hp₀, hs, hT₀e₀, hc₀, hev, hlim⟩ :=
     exists_adaptedChart_family hU hΩ hx₀U hℓ hγ hγΩ hJ hJ₀
-      (fun j hj q hq ↦ hN₀conv (φ.symm q) hq.2 j hj) (J₀.inChart_inChart _ (hγΩ hx₀U))
+      (fun q hq ↦ hN₀conv (φ.symm q) hq.2) (J₀.inChart_inChart _ (hγΩ hx₀U))
       (h.isMaximalTotallyRealMap.fderiv_writtenInExtChartAt_injective h.two_mul_finrank hιd)
       (h.isMaximalTotallyRealMap.isMaximalTotallyReal_range_fderiv_writtenInExtChartAt hιd)
   rw [hγx₀] at hγT₀
@@ -133,18 +131,18 @@ private theorem exists_adaptedChart_family_model [IsManifold I' k N]
     h.isSmoothEmbedding.isEmbedding.isInducing.exists_isOpen_extChartAt_zero_mem e₀.open_source hp₀
   have hV : IsOpen (χ.target ∩ χ.symm ⁻¹' O) :=
     (continuousOn_extChartAt_symm (ι x₀)).isOpen_inter_preimage hΩ hO
-  obtain ⟨W, hW, hp₀W, hWV⟩ := (hext 0 zero_le (φ x₀, 0) hx₀U).exists_isOpen_eventually_mapsTo
+  obtain ⟨W, hW, hp₀W, hWV⟩ := (hext (φ x₀, 0) hx₀U).exists_isOpen_eventually_mapsTo
     (by
       rw [adaptedNormalExtension_zero, hγx₀]
       refine hV.mem_nhds ⟨mem_extChartAt_target _, ?_⟩
       rw [mem_preimage, χ.left_inv (mem_extChartAt_source _)]
       exact hx₀O)
   refine ⟨e₀, e, T₀, O, W, he₀, hc₀, hev, hs.trans (prod_mono inter_subset_left subset_rfl), hT₀,
-    hγT₀, hT₀e₀, hlim, fun j hj p hp ↦ ?_, hO, hx₀O, hOe, hW, hp₀W, ?_⟩
+    hγT₀, hT₀e₀, hlim, fun p hp ↦ ?_, hO, hx₀O, hOe, hW, hp₀W, ?_⟩
   · rw [he₀]
-    exact (hext j hj p (hs hp).1).congr (hev.mono fun i hi ↦ hi.1.symm)
-  · filter_upwards [hev, hWV] with i hi hWi
-    rwa [hi.1]
+    exact (hext p (hs hp).1).congr (hev.mono fun i hi ↦ hi.1.symm)
+  · filter_upwards [hev, hWV] with i ⟨hei, _⟩ hWi
+    rwa [hei]
 
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
 /-- **Adapted charts from a family of adapted extensions.** For partial homeomorphisms `e i` that
@@ -161,46 +159,43 @@ private theorem exists_isAdaptedChart_family_of_adaptedNormalExtension [IsManifo
     {O : Set M} (hO : IsOpen O) (hx₀O : ι x₀ ∈ O)
     (hOe : ∀ z, ι z ∈ O → z ∈ (extChartAt I' x₀).source ∧ (extChartAt I' x₀ z, 0) ∈ e₀.source)
     (ψ₀ : OpenPartialHomeomorph M (F × F)) :
-    ∃ ψ : α → OpenPartialHomeomorph M (F × F), ∀ i,
+    ∀ i, ∃ ψ : OpenPartialHomeomorph M (F × F),
       ⇑(e i) = adaptedNormalExtension (writtenInExtChartAt I' I x₀ ι) ((J i).inChart (ι x₀)) →
       (e i).source = e₀.source → ContDiffOn ℝ ℓ (e i).symm (e i).target →
-      (∀ x, ψ i x = (e i).symm (extChartAt I (ι x₀) x)) ∧
-      (∀ p, (ψ i).symm p = (extChartAt I (ι x₀)).symm (e i p)) ∧
-      (∀ x, x ∈ (ψ i).source ↔
+      (∀ x, ψ x = (e i).symm (extChartAt I (ι x₀) x)) ∧
+      (∀ p, ψ.symm p = (extChartAt I (ι x₀)).symm (e i p)) ∧
+      (∀ x, x ∈ ψ.source ↔
         x ∈ (extChartAt I (ι x₀)).source ∧ extChartAt I (ι x₀) x ∈ (e i).target ∧ x ∈ O) ∧
-      (∀ p, p ∈ (ψ i).target ↔ p ∈ (e i).source ∧ e i p ∈ (extChartAt I (ι x₀)).target ∧
+      (∀ p, p ∈ ψ.target ↔ p ∈ (e i).source ∧ e i p ∈ (extChartAt I (ι x₀)).target ∧
         (extChartAt I (ι x₀)).symm (e i p) ∈ O) ∧
-      ι x₀ ∈ (ψ i).source ∧ ψ i (ι x₀) = (extChartAt I' x₀ x₀, 0) ∧
-      IsAdaptedChart (J i) (range ι) (ψ i) := by
-  classical
-  refine ⟨fun i ↦ if hi : ⇑(e i) = adaptedNormalExtension (writtenInExtChartAt I' I x₀ ι)
+      ι x₀ ∈ ψ.source ∧ ψ (ι x₀) = (extChartAt I' x₀ x₀, 0) ∧
+      IsAdaptedChart (J i) (range ι) ψ := by
+  intro i
+  by_cases hi : ⇑(e i) = adaptedNormalExtension (writtenInExtChartAt I' I x₀ ι)
       ((J i).inChart (ι x₀)) ∧ (e i).source = e₀.source ∧ ContDiffOn ℝ ℓ (e i).symm (e i).target
-    then (exists_isAdaptedChart_of_coe_eq_adaptedNormalExtension hι hℓ hk hi.1 hi.2.2
-      (hi.2.1 ▸ hs) hO hx₀O fun z hz ↦ hi.2.1 ▸ hOe z hz).choose else ψ₀,
-    fun i hei hsi hci ↦ ?_⟩
-  dsimp only
-  split_ifs with hi
-  · exact (exists_isAdaptedChart_of_coe_eq_adaptedNormalExtension hι hℓ hk hi.1 hi.2.2
-      (hi.2.1 ▸ hs) hO hx₀O fun z hz ↦ hi.2.1 ▸ hOe z hz).choose_spec
-  · exact absurd ⟨hei, hsi, hci⟩ hi
+  · obtain ⟨hei, hsi, hci⟩ := hi
+    obtain ⟨ψ', hψ'⟩ := exists_isAdaptedChart_of_coe_eq_adaptedNormalExtension hι hℓ hk hei hci
+      (hsi ▸ hs) hO hx₀O fun z hz ↦ hsi ▸ hOe z hz
+    exact ⟨ψ', fun _ _ _ ↦ hψ'⟩
+  · exact ⟨ψ₀, fun hei hsi hci ↦ (hi ⟨hei, hsi, hci⟩).elim⟩
 
 /-- **Adapted charts converging in `C^ℓ`.** Let `ι` be a `C^k` totally real embedding for a
 `C^ℓ` almost complex structure `J₀`, with `ℓ : ℕ∞` (possibly `∞`), `1 ≤ ℓ` and `ℓ + 1 ≤ k`, and
-let `J i` be `C^ℓ` almost complex structures converging to `J₀` in `C^j`, for every finite
-`j ≤ ℓ`, at every point of `ι (N)` near `ι x₀`, read in the extended chart `χ` at `ι x₀`. Then
+let `J i` be `C^ℓ` almost complex structures converging to `J₀` in `C^ℓ` at every point of
+`ι (N)` near `ι x₀`, read in the extended chart `χ` at `ι x₀`. Then
 there are an adapted chart `ψ₀` for `J₀` and, eventually along `l`, adapted charts `ψ i` for
 `J i`, all defined at `ι x₀` with the same value there and with sources inside that of `χ`, such
 that
 
 * the targets of all of them contain one open neighbourhood `T` of `ψ₀ (ι x₀)`, on which
-  `χ ∘ (ψ i)⁻¹ → χ ∘ ψ₀⁻¹` in `C^j` for every finite `j ≤ ℓ`;
+  `χ ∘ (ψ i)⁻¹ → χ ∘ ψ₀⁻¹` in `C^ℓ`;
 * their sources all contain `χ⁻¹ (S)` for one open neighbourhood `S ⊆ χ.target` of `χ (ι x₀)`,
-  on which `ψ i ∘ χ⁻¹ → ψ₀ ∘ χ⁻¹` in `C^j` for every finite `j ≤ ℓ`. -/
+  on which `ψ i ∘ χ⁻¹ → ψ₀ ∘ χ⁻¹` in `C^ℓ`. -/
 theorem IsTotallyRealEmbedding.exists_adaptedChart_family [IsManifold I' k N]
     (h : IsTotallyRealEmbedding I' I k J₀.almostComplexStructureAt ι) (hℓ : 1 ≤ ℓ)
     (hk : (ℓ : ℕ∞ω) + 1 ≤ k) (x₀ : N)
-    (hconv : ∀ᶠ z in 𝓝 x₀, ∀ j : ℕ, (j : ℕ∞) ≤ ℓ →
-      TendstoContDiffAt ℝ j (fun i ↦ (J i).inChart (ι x₀)) (J₀.inChart (ι x₀)) l
+    (hconv : ∀ᶠ z in 𝓝 x₀,
+      TendstoContDiffAt ℝ ℓ (fun i ↦ (J i).inChart (ι x₀)) (J₀.inChart (ι x₀)) l
         (extChartAt I (ι x₀) (ι z))) :
     ∃ (ψ₀ : OpenPartialHomeomorph M (F × F)) (ψ : α → OpenPartialHomeomorph M (F × F))
       (T : Set (F × F)) (S : Set E),
@@ -210,25 +205,24 @@ theorem IsTotallyRealEmbedding.exists_adaptedChart_family [IsManifold I' k N]
         IsAdaptedChart (J i) (range ι) (ψ i) ∧ ψ i (ι x₀) = ψ₀ (ι x₀) ∧ T ⊆ (ψ i).target ∧
         MapsTo (extChartAt I (ι x₀)).symm S (ψ i).source) ∧
       IsOpen T ∧ ψ₀ (ι x₀) ∈ T ∧ T ⊆ ψ₀.target ∧
-      (∀ j : ℕ, (j : ℕ∞) ≤ ℓ → ∀ p ∈ T,
-        TendstoContDiffAt ℝ j (fun i ↦ extChartAt I (ι x₀) ∘ (ψ i).symm)
-          (extChartAt I (ι x₀) ∘ ψ₀.symm) l p) ∧
+      (∀ p ∈ T, TendstoContDiffAt ℝ ℓ (fun i ↦ extChartAt I (ι x₀) ∘ (ψ i).symm)
+        (extChartAt I (ι x₀) ∘ ψ₀.symm) l p) ∧
       IsOpen S ∧ extChartAt I (ι x₀) (ι x₀) ∈ S ∧ S ⊆ (extChartAt I (ι x₀)).target ∧
       MapsTo (extChartAt I (ι x₀)).symm S ψ₀.source ∧
-      ∀ j : ℕ, (j : ℕ∞) ≤ ℓ → ∀ z ∈ S,
-        TendstoContDiffAt ℝ j (fun i ↦ ψ i ∘ (extChartAt I (ι x₀)).symm)
-          (ψ₀ ∘ (extChartAt I (ι x₀)).symm) l z := by
+      ∀ z ∈ S, TendstoContDiffAt ℝ ℓ (fun i ↦ ψ i ∘ (extChartAt I (ι x₀)).symm)
+        (ψ₀ ∘ (extChartAt I (ι x₀)).symm) l z := by
   set χ := extChartAt I (ι x₀)
   obtain ⟨e₀, e, T₀, O, W, he₀, hc₀, hev, hs, hT₀, hγT₀, hT₀e₀, hlim, hlimΦ, hO, hx₀O, hOe, hW,
     hp₀W, hWV⟩ := exists_adaptedChart_family_model h hℓ hk x₀ hconv
   have hιc := h.isSmoothEmbedding.contMDiff
   obtain ⟨ψ₀, hψ₀, hψ₀symm, hψ₀src, hψ₀tgt, hx₀ψ₀, hψ₀x₀, hψ₀A⟩ :=
     exists_isAdaptedChart_of_coe_eq_adaptedNormalExtension hιc hℓ hk he₀ hc₀ hs hO hx₀O hOe
-  obtain ⟨ψ, hψ⟩ := exists_isAdaptedChart_family_of_adaptedNormalExtension (J := J) hιc hℓ hk e
+  choose ψ hψ using exists_isAdaptedChart_family_of_adaptedNormalExtension (J := J) hιc hℓ hk e
     hs hO hx₀O hOe ψ₀
   -- Eventually along `l` the charts come from the model extensions.
-  have hψev := (hev.and hWV).mono fun i hi ↦
-    And.intro hi (hψ i hi.1.1 hi.1.2.1 hi.1.2.2.2)
+  have hψev := (hev.and hWV).mono fun i hi ↦ by
+    obtain ⟨⟨hei, hes, -, hic⟩, -⟩ := id hi
+    exact And.intro hi (hψ i hei hes hic)
   -- The common target `T` and forward domain `S`.
   set T := W ∩ ψ₀.target
   have hT : IsOpen T := hW.inter ψ₀.open_target
@@ -253,14 +247,14 @@ theorem IsTotallyRealEmbedding.exists_adaptedChart_family [IsManifold I' k N]
     have hq := hWi hp.1
     exact (hψtgt p).2 ⟨hsi ▸ hTe₀ hp, hq.1, hq.2⟩
   · -- The inverse charts read in `χ` are the extensions on `T`.
-    intro j hj p hp
-    refine (hlimΦ j hj p (hTe₀ hp)).congr_of_eqOn (hT.mem_nhds hp) ?_ fun q hq ↦ ?_
+    intro p hp
+    refine (hlimΦ p (hTe₀ hp)).congr_of_eqOn (hT.mem_nhds hp) ?_ fun q hq ↦ ?_
     · filter_upwards [hψev] with i ⟨⟨_, hWi⟩, _, hψsymm, _⟩ q hq
       rw [Function.comp_apply, hψsymm, χ.right_inv (hWi hq.1).1]
     · rw [Function.comp_apply, hψ₀symm, χ.right_inv ((hψ₀tgt q).1 hq.2).2.1]
   · -- The charts read in `χ` are the inverse extensions on the chart target.
-    intro j hj z hz
-    refine (hlim j hj z hz.1).congr_of_eqOn ((isOpen_extChartAt_target _).mem_nhds (hSΩ hz)) ?_
+    intro z hz
+    refine (hlim z hz.1).congr_of_eqOn ((isOpen_extChartAt_target _).mem_nhds (hSΩ hz)) ?_
       fun w hw ↦ by rw [Function.comp_apply, hψ₀, χ.right_inv hw]
     filter_upwards [hψev] with i ⟨_, hψi, _⟩ w hw
     rw [Function.comp_apply, hψi, χ.right_inv hw]
