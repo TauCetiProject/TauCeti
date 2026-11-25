@@ -260,6 +260,28 @@ theorem fderiv_comp_neg_fst {z : ℝ × ℝ} :
   rw [h, ContinuousLinearEquiv.comp_right_fderiv]
   simp
 
+/-- The `s`-derivative of the reflected map `(s, t) ↦ u(-s, t)` at `z` is minus the `s`-derivative
+of `u` at `(-z.1, z.2)`. -/
+@[simp]
+theorem fderiv_comp_neg_fst_apply_one_zero {z : ℝ × ℝ} :
+    fderiv ℝ (fun w ↦ u (-w.1, w.2)) z (1, 0) = -fderiv ℝ u (-z.1, z.2) (1, 0) := by
+  rw [fderiv_comp_neg_fst, ← map_neg]
+  simp
+
+/-- The `t`-derivative of the reflected map `(s, t) ↦ u(-s, t)` at `z` is the `t`-derivative of
+`u` at `(-z.1, z.2)`. -/
+@[simp]
+theorem fderiv_comp_neg_fst_apply_zero_one {z : ℝ × ℝ} :
+    fderiv ℝ (fun w ↦ u (-w.1, w.2)) z (0, 1) = fderiv ℝ u (-z.1, z.2) (0, 1) := by
+  simp [fderiv_comp_neg_fst]
+
+/-- The reflection `(s, t) ↦ (-s, t)` of the plane preserves Lebesgue measure. -/
+theorem _root_.LinearIsometryEquiv.measurePreserving_negFst :
+    MeasurePreserving (negFst ℝ ℝ ℝ) := by
+  rw [LinearIsometryEquiv.coe_negFst, Measure.volume_eq_prod]
+  exact (Measure.measurePreserving_neg (volume : Measure ℝ)).prod
+    (MeasurePreserving.id (volume : Measure ℝ))
+
 /-- A map `C^n` on the half-cylinder `(-∞, a) × T` reflects to a map `C^n` on
 `(-a, ∞) × T`. -/
 theorem contDiffOn_comp_neg_fst {n : WithTop ℕ∞} {T : Set ℝ} (hu : ContDiffOn ℝ n u (Iio a ×ˢ T)) :
@@ -284,16 +306,13 @@ theorem setLIntegral_norm_sq_sliceDefect_comp_neg_fst :
       ∫⁻ z in Iio a ×ˢ Icc 0 1, ENNReal.ofReal (‖sliceDefect X u z‖ ^ 2) := by
   -- The reflection preserves Lebesgue measure and carries `(-a, ∞) × [0, 1]` onto
   -- `(-∞, a) × [0, 1]`.
-  have hmp : MeasurePreserving (negFst ℝ ℝ ℝ) := by
-    rw [LinearIsometryEquiv.coe_negFst, Measure.volume_eq_prod]
-    exact (Measure.measurePreserving_neg (volume : Measure ℝ)).prod
-      (MeasurePreserving.id (volume : Measure ℝ))
   have hpre : negFst ℝ ℝ ℝ ⁻¹' (Iio a ×ˢ Icc 0 1) = Ioi (-a) ×ˢ Icc 0 1 := by
     ext z
     simp [neg_lt]
   simp_rw [sliceDefect_comp_neg_fst, ← LinearIsometryEquiv.negFst_apply ℝ]
   rw [← hpre]
-  exact hmp.setLIntegral_comp_preimage_emb (negFst ℝ ℝ ℝ).toHomeomorph.measurableEmbedding
+  exact LinearIsometryEquiv.measurePreserving_negFst.setLIntegral_comp_preimage_emb
+    (negFst ℝ ℝ ℝ).toHomeomorph.measurableEmbedding
     (fun z ↦ ENNReal.ofReal (‖sliceDefect X u z‖ ^ 2)) _
 
 end Reflection

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Action
-import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 import TauCeti.Analysis.ODE.PeriodicOrbitLimit
@@ -34,10 +33,11 @@ diagonal. Since `-J J = 1`,
 
 `ω(ξ, γ' - X_t(γ)) = g(ξ, J (γ' - X_t(γ)))`
 
-(`SymplecticForm.hasDerivAt_hamiltonianAction_add_smul_associatedBilinForm`): for compatible `J`,
-`J (γ' - X(γ))` is the `L²` gradient of the action for the metric `g`, and the gradient of the
-Hamiltonian term is `-J X_t` (`SymplecticForm.associatedBilinForm_neg_apply_neg_apply`). Its
-negative gradient flow is the Floer equation
+(`SymplecticForm.hasDerivAt_hamiltonianAction_add_smul_associatedBilinForm`): when `-J` is
+compatible with `ω`, `J (γ' - X(γ))` is the `L²` gradient of the action for the metric `g`, and the
+gradient of the Hamiltonian term is `-J X_t`
+(`SymplecticForm.associatedBilinForm_neg_apply_neg_hamiltonianVectorField`). Its negative gradient
+flow is the Floer equation
 
 `∂_s u + J (∂_t u - X_t(u)) = 0`
 
@@ -62,8 +62,6 @@ where `x₋` and `x₊` are the ends at `s → -∞` and `s → ∞`.
 
 ## Main results
 
-* `SymplecticForm.hasDerivAt_loopArea_add_smul`: the first variation of the symplectic area of a
-  loop.
 * `SymplecticForm.hasDerivAt_hamiltonianAction_add_smul`: the first variation of the action.
 * `SymplecticForm.hasDerivAt_hamiltonianAction_add_smul_associatedBilinForm`: the first
   variation as the pairing with `J (γ' - X(γ))` for the bilinear form `ω(·, -J ·)`.
@@ -95,60 +93,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 section Variation
 
 variable {γ ξ : ℝ → V}
-
-open intervalIntegral in
-/-- **The first variation of the symplectic area of a loop.** For `C¹` loops `γ` and `ξ` with
-`γ 1 = γ 0` and `ξ 1 = ξ 0`, the area `½ ∫₀¹ ω(γ + ε ξ, γ' + ε ξ') dt` has derivative
-`∫₀¹ ω(ξ, γ') dt` at `ε = 0`. -/
-theorem hasDerivAt_loopArea_add_smul (ω : SymplecticForm V) (hγ : ContDiff ℝ 1 γ)
-    (hξ : ContDiff ℝ 1 ξ) (hγ1 : γ 1 = γ 0) (hξ1 : ξ 1 = ξ 0) :
-    HasDerivAt (fun ε : ℝ ↦ ω.loopArea fun t ↦ γ t + ε • ξ t)
-      (∫ t in (0 : ℝ)..1, ω (ξ t) (deriv γ t)) 0 := by
-  have hγd : Differentiable ℝ γ := hγ.differentiable one_ne_zero
-  have hξd : Differentiable ℝ ξ := hξ.differentiable one_ne_zero
-  have hγ' : Continuous (deriv γ) := hγ.continuous_deriv le_rfl
-  have hξ' : Continuous (deriv ξ) := hξ.continuous_deriv le_rfl
-  -- The area of `γ + ε ξ` is a quadratic polynomial in `ε`.
-  have ha := (ω.continuous_apply_comp hγ.continuous hγ').intervalIntegrable (μ := volume) 0 1
-  have hb₁ := (ω.continuous_apply_comp hγ.continuous hξ').intervalIntegrable (μ := volume) 0 1
-  have hb₂ := (ω.continuous_apply_comp hξ.continuous hγ').intervalIntegrable (μ := volume) 0 1
-  have hc := (ω.continuous_apply_comp hξ.continuous hξ').intervalIntegrable (μ := volume) 0 1
-  set A := ∫ t in (0 : ℝ)..1, ω (γ t) (deriv γ t)
-  set B := ∫ t in (0 : ℝ)..1, ω (ξ t) (deriv γ t)
-  set C := ∫ t in (0 : ℝ)..1, ω (ξ t) (deriv ξ t)
-  -- Integrating `d/dt ω(γ, ξ) = ω(γ', ξ) + ω(γ, ξ')` over a period moves the derivative from `ξ`
-  -- to `γ`.
-  have hibp : ∫ t in (0 : ℝ)..1, ω (γ t) (deriv ξ t) = B := by
-    have h := integral_eq_sub_of_hasDerivAt (f := fun t ↦ ω (γ t) (ξ t))
-      (fun t _ ↦ ω.hasDerivAt_apply_comp (hγd t).hasDerivAt (hξd t).hasDerivAt)
-      ((ω.continuous_apply_comp hγ' hξ.continuous).intervalIntegrable _ _ |>.add hb₁)
-    rw [hγ1, hξ1, sub_self, integral_add
-      ((ω.continuous_apply_comp hγ' hξ.continuous).intervalIntegrable _ _) hb₁] at h
-    have hneg : ∫ t in (0 : ℝ)..1, ω (deriv γ t) (ξ t) = -B := by
-      rw [← intervalIntegral.integral_neg]
-      exact integral_congr fun t _ ↦ (ω.neg_eq _ _).symm
-    linarith
-  have hexp : (fun ε : ℝ ↦ ω.loopArea fun t ↦ γ t + ε • ξ t) =
-      fun ε ↦ (1 / 2 : ℝ) * (A + ε * (2 * B) + ε ^ 2 * C) := by
-    funext ε
-    have hd : deriv (fun t ↦ γ t + ε • ξ t) = fun t ↦ deriv γ t + ε • deriv ξ t := funext fun t ↦
-      ((hγd t).hasDerivAt.add ((hξd t).hasDerivAt.const_smul ε)).deriv
-    have hpt : ∀ t, ω (γ t + ε • ξ t) (deriv γ t + ε • deriv ξ t) =
-        ω (γ t) (deriv γ t) + ε * (ω (γ t) (deriv ξ t) + ω (ξ t) (deriv γ t)) +
-          ε ^ 2 * ω (ξ t) (deriv ξ t) := fun t ↦ by
-      simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul]
-      ring
-    rw [loopArea_def, hd, integral_congr fun t _ ↦ hpt t, integral_add (ha.add
-      ((hb₁.add hb₂).const_mul ε)) (hc.const_mul _), integral_add ha ((hb₁.add hb₂).const_mul ε),
-      intervalIntegral.integral_const_mul, intervalIntegral.integral_const_mul,
-      integral_add hb₁ hb₂, hibp]
-    ring
-  rw [hexp]
-  have h := ((((hasDerivAt_id (0 : ℝ)).mul_const (2 * B)).const_add A).add
-    ((hasDerivAt_pow 2 (0 : ℝ)).mul_const C)).const_mul (1 / 2 : ℝ)
-  convert h using 1
-  · simp
-  · simp
 
 /-- **The first variation of the action.** Let `H` be a `C¹` time-dependent Hamiltonian, and let
 `γ` and `ξ` be `C¹` loops, `γ 1 = γ 0` and `ξ 1 = ξ 0`. The action of the loop `γ + ε ξ` has
@@ -213,16 +157,6 @@ theorem hasDerivAt_hamiltonianAction_add_smul_associatedBilinForm (ω : Symplect
     AlmostComplexStructure.apply_apply, neg_neg] using
     ω.hasDerivAt_hamiltonianAction_add_smul hH hγ hξ hγ1 hξ1
 
-/-- **The gradient of a Hamiltonian.** For the bilinear form `g(v, w) = ω(v, -J w)`, the
-Hamiltonian vector field `X_H` of `ι_{X_H} ω = dH` gives the gradient `-J X_H` of `H`:
-`g(v, -J X_H(x)) = dH_x(v)`. -/
-theorem associatedBilinForm_neg_apply_neg_apply (ω : SymplecticForm V)
-    (J : AlmostComplexStructure V) (H : V → ℝ) (x v : V) :
-    ω.associatedBilinForm (-J) v (-J (ω.hamiltonianVectorField H x)) = fderiv ℝ H x v := by
-  simp only [associatedBilinForm_apply, AlmostComplexStructure.neg_apply, map_neg, neg_neg,
-    AlmostComplexStructure.apply_apply]
-  rw [ω.neg_eq, apply_hamiltonianVectorField]
-
 end Variation
 
 section Reflection
@@ -240,11 +174,8 @@ theorem fderiv_comp_neg_fst_add_neg_apply_eq_zero_iff (ω : SymplecticForm V)
       fderiv ℝ u (-z.1, z.2) stdComplexLineReal +
         J (fderiv ℝ u (-z.1, z.2) stdComplexLineImag -
           ω.hamiltonianVectorField (H z.2) (u (-z.1, z.2))) = 0 := by
-  simp only [fderiv_comp_neg_fst, ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-    LinearIsometryEquiv.negFst_apply, stdComplexLineReal, stdComplexLineImag, neg_zero,
-    AlmostComplexStructure.neg_apply]
-  rw [show ((-1 : ℝ), (0 : ℝ)) = -((1 : ℝ), (0 : ℝ)) by simp, map_neg, ← neg_add, neg_eq_zero]
+  simp only [stdComplexLineReal, stdComplexLineImag, fderiv_comp_neg_fst_apply_one_zero,
+    fderiv_comp_neg_fst_apply_zero_one, AlmostComplexStructure.neg_apply, ← neg_add, neg_eq_zero]
 
 /-- **Reflection negates the energy density.** For the cylindrical perturbation `K = H_t dt`, the
 Floer energy density of `v(s, t) = u(-s, t)` at `z` is minus that of `u` at `(-z.1, z.2)`. -/
@@ -255,12 +186,9 @@ theorem floerEnergyDensity_comp_neg_fst (ω : SymplecticForm V) (z : ℝ × ℝ)
   rw [floerEnergyDensity_def, floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
     perturbedFDeriv_apply_stdComplexLineImag, perturbedFDeriv_apply_stdComplexLineReal,
     perturbedFDeriv_apply_stdComplexLineImag]
-  simp only [fderiv_comp_neg_fst, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    LinearIsometryEquiv.coe_toContinuousLinearEquiv, LinearIsometryEquiv.negFst_apply,
-    stdComplexLineReal, stdComplexLineImag, neg_zero, hamiltonianVectorField_const,
-    Pi.zero_apply, sub_zero]
-  rw [show ((-1 : ℝ), (0 : ℝ)) = -((1 : ℝ), (0 : ℝ)) by simp, map_neg, map_neg,
-    LinearMap.neg_apply]
+  simp only [stdComplexLineReal, stdComplexLineImag, fderiv_comp_neg_fst_apply_one_zero,
+    fderiv_comp_neg_fst_apply_zero_one, hamiltonianVectorField_const, Pi.zero_apply, sub_zero,
+    map_neg, LinearMap.neg_apply]
 
 /-- **The action decreases along a Floer solution for a structure whose negative is tamed.** Let
 `u` be a `C²` map with `1`-periodic loops solving `∂_s u + J_z (∂_t u - X_{H_t}(u)) = 0` on
@@ -321,13 +249,10 @@ theorem lintegral_neg_floerEnergyDensity_eq_of_tendsto_hamiltonianAction (ω : S
     (A₁ := A₂) (A₂ := A₁) (by simpa [comp_def] using htop.comp tendsto_neg_atBot_atTop)
     (by simpa [comp_def] using hbot.comp tendsto_neg_atTop_atBot)
   -- The reflection preserves Lebesgue measure and the strip `ℝ × [0, 1]`.
-  have hmp : MeasurePreserving r := by
-    rw [LinearIsometryEquiv.coe_negFst, Measure.volume_eq_prod]
-    exact (Measure.measurePreserving_neg (volume : Measure ℝ)).prod
-      (MeasurePreserving.id (volume : Measure ℝ))
-  rw [← hv, ← hmp.setLIntegral_comp_preimage_emb r.toHomeomorph.measurableEmbedding, hrU]
+  rw [← hv, ← LinearIsometryEquiv.measurePreserving_negFst.setLIntegral_comp_preimage_emb
+    r.toHomeomorph.measurableEmbedding, hrU]
   refine setLIntegral_congr_fun (MeasurableSet.univ.prod measurableSet_Icc) fun z _ ↦ ?_
-  simp [r]
+  simp
 
 end Reflection
 
