@@ -13,15 +13,16 @@ import TauCeti.Analysis.Normed.Module.Ball.Retraction
 
 Let `E` be a Banach space, `x₀ : E`, `r ≥ 0`, and let `B` be the closed ball of radius `r` about
 `x₀`. Let `F : ℝ → E → E` be such that, on the time interval `[t₀, T]`, every section
-`t ↦ F t x` with `x ∈ B` is integrable, `F t` is Lipschitz on `B` with constant `L t` for almost
-every `t`, and `‖F t x₀‖ ≤ m t` almost everywhere, with `L` and `m` integrable. If
+`t ↦ F t x` with `x ∈ B` is strongly measurable, `F t` is Lipschitz on `B` with constant `L t`
+for almost every `t`, and `‖F t x₀‖ ≤ m t` almost everywhere, with `L` and `m` integrable. If
 
 `(∫ t in t₀..T, m t) exp (∫ t in t₀..T, L t) ≤ r`,
 
 then the integral equation `x t = x₀ + ∫ s in t₀..t, F s (x s)` has a solution on `[t₀, T]` with
 values in `B` (`TauCeti.exists_continuousOn_mapsTo_closedBall_forall_mem_Icc_eq_picard`), and two
 solutions with values in `B` agree there, as on any interval `[a, b]` containing `t₀` on which
-the hypotheses hold (`TauCeti.eqOn_of_mapsTo_closedBall_of_forall_mem_Icc_eq_picard`). If the
+the sections are integrable and `F t` is Lipschitz on `B`
+(`TauCeti.eqOn_of_mapsTo_closedBall_of_forall_mem_Icc_eq_picard`). If the
 inequality is strict, every continuous solution on `[t₀, T]` takes values in `B`
 (`TauCeti.mapsTo_closedBall_of_forall_mem_Icc_eq_picard`), so any two solutions agree.
 
@@ -155,13 +156,14 @@ private theorem norm_sub_le_of_forall_mem_Icc_eq_picard_comp_centeredRadialRetra
     (by simpa only [hG₀] using hFm) (by simpa only [hG₀] using hLx₀) hx h ht
 
 /-- **The nonlinear Carathéodory theorem on a ball: existence.** Let the sections `t ↦ F t x`,
-`x ∈ closedBall x₀ r`, be integrable on `[t₀, T]`, let `F t` be Lipschitz on the ball with
+`x ∈ closedBall x₀ r`, be strongly measurable on `[t₀, T]`, let `F t` be Lipschitz on the ball with
 constant `L t` and `‖F t x₀‖ ≤ m t` for almost every `t ∈ [t₀, T]`, with `L` and `m` integrable,
 and let `(∫ t in t₀..T, m t) exp (∫ t in t₀..T, L t) ≤ r`. Then there is a curve `x` continuous on
 `[t₀, T]`, with values in the ball, such that `x t = x₀ + ∫ s in t₀..t, F s (x s)` for
 `t ∈ [t₀, T]`. -/
 theorem exists_continuousOn_mapsTo_closedBall_forall_mem_Icc_eq_picard [CompleteSpace E]
-    (hF : ∀ x ∈ closedBall x₀ r, IntegrableOn (fun t ↦ F t x) (Icc t₀ T))
+    (hF : ∀ x ∈ closedBall x₀ r,
+      AEStronglyMeasurable (fun t ↦ F t x) (volume.restrict (Icc t₀ T)))
     (hL : IntegrableOn (fun t ↦ (L t : ℝ)) (Icc t₀ T))
     (hLip : ∀ᵐ t ∂volume.restrict (Icc t₀ T), LipschitzOnWith (L t) (F t) (closedBall x₀ r))
     (hm : IntegrableOn m (Icc t₀ T)) (hFm : ∀ᵐ t ∂volume.restrict (Icc t₀ T), ‖F t x₀‖ ≤ m t)
@@ -173,8 +175,15 @@ theorem exists_continuousOn_mapsTo_closedBall_forall_mem_Icc_eq_picard [Complete
       by simp [Icc_eq_empty_of_lt hT]⟩
   have ht₀ : t₀ ∈ Icc t₀ T := left_mem_Icc.2 hT
   have hr₀ : 0 ≤ r := (integral_mul_exp_integral_nonneg hm hFm hL hT).trans hr
+  -- On the ball, `‖F t x‖ ≤ m t + L t * r`, so the measurable sections are integrable.
+  have hFi : ∀ x ∈ closedBall x₀ r, IntegrableOn (fun t ↦ F t x) (Icc t₀ T) := fun x hx ↦
+    (hm.add (hL.mul_const r)).mono' (hF x hx) <| (hLip.and hFm).mono fun t ⟨hLt, hFt⟩ ↦
+      calc ‖F t x‖ ≤ ‖F t x₀‖ + ‖F t x - F t x₀‖ := norm_le_norm_add_norm_sub' _ _
+      _ ≤ m t + L t * r := add_le_add hFt <| (dist_eq_norm (F t x) (F t x₀)).symm.trans_le <|
+        (hLt.dist_le_mul x hx x₀ (mem_closedBall_self hr₀)).trans
+          (mul_le_mul_of_nonneg_left (mem_closedBall.1 hx) (L t).coe_nonneg)
   obtain ⟨hG, hL₂, hGLip⟩ :=
-    integrableOn_lipschitzWith_comp_centeredRadialRetraction hr₀ hF hL hLip
+    integrableOn_lipschitzWith_comp_centeredRadialRetraction hr₀ hFi hL hLip
   obtain ⟨x, hx, hxe⟩ :=
     exists_continuousOn_forall_mem_Icc_eq_picard_of_lipschitzWith hG hL₂ hGLip ht₀ x₀
   have hB : MapsTo x (Icc t₀ T) (closedBall x₀ r) := fun t ht ↦ by
