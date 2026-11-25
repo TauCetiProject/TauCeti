@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Nondegenerate
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Toral
+import TauCeti.Algebra.Order.Ring.Square
 import TauCeti.Algebra.Polynomial.EvenComp
 import TauCeti.Algebra.Polynomial.RingDivision
 import TauCeti.Geometry.Symplectic.ExistsCompatible

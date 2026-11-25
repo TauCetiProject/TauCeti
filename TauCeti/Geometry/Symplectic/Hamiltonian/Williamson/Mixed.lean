@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.EllipticHyperbolic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.FocusFocus
 import Mathlib.Analysis.Complex.Polynomial.Basic
+import TauCeti.Algebra.Order.Ring.Square
 import TauCeti.Algebra.Polynomial.EvenComp
 import TauCeti.Data.Fin.Basic
 import TauCeti.Geometry.Symplectic.ExistsCompatible
@@ -183,11 +184,6 @@ theorem williamsonBlocks_prod {V₁ V₂ : Type*} [AddCommGroup V₁] [Module �
 
 /-! ### The Williamson blocks in a Darboux basis -/
 
-/-- The planes `m + 2j + i` of the focus-focus part of the Williamson blocks are distinct. -/
-theorem injective_natAdd_finProdFinEquiv :
-    Function.Injective fun l : Fin f × Fin 2 ↦ Fin.natAdd m (finProdFinEquiv l) :=
-  (Fin.natAdd_injective _ _).comp finProdFinEquiv.injective
-
 section Darboux
 
 variable {b t} [FiniteDimensional ℝ V] {ω : SymplecticForm V}
@@ -217,8 +213,10 @@ theorem IsDarbouxBasis.quadraticPoissonBracket_williamsonBlocks (hb : ω.IsDarbo
     (x y : Fin m ⊕ Fin f × Fin 2) :
     ω.quadraticPoissonBracket (williamsonBlocks b t x) (williamsonBlocks b t y) = 0 := by
   rcases x with i₁ | ⟨j₁, l₁⟩ <;> rcases y with i₂ | ⟨j₂, l₂⟩
-  pick_goal 4
-  · exact hb.quadraticPoissonBracket_focusFocusBlocksAt injective_natAdd_finProdFinEquiv _ _
+  · simpa only [williamsonBlocks_inl] using hb.quadraticPoissonBracket_ellipticHyperbolic _ _ _
+  pick_goal 3
+  · exact hb.quadraticPoissonBracket_focusFocusBlocksAt
+      Fin.natAdd_comp_finProdFinEquiv_injective _ _
   all_goals
     rw [quadraticPoissonBracket_eq_zero_iff, Commute, SemiconjBy]
     refine b.ext fun ⟨n, c⟩ ↦ ?_
@@ -231,18 +229,16 @@ theorem IsDarbouxBasis.quadraticPoissonBracket_williamsonBlocks (hb : ω.IsDarbo
           williamsonBlocks_inr, hb.hamiltonianEnd_focusFocusBlocksAt_apply_of_forall_ne,
           Fin.natAdd_ne_castAdd, ne_eq, not_false_eq_true, implies_true] <;>
         split_ifs <;>
-        simp_all [hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
-          hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd,
-          hb.hamiltonianEnd_focusFocusBlocksAt_apply_of_forall_ne]
+        simp_all [hb.hamiltonianEnd_focusFocusBlocksAt_apply_of_forall_ne]
     | right p =>
       obtain ⟨⟨j, i⟩, rfl⟩ := finProdFinEquiv.surjective p
       fin_cases i <;> fin_cases c <;> (try fin_cases l₁) <;> (try fin_cases l₂) <;>
         simp only [Fin.zero_eta, Fin.mk_one, hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
           hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd, williamsonBlocks_inr,
-          hb.hamiltonianEnd_focusFocusBlocksAt_zero_apply injective_natAdd_finProdFinEquiv,
-          hb.hamiltonianEnd_focusFocusBlocksAt_one_apply injective_natAdd_finProdFinEquiv,
+          hb.hamiltonianEnd_focusFocusBlocksAt_zero_apply Fin.natAdd_comp_finProdFinEquiv_injective,
+          hb.hamiltonianEnd_focusFocusBlocksAt_one_apply Fin.natAdd_comp_finProdFinEquiv_injective,
           Fin.natAdd_ne_castAdd, ite_false] <;>
-        (try split_ifs) <;>
+        split_ifs <;>
         simp_all [hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
           hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd]
 
@@ -520,9 +516,9 @@ private theorem IsDarbouxBasis.hamiltonianEnd_williamsonRegular_natAdd
         else -b (Fin.natAdd m (finProdFinEquiv (j, 0)), 0) := by
   simp [williamsonRegular, map_sum, LinearMap.sum_apply, williamsonBlocks_inr,
     hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
-    hb.hamiltonianEnd_focusFocusBlocksAt_zero_apply injective_natAdd_finProdFinEquiv,
-    hb.hamiltonianEnd_focusFocusBlocksAt_one_apply injective_natAdd_finProdFinEquiv, smul_ite,
-    Finset.sum_add_distrib]
+    hb.hamiltonianEnd_focusFocusBlocksAt_zero_apply Fin.natAdd_comp_finProdFinEquiv_injective,
+    hb.hamiltonianEnd_focusFocusBlocksAt_one_apply Fin.natAdd_comp_finProdFinEquiv_injective,
+    smul_ite, Finset.sum_add_distrib]
 
 /-- In a Darboux basis, the square of the Hamiltonian endomorphism of the regular element has the
 eigenvalue `-(k + 1)²` if the plane `k < m` is elliptic and `(k + 1)²` if it is hyperbolic. -/

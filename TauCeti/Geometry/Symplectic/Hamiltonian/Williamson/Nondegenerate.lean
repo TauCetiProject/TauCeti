@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Elliptic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Hyperbolic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.NondegenerateRankZero
+import TauCeti.Algebra.Order.Ring.Square
 import TauCeti.Algebra.Polynomial.RingDivision
 
 /-!
@@ -38,11 +39,12 @@ with square `μₖ = -cₖ²` for `k ∈ s` and `μₖ = cₖ²` for `k ∉ s`. 
 squarefree polynomial `(∏ₜ (X² - t)) X` over the nonzero values `t` of the `μₖ`
 (`IsDarbouxBasis.isSemisimple_hamiltonianEnd_sum_smul_ellipticHyperbolic`). If the `cₖ` are
 nonzero and the squares of the coefficients of blocks of the same type are distinct, then the `μₖ`
-are pairwise distinct (`TauCeti.SymplecticForm.injective_ite_neg_sq`), and every quadratic form
+are pairwise distinct (`TauCeti.injective_ite_neg_sq`), and every quadratic form
 Poisson-commuting with `P` is a combination of the blocks
 (`IsDarbouxBasis.mem_span_ellipticHyperbolic_of_quadraticPoissonBracket_eq_zero`; for the
 hyperbolic blocks alone, `IsDarbouxBasis.mem_span_hyperbolic_of_quadraticPoissonBracket_eq_zero`).
-Indeed, if `R` Poisson-commutes with `P` then `polar R (A_P u) v = -polar R u (A_P v)`. Applied
+Indeed, if `R` Poisson-commutes with `P` then `polar R (A_P u) v = -polar R u (A_P v)`
+(`TauCeti.SymplecticForm.polar_hamiltonianEnd_apply_of_quadraticPoissonBracket_eq_zero`). Applied
 twice this shows that the polar form of `R` pairs distinct planes trivially. On an elliptic plane it
 then is a multiple of `xₖ² + yₖ²`, and on a hyperbolic plane a multiple of `xₖ yₖ`. Moreover, a
 form whose Hamiltonian endomorphism acts on each plane as that of `cₖ Bₖ` is `P` itself
@@ -238,37 +240,6 @@ theorem IsDarbouxBasis.isSemisimple_hamiltonianEnd_sum_smul_ellipticHyperbolic
         one_apply_eq_self, sub_self]
     rw [hi, map_zero]
 
-/-- The coefficients of `∑ₖ cₖ Bₖ`, `Bₖ` the elliptic–hyperbolic blocks, are **regular** when they
-are nonzero and coefficients of blocks of the same type have distinct squares. Then the squares
-`-cₖ²` and `cₖ²` of the Hamiltonian endomorphism on the elliptic and hyperbolic planes are pairwise
-distinct. -/
-theorem injective_ite_neg_sq {ι : Type*} [DecidableEq ι] (s : Finset ι) {c : ι → ℝ}
-    (hc : Pairwise fun k l ↦ (k ∈ s ↔ l ∈ s) → c k ^ 2 ≠ c l ^ 2) (hc0 : ∀ k, c k ≠ 0) :
-    Function.Injective fun k ↦ if k ∈ s then -c k ^ 2 else c k ^ 2 := by
-  intro k l e
-  by_contra hkl
-  have hk := sq_pos_of_ne_zero (hc0 k)
-  have hl := sq_pos_of_ne_zero (hc0 l)
-  have h := hc hkl
-  by_cases hks : k ∈ s <;> by_cases hls : l ∈ s <;> simp only [hks, hls, ↓reduceIte] at h e
-  · exact h (by simp) (neg_inj.1 e)
-  · linarith
-  · linarith
-  · exact h (by simp) e
-
-/-- If a quadratic form `R` Poisson-commutes with `P`, then `A_P` is skew for the polar form of `R`:
-`polar R (A_P u) v = -polar R u (A_P v)`, since `A_R` commutes with `A_P ∈ sp(V, ω)`. -/
-private theorem polar_hamiltonianEnd_apply_of_quadraticPoissonBracket_eq_zero
-    {R P : QuadraticForm ℝ V} (hR : ω.quadraticPoissonBracket R P = 0) (u v : V) :
-    QuadraticMap.polar R (ω.hamiltonianEnd P u) v =
-      -QuadraticMap.polar R u (ω.hamiltonianEnd P v) := by
-  have hcomm : ω.hamiltonianEnd R (ω.hamiltonianEnd P u) =
-      ω.hamiltonianEnd P (ω.hamiltonianEnd R u) := by
-    simpa only [mul_apply_eq_comp] using
-      LinearMap.congr_fun (ω.quadraticPoissonBracket_eq_zero_iff.1 hR).eq u
-  rw [← apply_hamiltonianEnd, ← apply_hamiltonianEnd, hcomm, apply_hamiltonianEnd,
-    apply_hamiltonianEnd_right, neg_neg]
-
 /-- A quadratic form `R` Poisson-commuting with a regular combination `∑ₖ cₖ Bₖ` of the
 elliptic–hyperbolic blocks pairs distinct planes trivially, and on each plane its polar form is
 that of a multiple of the block. -/
@@ -288,7 +259,7 @@ private theorem IsDarbouxBasis.polar_apply_of_quadraticPoissonBracket_eq_zero
   have hA₁ (j : Fin n) : A (b (j, 1)) = if j ∈ s then c j • b (j, 0) else -c j • b (j, 1) :=
     hb.hamiltonianEnd_sum_smul_ellipticHyperbolic_apply_snd s c j
   have hskew (u v : V) : QuadraticMap.polar R (A u) v = -QuadraticMap.polar R u (A v) :=
-    polar_hamiltonianEnd_apply_of_quadraticPoissonBracket_eq_zero hR u v
+    ω.polar_hamiltonianEnd_apply_of_quadraticPoissonBracket_eq_zero hR u v
   obtain ⟨l, a'⟩ := i
   rcases eq_or_ne l k with rfl | hlk
   · -- On the `l`-th plane, `polar R` is a multiple of `xₗ² + yₗ²` or of `xₗ yₗ`.
