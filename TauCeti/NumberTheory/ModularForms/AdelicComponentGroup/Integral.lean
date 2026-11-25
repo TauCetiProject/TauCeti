@@ -63,11 +63,9 @@ theorem mem_range_mapGL_of_det_eq_one {γ : GL (Fin n) K} (hdet : GeneralLinearG
     ext i j
     simpa using hm i j
   have hdet' : (Matrix.of m).det = 1 := by
-    have h := congrArg Units.val hdet
-    rw [GeneralLinearGroup.val_det_apply, ← hmat, ← RingHom.mapMatrix_apply,
-      ← RingHom.map_det] at h
-    exact IsFractionRing.injective R K (by simpa using h)
-  exact ⟨⟨Matrix.of m, hdet'⟩, by ext i j; exact hm i j⟩
+    apply IsFractionRing.injective R K
+    simpa [RingHom.map_det, hmat] using congrArg Units.val hdet
+  exact ⟨⟨Matrix.of m, hdet'⟩, Units.ext ((SpecialLinearGroup.mapGL_coe_matrix _).trans hmat)⟩
 
 end IsDedekindDomain.FiniteAdeleRing
 
