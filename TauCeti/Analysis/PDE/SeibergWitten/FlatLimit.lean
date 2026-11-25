@@ -374,8 +374,10 @@ def baseNormalCoordHomeomorph : V ≃ₜ ℂ × ℂ :=
 
 @[simp]
 theorem baseNormalCoordHomeomorph_apply (y : V) :
-    baseNormalCoordHomeomorph e y = (baseCoord e y, normalCoord e y) :=
-  (rfl)
+    baseNormalCoordHomeomorph e y = (baseCoord e y, normalCoord e y) := by
+  rw [baseNormalCoordHomeomorph, Homeomorph.trans_apply, ← Homeomorph.coe_toEquiv,
+    WithLp.toEquiv_homeomorphProd, WithLp.equiv_apply, LinearIsometryEquiv.coe_toHomeomorph,
+    baseNormalCoordEquiv_apply, WithLp.ofLp_toLp]
 
 /-- The point with base coordinate `w` and normal coordinate `n` is
 `Re w e₀ + Im w e₁ + Re n e₂ + Im n e₃`. -/
