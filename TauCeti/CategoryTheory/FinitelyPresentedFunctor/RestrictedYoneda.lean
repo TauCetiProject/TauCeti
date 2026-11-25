@@ -7,6 +7,8 @@ module
 
 public import Mathlib.CategoryTheory.ObjectProperty.Equivalence
 public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.Basic
+public import TauCeti.CategoryTheory.ObjectProperty.FullSubcategory
+public import TauCeti.CategoryTheory.Preadditive.Projective.FiniteProducts
 public import TauCeti.CategoryTheory.Preadditive.RestrictedYoneda
 
 /-!
@@ -18,8 +20,10 @@ subcategory of `P` gives the functor `X ↦ (-, X)|_P`,
 `P.restrictedPreadditiveYoneda : C ⥤ P.FullSubcategoryᵒᵖ ⥤ AddCommGrpCat`. It sends a presentation
 `A ⟶ B ⟶ X ⟶ 0` of `X` by objects of `P` to a presentation `(-, A) ⟶ (-, B) ⟶ (-, X)|_P ⟶ 0` of a
 functor by representables, so the objects with such a presentation, `P.presented`, go to finitely
-presented functors. This is an equivalence between `P.presented` and `mod P`, the Yoneda description
-of the finitely presented functors on a category of projectives.
+presented functors. When the full subcategory of `P` has finite biproducts, so that finitely
+presented functors on it are presented by single representable functors, this is an equivalence
+between `P.presented` and `mod P`, the Yoneda description of the finitely presented functors on a
+category of projectives.
 
 If moreover every object of `C` is a quotient of an object of `P`, every object of `C` is
 `P`-presented and `C ≌ mod P`. In particular, an abelian category with enough projectives is
@@ -65,20 +69,24 @@ theorem isFinitelyPresentedFunctor_restrictedPreadditiveYoneda_obj (hP : P ≤ i
   let g : (⟨_, hA⟩ : P.FullSubcategory) ⟶ ⟨_, hB⟩ := P.homMk f
   have hc' : IsColimit (CokernelCofork.ofπ (f := g.hom) c.π c.condition) :=
     IsColimit.ofIsoColimit hc (Cofork.ext (Iso.refl _))
-  exact isFinitelyPresentedFunctor_iff_exists_isColimit.2
-    ⟨_, _, g, _, _, ⟨isColimitRestrictedPreadditiveYoneda hP g hc'⟩⟩
+  exact IsFinitelyPresentedFunctor.of_isColimit_cokernelCofork
+    (isColimitRestrictedPreadditiveYoneda hP g hc')
+    (isFinitelyGeneratedFunctor_preadditiveYoneda_obj _)
+    (isFinitelyPresentedFunctor_preadditiveYoneda_obj _)
 
-/-- Every finitely presented functor on `P` is `(-, X)|_P` for a `P`-presented object `X`: the
-cokernel of `(-, f)` is `(-, X)|_P` for `X` the cokernel of `f`. -/
-theorem exists_iso_restrictedPreadditiveYoneda_obj (hP : P ≤ isProjective C)
-    {F : P.FullSubcategoryᵒᵖ ⥤ AddCommGrpCat.{v}} (hF : IsFinitelyPresentedFunctor F) :
+/-- If the full subcategory of `P` has finite biproducts, every finitely presented functor on `P`
+is `(-, X)|_P` for a `P`-presented object `X`: the cokernel of `(-, f)` is `(-, X)|_P` for `X` the
+cokernel of `f`. -/
+theorem exists_iso_restrictedPreadditiveYoneda_obj [HasFiniteBiproducts P.FullSubcategory]
+    (hP : P ≤ isProjective C) {F : P.FullSubcategoryᵒᵖ ⥤ AddCommGrpCat.{v}}
+    (hF : IsFinitelyPresentedFunctor F) :
     ∃ X, P.presented X ∧ Nonempty (P.restrictedPreadditiveYoneda.obj X ≅ F) := by
-  obtain ⟨A, B, f, p, h, ⟨hc⟩⟩ := isFinitelyPresentedFunctor_iff_exists_isColimit.1 hF
+  obtain ⟨A, B, f, p, h, hp, hS⟩ := (isFinitelyPresentedFunctor_iff_exists_single _).1 hF
   have hX := isColimitRestrictedPreadditiveYoneda hP f (w := cokernel.condition f.hom)
     (cokernelIsCokernel f.hom)
   have hf : MorphismProperty.ofObjectProperty P P f.hom := ⟨A.property, B.property⟩
   exact ⟨cokernel f.hom, (MorphismProperty.cokernels.of_isColimit f.hom _ (cokernelIsCokernel f.hom)
-    hf :), ⟨hX.coconePointUniqueUpToIso hc⟩⟩
+    hf :), ⟨hX.coconePointUniqueUpToIso hS.gIsCokernel⟩⟩
 
 variable (P) in
 /-- The functor `X ↦ (-, X)|_P` from a full subcategory `Q` of `P`-presented objects to `mod P`.
@@ -119,18 +127,21 @@ instance (hP : P ≤ isProjective C) {Q : ObjectProperty C} (hQ : Q ≤ P.presen
       (hQ _ X.property) Y.obj).2 θ.hom
     exact ⟨Q.homMk g, ObjectProperty.hom_ext _ (by simpa using hg)⟩
 
-/-- The essential image of `X ↦ (-, X)|_P` is all of `mod P`. -/
-theorem essSurj_restrictedPreadditiveYonedaToMod (hP : P ≤ isProjective C) {Q : ObjectProperty C}
+/-- If the full subcategory of `P` has finite biproducts, the essential image of `X ↦ (-, X)|_P`
+is all of `mod P`. -/
+theorem essSurj_restrictedPreadditiveYonedaToMod [HasFiniteBiproducts P.FullSubcategory]
+    (hP : P ≤ isProjective C) {Q : ObjectProperty C}
     (hQ : Q = P.presented) : (P.restrictedPreadditiveYonedaToMod hP hQ.le).EssSurj where
   mem_essImage F := by
     obtain ⟨X, hX, ⟨e⟩⟩ := exists_iso_restrictedPreadditiveYoneda_obj hP F.property
     exact ⟨⟨X, hQ ▸ hX⟩, ⟨ObjectProperty.isoMk _ e⟩⟩
 
 /-- **The Yoneda description of `mod P`.** For a full subcategory `P` of projective objects of an
-abelian category, the functor `X ↦ (-, X)|_P` is an equivalence from the objects with a
-presentation by objects of `P`, given here as a property `Q` equal to `P.presented`, to the finitely
-presented functors on `P`. -/
-noncomputable def equivalenceMod (hP : P ≤ isProjective C) {Q : ObjectProperty C}
+abelian category, with finite biproducts, the functor `X ↦ (-, X)|_P` is an equivalence from the
+objects with a presentation by objects of `P`, given here as a property `Q` equal to
+`P.presented`, to the finitely presented functors on `P`. -/
+noncomputable def equivalenceMod [HasFiniteBiproducts P.FullSubcategory]
+    (hP : P ≤ isProjective C) {Q : ObjectProperty C}
     (hQ : Q = P.presented) :
     Q.FullSubcategory ≌ (isFinitelyPresentedFunctor P.FullSubcategory).FullSubcategory :=
   have := essSurj_restrictedPreadditiveYonedaToMod hP hQ
@@ -138,22 +149,25 @@ noncomputable def equivalenceMod (hP : P ≤ isProjective C) {Q : ObjectProperty
   (P.restrictedPreadditiveYonedaToMod hP hQ.le).asEquivalence
 
 /-- The functor of `equivalenceMod` is `X ↦ (-, X)|_P`. -/
-noncomputable def equivalenceModCompιIso (hP : P ≤ isProjective C) {Q : ObjectProperty C}
+noncomputable def equivalenceModCompιIso [HasFiniteBiproducts P.FullSubcategory]
+    (hP : P ≤ isProjective C) {Q : ObjectProperty C}
     (hQ : Q = P.presented) :
     (equivalenceMod hP hQ).functor ⋙ (isFinitelyPresentedFunctor _).ι ≅
       Q.ι ⋙ P.restrictedPreadditiveYoneda :=
   Iso.refl _
 
-/-- If `P` consists of projective objects and every object of the abelian category `C` is a quotient
-of an object of `P`, then `X ↦ (-, X)|_P` is an equivalence from `C` to the finitely presented
-functors on `P`. -/
-noncomputable def equivalenceModOfExistsEpi (hP : P ≤ isProjective C)
+/-- If `P` consists of projective objects, its full subcategory has finite biproducts, and every
+object of the abelian category `C` is a quotient of an object of `P`, then `X ↦ (-, X)|_P` is an
+equivalence from `C` to the finitely presented functors on `P`. -/
+noncomputable def equivalenceModOfExistsEpi [HasFiniteBiproducts P.FullSubcategory]
+    (hP : P ≤ isProjective C)
     (hgen : ∀ X : C, ∃ (Q : C) (π : Q ⟶ X), P Q ∧ Epi π) :
     C ≌ (isFinitelyPresentedFunctor P.FullSubcategory).FullSubcategory :=
   (topEquivalence C).symm.trans (equivalenceMod hP (presented_eq_top hgen).symm)
 
 /-- The functor of `equivalenceModOfExistsEpi` is `X ↦ (-, X)|_P`. -/
-noncomputable def equivalenceModOfExistsEpiCompιIso (hP : P ≤ isProjective C)
+noncomputable def equivalenceModOfExistsEpiCompιIso [HasFiniteBiproducts P.FullSubcategory]
+    (hP : P ≤ isProjective C)
     (hgen : ∀ X : C, ∃ (Q : C) (π : Q ⟶ X), P Q ∧ Epi π) :
     (equivalenceModOfExistsEpi hP hgen).functor ⋙ (isFinitelyPresentedFunctor _).ι ≅
       P.restrictedPreadditiveYoneda :=
@@ -166,6 +180,8 @@ end CategoryTheory
 namespace TauCeti
 
 variable (C : Type u) [Category.{v} C] [Abelian C] [EnoughProjectives C]
+
+attribute [local instance] Abelian.hasFiniteBiproducts
 
 /-- An abelian category with enough projectives is equivalent to `mod (proj C)`, the finitely
 presented functors on its full subcategory of projective objects, by `X ↦ (-, X)|_{proj C}`. -/
