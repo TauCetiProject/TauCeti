@@ -45,7 +45,8 @@ theorem meromorphicNFOn_rieszRemainderMellin (L : ℂ → ℂ) :
 
 /-- The quotient defining the Mellin expression, before normalization, describes its
 punctured germ at every point. -/
-theorem _root_.Meromorphic.rieszRemainderMellin_eventuallyEq {L : ℂ → ℂ} (hL : Meromorphic L) (z : ℂ) :
+theorem _root_.Meromorphic.rieszRemainderMellin_eventuallyEq {L : ℂ → ℂ}
+    (hL : Meromorphic L) (z : ℂ) :
     rieszRemainderMellin L =ᶠ[𝓝[≠] z] fun s ↦
       (s * logDerivFinitePart L 1 - (meromorphicOrderAt L 1).untop₀ * (s - 1) -
         (logDeriv L s - (meromorphicOrderAt L 1).untop₀ / (s - 1))) / (s * (s - 1)) := by
@@ -58,8 +59,9 @@ theorem _root_.Meromorphic.rieszRemainderMellin_eventuallyEq {L : ℂ → ℂ} (
 
 /-- At a regular nonzero point of `L` other than `0` or `1`, the Mellin expression is analytic
 and its value is given by the defining quotient. -/
-theorem _root_.Meromorphic.rieszRemainderMellin_eq_and_analyticAt {L : ℂ → ℂ} (hL : Meromorphic L) {s : ℂ}
-    (hs₀ : s ≠ 0) (hs₁ : s ≠ 1) (ha : AnalyticAt ℂ L s) (hne : L s ≠ 0) :
+theorem _root_.Meromorphic.rieszRemainderMellin_eq_and_analyticAt {L : ℂ → ℂ}
+    (hL : Meromorphic L) {s : ℂ} (hs₀ : s ≠ 0) (hs₁ : s ≠ 1) (ha : AnalyticAt ℂ L s)
+    (hne : L s ≠ 0) :
     rieszRemainderMellin L s =
       (s * logDerivFinitePart L 1 - (meromorphicOrderAt L 1).untop₀ * (s - 1) -
       (logDeriv L s - (meromorphicOrderAt L 1).untop₀ / (s - 1))) / (s * (s - 1)) ∧
@@ -78,8 +80,8 @@ theorem _root_.Meromorphic.rieszRemainderMellin_eq_and_analyticAt {L : ℂ → �
 
 /-- The analytic representative of the compensated logarithmic derivative at `1` gives the
 value and the analytic germ of the Riesz remainder Mellin expression there. -/
-theorem _root_.Meromorphic.rieszRemainderMellin_eventuallyEq_dslope {L g : ℂ → ℂ} (hL : Meromorphic L)
-    (hg : AnalyticAt ℂ g 1) (heq : (fun s ↦
+theorem _root_.Meromorphic.rieszRemainderMellin_eventuallyEq_dslope {L g : ℂ → ℂ}
+    (hL : Meromorphic L) (hg : AnalyticAt ℂ g 1) (heq : (fun s ↦
       logDeriv L s - (meromorphicOrderAt L 1).untop₀ / (s - 1)) =ᶠ[𝓝[≠] 1] g) :
     rieszRemainderMellin L =ᶠ[𝓝 1] fun s ↦
       (g 1 - (meromorphicOrderAt L 1).untop₀ - dslope g 1 s) / s := by
@@ -99,8 +101,8 @@ theorem _root_.Meromorphic.rieszRemainderMellin_eventuallyEq_dslope {L g : ℂ �
 
 /-- The main-term subtraction removes the pole at `1`, including when the input has a pole
 there. -/
-theorem _root_.Meromorphic.analyticAt_rieszRemainderMellin_one {L : ℂ → ℂ} (hL : Meromorphic L) :
-    AnalyticAt ℂ (rieszRemainderMellin L) 1 := by
+theorem _root_.Meromorphic.analyticAt_rieszRemainderMellin_one {L : ℂ → ℂ}
+    (hL : Meromorphic L) : AnalyticAt ℂ (rieszRemainderMellin L) 1 := by
   obtain ⟨g, hg, heq⟩ := (hL 1).exists_analyticAt_logDeriv_sub_order_div
   have ha : AnalyticAt ℂ (fun s ↦
       (g 1 - (meromorphicOrderAt L 1).untop₀ - dslope g 1 s) / s) 1 :=
@@ -109,8 +111,9 @@ theorem _root_.Meromorphic.analyticAt_rieszRemainderMellin_one {L : ℂ → ℂ}
 
 /-- Away from `0` and `1`, multiplying the Mellin germ by `s - z` gives an analytic numerator
 whose value at `z` is the order of `L` divided by `z * (1 - z)`. -/
-theorem _root_.Meromorphic.exists_analyticAt_mul_rieszRemainderMellin {L : ℂ → ℂ} (hL : Meromorphic L)
-    {z : ℂ} (hz₀ : z ≠ 0) (hz₁ : z ≠ 1) {n : ℤ} (hn : meromorphicOrderAt L z = n) :
+theorem _root_.Meromorphic.exists_analyticAt_mul_rieszRemainderMellin {L : ℂ → ℂ}
+    (hL : Meromorphic L) {z : ℂ} (hz₀ : z ≠ 0) (hz₁ : z ≠ 1) {n : ℤ}
+    (hn : meromorphicOrderAt L z = n) :
     ∃ H : ℂ → ℂ, AnalyticAt ℂ H z ∧ H z = (n : ℂ) / (z * (1 - z)) ∧
       (fun s ↦ (s - z) * rieszRemainderMellin L s) =ᶠ[𝓝[≠] z] H := by
   obtain ⟨g, hg, heq⟩ := (hL z).exists_analyticAt_logDeriv_sub_order_div
@@ -138,8 +141,9 @@ theorem _root_.Meromorphic.exists_analyticAt_mul_rieszRemainderMellin {L : ℂ �
 
 /-- At a point different from `0` and `1` where `L` has finite nonzero order `n`, the Mellin
 expression has a simple pole with residue `n / (z * (1 - z))`. -/
-theorem _root_.Meromorphic.rieszRemainderMellin_simplePole {L : ℂ → ℂ} (hL : Meromorphic L)
-    {z : ℂ} (hz₀ : z ≠ 0) (hz₁ : z ≠ 1) {n : ℤ} (hn : meromorphicOrderAt L z = n) (hne : n ≠ 0) :
+theorem _root_.Meromorphic.rieszRemainderMellin_simplePole {L : ℂ → ℂ}
+    (hL : Meromorphic L) {z : ℂ} (hz₀ : z ≠ 0) (hz₁ : z ≠ 1) {n : ℤ}
+    (hn : meromorphicOrderAt L z = n) (hne : n ≠ 0) :
     meromorphicOrderAt (rieszRemainderMellin L) z = -1 ∧
       meromorphicTrailingCoeffAt (rieszRemainderMellin L) z = (n : ℂ) / (z * (1 - z)) := by
   obtain ⟨H, ha, hval, heq⟩ := hL.exists_analyticAt_mul_rieszRemainderMellin hz₀ hz₁ hn
