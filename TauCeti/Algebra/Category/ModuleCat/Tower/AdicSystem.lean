@@ -55,6 +55,8 @@ schemes. Neither noetherianity of `A` nor finite generation of `I` is needed.
 * `TauCeti.ModuleTower.IsAdicSystem.finite_obj`: if `M₀` is finite, then so is every `Mₙ`.
 * `TauCeti.ModuleTower.IsAdicSystem.finite_lim`: the limit is a finite module.
 * `TauCeti.ModuleTower.IsAdicSystem.ker_limπ`: the kernel of `L → Mₙ` is `I^{n+1} L`.
+* `TauCeti.ModuleTower.IsAdicSystem.isBaseChange_limπ`: `L → Mₙ` exhibits scalar change to
+  `A ⧸ I ^ (n + 1)`.
 
 ## References
 
@@ -353,13 +355,18 @@ theorem limQuotientEquiv_mk (n : ℕ) (x : F.lim) :
 
 open scoped TensorProduct
 
+/-- The limit projection exhibits the `n`-th term as scalar change to `A ⧸ I ^ (n + 1)`. -/
+theorem isBaseChange_limπ (n : ℕ) :
+    letI := (hF.isTorsionBySet_obj n).isScalarTower (S := A)
+    IsBaseChange (N := hF.levelModule n) (A ⧸ I ^ (n + 1)) (F.limπ n) := by
+  have := (hF.isTorsionBySet_obj n).isScalarTower (S := A)
+  exact (IsBaseChange.quotient_iff (N := hF.levelModule n) _ _).2
+    ⟨F.limπ_surjective hF.transition_surjective n, hF.ker_limπ n⟩
+
 /-- The quotient-linear scalar-change equivalence induced by a limit projection. -/
 noncomputable def limBaseChangeEquiv (n : ℕ) :
-    (A ⧸ I ^ (n + 1)) ⊗[A] F.lim ≃ₗ[A ⧸ I ^ (n + 1)] hF.levelModule n := by
-  let := (hF.isTorsionBySet_obj n).module
-  have := (hF.isTorsionBySet_obj n).isScalarTower (S := A)
-  exact ((IsBaseChange.quotient_iff _ _).2
-    ⟨F.limπ_surjective hF.transition_surjective n, hF.ker_limπ n⟩).equiv
+    (A ⧸ I ^ (n + 1)) ⊗[A] F.lim ≃ₗ[A ⧸ I ^ (n + 1)] hF.levelModule n :=
+  (hF.isBaseChange_limπ n).equiv
 
 /-- The scalar-change equivalence evaluates `1 ⊗ x` by the limit projection. -/
 @[simp↓]
