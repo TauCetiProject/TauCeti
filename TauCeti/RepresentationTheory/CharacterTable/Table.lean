@@ -64,8 +64,9 @@ take their familiar Hermitian form, because inversion conjugates character value
   phrased as orthonormality for the character pairing, and
   `TauCeti.sum_mul_inv_of_mem_irreducibleCharacters` is the same relation for the set of
   irreducible characters, free of the enumeration and of division.
-* `TauCeti.exists_irreducibleCharacter_eq_one`: the trivial character is a row of the table, and
-  every other row is nonconstant
+* `TauCeti.one_mem_irreducibleCharacters`: the trivial character is irreducible;
+  `TauCeti.exists_irreducibleCharacter_eq_one`: it is a row of the table, and every other row is
+  nonconstant
   (`TauCeti.exists_irreducibleCharacter_ne_characterDegree`).
 * `TauCeti.card_conjClass_mul_sum_characterTable_mul_characterTable_inv` and
   `TauCeti.sum_characterTable_mul_conj`: **second (column) orthogonality**, over `k` and in its
@@ -157,6 +158,13 @@ theorem _root_.FDRep.character_mem_irreducibleCharacters (X : FDRep k G)
   have := FDRep.isIrreducible_of_simple X
   TauCeti.character_mem_irreducibleCharacters X.ρ
 
+/-- **The trivial character is irreducible**: the constant function `1` is the character of the
+trivial one-dimensional representation. -/
+theorem one_mem_irreducibleCharacters : (fun _ : G => (1 : k)) ∈ irreducibleCharacters k G := by
+  have h : (Representation.trivial k G k).character = fun _ => 1 :=
+    funext fun _ => by rw [Representation.char_trivial, Module.finrank_self, Nat.cast_one]
+  exact h ▸ character_mem_irreducibleCharacters _
+
 /-- An irreducible character does not vanish at the identity, where its value is its degree. -/
 theorem apply_one_ne_zero_of_mem_irreducibleCharacters [CharZero k] {f : G → k}
     (hf : f ∈ irreducibleCharacters k G) : f 1 ≠ 0 := by
@@ -242,10 +250,8 @@ variable (G) in
 character of `G` is the constant function `1`, the character of the trivial one-dimensional
 representation. -/
 theorem exists_irreducibleCharacter_eq_one :
-    ∃ i, irreducibleCharacter k i = fun _ : G => (1 : k) := by
-  have hchar : (Representation.trivial k G k).character = fun _ : G => (1 : k) :=
-    funext fun _ => by rw [Representation.char_trivial, Module.finrank_self, Nat.cast_one]
-  exact exists_irreducibleCharacter_eq k (hchar ▸ character_mem_irreducibleCharacters _)
+    ∃ i, irreducibleCharacter k i = fun _ : G => (1 : k) :=
+  exists_irreducibleCharacter_eq k one_mem_irreducibleCharacters
 
 /-- **The degree of the `i`-th irreducible character**, the dimension of a representation affording
 it. -/
@@ -337,10 +343,7 @@ theorem irreducibleCharacters_of_subsingleton {G : Type v} [Group G] [Subsinglet
     have h1 := hρ.finrank_eq_one_of_invariants_ne_bot hne
     refine Set.mem_singleton_iff.mpr (funext fun g => ?_)
     rw [Subsingleton.elim g 1, Representation.char_one, h1, Nat.cast_one]
-  · rw [Set.mem_singleton_iff.mp hf]
-    convert character_mem_irreducibleCharacters (Representation.trivial k G k) using 1
-    funext g
-    rw [Subsingleton.elim g 1, Representation.char_one, finrank_self, Nat.cast_one]
+  · exact Set.mem_singleton_iff.mp hf ▸ one_mem_irreducibleCharacters
 
 end Subsingleton
 
