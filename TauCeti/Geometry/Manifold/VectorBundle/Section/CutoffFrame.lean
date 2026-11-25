@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Distribution.TestFunction.Schwartz
+public import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
+public import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.ComplexModule
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.TestFunction
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 
 /-!
@@ -24,6 +28,13 @@ Multiplying by a smooth function `ψ` supported in the base set turns it into gl
 These read operators between sections of bundles as matrices of operators on functions, without
 restricting to the base set of a trivialization: the entries of an operator `P` are the operators
 `f ↦ χ ℓ(t' (P (f ψ t⁻¹ v)))` on functions on `M`.
+
+In a chart `e` whose source lies in the base set of `t`, a Schwartz function `u` on the model space
+and a cutoff `ψ` with compact support in the chart target give the **chart cut-off section**
+`x ↦ t⁻¹ₓ (ψ(e x) u(e x))` (`Bundle.Trivialization.chartCutoffSection`), on which chart
+compressions of operators between bundles are evaluated. In terms of cut-off frames, it is the sum
+of the cut-off frame sections `ρ t⁻¹ bᵢ` with the pulled back coefficients `(ψ bᵢ*(u)) ∘ e`
+(`Bundle.Trivialization.chartCutoffSection_eq_sum`).
 -/
 
 public section
@@ -31,7 +42,7 @@ public section
 noncomputable section
 
 open Bundle Set
-open scoped ContDiff Manifold
+open scoped ContDiff Distributions Manifold SchwartzMap
 
 namespace Bundle.Trivialization
 
@@ -120,5 +131,70 @@ theorem cutoffFrameCoeff_apply (χ : C^n⟮I, M; ℝ⟯) (hχ : tsupport χ ⊆ 
   (rfl)
 
 end Coeff
+
+section ChartCutoff
+
+variable {EM : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ EM] {M : Type*} [TopologicalSpace M]
+  [ChartedSpace EM M] [T2Space M] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
+  [∀ x, Module ℝ (V x)] [∀ x, Module ℂ (V x)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
+  [VectorBundle ℝ F V] [VectorBundle ℂ F V] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, EM)]
+  (t : Trivialization F (π F V)) [MemTrivializationAtlas t] {e : OpenPartialHomeomorph M EM}
+  (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, EM) ∞ M) (hE : e.source ⊆ t.baseSet)
+
+/-- The **chart cut-off section** of a Schwartz function `u : EM → F`: for a chart `e` whose
+source lies in the base set of the trivialization `t` and a cutoff `ψ` with compact support in the
+chart target, the smooth section `x ↦ t⁻¹ₓ (ψ(e x) u(e x))` of `V` on the chart source, extended
+by zero. Its frame coefficients in `t`, read in the chart, are `ψ u`. -/
+def chartCutoffSection (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (u : 𝓢(EM, F)) :
+    Cₛ^∞⟮𝓘(ℝ, EM); F, V⟯ :=
+  (t.chartTestSection (n := ⊤) e (contMDiffOn_of_mem_maximalAtlas he) hE
+    (ψ.smulSchwartzMap u)).val
+
+omit [∀ x, Module ℂ (V x)] [VectorBundle ℂ F V] in
+theorem chartCutoffSection_apply_of_mem (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (u : 𝓢(EM, F))
+    {x : M} (hx : x ∈ e.source) :
+    t.chartCutoffSection he hE ψ u x = t.symm x (ψ (e x) • u (e x)) := by
+  rw [chartCutoffSection, t.chartTestSection_apply_of_mem (n := ⊤) e _ hE _ hx,
+    t.symmL_apply (hE hx), TestFunction.smulSchwartzMap_apply]
+
+omit [∀ x, Module ℂ (V x)] [VectorBundle ℂ F V] in
+theorem chartCutoffSection_apply_of_notMem (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (u : 𝓢(EM, F)) {x : M} (hx : x ∉ e.source) :
+    t.chartCutoffSection he hE ψ u x = 0 :=
+  t.chartTestSection_apply_of_notMem (n := ⊤) e _ hE _ hx
+
+/-- **A chart cut-off section in a frame.** Let `ρ` be a real smooth function on `M`, supported in
+the base set of `t`, which equals `1` on `e⁻¹(supp ψ)`, and `(bᵢ)` a basis of the model fibre `F`
+with coordinate functionals `bᵢ*`. Then the chart cut-off section of `u` is the sum over `i` of the
+cut-off frame sections `ρ t⁻¹ bᵢ` multiplied by the complex pullbacks `(ψ bᵢ*(u)) ∘ e`. -/
+theorem chartCutoffSection_eq_sum [FiniteDimensional ℂ F]
+    (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (u : 𝓢(EM, F))
+    (ρ : C^∞⟮𝓘(ℝ, EM), M; ℝ⟯) (hρ : tsupport ρ ⊆ t.baseSet)
+    (hρψ : ∀ y ∈ tsupport ψ, ρ (e.symm y) = 1) {ι : Type*} [Fintype ι] (b : Module.Basis ι ℂ F) :
+    t.chartCutoffSection he hE ψ u = ∑ i, e.complexCutoffPullback he ψ
+      (ContMDiffMap.ofContDiff (u.postcompCLM (b.coord i).toContinuousLinearMap)
+        ((u.postcompCLM (b.coord i).toContinuousLinearMap).smooth ⊤)) •
+          t.cutoffFrameSection ρ hρ (b i) := by
+  ext x
+  rw [ContMDiffSection.coe_sum, Finset.sum_apply]
+  by_cases hx : x ∈ e.source
+  · simp only [t.chartCutoffSection_apply_of_mem he hE _ _ hx,
+      ContMDiffSection.smul_apply_of_normedAlgebra,
+      e.complexCutoffPullback_apply_of_mem he _ _ hx, t.cutoffFrameSection_apply,
+      ContMDiffMap.coe_ofContDiff, SchwartzMap.postcompCLM_apply]
+    by_cases hψx : ψ (e x) = 0
+    · simp [hψx, ← t.symmL_apply (R := ℂ) (hE hx)]
+    have hρx : ρ x = 1 := by
+      simpa [e.left_inv hx] using hρψ (e x) (subset_tsupport _ hψx)
+    simp only [hρx, one_smul, ← t.symmL_apply (R := ℂ) (hE hx), ← map_smul, ← map_sum]
+    congr 1
+    conv_lhs => rw [← b.sum_repr (u (e x)), Finset.smul_sum]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    simp [← smul_assoc, Complex.real_smul]
+  · simp [t.chartCutoffSection_apply_of_notMem he hE _ _ hx,
+      e.complexCutoffPullback_apply_of_notMem he _ _ hx]
+
+end ChartCutoff
 
 end Bundle.Trivialization

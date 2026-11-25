@@ -49,8 +49,10 @@ matrix-valued chart compression of `P`: on Schwartz functions `u : ℝⁿ → V`
 `u ↦ φ · t' (P (t⁻¹ ((ψ u) ∘ e))) ∘ e⁻¹`
 
 is the quantization `Op(a)` of a classical symbol `a` of order `m` with values in `V →L[ℂ] W`
-(`TauCeti.exists_quantizeSchwartzValue_eq_apply_chartCutoffSection`). This is the local description
-of a pseudodifferential operator between bundles in Taylor (Lecture I, §8) and Melrose (§5.3).
+(`TauCeti.exists_quantizeSchwartzValue_eq_apply_chartCutoffSection`), where
+`t⁻¹ ((ψ u) ∘ e)` is the chart cut-off section `Bundle.Trivialization.chartCutoffSection`. This
+is the local description of a pseudodifferential operator between bundles in Taylor (Lecture I,
+§8) and Melrose (§5.3).
 
 ## Main definitions
 
@@ -58,8 +60,6 @@ of a pseudodifferential operator between bundles in Taylor (Lecture I, §8) and 
 * `TauCeti.IsSectionProperlySupported`: proper support of an operator between bundles.
 * `TauCeti.sectionClassicalPseudodifferentialOperators m`: the classical pseudodifferential
   operators of order `m` from `Γ(E)` to `Γ(F)`, a complex submodule.
-* `Bundle.Trivialization.chartCutoffSection`: the section `t⁻¹ ((ψ u) ∘ e)` of `E` defined by a
-  Schwartz function `u : ℝⁿ → V` in a chart `e`, on which chart compressions are evaluated.
 
 ## Main results
 
@@ -99,87 +99,6 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpa
   {F : M → Type*} [TopologicalSpace (TotalSpace W F)] [∀ x, AddCommGroup (F x)]
   [∀ x, Module ℝ (F x)] [∀ x, Module ℂ (F x)] [∀ x, TopologicalSpace (F x)] [FiberBundle W F]
   [VectorBundle ℝ W F] [VectorBundle ℂ W F]
-
-/-! ### Chart cut-off sections -/
-
-namespace Bundle.Trivialization
-
-variable [ContMDiffVectorBundle ∞ V E 𝓘(ℝ, CoordinateSpace n)]
-  (t : Trivialization V (π V E)) [MemTrivializationAtlas t]
-
-/-- The test function `ψ u` on the target of a chart, for a cutoff `ψ` and a Schwartz function
-`u`. -/
-private def cutoffSmulSchwartz {e : OpenPartialHomeomorph M (CoordinateSpace n)}
-    (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (u : 𝓢(CoordinateSpace n, V)) :
-    𝓓(⟨e.target, e.open_target⟩, V) where
-  toFun y := ψ y • u y
-  contDiff' := ψ.contDiff.smul (u.smooth ⊤)
-  hasCompactSupport' := ψ.hasCompactSupport.smul_right
-  tsupport_subset' := (tsupport_smul_subset_left _ _).trans ψ.tsupport_subset
-
-omit [ChartedSpace (CoordinateSpace n) M] in
-private theorem cutoffSmulSchwartz_apply {e : OpenPartialHomeomorph M (CoordinateSpace n)}
-    (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (u : 𝓢(CoordinateSpace n, V)) (y : CoordinateSpace n) :
-    cutoffSmulSchwartz ψ u y = ψ y • u y :=
-  (rfl)
-
-variable [T2Space M] {e : OpenPartialHomeomorph M (CoordinateSpace n)}
-  (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M) (hE : e.source ⊆ t.baseSet)
-
-/-- The **chart cut-off section** of a Schwartz function `u : ℝⁿ → V`: for a chart `e` whose
-source lies in the base set of the trivialization `t` and a cutoff `ψ` with compact support in the
-chart target, the smooth section `x ↦ t⁻¹ₓ (ψ(e x) u(e x))` of `E` on the chart source, extended
-by zero. Its frame coefficients in `t`, read in the chart, are `ψ u`. -/
-def chartCutoffSection (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (u : 𝓢(CoordinateSpace n, V)) :
-    Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ :=
-  (t.chartTestSection (n := ⊤) e (contMDiffOn_of_mem_maximalAtlas he) hE
-    (cutoffSmulSchwartz ψ u)).val
-
-omit [∀ x, Module ℂ (E x)] [VectorBundle ℂ V E] in
-theorem chartCutoffSection_apply_of_mem (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
-    (u : 𝓢(CoordinateSpace n, V)) {x : M} (hx : x ∈ e.source) :
-    t.chartCutoffSection he hE ψ u x = t.symm x (ψ (e x) • u (e x)) := by
-  rw [chartCutoffSection, t.chartTestSection_apply_of_mem (n := ⊤) e _ hE _ hx,
-    t.symmL_apply (hE hx), cutoffSmulSchwartz_apply]
-
-omit [∀ x, Module ℂ (E x)] [VectorBundle ℂ V E] in
-theorem chartCutoffSection_apply_of_notMem (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
-    (u : 𝓢(CoordinateSpace n, V)) {x : M} (hx : x ∉ e.source) :
-    t.chartCutoffSection he hE ψ u x = 0 :=
-  t.chartTestSection_apply_of_notMem (n := ⊤) e _ hE _ hx
-
-/-- **A chart cut-off section in a frame.** Let `ρ` be a real smooth function on `M`, supported in
-the base set of `t`, which equals `1` on `e⁻¹(supp ψ)`, and `(bᵢ)` a basis of the model fibre `V`
-with coordinate functionals `bᵢ*`. Then the chart cut-off section of `u` is the sum over `i` of the
-cut-off frame sections `ρ t⁻¹ bᵢ` multiplied by the complex pullbacks `(ψ bᵢ*(u)) ∘ e`. -/
-theorem chartCutoffSection_eq_sum [FiniteDimensional ℂ V]
-    (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (u : 𝓢(CoordinateSpace n, V))
-    (ρ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hρ : tsupport ρ ⊆ t.baseSet)
-    (hρψ : ∀ y ∈ tsupport ψ, ρ (e.symm y) = 1) {ι : Type*} [Fintype ι] (b : Module.Basis ι ℂ V) :
-    t.chartCutoffSection he hE ψ u = ∑ i, e.complexCutoffPullback he ψ
-      (ContMDiffMap.ofContDiff (u.postcompCLM (b.coord i).toContinuousLinearMap)
-        ((u.postcompCLM (b.coord i).toContinuousLinearMap).smooth ⊤)) •
-          t.cutoffFrameSection ρ hρ (b i) := by
-  ext x
-  rw [ContMDiffSection.coe_sum, Finset.sum_apply]
-  by_cases hx : x ∈ e.source
-  · simp only [t.chartCutoffSection_apply_of_mem he hE _ _ hx,
-      ContMDiffSection.smul_apply_of_normedAlgebra,
-      e.complexCutoffPullback_apply_of_mem he _ _ hx, t.cutoffFrameSection_apply,
-      ContMDiffMap.coe_ofContDiff, SchwartzMap.postcompCLM_apply]
-    by_cases hψx : ψ (e x) = 0
-    · simp [hψx, ← t.symmL_apply (R := ℂ) (hE hx)]
-    have hρx : ρ x = 1 := by
-      simpa [e.left_inv hx] using hρψ (e x) (subset_tsupport _ hψx)
-    simp only [hρx, one_smul, ← t.symmL_apply (R := ℂ) (hE hx), ← map_smul, ← map_sum]
-    congr 1
-    conv_lhs => rw [← b.sum_repr (u (e x)), Finset.smul_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    simp [← smul_assoc, Complex.real_smul]
-  · simp [t.chartCutoffSection_apply_of_notMem he hE _ _ hx,
-      e.complexCutoffPullback_apply_of_notMem he _ _ hx]
-
-end Bundle.Trivialization
 
 namespace TauCeti
 
@@ -230,18 +149,24 @@ theorem IsSectionProperlySupported.add (hP : IsSectionProperlySupported P)
       hP₂ s (hs.filter_mono (nhdsSet_mono subset_union_left)) x hx,
       hQ₂ s (hs.filter_mono (nhdsSet_mono subset_union_right)) x hx, add_zero]
 
-theorem IsSectionProperlySupported.smul (hP : IsSectionProperlySupported P) (c : ℂ) :
-    IsSectionProperlySupported (c • P) := by
+/-- Multiplying a properly supported operator between bundles on the left by a complex-valued
+smooth function `g` gives a properly supported operator. -/
+theorem IsSectionProperlySupported.smul_left (hP : IsSectionProperlySupported P)
+    (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) : IsSectionProperlySupported (g • P) := by
   intro K hK
   obtain ⟨K', hK', hP₁, hP₂⟩ := hP K hK
   refine ⟨K', hK', fun s hs ↦ ?_, fun s hs x hx ↦ ?_⟩
-  · have h := hP₁ s hs
-    rw [ContMDiffSection.tsupport_def] at h ⊢
-    refine (closure_mono fun x hx ↦ ?_).trans h
-    simp only [mem_ofPred_eq, LinearMap.smul_apply, ContMDiffSection.coe_smul_of_normedAlgebra,
-      Pi.smul_apply] at hx ⊢
-    exact right_ne_zero_of_smul hx
+  · rw [LinearMap.smul_apply]
+    exact (ContMDiffSection.tsupport_smul_function_subset_of_normedAlgebra g (P s)).trans
+      (inter_subset_right.trans (hP₁ s hs))
   · simp [hP₂ s hs x hx]
+
+theorem IsSectionProperlySupported.smul (hP : IsSectionProperlySupported P) (c : ℂ) :
+    IsSectionProperlySupported (c • P) := by
+  have hc : c • P = (ContMDiffMap.const c : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) • P :=
+    LinearMap.ext fun s ↦ (ContMDiffSection.const_smul_of_normedAlgebra c (P s)).symm
+  rw [hc]
+  exact hP.smul_left _
 
 /-- **Composition.** The composition of two properly supported operators between bundles is
 properly supported. -/
@@ -275,26 +200,13 @@ theorem IsSectionProperlySupported.of_local [T2Space M]
   filter_upwards [hK.isClosed.isOpen_compl.mem_nhds hxK] with y hy
   exact s.eq_zero_of_notMem_tsupport fun h ↦ hy (hs h)
 
-/-- An operator between bundles which is linear over the complex-valued smooth functions is local:
-`P s` vanishes at every point near which `s` vanishes. -/
-theorem apply_eq_zero_of_map_smul [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
-    (hP : ∀ (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) s, P (f • s) = f • P s)
-    {s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯} {x : M} (hs : ∀ᶠ y in 𝓝 x, s y = 0) :
-    P s x = 0 := by
-  -- A bump function `ρ` at `x` supported where `s = 0` has `ρ s = 0` and `ρ(x) = 1`.
-  obtain ⟨ρ, -, hρ⟩ :=
-    (SmoothBumpFunction.nhds_basis_support (I := 𝓘(ℝ, CoordinateSpace n)) hs).mem_iff.mp hs
-  set g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ :=
-    ContMDiffMap.ofReal ⟨ρ, ρ.contMDiff⟩
-  -- `ofReal_apply`, up to the coercion of the bundled bump function `⟨ρ, _⟩`, which is `ρ`.
-  have hg (y : M) : g y = ρ y := ContMDiffMap.ofReal_apply _ y
-  have hgs : g • s = 0 := by
-    ext y
-    by_cases hy : ρ y = 0
-    · simp [hg, hy]
-    · simp [show s y = 0 from hρ hy]
-  have hx := congrArg (· x) (hP g s)
-  simpa [hgs, hg, ρ.eq_one] using hx.symm
+/-- An operator between bundles which is linear over the complex-valued smooth functions, that is,
+a smooth bundle map, is properly supported. -/
+theorem IsSectionProperlySupported.of_map_smul [T2Space M]
+    [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
+    (hP : ∀ (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) s, P (f • s) = f • P s) :
+    IsSectionProperlySupported P :=
+  of_local fun _ _ hs ↦ apply_eq_zero_of_map_smul hP hs
 
 end ProperSupport
 
@@ -338,12 +250,8 @@ theorem IsSectionProperlySupported.sectionEntry
   refine isProperlySupported_iff.2 fun K hK ↦ ?_
   obtain ⟨K', hK', hP₁, hP₂⟩ := hP K hK
   refine ⟨K', hK', fun f hf ↦ ?_, fun f hf x hx ↦ ?_⟩
-  · have h₁ : (f • t.cutoffFrameSection ψ hψ v).tsupport ⊆ K := by
-      rw [ContMDiffSection.tsupport_def]
-      refine (closure_mono fun y hy ↦ ?_).trans hf
-      simp only [mem_ofPred_eq, ContMDiffSection.smul_apply_of_normedAlgebra] at hy
-      exact left_ne_zero_of_smul hy
-    have h₂ := hP₁ _ h₁
+  · have h₂ := hP₁ _ ((ContMDiffSection.tsupport_smul_function_subset_of_normedAlgebra f
+      (t.cutoffFrameSection ψ hψ v)).trans (inter_subset_left.trans hf))
     rw [ContMDiffSection.tsupport_def] at h₂
     refine (closure_mono fun y hy ↦ ?_).trans h₂
     simp only [Function.mem_support, sectionEntry_apply] at hy
@@ -418,13 +326,11 @@ theorem mem_sectionClassicalPseudodifferentialOperators_zero_of_map_smul
     [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
     (hP : ∀ (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) s, P (f • s) = f • P s) :
     P ∈ sectionClassicalPseudodifferentialOperators 0 := by
-  refine ⟨IsSectionProperlySupported.of_local fun s x hs ↦ apply_eq_zero_of_map_smul hP hs,
-    fun t _ ψ hψ v t' _ χ hχ ℓ ↦ ?_⟩
+  refine ⟨.of_map_smul hP, fun t _ ψ hψ v t' _ χ hχ ℓ ↦ ?_⟩
   have hentry : sectionEntry t ψ hψ v t' χ hχ ℓ P =
       LinearMap.mulLeft ℂ (sectionEntry t ψ hψ v t' χ hχ ℓ P 1) := by
     ext f x
-    simp [hP]
-    ring
+    simp [hP, mul_comm, mul_left_comm]
   rw [hentry]
   exact mulLeft_mem_classicalPseudodifferentialOperators _
 
@@ -442,21 +348,11 @@ theorem smul_mem_sectionClassicalPseudodifferentialOperators
     (hP : P ∈ sectionClassicalPseudodifferentialOperators m)
     (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
     g • P ∈ sectionClassicalPseudodifferentialOperators m := by
-  refine ⟨fun K hK ↦ ?_, fun t _ ψ hψ v t' _ χ hχ ℓ ↦ ?_⟩
-  · obtain ⟨K', hK', hP₁, hP₂⟩ := hP.1 K hK
-    refine ⟨K', hK', fun s hs ↦ ?_, fun s hs x hx ↦ ?_⟩
-    · have h := hP₁ s hs
-      rw [ContMDiffSection.tsupport_def] at h ⊢
-      refine (closure_mono fun x hx ↦ ?_).trans h
-      simp only [mem_ofPred_eq, LinearMap.smul_apply,
-        ContMDiffSection.smul_apply_of_normedAlgebra] at hx ⊢
-      exact right_ne_zero_of_smul hx
-    · simp [hP₂ s hs x hx]
+  refine ⟨hP.1.smul_left g, fun t _ ψ hψ v t' _ χ hχ ℓ ↦ ?_⟩
   have hentry : sectionEntry t ψ hψ v t' χ hχ ℓ (g • P) =
       LinearMap.mulLeft ℂ g ∘ₗ sectionEntry t ψ hψ v t' χ hχ ℓ P := by
     ext f x
-    simp
-    ring
+    simp [mul_left_comm]
   rw [hentry]
   exact mulLeft_comp_mem_classicalPseudodifferentialOperators (hP.2 t ψ hψ v t' χ hχ ℓ) g
 
@@ -464,15 +360,10 @@ theorem smul_mem_sectionClassicalPseudodifferentialOperators
 between bundles, then so is `s ↦ P (g s)` for every complex-valued smooth function `g`: its entries
 are the entries of `P` composed with the multiplication by `g`. -/
 theorem comp_smul_mem_sectionClassicalPseudodifferentialOperators
-    [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
     (hP : P ∈ sectionClassicalPseudodifferentialOperators m)
     (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
     P ∘ₗ (g • LinearMap.id) ∈ sectionClassicalPseudodifferentialOperators m := by
-  have hg : IsSectionProperlySupported (g • LinearMap.id : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ]
-      Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) :=
-    IsSectionProperlySupported.of_local fun s x hs ↦
-      apply_eq_zero_of_map_smul (fun f s ↦ by simp [smul_comm g f]) hs
-  refine ⟨hP.1.comp hg, fun t _ ψ hψ v t' _ χ hχ ℓ ↦ ?_⟩
+  refine ⟨hP.1.comp (isSectionProperlySupported_id.smul_left g), fun t _ ψ hψ v t' _ χ hχ ℓ ↦ ?_⟩
   have hentry : sectionEntry t ψ hψ v t' χ hχ ℓ (P ∘ₗ (g • LinearMap.id)) =
       sectionEntry t ψ hψ v t' χ hχ ℓ P ∘ₗ LinearMap.mulLeft ℂ g := by
     ext f x
@@ -492,23 +383,6 @@ variable [T2Space M] [ContMDiffVectorBundle ∞ V E 𝓘(ℝ, CoordinateSpace n)
   (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
   (t : Trivialization V (π V E)) [MemTrivializationAtlas t] (hE : e.source ⊆ t.baseSet)
 
-/-- The map `T ↦ w ∘ T ∘ K` placing a scalar entry `T` into `V →L[ℂ] W`, for a vector `w ∈ W` and
-a functional `K` on `V`; the inverse operation to `TauCeti.Symbol.entryMap`. -/
-private def singleEntryMap (K : V →L[ℂ] ℂ) (w : W) : (ℂ →L[ℂ] ℂ) →L[ℝ] (V →L[ℂ] W) :=
-  ((ContinuousLinearMap.compL ℂ V ℂ W (ContinuousLinearMap.toSpanSingleton ℂ w)).comp
-    ((ContinuousLinearMap.compL ℂ V ℂ ℂ).flip K)).restrictScalars ℝ
-
-/-- Quantizing a scalar symbol placed by `singleEntryMap K w` gives the quantization of the scalar
-symbol on `K ∘ u`, times `w`. -/
-private theorem quantizeSchwartzValue_map_singleEntryMap [CompleteSpace V] [CompleteSpace W]
-    {m : ℝ} (a : Symbol n ℂ ℂ m) (K : V →L[ℂ] ℂ) (w : W) (u : 𝓢(CoordinateSpace n, V))
-    (y : CoordinateSpace n) :
-    quantizeSchwartzValue (a.map (singleEntryMap K w)).coefficient u y =
-      quantizeSchwartzValue a.coefficient (u.postcompCLM K) y • w := by
-  rw [Symbol.coefficient_map_eq_comp_comp (ContinuousLinearMap.toSpanSingleton ℂ w) K
-    (fun _ ↦ rfl), Symbol.quantizeSchwartzValue_comp_comp,
-    ContinuousLinearMap.toSpanSingleton_apply]
-
 /-- **Chart compressions of pseudodifferential operators between bundles.** Let `P` be a classical
 pseudodifferential operator of order `m` from `E` to `F`, `e` a chart of the maximal atlas whose
 source lies in the base sets of trivializations `t` of `E` and `t'` of `F`, and `φ`, `ψ` cutoffs
@@ -517,9 +391,7 @@ with compact supports in the chart target. Then the compression
 `u ↦ φ · t' (P (t⁻¹ ((ψ u) ∘ e))) ∘ e⁻¹`
 
 of `P` agrees on Schwartz functions `u : ℝⁿ → V` with the quantization `Op(a)` of a classical
-symbol `a` of order `m` with values in `V →L[ℂ] W`. Its entries in bases of `V` and `W` are the
-symbols of the chart compressions of the entries of `P`
-(`TauCeti.sectionEntry`), read with cut-off frames equal to `1` over the cutoffs. -/
+symbol `a` of order `m` with values in `V →L[ℂ] W`. -/
 theorem exists_quantizeSchwartzValue_eq_apply_chartCutoffSection [FiniteDimensional ℂ V]
     [FiniteDimensional ℂ W] {m : ℝ}
     {P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯}
@@ -547,10 +419,10 @@ theorem exists_quantizeSchwartzValue_eq_apply_chartCutoffSection [FiniteDimensio
   choose a ha using fun i j ↦ (mem_classicalPseudodifferentialOperators_iff.1
     (hP.2 t ρ (hρs.trans hE) (bV i) t' ρ (hρs.trans hF) (bW.coord j).toContinuousLinearMap)).2
       e he φ ψ
-  refine ⟨∑ i, ∑ j, (a i j).map (singleEntryMap (bV.coord i).toContinuousLinearMap (bW j)),
-    fun u y ↦ ?_⟩
+  refine ⟨∑ i, ∑ j,
+    (a i j).map (Symbol.singleEntryMap (bV.coord i).toContinuousLinearMap (bW j)), fun u y ↦ ?_⟩
   simp only [ClassicalSymbol.toSymbol_sum, Symbol.quantizeSchwartzValue_sum_left,
-    ClassicalSymbol.toSymbol_map, quantizeSchwartzValue_map_singleEntryMap, ha,
+    ClassicalSymbol.toSymbol_map, Symbol.quantizeSchwartzValue_map_singleEntryMap, ha,
     OpenPartialHomeomorph.complexChartCompression_apply, sectionEntry_apply]
   by_cases hφ : φ y = 0
   · simp [hφ]

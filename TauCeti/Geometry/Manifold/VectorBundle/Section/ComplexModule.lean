@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Algebra.ComplexSmoothFunctions
 public import TauCeti.Geometry.Manifold.VectorBundle.Complexification
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.LinearAlgebra.Complex.Module
+import Mathlib.Geometry.Manifold.BumpFunction
 
 /-!
 # Sections of complex bundles as modules over complex-valued functions
@@ -31,6 +32,9 @@ real bundle `E`, the real and imaginary parts of `(u + i v) • σ` are `u Re σ
 `(u + i v) • (1 ⊗ s) = 1 ⊗ (u • s) + i ⊗ (v • s)`
 (`ContMDiffSection.smul_function_oneTmulLinearMap_of_normedAlgebra`). The identification of
 `ℂ ⊗[ℝ] Γ(E)` with the sections of `ℂ ⊗[ℝ] E` intertwines the real function actions.
+
+An operator between sections of complex bundles which is `A_ℂ`-linear is local: `P s` vanishes
+near every point near which `s` vanishes (`TauCeti.apply_eq_zero_of_map_smul`).
 
 ## References
 
@@ -167,3 +171,42 @@ theorem complexificationEquiv_tmul_smul_function (z : ℂ) (f : C^n⟮IB, B; ℝ
 end Complexification
 
 end ContMDiffSection
+
+/-! ### Operators linear over complex-valued functions are local -/
+
+namespace TauCeti
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [T2Space M] [IsManifold I ∞ M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] {V : M → Type*}
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)] [FiberBundle F V]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, Module ℂ (V x)] [VectorBundle ℝ F V]
+  [VectorBundle ℂ F V]
+  {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℂ F'] {W : M → Type*}
+  [∀ x, TopologicalSpace (W x)] [TopologicalSpace (TotalSpace F' W)] [FiberBundle F' W]
+  [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, Module ℂ (W x)] [VectorBundle ℝ F' W]
+  [VectorBundle ℂ F' W]
+
+open scoped Topology
+
+/-- An operator between sections of complex bundles which is linear over the complex-valued smooth
+functions is local: `P s` vanishes at every point near which `s` vanishes. -/
+theorem apply_eq_zero_of_map_smul {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℂ] Cₛ^∞⟮I; F', W⟯}
+    (hP : ∀ (f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) s, P (f • s) = f • P s)
+    {s : Cₛ^∞⟮I; F, V⟯} {x : M} (hs : ∀ᶠ y in 𝓝 x, s y = 0) :
+    P s x = 0 := by
+  -- A bump function `ρ` at `x` supported where `s = 0` has `ρ s = 0` and `ρ(x) = 1`.
+  obtain ⟨ρ, -, hρ⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) hs).mem_iff.mp hs
+  set g : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ := ContMDiffMap.ofReal ⟨ρ, ρ.contMDiff⟩
+  -- `ofReal_apply`, up to the coercion of the bundled bump function `⟨ρ, _⟩`, which is `ρ`.
+  have hg (y : M) : g y = ρ y := ContMDiffMap.ofReal_apply _ y
+  have hgs : g • s = 0 := by
+    ext y
+    by_cases hy : ρ y = 0
+    · simp [hg, hy]
+    · simp [show s y = 0 from hρ hy]
+  have hx := congrArg (· x) (hP g s)
+  simpa [hgs, hg, ρ.eq_one] using hx.symm
+
+end TauCeti
