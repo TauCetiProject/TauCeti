@@ -57,7 +57,7 @@ diffeomorphisms.
 * `LinearIsometry.apply_eq_of_map_single`: a linear isometry of Euclidean spaces sending the `i`-th
   standard basis vector to the `j`-th one reads the `i`-th coordinate off as the `j`-th coordinate
   of the image.
-* `LinearIsometryEquiv.inner_apply_eq_zero_of_anticomm`: a map anticommuting with a linear
+* `LinearIsometry.inner_apply_eq_zero_of_anticomm`: a map anticommuting with a linear
   isometry sends its fixed vectors to vectors orthogonal to them.
 * `LinearMap.eq_of_apply_eq_of_eqOn_orthogonal`: linear maps agreeing on a vector and
   its orthogonal complement are equal, without a unit-norm assumption.
@@ -88,6 +88,16 @@ open scoped InnerProductSpace
 
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+/-- A map anticommuting with a linear isometry `R` of `E` sends the fixed vectors of `R` to vectors
+orthogonal to them: `⟪v, T w⟫ = ⟪R v, R (T w)⟫ = -⟪v, T w⟫` for `v, w` fixed by `R`. For `R` the
+conjugation of `ℂⁿ` and `T = i`, this is the orthogonality of `ℝⁿ` and `iℝⁿ`. -/
+theorem inner_apply_eq_zero_of_anticomm (R : E →ₗᵢ[𝕜] E) {T : E → E}
+    (hT : ∀ v, R (T v) = -T (R v)) {v w : E} (hv : R v = v) (hw : R w = w) :
+    ⟪v, T w⟫_𝕜 = 0 := by
+  have h := R.inner_map_map v (T w)
+  rw [hv, hT, hw, inner_neg_right] at h
+  exact self_eq_neg.1 h.symm
 
 /-- A linear isometry `f` maps the orthogonal complement of `v` into the orthogonal complement of
 `f v`. -/
@@ -246,16 +256,6 @@ matrix entries of the operator at the pulled-back vectors. -/
 theorem inner_toLinearEquiv_conj_apply (U : E ≃ₗᵢ[𝕜] F) (T : E →ₗ[𝕜] E) (a b : F) :
     ⟪U.toLinearEquiv.conj T a, b⟫_𝕜 = ⟪T (U.symm a), U.symm b⟫_𝕜 := by
   simp [LinearEquiv.conj_apply_apply, U.inner_map_eq_flip]
-
-/-- A map anticommuting with a linear isometry `R` of `E` sends the fixed vectors of `R` to vectors
-orthogonal to them: `⟪v, T w⟫ = ⟪R v, R (T w)⟫ = -⟪v, T w⟫` for `v, w` fixed by `R`. For `R` the
-conjugation of `ℂⁿ` and `T = i`, this is the orthogonality of `ℝⁿ` and `iℝⁿ`. -/
-theorem inner_apply_eq_zero_of_anticomm (R : E ≃ₗᵢ[𝕜] E) {T : E → E}
-    (hT : ∀ v, R (T v) = -T (R v)) {v w : E} (hv : R v = v) (hw : R w = w) :
-    ⟪v, T w⟫_𝕜 = 0 := by
-  have h := R.inner_map_map v (T w)
-  rw [hv, hT, hw, inner_neg_right] at h
-  exact self_eq_neg.1 h.symm
 
 /-- A condition `P` holds along all orthonormal families in `F` exactly when it holds for the
 images under a linear isometry equivalence `U : E ≃ₗᵢ[𝕜] F` of all orthonormal families in `E`. -/

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.Local.Basic
 import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HalfPlane.HigherOrder
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Bootstrap
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Bootstrap.HalfPlane
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.Sobolev.Local.ChainRule.HalfDisc
 import TauCeti.Analysis.Sobolev.Local.Locality
@@ -39,8 +40,9 @@ coordinates of a totally real boundary condition.
 The proof is McDuff–Salamon's induction. If `u ∈ W^{m,p}_loc(H)` with `1 ≤ m ≤ ℓ`, then:
 
 * `u` solves the linear equation `∂ₛξ + A ∂ₜξ = η(z, u z)` up to the boundary with the frozen
-  coefficient `A(z) = J(z, u z)`
-  (`TauCeti.exists_isWeakCRSolutionHalf_of_isWeakCauchyRiemannOn_of_mem`);
+  coefficient `A(z) = J(z, u z)` (`TauCeti.exists_isWeakCRSolutionHalf_of_isWeakCauchyRiemannOn`);
+  its boundary hypothesis `⟪Fix R, A(s) u(s)⟫ = 0` holds because `A(s)` anticommutes with `R` and
+  `u(s)` is fixed by `R` (`LinearIsometry.inner_apply_eq_zero_of_anticomm`);
 * `A` and `η(z, u z)` are in `W^{m,p}_loc(H)` by the half-disc composition theorem
   `TauCeti.MemWkpLoc.contDiffOn_comp_graph_succ_halfPlane`;
 * the reflection of `A` across the axis is a Sobolev coefficient on the doubled domain, because
@@ -94,7 +96,7 @@ private theorem memWkpLoc_of_isWeakCauchyRiemannOn_halfPlane_of_mapsTo
   -- The boundary subspace is the fixed space of `R`.
   let Λ : Submodule ℝ V := LinearMap.eqLocus (R : V →ₗ[ℝ] V) LinearMap.id
   have hΛ : ∀ s : ℝ, (s : ℂ) ∈ Ω → ∀ v ∈ Λ, ⟪v, J s (u s) (u s)⟫_ℝ = 0 :=
-    fun s hs _ hv => R.inner_apply_eq_zero_of_anticomm (hJR s hs) hv (huR s hs)
+    fun s hs _ hv => R.toLinearIsometry.inner_apply_eq_zero_of_anticomm (hJR s hs) hv (huR s hs)
   suffices ∀ m ≤ ℓ, MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (m + 1) u from this ℓ le_rfl
   intro m hm
   induction m with
@@ -150,8 +152,7 @@ theorem memWkpLoc_of_isWeakCauchyRiemannOn_halfPlane (hp : 2 < p) (hp' : p ≠ �
     let B : Opens ℂ := ⟨Metric.ball (x : ℂ) r, Metric.isOpen_ball⟩
     have hB : (B : Set ℂ) ∩ {z | 0 ≤ z.im} ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} :=
       inter_subset_inter_left _ hrΩ
-    have hBc : MapsTo (starRingEnd ℂ) B B := fun z hz => by
-      simpa [B, Metric.mem_ball, ← Complex.dist_conj_conj z] using hz
+    have hBc : MapsTo (starRingEnd ℂ) B B := fun _ hz => conj_mem_ball_of_im_eq_zero (by simp) hz
     exact memWkpLoc_of_isWeakCauchyRiemannOn_halfPlane_of_mapsTo hBc hp hp' hW hJ hη
       (fun z hz => huW z (hB hz)) (ae_restrict_of_ae_restrict_of_subset hB hJ2) hR
       (fun s hs => huR s (hrΩ hs)) (fun s hs => hJR s (hrΩ hs)) (h.mono hB)
