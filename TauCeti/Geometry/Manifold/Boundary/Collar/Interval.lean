@@ -24,7 +24,7 @@ written uniformly as `(x, t) ↦ x + (1 - 2 x) t / 2` for an endpoint `x ∈ {0,
 `[0, 1/2) ∪ (1/2, 1]`, the interval without its midpoint
 (`TauCeti.SmoothCollar.range_unitInterval`). The factor `1/2` is needed: the map
 `(x, t) ↦ x + (1 - 2 x) t` without it sends `(0, 1/2)` and `(1, 1/2)` to the same point
-(`TauCeti.SmoothCollar.not_injective_unitInterval_of_double`).
+(`TauCeti.not_injective_add_sign_mul_normal`).
 
 Near each endpoint `x` the collar is a partial diffeomorphism from `{x} × [0, 1)` onto the half of
 the interval at distance less than `1/2` from `x`, with inverse `z ↦ (x, 2 |z - x|)`; this is what
@@ -317,9 +317,10 @@ theorem SmoothCollar.range_unitInterval {k : ℕ∞ω} :
       ← localCollar_apply k x]
     exact (localCollar k x).right_inv hx
 
-/-- **The factor `1/2` is needed.** Without it, the map `(x, t) ↦ x + (1 - 2 x) t`, that is
-`(0, t) ↦ t` and `(1, t) ↦ 1 - t`, sends `(0, 1/2)` and `(1, 1/2)` to the same point. -/
-theorem SmoothCollar.not_injective_unitInterval_of_double :
+/-- **The factor `1/2` is needed.** Without it, the map `(x, t) ↦ x + (1 - 2 x) t`, which moves an
+endpoint `x` of `[0, 1]` by `t` in the direction of the sign `1 - 2 x = ±1` of its inward normal,
+that is `(0, t) ↦ t` and `(1, t) ↦ 1 - t`, sends `(0, 1/2)` and `(1, 1/2)` to the same point. -/
+theorem not_injective_add_sign_mul_normal :
     ¬Injective (fun p : B × D ↦ ((p.1 : Icc (0 : ℝ) 1) : ℝ) +
       (1 - 2 * ((p.1 : Icc (0 : ℝ) 1) : ℝ)) * (p.2 : EuclideanHalfSpace 1).val 0) := by
   intro h
