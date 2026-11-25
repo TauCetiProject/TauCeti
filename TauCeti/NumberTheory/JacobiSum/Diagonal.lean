@@ -69,31 +69,6 @@ private theorem card_sum_mul_pow_eq_sum_prod_card (a : ι → F) (d : ι → ℕ
   simp only [mem_filter, mem_univ, true_and, Fintype.mem_piFinset, funext_iff]
   exact ⟨fun h ↦ h.2, fun h ↦ ⟨by simp [h, hu], h⟩⟩
 
-/-- Over a hyperplane `∑ᵢ aᵢ uᵢ = b` with nonzero `aᵢ`, a product `∏_{i ∈ T} fᵢ(uᵢ)` over a proper
-subset `T` of the coordinates, of functions with `∑_y fᵢ(y) = 0`, sums to `q ^ (r - 1)` when `T`
-is empty and to `0` otherwise. -/
-private theorem sum_filter_sum_mul_eq_prod_eq_ite {a : ι → F} (ha : ∀ i, a i ≠ 0)
-    {f : ι → F → ℂ} (hf : ∀ i, ∑ y, f i y = 0) {T : Finset ι} (hT : T ≠ univ) (b : F) :
-    ∑ u : ι → F with ∑ i, a i * u i = b, ∏ i ∈ T, f i (u i) =
-      if T = ∅ then (Fintype.card F : ℂ) ^ (Fintype.card ι - 1) else 0 := by
-  obtain ⟨j, hj⟩ : ∃ j, j ∉ T := by simpa [eq_univ_iff_forall] using hT
-  have hq : (Fintype.card F : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
-  have h := card_smul_sum_filter_sum_mul_eq (ha j) (g := fun u ↦ ∏ i ∈ T, f i (u i))
-    (fun u c ↦ prod_congr rfl fun i hi ↦ by
-      rw [Pi.add_apply, Pi.single_eq_of_ne (ne_of_mem_of_not_mem hi hj), add_zero]) b
-  have hall : ∑ u : ι → F, ∏ i ∈ T, f i (u i) = ∏ i, ∑ y, if i ∈ T then f i y else 1 := by
-    rw [prod_univ_sum, Fintype.piFinset_univ]
-    exact sum_congr rfl fun u _ ↦ by rw [prod_ite_mem, univ_inter]
-  rw [nsmul_eq_mul, hall] at h
-  split_ifs with hT0
-  · have hι : Fintype.card ι = Fintype.card ι - 1 + 1 :=
-      (Nat.sub_add_cancel (Fintype.card_pos_iff.mpr ⟨j⟩)).symm
-    refine mul_left_cancel₀ hq (h.trans ?_)
-    simp [hT0, card_univ, ← pow_succ', ← hι]
-  · obtain ⟨i, hi⟩ := ne_empty_iff_nonempty.mp hT0
-    refine (mul_eq_zero.mp (h.trans (prod_eq_zero (mem_univ i) ?_))).resolve_left hq
-    simpa [hi] using hf i
-
 /-- **Solutions of a diagonal equation.** For units `aᵢ`, positive exponents `dᵢ` and any `b`, the
 number of solutions of `∑ᵢ aᵢ xᵢ ^ dᵢ = b` in `F ^ r`, `r ≥ 1`, is
 `q ^ (r - 1) + ∑_χ ∏ᵢ χᵢ(aᵢ⁻¹) J_b(χ)`, the sum over the families of nontrivial characters `χᵢ`
