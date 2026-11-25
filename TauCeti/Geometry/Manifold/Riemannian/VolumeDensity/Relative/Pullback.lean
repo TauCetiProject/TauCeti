@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative.CompactSupport
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative.Family
 
 /-!
@@ -17,17 +18,24 @@ manifold, their relative volume with respect to any fixed metric `g₀`, such as
 therefore as regular in `t` as the family allows, with first two derivatives given by
 differentiation under the integral sign. The family is not required to fix the boundary.
 
+On a manifold that need not be compact, if `F_t = F_{t₀}` outside a compact set `K` for `t` near
+`t₀`, the induced metrics `F_t^* h` agree with `F_{t₀}^* h` outside `K`, so
+`TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative.CompactSupport` applies instead.
+
 ## Main results
 
 * `Bundle.ContMDiffRiemannianMetric.contDiff_relativeVolume_pullback`,
   `Bundle.ContMDiffRiemannianMetric.hasDerivAt_relativeVolume_pullback` and
   `Bundle.ContMDiffRiemannianMetric.hasDerivAt_deriv_relativeVolume_pullback`: regularity and the
   first two derivatives of the relative volume of a family of immersions of a compact manifold.
+* `Bundle.ContMDiffRiemannianMetric.contDiffAt_relativeVolume_pullback_of_isCompact`: regularity
+  of the relative volume of a family of immersions of a manifold, not necessarily compact, that is
+  constant outside a compact set.
 -/
 
 public section
 
-open Bundle MeasureTheory Set Function TauCeti
+open Bundle MeasureTheory Set Function TauCeti Filter
 open scoped Manifold ContDiff Topology
 
 noncomputable section
@@ -48,6 +56,28 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N]
   (h : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)) {Φ : ℝ → M → N}
   {n₀ : ℕ∞ω} {g₀ : ContMDiffRiemannianMetric I n₀ E (fun x : M ↦ TangentSpace I x)}
+
+/-- **Regularity of the relative volume of a compactly supported family of immersions.** Let
+`F_t : M → N` be a jointly `C^(n+1)` family of immersions of a manifold `M`, not necessarily
+compact, into a manifold with a `C^n` metric `h`, with `F_t = F_{t₀}` outside a compact set `K`
+for all `t` near `t₀`. Then the relative volume of `F_t^* h` with respect to `F_{t₀}^* h` is `C^k`
+at `t₀` for every `k ≤ n`. -/
+theorem contDiffAt_relativeVolume_pullback_of_isCompact [LindelofSpace M] [T2Space M] {k : ℕ∞}
+    [IsManifold I (k + 1) M] (hk : (k : ℕ∞ω) ≤ n)
+    (hΦ : ContMDiff (𝓘(ℝ).prod I) J (n + 1) (uncurry Φ))
+    (hinj : ∀ t x, Injective (mfderiv I J (Φ t) x)) {t₀ : ℝ} {K : Set M} (hK : IsCompact K)
+    (hΦK : ∀ᶠ t in 𝓝 t₀, ∀ x ∉ K, Φ t x = Φ t₀ x) :
+    ContDiffAt ℝ k (fun t ↦ relativeVolume
+      (h.pullback (Φ t₀) (hΦ.curry_right (x := t₀)) (hinj t₀))
+      (h.pullback (Φ t) (hΦ.curry_right (x := t)) (hinj t))) t₀ := by
+  refine contDiffAt_relativeVolume_of_isCompact hK (fun x _ ↦ ?_) (fun x _ ↦ ?_) ?_
+  · exact ((h.contMDiffAt_uncurry_pullback hΦ hinj (t₀, x)).comp x
+      (contMDiffAt_const.prodMk contMDiffAt_id)).of_le hk
+  · exact (h.contMDiffAt_uncurry_pullback hΦ hinj (t₀, x)).of_le hk
+  · filter_upwards [hΦK] with t ht x hx
+    refine h.pullback_inner_congr_of_eventuallyEq ?_ _ _ _ _
+    filter_upwards [hK.isClosed.isOpen_compl.mem_nhds hx] with y hy
+    exact ht y hy
 
 variable [CompactSpace M]
 
