@@ -76,10 +76,10 @@ theorem apply_prod_ofFn_comp_finRotate_of_freeCumulant_comp_finRotate {n : ℕ}
     simp
   calc
     _ = ∑ π : NoncrossingPartition (univ : Finset (Fin n)),
-        ∏ B ∈ π.1.parts, freeCumulant φ (a ∘ w ∘ finRotate n) B :=
+        ∏ B ∈ π.val.parts, freeCumulant φ (a ∘ w ∘ finRotate n) B :=
       apply_prod_ofFn_eq_sum_prod_freeCumulant φ hn _
     _ = ∑ π : NoncrossingPartition (univ : Finset (Fin n)),
-        ∏ B ∈ (NoncrossingPartition.rotate n π).1.parts, freeCumulant φ (a ∘ w) B := by
+        ∏ B ∈ (NoncrossingPartition.rotate n π).val.parts, freeCumulant φ (a ∘ w) B := by
       apply sum_congr rfl
       intro π _
       rw [NoncrossingPartition.prod_parts_rotate π (freeCumulant φ (a ∘ w))]
@@ -90,9 +90,9 @@ theorem apply_prod_ofFn_comp_finRotate_of_freeCumulant_comp_finRotate {n : ℕ}
         (by simpa only [List.map_map, Function.comp_assoc] using
           B.isRotated_sort_map_finRotate.map (a ∘ w))
     _ = ∑ π : NoncrossingPartition (univ : Finset (Fin n)),
-        ∏ B ∈ π.1.parts, freeCumulant φ (a ∘ w) B :=
+        ∏ B ∈ π.val.parts, freeCumulant φ (a ∘ w) B :=
       (NoncrossingPartition.rotate n).toEquiv.sum_comp
-        (fun π => ∏ B ∈ π.1.parts, freeCumulant φ (a ∘ w) B)
+        (fun π => ∏ B ∈ π.val.parts, freeCumulant φ (a ∘ w) B)
     _ = _ := (apply_prod_ofFn_eq_sum_prod_freeCumulant φ hn (a ∘ w)).symm
 
 /-- Cyclic joint cumulants give equal moments of any two cyclic rotations of a word,
