@@ -33,6 +33,9 @@ the abstract construction recovers `expUnit`; see
 * `TauCeti.continuous_expUnit`: the units-valued exponential is continuous.
 * `TauCeti.expUnit_add_of_commute`: the exponential addition law as an equality of units.
 * `TauCeti.expUnit_zero`, `TauCeti.expUnit_neg`: the identity and inverse laws.
+* `TauCeti.expUnit_units_conj`, `TauCeti.expUnit_star`: compatibility with conjugation by a unit
+  and with a continuous star.
+* `TauCeti.expUnit_natCast_smul`: the exponential of `n • x` is the `n`-th power.
 * `TauCeti.expUnit_add_smul`: the one-parameter subgroup law as an equality of units.
 * `TauCeti.coe_expUnitHom_real`, `TauCeti.coe_expUnitHom_complex`: on `ℝ` and `ℂ`, the
   one-parameter subgroup is `t ↦ exp (t * x)` for the scalar exponential.
@@ -84,6 +87,16 @@ theorem expUnit_neg (x : R) : expUnit (-x) = (expUnit x)⁻¹ := by
   rw [← Ring.inverse_unit]
   simpa only [expUnit_coe] using (Ring.inverse_exp x).symm
 
+/-- The unit exponential commutes with conjugation by a unit. -/
+theorem expUnit_units_conj (y : Rˣ) (x : R) :
+    expUnit ((y : R) * x * ↑y⁻¹) = y * expUnit x * y⁻¹ :=
+  Units.ext <| by rw [expUnit_coe, Units.val_mul, Units.val_mul, expUnit_coe, exp_units_conj]
+
+/-- The unit exponential commutes with a continuous star. -/
+theorem expUnit_star [StarRing R] [ContinuousStar R] (x : R) :
+    expUnit (star x) = star (expUnit x) :=
+  Units.ext <| by rw [expUnit_coe, Units.coe_star, expUnit_coe, star_exp]
+
 end Rat
 
 section Real
@@ -98,6 +111,12 @@ theorem expUnit_add_smul (x : R) (s t : ℝ) :
     expUnit ((s + t) • x) = expUnit (s • x) * expUnit (t • x) := by
   rw [add_smul]
   exact expUnit_add_of_commute (((Commute.refl x).smul_left s).smul_right t)
+
+/-- The unit exponential of `n • x`, for a natural number `n` acting as a real scalar, is the
+`n`-th power of the unit exponential of `x`. -/
+theorem expUnit_natCast_smul (n : ℕ) (x : R) : expUnit ((n : ℝ) • x) = expUnit x ^ n :=
+  Units.ext <| by
+    rw [expUnit_coe, Units.val_pow_eq_pow_val, expUnit_coe, Nat.cast_smul_eq_nsmul, exp_nsmul]
 
 /-- The Banach-algebra exponential along the line through `x`, bundled as a continuous
 homomorphism from the additive real line (written multiplicatively) to `Rˣ`. -/
