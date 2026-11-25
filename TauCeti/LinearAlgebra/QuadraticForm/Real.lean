@@ -45,6 +45,7 @@ criteria for real orthogonal groups with the usual order-theoretic notion of def
   inertia vanishes.
 * `QuadraticMap.anisotropic_weightedSumSquares_iff`: a real diagonal form is anisotropic exactly
   when its coefficients are all positive or all negative.
+* `QuadraticMap.sqrt_map_smul`: `v ↦ √(Q v)` is absolutely homogeneous.
 * `QuadraticMap.map_inv_sqrt_smul_eq_one`: a vector of positive quadratic value can be
   normalized to value one by inverse-square-root scaling. This normalization feeds the
   reflection-pair construction for compact real Clifford forms.
@@ -90,6 +91,12 @@ namespace QuadraticMap
 section AddCommMonoid
 
 variable {M : Type*} [AddCommMonoid M] [Module ℝ M]
+
+/-- Homogeneity of `v ↦ √(Q v)`: `√(Q (a • v)) = |a| √(Q v)`. -/
+theorem sqrt_map_smul (Q : QuadraticForm ℝ M) (a : ℝ) (v : M) :
+    √(Q (a • v)) = |a| * √(Q v) := by
+  rw [QuadraticMap.map_smul, smul_eq_mul, Real.sqrt_mul (mul_self_nonneg a),
+    Real.sqrt_mul_self_eq_abs]
 
 /-- Scaling a vector by the inverse square root of its positive quadratic value gives value one. -/
 @[simp]
