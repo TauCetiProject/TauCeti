@@ -24,7 +24,7 @@ element `1 - p`, because `ω` does, and hence both equal `ω`. So `ω` is a pure
 point of the state space.
 
 Pure states also pull back along surjective star homomorphisms `f : A → B` of C⋆-algebras, not
-necessarily unital: if `φ` is a pure state of `B`, then `φ ∘ f` is a pure state of `A`. This
+necessarily unital: a state `φ` of `B` is pure if and only if `φ ∘ f` is a pure state of `A`. This
 produces pure states of `A` from those of its quotients, for instance pure extensions of states
 through evaluation maps.
 
@@ -35,6 +35,8 @@ through evaluation maps.
   space.
 * `TauCeti.pullbackFunctional_mem_extremePoints_stateSpace`: the pullback of a pure state along a
   surjective star homomorphism is pure.
+* `TauCeti.pullbackFunctional_mem_extremePoints_stateSpace_iff`: a state is pure if and only if
+  its pullback along a surjective star homomorphism is pure.
 
 ## References
 
@@ -127,6 +129,25 @@ theorem pullbackFunctional_mem_extremePoints_stateSpace (f : F) (hf : Function.S
       exact h)⟩
   obtain ⟨e₁, e₂⟩ := (mem_extremePoints.1 hφ).2 χ₁ hχ₁ χ₂ hχ₂ hseg'
   exact ⟨congrArg _ e₁, congrArg _ e₂⟩
+
+/-- **Purity is detected by pullback along a surjective star homomorphism.** If `f : A → B` is a
+surjective star homomorphism of C⋆-algebras, not necessarily unital, a state `φ` of `B` is pure if
+and only if its pullback `φ ∘ f` is a pure state of `A`. -/
+theorem pullbackFunctional_mem_extremePoints_stateSpace_iff (f : F) (hf : Function.Surjective f)
+    {φ : WeakDual ℂ B} (hφ : φ ∈ stateSpace B) :
+    pullbackFunctional A f φ ∈ Set.extremePoints ℝ (stateSpace A) ↔
+      φ ∈ Set.extremePoints ℝ (stateSpace B) := by
+  refine ⟨fun h ↦ mem_extremePoints.2 ⟨hφ, fun χ₁ hχ₁ χ₂ hχ₂ hseg ↦ ?_⟩,
+    pullbackFunctional_mem_extremePoints_stateSpace f hf⟩
+  obtain ⟨s, t, hs, ht, hst, hφseg⟩ := hseg
+  obtain ⟨e₁, e₂⟩ := (mem_extremePoints.1 h).2 _
+    (mapsTo_pullbackFunctional_stateSpace_of_surjective f hf hχ₁) _
+    (mapsTo_pullbackFunctional_stateSpace_of_surjective f hf hχ₂)
+    ⟨s, t, hs, ht, hst, by
+      rw [← hφseg, map_add, (pullbackFunctional A f).map_smul_of_tower,
+        (pullbackFunctional A f).map_smul_of_tower]⟩
+  exact ⟨pullbackFunctional_injective_of_surjective f hf e₁,
+    pullbackFunctional_injective_of_surjective f hf e₂⟩
 
 end Pullback
 

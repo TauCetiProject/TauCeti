@@ -22,8 +22,9 @@ surjective star homomorphism `ev₀ : M₂(C[0,1]) → M₂`, and pulling back s
 * the vector states `f ↦ ⟪ξ, f(0) ξ⟫` of unit vectors `ξ` are pure, since the
   pullback of a pure state along a surjective star homomorphism is pure
   (`TauCeti.pullbackFunctional_mem_extremePoints_stateSpace`);
-* the state `f ↦ tr(f(0))/2` is not pure, as the midpoint of the pullbacks of
-  the vector states of the two standard basis vectors.
+* the state `f ↦ tr(f(0))/2` is not pure, since the normalized trace of `M₂` is not pure and
+  purity is detected by pullback along `ev₀`
+  (`TauCeti.pullbackFunctional_mem_extremePoints_stateSpace_iff`).
 -/
 
 public section
@@ -79,22 +80,8 @@ theorem pullbackFunctional_normalizedTraceFunctional_mem_stateSpace :
 theorem pullbackFunctional_normalizedTraceFunctional_notMem_extremePoints_stateSpace :
     pullbackFunctional _ ev₀ (normalizedTraceFunctional (Fin 2)) ∉
       Set.extremePoints ℝ (stateSpace (CStarMatrix (Fin 2) (Fin 2) C(unitInterval, ℂ))) := by
-  intro h
-  have he (i : Fin 2) : star (Pi.single i (1 : ℂ)) ⬝ᵥ Pi.single i 1 = 1 := by simp
-  have hseg : pullbackFunctional _ ev₀ (normalizedTraceFunctional (Fin 2)) ∈ openSegment ℝ
-      (pullbackFunctional _ ev₀ (vectorFunctional (Pi.single 0 1)))
-      (pullbackFunctional _ ev₀ (vectorFunctional (Pi.single 1 1))) :=
-    ⟨2⁻¹, 2⁻¹, by norm_num, by norm_num, by norm_num, by
-      rw [normalizedTraceFunctional_eq_sum_smul_vectorFunctional, Fin.sum_univ_two]
-      simp only [map_add, (pullbackFunctional _ ev₀).map_smul_of_tower, Fintype.card_fin]
-      norm_num⟩
-  have h0 := pullbackFunctional_injective_of_surjective ev₀ ev₀_surjective
-    ((mem_extremePoints.1 h).2 _
-      (mapsTo_pullbackFunctional_stateSpace_of_surjective ev₀ ev₀_surjective
-        (vectorFunctional_mem_stateSpace (he 0))) _
-      (mapsTo_pullbackFunctional_stateSpace_of_surjective ev₀ ev₀_surjective
-        (vectorFunctional_mem_stateSpace (he 1))) hseg).1
+  rw [pullbackFunctional_mem_extremePoints_stateSpace_iff ev₀ ev₀_surjective
+    (normalizedTraceFunctional_mem_stateSpace (Fin 2))]
   exact StateExtensionExamples.normalizedTraceFunctional_notMem_extremePoints_stateSpace
-    (h0 ▸ vectorFunctional_mem_extremePoints_stateSpace (he 0))
 
 end TauCeti.PureExtensionExamples
