@@ -113,8 +113,6 @@ eigenvalues of `D` below `-1`.
 
 ## Main results
 
-* `Diffeomorph.mfderiv_comp_mfderiv_of_semiconj`: a diffeomorphism conjugating `f` to `g`
-  intertwines their differentials.
 * `Diffeomorph.isNondegenerateFixedPt_iff_of_semiconj`: nondegeneracy is invariant under
   conjugation by a diffeomorphism.
 * `TauCeti.IsNondegenerateFixedPt.eventually_not_isFixedPt`: on a manifold modelled on a
@@ -228,22 +226,6 @@ theorem congr_of_eventuallyEq {g : M → M} (h : IsNondegenerateFixedPt I f x) (
 
 end IsNondegenerateFixedPt
 
-/-- If a diffeomorphism `Φ` intertwines `f` and `g`, `Φ ∘ f = g ∘ Φ`, then the differential of `Φ`
-intertwines the differentials: `dg_{Φ x} ∘ dΦ_x = dΦ_{f x} ∘ df_x` at every point `x`.
-The differentials are stated as maps between the model spaces `E` and `F`, the tangent spaces of
-`M` and `N` at every point, so that at a fixed point `f x = x` can be substituted without
-transport. -/
-theorem _root_.Diffeomorph.mfderiv_comp_mfderiv_of_semiconj {F H' N : Type*}
-    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace H'] {J : ModelWithCorners 𝕜 F H'}
-    [TopologicalSpace N] [ChartedSpace H' N] {n : ℕ∞ω} (Φ : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {g : N → N}
-    (h : Semiconj Φ f g) (x : M) :
-    ((mfderiv J J g (Φ x)).comp (mfderiv I J Φ x) : E →L[𝕜] F) =
-      (mfderiv I J Φ (f x)).comp (mfderiv I I f x) := by
-  have hcomp : (Φ : M → N) ∘ f = g ∘ Φ := funext h
-  refine (Φ.mfderiv_comp_diffeomorph hn g x).symm.trans ?_
-  rw [← hcomp]
-  exact Φ.mfderiv_diffeomorph_comp hn f x
-
 /-- **Nondegeneracy is invariant under conjugation by a diffeomorphism.** If a diffeomorphism `Φ`
 intertwines `f` and `g`, `Φ ∘ f = g ∘ Φ`, then `Φ x` is a nondegenerate fixed point of `g` exactly
 when `x` is a nondegenerate fixed point of `f`: the differential of `Φ` at `x` carries the vectors
@@ -268,9 +250,8 @@ theorem _root_.Diffeomorph.isNondegenerateFixedPt_iff_of_semiconj {F H' N : Type
   have hfg (hfx : f x = x) (w : E) :
       (mfderiv J J g (Φ x) (mfderiv I J Φ x w) : F) = mfderiv I J Φ x (mfderiv I I f x w) := by
     have hΦ : (mfderiv I J Φ (f x) : E →L[𝕜] F) = mfderiv I J Φ x := by rw [hfx]
-    have hder := Φ.mfderiv_comp_mfderiv_of_semiconj hn h x
-    rw [hΦ] at hder
-    exact congrArg (fun A : E →L[𝕜] F ↦ A w) hder
+    exact (Φ.mfderiv_apply_mfderiv_of_comp_eventuallyEq hn (.of_forall h) w).trans
+      (congrArg (fun L : E →L[𝕜] F ↦ L (mfderiv I I f x w)) hΦ)
   constructor
   · rintro ⟨hgx, hgd, hg⟩
     have hfx : f x = x := (hfix.1 hgx).eq
@@ -854,11 +835,8 @@ theorem _root_.Diffeomorph.fixedPointDet_eq_of_semiconj {F H' N : Type*}
   let T : E →L[𝕜] F := mfderiv I J Φ x
   have hA : fixedPointDet I f x = LinearMap.det (LinearMap.id - (A : E →ₗ[𝕜] E)) := rfl
   have hB : fixedPointDet J g (Φ x) = LinearMap.det (LinearMap.id - (B : F →ₗ[𝕜] F)) := rfl
-  -- Differentiating `Φ ∘ f = g ∘ Φ` at the fixed point `x` gives `B ∘ T = T ∘ A`.
-  have hder : B.comp T = T.comp A := by
-    have hΦ : (mfderiv I J Φ (f x) : E →L[𝕜] F) = T := by rw [hx.eq]
-    have hsemi := Φ.mfderiv_comp_mfderiv_of_semiconj hn h x
-    rwa [hΦ] at hsemi
+  -- At the fixed point `x`, the differential of `Φ` at `f x` is `T`.
+  have hΦ : (mfderiv I J Φ (f x) : E →L[𝕜] F) = T := by rw [hx.eq]
   -- The differential `T` of `Φ` is a linear equivalence `e`.
   let e : E ≃ₗ[𝕜] F := (Φ.mfderivToContinuousLinearEquiv hn x).toLinearEquiv
   have he (w : E) : e w = T w :=
@@ -868,7 +846,10 @@ theorem _root_.Diffeomorph.fixedPointDet_eq_of_semiconj {F H' N : Type*}
       (e : E →ₗ[𝕜] F) ∘ₗ (LinearMap.id - (A : E →ₗ[𝕜] E)) ∘ₗ (e.symm : F →ₗ[𝕜] E) := by
     refine LinearMap.ext fun v ↦ ?_
     obtain ⟨w, rfl⟩ := e.surjective v
-    have hw : B (T w) = T (A w) := congrArg (fun L : E →L[𝕜] F ↦ L w) hder
+    -- Differentiating `Φ ∘ f = g ∘ Φ` at `x` gives `B (T w) = T (A w)`.
+    have hw : B (T w) = T (A w) :=
+      (Φ.mfderiv_apply_mfderiv_of_comp_eventuallyEq hn (.of_forall h) w).trans
+        (congrArg (fun L : E →L[𝕜] F ↦ L (A w)) hΦ)
     simp only [LinearMap.sub_apply, LinearMap.id_apply, LinearMap.comp_apply,
       LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply, map_sub, ContinuousLinearMap.coe_coe]
     simp only [he]
