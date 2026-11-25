@@ -87,11 +87,18 @@ local notation "R3" => ℝ × ℝ × ℝ
 private def conjL (p : Nil) : R3 →L[ℝ] R3 :=
   xL.prod (yL.prod (zL + p.x • yL - p.y • xL))
 
-private theorem coe_conjDiffeomorph (p : Nil) :
-    ⇑(Lie.conjDiffeomorph (I := 𝓘(ℝ, R3)) (n := 1) p) = toProd.symm ∘ conjL p ∘ toProd := by
-  funext q
+/-- Conjugation by `p` is the linear map `conjL p` in the global coordinates. -/
+private theorem toProd_comp_conjDiffeomorph_comp_toProd_symm (p : Nil) :
+    toProd ∘ (Lie.conjDiffeomorph (I := 𝓘(ℝ, R3)) (n := 1) p) ∘ toProd.symm = conjL p := by
+  funext r
   ext <;> simp [conjL, xL, yL, zL]
   ring
+
+/-- Reading a tangent vector of `Nil` in the model space does not depend on the base point. -/
+private theorem tangentSpaceCastModel_congr {p q : Nil} (h : p = q) (w : TangentSpace 𝓘(ℝ, R3) p) :
+    tangentSpaceCastModel 𝓘(ℝ, R3) q w = tangentSpaceCastModel 𝓘(ℝ, R3) p w := by
+  subst h
+  rfl
 
 /-- **The adjoint action of Nil.** Read in the model space `ℝ³`, the differential
 `Ad_p = d(conj_p)_1` of conjugation by `p` is `(a, b, c) ↦ (a, b, c + p.x b - p.y a)`. -/
@@ -100,15 +107,11 @@ theorem tangentSpaceCastModel_adjointContinuousLinearMap (p : Nil)
     let u := tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) v
     tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) (Lie.adjointContinuousLinearMap (I := 𝓘(ℝ, R3)) p v) =
       (u.1, u.2.1, u.2.2 + p.x * u.2.1 - p.y * u.1) := by
-  have h : HasMFDerivAt 𝓘(ℝ, R3) 𝓘(ℝ, R3) (Lie.conjDiffeomorph (I := 𝓘(ℝ, R3)) (n := 1) p) 1
-      (conjL p) := by
-    rw [coe_conjDiffeomorph]
-    exact (conjL p).hasFDerivAt.hasMFDerivAt
   intro u
-  simp only [Lie.adjointContinuousLinearMap_apply, h.mfderiv]
-  -- Both casts are the identity of `ℝ³`, so the value is `conjL p` applied to the model vector.
-  change conjL p u = _
-  simp [conjL, xL, yL, zL]
+  have h1 : Lie.conjDiffeomorph (I := 𝓘(ℝ, R3)) (n := 1) p 1 = 1 := by simp
+  rw [Lie.adjointContinuousLinearMap_apply, tangentSpaceCastModel_congr h1,
+    ← fderiv_toProd_conj_apply, toProd_comp_conjDiffeomorph_comp_toProd_symm, (conjL p).fderiv]
+  simp [conjL, xL, yL, zL, u]
 
 /-- `Ad_(g⁻¹)` adds a multiple of the central generator `∂_z`. -/
 private theorem adjointContinuousLinearMap_inv_apply (g : Nil)
@@ -122,55 +125,6 @@ private theorem adjointContinuousLinearMap_inv_apply (g : Nil)
     ContinuousLinearEquiv.apply_symm_apply]
   ext <;> simp
   ring
-
-/-! ### Adjoint orbits -/
-
-/-- **The adjoint orbit of a noncentral element of the Lie algebra of Nil is an affine line**: for
-`(a, b) ≠ (0, 0)`, the orbit of `(a, b, c)` is the line `{(a, b, c') | c' ∈ ℝ}`, the image of
-`a X + b Y + ℝ Z`. Adjoint orbits are thus one-dimensional, unlike the coadjoint orbits. -/
-theorem range_adjointRepresentation_apply_of_ne_zero {v : GroupLieAlgebra 𝓘(ℝ, R3) Nil}
-    (hv : ((tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) v).1,
-      (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) v).2.1) ≠ (0, 0)) :
-    Set.range (fun p : Nil ↦ Lie.adjointRepresentation ℝ 𝓘(ℝ, R3) Nil p v) =
-      {w | (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) w).1 =
-          (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) v).1 ∧
-        (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) w).2.1 =
-          (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) v).2.1} := by
-  set u := tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) v
-  ext w
-  refine ⟨?_, fun ⟨h₁, h₂⟩ ↦ ?_⟩
-  · rintro ⟨p, rfl⟩
-    simp only [Set.mem_ofPred_eq, Lie.adjointRepresentation_apply,
-      tangentSpaceCastModel_adjointContinuousLinearMap]
-    exact ⟨rfl, rfl⟩
-  -- Choose `p` with `p.x b - p.y a` equal to the difference of the third coordinates.
-  set d := (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) w).2.2 - u.2.2
-  obtain ⟨p, hp⟩ : ∃ p : Nil, p.x * u.2.1 - p.y * u.1 = d := by
-    by_cases ha : u.1 = 0
-    · have hb : u.2.1 ≠ 0 := fun hb ↦ hv (by simp [ha, hb])
-      exact ⟨mk (d / u.2.1) 0 0, by simp [hb]⟩
-    · exact ⟨mk 0 (-d / u.1) 0, by simp [ha]⟩
-  refine ⟨p, (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil)).injective ?_⟩
-  simp only [Lie.adjointRepresentation_apply]
-  rw [tangentSpaceCastModel_adjointContinuousLinearMap]
-  ext
-  · exact h₁.symm
-  · exact h₂.symm
-  · simp only [d] at hp
-    simp only [u] at hp ⊢
-    linarith
-
-/-- **The adjoint orbit of a central element of the Lie algebra of Nil is a point.** -/
-theorem range_adjointRepresentation_apply_of_eq_zero {v : GroupLieAlgebra 𝓘(ℝ, R3) Nil}
-    (h₁ : (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) v).1 = 0)
-    (h₂ : (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) v).2.1 = 0) :
-    Set.range (fun p : Nil ↦ Lie.adjointRepresentation ℝ 𝓘(ℝ, R3) Nil p v) = {v} := by
-  refine Set.eq_singleton_iff_unique_mem.mpr ⟨⟨1, by simp⟩, ?_⟩
-  rintro _ ⟨p, rfl⟩
-  apply (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil)).injective
-  simp only [Lie.adjointRepresentation_apply]
-  rw [tangentSpaceCastModel_adjointContinuousLinearMap]
-  ext <;> simp [h₁, h₂]
 
 /-! ### The Lie bracket -/
 
@@ -196,20 +150,16 @@ theorem tangentSpaceCastModel_lie (v w : GroupLieAlgebra 𝓘(ℝ, R3) Nil) :
   rw [map_sub, ← Lie.mvfderiv_coadjointRepresentation_apply_one, sub_eq_zero]
   -- In the global coordinates, `g ↦ (Ad*_g ν) v = ν (Ad_(g⁻¹) v)` is affine.
   set L : R3 →L[ℝ] ℝ := (ν Z * u.1) • yL - (ν Z * u.2.1) • xL
-  have hF : HasMFDerivAt 𝓘(ℝ, R3) 𝓘(ℝ, ℝ)
-      (fun g : Nil ↦ Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil g ν v) 1 L := by
-    have hfun : (fun g : Nil ↦ Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil g ν v) =
-        (fun r : R3 ↦ ν v + L r) ∘ toProd := by
-      funext g
-      rw [Lie.coadjointRepresentation_apply, adjointContinuousLinearMap_inv_apply]
-      simp [L, u, xL, yL]
-      ring
-    rw [hfun]
-    exact (L.hasFDerivAt.const_add (ν v)).hasMFDerivAt
-  simp only [mvfderiv, hF.mfderiv]
-  -- Both casts are the identity of `ℝ³`, so the derivative is `L` applied to the model vector.
-  change L u' = _
-  simp [L, xL, yL]
+  have hfun : (fun g : Nil ↦ Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil g ν v) =
+      (fun r : R3 ↦ ν v + L r) ∘ toProd := by
+    funext g
+    rw [Lie.coadjointRepresentation_apply, adjointContinuousLinearMap_inv_apply]
+    simp [L, u, xL, yL]
+    ring
+  rw [hfun, mvfderiv_comp_apply_of_differentiableAt (by fun_prop)
+      (contMDiff_toProd.mdifferentiableAt one_ne_zero), mvfderiv_apply_eq_mfderiv_apply,
+    mfderiv_toProd_apply, fderiv_const_add, L.fderiv]
+  simp [L, xL, yL, u']
   ring
 
 end Bracket
@@ -245,7 +195,6 @@ def lieAlgebraEquiv : GroupLieAlgebra 𝓘(ℝ, R3) Nil ≃ₗ⁅ℝ⁆ heisenbe
     simp only [ContinuousLinearEquiv.apply_symm_apply]
     exact (eq_smul_heisenbergX_add_smul_heisenbergY_add_smul_heisenbergZ A).symm
 
-@[simp]
 theorem lieAlgebraEquiv_apply (v : GroupLieAlgebra 𝓘(ℝ, R3) Nil) :
     lieAlgebraEquiv v =
       (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) v).1 • heisenbergX ℝ +
@@ -270,7 +219,7 @@ theorem lie_eq_smul_lieAlgebraEquiv_symm_heisenbergZ (ξ ξ' : GroupLieAlgebra �
       lieAlgebraEquiv.symm (heisenbergZ ℝ) := by
   rw [← lieAlgebraEquiv.symm_apply_apply ⁅ξ, ξ'⁆, LieEquiv.map_lie, lie_eq_smul_heisenbergZ,
     map_smul]
-  simp [mul_comm]
+  simp [lieAlgebraEquiv_apply, mul_comm]
 
 /-! ### Adjoint and coadjoint actions through the Heisenberg Lie algebra -/
 
@@ -285,6 +234,52 @@ theorem lieAlgebraEquiv_adjointRepresentation (p : Nil) (v : GroupLieAlgebra �
     tangentSpaceCastModel_adjointContinuousLinearMap]
   simp
   module
+
+/-! ### Adjoint orbits -/
+
+/-- Adjoint orbits of Nil are adjoint orbits of the Heisenberg group, carried back along
+`lieAlgebraEquiv`. -/
+private theorem range_adjointRepresentation_apply_eq_image (v : GroupLieAlgebra 𝓘(ℝ, R3) Nil) :
+    Set.range (fun p : Nil ↦ Lie.adjointRepresentation ℝ 𝓘(ℝ, R3) Nil p v) =
+      lieAlgebraEquiv.symm ''
+        Set.range (fun a ↦ HeisenbergGroup.adjointRepresentation ℝ a (lieAlgebraEquiv v)) := by
+  have h : (fun p : Nil ↦ Lie.adjointRepresentation ℝ 𝓘(ℝ, R3) Nil p v) =
+      (fun a ↦ lieAlgebraEquiv.symm (HeisenbergGroup.adjointRepresentation ℝ a
+        (lieAlgebraEquiv v))) ∘ toHeisenberg := by
+    funext p
+    rw [Function.comp_apply, ← lieAlgebraEquiv_adjointRepresentation, LieEquiv.symm_apply_apply]
+  rw [h, toHeisenberg.surjective.range_comp]
+  exact Set.range_comp lieAlgebraEquiv.symm _
+
+/-- **The adjoint orbit of a noncentral element of the Lie algebra of Nil is an affine line**: for
+`(a, b) ≠ (0, 0)`, the orbit of `(a, b, c)` is the line `{(a, b, c') | c' ∈ ℝ}`, the image of
+`a X + b Y + ℝ Z`. Adjoint orbits are thus one-dimensional, unlike the coadjoint orbits. -/
+theorem range_adjointRepresentation_apply_of_ne_zero {v : GroupLieAlgebra 𝓘(ℝ, R3) Nil}
+    (hv : ((tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) v).1,
+      (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) v).2.1) ≠ (0, 0)) :
+    Set.range (fun p : Nil ↦ Lie.adjointRepresentation ℝ 𝓘(ℝ, R3) Nil p v) =
+      {w | (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) w).1 =
+          (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) v).1 ∧
+        (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) w).2.1 =
+          (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) v).2.1} := by
+  rw [range_adjointRepresentation_apply_eq_image,
+    HeisenbergGroup.range_adjointRepresentation_apply_of_ne_zero
+      (by simpa [lieAlgebraEquiv_apply, or_iff_not_imp_left] using hv)]
+  ext w
+  refine ⟨?_, fun hw ↦ ⟨lieAlgebraEquiv w, ?_, lieAlgebraEquiv.symm_apply_apply w⟩⟩
+  · rintro ⟨B, hB, rfl⟩
+    simpa [lieAlgebraEquiv_apply] using hB
+  · simpa [lieAlgebraEquiv_apply] using hw
+
+/-- **The adjoint orbit of a central element of the Lie algebra of Nil is a point.** -/
+theorem range_adjointRepresentation_apply_of_eq_zero {v : GroupLieAlgebra 𝓘(ℝ, R3) Nil}
+    (h₁ : (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) v).1 = 0)
+    (h₂ : (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) v).2.1 = 0) :
+    Set.range (fun p : Nil ↦ Lie.adjointRepresentation ℝ 𝓘(ℝ, R3) Nil p v) = {v} := by
+  rw [range_adjointRepresentation_apply_eq_image,
+    HeisenbergGroup.range_adjointRepresentation_apply_of_eq_zero
+      (by simp [lieAlgebraEquiv_apply, h₁]) (by simp [lieAlgebraEquiv_apply, h₂]),
+    Set.image_singleton, LieEquiv.symm_apply_apply]
 
 /-- **The coadjoint action of Nil is the coadjoint action of the Heisenberg group**: pulling
 functionals back along `lieAlgebraEquiv` intertwines the two. -/
@@ -305,7 +300,7 @@ theorem coadjointRepresentation_comp_lieAlgebraEquiv (p : Nil) (ν : Dual ℝ (h
 private theorem comp_lieAlgebraEquiv_symm_comp (ν : Dual ℝ (GroupLieAlgebra 𝓘(ℝ, R3) Nil)) :
     (ν ∘ₗ (lieAlgebraEquiv.symm : heisenberg ℝ →ₗ[ℝ] GroupLieAlgebra 𝓘(ℝ, R3) Nil)) ∘ₗ
         (lieAlgebraEquiv : GroupLieAlgebra 𝓘(ℝ, R3) Nil →ₗ[ℝ] heisenberg ℝ) = ν :=
-  LinearMap.ext fun v ↦ by simp [-lieAlgebraEquiv_apply]
+  LinearMap.ext fun v ↦ by simp
 
 /-- **Coadjoint orbits of Nil are coadjoint orbits of the Heisenberg group**, pulled back along
 `lieAlgebraEquiv`. -/

@@ -257,17 +257,12 @@ def toHeisenberg : Nil ≃* HeisenbergGroup ℝ where
 
 @[simp] theorem z_toHeisenberg (p : Nil) : (toHeisenberg p).z = p.z := by simp [toHeisenberg]
 
-/-- **The centre of Nil is the `z`-axis** `{(0, 0, z)}`. -/
+/-- **The centre of Nil is the `z`-axis** `{(0, 0, z)}`, transported from the centre of the
+Heisenberg group (`TauCeti.HeisenbergGroup.center_eq_zAxis`). -/
 theorem mem_center_iff {p : Nil} : p ∈ Subgroup.center Nil ↔ p.x = 0 ∧ p.y = 0 := by
-  rw [Subgroup.mem_center_iff]
-  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨hx, hy⟩ q ↦ ?_⟩
-  · have hz := congrArg z (h (mk 0 1 0))
-    simp only [z_mul, x_mk, y_mk, z_mk] at hz
-    linarith
-  · have hz := congrArg z (h (mk 1 0 0))
-    simp only [z_mul, x_mk, y_mk, z_mk] at hz
-    linarith
-  · ext <;> simp [hx, hy, add_comm]
+  rw [← SetLike.mem_coe, Subgroup.coe_center, ← MulEquivClass.apply_mem_center_iff toHeisenberg,
+    ← Subgroup.coe_center, SetLike.mem_coe, HeisenbergGroup.center_eq_zAxis,
+    HeisenbergGroup.mem_zAxis_iff, x_toHeisenberg, y_toHeisenberg]
 
 /-! ### The Lie group structure -/
 
