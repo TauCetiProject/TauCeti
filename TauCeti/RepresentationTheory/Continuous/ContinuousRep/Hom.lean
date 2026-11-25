@@ -133,13 +133,6 @@ theorem ext {f g : Hom ρ σ} (h : ∀ x, f x = g x) : f = g :=
 theorem isIntertwining (f : Hom ρ σ) (g : Γ) (x : M) : f (ρ g x) = σ g (f x) :=
   f.toIntertwiningMap.isIntertwining _ _ g x
 
-/-- Equivariance of a morphism at the level of underlying continuous linear maps. -/
-theorem toContinuousLinearMap_comp_eq_comp (f : Hom ρ σ) (g : Γ) :
-    f.toContinuousLinearMap.comp ⟨ρ g, ρ.continuous_apply g⟩ =
-      (⟨σ g, σ.continuous_apply g⟩ : N →L[A] N).comp f.toContinuousLinearMap := by
-  ext x
-  exact f.isIntertwining g x
-
 /-- Builds a morphism of continuous representations from a continuous linear map and pointwise
 equivariance. -/
 def ofContinuousLinearMap (f : M →L[A] N) (hf : ∀ g x, f (ρ g x) = σ g (f x)) : Hom ρ σ where
@@ -479,13 +472,18 @@ variable {R V W : Type*} [Ring R]
   [AddCommGroup W] [Module R W] [TopologicalSpace W] [IsTopologicalAddGroup W]
   {ρ₁ : ContinuousRep Γ R V} {ρ₂ : ContinuousRep Γ R W}
 
+/-- Equivariance of a morphism at the level of underlying continuous linear maps. -/
+theorem toContinuousLinearMap_comp_eq_comp (f : Hom ρ₁ ρ₂) (g : Γ) :
+    f.toContinuousLinearMap.comp (ρ₁.toContRepresentation g) =
+      (ρ₂.toContRepresentation g).comp f.toContinuousLinearMap := by
+  ext x
+  simpa using f.isIntertwining g x
+
 /-- The Mathlib `ContIntertwiningMap` underlying a morphism of `ContinuousRep`s. -/
 def toContIntertwiningMap (f : Hom ρ₁ ρ₂) :
     ContIntertwiningMap ρ₁.toContRepresentation ρ₂.toContRepresentation where
   toContinuousLinearMap := f.toContinuousLinearMap
-  isIntertwining' g := by
-    ext x
-    simpa using f.isIntertwining g x
+  isIntertwining' g := f.toContinuousLinearMap_comp_eq_comp g
 
 /-- Every `ContIntertwiningMap` between the underlying `ContRepresentation`s is a morphism of
 `ContinuousRep`s. -/
@@ -639,16 +637,18 @@ variable [TopologicalSpace A]
 
 /-- `ofIntertwiningMap` sends the identity intertwining map to `Hom.id`. -/
 @[simp]
-theorem ofIntertwiningMap_id [IsModuleTopology A M] [ContinuousAdd M] :
+theorem ofIntertwiningMap_id [IsModuleTopology A M] :
+    haveI := IsModuleTopology.toContinuousAdd A M
     ofIntertwiningMap (.id ρ.toRepresentation) = id ρ :=
   (rfl)
 
 /-- `ofIntertwiningMap` preserves composition. -/
 @[simp]
 theorem ofIntertwiningMap_comp [IsModuleTopology A M] [IsModuleTopology A N]
-    [ContinuousAdd N] [ContinuousAdd P] [ContinuousSMul A P]
+    [ContinuousAdd P] [ContinuousSMul A P]
     (f : σ.toRepresentation.IntertwiningMap τ.toRepresentation)
     (g : ρ.toRepresentation.IntertwiningMap σ.toRepresentation) :
+    haveI := IsModuleTopology.toContinuousAdd A N
     ofIntertwiningMap (f.comp g) = (ofIntertwiningMap f).comp (ofIntertwiningMap g) :=
   (rfl)
 
@@ -744,8 +744,10 @@ theorem symm_toHom_comp_toHom (e : Iso ρ σ) : e.symm.toHom.comp e.toHom = .id 
 /-- `Iso.toHom` commutes with `Iso.ofEquiv` and `Hom.ofIntertwiningMap`. -/
 @[simp]
 theorem toHom_ofEquiv [TopologicalSpace A] [IsModuleTopology A M] [IsModuleTopology A N]
-    [ContinuousAdd N] (e : ρ.toRepresentation.Equiv σ.toRepresentation) :
+    (e : ρ.toRepresentation.Equiv σ.toRepresentation) :
+    haveI := IsModuleTopology.toContinuousAdd A N
     (ofEquiv e).toHom = .ofIntertwiningMap e.toIntertwiningMap := by
+  have := IsModuleTopology.toContinuousAdd A N
   ext
   simp
 
@@ -836,8 +838,12 @@ theorem Hom.baseChange_zero :
 
 /-- Scalar extension preserves addition of morphisms. -/
 @[simp]
-theorem Hom.baseChange_add [ContinuousAdd N] [ContinuousAdd (B ⊗[A] N)] (f g : Hom ρ σ) :
+theorem Hom.baseChange_add (f g : Hom ρ σ) :
+    haveI := IsModuleTopology.toContinuousAdd A N
+    haveI := IsModuleTopology.toContinuousAdd B (B ⊗[A] N)
     (f + g).baseChange B = f.baseChange B + g.baseChange B := by
+  have := IsModuleTopology.toContinuousAdd A N
+  have := IsModuleTopology.toContinuousAdd B (B ⊗[A] N)
   apply Hom.toLinearMap_injective
   simp
 

@@ -20,21 +20,26 @@ in `A[X]`.
 On the algebraic side, `(ρ g).charpoly` is invariant under isomorphism of continuous representations
 (`TauCeti.ContinuousRep.Iso.charpoly_apply_eq`) and cyclic permutation `g * h ↔ h * g`
 (`TauCeti.ContinuousRep.charpoly_apply_mul_comm`, hence conjugation in a group), multiplicative on
-products (`TauCeti.ContinuousRep.charpoly_prod_apply`), equal to `(X - 1) ^ finrank A M` on the
-trivial representation (`TauCeti.ContinuousRep.charpoly_trivial_apply`), equal to `X - C (χ g)` on
-the character line `ofCharacter χ` (`TauCeti.ContinuousRep.charpoly_ofCharacter_apply`), equal to
-`(ρ g⁻¹).charpoly` on the contragredient `ρ.dual` (`TauCeti.ContinuousRep.charpoly_dual_apply`),
-and compatible with scalar extension (`TauCeti.ContinuousRep.charpoly_baseChange_apply`, together
-with `TauCeti.ContinuousRep.linearMap_det_baseChange_apply` for determinants).
+products (`TauCeti.ContinuousRep.charpoly_prod_apply`) and on an invariant submodule and its
+quotient when both are finite free
+(`TauCeti.ContinuousRep.charpoly_apply_eq_subrepresentation_mul_quotient`), equal to
+`(X - 1) ^ finrank A M` on the trivial representation
+(`TauCeti.ContinuousRep.charpoly_trivial_apply`), equal to `X - C (χ g)` on the character line
+`ofCharacter χ` (`TauCeti.ContinuousRep.charpoly_ofCharacter_apply`), equal to `(ρ g⁻¹).charpoly` on
+the contragredient `ρ.dual` (`TauCeti.ContinuousRep.charpoly_dual_apply`), and compatible with
+scalar extension (`TauCeti.ContinuousRep.charpoly_baseChange_apply`, together with
+`TauCeti.ContinuousRep.linearMap_det_baseChange_apply` for determinants).
 
 On the topological side, when `A` is a topological commutative ring and `M` carries its `A`-module
 topology, every coefficient `g ↦ (ρ g).charpoly.coeff k` is continuous
 (`TauCeti.ContinuousRep.continuous_charpoly_coeff`): in a finite basis of `M` the matrix of `ρ g`
 is continuous (`TauCeti.ContinuousRep.continuous_toMatrix`), and each characteristic coefficient is
-a universal polynomial in the matrix entries (`Matrix.continuous_charpoly_coeff`). Consequently, two
-continuous representations whose characteristic polynomials agree (after mapping into a common
-Hausdorff ring) on a dense subset of `Γ` have equal characteristic polynomials everywhere on `Γ`
-(`TauCeti.ContinuousRep.charpoly_map_eq_of_dense`, `TauCeti.ContinuousRep.charpoly_eq_of_dense`).
+a universal polynomial in the matrix entries (`Matrix.continuous_charpoly_coeff`). Consequently, if
+the characteristic polynomials of two continuous representations agree after mapping into a common
+Hausdorff ring on a dense subset of `Γ`, then the mapped characteristic polynomials agree everywhere
+on `Γ` (`TauCeti.ContinuousRep.charpoly_map_eq_of_dense`); over a single Hausdorff coefficient ring,
+agreement on a dense subset implies equality of the characteristic polynomials everywhere on `Γ`
+(`TauCeti.ContinuousRep.charpoly_eq_of_dense`).
 
 ## Main results
 
@@ -42,6 +47,9 @@ Hausdorff ring) on a dense subset of `Γ` have equal characteristic polynomials 
   characteristic polynomials.
 * `TauCeti.ContinuousRep.charpoly_apply_mul_comm` and `TauCeti.ContinuousRep.charpoly_apply_conj`:
   cyclic and conjugation invariance of `(ρ g).charpoly`.
+* `TauCeti.ContinuousRep.charpoly_apply_eq_subrepresentation_mul_quotient`: when an invariant
+  submodule and its quotient are free of finite rank, the characteristic polynomial is the product
+  of those on the submodule and on the quotient.
 * `TauCeti.ContinuousRep.charpoly_ofCharacter_apply`: `(ofCharacter χ g).charpoly = X - C (χ g)`.
 * `TauCeti.ContinuousRep.charpoly_baseChange_apply` and
   `TauCeti.ContinuousRep.linearMap_det_baseChange_apply`: the characteristic polynomial and
@@ -50,8 +58,9 @@ Hausdorff ring) on a dense subset of `Γ` have equal characteristic polynomials 
 * `TauCeti.ContinuousRep.continuous_charpoly_coeff`: each coefficient `g ↦ (ρ g).charpoly.coeff k`
   is continuous when `M` carries its module topology over a topological commutative ring `A`.
 * `TauCeti.ContinuousRep.charpoly_map_eq_of_dense` and `TauCeti.ContinuousRep.charpoly_eq_of_dense`:
-  equality of characteristic polynomials into a Hausdorff ring propagates from a dense subset of `Γ`
-  to all of `Γ`.
+  equality of mapped characteristic polynomials in a Hausdorff target (and hence equality of
+  characteristic polynomials over a Hausdorff coefficient ring) propagates from a dense subset of
+  `Γ` to all of `Γ`.
 
 ## References
 
@@ -112,6 +121,18 @@ theorem charpoly_ofCharacter_apply [TopologicalSpace A] [ContinuousMul A] (χ : 
     (g : Γ) : (ofCharacter χ g).charpoly = X - C (χ g : A) := by
   rw [← coe_toRepresentation, toRepresentation_ofCharacter]
   exact Representation.charpoly_ofLinearCharacter_apply (χ : Γ →* Aˣ) g
+
+/-- **The characteristic polynomial on an invariant submodule and its quotient.** If `W` and
+`M ⧸ W` are free of finite rank, `g` acts on `M` with characteristic polynomial the product of
+those of its actions on `W` and on `M ⧸ W`. No complement of `W` is needed. -/
+theorem charpoly_apply_eq_subrepresentation_mul_quotient [ContinuousAdd M]
+    (ρ : ContinuousRep Γ A M) (W : Submodule A M) (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W)
+    [Module.Free A W] [Module.Finite A W] [Module.Free A (M ⧸ W)] [Module.Finite A (M ⧸ W)]
+    (g : Γ) :
+    (ρ g).charpoly = (ρ.subrepresentation W hW g).charpoly * (ρ.quotient W hW g).charpoly := by
+  rw [← coe_toRepresentation (ρ.subrepresentation W hW), ← coe_toRepresentation (ρ.quotient W hW),
+    toRepresentation_subrepresentation, toRepresentation_quotient]
+  exact Representation.charpoly_apply_eq_subrepresentation_mul_quotient ρ.toRepresentation W hW g
 
 section BaseChange
 

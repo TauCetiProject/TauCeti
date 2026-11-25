@@ -15,31 +15,35 @@ For a finite module `M` carrying its `A`-module topology (`IsModuleTopology A M`
 linear-map-family criteria in `TauCeti.Topology.Algebra.Module.ModuleTopology` reduce joint
 continuity of an action `Γ × M → M` to pointwise conditions on `Γ`:
 
-* **Orbit continuity** (`TauCeti.ContinuousRep.ofOrbit`,
-  `TauCeti.ContinuousRep.ofOrbitOfSpanEqTop`): over a topological ring `A`, continuity of every
-  orbit map `g ↦ ρ g x` (or on a finite spanning family) promotes a `Representation` to a
-  `ContinuousRep`, and characterizes the image of `toContRepresentation`
+* **Orbit continuity** (`IsModuleTopology.continuous_linearMap_apply_iff`,
+  `IsModuleTopology.continuous_linearMap_apply_iff_of_span_eq_top`, promoted by
+  `TauCeti.ContinuousRep.ofOrbit` and `TauCeti.ContinuousRep.ofOrbitOfSpanEqTop`): over a
+  topological ring `A`, continuity of every orbit map `g ↦ ρ g x` (or on a finite spanning family)
+  is equivalent to joint continuity, promotes a `Representation` to a `ContinuousRep`, and
+  characterizes the image of `toContRepresentation`
   (`TauCeti.ContinuousRep.mem_range_toContRepresentation_iff_orbit`).
-* **Matrix-coefficient continuity** (`TauCeti.ContinuousRep.continuous_matrixCoeff`,
-  `TauCeti.ContinuousRep.ofMatrixCoeff`, `TauCeti.ContinuousRep.ofToMatrix`): over a topological
-  semiring `A`, on a finite projective module `M`, joint continuity is continuity of every matrix
-  coefficient `g ↦ φ (ρ g x)` (`φ : Module.Dual A M`, `x : M`), or in a finite basis `b` over a
-  commutative topological semiring, continuity of every matrix entry
-  `g ↦ LinearMap.toMatrix b b (ρ g) i j`.
+* **Matrix-coefficient continuity**
+  (`IsModuleTopology.continuous_linearMap_apply_iff_forall_dual_of_projective`,
+  `TauCeti.ModuleTopology.continuous_linearMap_apply_iff_continuous_toMatrix`,
+  `TauCeti.ContinuousRep.continuous_matrixCoeff`, `TauCeti.ContinuousRep.ofMatrixCoeff`,
+  `TauCeti.ContinuousRep.ofToMatrix`): over a topological semiring `A`, on a finite projective
+  module `M`, joint continuity is equivalent to continuity of every matrix coefficient
+  `g ↦ φ (ρ g x)` (`φ : Module.Dual A M`, `x : M`), or in a finite basis `b` over a commutative
+  topological semiring, continuity of every matrix entry `g ↦ LinearMap.toMatrix b b (ρ g) i j`.
 
 On a discrete carrier `M`, every continuous representation of a group `G` has open point stabilizers
 and hence a smooth underlying representation (`TauCeti.ContinuousRep.isOpen_stabilizer_of_discrete`,
-`TauCeti.ContinuousRep.isSmooth_toRepresentation_of_discrete`). When `G` is a topological group,
-smoothness conversely promotes an algebraic representation on a discrete module to a `ContinuousRep`
-(`TauCeti.ContinuousRep.ofIsSmooth`).
+`TauCeti.ContinuousRep.isSmooth_toRepresentation_of_discrete`). When right translations on `G` are
+continuous (`ContinuousConstSMul Gᵐᵒᵖ G`), smoothness conversely promotes an algebraic
+representation on a discrete module to a `ContinuousRep` (`TauCeti.ContinuousRep.ofIsSmooth`).
 
 ## Main definitions
 
 * `TauCeti.ContinuousRep.ofOrbitOfSpanEqTop`, `TauCeti.ContinuousRep.ofOrbit`,
   `TauCeti.ContinuousRep.ofMatrixCoeff`, `TauCeti.ContinuousRep.ofToMatrix`: constructors for
   `ContinuousRep` on modules carrying their module topology.
-* `TauCeti.ContinuousRep.ofIsSmooth`: constructor for `ContinuousRep` of a topological group on a
-  discrete carrier.
+* `TauCeti.ContinuousRep.ofIsSmooth`: constructor for `ContinuousRep` on a discrete carrier from a
+  smooth representation of a group with continuous right translations.
 
 ## Main results
 
@@ -223,20 +227,21 @@ instance isSmooth_toRepresentation_of_discrete (ρ : ContinuousRep G A M) :
     ρ.toRepresentation.IsSmooth :=
   ⟨fun x => ρ.isOpen_stabilizer_of_discrete x⟩
 
-/-- Constructs a `ContinuousRep` of a topological group on a discrete module from a smooth
-representation. -/
-def ofIsSmooth [IsTopologicalGroup G] (ρ : Representation A G M) [ρ.IsSmooth] :
+/-- Constructs a `ContinuousRep` on a discrete module from a smooth representation of a group with
+continuous right translations. -/
+def ofIsSmooth [ContinuousConstSMul Gᵐᵒᵖ G] (ρ : Representation A G M) [ρ.IsSmooth] :
     ContinuousRep G A M where
   toRepresentation := ρ
   continuous_action := ρ.continuous_iff_isSmooth.mpr inferInstance
 
 @[simp]
-theorem coe_ofIsSmooth [IsTopologicalGroup G] (ρ : Representation A G M) [ρ.IsSmooth] :
+theorem coe_ofIsSmooth [ContinuousConstSMul Gᵐᵒᵖ G] (ρ : Representation A G M) [ρ.IsSmooth] :
     ⇑(ofIsSmooth ρ) = ρ :=
   (rfl)
 
 @[simp]
-theorem toRepresentation_ofIsSmooth [IsTopologicalGroup G] (ρ : Representation A G M) [ρ.IsSmooth] :
+theorem toRepresentation_ofIsSmooth [ContinuousConstSMul Gᵐᵒᵖ G] (ρ : Representation A G M)
+    [ρ.IsSmooth] :
     (ofIsSmooth ρ).toRepresentation = ρ :=
   (rfl)
 

@@ -51,6 +51,8 @@ case.
   supremum of the invariants of the compact open subgroups.
 * `Representation.le_smoothVectors_iff`: `V^∞` is the largest smooth subrepresentation.
 * `Representation.smoothVectors_eq_top_iff`: `V^∞ = V` exactly when the representation is smooth.
+* `Representation.isSmooth_of_iSup_range_eq_top`: a representation spanned by the images of
+  intertwining maps out of smooth representations is smooth.
 * `Representation.IsSmooth.of_injective`, `Representation.IsSmooth.of_surjective`: smoothness
   passes to subrepresentations and quotients, and equivalent representations are smooth together
   (`Representation.Equiv.isSmooth_iff`).
@@ -68,8 +70,8 @@ case.
 * `Representation.not_isSmooth_pi_ofMulAction_quotient`: over a nontrivial semiring, an infinite
   product of coset permutation modules `∏ i, A[G ⧸ H i]` fails to be smooth when `⨅ i, H i` is
   not open.
-* `Representation.continuous_iff_isSmooth`: when `G` is a topological group and `V` carries the
-  discrete topology, joint continuity on `G × V` is equivalent to smoothness.
+* `Representation.continuous_iff_isSmooth`: when right translations on `G` are continuous and `V`
+  carries the discrete topology, joint continuity on `G × V` is equivalent to smoothness.
 
 ## References
 
@@ -200,22 +202,23 @@ instance [ρ.IsTrivial] : IsSmooth ρ :=
 instance [Subsingleton V] : IsSmooth ρ :=
   ⟨fun v ↦ by rw [stabilizer_eq_top_of_subsingleton ρ v]; exact isOpen_univ⟩
 
-/-- When `V` carries the discrete topology and `G` is a topological group, a representation `ρ` is
-jointly continuous on `G × V` if and only if it is smooth. -/
-theorem continuous_iff_isSmooth [IsTopologicalGroup G]
+/-- When `V` carries the discrete topology and right translations on `G` are continuous, a
+representation `ρ` is jointly continuous on `G × V` if and only if it is smooth. -/
+theorem continuous_iff_isSmooth [ContinuousConstSMul Gᵐᵒᵖ G]
     [TopologicalSpace V] [DiscreteTopology V] (ρ : Representation A G V) :
     Continuous (fun p : G × V => ρ p.1 p.2) ↔ ρ.IsSmooth := by
-  let : MulAction G V := MulAction.compHom V (ρ : G →* Module.End A V)
-  have hsmul (g : G) (v : V) : g • v = ρ g v := by
-    rw [MulAction.compHom_smul_def, Module.End.smul_def]
-  have hstab (v : V) : MulAction.stabilizer G v = ρ.stabilizer v := by
-    ext g
-    simp [hsmul]
-  have hcont : Continuous (fun p : G × V => ρ p.1 p.2) ↔ ContinuousSMul G V :=
-    ⟨fun h => ⟨h.congr fun p => (hsmul p.1 p.2).symm⟩,
-      fun h => h.continuous_smul.congr fun p => hsmul p.1 p.2⟩
-  exact hcont.trans <| continuousSMul_iff_stabilizer_isOpen.trans <|
-    (forall_congr' fun v => by rw [hstab]).trans (isSmooth_iff ρ).symm
+  rw [isSmooth_iff]
+  refine ⟨fun h v =>
+      (isOpen_discrete {v}).preimage (h.comp (continuous_id.prodMk continuous_const)),
+    fun h => continuous_prod_of_discrete_right.mpr fun v => continuous_discrete_rng.mpr fun w => ?_⟩
+  obtain hU | ⟨m, hm : ρ m v = w⟩ := {g : G | ρ g v = w}.eq_empty_or_nonempty
+  · simp [Set.preimage, hU]
+  · have hset : (fun g : G => ρ g v) ⁻¹' {w} =
+        (fun g : G => MulOpposite.op m⁻¹ • g) ⁻¹' (ρ.stabilizer w : Set G) := by
+      ext g
+      simp [Representation.mem_stabilizer, ← hm, ← mul_apply_eq_comp, ← map_mul]
+    rw [hset]
+    exact (h w).preimage (continuous_const_smul (MulOpposite.op m⁻¹))
 
 end IsSmooth
 
@@ -284,6 +287,19 @@ theorem isSmooth_iff_forall_mem_smoothVectors : IsSmooth ρ ↔ ∀ v, v ∈ ρ.
 /-- Every vector of a smooth representation is smooth. -/
 theorem IsSmooth.mem_smoothVectors [IsSmooth ρ] (v : V) : v ∈ ρ.smoothVectors :=
   IsSmooth.isOpen_stabilizer v
+
+/-- **A representation spanned by smooth images is smooth.** If the ranges of a family of
+intertwining maps out of smooth representations span `W`, then `W` is smooth. -/
+theorem isSmooth_of_iSup_range_eq_top {κ : Type*} {V : κ → Type*} [∀ k, AddCommMonoid (V k)]
+    [∀ k, Module A (V k)] {ρ : ∀ k, Representation A G (V k)} [∀ k, IsSmooth (ρ k)]
+    (f : ∀ k, (ρ k).IntertwiningMap σ)
+    (hf : ⨆ k, LinearMap.range (f k).toLinearMap = ⊤) : IsSmooth σ := by
+  refine isSmooth_iff_forall_mem_smoothVectors.2 fun w ↦ ?_
+  have hle : ⨆ k, LinearMap.range (f k).toLinearMap ≤ σ.smoothVectors.toSubmodule :=
+    iSup_le fun k ↦ by
+      rintro _ ⟨v, rfl⟩
+      exact (f k).apply_mem_smoothVectors (IsSmooth.mem_smoothVectors v)
+  exact hle (hf ▸ Submodule.mem_top)
 
 /-- `V^∞` is smooth. -/
 instance : IsSmooth ρ.smoothVectors.toRepresentation :=
