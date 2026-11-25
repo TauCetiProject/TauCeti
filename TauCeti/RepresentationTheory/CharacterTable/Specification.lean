@@ -352,13 +352,8 @@ irreducible characters of `G` are exactly the class functions `g ↦ M i (ConjCl
 theorem IsCharacterTableSpec.irreducibleCharacters_eq_range (hM : IsCharacterTableSpec G M) :
     irreducibleCharacters ℂ G = Set.range fun i g => M i (ConjClasses.mk g) := by
   obtain ⟨σ, rfl⟩ := characterTable_unique_rows hM
-  ext f
-  simp only [Matrix.submatrix_apply, id_eq, characterTable_apply, Set.mem_range]
-  refine ⟨fun hf => ?_, ?_⟩
-  · obtain ⟨i, rfl⟩ := exists_irreducibleCharacter_eq ℂ hf
-    exact ⟨σ.symm i, by simp⟩
-  · rintro ⟨i, rfl⟩
-    exact irreducibleCharacter_mem ℂ (σ i)
+  rw [← range_irreducibleCharacter, ← σ.surjective.range_comp]
+  simp [Function.comp_def, characterTable_apply]
 
 end Spec
 
