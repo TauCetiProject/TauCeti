@@ -56,7 +56,10 @@ theorem mul_evaluation_comm {G : Type} [Group G] {V : Discrete PUnit.{1}} (a : V
     (x : (pointBG G).obj (.mk (op V))) (s : IntrinsicBandSections (pointBG G) pt) (h : G) :
     toElem (IntrinsicBandSections.evaluation a x s).asIso.hom * h =
       h * toElem (IntrinsicBandSections.evaluation a x s).asIso.hom :=
-  IntrinsicBandSections.evaluation_comm a x s h
+  -- The fibre of `pointBG G` is `SingleObj G` by definition, so `h : G` is an endomorphism of `x`
+  -- and composition is reversed multiplication (`SingleObj.comp_as_mul`).
+  (SingleObj.comp_as_mul G _ _).symm.trans
+    ((IntrinsicBandSections.evaluation_comm a x s h).trans (SingleObj.comp_as_mul G _ _))
 
 /-- **The `B(S₃)` Check, transposition.** The transposition `(0 1)` does not commute with `(1 2)`,
 so it is not the evaluation of any central section of `B(S₃)`. -/
@@ -78,7 +81,10 @@ theorem evaluation_eq_one {V : Discrete PUnit.{1}} (a : V ⟶ pt)
   have key : ∀ z : Equiv.Perm (Fin 3), (∀ h : Equiv.Perm (Fin 3), z * h = h * z) → z = 1 := by
     decide
   ext
-  exact key _ (mul_evaluation_comm a x s)
+  rw [Aut.one_asIso, Iso.refl_hom]
+  -- The identity of `x` in the fibre `SingleObj (Equiv.Perm (Fin 3))` is `1`
+  -- (`SingleObj.id_as_one`).
+  exact (key _ (mul_evaluation_comm a x s)).trans (SingleObj.id_as_one _ _).symm
 
 /-- **The `B(S₃)` Check, sections.** `B(S₃)` has only the identity central section over the point,
 rather than one for each of the six automorphisms of its object. -/
@@ -101,12 +107,16 @@ def centerUnit {G : Type} [CommGroup G] (g : G) : (CatCenter (SingleObj G))ˣ :=
 theorem toElem_centerUnit_app {G : Type} [CommGroup G] (g : G) {V : Discrete PUnit.{1}}
     (x : (pointBG G).obj (.mk (op V))) :
     toElem ((centerUnit g).val.app x) = g :=
+  -- `Aut.unitsEndEquivAut.symm` keeps the underlying natural transformation, whose component
+  -- built by `NatIso.ofComponents` is `g`.
   rfl
 
 /-- For a commutative group `G`, the central section of `B(G)` over the point acting by `g`
 on every fibre. -/
 def centralSection {G : Type} [CommGroup G] (g : G) : IntrinsicBandSections (pointBG G) pt :=
   IntrinsicBandSections.ofCompatible (fun _ _ ↦ centerUnit g)
+    -- Every pullback functor of the constant pseudofunctor `pointBG G` is the identity functor of
+    -- `SingleObj G` by definition, so it fixes each component `g` of `centerUnit g`.
     ((isPullbackCompatible_iff _).2 fun _ _ _ _ _ ↦ rfl)
 
 /-- The components of `centralSection g` are `centerUnit g`. -/
@@ -130,6 +140,7 @@ theorem centralSection_toElem_evaluation {G : Type} [CommGroup G]
   refine IntrinsicBandSections.ext fun V a x ↦ ?_
   obtain rfl : V = pt := Subsingleton.elim _ _
   obtain rfl : a = 𝟙 pt := Subsingleton.elim _ _
+  -- The fibre over the point is `SingleObj G`, which has a single object.
   obtain rfl : x = ptObj G := Subsingleton.elim (α := SingleObj G) _ _
   simp
 

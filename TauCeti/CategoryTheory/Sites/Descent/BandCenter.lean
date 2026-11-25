@@ -267,7 +267,10 @@ theorem autMulEquivOfIso_evaluation {V : C} (a : V ⟶ U) {x y : F.obj (.mk (op 
     (s : IntrinsicBandSections F U) :
     Aut.autMulEquivOfIso e (evaluation a x s) = evaluation a y s := by
   ext
-  simp [-evaluation_asIso_hom, ← evaluation_naturality]
+  -- Conjugation by `e` is `e.inv ≫ _ ≫ e.hom`, and naturality along `e.hom` moves `e.hom` past
+  -- the evaluation at `x`, where it cancels against `e.inv`.
+  rw [Aut.autMulEquivOfIso_apply_asIso, Iso.trans_hom, Iso.trans_hom, Iso.symm_hom,
+    ← evaluation_naturality, Iso.inv_hom_id_assoc]
 
 /-- **Compatibility with pullback.** The pullback functor `F(g)` carries the evaluation at
 `(a, x)` to the evaluation at `(g ≫ a, F(g) x)`. -/
