@@ -53,6 +53,7 @@ empty and every integrand vanishes on `[x, 1)`.
 * `TauCeti.moebiusSum_natCast`, `TauCeti.moebiusSum_natFloor`, `TauCeti.moebiusSum_natCast_add_one`
   and their analogues for `m`: agreement with the sums over `Finset.Icc 1 N`, constancy on
   `[N, N + 1)` and the jump `μ(N + 1)`.
+* `TauCeti.abs_moebiusSum_le`: the trivial bound `|M(x)| ≤ x` for `x ≥ 0`.
 * `TauCeti.moebiusLogSum_eq_moebiusDivSum_mul_log_sub`:
   `ℓ(x) = m(x) log x - ∑_{n ≤ x} μ(n) log n / n`.
 * `TauCeti.moebiusDivSum_eq_div_add_integral`: `m(x) = M(x) / x + ∫_1^x M(t) / t² dt`.
@@ -159,6 +160,11 @@ theorem moebiusDivSum_natCast_add_one (N : ℕ) :
 @[simp]
 theorem moebiusSum_one : moebiusSum 1 = 1 := by
   simpa using moebiusSum_natCast 1
+
+/-- The trivial bound `|M(x)| ≤ x` for `x ≥ 0`, as `|μ(n)| ≤ 1`. -/
+theorem abs_moebiusSum_le (hx : 0 ≤ x) : |moebiusSum x| ≤ x := by
+  rw [moebiusSum_def]
+  exact abs_sum_Icc_one_natFloor_le (fun _ ↦ mod_cast ArithmeticFunction.abs_moebius_le_one) hx
 
 /-- `m(1) = μ(1) = 1`. -/
 @[simp]

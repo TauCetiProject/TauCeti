@@ -7,6 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.ToLin
+import Mathlib.LinearAlgebra.Dual.Lemmas
+import Mathlib.LinearAlgebra.Matrix.Dual
 
 /-!
 # Factoring matrices through a column range
@@ -16,6 +18,10 @@ matrix-vector multiplication by `L`. The column index type of `L'` need not be f
 give a criterion, splitting off the top row, for the column range of a matrix to be a given
 submodule, and characterize when two nonsingular square matrices over a commutative domain span
 the same column range.
+
+Over a field, a vector `v` lies in the column range of `A` exactly when it is orthogonal, for the
+dot product, to every `z` with `z ᵥ* A = 0` (the Fredholm alternative): a linear functional
+vanishing on the range is a dot product with such a `z`.
 
 ## Main result
 
@@ -27,6 +33,8 @@ the same column range.
 * `Matrix.range_mulVecLin_eq_of_succ`: a matrix with columns in a submodule `L` of `R^(n+1)` has
   column range `L` if it reaches every vector of `L` below the top row and every vector of `L`
   supported on the top row.
+* `Matrix.mem_range_mulVecLin_iff_forall_vecMul_eq_zero`: over a field, `v` is in the column range
+  of `A` if and only if `z ⬝ᵥ v = 0` whenever `z ᵥ* A = 0`.
 * `Matrix.range_comp_mulVecLin_unit`, `Matrix.range_mulVecLin_mul_unit`: precomposing with or
   right-multiplying by `U ∈ GL n R` preserves the range / column range.
 * `Matrix.range_mulVecLin_eq_iff`: over a commutative domain, two nonsingular square matrices have
@@ -74,6 +82,28 @@ theorem exists_mul_eq_of_range_le {L : Matrix m ι R} {L' : Matrix m κ R}
   refine ⟨Matrix.of fun i j => v j i, ?_⟩
   ext i j
   simpa [Matrix.mul_apply, Matrix.mulVec, dotProduct] using congrFun (hv j) i
+
+section Field
+
+variable {K m n : Type*} [Field K] [Fintype m] [Fintype n]
+
+/-- **The Fredholm alternative for matrices.** Over a field, `v` lies in the column range of `A`
+if and only if it is orthogonal, for the dot product, to every `z` with `z ᵥ* A = 0`. -/
+theorem mem_range_mulVecLin_iff_forall_vecMul_eq_zero (A : Matrix m n K) (v : m → K) :
+    v ∈ LinearMap.range A.mulVecLin ↔ ∀ z, z ᵥ* A = 0 → z ⬝ᵥ v = 0 := by
+  classical
+  refine ⟨?_, fun h => ?_⟩
+  · rintro ⟨y, rfl⟩ z hz
+    rw [mulVecLin_apply, dotProduct_mulVec, hz, zero_dotProduct]
+  · refine (Subspace.forall_mem_dualAnnihilator_apply_eq_zero_iff _ v).mp fun φ hφ => ?_
+    -- Every linear functional on `m → K` is the dot product with some `z`.
+    obtain ⟨z, rfl⟩ := (dotProductEquiv K m).surjective φ
+    refine h z (funext fun j => ?_)
+    have := (Submodule.mem_dualAnnihilator _).mp hφ _ (LinearMap.mem_range_self _ (Pi.single j 1))
+    rwa [dotProductEquiv_apply_apply, mulVecLin_apply, dotProduct_mulVec,
+      dotProduct_single_one] at this
+
+end Field
 
 section Succ
 
