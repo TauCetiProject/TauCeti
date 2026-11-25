@@ -43,31 +43,38 @@ theorem diracCoeff_def (q : ℝ → ℂ) (z : ℂ) (t : ℝ) :
       !![((q t).re : ℂ), -z - ((q t).im : ℂ); z - ((q t).im : ℂ), -((q t).re : ℂ)] :=
   (rfl)
 
+/-- The top-left entry `Re q(t)` of the Dirac coefficient. -/
+@[simp] theorem diracCoeff_apply_zero_zero (q : ℝ → ℂ) (z : ℂ) (t : ℝ) :
+    diracCoeff q z t 0 0 = ((q t).re : ℂ) :=
+  (rfl)
+
+/-- The top-right entry `-z - Im q(t)` of the Dirac coefficient. -/
+@[simp] theorem diracCoeff_apply_zero_one (q : ℝ → ℂ) (z : ℂ) (t : ℝ) :
+    diracCoeff q z t 0 1 = -z - ((q t).im : ℂ) :=
+  (rfl)
+
+/-- The bottom-left entry `z - Im q(t)` of the Dirac coefficient. -/
+@[simp] theorem diracCoeff_apply_one_zero (q : ℝ → ℂ) (z : ℂ) (t : ℝ) :
+    diracCoeff q z t 1 0 = z - ((q t).im : ℂ) :=
+  (rfl)
+
+/-- The bottom-right entry `-Re q(t)` of the Dirac coefficient. -/
+@[simp] theorem diracCoeff_apply_one_one (q : ℝ → ℂ) (z : ℂ) (t : ℝ) :
+    diracCoeff q z t 1 1 = -((q t).re : ℂ) :=
+  (rfl)
+
 /-- The Dirac coefficient is `-z Ω` plus its value `Ω Q_q(t)` at `z = 0`. -/
 theorem diracCoeff_eq_smul_add (q : ℝ → ℂ) (z : ℂ) (t : ℝ) :
     diracCoeff q z t = z • !![0, -1; 1, 0] + diracCoeff q 0 t := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [diracCoeff_def] <;> ring
 
-/-- The squared Euclidean norm on `ℂ²`. -/
-private theorem norm_sq_euclidean (v : EuclideanSpace ℂ (Fin 2)) :
-    ‖v‖ ^ 2 = Complex.normSq (v 0) + Complex.normSq (v 1) := by
-  rw [EuclideanSpace.norm_sq_eq, Fin.sum_univ_two, Complex.sq_norm, Complex.sq_norm]
-
-/-- The rotation `-Ω = [[0, -1], [1, 0]]` is an isometry of `ℂ²`. -/
-private theorem norm_toEuclideanCLM_neg_omega_apply (v : EuclideanSpace ℂ (Fin 2)) :
-    ‖toEuclideanCLM (𝕜 := ℂ) !![0, -1; 1, 0] v‖ = ‖v‖ := by
-  refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 ?_
-  rw [norm_sq_euclidean, norm_sq_euclidean]
-  simp only [ofLp_toEuclideanCLM, mulVec, dotProduct, Fin.sum_univ_two]
-  simp [Complex.normSq_neg, add_comm]
-
 /-- At `z = 0` the Dirac coefficient `Ω Q_q(t)` scales every vector of `ℂ²` by `|q(t)|`. -/
 theorem norm_toEuclideanCLM_diracCoeff_zero_apply (q : ℝ → ℂ) (t : ℝ)
     (v : EuclideanSpace ℂ (Fin 2)) :
     ‖toEuclideanCLM (𝕜 := ℂ) (diracCoeff q 0 t) v‖ = ‖q t‖ * ‖v‖ := by
   refine (sq_eq_sq₀ (norm_nonneg _) (by positivity)).1 ?_
-  rw [mul_pow, norm_sq_euclidean, norm_sq_euclidean, Complex.sq_norm]
+  simp only [mul_pow, EuclideanSpace.norm_sq_eq, Fin.sum_univ_two, Complex.sq_norm]
   simp only [diracCoeff_def, ofLp_toEuclideanCLM, mulVec, dotProduct, Fin.sum_univ_two]
   simp [Complex.normSq_apply]
   ring
@@ -77,14 +84,12 @@ theorem norm_toEuclideanCLM_diracCoeff_le (q : ℝ → ℂ) (z : ℂ) (t : ℝ) 
     ‖toEuclideanCLM (𝕜 := ℂ) (diracCoeff q z t)‖ ≤ ‖z‖ + ‖q t‖ := by
   rw [diracCoeff_eq_smul_add, map_add, map_smul]
   refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-  · have hJ : ‖toEuclideanCLM (𝕜 := ℂ) !![(0 : ℂ), -1; 1, 0]‖ ≤ 1 :=
-      ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v => by
-        rw [norm_toEuclideanCLM_neg_omega_apply, one_mul]
-    calc ‖z • toEuclideanCLM (𝕜 := ℂ) !![(0 : ℂ), -1; 1, 0]‖
-        ≤ ‖z‖ * ‖toEuclideanCLM (𝕜 := ℂ) !![(0 : ℂ), -1; 1, 0]‖ :=
-          ContinuousLinearMap.opNorm_smul_le _ _
-      _ ≤ ‖z‖ * 1 := by gcongr
-      _ = ‖z‖ := mul_one _
+  · have h : star !![(0 : ℂ), -1; 1, 0] = !![0, 1; -1, 0] := by
+      ext i j; fin_cases i <;> fin_cases j <;> simp
+    have hJ : ‖toEuclideanCLM (𝕜 := ℂ) !![(0 : ℂ), -1; 1, 0]‖ = 1 :=
+      CStarRing.norm_of_mem_unitary <| Unitary.map_mem _ <| Unitary.mem_iff.2 <| by
+        constructor <;> simp [h, one_fin_two]
+    rw [norm_smul, hJ, mul_one]
   · exact ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun v =>
       (norm_toEuclideanCLM_diracCoeff_zero_apply q t v).le
 
@@ -96,7 +101,7 @@ private theorem toEuclideanCLM_diracCoeff_zero (q : ℝ → ℂ) (t : ℝ) :
   have h : diracCoeff q 0 t =
       ((q t).re : ℂ) • !![1, 0; 0, -1] + ((q t).im : ℂ) • !![0, -1; -1, 0] := by
     ext i j
-    fin_cases i <;> fin_cases j <;> simp [diracCoeff_def]
+    fin_cases i <;> fin_cases j <;> simp
   rw [h, map_add, map_smul, map_smul]
 
 /-- **The Dirac propagator is entire.** For `q` integrable on `[a, b]` and `s, t ∈ [a, b]`, the
