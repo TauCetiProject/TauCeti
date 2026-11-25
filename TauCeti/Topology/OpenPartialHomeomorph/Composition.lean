@@ -21,7 +21,8 @@ This file supplements `Mathlib.Topology.OpenPartialHomeomorph.Composition`:
   transitions `e.symm.trans e'`.
 * `OpenPartialHomeomorph.mem_target_and_mem_source_of_mem_symm_trans_source`: a point of the
   source of a chart transition `e.symm.trans e'` lies in the target of `e`, and `e.symm` sends it
-  into the source of `e'`; a converse of `PartialEquiv.mem_symm_trans_source`.
+  into the source of `e'`; the open-partial-homeomorphism form of
+  `PartialEquiv.mem_target_and_mem_source_of_mem_symm_trans_source`.
 * `Homeomorph.refl_transOpenPartialHomeomorph`: precomposing an open partial homeomorphism with
   `Homeomorph.refl` changes nothing; together with `Homeomorph.trans_transOpenPartialHomeomorph`
   this makes `Homeomorph.transOpenPartialHomeomorph` an action of homeomorphisms.
@@ -77,11 +78,12 @@ theorem image_restrOpen_symm_trans_source_inter (e : OpenPartialHomeomorph X Y)
 
 /-- A point of the source of a chart transition `e.symm.trans e'` lies in the target of `e`, and
 `e.symm` sends it into the source of `e'`. This is a converse of
-`PartialEquiv.mem_symm_trans_source`. -/
+`PartialEquiv.mem_symm_trans_source`, specialising
+`PartialEquiv.mem_target_and_mem_source_of_mem_symm_trans_source`. -/
 theorem mem_target_and_mem_source_of_mem_symm_trans_source {e : OpenPartialHomeomorph X Y}
     {e' : OpenPartialHomeomorph X Z} {y : Y} (hy : y ∈ (e.symm.trans e').source) :
-    y ∈ e.target ∧ e.symm y ∈ e'.source := by
-  rwa [trans_source, symm_source, Set.mem_inter_iff, Set.mem_preimage] at hy
+    y ∈ e.target ∧ e.symm y ∈ e'.source :=
+  PartialEquiv.mem_target_and_mem_source_of_mem_symm_trans_source hy
 
 end OpenPartialHomeomorph
 

@@ -332,9 +332,13 @@ private theorem mem_interiorChart_target (hCo : IsOpen (C \ range f)) (x : C)
     OpenPartialHomeomorph.coe_trans_symm, IsOpenEmbedding.toOpenPartialHomeomorph_target,
     mem_inter_iff, mem_preimage] at hz
   obtain ⟨⟨⟨⟨v, rfl⟩, hv⟩, hm⟩, -⟩ := hz
+  refine ⟨by rw [EuclideanHalfSpace.interiorEmbedding_coe_apply_zero]; exact Real.exp_pos _, hv,
+    ?_⟩
   -- The inclusion `C \ range f → C` followed by the coercion to `M` is the coercion.
-  exact ⟨by rw [EuclideanHalfSpace.interiorEmbedding_coe_apply_zero]; exact Real.exp_pos _, hv,
-    hCo.isOpenEmbedding_subtypeVal.toOpenPartialHomeomorph_right_inv _ hm⟩
+  simp only [interiorChart, OpenPartialHomeomorph.coe_trans_symm,
+    OpenPartialHomeomorph.symm_symm, IsOpenEmbedding.toOpenPartialHomeomorph_apply,
+    Function.comp_apply, coe_inclusion]
+  exact hCo.isOpenEmbedding_subtypeVal.toOpenPartialHomeomorph_right_inv _ hm
 
 variable {k : WithTop ℕ∞}
 

@@ -27,6 +27,9 @@ them in the other direction.
 * `PartialEquiv.image_symm_trans_source_inter` and
   `PartialEquiv.image_restr_symm_trans_source_inter`: transport of `e '' (e.source ∩ s)` onto
   `e' '' (e'.source ∩ s)` intersected with the transition target.
+* `PartialEquiv.mem_target_and_mem_source_of_mem_symm_trans_source`: a point of the source of a
+  transition `e.symm.trans e'` lies in the target of `e`, and `e.symm` sends it into the source of
+  `e'`; a converse of `PartialEquiv.mem_symm_trans_source`.
 * `PartialEquiv.preimage_eq_iUnion_symm_image`: if every point of `f ⁻¹' P` lies in the source of
   one of a family of partial equivalences `e x`, the preimage is the union of the images under
   `(e x).symm` of the sets of coordinates which `f ∘ (e x).symm` carries into `P`.
@@ -81,6 +84,13 @@ theorem image_restr_symm_trans_source_inter (e : PartialEquiv α β) (e' : Parti
     Set.inter_subset_left
   rw [(e.symm.trans e').image_restr_source_inter u, e.image_symm_trans_source_inter e',
     ← Set.inter_assoc, Set.inter_eq_self_of_subset_left hsub]
+
+/-- A point of the source of a transition `e.symm.trans e'` lies in the target of `e`, and
+`e.symm` sends it into the source of `e'`. This is a converse of `mem_symm_trans_source`. -/
+theorem mem_target_and_mem_source_of_mem_symm_trans_source {e : PartialEquiv α β}
+    {e' : PartialEquiv α γ} {y : β} (hy : y ∈ (e.symm.trans e').source) :
+    y ∈ e.target ∧ e.symm y ∈ e'.source := by
+  rwa [trans_source, symm_source, Set.mem_inter_iff, Set.mem_preimage] at hy
 
 /-- **A preimage as a union of chart images.** Let `e x` be partial equivalences with
 `T x ⊆ (e x).target` such that a coordinate `w ∈ (e x).target` lies in `T x` exactly when its
