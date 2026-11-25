@@ -86,8 +86,7 @@ theorem orderedFlowOf_eq_comp_flowOf_last {k : ℕ} (v : Fin (k + 1) → (x : M)
   | succ k ih =>
     rw [orderedFlowOf_succ, ih (fun i ↦ v i.succ) (fun i ↦ s i.succ),
       orderedFlowOf_succ (fun i ↦ v i.castSucc)]
-    simp only [Fin.succ_last, Fin.castSucc_zero, Fin.succ_castSucc]
-    rfl
+    simp only [Fin.succ_last, Fin.castSucc_zero, Fin.succ_castSucc, Function.comp_assoc]
 
 /-- The ordered flow for all times zero is the identity. -/
 @[simp]
