@@ -34,7 +34,8 @@ norm come from the C⋆-order: `y⋆(x⋆x)y ≤ ‖x‖² y⋆y` and the trace 
   `tr_k(xy) = tr_k(yx)` and monotonicity for the C⋆-order; `CStarMatrix.normalizedTrace_matrixUnit`
   evaluates it on matrix units.
 * `CStarMatrix.normalizedTraceMap`: `tr_k` as a positive continuous linear functional, of norm
-  at most `1` (`CStarMatrix.norm_normalizedTraceMap_le`), with equality for `k ≠ 0`.
+  at most `1` (`CStarMatrix.norm_normalizedTraceMap_le`), with equality for `k ≠ 0`, and
+  invariant under reindexing (`CStarMatrix.normalizedTraceMap_comp_reindexₐ`).
 * `CStarMatrix.normalizedTwoNorm`: the normalized 2-norm `‖x‖₂`.
 * `CStarMatrix.normalizedTwoNorm_eq_inv_sqrt_mul_frobenius_norm`: `‖x‖₂ = k^{-1/2}‖x‖_F`.
 * `CStarMatrix.normalizedTwoNorm_matrixUnit`: `‖e_ij‖₂ = k^{-1/2}`.
@@ -527,6 +528,15 @@ theorem normalizedTrace_reindexₐ (x : CStarMatrix n n ℂ) (e : n ≃ m) :
 theorem normalizedTrace_reindexₐ_symm (x : CStarMatrix n n ℂ) (e : m ≃ n) :
     normalizedTrace ((reindexₐ ℂ ℂ e).symm x) = normalizedTrace x := by
   rw [← reindexₐ_symm, normalizedTrace_reindexₐ]
+
+open scoped CStarAlgebra in
+/-- The normalized trace is invariant under reindexing: its pullback along the reindexing star
+isomorphism of an equivalence `n ≃ m` is the normalized trace on `CStarMatrix n n ℂ`. -/
+@[simp]
+theorem normalizedTraceMap_comp_reindexₐ (e : n ≃ m) :
+    (normalizedTraceMap m).comp (.ofClass (reindexₐ ℂ ℂ e)) = normalizedTraceMap n := by
+  ext x
+  simp
 
 /-- The normalized 2-norm does not depend on the labelling of the index type. -/
 @[simp]

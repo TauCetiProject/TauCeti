@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import TauCeti.Analysis.Distribution.ComplexPairing
+public import TauCeti.Analysis.Distribution.Restriction
 public import TauCeti.Analysis.Distribution.SmulLeft
 public import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
@@ -50,6 +51,8 @@ on `Ω` be replaced by one acting on the tempered distribution `χ T`.
 * `Distribution.cutoffTempered_zero`, `Distribution.cutoffTempered_add`,
   `Distribution.cutoffTempered_smul`, `Distribution.cutoffTempered_sum`: `φ T` is linear in `T`.
 * `Distribution.cutoffTempered_smulLeftCLM`: `φ (g T) = (g φ) T` for a smooth real `g`.
+* `Distribution.cutoffTempered_restrictCLM`: cutting off the restriction of `T` to an open
+  `Ω' ≤ Ω` by `φ` is cutting off `T` by `φ` extended by zero.
 * `Distribution.lineDerivOp_cutoffTempered`: the Leibniz rule for `φ T`.
 * `Distribution.smulLeftCLM_cutoffTempered`,
   `Distribution.smulLeftCLM_iteratedLineDerivOp_cutoffTempered`: if `χ = 1` on the support of
@@ -181,6 +184,17 @@ theorem cutoffTempered_congr (T : 𝓓'(Ω, ℂ)) {φ φ' : 𝓓(Ω, ℂ)}
   rw [cutoffTempered_def, cutoffTempered_def]
   exact T.complexPairing_eq_of_eventuallyEq (h.mono fun x hx ↦ by
     simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply', hx])
+
+/-- **Cutting off a restriction.** For an open set `Ω'` and a test function `φ` on `Ω'`, the
+cut-off `φ T|_{Ω'}` of the restriction of `T` is the cut-off of `T` by `TestFunction.monoCLM φ`,
+which is `φ` extended by zero to `Ω` when `Ω' ≤ Ω`. -/
+theorem cutoffTempered_restrictCLM {Ω' : Opens E} (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω', ℂ)) :
+    (restrictCLM T : 𝓓'(Ω', ℂ)).cutoffTempered φ = T.cutoffTempered (monoCLM ℝ φ) := by
+  ext ψ
+  rw [cutoffTempered_def, cutoffTempered_def, complexPairing_restrictCLM]
+  congr 1
+  ext x
+  by_cases h : Ω' ≤ Ω <;> simp [h, bilinLeftCLM_apply]
 
 /-- The tempered distribution `φ T` is additive in `T`. -/
 @[simp]

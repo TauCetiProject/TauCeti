@@ -33,8 +33,16 @@ kernel. For a nowhere vanishing function `f`, the **rescaling law**
 
 `R_(f α) = R_α / f + Y`,
 
-where `Y` is the unique vector field in `ξ` with `dα(Y, w) = df(w) / f²` for all `w ∈ ξ`. For a
-constant `c ≠ 0` this gives `R_(c α) = R_α / c`
+where `Y` is the unique vector field in `ξ` with `dα(Y, w) = df(w) / f²` for all `w ∈ ξ`. Where
+`f ≠ 0` it takes the normalized form
+(`TauCeti.SmoothForm.IsContactForm.smul_reebVectorField_eq_add_iff`)
+
+`R_(f α) = (R_α + Z) / f`,
+
+where `Z = f Y` is the unique vector field in `ξ` with `dα(Z, w) = df(w) / f` for all `w ∈ ξ`.
+Evaluating `α` on it gives `α(R_(f α)) = 1 / f`
+(`TauCeti.SmoothForm.IsContactForm.apply_reebVectorField_of_eq_smul`), which is where the factor
+`f²` in the equation for `Y` comes from. For a constant `c ≠ 0` this gives `R_(c α) = R_α / c`
 (`TauCeti.SmoothForm.IsContactForm.reebVectorField_smul`), and in particular `R_(-α) = -R_α`.
 
 The Reeb vector field is the characteristic vector field of the stable Hamiltonian structure
@@ -62,6 +70,9 @@ law is pointwise linear algebra at each point, applying `Module.Dual.reebVector`
 * `TauCeti.SmoothForm.IsContactForm.exists_contMDiffAt_and_mvfderiv_reebVectorField_eq_one`:
   existence of a function `g`, `C^n` at `x`, with `dg_x(R_α x) = 1`.
 * `TauCeti.SmoothForm.IsContactForm.reebVectorField_eq_inv_smul_add_iff`: the rescaling law.
+* `TauCeti.SmoothForm.IsContactForm.smul_reebVectorField_eq_add_iff`: its normalized form
+  `f R_(f α) = R_α + Z`.
+* `TauCeti.SmoothForm.IsContactForm.apply_reebVectorField_of_eq_smul`: `α(R_(f α)) = 1 / f`.
 
 ## References
 
@@ -294,6 +305,37 @@ theorem IsContactForm.reebVectorField_eq_inv_smul_add_iff (hα : α.IsContactFor
     (isContactForm_def.1 hα x).reebVector_smul_eq_inv_smul_add_iff hdβ y]
   simp only [degreeOneEquiv_coe_apply, ← mextDeriv_eq_bilinFormAt]
   simp only [ContinuousLinearMap.coe_coe]
+
+/-- **Normalized rescaling law for the Reeb vector field.** Let `α` be a contact form and
+`β = f α` for a function `f`, `C¹` at `x`, with `f(x) ≠ 0`. Then `f(x) R_β(x) = R_α(x) + z`, that
+is `R_β(x) = (R_α(x) + z) / f(x)`, exactly when `z` lies in `ξ_x = ker α_x` and
+`dα(z, w) = df(w) / f(x)` for all `w ∈ ξ_x`. In particular `f(x) R_β(x) - R_α(x)` is the unique
+such vector. -/
+theorem IsContactForm.smul_reebVectorField_eq_add_iff (hα : α.IsContactForm)
+    {β : SmoothForm I M ℝ 1} {f : M → ℝ} {x : M} (hf : ContMDiffAt I 𝓘(ℝ, ℝ) 1 f x)
+    (hfx : f x ≠ 0) (hβ : ∀ y, β.val y = f y • α.val y) (z : TangentSpace I x) :
+    f x • β.reebVectorField x = α.reebVectorField x + z ↔
+      α.val x ![z] = 0 ∧ ∀ w : TangentSpace I x, α.val x ![w] = 0 →
+        mextDeriv α.val x ![z, w] = mvfderiv I f x w / f x := by
+  -- This is the rescaling law for the correction `y = z / f(x)`.
+  rw [← eq_inv_smul_iff₀ hfx, smul_add, hα.reebVectorField_eq_inv_smul_add_iff hf hβ,
+    ContinuousAlternatingMap.vecCons_smul, smul_eq_zero, or_iff_right (inv_ne_zero hfx)]
+  refine and_congr_right fun _ ↦ forall₂_congr fun w _ ↦ ?_
+  rw [ContinuousAlternatingMap.vecCons_smul, smul_eq_mul, inv_mul_eq_iff_eq_mul₀ hfx]
+  field_simp
+
+/-- **The contact form on the rescaled Reeb vector field.** Let `α` be a contact form and
+`β = f α` for a function `f`, `C¹` at `x`. Then `α(R_β(x)) = 1 / f(x)`. For `f(x) = 0` both sides
+are `0`, by the junk value `0⁻¹ = 0`. -/
+theorem IsContactForm.apply_reebVectorField_of_eq_smul (hα : α.IsContactForm)
+    {β : SmoothForm I M ℝ 1} {f : M → ℝ} {x : M} (hf : ContMDiffAt I 𝓘(ℝ, ℝ) 1 f x)
+    (hβ : ∀ y, β.val y = f y • α.val y) : α.val x ![β.reebVectorField x] = (f x)⁻¹ := by
+  -- By the rescaling law, `R_β(x) = R_α(x) / f(x) + y` with `y ∈ ξ_x`.
+  have hy := (hα.reebVectorField_eq_inv_smul_add_iff hf hβ _).1
+    (add_sub_cancel _ _).symm
+  rw [← add_sub_cancel ((f x)⁻¹ • α.reebVectorField x) (β.reebVectorField x),
+    ContinuousAlternatingMap.vecCons_add, ContinuousAlternatingMap.vecCons_smul,
+    hα.apply_reebVectorField, hy.1, smul_eq_mul, mul_one, add_zero]
 
 omit [FiniteDimensional ℝ E] in
 /-- Multiplying a contact form by a nonzero constant `c` divides its Reeb vector field by `c`. -/

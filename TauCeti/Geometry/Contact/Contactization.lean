@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
 public import TauCeti.Geometry.Symplectic.Lagrangian.Exact
 import TauCeti.Geometry.Contact.Pullback
+import TauCeti.Geometry.Contact.Volume
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.Immersion.Differential
@@ -31,6 +32,12 @@ projection (`TauCeti.SmoothForm.mextDerivₗ_contactization`), and `α` is a con
 algebra on each tangent space `T_w W × ℝ`: the kernel of `α` is the graph `{(v, θ v)}` of `θ`
 (`TauCeti.SmoothForm.mem_kerDistribution_contactization`), which the projection identifies with
 `T_w W`, and on it `dα` is `ω`.
+
+When `W` has dimension `2 n`, the contact volume of `α` is the product volume:
+`α ∧ (dα)ⁿ = dz ∧ ωⁿ` (`TauCeti.SmoothForm.wedge_contactization_wedgePow_mextDerivₗ`). Indeed
+`α ∧ (dα)ⁿ = dz ∧ ωⁿ - θ ∧ ωⁿ`, and `θ ∧ ωⁿ` is pulled back from a form of degree `2 n + 1` on
+`W`, which vanishes. So `dz ∧ ωⁿ` vanishes nowhere when `ω` is nondegenerate
+(`TauCeti.SmoothForm.wedge_mpullback_realLineCoordForm_wedgePow_apply_ne_zero`).
 
 For the cotangent bundle `W = T*Q` with its Liouville form `λ_Q`, this is the standard contact
 form `dz - λ_Q` of the space of one-jets `J¹Q = T*Q × ℝ`
@@ -71,6 +78,8 @@ Legendrian immersions into `W × ℝ` are exactly the lifts of the exact Lagrang
 * `TauCeti.SmoothForm.mpullback_prodMk_contactization`: `(ι, h)^* (dz - θ) = dh - ι^* θ`.
 * `TauCeti.SmoothForm.isContactForm_contactization_iff`: `dz - θ` is a contact form exactly when
   `-dθ` is nondegenerate.
+* `TauCeti.SmoothForm.wedge_contactization_wedgePow_mextDerivₗ`: the contact volume formula
+  `α ∧ (dα)ⁿ = dz ∧ ωⁿ` for `α = dz - θ` and `ω = -dθ`.
 * `TauCeti.mpullback_contactizationShift_contactization`: change of primitive.
 * `TauCeti.SmoothForm.isHorizontalMap_contactization_iff`: `(ι, h)` is horizontal exactly when
   `ι^* θ = dh`.
@@ -231,6 +240,39 @@ theorem isContactForm_contactization_iff {θ : SmoothForm I W ℝ 1} :
       rw [h₁, (θ.val p.1).map_coord_zero 0 rfl] at hv
       exact (NormedSpace.fromTangentSpace p.2).map_eq_zero_iff.1 hv
     exact e.injective (by rw [map_zero]; exact Prod.ext h₁ h₂)
+
+/-! ### The contact volume -/
+
+variable [FiniteDimensional ℝ E] {n : ℕ}
+
+variable (I) in
+/-- **The contact volume of a contactization.** If the model space of `W` has dimension at most
+`2 n`, the contactization form `α = dz - θ` on `W × ℝ` satisfies `α ∧ (dα)ⁿ = dz ∧ ωⁿ` with
+`ω = -dθ`, where `dz` and `ωⁿ` are pulled back along the two projections. -/
+theorem wedge_contactization_wedgePow_mextDerivₗ (hn : Module.finrank ℝ E ≤ 2 * n)
+    (θ : SmoothForm I W ℝ 1) :
+    wedge θ.contactization ((mextDerivₗ (I.prod 𝓘(ℝ)) 1 θ.contactization).wedgePow n) =
+      wedge (mpullback Prod.snd contMDiff_snd realLineCoordForm)
+        (mpullback Prod.fst contMDiff_fst ((-mextDerivₗ I 1 θ).wedgePow n)) := by
+  -- `α ∧ (dα)ⁿ = dz ∧ ωⁿ - θ ∧ ωⁿ`, and `θ ∧ ωⁿ` has degree `2 n + 1` on `W`, so it vanishes.
+  rw [mextDerivₗ_contactization, ← mpullback_wedgePow, contactization, map_sub,
+    LinearMap.sub_apply, ← mpullback_wedge,
+    eq_zero_of_finrank_lt (by omega) (wedge θ ((-mextDerivₗ I 1 θ).wedgePow n)), map_zero,
+    sub_zero]
+
+/-- **The contactization volume vanishes nowhere.** If `W` has dimension `2 n` and `ω = -dθ` is
+nondegenerate, the volume form `dz ∧ ωⁿ` on `W × ℝ`, which is the contact volume `α ∧ (dα)ⁿ` of
+the contactization form `α = dz - θ`, vanishes nowhere. -/
+theorem wedge_mpullback_realLineCoordForm_wedgePow_apply_ne_zero (hn : Module.finrank ℝ E = 2 * n)
+    {θ : SmoothForm I W ℝ 1} (hθ : SmoothTwoForm.IsNondegenerate (-mextDerivₗ I 1 θ))
+    (p : W × ℝ) :
+    (wedge (mpullback Prod.snd contMDiff_snd realLineCoordForm)
+      (mpullback Prod.fst contMDiff_fst ((-mextDerivₗ I 1 θ).wedgePow n))).val p ≠ 0 := by
+  have hn' : Module.finrank ℝ (E × ℝ) = 2 * n + 1 := by
+    rw [Module.finrank_prod, Module.finrank_self, hn]
+  rw [← wedge_contactization_wedgePow_mextDerivₗ I hn.le]
+  exact (isContactForm_iff_wedge_wedgePow_apply_ne_zero hn' _).1
+    (isContactForm_contactization_iff.2 hθ) p
 
 end SmoothForm
 
