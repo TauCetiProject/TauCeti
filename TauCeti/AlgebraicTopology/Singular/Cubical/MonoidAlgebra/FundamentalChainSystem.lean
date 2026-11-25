@@ -83,6 +83,61 @@ namespace TauCeti
 
 variable {k : Type u} [CommRing k]
 
+/-- **The face condition at an interior point of a face, when `1` is the only unit.** Let
+`μ₁ ∈ Hₚ(X₁, ∂ X₁)`, `μ₂ ∈ H_q(X₂, ∂ X₂)` and `μ ∈ Hₙ(X, ∂ X)` generate the local homology at every
+interior point, where `∂ X₁`, `∂ X₂` and `∂ X` are the complements of open embeddings `j₁`, `j₂` and
+`j`, the interior of `X₁` is a manifold of dimension `p`, and `∂ X` is collared and a manifold of
+dimension `p + q = n - 1`. Let the face map `f : X₁ × X₂ → ∂ X` be an open embedding on the
+interiors. At a point `a` of the interior of the face, the cross product `μ₁ × μ₂`, carried by `f`
+to the local homology of `∂ X` at `a`, is any sign times the image of `∂ μ`: both generate a module
+isomorphic to `k`, which has a single generator, and signs act trivially. -/
+private theorem face_eq_negOnePow_smul_of_subsingleton_units [Subsingleton kˣ]
+    {X₁ X₂ X : TopCat.{u}} [T1Space X₁] [T1Space X₂] [T2Space X] {N₁ N₂ N : Type u}
+    [TopologicalSpace N₁] [TopologicalSpace N₂] {j₁ : N₁ → X₁} {j₂ : N₂ → X₂} {j : N → X}
+    (hj₁ : IsOpenEmbedding j₁) (hj₂ : IsOpenEmbedding j₂)
+    {F : Type u} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+    [ChartedSpace F N₁]
+    {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [ChartedSpace E ↥(range j)ᶜ] (hcol : IsCollared (Subtype.val : ↥(range j)ᶜ → X))
+    {p q m n : ℕ} (hp : finrank ℝ F = p) (hpq : p + q = m) (hE : finrank ℝ E = m)
+    (hmn : m + 1 = n)
+    {μ₁ : ((TopPair.ofSubset (range j₁)ᶜ).cubicalChainComplex k).homology p}
+    {μ₂ : ((TopPair.ofSubset (range j₂)ᶜ).cubicalChainComplex k).homology q}
+    {μ : ((TopPair.ofSubset (range j)ᶜ).cubicalChainComplex k).homology n}
+    (hμ₁ : ∀ r : N₁, (k ∙ localHomologyRestriction (ModuleCat.of k k)
+      (singleton_subset_iff.2 (mem_range_self r)) _
+        ((TopPair.singularCubicalHomologyIso k _ _).inv.hom μ₁)) = ⊤)
+    (hμ₂ : ∀ r : N₂, (k ∙ localHomologyRestriction (ModuleCat.of k k)
+      (singleton_subset_iff.2 (mem_range_self r)) _
+        ((TopPair.singularCubicalHomologyIso k _ _).inv.hom μ₂)) = ⊤)
+    (hμ : ∀ r : N, (k ∙ localHomologyRestriction (ModuleCat.of k k)
+      (singleton_subset_iff.2 (mem_range_self r)) _
+        ((TopPair.singularCubicalHomologyIso k _ _).inv.hom μ)) = ⊤)
+    (f : C(X₁ × X₂, X)) (hf : ∀ r, f r ∈ (range j)ᶜ)
+    (hfj : IsOpenEmbedding fun r : N₁ × N₂ ↦ f.codRestrict (range j)ᶜ hf (j₁ r.1, j₂ r.2))
+    {a : ↥(range j)ᶜ} (ha : (a : X) ∈ range fun r : N₁ × N₂ ↦ f (j₁ r.1, j₂ r.2))
+    (h : MapsTo (TopCat.ofHom (X := ↑((TopPair.ofSubset (range j₁)ᶜ).fst ⊗
+        (TopPair.ofSubset (range j₂)ᶜ).fst)) (f.codRestrict (range j)ᶜ hf))
+      ((TopPair.ofSubset (range j₁)ᶜ).prodSubspace (TopPair.ofSubset (range j₂)ᶜ))
+      ({a}ᶜ : Set ↥(range j)ᶜ)) (e : ℤ) :
+    (homologyMap (TopPair.cubicalChainComplexMap k (TopPair.ofSubsetMap _ h)) m).hom
+        ((homologyMap ((TopPair.ofSubset (range j₁)ᶜ).cubicalChainComplexProdComparison k
+          (TopPair.ofSubset (range j₂)ᶜ)) m).hom
+          ((GradedObject.Monoidal.ιTensorObj _ _ _ _ _ hpq ≫
+            cubicalHomologyKunnethPair k _ _ _).hom (μ₁ ⊗ₜ μ₂))) =
+      e.negOnePow • (homologyMap (cokernel.π ((normalizedCubicalChainComplex k).map
+          (TopPair.ofSubset ({a}ᶜ : Set ↥(range j)ᶜ)).map)) m).hom
+        (((TopPair.ofSubset (range j)ᶜ).cubicalHomologyδ k _ _ hmn).hom μ) := by
+  obtain ⟨r, hr⟩ := ha
+  obtain rfl : a = f.codRestrict (range j)ᶜ hf (j₁ r.1, j₂ r.2) :=
+    Subtype.ext (hr.symm.trans (ContinuousMap.coe_codRestrict_apply _ _ _ _).symm)
+  rw [negOnePow_smul_eq_self_of_neg_one_eq_one
+    (congrArg Units.val (Subsingleton.elim (-1 : kˣ) 1))]
+  exact eq_of_span_cubicalHomology_eq_top hE _
+    (span_homologyMap_cubicalChainComplexMap_cubicalHomologyKunnethPair_eq_top hj₁ hj₂ hp hpq μ₁
+      μ₂ _ hfj r (hμ₁ r.1) (hμ₂ r.2) h)
+    (span_homologyMap_cubicalHomologyδ_eq_top hcol hmn μ hμ _)
+
 variable {P : Type*} [Fintype P] {ind : P → ℤ} {M : P → P → TopCat.{u}}
   {ι : ∀ x y z, C(M x y × M y z, M x z)}
 
@@ -141,20 +196,9 @@ theorem TwistingChainSystem.exists_isRepresenting_of_subsingleton_units [Subsing
     isCompact_iff_compactSpace.1 (hj x y).isOpen_range.isClosed_compl.isCompact
   refine TwistingChainSystem.exists_isRepresenting_of_faces (E := E) hE hι hιA
     (fun x z y ↦ range fun r : N x z × N z y ↦ ι x z y (j x z r.1, j z y r.2)) hU hUι hUA
-    fun x z y hyz hzx a ha ↦ ?_
-  obtain ⟨r, hr⟩ := ha
-  obtain rfl : a = (ι x z y).codRestrict (range (j x y))ᶜ (hιA x z y hyz hzx)
-      (j x z r.1, j z y r.2) :=
-    Subtype.ext (hr.symm.trans (ContinuousMap.coe_codRestrict_apply _ _ _ _).symm)
-  -- Both sides generate the local homology of the boundary at `a`, which has a single generator.
-  rw [negOnePow_smul_eq_self_of_neg_one_eq_one
-    (congrArg Units.val (Subsingleton.elim (-1 : kˣ) 1))]
-  exact eq_of_span_cubicalHomology_eq_top (hE x y (by omega)) _
-    (span_homologyMap_cubicalChainComplexMap_cubicalHomologyKunnethPair_eq_top (hj x z) (hj z y)
-      (hF x z hzx) (by omega) (μ x z) (μ z y) _ (hιj x z y hyz hzx) r (hμ x z hzx r.1)
-      (hμ z y hyz r.2) _)
-    (span_homologyMap_cubicalHomologyδ_eq_top (hcol x y (by omega)) (by omega) (μ x y)
-      (hμ x y (by omega)) _)
+    fun x z y hyz hzx a ha ↦ face_eq_negOnePow_smul_of_subsingleton_units (hj x z) (hj z y)
+      (hcol x y (by omega)) (hF x z hzx) _ (hE x y (by omega)) _ (hμ x z hzx) (hμ z y hyz)
+      (hμ x y (by omega)) _ _ (hιj x z y hyz hzx) ha _ _
 
 section Continuation
 
@@ -273,31 +317,14 @@ theorem ContinuationChainSystem.exists_isRepresenting_of_subsingleton_units [Sub
   refine ContinuationChainSystem.exists_isRepresenting_of_faces hS hS' (E := E) hE hκ hκκ' hκ'
     hκB hκ'B (fun x z y ↦ range fun r : O x z × W z y ↦ κ x z y (o x z r.1, j z y r.2))
     (fun x w y ↦ range fun r : W x w × O' w y ↦ κ' x w y (j x w r.1, o' w y r.2)) hU hUκ hUκ'
-    hU'κ hU'κ' hUB hU'B (fun x z y hyz hzx a ha ↦ ?_) fun x w y hyw hwx a ha ↦ ?_
-  · obtain ⟨r, hr⟩ := ha
-    obtain rfl : a = (κ x z y).codRestrict (range (j x y))ᶜ (hκB x z y hyz hzx)
-        (o x z r.1, j z y r.2) :=
-      Subtype.ext (hr.symm.trans (ContinuousMap.coe_codRestrict_apply _ _ _ _).symm)
-    -- Both sides generate the local homology of the boundary at `a`, which has a single generator.
-    exact eq_of_span_cubicalHomology_eq_top (hE x y (by omega)) _
-      (span_homologyMap_cubicalChainComplexMap_cubicalHomologyKunnethPair_eq_top (ho x z) (hj z y)
-        (hF x z hzx) (by omega) (μ x z) (ν z y) _ (hκj x z y hyz hzx) r (hμ x z hzx r.1)
-        (hν z y hyz r.2) _)
-      (span_homologyMap_cubicalHomologyδ_eq_top (hcol x y (by omega)) (by omega) (ν x y)
-        (hν x y (by omega)) _)
-  · obtain ⟨r, hr⟩ := ha
-    obtain rfl : a = (κ' x w y).codRestrict (range (j x y))ᶜ (hκ'B x w y hyw hwx)
-        (j x w r.1, o' w y r.2) :=
-      Subtype.ext (hr.symm.trans (ContinuousMap.coe_codRestrict_apply _ _ _ _).symm)
-    -- The sign acts trivially, and both sides generate the local homology of the boundary at `a`.
-    rw [negOnePow_smul_eq_self_of_neg_one_eq_one
-      (congrArg Units.val (Subsingleton.elim (-1 : kˣ) 1))]
-    exact eq_of_span_cubicalHomology_eq_top (hE x y (by omega)) _
-      (span_homologyMap_cubicalChainComplexMap_cubicalHomologyKunnethPair_eq_top (hj x w)
-        (ho' w y) (hG x w hwx) (by omega) (ν x w) (μ' w y) _ (hκ'j x w y hyw hwx) r
-        (hν x w hwx r.1) (hμ' w y hyw r.2) _)
-      (span_homologyMap_cubicalHomologyδ_eq_top (hcol x y (by omega)) (by omega) (ν x y)
-        (hν x y (by omega)) _)
+    hU'κ hU'κ' hUB hU'B (fun x z y hyz hzx a ha ↦ ?_) fun x w y hyw hwx a ha ↦
+      face_eq_negOnePow_smul_of_subsingleton_units (hj x w) (ho' w y) (hcol x y (by omega))
+        (hG x w hwx) _ (hE x y (by omega)) _ (hν x w hwx) (hμ' w y hyw) (hν x y (by omega)) _ _
+        (hκ'j x w y hyw hwx) ha _ _
+  -- On a left face there is no sign.
+  exact (face_eq_negOnePow_smul_of_subsingleton_units (ho x z) (hj z y) (hcol x y (by omega))
+    (hF x z hzx) _ (hE x y (by omega)) _ (hμ x z hzx) (hν z y hyz) (hν x y (by omega)) _ _
+    (hκj x z y hyz hzx) ha _ 0).trans (by rw [Int.negOnePow_zero, one_smul])
 
 end Continuation
 
