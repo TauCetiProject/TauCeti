@@ -502,11 +502,10 @@ private theorem exists_partialDiffeomorph_opens_zeroSection [T2Space Λ] [SigmaC
   have hβ' (y : W) (v : TangentSpace ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) y) :
       β.val y ![v] = v.2 := by
     rw [hβ, SmoothForm.coe_mpullback_subtype_val_apply]
-    refine (SmoothForm.mpullback_apply_one _ _ SmoothForm.realLineCoordForm
-      (y : CotangentBundle I Λ × ℝ) v).trans ?_
-    rw [SmoothForm.realLineCoordForm_apply, Matrix.cons_val_zero, mfderiv_snd]
-    -- The tangent spaces are the model product, where `ContinuousLinearMap.snd` is `Prod.snd`.
-    exact congrFun (ContinuousLinearMap.coe_snd' (R := ℝ) (M₁ := E × (E →L[ℝ] ℝ)) (M₂ := ℝ)) v
+    refine (SmoothForm.mpullback_snd_apply SmoothForm.realLineCoordForm
+      (y : CotangentBundle I Λ × ℝ) ![v]).trans ?_
+    rw [SmoothForm.realLineCoordForm_apply, Manifold.tangentSpaceProdEquiv_apply]
+    exact congrArg Prod.snd (Matrix.cons_val_zero (α := (E × (E →L[ℝ] ℝ)) × ℝ) v ![])
   refine
     SmoothForm.exists_partialDiffeomorph_mpullback_eq_of_isContactFormAt_of_apply_mfderiv_eq_zero
     (β := β) (fun y hy ↦ (hvc y hy).2) (fun y hy ↦ (hvc y hy).1) (hσ.restrictPreimage W)
