@@ -61,8 +61,6 @@ mean `m.prod n` of `TauCeti.GroupTheory.Amenable.Prod`.
   point stabilizer is amenable.
 * `TauCeti.Mean.extension_inr_eq_prod`: for discrete groups, the iterated mean of the extension
   `H → G × H → G` along `x ↦ (x, 1)` is the product mean.
-* `Subgroup.amenable_iff_of_finiteIndex`: a discrete group is amenable iff a finite-index subgroup
-  of it is amenable.
 
 ## References
 
@@ -290,14 +288,3 @@ theorem Mean.extension_inr_eq_prod (m : Mean G) (n : Mean H) :
 end Prod
 
 end TauCeti
-
-namespace Subgroup
-
-variable {G : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
-
-/-- A discrete group is amenable exactly when a finite-index subgroup of it is amenable. -/
-theorem amenable_iff_of_finiteIndex (H : Subgroup G) [H.FiniteIndex] :
-    TauCeti.Amenable G ↔ TauCeti.Amenable H :=
-  ⟨fun _ => inferInstance, fun _ => TauCeti.Amenable.of_finiteIndex H⟩
-
-end Subgroup

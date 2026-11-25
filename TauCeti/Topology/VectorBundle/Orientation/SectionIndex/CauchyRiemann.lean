@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.Similarity
 public import TauCeti.Topology.VectorBundle.Orientation.SectionIndex.Holomorphic
-import TauCeti.Topology.DiscreteSubset
 
 /-!
 # The zero count for sections solving a Cauchy–Riemann inequality
@@ -53,6 +52,12 @@ set of more than `⟨e(E), [M]⟩` points vanishes identically
 section is nonzero when `⟨e(E), [M]⟩ < 0`. The intended application is to the kernel of a real
 Cauchy–Riemann operator, a linear space whose elements satisfy the inequality: on it, evaluation
 at `⟨e(E), [M]⟩ + 1` distinct points is injective.
+
+The global statements are corollaries of their forms for sections that are locally holomorphic
+up to a unit, in `TauCeti.Topology.VectorBundle.Orientation.SectionIndex.Holomorphic`
+(`TauCeti.finite_setOf_section_eq_zero_of_eventually_eq_mul` and the `_of_eventually_eq_mul`
+statements in the namespace `TauCeti.VectorBundleOrientation`), with the factorization given by
+the similarity principle `TauCeti.exists_eventually_eq_mul_of_norm_conjWirtingerDeriv_le`.
 
 ## Main results
 
@@ -144,9 +149,9 @@ theorem finite_setOf_section_eq_zero_of_norm_conjWirtingerDeriv_le
         (fun y ↦ (e z (TotalSpace.mk' ℂ ((φ z).symm y) (s ((φ z).symm y)))).2) y‖ ≤
       K z y * ‖(e z (TotalSpace.mk' ℂ ((φ z).symm y) (s ((φ z).symm y)))).2‖)
     (hne : ∃ x, s x ≠ 0) : {x | s x = 0}.Finite :=
-  finite_setOf_eq_zero_of_forall_eventually (fun x ↦
-    (e x).eventually_eq_zero_or_eventually_ne_zero_of_norm_conjWirtingerDeriv_le (φ x) (hze x)
-      (hzφ x) (hΩ x) (hzΩ x) (hf x) (hK x) (hfK x)) hne
+  finite_setOf_section_eq_zero_of_eventually_eq_mul φ e hzφ hze
+    (fun z ↦ exists_eventually_eq_mul_of_norm_conjWirtingerDeriv_le (hΩ z) (hf z) (hK z) (hfK z)
+      (hzΩ z)) hne
 
 end Finite
 
@@ -263,21 +268,10 @@ theorem ncard_le_evalFundamentalClass_eulerClass_of_norm_conjWirtingerDeriv_le
         (fun y ↦ (e z (TotalSpace.mk' ℂ ((φ z).symm y) (s ((φ z).symm y)))).2) y‖ ≤
       K z y * ‖(e z (TotalSpace.mk' ℂ ((φ z).symm y) (s ((φ z).symm y)))).2‖) :
     ({x | s x = 0}.ncard : ℤ) ≤ (oM.evalFundamentalClass hF (ModuleCat.of ℤ (ULift.{0} ℤ))
-      (ContinuousMap.id M) (o.eulerClass hF)).down := by
-  rw [o.evalFundamentalClass_eulerClass_eq_sum_sectionIndex hF oM hs hF hZ,
-    ncard_eq_toFinset_card _ hZ, Finset.card_eq_sum_ones, Nat.cast_sum, Nat.cast_one]
-  refine Finset.sum_le_sum fun z hz ↦ ?_
-  have hz0 : s z = 0 := hZ.mem_toFinset.1 hz
-  -- A zero of a section with finitely many zeros is isolated.
-  have hiso : ∀ᶠ x in 𝓝[≠] z, s x ≠ 0 := by
-    have hcl : IsClosed ({x | s x = 0} \ {z}) := (hZ.subset sdiff_subset).isClosed
-    filter_upwards [eventually_nhdsWithin_of_eventually_nhds
-      (hcl.isOpen_compl.mem_nhds fun h ↦ h.2 rfl), self_mem_nhdsWithin] with x hx hxz h0
-    exact hx ⟨h0, hxz⟩
-  have := o.sectionIndex_pos_of_norm_conjWirtingerDeriv_le hF oM hs (e z) (φ z) (hze z hz0)
-    (hzφ z hz0) (ho z hz0) (hφ z hz0) (hΩ z hz0) (hzΩ z hz0) (hf z hz0) (hK z hz0) (hfK z hz0)
-    hz0 hiso
-  omega
+      (ContinuousMap.id M) (o.eulerClass hF)).down :=
+  o.ncard_le_evalFundamentalClass_eulerClass_of_eventually_eq_mul hF oM hs φ e ω hzφ hZ hze ho hφ
+    fun z hz ↦ exists_eventually_eq_mul_of_norm_conjWirtingerDeriv_le (hΩ z hz) (hf z hz)
+      (hK z hz) (hfK z hz) (hzΩ z hz)
 
 include hs in
 /-- **The Euler number of a plane bundle with a section solving a Cauchy–Riemann inequality is
@@ -308,9 +302,9 @@ theorem evalFundamentalClass_eulerClass_nonneg_of_norm_conjWirtingerDeriv_le
       K z y * ‖(e z (TotalSpace.mk' ℂ ((φ z).symm y) (s ((φ z).symm y)))).2‖) :
     0 ≤ (oM.evalFundamentalClass hF (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.id M)
       (o.eulerClass hF)).down :=
-  (Nat.cast_nonneg _).trans
-    (o.ncard_le_evalFundamentalClass_eulerClass_of_norm_conjWirtingerDeriv_le hF oM hs φ e ω hzφ Ω
-      K hZ hze ho hφ hΩ hzΩ hf hK hfK)
+  o.evalFundamentalClass_eulerClass_nonneg_of_eventually_eq_mul hF oM hs φ e ω hzφ hZ hze ho hφ
+    fun z hz ↦ exists_eventually_eq_mul_of_norm_conjWirtingerDeriv_le (hΩ z hz) (hf z hz)
+      (hK z hz) (hfK z hz) (hzΩ z hz)
 
 end CompactSpace
 
@@ -353,15 +347,10 @@ theorem eq_zero_of_evalFundamentalClass_eulerClass_lt_ncard (hze : ∀ z, z ∈ 
       K z y * ‖(e z (TotalSpace.mk' ℂ ((φ z).symm y) (s ((φ z).symm y)))).2‖)
     {S : Set M} (hS : ∀ x ∈ S, s x = 0)
     (hlt : (oM.evalFundamentalClass hF (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.id M)
-      (o.eulerClass hF)).down < S.ncard) (x : M) : s x = 0 := by
-  by_contra hx
-  have hZ := finite_setOf_section_eq_zero_of_norm_conjWirtingerDeriv_le φ e hzφ hze Ω hΩ hzΩ hf K
-    hK hfK ⟨x, hx⟩
-  have hle := o.ncard_le_evalFundamentalClass_eulerClass_of_norm_conjWirtingerDeriv_le hF oM hs φ e
-    ω (fun z _ ↦ hzφ z) Ω K hZ (fun z _ ↦ hze z) (fun z _ ↦ ho z) (fun z _ ↦ hφ z)
-    (fun z _ ↦ hΩ z) (fun z _ ↦ hzΩ z) (fun z _ ↦ hf z) (fun z _ ↦ hK z) (fun z _ ↦ hfK z)
-  have hSZ : S.ncard ≤ {x | s x = 0}.ncard := ncard_le_ncard hS hZ
-  omega
+      (o.eulerClass hF)).down < S.ncard) (x : M) : s x = 0 :=
+  o.eq_zero_of_evalFundamentalClass_eulerClass_lt_ncard_of_eventually_eq_mul hF oM hs φ e ω hzφ hze
+    ho hφ (fun z ↦ exists_eventually_eq_mul_of_norm_conjWirtingerDeriv_le (hΩ z) (hf z) (hK z)
+      (hfK z) (hzΩ z)) hS hlt x
 
 end ConnectedSpace
 
