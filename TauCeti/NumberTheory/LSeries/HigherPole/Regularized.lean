@@ -61,14 +61,41 @@ namespace TauCeti.HigherPoleTauberian
 
 /-! ### Private analytic and integral helpers -/
 
-/-- On the open right half-plane `Re s > a`, the model-subtracted remainder
-`R(s) = F(s) - A / (s - a) ^ (k + 1)` is analytic, so `deriv R` is also analytic (hence continuous)
-there. -/
+/-- The raw (unregularised) model-subtracted remainder `R(s) = F(s) - A / (s - a) ^ (k + 1)`. -/
+private noncomputable def poleSubtractedRemainder (F : ℂ → ℂ) (a : ℝ) (k : ℕ) (A : ℝ) (s : ℂ) :
+    ℂ :=
+  F s - (A : ℂ) / (s - a) ^ (k + 1)
+
+/-- Function-level unfolding of `poleSubtractedRemainder`. -/
+private theorem poleSubtractedRemainder_def (F : ℂ → ℂ) (a : ℝ) (k : ℕ) (A : ℝ) :
+    poleSubtractedRemainder F a k A = fun s : ℂ ↦ F s - (A : ℂ) / (s - a) ^ (k + 1) :=
+  (rfl)
+
+/-- Evaluation of `poleSubtractedRemainder`. -/
+private theorem poleSubtractedRemainder_apply (F : ℂ → ℂ) (a : ℝ) (k : ℕ) (A : ℝ) (s : ℂ) :
+    poleSubtractedRemainder F a k A s = F s - (A : ℂ) / (s - a) ^ (k + 1) :=
+  (rfl)
+
+/-- Delange's regularised remainder integral
+`H(s) = -∫ u in (0 : ℝ)..1, deriv R (s + u) * (u ^ k / k!)`, where
+`R = poleSubtractedRemainder F a k A`. -/
+private noncomputable def regularizedRemainder (F : ℂ → ℂ) (a : ℝ) (k : ℕ) (A : ℝ) (s : ℂ) : ℂ :=
+  -∫ u : ℝ in (0 : ℝ)..1,
+    deriv (poleSubtractedRemainder F a k A) (s + u) * ((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ)
+
+/-- Evaluation of `regularizedRemainder`. -/
+private theorem regularizedRemainder_apply (F : ℂ → ℂ) (a : ℝ) (k : ℕ) (A : ℝ) (s : ℂ) :
+    regularizedRemainder F a k A s = -∫ u : ℝ in (0 : ℝ)..1,
+      deriv (poleSubtractedRemainder F a k A) (s + u) * ((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ) :=
+  (rfl)
+
+/-- On the open right half-plane `Re s > a`, `poleSubtractedRemainder F a k A` is analytic, so its
+derivative is also analytic (hence continuous) there. -/
 private theorem analyticOnNhd_deriv_remainder {F : ℂ → ℂ} {a A : ℝ} {k : ℕ}
     (h : PoleBoundary F a k A) :
-    AnalyticOnNhd ℂ (deriv fun s : ℂ ↦ F s - (A : ℂ) / (s - a) ^ (k + 1))
-      {s : ℂ | a < s.re} :=
-  (h.sub (poleBoundary_const_div_pow a A k)).interior.deriv
+    AnalyticOnNhd ℂ (deriv (poleSubtractedRemainder F a k A)) {s : ℂ | a < s.re} := by
+  rw [poleSubtractedRemainder_def]
+  exact (h.sub (poleBoundary_const_div_pow a A k)).interior.deriv
 
 /-- Real part of `((a : ℂ) + ε + y * I) + u - (a + y₀ * I)`. -/
 private theorem shift_sub_re (a ε y u y₀ : ℝ) :
@@ -122,25 +149,30 @@ private theorem norm_intervalIntegral_mul_weight_le {f : ℝ → ℂ} {c B : ℝ
     exact norm_mul_pow_div_factorial_le (hf u hu) hB (hc0.trans hu.1.le) hu.2).trans
     (mul_le_of_le_one_right hB (by rw [abs_of_nonneg (by linarith)]; linarith))
 
-/-- For every fixed `ε > 0`, `y ↦ H (a + ε + y * I)` is continuous on `ℝ`. -/
-private theorem continuous_regularized_of_pos {R : ℂ → ℂ} {a : ℝ} {k : ℕ}
-    (hR_cont : ContinuousOn (deriv R) {s : ℂ | a < s.re}) {ε : ℝ} (hε : 0 < ε) :
-    Continuous fun y : ℝ ↦
-      -∫ u : ℝ in (0 : ℝ)..1,
-        deriv R (((a : ℂ) + ε + y * I) + u) * ((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ) := by
+/-- For every fixed `ε > 0`, `y ↦ regularizedRemainder F a k A (a + ε + y * I)` is continuous on
+`ℝ`. -/
+private theorem continuous_regularized_of_pos {F : ℂ → ℂ} {a A : ℝ} {k : ℕ}
+    (h : PoleBoundary F a k A) {ε : ℝ} (hε : 0 < ε) :
+    Continuous fun y : ℝ ↦ regularizedRemainder F a k A ((a : ℂ) + ε + y * I) := by
   -- Clamp `u` to `max u 0` inside a globally continuous integrand that agrees on `[0, 1]`.
+  have hR_cont : ContinuousOn (deriv (poleSubtractedRemainder F a k A)) {s : ℂ | a < s.re} :=
+    (analyticOnNhd_deriv_remainder h).continuousOn
   let φ : ℝ × ℝ → ℂ := fun p ↦ ((a : ℂ) + ε + p.fst * I) + (max p.snd 0 : ℝ)
   have hφ_cont : Continuous φ := by fun_prop
   have hφ_mem : ∀ p : ℝ × ℝ, φ p ∈ {s : ℂ | a < s.re} := fun p ↦
     mem_re_gt_of_add_pos (add_pos_of_pos_of_nonneg hε (le_max_right _ _))
   have h_uncurry : Continuous fun p : ℝ × ℝ ↦
-      deriv R (φ p) * (((p.snd ^ k / (k.factorial : ℝ) : ℝ) : ℂ)) :=
+      deriv (poleSubtractedRemainder F a k A) (φ p) *
+        (((p.snd ^ k / (k.factorial : ℝ) : ℝ) : ℂ)) :=
     (hR_cont.comp_continuous hφ_cont hφ_mem).mul (by fun_prop)
   have h_param : Continuous fun y : ℝ ↦
       -∫ u : ℝ in (0 : ℝ)..1,
-        deriv R (φ (y, u)) * (((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ)) :=
+        deriv (poleSubtractedRemainder F a k A) (φ (y, u)) *
+          (((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ)) :=
     (continuous_parametric_intervalIntegral_of_continuous' h_uncurry 0 1).neg
-  refine h_param.congr fun y ↦ congrArg Neg.neg (integral_congr fun u hu ↦ ?_)
+  refine h_param.congr fun y ↦ ?_
+  rw [regularizedRemainder_apply]
+  refine congrArg Neg.neg (integral_congr fun u hu ↦ ?_)
   rw [uIcc_of_le zero_le_one] at hu
   simp [φ, max_eq_left hu.1]
 
@@ -162,23 +194,24 @@ private theorem exists_tail_bound {R : ℂ → ℂ} {a : ℝ}
   exact ⟨max B 0, le_max_right _ _, fun ε hε y hy u hu ↦
     (hB (ψ (ε, y, u)) ⟨(ε, y, u), ⟨hε, hy, hu⟩, rfl⟩).trans (le_max_left _ _)⟩
 
-/-- Local analytic continuation of `R` around an off-pole boundary point `a + y₀ * I` (`y₀ ≠ 0`)
-yields a radius `ρ > 0` and a uniform bound `B ≥ 0` on `‖deriv R (((a : ℂ) + ε + y * I) + u)‖`
-for all `ε ∈ [0, ρ]`, `y ∈ ball y₀ ρ`, and `u ∈ (0, 1]`. -/
+/-- Local analytic continuation of `poleSubtractedRemainder F a k A` around an off-pole boundary
+point `a + y₀ * I` (`y₀ ≠ 0`) yields a radius `ρ > 0` and a uniform bound `B ≥ 0` on
+`‖deriv (poleSubtractedRemainder F a k A) (((a : ℂ) + ε + y * I) + u)‖` for all `ε ∈ [0, ρ]`,
+`y ∈ ball y₀ ρ`, and `u ∈ (0, 1]`. -/
 private theorem exists_away_local_bound {F : ℂ → ℂ} {a A : ℝ} {k : ℕ}
     (h : PoleBoundary F a k A) {y₀ : ℝ} (hy₀ : y₀ ≠ 0) :
-    let R := fun s : ℂ ↦ F s - (A : ℂ) / (s - a) ^ (k + 1)
     ∃ ρ : ℝ, 0 < ρ ∧ ∃ B : ℝ, 0 ≤ B ∧
       ∀ ε ∈ Icc (0 : ℝ) ρ, ∀ y ∈ ball y₀ ρ, ∀ u ∈ Ioc (0 : ℝ) 1,
-        ‖deriv R (((a : ℂ) + ε + y * I) + u)‖ ≤ B := by
-  intro R
+        ‖deriv (poleSubtractedRemainder F a k A) (((a : ℂ) + ε + y * I) + u)‖ ≤ B := by
   obtain ⟨r, hr, R₀, hR₀_an, hR_eq⟩ := (h.sub (poleBoundary_const_div_pow a A k)).away y₀ hy₀
   let z₀ : ℂ := (a : ℂ) + y₀ * I
-  have hderiv_eq : ∀ s ∈ ball z₀ r, a < s.re → deriv R s = deriv R₀ s := by
+  have hderiv_eq : ∀ s ∈ ball z₀ r, a < s.re →
+      deriv (poleSubtractedRemainder F a k A) s = deriv R₀ s := by
     intro s hs hsre
     have hopen : IsOpen (ball z₀ r ∩ {w : ℂ | a < w.re}) := isOpen_ball.inter (isOpen_re_gt a)
-    exact (eventuallyEq_of_mem (hopen.mem_nhds ⟨hs, hsre⟩)
-      fun w ⟨hw, hwre⟩ ↦ hR_eq w hw hwre).deriv_eq
+    exact (eventuallyEq_of_mem (hopen.mem_nhds ⟨hs, hsre⟩) fun w ⟨hw, hwre⟩ ↦ by
+      rw [poleSubtractedRemainder_apply]
+      exact hR_eq w hw hwre).deriv_eq
   let ρ : ℝ := min 1 (r / 6)
   have hρ : 0 < ρ := lt_min zero_lt_one (by positivity)
   obtain ⟨B₁, hB₁⟩ := (isCompact_closedBall z₀ (r / 2)).exists_bound_of_continuousOn
@@ -200,23 +233,20 @@ private theorem exists_away_local_bound {F : ℂ → ℂ} {a A : ℝ} {k : ℕ}
       ⟨by linarith [neg_abs_le y₀], by linarith [le_abs_self y₀]⟩
     exact (hB₂ ε hε y hy_Icc u ⟨(lt_of_not_ge huρ).le, hu1⟩).trans (le_max_right _ _)
 
-/-- Right-continuity of `H (a + ε + y₀ * I)` as `ε → 0⁺` at any off-pole point `y₀ ≠ 0`. -/
+/-- Right-continuity of `regularizedRemainder F a k A (a + ε + y₀ * I)` as `ε → 0⁺` at any off-pole
+point `y₀ ≠ 0`. -/
 private theorem tendsto_regularized_of_ne_zero {F : ℂ → ℂ} {a A : ℝ} {k : ℕ}
     (h : PoleBoundary F a k A) {y₀ : ℝ} (hy₀ : y₀ ≠ 0) :
-    let R := fun s : ℂ ↦ F s - (A : ℂ) / (s - a) ^ (k + 1)
-    Tendsto (fun ε : ℝ ↦
-        -∫ u : ℝ in (0 : ℝ)..1,
-          deriv R (((a : ℂ) + ε + y₀ * I) + u) * ((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ))
+    Tendsto (fun ε : ℝ ↦ regularizedRemainder F a k A ((a : ℂ) + ε + y₀ * I))
       (𝓝[>] 0)
-      (𝓝 (-∫ u : ℝ in (0 : ℝ)..1,
-        deriv R (((a : ℂ) + y₀ * I) + u) * ((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ))) := by
-  intro R
+      (𝓝 (regularizedRemainder F a k A ((a : ℂ) + y₀ * I))) := by
   obtain ⟨ρ, hρ, B, hB0, hbound⟩ := exists_away_local_bound h hy₀
-  have hR_cont : ContinuousOn (deriv R) {s : ℂ | a < s.re} :=
+  have hR_cont : ContinuousOn (deriv (poleSubtractedRemainder F a k A)) {s : ℂ | a < s.re} :=
     (analyticOnNhd_deriv_remainder h).continuousOn
   have h_cwa : ContinuousWithinAt
       (fun ε : ℝ ↦ ∫ u : ℝ in (0 : ℝ)..1,
-        deriv R (((a : ℂ) + ε + y₀ * I) + u) * ((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ))
+        deriv (poleSubtractedRemainder F a k A) (((a : ℂ) + ε + y₀ * I) + u) *
+          ((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ))
       (Ici 0) 0 := by
     refine continuousWithinAt_of_dominated_interval (bound := fun _ ↦ B) ?_ ?_
       intervalIntegrable_const ?_
@@ -237,29 +267,26 @@ private theorem tendsto_regularized_of_ne_zero {F : ℂ → ℂ} {a A : ℝ} {k 
       exact ((((analyticOnNhd_deriv_remainder h _ hmem).continuousAt).comp_of_eq
         hinner rfl).mul continuousAt_const).continuousWithinAt
   have h_neg : ContinuousWithinAt
-      (fun ε : ℝ ↦ -∫ u : ℝ in (0 : ℝ)..1,
-        deriv R (((a : ℂ) + ε + y₀ * I) + u) * ((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ))
-      (Ici 0) 0 := h_cwa.neg
-  simpa using h_neg.tendsto.mono_left (nhdsWithin_mono 0 Ioi_subset_Ici_self)
+      (fun ε : ℝ ↦ regularizedRemainder F a k A ((a : ℂ) + ε + y₀ * I)) (Ici 0) 0 := by
+    simp_rw [regularizedRemainder_apply]
+    exact h_cwa.neg
+  simpa only [ofReal_zero, add_zero] using
+    h_neg.tendsto.mono_left (nhdsWithin_mono 0 Ioi_subset_Ici_self)
 
-/-- Finite-subcover uniform bound on `‖H (a + ε + y * I)‖` across the compact off-pole set
-`{y ∈ [-L, L] | δ ≤ |y|}` (`0 < δ`). -/
+/-- Finite-subcover uniform bound on `‖regularizedRemainder F a k A (a + ε + y * I)‖` across the
+compact off-pole set `{y ∈ [-L, L] | δ ≤ |y|}` (`0 < δ`). -/
 private theorem exists_away_compact_bound {F : ℂ → ℂ} {a A : ℝ} {k : ℕ}
     (h : PoleBoundary F a k A) {δ L : ℝ} (hδ : 0 < δ) :
-    let R := fun s : ℂ ↦ F s - (A : ℂ) / (s - a) ^ (k + 1)
     ∃ ε_away : ℝ, 0 < ε_away ∧ ∃ B_away : ℝ, 0 ≤ B_away ∧
       ∀ ε ∈ Ioo (0 : ℝ) ε_away, ∀ y ∈ Icc (-L) L, δ ≤ |y| →
-        ‖-∫ u : ℝ in (0 : ℝ)..1,
-          deriv R (((a : ℂ) + ε + y * I) + u) * ((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ)‖ ≤
-          B_away := by
-  intro R
+        ‖regularizedRemainder F a k A ((a : ℂ) + ε + y * I)‖ ≤ B_away := by
   let K : Set ℝ := {y ∈ Icc (-L) L | δ ≤ |y|}
   have hK_comp : IsCompact K :=
     isCompact_Icc.inter_right (isClosed_le continuous_const continuous_abs)
   have hK_loc : ∀ y₀ : K, ∃ ρ : ℝ, 0 < ρ ∧ ∃ B : ℝ, 0 ≤ B ∧
       ∀ ε ∈ Icc (0 : ℝ) ρ, ∀ y ∈ ball (y₀ : ℝ) ρ, ∀ u ∈ Ioc (0 : ℝ) 1,
-        ‖deriv R (((a : ℂ) + ε + y * I) + u)‖ ≤ B := fun ⟨_, _, hy₀δ⟩ ↦
-    exists_away_local_bound h (abs_pos.mp (hδ.trans_le hy₀δ))
+        ‖deriv (poleSubtractedRemainder F a k A) (((a : ℂ) + ε + y * I) + u)‖ ≤ B :=
+    fun ⟨_, _, hy₀δ⟩ ↦ exists_away_local_bound h (abs_pos.mp (hδ.trans_le hy₀δ))
   choose ρ hρ B hB0 hB using hK_loc
   obtain ⟨t, ht_cov⟩ := hK_comp.elim_finite_subcover (fun y₀ : K ↦ ball (y₀ : ℝ) (ρ y₀))
     (fun _ ↦ isOpen_ball) fun y hy ↦ mem_iUnion.mpr ⟨⟨y, hy⟩, mem_ball_self (hρ ⟨y, hy⟩)⟩
@@ -272,21 +299,20 @@ private theorem exists_away_compact_bound {F : ℂ → ℂ} {a A : ℝ} {k : ℕ
     fun ε hε y hyL hyδ ↦ ?_⟩
   rcases mem_iUnion₂.mp (ht_cov ⟨hyL, hyδ⟩) with ⟨y₀, hy₀t, hy_ball⟩
   have hε_Icc : ε ∈ Icc (0 : ℝ) (ρ y₀) := ⟨hε.1.le, hε.2.le.trans (hε_le y₀ hy₀t)⟩
-  rw [norm_neg]
+  rw [regularizedRemainder_apply, norm_neg]
   exact (norm_intervalIntegral_mul_weight_le le_rfl zero_le_one (hB0 y₀)
     (hB y₀ ε hε_Icc y hy_ball)).trans (Finset.single_le_sum (f := B) (fun z _ ↦ hB0 z) hy₀t)
 
-/-- Laurent decomposition of `R` on a right half-disc near `a`: the polar order is at most `k`,
-and `deriv R` decomposes into an analytic derivative plus at most `k` polar derivative terms. -/
+/-- Laurent decomposition of `poleSubtractedRemainder F a k A` on a right half-disc near `a`: the
+polar order is at most `k`, and its derivative decomposes into an analytic derivative plus at most
+`k` polar derivative terms. -/
 private theorem exists_near_pole_deriv_laurent {F : ℂ → ℂ} {a A : ℝ} {k : ℕ}
     (h : PoleBoundary F a k A) :
-    let R := fun s : ℂ ↦ F s - (A : ℂ) / (s - a) ^ (k + 1)
     ∃ r₁ : ℝ, 0 < r₁ ∧ ∃ m : ℕ, m ≤ k ∧ ∃ (c : Fin m → ℂ) (q : ℂ → ℂ),
       AnalyticOnNhd ℂ q (ball (a : ℂ) r₁) ∧
       ∀ z ∈ ball (a : ℂ) r₁, a < z.re →
-        deriv R z = deriv q z +
+        deriv (poleSubtractedRemainder F a k A) z = deriv q z +
           ∑ i : Fin m, c i * (-((i.val + 1 : ℕ) : ℂ) / (z - a) ^ (i.val + 2)) := by
-  intro R
   obtain ⟨r₀, hr₀, g, hg, hga, hF⟩ := h.pole
   let f : ℂ → ℂ := fun z ↦ g z - (A : ℂ)
   let Q : ℂ → ℂ := fun z ↦ f z / (z - a) ^ (k + 1)
@@ -313,11 +339,13 @@ private theorem exists_near_pole_deriv_laurent {F : ℂ → ℂ} {a A : ℝ} {k 
     hq_ball.mono hsub_q, fun z hz hzre ↦ ?_⟩
   have hopen : IsOpen (ball (a : ℂ) r₁ ∩ {w : ℂ | a < w.re}) :=
     isOpen_ball.inter (isOpen_re_gt a)
-  have hev : R =ᶠ[𝓝 z] fun w ↦ TauCeti.Contour.meromorphicAnalyticPartAt hQ w +
-      TauCeti.Contour.meromorphicPolarPartAt hQ w := by
+  have hev : poleSubtractedRemainder F a k A =ᶠ[𝓝 z]
+      fun w ↦ TauCeti.Contour.meromorphicAnalyticPartAt hQ w +
+        TauCeti.Contour.meromorphicPolarPartAt hQ w := by
     refine eventuallyEq_of_mem (hopen.mem_nhds ⟨hz, hzre⟩) fun w ⟨hw, hwre⟩ ↦ ?_
     have hwa : w ≠ a := fun h0 ↦ by simp [h0] at hwre
-    have hRw : R w = Q w := by simp only [R, Q, f, hF w (hsub₀ hw) hwre, sub_div]
+    have hRw : poleSubtractedRemainder F a k A w = Q w := by
+      simp only [poleSubtractedRemainder_apply, Q, f, hF w (hsub₀ hw) hwre, sub_div]
     exact hRw.trans (hlaur_ball w (hsub_e hw) hwa)
   rw [hev.deriv_eq]
   have hza : z ≠ a := fun h0 ↦ by simp [h0] at hzre
@@ -444,23 +472,19 @@ private theorem norm_integral_near_pole_head_le {R q : ℂ → ℂ} {m k : ℕ} 
 
 /-- Logarithmic bound near the pole: there exist `δ > 0` and constants `C₁, C₂ ≥ 0` such that
 for all `ε ∈ (0, δ)` and all `y` with `0 < |y| ≤ δ`,
-`‖H (a + ε + y * I)‖ ≤ C₁ + C₂ * |Real.log y|`. -/
+`‖regularizedRemainder F a k A (a + ε + y * I)‖ ≤ C₁ + C₂ * |Real.log y|`. -/
 private theorem exists_near_pole_log_bound {F : ℂ → ℂ} {a A : ℝ} {k : ℕ}
     (h : PoleBoundary F a k A) :
-    let R := fun s : ℂ ↦ F s - (A : ℂ) / (s - a) ^ (k + 1)
     ∃ δ : ℝ, 0 < δ ∧ ∃ C₁ C₂ : ℝ, 0 ≤ C₁ ∧ 0 ≤ C₂ ∧
       ∀ ε ∈ Ioo (0 : ℝ) δ, ∀ y : ℝ, y ≠ 0 → |y| ≤ δ →
-        ‖-∫ u : ℝ in (0 : ℝ)..1,
-          deriv R (((a : ℂ) + ε + y * I) + u) * ((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ)‖ ≤
-          C₁ + C₂ * |Real.log y| := by
-  intro R
+        ‖regularizedRemainder F a k A ((a : ℂ) + ε + y * I)‖ ≤ C₁ + C₂ * |Real.log y| := by
   obtain ⟨r₁, hr₁, m, hm_le, c, q, hq_ball, hderiv_laur⟩ := exists_near_pole_deriv_laurent h
   let δ : ℝ := min 1 (r₁ / 6)
   have hδ : 0 < δ := lt_min zero_lt_one (by positivity)
   have hδ1 : δ ≤ 1 := min_le_left _ _
   obtain ⟨M_q, hMq⟩ := (isCompact_closedBall (a : ℂ) (r₁ / 2)).exists_bound_of_continuousOn
     (hq_ball.deriv.continuousOn.mono (closedBall_subset_ball (half_lt_self hr₁)))
-  have hR_cont : ContinuousOn (deriv R) {s : ℂ | a < s.re} :=
+  have hR_cont : ContinuousOn (deriv (poleSubtractedRemainder F a k A)) {s : ℂ | a < s.re} :=
     (analyticOnNhd_deriv_remainder h).continuousOn
   obtain ⟨B_tail, hBt0, hBt⟩ := exists_tail_bound (ε₁ := δ) (L := δ) hR_cont hδ
   let C_pole : ℝ := ∑ i : Fin m, ‖c i‖ * ((i.val + 1 : ℕ) : ℝ) * (2 : ℝ) ^ (i.val + 2)
@@ -470,11 +494,12 @@ private theorem exists_near_pole_log_bound {F : ℂ → ℂ} {a A : ℝ} {k : �
     fun ε hε y hy0 hyδ ↦ ?_⟩
   -- Split `[0, 1]` at `δ` into the Laurent-controlled head `[0, δ]` and compact tail `[δ, 1]`.
   let φ : ℝ → ℂ := fun u ↦
-    deriv R (((a : ℂ) + ε + y * I) + u) * ((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ)
+    deriv (poleSubtractedRemainder F a k A) (((a : ℂ) + ε + y * I) + u) *
+      ((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ)
   have hφ_cont : ContinuousOn φ (Icc 0 1) :=
     (hR_cont.comp (by fun_prop) fun u hu ↦ mem_re_gt_of_add_pos (by linarith [hε.1, hu.1])).mul
       (by fun_prop)
-  rw [norm_neg, ← integral_add_adjacent_intervals
+  rw [regularizedRemainder_apply, norm_neg, ← integral_add_adjacent_intervals
     ((hφ_cont.mono (Icc_subset_Icc_right hδ1)).intervalIntegrable_of_Icc hδ.le)
     ((hφ_cont.mono (Icc_subset_Icc_left hδ.le)).intervalIntegrable_of_Icc hδ1)]
   have htail_le : ‖∫ u : ℝ in δ..1, φ u‖ ≤ B_tail :=
@@ -490,12 +515,9 @@ private theorem exists_near_pole_log_bound {F : ℂ → ℂ} {a A : ℝ} {k : �
 bound and the compact off-pole bound. -/
 private theorem exists_compact_majorant {F : ℂ → ℂ} {a A : ℝ} {k : ℕ}
     (h : PoleBoundary F a k A) {L : ℝ} (hL : 0 < L) :
-    let R := fun s : ℂ ↦ F s - (A : ℂ) / (s - a) ^ (k + 1)
     ∃ ε₀ : ℝ, 0 < ε₀ ∧ ∃ M : ℝ → ℝ, IntegrableOn M (Icc (-L) L) ∧
       ∀ ε ∈ Ioo (0 : ℝ) ε₀, ∀ y ∈ Icc (-L) L, y ≠ 0 →
-        ‖-∫ u : ℝ in (0 : ℝ)..1,
-          deriv R (((a : ℂ) + ε + y * I) + u) * ((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ)‖ ≤ M y := by
-  intro R
+        ‖regularizedRemainder F a k A ((a : ℂ) + ε + y * I)‖ ≤ M y := by
   obtain ⟨δ, hδ, C₁, C₂, hC₁0, hC₂0, hnear⟩ := exists_near_pole_log_bound h
   obtain ⟨ε_away, hε_away, B_away, hBa0, haway⟩ := exists_away_compact_bound h (L := L) hδ
   let M : ℝ → ℝ := fun y ↦ (C₁ + B_away) + C₂ * |Real.log y|
@@ -526,14 +548,14 @@ theorem regularizedBoundaryL1 {F : ℂ → ℂ} {a A : ℝ} {k : ℕ} (h : PoleB
       Tendsto (fun ε : ℝ ↦ ∫ y in Icc (-L) L, ‖H ((a : ℂ) + ε + y * Complex.I) - b y‖)
         (𝓝[>] 0) (𝓝 0) := by
   intro R H
-  dsimp only [H]
-  let b : ℝ → ℂ := fun y ↦ if y = 0 then 0 else
-    -∫ u : ℝ in (0 : ℝ)..1, deriv R (((a : ℂ) + y * I) + u) * ((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ)
-  have hR_cont : ContinuousOn (deriv R) {s : ℂ | a < s.re} :=
-    (analyticOnNhd_deriv_remainder h).continuousOn
+  have hH : H = regularizedRemainder F a k A := by
+    ext s
+    rw [regularizedRemainder_apply, poleSubtractedRemainder_def]
+  rw [hH]
+  let b : ℝ → ℂ := fun y ↦
+    if y = 0 then 0 else regularizedRemainder F a k A ((a : ℂ) + y * I)
   have h_ptwise : ∀ y : ℝ, y ≠ 0 →
-      Tendsto (fun ε : ℝ ↦ -∫ u : ℝ in (0 : ℝ)..1,
-        deriv R (((a : ℂ) + ε + y * I) + u) * ((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ))
+      Tendsto (fun ε : ℝ ↦ regularizedRemainder F a k A ((a : ℂ) + ε + y * I))
         (𝓝[>] 0) (𝓝 (b y)) := fun y hy ↦ by
     simpa [b, hy] using tendsto_regularized_of_ne_zero h hy
   refine ⟨b, fun L hL ↦ ?_⟩
@@ -548,9 +570,8 @@ theorem regularizedBoundaryL1 {F : ℂ → ℂ} {a A : ℝ} {k : ℕ} (h : PoleB
       tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
         tendsto_one_div_add_atTop_nhds_zero_nat (.of_forall hseq_pos)
     refine aestronglyMeasurable_of_tendsto_ae atTop
-      (f := fun (n : ℕ) (y : ℝ) ↦ -∫ u : ℝ in (0 : ℝ)..1,
-        deriv R (((a : ℂ) + ε_seq n + y * I) + u) * ((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ))
-      (fun n ↦ (continuous_regularized_of_pos (k := k) hR_cont (hseq_pos n)).aestronglyMeasurable)
+      (f := fun (n : ℕ) (y : ℝ) ↦ regularizedRemainder F a k A ((a : ℂ) + ε_seq n + y * I))
+      (fun n ↦ (continuous_regularized_of_pos h (hseq_pos n)).aestronglyMeasurable)
       ?_
     filter_upwards [hae_ne] with y hy using (h_ptwise y hy.2).comp hseq_tend
   have hb_le : ∀ᵐ y ∂volume.restrict (Icc (-L) L), ‖b y‖ ≤ M y := by
@@ -564,7 +585,7 @@ theorem regularizedBoundaryL1 {F : ℂ → ℂ} {a A : ℝ} {k : ℕ} (h : PoleB
       (μ := volume.restrict (Icc (-L) L)) (l := 𝓝[>] (0 : ℝ))
       (f := fun _ ↦ (0 : ℝ)) (fun y ↦ M y + ‖b y‖)
       (by filter_upwards [Ioo_mem_nhdsGT hε₀] with ε hε
-          exact ((continuous_regularized_of_pos (k := k) hR_cont hε.1).aestronglyMeasurable.sub
+          exact ((continuous_regularized_of_pos h hε.1).aestronglyMeasurable.sub
             hb_int.aestronglyMeasurable).norm)
       (by filter_upwards [Ioo_mem_nhdsGT hε₀] with ε hε
           filter_upwards [hae_ne] with y hy
@@ -595,16 +616,16 @@ theorem regularizedRemainder_eq_zero_of_eq_on_re_gt {F : ℂ → ℂ} {a A : ℝ
   simp [hev.deriv_eq]
 
 /-- Updating the model pole `s ↦ A / (s - a) ^ (k + 1)` at `a` to any nonzero value `w` makes the
-raw remainder `R(s) = F(s) - A / (s - a) ^ (k + 1)` discontinuous at `a` (it equals `w` at `a` and
+raw remainder `s ↦ F s - A / (s - a) ^ (k + 1)` discontinuous at `a` (it equals `w` at `a` and
 `0` away from `a`). -/
 theorem not_continuousAt_remainder_update_pole (a A : ℝ) (k : ℕ) {w : ℂ} (hw : w ≠ 0) :
-    let F := Function.update (fun s : ℂ ↦ (A : ℂ) / (s - a) ^ (k + 1)) (a : ℂ) w
-    let R := fun s : ℂ ↦ F s - (A : ℂ) / (s - a) ^ (k + 1)
-    ¬ ContinuousAt R a := by
-  intro F R
-  have hR : R = Function.update (fun _ ↦ (0 : ℂ)) (a : ℂ) w := by
+    ¬ ContinuousAt
+      (fun s : ℂ ↦ Function.update (fun z : ℂ ↦ (A : ℂ) / (z - a) ^ (k + 1)) (a : ℂ) w s -
+        (A : ℂ) / (s - a) ^ (k + 1)) a := by
+  have hR : (fun s : ℂ ↦ Function.update (fun z : ℂ ↦ (A : ℂ) / (z - a) ^ (k + 1)) (a : ℂ) w s -
+      (A : ℂ) / (s - a) ^ (k + 1)) = Function.update (fun _ ↦ (0 : ℂ)) (a : ℂ) w := by
     ext s
-    by_cases hs : s = a <;> simp [R, F, hs, zero_pow (Nat.succ_ne_zero k)]
+    by_cases hs : s = a <;> simp [hs, zero_pow (Nat.succ_ne_zero k)]
   rw [hR, continuousAt_update_same, tendsto_const_nhds_iff]
   exact hw.symm
 
