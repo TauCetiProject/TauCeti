@@ -55,15 +55,13 @@ theorem sectionDegree_tmul [Module.Flat (𝓞 K) E] [Module.Invertible (𝓞 K) 
   have : Finite (F ⧸ Submodule.span (𝓞 K) {t}) :=
     Module.finite_quotient_span_singleton_of_finrank_eq_one (F := K)
       (Module.Invertible.finrank_eq_one K (K ⊗[𝓞 K] F)) ht
-  have hinj : Function.Injective (LinearMap.toSpanSingleton (𝓞 K) E s) := by
-    refine (injective_iff_map_eq_zero _).2 fun r hr ↦ ?_
-    rw [LinearMap.toSpanSingleton_apply] at hr
-    exact (smul_eq_zero.1 hr).resolve_right hs
+  have hinj : Function.Injective (LinearMap.toSpanSingleton (𝓞 K) E s) :=
+    smul_left_injective (𝓞 K) hs
   -- Both lattice indices are nonzero, since the quotients are finite.
   have hcs : ((Submodule.span (𝓞 K) {s}).cardQuot : ℝ) ≠ 0 :=
-    Nat.cast_ne_zero.2 (AddSubgroup.index_ne_zero_of_finite (hH := ‹_›))
+    Nat.cast_ne_zero.2 (Submodule.cardQuot_ne_zero _)
   have hct : ((Submodule.span (𝓞 K) {t}).cardQuot : ℝ) ≠ 0 :=
-    Nat.cast_ne_zero.2 (AddSubgroup.index_ne_zero_of_finite (hH := ‹_›))
+    Nat.cast_ne_zero.2 (Submodule.cardQuot_ne_zero _)
   have hsσ (σ : K →+* ℂ) : h.norm σ (1 ⊗ₜ s) ≠ 0 :=
     (h.norm_pos (Codomain.one_tmul_ne_zero σ hs)).ne'
   have htσ (σ : K →+* ℂ) : h'.norm σ (1 ⊗ₜ t) ≠ 0 :=

@@ -61,6 +61,12 @@ end Module.Invertible
 
 namespace Submodule
 
+/-- A submodule with finite quotient has nonzero index. -/
+theorem cardQuot_ne_zero {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    (S : Submodule R M) [Finite (M ⧸ S)] : S.cardQuot ≠ 0 := by
+  rw [cardQuot_apply]
+  exact Nat.card_pos.ne'
+
 variable {R : Type*} [CommRing R] {L M : Type*} [AddCommGroup L] [Module R L]
   [AddCommGroup M] [Module R M] [Module.Invertible R M]
 
@@ -81,28 +87,16 @@ theorem cardQuot_span_tmul {s : L} (hs : Function.Injective (LinearMap.toSpanSin
     simp [φ]
   -- The image of `φ` is the image of `(R ∙ s) ⊗ M`.
   have hrange : LinearMap.range φ = LinearMap.range ((R ∙ s).subtype.rTensor M) := by
-    have hfac : LinearMap.toSpanSingleton R L s =
-        (R ∙ s).subtype ∘ₗ
-          (LinearMap.toSpanSingleton R (R ∙ s) ⟨s, Submodule.mem_span_singleton_self s⟩) := by
-      ext; simp
-    have hsurj : Function.Surjective
-        (LinearMap.toSpanSingleton R (R ∙ s) ⟨s, Submodule.mem_span_singleton_self s⟩) := by
-      rintro ⟨x, hx⟩
-      obtain ⟨r, rfl⟩ := Submodule.mem_span_singleton.1 hx
-      exact ⟨r, by simp⟩
-    rw [LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _), hfac,
-      LinearMap.rTensor_comp,
-      LinearMap.range_comp_of_range_eq_top _
-        (LinearMap.range_eq_top.2 (LinearMap.rTensor_surjective M hsurj))]
+    rw [LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _), LinearMap.rTensor_range,
+      LinearMap.range_toSpanSingleton]
   have hidx : (LinearMap.range φ).cardQuot = (R ∙ s).cardQuot := by
-    rw [hrange, Submodule.cardQuot_apply, Submodule.cardQuot_apply]
-    -- `rTensor M f` is `TensorProduct.map f id` by definition.
+    rw [hrange, Submodule.cardQuot_apply, Submodule.cardQuot_apply, LinearMap.rTensor_def]
     exact (Nat.card_congr (TensorProduct.quotientTensorEquiv M (R ∙ s)).toEquiv).symm.trans
       Module.Invertible.card_tensorProduct
+  -- The coercion `↑φ : M →+ L ⊗ M` agrees with `φ.toAddMonoidHom`.
+  have hcoe : (φ : M →+ L ⊗[R] M) = φ.toAddMonoidHom := by ext; simp
   unfold Submodule.cardQuot at hidx ⊢
   rw [← hφt, Submodule.map_toAddSubgroup, AddSubgroup.index_map_of_injective _ hφ, mul_comm,
-    ← hidx, LinearMap.range_toAddSubgroup]
-  -- The coercion `↑φ : M →+ L ⊗ M` is `φ.toAddMonoidHom`, up to structure eta.
-  congr 3
+    ← hidx, LinearMap.range_toAddSubgroup, hcoe]
 
 end Submodule
