@@ -72,6 +72,7 @@ noncomputable def riemannZetaZerosClosedBall (c : ℂ) (R : ℝ) : Finset ℂ :=
   ((isCompact_closedBall c R).inter_riemannZetaZeros_finite).toFinset
 
 /-- Membership in `riemannZetaZerosClosedBall c R`: `z` is a zero of `ζ` with `‖z - c‖ ≤ R`. -/
+@[simp]
 theorem mem_riemannZetaZerosClosedBall {c z : ℂ} {R : ℝ} :
     z ∈ riemannZetaZerosClosedBall c R ↔ ‖z - c‖ ≤ R ∧ riemannZeta z = 0 := by
   simp [riemannZetaZerosClosedBall, dist_eq_norm, mem_riemannZetaZeros]
