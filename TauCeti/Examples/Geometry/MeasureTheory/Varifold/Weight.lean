@@ -91,9 +91,11 @@ abbrev Plane : Type := EuclideanSpace ℝ (Fin 2)
 abbrev e (i : Fin 2) : Plane :=
   EuclideanSpace.single i 1
 
+/-- The standard basis vectors are nonzero. -/
 theorem e_ne_zero (i : Fin 2) : e i ≠ 0 := by
   simp [e]
 
+/-- The standard basis vectors are unit vectors. -/
 theorem norm_e (i : Fin 2) : ‖e i‖ = 1 := by
   simp [e]
 
@@ -221,9 +223,11 @@ def axisMap (t : ℝ) : Plane :=
 theorem axisMap_def (t : ℝ) : axisMap t = t • e 0 :=
   (rfl)
 
+/-- `‖t e₀‖ = |t|`. -/
 theorem norm_axisMap (t : ℝ) : ‖axisMap t‖ = |t| := by
   simp [axisMap_def, norm_smul]
 
+/-- The `x`-axis is a closed embedding of `ℝ`. -/
 theorem isClosedEmbedding_axisMap : Topology.IsClosedEmbedding axisMap := by
   have h := TauCeti.isClosedEmbedding_add_smul_left (0 : Plane) (e_ne_zero 0) (𝕜 := ℝ)
   simpa only [zero_add, ← axisMap_def] using h
