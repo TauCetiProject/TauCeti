@@ -23,16 +23,17 @@ equation
 in the sense of `TauCeti.IsWeakCauchyRiemannOn p U J η u`, for finite `p > 2`, satisfying the
 totally real boundary condition `⟪Λ, J(s, u s) u s⟫ = 0` on `ℝ ∩ Ω`. This follows from
 `u(s) ∈ Λ` when `⟪Λ, J(s, x) Λ⟫ = 0` for `x ∈ Λ`, as for `J(s, x) = i` and `Λ ⊥ iΛ`
-(`TauCeti.isWeakCRSolutionHalf_of_isWeakCauchyRiemannOn_of_mem`). This file proves that `u` is
-then a weak solution up to the boundary, in the sense of `TauCeti.IsWeakCRSolutionHalf`, of the
-linear equation
+(`TauCeti.exists_isWeakCRSolutionHalf_of_isWeakCauchyRiemannOn_of_mem`). This file proves that
+`u` is then a weak solution up to the boundary, in the sense of `TauCeti.IsWeakCRSolutionHalf`, of
+the linear equation
 
 `∂ₛξ + A ∂ₜξ = f`, `A(z) = J(z, u z)`, `f(z) = η(z, u z)`,
 
 with the boundary condition carried by `Λ` and `DA` a weak derivative of the frozen coefficient
 `A`. This is the step of McDuff–Salamon's proof of Theorem B.4.1 that freezes the solution in
 the coefficients at the boundary, as `TauCeti.memWkpLoc_of_isWeakCauchyRiemannOn` does in the
-interior, and it is what lets PH3.4's linear regularity up to the boundary run the bootstrap.
+interior, so that the linear regularity of `TauCeti.IsWeakCRSolutionHalf` up to the boundary
+applies to `u`.
 
 The coefficient `A` is in `W^{1,p}` up to the axis when `J` is `C¹` near the graph of `u` over
 `U`, by the half-disc composition theorem `TauCeti.MemWkpLoc.contDiffOn_comp_graph_succ_halfPlane`
@@ -47,9 +48,9 @@ equation makes `η(z, u z)` locally integrable up to the axis.
 * `TauCeti.IsWeakCauchyRiemannOn.isWeakCRSolutionHalf`: for any weak derivative `DA` of the
   frozen coefficient, locally `Lᵖ` up to the axis, with `p ≥ 2` (including `p = ∞`), the linear
   weak equation up to the boundary holds.
-* `TauCeti.isWeakCRSolutionHalf_of_isWeakCauchyRiemannOn`: for `J` of class `C¹` near the graph
-  and `p > 2`, such a weak derivative `DA` exists.
-* `TauCeti.isWeakCRSolutionHalf_of_isWeakCauchyRiemannOn_of_mem`: the same for the boundary
+* `TauCeti.exists_isWeakCRSolutionHalf_of_isWeakCauchyRiemannOn`: for `J` of class `C¹` near the
+  graph and `p > 2`, such a weak derivative `DA` exists.
+* `TauCeti.exists_isWeakCRSolutionHalf_of_isWeakCauchyRiemannOn_of_mem`: the same for the boundary
   condition `u(s) ∈ Λ` and coefficients with `⟪Λ, J(s, x) Λ⟫ = 0` for `x ∈ Λ`.
 
 ## References
@@ -102,7 +103,7 @@ of `∂ₛu + J(z, u) ∂ₜu = η(z, u)` on `U` with `⟪Λ, J(s, u s) u s⟫ =
 coefficient `A(z) = J(z, u z)` has a weak derivative `DA` on `Ω ∩ {0 < t}`, locally `Lᵖ` up to
 the axis, and `u` is a weak solution up to the boundary of `∂ₛξ + A ∂ₜξ = η(z, u z)` with
 boundary values in `Λ`. -/
-theorem isWeakCRSolutionHalf_of_isWeakCauchyRiemannOn (hp : 2 < p) (hp' : p ≠ ⊤)
+theorem exists_isWeakCRSolutionHalf_of_isWeakCauchyRiemannOn (hp : 2 < p) (hp' : p ≠ ⊤)
     (hW : IsOpen W) (hJ : ContDiffOn ℝ 1 (fun x : ℂ × V => J x.1 x.2) (W ∩ {x | 0 ≤ x.1.im}))
     (huW : ∀ z ∈ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im}, (z, u z) ∈ W)
     (hΛ : ∀ s : ℝ, (s : ℂ) ∈ Ω → ∀ v ∈ Λ, ⟪v, J s (u s) (u s)⟫_ℝ = 0)
@@ -123,10 +124,10 @@ theorem isWeakCRSolutionHalf_of_isWeakCauchyRiemannOn (hp : 2 < p) (hp' : p ≠ 
     (memWkpLoc_zero_iff.1 hDAp) (hAc.clm_apply h.continuousOn) hΛ⟩
 
 /-- **Freezing the coefficients at the boundary, for `u(s) ∈ Λ`.** The case of
-`TauCeti.isWeakCRSolutionHalf_of_isWeakCauchyRiemannOn` in which the boundary condition is
+`TauCeti.exists_isWeakCRSolutionHalf_of_isWeakCauchyRiemannOn` in which the boundary condition is
 `u(s) ∈ Λ` on `ℝ ∩ Ω` and `⟪Λ, J(s, x) Λ⟫ = 0` for real `s ∈ Ω` and `x ∈ Λ`, as for `J(s, x) = i`
 and a totally real `Λ` orthogonal to `iΛ`. -/
-theorem isWeakCRSolutionHalf_of_isWeakCauchyRiemannOn_of_mem (hp : 2 < p) (hp' : p ≠ ⊤)
+theorem exists_isWeakCRSolutionHalf_of_isWeakCauchyRiemannOn_of_mem (hp : 2 < p) (hp' : p ≠ ⊤)
     (hW : IsOpen W) (hJ : ContDiffOn ℝ 1 (fun x : ℂ × V => J x.1 x.2) (W ∩ {x | 0 ≤ x.1.im}))
     (huW : ∀ z ∈ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im}, (z, u z) ∈ W)
     (huΛ : ∀ s : ℝ, (s : ℂ) ∈ Ω → u s ∈ Λ)
@@ -136,7 +137,7 @@ theorem isWeakCRSolutionHalf_of_isWeakCauchyRiemannOn_of_mem (hp : 2 < p) (hp' :
       HasWeakFDerivOn volume Ω.upperHalf (fun z => J z (u z)) DA ∧
         MemLpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) DA ∧
         IsWeakCRSolutionHalf p Ω Λ (fun z => J z (u z)) DA 0 u (fun z => η z (u z)) :=
-  isWeakCRSolutionHalf_of_isWeakCauchyRiemannOn hp hp' hW hJ huW
+  exists_isWeakCRSolutionHalf_of_isWeakCauchyRiemannOn hp hp' hW hJ huW
     (fun s hs v hv => hJΛ s hs _ (huΛ s hs) v hv _ (huΛ s hs)) h
 
 end TauCeti
