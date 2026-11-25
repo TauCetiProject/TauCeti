@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.OpenPos
 public import Mathlib.MeasureTheory.Measure.Restrict
 public import Mathlib.Topology.Bases
+public import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Gluing functions along a sequence of sets
@@ -27,13 +29,20 @@ of a set holds almost everywhere on that set, even if the cover is uncountable: 
   function.
 * `TauCeti.ae_restrict_of_subset_iUnion_isOpen`: almost-everywhere statements on the members of an
   open cover hold almost everywhere on the covered set.
+* `TauCeti.eqOn_closure_inter_of_ae_eq`: two functions continuous on `closure U ∩ V`, for open `U`
+  and `V`, which agree almost everywhere on `U ∩ V` agree on `closure U ∩ V`.
+* `TauCeti.exists_holderOnWith_closure_of_forall_ae_eq`: Hölder functions on the balls of a cover
+  of a compact closure `closure U`, each agreeing almost everywhere on `U` with one function `F`,
+  glue to a single Hölder function on `closure U`, with a constant uniform over all such pieces.
+  This is how local regularity estimates up to the boundary assemble into a global one.
 -/
 
 public section
 
 namespace TauCeti
 
-open MeasureTheory Filter
+open MeasureTheory Filter Metric Set
+open scoped NNReal
 
 variable {X : Type*} [MeasurableSpace X] {μ : Measure X}
 
@@ -66,5 +75,86 @@ theorem ae_restrict_of_subset_iUnion_isOpen [TopologicalSpace X] [SecondCountabl
   have : Countable T := hTc.to_subtype
   rw [← hT, Set.biUnion_eq_iUnion] at hs
   exact ae_mono (Measure.restrict_mono_set μ hs) ((ae_restrict_iUnion_iff _ _).2 fun i => h i)
+
+/-- **Continuous functions agreeing almost everywhere agree up to the boundary.** For open sets
+`U` and `V` and a measure that charges every nonempty open set, two functions continuous on
+`closure U ∩ V` which agree almost everywhere on `U ∩ V` agree on `closure U ∩ V`: they agree on
+the open set `U ∩ V` by continuity, and `U ∩ V` is dense in `closure U ∩ V`. -/
+theorem eqOn_closure_inter_of_ae_eq [TopologicalSpace X] [μ.IsOpenPosMeasure] {Y : Type*}
+    [TopologicalSpace Y] [T2Space Y] {U V : Set X} (hU : IsOpen U) (hV : IsOpen V) {f g : X → Y}
+    (hf : ContinuousOn f (closure U ∩ V)) (hg : ContinuousOn g (closure U ∩ V))
+    (hfg : f =ᵐ[μ.restrict (U ∩ V)] g) : EqOn f g (closure U ∩ V) := by
+  have hsub : U ∩ V ⊆ closure U ∩ V := inter_subset_inter_left _ subset_closure
+  refine (μ.eqOn_open_of_ae_eq hfg (hU.inter hV) (hf.mono hsub) (hg.mono hsub)).of_subset_closure
+    hf hg hsub fun x hx => ?_
+  rw [inter_comm U V]
+  exact hV.inter_closure ⟨hx.2, hx.1⟩
+
+/-- **Gluing Hölder pieces that agree almost everywhere.** Let `U` be open with compact closure in
+a pseudometric space with a measure charging every nonempty open set, and assign to each
+`x ∈ closure U` a radius `ρ x > 0` and a weight `κ x`. Then there is a constant `A`, depending only
+on `U`, `ρ`, `κ` and `β`, with the following property. Suppose that, for each `x ∈ closure U`, a
+function `g x` is `β`-Hölder with constant `κ x * B` and bounded by `κ x * B` on
+`B(x, ρ x) ∩ closure U`, and agrees almost everywhere on `U ∩ B(x, ρ x)` with one function `F`.
+Then the pieces agree with each other where their balls overlap, and glue to a function `h` on
+`closure U` which is `β`-Hölder with constant `A * B`, bounded by `A * B`, agrees with every piece
+on its ball and agrees with `F` almost everywhere on `U`. -/
+theorem exists_holderOnWith_closure_of_forall_ae_eq [PseudoMetricSpace X]
+    [OpensMeasurableSpace X] [μ.IsOpenPosMeasure] {Y : Type*} [NormedAddCommGroup Y] {U : Set X}
+    (hU : IsOpen U) (hc : IsCompact (closure U)) {β : ℝ≥0} (hβ : 0 < β) {ρ : X → ℝ}
+    (hρ : ∀ x ∈ closure U, 0 < ρ x) (κ : X → ℝ≥0) :
+    ∃ A : ℝ≥0, ∀ {F : X → Y} {g : X → X → Y} {B : ℝ≥0},
+      (∀ x ∈ closure U, HolderOnWith (κ x * B) β (g x) (ball x (ρ x) ∩ closure U)) →
+      (∀ x ∈ closure U, ∀ y ∈ ball x (ρ x) ∩ closure U, ‖g x y‖ ≤ κ x * B) →
+      (∀ x ∈ closure U, g x =ᵐ[μ.restrict (U ∩ ball x (ρ x))] F) →
+      ∃ h : X → Y, HolderOnWith (A * B) β h (closure U) ∧ (∀ y ∈ closure U, ‖h y‖ ≤ A * B) ∧
+        (∀ x ∈ closure U, EqOn h (g x) (ball x (ρ x) ∩ closure U)) ∧ F =ᵐ[μ.restrict U] h := by
+  obtain ⟨t, hts, hcover⟩ := hc.elim_nhds_subcover (fun x => ball x (ρ x)) fun x hx =>
+    ball_mem_nhds x (hρ x hx)
+  -- The weight `D` bounds every piece of the finite subcover, and the Hölder constants of the
+  -- pieces are rescaled to `κ x / D` times the bound `D * B` of the glued function.
+  set D : ℝ≥0 := 1 + ∑ z ∈ t, κ z
+  have hD : D ≠ 0 := (lt_of_lt_of_le one_pos le_self_add).ne'
+  obtain ⟨A, hA⟩ := hc.exists_holderOnWith_of_forall_holderOnWith_ball_inter (Y := Y) (α := β) hρ
+    fun x => κ x / D
+  refine ⟨max (A * D) D, fun {F g B} hhol hbd hae => ⟨fun y => g y y, ?_⟩⟩
+  -- Two pieces agree on the overlap of their balls, since both agree with `F` there.
+  have heq : ∀ x ∈ closure U, EqOn (fun y => g y y) (g x) (ball x (ρ x) ∩ closure U) := by
+    intro x hx y hy
+    have hsx : closure U ∩ (ball x (ρ x) ∩ ball y (ρ y)) ⊆ ball x (ρ x) ∩ closure U :=
+      fun w hw => ⟨hw.2.1, hw.1⟩
+    have hsy : closure U ∩ (ball x (ρ x) ∩ ball y (ρ y)) ⊆ ball y (ρ y) ∩ closure U :=
+      fun w hw => ⟨hw.2.2, hw.1⟩
+    have hUy : U ∩ (ball x (ρ x) ∩ ball y (ρ y)) ⊆ U ∩ ball y (ρ y) := fun w hw => ⟨hw.1, hw.2.2⟩
+    have hUx : U ∩ (ball x (ρ x) ∩ ball y (ρ y)) ⊆ U ∩ ball x (ρ x) := fun w hw => ⟨hw.1, hw.2.1⟩
+    refine eqOn_closure_inter_of_ae_eq (μ := μ) hU (isOpen_ball.inter isOpen_ball)
+      (((hhol y hy.2).continuousOn hβ).mono hsy) (((hhol x hx).continuousOn hβ).mono hsx)
+      (((hae y hy.2).filter_mono (ae_mono (Measure.restrict_mono hUy le_rfl))).trans
+        ((hae x hx).filter_mono (ae_mono (Measure.restrict_mono hUx le_rfl))).symm)
+      ⟨hy.2, hy.1, mem_ball_self (hρ y hy.2)⟩
+  -- Every point of `closure U` lies in a ball of the finite subcover.
+  have hmem : ∀ y ∈ closure U, ∃ z ∈ t, y ∈ ball z (ρ z) := fun y hy => by
+    simpa only [mem_iUnion₂, exists_prop] using hcover hy
+  have hbound : ∀ y ∈ closure U, ‖g y y‖ ≤ D * B := fun y hy => by
+    obtain ⟨z, hz, hyz⟩ := hmem y hy
+    rw [show g y y = g z y from heq z (hts z hz) ⟨hyz, hy⟩]
+    refine (hbd z (hts z hz) y ⟨hyz, hy⟩).trans ?_
+    gcongr
+    exact le_add_left (Finset.single_le_sum (fun _ _ => zero_le) hz)
+  have hAB := hA (f := fun y => g y y) (B := D * B) (fun y hy => by exact_mod_cast hbound y hy)
+    fun x hx => ((hhol x hx).congr (heq x hx).symm).mono_const (le_of_eq (by
+      rw [← mul_assoc, div_mul_cancel₀ _ hD]))
+  refine ⟨hAB.mono_const (by rw [← mul_assoc]; gcongr; exact le_max_left _ _),
+    fun y hy => (hbound y hy).trans (by gcongr; exact le_max_right _ _), heq, ?_⟩
+  -- `F` agrees with the piece of each ball of the finite subcover, hence with `h`.
+  rw [Filter.EventuallyEq]
+  refine ae_restrict_of_ae_restrict_of_subset (t := ⋃ z ∈ t, U ∩ ball z (ρ z)) (fun y hy => ?_)
+    ((ae_restrict_biUnion_finset_iff (μ := μ) _ t _).2 fun z hz => ?_)
+  · obtain ⟨z, hz, hyz⟩ := hmem y (subset_closure hy)
+    exact mem_iUnion₂.2 ⟨z, hz, hy, hyz⟩
+  · filter_upwards [hae z (hts z hz), ae_restrict_mem (hU.inter isOpen_ball).measurableSet]
+      with y hy hyU
+    rw [show g y y = g z y from heq z (hts z hz) ⟨hyU.2, subset_closure hyU.1⟩]
+    exact hy.symm
 
 end TauCeti
