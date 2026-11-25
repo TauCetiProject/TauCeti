@@ -29,7 +29,8 @@ bijection from conjugacy classes of nilpotent endomorphisms of `V` onto the part
 
 For the standard basis of `Fin n → R` there is the single-block form `TauCeti.finShift R n`,
 `eᵢ ↦ e_(i+1)` and `e_(n-1) ↦ 0`, given coordinatewise by `(finShift R n v) j = v (j - 1)` for
-`j ≥ 1`; it is nilpotent (`TauCeti.finShift_pow_eq_zero`).
+`j ≥ 1`; it is the chain shift of the standard basis viewed as a single chain, so it is
+nilpotent (`TauCeti.isNilpotent_finShift`).
 
 ## References
 
@@ -204,47 +205,47 @@ namespace TauCeti
 variable {R : Type*} [Semiring R]
 
 variable (R) in
-/-- The shift `eᵢ ↦ e_(i+1)` on `Fin n → R`, with `e_(n-1) ↦ 0`: `(finShift R n v) j = v (j - 1)`
-for `j ≥ 1`, and `(finShift R n v) 0 = 0`. -/
+/-- The shift `eᵢ ↦ e_(i+1)` on `Fin n → R`, with `e_(n-1) ↦ 0`: the chain shift of the standard
+basis, viewed as a single chain of length `n`. Coordinatewise, `(finShift R n v) j = v (j - 1)`
+for `j ≥ 1`, and `(finShift R n v) 0 = 0` (`TauCeti.finShift_apply`). -/
 noncomputable def finShift (n : ℕ) : Module.End R (Fin n → R) :=
-  LinearMap.pi fun j ↦ if _ : (j : ℕ) = 0 then 0 else LinearMap.proj ⟨j - 1, by omega⟩
+  ((Pi.basisFun R (Fin n)).reindex (Equiv.uniqueSigma fun _ : Unit ↦ Fin n).symm).chainShift
 
-@[simp]
-theorem finShift_apply {n : ℕ} (v : Fin n → R) (j : Fin n) :
-    finShift R n v j = if _ : (j : ℕ) = 0 then 0 else v ⟨j - 1, by omega⟩ := by
-  by_cases h : (j : ℕ) = 0 <;> simp [finShift, h]
+/-- The shift sends `eᵢ` to `e_(i+1)`, or to zero when `i = n - 1`. -/
+theorem finShift_single_eq_dite {n : ℕ} (i : Fin n) :
+    finShift R n (Pi.single i 1) = if h : (i : ℕ) + 1 < n then Pi.single ⟨i + 1, h⟩ 1 else 0 := by
+  have := Basis.chainShift_basis
+    ((Pi.basisFun R (Fin n)).reindex (Equiv.uniqueSigma fun _ : Unit ↦ Fin n).symm) () i
+  simpa [finShift, Basis.reindex_apply, Equiv.uniqueSigma_apply] using this
 
 /-- The shift sends `eᵢ` to `e_(i+1)`. -/
 theorem finShift_single {n : ℕ} (i : Fin n) (hi : (i : ℕ) + 1 < n) :
     finShift R n (Pi.single i 1) = Pi.single ⟨i + 1, hi⟩ 1 := by
-  funext j
-  simp only [finShift_apply, Pi.single_apply, Fin.ext_iff]
-  split_ifs <;> first | rfl | omega
+  simp [finShift_single_eq_dite, hi]
 
 /-- The shift kills the last basis vector `e_(n-1)`. -/
 theorem finShift_single_of_add_one_eq {n : ℕ} (i : Fin n) (hi : (i : ℕ) + 1 = n) :
     finShift R n (Pi.single i 1) = 0 := by
-  funext j
-  have := j.isLt
-  simp only [finShift_apply, Pi.single_apply, Fin.ext_iff, Pi.zero_apply]
-  split_ifs <;> first | rfl | omega
+  simp [finShift_single_eq_dite, hi]
 
-/-- The `k`-th power of the shift kills the first `k` coordinates. -/
-theorem finShift_pow_apply_eq_zero {n : ℕ} (k : ℕ) (v : Fin n → R) (j : Fin n)
-    (hj : (j : ℕ) < k) : (finShift R n ^ k) v j = 0 := by
-  induction k generalizing j with
-  | zero => omega
-  | succ k ih =>
-    rw [pow_succ', mul_apply_eq_comp, finShift_apply]
-    split_ifs with h
-    · rfl
-    · exact ih _ (by simp; omega)
+@[simp]
+theorem finShift_apply {n : ℕ} (v : Fin n → R) (j : Fin n) :
+    finShift R n v j = if _ : (j : ℕ) = 0 then 0 else v ⟨j - 1, by omega⟩ := by
+  have : finShift R n =
+      LinearMap.pi fun j : Fin n ↦
+        if _ : (j : ℕ) = 0 then 0 else LinearMap.proj ⟨j - 1, by omega⟩ :=
+    (Pi.basisFun R (Fin n)).ext fun i ↦ funext fun j ↦ by
+      have := j.isLt
+      rw [Pi.basisFun_apply, finShift_single_eq_dite]
+      simp only [dite_apply, LinearMap.pi_apply, Pi.single_apply, Fin.ext_iff, Pi.zero_apply,
+        apply_dite (fun f : (Fin n → R) →ₗ[R] R ↦ f (Pi.single i 1)), LinearMap.zero_apply,
+        LinearMap.coe_proj, Function.eval]
+      split_ifs <;> first | rfl | omega
+  rw [this]
+  by_cases h : (j : ℕ) = 0 <;> simp [h]
 
-/-- The shift on `Fin n → R` is nilpotent: its `n`-th power vanishes. -/
-theorem finShift_pow_eq_zero (n : ℕ) : finShift R n ^ n = 0 :=
-  LinearMap.ext fun v ↦ funext fun j ↦ finShift_pow_apply_eq_zero n v j j.isLt
-
+/-- The shift on `Fin n → R` is nilpotent. -/
 theorem isNilpotent_finShift (n : ℕ) : IsNilpotent (finShift R n) :=
-  ⟨n, finShift_pow_eq_zero n⟩
+  Basis.isNilpotent_chainShift _
 
 end TauCeti
