@@ -93,6 +93,13 @@ theorem coe_compGL_symm (u : GL (m × ι) R) :
     ((compGL m ι R).symm u : Matrix m m (Matrix ι ι R)) = (comp m m ι ι R).symm u :=
   (rfl)
 
+omit [Fintype m] [Fintype ι] in
+/-- `Matrix.comp` flattens `1 + (r Eₐᵦ) Eᵢⱼ` to `1 + r E₍ᵢ,ₐ₎₍ⱼ,ᵦ₎`. -/
+theorem comp_one_add_single_single (i j : m) (a b : ι) (r : R) :
+    comp m m ι ι R (1 + single i j (single a b r)) = 1 + single (i, a) (j, b) r := by
+  rw [← compAddEquiv_apply, map_add, compAddEquiv_apply, compAddEquiv_apply, comp_one,
+    comp_single_single]
+
 variable (ι R) in
 /-- **Block flattening at a finite stage**: an invertible `k × k` matrix with entries in the
 `ι × ι` matrices over `R` is an invertible matrix of size `k * n` over `R`, where `n` is the
@@ -113,6 +120,17 @@ theorem flattenGL_apply_finProdFinEquiv {k : ℕ} (u : GL (Fin k) (Matrix ι ι 
       (u : Matrix (Fin k) (Fin k) (Matrix ι ι R)) i j a b := by
   simp [flattenGL]
 
+/-- The blocks of the inverse flattening: the entry at `(a, b)` of the block `(i, j)` is the entry
+at the indices `e a + n * i` and `e b + n * j`. -/
+@[simp]
+theorem flattenGL_symm_apply {k : ℕ} (u : GL (Fin (k * Fintype.card ι)) R) (i j : Fin k)
+    (a b : ι) :
+    ((flattenGL ι R k).symm u : Matrix (Fin k) (Fin k) (Matrix ι ι R)) i j a b =
+      (u : Matrix (Fin (k * Fintype.card ι)) (Fin (k * Fintype.card ι)) R)
+        (finProdFinEquiv (i, Fintype.equivFin ι a))
+        (finProdFinEquiv (j, Fintype.equivFin ι b)) := by
+  rw [← flattenGL_apply_finProdFinEquiv, MulEquiv.apply_symm_apply]
+
 /-- Flattening commutes with applying a ring homomorphism to the entries. -/
 theorem unitsMap_mapMatrix_flattenGL {S : Type*} [Semiring S] (f : R →+* S) {k : ℕ}
     (u : GL (Fin k) (Matrix ι ι R)) :
@@ -131,12 +149,13 @@ variable {m ι R : Type*} [Fintype m] [DecidableEq m] [Fintype ι] [DecidableEq 
 
 /-- The flattening of the elementary matrix `eᵢⱼ(r Eₐᵦ)` over `Matrix ι ι R` is the elementary
 matrix `e₍ᵢ,ₐ₎₍ⱼ,ᵦ₎(r)` over `R`. -/
+@[simp]
 theorem compGL_transvectionUnit_single {i j : m} (hij : i ≠ j) (a b : ι) (r : R) :
     compGL m ι R (transvectionUnit hij (single a b r)) =
       transvectionUnit (fun h ↦ hij (congrArg Prod.fst h) : (i, a) ≠ (j, b)) r := by
   ext : 1
   rw [coe_compGL, coe_transvectionUnit_eq_one_add_single, coe_transvectionUnit_eq_one_add_single,
-    ← compRingEquiv_apply, map_add, map_one, compRingEquiv_apply, comp_single_single]
+    comp_one_add_single_single]
 
 /-- Flattening carries elementary matrices over `Matrix ι ι R` to elementary matrices over `R`:
 `eᵢⱼ(X)` flattens to the product of the elementary matrices `e₍ᵢ,ₐ₎₍ⱼ,ᵦ₎(X a b)`. -/
@@ -152,18 +171,6 @@ theorem map_compGL_elementarySubgroup_le :
   | h_std_basis a b r =>
     rw [Subgroup.mem_comap, MulEquiv.coe_toMonoidHom, compGL_transvectionUnit_single]
     exact transvectionUnit_mem_elementarySubgroup _ _
-
-/-- For distinct block indices `i ≠ k` and `B * A = 0`, the commutator `⁅eᵢₖ(A), eₖᵢ(B)⁆` is the
-block diagonal matrix `1 + (A * B) Eᵢᵢ`. -/
-private theorem coe_commutatorElement_transvectionUnit_of_mul_eq_zero {S : Type*} [Ring S]
-    {i k : m} (hik : i ≠ k) {A B : S} (hBA : B * A = 0) :
-    (⁅transvectionUnit hik A, transvectionUnit hik.symm B⁆ : GL m S) =
-      (1 : Matrix m m S) + single i i (A * B) := by
-  simp only [commutatorElement_def, Units.val_mul, transvectionUnit_inv,
-    coe_transvectionUnit_eq_one_add_single]
-  simp [add_mul, mul_add, hik, hik.symm, single_mul_single_same, hBA, mul_assoc,
-    ← single_neg]
-  abel
 
 /-- With two distinct block indices, every elementary matrix over `R` of size `m × ι` is the
 flattening of an elementary matrix over `Matrix ι ι R`. -/
@@ -183,12 +190,11 @@ theorem elementarySubgroup_le_map_compGL [Nontrivial m] :
       rw [commutatorElement_def]
       exact mul_mem (mul_mem (mul_mem h₁ h₂) (inv_mem h₁)) (inv_mem h₂)
     convert hmem using 1
+    rw [MulEquiv.symm_apply_eq]
     ext : 1
-    rw [coe_commutatorElement_transvectionUnit_of_mul_eq_zero hik
-      (by simp [hab.symm])]
-    rw [coe_compGL_symm, coe_transvectionUnit_eq_one_add_single, ← compRingEquiv_symm_apply,
-      map_add, map_one, compRingEquiv_symm_apply, comp_symm_single, single_mul_single_same,
-      mul_one]
+    rw [coe_compGL, coe_commutatorElement_transvectionUnit_of_mul_eq_zero hik (by simp [hab.symm]),
+      single_mul_single_same, mul_one, comp_one_add_single_single,
+      coe_transvectionUnit_eq_one_add_single]
   · convert transvectionUnit_mem_elementarySubgroup hij (single a b r) using 1
     rw [MulEquiv.symm_apply_eq, compGL_transvectionUnit_single]
 
@@ -206,6 +212,28 @@ theorem compGL_mem_elementarySubgroup_iff [Nontrivial m] {u : GL m (Matrix ι ι
     compGL m ι R u ∈ elementarySubgroup (m × ι) R ↔ u ∈ elementarySubgroup m (Matrix ι ι R) := by
   rw [← map_compGL_elementarySubgroup, Subgroup.mem_map_equiv, MulEquiv.symm_apply_apply]
 
+/-- With at least two blocks, an invertible block matrix is elementary exactly when its flattening
+is. -/
+@[simp]
+theorem flattenGL_mem_elementarySubgroup_iff {k : ℕ} (hk : 2 ≤ k) {u : GL (Fin k) (Matrix ι ι R)} :
+    flattenGL ι R k u ∈ elementarySubgroup (Fin (k * Fintype.card ι)) R ↔
+      u ∈ elementarySubgroup (Fin k) (Matrix ι ι R) := by
+  have : Nontrivial (Fin k) := Fin.nontrivial_iff_two_le.2 hk
+  rw [flattenGL, MulEquiv.trans_apply, Equiv.reindexGL_mem_elementarySubgroup_iff,
+    compGL_mem_elementarySubgroup_iff]
+
+/-- The index `c + n * i` of `Fin (l * n)` is among the first `k * n` exactly when `i < k`. -/
+private theorem finProdFinEquiv_lt_mul_iff {k l n : ℕ} (i : Fin l) (c : Fin n) :
+    (finProdFinEquiv (i, c) : ℕ) < k * n ↔ (i : ℕ) < k := by
+  rw [← Nat.div_lt_iff_lt_mul c.pos, finProdFinEquiv_apply_val, Nat.add_mul_div_left _ _ c.pos,
+    Nat.div_eq_of_lt c.isLt, zero_add]
+
+/-- Reading the index `c + n * i` of `Fin (l * n)` with `i < k` in `Fin (k * n)`. -/
+private theorem mk_finProdFinEquiv {k l n : ℕ} {i : Fin l} (c : Fin n) (hi : (i : ℕ) < k) :
+    (⟨finProdFinEquiv (i, c), (finProdFinEquiv_lt_mul_iff i c).2 hi⟩ : Fin (k * n)) =
+      finProdFinEquiv (⟨i, hi⟩, c) :=
+  Fin.ext (by simp [finProdFinEquiv_apply_val])
+
 /-- **Flattening commutes with stabilization**: flattening `u ⊕ 1` is stabilizing the
 flattening of `u`. -/
 theorem flattenGL_stabilizeGL {k l : ℕ} (h : k ≤ l) (u : GL (Fin k) (Matrix ι ι R)) :
@@ -216,32 +244,13 @@ theorem flattenGL_stabilizeGL {k l : ℕ} (h : k ≤ l) (u : GL (Fin k) (Matrix 
   obtain ⟨⟨j, d⟩, rfl⟩ := finProdFinEquiv.surjective q
   obtain ⟨a, rfl⟩ := (Fintype.equivFin ι).surjective c
   obtain ⟨b, rfl⟩ := (Fintype.equivFin ι).surjective d
-  -- the first `k * n` indices of `Fin (l * n)` are those of the first `k` blocks
-  have hlt (i : Fin l) (c : Fin (Fintype.card ι)) :
-      (finProdFinEquiv (i, c) : ℕ) < k * Fintype.card ι ↔ (i : ℕ) < k := by
-    simp only [finProdFinEquiv_apply_val]
-    have hc := c.isLt
-    rw [Nat.mul_comm k]
-    constructor
-    · intro hi
-      by_contra hk
-      have := Nat.mul_le_mul_left (Fintype.card ι) (not_lt.1 hk)
-      omega
-    · intro hi
-      have := Nat.mul_le_mul_left (Fintype.card ι) (Nat.succ_le_of_lt hi)
-      rw [Nat.mul_succ] at this
-      omega
-  have hcast {i : Fin l} {c : Fin (Fintype.card ι)} (hi : (i : ℕ) < k) :
-      (⟨finProdFinEquiv (i, c), (hlt i c).2 hi⟩ :
-        Fin (k * Fintype.card ι)) = finProdFinEquiv (⟨i, hi⟩, c) :=
-    Fin.ext (by simp [finProdFinEquiv_apply_val])
   rw [flattenGL_apply_finProdFinEquiv, coe_stabilizeGL_apply, coe_stabilizeGL_apply]
   split_ifs with h₁ h₂ h₂
-  · rw [hcast h₁.1, hcast h₁.2, flattenGL_apply_finProdFinEquiv]
-  · exact absurd ⟨(hlt _ _).2 h₁.1,
-      (hlt _ _).2 h₁.2⟩ h₂
-  · exact absurd ⟨(hlt _ _).1 h₂.1,
-      (hlt _ _).1 h₂.2⟩ h₁
+  · rw [mk_finProdFinEquiv _ h₁.1, mk_finProdFinEquiv _ h₁.2, flattenGL_apply_finProdFinEquiv]
+  · exact absurd ⟨(finProdFinEquiv_lt_mul_iff _ _).2 h₁.1,
+      (finProdFinEquiv_lt_mul_iff _ _).2 h₁.2⟩ h₂
+  · exact absurd ⟨(finProdFinEquiv_lt_mul_iff _ _).1 h₂.1,
+      (finProdFinEquiv_lt_mul_iff _ _).1 h₂.2⟩ h₁
   · rcases eq_or_ne i j with rfl | hij
     · rcases eq_or_ne a b with rfl | hab
       · simp
@@ -284,13 +293,11 @@ private theorem flattenHom_injective [Nonempty ι] : Function.Injective (flatten
   have hkl : k ≤ l := le_max_of_le_left (le_max_left _ _)
   have hNl : N ≤ l * Fintype.card ι :=
     (le_max_of_le_left (le_max_right _ _) : N ≤ l).trans (Nat.le_mul_of_pos_right _ hn)
-  have : Nontrivial (Fin l) := Fin.nontrivial_iff_two_le.2 (le_max_right _ _)
   rw [mk_eq_one_iff]
   refine ⟨l, hkl, ?_⟩
   have hflat := map_stabilizeGL_elementarySubgroup_le hNl ⟨_, hNu, rfl⟩
-  rw [stabilizeGL_stabilizeGL, ← flattenGL_stabilizeGL hkl, flattenGL,
-    MulEquiv.trans_apply, Equiv.reindexGL_mem_elementarySubgroup_iff] at hflat
-  exact compGL_mem_elementarySubgroup_iff.1 hflat
+  rw [stabilizeGL_stabilizeGL, ← flattenGL_stabilizeGL hkl] at hflat
+  exact (flattenGL_mem_elementarySubgroup_iff (le_max_right _ _)).1 hflat
 
 /-- Flattening is surjective on `K₁`: every class of `R` is represented at a stage `k * n`, where
 flattening is bijective. -/
