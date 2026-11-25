@@ -198,15 +198,14 @@ variable (K) {n₁ n₂ m : ℕ} (h : n₁ * n₂ = m)
 /-- Multiplication by `n₂`, as a chain map `K / n₁ K ⟶ K / m K` for `m = n₁ n₂`. -/
 noncomputable def quotSMulTopSMul : K.quotSMulTop n₁ ⟶ K.quotSMulTop m :=
   quotSMulTopDesc (n₂ • K.toQuotSMulTop m) fun i x ↦ by
-    rw [nsmul_f_apply, AddCommGrpCat.hom_nsmul, AddMonoidHom.nsmul_apply, map_nsmul, smul_smul,
-      mul_comm, h, smul_toQuotSMulTop_f_apply]
+    simp only [nsmul_f_apply, AddCommGrpCat.hom_nsmul, AddMonoidHom.nsmul_apply, map_nsmul]
+    rw [smul_smul, h, smul_toQuotSMulTop_f_apply]
 
 @[simp]
 lemma quotSMulTopSMul_f_apply {i : ι} (x : K.X i) :
     ((K.quotSMulTopSMul h).f i).hom (((K.toQuotSMulTop n₁).f i).hom x) =
       ((K.toQuotSMulTop m).f i).hom (n₂ • x) := by
-  rw [quotSMulTopSMul, quotSMulTopDesc_f_apply, nsmul_f_apply, AddCommGrpCat.hom_nsmul,
-    AddMonoidHom.nsmul_apply, map_nsmul]
+  simp [quotSMulTopSMul]
 
 @[reassoc (attr := simp)]
 lemma toQuotSMulTop_comp_quotSMulTopSMul :
