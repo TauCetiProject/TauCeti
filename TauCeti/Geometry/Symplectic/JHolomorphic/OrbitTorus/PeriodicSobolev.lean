@@ -121,7 +121,7 @@ local notation "𝕐[" F "]" => ℓ²(ℕ, WithLp 2 (CircleSobolev 0 F × Circle
 
 section ProdMap
 
-variable (T : ℝ) [hT : Fact (0 < T)] {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
+variable (T : ℝ) [hT : Fact (0 < T)] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
   [FiniteDimensional ℂ F] {E E' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup E'] [NormedSpace ℝ E'] (S : C(AddCircle T, F →L[ℝ] F))
   {B : E →L[ℝ] E'}

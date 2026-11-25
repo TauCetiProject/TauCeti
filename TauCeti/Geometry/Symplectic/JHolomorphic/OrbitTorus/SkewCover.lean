@@ -474,9 +474,7 @@ theorem skewTorusOperator_apply_smul (ℓ σ : ℝ) {S : C(AddCircle T, F →L[�
     rw [loopOperator_smul T hS, smul_comm c I]
   · simp only [skewTorusOperator_apply, Prod.smul_snd]
     exact skewTorusModeOperator_apply_smul ((q : ℝ) * T) ℓ σ _ _
-      (loopOperator_smul ((q : ℝ) * T) (S := AddCircle.coverPullback q S) fun _ v ↦ by
-        rw [AddCircle.coverPullback_apply]
-        exact hS _ v) c x.2
+      (loopOperator_smul ((q : ℝ) * T) (coverPullback_apply_I_smul q hS)) c x.2
 
 /-- **The reference operator is complex linear.** For `S = 0` the operator `∂s + J₀ ∂t` on a skew
 cover commutes with multiplication by complex scalars, the complex structure of the Sobolev spaces

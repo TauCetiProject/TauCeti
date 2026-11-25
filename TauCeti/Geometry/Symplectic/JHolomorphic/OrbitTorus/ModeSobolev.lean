@@ -74,7 +74,10 @@ which is infinitesimally symplectic with `S`, so the results here apply to it (f
 in `s`, see `TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.OrbitTwistSobolev`). Together
 with the twist along the circle factor it is also treated in
 `TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.DoublyAntiperiodic`, on the double cover of
-`γ`, by restricting the operator of this file. Finite covers of the torus are not treated here.
+`γ`, by restricting the operator of this file. Finite covers of the torus are treated in
+`TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.Cover` and
+`TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.SkewCover`, the latter using the rotation
+`TauCeti.rotateMode` of this file.
 
 ## Main definitions
 
@@ -225,10 +228,12 @@ def rotateMode {ω : ℕ → ℝ} (θ : AddCircle T) (x : torusModeSobolev F ω)
     rw [lp.ampliation_apply_apply, lp.ampliation_apply_apply,
       mem_torusModeSobolev_iff.1 x.property k, rotatePair_smul_withLpProdMap_inclusion]⟩
 
+@[simp]
 theorem rotateMode_fst_apply {ω : ℕ → ℝ} (θ : AddCircle T) (x : torusModeSobolev F ω) (k : ℕ) :
     (rotateMode θ x : 𝕏[F]).1 k = rotatePair 1 θ ((x : 𝕏[F]).1 k) :=
   lp.ampliation_apply_apply _ _ _
 
+@[simp]
 theorem rotateMode_snd_apply {ω : ℕ → ℝ} (θ : AddCircle T) (x : torusModeSobolev F ω) (k : ℕ) :
     (rotateMode θ x : 𝕏[F]).2 k = rotatePair 0 θ ((x : 𝕏[F]).2 k) :=
   lp.ampliation_apply_apply _ _ _
@@ -331,7 +336,7 @@ theorem torusModeOperator_rotateMode {ω : ℕ → ℝ} {θ : AddCircle T}
     torusModeOperator T ω S (rotateMode θ x) k = rotatePair 0 θ (torusModeOperator T ω S x k) := by
   rw [torusModeOperator_apply_apply_eq, torusModeOperator_apply_apply_eq]
   refine WithLp.ofLp_injective 2 (Prod.ext ?_ ?_) <;>
-    simp [rotateMode, ← Complex.coe_smul, loopOperator_rotate_of_invariant T hS]
+    simp [← Complex.coe_smul, loopOperator_rotate_of_invariant T hS]
 
 end Operator
 
