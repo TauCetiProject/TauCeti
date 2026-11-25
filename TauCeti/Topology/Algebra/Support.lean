@@ -41,6 +41,8 @@ function transported along a homeomorphism, next to Mathlib's `mulTSupport_comp_
   `TauCeti.mulTSupport_subset_of_forall_notMem_eq_one`.
 * `HasCompactSupport.comp_of_forall_mem_imp_mem`: a function of `Ψ y` that vanishes outside `T` is
   compactly supported when the preimage of `T` under `Ψ` lies in a compact set.
+* `HasCompactSupport.comp_subtypeVal`: the restriction of a compactly supported function to a set
+  containing its topological support is compactly supported.
 * `HasCompactSupport.comp_prodMk_right` and `HasCompactSupport.comp_prodMk_left`: the slices
   `y ↦ f (x, y)` and `x ↦ f (x, y)` of a compactly supported function on a product are compactly
   supported, with multiplicative versions `HasCompactMulSupport.comp_prodMk_right` and
@@ -182,6 +184,16 @@ theorem HasCompactSupport.comp_of_forall_mem_imp_mem {X Y Z : Type*} [Topologica
     (hΨK : ∀ y, Ψ y ∈ T → y ∈ K) {k : Y → Z}
     (hkz : ∀ z ∉ T, k z = 0) : HasCompactSupport fun y ↦ k (Ψ y) :=
   HasCompactSupport.intro hK fun y hy ↦ hkz _ fun h ↦ hy (hΨK y h)
+
+/-- The restriction of a function to a set `U` containing its support closure has compact support
+if the function does. -/
+theorem HasCompactSupport.comp_subtypeVal {X M : Type*} [TopologicalSpace X] [Zero M]
+    {f : X → M} {U : Set X} (hf : HasCompactSupport f) (h : tsupport f ⊆ U) :
+    HasCompactSupport (fun x : U ↦ f x) :=
+  HasCompactSupport.intro' (K := ((↑) : U → X) ⁻¹' tsupport f)
+    (Topology.IsInducing.subtypeVal.isCompact_preimage' hf (by simpa using h))
+    ((isClosed_tsupport f).preimage continuous_subtypeVal) fun x hx ↦
+      image_eq_zero_of_notMem_tsupport (x := (x : X)) hx
 
 /-- A slice `y ↦ f (x, y)` of a function with compact multiplicative support on a product has
 compact multiplicative support. -/
