@@ -58,6 +58,8 @@ not a unit, the free module `⊕_ℕ R` is not derived `f`-complete, although `R
 * `TauCeti.isAdicComplete_iff_isDerivedComplete_and_isHausdorff`: for a finitely generated ideal,
   a module is `I`-adically complete if and only if it is derived complete and `I`-adically
   Hausdorff.
+* `TauCeti.IsDerivedComplete.le_jacobson`: if `R` is derived `I`-complete, then `I` lies in
+  the Jacobson radical of `R`.
 * `TauCeti.not_isDerivedComplete_finsupp`: `⊕_ℕ R` is not derived `f`-complete when `f` is a
   non-zero-divisor and not a unit.
 
@@ -278,6 +280,21 @@ theorem of_pow_smul_eq_bot {k : ℕ} (hk : I ^ k • (⊤ : Submodule R M) = ⊥
     IsDerivedComplete I M :=
   have := isAdicComplete_of_pow_smul_eq_bot hk
   of_isAdicComplete
+
+/-- **Derived completeness puts the ideal in the Jacobson radical.** If `R` is derived
+`I`-complete, then `I` lies in the Jacobson radical of `R`: `1 - g` is a unit for every `g ∈ I`. -/
+theorem le_jacobson (h : IsDerivedComplete I R) : I ≤ Ring.jacobson R := by
+  intro x hx
+  refine Ring.mem_jacobson_iff.2 fun y ↦ ?_
+  -- The preimage under the telescope map of the constant sequence `1` is shift-invariant by
+  -- injectivity, so it is a constant `u` with `u - g * u = 1`.
+  obtain ⟨z, hz⟩ := (h.bijective (I.neg_mem_iff.2 (I.mul_mem_right y hx))).2 fun _ ↦ (1 : R)
+  have hshift : (fun n ↦ z (n + 1)) = z :=
+    (h.bijective (I.neg_mem_iff.2 (I.mul_mem_right y hx))).1 <| funext fun n ↦ by
+      simpa using congrFun hz (n + 1) |>.trans (congrFun hz n).symm
+  have h0 := congrFun hz 0
+  rw [telescope_apply, show z (0 + 1) = z 0 from congrFun hshift 0, smul_eq_mul] at h0
+  exact .of_mul_eq_one (z 0) (by linear_combination h0)
 
 end IsDerivedComplete
 

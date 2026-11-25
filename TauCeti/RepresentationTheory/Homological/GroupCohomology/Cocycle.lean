@@ -27,6 +27,8 @@ representation:
 * `groupCohomology.isMulCocycle₁_iff_isMulCrossedHom`, `groupCohomology.IsMulCocycle₁.pow`:
   over a commutative coefficient group, `IsMulCocycle₁` agrees with `TauCeti.IsMulCrossedHom` and
   is closed under pointwise powers.
+* `groupCohomology.IsCocycle₁.add` and `groupCohomology.IsCoboundary₁.isCocycle₁`: `1`-cocycles
+  are closed under addition, and `1`-coboundaries are `1`-cocycles, for a distributive action.
 * `groupCohomology.zeroLocus`: the zero locus `{g | f g = 0}` is a subgroup of `G`, for any group
   action (not necessarily distributive) admitting the cocycle. As a set it is `f ⁻¹' {0}`
   (`groupCohomology.coe_zeroLocus`), and on `Additive M` it agrees with `oneLocus`
@@ -103,6 +105,20 @@ theorem IsCocycle₁.isMulCrossedHom_toMul {G M : Type*} [Monoid G] [CommGroup M
     TauCeti.IsMulCrossedHom (fun g => (f g).toMul) :=
   TauCeti.isMulCrossedHom_iff.mpr fun g h => by
     simpa only [toMul_add, Additive.toMul_smul] using congrArg Additive.toMul (hf g h)
+
+/-- The sum of two `1`-cocycles is a `1`-cocycle. -/
+theorem IsCocycle₁.add {G M : Type*} [Mul G] [AddCommGroup M] [DistribSMul G M] {f f' : G → M}
+    (hf : IsCocycle₁ f) (hf' : IsCocycle₁ f') : IsCocycle₁ (f + f') := fun g h => by
+  simp only [Pi.add_apply, hf g h, hf' g h, smul_add]
+  abel
+
+/-- A `1`-coboundary `g ↦ g • x - x` is a `1`-cocycle. -/
+theorem IsCoboundary₁.isCocycle₁ {G M : Type*} [Monoid G] [AddCommGroup M]
+    [DistribMulAction G M] {f : G → M} (hf : IsCoboundary₁ f) : IsCocycle₁ f := by
+  obtain ⟨x, hx⟩ := hf
+  intro g h
+  rw [← hx, ← hx, ← hx, smul_sub, mul_smul]
+  abel
 
 variable {G M : Type*} [Group G] [AddCommGroup M] [MulAction G M]
 

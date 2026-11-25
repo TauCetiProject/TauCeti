@@ -217,9 +217,10 @@ theorem IsMulCrossedHom.conj {c : H → M} (hc : IsMulCrossedHom c) (g : G) :
     IsMulCrossedHom fun x : ↥(MulAut.conj g • H) =>
       g • c ((Subgroup.equivSMul (MulAut.conj g) H).symm x) :=
   isMulCrossedHom_iff.mpr fun x y => by
-    rw [_root_.map_mul, hc.map_mul, smul_mul', Subgroup.smul_def, Subgroup.smul_def, smul_smul,
-      smul_smul, Subgroup.equivSMul_symm_apply_coe (MulAut.conj g) H x]
-    simp only [MulAut.smul_def, MulAut.conj_inv_apply, mul_assoc, mul_inv_cancel_left]
+    have hx : (((Subgroup.equivSMul (MulAut.conj g) H).symm x : H) : G) = g⁻¹ * x * g :=
+      Subgroup.equivSMul_symm_apply_coe (MulAut.conj g) H x
+    simp only [_root_.map_mul, hc.map_mul, smul_mul', Subgroup.smul_def, smul_smul, hx,
+      mul_assoc, mul_inv_cancel_left]
 
 /-- The `1`-locus of the conjugate `x ↦ g • c (g⁻¹ * x * g)` of a multiplicative crossed
 homomorphism on `H`, viewed in `G`, is the conjugate by `g` of the `1`-locus of `c`. -/

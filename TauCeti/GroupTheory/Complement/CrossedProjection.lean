@@ -34,9 +34,12 @@ Conjugating a complement by `a ∈ N` replaces its crossed projection `c` by
 `x ↦ x • a * c x * a⁻¹` (`Subgroup.IsComplement'.crossedProjection_conj_coe_smul_eq`,
 `Subgroup.IsComplement'.eq_conj_smul_iff_crossedProjection_eq_mul_inv`). When `N` is abelian this
 simplifies to the pointwise product `c x * (x • a / a)` with the principal crossed map `δ_a`
-(`Subgroup.IsComplement'.eq_conj_smul_iff_crossedProjection_eq`), and reading `N` as `Additive N`
+(`Subgroup.IsComplement'.eq_conj_smul_iff_crossedProjection_eq`, and on `H ≥ N`,
+`Subgroup.IsLocalComplement.eq_conj_smul_iff_leftProjection_eq`). Reading `N` as `Additive N`
 identifies normalized crossed maps with normalized `groupCohomology.IsCocycle₁` maps
-(`Subgroup.crossedProjectionEquiv`, `Subgroup.localCrossedProjectionEquiv`).
+(`Subgroup.crossedProjectionEquiv`, `Subgroup.localCrossedProjectionEquiv`), where adding
+`x ↦ x • a - a` conjugates the zero locus by `a`
+(`Subgroup.map_subtype_zeroLocus_add_smul_sub`).
 
 The conjugation action is explicit rather than a global instance. The additive
 coefficient action uses `Additive.distribMulAction`, and kernels use
@@ -189,9 +192,9 @@ theorem crossedProjection_conj_smul (g x : G) :
 theorem crossedProjection_conj_coe_smul_eq (a : N) (x : G) :
     (h.conj_smul (a : G)).crossedProjection x = x • a * h.crossedProjection x * a⁻¹ := by
   have hc := h.isMulCrossedHom_crossedProjection
-  rw [h.crossedProjection_conj_smul, hc.map_mul, h.crossedProjection_coe, hc.map_mul,
-    ← coe_inv, h.crossedProjection_coe, mul_smul, smul_mul', smul_mul', coe_inv, smul_inv_smul,
-    smul_inv_smul, conjugationAction_coe_smul_eq]
+  rw [h.crossedProjection_conj_smul]
+  simp only [hc.map_mul, crossedProjection_coe, ← coe_inv, mul_smul, smul_mul',
+    conjugationAction_coe_smul_eq]
   group
 
 /-- Two complements of a (not necessarily abelian) normal subgroup `N` are conjugate by `a ∈ N`
@@ -206,31 +209,6 @@ theorem eq_conj_smul_iff_crossedProjection_eq_mul_inv {D' : Subgroup G} (h' : N.
     ext x
     rw [← h'.crossedProjection_eq_one_iff, ← (h.conj_smul (a : G)).crossedProjection_eq_one_iff,
       hD, h.crossedProjection_conj_coe_smul_eq]
-
-section Commutative
-
-variable [IsMulCommutative N]
-
-/-- **Conjugation by an element of `N`.** For `a ∈ N` in an abelian normal subgroup `N`, the crossed
-projection along `a D a⁻¹` is the crossed projection along `D` times the principal crossed map
-`x ↦ x • a / a`. -/
-theorem crossedProjection_conj_coe_smul (a : N) (x : G) :
-    (h.conj_smul a).crossedProjection x = h.crossedProjection x * (x • a / a) := by
-  rw [h.crossedProjection_conj_coe_smul_eq, div_eq_mul_inv]
-  ac_rfl
-
-/-- Two complements of an abelian normal subgroup `N` are conjugate by `a ∈ N` exactly when
-their crossed projections differ by the principal crossed map `x ↦ x • a / a`. -/
-theorem eq_conj_smul_iff_crossedProjection_eq {D' : Subgroup G} (h' : N.IsComplement' D')
-    (a : N) : D' = MulAut.conj (a : G) • D ↔
-      ∀ x, h'.crossedProjection x = h.crossedProjection x * (x • a / a) := by
-  rw [h.eq_conj_smul_iff_crossedProjection_eq_mul_inv h' a]
-  refine forall_congr' fun x => eq_iff_eq_cancel_left.mpr ?_
-  rw [div_eq_mul_inv]
-  ac_rfl
-
-end Commutative
-
 end IsComplement'
 
 /-! ### Global complements and normalized multiplicative crossed homomorphisms -/
@@ -438,6 +416,65 @@ section Commutative
 
 variable [IsMulCommutative N]
 
+/-- **Conjugation by an element of `N`.** For `a ∈ N`, the left projection along the local
+complement `a K a⁻¹` of `N` in `H` is the left projection along `K` times the principal crossed
+map `x ↦ x • a / a`. -/
+theorem IsLocalComplement.leftProjection_conj_coe_smul {K H : Subgroup G}
+    (h : N.IsLocalComplement K H) (a : N) (x : H) :
+    (h.conj_smul_of_mem (h.left_le a.property)).leftProjection x =
+      h.leftProjection x * (x • a / a) := by
+  -- `N` is abelian, so `x • a` can be moved past `c x` inside `N`
+  have hN : h.leftProjection x * (x • a / a) = x • a * h.leftProjection x * a⁻¹ := by
+    rw [div_eq_mul_inv, mul_left_comm, mul_assoc]
+  rw [leftProjection_eq_iff, mem_pointwise_smul_iff_inv_smul_mem, hN]
+  convert (h.leftProjection_eq_iff x _).mp rfl using 1
+  simp only [MulAut.smul_def, MulAut.conj_inv_apply, coe_mul, coe_inv, Subgroup.smul_def,
+    coe_conjugationAction_smul]
+  group
+
+/-- Two local complements `K` and `K'` of an abelian normal subgroup `N` in `H` are conjugate by
+`a ∈ N` exactly when their left projections differ by the principal crossed map
+`x ↦ x • a / a`. -/
+theorem IsLocalComplement.eq_conj_smul_iff_leftProjection_eq {K H : Subgroup G}
+    (h : N.IsLocalComplement K H) {K' : Subgroup G} (h' : N.IsLocalComplement K' H) (a : N) :
+    K' = MulAut.conj (a : G) • K ↔
+      ∀ x, h'.leftProjection x = h.leftProjection x * (x • a / a) := by
+  have ha := h.conj_smul_of_mem (h.left_le a.property)
+  constructor
+  · rintro rfl x
+    exact h.leftProjection_conj_coe_smul a x
+  · intro hK
+    have hmem (x : H) : (x : G) ∈ K' ↔ (x : G) ∈ MulAut.conj (a : G) • K := by
+      rw [← h'.leftProjection_eq_one_iff, ← ha.leftProjection_eq_one_iff, hK,
+        h.leftProjection_conj_coe_smul]
+    ext g
+    exact ⟨fun hg => (hmem ⟨g, h'.right_le hg⟩).mp hg,
+      fun hg => (hmem ⟨g, ha.right_le hg⟩).mpr hg⟩
+
+/-- **Conjugation by an element of `N`.** For `a ∈ N`, the crossed projection along `a D a⁻¹` is
+the crossed projection along `D` times the principal crossed map `x ↦ x • a / a`. This is the
+case `H = ⊤` of `Subgroup.IsLocalComplement.leftProjection_conj_coe_smul`. -/
+theorem IsComplement'.crossedProjection_conj_coe_smul {D : Subgroup G} (h : N.IsComplement' D)
+    (a : N) (x : G) :
+    (h.conj_smul a).crossedProjection x = h.crossedProjection x * (x • a / a) := by
+  have hl := isLocalComplement_top_iff.mpr h
+  have hx := hl.leftProjection_conj_coe_smul a ⟨x, mem_top x⟩
+  rwa [hl.leftProjection_top_eq_crossedProjection,
+    (hl.conj_smul_of_mem (mem_top _)).leftProjection_top_eq_crossedProjection,
+    Subgroup.smul_def] at hx
+
+/-- Two complements of an abelian normal subgroup `N` are conjugate by `a ∈ N` exactly when
+their crossed projections differ by the principal crossed map `x ↦ x • a / a`. This is the case
+`H = ⊤` of `Subgroup.IsLocalComplement.eq_conj_smul_iff_leftProjection_eq`. -/
+theorem IsComplement'.eq_conj_smul_iff_crossedProjection_eq {D : Subgroup G}
+    (h : N.IsComplement' D) {D' : Subgroup G} (h' : N.IsComplement' D') (a : N) :
+    D' = MulAut.conj (a : G) • D ↔
+      ∀ x, h'.crossedProjection x = h.crossedProjection x * (x • a / a) := by
+  rw [(isLocalComplement_top_iff.mpr h).eq_conj_smul_iff_leftProjection_eq
+    (isLocalComplement_top_iff.mpr h') a]
+  simp only [IsLocalComplement.leftProjection_top_eq_crossedProjection, Subgroup.smul_def]
+  exact ⟨fun hD x => hD ⟨x, mem_top x⟩, fun hD x => hD x⟩
+
 /-- A normalized additive crossed map has complementary zero locus. This is the
 kernel construction for normalized multiplicative crossed maps read on `Additive N`. -/
 theorem isComplement'_zeroLocus {c : G → Additive N} (hc : IsCocycle₁ c)
@@ -545,6 +582,35 @@ theorem localCrossedProjectionEquiv_symm_apply
     ((localCrossedProjectionEquiv N H hNH).symm c).val = (zeroLocus c.property.1).map H.subtype :=
   (rfl)
 
+/-- Adding the principal crossed map `x ↦ x • a - a` of `a ∈ N` to a crossed map `H → N`, read
+additively, gives a crossed map. -/
+theorem isCocycle₁_add_smul_sub {c : H → Additive N} (hc : IsCocycle₁ c) (a : N) :
+    IsCocycle₁ fun x => c x + (x • Additive.ofMul a - Additive.ofMul a) :=
+  hc.add (IsCoboundary₁.isCocycle₁ ⟨Additive.ofMul a, fun _ => rfl⟩)
+
+/-- Adding the principal crossed map `x ↦ x • a - a` of `a ∈ N` to a crossed map `H → N` which is
+the identity on `N` gives a map which is again the identity on `N`, since `N` acts trivially on
+itself. -/
+theorem apply_inclusion_add_smul_sub {c : H → Additive N}
+    (hn : ∀ n : N, c (inclusion hNH n) = Additive.ofMul n) (a n : N) :
+    c (inclusion hNH n) + (inclusion hNH n • Additive.ofMul a - Additive.ofMul a) =
+      Additive.ofMul n := by
+  simp [hn, Subgroup.smul_def, ← Additive.ofMul_smul, conjugationAction_coe_smul]
+
+/-- **Principal crossed maps conjugate zero loci.** Let `c : H → N` be a crossed map on an
+intermediate subgroup `H ≥ N` which is the identity on `N`, read additively, and let `a ∈ N`. The
+zero locus of `c` plus the principal crossed map `x ↦ x • a - a` is the conjugate `a K a⁻¹` of the
+zero locus `K` of `c`, both viewed in `G`. -/
+theorem map_subtype_zeroLocus_add_smul_sub {c : H → Additive N} (hc : IsCocycle₁ c)
+    (hn : ∀ n : N, c (inclusion hNH n) = Additive.ofMul n) (a : N) :
+    (zeroLocus (isCocycle₁_add_smul_sub hc a)).map H.subtype =
+      MulAut.conj (a : G) • (zeroLocus hc).map H.subtype := by
+  refine ((isLocalComplement_map_zeroLocus hNH hc hn).eq_conj_smul_iff_leftProjection_eq
+    (isLocalComplement_map_zeroLocus hNH (isCocycle₁_add_smul_sub hc a)
+      (apply_inclusion_add_smul_sub hNH hn a)) a).mpr fun x => ?_
+  rw [leftProjection_map_zeroLocus hNH hc hn,
+    leftProjection_map_zeroLocus hNH _ (apply_inclusion_add_smul_sub hNH hn a), toMul_add,
+    toMul_sub, Additive.toMul_smul, toMul_ofMul]
 end Local
 
 end Commutative
