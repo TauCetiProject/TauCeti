@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.Algebra.Category.ModuleCat.RepresentationFinite
 public import TauCeti.CategoryTheory.AlmostSplit.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.RingTheory.Length
-public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import Mathlib.RingTheory.Finiteness.Defs
 import Mathlib.Algebra.Category.ModuleCat.AB
 import Mathlib.RingTheory.HopkinsLevitzki
 import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.Sequence
@@ -26,8 +27,8 @@ import TauCeti.CategoryTheory.AlmostSplit.Finiteness
 
 The **first Brauer–Thrall conjecture**, proved by Roiter, says that an algebra whose finitely
 generated indecomposable modules have bounded length has only finitely many of them up to
-isomorphism. This file proves it for finite-dimensional algebras over a field, through Auslander's
-argument with almost-split sequences and the Harada–Sai lemma:
+isomorphism. This file proves it for Artin algebras, finite algebras over a commutative Artinian
+ring, through Auslander's argument with almost-split sequences and the Harada–Sai lemma:
 
 * every nonzero module receives a nonzero morphism from an indecomposable summand of the ring;
 * such a morphism, unless it is an isomorphism, factors through a left almost split map, whose
@@ -39,17 +40,19 @@ At an indecomposable injective module, which starts no almost-split sequence, th
 map is `TauCeti.exists_isAtom_isLeftAlmostSplit_ofHom_mkQ`. Over any Artinian ring, the conjecture
 therefore holds as soon as every finitely generated indecomposable non-injective module has a left
 almost split map with finitely generated target
-(`TauCeti.isRepresentationFinite_of_length_le_of_isLeftAlmostSplit`). Over a finite-dimensional
-algebra this is the existence half of the Auslander–Reiten theorem,
+(`TauCeti.isRepresentationFinite_of_length_le_of_isLeftAlmostSplit`). Over an Artin algebra this
+is the existence half of the Auslander–Reiten theorem,
 `ModuleCat.exists_isAlmostSplit_of_not_injective`.
 
 ## Main results
 
-* `TauCeti.isRepresentationFinite_of_length_le`: **the first Brauer–Thrall conjecture** for a
-  finite-dimensional algebra.
-* `TauCeti.isRepresentationFinite_iff_exists_length_le`: a finite-dimensional algebra is
+* `TauCeti.isRepresentationFinite_of_length_le`: **the first Brauer–Thrall conjecture** for an Artin
+  algebra.
+* `TauCeti.isRepresentationFinite_iff_exists_length_le`: an Artin algebra is
   representation-finite exactly when the lengths of its finitely generated indecomposable modules
   are bounded.
+* `TauCeti.isRepresentationFinite_of_length_le_fgModuleCat`: the first Brauer–Thrall conjecture,
+  with the bound stated on the indecomposable objects of `mod A`.
 
 ## References
 
@@ -121,30 +124,40 @@ theorem isRepresentationFinite_of_length_le_of_isLeftAlmostSplit [IsArtinianRing
   obtain ⟨j, f, hj⟩ := (ModuleCat.isSeparator A).exists_hom_ne_zero_of_iso_biproduct e hi.1
   exact hSmem M ⟨hf, hi⟩ (P j) ⟨j, rfl⟩ f hj
 
-/-- **The first Brauer–Thrall conjecture** for a finite-dimensional algebra: if the finitely
-generated indecomposable modules have bounded length, then there are only finitely many of them up
-to isomorphism. -/
-theorem isRepresentationFinite_of_length_le (k : Type u) [Field k] [Algebra k A]
-    [FiniteDimensional k A] (b : ℕ)
-    (hlen : ∀ M : ModuleCat.{max u v w} A, Module.Finite A M → Indecomposable M →
+/-- **The first Brauer–Thrall conjecture** for an Artin algebra: if the finitely generated
+indecomposable modules have bounded length, then there are only finitely many of them up to
+isomorphism. -/
+theorem isRepresentationFinite_of_length_le (R : Type u) [CommRing R] [IsArtinianRing R]
+    [Algebra R A] [Module.Finite R A] (b : ℕ)
+    (hlen : ∀ M : ModuleCat.{max v w} A, Module.Finite A M → Indecomposable M →
       Module.length A M ≤ b) :
-    IsRepresentationFinite.{max u v w} A := by
-  have : IsArtinianRing A := IsArtinianRing.of_finite k A
-  refine isRepresentationFinite_of_length_le_of_isLeftAlmostSplit.{v, max u w} b hlen
+    IsRepresentationFinite.{max v w} A := by
+  have : IsArtinianRing A := IsArtinianRing.of_finite R A
+  refine isRepresentationFinite_of_length_le_of_isLeftAlmostSplit.{v, w} b hlen
     fun N hf hi hinj ↦ ?_
   have := hf
-  obtain ⟨E, _, i, _, _, hE, _, hS⟩ := ModuleCat.exists_isAlmostSplit_of_not_injective k N hi hinj
+  obtain ⟨E, _, i, _, _, hE, _, hS⟩ :=
+    ModuleCat.exists_isAlmostSplit_of_not_injective.{u, v, max v w} R N hi hinj
   exact ⟨E, i, hE, hS.isLeftAlmostSplit_f⟩
 
-/-- **A finite-dimensional algebra is representation-finite exactly when the lengths of its
-finitely generated indecomposable modules are bounded.** -/
-theorem isRepresentationFinite_iff_exists_length_le (k : Type u) [Field k] [Algebra k A]
-    [FiniteDimensional k A] :
-    IsRepresentationFinite.{max u v w} A ↔
-      ∃ b : ℕ, ∀ M : ModuleCat.{max u v w} A, Module.Finite A M → Indecomposable M →
+/-- **An Artin algebra is representation-finite exactly when the lengths of its finitely
+generated indecomposable modules are bounded.** -/
+theorem isRepresentationFinite_iff_exists_length_le (R : Type u) [CommRing R] [IsArtinianRing R]
+    [Algebra R A] [Module.Finite R A] :
+    IsRepresentationFinite.{max v w} A ↔
+      ∃ b : ℕ, ∀ M : ModuleCat.{max v w} A, Module.Finite A M → Indecomposable M →
         Module.length A M ≤ b := by
-  have : IsArtinianRing A := IsArtinianRing.of_finite k A
+  have : IsArtinianRing A := IsArtinianRing.of_finite R A
   exact ⟨IsRepresentationFinite.exists_length_le,
-    fun ⟨b, hb⟩ ↦ isRepresentationFinite_of_length_le.{u, v, w} k b hb⟩
+    fun ⟨b, hb⟩ ↦ isRepresentationFinite_of_length_le.{u, v, w} R b hb⟩
+
+/-- **The first Brauer–Thrall conjecture in `mod A`**: if the indecomposable objects of
+`FGModuleCat A` over an Artin algebra have bounded length, then `A` is representation-finite. -/
+theorem isRepresentationFinite_of_length_le_fgModuleCat (R : Type u) [CommRing R]
+    [IsArtinianRing R] [Algebra R A] [Module.Finite R A] (b : ℕ)
+    (h : ∀ X : FGModuleCat.{max v w} A, Indecomposable X.obj → Module.length A X.obj ≤ b) :
+    IsRepresentationFinite.{max v w} A :=
+  isRepresentationFinite_of_length_le.{u, v, w} R b fun M hf hi ↦
+    h ⟨M, (ModuleCat.isFG_iff _).mpr hf⟩ hi
 
 end TauCeti

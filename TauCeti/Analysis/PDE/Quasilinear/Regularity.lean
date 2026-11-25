@@ -54,8 +54,8 @@ A weak solution `u` solves the linear equation with the frozen coefficient `a(x)
   Schauder estimate for divergence-form equations with Hölder coefficients makes `∇u` Hölder
   continuous with a small positive exponent.
 * **Lipschitz.** A Hölder gradient is locally bounded, so `ū` is locally Lipschitz, hence
-  `β`-Hölder (`TauCeti.W1p.exists_holderOnWith_preciseRepresentative_of_forall_norm_le`), and the
-  frozen coefficient is `β`-Hölder.
+  `β`-Hölder (`TauCeti.W1p.exists_holderOnWith_preciseRepresentative_of_ae_norm_gradient_le`), and
+  the frozen coefficient is `β`-Hölder.
 * **Schauder again.** A second application of the Schauder estimate gives the exponents above.
 * **Differentiating the equation.** For the `C^{2,α}` statement, the data are bounded near each
   point, so `∇u` is `α`-Hölder near each point, and `u` has a `C¹` representative `g₁`
@@ -305,11 +305,17 @@ theorem exists_holderOnWith_preciseRepresentative_gradient_of_forall_energyFormH
     ((NNReal.coe_le_coe.2 (min_le_right γ₀ β)).trans hβq) hU (by positivity)
     (hUU.trans ((thickening_mono (by linarith) S).trans hRS)) (h₀.mono hUU)
   -- The Lipschitz step: `ū` is `β`-Hölder on `S_{R/8}`.
-  obtain ⟨M₁, hM₁⟩ :=
-    ((h₀.mono (thickening_mono (by linarith) S)).isBounded_image hU).exists_norm_le
   obtain ⟨M₂, hM₂⟩ := (h₁.isBounded_image hU).exists_norm_le
-  obtain ⟨C₂, h₂⟩ := W1p.exists_holderOnWith_preciseRepresentative_of_forall_norm_le u
-    (by positivity) hUΩ (forall_mem_image.1 hM₁) (forall_mem_image.1 hM₂) hβ1.le
+  have hgrad : ∀ᵐ x ∂volume.restrict (thickening (R / 4) S),
+      ‖W1p.gradient u x‖ ≤ (M₂.toNNReal : ℝ) := by
+    have hpr := ae_eq_restrict_preciseRepresentative Omega.isOpen
+      (W1p.hasWeakFDerivOn u).locallyIntegrableOn_gradient
+    filter_upwards [ae_restrict_mem isOpen_thickening.measurableSet,
+      ae_restrict_of_ae_restrict_of_subset hUΩ hpr] with x hx hx'
+    rw [hx']
+    exact (forall_mem_image.1 hM₂ hx).trans (Real.le_coe_toNNReal _)
+  obtain ⟨C₂, h₂⟩ := W1p.exists_holderOnWith_preciseRepresentative_of_ae_norm_gradient_le u
+    hUΩ hgrad hβ1.le
   -- Second Schauder pass, on `S`, with the exponent `β`.
   have hR8 : R / 4 / 2 = R / 8 := by ring
   rw [hR8] at h₂

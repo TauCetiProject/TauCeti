@@ -11,6 +11,7 @@ public import TauCeti.Topology.CWComplex.Classical.Quotient
 public import TauCeti.Topology.CWComplex.Classical.RelativeCWComplex
 public import TauCeti.Topology.CWComplex.Classical.Tower.Subcomplex.Basic
 import TauCeti.Topology.CWComplex.Classical.Image
+import TauCeti.Topology.Category.TopCat.Normal
 
 /-!
 # CW structure and normality on colimits of CW subcomplex towers

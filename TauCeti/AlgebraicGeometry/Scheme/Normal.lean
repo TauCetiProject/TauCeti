@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors, Taylor Dupuy, Thomas Tucker, Zhuoran Wang
 module
 
 public import Mathlib.AlgebraicGeometry.Noetherian
+public import Mathlib.FieldTheory.TranscendentalSeparable
+public import Mathlib.RingTheory.EssentialFiniteness
 public import TauCeti.AlgebraicGeometry.Scheme.IntegrallyClosed
 public import TauCeti.RingTheory.DiscreteValuationRing.IntegrallyClosed
 import Mathlib.RingTheory.Polynomial.RationalRoot
+import TauCeti.RingTheory.Normal.SeparablyGenerated
 
 /-!
 # Normal schemes
@@ -21,7 +24,8 @@ Lemma 28.7.2 (033J)); open subschemes of normal schemes are normal; normal schem
 (Stacks, Lemma 28.7.3 (033K)); the spectrum of a domain is normal exactly when the domain is
 integrally closed; on a normal scheme the domain of sections over an affine open is
 integrally closed; and on a locally Noetherian normal scheme the local ring at a point of
-coheight one is a discrete valuation ring (Stacks, Lemma 10.119.7 (00PD)).
+coheight one is a discrete valuation ring (Stacks, Lemma 10.119.7 (00PD)). Normality of a base
+change `X ×_{Spec k} Spec K` reduces to normality of the rings `K ⊗[k] B`, for `B` normal.
 
 Following Stacks, Definition 10.37.11 (00GV), a ring `R` is *normal* when every localization of
 `R` at a prime is an integrally closed domain; `isNormalScheme_Spec_iff_forall_localization`
@@ -52,13 +56,20 @@ use `IsNormalScheme (Spec R)` for it.
   ring, by the ring-level `IsDiscreteValuationRing.of_ringKrullDim_eq_one`.
 * `TauCeti.AlgebraicGeometry.IsNormalScheme.of_uniqueFactorizationMonoid_stalk`: a scheme whose
   local rings are unique factorization domains is normal.
+* `TauCeti.AlgebraicGeometry.isNormalScheme_pullback_of_forall_tensorProduct`: if `K ⊗[k] B` is
+  a normal ring for every normal `k`-algebra `B`, then base change along `Spec K → Spec k`
+  preserves normality of schemes (the scheme half of Stacks, Lemma 33.10.6 (0C3M)).
+* `TauCeti.AlgebraicGeometry.isNormalScheme_pullback_of_isSeparablyGenerated`: base change of a
+  normal scheme over a field `k` along a finitely generated separably generated field extension
+  `K / k` is normal (Stacks, Lemma 33.10.6 (0C3M), for `K` finitely generated over `k`).
 
 ## References
 
 * [Stacks Project, Definition 28.7.1](https://stacks.math.columbia.edu/tag/033I),
   [Lemma 28.7.2](https://stacks.math.columbia.edu/tag/033J),
-  [Lemma 28.7.3](https://stacks.math.columbia.edu/tag/033K) and
-  [Lemma 10.119.7](https://stacks.math.columbia.edu/tag/00PD).
+  [Lemma 28.7.3](https://stacks.math.columbia.edu/tag/033K),
+  [Lemma 10.119.7](https://stacks.math.columbia.edu/tag/00PD) and
+  [Lemma 33.10.6](https://stacks.math.columbia.edu/tag/0C3M).
 * `IsNormalScheme.isDiscreteValuationRing_stalk` is ported from T. Dupuy, T. Tucker and
   Z. Wang, [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
   `9a20b3f351446d64e6015d704198bc71c7002008` (Apache-2.0): it is
@@ -220,6 +231,57 @@ theorem IsNormalScheme.of_uniqueFactorizationMonoid_stalk {X : Scheme.{u}}
     [∀ x : X, UniqueFactorizationMonoid (X.presheaf.stalk x)] : IsNormalScheme X where
   isDomain_stalk := inferInstance
   isIntegrallyClosed_stalk _ := inferInstance
+
+open Limits in
+open scoped TensorProduct in
+/-- **Base change of a normal scheme, reduced to rings.** Let `k → K` be a ring map such that
+`K ⊗[k] B` is a normal ring for every `k`-algebra `B` that is a normal ring (normality of a ring
+meaning, as in `isNormalScheme_Spec_iff_forall_localization`, that every localization at a prime
+is an integrally closed domain). Then for every normal scheme `X` over `Spec k` the base change
+`X ×_{Spec k} Spec K` is normal: it is covered by the pullbacks of the affine opens `Spec B` of
+`X`, which are `Spec (K ⊗[k] B)`, and normality is local. This is the reduction in the proof of
+Stacks, Lemma 33.10.6 (0C3M), to the ring-level statement for a separable field extension. -/
+@[stacks 0C3M "reduction to the ring-level statement"]
+theorem isNormalScheme_pullback_of_forall_tensorProduct {k K : Type u} [CommRing k] [CommRing K]
+    [Algebra k K]
+    (h : ∀ (B : Type u) [CommRing B] [Algebra k B],
+      (∀ (p : Ideal B) [p.IsPrime],
+        IsDomain (Localization.AtPrime p) ∧ IsIntegrallyClosed (Localization.AtPrime p)) →
+      ∀ (q : Ideal (K ⊗[k] B)) [q.IsPrime],
+        IsDomain (Localization.AtPrime q) ∧ IsIntegrallyClosed (Localization.AtPrime q))
+    (f : X ⟶ Spec (.of k)) [IsNormalScheme X] :
+    IsNormalScheme (pullback f (Spec.map (CommRingCat.ofHom (algebraMap k K)))) := by
+  let 𝒰 := X.affineOpenCover.openCover
+  refine (isNormalScheme_iff_openCover (Scheme.Pullback.openCoverOfLeft 𝒰 f _)).2 fun i ↦ ?_
+  let B := X.affineOpenCover.X i
+  let φ : CommRingCat.of k ⟶ B := Spec.preimage (𝒰.f i ≫ f)
+  algebraize [φ.hom]
+  have hB := (isNormalScheme_Spec_iff_forall_localization B).1 (IsNormalScheme.openCover 𝒰 i)
+  have := (isNormalScheme_Spec_iff_forall_localization (.of (K ⊗[k] B))).2 (h B hB)
+  let e : pullback (𝒰.f i ≫ f) (Spec.map (CommRingCat.ofHom (algebraMap k K))) ≅
+      Spec (.of (K ⊗[k] B)) :=
+    pullback.congrHom (Spec.map_preimage _).symm rfl ≪≫ pullbackSymmetry _ _ ≪≫
+      pullbackSpecIso k K B
+  have hU : IsNormalScheme
+      (pullback (𝒰.f i ≫ f) (Spec.map (CommRingCat.ofHom (algebraMap k K)))) :=
+    .of_isOpenImmersion e.hom
+  exact hU
+
+open Limits in
+/-- **Separably generated base change of a normal scheme is normal.** Let `k` be a field and
+`K / k` a finitely generated field extension that is separably generated (for instance any
+finitely generated extension of a perfect field, or any finite separable extension). Then for
+every normal scheme `X` over `Spec k` the base change `X ×_{Spec k} Spec K` is normal. Neither `X`
+nor its rings of sections need be Noetherian. Stacks, Lemma 33.10.6 (0C3M), for `K` finitely
+generated over `k`. -/
+@[stacks 0C3M "`K` a finitely generated separably generated field extension"]
+theorem isNormalScheme_pullback_of_isSeparablyGenerated {k K : Type u} [Field k] [Field K]
+    [Algebra k K] [Algebra.EssFiniteType k K] [Algebra.IsSeparablyGenerated k K]
+    (f : X ⟶ Spec (.of k)) [IsNormalScheme X] :
+    IsNormalScheme (pullback f (Spec.map (CommRingCat.ofHom (algebraMap k K)))) :=
+  isNormalScheme_pullback_of_forall_tensorProduct
+    (fun _ _ _ hB q _ ↦
+      forall_isDomain_and_isIntegrallyClosed_tensorProduct_of_isSeparablyGenerated hB q) f
 
 end AlgebraicGeometry
 

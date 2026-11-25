@@ -57,6 +57,20 @@ theorem tendsto_sq_div_sq_add_sq_indicator (a x : ℝ) :
     simpa only [zero_pow (by decide : 2 ≠ 0), zero_div] using!
       (ht.pow 2).div (tendsto_const_nhds.add (ht.pow 2)) hden
 
+/-- The rescaled Poisson kernels converge pointwise to `1` as the height tends to infinity. -/
+theorem tendsto_sq_div_sq_add_sq_atTop (x : ℝ) :
+    Tendsto (fun η : ℝ ↦ η ^ 2 / (x ^ 2 + η ^ 2)) atTop (𝓝 1) := by
+  have hd : Tendsto (fun η : ℝ ↦ x ^ 2 + η ^ 2) atTop atTop :=
+    tendsto_atTop_add_const_left _ _ (tendsto_pow_atTop two_ne_zero)
+  have h : Tendsto (fun η : ℝ ↦ 1 - x ^ 2 / (x ^ 2 + η ^ 2)) atTop (𝓝 1) := by
+    simpa using (tendsto_const_nhds (x := (1 : ℝ))).sub
+      ((tendsto_const_nhds (x := x ^ 2)).div_atTop hd)
+  refine h.congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with η hη
+  have : 0 < x ^ 2 + η ^ 2 := by positivity
+  field_simp
+  ring
+
 end Real
 
 namespace MeasureTheory

@@ -15,6 +15,7 @@ public import Mathlib.RingTheory.Binomial
 import Mathlib.Algebra.Module.Torsion.Field
 import Mathlib.Tactic.ComputeDegree
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.Algebra.NatCast
 
 /-!
 # The Jacobi polynomials
@@ -177,8 +178,7 @@ theorem jacobi_zero (α β : R) : jacobi α β 0 = 1 := by
 theorem jacobi_one (α β : R) :
     jacobi α β 1 = C (α + 1) + ((1 : ℚ) / 2) • (C (α + β + 2) * (X - 1)) := by
   have h : C (algebraMap ℚ R 2⁻¹) * 2 = (1 : R[X]) := by
-    rw [← C_ofNat, ← C_mul, ← map_ofNat (algebraMap ℚ R), ← map_mul, inv_mul_cancel₀ two_ne_zero,
-      map_one, C_1]
+    rw [← C_ofNat, ← C_mul, TauCeti.algebraMap_inv_mul_ofNat two_ne_zero, C_1]
   simp only [jacobi_def, pow_one, one_div, Nat.reduceAdd, mul_inv_rev, ascPochhammer_smeval_cast,
     smul_assoc, sum_range_succ, range_one, sum_singleton, Nat.factorial_zero, Nat.cast_one, inv_one,
     tsub_zero, Nat.factorial_one, mul_one, ascPochhammer_one, Nat.cast_zero, add_zero, smeval_X,

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.Alternating.Uncurry.Fin
 public import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.GroupTheory.Perm.Basic
+public import TauCeti.LinearAlgebra.Alternating.Uncurry.Fin
 
 /-!
 # Alternatization and interior products
@@ -33,8 +34,13 @@ be combined with other permutation sums, such as those defining wedge products.
   and subtraction, complementing Mathlib's `alternatizeUncurryFin_add`.
 * `ContinuousAlternatingMap.alternatizeUncurryFin_curryLeft_comp_add_curryLeft`: the identity
   above.
+* `ContinuousAlternatingMap.alternatizeUncurryFin_curryLeft_comp`: alternating contractions with
+  `A v` gives the derivative at the identity, in the direction `A`, of pullback of alternating
+  maps, over any nontrivially normed field.
 * `ContinuousAlternatingMap.alternatizeUncurryFin_compContinuousLinearMap`: alternatization
   commutes with pullback along a continuous linear map.
+* `ContinuousAlternatingMap.sub_compContinuousLinearMap_id_sub_smulRight`: for `P = id - l ⊗ e`,
+  `f - f ∘ P = l ∧ ((ι_e f) ∘ P)`.
 * `ContinuousAlternatingMap.factorial_smul_alternatizeUncurryFin_apply`: the permutation-sum
   formula.
 * `ContinuousAlternatingMap.alternatizeUncurryFin_apply_eq_inv_factorial_smul_sum`: the same
@@ -156,5 +162,64 @@ theorem alternatizeUncurryFin_fderivCompContinuousLinearMap_comp_eq
   rw [comp_add, alternatizeUncurryFin_add] at hsymm
   rw [hNS, comp_sub, alternatizeUncurryFin_sub, eq_neg_of_add_eq_zero_right hsymm, sub_neg_eq_add,
     hS]
+
+open Finset in
+/-- **Splitting off one direction.** Let `P = id - l ⊗ e` be the linear map `v ↦ v - l v • e`.
+For a continuous alternating map `f` of `n + 1` vectors, `f - f ∘ P` is the wedge
+`l ∧ ((ι_e f) ∘ P)`, the alternatization of `v ↦ l v • (ι_e f) ∘ P`. When `l e = 1`, `P` is the
+projection onto `ker l` along `e`, so this writes `f` as its pullback by that projection plus a
+form divisible by `l`. -/
+theorem sub_compContinuousLinearMap_id_sub_smulRight (f : E [⋀^Fin (n + 1)]→L[𝕜] F)
+    (l : StrongDual 𝕜 E) (e : E) :
+    f - f.compContinuousLinearMap (.id 𝕜 E - l.smulRight e) =
+      alternatizeUncurryFin (l.smulRight
+        ((f.curryLeft e).compContinuousLinearMap (.id 𝕜 E - l.smulRight e))) := by
+  set P := ContinuousLinearMap.id 𝕜 E - l.smulRight e
+  ext v
+  -- Expand `f v = f (P ∘ v + h)`, `h i = l (v i) • e`, multilinearly around `P ∘ v`.
+  have hexp : f ((P ∘ v) + fun i ↦ l (v i) • e) = f (P ∘ v) +
+      ∑ i, f (Function.update (P ∘ v) i (l (v i) • e)) +
+      ∑ s with 2 ≤ #s, f (s.piecewise (fun i ↦ l (v i) • e) (P ∘ v)) := by
+    have h := f.toMultilinearMap.map_add_eq_map_add_linearDeriv_add (P ∘ v) fun i ↦ l (v i) • e
+    rw [MultilinearMap.linearDeriv_apply] at h
+    exact h
+  have hv : (P ∘ v) + (fun i ↦ l (v i) • e) = v := by
+    funext i
+    simp [P]
+  -- The terms with at least two copies of `e` vanish.
+  have hzero : ∀ s ∈ univ.filter (2 ≤ #·),
+      f (s.piecewise (fun i ↦ l (v i) • e) (P ∘ v)) = 0 := by
+    intro s hs
+    obtain ⟨i, hi, j, hj, hij⟩ := one_lt_card.1 (mem_filter.1 hs).2
+    have hpw : s.piecewise (fun i ↦ l (v i) • e) (P ∘ v) =
+        s.piecewise (fun i ↦ l (v i) • s.piecewise (fun _ ↦ e) (P ∘ v) i)
+          (s.piecewise (fun _ ↦ e) (P ∘ v)) := by
+      funext m
+      by_cases hm : m ∈ s <;> simp [hm]
+    rw [hpw, f.map_piecewise_smul, f.map_eq_zero_of_eq _ (by simp [hi, hj]) hij, smul_zero]
+  rw [hv, sum_eq_zero hzero, add_zero] at hexp
+  rw [sub_apply, hexp, compContinuousLinearMap_apply, add_sub_cancel_left,
+    alternatizeUncurryFin_apply]
+  refine sum_congr rfl fun i _ ↦ ?_
+  -- The `i`-th term moves `e` to the front at the cost of the sign `(-1) ^ i`.
+  rw [← Fin.insertNth_removeNth, map_insertNth]
+  congr 1
+  rw [ContinuousLinearMap.smulRight_apply, smul_apply, compContinuousLinearMap_apply,
+    curryLeft_apply_apply, ← f.vecCons_smul]
+  -- `Fin.removeNth i (P ∘ v)` and `P ∘ Fin.removeNth i v` are both `P ∘ v ∘ i.succAbove`.
+  rfl
+
+/-- Alternating the contractions `v ↦ ι_{A v} ω` gives the derivation of `A` on `ω`: the
+derivative at the identity, in the direction `A`, of pullback of alternating maps. -/
+theorem alternatizeUncurryFin_curryLeft_comp (ω : E [⋀^Fin (n + 1)]→L[𝕜] F) (A : E →L[𝕜] E) :
+    alternatizeUncurryFin (ω.curryLeft ∘L A) = ω.fderivCompContinuousLinearMap (.id 𝕜 E) A := by
+  ext v
+  have h := congrArg (fun f ↦ f v) (AlternatingMap.alternatizeUncurryFin_curryLeft_comp
+    ω.toAlternatingMap A.toLinearMap)
+  simp only [AlternatingMap.alternatizeUncurryFin_apply, LinearMap.alternatingDerivation_apply] at h
+  rw [alternatizeUncurryFin_apply, fderivCompContinuousLinearMap_apply]
+  refine h.trans (Finset.sum_congr rfl fun i _ ↦ congrArg ω (funext fun j ↦ ?_))
+  simpa using (Function.apply_update (fun j (L : E →L[𝕜] E) ↦ L (v j))
+    (fun _ ↦ ContinuousLinearMap.id 𝕜 E) i A j).symm
 
 end ContinuousAlternatingMap

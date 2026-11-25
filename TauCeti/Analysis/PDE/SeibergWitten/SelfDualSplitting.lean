@@ -40,6 +40,9 @@ imaginary form `i q(ψ)`, so `q(u₀) = ω / 4` is the identity `q(u₀) = i ω 
 ## Main results
 
 * `cliffordProjection_neg`: `P_β = 1 - P_α`.
+* `cliffordProjection_neg_apply_eq_smul_cliffordRestriction_apply`: if
+  `C(iω') ψ + C(iω) ψ' = 2 ψ'`, the differentiated eigenvalue equation, then
+  `P_β ψ' = C(iω') ψ / 4`.
 * `isStarProjection_cliffordProjection`: for self-dual `ω` with `‖ω‖² = 2`, `P_α` is an orthogonal
   projection.
 * `cliffordProjection_apply_eq_self_iff`,
@@ -165,6 +168,21 @@ theorem cliffordProjection_apply_eq_self_iff {ψ : positiveHalfSpinors o ρ} :
   constructor <;> intro h
   · linear_combination (norm := module) (4 : ℂ) • h
   · linear_combination (norm := module) (4⁻¹ : ℂ) • h
+
+variable {o ρ ω} in
+/-- **The `P_β`-component of a solution of the differentiated eigenvalue equation**: if
+`C(iω') ψ + C(iω) ψ' = 2 ψ'`, then `P_β ψ' = C(iω') ψ / 4`. Differentiating `C(iω) ψ = 2 ψ` along a
+vector with a Clifford-compatible connection gives this equation for the derivatives `ω'` of `ω`
+and `ψ'` of `ψ`. -/
+theorem cliffordProjection_neg_apply_eq_smul_cliffordRestriction_apply {ω' : ⋀[ℝ]^2 V}
+    {ψ ψ' : positiveHalfSpinors o ρ}
+    (h : cliffordRestriction o ρ ω' ψ + cliffordRestriction o ρ ω ψ' = (2 : ℂ) • ψ') :
+    cliffordProjection o ρ (-ω) ψ' = (4⁻¹ : ℂ) • cliffordRestriction o ρ ω' ψ := by
+  -- `C(iω) = 4 P_α - 2`, so the hypothesis says `C(iω') ψ = 4 (ψ' - P_α ψ')`.
+  rw [cliffordRestriction_eq_cliffordProjection o ρ ω, sub_apply, smul_apply, smul_apply,
+    one_apply_eq_self] at h
+  rw [cliffordProjection_neg_apply]
+  linear_combination (norm := module) (-4⁻¹ : ℂ) • h
 
 variable {ω} in
 /-- On the fixed vectors of `P_α`, the Clifford action of `ω` is multiplication by `-2i`: they are

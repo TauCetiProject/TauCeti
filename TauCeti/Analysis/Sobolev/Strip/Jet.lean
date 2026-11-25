@@ -32,8 +32,10 @@ over the strip: the Sobolev space with boundary conditions in
 fundamental domain is the strip, in `TauCeti.Analysis.Sobolev.Cylinder`.
 
 * `TauCeti.StripSobolev.stripMeasure` is Lebesgue measure on `ℝ × [0, 1]`; it is the product of
-  Lebesgue measure on `ℝ` and on `[0, 1]` (`TauCeti.StripSobolev.stripMeasure_eq_prod`). A
-  section that is bounded on a box `[-R, R] × [0, 1]` and vanishes outside it lies in every `Lᵖ`
+  Lebesgue measure on `ℝ` and on `[0, 1]` (`TauCeti.StripSobolev.stripMeasure_eq_prod`), and
+  Lebesgue measure on the band `ℝ × [0, 1)`
+  (`TauCeti.StripSobolev.stripMeasure_eq_restrict_univ_prod_Ico`).
+  A section that is bounded on a box `[-R, R] × [0, 1]` and vanishes outside it lies in every `Lᵖ`
   of the strip (`TauCeti.StripSobolev.memLp_stripMeasure_of_bound_of_eq_zero`), in particular a
   continuous section vanishing for `|s|` large
   (`TauCeti.StripSobolev.memLp_stripMeasure_of_continuous`).
@@ -92,6 +94,14 @@ theorem stripMeasure_eq_prod :
     stripMeasure = (volume : Measure ℝ).prod (volume.restrict (Icc (0 : ℝ) 1)) := by
   unfold stripMeasure
   rw [Measure.volume_eq_prod, ← Measure.prod_restrict, Measure.restrict_univ]
+
+/-- The strip measure is Lebesgue measure on the band `ℝ × [0, 1)`: the two differ by the null
+line `ℝ × {1}`. -/
+theorem stripMeasure_eq_restrict_univ_prod_Ico :
+    stripMeasure = volume.restrict ((univ : Set ℝ) ×ˢ Ico (0 : ℝ) 1) := by
+  rw [stripMeasure_eq_prod, Measure.restrict_congr_set (μ := volume (α := ℝ))
+    (Ico_ae_eq_Icc (a := (0 : ℝ)) (b := 1)).symm, Measure.volume_eq_prod,
+    ← Measure.prod_restrict, Measure.restrict_univ]
 
 /-- The jet `(ξ, ∂s ξ, ∂t ξ)` of a map `ξ : ℝ × ℝ → V`. -/
 def jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) : V × V × V :=
@@ -383,6 +393,15 @@ theorem jet_smul_fst_eq_cutoffCoeff {β : ℝ → ℝ} {ξ : ℝ × ℝ → V} {
   simp only [jet_apply, cutoffCoeff_apply, h]
   simp [add_comm]
 
+/-- The coefficient of multiplication by `β(s)` has norm at most `|β(s)| + |β'(s)|`. -/
+theorem norm_cutoffCoeff_le (β : ℝ → ℝ) (z : ℝ × ℝ) :
+    ‖cutoffCoeff V β z‖ ≤ |β z.1| + |deriv β z.1| := by
+  refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul, Real.norm_eq_abs]
+  · exact mul_le_of_le_one_right (abs_nonneg _) ContinuousLinearMap.norm_id_le
+  · refine mul_le_of_le_one_right (abs_nonneg _) ?_
+    refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ ?_
+    simp [Prod.norm_def]
+
 /-- For a `C¹` function `β` with `β` and `β'` bounded, the coefficient field of multiplication by
 `β(s)` is essentially bounded. -/
 theorem memLp_cutoffCoeff {β : ℝ → ℝ} (hβ : ContDiff ℝ 1 β) {B : ℝ} (hβB : ∀ s, |β s| ≤ B)
@@ -390,12 +409,8 @@ theorem memLp_cutoffCoeff {β : ℝ → ℝ} (hβ : ContDiff ℝ 1 β) {B : ℝ}
   have hc : Continuous (cutoffCoeff V β) :=
     ((hβ.continuous.comp continuous_fst).smul continuous_const).add
       (((hβ.continuous_deriv le_rfl).comp continuous_fst).smul continuous_const)
-  refine memLp_top_of_bound hc.aestronglyMeasurable (B + B) (ae_of_all _ fun z ↦ ?_)
-  refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul, Real.norm_eq_abs]
-  · exact (mul_le_of_le_one_right (abs_nonneg _) (ContinuousLinearMap.norm_id_le)).trans (hβB _)
-  · refine (mul_le_of_le_one_right (abs_nonneg _) ?_).trans (hβ'B _)
-    refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ ?_
-    simp [Prod.norm_def]
+  exact memLp_top_of_bound hc.aestronglyMeasurable (B + B) (ae_of_all _ fun z ↦
+    (norm_cutoffCoeff_le β z).trans (add_le_add (hβB _) (hβ'B _)))
 
 end Cutoff
 
