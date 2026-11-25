@@ -178,12 +178,12 @@ lemma toSubmodule_spanSingleton (v : W) (h : ∀ g, ∃ t : A, ρ g v = t • v)
 
 /-- A vector lies in the line through a common eigenvector `v` exactly when it is a multiple
 of `v`. -/
-@[simp]
 lemma mem_spanSingleton {v x : W} {h : ∀ g, ∃ t : A, ρ g v = t • v} :
     x ∈ spanSingleton v h ↔ ∃ a : A, a • v = x :=
   Submodule.mem_span_singleton
 
 /-- A common eigenvector lies in the line it spans. -/
+@[simp]
 lemma self_mem_spanSingleton (v : W) (h : ∀ g, ∃ t : A, ρ g v = t • v) :
     v ∈ spanSingleton v h :=
   Submodule.mem_span_singleton_self v

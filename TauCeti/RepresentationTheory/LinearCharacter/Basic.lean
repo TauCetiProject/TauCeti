@@ -300,17 +300,15 @@ theorem exists_character_eq_of_commute [Field k] [IsAlgClosed k] [Group G] (W : 
     rw [← mul_apply_eq_comp, (hcomm g h).eq, mul_apply_eq_comp]
   obtain ⟨v, hv⟩ := exists_ne (0 : W)
   -- The line through `v` is stable, hence everything: `W` is one-dimensional.
-  let line : Subrepresentation W.ρ :=
-    ⟨k ∙ v, fun g w hw => by
-      obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hw
-      rw [map_smul, hc, smul_smul]
-      exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self v)⟩
+  let line := Subrepresentation.spanSingleton v fun g => ⟨c g, hc g v⟩
   have hline : line = ⊤ := (IsSimpleOrder.eq_bot_or_eq_top line).resolve_left fun h => hv <| by
-    have hmem : v ∈ line.toSubmodule := Submodule.mem_span_singleton_self v
+    have hmem : v ∈ line := Subrepresentation.self_mem_spanSingleton v _
     rw [h] at hmem
     exact hmem
   have hfin : Module.finrank k W = 1 :=
-    (finrank_eq_one_iff_of_ne_zero v hv).mpr (congrArg Subrepresentation.toSubmodule hline)
+    (finrank_eq_one_iff_of_ne_zero v hv).mpr
+      ((Subrepresentation.toSubmodule_spanSingleton v _).symm.trans
+        (congrArg Subrepresentation.toSubmodule hline))
   let χ : G →* k :=
     { toFun := c
       map_one' := Representation.map_one_of_forall_apply_eq_smul W.ρ hc
