@@ -69,6 +69,8 @@ taking invariants under it.
 * `Representation.IsIntertwiningMap.dualMap`: the transpose of an intertwining map intertwines
   the dual representations.
 * `Representation.Equiv.ker_eq`: equivalent representations have the same kernel.
+* `Representation.IntertwiningMap.ker_le_ker_of_surjective`: an element acting trivially in a
+  representation acts trivially in each of its quotients.
 * `Representation.isIntertwiningMap_iff_of_closure_eq_top`: equivariance may be tested on a
   generating set of the group.
 * `Representation.exists_unit_smul_of_intertwines`: if the equivariant endomorphisms of a
@@ -268,6 +270,23 @@ theorem stabilizer_apply_eq_of_injective (f : IntertwiningMap ρ σ) (hf : Funct
   rw [mem_stabilizer, mem_stabilizer, ← isIntertwining _ _ f g v, hf.eq_iff]
 
 end Stabilizer
+
+section Kernel
+
+variable {A G V W : Type*} [Semiring A] [Group G] [AddCommMonoid V] [AddCommMonoid W]
+  [Module A V] [Module A W] {ρ : Representation A G V} {σ : Representation A G W}
+
+/-- **A quotient acts trivially wherever the source does.** If `f : ρ → σ` is a surjective
+intertwining map, every element acting trivially in `ρ` acts trivially in `σ`, since
+`σ g (f v) = f (ρ g v) = f v`. -/
+theorem ker_le_ker_of_surjective (f : IntertwiningMap ρ σ) (hf : Function.Surjective f) :
+    ρ.ker ≤ σ.ker := fun g hg ↦ by
+  rw [MonoidHom.mem_ker] at hg ⊢
+  refine LinearMap.ext fun w ↦ ?_
+  obtain ⟨v, rfl⟩ := hf w
+  rw [← isIntertwining _ _ f g v, hg, one_apply_eq_self, one_apply_eq_self]
+
+end Kernel
 
 end Representation.IntertwiningMap
 
