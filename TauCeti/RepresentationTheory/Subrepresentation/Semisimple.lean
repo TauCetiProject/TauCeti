@@ -17,7 +17,9 @@ A representation is semisimple when every subrepresentation has a complementary 
 A representation that maps injectively and equivariantly into a semisimple one is semisimple
 (`Representation.IntertwiningMap.isSemisimpleRepresentation_of_injective`), and so is the image of
 a semisimple representation under a surjective intertwining map
-(`Representation.IntertwiningMap.isSemisimpleRepresentation_of_surjective`). These are Mathlib's
+(`Representation.IntertwiningMap.isSemisimpleRepresentation_of_surjective`), in particular the range
+of an intertwining map out of a semisimple representation
+(`Representation.IntertwiningMap.isSemisimpleRepresentation_range`). These are Mathlib's
 `IsSemisimpleModule.of_injective` and `IsSemisimpleModule.of_surjective` for the modules over the
 group algebra.
 
@@ -44,6 +46,8 @@ change semisimplicity (`MonoidHom.isSemisimpleRepresentation_comp_surjective_iff
   an injective intertwining map into a semisimple representation is semisimple.
 * `Representation.IntertwiningMap.isSemisimpleRepresentation_of_surjective`: a representation with
   a surjective intertwining map from a semisimple representation is semisimple.
+* `Representation.IntertwiningMap.isSemisimpleRepresentation_range`: the range of an intertwining
+  map out of a semisimple representation is semisimple.
 * `Representation.isSemisimpleRepresentation_dual`: the dual of a finite-dimensional semisimple
   representation is semisimple.
 * `Representation.isSemisimpleRepresentation_iff_iSup_atoms_eq_top`: a representation is
@@ -80,6 +84,14 @@ theorem Representation.IntertwiningMap.isSemisimpleRepresentation_of_surjective
   have := (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule ρ).mp ‹_›
   exact (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule σ).mpr
     (IsSemisimpleModule.of_surjective (equivLinearMapAsModule ρ σ f) hf)
+
+/-- **The image of a semisimple representation is semisimple.** The range of an intertwining map
+out of a semisimple representation carries a semisimple representation. -/
+theorem Representation.IntertwiningMap.isSemisimpleRepresentation_range
+    {σ : Representation k G V} [ρ.IsSemisimpleRepresentation] (f : ρ.IntertwiningMap σ) :
+    f.range.toRepresentation.IsSemisimpleRepresentation :=
+  (f.codRestrict f.range fun w ↦ ⟨w, rfl⟩).isSemisimpleRepresentation_of_surjective
+    fun ⟨_, w, hw⟩ ↦ ⟨w, Subtype.ext ((f.codRestrict_apply_coe _ _ w).trans hw)⟩
 
 /-- **The dual of a finite-dimensional semisimple representation is semisimple.** A
 subrepresentation `S` of `σ.dual` is the annihilator of its coannihilator `S°`, a subrepresentation
