@@ -242,14 +242,6 @@ private theorem h_boundary {b w : M} (hbw : b - d w ∈ N) : h b - d (-h w) ∈ 
   rw [this]
   exact N'.add_mem (N'.add_mem (hNN' (hhom w)) (hvN' w)) (hNN' (hh _ hbw))
 
-include hd hN hhom in
-/-- A homotopy from `v` to zero modulo `N` makes `v` commute with `d` modulo `N`. -/
-private theorem commutator_mem_of_homotopy (u : M) : v (d u) - d (v u) ∈ N := by
-  have hdd (m : M) : d (d m) = 0 := congr($hd m)
-  have h := N.sub_mem (hN (hhom u)) (hhom (d u))
-  simp only [map_sub, map_add, hdd, map_zero, zero_add, add_zero] at h
-  simpa only [sub_sub_sub_cancel_left] using h
-
 include hd hN hN'N hh hreg hhom in
 /-- If `a + h b` is a boundary modulo `N'` for cycles `a` and `b` modulo `N`, then `b` is a
 boundary modulo `N`. -/
