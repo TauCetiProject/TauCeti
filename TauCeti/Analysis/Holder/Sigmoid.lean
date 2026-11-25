@@ -20,9 +20,10 @@ and Lipschitz since the next derivative is bounded too
 (`TauCeti.CkHolderSpace.exists_coe_eq_iteratedDeriv_sigmoid`).
 
 Since `σ` is the derivative of `x ↦ log (1 + exp x)`, this says that the logarithm of the weight
-`1 + exp x`, which is unbounded, has derivatives of every positive order in `C_b^{k,α}(ℝ)`: the
-hypothesis under which conjugation by this weight preserves the parabolic Hölder spaces of every
-order.
+`1 + exp x`, which is unbounded, has derivatives of every positive order in `C_b^{k,α}(ℝ)`. This is
+the hypothesis under which, at every order, multiplication by this weight identifies the
+unweighted space `C_{par,b}^{k+2+α}` with the weighted class `u / (1 + exp x) ∈ C_{par,b}^{k+2+α}`,
+while the conjugated coefficients remain in the unweighted coefficient space `C_{par,b}^{k+α}`.
 -/
 
 public section
