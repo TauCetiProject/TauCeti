@@ -53,6 +53,9 @@ second moment of `Λ`, and the variance and the cdf a probability mixing measure
   `TauCeti.Probability.integrableExpSet_natCast_mixedPoissonMeasure`: the generating functions
   are those of `Λ` evaluated at `z - 1`, respectively `exp t - 1`, and the
   exponential-integrability domain of `N` is the preimage of that of `Λ` under `t ↦ exp t - 1`.
+* the corresponding results in `ProbabilityTheory.HasLaw` give the factorial moments, mean,
+  variance, generating functions, and exact exponential-integrability criterion for a random
+  variable with the mixed Poisson law.
 
 ## References
 
@@ -312,3 +315,122 @@ theorem integrableExpSet_natCast_mixedPoissonMeasure (ρ : Measure ℝ≥0) :
     (fun x ↦ hasSum_pow_poissonMeasure x (exp t))
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory.HasLaw
+
+open TauCeti.Probability
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {N : Ω → ℕ} {ρ : Measure ℝ≥0}
+
+/-- A mixed Poisson random variable has a finite factorial moment exactly when the corresponding
+moment of its mixing law is finite. -/
+theorem integrable_descFactorial_mixedPoissonMeasure_iff
+    (hN : HasLaw N (mixedPoissonMeasure ρ) P) (n : ℕ) :
+    Integrable (fun ω ↦ ((N ω).descFactorial n : ℝ)) P ↔
+      Integrable (fun x : ℝ≥0 ↦ (x : ℝ) ^ n) ρ := by
+  rw [← TauCeti.Probability.integrable_descFactorial_mixedPoissonMeasure_iff,
+    ← hN.map_eq, integrable_map_measure (by fun_prop) hN.aemeasurable]
+  rfl
+
+/-- The factorial moments of a mixed Poisson random variable are the ordinary moments of its
+mixing law. Both sides use the totalized Bochner integral. -/
+theorem integral_descFactorial_mixedPoissonMeasure
+    (hN : HasLaw N (mixedPoissonMeasure ρ) P) (n : ℕ) :
+    ∫ ω, ((N ω).descFactorial n : ℝ) ∂P = ∫ x, (x : ℝ) ^ n ∂ρ := by
+  calc
+    _ = ∫ k, (k.descFactorial n : ℝ) ∂mixedPoissonMeasure ρ := by
+      simpa only [Function.comp_def] using
+        hN.integral_comp (f := fun k ↦ (k.descFactorial n : ℝ)) .of_discrete
+    _ = _ := TauCeti.Probability.integral_descFactorial_mixedPoissonMeasure ρ n
+
+/-- A mixed Poisson random variable is integrable after casting to `ℝ` exactly when the identity
+is integrable under its mixing law. -/
+theorem integrable_natCast_mixedPoissonMeasure_iff
+    (hN : HasLaw N (mixedPoissonMeasure ρ) P) :
+    Integrable (fun ω ↦ (N ω : ℝ)) P ↔ Integrable (fun x : ℝ≥0 ↦ (x : ℝ)) ρ := by
+  simpa only [Nat.descFactorial_one, pow_one] using
+    hN.integrable_descFactorial_mixedPoissonMeasure_iff 1
+
+/-- The expectation of a mixed Poisson random variable is the expectation of its mixing law. -/
+theorem integral_natCast_mixedPoissonMeasure
+    (hN : HasLaw N (mixedPoissonMeasure ρ) P) :
+    ∫ ω, (N ω : ℝ) ∂P = ∫ x, (x : ℝ) ∂ρ := by
+  simpa only [Nat.descFactorial_one, pow_one] using
+    hN.integral_descFactorial_mixedPoissonMeasure 1
+
+/-- The real cast of a mixed Poisson random variable is square-integrable exactly when the
+identity is square-integrable under its finite mixing law. -/
+theorem memLp_two_natCast_mixedPoissonMeasure_iff [IsFiniteMeasure ρ]
+    (hN : HasLaw N (mixedPoissonMeasure ρ) P) :
+    MemLp (fun ω ↦ (N ω : ℝ)) 2 P ↔ MemLp (fun x : ℝ≥0 ↦ (x : ℝ)) 2 ρ := by
+  rw [← TauCeti.Probability.memLp_two_natCast_mixedPoissonMeasure_iff,
+    ← hN.map_eq, memLp_map_measure_iff (by fun_prop) hN.aemeasurable]
+  rfl
+
+/-- The second moment of a mixed Poisson random variable is the second moment plus the mean of
+its mixing law. -/
+theorem integral_natCast_sq_mixedPoissonMeasure [IsFiniteMeasure ρ]
+    (hN : HasLaw N (mixedPoissonMeasure ρ) P)
+    (hρ : MemLp (fun x : ℝ≥0 ↦ (x : ℝ)) 2 ρ) :
+    ∫ ω, (N ω : ℝ) ^ 2 ∂P = ∫ x, (x : ℝ) ^ 2 ∂ρ + ∫ x, (x : ℝ) ∂ρ := by
+  calc
+    _ = ∫ k, (k : ℝ) ^ 2 ∂mixedPoissonMeasure ρ := by
+      simpa only [Function.comp_def] using
+        hN.integral_comp (f := fun k ↦ (k : ℝ) ^ 2) .of_discrete
+    _ = _ := TauCeti.Probability.integral_natCast_sq_mixedPoissonMeasure hρ
+
+/-- The variance of a mixed Poisson random variable is the mean plus the variance of its mixing
+law. -/
+theorem variance_mixedPoissonMeasure [IsProbabilityMeasure ρ]
+    (hN : HasLaw N (mixedPoissonMeasure ρ) P)
+    (hρ : MemLp (fun x : ℝ≥0 ↦ (x : ℝ)) 2 ρ) :
+    variance (fun ω ↦ (N ω : ℝ)) P =
+      (∫ x, (x : ℝ) ∂ρ) + variance (fun x : ℝ≥0 ↦ (x : ℝ)) ρ := by
+  have hcast : HasLaw (fun ω ↦ (N ω : ℝ))
+      ((mixedPoissonMeasure ρ).map (Nat.cast : ℕ → ℝ)) P :=
+    (hasLaw_map (by fun_prop)).fun_comp hN
+  rw [hcast.variance_eq, variance_map aemeasurable_id (by fun_prop)]
+  exact TauCeti.Probability.variance_mixedPoissonMeasure ρ hρ
+
+/-- The probability-generating function of a mixed Poisson random variable is the
+moment-generating function of its mixing law at `z - 1`. -/
+theorem pgf_mixedPoissonMeasure (hN : HasLaw N (mixedPoissonMeasure ρ) P)
+    {z : ℝ} (hz : 0 ≤ z) :
+    pgf N P z = mgf (fun x : ℝ≥0 ↦ (x : ℝ)) ρ (z - 1) :=
+  (TauCeti.Probability.HasLaw.pgf_eq hN z).trans
+    (TauCeti.Probability.pgf_mixedPoissonMeasure ρ hz)
+
+/-- The moment-generating function of the real cast of a mixed Poisson random variable is that of
+its mixing law at `exp t - 1`. -/
+theorem mgf_natCast_mixedPoissonMeasure
+    (hN : HasLaw N (mixedPoissonMeasure ρ) P) (t : ℝ) :
+    mgf (fun ω ↦ (N ω : ℝ)) P t =
+      mgf (fun x : ℝ≥0 ↦ (x : ℝ)) ρ (Real.exp t - 1) := by
+  rw [← pgf_exp]
+  exact hN.pgf_mixedPoissonMeasure (Real.exp_pos t).le
+
+/-- The cumulant-generating function of the real cast of a mixed Poisson random variable is that
+of its mixing law at `exp t - 1`. -/
+theorem cgf_natCast_mixedPoissonMeasure
+    (hN : HasLaw N (mixedPoissonMeasure ρ) P) (t : ℝ) :
+    cgf (fun ω ↦ (N ω : ℝ)) P t =
+      cgf (fun x : ℝ≥0 ↦ (x : ℝ)) ρ (Real.exp t - 1) := by
+  rw [cgf, cgf, hN.mgf_natCast_mixedPoissonMeasure]
+
+/-- The real cast of a mixed Poisson random variable has a finite exponential moment at `t`
+exactly when the mixing law has one at `exp t - 1`. -/
+theorem integrable_exp_mul_natCast_mixedPoissonMeasure_iff
+    (hN : HasLaw N (mixedPoissonMeasure ρ) P) (t : ℝ) :
+    Integrable (fun ω ↦ Real.exp (t * (N ω : ℝ))) P ↔
+      Real.exp t - 1 ∈ integrableExpSet (fun x : ℝ≥0 ↦ (x : ℝ)) ρ := by
+  have hdomain :
+      t ∈ integrableExpSet (fun k : ℕ ↦ (k : ℝ)) (mixedPoissonMeasure ρ) ↔
+        Real.exp t - 1 ∈ integrableExpSet (fun x : ℝ≥0 ↦ (x : ℝ)) ρ := by
+    rw [TauCeti.Probability.integrableExpSet_natCast_mixedPoissonMeasure]
+    rfl
+  rw [← hdomain]
+  simp only [integrableExpSet, Set.mem_ofPred_eq]
+  rw [← hN.map_eq, integrable_map_measure (by fun_prop) hN.aemeasurable]
+  rfl
+
+end ProbabilityTheory.HasLaw
