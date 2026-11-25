@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.GaloisRepresentation.Unramified
+public import TauCeti.NumberTheory.GaloisRepresentation.Unramified.Basic
 public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Operations
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Smul
 import TauCeti.RepresentationTheory.Stabilizer
@@ -134,19 +134,14 @@ of `ρ(χ)` gives `χ(Φ)ⁿ P(ρ, X)`, for `n` the rank. -/
 theorem frobCharpoly_twist_comp :
     (ρ.twist χ).frobCharpoly.comp (C (χ (arithFrobLift K) : A) * X) =
       C ((χ (arithFrobLift K) : A) ^ Module.finrank A M) * ρ.frobCharpoly := by
-  rw [frobCharpoly_def, frobCharpoly_def,
-    show ρ.twist χ (arithFrobLift K) = (χ (arithFrobLift K) : A) • ρ (arithFrobLift K) from
-      LinearMap.ext fun x ↦ by simp,
+  rw [frobCharpoly_def, frobCharpoly_def, twist_apply_eq_smul,
     LinearMap.charpoly_smul_comp_C_mul_X]
 
 /-- **The twist formula** `P(ρ(χ), X) = χ(Φ)ⁿ P(ρ, χ(Φ)⁻¹ X)`, for `n` the rank. -/
 theorem frobCharpoly_twist :
     (ρ.twist χ).frobCharpoly = C ((χ (arithFrobLift K) : A) ^ Module.finrank A M) *
       ρ.frobCharpoly.comp (C (((χ (arithFrobLift K))⁻¹ : Aˣ) : A) * X) := by
-  rw [frobCharpoly_def, frobCharpoly_def,
-    show ρ.twist χ (arithFrobLift K) = (χ (arithFrobLift K) : A) • ρ (arithFrobLift K) from
-      LinearMap.ext fun x ↦ by simp,
-    LinearMap.charpoly_units_smul]
+  rw [frobCharpoly_def, frobCharpoly_def, twist_apply_eq_smul, LinearMap.charpoly_units_smul]
 
 end FrobCharpoly
 

@@ -41,8 +41,7 @@ theorem charpoly_smul_comp_C_mul_X (M : Matrix n n R) (c : R) :
     · subst hij
       simp [charmatrix_apply_eq, mul_sub]
     · simp [charmatrix_apply_ne _ _ _ hij]
-  rw [charpoly, ← coe_compRingHom_apply, RingHom.map_det, h, det_smul, ← C_pow]
-  rfl
+  rw [charpoly, charpoly, ← coe_compRingHom_apply, RingHom.map_det, h, det_smul, ← C_pow]
 
 end Matrix
 
