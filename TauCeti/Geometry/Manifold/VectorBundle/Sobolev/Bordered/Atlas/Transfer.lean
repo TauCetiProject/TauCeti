@@ -216,11 +216,7 @@ theorem exists_chartValueL_ae_eq_halfCoord (hn : 1 ≤ n) (hkn : k ≤ n)
     exact ⟨Wkp.restrictL hle k v, (Wkp.value_restrictL_ae hle k v).trans
       (EventuallyEq.trans (ae_restrict_of_ae_restrict_of_subset hle hv)
         ((B.halfSectionChartData_coord_ae_eq j s).fun_comp _).symm)⟩
-  choose v hv using hcomp
-  refine ⟨⟨fun j m ↦ v j m, (SectionChartData.mem_sobolevSections_iff _ _ _ _).2 ⟨s, fun j ↦
-    B.halfSectionChartData.chartValueL_ae_eq_coord volume p k (hv j)⟩⟩, fun j ↦ ?_⟩
-  exact (B.halfSectionChartData.chartValueL_ae_eq_coord volume p k (hv j)).trans
-    (B.halfSectionChartData_coord_ae_eq j s)
+  exact exists_chartValueL_ae_eq_halfCoord_of_forall_exists_wkp hcomp
 
 /-- **Transfer of Sobolev sections between atlases over a surface with boundary.** For a `Cⁿ`
 vector bundle over a `Cⁿ` manifold modelled on the closed upper half-plane, `n ≥ 1`, every order
