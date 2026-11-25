@@ -59,7 +59,7 @@ theorem prod_scaleRoots [NoZeroDivisors R] (s : Finset ι) (f : ι → R[X]) (a 
 
 /-- A ring map `φ` sends the evaluation of `p.scaleRoots b` at `a`, for a monic `p`, to the
 evaluation of `(p.map φ).scaleRoots (φ b)` at `φ a`. -/
-theorem map_eval_scaleRoots {S T : Type*} [CommRing S] [CommRing T]
+theorem map_eval_scaleRoots {S T : Type*} [Semiring S] [Semiring T]
     (φ : S →+* T) {p : S[X]} (hp : p.Monic) (a b : S) :
     φ ((p.scaleRoots b).eval a) = ((p.map φ).scaleRoots (φ b)).eval (φ a) := by
   nontriviality T

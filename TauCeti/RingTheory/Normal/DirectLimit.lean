@@ -10,7 +10,6 @@ public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 import Mathlib.RingTheory.Int.Basic
 import Mathlib.RingTheory.Polynomial.RationalRoot
-import TauCeti.Algebra.Colimit.CommonStage
 import TauCeti.Algebra.Colimit.Ring.Basic
 import TauCeti.RingTheory.IntegralClosure.DirectLimit
 

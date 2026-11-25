@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Polynomial.Lifts
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import TauCeti.Algebra.Colimit.CommonStage
-import Mathlib.RingTheory.Polynomial.ScaleRoots
 import TauCeti.Algebra.Colimit.Ring.Basic
 import TauCeti.RingTheory.Polynomial.ScaleRoots
 
