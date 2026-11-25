@@ -106,6 +106,13 @@ theorem baseChange_flip (B : LinearMap.BilinForm R M) :
   ext x y
   simp
 
+/-- Scalar extension commutes with scalar multiples from the original semiring. -/
+@[simp]
+theorem baseChange_smul (r : R) (B : LinearMap.BilinForm R M) :
+    (r • B).baseChange A = algebraMap R A r • B.baseChange A := by
+  ext x y
+  simp [Algebra.smul_def]
+
 /-- **Scalar extension of a bilinear form is natural in the scalars.** Along an `R`-algebra map
 `f : A → A'`, the base change of `B` to `A'`, evaluated on the images of `x y : A ⊗[R] M`, is the
 image under `f` of its base change to `A`, evaluated on `x` and `y`. -/

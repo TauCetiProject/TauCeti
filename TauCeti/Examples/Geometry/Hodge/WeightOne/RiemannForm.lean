@@ -17,7 +17,8 @@ principal Riemann form `E` (`TauCeti.Hodge.StandardWeightOne`), for `l = Unit` t
 * `E(i, 1) = 1` and `E(1, i) = -1`;
 * `2E` is again a Riemann form, but not principal: the functional `x ↦ x₁` is not of the form
   `2E(y, ·)`;
-* `-E` is not a Riemann form on a positive-dimensional lattice: it fails `E(Jv, v) > 0`;
+* `-E` is not a Riemann form on a positive-dimensional lattice: `(-E)(Jv, v) = -E(Jv, v) < 0`
+  for `v ≠ 0`, so positivity fails;
 * on the zero lattice (`l = Empty`) the zero form is a principal Riemann form, positivity being
   vacuous.
 -/
@@ -44,22 +45,17 @@ theorem riemannForm_I_one : riemannForm Unit I one = 1 := by
 theorem riemannForm_one_I : riemannForm Unit one I = -1 := by
   simp
 
-/-- Real scalar extension commutes with integer multiples of a bilinear form. -/
-theorem baseChange_zsmul {M : Type*} [AddCommGroup M] (c : ℤ) (B : LinearMap.BilinForm ℤ M) :
-    (c • B).baseChange ℝ = (c : ℝ) • B.baseChange ℝ := by
-  have h := TensorProduct.isBaseChange ℤ M ℝ
-  refine h.algHom_ext _ _ fun x ↦ h.algHom_ext _ _ fun y ↦ ?_
-  simp [LinearMap.BilinForm.baseChange_tmul]
-
 /-- `2E` is a Riemann form for the standard complex structure. -/
 theorem isRiemannForm_two_smul_riemannForm :
     (almostComplexStructure l).IsRiemannForm ((2 : ℤ) • riemannForm l) where
   isAlt x := by
     simp only [LinearMap.smul_apply, (isRiemannForm_riemannForm l).isAlt x, smul_zero]
   invariant x y := by
-    simp only [baseChange_zsmul, LinearMap.smul_apply, (isRiemannForm_riemannForm l).invariant]
+    simp only [LinearMap.BilinForm.baseChange_smul, LinearMap.smul_apply,
+      (isRiemannForm_riemannForm l).invariant]
   positive x hx := by
-    rw [baseChange_zsmul, LinearMap.smul_apply, LinearMap.smul_apply, smul_eq_mul]
+    rw [LinearMap.BilinForm.baseChange_smul, LinearMap.smul_apply, LinearMap.smul_apply,
+      smul_eq_mul]
     exact mul_pos (by norm_num) ((isRiemannForm_riemannForm l).positive x hx)
 
 /-- `2E` is not principal on a nonzero standard lattice: the coordinate functional at a basis
@@ -79,16 +75,13 @@ theorem not_isRiemannForm_neg_riemannForm [Nonempty l] :
   intro h
   have : Nontrivial (Hodge.Realification (Hodge.StandardWeightOne.Lattice l)) :=
     Module.nontrivial_of_finrank_pos (R := ℝ) (by
-      change 0 < finrank ℝ (ℝ ⊗[ℤ] Hodge.StandardWeightOne.Lattice l)
       rw [Module.finrank_baseChange, Module.finrank_pi]
       exact Fintype.card_pos)
   obtain ⟨x, hx⟩ := exists_ne (0 : Hodge.Realification (Hodge.StandardWeightOne.Lattice l))
   have h₁ := h.positive x hx
   have h₂ := (isRiemannForm_riemannForm l).positive x hx
-  rw [← neg_one_smul ℤ (riemannForm l), baseChange_zsmul, LinearMap.smul_apply,
-    LinearMap.smul_apply,
-    smul_eq_mul] at h₁
-  push_cast at h₁
+  rw [← neg_one_smul ℤ (riemannForm l), LinearMap.BilinForm.baseChange_smul,
+    LinearMap.smul_apply, LinearMap.smul_apply, smul_eq_mul, map_neg, map_one] at h₁
   linarith
 
 /-- On the zero lattice the standard Riemann form is zero. -/
