@@ -54,8 +54,8 @@ namespace IsCyclotomicExtension
 variable {K : Type*} [Field K] [CharZero K] {F₁ F₂ : IntermediateField ℚ K} {m n : ℕ}
   [IsCyclotomicExtension {m} ℚ F₁] [IsCyclotomicExtension {n} ℚ F₂]
 
-/-- **Cyclotomic fields of coprime orders are linearly disjoint**: for nonzero `m` and `n` the
-compositum has degree `φ(mn) = φ(m) φ(n)`, and otherwise one of the two fields is `ℚ`. -/
+/-- **Cyclotomic fields of coprime orders are linearly disjoint**: an `m`-th and an `n`-th
+cyclotomic extension of `ℚ` with `m` and `n` coprime are linearly disjoint over `ℚ`. -/
 theorem linearDisjoint_of_coprime (h : m.Coprime n) : F₁.LinearDisjoint F₂ := by
   rcases eq_or_ne m 0 with rfl | hm
   · obtain rfl := (Nat.coprime_zero_left n).mp h
