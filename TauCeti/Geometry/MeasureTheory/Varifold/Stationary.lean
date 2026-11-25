@@ -31,7 +31,8 @@ convention, so `V` is then trivially stationary.
 
 These are Simon, *Lectures on Geometric Measure Theory*, 39.3, in Euclidean space. The
 identification of `‖δV‖` with the total variation measure of the extension of `δV` to continuous
-vector fields needs the Riesz representation for vector fields and is not proved here.
+vector fields, through the Riesz representation for vector fields, is in
+`TauCeti.Geometry.MeasureTheory.Varifold.FirstVariationMeasure`.
 
 ## Main results
 
@@ -86,8 +87,8 @@ def HasLocallyBoundedFirstVariation (V : Measure (W × grassmannian ℝ E k)) : 
 
 /-- The **total first variation** `‖δV‖(U) = sup {δV(X) : X ∈ C¹_c(U ∩ W), |X| ≤ 1}` of a set `U`,
 in `[0, ∞]`. It is defined for every varifold. By Simon 39.3 it agrees on open sets with the
-total variation measure of `δV` when `V` has locally bounded first variation; that identification
-is not formalized here. -/
+total variation measure of `δV` when `V` has locally bounded first variation
+(`Euclidean.firstVariationMeasure_preimage_coe`). -/
 def firstVariationMass (V : Measure (W × grassmannian ℝ E k)) (U : Set E) : ℝ≥0∞ :=
   ⨆ (X : 𝓓^{1}(W, E)) (_ : tsupport X ⊆ U) (_ : ∀ x, ‖X x‖ ≤ 1),
     ENNReal.ofReal (firstVariation V X)
