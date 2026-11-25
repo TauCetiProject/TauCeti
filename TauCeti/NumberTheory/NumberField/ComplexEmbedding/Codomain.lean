@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.Flat.Basic
 import Mathlib.RingTheory.DedekindDomain.Basic
 import Mathlib.RingTheory.Flat.Stability
 import Mathlib.RingTheory.Flat.TorsionFree
+import TauCeti.LinearAlgebra.TensorProduct.Cyclic
 
 /-!
 # `ℂ` as an algebra over a number field through a complex embedding
@@ -139,12 +140,8 @@ theorem tmul_smul (c : Codomain σ) (a : 𝓞 K) (x : E) :
 a complex multiple of `1 ⊗ s`. -/
 theorem exists_eq_smul_one_tmul {s : E} (hs : Submodule.span (𝓞 K) {s} = ⊤)
     (u : Codomain σ ⊗[𝓞 K] E) : ∃ c : ℂ, u = c • (1 ⊗ₜ[𝓞 K] s) := by
-  have hu : u ∈ (Submodule.span (𝓞 K) {s}).baseChange (Codomain σ) := by
-    rw [hs, Submodule.baseChange_top]
-    exact Submodule.mem_top
-  rw [Submodule.baseChange_span, Set.image_singleton, TensorProduct.mk_apply] at hu
-  obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 hu
-  exact ⟨equiv σ c, by rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one, tmul_eq_smul]⟩
+  obtain ⟨c, rfl⟩ := TensorProduct.exists_eq_tmul_of_span_singleton_eq_top hs u
+  exact ⟨equiv σ c, tmul_eq_smul σ c s⟩
 
 /-- Elements of `Codomain σ` pass between the factors of a complex tensor product of complex
 fibres, since they act as complex numbers. -/
