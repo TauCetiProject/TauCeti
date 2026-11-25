@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
+import Mathlib.Combinatorics.Enumerative.DoubleCounting
 
 /-!
 # Filtered products
@@ -139,8 +140,9 @@ are `k ∈ s` selecting `i`. -/]
 theorem prod_prod_filter_eq_prod_pow_card {ι κ M : Type*} [CommMonoid M] (s : Finset κ)
     (t : Finset ι) (f : ι → M) (p : ι → κ → Prop) [∀ i, DecidablePred (p i)] :
     ∏ k ∈ s, ∏ i ∈ t with p i k, f i = ∏ i ∈ t, f i ^ #{k ∈ s | p i k} := by
-  rw [prod_comm' (t' := t) (s' := fun i ↦ {k ∈ s | p i k})
-    fun _ _ ↦ by simp only [mem_filter]; tauto]
-  simp only [prod_const]
+  -- Mathlib's double counting with the relation `r k i := p i k`, then a constant inner product.
+  simpa only [bipartiteAbove, bipartiteBelow, prod_const] using
+    prod_prod_bipartiteAbove_eq_prod_prod_bipartiteBelow (s := s) (t := t)
+      (r := fun k i ↦ p i k) fun _ i ↦ f i
 
 end Finset
