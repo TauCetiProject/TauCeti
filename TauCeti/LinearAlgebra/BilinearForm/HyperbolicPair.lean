@@ -61,7 +61,8 @@ open scoped TensorProduct
 
 namespace LinearMap.BilinForm
 
-variable {𝕜 H : Type*} [Field 𝕜] [AddCommGroup H] {B : LinearMap.BilinForm ℤ H} {v t : H}
+variable {𝕜 H : Type*} [Field 𝕜] [AddCommGroup H] [Module ℤ H] {B : LinearMap.BilinForm ℤ H}
+  {v t : H}
 
 /-- A `ℤ`-valued form on a group spanned modulo torsion by `v` and `t` is symmetric as soon as
 `B v t = B t v`, since it sees each argument only modulo torsion. In particular a form spanned by
@@ -124,6 +125,8 @@ of the lines through `1 ⊗ v` and `1 ⊗ t`. -/
 private theorem isCompl_span_one_tmul (ht : B t t = 0) (hvt : B v t = 1) (htv : B t v = 1)
     (hspan : ∀ x : H, ∃ a c : ℤ, IsOfFinAddOrder (x - (a • v + c • t))) :
     IsCompl (𝕜 ∙ ((1 : 𝕜) ⊗ₜ[ℤ] v)) (𝕜 ∙ ((1 : 𝕜) ⊗ₜ[ℤ] t)) := by
+  -- `H` has only one `ℤ`-module structure, the one `span_one_tmul_eq_top_of_isOfFinAddOrder` uses.
+  obtain rfl : ‹Module ℤ H› = AddCommGroup.toIntModule H := Subsingleton.elim _ _
   -- The torsion of `H` dies in `𝕜 ⊗[ℤ] H`, so the two lines span it.
   have hsup : 𝕜 ∙ ((1 : 𝕜) ⊗ₜ[ℤ] v) ⊔ 𝕜 ∙ ((1 : 𝕜) ⊗ₜ[ℤ] t) = ⊤ := by
     have h := TauCeti.span_one_tmul_eq_top_of_isOfFinAddOrder (A := 𝕜) (s := {v, t}) fun x ↦ by

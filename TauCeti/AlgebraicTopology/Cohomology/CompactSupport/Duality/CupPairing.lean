@@ -23,9 +23,10 @@ instead chain coefficients and cochain values the unit object `ℤ` of `ModuleCa
 `ℤ`-linear structure of a category of modules; this is also the convention of the Künneth
 decompositions of products with circles, such as `TopCat.singularCohomologyAddCircleProdSlantEquiv`.
 
-This file transports Poincaré duality to the second convention. Write `[M]_ℤ ∈ Hₙ(M; ℤ)` for the
-fundamental class read with chain coefficients `ℤ`, its image under the coefficient isomorphism
-`TauCeti.uliftIntIso`. Then capping with `[M]_ℤ` is a bijection
+This file transports Poincaré duality to the second convention. Write `[M]_ℤ ∈ Hₙ(M; ℤ)`
+(`TauCeti.HomologicalOrientation.intFundamentalClass`) for the fundamental class read with chain
+coefficients `ℤ`, its image under the coefficient isomorphism `TauCeti.uliftIntIso`. Then capping
+with `[M]_ℤ` is a bijection
 
 `Hᵖ(M; ℤ) → H_q(M; ℤ)`, `α ↦ [M]_ℤ ⌢ α`, `p + q = n`
 
@@ -40,8 +41,13 @@ The dual class is not unique in general, since torsion of `H_q(M; ℤ)` is invis
 Kronecker pairing.
 
 The proof compares the two cap products by their naturality in the chain coefficients
-(`TopCat.singularCap_coefficient_naturality`) and by their independence of the presentation of
-the `ℤ`-linear structure (`TopCat.singularCap_eqToHom`).
+(`TopCat.singularCapLinearMap_singularCohomologyChainCoefficientMap`) and by their independence
+of the presentation of the `ℤ`-linear structure (`TopCat.singularCap_eqToHom`).
+
+## Main definitions
+
+* `TauCeti.HomologicalOrientation.intFundamentalClass`: the integral fundamental class `[M]_ℤ`,
+  with chain coefficients `ℤ`.
 
 ## Main results
 
@@ -71,30 +77,22 @@ variable {M E : Type} [TopologicalSpace M] [T2Space M] [CompactSpace M]
 
 attribute [local instance 1100] ModuleCat.instLinear
 
-/-- Capping the fundamental class, read with chain coefficients `ℤ`, with a class pulled back from
-chain coefficients `ULift ℤ` is capping the fundamental class itself. -/
-private theorem singularCapLinearMap_chainCoefficientMap {p q : ℕ} (h : p + q = n)
-    (α : (TopCat.of M).singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ
-      (𝟙_ (ModuleCat.{0} ℤ)) p) :
-    (TopCat.of M).singularCapLinearMap ℤ h
-        ((((singularHomologyFunctor (ModuleCat.{0} ℤ) n).map uliftIntIso.hom).app
-          (TopCat.of M)).hom (o.fundamentalClass hn))
-        ((TopCat.of M).singularCohomologyChainCoefficientMap ℤ (𝟙_ (ModuleCat.{0} ℤ))
-          uliftIntIso.inv p α) =
-      ((TopCat.of M).singularCap ℤ (ρ_ _).inv (ρ_ (𝟙_ (ModuleCat.{0} ℤ))).hom p q n h α).hom
-        (o.fundamentalClass hn) := by
-  have hc := TopCat.singularCap_coefficient_naturality (TopCat.of M) ℤ
-    (ρ_ (ModuleCat.of ℤ (ULift.{0} ℤ))).inv (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv
-    (ρ_ (𝟙_ (ModuleCat.{0} ℤ))).hom (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom
-    uliftIntIso.inv (𝟙 _) uliftIntIso.inv (𝟙 _) (𝟙 _)
-    (by simp [unitors_inv_equal]) (by simp [unitors_equal]) p q n h α
-  rw [ChainComplex.linearYonedaObjMap_id, HomologicalComplex.homologyMap_id] at hc
-  simp only [CategoryTheory.Functor.map_id, NatTrans.id_app, Category.comp_id,
-    ConcreteCategory.id_apply] at hc
-  rw [TopCat.singularCapLinearMap_apply, hc, ModuleCat.hom_comp, LinearMap.comp_apply]
-  congr 1
-  exact (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).mapIso uliftIntIso).app
-    (TopCat.of M)).hom_inv_id_apply (o.fundamentalClass hn)
+/-- **The integral fundamental class** `[M]_ℤ ∈ Hₙ(M; ℤ)`: the fundamental class
+`TauCeti.HomologicalOrientation.fundamentalClass`, read with chain coefficients the unit object
+`ℤ` of `ModuleCat ℤ` instead of `ULift ℤ`, through the coefficient isomorphism
+`TauCeti.uliftIntIso` (as in `TauCeti.uliftIntHomologyIso`). -/
+def intFundamentalClass :
+    ((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj (𝟙_ (ModuleCat.{0} ℤ))).obj (TopCat.of M) :=
+  (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).map uliftIntIso.hom).app (TopCat.of M)).hom
+    (o.fundamentalClass hn)
+
+/-- The integral fundamental class is the image of the fundamental class under the coefficient
+isomorphism `TauCeti.uliftIntIso`. -/
+theorem intFundamentalClass_def :
+    o.intFundamentalClass hn =
+      (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).map uliftIntIso.hom).app
+        (TopCat.of M)).hom (o.fundamentalClass hn) :=
+  (rfl)
 
 attribute [local instance] MonoidalPreadditive.monoidalLinearInt in
 /-- **Poincaré duality for the integral fundamental class.** For a closed manifold `M` of
@@ -102,9 +100,7 @@ dimension `n` with a homological orientation, capping with the fundamental class
 coefficients `ℤ` is a bijection `Hᵖ(M; ℤ) → H_q(M; ℤ)`, `α ↦ [M]_ℤ ⌢ α`, for `p + q = n`, in the
 convention of `TopCat.singularCapLinearMap` and `TopCat.singularCupPairing`. -/
 theorem bijective_singularCapLinearMap_fundamentalClass {p q : ℕ} (h : p + q = n) :
-    Function.Bijective ((TopCat.of M).singularCapLinearMap ℤ h
-      ((((singularHomologyFunctor (ModuleCat.{0} ℤ) n).map uliftIntIso.hom).app
-        (TopCat.of M)).hom (o.fundamentalClass hn))) := by
+    Function.Bijective ((TopCat.of M).singularCapLinearMap ℤ h (o.intFundamentalClass hn)) := by
   let e := eqToHom (congrArg (fun L : Linear ℤ (ModuleCat.{0} ℤ) ↦
     @TopCat.singularCohomology _ _ _ _ (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ _ L
       (𝟙_ (ModuleCat.{0} ℤ)) (TopCat.of M) p) (Subsingleton.elim Linear.preadditiveIntLinear
@@ -120,7 +116,9 @@ theorem bijective_singularCapLinearMap_fundamentalClass {p q : ℕ} (h : p + q =
   funext α
   simp only [Function.comp_apply, c, e, TopCat.singularCohomologyChainCoefficientIso_hom,
     Iso.symm_hom]
-  rw [singularCapLinearMap_chainCoefficientMap,
+  rw [intFundamentalClass_def,
+    TopCat.singularCapLinearMap_singularCohomologyChainCoefficientMap _ _ h uliftIntIso
+      (o.fundamentalClass hn),
     TopCat.singularCap_eqToHom _ _ (Subsingleton.elim _ _)]
 
 /-- **Poincaré duals of integral homology classes.** On a closed manifold `M` of dimension `n` with
@@ -132,9 +130,7 @@ theorem exists_forall_singularCupPairing_eq_singularKronecker {p q : ℕ} (h : p
       (TopCat.of M)) :
     ∃ α : (TopCat.of M).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) p,
       ∀ β : (TopCat.of M).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) q,
-        (TopCat.of M).singularCupPairing ℤ h
-            ((((singularHomologyFunctor (ModuleCat.{0} ℤ) n).map uliftIntIso.hom).app
-              (TopCat.of M)).hom (o.fundamentalClass hn)) α β =
+        (TopCat.of M).singularCupPairing ℤ h (o.intFundamentalClass hn) α β =
           ((TopCat.of M).singularKronecker ℤ q β).hom x := by
   obtain ⟨α, hα⟩ := (o.bijective_singularCapLinearMap_fundamentalClass hn h).2 x
   exact ⟨α, fun β ↦ by

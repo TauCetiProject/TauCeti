@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicTopology.Singular.MappingTorus.CircleProduct
 public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
 public import Mathlib.LinearAlgebra.QuadraticForm.Signature
 
-import TauCeti.CategoryTheory.Linear.Int
 import TauCeti.LinearAlgebra.BilinearForm.HyperbolicPair
 
 /-!
@@ -21,8 +20,9 @@ Let `F` be a closed connected oriented surface and `φ : F ≃ₜ F` a homeomorp
 class of `H²(Y_φ; ℤ)` pairing to one with the fibre class `i_*[F]`, and `[dt] ∈ H¹(Y_φ; ℤ)` the
 base class, which generates `H¹(Y_φ; ℤ)` (`TauCeti.MappingTorus.exists_eq_zsmul_baseClass`). The
 fundamental class of `Y_φ` is taken from a closed oriented three-manifold `N` homeomorphic to it by
-`g : N ≃ₜ Y_φ`, as `[Y_φ] = g_*[N]_ℤ` with chain coefficients `ℤ`; for a diffeomorphism `φ` of a
-smooth surface, `N` can be the smooth mapping torus of `φ⁻¹`
+`g : N ≃ₜ Y_φ`, as `[Y_φ] = g_*[N]_ℤ` with chain coefficients `ℤ`
+(`TauCeti.HomologicalOrientation.intFundamentalClass`); for a diffeomorphism `φ` of a smooth
+surface, `N` can be the smooth mapping torus of `φ⁻¹`
 (`TauCeti.SmoothMappingTorus.homeomorphMappingTorus`).
 
 By Poincaré duality on `N`
@@ -108,14 +108,12 @@ theorem singularCupPairing_baseClass_eq_one_or_eq_neg_one
     (TopCat.of (MappingTorus φ)).singularCupPairing ℤ (p := 2) (q := 1) (n := 3) rfl
         ((((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).obj (𝟙_ (ModuleCat.{0} ℤ))).map
           (TopCat.ofHom ⟨g, g.continuous⟩)).hom
-          ((((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).map uliftIntIso.hom).app
-            (TopCat.of N)).hom (o'.fundamentalClass hn')))
+          (o'.intFundamentalClass hn'))
         v (baseClass φ) = 1 ∨
       (TopCat.of (MappingTorus φ)).singularCupPairing ℤ (p := 2) (q := 1) (n := 3) rfl
         ((((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).obj (𝟙_ (ModuleCat.{0} ℤ))).map
           (TopCat.ofHom ⟨g, g.continuous⟩)).hom
-          ((((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).map uliftIntIso.hom).app
-            (TopCat.of N)).hom (o'.fundamentalClass hn')))
+          (o'.intFundamentalClass hn'))
         v (baseClass φ) = -1 := by
   have := ChartedSpace.locallyPathConnectedSpace E F
   have : PathConnectedSpace F := pathConnectedSpace_iff_connectedSpace.2 inferInstance
@@ -125,20 +123,8 @@ theorem singularCupPairing_baseClass_eq_one_or_eq_neg_one
   -- The fibre class `i_*[F]` with chain coefficients `ℤ`, on which `v` evaluates to one.
   set x := (((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).map uliftIntIso.hom).app
     (TopCat.of (MappingTorus φ))).hom (o.mapFundamentalClass hn (incl φ))
-  have hvx : ((TopCat.of (MappingTorus φ)).singularKronecker ℤ 2 v).hom x = 1 := by
-    -- `evalFundamentalClass` is stated with the `ℤ`-linear structure of a preadditive category,
-    -- `v` with that of a category of modules; the two cohomology modules agree only up to
-    -- unfolding instances, so the rewrites need `erw`, and `singularKronecker_eqToHom` compares
-    -- the two Kronecker maps.
-    have h := hv
-    erw [HomologicalOrientation.evalFundamentalClass_apply,
-      TopCat.singularKronecker_singularCohomologyChainCoefficientMap] at h
-    have key := TopCat.singularKronecker_eqToHom (𝟙_ (ModuleCat.{0} ℤ)) (ModuleCat.of ℤ ℤ)
-      ModuleCat.instLinear Linear.preadditiveIntLinear (Subsingleton.elim _ _)
-      (TopCat.of (MappingTorus φ)) 2 v
-    erw [eqToHom_refl, ConcreteCategory.id_apply] at key
-    rw [← key]
-    exact h
+  have hvx : ((TopCat.of (MappingTorus φ)).singularKronecker ℤ 2 v).hom x = 1 :=
+    (o.evalFundamentalClass_singularCohomologyChainCoefficientMap hn (incl φ) v).symm.trans hv
   obtain ⟨xN, hxN⟩ := (ConcreteCategory.bijective_of_isIso
     (((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj (𝟙_ (ModuleCat.{0} ℤ))).map G)).2 x
   obtain ⟨α, hα⟩ := o'.exists_forall_singularCupPairing_eq_singularKronecker hn'
@@ -153,15 +139,13 @@ theorem singularCupPairing_baseClass_eq_one_or_eq_neg_one
   -- `⟨a ⌣ v, g_*[N]⟩ = ⟨g^* a ⌣ g^* v, [N]⟩ = ⟨g^* v, x_N⟩ = ⟨v, x⟩ = 1`.
   have h₁ : (TopCat.of (MappingTorus φ)).singularCupPairing ℤ (p := 1) (q := 2) (n := 3) rfl
       ((((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).obj (𝟙_ (ModuleCat.{0} ℤ))).map G).hom
-        ((((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).map uliftIntIso.hom).app
-          (TopCat.of N)).hom (o'.fundamentalClass hn'))) a v = 1 := by
+        (o'.intFundamentalClass hn')) a v = 1 := by
     rw [← TopCat.singularCupPairing_naturality, ha, hα, TopCat.singularKronecker_naturality,
       ModuleCat.hom_comp, LinearMap.comp_apply, hxN, hvx]
   have h₂ := TopCat.singularCupPairing_gradedComm (TopCat.of (MappingTorus φ)) ℤ
     (p := 1) (q := 2) (n := 3) rfl rfl
     ((((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).obj (𝟙_ (ModuleCat.{0} ℤ))).map G).hom
-        ((((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).map uliftIntIso.hom).app
-          (TopCat.of N)).hom (o'.fundamentalClass hn'))) a v
+        (o'.intFundamentalClass hn')) a v
   rw [h₁, mul_one, show (-1 : ℤ) ^ (1 * 2) = 1 by norm_num] at h₂
   obtain ⟨k, rfl⟩ := exists_eq_zsmul_baseClass φ hdet a
   rw [LinearMap.map_smul_of_tower, smul_eq_mul] at h₂
@@ -185,16 +169,14 @@ theorem exists_forall_eq_zsmul_and_singularCupPairing_eq_one
       (TopCat.of (MappingTorus φ)).singularCupPairing ℤ (p := 2) (q := 1) (n := 3) rfl
         ((((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).obj (𝟙_ (ModuleCat.{0} ℤ))).map
           (TopCat.ofHom ⟨g, g.continuous⟩)).hom
-          ((((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).map uliftIntIso.hom).app
-            (TopCat.of N)).hom (o'.fundamentalClass hn'))) v a = 1 := by
+          (o'.intFundamentalClass hn')) v a = 1 := by
   have := ChartedSpace.locallyPathConnectedSpace E F
   have : PathConnectedSpace F := pathConnectedSpace_iff_connectedSpace.2 inferInstance
   obtain ⟨ε, hε, hεε⟩ : ∃ ε : ℤ, (TopCat.of (MappingTorus φ)).singularCupPairing ℤ (p := 2)
       (q := 1) (n := 3) rfl
         ((((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).obj (𝟙_ (ModuleCat.{0} ℤ))).map
           (TopCat.ofHom ⟨g, g.continuous⟩)).hom
-          ((((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).map uliftIntIso.hom).app
-            (TopCat.of N)).hom (o'.fundamentalClass hn'))) v (baseClass φ) = ε ∧ ε * ε = 1 := by
+          (o'.intFundamentalClass hn')) v (baseClass φ) = ε ∧ ε * ε = 1 := by
     rcases singularCupPairing_baseClass_eq_one_or_eq_neg_one φ o hn o' hn' g hdet hv with h | h
     exacts [⟨1, h, rfl⟩, ⟨-1, h, rfl⟩]
   refine ⟨ε • baseClass φ, fun c ↦ ?_, ?_⟩
@@ -222,8 +204,7 @@ theorem sigPos_eq_one_and_sigNeg_eq_one_singularCupPairing_addCircleProd (p : �
             (AddCircle.fundamentalClass p ⊗ₜ
               (((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).obj (𝟙_ (ModuleCat.{0} ℤ))).map
                 (TopCat.ofHom ⟨g, g.continuous⟩)).hom
-                ((((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).map uliftIntIso.hom).app
-                  (TopCat.of N)).hom (o'.fundamentalClass hn'))))))).toQuadraticMap = 1 ∧
+                (o'.intFundamentalClass hn')))))).toQuadraticMap = 1 ∧
       sigNeg (LinearMap.BilinForm.baseChange ℝ
         ((TopCat.of (AddCircle p) ⊗ TopCat.of (MappingTorus φ)).singularCupPairing ℤ
         (p := 2) (q := 2) (n := 4) rfl
@@ -234,21 +215,7 @@ theorem sigPos_eq_one_and_sigNeg_eq_one_singularCupPairing_addCircleProd (p : �
             (AddCircle.fundamentalClass p ⊗ₜ
               (((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).obj (𝟙_ (ModuleCat.{0} ℤ))).map
                 (TopCat.ofHom ⟨g, g.continuous⟩)).hom
-                ((((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).map uliftIntIso.hom).app
-                  (TopCat.of N)).hom (o'.fundamentalClass hn'))))))).toQuadraticMap = 1 := by
-  -- The hyperbolic-pair results are stated for the `ℤ`-module structure
-  -- `AddCommGroup.toIntModule`, which agrees with any other one.
-  have key : ∀ {H : Type} [AddCommGroup H] [m : Module ℤ H] (B : LinearMap.BilinForm ℤ H)
-      (v t : H), B v v = 0 → B t t = 0 → B v t = 1 → B t v = 1 →
-      (∀ x : H, ∃ a c : ℤ, IsOfFinAddOrder (x - (a • v + c • t))) →
-      sigPos (B.baseChange ℝ).toQuadraticMap = 1 ∧
-        sigNeg (B.baseChange ℝ).toQuadraticMap = 1 := by
-    intro H _ m B v t hv ht hvt htv hspan
-    obtain rfl : m = AddCommGroup.toIntModule H := Subsingleton.elim _ _
-    exact ⟨LinearMap.BilinForm.sigPos_toQuadraticMap_baseChange_eq_one_of_isOfFinAddOrder_span
-      hv ht hvt htv hspan,
-      LinearMap.BilinForm.sigNeg_toQuadraticMap_baseChange_eq_one_of_isOfFinAddOrder_span
-      hv ht hvt htv hspan⟩
+                (o'.intFundamentalClass hn')))))).toQuadraticMap = 1 := by
   -- A class `v` pairing to one with the fibre class, read with chain coefficients `ℤ`.
   obtain ⟨w, hw⟩ := surjective_evalFundamentalClass_incl hφ
     (injective_id_sub_homologyMap_monodromyChainMap_ulift φ hdet) (ModuleCat.of ℤ ℤ) 1
@@ -259,10 +226,16 @@ theorem sigPos_eq_one_and_sigNeg_eq_one_singularCupPairing_addCircleProd (p : �
   rw [TopCat.singularCohomologyChainCoefficientIso_hom] at hv
   obtain ⟨a, ha, hva⟩ :=
     exists_forall_eq_zsmul_and_singularCupPairing_eq_one φ o hn o' hn' g hdet hv
-  refine key _ _ _ (TopCat.singularCupPairing_snd_snd_addCircle_singularHomologyCross _ _ _)
-    (TopCat.singularCupPairing_fst_snd_fst_snd_addCircle_singularHomologyCross _ a a)
-    ((TopCat.singularCupPairing_snd_fst_snd_addCircle_singularHomologyCross _ v a).trans hva)
-    ((TopCat.singularCupPairing_fst_snd_snd_addCircle_singularHomologyCross _ v a).trans hva)
-    (exists_isOfFinAddOrder_sub_smul_add_smul_addCircleProd φ o hn hφ hdet hv ha)
+  have hvt := (TopCat.singularCupPairing_snd_fst_snd_addCircle_singularHomologyCross (p := p) _ v
+    a).trans hva
+  have htv := (TopCat.singularCupPairing_fst_snd_snd_addCircle_singularHomologyCross (p := p) _ v
+    a).trans hva
+  have hspan := exists_isOfFinAddOrder_sub_smul_add_smul_addCircleProd (p := p) φ o hn hφ hdet hv ha
+  refine ⟨LinearMap.BilinForm.sigPos_toQuadraticMap_baseChange_eq_one_of_isOfFinAddOrder_span
+      ?vv ?tt hvt htv hspan,
+    LinearMap.BilinForm.sigNeg_toQuadraticMap_baseChange_eq_one_of_isOfFinAddOrder_span
+      ?vv ?tt hvt htv hspan⟩
+  exacts [TopCat.singularCupPairing_snd_snd_addCircle_singularHomologyCross _ v v,
+    TopCat.singularCupPairing_fst_snd_fst_snd_addCircle_singularHomologyCross _ a a]
 
 end TauCeti.MappingTorus
