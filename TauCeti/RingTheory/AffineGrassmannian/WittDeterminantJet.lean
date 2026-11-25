@@ -81,39 +81,11 @@ theorem IsPoint.mul_right {hN : N < h}
     IsPoint hN (A * B) := by
   obtain ⟨b, hb⟩ := hB.exists_right_inv
   rw [isPoint_iff_det_coeff, Matrix.det_mul]
-  have hAu := (mul_coeff hN A.det B.det hA.1).1
+  have hAu := A.det.mul_coeff_eq_zero_of_lt B.det hA.1
   refine ⟨hAu, isUnit_of_dvd_unit ?_ hA.2⟩
   -- Multiplying back by the inverse shows the new leading coefficient divides the original.
-  have hdiv := (mul_coeff hN (A.det * B.det) b hAu).2
+  have hdiv := (A.det * B.det).coeff_dvd_mul_coeff b hN hAu
   rwa [mul_assoc, hb, mul_one] at hdiv
-where
-  mul_coeff (hN : N < h) (a b : TruncatedWittVector p h R)
-      (ha : ∀ i : Fin h, i.val < N → a.coeff i = 0) :
-      (∀ i : Fin h, i.val < N → (a * b).coeff i = 0) ∧
-        a.coeff ⟨N, hN⟩ ∣ (a * b).coeff ⟨N, hN⟩ := by
-    have htrunc : a * b = WittVector.truncate h (a.out * b.out) := by
-      rw [map_mul]
-      exact congrArg₂ (· * ·) (TruncatedWittVector.truncateFun_out _).symm
-        (TruncatedWittVector.truncateFun_out _).symm
-    have ha' : a.out = WittVector.verschiebung^[N] (a.out.shift N) :=
-      WittVector.eq_iterate_verschiebung fun i hi ↦
-        (TruncatedWittVector.coeff_out a ⟨i, hi.trans hN⟩).trans (ha _ hi)
-    have hprod : a.out * b.out =
-        WittVector.verschiebung^[N] (a.out.shift N * WittVector.frobenius^[N] b.out) :=
-      (congrArg (· * b.out) ha').trans (WittVector.iterate_verschiebung_mul_left _ _ _)
-    constructor
-    · intro i hi
-      rw [htrunc, WittVector.coeff_truncate, hprod]
-      exact WittVector.iterate_verschiebung_coeff_eq_zero _ hi
-    · let c := (WittVector.frobenius^[N] b.out).coeff 0
-      refine ⟨c, ?_⟩
-      calc
-        (a * b).coeff ⟨N, hN⟩ = a.out.coeff N * c := by
-          rw [htrunc, WittVector.coeff_truncate, hprod]
-          simpa only [zero_add, WittVector.mul_coeff_zero, WittVector.shift_coeff, add_zero] using
-            WittVector.iterate_verschiebung_coeff
-              (a.out.shift N * WittVector.frobenius^[N] b.out) N 0
-        _ = a.coeff ⟨N, hN⟩ * c := congrArg (· * c) (TruncatedWittVector.coeff_out a ⟨N, hN⟩)
 
 section CoordinateRing
 
@@ -377,16 +349,16 @@ section CharP
 
 variable [CharP R p]
 
-private theorem isPoint_iff_of_det_eq_truncate_mul_pow (hN : N < h)
+private theorem isPoint_of_det_eq_truncate_mul_pow (hN : N < h)
     {A : Matrix ι ι (TruncatedWittVector p h R)} {v : WittVector p R}
-    (hdet : A.det = WittVector.truncate h (v * (p : WittVector p R) ^ N)) :
-    IsPoint hN A ↔ IsUnit (v.coeff 0) := by
+    (hdet : A.det = WittVector.truncate h (v * (p : WittVector p R) ^ N))
+    (hv : IsUnit (v.coeff 0)) : IsPoint hN A := by
   have hlead : (v * (p : WittVector p R) ^ N).coeff N = v.coeff 0 ^ p ^ N := by
     simpa only [zero_add] using WittVector.mul_pow_charP_coeff_succ v (m := 0) (n := N)
   rw [isPoint_iff_det_coeff, hdet]
   simp only [WittVector.coeff_truncate, hlead,
     isUnit_pow_iff (pow_ne_zero _ (Fact.out : p.Prime).ne_zero)]
-  exact ⟨And.right, fun hv ↦ ⟨fun _ hi ↦ WittVector.mul_pow_charP_coeff_zero v hi, hv⟩⟩
+  exact ⟨fun _ hi ↦ WittVector.mul_pow_charP_coeff_zero v hi, hv⟩
 
 /-- A full Witt matrix with determinant a unit times `p ^ N` gives a point at every depth
 greater than `N`. -/
@@ -394,7 +366,7 @@ theorem IsPoint.map_truncate_of_det_eq_unit_mul_pow {hN : N < h}
     {A : Matrix ι ι (WittVector p R)} {u : (WittVector p R)ˣ}
     (hdet : A.det = ↑u * (p : WittVector p R) ^ N) :
     IsPoint hN (A.map (WittVector.truncate h)) := by
-  apply (isPoint_iff_of_det_eq_truncate_mul_pow hN (v := ↑u) ?_).mpr
+  apply isPoint_of_det_eq_truncate_mul_pow hN (v := ↑u) ?_
   · exact WittVector.isUnit_iff_isUnit_coeff_zero.mp u.isUnit
   · rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, hdet]
 
@@ -409,7 +381,7 @@ theorem IsPoint.of_det_eq_unit_mul_pow {hN : N < h}
   have hv : WittVector.truncate h v = ↑u := TruncatedWittVector.truncateFun_out _
   have hdet' : A.det = WittVector.truncate h (v * (p : WittVector p R) ^ N) := by
     simpa only [map_mul, map_pow, hv, map_natCast] using hdet
-  apply (isPoint_iff_of_det_eq_truncate_mul_pow hN hdet').mpr
+  apply isPoint_of_det_eq_truncate_mul_pow hN hdet'
   rw [← TruncatedWittVector.constantCoeff_wittVector_truncate (n := h), hv]
   exact u.isUnit.map TruncatedWittVector.constantCoeff
 
@@ -427,18 +399,11 @@ theorem isPoint_map_truncate_iff_exists_unit_mul_pow (hN : N < h)
       ∃ u : (WittVector p R)ˣ, A.det = ↑u * (p : WittVector p R) ^ N := by
   constructor
   · intro hA
-    have hlo := ((isPoint_iff_det_coeff _ _).mp hA).1
-    simp only [← RingHom.mapMatrix_apply, ← RingHom.map_det, WittVector.coeff_truncate] at hlo
-    have hdvd : (p : WittVector p R) ^ N ∣ A.det := by
-      rw [← Ideal.mem_span_singleton, WittVector.mem_span_p_pow_iff_le_coeff_eq_zero]
-      exact fun j hj ↦ hlo ⟨j, hj.trans hN⟩ hj
-    obtain ⟨v, hv⟩ := hdvd
-    have hdet : (A.map (WittVector.truncate h)).det =
-        WittVector.truncate h (v * (p : WittVector p R) ^ N) := by
-      rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, hv, mul_comm]
-    have hv₀ := (isPoint_iff_of_det_eq_truncate_mul_pow hN hdet).mp hA
-    exact ⟨(WittVector.isUnit_iff_isUnit_coeff_zero.mpr hv₀).unit,
-      by simpa [mul_comm] using hv⟩
+    rw [isPoint_iff_det_coeff] at hA
+    simp only [← RingHom.mapMatrix_apply, ← RingHom.map_det, WittVector.coeff_truncate] at hA
+    obtain ⟨u, hu⟩ := WittVector.associated_p_pow_iff.mpr
+      ⟨fun j hj ↦ hA.1 ⟨j, hj.trans hN⟩ hj, hA.2⟩
+    exact ⟨u, by simpa [mul_comm] using hu.symm⟩
   · rintro ⟨u, hu⟩
     exact IsPoint.map_truncate_of_det_eq_unit_mul_pow (u := u) hu
 

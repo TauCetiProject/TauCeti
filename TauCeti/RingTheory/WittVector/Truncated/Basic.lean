@@ -14,13 +14,18 @@ public import TauCeti.RingTheory.DeltaRing.Basic
 import TauCeti.RingTheory.WittVector.Units
 
 /-!
-# Coefficient maps, reduction modulo `p` and length-two Witt arithmetic
+# Coefficient maps, vanishing prefixes, reduction modulo `p` and length-two Witt arithmetic
 
 A ring homomorphism `f : A →+* B` induces a ring homomorphism `W_n(A) →+* W_n(B)` acting on Witt
 coordinates by `f`, compatibly with truncation from `W(A)`. For `A` of characteristic `p` the
 Witt-vector Frobenius of `W_n(A)` is `TruncatedWittVector.map n (frobenius A p)`
 (`TruncatedWittVector.map_frobenius_wittVector_truncate`), and for perfect `A` it is the
 automorphism `TruncatedWittVector.mapEquiv n (frobeniusEquiv A p)`.
+
+Over any commutative coefficient ring, multiplication preserves a vanishing prefix of Witt
+coordinates, and the first potentially nonzero coordinate of a factor divides that of the
+product (`TruncatedWittVector.mul_coeff_eq_zero_of_lt` and
+`TruncatedWittVector.coeff_dvd_mul_coeff`).
 
 For `n ≠ 0` the zeroth coordinate is a ring homomorphism `W_n(A) →+* A`. When `A` has
 characteristic `p`, the ring `W_n(A)` has characteristic `p ^ n`, and when moreover `A` is perfect,
@@ -85,6 +90,44 @@ omit hp in
 theorem coeff_out_eq_zero_of_le {n : ℕ} (x : TruncatedWittVector p n A) {i : ℕ} (hi : n ≤ i) :
     x.out.coeff i = 0 := by
   rw [out, WittVector.coeff_mk, dite_eq_right (Nat.not_lt.mpr hi)]
+
+/-- Multiplication preserves a vanishing prefix of the Witt coordinates of the left factor. -/
+theorem mul_coeff_eq_zero_of_lt {n N : ℕ} (a b : TruncatedWittVector p n A)
+    (ha : ∀ i : Fin n, i.val < N → a.coeff i = 0) :
+    ∀ i : Fin n, i.val < N → (a * b).coeff i = 0 := by
+  intro i hi
+  let j : Fin (i.val + 1) := ⟨i.val, Nat.lt_succ_self _⟩
+  have hn : i.val + 1 ≤ n := i.isLt
+  have ha₀ : truncate hn a = 0 := by
+    ext k
+    rw [coeff_truncate, coeff_zero]
+    exact ha _ ((Nat.lt_succ_iff.mp k.isLt).trans_lt hi)
+  have hab : truncate hn (a * b) = 0 := by rw [map_mul, ha₀, zero_mul]
+  simpa only [coeff_truncate, coeff_zero, j, Fin.castLE_mk, Fin.eta] using congrArg (coeff j) hab
+
+/-- If the Witt coordinates below `N` of the left factor vanish, its `N`-th coordinate divides
+the `N`-th coordinate of the product. -/
+theorem coeff_dvd_mul_coeff {n N : ℕ} (a b : TruncatedWittVector p n A) (hN : N < n)
+    (ha : ∀ i : Fin n, i.val < N → a.coeff i = 0) :
+    a.coeff ⟨N, hN⟩ ∣ (a * b).coeff ⟨N, hN⟩ := by
+  have htrunc : a * b = WittVector.truncate n (a.out * b.out) := by
+    rw [map_mul]
+    exact congrArg₂ (· * ·) (truncateFun_out a).symm (truncateFun_out b).symm
+  have ha' : a.out = WittVector.verschiebung^[N] (a.out.shift N) :=
+    WittVector.eq_iterate_verschiebung fun i hi ↦
+      (coeff_out a ⟨i, hi.trans hN⟩).trans (ha _ hi)
+  have hprod : a.out * b.out =
+      WittVector.verschiebung^[N] (a.out.shift N * WittVector.frobenius^[N] b.out) :=
+    (congrArg (· * b.out) ha').trans (WittVector.iterate_verschiebung_mul_left _ _ _)
+  let c := (WittVector.frobenius^[N] b.out).coeff 0
+  refine ⟨c, ?_⟩
+  calc
+    (a * b).coeff ⟨N, hN⟩ = a.out.coeff N * c := by
+      rw [htrunc, WittVector.coeff_truncate, hprod]
+      simpa only [zero_add, WittVector.mul_coeff_zero, WittVector.shift_coeff, add_zero] using
+        WittVector.iterate_verschiebung_coeff
+          (a.out.shift N * WittVector.frobenius^[N] b.out) N 0
+    _ = a.coeff ⟨N, hN⟩ * c := congrArg (· * c) (coeff_out a ⟨N, hN⟩)
 
 /-- Change the coefficient ring of a truncated Witt vector. -/
 def map (n : ℕ) (f : A →+* B) :
