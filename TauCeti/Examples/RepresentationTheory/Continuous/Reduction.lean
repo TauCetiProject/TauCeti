@@ -43,10 +43,8 @@ local instance : TopologicalSpace (ResidueField ℤ_[ℓ]) := ⊥
 local instance : DiscreteTopology (ResidueField ℤ_[ℓ]) := ⟨rfl⟩
 
 local instance : ContinuousSMul ℤ_[ℓ] (ResidueField ℤ_[ℓ]) :=
-  ⟨by
-    simp_rw [Algebra.smul_def, ResidueField.algebraMap_eq]
-    exact ((continuous_residue (isOpen_maximalIdeal ℤ_[ℓ])).comp continuous_fst).mul
-      continuous_snd⟩
+  continuousSMul_of_algebraMap _ _ (by
+    simpa only [ResidueField.algebraMap_eq] using continuous_residue (isOpen_maximalIdeal ℤ_[ℓ]))
 
 /-- The module topology on `𝔽_ℓ ⊗ ℤ_ℓ²`. -/
 local instance : TopologicalSpace (ResidueField ℤ_[ℓ] ⊗[ℤ_[ℓ]] (Fin 2 → ℤ_[ℓ])) :=
