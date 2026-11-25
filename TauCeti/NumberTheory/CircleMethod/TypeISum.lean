@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Harmonic.Bounds
 public import TauCeti.NumberTheory.CircleMethod.AdditiveCharacter
+public import TauCeti.NumberTheory.Harmonic.Basic
 
 /-!
 # Type I sums for additive twists
@@ -50,19 +51,6 @@ public section
 noncomputable section
 
 namespace TauCeti
-
-/-- The harmonic number `H_n` as a real sum, `∑_{i < n} 1 / (i + 1)`. -/
-private theorem harmonic_cast_eq_sum_range (n : ℕ) :
-    (harmonic n : ℝ) = ∑ i ∈ Finset.range n, ((i + 1 : ℕ) : ℝ)⁻¹ := by
-  induction n with
-  | zero => simp [harmonic_zero]
-  | succ n ih =>
-    rw [harmonic_succ, Rat.cast_add, Rat.cast_inv, Rat.cast_natCast, Finset.sum_range_succ, ih]
-
-/-- The harmonic numbers are nonnegative. -/
-private theorem harmonic_cast_nonneg (n : ℕ) : (0 : ℝ) ≤ harmonic n := by
-  rw [harmonic_cast_eq_sum_range]
-  positivity
 
 /-! ### Separated points -/
 
@@ -305,10 +293,11 @@ private theorem sum_block_bounds_le {q M : ℕ} (hq : 0 < q) (hM : 0 < M) {X : �
     rw [div_le_div_iff₀ hL hq']
     nlinarith
   have e1 : 2 * X / L * harmonic J ≤ 4 * X / q * Λ :=
-    mul_le_mul hXL hHJ (harmonic_cast_nonneg J) (by positivity)
+    mul_le_mul hXL hHJ (Rat.cast_nonneg.2 (harmonic_nonneg J)) (by positivity)
   have e2 : (J : ℝ) * (4 * q * harmonic q) ≤ 8 * M * Λ := by
     calc (J : ℝ) * (4 * q * harmonic q) = J * (4 * q) * harmonic q := by ring
-      _ ≤ 8 * M * Λ := mul_le_mul (by nlinarith) hHq (harmonic_cast_nonneg q) (by positivity)
+      _ ≤ 8 * M * Λ :=
+        mul_le_mul (by nlinarith) hHq (Rat.cast_nonneg.2 (harmonic_nonneg q)) (by positivity)
   have e3 : 2 * (2 * (q : ℝ)) + 4 * q * harmonic q ≤ 8 * q * Λ := by nlinarith
   have hXq : 0 ≤ X / q * Λ := mul_nonneg (by positivity) (by linarith)
   calc 2 * X / L * harmonic J + J * (4 * q * harmonic q) + (2 * (2 * q) + 4 * q * harmonic q)
