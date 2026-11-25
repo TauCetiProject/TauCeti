@@ -33,6 +33,8 @@ subscheme. Over a field `k`, the rank of `Ω_{X/k}` at a smooth point `x` is the
 * `TauCeti.AlgebraicGeometry.iSup_smoothLocusOfDim_eq_smoothLocus` and
   `TauCeti.AlgebraicGeometry.disjoint_smoothLocusOfDim`: the loci partition `X_sm`.
 * `TauCeti.AlgebraicGeometry.preimage_smoothLocusOfDim_eq`: compatibility with open immersions.
+* `TauCeti.AlgebraicGeometry.dense_smoothLocusOfDim_of_isOpenImmersion`: density of
+  `X_sm^{(d)}` passes to open subschemes.
 * `TauCeti.AlgebraicGeometry.rank_relativeDifferentials_smoothLocus_eq_topologicalKrullDimAt`:
   over a field, the rank at a smooth point is the local dimension.
 * `TauCeti.AlgebraicGeometry.smoothLocusOfDim_eq_smoothLocus` and
@@ -200,6 +202,18 @@ theorem preimage_smoothLocusOfDim_eq {U : Scheme.{u}} [U.Over (Spec (.of R))]
     exact ⟨hu, (hrk ⟨u, hu⟩ hx).trans h⟩
   · have hx : f u ∈ (X ↘ Spec (.of R)).smoothLocus := (hsm.symm ▸ hu :)
     exact ⟨hx, (hrk ⟨u, hu⟩ hx).symm.trans h⟩
+
+variable {R X} in
+/-- **Density of the smooth locus passes to open subschemes.** For an open immersion
+`f : U ⟶ X` over `Spec R`, the smooth locus of dimension `d` of `U` is the preimage of that of
+`X`, so it is dense in `U` when `X_sm^{(d)}` is dense in `X`. -/
+theorem dense_smoothLocusOfDim_of_isOpenImmersion {d : ℕ} {U : Scheme.{u}}
+    [U.Over (Spec (.of R))] [LocallyOfFinitePresentation (U ↘ Spec (.of R))] (f : U ⟶ X)
+    [IsOpenImmersion f] [f.IsOver (Spec (.of R))]
+    (hX : Dense (smoothLocusOfDim R X d : Set X)) :
+    Dense (smoothLocusOfDim R U d : Set U) := by
+  rw [← preimage_smoothLocusOfDim_eq R X f d]
+  exact hX.preimage f.isOpenEmbedding.isOpenMap
 
 section Field
 
