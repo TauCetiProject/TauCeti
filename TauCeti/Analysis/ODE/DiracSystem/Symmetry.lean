@@ -30,11 +30,13 @@ solutions (`TauCeti.IsDiracSolution.eq_diracFundamentalMatrix_mulVec`).
   (`TauCeti.diracFundamentalMatrix_neg_of_eqOn_conj`). For a real potential, `A` and `D` are even
   and `B` and `C` are odd in `z` (`TauCeti.diracFundamentalMatrix_neg_of_im_eq_zero`).
 
-All three are instances of a general principle: an invertible constant matrix `S` with
-`S (-Ω(z - Q_q(s))) = (-Ω(z' - Q_{q'}(s))) S` for every `s ≥ 0` intertwines the fundamental
-matrices, `S M_q(t, z) = M_{q'}(t, z') S` (`TauCeti.mul_diracFundamentalMatrix_of_mul_eq`); if
-`S S' = 1`, then `M_{q'}(t, z') = S M_q(t, z) S'`
-(`TauCeti.diracFundamentalMatrix_eq_mul_mul_of_mul_eq`).
+All three are instances of a general principle: a continuous `ℝ`-linear equivalence of `ℂ²`
+intertwining the Dirac coefficients carries solutions to solutions
+(`TauCeti.IsDiracSolution.continuousLinearEquiv_comp`). In particular an invertible constant
+matrix `S` with `S (-Ω(z - Q_q(s))) = (-Ω(z' - Q_{q'}(s))) S` for every `s ≥ 0` intertwines the
+fundamental matrices, `S M_q(t, z) = M_{q'}(t, z') S`
+(`TauCeti.mul_diracFundamentalMatrix_of_mul_eq`); if `S S' = 1`, then
+`M_{q'}(t, z') = S M_q(t, z) S'` (`TauCeti.diracFundamentalMatrix_eq_mul_mul_of_mul_eq`).
 
 ## References
 
@@ -52,6 +54,21 @@ namespace TauCeti
 
 variable {q q' : ℝ → ℂ} {z z' : ℂ} {t : ℝ}
 
+/-- A continuous `ℝ`-linear equivalence `L` of `ℂ²` with
+`L (-Ω(z - Q_q(s)) v) = -Ω(z' - Q_{q'}(s)) L v` for every `s ≥ 0` carries solutions of the Dirac
+system for `(q, z)` to solutions for `(q', z')`. -/
+theorem IsDiracSolution.continuousLinearEquiv_comp {X : ℝ → Fin 2 → ℂ}
+    (hX : IsDiracSolution q z X) (L : (Fin 2 → ℂ) ≃L[ℝ] (Fin 2 → ℂ))
+    (h : ∀ s ∈ Ici 0, ∀ v, L (diracCoeff q z s *ᵥ v) = diracCoeff q' z' s *ᵥ L v) :
+    IsDiracSolution q' z' fun t ↦ L (X t) := by
+  refine isDiracSolution_iff.2 ⟨L.continuous.comp_continuousOn hX.continuousOn, fun t ht ↦ ?_⟩
+  have hint : ∫ s in (0 : ℝ)..t, diracCoeff q' z' s *ᵥ L (X s) =
+      ∫ s in (0 : ℝ)..t, L (diracCoeff q z s *ᵥ X s) := by
+    refine intervalIntegral.integral_congr fun s hs ↦ ?_
+    rw [uIcc_of_le ht] at hs
+    exact (h s hs.1 (X s)).symm
+  rw [hint, L.intervalIntegral_comp_comm, hX.eq_add_integral ht, map_add]
+
 /-- An invertible constant matrix `S` intertwining the Dirac coefficients of `(q, z)` and
 `(q', z')` on `[0, ∞)` carries solutions of the Dirac system for `(q, z)` to solutions for
 `(q', z')`. -/
@@ -60,16 +77,12 @@ theorem IsDiracSolution.mulVec_of_mul_eq {X : ℝ → Fin 2 → ℂ} (hX : IsDir
     (h : ∀ s ∈ Ici 0, S * diracCoeff q z s = diracCoeff q' z' s * S) :
     IsDiracSolution q' z' fun t ↦ S *ᵥ X t := by
   have := hS.invertible
-  let L : (Fin 2 → ℂ) ≃L[ℂ] (Fin 2 → ℂ) := (toLinearEquiv' S this).toContinuousLinearEquiv
+  let L : (Fin 2 → ℂ) ≃L[ℝ] (Fin 2 → ℂ) :=
+    (toLinearEquiv' S this).toContinuousLinearEquiv.restrictScalars ℝ
   have hL (v : Fin 2 → ℂ) : L v = S *ᵥ v :=
     (LinearMap.congr_fun (toLinearEquiv'_apply S this) v).trans (toLin'_apply S v)
-  refine isDiracSolution_iff.2 ⟨L.continuous.comp_continuousOn hX.continuousOn, fun t ht ↦ ?_⟩
-  have hint : ∫ s in (0 : ℝ)..t, diracCoeff q' z' s *ᵥ (S *ᵥ X s) =
-      ∫ s in (0 : ℝ)..t, L (diracCoeff q z s *ᵥ X s) := by
-    refine intervalIntegral.integral_congr fun s hs ↦ ?_
-    rw [uIcc_of_le ht] at hs
-    simp only [hL, mulVec_mulVec, h s hs.1]
-  rw [hint, L.intervalIntegral_comp_comm, hL, hX.eq_add_integral ht, mulVec_add]
+  simpa only [hL] using
+    hX.continuousLinearEquiv_comp L fun s hs v ↦ by simp only [hL, mulVec_mulVec, h s hs]
 
 /-- **Intertwining the fundamental matrices.** If `q` and `q'` are locally integrable on
 `[0, ∞)` and an invertible constant matrix `S` satisfies
@@ -104,19 +117,13 @@ theorem diracFundamentalMatrix_eq_mul_mul_of_mul_eq (hq : LocallyIntegrableOn q 
 solution for `(q, conj z)`: the matrix `Q_q` has real entries. -/
 theorem IsDiracSolution.star {X : ℝ → Fin 2 → ℂ} (hX : IsDiracSolution q z X) :
     IsDiracSolution q (conj z) fun t ↦ star (X t) := by
-  let L : (Fin 2 → ℂ) ≃L[ℝ] (Fin 2 → ℂ) := starL' ℝ
-  have hL (v : Fin 2 → ℂ) : L v = Star.star v := starL'_apply ℝ v
   have hc (s : ℝ) : (diracCoeff q z s).map (starRingEnd ℂ) = diracCoeff q (conj z) s := by
     ext i j
     fin_cases i <;> fin_cases j <;> simp [diracCoeff_def]
-  refine isDiracSolution_iff.2 ⟨L.continuous.comp_continuousOn hX.continuousOn, fun t ht ↦ ?_⟩
-  have hint : ∫ s in (0 : ℝ)..t, diracCoeff q (conj z) s *ᵥ Star.star (X s) =
-      ∫ s in (0 : ℝ)..t, L (diracCoeff q z s *ᵥ X s) := by
-    refine intervalIntegral.integral_congr fun s _ ↦ ?_
+  simpa only [starL'_apply] using hX.continuousLinearEquiv_comp (starL' ℝ) fun s _ v ↦ by
     ext i
-    rw [hL, ← hc]
-    exact (RingHom.map_mulVec (starRingEnd ℂ) _ _ i).symm
-  rw [hint, L.intervalIntegral_comp_comm, hL, hX.eq_add_integral ht, star_add]
+    rw [starL'_apply, starL'_apply, ← hc]
+    exact RingHom.map_mulVec (starRingEnd ℂ) (diracCoeff q z s) v i
 
 /-- **Reflection symmetry.** For a potential `q` locally integrable on `[0, ∞)` and `t ≥ 0`,
 `M_q(t, conj z) = conj M_q(t, z)` entrywise. In particular the entries `A, B, C, D` of the
