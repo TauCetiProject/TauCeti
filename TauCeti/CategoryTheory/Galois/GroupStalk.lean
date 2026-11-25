@@ -16,8 +16,8 @@ Let `G` be a topological group and `P` a presheaf of groups on the finite contin
 `ContAction.point G` is a group (`TauCeti.CategoryTheory.Sites.Point.GrpStalk`), and it is the
 stalk of the underlying presheaf of sets, on which `G` acts by translating the point
 (`ContAction.stalk`). This action is by group automorphisms, and its stabilizers are open
-(`ContAction.isSmooth_stalk`), so the stalk is a group with a smooth `MulDistribMulAction` of `G`,
-as for the coefficients `A` of `TauCeti.NonabelianH1.SmoothTorsor`. A morphism of presheaves of
+(`ContAction.isSmooth_stalk`), so the stalk is a group with a smooth action of `G` by group
+automorphisms, the kind of coefficients of continuous nonabelian `H¹`. A morphism of presheaves of
 groups induces a `G`-equivariant homomorphism of stalks (`ContAction.grpStalkMap_smul`).
 
 ## Main results
@@ -45,8 +45,9 @@ noncomputable instance instMulActionGrpStalk : MulAction G ((point G).GrpStalk P
 /-- `G` acts on germs by translating the point. -/
 @[simp]
 theorem smul_grpGerm (g : G) (S : ContAction FintypeCat.{u} G) (s : (fiberFunctor G).obj S)
-    (a : P.obj (op S)) : g • (point G).grpGerm P S s a = (point G).grpGerm P S (g • s) a :=
-  smul_germ (P ⋙ forget GrpCat) S s a g
+    (a : P.obj (op S)) : g • (point G).grpGerm P S s a = (point G).grpGerm P S (g • s) a := by
+  rw [GrothendieckTopology.Point.grpGerm_apply, GrothendieckTopology.Point.grpGerm_apply]
+  exact smul_germ (P ⋙ forget GrpCat) S s a g
 
 /-- **`G` acts on the stalk of a presheaf of groups by group automorphisms.** -/
 noncomputable instance instMulDistribMulActionGrpStalk :
