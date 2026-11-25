@@ -188,11 +188,6 @@ private theorem isDifferentialSectionAt_extendSection
   filter_upwards [e] with y hy
   rw [extendSection_apply, hy]
 
-private theorem differentialSections_ext_nhdsNE {s t : differentialSections D U}
-    (h : ∀ x : U, ∀ᶠ y in 𝓝[≠] x, s.val y = t.val y) : s = t :=
-  Subtype.ext (eq_of_eventually_codiscrete s.property t.property
-    (eventually_codiscrete_iff_forall_eventually_nhdsNE.2 h))
-
 omit [IsManifold 𝓘(ℂ) 1 X] in
 private theorem divisorSections_ext_nhdsNE {f g : divisorSections E U}
     (h : ∀ x : U, ∀ᶠ y in 𝓝[≠] x, f.val y = g.val y) : f = g :=
@@ -278,7 +273,7 @@ def differentialSectionsEquivDivisorSections (U : Opens X) :
     refine smul_left_injective ℂ hne ?_
     simp only [Submodule.coe_smul, Pi.smul_apply, RingHom.id_apply, smul_eq_mul] at hcs ⊢
     rw [hcs, mul_smul, hs]
-  left_inv s := differentialSections_ext_nhdsNE fun x ↦ by
+  left_inv s := differentialSections.ext_of_eventually_nhdsNE fun x ↦ by
     filter_upwards [multiplySection_eventuallyEq hω ho (divideSection hω ho s) x,
       divideSection_smul_eventuallyEq hω ho s x] with y h₁ h₂
     exact h₁.trans h₂

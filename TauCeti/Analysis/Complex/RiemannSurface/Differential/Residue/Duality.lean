@@ -61,7 +61,7 @@ topological genus.
   `deg K = 2 g_an - 2`.
 * `TauCeti.RiemannSurface.subsingleton_divisorCechCohomology_one_of_degree_gt`: `H¹(X, 𝒪_D) = 0`
   for `deg D > 2 g_an - 2`.
-* `TauCeti.RiemannSurface.analyticGenus_eq_topologicalGenus`: the analytic genus is the topological
+* `TauCeti.RiemannSurface.analyticGenus_eq_genus`: the analytic genus is the topological
   genus.
 
 ## References
@@ -173,6 +173,10 @@ the principal parts of meromorphic functions. -/
 theorem mem_range_dualMap_mittagLefflerConnecting_iff (φ : Module.Dual ℂ (PrincipalParts D)) :
     φ ∈ LinearMap.range (mittagLefflerConnecting D).dualMap ↔
       φ ∘ₗ MeromorphicFunction.principalParts D = 0 := by
+  -- `LinearMap.range_dualMap_eq_dualAnnihilator_ker` needs an `AddCommGroup` instance whose
+  -- `AddCommMonoid` is the `DFinsupp.addCommMonoid` used by `mittagLefflerConnecting`. The
+  -- instance `DFinsupp.addCommGroup` agrees with it only after unfolding the germ modules, which
+  -- are not exposed, and elaboration times out; this instance agrees with it syntactically.
   let := Module.addCommMonoidToAddCommGroup ℂ (M := PrincipalParts D)
   refine ⟨?_, fun h ↦ (LinearMap.range_dualMap_eq_dualAnnihilator_ker _).ge
     ((Submodule.mem_dualAnnihilator _).2 fun μ hμ ↦ ?_)⟩
@@ -419,7 +423,7 @@ theorem subsingleton_divisorCechCohomology_one_of_degree_gt {D : WeilDivisor X}
 /-- **The analytic genus is the topological genus.** On a compact connected Hausdorff Riemann
 surface, `g_an = genus X`, from `deg K = 2 g_an - 2` and `deg K = -χ(X)` for a canonical
 divisor `K`. -/
-theorem analyticGenus_eq_topologicalGenus : analyticGenus X = genus X := by
+theorem analyticGenus_eq_genus : analyticGenus X = genus X := by
   obtain ⟨K, hK⟩ := exists_isCanonicalDivisor (X := X)
   have h := hK.degree_eq_two_mul_analyticGenus_sub_two
   rw [hK.degree_eq_neg_eulerChar] at h
