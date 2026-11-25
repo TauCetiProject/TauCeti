@@ -23,9 +23,10 @@ is a convex combination of two states with positive weights, both vanish at the 
 element `1 - p`, because `ω` does, and hence both equal `ω`. So `ω` is a pure state, an extreme
 point of the state space.
 
-Pure states also pull back along surjective star homomorphisms `f : A → B`: if `φ` is a pure state
-of `B`, then `φ ∘ f` is a pure state of `A`. This produces pure states of `A` from those of its
-quotients, for instance pure extensions of states through evaluation maps.
+Pure states also pull back along surjective star homomorphisms `f : A → B` of C⋆-algebras, not
+necessarily unital: if `φ` is a pure state of `B`, then `φ ∘ f` is a pure state of `A`. This
+produces pure states of `A` from those of its quotients, for instance pure extensions of states
+through evaluation maps.
 
 ## Main results
 
@@ -47,6 +48,8 @@ open WeakDual
 open scoped ComplexOrder
 
 namespace TauCeti
+
+section Projection
 
 variable {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A] {ω φ : WeakDual ℂ A}
   {p : A}
@@ -87,14 +90,17 @@ theorem mem_extremePoints_stateSpace_of_mul_mul_eq_smul (hω : ω ∈ stateSpace
   exact ⟨eq_of_mem_stateSpace_of_map_one_sub_eq_zero hp hpap hφ hφ0,
     eq_of_mem_stateSpace_of_map_one_sub_eq_zero hp hpap hψ hψ0⟩
 
+end Projection
+
 section Pullback
 
-variable {B F : Type*} [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+variable {A B F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
   [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
 
 /-- **Pullback of pure states along a surjective star homomorphism.** If `f : A → B` is a
-surjective star homomorphism of unital C⋆-algebras, the pullback `φ ∘ f` of a pure state `φ` of
-`B` is a pure state of `A`. -/
+surjective star homomorphism of C⋆-algebras, not necessarily unital, the pullback `φ ∘ f` of a
+pure state `φ` of `B` is a pure state of `A`. -/
 theorem pullbackFunctional_mem_extremePoints_stateSpace (f : F) (hf : Function.Surjective f)
     {φ : WeakDual ℂ B} (hφ : φ ∈ Set.extremePoints ℝ (stateSpace B)) :
     pullbackFunctional A f φ ∈ Set.extremePoints ℝ (stateSpace A) := by
