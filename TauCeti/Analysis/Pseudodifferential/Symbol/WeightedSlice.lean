@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Analysis.Fourier.FourierTransform
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
+public import TauCeti.Analysis.Pseudodifferential.Symbol.FrequencyLaplacian
+import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.Calculus.CoordinateDeriv.ParametricIntegral
 import TauCeti.Analysis.Fourier.Decay
@@ -199,7 +200,7 @@ theorem IsUniform.continuous_fourier_weightedSlice {b : Symbol n V W m} (hb : b.
     (.of_forall fun q ↦ ((by fun_prop : Continuous fun z ↦ (𝐞 (-⟪z, q.2⟫) : ℂ)).smul
       (contDiff_weightedSlice b q.1.1 q.1.2).continuous).aestronglyMeasurable) ?_
     (integrable_one_add_norm_sq_rpow_neg_succ_div_two.const_mul _)
-    (.of_forall fun z ↦ ((Real.continuous_fourierChar.comp (by fun_prop)).subtype_val.smul
+    (.of_forall fun z ↦ ((Real.continuous_fourierChar.comp (by fun_prop)).subtypeVal.smul
       ((continuous_const (y := displacementWeight n z)).smul
         (b.contDiff_coefficient.continuous.comp (by fun_prop)))).continuousAt)
   filter_upwards [(continuous_snd.comp continuous_fst).continuousAt.preimage_mem_nhds
@@ -277,6 +278,25 @@ theorem IsUniform.differentiableAt_fourier_weightedSlice_and_fderiv {b : Symbol 
     (fun j p ↦ hchar.smul (contDiff_weightedSlice (Symbol.frequencyDeriv j b) p.1 p.2).continuous)
     (integrable_one_add_norm_sq_rpow_neg_succ_div_two.const_mul D) p₀
     (fun z p hp ↦ by simpa only [norm_smul, Circle.norm_coe, one_mul] using hD z p hp)
+
+/-- For each `η`, `(x, ξ) ↦ 𝓕 (weightedSlice b x ξ) η` is smooth (`C^∞`). -/
+theorem IsUniform.contDiff_fourier_weightedSlice {b : Symbol n V W m} (hb : b.IsUniform)
+    (η : CoordinateSpace n) :
+    ContDiff ℝ ∞ fun p : CoordinateSpace n × CoordinateSpace n ↦
+      𝓕 (weightedSlice b p.1 p.2) η := by
+  refine contDiff_infty.2 fun k ↦ ?_
+  induction k generalizing m with
+  | zero =>
+    refine contDiff_zero.2 ?_
+    simpa only [Function.comp_def, id_eq] using
+      hb.continuous_fourier_weightedSlice.comp (continuous_id.prodMk continuous_const)
+  | succ k ih =>
+    rw [Nat.cast_succ]
+    refine contDiff_succ_iff_fderiv_apply.2
+      ⟨fun p ↦ (hb.differentiableAt_fourier_weightedSlice_and_fderiv η p).1, by simp, fun v ↦ ?_⟩
+    rw [funext fun p ↦ (hb.differentiableAt_fourier_weightedSlice_and_fderiv η p).2 v]
+    exact (ContDiff.sum fun j _ ↦ (ih (hb.spatialDeriv j)).const_smul (v.1 j)).add
+      (ContDiff.sum fun j _ ↦ (ih (hb.frequencyDeriv j)).const_smul (v.2 j))
 
 end WeightedSlice
 end Symbol

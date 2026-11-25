@@ -112,7 +112,7 @@ end Semiring
 
 /-- An actual resolution edge map has quantum degree `-1`. -/
 theorem isHomogeneous_resolutionEdgeMap (R : Type u) [CommRing R] :
-    TauCeti.LinearMap.IsHomogeneous (D.resolutionEdgeMap hst hc h R)
+    LinearMap.IsHomogeneous (D.resolutionEdgeMap hst hc h R)
       (Khovanov.circleQuantumGrading R (D.ResolvedCircle s)).piece
       (Khovanov.circleQuantumGrading R (D.ResolvedCircle t)).piece (-1) := by
   by_cases hs : #(D.circlesAt s c) = 2

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Irreducible.Defs
 public import TauCeti.Data.Matrix.Mul
-public import TauCeti.LinearAlgebra.Matrix.PerronFrobenius.Positive
+public import TauCeti.LinearAlgebra.Matrix.PerronFrobenius.Irreducible
 
 /-!
 # The Perron–Frobenius theorem for primitive matrices
@@ -36,6 +36,9 @@ matrices `A ^ k` and `A ^ (k + 1)`: an eigenvalue `μ` of modulus `r` has `μ ^ 
 * `Matrix.IsPrimitive.norm_lt_of_mulVec_eq_smul` and `Matrix.IsPrimitive.norm_lt_of_mem_spectrum`:
   every other complex eigenvalue of a primitive matrix has modulus strictly less than its
   Perron root.
+* `Matrix.IsPrimitive.norm_lt_of_hasEigenvalue`: the packaged theorem, with no eigenvector
+  assumed: the spectral radius `r` of a primitive matrix over a nonempty index type is positive,
+  and every other complex eigenvalue has modulus strictly less than `r`.
 
 ## References
 
@@ -92,6 +95,20 @@ theorem IsPrimitive.norm_lt_of_mem_spectrum (hA : A.IsPrimitive) (hv : ∀ i, 0 
     ‖μ‖ < r := by
   obtain ⟨z, hz, hAz⟩ := mem_spectrum_iff_exists_mulVec_eq_smul.1 hμ
   exact hA.norm_lt_of_mulVec_eq_smul hv hAv hz hAz hμr
+
+/-- **Perron–Frobenius for primitive matrices**: the spectral radius `r` of a primitive real
+matrix `A` over a nonempty index type, viewed as a complex matrix, is a positive real number, and
+every complex eigenvalue `μ ≠ r` of `A` has `‖μ‖ < r`. No eigenvector is assumed: `r` is the
+eigenvalue of the strictly positive eigenvector of `Matrix.IsIrreducible.exists_mulVec_eq_smul`.
+The index type must be nonempty, since the spectral radius of the empty matrix is `0`. -/
+theorem IsPrimitive.norm_lt_of_hasEigenvalue [Nonempty n] (hA : A.IsPrimitive) :
+    ∃ r : ℝ, 0 < r ∧ spectralRadius ℂ (A.map ((↑) : ℝ → ℂ)) = ENNReal.ofReal r ∧
+      ∀ μ : ℂ, Module.End.HasEigenvalue (Matrix.toLin' (A.map ((↑) : ℝ → ℂ))) μ →
+        μ ≠ (r : ℂ) → ‖μ‖ < r := by
+  obtain ⟨r, hr, v, hv, hAv⟩ := hA.isIrreducible.exists_mulVec_eq_smul
+  refine ⟨r, hr, spectralRadius_eq_of_mulVec_eq_smul hA.nonneg hv hAv, fun μ hμ hμr => ?_⟩
+  rw [Module.End.hasEigenvalue_iff_mem_spectrum, spectrum_toLin'] at hμ
+  exact hA.norm_lt_of_mem_spectrum hv hAv hμ hμr
 
 end Real
 

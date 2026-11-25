@@ -165,8 +165,8 @@ theorem thetaCoset_vadd_eq_sum (hL : IsEven L) (a : ℤ) (c : ℕ) [NeZero c] (�
   · -- For `w = c u`, `(‖x + w‖² - ‖x‖²) a / c = 2 a ⟪x, u⟫ + a c ‖u‖²` with `x = γ + y`, an even
     -- integer since `⟪γ, u⟫` and `⟪y, u⟫` are integers.
     obtain ⟨u, hu, rfl⟩ := Submodule.mem_smul_pointwise_iff_exists _ _ _ |>.mp hw
-    obtain ⟨i, hi⟩ := isIntegral_iff.mp hL.isIntegral _ (Quotient.out y).2 _ hu
-    obtain ⟨i', hi'⟩ := mem_dual.mp γ.2 _ hu
+    obtain ⟨i, hi⟩ := isIntegral_iff.mp hL.isIntegral _ (Quotient.out y).property _ hu
+    obtain ⟨i', hi'⟩ := mem_dual.mp γ.property _ hu
     obtain ⟨j, hj⟩ := isEven_iff.mp hL _ hu
     refine ⟨a * i' + a * i + a * c * j, ?_⟩
     rw [norm_add_sq_real, norm_smul, inner_smul_right, inner_add_left, hi, hi', mul_pow, hj,
@@ -204,7 +204,7 @@ theorem thetaSeries_vadd_eq_sum_of_le (hL : IsEven L) {M : Submodule ℤ E} [Dis
     have hc : (c : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hc
     -- For `w = c u`, `(‖γ + w‖² - ‖γ‖²) a / c = 2 a ⟪γ, u⟫ + a c ‖u‖²`, an even integer.
     obtain ⟨u, hu, rfl⟩ := Submodule.mem_smul_pointwise_iff_exists _ _ _ |>.mp hw
-    obtain ⟨i, hi⟩ := mem_dual.mp (hM (Quotient.out y).2) _ hu
+    obtain ⟨i, hi⟩ := mem_dual.mp (hM (Quotient.out y).property) _ hu
     obtain ⟨j, hj⟩ := isEven_iff.mp hL _ hu
     refine ⟨a * i + a * c * j, ?_⟩
     rw [norm_add_sq_real, norm_smul, inner_smul_right, hi, mul_pow, hj, Real.norm_natCast]

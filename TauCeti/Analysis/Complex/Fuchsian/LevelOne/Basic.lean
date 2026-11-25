@@ -18,7 +18,8 @@ The effective group acting on the upper half-plane at level one is the image of
 subgroup of `PSL(2, ℝ)`.
 
 The standard open modular fundamental domain is transported from the `PSL(2, ℤ)` action to
-its image in `PSL(2, ℝ)`. Its finite hyperbolic area then proves cofiniteness. This supplies the
+its image in `PSL(2, ℝ)`, and so is the half-open domain, which differs from it by a null set.
+Its finite hyperbolic area then proves cofiniteness. This supplies the
 effective level-one input for quotient and compactification constructions.
 
 The elliptic data of the effective group are transported from `PSL(2, ℤ)` in the same way: the
@@ -41,6 +42,8 @@ subgroup into congruence conditions on the bottom row of `γ`.
 
 * `TauCeti.ModularGroup.isFundamentalDomain_fdo_psl2zToPSL2RRange`: the standard open modular
   domain is a fundamental domain for the projective image in `PSL(2, ℝ)`.
+* `TauCeti.ModularGroup.isFundamentalDomain_fdHalfOpen_psl2zToPSL2RRange`: so is the half-open
+  modular domain.
 * `TauCeti.ModularGroup.isCofinite_psl2zToPSL2RRange`: that image is a cofinite Fuchsian group.
 * `TauCeti.ModularGroup.covolume_psl2zToPSL2RRange`: its covolume is `π / 3`.
 * `TauCeti.ModularGroup.card_stabilizer_psl2zToPSL2RRange_I` and
@@ -55,6 +58,9 @@ subgroup into congruence conditions on the bottom row of `γ`.
   in the effective image of `Γ` is trivial.
 * `Subgroup.exists_smul_eq_of_card_stabilizer_ne_one`: a point with nontrivial stabilizer in the
   effective image of `Γ` is a translate of `i` or `ρ`, with stabilizer order `2` or `3`.
+* `Subgroup.card_orderTwoElliptic_map_eq_zero` and `Subgroup.card_orderThreeElliptic_map_eq_zero`:
+  a subgroup containing no conjugate of `S`, resp. of `T⁻¹ S`, has no elliptic points of order
+  `2`, resp. `3`.
 
 ## References
 
@@ -86,6 +92,18 @@ theorem isFundamentalDomain_fdo_psl2zToPSL2RRange :
       fun g τ ↦ by
         simp only [id_eq, MonoidHom.ofInjective_apply, Subgroup.smul_def,
           UpperHalfPlane.psl2zToPSL2R_smul]
+
+/-- The half-open modular domain is a fundamental domain for the image of `PSL(2, ℤ)` in
+`PSL(2, ℝ)`. Pushing the invariant measure on it forward to the effective level-one quotient
+therefore gives the same quotient measure as any other fundamental domain
+(`MeasureTheory.IsFundamentalDomain.quotientMeasure_eq`), and integrals of invariant functions
+over it agree with those over any other fundamental domain
+(`MeasureTheory.IsFundamentalDomain.setIntegral_eq`). -/
+theorem isFundamentalDomain_fdHalfOpen_psl2zToPSL2RRange :
+    IsFundamentalDomain psl2zToPSL2R.range (_root_.ModularGroup.fdHalfOpen : Set ℍ) volume :=
+  isFundamentalDomain_fdo_psl2zToPSL2RRange.congr_set
+    _root_.ModularGroup.fdHalfOpen_ae_eq_fdo.symm fun g ↦
+      (measurePreserving_smul g volume).quasiMeasurePreserving
 
 /-- The image of `PSL(2, ℤ)` in `PSL(2, ℝ)` is a cofinite Fuchsian group. -/
 theorem isCofinite_psl2zToPSL2RRange : psl2zToPSL2R.range.IsCofinite := by
@@ -212,7 +230,7 @@ private theorem card_stabilizer_map_smul_of_zpow {z₀ : ℍ} {E : SL(2, ℤ)} {
           inv_smul_smul, hE]
       · have hmem : γ * E * γ⁻¹ ∈ Subgroup.center SL(2, ℤ) := by
           rw [← sl2zToPSL2R_ker, MonoidHom.mem_ker]
-          exact congrArg (fun x ↦ x.1.1) h1
+          exact congrArg (fun x ↦ x.val.val) h1
         simpa [mul_assoc] using hN.conj_mem' _ hmem γ
   split_ifs with h
   · rcases hp.eq_one_or_self_of_dvd _ hdvd with h1 | hp'
@@ -291,5 +309,32 @@ theorem _root_.Subgroup.exists_smul_eq_of_card_stabilizer_ne_one {z : ℍ}
     split_ifs at hz ⊢
     exacts [Or.inr ⟨γ, rfl, rfl⟩, absurd rfl hz]
   exact absurd (Γ.card_stabilizer_map_eq_one_of_orbit_ne hI hρ) hz
+
+/-- **No elliptic points of order two.** If no conjugate of `S` lies in `Γ`, then no orbit of the
+effective image of `Γ` has a stabilizer of order `2`. -/
+theorem _root_.Subgroup.card_orderTwoElliptic_map_eq_zero (h : ∀ γ : SL(2, ℤ), γ * S * γ⁻¹ ∉ Γ) :
+    Nat.card {q : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ // cardStabilizerOnOrbit q = 2} = 0 := by
+  refine Nat.card_eq_zero.mpr (Or.inl ⟨fun ⟨q, hq⟩ ↦ ?_⟩)
+  induction q using Quotient.inductionOn' with | h z => ?_
+  rw [cardStabilizerOnOrbit_mk] at hq
+  rcases Γ.exists_smul_eq_of_card_stabilizer_ne_one (z := z) (by rw [hq]; decide) with
+    ⟨γ, rfl, -⟩ | ⟨γ, rfl, h3⟩
+  · rw [Γ.card_stabilizer_map_smul_I] at hq
+    simp [h γ] at hq
+  · omega
+
+/-- **No elliptic points of order three.** If no conjugate of `T⁻¹ S` lies in `Γ`, then no orbit
+of the effective image of `Γ` has a stabilizer of order `3`. -/
+theorem _root_.Subgroup.card_orderThreeElliptic_map_eq_zero
+    (h : ∀ γ : SL(2, ℤ), γ * (T⁻¹ * S) * γ⁻¹ ∉ Γ) :
+    Nat.card {q : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ // cardStabilizerOnOrbit q = 3} = 0 := by
+  refine Nat.card_eq_zero.mpr (Or.inl ⟨fun ⟨q, hq⟩ ↦ ?_⟩)
+  induction q using Quotient.inductionOn' with | h z => ?_
+  rw [cardStabilizerOnOrbit_mk] at hq
+  rcases Γ.exists_smul_eq_of_card_stabilizer_ne_one (z := z) (by rw [hq]; decide) with
+    ⟨γ, rfl, h2⟩ | ⟨γ, rfl, -⟩
+  · omega
+  · rw [Γ.card_stabilizer_map_smul_ρ] at hq
+    simp [h γ] at hq
 
 end TauCeti

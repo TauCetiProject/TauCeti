@@ -9,7 +9,7 @@ public import Mathlib.NumberTheory.NumberField.Completion.InfinitePlace
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
 public import TauCeti.Analysis.AbsoluteValue.Equivalence
 public import TauCeti.NumberTheory.NumberField.Units.Signature.Integer
-public import TauCeti.NumberTheory.Padics.AlgebraicClosure
+public import TauCeti.NumberTheory.Padics.AlgebraicClosure.Basic
 public import TauCeti.RingTheory.Valuation.Approximation
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
 
@@ -85,8 +85,8 @@ private abbrev FinitePlace (K : Type*) [Field K]
 private noncomputable def mixedAbsoluteValue
     {Sₑ : Finset (HeightOneSpectrum (RingOfIntegers K))} {Sinf : Finset (InfinitePlace K)} :
     FinitePlace K Sₑ ⊕ {w : InfinitePlace K // w ∈ Sinf} → AbsoluteValue K ℝ
-  | .inl v => (v.1.valuation K).toRealAbsoluteValue
-  | .inr w => w.1.1
+  | .inl v => (v.val.valuation K).toRealAbsoluteValue
+  | .inr w => w.val.val
 
 private theorem mixedAbsoluteValue_isNontrivial
     {Sₑ : Finset (HeightOneSpectrum (RingOfIntegers K))} {Sinf : Finset (InfinitePlace K)}
@@ -94,9 +94,9 @@ private theorem mixedAbsoluteValue_isNontrivial
     (mixedAbsoluteValue (Sₑ := Sₑ) (Sinf := Sinf) v).IsNontrivial := by
   cases v with
   | inl v =>
-      exact (Valuation.toRealAbsoluteValue_isNontrivial_iff (v.1.valuation K)).mpr inferInstance
+      exact (Valuation.toRealAbsoluteValue_isNontrivial_iff (v.val.valuation K)).mpr inferInstance
   | inr w =>
-      exact w.1.isNontrivial
+      exact w.val.isNontrivial
 
 private theorem finite_mixedAbsoluteValue_not_isEquiv_infinite
     {Sₑ : Finset (HeightOneSpectrum (RingOfIntegers K))} {Sinf : Finset (InfinitePlace K)}
@@ -108,10 +108,10 @@ private theorem finite_mixedAbsoluteValue_not_isEquiv_infinite
       mixedAbsoluteValue (Sₑ := Sₑ) (Sinf := Sinf) (Sum.inl v) 1 := by
     rw [mixedAbsoluteValue, Valuation.toRealAbsoluteValue_le_iff, map_one,
       ← map_ofNat (algebraMap (RingOfIntegers K) K) 2]
-    exact v.1.valuation_le_one (K := K) 2
+    exact v.val.valuation_le_one (K := K) 2
   have hinfinite : ¬mixedAbsoluteValue (Sₑ := Sₑ) (Sinf := Sinf) (Sum.inr w) (2 : K) ≤
       mixedAbsoluteValue (Sₑ := Sₑ) (Sinf := Sinf) (Sum.inr w) 1 := by
-    have hw : (1 : ℝ) < w.1.1 (2 : K) := by
+    have hw : (1 : ℝ) < w.val.val (2 : K) := by
       rw [← InfinitePlace.coe_apply, ← Nat.cast_ofNat (R := K) (n := 2),
         InfinitePlace.map_natCast]
       norm_num
@@ -152,10 +152,10 @@ private theorem exists_mixed_approximation
     (aₑ : FinitePlace K Sₑ → K) (ainf : {w : InfinitePlace K // w ∈ Sinf} → K)
     (εₑ : FinitePlace K Sₑ → ℤᵐ⁰) (hεₑ : ∀ v, εₑ v ≠ 0)
     (einf : {w : InfinitePlace K // w ∈ Sinf} → ℝ) (heinf : ∀ w, 0 < einf w) :
-    ∃ x : K, (∀ v, v.1.valuation K (x - aₑ v) < εₑ v) ∧
-      ∀ w, w.1 (x - ainf w) < einf w := by
+    ∃ x : K, (∀ v, v.val.valuation K (x - aₑ v) < εₑ v) ∧
+      ∀ w, w.val (x - ainf w) < einf w := by
   classical
-  choose p hp using fun (v : FinitePlace K Sₑ) => v.1.valuation_surjective K (εₑ v)
+  choose p hp using fun (v : FinitePlace K Sₑ) => v.val.valuation_surjective K (εₑ v)
   let a : FinitePlace K Sₑ ⊕ {w : InfinitePlace K // w ∈ Sinf} → K
     | .inl v => aₑ v
     | .inr w => ainf w
@@ -165,7 +165,7 @@ private theorem exists_mixed_approximation
   have hρ : ∀ i, 0 < ρ i := by
     rintro (v | w)
     · exact (mixedAbsoluteValue (Sₑ := Sₑ) (Sinf := Sinf) (Sum.inl v)).pos_iff.mpr
-        ((v.1.valuation K).ne_zero_iff.mp (hp v ▸ hεₑ v))
+        ((v.val.valuation K).ne_zero_iff.mp (hp v ▸ hεₑ v))
     · exact heinf w
   cases @isEmpty_or_nonempty (FinitePlace K Sₑ ⊕ {w : InfinitePlace K // w ∈ Sinf}) with
   | inl h =>
@@ -210,8 +210,8 @@ theorem weakApproximation_denseRange
     (Sₑ : Finset (HeightOneSpectrum (RingOfIntegers K))) (Sinf : Finset (InfinitePlace K)) :
     DenseRange fun x : K =>
       ((fun v : {v : HeightOneSpectrum (RingOfIntegers K) // v ∈ Sₑ} =>
-          algebraMap K (v.1.adicCompletion K) x),
-        fun w : {w : InfinitePlace K // w ∈ Sinf} => algebraMap K w.1.Completion x) := by
+          algebraMap K (v.val.adicCompletion K) x),
+        fun w : {w : InfinitePlace K // w ∈ Sinf} => algebraMap K w.val.Completion x) := by
   classical
   rw [DenseRange, dense_iff_inter_open]
   intro U hU ⟨y, hyU⟩
@@ -220,15 +220,15 @@ theorem weakApproximation_denseRange
   obtain ⟨Vₑ, hVₑ, hVₑU⟩ := (isOpen_pi_iff'.mp hUₑ) y.1 hyₑ
   obtain ⟨Vinf, hVinf, hVinfU⟩ := (isOpen_pi_iff'.mp hUinf) y.2 hyinf
   choose aₑ haₑ using fun (v : FinitePlace K Sₑ) =>
-    (v.1.denseRange_algebraMap K).exists_mem_open (hVₑ v).1 ⟨y.1 v, (hVₑ v).2⟩
+    (v.val.denseRange_algebraMap K).exists_mem_open (hVₑ v).1 ⟨y.1 v, (hVₑ v).2⟩
   have hdenseinf (w : {w : InfinitePlace K // w ∈ Sinf}) :
-      DenseRange (fun x : K => algebraMap K w.1.Completion x) := by
+      DenseRange (fun x : K => algebraMap K w.val.Completion x) := by
     simp only [NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe]
     change DenseRange
-      (((↑) : WithAbs w.1.1 → w.1.Completion) ∘ (WithAbs.equiv w.1.1).symm)
-    exact (AbsoluteValue.Completion.denseRange_coe (v := w.1.1)).comp
-      (WithAbs.equiv w.1.1).symm.surjective.denseRange
-      (AbsoluteValue.Completion.continuous_coe (v := w.1.1))
+      (((↑) : WithAbs w.val.val → w.val.Completion) ∘ (WithAbs.equiv w.val.val).symm)
+    exact (AbsoluteValue.Completion.denseRange_coe (v := w.val.val)).comp
+      (WithAbs.equiv w.val.val).symm.surjective.denseRange
+      (AbsoluteValue.Completion.continuous_coe (v := w.val.val))
   choose ainf hainf using fun (w : {w : InfinitePlace K // w ∈ Sinf}) =>
     (hdenseinf w).exists_mem_open (hVinf w).1 ⟨y.2 w, (hVinf w).2⟩
   choose γ hγ using fun (v : FinitePlace K Sₑ) =>
@@ -238,14 +238,14 @@ theorem weakApproximation_denseRange
   -- Convert the value-group radii supplied by the valued topology back to `ℤᵐ⁰` radii.
   let εₑ : FinitePlace K Sₑ → ℤᵐ⁰ := fun v =>
     MonoidWithZeroHom.ValueGroup₀.embedding
-      (γ v : (Valued.v : Valuation (v.1.adicCompletion K) ℤᵐ⁰).ValueGroup₀)
+      (γ v : (Valued.v : Valuation (v.val.adicCompletion K) ℤᵐ⁰).ValueGroup₀)
   have hεₑ : ∀ v, εₑ v ≠ 0 := fun v => by
     intro h
     apply Units.ne_zero (γ v)
     apply MonoidWithZeroHom.ValueGroup₀.embedding_injective
     -- Unfold only the chosen radius; the value-group embedding itself remains abstract.
     change MonoidWithZeroHom.ValueGroup₀.embedding
-      (γ v : (Valued.v : Valuation (v.1.adicCompletion K) ℤᵐ⁰).ValueGroup₀) = 0 at h
+      (γ v : (Valued.v : Valuation (v.val.adicCompletion K) ℤᵐ⁰).ValueGroup₀) = 0 at h
     rw [map_zero]
     exact h
   obtain ⟨x, hxₑ, hxinf⟩ := exists_mixed_approximation aₑ ainf εₑ hεₑ einf heinf
@@ -257,22 +257,22 @@ theorem weakApproximation_denseRange
     apply hγ v
     -- `Valued.mem_nhds` presents the ball using `restrict`; expose that exact predicate.
     change Valued.v.restrict
-      (algebraMap K (v.1.adicCompletion K) x -
-        algebraMap K (v.1.adicCompletion K) (aₑ v)) < γ v
+      (algebraMap K (v.val.adicCompletion K) x -
+        algebraMap K (v.val.adicCompletion K) (aₑ v)) < γ v
     rw [Valuation.restrict_lt_iff_lt_embedding]
     rw [← map_sub]
     -- The completion algebra map is the canonical coercion on field elements.
-    change Valued.v ((x - aₑ v : K) : v.1.adicCompletion K) < εₑ v
-    rw [v.1.valuedAdicCompletion_eq_valuation']
+    change Valued.v ((x - aₑ v : K) : v.val.adicCompletion K) < εₑ v
+    rw [v.val.valuedAdicCompletion_eq_valuation']
     exact hxₑ v
   · apply hVinfU
     intro w _
     apply hballinf w
     -- `Metric.mem_nhds_iff` presents the chosen neighbourhood as this open ball.
-    change dist (algebraMap K w.1.Completion x)
-      (algebraMap K w.1.Completion (ainf w)) < einf w
+    change dist (algebraMap K w.val.Completion x)
+      (algebraMap K w.val.Completion (ainf w)) < einf w
     rw [dist_eq_norm, ← map_sub, NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe,
-      ← (WithAbs.equiv w.1.1).apply_symm_apply (x - ainf w),
+      ← (WithAbs.equiv w.val.val).apply_symm_apply (x - ainf w),
       AbsoluteValue.Completion.norm_coe]
     exact hxinf w
 
@@ -295,9 +295,9 @@ theorem exists_galois_padic_approximation (p : ℕ) [Fact p.Prime]
   let Sp : Finset (AbsoluteValue K ℝ) :=
     Finset.univ.image fun φ : K →ₐ[ℚ] AlgebraicClosure ℚ_[p] ↦ place φ.toRingHom
   let SL : Finset (AbsoluteValue K ℝ) := L.attach.biUnion fun ℓ ↦
-    haveI : Fact ℓ.1.Prime := ⟨hL ℓ.1 ℓ.2⟩
-    Finset.univ.image fun φ : K →ₐ[ℚ] AlgebraicClosure ℚ_[ℓ.1] ↦ place φ.toRingHom
-  let Si : Finset (AbsoluteValue K ℝ) := Finset.univ.image fun w : InfinitePlace K ↦ w.1
+    haveI : Fact ℓ.val.Prime := ⟨hL ℓ.val ℓ.property⟩
+    Finset.univ.image fun φ : K →ₐ[ℚ] AlgebraicClosure ℚ_[ℓ.val] ↦ place φ.toRingHom
+  let Si : Finset (AbsoluteValue K ℝ) := Finset.univ.image fun w : InfinitePlace K ↦ w.val
   let S := Sp ∪ SL ∪ Si
   -- An infinite place restricts on `ℚ` to the real absolute value.
   have hreal (w : InfinitePlace K) (r : ℚ) : w (r : K) = Rat.AbsoluteValue.real r := by
@@ -310,8 +310,8 @@ theorem exists_galois_padic_approximation (p : ℕ) [Fact p.Prime]
       Finset.mem_biUnion, Finset.mem_attach] at hv
     rcases hv with (⟨φ, rfl⟩ | ⟨ℓ, φ, rfl⟩) | ⟨w, rfl⟩
     · exact ⟨_, .padic p, place_ratCast_padicAlgCl p φ⟩
-    · have : Fact ℓ.1.Prime := ⟨hL ℓ.1 ℓ.2⟩
-      exact ⟨_, .padic ℓ.1, place_ratCast_padicAlgCl ℓ.1 φ⟩
+    · have : Fact ℓ.val.Prime := ⟨hL ℓ.val ℓ.property⟩
+      exact ⟨_, .padic ℓ.val, place_ratCast_padicAlgCl ℓ.val φ⟩
     · exact ⟨_, .real, hreal w⟩
   let v₀ : AbsoluteValue K ℝ := place (K.val : K →ₐ[ℚ] AlgebraicClosure ℚ_[p]).toRingHom
   have hv₀ : v₀ ∈ S := by
@@ -363,14 +363,14 @@ theorem exists_galois_padic_approximation (p : ℕ) [Fact p.Prime]
       rw [place_ratCast_padicAlgCl ℓ φ, Rat.AbsoluteValue.padic_eq_padicNorm]
       rw [padicNorm.padicNorm_of_prime_of_ne (fun h : ℓ = p ↦ hpL (h ▸ hℓ)), Rat.cast_one])
     simpa using h
-  · have hwS : w.1 ∈ S := by
+  · have hwS : w.val ∈ S := by
       simp only [S, Si, Finset.mem_union, Finset.mem_image, Finset.mem_univ, true_and]
       exact Or.inr ⟨w, rfl⟩
     refine (hY _ hwS).trans_eq' (congrArg _ ?_)
     rw [ite_eq_right]
     intro hw
     have := congr($hw (p : ℚ))
-    have hwp : w.1 (p : ℚ) = Rat.AbsoluteValue.real p := hreal w p
+    have hwp : w.val (p : ℚ) = Rat.AbsoluteValue.real p := hreal w p
     rw [hwp, Rat.AbsoluteValue.real_eq_abs, hv₀p,
       Rat.AbsoluteValue.padic_eq_padicNorm, padicNorm.padicNorm_p_of_prime] at this
     have h1 : (1 : ℝ) < p := by exact_mod_cast (Fact.out : p.Prime).one_lt
@@ -404,7 +404,7 @@ theorem exists_approx_of_le_adjoin (p : ℕ) [Fact p.Prime]
   -- Work with the tolerance `min ρ 1`, which is at most one.
   obtain ⟨ρ', hρ'pos, hρ'ρ, hρ'1⟩ : ∃ ρ' : ℝ, 0 < ρ' ∧ ρ' ≤ ρ ∧ ρ' ≤ 1 :=
     ⟨min ρ 1, lt_min hρ one_pos, min_le_left _ _, min_le_right _ _⟩
-  obtain ⟨y₀, hy₀K, hy₀⟩ := exists_mem_norm_sub_lt_of_mem_adjoin p K (hMK y.2)
+  obtain ⟨y₀, hy₀K, hy₀⟩ := exists_mem_norm_sub_lt_of_mem_adjoin p K (hMK y.property)
     (ε := ρ' * ‖(y : AlgebraicClosure ℚ_[p])‖ / 2) (by positivity)
   obtain ⟨Y, hY0, hYp, hYL, hYinf⟩ := GlobalNumberFields.exists_galois_padic_approximation p K hL
     hpL ⟨y₀, hy₀K⟩ (ρ := min (ρ' * ‖(y : AlgebraicClosure ℚ_[p])‖ / 2) ρ')
@@ -432,25 +432,26 @@ many real places, embedded through the real embeddings of those places. -/
 theorem denseRange_algebraMap_embedding_of_isReal
     (S : Finset (HeightOneSpectrum (𝓞 K))) (T : Finset {w : InfinitePlace K // w.IsReal}) :
     DenseRange fun x : K =>
-      ((fun v : S => algebraMap K (v.1.adicCompletion K) x),
-        fun w : T => embedding_of_isReal w.1.2 x) := by
+      ((fun v : S => algebraMap K (v.val.adicCompletion K) x),
+        fun w : T => embedding_of_isReal w.val.property x) := by
   classical
   let Sinf : Finset (InfinitePlace K) := T.map (Function.Embedding.subtype _)
-  have hmem (w : T) : w.1.1 ∈ Sinf := Finset.mem_map_of_mem _ w.2
-  have hreal (u : {u // u ∈ Sinf}) : ∃ h : u.1.IsReal, ⟨u.1, h⟩ ∈ T := by
+  have hmem (w : T) : w.val.val ∈ Sinf := Finset.mem_map_of_mem _ w.property
+  have hreal (u : {u // u ∈ Sinf}) : ∃ h : u.val.IsReal, ⟨u.val, h⟩ ∈ T := by
     obtain ⟨u, hu⟩ := u
     obtain ⟨w, hw, rfl⟩ := Finset.mem_map.mp hu
-    exact ⟨w.2, hw⟩
+    exact ⟨w.property, hw⟩
   choose hr hrT using hreal
   -- Read each archimedean completion as `ℝ` through its real embedding.
-  let r : (∀ u : {u // u ∈ Sinf}, u.1.Completion) → ∀ _ : T, ℝ :=
-    fun y w => Completion.extensionEmbeddingOfIsReal w.1.2 (y ⟨w.1.1, hmem w⟩)
+  let r : (∀ u : {u // u ∈ Sinf}, u.val.Completion) → ∀ _ : T, ℝ :=
+    fun y w => Completion.extensionEmbeddingOfIsReal w.val.property (y ⟨w.val.val, hmem w⟩)
   have hrc : Continuous r := continuous_pi fun w =>
-    (Completion.isometry_extensionEmbeddingOfIsReal w.1.2).continuous.comp (continuous_apply _)
+    (Completion.isometry_extensionEmbeddingOfIsReal w.val.property).continuous.comp
+        (continuous_apply _)
   have hrs : Function.Surjective r := fun t => by
     choose y hy using fun u : {u // u ∈ Sinf} =>
       Completion.surjective_extensionEmbeddingOfIsReal (hr u) (t ⟨_, hrT u⟩)
-    exact ⟨y, funext fun w => hy ⟨w.1.1, hmem w⟩⟩
+    exact ⟨y, funext fun w => hy ⟨w.val.val, hmem w⟩⟩
   have hdense := (Prod.map_surjective.mpr ⟨Function.surjective_id, hrs⟩).denseRange.comp
     (weakApproximation_denseRange S Sinf) (continuous_id.prodMap hrc)
   convert hdense using 1
@@ -459,7 +460,7 @@ theorem denseRange_algebraMap_embedding_of_isReal
   · rw [Function.comp_apply, Prod.map_fst, id]
   · rw [Function.comp_apply, Prod.map_snd]
     simp only [r, NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe]
-    exact ((Completion.extensionEmbeddingOfIsReal_coe w.1.2 (WithAbs.toAbs _ x)).trans
+    exact ((Completion.extensionEmbeddingOfIsReal_coe w.val.property (WithAbs.toAbs _ x)).trans
       (by simp)).symm
 
 /-! ### Simultaneous approximation in `Kˣ`
@@ -488,14 +489,14 @@ theorem exists_fieldUnit_valuation_sub_lt_and_signHom_eq
   obtain ⟨b, hbabs, hbsign⟩ :=
     NumberField.exists_forall_apply_eq_one_and_embedding_of_isReal_eq (K := K) s
   obtain ⟨x, hxf, hxi⟩ := exists_mixed_approximation (Sₑ := S) (Sinf := Finset.univ)
-    (fun v => a v.1) (fun w => b w.1) (fun v => γ v.1) (fun v => hγ v.1 v.2)
+    (fun v => a v.val) (fun w => b w.val) (fun v => γ v.val) (fun v => hγ v.val v.property)
     (fun _ => 1) (fun _ => one_pos)
   have hxi' : ∀ w : InfinitePlace K, w (x - b w) < w (b w) := fun w =>
     (hxi ⟨w, Finset.mem_univ w⟩).trans_eq (hbabs w).symm
   have hx0 := NumberField.InfinitePlace.ne_zero_of_apply_sub_lt (hxi' w₀)
   refine ⟨Units.mk0 x hx0, fun v hv => by simpa using hxf ⟨v, hv⟩, ?_⟩
   funext w
-  have h := w.2.mul_pos_of_apply_sub_lt (hxi' w.1)
+  have h := w.property.mul_pos_of_apply_sub_lt (hxi' w.val)
   rw [hbsign w] at h
   rcases Int.units_eq_one_or (s w) with hs | hs <;> rw [hs] at h ⊢
   · rw [signHom_apply_eq_one_iff, Units.val_mk0]
@@ -537,7 +538,7 @@ prescribed set.  Signs are not the only datum a prescription can impose on a fie
 `exists_fieldUnit_valuation_eq_and_signHom_eq` prescribes finite-place valuations as well — but
 they are the one datum that a single element of `Kˣ` realizes at every real place at once. -/
 theorem exists_fieldUnit_negative_at :
-    ∃ x : Kˣ, ∀ w : {w : InfinitePlace K // w.IsReal}, embedding_of_isReal w.2 (x : K) < 0 :=
+    ∃ x : Kˣ, ∀ w : {w : InfinitePlace K // w.IsReal}, embedding_of_isReal w.property (x : K) < 0 :=
   ⟨-1, fun _ => by simp⟩
 
 end TauCeti.GlobalNumberFields

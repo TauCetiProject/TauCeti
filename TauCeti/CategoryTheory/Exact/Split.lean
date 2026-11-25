@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.ExactStructure
-public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 
 /-!
@@ -45,6 +45,8 @@ structure.
 * `TauCeti.ExactStructure.conflation_zero_id` and
   `TauCeti.ExactStructure.conflation_id_zero`: the two trivial conflations, split by the identity,
   are conflations of every exact structure.
+* `TauCeti.ExactStructure.isDeflation_zero` and `TauCeti.ExactStructure.isInflation_zero`:
+  morphisms to and from the zero object are deflations and inflations respectively.
 * `TauCeti.ExactStructure.split_isInflation_iff` and
   `TauCeti.ExactStructure.split_isDeflation_iff`: the characteristic API of
   `TauCeti.ExactStructure.split`.
@@ -473,6 +475,14 @@ theorem conflation_zero_id (E : ExactStructure C) (X : C) :
 theorem conflation_id_zero (E : ExactStructure C) (X : C) :
     E.Conflation (ShortComplex.mk (𝟙 X) (0 : X ⟶ (0 : C)) (by simp)) :=
   E.conflation_of_splitting { r := 𝟙 X, s := 0 }
+
+/-- A morphism to the zero object is a deflation, with kernel the identity. -/
+theorem isDeflation_zero (E : ExactStructure C) (X : C) : E.IsDeflation (0 : X ⟶ (0 : C)) :=
+  E.isDeflation_g (E.conflation_id_zero X)
+
+/-- A morphism from the zero object is an inflation, with cokernel the identity. -/
+theorem isInflation_zero (E : ExactStructure C) (X : C) : E.IsInflation (0 : (0 : C) ⟶ X) :=
+  E.isInflation_f (E.conflation_zero_id X)
 
 /-- A conflation of the split exact structure is a conflation of every exact structure. -/
 theorem conflation_of_split_conflation (E : ExactStructure C) {S : ShortComplex C}

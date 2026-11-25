@@ -50,14 +50,11 @@ private theorem exists_nsmul_eq_of_pole {n : ℕ} (hn : (n : 𝓀[K]) ≠ 0)
   let L := u.adicCompletion K
   let O := u.adicCompletionIntegers K
   let i := algebraMap K L
-  let f : W.toAffine.Point →+ (W.map i).toAffine.Point :=
-    AddMonoidHom.mk' (Point.mapAlong i i.injective) (Point.mapAlong_add i i.injective)
-  have hf : Function.Bijective f := ⟨Point.mapAlong_injective i i.injective,
-    Point.mapAlong_surjective i i.injective
-      (TauCeti.bijective_algebraMap_adicCompletion_maximalPrime K).2⟩
-  have hf_apply (Q : W.toAffine.Point) : f Q = Point.mapAlong i i.injective Q := (rfl)
+  let f := Point.mapAlongAddEquiv (W := W) i
+    (TauCeti.bijective_algebraMap_adicCompletion_maximalPrime K)
+  have hf : Function.Bijective f := f.bijective
   have hx (Q : W.toAffine.Point) : Valued.v (f Q).xCoord = u.valuation K Q.xCoord := by
-    rw [hf_apply, Point.xCoord_mapAlong]
+    rw [Point.mapAlongAddEquiv_apply, Point.xCoord_mapAlong]
     exact u.valuedAdicCompletion_eq_valuation' Q.xCoord
   have hint : IsIntegral O (W.map i) := IsIntegral.baseChange
     ((IsScalarTower.algebraMap_eq 𝒪[K] O L).symm.trans
@@ -105,14 +102,14 @@ theorem nsmul_ker_nonsingularReductionHom_bijective_of_localField {n : ℕ} (hn 
     apply Subtype.ext
     apply hzero
     · simp only [AddSubgroup.coe_sub, map_sub]
-      have hP : ρ P = 0 := P.2
-      have hQ : ρ Q = 0 := Q.2
+      have hP : ρ P = 0 := P.property
+      have hQ : ρ Q = 0 := Q.property
       rw [hP, hQ, sub_self]
     · simpa only [AddSubgroup.coe_nsmul, AddSubgroup.coe_sub,
         ZeroMemClass.coe_zero, nsmul_sub] using congrArg Subtype.val (sub_eq_zero.mpr h)
   · intro P
     obtain ⟨Q, hQ, hnQ⟩ := exists_nsmul_eq_of_pole W hn
-      ((nonsingularReductionHom_eq_zero_iff (valuation K) P.val).mp P.2)
+      ((nonsingularReductionHom_eq_zero_iff (valuation K) P.val).mp P.property)
     have hQ₀ : Q ∈ W.toAffine.nonsingularReduction (valuation K) := hQ.elim
       (fun h ↦ h ▸ (W.toAffine.nonsingularReduction (valuation K)).zero_mem)
       (mem_nonsingularReduction_of_one_lt (valuation K))
