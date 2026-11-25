@@ -155,6 +155,12 @@ instance (z : Circle) : NormedSpace ℝ (moebiusCore.Fiber z) :=
 instance (z : Circle) : InnerProductSpace ℝ (moebiusCore.Fiber z) :=
   inferInstanceAs (InnerProductSpace ℝ ℝ)
 
+/-- The norm of a vector in a fibre of the Möbius line bundle is its absolute value as a real
+number. -/
+@[simp]
+theorem norm_moebiusCore_fiber {z : Circle} (u : moebiusCore.Fiber z) : ‖u‖ = (|u| : ℝ) :=
+  rfl
+
 /-- The transition functions of the Möbius line bundle preserve the norm of `ℝ`. -/
 theorem norm_moebiusCore_coordChange (i j : Bool) (z : Circle) (v : ℝ) :
     ‖moebiusCore.coordChange i j z v‖ = ‖v‖ := by

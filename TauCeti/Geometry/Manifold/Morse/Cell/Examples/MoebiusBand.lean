@@ -381,21 +381,25 @@ private theorem exists_moebiusBandMap_eq (hc₁ : 1 < c) (hc₂ : c < 2)
   set θ := moebiusRootAngle (moebiusCore.indexAt z) z
   have hh := (moebiusHeight_pos hc₁ hc₂ θ).ne'
   refine ⟨⟨z, σ * v 2 / (r * moebiusHeight c θ)⟩, (mk_eq_mk_iff' ℝ _ _ _ _).2 ⟨σ / r, ?_⟩⟩
-  rw [show moebiusRootAngle (moebiusCore.indexAt z) z = θ from rfl]
+  -- The constructed vector lies over `z`, so its angle is `θ`.
+  change (σ / r) • v = moebiusVec c θ (σ * v 2 / (r * moebiusHeight c θ))
   ext k
   fin_cases k
-  · simp [moebiusVec, hcos, hv0]
+  · simp only [Fin.zero_eta, Fin.isValue, Pi.smul_apply, hv0, smul_eq_mul, moebiusVec, hcos,
+      Matrix.cons_val_zero]
     field_simp
-  · simp [moebiusVec, hsin, hv1]
+  · simp only [Fin.mk_one, Fin.isValue, Pi.smul_apply, hv1, smul_eq_mul, moebiusVec, hsin,
+      Matrix.cons_val_one, Matrix.cons_val_zero]
     field_simp
-  · simp [moebiusVec]
+  · simp only [Fin.reduceFinMk, Pi.smul_apply, Fin.isValue, smul_eq_mul, moebiusVec,
+      Matrix.cons_val]
     field_simp
 
 /-- The map from the unit disc bundle of the Möbius line bundle to the sublevel `{f ≤ c}`. -/
 private def moebiusDiscBundleMap (hc₁ : 1 < c) (hc₂ : c < 2) (p : discBundle ℝ moebiusCore.Fiber) :
     {y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c} :=
   ⟨moebiusBandMap c p, (projectiveMomentFunction_mk_moebiusVec_le_iff hc₁ hc₂ _ _).2
-    (mem_discBundle.1 p.property)⟩
+    ((norm_moebiusCore_fiber _).symm.trans_le (mem_discBundle.1 p.property))⟩
 
 private theorem bijective_moebiusDiscBundleMap (hc₁ : 1 < c) (hc₂ : c < 2) :
     Function.Bijective (moebiusDiscBundleMap hc₁ hc₂) := by
@@ -404,8 +408,8 @@ private theorem bijective_moebiusDiscBundleMap (hc₁ : 1 < c) (hc₂ : c < 2) :
   obtain ⟨p, hp⟩ := exists_moebiusBandMap_eq hc₁ hc₂ (y.property.trans_lt hc₂)
   -- The preimage lies in the disc bundle because its image lies in the sublevel.
   have hpD : p ∈ discBundle ℝ moebiusCore.Fiber :=
-    mem_discBundle.2
-      ((projectiveMomentFunction_mk_moebiusVec_le_iff hc₁ hc₂ _ _).1 (hp ▸ y.property))
+    mem_discBundle.2 ((norm_moebiusCore_fiber _).trans_le
+      ((projectiveMomentFunction_mk_moebiusVec_le_iff hc₁ hc₂ _ _).1 (hp ▸ y.property)))
   exact ⟨⟨p, hpD⟩, Subtype.ext hp⟩
 
 /-- **The lower sublevels of the height on `ℝP²` are Möbius bands.** Let
@@ -446,6 +450,7 @@ theorem coe_proj_projectivePlaneSublevelMoebiusHomeomorph_of_eq (hc₁ : 1 < c) 
 /-- **The Möbius band is fibred over the core circle.** The bundle projection of the Möbius band
 `{f ≤ c}` is the homotopy equivalence `[x : y : z] ↦ (x + i y)² / (x² + y²)` of the sublevel with
 the circle (`TauCeti.projectivePlaneSublevelCircleEquiv`). -/
+@[simp]
 theorem proj_projectivePlaneSublevelMoebiusHomeomorph (hc₁ : 1 < c) (hc₂ : c < 2)
     (y : {y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c}) :
     (projectivePlaneSublevelMoebiusHomeomorph hc₁ hc₂ y).val.proj =
@@ -465,8 +470,8 @@ theorem norm_sq_snd_projectivePlaneSublevelMoebiusHomeomorph_of_eq (hc₁ : 1 < 
       (2 - c) * v 2 ^ 2 / (c * v 0 ^ 2 + (c - 1) * v 1 ^ 2) := by
   have h := sq_of_moebiusBandMap_eq_mk hc₁ hc₂
     ((moebiusBandMap_projectivePlaneSublevelMoebiusHomeomorph hc₁ hc₂ y).trans hy)
-  -- The fibres of the Möbius line bundle carry the norm `|·|` of `ℝ`.
-  exact (sq_abs (α := ℝ) _).trans h
+  rw [norm_moebiusCore_fiber]
+  exact (sq_abs _).trans h
 
 /-- **The boundary of the Möbius band is the level `f = c`.** A point of the sublevel `{f ≤ c}` goes
 to the unit sphere bundle of the Möbius line bundle exactly when it lies on the level `f = c`. -/
@@ -476,7 +481,8 @@ theorem projectivePlaneSublevelMoebiusHomeomorph_mem_sphereBundle_iff (hc₁ : 1
         sphereBundle ℝ moebiusCore.Fiber ↔
       projectiveMomentFunction ℝ ![0, 1, 2] y = c := by
   conv_rhs => rw [← moebiusBandMap_projectivePlaneSublevelMoebiusHomeomorph hc₁ hc₂ y]
-  exact mem_sphereBundle.trans (projectiveMomentFunction_mk_moebiusVec_eq_iff hc₁ hc₂ _ _).symm
+  rw [mem_sphereBundle, norm_moebiusCore_fiber]
+  exact (projectiveMomentFunction_mk_moebiusVec_eq_iff hc₁ hc₂ _ _).symm
 
 end MoebiusBand
 
