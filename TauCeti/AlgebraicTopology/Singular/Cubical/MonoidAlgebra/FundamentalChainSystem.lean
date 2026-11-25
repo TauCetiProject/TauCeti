@@ -14,14 +14,14 @@ import TauCeti.Algebra.Ring.NegOnePow
 # Representing chain systems of fundamental classes when `1` is the only unit
 
 Let `M x y` be compact Hausdorff spaces, indexed by pairs of elements of a finite set `P` graded by
-`ind`, each containing a manifold `N x y` of dimension `ind x - ind y - 1` as an open subset whose
+`ind`, each containing a manifold `O x y` of dimension `ind x - ind y - 1` as an open subset whose
 complement `∂ M x y` is collared, such as the compactified trajectory spaces of a Morse function.
 With coefficients in a commutative ring `k` whose only unit is `1`, such as `ZMod 2`, let
 `μ x y ∈ H(M x y, ∂ M x y; k)` generate the local homology at every interior point, as the mod `2`
 fundamental class relative to the boundary does
 (`TauCeti.existsUnique_span_localHomologyRestriction_range_eq_top`). Suppose that the boundary is a
 closed manifold of dimension `ind x - ind y - 2`, glued along the composition maps
-`ι x z y : M x z × M z y → M x y` from faces whose interiors are the images of `N x z × N z y`.
+`ι x z y : M x z × M z y → M x y` from faces whose interiors are the images of `O x z × O z y`.
 Then some twisting chain system represents the classes `μ`
 (`TauCeti.TwistingChainSystem.exists_isRepresenting_of_subsingleton_units`): the fundamental
 chains rel boundary can be chosen so that the boundary of each is the sum of the cross products of
@@ -147,7 +147,8 @@ theorem TwistingChainSystem.exists_isRepresenting_of_subsingleton_units [Subsing
       (j x z r.1, j z y r.2) :=
     Subtype.ext (hr.symm.trans (ContinuousMap.coe_codRestrict_apply _ _ _ _).symm)
   -- Both sides generate the local homology of the boundary at `a`, which has a single generator.
-  rw [negOnePow_smul_eq_self_of_subsingleton_units k]
+  rw [negOnePow_smul_eq_self_of_neg_one_eq_one
+    (congrArg Units.val (Subsingleton.elim (-1 : kˣ) 1))]
   exact eq_of_span_cubicalHomology_eq_top (hE x y (by omega)) _
     (span_homologyMap_cubicalChainComplexMap_cubicalHomologyKunnethPair_eq_top (hj x z) (hj z y)
       (hF x z hzx) (by omega) (μ x z) (μ z y) _ (hιj x z y hyz hzx) r (hμ x z hzx r.1)
@@ -289,7 +290,8 @@ theorem ContinuationChainSystem.exists_isRepresenting_of_subsingleton_units [Sub
         (j x w r.1, o' w y r.2) :=
       Subtype.ext (hr.symm.trans (ContinuousMap.coe_codRestrict_apply _ _ _ _).symm)
     -- The sign acts trivially, and both sides generate the local homology of the boundary at `a`.
-    rw [negOnePow_smul_eq_self_of_subsingleton_units k]
+    rw [negOnePow_smul_eq_self_of_neg_one_eq_one
+      (congrArg Units.val (Subsingleton.elim (-1 : kˣ) 1))]
     exact eq_of_span_cubicalHomology_eq_top (hE x y (by omega)) _
       (span_homologyMap_cubicalChainComplexMap_cubicalHomologyKunnethPair_eq_top (hj x w)
         (ho' w y) (hG x w hwx) (by omega) (ν x w) (μ' w y) _ (hκ'j x w y hyw hwx) r

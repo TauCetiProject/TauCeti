@@ -205,7 +205,7 @@ private theorem isCubicalRepresentative_map_crossProduct {X₁ X₂ : TopCat.{u}
     (hb : (TopPair.ofSubset A₂).IsCubicalRepresentative k b μ₂) (g : C(X₁ × X₂, Z)) {z : Z}
     (hg : Set.MapsTo
       (TopCat.ofHom (X := ↑((TopPair.ofSubset A₁).fst ⊗ (TopPair.ofSubset A₂).fst)) g)
-      ((TopPair.ofSubset A₁).prodSubspace (TopPair.ofSubset A₂)) ({z}ᶜ : Set (TopCat.of Z))) :
+      ((TopPair.ofSubset A₁).prodSubspace (TopPair.ofSubset A₂)) ({z}ᶜ : Set Z)) :
     (TopPair.ofSubset (X := TopCat.of Z) {z}ᶜ).IsCubicalRepresentative k
       (map k g n (cast k hpq (crossProduct _ _ k _ _ a b)))
       ((HomologicalComplex.homologyMap (TopPair.cubicalChainComplexMap k
@@ -231,7 +231,7 @@ private theorem isCubicalRepresentative_zsmul_map_crossProduct {X₁ X₂ : TopC
     (hb : (TopPair.ofSubset A₂).IsCubicalRepresentative k b μ₂) (g : C(X₁ × X₂, Z)) {z : Z}
     (hg : Set.MapsTo
       (TopCat.ofHom (X := ↑((TopPair.ofSubset A₁).fst ⊗ (TopPair.ofSubset A₂).fst)) g)
-      ((TopPair.ofSubset A₁).prodSubspace (TopPair.ofSubset A₂)) ({z}ᶜ : Set (TopCat.of Z)))
+      ((TopPair.ofSubset A₁).prodSubspace (TopPair.ofSubset A₂)) ({z}ᶜ : Set Z))
     (ε : ℤˣ) {v : ((TopPair.ofSubset (X := TopCat.of Z) {z}ᶜ).cubicalChainComplex k).homology n}
     (hv : (HomologicalComplex.homologyMap (TopPair.cubicalChainComplexMap k
           (TopPair.ofSubsetMap _ hg)) n).hom
@@ -367,7 +367,8 @@ theorem TwistingChainSystem.exists_isRepresenting_of_faces
   · rintro a ⟨z, hyz, hzx, ha⟩
     exact Set.mem_iUnion.2 ⟨⟨z, hyz, hzx⟩, ha⟩
   · -- The cross product of the representatives of the two factors, carried to the face, represents
-    -- the signed image of `∂ μ x y`, and the sign of the face chain cancels that sign.
+    -- the signed image of `∂ μ x y`, and the sign of the face chain cancels that sign. The helper
+    -- types the pair of `{a}ᶜ` through `TopCat.of`, which unfolds to the pair in `hface`.
     exact isCubicalRepresentative_zsmul_map_crossProduct (hpq z) (ha' z) (hb' z) (g z) _ _
       (hface x z.val y z.prop.1 z.prop.2 a ha)
 
@@ -590,12 +591,14 @@ theorem ContinuationChainSystem.exists_isRepresenting_of_faces (hS : S.IsReprese
     · exact Set.mem_iUnion.2 ⟨Sum.inr ⟨w, hyw, hwx⟩, ha⟩
   · rcases i with z | w
     · -- The cross product of the representatives of the two factors, carried to the face,
-      -- represents the image of `∂ ν x y`.
+      -- represents the image of `∂ ν x y`. The helper types the pair of `{a}ᶜ` through
+      -- `TopCat.of`, which unfolds to the pair in `hface`.
       have h := isCubicalRepresentative_map_crossProduct (hpq z) (hra z) (hrb z) (g z)
         ((hUB x z.val y z.prop.1 z.prop.2).mono_right
           (Set.compl_subset_compl.2 (Set.singleton_subset_iff.2 ha)))
       rwa [hface x z.val y z.prop.1 z.prop.2 a ha] at h
-    · -- On a right face the sign of the face chain cancels the sign of the face condition.
+    · -- On a right face the sign of the face chain cancels the sign of the face condition. As on
+      -- a left face, the helper's pair of `{a}ᶜ` unfolds to the pair in `hface'`.
       exact isCubicalRepresentative_zsmul_map_crossProduct (hpq' w) (hra' w) (hrb' w) (g' w) _ _
         (hface' x w.val y w.prop.1 w.prop.2 a ha)
 
