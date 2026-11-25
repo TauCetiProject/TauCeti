@@ -373,7 +373,7 @@ lemma toFiniteStratification_eq_comap {V : Y.Opens} (T : Y.ConstructibleStratifi
     obtain ⟨i, hi⟩ : ∃ i, φ ⁻¹' (U.ι ⁻¹' Set.range (S.f i)) = V.ι ⁻¹' Set.range (T.f j) :=
       h.subset ⟨j, rfl⟩
     rw [← hi] at hs ⊢
-    exact ⟨hs, _, ⟨(hs.image _).mono (Set.image_preimage_subset _ _), i, rfl⟩, rfl⟩
+    exact ⟨hs, _, ⟨Set.nonempty_of_nonempty_preimage hs, i, rfl⟩, rfl⟩
   · rintro ⟨hs, _, ⟨-, i, rfl⟩, rfl⟩
     exact ⟨hs, h.superset ⟨i, rfl⟩⟩
 
