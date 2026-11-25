@@ -87,7 +87,7 @@ theorem range_bfzOccurrence (w : List (Fin r × Bool)) (i : Fin r) :
   exact mem_bfzOccurrencePositions w i k
 
 /-- Every position of a given colour is some enumerated occurrence of that colour. -/
-theorem exists_bfzOccurrence_eq_of_fst (w : List (Fin r × Bool)) (i : Fin r)
+theorem exists_bfzOccurrence_eq_of_bfzLetter_fst_eq (w : List (Fin r × Bool)) (i : Fin r)
     {k : Fin (r + w.length)} (hk : (bfzLetter w k).1 = i) :
     ∃ n, bfzOccurrence w i n = k := by
   have h : k ∈ Set.range (bfzOccurrence w i) := by
@@ -104,7 +104,8 @@ theorem bfzOccurrence_eq_iff (w : List (Fin r × Bool)) (i : Fin r)
     exact ⟨bfzLetter_bfzOccurrence_fst w i n,
       Finset.card_filter_lt_orderEmbOfFin (bfzOccurrencePositions w i) rfl n⟩
   · rintro ⟨hk, hn⟩
-    obtain ⟨m, rfl⟩ := exists_bfzOccurrence_eq_of_fst w i hk
+    obtain ⟨m, rfl⟩ :=
+      exists_bfzOccurrence_eq_of_bfzLetter_fst_eq w i hk
     have hCount : ((bfzOccurrencePositions w i).filter (fun j ↦ j < bfzOccurrence w i m)).card =
         (m : ℕ) := Finset.card_filter_lt_orderEmbOfFin (bfzOccurrencePositions w i) rfl m
     have hm : (m : ℕ) = n := hCount.symm.trans hn
@@ -136,7 +137,8 @@ theorem bfzSuccessor_bfzOccurrence_succ (w : List (Fin r × Bool)) (i : Fin r)
     (Fin.lt_def.mpr (Nat.lt_succ_self _)), by simp, ?_⟩
   intro k hnk hk
   have hki : (bfzLetter w k).1 = i := hk.trans (bfzLetter_bfzOccurrence_fst w i n)
-  obtain ⟨m, rfl⟩ := exists_bfzOccurrence_eq_of_fst w i hki
+  obtain ⟨m, rfl⟩ :=
+    exists_bfzOccurrence_eq_of_bfzLetter_fst_eq w i hki
   apply (bfzOccurrence w i).monotone
   have hnm : n < m := (bfzOccurrence w i).lt_iff_lt.mp hnk
   simpa only [Fin.le_def, Fin.val_mk] using Nat.succ_le_of_lt (Fin.lt_def.mp hnm)
@@ -157,7 +159,8 @@ theorem bfzSuccessor_bfzOccurrence_eq_top_iff (w : List (Fin r × Bool)) (i : Fi
     rw [bfzSuccessor_eq_top_iff]
     intro k hnk hk
     have hki : (bfzLetter w k).1 = i := hk.trans (bfzLetter_bfzOccurrence_fst w i n)
-    obtain ⟨m, rfl⟩ := exists_bfzOccurrence_eq_of_fst w i hki
+    obtain ⟨m, rfl⟩ :=
+      exists_bfzOccurrence_eq_of_bfzLetter_fst_eq w i hki
     have hnm : n < m := (bfzOccurrence w i).lt_iff_lt.mp hnk
     have _hm := m.isLt
     omega
