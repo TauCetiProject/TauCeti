@@ -47,7 +47,7 @@ theorem lieMap_homEquivKerProjHom_symm
       ((projHom : UniversalCover (1 : G) →ₜ* G) :
         UniversalCover (1 : G) →* G).ker ≤ (g : UniversalCover (1 : G) →* K).ker}) :
     ContinuousMonoidHom.lieMap (I := I) (I' := I') (homEquivKerProjHom.symm f) =
-      (ContinuousMonoidHom.lieMap (I := I) (I' := I') f.1).comp
+      (ContinuousMonoidHom.lieMap (I := I) (I' := I') f.val).comp
         (lieEquivProjHom I G).symm.toLieHom := by
   let d : G →ₜ* K := homEquivKerProjHom.symm f
   let p : UniversalCover (1 : G) →ₜ* G := projHom
@@ -57,7 +57,7 @@ theorem lieMap_homEquivKerProjHom_symm
           (ContinuousMonoidHom.lieMap (I := I) (I' := I) p) :=
     ContinuousMonoidHom.lieMap_comp (G := UniversalCover (1 : G)) (G' := G) (G'' := K)
       (I := I) (I' := I) (I'' := I') p d
-  have hfun : d.comp p = f.1 := by
+  have hfun : d.comp p = f.val := by
     dsimp [d, p]
     exact homEquivKerProjHom_symm_apply_comp f
   rw [hfun] at hcomp

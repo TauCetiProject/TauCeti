@@ -21,7 +21,8 @@ On a manifold `M` without boundary, the **universal differential** is the sectio
 `f`, and a function is a regular parameter of `S` exactly when its critical points are
 nondegenerate. Genericity of such functions is then an instance of parametric transversality for
 Fredholm sections (`TauCeti.isMeagre_setOf_not_isRegularSectionParameter`). This file establishes
-the regularity, linearization and transversality of `S` that this application uses.
+the regularity, linearization and transversality of `S` that this application uses; the
+application itself is `TauCeti.mem_residual_setOf_isRegularSectionParameter_universalDifferential`.
 
 * The differential `df` of a single function, read as a section of the cotangent bundle, has
   intrinsic linearization the critical Hessian, which is onto exactly at nondegenerate critical
@@ -177,6 +178,7 @@ theorem sectionLinearization_universalDifferential_apply (hk : 2 ≤ k)
 
 end FiniteRegularity
 
+omit [LocallyCompactSpace E] in
 include hK in
 /-- **The universal differential is transverse to the zero section.** On a smooth Hausdorff
 manifold and for `k ≥ 2`, its intrinsic linearization is surjective at every point of

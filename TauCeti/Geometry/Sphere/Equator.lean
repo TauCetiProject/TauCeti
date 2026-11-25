@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Riccardo Brasca
 -/
 module
 
@@ -29,6 +29,8 @@ continuously onto this equator.
   equator.
 * `TauCeti.exists_ne_and_ne_neg_sphere`: in dimension at least two, the unit sphere has points
   other than `±p`, for instance the points of the equator orthogonal to `p`.
+* `TauCeti.nonempty_sphereEquator_inter_sphereEquator`: two great hyperspheres in a unit sphere
+  of dimension at least two meet.
 -/
 
 public section
@@ -69,7 +71,7 @@ def sphereToEquator (e : W ≃ₗᵢ[ℝ] (ℝ ∙ u)ᗮ) : C(sphere (0 : W) 1, 
   toFun s := ⟨⟨(e s : V), by
       rw [mem_sphere_zero_iff_norm, Submodule.norm_coe, LinearIsometryEquiv.norm_map,
         norm_eq_of_mem_sphere]⟩,
-    mem_sphereEquator.2 (Submodule.mem_orthogonal_singleton_iff_inner_left.1 (e s).2)⟩
+    mem_sphereEquator.2 (Submodule.mem_orthogonal_singleton_iff_inner_left.1 (e s).property)⟩
   continuous_toFun := by fun_prop
 
 @[simp]
@@ -86,8 +88,8 @@ theorem injective_sphereToEquator (e : W ≃ₗᵢ[ℝ] (ℝ ∙ u)ᗮ) :
 /-- The map `LinearIsometryEquiv.sphereToEquator e` onto the equator is surjective. -/
 theorem surjective_sphereToEquator (e : W ≃ₗᵢ[ℝ] (ℝ ∙ u)ᗮ) :
     Function.Surjective e.sphereToEquator := fun q =>
-  ⟨⟨e.symm ⟨q.1.1, Submodule.mem_orthogonal_singleton_iff_inner_left.2
-      (mem_sphereEquator.1 q.2)⟩, by simp [norm_eq_of_mem_sphere]⟩,
+  ⟨⟨e.symm ⟨q.val.val, Submodule.mem_orthogonal_singleton_iff_inner_left.2
+      (mem_sphereEquator.1 q.property)⟩, by simp [norm_eq_of_mem_sphere]⟩,
     Subtype.ext (Subtype.ext (by simp))⟩
 
 end LinearIsometryEquiv
@@ -114,6 +116,30 @@ theorem surjective_orthogonalSphereToEquator (u : V) :
     Function.Surjective (orthogonalSphereToEquator u) :=
   (LinearIsometryEquiv.refl ℝ (ℝ ∙ u)ᗮ).surjective_sphereToEquator
 
+variable (u : V) in
+/-- The unit sphere of the orthogonal complement `u⊥` is homeomorphic to the equator of the unit
+sphere orthogonal to `u`, through `TauCeti.orthogonalSphereToEquator`; the inverse sends a point of
+the equator, a unit vector orthogonal to `u`, to itself. -/
+def orthogonalSphereHomeomorphEquator : sphere (0 : (ℝ ∙ u)ᗮ) 1 ≃ₜ sphereEquator u where
+  toFun := orthogonalSphereToEquator u
+  invFun q := ⟨⟨q.val.val, Submodule.mem_orthogonal_singleton_iff_inner_left.2
+      (mem_sphereEquator.1 q.property)⟩, by simp [norm_eq_of_mem_sphere]⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := (orthogonalSphereToEquator u).continuous
+  continuous_invFun := by fun_prop
+
+@[simp]
+theorem orthogonalSphereHomeomorphEquator_apply (u : V) (s : sphere (0 : (ℝ ∙ u)ᗮ) 1) :
+    orthogonalSphereHomeomorphEquator u s = orthogonalSphereToEquator u s :=
+  (rfl)
+
+@[simp]
+theorem coe_orthogonalSphereHomeomorphEquator_symm_apply (u : V) (q : sphereEquator u) :
+    ((((orthogonalSphereHomeomorphEquator u).symm q : sphere (0 : (ℝ ∙ u)ᗮ) 1) : (ℝ ∙ u)ᗮ) :
+      V) = q :=
+  (rfl)
+
 /-- **The unit sphere has points other than `±p`** in dimension at least two, for instance any unit
 vector orthogonal to `p`. -/
 theorem exists_ne_and_ne_neg_sphere (hV : 1 < finrank ℝ V) (p : sphere (0 : V) 1) :
@@ -127,5 +153,17 @@ theorem exists_ne_and_ne_neg_sphere (hV : 1 < finrank ℝ V) (p : sphere (0 : V)
     rwa [show v = p from Subtype.ext_iff.1 h] at hpv
   · exact ne_neg_of_inner_eq_zero (ne_zero_of_mem_unit_sphere p) (by rwa [real_inner_comm])
       (Subtype.ext_iff.1 h)
+
+/-- Two great hyperspheres in a unit sphere of dimension at least two meet. The defining
+normals may be equal or zero. -/
+theorem nonempty_sphereEquator_inter_sphereEquator
+    (hdim : 2 < finrank ℝ V) (a b : V) :
+    (sphereEquator a ∩ sphereEquator b).Nonempty := by
+  classical
+  obtain ⟨x, hx, horth⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank
+    (𝕜 := ℝ) {a, b} (Finset.card_le_two.trans_lt hdim)
+  refine ⟨⟨x, by simpa using hx⟩, ?_, ?_⟩
+  · simpa only [mem_sphereEquator, real_inner_comm] using horth a (by simp)
+  · simpa only [mem_sphereEquator, real_inner_comm] using horth b (by simp)
 
 end TauCeti

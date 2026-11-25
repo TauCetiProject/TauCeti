@@ -142,7 +142,7 @@ private theorem exists_comp_algebraMap_eq_and_comp_coactAlgHom_eq_symm (x : A �
     induction w using TensorProduct.inductionOn with
     | add w w' hw hw' => simp only [map_add, hw, hw']
     | tmul a h =>
-      rw [LinearMap.lTensor_tmul, liftRingHom_assoc_symm_tmul x σ hσR hσι, hgσ,
+      rw [LinearMap.lTensor_tmul, liftRingHom_assoc_symm_tmul x σ hσR, hgσ,
         HopfAlgebra.mul_antipode_lTensor_comul_apply]
       simp [← map_mul, Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.algebraMap_apply,
         Algebra.algebraMap_eq_smul_one (A := H), TensorProduct.smul_tmul']
@@ -188,7 +188,7 @@ private theorem exists_comp_algebraMap_eq_and_comp_coactAlgHom_eq_trans (x y : A
     induction w using TensorProduct.inductionOn with
     | add w w' hw hw' => simp only [map_add, hw, hw']
     | tmul a h =>
-      rw [LinearMap.lTensor_tmul, liftRingHom_assoc_symm_tmul x (y.comp ι) hRx hR]
+      rw [LinearMap.lTensor_tmul, liftRingHom_assoc_symm_tmul x (y.comp ι) hRx]
       simp [z, γ, ι]
   -- `Ψ ((coact a) ⊗ h) = x (coact a) g'(h) = y (a ⊗ h)`
   have hΨ (w : A ⊗[R] H) :

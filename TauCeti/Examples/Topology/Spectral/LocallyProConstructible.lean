@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Topology.Compactification.OnePoint.Basic
 import TauCeti.Topology.Spectral.LocallyProConstructible
-import Mathlib.Topology.Compactification.OnePoint.Basic
-import Mathlib.Topology.InductiveDimension.Classes
+import TauCeti.Topology.Spectral.PatchCriterion
 
 /-!
 # Checks for locally pro-constructible images
@@ -38,18 +38,14 @@ example (s : Set ℕ) : IsLocallyProConstructible (id '' s) := by
 compactification has image that is not locally pro-constructible. -/
 example : IsLocallySpectralMap ((↑) : ℕ → OnePoint ℕ) ∧
     ¬ IsLocallyProConstructible (((↑) : ℕ → OnePoint ℕ) '' univ) := by
-  have : SpectralSpace (OnePoint ℕ) :=
-    { toPrespectralSpace := .of_isTopologicalBasis isTopologicalBasis_isClopen
-        fun _ hU ↦ hU.isClosed.isCompact }
+  have : SpectralSpace (OnePoint ℕ) := spectralSpace_of_zeroDimensionalSpace (OnePoint ℕ)
   refine ⟨.of_forall_exists fun n ↦ ⟨{n}, {(n : OnePoint ℕ)}, mapsTo_singleton.mpr rfl,
-    isOpen_discrete _, ?_, rfl, inferInstance, continuous_of_discreteTopology,
-    fun _ _ _ ↦ (toFinite _).isCompact⟩, fun h ↦ ?_⟩
-  · rw [← image_singleton]
-    exact OnePoint.isOpen_image_coe.mpr (isOpen_discrete _)
-  · have hc := (isLocallyProConstructible_iff_isProConstructible.mp h).isCompact
-    rw [OnePoint.isOpenEmbedding_coe.isEmbedding.isCompact_iff.symm,
-      isCompact_iff_finite] at hc
-    exact infinite_univ hc
+    isOpen_discrete _, OnePoint.isOpen_singleton_coe.mpr (isOpen_discrete _), rfl, inferInstance,
+    continuous_of_discreteTopology, fun _ _ _ ↦ (toFinite _).isCompact⟩, fun h ↦ ?_⟩
+  have hc := (isLocallyProConstructible_iff_isProConstructible.mp h).isCompact
+  rw [OnePoint.isOpenEmbedding_coe.isEmbedding.isCompact_iff.symm,
+    isCompact_iff_finite] at hc
+  exact infinite_univ hc
 
 /-- The criterion for closed maps works on a noncompact source: the identity of discrete `ℕ`
 is both quasi-compact and specializing. -/

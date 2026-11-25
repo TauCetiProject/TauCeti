@@ -16,6 +16,8 @@ import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 -- Proof-only: one- and two-function layer-cake formulas.
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.MeasureTheory.Integral.LayerCake
+-- Proof-only: right continuity of the distribution function `t ↦ μ {t < f}`.
+import TauCeti.MeasureTheory.Measure.Continuity
 -- Proof-only: the measure of the set where the centered Haar ball is small.
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
@@ -102,32 +104,6 @@ open scoped ENNReal
 
 namespace TauCeti
 
-section Distribution
-
-variable {α : Type*} [MeasurableSpace α] (μ : Measure α) {f : α → ℝ≥0∞}
-
-/-- **Right continuity of the distribution function.** The measure of a strict superlevel set
-`{t < f}` is approached by those of strictly higher levels, so anything below it is already below
-`μ {s < f}` for some `s > t`. -/
-theorem exists_lt_lt_measure_setOf_lt {t c : ℝ≥0∞} (h : c < μ {y | t < f y}) :
-    ∃ s, t < s ∧ c < μ {y | s < f y} := by
-  have ht : t ≠ ∞ := by
-    rintro rfl
-    simp at h
-  obtain ⟨u, hu, hut, hlim⟩ := exists_seq_strictAnti_tendsto' (lt_top_iff_ne_top.2 ht)
-  have hunion : {y | t < f y} = ⋃ n, {y | u n < f y} := by
-    ext y
-    simp only [mem_ofPred_eq, mem_iUnion]
-    exact ⟨fun hy ↦ (hlim.eventually (gt_mem_nhds hy)).exists,
-      fun ⟨n, hn⟩ ↦ (hut n).1.trans hn⟩
-  have hmono : Monotone fun n ↦ {y | u n < f y} :=
-    fun m n hmn y hy ↦ (hu.antitone hmn).trans_lt hy
-  rw [hunion, hmono.measure_iUnion, lt_iSup_iff] at h
-  obtain ⟨n, hn⟩ := h
-  exact ⟨u n, (hut n).1, hn⟩
-
-end Distribution
-
 section Measure
 
 variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] (μ : Measure E)
@@ -156,7 +132,7 @@ theorem lt_schwarzRearrangement_iff {x : E} {t : ℝ≥0∞} :
     obtain ⟨hball, hts⟩ := hs
     exact hball.trans_le (measure_mono fun y hy ↦ hts.trans hy)
   · intro h
-    obtain ⟨s, hts, hs⟩ := exists_lt_lt_measure_setOf_lt μ h
+    obtain ⟨s, hts, hs⟩ := μ.exists_lt_lt_measure_setOf_lt h
     exact ⟨s, lt_iSup_iff.2 ⟨hs, hts⟩⟩
 
 /-- The strict superlevel sets of the Schwarz rearrangement, as sets. -/
@@ -292,6 +268,22 @@ theorem edist_schwarzRearrangement_le_essSup (f g : E → ℝ≥0∞) (x : E) :
     ⟨key f g (h.mono fun y hy ↦ ((ENNReal.edist_le_iff_le_add_right _ _ _).1 hy).1),
       key g f (h.mono fun y hy ↦ ((ENNReal.edist_le_iff_le_add_right _ _ _).1 hy).2)⟩
 
+/-- If every centered ball has finite measure, a strict superlevel set of the Schwarz
+rearrangement whose original superlevel set has infinite measure is the whole space. -/
+theorem setOf_lt_schwarzRearrangement_eq_univ_of_measure_ball_lt_top (f : E → ℝ≥0∞) (t : ℝ≥0∞)
+    (hball : ∀ x : E, μ (ball 0 ‖x‖) < ∞) (h : μ {y | t < f y} = ∞) :
+    {x | t < schwarzRearrangement μ f x} = univ := by
+  simp [setOf_lt_schwarzRearrangement, h, hball]
+
+/-- For a measure that is finite on compact sets of a proper space, a strict superlevel set of the
+Schwarz rearrangement whose original superlevel set has infinite measure is the whole space. -/
+@[simp]
+theorem setOf_lt_schwarzRearrangement_eq_univ [ProperSpace E] [IsFiniteMeasureOnCompacts μ]
+    (f : E → ℝ≥0∞) (t : ℝ≥0∞) (h : μ {y | t < f y} = ∞) :
+    {x | t < schwarzRearrangement μ f x} = univ :=
+  setOf_lt_schwarzRearrangement_eq_univ_of_measure_ball_lt_top μ f t
+    (fun _ ↦ measure_ball_lt_top) h
+
 end Measure
 
 section AddHaar
@@ -320,6 +312,25 @@ theorem addHaar_setOf_lt_schwarzRearrangement (f : E → ℝ≥0∞) (t : ℝ≥
       rw [Subsingleton.eq_univ_of_nonempty (s := {y | t < f y}) ⟨x, hx⟩]
       exact isOpen_univ.measure_pos μ univ_nonempty
   · exact μ.addHaar_setOf_addHaar_ball_norm_lt _
+
+/-- A strict superlevel set of the Schwarz rearrangement whose original superlevel set has finite
+measure is a centered open ball of that same measure. -/
+theorem exists_setOf_lt_schwarzRearrangement_eq_ball (f : E → ℝ≥0∞) (t : ℝ≥0∞)
+    (h : μ {y | t < f y} ≠ ∞) :
+    ∃ r : ℝ, 0 ≤ r ∧ {x | t < schwarzRearrangement μ f x} = ball 0 r ∧
+      μ (ball 0 r) = μ {y | t < f y} := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- In dimension zero the superlevel set is `∅ = ball 0 0` or `univ = ball 0 1`.
+    obtain ⟨r, hr₀, hr⟩ : ∃ r : ℝ, 0 ≤ r ∧ {x | t < schwarzRearrangement μ f x} = ball 0 r := by
+      rcases {x | t < schwarzRearrangement μ f x}.eq_empty_or_nonempty with hs | hs
+      · exact ⟨0, le_rfl, by rw [hs, ball_zero]⟩
+      · refine ⟨1, zero_le_one, ?_⟩
+        rw [hs.eq_univ, eq_comm, eq_univ_iff_forall]
+        simp [norm_of_subsingleton]
+    exact ⟨r, hr₀, hr, by rw [← hr, addHaar_setOf_lt_schwarzRearrangement]⟩
+  obtain ⟨r, hr₀, hr⟩ := μ.exists_nonneg_addHaar_ball_eq h
+  refine ⟨r, hr₀, ?_, hr⟩
+  rw [setOf_lt_schwarzRearrangement, ← hr, μ.setOf_addHaar_ball_norm_lt_addHaar_ball]
 
 /-- Two superlevel sets of Schwarz rearrangements are concentric, so their intersection has the
 smaller of the two original superlevel measures. No measurability or finiteness hypothesis is

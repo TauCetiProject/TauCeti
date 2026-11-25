@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.PathSpace.Moore
 public import Mathlib.Topology.Connected.PathConnected
+public import Mathlib.Topology.Homotopy.Basic
 
 /-!
 # The free Moore loop space
@@ -31,6 +32,10 @@ constant loop, and the constant loops `X → 𝓛₀X` are again a closed embedd
   `length`.
 * `TauCeti.MooreFreeLoopSpace.const x` (`constMap`): the constant loop at `x` of length zero.
 * `TauCeti.MooreLoopSpace.toFreeLoop`: a based Moore loop as a free loop.
+* `TauCeti.MooreLoopSpace.codRestrictFreeLoop`: a continuous family of free loops based at `x`,
+  as a continuous family of based loops.
+* `TauCeti.MooreFreeLoopSpace.toMooreLoop`: a free Moore loop as a based Moore loop at its base
+  point.
 * `TauCeti.MooreFreeLoopSpace.contractibleLoops X`: the contractible free loops `𝓛₀X`, with
   `basepointContractible` and `TauCeti.MooreFreeLoopSpace.constContractible x`
   (`constContractibleMap`), the constant loop at `x` as a point of `𝓛₀X`.
@@ -237,11 +242,72 @@ theorem range_toFreeLoop :
     exact basepoint_toFreeLoop δ
   · exact fun h ↦ ⟨⟨γ.toMoorePath, h, γ.target_eq_source.trans h⟩, rfl⟩
 
+variable {Y : Type*} [TopologicalSpace Y]
+
+/-- **Families of free loops based at `x` are families of based loops.** A continuous map to the
+free Moore loops all of whose values are based at `x`, as a continuous map to the Moore loops at
+`x`: its corestriction to the fibre of `basepoint` over `x`, which is the image of `toFreeLoop`
+(`TauCeti.MooreLoopSpace.range_toFreeLoop`). -/
+def codRestrictFreeLoop (f : C(Y, MooreFreeLoopSpace X)) (hf : ∀ y, (f y).basepoint = x) :
+    C(Y, MooreLoopSpace X x) where
+  toFun y := ⟨(f y).toMoorePath, by rw [MooreFreeLoopSpace.source_toMoorePath, hf],
+    by rw [MooreFreeLoopSpace.target_toMoorePath, hf]⟩
+  continuous_toFun := isEmbedding_toMoorePath.continuous_iff.2 <|
+    MooreFreeLoopSpace.continuous_toMoorePath.comp f.continuous
+
+@[simp]
+theorem toMoorePath_codRestrictFreeLoop_apply (f : C(Y, MooreFreeLoopSpace X))
+    (hf : ∀ y, (f y).basepoint = x) (y : Y) :
+    (codRestrictFreeLoop f hf y).toMoorePath = (f y).toMoorePath :=
+  (rfl)
+
+@[simp]
+theorem toFreeLoop_codRestrictFreeLoop_apply (f : C(Y, MooreFreeLoopSpace X))
+    (hf : ∀ y, (f y).basepoint = x) (y : Y) :
+    (codRestrictFreeLoop f hf y).toFreeLoop = f y :=
+  MooreFreeLoopSpace.ext (toMoorePath_codRestrictFreeLoop_apply f hf y)
+
+/-- **Homotopies of free loops through loops based at `x` are homotopies of based loops.** If two
+families of free loops based at `x` are homotopic through free loops based at `x`, their
+corestrictions to the Moore loops at `x` are homotopic. -/
+theorem homotopic_codRestrictFreeLoop {f g : C(Y, MooreFreeLoopSpace X)}
+    {hf : ∀ y, (f y).basepoint = x} {hg : ∀ y, (g y).basepoint = x} (H : f.Homotopy g)
+    (hH : ∀ p, (H p).basepoint = x) :
+    (codRestrictFreeLoop f hf).Homotopic (codRestrictFreeLoop g hg) :=
+  ⟨{ toContinuousMap := codRestrictFreeLoop H.toContinuousMap hH
+     map_zero_left := fun y ↦ ext (congrArg MooreFreeLoopSpace.toMoorePath (H.apply_zero y))
+     map_one_left := fun y ↦ ext (congrArg MooreFreeLoopSpace.toMoorePath (H.apply_one y)) }⟩
+
 end MooreLoopSpace
 
 namespace MooreFreeLoopSpace
 
 variable {X : Type*} [TopologicalSpace X]
+
+/-! ### Free loops as based loops -/
+
+/-- A free Moore loop, read as a based Moore loop at its own base point. -/
+def toMooreLoop (γ : MooreFreeLoopSpace X) : MooreLoopSpace X γ.basepoint :=
+  ⟨γ.toMoorePath, rfl, γ.target_eq_source⟩
+
+@[simp]
+theorem toMoorePath_toMooreLoop (γ : MooreFreeLoopSpace X) :
+    γ.toMooreLoop.toMoorePath = γ.toMoorePath :=
+  (rfl)
+
+@[simp]
+theorem length_toMooreLoop (γ : MooreFreeLoopSpace X) : γ.toMooreLoop.length = γ.length := by
+  rw [← MooreLoopSpace.length_toMoorePath, toMoorePath_toMooreLoop, length_toMoorePath]
+
+/-- A constant free loop, read as a based loop, is the unit loop. -/
+@[simp]
+theorem toMooreLoop_const (x : X) : (const x).toMooreLoop = 1 :=
+  MooreLoopSpace.eq_one_of_length_eq_zero (by rw [length_toMooreLoop, length_const])
+
+/-- Reading a free loop as a based loop at its base point and back gives the same free loop. -/
+@[simp]
+theorem toFreeLoop_toMooreLoop (γ : MooreFreeLoopSpace X) : γ.toMooreLoop.toFreeLoop = γ :=
+  (rfl)
 
 /-! ### Contractible loops -/
 
@@ -315,7 +381,7 @@ theorem isClosedEmbedding_constContractible :
   toIsEmbedding := isClosedEmbedding_const.isEmbedding.codRestrict _ _
   isClosed_range := by
     rw [constContractible, Set.range_codRestrict]
-    exact isClosedEmbedding_const.isClosed_range.preimage continuous_subtype_val
+    exact isClosedEmbedding_const.isClosed_range.preimage continuous_subtypeVal
 
 variable (X) in
 /-- Basepoint evaluation `𝓛₀X → X` on contractible free Moore loops. -/
@@ -324,7 +390,7 @@ def basepointContractible : C(contractibleLoops X, X) :=
 
 @[simp]
 theorem basepointContractible_apply (γ : contractibleLoops X) :
-    basepointContractible X γ = γ.1.basepoint :=
+    basepointContractible X γ = γ.val.basepoint :=
   (rfl)
 
 variable (X) in

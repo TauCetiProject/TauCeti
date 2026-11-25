@@ -6,7 +6,7 @@ Authors: Claude
 module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Finite
-public import TauCeti.Combinatorics.SimpleGraph.Measurable
+public import TauCeti.Combinatorics.SimpleGraph.Measurable.Basic
 import TauCeti.Probability.Distributions.Uniform.Basic
 import TauCeti.MeasureTheory.Measure.ProductKernel
 

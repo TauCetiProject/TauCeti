@@ -6,15 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Density
+public import TauCeti.Order.Partition.Finpartition
 public import Mathlib.Analysis.Real.Sqrt
-public import Mathlib.Order.Partition.Finpartition
 public import Mathlib.Basic.Real.Basic
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Data.Rat.BigOperators
 import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Linarith
 import TauCeti.Algebra.BigOperators.Finset.WeightedCauchySchwarz
-import TauCeti.Order.Partition.Finpartition
 
 /-!
 # The energy of a vertex partition for a pair-color system
@@ -60,8 +59,10 @@ pairs of parts, this is the energy increment of the regularity lemma for pair-co
   identity.
 * `TauCeti.PairColorSystem.energy_mono_of_refines`: refining the partition does not decrease the
   energy.
-* `TauCeti.PairColorSystem.sum_abs_pairColorDensity_sub_le`: an energy gap of at most `ε` bounds
-  the `L¹` deviation between fine and coarse block densities by `√ε` on average.
+* `TauCeti.PairColorSystem.sum_abs_pairColorDensity_sub_le` and
+  `TauCeti.PairColorSystem.sum_card_mul_abs_pairColorDensity_sub_le`: an energy gap of at most `ε`
+  bounds the `L¹` deviation between fine and coarse block densities by `√ε` on average, both over
+  ordered distinct pairs and summed over distinct-parent fine blocks.
 * `TauCeti.PairColorSystem.card_mul_sq_pairColorDensity_sub_le_sum`: Cauchy–Schwarz on a rectangle
   whose sides are unions of parts.
 * `TauCeti.PairColorSystem.mul_card_le_sum_sq_pairColorDensity_sub_of_witness`: the deviation gain
@@ -369,6 +370,64 @@ theorem sum_abs_pairColorDensity_sub_le {ε : ℝ}
     (fun _ _ ↦ inv_nonneg.2 hD₀.le) hw hsq
   rw [← mul_sum, inv_mul_le_iff₀ hD₀] at hcs
   linarith
+
+open Finpartition in
+/-- **Blockwise `L¹` density deviation across distinct coarse cells.** If `Q ≤ P` and
+`S.energy Q - S.energy P ≤ ε`, then summing `(#A' * #B') * |d_c(A', B') - d_c(A, B)|` over all pairs
+of fine cells `(A', B')` whose coarse parents `A = refinementParent h A'` and
+`B = refinementParent h B'` are distinct gives at most `√ε * #(univ : Finset V).offDiag`. -/
+theorem sum_card_mul_abs_pairColorDensity_sub_le {ε : ℝ}
+    (hgap : S.energy Q - S.energy P ≤ ε) (c : κ) :
+    ∑ AB ∈ (univ : Finset (Q.parts × Q.parts)) with
+        refinementParent h AB.1 ≠ refinementParent h AB.2,
+        (#AB.1.val * #AB.2.val : ℝ) *
+          |(pairColorDensity S c AB.1.val AB.2.val : ℝ) -
+            pairColorDensity S c (refinementParent h AB.1).val (refinementParent h AB.2).val| ≤
+      Real.sqrt ε * #(univ : Finset V).offDiag := by
+  let f : V × V → ℝ := fun p ↦
+    |(pairColorDensity S c (Q.part p.1) (Q.part p.2) : ℝ) -
+      pairColorDensity S c (P.part p.1) (P.part p.2)|
+  set I := (univ : Finset (Q.parts × Q.parts)).filter fun AB ↦
+    refinementParent h AB.1 ≠ refinementParent h AB.2
+  have hterm (AB : Q.parts × Q.parts) :
+      (#AB.1.val * #AB.2.val : ℝ) *
+        |(pairColorDensity S c AB.1.val AB.2.val : ℝ) -
+          pairColorDensity S c (refinementParent h AB.1).val (refinementParent h AB.2).val| =
+        ∑ p ∈ AB.1.val ×ˢ AB.2.val, f p := by
+    have hcongr : ∀ p ∈ AB.1.val ×ˢ AB.2.val, f p =
+        |(pairColorDensity S c AB.1.val AB.2.val : ℝ) -
+          pairColorDensity S c (refinementParent h AB.1).val (refinementParent h AB.2).val| := by
+      intro p hp
+      obtain ⟨hp₁, hp₂⟩ := mem_product.1 hp
+      simp only [f, Q.part_eq_of_mem AB.1.property hp₁, Q.part_eq_of_mem AB.2.property hp₂,
+        part_eq_refinementParent h AB.1 hp₁, part_eq_refinementParent h AB.2 hp₂]
+    rw [sum_congr rfl hcongr, sum_const, card_product, nsmul_eq_mul, Nat.cast_mul]
+  have hdisj : (I : Set (Q.parts × Q.parts)).PairwiseDisjoint fun AB ↦ AB.1.val ×ˢ AB.2.val := by
+    intro AB _ CD _ hne
+    refine disjoint_product.2 ?_
+    by_cases h₁ : AB.1 = CD.1
+    · exact Or.inr (Q.disjoint AB.2.property CD.2.property <| Subtype.coe_injective.ne fun h₂ ↦
+        hne (Prod.ext h₁ h₂))
+    · exact Or.inl (Q.disjoint AB.1.property CD.1.property (Subtype.coe_injective.ne h₁))
+  have hsub : I.biUnion (fun AB ↦ AB.1.val ×ˢ AB.2.val) ⊆ (univ : Finset V).offDiag := by
+    intro p hp
+    obtain ⟨AB, hAB, hpAB⟩ := mem_biUnion.1 hp
+    obtain ⟨hp₁, hp₂⟩ := mem_product.1 hpAB
+    have hne_parent : (refinementParent h AB.1).val ≠ (refinementParent h AB.2).val :=
+      Subtype.coe_injective.ne (mem_filter.1 hAB).2
+    have hdisjP := P.disjoint (refinementParent h AB.1).property (refinementParent h AB.2).property
+        hne_parent
+    refine mem_offDiag.2 ⟨mem_univ _, mem_univ _, fun heq ↦ ?_⟩
+    exact disjoint_left.1 hdisjP (le_refinementParent h AB.1 hp₁)
+      (heq ▸ le_refinementParent h AB.2 hp₂)
+  calc ∑ AB ∈ I, (#AB.1.val * #AB.2.val : ℝ) *
+        |(pairColorDensity S c AB.1.val AB.2.val : ℝ) -
+          pairColorDensity S c (refinementParent h AB.1).val (refinementParent h AB.2).val|
+      = ∑ AB ∈ I, ∑ p ∈ AB.1.val ×ˢ AB.2.val, f p := sum_congr rfl fun AB _ ↦ hterm AB
+    _ = ∑ p ∈ I.biUnion (fun AB ↦ AB.1.val ×ˢ AB.2.val), f p := (sum_biUnion hdisj).symm
+    _ ≤ ∑ p ∈ (univ : Finset V).offDiag, f p :=
+        sum_le_sum_of_subset_of_nonneg hsub fun _ _ _ ↦ abs_nonneg _
+    _ ≤ Real.sqrt ε * #(univ : Finset V).offDiag := S.sum_abs_pairColorDensity_sub_le h hgap c
 
 omit h in
 /-- **A resolved witness forces a gain on its block.** Let `A ×ˢ B` be a block of parts of `P`,

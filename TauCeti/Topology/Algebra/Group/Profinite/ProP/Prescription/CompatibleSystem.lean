@@ -144,25 +144,26 @@ theorem HasPrescriptionProperty.exists_forall_reduce_eq_and_val_eq :
     {f : Z1 G (ZModTwist χ i) //
       ∀ k, ((f : G → ZModTwist χ i) (g k)).val = PadicInt.toZModPow i (c k)}
   have hstep : ∀ (i : ℕ) (f : S i), ∃ f' : S (i + 1), ∀ x,
-      ZModTwist.reduce χ (Nat.le_succ i) ((f'.1 : G → ZModTwist χ (i + 1)) x) =
-        (f.1 : G → ZModTwist χ i) x := fun i f ↦ by
-    obtain ⟨f', hf'₁, hf'₂⟩ := hχ.exists_succ_forall_reduce_eq_and_val_eq hG hfg hg c f.1 f.2
+      ZModTwist.reduce χ (Nat.le_succ i) ((f'.val : G → ZModTwist χ (i + 1)) x) =
+        (f.val : G → ZModTwist χ i) x := fun i f ↦ by
+    obtain ⟨f', hf'₁, hf'₂⟩ := hχ.exists_succ_forall_reduce_eq_and_val_eq hG hfg hg c f.val
+        f.property
     exact ⟨⟨f', hf'₂⟩, hf'₁⟩
   choose step hstep using hstep
   have h0 : S 0 := ⟨0, fun k ↦
     have : Subsingleton (ZMod (p ^ 0)) := ZMod.subsingleton_iff.2 (pow_zero p)
     Subsingleton.elim _ _⟩
   let seq : ∀ i, S i := fun i ↦ Nat.rec h0 step i
-  refine ⟨fun i ↦ (seq i).1, fun i j h x ↦ ?_, fun i k ↦ (seq i).2 k⟩
+  refine ⟨fun i ↦ (seq i).val, fun i j h x ↦ ?_, fun i k ↦ (seq i).property k⟩
   induction i, h using Nat.le_induction with
   | base => exact ZModTwist.reduce_self χ _
   | succ i hji ih =>
     calc ZModTwist.reduce χ (hji.trans (Nat.le_succ i))
-          (((seq (i + 1)).1 : G → ZModTwist χ (i + 1)) x)
+          (((seq (i + 1)).val : G → ZModTwist χ (i + 1)) x)
         = ZModTwist.reduce χ hji (ZModTwist.reduce χ (Nat.le_succ i)
-            (((seq (i + 1)).1 : G → ZModTwist χ (i + 1)) x)) :=
+            (((seq (i + 1)).val : G → ZModTwist χ (i + 1)) x)) :=
           (ZModTwist.reduce_reduce χ (Nat.le_succ i) hji _).symm
-      _ = ((seq j).1 : G → ZModTwist χ j) x := by rw [hstep i (seq i) x, ih]
+      _ = ((seq j).val : G → ZModTwist χ j) x := by rw [hstep i (seq i) x, ih]
 
 end System
 
@@ -191,7 +192,7 @@ theorem hasPrescriptionProperty_of_forall_exists_forall_reduce_eq_and_val_eq
     ZMod.ringHom_surjective (PadicInt.toZModPow (p := p) 1) ((f₁ : G → ZModTwist χ 1) (g k)).val
   obtain ⟨f, hf, hfc⟩ := h c
   have h1 : (f 1 : G → ZModTwist χ 1) = f₁ :=
-    eq_of_mem_Z1_of_eqOn_of_topologicalClosure_closure_eq_top (f 1).2 f₁.2 hg (by
+    eq_of_mem_Z1_of_eqOn_of_topologicalClosure_closure_eq_top (f 1).property f₁.property hg (by
       rintro _ ⟨k, rfl⟩
       exact ZModTwist.ext ((hfc 1 k).trans (hc k)))
   refine ⟨f i, ?_⟩
@@ -263,9 +264,9 @@ theorem exists_continuous_forall_mul_eq_and_forall_toZModPow_eq_val
           (PadicInt.inverseLimitHomeomorph_toEquiv p)).trans
           (PadicInt.inverseLimitRingEquiv_symm_apply p y)
     exact hcont.comp ((continuous_pi fun i ↦
-      continuous_of_discreteTopology.comp (mem_Z1_iff.1 (f i).2).1).subtype_mk _)
+      continuous_of_discreteTopology.comp (mem_Z1_iff.1 (f i).property).1).subtype_mk _)
   · refine PadicInt.ext_of_toZModPow.1 fun i ↦ ?_
-    have h := congrArg ZModTwist.val ((mem_Z1_iff.1 (f i).2).2 x y)
+    have h := congrArg ZModTwist.val ((mem_Z1_iff.1 (f i).property).2 x y)
     rw [ZModTwist.val_add, ZModTwist.val_smul, charScalar_apply] at h
     rw [map_add, map_mul, hr, hr, hr, h]
 

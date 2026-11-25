@@ -19,6 +19,8 @@ without choosing compatible representatives of their iterated weak derivatives.
 
 The criteria include the zero-dimensional codomain, order zero, and the exponent infinity.
 They also show that testing one basis is equivalent to testing every basis.
+Conversely, real functions in a local Sobolev class, one for each vector of a finite basis,
+are the coordinates of a single map in that class (`Module.Basis.exists_memWkpLoc_repr_eq`).
 
 For maps on `ℂ`, a weak derivative `D` is likewise tested through its two partial derivatives
 `z ↦ D z 1` and `z ↦ D z I`: `TauCeti.memWkpLoc_succ_iff_apply_one_apply_I` characterises
@@ -70,6 +72,16 @@ codomain is needed. -/
 theorem memLpLoc_iff (b : Module.Basis ι ℝ F) :
     MemLpLoc p U f ↔ ∀ i, MemLpLoc p U (fun z => b.repr (f z) i) := by
   simpa only [memWkpLoc_zero_iff] using b.memWkpLoc_iff (p := p) (U := U) (k := 0) (f := f)
+
+/-- Real functions `v i` in `MemWkpLoc p U k`, one for each vector of a finite basis `b` of `F`,
+are the coordinates in `b` of a single function `ℂ → F` in `MemWkpLoc p U k`. -/
+theorem exists_memWkpLoc_repr_eq (b : Module.Basis ι ℝ F) {v : ι → ℂ → ℝ}
+    (hv : ∀ i, MemWkpLoc p U k (v i)) :
+    ∃ V : ℂ → F, MemWkpLoc p U k V ∧ ∀ i, (fun z => b.repr (V z) i) = v i := by
+  have := Fintype.ofFinite ι
+  have hrepr : ∀ i, (fun z => b.repr (b.equivFun.symm fun j => v j z) i) = v i := fun i =>
+    funext fun z => by rw [← b.equivFun_apply, b.equivFun.apply_symm_apply]
+  exact ⟨_, b.memWkpLoc_iff.2 fun i => (hrepr i).symm ▸ hv i, hrepr⟩
 
 end Module.Basis
 
