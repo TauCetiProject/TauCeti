@@ -297,7 +297,7 @@ private theorem localIndex_eq_analyticOrderNatAt_of_closedBall
   have hy : ‖((0 : ℂ), -ε) - F ((u w₀).1, w₀)‖ < δ₂ := by
     rw [apply_eq_zero_of_apply_eq_graph_sub hF h, sub_zero]
     simpa [Prod.norm_def] using hεδ.trans_le ((min_le_left _ _).trans (min_le_left _ _))
-  rw [o.localIndex_eq_ncard_of_hasFDerivAt hn hr hδ₂ hδ₂le
+  rw [o.localIndex_eq_ncard_of_hasFDerivAt hn hr.le hδ₂le
     (fun p hp ↦ eq_of_mem_closedBall_of_apply_eq hF h hiso (ball_subset_closedBall hp)) hy
     (fun p hp hFp ↦ (hL p hp hFp).1) (fun p hp hFp ↦ (hL p hp hFp).2), hS,
     ncard_image_of_injective _ fun _ _ hab ↦ congrArg Prod.snd hab]
@@ -421,7 +421,7 @@ theorem localIndex_eq_of_apply_eq_comp_sub_comp {F G : C(ℂ × ℂ, ℂ × ℂ)
       ((((1 : ℂ →L[ℂ] ℂ).smulRight a).prodMap ((1 : ℂ →L[ℂ] ℂ).smulRight b)).restrictScalars ℝ)
       (z₀, w₀) :=
     (HasStrictFDerivAt.prodMap (z₀, w₀) h₁ h₂).restrictScalars ℝ
-  rw [hGF, o.localIndex_comp_eq_of_hasStrictFDerivAt hn o hn hd]
+  rw [hGF, o.localIndex_comp_eq_of_hasStrictFDerivAt o hn hd]
   · simp
   · rintro ⟨z, w⟩ ⟨z', w'⟩ h
     have h₁ := congrArg Prod.fst h
@@ -511,7 +511,7 @@ theorem localIndex_eq_analyticOrderNatAt_of_apply_eq_sub_of_eventually_fst_eq
   have hS : HasStrictFDerivAt S (S.restrictScalars ℝ) (u₁ z₀) :=
     (S.restrictScalars ℝ).hasStrictFDerivAt
   obtain ⟨hu₁, hu₂⟩ := continuous_and_continuous_of_continuous_sub (F.continuous.congr hF)
-  rw [← o.localIndex_eq_of_apply_eq_sub_of_hasStrictFDerivAt hn o hF hF'
+  rw [← o.localIndex_eq_of_apply_eq_sub_of_hasStrictFDerivAt o hn hF hF'
     (hu₁.comp continuous_fst).continuousAt (hu₂.comp continuous_snd).continuousAt h hS
     (ContinuousLinearEquiv.prodComm ℂ ℂ ℂ).injective]
   exact o.localIndex_eq_analyticOrderNatAt_of_apply_eq_sub_of_eventually_snd_eq hn
