@@ -54,7 +54,7 @@ isomorphism of graph codes to isomorphism of coded trees.
 
 public section
 
-open FirstOrder FirstOrder.Language Set Filter Topology
+open FirstOrder FirstOrder.Language Set
 
 namespace TauCeti.RelationalConfiguration
 
@@ -64,6 +64,21 @@ namespace TauCeti.RelationalConfiguration
 `1, …, n + 1` form a chain, and the tags above `n + 1` are leaves. -/
 def tagLE (n m m' : ℕ) : Prop :=
   m = m' ∨ m = 0 ∨ (0 < m ∧ m ≤ m' ∧ m' ≤ n + 1)
+
+/-- Unfolds `tagLE` into its three ways for a tag to lie below another. -/
+theorem tagLE_iff {n m m' : ℕ} :
+    tagLE n m m' ↔ m = m' ∨ m = 0 ∨ (0 < m ∧ m ≤ m' ∧ m' ≤ n + 1) :=
+  Iff.rfl
+
+/-- Every tag lies below itself. -/
+@[simp]
+theorem tagLE_refl (n m : ℕ) : tagLE n m m :=
+  Or.inl rfl
+
+/-- The tag `0` lies below every tag. -/
+@[simp]
+theorem tagLE_zero_left (n m : ℕ) : tagLE n 0 m :=
+  Or.inr (Or.inl rfl)
 
 /-- The tagged tree order in which the tags of the first node are ordered as for the colour `n`:
 original nodes are ordered by the prefix relation and lie below the tags of their extensions, a
@@ -78,6 +93,11 @@ def unravelTreeRelAt (n : ℕ) : List ℚ × Option ℕ → List ℚ × Option �
 def unravelTreeRel (χ : List ℚ → ℕ) (p q : List ℚ × Option ℕ) : Prop :=
   unravelTreeRelAt (χ p.1) p q
 
+/-- The tagged tree order compares two nodes as for the colour of the first. -/
+theorem unravelTreeRel_def {χ : List ℚ → ℕ} {p q : List ℚ × Option ℕ} :
+    unravelTreeRel χ p q ↔ unravelTreeRelAt (χ p.1) p q :=
+  Iff.rfl
+
 /-- An original node lies below exactly the nodes, original or tags, of its extensions. -/
 @[simp]
 theorem unravelTreeRel_none_left {χ : List ℚ → ℕ} {x y : List ℚ} {o : Option ℕ} :
@@ -86,7 +106,7 @@ theorem unravelTreeRel_none_left {χ : List ℚ → ℕ} {x y : List ℚ} {o : O
 
 /-- A tag lies below no original node. -/
 @[simp]
-theorem unravelTreeRel_some_none {χ : List ℚ → ℕ} {x y : List ℚ} {m : ℕ} :
+theorem not_unravelTreeRel_some_none {χ : List ℚ → ℕ} {x y : List ℚ} {m : ℕ} :
     ¬ unravelTreeRel χ (x, some m) (y, none) :=
   id
 
@@ -96,79 +116,84 @@ theorem unravelTreeRel_some_some {χ : List ℚ → ℕ} {x y : List ℚ} {m m' 
     unravelTreeRel χ (x, some m) (y, some m') ↔ x = y ∧ tagLE (χ x) m m' :=
   Iff.rfl
 
+private theorem unravelTreeRel_refl (χ : List ℚ → ℕ) (p : List ℚ × Option ℕ) :
+    unravelTreeRel χ p p := by
+  obtain ⟨x, _ | m⟩ := p <;> simp
+
+private theorem unravelTreeRel_trans {χ : List ℚ → ℕ} {p q r : List ℚ × Option ℕ}
+    (h₁ : unravelTreeRel χ p q) (h₂ : unravelTreeRel χ q r) : unravelTreeRel χ p r := by
+  obtain ⟨x, _ | m⟩ := p <;> obtain ⟨y, _ | m'⟩ := q <;> obtain ⟨z, _ | m''⟩ := r <;>
+    simp only [unravelTreeRel_none_left, unravelTreeRel_some_some,
+      not_unravelTreeRel_some_none] at h₁ h₂ ⊢
+  -- an original node below an original node or tag
+  · exact h₁.trans h₂
+  · exact h₁.trans h₂
+  -- an original node below a tag of `y`, below another tag of `y`
+  · exact h₂.1 ▸ h₁
+  -- three tags of the same node
+  · obtain ⟨rfl, h₁⟩ := h₁
+    obtain ⟨rfl, h₂⟩ := h₂
+    refine ⟨rfl, ?_⟩
+    rw [tagLE_iff] at h₁ h₂ ⊢
+    omega
+
+private theorem unravelTreeRel_antisymm {χ : List ℚ → ℕ} {p q : List ℚ × Option ℕ}
+    (h₁ : unravelTreeRel χ p q) (h₂ : unravelTreeRel χ q p) : p = q := by
+  obtain ⟨x, _ | m⟩ := p <;> obtain ⟨y, _ | m'⟩ := q <;>
+    simp only [unravelTreeRel_none_left, unravelTreeRel_some_some,
+      not_unravelTreeRel_some_none] at h₁ h₂
+  -- two original nodes, each a prefix of the other
+  · rw [h₁.eq_of_length (le_antisymm h₁.length_le h₂.length_le)]
+  -- two tags of the same node
+  · obtain ⟨rfl, h₁⟩ := h₁
+    obtain ⟨-, h₂⟩ := h₂
+    rw [tagLE_iff] at h₁ h₂
+    have : m = m' := by omega
+    rw [this]
+
+/-- The down-set of `(x, o)` consists of prefixes of `x` and tags of `x` up to `o.getD 0`. -/
+private theorem finite_setOf_unravelTreeRel (χ : List ℚ → ℕ) (p : List ℚ × Option ℕ) :
+    {q | unravelTreeRel χ q p}.Finite := by
+  obtain ⟨x, o⟩ := p
+  refine (((x.inits.finite_toSet.image fun y => (y, (none : Option ℕ)))).union
+    ((Set.finite_Iic (o.getD 0)).image fun k => (x, some k))).subset ?_
+  rintro ⟨y, _ | k⟩ h <;> rw [Set.mem_ofPred_eq] at h
+  · exact Or.inl ⟨y, (List.mem_inits _ _).2 ((unravelTreeRel_none_left (χ := χ)).1 h), rfl⟩
+  · obtain _ | m := o
+    · exact absurd h not_unravelTreeRel_some_none
+    · obtain ⟨rfl, h⟩ := h
+      refine Or.inr ⟨k, ?_, rfl⟩
+      rw [tagLE_iff] at h
+      simp only [Option.getD_some, Set.mem_Iic]
+      omega
+
+/-- The down-set of a node is a chain: prefixes of `x`, below the tags of `x` up to a given one. -/
+private theorem isChain_setOf_unravelTreeRel (χ : List ℚ → ℕ) (p : List ℚ × Option ℕ) :
+    IsChain (unravelTreeRel χ) {q | unravelTreeRel χ q p} := by
+  obtain ⟨x, _ | m⟩ := p <;> rintro ⟨y, _ | k⟩ hy ⟨z, _ | k'⟩ hz - <;>
+    simp only [Set.mem_ofPred_eq, unravelTreeRel_none_left, unravelTreeRel_some_some,
+      not_unravelTreeRel_some_none, or_false, false_or] at hy hz ⊢
+  -- two prefixes of `x`, below `(x, none)` or below a tag of `x`
+  · exact List.prefix_or_prefix_of_prefix hy hz
+  · exact List.prefix_or_prefix_of_prefix hy hz
+  -- a prefix of `x` and a tag of `x`
+  · exact hz.1 ▸ hy
+  · exact hy.1 ▸ hz
+  -- two tags of `x` below the tag `m`
+  · obtain ⟨rfl, hy⟩ := hy
+    obtain ⟨rfl, hz⟩ := hz
+    simp only [true_and, tagLE_iff] at hy hz ⊢
+    omega
+
 /-- **The tagged tree order is a tree order**, with least element `([], none)`: the down-set of
 `(x, none)` is the chain of prefixes of `x`, and the down-set of a tag of `x` adds at most the tags
 of `x` up to it. -/
-theorem isTreeOrder_unravelTreeRel (χ : List ℚ → ℕ) : IsTreeOrder (unravelTreeRel χ) := by
-  have refl : ∀ p, unravelTreeRel χ p p := by
-    rintro ⟨x, _ | m⟩
-    · exact unravelTreeRel_none_left.2 (List.prefix_refl x)
-    · exact ⟨rfl, Or.inl rfl⟩
-  have trans : ∀ p q r, unravelTreeRel χ p q → unravelTreeRel χ q r → unravelTreeRel χ p r := by
-    rintro ⟨x, _ | m⟩ ⟨y, _ | m'⟩ ⟨z, _ | m''⟩ h₁ h₂ <;>
-      simp only [unravelTreeRel_none_left, unravelTreeRel_some_some] at h₁ h₂ ⊢
-    · exact h₁.trans h₂
-    · exact h₁.trans h₂
-    · exact absurd h₂ unravelTreeRel_some_none
-    · exact h₂.1 ▸ h₁
-    · exact absurd h₁ unravelTreeRel_some_none
-    · exact absurd h₁ unravelTreeRel_some_none
-    · exact absurd h₂ unravelTreeRel_some_none
-    · obtain ⟨rfl, h₁⟩ := h₁
-      obtain ⟨rfl, h₂⟩ := h₂
-      refine ⟨rfl, ?_⟩
-      simp only [tagLE] at h₁ h₂ ⊢
-      omega
-  have antisymm : ∀ p q, unravelTreeRel χ p q → unravelTreeRel χ q p → p = q := by
-    rintro ⟨x, _ | m⟩ ⟨y, _ | m'⟩ h₁ h₂ <;>
-      simp only [unravelTreeRel_none_left, unravelTreeRel_some_some] at h₁ h₂
-    · rw [h₁.eq_of_length (le_antisymm h₁.length_le h₂.length_le)]
-    · exact absurd h₂ unravelTreeRel_some_none
-    · exact absurd h₁ unravelTreeRel_some_none
-    · obtain ⟨rfl, h₁⟩ := h₁
-      obtain ⟨-, h₂⟩ := h₂
-      simp only [tagLE] at h₁ h₂
-      have : m = m' := by omega
-      rw [this]
-  have hpo : IsPartialOrder _ (unravelTreeRel χ) :=
-    { refl := refl, trans := trans, antisymm := antisymm }
-  refine ⟨hpo, ⟨([], none), fun p => ?_⟩, fun p => ?_, fun p => ?_⟩
-  · exact unravelTreeRel_none_left.2 List.nil_prefix
-  · obtain ⟨x, o⟩ := p
-    refine (((x.inits.finite_toSet.image fun y => (y, (none : Option ℕ)))).union
-      ((Set.finite_Iic (o.getD 0)).image fun k => (x, some k))).subset ?_
-    rintro ⟨y, _ | k⟩ h <;> rw [Set.mem_ofPred_eq] at h
-    · exact Or.inl ⟨y, (List.mem_inits _ _).2 ((unravelTreeRel_none_left (χ := χ)).1 h), rfl⟩
-    · cases o with
-      | none => exact absurd h unravelTreeRel_some_none
-      | some m =>
-        obtain ⟨rfl, h⟩ := h
-        refine Or.inr ⟨k, ?_, rfl⟩
-        simp only [tagLE] at h
-        simp only [Option.getD_some, Set.mem_Iic]
-        omega
-  · obtain ⟨x, o⟩ := p
-    rintro ⟨y, _ | k⟩ hy ⟨z, _ | k'⟩ hz - <;> rw [Set.mem_ofPred_eq] at hy hz
-    · exact (List.prefix_or_prefix_of_prefix ((unravelTreeRel_none_left (χ := χ)).1 hy)
-        ((unravelTreeRel_none_left (χ := χ)).1 hz)).imp unravelTreeRel_none_left.2
-          unravelTreeRel_none_left.2
-    · cases o with
-      | none => exact absurd hz unravelTreeRel_some_none
-      | some m =>
-        obtain ⟨rfl, -⟩ := hz
-        exact Or.inl (unravelTreeRel_none_left.2 ((unravelTreeRel_none_left (χ := χ)).1 hy))
-    · cases o with
-      | none => exact absurd hy unravelTreeRel_some_none
-      | some m =>
-        obtain ⟨rfl, -⟩ := hy
-        exact Or.inr (unravelTreeRel_none_left.2 ((unravelTreeRel_none_left (χ := χ)).1 hz))
-    · cases o with
-      | none => exact absurd hy unravelTreeRel_some_none
-      | some m =>
-        obtain ⟨rfl, hy⟩ := hy
-        obtain ⟨rfl, hz⟩ := hz
-        simp only [unravelTreeRel_some_some, true_and, tagLE] at hy hz ⊢
-        omega
+theorem isTreeOrder_unravelTreeRel (χ : List ℚ → ℕ) : IsTreeOrder (unravelTreeRel χ) :=
+  ⟨{ refl := unravelTreeRel_refl χ
+     trans := fun _ _ _ => unravelTreeRel_trans
+     antisymm := fun _ _ => unravelTreeRel_antisymm },
+    ⟨([], none), fun _ => unravelTreeRel_none_left.2 List.nil_prefix⟩,
+    finite_setOf_unravelTreeRel χ, isChain_setOf_unravelTreeRel χ⟩
 
 /-- Mapping the nodes entrywise by an injection `π` of `ℚ`, with `χ' (x.map π) = χ x`, carries the
 tagged tree order for `χ` to the tagged tree order for `χ'`. -/
@@ -182,7 +207,7 @@ theorem unravelTreeRel_map {χ χ' : List ℚ → ℕ} {π : ℚ → ℚ} (hπ :
   obtain ⟨x, _ | m⟩ := p <;> obtain ⟨y, _ | m'⟩ := q
   · simp only [unravelTreeRel_none_left, hpre]
   · simp only [unravelTreeRel_none_left, hpre]
-  · exact iff_of_false unravelTreeRel_some_none unravelTreeRel_some_none
+  · exact iff_of_false not_unravelTreeRel_some_none not_unravelTreeRel_some_none
   · simp only [unravelTreeRel_some_some, (List.map_injective_iff.2 hπ).eq_iff, hχ]
 
 /-! ### The code -/
@@ -213,21 +238,6 @@ theorem unravelTreeCode_mem_treeClass (c : RelationalConfiguration Language.grap
 
 /-! ### Continuity -/
 
-/-- The colour of a node depends continuously on the code: it reads the finitely many
-coordinates `c.eval (adjAtom a_i a_j)` of the vertex tuple `a` of the node. -/
-private theorem continuous_unravelColor' (x : List ℚ) :
-    Continuous fun c : RelationalConfiguration Language.graph ℕ => unravelColor c x := by
-  refine continuous_iff_continuousAt.2 fun c => ?_
-  have hev (a : Atom Language.graph ℕ) : ∀ᶠ d in 𝓝 c, d.eval a = c.eval a :=
-    (continuous_eval a).continuousAt ((isOpen_discrete {c.eval a}).mem_nhds rfl)
-  have h : ∀ᶠ d in 𝓝 c, ∀ i : Fin x.length, ∀ j : Fin x.length,
-      d.eval (adjAtom (unravelVertex x i) (unravelVertex x j)) =
-        c.eval (adjAtom (unravelVertex x i) (unravelVertex x j)) :=
-    eventually_all.2 fun i => eventually_all.2 fun j => hev _
-  refine (continuousAt_const (y := unravelColor c x)).congr (h.mono fun d hd => ?_)
-  refine unravelColor_eq_iff.2 ⟨rfl, fun i hi j hj => ?_⟩
-  exact Prod.ext (by simp) (by simpa using (hd ⟨i, hi⟩ ⟨j, hj⟩).symm)
-
 /-- **`unravelTreeCode` is continuous**: each coordinate compares two nodes of the tagged tree,
 which depends on the code at most through the colour of the first node. -/
 theorem continuous_unravelTreeCode : Continuous unravelTreeCode := by
@@ -242,9 +252,9 @@ theorem continuous_unravelTreeCode : Continuous unravelTreeCode := by
       (fun n => decide (unravelTreeRelAt n p q)) ∘ fun c => unravelColor c p.1 := by
     funext c
     rw [unravelTreeCode, eval_ofRel]
-    rfl
+    simp only [unravelTreeRel_def, p, q, Function.comp_apply]
   rw [h]
-  exact continuous_of_discreteTopology.comp (continuous_unravelColor' p.1)
+  exact continuous_of_discreteTopology.comp (continuous_unravelColor p.1)
 
 /-! ### Isomorphic codes have isomorphic images -/
 
