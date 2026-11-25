@@ -11,6 +11,7 @@ import Mathlib.Analysis.SpecialFunctions.Integrals.PosLog
 import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 import TauCeti.Analysis.SpecialFunctions.Integrability.Log
 import TauCeti.Analysis.SpecialFunctions.Integrals.LogPower
+import TauCeti.MeasureTheory.Integral.Circle.Average
 import TauCeti.MeasureTheory.Integral.PolarCoord
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
@@ -106,18 +107,14 @@ private theorem logarithmicPotential_uniformBallMeasure_eq_integral (c z : ℂ) 
     refine intervalIntegral.integral_congr fun ρ hρ ↦ ?_
     rcases (uIcc_of_le hr.le ▸ hρ).1.eq_or_lt with rfl | hρ0
     · simp
-    -- Jensen's formula for the circle average, moved from `[0, 2π]` to `[-π, π]`.
-    have hper : (fun θ ↦ log ‖z - circleMap c ρ θ‖).Periodic (2 * π) :=
-      fun θ ↦ by simp [periodic_circleMap c ρ θ]
+    -- Jensen's formula for the circle average, written over the polar angles `[-π, π]`.
     have havg := circleAverage_log_norm_sub_const_eq_log_radius_add_posLog (c := c) (a := z)
       hρ0.ne'
-    rw [circleAverage_def, smul_eq_mul] at havg
+    rw [circleAverage_eq_integral_neg_pi_pi, smul_eq_mul] at havg
     have hcircle : ∫ θ in -π..π, log ‖z - circleMap c ρ θ‖ =
         2 * π * (log ρ + log⁺ (ρ⁻¹ * ‖c - z‖)) := by
       rw [← havg, ← mul_assoc, mul_inv_cancel₀ (by positivity), one_mul]
-      have h := hper.intervalIntegral_add_eq (-π) 0
-      rw [show -π + 2 * π = π by ring, zero_add] at h
-      simp_rw [h, norm_sub_rev z]
+      simp_rw [norm_sub_rev z]
     have hmax : log ρ + log⁺ (ρ⁻¹ * ‖c - z‖) = log (max ρ ‖z - c‖) := by
       rw [posLog_eq_log_max_one (by positivity), ← log_mul hρ0.ne' (by positivity),
         mul_max_of_nonneg _ _ hρ0.le, mul_one, mul_inv_cancel_left₀ hρ0.ne', norm_sub_rev]
