@@ -143,7 +143,7 @@ theorem inverseTransposeQuotientIso_def :
 
 /-- The restricted inverse transpose sends the class of `x` to the class of its inverse
 transpose. -/
-@[simp]
+@[simp↓]
 theorem inverseTransposeQuotientIso_hom_mk (x : coordinateHopfAlgebra R n) :
     (inverseTransposeQuotientIso I hI).hom.hom (Ideal.Quotient.mk I.toIdeal x) =
       Ideal.Quotient.mk I.toIdeal ((inverseTransposeCoordinateIso R n).hom.hom x) :=
@@ -161,6 +161,20 @@ theorem inverseTransposeQuotientIso_hom_comp_self :
 theorem inverseTransposeQuotientIso_symm :
     (inverseTransposeQuotientIso I hI).symm = inverseTransposeQuotientIso I hI :=
   CommHopfAlgCat.quotientIsoOfComapEq_symm_eq_self inverseTransposeCoordinateIso_hom_comp_self I hI
+
+/-- The inverse of the restricted inverse transpose is the restricted inverse transpose. -/
+@[simp]
+theorem inverseTransposeQuotientIso_inv :
+    (inverseTransposeQuotientIso I hI).inv = (inverseTransposeQuotientIso I hI).hom :=
+  congrArg Iso.hom (inverseTransposeQuotientIso_symm I hI)
+
+/-- The inverse of the restricted inverse transpose sends the class of `y` to the class of its
+inverse transpose. -/
+@[simp↓]
+theorem inverseTransposeQuotientIso_inv_mk (y : coordinateHopfAlgebra R n) :
+    (inverseTransposeQuotientIso I hI).inv.hom (Ideal.Quotient.mk I.toIdeal y) =
+      Ideal.Quotient.mk I.toIdeal ((inverseTransposeCoordinateIso R n).hom.hom y) := by
+  rw [inverseTransposeQuotientIso_inv, inverseTransposeQuotientIso_hom_mk]
 
 /-- **The fixed points of the restricted inverse transpose are the orthogonal points.** A point `p`
 of the closed subgroup cut out by `I` is fixed by inverse transpose exactly when the matrix of the

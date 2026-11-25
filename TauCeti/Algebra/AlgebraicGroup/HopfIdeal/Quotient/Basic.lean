@@ -429,7 +429,7 @@ lemma mkQuotient_comp_quotientIsoOfComapEq_inv (e : H ≅ K) (I : HopfIdeal R K)
 
 /-- The quotient isomorphism induced by an ideal-matching ambient isomorphism `e` sends the class
 of `x` to the class of `e x`. -/
-@[simp]
+@[simp↓]
 lemma quotientIsoOfComapEq_hom_mk (e : H ≅ K) (I : HopfIdeal R K) {J : HopfIdeal R H}
     (hI : I.comapOfSurjective e.hom.hom (ConcreteCategory.bijective_of_isIso e.hom).2 = J)
     (x : H) :
@@ -441,7 +441,7 @@ lemma quotientIsoOfComapEq_hom_mk (e : H ≅ K) (I : HopfIdeal R K) {J : HopfIde
 
 /-- The inverse of the quotient isomorphism induced by an ideal-matching ambient isomorphism `e`
 sends the class of `y` to the class of `e⁻¹ y`. -/
-@[simp]
+@[simp↓]
 lemma quotientIsoOfComapEq_inv_mk (e : H ≅ K) (I : HopfIdeal R K) {J : HopfIdeal R H}
     (hI : I.comapOfSurjective e.hom.hom (ConcreteCategory.bijective_of_isIso e.hom).2 = J)
     (y : K) :
