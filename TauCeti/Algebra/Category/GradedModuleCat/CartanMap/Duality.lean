@@ -167,7 +167,7 @@ private theorem finite_of_smulGradedDimension_ne_zero
     have hcoord := gradedIdempotentCoordinate_eq_mul_gradedSimpleClassBasisOfNeZero_repr
       S he he₀ hne hself hS (LaurentK0.of.{uA} _ reg) i
     rw [gradedIdempotentCoordinate_of, hi, mul_zero] at hcoord
-    exact smulGradedDimension_regular_ne_zero (he i) (he₀ i) hei hcoord
+    exact GradedModuleCat.smulGradedDimension_regular_ne_zero hei hcoord
   exact Finite.of_injective (fun i => (⟨i, hmem i⟩ : (bS.repr (LaurentK0.of.{uA} _ reg)).support))
     (fun _ _ h => congrArg Subtype.val h)
 

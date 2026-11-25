@@ -34,6 +34,8 @@ by `n` multiplies this dimension by `qⁿ`.
 
 * `TauCeti.GradedModuleCat.exact_smulPieceMap`: restriction to `e • Mₚ` preserves exactness when
   `e` is an idempotent of degree zero.
+* `TauCeti.GradedModuleCat.smulGradedDimension_regular_ne_zero`: every nonzero element has
+  nonzero graded dimension on the regular module.
 * `TauCeti.GradedModuleCat.smulGradedDimension_shortExact`: `gdim_e` is additive on short exact
   sequences.
 * `TauCeti.GradedModuleCat.smulGradedDimension_shiftObj`: `gdim_e(M{n}) = qⁿ gdim_e(M)`.
@@ -188,6 +190,26 @@ theorem smulGradedDimension_zero [Module.Finite k M] :
     rcases (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hx with ⟨_, _, rfl⟩
     simp
   simp [coeff_smulGradedDimension, hbot]
+
+/-- A nonzero element acts nontrivially on a homogeneous piece of the regular module, so its
+graded dimension there is nonzero. -/
+theorem smulGradedDimension_regular_ne_zero [DirectSum.Decomposition 𝒜] [SetLike.GradedMul 𝒜]
+    [Module.Finite k A] {f : A} (hf : f ≠ 0) :
+    (regular (𝒜 := 𝒜)).smulGradedDimension f ≠ 0 := by
+  intro h
+  have hmul (x : A) : f * x = 0 := by
+    induction x using DirectSum.Decomposition.inductionOn 𝒜 with
+    | zero => exact mul_zero _
+    | add x y hx hy => rw [mul_add, hx, hy, zero_add]
+    | @homogeneous p x =>
+      have hz := congrArg (fun q : LaurentPolynomial ℤ ↦ q.coeff p) h
+      rw [coeff_smulGradedDimension, regular_grading_piece, AddMonoidAlgebra.coeff_zero,
+        Finsupp.zero_apply, Nat.cast_eq_zero, Module.finrank_zero_iff,
+        Submodule.subsingleton_iff_eq_bot] at hz
+      have hx : f * (x : A) ∈ f • 𝒜 p :=
+        (Submodule.mem_smul_pointwise_iff_exists _ _ _).2 ⟨x, x.property, rfl⟩
+      simpa only [hz, Submodule.mem_bot] using hx
+  exact hf (by simpa only [mul_one] using hmul 1)
 
 /-- If a graded module is concentrated in degree zero, the graded dimension of `e • M` is
 constant. No idempotence assumption on `e` is needed. -/
