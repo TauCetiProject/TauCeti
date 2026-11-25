@@ -628,6 +628,15 @@ theorem differentiableAt_perturbation_target {V : Type*} [NormedAddCommGroup V] 
   simpa only [Function.comp_def, Function.uncurry_apply_pair,
     ContinuousLinearEquiv.symm_apply_apply, id_eq] using h
 
+/-- The reflected Hamiltonian `ε H(ε t)` of a plane with end sign `ε`
+(`TauCeti.Floer.PSSPlane.perturbation_eq_positive`) is `C^n` on `ℝ × M` when `H` is. -/
+theorem contMDiff_uncurry_endSign_mul (p : PSSPlane) {n : WithTop ℕ∞}
+    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (Function.uncurry H)) :
+    ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n
+      (Function.uncurry fun t x ↦ p.endSign * H (p.endSign * t) x) :=
+  (contDiff_const.mul contDiff_id).contMDiff.comp (hHs.comp
+    (((contDiff_const.mul contDiff_id).contMDiff.comp contMDiff_fst).prodMk contMDiff_snd))
+
 end PSSPlane
 
 end TauCeti.Floer

@@ -58,7 +58,10 @@ half-cylinder.
   translated ends map `Ω` into a compact subset `C` of the source of a symplectic chart; the
   coordinate maps converge locally uniformly off `Z`, and the maps converge pointwise in `M`
   (`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_realChart_positive_add` in
-  the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`).
+  the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`). In a manifold, the two facts above are
+  `contMDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_positive_add` in the same
+  namespace, which also gives the version in a closed manifold with no condition on the images
+  (`TauCeti.Geometry.Symplectic.Floer.Plane.Compactness.Closed`).
 
 For smooth solutions the convergence holds in `C¹` off `Z`, and the limit `v` is a `C¹` solution
 on `Ω \ Z` of the Floer equation for the cylindrical datum
@@ -355,7 +358,7 @@ most `E`, for structures `J` with `J(φ(s, t), x) = J_∞(t, x)` for `s ≥ T₀
 `v(z) = u(φ(z + (R, 0)))` maps `Ω` into a set on which `J_∞(t)` is tamed by `ω` for `(s, t) ∈ Ω`,
 then `v` is `C³`, solves the Floer equation for `H(t) dt` and `J_∞` on `Ω`, and its energy density
 is integrable on `Ω` with integral at most `E`. -/
-private theorem contMDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_positive_add
+theorem contMDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_positive_add
     (hω : ω.IsNondegenerate) (hH : Periodic H 1)
     (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry H)) {T₀ : ℝ}
     {Jend : ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
@@ -438,10 +441,7 @@ private theorem contMDiff_and_exists_isOpen_and_contDiffOn_comp_symm (p : PSSPla
         ContDiffOn ℝ 3 (fun q : (ℝ × ℝ) × V ↦ p.endSign * H (p.endSign * q.1.2) (φ.symm q.2)) W' ∧
         ContDiffOn ℝ 2
           (fun q : (ℝ × ℝ) × V ↦ (J' q.1 q.2).toLinearMap.toContinuousLinearMap) W' := by
-  have hHs' : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3
-      (uncurry fun t x ↦ p.endSign * H (p.endSign * t) x) :=
-    (contDiff_const.mul contDiff_id).contMDiff.comp (hHs.comp
-      (((contDiff_const.mul contDiff_id).contMDiff.comp contMDiff_fst).prodMk contMDiff_snd))
+  have hHs' := p.contMDiff_uncurry_endSign_mul hHs
   -- The datum is `C³` on `ℝ² × φ(U)`, which contains `D × φ(C)`.
   refine ⟨hHs', W ∩ univ ×ˢ φ.target, hW.inter (isOpen_univ.prod φ.open_target), ?_,
     (φ.contDiffOn_comp_symm_of_contMDiffOn
