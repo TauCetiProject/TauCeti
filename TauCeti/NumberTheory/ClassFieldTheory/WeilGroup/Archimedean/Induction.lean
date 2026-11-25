@@ -7,13 +7,13 @@ module
 
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
-public import TauCeti.NumberTheory.ClassFieldTheory.WeilGroup.Archimedean
+public import TauCeti.NumberTheory.ClassFieldTheory.WeilGroup.Archimedean.Basic
 
 /-!
 # Two-dimensional inductions of characters of `W_ℂ` to `W_ℝ`
 
 For a character `χ : W_ℂ = ℂˣ →* ℂˣ`, the representation of the Weil group `W_ℝ = ℂˣ ∪ jℂˣ`
-induced from `χ` is two-dimensional. In the basis `(e, j⁻¹ e)` of the induced module it is
+induced from `χ` is two-dimensional. In the basis `(e, j e)` of the induced module it is
 
 * `z ↦ diag(χ z, χ (conj z))` on `ℂˣ`, and
 * `j ↦ [[0, χ (-1)], [1, 0]]`,
@@ -57,11 +57,16 @@ open Matrix
 
 variable (χ : WeilGroupComplex →* ℂˣ)
 
+/-- Conjugation fixes `-1 ∈ ℂˣ`. -/
+private theorem star_neg_one_weilGroupComplex : star (-1 : WeilGroupComplex) = -1 := by
+  ext; simp
+
 /-- The diagonal part `z ↦ diag(χ z, χ (conj z))` of the induction of `χ`. -/
 def induceCharacterDiag : WeilGroupComplex →* GL (Fin 2) ℂ :=
   diagGL.comp (MonoidHom.pi ![χ, χ.comp (starMulAut : MulAut WeilGroupComplex).toMonoidHom])
 
 /-- The matrix of `induceCharacterDiag χ z` is `diag(χ z, χ (conj z))`. -/
+@[simp]
 theorem coe_induceCharacterDiag (z : WeilGroupComplex) :
     (induceCharacterDiag χ z : Matrix (Fin 2) (Fin 2) ℂ) =
       diagonal ![(χ z : ℂ), (χ (star z) : ℂ)] := by
@@ -70,11 +75,24 @@ theorem coe_induceCharacterDiag (z : WeilGroupComplex) :
   ext i
   fin_cases i <;> rfl
 
+/-- The diagonal part of the induction of a continuous character is continuous. -/
+theorem continuous_induceCharacterDiag (hχ : Continuous χ) :
+    Continuous (induceCharacterDiag χ) := by
+  have hval : Continuous fun z ↦ (induceCharacterDiag χ z : Matrix (Fin 2) (Fin 2) ℂ) := by
+    simp only [coe_induceCharacterDiag]
+    refine Continuous.matrix_diagonal (continuous_pi fun i ↦ ?_)
+    fin_cases i
+    · exact Units.continuous_val.comp hχ
+    · exact Units.continuous_val.comp (hχ.comp continuous_star)
+  refine Units.continuous_iff.mpr ⟨hval, ?_⟩
+  simpa only [Function.comp_def, map_inv] using hval.comp continuous_inv
+
 /-- The image `[[0, χ (-1)], [1, 0]]` of `j` in the induction of `χ`. -/
 def induceCharacterJ : GL (Fin 2) ℂ :=
   GeneralLinearGroup.mkOfDetNeZero !![0, (χ (-1) : ℂ); 1, 0] (by simp)
 
 /-- The matrix of `induceCharacterJ χ` is `[[0, χ (-1)], [1, 0]]`. -/
+@[simp]
 theorem coe_induceCharacterJ :
     (induceCharacterJ χ : Matrix (Fin 2) (Fin 2) ℂ) = !![0, (χ (-1) : ℂ); 1, 0] := by
   simp [induceCharacterJ, GeneralLinearGroup.mkOfDetNeZero]
@@ -82,73 +100,61 @@ theorem coe_induceCharacterJ :
 /-- The relation `j² = -1` for the induction of `χ`. -/
 theorem induceCharacterJ_sq : induceCharacterJ χ ^ 2 = induceCharacterDiag χ (-1) := by
   ext i j
-  have h : (star (-1 : WeilGroupComplex)) = -1 := by ext; simp
   fin_cases i <;> fin_cases j <;>
-    simp [sq, coe_induceCharacterJ, coe_induceCharacterDiag, h]
+    simp [sq, star_neg_one_weilGroupComplex]
 
 /-- The relation `j z = conj z j` for the induction of `χ`. -/
-theorem induceCharacterJ_mul (z : WeilGroupComplex) :
+theorem induceCharacterJ_mul_induceCharacterDiag (z : WeilGroupComplex) :
     induceCharacterJ χ * induceCharacterDiag χ z =
       induceCharacterDiag χ (star z) * induceCharacterJ χ := by
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [coe_induceCharacterJ, coe_induceCharacterDiag, mul_comm]
+    simp [mul_comm]
 
 /-- **The induction of a character of `W_ℂ` to `W_ℝ`.** It sends `z ∈ ℂˣ` to
 `diag(χ z, χ (conj z))` and `j` to `[[0, χ (-1)], [1, 0]]`. -/
 def induceCharacter : WeilGroupReal →* GL (Fin 2) ℂ :=
   lift (induceCharacterDiag χ) (induceCharacterJ χ) (induceCharacterJ_sq χ)
-    (induceCharacterJ_mul χ)
+    (induceCharacterJ_mul_induceCharacterDiag χ)
 
-/-- The induction of `χ` sends `z ∈ ℂˣ` to `diag(χ z, χ (conj z))`. -/
+/-- The induction of `χ` sends `z ∈ ℂˣ` to `induceCharacterDiag χ z = diag(χ z, χ (conj z))`. -/
+@[simp]
 theorem induceCharacter_includeComplex (z : WeilGroupComplex) :
-    (induceCharacter χ (includeComplex z) : Matrix (Fin 2) (Fin 2) ℂ) =
-      diagonal ![(χ z : ℂ), (χ (star z) : ℂ)] := by
-  rw [induceCharacter, lift_includeComplex, coe_induceCharacterDiag]
+    induceCharacter χ (includeComplex z) = induceCharacterDiag χ z :=
+  lift_includeComplex z
 
-/-- The induction of `χ` sends `j` to `[[0, χ (-1)], [1, 0]]`. -/
-theorem induceCharacter_j :
-    (induceCharacter χ j : Matrix (Fin 2) (Fin 2) ℂ) = !![0, (χ (-1) : ℂ); 1, 0] := by
-  rw [induceCharacter, lift_j, coe_induceCharacterJ]
+/-- The induction of `χ` sends `j` to `induceCharacterJ χ = [[0, χ (-1)], [1, 0]]`. -/
+@[simp]
+theorem induceCharacter_j : induceCharacter χ j = induceCharacterJ χ :=
+  lift_j
+
+/-- The induction of `χ` restricts to `induceCharacterDiag χ` on `ℂˣ`. -/
+@[simp]
+theorem induceCharacter_comp_includeComplex :
+    (induceCharacter χ).comp includeComplex = induceCharacterDiag χ :=
+  lift_comp_includeComplex
 
 /-- **The induction of a continuous character is continuous.** -/
 theorem continuous_induceCharacter (hχ : Continuous χ) : Continuous (induceCharacter χ) := by
-  refine (continuous_iff_continuous_comp_includeComplex _).mpr ?_
-  have hstar : Continuous (star : WeilGroupComplex → WeilGroupComplex) :=
-    Units.continuous_iff.mpr ⟨Complex.continuous_conj.comp Units.continuous_val,
-      Complex.continuous_conj.comp Units.continuous_coe_inv⟩
-  have h1 : Continuous fun z ↦ (χ z : ℂ) := Units.continuous_val.comp hχ
-  have h2 : Continuous fun z ↦ (χ (star z) : ℂ) := Units.continuous_val.comp (hχ.comp hstar)
-  have h3 : Continuous fun z ↦ (χ z : ℂ)⁻¹ :=
-    h1.inv₀ fun z ↦ (χ z).ne_zero
-  have h4 : Continuous fun z ↦ (χ (star z) : ℂ)⁻¹ :=
-    h2.inv₀ fun z ↦ (χ (star z)).ne_zero
-  refine Units.continuous_iff.mpr ⟨continuous_matrix fun i k ↦ ?_, continuous_matrix fun i k ↦ ?_⟩
-  · simp only [Function.comp_apply, MonoidHom.coe_comp, induceCharacter, lift_includeComplex,
-      coe_induceCharacterDiag]
-    fin_cases i <;> fin_cases k <;> simp [h1, h2, continuous_const]
-  · simp only [Function.comp_apply, MonoidHom.coe_comp, induceCharacter, lift_includeComplex,
-      ← map_inv, coe_induceCharacterDiag]
-    fin_cases i <;> fin_cases k <;> simp [h3, h4, continuous_const]
+  rw [continuous_iff_continuous_comp_includeComplex, induceCharacter_comp_includeComplex]
+  exact continuous_induceCharacterDiag χ hχ
 
 /-- **Interchanging the exponents does not change the induction.** The induction of the conjugate
 character `χ ∘ conj` is the conjugate of the induction of `χ` by the image of `j`. -/
 theorem induceCharacter_comp_star (w : WeilGroupReal) :
     induceCharacter (χ.comp (starMulAut : MulAut WeilGroupComplex).toMonoidHom) w =
       induceCharacter χ j * induceCharacter χ w * (induceCharacter χ j)⁻¹ := by
-  have hstar : (star (-1 : WeilGroupComplex)) = -1 := by ext; simp
   have h : induceCharacter (χ.comp (starMulAut : MulAut WeilGroupComplex).toMonoidHom) =
       (MulAut.conj (induceCharacter χ j)).toMonoidHom.comp (induceCharacter χ) := by
     refine hom_ext (MonoidHom.ext fun z ↦ eq_mul_inv_of_mul_eq ?_) (eq_mul_inv_of_mul_eq ?_)
     · ext i k
       simp only [Units.val_mul, MonoidHom.comp_apply, induceCharacter_includeComplex,
-        induceCharacter_j]
+        coe_induceCharacterDiag, induceCharacter_j, coe_induceCharacterJ]
       fin_cases i <;> fin_cases k <;> simp [mul_comm]
     · ext i k
-      simp only [Units.val_mul, induceCharacter_j]
-      fin_cases i <;> fin_cases k <;> simp [hstar]
-  rw [h]
-  rfl
+      simp only [Units.val_mul, induceCharacter_j, coe_induceCharacterJ]
+      fin_cases i <;> fin_cases k <;> simp [star_neg_one_weilGroupComplex]
+  rw [h, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulAut.conj_apply]
 
 end WeilGroupReal
 
