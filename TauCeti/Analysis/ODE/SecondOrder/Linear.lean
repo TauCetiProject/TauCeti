@@ -9,8 +9,8 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
-import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
 import TauCeti.Analysis.ODE.NonlinearCaratheodory.Interval
 
 /-!
@@ -26,10 +26,10 @@ on `I`, for solutions that are `C²` on `I`, with the equation written with `ite
   `w'(t₀) = w₁` (`TauCeti.exists_contDiffOn_iteratedDeriv_eq_mul`);
 * two solutions with the same value and derivative at one point of `I` agree on `I`
   (`TauCeti.eqOn_of_iteratedDeriv_eq_mul`);
-* the Wronskian `u w' - u' w` of two solutions is constant on `I`
-  (`TauCeti.wronskian_eq_of_iteratedDeriv_eq_mul`), and if it vanishes then each solution is a
-  constant multiple of the other one, at least where that one does not vanish
-  (`TauCeti.eqOn_mul_of_wronskian_eq_zero`).
+* if the Wronskian `u w' - u' w` of two solutions vanishes at a point where `u` does not vanish,
+  then `w` is a constant multiple of `u` on all of `I`, including at the zeros of `u`
+  (`TauCeti.eqOn_mul_of_wronskian_eq_zero`). The Wronskian itself is constant on `I` without any
+  continuity of `q` (`TauCeti.wronskian_eq_of_iteratedDeriv_eq_mul`).
 
 Nothing is assumed about `q` at the ends of `I`, which may be infinite. These are the facts about
 the solution space used to compare solutions through their asymptotic behaviour at an end of `I`.
@@ -67,16 +67,6 @@ private lemma lipschitzWith_secondOrderSystem (c : 𝕜) :
   have hc := norm_nonneg c
   have hp := norm_nonneg (p.2 - p'.2)
   exact max_le (by nlinarith) (by nlinarith)
-
-/-- A `C²` function on an open set has derivatives `w'` and `w''` there. -/
-private lemma hasDerivAt_of_contDiffOn_two (hI : IsOpen I) (hw : ContDiffOn ℝ 2 w I) {x : ℝ}
-    (hx : x ∈ I) :
-    HasDerivAt w (deriv w x) x ∧ HasDerivAt (deriv w) (iteratedDeriv 2 w x) x := by
-  have hxs := hI.mem_nhds hx
-  refine ⟨((hw.contDiffAt hxs).differentiableAt (by norm_num)).hasDerivAt, ?_⟩
-  rw [iteratedDeriv_succ, iteratedDeriv_one]
-  exact (((hw.deriv_of_isOpen hI (m := 1) (by norm_num)).contDiffAt hxs).differentiableAt
-    (by norm_num)).hasDerivAt
 
 /-- A function `w` with `w' = v` and `v' = q w` on an open set, with `q` continuous there, is a
 `C²` solution of `w'' = q w` there. -/
@@ -118,7 +108,7 @@ private lemma eq_picard_of_iteratedDeriv_eq_mul (hw : ContDiffOn ℝ 2 w I)
         (fun t ↦ (w t, deriv w t)) t := by
   have hd (x : ℝ) (hx : x ∈ I) :
       HasDerivAt (fun t ↦ (w t, deriv w t)) (deriv w x, q x * w x) x := by
-    obtain ⟨h1, h2⟩ := hasDerivAt_of_contDiffOn_two hI hw hx
+    obtain ⟨h1, h2⟩ := hw.hasDerivAt_and_hasDerivAt_deriv hI hx
     exact h1.prodMk (hwq x hx ▸ h2)
   refine ⟨fun x hx ↦ (hd x hx).continuousAt.continuousWithinAt, fun t ht ↦ ?_⟩
   have hsub : uIcc t₀ t ⊆ I := hIc.uIcc_subset ht₀ ht
@@ -171,25 +161,6 @@ theorem eqOn_of_iteratedDeriv_eq_mul (hu : ContDiffOn ℝ 2 u I)
   exact congrArg Prod.fst
     (eqOn_of_forall_mem_eq_picard_of_lipschitzWith hF hL hLip hIc ht₀ huc hwc hup hwp ht)
 
-omit hIc hq in
-/-- **The Wronskian is constant.** For two solutions `u`, `w` of `w'' = q w`, `C²` on a
-preconnected open set `I`, the Wronskian `u w' - u' w` takes the same value at any two points
-of `I`. No continuity of `q` is needed. -/
-theorem wronskian_eq_of_iteratedDeriv_eq_mul (hIp : IsPreconnected I) (hu : ContDiffOn ℝ 2 u I)
-    (huq : ∀ x ∈ I, iteratedDeriv 2 u x = q x * u x) (hw : ContDiffOn ℝ 2 w I)
-    (hwq : ∀ x ∈ I, iteratedDeriv 2 w x = q x * w x) {x y : ℝ} (hx : x ∈ I) (hy : y ∈ I) :
-    u x * deriv w x - deriv u x * w x = u y * deriv w y - deriv u y * w y := by
-  have hd (t : ℝ) (ht : t ∈ I) :
-      HasDerivAt (fun s ↦ u s * deriv w s - deriv u s * w s) 0 t := by
-    obtain ⟨hu1, hu2⟩ := hasDerivAt_of_contDiffOn_two hI hu ht
-    obtain ⟨hw1, hw2⟩ := hasDerivAt_of_contDiffOn_two hI hw ht
-    convert (hu1.mul hw2).sub (hu2.mul hw1) using 1
-    rw [huq t ht, hwq t ht]
-    ring
-  exact hI.is_const_of_deriv_eq_zero hIp
-    (fun t ht ↦ (hd t ht).differentiableAt.differentiableWithinAt) (fun t ht ↦ (hd t ht).deriv)
-    hx hy
-
 /-- **Solutions with vanishing Wronskian are proportional.** If `q` is continuous on the open
 interval `I`, `u` and `w` solve `w'' = q w` on `I`, and their Wronskian `u w' - u' w` vanishes at
 a point `t₀ ∈ I` with `u(t₀) ≠ 0`, then `w = (w(t₀) / u(t₀)) u` on `I`. -/
@@ -201,9 +172,9 @@ theorem eqOn_mul_of_wronskian_eq_zero (hu : ContDiffOn ℝ 2 u I)
   set c := w t₀ / u t₀
   have hcu : ContDiffOn ℝ 2 (fun x ↦ c * u x) I := contDiffOn_const.mul hu
   have hd (x : ℝ) (hx : x ∈ I) : deriv (fun x ↦ c * u x) x = c * deriv u x :=
-    ((hasDerivAt_of_contDiffOn_two hI hu hx).1.const_mul c).deriv
+    ((hu.hasDerivAt_and_hasDerivAt_deriv hI hx).1.const_mul c).deriv
   have hcuq (x : ℝ) (hx : x ∈ I) : iteratedDeriv 2 (fun x ↦ c * u x) x = q x * (c * u x) := by
-    have h2 := ((hasDerivAt_of_contDiffOn_two hI hu hx).2.const_mul c).congr_of_eventuallyEq
+    have h2 := ((hu.hasDerivAt_and_hasDerivAt_deriv hI hx).2.const_mul c).congr_of_eventuallyEq
       (eventually_of_mem (hI.mem_nhds hx) fun t ht ↦ hd t ht)
     rw [iteratedDeriv_succ, iteratedDeriv_one, h2.deriv, huq x hx]
     ring

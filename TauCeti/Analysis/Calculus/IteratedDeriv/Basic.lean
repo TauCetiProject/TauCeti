@@ -6,6 +6,7 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 module
 
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Mul
@@ -20,6 +21,8 @@ This file collects general results about `iteratedDeriv`:
 * `TauCeti.iteratedDeriv_eq_of_derivative_tower`, `TauCeti.contDiff_of_derivative_tower`: in a
   sequence of functions linked by ordinary derivatives, the iterated derivatives of the initial
   function are the later functions, and the initial function is smooth.
+* `ContDiffOn.hasDerivAt_and_hasDerivAt_deriv`: a function that is `C²` on an open set has
+  derivative `deriv f` there, and `deriv f` has derivative `iteratedDeriv 2 f` there.
 * `TauCeti.iteratedDeriv_const_pi`: the `k`-th iterated derivative of a constant-across-coordinates
   family `ζ ↦ fun _ : α ↦ g ζ` is the constant family of `k`-th iterated derivatives.
 * `TauCeti.iteratedDerivInr`: the `k`-th iterated derivative of `f : (σ ⊕ τ → 𝕜) → F` in the
@@ -59,6 +62,17 @@ theorem contDiff_of_derivative_tower (F : ℕ → 𝕜 → E)
   intro k _
   rw [iteratedDeriv_eq_of_derivative_tower hF k]
   exact fun x ↦ (hF k x).differentiableAt
+
+/-- A function that is `C²` on an open set `s` has derivative `deriv f x` at every `x ∈ s`, and
+`deriv f` has derivative `iteratedDeriv 2 f x` there. -/
+theorem _root_.ContDiffOn.hasDerivAt_and_hasDerivAt_deriv {f : 𝕜 → E} {s : Set 𝕜} {x : 𝕜}
+    (hf : ContDiffOn 𝕜 2 f s) (hs : IsOpen s) (hx : x ∈ s) :
+    HasDerivAt f (deriv f x) x ∧ HasDerivAt (deriv f) (iteratedDeriv 2 f x) x := by
+  have hxs := hs.mem_nhds hx
+  refine ⟨((hf.contDiffAt hxs).differentiableAt (by norm_num)).hasDerivAt, ?_⟩
+  rw [iteratedDeriv_succ, iteratedDeriv_one]
+  exact (((hf.deriv_of_isOpen hs (m := 1) (by norm_num)).contDiffAt hxs).differentiableAt
+    (by norm_num)).hasDerivAt
 
 variable {σ τ F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 

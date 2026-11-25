@@ -7,9 +7,12 @@ module
 
 public import TauCeti.Analysis.ODE.Liouville.Green
 public import Mathlib.Analysis.Asymptotics.AsymptoticEquivalent
+import Mathlib.Analysis.Complex.Asymptotics
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import TauCeti.Analysis.Calculus.LHopital
+import TauCeti.Analysis.Calculus.Deriv.Growth
+import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
 import TauCeti.Analysis.ODE.SecondOrder.Linear
+import TauCeti.Analysis.ODE.Wronskian
 
 /-!
 # Recessive and dominant Liouville–Green solutions at `+∞`
@@ -20,7 +23,8 @@ Liouville–Green approximants of the solutions of a second-order equation `w'' 
   `y₋ = f^{-1/4} e^{-ξ}` and `y₊ = f^{-1/4} e^{ξ}`.
 
 When `ξ(x) → ∞` as `x → ∞`, a solution `w₂ ∼ y₋` is *recessive* at `+∞`, and every solution
-independent of it is *dominant*. Precisely, if `w₂ ∼ y₋` then every solution `w` satisfies
+whose Wronskian with it does not vanish is *dominant*. Precisely, if `w₂ ∼ y₋` then every
+solution `w` satisfies
 
   `w / y₊ → W(w₂, w) / 2`,
 
@@ -28,9 +32,9 @@ where `W(w₂, w) = w₂ w' - w₂' w` is the (constant) Wronskian
 (`TauCeti.tendsto_div_liouvilleGreen_atTop`). Consequently:
 * every solution `w` with `W(w₂, w) ≠ 0` satisfies `w₂ / w → 0`
   (`TauCeti.tendsto_div_of_wronskian_ne_zero_atTop`);
-* `w₂` is the only solution with `w₂ ∼ y₋`
+* if `q` is continuous on `(a, ∞)`, then `w₂` is the only solution with `w₂ ∼ y₋`
   (`TauCeti.eqOn_of_isEquivalent_liouvilleGreen_atTop`);
-* there is a solution `w₃ ∼ y₊`, and `w₂ / w₃ → 0`
+* if `q` is continuous on `(a, ∞)`, then there is a solution `w₃ ∼ y₊`, and `w₂ / w₃ → 0`
   (`TauCeti.exists_liouvilleGreen_dominant_atTop`).
 The solution `w₃` is not unique: `w₃ + c w₂` has the same property for every constant `c`.
 
@@ -69,32 +73,47 @@ namespace TauCeti
 
 variable {f ξ : ℝ → ℝ} {q w₂ w : ℝ → ℂ} {a : ℝ}
 
-/-- The identities between the approximants `y₋ = f^{-1/4} e^{-ξ}`, `y₊ = f^{-1/4} e^{ξ}` and
-the derivative `2 f^{1/2} e^{2ξ}` of `e^{2ξ}`: `y₋² · 2 f^{1/2} e^{2ξ} = 2` and
-`y₋ e^{2ξ} = y₊`. -/
-private lemma liouvilleGreen_approximant_identities {x : ℝ} (hfx : 0 < f x) :
+/-- The approximant `y₋ = f^{-1/4} e^{-ξ}` and the derivative `2 f^{1/2} e^{2ξ}` of `e^{2ξ}`
+satisfy `y₋² · 2 f^{1/2} e^{2ξ} = 2`. -/
+private lemma liouvilleGreen_approximant_sq_mul_deriv_exp {x : ℝ} (hfx : 0 < f x) :
     ((f x ^ (-(1 / 4) : ℝ) * Real.exp (-ξ x) : ℝ) : ℂ) ^ 2 *
-        ((Real.exp (2 * ξ x) * (2 * √(f x)) : ℝ) : ℂ) = 2 ∧
-      ((f x ^ (-(1 / 4) : ℝ) * Real.exp (-ξ x) : ℝ) : ℂ) * ((Real.exp (2 * ξ x) : ℝ) : ℂ) =
-        ((f x ^ (-(1 / 4) : ℝ) * Real.exp (ξ x) : ℝ) : ℂ) := by
+      ((Real.exp (2 * ξ x) * (2 * √(f x)) : ℝ) : ℂ) = 2 := by
   have he : Real.exp (-ξ x) ^ 2 * Real.exp (2 * ξ x) = 1 := by
     rw [← Real.exp_natCast_mul, ← Real.exp_add]; simp
   have hr : (f x ^ (-(1 / 4) : ℝ)) ^ 2 * √(f x) = 1 := by
     rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul hfx.le, ← Real.rpow_add hfx]
     norm_num
-  have h1 : (f x ^ (-(1 / 4) : ℝ) * Real.exp (-ξ x)) ^ 2 * (Real.exp (2 * ξ x) * (2 * √(f x))) =
+  have h : (f x ^ (-(1 / 4) : ℝ) * Real.exp (-ξ x)) ^ 2 * (Real.exp (2 * ξ x) * (2 * √(f x))) =
       2 := by
     linear_combination (2 * Real.exp (-ξ x) ^ 2 * Real.exp (2 * ξ x)) * hr + 2 * he
-  have h2 : f x ^ (-(1 / 4) : ℝ) * Real.exp (-ξ x) * Real.exp (2 * ξ x) =
+  exact_mod_cast h
+
+/-- The approximants `y₋ = f^{-1/4} e^{-ξ}` and `y₊ = f^{-1/4} e^{ξ}` satisfy `y₋ e^{2ξ} = y₊`. -/
+private lemma liouvilleGreen_approximant_mul_exp {x : ℝ} :
+    ((f x ^ (-(1 / 4) : ℝ) * Real.exp (-ξ x) : ℝ) : ℂ) * ((Real.exp (2 * ξ x) : ℝ) : ℂ) =
+      ((f x ^ (-(1 / 4) : ℝ) * Real.exp (ξ x) : ℝ) : ℂ) := by
+  have h : f x ^ (-(1 / 4) : ℝ) * Real.exp (-ξ x) * Real.exp (2 * ξ x) =
       f x ^ (-(1 / 4) : ℝ) * Real.exp (ξ x) := by
     rw [mul_assoc, ← Real.exp_add]
     ring_nf
-  exact ⟨by exact_mod_cast h1, by exact_mod_cast h2⟩
+  exact_mod_cast h
 
 /-- The approximant `f^{-1/4} e^{σ ξ}` does not vanish where `f > 0`. -/
 private lemma liouvilleGreen_approximant_ne_zero {x σ : ℝ} (hfx : 0 < f x) :
     ((f x ^ (-(1 / 4) : ℝ) * Real.exp σ : ℝ) : ℂ) ≠ 0 :=
   Complex.ofReal_ne_zero.2 (mul_ne_zero (Real.rpow_pos_of_pos hfx _).ne' (Real.exp_pos _).ne')
+
+/-- Where `f > 0`, the quotients by the approximants `y₋ = f^{-1/4} e^{-ξ}` and
+`y₊ = f^{-1/4} e^{ξ}` are related by `u / y₋ = (u / y₊) e^{2ξ}`. -/
+private lemma div_approximant_eq_div_mul_exp {u : ℂ} {x : ℝ} (hfx : 0 < f x) :
+    u / ((f x ^ (-(1 / 4) : ℝ) * Real.exp (-ξ x) : ℝ) : ℂ) =
+      u / ((f x ^ (-(1 / 4) : ℝ) * Real.exp (ξ x) : ℝ) : ℂ) * ((Real.exp (2 * ξ x) : ℝ) : ℂ) := by
+  have hyx := liouvilleGreen_approximant_ne_zero (σ := -ξ x) hfx
+  have hEx : ((Real.exp (2 * ξ x) : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 (Real.exp_pos _).ne'
+  rw [← liouvilleGreen_approximant_mul_exp]
+  generalize ((f x ^ (-(1 / 4) : ℝ) * Real.exp (-ξ x) : ℝ) : ℂ) = A at hyx ⊢
+  generalize ((Real.exp (2 * ξ x) : ℝ) : ℂ) = C at hEx ⊢
+  field_simp
 
 /-- A function asymptotic to `y₋ = f^{-1/4} e^{-ξ}` has ratio to it tending to `1`. -/
 private lemma tendsto_div_of_isEquivalent_approximant {u : ℝ → ℂ} (hf0 : ∀ x ∈ Ioi a, 0 < f x)
@@ -121,7 +140,7 @@ private lemma hasDerivAt_div_sub_exp {x : ℝ} {W : ℂ} (hfx : 0 < f x)
       (W / 2 * ((w₂ x / ((f x ^ (-(1 / 4) : ℝ) * Real.exp (-ξ x) : ℝ) : ℂ))⁻¹ ^ 2 - 1) *
         ((Real.exp (2 * ξ x) * (2 * √(f x)) : ℝ) : ℂ)) x := by
   convert (hwx.div hw₂x hx2).sub ((hξx.const_mul 2).exp.ofReal_comp.const_mul (W / 2)) using 1
-  have hid := (liouvilleGreen_approximant_identities (ξ := ξ) hfx).1
+  have hid := liouvilleGreen_approximant_sq_mul_deriv_exp (ξ := ξ) hfx
   have hyx := liouvilleGreen_approximant_ne_zero (σ := -ξ x) hfx
   rw [show deriv w x * w₂ x - w x * deriv w₂ x = W by rw [← hW]; ring]
   generalize ((f x ^ (-(1 / 4) : ℝ) * Real.exp (-ξ x) : ℝ) : ℂ) = A at hid hyx ⊢
@@ -138,13 +157,12 @@ private lemma isLittleO_div_sub_exp {W : ℂ} (hf0 : ∀ x ∈ Ioi a, 0 < f x)
     (hw₂e : w₂ ~[atTop] fun x ↦ ((f x ^ (-(1 / 4) : ℝ) * Real.exp (-ξ x) : ℝ) : ℂ))
     (hw : ContDiffOn ℝ 2 w (Ioi a)) (hW : ∀ x ∈ Ioi a, w₂ x * deriv w x - deriv w₂ x * w x = W) :
     (fun x ↦ w x / w₂ x - W / 2 * ((Real.exp (2 * ξ x) : ℝ) : ℂ)) =o[atTop]
-      fun x ↦ Real.exp (2 * ξ x) := by
-  have hd {u : ℝ → ℂ} (hu : ContDiffOn ℝ 2 u (Ioi a)) {x : ℝ} (hx : x ∈ Ioi a) :
-      HasDerivAt u (deriv u x) x :=
-    ((hu.contDiffAt (isOpen_Ioi.mem_nhds hx)).differentiableAt (by norm_num)).hasDerivAt
-  refine isLittleO_atTop_of_hasDerivAt ((eventually_ne_zero_of_isEquivalent_approximant hf0
-      hw₂e).mono fun x hx ↦ hasDerivAt_div_sub_exp (hf0 x hx.1) (hξ x hx.1) (hd hw₂ hx.1)
-        (hd hw hx.1) hx.2 (hW x hx.1))
+      fun x ↦ ((Real.exp (2 * ξ x) : ℝ) : ℂ) := by
+  refine Complex.isLittleO_ofReal_right.2 <| isLittleO_atTop_of_hasDerivAt
+    ((eventually_ne_zero_of_isEquivalent_approximant hf0 hw₂e).mono fun x hx ↦
+      hasDerivAt_div_sub_exp (hf0 x hx.1) (hξ x hx.1)
+        (hw₂.hasDerivAt_and_hasDerivAt_deriv isOpen_Ioi hx.1).1
+        (hw.hasDerivAt_and_hasDerivAt_deriv isOpen_Ioi hx.1).1 hx.2 (hW x hx.1))
     ((eventually_gt_atTop a).mono fun x hx ↦ ((hξ x hx).const_mul 2).exp)
     (Eventually.of_forall fun x ↦ by positivity)
     (Real.tendsto_exp_atTop.comp (hξt.const_mul_atTop two_pos)) ?_
@@ -173,21 +191,17 @@ theorem tendsto_div_liouvilleGreen_atTop (hf0 : ∀ x ∈ Ioi a, 0 < f x)
   set W := w₂ x₀ * deriv w x₀ - deriv w₂ x₀ * w x₀
   have hGo := isLittleO_div_sub_exp hf0 hξ hξt hw₂ hw₂e hw fun x hx ↦
     wronskian_eq_of_iteratedDeriv_eq_mul isOpen_Ioi isPreconnected_Ioi hw₂ hw₂q hw hwq hx hx₀
-  have hGo' : (fun x ↦ w x / w₂ x - W / 2 * ((Real.exp (2 * ξ x) : ℝ) : ℂ)) =o[atTop]
-      fun x ↦ ((Real.exp (2 * ξ x) : ℝ) : ℂ) := by
-    refine isLittleO_norm_right.1 ?_
-    simpa only [Complex.norm_real] using isLittleO_norm_right.2 hGo
-  have hGE := hGo'.tendsto_div_nhds_zero
+  have hGE := hGo.tendsto_div_nhds_zero
   -- `w / y₊ = (W / 2 + (w / w₂ - (W / 2) e^{2ξ}) e^{-2ξ}) (w₂ / y₋)`
   have hlim := (hGE.const_add (W / 2)).mul (tendsto_div_of_isEquivalent_approximant hf0 hw₂e)
   rw [add_zero, mul_one] at hlim
   refine hlim.congr' ?_
   filter_upwards [eventually_ne_zero_of_isEquivalent_approximant hf0 hw₂e] with x hx
-  have hid := (liouvilleGreen_approximant_identities (ξ := ξ) (hf0 x hx.1)).2
   have hyx := liouvilleGreen_approximant_ne_zero (σ := -ξ x) (hf0 x hx.1)
   have hEx : ((Real.exp (2 * ξ x) : ℝ) : ℂ) ≠ 0 :=
     Complex.ofReal_ne_zero.2 (Real.exp_pos _).ne'
-  rw [← hid]
+  refine mul_right_cancel₀ hEx ?_
+  rw [← div_approximant_eq_div_mul_exp (hf0 x hx.1)]
   generalize ((f x ^ (-(1 / 4) : ℝ) * Real.exp (-ξ x) : ℝ) : ℂ) = A at hyx ⊢
   generalize ((Real.exp (2 * ξ x) : ℝ) : ℂ) = C at hEx ⊢
   have := hx.2
@@ -207,19 +221,11 @@ private lemma tendsto_norm_div_approximant_atTop (hf0 : ∀ x ∈ Ioi a, 0 < f x
   refine ((h.norm.pos_mul_atTop (norm_pos_iff.2 (div_ne_zero hW two_ne_zero))
     (Real.tendsto_exp_atTop.comp (hξt.const_mul_atTop two_pos)))).congr' ?_
   filter_upwards [eventually_gt_atTop a] with x hx
-  have hid := (liouvilleGreen_approximant_identities (ξ := ξ) (hf0 x hx)).2
-  have hyx := liouvilleGreen_approximant_ne_zero (σ := -ξ x) (hf0 x hx)
-  rw [Function.comp_apply, ← Real.norm_of_nonneg (Real.exp_pos (2 * ξ x)).le,
-    ← Complex.norm_real, ← norm_mul, ← hid]
-  have hEx : ((Real.exp (2 * ξ x) : ℝ) : ℂ) ≠ 0 :=
-    Complex.ofReal_ne_zero.2 (Real.exp_pos _).ne'
-  generalize ((f x ^ (-(1 / 4) : ℝ) * Real.exp (-ξ x) : ℝ) : ℂ) = A at hyx ⊢
-  generalize ((Real.exp (2 * ξ x) : ℝ) : ℂ) = C at hEx ⊢
-  congr 1
-  field_simp
+  rw [Function.comp_apply, div_approximant_eq_div_mul_exp (hf0 x hx), norm_mul, Complex.norm_real,
+    Real.norm_of_nonneg (Real.exp_pos _).le]
 
 /-- **Recessive solutions.** Under the hypotheses of `TauCeti.tendsto_div_liouvilleGreen_atTop`,
-every solution `w` whose Wronskian with `w₂` is not zero is dominated by it: `w₂ / w → 0`. -/
+every solution `w` whose Wronskian with `w₂` is not zero dominates `w₂`: `w₂ / w → 0`. -/
 theorem tendsto_div_of_wronskian_ne_zero_atTop (hf0 : ∀ x ∈ Ioi a, 0 < f x)
     (hξ : ∀ x ∈ Ioi a, HasDerivAt ξ (√(f x)) x) (hξt : Tendsto ξ atTop atTop)
     (hw₂ : ContDiffOn ℝ 2 w₂ (Ioi a)) (hw₂q : ∀ x ∈ Ioi a, iteratedDeriv 2 w₂ x = q x * w₂ x)
