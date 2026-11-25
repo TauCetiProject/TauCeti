@@ -55,35 +55,27 @@ variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [CommSemiring B] [Alg
 
 include h
 
-/-- If `R → A × B` is bijective, its inverse as an `R`-linear equivalence `A × B ≃ R`. -/
-private noncomputable def prodLinearEquivOfBijective : (A × B) ≃ₗ[R] R :=
-  (LinearEquiv.ofBijective ((Algebra.linearMap R A).prod (Algebra.linearMap R B)) <| by
-    have hf : ⇑((Algebra.linearMap R A).prod (Algebra.linearMap R B)) =
-        ⇑((algebraMap R A).prod (algebraMap R B)) :=
-      funext fun r ↦ by simp [RingHom.prod_apply]
-    rwa [hf]).symm
-
 /-- Given inverses `P'` of `P` over `A` and `Q'` of `Q` over `B`, the product `P' × Q'` is an
 inverse of `P × Q` over `R`. -/
 private noncomputable def tensorProdEquiv {P' Q' : Type*} [AddCommMonoid P'] [Module R P']
     [Module A P'] [IsScalarTower R A P'] [AddCommMonoid Q'] [Module R Q'] [Module B Q']
     [IsScalarTower R B Q'] (eP : P' ⊗[A] P ≃ₗ[A] A) (eQ : Q' ⊗[B] Q ≃ₗ[B] B) :
     (P' × Q') ⊗[R] (P × Q) ≃ₗ[R] R :=
-  haveI := subsingleton_of_bijective_prod h (P := P') (Q := Q)
-  haveI := subsingleton_of_bijective_prod h (P := P) (Q := Q')
+  haveI := subsingleton_of_surjective_prod h.surjective (P := P') (Q := Q)
+  haveI := subsingleton_of_surjective_prod h.surjective (P := P) (Q := Q')
   haveI : Subsingleton (Q' ⊗[R] P) := (TensorProduct.comm R Q' P).toEquiv.subsingleton
   letI : Unique (P' ⊗[R] Q) := uniqueOfSubsingleton 0
   letI : Unique (Q' ⊗[R] P) := uniqueOfSubsingleton 0
-  haveI : CompatibleSMul R A P' P :=
-    .of_algebraMap_surjective _ _ (Prod.fst_surjective.comp h.surjective)
-  haveI : CompatibleSMul R B Q' Q :=
-    .of_algebraMap_surjective _ _ (Prod.snd_surjective.comp h.surjective)
+  haveI : CompatibleSMul R A P' P := .of_algebraMap_surjective _ _
+    (Algebra.algebraMap_surjective_fst_of_surjective_prod h.surjective)
+  haveI : CompatibleSMul R B Q' Q := .of_algebraMap_surjective _ _
+    (Algebra.algebraMap_surjective_snd_of_surjective_prod h.surjective)
   prodLeft R R P' Q' (P × Q) ≪≫ₗ
     (prodRight R R P' P Q ≪≫ₗ LinearEquiv.prodUnique).prodCongr
       (prodRight R R Q' P Q ≪≫ₗ LinearEquiv.uniqueProd) ≪≫ₗ
     ((equivOfCompatibleSMul R A R P' P).symm ≪≫ₗ eP.restrictScalars R).prodCongr
       ((equivOfCompatibleSMul R B R Q' Q).symm ≪≫ₗ eQ.restrictScalars R) ≪≫ₗ
-    prodLinearEquivOfBijective h
+    (Algebra.linearEquivProdOfBijective h).symm
 
 /-- If `R → A × B` is bijective, the product of an invertible `A`-module and an invertible
 `B`-module is an invertible `R`-module. -/
@@ -103,26 +95,27 @@ variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [CommSemiring B] [Alg
 
 section Modules
 
-variable {P Q : Type*} [AddCommMonoid P] [Module R P] [Module A P] [IsScalarTower R A P]
+variable (hs : Function.Surjective ((algebraMap R A).prod (algebraMap R B)))
+  {P Q : Type*} [AddCommMonoid P] [Module R P] [Module A P] [IsScalarTower R A P]
   [AddCommMonoid Q] [Module R Q] [Module B Q] [IsScalarTower R B Q]
 
-include h
+include hs
 
-/-- If `R → A × B` is bijective, the class of the product of an `A`-module `P` and a `B`-module
+/-- If `R → A × B` is surjective, the class of the product of an `A`-module `P` and a `B`-module
 `Q` restricts to the class of `P` over `A`. -/
-theorem mapAlgebra_mk_prod_fst_of_bijective [Module.Invertible A P]
+theorem mapAlgebra_mk_prod_fst_of_surjective [Module.Invertible A P]
     [Module.Invertible R (P × Q)] : mapAlgebra R A (Pic.mk R (P × Q)) = Pic.mk A P := by
   rw [mapAlgebra_apply, mk_eq_mk_iff]
   exact ⟨AlgebraTensorModule.congr (.refl A A) (mk.linearEquiv ..) ≪≫ₗ
-    prodRightEquivFstOfBijective h P Q⟩
+    prodRightEquivFstOfSurjective hs P Q⟩
 
-/-- If `R → A × B` is bijective, the class of the product of an `A`-module `P` and a `B`-module
+/-- If `R → A × B` is surjective, the class of the product of an `A`-module `P` and a `B`-module
 `Q` restricts to the class of `Q` over `B`. -/
-theorem mapAlgebra_mk_prod_snd_of_bijective [Module.Invertible B Q]
+theorem mapAlgebra_mk_prod_snd_of_surjective [Module.Invertible B Q]
     [Module.Invertible R (P × Q)] : mapAlgebra R B (Pic.mk R (P × Q)) = Pic.mk B Q := by
   rw [mapAlgebra_apply, mk_eq_mk_iff]
   exact ⟨AlgebraTensorModule.congr (.refl B B) (mk.linearEquiv ..) ≪≫ₗ
-    prodRightEquivSndOfBijective h P Q⟩
+    prodRightEquivSndOfSurjective hs P Q⟩
 
 end Modules
 
@@ -140,7 +133,8 @@ theorem prod_mapAlgebra_injective_of_bijective :
   obtain ⟨eB⟩ := hB
   rw [← mk_eq_self (M := M), mk_eq_one_iff]
   exact ⟨equivProdOfBijective h M ≪≫ₗ
-    (eA.restrictScalars R).prodCongr (eB.restrictScalars R) ≪≫ₗ prodLinearEquivOfBijective h⟩
+    (eA.restrictScalars R).prodCongr (eB.restrictScalars R) ≪≫ₗ
+    (Algebra.linearEquivProdOfBijective h).symm⟩
 
 /-- If `R → A × B` is bijective, every pair of Picard classes of `A` and of `B` comes from a
 Picard class of `R`. -/
@@ -153,8 +147,8 @@ theorem prod_mapAlgebra_surjective_of_bijective :
   have : IsScalarTower R B Q := IsScalarTower.of_compHom R B Q
   have := Module.Invertible.prod_of_bijective h P Q
   refine ⟨Pic.mk R (P × Q), Prod.ext ?_ ?_⟩
-  · rw [MonoidHom.prod_apply, mapAlgebra_mk_prod_fst_of_bijective h, mk_eq_self]
-  · rw [MonoidHom.prod_apply, mapAlgebra_mk_prod_snd_of_bijective h, mk_eq_self]
+  · rw [MonoidHom.prod_apply, mapAlgebra_mk_prod_fst_of_surjective h.surjective, mk_eq_self]
+  · rw [MonoidHom.prod_apply, mapAlgebra_mk_prod_snd_of_surjective h.surjective, mk_eq_self]
 
 /-- If `R → A × B` is bijective, extension of scalars to `A` and to `B` is a bijection
 `Pic R → Pic A × Pic B`. -/
@@ -181,7 +175,8 @@ theorem prodEquivOfBijective_symm_mk {P Q : Type*} [AddCommMonoid P] [Module R P
     (prodEquivOfBijective h).symm (Pic.mk A P, Pic.mk B Q) = Pic.mk R (P × Q) := by
   have := Module.Invertible.prod_of_bijective h P Q
   rw [MulEquiv.symm_apply_eq, prodEquivOfBijective_apply,
-    mapAlgebra_mk_prod_fst_of_bijective h, mapAlgebra_mk_prod_snd_of_bijective h]
+    mapAlgebra_mk_prod_fst_of_surjective h.surjective,
+    mapAlgebra_mk_prod_snd_of_surjective h.surjective]
 
 end Bijective
 
