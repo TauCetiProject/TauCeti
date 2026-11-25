@@ -18,8 +18,9 @@ and `f ∈ L²(M)`, the weak form of the equation `(Δ⁺ + t) u = f` for the no
 
 `D(u, v) + t ⟪u, v⟫_{L²} = ⟪f, v⟫_{L²}` for every `v ∈ H¹(M)`.
 
-The form `D + t ⟪·, ·⟫_{L²}` is coercive on `H¹(M)`, with constant `min 1 t`, since the squared
-`H¹` norm is `D(u, u) + ‖u‖²_{L²}` (`TauCeti.Manifold.SobolevH1.norm_sq_eq_dirichletForm_add`). So
+The shifted form `D + t ⟪·, ·⟫_{L²}` (`ContinuousLinearMap.shiftedForm`)
+is coercive on `H¹(M)`, with constant `min 1 t`, since the squared `H¹` norm is
+`D(u, u) + ‖u‖²_{L²}` (`TauCeti.Manifold.SobolevH1.norm_sq_eq_dirichletForm_add`). So
 by the Lax–Milgram theorem the equation has exactly one solution, which depends continuously on `f`.
 This is the **resolvent** `(Δ⁺ + t)⁻¹ : L²(M) → H¹(M)`
 (`TauCeti.Manifold.SobolevH1.resolvent`), characterized by the variational equation
@@ -34,6 +35,8 @@ multiplication by `(μ + t)⁻¹` (`TauCeti.Manifold.SobolevH1.resolvent_toLp_of
 
 ## Main results
 
+* `TauCeti.Manifold.SobolevH1.isCoercive_shiftedForm_dirichletForm`: `D + t ⟪·, ·⟫_{L²}` is coercive
+  for `t > 0`.
 * `TauCeti.Manifold.SobolevH1.dirichletForm_resolvent_add`: the resolvent solves the weak equation.
 * `TauCeti.Manifold.SobolevH1.eq_resolvent`: the solution of the weak equation is unique.
 * `TauCeti.Manifold.SobolevH1.resolvent_toLp_of_mem_weakEigenspace`: the resolvent on weak
@@ -60,22 +63,12 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [MeasurableSpace M] [BorelSpace M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
-variable (I M) in
-/-- The shifted energy form `D(u, v) + t ⟪u, v⟫_{L²}` on `H¹(M)`. -/
-private def resolventForm (t : ℝ) : SobolevH1 I M →L[ℝ] SobolevH1 I M →L[ℝ] ℝ :=
-  dirichletForm + t • ((innerSL ℝ).bilinearComp (toLp (I := I) (M := M)) toLp :
-    SobolevH1 I M →L[ℝ] SobolevH1 I M →L[ℝ] ℝ)
-
-private theorem resolventForm_apply (t : ℝ) (u v : SobolevH1 I M) :
-    resolventForm I M t u v = dirichletForm u v + t * ⟪toLp u, toLp v⟫_ℝ := by
-  simp [resolventForm]
-
-/-- For `t > 0` the shifted energy form is coercive, with constant `min 1 t`. -/
-private theorem isCoercive_resolventForm {t : ℝ} (ht : 0 < t) :
-    IsCoercive (resolventForm I M t) := by
+/-- For `t > 0` the shifted form `D + t ⟪·, ·⟫_{L²}` is coercive, with constant `min 1 t`. -/
+theorem isCoercive_shiftedForm_dirichletForm {t : ℝ} (ht : 0 < t) :
+    IsCoercive ((toLp (I := I) (M := M)).shiftedForm dirichletForm t) := by
   refine ⟨min 1 t, lt_min one_pos ht, fun u ↦ ?_⟩
   have hD := dirichletForm_self_nonneg u
-  rw [mul_assoc, ← sq, norm_sq_eq_dirichletForm_add, resolventForm_apply,
+  rw [mul_assoc, ← sq, norm_sq_eq_dirichletForm_add, shiftedForm_dirichletForm_apply,
     real_inner_self_eq_norm_sq]
   nlinarith [min_le_left 1 t, min_le_right 1 t, sq_nonneg ‖toLp u‖]
 
@@ -87,7 +80,7 @@ for `t > 0`: it sends `f ∈ L²(M)` to the unique `u ∈ H¹(M)` with
 `TauCeti.Manifold.SobolevH1.eq_resolvent`). In the convention `R(λ) = (λ - A)⁻¹` it is the
 resolvent of the Laplace–Beltrami operator `Δ = div grad = -Δ⁺` at `λ = t`. -/
 def resolvent {t : ℝ} (ht : 0 < t) : Lp ℝ 2 (riemannianVolume I M) →L[ℝ] SobolevH1 I M :=
-  (isCoercive_resolventForm ht).formSolutionMap toLp
+  (isCoercive_shiftedForm_dirichletForm ht).formSolutionMap toLp
 
 /-- **The resolvent solves the weak equation** `(Δ⁺ + t) u = f`:
 `D(u, v) + t ⟪u, v⟫_{L²} = ⟪f, v⟫_{L²}` for `u = (Δ⁺ + t)⁻¹ f` and every `v ∈ H¹(M)`. -/
@@ -95,15 +88,16 @@ theorem dirichletForm_resolvent_add {t : ℝ} (ht : 0 < t) (f : Lp ℝ 2 (rieman
     (v : SobolevH1 I M) :
     dirichletForm (resolvent I M ht f) v + t * ⟪toLp (resolvent I M ht f), toLp v⟫_ℝ =
       ⟪f, toLp v⟫_ℝ := by
-  rw [← resolventForm_apply, resolvent, IsCoercive.apply_formSolutionMap]
+  have h := (isCoercive_shiftedForm_dirichletForm ht).apply_formSolutionMap toLp f v
+  rwa [shiftedForm_dirichletForm_apply] at h
 
 /-- **Uniqueness of weak solutions.** If `u ∈ H¹(M)` satisfies
 `D(u, v) + t ⟪u, v⟫_{L²} = ⟪f, v⟫_{L²}` for every `v ∈ H¹(M)`, then `u = (Δ⁺ + t)⁻¹ f`. -/
 theorem eq_resolvent {t : ℝ} (ht : 0 < t) {f : Lp ℝ 2 (riemannianVolume I M)} {u : SobolevH1 I M}
     (hu : ∀ v, dirichletForm u v + t * ⟪toLp u, toLp v⟫_ℝ = ⟪f, toLp v⟫_ℝ) :
     u = resolvent I M ht f :=
-  (isCoercive_resolventForm ht).eq_formSolutionMap toLp fun v ↦ by
-    rw [resolventForm_apply, hu]
+  (isCoercive_shiftedForm_dirichletForm ht).eq_formSolutionMap toLp fun v ↦ by
+    rw [shiftedForm_dirichletForm_apply, hu]
 
 /-- `u = (Δ⁺ + t)⁻¹ f` exactly when `u` solves the weak equation
 `D(u, v) + t ⟪u, v⟫_{L²} = ⟪f, v⟫_{L²}` for every `v ∈ H¹(M)`. -/

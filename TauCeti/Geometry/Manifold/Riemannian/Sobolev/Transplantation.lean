@@ -40,21 +40,28 @@ are the projections of the spectral decomposition of `Δ⁺`.
 
 ## The argument
 
-Every continuous bilinear form `B` on `H¹(M)` invariant under the deck transformations, such as
-the Dirichlet form and the `L²` inner product (`dirichletForm_compRiemannianIsometry`,
-`inner_toLp_compRiemannianIsometry`), satisfies `B(J w, v) = B(J w, A v)` for the deck average
-`A v = |G|⁻¹ ∑_g (g ·)^* v`, since `J w` is deck invariant. The average `A v` is itself a normalized
-pullback `J v'` (`TauCeti.Manifold.SobolevH1.exists_normalizedPullback_eq_smul_sum`). So testing
-the weak eigenvalue equation of `J w` on `M` against an arbitrary `v` reduces to testing it against
-`J v'`, where it is the equation of `w` on `N` tested against `v'`. The elements of the range of
-`J` in `L²(M)` are deck invariant as well, so they too pair with `v` as with `J v'`. This gives the
-weak equation of the resolvent of `M` for `J ((Δ⁺_N + t)⁻¹ f)` with forcing `J f`, and shows that
-`J` maps the orthogonal complement of the `μ`-eigenfunctions of `N` into that of `M`.
+Both the weak eigenvalue equation and the weak equation of the resolvent are equations
+`D(u, v) + c ⟪u, v⟫_{L²} = ⟪F, v⟫_{L²}` for the shifted form `D + c ⟪·, ·⟫_{L²}`
+(`ContinuousLinearMap.shiftedForm`), with `c = -μ`, `F = 0` and with `c = t`. This form is
+invariant under the deck transformations
+(`TauCeti.Manifold.SobolevH1.shiftedForm_dirichletForm_compRiemannianIsometry`), and so is `J w`.
+So the linear map `v ↦ D(J w, v) + c ⟪J w, v⟫_{L²}` takes the same value at `v` and at its deck
+average `|G|⁻¹ ∑_g (g ·)^* v`
+(`TauCeti.Manifold.SobolevH1.map_normalizedPullback_eq_of_eq_smul_sum`), which is itself a
+normalized pullback `J v'` (`TauCeti.Manifold.SobolevH1.exists_normalizedPullback_eq_smul_sum`).
+So testing the equation of `J w` on `M` against an arbitrary `v` reduces to testing it against
+`J v'`, where it is the equation of `w` on `N` tested against `v'`. The elements `J F` of the
+range of `J` in `L²(M)` are deck invariant as well, so they too pair with `v` as with `J v'`
+(`TauCeti.Manifold.SobolevH1.forall_shiftedForm_dirichletForm_normalizedPullback_iff`). The same
+pairing shows that `J` maps the orthogonal complement of the `μ`-eigenfunctions of `N` into that
+of `M`.
 
 ## Main results
 
 * `TauCeti.Manifold.SobolevH1.compRiemannianIsometry_mem_weakEigenspace_iff`: pullback along a
   Riemannian isometry preserves the weak eigenspaces.
+* `TauCeti.Manifold.SobolevH1.forall_shiftedForm_dirichletForm_normalizedPullback_iff`:
+  transplantation of the weak equation of `Δ⁺ + c`.
 * `TauCeti.Manifold.SobolevH1.normalizedPullback_mem_weakEigenspace_iff` and
   `TauCeti.Manifold.SobolevH1.image_normalizedPullback_weakEigenspace`: transplantation of weak
   eigenfunctions.
@@ -90,6 +97,14 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 /-! ### Weak eigenspaces under Riemannian isometries -/
 
+/-- Pullback along a Riemannian isometry preserves the shifted form `D + c ⟪·, ·⟫_{L²}`. -/
+theorem shiftedForm_dirichletForm_compRiemannianIsometry (Φ : RiemannianIsometry I I' M N)
+    (c : ℝ) (u v : SobolevH1 I' N) :
+    toLp.shiftedForm dirichletForm c (compRiemannianIsometry Φ u) (compRiemannianIsometry Φ v) =
+      toLp.shiftedForm dirichletForm c u v := by
+  simp only [shiftedForm_dirichletForm_apply, dirichletForm_compRiemannianIsometry,
+    inner_toLp_compRiemannianIsometry]
+
 /-- **Riemannian isometries preserve the weak eigenspaces.** For a Riemannian isometry
 `Φ : M → N`, the pullback `Φ^* w` of `w ∈ H¹(N)` is a weak `μ`-eigenfunction on `M` exactly when
 `w` is one on `N`. -/
@@ -108,41 +123,6 @@ theorem compRiemannianIsometry_mem_weakEigenspace_iff (Φ : RiemannianIsometry I
 variable [BoundarylessManifold I M] [IsManifold I ∞ M] [IsManifold I' ∞ N]
   {q : M → N} {G : Type*} [Group G] [MulAction G M] [Finite G]
 
-/-- A continuous bilinear form on `H¹(M)` invariant under the deck transformations takes the
-same value at `(J w, v)` as at `(J w, J v')`, when the normalized pullback `J v'` is the deck
-average of `v`. -/
-private theorem apply_normalizedPullback_eq_of_eq_smul_sum [Fintype G]
-    (hq : IsQuotientCoveringMap q G) (hf : IsLocalRiemannianIsometry I I' q)
-    {B : SobolevH1 I M →L[ℝ] SobolevH1 I M →L[ℝ] ℝ}
-    (hB : ∀ g a b, B (compRiemannianIsometry (hq.deckIsometry hf g) a)
-      (compRiemannianIsometry (hq.deckIsometry hf g) b) = B a b)
-    {v : SobolevH1 I M} {v' : SobolevH1 I' N} (hv' : normalizedPullback hq hf v' =
-      (Fintype.card G : ℝ)⁻¹ • ∑ g : G, compRiemannianIsometry (hq.deckIsometry hf g) v)
-    (w : SobolevH1 I' N) :
-    B (normalizedPullback hq hf w) v =
-      B (normalizedPullback hq hf w) (normalizedPullback hq hf v') := by
-  -- each deck pullback of `v` pairs with the deck-invariant `J w` as `v` does
-  have hdeck (g : G) : B (normalizedPullback hq hf w)
-      (compRiemannianIsometry (hq.deckIsometry hf g) v) = B (normalizedPullback hq hf w) v := by
-    conv_lhs => rw [← compRiemannianIsometry_normalizedPullback hq hf
-      (Φ := hq.deckIsometry hf g) (fun x ↦ by simp [hq.map_smul]) w]
-    exact hB g _ _
-  rw [hv', map_smul, map_sum]
-  simp only [hdeck, Finset.sum_const, Finset.card_univ, smul_eq_mul, nsmul_eq_mul]
-  rw [← mul_assoc, inv_mul_cancel₀ (Nat.cast_ne_zero.2 Fintype.card_ne_zero), one_mul]
-
-/-- Elements of the range of the normalized pullback on `L²` are invariant under composition with
-the deck transformations. -/
-private theorem compMeasurePreserving_normalizedPullbackLp (hq : IsQuotientCoveringMap q G)
-    (hf : IsLocalRiemannianIsometry I I' q) (g : G) (f : Lp ℝ 2 (riemannianVolume I' N)) :
-    Lp.compMeasurePreserving (hq.deckIsometry hf g)
-        (hq.deckIsometry hf g).measurePreserving_riemannianVolume
-        (hq.normalizedPullbackLp ℝ 2 hf.inner_mfderiv f) =
-      hq.normalizedPullbackLp ℝ 2 hf.inner_mfderiv f := by
-  refine Lp.ext ((Lp.coeFn_compMeasurePreserving _ _).trans ?_)
-  rw [hq.coe_deckIsometry hf g]
-  exact ((hq.mem_range_normalizedPullbackLp_iff hf.inner_mfderiv _).1 ⟨f, rfl⟩ g)
-
 /-- The deck-invariant normalized pullback `J F` of `F ∈ L²(N)` pairs with the value of `v` in
 `L²(M)` as with that of `J v'`, when `J v'` is the deck average of `v`. -/
 private theorem inner_normalizedPullbackLp_eq_of_eq_smul_sum [Fintype G]
@@ -152,24 +132,41 @@ private theorem inner_normalizedPullbackLp_eq_of_eq_smul_sum [Fintype G]
     (F : Lp ℝ 2 (riemannianVolume I' N)) :
     ⟪hq.normalizedPullbackLp ℝ 2 hf.inner_mfderiv F, toLp v⟫_ℝ =
       ⟪hq.normalizedPullbackLp ℝ 2 hf.inner_mfderiv F, toLp (normalizedPullback hq hf v')⟫_ℝ := by
-  have hdeck (g : G) : ⟪hq.normalizedPullbackLp ℝ 2 hf.inner_mfderiv F,
-      toLp (compRiemannianIsometry (hq.deckIsometry hf g) v)⟫_ℝ =
-        ⟪hq.normalizedPullbackLp ℝ 2 hf.inner_mfderiv F, toLp v⟫_ℝ := by
-    conv_lhs => rw [← compMeasurePreserving_normalizedPullbackLp hq hf g F]
-    rw [toLp_compRiemannianIsometry]
-    exact LinearIsometry.inner_map_map (𝕜 := ℝ) (Lp.compMeasurePreservingₗᵢ (E := ℝ) (p := 2) ℝ _
-      (hq.deckIsometry hf g).measurePreserving_riemannianVolume) _ _
-  rw [hv', map_smul, inner_smul_right, map_sum, inner_sum]
-  simp only [hdeck, Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
-  rw [← mul_assoc, inv_mul_cancel₀ (Nat.cast_ne_zero.2 Fintype.card_ne_zero), one_mul]
+  refine (map_normalizedPullback_eq_of_eq_smul_sum hq hf
+    ((innerSL ℝ (hq.normalizedPullbackLp ℝ 2 hf.inner_mfderiv F)).comp toLp).toLinearMap
+    (fun g ↦ ?_) hv').symm
+  simp only [ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply, innerSL_apply_apply,
+    toLp_compRiemannianIsometry]
+  conv_lhs => rw [← hq.compMeasurePreserving_normalizedPullbackLp hf g F]
+  exact LinearIsometry.inner_map_map (𝕜 := ℝ) (Lp.compMeasurePreservingₗᵢ (E := ℝ) (p := 2) ℝ _
+    (hq.deckIsometry hf g).measurePreserving_riemannianVolume) _ _
 
-omit [BoundarylessManifold I M] [IsManifold I ∞ M] [IsManifold I' ∞ N] in
-/-- The normalized pullback preserves the `L²` inner product of values of elements of `H¹`. -/
-private theorem inner_toLp_normalizedPullback (hq : IsQuotientCoveringMap q G)
-    (hf : IsLocalRiemannianIsometry I I' q) (a b : SobolevH1 I' N) :
-    ⟪toLp (normalizedPullback hq hf a), toLp (normalizedPullback hq hf b)⟫_ℝ =
-      ⟪toLp a, toLp b⟫_ℝ := by
-  rw [toLp_normalizedPullback, toLp_normalizedPullback, LinearIsometry.inner_map_map]
+/-- **Transplantation of the weak equation of `Δ⁺ + c`.** For `w ∈ H¹(N)` and `F ∈ L²(N)`, the
+normalized pullbacks `J w` and `J F` along the finite quotient covering `q : M → N` satisfy the
+weak equation `D(J w, v) + c ⟪J w, v⟫_{L²} = ⟪J F, v⟫_{L²}` on `M` exactly when `w` and `F`
+satisfy it on `N`. -/
+theorem forall_shiftedForm_dirichletForm_normalizedPullback_iff (hq : IsQuotientCoveringMap q G)
+    (hf : IsLocalRiemannianIsometry I I' q) {c : ℝ} {w : SobolevH1 I' N}
+    {F : Lp ℝ 2 (riemannianVolume I' N)} :
+    (∀ v, toLp.shiftedForm dirichletForm c (normalizedPullback hq hf w) v =
+        ⟪hq.normalizedPullbackLp ℝ 2 hf.inner_mfderiv F, toLp v⟫_ℝ) ↔
+      ∀ v, toLp.shiftedForm dirichletForm c w v = ⟪F, toLp v⟫_ℝ := by
+  refine ⟨fun h v ↦ ?_, fun h v ↦ ?_⟩
+  · simpa [shiftedForm_dirichletForm_apply, -ContinuousLinearMap.shiftedForm_apply,
+      toLp_normalizedPullback] using h (normalizedPullback hq hf v)
+  -- test against the normalized pullback `J v'` of the deck average of `v`
+  have := Fintype.ofFinite G
+  obtain ⟨v', hv'⟩ := exists_normalizedPullback_eq_smul_sum hq hf v
+  -- the deck-invariant `J w` pairs with each deck pullback of `v` as with `v`
+  have hB := map_normalizedPullback_eq_of_eq_smul_sum hq hf
+    (toLp.shiftedForm dirichletForm c (normalizedPullback hq hf w)).toLinearMap (fun g ↦ by
+      conv_lhs => rw [← compRiemannianIsometry_normalizedPullback hq hf
+        (Φ := hq.deckIsometry hf g) (fun x ↦ by simp [hq.map_smul]) w]
+      exact shiftedForm_dirichletForm_compRiemannianIsometry _ c _ _) hv'
+  rw [ContinuousLinearMap.coe_coe] at hB
+  rw [← hB, inner_normalizedPullbackLp_eq_of_eq_smul_sum hq hf hv', toLp_normalizedPullback,
+    LinearIsometry.inner_map_map, ← h v']
+  simp [shiftedForm_dirichletForm_apply, -ContinuousLinearMap.shiftedForm_apply]
 
 /-- **Transplantation of weak eigenfunctions.** The normalized pullback `J w` of `w ∈ H¹(N)` along
 the finite quotient covering `q : M → N` is a weak `μ`-eigenfunction of `Δ⁺` on `M` exactly when
@@ -178,24 +175,8 @@ the finite quotient covering `q : M → N` is a weak `μ`-eigenfunction of `Δ�
 theorem normalizedPullback_mem_weakEigenspace_iff (hq : IsQuotientCoveringMap q G)
     (hf : IsLocalRiemannianIsometry I I' q) {μ : ℝ} {w : SobolevH1 I' N} :
     normalizedPullback hq hf w ∈ weakEigenspace I M μ ↔ w ∈ weakEigenspace I' N μ := by
-  simp only [mem_weakEigenspace_iff]
-  refine ⟨fun h v ↦ ?_, fun h v ↦ ?_⟩
-  · simpa [inner_toLp_normalizedPullback] using h (normalizedPullback hq hf v)
-  -- test against the normalized pullback `J v'` of the deck average of `v`
-  have := Fintype.ofFinite G
-  obtain ⟨v', hv'⟩ := exists_normalizedPullback_eq_smul_sum hq hf v
-  set B : SobolevH1 I M →L[ℝ] SobolevH1 I M →L[ℝ] ℝ := dirichletForm - μ •
-    ((innerSL ℝ).bilinearComp (toLp (I := I) (M := M)) toLp :
-      SobolevH1 I M →L[ℝ] SobolevH1 I M →L[ℝ] ℝ)
-  have hBapply (a b : SobolevH1 I M) :
-      B a b = dirichletForm a b - μ * ⟪toLp a, toLp b⟫_ℝ := by
-    simp [B]
-  have := apply_normalizedPullback_eq_of_eq_smul_sum hq hf (B := B) (fun g a b ↦ by
-    simp only [hBapply, dirichletForm_compRiemannianIsometry,
-      inner_toLp_compRiemannianIsometry]) hv' w
-  rw [hBapply, hBapply, dirichletForm_normalizedPullback, inner_toLp_normalizedPullback, h v',
-    sub_self] at this
-  exact sub_eq_zero.1 this
+  simpa [mem_weakEigenspace_iff_shiftedForm, -ContinuousLinearMap.shiftedForm_apply] using
+    forall_shiftedForm_dirichletForm_normalizedPullback_iff hq hf (c := -μ) (w := w) (F := 0)
 
 /-- **The transplanted eigenspace.** The normalized pullback maps the weak `μ`-eigenspace of `Δ⁺`
 on `N` onto the weak `μ`-eigenfunctions on `M` invariant under every deck transformation of the
@@ -224,22 +205,9 @@ theorem normalizedPullback_resolvent (hq : IsQuotientCoveringMap q G)
     normalizedPullback hq hf (resolvent I' N ht f) =
       resolvent I M ht (hq.normalizedPullbackLp ℝ 2 hf.inner_mfderiv f) := by
   refine eq_resolvent ht fun v ↦ ?_
-  -- test against the normalized pullback `J v'` of the deck average of `v`
-  have := Fintype.ofFinite G
-  obtain ⟨v', hv'⟩ := exists_normalizedPullback_eq_smul_sum hq hf v
-  set B : SobolevH1 I M →L[ℝ] SobolevH1 I M →L[ℝ] ℝ := dirichletForm + t •
-    ((innerSL ℝ).bilinearComp (toLp (I := I) (M := M)) toLp :
-      SobolevH1 I M →L[ℝ] SobolevH1 I M →L[ℝ] ℝ)
-  have hBapply (a b : SobolevH1 I M) :
-      B a b = dirichletForm a b + t * ⟪toLp a, toLp b⟫_ℝ := by
-    simp [B]
-  have hB := apply_normalizedPullback_eq_of_eq_smul_sum hq hf (B := B) (fun g a b ↦ by
-    simp only [hBapply, dirichletForm_compRiemannianIsometry,
-      inner_toLp_compRiemannianIsometry]) hv' (resolvent I' N ht f)
-  rw [hBapply, hBapply, dirichletForm_normalizedPullback, inner_toLp_normalizedPullback,
-    dirichletForm_resolvent_add] at hB
-  rw [hB, inner_normalizedPullbackLp_eq_of_eq_smul_sum hq hf hv', toLp_normalizedPullback,
-    LinearIsometry.inner_map_map]
+  rw [← shiftedForm_dirichletForm_apply]
+  refine (forall_shiftedForm_dirichletForm_normalizedPullback_iff hq hf).2 (fun v' ↦ ?_) v
+  rw [shiftedForm_dirichletForm_apply, dirichletForm_resolvent_add]
 
 /-! ### Spectral projections -/
 
