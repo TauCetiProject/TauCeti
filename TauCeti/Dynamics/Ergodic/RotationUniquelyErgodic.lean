@@ -15,11 +15,12 @@ import Mathlib.Topology.Metrizable.Basic
 # Rotations with dense powers are uniquely ergodic
 
 Let `G` be a compact metrizable additive topological group, not necessarily abelian, and `a : G`
-an element whose integer multiples are dense. A finite Borel measure invariant under the rotation `x ↦ a + x` is invariant
-under every translation: the translations preserving it form a closed subgroup (closed because
-`g ↦ ∫ x, f (g + x) ∂ν` is continuous for bounded continuous `f`, and such integrals determine
-finite measures on metrizable spaces), and this subgroup contains the dense set of multiples of
-`a`. By uniqueness of Haar measure the rotation has exactly one invariant probability.
+an element whose integer multiples are dense. A finite Borel measure invariant under the rotation
+`x ↦ a + x` is invariant under every translation: the translations preserving it form a closed
+subgroup (closed because `g ↦ ∫ x, f (g + x) ∂ν` is continuous for bounded continuous `f`, and
+such integrals determine finite measures on metrizable spaces), and this subgroup contains the
+dense set of multiples of `a`. By uniqueness of Haar measure the rotation has exactly one
+invariant probability.
 
 ## Main results
 
