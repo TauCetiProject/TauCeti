@@ -29,8 +29,8 @@ noncomputable example : (SmoothRep.extendScalars A : SmoothRep.{0} A G ⥤ Smoot
 
 /-- The unit of `extendScalars B ⊣ restrictScalars A` sends `v` to `1 ⊗ v`. -/
 example (V : SmoothRep.{0} A G) (v : V.obj) :
-    ((SmoothRep.extendRestrictScalarsAdj B).unit.app V).hom.hom v =
-      ((1 : B) ⊗ₜ[A] v : B ⊗[A] V.obj) :=
-  rfl
+    ((SmoothRep.extendRestrictScalarsAdj A B).unit.app V).hom.hom v = (1 : B) ⊗ₜ[A] v := by
+  rw [SmoothRep.extendRestrictScalarsAdj_unit_app_hom,
+    Rep.extendRestrictScalarsAdj_unit_app_hom_apply]
 
 end TauCeti
