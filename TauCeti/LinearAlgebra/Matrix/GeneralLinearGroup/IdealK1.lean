@@ -59,6 +59,8 @@ unitization of a nonunital algebra.
   `g ⊕ g⁻¹ ∈ E₂ₙ(R, I)` for `g ∈ GLₙ(R, I)`.
 * `TauCeti.fromBlocksGL_conj_mem_relativeElementarySubgroup`: `geg⁻¹ ⊕ 1 ∈ E₂ₙ(R, I)` for
   `g ∈ GLₙ(R)` and `e ∈ Eₙ(R, I)`.
+* `TauCeti.StableGeneralLinearGroup.congruenceSubgroup_eq_ker_map`: `GL_∞(R, I)` is the kernel of
+  the reduction `GL_∞(R) → GL_∞(R/I)`.
 * `TauCeti.StableGeneralLinearGroup.relativeElementarySubgroup_eq_closure`: `E_∞(R, I)` is the
   normal closure in `E_∞(R)` of the stable elementary matrices with parameter in `I`.
 * `TauCeti.StableGeneralLinearGroup.relativeElementarySubgroup_normal`: `E_∞(R, I)` is normal in
@@ -378,6 +380,16 @@ theorem of_mem_congruenceSubgroup_iff {n : ℕ} {u : GL (Fin n) R} :
   rw [congruenceSubgroup, of_mem_iSup_map_of_iff (map_stabilizeGL_congruenceSubgroupGL_le I)]
   exact ⟨fun ⟨_, h, hu⟩ ↦ (stabilizeGL_mem_congruenceSubgroupGL_iff h).1 hu,
     fun hu ↦ ⟨n, le_rfl, (stabilizeGL_mem_congruenceSubgroupGL_iff le_rfl).2 hu⟩⟩
+
+variable (I) in
+/-- The stable congruence subgroup `GL_∞(R, I)` is the kernel of the reduction
+`GL_∞(R) → GL_∞(R/I)` induced by the quotient map `R → R/I`. -/
+theorem congruenceSubgroup_eq_ker_map :
+    congruenceSubgroup I = (map (Ideal.Quotient.mk I)).ker := by
+  ext x
+  obtain ⟨n, u, rfl⟩ := exists_of x
+  rw [of_mem_congruenceSubgroup_iff, mem_congruenceSubgroupGL_iff_map_eq_one, MonoidHom.mem_ker,
+    map_of, (of_injective n).eq_iff' (map_one _)]
 
 end Congruence
 
