@@ -102,21 +102,24 @@ lemma dualNumberDerivation_apply (h2 : (2 : k) = 0) (x : DualNumber k) :
     dualNumberDerivation k h2 x = TrivSqZeroExt.inl x.snd :=
   (rfl)
 
-/-- In characteristic `2`, the map `Ω[k[ε]/(ε²)⁄k] → k[ε]/(ε²)` induced by `a + bε ↦ b`, sending
-`dε` to `1`, is surjective. -/
-theorem surjective_dualNumberQuotient (h2 : (2 : k) = 0) :
-    Function.Surjective (LinearMap.pi fun _ : Fin 1 ↦
-      (dualNumberDerivation k h2).liftKaehlerDifferential :
-        Ω[dualNumberRing k⁄k] →ₗ[dualNumberRing k] (Fin 1 → dualNumberRing k)) := fun v ↦
+/-- In characteristic `2`, the quotient `Ω[k[ε]/(ε²)⁄k] → k[ε]/(ε²)` induced by `a + bε ↦ b`,
+sending `dε` to `1`. -/
+def dualNumberQuotient (h2 : (2 : k) = 0) :
+    Ω[dualNumberRing k⁄k] →ₗ[dualNumberRing k] (Fin 1 → dualNumberRing k) :=
+  LinearMap.pi fun _ ↦ (dualNumberDerivation k h2).liftKaehlerDifferential
+
+/-- The quotient induced by `a + bε ↦ b` is surjective. -/
+theorem dualNumberQuotient_surjective (h2 : (2 : k) = 0) :
+    Function.Surjective (dualNumberQuotient k h2) := fun v ↦
   ⟨v 0 • D k (DualNumber k) DualNumber.eps, funext fun j ↦ by
-    simp [Subsingleton.elim j 0]⟩
+    simp [dualNumberQuotient, Subsingleton.elim j 0]⟩
 
 -- **Check.** Over a field of characteristic `2`, `Ω_{X/k}` for `X = Spec k[ε]/(ε²)` has a locally
 -- free quotient of rank `1`.
 example (h2 : (2 : k) = 0) :
     HasLocallyFreeQuotientOfDifferentials k (Spec (dualNumberRing k)) 1 :=
   hasLocallyFreeQuotientOfDifferentials_Spec_of_surjective k _ _
-    (surjective_dualNumberQuotient k h2)
+    (dualNumberQuotient_surjective k h2)
 
 end
 

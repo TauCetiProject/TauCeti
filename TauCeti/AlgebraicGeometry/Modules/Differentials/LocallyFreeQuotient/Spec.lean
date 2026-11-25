@@ -51,31 +51,43 @@ def differentialsSpecToTilde {d : ℕ} (g : Ω[A⁄R] →ₗ[A] (Fin d → A)) :
     (Spec A).relativeDifferentials R ⟶ tilde (.of A (Fin d → A)) :=
   (relativeDifferentialsSpecIso R A).hom ≫ (tilde.functor A).map (ModuleCat.ofHom g)
 
-/-- The sheaf `(A^d)~` on `Spec A`, as a finite locally free sheaf of constant rank `d`. -/
-def tildePiFixedRank (d : ℕ) : FiniteLocallyFreeSheaf.FixedRank (Spec A) d :=
-  ⟨(FiniteLocallyFreeSheaf.finiteProjectiveEquiv A).functor.obj
-    ⟨.of A (Fin d → A), finiteProjectiveModules_iff.mpr ⟨inferInstance, inferInstance⟩⟩,
-    (FiniteLocallyFreeSheaf.isConstantRank_iff _ d).mpr fun p ↦ by
-      have : Nontrivial A := PrimeSpectrum.nontrivial p
-      rw [FiniteLocallyFreeSheaf.rank_finiteProjectiveEquiv_functor_obj_apply,
-        Module.rankAtStalk_eq_finrank_of_free]
-      exact Module.finrank_fin_fun A⟩
-
-/-- The underlying sheaf of `tildePiFixedRank A d` is `(A^d)~`. -/
-@[simp]
-lemma tildePiFixedRank_obj_obj (d : ℕ) :
-    (tildePiFixedRank A d).obj.obj = tilde (.of A (Fin d → A)) :=
+/-- `differentialsSpecToTilde R A g` is `Ω_{Spec A/R} ≅ Ω[A⁄R]~` followed by `g~`. -/
+lemma differentialsSpecToTilde_def {d : ℕ} (g : Ω[A⁄R] →ₗ[A] (Fin d → A)) :
+    differentialsSpecToTilde R A g =
+      (relativeDifferentialsSpecIso R A).hom ≫ (tilde.functor A).map (ModuleCat.ofHom g) :=
   (rfl)
+
+/-- The morphism induced by `g` sends the differential `d a` of `a ∈ A` to the section `g (D a)`
+of `(A^d)~`. -/
+lemma differentialsSpecToTilde_app_d {d : ℕ} (g : Ω[A⁄R] →ₗ[A] (Fin d → A))
+    (U : (Spec A).Opens) (a : A) :
+    (differentialsSpecToTilde R A g).val.app (.op U)
+        (((Spec A).universalDerivation R).d
+          (((Spec A).presheaf.map (homOfLE le_top).op).hom ((Scheme.ΓSpecIso A).inv.hom a))) =
+      tilde.toOpen (ModuleCat.of A (Fin d → A)) U (g (KaehlerDifferential.D R A a)) := by
+  rw [differentialsSpecToTilde_def]
+  exact (congrArg ((tilde.map (ModuleCat.ofHom g)).val.app (.op U))
+    (relativeDifferentialsSpecIso_hom_app_d R A U a)).trans
+      (tilde_map_val_app_toOpen (ModuleCat.ofHom g) U _)
+
+/-- If `g` is surjective, the morphism `Ω_{Spec A/R} ⟶ (A^d)~` it induces is an epimorphism, since
+`M ↦ M~` is a left adjoint. -/
+theorem epi_differentialsSpecToTilde {d : ℕ} {g : Ω[A⁄R] →ₗ[A] (Fin d → A)}
+    (hg : Function.Surjective g) : Epi (differentialsSpecToTilde R A g) :=
+  have : Epi (ModuleCat.ofHom g) := (ModuleCat.epi_iff_surjective _).mpr hg
+  epi_comp' inferInstance (Functor.map_epi _ _)
 
 /-- **A surjection of the Kähler differentials onto a free module gives a locally free quotient.**
 For an `R`-algebra `A`, a surjective `A`-linear map `Ω[A⁄R] → A^d` induces an epimorphism
-`Ω_{Spec A/R} ⟶ (A^d)~` onto a finite locally free sheaf of constant rank `d`. -/
+`Ω_{Spec A/R} ⟶ (A^d)~` onto the free sheaf of rank `d`. -/
 theorem hasLocallyFreeQuotientOfDifferentials_Spec_of_surjective {d : ℕ}
     (g : Ω[A⁄R] →ₗ[A] (Fin d → A)) (hg : Function.Surjective g) :
     HasLocallyFreeQuotientOfDifferentials R (Spec A) d := by
-  have : Epi (ModuleCat.ofHom g) := (ModuleCat.epi_iff_surjective _).mpr hg
-  exact (hasLocallyFreeQuotientOfDifferentials_iff R _ d).mpr ⟨tildePiFixedRank A d,
-    differentialsSpecToTilde R A g, epi_comp' inferInstance (Functor.map_epi _ _)⟩
+  refine (hasLocallyFreeQuotientOfDifferentials_iff R _ d).mpr
+    ⟨FiniteLocallyFreeSheaf.FixedRank.free _ d, ?_⟩
+  rw [FiniteLocallyFreeSheaf.FixedRank.free_obj]
+  exact ⟨differentialsSpecToTilde R A g ≫ (FiniteLocallyFreeSheaf.tildePiIsoFree A d).hom,
+    epi_comp' (epi_differentialsSpecToTilde R A hg) inferInstance⟩
 
 /-- If the morphism induced by `g` followed by a morphism `φ : (A^d)~ ⟶ (A^e)~` is the morphism
 induced by `h`, then the kernel of `g` lies in the kernel of `h`: as `M ↦ M~` is fully faithful,
@@ -91,12 +103,8 @@ theorem ker_le_ker_of_differentialsSpecToTilde_comp_eq {d e : ℕ}
     rw [Functor.map_comp]
     exact (cancel_epi (relativeDifferentialsSpecIso R A).hom).mp
       ((Category.assoc _ _ _).symm.trans hφ)
-  intro ω hω
-  rw [LinearMap.mem_ker] at hω ⊢
-  have := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom hψ) ω
-  rw [ModuleCat.hom_comp, ModuleCat.hom_ofHom, ModuleCat.hom_ofHom, LinearMap.comp_apply, hω,
-    map_zero] at this
-  exact this.symm
+  have : ψ.hom ∘ₗ g = h := by simpa using congrArg ModuleCat.Hom.hom hψ
+  exact this ▸ LinearMap.ker_le_ker_comp g ψ.hom
 
 end
 
