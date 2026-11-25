@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Pseudodifferential.Composition.Basic
 public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Map
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Topology
-public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
+public import TauCeti.Analysis.Sobolev.BesselPotential.Postcomp
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Fourier.FourierCharDeriv
@@ -101,6 +101,13 @@ All in the namespace `TauCeti.Symbol`:
   `HasBesselPotentialSpaceExtension.toDistr_quantizeUniformBesselPotentialSpace_eq_of_forall`, and
   specialized to symbols with compact spatial support
   (`HasCompactSpatialSupport.hasBesselPotentialSpaceExtension`).
+* `hasBesselPotentialSpaceExtension_const`, `quantizeUniformBesselPotentialSpace_const`,
+  `hasBesselPotentialSpaceExtension_besselPotential`,
+  `quantizeUniformBesselPotentialSpace_besselPotential`,
+  `toDistr_quantizeUniformBesselPotentialSpace_besselPotential`: for `p < ∞`, constant symbols and
+  Bessel-potential symbols have the extension property over arbitrary complete complex normed
+  fibres, quantizing to `BesselPotentialSpace.postcomp` and the canonical isometric isomorphism
+  `H^{s,p} → H^{s - m,p}` (`TemperedDistribution.besselPotential` on tempered distributions).
 * `exists_norm_quantizeUniformBesselPotentialSpace_le_seminorm`: for symbols vanishing outside a
   fixed compact set, the operator norm is at most a continuous seminorm of the symbol.
 * `continuous_quantizeUniformBesselPotentialSpace`: continuity of `Op(a)` in the operator norm
@@ -900,6 +907,81 @@ theorem quantizeUniformBesselPotentialSpace_zero {h : (0 : Symbol n V W m).IsUni
     (0 : Symbol n V W m).quantizeUniformBesselPotentialSpace h s p = 0 := by
   refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun u ↦ ?_
   simp [hasBesselPotentialSpaceExtension_zero hp_top s u, quantizeUniformCLM_zero h]
+
+/-- Every constant symbol `T : V →L[ℂ] W` has the `H^{s,p}` extension property (`p < ∞`),
+unconditionally over arbitrary complete complex normed fibres. -/
+theorem hasBesselPotentialSpaceExtension_const (T : V →L[ℂ] W) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
+    (const T : Symbol n V W 0).HasBesselPotentialSpaceExtension (isUniform_const T) p :=
+  HasBesselPotentialSpaceExtension.of_forall_exists hp_top fun s ↦
+    ⟨BesselPotentialSpace.inclusion (sub_zero s).le ∘L
+        BesselPotentialSpace.postcomp (CoordinateSpace n) s p T, fun v ↦ by
+      rw [ContinuousLinearMap.comp_apply, ← SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM,
+        BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM, quantizeUniformCLM_const]⟩
+
+/-- A constant symbol `T : V →L[ℂ] W` quantizes on `H^{s,p}` (`p < ∞`) to
+`BesselPotentialSpace.postcomp`, unconditionally over arbitrary complete complex normed fibres. -/
+theorem quantizeUniformBesselPotentialSpace_const (T : V →L[ℂ] W) (s : ℝ)
+    (hp_top : p ≠ (∞ : ℝ≥0∞)) :
+    (const T : Symbol n V W 0).quantizeUniformBesselPotentialSpace (isUniform_const T) s p =
+      BesselPotentialSpace.inclusion (sub_zero s).le ∘L
+        BesselPotentialSpace.postcomp (CoordinateSpace n) s p T :=
+  BesselPotentialSpace.continuousLinearMap_ext hp_top fun u ↦ by
+    rw [(hasBesselPotentialSpaceExtension_const T
+        hp_top).quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM s u,
+      ContinuousLinearMap.comp_apply, ← SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM,
+      BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM, quantizeUniformCLM_const]
+
+private theorem toLpₗᵢ_symm_toLpₗᵢ_eq_quantizeUniformCLM_besselPotential (m s : ℝ)
+    (u : 𝓢(CoordinateSpace n, V)) :
+    (BesselPotentialSpace.toLpₗᵢ (CoordinateSpace n) V (s - m) p).symm
+        (BesselPotentialSpace.toLpₗᵢ (CoordinateSpace n) V s p
+          (toBesselPotentialSpaceCLM s p u)) =
+      toBesselPotentialSpaceCLM (s - m) p
+        (quantizeUniformCLM (besselPotential m) (isUniform_besselPotential m) u) :=
+  BesselPotentialSpace.ext <| by
+    simp [quantizeUniformCLM_besselPotential,
+      ← TemperedDistribution.besselPotential_toTemperedDistributionCLM_eq]
+
+/-- The Bessel-potential symbol `⟨ξ / 2π⟩ ^ m` has the `H^{s,p}` extension property (`p < ∞`),
+unconditionally over arbitrary complete complex normed fibres. -/
+theorem hasBesselPotentialSpaceExtension_besselPotential (m : ℝ) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
+    (besselPotential m : Symbol n V V m).HasBesselPotentialSpaceExtension
+      (isUniform_besselPotential m) p :=
+  HasBesselPotentialSpaceExtension.of_forall_exists hp_top fun s ↦
+    ⟨((BesselPotentialSpace.toLpₗᵢ (CoordinateSpace n) V (s - m) p).symm.toContinuousLinearEquiv :
+        Lp V p (volume : Measure (CoordinateSpace n)) →L[ℂ]
+          H^{s - m, p}(CoordinateSpace n, V)) ∘L
+      ((BesselPotentialSpace.toLpₗᵢ (CoordinateSpace n) V s p).toContinuousLinearEquiv :
+        H^{s, p}(CoordinateSpace n, V) →L[ℂ] Lp V p (volume : Measure (CoordinateSpace n))),
+      toLpₗᵢ_symm_toLpₗᵢ_eq_quantizeUniformCLM_besselPotential m s⟩
+
+/-- **Action of `Symbol.besselPotential` on `H^{s,p}`** (`p < ∞`) as the canonical isometric
+isomorphism `H^{s,p} → H^{s - m,p}`, unconditionally over arbitrary complete complex normed
+fibres. -/
+theorem quantizeUniformBesselPotentialSpace_besselPotential (m s : ℝ) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
+    (besselPotential m : Symbol n V V m).quantizeUniformBesselPotentialSpace
+        (isUniform_besselPotential m) s p =
+      ((BesselPotentialSpace.toLpₗᵢ (CoordinateSpace n) V (s - m) p).symm.toContinuousLinearEquiv :
+          Lp V p (volume : Measure (CoordinateSpace n)) →L[ℂ]
+            H^{s - m, p}(CoordinateSpace n, V)) ∘L
+        ((BesselPotentialSpace.toLpₗᵢ (CoordinateSpace n) V s p).toContinuousLinearEquiv :
+          H^{s, p}(CoordinateSpace n, V) →L[ℂ] Lp V p (volume : Measure (CoordinateSpace n))) :=
+  BesselPotentialSpace.continuousLinearMap_ext hp_top fun u ↦ by
+    rw [(hasBesselPotentialSpaceExtension_besselPotential m
+        hp_top).quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM s u,
+      ← toLpₗᵢ_symm_toLpₗᵢ_eq_quantizeUniformCLM_besselPotential m s u]
+    rfl
+
+/-- On tempered distributions, `Op(⟨ξ / 2π⟩ ^ m)` acts on `H^{s,p}` (`p < ∞`) as
+`TemperedDistribution.besselPotential`. -/
+theorem toDistr_quantizeUniformBesselPotentialSpace_besselPotential (m s : ℝ)
+    (hp_top : p ≠ (∞ : ℝ≥0∞)) (u : H^{s, p}(CoordinateSpace n, V)) :
+    ((besselPotential m : Symbol n V V m).quantizeUniformBesselPotentialSpace
+        (isUniform_besselPotential m) s p u).toDistr =
+      TemperedDistribution.besselPotential (CoordinateSpace n) V m u.toDistr := by
+  rw [quantizeUniformBesselPotentialSpace_besselPotential m s hp_top,
+    ContinuousLinearMap.comp_apply]
+  simpa [sub_sub_cancel] using BesselPotentialSpace.toDistr_toLpₗᵢ_symm_toLpₗᵢ (r := s - m) u
 
 end Extension
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Composition.Expansion
-public import TauCeti.Analysis.Pseudodifferential.Composition.UniformSharp
+public import TauCeti.Analysis.Pseudodifferential.Composition.Uniform.Sharp
 public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
 import TauCeti.Analysis.Calculus.BumpFunction.LatticePartition
 import TauCeti.Analysis.Normed.Lp.PiLp
@@ -26,7 +26,7 @@ Let `p` and `a` be symbols of orders `m'` and `m` on `ℝⁿ` whose estimates
 (`TauCeti.Symbol.quantizeUniformCLM`), and this file shows that `Op(p) ∘ Op(a)` is again the
 quantization of a symbol of order `m' + m` with estimates uniform in the position
 (`TauCeti.Symbol.IsUniform.exists_quantizeUniformCLM_comp`, realized explicitly by
-`TauCeti.Symbol.uniformSharp` in `TauCeti.Analysis.Pseudodifferential.Composition.UniformSharp`).
+`TauCeti.Symbol.uniformSharp` in `TauCeti.Analysis.Pseudodifferential.Composition.Uniform.Sharp`).
 The composition symbol `p # a` of `TauCeti.Symbol.sharp` is only defined when `a` has compact
 spatial support, since it is built from the Fourier transforms of the position slices of `a`; a
 uniform symbol such as `a = 1` has no such Fourier transforms. With this theorem the uniform symbols

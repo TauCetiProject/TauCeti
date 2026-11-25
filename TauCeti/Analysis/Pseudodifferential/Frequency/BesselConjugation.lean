@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.Composition.UniformSharp
+public import TauCeti.Analysis.Pseudodifferential.Composition.Uniform.Sharp
 public import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 
