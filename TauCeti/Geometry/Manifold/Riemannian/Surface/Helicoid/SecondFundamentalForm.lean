@@ -7,13 +7,18 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Surface.Helicoid.Basic
 public import TauCeti.Analysis.InnerProductSpace.SecondFundamentalForm
+import TauCeti.Analysis.InnerProductSpace.RangeProjection
 
 /-!
 # The second fundamental form of a helicoid
 
 The unnormalized normal `N=(-a sin u, a cos u, -v)` has squared length `a²+v²`.
-The second fundamental form is `a/(a²+v²) (du⊗dv+dv⊗du) N`, so its diagonal
-coefficients vanish. All formulas include the axis for nonzero pitch.
+At a regular parameter, where `a ≠ 0 ∨ v ≠ 0`, the second fundamental form is
+`a/(a²+v²) (du⊗dv+dv⊗du) N`, so its diagonal coefficients vanish.
+All formulas include the axis for nonzero pitch.
+
+Based on Yangyang Li's formalization in
+[ColdingMinicozziTheory, commit a8c5fe94](https://github.com/riccardobrasca/ColdingMinicozziTheory/commit/a8c5fe948e2fbd3572000e70d087d9e61a375342).
 -/
 
 public noncomputable section
@@ -31,8 +36,24 @@ def normal (a : ℝ) (p : P) : E₃ :=
     (a * Real.cos p.1) • EuclideanSpace.basisFun (Fin 3) ℝ 1 -
     p.2 • EuclideanSpace.basisFun (Fin 3) ℝ 2
 
+/-- The first Euclidean coordinate of the helicoid normal. -/
+@[simp] theorem normal_apply_zero (a : ℝ) (p : P) :
+    normal a p 0 = -a * Real.sin p.1 := by
+  simp [normal, EuclideanSpace.basisFun_apply]
+
+/-- The second Euclidean coordinate of the helicoid normal. -/
+@[simp] theorem normal_apply_one (a : ℝ) (p : P) :
+    normal a p 1 = a * Real.cos p.1 := by
+  simp [normal, EuclideanSpace.basisFun_apply]
+
+/-- The third Euclidean coordinate of the helicoid normal. -/
+@[simp] theorem normal_apply_two (a : ℝ) (p : P) :
+    normal a p 2 = -p.2 := by
+  simp [normal, EuclideanSpace.basisFun_apply]
+
 /-- The normal has squared length `a²+v²`. -/
-theorem inner_normal_self (a : ℝ) (p : P) :
+-- Prioritize the helicoid formula over `inner_self_eq_norm_sq_to_K`.
+@[simp high] theorem inner_normal_self (a : ℝ) (p : P) :
     inner ℝ (normal a p) (normal a p) = a ^ 2 + p.2 ^ 2 := by
   simp only [normal, inner_sub_left, inner_sub_right, inner_add_left, inner_add_right,
     real_inner_smul_left, real_inner_smul_right, EuclideanSpace.basisFun_apply,
@@ -41,7 +62,7 @@ theorem inner_normal_self (a : ℝ) (p : P) :
   linear_combination a ^ 2 * Real.sin_sq_add_cos_sq p.1
 
 /-- The explicit normal is orthogonal to every helicoid tangent vector. -/
-theorem inner_normal_fderiv (a : ℝ) (p w : P) :
+@[simp] theorem inner_normal_fderiv (a : ℝ) (p w : P) :
     inner ℝ (normal a p) (fderiv ℝ (parametrization a) p w) = 0 := by
   rw [fderiv_parametrization]
   simp only [normal, inner_sub_left, inner_add_left, inner_add_right,
@@ -90,7 +111,7 @@ theorem fderiv_fderiv_parametrization (a : ℝ) (p w z : P) :
   module
 
 /-- Pairing the second fundamental form with the normal leaves precisely the mixed coefficient. -/
-theorem inner_normal_secondFundamentalForm (a : ℝ) (p w z : P) :
+@[simp] theorem inner_normal_secondFundamentalForm (a : ℝ) (p w z : P) :
     inner ℝ (normal a p) (TauCeti.secondFundamentalForm ℝ (parametrization a) p w z) =
       a * (w.1 * z.2 + w.2 * z.1) := by
   rw [TauCeti.inner_secondFundamentalForm_apply_of_mem_orthogonal
@@ -110,14 +131,10 @@ theorem orthogonal_range_fderiv_eq_span_normal {a : ℝ} (p : P) (hreg : a ≠ 0
     rw [h, inner_zero_left] at hi
     obtain ⟨ha, hp⟩ := sq_add_sq_eq_zero.mp hi.symm
     exact hreg.elim (· ha) (· hp)
-  symm
-  apply Submodule.eq_of_le_of_finrank_eq
-    (Submodule.span_le.mpr (by simpa using normal_mem_orthogonal a p))
-  have hdim := (fderiv ℝ (parametrization a) p).range.finrank_add_finrank_orthogonal
-  have hrank := LinearMap.finrank_range_of_inj ((injective_fderiv_parametrization_iff a p).2 hreg)
-  rw [finrank_span_singleton hn]
-  norm_num [Module.finrank_prod] at hdim hrank
-  omega
+  have hdim : Module.finrank ℝ (fderiv ℝ (parametrization a) p).rangeᗮ = 1 := by
+    simpa [Module.finrank_prod] using LinearMap.finrank_orthogonal_range_of_injective
+      ((injective_fderiv_parametrization_iff a p).2 hreg)
+  exact eq_span_singleton_of_mem_of_finrank_eq_one hdim (normal_mem_orthogonal a p) hn
 
 /-- The Euclidean second fundamental form at every regular helicoid parameter. -/
 theorem secondFundamentalForm_parametrization {a : ℝ} (p w z : P) (hreg : a ≠ 0 ∨ p.2 ≠ 0) :
