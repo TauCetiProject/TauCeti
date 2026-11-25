@@ -179,9 +179,8 @@ include hZ hc
 continuous. -/
 theorem continuous_liouvilleGraph (hι : Continuous ι) (hf : Continuous f) (hf₀ : ∀ s, f s ≠ 0) :
     Continuous (liouvilleGraph Z ι f) := by
-  rw [liouvilleGraph_def, flowOf_eq_globalFlow hZ hc]
-  exact (contMDiff_globalFlow_uncurry hc le_rfl hZ).continuous.comp
-    ((hf.log hf₀).prodMk hι)
+  rw [liouvilleGraph_def]
+  exact (continuous_flowOf_comp hc hZ hι).comp ((hf.log hf₀).prodMk continuous_id)
 
 /-- **The radial homotopy.** For a continuous positive function `f`, the Liouville graphs of the
 functions `(1 - τ) f + τ`, `τ ∈ [0, 1]`, form a homotopy from the Liouville graph of `f` to the map
