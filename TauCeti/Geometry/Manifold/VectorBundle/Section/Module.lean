@@ -28,7 +28,8 @@ For `m ≤ n`, every `Cⁿ` section is a `Cᵐ` section (`ContMDiffSection.ofLE`
 ground field.
 
 Pullback along a `C^n` map takes values in the pullback bundle. It is linear over the
-ground field and intertwines multiplication with composition of scalar functions.
+ground field and intertwines multiplication with composition of scalar functions, so it is
+semilinear over the pullback of functions (`ContMDiffSection.pullbackSemilinearMap`).
 Restriction to an open subset is pullback along its inclusion. No finite-dimensionality,
 compactness, or boundary assumption is needed, and the construction works at every
 differentiability order.
@@ -189,6 +190,24 @@ theorem pullbackLinearMap_apply (g : C^n⟮I', N; I, M⟯) (s : Cₛ^n⟮I; F, V
     dsimp% only [ContinuousMap.coe_ofClass]
       (pullbackLinearMap I F n V g s = s.pullback g) := (rfl)
 
+variable (I F n V) in
+/-- Pullback of sections along a `C^n` map `g`, semilinear over the pullback `f ↦ f ∘ g` of
+functions (`ContMDiffMap.compRightAlgHom`): `(f • s).pullback g = (f ∘ g) • s.pullback g`. -/
+def pullbackSemilinearMap (g : C^n⟮I', N; I, M⟯) :
+    Cₛ^n⟮I; F, V⟯ →ₛₗ[(ContMDiffMap.compRightAlgHom 𝕜 𝕜 g).toRingHom]
+      Cₛ^n⟮I'; F, (g : C(N, M)) *ᵖ V⟯ where
+  toFun s := s.pullback g
+  map_add' s t := pullback_add s t g
+  map_smul' f s := by
+    rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, ContMDiffMap.compRightAlgHom_apply]
+    exact pullback_smul_function f s g
+
+-- As for `pullback_apply`, normalize the implicit pullback-bundle type.
+@[simp]
+theorem pullbackSemilinearMap_apply (g : C^n⟮I', N; I, M⟯) (s : Cₛ^n⟮I; F, V⟯) :
+    dsimp% only [ContinuousMap.coe_ofClass]
+      (pullbackSemilinearMap I F n V g s = s.pullback g) := (rfl)
+
 end Pullback
 
 section Restriction
@@ -231,6 +250,11 @@ theorem restrict_zero (U : Opens M) : (0 : Cₛ^n⟮I; F, V⟯).restrict U = 0 :
 theorem restrict_add (s t : Cₛ^n⟮I; F, V⟯) (U : Opens M) :
     (s + t).restrict U = s.restrict U + t.restrict U :=
   pullback_add s t _
+
+@[simp]
+theorem restrict_sub (s t : Cₛ^n⟮I; F, V⟯) (U : Opens M) :
+    (s - t).restrict U = s.restrict U - t.restrict U :=
+  map_sub (pullbackLinearMap I F n V (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^n⟮I, U; I, M⟯)) s t
 
 @[simp]
 theorem restrict_smul (c : 𝕜) (s : Cₛ^n⟮I; F, V⟯) (U : Opens M) :

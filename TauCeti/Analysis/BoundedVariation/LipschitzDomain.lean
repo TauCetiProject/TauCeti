@@ -139,7 +139,8 @@ theorem BV.isCompactOperator_toL1CLM_of_isLipschitzDomainWith_image {L : ℝ≥0
   let W : Opens (WithLp 2 (ℝ × E)) := ⟨e '' (Ω : Set F), ((isLipschitzDomainWith_iff _ _).1 heΩ).1⟩
   have hOW : (Ω : Set F) = e ⁻¹' W := (e.toEquiv.preimage_image _).symm
   have hvol : IsCompactOperator (BV.toL1CLM (μ := volume) (Ω := Ω)) :=
-    BV.isCompactOperator_toL1CLM_of_linearIsometryEquiv e.measurePreserving hOW
+    BV.isCompactOperator_toL1CLM_of_linearIsometryEquiv e.measurePreserving
+      e.symm.continuous.measurable hOW
       (BV.isCompactOperator_toL1CLM_of_isLipschitzDomainWith heΩ
         (e.lipschitzWith.isBounded_image hb))
   rw [Measure.isAddLeftInvariant_eq_smul μ volume]
@@ -178,7 +179,7 @@ theorem BV.isCompactOperator_toL1CLM_of_isLipschitzDomain
   · exact isCompactOperator_toL1CLM_of_frontier_eq_empty hb hfr
   obtain ⟨g, -, -, -, -, -, -⟩ := isLipschitzDomain_iff_exists_mem_normalCylinder.mp hΩ x₀ hx₀
   have hfr_cpt : IsCompact (frontier (g '' (Ω : Set F))) := by
-    rw [← g.coe_toHomeomorph, ← g.toHomeomorph.image_frontier]
+    rw [← g.image_frontier]
     exact (hb.isCompact_closure.of_isClosed_subset isClosed_frontier frontier_subset_closure).image
       g.continuous
   obtain ⟨L, hL⟩ := (hΩ.image g).exists_isLipschitzDomainWith hfr_cpt

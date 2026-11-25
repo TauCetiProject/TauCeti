@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.HyperplaneReflection
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Extension
 import TauCeti.Analysis.PDE.Ellipticity.ConstantCoefficient
 import TauCeti.Analysis.PDE.Regularity.Boundary.Campanato
 import TauCeti.Analysis.PDE.Regularity.DifferentiatedEquation
@@ -305,11 +306,8 @@ private theorem exists_holderOnWith_iteratedFDeriv_two_thickening_inter_of_halfS
     hSU ⟨thickening_subset_cthickening R S (hTS hx).1,
       Set.mem_ofPred.2 (le_of_lt (Set.mem_ofPred.1 (hTS hx).2))⟩
   -- An orthonormal basis `b` with `b 0 = ν / ‖ν‖`; the other `b i` are tangential.
-  obtain ⟨b, hb⟩ : ∃ b : OrthonormalBasis (Fin (n + 1)) ℝ E, b 0 = (‖ν‖⁻¹ : ℝ) • ν := by
-    obtain ⟨b, hb⟩ := Orthonormal.exists_orthonormalBasis_extension_of_card_eq (𝕜 := ℝ)
-      (by simp) (v := fun _ : Fin (n + 1) => (‖ν‖⁻¹ : ℝ) • ν) (s := {0})
-      (orthonormal_subsingleton_iff.2 fun _ => norm_smul_inv_norm hν)
-    exact ⟨b, hb 0 rfl⟩
+  obtain ⟨b, hb⟩ : ∃ b : OrthonormalBasis (Fin (n + 1)) ℝ E, b 0 = (‖ν‖⁻¹ : ℝ) • ν :=
+    exists_orthonormalBasis_fin_apply_zero_eq finrank_euclideanSpace_fin (norm_smul_inv_norm hν)
   have hbν : ∀ i : Fin n, ⟪b i.succ, ν⟫_ℝ = 0 := fun i => by
     have h0 : ⟪b i.succ, b 0⟫_ℝ = 0 := b.orthonormal.2 (Fin.succ_ne_zero i)
     rw [hb, inner_smul_right] at h0

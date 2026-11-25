@@ -21,7 +21,9 @@ pointed homotopy classes form `πₙ₊₂(X, x)` (`HomotopyGroup.sphereEquiv`).
 such a map is the image of the fundamental class of the sphere, and the Hurewicz map is injective
 on `πₙ₊₂(X, x)` by the Hurewicz theorem. So two pointed maps inducing the same map on
 `Hₙ₊₂(-; ℤ)` are homotopic relative to the north pole
-(`ContinuousMap.homotopicRel_of_singularHomologyMap_eq`).
+(`ContinuousMap.homotopicRel_of_singularHomologyMap_eq`). Without any connectivity hypothesis, a
+map `Sⁿ → Y`, `n ≥ 1`, is null-homotopic as soon as the homotopy group `πₙ(Y, y)` at the image of
+the north pole is trivial (`ContinuousMap.nullhomotopic_of_subsingleton_homotopyGroup`).
 
 For `X = Sⁿ⁺²` this is the pointed form of Hopf's theorem for self-maps of a sphere of dimension at
 least two: the homotopy class of a pointed self-map is determined by its degree. In particular a
@@ -36,6 +38,8 @@ in the proof of their Lemma 7.6.
 
 ## Main results
 
+* `ContinuousMap.nullhomotopic_of_subsingleton_homotopyGroup`: a map out of `Sⁿ` is
+  null-homotopic when `πₙ` vanishes at the image of the north pole.
 * `ContinuousMap.homotopicRel_of_singularHomologyMap_eq`: pointed maps from `Sⁿ⁺²` to an
   `(n + 1)`-connected space are homotopic relative to the north pole when they agree on
   `Hₙ₊₂(-; ℤ)`.
@@ -55,6 +59,17 @@ open CategoryTheory AlgebraicTopology Metric TauCeti
 open scoped Topology.Homotopy
 
 namespace ContinuousMap
+
+/-- **A map out of a sphere is null-homotopic when the homotopy group it represents is trivial.**
+For `n ≥ 1`, a map `f : Sⁿ → Y` is null-homotopic as soon as `πₙ(Y, f N)` is trivial, where `N`
+is the north pole. -/
+theorem nullhomotopic_of_subsingleton_homotopyGroup {Y : Type*} [TopologicalSpace Y] {n : ℕ}
+    [NeZero n] (f : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, Y))
+    (hf : Subsingleton (HomotopyGroup (Fin n) Y (f (sphereNorthPole n)))) : f.Nullhomotopic := by
+  let p := (GenLoop.sphereEquiv n Y (f (sphereNorthPole n))).symm ⟨f, rfl⟩
+  have hp : GenLoop.toSphere p = f := by
+    rw [← GenLoop.coe_sphereEquiv_apply, Equiv.apply_symm_apply]
+  exact hp ▸ (HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere p).1 (hf.elim _ _)
 
 variable {X : Type} [TopologicalSpace X] {x : X} {n : ℕ}
 
