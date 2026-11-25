@@ -223,43 +223,79 @@ noncomputable def kummerSequenceOverMapPullbackIso :
 lemma kummerSequenceOverMapPullbackIso_hom_τ₁ :
     (kummerSequenceOverMapPullbackIso J n f).hom.τ₁ =
       ((𝟭 (Over T)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over T)
-        (fpqcTopology.over T)).map (muOverMapPullbackIso f n).hom :=
-  (rfl)
+        (fpqcTopology.over T)).map (muOverMapPullbackIso f n).hom := by
+  unfold kummerSequenceOverMapPullbackIso kummerSequence
+  simp only [ShortComplex.map_X₁, ShortComplex.map_comp, Iso.trans_hom,
+    ShortComplex.mapNatIso_hom, Functor.mapIso_hom, ShortComplex.comp_τ₁,
+    ShortComplex.mapNatTrans_τ₁,
+    GrothendieckTopology.sheafPushforwardContinuousIdCompOverMapPullbackIso_hom_app,
+    Functor.comp_obj, Functor.mapShortComplex_map_τ₁]
+  exact Category.id_comp _
 
 @[simp]
 lemma kummerSequenceOverMapPullbackIso_hom_τ₂ :
     (kummerSequenceOverMapPullbackIso J n f).hom.τ₂ =
       ((𝟭 (Over T)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over T)
-        (fpqcTopology.over T)).map (GmOverMapPullbackIso f).hom :=
-  (rfl)
+        (fpqcTopology.over T)).map (GmOverMapPullbackIso f).hom := by
+  unfold kummerSequenceOverMapPullbackIso kummerSequence
+  simp only [ShortComplex.map_X₂, ShortComplex.map_comp, Iso.trans_hom,
+    ShortComplex.mapNatIso_hom, Functor.mapIso_hom, ShortComplex.comp_τ₂,
+    ShortComplex.mapNatTrans_τ₂,
+    GrothendieckTopology.sheafPushforwardContinuousIdCompOverMapPullbackIso_hom_app,
+    Functor.comp_obj, Functor.mapShortComplex_map_τ₂]
+  exact Category.id_comp _
 
 @[simp]
 lemma kummerSequenceOverMapPullbackIso_hom_τ₃ :
     (kummerSequenceOverMapPullbackIso J n f).hom.τ₃ =
       ((𝟭 (Over T)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over T)
-        (fpqcTopology.over T)).map (GmOverMapPullbackIso f).hom :=
-  (rfl)
+        (fpqcTopology.over T)).map (GmOverMapPullbackIso f).hom := by
+  unfold kummerSequenceOverMapPullbackIso kummerSequence
+  simp only [ShortComplex.map_X₃, ShortComplex.map_comp, Iso.trans_hom,
+    ShortComplex.mapNatIso_hom, Functor.mapIso_hom, ShortComplex.comp_τ₃,
+    ShortComplex.mapNatTrans_τ₃,
+    GrothendieckTopology.sheafPushforwardContinuousIdCompOverMapPullbackIso_hom_app,
+    Functor.comp_obj, Functor.mapShortComplex_map_τ₃]
+  exact Category.id_comp _
 
 @[simp]
 lemma kummerSequenceOverMapPullbackIso_inv_τ₁ :
     (kummerSequenceOverMapPullbackIso J n f).inv.τ₁ =
       ((𝟭 (Over T)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over T)
-        (fpqcTopology.over T)).map (muOverMapPullbackIso f n).inv :=
-  (rfl)
+        (fpqcTopology.over T)).map (muOverMapPullbackIso f n).inv := by
+  unfold kummerSequenceOverMapPullbackIso kummerSequence
+  simp only [ShortComplex.map_X₁, ShortComplex.map_comp, Iso.trans_inv,
+    Functor.mapIso_inv, ShortComplex.mapNatIso_inv, ShortComplex.comp_τ₁,
+    Functor.mapShortComplex_map_τ₁, ShortComplex.mapNatTrans_τ₁,
+    GrothendieckTopology.sheafPushforwardContinuousIdCompOverMapPullbackIso_inv_app,
+    Functor.comp_obj]
+  exact Category.comp_id _
 
 @[simp]
 lemma kummerSequenceOverMapPullbackIso_inv_τ₂ :
     (kummerSequenceOverMapPullbackIso J n f).inv.τ₂ =
       ((𝟭 (Over T)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over T)
-        (fpqcTopology.over T)).map (GmOverMapPullbackIso f).inv :=
-  (rfl)
+        (fpqcTopology.over T)).map (GmOverMapPullbackIso f).inv := by
+  unfold kummerSequenceOverMapPullbackIso kummerSequence
+  simp only [ShortComplex.map_X₂, ShortComplex.map_comp, Iso.trans_inv,
+    Functor.mapIso_inv, ShortComplex.mapNatIso_inv, ShortComplex.comp_τ₂,
+    Functor.mapShortComplex_map_τ₂, ShortComplex.mapNatTrans_τ₂,
+    GrothendieckTopology.sheafPushforwardContinuousIdCompOverMapPullbackIso_inv_app,
+    Functor.comp_obj]
+  exact Category.comp_id _
 
 @[simp]
 lemma kummerSequenceOverMapPullbackIso_inv_τ₃ :
     (kummerSequenceOverMapPullbackIso J n f).inv.τ₃ =
       ((𝟭 (Over T)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over T)
-        (fpqcTopology.over T)).map (GmOverMapPullbackIso f).inv :=
-  (rfl)
+        (fpqcTopology.over T)).map (GmOverMapPullbackIso f).inv := by
+  unfold kummerSequenceOverMapPullbackIso kummerSequence
+  simp only [ShortComplex.map_X₃, ShortComplex.map_comp, Iso.trans_inv,
+    Functor.mapIso_inv, ShortComplex.mapNatIso_inv, ShortComplex.comp_τ₃,
+    Functor.mapShortComplex_map_τ₃, ShortComplex.mapNatTrans_τ₃,
+    GrothendieckTopology.sheafPushforwardContinuousIdCompOverMapPullbackIso_inv_app,
+    Functor.comp_obj]
+  exact Category.comp_id _
 
 /-- **The restricted Kummer sequence is exact.** For a morphism `f : T ⟶ S`, a natural number `n`
 invertible on `T` (for instance, invertible on `S`) and a topology `J` on schemes between the

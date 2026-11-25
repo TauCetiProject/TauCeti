@@ -39,7 +39,6 @@ variable {C : Type*} [Category* C] (J K : GrothendieckTopology C) (A : Type*) [C
 /-- Regarding `K`-sheaves on `Over Y` as `J`-sheaves commutes with the restriction of sheaves
 along `f : X ⟶ Y`: both composites send a `K`-sheaf `F` on `Over Y` to the presheaf
 `U ↦ F (U ⟶ X ⟶ Y)` on `Over X`. -/
-@[expose]
 noncomputable def sheafPushforwardContinuousIdCompOverMapPullbackIso :
     (𝟭 (Over Y)).sheafPushforwardContinuous A (J.over Y) (K.over Y) ⋙ J.overMapPullback A f ≅
       K.overMapPullback A f ⋙ (𝟭 (Over X)).sheafPushforwardContinuous A (J.over X) (K.over X) :=
