@@ -638,11 +638,12 @@ def automorphySheafOfModulesSectionsEquiv (k : ℤ) (U : Opens Γ.CompactifiedQu
 
 /-- **Restriction in the automorphy sheaf of modules** multiplies by the indicator function of
 the preimage in `ℍ` of the smaller open set. -/
-@[simp]
+-- Use this formula for explicit rewriting: `simp` first normalizes hidden coefficient-functor
+-- arguments inside the module restriction map.
 theorem automorphySheafOfModulesSectionsEquiv_map (k : ℤ) {U V : Opens Γ.CompactifiedQuotient}
     (h : V ⟶ U) (F : (automorphySheafOfModules hΓ k).val.obj (op U)) :
     (automorphySheafOfModulesSectionsEquiv hΓ k V
-        (((automorphySheafOfModules hΓ k).val.map h.op).hom F) : ℍ → ℂ) =
+        ((automorphySheafOfModules hΓ k).val.map h.op F) : ℍ → ℂ) =
       ((fun τ : ℍ ↦ ofQuotient (Quotient.mk (orbitRel Γ ℍ) τ)) ⁻¹' V).indicator
         (automorphySheafOfModulesSectionsEquiv hΓ k U F : ℍ → ℂ) :=
   (rfl)
