@@ -110,10 +110,10 @@ theorem isTrivial_of_isHighestWeightVector_weight_zero_of_isIrreducible
     IsKilling.exists_isSl2Triple_of_weight_isNonZero (hnonzero i)
   have he_zero (i : b.support) : ⁅e i, v⁆ = 0 :=
     hv.lie_eq_zero_of_mem_rootSpace
-      (support_subset_posRoots (IsKilling.rootSystem H) b i.2) (he i)
+      (support_subset_posRoots (IsKilling.rootSystem H) b i.property) (he i)
   have hf_zero (i : b.support) : ⁅f i, v⁆ = 0 := by
     have hpow := pow_toEnd_eq_zero_of_isHighestWeightVector_of_isIrreducible
-      hv i.2 (n := 0) (by simp) (hf i)
+      hv i.property (n := 0) (by simp) (hf i)
     simpa using hpow
   have hspan : LieSubalgebra.lieSpan K L (Set.range e ∪ Set.range f) = ⊤ :=
     LieAlgebra.lieSpan_range_union_eq_top_of_mem_rootSpace b e f

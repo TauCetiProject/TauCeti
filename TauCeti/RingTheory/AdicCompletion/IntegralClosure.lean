@@ -42,13 +42,14 @@ namespace TauCeti
 /-- A local integral closure of a complete integrally closed Noetherian local domain in a
 finite separable extension of its fraction field is complete at its own maximal ideal. -/
 theorem IsIntegralClosure.isAdicComplete
-    (A K L B : Type*) [CommRing A] [IsDomain A] [IsIntegrallyClosed A] [IsNoetherianRing A]
+    (A K L B : Type*) [CommRing A] [IsIntegrallyClosed A] [IsNoetherianRing A]
     [IsLocalRing A] [IsAdicComplete (IsLocalRing.maximalIdeal A) A]
     [Field K] [Algebra A K] [IsFractionRing A K]
     [Field L] [Algebra K L] [FiniteDimensional K L] [Algebra.IsSeparable K L]
     [Algebra A L] [IsScalarTower A K L]
     [CommRing B] [IsLocalRing B] [Algebra A B] [Algebra B L] [IsScalarTower A B L]
     [IsIntegralClosure B A L] : IsAdicComplete (IsLocalRing.maximalIdeal B) B := by
+  have := IsDomain.of_faithfulSMul A K
   have := _root_.IsIntegralClosure.finite A K L B
   exact _root_.IsAdicComplete.of_finite_of_isLocalRing A B
 
@@ -56,7 +57,7 @@ theorem IsIntegralClosure.isAdicComplete
 separable extension of a chosen fraction field is complete at its own maximal ideal. This is not
 an instance because `K` cannot be inferred; see `integralClosure.isAdicComplete_fractionRing` for
 the instance using `FractionRing A`. -/
-theorem integralClosure.isAdicComplete (A K L : Type*) [CommRing A] [IsDomain A]
+theorem integralClosure.isAdicComplete (A K L : Type*) [CommRing A]
     [IsIntegrallyClosed A] [IsNoetherianRing A] [IsLocalRing A]
     [IsAdicComplete (IsLocalRing.maximalIdeal A) A]
     [Field K] [Algebra A K] [IsFractionRing A K]

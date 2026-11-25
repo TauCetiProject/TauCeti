@@ -93,6 +93,12 @@ theorem inclFreeVars_injective : Function.Injective (inclFreeVars G X Y) :=
   Function.LeftInverse.injective (g := eval inl (Sum.elim (fun x => inr (FreeGroup.of x)) 1))
     fun _ => by simp
 
+/-- The inclusion `G[Y] → G[X ⊕ Y]`, renaming the variables along `Sum.inr`, is injective. -/
+theorem map_inr_injective :
+    Function.Injective (Monoid.Coprod.map (.id G) (FreeGroup.map (Sum.inr : Y → X ⊕ Y))) :=
+  Function.LeftInverse.injective (g := eval inl (Sum.elim 1 fun y => inr (FreeGroup.of y)))
+    fun _ => by simp [eval_map]
+
 /-- A system of equations in the variables `X`, regarded as a system in the variables `X` and
 `Y`. -/
 def addFreeVars (Y : Type*) (S : Set (GX G X)) : Set (GX G (X ⊕ Y)) :=
@@ -450,11 +456,11 @@ theorem freeVarsHom_injective_iff_isSeparatedBy (ι : G →* H) (Y : Type*) (S :
   · exact ⟨⟨eval (evalGHom v hv).toMonoidHom u, fun g => by simp⟩, h⟩
   · -- `φ` is given by its restriction `ψ` to the coordinate group and its values on `Y`.
     let ψ : GHom (coeff ι S) ι := ⟨(φ : GX (CoordGroup ι S) Y →* H).comp inl, φ.map_coeff⟩
-    have hψ : evalGHom (homEquiv ι S ψ) (homEquiv ι S ψ).2 = ψ :=
+    have hψ : evalGHom (homEquiv ι S ψ) (homEquiv ι S ψ).property = ψ :=
       (homEquiv_symm_apply _).symm.trans ((homEquiv ι S).symm_apply_apply ψ)
     have hφ : eval (ψ : CoordGroup ι S →* H) (fun y => φ (inr (FreeGroup.of y))) w = φ w :=
       (DFunLike.congr_fun (eq_eval (φ : GX (CoordGroup ι S) Y →* H)) w).symm
-    refine ⟨_, (homEquiv ι S ψ).2, fun y => φ (inr (FreeGroup.of y)), ?_⟩
+    refine ⟨_, (homEquiv ι S ψ).property, fun y => φ (inr (FreeGroup.of y)), ?_⟩
     rwa [hψ, hφ]
 
 end CoordGroup

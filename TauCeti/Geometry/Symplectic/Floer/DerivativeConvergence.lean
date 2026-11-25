@@ -49,6 +49,11 @@ The Arzelà–Ascoli theorem in `C¹` (`TauCeti.exists_strictMono_tendstoLocally
 gives a subsequence of every subsequence along which `Duₙ → Dv`; as the limit `Dv` is the same each
 time, the whole sequence converges. The equation passes to the limit pointwise.
 
+Combined with the compactness theorem of `TauCeti.Geometry.Symplectic.Floer.Compactness.Basic`,
+this shows that smooth solutions of bounded energy converge in `C¹` off finitely many bubbling
+points, to a `C¹` solution of the same equation there
+(`TauCeti.Floer.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset`).
+
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS Colloquium
@@ -132,8 +137,7 @@ private theorem exists_pos_forall_equicontinuousOn_fderiv_of_floer {ι : Type*}
   have hC (A : V →L[ℝ] V) (w : EuclideanSpace ℂ (Fin m)) : C A w = Φ.symm (A (Φ w)) := by
     simp [C]
   have hCy (w : EuclideanSpace ℂ (Fin m)) : C (J (y₀, x₀)) w = I • w := by
-    rw [hC, show J (y₀, x₀) (Φ w) = Φ (I • w) by simpa using congr($hΦ w)]
-    simp
+    rw [hC, Φ.symm_apply_eq_I_smul_symm_of_comp_eq hΦ, Φ.symm_apply_apply]
   obtain ⟨δ, hδ0, hδ⟩ :=
     exists_pos_forall_equicontinuousOn_fderiv (F := EuclideanSpace ℂ (Fin m)) (ι := ι)
   -- A ball of radius `ε` about `(y₀, x₀)`, inside `W`, on which `C (J q)` is `δ`-close to `i`.

@@ -299,8 +299,8 @@ theorem Nat.prod_unitsEquivProd_symm_primePow {N : ℕ} (hN : N ≠ 0) (u : (ZMo
       (ZMod.unitsMap (Nat.ordProj_dvd N p) u, 1) = u := by
   -- compare both sides modulo each `q ^ v_q(N)`, where only the factor at `q` survives
   refine (ZMod.unitsEquivPi hN).injective (funext fun q ↦ ?_)
-  have hq := q.2
-  rw [ZMod.unitsEquivPi_apply, ZMod.unitsEquivPi_apply, map_prod, Finset.prod_eq_single q.1]
+  have hq := q.property
+  rw [ZMod.unitsEquivPi_apply, ZMod.unitsEquivPi_apply, map_prod, Finset.prod_eq_single q.val]
   · rw [isExactDivisor_primePow.unitsMap_unitsEquivProd_symm_of_dvd dvd_rfl, ZMod.unitsMap_self,
       MonoidHom.id_apply]
   · intro p hp hpq

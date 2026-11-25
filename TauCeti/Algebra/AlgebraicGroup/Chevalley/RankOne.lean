@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Coroot.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Coroot
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Weyl
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Bruhat
 
 /-!
@@ -87,8 +88,9 @@ theorem simpleCorootPoints_conj_rootSubgroup (s : Aˣ) (u : A) :
     D.simpleCorootPoints i A s * D.rootSubgroupPoints (t.simpleIndex ht i) A (ofAdd u) *
         (D.simpleCorootPoints i A s)⁻¹ =
       D.rootSubgroupPoints (t.simpleIndex ht i) A (ofAdd ((s : A) ^ 2 * u)) := by
-  rw [D.simpleCorootPoints_eq_torusPoints, D.torusPoints_conj_rootSubgroupPoints]
-  simp [coordinateRoot_def, D.torusCharacter_simpleCorootParameter]
+  rw [simpleCorootPoints_eq_corootPoints, corootPoints_conj_rootSubgroupPoints,
+    RootPairing.pairing_same]
+  simp
 
 /-- Moving a simple coroot past its positive root subgroup rescales the parameter. -/
 theorem simpleCorootPoints_mul_rootSubgroup (s : Aˣ) (u : A) :

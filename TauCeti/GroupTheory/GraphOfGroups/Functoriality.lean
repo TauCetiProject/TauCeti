@@ -198,11 +198,12 @@ variable {x y : 𝔸.LetterVertex}
 /-- Moving an edge group element across a dart flanked by vertex group letters:
 `d, e, d'⁻¹, d' ω_e(c) d'⁻¹ ~ d α_e(c) d⁻¹, d, e, d'⁻¹`. -/
 private theorem cons_dart_ω_conj {z : 𝔹.LetterVertex} {a b : Δ.V} (r : 𝔹.Path z ⟨a⟩)
-    (d : 𝔹.vertexGroup a) (d' : 𝔹.vertexGroup b) (e : a ⟶ b) (c : 𝔹.edgeGroup (Δ.toGeomEdge e.1)) :
+    (d : 𝔹.vertexGroup a) (d' : 𝔹.vertexGroup b) (e : a ⟶ b) (c : 𝔹.edgeGroup
+        (Δ.toGeomEdge e.val)) :
     Homotopic ((((r.cons (Letter.vertex d)).cons (Letter.dart e)).cons (Letter.vertex d'⁻¹)).cons
-        (Letter.vertex (d' * MulEquiv.cast (M := 𝔹.vertexGroup) e.2.2 (𝔹.ω e.1 c) * d'⁻¹)))
+        (Letter.vertex (d' * MulEquiv.cast (M := 𝔹.vertexGroup) e.property.2 (𝔹.ω e.val c) * d'⁻¹)))
       ((((r.cons (Letter.vertex
-        (d * MulEquiv.cast (M := 𝔹.vertexGroup) e.2.1 (𝔹.α e.1 c) * d⁻¹))).cons
+        (d * MulEquiv.cast (M := 𝔹.vertexGroup) e.property.1 (𝔹.α e.val c) * d⁻¹))).cons
           (Letter.vertex d)).cons (Letter.dart e)).cons (Letter.vertex d'⁻¹)) := by
   rw [← αArrow_apply, ← ωArrow_apply]
   -- Both sides are homotopic to `d, α_e(c), e, d'⁻¹`.
@@ -393,11 +394,11 @@ theorem Path.toπ₁Tree_mapLetter {x y : 𝔸.LetterVertex} (l : 𝔸.Letter x 
     -- The transported image arrow of `f` has dart `[f]`, by unfolding
     -- `SerreGraph.Hom.toPrefunctor`.
     have h : (Quiver.Hom.cast (Φ.graph.toPrefunctor_obj _) (Φ.graph.toPrefunctor_obj _)
-        (Φ.graph.toPrefunctor.map f)).1 = Φ.graph.mapE f.1 :=
+        (Φ.graph.toPrefunctor.map f)).val = Φ.graph.mapE f.val :=
       rfl
     rw [Hom.mapLetter_dart, toπ₁Tree_cons, toπ₁Tree_cons, Letter.toπ₁Tree_dart, h,
       Φ.twistArrow_eq_cast (Quiver.reverse f) (Γ.reverse_val f)
-      (congrArg Φ.graph.mapV ((Γ.src_rev _).trans f.2.2))]
+      (congrArg Φ.graph.mapV ((Γ.src_rev _).trans f.property.2))]
     simp [Hom.twistArrow_def, π₁Tree.of_cast, Hom.edgeImage_def, mul_assoc, -MulEquiv.cast_apply]
 
 /-- Reading the image of an `𝔸`-path in `π₁(𝔹, T')` is applying `π₁Tree.map Φ` to the reading of

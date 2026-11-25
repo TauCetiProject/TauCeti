@@ -51,6 +51,24 @@ theorem timeMeasure_Ioc (T s t : ℝ≥0) :
   simp [timeMeasure_apply T measurableSet_Ioc, Ioc_inter_Ioc,
     NNReal.image_coe_Ioc, Real.volume_Ioc]
 
+/-- An unordered time interval has the distance between its horizon-clipped endpoints. -/
+@[simp]
+theorem timeMeasure_uIoc (T s t : ℝ≥0) :
+    timeMeasure T (uIoc s t) =
+      ENNReal.ofReal |(min s T : ℝ≥0) - (min t T : ℝ≥0)| := by
+  wlog hst : s ≤ t generalizing s t
+  · simpa only [uIoc_comm, abs_sub_comm] using this t s (le_of_not_ge hst)
+  rw [uIoc_of_le hst, timeMeasure_Ioc,
+    abs_of_nonpos (sub_nonpos.mpr (by exact_mod_cast min_le_min_right T hst))]
+  by_cases hsT : s ≤ T
+  · rw [min_eq_left hsT]
+    congr 1
+    ring
+  · have htT : T ≤ t := (le_of_not_ge hsT).trans hst
+    simp only [min_eq_right (le_of_not_ge hsT), min_eq_right htT, sub_self,
+      neg_zero, ENNReal.ofReal_zero]
+    exact ENNReal.ofReal_eq_zero.mpr (sub_nonpos.mpr (by exact_mod_cast le_of_not_ge hsT))
+
 /-- An initial closed interval has its length clipped at the horizon; time zero is null. -/
 @[simp]
 theorem timeMeasure_Iic (T t : ℝ≥0) : timeMeasure T (Iic t) = (min t T : ℝ≥0) := by
@@ -126,19 +144,20 @@ variable (𝕜) in
 noncomputable def timeMeasureExtendLp (hST : S ≤ T) :
     Lp E p (timeMeasure S) →ₗᵢ[𝕜] Lp E p (timeMeasure T) :=
   extendByZeroLpₗᵢ 𝕜 (Measure.comap ((↑) : ℝ≥0 → ℝ) volume)
-    measurableSet_Ioc (Ioc_subset_Ioc_right hST)
+    measurableSet_Ioc.nullMeasurableSet (Ioc_subset_Ioc_right hST)
 
 /-- The horizon extension agrees `timeMeasure T`-almost everywhere with `f` on
 `(0,S]`, extended by zero outside that interval. -/
 theorem coeFn_timeMeasureExtendLp (hST : S ≤ T) (f : Lp E p (timeMeasure S)) :
     ⇑(timeMeasureExtendLp 𝕜 hST f) =ᵐ[timeMeasure T] (Ioc 0 S).indicator ⇑f := by
-  exact coeFn_extendByZeroLpₗᵢ 𝕜 measurableSet_Ioc (Ioc_subset_Ioc_right hST) f
+  exact coeFn_extendByZeroLpₗᵢ 𝕜 measurableSet_Ioc.nullMeasurableSet
+    (Ioc_subset_Ioc_right hST) f
 
 /-- Extending to the same horizon is the identity. -/
 @[simp]
 theorem timeMeasureExtendLp_self (f : Lp E p (timeMeasure S)) :
     timeMeasureExtendLp 𝕜 le_rfl f = f :=
-  extendByZeroLpₗᵢ_self 𝕜 measurableSet_Ioc f
+  extendByZeroLpₗᵢ_self 𝕜 measurableSet_Ioc.nullMeasurableSet f
 
 /-- Two successive horizon extensions equal the direct extension. -/
 @[simp]
@@ -146,13 +165,14 @@ theorem timeMeasureExtendLp_timeMeasureExtendLp (hST : S ≤ T) (hTU : T ≤ U)
     (f : Lp E p (timeMeasure S)) :
     timeMeasureExtendLp 𝕜 hTU (timeMeasureExtendLp 𝕜 hST f) =
       timeMeasureExtendLp 𝕜 (hST.trans hTU) f :=
-  extendByZeroLpₗᵢ_extendByZeroLpₗᵢ 𝕜 measurableSet_Ioc measurableSet_Ioc
+  extendByZeroLpₗᵢ_extendByZeroLpₗᵢ 𝕜 measurableSet_Ioc.nullMeasurableSet
+    measurableSet_Ioc.nullMeasurableSet
     (Ioc_subset_Ioc_right hST) (Ioc_subset_Ioc_right hTU) f
 
 /-- The horizon extension restricts back to the original function almost everywhere. -/
 theorem coeFn_timeMeasureExtendLp_restrict (hST : S ≤ T) (f : Lp E p (timeMeasure S)) :
     ⇑(timeMeasureExtendLp 𝕜 hST f) =ᵐ[timeMeasure S] ⇑f :=
-  coeFn_extendByZeroLpₗᵢ_restrict 𝕜 measurableSet_Ioc (Ioc_subset_Ioc_right hST) f
+  coeFn_extendByZeroLpₗᵢ_restrict 𝕜 measurableSet_Ioc.nullMeasurableSet (Ioc_subset_Ioc_right hST) f
 
 /-- Any almost-everywhere representative can be used in the zero-extension formula. -/
 theorem coeFn_timeMeasureExtendLp_of_ae_eq (hST : S ≤ T)

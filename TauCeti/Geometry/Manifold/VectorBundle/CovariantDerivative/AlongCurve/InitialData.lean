@@ -7,13 +7,14 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Pullback
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # Prescribing initial covariant data
 
 A tangent field along a smooth curve can have any prescribed value and covariant derivative
-at one parameter. Consequently, at a tangent vector `(p, v)` one can choose a smooth curve
+at one parameter. Consequently, at a tangent vector `(p, v)` over an interior point one can
+choose a smooth curve
 of initial tangent vectors with any prescribed base velocity and covariant velocity. Such
 curves give variations of geodesic initial data, with the two independent initial data of
 the resulting Jacobi field specified in advance.
@@ -92,18 +93,19 @@ theorem exists_contMDiffWithinAt_alongCurveWithin_eq {γ : 𝕜 → M} {s : Set 
       hdt]
     simp [B]
 
-/-- Every pair of tangent vectors `(u, w)` is realized as the base velocity and covariant
-velocity of a locally smooth curve in the tangent bundle through `(p, v)`. This constructs
+/-- Every pair of tangent vectors `(u, w)` at an interior point `p` is realized as the base
+velocity and covariant velocity of a locally smooth curve in the tangent bundle through
+`(p, v)`. This constructs
 arbitrary infinitesimal variations of geodesic initial data, without a metric or a smoothness
 assumption on the connection. -/
-theorem exists_contMDiffAt_tangentCurve_initialData [I.Boundaryless]
-    (p : M) (v u w : TangentSpace I p) (t : 𝕜) :
+theorem exists_contMDiffAt_tangentCurve_initialData
+    (p : M) (hp : I.IsInteriorPoint p) (v u w : TangentSpace I p) (t : 𝕜) :
     ∃ σ : 𝕜 → TangentBundle I M,
       σ t = TotalSpace.mk' E p v ∧ ContMDiffAt 𝓘(𝕜, 𝕜) I.tangent ∞ σ t ∧
       curveVelocity I (fun r ↦ (σ r).proj) t = u ∧
-      cov.alongCurve (fun r ↦ (σ r).proj) (fun r ↦ (σ r).2) t = w := by
+      cov.alongCurve (fun r ↦ (σ r).proj) (fun r ↦ (σ r).snd) t = w := by
   obtain ⟨γ, hγt, hγ, hvel⟩ :=
-    exists_contMDiffAt_curveVelocity_eq (I := I) (n := ∞) (by simp) p u t
+    exists_contMDiffAt_curveVelocity_eq (I := I) (n := ∞) p hp u t
   obtain ⟨V, hV, hVt, hDV⟩ := cov.exists_contMDiffWithinAt_alongCurveWithin_eq
     hγ.contMDiffWithinAt (s := Set.univ) uniqueDiffWithinAt_univ v w
   refine ⟨fun r ↦ TotalSpace.mk' E (γ r) (V r), ?_,

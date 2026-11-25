@@ -454,7 +454,7 @@ noncomputable def mk (i : ZMod 2) :
     ((normalizedPeriodicCochainComplexXIso R A M i).inv.hom ∘ₗ
       (normalizedPeriodicCocycles R A M i).subtype)
     fun φ : normalizedPeriodicCocycles R A M i ↦
-      (mem_normalizedPeriodicCocycles_iff_complex i φ.1).1 φ.2
+      (mem_normalizedPeriodicCocycles_iff_complex i φ.val).1 φ.property
 
 /-- The class of a periodic cocycle `φ` is the homology class of any cycle of the periodic
 complex whose underlying family is `φ`. -/

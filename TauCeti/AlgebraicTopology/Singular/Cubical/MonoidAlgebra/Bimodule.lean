@@ -32,12 +32,16 @@ system.
 * `TauCeti.NormalizedCubicalChain.leftAct G Y R p q`: the action
   `C^□_p(G; R) ⊗ C^□_q(Y; R) → C^□_{p + q}(Y; R)`.
 * The `Module (normalizedCubicalChainAlgebra G R) (cubicalChainModule Y H R)` instance.
+* `TauCeti.cubicalChainModuleLeftPhantomEquiv G Y H H' R`: the change of phantom monoid, linear
+  over the chains of `G`.
 
 ## Main results
 
 * `TauCeti.NormalizedCubicalChain.leftAct_assoc`, `TauCeti.NormalizedCubicalChain.one_leftAct`:
   the left action is strictly associative and unital.
-* `TauCeti.NormalizedCubicalChain.boundary_leftAct`: the Leibniz rule.
+* `TauCeti.NormalizedCubicalChain.boundary_leftAct`: the Leibniz rule, and
+  `TauCeti.NormalizedCubicalChain.boundary_leftAct_of_boundary_eq_zero` its form for the action of
+  a cycle.
 * `TauCeti.NormalizedCubicalChain.leftAct_act`: the left and right actions commute.
 * `TauCeti.NormalizedCubicalChain.augment_leftAct`: the augmentation is multiplicative on the left
   action of `0`-chains.
@@ -102,6 +106,17 @@ theorem leftAct_ofCube {p q : ℕ} (a : SingularCube G p) (c : SingularCube Y q)
       ofCube Y R ((leftActMap G Y).comp (SingularCube.crossProduct a c)) := by
   simp [leftAct_def]
 
+/-- The left action of the point chain of `g` on the point chain of `y` is the point chain of
+`g • y`. -/
+@[simp]
+theorem leftAct_ofCube_point (g : G) (y : Y) :
+    leftAct G Y R 0 0 (ofCube G R (SingularCube.point g)) (ofCube Y R (SingularCube.point y)) =
+      ofCube Y R (SingularCube.point (g • y)) := by
+  rw [leftAct_ofCube, SingularCube.eq_point ((leftActMap G Y).comp _), ContinuousMap.comp_apply,
+    SingularCube.crossProduct_apply]
+  -- `simp` does not apply `crossProduct_apply` to cubes of dimension `0 + 0`.
+  simp
+
 /-- **The Leibniz rule for the left action**: for `a` of degree `p + 1` and `c` of degree `q + 1`,
 `∂ (a · c) = ∂ a · c + (-1) ^ (p + 1) • (a · ∂ c)`, in degree `p + q + 1`. -/
 theorem boundary_leftAct {p q : ℕ} (a : NormalizedCubicalChain G R (p + 1))
@@ -135,18 +150,48 @@ theorem boundary_leftAct_zero_left {q : ℕ} (a : NormalizedCubicalChain G R 0)
   rw [← map_cast, ← LinearMap.comp_apply (boundary Y R q), ← map_boundary, LinearMap.comp_apply,
     boundary_crossProduct_zero_left, map_cast]
 
+/-- **The Leibniz rule for the left action of a cycle**: acting by a `q`-cycle `a` commutes with the
+boundary up to the sign `(-1) ^ q`, `∂ (a · c) = (-1) ^ q • (a · ∂ c)`. In degree `0` every chain is
+a cycle; in positive degree `a` is a cycle when its boundary vanishes, which `ha` states up to the
+reindexing of `q` as `p + 1`. -/
+theorem boundary_leftAct_of_boundary_eq_zero {q n : ℕ} (a : NormalizedCubicalChain G R q)
+    (ha : ∀ p (hp : q = p + 1), boundary G R p (cast R hp a) = 0)
+    (c : NormalizedCubicalChain Y R (n + 1)) :
+    boundary Y R (q + n) (leftAct G Y R q (n + 1) a c) =
+      (-1 : R) ^ q • leftAct G Y R q n a (boundary Y R n c) := by
+  cases q with
+  | zero =>
+    have := (boundary_cast (X := Y) (R := R) (h := Nat.zero_add n)
+      (leftAct G Y R 0 (n + 1) a c)).symm.trans (boundary_leftAct_zero_left a c)
+    simpa using cast_injective R (Nat.zero_add n) this
+  | succ p =>
+    have h0 := ha p rfl
+    rw [cast_rfl] at h0
+    have := (boundary_cast (X := Y) (R := R) (h := show p + 1 + n = p + n + 1 by omega)
+      (leftAct G Y R (p + 1) (n + 1) a c)).symm.trans (boundary_leftAct a c)
+    rw [h0, map_zero, LinearMap.zero_apply, zero_add, ← map_smul] at this
+    exact cast_injective R _ this
+
 variable {Y' : Type*} [TopologicalSpace Y'] [SMul G Y'] [ContinuousSMul G Y']
+
+omit [SMul G Y'] [ContinuousSMul G Y'] in
+/-- Pushing forward along a map `f` that intertwines the left actions of two spaces through a
+map `g` of the acting spaces commutes with the left action. -/
+theorem map_leftAct_map {G' : Type*} [TopologicalSpace G'] [SMul G' Y'] [ContinuousSMul G' Y']
+    (f : C(Y, Y')) (g : C(G, G')) (hf : ∀ (x : G) (y : Y), f (x • y) = g x • f y) {p q : ℕ}
+    (a : NormalizedCubicalChain G R p) (c : NormalizedCubicalChain Y R q) :
+    map R f (p + q) (leftAct G Y R p q a c) = leftAct G' Y' R p q (map R g p a) (map R f q c) := by
+  have key : f.comp (leftActMap G Y) = (leftActMap G' Y').comp (g.prodMap f) := by
+    ext x
+    simp [hf]
+  rw [leftAct_def, leftAct_def, ← LinearMap.comp_apply (map R f (p + q)), ← map_comp, key,
+    map_comp, LinearMap.comp_apply, map_crossProduct]
 
 /-- Pushing forward along an equivariant map commutes with the left action. -/
 theorem map_leftAct (f : C(Y, Y')) (hf : ∀ (g : G) (y : Y), f (g • y) = g • f y) {p q : ℕ}
     (a : NormalizedCubicalChain G R p) (c : NormalizedCubicalChain Y R q) :
     map R f (p + q) (leftAct G Y R p q a c) = leftAct G Y' R p q a (map R f q c) := by
-  have key : f.comp (leftActMap G Y) =
-      (leftActMap G Y').comp ((ContinuousMap.id G).prodMap f) := by
-    ext x
-    simp [hf]
-  rw [leftAct_def, leftAct_def, ← LinearMap.comp_apply (map R f (p + q)), ← map_comp, key,
-    map_comp, LinearMap.comp_apply, map_crossProduct, map_id, LinearMap.id_apply]
+  rw [map_leftAct_map f (ContinuousMap.id G) hf, map_id, LinearMap.id_apply]
 
 /-- **The left and right actions commute**, after the reindexing `(p + q) + r = p + (q + r)`:
 `(a · c) · b = a · (c · b)` for chains `a` on `G`, `c` on `Y` and `b` on `H`. -/
@@ -391,27 +436,76 @@ end LeftAction
 
 section LeftMap
 
-universe u
+variable {G G' Y Y' H H' : Type*} [Monoid G] [TopologicalSpace G] [ContinuousMul G]
+  [TopologicalSpace Y] [TopologicalSpace Y'] [MulAction G Y] [ContinuousSMul G Y]
+  {R : Type*} [CommRing R]
 
-variable {G : Type*} {Y Y' : Type u} {H : Type*} [Monoid G] [TopologicalSpace G] [ContinuousMul G]
-  [TopologicalSpace Y] [TopologicalSpace Y'] [MulAction G Y] [ContinuousSMul G Y] [MulAction G Y']
-  [ContinuousSMul G Y'] {R : Type*} [CommRing R]
-
-/-- The map of modules induced by a `G`-equivariant map commutes with the left action. -/
-theorem cubicalChainModuleLinearMap_smul (f : C(Y, Y'))
-    (hf : ∀ (g : G) (y : Y), f (g • y) = g • f y) (a : normalizedCubicalChainAlgebra G R)
+/-- The map of modules induced by a map `f` that intertwines the left actions through a map `g` of
+the acting monoids is semilinear for the left action, through the push-forward along `g`. -/
+theorem cubicalChainModuleLinearMap_smul_map [Monoid G'] [TopologicalSpace G'] [ContinuousMul G']
+    [MulAction G' Y'] [ContinuousSMul G' Y'] (f : C(Y, Y')) (g : C(G, G'))
+    (hf : ∀ (x : G) (y : Y), f (x • y) = g x • f y) (a : normalizedCubicalChainAlgebra G R)
     (x : cubicalChainModule Y H R) :
-    cubicalChainModuleLinearMap R f (a • x) = a • cubicalChainModuleLinearMap R f x := by
+    cubicalChainModuleLinearMap (G' := H') R f (a • x) =
+      cubicalChainSumMap R g a • cubicalChainModuleLinearMap R f x := by
   induction x using cubicalChainModule.induction_on with
   | add x x' hx hx' => rw [smul_add, map_add, hx, hx', map_add, smul_add]
   | lof q c =>
     induction a using DirectSum.induction_on with
-    | zero => rw [zero_smul, map_zero, zero_smul]
-    | add a a' ha ha' => rw [add_smul, map_add, ha, ha', add_smul]
+    | zero => rw [zero_smul, map_zero, map_zero, zero_smul]
+    | add a a' ha ha' => rw [add_smul, map_add, ha, ha', map_add, add_smul]
     | of p z =>
       rw [← DirectSum.lof_eq_of R, lof_smul_cubicalChainModuleLof,
-        cubicalChainModuleLinearMap_lof, cubicalChainModuleLinearMap_lof,
-        lof_smul_cubicalChainModuleLof, map_leftAct f hf]
+        cubicalChainModuleLinearMap_lof, cubicalChainModuleLinearMap_lof, cubicalChainSumMap_lof,
+        lof_smul_cubicalChainModuleLof, map_leftAct_map f g hf]
+
+/-- The map of modules induced by a `G`-equivariant map commutes with the left action. -/
+theorem cubicalChainModuleLinearMap_smul [MulAction G Y'] [ContinuousSMul G Y'] (f : C(Y, Y'))
+    (hf : ∀ (g : G) (y : Y), f (g • y) = g • f y) (a : normalizedCubicalChainAlgebra G R)
+    (x : cubicalChainModule Y H R) :
+    cubicalChainModuleLinearMap (G' := H') R f (a • x) = a • cubicalChainModuleLinearMap R f x := by
+  rw [cubicalChainModuleLinearMap_smul_map f (ContinuousMap.id G) hf, cubicalChainSumMap_id,
+    LinearMap.id_apply]
+
+variable (G Y H H' R) in
+/-- The change of phantom monoid `TauCeti.cubicalChainModulePhantomEquiv`, as an equivalence of
+left modules over the chains of `G`. -/
+def cubicalChainModuleLeftPhantomEquiv :
+    cubicalChainModule Y H R ≃ₗ[normalizedCubicalChainAlgebra G R] cubicalChainModule Y H' R :=
+  { cubicalChainModulePhantomEquiv Y H H' R with
+    map_smul' a x := by
+      rw [LinearMap.toFun_eq_coe, LinearEquiv.coe_coe, cubicalChainModulePhantomEquiv_apply,
+        cubicalChainModulePhantomEquiv_apply]
+      exact cubicalChainModuleLinearMap_smul (ContinuousMap.id Y) (fun _ _ ↦ rfl) a x }
+
+/-- The change of phantom monoid over the chains of `G` is the one over `R`. -/
+theorem cubicalChainModuleLeftPhantomEquiv_apply (x : cubicalChainModule Y H R) :
+    cubicalChainModuleLeftPhantomEquiv G Y H H' R x = cubicalChainModulePhantomEquiv Y H H' R x :=
+  (rfl)
+
+/-- The inverse of the change of phantom monoid over the chains of `G` is the change back. -/
+@[simp]
+theorem cubicalChainModuleLeftPhantomEquiv_symm :
+    (cubicalChainModuleLeftPhantomEquiv G Y H H' R).symm =
+      cubicalChainModuleLeftPhantomEquiv G Y H' H R :=
+  LinearEquiv.ext fun x ↦ by
+    rw [LinearEquiv.symm_apply_eq, cubicalChainModuleLeftPhantomEquiv_apply,
+      cubicalChainModuleLeftPhantomEquiv_apply,
+      ← cubicalChainModulePhantomEquiv_symm (G := H) (G' := H'), LinearEquiv.apply_symm_apply]
+
+/-- The change of phantom monoid over the chains of `G` commutes with the differentials. -/
+theorem cubicalChainModuleDifferential_leftPhantomEquiv (x : cubicalChainModule Y H R) :
+    cubicalChainModuleDifferential Y H' R (cubicalChainModuleLeftPhantomEquiv G Y H H' R x) =
+      cubicalChainModuleLeftPhantomEquiv G Y H H' R (cubicalChainModuleDifferential Y H R x) := by
+  rw [cubicalChainModuleLeftPhantomEquiv_apply, cubicalChainModuleLeftPhantomEquiv_apply,
+    cubicalChainModuleDifferential_phantomEquiv]
+
+/-- The change of phantom monoid over the chains of `G` preserves the grading. -/
+theorem cubicalChainModuleLeftPhantomEquiv_mem {i : ℤ} {x : cubicalChainModule Y H R}
+    (hx : x ∈ cubicalChainModuleGrading Y H R i) :
+    cubicalChainModuleLeftPhantomEquiv G Y H H' R x ∈ cubicalChainModuleGrading Y H' R i := by
+  rw [cubicalChainModuleLeftPhantomEquiv_apply]
+  exact cubicalChainModulePhantomEquiv_mem hx
 
 end LeftMap
 

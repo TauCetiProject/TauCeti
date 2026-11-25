@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.FiniteEtale.Conservative
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Quotient
 public import TauCeti.CategoryTheory.Galois.FiberFunctorIso
 public import TauCeti.CategoryTheory.Limits.Shapes.SingleObj
+import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!
 # The Galois category of finite étale covers of a connected scheme
@@ -111,16 +112,14 @@ the geometric fibre at an algebraic closure of a residue field. -/
 instance [ConnectedSpace S] : GaloisCategory (FiniteEtaleScheme S) where
   hasFiberFunctor := by
     obtain ⟨p⟩ : Nonempty S := inferInstance
-    let K := S.residueField p
-    let x := Spec.map (CommRingCat.ofHom (algebraMap K (AlgebraicClosure K))) ≫
-      S.fromSpecResidueField p
-    exact ⟨fiber x, inferInstance⟩
+    exact ⟨fiber (S.fromSpecAlgebraicClosure p), inferInstance⟩
 
 /-- **Any two geometric points of a connected scheme are joined by an étale path**: their
 geometric fibre functors on finite étale schemes are isomorphic. The geometric points may have
-different separably closed fields. -/
-theorem nonempty_fiber_iso [ConnectedSpace S] {Ω' : Type u} [Field Ω'] [IsSepClosed Ω']
+different separably closed fields. Instance search finds this through
+`CategoryTheory.PreGaloisCategory.FiberFunctor.nonempty_iso`. -/
+theorem nonempty_fiber_iso [PreconnectedSpace S] {Ω' : Type u} [Field Ω'] [IsSepClosed Ω']
     (x : Spec (.of Ω) ⟶ S) (y : Spec (.of Ω') ⟶ S) : Nonempty (fiber x ≅ fiber y) :=
-  FiberFunctor.nonempty_iso _ _
+  inferInstance
 
 end TauCeti.FiniteEtaleScheme

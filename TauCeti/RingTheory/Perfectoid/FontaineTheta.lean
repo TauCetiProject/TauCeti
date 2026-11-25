@@ -23,15 +23,19 @@ This file determines the kernel of Mathlib's Fontaine map `θ : W(A♭) → A`
    of its zeroth Witt component. Since `A` is reduced, an element of `A♭` vanishes when its zeroth
    coordinate does, so `ker θ = (p)`.
 2. **Regular `π`-adic setting** (Scholze, *Étale cohomology of diamonds*, Lemma 3.14;
-   Bhatt–Morrow–Scholze, *Integral `p`-adic Hodge theory*, Lemma 3.10 and Remark 3.11): let `A` be
+   Bhatt–Morrow–Scholze, *Integral `p`-adic Hodge theory*, Lemma 3.10): let `A` be
    `π`-adically complete for a nonzerodivisor `π` with `π ^ p ∣ p` and bijective relative Frobenius
    `A ⧸ (π) → A ⧸ (π ^ p)`. When `π = ϖ.untilt` for `ϖ : A♭`, approximating `-p` modulo `π p` by
    untilts produces `α : W(A♭)` such that `ξ := p + [ϖ] α` lies in `ker θ`. Equipping `A♭` with its
    `(ϖ)`-adic topology makes `ξ` primitive, hence distinguished and a nonzerodivisor of `W(A♭)`.
    Repeated division using `(ξ, [ϖ]) = (p, [ϖ])` and `[ϖ]`-adic separatedness of `W(A♭) ⧸ (ξ)`
    shows `ker θ = (ξ)`. More generally, a `π` without pre-chosen `p`-power roots is associated to
-   some `ϖ.untilt`, and an element `ξ' ∈ ker θ` generates `ker θ` if and only if `ξ'` is
-   distinguished.
+   some `ϖ.untilt`.
+
+For every `p`-adically complete `A`, the zeroth Witt coordinate of an element of `ker θ` reduces to
+`0` modulo `p`, hence lies in the Jacobson radical of `A♭`. For integral perfectoid rings this
+characterises the generators of `ker θ` as its distinguished elements
+(`TauCeti.Perfectoid.IsIntegralPerfectoid.ker_fontaineTheta_eq_span_iff_isDistinguished`).
 
 ## Main results
 
@@ -45,13 +49,13 @@ This file determines the kernel of Mathlib's Fontaine map `θ : W(A♭) → A`
 * `WittVector.exists_isDistinguished_mem_nonZeroDivisors_ker_fontaineTheta`: the same for an
   arbitrary nonzerodivisor `π : A` with `π ^ p ∣ p`, `[IsAdicComplete (span {π}) A]`, and bijective
   relative Frobenius.
-* `WittVector.ker_fontaineTheta_eq_span_iff_isDistinguished`: under the same hypotheses, an element
-  `ξ' ∈ ker θ` generates `ker θ` if and only if `ξ'` is distinguished.
+* `WittVector.coeff_zero_mem_jacobson_of_mem_ker_fontaineTheta`: the zeroth Witt coordinate of an
+  element of `ker θ` lies in the Jacobson radical of `A♭`.
 
 ## References
 
-* B. Bhatt, M. Morrow, P. Scholze, *Integral `p`-adic Hodge theory*, Definition 3.5, Lemma 3.10,
-  and Remark 3.11.
+* B. Bhatt, M. Morrow, P. Scholze, *Integral `p`-adic Hodge theory*, Definition 3.5 and
+  Lemma 3.10.
 * P. Scholze, *Étale cohomology of diamonds*, Lemma 3.14.
 -/
 
@@ -88,6 +92,24 @@ theorem ker_fontaineTheta_eq_span_p :
   rw [RingHom.mem_ker, fontaineTheta_eq_zero_iff, mem_span_p_iff_coeff_zero_eq_zero]
 
 end CharP
+
+section Kernel
+
+variable {A : Type*} [CommRing A] {p : ℕ} [Fact p.Prime] [Fact ¬IsUnit (p : A)]
+  [IsAdicComplete (span {(p : A)}) A]
+
+/-- **Zeroth Witt coordinates of `ker θ` lie in the Jacobson radical.** If `ξ ∈ ker θ`, its zeroth
+Witt coordinate `ξ₀ ∈ A♭` reduces modulo `p` to `θ ξ = 0` (`WittVector.mk_fontaineTheta`), so
+`PreTilt A p` is `(ξ₀)`-adically complete and `ξ₀` lies in its Jacobson radical. -/
+theorem coeff_zero_mem_jacobson_of_mem_ker_fontaineTheta {ξ : WittVector p (PreTilt A p)}
+    (hξ : ξ ∈ RingHom.ker (fontaineTheta A p)) : ξ.coeff 0 ∈ Ring.jacobson (PreTilt A p) := by
+  have h : PreTilt.coeff 0 (ξ.coeff 0) = 0 := by
+    rw [← mk_fontaineTheta, RingHom.mem_ker.mp hξ, map_zero]
+  have : IsAdicComplete (span {ξ.coeff 0}) (PreTilt A p) :=
+    Perfection.isAdicComplete_span_singleton_of_coeff_zero_eq_zero h
+  exact IsAdicComplete.le_jacobson _ (mem_span_singleton_self _)
+
+end Kernel
 
 section Regular
 
@@ -135,7 +157,7 @@ private theorem ker_fontaineTheta_div_step {ϖ : A♭} {hdvd : ϖ.untilt ^ p ∣
       (x : WittVector p A♭) - teichmuller p ϖ * (y : WittVector p A♭) ∈ span {ξ} := by
   have hdvd1 : ϖ.untilt ∣ (p : A) := (dvd_pow_self _ hp.out.ne_zero).trans hdvd
   have hx0 : PreTilt.coeff 0 ((x : WittVector p A♭).coeff 0) = 0 := by
-    rw [← mk_fontaineTheta, RingHom.mem_ker.mp x.2, map_zero]
+    rw [← mk_fontaineTheta, RingHom.mem_ker.mp x.property, map_zero]
   have hp_dvd : (p : A) ∣ ((x : WittVector p A♭).coeff 0).untilt := by
     rw [← mem_span_singleton, ← Ideal.Quotient.eq_zero_iff_mem, PreTilt.mk_untilt_eq_coeff_zero]
     exact hx0
@@ -147,7 +169,7 @@ private theorem ker_fontaineTheta_div_step {ϖ : A♭} {hdvd : ϖ.untilt ^ p ∣
   obtain ⟨u, y, huy⟩ := mem_span_pair.mp hx_mem
   have hy_ker : y ∈ RingHom.ker (fontaineTheta A p) := by
     rw [RingHom.mem_ker, ← mul_right_mem_nonZeroDivisors_eq_zero_iff hreg]
-    simpa [RingHom.mem_ker.mp x.2, RingHom.mem_ker.mp hker] using
+    simpa [RingHom.mem_ker.mp x.property, RingHom.mem_ker.mp hker] using
       congrArg (fontaineTheta A p) huy
   refine ⟨⟨y, hy_ker⟩, mem_span_singleton.mpr ⟨u, ?_⟩⟩
   linear_combination -huy
@@ -205,7 +227,6 @@ theorem exists_ker_fontaineTheta_eq_span_p_add_teichmuller_mul {ϖ : A♭}
       (add_mem (subset_span (by simp)) (mul_mem_right _ _ (subset_span (by simp))))
   have hξ_reg : (p : WittVector p A♭) + teichmuller p ϖ * α ∈ (WittVector p A♭)⁰ :=
     hξ.mem_nonZeroDivisors (Ideal.le_radical (mem_span_singleton.mpr hξ₀_dvd))
-      (PreTilt.mem_nonZeroDivisors_of_untilt hreg)
   refine ⟨α, hξ, hξ_reg, le_antisymm (ker_fontaineTheta_le_span hreg hbij.1 hξ hξ₀_dvd hker) ?_⟩
   exact span_le.mpr (Set.singleton_subset_iff.mpr hker)
 
@@ -250,40 +271,6 @@ theorem exists_isDistinguished_mem_nonZeroDivisors_ker_fontaineTheta {π : A}
   obtain ⟨α, hξ, hξ_reg, hker⟩ :=
     exists_ker_fontaineTheta_eq_span_p_add_teichmuller_mul hreg' hbij'
   exact ⟨_, hξ, hξ_reg, hker⟩
-
-/-- **Characterisation of generators of `ker θ` by distinguishedness** (Bhatt–Morrow–Scholze,
-*Integral `p`-adic Hodge theory*, Remark 3.11; Scholze, *Étale cohomology of diamonds*,
-Lemma 3.14). Under the hypotheses of
-`exists_isDistinguished_mem_nonZeroDivisors_ker_fontaineTheta`, an element
-`ξ' ∈ ker (fontaineTheta A p)` generates `ker (fontaineTheta A p)` if and only if `ξ'` is
-distinguished. -/
-theorem ker_fontaineTheta_eq_span_iff_isDistinguished {π : A} {hdvd : π ^ p ∣ (p : A)}
-    [IsAdicComplete (span {π}) A] (hreg : π ∈ A⁰)
-    (hbij : Function.Bijective (TauCeti.frobeniusModPow p hdvd))
-    {ξ' : WittVector p A♭} (hξ' : ξ' ∈ RingHom.ker (fontaineTheta A p)) :
-    RingHom.ker (fontaineTheta A p) = span {ξ'} ↔ ξ'.IsDistinguished := by
-  obtain ⟨ϖ, hdvd', hc, hreg', hbij'⟩ := exists_untilt_of_frobeniusModPow_bijective hreg hbij
-  obtain ⟨α, -, hξ_reg, hker⟩ :=
-    exists_ker_fontaineTheta_eq_span_p_add_teichmuller_mul hreg' hbij'
-  let ξ : WittVector p A♭ := (p : WittVector p A♭) + teichmuller p ϖ * α
-  have : IsAdicComplete (span {ϖ}) A♭ := PreTilt.isAdicComplete_span_singleton_of_pow_dvd hdvd'
-  let _ : WithIdeal A♭ := ⟨span {ϖ}⟩
-  have hJac := IsAdic.topologicalNilradical_le_jacobson (I := span {ϖ}) rfl
-  have hprim : ξ.IsPrimitive :=
-    isPrimitive_p_add_teichmuller_mul_of_isAdic (I := span {ϖ}) rfl (mem_span_singleton_self ϖ) α
-  have hker' : RingHom.ker (fontaineTheta A p) = span {ξ} := hker
-  rw [hker']
-  refine ⟨fun hspan ↦ ?_, fun hdist ↦ ?_⟩
-  · obtain ⟨y, hy⟩ := mem_span_singleton.mp (by rw [← hspan]; exact mem_span_singleton_self ξ)
-    obtain ⟨z, hz⟩ := mem_span_singleton.mp (by rw [hspan]; exact mem_span_singleton_self ξ')
-    have h1 : ξ * (z * y) = ξ * 1 := by linear_combination -hy - hz * y
-    have hzy : z * y = 1 := (mul_cancel_left_mem_nonZeroDivisors hξ_reg).mp h1
-    let u : (WittVector p A♭)ˣ := Units.mkOfMulEqOne z y hzy
-    have huξ : ξ' = ↑u * ξ := by rw [Units.val_mkOfMulEqOne, mul_comm, ← hz]
-    exact (huξ ▸ (isPrimitive_units_mul hJac u).mpr hprim).isDistinguished
-  · obtain ⟨y, hy⟩ := mem_span_singleton.mp (by rwa [← hker'])
-    have hy_unit : IsUnit y := hprim.isUnit_of_eq_mul hJac hdist (by rw [mul_comm, ← hy])
-    rw [hy, span_singleton_mul_right_unit hy_unit]
 
 end Regular
 

@@ -32,22 +32,26 @@ problem with initial datum `g` is `u(t, ·) = K_t ⋆ g`, and the heat semigroup
 * its Fourier transform, in Mathlib's convention `𝓕 f(ξ) = ∫ e^{-2πi⟪x, ξ⟫} f(x) dx`, is
   `𝓕 K_t(ξ) = exp(-4π² t ‖ξ‖²)`.
 
-The value of `heatKernel t x` for `t ≤ 0` carries no meaning; every statement about the kernel as
-a heat kernel assumes `0 < t`.
+The value of `heatKernel t x` for `t ≤ 0` carries no meaning: it is whatever Mathlib's conventions
+for real powers and division by zero give. Statements that use the kernel as a heat kernel
+(positivity, mass one, the heat equation, the semigroup and Fourier identities) assume `0 < t`.
+Identities that follow formally from the defining formula, such as the parabolic scaling (stated
+for `0 ≤ t`) or the formula for the Laplacian (stated for every `t`), carry no such hypothesis and
+hold in the degenerate cases only through those conventions.
 
 ## Main declarations
 
 * `TauCeti.heatKernel`: the heat kernel `K_t(x)`.
 * `TauCeti.heatKernel_pos`: `K_t > 0` for `t > 0`.
 * `TauCeti.heatKernel_le`: the pointwise bound by `(4πt)^(-n/2)`.
-* `TauCeti.heatKernel_eq_mul_heatKernel_one_smul`: the parabolic scaling
-  `K_t(x) = (√t)⁻¹ ^ n K_1((√t)⁻¹ • x)`.
-* `TauCeti.heatKernel_mul_eq_mul_heatKernel_smul`: the same scaling between two positive times,
-  `K_{ts}(x) = (√t)⁻¹ ^ n K_s((√t)⁻¹ • x)`.
+* `TauCeti.heatKernel_mul_eq_mul_heatKernel_smul`: the parabolic scaling between two times,
+  `K_{ts}(x) = (√t)⁻¹ ^ n K_s((√t)⁻¹ • x)` for `t ≥ 0`.
+* `TauCeti.heatKernel_eq_mul_heatKernel_one_smul`: its case `s = 1`,
+  `K_t(x) = (√t)⁻¹ ^ n K_1((√t)⁻¹ • x)` for `t ≥ 0`.
 * `TauCeti.contDiff_heatKernel`: `K_t` is smooth.
 * `TauCeti.integral_heatKernel`: `∫ K_t = 1` for `t > 0`.
 * `TauCeti.eLpNorm_heatKernel_le`: an explicit `Lᵠ` bound for `1 ≤ q ≤ ∞`.
-* `TauCeti.memLp_heatKernel`: `K_t` belongs to every `Lᵠ` with `1 ≤ q ≤ ∞`.
+* `TauCeti.memLp_heatKernel`: for `t > 0`, `K_t` belongs to every `Lᵠ`, `0 ≤ q ≤ ∞`.
 * `TauCeti.laplacian_heatKernel`: `Δ K_t(x) = (‖x‖² / (4t²) - n / (2t)) K_t(x)`.
 * `TauCeti.hasDerivAt_heatKernel`: the heat equation `∂ₜ K_t(x) = Δ K_t(x)` for `t > 0`.
 * `TauCeti.heatKernel_convolution_heatKernel`: the semigroup identity `K_t ⋆ K_s = K_{t+s}`.
@@ -116,25 +120,26 @@ theorem heatKernel_le_heatKernel_of_norm_le {t : ℝ} (ht : 0 < t) {x y : E} (h 
   rw [heatKernel_apply, heatKernel_apply]
   gcongr
 
-/-- **Parabolic scaling of the heat kernel.** For `t > 0`, `K_t` is the `L¹`-normalized dilation
-of `K_1` by the factor `(√t)⁻¹`: `K_t(x) = (√t)⁻¹ ^ n K_1((√t)⁻¹ • x)` with `n = dim E`. -/
-theorem heatKernel_eq_mul_heatKernel_one_smul {t : ℝ} (ht : 0 < t) (x : E) :
-    heatKernel t x = (√t)⁻¹ ^ Module.finrank ℝ E * heatKernel 1 ((√t)⁻¹ • x) := by
-  have hst : 0 < √t := sqrt_pos.2 ht
-  have hnorm : ‖(√t)⁻¹ • x‖ ^ 2 = ‖x‖ ^ 2 / t := by
-    rw [norm_smul, norm_inv, norm_of_nonneg hst.le, mul_pow, inv_pow, sq_sqrt ht.le]
-    ring
-  rw [heatKernel_apply, heatKernel_apply, hnorm, inv_sqrt_pow_eq_rpow ht.le, mul_one,
-    mul_rpow (by positivity) ht.le]
-  field_simp
-
-/-- **Parabolic scaling of the heat kernel between two times.** For `t, s > 0`,
-`K_{ts}(x) = (√t)⁻¹ ^ n K_s((√t)⁻¹ • x)` with `n = dim E`. -/
-theorem heatKernel_mul_eq_mul_heatKernel_smul {t s : ℝ} (ht : 0 < t) (hs : 0 < s) (x : E) :
+/-- **Parabolic scaling of the heat kernel between two times.** For `t ≥ 0`,
+`K_{ts}(x) = (√t)⁻¹ ^ n K_s((√t)⁻¹ • x)` with `n = dim E`. At `t = 0` both sides are the junk
+values given by `(√0)⁻¹ = 0` and Mathlib's conventions for real powers and division by zero. -/
+theorem heatKernel_mul_eq_mul_heatKernel_smul {t s : ℝ} (ht : 0 ≤ t) (x : E) :
     heatKernel (t * s) x = (√t)⁻¹ ^ Module.finrank ℝ E * heatKernel s ((√t)⁻¹ • x) := by
-  rw [heatKernel_eq_mul_heatKernel_one_smul (mul_pos ht hs),
-    heatKernel_eq_mul_heatKernel_one_smul hs, smul_smul, sqrt_mul ht.le, mul_inv, mul_pow]
-  ring_nf
+  have hnorm : ‖(√t)⁻¹ • x‖ ^ 2 = ‖x‖ ^ 2 / t := by
+    rw [norm_smul, norm_inv, norm_of_nonneg (sqrt_nonneg t), mul_pow, inv_pow, sq_sqrt ht]
+    ring
+  rw [heatKernel_apply, heatKernel_apply, hnorm, inv_sqrt_pow_eq_rpow ht,
+    show 4 * π * (t * s) = t * (4 * π * s) by ring, mul_rpow_of_nonneg_left ht,
+    show -‖x‖ ^ 2 / (4 * (t * s)) = -(‖x‖ ^ 2 / t) / (4 * s) by ring]
+  ring
+
+/-- **Parabolic scaling of the heat kernel.** For `t ≥ 0`,
+`K_t(x) = (√t)⁻¹ ^ n K_1((√t)⁻¹ • x)` with `n = dim E`: for `t > 0`, `K_t` is the `L¹`-normalized
+dilation of `K_1` by the factor `(√t)⁻¹`, and at `t = 0` both sides are junk values. This is the
+case `s = 1` of `TauCeti.heatKernel_mul_eq_mul_heatKernel_smul`. -/
+theorem heatKernel_eq_mul_heatKernel_one_smul {t : ℝ} (ht : 0 ≤ t) (x : E) :
+    heatKernel t x = (√t)⁻¹ ^ Module.finrank ℝ E * heatKernel 1 ((√t)⁻¹ • x) := by
+  simpa only [mul_one] using heatKernel_mul_eq_mul_heatKernel_smul (s := 1) ht x
 
 /-- The heat kernel `K_t` is smooth in the space variable (for every `t`). -/
 theorem contDiff_heatKernel (t : ℝ) {k : WithTop ℕ∞} : ContDiff ℝ k (heatKernel t : E → ℝ) :=
@@ -163,7 +168,7 @@ theorem laplacian_heatKernel (t : ℝ) (x : E) :
     ring
   have hK : heatKernel t = fun y : E => ρ (‖y‖ ^ 2) := funext fun y => heatKernel_apply t y
   have hρc : ContDiff ℝ 2 ρ := contDiff_const.mul ((contDiff_id.neg.div_const _).exp)
-  rw [hK, hρc.laplacian_comp_norm_sq, hddρ, hdρ]
+  rw [hK, hρc.contDiffAt.laplacian_comp_norm_sq, hddρ, hdρ]
   ring
 
 /-- **The heat equation.** For `t > 0`, the heat kernel solves `∂ₜ K_t(x) = Δ K_t(x)`. -/
@@ -261,10 +266,18 @@ theorem eLpNorm_heatKernel_le {t : ℝ} (ht : 0 < t) {q : ℝ≥0∞} (hq : 1 �
   rw [he]
   simp only [c, ← rpow_mul (by positivity : 0 ≤ 4 * π * t)]
 
-/-- The heat kernel belongs to every `Lᵠ` with `1 ≤ q ≤ ∞`. -/
-theorem memLp_heatKernel {t : ℝ} (ht : 0 < t) {q : ℝ≥0∞} (hq : 1 ≤ q) :
-    MemLp (heatKernel t : E → ℝ) q volume :=
-  (eLpNorm_heatKernel_le ht hq).trans_lt ENNReal.ofReal_lt_top
+/-- At every positive time `t`, the heat kernel `K_t` belongs to every `Lᵠ`, `0 ≤ q ≤ ∞`. -/
+theorem memLp_heatKernel {t : ℝ} (ht : 0 < t) {q : ℝ≥0∞} :
+    MemLp (heatKernel t : E → ℝ) q volume := by
+  -- `K_t` is a constant multiple of the real part of the Schwartz Gaussian at `(4t)⁻¹`.
+  have hb : 0 < (((4 * t)⁻¹ : ℝ) : ℂ).re := by
+    rw [Complex.ofReal_re]
+    positivity
+  have h := ((SchwartzMap.gaussian (V := E) hb).memLp q volume).re
+  rw [SchwartzMap.coe_gaussian_ofReal] at h
+  convert h.const_mul ((4 * π * t) ^ (-(Module.finrank ℝ E : ℝ) / 2)) using 2 with x
+  rw [heatKernel_apply, RCLike.re_to_complex, Complex.ofReal_re]
+  ring_nf
 
 /-- **The semigroup property of the heat kernel** (Chapman–Kolmogorov):
 `K_t ⋆ K_s = K_{t+s}` for `t, s > 0`. -/
@@ -411,9 +424,15 @@ theorem fourier_heatKernel_convolution {F : Type*} [NormedAddCommGroup F] [Norme
 /-- On `ℝ`, the heat kernel smoothing of a function supported in `[a, b]` is the Gaussian
 transform `x ↦ ∫ y in a..b, (4πt)^(-1/2) g y exp (-(x - y)² / (4t))`. -/
 theorem heatKernel_convolution_eq_intervalIntegral {t a b : ℝ} {g : ℝ → ℝ}
-    (hgs : Function.support g ⊆ Set.Icc a b) (hab : a ≤ b) (x : ℝ) :
+    (hgs : Function.support g ⊆ Set.Icc a b) (x : ℝ) :
     (heatKernel t ⋆ g) x =
       ∫ y in a..b, (4 * π * t) ^ (-(1 : ℝ) / 2) * g y * Real.exp (-(4 * t)⁻¹ * (x - y) ^ 2) := by
+  rcases le_or_gt a b with hab | hab
+  swap
+  · -- An empty interval forces `g = 0`, and both sides vanish.
+    have hg : g = 0 := Function.support_eq_empty_iff.1
+      (Set.subset_empty_iff.1 ((hgs.trans (Set.Icc_eq_empty hab.not_ge).subset)))
+    simp [hg]
   rw [convolution_lsmul_swap, intervalIntegral.integral_of_le hab,
     ← integral_Icc_eq_integral_Ioc, setIntegral_eq_integral_of_forall_compl_eq_zero]
   · congr 1
