@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
+import Mathlib.Combinatorics.Enumerative.DoubleCounting
 
 /-!
 # Filtered products
@@ -34,6 +35,8 @@ level `m ≥ 1`.
   over `s ×ˢ t` as an iterated product or sum over `s` and the filtered fiber in `t`.
 * `Finset.prod_filter_product_product_and`, `Finset.sum_filter_product_product_and`: peeling the
   last coordinate off a filtered product or sum over `s ×ˢ t ×ˢ u` with a conjunctive predicate.
+* `Finset.prod_prod_filter_eq_prod_pow_card`, `Finset.sum_sum_filter_eq_sum_card_nsmul`: a product
+  or sum over `k` of filtered products or sums over `i` counts, for each `i`, the `k` selecting it.
 -/
 
 public section
@@ -128,5 +131,18 @@ theorem prod_filter_product_product_and {α β γ M : Type*} [CommMonoid M]
   simp_rw [prod_filter, prod_product]
   refine prod_congr rfl fun a _ ↦ prod_congr rfl fun b _ ↦ ?_
   by_cases hp : p a b <;> simp [hp]
+
+/-- A product over `k ∈ s` of the products of `f` over the indices `i ∈ t` selected by `p i k` is
+the product over `i ∈ t` of `f i` raised to the number of `k ∈ s` selecting `i`. -/
+@[to_additive sum_sum_filter_eq_sum_card_nsmul /-- A sum over `k ∈ s` of the sums of `f` over the
+indices `i ∈ t` selected by `p i k` is the sum over `i ∈ t` of `f i`, counted as many times as there
+are `k ∈ s` selecting `i`. -/]
+theorem prod_prod_filter_eq_prod_pow_card {ι κ M : Type*} [CommMonoid M] (s : Finset κ)
+    (t : Finset ι) (f : ι → M) (p : ι → κ → Prop) [∀ i, DecidablePred (p i)] :
+    ∏ k ∈ s, ∏ i ∈ t with p i k, f i = ∏ i ∈ t, f i ^ #{k ∈ s | p i k} := by
+  -- Mathlib's double counting with the relation `r k i := p i k`, then a constant inner product.
+  simpa only [bipartiteAbove, bipartiteBelow, prod_const] using
+    prod_prod_bipartiteAbove_eq_prod_prod_bipartiteBelow (s := s) (t := t)
+      (r := fun k i ↦ p i k) fun _ i ↦ f i
 
 end Finset
