@@ -71,6 +71,8 @@ constant never matters for cutting off, where one is free to shrink the radius i
   convex set containing the centre into its intersection with the closed ball.
 * `LipschitzOnWith.comp_centeredRadialRetraction`: precomposing with the centred retraction makes a
   map that is Lipschitz on the closed ball globally Lipschitz, with twice the constant.
+* `LipschitzOnWith.dist_comp_centeredRadialRetraction_le`: it keeps the Lipschitz bound at the
+  centre with the same constant.
 * `LipschitzOnWith.comp_radialRetraction`: precomposing with it makes a map that is Lipschitz on
   the closed ball of radius `r` globally Lipschitz, with twice the constant.
 * `HolderOnWith.comp_centeredRadialRetraction`: precomposing with the centred retraction makes a
@@ -570,6 +572,18 @@ theorem LipschitzOnWith.comp_centeredRadialRetraction {E F : Type*} [SeminormedA
   lipschitzOnWith_univ.1 <| hf.comp
     (lipschitzOnWith_univ.2 (TauCeti.lipschitzWith_centeredRadialRetraction hr))
     (TauCeti.mapsTo_centeredRadialRetraction hr)
+
+/-- Precomposing a map that is Lipschitz on a closed ball with the centred radial retraction keeps
+the Lipschitz bound at the centre, with the same constant, because the retraction moves no point
+farther from the centre. -/
+theorem LipschitzOnWith.dist_comp_centeredRadialRetraction_le {E F : Type*}
+    [SeminormedAddCommGroup E] [NormedSpace ℝ E] [PseudoMetricSpace F] {f : E → F} {c : ℝ≥0}
+    {x₀ : E} {r : ℝ} (hf : LipschitzOnWith c f (closedBall x₀ r)) (hr : 0 ≤ r) (x : E) :
+    dist (f (TauCeti.centeredRadialRetraction x₀ r x)) (f x₀) ≤ c * dist x x₀ := by
+  refine (hf.dist_le_mul _ (TauCeti.centeredRadialRetraction_mem_closedBall hr x) _
+    (mem_closedBall_self hr)).trans (mul_le_mul_of_nonneg_left ?_ c.coe_nonneg)
+  rw [TauCeti.dist_centeredRadialRetraction hr]
+  exact min_le_left _ _
 
 /-- Precomposing with the radial retraction turns a map that is Lipschitz on the closed ball of
 radius `r` into a globally Lipschitz map, at the cost of doubling the constant. When the domain is

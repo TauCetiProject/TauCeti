@@ -27,7 +27,8 @@ dominating its image (`IsLocalRing.exists_factor_valuationRing`). Domination for
 to `B`, is the point `w`.
 
 Consequently `Spv B → Spv A` is surjective exactly when `Spec B → Spec A` is; in particular
-`Spv L → Spv K` is surjective for every field extension `L / K`.
+it is surjective for an integral extension `A ⊆ B`, and `Spv L → Spv K` is surjective for every
+field extension `L / K`.
 
 ## Main results
 
@@ -35,6 +36,8 @@ Consequently `Spv B → Spv A` is surjective exactly when `Spec B → Spec A` is
   `Spv B` with any prescribed support lying over its own.
 * `TauCeti.ValuationSpectrum.comap_surjective_iff`: `Spv B → Spv A` is surjective iff
   `Spec B → Spec A` is.
+* `TauCeti.ValuationSpectrum.comap_algebraMap_surjective_of_isIntegral`: every point of `Spv A`
+  extends to an integral extension of `A`.
 * `TauCeti.ValuationSpectrum.comap_algebraMap_surjective`: every point of `Spv K` extends to any
   field extension `L`.
 
@@ -109,6 +112,12 @@ theorem comap_surjective_iff (φ : A →+* B) :
     obtain ⟨w, -, hw⟩ := exists_supp_eq_comap_eq φ v q.asIdeal
       (by simpa [← suppFun_asIdeal] using congrArg PrimeSpectrum.asIdeal hq)
     exact ⟨w, hw⟩
+
+/-- **Every point of `Spv A` extends to an integral extension `B ⊇ A`**, since every prime of `A`
+lies under a prime of `B` (`Algebra.IsIntegral.comap_surjective`). -/
+theorem comap_algebraMap_surjective_of_isIntegral [Algebra A B] [Algebra.IsIntegral A B]
+    [FaithfulSMul A B] : Function.Surjective (comap (algebraMap A B) : Spv B → Spv A) :=
+  (comap_surjective_iff _).mpr (Algebra.IsIntegral.comap_surjective A B)
 
 /-- **Every point of `Spv K` extends to any field extension `L`.** -/
 theorem comap_algebraMap_surjective {K L : Type*} [Field K] [Field L] [Algebra K L] :

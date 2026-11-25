@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.Block
 public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.BrauerProjection
-public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup
+public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup.Basic
 import TauCeti.GroupTheory.PGroup
 
 /-!
