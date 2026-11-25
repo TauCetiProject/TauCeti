@@ -348,8 +348,8 @@ variable {R A M N M' N' : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
 /-- **Sandwiching by linear maps.** If `D' = σ ∘ D ∘ ρ` for `A`-linear maps `ρ : M' → M` and
 `σ : N → N'`, then the commutator symbol of `D'` is the commutator symbol of `D` sandwiched between
 `ρ` and `σ`: `[⋯[D', a₁], …, aₘ] = σ ∘ [⋯[D, a₁], …, aₘ] ∘ ρ`. For the smooth sections of vector
-bundles, `ρ` and `σ` are bundle maps, and this is the invariance of the principal symbol under
-changes of frame. -/
+bundles, `ρ` and `σ` are bundle maps, and this gives the transformation of the principal symbol
+under bundle maps. -/
 theorem commutatorSymbol_apply_of_eq_comp_comp {m : ℕ} {D : differentialOperators R A M N m}
     {D' : differentialOperators R A M' N' m} (ρ : M' →ₗ[A] M) (σ : N →ₗ[A] N')
     (h : ∀ x, (D' : M' →ₗ[R] N') x = σ ((D : M →ₗ[R] N) (ρ x))) (a : Fin m → A) (x : M') :

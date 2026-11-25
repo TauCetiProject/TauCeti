@@ -23,14 +23,15 @@ sandwiched between `R` and `L` (`TauCeti.commutatorSymbol_apply_of_eq_comp_comp`
 `σ(R ∘ P ∘ L)_x(ξ) = R_x ∘ σ(P)_x(ξ) ∘ L_x`
 
 for the commutator symbols and the principal symbols
-(`TauCeti.sectionPrincipalSymbol_of_eq_comp_comp`). For bundle isomorphisms this is the
-transformation of the principal symbol under a change of frame, or of trivialization: in local
-frames of `V` and `W` an operator is a matrix of scalar operators, and changing the frames
-conjugates its principal symbol by the transition matrices. The same holds when `L` and `R` are
-given as smooth families of fibre maps
+(`TauCeti.sectionPrincipalSymbol_of_eq_comp_comp`). Here `L` and `R` are global bundle maps, so
+for global bundle isomorphisms this is the transformation of the principal symbol under a global
+change of trivialization. Changes of local frames follow by first restricting to an open set
+(`TauCeti.sectionPrincipalSymbol_restrictSectionDifferentialOperators`). The same holds when `L`
+and `R` are given as smooth families of fibre maps
 (`TauCeti.sectionPrincipalSymbol_of_eq_mapLinearMap_comp_comp`).
 
-Consequently the notions defined through the principal symbol do not depend on frames:
+Consequently the notions defined through the principal symbol are preserved by global bundle maps
+of the following kinds:
 
 * ellipticity at `x` is preserved when `L_x` and `R_x` are bijective, and ellipticity is preserved
   by function-linear isomorphisms of the section modules;
@@ -38,7 +39,7 @@ Consequently the notions defined through the principal symbol do not depend on f
   `R ∘ L = Id`, for instance by conjugation `P ↦ Φ⁻¹ ∘ P ∘ Φ` with a bundle isomorphism `Φ`, and by
   compression to a direct summand;
 * the Dirac-type condition `σ(D)(ξ)* σ(D)(ξ) = ‖ξ‖² Id` is preserved by sandwiching between
-  fibrewise isometries, for instance by a change of orthonormal frames.
+  global bundle maps that are fibrewise isometries.
 
 ## Main results
 
@@ -120,7 +121,8 @@ theorem sectionCommutatorSymbol_of_eq_comp_comp (hx : I.IsInteriorPoint x)
 /-- **The principal symbol under bundle maps.** If `Q = R ∘ P ∘ L` for maps `L` and `R` of sections
 that are linear over the smooth functions, then at an interior point `x` the principal symbol of `Q`
 is `σ(Q)(ξ) = R_x ∘ σ(P)(ξ) ∘ L_x`, where `L_x` and `R_x` are the fibre maps of `L` and `R`. For
-bundle isomorphisms this is the change of the principal symbol under a change of frame. -/
+global bundle isomorphisms this is the change of the principal symbol under a global change of
+trivialization. -/
 theorem sectionPrincipalSymbol_of_eq_comp_comp (hx : I.IsInteriorPoint x)
     (h : ∀ s, (Q : Cₛ^∞⟮I; G, V'⟯ →ₗ[ℝ] Cₛ^∞⟮I; G', W'⟯) s =
       R ((P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) (L s)))
@@ -171,10 +173,8 @@ theorem isSectionEllipticAt_iff_of_eq_comp_comp
     IsSectionEllipticAt Q x ↔ IsSectionEllipticAt P x := by
   rw [isSectionEllipticAt_iff, isSectionEllipticAt_iff]
   refine forall_congr' fun hx ↦ forall₂_congr fun ξ _ ↦ ?_
-  have eL : ⇑(smoothSectionFiberMap x L) = Equiv.ofBijective _ hL := rfl
-  have eR : ⇑(smoothSectionFiberMap x R) = Equiv.ofBijective _ hR := rfl
-  rw [sectionPrincipalSymbol_of_eq_comp_comp hx h, LinearMap.coe_comp, LinearMap.coe_comp, eL, eR,
-    EquivLike.comp_bijective, EquivLike.bijective_comp]
+  rw [sectionPrincipalSymbol_of_eq_comp_comp hx h, LinearMap.coe_comp, LinearMap.coe_comp,
+    Function.Bijective.of_comp_iff' hR, Function.Bijective.of_comp_iff _ hL]
 
 /-- **Ellipticity under bundle isomorphisms.** If `Q = R ∘ P ∘ L` for isomorphisms `L` and `R` of
 the modules of sections over the smooth functions, that is, bundle isomorphisms `V' ≅ V` and
@@ -236,7 +236,8 @@ variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 `D' = R ∘ D ∘ L` for maps `L` and `R` of sections that are linear over the smooth functions and
 whose fibre maps preserve the fibre metrics, then `D'` is of Dirac type:
 `⟪R σ(D)(ξ) L v, R σ(D)(ξ) L w⟫ = ⟪σ(D)(ξ) L v, σ(D)(ξ) L w⟫ = ‖ξ‖² ⟪L v, L w⟫ = ‖ξ‖² ⟪v, w⟫`.
-This applies to a change of orthonormal frames. -/
+This applies to global bundle isometries, such as a change between global orthonormal
+trivializations. -/
 theorem IsDiracType.of_eq_comp_comp
     {D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 1}
     {D' : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; G, V'⟯ Cₛ^∞⟮I; G', W'⟯ 1}
