@@ -143,39 +143,15 @@ variable [CommSemiring R] [Monoid G]
 variable [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
 variable {ρ : Representation R G M} {σ : Representation R G N}
 
-/-- The linear equivalence induced on `d`th symmetric powers by an equivalence of
-representations. -/
-private noncomputable def symmetricPowerLinearEquiv (e : ρ.Equiv σ) (d : ℕ) :
-    (Sym[R]^d M) ≃ₗ[R] (Sym[R]^d N) :=
-  LinearEquiv.ofLinearMap
-    (SymmetricPower.map (ι := Fin d) e.toLinearMap)
-    (SymmetricPower.map (ι := Fin d) e.symm.toLinearMap)
-    (by
-      rw [← SymmetricPower.map_comp, Representation.Equiv.toLinearMap_symm,
-        e.toLinearEquiv.comp_symm, SymmetricPower.map_id])
-    (by
-      rw [← SymmetricPower.map_comp, Representation.Equiv.toLinearMap_symm,
-        e.toLinearEquiv.symm_comp, SymmetricPower.map_id])
-
-private theorem symmetricPowerLinearEquiv_toLinearMap (e : ρ.Equiv σ) (d : ℕ) :
-    (symmetricPowerLinearEquiv e d).toLinearMap =
-      SymmetricPower.map (ι := Fin d) e.toLinearMap :=
-  rfl
-
-private theorem symmetricPowerLinearEquiv_symm_toLinearMap (e : ρ.Equiv σ) (d : ℕ) :
-    (symmetricPowerLinearEquiv e d).symm.toLinearMap =
-      SymmetricPower.map (ι := Fin d) e.symm.toLinearMap :=
-  rfl
-
 /-- An equivalence of representations induces an equivalence of every symmetric power. -/
 noncomputable def symmetricPower (e : ρ.Equiv σ) (d : ℕ) :
     (ρ.symmetricPower d).Equiv (σ.symmetricPower d) :=
-  .mk (symmetricPowerLinearEquiv e d) fun g => by
-    rw [symmetricPowerLinearEquiv_toLinearMap]
+  .mk (SymmetricPower.congr e.toLinearEquiv) fun g => by
+    rw [SymmetricPower.congr_toLinearMap]
     exact (e.toIntertwiningMap.symmetricPower d).isIntertwining' g
 
 private theorem symmetricPower_toLinearEquiv (e : ρ.Equiv σ) (d : ℕ) :
-    (e.symmetricPower d).toLinearEquiv = symmetricPowerLinearEquiv e d :=
+    (e.symmetricPower d).toLinearEquiv = SymmetricPower.congr e.toLinearEquiv :=
   toLinearEquiv_mk' _
 
 /-- The underlying linear map is the usual map induced on symmetric powers. -/
@@ -206,7 +182,8 @@ theorem symmetricPower_symm (e : ρ.Equiv σ) (d : ℕ) :
   have h : (e.symm.symmetricPower d).toLinearMap =
       ((e.symmetricPower d).symm).toLinearMap := by
     rw [symmetricPower_toLinearMap, toLinearMap_symm (e.symmetricPower d),
-      symmetricPower_toLinearEquiv, symmetricPowerLinearEquiv_symm_toLinearMap]
+      symmetricPower_toLinearEquiv, SymmetricPower.congr_symm, SymmetricPower.congr_toLinearMap]
+    rfl
   exact Equiv.ext (funext fun x => LinearMap.congr_fun h x)
 
 /-- Symmetric powers preserve composition of equivalences. -/

@@ -77,11 +77,14 @@ def sym (D : WeilDeligneParameter E W V deg q) (m : ℕ) :
   N := SymmetricPower.differential E V m D.N
   isNilpotent_N := SymmetricPower.isNilpotent_differential m D.isNilpotent_N
   conj_N w := by
-    have h := SymmetricPower.map_comp_differential m
-      ((D.r_mul_N w).trans (smul_mul_assoc _ _ _).symm)
-    rw [map_smul, ← Representation.symmetricPower_apply D.r m w] at h
-    rw [Module.End.mul_eq_comp _ (SymmetricPower.differential E V m D.N), h]
-    simp [-Representation.symmetricPower_apply, ← Module.End.mul_eq_comp, mul_assoc, ← map_mul]
+    have h : D.r.symmetricPower m w * SymmetricPower.differential E V m D.N =
+        (q : E) ^ (deg w).toAdd •
+          (SymmetricPower.differential E V m D.N * D.r.symmetricPower m w) := by
+      rw [← smul_mul_assoc, ← map_smul, Representation.symmetricPower_apply,
+        Module.End.mul_eq_comp, Module.End.mul_eq_comp]
+      refine SymmetricPower.map_comp_differential m ?_
+      rw [← Module.End.mul_eq_comp, ← Module.End.mul_eq_comp, D.r_mul_N, smul_mul_assoc]
+    rw [h, smul_mul_assoc, mul_assoc, ← map_mul, mul_inv_cancel, map_one, mul_one]
 
 variable (D : WeilDeligneParameter E W V deg q) (m : ℕ)
 
@@ -103,6 +106,7 @@ def Hom.sym (f : Hom D₁ D₂) : Hom (D₁.sym m) (D₂.sym m) where
     rw [Representation.IntertwiningMap.symmetricPower_toLinearMap]
     exact SymmetricPower.map_comp_differential m f.comp_N
 
+@[simp]
 theorem Hom.sym_toLinearMap (f : Hom D₁ D₂) :
     (f.sym m).toLinearMap = SymmetricPower.map (ι := Fin m) f.toLinearMap :=
   Representation.IntertwiningMap.symmetricPower_toLinearMap ..
@@ -115,13 +119,13 @@ theorem Hom.sym_tprod (f : Hom D₁ D₂) (v : Fin m → V₁) :
 @[simp]
 theorem Hom.sym_id : (Hom.id D₁).sym m = Hom.id (D₁.sym m) := by
   ext1
-  simp [Hom.sym_toLinearMap, SymmetricPower.map_id]
+  simp
 
 @[simp]
 theorem Hom.sym_comp (f : Hom D₂ D₃) (g : Hom D₁ D₂) :
     (f.comp g).sym m = (f.sym m).comp (g.sym m) := by
   ext1
-  simp [Hom.sym_toLinearMap, SymmetricPower.map_comp]
+  simp
 
 /-- The `m`-th symmetric power of an isomorphism of parameters. -/
 def Iso.sym (f : Iso D₁ D₂) : Iso (D₁.sym m) (D₂.sym m) where
@@ -158,11 +162,12 @@ theorem Iso.sym_symm (f : Iso D₁ D₂) : f.symm.sym m = (f.sym m).symm :=
     simp [← (f.sym m).injective.eq_iff]
 
 /-- **The symmetric power commutes with transport**: `Sym^m (e_* D) = (Sym^m e)_* (Sym^m D)`, where
-`Sym^m e` is the linear equivalence underlying `(D.transportIso e).sym m`, sending `⨂ₛ v` to
-`⨂ₛ (e ∘ v)`. -/
+`Sym^m e = SymmetricPower.congr e` sends `⨂ₛ v` to `⨂ₛ (e ∘ v)`. -/
 theorem sym_transport (e : V ≃ₗ[E] V₁) :
-    (D.transport e).sym m = (D.sym m).transport ((D.transportIso e).sym m).toLinearEquiv :=
-  ((D.transportIso e).sym m).eq_transport
+    (D.transport e).sym m = (D.sym m).transport (SymmetricPower.congr e) := by
+  have h : ((D.transportIso e).sym m).toLinearEquiv = SymmetricPower.congr e :=
+    LinearEquiv.toLinearMap_injective <| SymmetricPower.ext fun v ↦ by simp
+  exact h ▸ ((D.transportIso e).sym m).eq_transport
 
 /-! ### Low symmetric powers, twists and zero monodromy -/
 
@@ -201,7 +206,7 @@ theorem symOneIso_symm_apply (v : V) : D.symOneIso.symm v = ⨂ₛ[E] _ : Fin 1,
 theorem sym_twist (χ : W →* Eˣ) (hχ : IsOpen (χ.ker : Set W)) :
     (D.twist χ hχ).sym m = (D.sym m).twist (χ ^ m)
       (Subgroup.isOpen_mono (fun w hw ↦ by simp_all [MonoidHom.mem_ker]) hχ) := by
-  refine WeilDeligneParameter.ext ?_ (by rw [sym_N, twist_N, twist_N, sym_N])
+  refine WeilDeligneParameter.ext ?_ (by simp)
   ext w : 1
   refine SymmetricPower.ext fun v ↦ ?_
   simp [Representation.symmetricPower_apply, MultilinearMap.map_smul_univ]
