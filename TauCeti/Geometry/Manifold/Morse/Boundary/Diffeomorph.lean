@@ -175,14 +175,13 @@ points that `σ` carries into `S`. -/
 theorem pullback_reverse (S : Set (criticalPoints 𝓘(ℝ, E) f')) [DecidablePred (· ∈ S)] :
     (𝔬'.reverse S).pullback hf hσX =
       (𝔬'.pullback hf hσX).reverse (criticalPointsEquivOfComp hf ⁻¹' S) := by
-  simp only [pullback, reverse]
-  congr 1
-  funext p
-  by_cases hp : criticalPointsEquivOfComp hf p ∈ S
-  · simp only [Set.mem_preimage, hp, ↓reduceIte]
-    exact Orientation.reindex_neg (R := ℝ) _ _
-  · simp only [Set.mem_preimage, hp, ↓reduceIte]
-    rfl
+  ext p
+  · simp
+  · refine heq_of_eq (funext fun p ↦ ?_)
+    simp only [pullback_orientation, reverse_orientation, Set.mem_preimage]
+    by_cases hp : criticalPointsEquivOfComp hf p ∈ S <;> simp only [hp, ↓reduceIte]
+    · exact Orientation.reindex_neg (R := ℝ) _ _
+    · congr 1
 
 end MorseOrientation
 

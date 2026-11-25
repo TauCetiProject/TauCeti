@@ -56,9 +56,10 @@ followed by the bijection of critical points `Φ⁻¹ q ↦ q`
   `Finsupp.signReversal`
   (`TauCeti.IsAdaptedPseudoGradient.signedContinuationMap_reverse`).
 
-The map is defined for every diffeomorphism `Φ`; the transition diffeomorphisms of a continuation
-for different times `a` and `b` give the same mod-two map, while their independence over `ℤ` is not
-proved here.
+The map is defined for every diffeomorphism `Φ`. For all sufficiently negative `a` and sufficiently
+positive `b`, the transition diffeomorphisms of a continuation give the same mod-two map, namely
+`TauCeti.morseContinuationMap`; independence of the integral map from `a` and `b` is not proved
+here.
 
 ## Main definitions
 
@@ -122,20 +123,6 @@ theorem signedContinuationCoeff_def (p : criticalPoints 𝓘(ℝ, E) f₀)
 
 variable {hX₀ hX₁ Φ}
 
-omit [FiniteDimensional ℝ E] [CompactSpace M] [T2Space M] in
-/-- The Morse index of `f₁ ∘ Φ` at `Φ⁻¹ q` is that of `f₁` at a critical point `q`, read in the
-Morse chart of orientation data `𝔬` at `q`. -/
-private theorem manifoldMorseIndex_symm_criticalPointsEquivOfComp
-    {X : (x : M) → TangentSpace 𝓘(ℝ, E) x} (𝔬 : MorseOrientation f₁ X)
-    (q : criticalPoints 𝓘(ℝ, E) f₁) :
-    manifoldMorseIndex 𝓘(ℝ, E) (f₁ ∘ Φ)
-        ((criticalPointsEquivOfComp (σ := Φ) (f' := f₁) rfl).symm q) =
-      manifoldMorseIndex 𝓘(ℝ, E) f₁ q := by
-  have h := (𝔬.chart (criticalPointsEquivOfComp (σ := Φ) (f' := f₁) rfl
-    ((criticalPointsEquivOfComp (σ := Φ) (f' := f₁) rfl).symm q))).manifoldMorseIndex_eq_of_comp
-    (σ := Φ) rfl
-  simpa using h
-
 /-- The coefficient vanishes between critical points of different indices. -/
 @[simp]
 theorem signedContinuationCoeff_eq_zero_of_morseIndex_ne {p : criticalPoints 𝓘(ℝ, E) f₀}
@@ -144,7 +131,7 @@ theorem signedContinuationCoeff_eq_zero_of_morseIndex_ne {p : criticalPoints �
     hX₀.signedContinuationCoeff hX₁ 𝔬₀ 𝔬₁ Φ p q = 0 := by
   rw [signedContinuationCoeff_def]
   exact signedPairCoeff_eq_zero_of_morseIndex_ne
-    (by rwa [manifoldMorseIndex_symm_criticalPointsEquivOfComp 𝔬₁])
+    (by rwa [(𝔬₁.chart q).manifoldMorseIndex_criticalPointsEquivOfComp_symm (σ := Φ) rfl])
 
 /-- **The integral continuation map preserves the index**: a nonzero coefficient joins critical
 points of the same index. -/
@@ -181,7 +168,7 @@ theorem IsMorseSmalePair.intCast_signedContinuationCoeff
   rw [signedContinuationCoeff_def, h.intCast_signedPairCoeff h₀
     (h₁.pullback (Φ.mfderiv_apply_mpullback (by simp) X₁)) hf₀
     (hf₁.comp_isLocalDiffeomorph Φ.isLocalDiffeomorph)
-    (by rwa [manifoldMorseIndex_symm_criticalPointsEquivOfComp 𝔬₁]),
+    (by rwa [(𝔬₁.chart q).manifoldMorseIndex_criticalPointsEquivOfComp_symm (σ := Φ) rfl]),
     stableSet_mpullback, coe_criticalPointsEquivOfComp_symm_apply, Diffeomorph.apply_symm_apply]
 
 end Coeff
