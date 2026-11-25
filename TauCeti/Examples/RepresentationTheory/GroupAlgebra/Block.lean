@@ -194,8 +194,8 @@ it is a block idempotent (`isBlockIdempotent_eTwo`). -/
 noncomputable abbrev eTwo (α : K) : MonoidAlgebra K C₃ :=
   1 + α • of K C₃ r + α ^ 2 • of K C₃ (r ^ 2)
 
-/-- Sums over `C₃`. -/
-private theorem sum_c₃ {M : Type*} [AddCommMonoid M] (f : C₃ → M) :
+/-- A sum over `C₃` is the sum of the values at `1`, `r` and `r²`. -/
+theorem sum_c₃ {M : Type*} [AddCommMonoid M] (f : C₃ → M) :
     ∑ g, f g = f 1 + f r + f (r ^ 2) := by
   rw [show (Finset.univ : Finset C₃) = {1, r, r ^ 2} by decide, Finset.sum_insert (by decide),
     Finset.sum_pair (by decide), add_assoc]
@@ -344,6 +344,16 @@ noncomputable def blockOneS₃ : Subalgebra.center (ZMod 2) (MonoidAlgebra (ZMod
 /-- The block idempotent `ρ + ρ²` of `𝔽₂[S₃]`. -/
 noncomputable def blockTwoS₃ : Subalgebra.center (ZMod 2) (MonoidAlgebra (ZMod 2) S₃) :=
   ⟨_, of_ρ_add_of_ρ_sq_mem_center⟩
+
+/-- `blockOneS₃` is `1 + ρ + ρ²`. -/
+theorem coe_blockOneS₃ : (blockOneS₃ : MonoidAlgebra (ZMod 2) S₃) =
+    1 + of (ZMod 2) S₃ ρ + of (ZMod 2) S₃ (ρ ^ 2) := by
+  rw [blockOneS₃]
+
+/-- `blockTwoS₃` is `ρ + ρ²`. -/
+theorem coe_blockTwoS₃ : (blockTwoS₃ : MonoidAlgebra (ZMod 2) S₃) =
+    of (ZMod 2) S₃ ρ + of (ZMod 2) S₃ (ρ ^ 2) := by
+  rw [blockTwoS₃]
 
 /-- The coefficient function of `1 + ρ + ρ²` is the indicator of `{g | g³ = 1}`. -/
 theorem coeff_blockOneS₃ : ⇑(blockOneS₃ : MonoidAlgebra (ZMod 2) S₃).coeff =
