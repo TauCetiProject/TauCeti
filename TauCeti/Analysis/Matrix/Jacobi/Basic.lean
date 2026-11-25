@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Matrix.Spectrum
 public import Mathlib.LinearAlgebra.Lagrange
 public import TauCeti.LinearAlgebra.Matrix.Jacobi
 import Mathlib.Analysis.Matrix.HermitianFunctionalCalculus
-import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
 import TauCeti.Analysis.Matrix.Spectrum
 import TauCeti.LinearAlgebra.Matrix.MulVec
@@ -536,15 +535,19 @@ theorem continuousOn_jacobiSpectralWeight :
 /-! ### The Dumitriu–Edelman Vandermonde–weight identity -/
 
 private theorem eigenvectorMatrix_mul_jacobiKrylovMatrix (a : Fin (n + 1) → ℝ) (b : Fin n → ℝ) :
-    (Matrix.of fun k i => jacobiEigenvectorBasis a b k i) * jacobiKrylovMatrix a b =
+    ((EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toBasis.toMatrix
+        (jacobiEigenvectorBasis a b))ᵀ * jacobiKrylovMatrix a b =
       Matrix.diagonal (fun k => jacobiEigenvectorBasis a b k 0) *
         Matrix.vandermonde (jacobiEigenvalues a b) := by
+  let e := EuclideanSpace.basisFun (Fin (n + 1)) ℝ
   let v := jacobiEigenvectorBasis a b
   ext k m
   rw [Matrix.mul_apply, Matrix.diagonal_mul, Matrix.vandermonde_apply]
-  have hsym : ∑ i, (Matrix.of fun k i => v k i) k i * jacobiKrylovMatrix a b i m =
+  have hsym : ∑ i, (e.toBasis.toMatrix v)ᵀ k i * jacobiKrylovMatrix a b i m =
       ((symmJacobiMatrix a b ^ m.val) *ᵥ ⇑(v k)) 0 := by
-    simp only [of_apply, jacobiKrylovMatrix_apply, mulVec, dotProduct]
+    simp only [e, transpose_apply, Module.Basis.toMatrix_apply,
+      OrthonormalBasis.coe_toBasis_repr_apply, EuclideanSpace.basisFun_repr,
+      jacobiKrylovMatrix_apply, mulVec, dotProduct]
     refine Finset.sum_congr rfl fun i _ => ?_
     rw [((isSymm_symmJacobiMatrix a b).pow m.val).apply 0 i, mul_comm]
   rw [hsym, Matrix.pow_mulVec_eq_pow_smul (mulVec_jacobiEigenvectorBasis a b k) m.val,
@@ -570,9 +573,12 @@ theorem abs_prod_pow_eq_prod_sqrt_jacobiSpectralWeight_mul_prod_sub_jacobiEigenv
     have hle := jacobiEigenvalues_antitone a b (Finset.mem_Ioi.mp hj).le
     rw [abs_sub_comm, abs_of_nonneg (sub_nonneg.mpr hle)]
   by_cases hlam : Function.Injective (jacobiEigenvalues a b)
-  · let v := jacobiEigenvectorBasis a b
-    let W : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ := Matrix.of fun k i => v k i
-    have hdetW : |W.det| = 1 := by simpa only [Real.norm_eq_abs] using v.norm_det_of_apply_eq_one
+  · let e := EuclideanSpace.basisFun (Fin (n + 1)) ℝ
+    let v := jacobiEigenvectorBasis a b
+    let W := (e.toBasis.toMatrix v)ᵀ
+    have hdetW : |W.det| = 1 := by
+      simpa only [W, Matrix.det_transpose, ← Module.Basis.det_apply, Real.norm_eq_abs] using
+        e.det_to_matrix_orthonormalBasis v
     have hdet : |(W * jacobiKrylovMatrix a b).det| =
         |(Matrix.diagonal (fun k => v k 0) * Matrix.vandermonde (jacobiEigenvalues a b)).det| :=
       congrArg (fun M : Matrix _ _ ℝ => |M.det|)

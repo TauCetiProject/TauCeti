@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
+public import TauCeti.Analysis.InnerProductSpace.GramSchmidt.Ortho
 public import TauCeti.LinearAlgebra.Matrix.Jacobi
 import TauCeti.LinearAlgebra.Span.Basic
 

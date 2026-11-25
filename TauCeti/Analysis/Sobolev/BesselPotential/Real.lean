@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+public import TauCeti.Analysis.Sobolev.BesselPotential.ZeroAtInfty
 import TauCeti.Analysis.Sobolev.BesselPotential.Conj
-import TauCeti.Analysis.Sobolev.BesselPotential.ZeroAtInfty
 
 /-!
 # The real elements of the Bessel-potential space `H^s`
@@ -138,6 +138,16 @@ theorem continuous_continuousRep (hs : finrank ℝ E < 2 * s) (F : realSubmodule
 theorem coeFn_inclusionLp_ae_eq_continuousRep (hs : finrank ℝ E < 2 * s) (F : realSubmodule E h) :
     inclusionLp h (F : H^{s}(E)) =ᵐ[volume] fun z ↦ (continuousRep F z : ℂ) :=
   (continuousRep_spec hs F).2
+
+/-- Above the Sobolev threshold, the Sobolev embedding of a real element `F` of `H^s(E)` is its
+continuous representative. -/
+@[simp]
+theorem toZeroAtInfty_coe_apply_eq_continuousRep (hs : finrank ℝ E < 2 * s)
+    (F : realSubmodule E h) (z : E) : toZeroAtInfty hs (F : H^{s}(E)) z = (continuousRep F z : ℂ) :=
+  congrFun ((Continuous.ae_eq_iff_eq volume (toZeroAtInfty hs (F : H^{s}(E))).continuous
+    (Complex.continuous_ofReal.comp (continuous_continuousRep hs F))).1
+      ((coeFn_inclusionLp_ae_eq_toZeroAtInfty h (F : H^{s}(E))).symm.trans
+        (coeFn_inclusionLp_ae_eq_continuousRep hs F))) z
 
 /-- The continuous representative is the only continuous function representing `F`. -/
 theorem continuousRep_eq_of_ae_eq (hs : finrank ℝ E < 2 * s) {F : realSubmodule E h}

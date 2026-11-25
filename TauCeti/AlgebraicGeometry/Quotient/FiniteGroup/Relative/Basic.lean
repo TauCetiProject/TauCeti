@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.Quotient.Affine
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Equalizer
 import Mathlib.RingTheory.RingHom.Injective
 import TauCeti.AlgebraicGeometry.Morphisms.Epi
+import TauCeti.AlgebraicGeometry.Morphisms.Integral.TargetLocal
 import TauCeti.AlgebraicGeometry.Quotient.FiniteGroup.UniversalProperty
 import TauCeti.RingTheory.Invariant.Localization
 
@@ -287,8 +288,6 @@ lemma relativeSpecMap_invariantSubalgebraPresheaf_relativeSpecπ (g : G) :
 
 /-- The quotient projection is integral. -/
 instance : IsIntegralHom (invariantSubalgebraPresheaf ρ).relativeSpecπ := by
-  have : IsZariskiLocalAtTarget @IsIntegralHom.{u} :=
-    @HasAffineProperty.instIsZariskiLocalAtTarget _ _ IsIntegralHom.hasAffineProperty
   refine ((invariantSubalgebraPresheaf ρ).relativeSpecπ_iff @IsIntegralHom).mpr fun U ↦ ?_
   exact IsIntegralHom.SpecMap_iff.mpr
     (algebraMap_isIntegral_iff.mpr (isIntegral_invariantSections ρ U.val))
