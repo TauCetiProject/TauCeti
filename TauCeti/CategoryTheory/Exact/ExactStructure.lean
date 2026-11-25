@@ -157,6 +157,14 @@ theorem conflation_iff_of_iso (E : ConflationClass C) {S T : ShortComplex C} (e 
     E.Conflation S ↔ E.Conflation T :=
   E.Conflation.prop_iff_of_iso e
 
+/-- A conflation stays a conflation when its two maps are replaced by equal maps. -/
+theorem conflation_mk_of_eq (E : ConflationClass C) {X₁ X₂ X₃ : C} {f f' : X₁ ⟶ X₂}
+    {g g' : X₂ ⟶ X₃} {w : f ≫ g = 0} {w' : f' ≫ g' = 0}
+    (hS : E.Conflation (ShortComplex.mk f g w)) (hf : f = f') (hg : g = g') :
+    E.Conflation (ShortComplex.mk f' g' w') := by
+  subst hf hg
+  exact hS
+
 /-- Precomposing the inflation of a conflation with an isomorphism onto its first object gives a
 conflation. -/
 theorem conflation_iso_hom_comp (E : ConflationClass C) {S : ShortComplex C} {M : C}
