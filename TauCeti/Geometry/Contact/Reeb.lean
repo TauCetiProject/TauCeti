@@ -39,7 +39,9 @@ where `Y` is the unique vector field in `ξ` with `dα(Y, w) = df(w) / f²` for 
 
 `R_(f α) = (R_α + Z) / f`,
 
-where `Z = f Y` is the unique vector field in `ξ` with `dα(Z, w) = df(w) / f` for all `w ∈ ξ`.
+where `Z = f Y = f R_(f α) - R_α` is the unique vector field in `ξ` with `dα(Z, w) = df(w) / f`
+for all `w ∈ ξ`
+(`TauCeti.SmoothForm.IsContactForm.eq_smul_reebVectorField_sub_reebVectorField_iff`).
 Evaluating `α` on it gives `α(R_(f α)) = 1 / f`
 (`TauCeti.SmoothForm.IsContactForm.apply_reebVectorField_of_eq_smul`), which is where the factor
 `f²` in the equation for `Y` comes from. For a constant `c ≠ 0` this gives `R_(c α) = R_α / c`
@@ -73,6 +75,8 @@ law is pointwise linear algebra at each point, applying `Module.Dual.reebVector`
 * `TauCeti.SmoothForm.IsContactForm.smul_reebVectorField_eq_add_iff`: its normalized form
   `f R_(f α) = R_α + Z`.
 * `TauCeti.SmoothForm.IsContactForm.apply_reebVectorField_of_eq_smul`: `α(R_(f α)) = 1 / f`.
+* `TauCeti.SmoothForm.IsContactForm.eq_smul_reebVectorField_sub_reebVectorField_iff`: the
+  correction `Z = f R_(f α) - R_α` is the unique vector of `ξ` with `dα(Z, ·) = df / f` on `ξ`.
 
 ## References
 
@@ -336,6 +340,20 @@ theorem IsContactForm.apply_reebVectorField_of_eq_smul (hα : α.IsContactForm)
   rw [← add_sub_cancel ((f x)⁻¹ • α.reebVectorField x) (β.reebVectorField x),
     ContinuousAlternatingMap.vecCons_add, ContinuousAlternatingMap.vecCons_smul,
     hα.apply_reebVectorField, hy.1, smul_eq_mul, mul_one, add_zero]
+
+/-- **The correction term of the rescaled Reeb vector field.** Let `α` be a contact form and
+`β = f α` for a function `f`, `C¹` at `x` with `f(x) ≠ 0`. The vector `f(x) R_β(x) - R_α(x)` is the
+unique `z ∈ ξ_x = ker α_x` with `dα(z, w) = df(w) / f(x)` for all `w ∈ ξ_x`, so that
+`R_β(x) = (R_α(x) + z) / f(x)`. -/
+theorem IsContactForm.eq_smul_reebVectorField_sub_reebVectorField_iff
+    (hα : α.IsContactForm) {β : SmoothForm I M ℝ 1} {f : M → ℝ} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ, ℝ) 1 f x) (hfx : f x ≠ 0) (hβ : ∀ y, β.val y = f y • α.val y)
+    (z : TangentSpace I x) :
+    z = f x • β.reebVectorField x - α.reebVectorField x ↔
+      α.val x ![z] = 0 ∧ ∀ w : TangentSpace I x, α.val x ![w] = 0 →
+        mextDeriv α.val x ![z, w] = mvfderiv I f x w / f x := by
+  rw [eq_sub_iff_add_eq', eq_comm]
+  exact hα.smul_reebVectorField_eq_add_iff hf hfx hβ z
 
 omit [FiniteDimensional ℝ E] in
 /-- Multiplying a contact form by a nonzero constant `c` divides its Reeb vector field by `c`. -/
