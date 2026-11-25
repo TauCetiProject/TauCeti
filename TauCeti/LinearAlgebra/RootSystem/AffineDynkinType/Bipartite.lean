@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.SimpleGraph.CycleGraph
 public import TauCeti.GroupTheory.Coxeter.Bipartite
 public import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Basic
+import TauCeti.Data.Finset.Card
 
 /-!
 # Two-colourings of the affine simply-laced Dynkin diagrams

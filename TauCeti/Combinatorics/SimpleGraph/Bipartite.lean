@@ -37,9 +37,10 @@ independent of the colouring up to exchanging the two classes.
 
 Likewise an endomorphism of a preconnected graph either keeps the colour of every vertex or changes
 the colour of every vertex; a permutation doing the latter matches the two colour classes, so the
-graph has an even number of vertices. A cycle graph has a two-colouring exactly when it has an
-even number of vertices or a single vertex; on a cycle, which of the two happens is read off the
-parity of the number of steps the endomorphism moves a single vertex.
+graph has an even number of vertices (`TauCeti.two_mul_card_filter_eq_true`). A cycle graph has a
+two-colouring exactly when it has an even number of vertices or a single vertex; on a cycle, which
+of the two happens is read off the parity of the number of steps the endomorphism moves a single
+vertex.
 
 ## Main results
 
@@ -60,10 +61,6 @@ parity of the number of steps the endomorphism moves a single vertex.
   `Bool`-colourings agree or differ by exchanging the colours.
 * `SimpleGraph.Coloring.forall_apply_eq_or_forall_apply_eq_not`: on a preconnected graph, an
   endomorphism either keeps the colour of every vertex or changes the colour of every vertex.
-* `TauCeti.card_filter_eq_true_eq_card_filter_eq_false` and
-  `TauCeti.two_mul_card_filter_eq_true`: a permutation exchanging the two values of a `Bool`-valued
-  function, such as a colour-exchanging graph automorphism, matches its two fibres, so the number of
-  elements is even.
 * `SimpleGraph.isBipartite_cycleGraph_iff`: a cycle graph is bipartite exactly when it has an even
   number of vertices or a single vertex.
 * `SimpleGraph.Coloring.cycleGraph_apply_add_eq_iff_even_val`,
@@ -362,29 +359,3 @@ theorem cycleGraph_forall_apply_eq_not_iff_odd_val_apply_zero {n : ℕ} [NeZero 
     (Bool.eq_not_iff.mp (h.mpr h0))⟩
 
 end SimpleGraph.Coloring
-
-namespace TauCeti
-
-variable {V : Type*} [Fintype V]
-
-/-- **A permutation exchanging the two values of a `Bool`-valued function matches its two fibres**:
-if `c (f v) = !c v` for every `v`, then `c` takes the values `true` and `false` equally often. For
-a two-colouring of a graph, this says that a colour-exchanging permutation matches the two colour
-classes. -/
-theorem card_filter_eq_true_eq_card_filter_eq_false (c : V → Bool) (f : V ≃ V)
-    (h : ∀ v, c (f v) = !c v) : #{v | c v = true} = #{v | c v = false} :=
-  Finset.card_equiv f fun v ↦ by simp [h]
-
-/-- **A finite type with a permutation exchanging the two values of a `Bool`-valued function has
-even cardinality**: each fibre holds half of the elements. In particular, a finite graph with a
-colour-exchanging automorphism has an even number of vertices. -/
-theorem two_mul_card_filter_eq_true (c : V → Bool) (f : V ≃ V) (h : ∀ v, c (f v) = !c v) :
-    2 * #{v | c v = true} = Fintype.card V := by
-  have htot := Finset.card_filter_add_card_filter_not (s := Finset.univ) fun v ↦ c v = true
-  rw [Finset.card_univ] at htot
-  rw [two_mul, ← htot]
-  congr 1
-  convert card_filter_eq_true_eq_card_filter_eq_false c f h using 3
-  simp
-
-end TauCeti
