@@ -293,7 +293,7 @@ private theorem exists_differentiable_norm_sub_lt_of_fin {h : (Fin n → ℂ) �
 
 /-- **Polynomial approximation on polydiscs.** A function holomorphic on the open polydisc
 `∏ B(c_i, s_i)` of `ι → ℂ` is uniformly approximated on every smaller closed polydisc
-`∏ B̄(c_i, r_i)`, `r_i < s_i`, by entire functions: partial sums of its multivariate Cauchy
+`∏ closedBall(c_i, r_i)`, `r_i < s_i`, by entire functions: partial sums of its multivariate Cauchy
 expansion at `c`. -/
 theorem _root_.DifferentiableOn.exists_differentiable_norm_sub_lt_of_pi {ι : Type*} [Finite ι]
     {h : (ι → ℂ) → E} {c : ι → ℂ} {r s : ι → ℝ} {ε : ℝ}
