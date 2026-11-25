@@ -33,22 +33,11 @@ open _root_.MonoidAlgebra Module GroupAlgebraBlockExamples
 
 /-! ### The block `r + r²` of `𝔽₂[C₃]` -/
 
-/-- Every `2`-subgroup of `C₃` is trivial: its order is a power of `2` dividing `3`. -/
-theorem eq_bot_of_isPGroup_two {Q : Subgroup C₃} (hQ : IsPGroup 2 Q) : Q = ⊥ := by
-  obtain ⟨n, hn⟩ := hQ.exists_card_eq
-  have h3 : Nat.card Q ∣ 3 := by
-    simpa using Subgroup.card_subgroup_dvd_card Q
-  rw [hn] at h3
-  exact Subgroup.eq_bot_of_card_eq Q <| hn.trans <|
-    Nat.Coprime.eq_one_of_dvd (Nat.Coprime.pow_left n (by norm_num)) h3
-
 /-- **Check.** The block `r + r²` of `𝔽₂[C₃]` has defect group `1`: `1` is the only
 `2`-subgroup of `C₃`, and `Br_1` is the identity. -/
 theorem isDefectGroup_r_add_r_sq_bot :
     IsDefectGroup (ZMod 2) 2 (of (ZMod 2) C₃ r + of (ZMod 2) C₃ (r ^ 2)) ⊥ := by
-  refine isDefectGroup_iff.2 ⟨IsPGroup.of_bot, ?_, fun Q hQ _ _ ↦ eq_bot_of_isPGroup_two hQ⟩
-  rw [Ne, brauerProjection_bot_eq_zero_iff]
-  intro h
+  refine (isDefectGroup_iff_eq_bot_of_not_dvd_natCard (by simp) fun h ↦ ?_).2 rfl
   have := congrArg (fun x ↦ x.coeff r) h
   simp +decide at this
 
