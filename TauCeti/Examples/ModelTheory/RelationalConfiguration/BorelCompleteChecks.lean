@@ -10,7 +10,8 @@ public import TauCeti.ModelTheory.RelationalConfiguration.BorelComplete
 /-!
 # Regression examples: relabelling on small carriers and Borel completeness
 
-These are CountableStructureSpacesPartII §§1.1-1.2 Checks.
+Regression examples for relabelling of relational configurations and for Borel completeness of
+classes of codes.
 
 * Relabelling the code of `P = {0}` along the transposition of `0` and `1` gives the code of
   `P = {1}`, and agrees with the logic action of that transposition.
@@ -32,16 +33,17 @@ namespace TauCeti.RelationalConfiguration.BorelCompleteChecks
 
 /-! ### Relabelling along a transposition -/
 
+/-- Relabelling a unary atom `R(v)` along `f` gives `R(f v)`. -/
+private theorem map_atom_unary {L : Language} {V W : Type*} (f : V → W) (R : L.Relations 1)
+    (v : V) : (atom R ![v]).map f = atom R ![f v] := by
+  rw [Atom.map_atom, Matrix.vec_single_eq_const, Matrix.vec_single_eq_const]
+  rfl
+
 -- Relabelling the code of `P = {0}` along the transposition `(0 1)` gives the code of `P = {1}`.
 example {L : Language} (R : L.Relations 1) (c : RelationalConfiguration L ℕ)
     (hc : ∀ v, c.eval (atom R ![v]) = decide (v = 0)) (v : ℕ) :
     (relabel (Equiv.swap 0 1) c).eval (atom R ![v]) = decide (v = 1) := by
-  rw [eval_relabel, Atom.map_atom, Equiv.symm_swap]
-  have : (Equiv.swap (0 : ℕ) 1 ∘ ![v]) = ![Equiv.swap 0 1 v] := by
-    ext i
-    fin_cases i
-    rfl
-  rw [this, hc]
+  rw [eval_relabel, map_atom_unary, Equiv.symm_swap, hc]
   simp [Equiv.swap_apply_eq_iff]
 
 -- Relabelling along a permutation is the logic action of that permutation.
@@ -50,6 +52,14 @@ example {L : Language} (c : RelationalConfiguration L ℕ) :
   relabel_perm _ c
 
 /-! ### The carrier `Fin 0` -/
+
+/-- A configuration is its truth-value function on atoms, through `eval` and `mk`. -/
+private def equivAtomFun {L : Language} {V : Type*} :
+    RelationalConfiguration L V ≃ (Atom L V → Bool) where
+  toFun c := c.eval
+  invFun := mk
+  left_inv _ := ext fun a => eval_mk _ a
+  right_inv f := funext (eval_mk f)
 
 /-- Over the empty carrier, the only atoms are nullary. -/
 private theorem atom_fin_zero {L : Language} (a : Atom L (Fin 0)) :
@@ -75,13 +85,9 @@ private theorem isoSetoid_fin_zero_iff {L : Language} [L.IsRelational]
 /-- On the empty carrier, the classes of `classIso univ` are the codes. -/
 private theorem card_quotient_classIso_univ_fin_zero {L : Language} [L.IsRelational] :
     Nat.card (Quotient (classIso (univ : Set (RelationalConfiguration L (Fin 0))))) =
-      Nat.card (RelationalConfiguration L (Fin 0)) := by
-  refine Nat.card_congr (Equiv.ofBijective (Quotient.lift (fun c => c.val) fun c d h =>
-    congrArg Subtype.val ?_) ⟨fun a b hab => ?_, fun c => ⟨⟦⟨c, mem_univ c⟩⟧, rfl⟩⟩)
-  · exact Subtype.ext (isoSetoid_fin_zero_iff.1 h)
-  · induction a using Quotient.ind
-    induction b using Quotient.ind
-    exact Quotient.sound (isoSetoid_fin_zero_iff.2 hab)
+      Nat.card (RelationalConfiguration L (Fin 0)) :=
+  Nat.card_congr ((Setoid.quotientTrivialEquiv _ fun _ _ h =>
+    Subtype.ext (isoSetoid_fin_zero_iff.1 h)).trans (Equiv.Set.univ _))
 
 -- Without nullary symbols there is a single code on `Fin 0`, and a single class.
 example {L : Language} [L.IsRelational] [IsEmpty (L.Relations 0)] :
@@ -89,8 +95,7 @@ example {L : Language} [L.IsRelational] [IsEmpty (L.Relations 0)] :
       Nat.card (Quotient (classIso (univ : Set (RelationalConfiguration L (Fin 0))))) = 1 := by
   have : IsEmpty (Atom L (Fin 0)) :=
     ⟨fun a => (atom_fin_zero a).elim fun R _ => IsEmpty.elim inferInstance R⟩
-  have : Unique (RelationalConfiguration L (Fin 0)) :=
-    inferInstanceAs (Unique (Atom L (Fin 0) → Bool))
+  have : Unique (RelationalConfiguration L (Fin 0)) := equivAtomFun.unique
   rw [card_quotient_classIso_univ_fin_zero, Nat.card_unique]
   exact ⟨rfl, rfl⟩
 
@@ -120,8 +125,7 @@ example : Nat.card (RelationalConfiguration nullaryLanguage (Fin 0)) = 2 ∧
         rfl
       right_inv _ := rfl }
   have hcard : Nat.card (RelationalConfiguration nullaryLanguage (Fin 0)) = 2 := by
-    rw [show RelationalConfiguration nullaryLanguage (Fin 0) = (Atom nullaryLanguage (Fin 0) →
-      Bool) from rfl, Nat.card_congr (e.arrowCongr (Equiv.refl Bool))]
+    rw [Nat.card_congr (equivAtomFun.trans (e.arrowCongr (Equiv.refl Bool)))]
     simp
   exact ⟨hcard, relabel_fin_zero, by rw [card_quotient_classIso_univ_fin_zero, hcard]⟩
 
@@ -155,11 +159,7 @@ def unaryAtom (i v : ℕ) : Atom unaryFamily ℕ :=
 /-- Relabelling the atom `P_i(v)` along `f` gives `P_i(f v)`. -/
 @[simp]
 theorem map_unaryAtom (f : ℕ → ℕ) (i v : ℕ) : (unaryAtom i v).map f = unaryAtom i (f v) := by
-  rw [unaryAtom, unaryAtom, Atom.map_atom]
-  congr 1
-  funext j
-  fin_cases j
-  rfl
+  rw [unaryAtom, unaryAtom, map_atom_unary]
 
 /-- Every atom of `unaryFamily` is some `P_i(v)`. -/
 theorem exists_eq_unaryAtom (a : Atom unaryFamily ℕ) : ∃ i v, a = unaryAtom i v := by
@@ -169,21 +169,30 @@ theorem exists_eq_unaryAtom (a : Atom unaryFamily ℕ) : ∃ i v, a = unaryAtom 
     | 0, R, _ => exact (R : Empty).elim
     | 1, i, x =>
       refine ⟨i, x 0, (atom_eq_atom_iff (S := unarySymbol i)).2 ⟨rfl, heq_of_eq ?_⟩⟩
-      funext j
-      fin_cases j
-      rfl
+      rw [Matrix.vec_single_eq_const]
+      exact funext fun j => congrArg x (Subsingleton.elim j 0)
     | _ + 2, R, _ => exact (R : Empty).elim
 
 /-- The class of codes of `unaryFamily` on `ℕ` in which each `P_i` is `∅` or `ℕ`. -/
 def constantClass : Set (RelationalConfiguration unaryFamily ℕ) :=
   {c | ∀ i v w, c.eval (unaryAtom i v) = c.eval (unaryAtom i w)}
 
+/-- A code lies in `constantClass` when each `P_i` takes the same value at all points. -/
+theorem mem_constantClass_iff {c : RelationalConfiguration unaryFamily ℕ} :
+    c ∈ constantClass ↔ ∀ i v w, c.eval (unaryAtom i v) = c.eval (unaryAtom i w) :=
+  Iff.rfl
+
 /-- The truth values of `P_0, P_1, …` at the point `0`. -/
 def truthValues (c : RelationalConfiguration unaryFamily ℕ) : ℕ → Bool :=
   fun i => c.eval (unaryAtom i 0)
 
+/-- The `i`th truth value of a code is the value of `P_i` at `0`. -/
+theorem truthValues_apply (c : RelationalConfiguration unaryFamily ℕ) (i : ℕ) :
+    truthValues c i = c.eval (unaryAtom i 0) :=
+  (rfl)
+
 /-- The value `f i` on the symbol `P_i`. -/
-def symbolValue (f : ℕ → Bool) : (Σ n, unaryFamily.Relations n) → Bool
+private def symbolValue (f : ℕ → Bool) : (Σ n, unaryFamily.Relations n) → Bool
   | ⟨0, R⟩ => (R : Empty).elim
   | ⟨1, i⟩ => f i
   | ⟨_ + 2, R⟩ => (R : Empty).elim
@@ -198,6 +207,11 @@ theorem eval_ofTruthValues (f : ℕ → Bool) (i v : ℕ) :
     (ofTruthValues f).eval (unaryAtom i v) = f i := by
   rw [ofTruthValues, eval_mk, unaryAtom, Atom.symbol_atom]
   rfl
+
+/-- The truth values of `ofTruthValues f` are `f`. -/
+@[simp]
+theorem truthValues_ofTruthValues (f : ℕ → Bool) : truthValues (ofTruthValues f) = f :=
+  funext fun i => eval_ofTruthValues f i 0
 
 /-- The code `ofTruthValues f` lies in `constantClass`. -/
 theorem ofTruthValues_mem_constantClass (f : ℕ → Bool) : ofTruthValues f ∈ constantClass :=
@@ -222,7 +236,7 @@ theorem isClosed_constantClass : IsClosed constantClass := by
 theorem measurableSet_constantClass : MeasurableSet constantClass :=
   isClosed_constantClass.measurableSet
 
-/-- Relabelling preserves the truth values. -/
+/-- Relabelling preserves the truth values of a code in `constantClass`. -/
 theorem truthValues_perm_smul {c : RelationalConfiguration unaryFamily ℕ}
     (hc : c ∈ constantClass) (σ : Equiv.Perm ℕ) : truthValues (σ • c) = truthValues c := by
   funext i
@@ -246,32 +260,37 @@ theorem classIso_constantClass_iff {c d : constantClass} :
   · rw [one_smul, eq_of_truthValues_eq c.property d.property h]
 
 /-- **The isomorphism types of `constantClass` are the points of `ℕ → Bool`.** -/
-noncomputable def quotientClassIsoConstantClassEquiv :
+def quotientClassIsoConstantClassEquiv :
     Quotient (classIso constantClass) ≃ (ℕ → Bool) :=
-  Equiv.ofBijective (Quotient.lift (fun c => truthValues c) fun _ _ =>
-    classIso_constantClass_iff.1)
-    ⟨fun a b hab => by
-      induction a using Quotient.ind
-      induction b using Quotient.ind
-      exact Quotient.sound (classIso_constantClass_iff.2 hab),
-    fun f => ⟨⟦⟨ofTruthValues f, ofTruthValues_mem_constantClass f⟩⟧,
-      funext fun i => eval_ofTruthValues f i 0⟩⟩
+  (Quotient.congrRight fun _ _ => classIso_constantClass_iff).trans
+    (Setoid.quotientKerEquivOfRightInverse (truthValues ∘ Subtype.val)
+      (fun f => ⟨ofTruthValues f, ofTruthValues_mem_constantClass f⟩) truthValues_ofTruthValues)
 
-/-- **A Borel complete class has uncountably many isomorphism types**: isomorphism on
-`constantClass`, with `ℕ → Bool` as its isomorphism types, reduces to it. So a class with countably
-many isomorphism types, such as all codes of one unary predicate, is not Borel complete. -/
-theorem not_countable_quotient_of_borelComplete {L : Language} [L.IsRelational]
-    {K : Set (RelationalConfiguration L ℕ)} (hK : BorelComplete K) :
-    ¬ Countable (Quotient (classIso K)) := by
+/-- The isomorphism type of a code in `constantClass` corresponds to its truth values. -/
+@[simp]
+theorem quotientClassIsoConstantClassEquiv_mk (c : constantClass) :
+    quotientClassIsoConstantClassEquiv ⟦c⟧ = truthValues c :=
+  (rfl)
+
+/-- The isomorphism type corresponding to `f` is that of `ofTruthValues f`. -/
+@[simp]
+theorem quotientClassIsoConstantClassEquiv_symm_apply (f : ℕ → Bool) :
+    quotientClassIsoConstantClassEquiv.symm f =
+      ⟦⟨ofTruthValues f, ofTruthValues_mem_constantClass f⟩⟧ :=
+  (rfl)
+
+-- A Borel complete class has uncountably many isomorphism types: isomorphism on `constantClass`,
+-- with `ℕ → Bool` as its isomorphism types, reduces to it. So a class with countably many
+-- isomorphism types, such as all codes of one unary predicate, is not Borel complete.
+example {L : Language} [L.IsRelational] {K : Set (RelationalConfiguration L ℕ)}
+    (hK : BorelComplete K) : ¬ Countable (Quotient (classIso K)) := by
   intro h
   obtain ⟨g, -, hg⟩ := (hK.borelReducible measurableSet_constantClass
     isomorphismInvariant_constantClass).exists_measurable_injective_quotient
-  have : Countable (ℕ → Bool) :=
-    (hg.comp quotientClassIsoConstantClassEquiv.symm.injective).countable
-  have hle := Cardinal.mk_le_aleph0_iff.2 this
-  rw [Cardinal.mk_pi, Cardinal.prod_const, Cardinal.mk_bool, Cardinal.lift_id, Cardinal.mk_nat,
-    Cardinal.lift_aleph0] at hle
-  exact (Cardinal.cantor _).not_ge hle
+  have hlt : Cardinal.aleph0 < Cardinal.mk (ℕ → Bool) := by
+    simpa using Cardinal.aleph0_lt_continuum
+  exact hlt.not_ge (Cardinal.mk_le_aleph0_iff.2
+    (hg.comp quotientClassIsoConstantClassEquiv.symm.injective).countable)
 
 /-! ### Unions -/
 
