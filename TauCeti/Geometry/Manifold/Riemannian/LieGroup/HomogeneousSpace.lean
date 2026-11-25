@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.Riemannian.Section
 public import TauCeti.Geometry.Manifold.Riemannian.Submersion.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Homogeneous
 public import TauCeti.Topology.Algebra.Group.Quotient.Basic
-public import TauCeti.LinearAlgebra.Projection.KerCompl
 import TauCeti.GroupTheory.Coset.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
 
@@ -42,8 +41,8 @@ homogeneous metric*.
 * `Subgroup.homogeneousMetric`: the `G`-invariant metric on `G ⧸ K` determined by an
   isotropy-invariant inner product on `T_o(G ⧸ K)`.
 * `Subgroup.horizontalLiftOne`, `Subgroup.horizontalInnerOne`: the inverse of `dπ_1` on
-  `(ker dπ_1)^⊥` (`LinearMap.equivOfIsComplKer` for that complement) and the inner product it
-  induces on `T_o(G ⧸ K)`.
+  `(ker dπ_1)^⊥` (through Mathlib's `LinearMap.kerComplementEquivRange` for that complement) and
+  the inner product it induces on `T_o(G ⧸ K)`.
 * `Subgroup.normalHomogeneousMetric`: the normal homogeneous metric of an `Ad(G)`-invariant inner
   product at the identity of `G`.
 
@@ -348,7 +347,8 @@ variable [RiemannianBundle (fun g : G ↦ TangentSpace I g)]
 
 include hK in
 /-- The restriction of `dπ_1` to the orthogonal complement of its kernel is bijective: it is the
-forward map of `LinearMap.equivOfIsComplKer` for the complement `𝔨^⊥`. -/
+forward map of Mathlib's `LinearMap.kerComplementEquivRange` for the complement `𝔨^⊥`, followed by
+the inclusion of the range, which is everything since `dπ_1` is surjective. -/
 theorem bijective_mfderiv_quotientMk_one_orthogonal :
     letI := quotientChartedSpaceOfIsClosed I hK
     Bijective ((mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K)
@@ -356,36 +356,40 @@ theorem bijective_mfderiv_quotientMk_one_orthogonal :
         (QuotientGroup.mk : G → G ⧸ K) 1).kerᗮ.subtype) := by
   let _ := quotientChartedSpaceOfIsClosed I hK
   set D := mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) 1
-  rw [← LinearMap.coe_equivOfIsComplKer D.toLinearMap
-    ((isSubmersion_quotientMk (I := I) hK).surjective_mfderiv (by simp) 1)
-    D.ker.isCompl_orthogonal]
-  exact LinearEquiv.bijective _
+  exact ((D.toLinearMap.kerComplementEquivRange D.ker.isCompl_orthogonal.symm).trans
+    (LinearEquiv.ofTop _ (LinearMap.range_eq_top.2
+      ((isSubmersion_quotientMk (I := I) hK).surjective_mfderiv (by simp) 1)))).bijective
 
 variable (I K) in
 /-- **The horizontal lift at the identity.** The inverse of the restriction of `dπ_1` to the
 orthogonal complement `𝔪 = 𝔨^⊥` of its kernel `𝔨`, for the inner product at the identity, where
-`π` is the projection `G → G ⧸ K`. This is `LinearMap.equivOfIsComplKer` for the complement
-`𝔨^⊥`, inverted and followed by the inclusion of `𝔨^⊥`. -/
+`π` is the projection `G → G ⧸ K`. This is Mathlib's `LinearMap.kerComplementEquivRange` for the
+complement `𝔨^⊥`, with the range identified with `T_o(G ⧸ K)` by surjectivity, inverted and
+followed by the inclusion of `𝔨^⊥`. -/
 def horizontalLiftOne :
     letI := quotientChartedSpaceOfIsClosed I hK
     TangentSpace 𝓘(ℝ, QuotientModelSpace I K) ((1 : G) : G ⧸ K) →L[ℝ] TangentSpace I (1 : G) :=
   letI := quotientChartedSpaceOfIsClosed I hK
   LinearMap.toContinuousLinearMap ((mfderiv I 𝓘(ℝ, QuotientModelSpace I K)
     (QuotientGroup.mk : G → G ⧸ K) 1).kerᗮ.subtype ∘ₗ
-      (LinearMap.equivOfIsComplKer _
-        ((isSubmersion_quotientMk (I := I) hK).surjective_mfderiv (by simp) 1)
-        (mfderiv I 𝓘(ℝ, QuotientModelSpace I K)
-          (QuotientGroup.mk : G → G ⧸ K) 1).ker.isCompl_orthogonal).symm.toLinearMap)
+      (((mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K)
+        1).toLinearMap.kerComplementEquivRange (mfderiv I 𝓘(ℝ, QuotientModelSpace I K)
+          (QuotientGroup.mk : G → G ⧸ K) 1).ker.isCompl_orthogonal.symm).trans
+        (LinearEquiv.ofTop _ (LinearMap.range_eq_top.2
+          ((isSubmersion_quotientMk (I := I) hK).surjective_mfderiv (by simp)
+            1)))).symm.toLinearMap)
 
 /-- The horizontal lift at the identity is the inverse of the restriction of `dπ_1` to `𝔨^⊥`,
 followed by the inclusion of `𝔨^⊥`. -/
 theorem horizontalLiftOne_apply :
     letI := quotientChartedSpaceOfIsClosed I hK
     ∀ u : TangentSpace 𝓘(ℝ, QuotientModelSpace I K) ((1 : G) : G ⧸ K),
-      horizontalLiftOne I K hK u = ((LinearMap.equivOfIsComplKer _
-        ((isSubmersion_quotientMk (I := I) hK).surjective_mfderiv (by simp) 1)
-        (mfderiv I 𝓘(ℝ, QuotientModelSpace I K)
-          (QuotientGroup.mk : G → G ⧸ K) 1).ker.isCompl_orthogonal).symm u :
+      horizontalLiftOne I K hK u = ((((mfderiv I 𝓘(ℝ, QuotientModelSpace I K)
+        (QuotientGroup.mk : G → G ⧸ K) 1).toLinearMap.kerComplementEquivRange
+          (mfderiv I 𝓘(ℝ, QuotientModelSpace I K)
+            (QuotientGroup.mk : G → G ⧸ K) 1).ker.isCompl_orthogonal.symm).trans
+          (LinearEquiv.ofTop _ (LinearMap.range_eq_top.2
+            ((isSubmersion_quotientMk (I := I) hK).surjective_mfderiv (by simp) 1)))).symm u :
           TangentSpace I (1 : G)) :=
   fun _ ↦ (rfl)
 
@@ -408,7 +412,10 @@ theorem mfderiv_quotientMk_horizontalLiftOne :
         (horizontalLiftOne I K hK u) = u := by
   let _ := quotientChartedSpaceOfIsClosed I hK
   intro u
-  exact LinearMap.apply_equivOfIsComplKer_symm_apply _ _ _ u
+  rw [horizontalLiftOne_apply, LinearEquiv.symm_trans_apply]
+  refine (LinearMap.kerComplementEquivRange_apply_coe _
+    (Submodule.isCompl_orthogonal _).symm _).symm.trans ?_
+  rw [LinearEquiv.apply_symm_apply, LinearEquiv.coe_ofTop_symm_apply]
 
 /-- A horizontal vector at the identity is the horizontal lift of its image. -/
 theorem horizontalLiftOne_mfderiv_quotientMk {a : TangentSpace I (1 : G)} :
@@ -418,7 +425,10 @@ theorem horizontalLiftOne_mfderiv_quotientMk {a : TangentSpace I (1 : G)} :
       (mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) 1 a) = a := by
   let _ := quotientChartedSpaceOfIsClosed I hK
   intro ha
-  exact LinearMap.equivOfIsComplKer_symm_apply_of_mem _ _ _ ha
+  rw [horizontalLiftOne_apply, LinearEquiv.symm_trans_apply]
+  refine congrArg Subtype.val (?_ : _ = Subtype.mk a ha)
+  rw [LinearEquiv.symm_apply_eq, LinearEquiv.symm_apply_eq, LinearEquiv.ofTop_apply,
+    LinearMap.kerComplementEquivRange_apply_coe, ContinuousLinearMap.coe_coe]
 
 variable (I K) in
 /-- **The horizontal inner product at the base point.** The inner product on `T_o(G ⧸ K)` that
