@@ -72,37 +72,20 @@ variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
   {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P]
   [RiemannianBundle (fun z : P ↦ TangentSpace K z)]
 
-variable [IsManifold I 1 M] [IsManifold J 1 N]
+variable [IsManifold I 1 M] [IsManifold J 1 N] [CompleteSpace E] [CompleteSpace F]
 
-/-- A point `(y, U Q U⁻¹)` of the total space of `Hom(TN, TN)` depends only on `y` and on the
-values of `U : T_xM ≃ₗᵢ[ℝ] T_yN`. -/
-private theorem mk_conjStarAlgEquiv_eq [CompleteSpace E] [CompleteSpace F] {x : M} {y y' : N}
-    (h : y = y') (U : TangentSpace I x ≃ₗᵢ[ℝ] TangentSpace J y)
-    (U' : TangentSpace I x ≃ₗᵢ[ℝ] TangentSpace J y')
-    (hU : ∀ v, U v = U' v) (Q : TangentSpace I x →L[ℝ] TangentSpace I x) :
-    (⟨y, U.conjStarAlgEquiv Q⟩ :
-        TotalSpace (F →L[ℝ] F) fun z : N ↦ TangentSpace J z →L[ℝ] TangentSpace J z) =
-      ⟨y', U'.conjStarAlgEquiv Q⟩ := by
-  subst h
-  obtain rfl : U = U' := LinearIsometryEquiv.ext hU
+/-- The map of Grassmann bundles induced by `Φ⁻¹` inverts the map induced by `Φ`, since the
+differential of `Φ⁻¹` at `Φ x` inverts the differential of `Φ` at `x`. -/
+private theorem map_symm_comp_map (k : ℕ) (Φ : RiemannianIsometry I J M N) :
+    (grassmannBundle.map Φ.symm Φ.symm.mfderivToLinearIsometryEquiv :
+      grassmannBundle F (TangentSpace J : N → Type _) k →
+        grassmannBundle E (TangentSpace I : M → Type _) k) ∘
+      grassmannBundle.map Φ Φ.mfderivToLinearIsometryEquiv = id := by
+  rw [← grassmannBundle.map_comp, ← grassmannBundle.map_id]
+  refine grassmannBundle.map_congr fun x v ↦ TotalSpace.ext (Φ.symm_apply_apply x) (heq_of_eq ?_)
+  rw [LinearIsometryEquiv.trans_apply, mfderivToLinearIsometryEquiv_apply Φ.symm,
+    ← mfderivToLinearIsometryEquiv_symm_apply, LinearIsometryEquiv.symm_apply_apply]
   rfl
-
-variable [CompleteSpace E] [CompleteSpace F]
-
-/-- The differential of `Φ⁻¹` at `Φ x` inverts the differential of `Φ` at `x`. -/
-private theorem mk_conjStarAlgEquiv_symm_mfderiv (Φ : RiemannianIsometry I J M N) (x : M)
-    (Q : TangentSpace I x →L[ℝ] TangentSpace I x) :
-    (⟨Φ.symm (Φ x), (Φ.symm.mfderivToLinearIsometryEquiv (Φ x)).conjStarAlgEquiv
-        ((Φ.mfderivToLinearIsometryEquiv x).conjStarAlgEquiv Q)⟩ :
-        TotalSpace (E →L[ℝ] E) fun z : M ↦ TangentSpace I z →L[ℝ] TangentSpace I z) = ⟨x, Q⟩ := by
-  refine Eq.trans ?_ ((mk_conjStarAlgEquiv_eq (Φ.symm_apply_apply x)
-    ((Φ.mfderivToLinearIsometryEquiv x).trans (Φ.symm.mfderivToLinearIsometryEquiv (Φ x)))
-    (LinearIsometryEquiv.refl ℝ _) (fun v ↦ ?_) Q).trans (by simp))
-  · rw [LinearIsometryEquiv.conjStarAlgEquiv_trans]
-    rfl
-  · rw [LinearIsometryEquiv.trans_apply, mfderivToLinearIsometryEquiv_apply Φ.symm,
-      ← mfderivToLinearIsometryEquiv_symm_apply, LinearIsometryEquiv.symm_apply_apply]
-    rfl
 
 variable (k : ℕ) in
 /-- **The homeomorphism of Grassmann bundles induced by a smooth Riemannian isometry**
@@ -112,14 +95,11 @@ def grassmannBundleHomeomorph (Φ : RiemannianIsometry I J M N) :
       grassmannBundle F (TangentSpace J : N → Type _) k where
   toFun := grassmannBundle.map Φ Φ.mfderivToLinearIsometryEquiv
   invFun := grassmannBundle.map Φ.symm Φ.symm.mfderivToLinearIsometryEquiv
-  left_inv p := Subtype.ext (by
-    rw [grassmannBundle.coe_map_apply, grassmannBundle.coe_map_apply]
-    exact mk_conjStarAlgEquiv_symm_mfderiv Φ p.val.proj p.val.snd)
-  right_inv q := Subtype.ext (by
-    rw [grassmannBundle.coe_map_apply, grassmannBundle.coe_map_apply]
-    have h := mk_conjStarAlgEquiv_symm_mfderiv Φ.symm q.val.proj q.val.snd
+  left_inv := congrFun (map_symm_comp_map k Φ)
+  right_inv := by
+    have h := map_symm_comp_map k Φ.symm
     rw [symm_symm] at h
-    exact h)
+    exact congrFun h
   continuous_toFun := grassmannBundle.continuous_map
     (by rw [← coe_toDiffeomorph]; exact Φ.toDiffeomorph.continuous)
     Φ.continuousAt_inCoordinates_mfderivToLinearIsometryEquiv
@@ -161,10 +141,11 @@ variable (I M k) in
 theorem grassmannBundleHomeomorph_refl :
     grassmannBundleHomeomorph k (RiemannianIsometry.refl I M) =
       Homeomorph.refl (grassmannBundle E (TangentSpace I : M → Type _) k) := by
-  ext ⟨⟨x, Q⟩, hQ⟩ : 2
-  rw [coe_grassmannBundleHomeomorph_apply]
-  exact (mk_conjStarAlgEquiv_eq (refl_apply I M x) _ (LinearIsometryEquiv.refl ℝ _)
-    (mfderivToLinearIsometryEquiv_refl_apply x) Q).trans (by simp)
+  refine Homeomorph.ext (congrFun ?_)
+  change _ = id
+  rw [coe_grassmannBundleHomeomorph, ← grassmannBundle.map_id]
+  exact grassmannBundle.map_congr fun x v ↦
+    TotalSpace.ext (refl_apply I M x) (heq_of_eq (mfderivToLinearIsometryEquiv_refl_apply x v))
 
 /-- **Functoriality**: a composite of isometries induces the composite of the induced
 homeomorphisms. -/
@@ -172,13 +153,11 @@ theorem grassmannBundleHomeomorph_trans [IsManifold K 1 P] [CompleteSpace G]
     (Φ : RiemannianIsometry I J M N) (Ψ : RiemannianIsometry J K N P) :
     grassmannBundleHomeomorph k (Φ.trans Ψ) =
       (grassmannBundleHomeomorph k Φ).trans (grassmannBundleHomeomorph k Ψ) := by
-  ext ⟨⟨x, Q⟩, hQ⟩ : 2
-  rw [Homeomorph.trans_apply, coe_grassmannBundleHomeomorph_apply,
-    coe_grassmannBundleHomeomorph_apply, coe_grassmannBundleHomeomorph_apply]
-  refine (mk_conjStarAlgEquiv_eq (trans_apply Φ Ψ x) _
-    ((Φ.mfderivToLinearIsometryEquiv x).trans (Ψ.mfderivToLinearIsometryEquiv (Φ x)))
-    (mfderivToLinearIsometryEquiv_trans_apply Φ Ψ x) Q).trans ?_
-  rw [LinearIsometryEquiv.conjStarAlgEquiv_trans]
-  rfl
+  refine Homeomorph.ext (congrFun ?_)
+  change _ = grassmannBundleHomeomorph k Ψ ∘ grassmannBundleHomeomorph k Φ
+  rw [coe_grassmannBundleHomeomorph, coe_grassmannBundleHomeomorph, coe_grassmannBundleHomeomorph,
+    ← grassmannBundle.map_comp]
+  exact grassmannBundle.map_congr fun x v ↦ TotalSpace.ext (trans_apply Φ Ψ x)
+    (heq_of_eq (mfderivToLinearIsometryEquiv_trans_apply Φ Ψ x v))
 
 end TauCeti.RiemannianIsometry

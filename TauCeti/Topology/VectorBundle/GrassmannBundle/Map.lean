@@ -23,7 +23,8 @@ of Grassmann bundles (`TauCeti.grassmannBundle.map`). Over each point it is the 
 `LinearIsometryEquiv.grassmannianCongr` of the Grassmannians of the fibres
 (`TauCeti.grassmannBundle.map_fiberIncl`), and it is functorial: the identity covered by identities
 induces the identity (`TauCeti.grassmannBundle.map_id`), and composites induce composites
-(`TauCeti.grassmannBundle.map_comp`).
+(`TauCeti.grassmannBundle.map_comp`). It depends only on the values of `f` and of the `U_x`
+(`TauCeti.grassmannBundle.map_congr`).
 
 When `f` is continuous and `U` is continuous in the coordinates of the bundles, that is,
 `x ↦ e'_{f x} ∘ U_x ∘ e_x⁻¹` is continuous at each point for the local trivializations `e`, `e'`
@@ -44,6 +45,7 @@ For the tangent bundles of Riemannian manifolds and an isometry `f`, `U_x` is th
 
 * `TauCeti.grassmannBundle.map`: the map `(x, P) ↦ (f x, U_x P U_x⁻¹)`.
 * `TauCeti.grassmannBundle.map_id`, `TauCeti.grassmannBundle.map_comp`: functoriality.
+* `TauCeti.grassmannBundle.map_congr`: the induced map depends only on the values of `f` and `U`.
 * `TauCeti.grassmannBundle.continuous_map`: continuity.
 * `TauCeti.grassmannBundle.mapHomeomorph`: the homeomorphism induced by a homeomorphism of the
   bases covered by fibrewise linear isometries.
@@ -109,6 +111,22 @@ theorem map_comp (g : B' → B'') (U' : ∀ y, E' y ≃ₗᵢ[ℝ] E'' (g y)) :
       grassmannBundle F E k → grassmannBundle F'' E'' k) =
       (map g U' : grassmannBundle F' E' k → grassmannBundle F'' E'' k) ∘ map f U :=
   funext fun _ ↦ rfl
+
+variable {f U} in
+/-- **Congruence.** The induced map depends only on the values of `f` and of the fibre maps `U_x`,
+compared as maps into the total space of `E'`. -/
+theorem map_congr {f' : B → B'} {U' : ∀ x, E x ≃ₗᵢ[ℝ] E' (f' x)}
+    (h : ∀ x v, (⟨f x, U x v⟩ : TotalSpace F' E') = ⟨f' x, U' x v⟩) :
+    (map f U : grassmannBundle F E k → grassmannBundle F' E' k) = map f' U' := by
+  funext ⟨⟨x, P⟩, hP⟩
+  refine Subtype.ext ?_
+  rw [coe_map_apply, coe_map_apply]
+  replace h := h x
+  generalize f x = y, U x = V at h ⊢
+  generalize f' x = y', U' x = V' at h ⊢
+  obtain rfl : y = y' := congrArg TotalSpace.proj (h 0)
+  obtain rfl : V = V' := LinearIsometryEquiv.ext fun v ↦ TotalSpace.mk_inj.1 (h v)
+  rfl
 
 /-- The induced map is injective when `f` is. -/
 theorem map_injective (hf : Function.Injective f) :
