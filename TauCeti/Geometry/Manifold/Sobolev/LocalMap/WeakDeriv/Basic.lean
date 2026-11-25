@@ -40,11 +40,10 @@ overlap domain, independent of `p` and retaining both `(1, 0)` and `(0, 1)` comp
 * `TauCeti.hasWeakMFDerivOnGroupoid_iff_isNullSet_ne_mfderiv`,
   `TauCeti.HasWeakMFDerivGroupoid.isNullSet_ne_mfderiv`: for `C¹` maps, the weak differentials
   are exactly the fields agreeing with `mfderiv` off a chartwise null set.
-* `TauCeti.HasWeakMFDerivOnBordered.isNullSet_ne`,
-  `TauCeti.HasWeakMFDerivOnBordered.isNullSet_ne_mfderiv` and
-  `TauCeti.hasWeakMFDerivOnBordered_iff_isNullSet_ne_mfderiv`: on a surface with boundary, the
-  weak differential is unique and, for `C¹` maps, agrees with `mfderiv`, both off a chartwise null
-  set (which may contain the boundary); specializations of the groupoid statements.
+* `TauCeti.hasWeakMFDerivOnBordered_iff_isNullSet_ne_mfderiv`: on a surface with boundary, the
+  weak differentials of a `C¹` map are the fields agreeing with `mfderiv` off a chartwise null set
+  (which may contain the boundary). The groupoid uniqueness and `mfderiv` agreement statements
+  apply directly to `HasWeakMFDerivOnBordered` and `HasWeakMFDerivBordered`.
 
 ## References
 
@@ -552,34 +551,6 @@ theorem HasWeakMFDerivOnBordered.congr_deriv_of_isNullSet
     HasWeakMFDerivOnBordered I u du' s :=
   HasWeakMFDerivOnGroupoid.congr_deriv_of_isNullSet
     (borderedHolomorphicGroupoid_maximalAtlas_subset (by simp)) h hnull
-
-/-- **Almost-everywhere uniqueness of the weak differential** on an open subset of a Riemann
-surface with boundary: two weak differentials agree off a chartwise null set. The boundary is a
-null set, so this says nothing about the derivative at boundary points. -/
-theorem HasWeakMFDerivOnBordered.isNullSet_ne [HasGroupoid X borderedHolomorphicGroupoid]
-    [IsManifold I ∞ M] (hs : IsOpen s) (h₁ : HasWeakMFDerivOnBordered I u du s)
-    (h₂ : HasWeakMFDerivOnBordered I u du' s) :
-    IsNullSet closedUpperHalfPlaneModel {x ∈ s | du x ≠ du' x} :=
-  HasWeakMFDerivOnGroupoid.isNullSet_ne hs h₁ h₂
-
-/-- **The weak differential agrees with `mfderiv` almost everywhere.** On an open subset `s` of
-a Riemann surface with boundary, where `u` is `C^n` for some `1 ≤ n`, every weak differential of
-`u` agrees with `mfderiv` off a chartwise null set. That null set may contain the boundary, so this
-says nothing about the derivative at boundary points. -/
-theorem HasWeakMFDerivOnBordered.isNullSet_ne_mfderiv [HasGroupoid X borderedHolomorphicGroupoid]
-    [IsManifold I ∞ M] {n : ℕ∞ω} (h : HasWeakMFDerivOnBordered I u du s)
-    (hu : ContMDiffOn closedUpperHalfPlaneModel I n u s) (hn : 1 ≤ n) (hs : IsOpen s) :
-    IsNullSet closedUpperHalfPlaneModel
-      {x ∈ s | du x ≠ mfderiv closedUpperHalfPlaneModel I u x} :=
-  HasWeakMFDerivOnGroupoid.isNullSet_ne_mfderiv h hu hn hs
-
-/-- **The global weak differential agrees with `mfderiv`** on a Riemann surface with boundary,
-for a `C^n` map with `1 ≤ n`, off a chartwise null set. -/
-theorem HasWeakMFDerivBordered.isNullSet_ne_mfderiv [HasGroupoid X borderedHolomorphicGroupoid]
-    [IsManifold I ∞ M] {n : ℕ∞ω} (h : HasWeakMFDerivBordered I u du)
-    (hu : ContMDiff closedUpperHalfPlaneModel I n u) (hn : 1 ≤ n) :
-    IsNullSet closedUpperHalfPlaneModel {x | du x ≠ mfderiv closedUpperHalfPlaneModel I u x} :=
-  HasWeakMFDerivGroupoid.isNullSet_ne_mfderiv h hu hn
 
 /-- **Weak differentials of a `C¹` map are `mfderiv`, up to a null set.** On an open subset `s`
 of a Riemann surface with boundary where `u` is `C^n`, `1 ≤ n`, a field `du` is a weak
