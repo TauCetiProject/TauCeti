@@ -56,7 +56,8 @@ two normalizers at `ℓ = 13`.
 
 The index, the projective index and the determinant image of a level are unchanged by
 conjugation in `GL₂(ℤ / N)`: by `Subgroup.index_smul`, `Subgroup.projectiveIndex_pointwise_smul`
-and `Subgroup.map_det_pointwise_smul` respectively.
+and `Subgroup.map_conjAct_smul` (for the determinant, a homomorphism to a commutative group)
+respectively.
 
 A level at modulus `n` is also a level at every multiple `m` of `n`, through its preimage under
 the reduction `GL₂(ℤ / m) → GL₂(ℤ / n)`. This reduction is surjective for `m ≠ 0`

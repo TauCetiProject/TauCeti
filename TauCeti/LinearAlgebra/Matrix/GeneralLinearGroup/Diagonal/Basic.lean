@@ -21,8 +21,6 @@ public import Mathlib.SetTheory.Cardinal.Finite
 -- `Nat.card_units`, the number of units of a `GroupWithZero`.
 import Mathlib.Algebra.GroupWithZero.Units.Fintype
 import TauCeti.LinearAlgebra.Matrix.Diagonal
--- `Matrix.det_diagonal`: the determinant of a diagonal matrix is the product of its entries.
-import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 
 /-!
 # Diagonal elements of the general linear group, and the diagonal torus
@@ -268,14 +266,6 @@ theorem neg_one_mem_diagonalTorus [Ring k] : (-1 : GL (Fin n) k) ∈ diagonalTor
   rw [mem_diagonalTorus_iff, Units.val_neg, Units.val_one]
   exact Matrix.isDiag_one.neg
 
-/-- The determinant maps the diagonal torus onto the units, for `n ≥ 1`: the diagonal matrix with
-entries `u, 1, …, 1` has determinant `u`. -/
-theorem map_det_diagonalTorus [CommRing k] [NeZero n] :
-    (diagonalTorus k n).map GeneralLinearGroup.det = ⊤ :=
-  eq_top_iff.mpr fun u _ ↦
-    ⟨diagGL (Pi.mulSingle 0 u), mem_diagonalTorus_iff_exists_diagGL.mpr ⟨_, rfl⟩,
-      Units.ext (by simp [diagGL_coe, det_diagonal, Pi.mulSingle_apply, apply_ite Units.val])⟩
-
 section CommSemiring
 
 variable [CommSemiring k]
@@ -406,6 +396,14 @@ mapped units. -/
 theorem map_diagGL {S : Type*} [CommRing S] (f : k →+* S) (t : ι → kˣ) :
     Matrix.GeneralLinearGroup.map f (diagGL t) = diagGL fun i ↦ Units.map (f : k →* S) (t i) :=
   f.unitsMap_mapMatrix_diagGL t
+
+/-- The determinant maps the diagonal torus onto the units, for `n ≥ 1`: the diagonal matrix with
+entries `u, 1, …, 1` has determinant `u`. -/
+theorem map_det_diagonalTorus [NeZero n] :
+    (diagonalTorus k n).map GeneralLinearGroup.det = ⊤ :=
+  eq_top_iff.mpr fun u _ ↦
+    ⟨diagGL (Pi.mulSingle 0 u), mem_diagonalTorus_iff_exists_diagGL.mpr ⟨_, rfl⟩,
+      by rw [det_diagGL, Fintype.prod_pi_mulSingle']⟩
 
 /-- Rescaling one column makes an invertible matrix have determinant one. For an empty index
 type, every invertible matrix already has determinant one. -/

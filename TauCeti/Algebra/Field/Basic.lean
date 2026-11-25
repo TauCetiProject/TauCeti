@@ -9,8 +9,8 @@ public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.Algebra.Field.Basic
 import Mathlib.RingTheory.SimpleRing.Field
 import Mathlib.Tactic.Abel
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.LinearCombination
+-- `QuadraticAlgebra.norm_eq_zero_iff_eq_zero`: the norm of `F[X] / (X² - t X - n)` is anisotropic.
+import Mathlib.Algebra.QuadraticAlgebra.Basic
 
 /-!
 # Rational identities under inversion
@@ -61,17 +61,13 @@ theorem notMem_range_algebraMap_of_sq_eq_of_not_isSquare {K L : Type*} [Field K]
 
 /-- **A quadratic without roots has an anisotropic norm form.** If `X² - t X - n` has no root in
 the field `F`, then `a² + t a b - n b²` vanishes only at `a = b = 0`: for `b ≠ 0` a zero would make
-`-a / b` a root. -/
+`-a / b` a root. This is `QuadraticAlgebra.norm_eq_zero_iff_eq_zero` in coordinates. -/
 theorem sq_add_mul_mul_sub_mul_sq_eq_zero_iff {F : Type*} [Field F] {t n : F}
     (hirr : ∀ x : F, x ^ 2 ≠ t * x + n) {a b : F} :
     a ^ 2 + t * a * b - n * b ^ 2 = 0 ↔ a = 0 ∧ b = 0 := by
-  refine ⟨fun h ↦ ?_, fun ⟨ha, hb⟩ ↦ by simp [ha, hb]⟩
-  by_cases hb : b = 0
-  · subst hb
-    exact ⟨by simpa using h, rfl⟩
-  · refine absurd ?_ (hirr (-a / b))
-    field_simp
-    linear_combination h
+  have : Fact (∀ x : F, x ^ 2 ≠ n + t * x) := ⟨fun x ↦ add_comm n (t * x) ▸ hirr x⟩
+  simpa [QuadraticAlgebra.norm_def, QuadraticAlgebra.ext_iff, sq, mul_assoc] using
+    QuadraticAlgebra.norm_eq_zero_iff_eq_zero (z := (⟨a, b⟩ : QuadraticAlgebra F n t))
 
 variable {K : Type*} [DivisionRing K]
 
