@@ -59,6 +59,7 @@ that the circle is two closed intervals glued at their endpoints `±1`.
 * `Circle.exp_pow_eq_neg_one` and `Circle.mixed_power_rotation_factor`: power identities for
   complex exponentials on the circle.
 * `Circle.exists_pow_nat_eq`: every point of the circle has an `n`-th root on the circle.
+* `Circle.isSquare`: every point of the circle is a square.
 * `Circle.exp_pow_eq_one_iff`: `exp (i θ)` is an `n`-th root of unity exactly when `θ` is an
   integer multiple of `2π / n`.
 * `Circle.isOfFinOrder_exp_two_pi_mul_iff`: `exp (2π i x)` has finite order exactly when `x` is
@@ -262,6 +263,10 @@ theorem exp_neg_arg_mul_self (x : ℂ) : (exp (-Complex.arg x) : ℂ) * x = ‖x
   rw [mul_left_comm, ← Complex.exp_add]
   push_cast
   rw [neg_mul, neg_add_cancel, Complex.exp_zero, mul_one]
+
+/-- Every point of the circle is a square on the circle. -/
+theorem isSquare (z : Circle) : IsSquare z :=
+  (z.exists_pow_nat_eq two_ne_zero).imp fun y hy ↦ by rw [← hy, sq]
 
 /-- For unit complex numbers, `a⁻¹ b - 1 = a⁻¹ (b - a)`. -/
 theorem coe_inv_mul_sub_one (a b : Circle) :
