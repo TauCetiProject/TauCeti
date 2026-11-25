@@ -51,7 +51,7 @@ scalar equation `Δ ℓ = (exp ℓ - 1) / 4`
 (`TauCeti.Vortex.laplacian_log_normSq_of_equation_eq_zero`), and two solutions of that equation
 with `exp ℓ ≥ 4 c²` approach each other like `exp (-c (|z| - R))`, with the constant their largest
 difference on the boundary circle
-(`TauCeti.Vortex.abs_sub_le_mul_exp_of_laplacian_eq`). Since `|α| ≤ 1`, the exponential is
+(`TauCeti.abs_sub_le_mul_exp_of_laplacian_eq_exp_sub_one`). Since `|α| ≤ 1`, the exponential is
 `1`-Lipschitz on the values of `ℓ`, so the difference `u = ℓ_x - ℓ_y` has `|Δ u| ≤ |u| / 4`, and
 the interior gradient estimate for Poisson's equation
 (`TauCeti.norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_laplacian_le`) bounds `D u` by the same
