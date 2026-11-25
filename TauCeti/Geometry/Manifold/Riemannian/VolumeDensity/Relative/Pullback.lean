@@ -28,9 +28,11 @@ On a manifold that need not be compact, if `F_t = F_{t₀}` outside a compact se
   `Bundle.ContMDiffRiemannianMetric.hasDerivAt_relativeVolume_pullback` and
   `Bundle.ContMDiffRiemannianMetric.hasDerivAt_deriv_relativeVolume_pullback`: regularity and the
   first two derivatives of the relative volume of a family of immersions of a compact manifold.
-* `Bundle.ContMDiffRiemannianMetric.contDiffAt_relativeVolume_pullback_of_isCompact`: regularity
-  of the relative volume of a family of immersions of a manifold, not necessarily compact, that is
-  constant outside a compact set.
+* `Bundle.ContMDiffRiemannianMetric.contDiffAt_relativeVolume_pullback_of_isCompact`,
+  `Bundle.ContMDiffRiemannianMetric.hasDerivAt_relativeVolume_pullback_of_isCompact` and
+  `Bundle.ContMDiffRiemannianMetric.hasDerivAt_deriv_relativeVolume_pullback_of_isCompact`:
+  regularity and the first two derivatives of the relative volume of a family of immersions of a
+  manifold, not necessarily compact, that is constant outside a compact set.
 -/
 
 public section
@@ -69,15 +71,59 @@ theorem contDiffAt_relativeVolume_pullback_of_isCompact [LindelofSpace M] [T2Spa
     (hΦK : ∀ᶠ t in 𝓝 t₀, ∀ x ∉ K, Φ t x = Φ t₀ x) :
     ContDiffAt ℝ k (fun t ↦ relativeVolume
       (h.pullback (Φ t₀) (hΦ.curry_right (x := t₀)) (hinj t₀))
-      (h.pullback (Φ t) (hΦ.curry_right (x := t)) (hinj t))) t₀ := by
-  refine contDiffAt_relativeVolume_of_isCompact hK (fun x _ ↦ ?_) (fun x _ ↦ ?_) ?_
-  · exact ((h.contMDiffAt_uncurry_pullback hΦ hinj (t₀, x)).comp x
-      (contMDiffAt_const.prodMk contMDiffAt_id)).of_le hk
-  · exact (h.contMDiffAt_uncurry_pullback hΦ hinj (t₀, x)).of_le hk
-  · filter_upwards [hΦK] with t ht x hx
-    refine h.pullback_inner_congr_of_eventuallyEq ?_ _ _ _ _
-    filter_upwards [hK.isClosed.isOpen_compl.mem_nhds hx] with y hy
-    exact ht y hy
+      (h.pullback (Φ t) (hΦ.curry_right (x := t)) (hinj t))) t₀ :=
+  contDiffAt_relativeVolume_of_isCompact hK
+    (fun x _ ↦ ((h.contMDiffAt_uncurry_pullback hΦ hinj (t₀, x)).comp x
+      (contMDiffAt_const.prodMk contMDiffAt_id)).of_le hk)
+    (fun x _ ↦ (h.contMDiffAt_uncurry_pullback hΦ hinj (t₀, x)).of_le hk)
+    (h.eventually_forall_notMem_pullback_inner_eq hΦ hinj hK.isClosed hΦK)
+
+/-- **The first variation of the relative volume of a compactly supported family of
+immersions.** Let `F_t : M → N` be a jointly `C^(n+1)` family of immersions of a manifold `M`, not
+necessarily compact, into a manifold with a `C^n` metric `h`, `n ≥ 1`, with `F_t = F_{t₀}` outside a
+compact set `K` for `t` near `t₀`. Then the relative volume of `F_t^* h` with respect to
+`F_{t₀}^* h` has derivative `∫ ∂_t J(F_{t₀}^* h, F_t^* h) dV_{F_{t₀}^* h}` at `t₀`, where `J` is
+the relative volume density. -/
+theorem hasDerivAt_relativeVolume_pullback_of_isCompact [LindelofSpace M] [T2Space M]
+    [IsManifold I 2 M] (hn : 1 ≤ n) (hΦ : ContMDiff (𝓘(ℝ).prod I) J (n + 1) (uncurry Φ))
+    (hinj : ∀ t x, Injective (mfderiv I J (Φ t) x)) {t₀ : ℝ} {K : Set M} (hK : IsCompact K)
+    (hΦK : ∀ᶠ t in 𝓝 t₀, ∀ x ∉ K, Φ t x = Φ t₀ x) :
+    HasDerivAt (fun t ↦ relativeVolume
+        (h.pullback (Φ t₀) (hΦ.curry_right (x := t₀)) (hinj t₀))
+        (h.pullback (Φ t) (hΦ.curry_right (x := t)) (hinj t)))
+      (∫ x, deriv (fun s ↦ relativeVolumeDensity
+          (h.pullback (Φ t₀) (hΦ.curry_right (x := t₀)) (hinj t₀))
+          (h.pullback (Φ s) (hΦ.curry_right (x := s)) (hinj s)) x.ofWithMetric) t₀
+        ∂riemannianVolume I (WithMetric (h.pullback (Φ t₀) (hΦ.curry_right (x := t₀)) (hinj t₀))))
+      t₀ :=
+  hasDerivAt_relativeVolume_of_isCompact hK
+    (fun x _ ↦ ((h.contMDiffAt_uncurry_pullback hΦ hinj (t₀, x)).comp x
+      (contMDiffAt_const.prodMk contMDiffAt_id)).of_le hn)
+    (fun x _ ↦ (h.contMDiffAt_uncurry_pullback hΦ hinj (t₀, x)).of_le hn)
+    (h.eventually_forall_notMem_pullback_inner_eq hΦ hinj hK.isClosed hΦK)
+
+/-- **The second variation of the relative volume of a compactly supported family of
+immersions.** Let `F_t : M → N` be a jointly `C^(n+1)` family of immersions of a manifold `M`, not
+necessarily compact, into a manifold with a `C^n` metric `h`, `n ≥ 2`, with `F_t = F_{t₀}` outside a
+compact set `K` for `t` near `t₀`. Then the derivative of the relative volume of `F_t^* h` with
+respect to `F_{t₀}^* h` has derivative `∫ ∂_t² J(F_{t₀}^* h, F_t^* h) dV_{F_{t₀}^* h}` at `t₀`. -/
+theorem hasDerivAt_deriv_relativeVolume_pullback_of_isCompact [LindelofSpace M] [T2Space M]
+    [IsManifold I 3 M] (hn : 2 ≤ n) (hΦ : ContMDiff (𝓘(ℝ).prod I) J (n + 1) (uncurry Φ))
+    (hinj : ∀ t x, Injective (mfderiv I J (Φ t) x)) {t₀ : ℝ} {K : Set M} (hK : IsCompact K)
+    (hΦK : ∀ᶠ t in 𝓝 t₀, ∀ x ∉ K, Φ t x = Φ t₀ x) :
+    HasDerivAt (deriv fun t ↦ relativeVolume
+        (h.pullback (Φ t₀) (hΦ.curry_right (x := t₀)) (hinj t₀))
+        (h.pullback (Φ t) (hΦ.curry_right (x := t)) (hinj t)))
+      (∫ x, deriv (fun s ↦ deriv (fun r ↦ relativeVolumeDensity
+          (h.pullback (Φ t₀) (hΦ.curry_right (x := t₀)) (hinj t₀))
+          (h.pullback (Φ r) (hΦ.curry_right (x := r)) (hinj r)) x.ofWithMetric) s) t₀
+        ∂riemannianVolume I (WithMetric (h.pullback (Φ t₀) (hΦ.curry_right (x := t₀)) (hinj t₀))))
+      t₀ :=
+  hasDerivAt_deriv_relativeVolume_of_isCompact hK
+    (fun x _ ↦ ((h.contMDiffAt_uncurry_pullback hΦ hinj (t₀, x)).comp x
+      (contMDiffAt_const.prodMk contMDiffAt_id)).of_le hn)
+    (fun x _ ↦ (h.contMDiffAt_uncurry_pullback hΦ hinj (t₀, x)).of_le hn)
+    (h.eventually_forall_notMem_pullback_inner_eq hΦ hinj hK.isClosed hΦK)
 
 variable [CompactSpace M]
 
