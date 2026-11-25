@@ -29,6 +29,7 @@ as those of noncrossing partitions, into sums over `Finset.range`.
 
 ## Main results
 
+* `Finset.sum_range_sq_sub_eq`: the telescoping-square identity for successive differences.
 * `Finset.prod_range_ite_even`, `Finset.sum_range_ite_even`: keeping only the even-indexed factors
   among the first `N` gives the first `(N + 1) / 2` values `g k` at the halved indices.
 * `sum_Ioo_eq_sum_range`: a sum over `Ioo 0 n` equals the sum over `range n` when the summand at
@@ -101,6 +102,14 @@ as those of noncrossing partitions, into sums over `Finset.range`.
 public section
 
 namespace Finset
+
+/-- The sum of squared successive differences is the difference of the endpoint squares
+minus twice the left-endpoint weighted sum of differences. -/
+theorem sum_range_sq_sub_eq {R : Type*} [CommRing R] (f : ℕ → R) (n : ℕ) :
+    ∑ i ∈ range n, (f (i + 1) - f i) ^ 2 =
+      f n ^ 2 - f 0 ^ 2 - 2 * ∑ i ∈ range n, f i * (f (i + 1) - f i) := by
+  rw [← sum_range_sub (fun i ↦ f i ^ 2) n, mul_sum, ← sum_sub_distrib]
+  exact sum_congr rfl fun i _ ↦ by ring
 
 /-- Regroup a sum whose initial term is `g 0` and whose successive terms are
 `g (k + 1) + h k`, retaining the final contribution `g n`. -/
