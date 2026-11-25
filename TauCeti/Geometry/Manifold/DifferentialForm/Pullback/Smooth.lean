@@ -498,13 +498,13 @@ theorem coe_mpullback_subtype_val_apply {U : TopologicalSpace.Opens M} (σ : Smo
     (x : U) : (mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ).val x = σ.val x :=
   TauCeti.mpullback_subtype_val_apply σ.val x
 
-/-- Smooth real zero-forms on an open partition glue to a global smooth zero-form whose
+/-- Smooth vector-valued zero-forms on an open partition glue to a global smooth zero-form whose
 restriction to each piece is the prescribed form. -/
 theorem exists_zeroForm_mpullback_eq_of_partition {U : M → TopologicalSpace.Opens M}
     (hx : ∀ x, x ∈ U x) (hU : ∀ {x y}, y ∈ U x → U y = U x)
-    (f : (V : Set.range U) → SmoothForm I V.val ℝ 0) :
-    ∃ F : SmoothForm I M ℝ 0, ∀ x,
-      mpullback (Subtype.val : U x → M) contMDiff_subtypeVal F = f ⟨U x, ⟨x, rfl⟩⟩ := by
+    (f : (V : Set.range U) → SmoothForm I V.val F 0) :
+    ∃ σ : SmoothForm I M F 0, ∀ x,
+      mpullback (Subtype.val : U x → M) contMDiff_subtypeVal σ = f ⟨U x, ⟨x, rfl⟩⟩ := by
   let C (x : M) : Set.range U := ⟨U x, ⟨x, rfl⟩⟩
   let g (x : M) (y : U x) := (f (C x)).val y 0
   have hg (i j x : M) (hi : x ∈ U i) (hj : x ∈ U j) :
@@ -521,14 +521,14 @@ theorem exists_zeroForm_mpullback_eq_of_partition {U : M → TopologicalSpace.Op
   let u := Set.liftCover (fun x ↦ (U x : Set M)) g hg hcover
   have heq (x : M) (y : U x) : u y = (f (C x)).val y 0 :=
     Set.liftCover_coe (S := fun x ↦ (U x : Set M)) (f := g) (hf := hg) (hS := hcover) y
-  have hu : ContMDiff I 𝓘(ℝ, ℝ) ∞ u := by
+  have hu : ContMDiff I 𝓘(ℝ, F) ∞ u := by
     intro x
     let y : U x := ⟨x, hx x⟩
     apply (contMDiffAt_subtype_iff (x := y)).1
     exact (contMDiff_apply_zero (f (C x)) y).congr_of_eventuallyEq
       (Filter.Eventually.of_forall fun z ↦ heq x z)
-  let F := ofFunction (I := I) ⟨u, hu⟩
-  refine ⟨F, fun x ↦ ?_⟩
+  let σ := ofFunction (I := I) ⟨u, hu⟩
+  refine ⟨σ, fun x ↦ ?_⟩
   apply Subtype.ext
   funext z
   rw [coe_mpullback_subtype_val_apply]
