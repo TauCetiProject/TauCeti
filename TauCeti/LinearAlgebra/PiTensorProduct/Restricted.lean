@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Colimit.Module
 public import Mathlib.Data.Finset.Update
 public import Mathlib.LinearAlgebra.Dual.Lemmas
-public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
+public import TauCeti.LinearAlgebra.PiTensorProduct.Contraction
 
 /-!
 # Restricted tensor products of modules with reference vectors
@@ -152,58 +152,22 @@ instance directedSystem (w : ∀ i, W i) :
   map_self S x := stageMap_self w S x
   map_map _ _ _ hST hTU x := stageMap_stageMap w hST hTU x
 
-section contract
-
-variable {S T : Finset ι} (h : S ⊆ T)
-
-variable (R) in
-/-- Contracting the places of `T \ S` against linear forms, as a multilinear map: the tensor
-product of the pure tensor over `S` with the product of the forms over `T \ S`, followed by
-`M ⊗ R ≃ M`. -/
-def contractMultilinear (φ : ∀ i, Module.Dual R (W i)) :
-    (Π i : T, W i) →ₘₗ[R] ⨂[R] i : S, W i :=
-  (TensorProduct.rid R _).toLinearMap.compMultilinearMap <|
-    (MultilinearMap.domDomCongrLinearEquiv' R (RingHom.id R) (fun i : T ↦ W i) _
-      (Equiv.sumCompl fun i : T ↦ i.val ∈ S).symm).symm
-      (MultilinearMap.domCoprodDep
-        ((MultilinearMap.domDomCongrLinearEquiv' R (RingHom.id R)
-          (fun i : {a : T // a.val ∈ S} ↦ W i) _
-          (Equiv.subtypeSubtypeEquivSubtype (p := (· ∈ T)) (q := (· ∈ S)) (h ·))).symm
-          (PiTensorProduct.tprod R (s := fun i : S ↦ W i)))
-        ((MultilinearMap.mkPiAlgebra R {i : T // i.val ∉ S} R).compLinearMap fun i ↦ φ i))
-
-/-- The contraction on a family of vectors. -/
-theorem contractMultilinear_apply (φ : ∀ i, Module.Dual R (W i)) (g : ∀ i : T, W i) :
-    contractMultilinear R h φ g = (∏ i : {i : T // i.val ∉ S}, φ i (g i)) •
-      PiTensorProduct.tprod R (fun i : S ↦ g ⟨i.val, h i.property⟩) := by
-  rw [contractMultilinear, LinearMap.compMultilinearMap_apply,
-    MultilinearMap.domDomCongrLinearEquiv'_symm_apply]
-  -- The reindexed entries are `g` at the corresponding places by definition of
-  -- `Equiv.piCongrLeft'`, `Equiv.sumCompl` and `Equiv.subtypeSubtypeEquivSubtype`, so
-  -- `domCoprodDep` evaluates to this tensor. Rewriting with
-  -- `MultilinearMap.domCoprodDep_apply` instead fails: the reindexed `tprod` has the type
-  -- expected there only up to unfolding these equivalences.
-  change TensorProduct.rid R _ (PiTensorProduct.tprod R (fun i : S ↦ g ⟨i.val, h i.property⟩) ⊗ₜ
-    ∏ i : {i : T // i.val ∉ S}, φ i (g i)) = _
-  exact TensorProduct.rid_tmul _ _
-
-end contract
-
 /-- If linear forms send the references at the places of `T \ S` to `1`, adjoining those
 references is injective. -/
 theorem stageMap_injective (w : ∀ i, W i) {S T : Finset ι} (h : S ⊆ T)
     (hw : ∀ i ∈ T, i ∉ S → ∃ φ : Module.Dual R (W i), φ (w i) = 1) :
     Function.Injective (stageMap R w h) := by
   choose! φ hφ using hw
-  have hinv : PiTensorProduct.lift (contractMultilinear R h φ) ∘ₗ stageMap R w h =
-      LinearMap.id := by
+  have hinv :
+      PiTensorProduct.lift (PiTensorProduct.contractMultilinear R h φ) ∘ₗ stageMap R w h =
+        LinearMap.id := by
     refine PiTensorProduct.ext <| MultilinearMap.ext fun f ↦ ?_
     have hprod : ∏ i : {i : T // i.val ∉ S}, φ i (Function.updateFinset w S f i) = 1 :=
       Fintype.prod_eq_one _ fun i ↦ by
         simp [Function.updateFinset, i.property, hφ i i.val.property i.property]
     simp only [LinearMap.compMultilinearMap_apply, LinearMap.coe_comp, Function.comp_apply,
       stageMap_tprod, PiTensorProduct.lift.tprod, LinearMap.id_compMultilinearMap,
-      contractMultilinear_apply, Finset.restrict, hprod, one_smul]
+      PiTensorProduct.contractMultilinear_apply, Finset.restrict, hprod, one_smul]
     -- The remaining family `fun i : S ↦ Function.updateFinset w S f i` is
     -- `S.restrict (Function.updateFinset w S f)` by definition of `Finset.restrict`.
     exact congrArg _ (Function.restrict_updateFinset w f)
@@ -508,6 +472,7 @@ theorem finiteEquiv_symm_apply (x : ⨂[R] i, W i) :
 
 /-- For a finite index type, a pure tensor at a stage `S` corresponds to the pure tensor of the
 family extended by references. -/
+@[simp]
 theorem finiteEquiv_ofFinite_tprod (S : Finset ι) (f : ∀ i : S, W i) :
     finiteEquiv R W w (ofFinite R W w S (PiTensorProduct.tprod R f)) =
       PiTensorProduct.tprod R (Function.updateFinset w S f) := by
