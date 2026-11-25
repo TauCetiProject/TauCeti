@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Normed.Module.Convex
 public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
 public import TauCeti.Topology.MayerVietoris
 
+import Mathlib.Order.Zorn
+
 /-!
 # Mayer–Vietoris induction over convex chart domains
 
@@ -36,6 +38,14 @@ chart source are then an intersection-stable basis of `M`, so ordinary Mayer–V
 proves the property for every open subset of `M`
 (`TauCeti.mayerVietoris_induction_extChartAt`).
 
+Second countability of `M` can be traded for stability under unions of chains of open sets
+(`TauCeti.mayerVietoris_induction_extChartAt_of_isChain`). By Zorn's lemma an open set `U` contains
+a maximal open subset with the property; if a point `x` of `U` were missing from it, the part of
+`U` in the chart at `x` and its intersection with the maximal subset both have the property by the
+one-chart step, and so does their union, against maximality. This is the form of the argument
+that applies to manifolds which are not second countable, as in Hatcher's proof of Poincaré
+duality.
+
 Typical properties are that a natural map between two (co)homology theories of open subsets is an
 isomorphism, such as the inclusion of smooth singular chains into singular chains, the de Rham
 homomorphism, or the Poincaré duality map. Each has a Mayer–Vietoris sequence and turns countable
@@ -44,14 +54,20 @@ for instance by a contraction. Boundary and corners are allowed. The one-chart s
 `E` to be locally compact. The only hypotheses on `M` in the global step are those of
 `TauCeti.mayerVietoris_induction`; a Hausdorff σ-compact manifold over a finite-dimensional model
 satisfies them (`Manifold.locallyCompact_of_finiteDimensional`,
-`ChartedSpace.secondCountable_of_sigmaCompact`).
+`ChartedSpace.secondCountable_of_sigmaCompact`). On the model space `E` itself, the chart
+restricted to a convex chart domain is an open embedding onto its convex set
+(`OpenPartialHomeomorph.isOpenEmbedding_domRestrict`,
+`TauCeti.range_domRestrict_chartAt_of_eq_inter_preimage`), which is how the base cases are
+verified on a topological manifold.
 
 ## Main results
 
 * `TauCeti.mayerVietoris_induction_subset_chartAt_source`: induction over the convex chart
   domains of one chart proves a property for every open subset of its source.
 * `TauCeti.mayerVietoris_induction_extChartAt`: induction over all convex chart domains proves a
-  property for every open subset of `M`.
+  property for every open subset of a second-countable `M`.
+* `TauCeti.mayerVietoris_induction_extChartAt_of_isChain`: the same for every `M`, for a property
+  which is also stable under unions of chains.
 
 ## References
 
@@ -59,11 +75,14 @@ satisfies them (`Manifold.locallyCompact_of_finiteDimensional`,
   theorem (Theorem 18.14).
 * R. Bott and L. W. Tu, *Differential Forms in Algebraic Topology*, §5, the Mayer–Vietoris
   argument for Poincaré duality.
+* A. Hatcher, *Algebraic Topology*, Section 3.3, the proof of Lemma 3.36, whose last step is the
+  Zorn's lemma argument.
 -/
 
 public section
 
 open Set TopologicalSpace Topology Metric
+open scoped Manifold
 
 namespace TauCeti
 
@@ -170,5 +189,55 @@ theorem mayerVietoris_induction_extChartAt [T2Space M] [LocallyCompactSpace M]
     have := LocallyCompactSpace.of_locallyCompact_manifold M I
     exact mayerVietoris_induction_subset_chartAt_source I x P hbot (hbase x)
       (fun U V _ _ ↦ hsup U V) (fun s _ ↦ hdisjoint s) U hx
+
+/-- **Mayer–Vietoris induction over convex chart domains, without countability.** On a charted
+space `M` over a locally compact model space `E`, a property of open subsets holds on every open
+subset if it holds on the empty set and on the nonempty convex chart domains
+`(chartAt H x).source ∩ (extChartAt I x)⁻¹' C`, for points `x` and convex open `C ⊆ E` with
+`C ∩ range I ⊆ (extChartAt I x).target`, is preserved by binary unions when it holds on the
+intersection, by countable disjoint unions, and by unions of chains. No countability, local
+compactness or separation property of `M` is needed. -/
+theorem mayerVietoris_induction_extChartAt_of_isChain [LocallyCompactSpace E]
+    (I : ModelWithCorners 𝕜 E H) (P : Opens M → Prop) (hbot : P ⊥)
+    (hbase : ∀ (x : M) (C : Set E) (U : Opens M), IsOpen C → Convex ℝ C →
+      C ∩ range I ⊆ (extChartAt I x).target →
+      (U : Set M) = (chartAt H x).source ∩ extChartAt I x ⁻¹' C → (U : Set M).Nonempty → P U)
+    (hsup : ∀ U V, P U → P V → P (U ⊓ V) → P (U ⊔ V))
+    (hdisjoint : ∀ s : ℕ → Opens M, (∀ i j, i ≠ j → Disjoint (s i) (s j)) →
+      (∀ n, P (s n)) → P (⨆ n, s n))
+    (hchain : ∀ c : Set (Opens M), IsChain (· ≤ ·) c → (∀ U ∈ c, P U) → P (sSup c)) :
+    ∀ U, P U := by
+  intro U
+  -- A maximal open subset `m` of `U` with the property, by Zorn's lemma.
+  obtain ⟨m, ⟨hmU, hm⟩, hmax⟩ := zorn_le₀ {V : Opens M | V ≤ U ∧ P V} fun c hc hc' ↦
+    ⟨sSup c, ⟨sSup_le fun V hV ↦ (hc hV).1, hchain c hc' fun V hV ↦ (hc hV).2⟩,
+      fun _ hV ↦ le_sSup hV⟩
+  suffices hUm : U ≤ m from le_antisymm hmU hUm ▸ hm
+  intro x hxU
+  -- The part `W` of `U` in the chart at `x`, and its intersection with `m`, have the property by
+  -- the one-chart step, hence so does `m ⊔ W`, which by maximality lies in `m`.
+  let W : Opens M := U ⊓ ⟨_, (chartAt H x).open_source⟩
+  have hWs : (W : Set M) ⊆ (chartAt H x).source := inter_subset_right
+  have hP := mayerVietoris_induction_subset_chartAt_source I x P hbot (hbase x)
+    (fun U V _ _ ↦ hsup U V) (fun s _ ↦ hdisjoint s)
+  have hmW : P (m ⊔ W) := hsup m W hm (hP W hWs) (hP (m ⊓ W) (inter_subset_right.trans hWs))
+  exact hmax ⟨sup_le hmU inf_le_left, hmW⟩ le_sup_left
+    (Opens.mem_sup.2 (Or.inr ⟨hxU, mem_chart_source H x⟩))
+
+omit [NormedSpace ℝ E] in
+/-- On a charted space over the model space `E` itself, the chart at `x` restricted to the convex
+chart domain `U = (chartAt E x).source ∩ (extChartAt 𝓘(𝕜, E) x)⁻¹' C` has range `C`; for open
+`C` this restriction is an open embedding (`OpenPartialHomeomorph.isOpenEmbedding_domRestrict`). -/
+theorem range_domRestrict_chartAt_of_eq_inter_preimage {N : Type*} [TopologicalSpace N]
+    [ChartedSpace E N] {x : N} {C : Set E} {U : Set N}
+    (hCt : C ∩ range 𝓘(𝕜, E) ⊆ (extChartAt 𝓘(𝕜, E) x).target)
+    (hU : U = (chartAt E x).source ∩ extChartAt 𝓘(𝕜, E) x ⁻¹' C) :
+    range (U.domRestrict (chartAt E x)) = C := by
+  rw [range_domRestrict, hU, extChartAt_coe, modelWithCornersSelf_coe, Function.id_comp,
+    image_inter_preimage, (chartAt E x).image_source_eq_target, inter_eq_right]
+  intro y hy
+  have := hCt ⟨hy, mem_range_self (f := 𝓘(𝕜, E)) y⟩
+  rw [extChartAt_target, modelWithCornersSelf_coe_symm, preimage_id] at this
+  exact this.1
 
 end TauCeti
