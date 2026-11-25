@@ -9,6 +9,7 @@ public import TauCeti.Analysis.BoundedVariation.Weighted.HalfSpace
 public import TauCeti.Probability.Distributions.Gaussian.OrthogonalSplitting
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.SpecialFunctions.Gaussian.DecimalBounds
+import TauCeti.Examples.Analysis.BoundedVariation.GaussianHalfSpace
 
 /-!
 # Checks: Gaussian cylinders
@@ -91,8 +92,8 @@ example (s : ℝ) :
       {x | x 0 < s} := by
     ext x
     simp [EuclideanSpace.inner_single_right]
-  rw [preimage_orthogonalProjectionOnto_halfLine, hset, ← hset]
-  exact ⟨rfl, gaussianPerimeter_setOf_inner_lt (by simp) s⟩
+  rw [preimage_orthogonalProjectionOnto_halfLine, hset]
+  exact ⟨rfl, GaussianHalfSpace.gaussianPerimeter_setOf_lt s⟩
 
 /-- Over `F = {0}`, every subset of `F` is `∅` or `F`, its cylinder is `∅` or `E`, and the two
 Gaussian perimeters vanish. -/
@@ -118,24 +119,14 @@ theorem vadd_setOf_lt_zero :
   rw [mem_vadd_set_iff_neg_vadd_mem]
   simp [add_comm]
 
-/-- The coordinate half-plane `{x | x₀ < c}` of `ℝ²` has Gaussian perimeter `φ(c)`. -/
-private theorem gaussianPerimeter_setOf_coord_lt (c : ℝ) :
-    gaussianPerimeter {x : EuclideanSpace ℝ (Fin 2) | x 0 < c} =
-      ENNReal.ofReal (gaussianPDFReal 0 1 c) := by
-  have hset : {x : EuclideanSpace ℝ (Fin 2) | ⟪x, EuclideanSpace.single 0 1⟫ < c} =
-      {x | x 0 < c} := by
-    ext x
-    simp [EuclideanSpace.inner_single_right]
-  rw [← hset]
-  exact gaussianPerimeter_setOf_inner_lt (by simp) c
-
 /-- Gaussian perimeter is not translation invariant: `{x | x₀ < 0}` in `ℝ²` has perimeter
 `φ(0) = 0.398942`, and its translate by `e₀` has perimeter `φ(1) = 0.241971`. -/
 example :
     |(gaussianPerimeter {x : EuclideanSpace ℝ (Fin 2) | x 0 < 0}).toReal - 0.398942| < 5e-7 ∧
       |(gaussianPerimeter (EuclideanSpace.single (0 : Fin 2) (1 : ℝ) +ᵥ
           {x : EuclideanSpace ℝ (Fin 2) | x 0 < 0})).toReal - 0.241971| < 5e-7 := by
-  rw [vadd_setOf_lt_zero, gaussianPerimeter_setOf_coord_lt, gaussianPerimeter_setOf_coord_lt,
+  rw [vadd_setOf_lt_zero, GaussianHalfSpace.gaussianPerimeter_setOf_lt,
+    GaussianHalfSpace.gaussianPerimeter_setOf_lt,
     ENNReal.toReal_ofReal (gaussianPDFReal_nonneg _ _ _),
     ENNReal.toReal_ofReal (gaussianPDFReal_nonneg _ _ _), gaussianPDFReal_zero_one,
     gaussianPDFReal_zero_one, abs_sub_lt_iff, abs_sub_lt_iff]
