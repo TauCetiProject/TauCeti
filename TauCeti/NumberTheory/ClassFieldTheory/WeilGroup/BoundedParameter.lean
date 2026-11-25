@@ -114,15 +114,15 @@ theorem isBoundedParameter_restrictComplex_iff (r : WeilGroupReal →* GL (Fin n
 
 /-! ### A unipotent parameter with unbounded image -/
 
-/-- The homomorphism `ℝˣ →* Multiplicative ℂ`, `t ↦ log |t|`. -/
+/-- The homomorphism `ℝˣ →* Multiplicative ℂ`, `t ↦ log |t|`, written `Real.log t` because
+`Real.log` already ignores the sign. -/
 private noncomputable def logAbs : ℝˣ →* Multiplicative ℂ where
-  toFun t := .ofAdd (Real.log |(t : ℝ)| : ℂ)
+  toFun t := .ofAdd (Real.log (t : ℝ) : ℂ)
   map_one' := by simp
   map_mul' s t := by
-    rw [Units.val_mul, abs_mul, Real.log_mul (abs_ne_zero.mpr s.ne_zero)
-      (abs_ne_zero.mpr t.ne_zero), Complex.ofReal_add, ofAdd_add]
+    rw [Units.val_mul, Real.log_mul s.ne_zero t.ne_zero, Complex.ofReal_add, ofAdd_add]
 
-private theorem logAbs_apply (t : ℝˣ) : logAbs t = .ofAdd (Real.log |(t : ℝ)| : ℂ) :=
+private theorem logAbs_apply (t : ℝˣ) : logAbs t = .ofAdd (Real.log (t : ℝ) : ℂ) :=
   (rfl)
 
 /-- **The parameter `w ↦ [[1, log |norm w|], [0, 1]]` of `W_ℝ`**: every `w` acts by a unipotent
@@ -134,18 +134,18 @@ noncomputable def logNormUnipotent : WeilGroupReal →* GL (Fin 2) ℂ :=
 
 /-- `logNormUnipotent w` is Mathlib's unipotent matrix `upperRightHom (log |norm w|)`. -/
 theorem logNormUnipotent_apply (w : WeilGroupReal) :
-    logNormUnipotent w = GeneralLinearGroup.upperRightHom (Real.log |(norm w : ℝ)| : ℂ) := by
+    logNormUnipotent w = GeneralLinearGroup.upperRightHom (Real.log (norm w : ℝ) : ℂ) := by
   simp [logNormUnipotent, logAbs_apply]
 
 @[simp]
 theorem coe_logNormUnipotent (w : WeilGroupReal) :
     (logNormUnipotent w : Matrix (Fin 2) (Fin 2) ℂ) =
-      !![1, (Real.log |(norm w : ℝ)| : ℂ); 0, 1] := by
+      !![1, (Real.log (norm w : ℝ) : ℂ); 0, 1] := by
   simp [logNormUnipotent_apply, GeneralLinearGroup.upperRightHom_apply]
 
 /-- The `(0, 1)` entry of `logNormUnipotent w` is `log |norm w|`. -/
 theorem logNormUnipotent_apply_zero_one (w : WeilGroupReal) :
-    (logNormUnipotent w : Matrix (Fin 2) (Fin 2) ℂ) 0 1 = (Real.log |(norm w : ℝ)| : ℂ) := by
+    (logNormUnipotent w : Matrix (Fin 2) (Fin 2) ℂ) 0 1 = (Real.log (norm w : ℝ) : ℂ) := by
   simp
 
 /-- The parameter `w ↦ [[1, log |norm w|], [0, 1]]` is continuous. -/
@@ -153,7 +153,7 @@ theorem logNormUnipotent_apply_zero_one (w : WeilGroupReal) :
 theorem continuous_logNormUnipotent : Continuous logNormUnipotent := by
   rw [show ⇑logNormUnipotent = _ from funext logNormUnipotent_apply]
   exact GeneralLinearGroup.continuous_upperRightHom.comp <| Complex.continuous_ofReal.comp <|
-    (Units.continuous_val.comp continuous_norm).abs.log fun w ↦ abs_ne_zero.mpr (norm w).ne_zero
+    (Units.continuous_val.comp continuous_norm).log fun w ↦ (norm w).ne_zero
 
 /-- **A unipotent parameter need not be bounded.** The parameter
 `w ↦ [[1, log |norm w|], [0, 1]]` has both eigenvalues `1` at every `w` but unbounded image, since
@@ -164,8 +164,8 @@ theorem not_isBoundedParameter_logNormUnipotent : ¬ IsBoundedParameter logNormU
   obtain ⟨B, hB⟩ := (h.image (Units.continuous_val.matrix_elem 0 1)).isBounded.exists_norm_le
   obtain ⟨w, hw⟩ := norm_surjective (Units.mk0 (Real.exp (B + 1)) (Real.exp_pos _).ne')
   have := hB _ ⟨logNormUnipotent w, subset_closure ⟨w, rfl⟩, rfl⟩
-  simp only [logNormUnipotent_apply_zero_one, hw, Units.val_mk0, abs_of_pos (Real.exp_pos _),
-    Real.log_exp, Complex.norm_real, Real.norm_eq_abs] at this
+  simp only [logNormUnipotent_apply_zero_one, hw, Units.val_mk0, Real.log_exp, Complex.norm_real,
+    Real.norm_eq_abs] at this
   linarith [le_abs_self (B + 1)]
 
 end WeilGroupReal
