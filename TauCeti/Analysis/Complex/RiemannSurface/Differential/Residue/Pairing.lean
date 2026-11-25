@@ -11,7 +11,6 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Differential.MeromorphicMu
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.PrincipalParts
 public import TauCeti.Analysis.Meromorphic.ResiduePairing
 import TauCeti.Analysis.Meromorphic.PointTwist
-import TauCeti.Topology.ContinuousOn.PuncturedNhds
 import TauCeti.Analysis.Complex.RiemannSurface.Differential.Residue.Theorem
 
 /-!
@@ -276,11 +275,9 @@ theorem residuePairing_flip_injective [IsManifold 𝓘(ℂ) 1 X] :
   refine (injective_iff_map_eq_zero _).2 fun ω hω ↦ by_contra fun hω₀ ↦ ?_
   obtain ⟨a, ha⟩ : ∃ a, (differentialSections.toOneForm (-D) ω).order a ≠ ⊤ := by
     by_contra! h
-    refine hω₀ (differentialSections.ext_of_eventually_nhdsNE fun x ↦ ?_)
-    filter_upwards [(continuous_subtypeVal.continuousAt.tendsto_nhdsNE (x := x)
-      Subtype.val_injective).eventually (OneForm.eventually_apply_eq_zero_of_order_eq_top (h x))]
-      with y hy
-    rwa [differentialSections.toOneForm_apply] at hy
+    refine hω₀ (differentialSections.ext_of_eventually_nhdsNE_toOneForm fun x ↦ ?_)
+    filter_upwards [OneForm.eventually_apply_eq_zero_of_order_eq_top (h x)] with y hy
+    rw [hy, map_zero, Pi.zero_apply]
   obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.1 ha
   exact residuePairing_single_coordinate_zpow_ne_zero ω hn.symm
     (by rw [← LinearMap.flip_apply, hω, LinearMap.zero_apply])

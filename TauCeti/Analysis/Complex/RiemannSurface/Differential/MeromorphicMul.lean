@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Germ
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Twist
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Germ
-import TauCeti.Topology.ContinuousOn.PuncturedNhds
 
 /-!
 # Multiplication of sections of `Ω_D` by meromorphic functions
@@ -40,14 +39,6 @@ variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(
   [ConnectedSpace X] {D E : WeilDivisor X}
 
 namespace differentialSections
-
-omit [ConnectedSpace X] in
-/-- Global sections of `Ω_E` whose `1`-forms agree on punctured neighbourhoods are equal. -/
-private theorem ext_of_eventually_nhdsNE_toOneForm {s t : differentialSections E ⊤}
-    (h : ∀ x, ∀ᶠ y in 𝓝[≠] x, toOneForm E s y = toOneForm E t y) : s = t :=
-  ext_of_eventually_nhdsNE fun x ↦
-    ((continuous_subtypeVal.continuousAt.tendsto_nhdsNE (x := x) Subtype.val_injective).eventually
-      (h x)).mono fun y hy ↦ by simpa only [toOneForm_apply] using hy
 
 omit [ConnectedSpace X] in
 /-- The product of a meromorphic function with a global section of `Ω_D` is meromorphic. -/
