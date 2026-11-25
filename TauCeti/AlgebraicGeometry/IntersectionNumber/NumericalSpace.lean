@@ -34,11 +34,16 @@ and the `ℝ`-linear form on `N¹(X/k)_ℝ`, compatible with the inclusion `N¹(
   their relative versions: the maps `Num ⟶ N¹_ℚ ⟶ N¹_ℝ`;
 * `LineBundleClass.numericalIntersectionNumberBaseChange`: the `A`-linear extension of the
   intersection number with a curve to `A ⊗ Num(X/k)`, for any commutative ring `A`.
+* `LineBundleClass.relNumericalIntersectionNumberHom` and
+  `LineBundleClass.relNumericalIntersectionNumberBaseChange`: the relative degree pairing of
+  `Num(X/S)`, and of `A ⊗ Num(X/S)`, with an integral curve in a fibre of `f`.
 
 ## Main results
 
 * `LineBundleClass.toRatNumericalClasses_injective`,
   `LineBundleClass.ratToRealNumericalClasses_injective` and their relative versions.
+* `LineBundleClass.eq_zero_of_forall_relNumericalIntersectionNumberBaseChange_eq_zero`: the degree
+  pairing of `N¹(X/S)_ℚ` with curves in fibres is nondegenerate.
 
 ## References
 
@@ -191,6 +196,69 @@ theorem ratToRealRelNumericalClasses_injective :
     Function.Injective (ratToRealRelNumericalClasses f) := by
   rw [ratToRealRelNumericalClasses, AlgebraTensorModule.coe_rTensor]
   exact Module.Flat.rTensor_preserves_injective_linearMap _ (algebraMap ℚ ℝ).injective
+
+variable {f} {s : S} {C : Scheme.{u}} [IsIntegral C] [C.Over (Spec (.of (S.residueField s)))]
+  {i : C ⟶ f.fiber s} [IsClosedImmersion i]
+  (hi : C ↘ Spec (.of (S.residueField s)) = i ≫ f.fiberToSpecResidueField s)
+  (hC : topologicalKrullDim C = 1)
+
+/-- The **relative intersection number** `Num(X/S) →+ ℤ` with an integral curve `C` in the
+fibre `X_s` of `f` over a point `s`: restriction to `X_s` followed by the degree on `C` over the
+residue field `κ(s)`. -/
+def relNumericalIntersectionNumberHom :
+    Additive (LineBundleClass X ⧸ relNumericallyTrivialClasses f) →+ ℤ :=
+  (numericalIntersectionNumberHom (S.residueField s) hi hC).comp
+    (numericalFiberRestriction f s).toAdditive
+
+/-- The relative intersection number of the class of `a` is the degree on `C` of the pullback of
+`a` to the fibre. -/
+@[simp]
+theorem relNumericalIntersectionNumberHom_mk (a : LineBundleClass X) :
+    relNumericalIntersectionNumberHom hi hC
+        (Additive.ofMul (a : LineBundleClass X ⧸ relNumericallyTrivialClasses f)) =
+      intersectionNumber (S.residueField s) i (pullback (f.fiberι s) a) := by
+  simp [relNumericalIntersectionNumberHom]
+
+/-- The relative intersection number `A ⊗ Num(X/S) ⟶ A` with an integral curve in a fibre, for a
+commutative ring `A`: for `A = ℚ` and `A = ℝ` the degree pairing of `N¹(X/S)_ℚ` and `N¹(X/S)_ℝ`
+with curves in fibres. -/
+def relNumericalIntersectionNumberBaseChange (A : Type*) [CommRing A] :
+    A ⊗[ℤ] Additive (LineBundleClass X ⧸ relNumericallyTrivialClasses f) →ₗ[A] A :=
+  Module.Dual.baseChange A (relNumericalIntersectionNumberHom hi hC).toIntLinearMap
+
+/-- The base-changed relative intersection number of `a ⊗ α` is `a · (α · C)`. -/
+@[simp]
+theorem relNumericalIntersectionNumberBaseChange_tmul {A : Type*} [CommRing A] (a : A)
+    (α : Additive (LineBundleClass X ⧸ relNumericallyTrivialClasses f)) :
+    relNumericalIntersectionNumberBaseChange hi hC A (a ⊗ₜ α) =
+      a * relNumericalIntersectionNumberHom hi hC α := by
+  simp [relNumericalIntersectionNumberBaseChange, zsmul_eq_mul, mul_comm]
+
+variable (f) in
+/-- **The degree pairing of `N¹(X/S)_ℚ` with curves in fibres is nondegenerate**: a rational
+numerical class with zero degree on every integral curve in every fibre of `f` is zero. -/
+theorem eq_zero_of_forall_relNumericalIntersectionNumberBaseChange_eq_zero
+    (v : RelRatNumericalClasses f)
+    (h : ∀ (s : S) (C : Scheme.{u}) [IsIntegral C] [C.Over (Spec (.of (S.residueField s)))]
+      (i : C ⟶ f.fiber s) [IsClosedImmersion i]
+      (hi : C ↘ Spec (.of (S.residueField s)) = i ≫ f.fiberToSpecResidueField s)
+      (hC : topologicalKrullDim C = 1), relNumericalIntersectionNumberBaseChange hi hC ℚ v = 0) :
+    v = 0 := by
+  obtain ⟨⟨α, n⟩, hv⟩ := IsLocalizedModule.surj (nonZeroDivisors ℤ)
+    (TensorProduct.mk ℤ ℚ (Additive (LineBundleClass X ⧸ relNumericallyTrivialClasses f)) 1) v
+  simp only [TensorProduct.mk_apply] at hv
+  rw [Submonoid.smul_def, ← Int.cast_smul_eq_zsmul ℚ] at hv
+  have hα : α = 0 := by
+    apply Additive.toMul.injective
+    refine numericalFiberRestriction_injective f (funext fun s ↦ ?_)
+    refine eq_of_forall_numericalIntersectionNumber_eq _ _ fun C _ _ i _ hi hC ↦ ?_
+    have := h s C i hi hC
+    have h2 := congrArg (relNumericalIntersectionNumberBaseChange hi hC ℚ) hv
+    rw [map_smul, this, smul_zero, relNumericalIntersectionNumberBaseChange_tmul, one_mul,
+      eq_comm, Int.cast_eq_zero] at h2
+    simpa [relNumericalIntersectionNumberHom] using h2
+  rw [hα, TensorProduct.tmul_zero] at hv
+  exact (smul_eq_zero.mp hv).resolve_left (Int.cast_ne_zero.mpr (nonZeroDivisors.coe_ne_zero n))
 
 end Relative
 
