@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.GradedCommutativity
+public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
 public import TauCeti.CategoryTheory.Monoidal.Preadditive
 public import Mathlib.LinearAlgebra.Multilinear.Basic
+import TauCeti.CategoryTheory.Linear.Int
 
 /-!
 # The integral cup product
@@ -35,6 +37,13 @@ a repeated factor has order at most two (`TopCat.integralCupProd_add_self_eq_zer
 in fact vanishes, since an integral degree-one class has square zero, but graded commutativity
 alone gives only this weaker statement.
 
+Integral cohomology classes are compared with the cohomology of products with spheres and
+circles, which is computed with chain coefficients and cochain values the unit object `ℤ` of
+`ModuleCat ℤ`, through the isomorphism of chain coefficients `ULift ℤ ≅ ℤ` and the uniqueness of
+the `ℤ`-linear structure of `ModuleCat ℤ` (`CategoryTheory.Linear.subsingletonInt`): this is the
+equivalence `TopCat.integralCohomologyEquiv`, natural in the space and compatible with Kronecker
+pairings.
+
 ## Main definitions
 
 * `TopCat.integralCohomology`: integral singular cohomology `Hⁿ(X; ℤ)`.
@@ -44,6 +53,10 @@ alone gives only this weaker statement.
   multilinear map `H¹(X; ℤ)ʳ → Hʳ(X; ℤ)`.
 * `TauCeti.integralCoeffComul`, `TauCeti.integralCoeffMul`: the coefficient maps, the diagonal of
   `ULift ℤ` and the multiplication of `ℤ`.
+* `TopCat.integralCohomologyEquiv`: `Hⁿ(X; ℤ)` is the cohomology with chain coefficients and
+  cochain values the unit object `ℤ` of `ModuleCat ℤ`, the convention of the cohomology of
+  products with spheres and circles, with `TopCat.integralCohomologyEquiv_naturality` its
+  naturality and `TopCat.singularKronecker_integralCohomologyEquiv` its Kronecker pairings.
 * `TauCeti.integralCoeffIso`: the isomorphism `ULift ℤ ≅ ℤ` of chain coefficients, through which
   the diagonal and the multiplication are the inverse left unitor and the left unitor of `ℤ`
   (`TauCeti.integralCoeffComul_comp_tensorHom`, `TauCeti.integralCoeffMul_eq_leftUnitor_hom`).
@@ -383,5 +396,70 @@ theorem integralCupProd_add_self_eq_zero (r : ℕ) (v : Fin r → X.integralCoho
       | zero => exact X.integralCup_integralCupProd_add_self_eq_zero r _ _ _ hv
       | succ j =>
         rw [← map_add, ih (Fin.tail v) hv (fun h ↦ hij (congrArg Fin.succ h)), map_zero]
+
+section UnitCoefficients
+
+/- The cohomology of products with spheres and circles, such as
+`TopCat.singularCohomologyAddCircleProdSlantEquiv`, is computed with chain coefficients and cochain
+values the unit object `ℤ` of `ModuleCat ℤ`, and with the `ℤ`-linear structure
+`ModuleCat.instLinear` of a category of modules; instance search would otherwise find the
+structure `Linear.preadditiveIntLinear` of a preadditive category, which `integralCohomology`
+carries. -/
+attribute [local instance 1100] ModuleCat.instLinear
+
+/-- **Integral cohomology with unit coefficients**: the integral singular cohomology
+`Hⁿ(X; ℤ) = X.integralCohomology n`, computed from singular chains with coefficients in `ULift ℤ`,
+is the cohomology with chain coefficients and cochain values the unit object `ℤ` of `ModuleCat ℤ`,
+taken with the `ℤ`-linear structure of a category of modules. This is the convention of the
+Künneth decompositions of products with spheres and circles, such as
+`TopCat.singularCohomologyAddCircleProdSlantEquiv`. The equivalence changes the chain coefficients
+along `TauCeti.integralCoeffIso` and the `ℤ`-linear structure along its uniqueness. -/
+def integralCohomologyEquiv (n : ℕ) :
+    X.integralCohomology n ≃ₗ[ℤ]
+      X.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) n :=
+  (eqToIso (congrArg (fun L : Linear ℤ (ModuleCat.{0} ℤ) ↦
+      @TopCat.singularCohomology _ _ _ _ (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ _ L
+        (ModuleCat.of ℤ ℤ) X n) (Subsingleton.elim _ _)) ≪≫
+    (X.singularCohomologyChainCoefficientIso ℤ (𝟙_ (ModuleCat.{0} ℤ)) integralCoeffIso n).symm
+    ).toLinearEquiv
+
+/-- **Naturality of `TopCat.integralCohomologyEquiv`**: the comparison of integral cohomology with
+the cohomology with unit coefficients commutes with the maps induced by continuous maps. -/
+theorem integralCohomologyEquiv_naturality {Y : TopCat.{0}} (f : X ⟶ Y) (n : ℕ)
+    (a : Y.integralCohomology n) :
+    X.integralCohomologyEquiv n (@TopCat.singularCohomologyMap _ _ _ _
+        (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ _ Linear.preadditiveIntLinear (ModuleCat.of ℤ ℤ) X Y f
+        n a) =
+      TopCat.singularCohomologyMap f n (Y.integralCohomologyEquiv n a) := by
+  have h₁ := ConcreteCategory.congr_hom (singularCohomologyMap_comp_eqToHom
+    (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ ℤ) Linear.preadditiveIntLinear
+    ModuleCat.instLinear (Subsingleton.elim _ _) f n) a
+  have h₂ := ConcreteCategory.congr_hom (singularCohomologyChainCoefficientMap_naturality f ℤ
+    (𝟙_ (ModuleCat.{0} ℤ)) integralCoeffIso.inv n)
+  simp only [ConcreteCategory.comp_apply] at h₁ h₂
+  simp only [integralCohomologyEquiv, Iso.toLinearEquiv_apply, Iso.trans_hom, Iso.symm_hom,
+    singularCohomologyChainCoefficientIso_inv, ConcreteCategory.comp_apply, eqToIso.hom]
+  rw [h₁]
+  -- `h₂` writes the cochain values `ModuleCat.of ℤ ℤ` as the unit object `𝟙_ (ModuleCat ℤ)`
+  exact h₂ _
+
+/-- **Kronecker pairings through `TopCat.integralCohomologyEquiv`**: evaluating the image of an
+integral class `a` on `Hₙ(X; ℤ)` is evaluating `a` after the isomorphism `Hₙ(X; ℤ) ≅ Hₙ(X; ULift ℤ)`
+of coefficients. -/
+theorem singularKronecker_integralCohomologyEquiv (n : ℕ) (a : X.integralCohomology n) :
+    X.singularKronecker ℤ n (X.integralCohomologyEquiv n a) =
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) n).map
+          integralCoeffIso.inv).app X ≫
+        @TopCat.singularKronecker _ _ _ _ (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ ℤ) X ℤ _
+          Linear.preadditiveIntLinear n a := by
+  simp only [integralCohomologyEquiv, Iso.toLinearEquiv_apply, Iso.trans_hom, Iso.symm_hom,
+    singularCohomologyChainCoefficientIso_inv, ConcreteCategory.comp_apply, eqToIso.hom]
+  rw [singularKronecker_singularCohomologyChainCoefficientMap]
+  -- the Kronecker map on the right takes cochain values in `ModuleCat.of ℤ ℤ`, which Mathlib
+  -- defines to be the unit object `𝟙_ (ModuleCat ℤ)`
+  exact congrArg _ (singularKronecker_eqToHom (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ ℤ)
+    Linear.preadditiveIntLinear ModuleCat.instLinear (Subsingleton.elim _ _) X n a)
+
+end UnitCoefficients
 
 end TopCat

@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Even
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
+public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.Ring.Int.Parity
@@ -21,8 +23,11 @@ import TauCeti.Algebra.BigOperators.Finset.OffDiagonal
 /-!
 # Quadratic forms, idempotents, and the number of symmetric matrices
 
-For a symmetric matrix `A` over a commutative ring, the quadratic form `x ↦ xᵀ A x` satisfies
-the polarization identities `(x ± y)ᵀ A (x ± y) = xᵀ A x + yᵀ A y ± 2 xᵀ A y`.
+For a symmetric matrix `A` over a commutative ring, every congruent matrix `P A Pᵀ` is symmetric,
+and the quadratic form `x ↦ xᵀ A x` satisfies the polarization identities
+`(x ± y)ᵀ A (x ± y) = xᵀ A x + yᵀ A y ± 2 xᵀ A y`. If moreover `A` is invertible, translating `x`
+by `A y` changes the quadratic form of `A⁻¹` by
+`(x + A y)ᵀ A⁻¹ (x + A y) = xᵀ A⁻¹ x + 2 xᵀ y + yᵀ A y`.
 
 For a symmetric integer matrix `A` and an integer vector `m`, the quadratic form
 `mᵀ A m = ∑ᵢⱼ mᵢ mⱼ aᵢⱼ` agrees modulo two with `∑ᵢ mᵢ aᵢᵢ`: its off-diagonal part is even
@@ -53,10 +58,18 @@ function on the unordered pairs `Sym2 n`, so there are `#R ^ (n (n + 1) / 2)` of
 generally, for an alternating matrix `Q` the solutions `S` of `S - Sᵀ = Q` are determined in the
 same way by their entries on and above the diagonal, in every characteristic.
 
+A symmetric matrix on `ι ⊕ Unit` is the same as a symmetric matrix on `ι` together with a border
+column and a corner, the transpose of the column filling the last row.
+
 ## Main results
 
+* `Matrix.IsSymm.mul_mul_transpose`: a congruence `P A Pᵀ` of a symmetric matrix is symmetric.
 * `Matrix.IsSymm.add_dotProduct_mulVec_add` and `Matrix.IsSymm.sub_dotProduct_mulVec_sub`: the
   polarization identities for a symmetric matrix.
+* `Matrix.IsSymm.add_mulVec_dotProduct_inv_mulVec_add_mulVec`: for an invertible symmetric `A`,
+  `(x + A y)ᵀ A⁻¹ (x + A y) = xᵀ A⁻¹ x + 2 xᵀ y + yᵀ A y`.
+* `Matrix.IsSymm.dotProduct_eq_zero_of_mem_eigenspace`: distinct eigenspaces of a symmetric matrix
+  are orthogonal.
 * `Matrix.IsSymm.even_sum_mul_diag_iff_even_dotProduct_mulVec`: if `A` is a symmetric integer
   matrix then `∑ᵢ mᵢ aᵢᵢ` is even if and only if `mᵀ A m` is.
 * `Matrix.IsSymm.even_sum_mul_diag_of_dotProduct_mulVec_eq_zero`: if `A` is a symmetric integer
@@ -76,6 +89,8 @@ same way by their entries on and above the diagonal, in every characteristic.
   to the scalar `a` by `(a * r) • E` multiplies its determinant by an element of `1 + 2 r R`.
 * `Matrix.natCard_isSymm`: the number of symmetric `n × n` matrices over `R` is
   `Nat.card R ^ (n + 1).choose 2`.
+* `Matrix.isSymmSumUnitEquiv`: a symmetric matrix on `ι ⊕ Unit` is a symmetric matrix on `ι`
+  bordered by a column, its transpose and a corner.
 * `Matrix.subTransposeEqEquiv`: for an alternating `Q`, the solutions of `S - Sᵀ = Q` are
   parametrized by the functions on `Sym2 n`.
 -/
@@ -85,6 +100,11 @@ public section
 namespace Matrix
 
 open Finset
+
+/-- A congruence `P A Pᵀ` of a symmetric matrix `A` is symmetric. -/
+theorem IsSymm.mul_mul_transpose {m n R : Type*} [Fintype n] [NonUnitalCommSemiring R]
+    {A : Matrix n n R} (hA : A.IsSymm) (P : Matrix m n R) : (P * A * Pᵀ).IsSymm := by
+  rw [IsSymm, transpose_mul, transpose_mul, transpose_transpose, hA.eq, Matrix.mul_assoc]
 
 /-- Expanding the quadratic form of a symmetric matrix at a sum. -/
 theorem IsSymm.add_dotProduct_mulVec_add {ι R : Type*} [Fintype ι] [CommSemiring R]
@@ -101,6 +121,34 @@ theorem IsSymm.sub_dotProduct_mulVec_sub {ι R : Type*} [Fintype ι] [CommRing R
   rw [sub_eq_add_neg, hA.add_dotProduct_mulVec_add, mulVec_neg, neg_dotProduct, dotProduct_neg,
     dotProduct_neg, neg_neg]
   ring
+
+/-- Translating `x` by `A y` in the quadratic form of the inverse of an invertible symmetric
+matrix: `(x + A y)ᵀ A⁻¹ (x + A y) = xᵀ A⁻¹ x + 2 xᵀ y + yᵀ A y`. -/
+theorem IsSymm.add_mulVec_dotProduct_inv_mulVec_add_mulVec {ι R : Type*} [Fintype ι]
+    [DecidableEq ι] [CommRing R] {A : Matrix ι ι R} (hA : A.IsSymm) (hdet : IsUnit A.det)
+    (x y : ι → R) :
+    (x + A *ᵥ y) ⬝ᵥ A⁻¹ *ᵥ (x + A *ᵥ y) = x ⬝ᵥ A⁻¹ *ᵥ x + 2 * (x ⬝ᵥ y) + y ⬝ᵥ A *ᵥ y := by
+  -- `A⁻¹ (A y) = y` and, by symmetry of `A`, `(A y)ᵀ A⁻¹ x = yᵀ A (A⁻¹ x) = xᵀ y`.
+  have hinv : A⁻¹ *ᵥ (A *ᵥ y) = y := by
+    rw [mulVec_mulVec, nonsing_inv_mul A hdet, one_mulVec]
+  have hswap : (A *ᵥ y) ⬝ᵥ A⁻¹ *ᵥ x = x ⬝ᵥ y := by
+    rw [dotProduct_comm, hA.dotProduct_mulVec_comm, mulVec_mulVec, mul_nonsing_inv A hdet,
+      one_mulVec, dotProduct_comm]
+  rw [mulVec_add, hinv, add_dotProduct, dotProduct_add, dotProduct_add, hswap,
+    dotProduct_comm (A *ᵥ y) y]
+  ring
+
+/-- **Distinct eigenspaces of a symmetric matrix are orthogonal** for the dot product, over a ring
+without zero divisors: `ν (u ⬝ᵥ v) = u ⬝ᵥ A v = v ⬝ᵥ A u = μ (u ⬝ᵥ v)`. -/
+theorem IsSymm.dotProduct_eq_zero_of_mem_eigenspace {ι R : Type*} [Fintype ι] [DecidableEq ι]
+    [CommRing R] [NoZeroDivisors R] {A : Matrix ι ι R} (hA : A.IsSymm) {μ ν : R} (h : μ ≠ ν)
+    {u v : ι → R} (hu : u ∈ Module.End.eigenspace A.toLin' μ)
+    (hv : v ∈ Module.End.eigenspace A.toLin' ν) : u ⬝ᵥ v = 0 := by
+  rw [Module.End.mem_eigenspace_iff, toLin'_apply] at hu hv
+  have key := hA.dotProduct_mulVec_comm (x := u) (y := v)
+  rw [hu, hv, dotProduct_smul, dotProduct_smul, dotProduct_comm v, smul_eq_mul, smul_eq_mul,
+    ← sub_eq_zero, ← sub_mul] at key
+  exact (mul_eq_zero.1 key).resolve_left (sub_ne_zero.2 h.symm)
 
 /-- If `A` is a symmetric integer matrix and `m` is an integer vector, then `∑ᵢ mᵢ aᵢᵢ` has the
 same parity as the quadratic form `mᵀ A m`. The individual terms `mᵢ aᵢᵢ` need not be even. -/
@@ -283,6 +331,59 @@ theorem natCard_isSymm (n R : Type*) [Fintype n] :
     fun M => ?_).trans (Sym2.lift (α := n) (β := R))
   rw [IsSymm.ext_iff]
   exact ⟨fun h a b => h b a, fun h a b => h b a⟩
+
+section SumUnit
+
+variable (α ι : Type*)
+
+/-- A symmetric matrix on `ι ⊕ Unit` is a symmetric matrix on `ι` bordered by a column, its
+transpose and a corner. -/
+def isSymmSumUnitEquiv :
+    {M : Matrix (ι ⊕ Unit) (ι ⊕ Unit) α // M.IsSymm} ≃
+      {S : Matrix ι ι α // S.IsSymm} × (ι → α) × α where
+  toFun M := (⟨M.val.toBlocks₁₁,
+    (isSymm_fromBlocks_iff.mp (M.val.fromBlocks_toBlocks ▸ M.property)).left⟩,
+    fun i => M.val (.inl i) (.inr ()), M.val (.inr ()) (.inr ()))
+  invFun p := ⟨fromBlocks p.1.val (replicateCol Unit p.2.1) (replicateRow Unit p.2.1)
+    (of fun _ _ => p.2.2), p.1.property.fromBlocks (by simp) (by ext; simp)⟩
+  left_inv M := by
+    ext (i | i) (j | _)
+    · simp [toBlocks₁₁]
+    · simp
+    · simpa using (M.property.apply _ _).symm
+    · simp
+  right_inv p := by ext <;> simp [toBlocks₁₁]
+
+variable {α ι}
+
+/-- The symmetric block of a symmetric matrix on `ι ⊕ Unit` is its `ι × ι` block. -/
+@[simp]
+theorem coe_isSymmSumUnitEquiv_apply_fst (M : {M : Matrix (ι ⊕ Unit) (ι ⊕ Unit) α // M.IsSymm}) :
+    ((isSymmSumUnitEquiv α ι M).1 : Matrix ι ι α) = M.val.toBlocks₁₁ :=
+  (rfl)
+
+/-- The border column of a symmetric matrix on `ι ⊕ Unit` is its last column. -/
+@[simp]
+theorem isSymmSumUnitEquiv_apply_snd_fst (M : {M : Matrix (ι ⊕ Unit) (ι ⊕ Unit) α // M.IsSymm}) :
+    (isSymmSumUnitEquiv α ι M).2.1 = fun i => M.val (.inl i) (.inr ()) :=
+  (rfl)
+
+/-- The corner of a symmetric matrix on `ι ⊕ Unit` is its last diagonal entry. -/
+@[simp]
+theorem isSymmSumUnitEquiv_apply_snd_snd (M : {M : Matrix (ι ⊕ Unit) (ι ⊕ Unit) α // M.IsSymm}) :
+    (isSymmSumUnitEquiv α ι M).2.2 = M.val (.inr ()) (.inr ()) :=
+  (rfl)
+
+/-- The symmetric matrix with block `S`, border column `v` and corner `a` is
+`[[S, v], [vᵀ, a]]`. -/
+@[simp]
+theorem coe_isSymmSumUnitEquiv_symm_apply (p : {S : Matrix ι ι α // S.IsSymm} × (ι → α) × α) :
+    ((isSymmSumUnitEquiv α ι).symm p : Matrix (ι ⊕ Unit) (ι ⊕ Unit) α) =
+      fromBlocks p.1.val (replicateCol Unit p.2.1) (replicateRow Unit p.2.1)
+        (of fun _ _ => p.2.2) :=
+  (rfl)
+
+end SumUnit
 
 section SubTranspose
 

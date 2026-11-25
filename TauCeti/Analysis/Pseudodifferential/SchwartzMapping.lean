@@ -65,7 +65,8 @@ where the profile is bounded by `‖u‖_{L¹}`.
 * `TauCeti.Symbol.quantizeUniformCLM`: the quantization of a uniform symbol as a continuous linear
   map `𝓢(ℝⁿ, V) →L[ℂ] 𝓢(ℝⁿ, W)`.
 * `TauCeti.Symbol.quantizeUniformCLM_add`, `TauCeti.Symbol.quantizeUniformCLM_smul`,
-  `TauCeti.Symbol.quantizeUniformCLM_zero`, `TauCeti.Symbol.quantizeUniformCLM_sum`,
+  `TauCeti.Symbol.quantizeUniformCLM_zero`, `TauCeti.Symbol.quantizeUniformCLM_neg`,
+  `TauCeti.Symbol.quantizeUniformCLM_sub`, `TauCeti.Symbol.quantizeUniformCLM_sum`,
   `TauCeti.Symbol.quantizeUniformCLM_inclusion`, `TauCeti.Symbol.quantizeUniformCLM_congr`: the
   quantization is linear in the symbol and depends only on its coefficient, not on the order.
 * `TauCeti.Symbol.lineDerivOp_quantizeUniformCLM`,
@@ -83,8 +84,10 @@ where the profile is bounded by `‖u‖_{L¹}`.
 * `TauCeti.Symbol.quantizeRightUniformCLM`: the right quantization of a uniform symbol as a
   continuous linear map `𝓢(ℝⁿ, V) →L[ℂ] 𝓢(ℝⁿ, W)`, with its formula
   `TauCeti.Symbol.quantizeRightUniformCLM_apply`, its Fourier transform
-  `TauCeti.Symbol.fourier_quantizeRightUniformCLM` and its linearity in the symbol
-  (`TauCeti.Symbol.quantizeRightUniformCLM_add` and its companions).
+  `TauCeti.Symbol.fourier_quantizeRightUniformCLM`, its linearity in the symbol
+  (`TauCeti.Symbol.quantizeRightUniformCLM_add` and its companions) and its dependence only on
+  the integrand `c(y, ξ) (u y)`
+  (`TauCeti.Symbol.quantizeRightUniformCLM_eq_of_coefficient_apply_eq`).
 * `TauCeti.Symbol.IsUniform.integrable_coefficient_apply`: `y ↦ c(y, ξ) u(y)` is integrable for a
   uniform symbol `c` and a Schwartz function `u`.
 
@@ -305,6 +308,18 @@ theorem quantizeUniformCLM_congr {m' : ℝ} {a : Symbol n V W m} {b : Symbol n V
   ext u x
   simp [h]
 
+/-- The quantization takes the negated symbol to the negated operator. -/
+theorem quantizeUniformCLM_neg {a : Symbol n V W m} (ha : a.IsUniform) :
+    quantizeUniformCLM (-a) ha.neg = -quantizeUniformCLM a ha := by
+  rw [quantizeUniformCLM_congr ha.neg (ha.smul (-1)) (by simp), quantizeUniformCLM_smul,
+    neg_one_smul]
+
+/-- The quantization takes differences of symbols to differences of operators. -/
+theorem quantizeUniformCLM_sub {a b : Symbol n V W m} (ha : a.IsUniform) (hb : b.IsUniform) :
+    quantizeUniformCLM (a - b) (ha.sub hb) = quantizeUniformCLM a ha - quantizeUniformCLM b hb := by
+  rw [quantizeUniformCLM_congr (ha.sub hb) (ha.add hb.neg) (by rw [sub_eq_add_neg]),
+    quantizeUniformCLM_add ha hb.neg, quantizeUniformCLM_neg hb, sub_eq_add_neg]
+
 /-- **Commutator with a derivative.** `∂_j (Op(a) u) = Op(a) (∂_j u) + Op(∂_{x_j} a) u` in
 Schwartz space. -/
 theorem lineDerivOp_quantizeUniformCLM (a : Symbol n V W m) (ha : a.IsUniform) (j : Fin n)
@@ -429,9 +444,8 @@ theorem smulLeftCLM_quantizeUniformCLM (a : Symbol n V W m) (ha : a.IsUniform) (
 theorem quantizeUniformCLM_const [CompleteSpace V] [CompleteSpace W] (T : V →L[ℂ] W) :
     quantizeUniformCLM (const T) (isUniform_const T) =
       SchwartzMap.postcompCLM (E := CoordinateSpace n) T := by
-  have hT : (const T : Symbol n V W 0).coefficient = fun _ ↦ T := funext (coefficient_const T)
   ext u x
-  simpa [hT] using quantizeSchwartzValue_comp_fst (fun _ ↦ T) u x
+  exact quantizeSchwartzValue_const T u x
 
 /-- The symbol of a smooth function `f` of the position quantizes to multiplication by `f`:
 `Op(f) u (x) = f(x) (u(x))`. -/
@@ -439,8 +453,7 @@ theorem quantizeUniformCLM_ofSpatial_apply [CompleteSpace V] [CompleteSpace W]
     {f : CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f) (ha : (ofSpatial f hf).IsUniform)
     (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
     quantizeUniformCLM (ofSpatial f hf) ha u x = f x (u x) := by
-  rw [quantizeUniformCLM_apply, funext (coefficient_ofSpatial f hf)]
-  exact quantizeSchwartzValue_comp_fst f u x
+  rw [quantizeUniformCLM_apply, quantizeSchwartzValue_ofSpatial]
 
 /-! ### The Fourier profile of the right quantization -/
 
@@ -999,6 +1012,15 @@ theorem quantizeRightUniformCLM_apply (c : Symbol n V W m) (hc : c.IsUniform)
   rw [quantizeRightUniformCLM, ContinuousLinearMap.comp_apply,
     FourierTransform.fourierInvCLM_apply, SchwartzMap.fourierInv_coe, Real.fourierInv_eq]
   simp_rw [profileCLM_apply]
+
+/-- Two right quantizations agree when their integrands `c(y, ξ) (u y)` agree pointwise. -/
+theorem quantizeRightUniformCLM_eq_of_coefficient_apply_eq {m' : ℝ} {c : Symbol n V W m}
+    {c' : Symbol n V W m'} (hc : c.IsUniform) (hc' : c'.IsUniform)
+    {u u' : 𝓢(CoordinateSpace n, V)}
+    (h : ∀ y ξ, c.coefficient (y, ξ) (u y) = c'.coefficient (y, ξ) (u' y)) :
+    quantizeRightUniformCLM c hc u = quantizeRightUniformCLM c' hc' u' := by
+  ext x
+  simp only [quantizeRightUniformCLM_apply, h]
 
 /-- The right quantization is additive in the symbol. -/
 theorem quantizeRightUniformCLM_add {c c' : Symbol n V W m} (hc : c.IsUniform)

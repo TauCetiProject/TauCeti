@@ -12,7 +12,12 @@ public import Mathlib.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 
 Scalar multiplication on `E →SLₚₜ[σ] F` is jointly continuous whenever it is on `F`, since it is
 computed pointwise (`PointwiseConvergenceCLM.continuousSMul`). Post-composition evaluates as
-`postcomp E L f x = L (f x)` (`PointwiseConvergenceCLM.postcomp_apply_apply`). Passing from
+`postcomp E L f x = L (f x)` (`PointwiseConvergenceCLM.postcomp_apply_apply`), and
+post-composition by the identity is the identity (`PointwiseConvergenceCLM.postcomp_id`). For
+seminormed codomains, closure in the topology of pointwise convergence is characterized by
+simultaneous norm approximation on finite sets of vectors
+(`PointwiseConvergenceCLM.mem_closure_iff`,
+`ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff_norm`). Passing from
 `E →SL[σ] F` to its pointwise-convergence copy is injective
 (`ContinuousLinearMap.toPointwiseConvergenceCLM_injective`).
 A map lies in the closure of a set of maps in this topology exactly when it is the pointwise limit
@@ -38,6 +43,14 @@ theorem postcomp_apply_apply {𝕜₁ 𝕜₂ 𝕜₃ E F G : Type*} [NormedFiel
     postcomp E L f x = L (f x) :=
   DFunLike.congr_fun (postcomp_apply E L f) x
 
+/-- Post-composition by the identity is the identity. -/
+@[simp]
+theorem postcomp_id {𝕜₁ 𝕜₂ E F : Type*} [NormedField 𝕜₁] [NormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂}
+    [AddCommGroup E] [TopologicalSpace E] [Module 𝕜₁ E] [AddCommGroup F] [TopologicalSpace F]
+    [IsTopologicalAddGroup F] [Module 𝕜₂ F] [ContinuousConstSMul 𝕜₂ F] :
+    postcomp E (ContinuousLinearMap.id 𝕜₂ F) = ContinuousLinearMap.id 𝕜₂ (E →SLₚₜ[σ] F) :=
+  rfl
+
 variable {𝕜₁ 𝕜₂ M E F : Type*} [NormedField 𝕜₁] [NormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂}
     [AddCommGroup E] [TopologicalSpace E] [Module 𝕜₁ E] [AddCommGroup F] [TopologicalSpace F]
     [IsTopologicalAddGroup F] [Module 𝕜₂ F] [Monoid M] [TopologicalSpace M]
@@ -50,6 +63,29 @@ instance continuousSMul : ContinuousSMul M (E →SLₚₜ[σ] F) where
     continuous_fst.smul (((continuous_apply x).comp
       (PointwiseConvergenceCLM.isEmbedding_coeFn σ E F).continuous).comp continuous_snd :
         Continuous fun p : M × (E →SLₚₜ[σ] F) ↦ p.2 x)
+
+/-- An operator `T : E →SLₚₜ[σ] F` lies in the closure of `s` for the topology of pointwise
+convergence if and only if for every finite set of vectors `F₀` and every `ε > 0`, some `a ∈ s`
+satisfies `‖T v - a v‖ < ε` for all `v ∈ F₀`. -/
+theorem mem_closure_iff {𝕜₁ 𝕜₂ E F : Type*} [NormedField 𝕜₁] [NormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂}
+    [AddCommGroup E] [TopologicalSpace E] [Module 𝕜₁ E] [SeminormedAddCommGroup F] [Module 𝕜₂ F]
+    {s : Set (E →SLₚₜ[σ] F)} {T : E →SLₚₜ[σ] F} :
+    T ∈ closure s ↔ ∀ (F₀ : Finset E) {ε : ℝ}, 0 < ε → ∃ a ∈ s, ∀ v ∈ F₀, ‖T v - a v‖ < ε := by
+  rw [mem_closure_iff_nhds_basis
+    ((PointwiseConvergenceCLM.hasBasis_nhds_zero_of_basis
+      (σ := σ) (E := E) Metric.nhds_basis_ball).nhds_of_zero T)]
+  constructor
+  · intro h F₀ ε hε
+    obtain ⟨a, ha, hball⟩ := h ⟨(F₀ : Set E), ε⟩ ⟨F₀.finite_toSet, hε⟩
+    refine ⟨a, ha, fun v hv => ?_⟩
+    simpa only [Metric.mem_ball, dist_zero_right, _root_.sub_apply, norm_sub_rev] using hball v hv
+  · rintro h ⟨F₀, ε⟩ ⟨hF₀, hε⟩
+    classical
+    have hF : F₀.Finite := hF₀
+    obtain ⟨a, ha, happrox⟩ := h hF.toFinset hε
+    refine ⟨a, ha, fun v hv => ?_⟩
+    simpa only [Metric.mem_ball, dist_zero_right, _root_.sub_apply, norm_sub_rev] using
+      happrox v (hF.mem_toFinset.2 hv)
 
 end PointwiseConvergenceCLM
 
@@ -85,3 +121,17 @@ theorem ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff {�
   · rintro ⟨l, hl, hs, hT⟩
     exact mem_closure_of_tendsto (PointwiseConvergenceCLM.tendsto_iff_forall_tendsto.mpr hT)
       (hs.mono fun A hA => ⟨A, hA, rfl⟩)
+
+/-- An operator `T` lies in the pointwise-convergence (strong operator) closure of `s` if and only
+if for every finite set of vectors `F₀` and every `ε > 0`, some `a ∈ s` satisfies
+`‖T v - a v‖ < ε` for all `v ∈ F₀`. -/
+theorem ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff_norm
+    {𝕜₁ 𝕜₂ E F : Type*} [NormedField 𝕜₁] [NormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂} [AddCommGroup E]
+    [TopologicalSpace E] [Module 𝕜₁ E] [ContinuousSMul 𝕜₁ E] [SeminormedAddCommGroup F]
+    [Module 𝕜₂ F] [ContinuousConstSMul 𝕜₂ F] {s : Set (E →SL[σ] F)} {T : E →SL[σ] F} :
+    toPointwiseConvergenceCLM 𝕜₂ σ E F T ∈ closure (toPointwiseConvergenceCLM 𝕜₂ σ E F '' s) ↔
+      ∀ (F₀ : Finset E) {ε : ℝ}, 0 < ε → ∃ a ∈ s, ∀ v ∈ F₀, ‖T v - a v‖ < ε := by
+  rw [PointwiseConvergenceCLM.mem_closure_iff]
+  simp only [Set.exists_mem_image, toPointwiseConvergenceCLM_apply]
+  -- `UniformConvergenceCLM.instFunLike` is definitionally `ContinuousLinearMap.funLike`.
+  exact Iff.rfl

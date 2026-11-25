@@ -18,6 +18,9 @@ open domain is exactly its distributional support intersected with that domain. 
 the complement of the distributional support is mass-null, and a test supported in a mass-null
 set has zero evaluation. The comparison is on the open domain: the ambient distributional
 support may also contain frontier points, where the mass measure need not be locally finite.
+A real functional of locally finite mass therefore only sees the values of a test at the points
+of its support in the domain (`Distribution.HasLocallyFiniteMass.map_eq_map_of_eqOn_dsupport`),
+whereas an arbitrary distribution sees the germ of the test along its support.
 
 A linear functional with compact distributional support contained in its domain has finite
 mass if and only if it has locally finite mass. This last statement also holds for normed
@@ -62,13 +65,18 @@ end Vanishing
 
 section CompactSupport
 
-variable [FiniteDimensional ℝ E] {𝓕 : Type*} [FunLike 𝓕 𝓓^{n}(Ω, F) V]
-  [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, F) V] {T : 𝓕}
+variable {𝓕 : Type*} [FunLike 𝓕 𝓓^{n}(Ω, F) V] [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, F) V] {T : 𝓕}
 
 /-- A compactly supported linear functional of locally finite mass has finite total mass,
 provided its support is contained in the open domain. -/
 theorem HasLocallyFiniteMass.mass_ne_top (hT : HasLocallyFiniteMass T)
     (hc : IsCompact (dsupport T)) (hΩ : dsupport T ⊆ Ω) : mass T ≠ ⊤ := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · -- Every test function is zero, so `T` is zero and has zero mass.
+    rw [(mass_eq_zero_iff T).2 (funext fun φ => by
+      simp [TestFunction.eq_zero_of_not_finiteDimensional φ hE])]
+    exact ENNReal.zero_ne_top
   obtain ⟨χ, hχ, hχ01⟩ := TestFunction.exists_eventually_eq_one (n := n) hc hΩ
   obtain ⟨C, hC, hTC⟩ := (hasLocallyFiniteMass_def.1 hT)
     (tsupport χ) χ.hasCompactSupport χ.tsupport_subset
@@ -98,7 +106,7 @@ end CompactSupport
 
 section Measure
 
-variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+variable [MeasurableSpace E] [BorelSpace E]
   {𝓕 : Type*} [FunLike 𝓕 𝓓^{n}(Ω, F) ℝ] [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, F) ℝ]
   {T : 𝓕}
 
@@ -154,5 +162,26 @@ theorem map_eq_zero_of_massMeasure_tsupport_eq_zero (hT : HasLocallyFiniteMass T
   simpa [hzero] using enorm_apply_le_lintegral_massMeasure hT φ
 
 end Measure
+
+section Locality
+
+variable {𝓕 : Type*} [FunLike 𝓕 𝓓^{n}(Ω, F) ℝ] [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, F) ℝ] {T : 𝓕}
+
+/-- **A functional of locally finite mass only sees the values of a test on its support**: two
+tests agreeing at every point of the distributional support in `Ω` have the same value. Unlike the
+locality of an arbitrary distribution (`Distribution.map_eq_map_of_forall_eventuallyEq`), no
+agreement near the support is required. -/
+theorem HasLocallyFiniteMass.map_eq_map_of_eqOn_dsupport (hT : HasLocallyFiniteMass T)
+    {φ ψ : 𝓓^{n}(Ω, F)} (h : EqOn φ ψ ((Ω : Set E) ∩ dsupport T)) : T φ = T ψ := by
+  borelize E
+  have hzero : ∫⁻ x, ‖(φ - ψ) x‖ₑ ∂massMeasure T = 0 := by
+    apply lintegral_eq_zero_of_ae_eq_zero
+    filter_upwards [measure_eq_zero_iff_ae_notMem.1 (massMeasure_compl_dsupport hT)] with x hx
+    simp [h ⟨x.property, not_not.1 hx⟩]
+  have hle := enorm_apply_le_lintegral_massMeasure hT (φ - ψ)
+  rw [hzero, nonpos_iff_eq_zero, eNorm_eq_zero, map_sub, sub_eq_zero] at hle
+  exact hle
+
+end Locality
 
 end Distribution

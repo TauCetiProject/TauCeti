@@ -57,8 +57,6 @@ Given a homotopy `H : C(I × A, B)` starting at `p ∘ f` on a space `A`:
   cover of a normal paracompact base.
 * `TauCeti.isHurewiczFibration_of_partitionOfUnity`: a continuous map locally a Hurewicz fibration
   over a numerable cover is a Hurewicz fibration.
-* `TauCeti.isHurewiczFibration_of_isSubordinate`: convenience form for closed-support subordination
-  `ρ.IsSubordinate U`.
 * `TauCeti.isHurewiczFibration_of_isOpenCover`: a continuous map locally a Hurewicz fibration over
   an open cover of a normal paracompact base is a Hurewicz fibration.
 
@@ -730,6 +728,22 @@ private theorem cumTime_eq_one_of_finsupport_subset {A : Type w} [TopologicalSpa
     cumTime μ n a = 1 :=
   Subtype.ext (μ.sum_finsupport' (mem_univ a) h)
 
+/-- The closure of the set where the cumulative times of the shrunk gap partition of `ν` differ
+between `n` and `n + 1` lies in the union of the gap strata of the finite index sets of cardinality
+`n`. -/
+private theorem closure_cumTime_lt_subset_iUnion_gap {κ : Type*} {A : Type w} [TopologicalSpace A]
+    (ν : PartitionOfUnity κ A) (n : ℕ) :
+    closure {a : A | cumTime ν.gapPartition.shrink n a < cumTime ν.gapPartition.shrink (n + 1) a} ⊆
+      ⋃ F : {F : Finset κ // F.card = n ∧ F.Nonempty}, {a : A | 0 < ν.gap F.val a} :=
+  fun a ha ↦ by
+    have hsupp_gap : a ∈ support (ν.gapPartition n) :=
+      ν.gapPartition.tsupport_shrink_subset_support n
+        (closure_cumTime_lt_subset ν.gapPartition.shrink n ha)
+    have hpos_gap : 0 < ν.gapPartition n a :=
+      lt_of_le_of_ne (ν.gapPartition.nonneg n a) (Ne.symm hsupp_gap)
+    obtain ⟨F, hcard, hgap⟩ := ν.exists_gap_pos_of_gapPartition_pos hpos_gap
+    exact mem_iUnion.2 ⟨⟨F, hcard, (ν.gap_pos_iff.1 hgap).1⟩, hgap⟩
+
 /-- Advance a global `PartialLift` on `A` from `cumTime μ n` to `cumTime μ (n + 1)` by lifting
 independently on the pairwise disjoint open gap strata `{a | 0 < ν.gap E a}` of cardinality `n`. -/
 private theorem PartialLift.advanceGapStep {ι : Type*} {E : Type u} {B : Type v} {A : Type w}
@@ -764,15 +778,7 @@ private theorem PartialLift.advanceGapStep {ι : Type*} {E : Type u} {B : Type v
     rw [tubePartition, PartitionOfUnity.ofExistsPos_pos_iff] at hν_pos
     exact pos_of_tubeWeight_pos (tubeWeight_pos_of_truncTubeWeight_pos hν_pos) k ht
   choose LF hLF using hlocal
-  have hclos_sub : closure {a : A | τ₁ a < τ₂ a} ⊆
-      ⋃ F : {F : Finset (Σ m : ℕ, Fin (m + 1) → ι) // F.card = n ∧ F.Nonempty}, Stratum F.val :=
-    fun a ha ↦ by
-    have hsupp_gap : a ∈ support (ν.gapPartition n) :=
-      ν.gapPartition.tsupport_shrink_subset_support n (closure_cumTime_lt_subset μ n ha)
-    have hpos_gap : 0 < ν.gapPartition n a :=
-      lt_of_le_of_ne (ν.gapPartition.nonneg n a) (Ne.symm hsupp_gap)
-    obtain ⟨F, hcard, hgap⟩ := ν.exists_gap_pos_of_gapPartition_pos hpos_gap
-    exact mem_iUnion.2 ⟨⟨F, hcard, (ν.gap_pos_iff.1 hgap).1⟩, hgap⟩
+  have hclos_sub := closure_cumTime_lt_subset_iUnion_gap ν n
   obtain ⟨LO, hLO⟩ := PartialLift.exists_of_pairwise_disjoint_isOpen
     (S := fun F : {F : Finset (Σ m : ℕ, Fin (m + 1) → ι) // F.card = n ∧ F.Nonempty} ↦
       Stratum F.val) (fun F ↦ hStratum_open F.val)
@@ -875,16 +881,6 @@ theorem isHurewiczFibration_of_partitionOfUnity {p : E → B} (hp : Continuous p
   isHurewiczFibration_iff.2 ⟨hp, fun _ _ ↦
     HasHomotopyLiftingProperty.of_partitionOfUnity ρ hρ
       fun i W _ ↦ (hpU i).hasHomotopyLiftingProperty W⟩
-
-/-- Convenience form of `TauCeti.isHurewiczFibration_of_partitionOfUnity` for a partition of unity
-subordinate to `U` in the closed-support sense (`PartitionOfUnity.IsSubordinate`). -/
-theorem isHurewiczFibration_of_isSubordinate {p : E → B} (hp : Continuous p)
-    {U : ι → Set B} {ρ : PartitionOfUnity ι B} (hρ : ρ.IsSubordinate U)
-    (hpU : ∀ i, IsHurewiczFibration.{w}
-      ((U i).restrictPreimage p)) :
-    IsHurewiczFibration.{w} p :=
-  isHurewiczFibration_of_partitionOfUnity hp ρ
-    (fun i ↦ (subset_tsupport _).trans (hρ i)) hpU
 
 /-- Over a normal paracompact base (including every paracompact Hausdorff base), a continuous map
 that is locally a Hurewicz fibration over an open cover is globally a Hurewicz fibration. -/

@@ -8,9 +8,9 @@ module
 public import Mathlib.RingTheory.Jacobson.Radical
 public import Mathlib.RingTheory.SimpleModule.Basic
 public import TauCeti.RingTheory.StableRange.Basic
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.RingTheory.SimpleModule.WedderburnArtin
+import TauCeti.LinearAlgebra.Dimension.Submodule
 import TauCeti.RingTheory.Jacobson.Basic
 
 /-!
@@ -27,18 +27,6 @@ See Weibel, *The K-book*, Chapter I, Exercises 1.5(c) and 1.12(v), and Vaserstei
 public section
 
 namespace TauCeti
-
-/-- Bass stable range bounds hold in a product ring exactly when they hold in each factor. -/
-@[simp]
-theorem hasStableRangeLE_pi_iff {ι : Type*} {R : ι → Type*} [∀ i, Ring (R i)] {s : ℕ} :
-    HasStableRangeLE ((i : ι) → R i) s ↔ ∀ i, HasStableRangeLE (R i) s := by
-  refine ⟨fun h i ↦ h.of_surjective (f := Pi.evalRingHom R i) (RingHomSurjective.is_surjective),
-    fun h ↦ hasStableRangeLE_iff_exists_sum_eq_one.mpr fun a b hab ↦ ?_⟩
-  have hi (j : ι) : ∑ i, a i j * b i j = 1 := by
-    simpa using congrArg (Pi.evalRingHom R j) hab
-  choose c d hcd using fun j ↦ hasStableRangeLE_iff_exists_sum_eq_one.mp (h j) _ _ (hi j)
-  refine ⟨fun i j ↦ c j i, fun i j ↦ d j i, funext fun j ↦ ?_⟩
-  simpa using hcd j
 
 /-- Passing to a quotient by a two-sided ideal in the Jacobson radical preserves every
 Bass stable range bound. -/
@@ -83,10 +71,8 @@ theorem hasStableRangeLE_one_end (K V : Type*) [DivisionRing K] [AddCommGroup V]
       zero_add, LinearMap.comp_apply] using congrArg q (LinearMap.congr_fun hAB v)
   obtain ⟨j, hj⟩ := (q.comp B).exists_rightInverse_of_surjective (LinearMap.range_eq_top.mpr hqB)
   obtain ⟨p, hp⟩ := A.ker.subtype.exists_leftInverse_of_injective A.ker.ker_subtype
-  let e : A.ker ≃ₗ[K] V ⧸ A.range := LinearEquiv.ofFinrankEq _ _ (by
-    have h₁ := A.finrank_range_add_finrank_ker
-    have h₂ := A.range.finrank_quotient_add_finrank
-    omega)
+  let e : A.ker ≃ₗ[K] V ⧸ A.range :=
+    LinearEquiv.ofFinrankEq _ _ (LinearMap.finrank_quotient_range_eq_finrank_ker A).symm
   -- Correct A on its kernel by lifting an isomorphism from the kernel to the cokernel.
   let C := j.comp (e.toLinearMap.comp p)
   have hqC (v : V) : q ((A + B * C) v) = e (p v) := by

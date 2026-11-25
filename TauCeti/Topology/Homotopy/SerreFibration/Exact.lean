@@ -12,6 +12,7 @@ public import TauCeti.Topology.Homotopy.GenLoop.Homotopic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
+public import TauCeti.Topology.Homotopy.Lifting.Monodromy
 public import TauCeti.Topology.Homotopy.SerreFibration.RelativeCube
 
 /-!
@@ -48,7 +49,9 @@ boundary lifts of homotopic loops are compared by one further relative lift over
 every boundary lift.
 
 The boundary map is natural for maps of Serre fibrations, that is, for commutative squares
-(`TauCeti.TopCat.fibrationBoundary_map`). For `n ≥ 1` it is a group homomorphism
+(`TauCeti.TopCat.fibrationBoundary_map`), also when the image of the base point is only
+propositionally the chosen point of the target (`TauCeti.TopCat.fibrationBoundary_map_of_eq`).
+For `n ≥ 1` it is a group homomorphism
 (`TauCeti.TopCat.fibrationBoundary_mul`, bundled as `TauCeti.TopCat.fibrationBoundaryHom`):
 concatenating two boundary lifts along a direction of `I^N` gives a boundary lift of the
 concatenated loops, in the order of Mathlib's `HomotopyGroup.mul_spec`.
@@ -59,7 +62,10 @@ concatenated loops, in the order of Mathlib's `HomotopyGroup.mul_spec`.
   null-homotopy in `E` of a loop in the fibre is a boundary lift of its projection
   (`TauCeti.TopCat.mem_range_fibrationBoundary_iff`). At `π_0(F, e)` this says that a point of
   the fibre is joined to `e` in `E` exactly when its class is a boundary
-  (`TauCeti.TopCat.joined_iff_mem_range_fibrationBoundary`).
+  (`TauCeti.TopCat.joined_iff_mem_range_fibrationBoundary`). In degree one the boundary map is
+  the orbit map of the path component of `e` for the monodromy action of `π_1(B, b)` on the path
+  components of the fibre (`TauCeti.TopCat.fibrationBoundary_eq_fiberMonodromy`), whose orbits
+  and stabilisers refine this exactness, in `TauCeti.Topology.Homotopy.Lifting.Monodromy`.
 * At `π_n(E, e)`: a null-homotopy in `B` of the projection of a loop in `E` lifts, relative to the
   boundary, to a homotopy in `E` from that loop to a loop in the fibre
   (`TauCeti.TopCat.mem_range_homotopyGroupMap_fiberι_iff`).
@@ -321,6 +327,21 @@ theorem fibrationBoundary_map {E' B' : TopCat.{u}} {p' : E' ⟶ B'} {f : E ⟶ E
   rw [hfG.endLoop_apply_coe, ContinuousMap.comp_apply, GenLoop.map_apply]
   exact (CommSq.fiberMap_apply_coe sq b (hG.endLoop t)).symm
 
+/-- **Naturality of the boundary map, at a prescribed image point.** The form of
+`TauCeti.TopCat.fibrationBoundary_map` for a base point `b'` of `B'` that is only propositionally
+the image `g b`, and for any map of fibres `φ : p⁻¹(b) → p'⁻¹(b')` given on underlying points by
+the top of the square. -/
+theorem fibrationBoundary_map_of_eq {E' B' : TopCat.{u}} {p' : E' ⟶ B'} {f : E ⟶ E'}
+    {g : B ⟶ B'} (sq : CommSq f p p' g) (hp : serreFibrations p) (hp' : serreFibrations p')
+    [Finite N] {b' : B'} (hb : g b = b') {e' : p'.fiber b'} (φ : C(p.fiber b, p'.fiber b'))
+    (hφ : ∀ x, (φ x : E') = f x.val) (he : φ e = e') (a : HomotopyGroup (Option N) B b) :
+    fibrationBoundary hp' e' (HomotopyGroup.map g.hom hb a) =
+      HomotopyGroup.map φ he (fibrationBoundary hp e a) := by
+  subst hb he
+  obtain rfl : φ = (sq.fiberMap b).hom :=
+    ContinuousMap.ext fun x ↦ Subtype.ext ((hφ x).trans (CommSq.fiberMap_apply_coe sq b x).symm)
+  exact fibrationBoundary_map sq hp hp' a
+
 /-! ### The boundary map is a homomorphism -/
 
 section Group
@@ -455,6 +476,27 @@ theorem joined_iff_mem_range_fibrationBoundary (hp : serreFibrations p) (y : p.f
   rw [GenLoop.map_apply, genLoopHomeoOfIsEmpty_symm_apply, TopCat.Hom.fiberι_apply,
     GenLoop.const_apply]
   exact ⟨Joined.symm, Joined.symm⟩
+
+/-- **The boundary map `π_1(B, b) → π_0(F, e)` is the orbit map of the path component of `e`.**
+Read through the identifications of `π_1` with the fundamental group and of `π_0` with the path
+components, the boundary map sends a loop class `a` to the monodromy of `a` applied to the path
+component of `e` (`TauCeti.HasHomotopyLiftingProperty.fiberMonodromy`). -/
+theorem fibrationBoundary_eq_fiberMonodromy (hp : serreFibrations p)
+    (a : HomotopyGroup (Option (Fin 0)) B b) :
+    HomotopyGroup.pi0EquivZerothHomotopy (fibrationBoundary hp e a) =
+      (hasHomotopyLiftingProperty_unitInterval_of_mem_serreFibrations hp).fiberMonodromy
+        (homotopyGroupEquivFundamentalGroupOfUnique (Option (Fin 0)) a).asHom (.mk e) := by
+  induction a using Quotient.inductionOn with | h γ =>
+  obtain ⟨G, hG⟩ := exists_isBoundaryLift hp e γ
+  rw [fibrationBoundary_mk hp hG, HomotopyGroup.pi0EquivZerothHomotopy_mk,
+    homotopyGroupEquivFundamentalGroupOfUnique_mk_asHom]
+  -- At the only point of the cube `I^0`, the boundary lift is a lift of the loop from `e`.
+  refine (HasHomotopyLiftingProperty.fiberMonodromy_mk _ _ (Γ := ⟨fun t ↦ G (t, 0), by fun_prop⟩)
+    (funext fun t ↦ ?_) (hG.apply_zero 0) (hG.endLoop_apply_coe 0).symm).symm
+  refine (hG.proj_apply (t, 0)).trans (congrArg γ (funext fun i ↦ ?_))
+  cases i with
+  | none => exact piOptionEquivProdHomeomorph_symm_apply_none _ _
+  | some i => exact i.elim0
 
 /-- **Exactness at `π_n(E, e)`.** A class of the total space comes from the fibre exactly when it
 becomes trivial in `π_n(B, b)`. -/

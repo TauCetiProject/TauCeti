@@ -32,6 +32,8 @@ infinite part, without imposing any condition on the ramification.
   at finite places.
 * `TauCeti.ClassFieldTheory.mem_infinitePart_abelianConductor_iff_exists_fixedField_ker`: the union
   formula at real places.
+* `TauCeti.ClassFieldTheory.abelianConductor_eq_lcm`: both formulas together for complex
+  characters, with multiplicities counted in prime factorizations.
 
 These give the lcm half of the conductor–discriminant formula, complementing the product formula
 `TauCeti.ClassFieldTheory.relDiscr_eq_finprod_finitePart_abelianConductor` in
@@ -107,5 +109,26 @@ theorem mem_infinitePart_abelianConductor_iff_exists_fixedField_ker
     exact (Finset.mem_filter.1 ((Modulus.dvd_iff.1 hd).2 hw)).2
   · rintro ⟨χ, hχ⟩
     exact (Modulus.dvd_iff.1 (hdiv χ)).2 hχ
+
+/-- **The conductor is the lcm of the character conductors, for complex characters.** For a finite
+abelian extension `L/K` of number fields, the number of times a finite place `v` of `K` occurs in
+the finite part of the conductor of `L/K` is the maximum, over the characters
+`ψ : Gal(L/K) →* ℂˣ`, of the number of times it occurs in the finite parts of the conductors of the
+fixed fields of their kernels, and a real place divides the conductor of `L/K` exactly when it
+divides one of them. -/
+theorem abelianConductor_eq_lcm :
+    (∀ v : HeightOneSpectrum (𝓞 K),
+      (UniqueFactorizationMonoid.normalizedFactors (abelianConductor K L).finitePart).count
+          v.asIdeal =
+        ⨆ ψ : Gal(L/K) →* ℂˣ,
+          (UniqueFactorizationMonoid.normalizedFactors
+            (abelianConductor K (fixedField ψ.ker)).finitePart).count v.asIdeal) ∧
+      ∀ w : {w : InfinitePlace K // w.IsReal},
+        w ∈ (abelianConductor K L).infinitePart ↔
+          ∃ ψ : Gal(L/K) →* ℂˣ, w ∈ (abelianConductor K (fixedField ψ.ker)).infinitePart := by
+  have : NeZero (Monoid.exponent Gal(L/K)) := ⟨Monoid.exponent_ne_zero_of_finite⟩
+  simp only [Modulus.count_normalizedFactors_finitePart]
+  exact ⟨exponent_abelianConductor_eq_iSup_fixedField_ker K L ℂ,
+    mem_infinitePart_abelianConductor_iff_exists_fixedField_ker K L ℂ⟩
 
 end TauCeti.ClassFieldTheory

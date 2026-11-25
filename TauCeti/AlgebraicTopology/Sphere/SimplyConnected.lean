@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Module.Connected
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import TauCeti.AlgebraicTopology.Sphere.Puncture
+public import TauCeti.Analysis.InnerProductSpace.Sphere.Stereographic
 import Mathlib.Analysis.Convex.Combination
 import TauCeti.Topology.Homotopy.HomotopyEquiv
 
@@ -51,8 +52,11 @@ Rank two is genuinely the boundary: the circle is not simply connected.
 * `TauCeti.simplyConnectedSpace_sphere`: spheres of nonnegative radius in real normed spaces
   of rank greater than two are simply connected.
 * `TauCeti.simplyConnectedSpace_sphere_euclideanSpace`: the case of `Sⁿ` for `2 ≤ n`.
+* `TauCeti.simplyConnectedSpace_sphere_of_lt_finrank`: the same under `2 < Module.finrank ℝ E`.
 * `TauCeti.simplyConnectedSpace_sphere_euclideanSpace_complex`: the case of the unit sphere
   `S²ᵏ⁺¹` of `ℂᵏ⁺¹` for `1 ≤ k`.
+* `TauCeti.simplyConnectedSpace_onePoint_complex`: the Riemann sphere `OnePoint ℂ` is simply
+  connected.
 * `ContinuousMap.HomotopyEquiv.nonempty_of_sphere`: nonemptiness of a space homotopy equivalent
   to a sphere of nonnegative radius.
 * `ContinuousMap.HomotopyEquiv.pathConnectedSpace_of_sphere`,
@@ -459,6 +463,12 @@ instance simplyConnectedSpace_sphere_euclideanSpace_add_three (n : ℕ) :
     SimplyConnectedSpace (sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1) :=
   simplyConnectedSpace_sphere_euclideanSpace (n := n + 2) (by omega)
 
+/-- Every sphere of nonnegative radius in a real normed space of finite rank greater than two is
+simply connected. -/
+theorem simplyConnectedSpace_sphere_of_lt_finrank (h : 2 < Module.finrank ℝ E) (c : E) {r : ℝ}
+    (hr : 0 ≤ r) : SimplyConnectedSpace (sphere c r) :=
+  simplyConnectedSpace_sphere (by exact_mod_cast Module.lt_rank_of_lt_finrank h) c hr
+
 /-- **The unit sphere `S²ᵏ⁺¹` of `ℂᵏ⁺¹` is simply connected for `1 ≤ k`.** -/
 theorem simplyConnectedSpace_sphere_euclideanSpace_complex {k : ℕ} (hk : 1 ≤ k) :
     SimplyConnectedSpace (sphere (0 : EuclideanSpace ℂ (Fin (k + 1))) 1) := by
@@ -515,5 +525,18 @@ theorem simplyConnectedSpace_of_sphere_euclideanSpace {n : ℕ}
       (by rw [finrank_euclideanSpace_fin]; lia))) zero_le_one
 
 end ContinuousMap.HomotopyEquiv
+
+namespace TauCeti
+
+/-- **The Riemann sphere is simply connected**: the one-point compactification `OnePoint ℂ` is
+homeomorphic to the unit sphere of `ℝ³` by inverse stereographic projection
+(`TauCeti.exists_onePoint_homeomorph_sphere_preimage_inner_eq_zero`). -/
+instance simplyConnectedSpace_onePoint_complex : SimplyConnectedSpace (OnePoint ℂ) := by
+  have : Fact (Module.finrank ℝ (EuclideanSpace ℝ (Fin 3)) = 3) := ⟨finrank_euclideanSpace_fin⟩
+  obtain ⟨K, -⟩ := exists_onePoint_homeomorph_sphere_preimage_inner_eq_zero
+    (E := EuclideanSpace ℝ (Fin 3)) ⟨EuclideanSpace.single 0 1, by simp⟩
+  exact K.toHomotopyEquiv.simplyConnectedSpace_of_sphere_euclideanSpace (n := 2) le_rfl
+
+end TauCeti
 
 end

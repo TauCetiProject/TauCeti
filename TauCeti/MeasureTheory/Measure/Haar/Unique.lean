@@ -21,7 +21,9 @@ which is again a Haar measure.
 A finite Haar measure lives on a compact group, where every finite left-invariant measure is a
 multiple of it (`MeasureTheory.Measure.isMulInvariant_eq_smul_of_compactSpace`). Hence it is
 determined by its total mass among left-invariant measures, and it is also right-invariant and
-inversion-invariant.
+inversion-invariant. More generally, on any locally compact group, two regular (or inner regular,
+with the first finite on compacts) left-invariant measures—the second a Haar measure—that agree on
+a single set of positive finite measure are equal.
 
 ## Main results
 
@@ -36,16 +38,23 @@ inversion-invariant.
 * `MeasureTheory.Measure.isMulLeftInvariant_eq_of_apply_eq`: a left-invariant measure that is
   finite on compacts and agrees with a Haar measure on a set of positive finite Haar measure
   coincides with it.
+* `MeasureTheory.Measure.isMulLeftInvariant_eq_of_measure_eq_of_regular` and
+  `MeasureTheory.Measure.isMulLeftInvariant_eq_of_measure_eq_of_innerRegular`: two regular (or
+  inner regular) left-invariant measures—the second a Haar measure—that agree on a set of positive
+  finite measure coincide.
 * `MeasureTheory.Measure.isMulRightInvariant_of_isHaarMeasure_of_isFiniteMeasure` and
   `MeasureTheory.Measure.isInvInvariant_of_isHaarMeasure_of_isFiniteMeasure`: a finite Haar
   measure is right-invariant and inversion-invariant.
+* `MonoidHom.map_haar_eq_self`: a continuous surjective endomorphism of a locally compact group
+  preserves every finite Haar measure. The additive version is `AddMonoidHom.map_addHaar_eq_self`.
 
-All five have additive versions.
+All of the `MeasureTheory.Measure` results above have additive versions.
 -/
 
 public section
 
 open MeasureTheory MeasureTheory.Measure
+open scoped ENNReal
 
 /-- A continuous group isomorphism into a second-countable locally compact group is nonsingular
 for any Haar measures on its source and target. -/
@@ -107,6 +116,16 @@ theorem isInvInvariant_of_isHaarMeasure_of_isFiniteMeasure (μ : Measure G)
   have : μ.IsMulRightInvariant := isMulRightInvariant_of_isHaarMeasure_of_isFiniteMeasure μ
   exact ⟨isMulLeftInvariant_eq_of_measure_univ_eq _ _ <| by simp [inv_apply]⟩
 
+/-- A continuous surjective endomorphism of a locally compact group preserves every finite Haar
+measure. -/
+@[to_additive /-- A continuous surjective additive endomorphism of a locally compact additive
+group preserves every finite additive Haar measure. -/]
+theorem _root_.MonoidHom.map_haar_eq_self {μ : Measure G} [μ.IsHaarMeasure] [IsFiniteMeasure μ]
+    (f : G →* G) (hf : Continuous f) (hsurj : Function.Surjective f) : μ.map f = μ := by
+  have : (μ.map f).IsHaarMeasure := isHaarMeasure_map_of_isFiniteMeasure μ f hf hsurj
+  refine isMulLeftInvariant_eq_of_measure_univ_eq _ _ ?_
+  rw [map_apply hf.measurable .univ, preimage_univ]
+
 end FiniteHaar
 
 /-- A left-invariant measure on a second-countable locally compact group that is finite on compact
@@ -125,6 +144,36 @@ theorem isMulLeftInvariant_eq_of_apply_eq {G : Type*} [Group G] [TopologicalSpac
   have hc : (haarScalarFactor μ' μ : ENNReal) * μ s = 1 * μ s := by simpa using hs
   rw [ENNReal.mul_left_inj h₀ htop, ENNReal.coe_eq_one] at hc
   rw [hc, one_smul]
+
+/-- Two regular left-invariant measures on a locally compact group (the second a Haar measure) that
+agree on a set of positive finite measure are equal. -/
+@[to_additive /-- Two regular left-invariant measures on a locally compact additive group (the
+second an additive Haar measure) that agree on a set of positive finite measure are equal. -/]
+theorem isMulLeftInvariant_eq_of_measure_eq_of_regular {G : Type*} [Group G] [TopologicalSpace G]
+    [IsTopologicalGroup G] [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
+    (μ' μ : Measure G) [μ'.IsMulLeftInvariant] [μ.IsHaarMeasure] [μ'.Regular] [μ.Regular]
+    {s : Set G} (hs : μ' s = μ s) (h0 : μ s ≠ 0) (htop : μ s ≠ ∞) : μ' = μ := by
+  have hc : μ' = haarScalarFactor μ' μ • μ := isMulLeftInvariant_eq_smul_of_regular μ' μ
+  have h1 : (haarScalarFactor μ' μ : ℝ≥0∞) * μ s = 1 * μ s := by
+    simpa [smul_apply, nnreal_smul_coe_apply, hs] using congrArg (· s) hc.symm
+  rw [ENNReal.mul_left_inj h0 htop, ENNReal.coe_eq_one] at h1
+  rw [hc, h1, one_smul]
+
+/-- Two inner regular left-invariant measures on a locally compact group (the first finite on
+compacts, the second a Haar measure) that agree on a set of positive finite measure are equal. -/
+@[to_additive /-- Two inner regular left-invariant measures on a locally compact additive group
+(the first finite on compacts, the second an additive Haar measure) that agree on a set of
+positive finite measure are equal. -/]
+theorem isMulLeftInvariant_eq_of_measure_eq_of_innerRegular {G : Type*} [Group G]
+    [TopologicalSpace G] [IsTopologicalGroup G] [LocallyCompactSpace G] [MeasurableSpace G]
+    [BorelSpace G] (μ' μ : Measure G) [μ'.IsMulLeftInvariant] [IsFiniteMeasureOnCompacts μ']
+    [μ.IsHaarMeasure] [μ'.InnerRegular] [μ.InnerRegular]
+    {s : Set G} (hs : μ' s = μ s) (h0 : μ s ≠ 0) (htop : μ s ≠ ∞) : μ' = μ := by
+  have hc : μ' = haarScalarFactor μ' μ • μ := isMulLeftInvariant_eq_smul_of_innerRegular μ' μ
+  have h1 : (haarScalarFactor μ' μ : ℝ≥0∞) * μ s = 1 * μ s := by
+    simpa [smul_apply, nnreal_smul_coe_apply, hs] using congrArg (· s) hc.symm
+  rw [ENNReal.mul_left_inj h0 htop, ENNReal.coe_eq_one] at h1
+  rw [hc, h1, one_smul]
 
 /-- Two Haar measures on a second-countable locally compact group are positive finite multiples
 of each other, so they compare sets the same way. -/

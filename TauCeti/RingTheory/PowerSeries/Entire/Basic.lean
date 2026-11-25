@@ -35,8 +35,11 @@ restricted at a fixed radius.
 ## Main definitions
 
 * `PowerSeries.IsEntire`: `f` is restricted at every real radius.
-* `PowerSeries.IsEntire.subring`: the subring of entire series.
+* `PowerSeries.IsEntire.subring`: the subring of entire series, with coefficient algebra structure
+  `PowerSeries.IsEntire.instAlgebraSubring`.
 * `PowerSeries.IsEntire.polynomialHom`: the inclusion of polynomials into that subring.
+* `PowerSeries.IsEntire.mapHom`: the ring homomorphism on entire series induced by a bounded ring
+  homomorphism.
 
 ## Main results
 
@@ -51,6 +54,9 @@ restricted at a fixed radius.
 * `PowerSeries.IsEntire.summable_norm_coeff_mul_pow`: `∑ ‖aₙ‖ tⁿ` converges for every real `t`.
 * `PowerSeries.IsEntire.mk_coeff_succ`: dropping the constant term and dividing by `X` keeps a
   series entire.
+* `PowerSeries.IsEntire.mapHom_polynomialHom`, `PowerSeries.IsEntire.mapHom_id`, and
+  `PowerSeries.IsEntire.mapHom_comp`: compatibility of `IsEntire.mapHom` with polynomial
+  inclusion, identity, and composition.
 * `PowerSeries.IsEntire.eq_C_of_mul_eq_one` and `PowerSeries.IsEntire.isUnit_iff`: over an
   ultrametric normed field, the units of the ring of entire series are the nonzero constants,
   since the Gauss norm is multiplicative and a nonconstant entire series has unbounded Gauss norms.
@@ -245,6 +251,76 @@ noncomputable def IsEntire.polynomialHom : Polynomial R →+* IsEntire.subring R
 theorem IsEntire.coe_polynomialHom (p : Polynomial R) :
     (IsEntire.polynomialHom p : R⟦X⟧) = p :=
   RingHom.codRestrict_apply _ _ _ p
+
+/-- A bounded ring homomorphism `φ`, `‖φ x‖ ≤ C ‖x‖`, induces a ring homomorphism on subrings of
+entire series. -/
+noncomputable def IsEntire.mapHom {S : Type*} [NormedRing S] (φ : R →+* S) {C : ℝ}
+    (hφ : ∀ x, ‖φ x‖ ≤ C * ‖x‖) : IsEntire.subring R →+* IsEntire.subring S :=
+  ((PowerSeries.map φ).comp (IsEntire.subring R).subtype).codRestrict _ fun f ↦
+    IsEntire.mem_subring.mpr ((IsEntire.mem_subring.mp f.property).map φ hφ)
+
+/-- Applying `IsEntire.mapHom` acts on underlying power series by `PowerSeries.map`. -/
+@[simp]
+theorem IsEntire.coe_mapHom {S : Type*} [NormedRing S] (φ : R →+* S) {C : ℝ}
+    (hφ : ∀ x, ‖φ x‖ ≤ C * ‖x‖) (f : IsEntire.subring R) :
+    (IsEntire.mapHom φ hφ f : S⟦X⟧) = PowerSeries.map φ (f : R⟦X⟧) :=
+  RingHom.codRestrict_apply _ _ _ f
+
+/-- Mapping an entire polynomial under `IsEntire.mapHom` is the polynomial inclusion of its
+coefficientwise image. -/
+@[simp]
+theorem IsEntire.mapHom_polynomialHom {S : Type*} [NormedRing S] (φ : R →+* S) {C : ℝ}
+    (hφ : ∀ x, ‖φ x‖ ≤ C * ‖x‖) (p : Polynomial R) :
+    IsEntire.mapHom φ hφ (IsEntire.polynomialHom p) = IsEntire.polynomialHom (p.map φ) :=
+  Subtype.ext (PowerSeries.ext fun n ↦ by simp)
+
+/-- The identity ring homomorphism induces the identity on entire power series. -/
+@[simp]
+theorem IsEntire.mapHom_id {C : ℝ} (hφ : ∀ x : R, ‖RingHom.id R x‖ ≤ C * ‖x‖) :
+    IsEntire.mapHom (RingHom.id R) hφ = RingHom.id (IsEntire.subring R) :=
+  RingHom.ext fun f ↦ Subtype.ext <| by
+    rw [IsEntire.coe_mapHom, RingHom.id_apply, PowerSeries.map_id, id_eq]
+
+/-- `IsEntire.mapHom` respects composition of bounded ring homomorphisms. -/
+theorem IsEntire.mapHom_comp {S T : Type*} [NormedRing S] [NormedRing T]
+    (ψ : S →+* T) {C₂ : ℝ} (hψ : ∀ x, ‖ψ x‖ ≤ C₂ * ‖x‖)
+    (φ : R →+* S) {C₁ : ℝ} (hφ : ∀ x, ‖φ x‖ ≤ C₁ * ‖x‖)
+    {C₃ : ℝ} (hcomp : ∀ x, ‖(ψ.comp φ) x‖ ≤ C₃ * ‖x‖) :
+    IsEntire.mapHom (ψ.comp φ) hcomp =
+      (IsEntire.mapHom ψ hψ).comp (IsEntire.mapHom φ hφ) :=
+  RingHom.ext fun f ↦ Subtype.ext <| by
+    rw [IsEntire.coe_mapHom, RingHom.comp_apply, IsEntire.coe_mapHom, IsEntire.coe_mapHom,
+      PowerSeries.map_comp, RingHom.comp_apply]
+
+/-- An algebra structure on the coefficients induces one on entire power series through constant
+series. Scalars act as on the ambient formal series, and the coefficient ring need not be
+commutative. -/
+noncomputable instance IsEntire.instAlgebraSubring {S : Type*} [CommSemiring S] [Algebra S R] :
+    Algebra S (IsEntire.subring R) :=
+  (IsEntire.subring R).algebraOfMem fun s ↦ by
+    rw [PowerSeries.algebraMap_apply]
+    exact IsEntire.mem_subring.mpr (isEntire_C _)
+
+/-- A scalar maps to the constant entire series of its image in the coefficient ring. -/
+@[simp]
+theorem IsEntire.coe_algebraMap_subring {S : Type*} [CommSemiring S] [Algebra S R] (s : S) :
+    (algebraMap S (IsEntire.subring R) s : R⟦X⟧) = C (algebraMap S R s) :=
+  (Subring.coe_algebraMap_algebraOfMem _ s).trans PowerSeries.algebraMap_apply
+
+/-- Scalars act on entire series as on their underlying formal power series. -/
+@[simp]
+theorem IsEntire.coe_smul_subring {S : Type*} [CommSemiring S] [Algebra S R] (s : S)
+    (h : IsEntire.subring R) :
+    ((s • h : IsEntire.subring R) : R⟦X⟧) = s • (h : R⟦X⟧) :=
+  Subring.coe_smul_algebraOfMem _ s h
+
+/-- Scalar towers on the coefficients induce scalar towers on entire power series. -/
+instance {S T : Type*} [CommSemiring S] [CommSemiring T] [Algebra S R] [Algebra T R]
+    [SMul S T] [IsScalarTower S T R] :
+    IsScalarTower S T (IsEntire.subring R) :=
+  Subring.isScalarTower_algebraOfMem
+    (fun s ↦ by rw [PowerSeries.algebraMap_apply]; exact IsEntire.mem_subring.mpr (isEntire_C _))
+    (fun t ↦ by rw [PowerSeries.algebraMap_apply]; exact IsEntire.mem_subring.mpr (isEntire_C _))
 
 /-- Over an ultrametric ring, every entire series is restricted at each radius `r`, so the
 subring of entire series lies in the restricted subring at `r`. -/

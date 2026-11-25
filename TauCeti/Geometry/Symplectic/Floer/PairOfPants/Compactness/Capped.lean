@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Symplectic.Floer.Compactness.Closed
+public import TauCeti.Geometry.Symplectic.Floer.Compactness.Infinity
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Capped
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Manifold.Capped
@@ -46,9 +48,24 @@ The main result, in the namespace `TauCeti.SymplecticForm`,
 gives a threshold `δ > 0` such that every sequence of solutions for parameters `Rₖ ∈ C`, with
 areas at most `A` and images of an open `Ω ⊆ D` in a compact `K ⊆ V`, has a subsequence whose
 parameters converge to some `R₀ ∈ C` and which converges locally uniformly on `Ω` off a finite set
-`Z` of bubbling points, with `#Z * δ ≤ A + 2 (B₀ + B₁ + B_∞)`. The regularity of the limit, the
-bubbles at the points of `Z`, the behaviour near the pole `∞`, and the long-neck end `R → ∞` of
-the family are not treated here.
+`Z` of bubbling points, with `#Z * δ ≤ A + 2 (B₀ + B₁ + B_∞)`.
+
+**The pole `∞`.** The plane chart misses the pole `∞`, which is covered by the chart `y ↦ y⁻¹`.
+Outside a disc whose radius depends only on a bound for the neck lengths over `C`, the datum `K_R`
+vanishes and `J_R` is `J₀` (`TauCeti.Floer.cappedPerturbation_eq_zero_of_lt_norm`,
+`TauCeti.Floer.cappedAlmostComplex_eq_base_of_lt_norm`), so the solutions are `J₀`-holomorphic
+there and their area outside the disc is at most their energy. The compactness theorem at infinity
+of `TauCeti.Geometry.Symplectic.Floer.Compactness.Infinity` then applies
+(`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_cappedComparison_inv`): there are
+a radius `ρ > 0` and a threshold `δ > 0` such that, for every sequence of solutions as above whose
+expressions `wₖ(y) = uₖ(y⁻¹)` in the chart at `∞` are `C³` on an open `Ω ⊆ {‖y‖ < ρ}` with values
+in a compact `K`, a subsequence of the `wₖ` converges locally uniformly on `Ω` off a finite set
+`Z` with `#Z * δ ≤ A + 2 (B₀ + B₁ + B_∞)`, the pole `0` of this chart included. Together with the
+plane chart this covers the whole three-pole sphere. The `C³` regularity of `wₖ` at the pole is a
+hypothesis (removal of singularities is not proved here). The regularity of the limit and the
+bubbles at the points of `Z` are not treated here. Interior compactness at the long-neck end
+`R → ∞`, on the pair of pants and the caps of the PSS planes, is in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.LongNeck`.
 
 **Manifold targets.** For a target manifold `M` with a nondegenerate two-form `ω`, such as a
 closed symplectic manifold, the family is built from the structures
@@ -66,7 +83,32 @@ family; the structures read in the chart are supplied, as for fixed data, by any
 with `dφ_x ∘ J_R(z, x) = J'_R(z, φ x) ∘ dφ_x` that is `C²` in `(R, z, y)` on an open set
 containing `C × D × φ(K)`. The limit is read in `M`: the coordinate maps converge locally
 uniformly off the bubbling points, and the maps themselves converge pointwise to a continuous
-limit with values in `K`. Covering `M` by several charts is not treated here.
+limit with values in `K`.
+
+**Closed manifolds.** When `M` is closed, no chart condition is needed. Sizes in `M` are measured
+through an injective differentiable map `e : M → F`, such as the Whitney embedding, and the
+compactness theorem in a closed manifold over a compact parameter window (in the namespace
+`TauCeti.SmoothTwoForm`,
+`IsNondegenerate.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset`)
+applies to the family: the Hamiltonian vector fields of `K_R`, read in the charts of `M`, are `C²`
+jointly in `(R, z)` and the chart coordinate
+(`TauCeti.SmoothTwoForm.IsNondegenerate.contDiffOn_hamiltonianVectorFieldInChartAt`), and the
+structures read in the charts are assumed `C²`, as for a single datum. The result (in the namespace
+`TauCeti.SmoothTwoForm.IsNondegenerate`,
+`exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset_cappedComparison`)
+gives, for every sequence of solutions with parameters in a compact window `C ⊆ [0, ∞)` and areas
+at most `A`, on every open `Ω` of a compact window of the plane chart, a subsequence whose
+parameters converge in `C` and which converges off a finite set `Z` of bubbling points with
+`#Z * δ ≤ A + 2 (B₀ + B₁ + B_∞)`, locally uniformly after applying `e` and pointwise in `M`, with
+no condition on where the solutions take their values. Near the pole `∞` the data are standard, and
+the compactness theorem at infinity in a closed manifold (in the namespace `TauCeti.SmoothTwoForm`,
+`IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_inv`) gives
+the same conclusion in the chart `y ↦ y⁻¹`, the pole included
+(`exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_cappedComparison_inv`, in
+the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`). Together the two charts cover the whole
+three-pole sphere, for every member of the family with parameter in `C`. As for a vector-space
+target, the `C³` regularity of the maps at the pole `∞` is a hypothesis, and the bubbles at the
+points of `Z` and the regularity of the limit are not treated.
 
 ## References
 
@@ -161,18 +203,105 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ca
   refine ⟨δ, hδ, fun Ω R u A hΩ hΩD hRC hu hfl huK hint harea ↦ ?_⟩
   -- The Floer energy over `Ω` is at most the energy over the plane, which exceeds the area by at
   -- most `2 (B₀ + B₁ + B_∞)`.
-  have hE (k : ℕ) : ∫ z in Ω, ω.floerEnergyDensity
-      (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x I) (u k) z ≤
-        A + 2 * ∑ q, B q := by
-    have habs := ω.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le hH
-      (fun q ↦ (hHs q).of_le (by norm_num)) hB (hC₀ (hRC k)) ((hu k).of_le (by norm_num))
-      (hint k)
-    refine (setIntegral_le_integral (hint k) (Eventually.of_forall fun z ↦
-      ω.floerEnergyDensity_nonneg (hJt _ _ _) (hfl k z))).trans ?_
-    linarith [(abs_sub_le_iff.1 habs).1, harea k]
+  have hE (k : ℕ) :=
+    ω.setIntegral_floerEnergyDensity_cappedComparisonPerturbation_le h₀ hJ hH
+      (fun q ↦ (hHs q).of_le (by norm_num)) hB (hC₀ (hRC k)) ((hu k).of_le (by norm_num)) (hfl k)
+      (hint k) (harea k) Ω
   exact hconv hΩ hΩD hRC (fun k ↦ (hu k).contDiffOn) (fun k z _ ↦ hfl k z) huK
     (fun k ↦ (hint k).integrableOn) hE
+
+open TauCeti.Complex (realChart) in
+/-- **Solutions of the capped comparison family converge near the pole `∞`.** Let `H_q` be
+period-one `C¹` Hamiltonians with `|H_q| ≤ B_q`, let `J₀` be `ω`-compatible and let `J_q(t, x)` be
+`ω`-tame end structures. Fix a compact window `C ⊆ [0, ∞)` of parameters and a compact `K ⊆ V`.
+There are a radius `ρ > 0` and a threshold `δ > 0` with the following property. Let `uₖ` be `C¹`
+maps of the plane chart `ℝ × ℝ ≅ ℂ` of the three-pole sphere solving the Floer equation
+`(du - X_{K_{Rₖ}})^{0,1} = 0` for the structures `J_{Rₖ}(z, u)` of the comparison family, with
+`Rₖ ∈ C`, integrable energy density and symplectic area `∫ ω(∂ₛuₖ, ∂ₜuₖ) ≤ A`. Let `wₖ` be their
+expressions in the chart `y ↦ y⁻¹` at the pole `∞`: `C³` maps on an open set `Ω` of the disc
+`‖y‖ < ρ`, with `wₖ(y) = uₖ(y⁻¹)` for `y ≠ 0` and `wₖ(Ω) ⊆ K`. Then there are a subsequence `φ`,
+a finite set `Z ⊆ Ω` with `#Z * δ ≤ A + 2 (B₀ + B₁ + B_∞)`, and a continuous `v : Ω \ Z → K`
+such that along `φ` every disc about a point of `Z` eventually carries area of `wₖ` at least `δ`,
+the differentials of the `wₖ` are uniformly bounded on every compact subset of `Ω \ Z`, and
+`w_{φ n} → v` locally uniformly on `Ω \ Z`. -/
+theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_cappedComparison_inv
+    (ω : SymplecticForm V) (h₀ : ω.Compatible J₀) (hJ : ∀ q t x, ω.Tames (J q t x))
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q)
+    {C : Set ℝ} {K : Set V} (hC : IsCompact C) (hC₀ : C ⊆ Ici 0) (hK : IsCompact K) :
+    ∃ ρ > 0, ∃ δ > 0, ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃R : ℕ → ℝ⦄ ⦃u w : ℕ → ℝ × ℝ → V⦄ ⦃A : ℝ⦄,
+      IsOpen Ω → Ω ⊆ equivRealProdCLM.symm ⁻¹' ball 0 ρ →
+      (∀ k, R k ∈ C) → (∀ k, ContDiff ℝ 1 (u k)) →
+      (∀ k z, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+        (cappedComparisonAlmostComplex h₀ J hJ (R k) (equivRealProdCLM.symm z) (u k z))
+        (ω.perturbedFDeriv
+          (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x I)
+          (u k) z : ℝ × ℝ →ₗ[ℝ] V)) →
+      (∀ k, Integrable (ω.floerEnergyDensity
+        (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x I) (u k))) →
+      (∀ k, ∫ z, ω (fderiv ℝ (u k) z stdComplexLineReal) (fderiv ℝ (u k) z stdComplexLineImag) ≤
+        A) →
+      (∀ k, ContDiffOn ℝ 3 (w k) Ω) →
+      (∀ k, ∀ y ∈ Ω, y ≠ 0 → w k y = u k (realChart (fun ζ ↦ ζ⁻¹) y)) →
+      (∀ k, MapsTo (w k) Ω K) →
+      ∃ (φ : ℕ → ℕ) (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → V), StrictMono φ ∧
+        ↑Z ⊆ Ω ∧ Z.card * δ ≤ A + 2 * ∑ q, B q ∧
+        (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ Ω,
+          ω (fderiv ℝ (w (φ n)) y stdComplexLineReal) (fderiv ℝ (w (φ n)) y stdComplexLineImag)) ∧
+        (∀ C', IsCompact C' → C' ⊆ Ω \ ↑Z →
+          ∃ M, ∀ n, ∀ y ∈ C', ‖fderiv ℝ (w (φ n)) y‖ ≤ M) ∧
+        ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) K ∧
+        TendstoLocallyUniformlyOn (fun n ↦ w (φ n)) v atTop (Ω \ ↑Z) := by
+  -- Outside the disc of radius `T` the data of the family are standard for every `R ∈ C`.
+  obtain ⟨L₀, hL₀⟩ := hC.exists_bound_of_continuousOn
+    (contDiff_comparisonNeckLength (n := 0)).continuous.continuousOn
+  set T : ℝ := 2 * Real.exp (2 * Real.pi * (L₀ + 3))
+  set S : Set (ℝ × ℝ) := equivRealProdCLM.symm ⁻¹' (closedBall 0 T)ᶜ
+  have hstd {R : ℝ} (hR : R ∈ C) {z : ℝ × ℝ} (hz : z ∈ S) (x : V) :
+      cappedComparisonPerturbation H R (equivRealProdCLM.symm z) x = 0 ∧
+        cappedComparisonAlmostComplex h₀ J hJ R (equivRealProdCLM.symm z) x = J₀ := by
+    have hL : comparisonNeckLength R ≤ L₀ := (le_abs_self _).trans (by simpa using hL₀ R hR)
+    have hz' : T < ‖equivRealProdCLM.symm z‖ := by simpa [S] using hz
+    rw [cappedComparisonPerturbation_def, cappedComparisonAlmostComplex_def]
+    exact ⟨cappedPerturbation_eq_zero_of_lt_norm hL hz' x,
+      cappedAlmostComplex_eq_base_of_lt_norm h₀ _ hL hz' x⟩
+  obtain ⟨δ, hδ, hconv⟩ :=
+    ω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_inv h₀.tames T hK
+  refine ⟨T⁻¹, inv_pos.2 (by positivity), δ, hδ,
+    fun Ω R u w A hΩ hΩρ hRC hu hfl hint harea hw hwu hwK ↦ ?_⟩
+  -- On `S` the Floer equation and the energy density are those of the unperturbed problem.
+  have hzero (k : ℕ) {z : ℝ × ℝ} (hz : z ∈ S) (v : ℂ) :
+      (fun x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x v) =
+        fun _ ↦ 0 := funext fun x ↦ by simp [(hstd (hRC k) hz x).1]
+  have hdens (k : ℕ) {z : ℝ × ℝ} (hz : z ∈ S) :
+      ω (fderiv ℝ (u k) z stdComplexLineReal) (fderiv ℝ (u k) z stdComplexLineImag) =
+        ω.floerEnergyDensity
+          (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x I)
+          (u k) z := by
+    rw [ω.floerEnergyDensity_congr_perturbation (u k) (Ks' := fun _ _ ↦ 0)
+      (Kt' := fun _ _ ↦ 0) (hzero k hz 1) (hzero k hz I), floerEnergyDensity_zero]
+  have hSm : MeasurableSet S := (isClosed_closedBall.isOpen_compl.preimage
+    equivRealProdCLM.symm.continuous).measurableSet
+  refine hconv hΩ hΩρ (fun k z _ ↦ (hu k).differentiable one_ne_zero z) (fun k z hz ↦ ?_)
+    (fun k ↦ (hint k).integrableOn.congr_fun (fun z hz ↦ (hdens k hz).symm) hSm)
+    (fun k ↦ ?_) hw hwu hwK
+  · have h := hfl k z
+    rwa [(hstd (hRC k) hz _).2, ω.perturbedFDeriv_congr (u k) (Ks' := fun _ _ ↦ 0)
+      (Kt' := fun _ _ ↦ 0) (hzero k hz 1) (hzero k hz I),
+      perturbedFDeriv_const ω (fun _ ↦ 0) (fun _ ↦ 0)] at h
+  · -- The area outside the disc of radius `T` is at most the energy, which exceeds the total area
+    -- by at most `2 (B₀ + B₁ + B_∞)`.
+    have habs := ω.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le hH hHs hB
+      (hC₀ (hRC k)) (hu k) (hint k)
+    rw [setIntegral_congr_fun hSm fun z hz ↦ hdens k hz]
+    refine (setIntegral_le_integral (hint k) (Eventually.of_forall fun z ↦
+      ω.floerEnergyDensity_nonneg ?_ (hfl k z))).trans ?_
+    · rw [cappedComparisonAlmostComplex_def]
+      exact tames_cappedAlmostComplex h₀ _ _ _ _
+    · linarith [(abs_sub_le_iff.1 habs).1, harea k]
 
 end TauCeti.SymplecticForm
 
@@ -269,16 +398,13 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ca
       (univ ×ˢ (univ ×ˢ φ.target)) :=
     (contMDiffOn_iff_contDiffOn.1 ((contMDiff_cappedComparisonPerturbation (n := 3) hH hHs
       ).comp_contMDiffOn hg)).clm_apply contDiffOn_const
-  have hJt (R : ℝ) (w : ℂ) (x : M) : (hω.symplecticFormAt x).Tames
-      ((h₀.cappedComparisonAlmostComplex J hJ R w).almostComplexStructureAt x) := by
-    rw [h₀.cappedComparisonAlmostComplex_def J hJ R]
-    exact hω.tames_iff.1 (h₀.tames_cappedAlmostComplex J hJ _ _ w) x
+  have hJt (R : ℝ) (w : ℂ) (x : M) :=
+    h₀.tames_almostComplexStructureAt_cappedComparisonAlmostComplex J hJ R w x
   have hWt : IsOpen (W ∩ univ ×ˢ (univ ×ˢ φ.target)) :=
     hW.inter (isOpen_univ.prod (isOpen_univ.prod φ.open_target))
-  have hDKW : C ×ˢ (D ×ˢ (φ '' K)) ⊆ W ∩ univ ×ˢ (univ ×ˢ φ.target) := by
-    intro q hq
-    obtain ⟨x, hx, hxq⟩ := hq.2.2
-    exact ⟨hCDKW hq, trivial, trivial, hxq ▸ φ.toPartialEquiv.map_source (hKφ hx)⟩
+  have hDKW : C ×ˢ (D ×ˢ (φ '' K)) ⊆ W ∩ univ ×ˢ (univ ×ˢ φ.target) :=
+    subset_inter hCDKW (prod_mono (subset_univ _)
+      (prod_mono (subset_univ _) (φ.toPartialEquiv.mapsTo.mono_left hKφ).image_subset))
   obtain ⟨δ, hδ, hconv⟩ := hω.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
     φ (Ks := fun R z x ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) x 1)
     (Kt := fun R z x ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) x Complex.I)
@@ -302,5 +428,234 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ca
     linarith [(abs_sub_le_iff.1 habs).1, harea k]
   exact hconv hΩ hΩD hRC (fun k ↦ (hu k).contMDiffOn) (fun k z _ ↦ hfl k z) huK
     (fun k ↦ (hint k).integrableOn) hE
+
+section Closed
+
+variable [I.Boundaryless] [CompactSpace M] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- **Solutions of the capped comparison family in a closed manifold converge off finitely many
+bubbling points.** Let `ω` be a nondegenerate two-form on a closed manifold `M`, such as a closed
+symplectic manifold, let `H_q` be period-one `C³` Hamiltonians with `|H_q| ≤ B_q`, let `J₀` be
+`ω`-compatible and let `J_q(t)` be `ω`-tame end structures. Let the structures `J_R(z, x)` of the
+comparison family, read in the chart at every point of `M`, be `C²` jointly in `(R, z)` and the
+chart coordinate, for `(R, z)` in an open set `W`. Let `e : M → F` be injective and differentiable,
+such as the Whitney embedding of `M`, fix a compact window `C ⊆ [0, ∞)` of parameters and a compact
+`D ⊆ ℝ × ℝ` with `C × D ⊆ W`, and over `C × D` let the structures be uniformly tame with respect
+to `e`, `c ‖d e v‖² ≤ ω(v, J_R v)` with `c > 0`, and let the pushforwards through `e` of the
+Hamiltonian vector fields of the two components of `K_R` be at most `L`. There is a threshold
+`δ > 0` with the following property. Let `uₖ` be `C³` maps of the plane chart `ℝ × ℝ ≅ ℂ` of the
+three-pole sphere into `M` solving the Floer equation `(du - X_{K_{Rₖ}})^{0,1} = 0` for the
+structures `J_{Rₖ}(z, u)` of the comparison family, with `Rₖ ∈ C`, integrable energy density and
+curvature term, and symplectic area `∫ u^* ω ≤ A`, and let
+`Ω ⊆ D` be open. Then there are a subsequence `φ`, a limit `R₀ ∈ C` of `R_{φ n}`, and a finite set
+`Z ⊆ Ω` with `#Z * δ ≤ A + 2 (B₀ + B₁ + B_∞)` such that, along `φ`, every disc about a point of
+`Z` eventually carries Floer energy at least `δ`, the energy densities are uniformly bounded on
+every compact subset of `Ω \ Z`, and the solutions converge on `Ω \ Z` to a continuous map `v`,
+locally uniformly after applying `e` and pointwise in `M`.
+
+Unlike `exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_cappedComparison`,
+no condition is put on where the solutions take their values. -/
+theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset_cappedComparison
+    (hω : ω.IsNondegenerate) (h₀ : ω.Compatible J₀) (hJ : ∀ q t, ω.Tames (J q t))
+    (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q)
+    {W : Set (ℝ × (ℝ × ℝ))} (hW : IsOpen W)
+    (hJR : ∀ α, ContDiffOn ℝ 2 (almostComplexInChartAt I α (uncurry fun R z ↦
+      (h₀.cappedComparisonAlmostComplex J hJ R (equivRealProdCLM.symm z)).almostComplexStructureAt))
+      (W ×ˢ (extChartAt I α).target))
+    {e : M → F} (he : ∀ x, MDifferentiableAt I 𝓘(ℝ, F) e x) (he_inj : Injective e)
+    {C : Set ℝ} {D : Set (ℝ × ℝ)} (hC : IsCompact C) (hC₀ : C ⊆ Ici 0) (hD : IsCompact D)
+    (hCDW : C ×ˢ D ⊆ W) {c L : ℝ} (hc : 0 < c)
+    (hJc : ∀ R ∈ C, ∀ z ∈ D, ∀ x v, c * ‖mvfderiv I e x v‖ ^ 2 ≤ hω.symplecticFormAt x v
+      ((h₀.cappedComparisonAlmostComplex J hJ R (equivRealProdCLM.symm z)).almostComplexStructureAt
+        x v))
+    (hLs : ∀ R ∈ C, ∀ z ∈ D, ∀ x, ‖mvfderiv I e x (ω.hamiltonianVectorField
+      (fun y ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) y 1) x)‖ ≤ L)
+    (hLt : ∀ R ∈ C, ∀ z ∈ D, ∀ x, ‖mvfderiv I e x (ω.hamiltonianVectorField
+      (fun y ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) y Complex.I) x)‖ ≤ L) :
+    ∃ δ > 0, ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃R : ℕ → ℝ⦄ ⦃u : ℕ → ℝ × ℝ → M⦄ ⦃A : ℝ⦄, IsOpen Ω → Ω ⊆ D →
+      (∀ k, R k ∈ C) → (∀ k, ContMDiff 𝓘(ℝ, ℝ × ℝ) I 3 (u k)) →
+      (∀ k z, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+        ((h₀.cappedComparisonAlmostComplex J hJ (R k)
+          (equivRealProdCLM.symm z)).almostComplexStructureAt (u k z))
+        (ω.perturbedMFDeriv
+          (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x Complex.I)
+          (u k) z).toLinearMap) →
+      (∀ k, Integrable (ω.floerEnergyDensity
+        (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x Complex.I)
+        (u k))) →
+      (∀ k, Integrable fun z ↦ ω.hamiltonianCurvature
+        (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x Complex.I)
+        z (u k z)) →
+      (∀ k, ∫ z, (SmoothBundleForm.eval₂ ω (u k z)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u k) z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u k) z stdComplexLineImag) : ℝ) ≤ A) →
+      ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ R₀ ∈ C, Tendsto (fun n ↦ R (φ n)) atTop (𝓝 R₀) ∧
+        ∃ Z : Finset (ℝ × ℝ), ↑Z ⊆ Ω ∧ Z.card * δ ≤ A + 2 * ∑ q, B q ∧
+        (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ Ω, ω.floerEnergyDensity
+          (fun z x ↦ cappedComparisonPerturbation H (R (φ n)) (equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ cappedComparisonPerturbation H (R (φ n)) (equivRealProdCLM.symm z) x Complex.I)
+          (u (φ n)) y) ∧
+        (∀ L', IsCompact L' → L' ⊆ Ω \ ↑Z → ∃ A', ∀ n, ∀ y ∈ L', ω.floerEnergyDensity
+          (fun z x ↦ cappedComparisonPerturbation H (R (φ n)) (equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ cappedComparisonPerturbation H (R (φ n)) (equivRealProdCLM.symm z) x Complex.I)
+          (u (φ n)) y ≤ A') ∧
+        ∃ v : ℝ × ℝ → M, ContinuousOn v (Ω \ ↑Z) ∧
+          TendstoLocallyUniformlyOn (fun n ↦ e ∘ u (φ n)) (e ∘ v) atTop (Ω \ ↑Z) ∧
+          ∀ z ∈ Ω \ ↑Z, Tendsto (fun n ↦ u (φ n) z) atTop (𝓝 (v z)) := by
+  -- Each component `(R, z) ↦ K_R(z)(w)` of the family is `C³` jointly in the parameter, the
+  -- domain point and the target point, so its Hamiltonian vector field is `C²` in every chart.
+  have hK (w : ℂ) (p : ℝ × (ℝ × ℝ)) (x : M) :
+      ContMDiffAt (𝓘(ℝ, ℝ × (ℝ × ℝ)).prod I) 𝓘(ℝ) ((2 : ℕ∞) + 1) (uncurry fun p x ↦
+        cappedComparisonPerturbation H p.1 (equivRealProdCLM.symm p.2) x w) (p, x) :=
+    (((contMDiff_cappedComparisonPerturbation (n := (2 : ℕ∞) + 1) hH
+      fun q ↦ (hHs q).of_le (by norm_num)).comp
+      (((equivRealProdCLM.symm.contDiff.comp contDiff_snd).contMDiff.comp contMDiff_fst).prodMk
+        ((contDiff_fst.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd))).clm_apply
+      contMDiff_const).contMDiffAt
+  have hJt (R : ℝ) (w : ℂ) (x : M) :=
+    h₀.tames_almostComplexStructureAt_cappedComparisonAlmostComplex J hJ R w x
+  obtain ⟨δ, hδ, hconv⟩ :=
+    hω.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset
+      (Ks := fun R z x ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) x 1)
+      (Kt := fun R z x ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) x Complex.I)
+      (J := fun R z ↦ (h₀.cappedComparisonAlmostComplex J hJ R
+        (equivRealProdCLM.symm z)).almostComplexStructureAt)
+      he he_inj hW hC hD hCDW hJR
+      (hω.contDiffOn_hamiltonianVectorFieldInChartAt fun p _ x ↦ hK 1 p x)
+      (hω.contDiffOn_hamiltonianVectorFieldInChartAt fun p _ x ↦ hK Complex.I p x)
+      (fun R _ z _ x ↦ hJt R _ x) hc hJc hLs hLt
+  refine ⟨δ, hδ, fun Ω R u A hΩ hΩD hRC hu hfl hint hcurv harea ↦ ?_⟩
+  -- The Floer energy over `Ω` is at most the energy over the plane, which exceeds the area by at
+  -- most `2 (B₀ + B₁ + B_∞)`.
+  refine hconv hΩ hΩD hRC (fun k ↦ (hu k).contMDiffOn) (fun k z _ ↦ hfl k z)
+    (fun k ↦ (hint k).integrableOn) fun k ↦ ?_
+  have habs := hω.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le hH
+    (fun q ↦ (hHs q).of_le (by norm_num)) hB (hC₀ (hRC k)) ((hu k).of_le (by norm_num))
+    (hint k) (hcurv k)
+  refine (setIntegral_le_integral (hint k) (Eventually.of_forall fun z ↦
+    floerEnergyDensity_nonneg hω (hJt _ _ _) (hfl k z))).trans ?_
+  linarith [(abs_sub_le_iff.1 habs).1, harea k]
+
+open TauCeti.Complex (realChart) in
+/-- **Solutions of the capped comparison family in a closed manifold converge near the pole `∞`.**
+Let `ω` be a nondegenerate two-form on a closed manifold `M`, let `H_q` be period-one `C¹`
+Hamiltonians with `|H_q| ≤ B_q`, let `J₀` be `ω`-compatible and let `J_q(t)` be `ω`-tame end
+structures. Let `e : M → F` be injective and differentiable, with `J₀` uniformly tame with respect
+to `e`, `c ‖d e v‖² ≤ ω(v, J₀ v)` with `c > 0`, and fix a compact window `C ⊆ [0, ∞)` of
+parameters. There are a radius `ρ > 0` and a threshold `δ > 0` with the following property. Let
+`uₖ` be `C¹` maps of the plane chart `ℝ × ℝ ≅ ℂ` of the three-pole sphere into `M` solving the Floer
+equation `(du - X_{K_{Rₖ}})^{0,1} = 0` for the structures `J_{Rₖ}(z, u)` of the comparison family,
+with `Rₖ ∈ C`, integrable energy density and curvature term, and symplectic area `∫ u^* ω ≤ A`. Let
+`wₖ` be their expressions in the chart `y ↦ y⁻¹` at the pole `∞`: `C³` maps on an open set `Ω` of
+the disc `‖y‖ < ρ`, with `wₖ(y) = uₖ(y⁻¹)` for `y ≠ 0`. Then there are a subsequence `φ` and a
+finite set `Z ⊆ Ω` with `#Z * δ ≤ A + 2 (B₀ + B₁ + B_∞)` such that, along `φ`, every disc about a
+point of `Z` eventually carries area of `wₖ` at least `δ`, the area densities of the `wₖ` are
+uniformly bounded on every compact subset of `Ω \ Z`, and the `wₖ` converge on `Ω \ Z` to a
+continuous map `v`, locally uniformly after applying `e` and pointwise in `M`.
+
+Together with
+`exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset_cappedComparison`
+in the plane chart, this covers the whole three-pole sphere. -/
+theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_cappedComparison_inv
+    (hω : ω.IsNondegenerate) (h₀ : ω.Compatible J₀) (hJ : ∀ q t, ω.Tames (J q t))
+    (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q)
+    {e : M → F} (he : ∀ x, MDifferentiableAt I 𝓘(ℝ, F) e x) (he_inj : Injective e) {c : ℝ}
+    (hc : 0 < c) (hJc : ∀ x v, c * ‖mvfderiv I e x v‖ ^ 2 ≤
+      hω.symplecticFormAt x v (J₀.almostComplexStructureAt x v))
+    {C : Set ℝ} (hC : IsCompact C) (hC₀ : C ⊆ Ici 0) :
+    ∃ ρ > 0, ∃ δ > 0, ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃R : ℕ → ℝ⦄ ⦃u w : ℕ → ℝ × ℝ → M⦄ ⦃A : ℝ⦄,
+      IsOpen Ω → Ω ⊆ equivRealProdCLM.symm ⁻¹' ball 0 ρ →
+      (∀ k, R k ∈ C) → (∀ k, ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 (u k)) →
+      (∀ k z, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+        ((h₀.cappedComparisonAlmostComplex J hJ (R k)
+          (equivRealProdCLM.symm z)).almostComplexStructureAt (u k z))
+        (ω.perturbedMFDeriv
+          (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x Complex.I)
+          (u k) z).toLinearMap) →
+      (∀ k, Integrable (ω.floerEnergyDensity
+        (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x Complex.I)
+        (u k))) →
+      (∀ k, Integrable fun z ↦ ω.hamiltonianCurvature
+        (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x Complex.I)
+        z (u k z)) →
+      (∀ k, ∫ z, (SmoothBundleForm.eval₂ ω (u k z)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u k) z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u k) z stdComplexLineImag) : ℝ) ≤ A) →
+      (∀ k, ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 (w k) Ω) →
+      (∀ k, ∀ y ∈ Ω, y ≠ 0 → w k y = u k (realChart (fun ζ ↦ ζ⁻¹) y)) →
+      ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ Z : Finset (ℝ × ℝ), ↑Z ⊆ Ω ∧
+        Z.card * δ ≤ A + 2 * ∑ q, B q ∧
+        (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ Ω,
+          (SmoothBundleForm.eval₂ ω (w (φ n) y)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I (w (φ n)) y stdComplexLineReal)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I (w (φ n)) y stdComplexLineImag) : ℝ)) ∧
+        (∀ L', IsCompact L' → L' ⊆ Ω \ ↑Z → ∃ A', ∀ n, ∀ y ∈ L',
+          (SmoothBundleForm.eval₂ ω (w (φ n) y)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I (w (φ n)) y stdComplexLineReal)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I (w (φ n)) y stdComplexLineImag) : ℝ) ≤ A') ∧
+        ∃ v : ℝ × ℝ → M, ContinuousOn v (Ω \ ↑Z) ∧
+          TendstoLocallyUniformlyOn (fun n ↦ e ∘ w (φ n)) (e ∘ v) atTop (Ω \ ↑Z) ∧
+          ∀ z ∈ Ω \ ↑Z, Tendsto (fun n ↦ w (φ n) z) atTop (𝓝 (v z)) := by
+  -- Outside the disc of radius `T` the data of the family are standard for every `R ∈ C`.
+  obtain ⟨L₀, hL₀⟩ := hC.exists_bound_of_continuousOn
+    (contDiff_comparisonNeckLength (n := 0)).continuous.continuousOn
+  set T : ℝ := 2 * Real.exp (2 * Real.pi * (L₀ + 3))
+  set S : Set (ℝ × ℝ) := equivRealProdCLM.symm ⁻¹' (closedBall 0 T)ᶜ
+  have hstd {R : ℝ} (hR : R ∈ C) {z : ℝ × ℝ} (hz : z ∈ S) :
+      (∀ x, cappedComparisonPerturbation H R (equivRealProdCLM.symm z) x = 0) ∧
+        h₀.cappedComparisonAlmostComplex J hJ R (equivRealProdCLM.symm z) = J₀ := by
+    have hL : comparisonNeckLength R ≤ L₀ := (le_abs_self _).trans (by simpa using hL₀ R hR)
+    have hz' : T < ‖equivRealProdCLM.symm z‖ := by simpa [S] using hz
+    rw [cappedComparisonPerturbation_def, h₀.cappedComparisonAlmostComplex_def J hJ R]
+    exact ⟨cappedPerturbation_eq_zero_of_lt_norm hL hz',
+      h₀.cappedAlmostComplex_eq_base_of_notMem_truncation J hJ _
+        (notMem_truncation_of_lt_norm (by linarith) hz')⟩
+  have hJt (R : ℝ) (w : ℂ) (x : M) :=
+    h₀.tames_almostComplexStructureAt_cappedComparisonAlmostComplex J hJ R w x
+  obtain ⟨δ, hδ, hconv⟩ := hω.exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_inv
+    J₀ (fun x ↦ (h₀.compatibleAt x).tames) he he_inj hc hJc T
+  refine ⟨T⁻¹, inv_pos.2 (by positivity), δ, hδ,
+    fun Ω R u w A hΩ hΩρ hRC hu hfl hint hcurv harea hw hwu ↦ ?_⟩
+  -- On `S` the Floer equation and the energy density are those of the unperturbed problem.
+  have hzero (k : ℕ) {z : ℝ × ℝ} (hz : z ∈ S) (v : ℂ) :
+      (fun x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x v) =
+        fun _ ↦ 0 := funext fun x ↦ by simp [(hstd (hRC k) hz).1 x]
+  have hdens (k : ℕ) (z : ℝ × ℝ) (hz : z ∈ S) :
+      (SmoothBundleForm.eval₂ ω (u k z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u k) z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u k) z stdComplexLineImag) : ℝ) =
+        ω.floerEnergyDensity
+          (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x Complex.I)
+          (u k) z := by
+    rw [ω.floerEnergyDensity_congr_perturbation (u k) (Ks' := fun _ _ ↦ 0)
+      (Kt' := fun _ _ ↦ 0) (hzero k hz 1) (hzero k hz Complex.I), floerEnergyDensity_zero]
+  have hSm : MeasurableSet S := (isClosed_closedBall.isOpen_compl.preimage
+    equivRealProdCLM.symm.continuous).measurableSet
+  refine hconv hΩ hΩρ (fun k z _ ↦ (hu k).mdifferentiableAt one_ne_zero) (fun k z hz ↦ ?_)
+    (fun k ↦ (hint k).integrableOn.congr_fun (fun z hz ↦ (hdens k z hz).symm) hSm)
+    (fun k ↦ ?_) hw hwu
+  · have h := hfl k z
+    rwa [(hstd (hRC k) hz).2, ω.perturbedMFDeriv_congr_perturbation (u k) (Ks' := fun _ _ ↦ 0)
+      (Kt' := fun _ _ ↦ 0) (hzero k hz 1) (hzero k hz Complex.I)] at h
+  · -- The area outside the disc of radius `T` is at most the energy, which exceeds the total area
+    -- by at most `2 (B₀ + B₁ + B_∞)`.
+    have habs := hω.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le hH hHs hB
+      (hC₀ (hRC k)) (hu k) (hint k) (hcurv k)
+    have hle := setIntegral_le_integral (s := S) (hint k) (Eventually.of_forall fun z ↦
+      floerEnergyDensity_nonneg hω (hJt _ _ _) (hfl k z))
+    refine ((setIntegral_congr_fun hSm fun z hz ↦ hdens k z hz).trans_le hle).trans ?_
+    linarith [(abs_sub_le_iff.1 habs).1, harea k]
+
+end Closed
 
 end TauCeti.SmoothTwoForm.IsNondegenerate

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.SingleOracle.Code
-public import Mathlib.Algebra.Notation.Indicator
+public import TauCeti.Computability.TuringDegree
 
 /-!
 # Bounded evaluation of oracle programs, with use
@@ -30,6 +30,7 @@ the program relative to every oracle extending those answers.
 
 * `TauCeti.Oracle.Single.Code.Halt`: the output and use of a successful run.
 * `TauCeti.Oracle.Single.Code.evaln`: bounded evaluation against oracle answers.
+* `TauCeti.Oracle.Single.Code.boundedAnswers`: answers computed within separate fuel and use bounds.
 * `TauCeti.Oracle.Single.Code.stageUse`: the use of a run, or `0` when it fails.
 * `TauCeti.Oracle.Single.Code.setAnswers`: the answers of the characteristic function of a set.
 
@@ -54,6 +55,10 @@ the program relative to every oracle extending those answers.
 * `TauCeti.Oracle.Single.Code.mem_eval_iff_exists_evaln_range_map`: the values of a program
   relative to a total oracle are exactly the outputs of its successful runs against the finite
   initial segments of the oracle.
+* `TauCeti.Oracle.Single.Code.mem_eval_oracle_iff_exists_evaln_finset`,
+  `TauCeti.Oracle.Single.Code.dom_eval_oracle_iff_exists_evaln_finset`: the values and halting
+  of a program relative to a set oracle are witnessed by successful runs against finite sets
+  agreeing with the oracle below the use.
 
 ## References
 
@@ -212,8 +217,24 @@ theorem evaln_succ_prec_succ_eq_some {cf cg : Code} {a y : ℕ} :
     Option.guard_eq_some', exists_const]
   grind
 
-/-- `rfind' cf` at `m` runs `cf` at `m`. On output `0` it returns `m`; otherwise it continues the
-search at `m + 1` with one less fuel. Its use is the largest use of the runs of `cf` it makes. -/
+/-- One bounded search step checks the paired input against the fuel and probes `cf`. A zero
+result returns `m` with the probe's use. A nonzero result continues the search at `m + 1` with
+one less fuel and takes the maximum of the two uses. -/
+theorem evaln_succ_rfind' {cf : Code} {a m : ℕ} :
+    evaln σ (k + 1) (rfind' cf) (Nat.pair a m) = (do
+      guard (Nat.pair a m ≤ k)
+      let probe ← evaln σ (k + 1) cf (Nat.pair a m)
+      if probe.output = 0 then
+        return ⟨m, probe.use⟩
+      else
+        let next ← evaln σ k (rfind' cf) (Nat.pair a (m + 1))
+        return ⟨next.output, max probe.use next.use⟩) := by
+  rw [evaln]
+  simp only [Nat.unpaired, Nat.unpair_pair]
+
+/-- `rfind' cf` probes `cf` at `Nat.pair a m`. A zero output returns `m`. A nonzero output
+continues at `Nat.pair a (m + 1)` with one less fuel. The search records the largest use of
+its probes. -/
 @[simp]
 theorem evaln_succ_rfind'_eq_some {cf : Code} {a m : ℕ} :
     evaln σ (k + 1) (rfind' cf) (Nat.pair a m) = some d ↔ Nat.pair a m ≤ k ∧
@@ -221,8 +242,7 @@ theorem evaln_succ_rfind'_eq_some {cf : Code} {a m : ℕ} :
         (dx.output = 0 ∧ d = ⟨m, dx.use⟩ ∨ dx.output ≠ 0 ∧
           ∃ d', evaln σ k (rfind' cf) (Nat.pair a (m + 1)) = some d' ∧
             d = ⟨d'.output, max dx.use d'.use⟩) := by
-  simp only [evaln, Nat.unpaired, Nat.unpair_pair, bind, Option.bind_eq_some_iff,
-    Option.guard_eq_some', exists_const]
+  simp only [evaln_succ_rfind', bind, Option.bind_eq_some_iff, Option.guard_eq_some', exists_const]
   refine and_congr_right fun _ => exists_congr fun dx => and_congr_right fun _ => ?_
   split_ifs with h <;>
     simp only [h, Option.pure_def, Option.some.injEq, Option.bind_eq_some_iff] <;> grind
@@ -238,6 +258,28 @@ theorem evaln_bound : ∀ {k c n d}, evaln σ k c n = some d → n < k
 /-- A run at fuel `k` fails on every input at or above `k`. -/
 theorem evaln_eq_none_of_le {c : Code} (h : k ≤ n) : evaln σ k c n = none :=
   Option.eq_none_iff_forall_ne_some.2 fun _ hd => (evaln_bound hd).not_ge h
+
+/-- A bounded run of `comp oracle t` queries the address returned by `t` if it is below the fuel
+and an answer is supplied. Its use is the maximum of the address computation's use and one more
+than the queried address. -/
+theorem evaln_comp_oracle (t : Code) : evaln σ k (comp oracle t) n =
+    (evaln σ k t n).bind (fun r =>
+      if r.output < k then (σ r.output).map (fun y => ⟨y, max r.use (r.output + 1)⟩)
+      else none) := by
+  cases k with
+  | zero => simp
+  | succ k =>
+    by_cases hn : n ≤ k
+    · rw [evaln]
+      cases ht : evaln σ (k + 1) t n with
+      | none => simp [hn, ht]
+      | some r =>
+        by_cases hq : r.output ≤ k
+        · cases ha : σ r.output <;> simp [evaln, hn, ht, hq, ha, Nat.lt_succ_iff]
+        · simp [evaln, hn, ht, hq, Nat.lt_succ_iff]
+    · have ht : evaln σ (k + 1) t n = none := evaln_eq_none_of_le (by omega)
+      rw [evaln, ht]
+      simp [hn]
 
 /-- Every input is a pairing `Nat.pair a m`, the form in which the clauses for `prec` and
 `rfind'` are stated. -/
@@ -582,16 +624,137 @@ theorem mem_eval_iff_exists_evaln {O : ℕ →. ℕ} (hσ : ∀ z y, σ z = some
   ⟨exists_evaln_eq_some_of_mem_eval fun z y => (hσ z y).2, fun ⟨_, _, h, hy⟩ =>
     hy ▸ evaln_sound h fun z _ y' hy' => (hσ z y').1 hy'⟩
 
-/-- A run with fuel `k` depends only on the first `k` answers of a total oracle. Truncating
-that oracle to a string of length `k` preserves failure as well as output and use. -/
-theorem evaln_range_map (O : ℕ → ℕ) (k : ℕ) (c : Code) (n : ℕ) :
-    evaln (fun z => ((List.range k).map O)[z]?) k c n =
-      evaln (fun z => some (O z)) k c n := by
+/-- If `t` computes the address `q` on the everywhere undefined oracle, then at sufficient
+fuel `comp oracle t` looks up `q` with use `q + 1` when the answer is supplied, and fails
+otherwise. The same threshold works for every answer table. -/
+theorem exists_forall_evaln_comp_oracle_eq_map_of_mem_eval_none {t : Code} {x q : ℕ}
+    (h : q ∈ eval (fun _ => Part.none) t x) :
+    ∃ K, ∀ (σ : ℕ → Option ℕ) (k : ℕ), K ≤ k →
+      evaln σ k (comp oracle t) x = (σ q).map (fun y => ⟨y, q + 1⟩) := by
+  obtain ⟨j, ⟨q, u⟩, hr, rfl⟩ := exists_evaln_eq_some_of_mem_eval (σ := fun _ => none)
+    (by simp) h
+  have hzero : u = 0 := Nat.eq_zero_of_le_zero
+    (evaln_use_le_of_forall_eq_none (fun _ _ => rfl) hr)
+  subst u
+  refine ⟨max j (q + 1), fun σ k hk => ?_⟩
+  have hrun := evaln_eq_some_of_use_eq_zero σ
+    (evaln_mono ((le_max_left _ _).trans hk) hr) rfl
+  have hq : q < k := (le_max_right j (q + 1)).trans hk
+  simp [evaln_comp_oracle, hrun, hq]
+
+/-- If `t` computes the address `q` on the everywhere undefined oracle, then every successful
+bounded run of `comp oracle t` has use `q + 1`, for every answer table and fuel. -/
+theorem evaln_comp_oracle_use_eq_add_one_of_mem_eval_none {t : Code} {x q k : ℕ} {r : Halt}
+    (ht : q ∈ eval (fun _ => Part.none) t x) (h : evaln σ k (comp oracle t) x = some r) :
+    r.use = q + 1 := by
+  obtain ⟨K, hK⟩ := exists_forall_evaln_comp_oracle_eq_map_of_mem_eval_none ht
+  have hr := evaln_mono (le_max_left k K) h
+  rw [hK σ _ (le_max_right k K)] at hr
+  obtain ⟨_, -, rfl⟩ := Option.map_eq_some_iff.1 hr
+  rfl
+
+/-! ### Bounded oracle answers -/
+
+section BoundedAnswers
+
+/-- The answer computed by `d` at an address using fuel `k` and at most the first `u` base-oracle
+coordinates. A missing run or a run using a larger prefix supplies no answer. -/
+def boundedAnswers (d : Code) (σ : ℕ → Option ℕ) (k u : ℕ) (x : ℕ) : Option ℕ :=
+  (evaln σ k d x).bind fun h => Option.guard (fun _ => h.use ≤ u) h.output
+
+/-- Bounded answers filter the result of bounded evaluation by its use before returning its
+output. -/
+theorem boundedAnswers_def (d : Code) (σ : ℕ → Option ℕ) (k u x : ℕ) :
+    d.boundedAnswers σ k u x =
+      (evaln σ k d x).bind (fun h => Option.guard (fun _ => h.use ≤ u) h.output) := (rfl)
+
+variable {d : Code} {j u x y : ℕ}
+
+/-- No bounded answer is supplied with zero fuel. -/
+@[simp]
+theorem boundedAnswers_zero : d.boundedAnswers σ 0 u x = none := by
+  simp [boundedAnswers]
+
+/-- A bounded answer is supplied precisely by a successful run within the use bound. -/
+@[simp]
+theorem boundedAnswers_eq_some_iff :
+    d.boundedAnswers σ j u x = some y ↔
+      ∃ h, evaln σ j d x = some h ∧ h.use ≤ u ∧ h.output = y := by
+  simp [boundedAnswers, Option.bind_eq_some_iff, and_comm]
+
+/-- A bounded answer is missing if evaluation fails or the successful run exceeds the use bound. -/
+@[simp]
+theorem boundedAnswers_eq_none_iff :
+    d.boundedAnswers σ j u x = none ↔
+      evaln σ j d x = none ∨ ∃ h, evaln σ j d x = some h ∧ u < h.use := by
+  cases h : evaln σ j d x <;> simp [boundedAnswers, h]
+
+/-- Enlarging either bound retains any answer already supplied by a query program. -/
+theorem boundedAnswers_eq_some_of_le {j' u' : ℕ} (hj : j ≤ j') (hu : u ≤ u')
+    (h : d.boundedAnswers σ j u x = some y) : d.boundedAnswers σ j' u' x = some y := by
+  obtain ⟨r, hr, hru, rfl⟩ := boundedAnswers_eq_some_iff.1 h
+  exact boundedAnswers_eq_some_iff.2 ⟨r, evaln_mono hj hr, hru.trans hu, rfl⟩
+
+/-- Query answers depend only on the allowed prefix of the base oracle, including when the
+answer is missing. -/
+theorem boundedAnswers_eq_of_eqOn {τ : ℕ → Option ℕ} (h : Set.EqOn σ τ (Set.Iio u)) :
+    d.boundedAnswers σ j u x = d.boundedAnswers τ j u x := by
+  apply Option.ext
+  intro v
+  simp only [boundedAnswers_eq_some_iff]
+  constructor <;> rintro ⟨r, hr, hu, rfl⟩
+  · exact ⟨r, evaln_eq_some_of_eqOn hr (h.mono (Set.Iio_subset_Iio hu)), hu, rfl⟩
+  · exact ⟨r, evaln_eq_some_of_eqOn hr (h.symm.mono (Set.Iio_subset_Iio hu)), hu, rfl⟩
+
+/-- With a fixed use bound `u`, the answers eventually supplied by `d` are exactly the
+values it computes relative to the base oracle restricted to addresses below `u`, provided
+the answer table agrees with the oracle at those addresses. -/
+theorem mem_eval_restrict_iff_exists_boundedAnswers {O : ℕ →. ℕ}
+    (hσ : ∀ z < u, ∀ v, σ z = some v ↔ v ∈ O z) :
+    y ∈ eval (O.restrict (p := Set.Iio u ∩ O.Dom) Set.inter_subset_right) d x ↔
+      ∃ j, d.boundedAnswers σ j u x = some y := by
+  let τ (z : ℕ) := if z < u then σ z else none
+  have hτ (z v : ℕ) :
+      τ z = some v ↔ v ∈ O.restrict (p := Set.Iio u ∩ O.Dom) Set.inter_subset_right z := by
+    by_cases hz : z < u
+    · simp only [τ, hz, ite_true, PFun.mem_restrict, Set.mem_inter_iff, Set.mem_Iio, true_and,
+        hσ z hz]
+      exact ⟨fun hv => ⟨(PFun.mem_dom O z).2 ⟨v, hv⟩, hv⟩, And.right⟩
+    · simp [τ, hz]
+  have hagree : Set.EqOn σ τ (Set.Iio u) := fun z hz => by simp [τ, Set.mem_Iio.1 hz]
+  simp only [mem_eval_iff_exists_evaln hτ, boundedAnswers_eq_of_eqOn hagree,
+    boundedAnswers_eq_some_iff]
+  constructor
+  · rintro ⟨j, r, hr, rfl⟩
+    have hu : r.use ≤ u :=
+      evaln_use_le_of_forall_eq_none (fun z hz => by simp [τ, not_lt.2 hz]) hr
+    exact ⟨j, r, hr, hu, rfl⟩
+  · rintro ⟨j, r, hr, -, rfl⟩
+    exact ⟨j, r, hr, rfl⟩
+
+end BoundedAnswers
+
+/-- A run with fuel `k` depends only on the first `k` optional answers. Truncating the answers
+to a list of length `k` preserves failure as well as output and use. -/
+theorem evaln_range_map_option (σ : ℕ → Option ℕ) (k : ℕ) (c : Code) (n : ℕ) :
+    evaln (fun z => (((List.range k).map σ)[z]?).bind id) k c n = evaln σ k c n := by
   apply Option.ext
   intro d
   constructor <;> intro hd <;>
     refine evaln_eq_some_of_eqOn hd fun z hz => ?_
   all_goals simp [(Set.mem_Iio.1 hz).trans_le (evaln_use_le hd)]
+
+/-- A run with fuel `k` sees only the first `k` answers of a total oracle. -/
+theorem evaln_range_map (O : ℕ → ℕ) (k : ℕ) (c : Code) (n : ℕ) :
+    evaln (fun z => ((List.range k).map O)[z]?) k c n =
+      evaln (fun z => some (O z)) k c n := by
+  have h : (fun z : ℕ => ((List.range k).map O)[z]?) =
+      fun z => (((List.range k).map (some ∘ O))[z]?).bind id := by
+    funext z
+    rw [List.getElem?_map, List.getElem?_map, Option.bind_map]
+    exact Option.map_eq_bind
+  rw [h]
+  exact evaln_range_map_option (some ∘ O) k c n
 
 /-- **Evaluation through finite initial segments.** For a total oracle `O`, the values of a
 program relative to `O` are exactly the outputs of its successful runs, at some fuel `k`, against
@@ -601,5 +764,48 @@ theorem mem_eval_iff_exists_evaln_range_map {O : ℕ → ℕ} {c : Code} {n y : 
       ∃ k d, evaln (fun z => ((List.range k).map O)[z]?) k c n = some d ∧ d.output = y := by
   simp_rw [evaln_range_map]
   exact mem_eval_iff_exists_evaln (σ := fun z => some (O z)) (by simp [eq_comm])
+
+/-- **Evaluation through finite oracle sets.** For a set oracle `A`, the values of a program
+relative to `A` are exactly the outputs of its successful runs against finite sets `F` agreeing
+with `A` below the run's use. -/
+theorem mem_eval_oracle_iff_exists_evaln_finset {A : Set ℕ} {c : Code} {n y : ℕ} :
+    y ∈ eval A.oracle c n ↔
+      ∃ (k : ℕ) (F : Finset ℕ) (d : Halt),
+        evaln (setAnswers F) k c n = some d ∧
+          d.output = y ∧ ∀ z < d.use, z ∈ F ↔ z ∈ A := by
+  classical
+  have hanswers : ∀ z y, setAnswers A z = some y ↔ y ∈ A.oracle z := by
+    simp [eq_comm]
+  constructor
+  · intro hy
+    obtain ⟨k, d, hd, rfl⟩ := (mem_eval_iff_exists_evaln hanswers).1 hy
+    let F : Finset ℕ := (Finset.range d.use).filter (· ∈ A)
+    have hdF : evaln (setAnswers F) k c n = some d :=
+      evaln_eq_some_of_eqOn hd <| eqOn_setAnswers_iff.2 fun z hz => by
+        simp [F, Set.mem_Iio.1 hz]
+    exact ⟨k, F, d, hdF, rfl, fun z hz => by simp [F, hz]⟩
+  · rintro ⟨k, F, d, hd, rfl, hagree⟩
+    have hdA : evaln (setAnswers A) k c n = some d :=
+      evaln_eq_some_of_eqOn hd <| eqOn_setAnswers_iff.2 fun z hz => hagree z (Set.mem_Iio.1 hz)
+    exact evaln_sound hdA fun z _ y hy => (hanswers z y).1 hy
+
+/-- **Halting through finite oracle sets.** A program halts relative to a set oracle `A` if and
+only if it succeeds at some fuel against a finite set `F` agreeing with `A` below the run's stage
+use. -/
+theorem dom_eval_oracle_iff_exists_evaln_finset {A : Set ℕ} {c : Code} {n : ℕ} :
+    (eval A.oracle c n).Dom ↔
+      ∃ (k : ℕ) (F : Finset ℕ),
+        (evaln (setAnswers F) k c n).isSome ∧
+          ∀ z < stageUse (setAnswers F) k c n, z ∈ F ↔ z ∈ A := by
+  constructor
+  · intro hdom
+    obtain ⟨y, hy⟩ := Part.dom_iff_mem.1 hdom
+    obtain ⟨k, F, d, hd, -, hagree⟩ := mem_eval_oracle_iff_exists_evaln_finset.1 hy
+    exact ⟨k, F, by simp [hd], by simpa [stageUse_eq_of_evaln_eq_some hd] using hagree⟩
+  · rintro ⟨k, F, hsome, hagree⟩
+    obtain ⟨d, hd⟩ := Option.isSome_iff_exists.1 hsome
+    rw [stageUse_eq_of_evaln_eq_some hd] at hagree
+    exact Part.dom_iff_mem.2 ⟨d.output, mem_eval_oracle_iff_exists_evaln_finset.2
+      ⟨k, F, d, hd, rfl, hagree⟩⟩
 
 end TauCeti.Oracle.Single.Code

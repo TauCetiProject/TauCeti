@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RingTheory.FormalGroup.Curve.Basic
 import TauCeti.RingTheory.FormalGroup.Basic
+import TauCeti.RingTheory.FormalGroup.Point.Order
+import TauCeti.RingTheory.MvPowerSeries.Equiv
 import TauCeti.RingTheory.PowerSeries.Expand
 
 /-!
@@ -24,6 +26,11 @@ formal group law does not give a scalar action of the coefficient ring. These ar
 support normalized Cartier operators on curves. Verschiebung `Vₙ` (the substitution of `X^n`
 for the curve parameter `X`) is injective for every nonzero index `n`, without commutativity of
 the formal group law or a unit assumption on the index.
+
+Curve operations also respect degree-by-degree truncation: the degree-`≤ M` coefficients of a
+symmetric formal-group sum `∑ i : σ, γ(Tᵢ)` depend only on the coefficients of `γ` up to degree
+`M` (`FormalGroup.Curve.coeff_symmSum_congr`), and the degree-`k` coefficient of `V_n γ` depends
+only on those up to degree `k / n` (`FormalGroup.coeff_verschiebungCurve_congr`).
 -/
 
 public section
@@ -129,6 +136,22 @@ theorem verschiebungCurve_monomialCurve (F : FormalGroup R) {m n : ℕ} (hm : m 
       F.monomialCurve (n * m) (mul_ne_zero hn hm) c :=
   Curve.ext (by simp [← pow_mul, mul_comm])
 
+/-- One step of peeling off monomials: if the residual `γ - s` vanishes below degree `m`, then
+after also subtracting its degree-`m` term `c Tᵐ` the residual vanishes up to degree `m`. -/
+theorem Curve.coeff_sub_add_monomialCurve_eq_zero {F : FormalGroup R} [F.IsComm] {γ s : F.Curve}
+    {m : ℕ} (hm : m ≠ 0) (h : ∀ i < m, PowerSeries.coeff i (γ - s).toPowerSeries = 0) {k : ℕ}
+    (hk : k ≤ m) :
+    PowerSeries.coeff k (γ - (s + F.monomialCurve m hm
+      (PowerSeries.coeff m (γ - s).toPowerSeries))).toPowerSeries = 0 := by
+  rw [← sub_sub]
+  let t := F.monomialCurve m hm (PowerSeries.coeff m (γ - s).toPowerSeries)
+  have ht (i : ℕ) (hi : i ≤ k) :
+      PowerSeries.coeff i (γ - s).toPowerSeries = PowerSeries.coeff i t.toPowerSeries := by
+    rcases (hi.trans hk).lt_or_eq with hil | rfl
+    · simp [t, h i hil, PowerSeries.coeff_X_pow, hil.ne]
+    · simp [t]
+  rw [coeff_sub_congr ht (fun _ _ ↦ rfl), sub_self, toPowerSeries_zero, map_zero]
+
 /-! ### Division by invertible natural numbers -/
 
 section CurveDivision
@@ -192,5 +215,60 @@ theorem verschiebungCurve_injective (F : FormalGroup R) (n : ℕ) (hn : n ≠ 0)
   apply Curve.ext
   apply PowerSeries.expand_injective n hn
   simpa only [toPowerSeries_verschiebungCurve] using congrArg Curve.toPowerSeries h
+
+/-! ### Degree-by-degree truncation of curve operators -/
+
+/-- The degree-`≤ M` coefficients of the symmetric formal-group sum `∑ i : σ, γ(Tᵢ)` depend only
+on the coefficients of `γ` up to degree `M`. -/
+theorem Curve.coeff_symmSum_congr (F : FormalGroup R) [F.IsComm] (σ : Type*) [Fintype σ]
+    {γ₁ γ₂ : F.Curve} {M : ℕ}
+    (h : ∀ i ≤ M, PowerSeries.coeff i γ₁.toPowerSeries = PowerSeries.coeff i γ₂.toPowerSeries)
+    {d : σ →₀ ℕ} (hd : d.degree ≤ M) :
+    MvPowerSeries.coeff d (Curve.symmSum F σ γ₁ : MvPowerSeries σ R) =
+      MvPowerSeries.coeff d (Curve.symmSum F σ γ₂ : MvPowerSeries σ R) := by
+  classical
+  have hzero_single (γ : F.Curve) (a : σ) :
+      MvPowerSeries.constantCoeff (Curve.coordPointHom F a γ).val = 0 := by
+    rw [Curve.val_coordPointHom, PowerSeries.toMvPowerSeries_apply,
+      MvPowerSeries.constantCoeff_rename]
+    exact γ.constantCoeff_toPowerSeries
+  have hcoord (a : σ) : ((M + 1 : ℕ) : ℕ∞) ≤
+      (Curve.coordPointHom F a γ₁ - Curve.coordPointHom F a γ₂).val.order :=
+    F.le_order_val_sub_of_le_order_sub (hzero_single γ₁ a) (hzero_single γ₂ a) <|
+      MvPowerSeries.nat_le_order fun e he ↦ by
+        rw [map_sub, Curve.val_coordPointHom, Curve.val_coordPointHom,
+          PowerSeries.coeff_toMvPowerSeries, PowerSeries.coeff_toMvPowerSeries]
+        split_ifs with hea
+        · exact sub_eq_zero.mpr (h (e a) ((Finsupp.le_degree a e).trans (Nat.lt_succ_iff.mp he)))
+        · exact sub_self 0
+  have hpt : ((M + 1 : ℕ) : ℕ∞) ≤
+      ((∑ a : σ, Curve.coordPointHom F a γ₁) -
+        (∑ a : σ, Curve.coordPointHom F a γ₂)).val.order := by
+    rw [← Finset.sum_sub_distrib]
+    exact F.le_order_val_sum Finset.univ _ fun a _ ↦ hcoord a
+  have hdiff := (Nat.cast_le.mpr (Nat.le_succ (M + 1))).trans
+    (F.le_order_val_sub_val_sub (Nat.succ_ne_zero M)
+      (Curve.constantCoeff_val_sum_coordPointHom Finset.univ γ₂) hpt)
+  have hsum : ((M + 1 : ℕ) : ℕ∞) ≤
+      ((∑ a : σ, Curve.coordPointHom F a γ₁).val -
+        (∑ a : σ, Curve.coordPointHom F a γ₂).val).order := by
+    simpa only [sub_add_cancel] using MvPowerSeries.le_order_add hdiff hpt
+  have hlt : (d.degree : ℕ∞) < ((M + 1 : ℕ) : ℕ∞) := Nat.cast_lt.mpr (Nat.lt_succ_of_le hd)
+  rw [Curve.coe_symmSum, Curve.coe_symmSum]
+  exact sub_eq_zero.mp <| by
+    rw [← map_sub]
+    exact MvPowerSeries.coeff_of_lt_order (hlt.trans_le hsum)
+
+/-- The degree-`k` coefficient of `V_n γ` depends only on the coefficients of `γ` up to degree
+`k / n`. -/
+theorem coeff_verschiebungCurve_congr (F : FormalGroup R) (n : ℕ) (hn : n ≠ 0)
+    {γ₁ γ₂ : F.Curve} {k : ℕ}
+    (h : ∀ i ≤ k / n, PowerSeries.coeff i γ₁.toPowerSeries = PowerSeries.coeff i γ₂.toPowerSeries) :
+    PowerSeries.coeff k (F.verschiebungCurve n hn γ₁).toPowerSeries =
+      PowerSeries.coeff k (F.verschiebungCurve n hn γ₂).toPowerSeries := by
+  simp only [toPowerSeries_verschiebungCurve, PowerSeries.coeff_expand]
+  split_ifs with hdvd
+  · exact h (k / n) le_rfl
+  · rfl
 
 end FormalGroup

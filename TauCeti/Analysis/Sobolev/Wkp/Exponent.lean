@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Wkp.Restriction
 public import TauCeti.MeasureTheory.Function.Lp.Exponent
+import TauCeti.Analysis.MeanInequalities
 
 /-!
 # Lowering the integrability exponent of Sobolev functions
@@ -40,6 +41,10 @@ is unchanged up to almost everywhere equality.
 * `TauCeti.Wkp.ofExponentLEL_injective`: the inclusion is injective.
 * `TauCeti.Wkp.opNorm_ofExponentLEL_le`, `TauCeti.Wkp.norm_ofExponentLEL_apply_le`: the bound
   `μ(Ω) ^ (1/p - 1/q)` on the operator norm.
+* `TauCeti.Wkp.norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow`: the norms are logarithmically
+  convex in `1 / p`, `‖u‖_{W^{k,q}} ≤ ‖u‖_{W^{k,p}} ^ (1 - θ) ‖u‖_{W^{k,r}} ^ θ` for
+  `1 / q = (1 - θ) / p + θ / r`. This is what passes compactness into `W^{k,p}` to compactness into
+  `W^{k,q}` for an operator that is bounded into `W^{k,r}`.
 
 ## References
 
@@ -207,6 +212,39 @@ theorem norm_ofExponentLEL_apply_le (hpq : p ≤ q) : ∀ (k : ℕ) (u : Wkp mu 
         lowerOrder_ofExponentLEL, iteratedGradient_ofExponentLEL, ← mul_pow, ← mul_pow]
       exact add_le_add (pow_le_pow_left₀ (norm_nonneg _) hlow 2)
         (pow_le_pow_left₀ (norm_nonneg _) hgrad 2)
+
+/-- **Logarithmic convexity of the `W^{k,p}` norms.** If `p, q ≤ r` and
+`1 / q = (1 - θ) / p + θ / r` with `0 ≤ θ ≤ 1`, then the `W^{k,q}` norm of `u ∈ W^{k,r}(Ω)` is at
+most its `W^{k,p}` norm to the power `1 - θ` times its `W^{k,r}` norm to the power `θ`. The
+constant is one at every order, because each order adjoins one more `Lᵖ` component by a
+Euclidean product norm. -/
+theorem norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow (hpr : p ≤ r) (hqr : q ≤ r) {θ : ℝ}
+    (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
+    (hq : q⁻¹ = ENNReal.ofReal (1 - θ) * p⁻¹ + ENNReal.ofReal θ * r⁻¹) :
+    ∀ (k : ℕ) (u : Wkp mu Omega r k),
+      ‖ofExponentLEL hqr k u‖ ≤ ‖ofExponentLEL hpr k u‖ ^ (1 - θ) * ‖u‖ ^ θ
+  | 0, u => by
+      rw [ofExponentLEL_zero, ofExponentLEL_zero]
+      exact Lp.norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow hpr hqr hθ hq u
+  | 1, u => by
+      rw [ofExponentLEL_one, ofExponentLEL_one]
+      exact W1p.norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow hpr hqr hθ hq u
+  | k + 2, u => by
+      have hlow := norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow hpr hqr hθ hq (k + 1)
+        (lowerOrder (k + 1) u)
+      have hgrad := Lp.norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow (𝕜 := ℝ) hpr hqr hθ hq
+        (iteratedGradient (k + 1) u)
+      refine le_of_pow_le_pow_left₀ two_ne_zero (by positivity) ?_
+      -- Square both sides: each squared norm is that of the lower-order part plus that of the
+      -- highest weak derivative.
+      rw [mul_pow, Real.rpow_pow_comm (norm_nonneg _), Real.rpow_pow_comm (norm_nonneg _),
+        norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k,
+        norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k,
+        norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u,
+        lowerOrder_ofExponentLEL, lowerOrder_ofExponentLEL, iteratedGradient_ofExponentLEL,
+        iteratedGradient_ofExponentLEL]
+      exact Real.sq_add_sq_le_rpow_mul_rpow hθ (norm_nonneg _) (norm_nonneg _) (norm_nonneg _)
+        (norm_nonneg _) (norm_nonneg _) (norm_nonneg _) hlow hgrad
 
 /-- The operator norm of `W^{k,q}(Ω) → W^{k,p}(Ω)` is at most `μ(Ω) ^ (1/p - 1/q)`. -/
 theorem opNorm_ofExponentLEL_le (hpq : p ≤ q) (k : ℕ) :

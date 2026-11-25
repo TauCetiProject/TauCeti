@@ -30,7 +30,9 @@ is invertible when `A` is symplectic (`Matrix.isUnit_det_graphFrame`). Its Gram 
 symplectic matrix is Lagrangian for the symplectic form `Im ⟪·, ·⟫`
 (`Matrix.map_im_conjTranspose_graphFrame_mul_graphFrame`). The graphs
 of a loop `γ` of symplectic matrices form a loop of maximal totally real subspaces with a continuous
-frame (`TauCeti.GLSymplectic.graphLoop`).
+frame (`TauCeti.GLSymplectic.graphLoop`). The graph of the inverse of `A` is the image of the graph
+of `A` under the involution `(u, v) ↦ (conj v, conj u)` of `ℂⁿ × ℂⁿ`, which exchanges the two
+factors (`Matrix.graphFrame_mul_map_ofReal_of_mul_eq_one`).
 
 The main result is that **the Maslov index of the graph loop is twice the Maslov index of the
 loop**, `μ(Γ ∘ γ) = 2 μ(γ)` (`TauCeti.GLSymplectic.maslovIndex_graphLoop`). Here `μ(γ)` is the
@@ -87,6 +89,14 @@ noncomputable def graphFrame (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) : Matrix (n �
     (A.toBlocks₁₂.map (↑) + Complex.I • A.toBlocks₂₂.map (↑))
 
 omit [Fintype n] in
+/-- The defining block form of the graph frame. -/
+theorem graphFrame_def (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    graphFrame A = fromBlocks 1 (-(Complex.I • 1))
+      (A.toBlocks₁₁.map (↑) + Complex.I • A.toBlocks₂₁.map (↑))
+      (A.toBlocks₁₂.map (↑) + Complex.I • A.toBlocks₂₂.map (↑)) :=
+  (rfl)
+
+omit [Fintype n] in
 /-- The graph frame of a symplectic direct sum is the symplectic direct sum of the graph frames:
 the graph of `A ⊕ B` is the product of the graphs of `A` and `B`, in regrouped coordinates. -/
 theorem graphFrame_symplecticSum {m : Type*} [DecidableEq m]
@@ -111,6 +121,32 @@ theorem graphFrame_mulVec (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) (x : n ⊕ n → 
       ofReal_sum, ofReal_mul]
     simp only [add_mul, Finset.sum_add_distrib, mul_assoc, ← Finset.mul_sum]
     ring
+
+/-- **The graph of the inverse.** If `B A = 1`, the graph of `B` is the image of the graph of `A`
+under the anti-symplectic involution `(u, v) ↦ (conj v, conj u)` of `ℂⁿ × ℂⁿ`, which exchanges the
+two factors: `graphFrame B * A` is the complex conjugate of `graphFrame A` with its two row blocks
+exchanged, since both send the real point `x` to `(conj (φ (A x)), φ x)`. -/
+theorem graphFrame_mul_map_ofReal_of_mul_eq_one {A B : Matrix (n ⊕ n) (n ⊕ n) ℝ}
+    (h : B * A = 1) :
+    graphFrame B * A.map ((↑) : ℝ → ℂ) = ((graphFrame A).map star).submatrix Sum.swap id := by
+  refine ext_of_mulVec_single fun j ↦ ?_
+  set x : n ⊕ n → ℝ := Pi.single j 1
+  have hx : (Pi.single j 1 : n ⊕ n → ℂ) = fun k ↦ (x k : ℂ) := by
+    ext k
+    by_cases hk : k = j <;> simp [x, hk]
+  have hAx : A.map ((↑) : ℝ → ℂ) *ᵥ (fun k ↦ (x k : ℂ)) = fun k ↦ ((A *ᵥ x) k : ℂ) :=
+    funext fun k ↦ (RingHom.map_mulVec Complex.ofRealHom A x k).symm
+  rw [hx, ← mulVec_mulVec, hAx, graphFrame_mulVec, mulVec_mulVec, h, one_mulVec]
+  funext i
+  -- Exchanging the row blocks of a matrix evaluates its values at `Sum.swap i`; this is the
+  -- definition of `submatrix`, for which `Matrix.submatrix_mulVec_equiv` needs an equivalence on
+  -- the columns rather than `id`.
+  change _ = ((graphFrame A).map star *ᵥ fun k ↦ (x k : ℂ)) (Sum.swap i)
+  -- Conjugating the entries of the frame conjugates its values on real points.
+  have hxs : star (fun k ↦ (x k : ℂ)) = fun k ↦ (x k : ℂ) := funext fun k ↦ conj_ofReal (x k)
+  rw [← conjTranspose_transpose, mulVec_transpose, vecMul_conjTranspose, hxs, Pi.star_apply,
+    graphFrame_mulVec]
+  rcases i with i | i <;> simp
 
 /-- The complex `n × n` matrix `(A₁₂ - A₂₁) + i (A₁₁ + A₂₂)`, whose determinant is that of the
 graph frame and whose realification is `A J + J A`. -/
