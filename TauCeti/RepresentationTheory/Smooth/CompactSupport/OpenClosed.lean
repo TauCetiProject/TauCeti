@@ -65,8 +65,11 @@ def compactlySupportedExtendByZero [T2Space X] (U : SubMulAction G X)
   isIntertwining' g := LinearMap.ext fun f ↦ LocallyConstant.compactlySupported.ext fun x ↦ by
     by_cases hx : x ∈ U
     · lift x to U using hx
-      simp [LocallyConstant.compactlySupported.extendByZero_apply_coe hU,
-        ← LocallyConstant.compactlySupported.extendByZero_apply_coe hU f (g⁻¹ • x)]
+      -- `extendByZero_apply_coe` is stated for a `Set`, so simp needs it instantiated at `hU`;
+      -- `h` states its value at `g⁻¹ • x` with the simp-normal argument `g⁻¹ • ↑x`.
+      have h := LocallyConstant.compactlySupported.extendByZero_apply_coe hU f (g⁻¹ • x)
+      rw [SubMulAction.val_smul] at h
+      simp [LocallyConstant.compactlySupported.extendByZero_apply_coe hU, h]
     · have hx' : g⁻¹ • x ∉ U := fun h ↦ hx (by simpa using U.smul_mem g h)
       simp [LocallyConstant.compactlySupported.extendByZero_apply_of_notMem hU, hx, hx']
 
