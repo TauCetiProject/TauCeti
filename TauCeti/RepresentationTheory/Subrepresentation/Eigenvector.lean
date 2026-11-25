@@ -111,7 +111,10 @@ theorem span_setOf_forall_apply_eq_smul_eq_top [ρ.IsSemisimpleRepresentation] :
   obtain ⟨c, hc, -⟩ := LinearMap.existsUnique_eq_smul_id_of_finrank_eq_one
     (IsIrreducible.finrank_eq_one_of_isMulCommutative σ.val.toRepresentation)
     (σ.val.toRepresentation g)
-  exact ⟨c, congrArg Subtype.val (LinearMap.congr_fun hc ⟨w, hw⟩)⟩
+  have h := LinearMap.congr_fun hc ⟨w, hw⟩
+  rw [LinearMap.smul_apply, LinearMap.id_apply, Subrepresentation.toRepresentation_apply_coe,
+    Submodule.coe_smul] at h
+  exact ⟨c, h⟩
 
 /-- **An eigenbasis of a semisimple representation of a commutative monoid**, over an
 algebraically closed field and in finite dimension: a basis of common eigenvectors of the
