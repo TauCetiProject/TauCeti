@@ -48,13 +48,11 @@ countably `k`-rectifiable set with locally finite `μHE[k]` measure, there is a 
 that the part of the set outside every cone about that plane has `k`-dimensional density
 zero. The density-one theorem supplies the nonzero density required for an approximate
 tangent plane. This theorem does not assert uniqueness of the plane. -/
-theorem CountablyRectifiable.ae_exists_submodule_tendsto_measure_outside_cone_div
+theorem CountablyRectifiable.ae_exists_submodule_densityZeroOutsideCones
     (hE : CountablyRectifiable k E) (hEm : NullMeasurableSet E μHE[k])
     [IsLocallyFiniteMeasure (μHE[k].restrict E)] :
     ∀ᵐ x ∂μHE[k], x ∈ E → ∃ P : Submodule ℝ V, Module.finrank ℝ P = k ∧
-      ∀ ε > (0 : ℝ), Tendsto (fun r =>
-        μHE[k] {z ∈ E ∩ closedBall x r | ε * dist z x < infDist (z - x) (P : Set V)} /
-          volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0) := by
+      DensityZeroOutsideCones k E x P := by
   obtain ⟨Q, _, hQ⟩ := hE.exists_measurable_approximate_tangent_projection hEm
   filter_upwards [hQ] with x hx hxE
   obtain ⟨P, hdim, _, hP⟩ := hx hxE

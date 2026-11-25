@@ -61,6 +61,9 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
   proves it through a product of primes of `l` (`primeProductCoprime` and two supports), which is
   not ported.
 * `ZMod.unitOfCoprime_mul` — `ZMod.unitOfCoprime` is multiplicative in its numerator.
+* `ZMod.val_mul_unitOfCoprime` — the least nonnegative representative of `c b` is `b c₀ mod d`
+  for a unit `c` and the class of `b`. Its consumer is the positive smoothing of the Stickelberger
+  element in `TauCeti/NumberTheory/Cyclotomic/Stickelberger/Smoothing.lean`.
 * `ZMod.unitsMap_unitOfCoprime` — `ZMod.unitsMap` sends the class of `a` modulo `n` to the
   class of `a` modulo a divisor of `n`.
 * `ZMod.eq_comp_unitsMap_of_comp_unitsMap_eq` — a unit homomorphism that agrees with a lowered
@@ -267,6 +270,12 @@ theorem ZMod.unitOfCoprime_mul {m n : ℕ} (hm : Nat.Coprime m d) (hn : Nat.Copr
     ZMod.unitOfCoprime (m * n) (Nat.coprime_mul_iff_left.mpr ⟨hm, hn⟩)
       = ZMod.unitOfCoprime m hm * ZMod.unitOfCoprime n hn :=
   Units.ext (by push_cast [ZMod.coe_unitOfCoprime]; ring)
+
+/-- **The representative of a unit times `ZMod.unitOfCoprime b`.** The least nonnegative
+representative of `c b` is `b c₀ mod d`, where `c₀` is that of `c`. -/
+theorem ZMod.val_mul_unitOfCoprime {b : ℕ} (hb : b.Coprime d) (c : (ZMod d)ˣ) :
+    ((c * ZMod.unitOfCoprime b hb : (ZMod d)ˣ) : ZMod d).val = b * (c : ZMod d).val % d := by
+  simp [mul_comm, ZMod.coe_unitOfCoprime, ZMod.val_mul, ZMod.val_natCast]
 
 /-- **Reducing `ZMod.unitOfCoprime` to a divisor of the modulus.** The class of `a` modulo `n`
 reduces to the class of `a` modulo `m` for `m ∣ n`. -/

@@ -29,6 +29,8 @@ outside the `letI` scope.
 ## Main definitions
 
 * `KaehlerDifferential.mapSemilinear f : Ω[A⁄R] →ₛₗ[f.toRingHom] Ω[B⁄R]`
+* `KaehlerDifferential.mapSemilinearEquiv e : Ω[A⁄R] ≃ₛₗ[e] Ω[B⁄R]`: the semilinear
+  equivalence along an algebra isomorphism `e`.
 
 ## Main results
 
@@ -47,6 +49,8 @@ outside the `letI` scope.
   an algebra isomorphism the maps for `e` and `e.symm` are mutually inverse.
 * `KaehlerDifferential.span_singleton_mapSemilinear_eq_top_iff`: a generating differential
   transfers along an algebra isomorphism.
+* `KaehlerDifferential.nonempty_linearEquiv_pi_of_algEquiv`: freeness of the Kähler
+  differentials on a given index type passes along an algebra isomorphism.
 
 ## Provenance
 
@@ -155,6 +159,47 @@ theorem span_singleton_mapSemilinear_eq_top_iff (e : A ≃ₐ[R] B) (ω : Ω[A�
     simpa only [mapSemilinear_symm_apply_apply] using
       span_singleton_mapSemilinear_eq_top_of_eq_top e.symm h,
     span_singleton_mapSemilinear_eq_top_of_eq_top e⟩
+
+attribute [local instance] RingHomInvPair.of_ringEquiv in
+/-- **The isomorphism of Kähler differentials along an `R`-algebra isomorphism**
+`e : A ≃ₐ[R] B`: `mapSemilinear e` and `mapSemilinear e.symm` are mutually inverse, so they form an
+`e`-semilinear equivalence. -/
+noncomputable def mapSemilinearEquiv (e : A ≃ₐ[R] B) :
+    Ω[A⁄R] ≃ₛₗ[(e.toRingEquiv : A →+* B)] Ω[B⁄R] where
+  __ := mapSemilinear e.toAlgHom
+  invFun := mapSemilinear e.symm.toAlgHom
+  left_inv := mapSemilinear_symm_apply_apply e
+  right_inv := mapSemilinear_apply_symm_apply e
+
+attribute [local instance] RingHomInvPair.of_ringEquiv in
+/-- `mapSemilinearEquiv e` is `mapSemilinear e`. -/
+@[simp]
+theorem mapSemilinearEquiv_apply (e : A ≃ₐ[R] B) (ω : Ω[A⁄R]) :
+    mapSemilinearEquiv e ω = mapSemilinear e.toAlgHom ω :=
+  (rfl)
+
+attribute [local instance] RingHomInvPair.of_ringEquiv in
+/-- The inverse of `mapSemilinearEquiv e` is `mapSemilinear e.symm`. -/
+@[simp]
+theorem mapSemilinearEquiv_symm_apply (e : A ≃ₐ[R] B) (ω : Ω[B⁄R]) :
+    (mapSemilinearEquiv e).symm ω = mapSemilinear e.symm.toAlgHom ω :=
+  (rfl)
+
+attribute [local instance] RingHomInvPair.of_ringEquiv in
+/-- If the Kähler differentials of `B` over `R` are free on an index type `ι`, so are those of an
+isomorphic `R`-algebra `A`: compose `mapSemilinearEquiv e` with the coordinatewise transport
+along `e.symm`. -/
+theorem nonempty_linearEquiv_pi_of_algEquiv {ι : Type*} (e : A ≃ₐ[R] B)
+    (h : Nonempty (Ω[B⁄R] ≃ₗ[B] (ι → B))) : Nonempty (Ω[A⁄R] ≃ₗ[A] (ι → A)) := by
+  obtain ⟨g⟩ := h
+  let p : (ι → B) ≃ₛₗ[(e.toRingEquiv.symm : B →+* A)] (ι → A) :=
+    { toFun v i := e.symm (v i)
+      invFun v i := e (v i)
+      map_add' _ _ := funext fun _ ↦ map_add e.symm _ _
+      map_smul' _ _ := funext fun _ ↦ map_mul e.symm _ _
+      left_inv _ := funext fun _ ↦ e.apply_symm_apply _
+      right_inv _ := funext fun _ ↦ e.symm_apply_apply _ }
+  exact ⟨((mapSemilinearEquiv e).trans g).trans p⟩
 
 /-- On a tower, `mapSemilinear` along the structure map is Mathlib's `KaehlerDifferential.map`
 — the sense in which this construction extends the tower functoriality to arbitrary algebra

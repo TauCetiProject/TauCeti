@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Vertex.NthProduct
 import TauCeti.Algebra.BigOperators.Finprod
-import TauCeti.Algebra.Ring.Commute
+import TauCeti.Algebra.Module.NilpotentAction
 
 /-!
 # Dong's lemma for vertex operators
@@ -293,9 +293,12 @@ private theorem δ₂₃_pow_jacobi_eq_zero {A B C : VertexOperator R V} {r₀ r
     rw [← Function.comp_apply (f := δ₁₂ ^ r₀), ← AddMonoid.End.coe_mul,
       ((commute_δ₁₂_δ₂₃.pow_left r₀).pow_right r₂).eq, AddMonoid.End.coe_mul,
       Function.comp_apply, hw_r₀, map_zero]
-  have hsub := commute_δ₁₂_δ₁₃.symm.sub_pow_apply_eq_zero hu₁ hu₀
-  rwa [δ₁₃_sub_δ₁₂, ← Function.comp_apply (f := δ₂₃ ^ (r₁ + r₀)), ← AddMonoid.End.coe_mul,
-    ← pow_add, show r₁ + r₀ + r₂ = r₀ + r₁ + r₂ by omega] at hsub
+  have hsub := commute_δ₁₂_δ₁₃.symm.sub_pow_smul_eq_zero_of_add_le_succ_of_pow_smul_eq_zero
+    ((AddMonoid.End.smul_def _ _).trans hu₁) ((AddMonoid.End.smul_def _ _).trans hu₀)
+    (Nat.le_succ _)
+  have hr : r₁ + r₀ + r₂ = r₀ + r₁ + r₂ := by omega
+  rwa [δ₁₃_sub_δ₁₂, ← AddMonoid.End.smul_def _ w, ← mul_smul, ← pow_add, hr,
+    AddMonoid.End.smul_def] at hsub
 
 /-- **Dong's lemma for nonnegative residue products.** If `(A, B)`, `(A, C)`, `(B, C)` are mutually
 local of orders `r₀`, `r₁`, `r₂`, then `nonnegResidueProduct n A B` is local with `C` of order

@@ -42,7 +42,7 @@ the topological Riemann–Hurwitz formula over the sphere gives `χ(X) = 2` and 
   Riemann–Hurwitz in genus form, for surfaces satisfying `χ = 2 - 2 · genus`.
 * `TauCeti.RiemannSurface.eulerChar_eq_two_of_analyticGenus_eq_zero` and
   `TauCeti.RiemannSurface.genus_eq_zero_of_analyticGenus_eq_zero`: a compact connected Riemann
-  surface with finite-dimensional `H¹(X, 𝒪)` and analytic genus `0` has `χ(X) = 2` and topological
+  surface with analytic genus `0` has `χ(X) = 2` and topological
   genus `0`.
 * `TauCeti.RiemannSurface.FiniteHolomorphicMap.degree_mul_genus_sub_one_le`,
   `TauCeti.RiemannSurface.FiniteHolomorphicMap.degree_mul_genus_sub_one_eq_iff`: the bound
@@ -191,11 +191,9 @@ section AnalyticGenus
 
 variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
   [CompactSpace X] [T2Space X] [ConnectedSpace X]
-  [FiniteDimensional ℂ ((TauCeti.Topology.cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 1).obj
-    (holomorphicStructureSheafModules 𝓘(ℂ) X).obj)]
 
 /-- **Analytic genus zero gives Euler characteristic two.** A compact connected Riemann surface
-with finite-dimensional `H¹(X, 𝒪)` and analytic genus `0` has `χ(X) = 2`. -/
+with analytic genus `0` has `χ(X) = 2`. -/
 theorem eulerChar_eq_two_of_analyticGenus_eq_zero (h : analyticGenus X = 0) :
     eulerChar X = 2 := by
   obtain ⟨F, hF⟩ := exists_finiteHolomorphicMap_degree_eq_one_of_analyticGenus_eq_zero h
@@ -203,8 +201,8 @@ theorem eulerChar_eq_two_of_analyticGenus_eq_zero (h : analyticGenus X = 0) :
     F.ramificationDegree_eq_zero_of_degree_eq_one hF]
   norm_num
 
-/-- **Analytic genus zero gives topological genus zero.** A compact connected Riemann surface with
-finite-dimensional `H¹(X, 𝒪)` and analytic genus `0` has topological genus `0`. -/
+/-- **Analytic genus zero gives topological genus zero.** A compact connected Riemann surface
+with analytic genus `0` has topological genus `0`. -/
 theorem genus_eq_zero_of_analyticGenus_eq_zero (h : analyticGenus X = 0) : genus X = 0 :=
   genus_eq_of_eulerChar_eq (by rw [eulerChar_eq_two_of_analyticGenus_eq_zero h]; norm_num)
 
