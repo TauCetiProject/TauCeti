@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Polynomial.Basic
 public import TauCeti.AlgebraicGeometry.Blowup.Modification
-public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Point
+public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Stalk
 import Mathlib.RingTheory.MvPolynomial.Ideal
 import Mathlib.RingTheory.Polynomial.UniqueFactorization
 import TauCeti.RingTheory.Ideal.Height
@@ -22,9 +22,7 @@ and Noetherian, the blowup at the origin is a modification, and its centre lies 
 The ideal `(x, y)` is not an effective Cartier divisor on any affine open neighbourhood `U` of the
 origin: its stalk at the origin is the maximal ideal of the local ring `k[x, y]_(x, y)`, which has
 dimension two since `(x, y)` contains the two coprime elements `x` and `y`, while the stalks of an
-effective Cartier divisor are principal. By the characterization of the iso locus of a blowup
-through affine opens, this says the blowup is not an isomorphism over any neighbourhood of the
-origin.
+effective Cartier divisor are principal.
 -/
 
 public section
@@ -60,13 +58,42 @@ example : IsModification (originIdealSheaf k).blowupToBase :=
 example : (originIdealSheaf k).blowupToBase.centre ⊆ (originIdealSheaf k).support :=
   Scheme.IdealSheafData.centre_blowupToBase_subset
 
+private theorem X_image_univ : (X '' Set.univ : Set (MvPolynomial (Fin 2) k)) = {X 0, X 1} := by
+  ext p
+  simp [Fin.exists_fin_two, eq_comm]
+
 /-- The origin of the affine plane, the point of the prime `(x, y)`. -/
 noncomputable def origin : Spec (.of (MvPolynomial (Fin 2) k)) :=
-  ⟨Ideal.span {X 0, X 1}, by
-    have h : (X '' Set.univ : Set (MvPolynomial (Fin 2) k)) = {X 0, X 1} := by
-      ext p
-      simp [Fin.exists_fin_two, eq_comm]
-    exact h ▸ span_X_image_isPrime Set.univ⟩
+  ⟨Ideal.span {X 0, X 1}, X_image_univ k ▸ span_X_image_isPrime Set.univ⟩
+
+/-- The prime of the origin is `(x, y)`. -/
+@[simp]
+theorem origin_asIdeal : (origin k).asIdeal = Ideal.span {X 0, X 1} := (rfl)
+
+/-- The prime `(x, y)` of the origin is maximal: it is the kernel of the constant coefficient map
+`k[x, y] → k`. -/
+theorem isMaximal_origin_asIdeal : (origin k).asIdeal.IsMaximal := by
+  have h : (origin k).asIdeal = RingHom.ker (constantCoeff (σ := Fin 2) (R := k)) := by
+    ext p
+    rw [origin_asIdeal, ← X_image_univ k, mem_ideal_span_X_image, RingHom.mem_ker,
+      constantCoeff_eq, ← notMem_support_iff]
+    refine ⟨fun h h0 ↦ ?_, fun h m hm ↦ ?_⟩
+    · obtain ⟨i, -, hi⟩ := h 0 h0
+      exact hi rfl
+    · simpa using DFunLike.ne_iff.mp (ne_of_mem_of_not_mem hm h)
+  exact h ▸ RingHom.ker_isMaximal_of_surjective _ fun a ↦ ⟨C a, constantCoeff_C _ a⟩
+
+/-- The support of the ideal sheaf of `(x, y)` is the origin. -/
+theorem mem_support_originIdealSheaf_iff (x : Spec (.of (MvPolynomial (Fin 2) k))) :
+    x ∈ (originIdealSheaf k).support ↔ x = origin k := by
+  rw [← SetLike.mem_coe]
+  simp only [originIdealSheaf, Scheme.IdealSheafData.coe_support_ofIdealTop, Spec_zeroLocus]
+  refine (PrimeSpectrum.mem_zeroLocus x _).trans ?_
+  rw [← Ideal.coe_comap, Ideal.comap_map_of_bijective (Scheme.ΓSpecIso _).inv.hom
+    (CategoryTheory.ConcreteCategory.bijective_of_isIso _), SetLike.coe_subset_coe,
+    ← origin_asIdeal]
+  exact ⟨fun h ↦ PrimeSpectrum.ext
+    ((isMaximal_origin_asIdeal k).eq_of_le x.isPrime.ne_top h).symm, fun h ↦ h ▸ le_rfl⟩
 
 /-- The local ring of the plane at the origin has dimension at least two: the prime `(x, y)`
 contains the coprime elements `x` and `y` of the factorial ring `k[x, y]`. -/
@@ -92,11 +119,10 @@ theorem stalkIdeal_originIdealSheaf_origin :
   simp only [originIdealSheaf, Scheme.IdealSheafData.ofIdealTop_ideal,
     CategoryTheory.homOfLE_refl, CategoryTheory.op_id, CategoryTheory.Functor.map_id,
     CommRingCat.hom_id, RingHom.id_comp, Ideal.map_map]
-  rw [← CommRingCat.hom_comp]
-  erw [← Spec.algebraMap_stalkIso_inv]
-  rw [CommRingCat.hom_comp, ← Ideal.map_map, CommRingCat.hom_ofHom]
-  change (Ideal.map _ (origin k).asIdeal).map _ = _
-  rw [Localization.AtPrime.map_eq_maximalIdeal]
+  -- The germ map of `Γ(𝔸²_k, ⊤)` factors through the localization `k[x, y]_(x, y)`.
+  rw [← CommRingCat.hom_comp, ← Spec.algebraMap_stalkIso_inv (origin k), CommRingCat.hom_comp,
+    ← Ideal.map_map, CommRingCat.hom_ofHom, ← origin_asIdeal,
+    Localization.AtPrime.map_eq_maximalIdeal]
   exact IsLocalRing.map_ringEquiv_maximalIdeal
     (Spec.stalkIso _ (origin k)).symm.commRingCatIsoToRingEquiv
 
