@@ -164,13 +164,13 @@ theorem IsNondegenerate.nondegeneratePart_eq_top (hM : IsNondegenerate A H M) :
 @[simp]
 theorem inr_smul_mem_nondegeneratePart (h : H) (m : M) :
     (h : Unitization A H) • m ∈ nondegeneratePart A H M :=
-  Submodule.mem_set_smul_of_mem_mem ⟨h, rfl⟩ trivial
+  Submodule.mem_set_smul_of_mem_mem ⟨h, rfl⟩ Submodule.mem_top
 
 /-- `H • M` is contained in a submodule `N` exactly when `N` contains every `h • m`. -/
 theorem nondegeneratePart_le_iff {N : Submodule (Unitization A H) M} :
     nondegeneratePart A H M ≤ N ↔ ∀ (h : H) (m : M), (h : Unitization A H) • m ∈ N := by
   rw [nondegeneratePart, Submodule.set_smul_le_iff]
-  exact ⟨fun hN h m ↦ hN ⟨h, rfl⟩ trivial, fun hN _ m ⟨h, hh⟩ _ ↦ hh ▸ hN h m⟩
+  exact ⟨fun hN h m ↦ hN ⟨h, rfl⟩ Submodule.mem_top, fun hN _ m ⟨h, hh⟩ _ ↦ hh ▸ hN h m⟩
 
 /-- The nondegenerate part vanishes exactly when `H` acts by zero. -/
 theorem nondegeneratePart_eq_bot_iff :

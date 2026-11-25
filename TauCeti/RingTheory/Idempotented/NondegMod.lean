@@ -91,7 +91,8 @@ theorem isNondegenerate_of_isColimit {J : Type*} [Category J]
   have hq : (ModuleCat.ofHom N.mkQ : c.pt ⟶ ModuleCat.of _ (c.pt ⧸ N)) = 0 := by
     refine hc.hom_ext fun j ↦ ?_
     ext x
-    have hx : x ∈ nondegeneratePart A H (F.obj j) := (hF j).nondegeneratePart_eq_top ▸ trivial
+    have hx : x ∈ nondegeneratePart A H (F.obj j) :=
+      (hF j).nondegeneratePart_eq_top ▸ Submodule.mem_top
     simpa [Submodule.Quotient.mk_eq_zero] using
       map_nondegeneratePart_le (c.ι.app j).hom (Submodule.mem_map_of_mem hx)
   refine isNondegenerate_iff_nondegeneratePart_eq_top.2 (eq_top_iff.2 fun m _ ↦ ?_)
@@ -167,9 +168,13 @@ def nondegeneratePartAdjunction :
         { toFun f := ObjectProperty.homMk (ModuleCat.ofHom (f.hom.codRestrict _ fun x ↦
             map_nondegeneratePart_le f.hom (Submodule.mem_map_of_mem
               (((nondegenerateModuleProperty_iff _).1 X.property).nondegeneratePart_eq_top ▸
-                trivial))))
+                Submodule.mem_top))))
           invFun g := ModuleCat.ofHom ((nondegeneratePart A H M).subtype ∘ₗ g.hom.hom)
-          left_inv _ := rfl
+          left_inv _ := by ext; simp [nondegeneratePartFunctor]
+          -- Corestricting `subtype ∘ₗ g` to `H • M` gives back `g` by eta for subtypes, linear maps
+          -- and the hom structures. `simp` cannot see it: the codomain of `g` is
+          -- `(nondegeneratePartFunctor A H).obj M`, which is `H • M` only after unfolding the
+          -- functor, so `LinearMap.codRestrict_apply` and `Subtype.coe_eta` do not match.
           right_inv _ := rfl } }
 
 /-- The hom-equivalence of `TauCeti.nondegeneratePartAdjunction` corestricts a homomorphism
@@ -178,6 +183,10 @@ theorem coe_nondegeneratePartAdjunction_homEquiv_apply (X : NondegMod.{v} A H)
     (M : ModuleCat.{v} (Unitization A H)) (f : X.obj ⟶ M) (x : X.obj) :
     Subtype.val (((nondegeneratePartAdjunction.{v} A H).homEquiv X M f).hom.hom x) = f.hom x := by
   rw [nondegeneratePartAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
+  -- This is the `toFun` field followed by `LinearMap.codRestrict_apply`. It is intended to hold
+  -- by `rfl`: `simp` cannot apply `ObjectProperty.homMk_hom` or `ConcreteCategory.hom_ofHom`
+  -- here, since the target object `(nondegeneratePartFunctor A H).obj M` is `H • M` only after
+  -- unfolding the functor.
   rfl
 
 /-- The inverse hom-equivalence of `TauCeti.nondegeneratePartAdjunction` composes a homomorphism
@@ -187,6 +196,7 @@ theorem nondegeneratePartAdjunction_homEquiv_symm_apply (X : NondegMod.{v} A H)
     ((nondegeneratePartAdjunction.{v} A H).homEquiv X M).symm g =
       ModuleCat.ofHom ((nondegeneratePart A H M).subtype ∘ₗ g.hom.hom) := by
   rw [nondegeneratePartAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
+  -- This is the `invFun` field, so it holds by `rfl`.
   rfl
 
 /-- The unit of `TauCeti.nondegeneratePartAdjunction` at a nondegenerate module `X` sends `x` to
@@ -201,8 +211,9 @@ theorem coe_nondegeneratePartAdjunction_unit_app (X : NondegMod.{v} A H) (x : X.
 theorem nondegeneratePartAdjunction_counit_app (M : ModuleCat.{v} (Unitization A H)) :
     (nondegeneratePartAdjunction.{v} A H).counit.app M =
       ModuleCat.ofHom (nondegeneratePart A H M).subtype := by
-  rw [← Adjunction.homEquiv_symm_id, nondegeneratePartAdjunction_homEquiv_symm_apply]
-  rfl
+  rw [← Adjunction.homEquiv_symm_id, nondegeneratePartAdjunction_homEquiv_symm_apply,
+    ObjectProperty.FullSubcategory.id_hom, ModuleCat.hom_id]
+  exact congrArg ModuleCat.ofHom (LinearMap.comp_id _)
 
 instance : Coreflective (nondegenerateModuleProperty.{v} A H).ι where
   R := nondegeneratePartFunctor.{v} A H
