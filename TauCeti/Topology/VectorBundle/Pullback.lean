@@ -85,21 +85,21 @@ end Bundle.Pullback
 namespace Bundle.Pullback
 
 variable {B B' : Type*} [TopologicalSpace B] [TopologicalSpace B'] (F : Type*)
-  [NormedAddCommGroup F] (E : B → Type*) [∀ b, NormedAddCommGroup (E b)]
-  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E]
+  (E : B → Type*) [∀ b, NormedAddCommGroup (E b)] [TopologicalSpace (TotalSpace F E)]
   {K : Type*} [FunLike K B' B] [ContinuousMapClass K B' B]
 
 /-- The pullback of a fibre bundle `E` with normed fibres along `f`, with the fibres `E (f y)`
 carrying the topology of their norms (Mathlib's `FiberBundle.pullback`, restated for these fibre
 topologies). -/
-noncomputable abbrev normedFiberBundle (f : K) :
+noncomputable abbrev normedFiberBundle [TopologicalSpace F] [FiberBundle F E] (f : K) :
     @FiberBundle B' F _ _ ((f : B' → B) *ᵖ E) _ fun _ ↦ UniformSpace.toTopologicalSpace :=
   FiberBundle.pullback (F := F) (E := E) f
 
 /-- The pullback of a vector bundle `E` with normed fibres along `f`, with the fibres `E (f y)`
 carrying the topology of their norms (Mathlib's `VectorBundle.pullback`, restated for these fibre
 topologies). -/
-abbrev normedVectorBundle (𝕜 : Type*) [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 F]
+abbrev normedVectorBundle [NormedAddCommGroup F] [FiberBundle F E] (𝕜 : Type*)
+    [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 F]
     [∀ b, NormedSpace 𝕜 (E b)] [VectorBundle 𝕜 F E] (f : K) :
     @VectorBundle 𝕜 B' F ((f : B' → B) *ᵖ E) _ _ _ _ _ _ _ _ (normedFiberBundle F E f) :=
   VectorBundle.pullback 𝕜 (F := F) (E := E) f

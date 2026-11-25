@@ -31,7 +31,7 @@ The construction has two steps.
    `TauCeti.realCliffordIsometryEquivEuclidean`) and `ρ` the rotation homomorphism of `Spinᶜ(n)`,
    take `ρ' = ρ ∘ σ`, where `σ : Spinᶜ(n) → Spinᶜ(n)`, `[g, z] ↦ [f⁻¹ g, z]`, is the automorphism
    induced by the quadratic isometry `f⁻¹` (`QuadraticMap.Isometry.spinCGroupMap`): its rotation
-   is `f⁻¹ π(g) f`.
+   is `f⁻¹ π(g) f`. This gives the lift `TauCeti.SpinCStructure.precompIsometryLift`.
 2. **Extending along `σ`.** The resulting lift along `ρ ∘ σ` is extended along `σ` to a lift
    along `ρ` (`TauCeti.OrthonormalFrameLift.extendSpinC`), whose principal bundle is
    `P ×_σ Spinᶜ(n)`.
@@ -113,6 +113,19 @@ theorem toSpecialOrthogonal_precompIsometryHom_apply
     QuadraticMap.IsometryEquiv.symm_apply_apply] at h
   rw [h, QuadraticMap.IsometryEquiv.apply_symm_apply]
 
+/-- The lift along `ρ ∘ σ`, for the rotation homomorphism `ρ` of `Spinᶜ(n)` and
+`σ = TauCeti.SpinCStructure.precompIsometryHom f`, with the principal bundle of a `Spinᶜ`
+structure `s` and its frames precomposed with `f` (`TauCeti.OrthonormalFrameLift.precomp`); its
+extension along `σ` is `s.precompIsometry f`. -/
+noncomputable abbrev precompIsometryLift
+    (f : (realCliffordForm n 0).IsometryEquiv (realCliffordForm n 0))
+    (s : SpinCStructure F V n) :
+    OrthonormalFrameLift F V n (spinCGroup (realCliffordForm n 0) hQ)
+      (((QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)).subtype.comp
+        (spinCGroup.toSpecialOrthogonal (realCliffordForm n 0) _)).comp (precompIsometryHom f)) :=
+  s.precomp (realCliffordIsometryEquivEuclidean f) _ fun g v ↦ by
+    simpa using toSpecialOrthogonal_precompIsometryHom_apply f g v
+
 /-- The **precomposition of a `Spinᶜ` structure** `s` with an isometry `f` of `ℝⁿ`: the `Spinᶜ`
 structure whose principal bundle is `P ×_σ Spinᶜ(n)`, for the automorphism
 `σ : [g, z] ↦ [f⁻¹ g, z]` of `Spinᶜ(n)` (`TauCeti.SpinCStructure.precompIsometryHom`), and in
@@ -124,12 +137,8 @@ which the frame of `[p, 1]` is the frame of `p` precomposed with `f`
 noncomputable def precompIsometry
     (f : (realCliffordForm n 0).IsometryEquiv (realCliffordForm n 0))
     (s : SpinCStructure F V n) : SpinCStructure F V n :=
-  (s.precomp (realCliffordIsometryEquivEuclidean f)
-      (((QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)).subtype.comp
-        (spinCGroup.toSpecialOrthogonal (realCliffordForm n 0) _)).comp (precompIsometryHom f))
-      fun g v ↦ by
-        simpa using toSpecialOrthogonal_precompIsometryHom_apply f g v).extendSpinC
-    (precompIsometryHom f) (continuous_precompIsometryHom f) rfl
+  (s.precompIsometryLift f).extendSpinC (precompIsometryHom f) (continuous_precompIsometryHom f)
+    rfl
 
 /-- **The frame of `[p, 1]`** in the precomposition of a `Spinᶜ` structure with `f` is the frame
 of `p` precomposed with `f`. -/
@@ -142,7 +151,8 @@ theorem toFrame_precompIsometry_inl
       ⟨(s.toFrame ⟨x, p⟩).proj, (realCliffordIsometryEquivEuclidean f).trans
         (s.toFrame ⟨x, p⟩).frame⟩ := by
   unfold precompIsometry
-  exact (toFrame_extendSpinC_inl (s.precomp _ _ _) _ _ _ x p).trans (toFrame_precomp _ _ _ _ _)
+  exact (toFrame_extendSpinC_inl (s.precompIsometryLift f) _ _ _ x p).trans
+    (toFrame_precomp _ _ _ _ _)
 
 /-- The precomposition of a `Spinᶜ` structure with `f` transports a model orientation `o` of
 `EuclideanSpace ℝ (Fin n)`, along the frame of `[p, 1]`, to the orientation that the frame of

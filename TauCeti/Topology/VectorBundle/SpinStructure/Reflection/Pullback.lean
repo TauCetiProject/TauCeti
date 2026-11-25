@@ -17,7 +17,8 @@ pulling back along `g`: `(g^* s).precompIsometry f ≃ g^* (s.precompIsometry f)
 (`TauCeti.SpinCStructure.precompIsometryPullbackEquiv`). Both principal bundles are, over `y ∈ Y`,
 the extension `P_{g y} ×_σ Spinᶜ(n)`; the equivalence is the identity `[p, h] ↦ [p, h]`,
 obtained from the universal property of the extension
-(`TauCeti.OrthonormalFrameLift.extendEquivOfEquivariant`) applied to `p ↦ [p, 1]`. In particular
+(`TauCeti.OrthonormalFrameLift.extendSpinCEquivOfEquivariant`) applied to `p ↦ [p, 1]`, which
+preserves frames (`TauCeti.SpinCStructure.toFrame_pullback_precompIsometry_inl`). In particular
 orientation reversal commutes with pullback (`TauCeti.SpinCStructure.reversePullbackEquiv`).
 
 `TauCeti.SpinCStructure.precompIsometry` needs the pulled-back bundle `g *ᵖ V` to be a vector
@@ -35,6 +36,8 @@ pullback for the norm topologies (`Bundle.Pullback.normedFiberBundle`,
 
 ## Main results
 
+* `TauCeti.SpinCStructure.toFrame_pullback_precompIsometry_inl`: the frame of `[p, 1]` in
+  `g^* (s.precompIsometry f)` is the frame of `p` in `g^* s` precomposed with `f`.
 * `TauCeti.SpinCStructure.precompIsometryPullbackEquiv_toEquiv_inl`,
   `TauCeti.SpinCStructure.reversePullbackEquiv_toEquiv_inl`: the equivalences send `[p, 1]` to
   `[p, 1]`.
@@ -63,6 +66,28 @@ variable {X : Type*} [TopologicalSpace X] {F : Type*} [NormedAddCommGroup F] [No
 
 attribute [local instance] Pullback.normedFiberBundle Pullback.normedVectorBundle
 
+/-- **The frame of `[p, 1]`** in the pullback of the precomposition of a `Spinᶜ` structure `s`
+with `f` is the frame of `p` in the pullback of `s`, precomposed with `f`. -/
+theorem toFrame_pullback_precompIsometry_inl (g : C(Y, X))
+    (f : (realCliffordForm n 0).IsometryEquiv (realCliffordForm n 0))
+    (s : SpinCStructure F V n) (y : Y) (p : s.P (g y)) :
+    ((s.precompIsometry f).pullback g).toFrame
+        ⟨y, Extend.inl (precompIsometryHom f) (continuous_precompIsometryHom f) p⟩ =
+      (precompIsometryLift f (s.pullback g)).toFrame ⟨y, p⟩ := by
+  obtain ⟨φ, hφ⟩ := s.exists_toFrame_eq_mk ⟨g y, p⟩
+  have hs : (s.pullback g).toFrame ⟨y, p⟩ = ⟨y, φ⟩ := s.toFrame_pullback_mk g y p hφ
+  have ht : (s.precompIsometry f).toFrame ⟨g y, Extend.inl (precompIsometryHom f)
+      (continuous_precompIsometryHom f) p⟩ =
+        ⟨g y, (realCliffordIsometryEquivEuclidean f).trans φ⟩ :=
+    (toFrame_precompIsometry_inl f s (g y) p).trans (by rw [hφ])
+  rw [(s.precompIsometry f).toFrame_pullback_mk g y _ ht]
+  -- `rw [hs]` does not see `hs` in the frame given by `toFrame_precomp`, whose fibre
+  -- instances are unfolded differently, so `hs` is transported along the precomposition.
+  exact ((toFrame_precomp _ _ _ _ _).trans (congrArg
+    (fun q : OrthonormalFrameBundle ℝ F ((g : Y → X) *ᵖ V) (EuclideanSpace ℝ (Fin n)) ↦
+      (⟨q.proj, (realCliffordIsometryEquivEuclidean f).trans q.frame⟩ :
+        OrthonormalFrameBundle ℝ F ((g : Y → X) *ᵖ V) (EuclideanSpace ℝ (Fin n)))) hs)).symm
+
 /-- **Precomposition commutes with pullback**: for a continuous map `g : Y → X`,
 `(g^* s).precompIsometry f ≃ g^* (s.precompIsometry f)`. Over `y`, both principal bundles are
 `P_{g y} ×_σ Spinᶜ(n)`, and the equivalence is `[p, h] ↦ [p, h]`. -/
@@ -70,35 +95,13 @@ def precompIsometryPullbackEquiv (g : C(Y, X))
     (f : (realCliffordForm n 0).IsometryEquiv (realCliffordForm n 0))
     (s : SpinCStructure F V n) :
     (SpinCStructure.precompIsometry f (s.pullback g)).Equiv ((s.precompIsometry f).pullback g) :=
-  OrthonormalFrameLift.extendEquivOfEquivariant
-    ((s.pullback g).precomp (realCliffordIsometryEquivEuclidean f) _
-      fun h v ↦ by simpa using toSpecialOrthogonal_precompIsometryHom_apply f h v)
-    (precompIsometryHom f) (continuous_precompIsometryHom f) rfl
-    (fun h ↦ by
-      exact TauCeti.CliffordAlgebra.norm_toLp_specialOrthogonalGroup_realCliffordForm_apply n
-        (spinCGroup.toSpecialOrthogonal _ _ h))
-    (fun v ↦ by
-      exact (TauCeti.CliffordAlgebra.continuous_specialOrthogonalGroup_realCliffordForm_apply n
-        v).comp (spinCGroup.continuous_toSpecialOrthogonal_pi _ _))
-    ((s.precompIsometry f).pullback g)
+  (precompIsometryLift f (s.pullback g)).extendSpinCEquivOfEquivariant (precompIsometryHom f)
+    (continuous_precompIsometryHom f) rfl ((s.precompIsometry f).pullback g)
     (fun _ (p : s.P _) ↦ Extend.inl (precompIsometryHom f) (continuous_precompIsometryHom f) p)
     (fun _ (p : s.P _) h ↦ Extend.inl_smul _ _ p h)
     (Pullback.continuous_fiberwise
       (Extend.continuous_inl s.P (precompIsometryHom f) (continuous_precompIsometryHom f)) g)
-    (fun y (p : s.P (g y)) ↦ by
-      obtain ⟨φ, hφ⟩ := s.exists_toFrame_eq_mk ⟨g y, p⟩
-      have hs : (s.pullback g).toFrame ⟨y, p⟩ = ⟨y, φ⟩ := s.toFrame_pullback_mk g y p hφ
-      have ht : (s.precompIsometry f).toFrame ⟨g y, Extend.inl (precompIsometryHom f)
-          (continuous_precompIsometryHom f) p⟩ =
-            ⟨g y, (realCliffordIsometryEquivEuclidean f).trans φ⟩ :=
-        (toFrame_precompIsometry_inl f s (g y) p).trans (by rw [hφ])
-      rw [(s.precompIsometry f).toFrame_pullback_mk g y _ ht]
-      -- `rw [hs]` does not see `hs` in the frame given by `toFrame_precomp`, whose fibre
-      -- instances are unfolded differently, so `hs` is transported along the precomposition.
-      exact ((toFrame_precomp _ _ _ _ _).trans (congrArg
-        (fun q : OrthonormalFrameBundle ℝ F ((g : Y → X) *ᵖ V) (EuclideanSpace ℝ (Fin n)) ↦
-          (⟨q.proj, (realCliffordIsometryEquivEuclidean f).trans q.frame⟩ :
-            OrthonormalFrameBundle ℝ F ((g : Y → X) *ᵖ V) (EuclideanSpace ℝ (Fin n)))) hs)).symm)
+    (toFrame_pullback_precompIsometry_inl g f s)
 
 /-- The equivalence `(g^* s).precompIsometry f ≃ g^* (s.precompIsometry f)` sends `[p, 1]` to
 `[p, 1]`. -/
@@ -110,7 +113,7 @@ theorem precompIsometryPullbackEquiv_toEquiv_inl (g : C(Y, X))
           (continuous_precompIsometryHom f) p) =
       Extend.inl (P := s.P) (precompIsometryHom f) (continuous_precompIsometryHom f) p := by
   unfold precompIsometryPullbackEquiv
-  apply extendEquivOfEquivariant_toEquiv_inl
+  apply extendSpinCEquivOfEquivariant_toEquiv_inl
 
 /-- **Orientation reversal commutes with pullback**: for a continuous map `g : Y → X`,
 `(g^* s).reverse ≃ g^* s.reverse`. -/
