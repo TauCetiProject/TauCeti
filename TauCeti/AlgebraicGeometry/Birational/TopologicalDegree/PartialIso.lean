@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Birational.TopologicalDegree.Birationality
 public import TauCeti.AlgebraicGeometry.Birational.FunctionField.Determination
-public import Mathlib.AlgebraicGeometry.Birational.Birational
+public import TauCeti.AlgebraicGeometry.Birational.PartialIso
 
 /-!
 # Partial isomorphisms and rational maps of topological degree one
@@ -15,7 +15,8 @@ public import Mathlib.AlgebraicGeometry.Birational.Birational
 A partial isomorphism `φ` of integral schemes, an isomorphism between dense opens of `X` and `Y`
 (Mathlib's `AlgebraicGeometry.Scheme.PartialIso`), has rational map `φ.toRationalMap` with inverse
 `φ.symm.toRationalMap` on both sides
-(`AlgebraicGeometry.Scheme.PartialIso.toRationalMap_comp_symm`). So the rational map of a partial
+(`AlgebraicGeometry.Scheme.PartialIso.toRationalMap_comp_symm`, in
+`TauCeti.AlgebraicGeometry.Birational.PartialIso`). So the rational map of a partial
 isomorphism has topological degree `1`, and its pullback of rational functions is an isomorphism:
 a birational map has topological degree `1`.
 
@@ -28,9 +29,6 @@ inverse is the rational map whose pullback is `(f^*)^{-1}`, which exists because
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.PartialIso.toRationalMap_comp_symm` and
-  `AlgebraicGeometry.Scheme.PartialIso.toRationalMap_symm_comp`: `φ⁻¹ ∘ φ = id` and
-  `φ ∘ φ⁻¹ = id` as rational maps.
 * `AlgebraicGeometry.Scheme.PartialIso.topologicalDegree_toRationalMap`: the rational map of a
   partial isomorphism has topological degree `1`.
 * `AlgebraicGeometry.Scheme.RationalMap.topologicalDegree_eq_one_iff_exists_comp_eq_id`: a
@@ -53,59 +51,16 @@ namespace AlgebraicGeometry.Scheme
 
 variable {X Y : Scheme.{u}}
 
-/-- The partial map of a partial isomorphism is dominant: its image is a dense open. -/
-instance PartialIso.isDominant_toPartialMap_hom (φ : X.PartialIso Y) :
-    IsDominant φ.toPartialMap.hom := by
-  have := Opens.isDominant_ι φ.dense_target
-  exact inferInstanceAs (IsDominant (φ.iso.hom ≫ φ.target.ι))
-
-/-- The partial map `e.hom` on `U`, followed by the partial map `e.inv` on `V`, for an isomorphism
-`e` of dense opens `U` of `X` and `V` of `Y`, is equivalent to the identity of `X`. -/
-theorem PartialMap.mk_comp_mk_equiv [IsIntegral X] [IsIntegral Y] (U : X.Opens)
-    (hU : Dense (U : Set X)) (V : Y.Opens) (hV : Dense (V : Set Y)) (e : U.toScheme ≅ V.toScheme)
-    [IsDominant (e.hom ≫ V.ι)] :
-    ((⟨U, hU, e.hom ≫ V.ι⟩ : X.PartialMap Y).comp ⟨V, hV, e.inv ≫ U.ι⟩).equiv
-      (PartialMap.id X) := by
-  have key : (e.hom ≫ V.ι) ∣_ V ≫ e.inv = ((e.hom ≫ V.ι) ⁻¹ᵁ V).ι := by
-    rw [← cancel_mono (e.hom ≫ V.ι), Category.assoc, Iso.inv_hom_id_assoc, morphismRestrict_ι]
-  refine ⟨_, (PartialMap.comp _ _).dense_domain, le_rfl,
-    le_top.trans_eq (Hom.toPartialMap_domain _).symm, ?_⟩
-  rw [PartialMap.restrict_hom, PartialMap.restrict_hom, homOfLE_rfl, Category.id_comp,
-    PartialMap.comp_hom]
-  dsimp only
-  rw [reassoc_of% key, Hom.isoImage_inv_ι, Hom.toPartialMap_hom, Category.comp_id, topIso_hom]
-  exact (X.homOfLE_ι _).symm
-
-/-- The partial map of a partial isomorphism followed by that of its inverse is equivalent to the
-identity. -/
-theorem PartialIso.toPartialMap_comp_symm_equiv [IsIntegral X] [IsIntegral Y]
-    (φ : X.PartialIso Y) :
-    (φ.toPartialMap.comp φ.symm.toPartialMap).equiv (PartialMap.id X) := by
-  have := Opens.isDominant_ι φ.dense_target
-  exact PartialMap.mk_comp_mk_equiv φ.source φ.dense_source φ.target φ.dense_target φ.iso
-
-/-- **A partial isomorphism is invertible as a rational map**: `φ⁻¹ ∘ φ = id`. -/
-theorem PartialIso.toRationalMap_comp_symm [IsIntegral X] [IsIntegral Y] (φ : X.PartialIso Y) :
-    φ.toRationalMap.comp φ.symm.toRationalMap = RationalMap.id X := by
-  rw [RationalMap.comp_def, PartialMap.toRationalMap_eq_iff]
-  refine PartialMap.equivalence_rel.trans (PartialMap.comp_equiv_of_equiv_left ?_ _)
-    φ.toPartialMap_comp_symm_equiv
-  exact PartialMap.toRationalMap_eq_iff.mp φ.toRationalMap.toRationalMap_representative
-
-/-- **A partial isomorphism is invertible as a rational map**: `φ ∘ φ⁻¹ = id`. -/
-theorem PartialIso.toRationalMap_symm_comp [IsIntegral X] [IsIntegral Y] (φ : X.PartialIso Y) :
-    φ.symm.toRationalMap.comp φ.toRationalMap = RationalMap.id Y :=
-  RationalMap.comp_eq_id_of_comp_eq_id _ _ φ.toRationalMap_comp_symm
-
 /-- **A birational map has topological degree one**: the rational map of a partial isomorphism
 of integral schemes has topological degree `1`. -/
+@[simp]
 theorem PartialIso.topologicalDegree_toRationalMap [IsIntegral X] [IsIntegral Y]
     (φ : X.PartialIso Y) : φ.toRationalMap.topologicalDegree = 1 :=
   (RationalMap.topologicalDegree_eq_one_of_comp_eq_id _ _ φ.toRationalMap_comp_symm).1
 
 /-- The pullback of rational functions along the rational map of a partial isomorphism of
 integral schemes is an isomorphism of function fields. -/
-theorem PartialIso.isIso_functionFieldMap_toRationalMap [IsIntegral X] [IsIntegral Y]
+instance PartialIso.isIso_functionFieldMap_toRationalMap [IsIntegral X] [IsIntegral Y]
     (φ : X.PartialIso Y) : IsIso φ.toRationalMap.functionFieldMap :=
   (RationalMap.topologicalDegree_eq_one_iff_isIso _).1 φ.topologicalDegree_toRationalMap
 
