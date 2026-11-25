@@ -33,18 +33,18 @@ example (p : ℕ) (x : TateModuleLevel p (AddAction.orbitRel.Quotient (LinearMap
 classes. -/
 example (ℓ r : ℕ)
     (x : TateModuleLevel ℓ (AddAction.orbitRel.Quotient (LinearMap.range f) E) (r + 1)) :
-    f.orbitRelQuotientTateLevel hf ℓ r
+    f.orbitRelQuotientTateModuleLevelδ hf ℓ r
         (tateModuleTransition ℓ (AddAction.orbitRel.Quotient (LinearMap.range f) E) r x) =
       factorPow (Ideal.span {(ℓ : ℤ)}) Λ r.le_succ
-        (f.orbitRelQuotientTateLevel hf ℓ (r + 1) x) :=
-  f.orbitRelQuotientTateLevel_transition hf ℓ r x
+        (f.orbitRelQuotientTateModuleLevelδ hf ℓ (r + 1) x) :=
+  f.orbitRelQuotientTateModuleLevelδ_transition hf ℓ r x
 
 /-- The `2`-adic Tate module of the circle `ℝ / ℤ` is the `2`-adic completion of `ℤ`. -/
 noncomputable example :
     TateModule 2
         (AddAction.orbitRel.Quotient (LinearMap.range (Int.castAddHom ℝ).toIntLinearMap) ℝ) ≃+
       AdicCompletion (Ideal.span {((2 : ℕ) : ℤ)}) ℤ :=
-  (Int.castAddHom ℝ).toIntLinearMap.tateModuleOrbitRelQuotientEquiv Int.cast_injective 2
+  (Int.castAddHom ℝ).toIntLinearMap.orbitRelQuotientTateModuleδEquiv Int.cast_injective 2
     ⟨fun a b h ↦ by simpa using h,
       fun v ↦ ⟨v / 2, by simp only [Nat.cast_ofNat, two_zsmul, add_halves]⟩⟩
 
