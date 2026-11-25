@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 public import TauCeti.NumberTheory.LSeries.Quadratic.Pair.Basic
 public import TauCeti.Analysis.Contour.Residue.Basic
-import TauCeti.NumberTheory.LSeries.CompletedRiemannZeta
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Meromorphic
 
 /-!
 # Regularity and poles of the four-factor Dirichlet L-function product
@@ -46,9 +46,6 @@ namespace DirichletCharacter
 variable {M N : ℕ} [NeZero M] [NeZero N]
 variable (χ : DirichletCharacter ℂ M) (ψ : DirichletCharacter ℂ N)
 
-private theorem LFunctionTrivChar₁_one_apply_one : LFunctionTrivChar₁ 1 1 = 1 := by
-  simp [LFunctionTrivChar₁]
-
 private theorem tendsto_LFunction_nhdsNE_one (hχ : χ ≠ 1) :
     Tendsto χ.LFunction (𝓝[≠] 1) (𝓝 (χ.LFunction 1)) :=
   (differentiable_LFunction hχ).continuous.continuousAt.tendsto.mono_left nhdsWithin_le_nhds
@@ -64,7 +61,7 @@ private theorem pair_simple_factorization :
         (LFunctionTrivChar₁ 1 s * χ.LFunction s * ψ.LFunction s * (χ.mul ψ).LFunction s) := by
   filter_upwards [self_mem_nhdsWithin] with s hs
   have hs1 : s ≠ 1 := hs
-  rw [LFunctionTrivChar₁, Function.update_of_ne hs1, LFunctionTrivChar, LFunction_modOne_eq]
+  rw [LFunctionTrivChar₁_one_apply_of_ne_one hs1]
   simp only [smul_eq_mul, zpow_neg_one]
   field_simp
 
@@ -75,8 +72,8 @@ private theorem pair_double_factorization (hχψ : χ.mul ψ = 1) :
           LFunctionTrivChar₁ (Nat.lcm M N) s) := by
   filter_upwards [self_mem_nhdsWithin] with s hs
   have hs1 : s ≠ 1 := hs
-  rw [hχψ, LFunctionTrivChar₁, Function.update_of_ne hs1, LFunctionTrivChar, LFunction_modOne_eq,
-    LFunctionTrivChar₁, Function.update_of_ne hs1]
+  rw [hχψ, LFunctionTrivChar₁_one_apply_of_ne_one hs1,
+    LFunctionTrivChar₁_apply_of_ne_one _ hs1]
   simp only [smul_eq_mul, zpow_neg, zpow_ofNat]
   field_simp
 

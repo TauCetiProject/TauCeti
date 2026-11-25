@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.PointTopology.Scheme.Charts
-public import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
+public import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
 
 /-!
 # Local compactness of scheme-valued points

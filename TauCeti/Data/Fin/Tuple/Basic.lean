@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Defs
 public import Mathlib.Data.Fin.Tuple.Basic
 import Mathlib.Algebra.NeZero
 import Mathlib.Data.Set.Image
 import Mathlib.Data.Set.Insert
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Insertions and appends in tuples
@@ -62,6 +64,9 @@ once.
   is deleting entry `j + 1` and then overwriting entry `j` by the contraction.
 * `Fin.update_removeNth_succ_eq_removeNth_castSucc`: deleting entry `j + 1` and then overwriting
   entry `j` by the deleted entry is deleting entry `j`.
+* `Fin.contractNth_castSucc_eq_removeNth_succ_of_apply_succ_eq_one`,
+  `Fin.contractNth_castSucc_eq_removeNth_castSucc_of_apply_castSucc_eq_one`: multiplying two
+  adjacent entries one of which is `1` deletes that entry.
 * `Fin.contractNth_castSucc_const`: contracting two adjacent entries of a constant tuple.
 * `Fin.contractNth_castSucc_insertNth_castSucc`: inserting an entry before entry `j` and
   contracting the two overwrites entry `j` by the contraction.
@@ -84,6 +89,8 @@ once.
 * `Fin.comp_succ_succAbove_comp_predAbove`: when adjacent entries at `p.castSucc` and `p.succ`
   agree, deleting `p.succ` via `p.succ.succAbove` and pulling back along `p.predAbove` recovers the
   tuple.
+* `Fin.insertNth_comp_succAbove_eq_comp_swap`: inserting `f i.castSucc` at `i.succ.succ` and
+  deleting `i.castSucc.castSucc` swaps the entries of `f` at `i.castSucc` and `i.succ`.
 -/
 
 public section
@@ -372,6 +379,20 @@ theorem update_removeNth_succ_eq_removeNth_castSucc {n : ℕ} (j : Fin (n + 1))
       succAbove_of_lt_succ _ _ (by simpa using hkj),
       succAbove_of_le_castSucc _ _ (by simpa using hkj.le)]
 
+/-- If entry `j + 1` is `1`, multiplying the entries `j` and `j + 1` is deleting entry `j + 1`. -/
+theorem contractNth_castSucc_eq_removeNth_succ_of_apply_succ_eq_one {M : Type*} [MulOneClass M]
+    {n : ℕ} {j : Fin (n + 1)} {a : Fin (n + 2) → M} (ha : a j.succ = 1) :
+    contractNth j.castSucc (· * ·) a = removeNth j.succ a := by
+  rw [contractNth_castSucc_eq_update_removeNth_succ, ha, mul_one, Function.update_eq_self_iff,
+    removeNth_apply, succAbove_succ_self]
+
+/-- If entry `j` is `1`, multiplying the entries `j` and `j + 1` is deleting entry `j`. -/
+theorem contractNth_castSucc_eq_removeNth_castSucc_of_apply_castSucc_eq_one {M : Type*}
+    [MulOneClass M] {n : ℕ} {j : Fin (n + 1)} {a : Fin (n + 2) → M} (ha : a j.castSucc = 1) :
+    contractNth j.castSucc (· * ·) a = removeNth j.castSucc a := by
+  rw [contractNth_castSucc_eq_update_removeNth_succ, ha, one_mul,
+    update_removeNth_succ_eq_removeNth_castSucc]
+
 /-- Inserting at a position other than the first keeps the first entry. -/
 @[simp]
 theorem insertNth_apply_zero_of_ne_zero {β : Type*} {n : ℕ} {p : Fin (n + 2)} (hp : p ≠ 0)
@@ -541,5 +562,28 @@ theorem comp_succ_succAbove_comp_predAbove {α : Type*} {n : ℕ} {f : Fin (n + 
   · subst hi
     simp [hf]
   · simp [Function.comp_apply, Fin.succ_succAbove_predAbove hi]
+
+/-- Inserting `f i.castSucc` at position `i.succ.succ` into a tuple `f : Fin (n + 2) → α` and then
+deleting position `i.castSucc.castSucc` swaps the entries at `i.castSucc` and `i.succ`. -/
+theorem insertNth_comp_succAbove_eq_comp_swap {n : ℕ} (i : Fin (n + 1)) (f : Fin (n + 2) → α) :
+    i.succ.succ.insertNth (α := fun _ ↦ α) (f i.castSucc) f ∘ i.castSucc.castSucc.succAbove =
+      f ∘ Equiv.swap i.castSucc i.succ := by
+  funext j
+  simp only [Function.comp_apply]
+  by_cases hj : j = i.succ
+  · subst hj
+    have h : i.castSucc.castSucc.succAbove i.succ = i.succ.succ :=
+      Fin.ext (by simp [val_succAbove])
+    rw [h, insertNth_apply_same, Equiv.swap_apply_right]
+  · have h : i.castSucc.castSucc.succAbove j =
+        i.succ.succ.succAbove (Equiv.swap i.castSucc i.succ j) := by
+      refine Fin.ext ?_
+      by_cases hj' : j = i.castSucc
+      · subst hj'
+        simp
+      · rw [Equiv.swap_apply_of_ne_of_ne hj' hj]
+        simp only [val_succAbove, Fin.ext_iff, val_castSucc, val_succ] at hj hj' ⊢
+        split_ifs <;> omega
+    rw [h, insertNth_apply_succAbove]
 
 end Fin

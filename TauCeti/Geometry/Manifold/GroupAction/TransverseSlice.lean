@@ -41,6 +41,8 @@ built: properness of the action makes the slice map injective after shrinking th
   of `𝔤 · σ s₀`.
 * `IsLocalDiffeomorphAt.eventually_forall_smul_slice`: a slice map which is a local
   diffeomorphism at `(1, s₀)` is one at `(g, s)` for all `g` and all `s` near `s₀`.
+* `TauCeti.surjective_mfderiv_smul_slice_of_surjective_one`: if the differential of a slice map
+  is onto at `(1, s₀)`, it is onto at `(g, s₀)` for every `g`.
 * `IsLocalDiffeomorphAt.exists_isOpen_smul_slice`: for a proper action at a point with trivial
   stabilizer, a slice map which is a `C^n` local diffeomorphism at `(1, s₀)` is injective and a
   `C^n` local diffeomorphism on `G × U` for some open neighbourhood `U` of `s₀`.
@@ -82,17 +84,23 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {S : Type*} [TopologicalSpace S] [ChartedSpace K S]
   {σ : S → M} {s₀ : S}
 
+/-- **Slice maps are differentiable.** If `σ` is differentiable at `s₀`, then the slice map
+`(h, s) ↦ h • σ s` is differentiable at `(g, s₀)` for every `g`. -/
+theorem mdifferentiableAt_smul_slice [ContMDiffSMul I I' 1 G M]
+    (hσ : MDifferentiableAt J I' σ s₀) (g : G) :
+    MDifferentiableAt (I.prod J) I' (fun p : G × S ↦ p.1 • σ p.2) (g, s₀) :=
+  ((ContMDiffSMul.contMDiff_smul (I := I) (I' := I') (n := 1)).mdifferentiableAt
+    one_ne_zero).comp _ (mdifferentiableAt_fst.prodMk (hσ.comp _ mdifferentiableAt_snd))
+
 /-- **The differential of a slice map at the identity.** At `(1, s₀)`, the differential of
 `(g, s) ↦ g • σ s` sends `(ξ, v)` to `ξ_M(σ s₀) + dσ v`. -/
 theorem mfderiv_smul_slice_apply [ContMDiffSMul I I' 1 G M] (hσ : MDifferentiableAt J I' σ s₀)
     (ξ : GroupLieAlgebra I G) (v : TangentSpace J s₀) :
     mfderiv (I.prod J) I' (fun p : G × S ↦ p.1 • σ p.2) (1, s₀) (ξ, v) =
       fundamentalVectorField I' ξ (σ s₀) + mfderiv J I' σ s₀ v := by
-  have hf : MDifferentiableAt (I.prod J) I' (fun p : G × S ↦ p.1 • σ p.2) (1, s₀) :=
-    ((ContMDiffSMul.contMDiff_smul (I := I) (I' := I') (n := 1)).mdifferentiableAt
-      one_ne_zero).comp _ (mdifferentiableAt_fst.prodMk (hσ.comp _ mdifferentiableAt_snd))
   rw [fundamentalVectorField_apply]
-  refine (mfderiv_prod_eq_add_apply (v := ((ξ, v) : E × F)) hf).trans ?_
+  refine (mfderiv_prod_eq_add_apply (v := ((ξ, v) : E × F))
+    (mdifferentiableAt_smul_slice hσ 1)).trans ?_
   -- `simp only [one_smul]` cannot rewrite under `mfderiv`, whose codomain `TangentSpace I' (f s₀)`
   -- depends on the function `f`, so the identity action is rewritten as a function equality.
   have hone : (fun z : S ↦ (1 : G) • σ z) = σ := funext fun z ↦ one_smul G (σ z)
@@ -120,6 +128,33 @@ theorem _root_.IsLocalDiffeomorphAt.eventually_forall_smul_slice {n : ℕ∞ω} 
       Diffeomorph.smul I I' n g (M := M) ∘ fun p : G × S ↦ p.1 • σ p.2 :=
     funext fun p ↦ by simp [T, mul_smul]
   simpa [T] using hs.of_comp_diffeomorph_eq T (Diffeomorph.smul I I' n g) le_rfl hT
+
+/-- **The differential of a slice map is onto along whole orbits.** For a slice `σ`
+differentiable at `s₀`, if the differential of `(h, s) ↦ h • σ s` at `(1, s₀)` is onto, then so is
+its differential at `(g, s₀)` for every `g`. -/
+theorem surjective_mfderiv_smul_slice_of_surjective_one [LieGroup I 1 G]
+    [ContMDiffSMul I I' 1 G M] (hσ : MDifferentiableAt J I' σ s₀)
+    (hsurj : Surjective (mfderiv (I.prod J) I' (fun p : G × S ↦ p.1 • σ p.2) (1, s₀))) (g : G) :
+    Surjective (mfderiv (I.prod J) I' (fun p : G × S ↦ p.1 • σ p.2) (g, s₀)) := by
+  set f : G × S → M := fun p ↦ p.1 • σ p.2
+  have hf (h : G) : MDifferentiableAt (I.prod J) I' f (h, s₀) := mdifferentiableAt_smul_slice hσ h
+  -- Left translation `T` by `g` on the `G` factor intertwines the slice map `f` with the
+  -- diffeomorphism `g • ·` of `M`, whose differential is invertible.
+  set T : G × S → G × S := fun p ↦ (g * p.1, p.2)
+  have hT : ContMDiff (I.prod J) (I.prod J) 1 T :=
+    (contMDiff_const.mul contMDiff_fst).prodMk contMDiff_snd
+  have hT1 : T (1, s₀) = (g, s₀) := by simp [T]
+  have hcomm : f ∘ T = Diffeomorph.smul I I' 1 g ∘ f :=
+    funext fun p ↦ by simp only [Function.comp_apply, f, T, Diffeomorph.smul_apply, mul_smul]
+  have h₁ := mfderiv_comp (1, s₀) (hT1 ▸ hf g) (hT.mdifferentiableAt one_ne_zero)
+  have h₂ := mfderiv_comp (1, s₀)
+    ((Diffeomorph.smul I I' 1 g).contMDiff.mdifferentiableAt one_ne_zero) (hf 1)
+  rw [hcomm, h₂, hT1] at h₁
+  have hs : Surjective ((mfderiv I' I' (Diffeomorph.smul I I' 1 g) (f (1, s₀))).comp
+      (mfderiv (I.prod J) I' f (1, s₀))) :=
+    ((Diffeomorph.smul I I' 1 g).isInvertible_mfderiv one_ne_zero).surjective.comp hsurj
+  rw [h₁] at hs
+  exact Surjective.of_comp hs
 
 /-- **Shrinking a transverse slice of a proper action.** If the slice map `(g, s) ↦ g • σ s` is a
 `C^n` local diffeomorphism at `(1, s₀)` and `σ s₀` has trivial stabilizer under a proper action of
