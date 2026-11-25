@@ -272,8 +272,6 @@ theorem herbrandQuotient_ofMulAction_sigma_of_isPretransitive {G ι : Type} {X :
     [∀ i, IsPretransitive G (X i)] (x : ∀ i, X i) :
     herbrandQuotient (Rep.ofMulAction ℤ G (Σ i, X i)) =
       ∏ i, (Nat.card (stabilizer G (x i)) : ℚ) := by
-  let : ∀ i, Subsingleton (orbitRel.Quotient G (X i)) :=
-    fun i ↦ (pretransitive_iff_subsingleton_quotient G (X i)).1 inferInstance
   let : ∀ i, Fintype (orbitRel.Quotient G (X i)) :=
     fun i ↦ Fintype.ofSubsingleton (Quotient.mk'' (x i))
   rw [herbrandQuotient_ofMulAction_sigma]

@@ -201,10 +201,11 @@ theorem coeff_toIntertwiningMap_apply (h : permutationHeckeModule G S A) (f : Mo
 theorem toIntertwiningMap_single (h : permutationHeckeModule G S A) (s : S) (c : A) :
     toIntertwiningMap G S A h (MonoidAlgebra.single s c) =
       (column h s).sum fun t a ↦ MonoidAlgebra.single t (c * a) := by
+  classical
   apply MonoidAlgebra.coeff_injective
-  conv_lhs => rw [coeff_toIntertwiningMap_apply, MonoidAlgebra.coeff_single, toEnd_single_eq,
-    ← (column h s).sum_single, Finsupp.smul_sum]
-  simp [Finsupp.sum, MonoidAlgebra.coeff_sum]
+  ext t
+  simp +contextual [toEnd_single_eq, Finsupp.sum, MonoidAlgebra.coeff_sum,
+    Finsupp.finsetSum_apply, Finsupp.single_apply]
 
 variable (G S A) in
 /-- An element of `Fun_G(S × S, A)` is determined by its action on `A[S]`. -/
