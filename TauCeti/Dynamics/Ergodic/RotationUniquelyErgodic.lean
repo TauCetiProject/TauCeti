@@ -14,8 +14,8 @@ import Mathlib.Topology.Metrizable.Basic
 /-!
 # Rotations with dense powers are uniquely ergodic
 
-Let `G` be a compact metrizable abelian topological group and `a : G` an element whose integer
-multiples are dense. A finite Borel measure invariant under the rotation `x ↦ a + x` is invariant
+Let `G` be a compact metrizable additive topological group, not necessarily abelian, and `a : G`
+an element whose integer multiples are dense. A finite Borel measure invariant under the rotation `x ↦ a + x` is invariant
 under every translation: the translations preserving it form a closed subgroup (closed because
 `g ↦ ∫ x, f (g + x) ∂ν` is continuous for bounded continuous `f`, and such integrals determine
 finite measures on metrizable spaces), and this subgroup contains the dense set of multiples of
@@ -27,7 +27,7 @@ finite measures on metrizable spaces), and this subgroup contains the dense set 
   closed set.
 * `TauCeti.isAddLeftInvariant_of_map_add_left_eq`: a finite measure invariant under a rotation
   with dense multiples is invariant under all translations.
-* `TauCeti.uniquelyErgodic_add_left`: a rotation of a compact metrizable abelian group with dense
+* `TauCeti.uniquelyErgodic_add_left`: a rotation of a compact metrizable group with dense
   multiples is uniquely ergodic.
 -/
 
@@ -38,10 +38,10 @@ open scoped BoundedContinuousFunction ENNReal
 
 namespace TauCeti
 
-variable {G : Type*} [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
+variable {G : Type*} [AddGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
   [MeasurableSpace G] [BorelSpace G]
 
-/-- The translations preserving a finite measure on a pseudometrizable abelian group form a
+/-- The translations preserving a finite measure on a pseudometrizable additive group form a
 closed set. -/
 theorem isClosed_setOf_map_add_left_eq [PseudoMetrizableSpace G] (ν : Measure G)
     [IsFiniteMeasure ν] : IsClosed {g : G | ν.map (g + ·) = ν} := by
@@ -80,7 +80,7 @@ theorem map_add_left_eq_of_neg {ν : Measure G} {g : G} (hg : ν.map (g + ·) = 
   rw [map_map (continuous_const_add _).measurable (continuous_const_add g).measurable]
   simp [Function.comp_def]
 
-/-- **Rotations with dense multiples.** On a pseudometrizable abelian group, a finite measure
+/-- **Rotations with dense multiples.** On a pseudometrizable additive group, a finite measure
 preserved by the translation by `a`, where the integer multiples of `a` are dense, is preserved
 by every translation. -/
 theorem isAddLeftInvariant_of_map_add_left_eq [PseudoMetrizableSpace G] {a : G}
@@ -90,16 +90,16 @@ theorem isAddLeftInvariant_of_map_add_left_eq [PseudoMetrizableSpace G] {a : G}
     intro n
     induction n using Int.induction_on with
     | zero => simp
-    | succ n ih => rw [add_smul, one_smul]; exact map_add_left_eq_of_add ih hν
+    | succ n ih => rw [add_zsmul, one_zsmul]; exact map_add_left_eq_of_add ih hν
     | pred n ih =>
-      rw [sub_smul, one_smul, sub_eq_add_neg]
+      rw [sub_zsmul, one_zsmul]
       exact map_add_left_eq_of_add ih (map_add_left_eq_of_neg hν)
   have hall : {g : G | ν.map (g + ·) = ν} = univ :=
     eq_univ_of_univ_subset <| ha.closure_range ▸ closure_minimal (range_subset_iff.mpr hmul)
       (isClosed_setOf_map_add_left_eq ν)
   exact ⟨fun g ↦ (hall ▸ mem_univ g :)⟩
 
-/-- **Unique ergodicity of rotations.** A rotation `x ↦ a + x` of a compact metrizable abelian
+/-- **Unique ergodicity of rotations.** A rotation `x ↦ a + x` of a compact metrizable additive
 group whose integer multiples are dense is uniquely ergodic: its only invariant probability is the
 normalised Haar measure. -/
 theorem uniquelyErgodic_add_left [CompactSpace G] [MetrizableSpace G] {a : G}
