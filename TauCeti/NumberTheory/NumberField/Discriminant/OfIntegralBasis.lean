@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
+public import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 
 /-!
@@ -38,6 +39,9 @@ e.g. `{1, i}` is a `ℤ`-basis of the Gaussian integers and `disc {1, i} = -4` g
   form that turns an evaluated integer basis discriminant into `d_K` exactly, with
   `NumberField.natAbs_discr_eq_of_basis_isIntegral_of_span_eq_top_of_discr_eq_int` its
   `natAbs` corollary.
+* `NumberField.sq_det_mapRingHom_basis_eq_discr`: for a field `F` of characteristic zero
+  receiving all `[K : ℚ]` embeddings of `K` and a `ℤ`-basis `c` of `𝒪_K`, the determinant of
+  `(σ(c_τ))_{σ, τ}` in `𝒪_F` squares to `d_K`.
 
 ## Provenance
 
@@ -114,6 +118,66 @@ theorem natAbs_discr_eq_of_basis_isIntegral_of_span_eq_top_of_discr_eq_int
     {d : ℤ} (hd : Algebra.discr ℚ (b : ι → K) = (d : ℚ)) :
     (NumberField.discr K).natAbs = d.natAbs := by
   rw [discr_eq_of_basis_isIntegral_of_span_eq_top_of_discr_eq_int b hb hspan hd]
+
+section Embeddings
+
+variable {F : Type*} [Field F] [CharZero F] {ι : Type*}
+
+/-- When `F` receives all `[K : ℚ]` embeddings of `K`, composing with `F → AlgebraicClosure F`
+matches the embeddings `K →+* F` with the `ℚ`-algebra maps `K →ₐ[ℚ] AlgebraicClosure F`. -/
+private noncomputable def ringHomEquivAlgHomAlgebraicClosure
+    (hF : Fintype.card (K →+* F) = finrank ℚ K) :
+    (K →+* F) ≃ (K →ₐ[ℚ] AlgebraicClosure F) :=
+  Equiv.ofBijective (fun σ ↦ RingHom.equivRatAlgHom K _ ((algebraMap F _).comp σ)) <|
+    (Fintype.bijective_iff_injective_and_card _).mpr
+      ⟨fun σ τ h ↦ RingHom.ext fun x ↦ (algebraMap F (AlgebraicClosure F)).injective <| by
+        simpa [RingHom.equivRatAlgHom_apply] using DFunLike.congr_fun h x,
+        by rw [hF, AlgHom.card]⟩
+
+@[simp]
+private theorem ringHomEquivAlgHomAlgebraicClosure_apply
+    (hF : Fintype.card (K →+* F) = finrank ℚ K) (σ : K →+* F) (x : K) :
+    ringHomEquivAlgHomAlgebraicClosure hF σ x = algebraMap F (AlgebraicClosure F) (σ x) :=
+  rfl
+
+/-- **The embedding determinant squares to the discriminant.** Let `F` be a field of
+characteristic zero receiving all `[K : ℚ]` embeddings of `K`, let `c` be a `ℤ`-basis of `𝒪_K`,
+and let `e` match the embeddings `K →+* F` with the index of `c`. Then the determinant of
+`(σ(c (e τ)))_{σ, τ}` in `𝒪_F` squares to `d_K`. -/
+theorem sq_det_mapRingHom_basis_eq_discr [DecidableEq (K →+* F)]
+    (hF : Fintype.card (K →+* F) = finrank ℚ K) (c : Basis ι ℤ (𝓞 K)) (e : (K →+* F) ≃ ι) :
+    (Matrix.of fun σ τ : K →+* F ↦ RingOfIntegers.mapRingHom σ (c (e τ))).det ^ 2 =
+      (discr K : 𝓞 F) := by
+  classical
+  let _ : Fintype ι := Fintype.ofEquiv _ e
+  -- Work in `AlgebraicClosure F`, into which `𝓞 F` embeds through `F`.
+  let ψ : 𝓞 F →+* AlgebraicClosure F := (algebraMap F _).comp (algebraMap (𝓞 F) F)
+  have hψ : Function.Injective ψ :=
+    (algebraMap F (AlgebraicClosure F)).injective.comp RingOfIntegers.coe_injective
+  have hψ_apply (x : 𝓞 F) : ψ x = algebraMap F (AlgebraicClosure F) x := rfl
+  let c' : Basis ι ℚ K := c.localizationLocalization ℚ (nonZeroDivisors ℤ) K
+  have hc' (i : ι) : c' i = algebraMap (𝓞 K) K (c i) :=
+    c.localizationLocalization_apply ℚ (nonZeroDivisors ℤ) K i
+  -- The rational discriminant of `c'` is `d_K`, since `c'` is the image of the integral basis `c`.
+  have hdisc : Algebra.discr ℚ (c'.reindex e.symm) = (discr K : ℚ) := by
+    rw [Basis.coe_reindex, Algebra.discr_reindex, funext hc', discr_eq_of_integralBasis]
+  -- Over `AlgebraicClosure F`, Mathlib's embeddings matrix of `c'` is the transpose of the
+  -- image of `(σ(c (e τ)))` under `ψ`.
+  have hM : Algebra.embeddingsMatrixReindex ℚ (AlgebraicClosure F) (c'.reindex e.symm)
+      (ringHomEquivAlgHomAlgebraicClosure hF) =
+      (ψ.mapMatrix (Matrix.of fun σ τ : K →+* F ↦
+        RingOfIntegers.mapRingHom σ (c (e τ)))).transpose := by
+    ext i j
+    simp [Algebra.embeddingsMatrixReindex, Algebra.embeddingsMatrix_apply, hc', hψ_apply]
+  have hsq : ψ ((Matrix.of fun σ τ : K →+* F ↦ RingOfIntegers.mapRingHom σ (c (e τ))).det ^ 2) =
+      ψ (discr K) := by
+    have h := Algebra.discr_eq_det_embeddingsMatrixReindex_pow_two ℚ (AlgebraicClosure F)
+      (c'.reindex e.symm) (ringHomEquivAlgHomAlgebraicClosure hF)
+    rw [hdisc, hM, Matrix.det_transpose, ← RingHom.map_det] at h
+    simpa [hψ_apply] using h.symm
+  exact hψ hsq
+
+end Embeddings
 
 end NumberField
 
