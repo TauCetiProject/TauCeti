@@ -143,10 +143,8 @@ theorem teichmullerCharacter_injective :
 /-- The Teichmüller lift has the same kernel as the residual character. -/
 @[simp]
 theorem ker_teichmullerCharacter {G : Type*} [Group G] (ψ : G →* (ResidueField R)ˣ) :
-    (teichmullerCharacter R ψ).ker = ψ.ker := by
-  ext g
-  rw [MonoidHom.mem_ker, MonoidHom.mem_ker, teichmullerCharacter_apply,
-    ← map_one (teichmuller R), (teichmuller_injective R).eq_iff]
+    (teichmullerCharacter R ψ).ker = ψ.ker :=
+  MonoidHom.ker_comp_of_injective ψ (teichmuller R) (teichmuller_injective R)
 
 /-- The Teichmüller lift of `ψ` has the same order as `ψ` at every element. -/
 theorem orderOf_teichmullerCharacter_apply (ψ : Γ →* (ResidueField R)ˣ) (g : Γ) :
