@@ -205,8 +205,8 @@ theorem fderiv_apply_self (h : IsAdmissiblePair Γ f) (hμ : μ ∈ Γ) : fderiv
 /-- **Euler's identity** for an admissible pair: `∑_j μ_j ∂_j f(μ) = f(μ)` on `Γ`. -/
 theorem sum_mul_fderiv_single (h : IsAdmissiblePair Γ f) (hμ : μ ∈ Γ) :
     ∑ j, μ j * fderiv ℝ f μ (Pi.single j 1) = f μ := by
-  simp only [← smul_eq_mul, ← ContinuousLinearMap.apply_eq_sum_smul_single,
-    h.fderiv_apply_self hμ]
+  rw [← h.fderiv_apply_self hμ, ContinuousLinearMap.apply_eq_sum_smul_single]
+  simp only [smul_eq_mul]
 
 /-- An admissible pair is positive on the positive orthant `Γ_n`. -/
 theorem pos_of_forall_pos (h : IsAdmissiblePair Γ f) (hμ : ∀ i, 0 < μ i) : 0 < f μ := by
