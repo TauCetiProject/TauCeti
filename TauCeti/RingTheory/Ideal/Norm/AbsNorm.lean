@@ -25,7 +25,8 @@ cardinality raised to the prime multiplicity. Over `ℤ` itself, the absolute no
 The cardinality of the quotient of a submodule `p` by a submodule `N` of `p` is the index of the
 image of `N` in `p`, as additive subgroups of the ambient module.
 A submodule with finite quotient has nonzero index, and the index of the image of a submodule
-under an injective linear map is its index times the index of the range.
+under an injective linear map is its index times the index of the range; in particular a linear
+equivalence preserves the index.
 
 In a Dedekind domain that is free of finite rank over `ℤ`, congruent elements whose norms
 have nonnegative product generate principal ideals with congruent absolute norms.
@@ -40,6 +41,7 @@ nonzero `s`, so the index `Submodule.cardQuot` is multiplicative along this chai
 * `Submodule.cardQuot_ne_zero`: a submodule with finite quotient has nonzero index.
 * `Submodule.cardQuot_map_of_injective`: for an injective linear map `f`,
   `#(N ⧸ f P) = #(M ⧸ P) * #(N ⧸ range f)`.
+* `Submodule.cardQuot_map_equiv`: a linear equivalence preserves the index of a submodule.
 * `Ideal.absNorm_comap_of_ringEquiv`, `Ideal.absNorm_map_of_ringEquiv`: the absolute norm of an
   ideal is unchanged by transporting it along a ring isomorphism, in either direction.
 * `Ideal.absNorm_map_of_ringEquiv_eq_natCard`: the absolute norm of an ideal transported from an
@@ -90,6 +92,13 @@ theorem cardQuot_map_of_injective {R M N : Type*} [Ring R] [AddCommGroup M] [Mod
     (P : Submodule R M) : (P.map f).cardQuot = P.cardQuot * (LinearMap.range f).cardQuot := by
   rw [cardQuot, cardQuot, cardQuot, map_toAddSubgroup, LinearMap.range_toAddSubgroup]
   exact AddSubgroup.index_map_of_injective _ hf
+
+/-- **The index is invariant under linear equivalences**: the image of `P` under a linear
+equivalence `e : M ≃ N` has the same index in `N` as `P` has in `M`. -/
+theorem cardQuot_map_equiv {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] (e : M ≃ₗ[R] N) (P : Submodule R M) :
+    (P.map (e : M →ₗ[R] N)).cardQuot = P.cardQuot := by
+  rw [cardQuot_map_of_injective e.injective, LinearEquiv.range, cardQuot_top, mul_one]
 
 end Submodule
 
