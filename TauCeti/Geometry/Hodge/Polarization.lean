@@ -110,8 +110,8 @@ theorem complex_nondegenerate (h : IsPolarization hℂ hs Q) :
     LinearMap.BilinForm.Nondegenerate (bilinForm hℂ Q) :=
   nondegenerate_bilinForm_complex hℂ h.nondegenerate
 
-/-- The flat map `Q♭ : V → Hom(V, ℤ)` of a polarizing form is injective. -/
-theorem injective_flat (h : IsPolarization hℂ hs Q) : Function.Injective Q :=
+/-- The map `Q♭ : V → Hom(V, ℤ)`, `x ↦ Q(x, ·)`, of a polarizing form is injective. -/
+theorem injective (h : IsPolarization hℂ hs Q) : Function.Injective Q :=
   LinearMap.ker_eq_bot.mp h.nondegenerate.ker_eq_bot
 
 /-- The first Hodge–Riemann relation transported to the conjugate filtration. -/

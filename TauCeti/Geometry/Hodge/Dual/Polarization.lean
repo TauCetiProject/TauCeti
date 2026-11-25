@@ -23,7 +23,8 @@ polarization of `V^*` (`TauCeti.Hodge.IsPolarization.scaledDualForm_one`,
 
 The proof: the map `η ↦ y_η` is a Hodge morphism `V^*(-n) → V`, since composed with the
 self-duality `Q♭` it is multiplication by `a` (`TauCeti.Hodge.Polarization.homOfCompToDualHom`).
-It is injective, and `Q(y_ξ, y_η) = a · (a Q^∨)(ξ, η)`. So `Q` pulls back to `a` times the scaled
+It is injective, and `Q(y_ξ, y_η) = a · (a Q^∨)(ξ, η)`
+(`LinearMap.BilinForm.comp_scaledDualPreimage`). So `Q` pulls back to `a` times the scaled
 dual form, which therefore polarizes `V^*(-n)` (`TauCeti.Hodge.IsPolarization.of_smul`); a Tate
 twist then gives `V^*`.
 
@@ -54,29 +55,20 @@ variable {Q : LinearMap.BilinForm ℤ V} {a : ℤ}
 
 namespace IsPolarization
 
-/-- `Q` pulled back along `η ↦ y_η` is `a` times the scaled dual form. -/
-theorem comp_scaledDualPreimage (hQ : IsPolarization hℂ hs Q)
-    (ha : ∀ η : Module.Dual ℤ V, a • η ∈ LinearMap.range Q) :
-    Q.comp (Q.scaledDualPreimage hQ.injective_flat a ha)
-        (Q.scaledDualPreimage hQ.injective_flat a ha) =
-      a • Q.scaledDualForm hQ.injective_flat a ha := by
-  ext ξ η
-  simp [LinearMap.BilinForm.scaledDualForm_apply]
-
 variable [Module.Free ℤ V] [Module.Finite ℤ V]
 
 /-- The map `η ↦ y_η`, with `Q♭ y_η = a η`, as a **Hodge morphism `V^*(-n) → V`**. -/
 noncomputable def scaledDualHom (hQ : IsPolarization hℂ hs Q)
     (ha : ∀ η : Module.Dual ℤ V, a • η ∈ LinearMap.range Q) :
     HodgeStructure.Hom hs.dualTateTwist hs :=
-  Polarization.homOfCompToDualHom ⟨Q, hQ⟩ (Q.scaledDualPreimage hQ.injective_flat a ha) a
+  Polarization.homOfCompToDualHom ⟨Q, hQ⟩ (Q.scaledDualPreimage hQ.injective a ha) a
     (LinearMap.ext fun η ↦ by simp)
 
 /-- The lattice map underlying `scaledDualHom` is `η ↦ y_η`. -/
 @[simp]
 theorem scaledDualHom_toIntLinearMap (hQ : IsPolarization hℂ hs Q)
     (ha : ∀ η : Module.Dual ℤ V, a • η ∈ LinearMap.range Q) :
-    (hQ.scaledDualHom ha).toIntLinearMap = Q.scaledDualPreimage hQ.injective_flat a ha :=
+    (hQ.scaledDualHom ha).toIntLinearMap = Q.scaledDualPreimage hQ.injective a ha :=
   Polarization.homOfCompToDualHom_toIntLinearMap _ _ _ _
 
 /-- **The scaled dual form polarizes the dual Hodge structure.** If `Q` polarizes `V` and the
@@ -85,13 +77,13 @@ Hodge structure `V^*`, of weight `-n`. -/
 theorem scaledDualForm (hQ : IsPolarization hℂ hs Q)
     (ha : ∀ η : Module.Dual ℤ V, a • η ∈ LinearMap.range Q) (ha0 : 0 < a) :
     IsPolarization (isBaseChange_dualLatticeMap hℂ) hs.dual
-      (Q.scaledDualForm hQ.injective_flat a ha) := by
+      (Q.scaledDualForm hQ.injective a ha) := by
   have hinj : Function.Injective (hQ.scaledDualHom ha).toIntLinearMap := fun ξ η h ↦ by
     have := congr(Q $h)
     simp only [scaledDualHom_toIntLinearMap, LinearMap.BilinForm.apply_scaledDualPreimage] at this
     exact smul_right_injective _ ha0.ne' this
   have htwist := (hQ.comp (hQ.scaledDualHom ha) hinj)
-  rw [scaledDualHom_toIntLinearMap, hQ.comp_scaledDualPreimage ha] at htwist
+  rw [scaledDualHom_toIntLinearMap, Q.comp_scaledDualPreimage hQ.injective a ha] at htwist
   exact (of_smul ha0 htwist).of_F_eq_F_add n (by ring) fun p ↦ by
     rw [HodgeStructure.dualTateTwist_F, add_sub_cancel_right]
 

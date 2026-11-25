@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
-public import TauCeti.Geometry.Hodge.Dual
+public import TauCeti.Geometry.Hodge.Dual.Basic
 public import TauCeti.Geometry.Hodge.HodgeForm
 public import TauCeti.Geometry.Hodge.Tate.Twist
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
@@ -144,7 +144,7 @@ theorem toDualHom_toLinearMap (P : Polarization hℂ hs) :
 theorem toDualHom_toIntLinearMap_injective (P : Polarization hℂ hs) :
     Function.Injective P.toDualHom.toIntLinearMap := by
   rw [toDualHom_toIntLinearMap]
-  exact P.isPolarization.injective_flat
+  exact P.isPolarization.injective
 
 /-- The complex self-duality map induced by a polarization is injective. -/
 theorem toDualHom_toLinearMap_injective (P : Polarization hℂ hs) :
