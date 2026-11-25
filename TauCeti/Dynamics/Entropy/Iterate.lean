@@ -27,8 +27,8 @@ of `T`.
 * `TauCeti.coverEntropy_iterate_le`, `TauCeti.coverEntropyInf_iterate_le` — the entropy of `T^[k]`
   is at most `k` times that of `T`.
 * `TauCeti.coverEntropy_iterate`, `TauCeti.coverEntropyInf_iterate` — equality for uniformly
-  continuous `T`, and `TauCeti.coverEntropy_iterate_of_compactSpace` for continuous `T` on a
-  compact space.
+  continuous `T`, and `TauCeti.coverEntropy_iterate_of_compactSpace`,
+  `TauCeti.coverEntropyInf_iterate_of_compactSpace` for continuous `T` on a compact space.
 
 ## References
 
@@ -48,6 +48,7 @@ variable {X : Type*} {T : X → X} {k : ℕ}
 
 /-- Being `dynEntourage T U k`-close for `n` steps of `T^[k]` is being `U`-close for `k * n` steps
 of `T`. -/
+@[simp]
 theorem dynEntourage_iterate (T : X → X) (U : SetRel X X) (k n : ℕ) :
     dynEntourage (T^[k]) (dynEntourage T U k) n = dynEntourage T U (k * n) := by
   ext ⟨x, y⟩
@@ -62,6 +63,7 @@ theorem dynEntourage_iterate (T : X → X) (U : SetRel X X) (k n : ℕ) :
 
 /-- The minimal cardinality of a dynamical cover of `F` for `T^[k]` at the entourage
 `dynEntourage T U k` and time `n` equals that for `T` at `U` and time `k * n`. -/
+@[simp]
 theorem coverMincard_iterate (T : X → X) (F : Set X) (U : SetRel X X) (k n : ℕ) :
     coverMincard (T^[k]) F (dynEntourage T U k) n = coverMincard T F U (k * n) := by
   simp only [coverMincard, IsDynCoverOf, dynEntourage_iterate]
@@ -139,5 +141,11 @@ theorem coverEntropyInf_iterate (hT : UniformContinuous T) (hk : k ≠ 0) (F : S
 theorem coverEntropy_iterate_of_compactSpace [CompactSpace X] (hT : Continuous T) (hk : k ≠ 0)
     (F : Set X) : coverEntropy (T^[k]) F = k * coverEntropy T F :=
   coverEntropy_iterate (CompactSpace.uniformContinuous_of_continuous hT) hk F
+
+/-- For a continuous map `T` of a compact space and `k ≥ 1`, the `liminf` topological entropy of
+`T^[k]` is `k` times that of `T`. -/
+theorem coverEntropyInf_iterate_of_compactSpace [CompactSpace X] (hT : Continuous T)
+    (hk : k ≠ 0) (F : Set X) : coverEntropyInf (T^[k]) F = k * coverEntropyInf T F :=
+  coverEntropyInf_iterate (CompactSpace.uniformContinuous_of_continuous hT) hk F
 
 end TauCeti
