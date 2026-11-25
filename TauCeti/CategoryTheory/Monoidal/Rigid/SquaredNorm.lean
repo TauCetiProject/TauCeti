@@ -47,9 +47,6 @@ We develop the basic calculus of `doubleDualTrace` and `squaredNorm`:
   `squaredNorm` equal `𝟙 (𝟙_ C)`.
 * **Linearity and biproducts**: `doubleDualTrace` is additive, `R`-linear, and sums over the
   diagonal components of finite and binary biproducts.
-* **Invertibility from split coevaluation**: when `η_ X Xᘁ` is a split monomorphism and every
-  endomorphism of `X` is a scalar multiple of `𝟙 X`, `doubleDualTrace b` is an isomorphism in `C`
-  and a unit in `End (𝟙_ C)` for any isomorphism `b : X ⟶ Xᘁᘁ`.
 
 Comparison with pivotal traces and dimensions lives in
 `TauCeti.CategoryTheory.Monoidal.Pivotal.Trace`, invertibility and nonvanishing in finite
@@ -70,9 +67,7 @@ pivot-free global dimension lives in `TauCeti.CategoryTheory.Monoidal.Rigid.Glob
   `TauCeti.doubleDualTrace_rightAdjointMate_η_doubleRightDualFunctor`, and
   `TauCeti.squaredNorm_εIso_doubleRightDualFunctor`: values at the tensor unit;
 * `TauCeti.squaredNorm_congr`: independence of `a : X ≅ Xᘁᘁ` when `algebraMap R (End X)` is
-  surjective;
-* `TauCeti.isIso_doubleDualTrace_of_isSplitMono` and
-  `TauCeti.isUnit_endOf_doubleDualTrace_of_isSplitMono`: invertibility when `η_ X Xᘁ` splits.
+  surjective.
 
 ## References
 
@@ -344,38 +339,6 @@ section ScalarEnd
 variable {R : Type w} [CommSemiring R] [Preadditive C] [Linear R C] [MonoidalPreadditive C]
   [MonoidalLinear R C] {X : C}
 
-/-- Precomposing `a : X ⟶ Xᘁᘁ` with `algebraMap R (End X) r = r • 𝟙 X` scales `doubleDualTrace a`
-by `r`. -/
-theorem doubleDualTrace_comp_of_algebraMap_eq {f : X ⟶ X} {r : R}
-    (h : algebraMap R (End X) r = End.of f) (a : X ⟶ (Xᘁ : C)ᘁ) :
-    doubleDualTrace (f ≫ a) = r • doubleDualTrace a := by
-  have hf : r • 𝟙 X = f := by rw [← End.algebraMap_asHom, h]
-  rw [← hf, Linear.smul_comp, Category.id_comp, doubleDualTrace_smul]
-
-/-- Postcomposing `g : Xᘁᘁ ⟶ X` with `algebraMap R (End X) r = r • 𝟙 X` scales
-`doubleDualTrace (gᘁ)` by `r`. -/
-theorem doubleDualTrace_rightAdjointMate_comp_of_algebraMap_eq (g : (Xᘁ : C)ᘁ ⟶ X) {f : X ⟶ X}
-    {r : R} (h : algebraMap R (End X) r = End.of f) :
-    doubleDualTrace ((g ≫ f)ᘁ) = r • doubleDualTrace (gᘁ) := by
-  have hf : r • 𝟙 X = f := by rw [← End.algebraMap_asHom, h]
-  rw [← hf, Linear.comp_smul, Category.comp_id, rightAdjointMate_smul, doubleDualTrace_smul]
-
-/-- Precomposing `a : X ⟶ Xᘁᘁ` with an endomorphism `f : X ⟶ X` of an object with scalar
-endomorphisms scales `doubleDualTrace a` by the scalar of `f`. -/
-theorem doubleDualTrace_comp_of_bijective
-    (hX : Function.Bijective (algebraMap R (End X))) (f : X ⟶ X) (a : X ⟶ (Xᘁ : C)ᘁ) :
-    doubleDualTrace (f ≫ a) = endAlgEquivOfBijective hX (End.of f) • doubleDualTrace a :=
-  doubleDualTrace_comp_of_algebraMap_eq (algebraMap_endAlgEquivOfBijective hX (End.of f)) a
-
-/-- Postcomposing `g : Xᘁᘁ ⟶ X` with an endomorphism `f : X ⟶ X` of an object with scalar
-endomorphisms scales `doubleDualTrace (gᘁ)` by the scalar of `f`. -/
-theorem doubleDualTrace_rightAdjointMate_comp_of_bijective
-    (hX : Function.Bijective (algebraMap R (End X))) (g : (Xᘁ : C)ᘁ ⟶ X) (f : X ⟶ X) :
-    doubleDualTrace ((g ≫ f)ᘁ) =
-      endAlgEquivOfBijective hX (End.of f) • doubleDualTrace (gᘁ) :=
-  doubleDualTrace_rightAdjointMate_comp_of_algebraMap_eq g
-    (algebraMap_endAlgEquivOfBijective hX (End.of f))
-
 variable (R) in
 /-- **The squared norm does not depend on the isomorphism** `X ≅ Xᘁᘁ` when every endomorphism
 of `X` is a scalar multiple of `𝟙 X` over a commutative semiring `R`: two such isomorphisms differ
@@ -404,43 +367,6 @@ theorem squaredNorm_congr (hX : Function.Surjective (algebraMap R (End X)))
   rw [← Linear.smul_comp, ← doubleDualTrace_smul, mul_comm, hrs]
 
 end ScalarEnd
-
-section SplitMono
-
-variable {R : Type w} [CommSemiring R] [Preadditive C] [Linear R C] [MonoidalPreadditive C]
-  [MonoidalLinear R C] {X : C}
-
-/-- If `η_ X Xᘁ` is a split monomorphism and every endomorphism of `X` is a scalar multiple of
-`𝟙 X`, then some scalar multiple of `doubleDualTrace b` equals `𝟙 (𝟙_ C)` for any isomorphism
-`b : X ⟶ Xᘁᘁ`. -/
-theorem exists_smul_doubleDualTrace_eq_id [IsSplitMono (η_ X Xᘁ)]
-    (hX : Function.Surjective (algebraMap R (End X))) (b : X ⟶ (Xᘁ : C)ᘁ) [IsIso b] :
-    ∃ r : R, r • doubleDualTrace b = 𝟙 (𝟙_ C) := by
-  let p : ExactPairing Xᘁ X := exactPairingCongrRight (asIso b)
-  obtain ⟨r, hr⟩ := @hom_tensorUnit_eq_smul_evaluation_of_surjective_right C _ _ _ _ R _ _ _ Xᘁ X p
-    hX (retraction (η_ X Xᘁ))
-  refine ⟨r, ?_⟩
-  rw [doubleDualTrace_def, ← asIso_hom b, ← exactPairingCongrRight_evaluation (asIso b),
-    ← Linear.comp_smul, ← hr]
-  exact IsSplitMono.id (η_ X Xᘁ)
-
-/-- If `η_ X Xᘁ` is a split monomorphism and every endomorphism of `X` is a scalar multiple of
-`𝟙 X`, then `doubleDualTrace b` is an isomorphism in `C` for any isomorphism `b : X ⟶ Xᘁᘁ`. -/
-theorem isIso_doubleDualTrace_of_isSplitMono [IsSplitMono (η_ X Xᘁ)]
-    (hX : Function.Surjective (algebraMap R (End X))) (b : X ⟶ (Xᘁ : C)ᘁ) [IsIso b] :
-    IsIso (doubleDualTrace b) := by
-  obtain ⟨r, hr⟩ := exists_smul_doubleDualTrace_eq_id hX b
-  exact Linear.isIso_of_smul_eq_id hr
-
-/-- If `η_ X Xᘁ` is a split monomorphism and every endomorphism of `X` is a scalar multiple of
-`𝟙 X`, then `End.of (doubleDualTrace b)` is a unit in `End (𝟙_ C)` for any isomorphism
-`b : X ⟶ Xᘁᘁ`. -/
-theorem isUnit_endOf_doubleDualTrace_of_isSplitMono [IsSplitMono (η_ X Xᘁ)]
-    (hX : Function.Surjective (algebraMap R (End X))) (b : X ⟶ (Xᘁ : C)ᘁ) [IsIso b] :
-    IsUnit (End.of (doubleDualTrace b)) :=
-  (CategoryTheory.isUnit_iff_isIso _).mpr (isIso_doubleDualTrace_of_isSplitMono hX b)
-
-end SplitMono
 
 end RightRigid
 

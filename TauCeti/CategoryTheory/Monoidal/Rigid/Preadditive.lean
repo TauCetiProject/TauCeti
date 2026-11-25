@@ -29,8 +29,8 @@ the paired tensor product to the unit is a scalar multiple of the evaluation.
 * `TauCeti.rightAdjointMate_zero`, `TauCeti.rightAdjointMate_add`, `TauCeti.rightAdjointMate_neg`,
   `TauCeti.rightAdjointMate_sub`, `TauCeti.rightAdjointMate_sum`, and
   `TauCeti.rightAdjointMate_smul`: additivity and linearity of the right adjoint mate;
-* `TauCeti.surjective_algebraMap_end_rightDual` and `TauCeti.bijective_algebraMap_end_rightDual`:
-  scalar endomorphisms are preserved by right duality;
+* `TauCeti.surjective_algebraMap_end_rightDual`: scalar endomorphisms are preserved by right
+  duality;
 * `TauCeti.tensorLeftHomLinearEquiv` and `TauCeti.tensorRightHomLinearEquiv`: Frobenius
   reciprocity as `k`-linear equivalences;
 * `TauCeti.hom_tensorUnit_eq_smul_evaluation_of_surjective_right` and
@@ -106,17 +106,6 @@ theorem surjective_algebraMap_end_rightDual
   rw [End.algebraMap_asHom]
   -- `(ᘁ(Xᘁ))ᘁ` is definitionally `Xᘁ` via `hasRightDualLeftDual` on `hasLeftDualRightDual`.
   exact h
-
-/-- If `X` has scalar endomorphisms over `R`, then so does its right dual `Xᘁ`. -/
-theorem bijective_algebraMap_end_rightDual
-    (hX : Function.Bijective (algebraMap R (End X))) :
-    Function.Bijective (algebraMap R (End Xᘁ)) := by
-  refine ⟨fun r s hrs ↦ hX.injective <| End.ext ?_,
-    surjective_algebraMap_end_rightDual hX.surjective⟩
-  have h := congrArg End.asHom hrs
-  simp only [End.algebraMap_asHom] at h ⊢
-  exact rightAdjointMate_injective
-    (by simpa only [rightAdjointMate_smul, rightAdjointMate_id] using h)
 
 end ScalarEnd
 

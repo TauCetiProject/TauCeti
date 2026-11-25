@@ -40,8 +40,7 @@ when the functor is bijective on the object's endomorphisms.
 
 When the structure map `algebraMap R (End X)` of an object `X` over a commutative semiring `R`
 is bijective, its inverse `TauCeti.endAlgEquivOfBijective` identifies `End X` as an `R`-algebra
-with `R`, so every endomorphism is its scalar times `𝟙 X` and the scalars of an automorphism and
-its inverse multiply to `1`.
+with `R`, so every endomorphism is its scalar times `𝟙 X`.
 -/
 
 public section
@@ -241,23 +240,11 @@ theorem endAlgEquivOfBijective_smul_id (hX : Function.Bijective (algebraMap R (E
     (f : End X) : endAlgEquivOfBijective hX f • 𝟙 X = f.asHom := by
   rw [← End.algebraMap_asHom, algebraMap_endAlgEquivOfBijective hX]
 
-/-- Every morphism `f : X ⟶ X` of an object with scalar endomorphisms is its scalar times `𝟙 X`. -/
-theorem endAlgEquivOfBijective_endOf_smul_id (hX : Function.Bijective (algebraMap R (End X)))
-    (f : X ⟶ X) : endAlgEquivOfBijective hX (End.of f) • 𝟙 X = f :=
-  endAlgEquivOfBijective_smul_id hX (End.of f)
-
 /-- The scalar of an endomorphism `f` is the unique `r` with `f = r • 𝟙 X`. -/
 theorem endAlgEquivOfBijective_apply_eq_iff (hX : Function.Bijective (algebraMap R (End X)))
     (f : End X) (r : R) : endAlgEquivOfBijective hX f = r ↔ f.asHom = r • 𝟙 X := by
   rw [← AlgEquiv.eq_symm_apply, End.ext_iff, endAlgEquivOfBijective_symm_apply,
     End.algebraMap_asHom]
-
-/-- For an automorphism `a` of an object with scalar endomorphisms, the scalars of `a.hom` and
-`a.inv` are inverse to each other in `R`. -/
-theorem endAlgEquivOfBijective_hom_mul_inv (hX : Function.Bijective (algebraMap R (End X)))
-    (a : X ≅ X) :
-    endAlgEquivOfBijective hX (End.of a.hom) * endAlgEquivOfBijective hX (End.of a.inv) = 1 := by
-  rw [← map_mul, ← End.of_comp, a.inv_hom_id, End.of_id, map_one]
 
 end ScalarEnd
 
