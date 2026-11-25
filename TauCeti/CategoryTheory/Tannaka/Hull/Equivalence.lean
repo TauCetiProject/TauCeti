@@ -30,8 +30,7 @@ finitely generated `A_X`-modules is an equivalence of categories
 category with an exact faithful fibre functor as the finite comodules over a coalgebra. The
 underlying type of the module attached to `Y` is `ω Y`, and the map attached to a morphism `g` is
 `ω g` (`CategoryTheory.Functor.hullModuleFunctor_obj_obj`,
-`CategoryTheory.Functor.hullModuleFunctor_map_hom_hom_apply`); the coalgebra is assembled
-from the duals of the algebras `A_X` as `X` varies.
+`CategoryTheory.Functor.hullModuleFunctor_map_hom_hom_apply`).
 
 The proof uses the representing object `P = CategoryTheory.Functor.hullRepresenting ω X` of `ω`
 on `⟨X⟩`, with its point `p ∈ ω P`: evaluation at `p` identifies `P ⟶ Y` with `ω Y` for every

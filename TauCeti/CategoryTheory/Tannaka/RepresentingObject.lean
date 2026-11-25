@@ -265,7 +265,7 @@ theorem exists_epi_biproduct_fiberSpan [Preadditive C] [HasFiniteBiproducts C] [
   rw [ModuleCat.epi_iff_surjective]
   refine LinearMap.surjective_of_span_range_eq_top _ b.span_eq fun k ↦
     ⟨(ω.map (biproduct.ι _ k)).hom (ω.fiberSpanPoint t), ?_⟩
-  rw [← ModuleCat.comp_apply, ← ω.map_comp, biproduct.ι_desc]
+  rw [ω.map_biproductDesc_map_ι_apply]
   exact hf (b k)
 
 /-- `fiberSpan t` is projective relative to the objects onto whose fibre evaluation at
