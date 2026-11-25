@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Measure
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.FubiniStudy
+public import TauCeti.Geometry.Manifold.Instances.OnePoint.RoundSphere
 public import TauCeti.Geometry.Manifold.Orientation.Sphere
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 import TauCeti.Analysis.InnerProductSpace.Sphere.Stereographic
+import TauCeti.Geometry.Manifold.DifferentialForm.Integration.RiemannSphere
 import TauCeti.Geometry.Manifold.Orientation.Pullback
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Stereographic
 
@@ -53,10 +56,22 @@ connected, so the orientation pulled back along `σ` from the outward-normal ori
 complex orientation or its opposite. At the origin, where `σ 0 = -v` and `dσ a = 2 ι a`, the sign
 is that of `vol(-v, ι 1, ι i) = -ε`.
 
+This gives the area of the two-sphere. The measure `|vol|` of the area form only depends on its
+absolute value, which pulls back to `4π |ω_FS|`, and `ω_FS` has total measure one
+(`OnePoint.measure_fubiniStudyForm_univ`). So the area form of `S²` has total measure `4π`
+(`Orientation.measure_sphereVolumeForm_univ`).
+
+For `E = ℝ³`, the north pole `v = (0, 0, 1)` and the isometry `z ↦ (Re z, -Im z, 0)`
+(`OnePoint.sphereCoordsIsometry`), `σ` is the Pauli model `OnePoint.homeomorphSphere`
+(`OnePoint.diffeomorphSphere_sphereCoordsIsometry_apply`), so the Pauli model is an analytic
+diffeomorphism.
+
 ## Main definitions
 
 * `OnePoint.diffeomorphSphere v ι`: the analytic diffeomorphism from the Riemann sphere onto the
   unit sphere of `E`, sending `∞` to `v`.
+* `OnePoint.sphereCoordsIsometry`: the isometry `z ↦ (Re z, -Im z, 0)` of `ℂ` onto the plane
+  orthogonal to the north pole of `ℝ³`, for which `σ` is the Pauli model.
 
 ## Main results
 
@@ -69,6 +84,11 @@ is that of `vol(-v, ι 1, ι i) = -ε`.
   Fubini–Study metric.
 * `OnePoint.mpullback_diffeomorphSphere_sphereVolumeForm`: the outward-normal area form pulls back
   to `∓4π` times the Fubini–Study form.
+* `Orientation.measure_sphereVolumeForm_univ`: the area form of `S²` has total measure `4π`.
+* `OnePoint.diffeomorphSphere_sphereCoordsIsometry_apply`,
+  `OnePoint.toHomeomorph_diffeomorphSphere_sphereCoordsIsometry`,
+  `OnePoint.diffeomorphSphere_sphereCoordsIsometry_symm_apply`: for the north pole and
+  `sphereCoordsIsometry`, `σ` is the Pauli model `homeomorphSphere`.
 
 ## References
 
@@ -80,7 +100,7 @@ is that of `vol(-v, ι 1, ι i) = -ε`.
 
 public section
 
-open Metric Module Set Filter ComplexConjugate TauCeti
+open Metric Module Set Filter MeasureTheory ComplexConjugate TauCeti
 open scoped Bundle InnerProductSpace Manifold Topology ContDiff TauCeti.ComplexManifold
 
 noncomputable section
@@ -120,7 +140,7 @@ private theorem invExpr_inv {z : ℂ} (hz : z ≠ 0) : invExpr v ι z⁻¹ = aff
     rw [map_inv₀, Complex.inv_def]
     simp [Complex.normSq_eq_norm_sq, Complex.real_smul, mul_comm]
   have hι : (ι (conj z⁻¹) : E) = (‖z‖ ^ 2)⁻¹ • (ι z : E) := by
-    rw [hconj, map_smul, Submodule.coe_smul]
+    rw [hconj, _root_.map_smul, Submodule.coe_smul]
   simp only [invExpr, affineExpr, stereoInvFunAux_apply, hι, norm_smul, Submodule.norm_coe,
     LinearIsometryEquiv.norm_map, Real.norm_eq_abs, abs_two, abs_inv, abs_pow, abs_norm]
   match_scalars <;> field_simp <;> ring
@@ -140,7 +160,7 @@ private theorem coe_toSphere_coe (z : ℂ) : (toSphere v ι z : E) = affineExpr 
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ 2
   rw [toSphere, Homeomorph.trans_apply, Homeomorph.onePointCongr_apply, map_some,
     coe_onePointHyperplaneHomeoUnitSphere_coe, Homeomorph.trans_apply,
-    Homeomorph.smulOfNeZero_apply, LinearIsometryEquiv.coe_toHomeomorph, map_smul,
+    Homeomorph.smulOfNeZero_apply, LinearIsometryEquiv.coe_toHomeomorph, _root_.map_smul,
     Submodule.coe_smul, affineExpr, stereoInvFunAux_apply]
   simp only [norm_smul, Submodule.norm_coe]
 
@@ -636,6 +656,142 @@ theorem mpullback_diffeomorphSphere_sphereVolumeForm :
       (Complex.basisOneI : Module.Basis (Fin 2) ℝ (TangentSpace 𝓘(ℝ, ℂ) x)) _).1 ?_)
   exact (congrArg F Complex.coe_basisOneI).trans hF
 
+variable [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E]
+
+attribute [local instance] finrank_euclideanSpace_fin_succ_fact Complex.finrank_real_complex_fact
+
+/-- **The area of the two-sphere is `4π`.** The measure `|vol|` of the outward-normal area form of
+the unit sphere of an oriented three-dimensional inner product space gives the whole sphere
+measure `4π`. -/
+@[simp]
+theorem _root_.Orientation.measure_sphereVolumeForm_univ :
+    RoughForm.measure o.sphereVolumeForm.val (univ : Set (sphere (0 : E) 1)) =
+      ENNReal.ofReal (4 * Real.pi) := by
+  -- Transport along inverse stereographic projection from a point `v` of the sphere.
+  have : Nontrivial E :=
+    Module.nontrivial_of_finrank_pos (by rw [Fact.out (p := finrank ℝ E = 2 + 1)]; norm_num)
+  obtain ⟨w, hw⟩ := NormedSpace.sphere_nonempty (x := (0 : E)).mpr zero_le_one
+  have : Fact (finrank ℝ E = 3) := ⟨Fact.out (p := finrank ℝ E = 2 + 1)⟩
+  set v : sphere (0 : E) 1 := ⟨w, hw⟩
+  set ι := complexIsometryOrthogonalSpanSingleton (ne_zero_of_mem_unit_sphere v)
+  let _ : MeasurableSpace (OnePoint ℂ) := borel _
+  have : BorelSpace (OnePoint ℂ) := ⟨rfl⟩
+  have hΦ := (diffeomorphSphere v ι).toHomeomorph.measurePreserving_measure_mpullback
+    ((diffeomorphSphere v ι).mdifferentiable (by simp)) o.sphereVolumeForm.val
+  rw [← hΦ.measure_preimage MeasurableSet.univ.nullMeasurableSet, preimage_univ,
+    Diffeomorph.coe_toHomeomorph, mpullback_diffeomorphSphere_sphereVolumeForm v ι o,
+    RoughForm.measure_smul, smul_apply, measure_fubiniStudyForm_univ]
+  -- The frame `(v, ι 1, ι i)` has volume `±1`, so the pullback is `±4π ω_FS`.
+  simp [abs_mul, abs_volumeForm_frame v ι o]
+
 end Area
+
+/-! ### The Pauli model -/
+
+section Pauli
+
+open WithLp
+
+attribute [local instance] finrank_euclideanSpace_fin_succ_fact
+
+/-- The linear isometry `z ↦ (Re z, -Im z, 0)` of `ℂ` into `ℝ³`. -/
+private def sphereCoordsPlane : ℂ →ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 3) where
+  toFun z := toLp 2 ![z.re, -z.im, 0]
+  map_add' z w := by
+    ext i
+    fin_cases i <;> simp [add_comm]
+  map_smul' c z := by
+    ext i
+    fin_cases i <;> simp
+  norm_map' z := by
+    rw [EuclideanSpace.norm_eq, Fin.sum_univ_three, Complex.norm_eq_sqrt_sq_add_sq]
+    simp
+
+private theorem sphereCoordsPlane_apply (z : ℂ) :
+    sphereCoordsPlane z = toLp 2 ![z.re, -z.im, 0] :=
+  (rfl)
+
+/-- The image of `z ↦ (Re z, -Im z, 0)` is the plane orthogonal to the north pole
+`sphereCoords ∞ = (0, 0, 1)`. -/
+private theorem range_sphereCoordsPlane :
+    LinearMap.range sphereCoordsPlane.toLinearMap =
+      (ℝ ∙ (homeomorphSphere ∞ : EuclideanSpace ℝ (Fin 3)))ᗮ := by
+  ext w
+  rw [Submodule.mem_orthogonal_singleton_iff_inner_right, coe_homeomorphSphere,
+    sphereCoords_infty, EuclideanSpace.inner_eq_star_dotProduct]
+  simp only [LinearMap.mem_range, LinearIsometry.coe_toLinearMap, star_trivial, dotProduct,
+    Fin.sum_univ_three]
+  simp only [Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
+    Matrix.head_cons, Matrix.tail_cons, mul_zero, zero_add, mul_one]
+  refine ⟨?_, fun hw ↦ ⟨⟨w 0, -w 1⟩, ?_⟩⟩
+  · rintro ⟨z, rfl⟩
+    simp [sphereCoordsPlane_apply]
+  · ext i
+    fin_cases i <;> simp [sphereCoordsPlane_apply, hw]
+
+/-- The linear isometry `z ↦ (Re z, -Im z, 0)` of `ℂ` onto the plane orthogonal to the north pole
+`sphereCoords ∞ = (0, 0, 1)` of the unit sphere of `ℝ³`. For this choice the stereographic
+diffeomorphism `diffeomorphSphere` from `∞ ↦ (0, 0, 1)` is the Pauli model `sphereCoords` of the
+Riemann sphere (`OnePoint.diffeomorphSphere_sphereCoordsIsometry_apply`). -/
+def sphereCoordsIsometry : ℂ ≃ₗᵢ[ℝ] (ℝ ∙ (homeomorphSphere ∞ : EuclideanSpace ℝ (Fin 3)))ᗮ :=
+  sphereCoordsPlane.equivRange.trans (LinearIsometryEquiv.ofEq _ _ range_sphereCoordsPlane)
+
+@[simp]
+theorem coe_sphereCoordsIsometry_apply (z : ℂ) :
+    (sphereCoordsIsometry z : EuclideanSpace ℝ (Fin 3)) = toLp 2 ![z.re, -z.im, 0] :=
+  (rfl)
+
+/-- The inverse of `sphereCoordsIsometry` reads off `z = w₀ - i w₁` from `w = (w₀, w₁, 0)`. -/
+@[simp]
+theorem sphereCoordsIsometry_symm_apply
+    (w : (ℝ ∙ (homeomorphSphere ∞ : EuclideanSpace ℝ (Fin 3)))ᗮ) :
+    sphereCoordsIsometry.symm w =
+      ⟨(w : EuclideanSpace ℝ (Fin 3)) 0, -(w : EuclideanSpace ℝ (Fin 3)) 1⟩ := by
+  -- The third coordinate of `w` vanishes, since `w` is orthogonal to the north pole.
+  have hw : ⟪toLp 2 (sphereCoords ∞), (w : EuclideanSpace ℝ (Fin 3))⟫_ℝ = 0 := by
+    rw [← coe_homeomorphSphere]
+    exact Submodule.mem_orthogonal_singleton_iff_inner_right.1 w.property
+  rw [sphereCoords_infty, EuclideanSpace.inner_eq_star_dotProduct] at hw
+  simp only [star_trivial, dotProduct, Fin.sum_univ_three] at hw
+  simp only [Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
+    Matrix.head_cons, Matrix.tail_cons, mul_zero, zero_add, mul_one] at hw
+  rw [LinearIsometryEquiv.symm_apply_eq]
+  ext i
+  fin_cases i <;> simp [hw]
+
+/-- **The Pauli model is the stereographic diffeomorphism.** For the north pole `(0, 0, 1)` and the
+isometry `z ↦ (Re z, -Im z, 0)`, the diffeomorphism `diffeomorphSphere` from the Riemann sphere
+onto the unit sphere of `ℝ³` is the homeomorphism `homeomorphSphere` given by `sphereCoords`. In
+particular `homeomorphSphere` is an analytic diffeomorphism. -/
+@[simp]
+theorem diffeomorphSphere_sphereCoordsIsometry_apply (x : OnePoint ℂ) :
+    diffeomorphSphere (homeomorphSphere ∞) sphereCoordsIsometry x = homeomorphSphere x := by
+  induction x using OnePoint.rec with
+  | infty => exact diffeomorphSphere_infty _ _
+  | coe z =>
+    ext1
+    rw [coe_diffeomorphSphere_coe, coe_sphereCoordsIsometry_apply, coe_homeomorphSphere,
+      coe_homeomorphSphere, sphereCoords_coe, sphereCoords_infty]
+    have hz : ‖z‖ ^ 2 = Complex.normSq z := Complex.sq_norm z
+    ext i
+    fin_cases i <;> simp [hz]
+
+/-- The stereographic diffeomorphism from the north pole through `sphereCoordsIsometry` has the
+Pauli model `homeomorphSphere` as underlying homeomorphism. -/
+theorem toHomeomorph_diffeomorphSphere_sphereCoordsIsometry :
+    (diffeomorphSphere (homeomorphSphere ∞) sphereCoordsIsometry).toHomeomorph =
+      homeomorphSphere :=
+  Homeomorph.ext diffeomorphSphere_sphereCoordsIsometry_apply
+
+/-- The inverse of the stereographic diffeomorphism from the north pole through
+`sphereCoordsIsometry` is the inverse of the Pauli model. -/
+@[simp]
+theorem diffeomorphSphere_sphereCoordsIsometry_symm_apply
+    (p : sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) :
+    (diffeomorphSphere (homeomorphSphere ∞) sphereCoordsIsometry).symm p =
+      homeomorphSphere.symm p :=
+  (diffeomorphSphere _ _).toEquiv.symm_apply_eq.2 (by simp)
+
+end Pauli
 
 end OnePoint

@@ -54,6 +54,7 @@ coboundaries the inner derivations `a ↦ a m - m a`.
 * `TauCeti.mem_hochschildBimoduleCocycles_zero_iff`: the degree-zero cocycles are the central
   elements.
 * `TauCeti.mem_hochschildBimoduleCocycles_one_iff`: the degree-one cocycles are the derivations.
+* `TauCeti.mem_hochschildBimoduleCocycles_two_iff`: the degree-two cocycle identity, explicitly.
 * `TauCeti.mem_hochschildBimoduleCoboundaries_one_iff`,
   `TauCeti.hochschildBimoduleCohomology.mk_one_eq_zero_iff`: a degree-one cochain is a coboundary
   exactly when it is an inner derivation.
@@ -154,6 +155,19 @@ theorem mem_hochschildBimoduleCocycles_one_iff (ψ : (Fin 1 → A) →ₘₗ[R] 
   simp only [mem_hochschildBimoduleCocycles_iff,
     hochschildBimoduleCoboundary_ofSubsingleton_eq_zero_iff,
     MultilinearMap.ofSubsingleton_apply_apply]
+
+variable {R A M} in
+/-- A degree-two cochain is a cocycle exactly when
+`a • ψ(b, c) - ψ(a b, c) + ψ(a, b c) - ψ(a, b) • c = 0` for all `a`, `b`, `c`. -/
+theorem mem_hochschildBimoduleCocycles_two_iff (ψ : (Fin 2 → A) →ₘₗ[R] M) :
+    ψ ∈ hochschildBimoduleCocycles R A M 2 ↔
+      ∀ a b c : A, a • ψ ![b, c] - ψ ![a * b, c] + ψ ![a, b * c] - op c • ψ ![a, b] = 0 := by
+  rw [mem_hochschildBimoduleCocycles_iff]
+  refine ⟨fun h a b c ↦ ?_, fun h ↦ ?_⟩
+  · rw [← hochschildBimoduleCoboundary_two_apply, h, zero_apply]
+  · ext x
+    rw [← FinVec.etaExpand_eq x]
+    exact (hochschildBimoduleCoboundary_two_apply ψ (x 0) (x 1) (x 2)).trans (h _ _ _)
 
 variable {R A M} in
 /-- A degree-one cochain is a coboundary exactly when it is an inner derivation

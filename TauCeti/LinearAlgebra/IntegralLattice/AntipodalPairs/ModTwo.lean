@@ -25,6 +25,10 @@ The sign-independent map exists on every norm shell; it is injective whenever th
 norm is less than twice every nonzero lattice norm. No unimodularity or enumeration of
 the lattice is needed.
 
+Translating a vector by `2z` changes its norm by `4 (x · z + z · z)`, so the norm modulo four is
+constant on each residue class (`TauCeti.IntegralLattice.integralNorm_modEq_of_mk_eq`). A class
+therefore meets only norm shells of a single residue modulo four.
+
 ## References
 
 * J. H. Conway and N. J. A. Sloane, *Sphere Packings, Lattices and Groups*, Chapter 10.
@@ -63,6 +67,24 @@ instance instFiniteNormClassesModTwo (n : ℚ) : Finite (L.normClassesModTwo n) 
 /-- Every norm shell has finitely many represented mod-two classes. -/
 theorem finite_normClassesModTwo (n : ℚ) : (L.normClassesModTwo n).Finite :=
   Set.toFinite _
+
+/-- Vectors with the same residue modulo `2L` have norms congruent modulo four. -/
+theorem integralNorm_modEq_of_mk_eq {x y : L}
+    (h : (Submodule.Quotient.mk x : QuotSMulTop (2 : ℤ) L) = Submodule.Quotient.mk y) :
+    L.integralNorm x ≡ L.integralNorm y [ZMOD 4] := by
+  obtain ⟨z, -, hz⟩ := (Submodule.mem_smul_pointwise_iff_exists
+    (x - y) (2 : ℤ) (⊤ : Submodule ℤ L)).mp ((Submodule.Quotient.eq _).mp h)
+  rw [show x = y + (2 : ℤ) • z by rw [hz]; abel, integralNorm_add_two_smul]
+  exact Int.modEq_iff_dvd.mpr ⟨-(L.integralForm y z + L.integralNorm z), by ring⟩
+
+/-- A class represented on the shell of integer norm `t` consists of vectors whose norms are
+congruent to `t` modulo four. -/
+theorem modEq_integralNorm_of_mk_mem_normClassesModTwo {x : L} {t : ℤ}
+    (h : (Submodule.Quotient.mk x : QuotSMulTop (2 : ℤ) L) ∈ L.normClassesModTwo t) :
+    t ≡ L.integralNorm x [ZMOD 4] := by
+  obtain ⟨y, hy, hyx⟩ := L.mem_normClassesModTwo.mp h
+  rw [← (L.mem_vectorsOfNorm_intCast).mp hy]
+  exact L.integralNorm_modEq_of_mk_eq hyx
 
 /-- Reduction of an isometry preserves membership in every represented norm shell. -/
 @[simp]

@@ -22,6 +22,20 @@ before the first success, the search cannot reach that success. For a total stag
 specializes to Mathlib's `Nat.rfindOpt`, and for a persistent stage table it computes the
 presented partial function.
 
+## Main results
+
+* `TauCeti.Oracle.Single.Code.exists_code_answers_apply`: a single oracle program applies any
+  primitive recursive function to `(n, k)` and the finite oracle prefix `O 0, …, O (k - 1)`,
+  uniformly for every total oracle `O`.
+* `TauCeti.Oracle.Single.Code.exists_code_rfindOpt_answers`: a single oracle program evaluates to
+  the option-valued least search `Nat.rfindOpt` of a primitive recursive function on `(n, k)` and
+  `O 0, …, O (k - 1)`, uniformly for every total oracle `O`.
+* `TauCeti.Oracle.Single.Code.exists_code_rfind_answers`: a single oracle program evaluates to the
+  least witness `k` satisfying a primitive recursive predicate on `(n, k)` and
+  `O 0, …, O (k - 1)`, uniformly for every total oracle `O`.
+* `TauCeti.Oracle.Single.Code.exists_code_dom_iff_exists_answers`: domain characterization of
+  `exists_code_rfind_answers`.
+
 ## References
 
 * R. I. Soare, *Recursively Enumerable Sets and Degrees*, Springer, 1987, Chapter I.3
@@ -136,5 +150,82 @@ theorem eval_searchStages {c : Code} {A : ℕ → Option ℕ} {x : ℕ}
   ext y
   simp only [mem_eval_searchStages, Nat.mem_rfindOpt_iff, hA, Part.mem_some_iff, encode_inj,
     eq_comm]
+
+/-! ### Uniform prefix search over total oracles -/
+
+/-- A program sending `Nat.pair a k` to the code of the string `O 0, …, O (k - 1)`, relative to
+every total oracle `O`. -/
+private theorem exists_code_answers : ∃ c : Code, ∀ (O : ℕ → ℕ) a k,
+    eval (O : ℕ →. ℕ) c (Nat.pair a k) =
+      Part.some (encode ((List.range k).map O)) := by
+  open Primrec in
+  obtain ⟨cs, hcs⟩ := exists_code_of_computable (g := fun m =>
+      encode (Denumerable.ofNat (List ℕ) m.unpair.1 ++ [m.unpair.2])) <| Primrec.to_comp <|
+    Primrec.encode.comp <| list_append.comp ((Primrec.ofNat _).comp (fst.comp Primrec.unpair))
+      (list_cons.comp (snd.comp Primrec.unpair) (const []))
+  refine ⟨prec zero (comp cs (pair (comp right right) (comp oracle (comp left right)))),
+    fun O a k => ?_⟩
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [eval_prec_succ, ih]
+    simp [hcs, Seq.seq, List.range_succ]
+
+/-- A program applying a primitive recursive function `g` to `(n, k, [O 0, …, O (k - 1)])` on the
+input `Nat.pair n k`, relative to every total oracle `O`. -/
+theorem exists_code_answers_apply {g : ℕ × ℕ × List ℕ → ℕ} (hg : Primrec g) :
+    ∃ c : Code, ∀ (O : ℕ → ℕ) n k, eval (O : ℕ →. ℕ) c (Nat.pair n k) =
+      Part.some (g (n, k, (List.range k).map O)) := by
+  open Primrec in
+  obtain ⟨ca, hca⟩ := exists_code_answers
+  obtain ⟨cg, hcg⟩ := exists_code_of_computable (g := fun m =>
+      g (m.unpair.1.unpair.1, m.unpair.1.unpair.2, Denumerable.ofNat (List ℕ) m.unpair.2)) <|
+    Primrec.to_comp <| hg.comp <| (fst.comp (Primrec.unpair.comp (fst.comp Primrec.unpair))).pair <|
+      (snd.comp (Primrec.unpair.comp (fst.comp Primrec.unpair))).pair <|
+        (Primrec.ofNat _).comp (snd.comp Primrec.unpair)
+  refine ⟨comp cg (pair (pair left right) ca), fun O n k => ?_⟩
+  rw [eval_comp, eval_pair, eval_pair_left_right, hca]
+  simp [hcg, Seq.seq]
+
+/-- A single program whose evaluation on `n`, relative to every total oracle `O`, is the
+option-valued least search `Nat.rfindOpt` of a primitive recursive function `g` on `(n, k)` and
+the finite oracle string `O 0, …, O (k - 1)`. -/
+theorem exists_code_rfindOpt_answers {g : ℕ × ℕ × List ℕ → Option ℕ} (hg : Primrec g) :
+    ∃ c : Code, ∀ (O : ℕ → ℕ) n,
+      eval (O : ℕ →. ℕ) c n =
+        Nat.rfindOpt fun k => g (n, k, (List.range k).map O) := by
+  obtain ⟨t, ht⟩ := exists_code_answers_apply (g := fun q => encode (g q))
+    (Primrec.encode.comp hg)
+  exact ⟨t.searchStages, fun O n => eval_searchStages (ht O n)⟩
+
+/-- A single program whose evaluation on `n`, relative to every total oracle `O`, is the least
+witness `k` at which a primitive recursive predicate holds of `(n, k)` and the finite oracle string
+`O 0, …, O (k - 1)`. -/
+theorem exists_code_rfind_answers {p : ℕ × ℕ × List ℕ → Bool} (hp : Primrec p) :
+    ∃ c : Code, ∀ (O : ℕ → ℕ) n,
+      eval (O : ℕ →. ℕ) c n =
+        Nat.rfind fun k => Part.some (p (n, k, (List.range k).map O)) := by
+  open Primrec in
+  obtain ⟨c, hc⟩ := exists_code_rfindOpt_answers
+    (g := fun q => bif p q then some q.2.1 else (none : Option ℕ))
+    (Primrec.cond hp (option_some.comp (fst.comp snd)) (const none))
+  refine ⟨c, fun O n => ?_⟩
+  rw [hc]
+  ext k
+  rw [Nat.mem_rfindOpt_iff,
+    Nat.mem_rfind (p := fun k => (Part.some (p (n, k, (List.range k).map O)) : Part Bool))]
+  simp
+
+/-- A single program whose domain on `n`, relative to every total oracle `O`, is the set of inputs
+admitting a witness `k` at which a primitive recursive predicate holds of `(n, k)` and the finite
+oracle string `O 0, …, O (k - 1)`. -/
+theorem exists_code_dom_iff_exists_answers {p : ℕ × ℕ × List ℕ → Bool} (hp : Primrec p) :
+    ∃ c : Code, ∀ (O : ℕ → ℕ) n,
+      (eval (O : ℕ →. ℕ) c n).Dom ↔ ∃ k, p (n, k, (List.range k).map O) = true := by
+  obtain ⟨c, hc⟩ := exists_code_rfind_answers hp
+  refine ⟨c, fun O n => ?_⟩
+  rw [hc]
+  exact (Nat.rfind_dom (p := fun k =>
+    (Part.some (p (n, k, (List.range k).map O)) : Part Bool))).trans (by simp)
 
 end TauCeti.Oracle.Single.Code

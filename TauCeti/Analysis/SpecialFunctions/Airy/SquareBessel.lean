@@ -10,7 +10,7 @@ import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 import TauCeti.Analysis.Bochner.Gaussian.Basic
-import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.MeasureTheory.Integral.Bochner.Affine
 
 /-!
 # The Airy double integral against a Gaussian as a `J₀` integral
@@ -70,12 +70,6 @@ private theorem det_airyProductSubst : airyProductSubst.det = -(2 * √3) := by
     Matrix.det_fin_two]
   simp [LinearMap.toMatrix_apply, airyProductSubst_apply]
   ring
-
-private theorem isUnit_airyProductSubst : IsUnit airyProductSubst := by
-  have hdet := det_airyProductSubst
-  rw [ContinuousLinearMap.det] at hdet
-  rw [ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap, LinearMap.isUnit_iff_isUnit_det, hdet]
-  exact isUnit_iff_ne_zero.2 (neg_ne_zero.2 (by positivity))
 
 /-- The integrand in polar form: the radial plane wave `e^{i Re z (|z|²/12 + x)}` against the
 Gaussian `e^{-ε|z|²}` is integrable on `ℂ`. -/
@@ -156,11 +150,11 @@ theorem integral_exp_cube_add_cube_mul_exp_neg_eq_integral_besselJ (x : ℝ) {ε
   -- Lebesgue measure on `ℝ × ℝ` is the product measure, an additive Haar measure.
   have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
   -- The Jacobian of the substitution is `|det| = 2√3`.
-  have hdet := Measure.integral_eq_abs_det_smul_integral_comp volume isUnit_airyProductSubst G
-  rw [det_airyProductSubst, abs_neg, abs_of_pos (by positivity)] at hdet
+  have hdet := Measure.integral_comp_linearMap volume G (airyProductSubst : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ)
+  simp only [ContinuousLinearMap.coe_coe] at hdet
+  rw [← ContinuousLinearMap.det, det_airyProductSubst, abs_neg, abs_of_pos (by positivity)] at hdet
   simp_rw [hsubst]
-  rw [eq_inv_smul_iff₀ (by positivity) |>.mpr hdet.symm, hG,
-    integral_exp_fst_mul_exp_neg_eq_integral_besselJ x hε, real_smul, ← mul_assoc]
+  rw [hdet, hG, integral_exp_fst_mul_exp_neg_eq_integral_besselJ x hε, real_smul, ← mul_assoc]
   congr 1
   push_cast
   field_simp

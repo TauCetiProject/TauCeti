@@ -29,6 +29,10 @@ other.
 
 ## Main results
 
+* `IsIntegral.pow_add_mul_mul`, `IsIntegral.pow_mul_add`, `IsIntegral.pow_mul_mul_pow`,
+  `IsIntegral.pow_mul_of_le`, `IsIntegral.pow_mul_sum`, `IsIntegral.pow_sum_mul_prod`: if
+  `δ ^ a * α` is integral, the powers of `δ` that clear the denominators of products, sums
+  (over a finite set `s`) and powers of such elements, and every larger power of an integral `δ`.
 * `IsIntegral.exists_isIntegral_algebraMap_pow_mul`: if each element of `A` times a power of `r`
   is integral over `P`, every element of an `A`-algebra integral over `A` becomes integral over
   `P` after multiplication by a power of `r`.
@@ -84,6 +88,67 @@ version of this lemma was extracted from the proof of
 
 public section
 
+/-! ### Clearing denominators of sums, products and powers
+
+If `δ ^ a * α` is integral, then `δ ^ a` clears the denominator of `α`. The lemmas below give
+exponents that clear the denominators of sums, products and powers of such elements. They isolate
+and generalize the integrality half of the bundled size predicate `AlgSize` in Michail
+Karatarakis's formalization of Baker's theorem (`mkaratarakis/mathlib4`, branch `baker`, commit
+`1d51891b5be7ceeca95b4583cad39e0681c5e453`,
+`Mathlib/NumberTheory/Transcendental/Baker/AlgSize.lean`, Apache 2.0). -/
+
+section Denominators
+
+variable {R A : Type*} [CommRing R]
+
+/-- If `δ ^ a` clears the denominator of `α` and `δ` commutes with `α`, then `δ ^ (a * k)` clears
+that of `α ^ k`. -/
+theorem IsIntegral.pow_mul_mul_pow [Ring A] [Algebra R A] {δ α : A} {a : ℕ}
+    (hα : IsIntegral R (δ ^ a * α)) (h : Commute δ α) (k : ℕ) :
+    IsIntegral R (δ ^ (a * k) * α ^ k) := by
+  rw [pow_mul, ← (h.pow_left a).mul_pow]
+  exact hα.pow k
+
+variable [CommRing A] [Algebra R A] {δ α β : A} {a b : ℕ}
+
+/-- If `δ` is integral and `δ ^ a` clears the denominator of `α`, then so does every larger power
+of `δ`. -/
+theorem IsIntegral.pow_mul_of_le (hα : IsIntegral R (δ ^ a * α)) (hδ : IsIntegral R δ) {c : ℕ}
+    (hac : a ≤ c) : IsIntegral R (δ ^ c * α) := by
+  rw [← Nat.sub_add_cancel hac, pow_add, mul_assoc]
+  exact (hδ.pow _).mul hα
+
+/-- If `δ ^ a` clears the denominator of `f i` for every `i ∈ s`, then it clears that of
+`∑ i ∈ s, f i`. -/
+theorem IsIntegral.pow_mul_sum {ι : Type*} {s : Finset ι} {f : ι → A}
+    (hf : ∀ i ∈ s, IsIntegral R (δ ^ a * f i)) : IsIntegral R (δ ^ a * ∑ i ∈ s, f i) := by
+  rw [Finset.mul_sum]
+  exact IsIntegral.sum _ hf
+
+/-- If `δ ^ a` clears the denominators of `α` and of `β`, then it clears that of `α + β`. -/
+theorem IsIntegral.pow_mul_add (hα : IsIntegral R (δ ^ a * α)) (hβ : IsIntegral R (δ ^ a * β)) :
+    IsIntegral R (δ ^ a * (α + β)) := by
+  simpa [Fin.sum_univ_two] using
+    IsIntegral.pow_mul_sum (s := Finset.univ) (f := ![α, β]) (by simp [Fin.forall_fin_two, hα, hβ])
+
+/-- If `δ ^ a i` clears the denominator of `f i` for every `i ∈ s`, then `δ ^ (∑ i ∈ s, a i)`
+clears that of `∏ i ∈ s, f i`. -/
+theorem IsIntegral.pow_sum_mul_prod {ι : Type*} {s : Finset ι} {f : ι → A} {a : ι → ℕ}
+    (hf : ∀ i ∈ s, IsIntegral R (δ ^ a i * f i)) :
+    IsIntegral R (δ ^ (∑ i ∈ s, a i) * ∏ i ∈ s, f i) := by
+  rw [← Finset.prod_pow_eq_pow_sum, ← Finset.prod_mul_distrib]
+  exact IsIntegral.prod _ hf
+
+/-- If `δ ^ a` clears the denominator of `α` and `δ ^ b` that of `β`, then `δ ^ (a + b)` clears
+the denominator of `α * β`. -/
+theorem IsIntegral.pow_add_mul_mul (hα : IsIntegral R (δ ^ a * α))
+    (hβ : IsIntegral R (δ ^ b * β)) : IsIntegral R (δ ^ (a + b) * (α * β)) := by
+  simpa [Fin.sum_univ_two, Fin.prod_univ_two] using
+    IsIntegral.pow_sum_mul_prod (s := Finset.univ) (f := ![α, β]) (a := ![a, b])
+      (by simp [Fin.forall_fin_two, hα, hβ])
+
+end Denominators
+
 section
 
 open Polynomial
@@ -108,8 +173,7 @@ theorem IsIntegral.exists_isIntegral_algebraMap_pow_mul {c : B} (hc : IsIntegral
     rcases le_or_gt i f.natDegree with hi | hi
     · have : m (f.coeff i) ≤ N := Finset.single_le_sum (f := fun i ↦ m (f.coeff i))
         (fun _ _ ↦ Nat.zero_le _) (Finset.mem_range.mpr (Nat.lt_succ_of_le hi))
-      rw [← Nat.sub_add_cancel this, pow_add, mul_assoc]
-      exact (hr.pow _).mul (hm _)
+      exact (hm _).pow_mul_of_le hr this
     · rw [f.coeff_eq_zero_of_natDegree_lt hi, mul_zero]
       exact isIntegral_zero
   -- The coefficients of `f.scaleRoots rᴺ` lie in the integral closure `S` of `P` in `A`.

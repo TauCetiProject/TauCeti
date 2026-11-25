@@ -51,7 +51,9 @@ the basis above. These generate the special linear group.
 * `TauCeti.exists_spinPlusAction_spinGroupToEven_eq_of_det_eq_one`: every determinant-one
   endomorphism of the even half-spin module is the action of a Spin element.
 * `TauCeti.spinSixTransvectionLift`: a specified Spin lift of each elementary transvection,
-  with its half-spin matrix and vector action computed explicitly.
+  with its half-spin matrix and vector action computed explicitly. It is the Clifford element
+  `1 + ι w * ι u` for two orthogonal vectors (`TauCeti.coe_spinSixTransvectionLift` and
+  `TauCeti.polar_spinSixTransvectionVectors_eq_zero`).
 * `TauCeti.mem_range_spinGroupToEvenUnitary_iff_det_hyperbolicSixEvenUnitaryEquivGeneralLinear`:
   for three hyperbolic planes, an even unitary element lies in Spin exactly when its image in
   `GL₄(K)` has determinant one.
@@ -169,7 +171,8 @@ private theorem spinSixTransvectionFirstVector_isotropic {i j : Fin 4} (hij : i 
   all_goals
     simp [spinSixTransvectionFirstVector, P.isotropic_W, P.isotropic_W']
 
-private theorem spinSixTransvectionVectors_polar {i j : Fin 4} (hij : i ≠ j) (c : R) :
+/-- The two vectors of an elementary Spin-six transvection lift are orthogonal. -/
+theorem polar_spinSixTransvectionVectors_eq_zero {i j : Fin 4} (hij : i ≠ j) (c : R) :
     QuadraticMap.polar Q (spinSixTransvectionFirstVector P b i j)
       (spinSixTransvectionSecondVector P b i j c) = 0 := by
   fin_cases i <;> fin_cases j
@@ -703,7 +706,7 @@ polarized six-dimensional quadratic space. -/
 noncomputable def spinSixTransvectionLift {i j : Fin 4} (hij : i ≠ j) (c : K) : spinGroup Q :=
   spinTransvection (P.nondegenerate_of_line_eq_bot hline)
     (spinSixTransvectionFirstVector_isotropic P b hij)
-    (spinSixTransvectionVectors_polar P b hij c)
+    (polar_spinSixTransvectionVectors_eq_zero P b hij c)
 
 /-- The canonical lift of an elementary transvection with parameter zero is the identity. -/
 @[simp]
@@ -713,6 +716,15 @@ theorem spinSixTransvectionLift_zero {i j : Fin 4} (hij : i ≠ j) :
   apply spinTransvection_eq_one_of_mem_span
   rw [spinSixTransvectionSecondVector_zero]
   exact Submodule.zero_mem _
+
+/-- The canonical lift is the Clifford element `1 + ι w * ι u` built from its two transvection
+vectors. -/
+@[simp]
+theorem coe_spinSixTransvectionLift {i j : Fin 4} (hij : i ≠ j) (c : K) :
+    (spinSixTransvectionLift P hline b hij c : CliffordAlgebra Q) =
+      1 + ι Q (spinSixTransvectionSecondVector P b i j c) *
+        ι Q (spinSixTransvectionFirstVector P b i j) := by
+  rw [spinSixTransvectionLift, coe_spinTransvection]
 
 private abbrev SpinSixLiftHasMatrix (i j : Fin 4) (hij : i ≠ j) (c : K) : Prop :=
     LinearMap.toMatrix (b.spinSixEvenMonomialBasis (spinPlus_def P))
