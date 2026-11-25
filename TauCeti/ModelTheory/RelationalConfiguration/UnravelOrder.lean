@@ -9,6 +9,8 @@ public import Mathlib.Data.Rat.Denumerable
 public import TauCeti.ModelTheory.RelationalConfiguration.GraphClass
 public import TauCeti.ModelTheory.RelationalConfiguration.OrderClass
 public import TauCeti.ModelTheory.RelationalConfiguration.Unravelling
+public import TauCeti.Order.Condensation
+import Mathlib.Order.Interval.Set.Nat
 
 /-!
 # The linear order of an unravelled graph code
@@ -23,10 +25,10 @@ order. Relabelled along the fixed bijection `ℕ ≃ List ℚ × ℕ`, this is a
 This file proves that `unravelOrderCode` is continuous, that its values are coded linear orders
 for every code, simple graph or not, and that its images are isomorphic exactly when the codes
 are. An order automorphism `Φ` of `List ℚ` with `χ_d ∘ Φ = χ_c`, given by the unravelling lemma,
-extends block by block. Conversely, call two points near (`IsNear`) when the interval between
-them is finite: the points near a point of the `ω`-part of a block are infinitely many, and the
-points near a point of the finite part are that finite part, of size `χ_c(x) + 2`, because the
-order of `List ℚ` is dense. An isomorphism of the images preserves nearness, so it maps finite
+extends block by block. Conversely, call two points near (`TauCeti.IsNear`) when the interval
+between them is finite: the points near a point of the `ω`-part of a block are infinitely many,
+and the points near a point of the finite part are that finite part, of size `χ_c(x) + 2`, because
+the order of `List ℚ` is dense. An isomorphism of the images preserves nearness, so it maps finite
 parts to finite parts of the same size, in order, and induces a colour-preserving order
 automorphism of `List ℚ`. Hence countable linear orders are Borel complete.
 
@@ -36,8 +38,6 @@ automorphism of `List ℚ`. Hence countable linear orders are Borel complete.
   `χ` of `List ℚ`.
 * `TauCeti.RelationalConfiguration.unravelOrderCode c`: the code on `ℕ` of the order for the
   colouring `unravelColor c`.
-* `TauCeti.RelationalConfiguration.IsNear r p q`: the interval between `p` and `q` for `r` is
-  finite.
 
 ## Main results
 
@@ -50,6 +50,8 @@ automorphism of `List ℚ`. Hence countable linear orders are Borel complete.
   orders for two colourings induces a colour-preserving order automorphism of `List ℚ`.
 * `TauCeti.RelationalConfiguration.isoSetoid_unravelOrderCode_iff`: the images are isomorphic
   exactly when the codes are.
+* `TauCeti.RelationalConfiguration.exists_continuous_reduction_linearOrderClass`: a continuous map
+  to coded linear orders reduces isomorphism of graph codes to isomorphism of its values.
 * `TauCeti.RelationalConfiguration.borelComplete_linearOrderClass`: countable linear orders are
   Borel complete.
 
@@ -216,30 +218,6 @@ theorem isoSetoid_unravelOrderCode {c d : RelationalConfiguration Language.graph
 
 /-! ### Isomorphic images come from isomorphic codes -/
 
-/-- Points `p` and `q` are **near** for a relation `r` when the closed interval between them, in
-either direction, is finite. For a linear order, nearness is the relation of the condensation
-classes. -/
-def IsNear {α : Type*} (r : α → α → Prop) (p q : α) : Prop :=
-  {z | r p z ∧ r z q ∨ r q z ∧ r z p}.Finite
-
-/-- A bijection carrying `r` to `r'` preserves nearness. -/
-theorem isNear_map {α : Type*} {r r' : α → α → Prop} (f : α ≃ α)
-    (hf : ∀ p q, r' (f p) (f q) ↔ r p q) (p q : α) : IsNear r' (f p) (f q) ↔ IsNear r p q := by
-  have h : {z | r' (f p) z ∧ r' z (f q) ∨ r' (f q) z ∧ r' z (f p)} =
-      f '' {z | r p z ∧ r z q ∨ r q z ∧ r z p} := by
-    ext z
-    obtain ⟨w, rfl⟩ := f.surjective z
-    simp only [mem_ofPred_eq, hf, f.injective.mem_set_image]
-  rw [IsNear, IsNear, h, finite_image_iff f.injective.injOn]
-
-/-- A bijection carrying `r` to `r'` carries the points near `p` to the points near `f p`. -/
-theorem setOf_isNear_map {α : Type*} {r r' : α → α → Prop} (f : α ≃ α)
-    (hf : ∀ p q, r' (f p) (f q) ↔ r p q) (p : α) :
-    {q | IsNear r' (f p) q} = f '' {q | IsNear r p q} := by
-  ext q
-  obtain ⟨w, rfl⟩ := f.surjective q
-  simp only [mem_ofPred_eq, isNear_map f hf, f.injective.mem_set_image]
-
 variable {χ : List ℚ → ℕ}
 
 /-- Two points of the block of `x` compare by their positions in the block of colour `χ x`. -/
@@ -261,6 +239,21 @@ private theorem fst_eq_of_between {p q z : List ℚ × ℕ} (hq : q.1 = p.1)
   · exact le_antisymm (hq ▸ fst_le_of_unravelOrderRel h₂) (fst_le_of_unravelOrderRel h₁)
   · exact le_antisymm (fst_le_of_unravelOrderRel h₂) (hq ▸ fst_le_of_unravelOrderRel h₁)
 
+/-- Two points of one block on the same side of `χ x + 2`, both in the `ω`-part or both in the
+finite part, are near. -/
+private theorem isNear_mk_mk {x : List ℚ} {i j : ℕ} (h : i < χ x + 2 ↔ j < χ x + 2) :
+    IsNear (unravelOrderRel χ) (x, i) (x, j) := by
+  refine isNear_iff.2 <|
+    ((finite_Iic (max (max i j) (χ x + 1))).image fun k => (x, k)).subset fun z hz => ?_
+  have hzx := fst_eq_of_between (p := (x, i)) (q := (x, j)) rfl hz
+  obtain ⟨z, k⟩ := z
+  dsimp only at hzx
+  subst hzx
+  refine ⟨k, ?_, rfl⟩
+  rw [mem_Iic]
+  simp only [mem_ofPred_eq, unravelOrderRel_mk_mk_iff, blockKey_le_blockKey_iff] at hz
+  omega
+
 /-- Points of the finite part of a block are near exactly the points of the same finite part. -/
 theorem isNear_unravelOrderRel_iff {p q : List ℚ × ℕ} (hp : p.2 < χ p.1 + 2) :
     IsNear (unravelOrderRel χ) p q ↔ q.1 = p.1 ∧ q.2 < χ p.1 + 2 := by
@@ -269,11 +262,11 @@ theorem isNear_unravelOrderRel_iff {p q : List ℚ × ℕ} (hp : p.2 < χ p.1 + 
   dsimp only at hp ⊢
   refine ⟨fun h => ?_, fun ⟨hy, hj⟩ => ?_⟩
   · by_contra hne
-    refine h.not_infinite ?_
+    refine (isNear_iff.1 h).not_infinite ?_
     rcases lt_trichotomy x y with hxy | hxy | hxy
     · obtain ⟨z, hxz, hzy⟩ := exists_between hxy
-      refine infinite_of_injective_forall_mem (f := fun k : ℕ => (z, k))
-        (fun a b h => (Prod.mk.inj h).2) fun k => Or.inl ⟨?_, ?_⟩ <;>
+      refine infinite_of_injective_forall_mem (Prod.mk_right_injective z)
+        fun k => Or.inl ⟨?_, ?_⟩ <;>
         exact unravelOrderRel_iff.2 (Or.inl ‹_›)
     · subst hxy
       have hj : χ x + 2 ≤ j := by simpa using hne
@@ -284,40 +277,26 @@ theorem isNear_unravelOrderRel_iff {p q : List ℚ × ℕ} (hp : p.2 < χ p.1 + 
       · rw [unravelOrderRel_mk_mk_iff, blockKey_le_blockKey_iff]
         exact Or.inl ⟨by omega, hp⟩
     · obtain ⟨z, hyz, hzx⟩ := exists_between hxy
-      refine infinite_of_injective_forall_mem (f := fun k : ℕ => (z, k))
-        (fun a b h => (Prod.mk.inj h).2) fun k => Or.inr ⟨?_, ?_⟩ <;>
+      refine infinite_of_injective_forall_mem (Prod.mk_right_injective z)
+        fun k => Or.inr ⟨?_, ?_⟩ <;>
         exact unravelOrderRel_iff.2 (Or.inl ‹_›)
   · subst y
-    refine ((finite_Iio (χ x + 2)).image fun k => (x, k)).subset fun z hz => ?_
-    have hzx := fst_eq_of_between (p := (x, i)) (q := (x, j)) rfl hz
-    obtain ⟨z, k⟩ := z
-    dsimp only at hzx
-    subst hzx
-    refine ⟨k, ?_, rfl⟩
-    rw [mem_Iio]
-    rcases hz with ⟨h₁, -⟩ | ⟨h₁, -⟩ <;>
-    · rw [unravelOrderRel_mk_mk_iff, blockKey_le_blockKey_iff] at h₁
-      omega
+    exact isNear_mk_mk (by omega)
+
+/-- The points near a point `p` of the finite part of its block form that finite part. -/
+theorem setOf_isNear_unravelOrderRel_eq {p : List ℚ × ℕ} (hp : p.2 < χ p.1 + 2) :
+    {q | IsNear (unravelOrderRel χ) p q} = (fun k => (p.1, k)) '' Iio (χ p.1 + 2) := by
+  ext q
+  rw [mem_ofPred_eq, isNear_unravelOrderRel_iff hp]
+  exact ⟨fun ⟨h₁, h₂⟩ => ⟨q.2, h₂, by rw [← h₁]⟩, by rintro ⟨k, hk, rfl⟩; exact ⟨rfl, hk⟩⟩
 
 /-- A point of the `ω`-part of a block is near infinitely many points. -/
 theorem infinite_setOf_isNear_unravelOrderRel {p : List ℚ × ℕ} (hp : χ p.1 + 2 ≤ p.2) :
     {q | IsNear (unravelOrderRel χ) p q}.Infinite := by
   obtain ⟨x, i⟩ := p
   dsimp only at hp
-  refine infinite_of_injective_forall_mem (f := fun k : ℕ => (x, i + k))
-    (fun a b h => by simpa using h) fun k => ?_
-  refine ((finite_Iic (i + k)).image fun k => (x, k)).subset fun z hz => ?_
-  have hzx := fst_eq_of_between (p := (x, i)) (q := (x, i + k)) rfl hz
-  obtain ⟨z, l⟩ := z
-  dsimp only at hzx
-  subst hzx
-  refine ⟨l, ?_, rfl⟩
-  rw [mem_Iic]
-  rcases hz with ⟨-, h₂⟩ | ⟨h₁, h₂⟩
-  · rw [unravelOrderRel_mk_mk_iff, blockKey_le_blockKey_iff] at h₂
-    omega
-  · rw [unravelOrderRel_mk_mk_iff, blockKey_le_blockKey_iff] at h₁ h₂
-    omega
+  exact infinite_of_injective_forall_mem (f := fun k : ℕ => (x, i + k))
+    (fun a b h => by simpa using h) fun k => isNear_mk_mk (by omega)
 
 /-- A point is near only finitely many points exactly when it lies in the finite part of its
 block. -/
@@ -326,19 +305,15 @@ theorem finite_setOf_isNear_unravelOrderRel_iff {p : List ℚ × ℕ} :
   refine ⟨fun h => ?_, fun hp => ?_⟩
   · by_contra hp
     exact infinite_setOf_isNear_unravelOrderRel (not_lt.1 hp) h
-  · refine ((finite_Iio (χ p.1 + 2)).image fun k => (p.1, k)).subset fun q hq => ?_
-    obtain ⟨hq₁, hq₂⟩ := (isNear_unravelOrderRel_iff hp).1 hq
-    exact ⟨q.2, hq₂, by rw [← hq₁]⟩
+  · rw [setOf_isNear_unravelOrderRel_eq hp]
+    exact (finite_Iio _).image _
 
-/-- The finite part of the block of `x` has `χ x + 2` points. -/
+/-- For a point `p` of the finite part of its block, the points near `p` are `χ p.1 + 2` in
+number: they form the finite part of the block of `p.1`. -/
 theorem ncard_setOf_isNear_unravelOrderRel {p : List ℚ × ℕ} (hp : p.2 < χ p.1 + 2) :
     {q | IsNear (unravelOrderRel χ) p q}.ncard = χ p.1 + 2 := by
-  have h : {q | IsNear (unravelOrderRel χ) p q} = (fun k => (p.1, k)) '' Iio (χ p.1 + 2) := by
-    ext q
-    rw [mem_ofPred_eq, isNear_unravelOrderRel_iff hp]
-    exact ⟨fun ⟨h₁, h₂⟩ => ⟨q.2, h₂, by rw [← h₁]⟩, by rintro ⟨k, hk, rfl⟩; exact ⟨rfl, hk⟩⟩
-  rw [h, ncard_image_of_injective _ fun a b h => (Prod.mk.inj h).2, ← Finset.coe_range,
-    ncard_coe_finset, Finset.card_range]
+  rw [setOf_isNear_unravelOrderRel_eq hp, ncard_image_of_injective _ (Prod.mk_right_injective _),
+    ncard_Iio_nat]
 
 /-- **Order isomorphisms of the unravelled orders give colour-preserving automorphisms.** A
 bijection `f` of `List ℚ × ℕ` carrying the order for `χ` to the order for `χ'` maps the finite
@@ -397,12 +372,23 @@ theorem isoSetoid_unravelOrderCode_iff {c d : RelationalConfiguration Language.g
       isoSetoid Language.graph ℕ c d :=
   ⟨isoSetoid_of_isoSetoid_unravelOrderCode, isoSetoid_unravelOrderCode⟩
 
-/-- **Countable linear orders are Borel complete** (Friedman–Stanley): `unravelOrderCode` is a
-continuous reduction of isomorphism on `graphClass` to isomorphism on `linearOrderClass`. -/
+/-- **A continuous reduction to coded linear orders**: a continuous map, `unravelOrderCode`,
+sends every code of the language of graphs to a coded linear order, and two codes are isomorphic
+exactly when their images are. -/
+theorem exists_continuous_reduction_linearOrderClass :
+    ∃ f : RelationalConfiguration Language.graph ℕ → RelationalConfiguration Language.order ℕ,
+      Continuous f ∧ (∀ c, f c ∈ linearOrderClass) ∧
+        ∀ c d, isoSetoid Language.graph ℕ c d ↔ isoSetoid Language.order ℕ (f c) (f d) :=
+  ⟨unravelOrderCode, continuous_unravelOrderCode, unravelOrderCode_mem_linearOrderClass,
+    fun _ _ => isoSetoid_unravelOrderCode_iff.symm⟩
+
+/-- **Countable linear orders are Borel complete** (Friedman–Stanley): the continuous reduction
+`exists_continuous_reduction_linearOrderClass` reduces isomorphism on `graphClass` to isomorphism
+on `linearOrderClass`. -/
 theorem borelComplete_linearOrderClass : BorelComplete (linearOrderClass (V := ℕ)) :=
+  let ⟨_, hc, hmem, hiso⟩ := exists_continuous_reduction_linearOrderClass
   borelComplete_graphClass.of_borelReducible <|
-    borelReducible_classIso_of_mapsTo continuous_unravelOrderCode.measurable
-      (fun c _ => unravelOrderCode_mem_linearOrderClass c)
-      fun _ _ _ _ => isoSetoid_unravelOrderCode_iff.symm
+    borelReducible_classIso_of_mapsTo hc.measurable (fun c _ => hmem c)
+      fun c _ d _ => hiso c d
 
 end TauCeti.RelationalConfiguration
