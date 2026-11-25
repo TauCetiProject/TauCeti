@@ -8,13 +8,13 @@ module
 public import TauCeti.RingTheory.HochschildCohomology.Bimodule
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.NoncommRing
-import TauCeti.LinearAlgebra.Multilinear.VecCons
+import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 
 /-!
 # Infinitesimal deformations of an algebra and `HH²(A, A)`
 
 Let `A` be an associative algebra over a commutative ring `R`, and write `A[ε] = A ⊕ εA` for its
-extension of scalars to the dual numbers `R[ε] = R[ε]/(ε²)`, modelled on `A × A` with
+extension of scalars to the dual numbers `R[ε] = R[X]/(X²)`, modelled on `A × A` with
 `ε • (a, b) = (0, a)`. An `R[ε]`-bilinear multiplication on `A[ε]` that reduces to the
 multiplication of `A` modulo `ε` is determined by its values `ac + ε φ(a, c)` on `A`, so it is
 
@@ -50,8 +50,7 @@ cohomology `HH²(A, A)` (`InfinitesimalDeformation.equivHochschildBimoduleCohomo
 * `TauCeti.InfinitesimallyEquivalent`: two deformations related by such a map.
 * `TauCeti.InfinitesimalDeformation`: the infinitesimal deformations of `A`, with the setoid
   `TauCeti.InfinitesimalDeformation.setoid` of infinitesimal equivalence, and
-  `TauCeti.InfinitesimalDeformation.toCocycle` and `TauCeti.InfinitesimalDeformation.ofCocycle`
-  identifying them with Hochschild `2`-cocycles.
+  `TauCeti.InfinitesimalDeformation.cocycleEquiv` identifying them with Hochschild `2`-cocycles.
 
 ## Main results
 
@@ -189,7 +188,7 @@ theorem IsInfinitesimalEquivalence.apply_eq {φ ψ : (Fin 2 → A) →ₘₗ[R] 
     rw [← map_add, Prod.mk_add_mk, add_zero, zero_add]
   refine Prod.ext (hF.fst_apply x) ?_
   rw [hx, Prod.snd_add, hF.apply_zero_prod, add_comm]
-  rfl
+  simp only [LinearMap.comp_apply, LinearMap.inl_apply, LinearMap.snd_apply]
 
 end Deformation
 
@@ -267,7 +266,7 @@ theorem add_infinitesimalDeformationMul [Mul A] [RightDistribClass A] (φ : (Fin
       infinitesimalDeformationMul φ x y + infinitesimalDeformationMul φ x' y := by
   refine Prod.ext (by simp [add_mul]) ?_
   simp only [infinitesimalDeformationMul_snd, Prod.fst_add, Prod.snd_add, Prod.snd_add, add_mul,
-    φ.apply_vecCons_add_left]
+    φ.map_vecCons_add_left]
   abel
 
 /-- The deformed multiplication is additive in its second argument. -/
@@ -277,7 +276,7 @@ theorem infinitesimalDeformationMul_add [Mul A] [LeftDistribClass A] (φ : (Fin 
       infinitesimalDeformationMul φ x y + infinitesimalDeformationMul φ x y' := by
   refine Prod.ext (by simp [mul_add]) ?_
   simp only [infinitesimalDeformationMul_snd, Prod.fst_add, Prod.snd_add, mul_add,
-    φ.apply_vecCons_add_right]
+    φ.map_vecCons_add_right]
   abel
 
 /-- The deformed multiplication is `R`-linear in its first argument. -/
@@ -285,14 +284,14 @@ theorem smul_infinitesimalDeformationMul [Mul A] [IsScalarTower R A A] (φ : (Fi
     (c : R) (x y : A × A) :
     infinitesimalDeformationMul φ (c • x) y = c • infinitesimalDeformationMul φ x y :=
   Prod.ext (by simp [smul_mul_assoc])
-    (by simp [smul_mul_assoc, φ.apply_vecCons_smul_left, smul_add])
+    (by simp [smul_mul_assoc, φ.map_vecCons_smul_left, smul_add])
 
 /-- The deformed multiplication is `R`-linear in its second argument. -/
 theorem infinitesimalDeformationMul_smul [Mul A] [SMulCommClass R A A] (φ : (Fin 2 → A) →ₘₗ[R] A)
     (c : R) (x y : A × A) :
     infinitesimalDeformationMul φ x (c • y) = c • infinitesimalDeformationMul φ x y :=
   Prod.ext (by simp [mul_smul_comm])
-    (by simp [mul_smul_comm, φ.apply_vecCons_smul_right, smul_add])
+    (by simp [mul_smul_comm, φ.map_vecCons_smul_right, smul_add])
 
 end Bilinear
 
@@ -453,34 +452,23 @@ theorem infinitesimallyEquivalent_iff_sub_mem_hochschildBimoduleCoboundaries
 
 namespace InfinitesimalDeformation
 
-/-- The Hochschild cocycle of an infinitesimal deformation. -/
-def toCocycle (φ : InfinitesimalDeformation R A) : hochschildBimoduleCocycles R A A 2 :=
-  ⟨φ.val, isInfinitesimalDeformation_iff_mem_hochschildBimoduleCocycles.1 φ.property⟩
+variable (R A) in
+/-- **Infinitesimal deformations are Hochschild `2`-cocycles**, as subtypes of the
+`2`-cochains. -/
+def cocycleEquiv : InfinitesimalDeformation R A ≃ hochschildBimoduleCocycles R A A 2 :=
+  Equiv.subtypeEquivRight fun _ ↦ isInfinitesimalDeformation_iff_mem_hochschildBimoduleCocycles
 
 /-- The cocycle of an infinitesimal deformation is its underlying cochain. -/
 @[simp]
-theorem coe_toCocycle (φ : InfinitesimalDeformation R A) : (toCocycle φ : _) = φ.val := by
-  rw [toCocycle]
-
-/-- The infinitesimal deformation given by a Hochschild `2`-cocycle. -/
-def ofCocycle (ψ : hochschildBimoduleCocycles R A A 2) : InfinitesimalDeformation R A :=
-  ⟨ψ, isInfinitesimalDeformation_iff_mem_hochschildBimoduleCocycles.2 ψ.property⟩
+theorem coe_cocycleEquiv (φ : InfinitesimalDeformation R A) :
+    (cocycleEquiv R A φ : _) = φ.val := by
+  simp [cocycleEquiv]
 
 /-- The underlying cochain of the deformation of a cocycle is the cocycle. -/
 @[simp]
-theorem val_ofCocycle (ψ : hochschildBimoduleCocycles R A A 2) : (ofCocycle ψ).val = ψ := by
-  rw [ofCocycle]
-
-/-- The cocycle of the deformation of a cocycle `ψ` is `ψ`. -/
-@[simp]
-theorem toCocycle_ofCocycle (ψ : hochschildBimoduleCocycles R A A 2) :
-    toCocycle (ofCocycle ψ) = ψ :=
-  Subtype.ext (by simp)
-
-/-- The deformation of the cocycle of a deformation `φ` is `φ`. -/
-@[simp]
-theorem ofCocycle_toCocycle (φ : InfinitesimalDeformation R A) : ofCocycle (toCocycle φ) = φ :=
-  Subtype.ext (by simp)
+theorem val_cocycleEquiv_symm (ψ : hochschildBimoduleCocycles R A A 2) :
+    ((cocycleEquiv R A).symm ψ).val = ψ := by
+  simp [cocycleEquiv]
 
 end InfinitesimalDeformation
 
@@ -496,11 +484,11 @@ namespace InfinitesimalDeformation
 class in `HH²(A, A)`. -/
 theorem infinitesimallyEquivalent_iff_mk_eq_mk {φ ψ : InfinitesimalDeformation R A} :
     InfinitesimallyEquivalent φ.val ψ.val ↔
-      hochschildBimoduleCohomology.mk R A A 2 (toCocycle φ) =
-        hochschildBimoduleCohomology.mk R A A 2 (toCocycle ψ) := by
+      hochschildBimoduleCohomology.mk R A A 2 (cocycleEquiv R A φ) =
+        hochschildBimoduleCohomology.mk R A A 2 (cocycleEquiv R A ψ) := by
   rw [hochschildBimoduleCohomology.mk_eq_mk_iff,
-    infinitesimallyEquivalent_iff_sub_mem_hochschildBimoduleCoboundaries, coe_toCocycle,
-    coe_toCocycle]
+    infinitesimallyEquivalent_iff_sub_mem_hochschildBimoduleCoboundaries, coe_cocycleEquiv,
+    coe_cocycleEquiv]
 
 variable (R A) in
 /-- **`HH²` classifies infinitesimal deformations**: the equivalence classes of infinitesimal
@@ -509,30 +497,30 @@ sending a deformation `μ + εφ` to the class of the cocycle `φ`. -/
 def equivHochschildBimoduleCohomology :
     Quotient (setoid R A) ≃ hochschildBimoduleCohomology R A A 2 :=
   Equiv.ofBijective
-    (Quotient.lift (fun φ ↦ hochschildBimoduleCohomology.mk R A A 2 (toCocycle φ))
-      fun _ _ ↦ infinitesimallyEquivalent_iff_mk_eq_mk.1)
+    (Quotient.lift (fun φ ↦ hochschildBimoduleCohomology.mk R A A 2 (cocycleEquiv R A φ))
+      fun _ _ h ↦ infinitesimallyEquivalent_iff_mk_eq_mk.1 (setoid_r_iff.1 h))
     ⟨fun φ ψ ↦ Quotient.inductionOn₂ φ ψ fun _ _ h ↦
-        Quotient.sound (infinitesimallyEquivalent_iff_mk_eq_mk.2 h),
+        Quotient.sound (setoid_r_iff.2 (infinitesimallyEquivalent_iff_mk_eq_mk.2 h)),
       fun c ↦ by
         obtain ⟨ψ, rfl⟩ := hochschildBimoduleCohomology.mk_surjective R A A 2 c
-        exact ⟨⟦ofCocycle ψ⟧, congrArg _ (toCocycle_ofCocycle ψ)⟩⟩
+        exact ⟨⟦(cocycleEquiv R A).symm ψ⟧, congrArg _ (Equiv.apply_symm_apply _ ψ)⟩⟩
 
 /-- The class in `HH²(A, A)` of the equivalence class of a deformation `φ` is the cohomology
 class of the cocycle `φ`. -/
 @[simp]
 theorem equivHochschildBimoduleCohomology_mk (φ : InfinitesimalDeformation R A) :
     equivHochschildBimoduleCohomology R A ⟦φ⟧ =
-      hochschildBimoduleCohomology.mk R A A 2 (toCocycle φ) := by
+      hochschildBimoduleCohomology.mk R A A 2 (cocycleEquiv R A φ) := by
   rw [equivHochschildBimoduleCohomology]
-  rfl
+  exact (Equiv.ofBijective_apply _ _ _).trans (Quotient.lift_mk _ _ φ)
 
 /-- The equivalence class of deformations corresponding to the class of a cocycle `ψ` is that
 of the deformation `μ + εψ`. -/
 @[simp]
 theorem equivHochschildBimoduleCohomology_symm_mk (ψ : hochschildBimoduleCocycles R A A 2) :
     (equivHochschildBimoduleCohomology R A).symm (hochschildBimoduleCohomology.mk R A A 2 ψ) =
-      ⟦ofCocycle ψ⟧ := by
-  rw [Equiv.symm_apply_eq, equivHochschildBimoduleCohomology_mk, toCocycle_ofCocycle]
+      ⟦(cocycleEquiv R A).symm ψ⟧ := by
+  rw [Equiv.symm_apply_eq, equivHochschildBimoduleCohomology_mk, Equiv.apply_symm_apply]
 
 end InfinitesimalDeformation
 

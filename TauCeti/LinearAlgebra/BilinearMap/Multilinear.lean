@@ -35,6 +35,9 @@ map can likewise be read as an `AlternatingMap` on `Fin 2`, and these two readin
 
 ## Main results
 
+* `MultilinearMap.map_vecCons_add_left`, `map_vecCons_add_right`, `map_vecCons_smul_left` and
+  `map_vecCons_smul_right`: a multilinear map in two variables is linear in each argument of a
+  pair `![x, y]`.
 * `MultilinearMap.isSymm_toBilinMap`: the scalar-valued form is symmetric when `m` is unchanged by
   swapping its two arguments.
 * `MultilinearMap.isAlt_toBilinMap`: the map is alternating when `m` vanishes on a repeated
@@ -52,9 +55,9 @@ map can likewise be read as an `AlternatingMap` on `Fin 2`, and these two readin
 
 Bilinearity is Mathlib's `MultilinearMap.cons_add` and `cons_smul` at the first argument and
 `MultilinearMap.snoc_add` and `snoc_smul` at the second, since `![x, y]` is both `Fin.cons x ![y]`
-and `Fin.snoc ![x] y`.  Feeding those four facts to `LinearMap.mk₂` keeps the four linearity goals
-stated in the `![·, ·]` notation, so none of them has to be massaged into the nested form a bare
-`LinearMap` constructor would present.
+and `Fin.snoc ![x] y`; the `map_vecCons_*` lemmas state them for pairs.  Feeding those four facts
+to `LinearMap.mk₂` keeps the four linearity goals stated in the `![·, ·]` notation, so none of
+them has to be massaged into the nested form a bare `LinearMap` constructor would present.
 -/
 
 public section
@@ -96,14 +99,34 @@ end LinearMap
 
 namespace MultilinearMap
 
+section VecCons
+
+variable {S M P : Type*} [Semiring S] [AddCommMonoid M] [Module S M] [AddCommMonoid P]
+  [Module S P] (m : MultilinearMap (RingHom.id S) (fun _ : Fin 2 => M) P)
+
+/-- A multilinear map in two variables is additive in its first argument. -/
+theorem map_vecCons_add_left (x x' y : M) : m ![x + x', y] = m ![x, y] + m ![x', y] :=
+  m.cons_add ![y] x x'
+
+/-- A multilinear map in two variables is additive in its second argument. -/
+theorem map_vecCons_add_right (x y y' : M) : m ![x, y + y'] = m ![x, y] + m ![x, y'] := by
+  simpa using m.snoc_add ![x] y y'
+
+/-- A multilinear map in two variables is linear in its first argument. -/
+theorem map_vecCons_smul_left (c : S) (x y : M) : m ![c • x, y] = c • m ![x, y] :=
+  m.cons_smul ![y] c x
+
+/-- A multilinear map in two variables is linear in its second argument. -/
+theorem map_vecCons_smul_right (c : S) (x y : M) : m ![x, c • y] = c • m ![x, y] := by
+  simpa using m.snoc_smul ![x] c y
+
+end VecCons
+
 /-- The bilinear map `(x, y) ↦ m ![x, y]` of a multilinear map `m` in two variables. -/
 def toBilinMap (m : MultilinearMap (RingHom.id R) (fun _ : Fin 2 => V)
     N) : LinearMap.BilinMap R V N :=
-  LinearMap.mk₂ R (fun x y => m ![x, y])
-    (fun x x' y => m.cons_add ![y] x x')
-    (fun c x y => m.cons_smul ![y] c x)
-    (fun x y y' => by simpa using m.snoc_add ![x] y y')
-    (fun c x y => by simpa using m.snoc_smul ![x] c y)
+  LinearMap.mk₂ R (fun x y => m ![x, y]) m.map_vecCons_add_left m.map_vecCons_smul_left
+    m.map_vecCons_add_right m.map_vecCons_smul_right
 
 @[simp]
 theorem toBilinMap_apply (m : MultilinearMap (RingHom.id R) (fun _ : Fin 2 => V) N) (x y : V) :
