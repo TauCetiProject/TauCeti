@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.Order.Fin.Tuple
-import TauCeti.Data.Finset.Card
+import TauCeti.Data.Finset.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.Order.Hom.PowersetCard
@@ -210,20 +210,8 @@ theorem basisEraseSign_mul_basisEraseSign_erase {I : Type w} [LinearOrder I] {J 
     {j k : I} (hj : j ∈ J) (hk : k ∈ J) (hjk : j ≠ k) :
     basisEraseSign j J * basisEraseSign k (J.erase j) =
       -(basisEraseSign k J * basisEraseSign j (J.erase k)) := by
-  have h₁ := Finset.card_filter_lt_erase_add hj k
-  have h₂ := Finset.card_filter_lt_erase_add hk j
   simp only [basisEraseSign_eq_neg_one_pow_card_filter_lt]
-  rcases hjk.lt_or_gt with h | h
-  · simp only [h, h.not_gt, ite_true, ite_false, add_zero] at h₁ h₂
-    rw [← h₁, h₂]
-    ext
-    push_cast
-    ring
-  · simp only [h, h.not_gt, ite_true, ite_false, add_zero] at h₁ h₂
-    rw [← h₂, h₁]
-    ext
-    push_cast
-    ring
+  exact Finset.neg_one_pow_card_filter_lt_mul_erase hj hk hjk
 
 /-- The exterior-basis vector indexed by a singleton is the image of the corresponding basis
 vector under the exterior-algebra generator. -/

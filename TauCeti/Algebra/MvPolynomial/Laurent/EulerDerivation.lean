@@ -36,8 +36,8 @@ with the module of Kähler differentials of the Laurent ring is not formalized h
 cohomology `H^n_dR(T, E^φ)` is the cokernel `R[x^{±1}] ⧸ ∑ᵢ range (θ_i + θ_i φ)`
 (`TauCeti.koszulTopCohomologyEquiv`).
 
-For one variable and `φ = x` over a field of characteristic zero this cokernel is a line
-spanned by the class of `1` (`TauCeti.LaurentRing.finrank_quotient_iSup_range_twistedEuler_X`):
+For one variable and `φ = x` over a field of characteristic zero this cokernel is
+one-dimensional (`TauCeti.LaurentRing.finrank_quotient_iSup_range_twistedEuler_X`):
 `x^{m+1} ≡ -m x^m` modulo the image of `θ + x`, and the functional `x^{-k} ↦ 1 / k!`,
 `x^k ↦ 0` for `k > 0`, vanishes on that image. Hence the twisted de Rham cohomology
 `H¹_dR(G_m, E^x)` has dimension one
@@ -286,7 +286,7 @@ private noncomputable def quotientXImageEquiv [CharZero k] :
 
 /-- **The twisted cokernel of `(G_m, x)`**: over a field of characteristic zero, the quotient of
 the one-variable Laurent ring by the image of the twisted Euler operator `θ + x` of `φ = x` is
-one-dimensional, spanned by the class of `1`. -/
+one-dimensional. -/
 theorem finrank_quotient_iSup_range_twistedEuler_X [CharZero k] :
     Module.finrank k (LaurentRing k K ⧸
       ⨆ i, LinearMap.range (twistedEuler (X default : LaurentRing k K) i)) = 1 := by
