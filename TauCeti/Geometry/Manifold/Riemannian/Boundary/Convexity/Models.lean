@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Boundary.Convexity
+public import TauCeti.Geometry.Manifold.Riemannian.Boundary.Convexity.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.ClosedBall.SecondFundamentalForm
 public import TauCeti.Geometry.Manifold.Riemannian.EuclideanHalfSpace
 
@@ -57,13 +57,9 @@ vanishes. -/
 theorem not_isStrictlyConvexAt_euclideanHalfSpace {n : ℕ} [NeZero n]
     (q : (𝓡∂ (n + 1)).boundary (EuclideanHalfSpace (n + 1))) :
     ¬ IsStrictlyConvexAt q := fun h ↦ by
-  -- A nonzero tangent vector of the boundary hyperplane, typed in the tangent space at `q`.
-  let u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q := EuclideanSpace.single 0 1
-  have hu : u ≠ 0 := by
-    change (EuclideanSpace.single 0 1 : EuclideanSpace ℝ (Fin n)) ≠ 0
-    simp
-  exact (isStrictlyConvexAt_iff.1 h u hu).ne'
-    (boundarySecondFundamentalForm_euclideanHalfSpace q u u)
+  have hu : (EuclideanSpace.single 0 1 : EuclideanSpace ℝ (Fin n)) ≠ 0 := by simp
+  exact (isStrictlyConvexAt_iff.1 h _ hu).ne'
+    (boundarySecondFundamentalForm_euclideanHalfSpace q _ _)
 
 /-- **The half-line is strictly convex**: in dimension one the tangent space of the boundary is
 zero, so the condition is vacuous. -/
