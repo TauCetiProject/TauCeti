@@ -89,19 +89,10 @@ theorem coefficientMatrix_charpoly_eq
     have hcharpoly := (LinearMap.GeneralLinearGroup.isUnipotent_iff_charpoly _).mp hq
     rw [Module.finrank_baseChange] at hcharpoly
     exact hcharpoly.trans (by simp [P])
-  have hmatrix : C.map q =
-      LinearMap.toMatrix (b.baseChange (AlgebraicClosure k))
-        (b.baseChange (AlgebraicClosure k)) (Comodule.endOfPoint M q) := by
-    rw [Comodule.toMatrix_endOfPoint]
-  rw [← LinearMap.charpoly_toMatrix (Comodule.endOfPoint M q)
-    (b.baseChange (AlgebraicClosure k)), ← hmatrix] at hqcharpoly
   calc
-    q (C.charpoly.coeff r) = (C.charpoly.map q).coeff r := by
-      exact (Polynomial.coeff_map q.toRingHom r).symm
-    _ = (C.map q).charpoly.coeff r :=
-      congrArg (fun p ↦ p.coeff r) (Matrix.charpoly_map C q.toRingHom).symm
-    _ = (P.map (algebraMap k (AlgebraicClosure k))).coeff r :=
-      congrArg (fun p ↦ p.coeff r) hqcharpoly
+    q (C.charpoly.coeff r) = (Comodule.endOfPoint M q).charpoly.coeff r := by
+      rw [← Comodule.charpoly_eq_charpoly_coefficientMatrix b, Comodule.apply_coeff_charpoly]
+    _ = (P.map (algebraMap k (AlgebraicClosure k))).coeff r := by rw [hqcharpoly]
     _ = q ((P.map (algebraMap k A)).coeff r) := by
       rw [Polynomial.coeff_map, Polynomial.coeff_map]
       exact (q.commutes (P.coeff r)).symm

@@ -108,17 +108,28 @@ theorem pointConjugationAlgHom_apply_of_mem_classFunctions {f : H}
     pointConjugationAlgHom g f = f := by
   simpa [mem_classFunctions_iff.mp hf] using LinearMap.apply_pointConjugationAlgHom LinearMap.id g f
 
+/-- An element is a class function as soon as it is invariant under conjugating the universal
+second-factor point `includeRight` of `H ⊗[k] H` by the universal first-factor point
+`includeLeft`. -/
+theorem mem_classFunctions_of_apply_conj_universal {f : H}
+    (h : (toConv (Algebra.TensorProduct.includeLeft : H →ₐ[k] H ⊗[k] H) *
+        toConv (Algebra.TensorProduct.includeRight : H →ₐ[k] H ⊗[k] H) *
+        (toConv (Algebra.TensorProduct.includeLeft : H →ₐ[k] H ⊗[k] H))⁻¹).ofConv f =
+      (Algebra.TensorProduct.includeRight : H →ₐ[k] H ⊗[k] H) f) :
+    f ∈ classFunctions k H := by
+  have hc := comp_conjugationAlgHom (R := k) (H := H) (AlgHom.id k (H ⊗[k] H))
+  simp only [AlgHom.id_comp] at hc
+  rw [mem_classFunctions_iff, hc, h, Algebra.TensorProduct.includeRight_apply]
+
 /-- **Class functions are the conjugation-invariant functions.** An element `f` is a class
 function exactly when `f(g * x * g⁻¹) = f(x)` for all points `g` and `x` with values in every
 commutative `k`-algebra. Algebras in the universe of `H` suffice: the converse uses only the two
 universal tensor-factor points of `H ⊗[k] H`. -/
 theorem mem_classFunctions_iff_forall {f : H} :
     f ∈ classFunctions k H ↔ ∀ (A : Type v) [CommSemiring A] [Algebra k A]
-      (g x : WithConv (H →ₐ[k] A)), (g * x * g⁻¹).ofConv f = x.ofConv f := by
-  refine ⟨fun hf A _ _ g x ↦ apply_mul_mul_inv_of_mem_classFunctions hf g x, fun h ↦ ?_⟩
-  have hc := comp_conjugationAlgHom (R := k) (H := H) (AlgHom.id k (H ⊗[k] H))
-  simp only [AlgHom.id_comp] at hc
-  rw [mem_classFunctions_iff, hc, h, ofConv_toConv, Algebra.TensorProduct.includeRight_apply]
+      (g x : WithConv (H →ₐ[k] A)), (g * x * g⁻¹).ofConv f = x.ofConv f :=
+  ⟨fun hf _ _ _ g x ↦ apply_mul_mul_inv_of_mem_classFunctions hf g x,
+    fun h ↦ mem_classFunctions_of_apply_conj_universal (h _ _ _)⟩
 
 /-- The class functions are the whole coordinate algebra exactly when the coordinate map of
 conjugation is the second-factor inclusion. -/
@@ -154,11 +165,9 @@ commutative rings, rather than semirings: the universal tensor-factor points of 
 already take values in a ring. -/
 theorem mem_classFunctions_iff_forall_commRing {f : H} :
     f ∈ classFunctions k H ↔ ∀ (A : Type v) [CommRing A] [Algebra k A]
-      (g x : WithConv (H →ₐ[k] A)), (g * x * g⁻¹).ofConv f = x.ofConv f := by
-  refine ⟨fun hf A _ _ g x ↦ apply_mul_mul_inv_of_mem_classFunctions hf g x, fun h ↦ ?_⟩
-  have hc := comp_conjugationAlgHom (R := k) (H := H) (AlgHom.id k (H ⊗[k] H))
-  simp only [AlgHom.id_comp] at hc
-  rw [mem_classFunctions_iff, hc, h, ofConv_toConv, Algebra.TensorProduct.includeRight_apply]
+      (g x : WithConv (H →ₐ[k] A)), (g * x * g⁻¹).ofConv f = x.ofConv f :=
+  ⟨fun hf _ _ _ g x ↦ apply_mul_mul_inv_of_mem_classFunctions hf g x,
+    fun h ↦ mem_classFunctions_of_apply_conj_universal (h _ _ _)⟩
 
 end Ring
 
