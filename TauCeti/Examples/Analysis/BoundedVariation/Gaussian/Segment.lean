@@ -11,7 +11,9 @@ public import Mathlib.Geometry.Euclidean.Volume.Measure
 public import Mathlib.Probability.CDF
 public import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Analysis.Convex.Topology
 import TauCeti.Analysis.SpecialFunctions.Erf.Basic
+import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.Probability.Distributions.Gaussian.Cdf
 
 /-!
@@ -50,6 +52,10 @@ private theorem norm_smul_unitX (t : ℝ) : ‖t • unitX‖ = |t| := by
 private theorem isometry_smul_unitX : Isometry fun t : ℝ => t • unitX :=
   (LinearIsometry.toSpanSingleton ℝ _ (by simpa using norm_smul_unitX 1)).isometry
 
+/-- The segment is closed. -/
+private theorem isClosed_closedSeg : IsClosed closedSeg :=
+  (TauCeti.isCompact_segment ℝ 0 unitX).isClosed
+
 /-- The segment is Lebesgue-null: it lies in the line `ℝ e₁`. -/
 theorem volume_closedSeg : volume closedSeg = 0 := by
   have hne : (ℝ ∙ unitX) ≠ ⊤ := by
@@ -68,20 +74,19 @@ theorem gaussianPerimeter_closedSeg : gaussianPerimeter closedSeg = 0 := by
 
 /-- The frontier of the segment is the segment itself: it is closed with empty interior. -/
 theorem frontier_closedSeg : frontier closedSeg = closedSeg := by
-  have hc : IsClosed closedSeg := by
-    rw [closedSeg_eq_image]
-    exact (isCompact_Icc.image isometry_smul_unitX.continuous).isClosed
-  rw [frontier, hc.closure_eq, Measure.interior_eq_empty_of_null volume_closedSeg, sdiff_empty]
+  rw [frontier, isClosed_closedSeg.closure_eq, Measure.interior_eq_empty_of_null volume_closedSeg,
+    sdiff_empty]
 
 /-- The Gaussian density at `t e₁` is `φ(0) φ(t)`. -/
 private theorem exp_neg_gaussianWeight_smul_unitX (t : ℝ) :
     Real.exp (-gaussianWeight (EuclideanSpace ℝ (Fin 2)) (t • unitX)) =
       gaussianPDFReal 0 1 0 * gaussianPDFReal 0 1 t := by
-  have h2π : 0 < 2 * Real.pi := by positivity
-  rw [exp_neg_gaussianWeight_of_norm_eq (norm_smul_unitX t), finrank_euclideanSpace_fin,
-    gaussianPDFReal_def, Nat.cast_ofNat, show -(2 : ℝ) / 2 = -1 by norm_num, Real.rpow_neg_one,
-    ← Real.mul_self_sqrt h2π.le, mul_inv]
-  simp [sq_abs, neg_div]
+  have hs : (2 * Real.pi) ^ (-((2 : ℕ) : ℝ) / 2) = (√(2 * Real.pi))⁻¹ * (√(2 * Real.pi))⁻¹ := by
+    rw [← mul_inv, Real.mul_self_sqrt (by positivity)]
+    norm_num [Real.rpow_neg_one]
+  rw [exp_neg_gaussianWeight_of_norm_eq (norm_smul_unitX t), finrank_euclideanSpace_fin, hs]
+  simp only [gaussianPDFReal_def, NNReal.coe_one, mul_one, sub_zero, sq_abs, neg_div,
+    zero_pow two_ne_zero, zero_div, neg_zero, Real.exp_zero]
   ring
 
 /-- **The Gaussian length of the segment** is `φ(0) (Φ(1) − 1/2)`. -/
@@ -89,18 +94,14 @@ theorem setLIntegral_frontier_closedSeg :
     ∫⁻ x in frontier closedSeg,
         ENNReal.ofReal (Real.exp (-gaussianWeight (EuclideanSpace ℝ (Fin 2)) x)) ∂μHE[1] =
       ENNReal.ofReal (gaussianPDFReal 0 1 0 * (cdf (gaussianReal 0 1) 1 - 1 / 2)) := by
-  have hm : MeasurableSet ((fun t : ℝ => t • unitX) '' Icc 0 1) :=
-    (isCompact_Icc.image isometry_smul_unitX.continuous).isClosed.measurableSet
   have hmeas : Measurable fun x : EuclideanSpace ℝ (Fin 2) =>
       ENNReal.ofReal (Real.exp (-gaussianWeight (EuclideanSpace ℝ (Fin 2)) x)) :=
     ((contDiff_gaussianWeight (n := 0)).continuous.measurable.neg.exp).ennreal_ofReal
   have hvol : (μHE[1] : Measure ℝ) = volume := by
     simpa using InnerProductSpace.euclideanHausdorffMeasure_eq_volume (V := ℝ)
   rw [frontier_closedSeg, closedSeg_eq_image,
-    ← Measure.restrict_restrict_of_subset (image_subset_range _ _),
-    ← isometry_smul_unitX.map_euclideanHausdorffMeasure,
-    setLIntegral_map hm hmeas isometry_smul_unitX.continuous.measurable,
-    preimage_image_eq _ isometry_smul_unitX.injective, hvol]
+    ← isometry_smul_unitX.map_euclideanHausdorffMeasure_restrict,
+    lintegral_map hmeas isometry_smul_unitX.continuous.measurable, hvol]
   simp only [exp_neg_gaussianWeight_smul_unitX]
   have hpdf : ∀ t, ENNReal.ofReal (gaussianPDFReal 0 1 0 * gaussianPDFReal 0 1 t) =
       ENNReal.ofReal (gaussianPDFReal 0 1 0) * gaussianPDF 0 1 t := fun t => by
