@@ -34,11 +34,11 @@ proves that
   `ω = Im ⟪·, ·⟫`, it is Fredholm for all families `J₋`, `J₊` of compatible almost complex
   structures (`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_continuationHomotopy`).
 
-These are the cases `R = 1` of the corresponding statements for Floer data cylindrical near the
-ends in `TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization`, whose input is the semi-Fredholm
-estimate of `TauCeti.Geometry.Symplectic.Floer.Continuation.SemiFredholm`. The semi-Fredholm
-estimate for the formal adjoint `D_u^*` on `C²` covector fields, for Floer data cylindrical near
-the ends such as continuation data, is the `_of_cylindrical` version of
+The first three are the cases `R = 1` of the corresponding statements for Floer data cylindrical
+near the ends in `TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization`, whose input is the
+semi-Fredholm estimate of `TauCeti.Geometry.Symplectic.Floer.Continuation.SemiFredholm`. The
+semi-Fredholm estimate for the formal adjoint `D_u^*` on `C²` covector fields, for Floer data
+cylindrical near the ends such as continuation data, is the `_of_cylindrical` version of
 `TauCeti.SymplecticForm.exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint_add`.
 In a unitary trivialization the Fredholm property follows from a parametrix built from the
 invertible end models, without the adjoint
