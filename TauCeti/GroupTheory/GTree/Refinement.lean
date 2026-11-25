@@ -181,19 +181,8 @@ exactly when no edge is collapsed. -/
 /-- Under a geodesic morphism, the stabilizer of a dart of the source fixes a dart of the
 target. -/
 theorem IsGeodesicMorphism.exists_stabilizer_le {f : T.V →[G] T'.V} (hf : IsGeodesicMorphism f)
-    (e : T.E) : ∃ e' : T'.E, stabilizer G e ≤ stabilizer G e' := by
-  -- Take a dart of the reduced path joining the distinct images of the ends of `e`.
-  obtain ⟨p⟩ := T'.nonempty_path (f (T.src e)) (f (T.tgt e))
-  obtain ⟨e', he'⟩ := List.exists_mem_of_ne_nil _ fun h0 =>
-    hf e (Path.eq_of_darts_eq_nil _ (Path.reduce T'.toSerreGraph p) h0)
-  refine ⟨e', fun g hg => mem_stabilizer_iff.mpr ?_⟩
-  -- An element fixing `e` fixes the images of its ends, hence the path between them.
-  have hs : g • f (T.src e) = f (T.src e) := by
-    rw [← map_smul, ← src_smul, mem_stabilizer_iff.mp hg]
-  have ht : g • f (T.tgt e) = f (T.tgt e) := by
-    rw [← map_smul, ← tgt_smul, mem_stabilizer_iff.mp hg]
-  exact Aut.smul_eq_of_mem_darts T'.isAcyclic (T'.action g) hs ht
-    (Path.isReduced_reduce _ p) he'
+    (e : T.E) : ∃ e' : T'.E, stabilizer G e ≤ stabilizer G e' :=
+  exists_stabilizer_le_of_apply_ne f (hf e)
 
 /-- A tree with a geodesic morphism to a tree relative to `𝒜` and `ℋ` is relative to `𝒜` and
 `ℋ`, when `𝒜` is closed under passing to subgroups and the members of `ℋ` are elliptic in it. -/

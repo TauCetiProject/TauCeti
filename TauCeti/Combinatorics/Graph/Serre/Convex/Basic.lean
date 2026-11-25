@@ -12,7 +12,8 @@ public import TauCeti.Combinatorics.Graph.Serre.Tree
 
 A set of vertices of a Serre graph is convex when it contains every vertex crossed by a reduced
 path between two of its vertices. In a tree, the nonempty convex sets are the vertex sets of the
-subtrees, since reduced paths are the geodesics. Convex sets are closed under arbitrary
+subtrees, since reduced paths are the geodesics. Reduced paths from a vertex outside a convex set
+to vertices of the set all start with the same dart. Convex sets are closed under arbitrary
 intersections. In an acyclic graph, the following sets are convex: a set of vertices in which no
 two distinct vertices are joined by a path (for instance a singleton), and the set of vertices of
 a path.
@@ -73,6 +74,28 @@ theorem IsConvex.isReduced_comp {C : Set Γ.V} (hC : Γ.IsConvex C) {a b c : Γ.
   have hfC : Γ.tgt f ∈ C := hC.tgt_mem hb hc hq (List.mem_of_mem_head? hf)
   rw [hfe, tgt_rev] at hfC
   exact hpC e he hfC
+
+/-- Two reduced paths from a vertex outside a convex set `C` to vertices of `C` start with the same
+dart. -/
+theorem IsConvex.head?_darts_eq {C : Set Γ.V} (hC : Γ.IsConvex C) {v m x : Γ.V} (hv : v ∉ C)
+    (hm : m ∈ C) (hx : x ∈ C) {p : Γ.Path v m} {q : Γ.Path v x} (hp : Path.IsReduced Γ p)
+    (hq : Path.IsReduced Γ q) : (Path.darts Γ p).head? = (Path.darts Γ q).head? := by
+  -- Otherwise the reverse of `p` followed by `q` is a reduced path from `m` to `x`, and its dart
+  -- following `v` starts outside `C`.
+  by_contra hne
+  obtain ⟨e, he⟩ : ∃ e, (Path.darts Γ q).head? = some e := by
+    cases hq' : Path.darts Γ q with
+    | nil => exact absurd ((Path.eq_of_darts_eq_nil Γ q hq') ▸ hx) hv
+    | cons e _ => exact ⟨e, rfl⟩
+  refine hv (Path.src_eq_of_mem_head?_darts Γ q (Option.mem_def.mpr he) ▸ hC.src_mem hm hx
+    ((Path.isReduced_comp_iff Γ p.reverse q).mpr ⟨(Path.isReduced_reverse Γ p).mpr hp, hq, ?_⟩)
+    (e := e) (by simp [List.mem_of_mem_head? (Option.mem_def.mpr he)]))
+  intro e₀ he₀ f hf hfe
+  simp only [Path.darts_reverse, List.getLast?_map, List.getLast?_reverse, Option.mem_def,
+    Option.map_eq_some_iff] at he₀
+  obtain ⟨d, hd, rfl⟩ := he₀
+  rw [Γ.rev_rev] at hfe
+  exact hne (by rw [hd, ← hfe, Option.mem_def.mp hf])
 
 theorem isConvex_univ : Γ.IsConvex Set.univ := fun _ _ _ _ _ _ _ _ => Set.mem_univ _
 

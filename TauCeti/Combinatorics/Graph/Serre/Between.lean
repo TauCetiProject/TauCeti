@@ -306,28 +306,6 @@ theorem IsConvex.mem_of_isBetween {C : Set Γ.V} (hC : Γ.IsConvex C) (ha : a �
   obtain ⟨p, hp, hep⟩ := crosses_iff_exists_length_eq_dist.mp he
   exact hC.src_mem ha hb (Path.isReduced_of_length_le_dist hp.le) hep
 
-/-- Two reduced paths from a vertex outside a convex set `C` to vertices of `C` start with the same
-dart. -/
-theorem IsConvex.head?_darts_eq {C : Set Γ.V} (hC : Γ.IsConvex C) (hv : v ∉ C) (hm : m ∈ C)
-    (hx : x ∈ C) {p : Γ.Path v m} {q : Γ.Path v x} (hp : Path.IsReduced Γ p)
-    (hq : Path.IsReduced Γ q) : (Path.darts Γ p).head? = (Path.darts Γ q).head? := by
-  -- Otherwise the reverse of `p` followed by `q` is a reduced path from `m` to `x`, and its dart
-  -- following `v` starts outside `C`.
-  by_contra hne
-  obtain ⟨e, he⟩ : ∃ e, (Path.darts Γ q).head? = some e := by
-    cases hq' : Path.darts Γ q with
-    | nil => exact absurd ((Path.eq_of_darts_eq_nil Γ q hq') ▸ hx) hv
-    | cons e _ => exact ⟨e, rfl⟩
-  refine hv (Path.src_eq_of_mem_head?_darts Γ q (Option.mem_def.mpr he) ▸ hC.src_mem hm hx
-    ((Path.isReduced_comp_iff Γ p.reverse q).mpr ⟨(Path.isReduced_reverse Γ p).mpr hp, hq, ?_⟩)
-    (e := e) (by simp [List.mem_of_mem_head? (Option.mem_def.mpr he)]))
-  intro e₀ he₀ f hf hfe
-  simp only [Path.darts_reverse, List.getLast?_map, List.getLast?_reverse, Option.mem_def,
-    Option.map_eq_some_iff] at he₀
-  obtain ⟨d, hd, rfl⟩ := he₀
-  rw [Γ.rev_rev] at hfe
-  exact hne (by rw [hd, ← hfe, Option.mem_def.mp hf])
-
 /-- A vertex `m` of a convex set `C` nearest to a vertex `v` lies between `v` and every vertex of
 `C` joined to `m`, provided `v` is joined to `m`. -/
 theorem IsConvex.isBetween_of_forall_dist_le {C : Set Γ.V} (hC : Γ.IsConvex C) (hm : m ∈ C)

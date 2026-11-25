@@ -29,8 +29,7 @@ their consequences:
 
 * a standard refinement refines `T₁` and dominates `T₂`;
 * the stabilizer of each of its darts fixes a dart of `T₁` or a dart of `T₂`: it fixes the images
-  of the two ends of the dart under `p` or, when these coincide, under `f`
-  (`TauCeti.GTree.exists_stabilizer_le_of_apply_ne`);
+  of the two ends of the dart under `p` or, when these coincide, under `f`;
 * a subgroup is elliptic in it exactly when it is elliptic in `T₁` and in `T₂`, so all standard
   refinements of `T₁` dominating `T₂` lie in one deformation space;
 * it is relative to families `𝒜` and `ℋ` when `T₁` and `T₂` are and `𝒜` is closed under passing
@@ -65,19 +64,7 @@ open SerreGraph _root_.MulAction
 
 namespace GTree
 
-variable {G : Type w} [Group G] {T : GTree.{u, v} G} {T' : GTree.{u', v'} G}
-
-/-! ### Stabilizers of darts under equivariant maps -/
-
-/-- If an equivariant map separates the two ends of a dart, the stabilizer of the dart fixes a
-dart of the target. -/
-theorem exists_stabilizer_le_of_apply_ne (f : T.V →[G] T'.V) {e : T.E}
-    (he : f (T.src e) ≠ f (T.tgt e)) : ∃ e' : T'.E, stabilizer G e ≤ stabilizer G e' :=
-  -- The stabilizer of `e` fixes both ends of `e`, hence their images.
-  let ⟨e', _, he'⟩ := exists_src_eq_and_stabilizer_inf_le he
-  ⟨e', le_trans (le_inf
-    (fun g hg => by rw [mem_stabilizer_iff, ← map_smul, ← src_smul, mem_stabilizer_iff.mp hg])
-    (fun g hg => by rw [mem_stabilizer_iff, ← map_smul, ← tgt_smul, mem_stabilizer_iff.mp hg])) he'⟩
+variable {G : Type w} [Group G] {T : GTree.{u, v} G}
 
 /-! ### Standard refinements -/
 
