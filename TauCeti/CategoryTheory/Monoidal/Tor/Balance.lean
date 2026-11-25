@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.ShortComplex.SnakeLemma
+public import TauCeti.CategoryTheory.Monoidal.Mono
 public import TauCeti.CategoryTheory.Monoidal.Tor.Basic
 
 /-!
@@ -86,9 +87,12 @@ def tensorSnakeInput [Mono (S.f ▷ T.X₂)] : SnakeInput C where
   L₁_exact := hS.exact.map_of_epi_of_preservesCokernel _ hS.epi_g inferInstance
   epi_L₁_g := by
     have := hS.epi_g
-    exact inferInstanceAs (Epi (((tensoringRight C).obj T.X₁).map S.g))
+    rw [ShortComplex.map_g]
+    infer_instance
   L₂_exact := hS.exact.map_of_epi_of_preservesCokernel _ hS.epi_g inferInstance
-  mono_L₂_f := inferInstanceAs (Mono (S.f ▷ T.X₂))
+  mono_L₂_f := by
+    rw [ShortComplex.map_f, Functor.flip_obj_map, curriedTensor_map_app]
+    infer_instance
 
 /-- For short exact `S` and `T` with `S.X₂ ◁ T.f` and `S.f ▷ T.X₂` monomorphisms, the kernels of
 `S.X₃ ◁ T.f` and of `S.f ▷ T.X₃` agree, through the connecting map of the snake lemma. -/
@@ -140,32 +144,15 @@ def torOneIsoTor'OneOfHasProjectiveDimensionLEOne [EnoughProjectives C] (X Y : C
     [((tensoringLeft C).obj (Projective.over X)).PreservesMonomorphisms]
     [((tensoringRight C).obj (Projective.over Y)).PreservesMonomorphisms] :
     ((Tor C 1).obj X).obj Y ≅ ((Tor' C 1).obj X).obj Y :=
-  -- the kernels of the projective covers are projective, as `X` and `Y` have dimension `< 2`
-  have : HasProjectiveDimensionLT (Projective.kernelShortComplex X).X₁ 1 :=
-    (Projective.kernelShortComplex_shortExact X).hasProjectiveDimensionLT_X₁ 1
-      inferInstance ‹_›
-  have : HasProjectiveDimensionLT (Projective.kernelShortComplex Y).X₁ 1 :=
-    (Projective.kernelShortComplex_shortExact Y).hasProjectiveDimensionLT_X₁ 1
-      inferInstance ‹_›
-  have : Mono (Projective.over X ◁ kernel.ι (Projective.π Y)) :=
-    ((tensoringLeft C).obj (Projective.over X)).map_mono _
-  have : Mono (kernel.ι (Projective.π X) ▷ Projective.over Y) :=
-    ((tensoringRight C).obj (Projective.over Y)).map_mono _
   (Projective.kernelShortComplex_shortExact X).torOneIsoTor'One
     (Projective.kernelShortComplex_shortExact Y)
 
 /-- The balance isomorphism in projective dimension at most one is `torOneIsoTor'One` for the
-projective presentations `0 ⟶ ker π ⟶ P ⟶ X ⟶ 0` of `X` and `Y`. The `Projective` and `Mono`
-instances follow from the other hypotheses but are not found by instance search, so they are
-arguments here for the right-hand side to elaborate. -/
+projective presentations `0 ⟶ ker π ⟶ P ⟶ X ⟶ 0` of `X` and `Y`. -/
 lemma torOneIsoTor'OneOfHasProjectiveDimensionLEOne_eq [EnoughProjectives C] (X Y : C)
     [HasProjectiveDimensionLE X 1] [HasProjectiveDimensionLE Y 1]
     [((tensoringLeft C).obj (Projective.over X)).PreservesMonomorphisms]
-    [((tensoringRight C).obj (Projective.over Y)).PreservesMonomorphisms]
-    [Projective (Projective.kernelShortComplex X).X₁]
-    [Projective (Projective.kernelShortComplex Y).X₁]
-    [Mono (Projective.over X ◁ (Projective.kernelShortComplex Y).f)]
-    [Mono ((Projective.kernelShortComplex X).f ▷ Projective.over Y)] :
+    [((tensoringRight C).obj (Projective.over Y)).PreservesMonomorphisms] :
     torOneIsoTor'OneOfHasProjectiveDimensionLEOne X Y =
       (Projective.kernelShortComplex_shortExact X).torOneIsoTor'One
         (Projective.kernelShortComplex_shortExact Y) := by
