@@ -345,9 +345,8 @@ variable (f m k) in
 `H^k(ℂ)`. The coordinates of `x_m` are smooth with bounded derivatives, so they multiply every
 integer-order Sobolev space into itself. -/
 def referenceMulCLM (a : Fin 4) : H^{(k : ℝ)}(ℂ) →L[ℂ] H^{(k : ℝ)}(ℂ) :=
-  mapCLM (TemperedDistribution.smulLeftCLM ℂ fun z ↦ (referenceField f m z a : ℂ)) fun u ↦
-    u.memSobolev_toDistr.smulLeftCLM_of_norm_iteratedFDeriv_le (by norm_num) (by norm_num)
-      fun n _ ↦ exists_norm_iteratedFDeriv_ofReal_referenceField_apply_le f m a n
+  BesselPotentialSpace.smulLeftCLMOfNormIteratedFDerivLe (by norm_num) (by norm_num)
+    fun n _ ↦ exists_norm_iteratedFDeriv_ofReal_referenceField_apply_le f m a n
 
 /-- `referenceMulCLM f m k a` multiplies the underlying tempered distribution by the coordinate
 `a` of the reference field. -/
@@ -355,16 +354,15 @@ def referenceMulCLM (a : Fin 4) : H^{(k : ℝ)}(ℂ) →L[ℂ] H^{(k : ℝ)}(ℂ
 theorem toDistr_referenceMulCLM (a : Fin 4) (u : H^{(k : ℝ)}(ℂ)) :
     (referenceMulCLM f m k a u).toDistr =
       TemperedDistribution.smulLeftCLM ℂ (fun z ↦ (referenceField f m z a : ℂ)) u.toDistr :=
-  toDistr_mapCLM _ _ u
+  toDistr_smulLeftCLMOfNormIteratedFDerivLe _ _ _ u
 
 /-- The `L²` function of `x_m,a u` is the pointwise product. -/
 theorem coeFn_inclusionLp_referenceMulCLM_ae_eq (a : Fin 4) (u : H^{(k : ℝ)}(ℂ)) :
     ⇑(inclusionLp (k.cast_nonneg : (0 : ℝ) ≤ k) (referenceMulCLM f m k a u)) =ᵐ[volume]
       fun z ↦ (referenceField f m z a : ℂ) * inclusionLp (k.cast_nonneg : (0 : ℝ) ≤ k) u z := by
-  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_ofReal_referenceField_apply_le f m a 0
-  simpa only [smul_eq_mul] using coeFn_inclusionLp_ae_eq_smul_of_toDistr_eq_smulLeftCLM _ _
-    (hasTemperateGrowth_ofReal_referenceField_apply f m a) (C := C)
-    (fun z ↦ by simpa using hC z) (toDistr_referenceMulCLM a u)
+  simpa only [referenceMulCLM, smul_eq_mul] using
+    coeFn_inclusionLp_smulLeftCLMOfNormIteratedFDerivLe_ae_eq _ _ _
+      (hasTemperateGrowth_ofReal_referenceField_apply f m a) u
 
 variable (f m) in
 /-- Multiplication by the coordinate `a` of `x_m + y`, for complexified coordinates
