@@ -198,7 +198,7 @@ theorem exists_apply_gen_eq_of_finiteDimensional (c : V) : ∃ f : Z1 zHat.{u} V
   obtain ⟨f, hf⟩ := exists_apply_gen_eq_of_profinite.{u} (⟨c, hcN⟩ : N)
   -- Push the cocycle forward along the equivariant inclusion `N → V`.
   exact ⟨ContCohomology.cocyclesMap1 zHat N zHat V (ContinuousMonoidHom.id _) N.subtype
-    continuous_subtype_val (fun _ _ ↦ rfl) f,
+    continuous_subtype_val (N.restrictDistribMulAction_coe_smul hN) f,
     (ContCohomology.cocyclesMap1_apply _ _ _ _ _ _ _ _ f gen).trans (congrArg Subtype.val hf)⟩
 
 include K in
