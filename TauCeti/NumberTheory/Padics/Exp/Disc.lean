@@ -86,8 +86,7 @@ disc `‖x‖ ≤ p ^ (-i)` of the least depth `i` with `1 < (p - 1) i`
 * `TauCeti.log_mul_of_commute_of_norm_sub_one_lt`, `TauCeti.log_mul_of_norm_sub_one_lt`:
   `log (y * w) = log y + log w` for commuting `y` and `w`.
 * `TauCeti.addChar_of_value_at_one_eq_exp_smul_log`: `(1 + t) ^ x = exp (x log (1 + t))`.
-* `TauCeti.norm_addChar_of_value_at_one_sub_one_le`, `TauCeti.norm_addChar_of_value_at_one_sub_one`:
-  `‖(1 + t) ^ x - 1‖ ≤ ‖x‖ ‖t‖` and `‖(1 + t) ^ x - 1‖ = ‖x‖ ‖t‖`.
+* `TauCeti.norm_addChar_of_value_at_one_sub_one`: `‖(1 + t) ^ x - 1‖ = ‖x‖ ‖t‖`.
 
 ## References
 
@@ -383,17 +382,6 @@ theorem addChar_of_value_at_one_eq_exp_smul_log [Algebra ℤ_[p] A] [IsBoundedSM
   simp only [Function.comp_apply, PadicInt.coe_natCast, Nat.cast_smul_eq_nsmul]
   rw [← nsmul_one, AddChar.map_nsmul_eq_pow, PadicInt.addChar_of_value_at_one_def,
     exp_nsmul_of_norm_lt n hL, exp_log_of_norm_sub_one_lt (by simpa using ht), add_comm]
-
-/-- For `‖t‖ < r₀` and `x ∈ ℤ_p`, the binomial power satisfies `‖(1 + t) ^ x - 1‖ ≤ ‖x‖ ‖t‖`. -/
-theorem norm_addChar_of_value_at_one_sub_one_le [Algebra ℤ_[p] A] [IsBoundedSMul ℤ_[p] A]
-    {t : A} (ht : ‖t‖ < amiceRadius p 0) (x : ℤ_[p]) :
-    ‖PadicInt.addChar_of_value_at_one t
-      (tendsto_pow_atTop_nhds_zero_of_norm_lt_one (ht.trans (amiceRadius_lt_one 0))) x - 1‖ ≤
-      ‖x‖ * ‖t‖ := by
-  rw [addChar_of_value_at_one_eq_exp_smul_log ht x,
-    norm_exp_sub_one_of_norm_lt (norm_coe_smul_log_one_add_lt ht x)]
-  refine (norm_smul_le _ _).trans_eq ?_
-  rw [norm_log_one_add_of_norm_lt ht, PadicInt.norm_def]
 
 /-- In every complete ultrametric normed algebra over `ℚ_[p]`, the binomial power satisfies
 `‖(1 + t) ^ x - 1‖ = ‖x‖ ‖t‖` for `‖t‖ < r₀` and `x ∈ ℤ_p`. -/

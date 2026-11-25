@@ -77,14 +77,12 @@ private theorem norm_aeval_trunc_aeval_trunc_sub_le {f g : K⟦X⟧} (hf0 : coef
     · simpa using hR.le
   -- The bound `‖cₙ‖ Rⁿ ≤ R` says that the Gauss norm at radius `R` is at most `R`.
   set v := NormedField.toAbsoluteValue K
-  -- Mathlib has no apply lemma for `NormedField.toAbsoluteValue`; it unfolds to the norm.
-  have hv (a : K) : v a = ‖a‖ := rfl
   have hle {P : Polynomial K} (hP : ∀ n, ‖P.coeff n‖ * R ^ n ≤ R) : P.gaussNorm v R ≤ R := by
     obtain ⟨i, hi⟩ := P.exists_eq_gaussNorm v R
-    rw [hi, hv]
+    rw [hi, NormedField.toAbsoluteValue_apply]
     exact hP i
   have hcomp (k : ℕ) : ‖((trunc M f).comp (trunc N g)).coeff k‖ * R ^ k ≤ R :=
-    (hv _ ▸ Polynomial.le_gaussNorm v _ hR.le k).trans <|
+    (NormedField.toAbsoluteValue_apply K _ ▸ Polynomial.le_gaussNorm v _ hR.le k).trans <|
       (Polynomial.gaussNorm_comp_le IsUltrametricDist.isNonarchimedean_norm hR.le _
         (hle (htrunc hg0 hg N))).trans (hle (htrunc hf0 hf M))
   -- `F ∘ Q - X` vanishes below degree `min M N` and has coefficients bounded by `‖cₖ‖ Rᵏ ≤ R`.
