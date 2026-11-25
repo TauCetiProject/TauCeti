@@ -9,13 +9,13 @@ public import Mathlib.Topology.Connected.Basic
 public import Mathlib.Topology.Constructions
 
 /-!
-# Preconnectedness through the type tags
+# Connectedness through the type tags
 
 The topologies of `Additive X` and `Multiplicative X` are that of `X`, so they are preconnected
-when `X` is. These instances let a preconnected additive group, such as a torus `(ℝ / 2πℤ)^ι`,
-act through its multiplicative copy in the Lie group results, which are stated for multiplicative
-groups. They mirror Mathlib's `CompactSpace` and `TotallyDisconnectedSpace` instances on the type
-tags.
+or connected when `X` is. These instances let a connected additive group, such as a torus
+`(ℝ / 2πℤ)^ι` or the line `ℝ`, act through its multiplicative copy in the Lie group results, which
+are stated for multiplicative groups. They mirror Mathlib's `CompactSpace` and
+`TotallyDisconnectedSpace` instances on the type tags.
 -/
 
 public section
@@ -27,5 +27,9 @@ variable {X : Type*} [TopologicalSpace X]
 instance [PreconnectedSpace X] : PreconnectedSpace (Additive X) := ‹PreconnectedSpace X›
 
 instance [PreconnectedSpace X] : PreconnectedSpace (Multiplicative X) := ‹PreconnectedSpace X›
+
+instance [ConnectedSpace X] : ConnectedSpace (Additive X) := ‹ConnectedSpace X›
+
+instance [ConnectedSpace X] : ConnectedSpace (Multiplicative X) := ‹ConnectedSpace X›
 
 end TauCeti
