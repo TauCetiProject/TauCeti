@@ -77,6 +77,16 @@ theorem denseRange_toGNS (f : A →ₚ[ℂ] ℂ) : DenseRange f.toGNS :=
   UniformSpace.Completion.denseRange_coe.comp f.toPreGNS.surjective.denseRange
     (UniformSpace.Completion.continuous_coe _)
 
+/-- Two continuous semilinear maps from the GNS space to a Hausdorff space are equal when they
+agree on the classes of the pre-GNS space, which are dense. -/
+theorem gns_continuousLinearMap_ext (f : A →ₚ[ℂ] ℂ) {R : Type*} [Semiring R] {σ : ℂ →+* R}
+    {E : Type*} [TopologicalSpace E] [T2Space E] [AddCommMonoid E] [Module R E]
+    {T S : f.GNS →SL[σ] E} (h : ∀ c : f.PreGNS, T c = S c) : T = S := by
+  ext x
+  induction x using UniformSpace.Completion.induction_on with
+  | hp => apply isClosed_eq <;> fun_prop
+  | ih c => exact h c
+
 /-- A separable C⋆-algebra has separable GNS Hilbert spaces for all its positive functionals. -/
 instance (f : A →ₚ[ℂ] ℂ) [TopologicalSpace.SeparableSpace A] :
     TopologicalSpace.SeparableSpace f.GNS :=

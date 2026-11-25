@@ -11,7 +11,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Parabolic.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 import Mathlib.Data.Fin.Tuple.Sort
 import TauCeti.Algebra.AlgebraicGroup.Borel.Conjugation
-import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Conjugation
+import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Conjugation.Basic
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.Weight.Parabolic.Geometry
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Borel
 
