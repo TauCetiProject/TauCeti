@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import TauCeti.LinearAlgebra.Pi
+import TauCeti.LinearAlgebra.Matrix.Charpoly.BlockDiagonal
 
 /-!
 # Characteristic polynomials on finite products
@@ -15,47 +16,18 @@ The characteristic polynomial of a coordinatewise endomorphism `LinearMap.piMap 
 product of finite free modules is the product of the characteristic polynomials of its
 components (`LinearMap.charpoly_piMap`). This extends Mathlib's `LinearMap.charpoly_prodMap` from
 two factors to finitely many. In a product basis `piMap f` has the block-diagonal matrix of the
-`f i` (`LinearMap.toMatrix_piMap`), its characteristic matrix is block diagonal with the
-characteristic matrices of the `f i` as blocks (`Matrix.charmatrix_blockDiagonal'`), and the
-determinant of a block-diagonal matrix is the product of the determinants of its blocks
-(`Matrix.det_blockDiagonal'`).
+`f i` (`LinearMap.toMatrix_piMap`), and the characteristic polynomial of a block-diagonal matrix
+is the product of the characteristic polynomials of its blocks (`Matrix.charpoly_blockDiagonal'`,
+in `TauCeti.LinearAlgebra.Matrix.Charpoly.BlockDiagonal`).
 
-## Main results
+## Main result
 
-* `Matrix.charpoly_blockDiagonal'`: the characteristic polynomial of a block-diagonal matrix is
-  the product of the characteristic polynomials of its blocks.
 * `LinearMap.charpoly_piMap`: the characteristic polynomial of `piMap f` is `∏ i, (f i).charpoly`.
 -/
 
 public section
 
 open Polynomial
-
-namespace Matrix
-
-variable {R o : Type*} [CommRing R] [Fintype o] [DecidableEq o] {m : o → Type*}
-  [∀ i, Fintype (m i)] [∀ i, DecidableEq (m i)]
-
-/-- The characteristic matrix of a block-diagonal matrix is block diagonal, with the
-characteristic matrices of the blocks as blocks. -/
-theorem charmatrix_blockDiagonal' (B : ∀ i, Matrix (m i) (m i) R) :
-    charmatrix (blockDiagonal' B) = blockDiagonal' fun i => charmatrix (B i) := by
-  refine Matrix.ext fun ⟨i, a⟩ ⟨j, c⟩ => ?_
-  rcases eq_or_ne i j with rfl | h
-  · rcases eq_or_ne a c with rfl | hac
-    · simp [charmatrix_apply_eq]
-    · simp [hac]
-  · simp [h, blockDiagonal'_apply_ne _ _ _ h]
-
-/-- The characteristic polynomial of a block-diagonal matrix with blocks of possibly different
-sizes is the product of the characteristic polynomials of the blocks. -/
-@[simp]
-theorem charpoly_blockDiagonal' (B : ∀ i, Matrix (m i) (m i) R) :
-    (blockDiagonal' B).charpoly = ∏ i, (B i).charpoly := by
-  rw [charpoly, charmatrix_blockDiagonal', det_blockDiagonal']
-  rfl
-
-end Matrix
 
 namespace LinearMap
 

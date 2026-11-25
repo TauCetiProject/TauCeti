@@ -29,7 +29,7 @@ eigenvalues of arithmetic and geometric Frobenius.
 * `Representation.charpoly_prod_apply`: multiplicativity on products.
 * `Representation.charpoly_trivial_apply`: the characteristic polynomial of the trivial
   representation.
-* `Representation.charpoly_lsmul_asModule_of`: `g` acts on the `k[G]`-module `ρ.asModule` with the
+* `Representation.charpoly_lsmul_asModule_of`: `g` acts on the `R[G]`-module `ρ.asModule` with the
   characteristic polynomial of `ρ g`.
 * `Representation.charpoly_apply_inv`, `Representation.aroots_charpoly_apply_inv`: the
   characteristic polynomial and the characteristic roots of `g⁻¹`.
@@ -70,6 +70,23 @@ theorem charpoly_trivial_apply (g : G) : (trivial R G V g).charpoly = (X - 1) ^ 
   nontriviality R
   rw [isTrivial_def, ← Module.End.one_eq_id, LinearMap.charpoly_one]
 
+/-- The `R[G]`-module of a representation on a free `R`-module is free over `R`, being `V` itself
+(`Representation.asModuleEquiv`). This complements Mathlib's instance for `Module.Finite`. -/
+instance (ρ : Representation R G V) : Module.Free R ρ.asModule :=
+  .of_equiv ρ.asModuleEquiv.symm
+
+variable (ρ) in
+/-- The action of `g` on the `R[G]`-module `ρ.asModule` has the characteristic polynomial of
+`ρ g`. -/
+theorem charpoly_lsmul_asModule_of (g : G) :
+    (Algebra.lsmul R R ρ.asModule (MonoidAlgebra.of R G g)).charpoly = (ρ g).charpoly := by
+  rw [← ρ.asModuleEquiv.charpoly_conj]
+  congr 1
+  ext x
+  simp [LinearEquiv.conj_apply]
+  -- `ρ.asModuleEquiv : ρ.asModule ≃ₗ[R] V` is the identity of the type synonym `ρ.asModule`.
+  rfl
+
 end Monoid
 
 section Group
@@ -101,23 +118,5 @@ theorem aroots_charpoly_dual_apply {S : Type*} [Field S] [Algebra R S] (g : G) :
   rw [charpoly_dual_apply, aroots_charpoly_apply_inv]
 
 end Group
-
-section Field
-
-variable {k G V : Type*} [Field k] [Monoid G] [AddCommGroup V] [Module k V]
-  [FiniteDimensional k V]
-
-/-- The action of `g` on the `k[G]`-module `ρ.asModule` has the characteristic polynomial of
-`ρ g`. -/
-theorem charpoly_lsmul_asModule_of (ρ : Representation k G V) (g : G) :
-    (Algebra.lsmul k k ρ.asModule (MonoidAlgebra.of k G g)).charpoly = (ρ g).charpoly := by
-  rw [← ρ.asModuleEquiv.charpoly_conj]
-  congr 1
-  ext x
-  simp [LinearEquiv.conj_apply]
-  -- `ρ.asModuleEquiv : ρ.asModule ≃ₗ[k] V` is the identity of the type synonym `ρ.asModule`.
-  rfl
-
-end Field
 
 end Representation

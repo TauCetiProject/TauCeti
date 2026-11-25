@@ -75,11 +75,7 @@ theorem charpoly_lsmul_eq_prod (hT : Pairwise fun i j => IsEmpty (T i ≃ₗ[A] 
       ∏ i, (Algebra.lsmul k k (T i) a).charpoly ^ jordanHolderMultiplicity A M (T i) := by
   classical
   obtain ⟨n, σ, ⟨e⟩, hσ⟩ := exists_linearEquiv_pi_natCard_eq hT hM
-  have he : (e.restrictScalars k).conj (Algebra.lsmul k k M a) =
-      LinearMap.piMap fun x => Algebra.lsmul k k (T (σ x)) a := by
-    refine LinearMap.ext fun y => funext fun x => ?_
-    simp [LinearEquiv.conj_apply]
-  rw [← (e.restrictScalars k).charpoly_conj, he, LinearMap.charpoly_piMap,
+  rw [← (e.restrictScalars k).charpoly_conj, e.conj_lsmul_eq_piMap, LinearMap.charpoly_piMap,
     ← Finset.prod_fiberwise Finset.univ σ]
   refine Finset.prod_congr rfl fun i _ => ?_
   rw [Finset.prod_congr rfl fun x hx => by rw [(Finset.mem_filter.1 hx).2], Finset.prod_const,

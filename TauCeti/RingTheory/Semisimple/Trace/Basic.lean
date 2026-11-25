@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.Trace.Pi
 public import TauCeti.RingTheory.Semisimple.Burnside
 public import TauCeti.RingTheory.Semisimple.Multiplicity
 public import TauCeti.RingTheory.SimpleModule.Basic
+import TauCeti.LinearAlgebra.Pi
 
 /-!
 # Semisimple modules are determined by their traces
@@ -175,12 +176,8 @@ theorem trace_lsmul_eq_sum (hT : Pairwise fun i j => IsEmpty (T i ≃ₗ[A] T j)
     := by
   classical
   obtain ⟨n, σ, ⟨e⟩, hσ⟩ := exists_linearEquiv_pi_natCard_eq hT hM
-  have he : (e.restrictScalars k).conj (Algebra.lsmul k k M a) =
-      LinearMap.piMap fun x => Algebra.lsmul k k (T (σ x)) a := by
-    refine LinearMap.ext fun y => funext fun x => ?_
-    simp [LinearEquiv.conj_apply]
-  rw [← LinearMap.trace_conj' _ (e.restrictScalars k), he, LinearMap.trace_piMap,
-    ← Finset.sum_fiberwise Finset.univ σ]
+  rw [← LinearMap.trace_conj' _ (e.restrictScalars k), e.conj_lsmul_eq_piMap,
+    LinearMap.trace_piMap, ← Finset.sum_fiberwise Finset.univ σ]
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [Finset.sum_congr rfl fun x hx => by rw [(Finset.mem_filter.1 hx).2], Finset.sum_const,
     ← hσ i, Nat.card_eq_fintype_card, Fintype.card_subtype]

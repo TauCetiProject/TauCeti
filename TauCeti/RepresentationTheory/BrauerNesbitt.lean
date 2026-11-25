@@ -60,8 +60,10 @@ theorem nonempty_equiv_of_charpoly_eq_of_isSemisimpleRepresentation (ρ : Repres
   refine TauCeti.Representation.nonempty_equiv_iff.mpr <|
     IsSemisimpleModule.nonempty_linearEquiv_of_charpoly_eq (k := k) (g := MonoidAlgebra.of k G)
       (by
-        rw [← (MonoidAlgebra.basis G k).span_eq]
-        congr 2) fun g => ?_
+        have hrange : Set.range (MonoidAlgebra.of k G) = Set.range (MonoidAlgebra.basis G k) := by
+          ext
+          simp [MonoidAlgebra.basis_apply]
+        rw [hrange, Module.Basis.span_eq]) fun g => ?_
   rw [charpoly_lsmul_asModule_of, charpoly_lsmul_asModule_of, h g]
 
 end Representation
