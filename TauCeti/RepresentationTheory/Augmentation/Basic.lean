@@ -346,19 +346,13 @@ theorem ofMulAction_permutationSum (g : G) :
 
 /-- The **invariant line** of `k[X]`: the line spanned by the sum of the standard basis, as a
 subrepresentation. -/
-noncomputable def invariantLine : Subrepresentation (Representation.ofMulAction k G X) where
-  toSubmodule := Submodule.span k {permutationSum k X}
-  apply_mem_toSubmodule g v hv := by
-    obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hv
-    rw [map_smul, ofMulAction_permutationSum]
-    exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)
+noncomputable def invariantLine : Subrepresentation (Representation.ofMulAction k G X) :=
+  Subrepresentation.spanSingleton (permutationSum k X) fun g => ⟨1, by simp⟩
 
 @[simp]
 theorem toSubmodule_invariantLine :
     (invariantLine k G X).toSubmodule = Submodule.span k {permutationSum k X} :=
-  -- `(rfl)`, not `rfl`: the body of `invariantLine` is not `@[expose]`d, so this must not be
-  -- inferred `@[defeq]`.
-  (rfl)
+  Subrepresentation.toSubmodule_spanSingleton _ _
 
 /-- The group acts trivially on the invariant line. -/
 @[simp]
@@ -381,7 +375,7 @@ basis. -/
 @[simp]
 theorem mem_invariantLine_iff {v : MonoidAlgebra k X} :
     v ∈ invariantLine k G X ↔ ∃ c : k, c • permutationSum k X = v :=
-  Submodule.mem_span_singleton
+  Subrepresentation.mem_spanSingleton
 
 end InvariantLine
 
@@ -529,6 +523,7 @@ theorem isCompl_invariantLine_augmentationSubrepresentation
         ?_, by abel⟩
       rw [LinearMap.mem_ker, map_sub, map_smul, sumCoords_basis_permutationSum, smul_eq_mul,
         Ring.inverse_mul_cancel_right _ _ h, sub_self]
+  rw [← toSubmodule_invariantLine k G X, ← toSubmodule_augmentationSubrepresentation k G X] at hsub
   exact Subrepresentation.isCompl_toSubmodule.mp hsub
 
 /-- The invariant line complements the augmentation subrepresentation exactly when the index

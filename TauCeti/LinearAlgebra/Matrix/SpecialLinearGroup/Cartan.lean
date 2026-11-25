@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Cartan
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Cartan.Basic
 
 /-!
 # The KAK decomposition of the real and complex special linear groups

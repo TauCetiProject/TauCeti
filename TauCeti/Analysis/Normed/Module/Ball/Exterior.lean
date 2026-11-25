@@ -5,21 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.Analysis.Normed.Module.Connected
-import Mathlib.Analysis.Normed.Module.Convex
+import Mathlib.Analysis.Convex.Contractible
 import Mathlib.Analysis.Convex.PathConnected
 import Mathlib.Analysis.LocallyConvex.Separation
+import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.LinearAlgebra.Dimension.Constructions
+import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 import TauCeti.Analysis.LocallyConvex.Separation
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.LinearAlgebra.Dual.Lemmas
+import TauCeti.Topology.Homotopy.StarConvexComplement
 
 /-!
-# Path-connected exteriors of closed balls and of unions of bounded closed convex sets
+# Path-connected and simply connected exteriors of closed balls and of unions of convex sets
 
 In a real normed space of dimension at least two the complement of a closed ball is path-connected:
 it is the image of the product of the unit sphere with the ray `(r, ∞)` of radii exceeding the
-ball's under the polar-coordinate map `(u, t) ↦ x + t • u`. By Hahn–Banach separation, every point
+ball's under the polar-coordinate map `(u, t) ↦ x + t • u`. In dimension at least three it is
+moreover simply connected, since it deformation retracts radially onto a sphere, which is then
+simply connected. By Hahn–Banach separation, every point
 outside the union of two bounded closed convex sets can be pushed along a ray staying in two
 closed half-spaces avoiding both sets into the exterior of a larger ball containing them, so the
 complement of their union (and in particular of the union of two closed balls) is also
@@ -33,7 +39,10 @@ coincide. This uniqueness result and the corresponding filled-hull alternative a
 ## Main results
 
 * `TauCeti.isPathConnected_compl_closedBall` — the exterior of a closed ball is path-connected in
-  a real normed space of dimension at least two.
+  a real normed space of dimension at least two, and so preconnected
+  (`TauCeti.isPreconnected_compl_closedBall`).
+* `TauCeti.simplyConnectedSpace_compl_closedBall` — the exterior of a closed ball is simply
+  connected in a real normed space of dimension at least three.
 * `TauCeti.isPathConnected_compl_union_of_convex_of_isClosed_of_isBounded` — the exterior of a
   union of two bounded closed convex sets is path-connected in a real normed space of dimension at
   least two.
@@ -71,6 +80,23 @@ theorem isPathConnected_compl_closedBall (h : 1 < Module.rank ℝ E) (x : E) (r 
       by simp [smul_smul, hw']⟩
   · rintro ⟨u, t, ⟨hu, ht⟩, rfl⟩
     simpa [norm_smul, hu, abs_of_nonneg (hr.trans ht.le)] using ht
+
+/-- The exterior of a closed ball is preconnected in a real normed space of dimension at least
+two. -/
+theorem isPreconnected_compl_closedBall (h : 1 < Module.rank ℝ E) (x : E) (r : ℝ) :
+    IsPreconnected (closedBall x r)ᶜ :=
+  (isPathConnected_compl_closedBall h x r).isConnected.isPreconnected
+
+/-- **The exterior of a closed ball is simply connected** in a real normed space of dimension at
+least three: it deformation retracts radially onto a sphere. -/
+theorem simplyConnectedSpace_compl_closedBall (h : 2 < Module.rank ℝ E) (x : E) (r : ℝ) :
+    SimplyConnectedSpace ↥(closedBall x r)ᶜ := by
+  rcases lt_or_ge r 0 with hr | hr
+  · rw [closedBall_eq_empty.mpr hr, compl_empty]
+    exact (Homeomorph.Set.univ E).toHomotopyEquiv.simplyConnectedSpace
+  exact (((convex_closedBall x r).starConvex (mem_closedBall_self hr)).complSphereHomotopyEquiv
+    (mem_closedBall_self hr) (closedBall_subset_ball (lt_add_one r))).symm
+    |>.simplyConnectedSpace_of_sphere h (by linarith)
 
 /-- **The exterior of a union of two bounded closed convex sets is path-connected** in a real
 normed space of dimension at least two. -/

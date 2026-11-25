@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Projective
 public import Mathlib.RingTheory.Finiteness.Nakayama
 public import Mathlib.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
@@ -45,6 +46,10 @@ The file also records the global form of Nakayama's lemma: a finitely generated 
 Over `ℤ` this passes from statements modulo every prime to integral statements: a finitely
 generated subgroup `N` of an abelian group with `N = p • N` for every prime `p` is zero
 (`Submodule.eq_bot_of_forall_prime_le_smul`).
+
+For a linear map `f : M → N` of finite modules with `N` projective which is bijective modulo an
+ideal `I`, Nakayama's lemma gives `r ≡ 1 (mod I)` such that `f` becomes bijective after inverting
+`r` (`LinearMap.exists_sub_one_mem_and_smul_mem_range_and_smul_eq_zero`).
 
 For a finite module `M`, Nakayama's lemma also characterises `I M = M` as the comaximality of `I`
 with the annihilator of `M` (`Ideal.smul_top_eq_top_iff_sup_annihilator_eq_top`).
@@ -208,3 +213,57 @@ theorem exists_finset_card_le_finrank_and_smul_mem_span :
     (by rw [Submodule.Quotient.mk_smul]; exact hrN _)⟩
 
 end Module
+
+namespace LinearMap
+
+variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  [Module.Finite R M] [Module.Finite R N] [Module.Projective R N]
+
+/-- **Nakayama's lemma for a map onto a projective module.** Let `f : M → N` be a linear map of
+finite modules with `N` projective, surjective modulo `I` and with kernel inside `I • M`, as when
+`f` becomes bijective modulo `I`. Then some `r ≡ 1 (mod I)` multiplies `N` into the range of `f`
+and kills the kernel of `f`, so `f` becomes bijective after inverting `r`. -/
+theorem exists_sub_one_mem_and_smul_mem_range_and_smul_eq_zero (I : Ideal R) (f : M →ₗ[R] N)
+    (hrange : range f ⊔ I • ⊤ = ⊤) (hker : ker f ≤ I • ⊤) :
+    ∃ r : R, r - 1 ∈ I ∧ (∀ n, r • n ∈ range f) ∧ ∀ m, f m = 0 → r • m = 0 := by
+  -- Nakayama's lemma for the cokernel gives `r₁ ≡ 1` with `r₁ • N ⊆ range f`.
+  obtain ⟨r₁, hr₁, hr₁N⟩ := Submodule.exists_sub_one_mem_and_smul_eq_zero_of_fg_of_le_smul I
+    (⊤ : Submodule R (N ⧸ range f)) Module.Finite.fg_top (by
+      rintro x -
+      obtain ⟨n, rfl⟩ := Submodule.mkQ_surjective _ x
+      obtain ⟨a, ha, b, hb, rfl⟩ := Submodule.mem_sup.mp (hrange ▸ Submodule.mem_top (x := n))
+      have := Submodule.mem_map_of_mem (f := (range f).mkQ) hb
+      rw [Submodule.map_smul'', Submodule.map_top, Submodule.range_mkQ] at this
+      simpa [(Submodule.Quotient.mk_eq_zero _).mpr ha] using this)
+  have h₁ (n : N) : r₁ • n ∈ range f := by
+    simpa [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero] using
+      hr₁N (Submodule.Quotient.mk n) trivial
+  -- As `N` is projective, multiplication by `r₁` factors through `f`.
+  obtain ⟨s, hs⟩ := Module.projective_lifting_property f.rangeRestrict
+    ((r₁ • LinearMap.id).codRestrict (range f) h₁) f.surjective_rangeRestrict
+  have hfs (n : N) : f (s n) = r₁ • n := by
+    simpa using congr(($(LinearMap.ext_iff.mp hs n) : N))
+  -- `e = r₁ - s ∘ f` maps `M` into `ker f`, where it is multiplication by `r₁`.
+  let e : M →ₗ[R] M := r₁ • LinearMap.id - s ∘ₗ f
+  have he_ker (m : M) : f (e m) = 0 := by simp [e, hfs]
+  have he (m : M) (hm : f m = 0) : e m = r₁ • m := by simp [e, hm]
+  -- Nakayama's lemma for `range e`, which satisfies `range e ≤ I • range e`.
+  have hle : range e ≤ I • range e := by
+    rintro _ ⟨m, rfl⟩
+    have h₂ : e (e m) ∈ I • range e := by
+      have := Submodule.mem_map_of_mem (f := e) (hker (he_ker m))
+      rwa [Submodule.map_smul'', Submodule.map_top] at this
+    rw [he _ (he_ker m)] at h₂
+    rw [show e m = r₁ • e m - (r₁ - 1) • e m by rw [sub_smul, one_smul, sub_sub_cancel]]
+    exact sub_mem h₂ (Submodule.smul_mem_smul hr₁ ⟨m, rfl⟩)
+  obtain ⟨r₂, hr₂, hr₂e⟩ := Submodule.exists_sub_one_mem_and_smul_eq_zero_of_fg_of_le_smul I
+    (range e) (by rw [range_eq_map]; exact Module.Finite.fg_top.map e) hle
+  refine ⟨r₂ * r₁, ?_, fun n ↦ ?_, fun m hm ↦ ?_⟩
+  · rw [show r₂ * r₁ - 1 = r₂ * (r₁ - 1) + (r₂ - 1) by ring]
+    exact add_mem (I.mul_mem_left _ hr₁) hr₂
+  · rw [mul_smul]
+    exact (range f).smul_mem _ (h₁ n)
+  · rw [mul_smul, ← he m hm]
+    exact hr₂e _ ⟨m, rfl⟩
+
+end LinearMap
