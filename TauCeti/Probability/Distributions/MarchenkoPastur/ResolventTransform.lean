@@ -106,7 +106,7 @@ theorem resolventTransform_semicircleReal_one_add_eq
       x • resolvent (R := ℝ) z x = 1 + z * resolvent (R := ℝ) z x := by
     filter_upwards [Measure.support_mem_ae] with x hx
     have hxz : (x : ℂ) - z ≠ 0 := sub_ne_zero.2 fun h ↦ hz ⟨x, hx, h⟩
-    rw [Complex.real_smul, resolvent, Ring.inverse_eq_inv', Complex.coe_algebraMap]
+    rw [Complex.real_smul, Complex.resolvent_real_eq_inv]
     field_simp
     ring
   rw [integral_congr_ae hae, integral_add (integrable_const _) (hint.const_mul z),

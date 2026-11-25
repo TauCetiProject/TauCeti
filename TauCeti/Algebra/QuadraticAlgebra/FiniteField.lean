@@ -41,7 +41,7 @@ In the inert case (`¬IsSquare r`), the `Q`-th power map is an involution (`(z ^
 turns Mathlib's `algebraMap_trace_eq_add_star` and `algebraMap_norm_eq_mul_star` into
 `trace z = z + z ^ Q` and `norm z = z * z ^ Q`, has fixed points exactly `F`, and is the unique
 nontrivial `F`-algebra endomorphism of `F(√r)`
-(`QuadraticAlgebra.algHom_eq_id_or_eq_starAlgEquiv`, in `TauCeti.Algebra.QuadraticAlgebra.Star`).
+(`AlgHom.eq_id_or_eq_starAlgEquiv`, in `TauCeti.Algebra.QuadraticAlgebra.Star`).
 Its iterates alternate between the identity (`QuadraticAlgebra.pow_card_pow_eq_self_of_even`) and
 conjugation (`QuadraticAlgebra.pow_card_pow_eq_star_of_odd`). When `r` is a square, the `Q`-th
 power map is idempotent instead (`QuadraticAlgebra.pow_card_pow_card_eq_pow_card`), so every

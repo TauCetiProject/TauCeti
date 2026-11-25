@@ -49,6 +49,14 @@ The homogeneous symbols `TauCeti.HomogeneousSymbol.adjointTerm k a` and the form
 * `TauCeti.ClassicalSymbol.principal_adjoint`: the principal symbol of `a*` is `a_m†`.
 * `TauCeti.ClassicalSymbol.coefficient_term_one_adjoint`: the term of degree `m - 1` of `a*`.
 * `TauCeti.ClassicalSymbol.isElliptic_adjoint_iff`: `a*` is elliptic exactly when `a` is.
+* `TauCeti.ClassicalSymbol.exists_inclusion_eq_adjoint_sub_pointwiseAdjoint`: `a* - a†` is a
+  classical symbol of order `m - 1` with principal symbol `-i ∑ⱼ (∂_{xⱼ} ∂_{ξⱼ} a_m)†`, where `a†`
+  is the pointwise adjoint `TauCeti.ClassicalSymbol.pointwiseAdjoint`.
+* `TauCeti.ClassicalSymbol.eq_adjoint_of_forall_integral_inner_eq`: if the quantization of `b` is
+  the formal adjoint of that of `a` on compactly supported Schwartz functions, then `b = a*`, and
+  `TauCeti.ClassicalSymbol.adjoint_principal_eq_of_forall_integral_inner_eq`: the principal symbol
+  of `b` is `a_m†`. For `b = a`, a formally self-adjoint quantization has `a* = a` and a pointwise
+  self-adjoint principal symbol.
 
 ## References
 
@@ -62,6 +70,7 @@ public section
 noncomputable section
 
 open Finset
+open scoped SchwartzMap
 
 namespace TauCeti
 
@@ -201,7 +210,62 @@ theorem coefficient_term_one_adjoint (z : CoordinateSpace n × CoordinateSpace n
 theorem isElliptic_adjoint_iff : (a.adjoint ha).IsElliptic ↔ a.IsElliptic := by
   rw [isElliptic_def, isElliptic_def, principal_adjoint, HomogeneousSymbol.isElliptic_adjoint_iff]
 
+/-- **The adjoint up to order `m - 1`.** The adjoint symbol `a*` differs from the pointwise adjoint
+`a†` by a classical symbol of order `m - 1`, whose principal symbol is
+`-i ∑ⱼ (∂_{xⱼ} ∂_{ξⱼ} a_m)†`. -/
+theorem exists_inclusion_eq_adjoint_sub_pointwiseAdjoint :
+    ∃ c : ClassicalSymbol n W V (m - 1),
+      inclusion 1 (by simp) c = a.adjoint ha - a.pointwiseAdjoint ∧
+      ∀ z, c.principal.coefficient z =
+        -Complex.I • ∑ j, ContinuousLinearMap.adjoint
+          (((a.principal.frequencyDeriv (EuclideanSpace.single j 1)).spatialDeriv
+            (EuclideanSpace.single j 1)).coefficient z) := by
+  have h0 : (a.adjoint ha - a.pointwiseAdjoint).principal = 0 := by
+    simp [principal_sub]
+  obtain ⟨c, hc⟩ := (principal_eq_zero_iff_exists_inclusion _).1 h0
+  refine ⟨c, hc, fun z => ?_⟩
+  rw [coefficient_principal_of_inclusion_eq hc, term_sub, HomogeneousSymbol.coefficient_sub,
+    Pi.sub_apply, coefficient_term_one_adjoint, term_pointwiseAdjoint, coefficient_adjoint,
+    neg_smul]
+  abel
+
 end Adjoint
+
+/-! ### Uniqueness of the adjoint -/
+
+section FormalAdjoint
+
+variable {m : ℝ} (a : ClassicalSymbol n V W m) (ha : a.toSymbol.HasCompactSpatialSupport)
+
+/-- **Uniqueness of the adjoint.** Let `a` be a classical symbol with compact spatial support. If
+the quantization of a classical symbol `b` is the formal adjoint of that of `a` on compactly
+supported Schwartz functions, `∫ ⟪Op(a) u, v⟫ = ∫ ⟪u, Op(b) v⟫`, then `b` is the adjoint symbol
+`a*`. For `b = a` this says that a formally self-adjoint quantization has `a* = a`. -/
+theorem eq_adjoint_of_forall_integral_inner_eq {b : ClassicalSymbol n W V m}
+    (h : ∀ (u : 𝓢(CoordinateSpace n, V)) (v : 𝓢(CoordinateSpace n, W)), HasCompactSupport u →
+      HasCompactSupport v →
+        ∫ x, inner ℂ (quantizeSchwartzValue a.toSymbol.coefficient u x) (v x) =
+          ∫ x, inner ℂ (u x) (quantizeSchwartzValue b.toSymbol.coefficient v x)) :
+    b = a.adjoint ha := by
+  ext1
+  rw [toSymbol_adjoint]
+  exact Symbol.ext (Symbol.coefficient_eq_adjoint_of_forall_integral_inner_eq ha h)
+
+include ha in
+/-- **The principal symbol of a formal adjoint.** Let `a` be a classical symbol with compact
+spatial support. If the quantization of a classical symbol `b` is the formal adjoint of that of
+`a` on compactly supported Schwartz functions, then the principal symbol of `b` is the pointwise
+adjoint `a_m(x, ξ)†` of that of `a`. For `b = a`: the principal symbol of a formally self-adjoint
+quantization is a self-adjoint operator at every position and frequency. -/
+theorem adjoint_principal_eq_of_forall_integral_inner_eq {b : ClassicalSymbol n W V m}
+    (h : ∀ (u : 𝓢(CoordinateSpace n, V)) (v : 𝓢(CoordinateSpace n, W)), HasCompactSupport u →
+      HasCompactSupport v →
+        ∫ x, inner ℂ (quantizeSchwartzValue a.toSymbol.coefficient u x) (v x) =
+          ∫ x, inner ℂ (u x) (quantizeSchwartzValue b.toSymbol.coefficient v x)) :
+    a.principal.adjoint = b.principal := by
+  rw [← principal_adjoint a ha, eq_adjoint_of_forall_integral_inner_eq a ha h]
+
+end FormalAdjoint
 
 end ClassicalSymbol
 

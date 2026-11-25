@@ -26,30 +26,30 @@ namespace FGModuleCat
 
 open CategoryTheory
 
-universe v
+universe v w
 
 variable {A : Type v} [Ring A]
 
 /-- The endomorphism ring of an object of `FGModuleCat A` is isomorphic to the ring of linear
 endomorphisms of its underlying module. -/
-noncomputable def endRingEquiv (X : FGModuleCat A) : End X ≃+* Module.End A X :=
+noncomputable def endRingEquiv (X : FGModuleCat.{w} A) : End X ≃+* Module.End A X :=
   ((ObjectProperty.fullyFaithfulι _).ringEquivEnd X).trans (ModuleCat.endRingEquiv X.obj)
 
 @[simp]
-theorem endRingEquiv_apply (X : FGModuleCat A) (f : End X) :
+theorem endRingEquiv_apply (X : FGModuleCat.{w} A) (f : End X) :
     endRingEquiv X f = f.asHom.hom.hom := by
   rw [endRingEquiv, RingEquiv.trans_apply, ModuleCat.endRingEquiv_apply,
     Functor.FullyFaithful.ringEquivEnd_apply_asHom, ObjectProperty.ι_map]
 
 @[simp]
-theorem endRingEquiv_symm_apply (X : FGModuleCat A) (f : Module.End A X) :
+theorem endRingEquiv_symm_apply (X : FGModuleCat.{w} A) (f : Module.End A X) :
     (endRingEquiv X).symm f = End.of (FGModuleCat.ofHom f) := by
   rw [RingEquiv.symm_apply_eq, endRingEquiv_apply]
   simp
 
 /-- An object of `FGModuleCat A` has a local endomorphism ring exactly when its underlying module
 does. -/
-theorem isLocalRing_end_iff {X : FGModuleCat A} :
+theorem isLocalRing_end_iff {X : FGModuleCat.{w} A} :
     IsLocalRing (End X) ↔ IsLocalRing (Module.End A X) :=
   ⟨fun _ ↦ (endRingEquiv X).isLocalRing, fun _ ↦ (endRingEquiv X).symm.isLocalRing⟩
 

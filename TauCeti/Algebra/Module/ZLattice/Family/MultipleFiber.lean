@@ -9,6 +9,7 @@ public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 public import TauCeti.Algebra.Module.ZLattice.Family.CyclicQuotient
 public import TauCeti.Algebra.Module.ZLattice.Family.RotatedDisc
 public import TauCeti.Algebra.Module.ZLattice.Family.Stabilizer
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 
@@ -65,6 +66,8 @@ The local equation `t = u ^ m` of `F` in the charts of `Q` is
   orbit map `T_y → T_y / Γ` is a `C^n` local diffeomorphism.
 * `TauCeti.isSmoothEmbedding_orbitRelQuotientMap_torusFamilyFiberMulActionHom`: the map
   `T_y / Γ → X / Γ` is a `C^n` embedding.
+* `TauCeti.torusFamilyMultipleFiberEmbedding`: the bundled embedding of the central fibre over
+  the rotated disc.
 * `TauCeti.range_orbitRelQuotientMap_torusFamilyFiberMulActionHom_rootsOfUnityBall`: over the
   rotated disc, its image is the fibre over `0` of the map `X / C_m → ℂ` induced by `z ↦ z ^ m`.
 
@@ -525,5 +528,92 @@ theorem range_orbitRelQuotientMap_torusFamilyFiberMulActionHom_rootsOfUnityBall
   exact congrArg range (funext fun v ↦ by rw [comp_apply, comp_apply, torusFamilyFiberMap_mk])
 
 end RotatedDisc
+
+section RotatedDiscEmbedding
+
+variable {m : ℕ} [NeZero m] {r : ℝ} {Λ E : Type*} [AddCommGroup Λ]
+  [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+  (P : rootsOfUnityBall m r → Λ →ₗ[ℤ] E)
+  [∀ z, DiscreteTopology (LinearMap.range (P z))] [∀ z, IsZLattice ℝ (LinearMap.range (P z))]
+  (hinj : ∀ z, Injective (P z))
+  {n : ℕ∞ω} (hP : ∀ l, ContMDiff 𝓘(ℂ) 𝓘(ℂ, E) n fun z ↦ P z l)
+
+variable (R : rootsOfUnity m ℂ → rootsOfUnityBall m r → E →+ E)
+  (ρ : Representation ℤ (rootsOfUnity m ℂ) Λ)
+  (hequiv : ∀ (g : rootsOfUnity m ℂ) (z : rootsOfUnityBall m r) (l : Λ),
+    P (g • z) (ρ g l) = R g z (P z l))
+  (b : rootsOfUnity m ℂ → rootsOfUnityBall m r →
+    letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))
+  (hb : ∀ (g : rootsOfUnity m ℂ) (z : rootsOfUnityBall m r),
+    torusFamilyProjection P (b g z) = g • z)
+  (hone : ∀ (z : rootsOfUnityBall m r) (v : E), R 1 z v = v)
+  (hmul : ∀ (g h : rootsOfUnity m ℂ) (z : rootsOfUnityBall m r) (v : E),
+    R (g * h) z v = R g (h • z) (R h z v))
+  (hbmul : ∀ (g h : rootsOfUnity m ℂ) (z : rootsOfUnityBall m r),
+    b (g * h) z = torusFamilyAffineMap R P ρ hequiv b hb g (b h z))
+  (hR : ∀ g : rootsOfUnity m ℂ, ContMDiff (𝓘(ℂ).prod 𝓘(ℂ, E)) 𝓘(ℂ, E) n
+    fun p : rootsOfUnityBall m r × E ↦ R g p.1 p.2)
+  (hbc : letI := periodAddAction P
+    letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
+    ∀ g, ContMDiff 𝓘(ℂ) (𝓘(ℂ).prod 𝓘(ℂ, E)) n (b g))
+  (hfree : letI := periodAddAction P
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+    IsCancelSMul (rootsOfUnity m ℂ) (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)))
+  {u₀ : rootsOfUnityBall m r} (hu₀ : (u₀ : ℂ) = 0) (hn : 1 ≤ n)
+
+/-- The `C^n` embedding of the reduced multiple fibre, presented as the quotient of the
+central torus, into the cyclic quotient of the family. -/
+noncomputable def torusFamilyMultipleFiberEmbedding :
+    letI := periodAddAction P
+    letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+    letI := torusFamilyAffineQuotientChartedSpace (H := ℂ) P hinj R ρ hequiv b hb hone hmul hbmul
+      (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous) hfree
+    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul
+      (fun g ↦ smul_rootsOfUnityBall_of_coe_eq_zero hu₀ g)
+    letI := torusFamilyFiberQuotientChartedSpace P R ρ hequiv b hb hone hmul hbmul
+      (fun g ↦ smul_rootsOfUnityBall_of_coe_eq_zero hu₀ g) (fun l ↦ (hP l).continuous)
+      (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous) hfree
+    SmoothEmbedding 𝓘(ℂ, E) (𝓘(ℂ).prod 𝓘(ℂ, E)) n
+      (orbitRel.Quotient (rootsOfUnity m ℂ)
+        (AddAction.orbitRel.Quotient (LinearMap.range (P u₀)) E))
+      (orbitRel.Quotient (rootsOfUnity m ℂ)
+        (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) :=
+  letI := periodAddAction P
+  letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
+  letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+  letI := torusFamilyAffineQuotientChartedSpace (H := ℂ) P hinj R ρ hequiv b hb hone hmul hbmul
+      (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous) hfree
+  letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul
+      (fun g ↦ smul_rootsOfUnityBall_of_coe_eq_zero hu₀ g)
+  letI := torusFamilyFiberQuotientChartedSpace P R ρ hequiv b hb hone hmul hbmul
+      (fun g ↦ smul_rootsOfUnityBall_of_coe_eq_zero hu₀ g) (fun l ↦ (hP l).continuous)
+      (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous) hfree
+  SmoothEmbedding.ofIsSmoothEmbedding _
+    (isSmoothEmbedding_orbitRelQuotientMap_torusFamilyFiberMulActionHom
+      P hinj hP R ρ hequiv b hb hone hmul hbmul hR hbc hfree
+      (fun g ↦ smul_rootsOfUnityBall_of_coe_eq_zero hu₀ g) hn)
+
+/-- On a lift to the central torus the multiple-fibre inclusion is the central-torus inclusion
+followed by the ambient orbit map. -/
+@[simp]
+theorem torusFamilyMultipleFiberEmbedding_mk
+    (x : AddAction.orbitRel.Quotient (LinearMap.range (P u₀)) E) :
+    letI := periodAddAction P
+    letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+    letI := torusFamilyAffineQuotientChartedSpace (H := ℂ) P hinj R ρ hequiv b hb hone hmul hbmul
+      (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous) hfree
+    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul
+      (fun g ↦ smul_rootsOfUnityBall_of_coe_eq_zero hu₀ g)
+    letI := torusFamilyFiberQuotientChartedSpace P R ρ hequiv b hb hone hmul hbmul
+      (fun g ↦ smul_rootsOfUnityBall_of_coe_eq_zero hu₀ g) (fun l ↦ (hP l).continuous)
+      (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous) hfree
+    torusFamilyMultipleFiberEmbedding P hinj hP R ρ hequiv b hb hone hmul hbmul hR hbc hfree
+      hu₀ hn (Quotient.mk _ x) = Quotient.mk _ (torusFamilyFiberMap P u₀ x) := by
+  simp [torusFamilyMultipleFiberEmbedding, MulActionHom.orbitRelQuotientMap_mk,
+    coe_torusFamilyFiberMulActionHom]
+
+end RotatedDiscEmbedding
 
 end TauCeti

@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.LevyProkhorovMetric
 
 /-!
-# The Lévy–Prokhorov distance between pushforward measures
+# Lévy–Prokhorov distance of pushforwards, and first countability of finite measures
 
 Mathlib's `MeasureTheory.left_measure_le_of_levyProkhorovEDist_lt` compares the masses of a set and
 of its thickening under two measures on the same space. This file restates it for the images
@@ -22,12 +22,21 @@ into a common extended pseudometric space `Z`, in terms of sets of `X` and `Y`.
 * `MeasureTheory.Measure.levyProkhorovEDist_map_le_of_edist_le`: if an a.e.-measurable self-map
   moves almost every point by at most `δ`, then the Lévy–Prokhorov distance from a measure to its
   pushforward is at most `δ`.
+* `MeasureTheory.FiniteMeasure.instFirstCountableTopology`: on a separable pseudo-metrizable
+  space with measurable open sets, the topology of weak convergence of finite measures is first
+  countable.
+
+Mathlib's Lévy–Prokhorov metrization makes `ProbabilityMeasure X` pseudo-metrizable when `X` is
+separable and pseudo-metrizable with measurable open sets. A finite measure is determined by its
+mass and, away from zero, by its normalization, so `FiniteMeasure X` is first countable too: in
+particular, cluster points of sequences of finite measures are limits of subsequences
+(`MapClusterPt.tendsto_subseq`).
 -/
 
 public section
 
-open MeasureTheory Set Metric
-open scoped ENNReal
+open MeasureTheory Set Metric Filter Topology
+open scoped ENNReal NNReal
 
 namespace TauCeti
 
@@ -84,3 +93,38 @@ theorem levyProkhorovEDist_map_le_of_edist_le
     exact (measure_mono_ae (by filter_upwards [hmem] with z hz h using hz.2 h)).trans le_self_add
 
 end MeasureTheory.Measure
+
+namespace MeasureTheory.FiniteMeasure
+
+variable {X : Type*} [MeasurableSpace X] [TopologicalSpace X] [OpensMeasurableSpace X]
+  [TopologicalSpace.PseudoMetrizableSpace X] [TopologicalSpace.SeparableSpace X]
+
+/-- On a separable pseudo-metrizable space with measurable open sets, the topology of weak
+convergence of finite measures is first countable. In particular, a cluster point of a sequence of
+finite measures is the limit of a subsequence (`MapClusterPt.tendsto_subseq`). -/
+instance instFirstCountableTopology : FirstCountableTopology (FiniteMeasure X) where
+  nhds_generated_countable μ := by
+    by_cases hzero : μ = 0
+    · -- Weak convergence to `0` is convergence of the mass to `0`.
+      subst hzero
+      have h : 𝓝 (0 : FiniteMeasure X) = Filter.comap mass (𝓝 0) := by
+        refine le_antisymm ?_ (tendsto_zero_of_tendsto_zero_mass (μs := id) tendsto_comap)
+        simpa only [zero_mass] using (continuous_mass.tendsto (0 : FiniteMeasure X)).le_comap
+      rw [h]
+      infer_instance
+    · -- Away from `0`, weak convergence is convergence of the mass and of the normalization.
+      -- Normalization needs `X` nonempty, which the nonzero measure `μ` provides.
+      have : NeZero (μ : Measure X) :=
+        ⟨fun h ↦ hzero <| toMeasure_injective <| h.trans toMeasure_zero.symm⟩
+      have : Nonempty X := Measure.nonempty_of_neZero (μ : Measure X)
+      let p : FiniteMeasure X → ℝ≥0 × ProbabilityMeasure X := fun ν ↦ (ν.mass, ν.normalize)
+      have h : 𝓝 μ = Filter.comap p (𝓝 (p μ)) := by
+        refine le_antisymm (Tendsto.le_comap <| continuous_mass.continuousAt.prodMk_nhds
+          (tendsto_normalize_of_tendsto tendsto_id hzero)) ?_
+        have hp : Tendsto p (Filter.comap p (𝓝 (p μ))) (𝓝 (p μ)) := tendsto_comap
+        exact tendsto_of_tendsto_normalize_testAgainstNN_of_tendsto_mass (μs := id) hp.snd_nhds
+          hp.fst_nhds
+      rw [h]
+      infer_instance
+
+end MeasureTheory.FiniteMeasure
