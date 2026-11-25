@@ -123,11 +123,7 @@ theorem exists_contMDiffOn_boundaryFlow (v : (x : M) → TangentSpace (𝓡∂ (
       ?_, ?_, fun htpos ↦ ?_⟩
     · rw [hΦeq hxU (left_mem_Ico.2 (hε a))]
       exact (hφx a x hxU).1
-    · intro s hs
-      have hd := (hφx a x hxU).2.1 s (hIcc hs)
-      rw [hΦeq hxU (hIcc hs)]
-      refine (hd.mono hIcc).congr_of_eventuallyEq ?_ (hΦeq hxU (hIcc hs))
-      exact eventually_nhdsWithin_of_forall fun r hr ↦ hΦeq hxU (hIcc hr)
+    · exact ((hφx a x hxU).2.1.mono hIcc).congr fun r hr ↦ hΦeq hxU (hIcc hr)
     · rw [hΦeq hxU htI]
       exact (hφx a x hxU).2.2 t ⟨htpos, htI.2⟩
 
