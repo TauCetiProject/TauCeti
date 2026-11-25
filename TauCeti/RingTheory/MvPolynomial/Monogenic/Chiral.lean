@@ -9,7 +9,8 @@ public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import TauCeti.RingTheory.MvPolynomial.Monogenic.Basic
 import Mathlib.Algebra.Algebra.Rat
 import TauCeti.LinearAlgebra.Eigenspace.Anticommute
-import TauCeti.LinearAlgebra.Eigenspace.Separation
+import TauCeti.LinearAlgebra.Eigenspace.Involution
+import TauCeti.LinearAlgebra.End.Basic
 
 /-!
 # Chiral homogeneous and monogenic polynomials

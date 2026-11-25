@@ -257,12 +257,6 @@ section Ring
 
 variable {σ R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Fintype σ]
 
-/-- An endomorphism squaring to `-1` is bijective, with inverse `-f`. -/
-theorem _root_.Module.End.bijective_of_comp_self_eq_neg_one {f : Module.End R M}
-    (hf : f ∘ₗ f = -1) : Function.Bijective f :=
-  ⟨fun _ _ hxy ↦ by simpa [← LinearMap.comp_apply, hf] using congrArg (-f) hxy,
-   fun y ↦ ⟨-f y, by simp [← LinearMap.comp_apply, hf]⟩⟩
-
 omit [Fintype σ] in
 private theorem sum_sum_tmul_of_clifford {c : σ → Module.End R M} (hc_sq : ∀ i, c i ∘ₗ c i = -1)
     (hc_anti : Pairwise fun i j ↦ c i ∘ₗ c j + c j ∘ₗ c i = 0)
@@ -300,12 +294,6 @@ theorem cliffordMul_comp_self {c : σ → Module.End R M} (hc_sq : ∀ i, c i �
     (fun _ _ _ ↦ mul_left_comm _ _ _) m Finset.univ]
   simp_rw [← mul_assoc, ← sq, ← Finset.sum_mul]
 
-private theorem coeff_normSq_eq (s : σ →₀ ℕ) [DecidableEq σ] :
-    (normSq σ R).coeff s = ∑ k : σ, if Finsupp.single k 2 = s then 1 else 0 := by
-  have hX2 (k : σ) : (X k : MvPolynomial σ R) ^ 2 = monomial (Finsupp.single k 2) 1 := by
-    rw [sq, X, monomial_mul_monomial, one_mul, ← Finsupp.single_add]
-  simp_rw [normSq_def, coeff_sum, hX2, coeff_monomial]
-
 /-- **Characterization of `X ∘ₗ X = -r²`** via the Riemannian Clifford relations. -/
 theorem cliffordMul_comp_self_iff {c : σ → Module.End R M} :
     cliffordMul c ∘ₗ cliffordMul c = -(LinearMap.mulLeft R (normSq σ R)).rTensor M ↔
@@ -321,7 +309,7 @@ theorem cliffordMul_comp_self_iff {c : σ → Module.End R M} :
     have hs2 : Finsupp.single i 2 - Finsupp.single i 1 = (Finsupp.single i 1 : σ →₀ ℕ) := by
       ext k; simp only [Finsupp.tsub_apply, Finsupp.single_apply]; split_ifs <;> omega
     have hc2 : (normSq σ R).coeff (Finsupp.single i 2) = 1 := by
-      rw [coeff_normSq_eq, Finset.sum_eq_single i (fun k _ hki ↦ ite_eq_right_iff.mpr fun hk ↦
+      rw [coeff_normSq, Finset.sum_eq_single i (fun k _ hki ↦ ite_eq_right_iff.mpr fun hk ↦
         (hki (Finsupp.single_left_injective (by decide : (2 : ℕ) ≠ 0) hk)).elim) (by simp)]
       simp
     rw [coeffTensor_cliffordMul, Finsupp.support_single i (by decide : (2 : ℕ) ≠ 0),
@@ -333,7 +321,7 @@ theorem cliffordMul_comp_self_iff {c : σ → Module.End R M} :
       ext k; simp only [Finsupp.mem_support_iff, Finsupp.add_apply, Finsupp.single_apply,
         Finset.mem_insert, Finset.mem_singleton]; split_ifs <;> simp_all [eq_comm]
     have hc0 : (normSq σ R).coeff (Finsupp.single i 1 + Finsupp.single j 1) = 0 := by
-      rw [coeff_normSq_eq]
+      rw [coeff_normSq]
       refine Finset.sum_eq_zero fun k _ ↦ ite_eq_right_iff.mpr fun hk ↦ ?_
       have hki := DFunLike.congr_fun hk i
       simp only [Finsupp.add_apply, Finsupp.single_apply] at hki; split_ifs at hki <;> simp_all
@@ -410,6 +398,11 @@ private theorem cliffordDirac_cliffordMul_pow_succ {c : σ → Module.End R M}
       (cliffordMul_pow_mem_homogeneousTensorSubmodule d hv),
     hd, map_neg, map_nsmul, neg_neg, hw, hAB, add_smul, sub_add_eq_sub_sub, sub_self, zero_sub]
 
+/-- **Action of `cliffordDirac` on odd and even powers of `cliffordMul`** applied to a degree-`ℓ`
+monogenic polynomial `v` (`a : ℕ`): `D (X^(2a + 1) v) = -(2ℓ + card σ + 2a) • X^(2a) v` and
+`D (X^(2a + 2) v) = -(2a + 2) • X^(2a + 1) v`. When `σ` is nonempty, both scalar factors are
+positive, allowing `D ∘ₗ X` to be inverted on each monogenic Fischer summand `X^j M_ℓ` over a
+`ℚ`-algebra. -/
 theorem cliffordDirac_cliffordMul_pow_odd_and_even {c : σ → Module.End R M}
     (hc_sq : ∀ i, c i ∘ₗ c i = -1) (hc_anti : Pairwise fun i j ↦ c i ∘ₗ c j + c j ∘ₗ c i = 0)
     {ℓ : ℕ} {v : MvPolynomial σ R ⊗[R] M} (hv : v ∈ monogenicSubmodule c ℓ) (a : ℕ) :

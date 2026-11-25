@@ -135,6 +135,7 @@ theorem homogeneousTensorSubmodule_inductionOn {k : ℕ}
   | tmul p m => exact tmul p.2 m
   | add x y hx hy => rw [map_add]; exact add hx hy
 
+/-- Lifting a module linear map preserves `homogeneousTensorSubmodule` of degree `k`. -/
 theorem lTensor_mem_homogeneousTensorSubmodule {N : Type*} [AddCommMonoid N] [Module R N]
     (f : M →ₗ[R] N) {k : ℕ} {u : MvPolynomial σ R ⊗[R] M}
     (hu : u ∈ homogeneousTensorSubmodule σ R M k) :
@@ -143,7 +144,9 @@ theorem lTensor_mem_homogeneousTensorSubmodule {N : Type*} [AddCommMonoid N] [Mo
     (fun hp m ↦ tmul_mem_homogeneousTensorSubmodule hp (f m))
     fun hx hy ↦ by rw [map_add]; exact Submodule.add_mem _ hx hy
 
-private theorem rTensor_mem_homogeneousTensorSubmodule {f : Module.End R (MvPolynomial σ R)}
+/-- Lifting a polynomial endomorphism sending degree `k` to degree `d` maps
+`homogeneousTensorSubmodule σ R M k` into `homogeneousTensorSubmodule σ R M d`. -/
+theorem rTensor_mem_homogeneousTensorSubmodule {f : Module.End R (MvPolynomial σ R)}
     {k d : ℕ} (hf : ∀ {p : MvPolynomial σ R}, p.IsHomogeneous k → (f p).IsHomogeneous d)
     {u : MvPolynomial σ R ⊗[R] M} (hu : u ∈ homogeneousTensorSubmodule σ R M k) :
     f.rTensor M u ∈ homogeneousTensorSubmodule σ R M d :=
@@ -246,17 +249,14 @@ section HomogeneousTensorEquiv
 
 attribute [local instance] MvPolynomial.decomposition
 
-private theorem decomposeTensor_eq_homogeneousTensorSubmodule (k : ℕ) :
-    DirectSum.decomposeTensor (homogeneousSubmodule σ R) M k =
-      homogeneousTensorSubmodule σ R M k :=
-  DirectSum.decomposeTensor_apply (homogeneousSubmodule σ R) M
-
+-- `DirectSum.decomposeTensor` is not `@[expose]` under Lean's `module` system, so
+-- `LinearEquiv.ofEq` with `DirectSum.decomposeTensor_apply` is needed to match the codomain.
 variable (σ R M) in
 /-- Canonical equivalence `homogeneousSubmodule σ R k ⊗[R] M ≃ₗ[R] homogeneousTensorSubmodule`. -/
 noncomputable def homogeneousTensorEquiv (k : ℕ) :
     homogeneousSubmodule σ R k ⊗[R] M ≃ₗ[R] homogeneousTensorSubmodule σ R M k :=
   (DirectSum.decomposeTensorEquiv (homogeneousSubmodule σ R) M k).trans
-    (LinearEquiv.ofEq _ _ (decomposeTensor_eq_homogeneousTensorSubmodule k))
+    (LinearEquiv.ofEq _ _ (by rw [DirectSum.decomposeTensor_apply]; rfl))
 
 @[simp] theorem coe_homogeneousTensorEquiv_tmul (k : ℕ) (p : homogeneousSubmodule σ R k) (m : M) :
     (homogeneousTensorEquiv σ R M k (p ⊗ₜ[R] m) : MvPolynomial σ R ⊗[R] M) =

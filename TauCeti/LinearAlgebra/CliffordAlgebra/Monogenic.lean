@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 public import TauCeti.RingTheory.MvPolynomial.Monogenic.Chiral
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
 import TauCeti.LinearAlgebra.Dual.Lemmas
+import TauCeti.LinearAlgebra.End.Basic
 
 /-!
 # Spinor-valued monogenic polynomials and the Clifford Fischer decomposition
