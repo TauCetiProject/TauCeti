@@ -88,8 +88,8 @@ theorem frobenius_frobeniusEquiv_symm [PerfectRing R p] (x : WittVector p R) :
 modulo `p`: `p` divides `φ x - x ^ p`. -/
 theorem natCast_dvd_frobenius_sub_pow [PerfectRing R p] (x : WittVector p R) :
     (p : WittVector p R) ∣ frobenius x - x ^ p := by
-  rw [← Ideal.mem_span_singleton, mem_span_p_iff_coeff_zero_eq_zero, ← constantCoeff_apply,
-    map_sub, map_pow, constantCoeff_apply, constantCoeff_apply, coeff_frobenius_charP, sub_self]
+  rw [← Ideal.mem_span_singleton, mem_span_p_iff_coeff_zero_eq_zero, ← constantCoeff_apply]
+  simp only [map_sub, map_pow, constantCoeff_apply, coeff_frobenius_charP, sub_self]
 
 /-- For a perfect ring of characteristic `p`, the Verschiebung is `p` times the inverse of the
 Frobenius: `V x = φ⁻¹ x * p`. -/

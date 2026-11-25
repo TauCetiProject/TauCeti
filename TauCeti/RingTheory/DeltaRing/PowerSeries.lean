@@ -52,10 +52,11 @@ theorem IsFrobeniusLift.powerSeries {σ : A →+* A} (hσ : IsFrobeniusLift p σ
   -- Modulo `p`, `φ f` is `(f mod p) ^ p` by Mathlib's `PowerSeries.map_frobenius_expand`.
   have hp₀ : p ≠ 0 := hp.out.ne_zero
   have hmap : PowerSeries.map q (φ f) = PowerSeries.map q f ^ p := calc
-    PowerSeries.map q (φ f) = PowerSeries.map (q.comp σ) (PowerSeries.expand p hp₀ f) := (rfl)
-    _ = PowerSeries.map (_root_.frobenius _ p)
+    PowerSeries.map q (φ f) = PowerSeries.map (_root_.frobenius _ p)
         (PowerSeries.map q (PowerSeries.expand p hp₀ f)) := by
-      rw [hq, PowerSeries.map_comp, RingHom.comp_apply]
+      rw [← RingHom.comp_apply (PowerSeries.map (_root_.frobenius _ p)), ← PowerSeries.map_comp,
+        ← hq, PowerSeries.map_comp]
+      simp [φ]
     _ = PowerSeries.map q f ^ p := by
       rw [PowerSeries.map_expand, PowerSeries.map_frobenius_expand]
   have hcoeff (n : ℕ) : (p : A) ∣ PowerSeries.coeff n (φ f - f ^ p) := by

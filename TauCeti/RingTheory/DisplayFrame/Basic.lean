@@ -201,6 +201,10 @@ instance : RingHomClass (Hom F F') S S' where
 theorem coe_toRingHom (f : Hom F F') : ⇑f.toRingHom = f :=
   (rfl)
 
+@[simp]
+theorem coe_mk (f : S →+* S') (h₁ h₂ h₃) : ⇑(Hom.mk f h₁ h₂ h₃ : Hom F F') = f :=
+  (rfl)
+
 @[ext]
 theorem ext {f g : Hom F F'} (h : ∀ s, f s = g s) : f = g :=
   DFunLike.ext _ _ h
@@ -350,6 +354,22 @@ abbrev ofHom {S S' : Type u} [CommRing S] [CommRing S'] {I : Ideal S} {I' : Idea
 theorem hom_ofHom {S S' : Type u} [CommRing S] [CommRing S'] {I : Ideal S} {I' : Ideal S'}
     {F : DisplayFrame p I} {F' : DisplayFrame p I'} (f : DisplayFrame.Hom F F') :
     (ofHom f).hom = f :=
+  (rfl)
+
+@[simp]
+theorem ofHom_hom {X Y : DisplayFrameCat.{u} p} (f : X ⟶ Y) : ofHom f.hom = f :=
+  (rfl)
+
+@[simp]
+theorem ofHom_id {S : Type u} [CommRing S] {I : Ideal S} (F : DisplayFrame p I) :
+    ofHom (DisplayFrame.Hom.id F) = 𝟙 (of F) :=
+  (rfl)
+
+@[simp]
+theorem ofHom_comp {S S' S'' : Type u} [CommRing S] [CommRing S'] [CommRing S''] {I : Ideal S}
+    {I' : Ideal S'} {I'' : Ideal S''} {F : DisplayFrame p I} {F' : DisplayFrame p I'}
+    {F'' : DisplayFrame p I''} (f : DisplayFrame.Hom F F') (g : DisplayFrame.Hom F' F'') :
+    ofHom (g.comp f) = ofHom f ≫ ofHom g :=
   (rfl)
 
 /-- The residue-ring functor `(S, I, φ, φ₁) ↦ S ⧸ I`. -/

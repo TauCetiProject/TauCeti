@@ -102,6 +102,12 @@ variable (hp : IsRegular (p : S)) (hjac : (p : S) ∈ Ring.jacobson S) (φ : S �
 theorem ofFrobeniusLift_frobenius : (ofFrobeniusLift hp hjac φ hφ).frobenius = φ :=
   (rfl)
 
+/-- The divided Frobenius of `ofFrobeniusLift` divides by `p` and then applies `φ`. -/
+theorem ofFrobeniusLift_divFrobenius_apply (x : Ideal.span {(p : S)}) :
+    (ofFrobeniusLift hp hjac φ hφ).divFrobenius x =
+      φ ((LinearEquiv.toSpanSingletonOfInjective (p : S) hp.right).symm x) :=
+  (rfl)
+
 /-- The divided Frobenius of `ofFrobeniusLift` sends `p a` to `φ a`. -/
 @[simp]
 theorem ofFrobeniusLift_divFrobenius_natCast_mul (a : S) :
@@ -111,8 +117,8 @@ theorem ofFrobeniusLift_divFrobenius_natCast_mul (a : S) :
       Ideal.span {(p : S)}) =
         ⟨a • (p : S), Submodule.smul_mem _ a (Submodule.mem_span_singleton_self _)⟩ :=
     Subtype.ext (mul_comm _ _)
-  rw [this]
-  exact congrArg φ (LinearEquiv.toSpanSingletonOfInjective_symm_mk_smul (p : S) hp.right a)
+  rw [this, ofFrobeniusLift_divFrobenius_apply,
+    LinearEquiv.toSpanSingletonOfInjective_symm_mk_smul]
 
 /-- The divided Frobenius of `ofFrobeniusLift` is determined by `p φ₁ x = φ x`. -/
 theorem natCast_mul_ofFrobeniusLift_divFrobenius (x : Ideal.span {(p : S)}) :
@@ -120,7 +126,7 @@ theorem natCast_mul_ofFrobeniusLift_divFrobenius (x : Ideal.span {(p : S)}) :
   have h := congrArg φ
     (LinearEquiv.toSpanSingletonOfInjective_symm_apply_smul (p : S) hp.right x)
   rw [smul_eq_mul, map_mul, map_natCast] at h
-  exact (mul_comm _ _).trans h
+  rw [ofFrobeniusLift_divFrobenius_apply, mul_comm, h]
 
 /-- `ofFrobeniusLift` is a `p`-frame. -/
 theorem isPFrame_ofFrobeniusLift : (ofFrobeniusLift hp hjac φ hφ).IsPFrame := by
@@ -173,6 +179,14 @@ noncomputable def wittVector : DisplayFrame p (Ideal.span {(p : WittVector p R)}
   ofFrobeniusLift (isRegular_iff_mem_nonZeroDivisors.mpr WittVector.p_mem_nonZeroDivisors)
     WittVector.natCast_mem_jacobson WittVector.frobenius ⟨WittVector.natCast_dvd_frobenius_sub_pow⟩
 
+/-- The Witt frame is the `p`-frame `ofFrobeniusLift` of the Witt-vector Frobenius. -/
+theorem wittVector_eq_ofFrobeniusLift :
+    wittVector p R =
+      ofFrobeniusLift (isRegular_iff_mem_nonZeroDivisors.mpr WittVector.p_mem_nonZeroDivisors)
+        WittVector.natCast_mem_jacobson WittVector.frobenius
+        ⟨WittVector.natCast_dvd_frobenius_sub_pow⟩ :=
+  (rfl)
+
 @[simp]
 theorem wittVector_frobenius : (wittVector p R).frobenius = WittVector.frobenius :=
   (rfl)
@@ -195,6 +209,11 @@ theorem wittVector_divFrobenius_natCast_mul (a : WittVector p R) :
       ⟨p * a, Ideal.mul_mem_right a _ (Ideal.mem_span_singleton_self _)⟩ =
         WittVector.frobenius a :=
   ofFrobeniusLift_divFrobenius_natCast_mul ..
+
+/-- The divided Frobenius of the Witt frame is determined by `p φ₁ x = F x`. -/
+theorem natCast_mul_wittVector_divFrobenius (x : Ideal.span {(p : WittVector p R)}) :
+    p * (wittVector p R).divFrobenius x = WittVector.frobenius (x : WittVector p R) :=
+  natCast_mul_ofFrobeniusLift_divFrobenius ..
 
 /-- The divided Frobenius of the Witt frame inverts the Verschiebung: `φ₁ (V x) = x`. -/
 @[simp]
@@ -232,6 +251,15 @@ noncomputable def powerSeries (hpA : IsRegular (p : A)) (hjac : (p : A) ∈ Ring
 variable (hpA : IsRegular (p : A)) (hjac : (p : A) ∈ Ring.jacobson A) (σ : A →+* A)
   (hσ : DeltaRing.IsFrobeniusLift p σ)
 
+/-- The power-series frame is the `p`-frame `ofFrobeniusLift` of its Frobenius lift. -/
+theorem powerSeries_eq_ofFrobeniusLift (hp' : IsRegular (p : A⟦X⟧))
+    (hjac' : (p : A⟦X⟧) ∈ Ring.jacobson A⟦X⟧) :
+    powerSeries hpA hjac σ hσ =
+      ofFrobeniusLift hp' hjac'
+        ((PowerSeries.map σ).comp (PowerSeries.expand p hp.out.ne_zero : A⟦X⟧ →ₐ[A] A⟦X⟧))
+        hσ.powerSeries :=
+  (rfl)
+
 /-- The Frobenius of `powerSeries` applies `σ` to the coefficients and substitutes `u ^ p` for
 `u`. -/
 theorem powerSeries_frobenius_apply (f : A⟦X⟧) :
@@ -262,9 +290,7 @@ theorem constant_powerSeries : (powerSeries hpA hjac σ hσ).constant = p :=
 noncomputable def powerSeriesConstantCoeff :
     Hom (powerSeries hpA hjac σ hσ) (ofFrobeniusLift hpA hjac σ hσ) :=
   Hom.ofFrobeniusLift PowerSeries.constantCoeff fun f ↦ by
-    rw [RingHom.comp_apply, RingHom.coe_coe, ← PowerSeries.coeff_zero_eq_constantCoeff_apply,
-      PowerSeries.coeff_map, PowerSeries.coeff_zero_eq_constantCoeff_apply,
-      PowerSeries.constantCoeff_expand]
+    simpa using PowerSeries.coeff_map σ 0 (PowerSeries.expand p hp.out.ne_zero f)
 
 @[simp]
 theorem coe_powerSeriesConstantCoeff :
@@ -279,6 +305,11 @@ theorem powerSeries_divFrobenius_natCast_mul (f : A⟦X⟧) :
         (powerSeries hpA hjac σ hσ).frobenius f :=
   ofFrobeniusLift_divFrobenius_natCast_mul ..
 
+/-- The divided Frobenius of `powerSeries` is determined by `p φ₁ x = φ x`. -/
+theorem natCast_mul_powerSeries_divFrobenius (x : Ideal.span {(p : A⟦X⟧)}) :
+    p * (powerSeries hpA hjac σ hσ).divFrobenius x = (powerSeries hpA hjac σ hσ).frobenius x :=
+  natCast_mul_ofFrobeniusLift_divFrobenius ..
+
 end PowerSeries
 
 section WittVectorPowerSeries
@@ -290,6 +321,14 @@ characteristic `p`, with `φ` the Witt-vector Frobenius on coefficients and `φ(
 noncomputable def wittVectorPowerSeries : DisplayFrame p (Ideal.span {(p : (WittVector p R)⟦X⟧)}) :=
   powerSeries (isRegular_iff_mem_nonZeroDivisors.mpr WittVector.p_mem_nonZeroDivisors)
     WittVector.natCast_mem_jacobson WittVector.frobenius ⟨WittVector.natCast_dvd_frobenius_sub_pow⟩
+
+/-- The Breuil–Kisin frame is the power-series frame over the Witt frame's Frobenius lift. -/
+theorem wittVectorPowerSeries_eq_powerSeries :
+    wittVectorPowerSeries p R =
+      powerSeries (isRegular_iff_mem_nonZeroDivisors.mpr WittVector.p_mem_nonZeroDivisors)
+        WittVector.natCast_mem_jacobson WittVector.frobenius
+        ⟨WittVector.natCast_dvd_frobenius_sub_pow⟩ :=
+  (rfl)
 
 /-- The Breuil–Kisin frame `W(R)⟦u⟧` is a `p`-frame. -/
 theorem isPFrame_wittVectorPowerSeries : (wittVectorPowerSeries p R).IsPFrame :=
@@ -336,6 +375,12 @@ theorem wittVectorPowerSeries_divFrobenius_natCast_mul (f : (WittVector p R)⟦X
       ⟨p * f, Ideal.mul_mem_right f _ (Ideal.mem_span_singleton_self _)⟩ =
         (wittVectorPowerSeries p R).frobenius f :=
   powerSeries_divFrobenius_natCast_mul ..
+
+/-- The divided Frobenius of the Breuil–Kisin frame is determined by `p φ₁ x = φ x`. -/
+theorem natCast_mul_wittVectorPowerSeries_divFrobenius
+    (x : Ideal.span {(p : (WittVector p R)⟦X⟧)}) :
+    p * (wittVectorPowerSeries p R).divFrobenius x = (wittVectorPowerSeries p R).frobenius x :=
+  natCast_mul_powerSeries_divFrobenius ..
 
 /-- The divided Frobenius of the Breuil–Kisin frame sends `p u` to `u ^ p`. -/
 theorem wittVectorPowerSeries_divFrobenius_natCast_mul_X :
