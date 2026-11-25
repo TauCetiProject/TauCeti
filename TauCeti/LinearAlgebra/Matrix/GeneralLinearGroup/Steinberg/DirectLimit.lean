@@ -72,14 +72,14 @@ variable {ι : Type*} [Preorder ι] [IsDirectedOrder ι] [Nonempty ι]
 a stage. -/
 private theorem exists_ringOf (a : _root_.DirectLimit G f) : ∃ i a', Ring.of G f i a' = a := by
   obtain ⟨i, a', rfl⟩ := exists_eq_mk f a
-  exact ⟨i, a', rfl⟩
+  exact ⟨i, a', Ring.of_apply ..⟩
 
 /-- Two elements of the direct limit of a directed system of rings are the images of two elements
 of a single stage. -/
 private theorem exists_ringOf₂ (a b : _root_.DirectLimit G f) :
     ∃ i a' b', Ring.of G f i a' = a ∧ Ring.of G f i b' = b := by
   obtain ⟨i, a', b', rfl, rfl⟩ := exists_eq_mk₂ f a b
-  exact ⟨i, a', b', rfl, rfl⟩
+  exact ⟨i, a', b', Ring.of_apply .., Ring.of_apply ..⟩
 
 namespace IndexedSteinbergGroup
 
@@ -107,8 +107,8 @@ private def genLim {p q : κ} (hpq : p ≠ q) (a : _root_.DirectLimit G f) : StL
     (fun i j h b ↦ by rw [← DirectLimit.Monoid.of_f h, map_x]) a
 
 private theorem genLim_ringOf {p q : κ} (hpq : p ≠ q) (i : ι) (a : G i) :
-    genLim G f hpq (Ring.of G f i a) = ofLim i (x hpq a) :=
-  (rfl)
+    genLim G f hpq (Ring.of G f i a) = ofLim i (x hpq a) := by
+  rw [Ring.of_apply, genLim, DirectLimit.lift_def]
 
 /-- The inverse of the comparison `directLimitEquiv`, defined on generators by `genLim`. -/
 private def toLim : IndexedSteinbergGroup κ (_root_.DirectLimit G f) →* StLim :=
