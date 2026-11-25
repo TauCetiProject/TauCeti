@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Rank
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Restriction
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Stalk
+import TauCeti.AlgebraicGeometry.Modules.Sheaf
 import TauCeti.AlgebraicGeometry.Modules.Stalk
 import TauCeti.AlgebraicGeometry.VectorBundle.Stalk
 
@@ -29,6 +30,9 @@ The predicate is sensitive to the characteristic: for the cusp `y² = x³` and `
 * `HasLocallyFreeQuotientOfDifferentials k X d`: `Ω_{X/k}` admits a locally free quotient of
   rank `d`;
 * `hasLocallyFreeQuotientOfDifferentials_iff`: the defining existential condition;
+* `hasLocallyFreeQuotientOfDifferentials_of_isEmpty` and
+  `hasLocallyFreeQuotientOfDifferentials_zero`: the predicate holds for every rank on the empty
+  scheme, and for rank `0` on every scheme;
 * `HasLocallyFreeQuotientOfDifferentials.of_isOpenImmersion` and
   `HasLocallyFreeQuotientOfDifferentials.restrict`: the predicate passes to open subschemes;
 * `hasLocallyFreeQuotientOfDifferentials_of_smoothOfRelativeDimension`: on a scheme smooth of
@@ -71,6 +75,21 @@ theorem hasLocallyFreeQuotientOfDifferentials_iff (X : Scheme.{u}) [X.Over (Spec
       ∃ (E : FiniteLocallyFreeSheaf.FixedRank X d) (q : X.relativeDifferentials k ⟶ E.obj.obj),
         Epi q :=
   Iff.rfl
+
+/-- On the empty scheme, `Ω_{X/k}` admits a locally free quotient of every rank `d`. -/
+theorem hasLocallyFreeQuotientOfDifferentials_of_isEmpty (X : Scheme.{u}) [X.Over (Spec (.of k))]
+    [IsEmpty X] (d : ℕ) : HasLocallyFreeQuotientOfDifferentials k X d :=
+  ⟨FiniteLocallyFreeSheaf.FixedRank.free X d, 0,
+    Scheme.Modules.Hom.epi_of_forall_exists_surjective_smul _ fun x ↦ isEmptyElim x⟩
+
+/-- On every scheme, `Ω_{X/k}` admits a locally free quotient of rank `0`, namely the zero
+quotient. -/
+theorem hasLocallyFreeQuotientOfDifferentials_zero (X : Scheme.{u}) [X.Over (Spec (.of k))] :
+    HasLocallyFreeQuotientOfDifferentials k X 0 :=
+  have h : Limits.IsZero (FiniteLocallyFreeSheaf.FixedRank.free X 0).obj.obj := by
+    rw [FiniteLocallyFreeSheaf.FixedRank.free_obj, FiniteLocallyFreeSheaf.free_obj]
+    exact TauCeti.SheafOfModules.isZero_free _
+  ⟨FiniteLocallyFreeSheaf.FixedRank.free X 0, 0, h.epi _⟩
 
 variable {k}
 
