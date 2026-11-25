@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
 public import TauCeti.NumberTheory.QuadraticForm.Global.Predicates
 import TauCeti.LinearAlgebra.QuadraticForm.Binary
-import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 import TauCeti.NumberTheory.ClassFieldTheory.Global.HasseNorm.Quadratic
 import TauCeti.NumberTheory.HilbertSymbol.NormSubgroup
 import TauCeti.NumberTheory.LocalField.QuadraticForm.OddResidue.Padic
@@ -17,7 +16,7 @@ import TauCeti.NumberTheory.QuadraticForm.Global.HilbertSymbol
 import TauCeti.NumberTheory.QuadraticForm.Global.Squares
 
 /-!
-# Local-to-global representation by binary quadratic forms
+# Local-to-global representation by the norm plane `⟨1, -d⟩`
 
 For an element `d` of a number field `K`, the binary norm plane `⟨1, -d⟩`, written in
 coordinates as `x² - d y²`, represents a scalar `a ∈ K` over `K` if and only if it represents `a`
@@ -35,10 +34,6 @@ plane `⟨1, -d⟩` is regular and isotropic over `K`, so it already represents 
 When `d = 0`, the plane `⟨1, 0⟩` represents exactly the squares, and the global square theorem
 (`TauCeti.isSquare_iff_forall_isSquare_algebraMap_adicCompletion`) gives the principle.
 
-Diagonalizing an arbitrary binary form `Q` over `K` via
-`QuadraticForm.equivalent_weightedSumSquares` and rescaling by the inverse of a nonzero diagonal
-coefficient extends local-to-global scalar representation to every two-dimensional quadratic form
-over `K`, regular or not (the zero form represents only zero, globally and at every finite place).
 Reading unit representation of `⟨1, -d⟩` through the norm-equation Hilbert symbol
 (`TauCeti.mem_unitValueSet_binary_one_neg_iff_hilbertSymbol_eq_one`) yields the local-to-global
 triviality criterion for `TauCeti.hilbertSymbol` over number fields.
@@ -53,9 +48,6 @@ triviality criterion for `TauCeti.hilbertSymbol` over number fields.
   local representation of a global unit by `⟨1, -d⟩` as positivity of the localized Hilbert symbol.
 * `QuadraticForm.represents_weightedSumSquares_one_neg_iff_locallyRepresentsScalar`: the
   local-to-global principle for scalar representation by `⟨1, -d⟩` for any `d ∈ K`.
-* `QuadraticForm.represents_iff_locallyRepresentsScalar_of_finrank_eq_two`: a binary quadratic form
-  over a number field represents a scalar globally if and only if it represents it at every finite
-  and real place.
 * `TauCeti.hilbertSymbol_eq_one_iff_forall_places` and
   `TauCeti.hilbertSymbol_eq_neg_one_iff_exists_place`: global triviality and nontriviality of the
   Hilbert symbol detected by finite and real places.
@@ -186,46 +178,6 @@ theorem represents_weightedSumSquares_one_neg_iff_locallyRepresentsScalar {d : K
                 ⟨w, hw⟩ d' u, hd', hu]
             exact hloc.2 ⟨w, hw⟩
           · exact TauCeti.hilbertSymbol_completion_eq_one_of_isComplex hw _ _
-
-/-- **Local-to-global scalar representation for binary forms.** Every two-dimensional quadratic
-form over a number field `K`, regular or not, represents a scalar `a ∈ K` over `K` if and only if
-it represents `a` at every finite and every real place. -/
-theorem represents_iff_locallyRepresentsScalar_of_finrank_eq_two
-    {V : Type v} [AddCommGroup V] [Module K V] {Q : _root_.QuadraticForm K V}
-    (hrank : Module.finrank K V = 2) (a : K) :
-    Represents Q a ↔ Q.LocallyRepresentsScalar a := by
-  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
-  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  -- Diagonalize `Q` as `⟨w₀, w₁⟩`, ordering the weights so that `w₀ = 0` only if `w₁ = 0`.
-  obtain ⟨w, hw, ⟨e⟩⟩ : ∃ w : Fin 2 → K, (w 0 = 0 → w 1 = 0) ∧
-      Q.Equivalent (weightedSumSquares K w) := by
-    obtain ⟨u, hu⟩ := Q.equivalent_weightedSumSquares
-    have hu₂ : Q.Equivalent (weightedSumSquares K (u ∘ finCongr hrank.symm)) :=
-      hu.trans (equivalent_weightedSumSquares_of_comp_eq _ fun _ => rfl).symm
-    by_cases h : (u ∘ finCongr hrank.symm) 0 = 0 → (u ∘ finCongr hrank.symm) 1 = 0
-    · exact ⟨_, h, hu₂⟩
-    · refine ⟨u ∘ finCongr hrank.symm ∘ Equiv.swap 0 1, fun h₀ => ?_,
-        hu₂.trans (equivalent_weightedSumSquares_of_comp_eq (Equiv.swap 0 1) fun _ => rfl).symm⟩
-      exact (h fun _ => by simpa using h₀).elim
-  rw [e.represents_iff, QuadraticMap.Equivalent.locallyRepresentsScalar_iff ⟨e⟩]
-  rcases eq_or_ne (w 0) 0 with h₀ | h₀
-  · -- The zero form represents only zero, globally and at any finite place.
-    obtain rfl : w = 0 := funext fun i => by fin_cases i; exacts [h₀, hw h₀]
-    refine ⟨LocallyRepresentsScalar.of_represents, fun hloc => ?_⟩
-    obtain ⟨v⟩ := (inferInstance : Nonempty (HeightOneSpectrum (𝓞 K)))
-    have hv := ((atFinitePlaceWeightedSumSquares v (0 : Fin 2 → K)).represents_iff _).mp
-      (((locallyRepresentsScalar_iff _ _).mp hloc).1 v)
-    obtain rfl : a = 0 := (map_eq_zero_iff _ (algebraMap K _).injective).mp <| Eq.symm <| by
-      simpa [QuadraticMap.represents_iff, weightedSumSquares_apply] using hv
-    exact represents_zero _
-  · -- Otherwise `⟨w₀, w₁⟩ = w₀ ⟨1, w₁ / w₀⟩`.
-    have hscale : weightedSumSquares K w = w 0 • weightedSumSquares K ![1, -(-(w 1 / w 0))] := by
-      rw [smul_weightedSumSquares]
-      congr 1
-      funext i
-      fin_cases i <;> simp [mul_div_cancel₀ _ h₀]
-    rw [hscale, represents_smul_iff h₀, locallyRepresentsScalar_smul_iff h₀]
-    exact represents_weightedSumSquares_one_neg_iff_locallyRepresentsScalar _
 
 end NormPlane
 

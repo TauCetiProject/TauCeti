@@ -71,9 +71,6 @@ example [Subsingleton C] (S : Pair B) (T : Pair C) (U : Pair D)
 
 end General
 
-local instance : IsAdicHom (algebraMap ℚ_[2] ℚ_[2]) := by
-  simpa using (IsAdicHom.id (A := ℚ_[2]))
-
 /-- Reassociation preserves the obstruction to integrality of the two-adic scalar `1/2`. -/
 example :
     let P := Pair.powerBounded ℚ_[2]
