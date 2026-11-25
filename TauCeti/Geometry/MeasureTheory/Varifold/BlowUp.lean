@@ -73,6 +73,10 @@ private def blowUpMap (x : E) (r : ℝ) (p : W × grassmannian ℝ E k) :
     (⊤ : Opens E) × grassmannian ℝ E k :=
   (⟨r⁻¹ • ((p.1 : E) - x), Opens.mem_top _⟩, p.2)
 
+private theorem blowUpMap_apply (x : E) (r : ℝ) (p : W × grassmannian ℝ E k) :
+    blowUpMap x r p = (⟨r⁻¹ • ((p.1 : E) - x), Opens.mem_top _⟩, p.2) :=
+  rfl
+
 private theorem continuous_blowUpMap (x : E) (r : ℝ) :
     Continuous (blowUpMap (W := W) (k := k) x r) :=
   ((continuous_const_smul r⁻¹).comp
@@ -143,8 +147,8 @@ theorem blowUp_apply (hr : r ≠ 0) (s : Set ((⊤ : Opens E) × grassmannian �
     blowUp V x r s = (ENNReal.ofReal r)⁻¹ ^ k *
       V {p | ((⟨r⁻¹ • ((p.1 : E) - x), Opens.mem_top _⟩, p.2) :
         (⊤ : Opens E) × grassmannian ℝ E k) ∈ s} := by
-  rw [blowUp_eq, smul_apply, smul_eq_mul]
-  exact congrArg _ ((measurableEmbedding_blowUpMap x hr).map_apply V s)
+  rw [blowUp_eq, smul_apply, smul_eq_mul, (measurableEmbedding_blowUpMap x hr).map_apply V s]
+  simp only [preimage, blowUpMap_apply]
 
 /-- The mass of the dilation is `r⁻ᵏ` times the mass of `V`. -/
 theorem blowUp_apply_univ (V : Measure (W × grassmannian ℝ E k)) (x : E) (r : ℝ) :
@@ -210,8 +214,8 @@ theorem integral_blowUp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] (
     ∫ q, f q ∂blowUp V x r =
       (r ^ k)⁻¹ • ∫ p, f (⟨r⁻¹ • ((p.1 : E) - x), Opens.mem_top _⟩, p.2) ∂V := by
   rw [blowUp_eq, integral_smul_measure, ENNReal.toReal_pow, ENNReal.toReal_inv,
-    ENNReal.toReal_ofReal hr.le, inv_pow]
-  exact congrArg _ ((measurableEmbedding_blowUpMap x hr.ne').integral_map f)
+    ENNReal.toReal_ofReal hr.le, inv_pow, (measurableEmbedding_blowUpMap x hr.ne').integral_map f]
+  simp only [blowUpMap_apply]
 
 /-- Lower integrals against the dilation:
 `∫⁻ f dV_{x,r} = r⁻ᵏ ∫⁻ f(r⁻¹ (y - x), P) dV(y, P)`. -/
@@ -219,8 +223,8 @@ theorem lintegral_blowUp (hr : r ≠ 0) (V : Measure (W × grassmannian ℝ E k)
     (f : (⊤ : Opens E) × grassmannian ℝ E k → ℝ≥0∞) :
     ∫⁻ q, f q ∂blowUp V x r =
       (ENNReal.ofReal r)⁻¹ ^ k * ∫⁻ p, f (⟨r⁻¹ • ((p.1 : E) - x), Opens.mem_top _⟩, p.2) ∂V := by
-  rw [blowUp_eq, lintegral_smul_measure]
-  exact congrArg _ ((measurableEmbedding_blowUpMap x hr).lintegral_map f)
+  rw [blowUp_eq, lintegral_smul_measure, (measurableEmbedding_blowUpMap x hr).lintegral_map f]
+  simp only [blowUpMap_apply, smul_eq_mul]
 
 /-- The dilation of a varifold on `W` is finite on the compact sets lying over `η_{x,r}(W)`, that
 is, of pairs `(y, P)` with `x + r y ∈ W`. -/
@@ -265,9 +269,9 @@ theorem tendsto_integral_blowUp {V : ℕ → Measure (W × grassmannian ℝ E k)
       hasCompactSupport' := HasCompactSupport.intro
         (isCompact_preimage_blowUpMap hr.ne' f.hasCompactSupport hf)
         fun _ hp ↦ image_eq_zero_of_notMem_tsupport (f := ⇑f) hp }
-  -- `g` is `f` composed with the dilation map, by definition.
   have hg (p : W × grassmannian ℝ E k) :
-      g p = f (⟨r⁻¹ • ((p.1 : E) - x), Opens.mem_top _⟩, p.2) := rfl
+      g p = f (⟨r⁻¹ • ((p.1 : E) - x), Opens.mem_top _⟩, p.2) := by
+    simp [g, blowUpMap_apply]
   simp_rw [integral_blowUp hr, ← hg]
   exact (h.tendsto_integral g).const_smul _
 
@@ -334,18 +338,15 @@ times the line varifold of the dilated line `r⁻¹ (a - x) + ℝu` with the sam
 theorem blowUp_lineVarifold (a u : E) (P : grassmannian ℝ E k) (x : E) (hr : 0 < r) :
     blowUp (lineVarifold a u P) x r =
       ((ENNReal.ofReal r)⁻¹ ^ k * ENNReal.ofReal r) • lineVarifold (r⁻¹ • (a - x)) u P := by
+  -- The dilation maps the line `a + ℝu` onto the line `r⁻¹ (a - x) + ℝ (r⁻¹ u)`, preserving
+  -- the parameter.
   have hcomp : blowUpMap x r ∘ lineVarifoldParam a u P =
-      lineVarifoldParam (r⁻¹ • (a - x)) u P ∘ (r⁻¹ * ·) := by
-    ext t <;> simp [blowUpMap, smul_smul, smul_sub, smul_add, add_sub_right_comm]
-  rw [blowUp_eq, lineVarifold_def, lineVarifold_def,
+      lineVarifoldParam (r⁻¹ • (a - x)) (r⁻¹ • u) P := by
+    ext t <;> simp [blowUpMap_apply, smul_sub, smul_add, smul_comm r⁻¹ t, add_sub_right_comm]
+  rw [blowUp_eq, lineVarifold_def,
     Measure.map_map (continuous_blowUpMap x r).measurable
-      (continuous_lineVarifoldParam a u P).measurable, hcomp,
-    ← Measure.map_map (continuous_lineVarifoldParam (r⁻¹ • (a - x)) u P).measurable
-      (measurable_const_mul _),
-    Real.map_volume_mul_left (inv_ne_zero hr.ne'),
-    Measure.map_smul
-      (hf := (continuous_lineVarifoldParam (r⁻¹ • (a - x)) u P).measurable.aemeasurable),
-    smul_smul]
+      (continuous_lineVarifoldParam a u P).measurable, hcomp, ← lineVarifold_def,
+    lineVarifold_smul_direction _ u P (inv_ne_zero hr.ne'), smul_smul]
   simp [abs_of_pos hr]
 
 /-- **The dilations of a line are lines**: for `1`-planes, the dilation about `x` of the line
