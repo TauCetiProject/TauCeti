@@ -121,10 +121,8 @@ private theorem localPairing_dualKerRes_eq_zero (v : HeightOneSpectrum (𝓞 K))
     {d : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff}
     (hd : d ∈ φ.dual.selmerGroup τ) :
     localPairing φ v a (φ.dualKerRes (L := v.adicCompletion K) (τ (.inl v)) d) = 0 := by
-  rw [selmerGroup_def] at hd
-  have hd' := (φ.dual.selmerStructure τ).localization_mem ⟨d, hd⟩ (.inl v)
-  simp only [selmerStructure_localization, selmerStructure_localCondition,
-    mem_localKummerCondition_iff] at hd'
+  have hd' := (φ.dual.mem_selmerGroup_iff_forall_kerRes_mem_localKummerCondition τ).mp hd (.inl v)
+  rw [mem_localKummerCondition_iff] at hd'
   rw [localPairing_apply, localTateKerWeilPairing_apply,
     kerH1WeilPairing_eq_zero_of_mem_localKummerCondition _ _ ha (by
       rw [mem_localKummerCondition_iff, explicitCoeff1_kerCoeffIncl_dualKerRes]
@@ -140,12 +138,10 @@ private theorem sum_localPairing_eq_zero (S : Finset (HeightOneSpectrum (𝓞 K)
     ∑ v : S, localPairing φ v (φ.kerRes (L := (v : HeightOneSpectrum (𝓞 K)).adicCompletion K)
       (τ (.inl v)) c) (φ.dualKerRes (L := (v : HeightOneSpectrum (𝓞 K)).adicCompletion K)
         (τ (.inl v)) d) = 0 := by
-  rw [selmerGroup_def] at hd
   have hc' (i : GlobalNumberFields.Place K)
       (hi : i ∉ Sum.inl '' (S : Set (HeightOneSpectrum (𝓞 K)))) :=
     ((φ.selmerStructure τ).mem_selmerGroup_relaxedAt_iff _).mp hc i hi
-  have hd' (i : GlobalNumberFields.Place K) :=
-    (φ.dual.selmerStructure τ).localization_mem ⟨d, hd⟩ i
+  have hd' := (φ.dual.mem_selmerGroup_iff_forall_kerRes_mem_localKummerCondition τ).mp hd
   simp only [selmerStructure_localization, selmerStructure_localCondition,
     mem_localKummerCondition_iff] at hc' hd'
   apply ZMod.toRatAddCircle_injective φ.degree
