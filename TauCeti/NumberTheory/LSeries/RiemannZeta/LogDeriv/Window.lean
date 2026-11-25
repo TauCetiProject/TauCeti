@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.LSeries.RiemannZeta
 import Mathlib.NumberTheory.LSeries.Nonvanishing
 import Mathlib.NumberTheory.LSeries.ZetaZeros
 import TauCeti.Analysis.Complex.JensenFormula
+import TauCeti.Analysis.SpecialFunctions.Log.TwoAdd
 import TauCeti.Data.Real.Pigeonhole
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.Local
@@ -28,6 +29,10 @@ by their analytic order `m(ρ)`.
 
 * `TauCeti.exists_finsum_analyticOrderAt_riemannZeta_le`: the zeros of `ζ` in a closed disc of
   fixed radius centred on a vertical line, counted with order, number `O(log(|Im s₀| + 2))`.
+* `TauCeti.riemannZetaZerosClosedBall`: the zeros of `ζ` in a closed disc, as a `Finset`, and
+  `TauCeti.finsum_window_eq_sum_filter`, which turns a sum over the zeros of a window into a
+  `Finset` sum over any finite set containing them, such as the disc of radius `4` about
+  `2 + i t` (`TauCeti.mem_riemannZetaZerosClosedBall_two_add`).
 * `TauCeti.riemannZeta_logDeriv_window`: the window form of the local expansion of `ζ′/ζ`.
 * `TauCeti.riemannZeta_safe_height`: every `[T, T + 1]` with `T ≥ 2` contains a height `T′` with
   `ζ(σ ± i T′) ≠ 0` and `‖ζ′/ζ(σ ± i T′)‖ ≤ C log² (T + 2)` for `-1 ≤ σ ≤ 2`.
@@ -63,10 +68,11 @@ open Complex DirichletCharacter Metric Set
 namespace TauCeti
 
 /-- The zeros of `ζ` in the closed disc of radius `R` about `c`, as a finite set. -/
-private noncomputable def riemannZetaZerosClosedBall (c : ℂ) (R : ℝ) : Finset ℂ :=
+noncomputable def riemannZetaZerosClosedBall (c : ℂ) (R : ℝ) : Finset ℂ :=
   ((isCompact_closedBall c R).inter_riemannZetaZeros_finite).toFinset
 
-private theorem mem_riemannZetaZerosClosedBall {c z : ℂ} {R : ℝ} :
+/-- Membership in `riemannZetaZerosClosedBall c R`: `z` is a zero of `ζ` with `‖z - c‖ ≤ R`. -/
+theorem mem_riemannZetaZerosClosedBall {c z : ℂ} {R : ℝ} :
     z ∈ riemannZetaZerosClosedBall c R ↔ ‖z - c‖ ≤ R ∧ riemannZeta z = 0 := by
   simp [riemannZetaZerosClosedBall, dist_eq_norm, mem_riemannZetaZeros]
 
@@ -165,7 +171,7 @@ private theorem norm_sum_filter_not_window_le {s : ℂ} (hs : -1 ≤ s.re) (Z : 
 
 /-- A zero `ρ` of `ζ` with `|Re ρ - 2| ≤ 2` and `|Im ρ - t| ≤ 2` lies in the closed disc of
 radius `4` about `2 + i t`. -/
-private theorem mem_riemannZetaZerosClosedBall_two_add {ρ : ℂ} {t : ℝ} (hre : |ρ.re - 2| ≤ 2)
+theorem mem_riemannZetaZerosClosedBall_two_add {ρ : ℂ} {t : ℝ} (hre : |ρ.re - 2| ≤ 2)
     (him : |ρ.im - t| ≤ 2) (hζ : riemannZeta ρ = 0) :
     ρ ∈ riemannZetaZerosClosedBall (2 + t * I) 4 := by
   refine mem_riemannZetaZerosClosedBall.mpr ⟨(Complex.norm_le_abs_re_add_abs_im _).trans ?_, hζ⟩
@@ -174,15 +180,16 @@ private theorem mem_riemannZetaZerosClosedBall_two_add {ρ : ℂ} {t : ℝ} (hre
   rw [h1, h2]
   linarith
 
-/-- If a finite set `Z` contains the zeros of the window `0 < Re z < 1`, `|Im z - Im s| ≤ 1`
-about `s`, a sum over these zeros, as a `finsum` over a subtype, is the `Finset` sum over the
-window zeros in `Z`. -/
-private theorem finsum_window_eq_sum_filter {M : Type*} [AddCommMonoid M] {s : ℂ} {Z : Finset ℂ}
-    (hZ : ∀ z : ℂ, 0 < z.re → z.re < 1 → |z.im - s.im| ≤ 1 → riemannZeta z = 0 → z ∈ Z)
+/-- If a finite set `Z` contains the zeros of the window `0 < Re z < 1`, `|Im z - t| ≤ 1` at
+height `t`, a sum over these zeros, as a `finsum` over a subtype, is the `Finset` sum over the
+window zeros in `Z`. For `Z` one can take `riemannZetaZerosClosedBall (2 + t * I) 4`, by
+`mem_riemannZetaZerosClosedBall_two_add`. -/
+theorem finsum_window_eq_sum_filter {M : Type*} [AddCommMonoid M] {t : ℝ} {Z : Finset ℂ}
+    (hZ : ∀ z : ℂ, 0 < z.re → z.re < 1 → |z.im - t| ≤ 1 → riemannZeta z = 0 → z ∈ Z)
     (f : ℂ → M)
-    [DecidablePred fun z : ℂ ↦ 0 < z.re ∧ z.re < 1 ∧ |z.im - s.im| ≤ 1 ∧ riemannZeta z = 0] :
-    ∑ᶠ ρ : {z : ℂ // 0 < z.re ∧ z.re < 1 ∧ |z.im - s.im| ≤ 1 ∧ riemannZeta z = 0}, f ρ =
-      ∑ z ∈ Z with 0 < z.re ∧ z.re < 1 ∧ |z.im - s.im| ≤ 1 ∧ riemannZeta z = 0, f z := by
+    [DecidablePred fun z : ℂ ↦ 0 < z.re ∧ z.re < 1 ∧ |z.im - t| ≤ 1 ∧ riemannZeta z = 0] :
+    ∑ᶠ ρ : {z : ℂ // 0 < z.re ∧ z.re < 1 ∧ |z.im - t| ≤ 1 ∧ riemannZeta z = 0}, f ρ =
+      ∑ z ∈ Z with 0 < z.re ∧ z.re < 1 ∧ |z.im - t| ≤ 1 ∧ riemannZeta z = 0, f z := by
   rw [finsum_subtype_eq_finsum_cond (f := f)]
   refine finsum_cond_eq_sum_of_cond_iff _ fun {z} _ ↦ ?_
   rw [Finset.mem_filter]
@@ -411,12 +418,10 @@ theorem riemannZeta_safe_height :
     (fun z h1 h2 h3 h4 ↦ mem_union_riemannZetaZerosClosedBall_of_window (hsim ▸ hT'.1)
       (hsim ▸ hT'.2) ⟨h1, h2, h3⟩ h4) hsep
   refine ⟨hζ, hbound.trans ?_⟩
-  -- `log (|Im s| + 2) ≤ log ((T + 2)²)`, and `K / δ = 2 K (K + 1)`
-  have hlog2 : Real.log ((T + 2) ^ 2) = 2 * Real.log (T + 2) := by
-    rw [Real.log_pow, Nat.cast_ofNat]
-  have hlog : Real.log (|s.im| + 2) ≤ 2 * Real.log (T + 2) := by
-    rw [← hlog2, hsim]
-    exact Real.log_le_log (by linarith [hT'.1]) (by nlinarith [hT'.2])
+  -- `log (|Im s| + 2) ≤ 2 log (T + 2)`, and `K / δ = 2 K (K + 1)`
+  have hlog : Real.log (|s.im| + 2) ≤ 2 * Real.log (T + 2) :=
+    Real.log_add_two_le_two_mul_log_add_two (by linarith) (abs_nonneg _)
+      (by linarith [hT'.2])
   have hKδ : K / (1 / (2 * (K + 1))) = 2 * K * (K + 1) := by
     rw [div_div_eq_mul_div, div_one]
     ring
