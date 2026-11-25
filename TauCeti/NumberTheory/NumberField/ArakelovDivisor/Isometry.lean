@@ -49,9 +49,10 @@ namespace TauCeti
 /-- **A linear map between submodules of a fraction field is a multiplication.** If `K` is the
 fraction field of a domain `R` and `I, J` are `R`-submodules of `K`, every `R`-linear map
 `I → J` is `x ↦ f x` for some `f ∈ K`. -/
-theorem exists_coe_linearMap_apply_eq_mul {R K : Type*} [CommRing R] [IsDomain R] [Field K]
+theorem exists_coe_linearMap_apply_eq_mul {R K : Type*} [CommRing R] [Field K]
     [Algebra R K] [IsFractionRing R K] {I J : Submodule R K} (φ : I →ₗ[R] J) :
     ∃ f : K, ∀ x : I, (φ x : K) = f * x := by
+  have : IsDomain R := (IsFractionRing.injective R K).isDomain (algebraMap R K)
   by_cases hI : ∀ x : I, (x : K) = 0
   · refine ⟨0, fun x ↦ ?_⟩
     rw [show x = 0 from Subtype.ext (hI x), map_zero, Submodule.coe_zero, zero_mul]
