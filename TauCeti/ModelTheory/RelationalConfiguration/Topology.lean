@@ -16,14 +16,17 @@ public import TauCeti.MeasureTheory.Constructions.BorelSpace.Perm
 The product topology on relational configurations is compact Hausdorff, and relabelling by a
 permutation of the carrier is continuous. Restriction along a vertex map is continuous, and
 jointly continuous in the vertex map when the target carrier is discrete. Specifying an atom's
-truth value gives a clopen, measurable cylinder, and so does specifying the truth values of a
-finite set of atoms (`SymbolicDynamics.FullShift.cylinder`, clopen by
-`SymbolicDynamics.FullShift.isOpen_cylinder` and `SymbolicDynamics.FullShift.isClosed_cylinder`,
-measurable by `SymbolicDynamics.FullShift.measurableSet_cylinder`); these finite cylinders form a
-basis of the topology (`SymbolicDynamics.FullShift.isTopologicalBasis_cylinder`). On
-countable carriers in countable relational vocabularies the topology is Polish and its Borel
-σ-algebra is the existing product σ-algebra. The same construction handles finite and empty
-carriers.
+truth value gives a clopen, measurable cylinder (`isClopen_setOf_eval`,
+`measurableSet_setOf_eval`). Specifying the truth values of a finite set of atoms gives Mathlib's
+finite cylinder `SymbolicDynamics.FullShift.cylinder`, whose results live in modules this one does
+not import: it is clopen by `SymbolicDynamics.FullShift.isOpen_cylinder` and
+`SymbolicDynamics.FullShift.isClosed_cylinder` in `Mathlib.Dynamics.SymbolicDynamics.Basic`,
+measurable by `SymbolicDynamics.FullShift.measurableSet_cylinder` in
+`TauCeti.MeasureTheory.Constructions.Cylinder.FullShift`, and these cylinders form a basis of the
+topology by `SymbolicDynamics.FullShift.isTopologicalBasis_cylinder` in
+`TauCeti.Dynamics.SymbolicDynamics.Basic`. On countable carriers in countable relational
+vocabularies the topology is Polish and its Borel σ-algebra is the existing product σ-algebra.
+The same construction handles finite and empty carriers.
 
 For a discrete carrier, the *logic action* of its permutation group, with the topology of
 pointwise convergence, is jointly continuous, for every language, so stabilizers of
