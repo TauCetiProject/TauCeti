@@ -31,7 +31,8 @@ are Hölder and bounded on the same set, so is their product (`HolderOnWith.smul
 A continuous linear map applied after a Hölder function is Hölder, the constant multiplied by
 the operator norm (`ContinuousLinearMap.holderWith_comp`). Evaluating a Hölder family of
 continuous linear maps at a vector of norm at most one keeps the Hölder constant
-(`HolderOnWith.clm_apply_of_norm_le_one`).
+(`HolderOnWith.clm_apply_of_norm_le_one`); evaluating it at a bounded Hölder family of vectors
+obeys the product rule (`HolderOnWith.clm_apply`).
 
 Composing a family of bilinear maps with two families of linear maps, `(f x).bilinearComp (g x)
 (h x)`, preserves Hölder continuity when the three families are bounded
@@ -307,5 +308,32 @@ theorem clm_apply_of_norm_le_one [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
   refine le_trans ?_ (hf x hx y hy)
   rw [edist_dist, edist_dist, dist_eq_norm, dist_eq_norm, ← sub_apply]
   exact ENNReal.ofReal_le_ofReal ((f x - f y).unit_le_opNorm _ hv)
+
+/-- Evaluating a family of continuous linear maps at a family of vectors, both Hölder and bounded
+on `s`, gives a Hölder function on `s`, with constant `Mf Kv + Mv Kf`. -/
+theorem clm_apply [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] {α Kf Kv Mf Mv : ℝ≥0}
+    {f : X → F →L[𝕜] G} {v : X → F} {s : Set X} (hf : HolderOnWith Kf α f s)
+    (hv : HolderOnWith Kv α v s) (hfnorm : ∀ x ∈ s, ‖f x‖ ≤ Mf) (hvnorm : ∀ x ∈ s, ‖v x‖ ≤ Mv) :
+    HolderOnWith (Mf * Kv + Mv * Kf) α (fun x ↦ f x (v x)) s := by
+  intro x hx y hy
+  have hle : ‖f x (v x) - f y (v y)‖ ≤ ‖f x‖ * ‖v x - v y‖ + ‖f x - f y‖ * ‖v y‖ := by
+    have hsplit : f x (v x) - f y (v y) = f x (v x - v y) + (f x - f y) (v y) := by
+      simp only [map_sub, sub_apply]
+      abel
+    rw [hsplit]
+    exact (norm_add_le _ _).trans (add_le_add ((f x).le_opNorm _) ((f x - f y).le_opNorm _))
+  calc
+    edist (f x (v x)) (f y (v y)) ≤ ‖f x‖₊ * edist (v x) (v y) + edist (f x) (f y) * ‖v y‖₊ := by
+      simp only [edist_nndist, nnDist_eq_nnNorm]
+      exact_mod_cast hle
+    _ ≤ Mf * (Kv * edist x y ^ (α : ℝ)) + Kf * edist x y ^ (α : ℝ) * Mv := by
+      gcongr
+      · exact_mod_cast hfnorm x hx
+      · exact hv.edist_le hx hy
+      · exact hf.edist_le hx hy
+      · exact_mod_cast hvnorm y hy
+    _ = _ := by
+      push_cast
+      ring
 
 end HolderOnWith

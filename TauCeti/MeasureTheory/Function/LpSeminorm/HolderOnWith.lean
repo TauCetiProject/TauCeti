@@ -13,17 +13,19 @@ import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
-# Hölder functions on a ball are in every `Lᵖ`
+# Hölder functions on a bounded set are in every `Lᵖ`
 
 Let `G` be `α`-Hölder with constant `K` on a ball `B(x₀, ρ)` of a proper metric space, with
 `α > 0`, and let `μ` be finite on compact sets. Then `G` is continuous on the ball and stays within
 `K ρ^α` of its value at the centre, so `G - G x₀` is a bounded measurable function on a set of
-finite measure.
+finite measure. More generally, `G` is bounded on any bounded set on which it is Hölder.
 
 ## Main declarations
 
 * `TauCeti.MeasureTheory.memLp_sub_of_holderOnWith`: `G - G x₀` lies in every `Lᵖ(B)`, for every
   measurable `B ⊆ B(x₀, ρ)`.
+* `TauCeti.MeasureTheory.memLp_of_holderOnWith`: if `G` is Hölder on a bounded set `S`, then `G`
+  lies in every `Lᵖ(B)`, for every measurable `B ⊆ S`.
 * `TauCeti.MeasureTheory.setIntegral_ball_norm_sub_sq_le_of_holderOnWith`:
   `∫_{B(x₀, ρ)} ‖G x₀ - G‖² ≤ μ(B(x₀, ρ)) (K ρ^α)²`.
 -/
@@ -55,6 +57,17 @@ theorem memLp_sub_of_holderOnWith {B : Set X} (hB : MeasurableSet B) {x₀ : X} 
   intro x hx
   rw [← dist_eq_norm]
   exact hGK.dist_le_mul_rpow_of_mem_ball (hBρ hx)
+
+/-- On a measurable set `B` inside a bounded set `S` on which `G` is `α`-Hölder, with `α > 0`,
+`G` is bounded, so it lies in every `Lᵖ(B)`. -/
+theorem memLp_of_holderOnWith {B S : Set X} (hB : MeasurableSet B) (hBS : B ⊆ S)
+    (hS : Bornology.IsBounded S) {α K : ℝ≥0} (hα : 0 < α) {G : X → E}
+    (hGK : HolderOnWith K α G S) {p : ℝ≥0∞} : MemLp G p (μ.restrict B) := by
+  have : IsFiniteMeasure (μ.restrict B) :=
+    isFiniteMeasure_restrict.2 (hS.subset hBS).measure_lt_top.ne
+  obtain ⟨M, hM⟩ := isBounded_iff_forall_norm_le.1 (hGK.isBounded_image hS)
+  exact MemLp.of_bound (((hGK.continuousOn hα).mono hBS).aestronglyMeasurable hB) M
+    ((ae_restrict_iff' hB).2 (ae_of_all _ fun x hx => hM _ (mem_image_of_mem _ (hBS hx))))
 
 /-- A function `G` that is `α`-Hölder with constant `K` on `B(x₀, ρ)`, with `α > 0`, stays within
 `K ρ^α` of `G x₀`, so `∫_{B(x₀, ρ)} ‖G x₀ - G‖² ≤ μ(B(x₀, ρ)) (K ρ^α)²`. -/

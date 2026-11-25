@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.Global
-import TauCeti.Topology.Instances.Matrix
+import TauCeti.MeasureTheory.Function.LpSeminorm.HolderOnWith
 
 /-!
 # The Dirichlet problem with `C^{1,α}` boundary values
@@ -34,9 +34,10 @@ and `β ≤ 1 - (n + 1) / q`.
   where `C` depends on `Ω`, its boundary charts, `n`, `α`, `β`, `q`, `λ`, `Λ` and `M`, but not on
   `u`, `g`, `a`, `G` or `f` otherwise
   (`TauCeti.PDE.exists_holderOnWith_gradient_closure_of_sub_mem_w1p0Submodule`).
-* **Solvability.** The problem has exactly one weak solution, and so exactly one solution whose
-  gradient is `β`-Hölder up to the boundary
-  (`TauCeti.PDE.existsUnique_sub_mem_w1p0Submodule_and_exists_holderOnWith_gradient_closure`).
+* **Solvability.** There is exactly one `u ∈ H¹(Ω)` with `u - g ∈ H¹₀(Ω)` and
+  `∫_Ω ⟨a ∇u, ∇v⟩ = ∫_Ω ⟨G, ∇v⟩ + ∫_Ω f v` for every `v ∈ H¹₀(Ω)`. It is a weak solution, so its
+  gradient is `β`-Hölder up to the boundary, with the estimate above
+  (`existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_and_holderOnWith_gradient_closure`).
 
 This is Gilbarg–Trudinger's Theorem 8.34 for the operator without lower-order terms, with the
 estimate of Theorem 8.33, for data `f ∈ L^q` and `G ∈ C^{0,α}`. The uniformity of the constant in
@@ -82,47 +83,6 @@ local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 
 attribute [local instance] W1p0.instNormedAddCommGroup W1p0.instInnerProductSpace
 
-/-- The vector field `x ↦ a(x) ξ(x)`, written through the bilinear forms of `a`: it is the vector
-whose inner product with `η` is `ηᵀ a(x) ξ(x)`. -/
-private def coeffApply (a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) (ξ : E → E) (x : E) : E :=
-  (toDual ℝ E).symm ((matrixBilinearForm (a x)).flip (ξ x))
-
-private theorem inner_coeffApply (a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) (ξ : E → E)
-    (x η : E) : ⟪coeffApply a ξ x, η⟫_ℝ = matrixBilinearForm (a x) η (ξ x) := by
-  rw [coeffApply, toDual_symm_apply, ContinuousLinearMap.flip_apply]
-
-/-- The vector field `a ξ` of two bounded Hölder fields is Hölder, with the constant of the product
-rule. -/
-private theorem holderOnWith_coeffApply {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    {ξ : E → E} {s : Set E} {α Ka Kξ L N : ℝ≥0}
-    (ha : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) s) (hξ : HolderOnWith Kξ α ξ s)
-    (hL : ∀ x ∈ s, ‖matrixBilinearForm (a x)‖ ≤ L) (hN : ∀ x ∈ s, ‖ξ x‖ ≤ N) :
-    HolderOnWith (L * Kξ + N * Ka) α (coeffApply a ξ) s := by
-  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
-  set Tx := matrixBilinearForm (a x)
-  set Ty := matrixBilinearForm (a y)
-  have hsplit : Tx.flip (ξ x) - Ty.flip (ξ y) = (Tx - Ty).flip (ξ x) + Ty.flip (ξ x - ξ y) := by
-    ext η
-    simp
-  have hTxy : ‖Tx - Ty‖ ≤ Ka * dist x y ^ (α : ℝ) := by
-    have h := ha.dist_le hx hy
-    rwa [dist_eq_norm] at h
-  rw [coeffApply, coeffApply, LinearIsometryEquiv.dist_map, dist_eq_norm, hsplit]
-  calc ‖(Tx - Ty).flip (ξ x) + Ty.flip (ξ x - ξ y)‖
-      ≤ ‖Tx - Ty‖ * ‖ξ x‖ + ‖Ty‖ * ‖ξ x - ξ y‖ := by
-        refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-        · exact ((Tx - Ty).flip.le_opNorm _).trans_eq (by rw [ContinuousLinearMap.opNorm_flip])
-        · exact (Ty.flip.le_opNorm _).trans_eq (by rw [ContinuousLinearMap.opNorm_flip])
-    _ ≤ Ka * dist x y ^ (α : ℝ) * N + L * (Kξ * dist x y ^ (α : ℝ)) := by
-        gcongr
-        · exact hN x hx
-        · exact hL y hy
-        · rw [← dist_eq_norm]
-          exact hξ.dist_le hx hy
-    _ = ((L * Kξ + N * Ka : ℝ≥0) : ℝ) * dist x y ^ (α : ℝ) := by
-        push_cast
-        ring
-
 /-- **Reduction to zero boundary values.** If `u ∈ H¹(Ω)` solves `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` weakly
 in `Ω`, tested against test functions, and the gradient of `g ∈ H¹(Ω)` agrees almost everywhere on
 `Ω` with `Dg`, then `u - g` solves the equation with the datum `G - a Dg` in place of `G`. -/
@@ -134,7 +94,7 @@ private theorem energyFormH1_sub_ofTestFunctionₗ_eq {a : E → Matrix (Fin (n 
     (hu : ∀ φ : 𝓓(Ω, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume Ω 2 φ) =
       (∫ x in Ω, ⟪G x, ∇ (φ : E → ℝ) x⟫_ℝ) + ∫ x in Ω, f x * φ x) (φ : 𝓓(Ω, ℝ)) :
     energyFormH1 a 0 0 (u - g) (W1p.ofTestFunctionₗ volume Ω 2 φ) =
-      (∫ x in Ω, ⟪G x - coeffApply a Dg x, ∇ (φ : E → ℝ) x⟫_ℝ) + ∫ x in Ω, f x * φ x := by
+      (∫ x in Ω, ⟪G x - coefficientField a Dg x, ∇ (φ : E → ℝ) x⟫_ℝ) + ∫ x in Ω, f x * φ x := by
   have hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (volume.restrict (Ω : Set E)) :=
     memLp_energyIntegrand_of_memLp_top hell.upper_nonneg ha (fun _ hx => hell.upper_bound hx)
       (memLp_top_const 0) (memLp_top_const 0)
@@ -144,9 +104,9 @@ private theorem energyFormH1_sub_ofTestFunctionₗ_eq {a : E → Matrix (Fin (n 
     exact gradientTestFunctionLp_apply_ae 2 φ
   -- Both sides of `∫ ⟨a ∇g, ∇φ⟩ = ∫ ⟨a Dg, ∇φ⟩` are integrable.
   have hgV : ∀ᵐ x ∂volume.restrict (Ω : Set E), matrixBilinearForm (a x) (W1p.gradient w x)
-      (W1p.gradient g x) = ⟪coeffApply a Dg x, ∇ (φ : E → ℝ) x⟫_ℝ := by
+      (W1p.gradient g x) = ⟪coefficientField a Dg x, ∇ (φ : E → ℝ) x⟫_ℝ := by
     filter_upwards [hw, hgD] with x hx hx'
-    rw [inner_coeffApply, hx, hx']
+    rw [inner_coefficientField, hx, hx']
   have hGi : Integrable (fun x => ⟪G x, ∇ (φ : E → ℝ) x⟫_ℝ) (volume.restrict (Ω : Set E)) :=
     (hG2.integrable_inner_of_holderConjugate (Lp.memLp (W1p.gradient w))).congr <| by
       filter_upwards [hw] with x hx
@@ -156,25 +116,6 @@ private theorem energyFormH1_sub_ofTestFunctionₗ_eq {a : E → Matrix (Fin (n 
   rw [energyFormH1_sub_left (b := 0) (c := 0) hcoeff, hu φ, energyFormH1_zero_zero_eq_setIntegral,
     integral_congr_ae hgV, integral_sub hGi hVi]
   ring
-
-/-- A coefficient field whose bilinear forms are Hölder on `closure Ω` is measurable on `Ω`. -/
-private theorem aestronglyMeasurable_of_holderOnWith_closure {α Ka : ℝ≥0} (hα : 0 < α)
-    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    (hKa : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) (closure (Ω : Set E))) :
-    AEStronglyMeasurable a (volume.restrict (Ω : Set E)) :=
-  ((continuousOn_of_continuousOn_matrixBilinearForm (hKa.continuousOn hα)).mono
-    subset_closure).aestronglyMeasurable Ω.isOpen.measurableSet
-
-/-- A field that is Hölder on the closure of a bounded open set is square integrable there. -/
-private theorem memLp_two_of_holderOnWith_closure {α KG : ℝ≥0} (hα : 0 < α)
-    (hΩ : Bornology.IsBounded (Ω : Set E)) {G : E → E}
-    (hG : HolderOnWith KG α G (closure (Ω : Set E))) : MemLp G 2 (volume.restrict (Ω : Set E)) := by
-  have : IsFiniteMeasure (volume.restrict (Ω : Set E)) :=
-    isFiniteMeasure_restrict.2 hΩ.measure_lt_top.ne
-  obtain ⟨MG, hMG⟩ := isBounded_iff_forall_norm_le.1 (hG.isBounded_image hΩ.closure)
-  exact MemLp.of_bound (((hG.continuousOn hα).mono subset_closure).aestronglyMeasurable
-    Ω.isOpen.measurableSet) MG ((ae_restrict_mem Ω.isOpen.measurableSet).mono fun x hx =>
-      hMG _ (mem_image_of_mem _ (subset_closure hx)))
 
 /-- The comparison of constants that closes the global estimate with boundary values. -/
 private theorem constant_le {C₀ Lam M KG F P Kg Ng Ka L : ℝ} (hC₀ : 0 ≤ C₀) (hKG : 0 ≤ KG)
@@ -235,22 +176,25 @@ theorem exists_holderOnWith_gradient_closure_of_sub_mem_w1p0Submodule {F : Type*
     hKaM hG hf hgD hDg hNg hu0 hu => ?_⟩
   have hα : 0 < α := hβ.trans_le hβα
   have hellΩ := hell.mono_set (subset_closure (s := (Ω : Set E)))
-  have ha := aestronglyMeasurable_of_holderOnWith_closure hα hKa
-  have hG2 := memLp_two_of_holderOnWith_closure hα hΩ hG
+  have ha := aestronglyMeasurable_of_holderOnWith_matrixBilinearForm (mu := volume)
+    Ω.isOpen.measurableSet subset_closure hα hKa
+  have hG2 := MeasureTheory.memLp_of_holderOnWith (μ := volume) (p := 2) Ω.isOpen.measurableSet
+    subset_closure hΩ.closure hα hG
   -- `u - g ∈ H¹₀(Ω)` solves the problem with the datum `G - a Dg` in place of `G`.
   have hψ : ∀ φ : 𝓓(Ω, ℝ), energyFormH1 a 0 0 ((⟨u - g, hu0⟩ : W1p0 volume Ω 2) : W1p volume Ω 2)
-      (W1p.ofTestFunctionₗ volume Ω 2 φ) = (∫ x in Ω, ⟪G x - coeffApply a Dg x,
+      (W1p.ofTestFunctionₗ volume Ω 2 φ) = (∫ x in Ω, ⟪G x - coefficientField a Dg x,
         ∇ (φ : E → ℝ) x⟫_ℝ) + ∫ x in Ω, f x * φ x :=
     energyFormH1_sub_ofTestFunctionₗ_eq hellΩ ha hG2 hgD hu
   -- The field `G - a Dg` is Hölder on `closure Ω`.
-  have hV := holderOnWith_coeffApply hKa hDg (L := Lam.toNNReal)
+  have hV := holderOnWith_coefficientField hKa hDg (L := Lam.toNNReal)
     (fun x hx => (hell.opNorm_matrixBilinearForm_le hx).trans (Real.le_coe_toNNReal _)) hNg
   obtain ⟨D', hD'ae, hD'hol, hD'bd⟩ := hglob hell hKa hKaM (hG.sub hV) hf hψ
   -- The Hölder constant of `Dg` for the exponent `β`.
   have hDgβ : HolderOnWith (Kg + 2 * Ng) β Dg (closure (Ω : Set E)) := by
     simpa using hDg.of_le_of_norm_le hNg hβα one_pos
   -- The constants of the global estimate and of `Dg` are bounded by the final constant.
-  have hnorm : ‖(⟨u - g, hu0⟩ : W1p0 volume Ω 2)‖ = ‖u - g‖ := rfl
+  have hnorm : ‖(⟨u - g, hu0⟩ : W1p0 volume Ω 2)‖ = ‖u - g‖ :=
+    (Submodule.norm_coe (⟨u - g, hu0⟩ : W1p0 volume Ω 2)).symm
   rw [hnorm] at hD'hol hD'bd
   have hLam : (Lam.toNNReal : ℝ) ≤ |Lam| := by
     rw [Real.coe_toNNReal']
@@ -295,10 +239,10 @@ these boundary values has this regularity
 (`TauCeti.PDE.exists_holderOnWith_gradient_closure_of_sub_mem_w1p0Submodule`).
 
 This is Gilbarg–Trudinger's Theorem 8.34 for the operator without lower-order terms. -/
-theorem existsUnique_sub_mem_w1p0Submodule_and_exists_holderOnWith_gradient_closure {F : Type*}
-    [NormedAddCommGroup F] [InnerProductSpace ℝ F] {α β : ℝ≥0} (hβ : 0 < β) (hβ1 : β < 1)
-    (hβα : β ≤ α) {q : ℝ≥0∞} (hq : 2 ≤ q) (hβq : (β : ℝ) ≤ 1 - ((n : ℝ) + 1) / q.toReal)
-    (hΩ : Bornology.IsBounded (Ω : Set E))
+theorem existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_and_holderOnWith_gradient_closure
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] {α β : ℝ≥0} (hβ : 0 < β)
+    (hβ1 : β < 1) (hβα : β ≤ α) {q : ℝ≥0∞} (hq : 2 ≤ q)
+    (hβq : (β : ℝ) ≤ 1 - ((n : ℝ) + 1) / q.toReal) (hΩ : Bornology.IsBounded (Ω : Set E))
     (hbdry : ∀ x ∈ frontier (Ω : Set E),
       ∃ (e : E ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × F)) (γ : F → ℝ) (h₀ r₀ : ℝ)
         (Kγ : ℝ≥0), e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ γ 0 = 0 ∧ ContDiff ℝ 1 γ ∧
@@ -329,8 +273,10 @@ theorem existsUnique_sub_mem_w1p0Submodule_and_exists_holderOnWith_gradient_clos
     isFiniteMeasure_restrict.2 hΩ.measure_lt_top.ne
   have hα : 0 < α := hβ.trans_le hβα
   have hellΩ := hell.mono_set (subset_closure (s := (Ω : Set E)))
-  have ha := aestronglyMeasurable_of_holderOnWith_closure hα hKa
-  have hG2 := memLp_two_of_holderOnWith_closure hα hΩ hG
+  have ha := aestronglyMeasurable_of_holderOnWith_matrixBilinearForm (mu := volume)
+    Ω.isOpen.measurableSet subset_closure hα hKa
+  have hG2 := MeasureTheory.memLp_of_holderOnWith (μ := volume) (p := 2) Ω.isOpen.measurableSet
+    subset_closure hΩ.closure hα hG
   have hf2 : MemLp f 2 (volume.restrict (Ω : Set E)) := hf.mono_exponent hq
   -- The right-hand side as a functional on `H¹₀(Ω)`.
   set ℓ := dirichletForcing (hf2.toLp f) - divergenceForcing (hG2.toLp G)

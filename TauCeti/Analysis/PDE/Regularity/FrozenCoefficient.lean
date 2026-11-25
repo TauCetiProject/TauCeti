@@ -13,6 +13,7 @@ import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.Topology.Instances.Matrix
 import TauCeti.MeasureTheory.Function.LpSeminorm.HolderOnWith
+import TauCeti.Analysis.Normed.Operator.Holder
 
 /-!
 # Comparison with the frozen-coefficient problem
@@ -81,11 +82,15 @@ the sum of these.
 * `TauCeti.PDE.UniformlyEllipticOn.setIntegral_norm_gradient_sub_sq_le`: its squared form with the
   coefficient term weighted by the local deviation `‖a(x) - A‖²`.
 * `TauCeti.PDE.aestronglyMeasurable_of_holderOnWith_matrixBilinearForm` and
-  `TauCeti.PDE.memLp_energyIntegrand_of_holderOnWith`: inside a ball on which `a` is `α`-Hölder,
-  `a` is measurable and its energy integrands are essentially bounded where it is elliptic.
+  `TauCeti.PDE.memLp_energyIntegrand_of_holderOnWith`: inside a set (for the second, a ball) on
+  which `a` is `α`-Hölder, `a` is measurable and its energy integrands are essentially bounded
+  where it is elliptic.
 * `TauCeti.PDE.memLp_energyIntegrand_and_memLp_of_holderOnWith`: on an open set of finite
   measure, Hölder elliptic coefficients give an essentially bounded energy integrand and a
   bounded Hölder field is square integrable.
+* `TauCeti.PDE.coefficientField`: the vector field `x ↦ a(x) ξ(x)`, Hölder by the product rule
+  (`TauCeti.PDE.holderOnWith_coefficientField`), and with constant `K_a ‖p‖` for a constant vector
+  `ξ = p` (`TauCeti.PDE.holderOnWith_coefficientField_const`).
 * `TauCeti.PDE.UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_le`: on an
   open set inside a ball `B(x₀, r)`, the replacement frozen at `x₀` exists and its error is
   `O(r^α)` for `α`-Hölder coefficients and field, plus `2 r ‖f‖_{L²(B)}`.
@@ -304,16 +309,75 @@ theorem UniformlyEllipticOn.setIntegral_norm_gradient_sub_sq_le
     _ ≤ _ := by linarith
 
 omit [DecidableEq ι] [mu.IsAddHaarMeasure] in
-/-- On a measurable set `B` inside a ball `B(x₀, ρ)` on which the bilinear forms of `a` are
-`α`-Hölder, with `α > 0`, the coefficient matrix `a` is almost everywhere strongly measurable
-on `B`. -/
-theorem aestronglyMeasurable_of_holderOnWith_matrixBilinearForm {B : Set (EuclideanSpace ℝ ι)}
-    (hB : MeasurableSet B) {x₀ : EuclideanSpace ℝ ι} {ρ : ℝ} (hBρ : B ⊆ ball x₀ ρ)
-    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {α Ka : ℝ≥0} (hα : 0 < α)
-    (haK : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) (ball x₀ ρ)) :
+/-- On a measurable set `B` inside a set `S` on which the bilinear forms of `a` are `α`-Hölder,
+with `α > 0`, the coefficient matrix `a` is almost everywhere strongly measurable on `B`. -/
+theorem aestronglyMeasurable_of_holderOnWith_matrixBilinearForm {B S : Set (EuclideanSpace ℝ ι)}
+    (hB : MeasurableSet B) (hBS : B ⊆ S) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {α Ka : ℝ≥0}
+    (hα : 0 < α) (haK : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) S) :
     AEStronglyMeasurable a (mu.restrict B) :=
   (continuousOn_of_continuousOn_matrixBilinearForm
-    ((haK.continuousOn hα).mono hBρ)).aestronglyMeasurable hB
+    ((haK.continuousOn hα).mono hBS)).aestronglyMeasurable hB
+
+/-- The vector field `x ↦ a(x) ξ(x)`, written through the bilinear forms of `a` and the Riesz
+representation: its inner product with `η` is `ηᵀ a(x) ξ(x)` (`inner_coefficientField`). -/
+def coefficientField (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
+    (ξ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (x : EuclideanSpace ℝ ι) :
+    EuclideanSpace ℝ ι :=
+  (toDual ℝ (EuclideanSpace ℝ ι)).symm ((matrixBilinearForm (a x)).flip (ξ x))
+
+omit [DecidableEq ι] in
+/-- The inner product of `a(x) ξ(x)` with `η` is the bilinear form of `a(x)` at `η` and `ξ(x)`. -/
+theorem inner_coefficientField (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
+    (ξ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (x η : EuclideanSpace ℝ ι) :
+    ⟪coefficientField a ξ x, η⟫_ℝ = matrixBilinearForm (a x) η (ξ x) := by
+  rw [coefficientField, toDual_symm_apply, ContinuousLinearMap.flip_apply]
+
+omit [DecidableEq ι] in
+/-- **The product rule for `a ξ`.** If the bilinear forms of `a` are `α`-Hölder with constant `K_a`
+and bounded by `L` on `s`, and `ξ` is `α`-Hölder with constant `K_ξ` and bounded by `N` on `s`,
+then `x ↦ a(x) ξ(x)` is `α`-Hölder on `s` with constant `L K_ξ + N K_a`. -/
+theorem holderOnWith_coefficientField {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {ξ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {s : Set (EuclideanSpace ℝ ι)}
+    {α Ka Kξ L N : ℝ≥0} (ha : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) s)
+    (hξ : HolderOnWith Kξ α ξ s) (hL : ∀ x ∈ s, ‖matrixBilinearForm (a x)‖ ≤ L)
+    (hN : ∀ x ∈ s, ‖ξ x‖ ≤ N) :
+    HolderOnWith (L * Kξ + N * Ka) α (coefficientField a ξ) s := by
+  have hflip : HolderOnWith Ka α (fun x => (matrixBilinearForm (a x)).flip) s :=
+    HolderOnWith.of_dist_le fun x hx y hy => by
+      have h := ha.dist_le hx hy
+      have hsub : (matrixBilinearForm (a x) - matrixBilinearForm (a y)).flip =
+          (matrixBilinearForm (a x)).flip - (matrixBilinearForm (a y)).flip := by
+        ext
+        simp
+      rw [dist_eq_norm] at h ⊢
+      rwa [← ContinuousLinearMap.opNorm_flip, hsub] at h
+  have h := hflip.clm_apply hξ
+    (fun x hx => (ContinuousLinearMap.opNorm_flip (matrixBilinearForm (a x))).trans_le (hL x hx)) hN
+  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
+  rw [coefficientField, coefficientField, LinearIsometryEquiv.dist_map]
+  exact h.dist_le hx hy
+
+omit [DecidableEq ι] in
+/-- If the bilinear forms of `a` are `α`-Hölder with constant `K_a` on `s`, then for a constant
+vector `p` the field `x ↦ a(x) p` is `α`-Hölder on `s` with constant `K_a ‖p‖`. -/
+theorem holderOnWith_coefficientField_const {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {s : Set (EuclideanSpace ℝ ι)} {α Ka : ℝ≥0}
+    (haK : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) s) (p : EuclideanSpace ℝ ι) :
+    HolderOnWith (Ka * ‖p‖₊) α (coefficientField a fun _ => p) s := by
+  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
+  rw [dist_eq_norm, coefficientField, coefficientField, ← map_sub, LinearIsometryEquiv.norm_map]
+  have hle : ‖(matrixBilinearForm (a x)).flip p - (matrixBilinearForm (a y)).flip p‖ ≤
+      ‖matrixBilinearForm (a x) - matrixBilinearForm (a y)‖ * ‖p‖ := by
+    refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun ξ => ?_
+    have h := (matrixBilinearForm (a x) - matrixBilinearForm (a y)).le_opNorm₂ ξ p
+    simp only [FunLike.coe_sub, Pi.sub_apply, ContinuousLinearMap.flip_apply] at h ⊢
+    linarith
+  calc _ ≤ _ := hle
+    _ ≤ (Ka : ℝ) * dist x y ^ (α : ℝ) * ‖p‖ := by
+        have hd := haK.dist_le hx hy
+        rw [dist_eq_norm] at hd
+        exact mul_le_mul_of_nonneg_right hd (norm_nonneg _)
+    _ = _ := by push_cast; ring
 
 omit [mu.IsAddHaarMeasure] in
 /-- On an open set `B` inside a ball `B(x₀, ρ)` on which the bilinear forms of `a` are
@@ -346,8 +410,7 @@ theorem memLp_energyIntegrand_and_memLp_of_holderOnWith {α : ℝ≥0} (hα : 0 
     MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict D) ∧
       MemLp G 2 (mu.restrict D) :=
   ⟨memLp_energyIntegrand_of_memLp_top (hell.pos.le.trans hell.le)
-      (((continuousOn_of_continuousOn_matrixBilinearForm (hKa.continuousOn hα)).mono
-        hDt).aestronglyMeasurable D.isOpen.measurableSet)
+      (aestronglyMeasurable_of_holderOnWith_matrixBilinearForm D.isOpen.measurableSet hDt hα hKa)
       (fun _ hx => hell.upper_bound (hDt hx)) (memLp_top_const 0) (memLp_top_const 0),
     MemLp.of_bound (((hG.continuousOn hα).mono hDt).aestronglyMeasurable
       D.isOpen.measurableSet) _
