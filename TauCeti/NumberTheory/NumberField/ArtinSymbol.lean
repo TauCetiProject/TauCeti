@@ -9,7 +9,7 @@ public import Mathlib.NumberTheory.RamificationInertia.Galois
 public import Mathlib.RingTheory.Frobenius
 public import TauCeti.Algebra.Group.Conj
 public import TauCeti.NumberTheory.NumberField.Frobenius.Restriction
-public import TauCeti.NumberTheory.NumberField.UnramifiedTower
+public import TauCeti.NumberTheory.NumberField.Unramified.Tower
 public import TauCeti.NumberTheory.RamificationInertia.Tower
 import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
 import TauCeti.NumberTheory.NumberField.Frobenius.Tower
