@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Tangent.Basic
 public import TauCeti.Topology.VectorBundle.GrassmannBundle.Map
-import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 
 /-!
 # Riemannian isometries act on Grassmann bundles
@@ -31,6 +30,9 @@ dimension or separation is needed. It is functorial: the identity isometry induc
 the composite (`TauCeti.RiemannianIsometry.grassmannBundleHomeomorph_trans`, by the chain rule),
 and the inverse isometry induces the inverse homeomorphism
 (`TauCeti.RiemannianIsometry.grassmannBundleHomeomorph_symm`).
+
+Only smooth isometries are covered here, since `TauCeti.RiemannianIsometry` extends a smooth
+diffeomorphism; the case of an isometry that is only a `C¹` diffeomorphism is not treated.
 
 ## Main declarations
 
@@ -65,36 +67,10 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
 
-/-- The differential of a smooth Riemannian isometry, as a linear isometric equivalence of
-tangent spaces, has the manifold differential as underlying continuous linear map. -/
-theorem coe_toContinuousLinearEquiv_mfderivToLinearIsometryEquiv
-    (Φ : RiemannianIsometry I J M N) (x : M) :
-    ((Φ.mfderivToLinearIsometryEquiv x).toContinuousLinearEquiv :
-      TangentSpace I x →L[ℝ] TangentSpace J (Φ x)) = mfderiv I J Φ x :=
-  ContinuousLinearMap.ext fun v ↦ Φ.mfderivToLinearIsometryEquiv_apply x v
-
-/-- The differential of the identity isometry is the identity. -/
-theorem mfderivToLinearIsometryEquiv_refl_apply (x : M) (v : TangentSpace I x) :
-    (RiemannianIsometry.refl I M).mfderivToLinearIsometryEquiv x v = v := by
-  rw [mfderivToLinearIsometryEquiv_apply,
-    show (⇑(RiemannianIsometry.refl I M) : M → M) = id from funext (refl_apply I M), mfderiv_id]
-  rfl
-
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
   {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℝ G H''}
   {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P]
   [RiemannianBundle (fun z : P ↦ TangentSpace K z)]
-
-/-- **Chain rule**: the differential of a composite of isometries is the composite of their
-differentials. -/
-theorem mfderivToLinearIsometryEquiv_trans_apply (Φ : RiemannianIsometry I J M N)
-    (Ψ : RiemannianIsometry J K N P) (x : M) (v : TangentSpace I x) :
-    (Φ.trans Ψ).mfderivToLinearIsometryEquiv x v =
-      Ψ.mfderivToLinearIsometryEquiv (Φ x) (Φ.mfderivToLinearIsometryEquiv x v) := by
-  rw [mfderivToLinearIsometryEquiv_apply, mfderivToLinearIsometryEquiv_apply,
-    mfderivToLinearIsometryEquiv_apply,
-    show (⇑(Φ.trans Ψ) : M → P) = Ψ ∘ Φ from funext (trans_apply Φ Ψ)]
-  exact mfderiv_comp_apply x (Ψ.mdifferentiableAt (Φ x)) (Φ.mdifferentiableAt x) v
 
 variable [IsManifold I 1 M] [IsManifold J 1 N]
 
@@ -110,19 +86,6 @@ private theorem mk_conjStarAlgEquiv_eq [CompleteSpace E] [CompleteSpace F] {x : 
   subst h
   obtain rfl : U = U' := LinearIsometryEquiv.ext hU
   rfl
-
-/-- **The differentials of a smooth Riemannian isometry are continuous in tangent
-coordinates**: near `x₀`, the matrix of `dΦ_x` in the charts at `x₀` and `Φ x₀` depends
-continuously on `x`. -/
-theorem continuousAt_inCoordinates_mfderivToLinearIsometryEquiv
-    (Φ : RiemannianIsometry I J M N) (x₀ : M) :
-    ContinuousAt (fun x ↦ inCoordinates E (TangentSpace I) F (TangentSpace J) x₀ x (Φ x₀) (Φ x)
-      ((Φ.mfderivToLinearIsometryEquiv x).toContinuousLinearEquiv :
-        TangentSpace I x →L[ℝ] TangentSpace J (Φ x))) x₀ := by
-  have h := ((Φ.toDiffeomorph.contMDiff x₀).mfderiv_const (m := 0) (by simp)).continuousAt
-  refine h.congr (.of_forall fun x ↦ ?_)
-  simp only [inTangentCoordinates, coe_toDiffeomorph, id,
-    coe_toContinuousLinearEquiv_mfderivToLinearIsometryEquiv]
 
 variable [CompleteSpace E] [CompleteSpace F]
 
