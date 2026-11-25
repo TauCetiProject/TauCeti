@@ -104,15 +104,13 @@ theorem unitsFormMeasure_unitFiltration_zero :
 /-- The form measure is a Haar measure on `Kˣ`: it is left-invariant and gives the compact open
 subgroup `𝒪[K]ˣ` the positive finite mass `(1 - q⁻¹) μ 𝒪[K]`. -/
 instance isHaarMeasure_unitsFormMeasure : (unitsFormMeasure K μ).IsHaarMeasure := by
-  have hq : (1 : ℝ≥0∞) < Nat.card 𝓀[K] := by exact_mod_cast Finite.one_lt_card
   have hO : IsCompact (𝒪[K] : Set K) := IsNonarchimedeanLocalField.isCompact_closedBall K 1
   refine isHaarMeasure_of_isCompact_nonempty_interior _ _
     (unitsIntegerPositiveCompacts K).isCompact (unitsIntegerPositiveCompacts K).interior_nonempty
     ?_ ?_ <;> rw [coe_unitsIntegerPositiveCompacts, unitsFormMeasure_unitFiltration_zero]
-  · exact mul_ne_zero (tsub_pos_iff_lt.2 (ENNReal.inv_lt_one.2 hq)).ne'
+  · exact mul_ne_zero (one_sub_inv_natCard_residueField_ne_zero K)
       (Valuation.isOpen_integer.measure_ne_zero μ ⟨0, zero_mem _⟩)
-  · exact ENNReal.mul_ne_top (ne_top_of_le_ne_top ENNReal.one_ne_top tsub_le_self)
-      hO.measure_lt_top.ne
+  · exact ENNReal.mul_ne_top (one_sub_inv_natCard_residueField_ne_top K) hO.measure_lt_top.ne
 
 /-- **The form measure is a multiple of the normalized Haar measure.** For every additive Haar
 measure `μ` on `K`, the form measure `|dx/x|_K` is `(1 - q⁻¹) μ(𝒪[K]) d^×x`. -/
@@ -135,12 +133,8 @@ For the additive Haar measure `μ` on `K` with `μ 𝒪[K] = 1`, the Haar measur
 normalized by `d^×x(𝒪[K]ˣ) = 1` is `(1 - q⁻¹)⁻¹ |dx/x|_K`. -/
 theorem unitsHaar_eq_smul_unitsFormMeasure (hμ : μ 𝒪[K] = 1) :
     unitsHaar K = (1 - (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹)⁻¹ • unitsFormMeasure K μ := by
-  have hq : (1 : ℝ≥0∞) < Nat.card 𝓀[K] := by exact_mod_cast Finite.one_lt_card
-  have h0 : 1 - (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹ ≠ 0 :=
-    (tsub_pos_iff_lt.2 (ENNReal.inv_lt_one.2 hq)).ne'
-  have htop : 1 - (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹ ≠ ⊤ :=
-    ne_top_of_le_ne_top ENNReal.one_ne_top tsub_le_self
-  rw [unitsFormMeasure_eq_smul_unitsHaar, hμ, mul_one, smul_smul, ENNReal.inv_mul_cancel h0 htop,
-    one_smul]
+  rw [unitsFormMeasure_eq_smul_unitsHaar, hμ, mul_one, smul_smul,
+    ENNReal.inv_mul_cancel (one_sub_inv_natCard_residueField_ne_zero K)
+      (one_sub_inv_natCard_residueField_ne_top K), one_smul]
 
 end TauCeti

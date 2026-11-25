@@ -108,6 +108,22 @@ end MeasureTheory.Measure
 
 namespace TauCeti
 
+section ResidueField
+
+variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K]
+
+/-- The local convergence factor `1 - q⁻¹` of a nonarchimedean local field is nonzero, since its
+residue field has `q > 1` elements. -/
+theorem one_sub_inv_natCard_residueField_ne_zero : 1 - (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹ ≠ 0 :=
+  (tsub_pos_iff_lt.2 (ENNReal.inv_lt_one.2 (by exact_mod_cast Finite.one_lt_card))).ne'
+
+/-- The local convergence factor `1 - q⁻¹` of a nonarchimedean local field is finite. -/
+theorem one_sub_inv_natCard_residueField_ne_top : 1 - (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹ ≠ ⊤ :=
+  ne_top_of_le_ne_top ENNReal.one_ne_top tsub_le_self
+
+end ResidueField
+
 section Padic
 
 variable (p : ℕ) [Fact p.Prime] [MeasurableSpace ℚ_[p]] [BorelSpace ℚ_[p]]
