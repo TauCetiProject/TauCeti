@@ -32,11 +32,12 @@ divisor-filtered `_filter_dvd_..._of_dvd` variants handle quantities (such as fi
 dimensions along characters of conductor `c ∣ N`) defined or obeying the convolution identity only
 on the divisors of a fixed nonzero level `N`, or on those divisible by `c`.
 
-The four Dirichlet-inverse lemmas for `μ * μ` and `σ 0` and the four global / divisor-closed
-divisor-count inversion equivalences closely adapt the statement pattern and proof plan of
-`ArithmeticFunction.moebius_mul_coe_zeta`..`ArithmeticFunction.coe_zeta_mul_coe_moebius` and
-`ArithmeticFunction.sum_eq_iff_sum_smul_moebius_eq`..`sum_eq_iff_sum_mul_moebius_eq_on` in
-`Mathlib.NumberTheory.ArithmeticFunction.Moebius`.
+The four Dirichlet-inverse lemmas for `μ * μ` and `σ 0` closely adapt the statement pattern and
+proof plan of `ArithmeticFunction.moebius_mul_coe_zeta` through
+`ArithmeticFunction.coe_zeta_mul_coe_moebius` in `Mathlib.NumberTheory.ArithmeticFunction.Moebius`;
+the four global and divisor-closed divisor-count inversion equivalences closely adapt the statement
+pattern of `ArithmeticFunction.sum_eq_iff_sum_smul_moebius_eq`..`sum_eq_iff_sum_mul_moebius_eq_on`
+there and are proved through `ArithmeticFunction.sum_divisors_smul_eq_of_mul_eq_one_on`.
 
 For squarefree `m`, the Möbius function summed over the divisors of `m` that are multiples
 of `l` vanishes unless `l = m`, when the sum is `μ l` (`ArithmeticFunction.sum_moebius_upper`).
@@ -53,8 +54,9 @@ behind the Dirichlet series `ζ(s)² / ζ(2s)` of `2 ^ ω`.
   `ArithmeticFunction.coe_sigma_zero_mul_coe_moebius_mul_coe_moebius`: `μ * μ` and `σ 0` are
   Dirichlet inverses.
 * `ArithmeticFunction.isMultiplicative_moebius_mul_moebius`: `μ * μ` is multiplicative.
-* `ArithmeticFunction.moebius_mul_moebius_apply_prime_pow` (with specializations at `1`, `p`, `p²`,
-  and `p ^ k` for `3 ≤ k`): values of `μ * μ` at `1` and prime powers.
+* `ArithmeticFunction.moebius_mul_moebius_apply_prime_pow`,
+  `ArithmeticFunction.moebius_mul_moebius_apply_prime`: values of `μ * μ` at prime powers and
+  primes.
 * `ArithmeticFunction.sum_divisors_smul_eq_of_mul_eq_one_on`: general Dirichlet-inverse inversion on
   a divisor-closed set for `α * β = 1`.
 * `ArithmeticFunction.sum_card_divisors_smul_eq_iff_sum_moebius_mul_moebius_smul_eq`,
@@ -123,11 +125,7 @@ theorem isMultiplicative_moebius_mul_moebius : IsMultiplicative (μ * μ) :=
 
 -- The pointwise evaluations below are not `@[simp]`: Mathlib marks
 -- `ArithmeticFunction.mul_apply` `@[simp]`, rewriting `(μ * μ) n` to an antidiagonal sum
--- (so `simp` already proves `n = 1` and `simpNF` rejects `@[simp]` on prime powers).
-
-/-- At `1`, `(μ * μ) 1 = 1`. -/
-theorem moebius_mul_moebius_apply_one : (μ * μ) 1 = 1 :=
-  isMultiplicative_moebius_mul_moebius.map_one
+-- (so `simpNF` rejects `@[simp]` on `(μ * μ) (p ^ k)` and `(μ * μ) p`).
 
 /-- At a prime power `p ^ k`, `(μ * μ) (p ^ k)` is `1` at `k = 0`, `-2` at `k = 1`, `1` at `k = 2`,
 and `0` for `k ≥ 3`. -/
@@ -163,17 +161,6 @@ theorem moebius_mul_moebius_apply_prime_pow {p : ℕ} (hp : p.Prime) (k : ℕ) :
 /-- At a prime `p`, `(μ * μ) p = -2`. -/
 theorem moebius_mul_moebius_apply_prime {p : ℕ} (hp : p.Prime) : (μ * μ) p = -2 := by
   simpa using moebius_mul_moebius_apply_prime_pow hp 1
-
-/-- At the square of a prime `p`, `(μ * μ) (p ^ 2) = 1`. -/
-theorem moebius_mul_moebius_apply_prime_sq {p : ℕ} (hp : p.Prime) : (μ * μ) (p ^ 2) = 1 := by
-  simpa using moebius_mul_moebius_apply_prime_pow hp 2
-
-/-- At a prime power `p ^ k` with `3 ≤ k`, `(μ * μ) (p ^ k) = 0`. -/
-theorem moebius_mul_moebius_apply_prime_pow_eq_zero {p k : ℕ} (hp : p.Prime) (hk : 3 ≤ k) :
-    (μ * μ) (p ^ k) = 0 := by
-  rw [moebius_mul_moebius_apply_prime_pow hp k]
-  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hk
-  simp
 
 /-! ### Möbius inversion for divisor-count convolutions -/
 

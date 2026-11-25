@@ -160,10 +160,16 @@ theorem evalDirectSum_of [Γ.HasDetPlusMinusOne] (k : ℤ) (f : ModularForm Γ k
 homomorphism into `ℍ → ℂ`. -/
 def evalDirectSumAlgHom [Γ.HasDetOne] :
     (⨁ k : ℤ, ModularForm Γ k) →ₐ[ℂ] (ℍ → ℂ) :=
+  -- Mathlib provides no equation lemmas unfolding `GradedMonoid.GOne.one` (`:= 1`) or
+  -- `GradedMonoid.GMul.mul` (`:= ModularForm.mul`) on `ModularForm Γ`, whose coercions reduce
+  -- definitionally to `1` and pointwise `*` (cf. the docstring of `DirectSum.toAlgebra`).
   DirectSum.toAlgebra ℂ _ (fun k ↦ FunLike.coeLinearMap ℂ (ModularForm Γ k) ℍ ℂ)
     (by simp only [FunLike.coeLinearMap_apply]; rfl)
     (fun _ _ ↦ by simp only [FunLike.coeLinearMap_apply]; rfl)
 
+-- Mathlib has no `DirectSum.toAlgebra_of`; tactic `rw`/`simp` after `DirectSum.toAlgebra_apply`
+-- rejects `DirectSum.toSemiring` at `implicit` transparency because `FunLike.coeLinearMap` is not
+-- `@[expose]`, so the three equation lemmas are composed in term mode via `.trans`.
 @[simp]
 theorem evalDirectSumAlgHom_of [Γ.HasDetOne] (k : ℤ) (f : ModularForm Γ k) :
     evalDirectSumAlgHom (DirectSum.of _ k f) = ⇑f :=

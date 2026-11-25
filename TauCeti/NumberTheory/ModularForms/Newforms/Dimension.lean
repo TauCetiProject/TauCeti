@@ -144,19 +144,24 @@ theorem natCast_finrank_cuspFormsNew_eq_sum_divisors {N : ℕ} [NeZero N] (k : �
   dsimp only [f]
   rw [coe_pnatDvdEquivDivisors_apply, dite_eq_left M.val.ne_zero, Nat.cast_mul]
 
+/-- Dimension in `ℤ` of the fixed-nebentypus newspace `S_k(d, χ_d)ⁿᵉʷ` for `cond(χ) ∣ d` and
+`d ≠ 0`, extended by `0` elsewhere. -/
+private noncomputable def newCharSpaceDim {N : ℕ} (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) (d : ℕ) : ℤ :=
+  if hd : DirichletCharacter.conductor (MulChar.ofUnitHom χ) ∣ d ∧ d ≠ 0 then
+    have : NeZero d := ⟨hd.2⟩
+    (Module.finrank ℂ ↥(cuspFormsNew d k ⊓
+      cuspFormCharSpace k (DirichletCharacter.changeLevel hd.1
+        (DirichletCharacter.primitiveCharacter (MulChar.ofUnitHom χ))).toUnitHom) : ℤ)
+  else 0
+
 /-- At an intermediate divisor `m ∣ N` divisible by `cond(χ)`, the dimension of `S_k(m, χ_m)` over
-`ℤ` expands as the filtered divisor-count sum over `d ∈ m.divisors` with `cond(χ) ∣ d`. -/
+`ℤ` expands as the filtered divisor-count sum over `d ∈ m.divisors` with `cond(χ) ∣ d` of
+`newCharSpaceDim k χ d`. -/
 private lemma finrank_cuspFormCharSpace_changeLevel_eq_sum_divisors_filter {N m : ℕ} [NeZero N]
     (hmN : m ∣ N) (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ)
     (hcm : DirichletCharacter.conductor (MulChar.ofUnitHom χ) ∣ m) :
     ∑ d ∈ m.divisors with DirichletCharacter.conductor (MulChar.ofUnitHom χ) ∣ d,
-        (#(m / d).divisors : ℤ) *
-          (if hd : DirichletCharacter.conductor (MulChar.ofUnitHom χ) ∣ d ∧ d ≠ 0 then
-            have : NeZero d := ⟨hd.2⟩
-            (Module.finrank ℂ ↥(cuspFormsNew d k ⊓
-              cuspFormCharSpace k (DirichletCharacter.changeLevel hd.1
-                (DirichletCharacter.primitiveCharacter (MulChar.ofUnitHom χ))).toUnitHom) : ℤ)
-          else 0) =
+        (#(m / d).divisors : ℤ) * newCharSpaceDim k χ d =
       (Module.finrank ℂ (cuspFormCharSpace k
         (DirichletCharacter.changeLevel hcm
           (DirichletCharacter.primitiveCharacter (MulChar.ofUnitHom χ))).toUnitHom) : ℤ) := by
@@ -176,7 +181,7 @@ private lemma finrank_cuspFormCharSpace_changeLevel_eq_sum_divisors_filter {N m 
   rw [hm, Finset.sum_filter, ← Finset.sum_coe_sort m.divisors,
     ← (pnatDvdEquivDivisors m).sum_comp]
   refine Finset.sum_congr rfl fun M _ ↦ ?_
-  rw [coe_pnatDvdEquivDivisors_apply]
+  rw [coe_pnatDvdEquivDivisors_apply, newCharSpaceDim]
   by_cases hcM : c ∣ M.val
   · have hcM' : DirichletCharacter.conductor (MulChar.ofUnitHom χm) ∣ M.val := hcond_m ▸ hcM
     rw [ite_eq_left hcM, dite_eq_left ⟨hcM, M.val.ne_zero⟩, dite_eq_left hcM', Nat.cast_mul]
@@ -206,12 +211,6 @@ theorem natCast_finrank_cuspFormsNew_inf_cuspFormCharSpace_eq_sum_divisors {N : 
         else 0 := by
   let c := DirichletCharacter.conductor (MulChar.ofUnitHom χ)
   let ψ₀ := DirichletCharacter.primitiveCharacter (MulChar.ofUnitHom χ)
-  let f : ℕ → ℤ := fun d ↦
-    if hd : c ∣ d ∧ d ≠ 0 then
-      have : NeZero d := ⟨hd.2⟩
-      (Module.finrank ℂ ↥(cuspFormsNew d k ⊓
-        cuspFormCharSpace k (DirichletCharacter.changeLevel hd.1 ψ₀).toUnitHom) : ℤ)
-    else 0
   let g : ℕ → ℤ := fun m ↦
     if hm : c ∣ m then
       (Module.finrank ℂ (cuspFormCharSpace k
@@ -222,12 +221,12 @@ theorem natCast_finrank_cuspFormsNew_inf_cuspFormCharSpace_eq_sum_divisors {N : 
     have := DirichletCharacter.changeLevel_primitiveCharacter_toUnitHom_comp_unitsMap
       dvd_rfl (DirichletCharacter.conductor_dvd_level (MulChar.ofUnitHom χ))
     rwa [ZMod.unitsMap_self, MonoidHom.comp_id] at this
-  have hfN : f N = (Module.finrank ℂ ↥(cuspFormsNew N k ⊓ cuspFormCharSpace k χ) : ℤ) := by
-    dsimp only [f]
-    rw [dite_eq_left ⟨hcN, NeZero.ne N⟩, hχN]
-  have hinv := eq_sum_divisors_filter_dvd_moebius_mul_moebius_mul_of_dvd (f := f) (g := g)
-    hcN (NeZero.ne N) fun m hcm hmN ↦ by
-      dsimp only [f, g]
+  have hfN : newCharSpaceDim k χ N =
+      (Module.finrank ℂ ↥(cuspFormsNew N k ⊓ cuspFormCharSpace k χ) : ℤ) := by
+    rw [newCharSpaceDim, dite_eq_left ⟨hcN, NeZero.ne N⟩, hχN]
+  have hinv := eq_sum_divisors_filter_dvd_moebius_mul_moebius_mul_of_dvd
+    (f := newCharSpaceDim k χ) (g := g) hcN (NeZero.ne N) fun m hcm hmN ↦ by
+      dsimp only [g]
       rw [dite_eq_left hcm]
       exact finrank_cuspFormCharSpace_changeLevel_eq_sum_divisors_filter hmN k χ hcm
   rw [← hfN, hinv, Finset.sum_filter]
