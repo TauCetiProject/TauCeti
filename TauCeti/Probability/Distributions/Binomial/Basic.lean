@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Distributions.Binomial
 public import Mathlib.Probability.Independence.CharacteristicFunction
 public import Mathlib.Probability.Moments.Basic
+public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
 public import TauCeti.Probability.GeneratingFunction
 import TauCeti.Probability.Distributions.Bernoulli.Basic
@@ -26,6 +27,8 @@ characterization of Mathlib's binomial measure.  The native law remains
   carrier;
 * `TauCeti.Probability.variance_id_map_cast_binomial` computes the variance of the cast law;
 * `TauCeti.Probability.integral_sq_id_map_cast_binomial` computes its second raw moment;
+* `TauCeti.Probability.integrableExpSet_id_map_cast_binomial` identifies its exact
+  exponential-integrability domain;
 * `TauCeti.Probability.mgf_id_map_cast_binomial` and
   `TauCeti.Probability.cgf_id_map_cast_binomial` compute its moment and cumulant generating
   functions;
@@ -65,6 +68,14 @@ theorem pgf_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :
   apply Finset.sum_congr rfl
   intro k _
   ring
+
+/-- Every exponential moment of a real-cast binomial law exists. -/
+@[simp]
+theorem integrableExpSet_id_map_cast_binomial (n : ℕ) (p : unitInterval) :
+    integrableExpSet id Bin(ℝ, n, p) = Set.univ := by
+  ext t
+  simp only [integrableExpSet, Set.mem_ofPred_eq, id_eq, Set.mem_univ, iff_true]
+  exact integrable_map_cast_binomial _
 
 /-- The moment generating function of the real-valued binomial law. -/
 theorem mgf_id_map_cast_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :
