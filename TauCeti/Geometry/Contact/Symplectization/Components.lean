@@ -116,22 +116,17 @@ theorem connectedComponentIn_annihilatorPunctured_eq_range [PreconnectedSpace M]
   haveI := hξ.isContMDiffDistribution.annihilatorVectorBundle hξ.finrank_sub_one_add_one
   by
   have hF : finrank ℝ (Fin 1 → ℝ) = 1 := by simp
-  -- `α` vanishes nowhere, since its kernel `ξ` is a hyperplane field.
-  have hα₀ (x : M) : α.val x ≠ 0 := by
-    rw [Ne, ← RoughForm.ker_eq_top_iff, ← SmoothForm.kerDistribution_eq_ker, hα]
-    exact hξ.ne_top x
+  have hα₀ (x : M) : α.val x ≠ 0 := hξ.val_ne_zero_of_kerDistribution_eq (congrFun hα x)
   have hE (x : M) : finrank ℝ (annihilatorSpace I ξ x) = 1 :=
     (VectorBundle.finrank_eq ℝ (Fin 1 → ℝ) (fun x ↦ annihilatorSpace I ξ x) x).trans hF
   -- `α` is a continuous section of the annihilator line vanishing nowhere; it orients the line.
-  let s (x : M) : annihilatorSpace I ξ x :=
-    ⟨SmoothForm.degreeOneEquiv α x, mem_annihilatorSpace_iff.2 fun v hv ↦ by
-      rw [← hα, SmoothForm.mem_kerDistribution] at hv
-      rw [SmoothForm.degreeOneEquiv_apply_apply_vec, hv]⟩
+  have hαξ (x : M) := SmoothForm.degreeOneEquiv_ne_zero_and_mem_annihilatorSpace (hα₀ x)
+    ((SmoothForm.kerDistribution_eq_ker α x).symm.trans (congrFun hα x))
+  let s (x : M) : annihilatorSpace I ξ x := ⟨SmoothForm.degreeOneEquiv α x, (hαξ x).2⟩
   have hs : Continuous fun x ↦ TotalSpace.mk' (Fin 1 → ℝ) x (s x) :=
     continuous_totalSpaceMk_annihilatorSpace_iff.2
       (SmoothForm.degreeOneEquiv α).contMDiff.continuous
-  have hs₀ (x : M) : s x ≠ 0 := fun h ↦ hα₀ x <| SmoothForm.degreeOneEquiv_coe_eq_zero_iff.1 <|
-    congrArg ContinuousLinearMap.toLinearMap (congrArg Subtype.val h)
+  have hs₀ (x : M) : s x ≠ 0 := fun h ↦ (hαξ x).1 (congrArg Subtype.val h)
   set o := VectorBundleOrientation.ofContinuousNonvanishingSection hE hs hs₀
   -- A nonzero covector `w` has the orientation `o` exactly when it is a positive multiple of `α`.
   have key (w : zeroSectionCompl (Fin 1 → ℝ) fun x ↦ annihilatorSpace I ξ x) :
