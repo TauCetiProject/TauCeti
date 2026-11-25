@@ -10,7 +10,10 @@ public import TauCeti.Analysis.BoundedVariation.Hyperplane
 public import TauCeti.Probability.Distributions.Gaussian.Density
 public import Mathlib.Probability.Distributions.Gaussian.Real
 public import TauCeti.Geometry.Euclidean.Volume.Measure
+public import TauCeti.Probability.Distributions.Gaussian.IsoperimetricProfile
+public import TauCeti.Probability.Distributions.Gaussian.OrthogonalSplitting
 import Mathlib.MeasureTheory.Integral.Layercake
+import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -21,7 +24,9 @@ For a `C¹` weight `W`, a unit vector `ν` and `c ∈ ℝ`, the weighted perimet
 `(n − 1)`-dimensional Hausdorff measure on the part of the boundary hyperplane in `Ω`
 (`TauCeti.weightedPerimeter_setOf_inner_lt`). For the Gaussian weight this gives
 `P_γ({x | ⟪x, ν⟫ < c}) = φ(c)`, the standard normal density at `c`
-(`TauCeti.gaussianPerimeter_setOf_inner_lt`).
+(`TauCeti.gaussianPerimeter_setOf_inner_lt`). Rescaling a nonzero `ν` to unit length, a
+half-space of Gaussian measure `v` has Gaussian perimeter `I(v)`, the Gaussian isoperimetric
+function (`TauCeti.gaussianPerimeter_setOf_inner_lt_eq_gaussianIsoperimetricProfile`).
 
 The route: `V_μ(1_H; Ω) = ∫ e^{−W} d|D1_H|`
 (`TauCeti.weightedVariation_eq_lintegral_variationMeasure`) and the layer-cake formula write
@@ -126,5 +131,25 @@ theorem gaussianPerimeter_setOf_inner_lt (hν : ‖ν‖ = 1) (c : ℝ) :
   simp_rw [hsplit]
   rw [lintegral_const_mul _ hρ, ← setLIntegral_univ, ← withDensity_apply _ MeasurableSet.univ,
     ← Probability.stdGaussian_eq_withDensity_norm, measure_univ, mul_one]
+
+/-- For a nonzero vector `ν`, the half-space `{x | ⟪x, ν⟫ < c}` has Gaussian perimeter
+`φ(c / ‖ν‖)`. -/
+theorem gaussianPerimeter_setOf_inner_lt_of_ne_zero (hν : ν ≠ 0) (c : ℝ) :
+    gaussianPerimeter {x : E | ⟪x, ν⟫ < c} = ENNReal.ofReal (gaussianPDFReal 0 1 (c / ‖ν‖)) := by
+  rw [setOf_inner_lt_eq_smul_inv_norm hν,
+    gaussianPerimeter_setOf_inner_lt (ν := ‖ν‖⁻¹ • ν) (norm_smul_inv_norm hν)]
+
+/-- **A half-space of Gaussian measure `v` has Gaussian perimeter `I(v)`.** This holds for every
+vector `ν`: for `ν = 0` the set is `∅` or `E`, of perimeter `0 = I(0) = I(1)`. -/
+theorem gaussianPerimeter_setOf_inner_lt_eq_gaussianIsoperimetricProfile (ν : E) (c : ℝ) :
+    gaussianPerimeter {x : E | ⟪x, ν⟫ < c} = ENNReal.ofReal
+      (Probability.gaussianIsoperimetricProfile ((stdGaussian E).real {x | ⟪x, ν⟫ < c})) := by
+  rcases eq_or_ne ν 0 with rfl | hν
+  · by_cases hc : 0 < c
+    · simp [hc, gaussianPerimeter_univ, Probability.gaussianIsoperimetricProfile_one]
+    · simp [hc, gaussianPerimeter_empty, Probability.gaussianIsoperimetricProfile_zero]
+  rw [gaussianPerimeter_setOf_inner_lt_of_ne_zero hν, setOf_inner_lt_eq_smul_inv_norm hν,
+    Probability.measureReal_stdGaussian_setOf_inner_lt (ν := ‖ν‖⁻¹ • ν) (norm_smul_inv_norm hν),
+    Probability.gaussianIsoperimetricProfile_cdf]
 
 end TauCeti
