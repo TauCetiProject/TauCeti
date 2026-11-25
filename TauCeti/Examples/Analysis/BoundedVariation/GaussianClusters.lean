@@ -22,8 +22,8 @@ For the Gaussian weight on a finite-dimensional real inner product space `E` and
 * `(E, ∅)` is a `2`-cluster (`TauCeti.Examples.GaussianClusters.univEmpty`) of total perimeter `0`
   and measure vector `(1, 0)`;
 * the `1`-cluster `(E)` has total perimeter `0` and measure vector `(1)`, while the half-space
-  `{⟪x, ν⟫ < 0}` is not the cell of any `1`-cluster: it leaves the half-space `{⟪x, ν⟫ ≥ 0}`,
-  which has positive measure, uncovered
+  `{⟪x, ν⟫ < 0}` is not the cell of any `1`-cluster: it leaves the set `{⟪x, ν⟫ ≥ 0}`, which
+  has positive measure, uncovered
   (`TauCeti.Examples.GaussianClusters.not_exists_cluster_one_halfSpace`);
 * overlapping cells such as `((−∞, 1), (0, ∞))` in `ℝ` are excluded by disjointness
   (`TauCeti.Examples.GaussianClusters.not_exists_cluster_Iio_Ioi`).
@@ -139,21 +139,24 @@ theorem perimeter_univ_and_weightedMeasure_cell :
   ⟨Cluster.perimeter_eq_zero_of_one contDiff_gaussianWeight _, fun i => by
     simp [Cluster.univ_cell, weightedMeasure_gaussianWeight]⟩
 
-/-- **A half-space is not a `1`-cluster.** For `ν ≠ 0`, no `1`-cluster for the Gaussian weight has
-the half-space `{⟪x, ν⟫ < 0}` as its cell: the open half-space `{⟪x, ν⟫ > 0}`, which is nonempty
-and so has positive volume, would be left uncovered. -/
-theorem not_exists_cluster_one_halfSpace {ν : E} (hν : ν ≠ 0) :
+/-- **A half-space is not a `1`-cluster.** No `1`-cluster for the Gaussian weight has the
+half-space `{⟪x, ν⟫ < 0}` as its cell: the set `{⟪x, ν⟫ ≥ 0}`, which has positive volume, would be
+left uncovered. -/
+theorem not_exists_cluster_one_halfSpace (ν : E) :
     ¬ ∃ Ω : Cluster (gaussianWeight E) 1, Ω.cell 0 = {x | ⟪x, ν⟫ < 0} := by
   rintro ⟨Ω, hΩ⟩
   have hc : Continuous fun x : E => ⟪x, ν⟫ := continuous_id.inner continuous_const
-  have hpos : 0 < volume {x : E | 0 < ⟪x, ν⟫} :=
-    (isOpen_lt continuous_const hc).measure_pos volume
-      ⟨ν, show 0 < ⟪ν, ν⟫ from real_inner_self_pos.2 hν⟩
-  refine hpos.ne' (measure_mono_null (fun x hx => ?_) Ω.volume_compl_iUnion)
+  have hpos : 0 < volume {x : E | 0 ≤ ⟪x, ν⟫} := by
+    rcases eq_or_ne ν 0 with rfl | hν
+    · simpa using isOpen_univ.measure_pos (volume : Measure E) univ_nonempty
+    · exact ((isOpen_lt continuous_const hc).measure_pos volume
+        ⟨ν, show 0 < ⟪ν, ν⟫ from real_inner_self_pos.2 hν⟩).trans_le
+          (measure_mono fun x (hx : 0 < ⟪x, ν⟫) => hx.le)
+  refine hpos.ne' (measure_mono_null (fun x (hx : 0 ≤ ⟪x, ν⟫) => ?_) Ω.volume_compl_iUnion)
   simp only [mem_compl_iff, mem_iUnion, not_exists]
   intro i
   rw [Subsingleton.elim i 0, hΩ]
-  exact fun (h : ⟪x, ν⟫ < 0) => lt_asymm h hx
+  exact fun (h : ⟪x, ν⟫ < 0) => not_lt.2 hx h
 
 /-- **Overlapping cells are excluded.** No `2`-cluster on `ℝ` has the overlapping cells
 `(−∞, 1)` and `(0, ∞)`. -/
