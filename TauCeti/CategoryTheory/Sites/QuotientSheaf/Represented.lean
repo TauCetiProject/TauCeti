@@ -30,6 +30,9 @@ fppf topology, Stacks, Lemma 39.20.3 (03C5)).
 * `TauCeti.CategoryTheory.quotientSheaf.isIso_desc_of_epi`: if `p : h_U ⟶ F` is an epimorphism to
   a `J`-sheaf and `π : h_U ⟶ U/R` coequalises the kernel pair of `p`, then
   `quotientSheaf.desc p : U/R ⟶ F` is an isomorphism.
+* `TauCeti.CategoryTheory.quotientSheaf.isIso_desc_of_isKernelPair`: if `p : h_U ⟶ F` is an
+  epimorphism to a `J`-sheaf with kernel pair `h_R ⇉ h_U`, then the factorisation `U/R ⟶ F` of `p`
+  through the quotient sheaf is an isomorphism.
 
 ## Implementation notes
 
@@ -101,6 +104,16 @@ theorem quotientSheaf.isIso_desc_of_epi {F : Sheaf J (Type (max v w))}
   refine ⟨ψ, quotientSheaf.hom_ext ?_, ?_⟩
   · rw [quotientSheaf.π_desc_assoc, hψ, Category.comp_id]
   · rw [← cancel_epi p, reassoc_of% hψ, quotientSheaf.π_desc, Category.comp_id]
+
+/-- If `p : h_U ⟶ F` is an epimorphism to a `J`-sheaf whose kernel pair is `h_R ⇉ h_U`, then the
+factorisation `U/R ⟶ F` of `p` through the quotient sheaf is an isomorphism. -/
+theorem quotientSheaf.isIso_desc_of_isKernelPair {F : Sheaf J (Type (max v w))}
+    (p : J.uliftYoneda.{w}.obj U ⟶ F) [Epi p]
+    (hk : IsKernelPair p (J.uliftYoneda.{w}.map t) (J.uliftYoneda.{w}.map s)) :
+    IsIso (quotientSheaf.desc p hk.w) := by
+  refine quotientSheaf.isIso_desc_of_epi p hk.w ?_
+  rw [← hk.isoPullback_inv_fst, ← hk.isoPullback_inv_snd, Category.assoc, Category.assoc,
+    quotientSheaf.condition]
 
 /-- **Stacks, Lemma 39.20.3 (03C5).** Let `q : U ⟶ M` be invariant for the pre-relation `(t, s)`.
 If `h_U ⟶ h_M` and `h_R ⟶ h_U ×_{h_M} h_U` are `J`-locally surjective, then the factorisation

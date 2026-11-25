@@ -28,9 +28,6 @@ fails (for the empty pre-relation on a point and a two-point covering of it).
 
 ## Main results
 
-* `TauCeti.CategoryTheory.quotientSheaf.isIso_desc_of_isKernelPair`: if `p : h_U ⟶ F` is an
-  epimorphism to a `J`-sheaf with kernel pair `h_R ⇉ h_U`, then the factorisation `U/R ⟶ F` of `p`
-  through the quotient sheaf is an isomorphism.
 * `TauCeti.CategoryTheory.quotientSheaf.isKernelPair_restrictRel`: for an equivalence relation,
   `h_{R'} ⇉ h_{U'}` is the kernel pair of `h_{U'} ⟶ h_U ⟶ U/R`.
 * `TauCeti.CategoryTheory.quotientSheaf.restrictIso`: the isomorphism `U'/R' ≅ U/R`, induced by
@@ -58,22 +55,6 @@ namespace TauCeti.CategoryTheory
 universe w v u
 
 variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C} [J.Subcanonical]
-
-section KernelPair
-
-variable [HasSheafify J (Type (max v w))] {R U : C} {s t : R ⟶ U}
-
-/-- If `p : h_U ⟶ F` is an epimorphism to a `J`-sheaf whose kernel pair is `h_R ⇉ h_U`, then the
-factorisation `U/R ⟶ F` of `p` through the quotient sheaf is an isomorphism. -/
-theorem quotientSheaf.isIso_desc_of_isKernelPair {F : Sheaf J (Type (max v w))}
-    (p : J.uliftYoneda.{w}.obj U ⟶ F) [Epi p]
-    (hk : IsKernelPair p (J.uliftYoneda.{w}.map t) (J.uliftYoneda.{w}.map s)) :
-    IsIso (quotientSheaf.desc p hk.w) := by
-  refine quotientSheaf.isIso_desc_of_epi p hk.w ?_
-  rw [← hk.isoPullback_inv_fst, ← hk.isoPullback_inv_snd, Category.assoc, Category.assoc,
-    quotientSheaf.condition]
-
-end KernelPair
 
 section Restrict
 
