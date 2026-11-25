@@ -57,6 +57,7 @@ equivalence and is compatible with identities, composition and inverses.
   identification `A ⊗[R] (ι → R) ≃ (ι → A)` sends `a ⊗ v` to `a • (algebraMap R A ∘ v)`.
 * `TensorProduct.piScalarRight_symm_algebraMap_comp`: conversely, `algebraMap R N ∘ v`
   corresponds to the pure tensor `1 ⊗ v`.
+* `TensorProduct.piScalarRight_rTensor`: `piScalarRight` is natural in the module.
 
 ## References
 
@@ -116,6 +117,17 @@ theorem piScalarRight_symm_algebraMap_comp {S N : Type*} [CommSemiring S] [Algeb
     [Semiring N] [Algebra R N] [Module S N] [IsScalarTower R S N] (v : ι → R) :
     (piScalarRight R S N ι).symm (algebraMap R N ∘ v) = 1 ⊗ₜ v :=
   piScalarRight_symm_algebraMap R S ι v
+
+/-- `TensorProduct.piScalarRight` is natural in the module: a linear map `φ : N → N'` acting on
+the left factor of `N ⊗ (ι → R)` acts coordinatewise on `ι → N`. -/
+theorem piScalarRight_rTensor {S S' N N' : Type*} [CommSemiring S] [Algebra R S]
+    [CommSemiring S'] [Algebra R S'] [AddCommMonoid N] [Module R N] [Module S N]
+    [IsScalarTower R S N] [AddCommMonoid N'] [Module R N'] [Module S' N'] [IsScalarTower R S' N']
+    (φ : N →ₗ[R] N') (x : N ⊗[R] (ι → R)) :
+    piScalarRight R S' N' ι (LinearMap.rTensor (ι → R) φ x) = φ ∘ piScalarRight R S N ι x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul a f => ext i; simp
+  | add x y hx hy => ext i; simp only [map_add, hx, hy, Pi.add_apply, Function.comp_apply]
 
 end PiScalarRight
 
