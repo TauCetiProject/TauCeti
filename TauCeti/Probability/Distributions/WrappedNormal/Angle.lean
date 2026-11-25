@@ -105,7 +105,7 @@ theorem ae_mem_Ico_wrappedNormalAngleMeasure (m : AddCircle (2 * π)) (v : ℝ�
 
 /-- Every exponential moment of the fixed-chart wrapped normal angle exists. -/
 @[simp]
-theorem _root_.AddCircle.integrableExpSet_id_wrappedNormalAngleMeasure
+theorem integrableExpSet_id_wrappedNormalAngleMeasure
     (m : AddCircle (2 * π)) (v : ℝ≥0) :
     integrableExpSet id (wrappedNormalAngleMeasure m v) = univ := by
   apply TauCeti.integrableExpSet_eq_univ_of_mem_Icc measurable_id.aemeasurable

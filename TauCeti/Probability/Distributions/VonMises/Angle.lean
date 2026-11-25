@@ -93,7 +93,7 @@ theorem ae_mem_Ico_vonMisesAngleMeasure (m : AddCircle (2 * π)) (κ : ℝ) :
 
 /-- Every exponential moment of the fixed-chart von Mises angle exists. -/
 @[simp]
-theorem _root_.AddCircle.integrableExpSet_id_vonMisesAngleMeasure
+theorem integrableExpSet_id_vonMisesAngleMeasure
     (m : AddCircle (2 * π)) (κ : ℝ) :
     integrableExpSet id (vonMisesAngleMeasure m κ) = univ := by
   by_cases hκ : 0 ≤ κ

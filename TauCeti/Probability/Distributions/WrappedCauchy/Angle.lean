@@ -101,7 +101,7 @@ theorem ae_mem_Ico_wrappedCauchyAngleMeasure (m : AddCircle (2 * π)) (γ : ℝ�
 
 /-- Every exponential moment of the fixed-chart wrapped Cauchy angle exists. -/
 @[simp]
-theorem _root_.AddCircle.integrableExpSet_id_wrappedCauchyAngleMeasure
+theorem integrableExpSet_id_wrappedCauchyAngleMeasure
     (m : AddCircle (2 * π)) (γ : ℝ≥0) :
     integrableExpSet id (wrappedCauchyAngleMeasure m γ) = univ := by
   apply TauCeti.integrableExpSet_eq_univ_of_mem_Icc measurable_id.aemeasurable
