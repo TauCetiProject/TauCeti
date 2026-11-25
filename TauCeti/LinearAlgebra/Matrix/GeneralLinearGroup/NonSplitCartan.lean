@@ -53,6 +53,8 @@ are those of the standard level `C_ns(ℓ)`, and they also make sense over `ℤ 
 
 ## Main results
 
+* `TauCeti.GL2NonSplitCartan.mem_iff_commute`: over any commutative ring, `C_ns` consists of the
+  elements of `GL₂(R)` commuting with the companion matrix `!![0, n; 1, t]` of `X² - t X - n`.
 * `TauCeti.GL2NonSplitCartan.mem_iff_exists_mk`: when `X² - t X - n` has no root in `F`, the
   elements of `C_ns` are exactly the matrices `!![a, n b; b, a + t b]` with `(a, b) ≠ (0, 0)`.
 * `TauCeti.GL2NonSplitCartan.natCard`, `TauCeti.GL2NonSplitCartan.index_eq`: `|C_ns| = q² - 1` and
@@ -138,13 +140,16 @@ theorem neg_one_mem : (-1 : GL (Fin 2) R) ∈ GL2NonSplitCartan t n := by
 theorem le_normalizer : GL2NonSplitCartan t n ≤ GL2NonSplitCartanNormalizer t n :=
   Subgroup.le_normalizer
 
-/-- **A matrix commuting with the companion matrix `!![0, n; 1, t]` has the shape
-`!![a, n b; b, a + t b]`.** -/
-theorem mem_of_commute {g : GL (Fin 2) R}
-    (h : (g : Matrix (Fin 2) (Fin 2) R) * !![0, n; 1, t] =
-      !![0, n; 1, t] * (g : Matrix (Fin 2) (Fin 2) R)) :
-    g ∈ GL2NonSplitCartan t n := by
-  refine ⟨?_, ?_⟩
+/-- **The nonsplit Cartan subgroup is the centralizer in `GL₂(R)` of the companion matrix
+`!![0, n; 1, t]`**, the matrix of multiplication by `α`: an invertible matrix has the shape
+`!![a, n b; b, a + t b]` if and only if it commutes with `!![0, n; 1, t]`. -/
+theorem mem_iff_commute {g : GL (Fin 2) R} :
+    g ∈ GL2NonSplitCartan t n ↔
+      (g : Matrix (Fin 2) (Fin 2) R) * !![0, n; 1, t] =
+        !![0, n; 1, t] * (g : Matrix (Fin 2) (Fin 2) R) := by
+  refine ⟨fun ⟨h₁, h₂⟩ ↦ ?_, fun h ↦ ⟨?_, ?_⟩⟩
+  · ext i j
+    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two, h₁, h₂] <;> ring
   · simpa [Matrix.mul_apply, Fin.sum_univ_two] using congrFun (congrFun h 1) 0
   · simpa [Matrix.mul_apply, Fin.sum_univ_two] using congrFun (congrFun h 0) 0
 
@@ -349,8 +354,8 @@ theorem relIndex_normalizer (hirr : ∀ x : F, x ^ 2 ≠ t * x + n) (hsep : t �
     simpa using mul_mem h (inv_mem hgC)
   · refine Or.inl ⟨?_, hgC⟩
     rcases conj_alpha_eq hirr hn hg with h | h
-    · exact absurd (mem_of_commute (congrArg Units.val (mul_inv_eq_iff_eq_mul.mp h))) hgC
-    · apply mem_of_commute
+    · exact absurd (mem_iff_commute.mpr (congrArg Units.val (mul_inv_eq_iff_eq_mul.mp h))) hgC
+    · apply mem_iff_commute.mpr
       have : conjMatrix t * g * alpha t hn * (conjMatrix t * g)⁻¹ = alpha t hn := by
         rw [_root_.mul_inv_rev, conjMatrix_inv]
         calc conjMatrix t * g * alpha t hn * (g⁻¹ * conjMatrix t)
