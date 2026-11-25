@@ -83,7 +83,8 @@ theorem moduleProjective_of_isDefectGroup_bot (hb : IsBlockIdempotent b)
     Module.Projective (MonoidAlgebra R G) V := by
   have := Fintype.ofFinite G
   obtain ⟨a, ha⟩ := hb.isDefectGroup_bot_iff.1 hD
-  exact moduleProjective_of_forall_sum_conj_smul_eq (a := a) (by rwa [ha])
+  exact moduleProjective_of_sumOfConjugates_eq_id (φ := DistribSMul.toLinearMap R V a)
+    (LinearMap.ext fun v => by rw [sumOfConjugates_toLinearMap_apply, ha, hV, LinearMap.id_apply])
 
 end Projective
 
