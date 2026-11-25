@@ -9,6 +9,7 @@ public import TauCeti.CategoryTheory.Center.Linear
 public import TauCeti.RepresentationTheory.OfMulAction.CosetLift
 public import TauCeti.RepresentationTheory.Smooth.Category
 import TauCeti.Algebra.MonoidAlgebra.Basic
+import TauCeti.RepresentationTheory.Intertwining
 
 /-!
 # The centre of the category of smooth representations
@@ -36,6 +37,11 @@ vector, and so on every trivial representation, `z` acts by a scalar `scalar z`
 `scalar` is an `A`-algebra homomorphism `Z(G, A) → A`. For a trivial group the smooth centre is
 `A` (`TauCeti.SmoothCenter.algEquivOfSubsingleton`).
 
+A central element `c` of the group algebra `A[G]` acts on every smooth representation by an
+intertwining map `v ↦ c • v`, and these maps commute with every morphism. This gives an
+`A`-algebra homomorphism `TauCeti.SmoothCenter.ofCenter` from the centre of `A[G]` to `Z(G, A)`;
+for a discrete group it is an isomorphism (`TauCeti.RepresentationTheory.Smooth.Center.Discrete`).
+
 ## Main definitions
 
 * `TauCeti.SmoothCenter A G`: the centre of the category `SmoothRep A G`, a commutative
@@ -43,6 +49,8 @@ vector, and so on every trivial representation, `z` acts by a scalar `scalar z`
 * `TauCeti.SmoothCenter.scalar`: the `A`-algebra homomorphism sending `z` to the scalar by which
   it acts on every trivial representation.
 * `TauCeti.SmoothCenter.algEquivOfSubsingleton`: for a trivial group, `A ≃ₐ[A] Z(G, A)`.
+* `TauCeti.SmoothCenter.ofCenter`: the `A`-algebra homomorphism from the centre of `A[G]` to the
+  smooth centre.
 
 ## References
 
@@ -104,6 +112,62 @@ lemma app_mkQ (z : SmoothCenter.{w} A G) {V : SmoothRep.{w} A G}
       fun _ _ ↦ rfl)))).hom.hom v)
   simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom] at this
   exact this
+
+section OfCenter
+
+/-! ### The centre of the group algebra -/
+
+/-- The element of the smooth centre given by a central element `c` of `A[G]`: it acts on every
+smooth representation as `c`, through `Representation.asAlgebraHom`. The underlying function of
+`ofCenter`. -/
+private noncomputable def ofCenterFun (c : Subalgebra.center A (MonoidAlgebra A G)) :
+    SmoothCenter.{w} A G :=
+  .of
+    { app V := ObjectProperty.homMk
+        (Rep.ofHom (IntertwiningMap.centralAlgebraMul V.obj.ρ c.property))
+      naturality V W f := by
+        ext v
+        exact (IntertwiningMap.apply_asAlgebraHom f.hom.hom c v).symm }
+
+private lemma ofCenterFun_app_hom_hom_apply (c : Subalgebra.center A (MonoidAlgebra A G))
+    (V : SmoothRep.{w} A G) (v : V.obj) :
+    ((ofCenterFun c).app V).hom.hom v = V.obj.ρ.asAlgebraHom c v :=
+  (rfl)
+
+/-- A central element of `A[G]`, acting on every smooth representation, as an element of the
+smooth centre: the `A`-algebra homomorphism from the centre of `A[G]` to `Z(G, A)`. -/
+noncomputable def ofCenter :
+    Subalgebra.center A (MonoidAlgebra A G) →ₐ[A] SmoothCenter.{w} A G where
+  toFun := ofCenterFun
+  map_one' := by ext; simp [ofCenterFun_app_hom_hom_apply]
+  map_mul' c c' := by
+    ext V v
+    rw [CatCenter.mul_app]
+    simp only [ObjectProperty.FullSubcategory.comp_hom, Rep.hom_comp, IntertwiningMap.comp_apply,
+      ofCenterFun_app_hom_hom_apply, Subalgebra.coe_mul]
+    rw [Subalgebra.mem_center_iff.1 c'.property, map_mul, mul_apply_eq_comp]
+  map_zero' := by ext; simp [ofCenterFun_app_hom_hom_apply]
+  map_add' c c' := by
+    ext V v
+    -- The full subcategory `SmoothRep A G` has no lemma for the `hom` of a sum, so the sum is
+    -- moved through the additive inclusion functor `ι`, as in `scalar`.
+    rw [CatCenter.app_add]
+    simp only [← ObjectProperty.ι_map, Functor.map_add, Rep.add_hom, IntertwiningMap.coe_add,
+      Pi.add_apply]
+    simp only [ObjectProperty.ι_map, ofCenterFun_app_hom_hom_apply, Subalgebra.coe_add, map_add,
+      LinearMap.add_apply]
+  commutes' a := by
+    ext V v
+    rw [algebraMap_app_hom_hom_apply, ofCenterFun_app_hom_hom_apply]
+    simp
+
+/-- `ofCenter c` acts on every vector `v` as `c`. -/
+@[simp] lemma ofCenter_app_hom_hom_apply (c : Subalgebra.center A (MonoidAlgebra A G))
+    (V : SmoothRep.{w} A G) (v : V.obj) :
+    ((ofCenter c).app V).hom.hom v = V.obj.ρ.asAlgebraHom c v :=
+  (rfl)
+
+end OfCenter
 
 section Generators
 

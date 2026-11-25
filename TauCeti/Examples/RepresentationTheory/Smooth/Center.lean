@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Smooth.CenterDiscrete
+public import TauCeti.RepresentationTheory.Smooth.Center.Discrete
 
 /-!
 # Examples for the smooth centre
