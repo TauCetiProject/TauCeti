@@ -11,6 +11,7 @@ public import TauCeti.Analysis.PDE.Vortex.Dilation.Basic
 public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Complex.Euclidean.Four
 import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
 import TauCeti.Analysis.PDE.SeibergWitten.LogModulusRatio
@@ -73,7 +74,8 @@ connection along the normal factor are exactly the pullbacks of plane vortices o
 The base coordinate `w = ⟪e₀, ·⟫ + i ⟪e₁, ·⟫` (`baseCoord`) is the normal coordinate of the frame
 with its base and normal planes swapped. The derivative along `v` of a function of `(w, z)` is
 the sum of the derivatives of its base and normal slices along `w(v)` and `z(v)`
-(`fderiv_comp_baseCoord_normalCoord_apply`).
+(`fderiv_comp_baseCoord_normalCoord_apply`). The frame coordinates `y ↦ (w(y), z(y))` identify `V`
+isometrically with the `L²` product `ℂ × ℂ` (`baseNormalCoordEquiv`, `baseNormalCoordHomeomorph`).
 
 For a solution `(b, α u₀)` that is not assumed base independent:
 
@@ -322,6 +324,57 @@ theorem fderiv_comp_baseCoord_normalCoord_apply {F : Type*} [NormedAddCommGroup 
     hc.hasFDerivAt.comp y ((baseCoord e).prod (normalCoord e)).hasFDerivAt
   rw [h.fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearMap.prod_apply,
     fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right hc]
+
+/-- The squared norm of a vector is the sum of the squared norms of its base and normal
+coordinates. -/
+theorem norm_baseCoord_sq_add_norm_normalCoord_sq (y : V) :
+    ‖baseCoord e y‖ ^ 2 + ‖normalCoord e y‖ ^ 2 = ‖y‖ ^ 2 := by
+  rw [← e.sum_sq_inner_right, Fin.sum_univ_four, ← Complex.normSq_eq_norm_sq,
+    ← Complex.normSq_eq_norm_sq, Complex.normSq_apply, Complex.normSq_apply, baseCoord_re,
+    baseCoord_im, normalCoord_re, normalCoord_im]
+  ring
+
+variable (e) in
+/-- The **frame coordinates** `y ↦ (w(y), z(y))`, the base and normal coordinates of the frame
+`e`, as a linear isometric equivalence of `V` with the `L²` product `ℂ × ℂ`: the coordinates of `y`
+in the frame, read as a point of `ℂ²` through `TauCeti.complexProdToEuclideanFour`. -/
+def baseNormalCoordEquiv : V ≃ₗᵢ[ℝ] WithLp 2 (ℂ × ℂ) :=
+  e.repr.trans complexProdToEuclideanFour.symm
+
+@[simp]
+theorem baseNormalCoordEquiv_apply (y : V) :
+    baseNormalCoordEquiv e y = WithLp.toLp 2 (baseCoord e y, normalCoord e y) := by
+  rw [baseNormalCoordEquiv, LinearIsometryEquiv.trans_apply, complexProdToEuclideanFour_symm_apply]
+  congr 2 <;> apply Complex.ext <;> simp [OrthonormalBasis.repr_apply_apply]
+
+/-- The point with base coordinate `w` and normal coordinate `n` is
+`Re w e₀ + Im w e₁ + Re n e₂ + Im n e₃`. -/
+@[simp]
+theorem baseNormalCoordEquiv_symm_apply (w n : ℂ) :
+    (baseNormalCoordEquiv e).symm (WithLp.toLp 2 (w, n)) =
+      w.re • e 0 + w.im • e 1 + n.re • e 2 + n.im • e 3 := by
+  rw [LinearIsometryEquiv.symm_apply_eq, baseNormalCoordEquiv_apply]
+  simp [Complex.re_add_im]
+
+variable (e) in
+/-- The frame coordinates `y ↦ (w(y), z(y))` as a homeomorphism of `V` with `ℂ × ℂ`. -/
+def baseNormalCoordHomeomorph : V ≃ₜ ℂ × ℂ :=
+  (baseNormalCoordEquiv e).toHomeomorph.trans (WithLp.homeomorphProd 2 ℂ ℂ)
+
+@[simp]
+theorem baseNormalCoordHomeomorph_apply (y : V) :
+    baseNormalCoordHomeomorph e y = (baseCoord e y, normalCoord e y) :=
+  -- The composite unfolds definitionally to `WithLp.ofLp ∘ baseNormalCoordEquiv e`.
+  congrArg WithLp.ofLp (baseNormalCoordEquiv_apply y)
+
+/-- The point with base coordinate `w` and normal coordinate `n` is
+`Re w e₀ + Im w e₁ + Re n e₂ + Im n e₃`. -/
+@[simp]
+theorem baseNormalCoordHomeomorph_symm_apply (w n : ℂ) :
+    (baseNormalCoordHomeomorph e).symm (w, n) =
+      w.re • e 0 + w.im • e 1 + n.re • e 2 + n.im • e 3 := by
+  rw [Homeomorph.symm_apply_eq, baseNormalCoordHomeomorph_apply]
+  simp [Complex.re_add_im]
 
 variable (e) in
 /-- The **base-independent connection** `b₁(z) ds + b₂(z) dt` on `V = ℂ_base × ℂ_normal` pulled
