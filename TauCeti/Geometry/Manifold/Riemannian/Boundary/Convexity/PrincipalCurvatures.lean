@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Boundary.Convexity
+public import TauCeti.Geometry.Manifold.Riemannian.Boundary.Convexity.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.Weingarten
 
 /-!
@@ -22,8 +22,9 @@ the coordinates of `u`. Hence:
   principal curvature is nonnegative, and strictly concave iff every principal curvature is
   negative;
 * for `n ≥ 1`, strict convexity at `q` gives `H(q) > 0`
-  (`TauCeti.IsStrictlyConvexAt.boundaryMeanCurvature_pos`) and convexity gives `H(q) ≥ 0`
-  (`TauCeti.IsConvexAt.boundaryMeanCurvature_nonneg`).
+  (`TauCeti.IsStrictlyConvexAt.boundaryMeanCurvature_pos`), convexity gives `H(q) ≥ 0`
+  (`TauCeti.IsConvexAt.boundaryMeanCurvature_nonneg`), and strict concavity gives `H(q) < 0`
+  (`TauCeti.IsStrictlyConcaveAt.boundaryMeanCurvature_neg`).
 
 ## References
 
@@ -67,9 +68,8 @@ theorem isStrictlyConvexAt_iff_forall_boundaryPrincipalCurvatures_pos
   refine ⟨fun h i ↦ ?_, fun h ↦ isStrictlyConvexAt_iff.2 fun u hu ↦ ?_⟩
   · have := isStrictlyConvexAt_iff.1 h _ (boundaryPrincipalDirection_ne_zero q i)
     simpa using this
-  · obtain ⟨i, hi⟩ : ∃ i, (boundaryPrincipalBasis q).repr u i ≠ 0 := by
-      by_contra! h0
-      exact hu ((boundaryPrincipalBasis q).ext_elem fun i ↦ by simp [h0 i])
+  · obtain ⟨i, hi⟩ : ∃ i, (boundaryPrincipalBasis q).repr u i ≠ 0 :=
+      DFunLike.ne_iff.1 ((boundaryPrincipalBasis q).repr.map_ne_zero_iff.2 hu)
     rw [boundarySecondFundamentalForm_self_eq_sum]
     exact Finset.sum_pos' (fun j _ ↦ mul_nonneg (h j).le (sq_nonneg _))
       ⟨i, Finset.mem_univ i, mul_pos (h i) (by positivity)⟩
@@ -92,9 +92,8 @@ theorem isStrictlyConcaveAt_iff_forall_boundaryPrincipalCurvatures_neg
   refine ⟨fun h i ↦ ?_, fun h ↦ isStrictlyConcaveAt_iff.2 fun u hu ↦ ?_⟩
   · have := isStrictlyConcaveAt_iff.1 h _ (boundaryPrincipalDirection_ne_zero q i)
     simpa using this
-  · obtain ⟨i, hi⟩ : ∃ i, (boundaryPrincipalBasis q).repr u i ≠ 0 := by
-      by_contra! h0
-      exact hu ((boundaryPrincipalBasis q).ext_elem fun i ↦ by simp [h0 i])
+  · obtain ⟨i, hi⟩ : ∃ i, (boundaryPrincipalBasis q).repr u i ≠ 0 :=
+      DFunLike.ne_iff.1 ((boundaryPrincipalBasis q).repr.map_ne_zero_iff.2 hu)
     rw [boundarySecondFundamentalForm_self_eq_sum, ← neg_pos, ← Finset.sum_neg_distrib]
     refine Finset.sum_pos' (fun j _ ↦ ?_) ⟨i, Finset.mem_univ i, ?_⟩
     · rw [← neg_mul]
@@ -118,5 +117,14 @@ theorem IsConvexAt.boundaryMeanCurvature_nonneg {q : (𝓡∂ (n + 1)).boundary 
   have hκ := isConvexAt_iff_forall_boundaryPrincipalCurvatures_nonneg.1 h
   rw [boundaryMeanCurvature_eq_sum_div]
   exact div_nonneg (Finset.sum_nonneg fun i _ ↦ hκ i) (Nat.cast_nonneg n)
+
+/-- **Strict concavity gives negative mean curvature**: for `n ≥ 1`, if the boundary is strictly
+concave at `q`, then `H(q) < 0`. -/
+theorem IsStrictlyConcaveAt.boundaryMeanCurvature_neg [NeZero n] {q : (𝓡∂ (n + 1)).boundary M}
+    (h : IsStrictlyConcaveAt q) : boundaryMeanCurvature q < 0 := by
+  have hκ := isStrictlyConcaveAt_iff_forall_boundaryPrincipalCurvatures_neg.1 h
+  rw [boundaryMeanCurvature_eq_sum_div]
+  exact div_neg_of_neg_of_pos (Finset.sum_neg (fun i _ ↦ hκ i) Finset.univ_nonempty)
+    (Nat.cast_pos.2 (Nat.pos_of_ne_zero (NeZero.ne n)))
 
 end TauCeti
