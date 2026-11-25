@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.NonlinearCaratheodory.Basic
 public import TauCeti.Analysis.ODE.VariationOfConstants
+public import Mathlib.Analysis.ODE.ExistUnique
 import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
@@ -25,6 +26,12 @@ constants formula, and without the Lipschitz bound uniqueness fails.
   theory, the variation of constants formula `N_P(t, t₀) x₀ + ∫ s in t₀..t, N_P(t, s) G(s)`
   (`TauCeti.Examples.NonlinearCaratheodory.eq_propagator_apply_add_integral_of_linear`,
   `TauCeti.Examples.NonlinearCaratheodory.exists_eq_propagator_apply_add_integral_of_linear`).
+* **Agreement with Mathlib's Picard-Lindelöf theorem.** For a field `F` continuous in time
+  with every `F t` Lipschitz with one constant `K`, a solution of the integral equation on
+  `[a, b]` agrees there with every solution of `x' = F(t, x)`, `x(t₀) = x₀`, in the sense of Mathlib
+  (`TauCeti.Examples.NonlinearCaratheodory.eqOn_of_hasDerivWithinAt`); in particular with the
+  solution given by `IsPicardLindelof.exists_eq_forall_mem_Icc_hasDerivWithinAt₀`
+  (`TauCeti.Examples.NonlinearCaratheodory.exists_eqOn_of_isPicardLindelof`).
 * **The Lipschitz bound is needed.** The field `F(t, x) = 2 √|x|` on `ℝ`, from `x₀ = 0` at
   `t₀ = 0`, has the two solutions `0` and `t²` on `[0, 1]`
   (`TauCeti.Examples.NonlinearCaratheodory.sq_eq_picard_sqrt`,
@@ -122,5 +129,58 @@ theorem not_lipschitzWith_sqrt (L : ℝ≥0) : ¬LipschitzWith L fun x : ℝ ↦
   nlinarith [L.coe_nonneg]
 
 end Sqrt
+
+section PicardLindelof
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] {F : ℝ → E → E}
+  {K : ℝ≥0} {a b t₀ : ℝ} {x₀ : E}
+
+/-- A solution of `x' = F(t, x)` on `[a, b]` in the sense of Mathlib solves the integral
+equation there, when `F` is continuous in time and every `F t` is `K`-Lipschitz. -/
+private theorem eq_picard_of_hasDerivWithinAt (hLip : ∀ t, LipschitzWith K (F t))
+    (hc : ∀ x, ContinuousOn (F · x) (Icc a b)) (ht₀ : t₀ ∈ Icc a b) {y : ℝ → E}
+    (hy₀ : y t₀ = x₀) (hy : ∀ t ∈ Icc a b, HasDerivWithinAt y (F t (y t)) (Icc a b) t) {t : ℝ}
+    (ht : t ∈ Icc a b) : y t = ODE.picard F t₀ x₀ y t := by
+  have hyc : ContinuousOn y (Icc a b) := fun t ht ↦ (hy t ht).continuousWithinAt
+  have hFy : ContinuousOn (fun s ↦ F s (y s)) (Icc a b) :=
+    ODE.continuousOn_comp (u := univ) (continuousOn_prod_of_continuousOn_lipschitzOnWith'
+      (Function.uncurry F) K (fun s _ ↦ (hLip s).lipschitzOnWith) fun x _ ↦ hc x) hyc
+      (mapsTo_univ _ _)
+  have hsub : uIcc t₀ t ⊆ Icc a b := uIcc_subset_Icc ht₀ ht
+  rw [ODE.picard_apply, integral_eq_sub_of_hasDeriv_right (hyc.mono hsub) (fun s hs ↦ ?_)
+    ((hFy.mono hsub).intervalIntegrable), hy₀, add_sub_cancel]
+  have hs' : s ∈ Ioo a b := ⟨(le_min ht₀.1 ht.1).trans_lt hs.1, hs.2.trans_le (max_le ht₀.2 ht.2)⟩
+  exact ((hy s (Ioo_subset_Icc_self hs')).hasDerivAt (Icc_mem_nhds hs'.1 hs'.2)).hasDerivWithinAt
+
+/-- **Agreement with Mathlib's notion of solution.** Let `F` be continuous in time on `[a, b]`,
+with every `F t` Lipschitz with one constant `K`. A curve continuous on `[a, b]` solving the
+integral equation `x t = x₀ + ∫ s in t₀..t, F s (x s)` there agrees on `[a, b]` with every
+solution of `y' = F(t, y)`, `y(t₀) = x₀`, in the sense of Mathlib. -/
+theorem eqOn_of_hasDerivWithinAt (hLip : ∀ t, LipschitzWith K (F t))
+    (hc : ∀ x, ContinuousOn (F · x) (Icc a b)) (ht₀ : t₀ ∈ Icc a b) {x y : ℝ → E}
+    (hx : ContinuousOn x (Icc a b)) (hxp : ∀ t ∈ Icc a b, x t = ODE.picard F t₀ x₀ x t)
+    (hy₀ : y t₀ = x₀) (hy : ∀ t ∈ Icc a b, HasDerivWithinAt y (F t (y t)) (Icc a b) t) :
+    EqOn x y (Icc a b) :=
+  eqOn_of_forall_mem_Icc_eq_picard_of_lipschitzWith (L := fun _ ↦ K)
+    (fun x ↦ (hc x).integrableOn_Icc) continuousOn_const.integrableOn_Icc
+    (Filter.Eventually.of_forall hLip) ht₀ hx
+    (fun t ht ↦ (hy t ht).continuousWithinAt) hxp
+    fun _ ht ↦ eq_picard_of_hasDerivWithinAt hLip hc ht₀ hy₀ hy ht
+
+/-- **Agreement with Mathlib's Picard-Lindelöf theorem.** If `F` satisfies `IsPicardLindelof` on
+`[a, b]` with initial time `t₀` and value `x₀`, and moreover is continuous in time with every
+`F t` Lipschitz with one constant `K`, then the solution given by Mathlib
+(`IsPicardLindelof.exists_eq_forall_mem_Icc_hasDerivWithinAt₀`) is the solution of the integral
+equation of the nonlinear Carathéodory theorem on `[a, b]`. -/
+theorem exists_eqOn_of_isPicardLindelof {t₀ : Icc a b} {r L K' : ℝ≥0}
+    (hPL : IsPicardLindelof F t₀ x₀ r 0 L K') (hLip : ∀ t, LipschitzWith K (F t))
+    (hc : ∀ x, ContinuousOn (F · x) (Icc a b)) :
+    ∃ y : ℝ → E, y t₀ = x₀ ∧ (∀ t ∈ Icc a b, HasDerivWithinAt y (F t (y t)) (Icc a b) t) ∧
+      ∀ x : ℝ → E, ContinuousOn x (Icc a b) →
+        (∀ t ∈ Icc a b, x t = ODE.picard F t₀ x₀ x t) → EqOn x y (Icc a b) := by
+  obtain ⟨y, hy₀, hy⟩ := hPL.exists_eq_forall_mem_Icc_hasDerivWithinAt₀
+  exact ⟨y, hy₀, hy, fun x hx hxp ↦ eqOn_of_hasDerivWithinAt hLip hc t₀.property hx hxp hy₀ hy⟩
+
+end PicardLindelof
 
 end TauCeti.Examples.NonlinearCaratheodory

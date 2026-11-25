@@ -6,19 +6,37 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Notation
+public import TauCeti.Analysis.Matrix.EuclideanLin
+public import TauCeti.Analysis.Normed.Algebra.MatrixExponential
 public import TauCeti.Analysis.ODE.Propagator.Liouville
+public import TauCeti.Examples.Analysis.ODE.Propagator.Basic
+import TauCeti.Analysis.Normed.Algebra.Basic
+import TauCeti.Analysis.Normed.Algebra.NilpotentExponential
+import Mathlib.Tactic.FinCases
 
 /-!
-# Liouville's formula for a diagonal coefficient
+# Checks for Liouville's formula
 
-For a diagonal coefficient `P = diag(p₁, p₂)` on `Fin 2 → ℝ` with `p₁, p₂` integrable,
-`TauCeti.det_toMatrix'_propagator` gives `det N_P(t, s) = e^{∫_s^t (p₁ + p₂)}`
-(`TauCeti.Examples.Propagator.det_propagator_diagonal`).
+* **Diagonal coefficient.** For `P = diag(p₁, p₂)` on `Fin 2 → ℝ` with `p₁, p₂` integrable,
+  `TauCeti.det_toMatrix'_propagator` gives `det N_P(t, s) = e^{∫_s^t (p₁ + p₂)}`
+  (`TauCeti.Examples.Propagator.det_propagator_diagonal`).
+* **The time-ordered example.** For the coefficient `P` equal to `A = [[0, 1], [0, 0]]` on
+  `(-∞, 1)` and to `B = [[0, 0], [1, 0]]` on `[1, ∞)`, the propagator `N_P(2, 0) = [[1, 1], [1, 2]]`
+  has determinant `1` (`TauCeti.Examples.Propagator.det_propagator_coeff_two_zero`), and Liouville's
+  formula gives `e^{tr A + tr B} = e^0`
+  (`TauCeti.Examples.Propagator.det_propagator_coeff_two_zero_eq_exp`).
+* **Constant coefficients.** For a constant coefficient `A`, `N_A(t, s) = exp ((t - s) A)`, and
+  Liouville's formula `det N_A(t, s) = e^{∫_s^t tr A}` is `Matrix.det_exp` at `(t - s) A`
+  (`TauCeti.Examples.Propagator.det_propagator_const_eq_det_exp`). For `A = [[1, 1], [0, 1]]`,
+  `exp (t A) = e^t [[1, t], [0, 1]]` (`TauCeti.Examples.Propagator.exp_smul_jordan`) has
+  determinant `e^{2t} = e^{t tr A}` (`TauCeti.Examples.Propagator.det_propagator_jordan`), while
+  the sum of the entries (`e^{3t}`) or `det A` (`e^t`) in place of the trace gives a different value
+  for `t ≠ 0` (`TauCeti.Examples.Propagator.det_propagator_jordan_ne`).
 -/
 
 public section
 
-open MeasureTheory Set
+open MeasureTheory Set NormedSpace
 
 namespace TauCeti.Examples.Propagator
 
@@ -43,5 +61,117 @@ theorem det_propagator_diagonal {p₁ p₂ : ℝ → ℝ} {a b s t : ℝ}
     exact (h₁.smul_const _).add (h₂.smul_const _)
   rw [det_toMatrix'_propagator hP hs ht, ← Real.exp_eq_exp_ℝ]
   simp [LinearMap.toMatrix'_toLin', Matrix.trace_fin_two]
+
+/-! ### The time-ordered example -/
+
+/-- The coefficient of the time-ordered example is trace free: `tr A = tr B = 0`. -/
+theorem trace_coeff (r : ℝ) :
+    LinearMap.trace ℝ _
+      (coeff r : EuclideanSpace ℝ (Fin 2) →ₗ[ℝ] EuclideanSpace ℝ (Fin 2)) = 0 := by
+  by_cases hr : r ∈ Iio 1
+  · simp [coeff, indicator_of_mem hr, Matrix.trace_fin_two]
+  · simp [coeff, indicator_of_notMem hr, Matrix.trace_fin_two]
+
+/-- **The time-ordered example, computed.** `det N_P(2, 0) = det [[1, 1], [1, 2]] = 1`. -/
+theorem det_propagator_coeff_two_zero :
+    LinearMap.det (propagator coeff 2 0 :
+      EuclideanSpace ℝ (Fin 2) →ₗ[ℝ] EuclideanSpace ℝ (Fin 2)) = 1 := by
+  rw [← ContinuousLinearMap.det, propagator_coeff_two_zero, Matrix.det_toEuclideanCLM,
+    Matrix.det_fin_two_of]
+  norm_num
+
+/-- **The time-ordered example, by Liouville's formula.** `det N_P(2, 0) = e^{tr A + tr B}`, and
+`tr A + tr B = 0`. -/
+theorem det_propagator_coeff_two_zero_eq_exp :
+    LinearMap.det (propagator coeff 2 0 :
+        EuclideanSpace ℝ (Fin 2) →ₗ[ℝ] EuclideanSpace ℝ (Fin 2)) =
+      Real.exp (LinearMap.trace ℝ _ (opA : EuclideanSpace ℝ (Fin 2) →ₗ[ℝ] _) +
+        LinearMap.trace ℝ _ (opB : EuclideanSpace ℝ (Fin 2) →ₗ[ℝ] _)) ∧
+    LinearMap.trace ℝ _ (opA : EuclideanSpace ℝ (Fin 2) →ₗ[ℝ] _) +
+        LinearMap.trace ℝ _ (opB : EuclideanSpace ℝ (Fin 2) →ₗ[ℝ] _) = 0 := by
+  have h : LinearMap.trace ℝ _ (opA : EuclideanSpace ℝ (Fin 2) →ₗ[ℝ] _) +
+      LinearMap.trace ℝ _ (opB : EuclideanSpace ℝ (Fin 2) →ₗ[ℝ] _) = 0 := by
+    simp [Matrix.trace_fin_two]
+  refine ⟨?_, h⟩
+  rw [det_propagator integrableOn_coeff ⟨le_rfl, zero_le_two⟩ ⟨zero_le_two, le_rfl⟩, h]
+  simp only [trace_coeff, intervalIntegral.integral_zero, exp_zero, Real.exp_zero]
+
+/-! ### Constant coefficients -/
+
+/-- The operator of the exponential of a real square matrix is the exponential of its operator. -/
+private theorem toEuclideanCLM_exp {n : Type*} [Fintype n] [DecidableEq n] (M : Matrix n n ℝ) :
+    Matrix.toEuclideanCLM (𝕜 := ℝ) (exp M) = exp (Matrix.toEuclideanCLM (𝕜 := ℝ) M) := by
+  let _ : NormedRing (Matrix n n ℝ) := Matrix.linftyOpNormedRing
+  let _ : NormedAlgebra ℝ (Matrix n n ℝ) := Matrix.linftyOpNormedAlgebra
+  let _ : NormedAlgebra ℚ (Matrix n n ℝ) := TauCeti.normedAlgebraRatOfReal
+  let _ : NormedAlgebra ℚ (EuclideanSpace ℝ n →L[ℝ] EuclideanSpace ℝ n) :=
+    TauCeti.normedAlgebraRatOfReal
+  exact map_exp (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := n))
+    (LinearMap.continuous_of_finiteDimensional
+      (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := n)).toAlgEquiv.toLinearMap) M
+
+/-- **Constant coefficients agree with `Matrix.det_exp`.** For a constant coefficient `A`,
+`N_A(t, s) = exp ((t - s) A)` (`TauCeti.propagator_const`), and Liouville's formula
+`det N_A(t, s) = e^{∫_s^t tr A}` is `Matrix.det_exp` at `(t - s) A`: both sides are
+`det (exp ((t - s) A)) = e^{(t - s) tr A}`. -/
+theorem det_propagator_const_eq_det_exp {n : Type*} [Fintype n] [DecidableEq n]
+    (A : Matrix n n ℝ) (t s : ℝ) :
+    exp (∫ _ in s..t, LinearMap.trace ℝ _
+        (Matrix.toEuclideanCLM (𝕜 := ℝ) A : EuclideanSpace ℝ n →ₗ[ℝ] EuclideanSpace ℝ n)) =
+      (exp ((t - s) • A)).det ∧
+    (exp ((t - s) • A)).det = Real.exp ((t - s) * A.trace) := by
+  have hdet : (exp ((t - s) • A)).det = Real.exp ((t - s) * A.trace) := by
+    rw [Matrix.det_exp, Matrix.trace_smul, smul_eq_mul, Real.exp_eq_exp_ℝ]
+  refine ⟨?_, hdet⟩
+  rw [← det_propagator (a := min s t) (b := max s t) continuousOn_const.integrableOn_Icc
+    ⟨min_le_left _ _, le_max_left _ _⟩ ⟨min_le_right _ _, le_max_right _ _⟩, propagator_const,
+    RCLike.ofReal_real_eq_id, id, ← map_smul, ← toEuclideanCLM_exp, ← ContinuousLinearMap.det,
+    Matrix.det_toEuclideanCLM]
+
+/-- The matrix `[[1, 1], [0, 1]]`. -/
+abbrev jordan : Matrix (Fin 2) (Fin 2) ℝ := !![1, 1; 0, 1]
+
+/-- **The exponential of `t [[1, 1], [0, 1]]`** is `e^t [[1, t], [0, 1]]`. -/
+theorem exp_smul_jordan (t : ℝ) : exp (t • jordan) = Real.exp t • !![1, t; 0, 1] := by
+  have hsplit : t • jordan = t • (1 : Matrix (Fin 2) (Fin 2) ℝ) + !![0, t; 0, 0] := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp
+  have hsq : (!![0, t; 0, 0] : Matrix (Fin 2) (Fin 2) ℝ) ^ 2 = 0 := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [sq]
+  rw [hsplit, Matrix.exp_add_of_commute _ _ ((Commute.one_left _).smul_left t),
+    Matrix.smul_one_eq_diagonal, Matrix.exp_diagonal]
+  let _ : NormedRing (Matrix (Fin 2) (Fin 2) ℝ) := Matrix.linftyOpNormedRing
+  let _ : NormedAlgebra ℝ (Matrix (Fin 2) (Fin 2) ℝ) := Matrix.linftyOpNormedAlgebra
+  rw [exp_eq_one_add_of_sq_eq_zero ℝ hsq]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [Real.exp_eq_exp_ℝ]
+
+/-- **Liouville's formula for `A = [[1, 1], [0, 1]]`.** `N_A(t, 0) = e^t [[1, t], [0, 1]]`, and
+`det N_A(t, 0) = e^{2t} = e^{t tr A}`. -/
+theorem det_propagator_jordan (t : ℝ) :
+    propagator (fun _ ↦ Matrix.toEuclideanCLM (𝕜 := ℝ) jordan) t 0 =
+        Matrix.toEuclideanCLM (𝕜 := ℝ) (Real.exp t • !![1, t; 0, 1]) ∧
+      LinearMap.det (propagator (fun _ ↦ Matrix.toEuclideanCLM (𝕜 := ℝ) jordan) t 0 :
+        EuclideanSpace ℝ (Fin 2) →ₗ[ℝ] EuclideanSpace ℝ (Fin 2)) = Real.exp (2 * t) ∧
+      Real.exp (2 * t) = Real.exp (t * jordan.trace) := by
+  have hN : propagator (fun _ ↦ Matrix.toEuclideanCLM (𝕜 := ℝ) jordan) t 0 =
+      Matrix.toEuclideanCLM (𝕜 := ℝ) (Real.exp t • !![1, t; 0, 1]) := by
+    rw [propagator_const, RCLike.ofReal_real_eq_id, id, sub_zero, ← map_smul,
+      ← toEuclideanCLM_exp, exp_smul_jordan]
+  refine ⟨hN, ?_, by rw [Matrix.trace_fin_two_of]; ring_nf⟩
+  rw [← ContinuousLinearMap.det, hN, Matrix.det_toEuclideanCLM, Matrix.det_smul,
+    Fintype.card_fin, Matrix.det_fin_two_of, ← Real.exp_natCast_mul]
+  ring_nf
+
+/-- **The trace is the right invariant.** For `t ≠ 0`, `det N_A(t, 0) = e^{2t}` differs from
+`e^{3t}`, where `3` is the sum of the entries of `A = [[1, 1], [0, 1]]`, and from `e^t`, where
+`1 = det A`. -/
+theorem det_propagator_jordan_ne {t : ℝ} (ht : t ≠ 0) :
+    Real.exp (2 * t) ≠ Real.exp (t * ∑ i, ∑ j, jordan i j) ∧
+      Real.exp (2 * t) ≠ Real.exp (t * jordan.det) := by
+  simp only [Fin.sum_univ_two, Matrix.det_fin_two_of, Ne, Real.exp_eq_exp, Matrix.of_apply,
+    Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+  constructor <;> intro h <;> apply ht <;> linarith
 
 end TauCeti.Examples.Propagator
