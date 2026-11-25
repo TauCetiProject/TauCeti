@@ -292,8 +292,7 @@ theorem map_invariants_comp_subtype (g : G) (H : Subgroup G) :
     rw [mem_invariants_comp_subtype_iff, stabilizer_conj]
     exact Subgroup.map_mono hv
   · intro hw
-    refine ⟨ρ g⁻¹ w, ?_, by rw [← mul_apply_eq_comp, ← map_mul, mul_inv_cancel, map_one,
-      one_apply_eq_self]⟩
+    refine ⟨ρ g⁻¹ w, ?_, self_inv_apply ρ g w⟩
     rw [mem_invariants_comp_subtype_iff] at hw
     rw [SetLike.mem_coe, mem_invariants_comp_subtype_iff, stabilizer_conj]
     intro h hh
