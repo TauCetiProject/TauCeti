@@ -88,14 +88,15 @@ unitary frame bundle `unitaryFrameLift` by the lift `TauCeti.unitarySpinCLift` o
 `U(ℝ⁴, J₀) ⊆ SO(4)` to `Spinᶜ(4)`, for a unitary frame `e` of the model complex structure `J₀`. Its
 principal bundle is `P ×_σ Spinᶜ(4)` for the unitary frames `P`. The construction depends on the
 chosen `J₀` and `e`; its independence of these choices is not proved here. -/
-noncomputable def canonicalSpinCStructure : SpinCStructure F E 4 :=
+@[expose] noncomputable def canonicalSpinCStructure : SpinCStructure F E 4 :=
   (unitaryFrameLift hJ hJ₂ hJ₀ hF).extendSpinC (unitarySpinCLift hJ₀ e h₀ h₂)
     (continuous_unitarySpinCLift hJ₀ e h₀ h₂)
     (toSpecialOrthogonal_comp_unitarySpinCLift hJ₀ e h₀ h₂)
 
 /-- The point `[p, 1]` of the principal bundle of the canonical `Spinᶜ` structure over the unitary
 frame `p`. -/
-noncomputable def canonicalSpinCStructureInl {x : X} (p : (unitaryFrameLift hJ hJ₂ hJ₀ hF).P x) :
+@[expose] noncomputable def canonicalSpinCStructureInl {x : X}
+    (p : (unitaryFrameLift hJ hJ₂ hJ₀ hF).P x) :
     (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).P x :=
   PrincipalBundle.Extend.inl (unitarySpinCLift hJ₀ e h₀ h₂)
     (continuous_unitarySpinCLift hJ₀ e h₀ h₂) p
