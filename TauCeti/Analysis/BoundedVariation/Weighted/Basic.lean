@@ -49,6 +49,7 @@ perimeter has neither defect (`TauCeti.weightedPerimeter_compl`,
   and perimeter.
 * `TauCeti.gaussianWeight E`, `TauCeti.gaussianPerimeter U`: the Gaussian weight and the
   Gaussian perimeter.
+* `TauCeti.weightedMeasure W`: the measure `e^{−W} · volume`.
 * `LinearIsometryEquiv.gaussianWeight_apply`, `LinearIsometryEquiv.gaussianWeight_comp`: the
   Gaussian weight is invariant under linear isometry equivalences.
 * `TauCeti.weightedVariation_eq_iSup_trace_fderiv`: for a differentiable weight, the weighted
@@ -67,7 +68,8 @@ perimeter has neither defect (`TauCeti.weightedPerimeter_compl`,
   weighted variation on `Ω` has locally finite Euclidean variation on `Ω`.
 * `TauCeti.weightedVariation_congr_ae`, `TauCeti.weightedVariation_mono`,
   `TauCeti.weightedVariation_smul` and `TauCeti.weightedVariation_add_le`: locality,
-  monotonicity in the open set, absolute homogeneity and subadditivity.
+  monotonicity in the open set, absolute homogeneity and subadditivity, also over finite sums
+  (`TauCeti.weightedVariation_sum_le`).
 * `TauCeti.weightedVariation_add_const`, `TauCeti.weightedPerimeter_compl`,
   `TauCeti.weightedPerimeter_empty` and `TauCeti.weightedPerimeter_univ`: for a `C¹` weight,
   constants have no variation and complements have the same perimeter.
@@ -174,6 +176,17 @@ def gaussianPerimeter (U : Set E) : ℝ≥0∞ :=
 /-- The Gaussian perimeter is the weighted perimeter in the whole space for the Gaussian
 weight. -/
 theorem gaussianPerimeter_def : gaussianPerimeter s = weightedPerimeter (gaussianWeight E) ⊤ s :=
+  (rfl)
+
+variable (W) in
+/-- The measure `μ = e^{−W} · volume` of the weight `W`. -/
+def weightedMeasure : Measure E :=
+  volume.withDensity fun x => ENNReal.ofReal (Real.exp (-W x))
+
+variable (W) in
+/-- The measure of a weight is `volume` with the density `e^{−W}`. -/
+theorem weightedMeasure_def :
+    weightedMeasure W = volume.withDensity fun x => ENNReal.ofReal (Real.exp (-W x)) :=
   (rfl)
 
 /-! ### Admissible fields -/
@@ -439,6 +452,19 @@ theorem weightedVariation_add_le (hW : ContDiff ℝ 1 W) (hu : LocallyIntegrable
       (ofReal_integral_le_weightedVariation X hX))
   · rw [integral_undef fun h => hiv ((h.sub hiu).congr (.of_forall fun x => by simp [mul_add]))]
     simp
+
+/-- **Subadditivity over a finite sum.** For a `C¹` weight and functions locally integrable on
+`Ω`, `V_μ(∑ᵢ uᵢ; Ω) ≤ ∑ᵢ V_μ(uᵢ; Ω)`. -/
+theorem weightedVariation_sum_le (hW : ContDiff ℝ 1 W) {ι : Type*} (t : Finset ι)
+    {f : ι → E → ℝ} (hf : ∀ i ∈ t, LocallyIntegrableOn (f i) Ω) :
+    weightedVariation W Ω (∑ i ∈ t, f i) ≤ ∑ i ∈ t, weightedVariation W Ω (f i) := by
+  classical
+  induction t using Finset.induction_on with
+  | empty => simp
+  | insert a t ha ih =>
+    rw [Finset.sum_insert ha, Finset.sum_insert ha]
+    exact (weightedVariation_add_le hW (hf a (Finset.mem_insert_self a t))).trans
+      (add_le_add_right (ih fun i hi => hf i (Finset.mem_insert_of_mem hi)) _)
 
 /-- For a `C¹` weight, adding a constant does not change the weighted variation. No
 integrability of `u` is needed. -/
