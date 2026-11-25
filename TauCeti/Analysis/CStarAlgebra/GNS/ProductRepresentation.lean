@@ -21,7 +21,7 @@ algebraic tensor product `A ⊗ Aᵐᵒᵖ`, `a ⊗ bᵒᵖ ↦ π_f(a) π_fᵒ�
 
 The *tensor functional* `PositiveLinearMap.gnsTensorFunctional` is the linear functional
 `μ_f(a ⊗ bᵒᵖ) = f (a b)` on `A ⊗ Aᵐᵒᵖ`, that is `f` composed with the multiplication map
-`LinearMap.mulUnop' : A ⊗ Aᵐᵒᵖ → A` (`TauCeti.Algebra.Algebra.Bilinear`,
+`TauCeti.LinearMap.mulUnop' : A ⊗ Aᵐᵒᵖ → A` (`TauCeti.Algebra.Algebra.Bilinear`,
 `PositiveLinearMap.gnsTensorFunctional_apply`). It is defined for every positive functional. For
 tracial `f`, `μ_f(s⋆ t) = f ((m s)⋆ (m t))` with `m` the multiplication map
 (`PositiveLinearMap.gnsTensorFunctional_star_mul`), so `μ_f` is positive
@@ -77,13 +77,13 @@ theorem gnsProductNonUnitalStarAlgHom_tmul_apply_toGNS (hf : ∀ a b, f (a * b) 
 `A ⊗ Aᵐᵒᵖ` with `μ_f(a ⊗ bᵒᵖ) = f (a b)`, that is, `f` composed with multiplication
 `A ⊗ Aᵐᵒᵖ → A`. -/
 noncomputable def gnsTensorFunctional : A ⊗[ℂ] Aᵐᵒᵖ →ₗ[ℂ] ℂ :=
-  (f : A →ₗ[ℂ] ℂ) ∘ₗ LinearMap.mulUnop' ℂ A
+  (f : A →ₗ[ℂ] ℂ) ∘ₗ TauCeti.LinearMap.mulUnop' ℂ A
 
 omit [StarOrderedRing A] in
 /-- The tensor functional is `f` composed with the multiplication map:
 `μ_f(t) = f (m t)` for every tensor `t`. -/
 theorem gnsTensorFunctional_apply (t : A ⊗[ℂ] Aᵐᵒᵖ) :
-    f.gnsTensorFunctional t = f (LinearMap.mulUnop' ℂ A t) :=
+    f.gnsTensorFunctional t = f (TauCeti.LinearMap.mulUnop' ℂ A t) :=
   (rfl)
 
 omit [StarOrderedRing A] in
@@ -91,7 +91,7 @@ omit [StarOrderedRing A] in
 @[simp]
 theorem gnsTensorFunctional_tmul (a : A) (b : Aᵐᵒᵖ) :
     f.gnsTensorFunctional (a ⊗ₜ b) = f (a * b.unop) := by
-  rw [gnsTensorFunctional_apply, LinearMap.mulUnop'_tmul]
+  rw [gnsTensorFunctional_apply, TauCeti.LinearMap.mulUnop'_tmul]
 
 omit [StarOrderedRing A] in
 /-- For tracial `f`, the tensor functional at `s⋆ t` is `f` at `(m s)⋆ (m t)`, for `m` the
@@ -99,7 +99,7 @@ multiplication map `A ⊗ Aᵐᵒᵖ → A`. -/
 theorem gnsTensorFunctional_star_mul (hf : ∀ a b, f (a * b) = f (b * a))
     (s t : A ⊗[ℂ] Aᵐᵒᵖ) :
     f.gnsTensorFunctional (star s * t) =
-      f (star (LinearMap.mulUnop' ℂ A s) * LinearMap.mulUnop' ℂ A t) := by
+      f (star (TauCeti.LinearMap.mulUnop' ℂ A s) * TauCeti.LinearMap.mulUnop' ℂ A t) := by
   induction s using TensorProduct.inductionOn with
   | add s s' hs hs' => simp [star_add, add_mul, hs, hs']
   | tmul a b =>

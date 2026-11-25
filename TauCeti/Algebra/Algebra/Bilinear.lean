@@ -17,8 +17,8 @@ the first tensor factor with left multiplication on `A`, and right multiplicatio
 tensor factor with right multiplication on `A`.  These identities show, for instance, that the
 kernel of multiplication is stable under the outer bimodule actions.
 
-The multiplication map `LinearMap.mulUnop' R A : A ⊗[R] Aᵐᵒᵖ → A`, `a ⊗ bᵒᵖ ↦ a b`, is the
-variant with the second factor read in the opposite algebra.
+The multiplication map `TauCeti.LinearMap.mulUnop' R A : A ⊗[R] Aᵐᵒᵖ → A`, `a ⊗ bᵒᵖ ↦ a b`,
+is the variant with the second factor read in the opposite algebra.
 -/
 
 public section
@@ -50,19 +50,17 @@ theorem mul'_lTensor_mulRight (a : A) (t : A ⊗[R] A) :
   | tmul x y => simp [mul_assoc]
   | add x y hx hy => simp only [map_add, hx, hy, add_mul]
 
-end LinearMap
-
-end TauCeti
-
+variable (R A) in
 /-- Multiplication `A ⊗ Aᵐᵒᵖ → A`, `a ⊗ bᵒᵖ ↦ a b`. -/
-noncomputable def LinearMap.mulUnop' (R A : Type*) [CommSemiring R] [NonUnitalSemiring A]
-    [Module R A] [SMulCommClass R A A] [IsScalarTower R A A] : A ⊗[R] Aᵐᵒᵖ →ₗ[R] A :=
+noncomputable def mulUnop' : A ⊗[R] Aᵐᵒᵖ →ₗ[R] A :=
   LinearMap.mul' R A ∘ₗ
     TensorProduct.map LinearMap.id (MulOpposite.opLinearEquiv R).symm.toLinearMap
 
-/-- `LinearMap.mulUnop'` on elementary tensors. -/
+/-- `TauCeti.LinearMap.mulUnop'` on elementary tensors. -/
 @[simp]
-theorem LinearMap.mulUnop'_tmul {R A : Type*} [CommSemiring R] [NonUnitalSemiring A]
-    [Module R A] [SMulCommClass R A A] [IsScalarTower R A A] (a : A) (b : Aᵐᵒᵖ) :
-    LinearMap.mulUnop' R A (a ⊗ₜ b) = a * b.unop :=
+theorem mulUnop'_tmul (a : A) (b : Aᵐᵒᵖ) : mulUnop' R A (a ⊗ₜ b) = a * b.unop :=
   (rfl)
+
+end LinearMap
+
+end TauCeti
