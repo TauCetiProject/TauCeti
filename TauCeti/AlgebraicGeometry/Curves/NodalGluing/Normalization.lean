@@ -158,7 +158,7 @@ theorem range_ofRestrict_comp_normalizationSheafedSpaceHom [∀ i, T1Space (X i)
   -- An open set and its underlying set give the same subtype.
   rfl
 
-/-- **The smooth locus of a glued curve is the normalization off the flag points.** The
+/-- **The complement of the nodes is the normalization off the flag points.** The
 normalization restricted to the complement of the flag points and the glued curve restricted to
 the complement of its nodes are isomorphic sheafed spaces, through the normalization map. -/
 def restrictComplFlagPointSetIso [∀ i, T1Space (X i)] :
