@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.Topology.Connected.Clopen
+public import TauCeti.Topology.LocallyConstant.ConnectedComponents
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.MeasureTheory.Measure.OpenPos
 import TauCeti.Analysis.Sobolev.LipschitzDomain.ConnectedComponents
@@ -30,11 +31,14 @@ dimension is the number of connected components of `Ω`.
 
 For `p = 2` this kernel is the eigenspace of the eigenvalue `0` of the Neumann Laplacian, so the
 dimension count is the multiplicity of that eigenvalue. A bounded Lipschitz domain has finite
-measure and finitely many components (`Set.IsLipschitzDomain.finite_connectedComponents`), so
-the count applies to it.
+measure and finitely many components
+(`Set.IsLipschitzDomain.finite_connectedComponents_of_isBounded`), so the count applies to it.
 
 ## Main declarations
 
+* `TauCeti.W1p.componentFunEquivKerGradientL`: on a domain of finite measure with finitely many
+  connected components, the Sobolev functions with vanishing weak gradient are identified, as a
+  linear equivalence, with the functions on the set of components.
 * `TauCeti.W1p.finrank_ker_gradientL`: on a domain of finite measure with finitely many connected
   components, the Sobolev functions with vanishing weak gradient form a space whose dimension is
   the number of components.
@@ -55,37 +59,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {Omega : O
 
 section Components
 
-open scoped Classical in
-/-- The function equal to `φ c` on the connected component `c` of `Ω`, and to `0` off `Ω`. -/
-private def componentFun (φ : ConnectedComponents (Omega : Set E) → ℝ) (x : E) : ℝ :=
-  if hx : x ∈ Omega then φ (ConnectedComponents.mk ⟨x, hx⟩) else 0
-
-omit [InnerProductSpace ℝ E] in
-private theorem componentFun_of_mem (φ : ConnectedComponents (Omega : Set E) → ℝ) {x : E}
-    (hx : x ∈ Omega) : componentFun φ x = φ (ConnectedComponents.mk ⟨x, hx⟩) := by
-  simp [componentFun, hx]
-
-omit [InnerProductSpace ℝ E] in
-private theorem componentFun_add (φ ψ : ConnectedComponents (Omega : Set E) → ℝ) :
-    componentFun (φ + ψ) = componentFun φ + componentFun ψ := by
-  funext x
-  by_cases hx : x ∈ Omega <;> simp [componentFun, hx]
-
-omit [InnerProductSpace ℝ E] in
-private theorem componentFun_smul (c : ℝ) (φ : ConnectedComponents (Omega : Set E) → ℝ) :
-    componentFun (c • φ) = c • componentFun φ := by
-  funext x
-  by_cases hx : x ∈ Omega <;> simp [componentFun, hx]
-
-/-- `componentFun φ` is locally constant on `Ω`, whose components are open. -/
-private theorem isLocallyConstant_componentFun (φ : ConnectedComponents (Omega : Set E) → ℝ) :
-    IsLocallyConstant ((Omega : Set E).domRestrict (componentFun φ)) := by
-  have := Omega.isOpen.locallyConnectedSpace
-  refine IsLocallyConstant.of_constant_on_connected_components fun x y hy => ?_
-  simp only [domRestrict_apply, componentFun_of_mem φ x.property,
-    componentFun_of_mem φ y.property]
-  exact congrArg φ (ConnectedComponents.coe_eq_coe'.2 hy)
-
 variable [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E}
   {p : ℝ≥0∞} [IsFiniteMeasure (mu.restrict (Omega : Set E))]
   [Finite (ConnectedComponents (Omega : Set E))]
@@ -97,21 +70,22 @@ private theorem memLp_componentFun (φ : ConnectedComponents (Omega : Set E) →
     MemLp (componentFun φ) p (mu.restrict Omega) := by
   obtain ⟨C, hC⟩ := (Set.finite_range fun c => |φ c|).bddAbove
   have hcont : ContinuousOn (componentFun φ) Omega :=
-    continuousOn_iff_continuous_domRestrict.2 (isLocallyConstant_componentFun φ).continuous
+    continuousOn_iff_continuous_domRestrict.2
+      (isLocallyConstant_componentFun Omega.isOpen φ).continuous
   refine MemLp.of_bound (hcont.aestronglyMeasurable Omega.isOpen.measurableSet) (max C 0)
     (ae_of_all _ fun x => ?_)
   rw [Real.norm_eq_abs]
   by_cases hx : x ∈ Omega
   · rw [componentFun_of_mem φ hx]
     exact (hC ⟨_, rfl⟩).trans (le_max_left _ _)
-  · simp [componentFun, hx]
+  · simp [componentFun_of_notMem φ hx]
 
 variable [mu.IsAddHaarMeasure] [Fact (1 ≤ p)]
 
 /-- The Sobolev function equal to `φ c` on the component `c` of `Ω`. -/
 private def componentW1p (φ : ConnectedComponents (Omega : Set E) → ℝ) : W1p mu Omega p :=
   W1p.mk ((memLp_componentFun φ).toLp _) 0 <|
-    (((isLocallyConstant_componentFun φ).hasWeakFDerivOn_zero (μ := mu)).congr_ae
+    (((isLocallyConstant_componentFun Omega.isOpen φ).hasWeakFDerivOn_zero (μ := mu)).congr_ae
       (memLp_componentFun φ).coeFn_toLp.symm).congr_ae_deriv <| by
         filter_upwards [Lp.coeFn_zero E p (mu.restrict Omega)] with x hx
         rw [hx, Pi.zero_apply, Pi.zero_apply, map_zero]
@@ -188,6 +162,28 @@ private theorem range_componentW1pₗ :
       ae_restrict_mem Omega.isOpen.measurableSet] with x h1 h2 hx
     rw [h1, h2, hpt x hx]
 
+/-- **The kernel of the weak gradient is the space of functions on the components.** On an open
+set `Ω` of finite measure with finitely many connected components, a function `φ` on the
+components of `Ω` corresponds to the Sobolev function `componentFun φ`, equal to `φ c` on the
+component `c`; these are exactly the Sobolev functions with vanishing weak gradient. -/
+def W1p.componentFunEquivKerGradientL :
+    (ConnectedComponents (Omega : Set E) → ℝ) ≃ₗ[ℝ] LinearMap.ker
+      (W1p.gradientL : W1p mu Omega p →L[ℝ] Lp E p (mu.restrict Omega)).toLinearMap :=
+  (LinearEquiv.ofInjective componentW1pₗ componentW1pₗ_injective).trans
+    (LinearEquiv.ofEq _ _ range_componentW1pₗ)
+
+/-- The Sobolev function attached to `φ` by `W1p.componentFunEquivKerGradientL` is almost
+everywhere equal on `Ω` to `componentFun φ`. -/
+theorem W1p.coeFn_value_componentFunEquivKerGradientL_apply
+    (φ : ConnectedComponents (Omega : Set E) → ℝ) :
+    W1p.value (W1p.componentFunEquivKerGradientL (mu := mu) (p := p) φ : W1p mu Omega p) =ᵐ[
+      mu.restrict Omega] componentFun φ := by
+  have h : (W1p.componentFunEquivKerGradientL (mu := mu) (p := p) φ : W1p mu Omega p) =
+      componentW1p φ :=
+    rfl
+  rw [h, value_componentW1p]
+  exact (memLp_componentFun φ).coeFn_toLp
+
 /-- **The kernel of the weak gradient counts the connected components.** On an open set `Ω` of
 finite measure with finitely many connected components, the Sobolev functions `u ∈ W^{1,p}(Ω)`
 with vanishing weak gradient form a space whose dimension is the number of connected components
@@ -197,7 +193,7 @@ theorem W1p.finrank_ker_gradientL :
         (W1p.gradientL : W1p mu Omega p →L[ℝ] Lp E p (mu.restrict Omega)).toLinearMap) =
       Nat.card (ConnectedComponents (Omega : Set E)) := by
   have := Fintype.ofFinite (ConnectedComponents (Omega : Set E))
-  rw [← range_componentW1pₗ, LinearMap.finrank_range_of_inj componentW1pₗ_injective,
+  rw [← (W1p.componentFunEquivKerGradientL (mu := mu) (p := p)).finrank_eq,
     Module.finrank_fintype_fun_eq_card, Nat.card_eq_fintype_card]
 
 end Components

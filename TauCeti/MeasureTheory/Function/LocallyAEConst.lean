@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Measure.OpenPos
 public import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
-# Locally almost everywhere constant functions on preconnected sets
+# Locally almost everywhere constant functions
 
 A function that is almost everywhere constant near each point of a preconnected set is almost
 everywhere equal to a single constant on the whole set, provided the measure charges every
@@ -30,6 +30,8 @@ set and almost everywhere equal to `f` there.
 
 ## Main results
 
+* `TauCeti.eq_of_ae_eq_of_mem_nhds`: for a measure charging every nonempty open set, a function
+  has at most one almost everywhere value near each point.
 * `IsPreconnected.exists_ae_eq_const_of_forall_nhds`: a locally almost everywhere constant
   function on a preconnected Lindelöf set is almost everywhere constant on it.
 * `IsOpen.exists_isLocallyConstant_ae_eq_of_forall_nhds`: a locally almost everywhere constant
@@ -42,9 +44,12 @@ public section
 open MeasureTheory Set
 open scoped Topology
 
-/-- Since `μ` charges every neighbourhood, a function has at most one almost everywhere value
-near each point. -/
-private theorem eq_of_ae_eq_of_mem_nhds {X β : Type*} [TopologicalSpace X] [MeasurableSpace X]
+namespace TauCeti
+
+/-- **A function has at most one almost everywhere value near a point.** Since `μ` charges every
+nonempty open set, hence every neighbourhood of `x`, if `f` is `μ`-almost everywhere equal to `c`
+on a neighbourhood `U` of `x` and to `d` on a neighbourhood `V` of `x`, then `c = d`. -/
+theorem eq_of_ae_eq_of_mem_nhds {X β : Type*} [TopologicalSpace X] [MeasurableSpace X]
     {μ : Measure X} [μ.IsOpenPosMeasure] {f : X → β} {x : X} {c d : β} {U V : Set X}
     (hU : U ∈ 𝓝 x) (hV : V ∈ 𝓝 x) (hcU : ∀ᵐ y ∂μ.restrict U, f y = c)
     (hdV : ∀ᵐ y ∂μ.restrict V, f y = d) : c = d := by
@@ -53,6 +58,8 @@ private theorem eq_of_ae_eq_of_mem_nhds {X β : Type*} [TopologicalSpace X] [Mea
   obtain ⟨y, hyc, hyd⟩ := ((ae_restrict_of_ae_restrict_of_subset inter_subset_left hcU).and
     (ae_restrict_of_ae_restrict_of_subset inter_subset_right hdV)).exists
   rw [← hyc, hyd]
+
+end TauCeti
 
 namespace IsPreconnected
 
@@ -73,7 +80,7 @@ theorem exists_ae_eq_const_of_forall_nhds {X β : Type*}
   have hunique {c d : β} {x : X} (hc : P c x) (hd : P d x) : c = d := by
     obtain ⟨U, hU, hcU⟩ := hc
     obtain ⟨V, hV, hdV⟩ := hd
-    exact eq_of_ae_eq_of_mem_nhds hU hV hcU hdV
+    exact TauCeti.eq_of_ae_eq_of_mem_nhds hU hV hcU hdV
   rcases s.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
   · exact ⟨Classical.arbitrary β, by simp⟩
   obtain ⟨c₀, hc₀⟩ := hf x₀ hx₀
@@ -118,7 +125,7 @@ theorem exists_isLocallyConstant_ae_eq_of_forall_nhds {X β : Type*}
   choose! g U hUo hxU hUs hgU using hf'
   -- The chosen constant is constant on each of the chosen open sets.
   have hconst : ∀ x ∈ s, ∀ y ∈ U x, g y = g x := fun x hx y hy =>
-    eq_of_ae_eq_of_mem_nhds ((hUo y (hUs x hx hy)).mem_nhds (hxU y (hUs x hx hy)))
+    TauCeti.eq_of_ae_eq_of_mem_nhds ((hUo y (hUs x hx hy)).mem_nhds (hxU y (hUs x hx hy)))
       ((hUo x hx).mem_nhds hy) (hgU y (hUs x hx hy)) (hgU x hx)
   refine ⟨g, (IsLocallyConstant.iff_eventually_eq _).2 fun x => ?_, ?_⟩
   · filter_upwards [((hUo x x.property).preimage continuous_subtypeVal).mem_nhds
