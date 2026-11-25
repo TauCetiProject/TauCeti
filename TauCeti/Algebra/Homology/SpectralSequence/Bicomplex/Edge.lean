@@ -33,11 +33,12 @@ augmentation `ε : K.X 0 ⟶ E` of the column `0`, the edge map followed by the 
 augmentation of the total complex is the map induced by `ε`
 (`HomologicalComplex₂.columnFiltrationSpectralSequenceFirstPageXIso_inv_columnFiltrationEdge`).
 
-**Collapse.** The differentials of the page `r` change the row by `r - 1`. If a page `r ≥ 3`
-vanishes in the rows `≥ 2`, no differential from the page `r` on reaches or leaves the rows `0`
-and `1`, so their objects on the page `r` are the limit objects
+**Collapse.** The differentials of the page `r` change the row by `r - 1`. If a page `r ≥ s + 1`
+vanishes in the rows `≥ s`, no differential from the page `r` on reaches or leaves the rows
+`0 ≤ q < s`, so their objects on the page `r` are the limit objects
 (`HomologicalComplex₂.isIso_rowFiltrationSpectralSequencePageXToEInfty_of_isZero`), and the limit
-objects vanish in the rows `≥ 2`, so the rows `< 2` give the whole homology of the total complex.
+objects vanish in the rows `≥ s`, so the rows `< s` give the whole homology of the total complex.
+This is used for `s = 1` and `s = 2`.
 The main application is to the second page, numbered `r = 3`.
 
 * If a page `r ≥ 2` vanishes in the rows `≥ 1`, the edge map from the page `r` is an isomorphism
@@ -194,17 +195,17 @@ lemma isZero_rowFiltrationSpectralObject_EInfty (r : ℤ) (hr : 2 ≤ r) (pq : �
     (K.rowFiltrationSpectralSequencePageXIsoEInfty _ (by omega) pq _ rfl (by omega)
       (by omega)).symm
 
-/-- **Degeneration in the rows `0` and `1`.** If the page `r ≥ 3` of the spectral sequence of the
-row filtration vanishes in the rows `≥ 2`, then no differential from the page `r` on reaches or
-leaves the rows `0` and `1`, so their objects on the page `r` are the limit objects: the map
+/-- **Degeneration in the rows `< s`.** If the page `r ≥ s + 1` of the spectral sequence of the
+row filtration vanishes in the rows `≥ s`, then no differential from the page `r` on reaches or
+leaves the rows `0 ≤ q < s`, so their objects on the page `r` are the limit objects: the map
 `spectralSequencePageXToEInfty` from the page `r` is an isomorphism. -/
-lemma isIso_rowFiltrationSpectralSequencePageXToEInfty_of_isZero (r : ℤ) (hr : 3 ≤ r)
-    (pq : ℤ × ℤ) (n : ℤ) (hn : n = pq.1 + pq.2) (hpq₀ : 0 ≤ pq.2) (hpq₁ : pq.2 ≤ 1)
-    (h : ∀ pq' : ℤ × ℤ, 2 ≤ pq'.2 → IsZero ((K.rowFiltrationSpectralSequence.page r).X pq')) :
+lemma isIso_rowFiltrationSpectralSequencePageXToEInfty_of_isZero (r s : ℤ) (hr : s + 1 ≤ r)
+    (pq : ℤ × ℤ) (n : ℤ) (hn : n = pq.1 + pq.2) (hpq₀ : 0 ≤ pq.2) (hpq₁ : pq.2 < s)
+    (h : ∀ pq' : ℤ × ℤ, s ≤ pq'.2 → IsZero ((K.rowFiltrationSpectralSequence.page r).X pq')) :
     IsIso (K.rowFiltrationSpectralObject.spectralSequencePageXToEInfty r (by omega) pq n hn
       (K.isZero_rowFiltrationSpectralObject_H_bot _ _ (by omega))) :=
   K.rowFiltrationSpectralObject.isIso_spectralSequencePageXToEInfty_of_isZero
-    (r + pq.1.natAbs + 2 * pq.2.natAbs) pq n hn r (by omega) (by omega)
+    (r + 1 + pq.1.natAbs + 2 * pq.2.natAbs) pq n hn r (by omega) (by omega)
     (fun r' _ _ ↦ K.isZero_rowFiltrationSpectralObject_H_bot _ _ (by omega))
     (CochainComplex.isZero_spectralObject_H_top _ _ _ _
       (K.isZero_homology_cokernel_rowFiltration_arrow _ _ (by omega)))
@@ -232,15 +233,8 @@ theorem isIso_rowFiltrationEdge_of_isZero (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × 
     (hpq : pq = (-(k : ℤ), 0))
     (h : ∀ pq' : ℤ × ℤ, 1 ≤ pq'.2 → IsZero ((K.rowFiltrationSpectralSequence.page r).X pq')) :
     IsIso (K.rowFiltrationEdge r hr pq k hpq) := by
-  -- no differential from the page `r` on reaches or leaves the row `0`
-  have := K.rowFiltrationSpectralObject.isIso_spectralSequencePageXToEInfty_of_isZero
-    (r + 1 + pq.1.natAbs + 2 * pq.2.natAbs) pq _ rfl r hr (by omega)
-    (fun r' _ _ ↦ K.isZero_rowFiltrationSpectralObject_H_bot _ _ (by subst hpq; dsimp; omega))
-    (CochainComplex.isZero_spectralObject_H_top _ _ _ _
-      (K.isZero_homology_cokernel_rowFiltration_arrow _ _ (by subst hpq; dsimp; omega)))
-    (fun r' hr' _ ↦ ⟨h _ (by subst hpq; dsimp; omega),
-      K.isZero_rowFiltrationSpectralSequence_page_X r hr _ _
-        (Or.inl (by subst hpq; dsimp; omega))⟩)
+  have := K.isIso_rowFiltrationSpectralSequencePageXToEInfty_of_isZero r 1 (by omega) pq _ rfl
+    (by subst hpq; simp) (by subst hpq; simp) h
   have := K.isIso_rowFiltration_abutmentFiltrationι_of_isZero r hr (pq.2 + 1)
     (by subst hpq; simp) (pq.1 + pq.2) (fun pq' h' ↦ h pq' (by subst hpq; simp at h'; omega))
   have := K.rowFiltrationSpectralObject.isIso_EInftyToAbutment pq.2 (pq.1 + pq.2)
@@ -259,7 +253,7 @@ def rowFiltrationToRowOne (r : ℤ) (hr : 3 ≤ r) (pq : ℤ × ℤ) (k : ℕ) (
       (K.rowFiltrationSpectralSequence.page r).X (pq.1 - 1, pq.2 + 1) :=
   have := K.isIso_rowFiltration_abutmentFiltrationι_of_isZero r (by omega) (pq.2 + 1 + 1)
     (by subst hpq; simp) (pq.1 + pq.2) (fun pq' h' ↦ h pq' (by subst hpq; simp at h'; omega))
-  have hiso := K.isIso_rowFiltrationSpectralSequencePageXToEInfty_of_isZero r hr
+  have hiso := K.isIso_rowFiltrationSpectralSequencePageXToEInfty_of_isZero r 2 (by omega)
     (pq.1 - 1, pq.2 + 1) (pq.1 + pq.2) (by dsimp; omega) (by subst hpq; simp) (by subst hpq; simp) h
   ((K.total (down ℕ)).extendHomologyIso embeddingDownNat (by subst hpq; simp)).inv ≫
     (CochainComplex.filtrationAbutmentIso _ K.monotone_rowFiltration (pq.1 + pq.2)).inv ≫
@@ -293,8 +287,8 @@ lemma rowFiltrationEdge_rowFiltrationToRowOne (r : ℤ) (hr : 3 ≤ r) (pq : ℤ
     (hpq : pq = (-(k : ℤ), 0))
     (h : ∀ pq' : ℤ × ℤ, 2 ≤ pq'.2 → IsZero ((K.rowFiltrationSpectralSequence.page r).X pq')) :
     K.rowFiltrationEdge r (by omega) pq k hpq ≫ K.rowFiltrationToRowOne r hr pq k hpq h = 0 := by
-  have := K.isIso_rowFiltrationSpectralSequencePageXToEInfty_of_isZero r hr (pq.1 - 1, pq.2 + 1)
-    (pq.1 + pq.2) (by dsimp; omega) (by subst hpq; simp) (by subst hpq; simp) h
+  have := K.isIso_rowFiltrationSpectralSequencePageXToEInfty_of_isZero r 2 (by omega)
+    (pq.1 - 1, pq.2 + 1) (pq.1 + pq.2) (by dsimp; omega) (by subst hpq; simp) (by subst hpq; simp) h
   rw [← cancel_mono (K.rowFiltrationSpectralObject.spectralSequencePageXToEInfty r (by omega)
       (pq.1 - 1, pq.2 + 1) (pq.1 + pq.2) (by dsimp; omega)
       (K.isZero_rowFiltrationSpectralObject_H_bot _ _ (by subst hpq; dsimp; omega))),
@@ -311,10 +305,10 @@ theorem rowFiltrationEdge_shortExact (r : ℤ) (hr : 3 ≤ r) (pq : ℤ × ℤ) 
       (K.rowFiltrationEdge_rowFiltrationToRowOne r hr pq k hpq h)).ShortExact := by
   have := K.isIso_rowFiltration_abutmentFiltrationι_of_isZero r (by omega) (pq.2 + 1 + 1)
     (by subst hpq; simp) (pq.1 + pq.2) (fun pq' h' ↦ h pq' (by subst hpq; simp at h'; omega))
-  have h₀ := K.isIso_rowFiltrationSpectralSequencePageXToEInfty_of_isZero r hr pq _ rfl
+  have h₀ := K.isIso_rowFiltrationSpectralSequencePageXToEInfty_of_isZero r 2 (by omega) pq _ rfl
     (by subst hpq; simp) (by subst hpq; simp) h
-  have h₁ := K.isIso_rowFiltrationSpectralSequencePageXToEInfty_of_isZero r hr (pq.1 - 1, pq.2 + 1)
-    (pq.1 + pq.2) (by dsimp; omega) (by subst hpq; simp) (by subst hpq; simp) h
+  have h₁ := K.isIso_rowFiltrationSpectralSequencePageXToEInfty_of_isZero r 2 (by omega)
+    (pq.1 - 1, pq.2 + 1) (pq.1 + pq.2) (by dsimp; omega) (by subst hpq; simp) (by subst hpq; simp) h
   refine ShortComplex.shortExact_of_iso (ShortComplex.isoMk (@asIso _ _ _ _ _ h₀).symm
     (CochainComplex.filtrationAbutmentIso _ K.monotone_rowFiltration (pq.1 + pq.2) ≪≫
       (K.total (down ℕ)).extendHomologyIso embeddingDownNat (by subst hpq; simp))
