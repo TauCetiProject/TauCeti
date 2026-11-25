@@ -18,7 +18,8 @@ products, with the primes in an arbitrary finite set `T` deleted:
 
 * the partial sums `∑ p ≤ n, p ∉ T, 1 / p` tend to infinity;
 * hence, since `(1 - x)⁻¹ ≥ exp x` for `x < 1`, so do the partial Euler products
-  `∏ p ≤ n, p ∉ T, (1 - 1 / p)⁻¹` of the Riemann zeta function at `s = 1`.
+  `∏ p ≤ n, p ∉ T, (1 - 1 / p)⁻¹` of the Riemann zeta function at `s = 1`, and their inverses
+  `∏ p ≤ n, p ∉ T, (1 - 1 / p)` tend to `0`.
 
 The deleted set `T` accommodates the Euler products of a trivial Dirichlet character, which omit
 the primes dividing the level.
@@ -28,6 +29,8 @@ the primes dividing the level.
 * `Nat.tendsto_sum_primesLE_filter_notMem_inv_atTop`: the partial sums of `1 / p` diverge.
 * `Nat.tendsto_prod_primesLE_filter_notMem_one_sub_inv_inv_atTop`: the partial Euler products
   `∏ (1 - 1 / p)⁻¹` diverge.
+* `Nat.tendsto_prod_primesLE_filter_notMem_one_sub_inv_atTop_nhds_zero`: the partial products
+  `∏ (1 - 1 / p)` tend to `0`.
 -/
 
 public section
@@ -63,5 +66,13 @@ theorem tendsto_prod_primesLE_filter_notMem_one_sub_inv_inv_atTop (T : Finset �
   have hp1 : (1 : ℝ) < p := mod_cast (prime_of_mem_primesLE (mem_filter.mp hp).1).one_lt
   have hpos : 0 < 1 - (p : ℝ)⁻¹ := sub_pos.mpr (inv_lt_one_of_one_lt₀ hp1)
   simpa [Real.exp_neg] using inv_anti₀ hpos (Real.one_sub_le_exp_neg (p : ℝ)⁻¹)
+
+/-- **The Euler product of `1 - 1 / p` tends to zero.** For every finite set `T`, the partial
+products `∏ p ≤ n, p ∉ T, (1 - 1 / p)` tend to `0`, being the inverses of the diverging Euler
+products of `tendsto_prod_primesLE_filter_notMem_one_sub_inv_inv_atTop`. -/
+theorem tendsto_prod_primesLE_filter_notMem_one_sub_inv_atTop_nhds_zero (T : Finset ℕ) :
+    Tendsto (fun n ↦ ∏ p ∈ primesLE n with p ∉ T, (1 - (p : ℝ)⁻¹)) atTop (nhds 0) := by
+  simpa [Pi.inv_def] using
+    (tendsto_prod_primesLE_filter_notMem_one_sub_inv_inv_atTop T).inv_tendsto_atTop
 
 end Nat

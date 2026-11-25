@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+public import TauCeti.NumberTheory.Arakelov.SectionDegree
 
 import Mathlib.Analysis.InnerProductSpace.Basic
 import Mathlib.RingTheory.Flat.Basic
@@ -40,9 +41,10 @@ The structure is `TauCeti.HermitianVectorBundle`; the other names are in its nam
 * `rescale`: the bundle `Ē(c)` with norms `e^{-c} ‖·‖_σ`.
 * `Isometry`: `𝓞 K`-linear isomorphisms whose complexifications
   are unitary at every embedding.
-* `sectionDegree`: the expression `log #(E / 𝓞 K • s) - Σ_σ log ‖s‖_σ` attached to a section `s`.
-  For a nonzero section of a bundle of rank one it is the Arakelov degree of the bundle; for other
-  bundles or sections it is only this expression, not a degree of the bundle.
+* `sectionDegree`: the expression `log #(E / 𝓞 K • s) - Σ_σ log ‖s‖_σ` attached to a section `s`,
+  `TauCeti.sectionDegreeOfNorms` for the norms of the bundle. For a nonzero section of a bundle
+  of rank one it is the Arakelov degree of the bundle; for other bundles or sections it is only
+  this expression, not a degree of the bundle.
 
 ## References
 
@@ -94,6 +96,12 @@ instance instSMulCommClass : SMulCommClass (𝓞 K) ℂ (ComplexAlong σ) where
 /-- An integer `a` of `K` acts on `ComplexAlong σ` as the complex number `σ(a)`. -/
 theorem toComplex_algebraMap (a : 𝓞 K) :
     toComplex σ (algebraMap (𝓞 K) (ComplexAlong σ) a) = σ (algebraMap (𝓞 K) K a) :=
+  (rfl)
+
+/-- The image of an integer `a` of `K` in `ComplexAlong σ` is that of the complex number `σ(a)`. -/
+theorem algebraMap_ringOfIntegers_eq (a : 𝓞 K) :
+    algebraMap (𝓞 K) (ComplexAlong σ) a =
+      algebraMap ℂ (ComplexAlong σ) (σ (algebraMap (𝓞 K) K a)) :=
   (rfl)
 
 end ComplexAlong
@@ -230,6 +238,30 @@ theorem norm_pos (σ : K →+* ℂ) {x : E} (hx : x ≠ 0) : 0 < E.norm σ x := 
   refine Real.sqrt_pos.2 (lt_of_le_of_ne InnerProductSpace.Core.inner_self_nonneg (Ne.symm ?_))
   exact fun h => E.one_tmul_ne_zero σ hx (InnerProductSpace.Core.normSq_eq_zero.1 h)
 
+variable (E) in
+/-- An integer `a` of `K` scales the norm at `σ` by `|σ(a)|`: `‖a • x‖_σ = |σ(a)| ‖x‖_σ`. -/
+theorem norm_smul (σ : K →+* ℂ) (a : 𝓞 K) (x : E) :
+    E.norm σ (a • x) = ‖σ (algebraMap (𝓞 K) K a)‖ * E.norm σ x := by
+  set z := σ (algebraMap (𝓞 K) K a)
+  -- In the fibre, `a` acts on `1 ⊗ x` as the complex number `z = σ(a)`.
+  have h : (1 : ComplexAlong σ) ⊗ₜ[𝓞 K] (a • x) = z • ((1 : ComplexAlong σ) ⊗ₜ x) := by
+    simp [z, smul_tmul', Algebra.smul_def, ComplexAlong.algebraMap_ringOfIntegers_eq]
+  -- Scaling by `z` multiplies `h_σ(v, v)` by `conj z * z = ‖z‖ ^ 2`.
+  have hz (v : ComplexFiber σ E) :
+      (E.metric.core σ).inner (z • v) (z • v) = (‖z‖ ^ 2 : ℝ) * (E.metric.core σ).inner v v := by
+    rw [(E.metric.core σ).smul_left,
+      InnerProductSpace.Core.inner_smul_right (c := (E.metric.core σ).toCore), ← mul_assoc,
+      Complex.conj_mul', Complex.ofReal_pow]
+  simp only [norm_def, inner_def, h, hz, RCLike.re_to_complex, Complex.re_ofReal_mul,
+    Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq (norm_nonneg _)]
+
+variable (E) in
+/-- The zero element of a hermitian vector bundle has norm zero at every embedding. -/
+@[simp]
+protected theorem norm_zero (σ : K →+* ℂ) : E.norm σ 0 = 0 := by
+  let := E.metric.core σ
+  simp [norm_def, inner_def, InnerProductSpace.Core.inner_zero_left]
+
 section Trivial
 
 variable (σ : K →+* ℂ)
@@ -356,36 +388,34 @@ section SectionDegree
 variable [NumberField K]
 
 /-- The expression `log #(E / 𝓞 K • s) - Σ_σ log ‖s‖_σ` attached to a section `s`, the sum
-running over all field embeddings `σ : K →+* ℂ`. For a nonzero section of a hermitian vector
-bundle of rank one this is the Arakelov degree of the bundle; its independence of the section is
-the product formula. For other bundles or sections it is only this expression. -/
+running over all field embeddings `σ : K →+* ℂ`: `TauCeti.sectionDegreeOfNorms` for the norms of
+`E`. For a nonzero section of a hermitian vector bundle of rank one this is the Arakelov degree of
+the bundle; its independence of the section is the product formula. For other bundles or sections
+it is only this expression. -/
 def sectionDegree (s : E) : ℝ :=
-  Real.log (Submodule.span (𝓞 K) {s}).cardQuot - ∑ σ : K →+* ℂ, Real.log (E.norm σ s)
+  sectionDegreeOfNorms E.norm s
 
 /-- The degree computed with `s` is `log #(E / 𝓞 K • s) - Σ_σ log ‖s‖_σ`. -/
 theorem sectionDegree_def (s : E) :
     E.sectionDegree s =
       Real.log (Submodule.span (𝓞 K) {s}).cardQuot - ∑ σ : K →+* ℂ, Real.log (E.norm σ s) :=
-  (rfl)
+  sectionDegreeOfNorms_def _ _
 
 /-- The degree of `Ō_K` computed with the section `1` is zero. -/
 @[simp]
-theorem sectionDegree_trivial_one : (trivial K).sectionDegree 1 = 0 := by
-  simp [sectionDegree, Ideal.span_singleton_one, Submodule.cardQuot_top]
+theorem sectionDegree_trivial_one : (trivial K).sectionDegree 1 = 0 :=
+  sectionDegreeOfNorms_eq_zero Ideal.span_singleton_one trivial_norm_one
 
 /-- Rescaling the metric by `e^{-c}` adds `[K : ℚ] c` to the degree computed with a nonzero
 section. -/
 theorem sectionDegree_rescale (c : ℝ) {s : E} (hs : s ≠ 0) :
     (E.rescale c).sectionDegree s = E.sectionDegree s + finrank ℚ K * c := by
-  have h σ : Real.log ((E.rescale c).norm σ s) = -c + Real.log (E.norm σ s) := by
-    rw [rescale_norm, Real.log_mul (by positivity) (E.norm_pos σ hs).ne', Real.log_exp]
-  simp only [sectionDegree, h, Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ,
-    NumberField.Embeddings.card, nsmul_eq_mul]
+  have h := sectionDegreeOfNorms_exp_neg_mul E.norm c fun σ => (E.norm_pos σ hs).ne'
+  simp only [← E.rescale_norm c] at h
   -- `E.rescale c` is `E` with a new metric: its carrier is `E` by definition, but the module
-  -- instance on the span differs syntactically, so `rw` cannot identify the two `cardQuot` terms
-  -- and `change` restates the left one over `E`.
-  change Real.log (Submodule.span (𝓞 K) {s}).cardQuot - _ = _
-  ring
+  -- instance on the span differs syntactically, so `rw` cannot identify the two degrees and
+  -- `exact` closes the goal up to this unfolding.
+  exact h
 
 end SectionDegree
 
