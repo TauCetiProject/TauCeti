@@ -119,7 +119,7 @@ theorem exists_prime_dvd_pow_sub_pow {a b n : ℕ}
     · rw [hm1, mul_one]
       have ha1 : (1 : ℤ) < a := by omega
       have hb1 : (1 : ℤ) ≤ b := by omega
-      exact natCast_lt_homogeneousCyclotomic_prime hp ha1 hb1
+      exact hp.natCast_lt_homogeneousCyclotomic_prime ha1 hb1
     · -- Here `m ≥ 2` divides `p - 1`, so `p ≥ 3` and `(a, b, p) ≠ (2, 1, 3)` since `n ≠ 6`.
       have hm2 : 2 ≤ m := by omega
       have hmp : m ≤ p - 1 := Nat.le_of_dvd (Nat.sub_pos_of_lt hp.one_lt) hm_dvd

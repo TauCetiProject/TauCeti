@@ -71,6 +71,9 @@ continuous lift of `m Θ ∘ γ` for an integer `m` drops by `2πm`
 The circles of radius `r ≤ 1` run above the curve of relative equilibria off the axis
 (`TauCeti.mem_sphericalPendulumTurningPointDomain_of_le_one`,
 `TauCeti.sub_eq_neg_two_mul_pi_of_coe_eq_sphericalPendulumRotationAngle_of_le_one`).
+Such a lift exists: `Θ ∘ γ` on the upper half-circle and `Θ ∘ γ + 2π` on the lower one join
+continuously, from `2π` at `t = 0` to `0` at `t = 2π`
+(`TauCeti.exists_continuousOn_eqOn_sphericalPendulumRotationAngle`).
 This drop of the rotation angle is the input to the classical computation of the Hamiltonian
 monodromy of the pendulum around `(1, 0)`.
 
@@ -105,6 +108,8 @@ contribution small (`TauCeti.abs_integral_mul_mul_div_mul_sqrt_sub_sq_le`). Away
   `j ≠ 0` above the curve of relative equilibria.
 * `TauCeti.tendsto_sphericalPendulumRotationAngle_circle`: the one-sided limits of `Θ` along a
   circle about the focus–focus value, where it crosses the axis `j = 0`.
+* `TauCeti.exists_continuousOn_eqOn_sphericalPendulumRotationAngle`: a continuous lift of `Θ`
+  modulo `2π` along a circle about the focus–focus value.
 * `TauCeti.sub_eq_neg_two_mul_pi_of_coe_eq_sphericalPendulumRotationAngle`: a continuous lift of `Θ`
   modulo `2π` decreases by `2π` once around the focus–focus value.
 * `TauCeti.sub_eq_neg_intCast_mul_two_mul_pi_of_coe_eq_intCast_mul_sphericalPendulumRotationAngle`:
@@ -763,6 +768,69 @@ theorem lt_two_of_mem_sphericalPendulumTurningPointDomain {r : ℝ}
   -- `r² < 2 (1 - z)² (1 + z)`, and `(1 + z) (1 - z) ≤ 1` with `1 - z < 2`.
   have hle : (1 + z) * (1 - z) ≤ 1 := by nlinarith [sq_nonneg z]
   nlinarith [mul_le_mul_of_nonneg_right hle hw.le]
+
+/-- **A continuous lift of the rotation angle around the focus–focus value.** Let
+`γ(t) = (1 + r cos t, r sin t)`, for `t ∈ [0, 2π]`, be the counterclockwise circle of radius `r > 0`
+about the focus–focus value `(1, 0)`, and suppose that off the axis `j = 0` it runs strictly above
+the curve of relative equilibria. Then the rotation angle `Θ(γ(t))` on the upper half-circle
+`t ∈ (0, π)` and `Θ(γ(t)) + 2π` on the lower half-circle `t ∈ (π, 2π)` join to a function `L`
+continuous on `[0, 2π]`, with `L(0) = 2π` and `L(2π) = 0`: at the crossings of the axis, the
+one-sided limits `2π` at `γ(0)`, `π` and `-π + 2π` at `γ(π)`, and `-2π + 2π` at `γ(2π)` match. -/
+theorem exists_continuousOn_eqOn_sphericalPendulumRotationAngle {r : ℝ} (hr : 0 < r)
+    (hγ : ∀ t, sin t ≠ 0 → (1 + r * cos t, r * sin t) ∈ sphericalPendulumTurningPointDomain) :
+    ∃ L : ℝ → ℝ, ContinuousOn L (Icc 0 (2 * π)) ∧
+      (∀ t ∈ Ioo 0 π, L t = sphericalPendulumRotationAngle (1 + r * cos t) (r * sin t)) ∧
+      (∀ t ∈ Ioo π (2 * π),
+        L t = sphericalPendulumRotationAngle (1 + r * cos t) (r * sin t) + 2 * π) ∧
+      L 0 = 2 * π ∧ L (2 * π) = 0 := by
+  have hpi : 0 < π := pi_pos
+  have h2pi : π < 2 * π := by linarith
+  have hr₂ := lt_two_of_mem_sphericalPendulumTurningPointDomain
+    (by simpa using hγ (π / 2) (by simp))
+  obtain ⟨l₀, lπ₁, lπ₂, l₂π⟩ := tendsto_sphericalPendulumRotationAngle_circle hr hr₂
+  set Θ : ℝ → ℝ := fun t ↦ sphericalPendulumRotationAngle (1 + r * cos t) (r * sin t)
+  have hΘ : ∀ {s : Set ℝ}, (∀ t ∈ s, sin t ≠ 0) → ContinuousOn Θ s :=
+    fun hs ↦ continuousOn_sphericalPendulumRotationAngle.comp
+      (by fun_prop : Continuous fun t : ℝ ↦ (1 + r * cos t, r * sin t)).continuousOn
+      fun t ht ↦ hγ t (hs t ht)
+  have hsin₁ : ∀ t ∈ Ioo 0 π, sin t ≠ 0 := fun t ht ↦ (sin_pos_of_pos_of_lt_pi ht.1 ht.2).ne'
+  have hsin₂ : ∀ t ∈ Ioo π (2 * π), sin t ≠ 0 := fun t ht ↦
+    (sin_neg_of_pi_lt_of_lt_two_pi ht.1 ht.2).ne
+  -- Off the two half-circles, `L(t) = 2π - t` takes the values `2π`, `π` and `0` at the crossings.
+  let L : ℝ → ℝ := fun t ↦
+    if t ∈ Ioo 0 π then Θ t else if t ∈ Ioo π (2 * π) then Θ t + 2 * π else 2 * π - t
+  have hL₁ : EqOn L Θ (Ioo 0 π) := fun t ht ↦ by simp only [L, ht, ↓reduceIte]
+  have hL₂ : EqOn L (fun t ↦ Θ t + 2 * π) (Ioo π (2 * π)) := fun t ht ↦ by
+    have h₁ : t ∉ Ioo 0 π := fun h ↦ ht.1.not_gt h.2
+    simp only [L, h₁, ht, ↓reduceIte]
+  have hLc {t : ℝ} (h₁ : t ∉ Ioo 0 π) (h₂ : t ∉ Ioo π (2 * π)) : L t = 2 * π - t := by
+    simp only [L, h₁, h₂, ↓reduceIte]
+  have hL0 : L 0 = 2 * π := by rw [hLc (fun h ↦ h.1.false) fun h ↦ hpi.not_gt h.1, sub_zero]
+  have hLπ : L π = π := by rw [hLc (fun h ↦ h.2.false) fun h ↦ h.1.false]; ring
+  have hL2π : L (2 * π) = 0 := by rw [hLc (fun h ↦ h2pi.not_gt h.2) fun h ↦ h.2.false, sub_self]
+  -- The one-sided limits at the crossings of the axis.
+  have lim {s : Set ℝ} {t₀ v : ℝ} {f : ℝ → ℝ} (hf : EqOn L f s)
+      (hlim : Tendsto f (𝓝[s] t₀) (𝓝 v)) (hv : L t₀ = v) : ContinuousWithinAt L s t₀ := by
+    rw [ContinuousWithinAt, hv]
+    exact hlim.congr' (eventually_nhdsWithin_of_forall fun t ht ↦ (hf ht).symm)
+  have e₀ := lim hL₁ l₀ hL0
+  have eπ₁ := lim hL₁ lπ₁ hLπ
+  have eπ₂ := lim hL₂ (lπ₂.add_const (2 * π)) (by rw [hLπ]; ring)
+  have e₂π := lim hL₂ (l₂π.add_const (2 * π)) (by rw [hL2π]; ring)
+  refine ⟨L, fun t ht ↦ ?_, hL₁, hL₂, hL0, hL2π⟩
+  rcases ht.1.eq_or_lt with rfl | ht₀
+  · exact (continuousWithinAt_Icc_iff_Ici (by positivity)).2
+      (continuousWithinAt_Ioi_iff_Ici.1 ((continuousWithinAt_Ioo_iff_Ioi hpi).1 e₀))
+  rcases lt_trichotomy t π with htπ | rfl | htπ
+  · exact ((hΘ hsin₁).congr hL₁ |>.continuousAt (isOpen_Ioo.mem_nhds ⟨ht₀, htπ⟩)).continuousWithinAt
+  · refine (continuousAt_iff_continuous_left_right.2 ⟨?_, ?_⟩).continuousWithinAt
+    exacts [continuousWithinAt_Iio_iff_Iic.1 ((continuousWithinAt_Ioo_iff_Iio hpi).1 eπ₁),
+      continuousWithinAt_Ioi_iff_Ici.1 ((continuousWithinAt_Ioo_iff_Ioi h2pi).1 eπ₂)]
+  rcases ht.2.eq_or_lt with rfl | ht₂
+  · exact (continuousWithinAt_Icc_iff_Iic (by positivity)).2
+      (continuousWithinAt_Iio_iff_Iic.1 ((continuousWithinAt_Ioo_iff_Iio h2pi).1 e₂π))
+  · exact (((hΘ hsin₂).add continuousOn_const).congr hL₂ |>.continuousAt
+      (isOpen_Ioo.mem_nhds ⟨htπ, ht₂⟩)).continuousWithinAt
 
 /-- **A continuous lift of an integer multiple of the rotation angle drops around the focus–focus
 value.** Let `γ(t) = (1 + r cos t, r sin t)`, for `t ∈ [0, 2π]`, be the counterclockwise circle of

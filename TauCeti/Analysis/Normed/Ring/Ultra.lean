@@ -8,9 +8,11 @@ module
 public import Mathlib.Algebra.Group.ForwardDiff
 public import Mathlib.Analysis.Normed.Field.UnitBall
 public import Mathlib.Analysis.Normed.Ring.Ultra
+public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
 import Mathlib.Data.Nat.Choose.Factorization
 import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 import TauCeti.Algebra.Group.ForwardDiff
+import TauCeti.Algebra.Polynomial.Eval.Nonarchimedean
 import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
@@ -26,7 +28,8 @@ arguments is bounded by its first argument `q w`, and it depends on `w` in a `�
 when its terms are `1`-Lipschitz. The rational functions `t / (1 - t)²`, `t / (1 - t)³` and
 `t² / (1 - t)³` are Lipschitz on the open unit ball of an ultrametric field.
 
-Integer casts have norm at most `‖1‖`, without requiring the seminorm to be normalized. When
+Integer casts have norm at most `‖1‖`, without requiring the seminorm to be normalized. For a
+power-multiplicative seminorm, every element integral over `ℤ` has norm at most one. When
 `‖1‖ = 1`, arbitrarily large natural numbers have norm exactly one, and if `‖n‖ < 1` then
 multiplying by a natural number coprime to `n` does not change norms; in particular every natural
 number coprime to `n` has norm one. For a prime `p` with `‖p‖ < 1`, the binomial coefficient
@@ -35,6 +38,8 @@ forward differences of a monomial are divisible by `k!`, their norms carry the f
 
 ## Main results
 
+* `IsUltrametricDist.norm_le_one_of_isIntegral`: algebraic integers lie in the closed unit ball of
+  an ultrametric seminormed ring whose seminorm is power-multiplicative.
 * `IsUltrametricDist.exists_lt_norm_natCast_eq_one`: arbitrarily large natural numbers have norm
   one in an ultrametric seminormed ring with `‖1‖ = 1`.
 * `IsUltrametricDist.norm_mul_natCast_eq_of_coprime`: if `‖n‖ < 1` with `‖1‖ = 1`, then
@@ -87,6 +92,17 @@ public section
 theorem IsUltrametricDist.norm_intCast_le_norm_one {R : Type*} [SeminormedRing R]
     [IsUltrametricDist R] (z : ℤ) : ‖(z : R)‖ ≤ ‖(1 : R)‖ := by
   simpa using IsUltrametricDist.norm_zsmul_le (1 : R) z
+
+/-- In a seminormed ring whose seminorm is power-multiplicative and ultrametric, every element
+integral over `ℤ` has norm at most `1`. This is the norm analogue of
+`IsNonarchimedean.apply_le_one_of_isIntegral_int`, and like it a case of
+`IsNonarchimedean.apply_le_one_of_isIntegral_of_isPowMul`. -/
+theorem IsUltrametricDist.norm_le_one_of_isIntegral {R : Type*} [SeminormedRing R]
+    [IsUltrametricDist R] (hR : IsPowMul (‖·‖ : R → ℝ)) {x : R} (hx : IsIntegral ℤ x) :
+    ‖x‖ ≤ 1 :=
+  isNonarchimedean_norm.apply_le_one_of_isIntegral_of_isPowMul norm_nonneg norm_mul_le hR
+    (fun z ↦ eq_intCast (algebraMap ℤ R) z ▸ (norm_intCast_le_norm_one z).trans hR.map_one_le_one)
+    hx
 
 /-- In an ultrametric seminormed ring with `‖1‖ = 1`, arbitrarily large natural numbers have norm
 one: of two consecutive natural numbers, one has norm one, since their difference does. -/

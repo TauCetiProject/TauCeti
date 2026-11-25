@@ -41,6 +41,8 @@ spaces, while this one builds a comodule from a basis equipped with a prescribed
 * `TauCeti.Comodule.coefficientMatrix_ofGroupLike`: the coefficient matrix of a group-like basis
   is diagonal.
 * `TauCeti.Comodule.basis_mem_weightSpace_ofWeights`: the `x`-th basis vector has weight `wt x`.
+* `TauCeti.Comodule.mem_weightSpace_ofWeights_iff`: a vector has weight `g` exactly when every
+  basis vector in its support has weight `g`.
 * `TauCeti.Comodule.weightProj_ofWeights_eq`: for distinct weights, weight projection extracts
   the corresponding basis coordinate.
 * `TauCeti.Comodule.weightProj_ofWeights_eq_repr_sum`, `weightProj_ofWeights_eq_sum` and
@@ -164,6 +166,15 @@ theorem weightProj_ofWeights_eq_repr_sum [DecidableEq G] (b : Module.Basis η R 
   · rw [weightProj_of_mem]
     exact h ▸ basis_mem_weightSpace_ofWeights b wt x
   · rw [weightProj_of_mem_of_ne (Ne.symm h) (basis_mem_weightSpace_ofWeights b wt x), smul_zero]
+
+/-- **Weight vectors of a diagonal comodule.** A vector has weight `g` exactly when every basis
+vector in its support has weight `g`. -/
+theorem mem_weightSpace_ofWeights_iff (b : Module.Basis η R M) (wt : η → G) (g : G) (m : M) :
+    letI : Comodule R (MonoidAlgebra R G) M := ofWeights b wt
+    m ∈ weightSpace R G M g ↔ ∀ x ∈ (b.repr m).support, wt x = g := by
+  let _ : Comodule R (MonoidAlgebra R G) M := ofWeights b wt
+  rw [b.comoduleWeightSpace_eq_span wt (basis_mem_weightSpace_ofWeights b wt) g, b.mem_span_image]
+  simp only [Set.subset_def, Finset.mem_coe, Set.mem_ofPred_eq]
 
 /-- In a basis with pairwise distinct weights, projection to the weight of a basis vector
 extracts exactly that basis coordinate. -/
