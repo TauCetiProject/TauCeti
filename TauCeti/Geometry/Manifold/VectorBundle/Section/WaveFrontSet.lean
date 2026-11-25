@@ -515,12 +515,11 @@ smooth at `ξ`. -/
 theorem IsMicrolocallySmoothAt.smulLeftDualCLM {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M}
     {ξ : TangentSpace I x →L[ℝ] ℝ} (h : IsMicrolocallySmoothAt T x ξ) (f : C^∞⟮I, M; ℝ⟯) :
     IsMicrolocallySmoothAt (smulLeftDualCLM f T) x ξ := by
-  obtain ⟨t, _, c, hc, hcs, hct, hx, h⟩ := h
+  obtain ⟨t, _, c, hc, hcs, hct, hx, h⟩ := isMicrolocallyAt_def.1 (isMicrolocallySmoothAt_def.1 h)
   obtain ⟨B, g, hg, hyB, hBt, -, hB⟩ :=
     t.exists_forall_restrictCLM_chartDistributionCLM_smulLeftDualCLM (W := ℝ) c hc hct hcs f
       (c.map_source hx)
-  refine ⟨t, inferInstance, c, hc, hcs, hct, hx, fun v ↦ ?_⟩
-  dsimp only
+  refine (isMicrolocallySmoothAt_iff _ hc hcs hct hx ξ).2 fun v ↦ ?_
   rw [← isMicrolocallySmoothAt_restrictCLM_iff hBt hyB,
     restrictCLM_chartComponent_eq_smulLeftCLM hc hct hg (hB T)]
   exact ((isMicrolocallySmoothAt_restrictCLM_iff hBt hyB).2 (h v)).smulLeftCLM hg
@@ -531,13 +530,12 @@ theorem isMicrolocallySmoothAt_smulLeftDualCLM_iff {T : BundleTest I F V →L_c[
     {ξ : TangentSpace I x →L[ℝ] ℝ} {f : C^∞⟮I, M; ℝ⟯} (hfx : f x ≠ 0) :
     IsMicrolocallySmoothAt (smulLeftDualCLM f T) x ξ ↔ IsMicrolocallySmoothAt T x ξ := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.smulLeftDualCLM f⟩
-  obtain ⟨t, _, c, hc, hcs, hct, hx, h⟩ := h
+  obtain ⟨t, _, c, hc, hcs, hct, hx, h⟩ := isMicrolocallyAt_def.1 (isMicrolocallySmoothAt_def.1 h)
   obtain ⟨B, g, hg, hyB, hBt, hgy, hB⟩ :=
     t.exists_forall_restrictCLM_chartDistributionCLM_smulLeftDualCLM (W := ℝ) c hc hct hcs f
       (c.map_source hx)
   have hgx : g (c x) ≠ 0 := by rwa [hgy, c.left_inv hx]
-  refine ⟨t, inferInstance, c, hc, hcs, hct, hx, fun v ↦ ?_⟩
-  dsimp only
+  refine (isMicrolocallySmoothAt_iff T hc hcs hct hx ξ).2 fun v ↦ ?_
   rw [← isMicrolocallySmoothAt_restrictCLM_iff hBt hyB,
     ← Distribution.isMicrolocallySmoothAt_smulLeftCLM_iff hg hgx,
     ← restrictCLM_chartComponent_eq_smulLeftCLM hc hct hg (hB T),
@@ -558,8 +556,8 @@ theorem isMicrolocallySmoothAt_smulLeftDualCLM_of_notMem_tsupport [I.Boundaryles
   have hBt : B ≤ ⟨c.target, c.open_target⟩ := fun _ hz ↦ hz.1
   have hgB : EqOn (fun _ ↦ (0 : ℝ)) (f ∘ c.symm) B := fun z hz ↦
     (image_eq_zero_of_notMem_tsupport hz.2).symm
-  refine ⟨trivializationAt F V x, inferInstance, c, hc, hcs, hct, hxc, fun v ↦ ?_⟩
-  dsimp only
+  refine (isMicrolocallySmoothAt_iff (t := trivializationAt F V x) _ hc hcs hct hxc ξ).2
+    fun v ↦ ?_
   rw [← isMicrolocallySmoothAt_restrictCLM_iff hBt hyB,
     restrictCLM_chartComponent_eq_smulLeftCLM hc hct contDiff_const
       ((trivializationAt F V x).restrictCLM_chartDistributionCLM_smulLeftDualCLM c hc hct f T

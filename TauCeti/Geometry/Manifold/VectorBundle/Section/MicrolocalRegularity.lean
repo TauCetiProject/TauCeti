@@ -199,7 +199,6 @@ frame do not matter (`TauCeti.BundleTest.isMicrolocallyAt_iff`).
 The notion is meant for a boundaryless model `I`, where such charts exist at every point. At a
 boundary point of a manifold with boundary there is no chart into `E`, and `T` never satisfies `P`
 there. -/
-@[expose]
 def IsMicrolocallyAt (P : (Ω : Opens E) → 𝓓'(Ω, ℂ) → E → E → Prop)
     (T : BundleTest I F V →L_c[ℝ] ℝ) (x : M) (ξ : TangentSpace I x →L[ℝ] ℝ) : Prop :=
   ∃ (t : Trivialization F (π F V)) (_ : MemTrivializationAtlas t) (c : OpenPartialHomeomorph M E)
