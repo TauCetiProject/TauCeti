@@ -383,6 +383,15 @@ theorem complexifyLinearMap_ofReal (D : C^n⟮I, M; ℝ⟯ →ₗ[ℝ] C^n⟮J, 
   ext x
   simp
 
+/-- **The complexification of a local operator is local.** If `D g` vanishes at `x` whenever the
+real-valued function `g` vanishes near `x`, then `complexifyLinearMap D f` vanishes at `x` whenever
+the complex-valued function `f` vanishes near `x`. -/
+theorem complexifyLinearMap_apply_eq_zero {D : C^n⟮I, M; ℝ⟯ →ₗ[ℝ] C^n⟮I, M; ℝ⟯} {x : M}
+    (hD : ∀ g : C^n⟮I, M; ℝ⟯, (∀ᶠ y in nhds x, g y = 0) → D g x = 0)
+    {f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯} (hf : ∀ᶠ y in nhds x, f y = 0) :
+    complexifyLinearMap D f x = 0 := by
+  simp [hD f.re (hf.mono fun y hy ↦ by simp [hy]), hD f.im (hf.mono fun y hy ↦ by simp [hy])]
+
 variable {U V : TopologicalSpace.Opens M}
 
 /-- Real part commutes with restriction to an open subset. -/
