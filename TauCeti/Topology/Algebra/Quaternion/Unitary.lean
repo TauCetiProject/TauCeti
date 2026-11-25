@@ -258,13 +258,17 @@ noncomputable def toQuaternionSphereProdHomeomorph :
 @[simp]
 theorem coe_fst_toQuaternionSphereProdHomeomorph_apply (g : G) :
     ((e.toQuaternionSphereProdHomeomorph g).1 : ℍ[ℝ]) = (e g).1 := by
-  simp [toQuaternionSphereProdHomeomorph]; rfl
+  rw [toQuaternionSphereProdHomeomorph, Homeomorph.trans_apply, Homeomorph.coe_prodCongr,
+    Prod.map_fst, Quaternion.coe_unitaryHomeomorphSphere_apply,
+    ContinuousMulEquiv.toHomeomorph_eq_coe, Homeomorph.coe_ofClass]
 
 /-- Second quaternion coordinate of `toQuaternionSphereProdHomeomorph`. -/
 @[simp]
 theorem coe_snd_toQuaternionSphereProdHomeomorph_apply (g : G) :
     ((e.toQuaternionSphereProdHomeomorph g).2 : ℍ[ℝ]) = (e g).2 := by
-  simp [toQuaternionSphereProdHomeomorph]; rfl
+  rw [toQuaternionSphereProdHomeomorph, Homeomorph.trans_apply, Homeomorph.coe_prodCongr,
+    Prod.map_snd, Quaternion.coe_unitaryHomeomorphSphere_apply,
+    ContinuousMulEquiv.toHomeomorph_eq_coe, Homeomorph.coe_ofClass]
 
 /-- Inverse of `toQuaternionSphereProdHomeomorph`. -/
 theorem toQuaternionSphereProdHomeomorph_symm_apply

@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Quaternion.ComplexMatrix
 public import TauCeti.Algebra.Star.Unitary
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Four
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.QuaternionProduct
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Stabilization
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Three
@@ -39,6 +40,8 @@ reflection (`TauCeti.realCliffordCoordReflection 0`) swaps the two unit-quaterni
   unit-quaternion groups and exposes its forward and inverse Clifford equations.
 * `TauCeti.normSq_fst_realSpinFourEquivQuaternionUnitaryProd` and
   `TauCeti.normSq_snd_realSpinFourEquivQuaternionUnitaryProd` state the two norm-one conditions.
+* `TauCeti.realSpinFourEquivQuaternionUnitaryProd_negOne`: the central element `-1` is the pair
+  `(-1, -1)`.
 * `TauCeti.realSpinFourEquivQuaternionUnitaryProd_action` identifies the vector action with left
   multiplication by the first quaternion and inverse right multiplication by the second.
 * `TauCeti.realSpinFourEquivSpecialUnitaryProd` identifies compact real `Spin(4)` with
@@ -169,6 +172,19 @@ theorem normSq_snd_realSpinFourEquivQuaternionUnitaryProd
     Quaternion.normSq
         ((realSpinFourEquivQuaternionUnitaryProd s).2 : ℍ[ℝ]) = (1 : ℝ) :=
   Quaternion.normSq_coe_unitary_eq_one _
+
+/-- The central element `-1` of compact `Spin(4)` is the pair `(-1, -1)` of unit quaternions. -/
+@[simp]
+theorem realSpinFourEquivQuaternionUnitaryProd_negOne (hQ : realCliffordForm 4 0 ≠ 0) :
+    realSpinFourEquivQuaternionUnitaryProd (CliffordAlgebra.spinGroup.negOne _ hQ) = -1 := by
+  rw [← MulEquiv.eq_symm_apply]
+  apply Subtype.ext
+  rw [coe_realSpinFourEquivQuaternionUnitaryProd_symm_apply, CliffordAlgebra.spinGroup.coe_negOne]
+  have : (((-1 : unitary ℍ[ℝ] × unitary ℍ[ℝ]).1 : ℍ[ℝ]),
+      ((-1 : unitary ℍ[ℝ] × unitary ℍ[ℝ]).2 : ℍ[ℝ])) = -1 := by
+    ext <;> simp [Unitary.coe_neg]
+  rw [this, map_neg, map_one]
+  simp
 
 private abbrev Q4 := realCliffordForm 4 0
 
@@ -457,19 +473,6 @@ theorem realSpinFourEquivQuaternionUnitaryProd_eq :
       realCliffordFourZeroEvenEquivQuaternionProd_reverseEven s).symm
   exact Prod.ext (Subtype.ext (congrArg Prod.fst h)) (Subtype.ext (congrArg Prod.snd h))
 
-/-- In the compact `Spin(4)` quaternion-pair model, the central element `-1` has coordinates
-`(-1, -1)`. -/
-@[simp]
-theorem realSpinFourEquivQuaternionUnitaryProd_negOne :
-    realSpinFourEquivQuaternionUnitaryProd
-        (CliffordAlgebra.spinGroup.negOne (realCliffordForm 4 0)
-          (nondegenerate_realCliffordForm 4 0).ne_zero) = (-1, -1) := by
-  rw [realSpinFourEquivQuaternionUnitaryProd_eq]
-  exact CliffordAlgebra.spinGroupEquivQuaternionUnitaryProd_negOne
-    (realCliffordForm 4 0) (nondegenerate_realCliffordForm 4 0) (by simp)
-    realCliffordFourZeroEvenEquivQuaternionProd
-    realCliffordFourZeroEvenEquivQuaternionProd_reverseEven
-
 /-! ### Calibrated `(1, i, j, k)` `Spin(4)` model -/
 
 section Calibrated
@@ -554,10 +557,10 @@ theorem realSpinFourCalibratedEquivQuaternionUnitaryProd_apply :
       realCliffordFourZeroQuaternionProdCalibrationEquiv_apply, Unitary.coe_conj_symm_apply]
 
 /-- In the calibrated `Spin(4)` quaternion-pair model, `-1` has coordinates `(-1, -1)`. -/
-@[simp] theorem realSpinFourCalibratedEquivQuaternionUnitaryProd_negOne :
+@[simp] theorem realSpinFourCalibratedEquivQuaternionUnitaryProd_negOne
+    (hQ : realCliffordForm 4 0 ≠ 0) :
     realSpinFourCalibratedEquivQuaternionUnitaryProd
-        (CliffordAlgebra.spinGroup.negOne (realCliffordForm 4 0)
-          (nondegenerate_realCliffordForm 4 0).ne_zero) = (-1, -1) :=
+        (CliffordAlgebra.spinGroup.negOne (realCliffordForm 4 0) hQ) = (-1, -1) :=
   CliffordAlgebra.spinGroupEquivQuaternionUnitaryProd_negOne (realCliffordForm 4 0)
     (nondegenerate_realCliffordForm 4 0) (by simp)
     realCliffordFourZeroCalibratedEvenEquivQuaternionProd
@@ -653,6 +656,21 @@ noncomputable def realSpinThreeToFourCalibrationUnitary : unitary ℍ[ℝ] :=
     (realSpinThreeToFourCalibrationUnitary : ℍ[ℝ]) = ⟨(Real.sqrt 2)⁻¹, 0, 0, (Real.sqrt 2)⁻¹⟩ :=
   (rfl)
 
+-- Not `@[simp]`: `Unitary.conjStarAlgAut_apply` and `coe_realSpinThreeToFourCalibrationUnitary`
+-- unfold the LHS before rewriting.
+/-- Conjugating `⟨a, b, c, d⟩` by `(1 + k) / √2` sends `(1, i, j, k)` to `(1, j, -i, k)`. -/
+theorem conjStarAlgAut_realSpinThreeToFourCalibrationUnitary_mk (a b c d : ℝ) :
+    Unitary.conjStarAlgAut ℝ ℍ[ℝ] realSpinThreeToFourCalibrationUnitary ⟨a, b, c, d⟩ =
+      ⟨a, -c, b, d⟩ := by
+  have hs : (Real.sqrt 2)⁻¹ ^ 2 = 1 / 2 := by
+    rw [inv_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]; norm_num
+  ext <;> simp only [Unitary.conjStarAlgAut_apply, coe_realSpinThreeToFourCalibrationUnitary,
+    QuaternionAlgebra.star_mk, QuaternionAlgebra.mk_mul_mk]
+  · linear_combination 2 * a * hs
+  · linear_combination -2 * c * hs
+  · linear_combination 2 * b * hs
+  · linear_combination 2 * d * hs
+
 /-- First-coordinate inclusion embeds `Cl⁺(3,0) ≃ ℍ` diagonally into calibrated `Cl⁺(4,0) ≃ ℍ × ℍ`
 after conjugating by `realSpinThreeToFourCalibrationUnitary`. -/
 @[simp] theorem realCliffordFourZeroCalibratedEvenEquivQuaternionProd_firstInclusion
@@ -679,12 +697,9 @@ after conjugating by `realSpinThreeToFourCalibrationUnitary`. -/
         c, StarAlgEquiv.coe_toAlgEquiv, CliffordAlgebra.evenMap_ι,
         realCliffordSpinFirstInclusionIsometry_apply,
         realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι, hcons,
-        realCliffordThreeZeroEvenEquivQuaternion_ι]
-      ext <;>
-        simp only [Unitary.conjStarAlgAut_apply,
-          coe_realSpinThreeToFourCalibrationUnitary, QuaternionAlgebra.star_mk,
-          QuaternionAlgebra.mk_mul_mk] <;>
-        ring_nf <;> simp only [inv_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)] <;> ring
+        realCliffordThreeZeroEvenEquivQuaternion_ι,
+        conjStarAlgAut_realSpinThreeToFourCalibrationUnitary_mk]
+      ext <;> simp [QuaternionAlgebra.mk_mul_mk] <;> ring
   simpa [c] using DFunLike.congr_fun h x
 
 /-- **First-coordinate Spin stabilization `Spin(3) →* Spin(4)` is diagonal in the calibrated

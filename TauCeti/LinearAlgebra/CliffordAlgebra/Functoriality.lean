@@ -327,6 +327,12 @@ theorem coe_evenEquivOfIsometry_apply (e : Q₁.IsometryEquiv Q₂) (x : even Q�
       equivOfIsometry e (x : CliffordAlgebra Q₁) := by
   simp [evenEquivOfIsometry]
 
+/-- The algebra homomorphism underlying `evenEquivOfIsometry` is `evenMap e.toIsometry`. -/
+@[simp]
+theorem evenEquivOfIsometry_toAlgHom (e : Q₁.IsometryEquiv Q₂) :
+    (evenEquivOfIsometry e : even Q₁ →ₐ[R] even Q₂) = evenMap e.toIsometry :=
+  AlgHom.ext fun _ ↦ Subtype.ext <| by simp [coe_evenEquivOfIsometry_apply, equivOfIsometry_apply]
+
 /-- On a bilinear generator, the restricted equivalence applies the isometry to both vectors. -/
 @[simp]
 theorem evenEquivOfIsometry_ι (e : Q₁.IsometryEquiv Q₂) (m n : M₁) :

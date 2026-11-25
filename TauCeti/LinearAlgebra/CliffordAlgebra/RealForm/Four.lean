@@ -356,18 +356,58 @@ theorem coe_realCliffordFourZeroCalibrationUnitary :
     (realCliffordFourZeroCalibrationUnitary : ℍ[ℝ]) = ⟨(Real.sqrt 2)⁻¹, 0, (Real.sqrt 2)⁻¹, 0⟩ :=
   (rfl)
 
+-- Not `@[simp]`: `coe_realCliffordFourZeroCalibrationUnitary`, `Unitary.conjStarAlgAut_apply`, and
+-- `QuaternionAlgebra.mk_mul_mk` are `@[simp]` and unfold the LHS before rewriting.
+/-- Squaring `(1 + j) / √2` gives `j`. -/
+theorem realCliffordFourZeroCalibrationUnitary_mul_self :
+    (realCliffordFourZeroCalibrationUnitary : ℍ[ℝ]) *
+        (realCliffordFourZeroCalibrationUnitary : ℍ[ℝ]) = ⟨0, 0, 1, 0⟩ := by
+  have hs : (Real.sqrt 2)⁻¹ ^ 2 = 1 / 2 := by
+    rw [inv_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]; norm_num
+  ext <;> simp only [coe_realCliffordFourZeroCalibrationUnitary, QuaternionAlgebra.mk_mul_mk]
+  · ring
+  · ring
+  · linear_combination 2 * hs
+  · ring
+
+/-- Conjugating `⟨a, b, c, d⟩` by `(1 + j) / √2` sends `(1, i, j, k)` to `(1, -k, j, i)`. -/
+theorem conjStarAlgAut_realCliffordFourZeroCalibrationUnitary_mk (a b c d : ℝ) :
+    Unitary.conjStarAlgAut ℝ ℍ[ℝ] realCliffordFourZeroCalibrationUnitary ⟨a, b, c, d⟩ =
+      ⟨a, d, c, -b⟩ := by
+  have hs : (Real.sqrt 2)⁻¹ ^ 2 = 1 / 2 := by
+    rw [inv_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]; norm_num
+  ext <;> simp only [Unitary.conjStarAlgAut_apply, coe_realCliffordFourZeroCalibrationUnitary,
+    QuaternionAlgebra.star_mk, QuaternionAlgebra.mk_mul_mk]
+  · linear_combination 2 * a * hs
+  · linear_combination 2 * d * hs
+  · linear_combination 2 * c * hs
+  · linear_combination -2 * b * hs
+
+/-- Inverse conjugation by `(1 + j) / √2` sends `(1, i, j, k)` to `(1, k, j, -i)`. -/
+theorem conjStarAlgAut_symm_realCliffordFourZeroCalibrationUnitary_mk (a b c d : ℝ) :
+    (Unitary.conjStarAlgAut ℝ ℍ[ℝ] realCliffordFourZeroCalibrationUnitary).symm ⟨a, b, c, d⟩ =
+      ⟨a, -d, c, b⟩ := by
+  rw [StarAlgEquiv.symm_apply_eq, conjStarAlgAut_realCliffordFourZeroCalibrationUnitary_mk,
+     neg_neg]
+
 /-- Relation between the calibrated and native vector-to-quaternion isometries. -/
 theorem realCliffordFourZeroCalibratedQuaternionEquiv_eq_neg_mul_star_mul (v : Fin 4 → ℝ) :
     realCliffordFourZeroCalibratedQuaternionEquiv v =
       -((realCliffordFourZeroCalibrationUnitary : ℍ[ℝ]) *
         star (realCliffordFourZeroQuaternionEquiv v) *
           (realCliffordFourZeroCalibrationUnitary : ℍ[ℝ])) := by
-  ext <;>
-    simp only [realCliffordFourZeroCalibratedQuaternionEquiv_apply,
-      coe_realCliffordFourZeroCalibrationUnitary, realCliffordFourZeroQuaternionEquiv_apply,
-      QuaternionAlgebra.star_mk, QuaternionAlgebra.mk_mul_mk, QuaternionAlgebra.re_neg,
-      QuaternionAlgebra.imI_neg, QuaternionAlgebra.imJ_neg, QuaternionAlgebra.imK_neg] <;>
-    ring_nf <;> simp only [inv_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)] <;> ring
+  let u : ℍ[ℝ] := (realCliffordFourZeroCalibrationUnitary : ℍ[ℝ])
+  have hu : star u * u = 1 :=
+    Unitary.star_mul_self_of_mem realCliffordFourZeroCalibrationUnitary.property
+  have hmul (q : ℍ[ℝ]) : u * q * u =
+      Unitary.conjStarAlgAut ℝ ℍ[ℝ] realCliffordFourZeroCalibrationUnitary q * (u * u) := by
+    rw [Unitary.conjStarAlgAut_apply]
+    change u * q * u = u * q * star u * (u * u)
+    rw [mul_assoc (u * q) (star u) (u * u), ← mul_assoc (star u) u u, hu, one_mul]
+  rw [hmul, realCliffordFourZeroQuaternionEquiv_apply, QuaternionAlgebra.star_mk,
+    conjStarAlgAut_realCliffordFourZeroCalibrationUnitary_mk,
+    realCliffordFourZeroCalibrationUnitary_mul_self]
+  ext <;> simp [QuaternionAlgebra.mk_mul_mk]
 
 /-- The involutive `ℝ`-`⋆`-algebra equivalence `(n₁, n₂) ↦ (u * n₂ * star u, star u * n₁ * u)` on
 `ℍ × ℍ` for `u = (1 + j) / √2`. -/
@@ -433,15 +473,16 @@ theorem realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι (m n : Fin 4 �
           star (realCliffordFourZeroCalibratedQuaternionEquiv n),
         star (realCliffordFourZeroCalibratedQuaternionEquiv m) *
           realCliffordFourZeroCalibratedQuaternionEquiv n) := by
-  simp only [realCliffordFourZeroCalibratedEvenEquivQuaternionProd, AlgEquiv.trans_apply,
-    StarAlgEquiv.coe_toAlgEquiv, realCliffordFourZeroEvenEquivQuaternionProd_ι,
-    realCliffordFourZeroQuaternionProdCalibrationEquiv_apply,
-    coe_realCliffordFourZeroCalibrationUnitary, realCliffordFourZeroCalibratedQuaternionEquiv_apply]
-  ext <;>
-    simp only [mul_neg, neg_mul, QuaternionAlgebra.star_mk,
-      QuaternionAlgebra.mk_mul_mk, QuaternionAlgebra.re_neg, QuaternionAlgebra.imI_neg,
-      QuaternionAlgebra.imJ_neg, QuaternionAlgebra.imK_neg] <;>
-    ring_nf <;> simp only [inv_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)] <;> ring
+  rw [realCliffordFourZeroCalibratedEvenEquivQuaternionProd_eq_calibrationEquiv,
+    realCliffordFourZeroEvenEquivQuaternionProd_ι]
+  -- Unfold `realCliffordFourZeroQuaternionProdCalibrationEquiv` to `conjStarAlgAut` and `.symm`,
+  -- which preserve negation and multiplication and act on coordinates by `conjStarAlgAut_*_mk`.
+  change (Unitary.conjStarAlgAut ℝ ℍ[ℝ] realCliffordFourZeroCalibrationUnitary _,
+    (Unitary.conjStarAlgAut ℝ ℍ[ℝ] realCliffordFourZeroCalibrationUnitary).symm _) = _
+  simp only [map_neg, map_mul, conjStarAlgAut_realCliffordFourZeroCalibrationUnitary_mk,
+    conjStarAlgAut_symm_realCliffordFourZeroCalibrationUnitary_mk,
+    realCliffordFourZeroCalibratedQuaternionEquiv_apply, QuaternionAlgebra.star_mk]
+  ext <;> simp [QuaternionAlgebra.mk_mul_mk] <;> ring
 
 /-- Right-multiplying `v ∈ ℝ⁴` by `e₀` gives calibrated coordinates `(φ v, star (φ v))`. -/
 theorem realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι_single_zero_right (v : Fin 4 → ℝ) :
@@ -548,7 +589,9 @@ theorem realCliffordFourZeroCalibratedEvenEquivQuaternionProd_firstReflection
         realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι,
         realCliffordFourZeroCalibratedQuaternionEquiv_firstReflection, star_neg, star_star, neg_mul,
         mul_neg, neg_neg]
-  simpa [swapAlgHom, Prod.ext_iff] using DFunLike.congr_fun h x
+  simpa only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, swapAlgHom, AlgHom.prod_apply,
+    AlgHom.snd_apply, AlgHom.fst_apply, Prod.ext_iff, Prod.fst_swap, Prod.snd_swap] using
+    DFunLike.congr_fun h x
 
 end TauCeti
 

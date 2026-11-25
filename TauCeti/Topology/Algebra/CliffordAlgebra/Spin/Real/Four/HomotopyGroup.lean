@@ -25,7 +25,8 @@ via `HomotopyGroup.map_conj_apply`, while conjugation by first-coordinate reflec
 
 ## Main definitions and results
 
-* `CliffordAlgebra.realSpinFourCalibratedHomotopyGroupMulEquivSphereProd`,
+* `CliffordAlgebra.realSpinFourCalibratedHomotopyGroupMulEquivSphereProd` (with evaluation lemmas
+  `_apply`, `_symm_apply`, `fst_..._apply`, and `snd_..._apply`),
   `CliffordAlgebra.realSpecialOrthogonalFourCalibratedHomotopyGroupMulEquivSphereProd`, and
   `TauCeti.specialOrthogonalGroupFourCalibratedHomotopyGroupMulEquivSphereProd`: sphere-product
   homotopy decompositions of `Spin(4)` and `SO(4)`.
@@ -88,7 +89,10 @@ theorem realSpinFourCalibratedHomotopyGroupMulEquivSphereProd_symm_apply
   rw [realSpinFourCalibratedHomotopyGroupMulEquivSphereProd, MulEquiv.symm_trans_apply,
     HomotopyGroup.prodMulEquiv_symm_apply, HomotopyGroup.homeomorphMulEquivOfEq_symm_apply]
 
-private theorem fst_realSpinFourCalibratedHomotopyGroupMulEquivSphereProd_apply
+-- Not `@[simp]`: keeps `(realSpinFourCalibratedHomotopyGroupMulEquivSphereProd x).1` in
+-- `MulEquiv` form so `@[simp]` factor-pinning lemmas can fire before unfolding to `map`.
+/-- First sphere factor of `realSpinFourCalibratedHomotopyGroupMulEquivSphereProd`. -/
+theorem fst_realSpinFourCalibratedHomotopyGroupMulEquivSphereProd_apply
     (x : HomotopyGroup N (realCliffordSpinGroupZero 4) 1) :
     (realSpinFourCalibratedHomotopyGroupMulEquivSphereProd x).1 =
       HomotopyGroup.map ((ContinuousMap.fst : C(_, _)).comp
@@ -96,9 +100,10 @@ private theorem fst_realSpinFourCalibratedHomotopyGroupMulEquivSphereProd_apply
           realSpinFourCalibratedHomeomorphQuaternionSphereProd.continuous⟩) (by simp) x := by
   simp only [realSpinFourCalibratedHomotopyGroupMulEquivSphereProd_apply,
     HomotopyGroup.prodMulEquiv_apply, HomotopyGroup.prodEquiv_apply, HomotopyGroup.map_comp_apply]
-  rfl
+  exact HomotopyGroup.map_congr rfl _ _ x
 
-private theorem snd_realSpinFourCalibratedHomotopyGroupMulEquivSphereProd_apply
+/-- Second sphere factor of `realSpinFourCalibratedHomotopyGroupMulEquivSphereProd`. -/
+theorem snd_realSpinFourCalibratedHomotopyGroupMulEquivSphereProd_apply
     (x : HomotopyGroup N (realCliffordSpinGroupZero 4) 1) :
     (realSpinFourCalibratedHomotopyGroupMulEquivSphereProd x).2 =
       HomotopyGroup.map ((ContinuousMap.snd : C(_, _)).comp
@@ -106,7 +111,7 @@ private theorem snd_realSpinFourCalibratedHomotopyGroupMulEquivSphereProd_apply
           realSpinFourCalibratedHomeomorphQuaternionSphereProd.continuous⟩) (by simp) x := by
   simp only [realSpinFourCalibratedHomotopyGroupMulEquivSphereProd_apply,
     HomotopyGroup.prodMulEquiv_apply, HomotopyGroup.prodEquiv_apply, HomotopyGroup.map_comp_apply]
-  rfl
+  exact HomotopyGroup.map_congr rfl _ _ x
 
 /-- **First-coordinate stabilization `Spin(3) → Spin(4)` induces the diagonal map on homotopy
 groups** in the calibrated sphere-product model. -/
@@ -309,7 +314,8 @@ theorem specialOrthogonalGroupFourCalibratedHomotopyGroupMulEquivSphereProd_appl
           a) := by
   rw [specialOrthogonalGroupFourCalibratedHomotopyGroupMulEquivSphereProd, MulEquiv.trans_apply,
     HomotopyGroup.homeomorphMulEquivOfEq_apply]
-  congr 1
+  exact congrArg _ (HomotopyGroup.map_congr
+    (ContinuousMap.ext fun g ↦ by simp [ContinuousMulEquiv.toHomeomorph_eq_coe]) _ _ a)
 
 /-- Inverse of `specialOrthogonalGroupFourCalibratedHomotopyGroupMulEquivSphereProd`. -/
 theorem specialOrthogonalGroupFourCalibratedHomotopyGroupMulEquivSphereProd_symm_apply
@@ -322,7 +328,8 @@ theorem specialOrthogonalGroupFourCalibratedHomotopyGroupMulEquivSphereProd_symm
           ab) := by
   rw [specialOrthogonalGroupFourCalibratedHomotopyGroupMulEquivSphereProd,
     MulEquiv.symm_trans_apply, HomotopyGroup.homeomorphMulEquivOfEq_symm_apply]
-  exact HomotopyGroup.map_congr (ContinuousMap.ext fun _ ↦ rfl) _ _ _
+  exact HomotopyGroup.map_congr (ContinuousMap.ext fun g ↦ by
+    simp [ContinuousMulEquiv.toHomeomorph_eq_coe]) _ _ _
 
 end Nontrivial
 
