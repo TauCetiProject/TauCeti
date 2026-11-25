@@ -30,6 +30,13 @@ of two labels `a`, `b` is the pair label `x ↦ (a x, b x)`.
 * `TauCeti.countablePartitionEntropy_pair_eq_add`: the chain rule
   `H(a ∨ b) = H(b) + H(a | b)` for a measurable countable label `a`, under a probability (or
   zero) measure.
+* `TauCeti.conditionalPartitionEntropy_le`: conditioning on a measurable countable label does not
+  increase entropy, `H(a | b) ≤ H(a)`.
+* `TauCeti.countablePartitionEntropy_pair_le_add`: subadditivity `H(a ∨ b) ≤ H(a) + H(b)`.
+* `TauCeti.countablePartitionEntropy_le_pair`, `TauCeti.countablePartitionEntropy_comp_le`:
+  refining a partition does not decrease entropy, coarsening does not increase it.
+* `TauCeti.countablePartitionEntropy_comp_of_measurePreserving`: pulling a label back along a
+  measure-preserving map does not change its entropy.
 * `TauCeti.countablePartitionEntropy_pair_of_indepFun`: independent labels have additive entropy.
 * `TauCeti.countablePartitionEntropy_comp_of_injective`: relabeling by an injection, for instance
   embedding a countable alphabet into `ℕ`, does not change the entropy.
@@ -200,9 +207,99 @@ theorem countablePartitionEntropy_pair_eq_add {a : X → ι} (ha : Measurable a)
   rw [ENNReal.tsum_mul_right, hsplit, ← ofReal_measureReal,
     ← ENNReal.ofReal_mul measureReal_nonneg, negMulLog, neg_mul, mul_neg]
 
+/-- **Refinement.** Refining a partition does not decrease its entropy: `H(b) ≤ H(a ∨ b)` for a
+measurable countable label `a`. -/
+theorem countablePartitionEntropy_le_pair {a : X → ι} (ha : Measurable a) (b : X → κ) :
+    countablePartitionEntropy μ b ≤ countablePartitionEntropy μ (fun x ↦ (a x, b x)) := by
+  rw [countablePartitionEntropy_pair_eq_add ha]
+  exact le_self_add
+
+/-- **Coarsening.** A coarsening `f ∘ a` of a measurable countable label `a` has entropy at most
+`H(a)`. -/
+theorem countablePartitionEntropy_comp_le {a : X → ι} (ha : Measurable a) (f : ι → κ) :
+    countablePartitionEntropy μ (f ∘ a) ≤ countablePartitionEntropy μ a :=
+  (countablePartitionEntropy_le_pair ha (f ∘ a)).trans_eq <|
+    countablePartitionEntropy_comp_of_injective (e := fun i ↦ (i, f i)) a
+      fun _ _ h ↦ congrArg Prod.fst h
+
 end ChainRule
 
 variable [Countable κ] [MeasurableSpace κ] [MeasurableSingletonClass κ]
+
+/-- The real inequality behind `H(a | b) ≤ H(a)`: for `0 ≤ p ≤ q` and `p ≤ r`,
+`p * log (r / p) + p ≤ p * (-log q) + q * r`. It is `log y ≤ y - 1` at `y = q * r / p`. -/
+private theorem mul_log_div_add_le {p q r : ℝ} (hp : 0 ≤ p) (hpq : p ≤ q) (hpr : p ≤ r) :
+    p * log (r / p) + p ≤ p * (-log q) + q * r := by
+  rcases hp.eq_or_lt with rfl | hp
+  · simpa using mul_nonneg hpq hpr
+  have hq := hp.trans_le hpq
+  have hr := hp.trans_le hpr
+  have hy := log_le_sub_one_of_pos (show 0 < q * r / p by positivity)
+  rw [log_div (by positivity) hp.ne', log_mul hq.ne' hr.ne'] at hy
+  have h := mul_le_mul_of_nonneg_left hy hp.le
+  rw [show p * (q * r / p - 1) = q * r - p by field_simp] at h
+  rw [log_div hr.ne' hp.ne']
+  linarith
+
+/-- **Conditioning reduces entropy.** Under a probability measure (or the zero measure), for a
+measurable countable label `b` and any label `a`, `H(a | b) ≤ H(a)`. -/
+theorem conditionalPartitionEntropy_le [IsZeroOrProbabilityMeasure μ] (a : X → ι') {b : X → κ}
+    (hb : Measurable b) :
+    conditionalPartitionEntropy μ a b ≤ countablePartitionEntropy μ a := by
+  rw [conditionalPartitionEntropy_def, tsum_prod', countablePartitionEntropy_def]
+  refine tsum_le_tsum fun i ↦ ?_
+  set A := a ⁻¹' {i}
+  have hsplit : ∀ S : Set X, ∑' j, μ (S ∩ b ⁻¹' {j}) = μ S := fun S ↦ by
+    have := tsum_measure_preimage_singleton (μ := μ.restrict S) Set.countable_univ
+      fun j _ ↦ hb (measurableSet_singleton j)
+    rw [tsum_univ (f := fun j ↦ μ.restrict S (b ⁻¹' {j}))] at this
+    simpa [Measure.restrict_apply (hb (measurableSet_singleton _)), Set.inter_comm] using this
+  have hcell : ∀ j, ENNReal.ofReal (μ.real (A ∩ b ⁻¹' {j}) *
+        log (μ.real (b ⁻¹' {j}) / μ.real (A ∩ b ⁻¹' {j}))) + μ (A ∩ b ⁻¹' {j}) ≤
+      μ (A ∩ b ⁻¹' {j}) * ENNReal.ofReal (-log (μ.real A)) + μ A * μ (b ⁻¹' {j}) := fun j ↦ by
+    have h0 : 0 ≤ μ.real (A ∩ b ⁻¹' {j}) := measureReal_nonneg
+    have hA : μ.real (A ∩ b ⁻¹' {j}) ≤ μ.real A := measureReal_mono Set.inter_subset_left
+    have hB : μ.real (A ∩ b ⁻¹' {j}) ≤ μ.real (b ⁻¹' {j}) :=
+      measureReal_mono Set.inter_subset_right
+    have hlog : 0 ≤ μ.real (A ∩ b ⁻¹' {j}) *
+        log (μ.real (b ⁻¹' {j}) / μ.real (A ∩ b ⁻¹' {j})) := by
+      rcases h0.eq_or_lt with h | h
+      · simp [← h]
+      · exact mul_nonneg h0 (log_nonneg ((one_le_div h).mpr hB))
+    have hneg : 0 ≤ -log (μ.real A) := neg_nonneg.mpr (log_nonpos measureReal_nonneg
+      measureReal_le_one)
+    rw [← ofReal_measureReal (s := A ∩ _), ← ofReal_measureReal (s := A),
+      ← ofReal_measureReal (s := b ⁻¹' _), ← ENNReal.ofReal_add hlog h0,
+      ← ENNReal.ofReal_mul h0, ← ENNReal.ofReal_mul measureReal_nonneg,
+      ← ENNReal.ofReal_add (mul_nonneg h0 hneg) (mul_nonneg measureReal_nonneg
+        measureReal_nonneg)]
+    exact ENNReal.ofReal_le_ofReal (mul_log_div_add_le h0 hA hB)
+  have htot : ∑' j, μ (b ⁻¹' {j}) ≤ 1 := by
+    simpa using (hsplit Set.univ).le.trans prob_le_one
+  refine ENNReal.le_of_add_le_add_right (measure_ne_top μ A) ?_
+  calc _ = ∑' j, (ENNReal.ofReal (μ.real (A ∩ b ⁻¹' {j}) *
+        log (μ.real (b ⁻¹' {j}) / μ.real (A ∩ b ⁻¹' {j}))) + μ (A ∩ b ⁻¹' {j})) := by
+        rw [tsum_add, hsplit]
+    _ ≤ ∑' j, (μ (A ∩ b ⁻¹' {j}) * ENNReal.ofReal (-log (μ.real A)) +
+        μ A * μ (b ⁻¹' {j})) := tsum_le_tsum hcell
+    _ ≤ μ A * ENNReal.ofReal (-log (μ.real A)) + μ A := by
+        rw [tsum_add, ENNReal.tsum_mul_right, ENNReal.tsum_mul_left, hsplit]
+        gcongr
+        exact (mul_le_mul_right htot _).trans_eq (mul_one _)
+    _ = _ := by
+        rw [← ofReal_measureReal, ← ENNReal.ofReal_mul measureReal_nonneg, negMulLog, neg_mul,
+          mul_neg]
+
+/-- **Subadditivity.** Under a probability measure (or the zero measure), the entropy of the join
+of two measurable countable labels is at most the sum of their entropies:
+`H(a ∨ b) ≤ H(a) + H(b)`. -/
+theorem countablePartitionEntropy_pair_le_add [IsZeroOrProbabilityMeasure μ] {a : X → ι}
+    {b : X → κ} (ha : Measurable a) (hb : Measurable b) :
+    countablePartitionEntropy μ (fun x ↦ (a x, b x)) ≤
+      countablePartitionEntropy μ a + countablePartitionEntropy μ b := by
+  rw [countablePartitionEntropy_pair_eq_add ha, add_comm (countablePartitionEntropy μ a)]
+  gcongr
+  exact conditionalPartitionEntropy_le a hb
 
 private theorem countablePartitionEntropy_pair_of_indepFun_of_isProbabilityMeasure
     [IsProbabilityMeasure μ] {a : X → ι} {b : X → κ} (ha : Measurable a)
@@ -272,5 +369,14 @@ theorem countablePartitionEntropy_pair_of_indepFun {a : X → ι} {b : X → κ}
     exact countablePartitionEntropy_pair_of_indepFun_of_isProbabilityMeasure ha hb hab
 
 end Measurable
+
+/-- Pulling a measurable countable label back along a measure-preserving map does not change its
+entropy. -/
+theorem countablePartitionEntropy_comp_of_measurePreserving {Y : Type*} [MeasurableSpace Y]
+    {ν : Measure Y} [MeasurableSpace ι] [MeasurableSingletonClass ι] {T : X → Y}
+    (hT : MeasurePreserving T μ ν) {a : Y → ι} (ha : Measurable a) :
+    countablePartitionEntropy μ (a ∘ T) = countablePartitionEntropy ν a := by
+  simp only [countablePartitionEntropy_def, Set.preimage_comp,
+    hT.measureReal_preimage (ha (measurableSet_singleton _)).nullMeasurableSet]
 
 end TauCeti
