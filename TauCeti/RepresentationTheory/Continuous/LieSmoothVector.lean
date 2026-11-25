@@ -341,7 +341,7 @@ smooth vectors is a homomorphism of real Lie algebras into the `R`-linear endomo
 def lieSmoothVectorsDerivedAction :
     LeftInvariantDerivation I G →ₗ⁅ℝ⁆ Module.End R (lieSmoothVectors I π) where
   toFun := lieSmoothVectorsDerivative I π
-  map_add' X Y := LinearMap.ext fun w ↦ Subtype.ext (w.property.lieDerivative_add_left X Y)
+  map_add' := lieSmoothVectorsDerivative_add
   map_smul' c X := LinearMap.ext fun w ↦ Subtype.ext (w.property.lieDerivative_smul_left c X)
   map_lie' {X Y} := LinearMap.ext fun w ↦ Subtype.ext (w.property.lieDerivative_lie X Y)
 
