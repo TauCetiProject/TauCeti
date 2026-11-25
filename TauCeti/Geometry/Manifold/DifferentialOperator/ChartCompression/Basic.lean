@@ -179,8 +179,10 @@ theorem exists_cutoffPullback_one_eq [FiniteDimensional ℝ E] {g : C^∞⟮𝓘
     (Ω := ⟨e.target, e.open_target⟩) (n := ⊤)
     (hgc.isCompact.image_of_continuousOn (e.continuousOn.mono hg))
     (image_subset_iff.2 fun p hp ↦ e.map_source (hg hp))
-  refine ⟨⟨fun y ↦ θ y * g (e.symm y),
-    contMDiff_iff_contDiff.1 (e.cutoffPushforward he θ g).contMDiff, θ.hasCompactSupport.mul_right,
+  have hρ : ContDiff ℝ ∞ fun y ↦ θ y * g (e.symm y) := by
+    rw [← funext (e.cutoffPushforward_apply he θ g)]
+    exact contMDiff_iff_contDiff.1 (e.cutoffPushforward he θ g).contMDiff
+  refine ⟨⟨fun y ↦ θ y * g (e.symm y), hρ, θ.hasCompactSupport.mul_right,
     tsupport_mul_subset_left.trans θ.tsupport_subset⟩, ?_⟩
   ext p
   by_cases hp : p ∈ e.source

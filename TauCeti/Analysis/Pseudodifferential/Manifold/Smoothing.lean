@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Pseudodifferential.Manifold.PrincipalSymbol
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Pseudodifferential.CoordinateChange.Chart
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
+import TauCeti.Topology.OpenPartialHomeomorph.Compact
 
 /-!
 # Smoothing operators and pseudolocality on a manifold
@@ -21,9 +22,8 @@ operators all of whose chart compressions are quantizations of smoothing symbols
 (`TauCeti.mem_smoothingPseudodifferentialOperators_iff_isSmoothing`). Their principal symbols
 vanish in every order.
 
-The main results are the two facts behind the patching of pseudodifferential operators from
-local data, as in Hörmander (III, §18.1) and Melrose (*Introduction to Microlocal Analysis*,
-§5.3):
+The patching of pseudodifferential operators from local data rests on two facts, as in
+Hörmander (III, §18.1) and Melrose (*Introduction to Microlocal Analysis*, §5.3):
 
 * **Pseudolocality.** If `P` is a classical pseudodifferential operator and `f`, `g` are smooth
   functions with disjoint supports, then `f P g` has order `-∞`
@@ -33,7 +33,8 @@ local data, as in Hörmander (III, §18.1) and Melrose (*Introduction to Microlo
 * **Localization.** If `φ` and `ψ` are cutoffs in a chart `e` and `a` is the symbol of the chart
   compression of `P` by `φ` and `ψ`, then `φ P ψ`, with the cutoffs read on `M`, is exactly the
   chart quantization of `a`
-  (`OpenPartialHomeomorph.chartQuantization_eq_mulLeft_comp_comp_mulLeft`).
+  (`OpenPartialHomeomorph.chartQuantization_eq_mulLeft_comp_comp_mulLeft`, next to the chart
+  quantization itself).
 
 Together they show that a classical pseudodifferential operator is, modulo an operator of order
 `-∞`, the sum of the chart quantizations of its chart symbols: for cutoffs `ρᵢ` in charts `eᵢ`
@@ -58,7 +59,6 @@ manifold such cutoffs exist. This is the converse of
 * `TauCeti.classicalPrincipalSymbol_eq_zero_of_mem_smoothingPseudodifferentialOperators`: the
   principal symbol of an operator of order `-∞` vanishes in every order.
 * `TauCeti.mulLeft_comp_comp_mulLeft_mem_smoothingPseudodifferentialOperators`: pseudolocality.
-* `OpenPartialHomeomorph.chartQuantization_eq_mulLeft_comp_comp_mulLeft`: localization.
 * `TauCeti.sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators`: a classical
   pseudodifferential operator is a sum of chart quantizations modulo an operator of order `-∞`,
   given cutoffs in charts adding up to `1`.
@@ -169,16 +169,6 @@ theorem comp_mulLeft_mem_smoothingPseudodifferentialOperators
 
 /-! ### Pseudolocality -/
 
-omit [ChartedSpace (CoordinateSpace n) M] [T2Space M] in
-/-- The set of points of `tsupport φ` read on `M` inside a closed set `s`: it is compact, since
-`φ` has compact support in the chart target, where the inverse chart is continuous. -/
-private theorem isCompact_tsupport_inter_preimage_symm
-    {e : OpenPartialHomeomorph M (CoordinateSpace n)} (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
-    {s : Set M} (hs : IsClosed s) : IsCompact (tsupport φ ∩ e.symm ⁻¹' s) :=
-  φ.hasCompactSupport.isCompact.of_isClosed_subset
-    ((e.continuousOn_symm.mono φ.tsupport_subset).preimage_isClosed_of_isClosed
-      (isClosed_tsupport _) hs) inter_subset_left
-
 /-- In a chart `e`, the compression of `f P g` by `φ` and `ψ` vanishes off the set of points of
 `tsupport φ` read on `M` inside `tsupport f`, and only sees its input on the set of points of
 `tsupport ψ` read on `M` inside `tsupport g`. So the input may be multiplied by a cutoff `ψ₁` equal
@@ -236,8 +226,10 @@ theorem mulLeft_comp_comp_mulLeft_mem_smoothingPseudodifferentialOperators {m : 
   -- In the chart, the output of the compression is supported in the compact set `F` and only
   -- depends on the input on the compact set `G`; these are disjoint since `f` and `g` are. Choose
   -- cutoffs `φ₁ = 1` on `F` and `ψ₁ = 1` on `G` with disjoint supports.
-  have hF := isCompact_tsupport_inter_preimage_symm φ (isClosed_tsupport f)
-  have hG := isCompact_tsupport_inter_preimage_symm ψ (isClosed_tsupport g)
+  have hF := e.isCompact_inter_preimage_symm φ.hasCompactSupport.isCompact φ.tsupport_subset
+    (isClosed_tsupport f)
+  have hG := e.isCompact_inter_preimage_symm ψ.hasCompactSupport.isCompact ψ.tsupport_subset
+    (isClosed_tsupport g)
   obtain ⟨U, V, hU, hV, hFU, hGV, hUV⟩ := SeparatedNhds.of_isCompact_isCompact hF hG
     (disjoint_left.2 fun x hxF hxG ↦ hfg.ne_of_mem hxF.2 hxG.2 rfl)
   obtain ⟨φ₁, hφ₁, -, hφ₁1, hφ₁c, hφ₁U⟩ := hF.exists_contDiff_cutoff hU hFU
@@ -251,78 +243,13 @@ theorem mulLeft_comp_comp_mulLeft_mem_smoothingPseudodifferentialOperators {m : 
   -- The compression of `f P g` is `φ₁ Op(a) ψ₁`.
   set w : 𝓢(CoordinateSpace n, ℂ) :=
     (hψ₁c.smul_right (f' := ⇑u)).toSchwartzMap (hψ₁.smul (u.smooth ⊤))
-  have hw (y : CoordinateSpace n) : w y = ψ₁ y • u y := rfl
+  have hw (y : CoordinateSpace n) : w y = ψ₁ y • u y := HasCompactSupport.toSchwartzMap_toFun _ _ y
   rw [← hop u w (fun y _ ↦ hw y) (fun z hz ↦ (hz (mem_univ z)).elim) x,
     ← complexChartCompression_mulLeft_comp_comp_mulLeft_eq_smul he φ ψ
       (fun y hy ↦ interior_subset (hφ₁1 hy)) (fun y hy ↦ interior_subset (hψ₁1 hy)) hw x, ← ha]
   simp
 
 end TauCeti
-
-/-! ### Localization -/
-
-namespace OpenPartialHomeomorph
-
-open TauCeti
-
-variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpace n) M]
-  [T2Space M] {e : OpenPartialHomeomorph M (CoordinateSpace n)}
-  (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M) {m : ℝ}
-  {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
-    C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
-
-include he
-
-/-- **Localization.** Let `a` be the symbol of the chart compression of an operator `P` by cutoffs
-`φ` and `ψ` in a chart `e`. For cutoffs `φ₁` and `ψ₁` equal to `1` on the supports of `φ` and
-`ψ`, the chart quantization of `a` localized by `φ₁` and `ψ₁` is `u ↦ φ · P (ψ u)`, where `φ` and
-`ψ` are read on `M` through the chart and extended by `0`. -/
-theorem chartQuantization_eq_mulLeft_comp_comp_mulLeft {φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)}
-    {a : ClassicalSymbol n ℂ ℂ m}
-    (ha : ∀ (u : 𝓢(CoordinateSpace n, ℂ)) (x : CoordinateSpace n),
-      quantizeSchwartzValue a.toSymbol.coefficient u x =
-        e.complexChartCompression he φ ψ P (ContMDiffMap.ofContDiff u (u.smooth ⊤)) x)
-    {φ₁ ψ₁ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} (hφ₁ : EqOn φ₁ 1 (tsupport φ))
-    (hψ₁ : EqOn ψ₁ 1 (tsupport ψ)) :
-    e.chartQuantization he φ₁ ψ₁ a =
-      LinearMap.mulLeft ℂ (e.complexCutoffPullback he φ 1) ∘ₗ P ∘ₗ
-        LinearMap.mulLeft ℂ (e.complexCutoffPullback he ψ 1) := by
-  ext u p
-  -- The input `ψ₁ · (u ∘ e⁻¹)` of `Op(a)`, as a Schwartz function.
-  set v : 𝓢(CoordinateSpace n, ℂ) :=
-    HasCompactSupport.toSchwartzMap (f := e.complexCutoffPushforward he ψ₁ u)
-      (by
-        rw [show ⇑(e.complexCutoffPushforward he ψ₁ u) = fun y ↦ ψ₁ y • u (e.symm y) from
-          funext (e.complexCutoffPushforward_apply he ψ₁ u)]
-        exact ψ₁.hasCompactSupport.smul_right)
-      (contMDiff_iff_contDiff.1 (e.complexCutoffPushforward he ψ₁ u).contMDiff)
-  have hv (y : CoordinateSpace n) : v y = ψ₁ y • u (e.symm y) :=
-    e.complexCutoffPushforward_apply he ψ₁ u y
-  -- Read on `M`, the pullback of `v` by `ψ` is `ψ u`, since `ψ₁ = 1` on the support of `ψ`.
-  have hpull : e.complexCutoffPullback he ψ (ContMDiffMap.ofContDiff v (v.smooth ⊤)) =
-      e.complexCutoffPullback he ψ 1 * u := by
-    ext q
-    by_cases hq : q ∈ e.source
-    · simp only [complexCutoffPullback_apply_of_mem he _ _ hq, ContMDiffMap.coe_mul,
-        Pi.mul_apply, ContMDiffMap.coe_ofContDiff, hv, e.left_inv hq, ContMDiffMap.coe_one,
-        Pi.one_apply, Complex.real_smul, mul_one]
-      by_cases hψq : ψ (e q) = 0
-      · simp [hψq]
-      rw [hψ₁ (subset_tsupport _ hψq), Pi.one_apply, Complex.ofReal_one, one_mul]
-    · simp [complexCutoffPullback_apply_of_notMem he _ _ hq]
-  by_cases hp : p ∈ e.source
-  · rw [chartQuantization_apply_of_mem he φ₁ ψ₁ a u hv hp, ha, complexChartCompression_apply,
-      e.left_inv hp, hpull]
-    simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply,
-      complexCutoffPullback_apply_of_mem he _ _ hp, ContMDiffMap.coe_one, Pi.one_apply,
-      Complex.real_smul, mul_one]
-    by_cases hφp : φ (e p) = 0
-    · simp [hφp]
-    rw [hφ₁ (subset_tsupport _ hφp), Pi.one_apply, Complex.ofReal_one, one_mul]
-  · simp [chartQuantization_apply_of_notMem he _ _ a u hp,
-      complexCutoffPullback_apply_of_notMem he _ _ hp]
-
-end OpenPartialHomeomorph
 
 /-! ### Chart quantizations modulo operators of order `-∞` -/
 
