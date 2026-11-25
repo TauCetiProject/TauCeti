@@ -32,7 +32,8 @@ real, and Mathlib's `NumberField.IsCMField.complexConj F` if `F` is CM.
 ## Main results
 
 * `TauCeti.NumberField.exists_isConj`: every embedding `Ω →+* ℂ` has a complex conjugation.
-* `TauCeti.NumberField.inv_mul_mul_mem_complexConjugations`: the set of complex conjugations is
+* `TauCeti.NumberField.inv_mul_mul_mem_complexConjugations` and
+  `TauCeti.NumberField.mul_mul_inv_mem_complexConjugations`: the set of complex conjugations is
   stable under conjugation.
 * `TauCeti.NumberField.apply_eq_of_isTotallyReal` and
   `TauCeti.NumberField.apply_eq_complexConj_of_isCMField`: the action of a complex conjugation on
@@ -95,6 +96,12 @@ theorem inv_mul_mul_mem_complexConjugations {c : Gal(Ω/ℚ)} (hc : c ∈ comple
   obtain ⟨ι, hι⟩ := hc
   exact ⟨_, hι.comp g⟩
 
+/-- The set of complex conjugations is stable under conjugation by `Gal(Ω/ℚ)`, in the form
+`g c g⁻¹`. -/
+theorem mul_mul_inv_mem_complexConjugations {c : Gal(Ω/ℚ)} (hc : c ∈ complexConjugations Ω)
+    (g : Gal(Ω/ℚ)) : g * c * g⁻¹ ∈ complexConjugations Ω := by
+  simpa using inv_mul_mul_mem_complexConjugations hc g⁻¹
+
 /-- **Complex conjugations on a totally real field.** Every complex conjugation fixes the image
 of a totally real field pointwise. -/
 theorem apply_eq_of_isTotallyReal {F : Type*} [Field F] [IsTotallyReal F] {c : Gal(Ω/ℚ)}
@@ -147,8 +154,7 @@ private theorem apply_mem_fieldRange_of_forall_mul {τ : F →+* Ω} {c : Gal(Ω
   intro g hg
   have hgx : g (τ x) = τ x := (IntermediateField.mem_fixingSubgroup_iff _ _).mp hg _ ⟨x, rfl⟩
   have hginv : g⁻¹ (τ x) = τ x := g.symm_apply_eq.mpr hgx.symm
-  have hc' : g * c * g⁻¹ ∈ complexConjugations Ω := by
-    simpa using inv_mul_mul_mem_complexConjugations hc g⁻¹
+  have hc' := mul_mul_inv_mem_complexConjugations hc g
   -- The conjugate `g c g⁻¹` sends `τ x` to `g (c (τ x))`, and by involutivity of `g c g⁻¹` and
   -- `h` this is `c (τ x)`.
   have hcx : (g * c * g⁻¹) (τ x) = c (τ x) :=
