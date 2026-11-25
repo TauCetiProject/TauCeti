@@ -45,6 +45,8 @@ nonreduced ones included.
 
 * `Derivation.pointRightLogDeriv D g`: the right logarithmic derivative `(D ∘ g) ⋆ g⁻¹`.
 * `Derivation.pointGauge D g A`: the gauge action `Ad g A - dlog g`.
+* `Derivation.pointGaugeMulAction D`: the gauge action as a `MulAction`, installed locally.
+* `Derivation.pointGaugeStabilizer D A`: the stabilizer of the connection `D + A`.
 
 ## Main results
 
@@ -77,17 +79,6 @@ section CommSemiring
 variable {R H B : Type*} [CommSemiring R] [CommSemiring H] [HopfAlgebra R H]
   [CommSemiring B] [Algebra R B] (D : Derivation R B B)
 
-/-- The derivative `D ∘ g` of a point is a derivation at `g`: composed with the multiplication of
-`H` it is `g ⊠ (D ∘ g) + (D ∘ g) ⊠ g`. -/
-private lemma toConv_comp_comp_mul' (g : WithConv (H →ₐ[R] B)) :
-    toConv ((D : B →ₗ[R] B) ∘ₗ g.ofConv.toLinearMap ∘ₗ LinearMap.mul' R H) =
-      mulTensor (toConv g.ofConv.toLinearMap)
-          (toConv ((D : B →ₗ[R] B) ∘ₗ g.ofConv.toLinearMap)) +
-        mulTensor (toConv ((D : B →ₗ[R] B) ∘ₗ g.ofConv.toLinearMap))
-          (toConv g.ofConv.toLinearMap) := by
-  refine ofConv_injective (TensorProduct.ext' fun x y => ?_)
-  simp [D.leibniz, mul_comm]
-
 /-- The convolution `(D ∘ g) ⋆ g⁻¹` satisfies the Leibniz rule at the counit:
 composed with the multiplication of `H` it is `1 ⊠ δ + δ ⊠ 1`. -/
 private lemma toConv_dlog_comp_mul' (g : WithConv (H →ₐ[R] B)) :
@@ -100,11 +91,11 @@ private lemma toConv_dlog_comp_mul' (g : WithConv (H →ₐ[R] B)) :
   have h := LinearMap.convMul_comp_coalgHom_distrib
     (toConv ((D : B →ₗ[R] B) ∘ₗ g.ofConv.toLinearMap)) (toConv ((g⁻¹).ofConv.toLinearMap))
     (_root_.Bialgebra.mulCoalgHom R H)
-  -- The `toLinearMap` field of `mulCoalgHom` is definitionally `mul'`; the library
-  -- states this only for the coercion, whose pattern does not match the field
-  -- projection, so the identification is by `rfl`.
-  rw [show (_root_.Bialgebra.mulCoalgHom R H).toLinearMap = LinearMap.mul' R H from rfl] at h
-  rw [h, toConv_ofConv, ofConv_toConv, LinearMap.comp_assoc, toConv_comp_comp_mul' D g,
+  have hmul : (_root_.Bialgebra.mulCoalgHom R H).toLinearMap = LinearMap.mul' R H :=
+    _root_.Bialgebra.toLinearMap_mulCoalgHom
+  rw [hmul] at h
+  rw [h, toConv_ofConv, ofConv_toConv, LinearMap.comp_assoc,
+    D.toConv_comp_toLinearMap_comp_mul' g.ofConv,
     ofConv_toConv, AlgHom.toConv_toLinearMap_comp_mul' (g⁻¹).ofConv, add_mul,
     WithConv.mulTensor_convMul, WithConv.mulTensor_convMul, algHom_toConv_mul_toConv_inv]
 
@@ -376,19 +367,37 @@ theorem mapValue_pointGauge {C : Type*} [CommRing C] [Algebra R C] (φ : B →�
     Bialgebra.CounitAlgebra.mapValue_pointsMulEquiv_symm_apply,
     mapValue_pointRightLogDeriv D φ D' hφ]
 
+/-- The gauge action of `G(B)` on the connections `D + A`, packaged as a multiplicative action.
+It depends on the derivation `D`, so it is not an instance; install it locally to use the orbit
+and stabilizer API of `MulAction`. -/
+@[instance_reducible]
+noncomputable def pointGaugeMulAction :
+    MulAction (WithConv (H →ₐ[R] B)) (Derivation R H (Bialgebra.CounitAlgebra R H B)) where
+  smul := D.pointGauge
+  one_smul := D.pointGauge_one
+  mul_smul := D.pointGauge_mul
+
+/-- The scalar action of `Derivation.pointGaugeMulAction` is the gauge action. -/
+theorem pointGauge_smul_def (g : WithConv (H →ₐ[R] B))
+    (A : Derivation R H (Bialgebra.CounitAlgebra R H B)) :
+    letI := D.pointGaugeMulAction (H := H)
+    g • A = D.pointGauge g A :=
+  (rfl)
+
 /-- The stabilizer of the connection `D + A` under the gauge action: its automorphisms as a
-connection on the trivial torsor. -/
+connection on the trivial torsor. It is the `MulAction.stabilizer` of
+`Derivation.pointGaugeMulAction`. -/
 noncomputable def pointGaugeStabilizer (A : Derivation R H (Bialgebra.CounitAlgebra R H B)) :
-    Subgroup (WithConv (H →ₐ[R] B)) where
-  carrier := {g | D.pointGauge g A = A}
-  one_mem' := D.pointGauge_one A
-  mul_mem' {g h} hg hh := by
-    simp only [Set.mem_ofPred_eq] at hg hh ⊢
-    rw [pointGauge_mul, hh, hg]
-  inv_mem' {g} hg := by
-    simp only [Set.mem_ofPred_eq] at hg ⊢
-    conv_lhs => rw [← hg]
-    exact D.pointGauge_inv_pointGauge g A
+    Subgroup (WithConv (H →ₐ[R] B)) :=
+  letI := D.pointGaugeMulAction (H := H)
+  MulAction.stabilizer (WithConv (H →ₐ[R] B)) A
+
+/-- The gauge stabilizer is the `MulAction.stabilizer` of `Derivation.pointGaugeMulAction`, so
+the orbit-stabilizer API of `MulAction` applies to it. -/
+theorem stabilizer_pointGaugeMulAction (A : Derivation R H (Bialgebra.CounitAlgebra R H B)) :
+    letI := D.pointGaugeMulAction (H := H)
+    MulAction.stabilizer (WithConv (H →ₐ[R] B)) A = D.pointGaugeStabilizer A :=
+  (rfl)
 
 @[simp]
 theorem mem_pointGaugeStabilizer_iff {A : Derivation R H (Bialgebra.CounitAlgebra R H B)}

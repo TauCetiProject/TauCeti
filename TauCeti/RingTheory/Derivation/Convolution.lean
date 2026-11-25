@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Coalgebra.Convolution
 public import Mathlib.RingTheory.Derivation.Basic
+public import TauCeti.Algebra.Coalgebra.Convolution
 
 /-!
 # Derivations of convolution products
@@ -16,6 +17,17 @@ ring under convolution, `(f ⋆ g) c = ∑ f c₁ * g c₂`. A derivation `D` of
 `A` acts on them by postcomposition, and it differentiates convolution products by the Leibniz
 rule. This is the rule used to differentiate points of an affine group scheme, which are
 convolution-invertible algebra maps out of its coordinate Hopf algebra.
+
+Dually, the derivative `D ∘ g` of an algebra map `g` into `A` is a derivation at `g`: composed
+with multiplication it is `g ⊠ (D ∘ g) + (D ∘ g) ⊠ g`, in the exterior convolution product
+`WithConv.mulTensor`. This is the Leibniz counterpart of
+`AlgHom.toConv_toLinearMap_comp_mul'`.
+
+## Main results
+
+* `Derivation.toConv_comp_convMul`: the Leibniz rule for convolution products.
+* `Derivation.toConv_comp_toLinearMap_comp_mul'`: the derivative of an algebra map is a
+  derivation at that map.
 -/
 
 public section
@@ -36,5 +48,16 @@ theorem toConv_comp_convMul (D : Derivation R A A) (f g : WithConv (C →ₗ[R] 
   refine ofConv_injective (LinearMap.ext fun c => ?_)
   simp [(Coalgebra.Repr.arbitrary R c).convMul_apply, Finset.sum_add_distrib, D.leibniz,
     mul_comm, add_comm]
+
+/-- The derivative `D ∘ g` of an algebra map `g : S → A` is a derivation at `g`: composed with
+the multiplication of `S` it is `g ⊠ (D ∘ g) + (D ∘ g) ⊠ g`. This is the Leibniz counterpart of
+`AlgHom.toConv_toLinearMap_comp_mul'`. -/
+theorem toConv_comp_toLinearMap_comp_mul' {S : Type*} [Semiring S] [Algebra R S]
+    (D : Derivation R A A) (g : S →ₐ[R] A) :
+    toConv ((D : A →ₗ[R] A) ∘ₗ g.toLinearMap ∘ₗ LinearMap.mul' R S) =
+      mulTensor (toConv g.toLinearMap) (toConv ((D : A →ₗ[R] A) ∘ₗ g.toLinearMap)) +
+        mulTensor (toConv ((D : A →ₗ[R] A) ∘ₗ g.toLinearMap)) (toConv g.toLinearMap) := by
+  refine ofConv_injective (TensorProduct.ext' fun x y => ?_)
+  simp [D.leibniz, mul_comm]
 
 end Derivation
