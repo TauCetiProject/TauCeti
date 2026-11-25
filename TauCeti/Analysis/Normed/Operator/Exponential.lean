@@ -70,8 +70,13 @@ theorem restrictScalars_exp [NormedSpace ℝ X] [IsScalarTower ℝ 𝕜 X] (A : 
   let +nondep : NormedAlgebra ℚ (X →L[ℝ] X) := .restrictScalars ℚ ℝ _
   let φ : (X →L[𝕜] X) →+* (X →L[ℝ] X) :=
     { toFun := restrictScalars ℝ
-      map_one' := by ext x; rfl
-      map_mul' := by intro B C; ext x; rfl
+      map_one' := by
+        ext x
+        simp only [coe_restrictScalars', one_apply_eq_self]
+      map_mul' := by
+        intro B C
+        ext x
+        simp only [coe_restrictScalars', mul_apply_eq_comp]
       map_zero' := restrictScalars_zero
       map_add' := restrictScalars_add }
   have hφ : Continuous φ := by

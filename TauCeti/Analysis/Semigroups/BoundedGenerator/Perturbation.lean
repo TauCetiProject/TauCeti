@@ -13,8 +13,8 @@ import TauCeti.Topology.MetricSpace.Pseudo.Basic
 # Comparing commuting bounded-generator semigroups
 
 This file gives the perturbation estimate needed to compare the bounded semigroups in the
-Yosida approximation. If bounded operators `A` and `B` commute and their exponentials are bounded
-by `M` and `N` between zero and `t`, then
+Yosida approximation. For `t ≥ 0`, if bounded operators `A` and `B` commute and their
+exponentials are bounded by `M` and `N` on `[0, t]`, then
 
 `‖exp (t A) x - exp (t B) x‖ ≤ M * N * t * ‖(A - B) x‖`.
 
@@ -33,8 +33,10 @@ comparison carries the factor `M ^ 2`.
 
 * `TauCeti.Semigroups.norm_exp_smul_sub_exp_smul_apply_le_of_commute`: the pointwise comparison
   estimate for commuting exponentials with bounds on the required time segment.
-* `TauCeti.Semigroups.uniformCauchySeqOn_exp_smul_apply_of_tendsto`: strong convergence of
-  eventually commuting generators gives uniform Cauchy convergence on bounded time sets.
+* `TauCeti.Semigroups.uniformCauchySeqOn_exp_smul_apply_of_tendsto`: eventual pairwise
+  commutation and convergence of the generators on a vector give uniformly Cauchy orbits on
+  that vector for bounded time sets, provided the exponentials are eventually uniformly
+  bounded along every segment from zero to a time in the set.
 
 ## References
 
@@ -52,7 +54,12 @@ open NormedSpace Set
 namespace TauCeti.Semigroups
 
 variable {𝕜 X : Type*} [RCLike 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
-  [CompleteSpace X]
+
+private theorem norm_ofReal_smul_sub_apply (t : ℝ) (A B : X →L[𝕜] X) (x : X) :
+    ‖((t : 𝕜) • (A - B)) x‖ = |t| * ‖(A - B) x‖ := by
+  rw [smul_apply, norm_smul, RCLike.norm_ofReal]
+
+variable [CompleteSpace X]
 
 /-- If `A` and `B` commute and their bounded-generator semigroups obey the uniform bounds `M` and
 `N` between zero and `t`, then their orbits differ by at most
@@ -107,8 +114,8 @@ theorem norm_exp_smul_sub_exp_smul_apply_le_of_commute {M N t : ℝ} (A B : X �
               (norm_nonneg _)))
           hN
       _ = M * N * t * ‖(A - B) x‖ := by
-        rw [smul_apply, norm_smul, Real.norm_eq_abs, abs_of_nonneg ht,
-          ← neg_sub, neg_apply, norm_neg]
+        rw [RCLike.real_smul_eq_coe_smul (K := 𝕜), norm_ofReal_smul_sub_apply,
+          abs_of_nonneg ht, ← neg_sub A B, neg_apply, norm_neg]
         ring
   · simp
 
@@ -132,11 +139,10 @@ theorem uniformCauchySeqOn_exp_smul_apply_of_tendsto {ι : Type*} {l : Filter ι
     (fun s hs => by simpa only [smul_smul, RCLike.ofReal_mul] using! hb.1 t ht s hs)
     (fun s hs => by simpa only [smul_smul, RCLike.ofReal_mul] using! hb.2 t ht s hs)
     (by norm_num : (0 : ℝ) ≤ 1) x
-  simp only [RCLike.ofReal_one, one_smul, mul_one, ← smul_sub, smul_apply,
-    norm_smul, RCLike.norm_ofReal, sub_apply, ← dist_eq_norm] at hcompare
-  rw [← mul_assoc] at hcompare
-  exact hcompare.trans (mul_le_mul_of_nonneg_right
-    (mul_le_mul_of_nonneg_left (htime t ht) (mul_self_nonneg M)) dist_nonneg)
+  simp only [RCLike.ofReal_one, one_smul, mul_one] at hcompare
+  rw [← smul_sub, norm_ofReal_smul_sub_apply, ← mul_assoc] at hcompare
+  simpa only [dist_eq_norm, sub_apply] using hcompare.trans (mul_le_mul_of_nonneg_right
+    (mul_le_mul_of_nonneg_left (htime t ht) (mul_self_nonneg M)) (norm_nonneg _))
 
 end TauCeti.Semigroups
 
