@@ -36,7 +36,9 @@ transposition with `MulOpposite.op` and with `MulOpposite.unop` are mutually inv
 Sandwiching a matrix over an `R`-algebra between two matrices with entries in `R` gives entries that
 are `R`-linear combinations of the entries of the middle factor. Over a commutative semiring, the
 sum `∑ p, E p * M * E p` over a finite family of square matrices depends on the family only through
-its entry covariance `∑ p, E p a b * E p c d`.
+its entry covariance `∑ p, E p a b * E p c d`. If a rectangular matrix `U` intertwines `f a` and
+`g a` for every entry `a` of a list `L`, then `U` intertwines the ordered list products
+`(L.map f).prod` and `(L.map g).prod`.
 
 ## Main results
 
@@ -65,6 +67,7 @@ its entry covariance `∑ p, E p a b * E p c d`.
   `G` with entries in `R` and `u` over an `R`-algebra, are `∑ q, ∑ p, (F i p * G q j) • u p q`.
 * `Matrix.sum_mul_mul_apply`: the entries of `∑ p, E p * M * E p` through the entry covariance
   `∑ p, E p a b * E p c d` of the family `E`.
+* `Matrix.list_prod_map_mul_eq_mul_list_prod_map`: list products preserve rectangular intertwiners.
 -/
 
 public section
@@ -275,5 +278,23 @@ theorem sum_mul_mul_apply {ι m R : Type*} [Fintype ι] [Fintype m] [CommSemirin
   exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_comm.trans <|
     Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦
       (mul_right_comm _ _ _).trans (mul_comm _ _)
+
+section Semiring
+
+variable {α m k R : Type*} [Fintype m] [DecidableEq m] [Fintype k] [DecidableEq k] [Semiring R]
+
+/-- **List products preserve intertwiners.** If a rectangular matrix `U` intertwines `f a` and `g a`
+for every entry `a` of a list `L` (`f a * U = U * g a`), then `U` intertwines the ordered products
+`(L.map f).prod` and `(L.map g).prod`. -/
+theorem list_prod_map_mul_eq_mul_list_prod_map (L : List α) (U : Matrix m k R)
+    (f : α → Matrix m m R) (g : α → Matrix k k R) (h : ∀ a ∈ L, f a * U = U * g a) :
+    (L.map f).prod * U = U * (L.map g).prod := by
+  induction L with
+  | nil => simp
+  | cons a t ih =>
+    rw [List.map_cons, List.prod_cons, Matrix.mul_assoc, ih fun x hx => h x (.tail a hx),
+      ← Matrix.mul_assoc, h a (.head t), Matrix.mul_assoc, ← List.prod_cons, ← List.map_cons]
+
+end Semiring
 
 end Matrix
