@@ -64,6 +64,8 @@ positivity of an operator, tested on functions localized near a point, is read o
   dual norm.
 * `TauCeti.ae_enorm_le_of_forall_enorm_integral_inner_le`: the pointwise bound `‖h‖ ≤ k` for an
   inner product space.
+* `TauCeti.ae_eq_zero_of_forall_integral_inner_eq_zero`: a vector field whose pairings with all
+  test vector fields vanish is zero almost everywhere.
 * `TauCeti.ae_nonneg_of_forall_integral_mul_nonneg`: nonnegativity from nonnegative pairings.
 * `TauCeti.nonneg_of_forall_integral_sq_smul_nonneg`: pointwise nonnegativity of a real or
   complex density continuous on an open set from nonnegative pairings with squares of test
@@ -329,6 +331,15 @@ theorem ae_enorm_le_of_forall_enorm_integral_inner_le {h : Ω → F} (hh : Local
   filter_upwards [ae_enorm_le_of_forall_enorm_integral_apply_le hh' hkm hk fun U hU φ hφU hφ => by
     simpa only [innerSL_apply_apply, real_inner_comm] using H U hU φ hφU hφ] with x hx
   rwa [← eNorm_norm, innerSL_apply_norm, eNorm_norm] at hx
+
+/-- **Fundamental lemma for vector fields.** A locally integrable vector field `h : Ω → F` whose
+pairings `∫ ⟪φ x, h x⟫ ∂ρ` with all test vector fields `φ` vanish is zero `ρ`-almost
+everywhere. -/
+theorem ae_eq_zero_of_forall_integral_inner_eq_zero {h : Ω → F} (hh : LocallyIntegrable h ρ)
+    (H : ∀ φ : 𝓓(Ω, F), ∫ x, ⟪φ x, h x⟫ ∂ρ = 0) : h =ᵐ[ρ] 0 := by
+  filter_upwards [ae_enorm_le_of_forall_enorm_integral_inner_le (k := 0) hh measurable_const
+    (by simp) fun U _ φ _ _ => by simp [H φ]] with x hx
+  simpa using hx
 
 end Inner
 

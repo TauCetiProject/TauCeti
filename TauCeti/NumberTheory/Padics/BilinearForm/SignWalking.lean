@@ -120,7 +120,8 @@ theorem IsJordanSplitting.exists_mem_apply_eq_two_pow [Module.Free ℤ_[2] M]
   obtain ⟨C, hC, hCp⟩ := isModular_def.mp (h.isModular k)
   have hBC (y z : N k) : 2 ^ k * C y z = B y z := by
     simpa using LinearMap.congr_fun₂ hC y z
-  have hCs : C.IsSymm := IsSymm.of_smul h2k (hC ▸ hB.restrict (N k))
+  have hCs : C.IsSymm := (IsSMulRegular.of_ne_zero (pow_ne_zero k two_ne_zero)).isSymm_smul_iff.mp
+    (hC ▸ hB.restrict (N k))
   have hCeven (y : N k) : 2 ∣ C y y := by
     obtain ⟨c, hc⟩ := heven y y.property
     exact ⟨c, (mul_cancel_left_mem_nonZeroDivisors h2k).mp (by
@@ -403,7 +404,7 @@ theorem IsJordanSplitting.exists_signWalk_add_two_of_odd_of_odd [Module.Free ℤ
   have hwalk : (Matrix.toBilin' ((2 : ℤ_[2]) ^ k • Matrix.diagonal ![a, 4 * b])).Equivalent
       (Matrix.toBilin' ((2 : ℤ_[2]) ^ k • Matrix.diagonal ![5 * a, 4 * (5 * b)])) := by
     simp only [map_smul]
-    exact (equivalent_smul_iff (mem_nonZeroDivisors_of_ne_zero (pow_ne_zero k two_ne_zero))).mpr
+    exact (equivalent_smul_iff (IsRegular.of_ne_zero (pow_ne_zero k two_ne_zero))).mpr
       (TauCeti.equivalent_toBilin'_diagonal_four_mul_five_mul ha hb)
   obtain ⟨z', hz', hspan⟩ := exists_span_range_eq_of_equivalent_toBilin' (B := B) (v := ![x, y])
     (fun i j ↦ by

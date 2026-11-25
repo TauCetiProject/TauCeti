@@ -430,6 +430,21 @@ theorem hasDerivAt_fst_of_hasDerivAt_hamiltonianVectorField_effectivePotential {
   convert (hasFDerivAt_fst (𝕜 := ℝ) (p := γ t)).comp_hasDerivAt t hγ using 1 <;>
     simp [Function.comp_def]
 
+/-- **The radial force.** Along an integral curve of the reduced Hamiltonian vector field in the
+half-line `r > 0`, with `U` differentiable at the radius, the radial momentum has derivative
+`p_r' = ℓ² / (m r³) - U'(r)`, the negative of the derivative of the effective potential. -/
+theorem hasDerivAt_snd_of_hasDerivAt_hamiltonianVectorField_effectivePotential {m ℓ : ℝ}
+    {U : ℝ → ℝ} {γ : ℝ → ℝ × ℝ} {t : ℝ}
+    (hγ : HasDerivAt γ ((stdSymplecticForm (V := ℝ)).hamiltonianVectorField
+      (centralForceHamiltonian m (effectivePotential m ℓ U)) (γ t)) t)
+    (hr : 0 < (γ t).1) (hU : DifferentiableAt ℝ U (γ t).1) :
+    HasDerivAt (fun s ↦ (γ s).2) (ℓ ^ 2 / (m * (γ t).1 ^ 3) - deriv U (γ t).1) t := by
+  rw [← Prod.mk.eta (p := γ t),
+    stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_effectivePotential
+      hU.hasDerivAt hr] at hγ
+  convert (hasFDerivAt_snd (𝕜 := ℝ) (p := γ t)).comp_hasDerivAt t hγ using 1 <;>
+    simp [Function.comp_def]
+
 /-! ### The radial projection of the Hamiltonian flow -/
 
 /-- **Radial reduction of the Hamiltonian vector field.** Away from the collision set, the radial

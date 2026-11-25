@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.GraphProjection
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.ProjValMeasure
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.ProjValMeasure.Basic
 public import TauCeti.Analysis.VonNeumannAlgebra.Basic
 public import TauCeti.Analysis.VonNeumannAlgebra.MatrixAmplification
 

@@ -416,6 +416,7 @@ theorem discr_formClass_eq_squareClass {V : Type v} [AddCommGroup V] [Module K V
     rw [hu, ← hre, hg, QuadraticForm.discr_comp (b := b.reindex e) (Pi.basisFun K (Fin n)),
       QuadraticForm.discr_eq_discr', presentedForm_eq_weightedSumSquares_coe,
       QuadraticForm.discr'_weightedSumSquares]
+    simp only [c, smul_eq_mul, mul_one]
   have hc : c * ∏ i, (w i : K) ≠ 0 := fun h => u.ne_zero (by rw [hdiscr, mul_assoc, h, mul_zero])
   refine ⟨Units.mk0 _ hc, Units.ext ?_⟩
   simp only [Units.val_mul, Units.coe_prod, Units.val_mk0, hdiscr]

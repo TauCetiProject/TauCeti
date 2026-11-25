@@ -444,7 +444,7 @@ private theorem exists_hessian_bounds (hα₀ : 0 < α) (hα₁ : α < 1) :
     · simp only [← h0, heatDuhamelPotential_zero, fderiv_zero, Pi.zero_apply]
       rw [ContinuousLinearMap.opNorm_zero]
       positivity
-    rw [← continuousMultilinearCurryFin2_iteratedFDeriv_two, LinearIsometryEquiv.norm_map]
+    rw [norm_fderiv_fderiv]
     calc _ ≤ C₂ * ‖f‖₊ * (t : ℝ) ^ ((α : ℝ) / 2) :=
           hC₂ (stronglyMeasurable_forcing f) hfM hH ht x
       _ ≤ C₂.toNNReal * ‖f‖ * (T : ℝ) ^ ((α : ℝ) / 2) := by

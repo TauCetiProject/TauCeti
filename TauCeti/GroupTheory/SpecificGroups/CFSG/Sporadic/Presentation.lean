@@ -186,6 +186,13 @@ to importing modules, so this equation is how they reach it. -/
 theorem SporadicName.presentation_M24 : SporadicName.M24.presentation = Sporadic.m24Presentation :=
   (rfl)
 
+/-- The presentation selected for `Ru` is Soicher's transcribed presentation
+`TauCeti.Sporadic.ruPresentation`. The body of `TauCeti.SporadicName.presentation` is not exposed
+to importing modules, so this equation is how they reach it. -/
+@[simp]
+theorem SporadicName.presentation_Ru : SporadicName.Ru.presentation = Sporadic.ruPresentation :=
+  (rfl)
+
 /-- The presentation selected for `Co₂` is the transcribed ATLAS presentation
 `TauCeti.Sporadic.co2Presentation`. The body of `TauCeti.SporadicName.presentation` is not exposed
 to importing modules, so this equation is how they reach it. -/
@@ -223,6 +230,13 @@ theorem SporadicName.presentation_He : SporadicName.He.presentation = Sporadic.h
 to importing modules, so this equation is how they reach it. -/
 @[simp]
 theorem SporadicName.presentation_J3 : SporadicName.J3.presentation = Sporadic.j3Presentation :=
+  (rfl)
+
+/-- The presentation selected for `J₄` is the transcribed ATLAS presentation
+`TauCeti.Sporadic.j4Presentation`. The body of `TauCeti.SporadicName.presentation` is not exposed
+to importing modules, so this equation is how they reach it. -/
+@[simp]
+theorem SporadicName.presentation_J4 : SporadicName.J4.presentation = Sporadic.j4Presentation :=
   (rfl)
 
 end TauCeti

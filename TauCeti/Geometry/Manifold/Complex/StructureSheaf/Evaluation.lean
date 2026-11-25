@@ -34,11 +34,13 @@ public noncomputable section
 open CategoryTheory CategoryTheory.Limits Opposite TopologicalSpace
 open scoped ContDiff Manifold
 
+universe u
+
 namespace TauCeti.holomorphicStructureSheaf
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℂ E H)
-  (X : Type) [TopologicalSpace X] [ChartedSpace H X] (p : X)
+  (X : Type u) [TopologicalSpace X] [ChartedSpace H X] (p : X)
 
 /-- Evaluation of a holomorphic module section at a point of its domain. -/
 def sectionEval (U : Opens X) (hp : p ∈ U) :
@@ -53,6 +55,8 @@ def sectionEval (U : Opens X) (hp : p ∈ U) :
 theorem sectionEval_apply (U : Opens X) (hp : p ∈ U)
     (f : (holomorphicStructureSheafModules I X).obj.obj (op U)) :
     sectionEval I X p U hp f = f ⟨p, hp⟩ := (rfl)
+
+variable (X : Type) [TopologicalSpace X] [ChartedSpace H X] (p : X)
 
 /-- Evaluation of holomorphic module germs at their base point. -/
 def stalkEval : TopCat.Presheaf.stalk (X := TopCat.of X)
