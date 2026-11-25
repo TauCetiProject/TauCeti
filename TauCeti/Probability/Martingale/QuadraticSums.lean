@@ -121,21 +121,22 @@ theorem integral_sum_sq_sub (hM : Martingale M ℱ P)
       M (τ n) ω - M (τ 0) ω := sum_range_sub (fun i ↦ M (τ i) ω) n
   simpa only [htel] using h.symm
 
-/-- Bounded a.e. predictable heights bound the second moment of a martingale transform by
-`C²` times the second moment of the total increment. Only this increment needs to be
-square-integrable. -/
-theorem integral_sq_sum_mul_sub_le (hM : Martingale M ℱ P)
+-- Keep the integrability witness alongside the estimate so the quadratic-sum proof can use
+-- both without re-establishing square integrability of the weighted increments.
+private theorem integrable_sq_sum_mul_sub_and_le (hM : Martingale M ℱ P)
     (hτ : MonotoneOn τ (Set.Iic n)) (h₂ : MemLp (M (τ n) - M (τ 0)) 2 P)
     (ha : ∀ i < n, AEStronglyMeasurable[ℱ (τ i)] (a i) P) {C : ℝ}
     (hb : ∀ i < n, ∀ᵐ ω ∂P, |a i ω| ≤ C) :
-    ∫ ω, (∑ i ∈ range n, a i ω * (M (τ (i + 1)) ω - M (τ i) ω)) ^ 2 ∂P ≤
-      C ^ 2 * ∫ ω, (M (τ n) ω - M (τ 0) ω) ^ 2 ∂P := by
+    Integrable (fun ω ↦ (∑ i ∈ range n, a i ω * (M (τ (i + 1)) ω - M (τ i) ω)) ^ 2) P ∧
+      (∫ ω, (∑ i ∈ range n, a i ω * (M (τ (i + 1)) ω - M (τ i) ω)) ^ 2 ∂P) ≤
+        C ^ 2 * ∫ ω, (M (τ n) ω - M (τ 0) ω) ^ 2 ∂P := by
   let Δ (i : ℕ) (ω : Ω) := M (τ (i + 1)) ω - M (τ i) ω
   have hΔ (i : ℕ) (hi : i < n) : MemLp (Δ i) 2 P :=
     hM.memLp_sub_of_monotoneOn hτ (by norm_num) h₂ hi
   have hZ (i : ℕ) (hi : i < n) : MemLp (fun ω ↦ a i ω * Δ i ω) 2 P :=
     (memLp_top_of_bound ((ha i hi).mono (ℱ.le _)) C
       (by simpa only [Real.norm_eq_abs] using hb i hi)).mul (hΔ i hi)
+  refine ⟨(memLp_finsetSum _ fun i hi ↦ hZ i (mem_range.mp hi)).integrable_sq, ?_⟩
   rw [hM.integral_sq_sum_mul_sub hτ ha hZ]
   calc
     _ ≤ ∑ i ∈ range n, C ^ 2 * ∫ ω, Δ i ω ^ 2 ∂P := by
@@ -153,6 +154,17 @@ theorem integral_sq_sum_mul_sub_le (hM : Martingale M ℱ P)
       rw [← mul_sum, ← integral_finsetSum _ fun i hi ↦ (hΔ i (mem_range.mp hi)).integrable_sq]
       exact congrArg (C ^ 2 * ·) (hM.integral_sum_sq_sub hτ h₂)
 
+/-- Bounded a.e. predictable heights bound the second moment of a martingale transform by
+`C²` times the second moment of the total increment. Only this increment needs to be
+square-integrable. -/
+theorem integral_sq_sum_mul_sub_le (hM : Martingale M ℱ P)
+    (hτ : MonotoneOn τ (Set.Iic n)) (h₂ : MemLp (M (τ n) - M (τ 0)) 2 P)
+    (ha : ∀ i < n, AEStronglyMeasurable[ℱ (τ i)] (a i) P) {C : ℝ}
+    (hb : ∀ i < n, ∀ᵐ ω ∂P, |a i ω| ≤ C) :
+    ∫ ω, (∑ i ∈ range n, a i ω * (M (τ (i + 1)) ω - M (τ i) ω)) ^ 2 ∂P ≤
+      C ^ 2 * ∫ ω, (M (τ n) ω - M (τ 0) ω) ^ 2 ∂P :=
+  (hM.integrable_sq_sum_mul_sub_and_le hτ h₂ ha hb).2
+
 /-- On a finite measure space, bounds `C` on the predictable heights and `B` on the total
 martingale increment bound the transform's second moment by `C² * B²` times the total mass. -/
 theorem integral_sq_sum_mul_sub_le_of_bound [IsFiniteMeasure P] (hM : Martingale M ℱ P)
@@ -163,7 +175,8 @@ theorem integral_sq_sum_mul_sub_le_of_bound [IsFiniteMeasure P] (hM : Martingale
     ∫ ω, (∑ i ∈ range n, a i ω * (M (τ (i + 1)) ω - M (τ i) ω)) ^ 2 ∂P ≤
       C ^ 2 * (B ^ 2 * P.real Set.univ) := by
   have h₂ : MemLp (M (τ n) - M (τ 0)) 2 P := MemLp.of_bound
-    ((hM.integrable _).sub (hM.integrable _)).aestronglyMeasurable B hB
+    ((hM.integrable _).sub (hM.integrable _)).aestronglyMeasurable B
+    (by simpa only [Pi.sub_apply, Real.norm_eq_abs] using hB)
   apply (hM.integral_sq_sum_mul_sub_le hτ h₂ ha hC).trans
   apply mul_le_mul_of_nonneg_left _ (sq_nonneg C)
   simpa only [Real.norm_eq_abs, sq_abs] using TauCeti.integral_norm_sq_le_of_ae_bound
@@ -191,11 +204,7 @@ theorem integral_sq_sum_sq_sub_le (hM : Martingale M ℱ P)
       simpa only [pow_two] using hint.bdd_mul hint.aestronglyMeasurable
         (by simpa only [Pi.sub_apply, Real.norm_eq_abs] using hb))
   let J (ω : Ω) := ∑ i ∈ range n, a i ω * (M (τ (i + 1)) ω - M (τ i) ω)
-  have hJi : Integrable (fun ω ↦ J ω ^ 2) P := (memLp_finsetSum _ fun i hi ↦
-    (memLp_top_of_bound ((ha i (mem_range.mp hi).le).mono (ℱ.le _)).aestronglyMeasurable C
-      (by simpa only [Real.norm_eq_abs] using hb' i (mem_range.mp hi).le)).mul
-        (hM.memLp_sub_of_monotoneOn hτ (by norm_num) h₂ (mem_range.mp hi))).integrable_sq
-  have hJ := hM.integral_sq_sum_mul_sub_le hτ h₂
+  obtain ⟨hJi, hJ⟩ := hM.integrable_sq_sum_mul_sub_and_le hτ h₂
     (fun i hi ↦ (ha i hi.le).aestronglyMeasurable) (fun i hi ↦ hb' i hi.le)
   have hpoint : ∀ᵐ ω ∂P,
       (∑ i ∈ range n, (M (τ (i + 1)) ω - M (τ i) ω) ^ 2) ^ 2 ≤
