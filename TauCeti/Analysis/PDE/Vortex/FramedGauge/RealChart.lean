@@ -57,11 +57,12 @@ the threshold for `C¹` fields, and this file shows:
   (`continuousRep_realSobolevGaugeAdjoint`, `continuousRep_realSobolevLinearizedEquation`).
 
 Real-analyticity uses the bounded real-linear projection `BesselPotentialSpace.realPartCLM` of
-`H^s(ℂ)` onto its real elements: the real map is this projection composed with the complexified
-map. The vortex moduli space near a vortex is the zero set of this map in a slice of the gauge
-action, so these are the nonlinear smoothness statements on which the implicit function theorem
-for the moduli space rests. The Coulomb slice and the implicit function theorem are in
-`TauCeti.Analysis.PDE.Vortex.FramedGauge.LocalModuli`.
+`H^s(ℂ)` onto its real elements: the real map is this projection, applied coordinatewise
+(`realPartPi`), composed with the complexified map and the inclusion `coordInclusion` of
+real coordinates into complexified ones. The vortex moduli space near a vortex is the zero set of
+this map in a slice of the gauge action, so these are the nonlinear smoothness statements on which
+the implicit function theorem for the moduli space rests. The Coulomb slice and the implicit
+function theorem are in `TauCeti.Analysis.PDE.Vortex.FramedGauge.LocalModuli`.
 
 ## References
 
@@ -83,6 +84,26 @@ open scoped BesselPotentialSpace ContDiff
 variable {f : ContDiffBump (0 : ℝ)} {m k : ℕ} {s : ℝ}
 
 /-! ### Fields from real coordinates -/
+
+/-- **The inclusion of real coordinates** `(H^s_ℝ)^ι` into complexified coordinates `H^s(ℂ)^ι`, a
+bounded real-linear map. -/
+def coordInclusion {ι : Type*} (h : 0 ≤ s) :
+    (ι → realSubmodule ℂ h) →L[ℝ] (ι → H^{s}(ℂ)) :=
+  ContinuousLinearMap.piMap fun _ ↦ (realSubmodule ℂ h).subtypeL
+
+theorem coordInclusion_apply {ι : Type*} (h : 0 ≤ s) (u : ι → realSubmodule ℂ h) :
+    coordInclusion h u = fun a ↦ (u a : H^{s}(ℂ)) :=
+  (rfl)
+
+/-- **The real part, coordinatewise**: the bounded real-linear projection `H^s(ℂ)^ι → (H^s_ℝ)^ι`
+applying `BesselPotentialSpace.realPartCLM` in each coordinate. -/
+def realPartPi {ι : Type*} (h : 0 ≤ s) :
+    (ι → H^{s}(ℂ)) →L[ℝ] (ι → realSubmodule ℂ h) :=
+  ContinuousLinearMap.piMap fun _ ↦ realPartCLM ℂ h
+
+theorem realPartPi_apply {ι : Type*} (h : 0 ≤ s) (v : ι → H^{s}(ℂ)) (i : ι) :
+    realPartPi h v i = realPartCLM ℂ h (v i) :=
+  (rfl)
 
 /-- **The field of real coordinates.** The field whose coordinates are the continuous
 representatives (`BesselPotentialSpace.continuousRep`) of real coordinates `u ∈ (H^s_ℝ)⁴`, as a
@@ -220,6 +241,12 @@ theorem ofRealSubRef_realSubRef (hs : 1 < s) {h : 0 ≤ s} (x : SobolevFieldSpac
   subRef_injective h <| funext fun j ↦ by
     rw [← coe_realSubRef h, realSubRef_ofRealSubRef, coe_realSubRef]
 
+/-- The complexified coordinates of the field with real coordinates `u` are the coordinates `u`
+included into `H^s(ℂ)⁴`. -/
+theorem subRef_ofRealSubRef (hs : 1 < s) {h : 0 ≤ s} (u : Fin 4 → realSubmodule ℂ h) :
+    subRef (ofRealSubRef (f := f) (m := m) hs u) = coordInclusion h u :=
+  funext fun j ↦ by rw [← coe_realSubRef h, realSubRef_ofRealSubRef, coordInclusion_apply]
+
 /-- The field of real coordinates of a field `x` of `A_m^s`, `s > 1`, is `x - x_m`. -/
 theorem continuousRepField_realSubRef (hs : 1 < s) {h : 0 ≤ s} (x : SobolevFieldSpace f m s) :
     continuousRepField (realSubRef h x) = ⇑x - referenceField f m := by
@@ -237,11 +264,9 @@ def realSubRefHomeomorph (hs : 1 < s) {h : 0 ≤ s} :
   continuous_toFun := continuous_pi fun j ↦
     ((continuous_apply j).comp continuous_subRef).subtype_mk _
   continuous_invFun := by
-    refine (isEmbedding_subRef h).continuous_iff.2 (continuous_pi fun j ↦ ?_)
-    have : (fun u ↦ subRef (ofRealSubRef (f := f) (m := m) hs u) j) =
-        fun u : Fin 4 → realSubmodule ℂ h ↦ (u j : H^{s}(ℂ)) := funext fun u ↦ by
-      rw [← coe_realSubRef h, realSubRef_ofRealSubRef]
-    exact this ▸ continuous_subtypeVal.comp (continuous_apply j)
+    refine (isEmbedding_subRef h).continuous_iff.2 ?_
+    rw [show subRef ∘ ofRealSubRef hs = coordInclusion h from funext (subRef_ofRealSubRef hs)]
+    exact (coordInclusion h).continuous
 
 @[simp]
 theorem coe_realSubRefHomeomorph (hs : 1 < s) {h : 0 ≤ s} :
@@ -306,15 +331,6 @@ theorem coe_realSobolevEquation_apply (hk : 2 ≤ k)
     (u : Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le) (i : Fin 3) :
     (realSobolevEquation f m hk u i : H^{(k : ℝ)}(ℂ)) =
       sobolevEquation f m (one_le_two.trans hk) (fun a ↦ (u a : H^{(k : ℝ) + 1}(ℂ))) i :=
-  (rfl)
-
-/-- The inclusion of real coordinates into complexified coordinates. -/
-private def coordInclusion (h : 0 ≤ s) :
-    (Fin 4 → realSubmodule ℂ h) →L[ℝ] (Fin 4 → H^{s}(ℂ)) :=
-  ContinuousLinearMap.piMap fun _ ↦ (realSubmodule ℂ h).subtypeL
-
-private theorem coordInclusion_apply (h : 0 ≤ s) (u : Fin 4 → realSubmodule ℂ h) :
-    coordInclusion h u = fun a ↦ (u a : H^{s}(ℂ)) :=
   (rfl)
 
 variable (f m) in
@@ -426,15 +442,6 @@ theorem continuousRep_realSobolevLinearizedEquation (hk : 2 ≤ k)
     (f := f) (m := m) (y := ⇑x - referenceField f m) (one_le_two.trans hk)
     (coeFn_inclusionLp_realSubRef_ae_eq_sub _ x)
     (coeFn_inclusionLp_ae_eq_continuousRepField (one_lt_natCast_add_one hk) v) hv i
-
-/-- The real part, coordinatewise. -/
-private def realPartPi (h : 0 ≤ s) :
-    (Fin 3 → H^{s}(ℂ)) →L[ℝ] (Fin 3 → realSubmodule ℂ h) :=
-  ContinuousLinearMap.piMap fun _ ↦ realPartCLM ℂ h
-
-private theorem realPartPi_apply (h : 0 ≤ s) (v : Fin 3 → H^{s}(ℂ)) (i : Fin 3) :
-    realPartPi h v i = realPartCLM ℂ h (v i) :=
-  (rfl)
 
 /-- The real equation map is the real part of the complexified map on real coordinates. -/
 private theorem realSobolevEquation_eq_comp (hk : 2 ≤ k) :
