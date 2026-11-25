@@ -13,11 +13,9 @@ public import Mathlib.FieldTheory.IntermediateField.Algebraic
 
 A CM type `Φ` on a field `E` is induced from a subfield `F` when it is the type
 `TauCeti.CMType.induced` of a CM type `Φ₀` on `F`; the pair `(E, Φ)` is **primitive** when `Φ` is
-induced from no proper subfield. Along an algebraic extension `E / F` every complex embedding of
-`F` extends to `E` (`NumberField.ComplexEmbedding.lift`), so the inducing type `Φ₀` is unique
-(`TauCeti.CMType.induced_algebraMap_injective`), and `Φ` is induced from `F` exactly when
-membership in `Φ` depends only on the restriction to `F`
-(`TauCeti.CMType.exists_induced_algebraMap_eq_iff`). Choosing a subfield of least degree from which
+induced from no proper subfield. By the fibre criterion
+`TauCeti.CMType.exists_induced_algebraMap_eq_iff`, `Φ` is induced from `F` exactly when membership
+in `Φ` depends only on the restriction to `F`. Choosing a subfield of least degree from which
 `Φ` is induced gives a primitive pair inducing `Φ`
 (`TauCeti.CMType.exists_isPrimitive_induced_eq`).
 
@@ -31,9 +29,6 @@ proper CM subfield".
 
 ## Main results
 
-* `TauCeti.CMType.induced_algebraMap_injective`: inducing along an algebraic extension is
-  injective.
-* `TauCeti.CMType.exists_induced_algebraMap_eq_iff`: the fibre criterion for being induced.
 * `TauCeti.CMType.exists_isPrimitive_induced_eq`: every CM type on a number field is induced from
   a primitive CM type on a subfield.
 
@@ -47,58 +42,6 @@ public section
 namespace TauCeti
 
 namespace CMType
-
-section Extension
-
-variable {F E : Type*} [Field F] [Field E] [Algebra F E] [Algebra.IsAlgebraic F E]
-
-/-- Inducing along an algebraic extension of fields is injective: a CM type on `F` is recovered
-from the type it induces on `E`, since every embedding of `F` extends to `E`. -/
-theorem induced_algebraMap_injective :
-    Function.Injective fun Φ₀ : CMType F ↦ Φ₀.induced (algebraMap F E) := by
-  intro Φ₀ Φ₁ h
-  ext φ₀
-  obtain ⟨φ, rfl⟩ : ∃ φ : E →+* ℂ, φ.comp (algebraMap F E) = φ₀ :=
-    ⟨_, NumberField.ComplexEmbedding.lift_comp_algebraMap E φ₀⟩
-  simpa using SetLike.ext_iff.1 h φ
-
-/-- **The fibre criterion.** A CM type `Φ` on `E` is induced from a CM type on the subextension
-`F` exactly when membership in `Φ` depends only on the restriction to `F`: two embeddings of `E`
-agreeing on `F` are both in `Φ` or both outside it. -/
-theorem exists_induced_algebraMap_eq_iff (Φ : CMType E) :
-    (∃ Φ₀ : CMType F, Φ₀.induced (algebraMap F E) = Φ) ↔
-      ∀ φ ψ : E →+* ℂ, (∀ x : F, φ (algebraMap F E x) = ψ (algebraMap F E x)) →
-        (φ ∈ Φ ↔ ψ ∈ Φ) := by
-  constructor
-  · rintro ⟨Φ₀, rfl⟩ φ ψ h
-    have : φ.comp (algebraMap F E) = ψ.comp (algebraMap F E) := RingHom.ext h
-    simp [this]
-  · intro h
-    refine ⟨⟨{φ₀ | ∃ φ ∈ Φ, φ.comp (algebraMap F E) = φ₀}, fun φ₀ ↦ ?_⟩, ?_⟩
-    · obtain ⟨φ, rfl⟩ : ∃ φ : E →+* ℂ, φ.comp (algebraMap F E) = φ₀ :=
-        ⟨_, NumberField.ComplexEmbedding.lift_comp_algebraMap E φ₀⟩
-      have hstar : (star φ).comp (algebraMap F E) = star (φ.comp (algebraMap F E)) :=
-        RingHom.ext fun _ ↦ by simp [RingHom.star_apply]
-      have key (ψ : E →+* ℂ) (χ : E →+* ℂ) (hψχ : ψ.comp (algebraMap F E) = χ.comp
-          (algebraMap F E)) : ψ ∈ Φ ↔ χ ∈ Φ :=
-        h ψ χ fun x ↦ congrArg (· x) hψχ
-      simp only [Set.mem_ofPred_eq, ← hstar]
-      constructor
-      · rintro ⟨ψ, hψ, hψeq⟩ ⟨χ, hχ, hχeq⟩
-        rw [key ψ (star φ) hψeq, Φ.star_mem_iff] at hψ
-        exact hψ ((key χ φ hχeq).1 hχ)
-      · intro hn
-        refine ⟨star φ, ?_, rfl⟩
-        rw [Φ.star_mem_iff]
-        exact fun hφ ↦ hn ⟨φ, hφ, rfl⟩
-    · ext φ
-      simp only [mem_induced]
-      constructor
-      · rintro ⟨ψ, hψ, hψeq⟩
-        exact (h ψ φ fun x ↦ congrArg (· x) hψeq).1 hψ
-      · exact fun hφ ↦ ⟨φ, hφ, rfl⟩
-
-end Extension
 
 section Primitive
 
@@ -124,8 +67,7 @@ theorem exists_induced_top_eq (Φ : CMType E) :
 variable [NumberField E]
 
 /-- **Every CM type is induced from a primitive one.** A CM type `Φ` on a number field `E` is
-induced from a primitive CM type `Φ₀` on a subfield `F`; one may take `F` of least degree among
-the subfields from which `Φ` is induced. -/
+induced from a primitive CM type `Φ₀` on a subfield `F`. -/
 theorem exists_isPrimitive_induced_eq (Φ : CMType E) :
     ∃ (F : IntermediateField ℚ E) (Φ₀ : CMType F),
       Φ₀.induced (algebraMap F E) = Φ ∧ Φ₀.IsPrimitive := by
@@ -145,9 +87,7 @@ theorem exists_isPrimitive_induced_eq (Φ : CMType E) :
   have hle : F₁' ≤ F := IntermediateField.lift_le F₁
   have hmin := Nat.find_min' hP ⟨F₁', rfl, hind⟩
   have heq : F₁' = F := IntermediateField.eq_of_le_of_finrank_le hle (hFn.trans_le hmin)
-  refine F.lift_injective ?_
-  change F₁' = _
-  rw [heq, IntermediateField.lift_top]
+  exact F.lift_injective (heq.trans F.lift_top.symm)
 
 end Primitive
 
