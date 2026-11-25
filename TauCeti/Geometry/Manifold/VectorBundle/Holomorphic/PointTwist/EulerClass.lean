@@ -270,32 +270,6 @@ private theorem hasFDerivAt_pointTwistMul_chartAt (x : X) {s : ∀ z, L z}
   exact hasFDerivAt_sub_smul_comp_chartAt_symm ((eL.continuousOn_snd_apply_mk hs).continuousAt
     (eL.open_baseSet.mem_nhds (mem_baseSet_trivializationAt ℂ L x))) hfeq
 
-/-- **The local index at a zero is the sign of the Jacobian of its chart reading.** Let `σ` be a
-continuous section of a complex line bundle `L` with fibre `ℂ` over a Riemann surface `X`,
-vanishing at `x` and nowhere else on an open neighbourhood `U` of `x` inside the source of the
-chart `φ` of `X` at `x` and the base set of the chart of `L` at `x`. If the reading of `σ` in these
-charts has, at `φ x`, a real derivative `D` with `det D ≠ 0`, then the local index of `σ` at `x`,
-for the canonical orientations of `L` and `X`, is the sign of `det D`. -/
-theorem sectionIndex_eq_sign_det_of_hasFDerivAt_chartAt (x : X) {σ : ∀ z, L z}
-    (hσ : Continuous fun z ↦ TotalSpace.mk' ℂ z (σ z)) {U : Set X} (hU : IsOpen U)
-    (hxU : x ∈ U) (hUz : ∀ y ∈ U, σ y = 0 → y = x) (hσx : σ x = 0)
-    (hUe : U ⊆ (trivializationAt ℂ L x).baseSet) (hUφ : U ⊆ (chartAt ℂ x).source)
-    {D : ℂ →L[ℝ] ℂ}
-    (hA : HasFDerivAt (fun w ↦ (trivializationAt ℂ L x (TotalSpace.mk' ℂ ((chartAt ℂ x).symm w)
-        (σ ((chartAt ℂ x).symm w)))).2) D (chartAt ℂ x x))
-    (hD : D.det ≠ 0) :
-    (VectorBundleOrientation.reindex (finCongr (by rw [finrank_self]))
-        (VectorBundleOrientation.complex ℂ L)).sectionIndex
-        Complex.finrank_real_complex (complexHomologicalOrientation X) hσ x =
-      SignType.sign D.det :=
-  VectorBundleOrientation.sectionIndex_eq_sign_det_of_hasFDerivAt _ _ _ _
-    (trivializationAt ℂ L x) (chartAt ℂ x) hU hxU hUz hσx hUe hUφ
-    (fun _ hy ↦ VectorBundleOrientation.mapOrientation_reindex_complex_eq_orientation _ _
-      (hUe hy))
-    (localHomologyMap_complexHomologicalOrientation_of_mem_maximalAtlas
-      (IsManifold.chart_mem_maximalAtlas (n := 1) x) (hUφ hxU))
-    hA hD
-
 /-- **A zero with nonzero complex-linear derivative has local index one.** Let `σ` be a continuous
 section of a complex line bundle `L` with fibre `ℂ` over a Riemann surface `X`, vanishing at `x`
 and nowhere else on an open neighbourhood `U` of `x` inside the source of the chart `φ` of `X` at
@@ -313,12 +287,61 @@ theorem sectionIndex_eq_one_of_hasFDerivAt_smulRight (x : X) {σ : ∀ z, L z}
     (VectorBundleOrientation.reindex (finCongr (by rw [finrank_self]))
         (VectorBundleOrientation.complex ℂ L)).sectionIndex
         Complex.finrank_real_complex (complexHomologicalOrientation X) hσ x = 1 := by
+  set φ := chartAt ℂ x
   -- Over `ℝ`, multiplication by `c` has determinant `|c|²`.
   have hdet : ((ContinuousLinearMap.id ℝ ℂ).smulRight c).det = Complex.normSq c := by
     simp [ContinuousLinearMap.det, LinearMap.det_complex, Complex.normSq_apply]
-  rw [sectionIndex_eq_sign_det_of_hasFDerivAt_chartAt x hσ hU hxU hUz hσx hUe hUφ hA
-    (hdet.trans_ne (Complex.normSq_pos.2 hc).ne'), hdet, sign_pos (Complex.normSq_pos.2 hc),
+  rw [VectorBundleOrientation.sectionIndex_eq_sign_det_of_hasFDerivAt _ _ _ _
+    (trivializationAt ℂ L x) φ hU hxU hUz hσx hUe hUφ
+    (fun y hy ↦ VectorBundleOrientation.mapOrientation_reindex_complex_eq_orientation _ _
+      (hUe hy))
+    (localHomologyMap_complexHomologicalOrientation_of_mem_maximalAtlas
+      (IsManifold.chart_mem_maximalAtlas (n := 1) x) (hUφ hxU))
+    hA (hdet.trans_ne (Complex.normSq_pos.2 hc).ne'), hdet, sign_pos (Complex.normSq_pos.2 hc),
     SignType.coe_one]
+
+/-- **The local index at a zero is the sign of the Jacobian of its chart reading.** Let `σ` be a
+continuous section of a complex line bundle `L` with fibre `ℂ` over a Riemann surface `X`,
+vanishing at `x`. If the reading of `σ` in the chart `φ` of `X` at `x` and the chart of `L` at `x`
+has, at `φ x`, a real derivative `D` with `det D ≠ 0`, then the local index of `σ` at `x`, for the
+canonical orientations of `L` and `X`, is the sign of `det D`. Since `D` is injective, the zero is
+isolated: the reading has no other zero near `φ x`. -/
+theorem sectionIndex_eq_sign_det_of_hasFDerivAt_chartAt (x : X) {σ : ∀ z, L z}
+    (hσ : Continuous fun z ↦ TotalSpace.mk' ℂ z (σ z)) (hσx : σ x = 0) {D : ℂ →L[ℝ] ℂ}
+    (hA : HasFDerivAt (fun w ↦ (trivializationAt ℂ L x (TotalSpace.mk' ℂ ((chartAt ℂ x).symm w)
+        (σ ((chartAt ℂ x).symm w)))).2) D (chartAt ℂ x x))
+    (hD : D.det ≠ 0) :
+    (VectorBundleOrientation.reindex (finCongr (by rw [finrank_self]))
+        (VectorBundleOrientation.complex ℂ L)).sectionIndex
+        Complex.finrank_real_complex (complexHomologicalOrientation X) hσ x =
+      SignType.sign D.det := by
+  set φ := chartAt ℂ x
+  set e := trivializationAt ℂ L x
+  -- `D` is injective, hence antilipschitz, so the reading has no zero near `φ x` but `φ x`.
+  have hker : LinearMap.ker (D : ℂ →ₗ[ℝ] ℂ) = ⊥ := (LinearMap.isUnit_iff_ker_eq_bot _).1
+    ((LinearMap.isUnit_iff_isUnit_det _).2 (isUnit_iff_ne_zero.2 hD))
+  obtain ⟨K, -, hK⟩ := (D : ℂ →ₗ[ℝ] ℂ).exists_antilipschitzWith hker
+  have hne := hA.eventually_ne (c := 0) ⟨K, hK⟩
+  rw [eventually_nhdsWithin_iff] at hne
+  obtain ⟨V, hVS, hVo, hxV⟩ := mem_nhds_iff.1 hne
+  -- The neighbourhood `U` of `x` on which `x` is the only zero of `σ`.
+  have hU : IsOpen (e.baseSet ∩ (φ.source ∩ φ ⁻¹' V)) :=
+    e.open_baseSet.inter (φ.isOpen_inter_preimage hVo)
+  have hUz : ∀ y ∈ e.baseSet ∩ (φ.source ∩ φ ⁻¹' V), σ y = 0 → y = x := fun y hy hσy ↦
+    by_contra fun hyx ↦ hVS hy.2.2 (fun h ↦ hyx (φ.injOn hy.2.1 (mem_chart_source ℂ x) h)) <| by
+      -- The reading at `φ y` is the coordinate of `σ y = 0`, read at `φ⁻¹ (φ y) = y`.
+      have h0 : ∀ z, z = y → (e ⟨z, σ z⟩).2 = 0 := by
+        rintro z rfl
+        rw [hσy]
+        exact congrArg Prod.snd (e.zeroSection ℝ hy.1)
+      exact h0 _ (φ.left_inv hy.2.1)
+  exact VectorBundleOrientation.sectionIndex_eq_sign_det_of_hasFDerivAt _ _ _ _ e φ hU
+    ⟨mem_baseSet_trivializationAt ℂ L x, mem_chart_source ℂ x, hxV⟩ hUz hσx
+    inter_subset_left (fun _ hy ↦ hy.2.1)
+    (fun _ hy ↦ VectorBundleOrientation.mapOrientation_reindex_complex_eq_orientation _ _ hy.1)
+    (localHomologyMap_complexHomologicalOrientation_of_mem_maximalAtlas
+      (IsManifold.chart_mem_maximalAtlas (n := 1) x) (mem_chart_source ℂ x))
+    hA hD
 
 omit [∀ z, Module ℝ (L z)] [∀ z, IsScalarTower ℝ ℂ (L z)] in
 /-- **The local index of the twisted section at the twisting point is one.** For a continuous

@@ -80,17 +80,14 @@ local instance instVectorBundleRealTransverseZero : VectorBundle ℝ ℂ L :=
 section Index
 
 variable [IsManifold 𝓘(ℂ, ℂ) 1 X] (x : X) {σ : ∀ z, L z}
-  (hσ : Continuous fun z ↦ TotalSpace.mk' ℂ z (σ z)) {U : Set X} (hU : IsOpen U) (hxU : x ∈ U)
-  (hUz : ∀ y ∈ U, σ y = 0 → y = x) (hσx : σ x = 0)
-  (hUe : U ⊆ (trivializationAt ℂ L x).baseSet) (hUφ : U ⊆ (chartAt ℂ x).source)
-  {D : ℂ →L[ℝ] ℂ} (hD : HasFDerivAt (negPointTwistChartReading ℂ x σ) D (chartAt ℂ x x)) {c : ℂ}
+  (hσ : Continuous fun z ↦ TotalSpace.mk' ℂ z (σ z)) (hσx : σ x = 0) {D : ℂ →L[ℝ] ℂ}
+  (hD : HasFDerivAt (negPointTwistChartReading ℂ x σ) D (chartAt ℂ x x)) {c : ℂ}
 
-include hU hxU hUz hσx hUe hUφ hD
+include hσx hD
 
 /-- **A positive zero has local index one.** Let `σ` be a continuous section of a complex line
-bundle `L` with fibre `ℂ` over a Riemann surface `X`, vanishing at `x` and nowhere else on an open
-neighbourhood `U` of `x` inside the source of the chart `φ` of `X` at `x` and the base set of the
-chart of `L` at `x`. If the real derivative `D` of the chart reading of `σ` at `φ x` satisfies
+bundle `L` with fibre `ℂ` over a Riemann surface `X`, vanishing at `x`. If the real derivative `D`
+of the chart reading of `σ` at `φ x`, for the chart `φ` of `X` at `x`, satisfies
 `‖D - (u ↦ u c)‖ < ‖c‖`, then the local index of `σ` at `x` is `1`, for the canonical orientations
 of `L` and `X`. -/
 theorem sectionIndex_eq_one_of_norm_sub_smulRight_lt
@@ -100,13 +97,12 @@ theorem sectionIndex_eq_one_of_norm_sub_smulRight_lt
         Complex.finrank_real_complex (complexHomologicalOrientation X) hσ x = 1 := by
   have h := det_pos_of_norm_sub_smulRight_lt hDc
   rw [funext (negPointTwistChartReading_apply ℂ x σ)] at hD
-  rw [sectionIndex_eq_sign_det_of_hasFDerivAt_chartAt x hσ hU hxU hUz hσx hUe hUφ hD h.ne',
+  rw [sectionIndex_eq_sign_det_of_hasFDerivAt_chartAt x hσ hσx hD h.ne',
     sign_pos h, SignType.coe_one]
 
 /-- **A negative zero has local index minus one.** Let `σ` be a continuous section of a complex
-line bundle `L` with fibre `ℂ` over a Riemann surface `X`, vanishing at `x` and nowhere else on an
-open neighbourhood `U` of `x` inside the source of the chart `φ` of `X` at `x` and the base set of
-the chart of `L` at `x`. If the real derivative `D` of the chart reading of `σ` at `φ x` satisfies
+line bundle `L` with fibre `ℂ` over a Riemann surface `X`, vanishing at `x`. If the real derivative
+`D` of the chart reading of `σ` at `φ x`, for the chart `φ` of `X` at `x`, satisfies
 `‖D - (u ↦ conj u c)‖ < ‖c‖`, then the local index of `σ` at `x` is `-1`, for the canonical
 orientations of `L` and `X`. -/
 theorem sectionIndex_eq_neg_one_of_norm_sub_smulRight_conjCLE_lt
@@ -116,7 +112,7 @@ theorem sectionIndex_eq_neg_one_of_norm_sub_smulRight_conjCLE_lt
         Complex.finrank_real_complex (complexHomologicalOrientation X) hσ x = -1 := by
   have h := det_neg_of_norm_sub_smulRight_conjCLE_lt hDc
   rw [funext (negPointTwistChartReading_apply ℂ x σ)] at hD
-  rw [sectionIndex_eq_sign_det_of_hasFDerivAt_chartAt x hσ hU hxU hUz hσx hUe hUφ hD h.ne,
+  rw [sectionIndex_eq_sign_det_of_hasFDerivAt_chartAt x hσ hσx hD h.ne,
     sign_neg h, SignType.coe_neg_one]
 
 end Index
@@ -193,15 +189,7 @@ theorem exists_contMDiffSection_complexEulerClass_eq_sum_sign [CompactSpace X]
   have hz0 : σ z = 0 := hZ.mem_toFinset.1 hz
   have hDz := hD z hz0
   rw [funext (negPointTwistChartReading_apply ℂ z σ)] at hDz
-  -- An open neighbourhood of `z` in the charts at `z` containing no other zero.
-  have hU : IsOpen ((chartAt ℂ z).source ∩ (trivializationAt ℂ L z).baseSet ∩
-      ({y | σ y = 0} \ {z})ᶜ) :=
-    ((chartAt ℂ z).open_source.inter (trivializationAt ℂ L z).open_baseSet).inter
-      (hZ.subset sdiff_subset).isClosed.isOpen_compl
-  rw [sectionIndex_eq_sign_det_of_hasFDerivAt_chartAt z hσ hU
-      ⟨⟨mem_chart_source ℂ z, mem_baseSet_trivializationAt ℂ L z⟩, fun h ↦ h.2 rfl⟩
-      (fun y hy hy0 ↦ by_contra fun hyz ↦ hy.2 ⟨hy0, hyz⟩) hz0
-      (fun _ hy ↦ hy.1.2) (fun _ hy ↦ hy.1.1) hDz (hdet z hz0)]
+  rw [sectionIndex_eq_sign_det_of_hasFDerivAt_chartAt z hσ hz0 hDz (hdet z hz0)]
   rcases (hdet z hz0).lt_or_gt with h | h
   · simp [h, sign_neg h]
   · simp [h.not_gt, sign_pos h]
