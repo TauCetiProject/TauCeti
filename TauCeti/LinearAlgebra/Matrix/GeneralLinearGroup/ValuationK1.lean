@@ -91,8 +91,8 @@ variable {A}
 /-- The order of vanishing of a class of `K₁(K)` is the order of its determinant. -/
 @[simp]
 theorem coe_ordFrac (x : AlgebraicK1 K) :
-    (ordFrac A x : ℤᵐ⁰) = Ring.ordFrac A (det K x : K) :=
-  WithZero.coe_unitsWithZeroEquiv_eq_units_val _
+    (ordFrac A x : ℤᵐ⁰) = Ring.ordFrac A (det K x : K) := by
+  simp [ordFrac]
 
 /-- Two classes have the same order of vanishing exactly when their determinants have the same
 order. -/
