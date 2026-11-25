@@ -172,8 +172,7 @@ def snoc (w : BoundedWord ι k) (i : ι) : BoundedWord ι (k + 1) :=
 @[simp]
 theorem ofFn_snoc (w : BoundedWord ι k) (i : ι) :
     List.ofFn (w.snoc i).2 = List.ofFn w.2 ++ [i] := by
-  change List.ofFn (Fin.snoc (α := fun _ ↦ ι) w.2 i : Fin ((w.1 : ℕ) + 1) → ι) = _
-  rw [List.ofFn_succ']
+  simp only [snoc, List.ofFn_succ']
   simp
 
 /-- Appending a fixed letter is injective. -/
@@ -279,42 +278,34 @@ theorem wordSeminorm_zero (X : ι → LeftInvariantDerivation I G) (v : lieSmoot
 
 /-! ### Monotonicity and the derivative estimate -/
 
-/-- A sum over the words of length at most `k` of a function of a word's letters is at most the
-sum over the words of length at most `k + 1` of the same function, once the summands are
-reindexed by an injective map. -/
-private theorem sum_le_sum_of_injective {ι : Type*} [Fintype ι] {k l : ℕ}
-    (φ : BoundedWord ι k → BoundedWord ι l) (hφ : Function.Injective φ) (f : BoundedWord ι l → ℝ)
-    (hf : ∀ w, 0 ≤ f w) : ∑ w, f (φ w) ≤ ∑ w, f w := by
-  classical
-  rw [← Finset.sum_image fun _ _ _ _ h ↦ hφ h]
-  exact Finset.sum_le_univ_sum_of_nonneg hf
-
 /-- The word seminorms increase with the order: `P_k ≤ P_{k+1}`. -/
 theorem wordSeminorm_le_succ (X : ι → LeftInvariantDerivation I G) (k : ℕ)
     (v : lieSmoothVectors I π) : wordSeminorm I π X k v ≤ wordSeminorm I π X (k + 1) v := by
+  classical
   rw [wordSeminorm_apply, wordSeminorm_apply]
-  simpa using sum_le_sum_of_injective _ BoundedWord.castSucc_injective
-    (fun w ↦ ‖(wordAction I π X (List.ofFn w.2) v : V)‖) fun _ ↦ norm_nonneg _
+  exact Finset.sum_le_sum_of_injOn BoundedWord.castSucc BoundedWord.castSucc_injective.injOn
+    (Finset.subset_univ _) (fun _ _ ↦ le_rfl) fun _ _ _ ↦ norm_nonneg _
 
 /-- The word seminorms increase with the order: `P_k ≤ P_l` for `k ≤ l`. -/
 theorem wordSeminorm_mono (X : ι → LeftInvariantDerivation I G) {k l : ℕ} (hkl : k ≤ l)
     (v : lieSmoothVectors I π) : wordSeminorm I π X k v ≤ wordSeminorm I π X l v :=
   monotone_nat_of_le_succ (fun n ↦ wordSeminorm_le_succ X n v) hkl
 
-/-- **The derivative estimate along a basis element.** `P_k(dπ(X_i) v) ≤ P_{k+1}(v)`: the words
-`w` of length at most `k` give the distinct words `w i` of length at most `k + 1`. -/
+/-- **The derivative estimate along a family element.** `P_k(dπ(X_i) v) ≤ P_{k+1}(v)` for the
+word seminorms along any family `X`. -/
 theorem wordSeminorm_lieSmoothVectorsDerivative_le (X : ι → LeftInvariantDerivation I G)
     (k : ℕ) (i : ι) (v : lieSmoothVectors I π) :
     wordSeminorm I π X k (lieSmoothVectorsDerivative I π (X i) v) ≤
       wordSeminorm I π X (k + 1) v := by
+  classical
   rw [wordSeminorm_apply, wordSeminorm_apply]
   have h (w : BoundedWord ι k) :
       wordAction I π X (List.ofFn w.2) (lieSmoothVectorsDerivative I π (X i) v) =
         wordAction I π X (List.ofFn (w.snoc i).2) v := by
     rw [BoundedWord.ofFn_snoc, wordAction_append, wordAction_singleton, mul_apply_eq_comp]
   simp_rw [h]
-  exact sum_le_sum_of_injective _ (BoundedWord.snoc_left_injective i)
-    (fun w ↦ ‖(wordAction I π X (List.ofFn w.2) v : V)‖) fun _ ↦ norm_nonneg _
+  exact Finset.sum_le_sum_of_injOn (fun w ↦ w.snoc i) (BoundedWord.snoc_left_injective i).injOn
+    (Finset.subset_univ _) (fun _ _ ↦ le_rfl) fun _ _ _ ↦ norm_nonneg _
 
 section RealCombination
 
@@ -393,9 +384,10 @@ theorem sobolevSeminorm_le_wordSeminorm (X : Fin m → LeftInvariantDerivation I
   have hb : ∀ α : SobolevIndex m k,
       ‖(wordAction I π X (monomialWord α.exponent) v : V)‖ = b α.toBoundedWord := fun α ↦ by
     simp only [b, SobolevIndex.ofFn_toBoundedWord]
-  have hsum : ∑ α : SobolevIndex m k, b α.toBoundedWord ≤ ∑ w, b w := by
-    rw [← Finset.sum_image fun _ _ _ _ h ↦ SobolevIndex.toBoundedWord_injective h]
-    exact Finset.sum_le_univ_sum_of_nonneg fun _ ↦ norm_nonneg _
+  have hsum : ∑ α : SobolevIndex m k, b α.toBoundedWord ≤ ∑ w, b w :=
+    Finset.sum_le_sum_of_injOn SobolevIndex.toBoundedWord
+      SobolevIndex.toBoundedWord_injective.injOn (Finset.subset_univ _) (fun _ _ ↦ le_rfl)
+      fun _ _ _ ↦ norm_nonneg _
   rw [sobolevSeminorm_apply, wordSeminorm_apply, Real.sqrt_le_iff]
   refine ⟨Finset.sum_nonneg fun _ _ ↦ norm_nonneg _, ?_⟩
   simp_rw [hb]
