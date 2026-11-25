@@ -26,10 +26,10 @@ Milman's converse to the Krein–Milman theorem
 (`TauCeti.extremePoints_closure_convexHull_subset_closure`): if the closed convex hull of a set `F`
 is compact, every extreme point of it lies in the closure of `F`. Mathlib's
 `closure_convexHull_extremePoints` says that a compact convex set is the closed convex hull of its
-extreme points; the converse says that the extreme points are the smallest closed set with this
-property. In representation theory it shows that an extreme point of a compact convex set of
-positive-definite functions, approximated by convex combinations of a family of such functions, is
-approximated by single members of the family.
+extreme points; the converse says that the closure of the extreme points is the smallest closed set
+whose closed convex hull is the given set. In representation theory it shows that an extreme point
+of a compact convex set of positive-definite functions, approximated by convex combinations of a
+family of such functions, is approximated by single members of the family.
 
 ## References
 

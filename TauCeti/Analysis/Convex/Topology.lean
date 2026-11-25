@@ -208,8 +208,8 @@ variable {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing �
   [CompactIccSpace 𝕜] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
   [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E]
 
-/-- If two sets have compact convex hulls, so does their union: its convex hull is the convex join
-of the two convex hulls. -/
+/-- If two sets have compact convex hulls, so does their union. When both sets are nonempty, its
+convex hull is the convex join of the two convex hulls. -/
 theorem TauCeti.isCompact_convexHull_union {s t : Set E} (hs : IsCompact (convexHull 𝕜 s))
     (ht : IsCompact (convexHull 𝕜 t)) : IsCompact (convexHull 𝕜 (s ∪ t)) := by
   rcases s.eq_empty_or_nonempty with rfl | hs₀
