@@ -40,7 +40,8 @@ and `‖L‖ (U) = sup { L f | ‖f x‖ ≤ 1 for all x, tsupport f ⊆ U }` fo
 (`TauCeti.RealRMK.exists_apply_eq_integral_dual`). Conversely, a functional represented by a
 measure finite on compact sets and a density of dual norm at most one satisfies the bound
 (`TauCeti.RealRMK.exists_le_of_apply_eq_integral`). The measure and the density are unique: any two
-such pairs, with measures finite on compact sets, have the same measure
+representing pairs with measures finite on compact sets and densities of dual norm one almost
+everywhere have the same measure
 (`TauCeti.RealRMK.measure_eq_of_apply_eq_integral_dual`) and densities that agree almost everywhere
 (`TauCeti.RealRMK.ae_eq_of_apply_eq_integral_dual`).
 When `F` is an inner product space the density is a unit vector field `η : Ω → F`, with
