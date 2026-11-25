@@ -58,6 +58,9 @@ for the statements here.
   `ξ` and continuous `η`, the weak equation with `DJ = fderiv ℝ J` is the classical equation
   `∂_s ξ + J ∂_t ξ + S ξ = η` at every point of `Ω`. Its coefficients are Sobolev coefficients
   for every exponent (`TauCeti.IsSobolevCRCoefficients.of_contDiffOn`).
+* `TauCeti.integrable_inner_crFormalAdjoint_of_memLpLoc`: for locally `Lᵖ` coefficients and
+  `1/p + 1/q ≤ 1` the pairing `⟪D* φ, ξ⟫` is integrable for every locally `L^q` field `ξ`, with no
+  relation between `J` and `DJ`.
 * `TauCeti.IsSobolevCRCoefficients.memLpLoc_deriv_apply`: the directional weak derivatives
   `DJ · e` of the coefficient are locally `Lᵖ`; `TauCeti.IsSobolevCRCoefficients.add_zeroth`
   changes the zeroth-order coefficient by a locally `Lᵖ` field, which adds its adjoint to the
