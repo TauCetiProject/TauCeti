@@ -79,7 +79,7 @@ section NormalSpaces
 
 variable (g : Bundle.RiemannianMetric fun x : ℝ ↦ (SmoothEmbedding.ofIsSmoothEmbedding _
   (isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero (I := 𝓘(ℝ)) (I' := 𝓘(ℝ)) (n := ∞)
-    (M := ℝ) (c := (0 : ℝ)) (by simp))).NormalSpace x (by simp))
+    (M := ℝ) (c := (0 : ℝ)) (by simp))).isImmersion.NormalSpace x (by simp))
 
 /-- **`y²` has negative normal rank `0`.** Along the critical line of `(x, y) ↦ y²`, the negative
 normal space is zero for every fibre metric: the line consists of minima. -/

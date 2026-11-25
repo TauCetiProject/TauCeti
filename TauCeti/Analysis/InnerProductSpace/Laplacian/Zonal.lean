@@ -132,22 +132,17 @@ theorem laplacian_norm_rpow_mul_comp_inner_div_norm {F : ℝ → ℝ} (he : ‖e
   have hnorm : ContDiffAt ℝ 2 (fun y : E ↦ ‖y‖) x := contDiffAt_norm ℝ hx
   have hq : ContDiffAt ℝ 2 (fun y : E ↦ ⟪e, y⟫_ℝ / ‖y‖) x :=
     (innerSL ℝ e).contDiff.contDiffAt.div hnorm hr.ne'
-  have hp : ContDiffAt ℝ 2 (fun y : E ↦ ‖y‖ ^ μ) x := hnorm.rpow_const_of_ne hr.ne'
+  have hp : ContDiffAt ℝ 2 (fun y : E ↦ ‖y‖ ^ μ) x := contDiffAt_norm_rpow_of_ne μ hx
   have hFq : ContDiffAt ℝ 2 (F ∘ fun y : E ↦ ⟪e, y⟫_ℝ / ‖y‖) x := hF.comp x hq
   have hgq := hasGradientAt_inner_div_norm e hx
   -- The mixed term vanishes: `∇ ‖x‖ ^ μ` is parallel to `x`, and `∇ t` is orthogonal to `x`.
-  have hgp : ∇ (fun y : E ↦ ‖y‖ ^ μ) x = (μ * ‖x‖ ^ (μ - 2)) • x := by
-    refine (hasGradientAt_iff_hasFDerivAt.2 ?_).gradient
-    convert hasFDerivAt_norm_rpow_of_ne μ hx using 1
-    ext v
-    simp
   have hfd : fderiv ℝ (F ∘ fun y : E ↦ ⟪e, y⟫_ℝ / ‖y‖) x =
       deriv F (⟪e, x⟫_ℝ / ‖x‖) • toDual ℝ E (‖x‖⁻¹ • e - (⟪e, x⟫_ℝ / ‖x‖ ^ 3) • x) :=
     ((hF.differentiableAt (by norm_num)).hasDerivAt.comp_hasFDerivAt x
       hgq.hasFDerivAt).fderiv
   have hmixed :
       ⟪∇ (fun y : E ↦ ‖y‖ ^ μ) x, ∇ (F ∘ fun y : E ↦ ⟪e, y⟫_ℝ / ‖y‖) x⟫_ℝ = 0 := by
-    rw [inner_gradient_right, conj_trivial, hfd, hgp]
+    rw [inner_gradient_right, conj_trivial, hfd, gradient_norm_rpow_of_ne μ hx]
     simp only [smul_apply, toDual_apply_apply, inner_smul_right, smul_eq_mul]
     rw [← hgq.gradient, inner_gradient_inner_div_norm_self e hx, mul_zero, mul_zero]
   have hpow : ‖x‖ ^ μ = ‖x‖ ^ (μ - 2) * ‖x‖ ^ 2 := by
