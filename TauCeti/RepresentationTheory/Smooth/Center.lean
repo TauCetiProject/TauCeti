@@ -111,6 +111,17 @@ section Generators
 The permutation representations `A[G ⧸ U]` live in `Type (max u v)`, so the statements of this
 section are about `SmoothCenter.{max u v} A G`. -/
 
+/-- `A[G ⧸ G]` is one-dimensional: each of its elements is the coefficient at the single coset
+`G` times the basis vector there. -/
+private lemma eq_single_coeff_quotient_top (x : MonoidAlgebra A (G ⧸ ((⊤ : OpenSubgroup G) :
+    Subgroup G))) :
+    x = .single ((1 : G) : G ⧸ ((⊤ : OpenSubgroup G) : Subgroup G))
+      (x.coeff ((1 : G) : G ⧸ ((⊤ : OpenSubgroup G) : Subgroup G))) := by
+  have : Subsingleton (G ⧸ ((⊤ : OpenSubgroup G) : Subgroup G)) :=
+    QuotientGroup.subsingleton_quotient_top
+  ext q
+  simp [Subsingleton.elim q (1 : G)]
+
 variable [SeparatelyContinuousMul G]
 
 /-- The value of `z` at a vector `v` fixed by an open subgroup `U` is the image of `z` applied to
@@ -166,15 +177,13 @@ noncomputable def scalar : SmoothCenter.{max u v} A G →ₐ[A] A where
     set q : G ⧸ ((⊤ : OpenSubgroup G) : Subgroup G) :=
       ((1 : G) : G ⧸ ((⊤ : OpenSubgroup G) : Subgroup G))
     -- `A[G ⧸ G]` is one-dimensional, so `z` sends its basis vector to a multiple of it.
-    have hz : (z.app X).hom.hom (.single q 1) =
-        .single q (((z.app X).hom.hom (.single q 1)).coeff q) := by
-      have : Subsingleton (G ⧸ ((⊤ : OpenSubgroup G) : Subgroup G)) :=
-        QuotientGroup.subsingleton_quotient_top
-      let : One (G ⧸ ((⊤ : OpenSubgroup G) : Subgroup G)) := ⟨(1 : G)⟩
-      exact ((MonoidAlgebra.uniqueLinearEquiv A _).symm_apply_apply _).symm
     set c := ((z.app X).hom.hom (.single q 1)).coeff q
-    rw [CatCenter.mul_app, ObjectProperty.FullSubcategory.comp_hom, Rep.hom_comp,
-      IntertwiningMap.comp_apply, hz, ← mul_one c, ← MonoidAlgebra.smul_single', map_smul]
+    have hz : (z.app X).hom.hom (.single q 1) = c • .single q 1 := by
+      rw [MonoidAlgebra.smul_single', mul_one]
+      exact eq_single_coeff_quotient_top _
+    rw [CatCenter.mul_app]
+    simp only [ObjectProperty.FullSubcategory.comp_hom, Rep.hom_comp, IntertwiningMap.comp_apply]
+    rw [hz]
     simp
   map_zero' := by simp
   map_add' _ _ := by
@@ -190,11 +199,8 @@ times it. -/
 lemma app_single_one_top (z : SmoothCenter.{max u v} A G) :
     (z.app (SmoothRep.of (ofMulAction A G (G ⧸ ((⊤ : OpenSubgroup G) : Subgroup G))))).hom.hom
         (MonoidAlgebra.single ((1 : G) : G ⧸ ((⊤ : OpenSubgroup G) : Subgroup G)) 1) =
-      MonoidAlgebra.single ((1 : G) : G ⧸ ((⊤ : OpenSubgroup G) : Subgroup G)) (scalar z) := by
-  have : Subsingleton (G ⧸ ((⊤ : OpenSubgroup G) : Subgroup G)) :=
-    QuotientGroup.subsingleton_quotient_top
-  let : One (G ⧸ ((⊤ : OpenSubgroup G) : Subgroup G)) := ⟨(1 : G)⟩
-  exact ((MonoidAlgebra.uniqueLinearEquiv A _).symm_apply_apply _).symm
+      MonoidAlgebra.single ((1 : G) : G ⧸ ((⊤ : OpenSubgroup G) : Subgroup G)) (scalar z) :=
+  eq_single_coeff_quotient_top _
 
 /-- **The smooth centre acts on invariant vectors by a scalar**: on a `G`-invariant vector `v`,
 an element `z` of `Z(G, A)` acts as the scalar `scalar z`. -/
@@ -220,8 +226,7 @@ element, `A → Z(G, A)` is an isomorphism, with inverse `scalar`, since every v
 noncomputable def algEquivOfSubsingleton [Subsingleton G] : A ≃ₐ[A] SmoothCenter.{max u v} A G :=
   AlgEquiv.ofAlgHom (Algebra.ofId A _) scalar (by
     ext z V v
-    rw [AlgHom.comp_apply, Algebra.ofId_apply, algebraMap_app_hom_hom_apply,
-      AlgHom.id_apply, app_apply_of_forall_eq z V fun g ↦ by simp [Subsingleton.elim g 1]])
+    simp [app_apply_of_forall_eq z V (v := v) fun g ↦ by simp [Subsingleton.elim g 1]])
     (AlgHom.ext scalar.commutes)
 
 /-- `algEquivOfSubsingleton` sends `a` to the scalar `a`. -/
