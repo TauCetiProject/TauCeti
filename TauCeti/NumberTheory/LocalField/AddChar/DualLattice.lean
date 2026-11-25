@@ -109,7 +109,8 @@ theorem characterAnnihilator_eq_dualSubmodule (h0 : {x | ψ x = 1} ∈ 𝓝 (0 :
   have hval : valuation K (c⁻¹ * B x y) ≤ 1 ↔ valuation K (B x y) ≤ valuation K c := by
     rw [map_mul, map_inv₀, inv_mul_le_iff₀ hc0, mul_one]
   rw [← hval]
-  exact ⟨fun h ↦ ⟨⟨_, h⟩, rfl⟩, fun ⟨r, hr⟩ ↦ hr ▸ r.property⟩
+  exact ⟨fun h ↦ ⟨⟨_, (Valuation.mem_integer_iff _ _).2 h⟩, rfl⟩,
+    fun ⟨r, hr⟩ ↦ hr ▸ (Valuation.mem_integer_iff _ _).1 r.property⟩
 
 /-- For `c ∈ K` of valuation `uniformizer K ^ (-ν(ψ))` and a basis `e` of `V`, the annihilator
 of the lattice spanned by `e` under `ψ (B x y)` is spanned by `c • f`, where `f` is the basis with
