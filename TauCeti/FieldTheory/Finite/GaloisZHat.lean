@@ -36,6 +36,8 @@ equivalence `TauCeti.zHat.liftContinuousMulEquiv` that both identifications shar
   Frobenius is `k`.
 * `TauCeti.FiniteField.topologicalClosure_zpowers_frobeniusAlgEquivOfAlgebraic`: Frobenius
   generates `Gal(L/k)` topologically.
+* `TauCeti.FiniteField.restrictNormalHom_frobeniusAlgEquivOfAlgebraic`: Frobenius restricts to
+  the Frobenius of any normal subextension.
 * `TauCeti.FiniteField.galoisGroupEquivZHat`: `Gal(L/k) ≃ₜ* ℤ̂`, with
   `galoisGroupEquivZHat_apply_frobenius` and `galoisGroupEquivZHat_symm_apply_gen`.
 -/
@@ -68,6 +70,18 @@ theorem topologicalClosure_zpowers_frobeniusAlgEquivOfAlgebraic [IsGalois k L] :
   rw [← fixingSubgroup_fixedField_eq_topologicalClosure,
     fixedField_zpowers_frobeniusAlgEquivOfAlgebraic, fixingSubgroup_bot]
 
+/-- **Restricting Frobenius to a normal subextension gives its Frobenius.** For a tower
+`L / E / k` with `E / k` normal, the restriction to `E` of the arithmetic Frobenius `x ↦ x ^ q` of
+`L` is the arithmetic Frobenius of `E`. -/
+@[simp]
+theorem restrictNormalHom_frobeniusAlgEquivOfAlgebraic (E : Type*) [Field E] [Algebra k E]
+    [Algebra E L] [IsScalarTower k E L] [Normal k E] :
+    AlgEquiv.restrictNormalHom E (_root_.FiniteField.frobeniusAlgEquivOfAlgebraic k L) =
+      _root_.FiniteField.frobeniusAlgEquivOfAlgebraic k E := by
+  ext x
+  apply (algebraMap E L).injective
+  simp [AlgEquiv.restrictNormalHom]
+
 variable [IsSepClosed L]
 
 /-- The fixed field `k_n` of the `n`-th power of Frobenius, of degree `n` over `k`. -/
@@ -85,14 +99,8 @@ private theorem orderOf_restrictNormalHom_frobeniusAlgEquivOfAlgebraic (n : ℕ+
     orderOf (AlgEquiv.restrictNormalHom (frobeniusLevel k L n)
       (_root_.FiniteField.frobeniusAlgEquivOfAlgebraic k L)) = n := by
   have : Fintype (frobeniusLevel k L n) := Fintype.ofFinite _
-  have h : AlgEquiv.restrictNormalHom (frobeniusLevel k L n)
-      (_root_.FiniteField.frobeniusAlgEquivOfAlgebraic k L) =
-      _root_.FiniteField.frobeniusAlgEquivOfAlgebraic k (frobeniusLevel k L n) := by
-    ext x
-    rw [AlgEquiv.restrictNormalHom_apply, _root_.FiniteField.coe_frobeniusAlgEquivOfAlgebraic,
-      _root_.FiniteField.coe_frobeniusAlgEquivOfAlgebraic]
-    simp
-  rw [h, _root_.FiniteField.orderOf_frobeniusAlgEquivOfAlgebraic,
+  rw [restrictNormalHom_frobeniusAlgEquivOfAlgebraic,
+    _root_.FiniteField.orderOf_frobeniusAlgEquivOfAlgebraic,
     finrank_fixedField_zpowers_frobeniusAlgEquivOfAlgebraic_pow k L n.ne_zero]
 
 /-- The lift to `ℤ̂` of the arithmetic Frobenius is bijective. -/
