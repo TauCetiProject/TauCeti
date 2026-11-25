@@ -119,15 +119,7 @@ private theorem isSelfAdjoint_toEnd (H : 𝔞) :
   (LinearMap.mem_selfAdjointSubmodule _).mp
     (ad_mem_selfAdjointSubmodule_twistedKillingForm (h𝔞 H.property))
 
-omit h𝔞 in
-/-- The twisted Killing form of a Cartan involution is anisotropic. -/
-private theorem twistedKillingForm_anisotropic (x : L) (hx : θ.twistedKillingForm x x = 0) :
-    x = 0 := by
-  by_contra hx₀
-  have := hθ.killingForm_apply_apply_neg hx₀
-  rw [twistedKillingForm_apply, neg_eq_zero] at hx
-  exact this.ne hx
-
+omit [IsStrictOrderedRing K] in
 /-- **Generalized weight spaces of `𝔞 ⊆ 𝔭` are weight spaces.** For a Cartan involution `θ` and
 a Lie subalgebra `𝔞` of `𝔭`, the operators `ad H`, `H ∈ 𝔞`, are self-adjoint for the
 inner product `B_θ`, so the generalized weight spaces of `𝔞` acting on `L` are its weight
@@ -135,8 +127,9 @@ spaces. -/
 theorem genWeightSpace_eq_weightSpace [LieRing.IsNilpotent 𝔞] (χ : 𝔞 → K) :
     genWeightSpace L χ = weightSpace L χ :=
   TauCeti.genWeightSpace_eq_weightSpace_of_isSelfAdjoint
-    (twistedKillingForm_anisotropic hθ) (isSelfAdjoint_toEnd h𝔞) χ
+    hθ.posDef_twistedKillingForm.anisotropic (isSelfAdjoint_toEnd h𝔞) χ
 
+omit [IsStrictOrderedRing K] in
 /-- **The restricted root space `𝔤_λ` is the generalized weight space of `λ`** for a Lie
 subalgebra `𝔞` of `𝔭` acting on `L` by `ad`. -/
 theorem toSubmodule_genWeightSpace_eq_restrictedRootSpace [LieRing.IsNilpotent 𝔞]
