@@ -62,7 +62,7 @@ structure IsFactorMap (π : X → Y) (T : X → X) (S : Y → Y) (μ : Measure X
 namespace IsFactorMap
 
 /-- The identity is a factor map from any system to itself. -/
-theorem id (T : X → X) (μ : Measure X) : IsFactorMap _root_.id T T μ μ :=
+protected theorem id (T : X → X) (μ : Measure X) : IsFactorMap id T T μ μ :=
   ⟨.id μ, .rfl⟩
 
 /-- A measure-preserving map that semiconjugates `T` to `S` everywhere is a factor map. -/
@@ -71,7 +71,7 @@ theorem of_semiconj (hπ : MeasurePreserving π μ ν) (h : Semiconj π T S) :
   ⟨hπ, .of_eq h.comp_eq⟩
 
 /-- Factor maps compose. -/
-theorem comp (hσ : IsFactorMap σ S R ν ρ) (hπ : IsFactorMap π T S μ ν) :
+protected theorem comp (hσ : IsFactorMap σ S R ν ρ) (hπ : IsFactorMap π T S μ ν) :
     IsFactorMap (σ ∘ π) T R μ ρ := by
   refine ⟨hσ.measurePreserving.comp hπ.measurePreserving, ?_⟩
   have h₁ : σ ∘ (π ∘ T) =ᵐ[μ] σ ∘ (S ∘ π) := hπ.comp_ae_eq.fun_comp σ
@@ -82,18 +82,18 @@ theorem comp (hσ : IsFactorMap σ S R ν ρ) (hπ : IsFactorMap π T S μ ν) :
 /-- The constant map to a point is a factor map from a probability system onto the trivial
 system. -/
 theorem toUnit [IsProbabilityMeasure μ] (T : X → X) :
-    IsFactorMap (fun _ ↦ ()) T _root_.id μ (Measure.dirac ()) :=
+    IsFactorMap (fun _ ↦ ()) T id μ (Measure.dirac ()) :=
   of_semiconj ⟨measurable_const, by simp [Measure.map_const]⟩ fun _ ↦ rfl
 
 /-- The first coordinate projection is a factor map from the product of two systems, the second
 on a probability space, to the first. -/
-theorem fst [IsProbabilityMeasure ν] (T : X → X) (S : Y → Y) :
+protected theorem fst [IsProbabilityMeasure ν] (T : X → X) (S : Y → Y) :
     IsFactorMap Prod.fst (Prod.map T S) T (μ.prod ν) μ :=
   of_semiconj (measurePreserving_fst) fun _ ↦ rfl
 
 /-- The second coordinate projection is a factor map from the product of two systems, the first
 on a probability space, to the second. -/
-theorem snd [IsProbabilityMeasure μ] [SFinite ν] (T : X → X) (S : Y → Y) :
+protected theorem snd [IsProbabilityMeasure μ] [SFinite ν] (T : X → X) (S : Y → Y) :
     IsFactorMap Prod.snd (Prod.map T S) S (μ.prod ν) ν :=
   of_semiconj (measurePreserving_snd) fun _ ↦ rfl
 
