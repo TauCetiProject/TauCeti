@@ -120,10 +120,9 @@ theorem wellFounded_val_lt (hcap : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ zmultipl
   refine Subrelation.wf (fun {g f} h ↦ ?_)
     (InvImage.wf (fun f ↦ m f - n f) wellFounded_lt)
   have hlt : n f < n g := (nsmul_lt_nsmul_iff_left hd).1 (by rwa [hn, hn])
-  have hmf := hnm f
-  have hmg := hnm g
-  have hmfg := hm_eq f g
-  exact (by omega : m g - n g < m f - n f)
+  change m g - n g < m f - n f
+  rw [← hm_eq f g]
+  exact tsub_lt_tsub_left_of_le (by simpa only [← hm_eq f g] using hnm g) hlt
 
 /-- **Termination of augmentation for capacities in a cyclic subgroup.** For capacities in
 `zmultiples d` and distinct terminals, every sequence of augmentation steps starting from a flow
