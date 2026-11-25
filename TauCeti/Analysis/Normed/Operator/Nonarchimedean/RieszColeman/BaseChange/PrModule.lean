@@ -25,6 +25,10 @@ modules.
   `ContinuousLinearMap.IsPrCompact.finrank_ker_aeval_reverse_completedBaseChange`: transport of
   Riesz–Coleman projections, complementary inverses, stalk ranks, and field kernel dimensions along
   completed-tensor base change on `(Pr)` modules for bounded scalar extensions.
+* `ContinuousLinearMap.IsRieszColemanProjection.eq_completedBaseChange`: the extended projection is
+  the unique Riesz–Coleman projection of `u.completedBaseChange α α` for `Q.map (algebraMap R S)`.
+* `ContinuousLinearMap.IsRieszColemanProjection.finrank_range_completedBaseChange`: over a bounded
+  field extension, the extended Riesz–Coleman summand has the same dimension as the original.
 
 ## References
 
@@ -97,6 +101,18 @@ theorem IsRieszColemanProjection.inverse_completedBaseChange (hM : HasPr R M)
   simpa only [completedBaseChangeRingHom_apply] using hinv
 
 include hS in
+/-- **Uniqueness of the extended Riesz–Coleman projection.** On a `(Pr)` module, for a bounded
+scalar extension `S` satisfying `‖r • s‖ ≤ C * ‖r‖ * ‖s‖` and `IsUnit Q.leadingCoeff`, every
+Riesz–Coleman projection of `u.completedBaseChange α α` for `Q.map (algebraMap R S)` is the
+extension `E.completedBaseChange α α` of a Riesz–Coleman projection `E` of `u` for `Q`. -/
+theorem IsRieszColemanProjection.eq_completedBaseChange (hM : HasPr R M) (α : S ⊗̂[R] M ≃L[S] N)
+    {u E : M →L[R] M} {Q : R[X]} (hE : IsRieszColemanProjection u Q E)
+    (hQ : IsUnit Q.leadingCoeff) {E' : N →L[S] N}
+    (hE' : IsRieszColemanProjection (u.completedBaseChange α α) (Q.map (algebraMap R S)) E') :
+    E' = E.completedBaseChange α α :=
+  hE'.unique (hE.completedBaseChange hS hM α hQ)
+
+include hS in
 /-- **Constant stalk rank after bounded completed-tensor base change.** For a `(Pr)`-compact
 operator `u` on a module `M` over a complete ultrametric Tate ring `R` with a Riesz–Coleman
 projection `E` for a coprime factorisation `H_u = Q * S'`, where `IsUnit Q.leadingCoeff` and `S'`
@@ -151,6 +167,22 @@ theorem IsPrCompact.finrank_ker_aeval_reverse_completedBaseChange
   rw [← hu.charPowerSeries_completedBaseChange hL α] at hHS
   rw [(hu.completedBaseChange hL α α).finrank_ker_aeval_reverse hLS hHS hcopL, hQdeg,
     hu.finrank_ker_aeval_reverse hS hQS hcop]
+
+/-- **Completed-tensor field extension preserves the Riesz–Coleman summand dimension.** For a
+coprime factorisation `H_u = Q * S` of the Fredholm series of a `(Pr)`-compact operator `u` on `M`
+into a polynomial `Q` and an entire series `S`, and a Riesz–Coleman projection `E` of `u` for `Q`,
+completed-tensor base change along a bounded field extension `L / K` preserves the dimension of
+`range E`. -/
+theorem IsRieszColemanProjection.finrank_range_completedBaseChange [IsBoundedSMul K M]
+    [IsBoundedSMul L N] (hL : ∃ C : ℝ≥0, ∀ (k : K) (l : L), ‖k • l‖ ≤ C * ‖k‖ * ‖l‖)
+    (α : L ⊗̂[K] M ≃L[L] N) {u E : M →L[K] M} {Q : K[X]} {S : K⟦X⟧}
+    (hE : IsRieszColemanProjection u Q E) (hu : u.IsPrCompact) (hS : S.IsEntire)
+    (hQS : u.charPowerSeries = (Q : K⟦X⟧) * S)
+    (hcop : IsCoprime (IsEntire.polynomialHom Q) ⟨S, IsEntire.mem_subring.mpr hS⟩) :
+    Module.finrank L (E.completedBaseChange α α).range = Module.finrank K E.range := by
+  have hQ := PowerSeries.isUnit_leadingCoeff_of_eq_coe_mul u.constantCoeff_charPowerSeries hQS
+  rw [(hE.completedBaseChange hL hu.hasPr_source α hQ).range_eq_ker, hE.range_eq_ker]
+  exact hu.finrank_ker_aeval_reverse_completedBaseChange hL α hS hQS hcop
 
 end PrFieldBaseChange
 

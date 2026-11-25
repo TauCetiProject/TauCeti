@@ -40,6 +40,8 @@ calculations: in orthonormal eigenbases, for instance, it turns the coordinate f
   scoped Frobenius norm of `A`.
 * `LinearMap.sum_norm_apply_sq_eq_sum_norm_apply_sq`: `∑ᵢ ‖A bᵢ‖²` is independent of the
   orthonormal basis.
+* `LinearMap.sum_sum_norm_apply_apply_sq_eq_sum_sum_norm_apply_apply_sq`: so is `∑ᵢ ∑ⱼ ‖B bᵢ bⱼ‖²`
+  for a bilinear map `B`.
 * `LinearMap.sum_sq_norm_apply_orthonormal_le`: compression to an orthonormal family
   cannot increase the squared Frobenius sum.
 * `TauCeti.UnitarilyInvariantSeminorm.frobenius`: the Frobenius seminorm.
@@ -89,6 +91,20 @@ theorem sum_norm_apply_sq_eq_sum_norm_apply_sq (A : E →ₗ[𝕜] F) (b : Ortho
   have h := (A.rangeRestrict.trace_adjoint_comp_self_eq_sum_norm_apply_sq b).symm.trans
     (A.rangeRestrict.trace_adjoint_comp_self_eq_sum_norm_apply_sq b')
   exact_mod_cast h
+
+omit [FiniteDimensional 𝕜 E] in
+/-- **Basis independence of the Frobenius sum of a bilinear map**: `∑ᵢ ∑ⱼ ‖B bᵢ bⱼ‖²` takes the
+same value on any two orthonormal bases `(bᵢ)` and `(b'ⱼ)` of the source. -/
+theorem sum_sum_norm_apply_apply_sq_eq_sum_sum_norm_apply_apply_sq (B : E →ₗ[𝕜] E →ₗ[𝕜] F)
+    (b : OrthonormalBasis ι 𝕜 E) (b' : OrthonormalBasis ι' 𝕜 E) :
+    ∑ i, ∑ j, ‖B (b i) (b j)‖ ^ 2 = ∑ i, ∑ j, ‖B (b' i) (b' j)‖ ^ 2 := by
+  calc ∑ i, ∑ j, ‖B (b i) (b j)‖ ^ 2
+      = ∑ i, ∑ j, ‖B (b i) (b' j)‖ ^ 2 :=
+        Finset.sum_congr rfl fun i _ ↦ (B (b i)).sum_norm_apply_sq_eq_sum_norm_apply_sq b b'
+    _ = ∑ j, ∑ i, ‖B.flip (b' j) (b i)‖ ^ 2 := Finset.sum_comm
+    _ = ∑ j, ∑ i, ‖B.flip (b' j) (b' i)‖ ^ 2 :=
+        Finset.sum_congr rfl fun j _ ↦ (B.flip (b' j)).sum_norm_apply_sq_eq_sum_norm_apply_sq b b'
+    _ = ∑ i, ∑ j, ‖B (b' i) (b' j)‖ ^ 2 := Finset.sum_comm
 
 end LinearMap
 

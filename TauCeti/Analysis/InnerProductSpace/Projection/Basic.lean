@@ -148,6 +148,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `(P_U - P_V)² P_U = P_U (P_U - P_V)² = P_U - P_U P_V P_U`.
 * `Submodule.span_range_starProjection_orthogonal_basis_succ`: if the zeroth coordinate of `v` in
   a basis is nonzero, the projections onto `(𝕜 ∙ v)ᗮ` of the other basis vectors span it.
+* `Submodule.starProjection_comp_eq_self_iff`: `P_U T = T` if and only if the range of `T` lies
+  in `U`.
 * `Submodule.apply_starProjection_eq_of_forall_mem_orthogonal`,
   `Submodule.mul_starProjection_eq_self`, `Submodule.commute_starProjection_orthogonal_iff`,
   `Submodule.apply_mem_of_commute_starProjection`: additive maps vanishing on `Uᗮ` factor through
@@ -590,6 +592,17 @@ theorem mul_starProjection_eq_self {U : Submodule 𝕜 E} [U.HasOrthogonalProjec
   simpa only [_root_.mul_apply_eq_comp] using
     U.apply_starProjection_eq_of_forall_mem_orthogonal hker x
 
+/-- An operator into `E` is fixed by left composition with `U.starProjection` exactly when its
+range lies in `U`. -/
+theorem starProjection_comp_eq_self_iff {F : Type*} [AddCommMonoid F] [Module 𝕜 F]
+    [TopologicalSpace F] {U : Submodule 𝕜 E} [U.HasOrthogonalProjection] {T : F →L[𝕜] E} :
+    U.starProjection ∘L T = T ↔ T.range ≤ U := by
+  refine ⟨?_, fun hT ↦ ContinuousLinearMap.ext fun x ↦
+    U.starProjection_eq_self_iff.mpr (hT ⟨x, rfl⟩)⟩
+  rintro hT _ ⟨x, rfl⟩
+  rw [← hT]
+  exact U.starProjection_apply_mem _
+
 /-- A bounded operator commutes with `Uᗮ.starProjection` if and only if it commutes with
 `U.starProjection`. -/
 @[simp]
@@ -701,6 +714,13 @@ theorem exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank (s : Finset E
   obtain ⟨e, he₀, he⟩ := exists_ne_zero_forall_inner_eq_zero_of_card_lt_finrank s hs
   exact ⟨(‖e‖⁻¹ : 𝕜) • e, norm_smul_inv_norm he₀, fun u hu ↦ by
     rw [inner_smul_right, he u hu, mul_zero]⟩
+
+/-- In dimension at least two, the orthogonal complement of any vector contains a unit vector. -/
+theorem exists_norm_eq_one_mem_orthogonal_singleton (e : E) (hE : 2 ≤ Module.finrank 𝕜 E) :
+    ∃ w : (𝕜 ∙ e)ᗮ, ‖(w : E)‖ = 1 := by
+  obtain ⟨w, hw, horth⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank
+    (𝕜 := 𝕜) ({e} : Finset E) (by simp; omega)
+  exact ⟨⟨w, Submodule.mem_orthogonal_singleton_iff_inner_right.2 (horth e (by simp))⟩, hw⟩
 
 /-- A vector orthogonal to a nonzero vector `b` is not `-b`. -/
 theorem ne_neg_of_inner_eq_zero {a b : E} (hb : b ≠ 0) (hab : ⟪a, b⟫_𝕜 = 0) : a ≠ -b := by

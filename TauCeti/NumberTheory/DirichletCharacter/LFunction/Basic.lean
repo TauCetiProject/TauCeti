@@ -33,6 +33,14 @@ function `χ.LFunction`, without going through completed `L`-functions or Gamma 
   `DirichletCharacter.meromorphicOrderAt_LFunction_pos_iff`: `LFunctionTrivChar N` has a simple
   pole (meromorphic order `-1`) at `s = 1`, so positive meromorphic order characterizes the zeros
   of `χ.LFunction` away from that pole.
+* `DirichletCharacter.LFunctionTrivChar₁_apply_of_ne_one`,
+  `DirichletCharacter.LFunctionTrivChar₁_one_apply_of_ne_one`,
+  `DirichletCharacter.LFunctionTrivChar₁_one_ne_zero`,
+  `DirichletCharacter.LFunctionTrivChar₁_one_apply_one`, and
+  `DirichletCharacter.analyticOrderAt_LFunctionTrivChar₁_one`: the values of the pole-removed
+  function `LFunctionTrivChar₁ N`, which is `(s - 1) L(s)` away from `s = 1` and, for `N = 1`,
+  `(s - 1) ζ(s)` away from `1` and `1` at `1`; it is nonzero wherever `ζ` is, and away from `1`
+  its analytic orders agree with `ζ`.
 * `DirichletCharacter.re_lt_one_of_LFunction_eq_zero`: every zero of `χ.LFunction` away from the
   simple pole `(s = 1, χ = 1)` satisfies `s.re < 1`.
 
@@ -49,6 +57,39 @@ open Complex Filter
 open scoped Topology
 
 namespace DirichletCharacter
+
+/-- Away from `s = 1`, the pole-removed principal `L`-function is `(s - 1) L(s)`. -/
+theorem LFunctionTrivChar₁_apply_of_ne_one (N : ℕ) [NeZero N] {s : ℂ} (hs : s ≠ 1) :
+    LFunctionTrivChar₁ N s = (s - 1) * LFunctionTrivChar N s :=
+  Function.update_of_ne hs ..
+
+/-- Away from `s = 1`, Mathlib's pole-removed zeta function is `(s - 1) ζ(s)`. -/
+theorem LFunctionTrivChar₁_one_apply_of_ne_one {s : ℂ} (hs : s ≠ 1) :
+    LFunctionTrivChar₁ 1 s = (s - 1) * riemannZeta s := by
+  simp [LFunctionTrivChar₁_apply_of_ne_one 1 hs]
+
+/-- The pole-removed zeta function, `(s - 1) ζ(s)` away from `s = 1`, is nonzero wherever `ζ` is
+nonzero. -/
+theorem LFunctionTrivChar₁_one_ne_zero {s : ℂ} (hζ : riemannZeta s ≠ 0) :
+    LFunctionTrivChar₁ 1 s ≠ 0 := by
+  rcases eq_or_ne s 1 with rfl | hs
+  · exact LFunctionTrivChar₁_apply_one_ne_zero 1
+  rw [LFunctionTrivChar₁_one_apply_of_ne_one hs]
+  exact mul_ne_zero (sub_ne_zero.mpr hs) hζ
+
+/-- At `s = 1`, the pole-removed zeta function takes the value `1`, the residue of `ζ`. -/
+theorem LFunctionTrivChar₁_one_apply_one : LFunctionTrivChar₁ 1 1 = 1 := by
+  simp [LFunctionTrivChar₁]
+
+/-- Away from `s = 1`, the analytic orders of `(s - 1) ζ(s)` and `ζ(s)` agree. -/
+theorem analyticOrderAt_LFunctionTrivChar₁_one {ρ : ℂ} (hρ : ρ ≠ 1) :
+    analyticOrderAt (LFunctionTrivChar₁ 1) ρ = analyticOrderAt riemannZeta ρ := by
+  have hev : LFunctionTrivChar₁ 1 =ᶠ[𝓝 ρ] (fun z ↦ z - 1) * riemannZeta :=
+    Filter.mem_of_superset (isOpen_ne.mem_nhds hρ) fun z hz ↦
+      LFunctionTrivChar₁_one_apply_of_ne_one hz
+  have hlin : AnalyticAt ℂ (fun z : ℂ ↦ z - 1) ρ := by fun_prop
+  rw [analyticOrderAt_congr hev, analyticOrderAt_mul hlin (analyticOn_riemannZeta ρ hρ),
+    hlin.analyticOrderAt_eq_zero.mpr (sub_ne_zero.mpr hρ), zero_add]
 
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
 
@@ -74,8 +115,7 @@ theorem meromorphic_LFunction : Meromorphic χ.LFunction := by
       refine MeromorphicAt.iff_eventuallyEq_zpow_smul_analyticAt.mpr
         ⟨-1, LFunctionTrivChar₁ N, (differentiable_LFunctionTrivChar₁ N).analyticAt 1, ?_⟩
       filter_upwards [self_mem_nhdsWithin] with s (hs : s ≠ 1)
-      rw [LFunctionTrivChar₁, Function.update_of_ne hs, LFunctionTrivChar, smul_eq_mul,
-        zpow_neg_one]
+      rw [LFunctionTrivChar₁_apply_of_ne_one N hs, smul_eq_mul, zpow_neg_one]
       field_simp [sub_ne_zero.mpr hs]
     · exact (χ.analyticAt_LFunction (.inr hχ)).meromorphicAt
   · exact (χ.analyticAt_LFunction (.inl hz)).meromorphicAt

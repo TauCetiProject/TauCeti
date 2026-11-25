@@ -24,7 +24,8 @@ transformation of the underlying vector.
 
 The rank of a matrix is the rank of the linear map it induces, in both the `ℕ`-valued and the
 `Cardinal`-valued sense; this is what lets a matrix-rank statement be read off an operator-rank
-one.
+one. The kernel of the map of the conjugate transpose is the orthogonal complement of the span of
+the columns.
 
 Normal square matrices induce normal operators on Euclidean space.
 The instance `Matrix.isStarNormal_toEuclideanLin` supplies this normality automatically
@@ -64,10 +65,13 @@ diagonal matrix `diag(w)` the quadratic form `x ↦ ⟪x, diag(w) x⟫` is `x �
   adjoint-composition bridges for `toEuclideanLin`;
 * `Matrix.trace_adjoint_comp_toEuclideanLin` — operator trace of
   `A.toEuclideanLin† ∘ₗ B.toEuclideanLin` equals `(Aᴴ * B).trace`;
+* `Matrix.ker_toEuclideanLin_conjTranspose` — the kernel of the map of `Aᴴ` is the orthogonal
+  complement of the span of the columns of `A`;
 * `Matrix.mem_unitaryGroup_iff_inner_toEuclideanCLM` — a matrix is unitary exactly when its
   Euclidean operator preserves the inner product;
-* `Matrix.adjoint_toEuclideanCLM`, `Matrix.det_toEuclideanCLM`: the adjoint and the determinant
-  of the induced continuous linear map are those of the conjugate transpose and of the matrix;
+* `Matrix.adjoint_toEuclideanCLM`, `Matrix.det_toEuclideanCLM`, `Matrix.trace_toEuclideanCLM`:
+  the adjoint, the determinant and the trace of the induced continuous linear map are those of
+  the conjugate transpose and of the matrix;
 * `Matrix.inner_toEuclideanCLM_mul_mul_conjTranspose` — the sesquilinear form of `A * B * Aᴴ`
   at `x, y` is that of `B` at `Aᴴ x, Aᴴ y`;
 * `Matrix.UnitaryGroup.toLinearIsometryEquiv` — the group isomorphism from the unitary group to
@@ -199,6 +203,20 @@ theorem rank_eq_finrank_range_toEuclideanLin (A : Matrix κ ι 𝕜) :
       A.mulVecLin ∘ₗ (WithLp.linearEquiv 2 𝕜 (ι → 𝕜)).toLinearMap := rfl
   rw [h, LinearMap.range_comp, LinearEquiv.range_comp, LinearEquiv.finrank_map_eq,
     Matrix.finrank_range_mulVecLin]
+
+omit [Fintype ι] [DecidableEq ι] in
+/-- The kernel of the map of the conjugate transpose of a matrix is the orthogonal complement of
+the span of the columns of the matrix. -/
+theorem ker_toEuclideanLin_conjTranspose (A : Matrix κ ι 𝕜) :
+    LinearMap.ker (toEuclideanLin Aᴴ) =
+      (Submodule.span 𝕜 (Set.range fun j ↦ WithLp.toLp 2 fun i ↦ A i j))ᗮ := by
+  ext x
+  -- A vector is orthogonal to a span exactly when it is orthogonal to each spanning column.
+  rw [LinearMap.mem_ker, ← Submodule.span_singleton_le_iff_mem, ← Submodule.isOrtho_iff_le,
+    Submodule.isOrtho_comm, Submodule.isOrtho_span]
+  simp only [Set.forall_mem_range, Set.mem_singleton_iff, forall_eq]
+  simp [WithLp.ext_iff, funext_iff, EuclideanSpace.inner_eq_star_dotProduct, mulVec, dotProduct,
+    mul_comm]
 
 /-- The `Cardinal`-valued rank of the continuous linear map of a square matrix is its matrix rank.
 This is the bridge that turns an operator-rank statement into a matrix-rank one. -/
@@ -514,6 +532,12 @@ theorem det_toEuclideanCLM (A : Matrix ι ι 𝕜) : (toEuclideanCLM (𝕜 := �
 theorem det_toEuclideanCLM_diagonal (d : ι → 𝕜) :
     (toEuclideanCLM (𝕜 := 𝕜) (diagonal d)).det = ∏ i, d i := by
   rw [det_toEuclideanCLM, det_diagonal]
+
+/-- The trace of the continuous linear map of a square matrix is the trace of the matrix. -/
+@[simp]
+theorem trace_toEuclideanCLM (A : Matrix ι ι 𝕜) :
+    LinearMap.trace 𝕜 _ (toEuclideanCLM (𝕜 := 𝕜) A).toLinearMap = A.trace := by
+  rw [coe_toEuclideanCLM_eq_toEuclideanLin, toEuclideanLin_eq_toLin_orthonormal, trace_toLin_eq]
 
 section Invertible
 

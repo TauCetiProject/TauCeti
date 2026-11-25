@@ -58,7 +58,9 @@ Their homology in degree zero is the cokernel of the first differential
 The isomorphisms `homologyIsoSc'`
 are natural (`HomologicalComplex.homologyMap_comp_homologyIsoSc'_hom`), and exactness in a degree
 is the vanishing of the homology of the short complex `sc'` there
-(`HomologicalComplex.exactAt_iff_isZero_homology_sc'`).
+(`HomologicalComplex.exactAt_iff_isZero_homology_sc'`), so that a morphism of complexes which is an
+isomorphism in the degrees around `j` identifies exactness at `j` of its source and target
+(`HomologicalComplex.exactAt_iff_of_isIso_f`).
 Homology of complexes commutes with an additive functor preserving homology
 (`CategoryTheory.Functor.mapHomologicalComplexCompHomologyFunctorIso`), the complex-level form of
 Mathlib's `CategoryTheory.ShortComplex.homologyFunctorIso`, and exactness of a mapped complex in
@@ -430,6 +432,21 @@ lemma exactAt_iff_isZero_homology_sc' {C : Type*} [Category* C] [HasZeroMorphism
     (hk : c.next j = k) [(L.sc' i j k).HasHomology] :
     L.ExactAt j ↔ IsZero (L.sc' i j k).homology :=
   (exactAt_iff' L i j k hi hk).trans (ShortComplex.exact_iff_isZero_homology _)
+
+/-- A morphism of homological complexes which is an isomorphism in the degrees `i`, `j` and `k`,
+where `i` and `k` are the degrees before and after `j`, identifies exactness at `j` of its source
+and of its target. -/
+lemma exactAt_iff_of_isIso_f {C : Type*} [Category* C] [HasZeroMorphisms C] {ι : Type*}
+    {c : ComplexShape ι} {K L : HomologicalComplex C c} (φ : K ⟶ L) (i j k : ι)
+    (hi : c.prev j = i) (hk : c.next j = k) [IsIso (φ.f i)] [IsIso (φ.f j)] [IsIso (φ.f k)] :
+    K.ExactAt j ↔ L.ExactAt j := by
+  -- the components of the morphism of short complexes are `φ.f i`, `φ.f j` and `φ.f k`
+  have : IsIso ((shortComplexFunctor' C c i j k).map φ).τ₁ := inferInstanceAs (IsIso (φ.f i))
+  have : IsIso ((shortComplexFunctor' C c i j k).map φ).τ₂ := inferInstanceAs (IsIso (φ.f j))
+  have : IsIso ((shortComplexFunctor' C c i j k).map φ).τ₃ := inferInstanceAs (IsIso (φ.f k))
+  have : IsIso ((shortComplexFunctor' C c i j k).map φ) := ShortComplex.isIso_of_isIso _
+  rw [exactAt_iff' K i j k hi hk, exactAt_iff' L i j k hi hk]
+  exact ShortComplex.exact_iff_of_iso (asIso ((shortComplexFunctor' C c i j k).map φ))
 
 end HomologicalComplex
 
