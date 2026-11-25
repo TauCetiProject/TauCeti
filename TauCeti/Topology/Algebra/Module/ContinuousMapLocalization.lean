@@ -89,7 +89,7 @@ theorem isLocalizedModule_compLeftContinuous_subtypeL (hT : IsOpen (T : Set V))
   surj g := by
     obtain ⟨s, hs, h⟩ := exists_smul_apply_mem_of_compactSpace S T hT habs g
     exact ⟨(⟨fun x ↦ ⟨s • g x, h x⟩, (g.continuous.const_smul s).subtype_mk _⟩, ⟨s, hs⟩),
-      by ext; rfl⟩
+      by ext x; simp⟩
   exists_of_eq {f₁ f₂} h := ⟨1, by
     ext x
     simpa using congr($h x)⟩
