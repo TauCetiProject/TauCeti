@@ -426,13 +426,14 @@ theorem norm_finiteCharacterField_le (χ : Grossencharacter K 𝔪) (x : K) :
 /-- **At a trivial finite modulus, the finite character on `K` is `1` at every nonzero element**:
 every element of `Kˣ` is prime to `𝔪`, and the finite character is trivial
 (`finiteCharacterK_eq_one_of_finitePart_eq_top`). -/
-theorem finiteCharacterField_of_finitePart_eq_top (χ : Grossencharacter K 𝔪)
+theorem finiteCharacterField_eq_one_of_finitePart_eq_top (χ : Grossencharacter K 𝔪)
     (h : 𝔪.finitePart = ⊤) {x : K} (hx : x ≠ 0) : χ.finiteCharacterField x = 1 := by
   have hmem : Units.mk0 x hx ∈ primeToSubgroup 𝔪 := mem_primeToSubgroup.mpr fun v hv ↦ by
     rw [h, Ideal.dvd_iff_le, top_le_iff] at hv
     exact (v.isPrime.ne_top hv).elim
-  rw [show x = ((⟨Units.mk0 x hx, hmem⟩ : primeToSubgroup 𝔪) : Kˣ) from rfl,
-    finiteCharacterField_coe, χ.finiteCharacterK_eq_one_of_finitePart_eq_top h, Units.val_one]
+  have := χ.finiteCharacterField_coe ⟨Units.mk0 x hx, hmem⟩
+  rw [Units.val_mk0] at this
+  rw [this, χ.finiteCharacterK_eq_one_of_finitePart_eq_top h, Units.val_one]
 
 /-- The finite character at a fraction prime to `𝔪`, through the ideal character of the presented
 Hecke character at the principal ideal it generates. -/
@@ -454,6 +455,21 @@ private theorem exists_finiteCharacterK_eq_idealCharacter (χ : Grossencharacter
   rw [finiteCharacterK_apply, archimedeanValue_apply]
   exact congrArg (· * _) (congrArg _ (Subtype.ext hz))
 
+/-- **The finite character depends only on the Hecke character**: two presentations of the same
+Hecke character agree at every fraction prime to both moduli. -/
+theorem finiteCharacterK_congr {𝔫 : Modulus K} {χ : Grossencharacter K 𝔪}
+    {ψ : Grossencharacter K 𝔫} (h : χ.toHeckeCharacter = ψ.toHeckeCharacter)
+    (x : primeToSubgroup 𝔪) (hx : (x : Kˣ) ∈ primeToSubgroup 𝔫) :
+    χ.finiteCharacterK x = ψ.finiteCharacterK ⟨x, hx⟩ := by
+  obtain ⟨h₁, e₁⟩ := χ.exists_finiteCharacterK_eq_idealCharacter x
+  obtain ⟨h₂, e₂⟩ := ψ.exists_finiteCharacterK_eq_idealCharacter ⟨x, hx⟩
+  rw [e₁, e₂]
+  -- the membership proof `h₁` mentions the finite conductor of `χ.toHeckeCharacter`, so the
+  -- Hecke character is generalized before it is substituted along `h`
+  generalize χ.toHeckeCharacter = H at h h₁ ⊢
+  subst h
+  rfl
+
 /-- **The finite character on `K` depends only on the Hecke character and the finite part of the
 modulus.** -/
 theorem finiteCharacterField_congr {𝔫 : Modulus K} {χ : Grossencharacter K 𝔪}
@@ -467,13 +483,7 @@ theorem finiteCharacterField_congr {𝔫 : Modulus K} {χ : Grossencharacter K �
   · obtain ⟨⟨z, hz⟩, rfl⟩ := hx
     refine (χ.finiteCharacterField_coe ⟨z, hz⟩).trans
       (Eq.trans ?_ (ψ.finiteCharacterField_coe ⟨z, (hmem z).mp hz⟩).symm)
-    obtain ⟨h₁, e₁⟩ := χ.exists_finiteCharacterK_eq_idealCharacter ⟨z, hz⟩
-    obtain ⟨h₂, e₂⟩ := ψ.exists_finiteCharacterK_eq_idealCharacter ⟨z, (hmem z).mp hz⟩
-    rw [e₁, e₂]
-    clear e₁ e₂
-    revert h₁ h₂
-    rw [h]
-    exact fun _ _ ↦ rfl
+    exact congrArg _ (finiteCharacterK_congr h _ _)
   · rw [χ.finiteCharacterField_eq_zero (not_exists.mp hx), ψ.finiteCharacterField_eq_zero]
     exact fun z hz ↦ hx ⟨⟨z, (hmem z).mpr z.property⟩, hz⟩
 

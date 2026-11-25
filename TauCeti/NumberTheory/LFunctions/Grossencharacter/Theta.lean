@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Conductor
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.FiniteCharacter
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Harmonic
+import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.IdealLattice
 
 /-!
 # Hecke's twisted theta series of a Grossencharacter
@@ -109,17 +110,6 @@ theorem heckeTheta_def (χ : Grossencharacter K 𝔪) (I : (FractionalIdeal (�
         archGaussian y (mixedEmbedding K a) :=
   (rfl)
 
-/-- The points of a fractional ideal are in bijection with the points of its lattice in the mixed
-space, which is the range of the mixed embedding on the ideal. -/
-private def idealLatticeEquiv (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
-    (I : Submodule (𝓞 K) K) ≃ idealLattice K I :=
-  (LinearEquiv.ofInjective _ ((mixedEmbedding_injective K).comp Subtype.val_injective)).toEquiv
-
-private theorem coe_idealLatticeEquiv (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
-    (a : (I : Submodule (𝓞 K) K)) :
-    (idealLatticeEquiv I a : mixedSpace K) = mixedEmbedding K a :=
-  (rfl)
-
 /-- **The twisted theta series converges absolutely** at every parameter with positive
 coordinates: its terms are dominated by the harmonic Gaussian on the ideal lattice, since the
 finite character has values of norm at most `1`. -/
@@ -130,9 +120,10 @@ theorem summable_finiteCharacterField_mul_harmonicFactor_mul_archGaussian
       χ.primitive.finiteCharacterField a * χ.harmonicFactor (mixedEmbedding K a) *
         archGaussian y (mixedEmbedding K a) := by
   have hL : Summable fun a : (I : Submodule (𝓞 K) K) ↦
-      ‖χ.harmonicFactor (mixedEmbedding K a) * archGaussian y (mixedEmbedding K a)‖ :=
-    ((idealLatticeEquiv I).summable_iff.mpr
-      (χ.summable_harmonicFactor_mul_archGaussian (idealLattice K I) y hy)).norm
+      ‖χ.harmonicFactor (mixedEmbedding K a) * archGaussian y (mixedEmbedding K a)‖ := by
+    simpa only [Function.comp_def, coe_idealLatticeEquiv] using
+      ((idealLatticeEquiv I).summable_iff.mpr
+        (χ.summable_harmonicFactor_mul_archGaussian (idealLattice K I) y hy)).norm
   refine Summable.of_norm_bounded hL fun a ↦ ?_
   rw [mul_assoc, norm_mul]
   exact mul_le_of_le_one_left (norm_nonneg _) (χ.primitive.norm_finiteCharacterField_le _)
@@ -226,16 +217,18 @@ theorem heckeTheta_eq_latticeTheta (χ : Grossencharacter K 𝔪) (hχ : χ.heck
     χ.heckeTheta I y = latticeTheta (idealLattice K I) y := by
   classical
   obtain ⟨hf, hdeg⟩ := χ.heckeEpsilon_eq_one_iff.mp hχ
-  have hsum : Summable fun a : (I : Submodule (𝓞 K) K) ↦ archGaussian y (mixedEmbedding K a) :=
-    (idealLatticeEquiv I).summable_iff.mpr (summable_archGaussian (idealLattice K I) y hy)
+  have hsum :
+      Summable fun a : (I : Submodule (𝓞 K) K) ↦ archGaussian y (mixedEmbedding K a) := by
+    simpa only [Function.comp_def, coe_idealLatticeEquiv] using
+      (idealLatticeEquiv I).summable_iff.mpr (summable_archGaussian (idealLattice K I) y hy)
   have hterm (a : (I : Submodule (𝓞 K) K)) :
       χ.primitive.finiteCharacterField a * χ.harmonicFactor (mixedEmbedding K a) *
           archGaussian y (mixedEmbedding K a) =
         if a = 0 then 0 else archGaussian y (mixedEmbedding K a) := by
     split_ifs with ha
     · simp [ha]
-    · rw [χ.primitive.finiteCharacterField_of_finitePart_eq_top (by rwa [finitePart_conductor])
-          (by simpa using (Subtype.ext_iff.not.mp ha)),
+    · rw [χ.primitive.finiteCharacterField_eq_one_of_finitePart_eq_top
+          (by rwa [finitePart_conductor]) (by simpa using (Subtype.ext_iff.not.mp ha)),
         χ.harmonicFactor_eq_one_of_harmonicDegree_eq_zero hdeg, one_mul, one_mul]
   rw [heckeTheta_def, hχ, latticeTheta_def, ← (idealLatticeEquiv I).tsum_eq]
   simp only [coe_idealLatticeEquiv]
