@@ -30,7 +30,8 @@ For smooth maps, `SmoothForm.mpullback` bundles this operation as a linear map o
 Its underlying rough form is the existing `TauCeti.mpullback`. Restriction to an open subset does
 not change the values of a smooth form (`TauCeti.SmoothForm.coe_mpullback_subtype_val_apply`).
 Pullback commutes with wedge products and wedge powers
-(`TauCeti.SmoothForm.mpullback_wedge`, `TauCeti.SmoothForm.mpullback_wedgePow`).
+(`TauCeti.SmoothForm.mpullback_wedge`, `TauCeti.SmoothForm.mpullback_wedgePow`); for wedge powers
+this holds pointwise along any map (`TauCeti.mpullback_wedgePow_apply`).
 A product map `Prod.map f g` pulls a form pulled back from either factor back through the
 corresponding component (`TauCeti.SmoothForm.mpullback_prodMap_mpullback_fst`,
 `TauCeti.SmoothForm.mpullback_prodMap_mpullback_snd`), and so the wedge of two such forms
@@ -662,19 +663,30 @@ theorem mpullback_wedge (f : M → M') (hf : ContMDiff I I' ∞ f)
   simpa only [SmoothForm.wedge_def] using
     mpullback_wedgeWith (ContinuousLinearMap.mul ℝ ℝ) f hf φ ψ
 
-/-- Smooth real-valued pullback commutes with wedge powers: `f^* (φ ^ m) = (f^* φ) ^ m`. -/
-theorem mpullback_wedgePow (f : M → M') (hf : ContMDiff I I' ∞ f) (φ : SmoothForm I' M' ℝ k)
-    (m : ℕ) : mpullback f hf (φ.wedgePow m) = (mpullback f hf φ).wedgePow m := by
+omit [IsManifold I 1 M] in
+/-- Pullback along any map commutes with wedge powers pointwise: at each point, the rough pullback
+of `φ ^ m` is the `m`-th wedge power of the value of the pullback of `φ`. No smoothness of the map
+is needed. -/
+theorem _root_.TauCeti.mpullback_wedgePow_apply (f : M → M') (φ : SmoothForm I' M' ℝ k) (m : ℕ)
+    (x : M) :
+    TauCeti.mpullback I I' f (φ.wedgePow m).val x =
+      (TauCeti.mpullback I I' f φ.val x).wedgePow m := by
   -- At each point, the pullback is precomposition with the differential `df_x`.
-  have hx (x : M) : (mpullback f hf φ).val x =
+  have hx : TauCeti.mpullback I I' f φ.val x =
       (φ.val (f x)).compContinuousLinearMap (mfderiv I I' f x) := by
     ext w
-    rw [mpullback_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply,
+    rw [TauCeti.mpullback_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply,
       Function.comp_def]
-  ext x v
-  rw [mpullback_apply, wedgePow_apply, wedgePow_apply, hx,
+  ext v
+  rw [TauCeti.mpullback_apply, wedgePow_apply, hx,
     ← ContinuousAlternatingMap.wedgePow_compContinuousLinearMap,
     ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def]
+
+/-- Smooth real-valued pullback commutes with wedge powers: `f^* (φ ^ m) = (f^* φ) ^ m`. -/
+theorem mpullback_wedgePow (f : M → M') (hf : ContMDiff I I' ∞ f) (φ : SmoothForm I' M' ℝ k)
+    (m : ℕ) : mpullback f hf (φ.wedgePow m) = (mpullback f hf φ).wedgePow m :=
+  Subtype.ext (funext fun x ↦ by
+    rw [coe_mpullback, TauCeti.mpullback_wedgePow_apply, wedgePow_apply, coe_mpullback])
 
 /-- A product map `Prod.map f g` pulls the wedge of a form pulled back from the first factor and a
 form pulled back from the second factor back to the wedge of their pullbacks along `f` and `g`. -/
