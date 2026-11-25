@@ -134,9 +134,9 @@ section Basic
 
 variable (D : LocalMonodromyDatum ℓ H)
 
-/-- Inertia is compact, being closed in the compact group `H`. -/
+/-- Inertia is compact: Mathlib's instance for closed subgroups of a compact group. -/
 instance compactSpace_inertia : CompactSpace D.inertia :=
-  isCompact_iff_compactSpace.1 D.isClosed_inertia.isCompact
+  inferInstanceAs (CompactSpace (⟨D.inertia, D.isClosed_inertia⟩ : ClosedSubgroup H))
 
 /-- The **Frobenius coset** of a local monodromy datum: the elements of `H` whose class modulo
 inertia is `frobClass`. -/
