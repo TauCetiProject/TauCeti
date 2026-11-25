@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.GeneralizedPareto.Basic
+import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Probability.Distributions.Affine
 
 /-!
@@ -136,11 +137,9 @@ private lemma integral_pow_generalizedParetoMeasure_succ (hs : 0 < s)
       ring
   have hint := (hin.const_mul ((n + 1 : ℝ) * s)).sub
     (hin1.const_mul (1 - (n + 1 : ℝ) * ξ))
-  have ht := tendsto_zero_of_hasDerivAt_of_integrableOn_Ioi
-    (fun e _ => hderiv e) hint hin1
-  have heq := integral_Ioi_of_hasDerivAt_of_tendsto'
-    (fun e _ => hderiv e) hint ht
-  simp only [y, mul_zero, exp_zero, sub_self, mul_zero, zero_div, zero_pow
+  have heq := integral_Ioi_of_hasDerivAt_of_integrableOn
+    (hderiv 0).continuousAt.continuousWithinAt (fun e _ => hderiv e) hint hin1
+  simp only [y, mul_zero, exp_zero, sub_self, mul_zero, zero_div, neg_zero, zero_pow
     (Nat.succ_ne_zero n)] at heq
   rw [integral_sub (hin.const_mul _) (hin1.const_mul _), integral_const_mul,
     integral_const_mul] at heq

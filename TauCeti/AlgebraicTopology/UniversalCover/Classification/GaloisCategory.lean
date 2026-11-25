@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.Galois.Examples
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.FundamentalGroupAction
 public import TauCeti.CategoryTheory.Action.FintypeCat
 public import TauCeti.CategoryTheory.Galois.Transport
-public import TauCeti.Topology.Covering.Finite
+public import TauCeti.Topology.Covering.Finite.Basic
 
 /-!
 # Finite covering spaces form a Galois category

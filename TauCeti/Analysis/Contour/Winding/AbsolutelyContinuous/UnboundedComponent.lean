@@ -15,7 +15,9 @@ import TauCeti.MeasureTheory.Function.MetricDerivative.ConstantSpeed
 /-!
 # Winding numbers of absolutely continuous curves on unbounded components
 
-A closed absolutely continuous curve has winding number zero sufficiently far from its trace.
+A closed absolutely continuous curve has winding number zero sufficiently far from its trace
+(`AbsolutelyContinuousOnInterval.windingNumber_eventually_zero_cocompact`, in
+`TauCeti/Analysis/Contour/Winding/Vanishing.lean`).
 Local constancy then gives vanishing on every unbounded connected component of the complement, and
 hence outside the filled hull of the trace (both directly for closed AC curves and for the
 arclength parametrization of rectifiable closed curves).
@@ -26,17 +28,6 @@ public section
 open Bornology Complex MeasureTheory Set
 
 namespace TauCeti.Contour
-
-/-- The winding number of a closed absolutely continuous curve is zero sufficiently far from the
-origin, and such points lie off its trace. -/
-theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eventually_zero_cocompact
-    {γ : ℝ → ℂ} {a b : ℝ} (hγ : AbsolutelyContinuousOnInterval γ a b)
-    (hclosed : γ a = γ b) :
-    ∀ᶠ z in Filter.cocompact ℂ,
-      z ∉ γ '' uIcc a b ∧ windingNumber γ a b z = 0 := by
-  exact hγ.continuousOn.windingNumber_eventually_zero_cocompact_of_integer
-    hγ.intervalIntegrable_deriv_of_finiteDimensional
-    (fun _ hz ↦ hγ.exists_int_windingNumber hclosed hz)
 
 /-- The winding number of a closed absolutely continuous curve vanishes on every unbounded
 component of the complement of its trace. -/

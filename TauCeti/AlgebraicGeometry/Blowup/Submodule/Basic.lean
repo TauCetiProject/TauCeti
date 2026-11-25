@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Proper
 public import TauCeti.RingTheory.GradedAlgebra.SubmoduleBlowup
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 import TauCeti.AlgebraicGeometry.Restrict
 
@@ -397,10 +398,10 @@ private theorem isIso_toSpec_restrict_of_le_basicOpen (hF : Ideal.span F = ⊤) 
   have hchart : IsIso (Spec.map (CommRingCat.ofHom
       (algebraMap C (Away (gradedRing C F) (monomialDegreeOneOfMemSpan C ha)))) ∣_
         PrimeSpectrum.basicOpen h) :=
-    ((MorphismProperty.isomorphisms Scheme).arrow_mk_iso_iff (SpecMapRestrictBasicOpenIso
+    (isIso_SpecMap_morphismRestrict_basicOpen_iff
       (CommRingCat.ofHom
-        (algebraMap C (Away (gradedRing C F) (monomialDegreeOneOfMemSpan C ha)))) h)).mpr
-      (isIso_SpecMap_iff.mpr (bijective_awayMap_algebraMap_away hb ha))
+        (algebraMap C (Away (gradedRing C F) (monomialDegreeOneOfMemSpan C ha)))) h).mpr
+      (bijective_awayMap_algebraMap_away hb ha)
   have hchartW : IsIso ((chart ha ≫ toSpec C F) ∣_ W) := by
     rw [hιg]
     exact (MorphismProperty.isomorphisms.iff _).mp (IsZariskiLocalAtTarget.restrict_of_le
@@ -445,8 +446,8 @@ theorem isIso_toSpec_restrict (hF : Ideal.span F = ⊤) {U : (Spec (.of C)).Open
       (Spec.map (CommRingCat.ofHom (algebraMap C B)) ∣_ PrimeSpectrum.basicOpen h.val) :=
     (MorphismProperty.isomorphisms.iff _).mp (IsZariskiLocalAtTarget.restrict_of_le _
       ((MorphismProperty.isomorphisms.iff _).mpr hU) h.property)
-  have hb := isIso_SpecMap_iff.mp (((MorphismProperty.isomorphisms Scheme).arrow_mk_iso_iff
-    (SpecMapRestrictBasicOpenIso (CommRingCat.ofHom (algebraMap C B)) h.val)).mp hφ)
+  have hb := (isIso_SpecMap_morphismRestrict_basicOpen_iff
+    (CommRingCat.ofHom (algebraMap C B)) h.val).mp hφ
   exact (MorphismProperty.isomorphisms.iff _).mpr
     (isIso_toSpec_restrict_of_le_basicOpen hF hb (U.ι.image_preimage_le _))
 

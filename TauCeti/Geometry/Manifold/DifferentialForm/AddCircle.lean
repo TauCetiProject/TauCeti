@@ -142,9 +142,7 @@ theorem mpullback_coe_timeForm :
       mextDeriv (RoughForm.ofFunction 𝓘(ℝ) id) := by
   funext t
   refine ContinuousAlternatingMap.ext fun v ↦ ?_
-  simp only [mpullback_apply, mfderiv_coe, timeForm_apply, mextDeriv_ofFunction, mvfderiv_eq_fderiv,
-    fderiv_id, ContinuousLinearMap.id_comp, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
-    ContinuousLinearEquiv.coe_coe]
+  rw [mpullback_apply, timeForm_apply, mfderiv_coe, mextDeriv_ofFunction_id_apply]
   -- Tangent vectors of `AddCircle p` are real numbers, on which the identity of `ℝ` acts.
   rfl
 

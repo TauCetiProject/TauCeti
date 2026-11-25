@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Inner
+public import TauCeti.Analysis.Complex.Basic
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.SphereBoost
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Straightening
 public import TauCeti.KnotTheory.ConnectedSum.Concordance

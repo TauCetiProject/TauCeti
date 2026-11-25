@@ -12,10 +12,11 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Path
 public import TauCeti.Geometry.Manifold.ContMDiff.Curve
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
-import TauCeti.Topology.Algebra.Order.Floor
+import TauCeti.Geometry.Manifold.ContMDiff.Fract
 
 /-!
 # Gluing and reparametrization of integrals over rectangles
@@ -33,10 +34,16 @@ coordinate `s`, the coordinate along which a cylinder `u` joins its boundary loo
   `Integration.Homotopy` (`TauCeti.rectangleIntegral_comp_prodMap` and
   `TauCeti.rectangleIntegral_comp_prodMap_of_contDiff`), it is invariant under an affine change of
   the first coordinate (`TauCeti.rectangleIntegral_comp_prodMap_affine`), and reversing the first
-  coordinate changes its sign (`TauCeti.rectangleIntegral_comp_prodMap_one_sub`);
+  coordinate changes its sign (`TauCeti.rectangleIntegral_comp_prodMap_one_sub`); so does
+  reversing the second coordinate (`TauCeti.rectangleIntegral_comp_prodMap_id_one_sub`);
 * it is likewise additive under subdivision of `[a.2, b.2]`
   (`TauCeti.rectangleIntegral_add_adjacent_snd`) and invariant under a `C¹` change of the second
   coordinate (`TauCeti.rectangleIntegral_comp_prodMap_snd`).
+
+In the second coordinate, the circle coordinate of a cylinder, a differentiable map `u` that is
+`T`-periodic in `t` has the same integral as its rotation `z ↦ u (z + (0, θ))` over a rectangle
+spanning one period (`TauCeti.rectangleIntegral_comp_add_snd_of_periodic`). This is the invariance
+of the area of a cylinder or cap under a change of the origin of its circle coordinate.
 
 Two maps `u₁ u₂ : ℝ × ℝ → M` with `u₁(1, ·) = u₂(0, ·)` are glued into their concatenation
 `TauCeti.rectangleTrans u₁ u₂`, the curve concatenation `TauCeti.curveConcat` in the first
@@ -78,6 +85,8 @@ rectangle, exact two-forms vanish on spheres and on tori.
 
 ## Main results
 
+* `TauCeti.rectangleIntegral_comp_add_snd_of_periodic`: rotation invariance in the second
+  coordinate over a full period.
 * `TauCeti.rectangleIntegral_add_adjacent_fst`: additivity in the first coordinate.
 * `TauCeti.rectangleIntegral_comp_prodMap_affine`: reparametrization by an affine function in the
   first coordinate.
@@ -119,6 +128,33 @@ namespace TauCeti
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-! ### Rotation in the second coordinate -/
+
+/-- **Rotating a periodic map.** If a differentiable map `u` of the plane is `T`-periodic in its
+second coordinate, its rotation `z ↦ u (z + (0, θ))` has the same integral as `u` over every
+rectangle `[a₁, b₁] × [a₂, a₂ + T]` spanning one period in the second coordinate. For a cylinder,
+`T = 1`, this is the invariance of its integral under a rotation of the circle coordinate. -/
+theorem rectangleIntegral_comp_add_snd_of_periodic (φ : RoughForm I M F 2) {u : ℝ × ℝ → M}
+    (hu : MDifferentiable 𝓘(ℝ, ℝ × ℝ) I u) {T : ℝ} (hT : ∀ z : ℝ × ℝ, u (z.1, z.2 + T) = u z)
+    (θ a₁ b₁ a₂ : ℝ) :
+    rectangleIntegral φ (fun z ↦ u (z + (0, θ))) (a₁, a₂) (b₁, a₂ + T) =
+      rectangleIntegral φ u (a₁, a₂) (b₁, a₂ + T) := by
+  set G : ℝ × ℝ → F := fun z ↦ mpullback 𝓘(ℝ, ℝ × ℝ) I u φ z ![(1, 0), (0, 1)]
+  -- The integrand `G` is `T`-periodic in the second coordinate, since `u` is.
+  have hG (z : ℝ × ℝ) : G (z + (0, T)) = G z := by
+    have hu' : (fun w ↦ u (w + (0, T))) = u := funext fun ⟨a, b⟩ ↦ by simpa using hT (a, b)
+    have h := congrArg (fun A ↦ A ![(1, 0), (0, 1)])
+      (mpullback_comp_add_right (c := ((0 : ℝ), T)) (hu (z + (0, T))) φ)
+    rw [hu'] at h
+    exact h.symm
+  have hper (s : ℝ) : Function.Periodic (fun t ↦ G (s, t)) T := fun t ↦ by
+    simpa using hG (s, t)
+  rw [rectangleIntegral_comp_add_right φ hu]
+  simp only [Prod.mk_add_mk, add_zero, rectangleIntegral_def]
+  refine intervalIntegral.integral_congr fun s _ ↦ ?_
+  rw [add_right_comm]
+  exact Function.Periodic.intervalIntegral_add_eq (hper s) (a₂ + θ) a₂
 
 /-! ### Additivity and reparametrization in the first coordinate -/
 
@@ -259,6 +295,24 @@ theorem rectangleIntegral_comp_prodMap_snd_of_contDiff {φ : RoughForm I M F 2}
     (hτ.continuous_deriv le_rfl).continuousOn
 
 end Continuous
+
+/-- Reversing the second coordinate of a differentiable map changes the sign of its integral over
+`[a₁, b₁] × [0, 1]`. -/
+theorem rectangleIntegral_comp_prodMap_id_one_sub (φ : RoughForm I M F 2) {u : ℝ × ℝ → M}
+    (hu : MDifferentiable 𝓘(ℝ, ℝ × ℝ) I u) (a₁ b₁ : ℝ) :
+    rectangleIntegral φ (u ∘ Prod.map id (fun t ↦ 1 - t)) (a₁, 0) (b₁, 1) =
+      -rectangleIntegral φ u (a₁, 0) (b₁, 1) := by
+  rw [rectangleIntegral_def, rectangleIntegral_def, ← intervalIntegral.integral_neg]
+  refine intervalIntegral.integral_congr fun s _ ↦ ?_
+  -- The derivative of `Prod.map id (1 - ·)` sends `(0, 1)` to `-(0, 1)`, so the integrand at
+  -- `(s, t)` is minus the integrand of `u` at `(s, 1 - t)`.
+  have hpt (t : ℝ) : mpullback 𝓘(ℝ, ℝ × ℝ) I (u ∘ Prod.map id fun t ↦ 1 - t) φ (s, t)
+      ![(1, 0), (0, 1)] = -mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (s, 1 - t) ![(1, 0), (0, 1)] := by
+    simpa using mpullback_comp_prodMap_apply φ (hasDerivAt_id s)
+      ((hasDerivAt_id t).const_sub 1) (hu _)
+  simp_rw [hpt, intervalIntegral.integral_neg,
+    intervalIntegral.integral_comp_sub_left (fun t ↦ mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (s, t)
+      ![(1, 0), (0, 1)]) 1, sub_self, sub_zero]
 
 /-! ### Concatenation along the first coordinate -/
 
@@ -470,10 +524,9 @@ theorem contMDiff_loopwiseTrans {n : ℕ∞} {u₁ u₂ : ℝ × ℝ → M}
       simp only [Function.comp_apply, Prod.map_apply', id]
       congr 3
       ring
-  intro z
-  refine ((hG.comp (contDiff_fst.prodMk (contDiff_snd.sub contDiff_const)).contMDiff)
-    z).congr_of_eventuallyEq
-    (apply_fract_snd_eventuallyEq (G := G) (ε := 1 / 6) (by norm_num) (fun s t ht₀ ht₁ ↦ ?_) z)
+  refine contMDiff_prod_modelWithCornersSelf_iff.1 <|
+    (contMDiff_prod_modelWithCornersSelf_iff.2 hG).comp_fract_snd (ε := 1 / 6) (by norm_num)
+      fun s t ht₀ ht₁ ↦ ?_
   -- Just below `t = 0` the concatenation rests where `u₂` ends and `u₁` starts.
   simp only [G]
   rw [curveConcat_of_lt (by linarith), curveConcat_of_le (by linarith),

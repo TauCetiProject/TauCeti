@@ -276,21 +276,41 @@ theorem IsCompanionSolution.isSolution {v : ℂ → Fin n → ℂ}
   simp only [← hv.eq_iteratedDeriv z hz]
   exact neg_add_cancel _
 
+/-- A solution on the whole domain, bundled on the domain as an element of the solution
+space. -/
+def IsSolution.toSolutionSpace (hy : E.IsSolution y) : E.solutionSpace :=
+  ⟨HolomorphicFunctions.of U y hy.analyticOnNhd.differentiableOn,
+    hy.congr fun _ hz ↦ (HolomorphicFunctions.extend_of _ hz).symm⟩
+
+/-- The bundled solution evaluates to the solution on the domain. -/
+@[simp]
+theorem IsSolution.toSolutionSpace_apply (hy : E.IsSolution y) (z : U) :
+    hy.toSolutionSpace.val.val z = y z := by
+  simp [toSolutionSpace]
+
+/-- The extension of a bundled solution agrees with the solution on the domain. -/
+theorem IsSolution.eqOn_extend_toSolutionSpace (hy : E.IsSolution y) :
+    EqOn (HolomorphicFunctions.extend hy.toSolutionSpace.val) y U :=
+  fun _ hz ↦ HolomorphicFunctions.extend_of _ hz
+
+/-- The initial jet of a bundled solution is the jet of unscaled derivatives of the solution. -/
+@[simp]
+theorem IsSolution.initialJet_toSolutionSpace (hy : E.IsSolution y) {a : ℂ} (ha : a ∈ U) :
+    E.initialJet ha hy.toSolutionSpace = fun j : Fin n ↦ iteratedDeriv j y a :=
+  funext (HolomorphicFunctions.jet_of ha n _ _)
+
 /-- The first coordinate of a companion-system solution, bundled on the domain as a
 scalar solution. -/
 def IsCompanionSolution.toSolutionSpace {v : ℂ → Fin n → ℂ}
     (hv : E.IsCompanionSolution v) : E.solutionSpace :=
-  ⟨HolomorphicFunctions.of U (fun z ↦ v z ⟨0, E.order_pos⟩)
-      hv.isSolution.analyticOnNhd.differentiableOn,
-    hv.isSolution.congr (fun z hz ↦ by
-      simp [HolomorphicFunctions.extend_apply _ ⟨z, hz⟩])⟩
+  hv.isSolution.toSolutionSpace
 
 /-- The bundled scalar solution evaluates to the first vector coordinate on the domain. -/
 @[simp]
 theorem IsCompanionSolution.toSolutionSpace_apply {v : ℂ → Fin n → ℂ}
     (hv : E.IsCompanionSolution v) (z : U) :
     hv.toSolutionSpace.val.val z = v z ⟨0, E.order_pos⟩ := by
-  simp [toSolutionSpace]
+  simp [toSolutionSpace, IsSolution.toSolutionSpace]
 
 /-- The initial jet of the bundled scalar solution is the companion solution's value. -/
 @[simp]

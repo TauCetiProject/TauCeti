@@ -15,8 +15,8 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Distribution.TemperateGrowth
+import TauCeti.Analysis.SpecialFunctions.Pow.Regularization
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Complex powers of the Japanese bracket
@@ -137,6 +137,13 @@ theorem japaneseBracketCpow_conj (z : ℂ) (x : E) :
 theorem norm_japaneseBracketCpow (z : ℂ) (x : E) :
     ‖japaneseBracketCpow z x‖ = (1 + ‖x‖ ^ 2) ^ (z.re / 2) := by
   rw [japaneseBracketCpow, norm_cpow_eq_rpow_re_of_pos (by positivity), div_ofNat_re]
+
+/-- The complex powers of nonpositive real part have norm at most one: `‖⟨x⟩ ^ z‖ ≤ 1` for
+`re z ≤ 0`. -/
+theorem norm_japaneseBracketCpow_le_one {z : ℂ} (hz : z.re ≤ 0) (x : E) :
+    ‖japaneseBracketCpow z x‖ ≤ 1 := by
+  rw [norm_japaneseBracketCpow]
+  exact Real.rpow_le_one_of_one_le_of_nonpos (by nlinarith [norm_nonneg x]) (by linarith)
 
 /-- The complex powers are multiplicative in the exponent. -/
 theorem japaneseBracketCpow_add (z w : ℂ) (x : E) :
@@ -262,54 +269,20 @@ theorem fderiv_japaneseBracketCpow (z : ℂ) :
       fun x ↦ japaneseBracketCpow (z - 2) x • z • ofRealCLM.comp (innerSL ℝ x) :=
   funext fun x ↦ (hasFDerivAt_japaneseBracketCpow z x).fderiv
 
-/-- One term of the Leibniz expansion of `D^k (⟨x⟩ ^ (z - 2) • L x)`, for a continuous linear map
-`L` of norm at most `c ‖z‖`: if `D^i ⟨x⟩ ^ (z - 2)` satisfies the bound of order `i`, the term is
-bounded by the bracket power of order `k + 1` times `(1 + ‖z‖) ^ (k + 1)`. -/
-private theorem choose_mul_norm_iteratedFDeriv_mul_norm_iteratedFDeriv_le {k i : ℕ} (hik : i ≤ k)
-    {C c : ℝ} (hC : 0 ≤ C) (hc : 0 ≤ c) {z : ℂ} {x : H} {L : H →L[ℝ] H →L[ℝ] ℂ}
-    (hL : ‖L‖ ≤ ‖z‖ * c)
-    (h₁ : ‖iteratedFDeriv ℝ i (japaneseBracketCpow (z - 2)) x‖ ≤
-      C * (1 + ‖z - 2‖) ^ i * (1 + ‖x‖ ^ 2) ^ (((z - 2).re - i) / 2)) :
-    (k.choose i : ℝ) * ‖iteratedFDeriv ℝ i (japaneseBracketCpow (z - 2)) x‖ *
-        ‖iteratedFDeriv ℝ (k - i) L x‖ ≤
-      k.choose i * C * 3 ^ i * c * (1 + ‖z‖) ^ (k + 1) *
-        (1 + ‖x‖ ^ 2) ^ ((z.re - (k + 1 : ℕ)) / 2) := by
-  have hw : 0 < 1 + ‖x‖ ^ 2 := by positivity
+/-- The orders `z` and `z - 2` have comparable sizes: for `i ≤ k`,
+`(1 + ‖z - 2‖) ^ i ‖z‖ ≤ 3 ^ i (1 + ‖z‖) ^ (k + 1)`. -/
+private theorem one_add_norm_sub_two_pow_mul_norm_le (z : ℂ) {i k : ℕ} (hik : i ≤ k) :
+    (1 + ‖z - 2‖) ^ i * ‖z‖ ≤ 3 ^ i * (1 + ‖z‖) ^ (k + 1) := by
   have hz : 0 ≤ ‖z‖ := norm_nonneg z
-  have h₂ := L.norm_iteratedFDeriv_le_one_add_norm_sq_rpow (k - i) x
   have hz2 : 1 + ‖z - 2‖ ≤ 3 * (1 + ‖z‖) := by
     have := norm_sub_le z 2
     simp only [Complex.norm_ofNat] at this
     linarith
-  have hpow : (1 + ‖z - 2‖) ^ i * ‖z‖ ≤ 3 ^ i * (1 + ‖z‖) ^ (k + 1) := by
-    calc (1 + ‖z - 2‖) ^ i * ‖z‖ ≤ (3 * (1 + ‖z‖)) ^ i * (1 + ‖z‖) := by
-          gcongr
-          linarith
-      _ = 3 ^ i * (1 + ‖z‖) ^ (i + 1) := by rw [mul_pow]; ring
-      _ ≤ 3 ^ i * (1 + ‖z‖) ^ (k + 1) := by gcongr; linarith
-  -- The bracket exponents of the two factors add up to `(re z - (k + 1)) / 2`.
-  have hexp : (1 + ‖x‖ ^ 2) ^ (((z - 2).re - i) / 2) *
-      (1 + ‖x‖ ^ 2) ^ ((1 - (k - i : ℕ) : ℝ) / 2) =
-        (1 + ‖x‖ ^ 2) ^ ((z.re - (k + 1 : ℕ)) / 2) := by
-    rw [← Real.rpow_add hw, Nat.cast_sub hik, Complex.sub_re]
-    congr 1
-    push_cast
-    norm_num
-    ring
-  calc (k.choose i : ℝ) * ‖iteratedFDeriv ℝ i (japaneseBracketCpow (z - 2)) x‖ *
-        ‖iteratedFDeriv ℝ (k - i) L x‖
-      ≤ k.choose i * (C * (1 + ‖z - 2‖) ^ i * (1 + ‖x‖ ^ 2) ^ (((z - 2).re - i) / 2)) *
-          (‖z‖ * c * (1 + ‖x‖ ^ 2) ^ ((1 - (k - i : ℕ) : ℝ) / 2)) := by
+  calc (1 + ‖z - 2‖) ^ i * ‖z‖ ≤ (3 * (1 + ‖z‖)) ^ i * (1 + ‖z‖) := by
         gcongr
-        exact h₂.trans (by gcongr)
-    _ = k.choose i * C * c * ((1 + ‖z - 2‖) ^ i * ‖z‖) *
-          (1 + ‖x‖ ^ 2) ^ ((z.re - (k + 1 : ℕ)) / 2) := by
-        rw [← hexp]
-        ring
-    _ ≤ k.choose i * C * c * (3 ^ i * (1 + ‖z‖) ^ (k + 1)) *
-          (1 + ‖x‖ ^ 2) ^ ((z.re - (k + 1 : ℕ)) / 2) := by
-        gcongr
-    _ = _ := by ring
+        linarith
+    _ = 3 ^ i * (1 + ‖z‖) ^ (i + 1) := by rw [mul_pow]; ring
+    _ ≤ 3 ^ i * (1 + ‖z‖) ^ (k + 1) := by gcongr; linarith
 
 /-- **Derivative bounds for the complex powers of the Japanese bracket, uniform in the order.**
 For every `k` there is a constant `C`, independent of `z`, such that
@@ -336,14 +309,39 @@ theorem exists_norm_iteratedFDeriv_japaneseBracketCpow_le (k : ℕ) :
       funext y
       ext v
       simp [Λ]
+    -- The induction hypothesis at the order `z - 2`, in the form of the Leibniz bound.
+    have hg (i : ℕ) (hi : i ≤ k) (y : H) :
+        ‖iteratedFDeriv ℝ i (japaneseBracketCpow (z - 2)) y‖ ≤
+          C i * (1 + ‖z - 2‖) ^ i * (1 + ‖y‖ ^ 2) ^ ((z.re - 2) / 2 - i / 2) := by
+      refine (hC i hi (z - 2) y).trans_eq ?_
+      congr 2
+      simp only [sub_re, re_ofNat]
+      ring
     rw [← norm_iteratedFDeriv_fderiv, hfd]
-    refine (norm_iteratedFDeriv_smul_le (contDiff_japaneseBracketCpow (n := ∞) (z - 2))
-      (z • Λ).contDiff x (mod_cast le_top)).trans ?_
-    rw [Finset.sum_mul, Finset.sum_mul]
+    refine ((z • Λ).norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow
+      (contDiff_japaneseBracketCpow (z - 2)) hg x).trans ?_
+    have hexp : (z.re - 2) / 2 + 1 / 2 - k / 2 = (z.re - (k + 1 : ℕ)) / 2 := by
+      push_cast
+      ring
+    rw [hexp, Finset.sum_mul, Finset.sum_mul, Finset.sum_mul]
     refine Finset.sum_le_sum fun i hi ↦ ?_
     have hik : i ≤ k := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
-    exact choose_mul_norm_iteratedFDeriv_mul_norm_iteratedFDeriv_le hik (hC0 i hik) (norm_nonneg Λ)
-      (ContinuousLinearMap.opNorm_smul_le z Λ) (hC i hik (z - 2) x)
+    have := hC0 i hik
+    -- Each derivative of `⟨x⟩ ^ (z - 2)` costs `1 + ‖z - 2‖`, and the linear map costs `‖z‖`.
+    calc (k.choose i : ℝ) * (C i * (1 + ‖z - 2‖) ^ i) * ‖z • Λ‖ *
+          (1 + ‖x‖ ^ 2) ^ ((z.re - (k + 1 : ℕ)) / 2)
+        ≤ k.choose i * (C i * (1 + ‖z - 2‖) ^ i) * (‖z‖ * ‖Λ‖) *
+            (1 + ‖x‖ ^ 2) ^ ((z.re - (k + 1 : ℕ)) / 2) := by
+          gcongr
+          exact ContinuousLinearMap.opNorm_smul_le z Λ
+      _ = k.choose i * C i * ‖Λ‖ * ((1 + ‖z - 2‖) ^ i * ‖z‖) *
+            (1 + ‖x‖ ^ 2) ^ ((z.re - (k + 1 : ℕ)) / 2) := by
+          ring
+      _ ≤ k.choose i * C i * ‖Λ‖ * (3 ^ i * (1 + ‖z‖) ^ (k + 1)) *
+            (1 + ‖x‖ ^ 2) ^ ((z.re - (k + 1 : ℕ)) / 2) := by
+          gcongr _ * ?_ * _
+          exact one_add_norm_sub_two_pow_mul_norm_le z hik
+      _ = _ := by ring
 
 /-- **Mihlin's condition for the powers of the Japanese bracket of nonpositive real part.** For
 every `N` there is a constant `C` such that for every `z` with `re z ≤ 0`, in particular every
@@ -369,7 +367,9 @@ theorem exists_norm_iteratedFDeriv_japaneseBracketCpow_le_div_pow (N : ℕ) :
         -- Since `re z ≤ 0`, the bracket power has order at most `-k`.
         calc (1 + ‖ξ‖ ^ 2) ^ ((z.re - k) / 2) ≤ (1 + ‖ξ‖ ^ 2) ^ (-(k : ℝ) / 2) :=
               Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖ξ‖]) (by linarith)
-          _ ≤ 1 / ‖ξ‖ ^ k := Real.one_add_sq_rpow_neg_le (norm_pos_iff.2 hξ) k
+          _ ≤ 1 / ‖ξ‖ ^ k := by
+            simpa [add_comm, one_div] using
+              norm_sq_add_rpow_div_two_le zero_le_one hξ (neg_nonpos.2 (Nat.cast_nonneg k))
     _ = _ := by
         push_cast
         ring

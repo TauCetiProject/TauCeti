@@ -198,15 +198,6 @@ private theorem re_endCoord_one_cylindricalEndLift_nonpos {q : Puncture} (hq : q
   simpa using endSign_mul_re_endCoord_nonpos hq (w := q.cylindricalEndLift w)
     (by rw [re_endCoord_cylindricalEndLift]; linarith)
 
-/-- A point of the capped plane `ℂ ∖ {0}` is the capped puncture `1` or a point of the pair of
-pants `ℂ ∖ {0, 1}`: these are the domain points at which the data of the pair of pants capped at
-`1` are smooth. -/
-theorem eq_endCenter_one_or_of_ne_zero {w : ℂ} (hw : w ≠ 0) :
-    w = one.endCenter ∨ w ≠ 0 ∧ w ≠ 1 := by
-  rcases eq_or_ne w 1 with h | h
-  · exact Or.inl (by simpa using h)
-  · exact Or.inr ⟨hw, h⟩
-
 /-- The end lift of the end at `0` maps the cylinder into `ℂ ∖ {0}`: every image point is the
 capped puncture `1` or a point of the pair of pants. -/
 private theorem cylindricalEndLift_zero_eq_endCenter_one_or (w : ℂ) :
