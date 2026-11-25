@@ -37,8 +37,10 @@ divisor are involved.
 * `TauCeti.RiemannSurface.mittagLefflerConnecting_mapOfLE`: naturality in the divisor, and
   `mittagLefflerConnecting_mapOfLE_add_ofPoint`: its form for a point twist `D ≤ D + x`.
 
-Forster's Theorem 17.3, the surjectivity of the connecting map, is not proved here: it needs the
-vanishing of `H¹(X, 𝒪_E)` for divisors `E` of large degree.
+Forster's Theorem 17.3, the surjectivity of the connecting map, needs the vanishing of
+`H¹(X, 𝒪_E)` for large divisors `E`. Both are proved in
+`TauCeti.Analysis.Complex.RiemannSurface.Divisor.Cohomology.Vanishing`
+(`TauCeti.RiemannSurface.mittagLefflerConnecting_surjective`).
 
 ## References
 
