@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.NumberField.HermitianBundle.Dual
 public import Mathlib.RingTheory.PicardGroup
 
 import TauCeti.RingTheory.Ideal.Norm.AbsNorm
+import TauCeti.RingTheory.PicardGroup.Contraction
 
 /-!
 # The Arakelov degree of the dual of a hermitian line
@@ -58,12 +59,10 @@ variable {K : Type*} [Field K] [NumberField K] {E : Type*} [AddCommGroup E] [Mod
 theorem sectionDegree_dual_tmul_eq_zero [Module.Invertible (𝓞 K) E] {s : E}
     {f : Module.Dual (𝓞 K) E} (hfs : f s ≠ 0) : (h.dual.tmul h).sectionDegree (f ⊗ₜ s) = 0 := by
   have hE := Module.Invertible.finrank_eq_one K (K ⊗[𝓞 K] E)
-  set e := Module.Invertible.linearEquiv (𝓞 K) E
-  have he : e (f ⊗ₜ s) = f s := by simp [e, Module.Invertible.linearEquiv]
   have hcard : Submodule.cardQuot (Submodule.span (𝓞 K) {f ⊗ₜ[𝓞 K] s}) =
       (Submodule.span (𝓞 K) {f s}).cardQuot := by
-    rw [← Submodule.cardQuot_map_equiv e, Submodule.map_span, Set.image_singleton,
-      LinearEquiv.coe_coe, he]
+    rw [← Submodule.cardQuot_span_singleton_map_equiv (Module.Invertible.linearEquiv (𝓞 K) E),
+      Module.Invertible.linearEquiv_tmul]
   have hnorm (σ : K →+* ℂ) :
       (h.dual.tmul h).norm σ (1 ⊗ₜ (f ⊗ₜ s)) = (trivial K).norm σ (1 ⊗ₜ f s) := by
     rw [norm_tmul_tmul, h.norm_dual_one_tmul_mul_norm σ hE s, norm_trivial_tmul]

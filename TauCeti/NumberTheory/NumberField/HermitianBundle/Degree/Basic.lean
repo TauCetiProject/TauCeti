@@ -100,9 +100,8 @@ with `s`. -/
 @[simp]
 theorem _root_.TauCeti.HermitianMetric.IsometryEquiv.sectionDegree_map {h' : HermitianMetric K F}
     (e : IsometryEquiv h h') (s : E) : h'.sectionDegree (e s) = h.sectionDegree s := by
-  have hcard : (Submodule.span (𝓞 K) {e s}).cardQuot = (Submodule.span (𝓞 K) {s}).cardQuot := by
-    rw [← Submodule.cardQuot_map_equiv e.toLinearEquiv, Submodule.map_span, Set.image_singleton,
-      LinearEquiv.coe_coe, IsometryEquiv.coe_toLinearEquiv]
+  have hcard : (Submodule.span (𝓞 K) {e s}).cardQuot = (Submodule.span (𝓞 K) {s}).cardQuot :=
+    Submodule.cardQuot_span_singleton_map_equiv e.toLinearEquiv s
   simp only [sectionDegree_def, hcard, e.norm_tmul_map]
 
 /-- The degree of `Ō_K` computed with the section `1` is zero. -/
