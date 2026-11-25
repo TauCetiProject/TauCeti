@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
 public import Mathlib.Algebra.Category.ModuleCat.Projective
-public import Mathlib.RingTheory.QuotSMulTop
-public import Mathlib.RingTheory.Regular.Category
+public import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
 public import TauCeti.Algebra.Homology.Ext.Presentation
+public import TauCeti.RingTheory.Regular.Category
 
 /-!
 # `Ext` out of the quotient by a regular element
@@ -53,36 +53,13 @@ namespace ModuleCat
 
 variable {R : Type u} [CommRing R] {f : R}
 
-/-- `R` is a projective `R`-module, as the middle term of `ModuleCat.smulShortComplex`. -/
-private instance instProjectiveSmulShortComplexX₂ (f : R) :
-    Projective (smulShortComplex (of R R) f).X₂ :=
-  projective_of_free (Module.Free.chooseBasis R R)
-
-/-- `R` is a projective `R`-module, as the first term of `ModuleCat.smulShortComplex`. -/
-private instance instProjectiveSmulShortComplexX₁ (f : R) :
-    Projective (smulShortComplex (of R R) f).X₁ :=
-  projective_of_free (Module.Free.chooseBasis R R)
-
-/-- The `R`-linear maps `R → X`, as morphisms out of `ModuleCat.of R R`, are evaluated at `1`. -/
-private def homSelfEquiv (X : ModuleCat.{u} R) : (of R R ⟶ X) ≃ₗ[R] X :=
-  homLinearEquiv.trans (LinearMap.ringLmapEquivSelf R R X)
-
-private theorem homSelfEquiv_apply (X : ModuleCat.{u} R) (g : of R R ⟶ X) :
-    homSelfEquiv X g = g.hom 1 :=
-  rfl
-
-private theorem homSelfEquiv_symm_apply (X : ModuleCat.{u} R) (x : X) :
-    (homSelfEquiv X).symm x = ofHom (LinearMap.toSpanSingleton R X x) := by
-  apply (homSelfEquiv X).injective
-  rw [LinearEquiv.apply_symm_apply, homSelfEquiv_apply, hom_ofHom,
-    LinearMap.toSpanSingleton_apply, one_smul]
-
 /-- Under evaluation at `1`, the maps `R → X` that factor through multiplication by `f` are the
 elements of `f X`. -/
-private theorem map_homSelfEquiv_range (X : ModuleCat.{u} R) (f : R) :
+private theorem map_homSelfLinearEquiv_range (X : ModuleCat.{u} R) (f : R) :
     (Linear.leftComp R X (smulShortComplex (of R R) f).f).range.map
-        (homSelfEquiv X).toLinearMap = f • (⊤ : Submodule R X) := by
-  have key (g : of R R ⟶ X) : homSelfEquiv X ((f • 𝟙 (of R R)) ≫ g) = f • homSelfEquiv X g := by
+        (homSelfLinearEquiv R X).toLinearMap = f • (⊤ : Submodule R X) := by
+  have key (g : of R R ⟶ X) :
+      homSelfLinearEquiv R X ((f • 𝟙 (of R R)) ≫ g) = f • homSelfLinearEquiv R X g := by
     rw [Linear.smul_comp, Category.id_comp, map_smul]
   ext x
   simp only [Submodule.mem_map, LinearMap.mem_range, Linear.leftComp_apply,
@@ -90,9 +67,9 @@ private theorem map_homSelfEquiv_range (X : ModuleCat.{u} R) (f : R) :
     Submodule.mem_top, true_and]
   constructor
   · rintro ⟨_, ⟨g, rfl⟩, rfl⟩
-    exact ⟨homSelfEquiv X g, (key g).symm⟩
+    exact ⟨homSelfLinearEquiv R X g, (key g).symm⟩
   · rintro ⟨y, rfl⟩
-    exact ⟨_, ⟨(homSelfEquiv X).symm y, rfl⟩, by rw [key, LinearEquiv.apply_symm_apply]⟩
+    exact ⟨_, ⟨(homSelfLinearEquiv R X).symm y, rfl⟩, by rw [key, LinearEquiv.apply_symm_apply]⟩
 
 /-- **`Ext¹` against `R ⧸ f R`.** For an element `f` of `R` regular on `R`, `Ext¹(R ⧸ f R, X)` is
 `X ⧸ f X`. The class of `x` is the extension class of `0 → R → R → R ⧸ f R → 0` pushed forward
@@ -100,17 +77,7 @@ along `r ↦ r • x` (`ModuleCat.extOneQuotSMulTopEquiv_symm_mk`). -/
 def extOneQuotSMulTopEquiv (hf : IsSMulRegular R f) (X : ModuleCat.{u} R) :
     Ext.{u} (of R (QuotSMulTop f R)) X 1 ≃ₗ[R] QuotSMulTop f X :=
   (TauCeti.homCokernelEquivExt R (hf.smulShortComplex_shortExact (M := of R R)) X).symm.trans
-    (Submodule.Quotient.equiv _ _ (homSelfEquiv X) (map_homSelfEquiv_range X f))
-
-/-- The inverse of `ModuleCat.extOneQuotSMulTopEquiv` sends the class of `x` to the extension
-class of `0 → R → R → R ⧸ f R → 0` pushed forward along `r ↦ r • x`. -/
-theorem extOneQuotSMulTopEquiv_symm_mk (hf : IsSMulRegular R f) (X : ModuleCat.{u} R) (x : X) :
-    (extOneQuotSMulTopEquiv hf X).symm (Submodule.Quotient.mk x) =
-      (hf.smulShortComplex_shortExact (M := of R R)).extClass.comp
-        (Ext.mk₀ (ofHom (LinearMap.toSpanSingleton R X x))) (add_zero 1) := by
-  rw [extOneQuotSMulTopEquiv, LinearEquiv.symm_trans_apply, Submodule.Quotient.equiv_symm,
-    Submodule.Quotient.equiv_apply, Submodule.mapQ_apply, LinearEquiv.coe_coe,
-    homSelfEquiv_symm_apply, LinearEquiv.symm_symm, TauCeti.homCokernelEquivExt_mk]
+    (Submodule.Quotient.equiv _ _ (homSelfLinearEquiv R X) (map_homSelfLinearEquiv_range X f))
 
 /-- `ModuleCat.extOneQuotSMulTopEquiv` sends the extension class of `0 → R → R → R ⧸ f R → 0`
 pushed forward along `g : R → X` to the class of `g 1`. -/
@@ -120,10 +87,17 @@ theorem extOneQuotSMulTopEquiv_extClass_comp (hf : IsSMulRegular R f) {X : Modul
     extOneQuotSMulTopEquiv hf X
         ((hf.smulShortComplex_shortExact (M := of R R)).extClass.comp (Ext.mk₀ g) (add_zero 1)) =
       Submodule.Quotient.mk (g.hom 1) := by
-  have hg : g = ofHom (LinearMap.toSpanSingleton R X (g.hom 1)) := by
-    rw [← homSelfEquiv_symm_apply, ← homSelfEquiv_apply, LinearEquiv.symm_apply_apply]
-  conv_lhs => rw [hg]
-  rw [← extOneQuotSMulTopEquiv_symm_mk hf, LinearEquiv.apply_symm_apply]
+  rw [extOneQuotSMulTopEquiv, LinearEquiv.trans_apply, TauCeti.homCokernelEquivExt_symm_comp_mk₀]
+  exact congrArg Submodule.Quotient.mk (homSelfLinearEquiv_apply g)
+
+/-- The inverse of `ModuleCat.extOneQuotSMulTopEquiv` sends the class of `x` to the extension
+class of `0 → R → R → R ⧸ f R → 0` pushed forward along `r ↦ r • x`. -/
+theorem extOneQuotSMulTopEquiv_symm_mk (hf : IsSMulRegular R f) (X : ModuleCat.{u} R) (x : X) :
+    (extOneQuotSMulTopEquiv hf X).symm (Submodule.Quotient.mk x) =
+      (hf.smulShortComplex_shortExact (M := of R R)).extClass.comp
+        (Ext.mk₀ (ofHom (LinearMap.toSpanSingleton R X x))) (add_zero 1) := by
+  rw [LinearEquiv.symm_apply_eq, extOneQuotSMulTopEquiv_extClass_comp]
+  simp
 
 /-- **Naturality.** The identification `Ext¹(R ⧸ f R, X) ≃ X ⧸ f X` is natural in `X`: a map
 `g : X ⟶ Y` acts on `Ext¹` by postcomposition and on `X ⧸ f X` by `QuotSMulTop.map`. -/
@@ -134,10 +108,7 @@ theorem extOneQuotSMulTopEquiv_comp_mk₀ (hf : IsSMulRegular R f) {X Y : Module
   obtain ⟨y, rfl⟩ := (extOneQuotSMulTopEquiv hf X).symm.surjective e
   induction y using Submodule.Quotient.induction_on with
   | _ x =>
-    rw [LinearEquiv.apply_symm_apply, extOneQuotSMulTopEquiv_symm_mk,
-      Ext.comp_assoc_of_second_deg_zero, Ext.mk₀_comp_mk₀, extOneQuotSMulTopEquiv_extClass_comp,
-      QuotSMulTop.map_apply_mk, hom_comp, LinearMap.comp_apply, hom_ofHom,
-      LinearMap.toSpanSingleton_apply, one_smul]
+    simp [extOneQuotSMulTopEquiv_symm_mk, Ext.comp_assoc_of_second_deg_zero]
 
 /-- **Vanishing of higher `Ext`.** For an element `f` of `R` regular on `R`,
 `Extⁿ(R ⧸ f R, X) = 0` for `n ≥ 2`. -/
