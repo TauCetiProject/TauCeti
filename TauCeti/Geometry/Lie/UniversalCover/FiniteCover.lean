@@ -264,10 +264,6 @@ instance finite_map_snd_ker_centerProdDerivedProjHom :
   have := finite_center_integralLeafSubgroupData_derivedSeries I G
   Subgroup.finite_map_snd_of_le_center _ (ker_centerProdDerivedProjHom_le_center I G)
 
-/-- The deck lattice is discrete. -/
-instance discreteTopology_deckLattice : DiscreteTopology (deckLattice I G).toAddSubgroup' :=
-  Subgroup.discreteTopology_toAddSubgroup'_comap_inl _
-
 /-- **The deck lattice is a full lattice** in the centre `𝔷` of the Lie algebra, so `𝔷 ⧸ Λ` is a
 torus. -/
 instance isZLattice_deckLattice :
