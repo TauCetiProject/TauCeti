@@ -9,7 +9,8 @@ public import Mathlib.Analysis.MellinInversion
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 import TauCeti.Analysis.Calculus.RealCharts
 import TauCeti.Analysis.MellinTransform
-import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
+import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical.Basic
+import TauCeti.Analysis.SpecialFunctions.Beta.Substitution
 import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
@@ -77,52 +78,11 @@ open Complex hiding exp continuous_exp log
 
 namespace Complex
 
-/-- Under the chart `u ↦ u / (1 - u)` of `(0, 1)` onto `(0, ∞)`, the Mellin integrand of
-`(1 + t)^{-a}` at `s` becomes the integrand of the Beta integral with parameters `s` and
-`a - s`. -/
-private lemma abs_deriv_smul_cpow_mul_one_add_cpow (s a : ℂ) {u : ℝ} (hu : u ∈ Ioo 0 1) :
-    |((1 - u) ^ 2)⁻¹| • (((u / (1 - u) : ℝ) : ℂ) ^ (s - 1) • (1 + ((u / (1 - u) : ℝ) : ℂ)) ^ (-a)) =
-      (u : ℂ) ^ (s - 1) * (1 - (u : ℂ)) ^ (a - s - 1) := by
-  obtain ⟨hu0, hu1⟩ := hu
-  have h1u : 0 < 1 - u := by linarith
-  -- every power below has a positive real base, so it is `exp (Real.log x * w)`
-  have hexp {x : ℝ} (hx : 0 < x) (w : ℂ) : (x : ℂ) ^ w = cexp (Real.log x * w) := by
-    rw [cpow_def_of_ne_zero (ofReal_ne_zero.mpr hx.ne'), ofReal_log hx.le]
-  have hbase : 1 + ((u / (1 - u) : ℝ) : ℂ) = (((1 - u)⁻¹ : ℝ) : ℂ) := by
-    have hr : 1 + u / (1 - u) = (1 - u)⁻¹ := by field_simp; ring
-    rw [← hr]
-    push_cast
-    ring
-  have hsub : (1 - (u : ℂ)) = ((1 - u : ℝ) : ℂ) := by push_cast; ring
-  have hfac : ((|((1 - u) ^ 2)⁻¹| : ℝ) : ℂ) = cexp (-(2 * Real.log (1 - u))) := by
-    have hr : |((1 - u) ^ 2)⁻¹| = Real.exp (-(2 * Real.log (1 - u))) := by
-      rw [abs_of_nonneg (by positivity), Real.exp_neg,
-        show 2 * Real.log (1 - u) = Real.log ((1 - u) ^ 2) by rw [Real.log_pow]; norm_num,
-        Real.exp_log (by positivity)]
-    rw [hr, ofReal_exp]
-    push_cast
-    ring_nf
-  rw [real_smul, smul_eq_mul, hbase, hsub, hfac,
-    hexp (div_pos hu0 h1u), hexp (inv_pos.mpr h1u), hexp hu0, hexp h1u,
-    Real.log_div hu0.ne' h1u.ne',
-    Real.log_inv, ← Complex.exp_add, ← Complex.exp_add, ← Complex.exp_add]
-  congr 1
-  push_cast
-  ring
-
 /-- **Euler's Beta integral of the second kind** (DLMF 5.12.3). For `0 < Re s < Re a` the Mellin
 transform of `t ↦ (1 + t)^{-a}` converges at `s` and equals `Γ(s) Γ(a - s) / Γ(a)`. -/
 theorem hasMellin_one_add_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.re < a.re) :
     HasMellin (fun t : ℝ ↦ (1 + (t : ℂ)) ^ (-a)) s (Gamma s * Gamma (a - s) / Gamma a) := by
   have has : 0 < (a - s).re := by simpa using hsa
-  have hchart : (fun u : ℝ ↦ u / (1 - u)) '' Ioo 0 1 = Ioi 0 := by
-    rw [TauCeti.image_div_one_sub_Ioo (u0 := 0) zero_lt_one]
-    norm_num
-  have hderiv : ∀ u ∈ Ioo (0 : ℝ) 1,
-      HasDerivWithinAt (fun u : ℝ ↦ u / (1 - u)) ((1 - u) ^ 2)⁻¹ (Ioo 0 1) u :=
-    fun u hu ↦ (TauCeti.hasDerivAt_div_one_sub hu.2.ne).hasDerivWithinAt
-  have hinj : InjOn (fun u : ℝ ↦ u / (1 - u)) (Ioo 0 1) :=
-    TauCeti.strictMonoOn_div_one_sub.injOn.mono Ioo_subset_Iio_self
   -- the Beta integrand on `(0, 1)`, as an integrable function on `Ioo 0 1`
   have hbeta : IntegrableOn (fun u : ℝ ↦ (u : ℂ) ^ (s - 1) * (1 - (u : ℂ)) ^ (a - s - 1))
       (Ioo 0 1) := by
@@ -130,14 +90,19 @@ theorem hasMellin_one_add_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.re < a.r
     rw [intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one] at h
     exact h.mono_set Ioo_subset_Ioc_self
   refine ⟨?_, ?_⟩
-  · rw [MellinConvergent, ← hchart,
-      integrableOn_image_iff_integrableOn_abs_deriv_smul measurableSet_Ioo hderiv hinj]
-    exact hbeta.congr_fun (fun u hu ↦ (abs_deriv_smul_cpow_mul_one_add_cpow s a hu).symm)
-      measurableSet_Ioo
-  · rw [mellin, ← hchart,
-      integral_image_eq_integral_abs_deriv_smul measurableSet_Ioo hderiv hinj,
-      setIntegral_congr_fun measurableSet_Ioo
-        fun u hu ↦ abs_deriv_smul_cpow_mul_one_add_cpow s a hu,
+  · rw [MellinConvergent]
+    have hchart := (TauCeti.integrableOn_Ioi_iff_integrableOn_div_one_sub
+      (fun t : ℝ ↦ (t : ℂ) ^ (s - 1) • (1 + (t : ℂ)) ^ (-a))
+      (ρ := 0) zero_lt_one).2
+    simpa only [zero_div] using
+      hchart (hbeta.congr_fun
+        (fun u hu ↦ (inv_sq_smul_div_cpow_smul_one_add_cpow s a hu.2).symm) measurableSet_Ioo)
+  · rw [mellin]
+    have hchart := TauCeti.integral_Ioi_eq_integral_div_one_sub
+      (fun t : ℝ ↦ (t : ℂ) ^ (s - 1) • (1 + (t : ℂ)) ^ (-a)) (ρ := 0) zero_lt_one
+    simp only [zero_div] at hchart
+    rw [hchart, setIntegral_congr_fun measurableSet_Ioo
+      (fun u hu ↦ inv_sq_smul_div_cpow_smul_one_add_cpow s a hu.2),
       setIntegral_congr_set Ioo_ae_eq_Ioc, ← intervalIntegral.integral_of_le zero_le_one,
       ← betaIntegral, betaIntegral_eq_Gamma_mul_div _ _ hs has, add_sub_cancel]
 

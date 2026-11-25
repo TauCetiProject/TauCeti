@@ -33,6 +33,8 @@ transforms by the same congruence.
   `O Oᵀ = 1` as a complex matrix.
 * `Matrix.map_ofReal_mem_unitaryGroup`: an orthogonal real matrix is unitary.
 * `Matrix.IsHermitian.map_ofReal`: a real symmetric matrix is Hermitian.
+* `Matrix.map_ofReal_mul`, `Matrix.map_ofReal_one`, `Matrix.trace_map_ofReal`: the entrywise
+  coercion is multiplicative, preserves the identity and commutes with the trace.
 * `Matrix.isUnit_map_ofReal_iff`: a real matrix is invertible exactly when it is invertible as a
   complex matrix.
 * `Matrix.det_map_ofReal`: the determinant of a real matrix is unchanged as a complex matrix.
@@ -294,6 +296,22 @@ theorem map_ofReal_mem_unitaryGroup [Fintype n] [DecidableEq n] {O : Matrix n n 
 theorem IsHermitian.map_ofReal {A : Matrix n n ℝ} (hA : A.IsHermitian) :
     (A.map ((↑) : ℝ → ℂ)).IsHermitian :=
   hA.map _ fun _ ↦ by simp
+
+/-- The entrywise coercion of real matrices to complex matrices is multiplicative. -/
+@[simp]
+theorem map_ofReal_mul [Fintype m] (X : Matrix l m ℝ) (Y : Matrix m n ℝ) :
+    (X * Y).map ((↑) : ℝ → ℂ) = X.map (↑) * Y.map (↑) :=
+  Matrix.map_mul (f := Complex.ofRealHom)
+
+/-- The entrywise coercion of the real identity matrix is the complex identity matrix. -/
+theorem map_ofReal_one [DecidableEq n] : (1 : Matrix n n ℝ).map ((↑) : ℝ → ℂ) = 1 :=
+  Matrix.map_one _ Complex.ofReal_zero Complex.ofReal_one
+
+/-- The trace of a real matrix, viewed as a complex matrix, is the coercion of its trace. -/
+@[simp]
+theorem trace_map_ofReal [Fintype n] (X : Matrix n n ℝ) :
+    trace (X.map ((↑) : ℝ → ℂ)) = ((trace X : ℝ) : ℂ) :=
+  (AddMonoidHom.map_trace Complex.ofRealHom X).symm
 
 /-- A real square matrix is invertible exactly when it is invertible as a complex matrix: the
 case `ℝ → ℂ` of `Matrix.isUnit_map_iff`. -/

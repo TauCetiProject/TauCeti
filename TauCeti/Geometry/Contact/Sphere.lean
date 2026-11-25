@@ -9,7 +9,7 @@ public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Contact.Reeb
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Symplectic.Liouville.ContactType
-public import TauCeti.Geometry.Symplectic.Liouville.Radial
+public import TauCeti.Geometry.Symplectic.Liouville.Radial.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 /-!
@@ -17,7 +17,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 Let `ω` be a linear symplectic form on a finite-dimensional real inner product space `E`, with
 radial primitive `λₓ(v) = ω(x, v) / 2` (`TauCeti.SymplecticForm.radialPrimitive`, in
-`TauCeti.Geometry.Symplectic.Liouville.Radial`) and Liouville field `Z(x) = x / 2`. Then `Z`
+`TauCeti.Geometry.Symplectic.Liouville.Radial.Basic`) and Liouville field `Z(x) = x / 2`. Then `Z`
 points outwards along the unit sphere `S = sphere 0 1`, since `⟪x, x / 2⟫ = 1 / 2` there. So the
 unit sphere is a hypersurface of restricted contact type with primitive `λ`
 (`TauCeti.SymplecticForm.isRestrictedContactType_sphere`), and the restriction

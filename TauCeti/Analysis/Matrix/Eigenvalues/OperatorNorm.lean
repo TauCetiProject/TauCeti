@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Matrix.EuclideanLin
 public import TauCeti.Analysis.Matrix.L2OpNorm
 public import TauCeti.Analysis.Matrix.Spectrum
 import TauCeti.Analysis.Matrix.Eigenvalues.Basic
+import TauCeti.Analysis.Normed.Group.Pi
 
 /-!
 # Euclidean operator norms and extreme real eigenvalues
@@ -26,6 +27,11 @@ agree with the first and last entries of `eigenvalues₀` (proved in
 `max (sSup (spectrum ℝ A)) (sSup (spectrum ℝ (-A)))`. For the Hermitian dilation
 `fromBlocks 0 A Aᴴ 0` (`A.hermitianDilation`) of a rectangular matrix `A`, symmetry of the
 spectrum under negation shows that `sSup (spectrum ℝ (fromBlocks 0 A Aᴴ 0)) = ‖A‖`.
+
+For a Hermitian matrix, each ordered eigenvalue is bounded in absolute value by the operator
+norm, and the `2 * k`-th power of the operator norm is bounded by the real trace of the
+`2 * k`-th matrix power, provided the matrix is nonempty when `k = 0`. This is the trace bound
+behind moment estimates for the operator norm of random matrices.
 
 All matrix norms here use `Matrix.Norms.L2Operator`, hence agree with the norms of the
 native maps on `EuclideanSpace`. The proof uses Mathlib's
@@ -175,5 +181,27 @@ theorem sSup_spectrum_real_hermitianDilation {p : Type*}
     [Fintype p] [DecidableEq m] [DecidableEq p] [Nonempty (m ⊕ p)] (A : Matrix m p 𝕜) :
     sSup (spectrum ℝ A.hermitianDilation) = ‖A‖ :=
   A.sSup_spectrum_real_fromBlocks_zero_diagonal
+
+/-- The absolute value of each ordered Hermitian eigenvalue is bounded by the Euclidean
+operator norm. -/
+theorem IsHermitian.norm_eigenvalues₀_le_l2_opNorm {A : Matrix n n 𝕜}
+    (hA : A.IsHermitian) (j : Fin (Fintype.card n)) : ‖hA.eigenvalues₀ j‖ ≤ ‖A‖ := by
+  rw [hA.l2_opNorm_eq_norm_eigenvalues]
+  simpa only [hA.eigenvalues_apply_equivOfCardEq] using
+    norm_le_pi_norm hA.eigenvalues (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n)) j)
+
+/-- For a Hermitian matrix, the `2*k`-th power of the Euclidean operator norm is bounded by the
+real trace of its `2*k`-th power. The dimension must be nonempty only for `k = 0`, where the
+power of the norm is `1` and the trace is the dimension. -/
+theorem IsHermitian.l2_opNorm_pow_two_mul_le_re_trace_pow_two_mul {A : Matrix n n 𝕜}
+    (hA : A.IsHermitian) (k : ℕ) (hn : k = 0 → Nonempty n) :
+    ‖A‖ ^ (2 * k) ≤ RCLike.re (A ^ (2 * k)).trace := by
+  rw [hA.l2_opNorm_eq_norm_eigenvalues, hA.trace_pow_eq_sum_eigenvalues_pow]
+  simp only [map_sum, ← RCLike.ofReal_pow, RCLike.ofReal_re]
+  rcases eq_or_ne k 0 with rfl | hk
+  · have := hn rfl
+    simpa using (Nat.one_le_cast.mpr Fintype.card_pos : (1 : ℝ) ≤ Fintype.card n)
+  · simpa only [Real.norm_eq_abs, pow_abs_two_mul] using
+      Pi.norm_pow_le_sum_norm_pow hA.eigenvalues (mul_ne_zero two_ne_zero hk)
 
 end Matrix
