@@ -41,6 +41,8 @@ exists after a ramified extension of `ℚₚ` does not qualify.
 
 ## Main results
 
+* `TauCeti.AlgebraicGeometry.HasEverywhereWittGoodReduction.hasWittGoodReductionAt`: everywhere
+  Witt good reduction gives Witt good reduction at each prime.
 * `TauCeti.AlgebraicGeometry.hasWittGoodReductionAt_iff`: the definition, for a given ring map
   `ℚ → Frac W`; any two such maps agree.
 * `TauCeti.AlgebraicGeometry.hasWittGoodReductionAt_iff_exists_isPullback`: Witt good reduction
@@ -99,6 +101,12 @@ variable {f p}
 theorem hasEverywhereWittGoodReduction_iff :
     HasEverywhereWittGoodReduction f ↔ ∀ (p : ℕ) [Fact p.Prime], HasWittGoodReductionAt f p :=
   Iff.rfl
+
+/-- A scheme with everywhere Witt good reduction has Witt good reduction at each prime `q`. -/
+theorem HasEverywhereWittGoodReduction.hasWittGoodReductionAt
+    (hf : HasEverywhereWittGoodReduction f) (q : ℕ) [Fact q.Prime] :
+    HasWittGoodReductionAt f q :=
+  hf q
 
 /-- Witt good reduction at `p`, for a given ring map `a : ℚ → Frac W`, where `W` is the ring of
 Witt vectors of an algebraic closure of `𝔽ₚ`: such a map is unique, so the existential quantifier
