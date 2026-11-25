@@ -154,6 +154,14 @@ theorem _root_.OpenPartialHomeomorph.exists_isOpen_extend_target_inter_preimage 
     range_closedUpperHalfPlaneModel, mem_inter_iff, mem_preimage, mem_ofPred_eq]
   tauto
 
+/-- The model inverse undoes the model in an extended chart: reading a point through the extended
+chart at `x` and back through the model inverse gives its image under the chart at `x`. -/
+theorem closedUpperHalfPlaneModel_symm_extChartAt {M : Type*} [TopologicalSpace M]
+    [ChartedSpace ClosedUpperHalfPlane M] (x y : M) :
+    closedUpperHalfPlaneModel.symm (extChartAt closedUpperHalfPlaneModel x y) =
+      chartAt ClosedUpperHalfPlane x y := by
+  rw [extChartAt_coe, Function.comp_apply, ModelWithCorners.left_inv]
+
 /-- The part of the target of the extended chart at `x` of a manifold modelled on the closed upper
 half-plane lying over an open set is relatively open in the closed upper half-plane: it is
 `Ω ∩ {z | 0 ≤ z.im}` for an open `Ω ⊆ ℂ`. This is

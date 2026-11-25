@@ -92,6 +92,15 @@ private theorem memWkpLoc_halfCoord_comp_extChartAt_trans (hn : 1 ≤ n) (hkn : 
         (extChartAt closedUpperHalfPlaneModel (A.center i))) ⁻¹' A.halfOpen i) k
       (fun z ↦ A.halfCoord i s (((extChartAt closedUpperHalfPlaneModel (B.center j)).symm.trans
         (extChartAt closedUpperHalfPlaneModel (A.center i))) z)) := by
+  have he := contDiffOn_ext_coord_change (I := closedUpperHalfPlaneModel) (n := n) (A.center i)
+    (B.center j)
+  have he' : ContDiffOn ℝ n ((extChartAt closedUpperHalfPlaneModel (B.center j)).symm.trans
+      (extChartAt closedUpperHalfPlaneModel (A.center i))).symm
+      ((extChartAt closedUpperHalfPlaneModel (B.center j)).symm.trans
+        (extChartAt closedUpperHalfPlaneModel (A.center i))).target := by
+    rw [← PartialEquiv.symm_source, PartialEquiv.trans_symm_eq_symm_trans_symm,
+      PartialEquiv.symm_symm]
+    exact contDiffOn_ext_coord_change (B.center j) (A.center i)
   set e : PartialEquiv ℂ ℂ := (extChartAt closedUpperHalfPlaneModel (B.center j)).symm.trans
     (extChartAt closedUpperHalfPlaneModel (A.center i))
   obtain ⟨Ω, hΩ, hΩe⟩ := exists_isOpen_extChartAt_target_inter_preimage (B.center j)
@@ -103,15 +112,6 @@ private theorem memWkpLoc_halfCoord_comp_extChartAt_trans (hn : 1 ≤ n) (hkn : 
     rw [← hΩe, PartialEquiv.trans_source, PartialEquiv.symm_source]
   have ht' : e.target = Ω' ∩ {z | 0 ≤ z.im} := by
     rw [← hΩ'e, PartialEquiv.trans_target, PartialEquiv.symm_target]
-  have he : ContDiffOn ℝ n e e.source := contDiffOn_ext_coord_change (A.center i) (B.center j)
-  have he' : ContDiffOn ℝ n e.symm e.target := by
-    have h := contDiffOn_ext_coord_change (I := closedUpperHalfPlaneModel) (n := n) (B.center j)
-      (A.center i)
-    -- As functions, `e.symm` is `eB ∘ eA.symm` (`PartialEquiv.coe_trans_symm`).
-    refine h.congr_mono (fun z _ ↦ by rw [PartialEquiv.coe_trans_symm, PartialEquiv.symm_symm])
-      fun z hz ↦ ?_
-    simpa only [e, PartialEquiv.trans_target, PartialEquiv.symm_symm, PartialEquiv.trans_source,
-      PartialEquiv.symm_source, PartialEquiv.symm_target, mem_inter_iff, mem_preimage] using hz
   exact (hs.congr_mono (fun _ _ ↦ rfl) (A.halfClosedImage_eq_inter i).ge
     |>.comp_partialEquiv_halfPlane hn hkn hΩ hΩ' hs' ht' he he' (A.halfOpen i).isOpen)
 
@@ -147,9 +147,6 @@ theorem memWkpLoc_halfCoord_extChartAt_target (hn : 1 ≤ n) (hkn : k ≤ n) {s 
   set U : Set ℂ := (e.source ∩ e ⁻¹' A.halfOpen i) ∩ (eB.target ∩ eB.symm ⁻¹' O)
   have hmul := (hcomp.mono inter_subset_left).contDiffOn_clm_apply_inter_setOf_im_nonneg hΩ₀ hC
     (hΩ₀e ▸ fun z hz ↦ ⟨hz.2.1, hz.2.2.2⟩ : U ⊆ Ω₀ ∩ {z | 0 ≤ z.im})
-  -- On `U`, the reading in chart `j` is the coordinate change of the reading in chart `i`.
-  have hchart (y : M) : closedUpperHalfPlaneModel.symm (eA y) = A.chart i y := by
-    rw [extChartAt_coe, Function.comp_apply, ModelWithCorners.left_inv]
   refine ⟨U, ?_, hmul.congr fun z hz ↦ ?_⟩
   · -- `U` is a neighbourhood of `z₀` there.
     have hO : eB.symm ⁻¹' O ∈ 𝓝[eB.target] z₀ :=
@@ -160,16 +157,19 @@ theorem memWkpLoc_halfCoord_extChartAt_target (hn : 1 ≤ n) (hkn : k ≤ n) {s 
       (nhdsWithin_mono _ inter_subset_left hO)) fun z ⟨⟨hz, _⟩, hzO⟩ ↦ ?_
     have hzA : eB.symm z ∈ (A.chart i).source := A.dom_subset_chart_source i hzO.1
     refine ⟨⟨⟨hz, by rw [extChartAt_source]; exact hzA⟩, ?_⟩, hz, hzO⟩
-    rw [mem_preimage, SetLike.mem_coe, mem_halfOpen, PartialEquiv.coe_trans, Function.comp_apply,
-      hchart]
-    exact A.mem_image.2 ⟨_, hzO.1, rfl⟩
-  · obtain ⟨-, -, hi, -, hzb⟩ := hz
+    simpa only [e, eA, mem_preimage, SetLike.mem_coe, mem_halfOpen, PartialEquiv.coe_trans,
+      Function.comp_apply, closedUpperHalfPlaneModel_symm_extChartAt] using
+      A.mem_image.2 ⟨_, hzO.1, rfl⟩
+  · -- On `U`, the reading in chart `j` is the coordinate change of the reading in chart `i`.
+    obtain ⟨-, -, hi, -, hzb⟩ := hz
     have hy : eB.symm z = (B.chart j).symm (closedUpperHalfPlaneModel.symm z) := by
       rw [extChartAt_coe_symm, Function.comp_apply]
     rw [hy] at hi hzb
-    simp only
-    rw [halfCoord_def, A.coord_eq_coordChangeL_coord B s hzb hi, halfCoord_def,
-      PartialEquiv.coe_trans, Function.comp_apply, hchart, hy, ContinuousLinearEquiv.coe_coe]
+    beta_reduce
+    rw [halfCoord_def, A.coord_eq_coordChangeL_coord B s hzb hi]
+    simp only [halfCoord_def, PartialEquiv.coe_trans, Function.comp_apply,
+      closedUpperHalfPlaneModel_symm_extChartAt, extChartAt_coe_symm, hy,
+      ContinuousLinearEquiv.coe_coe]
 
 end FiniteBundleAtlas
 
@@ -195,15 +195,10 @@ theorem exists_chartValueL_ae_eq_halfCoord (hn : 1 ≤ n) (hkn : k ≤ n)
         fun z ↦ (finBasis ℝ F).coord m (B.halfSectionChartData.coord j s z) := by
     obtain ⟨Ω, hΩ, hΩe⟩ := exists_isOpen_extChartAt_target_inter_preimage (B.center j)
       (B.triv j).open_baseSet
-    have hcl : closure (B.halfImage j : Set ℂ) ⊆ Ω := fun z hz ↦ by
-      obtain ⟨x, hx, rfl⟩ := closure_minimal (B.halfImage_subset_extChartAt_image_closure_dom j)
-        (B.isCompact_extChartAt_image_closure_dom j).isClosed hz
-      have hxs : x ∈ (extChartAt closedUpperHalfPlaneModel (B.center j)).source := by
-        rw [extChartAt_source]; exact B.closure_dom_subset_source j hx
-      refine (hΩe.subset ⟨(extChartAt closedUpperHalfPlaneModel (B.center j)).map_source hxs,
-        ?_⟩ : _ ∈ Ω ∩ {z | 0 ≤ z.im}).1
-      rw [mem_preimage, (extChartAt closedUpperHalfPlaneModel (B.center j)).left_inv hxs]
-      exact B.closure_dom_subset_baseSet j hx
+    have hcl : closure (B.halfImage j : Set ℂ) ⊆ Ω := fun z hz ↦
+      (hΩe.subset ⟨B.closure_halfImage_subset_extChartAt_target j hz, by
+        simpa only [mem_preimage, extChartAt_coe_symm, Function.comp_apply] using
+          B.chart_symm_mem_baseSet_of_mem_closure_halfImage hz⟩ : z ∈ Ω ∩ {z | 0 ≤ z.im}).1
     have hle : B.halfImage j ≤ (B.halfImage j).upperHalf :=
       fun z hz ↦ Opens.mem_upperHalf.2 ⟨hz, (B.mem_halfImage.1 hz).2⟩
     obtain ⟨v, hv⟩ := ((hloc j).clm_comp (LinearMap.toContinuousLinearMap
