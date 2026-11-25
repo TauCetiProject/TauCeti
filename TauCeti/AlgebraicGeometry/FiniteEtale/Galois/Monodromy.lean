@@ -23,11 +23,11 @@ correspondence that live on the side of covers (SGA 1, Exposé V, §§4–7):
 
 * For any profinite group `G` with `PreGaloisCategory.IsFundamentalGroup (fiber x) G`, such as a
   Galois group or a chosen small model of `π₁(S, x)`, the same correspondence lands in finite
-  continuous `G`-sets (`TauCeti.FiniteEtaleScheme.monodromyEquivalenceOfIsFundamentalGroup`),
-  with `G` acting on each geometric fibre through its given action. This is the general
-  `CategoryTheory.PreGaloisCategory.functorToContActionEquivOfIsFundamentalGroup`, which
-  restricts along the isomorphism of topological groups `G ≃ₜ* Aut (fiber x)` of
-  `CategoryTheory.PreGaloisCategory.toAutContinuousMulEquiv`.
+  continuous `G`-sets, with `G` acting on each geometric fibre through its given action. This is
+  the general `CategoryTheory.PreGaloisCategory.functorToContActionEquivOfIsFundamentalGroup`
+  applied to the fibre functor `fiber x`: it restricts along the isomorphism of topological groups
+  `G ≃ₜ* Aut (fiber x)` of `CategoryTheory.PreGaloisCategory.toAutContinuousMulEquiv`, and its
+  simp lemmas apply directly.
 * Both categories are cartesian monoidal and the equivalence preserves finite products, so it
   carries group objects to group objects. Finite étale group schemes over `S` therefore correspond
   to finite groups with a continuous action of `π₁(S, x)` by automorphisms
@@ -55,8 +55,6 @@ fibre functor (`TauCeti.FiniteEtaleScheme.instIsFundamentalGroupFiber`), so
 
 * `TauCeti.FiniteEtaleScheme.monodromyEquivalence x`:
   `FiniteEtaleScheme S ≌ ContAction FintypeCat (Aut (fiber x))` for connected `S`.
-* `TauCeti.FiniteEtaleScheme.monodromyEquivalenceOfIsFundamentalGroup x G`: the monodromy
-  equivalence with such a `G` in place of `Aut (fiber x)`.
 * `TauCeti.FiniteEtaleScheme.monodromyEquivalenceGrp x` and
   `TauCeti.FiniteEtaleScheme.monodromyEquivalenceCommGrp x`: the induced equivalences of group
   objects and of commutative group objects.
@@ -116,47 +114,6 @@ geometric fibres. -/
 theorem monodromyEquivalence_functor_map_hom_hom {X Y : FiniteEtaleScheme S} (f : X ⟶ Y) :
     ((monodromyEquivalence x).functor.map f).hom.hom = (fiber x).map f :=
   (rfl)
-
-section FundamentalGroup
-
-variable (G : Type*) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
-  [∀ X : FiniteEtaleScheme S, MulAction G ((fiber x).obj X)] [IsFundamentalGroup (fiber x) G]
-
-/-- **The monodromy equivalence for a fundamental group.** For a connected scheme `S`, a
-geometric point `x` and a fundamental group `G` of the geometric fibre functor at `x` (for
-instance a Galois group, or a small model of `Aut (fiber x)`), finite étale `S`-schemes are
-equivalent to finite sets with a continuous action of `G`. It is the general
-`functorToContActionEquivOfIsFundamentalGroup` for the fibre functor `fiber x`: the monodromy
-equivalence followed by restriction along `toAutContinuousMulEquiv (fiber x) G`. -/
-@[expose] noncomputable def monodromyEquivalenceOfIsFundamentalGroup :
-    FiniteEtaleScheme S ≌ ContAction FintypeCat.{u} G :=
-  functorToContActionEquivOfIsFundamentalGroup (fiber x) G
-
-/-- In `monodromyEquivalenceOfIsFundamentalGroup x G`, the finite `G`-set attached to a cover
-`X` has underlying set the geometric fibre of `X` at `x`. -/
-@[simp]
-theorem monodromyEquivalenceOfIsFundamentalGroup_functor_obj_obj_V (X : FiniteEtaleScheme S) :
-    ((monodromyEquivalenceOfIsFundamentalGroup x G).functor.obj X).obj.V = (fiber x).obj X :=
-  (rfl)
-
-variable {G} in
-/-- In `monodromyEquivalenceOfIsFundamentalGroup x G`, an element `g` of `G` acts on the
-geometric fibre of a cover by its given action. -/
-@[simp]
-theorem monodromyEquivalenceOfIsFundamentalGroup_functor_obj_obj_ρ_apply
-    (X : FiniteEtaleScheme S) (g : G) (a : (fiber x).obj X) :
-    (((monodromyEquivalenceOfIsFundamentalGroup x G).functor.obj X).obj.ρ g).asHom a = g • a :=
-  functorToContActionEquivOfIsFundamentalGroup_functor_obj_obj_ρ_apply (fiber x) X g a
-
-/-- On a morphism of covers, the functor of `monodromyEquivalenceOfIsFundamentalGroup x G` is
-the induced map of geometric fibres. -/
-@[simp]
-theorem monodromyEquivalenceOfIsFundamentalGroup_functor_map_hom_hom
-    {X Y : FiniteEtaleScheme S} (f : X ⟶ Y) :
-    ((monodromyEquivalenceOfIsFundamentalGroup x G).functor.map f).hom.hom = (fiber x).map f :=
-  (rfl)
-
-end FundamentalGroup
 
 section GroupObjects
 
