@@ -195,8 +195,11 @@ private theorem IsSmoothBasedCap.frameConleyZehnderIndex_eq_sub_two_mul_firstChe
   -- A continuous lift `θ` of the normalized determinant of `k` computes the first Chern number.
   obtain ⟨θ, hθ⟩ := Circle.exists_lift
     (⟨⟨fun t ↦ (k t).normalizedDet, hk.normalizedDet⟩, rfl, rfl⟩ : Path _ _)
+  -- Applying the path built from `t ↦ (k t).normalizedDet` unfolds definitionally to that
+  -- function, so `hθ` says that `θ` lifts the normalized determinant itself.
+  have hθk (t : unitInterval) : Circle.exp (θ t) = (k t).normalizedDet := hθ t
   have hc := hu.firstChernHom_homotopyClass_vsub_homotopyClass_mul_two_pi_eq h hJ hu' hχ hχ' hχJ
-    hχJ' hχ₀ hχ₀' hχk θ.continuous hθ
+    hχJ' hχ₀ hχ₀' hχk θ.continuous hθk
   -- The change of frame along the loop is a loop, since both frames are constant on the edges
   -- `t = 0` and `t = 1` of the caps.
   have hper := trans_symm_zero_eq_trans_symm_one (apply_zero_eq_apply_one_of_eq_on_edges hχ₀ hφχ)
@@ -210,7 +213,7 @@ private theorem IsSmoothBasedCap.frameConleyZehnderIndex_eq_sub_two_mul_firstChe
       simp only [k, transitionLoop_apply, ContinuousLinearEquiv.complexOfMapISmul_symm_apply,
         ContinuousLinearEquiv.symm_trans_apply, ContinuousLinearEquiv.symm_symm])
     (θ := fun t ↦ -θ t) θ.continuous.neg
-    fun t ↦ by rw [Circle.exp_neg, hθ, ContinuousLinearEquiv.normalizedDet_symm]; rfl
+    fun t ↦ by rw [Circle.exp_neg, hθk, ContinuousLinearEquiv.normalizedDet_symm]
   have hmc : (SymplecticForm.maslovIndex (imInnerSymplecticForm G)
       (transitionLoop hφ.continuous hφ'.continuous hper)
       (apply_transitionLoop_apply hφ hφ' hper) : ℝ) =
