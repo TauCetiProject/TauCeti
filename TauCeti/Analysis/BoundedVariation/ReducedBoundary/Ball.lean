@@ -11,7 +11,6 @@ import Mathlib.Analysis.Convex.Integral
 import TauCeti.Analysis.BoundedVariation.Ball
 import TauCeti.Analysis.BoundedVariation.Poincare
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Inner
-import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
@@ -43,10 +42,6 @@ the reduced boundary.
 
 ## Main results
 
-* `TauCeti.locallyIntegrableOn_indicator_ball`,
-  `TauCeti.forall_exists_totalVariationOn_indicator_ball_ne_top`: the indicator of a ball is
-  locally integrable and has locally finite total variation, the hypotheses of the Gauss–Green and
-  De Giorgi theorems.
 * `TauCeti.reducedBoundary_ball`: `∂*(ball c r) = sphere c r` for `r > 0`.
 * `TauCeti.outerNormal_ball`: the outer normal at `x ∈ sphere c r` is `r⁻¹ • (x - c)`.
 * `TauCeti.reducedBoundary_compl_closedBall`, `TauCeti.outerNormal_compl_closedBall`: the
@@ -68,20 +63,6 @@ open scoped ENNReal Topology RealInnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {c x : E} {r : ℝ}
-
-/-- The indicator of a ball is locally integrable. -/
-theorem locallyIntegrableOn_indicator_ball :
-    LocallyIntegrableOn ((ball c r).indicator (1 : E → ℝ)) (⊤ : Opens E) μ :=
-  locallyIntegrableOn_indicator_const measurableSet_ball.nullMeasurableSet 1
-
-/-- A ball has locally finite perimeter in the whole space: every compact set lies in an open set
-(the whole space) on which the indicator of the ball has finite total variation. -/
-theorem forall_exists_totalVariationOn_indicator_ball_ne_top :
-    ∀ K, IsCompact K → K ⊆ (⊤ : Opens E) → ∃ U : Opens E, K ⊆ (U : Set E) ∧
-      totalVariationOn μ U ((ball c r).indicator 1) ≠ ∞ := fun K _ _ => by
-  refine ⟨⊤, by simp, ?_⟩
-  rw [← perimeter_def, perimeter_ball_eq_ofReal_div_mul]
-  exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top measure_ball_lt_top.ne
 
 /-- The perimeter measure of a ball is concentrated on the sphere. -/
 private theorem ae_mem_sphere (hr : 0 < r) :
