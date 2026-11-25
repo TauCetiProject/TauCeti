@@ -95,7 +95,7 @@ theorem adjoin_cuspX_cuspY_eq_top : Algebra.adjoin k {cuspX k, cuspY k} = ⊤ :=
 theorem span_D_eq_top :
     Submodule.span (CuspRing k) {D k (CuspRing k) (cuspX k), D k (CuspRing k) (cuspY k)} = ⊤ := by
   rw [← Set.image_pair]
-  exact span_image_D_eq_top_of_adjoin_eq_top (adjoin_cuspX_cuspY_eq_top k)
+  exact KaehlerDifferential.span_image_D_eq_top_of_adjoin_eq_top (adjoin_cuspX_cuspY_eq_top k)
 
 variable {k}
 
