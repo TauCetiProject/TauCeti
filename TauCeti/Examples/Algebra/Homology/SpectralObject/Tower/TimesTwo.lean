@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Homology.Double
+public import Mathlib.Algebra.Homology.Embedding.StupidTrunc
 public import TauCeti.Algebra.Homology.SpectralObject.Tower.FirstPage
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.SpectralObject
 import Mathlib.Algebra.Homology.HomologySequence
@@ -48,27 +49,11 @@ open CategoryTheory Limits ComposableArrows CategoryTheory.Abelian CochainComple
 abbrev complex : CochainComplex (ModuleCat ℤ) ℤ :=
   double (2 • 𝟙 (ModuleCat.of ℤ ℤ)) (ComplexShape.up_mk 0 1 (zero_add 1))
 
-/-- The complex `ℤ[-1]`: the abelian group `ℤ` concentrated in degree `1`. -/
-abbrev degreeOne : CochainComplex (ModuleCat ℤ) ℤ :=
-  (single (ModuleCat ℤ) (ComplexShape.up ℤ) 1).obj (ModuleCat.of ℤ ℤ)
-
-/-- The inclusion of the degree-`1` term `K^1` into `K`, as a morphism of complexes. -/
-def inclusion : degreeOne ⟶ complex :=
-  mkHomFromSingle (doubleXIso₁ _ (ComplexShape.up_mk 0 1 (zero_add 1)) (by simp)).inv (fun k _ => by
-    rw [double_d_eq_zero₀ _ _ _ _ (by simp), comp_zero])
-
-/-- The inclusion of `K^1` into `K` is a monomorphism: it is an isomorphism in degree `1`. -/
-instance mono_inclusion : Mono inclusion := by
-  refine mono_of_mono_f _ fun i => ?_
-  by_cases hi : i = 1
-  · subst hi
-    rw [inclusion, mkHomFromSingle_f]
-    infer_instance
-  · exact (isZero_single_obj_X _ 1 _ i hi).mono _
-
 /-- The filtration `G_t = 0` for `t ≤ -2`, `G_{-1} = K^1` and `G_t = K` for `t ≥ 0`. -/
 def filtration (t : ℤ) : Subobject complex :=
-  if t ≤ -2 then ⊥ else if t = -1 then Subobject.mk inclusion else ⊤
+  if t ≤ -2 then ⊥
+  else if t = -1 then Subobject.mk (complex.ιStupidTrunc (ComplexShape.embeddingUpIntGE 1))
+  else ⊤
 
 /-- The filtration `0 ⊆ K^1 ⊆ K` is increasing. -/
 theorem monotone_filtration : Monotone filtration := by
@@ -131,6 +116,6 @@ theorem cyclesSubobject_three_eq_bot :
     (by norm_num)]
   have := mono_δ
   rw [kernelSubobject, Subobject.mk_eq_bot_iff_zero]
-  exact (cancel_mono _).1 (by rw [kernel.condition, zero_comp])
+  exact kernel.ι_of_mono _
 
 end TauCeti.Examples.TimesTwo
