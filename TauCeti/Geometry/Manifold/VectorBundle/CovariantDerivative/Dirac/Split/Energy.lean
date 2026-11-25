@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Dirac.DifferentialOperator
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Dirac.Split
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Dirac.Split.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Dirac.Square
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
@@ -101,13 +101,6 @@ variable [IsManifold I ∞ M]
     (fun x ↦ TotalSpace.mk' (E →L[ℝ] F →L[ℝ] F)
       (E := fun y ↦ TangentSpace I y →L[ℝ] V y →L[ℝ] V y) x (c x)))
 
-include hc in
-/-- Clifford multiplication of a smooth section by a smooth vector field is smooth. -/
-private theorem contMDiff_clifford_apply {Y : Π y : M, TangentSpace I y} (hY : CMDiff ∞ (T% Y))
-    {τ : Π y : M, V y} (hτ : CMDiff ∞ (T% τ)) :
-    CMDiff ∞ (T% (fun y ↦ c y (Y y) (τ y))) :=
-  fun x ↦ ((hc x).clm_bundle_apply (hY x)).clm_bundle_apply (hτ x)
-
 variable [FiniteDimensional ℝ E] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   [ContMDiffCovariantDerivative cov ∞]
@@ -133,17 +126,6 @@ variable [IsContMDiffRiemannianBundle I ∞ F V] [SigmaCompactSpace M] [Measurab
 local instance : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
   IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
     (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
-
-/-- The pointwise inner product of two smooth sections, one of which has compact support, is
-integrable for the Riemannian volume. -/
-private theorem integrable_inner_of_isCompact {s t : Π y : M, V y} (hs : CMDiff ∞ (T% s))
-    (ht : CMDiff ∞ (T% t))
-    (hst : IsCompact (closure {x | s x ≠ 0}) ∨ IsCompact (closure {x | t x ≠ 0})) :
-    Integrable (fun x ↦ ⟪s x, t x⟫) (riemannianVolume I M) := by
-  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := F)
-    (V := V)
-  exact ContMDiffSection.integrable_inner (s := (⟨s, hs⟩ : Cₛ^∞⟮I; F, V⟯)) (t := ⟨t, ht⟩)
-    (by simpa only [ContMDiffSection.tsupport_def, ContMDiffSection.coeFn_mk] using hst)
 
 variable [T2Space M] [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I] [I.Boundaryless]
   (hskew : ∀ x (v : TangentSpace I x) (s t : V x), ⟪c x v s, t⟫ = -⟪s, c x v t⟫)
@@ -182,53 +164,6 @@ namespace IsMetricCompatible
 
 include hc hskew hcomp
 
-/-- Integration by parts for the transverse Dirac operator, when the second section has compact
-support. -/
-private theorem integral_inner_transverseDiracOperator_left_eq_right_of_isCompact_right
-    (hcov : cov.IsMetricCompatible) {T : Π y : M, TangentSpace I y} (hT : IsKillingField I T)
-    {r : ℝ} (hTr : ∀ x, ‖T x‖ = r) {σ τ : Π y : M, V y} (hσ : CMDiff ∞ (T% σ))
-    (hτ : CMDiff ∞ (T% τ)) (hτc : IsCompact (closure {x | τ x ≠ 0})) :
-    ∫ x, ⟪cov.transverseDiracOperator c T σ x, τ x⟫ ∂riemannianVolume I M =
-      ∫ x, ⟪σ x, cov.transverseDiracOperator c T τ x⟫ ∂riemannianVolume I M := by
-  have hTs := hT.contMDiff
-  have hdiff (Y : Π y : M, TangentSpace I y) (τ : Π y : M, V y) (hY : CMDiff ∞ (T% Y))
-      (hτ : CMDiff ∞ (T% τ)) : CMDiff ∞ (T% (fun y ↦ c y (Y y) (τ y))) :=
-    contMDiff_clifford_apply hc hY hτ
-  have hcT {s : Π y : M, V y} (hs : CMDiff ∞ (T% s)) :
-      CMDiff ∞ (T% (fun y ↦ c y (T y) (cov s y (T y)))) :=
-    hdiff T _ hTs (cov.contMDiff_apply hTs (by simpa using hs))
-  -- `D τ` and `c(T) ∇_T τ` are supported in the support of `τ`, which is compact.
-  have hDc : IsCompact (closure {x | cov.diracOperator c τ x ≠ 0}) :=
-    hτc.of_isClosed_subset isClosed_closure (by
-      simpa only [ContMDiffSection.tsupport_def, smoothDiracOperator_apply,
-        ContMDiffSection.coeFn_mk] using tsupport_differentialOperators_section_apply_subset
-          (cov.smoothDiracOperator_mem_differentialOperators_one hc) ⟨τ, hτ⟩)
-  have hAc : IsCompact (closure {x | c x (T x) (cov τ x (T x)) ≠ 0}) := by
-    have h := tsupport_alongVectorField_apply_subset
-      (⟨T, hTs⟩ : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) cov ⟨τ, hτ⟩
-    simp only [ContMDiffSection.tsupport_def, alongVectorField_apply,
-      ContMDiffSection.coeFn_mk] at h
-    refine hτc.of_isClosed_subset isClosed_closure (subset_trans (closure_mono ?_) h)
-    intro x hx h0
-    exact hx (by simp [h0])
-  calc ∫ x, ⟪cov.transverseDiracOperator c T σ x, τ x⟫ ∂riemannianVolume I M
-      = ∫ x, ⟪cov.diracOperator c σ x, τ x⟫ ∂riemannianVolume I M -
-          ∫ x, ⟪c x (T x) (cov σ x (T x)), τ x⟫ ∂riemannianVolume I M := by
-        simp only [transverseDiracOperator_def, inner_sub_left]
-        exact integral_sub
-          (integrable_inner_of_isCompact (cov.contMDiff_diracOperator hc hσ) hτ (.inr hτc))
-          (integrable_inner_of_isCompact (hcT hσ) hτ (.inr hτc))
-    _ = ∫ x, ⟪σ x, cov.diracOperator c τ x⟫ ∂riemannianVolume I M -
-          ∫ x, ⟪σ x, c x (T x) (cov τ x (T x))⟫ ∂riemannianVolume I M := by
-        rw [hcov.integral_inner_diracOperator_left_eq_right hc hskew hcomp hσ hτ hτc,
-          hcov.integral_inner_clifford_covariantDerivative_left_eq_right hskew hcomp hdiff hT hTr
-            hσ hτ (.inr hτc)]
-    _ = ∫ x, ⟪σ x, cov.transverseDiracOperator c T τ x⟫ ∂riemannianVolume I M := by
-        simp only [transverseDiracOperator_def, inner_sub_right]
-        exact (integral_sub
-          (integrable_inner_of_isCompact hσ (cov.contMDiff_diracOperator hc hτ) (.inr hDc))
-          (integrable_inner_of_isCompact hσ (hcT hτ) (.inr hAc))).symm
-
 /-- **The transverse Dirac operator is formally self-adjoint.** Let `∇` be a metric connection on
 a Riemannian vector bundle over a Riemannian manifold without boundary, and let the Clifford
 multiplication `c` be smooth, skew-adjoint and compatible with `∇` and the Levi-Civita connection.
@@ -244,14 +179,38 @@ theorem integral_inner_transverseDiracOperator_left_eq_right (hcov : cov.IsMetri
     (hστ : IsCompact (closure {x | σ x ≠ 0}) ∨ IsCompact (closure {x | τ x ≠ 0})) :
     ∫ x, ⟪cov.transverseDiracOperator c T σ x, τ x⟫ ∂riemannianVolume I M =
       ∫ x, ⟪σ x, cov.transverseDiracOperator c T τ x⟫ ∂riemannianVolume I M := by
-  rcases hστ with hσc | hτc
-  · -- Swap the roles of `σ` and `τ` by the symmetry of the inner product.
-    rw [integral_congr_ae (.of_forall fun x ↦ real_inner_comm _ _),
-      ← hcov.integral_inner_transverseDiracOperator_left_eq_right_of_isCompact_right hc hskew
-        hcomp hT hTr hτ hσ hσc]
-    exact integral_congr_ae (.of_forall fun x ↦ real_inner_comm _ _)
-  · exact hcov.integral_inner_transverseDiracOperator_left_eq_right_of_isCompact_right hc hskew
-      hcomp hT hTr hσ hτ hτc
+  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := F)
+    (V := V)
+  have hTs := hT.contMDiff
+  let Tₛ : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ := ⟨T, hTs⟩
+  -- Clifford multiplication by `T`, as an operator on the smooth sections.
+  let A : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯ :=
+    { toFun s := ⟨fun y ↦ c y (T y) (s y), contMDiff_clifford_apply hc hTs s.contMDiff⟩
+      map_add' s t := ContMDiffSection.ext fun y ↦ by simp
+      map_smul' a s := ContMDiffSection.ext fun y ↦ by simp }
+  have hA (s : Cₛ^∞⟮I; F, V⟯) (y : M) : A s y = c y (T y) (s y) := (rfl)
+  have hTₛ (y : M) : Tₛ y = T y := (rfl)
+  -- `c(T) ∇_T = A ∘ ∇_T` and `D` are formally self-adjoint and do not enlarge supports.
+  have hC : (A ∘ₗ cov.alongVectorField Tₛ).IsFormalAdjoint (A ∘ₗ cov.alongVectorField Tₛ)
+      (riemannianVolume I M) := LinearMap.isFormalAdjoint_iff.2 fun s t hst ↦ by
+    simpa only [LinearMap.comp_apply, hA, alongVectorField_apply, hTₛ] using
+      hcov.integral_inner_clifford_covariantDerivative_left_eq_right hskew hcomp
+        (fun _ _ hY hτ ↦ contMDiff_clifford_apply hc hY hτ) hT hTr s.contMDiff t.contMDiff
+        (by simpa only [ContMDiffSection.tsupport_def] using hst)
+  have hCs (s : Cₛ^∞⟮I; F, V⟯) : ((A ∘ₗ cov.alongVectorField Tₛ) s).tsupport ⊆ s.tsupport := by
+    have h := tsupport_alongVectorField_apply_subset Tₛ cov s
+    rw [ContMDiffSection.tsupport_def] at h ⊢
+    refine subset_trans (closure_mono ?_) h
+    intro x hx h0
+    exact hx (by simp [hA, h0])
+  have hDs := tsupport_differentialOperators_section_apply_subset
+    (cov.smoothDiracOperator_mem_differentialOperators_one hc)
+  have h := ((hcov.isFormalAdjoint_smoothDiracOperator hc hskew hcomp).sub hC hDs hCs hDs
+    hCs).integral_inner_eq (s := ⟨σ, hσ⟩) (t := ⟨τ, hτ⟩)
+    (by simpa only [ContMDiffSection.tsupport_def, ContMDiffSection.coeFn_mk] using hστ)
+  simpa only [LinearMap.sub_apply, LinearMap.comp_apply, ContMDiffSection.coe_sub, Pi.sub_apply,
+    smoothDiracOperator_apply, hA, alongVectorField_apply, hTₛ, ContMDiffSection.coeFn_mk,
+    transverseDiracOperator_def] using h
 
 /-- **The energy identity of the transverse Dirac operator.** Under the hypotheses of
 `CovariantDerivative.IsMetricCompatible.integral_inner_transverseDiracOperator_left_eq_right`, for
@@ -294,6 +253,8 @@ theorem integral_norm_sq_diracOperator_eq (hcov : cov.IsMetricCompatible)
   have hK : IsKillingField I T :=
     (isMetricCompatible_leviCivitaConnection I).isKillingField_of_forall_eq_zero
       (torsion_leviCivitaConnection_eq_zero I) hT hTpar
+  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := F)
+    (V := V)
   -- Write `N = ∇_T σ` and `B = B_T`.
   have hN : CMDiff ∞ (T% (fun y ↦ cov σ y (T y))) := cov.contMDiff_apply hT (by simpa using hσ)
   have hB := cov.contMDiff_transverseDiracOperator hc hT hσ
@@ -309,12 +270,12 @@ theorem integral_norm_sq_diracOperator_eq (hcov : cov.IsMetricCompatible)
         (cov.contMDiff_transverseDiracOperator hc hT hN))
   have h₁ : Integrable (fun x ↦ ⟪-cov (fun y ↦ cov σ y (T y)) x (T x), σ x⟫)
       (riemannianVolume I M) :=
-    integrable_inner_of_isCompact hNN.neg_section hσ (.inr hσc)
+    ContMDiff.integrable_inner_bundle hNN.neg_section hσ (.inr hσc)
   have h₂ : Integrable
       (fun x ↦ ⟪cov.transverseDiracOperator c T (cov.transverseDiracOperator c T σ) x, σ x⟫)
       (riemannianVolume I M) :=
-    integrable_inner_of_isCompact hBB hσ (.inr hσc)
-  have h₃ := integrable_inner_of_isCompact hcomm hσ (.inr hσc)
+    ContMDiff.integrable_inner_bundle hBB hσ (.inr hσc)
+  have h₃ := ContMDiff.integrable_inner_bundle (μ := riemannianVolume I M) hcomm hσ (.inr hσc)
   have h₁₂ : Integrable (fun x ↦ ⟪-cov (fun y ↦ cov σ y (T y)) x (T x), σ x⟫ +
       ⟪cov.transverseDiracOperator c T (cov.transverseDiracOperator c T σ) x, σ x⟫)
       (riemannianVolume I M) :=
