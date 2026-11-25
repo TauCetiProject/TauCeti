@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors, Jon Crall, Claude Opus 5
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Compression
+public import Mathlib.Algebra.Lie.SkewAdjoint
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.Normed.Operator.Basic
@@ -70,6 +71,9 @@ Compression is its inverse on this corner, and extension preserves composition a
 
 The adjoint commutes with real scalars whenever these act on operators through `𝕜`
 (`ContinuousLinearMap.starModule_real`).
+A continuous endomorphism of a real Hilbert space lies in the Lie algebra
+`so(V) = skewAdjointLieSubalgebra (innerₗ V)` exactly when it is skew-adjoint, `A† = -A`
+(`ContinuousLinearMap.coe_mem_skewAdjointLieSubalgebra_innerₗ_iff`).
 
 ## Further results
 
@@ -289,6 +293,27 @@ theorem norm_compAdjointL_apply_le (T S : V →L[ℂ] W) : ‖compAdjointL T S�
   exact opNorm_comp_le _ _
 
 end RealAdjointBilinear
+
+section SkewAdjointLieSubalgebra
+
+/-- A continuous endomorphism of a real Hilbert space lies in `so(V)`, the Lie algebra of
+endomorphisms that are skew-adjoint for the inner product, exactly when it is a skew-adjoint
+element of the star algebra `V →L[ℝ] V`, that is `A† = -A`. -/
+theorem coe_mem_skewAdjointLieSubalgebra_innerₗ_iff {V : Type*}
+    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V] {A : V →L[ℝ] V} :
+    (A : Module.End ℝ V) ∈ skewAdjointLieSubalgebra (innerₗ V) ↔ A ∈ skewAdjoint (V →L[ℝ] V) := by
+  -- Membership in `skewAdjointLieSubalgebra B` is membership in `B.skewAdjointSubmodule`, and
+  -- Mathlib states its characterization only for the submodule.
+  change _ ∈ LinearMap.skewAdjointSubmodule _ ↔ _
+  rw [LinearMap.mem_skewAdjointSubmodule, skewAdjoint.mem_iff,
+    ContinuousLinearMap.star_eq_adjoint, eq_comm, ContinuousLinearMap.eq_adjoint_iff]
+  simp only [neg_apply, inner_neg_left]
+  refine ⟨fun h x y ↦ ?_, fun h x y ↦ ?_⟩
+  · have h' : inner ℝ (A x) y = -inner ℝ x (A y) := by simpa using h x y
+    linarith
+  · simp [← h x y]
+
+end SkewAdjointLieSubalgebra
 
 end ContinuousLinearMap
 
