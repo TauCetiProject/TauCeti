@@ -53,6 +53,8 @@ equivalence of complex vector spaces is real-linear.
 * `TauCeti.starMulLinearMap`: the star product `star a * b` as a sesquilinear map.
 * `LinearEquiv.restrictScalarsₛₗ`: a star-linear equivalence over `S` is `R`-linear when `R` acts
   on `S` with trivial star.
+* `Units.star_neg`: in a star ring, `star (-u) = -star u` for a unit `u`; in particular `star`
+  fixes the unit `-1`.
 -/
 
 public section
@@ -193,3 +195,14 @@ def starMulLinearMap : A →ₗ⋆[R] A →ₗ[R] A :=
   simp [starMulLinearMap]
 
 end TauCeti
+
+namespace Units
+
+variable {R : Type*} [Ring R] [StarRing R]
+
+/-- The star of the negation of a unit of a star ring is the negation of its star. -/
+@[simp]
+theorem star_neg (u : Rˣ) : star (-u) = -star u :=
+  Units.ext (_root_.star_neg (u : R))
+
+end Units
