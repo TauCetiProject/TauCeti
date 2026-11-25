@@ -51,7 +51,7 @@ namespace TauCeti
 
 /-- If values in `{0, 1/2, 1}` indexed by a finite set add up to `1/2`, exactly one of them is
 `1/2`. -/
-theorem existsUnique_eq_half_of_sum_eq_half {ι : Type*} {S : Finset ι} {d : ι → ℝ≥0∞}
+private theorem existsUnique_eq_half_of_sum_eq_half {ι : Type*} {S : Finset ι} {d : ι → ℝ≥0∞}
     (hd : ∀ i ∈ S, d i = 0 ∨ d i = 1 / 2 ∨ d i = 1) (hsum : ∑ i ∈ S, d i = 1 / 2) :
     ∃! i, i ∈ S ∧ d i = 1 / 2 := by
   classical
@@ -78,28 +78,6 @@ theorem existsUnique_eq_half_of_sum_eq_half {ι : Type*} {S : Finset ι} {d : ι
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
   {ι : Type*} {s : ι → Set E}
-
-/-- Off an `Hⁿ⁻¹`-null set, every cell of locally finite perimeter has density `0`, `1/2` or `1`
-at each point of `Ω`, and density `1/2` exactly on its reduced boundary. -/
-theorem ae_forall_exists_hasDensityAt_of_locallyFinitePerimeter [Countable ι] (hn : 2 ≤ finrank ℝ E)
-    (hu : ∀ i, LocallyIntegrableOn ((s i).indicator (1 : E → ℝ)) Ω μ)
-    (hfin : ∀ i K, IsCompact K → K ⊆ Ω →
-      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U ((s i).indicator 1) ≠ ∞) :
-    ∀ᵐ x ∂μHE[finrank ℝ E - 1], x ∈ Ω → ∀ i, ∃ d : ℝ≥0∞, (d = 0 ∨ d = 1 / 2 ∨ d = 1) ∧
-      HasDensityAt μ (s i) x d ∧ (d = 1 / 2 ↔ x ∈ reducedBoundary μ Ω (s i)) := by
-  have hne : (1 / 2 : ℝ≥0∞) ≠ 0 := by simp
-  have hne1 : (1 / 2 : ℝ≥0∞) ≠ 1 := (ENNReal.half_lt_self one_ne_zero ENNReal.one_ne_top).ne
-  filter_upwards [ae_all_iff.2 fun i => essentialBoundary_inter_ae_eq_reducedBoundary hn (hu i)
-    (hfin i)] with x hx hxΩ i
-  by_cases hr : x ∈ reducedBoundary μ Ω (s i)
-  · exact ⟨1 / 2, Or.inr (Or.inl rfl), hasDensityAt_of_mem_reducedBoundary hn hr,
-      iff_of_true rfl hr⟩
-  · have hb : x ∉ essentialBoundary μ (s i) := fun hb => hr ((hx i).1 ⟨hb, hxΩ⟩)
-    simp only [mem_essentialBoundary, not_and_or, not_not, mem_essentialInterior,
-      mem_essentialExterior] at hb
-    rcases hb with h1 | h0
-    · exact ⟨1, Or.inr (Or.inr rfl), h1, iff_of_false hne1.symm hr⟩
-    · exact ⟨0, Or.inl rfl, h0, iff_of_false hne.symm hr⟩
 
 /-- **The interfaces of a partition.** Let `E` have dimension `n ≥ 2`, and let `(s i)_{i ∈ ι}` be
 finitely many pairwise almost disjoint null-measurable sets covering `E` up to a null set, each of
