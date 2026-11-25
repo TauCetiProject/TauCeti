@@ -57,6 +57,8 @@ case.
 * `Representation.IsSmooth.of_injective`, `Representation.IsSmooth.of_surjective`: smoothness
   passes to subrepresentations and quotients, and equivalent representations are smooth together
   (`Representation.Equiv.isSmooth_iff`).
+* `Representation.IsSmooth.finiteIndex_stabilizer`: for a smooth representation of a compact group,
+  every stabilizer has finite index.
 * `Representation.IsSmooth.comp`, `Representation.isSmooth_ofQuotient_iff`: smoothness passes
   to the restriction along a continuous homomorphism (in particular to subgroups), and descends
   iff it holds on `G ⧸ S` for a trivially acting normal subgroup `S`.
@@ -143,6 +145,13 @@ theorem IsSmooth.comp [IsSmooth ρ] {H : Type*} [Group H] [TopologicalSpace H] {
 /-- The restriction of a smooth representation to a subgroup is smooth. -/
 instance [IsSmooth ρ] (H : Subgroup G) : IsSmooth (ρ.comp H.subtype) :=
   IsSmooth.comp continuous_subtypeVal
+
+/-- For a smooth representation of a compact group, the stabilizer of every vector has finite
+index, since it is open. -/
+instance IsSmooth.finiteIndex_stabilizer [SeparatelyContinuousMul G] [CompactSpace G] [IsSmooth ρ]
+    (v : V) : (ρ.stabilizer v).FiniteIndex :=
+  have := (ρ.stabilizer v).quotient_finite_of_isOpen (IsSmooth.isOpen_stabilizer v)
+  Subgroup.finiteIndex_of_finite_quotient
 
 /-- A representation trivial on a normal subgroup `S` is smooth on `G ⧸ S` (in the quotient
 topology) if and only if it is smooth on `G`. -/

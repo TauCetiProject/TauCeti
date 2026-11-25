@@ -41,7 +41,7 @@ Bernstein's notes onto `V^U`.
   fixing `v`.
 * `Representation.isProj_smoothAverage`, `Representation.range_smoothAverage`: `e_K` is a
   projection onto the invariants `V^K`, and it is idempotent
-  (`Representation.smoothAverage_smoothAverage`).
+  (`Representation.smoothAverage_smoothAverage`, `Representation.smoothAverage_comp_smoothAverage`).
 * `Representation.smoothAverage_apply_apply`, `Representation.apply_smoothAverage_apply`:
   `e_K (σ k v) = e_K v` and `σ k (e_K v) = e_K v`.
 * `Representation.ker_smoothAverage`: the kernel of `e_K` is the span of the vectors `σ k x - x`.
@@ -75,12 +75,6 @@ section Compact
 
 variable [TopologicalSpace K] [SeparatelyContinuousMul K] [CompactSpace K]
   (σ : Representation A K V) [IsSmooth σ] (hK : TauCeti.HasUnitProOrder A K)
-
-/-- For a smooth representation of a compact group, the stabilizer of every vector has finite
-index, since it is open. -/
-instance IsSmooth.finiteIndex_stabilizer (v : V) : (σ.stabilizer v).FiniteIndex :=
-  have := (σ.stabilizer v).quotient_finite_of_isOpen (IsSmooth.isOpen_stabilizer v)
-  Subgroup.finiteIndex_of_finite_quotient
 
 omit [IsSmooth σ] in
 include hK in
@@ -177,6 +171,12 @@ theorem smoothAverage_smoothAverage (v : V) :
     σ.smoothAverage hK (σ.smoothAverage hK v) = σ.smoothAverage hK v :=
   σ.smoothAverage_apply_of_mem_invariants hK (σ.smoothAverage_apply_mem_invariants hK v)
 
+/-- The averaging projector is idempotent, as an identity of linear maps: `e_K ∘ e_K = e_K`. -/
+@[simp]
+theorem smoothAverage_comp_smoothAverage :
+    σ.smoothAverage hK ∘ₗ σ.smoothAverage hK = σ.smoothAverage hK :=
+  LinearMap.ext (σ.smoothAverage_smoothAverage hK)
+
 /-- The averaging projector does not see the action: `v` and `σ k v` have the same orbit. -/
 @[simp]
 theorem smoothAverage_apply_apply (k : K) (v : V) :
@@ -264,16 +264,13 @@ theorem smoothAverage_eq_averageMap [Fintype K] [TopologicalSpace K] [Separately
     exact isUnit_of_invertible _
   have hbot : ∀ h : (⊥ : Subgroup K), σ h v = v := fun h ↦ by
     rw [Subgroup.mem_bot.1 h.property, map_one, one_apply_eq_self]
-  -- The cosets of `⊥` are the elements of `K`.
-  have hmk : Function.Bijective (QuotientGroup.mk : K → K ⧸ (⊥ : Subgroup K)) :=
-    ⟨fun a b h ↦ inv_mul_eq_one.1 (Subgroup.mem_bot.1 (QuotientGroup.eq.1 h)),
-      QuotientGroup.mk_surjective⟩
   rw [σ.smoothAverage_apply_eq_relNorm hK (IsSmooth.isOpen_stabilizer v) le_rfl,
     ← inverse_index_smul_relNorm_apply_of_le σ bot_le hu fun h ↦ mem_stabilizer.1 h.property,
     averageMap_apply, Subgroup.index_bot, Nat.card_eq_fintype_card, Ring.inverse_invertible,
     relNorm_apply]
   congr 1
-  exact (Fintype.sum_bijective _ hmk _ _ fun g ↦
+  -- The cosets of `⊥` are the elements of `K`.
+  exact (Fintype.sum_equiv QuotientGroup.quotientBot.symm.toEquiv _ _ fun g ↦
     σ.apply_eq_apply_of_quotientGroup_mk_eq hbot (QuotientGroup.out_eq' _).symm).symm
 
 end Representation

@@ -342,24 +342,28 @@ variable {ρ H}
 
 variable [Fintype (G ⧸ H)]
 
-/-- Modulo the augmentation submodule of `G`, the relative transfer is multiplication by the
-index. -/
-theorem relTransfer_sub_index_nsmul_mem (x : V) :
-    relTransfer ρ H x - H.index • x ∈ Coinvariants.ker ρ := by
-  have hrw : relTransfer ρ H x - H.index • x = ∑ q : G ⧸ H, (ρ (q.out : G)⁻¹ x - x) := by
-    rw [relTransfer_apply, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ]
+/-- Modulo the augmentation submodule of `G`, a sum of translates of `x` indexed by the cosets of
+`H` is `[G : H] • x`. -/
+private theorem sum_apply_sub_index_nsmul_mem (f : G ⧸ H → G) (x : V) :
+    ∑ q : G ⧸ H, ρ (f q) x - H.index • x ∈ Coinvariants.ker ρ := by
+  have hrw : ∑ q : G ⧸ H, ρ (f q) x - H.index • x = ∑ q : G ⧸ H, (ρ (f q) x - x) := by
+    rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ]
     simp [Subgroup.index, Nat.card_eq_fintype_card]
   rw [hrw]
   exact Submodule.sum_mem _ fun q _ => Coinvariants.sub_mem_ker _ _
 
+/-- Modulo the augmentation submodule of `G`, the relative transfer is multiplication by the
+index. -/
+theorem relTransfer_sub_index_nsmul_mem (x : V) :
+    relTransfer ρ H x - H.index • x ∈ Coinvariants.ker ρ := by
+  rw [relTransfer_apply]
+  exact sum_apply_sub_index_nsmul_mem (fun q ↦ (q.out : G)⁻¹) x
+
 /-- Modulo the augmentation submodule of `G`, the relative norm is multiplication by the index. -/
 theorem relNorm_sub_index_nsmul_mem (x : V) :
     relNorm ρ H x - H.index • x ∈ Coinvariants.ker ρ := by
-  have hrw : relNorm ρ H x - H.index • x = ∑ q : G ⧸ H, (ρ q.out x - x) := by
-    rw [relNorm_apply, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ]
-    simp [Subgroup.index, Nat.card_eq_fintype_card]
-  rw [hrw]
-  exact Submodule.sum_mem _ fun q _ => Coinvariants.sub_mem_ker _ _
+  rw [relNorm_apply]
+  exact sum_apply_sub_index_nsmul_mem (fun q ↦ q.out) x
 
 /-- The relative transfer carries the augmentation submodule of `G` into the augmentation
 submodule of `H`; it is therefore the transfer of `H` on coinvariants. -/
