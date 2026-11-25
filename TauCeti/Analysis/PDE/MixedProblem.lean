@@ -54,12 +54,15 @@ problem for inverse-coercive `a`, no drift and `c ≥ 0`.
   `H¹_Γ(Ω)`.
 * `TauCeti.PDE.mixedSolutionL`: the bounded linear solution map `(g, ℓ) ↦ u` of a coercive
   form, characterized by `TauCeti.PDE.mixedSolutionL_eq_iff`, with the bounds
-  `TauCeti.PDE.norm_mixedSolutionL_sub_le` and `TauCeti.PDE.norm_mixedSolutionL_le`.
+  `TauCeti.PDE.norm_mixedSolutionL_sub_le` and `TauCeti.PDE.norm_mixedSolutionL_apply_le`.
 * `TauCeti.PDE.existsUnique_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq`: existence
   and uniqueness of the weak solution of the mixed problem for a coercive form.
 * `TauCeti.PDE.UniformlyEllipticOn.isCoercive_energyFormH1LVanishingOn_of_mass_lower_bound` and
   `TauCeti.PDE.UniformlyEllipticOn.isCoercive_energyFormH1LVanishingOn_of_poincare`: the two
-  sources of coercivity.
+  sources of coercivity, and their versions
+  `TauCeti.PDE.IsUniformlyEllipticAE.isCoercive_energyFormH1LVanishingOn_of_mass_lower_bound` and
+  `TauCeti.PDE.IsUniformlyEllipticAE.isCoercive_energyFormH1LVanishingOn_of_poincare` for an
+  inverse-coercive principal coefficient and almost everywhere bounds on the mass coefficient.
 * `existsUnique_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq_of_isLipschitzDomainWith`
   and `isCoercive_energyFormH1LVanishingOn_of_isLipschitzDomainWith`, in the namespace
   `TauCeti.PDE.IsUniformlyEllipticAE`: the mixed problem on a bounded connected Lipschitz domain,
@@ -165,14 +168,6 @@ private theorem mixedSolutionL_eq :
       (isCoercive_bilinearComp hcoeff hcoercive).solutionWithLifting :=
   rfl
 
-/-- The solution of the mixed problem has Dirichlet datum `g` on `Γ`: `u - g ∈ H¹_Γ(Ω)`. -/
-theorem mixedSolutionL_sub_mem (g : W1p mu Omega 2)
-    (ℓ : StrongDual ℝ (W1pVanishingOn mu Omega 2 Γ)) :
-    mixedSolutionL hcoeff hcoercive (g, ℓ) - g ∈ w1pVanishingOnSubmodule mu Omega 2 Γ := by
-  obtain ⟨w, hw⟩ := (isCoercive_bilinearComp hcoeff hcoercive).solutionWithLifting_sub_mem_range g ℓ
-  rw [mixedSolutionL_eq, ← hw, Submodule.subtypeL_apply, ← ClosedSubmodule.mem_toSubmodule_iff]
-  exact w.property
-
 /-- The solution of the mixed problem satisfies the weak equation against every test function
 in `H¹_Γ(Ω)`. -/
 @[simp]
@@ -195,6 +190,12 @@ theorem mixedSolutionL_eq_iff {g u : W1p mu Omega 2}
     (forall_congr' fun v => by rw [energyFormH1L_apply, Submodule.subtypeL_apply])
   rw [← hw, Submodule.subtypeL_apply, ← ClosedSubmodule.mem_toSubmodule_iff]
   exact w.property
+
+/-- The solution of the mixed problem has Dirichlet datum `g` on `Γ`: `u - g ∈ H¹_Γ(Ω)`. -/
+theorem mixedSolutionL_sub_mem (g : W1p mu Omega 2)
+    (ℓ : StrongDual ℝ (W1pVanishingOn mu Omega 2 Γ)) :
+    mixedSolutionL hcoeff hcoercive (g, ℓ) - g ∈ w1pVanishingOnSubmodule mu Omega 2 Γ :=
+  ((mixedSolutionL_eq_iff hcoeff hcoercive).1 rfl).1
 
 include hcoercive in
 /-- **The mixed problem with a coercive form.** For a divergence-form operator whose energy form
@@ -288,6 +289,76 @@ theorem isCoercive_energyFormH1LVanishingOn_of_poincare {P : ℝ}
 
 end UniformlyEllipticOn
 
+namespace IsUniformlyEllipticAE
+
+variable [DecidableEq ι] {lam Lam : ℝ}
+
+/-- **Coercivity on `H¹_Γ(Ω)` from a mass floor, for an inverse-coercive principal coefficient.**
+For a measurable inverse-coercive principal coefficient `a` with lower constant `λ`, no drift and
+an essentially bounded mass coefficient with `c ≥ δ > 0` almost everywhere on `Ω`, the energy
+form is coercive on `H¹_Γ(Ω)` for every `Γ`, with constant `min λ δ`. -/
+theorem isCoercive_energyFormH1LVanishingOn_of_mass_lower_bound {delta : ℝ}
+    (h : IsUniformlyEllipticAE mu (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hc : MemLp c ⊤ (mu.restrict Omega)) (hdelta : 0 < delta)
+    (hc_lower : ∀ᵐ x ∂mu.restrict Omega, delta ≤ c x)
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 (c x)) ⊤ (mu.restrict Omega)) :
+    IsCoercive (energyFormH1LVanishingOn hcoeff Γ) := by
+  -- Normalize `a` to a pointwise uniformly elliptic field `a'` with constant `1` and
+  -- `a'(u, v) = λ⁻¹ a(u, v)`.
+  obtain ⟨a', ha', ha'm, ha'eq⟩ := h.exists_uniformlyEllipticOn_energyFormH1_eq
+    (ratio := Lam / lam) (by rw [div_mul_cancel₀ _ h.pos.ne']) ha
+  refine isCoercive_energyFormH1LVanishingOn hcoeff (lt_min h.pos hdelta) fun w => ?_
+  have hgrad := ha'.mul_norm_gradient_sq_le_energyFormH1_self_of_zero_drift (b := 0) (c := 0)
+    (gamma := 0) ha'm aestronglyMeasurable_const (fun _ _ => rfl) (fun _ _ => by simp)
+    (fun _ _ => le_rfl) (w : W1p mu Omega 2)
+  rw [ha'eq, one_mul] at hgrad
+  -- Split off the mass floor: the shifted mass `c - δ` is nonnegative almost everywhere.
+  have hmass := energyFormH1_le_energyFormH1_of_mass_nonneg_ae
+    (memLp_energyIntegrand_mass_sub_const hcoeff delta) (hc.sub (memLp_top_const delta))
+    (hc_lower.mono fun x hx => sub_nonneg.2 hx) (w : W1p mu Omega 2)
+  rw [energyFormH1_mass_sub_const hcoeff delta, real_inner_self_eq_norm_sq] at hmass
+  have hlam := h.pos
+  have hgrad' : lam * ‖W1p.gradient (w : W1p mu Omega 2)‖ ^ 2 ≤
+      energyFormH1 a (fun _ => 0) 0 (w : W1p mu Omega 2) w := by
+    have := mul_le_mul_of_nonneg_left hgrad hlam.le
+    rwa [mul_inv_cancel_left₀ hlam.ne'] at this
+  rw [← Submodule.norm_coe w, W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq]
+  nlinarith [min_le_left lam delta, min_le_right lam delta,
+    sq_nonneg ‖W1p.value (w : W1p mu Omega 2)‖, sq_nonneg ‖W1p.gradient (w : W1p mu Omega 2)‖]
+
+/-- **Coercivity on `H¹_Γ(Ω)` from a Poincaré–Friedrichs inequality, for an inverse-coercive
+principal coefficient.** For a measurable inverse-coercive principal coefficient `a` with lower
+constant `λ`, no drift and an essentially bounded mass coefficient `c ≥ 0` almost everywhere on
+`Ω`, if `‖u‖_{L²} ≤ P ‖∇u‖_{L²}` for every `u ∈ H¹_Γ(Ω)`, the energy form is coercive on
+`H¹_Γ(Ω)` with constant `λ / (P² + 1)`. -/
+theorem isCoercive_energyFormH1LVanishingOn_of_poincare {P : ℝ}
+    (h : IsUniformlyEllipticAE mu (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hc : MemLp c ⊤ (mu.restrict Omega)) (hc_nonneg : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ c x)
+    (hP : ∀ u ∈ w1pVanishingOnSubmodule mu Omega 2 Γ, ‖W1p.value u‖ ≤ P * ‖W1p.gradient u‖)
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 (c x)) ⊤ (mu.restrict Omega)) :
+    IsCoercive (energyFormH1LVanishingOn hcoeff Γ) := by
+  -- Normalize `a` to a pointwise uniformly elliptic field `a'` with constant `1` and
+  -- `a'(u, v) = λ⁻¹ a(u, v)`.
+  obtain ⟨a', ha', ha'm, ha'eq⟩ := h.exists_uniformlyEllipticOn_energyFormH1_eq
+    (ratio := Lam / lam) (by rw [div_mul_cancel₀ _ h.pos.ne']) ha
+  have hlam := h.pos
+  refine isCoercive_energyFormH1LVanishingOn (C := lam / (P ^ 2 + 1)) hcoeff
+    (div_pos hlam (by positivity)) fun w => ?_
+  have h1 := ha'.div_mul_norm_sq_le_energyFormH1_self_of_zero_drift (b := 0) (c := 0)
+    (gamma := 0) ha'm aestronglyMeasurable_const (fun _ _ => rfl) (fun _ _ => by simp)
+    (fun _ _ => le_rfl) (hP _ w.property)
+  rw [ha'eq] at h1
+  have key : lam / (P ^ 2 + 1) * ‖w‖ ^ 2 ≤ energyFormH1 a 0 0 (w : W1p mu Omega 2) w := by
+    have := mul_le_mul_of_nonneg_left h1 hlam.le
+    rw [mul_inv_cancel_left₀ hlam.ne', Submodule.norm_coe, one_div] at this
+    calc lam / (P ^ 2 + 1) * ‖w‖ ^ 2 = lam * ((P ^ 2 + 1)⁻¹ * ‖w‖ ^ 2) := by ring
+      _ ≤ _ := this
+  exact key.trans (energyFormH1_le_energyFormH1_of_mass_nonneg_ae hcoeff hc hc_nonneg _)
+
+end IsUniformlyEllipticAE
+
 end Domain
 
 /-! ### Lipschitz domains -/
@@ -324,37 +395,7 @@ theorem isCoercive_energyFormH1LVanishingOn_of_isLipschitzDomainWith
   obtain ⟨P, -, hP⟩ :=
     W1p.exists_norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule_of_affineIsometryEquiv
       (p := 2) ENNReal.ofNat_ne_top hV hVb e hVΩ hconn hΓ
-  -- Normalize `a` to a pointwise uniformly elliptic field `a'` with constant `1` and
-  -- `a'(u, v) = λ⁻¹ a(u, v)`.
-  obtain ⟨a', ha', ha'm, ha'eq⟩ := h.exists_uniformlyEllipticOn_energyFormH1_eq
-    (ratio := Lam / lam) (by rw [div_mul_cancel₀ _ h.pos.ne']) ha
-  have hlam := h.pos
-  refine isCoercive_energyFormH1LVanishingOn (C := lam / (P ^ 2 + 1)) hcoeff
-    (div_pos hlam (by positivity)) fun w => ?_
-  have h1 := ha'.div_mul_norm_sq_le_energyFormH1_self_of_zero_drift (b := 0) (c := 0)
-    (gamma := 0) ha'm aestronglyMeasurable_const (fun _ _ => rfl) (fun _ _ => by simp)
-    (fun _ _ => le_rfl) (hP _ w.property)
-  rw [ha'eq] at h1
-  -- The mass term `∫ c w²` is nonnegative.
-  have hmass := energyFormH1_mass_add hcoeff hc.neg (w : W1p volume Omega 2) w
-  have hzero : (fun x => c x + -c x) = (0 : EuclideanSpace ℝ ι → ℝ) := funext fun x => by simp
-  -- `hcoeff` records the zero drift as `fun _ => 0`; normalize it to `0`.
-  have hb0 : (fun _ : EuclideanSpace ℝ ι => (0 : EuclideanSpace ℝ ι)) = 0 := rfl
-  have hint : 0 ≤ ∫ x in Omega, c x * W1p.value (w : W1p volume Omega 2) x *
-      W1p.value (w : W1p volume Omega 2) x :=
-    integral_nonneg_of_ae <| hc_nonneg.mono fun x hx => by
-      simp only [Pi.zero_apply]
-      rw [mul_assoc]
-      exact mul_nonneg hx (mul_self_nonneg _)
-  simp only [Pi.neg_apply, neg_mul, integral_neg] at hmass
-  rw [hzero, hb0] at hmass
-  have key : lam / (P ^ 2 + 1) * ‖w‖ ^ 2 ≤ energyFormH1 a 0 0 (w : W1p volume Omega 2) w := by
-    have := mul_le_mul_of_nonneg_left h1 hlam.le
-    rw [mul_inv_cancel_left₀ hlam.ne', Submodule.norm_coe, one_div] at this
-    calc lam / (P ^ 2 + 1) * ‖w‖ ^ 2 = lam * ((P ^ 2 + 1)⁻¹ * ‖w‖ ^ 2) := by ring
-      _ ≤ _ := this
-  rw [hb0]
-  linarith
+  exact h.isCoercive_energyFormH1LVanishingOn_of_poincare ha hc hc_nonneg hP hcoeff
 
 /-- **The mixed problem on a Lipschitz domain.** Let an affine isometry `e` carry the connected
 open set `Ω ⊆ EuclideanSpace ℝ ι` onto a bounded Lipschitz domain `V`, and let `Γ` meet the

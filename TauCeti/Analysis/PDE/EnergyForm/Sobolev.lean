@@ -115,6 +115,8 @@ estimates do not see the boundary.
 * `TauCeti.PDE.integrable_value_mul_inner_gradient`: the density `u ⟪e, ∇w⟫` of a bounded
   lower-order term in divergence form is integrable, and
   `TauCeti.PDE.integral_value_sub_mul_inner_gradient`: its integral is linear in `u`.
+* `TauCeti.PDE.energyFormH1_le_energyFormH1_of_mass_nonneg_ae`: an almost everywhere
+  nonnegative mass coefficient increases the energy on the diagonal.
 * `TauCeti.PDE.UniformlyEllipticOn.integrable_matrixBilinearForm_gradient`: the principal
   density `⟨a ∇u, ∇w⟩` of two Sobolev functions is integrable.
 * `TauCeti.PDE.UniformlyEllipticOn.continuous_energyFormIntegral_jetField_left`: for
@@ -768,6 +770,22 @@ theorem energyFormH1_mass_sub_const
   rw [energyFormH1_mass_add hcoeff (memLp_top_const (-kappa)) u v,
     W1p.inner_value_eq_setIntegral, ← integral_const_mul]
   simp only [neg_mul, integral_neg, mul_assoc]
+
+/-- **A nonnegative mass coefficient increases the energy on the diagonal**: if `c ≥ 0` almost
+everywhere on `Ω`, then `B_{a,b,0}(u, u) ≤ B_{a,b,c}(u, u)` for every `u ∈ H¹(Ω)`, the difference
+being the weighted mass `∫_Ω c u²`. -/
+theorem energyFormH1_le_energyFormH1_of_mass_nonneg_ae
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hc : MemLp c ⊤ (mu.restrict Omega)) (hc_nonneg : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ c x)
+    (u : W1p mu Omega 2) :
+    energyFormH1 a b 0 u u ≤ energyFormH1 a b c u u := by
+  have hmass := energyFormH1_mass_add hcoeff hc.neg u u
+  rw [show (fun x ↦ c x + (-c) x) = 0 from funext fun x ↦ add_neg_cancel (c x)] at hmass
+  have hint : 0 ≤ ∫ x in Omega, c x * W1p.value u x * W1p.value u x ∂mu :=
+    integral_nonneg_of_ae <| hc_nonneg.mono fun x hx ↦ by
+      simpa only [Pi.zero_apply, mul_assoc] using mul_nonneg hx (mul_self_nonneg (W1p.value u x))
+  simp only [Pi.neg_apply, neg_mul, integral_neg] at hmass
+  linarith
 
 /-- The energy form on `H¹(Ω)` as a continuous bilinear form, obtained by restricting the
 existing variable-coefficient `L²` energy form along the continuous Sobolev jet inclusion. -/
