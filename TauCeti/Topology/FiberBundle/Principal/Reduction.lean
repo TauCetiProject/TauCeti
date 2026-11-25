@@ -26,11 +26,17 @@ trivialization of the principal bundle given by the section `τ`
 (`TauCeti.PrincipalBundle.trivializationOfSection`): for instance for the points of a `Spinᶜ`
 structure whose frames are adapted to a unit section.
 
+When `S` has a continuous local section near every point of the base, it is a locally trivial
+reduction (`TauCeti.PrincipalBundle.isLocallyTrivialReduction_of_forall_exists_section`), so its
+fibres form a principal `H`-bundle (`TauCeti.IsLocallyTrivialReduction.principalBundle`).
+
 ## Main results
 
 * `TauCeti.PrincipalBundle.exists_trivialization_of_continuousOn_section_mem`: a set of points of
   a principal `G`-bundle stable under exactly a subgroup `H` is trivial with fibre `H`,
   equivariantly, over every open set on which it has a continuous section.
+* `TauCeti.PrincipalBundle.isLocallyTrivialReduction_of_forall_exists_section`: such a set with
+  continuous local sections near every point is a locally trivial reduction to `H`.
 
 ## References
 
@@ -69,5 +75,19 @@ theorem exists_trivialization_of_continuousOn_section_mem {H : Subgroup G}
       rw [trivializationOfSection_symm_apply, Pi.one_apply, op_one, one_smul]
       exact hτS y hy)
     hU continuousOn_const hb
+
+/-- **A set with continuous local sections is a locally trivial reduction.** If `S` is carried
+into itself by exactly the elements of `H` and has a continuous section over an open
+neighbourhood of every point of the base, it is a locally trivial reduction to `H`. -/
+theorem isLocallyTrivialReduction_of_forall_exists_section {H : Subgroup G}
+    {S : Set (TotalSpace G P)} (hS : ∀ p ∈ S, ∀ g : G, op g • p ∈ S ↔ g ∈ H)
+    (hsec : ∀ b : B, ∃ U : Set B, IsOpen U ∧ b ∈ U ∧ ∃ τ : ∀ b, P b,
+      (∀ y ∈ U, (⟨y, τ y⟩ : TotalSpace G P) ∈ S) ∧
+        ContinuousOn (fun y ↦ TotalSpace.mk' G y (τ y)) U) :
+    IsLocallyTrivialReduction (TotalSpace.proj : TotalSpace G P → B) H S :=
+  isLocallyTrivialReduction_iff.mpr fun b ↦ by
+  obtain ⟨U, hU, hbU, τ, hτS, hτ⟩ := hsec b
+  obtain ⟨t, ht, hteq⟩ := exists_trivialization_of_continuousOn_section_mem hS hτS hU hτ hbU
+  exact ⟨t, ht ▸ hbU, fun g p hgp hp ↦ hteq g p hgp (ht ▸ hp)⟩
 
 end TauCeti.PrincipalBundle
