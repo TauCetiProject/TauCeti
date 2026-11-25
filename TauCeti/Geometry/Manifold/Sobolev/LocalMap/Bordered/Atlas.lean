@@ -61,8 +61,8 @@ The steps are glued with the locality of the planar classes, `memWkpLoc_iff_loca
 As in `TauCeti.Geometry.Manifold.Sobolev.LocalMap.Atlas`, chart independence assumes `M`
 boundaryless. Orders `k ≥ 2` need the higher-order change of variables for the half-disc classes
 and are treated, for `2 < p < ∞`, in
-`TauCeti.Geometry.Manifold.Sobolev.LocalMap.Bordered.Atlas.Higher`. The restriction to the interior changes only the chart of the surface,
-so it holds for targets with boundary or corners.
+`TauCeti.Geometry.Manifold.Sobolev.LocalMap.Bordered.Atlas.Higher`. The restriction to the
+interior changes only the chart of the surface, so it holds for targets with boundary or corners.
 
 ## References
 
