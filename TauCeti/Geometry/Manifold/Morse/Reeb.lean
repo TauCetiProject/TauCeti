@@ -73,13 +73,16 @@ private theorem IsMorse.nonempty_homeomorph_sphere_of_lt (hf : IsMorse I f) {x�
   have hmax (y : M) (hy : f x₁ ≤ f y) : y = x₁ := hx₁.eq_of_le_of_two_criticalPoints hlt hcrit hy
   -- Small sublevels at the minimum and small superlevels at the maximum are discs.
   obtain ⟨R₀, hR₀, he₀⟩ :=
-    (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-      ((hx₀.isLocalMin univ_mem).mem_criticalPoints)).exists_sublevel_homeomorph_closedBall
-      hsmooth (isClosed_le hfc continuous_const).isCompact hfc.continuousOn hlt hmin
+    IsManifoldNondegenerateCriticalPoint.exists_sublevel_homeomorph_closedBall hsmooth
+      (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+        (hx₀.mem_criticalPoints BoundarylessManifold.isInteriorPoint))
+      (isClosed_le hfc continuous_const).isCompact hfc.continuousOn hlt hmin
   obtain ⟨R₁, hR₁, he₁⟩ :=
-    (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-      ((hx₁.isLocalMax univ_mem).mem_criticalPoints)).exists_superlevel_homeomorph_closedBall
-      (.of_forall fun y ↦ hf.contMDiff y) (isClosed_le continuous_const hfc).isCompact
+    IsManifoldNondegenerateCriticalPoint.exists_superlevel_homeomorph_closedBall
+      (.of_forall fun y ↦ hf.contMDiff y)
+      (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+        (hx₁.mem_criticalPoints BoundarylessManifold.isInteriorPoint))
+      (isClosed_le continuous_const hfc).isCompact
       hfc.continuousOn (a := f x₀) hlt hmax
   obtain ⟨r, ⟨hrR₀, hrR₁, hr2⟩, hr⟩ :=
     TauCeti.exists_pos_lt_lt_two_mul_sq_lt hR₀ hR₁ (sub_pos.2 hlt)
@@ -109,10 +112,10 @@ private theorem IsMorse.nonempty_homeomorph_sphere_of_lt (hf : IsMorse I f) {x�
   refine nonempty_homeomorph_sphere_of_union_closedBall (by simp)
     (isClosed_le hfc continuous_const) (isClosed_le continuous_const hfc)
     (eq_univ_of_forall fun x ↦ le_total (f x) (f x₁ - r ^ 2)) eA eB (fun x ↦ ?_) (fun x ↦ ?_)
-  · have hx : (x : M) ∈ B ↔ f x = f x₁ - r ^ 2 := ⟨fun h ↦ le_antisymm x.2 h, fun h ↦ h.ge⟩
+  · have hx : (x : M) ∈ B ↔ f x = f x₁ - r ^ 2 := ⟨fun h ↦ le_antisymm x.property h, fun h ↦ h.ge⟩
     rw [hx, ← he x, he₀ (e x)]
     simpa only [eA, Homeomorph.trans_apply] using hS _ _
-  · have hx : (x : M) ∈ A ↔ f x = f x₁ - r ^ 2 := ⟨fun h ↦ le_antisymm h x.2, fun h ↦ h.le⟩
+  · have hx : (x : M) ∈ A ↔ f x = f x₁ - r ^ 2 := ⟨fun h ↦ le_antisymm h x.property, fun h ↦ h.le⟩
     have h₁ := he₁ x
     have hneg : f x = f x₁ - r ^ 2 ↔ ‖(e₁ x : EuclideanSpace ℝ (Fin (finrank ℝ E)))‖ = r := by
       rw [h₁, ← sq_eq_sq₀ (norm_nonneg _) hr.le]
@@ -136,9 +139,10 @@ theorem IsMorse.nonempty_homeomorph_sphere_of_totalCriticalCount_eq_two (hf : Is
     have hmin : IsLocalMin f p := .of_forall fun y ↦ by rw [hall y]
     have hmin' : IsLocalMin (-f) p := .of_forall fun y ↦ by simp [hall y]
     have h₀ := manifoldMorseIndex_eq_zero_of_isLocalMin
-      ((hf.contMDiff p).of_le (by norm_cast)) hmin
+      ((hf.contMDiff p).of_le (by norm_cast)) BoundarylessManifold.isInteriorPoint hmin
     have h₀' := manifoldMorseIndex_eq_zero_of_isLocalMin (f := -f)
-      ((contDiff_neg.contMDiff.contMDiffAt.comp p (hf.contMDiff p)).of_le (by norm_cast)) hmin'
+      ((contDiff_neg.contMDiff.contMDiffAt.comp p (hf.contMDiff p)).of_le (by norm_cast))
+        BoundarylessManifold.isInteriorPoint hmin'
     have := hnd.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
     omega
   -- The discs are points, the single points `p` and `q`.
@@ -158,7 +162,7 @@ theorem IsMorse.nonempty_homeomorph_sphere_of_totalCriticalCount_eq_two (hf : Is
       exact hx)
     (Homeomorph.homeomorphOfUnique _ _) (Homeomorph.homeomorphOfUnique _ _)
     (fun x ↦ ?_) (fun x ↦ ?_)
-  · simpa [mem_singleton_iff.1 x.2, hpq] using hnorm _
-  · simpa [mem_singleton_iff.1 x.2, hpq.symm] using hnorm _
+  · simpa [mem_singleton_iff.1 x.property, hpq] using hnorm _
+  · simpa [mem_singleton_iff.1 x.property, hpq.symm] using hnorm _
 
 end TauCeti

@@ -119,7 +119,8 @@ theorem of_isProperMap (hX : SimplyConnectedAtInfinity X) {f : C(X, Y)} {g : C(Y
     hγ z.2 (Or.inl (Or.inr ⟨(σ z.1, γ z.2), by simpa [F] using hz, rfl⟩))
   let G' := ((Homotopy.refl f).comp G).cast rfl (ContinuousMap.comp_const f p)
   have hG' (z) : G' z ∉ K := by simpa [G'] using hG z
-  exact ⟨f p, hp, F.trans G', Homotopy.trans_apply_mem (S := Kᶜ) hF hG'⟩
+  exact ⟨f p, hp, F.trans G', fun z ↦ Homotopy.trans_apply_mem (S := fun _ ↦ Kᶜ)
+    (fun t x ↦ hF (t, x)) (fun t x ↦ hG' (t, x)) z.1 z.2⟩
 
 end SimplyConnectedAtInfinity
 
@@ -147,9 +148,9 @@ theorem simplyConnectedAtInfinity_of_two_lt_rank {E : Type*} [NormedAddCommGroup
   let F := ((convex_closedBall (0 : E) R).starConvex h0).complRadialHomotopy h0 hB
     |>.symm.compContinuousMap f' |>.cast (ContinuousMap.id_comp f') (ContinuousMap.comp_assoc _ _ _)
   let H := F.trans (((Homotopy.refl j).comp G).cast rfl (ContinuousMap.comp_const j q))
-  exact ⟨j q, fun h => (j q).2 (hKR h),
+  exact ⟨j q, fun h => (j q).property (hKR h),
     ((Homotopy.refl (ContinuousMap.subtypeVal _)).comp H).cast rfl
-      (ContinuousMap.comp_const _ _), fun x h => (H x).2 (hKR h)⟩
+      (ContinuousMap.comp_const _ _), fun x h => (H x).property (hKR h)⟩
 
 /-- **`ℝⁿ` is simply connected at infinity for `n ≥ 3`.** -/
 theorem simplyConnectedAtInfinity_euclideanSpace {n : ℕ} (hn : 3 ≤ n) :

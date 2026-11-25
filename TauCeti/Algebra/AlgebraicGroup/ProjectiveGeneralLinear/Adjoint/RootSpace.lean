@@ -45,7 +45,7 @@ variable {R : Type u} [CommRing R] {r : ℕ}
 
 private theorem weightCharacter_diagonalTorusWeight
     (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) :
-    SplitTorus.weightCharacter (diagonalTorusWeight r (finProdFinEquiv p.1)) =
+    SplitTorus.weightCharacter (diagonalTorusWeight r (finProdFinEquiv p.val)) =
       Multiplicative.ofAdd ((diagonalRootDatum.{u} r).root p) := by
   apply Multiplicative.toAdd.injective
   ext i
@@ -66,7 +66,7 @@ private theorem weightCharacter_diagonalTorusWeight_eq_root_iff
     (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) (a b : Fin (r + 1)) :
     SplitTorus.weightCharacter (diagonalTorusWeight.{u} r (finProdFinEquiv (a, b))) =
         Multiplicative.ofAdd ((diagonalRootDatum.{u} r).root p) ↔
-      a = p.1.1 ∧ b = p.1.2 := by
+      a = p.val.1 ∧ b = p.val.2 := by
   by_cases hab : a = b
   · subst b
     simp only [weightCharacter_diagonalTorusWeight_self]
@@ -74,7 +74,7 @@ private theorem weightCharacter_diagonalTorusWeight_eq_root_iff
     · intro h
       exact (rootCharacter_ne_one p h.symm).elim
     · rintro ⟨rfl, h⟩
-      exact (p.2 h).elim
+      exact (p.property h).elim
   · rw [weightCharacter_diagonalTorusWeight ⟨(a, b), hab⟩]
     constructor
     · intro h
@@ -90,7 +90,7 @@ def rootVector (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) :
     Module.Dual R (Bialgebra.CotangentSpace R (coordinateHopfAlgebra (r + 1) R)) :=
   (Derivation.cotangentLinearEquiv (R := R)
     (A := coordinateHopfAlgebra (r + 1) R) (B := R)).symm
-      (derivationComp (B := R) (rootSubgroupCoordinateMap p.2).hom
+      (derivationComp (B := R) (rootSubgroupCoordinateMap p.property).hom
         ((AdditiveGroup.gaTangentLinearEquiv (R := R) (B := R)).symm 1))
 
 /-- The normalized root vector acts by commutator with the matrix unit. -/
@@ -99,8 +99,8 @@ theorem tangentEnd_cotangentLinearEquiv_rootVector
     (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) :
     tangentEnd (R := R) (r + 1)
         (Derivation.cotangentLinearEquiv (R := R) (B := R) (rootVector (R := R) p)) =
-      LinearMap.mulLeft R (Matrix.single p.1.1 p.1.2 1) -
-        LinearMap.mulRight R (Matrix.single p.1.1 p.1.2 1) := by
+      LinearMap.mulLeft R (Matrix.single p.val.1 p.val.2 1) -
+        LinearMap.mulRight R (Matrix.single p.val.1 p.val.2 1) := by
   rw [rootVector, LinearEquiv.apply_symm_apply, tangentEnd_derivationComp_rootSubgroup,
     LinearEquiv.apply_symm_apply]
 
@@ -113,7 +113,7 @@ theorem cotangentLinearEquiv_symm_derivationComp_rootSubgroup
       (Bialgebra.CounitAlgebra R (AdditiveGroup.coordinateHopfAlgebra R) R)) :
     (Derivation.cotangentLinearEquiv (R := R)
       (A := coordinateHopfAlgebra (r + 1) R) (B := R)).symm
-        (derivationComp (B := R) (rootSubgroupCoordinateMap (R := R) p.2).hom d) =
+        (derivationComp (B := R) (rootSubgroupCoordinateMap (R := R) p.property).hom d) =
       AdditiveGroup.gaTangentLinearEquiv d • rootVector (R := R) p := by
   have hd : d = AdditiveGroup.gaTangentLinearEquiv d •
       (AdditiveGroup.gaTangentLinearEquiv (R := R) (B := R)).symm 1 := by
@@ -129,9 +129,9 @@ theorem tangentEnd_smul_rootVector_apply
     (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) (c : R) :
     tangentEnd (R := R) (r + 1)
         (Derivation.cotangentLinearEquiv (R := R) (B := R) (c • rootVector (R := R) p))
-        (Matrix.single p.1.2 p.1.2 1) p.1.1 p.1.2 = c := by
+        (Matrix.single p.val.2 p.val.2 1) p.val.1 p.val.2 = c := by
   rw [map_smul, map_smul, tangentEnd_cotangentLinearEquiv_rootVector]
-  simp [p.2.symm]
+  simp [p.property.symm]
 
 /-- Multiplication by a projective root vector is injective over every base ring. -/
 theorem rootVector_smul_left_injective
@@ -140,7 +140,7 @@ theorem rootVector_smul_left_injective
   intro a b h
   have he := congrArg (fun x ↦
     tangentEnd (R := R) (r + 1) (Derivation.cotangentLinearEquiv (R := R) (B := R) x)
-      (Matrix.single p.1.2 p.1.2 1) p.1.1 p.1.2) h
+      (Matrix.single p.val.2 p.val.2 1) p.val.1 p.val.2) h
   rw [tangentEnd_smul_rootVector_apply, tangentEnd_smul_rootVector_apply] at he
   exact he
 
@@ -230,14 +230,14 @@ theorem rootVector_mem_adjointWeightSpace
     (tangentEnd_cotangentLinearEquiv_rootVector (R := R) p)]
   constructor
   · intro a b _ hw
-    have hp : ¬(p.1.1 = a ∧ p.1.2 = b) := by
+    have hp : ¬(p.val.1 = a ∧ p.val.2 = b) := by
       rintro ⟨rfl, rfl⟩
       exact hw (weightCharacter_diagonalTorusWeight p)
     simp [hp]
   · intro a b
-    have h (c : Fin (r + 1)) : ¬(p.1.1 = c ∧ p.1.2 = c) := by
+    have h (c : Fin (r + 1)) : ¬(p.val.1 = c ∧ p.val.2 = c) := by
       rintro ⟨h₁, h₂⟩
-      exact p.2 (h₁.trans h₂.symm)
+      exact p.property (h₁.trans h₂.symm)
     simp [h]
 
 private theorem tangentEnd_eq_root_of_mem_adjointWeightSpace
@@ -246,21 +246,21 @@ private theorem tangentEnd_eq_root_of_mem_adjointWeightSpace
     (hx : x ∈ Derivation.adjointWeightSpace (diagonalTorusCoordinateMap r R).hom
       (Multiplicative.ofAdd ((diagonalRootDatum.{u} r).root p))) :
     ∃ c : R, tangentEnd (R := R) (r + 1) (Derivation.cotangentLinearEquiv (R := R) (B := R) x) =
-      LinearMap.mulLeft R (Matrix.single p.1.1 p.1.2 c) -
-        LinearMap.mulRight R (Matrix.single p.1.1 p.1.2 c) := by
+      LinearMap.mulLeft R (Matrix.single p.val.1 p.val.2 c) -
+        LinearMap.mulRight R (Matrix.single p.val.1 p.val.2 c) := by
   obtain ⟨X, hX⟩ := (mem_range_tangentEnd_iff (R := R) (B := R) (r + 1) _).mp ⟨_, rfl⟩
   obtain ⟨hoff, hdiag⟩ := (mem_adjointWeightSpace_iff_of_inner _
     (rootCharacter_ne_one p) x X hX).mp hx
-  have hnormal : X = Matrix.single p.1.1 p.1.2 (X p.1.1 p.1.2) +
+  have hnormal : X = Matrix.single p.val.1 p.val.2 (X p.val.1 p.val.2) +
       X (Fin.last r) (Fin.last r) • (1 : Matrix (Fin (r + 1)) (Fin (r + 1)) R) := by
     ext a b
     by_cases hab : a = b
     · subst b
-      have hp : ¬(p.1.1 = a ∧ p.1.2 = a) := by
+      have hp : ¬(p.val.1 = a ∧ p.val.2 = a) := by
         rintro ⟨h₁, h₂⟩
-        exact p.2 (h₁.trans h₂.symm)
+        exact p.property (h₁.trans h₂.symm)
       simp [hp, hdiag a (Fin.last r)]
-    · by_cases hp : p.1.1 = a ∧ p.1.2 = b
+    · by_cases hp : p.val.1 = a ∧ p.val.2 = b
       · obtain ⟨rfl, rfl⟩ := hp
         simp [hab]
       · have he := hoff a b hab (by
@@ -268,7 +268,7 @@ private theorem tangentEnd_eq_root_of_mem_adjointWeightSpace
           have hpair := (weightCharacter_diagonalTorusWeight_eq_root_iff p a b).mp h
           exact hp ⟨hpair.1.symm, hpair.2.symm⟩)
         simp [hp, hab, he]
-  refine ⟨X p.1.1 p.1.2, ?_⟩
+  refine ⟨X p.val.1 p.val.2, ?_⟩
   rw [hX]
   conv_lhs => rw [hnormal]
   ext Y a b
@@ -293,7 +293,7 @@ theorem adjointWeightSpace_root_eq_span
       (A := coordinateHopfAlgebra (r + 1) R) (B := R)).injective
     apply tangentEnd_injective (r + 1)
     rw [map_smul, map_smul, tangentEnd_cotangentLinearEquiv_rootVector, hc]
-    have hs : Matrix.single p.1.1 p.1.2 c = c • Matrix.single p.1.1 p.1.2 (1 : R) := by
+    have hs : Matrix.single p.val.1 p.val.2 c = c • Matrix.single p.val.1 p.val.2 (1 : R) := by
       simp
     rw [hs]
     apply LinearMap.ext
@@ -330,13 +330,13 @@ theorem rootSpaceEquiv_symm_apply
     (x : Derivation.adjointWeightSpace (diagonalTorusCoordinateMap r R).hom
       (Multiplicative.ofAdd ((diagonalRootDatum.{u} r).root p))) :
     (rootSpaceEquiv (R := R) p).symm x =
-      tangentEnd (R := R) (r + 1) (Derivation.cotangentLinearEquiv (R := R) (B := R) x.1)
-        (Matrix.single p.1.2 p.1.2 1) p.1.1 p.1.2 := by
+      tangentEnd (R := R) (r + 1) (Derivation.cotangentLinearEquiv (R := R) (B := R) x.val)
+        (Matrix.single p.val.2 p.val.2 1) p.val.1 p.val.2 := by
   have h := congrArg Subtype.val ((rootSpaceEquiv (R := R) p).apply_symm_apply x)
   rw [rootSpaceEquiv_apply_coe] at h
   have he := congrArg (fun y ↦
     tangentEnd (R := R) (r + 1) (Derivation.cotangentLinearEquiv (R := R) (B := R) y)
-      (Matrix.single p.1.2 p.1.2 1) p.1.1 p.1.2) h
+      (Matrix.single p.val.2 p.val.2 1) p.val.1 p.val.2) h
   rw [tangentEnd_smul_rootVector_apply] at he
   exact he
 

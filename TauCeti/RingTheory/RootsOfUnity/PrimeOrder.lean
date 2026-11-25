@@ -19,6 +19,8 @@ Mathlib's `isPrimitiveRoot_of_mem_nthRootsFinset` for domains. Consequently no p
 
 * `IsPrimitiveRoot.of_pow_eq_one_of_ne_one`: for a prime `p`, an element `ζ ≠ 1` with
   `ζ ^ p = 1` is a primitive `p`-th root of unity.
+* `rootsOfUnity.isPrimitiveRoot_coe_of_ne_one`: for a prime `p`, a `p`-th root of unity `ζ ≠ 1` is
+  primitive.
 * `rootsOfUnity.pow_ne_one_of_ne_one`: for a prime `p`, a `p`-th root of unity `ζ ≠ 1` satisfies
   `ζ ^ m ≠ 1` for `0 < m < p`.
 -/
@@ -31,9 +33,16 @@ theorem IsPrimitiveRoot.of_pow_eq_one_of_ne_one {M : Type*} [CommMonoid M] {p : 
     {ζ : M} (h : ζ ^ p = 1) (hζ : ζ ≠ 1) : IsPrimitiveRoot ζ p :=
   IsPrimitiveRoot.iff_orderOf.2 (orderOf_eq_prime h hζ)
 
+/-- For a prime `p`, a `p`-th root of unity `ζ ≠ 1` of a commutative monoid `M` is a primitive
+`p`-th root of unity in `M`. -/
+theorem rootsOfUnity.isPrimitiveRoot_coe_of_ne_one {M : Type*} [CommMonoid M] {p : ℕ}
+    [Fact p.Prime] {ζ : rootsOfUnity p M} (hζ : ζ ≠ 1) : IsPrimitiveRoot ((ζ : Mˣ) : M) p :=
+  IsPrimitiveRoot.of_pow_eq_one_of_ne_one ((mem_rootsOfUnity' p _).1 ζ.property)
+    (rootsOfUnity.coe_injective.ne hζ)
+
 /-- For a prime `p`, a `p`-th root of unity `ζ ≠ 1` of a commutative monoid satisfies `ζ ^ m ≠ 1`
 for every `0 < m < p`, since `ζ` is primitive. -/
 theorem rootsOfUnity.pow_ne_one_of_ne_one {M : Type*} [CommMonoid M] {p : ℕ} [Fact p.Prime]
     {ζ : rootsOfUnity p M} (hζ : ζ ≠ 1) {m : ℕ} (h0 : m ≠ 0) (hm : m < p) : ζ ^ m ≠ 1 :=
-  (IsPrimitiveRoot.of_pow_eq_one_of_ne_one (Subtype.ext ((mem_rootsOfUnity p _).1 ζ.2))
+  (IsPrimitiveRoot.of_pow_eq_one_of_ne_one (Subtype.ext ((mem_rootsOfUnity p _).1 ζ.property))
     hζ).pow_ne_one_of_pos_of_lt h0 hm

@@ -8,8 +8,9 @@ module
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import TauCeti.RingTheory.DedekindDomain.Different.Monogenic
 public import TauCeti.RingTheory.DiscreteValuationRing.Monogenic
+import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
 public import TauCeti.RingTheory.Invariant.Minpoly
-public import TauCeti.RingTheory.LocalRing.RamificationGroup
+public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
 public import TauCeti.RingTheory.Valuation.AddValuation
 
 /-!
@@ -82,11 +83,7 @@ theorem differentIdeal_eq_pow_maximalIdeal_of_separable_residue
     differentIdeal A B = maximalIdeal B ^
       (∑ᶠ i : ℕ, (Nat.card (IsLocalRing.ramificationGroup G B (i : ℤ)) - 1)) := by
   let : IsGaloisGroup G A B := ⟨inferInstance, inferInstance, inferInstance⟩
-  let := IsFractionRing.mulSemiringAction G B (FractionRing B)
-  have := IsGaloisGroup.isGalois G (FractionRing A) (FractionRing B)
-  have := IsGaloisGroup.finiteDimensional G (FractionRing A) (FractionRing B)
-  have := Algebra.IsInvariant.isIntegral A B G
-  have := IsIntegralClosure.finite A (FractionRing A) (FractionRing B) B
+  have := IsGaloisGroup.moduleFinite_of_isIntegrallyClosed G A B
   obtain ⟨x, hx⟩ := IsDiscreteValuationRing.exists_adjoin_eq_top (R := A) (S := B)
   exact differentIdeal_eq_pow_maximalIdeal_of_adjoin_eq_top A B G hx
 

@@ -42,13 +42,6 @@ universe u w
 
 variable (k : Type w) [Field k] {V : Type u} (G : SimpleGraph V) [Finite V]
 
-/-- The vertex idempotent has degree zero. -/
-theorem zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero (i : V) :
-    zigzagVertexIdempotent k G i ∈ zigzagIntegerGrade k G 0 := by
-  -- Normalize the integer zero to the cast required by the extension-by-zero lemma.
-  rw [show (0 : ℤ) = (0 : ℕ) from rfl, zigzagIntegerGrade_ofNat]
-  exact zigzagMk_mem_zigzagGrade k G (PathAlgebra.vertexIdempotent_mem_grade_zero _)
-
 /-- The vertex projective is a homogeneous submodule of the regular module: homogeneous
 projection preserves the fixed-point equation `x * e_i = x`. -/
 theorem isHomogeneous_zigzagProjective
@@ -112,11 +105,11 @@ noncomputable def zigzagGradedProjectiveHomEquiv (i j : V) (d : ℤ) :
     have h := f.isHomogeneous.map_mem hx
     rw [zigzagGradedProjective_shift_piece, zigzagProjectiveShiftGrade_apply] at h
     simpa only [Int.add_zero, sub_eq_add_neg] using h⟩
-  invFun f := GradedModuleCat.ofHom f.1 <| LinearMap.isHomogeneous_def.2 fun p x hx => by
+  invFun f := GradedModuleCat.ofHom f.val <| LinearMap.isHomogeneous_def.2 fun p x hx => by
     rw [zigzagGradedProjective_shift_piece, zigzagProjectiveShiftGrade_apply]
     rw [zigzagGradedProjective_piece] at hx
     simpa only [sub_eq_add_neg, add_zero] using
-      ((mem_zigzagProjectiveTargetShiftHom_iff_isHomogeneous k G).1 f.2).map_mem hx
+      ((mem_zigzagProjectiveTargetShiftHom_iff_isHomogeneous k G).1 f.property).map_mem hx
   left_inv _ := GradedModuleCat.hom_ext rfl
   right_inv _ := Subtype.ext rfl
   map_add' _ _ := Subtype.ext rfl
@@ -125,13 +118,13 @@ noncomputable def zigzagGradedProjectiveHomEquiv (i j : V) (d : ℤ) :
 @[simp]
 theorem coe_zigzagGradedProjectiveHomEquiv_apply {i j : V} {d : ℤ}
     (f : (zigzagGradedProjective k G i) ⟶ (zigzagGradedProjective k G j).shiftObj d) :
-    (zigzagGradedProjectiveHomEquiv k G i j d f).1 = f.hom :=
+    (zigzagGradedProjectiveHomEquiv k G i j d f).val = f.hom :=
   (rfl)
 
 @[simp]
 theorem hom_zigzagGradedProjectiveHomEquiv_symm_apply {i j : V} {d : ℤ}
     (f : zigzagProjectiveTargetShiftHom k G i j d) :
-    ((zigzagGradedProjectiveHomEquiv k G i j d).symm f).hom = f.1 :=
+    ((zigzagGradedProjectiveHomEquiv k G i j d).symm f).hom = f.val :=
   (rfl)
 
 /-- Categorical shifted Hom spaces have the dimensions computed by the corner dictionary. -/

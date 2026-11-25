@@ -99,7 +99,7 @@ theorem principalUnitGroupGradedSuccEquivMaximalIdealGraded_mk (n : ℕ)
     (u : (maximalIdeal R ^ (n + 1)).principalUnitGroup) :
     principalUnitGroupGradedSuccEquivMaximalIdealGraded n (QuotientGroup.mk u) =
       Multiplicative.ofAdd (Submodule.Quotient.mk
-        ⟨((u : Rˣ) : R) - 1, Ideal.mem_principalUnitGroup.mp u.2⟩) := by
+        ⟨((u : Rˣ) : R) - 1, Ideal.mem_principalUnitGroup.mp u.property⟩) := by
   rw [principalUnitGroupGradedSuccEquivMaximalIdealGraded]
   refine (MulEquiv.trans_apply ..).trans ?_
   rw [Ideal.principalUnitGroupPowQuotientEquiv_mk]

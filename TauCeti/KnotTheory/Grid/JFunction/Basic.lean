@@ -381,6 +381,15 @@ theorem JMixed_insert_right {p : Fin n × Fin n} {s t : Finset (Fin n × Fin n)}
   rw [← Finset.singleton_union, JMixed_union_right]
   exact Finset.disjoint_singleton_left.mpr h
 
+/-- A mixed rational pairing is the sum of the pairings with the single points of its right
+point set. -/
+theorem JMixed_eq_sum_singleton_right (s t : Finset (Fin n × Fin n)) :
+    JMixed r s t = ∑ p ∈ t, JMixed r s {p} := by
+  classical
+  induction t using Finset.induction_on with
+  | empty => simp
+  | insert p t hp ih => rw [JMixed_insert_right r hp, Finset.sum_insert hp, ih]
+
 /-- A mixed numerator is invariant under diagonal reflection when its variable
 relation is. -/
 theorem JNumMixed_image_swap
@@ -497,6 +506,12 @@ theorem J_insert_left {p : Fin n × Fin n} {s t : Finset (Fin n × Fin n)} (h : 
 theorem J_insert_right {p : Fin n × Fin n} {s t : Finset (Fin n × Fin n)} (h : p ∉ t) :
     GridPoint.J s (insert p t) = GridPoint.J s {p} + GridPoint.J s t :=
   JMixed_insert_right _ h
+
+/-- The grid `J`-function is the sum of the pairings with the single points of its right point
+set. -/
+theorem J_eq_sum_singleton_right (s t : Finset (Fin n × Fin n)) :
+    GridPoint.J s t = ∑ p ∈ t, GridPoint.J s {p} :=
+  JMixed_eq_sum_singleton_right _ s t
 
 /-- The numerator of `J` on singleton point sets records whether either point is southwest of
 the other. -/

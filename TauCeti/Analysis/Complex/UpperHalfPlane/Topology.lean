@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Topology
-public import TauCeti.Analysis.Complex.AtInfinity
+public import TauCeti.Analysis.Normed.Field.AtInfinity
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -18,7 +18,8 @@ import TauCeti.Logic.Function.Update
 # Topology of the upper half-plane
 
 Every real point lies in the closure of the open upper half-plane, so limits taken along the
-half-plane at a real point are well posed.  The half-plane is also unbounded, so the filter along
+half-plane at a real point are well posed; along them `Im z → 0⁺` and `Re z` tends to the real
+point.  The half-plane is also unbounded, so the filter along
 which it approaches infinity is nontrivial and limits taken along it are unique.
 
 For a function conjugation-symmetric near infinity, decay along the upper half-plane implies
@@ -52,16 +53,19 @@ many points, such as the vertices of a tessellation, therefore keeps `ℍ` conne
 ## Main declarations
 
 * `Real.nhdsWithin_upperHalfPlaneSet_neBot`.
+* `Real.tendsto_im_nhdsWithin_upperHalfPlaneSet`,
+  `Real.tendsto_re_nhdsWithin_upperHalfPlaneSet`: the coordinates along the half-plane at a
+  real point.
 * `TauCeti.mem_closedBall_and_eq_of_tendsto` — transport a boundary limit through a map
   continuous on the closed unit disc.
 * `TauCeti.cobounded_inf_principal_upperHalfPlaneSet_neBot`.
 * `TauCeti.tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet`.
 * `TauCeti.tendsto_zero_cobounded_of_tendsto_mul_upperHalfPlaneSet`.
 * `TauCeti.mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero`.
-* `TauCeti.not_mem_image_upperHalfPlaneSet_of_im_eq_zero`.
+* `TauCeti.notMem_image_upperHalfPlaneSet_of_im_eq_zero`.
 * `TauCeti.im_neg_inv_nonneg`.
 * `TauCeti.bijOn_const_sub_inv_upperHalfPlaneSet`.
-* `TauCeti.tendsto_comp_neg_inv_cobounded`, `TauCeti.continuousOn_comp_neg_inv`.
+* `TauCeti.tendsto_comp_neg_inv_nhdsWithin_zero`, `TauCeti.continuousOn_comp_neg_inv`.
 * `TauCeti.continuousOn_update_comp_const_sub_inv`,
   `TauCeti.tendsto_update_comp_const_sub_inv_cobounded`,
   `TauCeti.insert_image_update_comp_const_sub_inv`,
@@ -95,6 +99,18 @@ relatives apply along the half-plane at a real point directly. -/
 instance nhdsWithin_upperHalfPlaneSet_neBot (x : ℝ) :
     (𝓝[upperHalfPlaneSet] ((x : ℂ))).NeBot :=
   mem_closure_iff_nhdsWithin_neBot.mp (by simp [upperHalfPlaneSet])
+
+/-- Along the approach to a real point through the upper half-plane, `Im z → 0⁺`. -/
+theorem tendsto_im_nhdsWithin_upperHalfPlaneSet (x : ℝ) :
+    Tendsto Complex.im (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝[>] 0) :=
+  tendsto_nhdsWithin_iff.2
+    ⟨(Complex.continuous_im.tendsto' _ 0 (by simp)).mono_left nhdsWithin_le_nhds,
+      eventually_nhdsWithin_of_forall fun _ hz => hz⟩
+
+/-- Along the approach to a real point `x` through the upper half-plane, `Re z → x`. -/
+theorem tendsto_re_nhdsWithin_upperHalfPlaneSet (x : ℝ) :
+    Tendsto Complex.re (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 x) :=
+  (Complex.continuous_re.tendsto' _ x (by simp)).mono_left nhdsWithin_le_nhds
 
 end Real
 
@@ -185,18 +201,16 @@ theorem tendsto_zero_cobounded_of_tendsto_mul_upperHalfPlaneSet
   exact Eventually.of_forall fun z hz => (hφ hz).symm
 
 /-- A boundary point of the closed upper half-plane whose image avoids the open half-plane image
-maps to the frontier when the map is continuous there. -/
+maps to the frontier when the map is continuous there within the open upper half-plane. -/
 theorem mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero {f : ℂ → ℂ}
-    {z : ℂ} (hfc : ContinuousWithinAt f {z : ℂ | 0 ≤ z.im} z)
+    {z : ℂ} (hfc : ContinuousWithinAt f upperHalfPlaneSet z)
     (hz : z.im = 0) (hnot : f z ∉ f '' upperHalfPlaneSet) :
-    f z ∈ frontier (f '' upperHalfPlaneSet) := by
-  have hH0 : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} := ofPred_subset_ofPred.mpr fun _ => le_of_lt
-  refine ⟨(hfc.mono hH0).mem_closure_image ?_, fun h => hnot (interior_subset h)⟩
-  · simp [upperHalfPlaneSet, hz]
+    f z ∈ frontier (f '' upperHalfPlaneSet) :=
+  ⟨hfc.mem_closure_image (by simp [upperHalfPlaneSet, hz]), fun h => hnot (interior_subset h)⟩
 
 /-- An injection on the closed upper half-plane cannot send a real point into the image of the
 open upper half-plane. -/
-theorem not_mem_image_upperHalfPlaneSet_of_im_eq_zero {f : ℂ → ℂ}
+theorem notMem_image_upperHalfPlaneSet_of_im_eq_zero {f : ℂ → ℂ}
     (hfi : InjOn f {z : ℂ | 0 ≤ z.im}) {z : ℂ} (hz : z.im = 0) :
     f z ∉ f '' upperHalfPlaneSet := by
   rintro ⟨y, hy, heq⟩
@@ -253,7 +267,7 @@ theorem tendsto_const_sub_inv_nhdsWithin_zero (c : ℝ) :
 /-- `w ↦ -w⁻¹` carries the closed upper half-plane near `0` to the closed upper half-plane near
 infinity, so a limit of `f` at infinity in the closed upper half-plane is a limit of `w ↦ f (-w⁻¹)`
 at `0` in the punctured closed upper half-plane. -/
-theorem tendsto_comp_neg_inv_cobounded {α : Type*} {l : Filter α} {f : ℂ → α}
+theorem tendsto_comp_neg_inv_nhdsWithin_zero {α : Type*} {l : Filter α} {f : ℂ → α}
     (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) l) :
     Tendsto (fun w => f (-w⁻¹)) (𝓝[{w : ℂ | 0 ≤ w.im} \ {0}] 0) l := by
   simpa [Function.comp_def] using hp.comp (tendsto_const_sub_inv_nhdsWithin_zero 0)
@@ -355,7 +369,7 @@ theorem continuousOn_update_div_sub_neg_inv {f : ℂ → ℂ} {r : ℝ} {c b : �
     (hne : ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 → f (-w⁻¹) - c ≠ 0) :
     ContinuousOn (Function.update (fun w => b / (f (-w⁻¹) - c)) 0 0)
       (ball (0 : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) := by
-  have hT := tendsto_comp_neg_inv_cobounded hp
+  have hT := tendsto_comp_neg_inv_nhdsWithin_zero hp
   refine continuousOn_update_iff.mpr ⟨fun w hw => ?_, fun _ => ?_⟩
   · exact continuousWithinAt_const.div
       (((continuousOn_comp_neg_inv hfc).mono (sdiff_subset_sdiff_left inter_subset_right) w

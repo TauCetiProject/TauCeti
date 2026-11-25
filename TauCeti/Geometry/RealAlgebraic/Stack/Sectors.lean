@@ -54,8 +54,8 @@ theorem isAnalyticSubmanifold_image_cylinder_sectorSet
   let f : {v : Fin (n + 1) → ℝ | Fin.tail v ∈ S} → S × ℝ :=
     fun v ↦ (⟨Fin.tail v.val, v.property⟩, v.val 0)
   have hf : Continuous f :=
-    (continuous_subtype_val.finTail.subtype_mk _).prodMk
-      ((continuous_apply 0).comp continuous_subtype_val)
+    (continuous_subtypeVal.finTail.subtype_mk _).prodMk
+      ((continuous_apply 0).comp continuous_subtypeVal)
   convert (isOpen_sectorSet hc j).preimage hf using 1
   ext v
   simp only [mem_preimage, mem_image_cylinder, f]

@@ -48,17 +48,19 @@ namespace TauCeti
 /-- Exact `e`-th cyclotomic integers, represented by the `e.totient` coefficients of the
 canonical polynomial representative in descending order. -/
 @[expose] def Cyclotomic (e : ℕ) : Type _ := {l : List ℤ // l.length = e.totient}
-  deriving DecidableEq
 
 namespace Cyclotomic
 
 variable {e : ℕ}
 
+instance : DecidableEq (Cyclotomic e) :=
+  inferInstanceAs (DecidableEq {l : List ℤ // l.length = e.totient})
+
 /-- The descending list of coefficients representing an exact cyclotomic integer. -/
-@[expose] def coeffs (x : Cyclotomic e) : List ℤ := x.1
+@[expose] def coeffs (x : Cyclotomic e) : List ℤ := x.val
 
 @[simp]
-theorem length_coeffs (x : Cyclotomic e) : x.coeffs.length = e.totient := x.2
+theorem length_coeffs (x : Cyclotomic e) : x.coeffs.length = e.totient := x.property
 
 /-- An exact cyclotomic integer is determined by its coefficient list. -/
 theorem ext_coeffs {x y : Cyclotomic e} (h : x.coeffs = y.coeffs) : x = y := Subtype.ext h
@@ -96,7 +98,7 @@ theorem coeffs_ofCoeffList (e : ℕ) (l : List ℤ) :
 `Φ_e`, the polynomial it presents having degree less than `φ e` already. -/
 theorem coeffs_ofCoeffList_of_length_eq {l : List ℤ} (h : l.length = e.totient) :
     (ofCoeffList e l).coeffs = l :=
-  eq_of_length_eq_of_ofCoeffList_reverse_eq (by simp [h])
+  (ofCoeffList_reverse_inj (by simp [h])).1
     (by
       rw [coeffs_ofCoeffList, ofCoeffList_reverse_modByCyclotomic]
       exact (modByMonic_eq_self_iff (cyclotomic.monic e ℤ)).2
@@ -196,7 +198,7 @@ theorem toAdjoinRoot_injective : Function.Injective (toAdjoinRoot : Cyclotomic e
   have h' := congrArg (AdjoinRoot.modByMonicHom (cyclotomic.monic e ℤ)) h
   simp only [toAdjoinRoot, AdjoinRoot.modByMonicHom_mk, toPolynomial_modByMonic] at h'
   exact ext_coeffs
-    (eq_of_length_eq_of_ofCoeffList_reverse_eq (x.length_coeffs.trans y.length_coeffs.symm) h')
+    ((ofCoeffList_reverse_inj (x.length_coeffs.trans y.length_coeffs.symm)).1 h')
 
 /-- The comparison map sends the exact cyclotomic integer built from a coefficient list to the
 class of the polynomial with those coefficients: reduction modulo `Φ_e` is invisible in the
@@ -290,6 +292,25 @@ theorem coeff_intCast [NeZero e] (z : ℤ) (j : ℕ) :
   rw [(modByMonic_eq_self_iff (cyclotomic.monic e ℤ)).mpr hdegree]
   exact Polynomial.coeff_C
 
+/-- A natural number has only a constant power-basis coordinate when the conductor is nonzero. -/
+@[simp]
+theorem coeff_natCast [NeZero e] (n j : ℕ) :
+    (n : Cyclotomic e).coeff j = if j = 0 then (n : ℤ) else 0 := by
+  exact_mod_cast coeff_intCast (e := e) (n : ℤ) j
+
+/-- The power-basis coordinate of `1` is the Kronecker delta at `0` when the conductor is
+nonzero. -/
+@[simp]
+theorem coeff_one [NeZero e] (j : ℕ) : (1 : Cyclotomic e).coeff j = if j = 0 then 1 else 0 := by
+  exact_mod_cast coeff_intCast (e := e) 1 j
+
+/-- A numeral at least `2` has only a constant power-basis coordinate when the conductor is
+nonzero. -/
+@[simp]
+theorem coeff_ofNat [NeZero e] (n : ℕ) [n.AtLeastTwo] (j : ℕ) :
+    (ofNat(n) : Cyclotomic e).coeff j = if j = 0 then ofNat(n) else 0 :=
+  coeff_natCast (e := e) n j
+
 /-- **Multiplication by an integer constant scales every coefficient.**  A constant multiple
 raises no power of `ζ`, so no reduction modulo `Φ_e` takes place. -/
 @[simp]
@@ -305,6 +326,18 @@ theorem coeffs_intCast_mul (z : ℤ) (x : Cyclotomic e) :
     rfl
   rw [hmul]
   exact coeffs_ofCoeffList_of_length_eq (by simp)
+
+/-- Multiplication by a natural-number constant scales every coefficient. -/
+@[simp]
+theorem coeffs_natCast_mul (n : ℕ) (x : Cyclotomic e) :
+    ((n : Cyclotomic e) * x).coeffs = x.coeffs.map ((n : ℤ) * ·) := by
+  exact_mod_cast coeffs_intCast_mul (n : ℤ) x
+
+/-- Multiplication by a numeral at least `2` scales every coefficient. -/
+@[simp]
+theorem coeffs_ofNat_mul (n : ℕ) [n.AtLeastTwo] (x : Cyclotomic e) :
+    ((ofNat(n) : Cyclotomic e) * x).coeffs = x.coeffs.map (ofNat(n) * ·) :=
+  coeffs_natCast_mul n x
 
 /-! ## Comparison with `AdjoinRoot` -/
 
@@ -366,6 +399,18 @@ theorem coeff_zsmul (z : ℤ) (x : Cyclotomic e) (j : ℕ) :
 theorem coeff_intCast_mul (z : ℤ) (x : Cyclotomic e) (j : ℕ) :
     ((z : Cyclotomic e) * x).coeff j = z * x.coeff j := by
   simpa [zsmul_eq_mul] using (coeffAddHom e j).map_zsmul z x
+
+/-- Multiplying by a natural-number cast scales every power-basis coefficient. -/
+@[simp]
+theorem coeff_natCast_mul (n : ℕ) (x : Cyclotomic e) (j : ℕ) :
+    ((n : Cyclotomic e) * x).coeff j = n * x.coeff j := by
+  exact_mod_cast coeff_intCast_mul (n : ℤ) x j
+
+/-- Multiplying by a numeral at least `2` scales every power-basis coefficient. -/
+@[simp]
+theorem coeff_ofNat_mul (n : ℕ) [n.AtLeastTwo] (x : Cyclotomic e) (j : ℕ) :
+    ((ofNat(n) : Cyclotomic e) * x).coeff j = ofNat(n) * x.coeff j :=
+  coeff_natCast_mul n x j
 
 /-- A finite sum adds power-basis coefficients. -/
 @[simp]
@@ -554,11 +599,33 @@ noncomputable def complexRoot (e : ℕ) : ℂ := Complex.exp (2 * Real.pi * Comp
 theorem complexRoot_def (e : ℕ) : complexRoot e = Complex.exp (2 * Real.pi * Complex.I / e) :=
   (rfl)
 
+/-- The distinguished first root of unity is `1`. -/
+@[simp]
+theorem complexRoot_one : complexRoot 1 = 1 := by
+  rw [complexRoot_def, Nat.cast_one, div_one, Complex.exp_two_pi_mul_I]
+
 /-- For nonzero `e`, the distinguished root `TauCeti.Cyclotomic.complexRoot e` is a primitive
 `e`-th root of unity.  Which primitive root it is, and hence which embedding
 `TauCeti.Cyclotomic.complexEmbedding` is, is fixed by the definition `exp (2πi/e)`. -/
 theorem isPrimitiveRoot_complexRoot [NeZero e] : IsPrimitiveRoot (complexRoot e) e :=
   Complex.isPrimitiveRoot_exp e (NeZero.ne e)
+
+/-- A power of a distinguished root of unity: `complexRoot (m * n) ^ m = complexRoot n`. -/
+theorem complexRoot_mul_pow {m : ℕ} (hm : m ≠ 0) (n : ℕ) :
+    complexRoot (m * n) ^ m = complexRoot n := by
+  rw [complexRoot_def, complexRoot_def, ← Complex.exp_natCast_mul]
+  congr 1
+  push_cast
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  field_simp
+
+/-- The power of `complexRoot e` by the `p`-part of `e` is `complexRoot e'`, with `e'` the part
+of `e` prime to `p`. -/
+theorem complexRoot_pow_ordProj (e p : ℕ) :
+    complexRoot e ^ ordProj[p] e = complexRoot (ordCompl[p] e) := by
+  have := complexRoot_mul_pow (Nat.ordProj_pos e p).ne' (ordCompl[p] e)
+  rwa [Nat.ordProj_mul_ordCompl_eq_self] at this
 
 /-- Complex conjugation sends the distinguished root `complexRoot e` to its inverse.  The root is
 primitive for `e ≠ 0` (`TauCeti.Cyclotomic.isPrimitiveRoot_complexRoot`), and `complexRoot 0 = 1`.

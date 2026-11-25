@@ -13,10 +13,11 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 # Trigonometric bounds and nonvanishing criteria
 
 The sine of `π / x` is positive for real `x > 1`, and the cosine of `π / x` for real `x > 2`.
+The sine of `π * x` is positive for `0 < x < 1`.
 The sine of `π * x` is nonzero for nonzero `x ∈ (-1, 1)`, a criterion used to detect nonflat
-Schwarz–Christoffel turns. The sine is
-nonpositive on `[π, 2π]`. For real `a < 1` the quantity `1 - a sin² θ` is positive, a bound
-`a sin² φ < 1` with `φ ≤ π / 2` gives `a sin² θ < 1` for `|θ| ≤ φ`, and
+Schwarz–Christoffel turns. The sine exceeds `1/2` on `(π/6, 5π/6)`. The sine is nonpositive
+on `[π, 2π]` and negative on `(π, 2π)`. For real `a < 1` the quantity `1 - a sin² θ` is
+positive, a bound `a sin² φ < 1` with `φ ≤ π / 2` gives `a sin² θ < 1` for `|θ| ≤ φ`, and
 `1 - k² ≤ 1 - k² sin² θ ≤ 1` for every real `k`. Jordan's inequality gives `θ ≤ π / 2 * sin θ` on
 `[0, π / 2]`. Cosine is positive strictly between two
 angles in `[-π/2, π/2]`, in either orientation (`TauCeti.cos_pos_of_mem_uIoo`). On
@@ -29,13 +30,26 @@ For angles `α, β > 0` and `γ ≥ 0` with
 second hyperbolic law of cosines it is the hyperbolic cosine of the side opposite `γ` in a
 hyperbolic triangle with angles `α`, `β`, `γ`. These supply the positive sine factors and the
 hyperbolic scale in the matrix representations of triangle groups.
+A circle of positive perimeter `2πR` has positive radius `R`
+(`Real.pos_of_fact_two_pi_mul_pos`), under the instance `Fact (0 < 2 * Real.pi * R)` that makes
+`AddCircle (2 * Real.pi * R)` usable.
 -/
 
 public section
 
 open Real
 
+/-- A circle of positive perimeter `2πR` has positive radius `R`. This recovers the radius from
+the instance `Fact (0 < 2 * Real.pi * R)` that makes `AddCircle (2 * Real.pi * R)` usable. -/
+theorem Real.pos_of_fact_two_pi_mul_pos {R : ℝ} [Fact (0 < 2 * Real.pi * R)] : 0 < R :=
+  pos_of_mul_pos_right (Fact.out : 0 < 2 * Real.pi * R) Real.two_pi_pos.le
+
 namespace TauCeti
+
+/-- The point `(a + b) / 2 + (b - a) / 2 · sin θ` of the substitution lies in `[a, b]`. -/
+theorem mem_Icc_add_mul_sin {a b : ℝ} (hab : a ≤ b) (θ : ℝ) :
+    (a + b) / 2 + (b - a) / 2 * sin θ ∈ Set.Icc a b :=
+  ⟨by nlinarith [neg_one_le_sin θ], by nlinarith [sin_le_one θ]⟩
 
 /-- Cosine is positive strictly between two angles in `[-π/2, π/2]`, in either orientation. -/
 theorem cos_pos_of_mem_uIoo {a b θ : ℝ}
@@ -47,6 +61,11 @@ theorem cos_pos_of_mem_uIoo {a b θ : ℝ}
 theorem sin_nonpos_of_pi_le_of_le_two_pi {x : ℝ} (hpx : π ≤ x) (hxp : x ≤ 2 * π) : sin x ≤ 0 := by
   rw [← sin_sub_two_pi]
   exact sin_nonpos_of_nonpos_of_neg_pi_le (by linarith) (by linarith)
+
+/-- The sine is negative on `(π, 2π)`. -/
+theorem sin_neg_of_pi_lt_of_lt_two_pi {x : ℝ} (hpx : π < x) (hxp : x < 2 * π) : sin x < 0 := by
+  rw [← sin_sub_two_pi]
+  exact sin_neg_of_neg_of_neg_pi_lt (by linarith) (by linarith)
 
 /-- A step of nonnegative length whose direction `x` lies in `[θ, θ + π]` does not lower the
 height. -/
@@ -123,6 +142,21 @@ theorem sin_pi_mul_ne_zero_of_mem_Ioo_of_ne_zero {x : ℝ}
     sin (π * x) ≠ 0 := by
   rw [Ne, sin_eq_zero_iff_of_lt_of_lt (by nlinarith [hx.1, pi_pos]) (by nlinarith [hx.2, pi_pos])]
   exact mul_ne_zero pi_ne_zero hx0
+
+/-- For `0 < x < 1`, the sine of `π * x` is positive. -/
+theorem sin_pi_mul_pos_of_pos_of_lt_one {x : ℝ} (h₀ : 0 < x) (h₁ : x < 1) : 0 < sin (π * x) :=
+  sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith [pi_pos])
+
+/-- On `(π/6, 5π/6)`, `sin θ > 1/2`. -/
+theorem two_inv_lt_sin_of_mem_Ioo {θ : ℝ} (hθ : θ ∈ Set.Ioo (π / 6) (5 * π / 6)) :
+    2⁻¹ < sin θ := by
+  have hs : 0 < sin ((θ - π / 6) / 2) :=
+    sin_pos_of_pos_of_lt_pi (by linarith [hθ.1]) (by linarith [hθ.2, pi_pos])
+  have hc : 0 < cos ((θ + π / 6) / 2) :=
+    cos_pos_of_mem_Ioo ⟨by linarith [hθ.1, pi_pos], by linarith [hθ.2]⟩
+  have := sin_sub_sin θ (π / 6)
+  rw [sin_pi_div_six] at this
+  nlinarith [mul_pos hs hc]
 
 /-- For a real denominator greater than one, the sine of `π / x` is positive. -/
 theorem sin_pi_div_pos {x : ℝ} (hx : 1 < x) : 0 < sin (π / x) :=

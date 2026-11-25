@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.Padics.PadicIntegers
 public import TauCeti.NumberTheory.Padics.PrincipalUnits
 public import TauCeti.RingTheory.Henselian.Basic
-public import TauCeti.RingTheory.Henselian.Teichmuller
+public import TauCeti.RingTheory.Henselian.Teichmuller.Basic
 
 /-!
 # The Teichmüller splitting of `ℤ_pˣ`
@@ -86,10 +86,10 @@ private theorem padicIntUnitsProdMulEquiv_symm_apply (u : ℤ_[p]ˣ) :
     (padicIntUnitsProdMulEquiv p).symm u =
       (⟨(unitsMulEquivRootsOfUnityProdKerResidue ℤ_[p] u).1, by
           simpa only [PadicInt.card_residueField] using
-            (unitsMulEquivRootsOfUnityProdKerResidue ℤ_[p] u).1.2⟩,
+            (unitsMulEquivRootsOfUnityProdKerResidue ℤ_[p] u).1.property⟩,
         ⟨(unitsMulEquivRootsOfUnityProdKerResidue ℤ_[p] u).2, by
           rw [unitsPrincipal_one_eq_ker_unitsMap_residue]
-          exact (unitsMulEquivRootsOfUnityProdKerResidue ℤ_[p] u).2.2⟩) := by
+          exact (unitsMulEquivRootsOfUnityProdKerResidue ℤ_[p] u).2.property⟩) := by
   apply (padicIntUnitsProdMulEquiv p).injective
   rw [MulEquiv.apply_symm_apply, padicIntUnitsProdMulEquiv_apply]
   simpa only [unitsMulEquivRootsOfUnityProdKerResidue_symm_apply] using
@@ -109,8 +109,8 @@ noncomputable def padicIntUnitsEquivProd :
   -- Multiplication is continuous, and a continuous bijection from a compact space to a Hausdorff
   -- space is a homeomorphism.
   have he : Continuous e :=
-    ((continuous_subtype_val.comp continuous_fst).mul
-      (continuous_subtype_val.comp continuous_snd)).congr fun x ↦
+    ((continuous_subtypeVal.comp continuous_fst).mul
+      (continuous_subtypeVal.comp continuous_snd)).congr fun x ↦
         (padicIntUnitsProdMulEquiv_apply x).symm
   (ContinuousMulEquiv.mk e he (he.continuous_symm_of_equiv_compact_to_t2 (f := e.toEquiv))).symm
 
@@ -151,7 +151,7 @@ theorem coe_padicIntUnitsEquivProd_apply_snd (u : ℤ_[p]ˣ) :
 theorem toZMod_padicIntUnitsEquivProd_apply_fst (u : ℤ_[p]ˣ) :
     PadicInt.toZMod (((padicIntUnitsEquivProd p u).1 : ℤ_[p]ˣ) : ℤ_[p]) =
       PadicInt.toZMod (u : ℤ_[p]) := by
-  have h := mem_unitsPrincipal_one_iff_toZMod.mp (padicIntUnitsEquivProd p u).2.2
+  have h := mem_unitsPrincipal_one_iff_toZMod.mp (padicIntUnitsEquivProd p u).2.property
   have hu := (padicIntUnitsEquivProd p).symm_apply_apply u
   rw [padicIntUnitsEquivProd_symm_apply] at hu
   conv_rhs => rw [← hu, Units.val_mul, map_mul, h, mul_one]

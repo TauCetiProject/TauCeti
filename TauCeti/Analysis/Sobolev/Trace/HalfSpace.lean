@@ -26,7 +26,7 @@ local boundary charts of strips.
 
 The Euclidean product norm is represented by `WithLp 2`. The estimate is first proved on
 test functions using the one-sided trace inequality
-`TauCeti.integral_hyperplane_abs_rpow_le_integral_halfSpace`, then extended by whole-space Sobolev
+`TauCeti.integral_hyperplane_norm_rpow_le_integral_halfSpace`, then extended by whole-space Sobolev
 density. This one-sided estimate bounds the trace `TauCeti.W1p.halfSpaceTrace` of arbitrary
 half-space Sobolev functions, which is in `TauCeti.Analysis.Sobolev.Trace.Extension` together with
 the reflection extension operator `TauCeti.W1p.extendByReflectionL`.
@@ -67,12 +67,8 @@ private theorem norm_hyperplaneTrace_ofTestFunction_rpow_le (hp : p ≠ ∞) (a 
     have hφ := testFunctionLp_apply_ae (mu := volume) p φ
     simp only [Opens.coe_top, Measure.restrict_univ] at hφ
     exact hφ.filter_mono (ae_mono Measure.restrict_le_self)
-  have hg : W1p.gradient v =ᵐ[volume.restrict (normalHalfSpace (E := E) a)] ∇ φ := by
-    apply (W1p.gradient_restrictL_ae le_top _).trans
-    rw [W1p.gradient_ofTestFunctionₗ]
-    have hφ := gradientTestFunctionLp_apply_ae (mu := volume) p φ
-    simp only [Opens.coe_top, Measure.restrict_univ] at hφ
-    exact hφ.filter_mono (ae_mono Measure.restrict_le_self)
+  have hg : W1p.gradient v =ᵐ[volume.restrict (normalHalfSpace (E := E) a)] ∇ φ :=
+    W1p.gradient_restrictL_ofTestFunctionₗ_ae le_top φ
   -- The left side of the one-sided trace inequality, as a power of an `Lᵖ` norm.
   have htr : ‖W1p.hyperplaneTrace hp a (W1p.ofTestFunctionₗ volume ⊤ p φ)‖ ^ p.toReal =
       ∫ y : E, |φ (WithLp.toLp 2 (a, y))| ^ p.toReal := by
@@ -80,7 +76,8 @@ private theorem norm_hyperplaneTrace_ofTestFunction_rpow_le (hp : p ≠ ∞) (a 
     apply integral_congr_ae
     filter_upwards [W1p.hyperplaneTrace_ofTestFunction_apply_ae hp a φ] with y hy
     rw [hy, Real.norm_eq_abs]
-  have key := integral_hyperplane_abs_rpow_le_integral_halfSpace hu φ.hasCompactSupport a hr
+  have key := integral_hyperplane_norm_rpow_le_integral_halfSpace hu φ.hasCompactSupport a hr
+  simp only [WithLp.ofLp_fst, Real.norm_eq_abs] at key
   rw [← coe_normalHalfSpace a, integral_rpow_energy_eq_of_ae_eq hp hv hg, ← htr] at key
   exact key
 

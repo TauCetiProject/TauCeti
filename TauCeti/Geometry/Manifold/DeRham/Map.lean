@@ -18,7 +18,8 @@ A smooth map pulls smooth forms back and commutes with the exterior derivative. 
 induces a contravariant map on the de Rham complex and on de Rham cohomology. The induced map sends
 the class of a closed form to the class of its pullback, preserves identity maps, and reverses
 composition. In particular a diffeomorphism induces a linear equivalence on de Rham cohomology,
-`TauCeti.deRhamCohomology.equivOfDiffeomorph`.
+`TauCeti.deRhamCohomology.equivOfDiffeomorph`. A constant map induces zero in positive degrees
+(`TauCeti.deRhamCohomology.map_const_eq_zero`).
 
 Pullback also defines a cochain map of de Rham complexes, `TauCeti.deRhamComplex.map`, which
 induces the map on cohomology (`TauCeti.deRhamComplex.homologyMap_map`). It is stated for
@@ -60,13 +61,13 @@ def mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ) :
     (closedForms I M k) fun φ ↦ by
       rw [mem_closedForms_iff_mextDerivₗ_eq_zero, LinearMap.domRestrict_apply,
         SmoothForm.mextDerivₗ_mpullback,
-        (mem_closedForms_iff_mextDerivₗ_eq_zero I' φ.1).mp φ.2, map_zero]
+        (mem_closedForms_iff_mextDerivₗ_eq_zero I' φ.val).mp φ.property, map_zero]
 
 /-- The underlying smooth form of a pullback of a closed form is the usual smooth pullback. -/
 @[simp]
 theorem coe_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ)
     (φ : closedForms I' M' k) :
-    (mpullback f hf k φ).1 = SmoothForm.mpullback f hf φ.1 := by
+    (mpullback f hf k φ).val = SmoothForm.mpullback f hf φ.val := by
   rw [mpullback]
   rfl
 
@@ -85,12 +86,12 @@ theorem mpullback_comp (f : M → M') (g : M' → M'')
   ext φ : 1
   apply Subtype.ext
   rw [coe_mpullback, LinearMap.comp_apply, coe_mpullback]
-  exact LinearMap.congr_fun (SmoothForm.mpullback_comp f g hf hg) φ.1
+  exact LinearMap.congr_fun (SmoothForm.mpullback_comp f g hf hg) φ.val
 
 /-- Pullback preserves exact forms. -/
 theorem mpullback_mem_exactForms (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ)
-    (φ : closedForms I' M' k) (hφ : φ.1 ∈ exactForms I' M' k) :
-    (mpullback f hf k φ).1 ∈ exactForms I M k := by
+    (φ : closedForms I' M' k) (hφ : φ.val ∈ exactForms I' M' k) :
+    (mpullback f hf k φ).val ∈ exactForms I M k := by
   cases k with
   | zero =>
       rw [exactForms_zero, Submodule.mem_bot] at hφ ⊢
@@ -164,6 +165,19 @@ theorem map_comp (f : M → M') (g : M' → M'')
     closedForms.mpullback_comp (I := I) (I' := I') (I'' := I'')
       (M := M) (M' := M') (M'' := M'') f g hf hg k]
   rfl
+
+/-- A constant map induces zero on de Rham cohomology in positive degrees: its derivative
+vanishes, so it pulls every form of positive degree back to zero. -/
+theorem map_const_eq_zero {k : ℕ} (hk : k ≠ 0) (c : M') :
+    map (I := I) (I' := I') (M := M) (fun _ ↦ c) contMDiff_const k = 0 := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hk
+  refine LinearMap.ext fun a ↦ ?_
+  obtain ⟨φ, rfl⟩ := mk_surjective I' k.succ a
+  have h : closedForms.mpullback (I := I) (M := M) (fun _ ↦ c) contMDiff_const (k + 1) φ = 0 := by
+    ext : 2
+    simp [closedForms.coe_mpullback, SmoothForm.coe_mpullback]
+  rw [map_mk, LinearMap.zero_apply, mk_eq_zero_iff, h, Submodule.coe_zero]
+  exact Submodule.zero_mem _
 
 /-- A smooth diffeomorphism `Φ : M ≃ M'` induces a linear equivalence `H^k(M') ≃ H^k(M)` on de Rham
 cohomology: pullback along `Φ`, with inverse pullback along `Φ.symm`. -/
@@ -275,7 +289,7 @@ theorem homologyMap_map (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ) :
   refine HomologicalComplex.homologyMap_moduleCatHomologyClass (Z' := closedForms I M k) _ _ _
     (map f hf) _ _ (closedForms.mpullback f hf k) (fun φ ↦ ?_) φ
   have h := ConcreteCategory.congr_hom ((Iso.eq_comp_inv _).mpr (map_f f hf k))
-    ((deRhamComplexXIso I' k).inv φ.1)
+    ((deRhamComplexXIso I' k).inv φ.val)
   simp only [Category.assoc, ModuleCat.hom_comp, ConcreteCategory.hom_ofHom, LinearMap.coe_comp,
     Function.comp_apply, Iso.inv_hom_id_apply] at h
   exact h.trans (congrArg (deRhamComplexXIso I k).inv.hom (closedForms.coe_mpullback f hf k φ).symm)

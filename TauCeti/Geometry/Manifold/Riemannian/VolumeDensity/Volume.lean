@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Measure
+public import TauCeti.Geometry.Manifold.Measure.PositiveDensity
 public import TauCeti.MeasureTheory.Measure.Glue
+import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # The Riemannian volume measure
@@ -42,12 +45,19 @@ GTM 176 (2018), Proposition 2.44 and the discussion of the Riemannian density fo
   coordinates, and `TauCeti.setLIntegral_riemannianVolume_inter_preimage`, its form over the
   chart preimage of an open coordinate set.
 * `TauCeti.setLIntegral_comp_extChartAt_symm_le_mul_lintegral`: where the chart density is at
-  least `m > 0`, coordinate integrals are at most `m⁻¹` times Riemannian integrals.
+  least `m > 0`, coordinate integrals are at most `m⁻¹` times Riemannian integrals, and
+  `TauCeti.setLIntegral_inter_preimage_le_mul_setLIntegral_comp_extChartAt_symm`: where it is at
+  most `m`, Riemannian integrals over a chart preimage are at most `m` times coordinate integrals.
 * `TauCeti.lintegral_riemannianVolume_eq_of_support_subset`: integration in coordinates of a
   function supported in the chart preimage of an open coordinate set, and
-  `TauCeti.integral_riemannianVolume_le_mul_integral_of_support_subset` and
-  `TauCeti.mul_integral_le_integral_riemannianVolume_of_support_subset`, the resulting bounds on
-  Riemannian integrals by pointwise bounds in coordinates.
+  `TauCeti.integral_riemannianVolume_le_mul_integral_of_support_subset`, the resulting upper bound
+  on the Riemannian integral of such a function by a pointwise bound in coordinates.
+* `TauCeti.mul_integral_le_integral_riemannianVolume_of_support_subset`: the lower bound for any
+  nonnegative integrable function from a coordinate lower bound supported in a subset of the chart
+  target.
+* `TauCeti.isPositiveDensityMeasure_riemannianVolume`: the Riemannian volume is a positive
+  continuous density measure: in each chart it is Haar measure weighted by the chart volume
+  density, which is continuous and positive.
 * `TauCeti.isLocallyFiniteMeasure_riemannianVolume`: the Riemannian volume is locally finite.
 -/
 
@@ -177,6 +187,23 @@ theorem setLIntegral_comp_extChartAt_symm_le_mul_lintegral (α : M) {Ω : Set E}
     _ ≤ ENNReal.ofReal m⁻¹ * ∫⁻ x, φ x ∂riemannianVolume I M :=
         mul_le_mul_of_nonneg_left (setLIntegral_le_lintegral _ _) bot_le
 
+/-- **Riemannian integrals are controlled by coordinate integrals** where the chart density is
+bounded above: if the density is at most `m` on an open set `Ω` of the chart target, then the
+integral of `φ` over the chart preimage of `Ω` is at most `m` times the integral over `Ω` of `φ`
+read in the chart. -/
+theorem setLIntegral_inter_preimage_le_mul_setLIntegral_comp_extChartAt_symm (α : M) {Ω : Set E}
+    (hΩ : IsOpen Ω) (hΩt : Ω ⊆ (extChartAt I α).target) {m : ℝ}
+    (hρ : ∀ y ∈ Ω, chartVolumeDensity (I := I) α ((extChartAt I α).symm y) ≤ m)
+    (φ : M → ℝ≥0∞) :
+    ∫⁻ x in (extChartAt I α).source ∩ extChartAt I α ⁻¹' Ω, φ x ∂riemannianVolume I M ≤
+      ENNReal.ofReal m *
+        ∫⁻ y in Ω, φ ((extChartAt I α).symm y) ∂(Module.finBasis ℝ E).addHaar := by
+  rw [setLIntegral_riemannianVolume_inter_preimage α hΩ hΩt,
+    ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+  refine setLIntegral_mono' hΩ.measurableSet fun y hy ↦ ?_
+  gcongr
+  exact hρ y hy
+
 /-- **Integration in coordinates of a function supported in a chart**: if `φ` vanishes outside
 the chart preimage of an open set `Ω` of the chart target, its integral over `M` is the integral
 over `Ω` of `φ` read in the chart times the chart density. -/
@@ -225,37 +252,72 @@ theorem integral_riemannianVolume_le_mul_integral_of_support_subset (α : M) {Ω
   exact (setLIntegral_mono' hΩ.measurableSet fun y hy ↦
     ENNReal.ofReal_le_ofReal (hfk y hy)).trans (setLIntegral_le_lintegral _ _)
 
-/-- **Lower bounds in coordinates for Riemannian integrals**: if a nonnegative integrable `f`
-vanishes outside the chart preimage of an open set `Ω` of the chart target, and on `Ω` the
-density times `f` read in the chart is at least `c k` for a nonnegative integrable `k` vanishing
-outside `Ω`, then `c ∫ k ≤ ∫ f dV`. -/
+/-- **Lower bounds in coordinates for Riemannian integrals**: if `f` is a nonnegative integrable
+function, and on a subset `Ω` of the chart target the density times `f` read in the chart is at
+least `c k` for a function `k` vanishing outside `Ω`, then `c ∫ k ≤ ∫ f dV`. -/
 theorem mul_integral_le_integral_riemannianVolume_of_support_subset (α : M) {Ω : Set E}
-    (hΩ : IsOpen Ω) (hΩt : Ω ⊆ (extChartAt I α).target) {f : M → ℝ} (hf0 : 0 ≤ f)
-    (hfi : Integrable f (riemannianVolume I M))
-    (hf : Function.support f ⊆ (extChartAt I α).source ∩ extChartAt I α ⁻¹' Ω)
-    {k : E → ℝ} (hk0 : 0 ≤ k) (hki : Integrable k (Module.finBasis ℝ E).addHaar)
-    (hk : Function.support k ⊆ Ω) {c : ℝ} (hc : 0 ≤ c) (hfk : ∀ y ∈ Ω,
+    (hΩt : Ω ⊆ (extChartAt I α).target) {f : M → ℝ} (hf0 : 0 ≤ f)
+    (hfi : Integrable f (riemannianVolume I M)) {k : E → ℝ} (hk : Function.support k ⊆ Ω)
+    {c : ℝ} (hfk : ∀ y ∈ Ω,
       c * k y ≤
         chartVolumeDensity (I := I) α ((extChartAt I α).symm y) * f ((extChartAt I α).symm y)) :
     c * ∫ y, k y ∂(Module.finBasis ℝ E).addHaar ≤ ∫ x, f x ∂riemannianVolume I M := by
-  rw [← ENNReal.ofReal_le_ofReal_iff (integral_nonneg hf0),
-    ofReal_integral_riemannianVolume_eq_of_support_subset α hΩ hΩt hf0 hfi hf,
-    ← integral_const_mul, ofReal_integral_eq_lintegral_ofReal (hki.const_mul c)
-      (ae_of_all _ fun y ↦ mul_nonneg hc (hk0 y)),
-    ← setLIntegral_eq_of_support_subset (s := Ω) fun y hy ↦ hk fun h ↦ hy (by simp [h])]
-  exact setLIntegral_mono' hΩ.measurableSet fun y hy ↦ ENNReal.ofReal_le_ofReal (hfk y hy)
+  have hsrc : (chartAt H α).source = (extChartAt I α).source := (extChartAt_source I α).symm
+  have himage : extChartAt I α '' (chartAt H α).source = (extChartAt I α).target := by
+    rw [hsrc, PartialEquiv.image_source_eq_target]
+  rw [← integral_const_mul, ← ENNReal.ofReal_le_ofReal_iff (integral_nonneg hf0),
+    ofReal_integral_eq_lintegral_ofReal hfi (ae_of_all _ hf0)]
+  refine TauCeti.MeasureTheory.ofReal_integral_le_lintegral_ofReal.trans ?_
+  rw [← setLIntegral_eq_of_support_subset (s := (extChartAt I α).target) fun y hy ↦
+    hΩt (hk fun h ↦ hy (by simp [h]))]
+  calc ∫⁻ y in (extChartAt I α).target, ENNReal.ofReal (c * k y) ∂(Module.finBasis ℝ E).addHaar
+      ≤ ∫⁻ y in (extChartAt I α).target,
+          ENNReal.ofReal (chartVolumeDensity (I := I) α ((extChartAt I α).symm y)) *
+            ENNReal.ofReal (f ((extChartAt I α).symm y)) ∂(Module.finBasis ℝ E).addHaar := by
+        refine lintegral_mono fun y ↦ ?_
+        by_cases hy : y ∈ Ω
+        · rw [← ENNReal.ofReal_mul (chartVolumeDensity_nonneg _ _)]
+          exact ENNReal.ofReal_le_ofReal (hfk y hy)
+        · simp [Function.notMem_support.1 fun h ↦ hy (hk h)]
+    _ = ∫⁻ x in (chartAt H α).source, ENNReal.ofReal (f x) ∂riemannianVolume I M := by
+        rw [setLIntegral_riemannianVolume_of_subset subset_rfl
+          (hsrc ▸ (isOpen_extChartAt_source α).measurableSet), himage]
+    _ ≤ ∫⁻ x, ENNReal.ofReal (f x) ∂riemannianVolume I M := setLIntegral_le_lintegral _ _
 
 end Coordinates
+
+section PositiveDensity
+
+variable [MeasurableSpace E] [BorelSpace E] in
+/-- The Riemannian volume of a continuous metric is a positive continuous density measure. -/
+theorem isPositiveDensityMeasure_riemannianVolume :
+    IsPositiveDensityMeasure I (riemannianVolume I M) := by
+  obtain rfl : ‹MeasurableSpace E› = extChartAtMeasurableSpaceE := BorelSpace.measurable_eq
+  let : MeasurableSpace E := extChartAtMeasurableSpaceE
+  rw [isPositiveDensityMeasure_iff_of_isAddHaarMeasure (Module.finBasis ℝ E).addHaar]
+  intro x
+  let e := extChartAt I x
+  refine ⟨fun y ↦ chartVolumeDensity (I := I) x (e.symm y),
+    continuousOn_chartVolumeDensity_extChartAt_symm x, fun y hy ↦ chartVolumeDensity_pos x ?_, ?_⟩
+  · simpa only [TangentBundle.trivializationAt_baseSet, e, extChartAt_source] using e.map_target hy
+  ext A hA
+  have hsrc : MeasurableSet e.source := (isOpen_extChartAt_source x).measurableSet
+  have hpre : MeasurableSet (e ⁻¹' A ∩ e.source) :=
+    (continuousOn_extChartAt x).measurableSet_preimage_inter hsrc hA
+  have hsub : e ⁻¹' A ∩ e.source ⊆ (chartAt H x).source := by
+    simpa only [e, extChartAt_source] using inter_subset_right
+  rw [map_restrict_extChartAt_source_apply x hA, riemannianVolume_apply_of_subset hsub,
+    chartRiemannianVolume_apply x hpre, withDensity_apply _ hA, Measure.restrict_restrict hA,
+    inter_assoc, inter_self, image_preimage_inter, e.image_source_eq_target]
+
+attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
 
 /-- The Riemannian volume is locally finite: every point has a neighbourhood of finite volume. In
 particular, the Riemannian volume of a compact manifold is a finite measure. -/
 instance isLocallyFiniteMeasure_riemannianVolume :
-    IsLocallyFiniteMeasure (riemannianVolume I M) := by
-  refine ⟨fun x ↦ ?_⟩
-  obtain ⟨s, hs, hfin⟩ :=
-    chartRiemannianVolume_finiteAtFilter_nhds (I := I) x (mem_chart_source H x)
-  refine ⟨s ∩ (chartAt H x).source, Filter.inter_mem hs (chart_source_mem_nhds H x), ?_⟩
-  rw [riemannianVolume_apply_of_subset inter_subset_right]
-  exact (measure_mono inter_subset_left).trans_lt hfin
+    IsLocallyFiniteMeasure (riemannianVolume I M) :=
+  isPositiveDensityMeasure_riemannianVolume.isLocallyFiniteMeasure
+
+end PositiveDensity
 
 end TauCeti

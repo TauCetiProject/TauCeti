@@ -64,22 +64,22 @@ theorem exists_partialDiffeomorph_normalExp_norm_le_subset [Nonempty M]
     {ε : M → ℝ} (hε : Continuous ε) (hεpos : ∀ x, 0 < ε x) :
     let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
     letI := f.normalSpaceFiberBundle hn hdim
-    let ν : M → Type _ := fun x => f.NormalSpace x hn
+    let ν : M → Type _ := fun x => f.isImmersion.NormalSpace x hn
     letI : RiemannianBundle ν := ⟨f.normalRiemannianMetric hn⟩
     ∃ (Φ : PartialDiffeomorph (I.prod 𝓘(ℝ, P)) J (TotalSpace P ν) N ∞)
         (r : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯),
       ⇑Φ = f.normalExp hn ∧ (∀ x, 0 < r x) ∧ (∀ x, r x < ε x) ∧
-      {p : TotalSpace P ν | ‖p.2‖ ≤ r p.proj} ⊆ Φ.source ∧
+      {p : TotalSpace P ν | ‖p.snd‖ ≤ r p.proj} ⊆ Φ.source ∧
       Φ.source ⊆ f.normalExpDomain hn ∧ Φ.target ⊆ O ∧
-      IsOpenEmbedding ({p : TotalSpace P ν | ‖p.2‖ < r p.proj}.domRestrict Φ) ∧
-      IsClosedEmbedding ({p : TotalSpace P ν | ‖p.2‖ ≤ r p.proj}.domRestrict Φ) ∧
-      IsClosedEmbedding ({p : TotalSpace P ν | ‖p.2‖ = r p.proj}.domRestrict Φ) := by
+      IsOpenEmbedding ({p : TotalSpace P ν | ‖p.snd‖ < r p.proj}.domRestrict Φ) ∧
+      IsClosedEmbedding ({p : TotalSpace P ν | ‖p.snd‖ ≤ r p.proj}.domRestrict Φ) ∧
+      IsClosedEmbedding ({p : TotalSpace P ν | ‖p.snd‖ = r p.proj}.domRestrict Φ) := by
   let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
   have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   have : IsManifold J (∞ + 1) N := by simpa using (inferInstance : IsManifold J ∞ N)
   let := f.normalSpaceFiberBundle hn hdim
   let := f.normalSpaceVectorBundle hn hdim
-  let ν : M → Type _ := fun x => f.NormalSpace x hn
+  let ν : M → Type _ := fun x => f.isImmersion.NormalSpace x hn
   let : RiemannianBundle ν := ⟨f.normalRiemannianMetric hn⟩
   let : ∀ x, NormedAddCommGroup (ν x) := fun x => inferInstance
   let : ∀ x, InnerProductSpace ℝ (ν x) := fun x => inferInstance
@@ -101,7 +101,7 @@ theorem exists_partialDiffeomorph_normalExp_norm_le_subset [Nonempty M]
     exact f.normalExp_zeroSection hn x
   obtain ⟨r, hr, hrε, hdisc, hopen, hd, hs⟩ :=
     Φ.toOpenPartialHomeomorph.exists_contMDiffMap_isClosedEmbedding_norm_le
-      (I := I) hzero (hcore ▸ hclosed) hε hεpos ⊤
+      (I := I) hzero (by convert hclosed using 2; exact hcore) hε hεpos ⊤
   exact ⟨Φ, r, hΦ, hr, hrε, hdisc, hsource, htarget, hopen, hd, hs⟩
 
 /-- **Closed normal disc theorem for a closed smooth submanifold.** The normal exponential
@@ -115,26 +115,26 @@ theorem exists_isClosedEmbedding_normalExp_norm_le_subset
     {ε : M → ℝ} (hε : Continuous ε) (hεpos : ∀ x, 0 < ε x) :
     let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
     letI := f.normalSpaceFiberBundle hn hdim
-    let ν : M → Type _ := fun x => f.NormalSpace x hn
+    let ν : M → Type _ := fun x => f.isImmersion.NormalSpace x hn
     letI : RiemannianBundle ν := ⟨f.normalRiemannianMetric hn⟩
     letI : ∀ x, NormedAddCommGroup (ν x) := fun x => inferInstance
     ∃ r : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯, (∀ x, 0 < r x) ∧ (∀ x, r x < ε x) ∧
-      {p : TotalSpace P ν | ‖p.2‖ ≤ r p.proj} ⊆
+      {p : TotalSpace P ν | ‖p.snd‖ ≤ r p.proj} ⊆
         f.normalExpDomain hn ∧
       f.normalExp hn '' {p : TotalSpace P ν |
-        ‖p.2‖ ≤ r p.proj} ⊆ O ∧
+        ‖p.snd‖ ≤ r p.proj} ⊆ O ∧
       IsOpenEmbedding ({p : TotalSpace P ν |
-        ‖p.2‖ < r p.proj}.domRestrict (f.normalExp hn)) ∧
+        ‖p.snd‖ < r p.proj}.domRestrict (f.normalExp hn)) ∧
       IsClosedEmbedding ({p : TotalSpace P ν |
-        ‖p.2‖ ≤ r p.proj}.domRestrict (f.normalExp hn)) ∧
+        ‖p.snd‖ ≤ r p.proj}.domRestrict (f.normalExp hn)) ∧
       IsClosedEmbedding ({p : TotalSpace P ν |
-        ‖p.2‖ = r p.proj}.domRestrict (f.normalExp hn)) := by
+        ‖p.snd‖ = r p.proj}.domRestrict (f.normalExp hn)) := by
   let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
   have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   have : IsManifold J (∞ + 1) N := by simpa using (inferInstance : IsManifold J ∞ N)
   let := f.normalSpaceFiberBundle hn hdim
   let := f.normalSpaceVectorBundle hn hdim
-  let ν : M → Type _ := fun x => f.NormalSpace x hn
+  let ν : M → Type _ := fun x => f.isImmersion.NormalSpace x hn
   let : RiemannianBundle ν := ⟨f.normalRiemannianMetric hn⟩
   let : ∀ x, NormedAddCommGroup (ν x) := fun x => inferInstance
   let : ∀ x, InnerProductSpace ℝ (ν x) := fun x => inferInstance

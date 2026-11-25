@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
 public import TauCeti.Analysis.Complex.Conformal.PseudoHyperbolic
+import TauCeti.Analysis.Calculus.Deriv.Mobius
 
 /-!
 # Unit-disc Moebius factors
@@ -126,17 +127,15 @@ lemma hasDerivAt_unitDiscMoebiusFormula (a p : ℂ)
     (hp : 1 - (starRingEnd ℂ) a * p ≠ 0) :
     HasDerivAt (fun z : ℂ => (z - a) / (1 - (starRingEnd ℂ) a * z))
       ((1 - (starRingEnd ℂ) a * a) / (1 - (starRingEnd ℂ) a * p) ^ 2) p := by
-  have hn : HasDerivAt (fun z : ℂ => z - a) 1 p := (hasDerivAt_id p).sub_const a
-  have hd : HasDerivAt (fun z : ℂ => 1 - (starRingEnd ℂ) a * z) (-(starRingEnd ℂ) a) p := by
-    simpa using ((hasDerivAt_id p).const_mul ((starRingEnd ℂ) a)).const_sub 1
-  have hq := hn.div hd hp
-  have hval : (1 - (starRingEnd ℂ) a * a) / (1 - (starRingEnd ℂ) a * p) ^ 2
-      = (1 * (1 - (starRingEnd ℂ) a * p) - (p - a) * -(starRingEnd ℂ) a)
-        / (1 - (starRingEnd ℂ) a * p) ^ 2 := by
-    congr 1
+  -- The factor is the fractional-linear map with `k = n = 1`, `l = -a`, `m = -conj a`.
+  have hfun : (fun z : ℂ => (1 * z + -a) / (-(starRingEnd ℂ) a * z + 1)) =
+      fun z : ℂ => (z - a) / (1 - (starRingEnd ℂ) a * z) := by
+    funext z
     ring
-  rw [hval]
-  exact hq
+  have h := hasDerivAt_mul_add_div_mul_add (k := 1) (l := -a) (m := -(starRingEnd ℂ) a) (n := 1)
+    (z := p) (by rwa [neg_mul, neg_add_eq_sub])
+  rw [hfun] at h
+  exact h.congr_deriv (by ring)
 
 /-- The scalar unit-disc Moebius factor `z ↦ (z - a) / (1 - conj a * z)` has the difference
 quotient `(1 - conj a * a) / ((1 - conj a * s) * (1 - conj a * t))`. -/
@@ -147,6 +146,36 @@ lemma unitDiscMoebiusFormula_sub_unitDiscMoebiusFormula (a : ℂ) {s t : ℂ}
         ((1 - (starRingEnd ℂ) a * s) * (1 - (starRingEnd ℂ) a * t)) := by
   rw [div_sub_div _ _ hs ht]
   ring
+
+/-- On the closed disc of radius `R < 1`, the scalar Moebius factor
+`z ↦ (z - a) / (1 - conj a * z)` with center of norm at most one is Lipschitz with constant
+`(1 - R)⁻²`: its difference quotient has numerator `1 - ‖a‖ ^ 2 ≤ 1` and denominators of norm at
+least `1 - R`. -/
+lemma lipschitzOnWith_unitDiscMoebiusFormula_of_norm_le_one {a : ℂ} (ha : ‖a‖ ≤ 1) {R : ℝ}
+    (hR : R < 1) :
+    LipschitzOnWith ((1 - R) ^ 2)⁻¹.toNNReal
+      (fun z : ℂ => (z - a) / (1 - (starRingEnd ℂ) a * z)) (closedBall (0 : ℂ) R) := by
+  have hR' : 0 < 1 - R := by linarith
+  have hden (u : ℂ) (hu : u ∈ closedBall (0 : ℂ) R) : 1 - R ≤ ‖1 - (starRingEnd ℂ) a * u‖ := by
+    have : ‖(starRingEnd ℂ) a * u‖ ≤ R := by
+      rw [norm_mul, Complex.norm_conj]
+      exact (mul_le_of_le_one_left (norm_nonneg u) ha).trans (mem_closedBall_zero_iff.mp hu)
+    have := norm_sub_norm_le (1 : ℂ) ((starRingEnd ℂ) a * u)
+    rw [norm_one] at this
+    linarith
+  have hnum : ‖1 - (starRingEnd ℂ) a * a‖ ≤ 1 := by
+    rw [norm_one_sub_conj_mul_self_of_norm_le_one ha]
+    exact sub_le_self _ (by positivity)
+  refine LipschitzOnWith.of_dist_le_mul fun s hs t ht => ?_
+  have hs0 := hden s hs
+  have ht0 := hden t ht
+  rw [dist_eq_norm, dist_eq_norm, unitDiscMoebiusFormula_sub_unitDiscMoebiusFormula a
+    (norm_pos_iff.mp (hR'.trans_le hs0)) (norm_pos_iff.mp (hR'.trans_le ht0)), norm_div,
+    norm_mul, norm_mul, Real.coe_toNNReal _ (by positivity), sq]
+  calc ‖1 - (starRingEnd ℂ) a * a‖ * ‖s - t‖ /
+        (‖1 - (starRingEnd ℂ) a * s‖ * ‖1 - (starRingEnd ℂ) a * t‖)
+      ≤ 1 * ‖s - t‖ / ((1 - R) * (1 - R)) := by gcongr
+    _ = ((1 - R) * (1 - R))⁻¹ * ‖s - t‖ := by rw [one_mul, div_eq_inv_mul]
 
 /-- The scalar formula of the unit-disc Moebius factor is holomorphic on the unit disc. -/
 lemma differentiableOn_unitDiscMoebiusFormula (a : Complex.UnitDisc) :

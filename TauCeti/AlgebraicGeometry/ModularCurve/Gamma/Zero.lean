@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.CyclicSubgroup
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.CyclicSubgroup.Basic
 public import TauCeti.AlgebraicGeometry.ModularCurve.Gamma.One
 
 /-!
@@ -71,7 +71,7 @@ noncomputable def gammaZero : ModuliProblem B where
   obj X := ULift.{u + 1}
     {I : X.unop.curve.carrier.IdealSheafData // X.unop.curve.IsCyclicSubgroup I N}
   map φ := TypeCat.ofHom fun I ↦
-    ⟨⟨I.down.1.comap φ.unop.total, I.down.2.comap φ.unop.isPullback φ.unop.zero_total⟩⟩
+    ⟨⟨I.down.val.comap φ.unop.total, I.down.property.comap φ.unop.isPullback φ.unop.zero_total⟩⟩
   map_id X := by
     ext I : 5
     exact Scheme.IdealSheafData.comap_id _
@@ -92,7 +92,7 @@ noncomputable def gammaZeroEquiv (X : EllObj B) :
 its ideal sheaf along the morphism of total spaces of `φ`. -/
 @[simp]
 theorem gammaZeroEquiv_map {X Y : EllObj B} (φ : X ⟶ Y) (α : (gammaZero B N).obj (op Y)) :
-    (gammaZeroEquiv X ((gammaZero B N).map φ.op α)).1 = (gammaZeroEquiv Y α).1.comap φ.total :=
+    (gammaZeroEquiv X ((gammaZero B N).map φ.op α)).val = (gammaZeroEquiv Y α).val.comap φ.total :=
   (rfl)
 
 variable (B N) in
@@ -101,8 +101,8 @@ problems `[Γ₁(N)] ⟶ [Γ₀(N)]`: it sends a point `P` of exact order `N` on
 subgroup `⟨P⟩ = [P] + ⋯ + [NP]` (`gammaZeroEquiv_gammaOneToGammaZero_app`). -/
 noncomputable def gammaOneToGammaZero : gammaOne B N ⟶ gammaZero B N where
   app X := TypeCat.ofHom fun P ↦ (gammaZeroEquiv X.unop).symm
-    ⟨X.unop.curve.multiplesDivisor (gammaOneEquiv X.unop P).1 N,
-      (gammaOneEquiv X.unop P).2.isCyclicSubgroup_multiplesDivisor⟩
+    ⟨X.unop.curve.multiplesDivisor (gammaOneEquiv X.unop P).val N,
+      (gammaOneEquiv X.unop P).property.isCyclicSubgroup_multiplesDivisor⟩
   naturality X Y φ := by
     ext P : 3
     -- Both sides are divisors `[Q] + ⋯ + [NQ]`: on the left `Q` is the pull-back of `P`, on the
@@ -117,8 +117,8 @@ noncomputable def gammaOneToGammaZero : gammaOne B N ⟶ gammaZero B N where
 `[P] + ⋯ + [NP]`. -/
 @[simp]
 theorem gammaZeroEquiv_gammaOneToGammaZero_app (X : EllObj B) (P : (gammaOne B N).obj (op X)) :
-    (gammaZeroEquiv X ((gammaOneToGammaZero B N).app (op X) P)).1 =
-      X.curve.multiplesDivisor (gammaOneEquiv X P).1 N :=
+    (gammaZeroEquiv X ((gammaOneToGammaZero B N).app (op X) P)).val =
+      X.curve.multiplesDivisor (gammaOneEquiv X P).val N :=
   (rfl)
 
 end ModuliProblem

@@ -149,10 +149,10 @@ theorem orientedFrameSpan_toFullRankFrame_eq_iff {f g : finiteOrthonormalFrame �
       (congrArg VectorBundleOrientationCover.proj h)
     rw [finiteOrthonormalFrame.toFullRankFrame_smul, eq_comm, orientedFrameSpan_smul_eq_iff,
       Unitary.val_toUnits_apply] at h
-    have hsq := (Matrix.det_of_mem_unitary A.2).2
+    have hsq := (Matrix.det_of_mem_unitary A.property).2
     rw [star_trivial] at hsq
     have hdet : (A : Matrix (Fin r) (Fin r) ℝ).det = 1 := by nlinarith
-    refine ⟨⟨A, Matrix.mem_specialUnitaryGroup_iff.2 ⟨A.2, hdet⟩⟩, ?_⟩
+    refine ⟨⟨A, Matrix.mem_specialUnitaryGroup_iff.2 ⟨A.property, hdet⟩⟩, ?_⟩
     dsimp only
     rw [finiteOrthonormalFrame.specialUnitaryGroup_smul_def]
     exact congrArg (· • f) (Subtype.ext (Submonoid.coe_inclusion _ _))
@@ -160,7 +160,7 @@ theorem orientedFrameSpan_toFullRankFrame_eq_iff {f g : finiteOrthonormalFrame �
     dsimp only
     rw [finiteOrthonormalFrame.specialUnitaryGroup_smul_def,
       finiteOrthonormalFrame.toFullRankFrame_smul, eq_comm, orientedFrameSpan_smul_eq_iff]
-    simp [(Matrix.mem_specialUnitaryGroup_iff.1 A.2).2]
+    simp [(Matrix.mem_specialUnitaryGroup_iff.1 A.property).2]
 
 /-- Every oriented plane is spanned by an orthonormal frame. -/
 theorem surjective_orientedFrameSpan_toFullRankFrame :

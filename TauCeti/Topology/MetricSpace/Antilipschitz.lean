@@ -10,7 +10,7 @@ public import Mathlib.Topology.Order.Compact
 import Mathlib.Topology.Instances.Real.Lemmas
 
 /-!
-# Global lower distance bounds on compact sets
+# Inverse-Lipschitz restrictions and global lower distance bounds
 
 For a continuous injection on a compact set, a uniform lower distance bound for nearby pairs
 extends to all pairs. Away from the diagonal, compactness and injectivity supply the missing
@@ -19,6 +19,10 @@ positive lower bound. This lets local differential estimates give quantitative e
 We also show that a map `x ↦ (f x, g x)` is antilipschitz, and uniformly inducing when `f` and
 `g` are uniformly continuous, on a set where `dist x y` is bounded by a combination of
 `dist (f x) (f y)` and `dist (g x) (g y)`.
+
+`AntilipschitzWith.domRestrict_mono` restricts inverse-Lipschitz control on a set to any subset,
+and `AntilipschitzWith.dist_le_add_one_mul_of_domRestrict` gives the strictly-positive-constant
+distance bound `dist x y ≤ (L + 1) * dist (f x) (f y)` on `s`.
 -/
 
 public section
@@ -60,8 +64,8 @@ theorem exists_antilipschitzWith_of_locally
   -- separately can unfold NNReal to a subtype and invalidate the coercion's type.
   change dist (x : X) y ≤ (min c a)⁻¹ * dist (f x) (f y)
   rw [← div_eq_inv_mul, le_div_iff₀ hb, mul_comm]
-  have hx := x.2
-  have hy := y.2
+  have hx := x.property
+  have hy := y.property
   by_cases hxy : dist (x : X) y < δ
   · exact (mul_le_mul_of_nonneg_right (min_le_left _ _) dist_nonneg).trans
       (hlocal x hx y hy hxy)
@@ -72,6 +76,23 @@ theorem exists_antilipschitzWith_of_locally
 end IsCompact
 
 namespace AntilipschitzWith
+
+/-- Inverse-Lipschitz control on a set restricts to any subset. -/
+theorem domRestrict_mono {X Y : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
+    {L : ℝ≥0} {f : X → Y} {s t : Set X} (hi : AntilipschitzWith L (s.domRestrict f))
+    (ht : t ⊆ s) : AntilipschitzWith L (t.domRestrict f) := by
+  intro x y
+  simpa only [Set.domRestrict_apply, Subtype.edist_eq, Subtype.edist_mk_mk] using
+    hi ⟨x, ht x.property⟩ ⟨y, ht y.property⟩
+
+/-- An `L`-antilipschitz restriction `s.domRestrict f` bounds source distances on `s` with the
+strictly positive factor `(L : ℝ) + 1`. -/
+theorem dist_le_add_one_mul_of_domRestrict {X Y : Type*} [PseudoMetricSpace X]
+    [PseudoMetricSpace Y] {L : ℝ≥0} {f : X → Y} {s : Set X}
+    (hi : AntilipschitzWith L (s.domRestrict f)) {x y : X} (hx : x ∈ s) (hy : y ∈ s) :
+    dist x y ≤ ((L : ℝ) + 1) * dist (f x) (f y) :=
+  (hi.le_mul_dist ⟨x, hx⟩ ⟨y, hy⟩).trans
+    (mul_le_mul_of_nonneg_right (le_add_of_nonneg_right zero_le_one) dist_nonneg)
 
 /-- If distances in `X` are controlled by the distances of the images under `f` and `g`, then
 `x ↦ (f x, g x)` is antilipschitz, with constant `A + B`. -/

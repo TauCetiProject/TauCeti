@@ -22,6 +22,8 @@ a unit whose square is not one supplies such separation.
 
 * `Matrix.SpecialLinearGroup.diag2nUnit`: the two-coordinate diagonal matrix attached to a unit.
 * `Matrix.SpecialLinearGroup.diagonalTorus`: the diagonal torus of `SL_n`.
+* `Matrix.SpecialLinearGroup.apply_self_ne_zero_of_mem_diagonalTorus`: the diagonal entries of an
+  element of the diagonal torus are nonzero.
 * `Matrix.SpecialLinearGroup.DiagonalTorusSeparatesCoordinates`: coordinate separation by the torus.
 * `Matrix.SpecialLinearGroup.diagonalTorusSeparatesCoordinates_of_exists_sq_ne_one`: a sufficient
   condition for coordinate separation over a commutative ring.
@@ -63,7 +65,7 @@ noncomputable def _root_.Matrix.SpecialLinearGroup.diag2nUnit {R : Type u} [Comm
 @[simp]
 theorem _root_.Matrix.SpecialLinearGroup.diag2nUnit_coe {R : Type u} [CommRing R]
     {m : Type v} [Fintype m] [DecidableEq m] {i j : m} (hij : i ≠ j) (a : Rˣ) :
-    (Matrix.SpecialLinearGroup.diag2nUnit hij a).1 = Matrix.diagonal (fun r ↦
+    (Matrix.SpecialLinearGroup.diag2nUnit hij a).val = Matrix.diagonal (fun r ↦
       if r = i then (a : R) else if r = j then ((a⁻¹ : Rˣ) : R) else 1) :=
   by rw [Matrix.SpecialLinearGroup.diag2nUnit]
 
@@ -103,7 +105,7 @@ theorem _root_.Matrix.SpecialLinearGroup.map_diag2nUnit
     Matrix.SpecialLinearGroup.map f (Matrix.SpecialLinearGroup.diag2nUnit hij a) =
       Matrix.SpecialLinearGroup.diag2nUnit hij (Units.map f a) := by
   ext r s
-  simp [Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply,
+  simp [Matrix.SpecialLinearGroup.map_apply_coe,
     Matrix.diagonal_apply, apply_ite f]
 
 /-- The unit diagonal family takes the identity unit to the identity matrix. -/
@@ -201,6 +203,9 @@ the preimage of the diagonal torus of `GL_n(R)`. -/
 def diagonalTorus : Subgroup (SpecialLinearGroup (Fin n) R) :=
   (TauCeti.diagonalTorus R n).comap toGL
 
+instance : IsMulCommutative (diagonalTorus R n) :=
+  (TauCeti.diagonalTorus R n).comap_injective_isMulCommutative toGL_injective
+
 /-- An element of `SL_n(R)` lies in its diagonal torus exactly when it lies in the diagonal torus
 of `GL_n(R)`. -/
 theorem mem_diagonalTorus_iff_toGL_mem {g : SpecialLinearGroup (Fin n) R} :
@@ -212,6 +217,14 @@ theorem mem_diagonalTorus_iff_toGL_mem {g : SpecialLinearGroup (Fin n) R} :
 theorem mem_diagonalTorus_iff {g : SpecialLinearGroup (Fin n) R} :
     g ∈ diagonalTorus R n ↔ (g : Matrix (Fin n) (Fin n) R).IsDiag := by
   rw [mem_diagonalTorus_iff_toGL_mem, TauCeti.mem_diagonalTorus_iff, coe_GL_coe_matrix]
+
+/-- A diagonal entry of an element of the diagonal torus of `SL_n(R)` is nonzero. -/
+theorem apply_self_ne_zero_of_mem_diagonalTorus [Nontrivial R] {g : SpecialLinearGroup (Fin n) R}
+    (hg : g ∈ diagonalTorus R n) (i : Fin n) : (g : Matrix (Fin n) (Fin n) R) i i ≠ 0 := by
+  have h := TauCeti.isUnit_apply_of_isDiag
+    (TauCeti.mem_diagonalTorus_iff.mp (mem_diagonalTorus_iff_toGL_mem.mp hg)) i
+  rw [coe_GL_coe_matrix] at h
+  exact h.ne_zero
 
 /-- The determinant-one diagonal torus separates coordinates if each pair of distinct coordinates
 receives different values under some diagonal element of determinant one. -/

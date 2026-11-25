@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import Mathlib.Geometry.Manifold.Immersion
 public import Mathlib.Topology.Connected.TotallyDisconnected
+import TauCeti.Geometry.Lie.Basic
 
 /-!
 # Immersed Lie subgroups
@@ -31,6 +32,9 @@ of left-invariant distributions.
 * `TauCeti.Lie.ImmersedLieSubgroupData`: a connected Lie group mapping injectively and immersively
   onto a specified subgroup, with a finite-dimensional source model.
 * `TauCeti.Lie.IsImmersedLieSubgroup`: existence of immersed-Lie-subgroup data.
+* `TauCeti.Lie.ImmersedLieSubgroupData.t2Space`: the source of a presentation is Hausdorff.
+* `TauCeti.Lie.ImmersedLieSubgroupData.coe_range_toHom`: the presenting homomorphism has range
+  `K` as a set.
 * `TauCeti.Lie.ImmersedLieSubgroupData.contMDiff_toHom`: the presenting homomorphism is smooth.
 * `TauCeti.Lie.ImmersedLieSubgroupData.injective_mfderiv_toHom`: its differential is injective.
 * `TauCeti.Lie.ImmersedLieSubgroupData.eq_bot_of_isTotallyDisconnected` and
@@ -58,7 +62,7 @@ noncomputable section
 
 open scoped ContDiff Manifold
 
-universe u v w
+universe u v w u' v' w'
 
 namespace TauCeti.Lie
 
@@ -68,7 +72,10 @@ subgroup.
 The source `X` carries its own topology and smooth structure.  The homomorphism `toHom` is
 injective, has range exactly `K`, and is an immersion.  Thus the topology of `X` is not required
 to agree with the subspace topology on `K`; this is the distinction between immersed and embedded
-Lie subgroups. -/
+Lie subgroups.
+
+The universes of the source `X` and of its model spaces `E'` and `H'` are independent of those of
+the ambient group and its model. -/
 structure ImmersedLieSubgroupData
     {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {H : Type v} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
@@ -76,13 +83,13 @@ structure ImmersedLieSubgroupData
     [LieGroup I ∞ G]
     (K : Subgroup G) where
   /-- The connected Lie group which parametrizes the immersed subgroup. -/
-  X : Type w
+  X : Type w'
   /-- The group structure on the source. -/
   [group : Group X]
   /-- The intrinsic topology on the source. -/
   [topologicalSpace : TopologicalSpace X]
   /-- The model vector space of the source. -/
-  E' : Type u
+  E' : Type u'
   /-- The additive topological structure on the source model space. -/
   [normedAddCommGroup : NormedAddCommGroup E']
   /-- The real normed-space structure on the source model space. -/
@@ -90,7 +97,7 @@ structure ImmersedLieSubgroupData
   /-- The source model space is finite-dimensional. -/
   [finiteDimensional : FiniteDimensional ℝ E']
   /-- The model chart target of the source. -/
-  H' : Type v
+  H' : Type v'
   /-- The topology on the source model chart target. -/
   [modelTopology : TopologicalSpace H']
   /-- The model with corners for the source. -/
@@ -124,6 +131,15 @@ attribute [local instance] ImmersedLieSubgroupData.group
   ImmersedLieSubgroupData.normedSpace ImmersedLieSubgroupData.modelTopology
   ImmersedLieSubgroupData.chartedSpace ImmersedLieSubgroupData.lieGroup
 
+/-- The source of an immersed subgroup presentation is Hausdorff, being a Lie group. -/
+instance t2Space (d : ImmersedLieSubgroupData I K) : T2Space d.X :=
+  d.I'.t2Space_of_lieGroup ∞
+
+/-- The homomorphism presenting an immersed Lie subgroup has range `K`, as a set. -/
+@[simp]
+theorem coe_range_toHom (d : ImmersedLieSubgroupData I K) : Set.range d.toHom = K := by
+  rw [← MonoidHom.coe_range, d.range_eq]
+
 /-- The homomorphism presenting an immersed Lie subgroup is smooth. -/
 theorem contMDiff_toHom (d : ImmersedLieSubgroupData I K) :
     ContMDiff d.I' I ∞ (d.toHom : d.X → G) :=
@@ -141,10 +157,8 @@ theorem eq_bot_of_isTotallyDisconnected {K : Subgroup G}
     (hK : IsTotallyDisconnected (K : Set G)) : K = ⊥ := by
   let _ : TopologicalSpace d.X := d.topologicalSpace
   let _ : ConnectedSpace d.X := d.connectedSpace
-  have hr : Set.range d.toHom = (K : Set G) := by
-    rw [← MonoidHom.coe_range, d.range_eq]
   have hp : IsPreconnected (K : Set G) := by
-    rw [← hr]
+    rw [← d.coe_range_toHom]
     exact isPreconnected_range d.contMDiff_toHom.continuous
   have hs : (K : Set G).Subsingleton := hK (K : Set G) (fun _ hx ↦ hx) hp
   rw [Subgroup.eq_bot_iff_forall]
@@ -273,19 +287,20 @@ theorem mulEquivOfEq_mulEquivOfEq (d : ImmersedLieSubgroupData I K)
 end ImmersedLieSubgroupData
 
 /-- A subgroup is an immersed Lie subgroup when it is the image of an injective smooth immersion
-from a connected Lie group carrying its own manifold topology. -/
+from a connected Lie group carrying its own manifold topology. The source group and its model
+spaces are taken in the universes of `G`, `E` and `H`. -/
 def IsImmersedLieSubgroup (K : Subgroup G) : Prop :=
-  Nonempty (ImmersedLieSubgroupData I K)
+  Nonempty (ImmersedLieSubgroupData.{u, v, w, u, v, w} I K)
 
 /-- Characterization of `TauCeti.Lie.IsImmersedLieSubgroup` by the data it forgets. -/
 @[simp]
 theorem isImmersedLieSubgroup_iff {K : Subgroup G} :
-    IsImmersedLieSubgroup (I := I) K ↔ Nonempty (ImmersedLieSubgroupData I K) :=
+    IsImmersedLieSubgroup (I := I) K ↔ Nonempty (ImmersedLieSubgroupData.{u, v, w, u, v, w} I K) :=
   Iff.rfl
 
 /-- Immersed-Lie-subgroup data exhibits its specified subgroup as an immersed Lie subgroup. -/
 theorem ImmersedLieSubgroupData.isImmersedLieSubgroup {K : Subgroup G}
-    (d : ImmersedLieSubgroupData I K) : IsImmersedLieSubgroup (I := I) K :=
+    (d : ImmersedLieSubgroupData.{u, v, w, u, v, w} I K) : IsImmersedLieSubgroup (I := I) K :=
   ⟨d⟩
 
 /-- A totally disconnected immersed Lie subgroup is trivial. -/

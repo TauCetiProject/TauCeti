@@ -194,7 +194,7 @@ private theorem smul_mem_of_add_mem_iSup (hv : IsHighestWeightVector b lam v)
     -- separate the weight `chi0` from `lam`
     obtain ⟨x, hx⟩ : ∃ x : H, (chi0 : H → K) x ≠ ((lam : Dual K H) : H → K) x := by
       by_contra! hcontra
-      exact chi0.2 (funext hcontra)
+      exact chi0.property (funext hcontra)
     obtain ⟨k, hk⟩ := (mem_genWeightSpace M (chi0 : H → K) m0).mp hm0 x
     set f := (toEnd K H M x - (chi0 : H → K) x • (1 : Module.End K M)) with hf
     -- the scalar by which the operator below multiplies the generator
