@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Line
 public import TauCeti.Analysis.Complex.RealChart
 import Mathlib.Analysis.Calculus.Deriv.Inv
+import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Normed.Field.Inversion
 
@@ -30,6 +31,9 @@ linearity of the derivative is a closed condition.
 
 * `TauCeti.isComplexLinearMap_fderiv_realChart`: a map of the plane with a complex derivative has
   complex-linear derivative in the real coordinates.
+* `TauCeti.isComplexLinearMap_fderiv_fderiv_apply_stdComplexLineReal`: the complex derivative
+  `w ↦ dφ_w (1, 0)` of a `C²` holomorphic map `φ` of the plane is again holomorphic, by the
+  symmetry of the second derivative.
 * `TauCeti.isComplexLinearMap_fderiv_of_forall_ne`: the Cauchy–Riemann equation for a `C¹` map
   extends across a point.
 * `TauCeti.isComplexLinearMap_fderiv_of_eq_comp_inv`: a map `J`-holomorphic outside a disc,
@@ -57,6 +61,37 @@ theorem isComplexLinearMap_fderiv_realChart {f : ℂ → ℂ} {f' : ℂ} {z : �
     AlmostComplexStructure.product_apply]
   apply Prod.ext <;>
     simp [Complex.equivRealProdCLM_symm_apply, Complex.mul_re, Complex.mul_im] <;> ring
+
+/-- **The complex derivative of a holomorphic map is holomorphic.** If a map `φ` of the plane is
+`C²` at `w` and its derivative is complex linear near `w`, then its complex derivative
+`w' ↦ dφ_{w'} (1, 0)`, read in real coordinates, has complex-linear derivative at `w`: its
+components `(a, b)` satisfy the Cauchy–Riemann equations `∂t a = -∂s b`, `∂t b = ∂s a`. -/
+theorem isComplexLinearMap_fderiv_fderiv_apply_stdComplexLineReal {φ : ℝ × ℝ → ℝ × ℝ}
+    {w : ℝ × ℝ} (hφ : ContDiffAt ℝ 2 φ w)
+    (hφJ : ∀ᶠ w' in 𝓝 w, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (AlmostComplexStructure.product ℝ) (fderiv ℝ φ w' : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ)) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) (AlmostComplexStructure.product ℝ)
+      (fderiv ℝ (fun w' ↦ fderiv ℝ φ w' stdComplexLineReal) w : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) := by
+  have hd : DifferentiableAt ℝ (fderiv ℝ φ) w :=
+    (hφ.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
+  have happ (v e : ℝ × ℝ) :
+      fderiv ℝ (fun w' ↦ fderiv ℝ φ w' e) w v = fderiv ℝ (fderiv ℝ φ) w v e := by
+    rw [fderiv_clm_apply hd (differentiableAt_const e)]
+    simp
+  -- Near `w`, the second column of `dφ` is the first one turned by `i`.
+  set rot : ℝ × ℝ →L[ℝ] ℝ × ℝ :=
+    (-(ContinuousLinearMap.snd ℝ ℝ ℝ)).prod (ContinuousLinearMap.fst ℝ ℝ ℝ)
+  have hB : (fun w' ↦ fderiv ℝ φ w' stdComplexLineImag) =ᶠ[𝓝 w]
+      rot ∘ fun w' ↦ fderiv ℝ φ w' stdComplexLineReal := by
+    filter_upwards [hφJ] with w' hw'
+    simpa [rot] using hw'.apply_stdComplexLineImag_eq
+  have hA : DifferentiableAt ℝ (fun w' ↦ fderiv ℝ φ w' stdComplexLineReal) w :=
+    hd.clm_apply (differentiableAt_const _)
+  refine IsComplexLinearMap.of_apply_stdComplexLineImag ?_
+  simp only [ContinuousLinearMap.coe_coe]
+  rw [happ, hφ.isSymmSndFDerivAt (n := 2) (by simp), ← happ, hB.fderiv_eq,
+    rot.fderiv_comp_left hA]
+  simp [rot, AlmostComplexStructure.product_apply]
 
 section Extension
 

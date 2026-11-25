@@ -63,7 +63,7 @@ theorem coordChange_comp_ofLinearEquiv_change (b c x : B) :
 isomorphism of finite-rank cores with fibre map `e₁.symm.trans e₂`. -/
 noncomputable def ofLinearEquivChangeIso :
     ofLinearEquiv e₁ V ≅ ofLinearEquiv e₂ V :=
-  constIso (fun _ ↦ rfl) (e₁.symm.trans e₂) fun b c x _ _ ↦
+  constIso (fun _ ↦ subset_rfl) (e₁.symm.trans e₂) fun b c x _ _ ↦
     coordChange_comp_ofLinearEquiv_change e₁ e₂ V b c x
 
 @[simp] theorem fiberMap_ofLinearEquivChangeIso_hom (x : B) :
@@ -200,8 +200,8 @@ theorem coordChange_comp_ofLinearEquiv_dual_symm {i j x : B}
 `fun x ↦ V x →L[𝕜] 𝕜` in `e.dualCoords`, by the identity on every coordinate fibre. -/
 noncomputable def ofLinearEquivDualIso :
     (ofLinearEquiv e V).dual ≅ ofLinearEquiv e.dualCoords (fun y ↦ V y →L[𝕜] 𝕜) :=
-  constIso (fun i ↦ (baseSet_ofLinearEquiv_dual e V i).trans
-      (by simp))
+  constIso (fun i ↦ ((baseSet_ofLinearEquiv_dual e V i).trans
+      (by simp)).le)
     (ContinuousLinearEquiv.refl 𝕜 (Fin r → 𝕜))
     fun _ _ _ hi hj ↦ coordChange_comp_ofLinearEquiv_dual e V hi hj
 

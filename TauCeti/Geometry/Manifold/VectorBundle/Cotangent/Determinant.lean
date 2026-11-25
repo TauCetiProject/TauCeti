@@ -373,7 +373,7 @@ noncomputable def cotangentDetCanonicalCoreIso
     (M : Type*) [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] :
     (cotangentCore I b M).det ≅ canonicalCore I b M :=
   FiniteRankBundleCore.constIso
-    (baseSet_cotangentCore_det_eq_canonicalCore b)
+    (fun i ↦ (baseSet_cotangentCore_det_eq_canonicalCore b i).le)
     (cotangentDetCanonicalCoords (I := I) (M := M) b)
     fun _ _ _ hx₀ hx₁ ↦ coordChange_comp_cotangentDetCanonicalCore b hx₀ hx₁
 
@@ -391,7 +391,8 @@ noncomputable def cotangentDetCanonicalCoreDiffeomorph
       exact FiniteRankBundleCore.contMDiff_totalSpaceMap_constIso_hom _ _ _)
     (by
       rw [cotangentDetCanonicalCoreIso]
-      exact FiniteRankBundleCore.contMDiff_totalSpaceMap_constIso_inv _ _ _)
+      exact FiniteRankBundleCore.contMDiff_totalSpaceMap_constIso_inv
+        (baseSet_cotangentCore_det_eq_canonicalCore b) _ _)
 
 @[simp] theorem coe_cotangentDetCanonicalCoreDiffeomorph
     (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) (k : ℕ∞ω) :

@@ -91,6 +91,14 @@ theorem jacobiBracket_def (α : SmoothForm I M ℝ 1) (f g : M → ℝ) (x : M) 
         f x * mvfderiv I g x (α.reebVectorField x) - g x * mvfderiv I f x (α.reebVectorField x) :=
   (rfl)
 
+/-- The value at `x` of the Jacobi bracket only depends on the germs of the two functions at
+`x`. -/
+theorem _root_.Filter.EventuallyEq.jacobiBracket_eq (α : SmoothForm I M ℝ 1) {f' g' : M → ℝ}
+    (hf : f =ᶠ[𝓝 x] f') (hg : g =ᶠ[𝓝 x] g') : α.jacobiBracket f g x = α.jacobiBracket f' g' x := by
+  rw [jacobiBracket_def, jacobiBracket_def, hf.contactHamiltonianVectorField_eq,
+    hg.contactHamiltonianVectorField_eq, hf.eq_of_nhds, hg.eq_of_nhds, hf.mvfderiv_eq,
+    hg.mvfderiv_eq]
+
 /-- The Jacobi bracket is antisymmetric. -/
 theorem neg_jacobiBracket (α : SmoothForm I M ℝ 1) (f g : M → ℝ) (x : M) :
     -α.jacobiBracket g f x = α.jacobiBracket f g x := by

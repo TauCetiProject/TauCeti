@@ -273,8 +273,7 @@ theorem covariantDerivative_transverseDiracOperator_sub_eq_sum [VectorBundle ℝ
       MDifferentiableAt.sum_section (s := Finset.univ) fun i _ ↦ hdiff i
   obtain ⟨b, hb, he⟩ := hframe.self_of_nhds
   rw [cov.isCovariantDerivativeOnUniv.congr_of_eventuallyEq hB hsumdiff univ_mem hsum,
-    TauCeti.Manifold.covariantDerivative_sum cov.isCovariantDerivativeOnUniv (mem_univ x)
-      fun i _ ↦ hdiff i,
+    cov.isCovariantDerivativeOnUniv.sum fun i _ ↦ hdiff i,
     cov.transverseDiracOperator_eq_sum c T _ b hb]
   simp only [he, FunLike.coe_sum, Finset.sum_apply, hpar, ← Finset.sum_sub_distrib,
     ← map_sub, curvatureOperator_def, hbr, map_zero, sub_zero]

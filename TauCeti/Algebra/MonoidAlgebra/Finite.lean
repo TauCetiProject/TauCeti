@@ -38,8 +38,11 @@ is finite, `R[N]` is a finite `R[M]`-module over any commutative semiring `R`
 (`TauCeti.MonoidAlgebra.mapDomainRingHom_moduleFinite_of_exists_finset_mul`), and hence
 `(mapDomainRingHom R p).Finite` holds over any commutative ring `R`
 (`TauCeti.MonoidAlgebra.mapDomainRingHom_finite_of_exists_finset_mul`). Combining this with
-bounded-shift representatives for submonoid saturations shows that `R[T]` is finite over `R[S]` for
-any finitely generated `T` with `S ≤ T ≤ S.powSaturation`
+bounded-shift representatives for submonoid saturations shows that `R[N]` is finite over `R[M]`
+whenever `N` is finitely generated and every element of `N` has a positive power in the image of
+`p` (`TauCeti.MonoidAlgebra.mapDomainRingHom_moduleFinite_of_forall_mem_powSaturation` and
+`TauCeti.MonoidAlgebra.mapDomainRingHom_finite_of_forall_mem_powSaturation`), and that `R[T]` is
+finite over `R[S]` for any finitely generated `T` with `S ≤ T ≤ S.powSaturation`
 (`Submonoid.FG.moduleFinite_mapDomainRingHom_inclusion_of_le_powSaturation` and
 `Submonoid.FG.finite_mapDomainRingHom_inclusion_of_le_powSaturation`), and hence that for a
 finitely generated submonoid `S` the algebra of its saturation in an ambient free abelian group or
@@ -189,6 +192,39 @@ theorem mapDomainRingHom_finite_of_exists_finset_mul {M N : Type*} [CommMonoid M
     (R : Type*) [CommRing R] :
     (mapDomainRingHom R p).Finite :=
   mapDomainRingHom_moduleFinite_of_exists_finset_mul p hF R
+
+/-- If every element of a finitely generated commutative monoid `N` has a positive power in the
+image of `p : M →* N`, then `R[N]` is a finite `R[M]`-module along `mapDomainRingHom R p` over any
+commutative semiring `R`. -/
+@[to_additive (dont_translate := R)
+  TauCeti.AddMonoidAlgebra.mapDomainRingHom_moduleFinite_of_forall_mem_nsmulSaturation
+  /-- If every element of a finitely generated commutative additive monoid `N` has a positive
+  multiple in the image of `p : M →+ N`, then `R[N]` is a finite `R[M]`-module along
+  `mapDomainRingHom R p` over any commutative semiring `R`. -/]
+theorem mapDomainRingHom_moduleFinite_of_forall_mem_powSaturation {M N : Type*} [CommMonoid M]
+    [CommMonoid N] [Monoid.FG N] (p : M →* N)
+    (hp : ∀ x : N, x ∈ (MonoidHom.mrange p).powSaturation) (R : Type*) [CommSemiring R] :
+    letI := (mapDomainRingHom R p).toAlgebra
+    Module.Finite (MonoidAlgebra R M) (MonoidAlgebra R N) := by
+  obtain ⟨F, -, hF⟩ :=
+    (Monoid.FG.fg_top (M := N)).exists_finset_subset_forall_exists_mul fun x _ ↦ hp x
+  refine mapDomainRingHom_moduleFinite_of_exists_finset_mul p ⟨F, fun x ↦ ?_⟩ R
+  obtain ⟨z, hz, _, ⟨s, rfl⟩, hx⟩ := hF x (Submonoid.mem_top x)
+  exact ⟨z, hz, s, hx⟩
+
+/-- If every element of a finitely generated commutative monoid `N` has a positive power in the
+image of `p : M →* N`, then `mapDomainRingHom R p` is a finite ring homomorphism over any
+commutative ring `R`. -/
+@[to_additive (dont_translate := R)
+  TauCeti.AddMonoidAlgebra.mapDomainRingHom_finite_of_forall_mem_nsmulSaturation
+  /-- If every element of a finitely generated commutative additive monoid `N` has a positive
+  multiple in the image of `p : M →+ N`, then `mapDomainRingHom R p` is a finite ring homomorphism
+  over any commutative ring `R`. -/]
+theorem mapDomainRingHom_finite_of_forall_mem_powSaturation {M N : Type*} [CommMonoid M]
+    [CommMonoid N] [Monoid.FG N] (p : M →* N)
+    (hp : ∀ x : N, x ∈ (MonoidHom.mrange p).powSaturation) (R : Type*) [CommRing R] :
+    (mapDomainRingHom R p).Finite :=
+  mapDomainRingHom_moduleFinite_of_forall_mem_powSaturation p hp R
 
 end TauCeti.MonoidAlgebra
 

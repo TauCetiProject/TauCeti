@@ -96,14 +96,14 @@ theorem coordChange_comp_detExteriorPower (A : FiniteRankBundleCore 𝕜 B) {r :
 power `(exteriorPower 𝕜 B r).obj A`, preserving scalar coordinates. -/
 noncomputable def detExteriorPowerIso (A : FiniteRankBundleCore 𝕜 B) {r : ℕ} (hr : A.rank = r) :
     A.det ≅ (exteriorPower 𝕜 B r).obj A :=
-  constIso (fun i ↦ baseSet_det A i)
+  constIso (fun i ↦ (baseSet_det A i).le)
     ((detScalarEquiv A).trans (ContinuousLinearEquiv.topExteriorScalarEquiv 𝕜 hr).symm)
     fun i j x _ _ ↦ coordChange_comp_detExteriorPower A hr i j x
 
 /-- Definitional presentation of `detExteriorPowerIso` as a constant-equivalence isomorphism. -/
 theorem detExteriorPowerIso_def (A : FiniteRankBundleCore 𝕜 B) {r : ℕ} (hr : A.rank = r) :
     detExteriorPowerIso A hr =
-      constIso (D := (exteriorPower 𝕜 B r).obj A) (fun i ↦ baseSet_det A i)
+      constIso (D := (exteriorPower 𝕜 B r).obj A) (fun i ↦ (baseSet_det A i).le)
         ((detScalarEquiv A).trans (ContinuousLinearEquiv.topExteriorScalarEquiv 𝕜 hr).symm)
         fun i j x _ _ ↦ coordChange_comp_detExteriorPower A hr i j x := (rfl)
 
@@ -338,8 +338,8 @@ preserving scalar coordinates. -/
 noncomputable def dualDetIso (A : FiniteRankBundleCore 𝕜 B) :
     A.dual.det ≅ A.det.dual :=
   constIso
-    (fun i ↦ (baseSet_det A.dual i).trans ((localTriv_baseSet_dual A i).trans
-      ((baseSet_det A i).symm.trans (localTriv_baseSet_dual A.det i).symm)))
+    (fun i ↦ ((baseSet_det A.dual i).trans ((localTriv_baseSet_dual A i).trans
+      ((baseSet_det A i).symm.trans (localTriv_baseSet_dual A.det i).symm))).le)
     ((detScalarEquiv A.dual).trans (detScalarEquiv A).symm)
     fun i j x _ _ ↦ coordChange_comp_dualDet A i j x
 
@@ -347,8 +347,8 @@ noncomputable def dualDetIso (A : FiniteRankBundleCore 𝕜 B) :
 theorem dualDetIso_def (A : FiniteRankBundleCore 𝕜 B) :
     dualDetIso A =
       constIso (D := A.det.dual)
-        (fun i ↦ (baseSet_det A.dual i).trans ((localTriv_baseSet_dual A i).trans
-          ((baseSet_det A i).symm.trans (localTriv_baseSet_dual A.det i).symm)))
+        (fun i ↦ ((baseSet_det A.dual i).trans ((localTriv_baseSet_dual A i).trans
+          ((baseSet_det A i).symm.trans (localTriv_baseSet_dual A.det i).symm))).le)
         ((detScalarEquiv A.dual).trans (detScalarEquiv A).symm)
         fun i j x _ _ ↦ coordChange_comp_dualDet A i j x := (rfl)
 
