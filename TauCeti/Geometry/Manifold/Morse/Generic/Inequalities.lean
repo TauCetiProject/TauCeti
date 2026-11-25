@@ -59,7 +59,7 @@ statements here give the Morse–Bott inequalities. The module
 `TauCeti.Geometry.Manifold.Morse.Bott.Inequalities` does this when the negative normal bundles
 have Thom classes, for instance when they are oriented, and
 `TauCeti.Geometry.Manifold.Morse.Bott.TwistedInequalities` does it with twisted coefficients over
-fields in which `2` is invertible.
+every field.
 
 ## Main results
 

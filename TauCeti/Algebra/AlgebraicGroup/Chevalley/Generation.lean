@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Coroot
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Basic
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Weyl
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Coroot
 
 /-!
@@ -61,9 +62,8 @@ theorem simpleCorootPoints_eq_weylElement_mul_inv (i : Fin t.rank) (s : Aˣ) :
     D.simpleCorootPoints i A s =
       D.weylElement (t.simpleIndex ht i) A s *
         (D.weylElement (t.simpleIndex ht i) A 1)⁻¹ := by
-  apply Subtype.ext
-  rw [D.coe_simpleCorootPoints_eq_root_word]
-  simp [weylElement_def]
+  simpa only [simpleCorootPoints_eq_corootPoints, inv_one, mul_one] using
+    (D.weylElement_mul_inv_weylElement (t.simpleIndex ht i) A s 1).symm
 
 /-- The full-weight torus of a Chevalley datum lies in its Kostant elementary subgroup over
 every commutative ring, without any divisibility assumption on the units. -/

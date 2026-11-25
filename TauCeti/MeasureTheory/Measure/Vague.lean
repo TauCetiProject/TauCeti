@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import Mathlib.Topology.UrysohnsLemma
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
+import TauCeti.MeasureTheory.Integral.CompactlySupported
 import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -31,6 +32,13 @@ measures `χ μs i`
 (`MeasureTheory.Measure.tendsto_withDensity_ofReal_of_tendsto_integral_compactlySupported`), and
 these agree with `μs i` on the set when `χ` is a cutoff equal to one there
 (`MeasureTheory.withDensity_apply_eq_self_of_eqOn_one`).
+
+In the other direction, a mass bound on an open neighbourhood `V` of a compact set `K` passes to
+the limit measure of `K` (`IsCompact.measure_le_of_tendsto_integral`). This holds on a locally
+compact space with measurable open sets, with `R1Space` in place of Hausdorffness, for a limit
+measure that is finite on compact sets; nothing is required of the approximating measures. It
+tests against a compactly supported cutoff whose integral lies between the masses of `K` and of
+`V` (`IsCompact.exists_compactlySupported_measure_le_integral_le`).
 
 ## References
 
@@ -106,3 +114,24 @@ theorem limsup_measure_le_of_tendsto_integral_compactlySupported
         fun x ↦ (hχrange x).1) hK.isClosed
 
 end MeasureTheory.Measure
+
+section CompactMassBound
+
+open MeasureTheory
+
+variable {X : Type*} [MeasurableSpace X] [TopologicalSpace X] [R1Space X] [LocallyCompactSpace X]
+  [OpensMeasurableSpace X]
+
+/-- Under convergence against compactly supported continuous functions, a mass bound on an
+open neighbourhood passes to the measure of a compact subset for the limiting measure. -/
+theorem IsCompact.measure_le_of_tendsto_integral {ι : Type*} {l : Filter ι} [NeBot l]
+    {K V : Set X} (hK : IsCompact K) (hV : IsOpen V) (hKV : K ⊆ V)
+    {μ : Measure X} [IsFiniteMeasureOnCompacts μ] {σ : ι → Measure X} {C : ℝ≥0∞}
+    (hbound : ∀ᶠ i in l, σ i V ≤ C)
+    (hlim : ∀ f : C_c(X, ℝ), Tendsto (fun i => ∫ x, f x ∂σ i) l
+      (𝓝 (∫ x, f x ∂μ))) : μ K ≤ C := by
+  obtain ⟨f, hfK, hfV⟩ := hK.exists_compactlySupported_measure_le_integral_le hV hKV
+  exact (hfK μ).trans (le_of_tendsto ((ENNReal.continuous_ofReal.tendsto _).comp (hlim f))
+    (hbound.mono fun i hi ↦ (hfV (σ i)).trans hi))
+
+end CompactMassBound
