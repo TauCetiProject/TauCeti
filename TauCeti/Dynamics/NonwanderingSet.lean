@@ -80,13 +80,12 @@ theorem mem_nonwanderingSet_iff_exists_iterate_mem :
 /-- The non-wandering set is closed. -/
 theorem isClosed_nonwanderingSet (f : X → X) : IsClosed (nonwanderingSet f) := by
   refine isOpen_compl_iff.1 (isOpen_iff_forall_mem_open.2 fun x hx ↦ ?_)
-  simp only [mem_compl_iff, mem_nonwanderingSet_iff, not_forall, not_exists, not_and,
-    exists_prop] at hx
-  obtain ⟨U, hU, hUf⟩ := hx
-  obtain ⟨V, hVU, hV, hxV⟩ := mem_nhds_iff.1 hU
-  refine ⟨V, fun y hyV hy ↦ ?_, hV, hxV⟩
-  obtain ⟨n, hn, z, hz⟩ := hy V (hV.mem_nhds hyV)
-  exact hUf n hn ⟨z, image_mono hVU hz.1, hVU hz.2⟩
+  rw [mem_compl_iff, mem_nonwanderingSet_iff_forall_isOpen] at hx
+  push Not at hx
+  obtain ⟨U, hU, hxU, hUf⟩ := hx
+  refine ⟨U, fun y hyU hy ↦ ?_, hU, hxU⟩
+  obtain ⟨n, hn, hne⟩ := hy U (hU.mem_nhds hyU)
+  exact hne.ne_empty (hUf n hn)
 
 /-- A set of non-wandering points has non-wandering closure. -/
 theorem closure_subset_nonwanderingSet (h : s ⊆ nonwanderingSet f) :
