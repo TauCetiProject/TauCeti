@@ -312,7 +312,7 @@ theorem norm_ramanujanSum_le (q : ℕ) (n : ℤ) : ‖ramanujanSum q n‖ ≤ In
 
 /-- `|c_q(n)| ≤ φ(q)`: `c_q(n)` is a sum of `φ(q)` complex numbers of absolute value `1`. -/
 theorem norm_ramanujanSum_le_totient (q : ℕ) (n : ℤ) : ‖ramanujanSum q n‖ ≤ q.totient := by
-  rw [ramanujanSum_def, Nat.totient]
+  rw [ramanujanSum_def, Nat.totient_eq_card_coprime]
   refine (norm_sum_le _ _).trans (le_of_eq ?_)
   rw [Finset.sum_congr rfl fun b _ => ?_, Finset.sum_const, nsmul_eq_mul, mul_one]
   rw [show 2 * π * I * ((b * n / q : ℝ) : ℂ) = ((2 * π * (b * n / q) : ℝ) : ℂ) * I by
