@@ -36,8 +36,9 @@ kernel of the map to `E^n(q ≤ q ≤ q + 1 ≤ q + r - 1)`, inside `E^n(q ≤ q
 `H^n(q ≤ q + 1)`.
 
 The proof is by induction on `r`. The kernel of the differential leaving `pq` on the page `r` is the
-image of `E^n(i₀(r + 1) ≤ i₁ ≤ i₂ ≤ i₃(r))` (Mathlib's homology data of the pages), and its preimage
-under the projection is computed by the fact that boundaries are permanent cycles: the kernel of
+image of `E^n(i₀(r + 1) ≤ i₁ ≤ i₂ ≤ i₃(r))` (Mathlib's homology data of the pages, through the
+isomorphism `SpectralObject.towerLiftCycles` onto the cycles), and its preimage under the
+projection is computed by the fact that boundaries are permanent cycles: the kernel of
 `E^n(a ≤ i₁ ≤ i₂ ≤ b) ⟶ E^n(a ≤ i₁ ≤ i₂ ≤ b')` lies in the image of
 `E^n(a' ≤ i₁ ≤ i₂ ≤ b) ⟶ E^n(a ≤ i₁ ≤ i₂ ≤ b)`
 (`SpectralObject.kernelSubobject_mapFourδ₄Toδ₃'_le_imageSubobject_mapFourδ₁Toδ₀'`).
@@ -83,27 +84,10 @@ lemma kernelSubobject_mapFourδ₄Toδ₃'_le_imageSubobject_mapFourδ₁Toδ₀
     n₀ n₁ n₂ (n₂ + 1) hn₁ hn₂ rfl)
   dsimp at hc hk
   refine le_of_eq_of_le (Eq.trans ?_ hc.symm) (le_of_le_of_eq ?_ hk.symm)
-  · rfl
+  · -- `mapFourδ₄Toδ₃'` and `fourδ₄Toδ₃'` are abbreviations for this `X.map` of `fourδ₄Toδ₃`.
+    with_reducible rfl
   · exact image_le_kernel _ _ (X.d_d (𝟙 a') (homOfLE h₀) (homOfLE h₁) (homOfLE h₂)
       (homOfLE h₃) (homOfLE h₄) (𝟙 b') (n₀ - 1) n₀ n₁ n₂ (n₂ + 1) (by lia) hn₁ hn₂ rfl)
-
-/-- **Lifting factorizations along a commutative square.** Let `α ≫ p = p' ≫ α'` with `p'` an
-epimorphism, and suppose that the kernel of `p` lies in the image of `α`. If `y ≫ p` factors
-through the image of `α'`, then `y` factors through the image of `α`. -/
-lemma _root_.CategoryTheory.imageSubobject_factors_of_comm {E F E' F' W : C} (p : E ⟶ F)
-    (α : E' ⟶ E) (α' : F' ⟶ F) (p' : E' ⟶ F') [Epi p'] (w : α ≫ p = p' ≫ α')
-    (h : kernelSubobject p ≤ imageSubobject α) (y : W ⟶ E)
-    (hy : (imageSubobject α').Factors (y ≫ p)) : (imageSubobject α).Factors y := by
-  obtain ⟨A₁, π₁, _, x, hx⟩ := (imageSubobject_factors_iff_up_to_refinements α' _).1 hy
-  obtain ⟨A₂, π₂, _, z, hz⟩ := surjective_up_to_refinements_of_epi p' x
-  rw [← Subobject.factors_epi_comp_iff _ (π₂ ≫ π₁)]
-  have hk : (kernelSubobject p).Factors ((π₂ ≫ π₁) ≫ y - z ≫ α) :=
-    kernelSubobject_factors _ _ (by
-      rw [Preadditive.sub_comp, Category.assoc, Category.assoc, hx, Category.assoc, w,
-        ← Category.assoc z, ← hz, Category.assoc, sub_self])
-  have := Subobject.factors_add _ _ (Subobject.factors_of_le _ h hk)
-    (imageSubobject_factors_comp_self α z)
-  rwa [sub_add_cancel] at this
 
 section Tower
 
@@ -157,8 +141,14 @@ noncomputable def towerα (r : ℤ) (hr : r₀ ≤ r) :
     X.towerE data pq r r₀ ⟶ ((X.spectralSequence data).page r₀).X pq :=
   X.towerι data pq r₀ r r₀ le_rfl hr le_rfl ≫ (X.towerPageXIso data pq r₀ le_rfl).inv
 
+@[reassoc]
+lemma towerα_def (r : ℤ) (hr : r₀ ≤ r) :
+    X.towerα data pq r hr =
+      X.towerι data pq r₀ r r₀ le_rfl hr le_rfl ≫ (X.towerPageXIso data pq r₀ le_rfl).inv :=
+  (rfl)
+
 instance (r : ℤ) (hr : r₀ ≤ r) : Mono (X.towerα data pq r hr) := by
-  dsimp [towerα]
+  rw [towerα_def]
   infer_instance
 
 /-- The epimorphism `E^n(i₀(r) ≤ i₁ ≤ i₂ ≤ i₃(r₀)) ⟶ E_r(pq)`, which is the projection of the
@@ -167,11 +157,64 @@ noncomputable def towerπ (r : ℤ) (hr : r₀ ≤ r) :
     X.towerE data pq r r₀ ⟶ ((X.spectralSequence data).page r).X pq :=
   X.towerp data pq r r₀ r hr le_rfl hr ≫ (X.towerPageXIso data pq r hr).inv
 
+@[reassoc]
+lemma towerπ_def (r : ℤ) (hr : r₀ ≤ r) :
+    X.towerπ data pq r hr =
+      X.towerp data pq r r₀ r hr le_rfl hr ≫ (X.towerPageXIso data pq r hr).inv :=
+  (rfl)
+
+instance (r : ℤ) (hr : r₀ ≤ r) : Epi (X.towerπ data pq r hr) := by
+  rw [towerπ_def]
+  infer_instance
+
 /-- The epimorphism `E_{r₀}(pq) ⟶ E^n(i₀(r₀) ≤ i₁ ≤ i₂ ≤ i₃(r))`, whose kernel is the boundary
 tower `B_r(pq)`. -/
 noncomputable def towerβ (r : ℤ) (hr : r₀ ≤ r) :
     ((X.spectralSequence data).page r₀).X pq ⟶ X.towerE data pq r₀ r :=
   (X.towerPageXIso data pq r₀ le_rfl).hom ≫ X.towerp data pq r₀ r₀ r le_rfl le_rfl hr
+
+@[reassoc]
+lemma towerβ_def (r : ℤ) (hr : r₀ ≤ r) :
+    X.towerβ data pq r hr =
+      (X.towerPageXIso data pq r₀ le_rfl).hom ≫ X.towerp data pq r₀ r₀ r le_rfl le_rfl hr :=
+  (rfl)
+
+instance (r : ℤ) (hr : r₀ ≤ r) : Epi (X.towerβ data pq r hr) := by
+  rw [towerβ_def]
+  infer_instance
+
+/-- The lift to the cycles of the page `r` at `pq` of the cycle
+`E^n(i₀(r + 1) ≤ i₁ ≤ i₂ ≤ i₃(r)) ⟶ E_r(pq)`; it is an isomorphism. -/
+noncomputable def towerLiftCycles (r : ℤ) (hr : r₀ ≤ r) :
+    X.towerE data pq (r + 1) r ⟶ (((X.spectralSequence data).page r).sc pq).cycles :=
+  ((X.spectralSequence data).page r).liftCycles _ _ rfl
+    (X.mapFourδ₁Toδ₀'_spectralSequencePageXIso_inv_d data r (r + 1) rfl hr pq
+      ((c r).next pq) _ _ _ _ _ rfl rfl rfl rfl rfl (data.deg pq - 1) (data.deg pq)
+      (data.deg pq + 1) rfl)
+
+@[reassoc (attr := simp)]
+lemma towerLiftCycles_iCycles (r : ℤ) (hr : r₀ ≤ r) :
+    X.towerLiftCycles data pq r hr ≫ (((X.spectralSequence data).page r).sc pq).iCycles =
+      X.towerι data pq r (r + 1) r hr (by lia) hr ≫ (X.towerPageXIso data pq r hr).inv :=
+  -- `HomologicalComplex.iCycles` is by definition the `iCycles` of `sc`.
+  HomologicalComplex.liftCycles_i _ _ _ _ _
+
+instance (r : ℤ) (hr : r₀ ≤ r) : IsIso (X.towerLiftCycles data pq r hr) :=
+  X.isIso_liftCycles_mapFourδ₁Toδ₀'_spectralSequencePageXIso_inv data r (r + 1) rfl hr pq _ rfl
+    _ _ _ _ _ rfl rfl rfl rfl rfl (data.deg pq - 1) (data.deg pq) (data.deg pq + 1) rfl
+
+/-- The identification of the homology at `pq` of the page `r` with the page `r + 1` sends the
+class of `towerLiftCycles` to the canonical epimorphism
+`E^n(i₀(r + 1) ≤ i₁ ≤ i₂ ≤ i₃(r)) ⟶ E^n(i₀(r + 1) ≤ i₁ ≤ i₂ ≤ i₃(r + 1))`. -/
+@[reassoc]
+lemma towerLiftCycles_homologyπ_iso_hom (r : ℤ) (hr : r₀ ≤ r) :
+    X.towerLiftCycles data pq r hr ≫ (((X.spectralSequence data).page r).sc pq).homologyπ ≫
+        ((X.spectralSequence data).iso r (r + 1) pq rfl hr).hom =
+      X.towerp data pq (r + 1) r (r + 1) (by lia) hr (by lia) ≫
+        (X.towerPageXIso data pq (r + 1) (by lia)).inv :=
+  -- `HomologicalComplex.homologyπ` is by definition the `homologyπ` of `sc`.
+  X.liftCycles_homologyπ_spectralSequence_iso_hom data r (r + 1) rfl hr pq _ rfl
+    _ _ _ _ _ _ rfl rfl rfl rfl rfl rfl (data.deg pq - 1) (data.deg pq) (data.deg pq + 1) rfl
 
 /-- The kernel of the differential leaving `pq` on the page `r` is the image of the canonical map
 `E^n(i₀(r + 1) ≤ i₁ ≤ i₂ ≤ i₃(r)) ⟶ E_r(pq)`. -/
@@ -179,33 +222,28 @@ lemma kernelSubobject_spectralSequence_page_sc_g (r : ℤ) (hr : r₀ ≤ r) :
     kernelSubobject (((X.spectralSequence data).page r).sc pq).g =
       imageSubobject (X.towerι data pq r (r + 1) r hr (by lia) hr ≫
         (X.towerPageXIso data pq r hr).inv) := by
+  simp only [← X.towerLiftCycles_iCycles data pq r hr,
+    ← ShortComplex.kernelSubobjectIsoCycles_inv_arrow, imageSubobject_mono]
   let S := ((X.spectralSequence data).page r).sc pq
-  have hd := X.mapFourδ₁Toδ₀'_spectralSequencePageXIso_inv_d data r (r + 1) rfl hr pq
-    ((c r).next pq) _ _ _ _ _ rfl rfl rfl rfl rfl (data.deg pq - 1) (data.deg pq)
-    (data.deg pq + 1) rfl
-  let L := ((X.spectralSequence data).page r).liftCycles _ _ rfl hd
-  have hL : L ≫ S.iCycles = X.towerι data pq r (r + 1) r hr (by lia) hr ≫
-      (X.towerPageXIso data pq r hr).inv := HomologicalComplex.liftCycles_i _ _ _ _ _
-  have : IsIso L := X.isIso_liftCycles_mapFourδ₁Toδ₀'_spectralSequencePageXIso_inv data r
-    (r + 1) rfl hr pq _ rfl _ _ _ _ _ rfl rfl rfl rfl rfl (data.deg pq - 1) (data.deg pq)
-    (data.deg pq + 1) rfl
-  simp only [← hL, ← S.kernelSubobjectIsoCycles_inv_arrow, imageSubobject_mono]
-  exact (Subobject.mk_eq_of_comm _ (asIso (L ≫ S.kernelSubobjectIsoCycles.inv)) (by simp)).symm
+  exact (Subobject.mk_eq_of_comm _
+    (asIso (X.towerLiftCycles data pq r hr ≫ S.kernelSubobjectIsoCycles.inv)) (by simp [S])).symm
 
 /-- The monomorphisms `towerι` compose: `Z_{r+1}` lies in `Z_r`. -/
+@[reassoc]
 lemma towerι_towerα (r : ℤ) (hr : r₀ ≤ r) :
     X.towerι data pq r (r + 1) r₀ hr (by lia) le_rfl ≫ X.towerα data pq r hr =
       X.towerα data pq (r + 1) (by lia) := by
-  simp only [towerα, ← Category.assoc]
+  simp only [towerα_def, ← Category.assoc]
   congr 1
   exact X.mapFourδ₁Toδ₀'_comp ..
 
 /-- The square relating the projections of the cycles onto the pages `r` and `r + 1`. -/
+@[reassoc]
 lemma towerι_towerπ (r : ℤ) (hr : r₀ ≤ r) :
     X.towerι data pq r (r + 1) r₀ hr (by lia) le_rfl ≫ X.towerπ data pq r hr =
       X.towerp data pq (r + 1) r₀ r (by lia) le_rfl hr ≫
         X.towerι data pq r (r + 1) r hr (by lia) hr ≫ (X.towerPageXIso data pq r hr).inv := by
-  simp only [towerπ, ← Category.assoc]
+  simp only [towerπ_def, ← Category.assoc]
   congr 1
   exact X.mapFourδ₁Toδ₀'_mapFourδ₃Toδ₃' ..
 
@@ -220,7 +258,7 @@ lemma preimage_kernelSubobject_eq (r : ℤ) (hr : r₀ ≤ r)
       imageSubobject (X.towerα data pq (r + 1) (by lia)) := by
   have hker : kernelSubobject (X.towerπ data pq r hr) ≤
       imageSubobject (X.towerι data pq r (r + 1) r₀ hr (by lia) le_rfl) := by
-    rw [towerπ, kernelSubobject_comp_mono]
+    rw [towerπ_def, kernelSubobject_comp_mono]
     exact X.kernelSubobject_mapFourδ₄Toδ₃'_le_imageSubobject_mapFourδ₁Toδ₀' ..
   have hαe : X.towerα data pq r hr = e.inv ≫ P.Z.arrow := by rw [← he, Iso.inv_hom_id_assoc]
   rw [X.kernelSubobject_spectralSequence_page_sc_g data pq r hr]
@@ -234,9 +272,8 @@ lemma preimage_kernelSubobject_eq (r : ℤ) (hr : r₀ ≤ r)
     obtain ⟨A, π, _, z, hz⟩ := (imageSubobject_factors_iff_up_to_refinements _ _).1
       (imageSubobject_factors_of_comm _ _ _ _ (X.towerι_towerπ data pq r hr) hker _ hx)
     refine (imageSubobject_factors_iff_up_to_refinements _ _).2 ⟨A, π, inferInstance, z, ?_⟩
-    rw [← X.towerι_towerα data pq r hr, ← reassoc_of% hz, ← ofLE_arrow (P.preimage_le_Z _), hαe]
-    simp only [Iso.hom_inv_id_assoc]
-    rfl
+    rw [← X.towerι_towerα data pq r hr, ← reassoc_of% hz,
+      ← ofLE_arrow (P.preimage_le_Z (imageSubobject ι)), hαe, Iso.hom_inv_id_assoc]
   · apply Subobject.le_of_factors
     rw [← Subobject.factors_epi_comp_iff _ (factorThruImageSubobject _),
       imageSubobject_arrow_comp, ← X.towerι_towerα data pq r hr, hαe, ← Category.assoc,
@@ -258,50 +295,46 @@ theorem exists_iso_pagePresentation (r : ℤ) (hr : r₀ ≤ r) :
     rw [SpectralSequence.pagePresentation_self]
     refine ⟨Subobject.isoOfEq _ _ TauCeti.SubquotientPresentation.refl_Z ≪≫
       asIso (⊤ : Subobject _).arrow ≪≫ X.towerPageXIso data pq r₀ le_rfl, ?_, ?_⟩
-    · simp [towerα]
-    · simp [towerπ, TauCeti.SubquotientPresentation.π_refl]
+    · simp [towerα_def]
+    · simp [towerπ_def, TauCeti.SubquotientPresentation.π_refl]
   | succ r hr ih =>
     rw [SpectralSequence.pagePresentation_add_one _ _ r hr]
     generalize (X.spectralSequence data).pagePresentation pq r hr = P at ih ⊢
     obtain ⟨e, he, hπ⟩ := ih
     let S := ((X.spectralSequence data).page r).sc pq
-    have hZ := X.preimage_kernelSubobject_eq data pq r hr P e he hπ
-    refine ⟨Subobject.isoOfEq _ (Subobject.mk (X.towerα data pq (r + 1) (by lia))) ?_ ≪≫
-      Subobject.underlyingIso _, ?_, ?_⟩
-    · rw [← imageSubobject_mono, ← hZ]; rfl
-    · simp
-    · rw [TauCeti.SubquotientPresentation.π_mapIso, TauCeti.SubquotientPresentation.π_trans,
-        ShortComplex.π_homologyPresentation]
-      refine (Iso.inv_comp_eq _).1 ?_
-      have hy : (Subobject.isoOfEq _ (Subobject.mk (X.towerα data pq (r + 1) (by lia)))
-            (by rw [← imageSubobject_mono, ← hZ]) ≪≫ Subobject.underlyingIso _).inv ≫
-          P.preimageπ (kernelSubobject S.g) ≫ S.kernelSubobjectIsoCycles.hom =
-          X.towerp data pq (r + 1) r₀ r (by lia) le_rfl hr ≫
-            ((X.spectralSequence data).page r).liftCycles _ _ rfl
-              (X.mapFourδ₁Toδ₀'_spectralSequencePageXIso_inv_d data r (r + 1) rfl hr pq
-                ((c r).next pq) _ _ _ _ _ rfl rfl rfl rfl rfl (data.deg pq - 1) (data.deg pq)
-                (data.deg pq + 1) rfl) := by
-        rw [← cancel_mono S.iCycles]
-        simp only [Category.assoc, ShortComplex.kernelSubobjectIsoCycles_hom_iCycles,
-          TauCeti.SubquotientPresentation.preimageπ_arrow, hπ]
-        erw [HomologicalComplex.liftCycles_i]
-        rw [← X.towerι_towerπ data pq r hr]
-        simp only [← Category.assoc]
-        congr 1
-        rw [← cancel_mono (X.towerα data pq r hr), Category.assoc, he, X.towerι_towerα,
-          Category.assoc, ofLE_arrow]
-        simp
-      have h2 := hy =≫ (S.homologyπ ≫ ((X.spectralSequence data).iso r (r + 1) pq rfl hr).hom)
-      simp only [Iso.trans_inv, Category.assoc] at h2
-      erw [X.liftCycles_homologyπ_spectralSequence_iso_hom data r (r + 1) rfl hr pq _ rfl
-        _ _ _ _ _ _ rfl rfl rfl rfl rfl rfl (data.deg pq - 1) (data.deg pq) (data.deg pq + 1)
-        rfl] at h2
-      refine Eq.trans ?_ (h2.trans ?_)
-      · simp only [Iso.trans_inv]
-        erw [Category.assoc, Category.assoc, Category.assoc]; rfl
-      · simp only [towerπ, ← Category.assoc]
-        congr 1
-        exact X.mapFourδ₄Toδ₃'_comp ..
+    let Q := (P.trans S.homologyPresentation).mapIso
+      ((X.spectralSequence data).iso r (r + 1) pq rfl hr)
+    have hZ : Q.Z = Subobject.mk (X.towerα data pq (r + 1) (by lia)) := by
+      rw [TauCeti.SubquotientPresentation.mapIso_Z, TauCeti.SubquotientPresentation.trans_Z,
+        ShortComplex.homologyPresentation_Z, X.preimage_kernelSubobject_eq data pq r hr P e he hπ,
+        imageSubobject_mono]
+    obtain ⟨e', he'⟩ : ∃ e' : (Q.Z : C) ≅ X.towerE data pq (r + 1) r₀,
+        e'.hom ≫ X.towerα data pq (r + 1) (by lia) = Q.Z.arrow :=
+      ⟨Subobject.isoOfEq _ _ hZ ≪≫ Subobject.underlyingIso _, by simp⟩
+    refine ⟨e', he', ?_⟩
+    rw [TauCeti.SubquotientPresentation.π_mapIso', TauCeti.SubquotientPresentation.π_trans',
+      ShortComplex.π_homologyPresentation', ← cancel_epi e'.inv, Iso.inv_hom_id_assoc]
+    have key {x : X.towerE data pq (r + 1) r₀ ⟶ (kernelSubobject S.g : C)}
+        (hx : x ≫ (kernelSubobject S.g).arrow = X.towerp data pq (r + 1) r₀ r (by lia) le_rfl hr ≫
+          X.towerι data pq r (r + 1) r hr (by lia) hr ≫ (X.towerPageXIso data pq r hr).inv) :
+        x ≫ S.kernelSubobjectIsoCycles.hom =
+          X.towerp data pq (r + 1) r₀ r (by lia) le_rfl hr ≫ X.towerLiftCycles data pq r hr := by
+      rw [← cancel_mono S.iCycles, Category.assoc,
+        ShortComplex.kernelSubobjectIsoCycles_hom_iCycles, hx, Category.assoc,
+        towerLiftCycles_iCycles]
+    simp only [← Category.assoc]
+    rw [key]
+    · rw [Category.assoc, Category.assoc, towerLiftCycles_homologyπ_iso_hom, towerπ_def,
+        ← Category.assoc]
+      congr 1
+      exact X.mapFourδ₄Toδ₃'_comp ..
+    simp only [Category.assoc]
+    rw [ofLE_arrow, TauCeti.SubquotientPresentation.preimageπ_arrow, ofLE_comp_ofLE_assoc,
+      ofLE_comp_ofLE_assoc, hπ, ← X.towerι_towerπ data pq r hr]
+    simp only [← Category.assoc]
+    congr 1
+    rw [← cancel_mono (X.towerα data pq r hr), Category.assoc, Category.assoc, he, ofLE_arrow,
+      towerι_towerα, ← he', Iso.inv_hom_id_assoc]
 
 /-- **The cycle tower of the spectral sequence of a spectral object.** The cycles `Z_r(pq)` are
 the image of `E^n(i₀(r) ≤ i₁ ≤ i₂ ≤ i₃(r₀)) ⟶ E^n(i₀(r₀) ≤ i₁ ≤ i₂ ≤ i₃(r₀)) = E_{r₀}(pq)`. -/
@@ -316,10 +349,11 @@ theorem cyclesSubobject_spectralSequence (r : ℤ) (hr : r₀ ≤ r) :
   exact (Subobject.mk_eq_of_comm _ e.symm (by rw [Iso.symm_hom, ← he, Iso.inv_hom_id_assoc])).symm
 
 /-- The square relating `towerα`, `towerβ` and `towerπ`. -/
-private lemma towerα_towerβ (r : ℤ) (hr : r₀ ≤ r) :
+@[reassoc]
+lemma towerα_towerβ (r : ℤ) (hr : r₀ ≤ r) :
     X.towerα data pq r hr ≫ X.towerβ data pq r hr = X.towerπ data pq r hr ≫
       (X.towerPageXIso data pq r hr).hom ≫ X.towerι data pq r₀ r r le_rfl hr hr := by
-  simp only [towerα, towerβ, towerπ, Category.assoc, Iso.inv_hom_id_assoc]
+  simp only [towerα_def, towerβ_def, towerπ_def, Category.assoc, Iso.inv_hom_id_assoc]
   exact X.mapFourδ₁Toδ₀'_mapFourδ₃Toδ₃' ..
 
 /-- **The boundary tower of the spectral sequence of a spectral object.** The boundaries
@@ -332,22 +366,13 @@ theorem boundariesSubobject_spectralSequence (r : ℤ) (hr : r₀ ≤ r) :
   rw [← SpectralSequence.pagePresentation_B _ pq r hr]
   generalize (X.spectralSequence data).pagePresentation pq r hr = P at h ⊢
   obtain ⟨e, he, hπ⟩ := h
-  obtain ⟨u, hu⟩ : ∃ u, u = (kernelSubobject P.π).arrow ≫ P.Z.arrow := ⟨_, rfl⟩
-  have : Mono u := hu ▸ inferInstance
-  have hB : P.B = Subobject.mk u := by
-    calc P.B = (Subobject.map P.Z.arrow).obj (kernelSubobject P.π) := by
-          rw [P.kernelSubobject_π, map_pullback_arrow_of_le P.le]
-      _ = (Subobject.map P.Z.arrow).obj (Subobject.mk (kernelSubobject P.π).arrow) := by
-          rw [mk_arrow]
-      _ = Subobject.mk u := by rw [Subobject.map_mk]; subst hu; rfl
+  have hB {W : C} (x : W ⟶ P.Z) : P.B.Factors (x ≫ P.Z.arrow) ↔ x ≫ P.π = 0 := by
+    rw [← P.preimage_bot, P.factors_preimage_iff, bot_factors_iff_zero]
   have hsq := X.towerα_towerβ data pq r hr
-  rw [hB]
   apply le_antisymm
-  · apply Subobject.le_of_factors
-    rw [← Subobject.underlyingIso_hom_comp_eq_mk]
-    refine Subobject.factors_of_factors_right _ (kernelSubobject_factors _ _ ?_)
-    rw [hu, Category.assoc, ← he, Category.assoc, hsq, ← Category.assoc e.hom, ← hπ,
-      ← Category.assoc, kernelSubobject_arrow_comp, zero_comp]
+  · refine le_kernelSubobject _ _ ?_
+    rw [← ofLE_arrow P.le, Category.assoc, ← he, Category.assoc, hsq, ← Category.assoc e.hom,
+      ← hπ, ← Category.assoc, (hB _).1 (by rw [ofLE_arrow]; exact factors_self _), zero_comp]
   · apply Subobject.le_of_factors
     have h1 : (imageSubobject (X.towerι data pq r₀ r r₀ le_rfl hr le_rfl)).Factors
         ((kernelSubobject (X.towerβ data pq r hr)).arrow ≫
@@ -355,22 +380,20 @@ theorem boundariesSubobject_spectralSequence (r : ℤ) (hr : r₀ ≤ r) :
       Subobject.factors_of_le _
         (X.kernelSubobject_mapFourδ₄Toδ₃'_le_imageSubobject_mapFourδ₁Toδ₀' ..)
         (kernelSubobject_factors _ _ (by
-          simpa [towerβ] using kernelSubobject_arrow_comp (X.towerβ data pq r hr)))
+          simpa [towerβ_def] using kernelSubobject_arrow_comp (X.towerβ data pq r hr)))
     obtain ⟨A, π, _, z, hz⟩ := (imageSubobject_factors_iff_up_to_refinements _ _).1 h1
     have hz' : π ≫ (kernelSubobject (X.towerβ data pq r hr)).arrow =
         z ≫ X.towerα data pq r hr := by
-      rw [towerα, ← reassoc_of% hz]
+      rw [towerα_def, ← reassoc_of% hz]
       simp
     have hz0 : (z ≫ e.inv) ≫ P.π = 0 := by
       rw [← cancel_mono ((X.towerPageXIso data pq r hr).hom ≫
         X.towerι data pq r₀ r r le_rfl hr hr), zero_comp, hπ]
       simp only [Category.assoc, Iso.inv_hom_id_assoc]
       rw [← hsq, ← reassoc_of% hz', kernelSubobject_arrow_comp, comp_zero]
-    rw [← Subobject.factors_epi_comp_iff _ π, hz', Subobject.mk_factors_iff]
-    refine ⟨(kernelSubobject P.π).factorThru _ (kernelSubobject_factors _ _ hz0), ?_⟩
-    change _ ≫ u = _
-    rw [hu, ← Category.assoc, Subobject.factorThru_arrow, Category.assoc, ← he,
-      Iso.inv_hom_id_assoc]
+    rw [← Subobject.factors_epi_comp_iff _ π, hz', (Iso.eq_inv_comp e).2 he, ← Category.assoc,
+      hB]
+    exact hz0
 
 end Tower
 
