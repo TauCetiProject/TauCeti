@@ -119,6 +119,12 @@ theorem smul_mem_sectionPoints_iff {p : TotalSpace (realCliffordSpinCGroupZero (
   rw [TotalSpace.smul_mk, smul_mk_mem_sectionPoints_iff, ← hp, (s.frameAt p).injective.eq_iff,
     (WithLp.toLp_injective 2).eq_iff, mem_realCliffordSpinCLastStabilizer_iff]
 
+/-- The last-vector stabilizer keeps the points adapted to `σ` adapted. -/
+theorem smul_mem_sectionPoints :
+    ∀ p ∈ s.sectionPoints σ, ∀ g ∈ realCliffordSpinCLastStabilizer n,
+      op g • p ∈ s.sectionPoints σ :=
+  fun _ hp g ↦ (smul_mem_sectionPoints_iff hp g).mpr
+
 /-! ### Local triviality -/
 
 section Trivialization
@@ -207,20 +213,17 @@ the last-vector stabilizer, the image of `Spinᶜ(n) ⊆ Spinᶜ(n + 1)`. -/
 theorem principalBundle_sectionPoints (hσ : Continuous fun y ↦ (⟨y, σ y⟩ : TotalSpace F E))
     (hσ₁ : ∀ y, ‖σ y‖ = 1) :
     letI := (isLocallyTrivialReduction_sectionPoints (s := s) hσ hσ₁).fiberBundle
-    letI := reductionMulAction (H := realCliffordSpinCLastStabilizer n) (S := s.sectionPoints σ)
-      fun _ hp g hg ↦ (smul_mem_sectionPoints_iff hp g).mpr hg
+    letI := reductionMulAction (smul_mem_sectionPoints (s := s) (σ := σ))
     letI := MapFiber.mulAction
       (proj := fun p : s.sectionPoints σ ↦
         (p : TotalSpace (realCliffordSpinCGroupZero (n + 1)) s.P).proj)
       (M := (realCliffordSpinCLastStabilizer n)ᵐᵒᵖ)
-      (proj_reductionMulAction_smul (H := realCliffordSpinCLastStabilizer n)
-        (S := s.sectionPoints σ) (fun _ _ ↦ rfl) fun _ hp g hg ↦
-          (smul_mem_sectionPoints_iff hp g).mpr hg)
+      (proj_reductionMulAction_smul (fun _ _ ↦ rfl) smul_mem_sectionPoints)
     PrincipalBundle (realCliffordSpinCLastStabilizer n)
       (MapFiber fun p : s.sectionPoints σ ↦
         (p : TotalSpace (realCliffordSpinCGroupZero (n + 1)) s.P).proj) :=
   (isLocallyTrivialReduction_sectionPoints (s := s) hσ hσ₁).principalBundle (fun _ _ ↦ rfl)
-    fun _ hp g hg ↦ (smul_mem_sectionPoints_iff hp g).mpr hg
+    smul_mem_sectionPoints
 
 end Trivialization
 

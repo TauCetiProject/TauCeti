@@ -208,8 +208,9 @@ theorem trivializationAt_reductionFiberBundle (x : B) :
 theorem principalBundle_reductionFiber [SMulMemIff H S] :
     letI := reductionFiberBundle hS
     PrincipalBundle H (ReductionFiber S) :=
-  hS.atlas.principalBundle_of_homeomorph _ _ _ (fun _ _ _ ↦ rfl)
-    fun x p hp g ↦ congrArg Prod.snd (hS.atlas_trivAt_mk_smul x g p (op g • p).property hp)
+  hS.atlas.principalBundle_of_homeomorph _ _ _ (fun _ _ _ ↦ rfl) fun x p hp g ↦ by
+    rw [SMulMemIff.smul_eq_mk g p ((SMulMemIff.smul_mem_iff p.property).2 g.property)]
+    exact congrArg Prod.snd (hS.atlas_trivAt_mk_smul x g p _ hp)
 
 end Bundle
 

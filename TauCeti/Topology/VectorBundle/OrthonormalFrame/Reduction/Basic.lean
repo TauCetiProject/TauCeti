@@ -106,6 +106,13 @@ theorem SMulMemIff.coe_smul (g : Hᵐᵒᵖ) (p : S) :
       op (g.unop : unitary (V →L[ℝ] V)) • (p : OrthonormalFrameBundle ℝ F E V) :=
   rfl
 
+/-- The action of `g ∈ H` on a point `p` of `S` is the point `op g • p` of `S`, with any proof
+that it lies in `S`. -/
+theorem SMulMemIff.smul_eq_mk (g : H) (p : S)
+    (hgp : op (g : unitary (V →L[ℝ] V)) • (p : OrthonormalFrameBundle ℝ F E V) ∈ S) :
+    op g • p = ⟨_, hgp⟩ :=
+  Subtype.ext (coe_smul (op g) p)
+
 /-- The action of `H` on `S` is free. -/
 @[simp↓]
 theorem SMulMemIff.smul_eq_self_iff {g : H} {p : S} : op g • p = p ↔ g = 1 := by
