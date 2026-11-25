@@ -28,7 +28,8 @@ Lebesgue-null set in `E` is `μH[d]`- and `μHE[d]`-null for `d ≥ finrank ℝ 
 `TauCeti.euclideanHausdorffMeasure_eq_zero_of_volume_eq_zero`); conversely, every subset of `E`
 with finite `μHE[d]` measure for `d < finrank ℝ E` has Lebesgue volume zero
 (`TauCeti.volume_eq_zero_of_euclideanHausdorffMeasure_ne_top`). In dimension zero, Hausdorff
-measure is counting measure (`TauCeti.hausdorffMeasure_zero_eq_count`). In dimension one the
+measure is counting measure (`TauCeti.hausdorffMeasure_zero_eq_count`), so `μHE[0]` gives `encard`
+on every set (`TauCeti.euclideanHausdorffMeasure_zero_apply`). In dimension one the
 normalizing constant is `1`, because `μH[1]` already agrees with Lebesgue measure on `ℝ`. Hence
 `μHE[1] = μH[1]` on every extended metric space, so length statements may be proved with either
 normalization.
@@ -163,6 +164,12 @@ theorem IsometryEquiv.measurePreserving_euclideanHausdorffMeasure_restrict_front
     isClosed_frontier.measurableSet
 
 namespace TauCeti
+
+/-- The zero-dimensional Euclidean Hausdorff measure `μHE[0]` counts the points of any set,
+measurable or not, on every extended metric space. -/
+theorem euclideanHausdorffMeasure_zero_apply {X : Type*} [EMetricSpace X] [MeasurableSpace X]
+    [BorelSpace X] (s : Set X) : μHE[0] s = s.encard := by
+  rw [Measure.euclideanHausdorffMeasure_zero, hausdorffMeasure_zero_apply]
 
 open Measure in
 /-- Integrating `μHE[k] (g y)` pulls out the finite Euclidean normalization factor

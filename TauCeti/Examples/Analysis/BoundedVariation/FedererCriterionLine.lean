@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.Real
 public import TauCeti.Analysis.BoundedVariation.Slicing.Criterion
-public import TauCeti.MeasureTheory.Measure.Hausdorff
+public import TauCeti.Geometry.Euclidean.Volume.Measure
 
 /-!
 # Federer's criterion on the line: locally finite but infinite perimeter
@@ -134,19 +134,14 @@ theorem perimeter_eq_top : perimeter volume unitIoo intervals = ∞ := by
     _ ≤ _ := natCast_le_perimeter_sup_window _
     _ ≤ _ := perimeter_mono hsub
 
-/-- On `ℝ`, the codimension-one Euclidean Hausdorff measure `H⁰` counts points. -/
-private theorem euclideanHausdorffMeasure_finrank_sub_one_apply (t : Set ℝ) :
-    μHE[finrank ℝ ℝ - 1] t = t.encard := by
-  rw [finrank_self, Nat.sub_self, Measure.euclideanHausdorffMeasure_zero,
-    hausdorffMeasure_zero_apply]
-
 /-- The essential boundary of `s` in `(0, 1)` is infinite. -/
 theorem infinite_essentialBoundary_inter :
     (essentialBoundary volume intervals ∩ unitIoo).Infinite := by
   -- The sharp bound `P(s; Ω) ≤ H⁰(∂ᵉs ∩ Ω)` with `P(s; (0, 1)) = ∞`.
   have h := perimeter_le_euclideanHausdorffMeasure_essentialBoundary_inter unitIoo
     measurableSet_intervals.nullMeasurableSet
-  rw [perimeter_eq_top, top_le_iff, euclideanHausdorffMeasure_finrank_sub_one_apply] at h
+  rw [perimeter_eq_top, top_le_iff, finrank_self, Nat.sub_self,
+    euclideanHausdorffMeasure_zero_apply] at h
   exact encard_eq_top_iff.1 (by exact_mod_cast h)
 
 /-- **The perimeter is `H⁰` of the essential boundary.** `P(s; (0, 1)) = H⁰(∂ᵉs ∩ (0, 1))`; both
@@ -154,11 +149,8 @@ sides are `∞`. -/
 theorem perimeter_eq_euclideanHausdorffMeasure :
     perimeter volume unitIoo intervals =
       μHE[0] (essentialBoundary volume intervals ∩ unitIoo) := by
-  have h := euclideanHausdorffMeasure_finrank_sub_one_apply
-    (essentialBoundary volume intervals ∩ unitIoo)
-  rw [finrank_self, Nat.sub_self, infinite_essentialBoundary_inter.encard_eq,
-    ENat.toENNReal_top] at h
-  rw [perimeter_eq_top, h]
+  rw [perimeter_eq_top, euclideanHausdorffMeasure_zero_apply,
+    infinite_essentialBoundary_inter.encard_eq, ENat.toENNReal_top]
 
 /-- On `(t, ∞)` with `1/(2N + 2) ≤ t`, the set `s` agrees with its first `N` intervals. -/
 private theorem intervals_inter_Ioi {t : ℝ} {N : ℕ} (hN : 1 / (2 * (N : ℝ) + 2) ≤ t) :
@@ -207,7 +199,7 @@ theorem exists_perimeter_ne_top {K : Set ℝ} (hK : IsCompact K) (hKΩ : K ⊆ u
     ∃ U : Opens ℝ, K ⊆ (U : Set ℝ) ∧ perimeter volume U intervals ≠ ∞ := by
   refine exists_perimeter_ne_top_of_euclideanHausdorffMeasure_essentialBoundary_inter_ne_top
     measurableSet_intervals.nullMeasurableSet (fun K' hK' hK'Ω => ?_) hK hKΩ
-  rw [euclideanHausdorffMeasure_finrank_sub_one_apply]
+  rw [finrank_self, Nat.sub_self, euclideanHausdorffMeasure_zero_apply]
   exact_mod_cast encard_essentialBoundary_inter_ne_top hK' hK'Ω
 
 end TauCeti.Examples.FedererCriterionLine
