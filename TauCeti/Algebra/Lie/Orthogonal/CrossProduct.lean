@@ -17,6 +17,7 @@ import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.Matrix.DotProduct
 
 /-!
 # The orthogonal Lie algebra `so(3)` and the cross product
@@ -396,13 +397,12 @@ end Form
 theorem lieBracketNorm_soThreeForm : (soThreeForm ℝ).toQuadraticMap.lieBracketNorm = 1 := by
   have hQ (u : Fin 3 → ℝ) : (soThreeForm ℝ).toQuadraticMap (soThreeEquiv ℝ u) = u ⬝ᵥ u := by
     simp
-  have hnonneg (u : Fin 3 → ℝ) : 0 ≤ u ⬝ᵥ u :=
-    Finset.sum_nonneg fun i _ ↦ mul_self_nonneg (u i)
   have hpos : (soThreeForm ℝ).toQuadraticMap.PosDef := by
     intro A hA
     obtain ⟨u, rfl⟩ := (soThreeEquiv ℝ).surjective A
     rw [hQ]
-    exact (hnonneg u).lt_of_ne' (dotProduct_self_eq_zero.not.mpr (by rintro rfl; simp at hA))
+    exact (Matrix.dotProduct_self_nonneg u).lt_of_ne'
+      (dotProduct_self_eq_zero.not.mpr (by rintro rfl; simp at hA))
   refine le_antisymm ?_ ?_
   · refine QuadraticMap.lieBracketNorm_le_of_forall_apply_le hpos.nonneg zero_le_one
       fun A C ↦ ?_

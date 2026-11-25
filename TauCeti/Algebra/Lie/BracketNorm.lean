@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 import TauCeti.Analysis.InnerProductSpace.Spectral.Relative
+import TauCeti.LinearAlgebra.QuadraticForm.Real
 
 /-!
 # The norm of the Lie bracket
@@ -84,11 +85,6 @@ theorem lieBracketNorm_def :
 
 variable {Q}
 
-/-- Homogeneity of the norm `|X| = √(Q X)`: `|a • Z| = |a| |Z|`. -/
-private theorem sqrt_apply_smul (a : ℝ) (Z : L) : √(Q (a • Z)) = |a| * √(Q Z) := by
-  rw [QuadraticMap.map_smul, smul_eq_mul, Real.sqrt_mul (mul_self_nonneg a),
-    Real.sqrt_mul_self_eq_abs]
-
 /-- The norm of the Lie bracket is nonnegative. -/
 theorem lieBracketNorm_nonneg (Q : QuadraticForm ℝ L) : 0 ≤ Q.lieBracketNorm :=
   Real.sSup_nonneg (by rintro _ ⟨p, -, rfl⟩; exact Real.sqrt_nonneg _)
@@ -143,7 +139,7 @@ theorem lieBracketNorm_smul (Q : QuadraticForm ℝ L) {c : ℝ} (hc : 0 < c) :
   have hball (Z : L) : (c • Q) Z = Q (√c • Z) := by
     rw [smul_apply, QuadraticMap.map_smul, smul_eq_mul, smul_eq_mul, Real.mul_self_sqrt hc.le]
   have hval (X Y : L) : √((c • Q) ⁅X, Y⁆) = (√c)⁻¹ * √(Q ⁅√c • X, √c • Y⁆) := by
-    rw [smul_lie, lie_smul, sqrt_apply_smul, sqrt_apply_smul, hball, sqrt_apply_smul,
+    rw [smul_lie, lie_smul, sqrt_map_smul, sqrt_map_smul, hball, sqrt_map_smul,
       abs_of_pos hs]
     field_simp
   rw [lieBracketNorm_def, lieBracketNorm_def, ← smul_eq_mul,
@@ -231,9 +227,9 @@ theorem sqrt_apply_lie_le (hQ : Q.PosDef) (X Y : L) :
   have hb : 0 < √(Q Y) := Real.sqrt_pos.mpr (hQ Y hY)
   -- Normalize `X` and `Y` to unit length.
   have hunit {Z : L} (hZ : 0 < √(Q Z)) : Q ((√(Q Z))⁻¹ • Z) ≤ 1 := by
-    rw [← Real.sqrt_le_one, sqrt_apply_smul, abs_of_pos (inv_pos.mpr hZ), inv_mul_cancel₀ hZ.ne']
+    rw [← Real.sqrt_le_one, sqrt_map_smul, abs_of_pos (inv_pos.mpr hZ), inv_mul_cancel₀ hZ.ne']
   have h := sqrt_apply_lie_le_lieBracketNorm hQ (hunit ha) (hunit hb)
-  rw [smul_lie, lie_smul, sqrt_apply_smul, sqrt_apply_smul, abs_of_pos (inv_pos.mpr ha),
+  rw [smul_lie, lie_smul, sqrt_map_smul, sqrt_map_smul, abs_of_pos (inv_pos.mpr ha),
     abs_of_pos (inv_pos.mpr hb)] at h
   -- `h : |X|⁻¹ (|Y|⁻¹ |⁅X, Y⁆|) ≤ γ₀`; clear the denominators.
   calc √(Q ⁅X, Y⁆) = √(Q X) * √(Q Y) * ((√(Q X))⁻¹ * ((√(Q Y))⁻¹ * √(Q ⁅X, Y⁆))) := by
