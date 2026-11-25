@@ -27,7 +27,9 @@ line of a fixed direction in boundedly many points is null. It also records that
 negating a probability measure gives a probability measure, so that the law of `X⁻¹` or `-X` can
 be used wherever a probability law is expected, that pulling a left- or right-invariant measure
 back along a group homomorphism, in particular to a subgroup, keeps it left- or right-invariant
-without any measurability hypotheses (for subgroups as typeclass instances), and that restricting
+without any measurability hypotheses (for subgroups as typeclass instances), that the product
+`volume` of left- or right-invariant measure spaces (such as Lebesgue measure on `ℝ × ℝ`) is
+left- or right-invariant, and that restricting
 an inversion-invariant measure to a symmetric set, or weighting it by an even density, keeps it
 inversion-invariant. A surjective homomorphism onto a finite group with measurable kernel splits
 a left-invariant measure evenly among its fibres, the translates of the kernel. Finally, for an
@@ -35,7 +37,10 @@ inner regular measure whose right translations are quasi-measure-preserving—in
 inner regular Haar measure on a locally compact group—if an open set `U` lies up to a null set
 inside a null-measurable set `V` satisfying `V * s ⊆ V`, then `U * s` (such as the subgroup
 saturation `(QuotientGroup.mk : G → G ⧸ N) ⁻¹' (QuotientGroup.mk '' U) = U * N`) also lies in `V`
-up to a null set.
+up to a null set. In a first-countable topological group with measurable open sets and measurable
+multiplication, a compact set of positive measure for a left-invariant measure finite on compact
+sets forces the group to be locally compact
+(`IsCompact.locallyCompactSpace_of_measure_ne_zero_of_group`).
 
 ## Main results
 
@@ -61,6 +66,9 @@ up to a null set.
   `Measure.isMulRightInvariant_comap_subtype`, `Measure.isAddRightInvariant_comap_subtype`: the
   instances for the pullback of an invariant measure to a subgroup, without measurability
   hypotheses on the subgroup.
+* `Measure.isMulLeftInvariant_volume_prod`, `Measure.isAddLeftInvariant_volume_prod`,
+  `Measure.isMulRightInvariant_volume_prod`, `Measure.isAddRightInvariant_volume_prod`: the
+  instances for the `volume` of a product of invariant measure spaces.
 * `IsOpen.measure_mul_sdiff_eq_zero_of_quasiMeasurePreserving`,
   `IsOpen.measure_add_sdiff_eq_zero_of_quasiMeasurePreserving`,
   `IsOpen.measure_mul_sdiff_eq_zero`, `IsOpen.measure_add_sdiff_eq_zero`: if an open set `U` has
@@ -71,6 +79,11 @@ up to a null set.
 * `measure_preimage_monoidHom`, `measure_preimage_addMonoidHom`: for a surjective homomorphism
   `φ : G → F` onto a finite group with measurable kernel and a left-invariant measure `μ` on `G`,
   the preimage of `T ⊆ F` has measure `#T / #F · μ G`.
+* `IsCompact.locallyCompactSpace_of_measure_ne_zero_of_group`,
+  `IsCompact.locallyCompactSpace_of_measure_ne_zero_of_addGroup`: in a first-countable
+  topological group with measurable open sets and measurable multiplication (or addition), a
+  compact set of positive measure for a left-invariant measure finite on compact sets forces the
+  group to be locally compact.
 -/
 
 public section
@@ -233,6 +246,30 @@ instance isMulRightInvariant_comap_subtype {G S : Type*} [Group G] [MeasurableSp
     [μ.IsMulRightInvariant] : (μ.comap ((↑) : H → G)).IsMulRightInvariant :=
   isMulRightInvariant_comap μ (SubgroupClass.subtype H)
 
+/-- **The product volume of left-invariant measure spaces is left-invariant**: the `volume`
+form of Mathlib's `Measure.prod.instIsMulLeftInvariant`, which instance search does not find
+through the definition of `volume` on a product. -/
+@[to_additive /-- **The product volume of additively left-invariant measure spaces is
+left-invariant**, for instance Lebesgue measure on `ℝ × ℝ`: the `volume` form of Mathlib's
+`Measure.prod.instIsAddLeftInvariant`. -/]
+instance isMulLeftInvariant_volume_prod {G H : Type*} [Mul G] [MeasureSpace G] [MeasurableMul G]
+    [(volume : Measure G).IsMulLeftInvariant] [Mul H] [MeasureSpace H] [MeasurableMul H]
+    [(volume : Measure H).IsMulLeftInvariant] [SFinite (volume : Measure H)] :
+    (volume : Measure (G × H)).IsMulLeftInvariant :=
+  prod.instIsMulLeftInvariant
+
+/-- **The product volume of right-invariant measure spaces is right-invariant**: the `volume`
+form of Mathlib's `Measure.prod.instIsMulRightInvariant`, which instance search does not find
+through the definition of `volume` on a product. -/
+@[to_additive /-- **The product volume of additively right-invariant measure spaces is
+right-invariant**, for instance Lebesgue measure on `ℝ × ℝ`: the `volume` form of Mathlib's
+`Measure.prod.instIsAddRightInvariant`. -/]
+instance isMulRightInvariant_volume_prod {G H : Type*} [Mul G] [MeasureSpace G] [MeasurableMul G]
+    [(volume : Measure G).IsMulRightInvariant] [Mul H] [MeasureSpace H] [MeasurableMul H]
+    [(volume : Measure H).IsMulRightInvariant] [SFinite (volume : Measure H)] :
+    (volume : Measure (G × H)).IsMulRightInvariant :=
+  prod.instIsMulRightInvariant
+
 /-- The inverse of a probability measure is a probability measure. -/
 @[to_additive /-- The negation of a probability measure is a probability measure. -/]
 instance isProbabilityMeasure_inv {G : Type*} [MeasurableSpace G] [Inv G] (μ : Measure G)
@@ -387,3 +424,80 @@ theorem IsOpen.measure_mul_sdiff_eq_zero
       exact Measure.smul_absolutelyContinuous⟩) hUV
 
 end MulSdiff
+
+section LocallyCompact
+
+open Filter Function
+
+open scoped Topology
+
+/-- In a first-countable topological group `G` with measurable open sets and measurable
+multiplication, if a left-invariant measure `μ` finite on compact sets assigns positive measure to a
+compact set `K`, then `G` is locally compact. -/
+@[to_additive /-- In a first-countable additive topological group `G` with measurable open sets
+and measurable addition, if a left-invariant measure `μ` finite on compact sets assigns positive
+measure to a compact set `K`, then `G` is locally compact. -/]
+theorem IsCompact.locallyCompactSpace_of_measure_ne_zero_of_group
+    {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+    [FirstCountableTopology G] [MeasurableSpace G] [OpensMeasurableSpace G] [MeasurableMul G]
+    {μ : Measure G} [μ.IsMulLeftInvariant] [IsFiniteMeasureOnCompacts μ]
+    {K : Set G} (hK : IsCompact K) (hμ : μ K ≠ 0) : LocallyCompactSpace G := by
+  classical
+  by_contra hlc
+  -- Replace `K` by its closure, which is closed, compact (since `G` is regular), and has positive
+  -- measure.
+  set C : Set G := closure K
+  have hC : IsCompact C := hK.closure
+  have hC_closed : IsClosed C := isClosed_closure
+  have hCμ : μ C ≠ 0 := fun h ↦ hμ (measure_mono_null subset_closure h)
+  obtain ⟨U, hU⟩ := (𝓝 (1 : G)).exists_antitone_basis
+  -- Outside any finite union of translates of `C * C⁻¹`, every neighbourhood `U n` of `1` has a
+  -- point; otherwise that compact union would be a neighbourhood of `1`, making `G` locally
+  -- compact.
+  have hstep (n : ℕ) (s : Finset G) : ∃ y ∈ U n, ∀ g ∈ s, y ∉ (g * ·) '' (C * C⁻¹) := by
+    by_contra! h
+    have hcomp : IsCompact (⋃ g ∈ s, (g * ·) '' (C * C⁻¹)) :=
+      s.isCompact_biUnion fun g _ ↦ (hC.mul hC.inv).image (continuous_const_mul g)
+    have hmem : (⋃ g ∈ s, (g * ·) '' (C * C⁻¹)) ∈ 𝓝 (1 : G) :=
+      Filter.mem_of_superset (hU.mem n) fun y hy ↦ by
+        obtain ⟨g, hg, hyg⟩ := h y hy
+        exact Set.mem_biUnion hg hyg
+    exact hlc (hcomp.locallyCompactSpace_of_mem_nhds_of_group hmem)
+  choose next hnextU hnextF using hstep
+  -- Recursively choose `x n ∈ U n` disjoint from all earlier `x j * (C * C⁻¹)`.
+  let S : ℕ → Finset G := Nat.rec ∅ fun n s ↦ insert (next n s) s
+  let x : ℕ → G := fun n ↦ next n (S n)
+  have hS_mono : Monotone S := monotone_nat_of_le_succ fun n ↦ Finset.subset_insert _ _
+  have hxS {j n : ℕ} (hjn : j < n) : x j ∈ S n :=
+    hS_mono hjn (Finset.mem_insert_self (x j) (S j))
+  -- The sequence `x` converges to `1`, so `insert 1 (range x) * C` is compact.
+  have hx_tendsto : Tendsto x atTop (𝓝 (1 : G)) :=
+    hU.tendsto_right_iff.2 fun n _ ↦
+      eventually_atTop.2 ⟨n, fun m hm ↦ hU.antitone hm (hnextU m (S m))⟩
+  have hcompact : IsCompact (insert 1 (Set.range x) * C) :=
+    hx_tendsto.isCompact_insert_range.mul hC
+  -- The translates `x n * C` are measurable, pairwise disjoint, and lie inside that compact set.
+  have hdisj : Pairwise (Disjoint on fun n ↦ (fun y ↦ (x n)⁻¹ * y) ⁻¹' C) := by
+    have aux {j k : ℕ} (hjk : j < k) :
+        Disjoint ((fun y ↦ (x j)⁻¹ * y) ⁻¹' C) ((fun y ↦ (x k)⁻¹ * y) ⁻¹' C) := by
+      refine Set.disjoint_left.2 fun z hzj hzk ↦ hnextF k (S k) (x j) (hxS hjk) ?_
+      refine ⟨((x j)⁻¹ * z) * ((x k)⁻¹ * z)⁻¹, Set.mul_mem_mul hzj (Set.inv_mem_inv.2 hzk), ?_⟩
+      simp [mul_assoc, x]
+    intro j k hjk
+    rcases hjk.lt_or_gt with h | h
+    · exact aux h
+    · exact (aux h).symm
+  have hmeas (n : ℕ) : MeasurableSet ((fun y ↦ (x n)⁻¹ * y) ⁻¹' C) :=
+    (hC_closed.preimage (continuous_const_mul _)).measurableSet
+  have hsub : (⋃ n, (fun y ↦ (x n)⁻¹ * y) ⁻¹' C) ⊆ insert 1 (Set.range x) * C :=
+    Set.iUnion_subset fun n z hz ↦
+      ⟨x n, Set.mem_insert_of_mem _ ⟨n, rfl⟩, (x n)⁻¹ * z, hz, mul_inv_cancel_left _ _⟩
+  have hle : (∑' _ : ℕ, μ C) ≤ μ (insert 1 (Set.range x) * C) := by
+    calc (∑' _ : ℕ, μ C) = ∑' n : ℕ, μ ((fun y ↦ (x n)⁻¹ * y) ⁻¹' C) := by
+          simp only [measure_preimage_mul]
+      _ = μ (⋃ n, (fun y ↦ (x n)⁻¹ * y) ⁻¹' C) := (measure_iUnion hdisj hmeas).symm
+      _ ≤ μ (insert 1 (Set.range x) * C) := measure_mono hsub
+  rw [ENNReal.tsum_const_eq_top_of_ne_zero hCμ] at hle
+  exact hcompact.measure_lt_top.not_ge hle
+
+end LocallyCompact

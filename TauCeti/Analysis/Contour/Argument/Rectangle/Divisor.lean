@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Contour.Argument.Rectangle.Basic
 public import TauCeti.Analysis.Meromorphic.Counting.Basic
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.Argument.Divisor
 import TauCeti.Analysis.Contour.Winding.Number.Rectangle
 
@@ -45,7 +46,7 @@ theorem argumentPrinciple_rectBoundary_divisor (hre : z.re ≤ w.re) (him : z.im
       2 * π * I * (divisorCount f U (Rectangle z w) : ℂ) :=
   argumentPrinciple_nullHomologous_divisor
     (isCompact_uIcc.reProdIm isCompact_uIcc) (convex_rectangle z w).isPreconnected
-    hRU hf hfr (isPiecewiseC1On_rectBoundary z w)
+    hRU hf hfr (isPiecewiseC1On_rectBoundary z w).absolutelyContinuousOnInterval
     (fun t _ ↦ rectBoundary_mem_frontier t) (by simp)
     (isNullHomologous_rectBoundary Subset.rfl)
     (fun x hx ↦ windingNumber_rectBoundary_eq_one (interior_rectangle hre him ▸ hx))

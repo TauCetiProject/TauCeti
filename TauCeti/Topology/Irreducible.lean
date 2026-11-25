@@ -8,20 +8,28 @@ module
 public import Mathlib.Topology.Irreducible
 
 /-!
-# Irreducible components: preimages and the component through a point
+# Irreducible components: preimages, images and the component through a point
 
 A continuous surjection whose preimages of irreducible components are irreducible induces, by
 taking preimages, a bijection between the irreducible components of the target and those of the
 source. Over a field, this recognises base changes along which every irreducible component stays
 irreducible, that is, geometrically irreducible components.
 
+A homeomorphism `h` induces a bijection `Homeomorph.irreducibleComponentsEquiv h` between
+irreducible components that sends a component to its image under `h`.
+
 Mathlib's `irreducibleComponent x` is a maximal irreducible set containing `x`. We bundle it as
 an element `irreducibleComponentOf x` of `irreducibleComponents α`, giving a map from points to
 irreducible components. When every point lies on a unique irreducible component, as in a scheme
-whose stalks are integral domains, this map sends a point to the component containing it.
+whose stalks are integral domains, this map sends a point to the component containing it, and
+`Homeomorph.irreducibleComponentsEquiv h` carries the component through `x` to the component
+through `h x`.
 
 An irreducible component has nonempty interior when there are only finitely many components, and
 more generally when it meets an open subset with finitely many components.
+
+Under a map with discrete fibres, a preirreducible set is a single point at most exactly when its
+image is (`IsPreirreducible.subsingleton_image_iff`).
 -/
 
 public section
@@ -77,6 +85,31 @@ theorem Function.Surjective.bijOn_preimage_irreducibleComponents {f : X → Y}
   have hle : T ⊆ f ⁻¹' Z := image_subset_iff.mp (subset_closure.trans hTZ)
   exact ⟨Z, hZ, subset_antisymm (hT.2 (hmaps hZ).1 hle) hle⟩
 
+/-- A homeomorphism `h : X ≃ₜ Y` induces a bijection of irreducible components, sending a
+component to its image under `h` (`Homeomorph.coe_irreducibleComponentsEquiv_apply`). It is the
+inverse of Mathlib's `irreducibleComponentsEquivOfIsPreirreducibleFiber` for `h`, whose fibres are
+singletons. -/
+def Homeomorph.irreducibleComponentsEquiv (h : X ≃ₜ Y) :
+    irreducibleComponents X ≃ irreducibleComponents Y :=
+  (irreducibleComponentsEquivOfIsPreirreducibleFiber h h.continuous h.isOpenMap
+    (fun _ ↦ (subsingleton_singleton.preimage h.injective).isPreirreducible)
+    h.surjective).symm.toEquiv
+
+/-- The bijection of irreducible components induced by a homeomorphism sends a component to its
+image. -/
+@[simp]
+theorem Homeomorph.coe_irreducibleComponentsEquiv_apply (h : X ≃ₜ Y) (c : irreducibleComponents X) :
+    (h.irreducibleComponentsEquiv c : Set Y) = h '' c :=
+  (rfl)
+
+/-- The inverse of the bijection of irreducible components induced by a homeomorphism sends a
+component to its image under `h.symm`. -/
+@[simp]
+theorem Homeomorph.coe_irreducibleComponentsEquiv_symm_apply (h : X ≃ₜ Y)
+    (c : irreducibleComponents Y) :
+    (h.irreducibleComponentsEquiv.symm c : Set X) = h.symm '' c :=
+  (congrFun h.image_symm c).symm
+
 namespace TauCeti
 
 variable {α : Type*} [TopologicalSpace α]
@@ -103,4 +136,25 @@ theorem irreducibleComponentOf_eq_iff_of_existsUnique {x : α}
     irreducibleComponentOf x = c ↔ x ∈ (c : Set α) :=
   ⟨fun hc ↦ hc ▸ mem_irreducibleComponentOf x, h.unique (mem_irreducibleComponentOf x)⟩
 
+/-- A homeomorphism carries the irreducible component through `x` to the irreducible component
+through `h x`, when `h x` lies on exactly one irreducible component. -/
+theorem _root_.Homeomorph.irreducibleComponentsEquiv_irreducibleComponentOf (h : X ≃ₜ Y) {x : X}
+    (hx : ∃! c : irreducibleComponents Y, h x ∈ (c : Set Y)) :
+    h.irreducibleComponentsEquiv (irreducibleComponentOf x) = irreducibleComponentOf (h x) :=
+  ((irreducibleComponentOf_eq_iff_of_existsUnique hx).2 (by
+    rw [Homeomorph.coe_irreducibleComponentsEquiv_apply]
+    exact Set.mem_image_of_mem h (mem_irreducibleComponentOf x))).symm
+
 end TauCeti
+
+omit [TopologicalSpace Y] in
+/-- A preirreducible set is a single point at most exactly when its image is, under a map whose
+fibres are discrete: the set lies in one fibre once its image is a point, and a preirreducible
+subset of a discrete set has at most one point. No topology on the target is needed. -/
+theorem IsPreirreducible.subsingleton_image_iff {f : X → Y} {s : Set X} (hs : IsPreirreducible s)
+    (hf : ∀ y, IsDiscrete (f ⁻¹' {y})) : (f '' s).Subsingleton ↔ s.Subsingleton := by
+  refine ⟨fun h ↦ ?_, (·.image f)⟩
+  obtain rfl | ⟨a, ha⟩ := s.eq_empty_or_nonempty
+  · exact subsingleton_empty
+  exact ((hf (f a)).mono fun b hb ↦
+    h (mem_image_of_mem f hb) (mem_image_of_mem f ha)).subsingleton_of_isPreirreducible hs

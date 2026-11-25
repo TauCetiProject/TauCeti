@@ -212,6 +212,14 @@ theorem inner_eq_sum {ι : Type*} [Fintype ι] [LinearOrder ι]
   rw [inner_eq_alternatingFormInner]
   exact alternatingFormInner_eq_sum b _ _
 
+/-- A covector of degree zero, the constant `c`, has Gram norm `|c|`. -/
+@[simp]
+theorem norm_toCovector_constOfIsEmpty (c : ℝ) :
+    ‖toCovector (ContinuousAlternatingMap.constOfIsEmpty ℝ V (Fin 0) c)‖ = |c| := by
+  rw [norm_eq_sqrt_alternatingFormInner, alternatingFormInner_zero_apply _ _ Fin.elim0,
+    ofCovector_toCovector]
+  simp [Real.sqrt_mul_self_eq_abs]
+
 end Hilbert
 
 section Pullback

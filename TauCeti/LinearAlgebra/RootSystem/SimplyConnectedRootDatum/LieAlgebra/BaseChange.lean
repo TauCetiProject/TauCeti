@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Lie.Matrix.BaseChange
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Basic
 public import Mathlib.RingTheory.Flat.Basic
 import TauCeti.Algebra.Lie.BaseChange.Hom
+import TauCeti.LinearAlgebra.RootSystem.BaseChange.CartanType
 
 /-!
 # Base change of the pinned Dynkin-type Lie algebra
@@ -119,22 +120,16 @@ instance instIsCrystallographicRootSystemBaseChange :
     (t.rootSystemBaseChange ht K).IsCrystallographic :=
   isCrystallographic_rootPairingBaseChange ..
 
-instance instIsRootSystemRootSystemBaseChange : (t.rootSystemBaseChange ht K).IsRootSystem where
-  span_root_eq_top := span_range_root_rootPairingBaseChange_eq_top K _ _
-    (span_range_root_rationalRootSystem_eq_top t ht)
-  span_coroot_eq_top := span_range_coroot_rootPairingBaseChange_eq_top K _ _
-    (span_range_coroot_rationalRootSystem_eq_top t ht)
+instance instIsRootSystemRootSystemBaseChange : (t.rootSystemBaseChange ht K).IsRootSystem :=
+  isRootSystem_rootPairingBaseChange ..
 
 instance instIsReducedRootSystemBaseChange : (t.rootSystemBaseChange ht K).IsReduced :=
   isReduced_rootPairingBaseChange K _ _
 
 /-- The scalar-extended pinned base realizes the same Dynkin type and Bourbaki numbering. -/
 theorem hasCartanType_baseChange :
-    HasCartanType (t.rootSystemBaseChange ht K) (t.baseChangeBase ht K) t := by
-  obtain ⟨e, he⟩ := (hasCartanType_iff _ _).1 (t.hasCartanType_rationalRootSystem ht)
-  refine (hasCartanType_iff _ _).2
-    ⟨(supportEquivRootPairingBaseChangeBase K _ _ _).trans e, fun i j ↦ ?_⟩
-  exact (cartanMatrix_rootPairingBaseChangeBase K _ _ _ i j).trans (he _ _)
+    HasCartanType (t.rootSystemBaseChange ht K) (t.baseChangeBase ht K) t :=
+  (t.hasCartanType_rationalRootSystem ht).rootPairingBaseChange K _
 
 /-- The index equivalence identifying the matrix coordinates before and after scalar extension.
 The root indices are unchanged, and the two base supports have the same underlying indices. -/

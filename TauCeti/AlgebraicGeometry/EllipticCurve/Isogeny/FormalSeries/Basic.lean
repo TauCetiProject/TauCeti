@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.LaurentExpansion
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.LaurentExpansion.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace.Basic
 public import TauCeti.RingTheory.LaurentSeries.Substitution.Basic
 
@@ -33,60 +33,6 @@ public section
 
 open WeierstrassCurve HahnSeries
 open scoped LaurentSeries PowerSeries WithZero
-
-namespace WeierstrassCurve
-
-variable {K : Type*} [Field K] (W : WeierstrassCurve K)
-
--- Not `@[simp]`: `W.functionFieldLaurentExpansion_genericY` already rewrites the inner argument.
-/-- Evaluating the Laurent expansion of `genericY` along substitution by a nonzero power series `q`
-with zero constant coefficient gives `-1 / w(q)`. -/
-theorem substAlgHom_functionFieldLaurentExpansion_genericY {q : K⟦X⟧}
-    (hq₀ : PowerSeries.constantCoeff q = 0) (hq : q ≠ 0) :
-    TauCeti.LaurentSeries.substAlgHom hq₀ hq
-        (W.functionFieldLaurentExpansion W.toAffine.genericY) =
-      -1 / ofPowerSeries ℤ K (PowerSeries.subst q (formalW W)) := by
-  have hY0 : TauCeti.LaurentSeries.substAlgHom hq₀ hq
-      (W.functionFieldLaurentExpansion W.toAffine.genericY) ≠ 0 :=
-    (map_ne_zero_iff _ (TauCeti.LaurentSeries.substAlgHom hq₀ hq).injective).mpr
-      ((map_ne_zero_iff _ W.functionFieldLaurentExpansion.injective).mpr
-        W.toAffine.genericY_ne_zero)
-  have hw : TauCeti.LaurentSeries.substAlgHom hq₀ hq
-      (W.functionFieldLaurentExpansion (-W.toAffine.genericY⁻¹)) =
-      ofPowerSeries ℤ K (PowerSeries.subst q (formalW W)) := by
-    rw [W.functionFieldLaurentExpansion_neg_inv_genericY,
-      TauCeti.LaurentSeries.substAlgHom_coe]
-  rw [← hw, map_neg, map_inv₀, map_neg, map_inv₀]
-  field_simp [hY0]
-
--- Not `@[simp]`: `W.functionFieldLaurentExpansion_genericX` already rewrites the inner argument.
-/-- Evaluating the Laurent expansion of `genericX` along substitution by a nonzero power series `q`
-with zero constant coefficient gives `q / w(q)`. -/
-theorem substAlgHom_functionFieldLaurentExpansion_genericX {q : K⟦X⟧}
-    (hq₀ : PowerSeries.constantCoeff q = 0) (hq : q ≠ 0) :
-    TauCeti.LaurentSeries.substAlgHom hq₀ hq
-        (W.functionFieldLaurentExpansion W.toAffine.genericX) =
-      ofPowerSeries ℤ K q / ofPowerSeries ℤ K (PowerSeries.subst q (formalW W)) := by
-  have hY0 : TauCeti.LaurentSeries.substAlgHom hq₀ hq
-      (W.functionFieldLaurentExpansion W.toAffine.genericY) ≠ 0 :=
-    (map_ne_zero_iff _ (TauCeti.LaurentSeries.substAlgHom hq₀ hq).injective).mpr
-      ((map_ne_zero_iff _ W.functionFieldLaurentExpansion.injective).mpr
-        W.toAffine.genericY_ne_zero)
-  have hw : TauCeti.LaurentSeries.substAlgHom hq₀ hq
-      (W.functionFieldLaurentExpansion (-W.toAffine.genericY⁻¹)) =
-      ofPowerSeries ℤ K (PowerSeries.subst q (formalW W)) := by
-    rw [W.functionFieldLaurentExpansion_neg_inv_genericY,
-      TauCeti.LaurentSeries.substAlgHom_coe]
-  have hz : TauCeti.LaurentSeries.substAlgHom hq₀ hq
-      (W.functionFieldLaurentExpansion (-W.toAffine.genericX / W.toAffine.genericY)) =
-      ofPowerSeries ℤ K q := by
-    rw [W.functionFieldLaurentExpansion_neg_genericX_div_genericY,
-      TauCeti.LaurentSeries.substAlgHom_coe,
-      PowerSeries.subst_X (.of_constantCoeff_zero' hq₀)]
-  rw [← hz, ← hw, map_div₀, map_neg, map_div₀, map_neg, map_neg, map_inv₀, map_neg, map_inv₀]
-  field_simp [hY0]
-
-end WeierstrassCurve
 
 namespace TauCeti.Isogeny
 

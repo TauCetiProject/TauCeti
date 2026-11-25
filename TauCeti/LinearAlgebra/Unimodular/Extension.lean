@@ -48,8 +48,10 @@ is first shown to be stably free and then free.
   preserves unimodularity and is carried along ring homomorphisms.
 * `TauCeti.UnimodularEquiv.of_apply_eq_one`: two vectors at which a common linear functional takes
   the value `1` are equivalent, by a transvection.
+* `TauCeti.UnimodularEquiv.self_add_smul`: adding to `v` a multiple `φ v • w` with `φ w = 0`, for
+  instance multiples of one entry to the others, gives an equivalent vector.
 * `TauCeti.unimodularEquiv_single_of_isUnit`: a vector with a unit entry is equivalent to every
-  standard basis vector; `TauCeti.unimodularEquiv_single_zero_of_fin_two`: so is every unimodular
+  standard basis vector; `TauCeti.unimodularEquiv_single_of_card_eq_two`: so is every unimodular
   vector of length two.
 * `IsLocalRing.hasUnimodularExtension`: local rings, in particular fields, have the unimodular
   extension property; `RingEquiv.hasUnimodularExtension_iff`: the property is invariant under
@@ -179,6 +181,14 @@ theorem of_apply_eq_one {f : (ι → R) →ₗ[R] R} {v w : ι → R} (hv : f v 
     ⟨LinearEquiv.transvection hfvw, by
       rw [LinearEquiv.transvection.apply, hv, one_smul, add_sub_cancel]⟩
 
+/-- Adding to a vector `v` the multiple `φ v • w` of a vector `w` with `φ w = 0` gives an
+equivalent vector. For `φ` a coordinate projection `v ↦ v i` and `w i = 0`, this adds multiples
+of the entry `v i` to the other entries. -/
+theorem self_add_smul (φ : (ι → R) →ₗ[R] R) {w : ι → R} (hw : φ w = 0) (v : ι → R) :
+    UnimodularEquiv v (v + φ v • w) :=
+  unimodularEquiv_iff_exists_linearEquiv.mpr
+    ⟨LinearEquiv.transvection hw, LinearEquiv.transvection.apply hw v⟩
+
 /-- Multiplying a vector by a unit gives an equivalent vector. -/
 theorem units_smul_left (c : Rˣ) (v : ι → R) : UnimodularEquiv (c • v) v :=
   unimodularEquiv_iff_exists_linearEquiv.mpr
@@ -219,14 +229,19 @@ theorem unimodularEquiv_single_iff_exists_basis {v : ι → R} (i : ι) :
     exact ⟨(Pi.basisFun R ι).equiv b (Equiv.refl ι), by
       simpa using (Pi.basisFun R ι).equiv_apply i b (Equiv.refl ι)⟩
 
-/-- Every unimodular vector of length two is equivalent to `Pi.single 0 1`. This is
-`Module.IsUnimodular.exists_basis_zero_eq` for `Fin 2 → R`. -/
-theorem unimodularEquiv_single_zero_of_fin_two {v : Fin 2 → R} (hv : IsUnimodular R v) :
-    UnimodularEquiv v (Pi.single 0 1) := by
+/-- Every unimodular vector of length two is equivalent to every standard basis vector. This is
+`Module.IsUnimodular.exists_basis_zero_eq` for `ι → R` with `ι` of cardinality two. -/
+theorem unimodularEquiv_single_of_card_eq_two (hι : Fintype.card ι = 2) {v : ι → R}
+    (hv : IsUnimodular R v) (j : ι) : UnimodularEquiv v (Pi.single j 1) := by
   cases subsingleton_or_nontrivial R
-  · exact Subsingleton.elim v (Pi.single 0 1) ▸ .rfl
-  obtain ⟨b, hb⟩ := hv.exists_basis_zero_eq (Module.finrank_fin_fun R)
-  exact (unimodularEquiv_single_iff_exists_basis 0).mpr ⟨b, hb⟩
+  · exact Subsingleton.elim v (Pi.single j 1) ▸ .rfl
+  obtain ⟨b, hb⟩ := hv.exists_basis_zero_eq (by rw [Module.finrank_fintype_fun_eq_card, hι])
+  -- Reindex the basis along an equivalence `Fin 2 ≃ ι` sending `0` to `j`.
+  let e₀ : Fin 2 ≃ ι := (Fintype.equivFinOfCardEq hι).symm
+  let e : Fin 2 ≃ ι := e₀.trans (Equiv.swap (e₀ 0) j)
+  have he : e 0 = j := Equiv.swap_apply_left _ _
+  exact (unimodularEquiv_single_iff_exists_basis j).mpr
+    ⟨b.reindex e, by rw [Basis.reindex_apply, ← he, Equiv.symm_apply_apply, hb]⟩
 
 end CommRing
 
@@ -356,9 +371,7 @@ theorem hasUnimodularExtension_of_forall_free {R : Type u} [CommRing R]
   let K := LinearMap.ker f
   let e : (K × R) ≃ₗ[R] (Fin (n + 1) → R) := LinearMap.kerProdEquivOfApplyEqOne hf
   have : Module.Free R (K × R) := Module.Free.of_equiv e.symm
-  have : Module.Finite R (K × R) := Module.Finite.equiv e.symm
-  have : Module.Finite R K :=
-    Module.Finite.of_surjective (LinearMap.fst R K R) LinearMap.fst_surjective
+  have : Module.Finite R K := LinearMap.finite_ker_of_apply_eq_one hf
   have : IsStablyFree R K := IsStablyFree.of_free_prod R K R
   have : Module.Free R K := h K inferInstance inferInstance
   have hrank : finrank R K = n := by
