@@ -126,11 +126,8 @@ private theorem exists_wkp_of_forall_sum_integral_eq_zero [Fintype ι] (hJ : Con
     ∑ c', (ContinuousLinearMap.proj c').smulRight (LinearMap.toContinuousLinearMap (b.coord c'))
   let η : ℂ → V →L[ℝ] ℝ := fun z ↦ T fun c' ↦ θ c' z
   have hηb (z : ℂ) (c' : ι) : η z (b c') = θ c' z := by
-    simp only [η, T, FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.smulRight_apply,
-      ContinuousLinearMap.proj_apply, smul_apply, LinearMap.coe_toContinuousLinearMap',
-      Basis.coord_apply, Basis.repr_self, smul_eq_mul]
-    rw [Finset.sum_eq_single c' (fun x _ hx ↦ by rw [Finsupp.single_eq_of_ne hx, mul_zero])
-      (by simp), Finsupp.single_eq_same, mul_one]
+    classical
+    simp [η, T, Finsupp.single_apply]
   have hη : MemLp η q (volume.restrict (Ω : Set ℂ)) :=
     (MemLp.of_eval fun c' ↦ Lp.memLp (θ c')).continuousLinearMap_comp T
   have hηeq (φ : 𝓓(Ω, V)) : ∫ z, η z (fderiv ℝ (φ : ℂ → V) z 1 +
@@ -144,15 +141,6 @@ private theorem exists_wkp_of_forall_sum_integral_eq_zero [Fintype ι] (hJ : Con
       (ContinuousLinearMap.apply ℝ ℝ (b c))).exists_wkp hWc hWΩ
   refine ⟨v, hv.trans (.of_forall fun z ↦ ?_)⟩
   simp only [ContinuousLinearMap.apply_apply, hηb]
-
-omit [FiniteDimensional ℝ V] [Fact (1 ≤ q)] in
-/-- The `L^q` norm of the component `η(·) v` of a covector field is at most `‖v‖ ‖η‖_{L^q}`. -/
-private theorem eLpNorm_apply_le {μ : Measure ℂ} {η : ℂ → V →L[ℝ] ℝ}
-    (hη : AEStronglyMeasurable η μ) (v : V) :
-    eLpNorm (fun z ↦ η z v) q μ ≤ ENNReal.ofReal ‖v‖ * eLpNorm η q μ :=
-  eLpNorm_le_mul_eLpNorm_of_ae_le_mul
-    ((ContinuousLinearMap.apply ℝ ℝ v).continuous.comp_aestronglyMeasurable hη)
-    (.of_forall fun z ↦ by rw [mul_comm]; exact (η z).le_opNorm v) q
 
 /-- The weak solutions, as tuples of `L^q` components in the basis `b`: the common kernel of the
 continuous functionals `θ ↦ ∑_c ∫_Ω θ_c (D φ)_c`, one for each test function `φ`. -/
@@ -195,17 +183,25 @@ private theorem norm_toLp_apply_le [Fintype ι] {μ : Measure ℂ} {η : ℂ →
     fun c ↦ ?_
   refine le_trans ?_ (mul_le_mul_of_nonneg_right
     (Finset.single_le_sum (fun c _ ↦ norm_nonneg (b c)) (Finset.mem_univ c)) hE)
-  rw [Lp.norm_toLp, ← ENNReal.toReal_ofReal (norm_nonneg (b c)), ← ENNReal.toReal_mul]
-  exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hη.eLpNorm_ne_top)
-    (eLpNorm_apply_le hη.aestronglyMeasurable (b c))
+  -- Postcomposition with evaluation at `b c`, of norm at most `‖b c‖`.
+  rw [Lp.norm_toLp]
+  calc (eLpNorm (fun z ↦ ContinuousLinearMap.apply ℝ ℝ (b c) (η z)) q μ).toReal
+      ≤ (‖ContinuousLinearMap.apply ℝ ℝ (b c)‖ₑ * eLpNorm η q μ).toReal :=
+        ENNReal.toReal_mono (ENNReal.mul_ne_top eNorm_ne_top hη.eLpNorm_ne_top)
+          (ContinuousLinearMap.apply ℝ ℝ (b c)).eLpNorm_comp_le
+    _ = ‖ContinuousLinearMap.apply ℝ ℝ (b c)‖ * (eLpNorm η q μ).toReal := by
+        rw [ENNReal.toReal_mul, toReal_eNorm]
+    _ ≤ ‖b c‖ * (eLpNorm η q μ).toReal :=
+        mul_le_mul_of_nonneg_right (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _)
+          fun L ↦ by simpa [mul_comm] using L.le_opNorm (b c)) hE
 
-/-- **The interior estimate for annihilators of a real Cauchy–Riemann operator.** Let `Ω ⊆ ℂ` be
+/-- **The interior estimate in components.** Let `Ω ⊆ ℂ` be
 open, `V` a finite-dimensional real normed space with a basis `b`, `J` a `C¹` field of complex
 structures and `S` a continuous field of endomorphisms over `Ω`, `1 < q < ∞`, and `W` open with
 compact closure in `Ω`. There is a constant `C` such that every `L^q` covector field `η` on `Ω`
 with `∫ η (∂_s φ + J ∂_t φ + S φ) = 0` for every test function `φ` on `Ω` has components
 `η(b c)` in `W^{1,q}(W)` with norm at most `C ‖η‖_{L^q(Ω)}`. -/
-theorem exists_norm_wkp_le_of_forall_integral_apply_cauchyRiemann_eq_zero [Finite ι]
+private theorem exists_norm_wkp_le_components [Finite ι]
     (hJ : ContDiffOn ℝ 1 J Ω) (hS : ContinuousOn S Ω) (hJ2 : ∀ z ∈ Ω, J z * J z = -1)
     (hq : 1 < q) (hq_top : q ≠ ⊤) {W : Opens ℂ} (hWc : IsCompact (closure (W : Set ℂ)))
     (hWΩ : closure (W : Set ℂ) ⊆ Ω) :
@@ -258,5 +254,60 @@ theorem exists_norm_wkp_le_of_forall_integral_apply_cauchyRiemann_eq_zero [Finit
     _ ≤ (∑ c, max (C c) 0) * ((∑ c, ‖b c‖) * E) :=
         mul_le_mul_of_nonneg_left hθ (Finset.sum_nonneg fun c _ ↦ le_max_right _ _)
     _ = _ := by ring
+
+omit [FiniteDimensional ℝ V] [Fact (1 ≤ q)] in
+/-- A covector is the sum of its values on a basis weighted by the coordinates. -/
+private theorem apply_eq_sum_coord_mul [Fintype ι] (L : V →L[ℝ] ℝ) (v : V) :
+    L v = ∑ c, b.coord c v * L (b c) := by
+  simpa [LinearMap.sum_apply, smul_eq_mul, mul_comm] using
+    (LinearMap.congr_fun (b.sum_dual_apply_smul_coord (L : V →ₗ[ℝ] ℝ)) v).symm
+
+/-- **The interior estimate for annihilators of a real Cauchy–Riemann operator.** Let `Ω ⊆ ℂ` be
+open, `V` a finite-dimensional real normed space, `J` a `C¹` field of complex structures and `S`
+a continuous field of endomorphisms over `Ω`, `1 < q < ∞`, and `W` open with compact closure in
+`Ω`. There is a constant `C` such that for every `L^q` covector field `η` on `Ω` with
+`∫ η (∂_s φ + J ∂_t φ + S φ) = 0` for every test function `φ` on `Ω` and every `v : V`, the
+function `η(·) v` is in `W^{1,q}(W)` with norm at most `C ‖v‖ ‖η‖_{L^q(Ω)}`. -/
+theorem exists_norm_wkp_le_of_forall_integral_apply_cauchyRiemann_eq_zero
+    (hJ : ContDiffOn ℝ 1 J Ω) (hS : ContinuousOn S Ω) (hJ2 : ∀ z ∈ Ω, J z * J z = -1)
+    (hq : 1 < q) (hq_top : q ≠ ⊤) {W : Opens ℂ} (hWc : IsCompact (closure (W : Set ℂ)))
+    (hWΩ : closure (W : Set ℂ) ⊆ Ω) :
+    ∃ C : ℝ, ∀ η : ℂ → V →L[ℝ] ℝ, MemLp η q (volume.restrict (Ω : Set ℂ)) →
+      (∀ φ : 𝓓(Ω, V), ∫ z, η z (fderiv ℝ (φ : ℂ → V) z 1 + J z (fderiv ℝ (φ : ℂ → V) z I) +
+        S z ((φ : ℂ → V) z)) = 0) →
+      ∀ v : V, ∃ u : Wkp volume W q 1,
+        (Wkp.value 1 u : ℂ → ℝ) =ᵐ[volume.restrict (W : Set ℂ)] (fun z ↦ η z v) ∧
+          ‖u‖ ≤ C * ‖v‖ * (eLpNorm η q (volume.restrict (Ω : Set ℂ))).toReal := by
+  -- Components in a basis, recombined with the coordinates of `v`.
+  let b := Module.finBasis ℝ V
+  let K : ℝ := ∑ c, ‖LinearMap.toContinuousLinearMap (b.coord c)‖
+  obtain ⟨C₀, hC₀⟩ := exists_norm_wkp_le_components b hJ hS hJ2 hq hq_top hWc hWΩ
+  refine ⟨max C₀ 0 * K, fun η hη h v ↦ ?_⟩
+  set E := (eLpNorm η q (volume.restrict (Ω : Set ℂ))).toReal
+  choose u hu huC using hC₀ η hη h
+  refine ⟨∑ c, b.coord c v • u c, ?_, ?_⟩
+  · -- The value of the combination is the combination of the values.
+    have hsum := Lp.coeFn_finsetSum (μ := volume.restrict (W : Set ℂ)) (p := q) Finset.univ
+      fun c ↦ b.coord c v • Wkp.value 1 (u c)
+    have hval : Wkp.value 1 (∑ c, b.coord c v • u c) = ∑ c, b.coord c v • Wkp.value 1 (u c) := by
+      simp only [← Wkp.valueL_apply, map_sum, map_smul]
+    rw [hval]
+    filter_upwards [hsum, ae_all_iff.2 fun c ↦ Lp.coeFn_smul (b.coord c v) (Wkp.value 1 (u c)),
+      ae_all_iff.2 hu] with z h₁ h₂ h₃
+    rw [h₁, Finset.sum_apply, apply_eq_sum_coord_mul b (η z) v]
+    refine Finset.sum_congr rfl fun c _ ↦ ?_
+    rw [h₂ c, Pi.smul_apply, h₃ c, smul_eq_mul]
+  · -- `|vᶜ| ≤ ‖b.coord c‖ ‖v‖` and `‖u c‖ ≤ max C₀ 0 ‖η‖`.
+    have hE : 0 ≤ E := ENNReal.toReal_nonneg
+    calc ‖∑ c, b.coord c v • u c‖ ≤ ∑ c, ‖b.coord c v‖ * ‖u c‖ :=
+          (norm_sum_le _ _).trans (Finset.sum_le_sum fun c _ ↦ (norm_smul _ _).le)
+      _ ≤ ∑ c, (‖LinearMap.toContinuousLinearMap (b.coord c)‖ * ‖v‖) * (max C₀ 0 * E) :=
+          Finset.sum_le_sum fun c _ ↦ mul_le_mul
+            ((LinearMap.toContinuousLinearMap (b.coord c)).le_opNorm v)
+            ((huC c).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hE)) (norm_nonneg _)
+            (mul_nonneg (norm_nonneg _) (norm_nonneg _))
+      _ = max C₀ 0 * K * ‖v‖ * E := by
+          simp only [K, Finset.mul_sum, Finset.sum_mul]
+          exact Finset.sum_congr rfl fun c _ ↦ by ring
 
 end TauCeti
