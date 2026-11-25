@@ -632,8 +632,8 @@ private theorem obstruction_basis_eq {n : ℕ} (hn : 1 ≤ n) {F : ReducedTensor
   exact (apply_arrows_eq_smul_zigzagVolume (by omega) hF hFn hδF hFe w).symm
 
 /-- **Loop operations are normalized relative to the vertex idempotents.** The obstruction of a
-loop deformation, its operation of arity `n + 2`, vanishes on every word one of whose letters is a
-vertex idempotent. -/
+loop deformation, which for `n ≥ 1` is its operation of arity `n + 2` (for `n = 0` it is zero),
+vanishes on every word one of whose letters is a vertex idempotent. -/
 theorem degenerateWords_le_ker_obstruction_zigzagLoopAInfinityAlgebra {n : ℕ}
     (c : (Fin (n + 2) → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd)
     (v : V) :
