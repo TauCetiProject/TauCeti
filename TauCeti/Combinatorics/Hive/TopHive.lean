@@ -78,6 +78,11 @@ def topHive (lam μ : DominantWeight n) : IntegerHive n :=
   rw [topHive, ofGTPattern_apply, gtCompletion_highest lam μ (by omega) (Nat.sub_le n p.x),
     show n - p.x = p.y + p.z by omega]
 
+/-- The difference pattern of the top hive is the highest-weight pattern of `μ`. -/
+@[simp] theorem toGTPattern_topHive (lam μ : DominantWeight n) :
+    (topHive lam μ).toGTPattern = GTPattern.highest μ :=
+  toGTPattern_ofGTPattern ..
+
 @[simp] theorem topHive_zero : topHive (0 : DominantWeight n) 0 = 0 := by
   ext p; simp
 
@@ -98,7 +103,7 @@ theorem eq_topHive_of_productBoundary {lam μ : DominantWeight n} {h : IntegerHi
     (hb : h.boundary = productBoundary lam μ (lam + μ)) : h = topHive lam μ := by
   refine eq_of_boundary_zero_eq_of_toGTPattern_eq
     (by rw [hb, topHive, boundary_ofGTPattern_zero, productBoundary_zero]) ?_
-  rw [topHive, toGTPattern_ofGTPattern, GTPattern.eq_highest_iff]
+  rw [toGTPattern_topHive, GTPattern.eq_highest_iff]
   exact ⟨topRow_toGTPattern_of_productBoundary hb, by
     rw [rowWeight_toGTPattern_of_productBoundary hb, DominantWeight.coe_add, add_sub_cancel_left]⟩
 

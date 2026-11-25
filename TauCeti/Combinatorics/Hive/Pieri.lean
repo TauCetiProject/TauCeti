@@ -128,6 +128,13 @@ def verticalPieriHive (lam γ : DominantWeight n)
   rw [verticalPieriHive, ofGTPattern_apply, gtCompletion_rowSubset hγ _ (Nat.sub_le n p.x),
     show n - p.x = p.y + p.z by omega]
 
+/-- The difference pattern of the vertical Pieri hive of `λ ⊆ γ` is the row-subset pattern of the
+rows where `γ - λ` is `1`. -/
+@[simp] theorem toGTPattern_verticalPieriHive
+    (hγ : ∀ i, lam.val i ≤ γ.val i ∧ γ.val i ≤ lam.val i + 1) :
+    (verticalPieriHive lam γ hγ).toGTPattern = GTPattern.rowSubset {r | γ.val r = lam.val r + 1} :=
+  toGTPattern_ofGTPattern ..
+
 /-- The side `A → B` of the vertical Pieri hive of `λ ⊆ γ` is `λ`. -/
 @[simp] theorem boundary_verticalPieriHive_zero
     (hγ : ∀ i, lam.val i ≤ γ.val i ∧ γ.val i ≤ lam.val i + 1) :
@@ -213,7 +220,7 @@ theorem eq_verticalPieriHive_of_productBoundary_of_zero_le_le_one {h : IntegerHi
       omega
   refine eq_of_boundary_zero_eq_of_toGTPattern_eq
     (by rw [hb, boundary_verticalPieriHive_zero, productBoundary_zero]) ?_
-  rw [verticalPieriHive, toGTPattern_ofGTPattern, ← hIγ, hI]
+  rw [toGTPattern_verticalPieriHive, ← hIγ, hI]
 
 /-- For a `0`/`1` weight `μ`, there is at most one integer hive with boundary `(λ, μ, γ*)`. -/
 theorem subsingleton_fixedIntegerHive_productBoundary_of_zero_le_le_one
