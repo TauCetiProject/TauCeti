@@ -97,7 +97,7 @@ def formAt (x : ManifoldTotalSpace G P) :
 
 /-- Evaluation of the intrinsic map agrees with evaluation of the underlying one-form. -/
 theorem formAt_apply (x : ManifoldTotalSpace G P) (v : TangentSpace (IB.prod IG) x) :
-    ω.formAt x v = ω.toForm.1 x ![v] :=
+    ω.formAt x v = ω.toForm.val x ![v] :=
   SmoothForm.degreeOneEquiv_apply_apply_vec ω.toForm x v
 
 /-- The intrinsic map reproduces fundamental vectors. -/
@@ -158,7 +158,7 @@ theorem mem_horizontalSpace (x : ManifoldTotalSpace G P) (v : TangentSpace (IB.p
 
 /-- The connection value of the vertical component is the connection value of the vector. -/
 @[simp]
-theorem form_verticalProj (x : ManifoldTotalSpace G P) (v : TangentSpace (IB.prod IG) x) :
+theorem formAt_verticalProj (x : ManifoldTotalSpace G P) (v : TangentSpace (IB.prod IG) x) :
     ω.formAt x (ω.verticalProj x v) = ω.formAt x v := by
   rw [verticalProj_apply, formAt_rightFundamentalVectorField]
 
@@ -181,9 +181,9 @@ theorem mfderiv_proj_verticalProj (x : ManifoldTotalSpace G P)
 
 /-- The horizontal component is annihilated by the connection. -/
 @[simp]
-theorem form_horizontalProj (x : ManifoldTotalSpace G P) (v : TangentSpace (IB.prod IG) x) :
+theorem formAt_horizontalProj (x : ManifoldTotalSpace G P) (v : TangentSpace (IB.prod IG) x) :
     ω.formAt x (ω.horizontalProj x v) = 0 := by
-  simp only [horizontalProj_apply, map_sub, form_verticalProj, sub_self]
+  simp only [horizontalProj_apply, map_sub, formAt_verticalProj, sub_self]
 
 /-- Removing the vertical component does not change the projection to the base tangent space. -/
 @[simp]
@@ -219,7 +219,7 @@ theorem ker_verticalProj (x : ManifoldTotalSpace G P) :
     verticalProj_apply, rightFundamentalVectorField_eq_zero_iff]
 
 /-- Vertical and horizontal tangent spaces are complementary. -/
-theorem isCompl_vertical_horizontal (x : ManifoldTotalSpace G P) :
+theorem isCompl_ker_mfderiv_proj_horizontalSpace (x : ManifoldTotalSpace G P) :
     IsCompl
       (mfderiv (IB.prod IG) IB
         (fun y : ManifoldTotalSpace G P => ((ManifoldTotalSpace.homeomorph G P).symm y).proj) x).ker
@@ -238,7 +238,7 @@ theorem horizontalProj_eq_self_iff (x : ManifoldTotalSpace G P)
 /-- The horizontal projection is a projection onto the horizontal tangent space. -/
 theorem isProj_horizontalProj (x : ManifoldTotalSpace G P) :
     LinearMap.IsProj (ω.horizontalSpace x) (ω.horizontalProj x).toLinearMap :=
-  ⟨fun v => ω.form_horizontalProj x v,
+  ⟨fun v => ω.formAt_horizontalProj x v,
     fun v hv => (ω.horizontalProj_eq_self_iff x v).2 hv⟩
 
 /-- Right translations intertwine the vertical projections. -/
@@ -283,13 +283,13 @@ theorem horizontalToBase_bijective (x : ManifoldTotalSpace G P) :
     rw [LinearMap.ker_eq_bot']
     intro v hv
     apply Subtype.ext
-    exact Submodule.disjoint_def.mp (ω.isCompl_vertical_horizontal x).disjoint v
+    exact Submodule.disjoint_def.mp (ω.isCompl_ker_mfderiv_proj_horizontalSpace x).disjoint v
       (by simpa only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
-        horizontalToBase_apply] using hv) v.2
+        horizontalToBase_apply] using hv) v.property
   · intro u
     obtain ⟨v, hv⟩ := (ManifoldTotalSpace.isSubmersion_proj 1 G P IB IG).surjective_mfderiv
       one_ne_zero x u
-    exact ⟨⟨ω.horizontalProj x v, ω.form_horizontalProj x v⟩,
+    exact ⟨⟨ω.horizontalProj x v, ω.formAt_horizontalProj x v⟩,
       (ω.mfderiv_proj_horizontalProj x v).trans hv⟩
 
 /-- Restricting the principal projection's differential to the horizontal tangent space is a
@@ -322,7 +322,7 @@ theorem horizontalEquiv_symm_mfderiv_proj (x : ManifoldTotalSpace G P)
     ((ω.horizontalEquiv x).symm (mfderiv (IB.prod IG) IB
       (fun y : ManifoldTotalSpace G P => ((ManifoldTotalSpace.homeomorph G P).symm y).proj) x v) :
         TangentSpace (IB.prod IG) x) = ω.horizontalProj x v := by
-  have h : ω.horizontalEquiv x ⟨ω.horizontalProj x v, ω.form_horizontalProj x v⟩ =
+  have h : ω.horizontalEquiv x ⟨ω.horizontalProj x v, ω.formAt_horizontalProj x v⟩ =
       mfderiv (IB.prod IG) IB
         (fun y : ManifoldTotalSpace G P =>
           ((ManifoldTotalSpace.homeomorph G P).symm y).proj) x v := by
