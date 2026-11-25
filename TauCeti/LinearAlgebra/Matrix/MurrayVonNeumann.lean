@@ -315,22 +315,6 @@ theorem isMurrayVonNeumannEquivalent_iff_exists_isPartialIsometry {p q : Matrix 
   · rintro ⟨v, hv, rfl, rfl⟩
     exact hv.isMurrayVonNeumannEquivalent
 
-/-- If `a` is self-adjoint and `a * b = 0`, then matrices `v` and `w` with `a * v = v` and
-`b * w = w` (columns in the ranges of `a` and `b`) satisfy `vᴴ * w = 0`. -/
-theorem conjTranspose_mul_eq_zero_of_mul_eq_zero {k l : Type*} {a b : Matrix n n R}
-    (ha : IsSelfAdjoint a) {v : Matrix n k R} {w : Matrix n l R} (hv : a * v = v)
-    (hw : b * w = w) (hab : a * b = 0) : vᴴ * w = 0 := by
-  rw [← hv, ← hw, conjTranspose_mul, ← star_eq_conjTranspose a, ha.star_eq, Matrix.mul_assoc,
-    ← Matrix.mul_assoc a, hab, Matrix.zero_mul, Matrix.mul_zero]
-
-/-- If `b` is self-adjoint and `a * b = 0`, then matrices `v` and `w` with `v * a = v` and
-`w * b = w` (rows in the ranges of `a` and `b`) satisfy `v * wᴴ = 0`. -/
-theorem mul_conjTranspose_eq_zero_of_mul_eq_zero {k l : Type*} {a b : Matrix m m R}
-    (hb : IsSelfAdjoint b) {v : Matrix k m R} {w : Matrix l m R} (hv : v * a = v)
-    (hw : w * b = w) (hab : a * b = 0) : v * wᴴ = 0 := by
-  rw [← hv, ← hw, conjTranspose_mul, ← star_eq_conjTranspose b, hb.star_eq, ← Matrix.mul_assoc,
-    Matrix.mul_assoc v, hab, Matrix.mul_zero, Matrix.zero_mul]
-
 /-- **Orthogonal sums.** If `p ∼ p'` and `q ∼ q'`, where `p` is orthogonal to `q` and `p'` to `q'`,
 then `p + q ∼ p' + q'`. -/
 theorem IsMurrayVonNeumannEquivalent.add {p q : Matrix m m R} {p' q' : Matrix n n R}
