@@ -38,6 +38,8 @@ none of the further theory built on it.
   of the coefficientwise map along `f : R →+* S` is `ker f • R[M]`.
 * `MonoidAlgebra.mem_rangeS_mapRingHom_iff` and its additive form characterize the image of
   a coefficient homomorphism by the image membership of every coefficient.
+* `MonoidAlgebra.mapRingHom_injective` and its additive form: mapping the coefficients along an
+  injective ring homomorphism is injective.
 * The `IsAddTorsionFree (MonoidAlgebra R M)` and `HasUniqueDiv (MonoidAlgebra R M)` instances:
   `R[M]` inherits the absence of additive torsion from its coefficients, as `M →₀ R` does in
   Mathlib.
@@ -168,6 +170,15 @@ theorem _root_.MonoidAlgebra.mem_rangeS_mapRingHom_iff {R : Type*} [Semiring R]
   rw [← SetLike.mem_coe, RingHom.coe_rangeS, MonoidAlgebra.coe_mapRingHom,
     MonoidAlgebra.range_map]
   simp
+
+/-- Mapping the coefficients along an injective ring homomorphism is injective. -/
+@[to_additive (dont_translate := R S)
+/-- Mapping the coefficients along an injective ring homomorphism is injective. -/]
+theorem _root_.MonoidAlgebra.mapRingHom_injective {R : Type*} [Semiring R] {M S : Type*}
+    [Semiring S] [Monoid M] {f : R →+* S} (hf : Function.Injective f) :
+    Function.Injective (MonoidAlgebra.mapRingHom M f) := by
+  rw [MonoidAlgebra.coe_mapRingHom]
+  exact MonoidAlgebra.map_injective _ hf
 
 /-- **The monoid algebra of a commutative torsion monoid is integral over its coefficients.**
 Every basis element `single g 1` with `g ^ n = 1` is a root of the monic polynomial `X ^ n - 1`. -/
