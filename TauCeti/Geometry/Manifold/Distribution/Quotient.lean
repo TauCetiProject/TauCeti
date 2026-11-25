@@ -36,6 +36,9 @@ tangent bundle of the quotient of a vector bundle by a subbundle with local fram
 
 * `TauCeti.IsContMDiffDistribution.contMDiffVectorBundle_quotientPrebundle`: `TM ⧸ D` is a `C^n`
   vector bundle.
+* `trivializationOfMemPretrivializationAtlas_quotientPrebundle_apply`, in the namespace
+  `TauCeti.IsContMDiffDistribution`: the trivializations of `TM ⧸ D` send a class to its
+  coordinates in the corresponding frame.
 * `TauCeti.IsContMDiffDistribution.contMDiff_totalSpace_mkQ`: the quotient map `TM → TM ⧸ D` is
   `C^n`.
 * `TauCeti.IsContMDiffDistribution.exists_contMDiffOn_mk_eq`: `C^n` sections of `TM ⧸ D` lift
@@ -81,6 +84,20 @@ theorem contMDiffVectorBundle_quotientPrebundle :
     ContMDiffVectorBundle n (Fin r → 𝕜) (fun x ↦ TangentSpace I x ⧸ D x) I :=
   have := TangentBundle.contMDiffVectorBundle (n := n) (I := I) (M := M)
   hD.hasLocalContMDiffSubbundleFrames.contMDiffVectorBundle_quotientPrebundle (by simpa using hr)
+
+/-- In the quotient bundle `TM ⧸ D`, the trivialization given by a local frame `Y` of `TM ⧸ D` on
+an open set `U` whose pretrivialization lies in the atlas sends a class over a point of `U` to its
+coordinates in the frame. -/
+theorem trivializationOfMemPretrivializationAtlas_quotientPrebundle_apply
+    {Y : Fin r → Π x : M, TangentSpace I x} {U : Set M} {hY : IsQuotientFrameOn D Y U}
+    {hU : IsOpen U}
+    (he : hY.pretrivialization hU ∈ (hD.quotientPrebundle hr).pretrivializationAtlas)
+    {p : TotalSpace (Fin r → 𝕜) fun x ↦ TangentSpace I x ⧸ D x} (hp : p.proj ∈ U) :
+    letI := (hD.quotientPrebundle hr).totalSpaceTopology
+    (hD.quotientPrebundle hr).trivializationOfMemPretrivializationAtlas he p =
+      (p.proj, (hY.basis hp).equivFun p.snd) :=
+  -- The trivialization built from a pretrivialization has the same underlying function.
+  hY.pretrivialization_apply hU hp
 
 /-- **The quotient map `TM → TM ⧸ D` is `C^n`.** -/
 theorem contMDiff_totalSpace_mkQ :

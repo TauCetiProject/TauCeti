@@ -362,6 +362,38 @@ theorem trivOperator_apply {y₀ y : B} (hy : y ∈ (trivializationAt F E y₀).
   simp only [trivOperator, FunLike.coe_sum, Finset.sum_apply,
     ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.proj_apply, ← h, map_sum, map_smul]
 
+/-- Over the base set of the trivialization at `y₀`, the operator `trivOperator 𝕜 F X y₀ y` sends
+coefficients to the image of the linear combination of the vectors `X i y` under the fibrewise
+linear equivalence of that trivialization. -/
+theorem trivOperator_apply_eq_linearCombination {y₀ y : B}
+    (hy : y ∈ (trivializationAt F E y₀).baseSet) (c : ι → 𝕜) :
+    trivOperator 𝕜 F X y₀ y c = (trivializationAt F E y₀).continuousLinearEquivAt 𝕜 y hy
+      (Fintype.linearCombination 𝕜 (X · y) c) := by
+  rw [trivOperator_apply hy, Fintype.linearCombination_apply,
+    Trivialization.continuousLinearEquivAt_apply]
+
+/-- Over the base set of the trivialization at `y₀`, the vectors `X i y` form a basis of `E y`
+exactly when the family `X` read in that trivialization is bijective on coefficients. -/
+theorem linearIndependent_and_span_eq_top_iff_bijective_trivOperator {y₀ y : B}
+    (hy : y ∈ (trivializationAt F E y₀).baseSet) :
+    LinearIndependent 𝕜 (X · y) ∧ Submodule.span 𝕜 (range (X · y)) = ⊤ ↔
+      Bijective (trivOperator 𝕜 F X y₀ y) := by
+  have h : (trivOperator 𝕜 F X y₀ y : (ι → 𝕜) → F) =
+      (trivializationAt F E y₀).continuousLinearEquivAt 𝕜 y hy ∘
+        Fintype.linearCombination 𝕜 (X · y) :=
+    funext (trivOperator_apply_eq_linearCombination hy)
+  rw [h, EquivLike.comp_bijective, linearIndependent_iff_injective_fintypeLinearCombination,
+    ← Fintype.range_linearCombination, LinearMap.range_eq_top, Bijective]
+
+/-- If as many vectors as the dimension of `F` are injective on coefficients when read in the
+trivialization at `y₀`, then they form a basis of the fibre over any point `y` of its base set. -/
+theorem linearIndependent_and_span_eq_top_of_injective_trivOperator [FiniteDimensional 𝕜 F]
+    {y₀ y : B} (hy : y ∈ (trivializationAt F E y₀).baseSet)
+    (hrank : finrank 𝕜 (ι → 𝕜) = finrank 𝕜 F) (hinj : Injective (trivOperator 𝕜 F X y₀ y)) :
+    LinearIndependent 𝕜 (X · y) ∧ Submodule.span 𝕜 (range (X · y)) = ⊤ :=
+  (linearIndependent_and_span_eq_top_iff_bijective_trivOperator hy).mpr
+    ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hrank).mp hinj⟩
+
 /-- A functional `c` on the model fibre that kills the frame read in the trivialization at `y₀`
 vanishes on `V y` once pulled back through that trivialization. -/
 theorem apply_continuousLinearMapAt_eq_zero (hX : IsSubbundleFrameOn F V X U) {y₀ y : B}

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
+public import TauCeti.Topology.VectorBundle.Quotient
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.ContMDiff.LeftInverse
 
@@ -27,7 +28,8 @@ a local frame of `V` on `U`, this holds exactly when `X` and `Y` together form a
 (`TauCeti.HasLocalContMDiffSubbundleFrames.exists_isQuotientFrameOn`): read the frame of `V` in a
 trivialization of `E` and add constant sections spanning a complement in `F`. A frame `Y` of `E ⧸ V`
 on an open set gives the pretrivialization `TauCeti.IsQuotientFrameOn.pretrivialization`, sending a
-class to its coordinates in the frame.
+class to its coordinates in the frame. These frames and their pretrivializations need no manifold
+structure and are set up in `TauCeti.Topology.VectorBundle.Quotient`.
 
 The substance is that these coordinates are `C^n`. Read in a trivialization of `E` near `y₀`, the
 frames `X` and `Y` together form a `C^n` family of invertible operators `𝕜^(ι ⊕ κ) → F`, which has
@@ -42,21 +44,18 @@ a linear isomorphism between finite-dimensional spaces is a homeomorphism.
 
 ## Main definitions
 
-* `TauCeti.IsQuotientFrameOn V Y U`: the classes of the sections `Y j` form a basis of
-  `E x ⧸ V x` at every point `x` of `U`.
-* `TauCeti.IsQuotientFrameOn.pretrivialization`: the pretrivialization of `E ⧸ V` given by a local
-  frame on an open set.
 * `TauCeti.HasLocalContMDiffSubbundleFrames.quotientPrebundle`: the quotient bundle `E ⧸ V`, as a
   vector prebundle with model fibre `κ → 𝕜`.
 
 ## Main results
 
-* `TauCeti.IsSubbundleFrameOn.isQuotientFrameOn_iff`: completions of a frame of `V` to a frame of
-  `E` are exactly the frames of `E ⧸ V`.
 * `TauCeti.HasLocalContMDiffSubbundleFrames.exists_isQuotientFrameOn`: `E ⧸ V` has `C^n` local
   frames near every point.
 * `TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle_quotientPrebundle`: `E ⧸ V` is a
   `C^n` vector bundle.
+* `trivializationOfMemPretrivializationAtlas_quotientPrebundle_apply`, in the namespace
+  `TauCeti.HasLocalContMDiffSubbundleFrames`: the trivializations of `E ⧸ V` send a class to its
+  coordinates in the corresponding frame.
 * `TauCeti.HasLocalContMDiffSubbundleFrames.contMDiff_totalSpace_mkQ`: the quotient map
   `E → E ⧸ V` is `C^n`.
 * `TauCeti.HasLocalContMDiffSubbundleFrames.exists_contMDiffOn_mk_eq`: a `C^n` section of `E ⧸ V`
@@ -77,179 +76,6 @@ open scoped Manifold ContDiff
 
 namespace TauCeti
 
-section Frame
-
-variable {𝕜 : Type*} [Ring 𝕜] {B : Type*} {E : B → Type*} [∀ x, AddCommGroup (E x)]
-  [∀ x, Module 𝕜 (E x)] {κ : Type*}
-
-/-- The sections `Y j` of `E` form a local frame of the quotient of `E` by the family of subspaces
-`V` on the set `U`: at every point `x` of `U` the classes of the vectors `Y j x` modulo `V x` form
-a basis of `E x ⧸ V x`. No regularity is required of the sections. -/
-structure IsQuotientFrameOn (V : Π x, Submodule 𝕜 (E x)) (Y : κ → Π x, E x) (U : Set B) :
-    Prop where
-  /-- The classes of the frame at a point of `U` are linearly independent. -/
-  linearIndependent {x : B} (hx : x ∈ U) :
-    LinearIndependent 𝕜 fun j ↦ (Submodule.Quotient.mk (Y j x) : E x ⧸ V x)
-  /-- The classes of the frame at a point of `U` span the quotient there. -/
-  span_eq {x : B} (hx : x ∈ U) :
-    Submodule.span 𝕜 (range fun j ↦ (Submodule.Quotient.mk (Y j x) : E x ⧸ V x)) = ⊤
-
-namespace IsQuotientFrameOn
-
-variable {V : Π x, Submodule 𝕜 (E x)} {Y : κ → Π x, E x} {U U' : Set B}
-
-/-- A local frame of `E ⧸ V` on `U` is a local frame of `E ⧸ V` on every subset of `U`. -/
-theorem mono (hY : IsQuotientFrameOn V Y U) (hU : U' ⊆ U) : IsQuotientFrameOn V Y U' where
-  linearIndependent hx := hY.linearIndependent (hU hx)
-  span_eq hx := hY.span_eq (hU hx)
-
-/-- At a point `y` of `U`, a local frame of `E ⧸ V` on `U` gives a basis of `E y ⧸ V y`. -/
-def basis (hY : IsQuotientFrameOn V Y U) {y : B} (hy : y ∈ U) : Basis κ 𝕜 (E y ⧸ V y) :=
-  Basis.mk (hY.linearIndependent hy) (hY.span_eq hy).ge
-
-@[simp]
-theorem basis_apply (hY : IsQuotientFrameOn V Y U) {y : B} (hy : y ∈ U) (j : κ) :
-    hY.basis hy j = Submodule.Quotient.mk (Y j y) :=
-  Basis.mk_apply ..
-
-/-- At a point `y` of `U`, the class with coordinates `c` in the frame `Y` is the class of the
-combination `∑ j, c j • Y j y`. -/
-theorem basis_equivFun_symm [Fintype κ] (hY : IsQuotientFrameOn V Y U) {y : B} (hy : y ∈ U)
-    (c : κ → 𝕜) :
-    (hY.basis hy).equivFun.symm c = Submodule.Quotient.mk (∑ j, c j • Y j y) := by
-  simp only [Basis.equivFun_symm_apply, basis_apply, ← Submodule.mkQ_apply, map_sum, map_smul]
-
-section Coordinates
-
-variable [Finite κ] (hY : IsQuotientFrameOn V Y U)
-
-open scoped Classical in
-/-- The coordinates of a class of `E y ⧸ V y` in the frame `Y`, extended by zero off `U`. -/
-private def coords (y : B) : (E y ⧸ V y) →ₗ[𝕜] κ → 𝕜 :=
-  if hy : y ∈ U then (hY.basis hy).equivFun.toLinearMap else 0
-
-open scoped Classical in
-/-- The class of `E y ⧸ V y` with given coordinates in the frame `Y`, extended by zero off `U`. -/
-private def vec (y : B) : (κ → 𝕜) →ₗ[𝕜] E y ⧸ V y :=
-  if hy : y ∈ U then (hY.basis hy).equivFun.symm.toLinearMap else 0
-
-private theorem coords_of_mem {y : B} (hy : y ∈ U) (v : E y ⧸ V y) :
-    hY.coords y v = (hY.basis hy).equivFun v := by
-  simp [coords, hy]
-
-private theorem vec_of_mem {y : B} (hy : y ∈ U) (c : κ → 𝕜) :
-    hY.vec y c = (hY.basis hy).equivFun.symm c := by
-  simp [vec, hy]
-
-private theorem vec_coords {y : B} (hy : y ∈ U) (v : E y ⧸ V y) :
-    hY.vec y (hY.coords y v) = v := by
-  rw [vec_of_mem hY hy, coords_of_mem hY hy, LinearEquiv.symm_apply_apply]
-
-private theorem coords_vec {y : B} (hy : y ∈ U) (c : κ → 𝕜) : hY.coords y (hY.vec y c) = c := by
-  rw [vec_of_mem hY hy, coords_of_mem hY hy, LinearEquiv.apply_symm_apply]
-
-variable [TopologicalSpace 𝕜] [TopologicalSpace B]
-
-/-- The local pretrivialization of the quotient `E ⧸ V` given by a local frame `Y` of it on an open
-set `U`: over `U`, a class of `E y ⧸ V y` is sent to its coordinates in the frame. -/
-def pretrivialization (hU : IsOpen U) :
-    Pretrivialization (κ → 𝕜) (π (κ → 𝕜) fun x ↦ E x ⧸ V x) where
-  toFun p := (p.proj, hY.coords p.proj p.snd)
-  invFun q := TotalSpace.mk' (κ → 𝕜) (E := fun x ↦ E x ⧸ V x) q.1 (hY.vec q.1 q.2)
-  source := π (κ → 𝕜) (fun x ↦ E x ⧸ V x) ⁻¹' U
-  target := U ×ˢ univ
-  map_source' _ hp := ⟨hp, mem_univ _⟩
-  map_target' _ hq := hq.1
-  left_inv' p hp := by
-    dsimp only
-    rw [vec_coords hY hp]
-  right_inv' q hq := by
-    dsimp only
-    rw [coords_vec hY hq.1]
-  open_target := hU.prod isOpen_univ
-  baseSet := U
-  open_baseSet := hU
-  source_eq := rfl
-  target_eq := rfl
-  proj_toFun _ _ := rfl
-
-variable (hU : IsOpen U)
-
-@[simp]
-theorem pretrivialization_baseSet : (hY.pretrivialization hU).baseSet = U :=
-  (rfl)
-
-private theorem pretrivialization_apply_eq (p : TotalSpace (κ → 𝕜) fun x ↦ E x ⧸ V x) :
-    hY.pretrivialization hU p = (p.proj, hY.coords p.proj p.snd) :=
-  (rfl)
-
-/-- Over `U`, the frame pretrivialization sends a class to its coordinates in the frame. -/
-@[simp]
-theorem pretrivialization_apply {p : TotalSpace (κ → 𝕜) fun x ↦ E x ⧸ V x} (hp : p.proj ∈ U) :
-    hY.pretrivialization hU p = (p.proj, (hY.basis hp).equivFun p.snd) := by
-  rw [pretrivialization_apply_eq, coords_of_mem hY hp]
-
-/-- Over `U`, the inverse of the frame pretrivialization sends coordinates to the corresponding
-combination of the frame. -/
-@[simp]
-theorem pretrivialization_symm_apply {y : B} (hy : y ∈ U) (c : κ → 𝕜) :
-    (hY.pretrivialization hU).symm y c = (hY.basis hy).equivFun.symm c := by
-  rw [Pretrivialization.symm_apply _ hy]
-  -- The cast is along an equality of base points that holds by definition of the inverse.
-  exact vec_of_mem hY hy c
-
-/-- The frame pretrivialization is fibrewise linear. -/
-instance isLinear_pretrivialization : (hY.pretrivialization hU).IsLinear 𝕜 where
-  linear y _ := (hY.coords y).isLinear
-
-end Coordinates
-
-end IsQuotientFrameOn
-
-end Frame
-
-section Combined
-
-variable {𝕜 : Type*} [Ring 𝕜] {B : Type*} [TopologicalSpace B] {F : Type*} {E : B → Type*}
-  [∀ x, AddCommGroup (E x)] [∀ x, Module 𝕜 (E x)] [TopologicalSpace (TotalSpace F E)]
-  {ι κ : Type*} {V : Π x, Submodule 𝕜 (E x)} {X : ι → Π x, E x} {Y : κ → Π x, E x} {U : Set B}
-
-omit [TopologicalSpace B] [∀ x, AddCommGroup (E x)] [∀ x, Module 𝕜 (E x)]
-  [TopologicalSpace (TotalSpace F E)] in
-private theorem sumElim_apply_eq (y : B) :
-    (fun k ↦ Sum.elim X Y k y) = Sum.elim (X · y) (Y · y) := by
-  ext (i | j) <;> rfl
-
-/-- **Quotient frames are complements of subbundle frames.** If `X` is a local frame of `V` on
-`U`, then the sections `Y` form a local frame of `E ⧸ V` on `U` exactly when at every point `y` of
-`U` the vectors `X i y` and `Y j y` together form a basis of `E y`. -/
-theorem IsSubbundleFrameOn.isQuotientFrameOn_iff (hX : IsSubbundleFrameOn F V X U) :
-    IsQuotientFrameOn V Y U ↔ ∀ y ∈ U, LinearIndependent 𝕜 (fun k ↦ Sum.elim X Y k y) ∧
-      Submodule.span 𝕜 (range fun k ↦ Sum.elim X Y k y) = ⊤ := by
-  have hrange (y : B) : (range fun j ↦ (Submodule.Quotient.mk (Y j y) : E y ⧸ V y)) =
-      (V y).mkQ '' range (Y · y) := by
-    rw [← range_comp]
-    rfl
-  -- The span of the combined family is `V y ⊔ span (Y · y)`, which is everything exactly when
-  -- the classes of `Y · y` span the quotient.
-  have hspan (y : B) (hy : y ∈ U) : Submodule.span 𝕜 (range fun k ↦ Sum.elim X Y k y) = ⊤ ↔
-      Submodule.span 𝕜 (range fun j ↦ (Submodule.Quotient.mk (Y j y) : E y ⧸ V y)) = ⊤ := by
-    rw [sumElim_apply_eq, Set.Sum.elim_range, Submodule.span_union, hX.span_eq hy, hrange,
-      ← Submodule.map_span, Submodule.map_mkQ_eq_top]
-  refine ⟨fun hY y hy ↦ ⟨?_, (hspan y hy).2 (hY.span_eq hy)⟩, fun h ↦ ⟨fun {y} hy ↦ ?_,
-    fun hy ↦ (hspan _ hy).1 (h _ hy).2⟩⟩
-  · rw [sumElim_apply_eq]
-    have hX' : LinearIndependent 𝕜 fun i ↦ (⟨X i y, hX.apply_mem i hy⟩ : V y) :=
-      .of_comp (V y).subtype (hX.linearIndependent hy)
-    exact hX'.sumElim_of_quotient (Y · y) (hY.linearIndependent hy)
-  · obtain ⟨-, hYi, hdisj⟩ := linearIndependent_sum.mp (sumElim_apply_eq (X := X) (Y := Y) y ▸
-      (h y hy).1)
-    refine hYi.map (f := (V y).mkQ) ?_
-    rw [Submodule.ker_mkQ, ← hX.span_eq hy]
-    exact hdisj.symm
-
-end Combined
-
 section Smooth
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
@@ -262,17 +88,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [VectorBundle 𝕜 F E] {n : ℕ∞ω}
   {ι κ : Type*} [Fintype ι] [Fintype κ] {V : Π x, Submodule 𝕜 (E x)}
   {X : ι → Π x, E x} {Y : κ → Π x, E x} {U U' : Set B}
-
-omit [CompleteSpace 𝕜] [ChartedSpace HB B] in
-/-- Read in a trivialization of `E`, a family of vectors sends coefficients to the image of their
-linear combination. -/
-private theorem trivOperator_eq_linearCombination {ν : Type*} [Fintype ν] {Z : ν → Π x, E x}
-    {y₀ y : B} (hy : y ∈ (trivializationAt F E y₀).baseSet) (d : ν → 𝕜) :
-    IsSubbundleFrameOn.trivOperator 𝕜 F Z y₀ y d =
-      (trivializationAt F E y₀).continuousLinearEquivAt 𝕜 y hy
-        (Fintype.linearCombination 𝕜 (Z · y) d) := by
-  rw [IsSubbundleFrameOn.trivOperator_apply hy, Fintype.linearCombination_apply]
-  rfl
 
 omit [CompleteSpace 𝕜] [ChartedSpace HB B] [Fintype κ] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [∀ x, TopologicalSpace (E x)] [FiberBundle F E] [VectorBundle 𝕜 F E] in
@@ -288,6 +103,23 @@ private theorem basis_equivFun_mk_eq [Fintype κ] (hX : IsSubbundleFrameOn F V X
   exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (hX.apply_mem i hy)
 
 variable [ContMDiffVectorBundle n F E IB]
+
+omit [Fintype κ] in
+/-- If the sections `X` and `Y` are `C^n` at `y₀` and together, read in the trivialization of `E`
+at `y₀`, are bijective on coefficients at `y₀`, then this family of operators has `C^n` left
+inverses near `y₀`. -/
+private theorem exists_contMDiffAt_leftInverse_trivOperator_sumElim [Fintype κ] {y₀ : B}
+    (hX : ∀ i, CMDiffAt n (T% (X i)) y₀) (hY : ∀ j, CMDiffAt n (T% (Y j)) y₀)
+    (hbij : Bijective (IsSubbundleFrameOn.trivOperator 𝕜 F (Sum.elim X Y) y₀ y₀)) :
+    ∃ L : B → F →L[𝕜] ι ⊕ κ → 𝕜, ContMDiffAt IB 𝓘(𝕜, F →L[𝕜] ι ⊕ κ → 𝕜) n L y₀ ∧
+      ∀ᶠ y in 𝓝 y₀,
+        LeftInverse (L y) (IsSubbundleFrameOn.trivOperator 𝕜 F (Sum.elim X Y) y₀ y) := by
+  let A₀ := (LinearEquiv.ofBijective
+    (IsSubbundleFrameOn.trivOperator 𝕜 F (Sum.elim X Y) y₀ y₀ : (ι ⊕ κ → 𝕜) →ₗ[𝕜] F)
+    hbij).toContinuousLinearEquiv
+  exact (IsSubbundleFrameOn.contMDiffAt_trivOperator (𝕜' := 𝕜) (Sum.forall.mpr ⟨hX, hY⟩)
+    (FiberBundle.mem_baseSet_trivializationAt' y₀)).exists_contMDiffAt_leftInverse
+    ⟨A₀.symm, fun d ↦ A₀.symm_apply_apply d⟩
 
 omit [Fintype ι] in
 /-- Near a point `y₀` where `X` is a `C^n` frame of `V` and `Y` a `C^n` frame of `E ⧸ V`, the
@@ -305,26 +137,12 @@ private theorem exists_basis_equivFun_mk_eq [Finite ι] (hX : IsSubbundleFrameOn
   have he := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := E) y₀
   have hb := (hX.mono (inter_subset_left (t := U'))).isQuotientFrameOn_iff.mp
     (hY.mono inter_subset_right)
-  -- The frames `X` and `Y` together, read in the trivialization at `y₀`.
-  let A := IsSubbundleFrameOn.trivOperator 𝕜 F (Sum.elim X Y) y₀
-  have hA : ContMDiffAt IB 𝓘(𝕜, (ι ⊕ κ → 𝕜) →L[𝕜] F) n A y₀ :=
-    IsSubbundleFrameOn.contMDiffAt_trivOperator (𝕜' := 𝕜) (fun k ↦ by
-      rcases k with i | j
-      · exact (hXn i).contMDiffAt (hU.mem_nhds hy₀)
-      · exact (hYn j).contMDiffAt (hU'.mem_nhds hy₀')) he
-  have hbij : Bijective (A y₀) := by
-    have h := hb y₀ ⟨hy₀, hy₀'⟩
-    rw [← Fintype.range_linearCombination] at h
-    refine ⟨fun d d' hd ↦ linearIndependent_iff_injective_fintypeLinearCombination.mp h.1
-      (((trivializationAt F E y₀).continuousLinearEquivAt 𝕜 y₀ he).injective ?_), fun w ↦ ?_⟩
-    · rwa [← trivOperator_eq_linearCombination he, ← trivOperator_eq_linearCombination he]
-    · obtain ⟨d, hd⟩ := LinearMap.range_eq_top.mp h.2
-        ((trivializationAt F E y₀).continuousLinearEquivAt 𝕜 y₀ he |>.symm w)
-      exact ⟨d, by
-        rw [trivOperator_eq_linearCombination he, hd, ContinuousLinearEquiv.apply_symm_apply]⟩
-  let A₀ := (LinearEquiv.ofBijective (A y₀ : (ι ⊕ κ → 𝕜) →ₗ[𝕜] F) hbij).toContinuousLinearEquiv
-  obtain ⟨L, hL, hLinv⟩ := hA.exists_contMDiffAt_leftInverse
-    ⟨A₀.symm, fun d ↦ A₀.symm_apply_apply d⟩
+  -- The frames `X` and `Y` together, read in the trivialization at `y₀`, have left inverses.
+  obtain ⟨L, hL, hLinv⟩ := exists_contMDiffAt_leftInverse_trivOperator_sumElim
+    (fun i ↦ (hXn i).contMDiffAt (hU.mem_nhds hy₀))
+    (fun j ↦ (hYn j).contMDiffAt (hU'.mem_nhds hy₀'))
+    ((IsSubbundleFrameOn.linearIndependent_and_span_eq_top_iff_bijective_trivOperator he).mp
+      (hb y₀ ⟨hy₀, hy₀'⟩))
   let P : (ι ⊕ κ → 𝕜) →L[𝕜] κ → 𝕜 := .pi fun j ↦ .proj (Sum.inr j)
   refine ⟨fun y ↦ P ∘L L y,
     (ContinuousLinearMap.compL 𝕜 F _ _ P).contDiff.comp_contMDiffAt hL, ?_⟩
@@ -335,11 +153,13 @@ private theorem exists_basis_equivFun_mk_eq [Finite ι] (hX : IsSubbundleFrameOn
   let b := Basis.mk (hb y hy).1 (hb y hy).2.ge
   have hv : ∑ k, b.equivFun v k • Sum.elim X Y k y = v := by
     simpa [b] using b.sum_equivFun v
-  have hAv : A y (b.equivFun v) = (trivializationAt F E y₀ ⟨y, v⟩).2 := by
+  have hAv : IsSubbundleFrameOn.trivOperator 𝕜 F (Sum.elim X Y) y₀ y (b.equivFun v) =
+      (trivializationAt F E y₀ ⟨y, v⟩).2 := by
     rw [IsSubbundleFrameOn.trivOperator_apply hye, hv]
   conv_lhs => rw [← hv]
   rw [basis_equivFun_mk_eq hX hY hy.1 hy.2, ContinuousLinearMap.comp_apply, ← hAv, hyL]
-  rfl
+  ext j
+  simp only [P, ContinuousLinearMap.pi_apply, ContinuousLinearMap.proj_apply]
 
 
 omit [Fintype ι] in
@@ -357,6 +177,7 @@ private theorem exists_contMDiffOn_coordChange [Finite ι]
         f b c = (hY'.pretrivialization hU' ⟨b, (hY.pretrivialization hU).symm b c⟩).2 := by
   classical
   have := Fintype.ofFinite ι
+  simp only [IsQuotientFrameOn.pretrivialization_baseSet]
   let f : B → (κ → 𝕜) →L[𝕜] κ → 𝕜 := fun b ↦
     if hb : b ∈ U ∩ U' then
       LinearMap.toContinuousLinearMap
@@ -364,8 +185,8 @@ private theorem exists_contMDiffOn_coordChange [Finite ι]
     else 0
   have hf (b : B) (hb : b ∈ U ∩ U') (c : κ → 𝕜) :
       f b c = (hY'.basis hb.2).equivFun ((hY.basis hb.1).equivFun.symm c) := by
-    simp only [f, hb, ↓reduceDIte]
-    rfl
+    simp only [f, hb, ↓reduceDIte, LinearMap.coe_toContinuousLinearMap', LinearMap.coe_comp,
+      LinearEquiv.coe_coe, comp_apply]
   refine ⟨f, fun b₀ hb₀ ↦ ?_, fun b hb c ↦ ?_⟩
   · obtain ⟨W, hW, hb₀W, X, hX, hXn⟩ := hasLocalContMDiffSubbundleFrames_iff.mp hV b₀
     obtain ⟨L, hL, hev⟩ := exists_basis_equivFun_mk_eq hX hW hXn hY' hU' hY'n hb₀W hb₀.2
@@ -424,26 +245,6 @@ private theorem isInducing_pretrivialization_comp_mk [Finite κ] [FiniteDimensio
     exact IsInducing.id
 
 
-omit [CompleteSpace 𝕜] [ContMDiffVectorBundle n F E IB] in
-/-- If as many sections of `E` as the dimension of `F`, read in a trivialization of `E`, are
-injective on coefficients at a point `y`, then they form a basis of `E y`. -/
-private theorem linearIndependent_and_span_eq_top [FiniteDimensional 𝕜 F] {ν : Type*} [Fintype ν]
-    {Z : ν → Π x, E x}
-    {y₀ y : B} (hy : y ∈ (trivializationAt F E y₀).baseSet)
-    (hrank : finrank 𝕜 (ν → 𝕜) = finrank 𝕜 F)
-    (hinj : Injective (IsSubbundleFrameOn.trivOperator 𝕜 F Z y₀ y)) :
-    LinearIndependent 𝕜 (Z · y) ∧ Submodule.span 𝕜 (range (Z · y)) = ⊤ := by
-  have hsurj := (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hrank).mp hinj
-  have hZ (d : ν → 𝕜) := trivOperator_eq_linearCombination (Z := Z) hy d
-  refine ⟨linearIndependent_iff_injective_fintypeLinearCombination.mpr fun d d' hd ↦
-    hinj ?_, ?_⟩
-  · simp only [hZ, hd]
-  · rw [← Fintype.range_linearCombination, LinearMap.range_eq_top]
-    intro v
-    obtain ⟨d, hd⟩ := hsurj ((trivializationAt F E y₀).continuousLinearEquivAt 𝕜 y hy v)
-    exact ⟨d, ((trivializationAt F E y₀).continuousLinearEquivAt 𝕜 y hy).injective
-      (by simpa [hZ] using hd)⟩
-
 omit [CompleteSpace 𝕜] in
 /-- A frame of `V` at `x₀` can be completed, by `C^n` sections of `E` that are constant in the
 trivialization of `E` at `x₀`, to vectors forming a basis of `E x₀`. -/
@@ -472,7 +273,8 @@ private theorem exists_contMDiffOn_injective_trivOperator_sumElim [FiniteDimensi
   have hA : (IsSubbundleFrameOn.trivOperator 𝕜 F (Sum.elim X Y) x₀ x₀ : (ι ⊕ κ → 𝕜) → F) =
       Fintype.linearCombination 𝕜 (Sum.elim (fun i ↦ φ (X i x₀)) fun j ↦ (c j : F)) := by
     ext d
-    rw [trivOperator_eq_linearCombination he, Fintype.linearCombination_apply,
+    rw [IsSubbundleFrameOn.trivOperator_apply_eq_linearCombination he,
+      Fintype.linearCombination_apply,
       Fintype.linearCombination_apply, map_sum, Fintype.sum_sum_type, Fintype.sum_sum_type]
     simp only [Y, φ, e]
     simp [Trivialization.apply_mk_symm _ (FiberBundle.mem_baseSet_trivializationAt' x₀)]
@@ -497,24 +299,18 @@ theorem HasLocalContMDiffSubbundleFrames.exists_isQuotientFrameOn
     exists_contMDiffOn_injective_trivOperator_sumElim (IB := IB) (n := n) hX hx₀ hκ
   set e := trivializationAt F E x₀
   have he : x₀ ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x₀
-  let A := IsSubbundleFrameOn.trivOperator 𝕜 F (Sum.elim X Y) x₀
-  have hA : ContMDiffAt IB 𝓘(𝕜, (ι ⊕ κ → 𝕜) →L[𝕜] F) n A x₀ :=
-    IsSubbundleFrameOn.contMDiffAt_trivOperator (𝕜' := 𝕜) (fun k ↦ by
-      rcases k with i | j
-      · exact (hXn i).contMDiffAt (hU₀.mem_nhds hx₀)
-      · exact (hYn j).contMDiffAt (e.open_baseSet.mem_nhds he)) he
   have hrank : finrank 𝕜 (ι ⊕ κ → 𝕜) = finrank 𝕜 F := by
     simp [hκ]
   -- The completed frame read in `e` is invertible at `x₀`, so it has left inverses nearby.
-  let A₀ := (LinearEquiv.ofBijective (A x₀ : (ι ⊕ κ → 𝕜) →ₗ[𝕜] F)
-    ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hrank).mp hinj⟩)
-    |>.toContinuousLinearEquiv
-  obtain ⟨L, -, hLinv⟩ := hA.exists_contMDiffAt_leftInverse
-    ⟨A₀.symm, fun d ↦ A₀.symm_apply_apply d⟩
+  obtain ⟨L, -, hLinv⟩ := exists_contMDiffAt_leftInverse_trivOperator_sumElim
+    (fun i ↦ (hXn i).contMDiffAt (hU₀.mem_nhds hx₀))
+    (fun j ↦ (hYn j).contMDiffAt (e.open_baseSet.mem_nhds he))
+    ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hrank).mp hinj⟩
   obtain ⟨t, ht, hto, hx₀t⟩ := mem_nhds_iff.mp hLinv
   exact ⟨t ∩ U₀ ∩ e.baseSet, (hto.inter hU₀).inter e.open_baseSet, ⟨⟨hx₀t, hx₀⟩, he⟩, Y,
     (hX.mono (U' := t ∩ U₀ ∩ e.baseSet) fun y hy ↦ hy.1.2).isQuotientFrameOn_iff.mpr
-      fun y hy ↦ linearIndependent_and_span_eq_top hy.2 hrank (ht hy.1.1).injective,
+      fun y hy ↦ IsSubbundleFrameOn.linearIndependent_and_span_eq_top_of_injective_trivOperator
+        hy.2 hrank (ht hy.1.1).injective,
     fun j ↦ (hYn j).mono fun y hy ↦ hy.2⟩
 
 namespace HasLocalContMDiffSubbundleFrames
@@ -554,7 +350,8 @@ def quotientPrebundle : VectorPrebundle 𝕜 (κ → 𝕜) fun x ↦ E x ⧸ V x
     rintro _ ⟨U, hU, Y, hY, -, rfl⟩
     exact hY.isLinear_pretrivialization hU
   pretrivializationAt x := (hV.frame_spec hκ x).2.2.1.pretrivialization (hV.frame_spec hκ x).1
-  mem_base_pretrivializationAt x := (hV.frame_spec hκ x).2.1
+  mem_base_pretrivializationAt x :=
+    ((hV.frame_spec hκ x).2.2.1.pretrivialization_baseSet _).ge (hV.frame_spec hκ x).2.1
   pretrivialization_mem_atlas x :=
     ⟨_, (hV.frame_spec hκ x).1, _, (hV.frame_spec hκ x).2.2.1, (hV.frame_spec hκ x).2.2.2, rfl⟩
   exists_coordChange := by
@@ -588,6 +385,19 @@ theorem contMDiffVectorBundle_quotientPrebundle :
     ContMDiffVectorBundle n (κ → 𝕜) (fun x ↦ E x ⧸ V x) IB :=
   have := hV.isContMDiff_quotientPrebundle hκ
   VectorPrebundle.contMDiffVectorBundle IB (hV.quotientPrebundle hκ)
+
+/-- In the quotient bundle, the trivialization given by a local frame `Y` of `E ⧸ V` on an open set
+`U` whose pretrivialization lies in the atlas sends a class over a point of `U` to its coordinates
+in the frame. -/
+theorem trivializationOfMemPretrivializationAtlas_quotientPrebundle_apply
+    {Y : κ → Π x, E x} {U : Set B} {hY : IsQuotientFrameOn V Y U} {hU : IsOpen U}
+    (he : hY.pretrivialization hU ∈ (hV.quotientPrebundle hκ).pretrivializationAtlas)
+    {p : TotalSpace (κ → 𝕜) fun x ↦ E x ⧸ V x} (hp : p.proj ∈ U) :
+    letI := (hV.quotientPrebundle hκ).totalSpaceTopology
+    (hV.quotientPrebundle hκ).trivializationOfMemPretrivializationAtlas he p =
+      (p.proj, (hY.basis hp).equivFun p.snd) :=
+  -- The trivialization built from a pretrivialization has the same underlying function.
+  hY.pretrivialization_apply hU hp
 
 /-- In the quotient bundle, the trivialization at `x` sends a class over a point of the domain of
 the chosen frame to its coordinates in that frame. -/
@@ -644,8 +454,8 @@ theorem exists_contMDiffOn_mk_eq {W : Set B} (hW : IsOpen W) {s : Π x, E x ⧸ 
   -- The coordinates of `s` in the frame `Y` are `C^n` on `U ∩ W`.
   have hc : ContMDiffOn IB 𝓘(𝕜, κ → 𝕜) n
       (fun x ↦ (trivializationAt (κ → 𝕜) (fun x ↦ E x ⧸ V x) x₀ ⟨x, s x⟩).2) (U ∩ W) :=
-    ((trivializationAt (κ → 𝕜) (fun x ↦ E x ⧸ V x) x₀).contMDiffOn_section_iff
-      (hU.inter hW) fun x hx ↦ hx.1).mp (hs.mono inter_subset_right)
+    ((trivializationAt (κ → 𝕜) (fun x ↦ E x ⧸ V x) x₀).contMDiffOn_section_iff (hU.inter hW)
+      fun x hx ↦ (hY.pretrivialization_baseSet hU).ge hx.1).mp (hs.mono inter_subset_right)
   refine ⟨U ∩ W, hU.inter hW, ⟨hx₀U, hx₀⟩, inter_subset_right,
     fun x ↦ ∑ j, (trivializationAt (κ → 𝕜) (fun x ↦ E x ⧸ V x) x₀ ⟨x, s x⟩).2 j • Y j x,
     ?_, fun x hx ↦ ?_⟩
