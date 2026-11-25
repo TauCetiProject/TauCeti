@@ -38,6 +38,10 @@ infinity. An eigenvalue missing from the listing would have an eigenfunction `w`
 orthogonal to every basis vector, since eigenfunctions of a symmetric form for distinct eigenvalues
 are orthogonal; so there is none.
 
+This abstracts the argument first given for the Dirichlet problem in
+`TauCeti.PDE.exists_hilbertBasis_nat_isDirichletEigenvalue_monotone`, which is now derived from the
+abstract statement.
+
 ## References
 
 * H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*,

@@ -10,10 +10,6 @@ public import TauCeti.Analysis.PDE.Spectrum.MinMax
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
 public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
 import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
-import TauCeti.Analysis.Sobolev.W1p.AddHaar
-import TauCeti.Analysis.Sobolev.W1p.LocalCompactness
-import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
-import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # Mixed and Neumann eigenvalues
@@ -52,17 +48,18 @@ range because `H¹_Γ(Ω)` contains `H¹₀(Ω)` when `Γ` misses `Ω`.
 The **min–max principle** defines the `k`-th mixed eigenvalue `λₖ` without eigenfunctions
 (`TauCeti.PDE.mixedEigenvalue`): the infimum of the `C` for which some subspace of `H¹_Γ(Ω)`, whose
 values span a subspace of `L²(Ω)` of dimension at least `k + 1`, satisfies `a(v, v) ≤ C ‖v‖²_{L²}`
-on it. For a symmetric nonnegative form with an eigenbasis it is the `k`-th term of every
-nondecreasing listing of the eigenvalues (`TauCeti.PDE.mixedEigenvalue_eq_of_hilbertBasis`), and
-the infimum is attained (`TauCeti.PDE.isLeast_mixedEigenvalue`). At `Γ = ∂Ω` it is the Dirichlet
-eigenvalue `TauCeti.PDE.dirichletEigenvalue` (`TauCeti.PDE.mixedEigenvalue_frontier`), and since
-`H¹_Γ(Ω)` shrinks as `Γ` grows, the eigenvalues grow with `Γ`:
-`λₖ(Γ) ≤ λₖ(Γ')` for `Γ ⊆ Γ'` (`TauCeti.PDE.mixedEigenvalue_le_of_subset`).
+on it. For a symmetric form bounded below, `a(v, v) + ω ‖v‖²_{L²} ≥ 0`, with an eigenbasis it is
+the `k`-th term of every nondecreasing listing of the eigenvalues
+(`TauCeti.PDE.mixedEigenvalue_eq_of_hilbertBasis`), and the infimum is attained
+(`TauCeti.PDE.isLeast_mixedEigenvalue`); a Gårding inequality makes the form bounded below. At
+`Γ = ∂Ω` it is the Dirichlet eigenvalue `TauCeti.PDE.dirichletEigenvalue`
+(`TauCeti.PDE.mixedEigenvalue_frontier`), and since `H¹_Γ(Ω)` shrinks as `Γ` grows, the
+eigenvalues grow with `Γ`: `λₖ(Γ) ≤ λₖ(Γ')` for `Γ ⊆ Γ'`
+(`TauCeti.PDE.mixedEigenvalue_le_of_subset`).
 
 For `-Δ`, whose energy form is `∫_Ω ∇u · ∇v`, all hypotheses except the Rellich property hold
-outright, and the Rellich property holds on every bounded Lipschitz domain of `ℝⁿ`: a boundary
-chart carries it to a Lipschitz domain of the model space `ℝ × E`, where it is
-`TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith`. So on a nonempty bounded
+outright, and the Rellich property holds on every bounded Lipschitz domain of `ℝⁿ`
+(`TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomain`). So on a nonempty bounded
 Lipschitz domain the mixed eigenvalues of `-Δ` are nonnegative and the eigenbasis and min–max
 hold outright (`TauCeti.PDE.mixedEigenvalue_laplacian_spectrum`).
 
@@ -76,8 +73,9 @@ hold outright (`TauCeti.PDE.mixedEigenvalue_laplacian_spectrum`).
 * `TauCeti.PDE.mixedEigenvalue`: the `k`-th mixed eigenvalue, by min–max, with
   `TauCeti.PDE.mixedEigenvalue_eq_of_hilbertBasis`, `TauCeti.PDE.isLeast_mixedEigenvalue`,
   `TauCeti.PDE.exists_hilbertBasis_mixedEigenvalue`, `TauCeti.PDE.monotone_mixedEigenvalue`,
-  `TauCeti.PDE.tendsto_mixedEigenvalue_atTop` and
-  `TauCeti.PDE.isMixedEigenvalue_iff_exists_mixedEigenvalue_eq`.
+  `TauCeti.PDE.tendsto_mixedEigenvalue_atTop`,
+  `TauCeti.PDE.isMixedEigenvalue_iff_exists_mixedEigenvalue_eq` and, for a nonnegative form,
+  `TauCeti.PDE.mixedEigenvalue_nonneg`.
 * `TauCeti.PDE.mixedEigenvalue_frontier` and `TauCeti.PDE.mixedEigenvalue_le_of_subset`: the
   Dirichlet case and monotonicity in `Γ`.
 * `TauCeti.PDE.exists_hilbertBasis_mixedEigenvalue_laplacian`,
@@ -288,8 +286,8 @@ Courant–Fischer min–max principle: the infimum of the constants `C` such tha
 `a(v, v) ≤ C ‖v‖²_{L²(Ω)}` for every `v` in some subspace `W` of `H¹_Γ(Ω)` whose values span a
 subspace of `L²(Ω)` of dimension at least `k + 1`.
 
-For a symmetric nonnegative form with an orthonormal eigenbasis the infimum is attained and equals
-the `k`-th term of the nondecreasing listing of the eigenvalues
+For a symmetric form bounded below, `a(v, v) + ω ‖v‖²_{L²} ≥ 0`, with an orthonormal eigenbasis
+the infimum is attained and equals the `k`-th term of the nondecreasing listing of the eigenvalues
 (`TauCeti.PDE.mixedEigenvalue_eq_of_hilbertBasis`). Otherwise the infimum may be over an empty or
 unbounded set, and the value carries no information. -/
 def mixedEigenvalue (k : ℕ) : ℝ :=
@@ -324,14 +322,17 @@ theorem mixedEigenvalue_frontier :
   rw [mixedEigenvalue_def, dirichletEigenvalue_def, w1pVanishingOnSubmodule_frontier, hJ]
 
 /-- The min–max principle `TauCeti.isLeast_minMax_of_hilbertBasis` for the energy form on
-`H¹_Γ(Ω)` and the value map `H¹_Γ(Ω) → L²(Ω)`. -/
+`H¹_Γ(Ω)` and the value map `H¹_Γ(Ω) → L²(Ω)`, for a form bounded below by `-ω ‖v‖²_{L²}`. It
+is applied to the nonnegative form shifted by `ω`, with eigenvalues `κⱼ + ω`, and the least
+constant is shifted back by `ω`. -/
 private theorem isLeast_of_hilbertBasis
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hsymm : ∀ u v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
       energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
         energyFormH1 a b c (v : W1p mu Omega 2) (u : W1p mu Omega 2))
-    (hnonneg : ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
-      0 ≤ energyFormH1 a b c (v : W1p mu Omega 2) (v : W1p mu Omega 2))
+    {omega : ℝ} (hlower : ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+      0 ≤ energyFormH1 a b c (v : W1p mu Omega 2) (v : W1p mu Omega 2) +
+        omega * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2)
     (basis : HilbertBasis ℕ ℝ (Lp ℝ 2 (mu.restrict Omega))) {kappa : ℕ → ℝ}
     (hkappa : Monotone kappa) {u : ℕ → (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule}
     (hvalue : ∀ j, W1p.value (u j : W1p mu Omega 2) = basis j)
@@ -345,26 +346,37 @@ private theorem isLeast_of_hilbertBasis
           (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule.subtype)) ∧
         ∀ v ∈ W, energyFormH1 a b c (v : W1p mu Omega 2) (v : W1p mu Omega 2) ≤
           C * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2} (kappa k) := by
+  let J := (W1p.valueL (mu := mu) (Omega := Omega) (p := 2)).toLinearMap ∘ₗ
+    (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule.subtype
+  have hJ (v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) :
+      J v = W1p.value (v : W1p mu Omega 2) := by
+    simp [J]
   have hB (u v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) :
-      shiftedForm hcoeff Γ 0 u v =
-        energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) := by
-    rw [shiftedForm_apply, zero_mul, add_zero]
-  simpa only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, hB, LinearMap.coe_comp,
-    Function.comp_apply, ContinuousLinearMap.coe_coe, Submodule.coe_subtype, W1p.valueL_apply]
-    using isLeast_minMax_of_hilbertBasis (B := (shiftedForm hcoeff Γ 0).toLinearMap₁₂)
-      (J := (W1p.valueL (mu := mu) (Omega := Omega) (p := 2)).toLinearMap ∘ₗ
-        (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule.subtype)
-      (by simpa only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, hB] using hsymm)
-      (by simpa only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, hB] using hnonneg)
-      basis hkappa
-      (by simpa only [LinearMap.coe_comp, Function.comp_apply, ContinuousLinearMap.coe_coe,
-        Submodule.coe_subtype, W1p.valueL_apply] using hvalue)
-      (by simpa only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, hB, LinearMap.coe_comp,
-        Function.comp_apply, ContinuousLinearMap.coe_coe, Submodule.coe_subtype,
-        W1p.valueL_apply] using heq) k
+      (shiftedForm hcoeff Γ omega).toLinearMap₁₂ u v =
+        energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) +
+          omega * ⟪J u, J v⟫_ℝ := by
+    rw [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, shiftedForm_apply, valueL_apply,
+      valueL_apply, hJ, hJ]
+  -- `C` is admissible for the form exactly when `C + ω` is admissible for the shifted form.
+  have hmem (W : Submodule ℝ (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) (C : ℝ) :
+      (∀ v ∈ W, (shiftedForm hcoeff Γ omega).toLinearMap₁₂ v v ≤ (C + omega) * ‖J v‖ ^ 2) ↔
+        ∀ v ∈ W, energyFormH1 a b c (v : W1p mu Omega 2) (v : W1p mu Omega 2) ≤
+          C * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2 := by
+    refine forall₂_congr fun v _ ↦ ?_
+    rw [hB, real_inner_self_eq_norm_sq, hJ, add_mul]
+    exact add_le_add_iff_right (omega * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2)
+  have h := isLeast_minMax_of_hilbertBasis (B := (shiftedForm hcoeff Γ omega).toLinearMap₁₂)
+    (J := J) (fun v w ↦ by rw [hB, hB, hsymm, real_inner_comm])
+    (fun v ↦ by rw [hB, real_inner_self_eq_norm_sq, hJ]; exact hlower v)
+    basis (kappa := fun j ↦ kappa j + omega) (fun _ _ hij ↦ by simpa using hkappa hij)
+    (fun j ↦ by rw [hJ, hvalue]) (fun j v ↦ by rw [hB, hJ, hJ, heq, add_mul]) k
+  refine ⟨?_, fun C ⟨W, hW, hC⟩ ↦ le_of_add_le_add_right (h.2 ⟨W, hW, (hmem W C).2 hC⟩)⟩
+  obtain ⟨W, hW, hC⟩ := h.1
+  exact ⟨W, hW, (hmem W (kappa k)).1 hC⟩
 
 /-- **The Courant–Fischer min–max principle for the mixed eigenvalues.** Let the energy form `a`
-be symmetric and nonnegative on `H¹_Γ(Ω)`, and let `κ₀ ≤ κ₁ ≤ ⋯` be eigenvalues with
+be symmetric on `H¹_Γ(Ω)` and bounded below there, `a(v, v) + ω ‖v‖²_{L²} ≥ 0` for some `ω`,
+as under a Gårding inequality, and let `κ₀ ≤ κ₁ ≤ ⋯` be eigenvalues with
 eigenfunctions `uⱼ ∈ H¹_Γ(Ω)`, `a(uⱼ, v) = κⱼ ⟪uⱼ, v⟫_{L²}` for every `v ∈ H¹_Γ(Ω)`, whose values
 form an orthonormal basis of `L²(Ω)`. Then `κₖ` is the `k`-th mixed eigenvalue `λₖ`. In
 particular any two such listings agree. -/
@@ -373,8 +385,9 @@ theorem mixedEigenvalue_eq_of_hilbertBasis
     (hsymm : ∀ u v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
       energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
         energyFormH1 a b c (v : W1p mu Omega 2) (u : W1p mu Omega 2))
-    (hnonneg : ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
-      0 ≤ energyFormH1 a b c (v : W1p mu Omega 2) (v : W1p mu Omega 2))
+    {omega : ℝ} (hlower : ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+      0 ≤ energyFormH1 a b c (v : W1p mu Omega 2) (v : W1p mu Omega 2) +
+        omega * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2)
     (basis : HilbertBasis ℕ ℝ (Lp ℝ 2 (mu.restrict Omega))) {kappa : ℕ → ℝ}
     (hkappa : Monotone kappa) {u : ℕ → (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule}
     (hvalue : ∀ j, W1p.value (u j : W1p mu Omega 2) = basis j)
@@ -383,7 +396,19 @@ theorem mixedEigenvalue_eq_of_hilbertBasis
         kappa j * ⟪W1p.value (u j : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ)
     (k : ℕ) :
     mixedEigenvalue mu Omega Γ a b c k = kappa k :=
-  (isLeast_of_hilbertBasis hcoeff hsymm hnonneg basis hkappa hvalue heq k).csInf_eq
+  (isLeast_of_hilbertBasis hcoeff hsymm hlower basis hkappa hvalue heq k).csInf_eq
+
+/-- A Gårding inequality `θ ‖v‖²_{H¹} ≤ a(v, v) + ω ‖v‖²_{L²}` bounds the energy form below by
+`-ω ‖v‖²_{L²}`. -/
+private theorem energyFormH1_add_nonneg_of_garding {theta omega : ℝ} (htheta : 0 < theta)
+    (hgarding : ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+      theta * ‖(v : W1p mu Omega 2)‖ ^ 2 ≤
+        energyFormH1 a b c (v : W1p mu Omega 2) (v : W1p mu Omega 2) +
+          omega * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2)
+    (v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) :
+    0 ≤ energyFormH1 a b c (v : W1p mu Omega 2) (v : W1p mu Omega 2) +
+      omega * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2 :=
+  (mul_nonneg htheta.le (sq_nonneg _)).trans (hgarding v)
 
 section Spectrum
 
@@ -394,18 +419,16 @@ variable [Nonempty ι]
   (hsymm : ∀ u v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
     energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
       energyFormH1 a b c (v : W1p mu Omega 2) (u : W1p mu Omega 2))
-  (hnonneg : ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
-    0 ≤ energyFormH1 a b c (v : W1p mu Omega 2) (v : W1p mu Omega 2))
   {theta omega : ℝ} (htheta : 0 < theta)
   (hgarding : ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
     theta * ‖(v : W1p mu Omega 2)‖ ^ 2 ≤
       energyFormH1 a b c (v : W1p mu Omega 2) (v : W1p mu Omega 2) +
         omega * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2)
   (hOmega_nonempty : (Omega : Set (EuclideanSpace ℝ ι)).Nonempty)
-include hcoeff hrellich hΓ hsymm hnonneg htheta hgarding hOmega_nonempty
+include hcoeff hrellich hΓ hsymm htheta hgarding hOmega_nonempty
 
 /-- **The mixed eigenvalues with an eigenbasis.** On a nonempty open set with the Rellich property,
-for a symmetric nonnegative energy form satisfying a Gårding inequality on `H¹_Γ(Ω)`, there is an
+for a symmetric energy form satisfying a Gårding inequality on `H¹_Γ(Ω)`, there is an
 orthonormal basis `(eₖ)` of `L²(Ω)` such that `eₖ` is the value of some `uₖ ∈ H¹_Γ(Ω)` with
 `a(uₖ, v) = λₖ ⟪uₖ, v⟫_{L²}` for every `v ∈ H¹_Γ(Ω)`, where `λₖ` is the min–max eigenvalue
 `TauCeti.PDE.mixedEigenvalue`. -/
@@ -421,10 +444,11 @@ theorem exists_hilbertBasis_mixedEigenvalue :
     exists_hilbertBasis_nat_isMixedEigenvalue_monotone hcoeff hrellich hΓ hsymm htheta hgarding
       hOmega_nonempty
   refine ⟨basis, u, hvalue, fun k v ↦ ?_⟩
-  rw [mixedEigenvalue_eq_of_hilbertBasis hcoeff hsymm hnonneg basis hmono hvalue heq k, heq]
+  rw [mixedEigenvalue_eq_of_hilbertBasis hcoeff hsymm
+    (energyFormH1_add_nonneg_of_garding htheta hgarding) basis hmono hvalue heq k, heq]
 
 /-- **The min–max principle is attained.** On a nonempty open set with the Rellich property, for a
-symmetric nonnegative energy form satisfying a Gårding inequality on `H¹_Γ(Ω)`, `λₖ` is the least
+symmetric energy form satisfying a Gårding inequality on `H¹_Γ(Ω)`, `λₖ` is the least
 `C` for which some subspace `W` of `H¹_Γ(Ω)`, whose values span a subspace of `L²(Ω)` of dimension
 at least `k + 1`, satisfies `a(v, v) ≤ C ‖v‖²_{L²(Ω)}` for every `v ∈ W`. -/
 theorem isLeast_mixedEigenvalue (k : ℕ) :
@@ -437,12 +461,13 @@ theorem isLeast_mixedEigenvalue (k : ℕ) :
   obtain ⟨basis, kappa, u, hmono, -, hvalue, heq, -⟩ :=
     exists_hilbertBasis_nat_isMixedEigenvalue_monotone hcoeff hrellich hΓ hsymm htheta hgarding
       hOmega_nonempty
-  rw [mixedEigenvalue_eq_of_hilbertBasis hcoeff hsymm hnonneg basis hmono hvalue heq]
-  exact isLeast_of_hilbertBasis hcoeff hsymm hnonneg basis hmono hvalue heq k
+  rw [mixedEigenvalue_eq_of_hilbertBasis hcoeff hsymm
+    (energyFormH1_add_nonneg_of_garding htheta hgarding) basis hmono hvalue heq]
+  exact isLeast_of_hilbertBasis hcoeff hsymm
+    (energyFormH1_add_nonneg_of_garding htheta hgarding) basis hmono hvalue heq k
 
-/-- Under the hypotheses of `TauCeti.PDE.exists_hilbertBasis_nat_isMixedEigenvalue_monotone` and
-for a nonnegative form, the mixed eigenvalues `λₖ` are that nondecreasing listing of the mixed
-spectrum. -/
+/-- Under the hypotheses of `TauCeti.PDE.exists_hilbertBasis_nat_isMixedEigenvalue_monotone`, the
+mixed eigenvalues `λₖ` are that nondecreasing listing of the mixed spectrum. -/
 private theorem mixedEigenvalue_properties :
     Monotone (mixedEigenvalue mu Omega Γ a b c) ∧
       Tendsto (mixedEigenvalue mu Omega Γ a b c) atTop atTop ∧
@@ -452,26 +477,40 @@ private theorem mixedEigenvalue_properties :
     exists_hilbertBasis_nat_isMixedEigenvalue_monotone hcoeff hrellich hΓ hsymm htheta hgarding
       hOmega_nonempty
   obtain rfl : mixedEigenvalue mu Omega Γ a b c = kappa :=
-    funext <| mixedEigenvalue_eq_of_hilbertBasis hcoeff hsymm hnonneg basis hmono hvalue heq
+    funext <| mixedEigenvalue_eq_of_hilbertBasis hcoeff hsymm
+      (energyFormH1_add_nonneg_of_garding htheta hgarding) basis hmono hvalue heq
   exact ⟨hmono, htendsto, hiff⟩
 
 /-- The mixed eigenvalues are nondecreasing: `λ₀ ≤ λ₁ ≤ ⋯`. -/
 theorem monotone_mixedEigenvalue : Monotone (mixedEigenvalue mu Omega Γ a b c) :=
-  (mixedEigenvalue_properties hcoeff hrellich hΓ hsymm hnonneg htheta hgarding
+  (mixedEigenvalue_properties hcoeff hrellich hΓ hsymm htheta hgarding
     hOmega_nonempty).1
 
 /-- The mixed eigenvalues tend to infinity. -/
 theorem tendsto_mixedEigenvalue_atTop :
     Tendsto (mixedEigenvalue mu Omega Γ a b c) atTop atTop :=
-  (mixedEigenvalue_properties hcoeff hrellich hΓ hsymm hnonneg htheta hgarding
+  (mixedEigenvalue_properties hcoeff hrellich hΓ hsymm htheta hgarding
     hOmega_nonempty).2.1
 
 /-- The mixed eigenvalues `λₖ` are exactly the mixed spectrum. -/
 theorem isMixedEigenvalue_iff_exists_mixedEigenvalue_eq (kappa' : ℝ) :
     IsMixedEigenvalue mu Omega Γ a b c kappa' ↔
       ∃ k, mixedEigenvalue mu Omega Γ a b c k = kappa' :=
-  (mixedEigenvalue_properties hcoeff hrellich hΓ hsymm hnonneg htheta hgarding
+  (mixedEigenvalue_properties hcoeff hrellich hΓ hsymm htheta hgarding
     hOmega_nonempty).2.2 kappa'
+
+/-- **The mixed eigenvalues of a nonnegative form are nonnegative**: if moreover
+`a(v, v) ≥ 0` for every `v ∈ H¹_Γ(Ω)`, then `0 ≤ λₖ` for every `k`, since `λₖ = a(uₖ, uₖ)` for a
+normalized eigenfunction `uₖ`. -/
+theorem mixedEigenvalue_nonneg
+    (hnonneg : ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+      0 ≤ energyFormH1 a b c (v : W1p mu Omega 2) (v : W1p mu Omega 2)) (k : ℕ) :
+    0 ≤ mixedEigenvalue mu Omega Γ a b c k := by
+  obtain ⟨basis, u, hvalue, heq⟩ :=
+    exists_hilbertBasis_mixedEigenvalue hcoeff hrellich hΓ hsymm htheta hgarding hOmega_nonempty
+  have h := heq k (u k)
+  rw [hvalue, real_inner_self_eq_norm_sq, basis.orthonormal.1 k, one_pow, mul_one] at h
+  exact h ▸ hnonneg (u k)
 
 end Spectrum
 
@@ -512,8 +551,6 @@ theorem mixedEigenvalue_le_of_subset [Nonempty ι] (hΓΓ' : Γ ⊆ Γ')
     (hsymm : ∀ u v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
       energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
         energyFormH1 a b c (v : W1p mu Omega 2) (u : W1p mu Omega 2))
-    (hnonneg : ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
-      0 ≤ energyFormH1 a b c (v : W1p mu Omega 2) (v : W1p mu Omega 2))
     {theta omega : ℝ} (htheta : 0 < theta)
     (hgarding : ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
       theta * ‖(v : W1p mu Omega 2)‖ ^ 2 ≤
@@ -526,92 +563,11 @@ theorem mixedEigenvalue_le_of_subset [Nonempty ι] (hΓΓ' : Γ ⊆ Γ')
   let i : (w1pVanishingOnSubmodule mu Omega 2 Γ').toSubmodule →
       (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule := fun v ↦ ⟨v, hle v.property⟩
   exact csInf_le_csInf
-    (isLeast_mixedEigenvalue hcoeff hrellich (hΓ'.mono_left hΓΓ') hsymm hnonneg htheta hgarding
+    (isLeast_mixedEigenvalue hcoeff hrellich (hΓ'.mono_left hΓΓ') hsymm htheta hgarding
       hOmega_nonempty k).bddBelow
     (isLeast_mixedEigenvalue hcoeff hrellich hΓ' (fun u v ↦ hsymm (i u) (i v))
-      (fun v ↦ hnonneg (i v)) htheta (fun v ↦ hgarding (i v)) hOmega_nonempty k).nonempty
+      htheta (fun v ↦ hgarding (i v)) hOmega_nonempty k).nonempty
     fun _ hC ↦ mem_setOf_mixedEigenvalue_of_subset hΓΓ' hC
-
-/-! ### Rellich compactness on bounded Lipschitz domains -/
-
-section Rellich
-
-variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-- Rellich compactness passes along a rigid change of coordinates: for an affine isometry `g`
-with `U = g⁻¹(V)`, if the value map `W^{1,p}(V) → Lᵖ(V)` is compact, so is
-`W^{1,p}(U) → Lᵖ(U)`, since the value of `u` is the value of `u ∘ g⁻¹` composed with `g`. -/
-private theorem isCompactOperator_valueL_of_affineIsometryEquiv {F : Type*}
-    [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] [MeasurableSpace F]
-    [BorelSpace F] {V : Opens F} (g : EuclideanSpace ℝ ι ≃ᵃⁱ[ℝ] F)
-    (hUV : (Omega : Set (EuclideanSpace ℝ ι)) = g ⁻¹' V)
-    (hK : IsCompactOperator (W1p.valueL (mu := volume) (Omega := V) (p := p))) :
-    IsCompactOperator (W1p.valueL (mu := volume) (Omega := Omega) (p := p)) := by
-  have hVU : (V : Set F) = g.symm ⁻¹' Omega :=
-    hUV ▸ (g.toHomeomorph.toEquiv.symm_preimage_preimage V).symm
-  have hmp : MeasurePreserving g (volume.restrict (Omega : Set (EuclideanSpace ℝ ι)))
-      (volume.restrict (V : Set F)) :=
-    hUV ▸ g.measurePreserving.restrict_preimage V.isOpen.measurableSet
-  let C : Lp ℝ p (volume.restrict (V : Set F)) →L[ℝ]
-      Lp ℝ p (volume.restrict (Omega : Set (EuclideanSpace ℝ ι))) :=
-    (Lp.compMeasurePreservingₗᵢ ℝ g hmp).toContinuousLinearMap
-  convert (hK.clm_comp C).comp_clm (W1p.compAffineIsometryEquivL g.symm hVU) using 1
-  ext1 u
-  refine Lp.ext ?_
-  have hv := hmp.quasiMeasurePreserving.ae_eq_comp
-    (W1p.value_compAffineIsometryEquivL_ae g.symm hVU u)
-  filter_upwards [Lp.coeFn_compMeasurePreserving
-    (W1p.value (W1p.compAffineIsometryEquivL g.symm hVU u)) hmp, hv] with x h1 h2
-  simp only [Function.comp_apply, W1p.valueL_apply, C, LinearIsometry.coe_toContinuousLinearMap,
-    Lp.compMeasurePreservingₗᵢ_apply] at h1 h2 ⊢
-  rw [h1, h2, AffineIsometryEquiv.symm_apply_apply]
-
-/-- **Rellich–Kondrachov on bounded Lipschitz domains of `ℝⁿ`.** On a bounded Lipschitz domain
-`Ω ⊆ ℝⁿ`, modelled on `ℝ × E`, the value map `W^{1,p}(Ω) → Lᵖ(Ω)` is compact for every additive
-Haar measure and every `1 ≤ p ≤ ∞`. A boundary chart carries `Ω` onto a Lipschitz domain of the
-model space, where this is `TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith`; the
-change of Haar measure is `TauCeti.W1p.addHaarEquivL`. When the frontier is empty, `closure Ω ⊆ Ω`
-is compact and local Rellich compactness applies. -/
-private theorem isCompactOperator_valueL_of_isLipschitzDomain {E : Type*}
-    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
-    [BorelSpace E] (hΩ : (Omega : Set (EuclideanSpace ℝ ι)).IsLipschitzDomain E)
-    (hb : IsBounded (Omega : Set (EuclideanSpace ℝ ι))) :
-    IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := p)) := by
-  have hvol : IsCompactOperator (W1p.valueL (mu := volume) (Omega := Omega) (p := p)) := by
-    rcases (frontier (Omega : Set (EuclideanSpace ℝ ι))).eq_empty_or_nonempty with hfr | hne
-    · have hcl : closure (Omega : Set (EuclideanSpace ℝ ι)) ⊆ Omega :=
-        (isClopen_iff_frontier_eq_empty.mpr hfr).isClosed.closure_subset
-      convert W1p.isCompactOperator_valueL_restrictL (mu := volume) (p := p)
-        hb.isCompact_closure hcl using 1
-      ext1 u
-      simp
-    · obtain ⟨g, L, hL⟩ := hΩ.exists_isLipschitzDomainWith_image hb hne
-      let V : Opens (WithLp 2 (ℝ × E)) :=
-        ⟨g '' Omega, ((Set.isLipschitzDomainWith_iff _ _).1 hL).1⟩
-      exact isCompactOperator_valueL_of_affineIsometryEquiv (V := V) g
-        (g.toHomeomorph.toEquiv.preimage_image _).symm
-        (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith hL
-          (g.lipschitzWith.isBounded_image hb))
-  have hle : mu.restrict (Omega : Set (EuclideanSpace ℝ ι)) ≤
-      (mu.addHaarScalarFactor volume : ℝ≥0∞) • volume.restrict Omega := by
-    conv_lhs => rw [Measure.isAddLeftInvariant_eq_smul mu volume]
-    rw [Measure.restrict_smul]
-    exact le_rfl
-  let C : Lp ℝ p (volume.restrict (Omega : Set (EuclideanSpace ℝ ι))) →L[ℝ]
-      Lp ℝ p (mu.restrict (Omega : Set (EuclideanSpace ℝ ι))) :=
-    Lp.LpToLpOfMeasureLeSMul ENNReal.coe_ne_top hle
-  convert (hvol.clm_comp C).comp_clm
-    (W1p.addHaarEquivL (Omega := Omega) (p := p) mu volume).toContinuousLinearMap using 1
-  ext1 u
-  refine Lp.ext ?_
-  filter_upwards [Lp.coeFn_LpToLpOfMeasureLeSMul ENNReal.coe_ne_top hle
-    (W1p.value (W1p.addHaarEquivL mu volume u)),
-    ((Measure.absolutelyContinuous_isAddHaarMeasure mu volume).restrict _).ae_le
-      (W1p.value_addHaarEquivL_ae mu volume u)] with x h1 h2
-  simp only [Function.comp_apply, W1p.valueL_apply, C, ContinuousLinearEquiv.coe_coe] at h1 h2 ⊢
-  rw [h1, h2]
-
-end Rellich
 
 /-! ### The mixed eigenvalues of `-Δ` -/
 
@@ -637,8 +593,7 @@ private theorem norm_sq_le_energyFormH1_laplacian_add (v : W1p mu Omega 2) :
     W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq]
   linarith
 
-variable [Nonempty ι] {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+variable [Nonempty ι] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   (hΩ : (Omega : Set (EuclideanSpace ℝ ι)).IsLipschitzDomain E)
   (hb : IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
   (hOmega_nonempty : (Omega : Set (EuclideanSpace ℝ ι)).Nonempty)
@@ -650,9 +605,9 @@ theorem mixedEigenvalue_laplacian_le_of_subset (hΓΓ' : Γ ⊆ Γ') (hΓ' : Dis
     (k : ℕ) :
     mixedEigenvalue mu Omega Γ (fun _ ↦ 1) 0 0 k ≤ mixedEigenvalue mu Omega Γ' (fun _ ↦ 1) 0 0 k :=
   mixedEigenvalue_le_of_subset hΓΓ' (memLp_energyIntegrand_const_zero_zero 1)
-    (isCompactOperator_valueL_of_isLipschitzDomain hΩ hb) hΓ'
-    (fun _ _ ↦ energyFormH1_laplacian_comm _ _) (fun _ ↦ energyFormH1_laplacian_self_nonneg _)
-    one_pos (fun _ ↦ norm_sq_le_energyFormH1_laplacian_add _) hOmega_nonempty k
+    (W1p.isCompactOperator_valueL_of_isLipschitzDomain hΩ hb) hΓ'
+    (fun _ _ ↦ energyFormH1_laplacian_comm _ _) one_pos
+    (fun _ ↦ norm_sq_le_energyFormH1_laplacian_add _) hOmega_nonempty k
 
 /-- **The mixed eigenvalues of `-Δ` lie below the Dirichlet ones**: on a nonempty bounded
 Lipschitz domain `Ω` and for a boundary part `Γ ⊆ ∂Ω`, `λₖ(Γ) ≤ λₖ(∂Ω)`, the `k`-th Dirichlet
@@ -682,9 +637,9 @@ theorem exists_hilbertBasis_mixedEigenvalue_laplacian :
           mixedEigenvalue mu Omega Γ (fun _ ↦ 1) 0 0 k *
             ⟪W1p.value (u k : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ :=
   exists_hilbertBasis_mixedEigenvalue (memLp_energyIntegrand_const_zero_zero 1)
-    (isCompactOperator_valueL_of_isLipschitzDomain hΩ hb) hΓ
-    (fun _ _ ↦ energyFormH1_laplacian_comm _ _) (fun _ ↦ energyFormH1_laplacian_self_nonneg _)
-    one_pos (fun _ ↦ norm_sq_le_energyFormH1_laplacian_add _) hOmega_nonempty
+    (W1p.isCompactOperator_valueL_of_isLipschitzDomain hΩ hb) hΓ
+    (fun _ _ ↦ energyFormH1_laplacian_comm _ _) one_pos
+    (fun _ ↦ norm_sq_le_energyFormH1_laplacian_add _) hOmega_nonempty
 
 /-- **The min–max principle for `-Δ` is attained**: `λₖ` is the least `C` for which some subspace
 `W` of `H¹_Γ(Ω)`, whose values span a subspace of `L²(Ω)` of dimension at least `k + 1`, satisfies
@@ -699,9 +654,9 @@ theorem isLeast_mixedEigenvalue_laplacian (k : ℕ) :
           C * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2}
       (mixedEigenvalue mu Omega Γ (fun _ ↦ 1) 0 0 k) :=
   isLeast_mixedEigenvalue (memLp_energyIntegrand_const_zero_zero 1)
-    (isCompactOperator_valueL_of_isLipschitzDomain hΩ hb) hΓ
-    (fun _ _ ↦ energyFormH1_laplacian_comm _ _) (fun _ ↦ energyFormH1_laplacian_self_nonneg _)
-    one_pos (fun _ ↦ norm_sq_le_energyFormH1_laplacian_add _) hOmega_nonempty k
+    (W1p.isCompactOperator_valueL_of_isLipschitzDomain hΩ hb) hΓ
+    (fun _ _ ↦ energyFormH1_laplacian_comm _ _) one_pos
+    (fun _ ↦ norm_sq_le_energyFormH1_laplacian_add _) hOmega_nonempty k
 
 /-- **The mixed spectrum of `-Δ`.** On a nonempty bounded Lipschitz domain and for `Γ` missing
 `Ω`, the mixed eigenvalues of `-Δ` satisfy `0 ≤ λ₀ ≤ λ₁ ≤ ⋯ → ∞`, and a real number is a
@@ -720,19 +675,14 @@ theorem mixedEigenvalue_laplacian_spectrum :
     energyFormH1_laplacian_self_nonneg (v : W1p mu Omega 2)
   have hgarding (v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) :=
     norm_sq_le_energyFormH1_laplacian_add (v : W1p mu Omega 2)
-  have hrellich := isCompactOperator_valueL_of_isLipschitzDomain (mu := mu) (p := 2) hΩ hb
-  refine ⟨?_, monotone_mixedEigenvalue hcoeff hrellich hΓ hsymm hnonneg one_pos hgarding
+  have hrellich := W1p.isCompactOperator_valueL_of_isLipschitzDomain (mu := mu) (p := 2) hΩ hb
+  exact ⟨mixedEigenvalue_nonneg hcoeff hrellich hΓ hsymm one_pos hgarding hOmega_nonempty
+      hnonneg 0, monotone_mixedEigenvalue hcoeff hrellich hΓ hsymm one_pos hgarding
       hOmega_nonempty,
-    tendsto_mixedEigenvalue_atTop hcoeff hrellich hΓ hsymm hnonneg one_pos hgarding
+    tendsto_mixedEigenvalue_atTop hcoeff hrellich hΓ hsymm one_pos hgarding
       hOmega_nonempty,
-    isMixedEigenvalue_iff_exists_mixedEigenvalue_eq hcoeff hrellich hΓ hsymm hnonneg one_pos
+    isMixedEigenvalue_iff_exists_mixedEigenvalue_eq hcoeff hrellich hΓ hsymm one_pos
       hgarding hOmega_nonempty⟩
-  -- The first eigenvalue is the energy of a normalized eigenfunction.
-  obtain ⟨basis, u, hvalue, heq⟩ :=
-    exists_hilbertBasis_mixedEigenvalue_laplacian (mu := mu) hΩ hb hOmega_nonempty hΓ
-  have h := heq 0 (u 0)
-  rw [hvalue, real_inner_self_eq_norm_sq, basis.orthonormal.1 0, one_pow, mul_one] at h
-  exact h ▸ hnonneg (u 0)
 
 end Laplacian
 
