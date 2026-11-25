@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Finance.BlackScholes.Basic
+public import TauCeti.Probability.Finance.BlackScholes.Greeks
 import TauCeti.Probability.Finance.BlackScholes.Limits
 
 /-!
@@ -303,9 +303,8 @@ spot `s`, the extended call `C(s, t) = callValue s r σ K (T - t)` satisfies
 `∂C/∂t + σ² s² / 2 ∂²C/∂s² + r (s ∂C/∂s - C) = 0`. For `s > 0` this is `callPrice_pde`; at a spot
 `s ≤ 0` the extended call is the intrinsic value `0` at every maturity. -/
 theorem callValue_pde (hK : 0 < K) {T t : ℝ} (ht : t < T) :
-    deriv (fun u => callValue s r σ K (T - u)) t +
-      σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => callValue x r σ K (T - t)) s +
-      r * (s * deriv (fun x => callValue x r σ K (T - t)) s - callValue s r σ K (T - t)) = 0 := by
+    residual r σ (fun x u => callValue x r σ K (T - u)) s t = 0 := by
+  simp only [residual_def]
   have hτ : 0 < T - t := sub_pos.2 ht
   rcases lt_or_ge 0 s with hs | hs
   · have hspot : (fun x => callValue x r σ K (T - t)) =ᶠ[𝓝 s]
@@ -335,9 +334,8 @@ spot `s`, the extended put `P(s, t) = putValue s r σ K (T - t)` satisfies
 `∂P/∂t + σ² s² / 2 ∂²P/∂s² + r (s ∂P/∂s - P) = 0`. For `s > 0` this is `putPrice_pde`; at a spot
 `s ≤ 0` the extended put is the intrinsic value `K e^{-rτ} - s` at every maturity `τ`. -/
 theorem putValue_pde (hK : 0 < K) {T t : ℝ} (ht : t < T) :
-    deriv (fun u => putValue s r σ K (T - u)) t +
-      σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => putValue x r σ K (T - t)) s +
-      r * (s * deriv (fun x => putValue x r σ K (T - t)) s - putValue s r σ K (T - t)) = 0 := by
+    residual r σ (fun x u => putValue x r σ K (T - u)) s t = 0 := by
+  simp only [residual_def]
   have hτ : 0 < T - t := sub_pos.2 ht
   rcases lt_or_ge 0 s with hs | hs
   · have hspot : (fun x => putValue x r σ K (T - t)) =ᶠ[𝓝 s]
