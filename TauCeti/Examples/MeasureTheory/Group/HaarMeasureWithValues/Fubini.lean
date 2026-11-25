@@ -33,7 +33,7 @@ example (f : compactlySupported A (G × H) A) :
   rw [← integral_integralRight, integral_eq_smul_sum_of_discrete, hμ, one_smul]
   refine Finset.sum_congr rfl fun x _ ↦ ?_
   rw [integralRight_apply, integral_eq_smul_sum_of_discrete, hν, one_smul]
-  rfl
+  simp only [compactlySupported.sliceRight_apply]
 
 /-- In the other order, the product integral is `∑ y, ∑ x, f (x, y)`. -/
 example (f : compactlySupported A (G × H) A) :
@@ -41,6 +41,6 @@ example (f : compactlySupported A (G × H) A) :
   rw [← integral_integralLeft, integral_eq_smul_sum_of_discrete, hν, one_smul]
   refine Finset.sum_congr rfl fun y _ ↦ ?_
   rw [integralLeft_apply, integral_eq_smul_sum_of_discrete, hμ, one_smul]
-  rfl
+  simp only [compactlySupported.sliceLeft_apply]
 
 end TauCeti.HaarMeasureWithValues
