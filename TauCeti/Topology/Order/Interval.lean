@@ -48,6 +48,8 @@ A function continuous on `[a, b]` and strictly monotone or antitone on `(a, b)` 
 
 * `TauCeti.uIcc_mem_nhds_of_ne` — `uIcc a b` is a neighbourhood of each of its points other than
   `a` and `b`.
+* `TauCeti.Icc_eventuallyEq_Ici`, `TauCeti.Icc_eventuallyEq_Iic` — `Icc a b` eventually agrees
+  with `Ici a` around any `t < b`, and dually with `Iic b` around any `a < t`.
 * `TauCeti.disjoint_frontier_Icc`, `TauCeti.disjoint_frontier_Ioc` — the frontier of `[a, b]` or
   `(a, b]` avoids a set containing neither `a` nor `b`.
 * `Real.Icc_subset_ball` — in `ℝ`, an interval whose endpoints lie within `ε` of `x` is
@@ -126,6 +128,18 @@ theorem ContinuousOn.piecewise_Iic_Icc {α X : Type*} [LinearOrder α] [Topologi
     (h₂.mono fun _ ht ↦ ⟨ht.2, ht.1.2⟩) hjoin
 
 namespace TauCeti
+
+/-- Below the upper endpoint `b`, the closed interval `Icc a b` eventually agrees with the ray
+`Ici a` around `t`. -/
+@[to_dual (reorder := a b)
+  /-- Above the lower endpoint `a`, the closed interval `Icc a b` eventually agrees with the ray
+  `Iic b` around `t`. -/]
+theorem Icc_eventuallyEq_Ici {α : Type*} [TopologicalSpace α] [LinearOrder α]
+    [ClosedIciTopology α] {a b t : α} (ht : t < b) :
+    Icc a b =ᶠ[𝓝 t] Ici a := by
+  rw [eventuallyEqSet_iff]
+  filter_upwards [Iio_mem_nhds ht] with x hx
+  exact ⟨fun h ↦ h.1, fun h ↦ ⟨h, hx.le⟩⟩
 
 /-- An unordered closed interval `uIcc a b` is a neighbourhood of each of its points other than
 its endpoints `a` and `b`. -/
