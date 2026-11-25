@@ -12,7 +12,7 @@ public import TauCeti.RingTheory.Grassmannian.Chart.RankOne
 public import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 
 /-!
-# The rank-one Grassmannian maps to `Proj (Sym M)`
+# The rank-one Grassmannian is `Proj (Sym M)`
 
 Let `M` be a module over a commutative ring `R`. The rank-one Grassmannian `G(1, M)` over `Spec R`
 (`Module.Grassmannian.scheme R M 1`) is glued from the charts `Spec C_x`, `x ∈ M`, where
@@ -46,7 +46,8 @@ over `Spec R`, which is `chartToProj R x` on the chart at `x` (`Module.Grassmann
 `Module.Grassmannian.toProj_projToSpec`).
 
 Inside the chart at `y`, both the chart at `x` and the preimage of `D₊(x)` are the basic open set
-of `u_y(x)` (`Module.Grassmannian.chartι_preimage_opensRange_chartι`,
+of `u_y(x)` (`Module.Grassmannian.chartι_preimage_opensRange_chartι` with
+`Module.Grassmannian.transitionDet_rankOne`, and
 `Module.Grassmannian.chartToProj_preimage_basicOpen`). So the preimage of `D₊(x)` under `toProj R`
 is the chart at `x` (`Module.Grassmannian.toProj_preimage_basicOpen`), over `D₊(x)` the morphism
 `toProj R` is the chart at `x` (`Module.Grassmannian.isPullback_chartι_toProj`), and since the
@@ -198,24 +199,6 @@ theorem toProj_projToSpec : toProj R ≫ projToSpec R M = toSpec R M 1 := by
 
 /-! ### `toProj` is an isomorphism -/
 
-/-- Inside the chart of `G(1, M)` at `y`, the chart at `x` is the basic open set of the value
-`u_y(x)` of the universal linear form of the chart at `y`. -/
-theorem chartι_preimage_opensRange_chartι (y x : M) :
-    chartι R (fun _ : Fin 1 ↦ y) ⁻¹ᵁ (chartι R (fun _ : Fin 1 ↦ x)).opensRange =
-      PrimeSpectrum.basicOpen (universalLinearMap R (fun _ : Fin 1 ↦ y) x 0) := by
-  have h := isPullback_chartι (R := R) (fun _ : Fin 1 ↦ y) (fun _ : Fin 1 ↦ x)
-  have h₁ : chartι R (fun _ : Fin 1 ↦ y) ⁻¹ᵁ (chartι R (fun _ : Fin 1 ↦ x)).opensRange =
-      (Spec.map (CommRingCat.ofHom (algebraMap (ChartAlgebra R (fun _ : Fin 1 ↦ y))
-        (OverlapAlgebra R (fun _ : Fin 1 ↦ y) (fun _ : Fin 1 ↦ x))))).opensRange := by
-    ext1
-    rw [Scheme.Hom.coe_opensRange, ← h.isoPullback_hom_fst, Scheme.Hom.comp_base,
-      TopCat.coe_comp, Set.range_comp,
-      Set.range_eq_univ.mpr h.isoPullback.hom.surjective, Set.image_univ,
-      IsOpenImmersion.range_pullbackFst]
-  rw [h₁, ← transitionDet_rankOne]
-  exact Scheme.Hom.opensRange_localizationAway (R := .of (ChartAlgebra R (fun _ : Fin 1 ↦ y)))
-    (transitionDet R (fun _ : Fin 1 ↦ y) (fun _ : Fin 1 ↦ x))
-
 /-- Inside the chart of `G(1, M)` at `y`, the preimage of the standard open `D₊(x)` of
 `Proj (Sym M)` is the basic open set of `u_y(x)`. -/
 theorem chartToProj_preimage_basicOpen (y x : M) :
@@ -237,7 +220,7 @@ theorem toProj_preimage_basicOpen (x : M) :
   obtain ⟨b, rfl⟩ : ∃ b, y = fun _ ↦ b := ⟨_, eq_const_of_unique y⟩
   rw [SetLike.mem_coe, SetLike.mem_coe, Scheme.Hom.mem_preimage, ← Scheme.Hom.comp_apply,
     chartι_toProj, ← Scheme.Hom.mem_preimage, ← Scheme.Hom.mem_preimage,
-    chartToProj_preimage_basicOpen, chartι_preimage_opensRange_chartι]
+    chartToProj_preimage_basicOpen, chartι_preimage_opensRange_chartι, transitionDet_rankOne]
 
 /-- The chart of `G(1, M)` at `x` is the base change of `toProj R` along the chart `D₊(x)` of
 `Proj (Sym M)`. -/
@@ -279,6 +262,7 @@ theorem toProjIso_inv_toSpec :
 
 /-- The inverse of `toProjIso R` sends the standard open `D₊(x)` of `Proj (Sym M)` onto the chart
 of `G(1, M)` at `x`. -/
+@[reassoc (attr := simp)]
 theorem chartToProj_toProjIso_inv (x : M) :
     chartToProj R x ≫ (toProjIso R).inv = chartι R (fun _ : Fin 1 ↦ x) := by
   rw [Iso.comp_inv_eq, toProjIso_hom, chartι_toProj]

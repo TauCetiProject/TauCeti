@@ -49,8 +49,8 @@ theorem chart_e₀_sup_chart_e₁ :
 chart at `e₁` is the basic open set of the coordinate `u_{e₀}(e₁)`. -/
 example :
     chartι R (fun _ : Fin 1 ↦ e R 0) ⁻¹ᵁ (chartι R (fun _ : Fin 1 ↦ e R 1)).opensRange =
-      PrimeSpectrum.basicOpen (universalLinearMap R (fun _ : Fin 1 ↦ e R 0) (e R 1) 0) :=
-  chartι_preimage_opensRange_chartι R _ _
+      PrimeSpectrum.basicOpen (universalLinearMap R (fun _ : Fin 1 ↦ e R 0) (e R 1) 0) := by
+  rw [chartι_preimage_opensRange_chartι, transitionDet_rankOne]
 
 /-- **The charts are glued along `t ↦ t⁻¹`.** On the overlap of the charts at `e₀` and `e₁`, the
 coordinate `u_{e₀}(e₁)` of the chart at `e₀` times the coordinate `u_{e₁}(e₀)` of the chart at
