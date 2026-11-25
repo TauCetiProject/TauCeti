@@ -105,7 +105,7 @@ theorem exists_conj_eq_diagonal_of_henselian
   have hαβ : algebraMap A K α ≠ algebraMap A K β := fun h => huv (by rw [← hαu, ← hβv, hinj h])
   set Q₀ : Matrix (Fin 2) (Fin 2) K := Matrix.of fun i j => ![w₁, w₂] j i
   have hli : LinearIndependent K Q₀.col := by
-    rw [show Q₀.col = ![w₁, w₂] by ext j i; fin_cases j <;> rfl]
+    rw [show Q₀.col = ![w₁, w₂] by ext j i; fin_cases j <;> simp [Q₀]]
     refine Module.End.eigenvectors_linearIndependent' (toLin' M)
       ![algebraMap A K α, algebraMap A K β] ?_ _ (Fin.forall_fin_two.mpr ⟨hw₁, hw₂⟩)
     intro i j hij

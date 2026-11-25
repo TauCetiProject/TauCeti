@@ -140,7 +140,7 @@ private theorem exists_conj_lift_nonsplit
     by simp [funext_iff, Fin.forall_fin_two, hb₁], by simp [funext_iff, Fin.forall_fin_two, hb₁]⟩
   set N' := (MulAut.conj D⁻¹).toMonoidHom.comp N
   have hN' (g : G) : (N' g : Matrix (Fin 2) (Fin 2) K) =
-      diagonal ![1, b₁] * N g * diagonal ![1, b₁⁻¹] := rfl
+      diagonal ![1, b₁] * N g * diagonal ![1, b₁⁻¹] := by simp [N', D]
   have hint (g : G) (i j : Fin 2) :
       ∃ z : A, algebraMap A K z = (N' g : Matrix (Fin 2) (Fin 2) K) i j := by
     rw [hN', diagonal_vec2_one_mul_mul_diagonal_vec2_one_inv hb₁]
