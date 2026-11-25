@@ -543,17 +543,24 @@ private theorem W1p.exists_value_ae_eq_const_ball_of_gradient_eq_zero {u : W1p m
     (hP.antisymm (integral_nonneg fun _ ↦ abs_nonneg _))
   exact ⟨m, hzero.mono fun y hy ↦ sub_eq_zero.1 (abs_eq_zero.1 hy)⟩
 
+/-- A Sobolev function with vanishing weak gradient is almost everywhere constant near each point
+of its domain. -/
+private theorem W1p.forall_mem_exists_nhds_ae_eq_const_of_gradient_eq_zero
+    {u : W1p mu Omega p} (hu : W1p.gradient u = 0) :
+    ∀ x ∈ (Omega : Set E), ∃ c : ℝ, ∃ U ∈ 𝓝 x, ∀ᵐ y ∂mu.restrict U, W1p.value u y = c := by
+  intro x hx
+  obtain ⟨r, hr, hxr⟩ := Metric.isOpen_iff.1 Omega.isOpen x hx
+  obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_ball_of_gradient_eq_zero hu hxr
+  exact ⟨c, ball x r, ball_mem_nhds x hr, hc⟩
+
 /-- **A Sobolev function with vanishing gradient on a connected domain is constant.** If `Ω` is
 preconnected and the weak gradient of `u ∈ W^{1,p}(Ω)` vanishes, then `u` agrees almost everywhere
 on `Ω` with a constant. -/
 theorem W1p.exists_value_ae_eq_const_of_gradient_eq_zero
     (hconn : IsPreconnected (Omega : Set E)) {u : W1p mu Omega p} (hu : W1p.gradient u = 0) :
-    ∃ c : ℝ, ∀ᵐ x ∂mu.restrict Omega, W1p.value u x = c := by
-  refine hconn.exists_ae_eq_const_of_forall_nhds (HereditarilyLindelofSpace.isLindelof _)
-    fun x hx => ?_
-  obtain ⟨r, hr, hxr⟩ := Metric.isOpen_iff.1 Omega.isOpen x hx
-  obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_ball_of_gradient_eq_zero hu hxr
-  exact ⟨c, ball x r, ball_mem_nhds x hr, hc⟩
+    ∃ c : ℝ, ∀ᵐ x ∂mu.restrict Omega, W1p.value u x = c :=
+  hconn.exists_ae_eq_const_of_forall_nhds (HereditarilyLindelofSpace.isLindelof _)
+    (W1p.forall_mem_exists_nhds_ae_eq_const_of_gradient_eq_zero hu)
 
 /-- **A Sobolev function with vanishing gradient is locally constant.** If the weak gradient of
 `u ∈ W^{1,p}(Ω)` vanishes, then `u` agrees almost everywhere on `Ω` with a function that is
@@ -562,12 +569,10 @@ regularity of `Ω` is needed. -/
 theorem W1p.exists_isLocallyConstant_ae_eq_of_gradient_eq_zero {u : W1p mu Omega p}
     (hu : W1p.gradient u = 0) :
     ∃ g : E → ℝ, IsLocallyConstant ((Omega : Set E).domRestrict g) ∧
-      W1p.value u =ᵐ[mu.restrict Omega] g := by
-  refine IsOpen.exists_isLocallyConstant_ae_eq_of_forall_nhds Omega.isOpen
-    (HereditarilyLindelofSpace.isLindelof _) fun x hx => ?_
-  obtain ⟨r, hr, hxr⟩ := Metric.isOpen_iff.1 Omega.isOpen x hx
-  obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_ball_of_gradient_eq_zero hu hxr
-  exact ⟨c, ball x r, ball_mem_nhds x hr, hc⟩
+      W1p.value u =ᵐ[mu.restrict Omega] g :=
+  IsOpen.exists_isLocallyConstant_ae_eq_of_forall_nhds Omega.isOpen
+    (HereditarilyLindelofSpace.isLindelof _)
+    (W1p.forall_mem_exists_nhds_ae_eq_const_of_gradient_eq_zero hu)
 
 /-- **A locally constant Sobolev function has vanishing gradient.** If `u ∈ W^{1,p}(Ω)` agrees
 almost everywhere on `Ω` with a function that is locally constant on `Ω`, then the weak gradient

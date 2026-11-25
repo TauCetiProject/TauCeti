@@ -15,6 +15,7 @@ import Mathlib.MeasureTheory.Measure.OpenPos
 import TauCeti.Analysis.Sobolev.LipschitzDomain.ConnectedComponents
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
+import TauCeti.MeasureTheory.Function.LocallyAEConst
 import TauCeti.Topology.ConnectedComponents
 
 /-!
@@ -125,12 +126,11 @@ private theorem componentW1pₗ_injective :
   have hopen : IsOpen c.carrierIn := by
     rw [ConnectedComponents.carrierIn_eq_connectedComponentIn hx]
     exact Omega.isOpen.connectedComponentIn
-  have : (ae (mu.restrict c.carrierIn)).NeBot :=
-    ae_restrict_neBot.2 (hopen.measure_pos mu ⟨x, hx⟩).ne'
-  obtain ⟨y, hy0, hyc⟩ := ((ae_restrict_of_ae_restrict_of_subset c.carrierIn_subset hval).and
-    (ae_restrict_mem hopen.measurableSet)).exists
-  obtain ⟨hyΩ, rfl⟩ := ConnectedComponents.mem_carrierIn_iff.1 hyc
-  rw [← componentFun_of_mem φ hyΩ, hy0, Pi.zero_apply, Pi.zero_apply]
+  refine eq_of_ae_eq_of_mem_nhds (μ := mu) (hopen.mem_nhds hx) (hopen.mem_nhds hx) ?_
+    (ae_restrict_of_ae_restrict_of_subset c.carrierIn_subset hval)
+  filter_upwards [ae_restrict_mem hopen.measurableSet] with y hy
+  obtain ⟨hyΩ, hyc⟩ := ConnectedComponents.mem_carrierIn_iff.1 hy
+  rw [componentFun_of_mem φ hyΩ, hyc]
 
 /-- The Sobolev functions constant on each component of `Ω` are exactly those with vanishing weak
 gradient. -/
@@ -178,10 +178,9 @@ theorem W1p.coeFn_value_componentFunEquivKerGradientL_apply
     (φ : ConnectedComponents (Omega : Set E) → ℝ) :
     W1p.value (W1p.componentFunEquivKerGradientL (mu := mu) (p := p) φ : W1p mu Omega p) =ᵐ[
       mu.restrict Omega] componentFun φ := by
-  have h : (W1p.componentFunEquivKerGradientL (mu := mu) (p := p) φ : W1p mu Omega p) =
-      componentW1p φ :=
-    rfl
-  rw [h, value_componentW1p]
+  simp only [W1p.componentFunEquivKerGradientL, LinearEquiv.trans_apply,
+    LinearEquiv.coe_ofEq_apply, LinearEquiv.ofInjective_apply, componentW1pₗ_apply,
+    value_componentW1p]
   exact (memLp_componentFun φ).coeFn_toLp
 
 /-- **The kernel of the weak gradient counts the connected components.** On an open set `Ω` of
