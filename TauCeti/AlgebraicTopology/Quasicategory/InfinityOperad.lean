@@ -144,12 +144,20 @@ def mulSpace {z : X _⦋0⦌} (hz : p.app _ z = (FinPointed.mk 1).vertex) :
     (X.rightMappingSpace y z : SSet.{u}).Subcomplex :=
   rightMappingSpaceOver p ((nerve.edgeMk (FinPointed.fold n)).ofEq L.app_eq.symm hz.symm)
 
+/-- `Mul({cᵢ}, z)` is the fiber `Hom^R_X(y, z)_e` of `SSet.rightMappingSpaceOver` over the fold
+edge `e : p y ⟶ p z`, so the fiber API (membership, the range criterion, functoriality) applies to
+it. -/
+lemma mulSpace_def {z : X _⦋0⦌} (hz : p.app _ z = (FinPointed.mk 1).vertex) :
+    L.mulSpace hz =
+      rightMappingSpaceOver p ((nerve.edgeMk (FinPointed.fold n)).ofEq L.app_eq.symm hz.symm) := by
+  rw [mulSpace]
+
 /-- A vertex of `Hom^R_X(y, z)` is a multi-operation exactly when it lies over the fold map. -/
 lemma mem_mulSpace_obj₀_iff {z : X _⦋0⦌} (hz : p.app _ z = (FinPointed.mk 1).vertex)
     (s : (X.rightMappingSpace y z : SSet.{u}) _⦋0⦌) :
     s ∈ (L.mulSpace hz).obj (op ⦋0⦌) ↔
       ((rightMappingSpace.obj₀Equiv s).map p).edge = (nerve.edgeMk (FinPointed.fold n)).edge := by
-  rw [mulSpace, rightMappingSpaceOver.mem_obj₀_iff]
+  rw [mulSpace_def, rightMappingSpaceOver.mem_obj₀_iff]
   exact ⟨fun h ↦ by rw [h]; rfl, fun h ↦ Edge.ext h⟩
 
 end InertProjectionLifts
