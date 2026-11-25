@@ -10,7 +10,7 @@ import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Linarith
 
 /-!
-# Choosing step counts in Archimedean ordered semifields
+# Choosing multiples and step counts in Archimedean ordered structures
 
 This file chooses a positive number of steps `n` with `L * n⁻¹ < c`, which splits a segment into `n`
 steps of length `n⁻¹` with an error of at most `c`.
@@ -24,6 +24,12 @@ Hölder inequality is iterated.
 Finally, it chooses a dyadic scale `2ᵏ` comparable to a given length: for `ρ, n > 0` there is
 an integer `k` with `4 · 2ᵏ n ≤ ρ < 8 · 2ᵏ n`. Covering arguments with dyadic cubes use it to fit
 a cube of side `2ᵏ` and diameter `2ᵏ √d` into a ball of radius `ρ`, with `n = √d`.
+
+Beyond ordered semifields, in an Archimedean linearly ordered additive group the integer
+multiples `k • ℓ` of a nonzero element `ℓ` are unbounded above, whatever the sign of `ℓ`. For maps
+of the strip `ℝ × Y` commuting with the translation by a period `ℓ`, it gives a multiple of the
+period exceeding any prescribed distance. This shows that such maps are onto along horizontal
+lines, and that the inverse of a positive twist lift twists negatively.
 
 ## Main results
 
