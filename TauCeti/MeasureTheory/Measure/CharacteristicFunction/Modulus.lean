@@ -16,7 +16,7 @@ import TauCeti.MeasureTheory.Measure.CharacteristicFunction.Wiener
 For a probability measure `μ` on `ℝ`, let `ρ` be the symmetrized law: the law of `x - y` under
 `μ ⊗ μ`. The squared modulus of the characteristic function of `μ` is the characteristic function
 of `ρ`, which is real: `‖charFun μ t‖ ^ 2 = ∫ w, cos (t * w) ∂ρ`
-(`Real.norm_charFun_sq_eq_integral_cos_mul`).
+(`TauCeti.norm_charFun_sq_eq_integral_cos_mul`).
 
 With the elementary inequality `x ≤ exp (-(1 - x ^ 2) / 2)` for `x ≥ 0`, this bounds a product
 of moduli `∏ k ∈ s, ‖charFun μ (c k)‖` by
@@ -51,7 +51,7 @@ variable {μ : Measure ℝ}
 
 /-- The squared modulus of the characteristic function of a finite measure `μ` on `ℝ` is the
 integral of `cos (t * w)` against the law of `x - y` under `μ ⊗ μ`. -/
-theorem _root_.Real.norm_charFun_sq_eq_integral_cos_mul [IsFiniteMeasure μ] (t : ℝ) :
+theorem norm_charFun_sq_eq_integral_cos_mul [IsFiniteMeasure μ] (t : ℝ) :
     ‖charFun μ t‖ ^ 2 = ∫ w, Real.cos (t * w) ∂((μ.prod μ).map fun p ↦ p.1 - p.2) := by
   rw [integral_cos_mul_eq_re_charFun, charFun_map_sub_prod, mul_conj, ← normSq_eq_norm_sq,
     ofReal_re]
@@ -106,7 +106,7 @@ theorem _root_.Finset.prod_norm_charFun_le_setAverage_exp {ι : Type*} [IsProbab
       ‖charFun μ u‖ ≤ Real.exp (-(∫ w, (1 - Real.cos (u * w)) ∂ρ) / 2) := by
     intro u
     have hsq : ‖charFun μ u‖ ^ 2 = ∫ w, Real.cos (u * w) ∂ρ :=
-      Real.norm_charFun_sq_eq_integral_cos_mul u
+      norm_charFun_sq_eq_integral_cos_mul u
     rw [integral_sub (integrable_const 1) (hcos u), integral_const, probReal_univ, smul_eq_mul,
       mul_one, ← hsq]
     refine (pow_le_pow_iff_left₀ (norm_nonneg _) (Real.exp_nonneg _) two_ne_zero).1 ?_
