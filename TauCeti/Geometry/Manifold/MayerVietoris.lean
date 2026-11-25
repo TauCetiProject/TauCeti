@@ -11,6 +11,7 @@ public import TauCeti.Topology.MayerVietoris
 public import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
 import Mathlib.Order.Zorn
+import TauCeti.Order.SupClosed
 
 /-!
 # Mayer–Vietoris induction over convex chart domains
@@ -197,19 +198,24 @@ space `M` over a locally compact model space `E`, a property of open subsets hol
 subset if it holds on the empty set and on the nonempty convex chart domains
 `(chartAt H x).source ∩ (extChartAt I x)⁻¹' C`, for points `x` and convex open `C ⊆ E` with
 `C ∩ range I ⊆ (extChartAt I x).target`, is preserved by binary unions when it holds on the
-intersection, by countable disjoint unions, and by directed unions. No countability, local
-compactness or separation property of `M` is needed. -/
+intersection, and by directed unions. Disjoint unions need no separate hypothesis: they are
+directed unions of finite disjoint unions, which are binary unions with empty intersection. No
+countability, local compactness or separation property of `M` is needed. -/
 theorem mayerVietoris_induction_extChartAt_of_directed [LocallyCompactSpace E]
     (I : ModelWithCorners 𝕜 E H) (P : Opens M → Prop) (hbot : P ⊥)
     (hbase : ∀ (x : M) (C : Set E) (U : Opens M), IsOpen C → Convex ℝ C →
       C ∩ range I ⊆ (extChartAt I x).target →
       (U : Set M) = (chartAt H x).source ∩ extChartAt I x ⁻¹' C → (U : Set M).Nonempty → P U)
     (hsup : ∀ U V, P U → P V → P (U ⊓ V) → P (U ⊔ V))
-    (hdisjoint : ∀ s : ℕ → Opens M, (∀ i j, i ≠ j → Disjoint (s i) (s j)) →
-      (∀ n, P (s n)) → P (⨆ n, s n))
     (hdirected : ∀ (ι : Type u) [Preorder ι] [IsDirected ι (· ≤ ·)] (U : ι → Opens M),
       Monotone U → (∀ i, P (U i)) → P (⨆ i, U i)) :
     ∀ U, P U := by
+  -- Countable disjoint unions are directed unions of finite disjoint unions.
+  have hdisjoint (s : ℕ → Opens M) (hs : ∀ i j, i ≠ j → Disjoint (s i) (s j))
+      (h : ∀ n, P (s n)) : P (⨆ n, s n) := by
+    simpa using iSup_of_pairwise_disjoint (ι := ULift.{u} ℕ) (s := fun i ↦ s i.down) P hbot
+      (fun a b hab ha hb ↦ hsup a b ha hb (hab.eq_bot ▸ hbot)) (fun t ht h ↦ hdirected _ t ht h)
+      (fun i j hij ↦ hs _ _ fun h ↦ hij (ULift.ext h)) fun i ↦ h i.down
   intro U
   -- A maximal open subset `m` of `U` with the property, by Zorn's lemma: the union of a chain
   -- `c` is the directed union of its members.

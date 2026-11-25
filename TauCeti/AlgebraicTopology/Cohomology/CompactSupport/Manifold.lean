@@ -28,9 +28,8 @@ that `Hᵐ_c(U) = 0` for every `m > n`:
   (`TopCat.isZero_compactSupportCohomology_of_convex`);
 * it passes from `U`, `V` and `U ∩ V` to `U ∪ V` by the Mayer–Vietoris sequence, which needs the
   vanishing on `U ∩ V` one degree up (`TopCat.isZero_compactSupportCohomology_sup`);
-* it passes to disjoint unions and to directed unions of open subsets
-  (`TopCat.isZero_compactSupportCohomology_iSup_of_pairwise_disjoint`,
-  `TopCat.isZero_compactSupportCohomology_iSup_of_monotone`).
+* it passes to directed unions of open subsets
+  (`TopCat.isZero_compactSupportCohomology_iSup_of_monotone`).
 
 This vanishing is the top-degree input of Poincaré duality, whose Mayer–Vietoris step needs
 `Hⁿ⁺¹_c(U ∩ V) = 0` (`TauCeti.HomologicalOrientation.bijective_dualityMap_comap_sup`).
@@ -66,7 +65,7 @@ theorem isZero_compactSupportCohomology_of_finrank_lt {m : ℕ} (hm : finrank �
   -- The vanishing holds on every open subset of `M`, by Mayer–Vietoris induction.
   have key : ∀ U : Opens M, ∀ m, finrank ℝ E < m →
       IsZero (((Opens.toTopCat (TopCat.of M)).obj U).compactSupportCohomology R k N m) := by
-    refine TauCeti.mayerVietoris_induction_extChartAt_of_directed 𝓘(ℝ, E) _ ?_ ?_ ?_ ?_ ?_
+    refine TauCeti.mayerVietoris_induction_extChartAt_of_directed 𝓘(ℝ, E) _ ?_ ?_ ?_ ?_
     · intro m _
       have : IsEmpty ((Opens.toTopCat (TopCat.of M)).obj ⊥) := ⟨fun x ↦ x.property⟩
       exact isZero_compactSupportCohomology_of_isEmpty R k N m
@@ -76,9 +75,6 @@ theorem isZero_compactSupportCohomology_of_finrank_lt {m : ℕ} (hm : finrank �
         hm.ne'
     · intro U V hU hV hUV m hm
       exact isZero_compactSupportCohomology_sup (hU m hm) (hV m hm) (hUV (m + 1) (by omega))
-    · intro s hs hsm m hm
-      exact isZero_compactSupportCohomology_iSup_of_pairwise_disjoint (fun i j hij ↦ hs i j hij)
-        fun i ↦ hsm i m hm
     · intro ι _ _ U hU hUm m hm
       exact isZero_compactSupportCohomology_iSup_of_monotone hU fun i ↦ hUm i m hm
   exact (key ⊤ m hm).of_iso (compactSupportCohomologyIsoOfHomeomorph R k N

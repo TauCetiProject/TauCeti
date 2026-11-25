@@ -40,9 +40,8 @@ with the orientation restricted from `o`, that its duality map is bijective in e
   (`TauCeti.HomologicalOrientation.bijective_dualityMap_comap_sup`); in the top degree this uses
   `Hⁿ⁺¹_c(U ∩ V) = 0`, the vanishing of cohomology with compact supports above the dimension
   (`TopCat.isZero_compactSupportCohomology_of_finrank_lt`);
-* it passes to disjoint unions and to directed unions of open subsets
-  (`TauCeti.HomologicalOrientation.bijective_dualityMap_comap_iSup_of_pairwise_disjoint`,
-  `TauCeti.HomologicalOrientation.bijective_dualityMap_comap_iSup_of_monotone`).
+* it passes to directed unions of open subsets
+  (`TauCeti.HomologicalOrientation.bijective_dualityMap_comap_iSup_of_monotone`).
 
 ## Main results
 
@@ -83,7 +82,7 @@ private theorem bijective_dualityMap_comap (U : Opens M) (p q : ℕ) (h : p + q 
   revert p q h
   refine mayerVietoris_induction_extChartAt_of_directed 𝓘(ℝ, E)
     (fun U : Opens M ↦ ∀ p q (h : p + q = n),
-      Function.Bijective ((o.comap U.isOpenEmbedding').dualityMap hn L p q h)) ?_ ?_ ?_ ?_ ?_ U
+      Function.Bijective ((o.comap U.isOpenEmbedding').dualityMap hn L p q h)) ?_ ?_ ?_ ?_ U
   · intro p q h
     have : IsEmpty (⊥ : Opens M) := ⟨fun x ↦ x.property⟩
     exact (o.comap _).bijective_dualityMap_of_isEmpty hn L h
@@ -99,9 +98,6 @@ private theorem bijective_dualityMap_comap (U : Opens M) (p q : ℕ) (h : p + q 
       (ModuleCat.of ℤ (ULift.{0} ℤ)) L (M := ↥(U ⊓ V)) (E := E) (m := n + 1) (by omega)
     exact o.bijective_dualityMap_comap_sup hn L h hU hV hUV
       (by convert h0 using 2; exact Subsingleton.elim _ _)
-  · intro s hs hsD p q h
-    exact o.bijective_dualityMap_comap_iSup_of_pairwise_disjoint hn L h
-      (fun i j hij ↦ hs i j hij) fun i ↦ hsD i p q h
   · intro ι _ _ U hU hUD p q h
     exact o.bijective_dualityMap_comap_iSup_of_monotone hn L h hU fun i ↦ hUD i p q h
 
