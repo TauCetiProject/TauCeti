@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Attach.Filtration
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Attach.Relative
-public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.BrownModel
+public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.BrownModel.Basic
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.PositiveCell
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.ZeroCell
 public import TauCeti.Topology.CWComplex.Classical.PathComponent
