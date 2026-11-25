@@ -95,10 +95,8 @@ theorem HasCompactResolvent.northcott_norm_of_orthonormal (h : A.HasCompactResol
       exact resolvent_apply_of_apply_eq_smul hz ⟨v i, hi⟩ hAi
     -- `z` lies in the resolvent set, so it is not an eigenvalue.
     have hne (i : ι) : z - lam i ≠ 0 := by
-      intro hzi
       obtain ⟨hi, hAi⟩ := hA i
-      rw [← sub_eq_zero.1 hzi] at hAi
-      exact hv.ne_zero i (congrArg Subtype.val (eq_zero_of_apply_eq_smul hz _ hAi))
+      exact sub_ne_zero_of_apply_eq_smul hz ⟨v i, hi⟩ (hv.ne_zero i) hAi
     set M := ‖z‖ + |R| + 1
     have hM : 0 < M := by positivity
     refine (hK.finite_setOf_le_norm_of_orthonormal (T := (A.resolvent z : E →ₗ[𝕜] E)) hv hR
@@ -148,7 +146,7 @@ theorem IsFormalAdjoint.mul_norm_sq_le_re_inner_of_hilbertBasis (hA : A.IsFormal
     (hb : ∀ k, ∃ hk : b k ∈ A.domain, A ⟨b k, hk⟩ = (lam k : 𝕜) • b k) {c : ℝ} (u : A.domain)
     (hu : ∀ k, lam k < c → ⟪b k, (u : E)⟫_𝕜 = 0) :
     c * ‖(u : E)‖ ^ 2 ≤ re ⟪A u, (u : E)⟫_𝕜 := by
-  refine hasSum_le (fun k ↦ ?_) ((b.hasSum_norm_sq_inner u).mul_left c)
+  refine hasSum_le (fun k ↦ ?_) ((b.hasSum_norm_inner_sq u).mul_left c)
     (hA.hasSum_re_inner_of_hilbertBasis b hb u)
   rcases lt_or_ge (lam k) c with hk | hk
   · simp [hu k hk]
@@ -171,8 +169,8 @@ theorem IsFormalAdjoint.mul_norm_le_norm_apply_of_hilbertBasis (hA : A.IsFormalA
     rw [← h1, hAk, inner_smul_left, conj_ofReal]
   have hsq : (c * ‖(u : E)‖) ^ 2 ≤ ‖A u‖ ^ 2 := by
     rw [mul_pow]
-    refine hasSum_le (fun k ↦ ?_) ((b.hasSum_norm_sq_inner u).mul_left (c ^ 2))
-      (b.hasSum_norm_sq_inner (A u))
+    refine hasSum_le (fun k ↦ ?_) ((b.hasSum_norm_inner_sq u).mul_left (c ^ 2))
+      (b.hasSum_norm_inner_sq (A u))
     rw [hcoef, norm_mul, norm_ofReal, mul_pow]
     rcases lt_or_ge |lam k| c with hk | hk
     · simp [hu k hk]

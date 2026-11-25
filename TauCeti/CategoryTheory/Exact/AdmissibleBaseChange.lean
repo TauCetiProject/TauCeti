@@ -7,7 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Exact.Bicartesian
 public import TauCeti.CategoryTheory.Exact.Functor
-public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 
 /-!
 # Exact functors preserve admissible base change

@@ -12,7 +12,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 
 /-!
-# Smoothly varying left inverses
+# Smoothly varying left and right inverses
 
 Let `𝕜 → 𝕜'` be a normed field extension. Let `A x` be a continuous `𝕜'`-linear map from a Banach
 space `G` to a normed space `F`, depending `C^n` over `𝕜` on a point `x` of a manifold. If `A x₀`
@@ -21,7 +21,8 @@ invertible near `x₀`, and `(P ∘ A x)⁻¹ ∘ P` is a left inverse of `A x` 
 inversion is analytic over the ground field on the invertible operators, so this left inverse is
 again `C^n` over `𝕜` at `x₀`, while retaining its `𝕜'`-linearity. The supplied ground-field scalar
 structures are preserved. This is the smooth counterpart of
-`ContinuousAt.exists_continuousAt_leftInverse`.
+`ContinuousAt.exists_continuousAt_leftInverse`. Dually, if `F` is complete and `A x₀` has a
+continuous right inverse `B`, then `B ∘ (A x ∘ B)⁻¹` is a `C^n` right inverse of `A x` near `x₀`.
 
 For `G = (𝕜')ᵏ` and `A x` the operator `c ↦ ∑ i, c i • X i x` of a family of linearly independent
 vectors depending smoothly on `x`, the left inverse sends a vector of the span of the `X i x` to
@@ -33,6 +34,8 @@ smoothly compatible.
 
 * `ContMDiffAt.exists_contMDiffAt_leftInverse`: `C^n` varying left inverses of a `C^n` family of
   operators whose member at `x₀` has a continuous left inverse.
+* `ContMDiffAt.exists_contMDiffAt_rightInverse`: dually, `C^n` varying right inverses of a `C^n`
+  family of operators into a Banach space whose member at `x₀` has a continuous right inverse.
 * `ContMDiffAt.of_clm_apply`: regularity can be tested after a smoothly varying split injection.
 * `ContMDiffOn.exists_isOpen_contMDiffOn_sub_comp_leftInverseAlong`: near a point where a left
   inverse compresses a smooth family of operators to the identity, the projections of a fixed
@@ -86,6 +89,34 @@ theorem ContMDiffAt.exists_contMDiffAt_leftInverse {A : M → G →L[𝕜'] F} {
   simp_rw [ContinuousLinearMap.leftInverseAlong_def, ← ContinuousLinearMap.ringInverse_eq_inverse]
   exact (((ContinuousLinearMap.compL 𝕜' F G G).flip P).restrictScalars 𝕜).contDiff.comp_contMDiffAt
     (hinv.comp_contMDiffAt (f := fun x ↦ P ∘L A x) hQ)
+
+omit [CompleteSpace G] in
+/-- **Right inverses vary smoothly.** Let `A x` be a continuous linear map from a normed space to
+a Banach space, linear over the extension field `𝕜'` and depending `C^n` over the ground field
+`𝕜` on a manifold point `x` at `x₀`. If `A x₀` has a continuous `𝕜'`-linear right inverse, then
+there are continuous `𝕜'`-linear maps `R x`, depending `C^n` over `𝕜` on `x` at `x₀`, such that
+`R x` is a right inverse of `A x` for all `x` near `x₀`. -/
+theorem ContMDiffAt.exists_contMDiffAt_rightInverse [CompleteSpace F] {A : M → G →L[𝕜'] F}
+    {x₀ : M} (hA : ContMDiffAt I 𝓘(𝕜, G →L[𝕜'] F) n A x₀) (h : (A x₀).HasRightInverse) :
+    ∃ R : M → F →L[𝕜'] G, ContMDiffAt I 𝓘(𝕜, F →L[𝕜'] G) n R x₀ ∧
+      ∀ᶠ x in 𝓝 x₀, RightInverse (R x) (A x) := by
+  -- Retain the original ground-field module on extension-linear endomorphisms.
+  let : NormedAlgebra 𝕜 (F →L[𝕜'] F) :=
+    { Algebra.ofModule smul_mul_assoc mul_smul_comm with norm_smul_le := norm_smul_le }
+  obtain ⟨B, hB⟩ := h
+  -- The compression `A x ∘ B` is the identity at `x₀`, hence invertible near `x₀`.
+  have hQ : ContMDiffAt I 𝓘(𝕜, F →L[𝕜'] F) n (fun x ↦ A x ∘L B) x₀ :=
+    (((ContinuousLinearMap.compL 𝕜' F G F).flip B).restrictScalars 𝕜).contDiff.comp_contMDiffAt hA
+  have hQ₀ : A x₀ ∘L B = ((1 : (F →L[𝕜'] F)ˣ) : F →L[𝕜'] F) := ContinuousLinearMap.ext hB
+  have hinv : ContDiffAt 𝕜 n Ring.inverse (A x₀ ∘L B) := by
+    rw [hQ₀]
+    exact contDiffAt_ringInverse 𝕜 1
+  have hunit : ∀ᶠ x in 𝓝 x₀, IsUnit (A x ∘L B) :=
+    hQ.continuousAt.preimage_mem_nhds (Units.isOpen.mem_nhds (by rw [hQ₀]; exact Units.isUnit 1))
+  refine ⟨fun x ↦ B ∘L Ring.inverse (A x ∘L B),
+    ((ContinuousLinearMap.compL 𝕜' F F G B).restrictScalars 𝕜).contDiff.comp_contMDiffAt
+      (hinv.comp_contMDiffAt (f := fun x ↦ A x ∘L B) hQ), hunit.mono fun x hx v ↦ ?_⟩
+  exact congr($(Ring.mul_inverse_cancel _ hx) v)
 
 /-- Ground-field smoothness can be tested after a smoothly varying extension-linear split
 injection. No regularity of `v` is assumed in advance. -/

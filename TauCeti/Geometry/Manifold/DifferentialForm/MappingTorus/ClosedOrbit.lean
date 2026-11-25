@@ -86,14 +86,8 @@ theorem mpullback_closedOrbit_fiberForm (hk : k ≠ 0) :
   rw [← SmoothForm.coe_mpullback _ (AddCircle.contMDiff_coe (d : ℝ) ∞),
     mpullback_coe_mpullback_closedOrbit h, mpullback_uncurry_mk_fiberForm]
   simp only [SmoothForm.coe_mpullback, ZeroMemClass.coe_zero, mpullback_zero]
-  rw [← mpullback_comp (hline.mdifferentiable (by simp)) mdifferentiable_snd, hsnd]
-  -- The constant map `t ↦ x` has derivative zero, and a form of positive degree vanishes on
-  -- zero vectors.
-  funext t
-  refine ContinuousAlternatingMap.ext fun v ↦ ?_
-  rw [TauCeti.mpullback_apply, mfderiv_const, Pi.zero_apply, ContinuousAlternatingMap.coe_zero,
-    Pi.zero_apply]
-  exact (σ.val x).map_coord_zero ⟨0, Nat.pos_of_ne_zero hk⟩ (zero_apply _)
+  rw [← mpullback_comp (hline.mdifferentiable (by simp)) mdifferentiable_snd, hsnd,
+    TauCeti.mpullback_const hk]
 
 /-- Every fiber form of positive degree, pulled back to `(ℝ / ℤ) × Y_φ`, vanishes on the orbit
 torus. -/

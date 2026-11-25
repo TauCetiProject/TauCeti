@@ -44,6 +44,7 @@ their dimensions (`TauCeti.IsSemialgebraic.semialgebraicDim_union`).
   dimension is monotone along embeddings, and invariant under embeddings of the ambient space.
 * `TauCeti.semialgebraicDim_eq_of_isOpenEmbedding`, `IsOpen.semialgebraicDim_eq`: a nonempty open
   subset of `ℝ ^ d` has dimension `d`.
+* `IsDiscrete.semialgebraicDim_le_zero`: a discrete set has dimension at most `0`.
 * `TauCeti.semialgebraicDim_iUnion_of_isLocallyClosed`: dimension of finite unions of locally
   closed sets.
 * `TauCeti.IsCAD.exists_semialgebraicDim_eq`: each cell of a CAD has a natural dimension `d` and
@@ -56,6 +57,8 @@ their dimensions (`TauCeti.IsSemialgebraic.semialgebraicDim_union`).
   set and any set.
 * `TauCeti.exists_isOpenEmbedding_semialgebraicDim_eq`: a nonempty set contains a locally closed
   Euclidean cell of the same dimension.
+* `TauCeti.exists_forall_mem_nhds_semialgebraicDim_inter_eq`: the dimension of a nonempty set is
+  attained by its trace on every neighborhood of some point.
 
 ## References
 
@@ -170,6 +173,19 @@ theorem semialgebraicDim_eq_of_isOpenEmbedding (hs : s.Nonempty) {d : ℕ}
     (hf.isEmbedding.comp (IsEmbedding.inclusion ht))
   simp only [finrank_fin_fun] at h
   exact_mod_cast h
+
+/-- A discrete set has dimension at most `0`: no nonempty open subset of `ℝ ^ d` with `0 < d` is
+discrete. -/
+theorem _root_.IsDiscrete.semialgebraicDim_le_zero (hs : IsDiscrete s) :
+    semialgebraicDim s ≤ 0 :=
+  semialgebraicDim_le_iff.2 fun t ht ⟨y, hy⟩ d f hf ↦ by
+    have := (hs.mono ht).to_subtype
+    -- The image of a point of `t` is an open point of `ℝ ^ d`.
+    have hopen : IsOpen {f ⟨y, hy⟩} := by
+      simpa using hf.isOpenMap {⟨y, hy⟩} (isOpen_discrete _)
+    rcases d with _ | d
+    · simp
+    · exact absurd hopen (not_isOpen_singleton _)
 
 /-- A nonempty open subset of `ℝ ^ n` has dimension `n`. -/
 theorem _root_.IsOpen.semialgebraicDim_eq (hs : IsOpen s) (hne : s.Nonempty) :
@@ -319,5 +335,18 @@ theorem exists_isOpenEmbedding_semialgebraicDim_eq (hne : s.Nonempty) :
   -- `u` is locally compact, being open in a Euclidean space, hence locally closed.
   have := hf.locallyCompactSpace
   exact isLocallyClosed_of_locallyCompactSpace
+
+/-- **Dimension is attained locally.** A nonempty set has a point near which its dimension is
+attained: its trace on every neighborhood of that point has the same dimension. -/
+theorem exists_forall_mem_nhds_semialgebraicDim_inter_eq (hne : s.Nonempty) :
+    ∃ x ∈ s, ∀ W ∈ 𝓝 x, semialgebraicDim (s ∩ W) = semialgebraicDim s := by
+  obtain ⟨u, hu, -, ⟨x, hx⟩, d, hd, f, hf⟩ := exists_isOpenEmbedding_semialgebraicDim_eq hne
+  refine ⟨x, hu hx, fun W hW ↦ le_antisymm (semialgebraicDim_mono inter_subset_left) ?_⟩
+  -- The trace of `u` on the interior of `W` is a nonempty open subset of `u` inside `s ∩ W`.
+  rw [hd]
+  refine le_semialgebraicDim_of_isOpen hf (isOpen_interior.preimage continuous_subtypeVal)
+    ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.2 hW⟩ ?_
+  rintro _ ⟨y, hy, rfl⟩
+  exact ⟨hu y.property, interior_subset hy⟩
 
 end TauCeti

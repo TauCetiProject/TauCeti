@@ -12,7 +12,7 @@ public import TauCeti.Analysis.Fourier.Fejer.Basic
 import Mathlib.Analysis.Real.Pi.Bounds
 import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Analysis.Fourier.Fejer.Finite
-import TauCeti.Analysis.InnerProductSpace.Gram.Selberg
+import TauCeti.Analysis.InnerProductSpace.Gram.RowSum
 import TauCeti.Analysis.Normed.Group.AddCircle.Basic
 import TauCeti.Analysis.Normed.Group.AddCircle.Cosecant
 import TauCeti.Analysis.Normed.Group.AddCircle.Trigonometric
@@ -23,8 +23,8 @@ import TauCeti.Analysis.SpecialFunctions.Complex.Circle.FourierChar
 
 This file proves Bombieri's additive large sieve inequality for trigonometric polynomials evaluated
 at points well-spaced in the circle `UnitAddCircle = ℝ / ℤ`, following Bombieri's 1971 Hilbert-space
-proof via Selberg's weighted Gram inequality (`Finset.sum_norm_inner_sq_le_of_diag_offDiag`) and
-tapered Fourier vectors.
+proof via Selberg's weighted Gram inequality
+(`TauCeti.sum_norm_inner_sq_le_of_norm_sq_le_of_sum_erase_le`) and tapered Fourier vectors.
 
 ## Main definitions
 
@@ -424,18 +424,30 @@ theorem sum_norm_sum_fourierChar_sq_le_of_sum_inv_sin_sq_le {ι : Type*} [Decida
         ∑ i ∈ s, ‖⟪f, taperedFourierVec N L (x i)⟫_ℂ‖ ^ 2 := by
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [norm_inner_symm, inner_taperedFourierVec_eq_sum hL (x i) f hf]
-  rw [hinner]
-  refine s.sum_norm_inner_sq_le_of_diag_offDiag (fun i ↦ taperedFourierVec N L (x i)) f
-    (by positivity) (fun i _ ↦ (norm_taperedFourierVec_sq hL (x i)).le) fun i hi ↦ ?_
+  rw [hinner, ← Finset.sum_coe_sort s]
+  refine TauCeti.sum_norm_inner_sq_le_of_norm_sq_le_of_sum_erase_le
+    (fun i : s ↦ taperedFourierVec N L (x i.val)) f
+    (by positivity) (fun i ↦ (norm_taperedFourierVec_sq hL (x i.val)).le) fun i ↦ ?_
+  have hmap : (Finset.univ.erase i).map (Function.Embedding.subtype _) = s.erase i.val := by
+    ext j
+    simp only [Finset.mem_map, Finset.mem_erase, Finset.mem_univ, Function.Embedding.coe_subtype,
+      Subtype.exists, and_true]
+    exact ⟨fun ⟨a, ha, hne, heq⟩ ↦ heq ▸ ⟨fun h ↦ hne (Subtype.ext h), ha⟩,
+      fun ⟨hne, hj⟩ ↦ ⟨j, hj, fun h ↦ hne (congrArg Subtype.val h), rfl⟩⟩
   calc
-    ∑ j ∈ s.erase i, ‖⟪taperedFourierVec N L (x i), taperedFourierVec N L (x j)⟫_ℂ‖
-        ≤ ∑ j ∈ s.erase i, ((L : ℝ) * Real.sin (Real.pi * (x i - x j)) ^ 2)⁻¹ :=
+    ∑ j ∈ Finset.univ.erase i,
+        ‖⟪taperedFourierVec N L (x i.val), taperedFourierVec N L (x j.val)⟫_ℂ‖
+        = ∑ j ∈ s.erase i.val,
+            ‖⟪taperedFourierVec N L (x i.val), taperedFourierVec N L (x j)⟫_ℂ‖ := by
+          rw [← hmap, Finset.sum_map]
+          rfl
+    _ ≤ ∑ j ∈ s.erase i.val, ((L : ℝ) * Real.sin (Real.pi * (x i.val - x j)) ^ 2)⁻¹ :=
       Finset.sum_le_sum fun j hj ↦
         norm_inner_taperedFourierVec_le N L
-          (hsin i hi j (Finset.mem_of_mem_erase hj) (Finset.ne_of_mem_erase hj).symm)
-    _ = (L : ℝ)⁻¹ * ∑ j ∈ s.erase i, (Real.sin (Real.pi * (x i - x j)) ^ 2)⁻¹ := by
+          (hsin i.val i.property j (Finset.mem_of_mem_erase hj) (Finset.ne_of_mem_erase hj).symm)
+    _ = (L : ℝ)⁻¹ * ∑ j ∈ s.erase i.val, (Real.sin (Real.pi * (x i.val - x j)) ^ 2)⁻¹ := by
       simp_rw [mul_inv, Finset.mul_sum]
-    _ ≤ (L : ℝ)⁻¹ * S := mul_le_mul_of_nonneg_left (hrow i hi) (by positivity)
+    _ ≤ (L : ℝ)⁻¹ * S := mul_le_mul_of_nonneg_left (hrow i.val i.property) (by positivity)
     _ = S / (L : ℝ) := by ring
 
 /-- Taper-width estimate for `L = ⌊1 / δ⌋₊` when `0 < δ ≤ 1 / 2`:

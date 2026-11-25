@@ -273,16 +273,10 @@ only sees the first `N` rows, need not. -/
 theorem diagramSchurPoly_mul_alternant (N : ℕ) (μ : _root_.YoungDiagram) (hμ : μ.colLen 0 ≤ N) :
     diagramSchurPoly N R μ * alternant (Fin N) R (fun j => N - 1 - j) =
       alternant (Fin N) R fun j => μ.betaNumber N j := by
-  have hbot : ∀ i, (⊥ : _root_.YoungDiagram).rowLen i = 0 := fun i =>
-    Nat.eq_zero_of_not_pos fun h =>
-      _root_.YoungDiagram.notMem_bot _ (_root_.YoungDiagram.mem_iff_lt_rowLen.mpr h)
-  have hbotc : (⊥ : _root_.YoungDiagram).colLen 0 = 0 :=
-    Nat.eq_zero_of_not_pos fun h =>
-      _root_.YoungDiagram.notMem_bot _ (_root_.YoungDiagram.mem_iff_lt_colLen.mpr h)
   induction N generalizing μ with
   | zero =>
     have hμ0 : μ = ⊥ := YoungDiagram.rowLen_injective (funext fun i => by
-      rw [YoungDiagram.rowLen_eq_zero_iff.mpr (hμ.trans (Nat.zero_le i)), hbot])
+      rw [YoungDiagram.rowLen_eq_zero_iff.mpr (hμ.trans (Nat.zero_le i)), YoungDiagram.rowLen_bot])
     subst hμ0
     simp [diagramSchurPoly_bot, alternant_def, YoungDiagram.betaNumber_def]
   | succ n ih =>
@@ -295,9 +289,9 @@ theorem diagramSchurPoly_mul_alternant (N : ℕ) (μ : _root_.YoungDiagram) (hμ
         simp only [YoungDiagram.mem_interlacingShapes, mem_singleton]
         refine ⟨fun h => le_bot_iff.mp h.1.le, ?_⟩
         rintro rfl
-        exact ⟨YoungDiagram.interlacedBy_iff.mpr fun i => by simp [hbot], by simp [hbotc]⟩
-      simpa [hshapes, hbot, YoungDiagram.betaNumber_def] using
-        alternant_eq_prod_mul_sum_interlacingShapes (R := R) n ⊥ (by simp [hbotc])
+        exact ⟨YoungDiagram.interlacedBy_iff.mpr fun i => by simp, by simp⟩
+      simpa [hshapes, YoungDiagram.betaNumber_def] using
+        alternant_eq_prod_mul_sum_interlacingShapes (R := R) n ⊥ (by simp)
     simp only [Nat.add_sub_cancel]
     rw [diagramSchurPoly_eq_sum_interlacingShapes, hvan,
       alternant_eq_prod_mul_sum_interlacingShapes n μ hμ, sum_mul, mul_sum]

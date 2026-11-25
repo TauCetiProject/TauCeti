@@ -49,6 +49,8 @@ of `q`, and the gaps between equally spaced times are the length divided by `m +
 
 * `TauCeti.Manifold.sample_cyclicDistanceCutBrokenGeodesic_mem_cyclicDistanceCut`: the equally
   spaced samples of a broken geodesic through a tuple of a distance cut lie in a distance cut.
+* `TauCeti.Manifold.coe_cyclicDistanceCutSampleBrokenGeodesicHomotopy_apply_zero`: the slide keeps
+  the first vertex.
 * `TauCeti.Manifold.homotopic_cyclicDistanceCutRepeatFirstIterate_sampleBrokenGeodesic`:
   `ιᵐ⁻¹ ∘ ⋯ ∘ ιⁿ ≃ evₘ₊₁ ∘ geoⁿ` as maps `𝓛ⁿM → 𝓛ᵐM`.
 
@@ -118,6 +120,13 @@ theorem coe_cyclicDistanceCutSampleBrokenGeodesic_apply {n : ℕ} {δ : Fin (n +
     (cyclicDistanceCutSampleBrokenGeodesic hr hδ m hm q : Fin (m + 1) → M) =
       (cyclicDistanceCutBrokenGeodesic hr hδ q).toMoorePath.sample (m + 1) :=
   (rfl)
+
+/-- The first sample of the broken geodesic through `q` is its base point, the first vertex `q₀`. -/
+theorem coe_cyclicDistanceCutSampleBrokenGeodesic_apply_zero {n : ℕ} {δ : Fin (n + 1) → ℝ}
+    (hδ : ∀ i, δ i < r) (m : ℕ) {δ' : Fin (m + 1) → ℝ}
+    (hm : ∀ j, ∑ i, δ i ≤ ((m + 1 : ℕ) : ℝ) * δ' j) (q : cyclicDistanceCut (X := M) δ) :
+    (cyclicDistanceCutSampleBrokenGeodesic hr hδ m hm q : Fin (m + 1) → M) 0 = q.val 0 := by
+  simp
 
 /-- The times of the slide at `s`: the convex combination `(1 - s) aⱼ + s bⱼ` of the time `aⱼ` at
 which the closed broken geodesic through `q` passes through the `j`-th vertex of
@@ -214,6 +223,33 @@ def cyclicDistanceCutSampleBrokenGeodesicHomotopy {n k : ℕ} {δ : Fin (n + 1) 
     ext j
     simp only [slideTimes_one, coe_cyclicDistanceCutSampleBrokenGeodesic_apply,
       MoorePath.sample_apply, MooreFreeLoopSpace.length_toMoorePath]
+
+/-- At `p = (s, q)`, the `j`-th vertex of the slide is the broken geodesic through `q` evaluated at
+the `j`-th time of the slide at `s`. It is private since the times of the slide are. -/
+private theorem coe_cyclicDistanceCutSampleBrokenGeodesicHomotopy_apply {n k : ℕ}
+    {δ : Fin (n + 1) → ℝ} {δ' : Fin (n + k + 1) → ℝ} (hδ : ∀ i, δ i < r)
+    (hδδ' : ∀ j : Fin (n + k + 1), δ ⟨j - k, by omega⟩ ≤ δ' j)
+    (hm : ∀ j, ∑ i, δ i ≤ ((n + k + 1 : ℕ) : ℝ) * δ' j)
+    (p : unitInterval × cyclicDistanceCut (X := M) δ) (j : Fin (n + k + 1)) :
+    (cyclicDistanceCutSampleBrokenGeodesicHomotopy hr hδ hδδ' hm p : Fin (n + k + 1) → M) j =
+      (cyclicDistanceCutBrokenGeodesic hr hδ p.2).toMoorePath (slideTimes hr hδ p.1 p.2 j) :=
+  (rfl)
+
+/-- **The slide keeps the first vertex.** For the vertex `0` both families of times are `0`, so at
+every time of the slide the first vertex is the base point `q₀` of the broken geodesic through `q`.
+So the slide restricts to the tuples with a prescribed first vertex. -/
+@[simp]
+theorem coe_cyclicDistanceCutSampleBrokenGeodesicHomotopy_apply_zero {n k : ℕ}
+    {δ : Fin (n + 1) → ℝ} {δ' : Fin (n + k + 1) → ℝ} (hδ : ∀ i, δ i < r)
+    (hδδ' : ∀ j : Fin (n + k + 1), δ ⟨j - k, by omega⟩ ≤ δ' j)
+    (hm : ∀ j, ∑ i, δ i ≤ ((n + k + 1 : ℕ) : ℝ) * δ' j)
+    (p : unitInterval × cyclicDistanceCut (X := M) δ) :
+    (cyclicDistanceCutSampleBrokenGeodesicHomotopy hr hδ hδδ' hm p : Fin (n + k + 1) → M) 0 =
+      p.2.val 0 := by
+  have h0 : slideTimes hr hδ p.1 p.2 (0 : Fin (n + k + 1)) = 0 := by
+    simp [slideTimes]
+  rw [coe_cyclicDistanceCutSampleBrokenGeodesicHomotopy_apply, h0]
+  simp [← MoorePath.source_def]
 
 /-- **`ιⁿ⁺ᵏ⁻¹ ∘ ⋯ ∘ ιⁿ ≃ evₙ₊ₖ₊₁ ∘ geoⁿ`.** For cut-offs `δ i < r` with `δ (j - k) ≤ δ' j` and
 `∑ i, δ i ≤ (n + k + 1) * δ' j` for every `j`, repeating the first vertex `k` more times and

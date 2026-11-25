@@ -85,14 +85,14 @@ theorem IsAlgebraicCurvature.abs_apply_orthonormal_le_of_span {r : FourTensor V}
     (hsec : ∀ u v : V, u ∈ Submodule.span ℝ (range f) → v ∈ Submodule.span ℝ (range f) →
       Orthonormal ℝ ![u, v] → a ≤ r ![u, v, u, v] ∧ r ![u, v, u, v] ≤ b) :
     |r ![f 0, f 1, f 2, f 3]| ≤ (2 / 3) * (b - a) := by
-  have hpol := LinearMap.twentyFour_mul_apply_eq_of_cyclic_eq_zero (T := toLinearMap₄ r)
+  have hpol := (toLinearMap₄ r).twentyFour_nsmul_apply_eq_of_cyclic_eq_zero
     (fun u v z w ↦ by simpa only [toLinearMap₄_apply] using hr.antisymm_first u v z w)
     (fun u v z w ↦ by simpa only [toLinearMap₄_apply] using hr.antisymm_last u v z w)
     (fun u v z w ↦ by simpa only [toLinearMap₄_apply] using hr.cyclic_eq_zero u v z w)
     (f 0) (f 1) (f 2) (f 3)
   have hflip (x y : V) : r ![x, y, y, x] = -r ![x, y, x, y] := by
     linarith [hr.antisymm_last x y x y]
-  simp only [toLinearMap₄_apply, hflip] at hpol
+  simp only [toLinearMap₄_apply, hflip, nsmul_eq_mul, Nat.cast_ofNat] at hpol
   have bp (c₁ c₂ : Bool) := And.intro
     (apply_add_smul_self_mem_Icc_of_span (i := 0) (j := 3) (k := 1) (l := 2) hf hsec (by decide)
       c₁ c₂)

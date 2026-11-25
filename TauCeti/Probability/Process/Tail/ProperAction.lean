@@ -23,7 +23,8 @@ event (`TauCeti.Probability.tailEvents`).
 The general statement, `TauCeti.Probability.exists_measurableSet_tailEvents_ae_eq`, only asks that
 for all finite `F, Λ ⊆ ι` some `g ∈ Γ` moves `F` off `Λ`; for an infinite group acting properly this
 holds because all but finitely many `g` do
-(`TauCeti.Probability.exists_measurableSet_tailEvents_ae_eq_of_proper`).
+(`TauCeti.Probability.exists_forall_smul_notMem_of_proper`, used in
+`TauCeti.Probability.exists_measurableSet_tailEvents_ae_eq_of_proper`).
 
 This is the ingredient of the face property of invariant Gibbs measures: Georgii, *Gibbs measures
 and phase transitions* (2nd ed., 2011), Theorem 14.15, and Sheffield, *Random surfaces*
@@ -116,6 +117,15 @@ theorem exists_measurableSet_tailEvents_ae_eq [Countable ι]
     simp only [mem_symmDiff, not_or, not_and, not_not] at hn
     tauto
 
+/-- **An infinite group acting properly moves every finite set off every finite set.** If only
+finitely many `g` move a point of `F` into `F'` for all finite `F, F' ⊆ ι`, then, `Γ` being
+infinite, for all finite `F, Λ ⊆ ι` some `g` moves every point of `F` outside `Λ`. -/
+theorem exists_forall_smul_notMem_of_proper [Infinite Γ]
+    (hproper : ∀ F F' : Finset ι, {g : Γ | ∃ i ∈ F, g • i ∈ F'}.Finite) (F Λ : Finset ι) :
+    ∃ g : Γ, ∀ i ∈ F, g • i ∉ Λ :=
+  let ⟨g, hg⟩ := (hproper F Λ).infinite_compl.nonempty
+  ⟨g, fun i hi hgi => hg ⟨i, hi, hgi⟩⟩
+
 /-- **Invariant events of a proper action are almost surely tail events.** Let an infinite group
 `Γ` act properly on a countable index set `ι`: for finite `F, F' ⊆ ι`, only finitely many `g` move
 a point of `F` into `F'`. Let `μ` be a finite measure on `ι → S` invariant under
@@ -126,9 +136,7 @@ theorem exists_measurableSet_tailEvents_ae_eq_of_proper [Countable ι] [Infinite
     (hμ : ∀ g : Γ, MeasurePreserving (fun (ω : ι → S) i => ω (g⁻¹ • i)) μ μ)
     (hA : NullMeasurableSet A μ) (hAg : ∀ g : Γ, (fun (ω : ι → S) i => ω (g⁻¹ • i)) ⁻¹' A =ᵐ[μ] A) :
     ∃ T, MeasurableSet[tailEvents] T ∧ T =ᵐ[μ] A :=
-  exists_measurableSet_tailEvents_ae_eq (fun F Λ =>
-    let ⟨g, hg⟩ := (hproper F Λ).infinite_compl.nonempty
-    ⟨g, fun i hi hgi => hg ⟨i, hi, hgi⟩⟩) hμ hA hAg
+  exists_measurableSet_tailEvents_ae_eq (exists_forall_smul_notMem_of_proper hproper) hμ hA hAg
 
 end Probability
 

@@ -82,8 +82,8 @@ noncomputable def discriminantBilinearIsometryCoordinatePower [L.IsNondegenerate
             (discriminantGroupPiEquiv (fun _ : ι ↦ L) (Submodule.Quotient.mk y) i) =
           (L.coordinatePower ι).discriminantPairing
             (Submodule.Quotient.mk x) (Submodule.Quotient.mk y)
-        simp only [discriminantGroupPiEquiv_mk, discriminantPairing_mk, pi_form, piForm_apply,
-          coe_piDualCarrierEquiv_apply]
+        simp only [discriminantGroupPiEquiv_mk, discriminantPairing_mk, pi_form,
+          LinearMap.BilinForm.pi_apply, coe_piDualCarrierEquiv_apply]
         exact (map_sum (QuotientAddGroup.mk' (AddSubgroup.zmultiples (1 : ℚ))) _ _).symm
 
 /-- The underlying additive equivalence of the coordinate-power discriminant-bilinear isometry is
