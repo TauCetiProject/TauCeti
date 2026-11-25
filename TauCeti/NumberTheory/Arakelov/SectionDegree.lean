@@ -11,7 +11,6 @@ public import Mathlib.LinearAlgebra.TensorProduct.Basic
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 public import Mathlib.RingTheory.DedekindDomain.Basic
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
-import Mathlib.RingTheory.Flat.TorsionFree
 import TauCeti.Algebra.Module.Torsion.GenericRankOne
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 import TauCeti.RingTheory.Ideal.Norm.AbsNorm
