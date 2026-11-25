@@ -349,16 +349,16 @@ theorem tameUnit_map_algebraMap {e : ℤ} (h : ∀ r : F, w.ord (algebraMap F E 
     (f g : Fˣ) :
     w.tameUnit (Units.map (algebraMap F E : F →* E) f) (Units.map (algebraMap F E : F →* E) g) =
       Units.map (algebraMap F E : F →* E) (v.tameUnit f g) ^ e := by
-  -- The signs agree because `e * e` and `e` have the same parity.
-  have hsign : (-1 : Eˣ) ^ (e * v.ord (f : F) * (e * v.ord (g : F))) =
-      (-1) ^ (v.ord (f : F) * v.ord (g : F) * e) := by
+  rw [tameUnit_def, tameUnit_def]
+  simp only [Units.coe_map, MonoidHom.coe_ofClass, h, map_mul, map_zpow, Units.map_neg_one,
+    mul_zpow, ← zpow_mul]
+  congr 2
+  · -- The signs agree because `e * e` and `e` have the same parity.
     rw [show e * v.ord (f : F) * (e * v.ord (g : F)) = v.ord (f : F) * v.ord (g : F) * e +
         v.ord (f : F) * v.ord (g : F) * (e * (e - 1)) by ring, zpow_add,
-      zpow_mul' _ (v.ord (f : F) * v.ord (g : F)) (e * (e - 1)),
+      zpow_mul' (-1) (v.ord (f : F) * v.ord (g : F)) (e * (e - 1)),
       (Int.even_mul_pred_self e).neg_one_zpow, one_zpow, mul_one]
-  simp only [tameUnit_def, Units.coe_map, MonoidHom.coe_ofClass, h, map_mul, map_zpow,
-    Units.map_neg_one, mul_zpow, ← zpow_mul, hsign]
-  ring_nf
+  all_goals congr 1; ring
 
 /-- **The ramification formula for the tame symbol** (Weibel, *K-book*, Remark III.6.3.1). Let
 `w` extend `v` along `E / F` with `ord_w r = e · ord_v r` for every `r ∈ F`. Then for
