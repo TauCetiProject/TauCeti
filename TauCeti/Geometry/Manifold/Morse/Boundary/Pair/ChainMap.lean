@@ -133,6 +133,28 @@ private theorem disjoint_sourceBrokenRecords_targetBrokenRecords (p r : M) (c₀
 
 variable {p r : M} {c₀ c₁ : ℝ}
 
+/-- Below `p` by one index, the end `a` of a trajectory from `p` is a different point, below the
+level `c₀`. -/
+private theorem ne_and_apply_lt_of_manifoldMorseIndex_eq_add_one
+    (hgap₀ : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f₀, f₀ x < f₀ p → f₀ x < c₀) {a z : M}
+    (ha : a ∈ criticalPoints 𝓘(ℝ, E) f₀)
+    (hpa : manifoldMorseIndex 𝓘(ℝ, E) f₀ p = manifoldMorseIndex 𝓘(ℝ, E) f₀ a + 1)
+    (hz : z ∈ hX₀.flow.unstableSet p ∩ hX₀.flow.stableSet a) : p ≠ a ∧ f₀ a < c₀ := by
+  have hpa' : p ≠ a := by rintro rfl; omega
+  have hfa := hX₀.mem_Ioo_of_mem_unstableSet_inter_stableSet hpa' hz
+  exact ⟨hpa', hgap₀ a ha (hfa.1.trans hfa.2)⟩
+
+/-- Above `r` by one index, the start `b` of a trajectory to `r` is a different point, above the
+level `c₁`. -/
+private theorem ne_and_lt_apply_of_manifoldMorseIndex_eq_add_one
+    (hgap₁ : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f₁, f₁ r < f₁ x → c₁ < f₁ x) {b z : M}
+    (hb : b ∈ criticalPoints 𝓘(ℝ, E) f₁)
+    (hbr : manifoldMorseIndex 𝓘(ℝ, E) f₁ b = manifoldMorseIndex 𝓘(ℝ, E) f₁ r + 1)
+    (hz : z ∈ hX₁.flow.unstableSet b ∩ hX₁.flow.stableSet r) : b ≠ r ∧ c₁ < f₁ b := by
+  have hbr' : b ≠ r := by rintro rfl; omega
+  have hfb := hX₁.mem_Ioo_of_mem_unstableSet_inter_stableSet hbr' hz
+  exact ⟨hbr', hgap₁ b hb (hfb.1.trans hfb.2)⟩
+
 /-- The records of the configurations broken at the source are the images of the configurations
 of `morseSourceBrokenPairSet`, moving the point of the trajectory from `p` to the level `c₀`. -/
 private theorem sourceBrokenRecords_eq_image (hc₀ : c₀ < f₀ p)
@@ -145,11 +167,9 @@ private theorem sourceBrokenRecords_eq_image (hc₀ : c₀ < f₀ p)
   constructor
   · rintro ⟨a, hpa, har, hw₁, hw₁c, hy, hw₃⟩
     have ha := mem_criticalPoints_iff_mfderiv_eq_zero.2 (hX₀.mfderiv_eq_zero_of_mem_stableSet hw₁.2)
-    have hpa' : p ≠ a := by rintro rfl; omega
-    have hfa := hX₀.mem_Ioo_of_mem_unstableSet_inter_stableSet hpa' hw₁
+    obtain ⟨hpa', hac⟩ := hX₀.ne_and_apply_lt_of_manifoldMorseIndex_eq_add_one hgap₀ ha hpa hw₁
     -- `w.1` is the level point of a point of the middle-level slice.
-    obtain ⟨z, hz, hzw⟩ := ((hX₀.bijOn_flow_levelCrossingTime_midpoint hpa' (hw₁c ▸ hfa.1)
-      (hw₁c ▸ hfa.2)).congr fun z _ ↦ (hX₀.levelPoint_def c₀ z).symm).surjOn ⟨hw₁, hw₁c⟩
+    obtain ⟨z, hz, hzw⟩ := (hX₀.bijOn_levelPoint_midpoint hpa' hac hc₀).surjOn ⟨hw₁, hw₁c⟩
     exact ⟨(⟨a, ha⟩, z, w.2.1), (hX₀.mem_morseSourceBrokenPairSet hX₁).2
       ⟨hpa, har, (hX₀.mem_morseTrajectorySlice).2 ⟨hz.1.1, hz.1.2, hz.2⟩, hy⟩,
       Prod.ext hzw (Prod.ext rfl hw₃.symm)⟩
@@ -157,10 +177,9 @@ private theorem sourceBrokenRecords_eq_image (hc₀ : c₀ < f₀ p)
     obtain ⟨hpa, har, hz, hy⟩ := (hX₀.mem_morseSourceBrokenPairSet hX₁).1 hx
     dsimp only at hpa har hz hy
     rw [mem_morseTrajectorySlice] at hz
-    have hpa' : p ≠ a := by rintro rfl; omega
-    have hfa := hX₀.mem_Ioo_of_mem_unstableSet_inter_stableSet hpa' ⟨hz.1, hz.2.1⟩
-    obtain ⟨hmem, hc⟩ := hX₀.mapsTo_levelPoint hpa' (hgap₀ a a.property (hfa.1.trans hfa.2)) hc₀
-      ⟨hz.1, hz.2.1⟩
+    obtain ⟨hpa', hac⟩ := hX₀.ne_and_apply_lt_of_manifoldMorseIndex_eq_add_one hgap₀ a.property
+      hpa ⟨hz.1, hz.2.1⟩
+    obtain ⟨hmem, hc⟩ := hX₀.mapsTo_levelPoint hpa' hac hc₀ ⟨hz.1, hz.2.1⟩
     exact ⟨a, hpa, har, hmem, hc, hy, rfl⟩
 
 /-- Distinct configurations broken at the source have distinct records. -/
@@ -176,22 +195,13 @@ private theorem injOn_sourceBrokenRecords (hc₀ : c₀ < f₀ p)
   simp only [Prod.mk.injEq] at heq
   obtain ⟨heq, rfl, -⟩ := heq
   rw [mem_morseTrajectorySlice] at hz hz'
-  have hpa' : p ≠ a := by rintro rfl; omega
-  have hpa₂' : p ≠ a' := by rintro rfl; omega
-  have hfa := hX₀.mem_Ioo_of_mem_unstableSet_inter_stableSet hpa' ⟨hz.1, hz.2.1⟩
-  have hfa' := hX₀.mem_Ioo_of_mem_unstableSet_inter_stableSet hpa₂' ⟨hz'.1, hz'.2.1⟩
-  have hac := hgap₀ a a.property (hfa.1.trans hfa.2)
-  obtain ⟨hmem, -⟩ := hX₀.mapsTo_levelPoint hpa' hac hc₀ ⟨hz.1, hz.2.1⟩
-  obtain ⟨hmem', -⟩ := hX₀.mapsTo_levelPoint hpa₂' (hgap₀ a' a'.property (hfa'.1.trans hfa'.2))
-    hc₀ ⟨hz'.1, hz'.2.1⟩
-  -- The common level point lies on the stable sets of `a` and `a'`, so `a = a'`.
-  obtain rfl : a = a' := Subtype.ext <| by
-    by_contra hne
-    exact (Flow.disjoint_stableSet hne).notMem_of_mem_left hmem.2 (heq ▸ hmem'.2)
-  -- The level point is injective on the middle-level slice.
-  rw [((hX₀.bijOn_flow_levelCrossingTime_midpoint hpa' hac hc₀).congr fun z _ ↦
-    (hX₀.levelPoint_def c₀ z).symm).injOn ⟨⟨hz.1, hz.2.1⟩, hz.2.2⟩ ⟨⟨hz'.1, hz'.2.1⟩, hz'.2.2⟩
-    heq]
+  obtain ⟨hpa', hac⟩ := hX₀.ne_and_apply_lt_of_manifoldMorseIndex_eq_add_one hgap₀ a.property
+    hpa ⟨hz.1, hz.2.1⟩
+  obtain ⟨hpa₂', hac'⟩ := hX₀.ne_and_apply_lt_of_manifoldMorseIndex_eq_add_one hgap₀ a'.property
+    hpa₂ ⟨hz'.1, hz'.2.1⟩
+  obtain ⟨-, ha, rfl⟩ := hX₀.eq_of_levelPoint_eq_of_mem_midpoint hpa' hac hc₀ hpa₂' hac' hc₀
+    ⟨⟨hz.1, hz.2.1⟩, hz.2.2⟩ ⟨⟨hz'.1, hz'.2.1⟩, hz'.2.2⟩ heq
+  rw [Subtype.ext ha]
 
 /-- The records of the configurations broken at the target are the images of the configurations
 of `morseTargetBrokenPairSet`, moving the point of the trajectory to `r` to the level `c₁`. -/
@@ -206,11 +216,9 @@ private theorem targetBrokenRecords_eq_image (hc₁ : f₁ r < c₁)
   · rintro ⟨b, hpb, hbr, hy, hw₁, hw₃, hw₃c⟩
     have hb := mem_criticalPoints_iff_mfderiv_eq_zero.2
       (hX₁.mfderiv_eq_zero_of_mem_unstableSet hw₃.1)
-    have hbr' : b ≠ r := by rintro rfl; omega
-    have hfb := hX₁.mem_Ioo_of_mem_unstableSet_inter_stableSet hbr' hw₃
+    obtain ⟨hbr', hcb⟩ := hX₁.ne_and_lt_apply_of_manifoldMorseIndex_eq_add_one hgap₁ hb hbr hw₃
     -- `w.2.2` is the level point of a point of the middle-level slice.
-    obtain ⟨z, hz, hzw⟩ := ((hX₁.bijOn_flow_levelCrossingTime_midpoint hbr' (hw₃c ▸ hfb.1)
-      (hw₃c ▸ hfb.2)).congr fun z _ ↦ (hX₁.levelPoint_def c₁ z).symm).surjOn ⟨hw₃, hw₃c⟩
+    obtain ⟨z, hz, hzw⟩ := (hX₁.bijOn_levelPoint_midpoint hbr' hc₁ hcb).surjOn ⟨hw₃, hw₃c⟩
     exact ⟨(⟨b, hb⟩, w.2.1, z), (hX₀.mem_morseTargetBrokenPairSet hX₁).2
       ⟨hpb, hbr, hy, (hX₁.mem_morseTrajectorySlice).2 ⟨hz.1.1, hz.1.2, hz.2⟩⟩,
       Prod.ext hw₁.symm (Prod.ext rfl hzw)⟩
@@ -218,10 +226,9 @@ private theorem targetBrokenRecords_eq_image (hc₁ : f₁ r < c₁)
     obtain ⟨hpb, hbr, hy, hz⟩ := (hX₀.mem_morseTargetBrokenPairSet hX₁).1 hx
     dsimp only at hpb hbr hy hz
     rw [mem_morseTrajectorySlice] at hz
-    have hbr' : b ≠ r := by rintro rfl; omega
-    have hfb := hX₁.mem_Ioo_of_mem_unstableSet_inter_stableSet hbr' ⟨hz.1, hz.2.1⟩
-    obtain ⟨hmem, hc⟩ := hX₁.mapsTo_levelPoint hbr' hc₁ (hgap₁ b b.property (hfb.1.trans hfb.2))
-      ⟨hz.1, hz.2.1⟩
+    obtain ⟨hbr', hcb⟩ := hX₁.ne_and_lt_apply_of_manifoldMorseIndex_eq_add_one hgap₁ b.property
+      hbr ⟨hz.1, hz.2.1⟩
+    obtain ⟨hmem, hc⟩ := hX₁.mapsTo_levelPoint hbr' hc₁ hcb ⟨hz.1, hz.2.1⟩
     exact ⟨b, hpb, hbr, hy, rfl, hmem, hc⟩
 
 /-- Distinct configurations broken at the target have distinct records. -/
@@ -237,23 +244,13 @@ private theorem injOn_targetBrokenRecords (hc₁ : f₁ r < c₁)
   simp only [Prod.mk.injEq] at heq
   obtain ⟨-, rfl, heq⟩ := heq
   rw [mem_morseTrajectorySlice] at hz hz'
-  have hbr' : b ≠ r := by rintro rfl; omega
-  have hbr₂' : b' ≠ r := by rintro rfl; omega
-  have hfb := hX₁.mem_Ioo_of_mem_unstableSet_inter_stableSet hbr' ⟨hz.1, hz.2.1⟩
-  have hfb' := hX₁.mem_Ioo_of_mem_unstableSet_inter_stableSet hbr₂' ⟨hz'.1, hz'.2.1⟩
-  have hcb := hgap₁ b b.property (hfb.1.trans hfb.2)
-  obtain ⟨hmem, -⟩ := hX₁.mapsTo_levelPoint hbr' hc₁ hcb ⟨hz.1, hz.2.1⟩
-  obtain ⟨hmem', -⟩ := hX₁.mapsTo_levelPoint hbr₂' hc₁ (hgap₁ b' b'.property (hfb'.1.trans hfb'.2))
-    ⟨hz'.1, hz'.2.1⟩
-  -- The common level point lies on the unstable sets of `b` and `b'`, so `b = b'`.
-  obtain rfl : b = b' := Subtype.ext <| by
-    by_contra hne
-    exact (Flow.disjoint_unstableSet hne).notMem_of_mem_left hmem.1 (heq ▸ hmem'.1)
-  -- The level point is injective on the middle-level slice.
-  rw [((hX₁.bijOn_flow_levelCrossingTime_midpoint hbr' hc₁ hcb).congr fun z _ ↦
-    (hX₁.levelPoint_def c₁ z).symm).injOn ⟨⟨hz.1, hz.2.1⟩, hz.2.2⟩ ⟨⟨hz'.1, hz'.2.1⟩, hz'.2.2⟩
-    heq]
-
+  obtain ⟨hbr', hcb⟩ := hX₁.ne_and_lt_apply_of_manifoldMorseIndex_eq_add_one hgap₁ b.property
+    hbr ⟨hz.1, hz.2.1⟩
+  obtain ⟨hbr₂', hcb'⟩ := hX₁.ne_and_lt_apply_of_manifoldMorseIndex_eq_add_one hgap₁ b'.property
+    hbr₂ ⟨hz'.1, hz'.2.1⟩
+  obtain ⟨hb, -, rfl⟩ := hX₁.eq_of_levelPoint_eq_of_mem_midpoint hbr' hc₁ hcb hbr₂' hc₁ hcb'
+    ⟨⟨hz.1, hz.2.1⟩, hz.2.2⟩ ⟨⟨hz'.1, hz'.2.1⟩, hz'.2.2⟩ heq
+  rw [Subtype.ext hb]
 
 /-- **Reversing the pair reverses the records.** Reading triples backwards carries the records of
 the reversed pair `(-X₁, -X₀)`, on the levels `-c₁` and `-c₀`, to those of `(X₀, X₁)`. -/
@@ -310,19 +307,17 @@ private theorem closure_pairRecords_subset :
   · exact Or.inl ⟨y, hy, Prod.ext (hup hy.1).symm (Prod.ext rfl (hlow hy.2).symm)⟩
   · -- Breaking at the source, at a critical point `a` below the level `c₀`.
     obtain ⟨a, ⟨har, z, hz⟩, hya⟩ := mem_iUnion₂.1 hy
-    have hpa : p ≠ a := by rintro rfl; omega
-    have hfa := hX₀.mem_Ioo_of_mem_unstableSet_inter_stableSet hpa hz
-    have hac : f₀ a < c₀ := hgap₀ a (mem_criticalPoints_iff_mfderiv_eq_zero.2
-      (hX₀.mfderiv_eq_zero_of_mem_unstableSet hya.1)) (hfa.1.trans hfa.2)
+    obtain ⟨hpa, hac⟩ := hX₀.ne_and_apply_lt_of_manifoldMorseIndex_eq_add_one hgap₀
+      (mem_criticalPoints_iff_mfderiv_eq_zero.2 (hX₀.mfderiv_eq_zero_of_mem_unstableSet hya.1))
+      (by omega) hz
     obtain ⟨hq₁, hq₁c⟩ := h₀.mem_of_tendsto_upperLevelPoint_of_mem_unstableSet hf₀ hpa
       (by omega) hya.1 hac hc₀ (fun n ↦ (hxS n).1) hx h₁q
     exact Or.inr (Or.inl ⟨a, by omega, har, hq₁, hq₁c, hya, hlow hya.2⟩)
   · -- Breaking at the target, at a critical point `b` above the level `c₁`.
     obtain ⟨b, ⟨hbp, z, hz⟩, hyb⟩ := mem_iUnion₂.1 hy
-    have hbr : b ≠ r := by rintro rfl; omega
-    have hfb := hX₁.mem_Ioo_of_mem_unstableSet_inter_stableSet hbr hz
-    have hcb : c₁ < f₁ b := hgap₁ b (mem_criticalPoints_iff_mfderiv_eq_zero.2
-      (hX₁.mfderiv_eq_zero_of_mem_stableSet hyb.2)) (hfb.1.trans hfb.2)
+    obtain ⟨hbr, hcb⟩ := hX₁.ne_and_lt_apply_of_manifoldMorseIndex_eq_add_one hgap₁
+      (mem_criticalPoints_iff_mfderiv_eq_zero.2 (hX₁.mfderiv_eq_zero_of_mem_stableSet hyb.2))
+      (by omega) hz
     obtain ⟨hq₃, hq₃c⟩ := h₁.mem_of_tendsto_lowerLevelPoint_of_mem_stableSet hf₁ hbr
       (by omega) hyb.2 hc₁ hcb (fun n ↦ (hxS n).2) hx h₃q
     exact Or.inr (Or.inr ⟨b, by omega, by omega, hyb, hup hyb.1, hq₃, hq₃c⟩)

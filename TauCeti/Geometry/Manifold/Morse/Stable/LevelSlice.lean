@@ -91,13 +91,18 @@ vector space.
 * `TauCeti.IsAdaptedPseudoGradient.levelPoint`: the point of an orbit on a level, at the crossing
   time `Flow.levelCrossingTime`. Along a trajectory between distinct critical points it is the
   unique point of the orbit on the level (`TauCeti.IsAdaptedPseudoGradient.levelPoint_eq`), it lies
-  on the trajectory (`TauCeti.IsAdaptedPseudoGradient.mapsTo_levelPoint`), and it depends
+  on the trajectory (`TauCeti.IsAdaptedPseudoGradient.mapsTo_levelPoint`), it is a bijection
+  from the middle slice onto the slice on the level
+  (`TauCeti.IsAdaptedPseudoGradient.bijOn_levelPoint_midpoint`) and determines the trajectory
+  (`TauCeti.IsAdaptedPseudoGradient.eq_of_levelPoint_eq_of_mem_midpoint`), and it depends
   continuously on the point (`TauCeti.IsAdaptedPseudoGradient.tendsto_levelPoint`).
 * `TauCeti.IsAdaptedPseudoGradient.upperLevelPoint` and
-  `TauCeti.IsAdaptedPseudoGradient.lowerLevelPoint`: the points of the orbit of `x` on the levels
-  `max (f x) c` and `min (f x) c`, which depend continuously on `x` in `W^u(p)` for `c < f p`
-  (`TauCeti.IsAdaptedPseudoGradient.continuousOn_upperLevelPoint`), respectively in `W^s(r)` for
-  `f r < c` (`TauCeti.IsAdaptedPseudoGradient.continuousOn_lowerLevelPoint`), and are exchanged by
+  `TauCeti.IsAdaptedPseudoGradient.lowerLevelPoint`: the point `x` itself on one side of the
+  level `c` and its level point on the other. For `x` in `W^u(p)` with `c < f p`, resp. in
+  `W^s(r)` with `f r < c`, they are the points of the orbit of `x` on the levels `max (f x) c`,
+  resp. `min (f x) c`, and depend continuously on `x` there
+  (`TauCeti.IsAdaptedPseudoGradient.continuousOn_upperLevelPoint`,
+  `TauCeti.IsAdaptedPseudoGradient.continuousOn_lowerLevelPoint`); they are exchanged by
   reversing the pseudo-gradient
   (`TauCeti.IsAdaptedPseudoGradient.upperLevelPoint_eq_lowerLevelPoint_neg`,
   `TauCeti.IsAdaptedPseudoGradient.lowerLevelPoint_eq_upperLevelPoint_neg`).
@@ -697,6 +702,37 @@ theorem mapsTo_levelPoint {a b : M} (hab : a ≠ b) {c : ℝ} (hbc : f b < c) (h
   rw [hX.levelPoint_eq hab hz hs]
   exact ⟨hX.flow.isInvariant_unstableSet_inter_stableSet a b s hz, hs⟩
 
+/-- **The level point is a bijection between slices.** Let `a ≠ b` be critical points and
+`f b < c < f a`. The level point is a bijection from the middle slice
+`W^u(a) ∩ W^s(b) ∩ {f = (f a + f b) / 2}` onto the slice `W^u(a) ∩ W^s(b) ∩ {f = c}`. -/
+theorem bijOn_levelPoint_midpoint {a b : M} (hab : a ≠ b) {c : ℝ} (hbc : f b < c)
+    (hca : c < f a) :
+    BijOn (hX.levelPoint c)
+      ((hX.flow.unstableSet a ∩ hX.flow.stableSet b) ∩ {z | f z = (f a + f b) / 2})
+      ((hX.flow.unstableSet a ∩ hX.flow.stableSet b) ∩ {z | f z = c}) :=
+  (hX.bijOn_flow_levelCrossingTime_midpoint hab hbc hca).congr fun z _ ↦
+    (hX.levelPoint_def c z).symm
+
+/-- **A level point determines its trajectory.** Points of the middle slices of trajectories from
+`a` to `b` and from `a'` to `b'`, all crossing the level `c`, with a common level point on `c`
+coincide, and so do their ends. -/
+theorem eq_of_levelPoint_eq_of_mem_midpoint {a b a' b' z z' : M} {c : ℝ} (hab : a ≠ b)
+    (hbc : f b < c) (hca : c < f a) (ha'b' : a' ≠ b') (hb'c : f b' < c) (hca' : c < f a')
+    (hz : z ∈ (hX.flow.unstableSet a ∩ hX.flow.stableSet b) ∩ {z | f z = (f a + f b) / 2})
+    (hz' : z' ∈ (hX.flow.unstableSet a' ∩ hX.flow.stableSet b') ∩
+      {z | f z = (f a' + f b') / 2})
+    (h : hX.levelPoint c z = hX.levelPoint c z') : a = a' ∧ b = b' ∧ z = z' := by
+  obtain ⟨hw, -⟩ := hX.mapsTo_levelPoint hab hbc hca hz.1
+  obtain ⟨hw', -⟩ := hX.mapsTo_levelPoint ha'b' hb'c hca' hz'.1
+  rw [← h] at hw'
+  obtain rfl : a = a' := by
+    by_contra hne
+    exact (Flow.disjoint_unstableSet hne).notMem_of_mem_left hw.1 hw'.1
+  obtain rfl : b = b' := by
+    by_contra hne
+    exact (Flow.disjoint_stableSet hne).notMem_of_mem_left hw.2 hw'.2
+  exact ⟨rfl, rfl, (hX.bijOn_levelPoint_midpoint hab hbc hca).injOn hz hz' h⟩
+
 /-- Moving a point of a trajectory between distinct critical points along its orbit does not move
 its level point, when the orbit crosses the level. -/
 theorem levelPoint_flow {a b x : M} (hab : a ≠ b)
@@ -741,13 +777,15 @@ theorem levelPoint_neg (hf : IsMorse 𝓘(ℝ, E) f) {a b x : M} (hab : a ≠ b)
   rw [hX.levelPoint_eq hab hx ht, (hX.neg hf).levelPoint_eq hab.symm hx' (t := -t)
     (by rw [hneg, neg_neg, Pi.neg_apply, ht]), hneg, neg_neg]
 
-/-- The point of the orbit of `x` on the level `max (f x) c`: the point `x` itself when
-`c ≤ f x`, and otherwise the point where the orbit of `x` comes down from the level `c`. -/
+/-- The upper level point of `x` at `c`: the point `x` itself when `c ≤ f x`, and otherwise the
+level point `levelPoint c x`. It lies on the level `max (f x) c` when the orbit of `x` meets the
+level `c` (as on `W^u(p)` for `c < f p`), and is `x` otherwise. -/
 noncomputable def upperLevelPoint (c : ℝ) (x : M) : M :=
   if c ≤ f x then x else hX.levelPoint c x
 
-/-- The point of the orbit of `x` on the level `min (f x) c`: the point `x` itself when
-`f x ≤ c`, and otherwise the point where the orbit of `x` descends to the level `c`. -/
+/-- The lower level point of `x` at `c`: the point `x` itself when `f x ≤ c`, and otherwise the
+level point `levelPoint c x`. It lies on the level `min (f x) c` when the orbit of `x` meets the
+level `c` (as on `W^s(r)` for `f r < c`), and is `x` otherwise. -/
 noncomputable def lowerLevelPoint (c : ℝ) (x : M) : M :=
   if f x ≤ c then x else hX.levelPoint c x
 
