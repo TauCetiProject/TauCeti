@@ -20,6 +20,8 @@ separation of the seminorm or pseudometric is needed.
 
 * `TauCeti.mem_affineSegment_iff_of_dist_le`: if `0 < dist c z` and `dist y z ≤ dist c z`, then
   `y` lies on the segment from `z` to `c` iff it lies on the ray from `z` through `c`.
+* `TauCeti.norm_le_norm_lineMap_of_one_le`: extending a segment past the endpoint of larger
+  norm preserves that endpoint's lower bound.
 -/
 
 public section
@@ -45,5 +47,18 @@ theorem mem_affineSegment_iff_of_dist_le {c y z : P} (hc : 0 < dist c z)
     rw [dist_vadd_left, norm_smul, Real.norm_of_nonneg ht, dist_eq_norm_vsub V] at hy
     rw [dist_eq_norm_vsub V] at hc
     exact (mul_le_iff_le_one_left hc).1 hy
+
+/-- If the norm does not decrease from `a` to `b`, extending the segment past `b` gives a
+point of norm at least `‖b‖`. -/
+theorem norm_le_norm_lineMap_of_one_le {a b : V} {t : ℝ} (hab : ‖a‖ ≤ ‖b‖) (ht : 1 ≤ t) :
+    ‖b‖ ≤ ‖AffineMap.lineMap a b t‖ := by
+  calc
+    ‖b‖ = t * ‖b‖ - (t - 1) * ‖b‖ := by ring
+    _ ≤ t * ‖b‖ - (t - 1) * ‖a‖ :=
+      sub_le_sub_left (mul_le_mul_of_nonneg_left hab (sub_nonneg.mpr ht)) _
+    _ ≤ ‖AffineMap.lineMap a b t‖ := by
+      rw [AffineMap.lineMap_apply_module, ← neg_sub t 1, neg_smul, add_comm, ← sub_eq_add_neg]
+      simpa only [norm_smul, Real.norm_of_nonneg (zero_le_one.trans ht),
+        Real.norm_of_nonneg (sub_nonneg.mpr ht)] using norm_sub_norm_le (t • b) ((t - 1) • a)
 
 end TauCeti

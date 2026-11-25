@@ -17,7 +17,8 @@ In period-one coordinates the Fourier mode of index `n` has angular frequency `2
 `circleHardyProjectionSymbol` is the cutoff of the positive-frequency branch, and
 `circleFourierIndexSymbol` has principal branches given by the first character on the positive
 axis and the identity on the negative axis. Its full symbol is periodic in position and its
-principal symbol is elliptic.
+principal symbol is elliptic. At frequency `2 * s` the full coefficient acts by multiplication
+by `circleIndexSymbolScalar` at the corresponding point of the cylinder.
 
 The samples of the full Hardy symbol at `2πn` are the indicator of the positive integers.
 The corresponding multiplier is the projection onto the strictly positive Fourier modes.
@@ -113,6 +114,84 @@ theorem coefficient_toSymbol_circleFourierIndexSymbol (ρ : FrequencyCutoff (Coo
   · simp [Complex.real_smul]
     ring
   · simp
+
+section Cylinder
+
+variable (ρ : FrequencyCutoff (CoordinateSpace 1))
+
+/-- The scalar of the full Fourier index symbol on the cylinder, with frequency `2 * s`. -/
+def circleIndexSymbolScalar : C(Circle × ℝ, ℂ) where
+  toFun p := 1 + ((p.1 : ℂ) - 1) *
+    (circleHardyProjectionSymbol ρ).toSymbol.coefficient (ι 0, ι (2 * p.2)) 1
+  continuous_toFun := by
+    have hξ : Continuous (fun p : Circle × ℝ ↦ ι (2 * p.2)) :=
+      (ι).continuous.comp (continuous_const.mul continuous_snd)
+    have hc := (circleHardyProjectionSymbol ρ).toSymbol.continuous_coefficient_slice (ι 0)
+    exact continuous_const.add ((continuous_subtypeVal.comp continuous_fst).sub
+      continuous_const |>.mul ((hc.comp hξ).clm_apply continuous_const))
+
+/-- The continuous cylinder scalar interpolates the two branches using the cutoff on the
+positive frequency axis. -/
+theorem circleIndexSymbolScalar_apply (z : Circle) (s : ℝ) :
+    circleIndexSymbolScalar ρ (z, s) =
+      1 + ((z : ℂ) - 1) * (if 0 < s then (ρ (ι (2 * s)) : ℂ) else 0) := by
+  by_cases hs : 0 < s <;> simp [circleIndexSymbolScalar, hs]
+
+/-- In period-one coordinates the full coefficient acts by multiplication by the cylinder scalar. -/
+theorem coefficient_toSymbol_circleFourierIndexSymbol_eq_scalar_smul_id (x s : ℝ) :
+    (circleFourierIndexSymbol ρ).toSymbol.coefficient (ι x, ι (2 * s)) =
+      circleIndexSymbolScalar ρ (Circle.exp (2 * Real.pi * x), s) • ContinuousLinearMap.id ℂ ℂ := by
+  rw [circleIndexSymbolScalar_apply, coefficient_toSymbol_circleFourierIndexSymbol]
+  apply congrArg (· • ContinuousLinearMap.id ℂ ℂ)
+  simp only [LinearIsometryEquiv.symm_apply_apply, fourier_coe_apply,
+    Int.cast_one, Complex.ofReal_one, mul_one, div_one,
+    Circle.coe_exp, Complex.ofReal_mul, Complex.ofReal_ofNat,
+    mul_pos_iff_of_pos_left (zero_lt_two : (0 : ℝ) < 2)]
+  ring_nf
+
+/-- Evaluating the full coefficient at `1` recovers the cylinder scalar. -/
+@[simp↓] theorem coefficient_toSymbol_circleFourierIndexSymbol_apply_one (x s : ℝ) :
+    (circleFourierIndexSymbol ρ).toSymbol.coefficient (ι x, ι (2 * s)) 1 =
+      circleIndexSymbolScalar ρ (Circle.exp (2 * Real.pi * x), s) := by
+  rw [coefficient_toSymbol_circleFourierIndexSymbol_eq_scalar_smul_id]
+  simp
+
+/-- Above the circle identity the cylinder scalar is constant. -/
+@[simp] theorem circleIndexSymbolScalar_one_left (s : ℝ) :
+    circleIndexSymbolScalar ρ (1, s) = 1 := by simp [circleIndexSymbolScalar_apply]
+
+/-- For `s ≤ 1 / 2` (Fourier frequency `2 * s ≤ 1`), the cylinder scalar is `1`. -/
+@[simp low] theorem circleIndexSymbolScalar_of_le_half (z : Circle) {s : ℝ} (hs : s ≤ 2⁻¹) :
+    circleIndexSymbolScalar ρ (z, s) = 1 := by
+  rw [circleIndexSymbolScalar_apply]
+  split_ifs with hp
+  · have h := ρ.apply_eq_zero_of_norm_le_one (ξ := ι (2 * s)) (by
+      refine ((ι).norm_map (2 * s)).le.trans ?_
+      rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+      linarith)
+    simp [h]
+  · simp
+
+/-- For `1 ≤ s` (Fourier frequency `2 ≤ 2 * s`), the cylinder scalar is `z`. -/
+@[simp low] theorem circleIndexSymbolScalar_of_one_le (z : Circle) {s : ℝ} (hs : 1 ≤ s) :
+    circleIndexSymbolScalar ρ (z, s) = z := by
+  have h := ρ.apply_eq_one_of_two_le_norm (ξ := ι (2 * s)) (by
+    refine le_trans ?_ ((ι).norm_map (2 * s)).ge
+    rw [Real.norm_eq_abs, abs_of_nonneg (by linarith)]
+    linarith)
+  simp [circleIndexSymbolScalar_apply, ite_eq_left (by linarith : 0 < s), h]
+
+/-- On the lower edge of the normalized cylinder strip the full scalar is constant. -/
+@[simp] theorem circleIndexSymbolScalar_neg_one (z : Circle) :
+    circleIndexSymbolScalar ρ (z, -1) = 1 :=
+  circleIndexSymbolScalar_of_le_half ρ z (by norm_num)
+
+/-- On the upper edge of the normalized cylinder strip the full scalar is the circle coordinate. -/
+@[simp] theorem circleIndexSymbolScalar_one (z : Circle) :
+    circleIndexSymbolScalar ρ (z, 1) = z :=
+  circleIndexSymbolScalar_of_one_le ρ z le_rfl
+
+end Cylinder
 
 /-- The full Hardy projection symbol is periodic in position with period one. -/
 theorem periodic_coefficient_toSymbol_circleHardyProjectionSymbol

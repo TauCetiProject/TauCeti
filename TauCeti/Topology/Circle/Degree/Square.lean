@@ -405,7 +405,7 @@ private theorem pathAngle_horizontal_eq_add {a b : Fin 2 → I} (γ : Path a b) 
 
 /-- An integer is the degree of `Γ` around the boundary of the square once its multiple of `2π`
 is the multiple `squareBoundaryDegree Γ * 2π`. -/
-private theorem squareBoundaryDegree_eq_of_mul_two_pi {n : ℤ}
+theorem squareBoundaryDegree_eq_of_mul_two_pi {n : ℤ}
     (h : (squareBoundaryDegree Γ : ℝ) * (2 * Real.pi) = n * (2 * Real.pi)) :
     squareBoundaryDegree Γ = n := by
   exact_mod_cast mul_right_cancel₀ (by positivity : (2 * Real.pi : ℝ) ≠ 0) h

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Analysis.Normed.Affine.Ray
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arccos
 
 /-!
@@ -59,6 +60,8 @@ circle.
   angle is `Circle.angleDiff x y`.
 * `TauCeti.min_angleDiff_le_pi_div_two_mul_dist` — the shorter of the two arcs joining two points of
   the circle has length at most `π / 2` times their distance.
+* `Circle.one_le_norm_lineMap_of_one_le` — extending a unit-circle chord past its second endpoint
+  gives a point of norm at least one.
 
 ## The argument
 
@@ -80,6 +83,12 @@ is `Subtype.dist_eq` seen through that definition. -/
 theorem Circle.dist_eq_norm_coe_sub (z w : Circle) : dist z w = ‖(z : ℂ) - w‖ := by
   rw [← Complex.dist_eq]
   exact Subtype.dist_eq _ _
+
+/-- Extending the chord from `a` to `b` past `b` stays outside the open unit disk. -/
+theorem Circle.one_le_norm_lineMap_of_one_le (a b : Circle) {t : ℝ} (ht : 1 ≤ t) :
+    1 ≤ ‖AffineMap.lineMap (a : ℂ) (b : ℂ) t‖ := by
+  simpa only [Circle.norm_coe] using
+    TauCeti.norm_le_norm_lineMap_of_one_le (a := (a : ℂ)) (b := (b : ℂ)) (by simp) ht
 
 namespace TauCeti
 
