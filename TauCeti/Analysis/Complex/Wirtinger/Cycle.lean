@@ -262,9 +262,8 @@ theorem integral_eq_two_mul_I_smul_integral_windingWeight_conjWirtingerDeriv
         ContinuousLinearMap.comp_apply]
     rw [hcomp, ← real_smul]
     exact ((ℓ.restrictScalars ℝ).map_smul _ _).symm
-  · rw [integral_eq_sum_support, Finset.sum_eq_zero fun _ _ ↦ by
-        simp [intervalIntegral, integral_of_not_completeSpace hE],
-      integral_of_not_completeSpace hE, smul_zero]
+  · rw [integral_of_not_completeSpace hE, MeasureTheory.integral_of_not_completeSpace hE,
+      smul_zero]
 
 private theorem conj_integral_conj_eq_neg_two_mul_I_mul_integral_windingWeight_wirtingerDeriv
     (C : Cycle) {U : Set ℂ} {F : ℂ → ℂ} (hU : IsOpen U) (htrace : C.IsIn U)
