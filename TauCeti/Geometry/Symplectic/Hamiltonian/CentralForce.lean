@@ -59,6 +59,10 @@ there.
 
 * `TauCeti.centralForceHamiltonian_smul`: isometries fixing the origin, such as rotations,
   preserve every central-force Hamiltonian.
+* `TauCeti.centralForceHamiltonian_linearIsometryEquiv`,
+  `TauCeti.stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_linearIsometryEquiv`:
+  applying a linear isometry to positions and momenta alike preserves every central-force
+  Hamiltonian and commutes with its Hamiltonian vector field.
 * `TauCeti.stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian`: Hamilton's
   equations for a central force.
 * `TauCeti.stdSymplecticForm_hamiltonianVectorField_angularMomentum`: angular momentum generates
@@ -137,6 +141,14 @@ theorem hasDerivAt_kepler_potential (κ : ℝ) {r : ℝ} (hr : r ≠ 0) :
   simpa [div_eq_mul_inv] using (hasDerivAt_inv hr).const_mul (-κ)
 
 variable [InnerProductSpace ℝ V]
+
+/-- Applying a linear isometry to positions and momenta alike preserves every central-force
+Hamiltonian. -/
+theorem centralForceHamiltonian_linearIsometryEquiv (m : ℝ) (U : ℝ → ℝ) (φ : V ≃ₗᵢ[ℝ] V)
+    (x : V × V) :
+    centralForceHamiltonian m U (φ x.1, φ x.2) = centralForceHamiltonian m U x := by
+  obtain ⟨q, p⟩ := x
+  simp [centralForceHamiltonian_apply]
 
 /-- The angular momentum `⟪q, u⟫⟪p, w⟫ - ⟪q, w⟫⟪p, u⟫` in the plane of `u` and `w`, the pairing
 of the bivector `q ∧ p` with `u ∧ w`. For `V = ℝ²` and the standard basis it is `q₁p₂ - q₂p₁`. -/
@@ -467,6 +479,23 @@ theorem stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian {m : �
     (stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U) x =
       (m⁻¹ • x.2, -((U' / ‖x.1‖) • x.1)) :=
   stdSymplecticForm_hamiltonianVectorField (hasFDerivAt_centralForceHamiltonian hU hq)
+
+/-- **Central forces are equivariant under linear isometries.** Off the collision set, applying a
+linear isometry `φ` to positions and momenta alike commutes with the Hamiltonian vector field of a
+central-force Hamiltonian: `X_H(φ q, φ p) = (φ X_H(q, p).1, φ X_H(q, p).2)`. -/
+theorem stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_linearIsometryEquiv
+    {m : ℝ} {U : ℝ → ℝ} {U' : ℝ} (φ : V ≃ₗᵢ[ℝ] V) {x : V × V}
+    (hU : HasDerivAt U U' ‖x.1‖) (hq : x.1 ≠ 0) :
+    (stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U)
+        (φ x.1, φ x.2) =
+      (φ ((stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U) x).1,
+        φ ((stdSymplecticForm (V := V)).hamiltonianVectorField
+          (centralForceHamiltonian m U) x).2) := by
+  have hU' : HasDerivAt U U' ‖φ x.1‖ := by rwa [φ.norm_map]
+  have hq' : φ x.1 ≠ 0 := by simpa using hq
+  rw [stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian (x := (φ x.1, φ x.2))
+    hU' hq', stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian hU hq]
+  simp [map_smul]
 
 /-- **Angular momentum generates rotations.** The Hamiltonian vector field of the angular momentum
 in the plane of `u` and `w` is `(R q, R p)` for the infinitesimal rotation

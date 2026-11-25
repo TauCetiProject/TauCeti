@@ -53,10 +53,6 @@ The conservation law `{H, L} = 0` for a central-force Hamiltonian `H` is
 `TauCeti.stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum`.
 
 The same holds in any real inner product plane `V`, without choosing an identification with `ℂ`.
-Applying a linear isometry to positions and momenta alike preserves every central-force
-Hamiltonian (`TauCeti.centralForceHamiltonian_linearIsometryEquiv`) and commutes with its
-Hamiltonian vector field
-(`TauCeti.stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_linearIsometryEquiv`).
 For a positively oriented orthonormal basis `b` of an oriented plane, with quarter turn `J` and
 rotations `R_t` (`Orientation.rotation`):
 
@@ -199,7 +195,6 @@ theorem hamiltonianTorusData_angularMomentum_puncturedPhaseSpace :
   hamiltonianTorusData_angularMomentum.mpullback contMDiff_subtypeVal
     coe_smul_puncturedPhaseSpace
 
-
 /-! ### Rotations of an oriented plane -/
 
 section OrientedPlane
@@ -207,33 +202,7 @@ section OrientedPlane
 open Module
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-
-/-- Applying a linear isometry to positions and momenta alike preserves every central-force
-Hamiltonian. -/
-theorem centralForceHamiltonian_linearIsometryEquiv (m : ℝ) (U : ℝ → ℝ) (φ : V ≃ₗᵢ[ℝ] V)
-    (x : V × V) :
-    centralForceHamiltonian m U (φ x.1, φ x.2) = centralForceHamiltonian m U x := by
-  obtain ⟨q, p⟩ := x
-  simp [centralForceHamiltonian_apply]
-
-/-- **Central forces are equivariant under linear isometries.** Off the collision set, applying a
-linear isometry `φ` to positions and momenta alike commutes with the Hamiltonian vector field of a
-central-force Hamiltonian: `X_H(φ q, φ p) = (φ X_H(q, p).1, φ X_H(q, p).2)`. -/
-theorem stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_linearIsometryEquiv
-    [FiniteDimensional ℝ V] {m : ℝ} {U : ℝ → ℝ} {U' : ℝ} (φ : V ≃ₗᵢ[ℝ] V) {x : V × V}
-    (hU : HasDerivAt U U' ‖x.1‖) (hq : x.1 ≠ 0) :
-    (stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U)
-        (φ x.1, φ x.2) =
-      (φ ((stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U) x).1,
-        φ ((stdSymplecticForm (V := V)).hamiltonianVectorField
-          (centralForceHamiltonian m U) x).2) := by
-  have hU' : HasDerivAt U U' ‖φ x.1‖ := by rwa [φ.norm_map]
-  have hq' : φ x.1 ≠ 0 := by simpa using hq
-  rw [stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian (x := (φ x.1, φ x.2))
-    hU' hq', stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian hU hq]
-  simp [map_smul]
-
-variable (b : OrthonormalBasis (Fin 2) ℝ V)
+  (b : OrthonormalBasis (Fin 2) ℝ V)
 
 section Fact
 
@@ -291,16 +260,14 @@ theorem eq_rotation_of_forall_hasDerivAt_angularMomentum
     γ t = (o.rotation t (γ 0).1, o.rotation t (γ 0).2) := by
   simp_rw [stdSymplecticForm_hamiltonianVectorField_angularMomentum_eq_rightAngleRotation b hb]
     at hγ
-  -- The quarter turn commutes with the rotations.
-  have hJ (θ : Real.Angle) (v : V) :=
-    o.linearIsometryEquiv_comp_rightAngleRotation (o.rotation θ) (by simp [o.det_rotation]) v
   -- Rotating `γ s` back by the angle `s` gives a constant curve.
   have hδ (s : ℝ) : HasDerivAt (fun s : ℝ ↦ (o.rotation (-s : ℝ) (γ s).1,
       o.rotation (-s : ℝ) (γ s).2)) 0 s := by
     have hθ := hasDerivAt_neg s
     convert (o.hasDerivAt_rotation hθ (hγ s).fst).prodMk (o.hasDerivAt_rotation hθ (hγ s).snd)
       using 1
-    ext <;> simp [← hJ]
+    -- The quarter turn commutes with the rotations.
+    ext <;> simp [o.linearIsometryEquiv_comp_rightAngleRotation, o.det_rotation]
   have hconst := is_const_of_deriv_eq_zero (fun s ↦ (hδ s).differentiableAt)
     (fun s ↦ (hδ s).deriv) t 0
   simp only [neg_zero, Real.Angle.coe_zero, o.rotation_zero, LinearIsometryEquiv.coe_refl, id_eq,

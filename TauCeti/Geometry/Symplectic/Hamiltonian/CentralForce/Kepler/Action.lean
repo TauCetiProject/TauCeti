@@ -93,17 +93,6 @@ theorem keplerRadialAction_apply (m κ : ℝ) (x : V × V) :
         |angularMomentum (b 0) (b 1) x| :=
   (rfl)
 
-/-- For `m > 0` the bound phase space is empty unless the potential is attractive, `κ > 0`. -/
-private theorem pos_of_mem_keplerBoundPhaseSpace (hm : 0 < m) {x : V × V}
-    (hx : x ∈ keplerBoundPhaseSpace b m κ) : 0 < κ := by
-  obtain ⟨hq, hE, -⟩ := (mem_keplerBoundPhaseSpace b).1 hx
-  rw [← Prod.mk.eta (p := x), centralForceHamiltonian_apply] at hE
-  have hp : 0 ≤ ‖x.2‖ ^ 2 / (2 * m) := by positivity
-  have hr : 0 < ‖x.1‖ := norm_pos_iff.2 hq
-  by_contra! hκ
-  have : 0 ≤ -κ / ‖x.1‖ := div_nonneg (by linarith) hr.le
-  linarith
-
 /-- On the bound phase space, the radial action is the radial quadrature
 `TauCeti.radialAction` of the level between its two turning radii. -/
 theorem keplerRadialAction_eq_radialAction (hm : 0 < m) {x : V × V}
@@ -143,8 +132,8 @@ private theorem hasDerivAt_mul_sqrt_div_neg_two_mul (hm : 0 < m) {E : ℝ} (hE :
     convert ((hasDerivAt_id E).const_mul (-2)).inv hu.ne' |>.const_mul m using 1
     · ext E
       simp [div_eq_mul_inv]
-    · simp
-      field_simp
+    · simp only [id_eq, mul_one, neg_neg]
+      ring
   convert (hd.sqrt (div_pos hm hu).ne').const_mul κ using 1
   set y := m / (-2 * E) with hy
   have hy0 : 0 < y := div_pos hm hu
@@ -222,33 +211,35 @@ section Rotation
 
 variable [Fact (finrank ℝ V = 2)] (o : Orientation ℝ V (Fin 2))
 
-/-- **Unwinding the flow of the radial action.** If `γ` moves along `c X_H - σ X_L` off the
-collision set, for constants `c ≠ 0` and `σ`, then rotating `γ (τ / c)` by the angle `σ τ / c`
-gives a solution of Hamilton's equations for the Kepler energy. -/
-private theorem hasDerivAt_rotation_comp_kepler {γ : ℝ → V × V} {c σ : ℝ} (hc : c ≠ 0)
+/-- **Rotating and rescaling a Kepler-type motion.** If `γ` moves along `a X_H + s (J q, J p)` off
+the collision set, for constants `a` and `s`, then rotating `γ (k t)` by the angle `θ' t` gives a
+curve moving along `k a X_H + (k s + θ') (J q, J p)`. -/
+private theorem hasDerivAt_rotation_comp_kepler {γ : ℝ → V × V} {a s k θ' : ℝ}
     (hv : ∀ t, HasDerivAt γ
-      (c • (stdSymplecticForm (V := V)).hamiltonianVectorField
-          (centralForceHamiltonian m (fun r ↦ -κ / r)) (γ t) -
-        σ • (o.rightAngleRotation (γ t).1, o.rightAngleRotation (γ t).2)) t)
-    (hq : ∀ t, (γ t).1 ≠ 0) (τ : ℝ) :
-    HasDerivAt (fun τ ↦ (o.rotation (σ * (c⁻¹ * τ) : ℝ) (γ (c⁻¹ * τ)).1,
-        o.rotation (σ * (c⁻¹ * τ) : ℝ) (γ (c⁻¹ * τ)).2))
-      ((stdSymplecticForm (V := V)).hamiltonianVectorField
-        (centralForceHamiltonian m (fun r ↦ -κ / r))
-        (o.rotation (σ * (c⁻¹ * τ) : ℝ) (γ (c⁻¹ * τ)).1,
-          o.rotation (σ * (c⁻¹ * τ) : ℝ) (γ (c⁻¹ * τ)).2)) τ := by
-  have hk : HasDerivAt (fun τ ↦ c⁻¹ * τ) c⁻¹ τ := by
-    simpa using (hasDerivAt_id τ).const_mul c⁻¹
-  have hθ : HasDerivAt (fun τ ↦ σ * (c⁻¹ * τ)) (σ * c⁻¹) τ := hk.const_mul σ
-  have hγk := (hv (c⁻¹ * τ)).scomp τ hk
-  -- The quarter turn commutes with the rotations.
-  have hJ (θ : Real.Angle) (v : V) :=
-    o.linearIsometryEquiv_comp_rightAngleRotation (o.rotation θ) (by simp [o.det_rotation]) v
+      (a • (stdSymplecticForm (V := V)).hamiltonianVectorField
+          (centralForceHamiltonian m (fun r ↦ -κ / r)) (γ t) +
+        s • (o.rightAngleRotation (γ t).1, o.rightAngleRotation (γ t).2)) t)
+    (hq : ∀ t, (γ t).1 ≠ 0) (t : ℝ) :
+    HasDerivAt (fun t ↦ (o.rotation (θ' * t : ℝ) (γ (k * t)).1,
+        o.rotation (θ' * t : ℝ) (γ (k * t)).2))
+      ((k * a) • (stdSymplecticForm (V := V)).hamiltonianVectorField
+          (centralForceHamiltonian m (fun r ↦ -κ / r))
+          (o.rotation (θ' * t : ℝ) (γ (k * t)).1, o.rotation (θ' * t : ℝ) (γ (k * t)).2) +
+        (k * s + θ') • (o.rightAngleRotation (o.rotation (θ' * t : ℝ) (γ (k * t)).1),
+          o.rightAngleRotation (o.rotation (θ' * t : ℝ) (γ (k * t)).2))) t := by
+  have hk : HasDerivAt (fun t ↦ k * t) k t := by
+    simpa using (hasDerivAt_id t).const_mul k
+  have hθ : HasDerivAt (fun t ↦ θ' * t) θ' t := by
+    simpa using (hasDerivAt_id t).const_mul θ'
+  have hγk := (hv (k * t)).scomp t hk
   rw [stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_linearIsometryEquiv _
     (hasDerivAt_kepler_potential κ (norm_ne_zero_iff.2 (hq _))) (hq _)]
   convert (o.hasDerivAt_rotation hθ hγk.fst).prodMk (o.hasDerivAt_rotation hθ hγk.snd) using 1
   · rfl
-  ext <;> simp [← hJ, smul_sub, smul_smul, hc] <;> module
+  -- The quarter turn commutes with the rotations.
+  ext <;> simp only [Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, Function.comp_apply,
+    map_add, map_smul, o.linearIsometryEquiv_comp_rightAngleRotation, o.det_rotation,
+    zero_lt_one] <;> module
 
 end Rotation
 
@@ -292,17 +283,20 @@ theorem periodic_of_forall_hasDerivAt_keplerRadialAction (hm : 0 < m) {γ : ℝ 
     simpa only [sub_eq_add_neg, ← neg_smul] using hγ' t) hq
   have hv (t : ℝ) : HasDerivAt γ
       (c • (stdSymplecticForm (V := V)).hamiltonianVectorField
-          (centralForceHamiltonian m (fun r ↦ -κ / r)) (γ t) -
-        σ • (o.rightAngleRotation (γ t).1, o.rightAngleRotation (γ t).2)) t := by
+          (centralForceHamiltonian m (fun r ↦ -κ / r)) (γ t) +
+        (-σ) • (o.rightAngleRotation (γ t).1, o.rightAngleRotation (γ t).2)) t := by
     have h := hγ' t
     rwa [(hcons t).1, (hcons t).2,
-      stdSymplecticForm_hamiltonianVectorField_angularMomentum_eq_rightAngleRotation b rfl] at h
-  -- Rotating `γ (τ / c)` back by the angle `σ τ / c` gives a bound Kepler motion `δ`.
-  set δ : ℝ → V × V := fun τ ↦ (o.rotation (σ * (c⁻¹ * τ) : ℝ) (γ (c⁻¹ * τ)).1,
-    o.rotation (σ * (c⁻¹ * τ) : ℝ) (γ (c⁻¹ * τ)).2) with hδdef
+      stdSymplecticForm_hamiltonianVectorField_angularMomentum_eq_rightAngleRotation b rfl,
+      sub_eq_add_neg, ← neg_smul] at h
+  -- Rotating `γ (τ / c)` by the angle `σ τ / c` gives a bound Kepler motion `δ`.
+  set δ : ℝ → V × V := fun τ ↦ (o.rotation (σ * c⁻¹ * τ : ℝ) (γ (c⁻¹ * τ)).1,
+    o.rotation (σ * c⁻¹ * τ : ℝ) (γ (c⁻¹ * τ)).2) with hδdef
   have hδ (τ : ℝ) : HasDerivAt δ ((stdSymplecticForm (V := V)).hamiltonianVectorField
-      (centralForceHamiltonian m (fun r ↦ -κ / r)) (δ τ)) τ :=
-    hasDerivAt_rotation_comp_kepler o hc.ne' hv hq τ
+      (centralForceHamiltonian m (fun r ↦ -κ / r)) (δ τ)) τ := by
+    have h := hasDerivAt_rotation_comp_kepler o (k := c⁻¹) (θ' := σ * c⁻¹) hv hq τ
+    rwa [inv_mul_cancel₀ hc.ne', one_smul, show c⁻¹ * -σ + σ * c⁻¹ = 0 by ring, zero_smul,
+      add_zero] at h
   -- By Kepler's third law `δ` is periodic, with period `2π c`.
   have hδq (τ : ℝ) : (δ τ).1 ≠ 0 := by simpa [hδdef] using hq (c⁻¹ * τ)
   have hδE : centralForceHamiltonian m (fun r ↦ -κ / r) (δ 0) = -κ / (2 * (κ / (-2 * E))) := by
@@ -314,8 +308,8 @@ theorem periodic_of_forall_hasDerivAt_keplerRadialAction (hm : 0 < m) {γ : ℝ 
   -- So `γ`, which is `δ (c t)` rotated back by the angle `σ t`, is `2π`-periodic, as `σ = ±1`.
   have hγδ (t : ℝ) : γ t = (o.rotation (-(σ * t) : ℝ) (δ (c * t)).1,
       o.rotation (-(σ * t) : ℝ) (δ (c * t)).2) := by
-    simp only [hδdef, inv_mul_cancel_left₀ hc.ne', Real.Angle.coe_neg, ← o.rotation_symm,
-      LinearIsometryEquiv.symm_apply_apply]
+    simp only [hδdef, inv_mul_cancel_left₀ hc.ne', mul_assoc σ, Real.Angle.coe_neg,
+      ← o.rotation_symm, LinearIsometryEquiv.symm_apply_apply]
   have hσ (t : ℝ) : ((-(σ * (t + 2 * π)) : ℝ) : Real.Angle) = ((-(σ * t) : ℝ) : Real.Angle) := by
     rcases hℓ.lt_or_gt with h | h <;> simp [σ, h, mul_add]
   intro t
@@ -333,35 +327,36 @@ theorem exists_forall_hasDerivAt_keplerRadialAction (hm : 0 < m) {x : V × V}
   set o : Orientation ℝ V (Fin 2) := b.toBasis.orientation with ho
   obtain ⟨-, hE, hℓ⟩ := (mem_keplerBoundPhaseSpace b).1 hx
   have hκ := pos_of_mem_keplerBoundPhaseSpace b hm hx
-  -- A Kepler motion `η` through `x` is global, and conserves the energy and the angular momentum.
-  obtain ⟨η, hη0, hη⟩ := exists_forall_hasDerivAt_kepler hm hκ
-    (by rw [← sq_angularMomentum b]; exact pow_ne_zero 2 hℓ)
+  -- A Kepler motion `η` through `x` is global on the bound phase space, and conserves the energy
+  -- and the angular momentum.
+  obtain ⟨η, hη0, hη⟩ := SymplecticForm.exists_forall_hasDerivAt_of_isCompleteVectorField
+    stdSymplecticForm (U := keplerBoundPhaseSpace b m κ)
+    (f := fun y ↦ centralForceEnergyMomentum b m (fun r ↦ -κ / r) y 0)
+    (contMDiff_pi_module_iff.1 (contMDiff_centralForceEnergyMomentum_keplerBoundPhaseSpace b) 0
+      |>.of_le (by simp))
+    (isCompleteVectorField_hamiltonianVectorField_keplerBoundPhaseSpace b hm hκ 0) hx
+  simp only [centralForceEnergyMomentum_zero] at hη
+  have hηq (t : ℝ) : (η t).1 ≠ 0 := ((mem_keplerBoundPhaseSpace b).1 (hη t).1).1
   have hcons := energy_angularMomentum_eq_of_hasDerivAt b (a := fun _ ↦ 1) (c := fun _ ↦ 0)
-    (fun t ↦ by simpa using (hη t).2) (fun t ↦ (hη t).1)
+    (fun t ↦ by simpa only [one_smul, zero_smul, add_zero] using (hη t).2) hηq
   set σ : ℝ := ((SignType.sign (angularMomentum (b 0) (b 1) x) : SignType) : ℝ) with hσ
   set c := κ * √(m / (-2 * centralForceHamiltonian m (fun r ↦ -κ / r) x)) /
     (-2 * centralForceHamiltonian m (fun r ↦ -κ / r) x) with hc
   -- The solution runs along `η` at the speed `c`, rotated by the angle `-σ t`.
-  refine ⟨fun t ↦ (o.rotation (-(σ * t) : ℝ) (η (c * t)).1,
-    o.rotation (-(σ * t) : ℝ) (η (c * t)).2),
+  refine ⟨fun t ↦ (o.rotation (-σ * t : ℝ) (η (c * t)).1, o.rotation (-σ * t : ℝ) (η (c * t)).2),
     by simp [hη0], fun t ↦ ?_⟩
-  have hHt : centralForceHamiltonian m (fun r ↦ -κ / r) (o.rotation (-(σ * t) : ℝ) (η (c * t)).1,
-      o.rotation (-(σ * t) : ℝ) (η (c * t)).2) = centralForceHamiltonian m (fun r ↦ -κ / r) x := by
+  have hHt : centralForceHamiltonian m (fun r ↦ -κ / r) (o.rotation (-σ * t : ℝ) (η (c * t)).1,
+      o.rotation (-σ * t : ℝ) (η (c * t)).2) = centralForceHamiltonian m (fun r ↦ -κ / r) x := by
     rw [centralForceHamiltonian_linearIsometryEquiv, (hcons (c * t)).1, hη0]
-  have hLt := (angularMomentum_rotation b rfl (-(σ * t) : ℝ) (η (c * t))).trans
+  have hLt := (angularMomentum_rotation b rfl (-σ * t : ℝ) (η (c * t))).trans
     ((hcons _).2.trans (congrArg _ hη0))
-  have hmem := (mem_keplerBoundPhaseSpace b).2 ⟨by simpa using (hη (c * t)).1, hHt ▸ hE, hLt ▸ hℓ⟩
+  have hmem := (mem_keplerBoundPhaseSpace b).2 ⟨by simpa using hηq (c * t), hHt ▸ hE, hLt ▸ hℓ⟩
   refine ⟨hmem, ?_⟩
   rw [stdSymplecticForm_hamiltonianVectorField_keplerRadialAction b hm hmem, hHt, hLt,
-    stdSymplecticForm_hamiltonianVectorField_angularMomentum_eq_rightAngleRotation b rfl,
-    stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_linearIsometryEquiv _
-      (hasDerivAt_kepler_potential κ (norm_ne_zero_iff.2 (hη _).1)) (hη _).1, ← hc, ← hσ, ← ho]
-  have hk : HasDerivAt (fun t ↦ c * t) c t := by simpa using (hasDerivAt_id t).const_mul c
-  have hθ : HasDerivAt (fun t ↦ -(σ * t)) (-σ) t := by
-    simpa using (hasDerivAt_id t).const_mul (-σ)
-  have hηk := (hη (c * t)).2.scomp t hk
-  convert (o.hasDerivAt_rotation hθ hηk.fst).prodMk (o.hasDerivAt_rotation hθ hηk.snd) using 1
-  · rfl
-  ext <;> simp <;> module
+    stdSymplecticForm_hamiltonianVectorField_angularMomentum_eq_rightAngleRotation b rfl, ← hc,
+    ← hσ, ← ho, sub_eq_add_neg, ← neg_smul]
+  have h := hasDerivAt_rotation_comp_kepler o (a := 1) (s := 0) (k := c) (θ' := -σ)
+    (fun t ↦ by simpa only [one_smul, zero_smul, add_zero] using (hη t).2) hηq t
+  rwa [mul_one, mul_zero, zero_add] at h
 
 end TauCeti
