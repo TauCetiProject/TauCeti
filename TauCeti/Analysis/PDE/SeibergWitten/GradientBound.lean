@@ -559,12 +559,12 @@ private theorem additiveConst_le (hc : 0 ≤ c) (hC : 0 ≤ C) :
     ring_nf; positivity
   linarith
 
-/-- The bound `|β|² ≤ (C / r) w₊ + C / r²` with `r ≥ 1` forces `C ≥ 0`. -/
-theorem nonneg_of_sq_le {r C b w : ℝ} (hr : 1 ≤ r)
+/-- The bound `|β|² ≤ (C / r) w₊ + C / r²` with `r > 0` forces `C ≥ 0`. -/
+theorem nonneg_of_sq_le {r C b w : ℝ} (hr : 0 < r)
     (h : b ^ 2 ≤ C / r * max w 0 + C / r ^ 2) : 0 ≤ C := by
   by_contra! hC
   have h1 : C / r * max w 0 ≤ 0 :=
-    mul_nonpos_of_nonpos_of_nonneg (div_nonpos_of_nonpos_of_nonneg hC.le (by linarith))
+    mul_nonpos_of_nonpos_of_nonneg (div_nonpos_of_nonpos_of_nonneg hC.le hr.le)
       (le_max_right _ _)
   have h2 : C / r ^ 2 < 0 := div_neg_of_neg_of_pos hC (by positivity)
   linarith [sq_nonneg b]
@@ -614,7 +614,7 @@ theorem norm_sq_add_mul_norm_sq_le (hc : 0 ≤ c) (hr : 1 ≤ r)
     ‖Dα x‖ ^ 2 + r * ‖Dβ x‖ ^ 2 ≤
       150 * (1 + c + C) ^ 5 * r * max (1 - ‖α x‖ ^ 2) 0 + 150 * (1 + c + C) ^ 5 := by
   have hr0 : 0 < r := by linarith
-  have hC : 0 ≤ C := nonneg_of_sq_le hr (ht x)
+  have hC : 0 ≤ C := nonneg_of_sq_le hr0 (ht x)
   obtain ⟨m, hm⟩ : ∃ m : ℝ, m = 1 + 2 * C := ⟨_, rfl⟩
   obtain ⟨K, hK⟩ : ∃ K : ℝ, K = 60 * (1 + c + C) ^ 3 := ⟨_, rfl⟩
   have hm1 : 1 ≤ m := by linarith

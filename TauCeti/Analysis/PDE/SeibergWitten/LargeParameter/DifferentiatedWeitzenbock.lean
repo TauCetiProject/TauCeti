@@ -578,7 +578,7 @@ theorem innerCovariantDerivative_self_add_mul_innerCovariantDerivative_self_le [
       150 * (1 + (c + 4 * finrank ℝ E ^ 2 * (1 + c) * (1 + (1 + C) ^ 2)) + C) ^ 5 * r *
           max (1 - ‖α x‖ ^ 2) 0 +
         150 * (1 + (c + 4 * finrank ℝ E ^ 2 * (1 + c) * (1 + (1 + C) ^ 2)) + C) ^ 5 := by
-  have hC : 0 ≤ C := nonneg_of_sq_le hr (ht x)
+  have hC : 0 ≤ C := nonneg_of_sq_le (by linarith) (ht x)
   have hB (y : M) : ‖α y‖ ≤ 1 + C ∧ ‖β y‖ ≤ 1 + C :=
     ⟨le_one_add_of_sq_add_sq_le hr hC (norm_nonneg _) (hs y),
       le_one_add_of_sq_add_sq_le hr hC (norm_nonneg _) ((add_comm _ _).trans_le (hs y))⟩
