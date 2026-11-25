@@ -52,6 +52,8 @@ is nonzero; this is not formalized here.
 
 ## Main results
 
+* `TauCeti.coeff_mapDomainRingHom_brauerProjection`: pushed forward to `R[G]`, `Br_P(x)` keeps
+  the coefficients of `x` on `C_G(P)`.
 * `TauCeti.brauerProjection_eq_zero_iff`: `Br_P(x) = 0` exactly when `x` vanishes on `C_G(P)`.
 * `TauCeti.brauerProjection_sSup_ne_zero_of_directedOn`: if `Br_Q(x) ≠ 0` for every `Q` in a
   nonempty directed family `c`, then `Br_{sSup c}(x) ≠ 0`.
@@ -93,6 +95,18 @@ theorem coeff_brauerProjection (P : Subgroup G) (x : MonoidAlgebra R G)
     (c : Subgroup.centralizer (P : Set G)) :
     (brauerProjection P x).coeff c = x.coeff c := by
   simp [brauerProjection]
+
+/-- Pushing `Br_P(x)` forward along the inclusion `C_G(P) → G` keeps exactly the coefficients of
+`x` on `C_G(P)`. -/
+theorem coeff_mapDomainRingHom_brauerProjection (P : Subgroup G) (x : MonoidAlgebra R G) (g : G)
+    [Decidable (g ∈ Subgroup.centralizer (P : Set G))] :
+    (mapDomainRingHom R (Subgroup.centralizer (P : Set G)).subtype (brauerProjection P x)).coeff g =
+      if g ∈ Subgroup.centralizer (P : Set G) then x.coeff g else 0 := by
+  rw [mapDomainRingHom_apply, coeff_mapDomain]
+  split_ifs with hg
+  · simpa using Finsupp.mapDomain_apply_of_injective
+      (Subgroup.centralizer (P : Set G)).subtype_injective (brauerProjection P x).coeff ⟨g, hg⟩
+  · exact Finsupp.mapDomain_of_notMem_range _ _ (by simpa using hg)
 
 /-- `Br_P(x) = 0` exactly when `x` has no nonzero coefficient on the centralizer `C_G(P)`. -/
 theorem brauerProjection_eq_zero_iff {P : Subgroup G} {x : MonoidAlgebra R G} :
