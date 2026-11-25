@@ -13,7 +13,7 @@ import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Immersion.Projection
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 import TauCeti.Topology.Algebra.Module.BilinearForm
-import TauCeti.Topology.VectorBundle.Riemannian.Basic
+import TauCeti.Topology.VectorBundle.Riemannian.Hermitian
 
 /-!
 # The orthogonal normal bundle of an immersion
@@ -628,7 +628,7 @@ theorem continuous_norm_orthogonalNormalSpace
     [IsContinuousRiemannianBundle V (fun y : N ↦ TangentSpace J y)] (P : Type*) (f : M → N) :
     Continuous fun v : TotalSpace P (fun x ↦ orthogonalNormalSpace I J f x) ↦ ‖v.snd‖ :=
   continuous_norm_subbundle (F := V) (E := (f : M → N) *ᵖ (TangentSpace J))
-    ((continuous_norm_bundle V (fun y : N ↦ TangentSpace J y)).comp
-      (Pullback.continuous_lift (F := V) (E := TangentSpace J) f)) P (orthogonalNormalSpace I J f)
+    (ContinuousFiberNorm.continuous_norm (F := V) (E := (f : M → N) *ᵖ (TangentSpace J))) P
+    (orthogonalNormalSpace I J f)
 
 end TauCeti
