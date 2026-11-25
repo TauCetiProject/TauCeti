@@ -111,14 +111,20 @@ private theorem hasSum_lt_of_mem_Ioo {x : ℝ} (hx : x < 0) {k : ℕ} {a b : ℝ
     exact mul_neg_of_pos_of_neg (by positivity) (div_neg_of_neg_of_pos (by linarith) hp)
   exact hasSum_lt (fun j => (hlt j).le) (hlt 0) hsb hsa
 
+/-- `a ↦ Re γ*(a, x)` is continuous on `ℝ`. -/
+private theorem continuous_re_tricomi_left (x : ℝ) :
+    Continuous fun b : ℝ => (tricomiIncompleteGamma b x).re :=
+  Complex.continuous_re.comp
+    ((Complex.differentiable_tricomiIncompleteGamma_left x).continuous.comp
+      Complex.continuous_ofReal)
+
 /-- Existence of a zero of `γ*(·, x)` in `−(k + 1) < a < −k` for `x < 0`, by the intermediate
 value theorem: `γ*(−n, x) = xⁿ` has opposite signs at the two endpoints. -/
 private theorem exists_mem_Ioo_tricomiIncompleteGamma_eq_zero {x : ℝ} (hx : x < 0) (k : ℕ) :
     ∃ a ∈ Ioo (-(k + 1 : ℝ)) (-k), tricomiIncompleteGamma a x = 0 := by
   -- the real part of `γ*(·, x)` on the real line, which is `xⁿ` at `−n`
   set f : ℝ → ℝ := fun a => (tricomiIncompleteGamma a x).re with hf_def
-  have hf : Continuous f := continuous_re.comp
-    ((differentiable_tricomiIncompleteGamma_left x).continuous.comp continuous_ofReal)
+  have hf : Continuous f := continuous_re_tricomi_left x
   have hval : ∀ n : ℕ, f (-n) = x ^ n := fun n => by
     simp [hf_def, ← ofReal_pow]
   have hx0 : x ≠ 0 := hx.ne
@@ -311,12 +317,7 @@ private theorem momentIntegrand_nonneg {x t : ℝ} (hx : 0 < x) (ht : x ≤ t) (
 /-- For `x ≥ 0` the upper incomplete Gamma function `Γ(a, x)` is the real zeroth moment. -/
 private theorem upperIncompleteGamma_ofReal_eq {x : ℝ} (hx : 0 ≤ x) (a : ℝ) :
     Complex.upperIncompleteGamma a x = ((upperMoment x 0 a : ℝ) : ℂ) := by
-  rw [Complex.upperIncompleteGamma_ofReal, upperMoment, ← integral_complex_ofReal]
-  refine setIntegral_congr_fun measurableSet_Ioi fun t ht => ?_
-  rw [momentIntegrand, pow_zero, one_mul, Complex.ofReal_mul,
-    Complex.ofReal_cpow (hx.trans (le_of_lt ht)), Complex.ofReal_exp]
-  push_cast
-  ring
+  simp [Complex.upperIncompleteGamma_ofReal_eq_ofReal_integral a hx, upperMoment, momentIntegrand]
 
 /-- For `x ≥ 0` the zeroth moment is the upper incomplete Gamma function `Γ(a, x)`. -/
 private theorem re_upperIncompleteGamma_ofReal {x : ℝ} (hx : 0 ≤ x) (a : ℝ) :
@@ -327,21 +328,24 @@ private theorem re_upperIncompleteGamma_ofReal {x : ℝ} (hx : 0 ≤ x) (a : ℝ
 private theorem upperMoment_nonneg {x : ℝ} (hx : 0 < x) (k : ℕ) (a : ℝ) : 0 ≤ upperMoment x k a :=
   setIntegral_nonneg measurableSet_Ioi fun _ ht => momentIntegrand_nonneg hx (le_of_lt ht) k a
 
+/-- `Γ(a, x)` is strictly decreasing in `x`. -/
+private theorem upperMoment_zero_lt {x y : ℝ} (hx : 0 < x) (hxy : x < y) (a : ℝ) :
+    upperMoment y 0 a < upperMoment x 0 a := by
+  have hcongr : upperMoment y 0 a = ∫ t in Ioi y, momentIntegrand x 0 a t := by
+    simp [upperMoment, momentIntegrand]
+  rw [← sub_pos, hcongr, upperMoment,
+    intervalIntegral.integral_Ioi_sub_Ioi (integrableOn_momentIntegrand hx 0 a) hxy.le]
+  refine intervalIntegral.intervalIntegral_pos_of_pos_on
+    (ContinuousOn.intervalIntegrable_of_Icc hxy.le
+      ((continuousOn_momentIntegrand hx 0 a).mono Icc_subset_Ici_self)) (fun t ht => ?_) hxy
+  have ht0 := hx.trans ht.1
+  simp only [momentIntegrand, pow_zero, one_mul]
+  positivity
+
 /-- `Γ(a, x) > 0` for `x > 0`. -/
-private theorem upperMoment_zero_pos {x : ℝ} (hx : 0 < x) (a : ℝ) : 0 < upperMoment x 0 a := by
-  have hpos : 0 < ∫ t in x..x + 1, momentIntegrand x 0 a t :=
-    intervalIntegral.intervalIntegral_pos_of_pos_on
-      (ContinuousOn.intervalIntegrable_of_Icc (by linarith)
-        ((continuousOn_momentIntegrand hx 0 a).mono Icc_subset_Ici_self))
-      (fun t ht => by
-        have ht0 := hx.trans ht.1
-        simp only [momentIntegrand, pow_zero, one_mul]
-        positivity) (by linarith)
-  rw [intervalIntegral.integral_of_le (by linarith)] at hpos
-  exact hpos.trans_le (setIntegral_mono_set (integrableOn_momentIntegrand hx 0 a)
-    (ae_restrict_of_forall_mem measurableSet_Ioi fun t ht =>
-      momentIntegrand_nonneg hx (le_of_lt ht) 0 a)
-    (Eventually.of_forall fun _ ht => Ioc_subset_Ioi_self ht))
+private theorem upperMoment_zero_pos {x : ℝ} (hx : 0 < x) (a : ℝ) : 0 < upperMoment x 0 a :=
+  (upperMoment_nonneg (hx.trans (lt_add_one x)) 0 a).trans_lt
+    (upperMoment_zero_lt hx (lt_add_one x) a)
 
 /-- The moment integrands tend to `0` at infinity. -/
 private theorem tendsto_momentIntegrand_atTop (x : ℝ) (k : ℕ) (a : ℝ) :
@@ -591,13 +595,6 @@ private theorem re_tricomi_neg_iff {x : ℝ} (hx : 0 < x) {n : ℕ} {a : ℝ}
   rw [re_tricomi_eq hx ha, mul_neg_iff, sub_neg, Real.one_lt_exp_iff, neg_pos]
   simp [hp, hp.not_gt]
 
-/-- `a ↦ Re γ*(a, x)` is continuous on `ℝ`. -/
-private theorem continuous_re_tricomi_left (x : ℝ) :
-    Continuous fun b : ℝ => (tricomiIncompleteGamma b x).re :=
-  Complex.continuous_re.comp
-    ((Complex.differentiable_tricomiIncompleteGamma_left x).continuous.comp
-      Complex.continuous_ofReal)
-
 /-- `x ↦ Re γ*(a, x)` is continuous on `ℝ`. -/
 private theorem continuous_re_tricomi_right (a : ℝ) :
     Continuous fun y : ℝ => (tricomiIncompleteGamma a y).re :=
@@ -632,23 +629,6 @@ private theorem deriv_deriv_re_tricomi {x : ℝ} (hx : 0 < x) {n : ℕ} {a : ℝ
   refine Filter.EventuallyEq.deriv_eq ?_
   filter_upwards [isOpen_Ioo.mem_nhds ha] with b hb
   exact deriv_re_tricomi hx hb
-
-/-- `Γ(a, x)` is strictly decreasing in `x`. -/
-private theorem upperMoment_zero_lt {x y : ℝ} (hx : 0 < x) (hxy : x < y) (a : ℝ) :
-    upperMoment y 0 a < upperMoment x 0 a := by
-  have hcongr : upperMoment y 0 a = ∫ t in Ioi y, momentIntegrand x 0 a t := by
-    simp [upperMoment, momentIntegrand]
-  have hint := integrableOn_momentIntegrand hx 0 a
-  rw [hcongr, upperMoment, ← Ioc_union_Ioi_eq_Ioi hxy.le,
-    setIntegral_union Ioc_disjoint_Ioi_same measurableSet_Ioi
-      (hint.mono_set Ioc_subset_Ioi_self) (hint.mono_set (Ioi_subset_Ioi hxy.le)),
-    lt_add_iff_pos_left, ← intervalIntegral.integral_of_le hxy.le]
-  refine intervalIntegral.intervalIntegral_pos_of_pos_on
-    (ContinuousOn.intervalIntegrable_of_Icc hxy.le
-      ((continuousOn_momentIntegrand hx 0 a).mono Icc_subset_Ici_self)) (fun t ht => ?_) hxy
-  have ht0 := hx.trans ht.1
-  simp only [momentIntegrand, pow_zero, one_mul]
-  positivity
 
 /-- The log-gap is strictly increasing in `x`. -/
 private theorem logGap_lt_logGap {x y : ℝ} (hx : 0 < x) (hxy : x < y) (a : ℝ) :
@@ -703,8 +683,8 @@ private theorem exists_zeros_of_logGap_neg {x : ℝ} (hx : 0 < x) {n : ℕ} (hn 
       (∀ b ∈ Ioo (-2 * (n : ℝ)) (1 - 2 * n), logGap x b ≤ 0 → b ∈ Icc a₁ a₂) ∧
       (∀ b ∈ Ioo (-2 * (n : ℝ)) (1 - 2 * n), logGap x b = 0 → b = a₁ ∨ b = a₂) := by
   set I := Ioo (-2 * (n : ℝ)) (1 - 2 * n)
-  have hf := (continuous_re_tricomi_left x).continuousOn (s := Icc (-2 * (n : ℝ)) a)
-  have hf' := (continuous_re_tricomi_left x).continuousOn (s := Icc a (1 - 2 * (n : ℝ)))
+  have hf := (Complex.continuous_re_tricomi_left x).continuousOn (s := Icc (-2 * (n : ℝ)) a)
+  have hf' := (Complex.continuous_re_tricomi_left x).continuousOn (s := Icc a (1 - 2 * (n : ℝ)))
   have hfa := (re_tricomi_neg_iff hx ha).2 hneg
   obtain ⟨a₁, ha₁, hz₁⟩ := intermediate_value_Ioo' ha.1.le hf
     ⟨hfa, re_tricomi_left_endpoint_pos n hx⟩
@@ -857,7 +837,7 @@ private theorem exists_logGap_sSup_eq_zero {n : ℕ} (hn : 1 ≤ n) :
     Icc a₁ a₂ ∩ (fun b : ℝ => (tricomiIncompleteGamma b (y : ℝ)).re) ⁻¹' Iic 0
   have hy0 : ∀ y : Ico s₀ xs, 0 < (y : ℝ) := fun y => hs₀.trans_le y.property.1
   have hKcl : ∀ y, IsClosed (K y) := fun y =>
-    isClosed_Icc.inter (isClosed_Iic.preimage (continuous_re_tricomi_left _))
+    isClosed_Icc.inter (isClosed_Iic.preimage (Complex.continuous_re_tricomi_left _))
   have hKne : ∀ y, (K y).Nonempty := by
     intro y
     obtain ⟨s, ⟨-, b, hb, hDb⟩, hys⟩ := exists_lt_of_lt_csSup ⟨s₀, hmem₀⟩ y.property.2
@@ -870,7 +850,7 @@ private theorem exists_logGap_sSup_eq_zero {n : ℕ} (hn : 1 ≤ n) :
   have : Nonempty (Ico s₀ xs) := ⟨⟨s₀, le_rfl, hs₀xs⟩⟩
   obtain ⟨a₀, ha₀⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed K hKdir
     hKne (fun y => isCompact_Icc.inter_right
-      (isClosed_Iic.preimage (continuous_re_tricomi_left _))) hKcl
+      (isClosed_Iic.preimage (Complex.continuous_re_tricomi_left _))) hKcl
   rw [mem_iInter] at ha₀
   have ha₀I : a₀ ∈ I := hIcc (ha₀ ⟨s₀, le_rfl, hs₀xs⟩).1
   have hfxs : (tricomiIncompleteGamma a₀ xs).re ≤ 0 :=
