@@ -18,10 +18,10 @@ representation `V` of `N`. Then `dim V` divides `dim W`, and the ratio `dim W / 
 index `|G : N|` (Isaacs, Corollary 11.29): in characters, `θ(1) ∣ χ(1)` and
 `χ(1)/θ(1) ∣ |G : N|` for `χ ∈ Irr(G)` and an irreducible constituent `θ` of `χ|_N`.
 
-The proof follows the roadmap's route. With `T` the inertia group of `V`, the Clifford
-correspondence writes `W` as induced from an irreducible representation `U` of `T` lying over `V`
-(`FDRep.exists_simple_liesOver_inertia_nonempty_iso_indFDRep`), so `dim W = |G : T| dim U`. A
-projective extension of `V` to `T` compatible with `N` exists
+The proof follows Reynolds (1963), proof of Theorem 8. With `T` the inertia group of `V`, the
+Clifford correspondence writes `W` as induced from an irreducible representation `U` of `T` lying
+over `V` (`FDRep.exists_simple_liesOver_inertia_nonempty_iso_indFDRep`), so
+`dim W = |G : T| dim U`. A projective extension of `V` to `T` compatible with `N` exists
 (`TauCeti.exists_isProjectiveInertiaExtension`), and `U` is the tensor product of `V` with the
 multiplicity space `M = Hom_N(V, U)` (`TauCeti.IsProjectiveInertiaExtension.tensorRepEquiv`), so
 `dim U = dim V · dim M`. The space `M` carries an irreducible projective representation of `T/N`
@@ -34,8 +34,9 @@ The ratio need not be the index of the inertia group: for `G = Q₈`, `N = Z(Q�
 
 ## Main results
 
-* `FDRep.exists_finrank_eq_mul_dvd_index_of_liesOver_inertia`: for an irreducible representation
-  `U` of the inertia group lying over `V`, `dim U = dim V · m` with `m ∣ |T : N|` (`N.relIndex T`).
+* `FDRep.exists_finrank_eq_mul_dvd_relIndex_of_liesOver_inertia`: for an irreducible
+  representation `U` of the inertia group lying over `V`, `dim U = dim V · m` with `m ∣ |T : N|`
+  (`N.relIndex T`).
 * `FDRep.exists_finrank_eq_mul_dvd_index_of_liesOver`: for an irreducible representation `W` of
   `G` lying over `V`, `dim W = dim V · m` with `m ∣ |G : N|`.
 * `FDRep.finrank_div_finrank_dvd_index_of_liesOver`: `dim W / dim V ∣ |G : N|`.
@@ -44,6 +45,8 @@ The ratio need not be the index of the inertia group: for `G = Q₈`, `N = Z(Q�
 
 * I. M. Isaacs, *Character Theory of Finite Groups*, AMS Chelsea (1976), Chapter 11,
   Corollary 11.29.
+* W. F. Reynolds, *Blocks and normal subgroups of finite groups*, Nagoya Math. J. 22 (1963),
+  15–32, proof of Theorem 8, p. 30.
 -/
 
 public section
@@ -62,9 +65,8 @@ variable {k G : Type u} [Field k] [Group G] [Finite G] [IsAlgClosed k] [CharZero
 /-- **The degree ratio over the inertia group.** Let `V` be an irreducible representation of a
 normal subgroup `N` of a finite group, over an algebraically closed field of characteristic zero,
 and let `U` be an irreducible representation of the inertia group `T` of `V` lying over `V`. Then
-`dim U = dim V · m` for some `m` dividing `|T : N|`: `U` is `V ⊗ Hom_N(V, U)`, and
-`Hom_N(V, U)` is an irreducible projective representation of `T/N`. -/
-theorem exists_finrank_eq_mul_dvd_index_of_liesOver_inertia (V : FDRep k N) [Simple V]
+`dim U = dim V · m` for some `m` dividing `|T : N|`. -/
+theorem exists_finrank_eq_mul_dvd_relIndex_of_liesOver_inertia (V : FDRep k N) [Simple V]
     (U : FDRep k (inertia V)) [Simple U]
     (hU : U.LiesOver (Subgroup.inclusion (le_inertia V)) V) :
     ∃ m, finrank k U = finrank k V * m ∧ m ∣ N.relIndex (inertia V) := by
@@ -94,7 +96,7 @@ theorem exists_finrank_eq_mul_dvd_index_of_liesOver (V : FDRep k N) [Simple V] (
     [Simple W] (hW : W.LiesOver N.subtype V) :
     ∃ m, finrank k W = finrank k V * m ∧ m ∣ N.index := by
   obtain ⟨U, _, hU, ⟨e⟩⟩ := exists_simple_liesOver_inertia_nonempty_iso_indFDRep V W hW
-  obtain ⟨m, hm, hmdvd⟩ := exists_finrank_eq_mul_dvd_index_of_liesOver_inertia V U hU
+  obtain ⟨m, hm, hmdvd⟩ := exists_finrank_eq_mul_dvd_relIndex_of_liesOver_inertia V U hU
   refine ⟨(inertia V).index * m, ?_, ?_⟩
   · rw [← (FDRep.isoToLinearEquiv e).finrank_eq, finrank_indFDRep, hm]
     ring
