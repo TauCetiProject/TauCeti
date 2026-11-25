@@ -89,9 +89,8 @@ def isColimitCofanTwistedChainComplex :
 twisted homologies. This holds for arbitrary rings and local systems in every degree. -/
 def isColimitCofanTwistedHomology (k : ℕ) :
     IsColimit (Cofan.mk ((sigma P).twistedHomology L k)
-      (fun i ↦ twistedHomologyMap (sigmaι P i) L k)) := by
-  have : AB4OfSize.{v} (ModuleCat.{max v w} R) := AB4OfSize_shrink.{v, w} _
-  exact isColimitCofanMkObjOfIsColimit (HomologicalComplex.homologyFunctor _ _ k) _ _
+      (fun i ↦ twistedHomologyMap (sigmaι P i) L k)) :=
+  isColimitCofanMkObjOfIsColimit (HomologicalComplex.homologyFunctor _ _ k) _ _
     (isColimitCofanTwistedChainComplex P L)
 
 end TopPair

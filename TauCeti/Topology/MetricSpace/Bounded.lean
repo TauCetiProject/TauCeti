@@ -22,7 +22,9 @@ Closed balls of a fixed radius `r` leave every bounded set as their centre does:
 infinity in the cobounded filter, `closedBall x r` is eventually contained in every set whose
 complement is bounded (`Metric.tendsto_closedBall_cobounded_smallSets`). So a property holding
 near infinity eventually holds on whole balls of radius `r`, which is the form in which local
-estimates on balls, such as mean-value inequalities, are applied near infinity.
+estimates on balls, such as mean-value inequalities, are applied near infinity. In particular a
+property holding near infinity holds on a neighbourhood of each point near infinity
+(`Metric.eventually_cobounded_eventually_nhds`).
 
 In a proper space the frontier of a bounded set is compact
 (`Bornology.IsBounded.isCompact_frontier`), as a closed subset of its compact closure.
@@ -33,6 +35,8 @@ function whose distance from a base point is uniformly bounded has totally bound
 -/
 
 public section
+
+open scoped Topology
 
 namespace Metric
 
@@ -69,6 +73,15 @@ theorem tendsto_closedBall_cobounded_smallSets (r : ℝ) :
     ⟨s + r, trivial, fun x hx y hy ↦ ?_⟩
   simp only [Set.mem_compl_iff, mem_closedBall, not_le] at hx ⊢
   linarith [dist_triangle x y c, mem_closedBall'.1 hy]
+
+/-- A property holds near every point of a neighbourhood of infinity exactly when it holds on a
+neighbourhood of infinity: the cobounded filter has a basis of open sets. -/
+theorem eventually_cobounded_eventually_nhds {p : X → Prop} :
+    (∀ᶠ x in Bornology.cobounded X, ∀ᶠ y in 𝓝 x, p y) ↔ ∀ᶠ x in Bornology.cobounded X, p x := by
+  refine ⟨fun h ↦ h.mono fun _ hx ↦ hx.self_of_nhds, fun h ↦ ?_⟩
+  filter_upwards [(tendsto_closedBall_cobounded_smallSets 1).eventually
+    (Filter.eventually_smallSets_subset.2 h)] with x hx
+  exact Filter.mem_of_superset (closedBall_mem_nhds x one_pos) hx
 
 /-- In a proper pseudometric space, the range of a function bounded in distance from a base point
 is totally bounded. -/

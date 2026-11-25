@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.LocalCohomology
 public import Mathlib.RingTheory.Depth.Basic
 import TauCeti.Algebra.Homology.Ext.LeftDerived
+import TauCeti.Algebra.Homology.LocalCohomology.Basic
 import TauCeti.RingTheory.Depth.Basic
 
 /-!
@@ -66,10 +67,7 @@ theorem isZero_obj_of_lt_depth [IsNoetherianRing R] (I : Ideal R) (M : ModuleCat
     refine hi.trans_le (ModuleCat.depth_le_depth_of_support_subset I _ M fun p hp ↦ ?_)
     rw [Module.support_eq_zeroLocus, Ideal.annihilator_quotient] at hp
     exact Ideal.IsPrime.le_of_pow_le hp
-  -- `H^i_I(M)` is the colimit over `n` of the groups `Extⁱ(R ⧸ Iⁿ, M)`, all of which vanish;
-  -- the `n`-th term of the diagram is `hExt n` by definition of `localCohomology`.
-  refine IsZero.of_iso ?_ (colimitObjIsoColimitCompEvaluation _ M)
-  rw [IsZero.iff_id_eq_zero]
-  exact colimit.hom_ext fun n ↦ (hExt n.unop.unop).eq_of_src _ _
+  -- `H^i_I(M)` is the colimit over `n` of the groups `Extⁱ(R ⧸ Iⁿ, M)`, all of which vanish.
+  exact isZero_obj_of_forall_isZero_ext I M hExt
 
 end localCohomology
