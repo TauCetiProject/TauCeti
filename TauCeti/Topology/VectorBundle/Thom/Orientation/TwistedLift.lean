@@ -41,9 +41,9 @@ representation (`TopPair.twistedHomologyIsoHomologyCoinvariantsTensorObj`), whic
 which `2` is invertible the twisted Thom isomorphism is proved by a transfer instead
 (`thomPairSingularHomologyEquivTwistedHomology`); the argument here needs no such hypothesis.
 
-The lifted cocycles are those of `TauCeti.Topology.VectorBundle.Thom.Orientation.Cover.ChainMap`,
-whose index type of orientations lies in `Type`, so the base, the fibres and the ring live in `Type`
-here.
+The base, the fibres and the ring lie in any common universe `w`. The cap product with a
+semi-invariant cocycle needs the acting group in that universe, so the units act through their copy
+`ULift ℤˣ`, and the sign character is `ULift ℤˣ ≃* ℤˣ →* Rˣ`.
 
 ## Main results
 
@@ -74,10 +74,12 @@ open Bundle CategoryTheory Module Set
 
 namespace TauCeti.VectorBundleOrientationCover
 
-variable {B : Type} [TopologicalSpace B] {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {E : B → Type} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+universe w
+
+variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
-  {ι : Type} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F) (R : Type) [CommRing R]
+  {ι : Type} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F) (R : Type w) [CommRing R]
 
 section SemiInvariant
 
@@ -118,18 +120,21 @@ theorem isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap {n : ℕ}
     (φ : ((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E R hι) R
       (ModuleCat.of R R)).cycles n) :
     TopPair.IsSemiInvariantCocycle (P := thomPair F
-        ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
-      (Units.map (Int.castRingHom R : ℤ →* R))
+        ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)) (G := ULift.{w} ℤˣ)
+      ((Units.map (Int.castRingHom R : ℤ →* R)).comp MulEquiv.ulift.toMonoidHom)
       (HomologicalComplex.cyclesMap (thomPairSignCochainMap F E hι R R (ModuleCat.of R R)) n
         φ) := by
-  refine (TopPair.isSemiInvariantCocycle_iff _ _).2 fun g ↦ ?_
+  refine (TopPair.isSemiInvariantCocycle_iff _ _).2 fun ⟨g⟩ ↦ ?_
   rw [iCycles_cyclesMap_thomPairSignCochainMap]
   rcases Int.units_eq_one_or g with rfl | rfl
-  · have h1 : TopCat.ofHom ⟨((1 : ℤˣ) • · : (thomPair F
+  · have h1 : TopCat.ofHom ⟨((⟨1⟩ : ULift.{w} ℤˣ) • · : (thomPair F
         ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst → _),
         continuous_const_smul _⟩ = 𝟙 _ := TopCat.ext fun v ↦ one_smul ℤˣ v
-    rw [h1, CategoryTheory.Functor.map_id, HomologicalComplex.id_f, Category.id_comp, map_one,
-      Units.val_one, one_smul]
+    rw [h1, CategoryTheory.Functor.map_id, HomologicalComplex.id_f, Category.id_comp,
+      -- `MulEquiv.ulift ⟨u⟩` is `u` by definition.
+      show (((Units.map (Int.castRingHom R : ℤ →* R)).comp MulEquiv.ulift.toMonoidHom ⟨1⟩ : Rˣ) :
+        R) = 1 from (show ((Units.map (Int.castRingHom R : ℤ →* R) 1 : Rˣ) : R) = 1 by simp),
+      one_smul]
     -- The two sides differ only in the instance composing the quotient onto the relative chains:
     -- the category of chain complexes of the singular simplicial set or of `singularChains R`.
     rfl
@@ -143,8 +148,15 @@ theorem isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap {n : ℕ}
     -- `erw`: the composite in `hd` is formed in the category of chain complexes of the singular
     -- simplicial set, as above.
     erw [HomologicalComplex.comp_f, HomologicalComplex.comp_f] at hd
-    rw [neg_one_smul_eq_deckThomPairMap_fst, show ((Units.map (Int.castRingHom R : ℤ →* R) (-1) :
-      Rˣ) : R) = -1 by simp, neg_one_smul]
+    -- `ULift ℤˣ` acts through `ULift.down`, so `⟨-1⟩` acts as `-1` does.
+    have hδ : TopCat.ofHom ⟨((⟨-1⟩ : ULift.{w} ℤˣ) • · : (thomPair F
+        ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst → _),
+        continuous_const_smul _⟩ = TopPair.Hom.fst (deckThomPairMap F E ι) :=
+      neg_one_smul_eq_deckThomPairMap_fst
+    -- `MulEquiv.ulift ⟨u⟩` is `u` by definition.
+    rw [hδ, show (((Units.map (Int.castRingHom R : ℤ →* R)).comp MulEquiv.ulift.toMonoidHom ⟨-1⟩ :
+      Rˣ) : R) = -1 from (show ((Units.map (Int.castRingHom R : ℤ →* R) (-1) : Rˣ) : R) = -1 by
+        simp), neg_one_smul]
     erw [reassoc_of% hd, reassoc_of% hΛ, Preadditive.neg_comp, Preadditive.comp_neg]
     -- As in the case `1`, the two sides differ only in the instances of the composites.
     rfl
@@ -184,8 +196,8 @@ theorem quasiIso_singularChainsRepCap_cyclesMap_thomPairSignCochainMap
           (ModuleCat.of R R)).homologyπ (finrank ℝ F) φ))) :
     QuasiIso (TopPair.singularChainsRepCap
       (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
-      (G := ℤˣ) (p₀ := thomPairProj F _) thomPairProj_smul
-      (Units.map (Int.castRingHom R : ℤ →* R))
+      (G := ULift.{w} ℤˣ) (p₀ := thomPairProj F _) (fun _ ↦ thomPairProj_smul _)
+      ((Units.map (Int.castRingHom R : ℤ →* R)).comp MulEquiv.ulift.toMonoidHom)
       (isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap hι R φ) (fun _ _ ↦ rfl)) :=
   quasiIso_singularChainsRepCap_thomPair _ _ _ _
     (isThomClass_homologyπ_cyclesMap_thomPairSignCochainMap hι R hφ)
