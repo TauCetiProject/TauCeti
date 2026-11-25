@@ -19,8 +19,8 @@ Let `k ≥ 1` and `M ≥ 1`, and let `a, x, y, J` be integers with `a y = x + M 
 `M / (k Pₖ₊₁)`, where `Pₖ₊₁ = primorial (k + 1)` is the product of the primes `≤ k + 1`. This is
 Voronoi's congruence for a single residue. Taken at a residue `b` modulo `M` prime to `a`, with
 `y` the representative of `b' = a⁻¹ b`, it compares the twisted Bernoulli values at `b` and `b'`
-with the integer `ε_a(b) = (a - 1) / 2 - (a ⟨b'⟩ - ⟨b⟩) / M`. For `k = 1` the congruence is the
-equality `B₁(⟨b⟩ / M) - a B₁(⟨b'⟩ / M) = ε_a(b)`.
+with the rational number `ε_a(b) = (a - 1) / 2 - (a ⟨b'⟩ - ⟨b⟩) / M`. For `k = 1` the congruence
+is the equality `B₁(⟨b⟩ / M) - a B₁(⟨b'⟩ / M) = ε_a(b)`.
 
 The proof expands `Mᵏ Bₖ(x / M) = ∑ᵢ (k choose i) Bᵢ xᵏ⁻ⁱ Mⁱ` and the same for
 `a y = x + M J`. Every term with `i ≥ 2` is divisible by `M²`, up to the denominator of `Bᵢ`,
@@ -29,12 +29,12 @@ which divides `Pₖ₊₁` by the theorem of von Staudt and Clausen (Mathlib's
 
 ## Main results
 
-* `exists_intCast_eq_primorial_mul_bernoulli`: for `i ≤ k`, `Pₖ₊₁ Bᵢ` is an integer.
-* `Polynomial.pow_mul_bernoulli_eval_div`: `Mᵏ Bₖ(x / M) = ∑ᵢ (k choose i) Bᵢ xᵏ⁻ⁱ Mⁱ`, and
-  `Polynomial.exists_intCast_eq_primorial_mul_pow_mul_bernoulli_eval`: `Pₖ₊₁ Mᵏ Bₖ(x / M)` is an
+* `TauCeti.exists_intCast_eq_primorial_mul_bernoulli`: for `i ≤ k`, `Pₖ₊₁ Bᵢ` is an integer.
+* `TauCeti.pow_mul_bernoulli_eval_div`: `Mᵏ Bₖ(x / M) = ∑ᵢ (k choose i) Bᵢ xᵏ⁻ⁱ Mⁱ`, and
+  `TauCeti.exists_intCast_eq_primorial_mul_pow_mul_bernoulli_eval`: `Pₖ₊₁ Mᵏ Bₖ(x / M)` is an
   integer.
-* `Polynomial.exists_pow_div_mul_bernoulli_eval_sub_eq`: Voronoi's congruence for one residue.
-* `ZMod.exists_pow_div_mul_bernoulli_eval_val_sub_eq`: the same at the residues `b = a b'`
+* `TauCeti.exists_pow_div_mul_bernoulli_eval_sub_eq`: Voronoi's congruence for one residue.
+* `TauCeti.exists_pow_div_mul_bernoulli_eval_val_sub_eq`: the same at the residues `b = a b'`
   modulo `M`, with `ε_a(b) = (a - 1) / 2 - ⌊a ⟨b'⟩ / M⌋`.
 
 ## References
@@ -56,6 +56,8 @@ congruence is stated for one residue.
 public section
 
 open Finset Nat
+
+namespace TauCeti
 
 /-- **Denominators of Bernoulli numbers.** For `i ≤ k`, the product `primorial (k + 1)` of the
 primes `≤ k + 1` times the Bernoulli number `Bᵢ` is an integer. This is the theorem of von Staudt
@@ -82,29 +84,28 @@ theorem exists_intCast_eq_primorial_mul_bernoulli {i k : ℕ} (hi : i ≤ k) :
     · ring
     · simp only [S, mem_filter] at hp
       exact_mod_cast hp.2.1.ne_zero
-  rw [Int.cast_sub, Int.cast_mul, Int.cast_natCast, Int.cast_natCast, Nat.cast_sum, hz,
-    sum_congr rfl hp, ← mul_sum, hm, ← two_mul]
-  ring
-
-namespace Polynomial
+  have hb : bernoulli (i + 1 + 1) = bernoulli (2 * m) := by rw [two_mul, ← hm]
+  simp only [Int.cast_sub, Int.cast_mul, Int.cast_natCast]
+  rw [Nat.cast_sum, sum_congr rfl hp, ← mul_sum]
+  linear_combination (primorial (k + 1) : ℚ) * (hz - hb)
 
 /-- **Homogenized Bernoulli polynomials.** For `M ≠ 0`,
 `Mᵏ Bₖ(x / M) = ∑ᵢ (k choose i) Bᵢ xᵏ⁻ⁱ Mⁱ`. -/
 theorem pow_mul_bernoulli_eval_div {M : ℚ} (hM : M ≠ 0) (k : ℕ) (x : ℚ) :
-    M ^ k * (bernoulli k).eval (x / M) =
-      ∑ i ∈ range (k + 1), (k.choose i : ℚ) * _root_.bernoulli i * x ^ (k - i) * M ^ i := by
-  rw [bernoulli, eval_finsetSum, mul_sum]
+    M ^ k * (Polynomial.bernoulli k).eval (x / M) =
+      ∑ i ∈ range (k + 1), (k.choose i : ℚ) * bernoulli i * x ^ (k - i) * M ^ i := by
+  rw [Polynomial.bernoulli, Polynomial.eval_finsetSum, mul_sum]
   refine sum_congr rfl fun i hi ↦ ?_
   have hik : M ^ k = M ^ (k - i) * M ^ i := by
     rw [← pow_add, Nat.sub_add_cancel (Nat.lt_succ_iff.1 (mem_range.1 hi))]
-  rw [eval_monomial, div_pow, hik]
+  rw [Polynomial.eval_monomial, div_pow, hik]
   field_simp
 
 /-- For `M ≠ 0` and an integer `x`, `Pₖ₊₁ Mᵏ Bₖ(x / M)` is an integer, where
 `Pₖ₊₁ = primorial (k + 1)`. -/
 theorem exists_intCast_eq_primorial_mul_pow_mul_bernoulli_eval (k : ℕ) {M : ℕ} (hM : M ≠ 0)
     (x : ℤ) :
-    ∃ z : ℤ, (z : ℚ) = primorial (k + 1) * M ^ k * (bernoulli k).eval ((x : ℚ) / M) := by
+    ∃ z : ℤ, (z : ℚ) = primorial (k + 1) * M ^ k * (Polynomial.bernoulli k).eval ((x : ℚ) / M) := by
   choose! c hc using fun i (hi : i < k + 1) ↦
     exists_intCast_eq_primorial_mul_bernoulli (Nat.lt_succ_iff.1 hi)
   refine ⟨∑ i ∈ range (k + 1), (k.choose i : ℤ) * c i * x ^ (k - i) * M ^ i, ?_⟩
@@ -149,7 +150,8 @@ with `a y = x + M J`. Then for some integer `z`,
 theorem exists_pow_div_mul_bernoulli_eval_sub_eq {k : ℕ} (hk : k ≠ 0) {M : ℕ} (hM : M ≠ 0)
     {a x y J : ℤ} (h : a * y = x + M * J) :
     ∃ z : ℤ, (M : ℚ) ^ (k - 1) / k *
-        ((bernoulli k).eval ((x : ℚ) / M) - a ^ k * (bernoulli k).eval ((y : ℚ) / M)) =
+        ((Polynomial.bernoulli k).eval ((x : ℚ) / M) -
+          a ^ k * (Polynomial.bernoulli k).eval ((y : ℚ) / M)) =
       x ^ (k - 1) * ((a - 1) / 2 - J) + M / (k * primorial (k + 1)) * z := by
   choose! c' hc' using fun i (hi : i < k + 1) ↦
     exists_intCast_eq_primorial_mul_bernoulli (Nat.lt_succ_iff.1 hi)
@@ -160,13 +162,13 @@ theorem exists_pow_div_mul_bernoulli_eval_sub_eq {k : ℕ} (hk : k ≠ 0) {M : �
   have hP : (primorial (k + 1) : ℚ) ≠ 0 := by exact_mod_cast primorial_ne_zero _
   have hc0 := hc' 0 (by omega)
   have hc1 := hc' 1 (by omega)
-  rw [_root_.bernoulli_zero, mul_one] at hc0
-  rw [_root_.bernoulli_one] at hc1
+  rw [bernoulli_zero, mul_one] at hc0
+  rw [bernoulli_one] at hc1
   -- the integer identity, cast to `ℚ`, is the claim multiplied by `k M primorial (k + 1)`
   have hzq := congrArg (fun n : ℤ ↦ (n : ℚ)) hz
   push_cast at hzq
-  have hy : (a : ℚ) ^ k * (M ^ k * (bernoulli k).eval ((y : ℚ) / M)) =
-      ∑ i ∈ range (k + 1), (k.choose i : ℚ) * _root_.bernoulli i * a ^ i *
+  have hy : (a : ℚ) ^ k * (M ^ k * (Polynomial.bernoulli k).eval ((y : ℚ) / M)) =
+      ∑ i ∈ range (k + 1), (k.choose i : ℚ) * bernoulli i * a ^ i *
         (x + M * J) ^ (k - i) * M ^ i := by
     rw [pow_mul_bernoulli_eval_div hMq, mul_sum]
     refine sum_congr rfl fun i hi ↦ ?_
@@ -177,11 +179,12 @@ theorem exists_pow_div_mul_bernoulli_eval_sub_eq {k : ℕ} (hk : k ≠ 0) {M : �
   have hsum : ∑ i ∈ range (k + 1), (k.choose i : ℚ) * c' i * M ^ i *
       (x ^ (k - i) - a ^ i * (x + M * J) ^ (k - i)) =
       primorial (k + 1) * M ^ k *
-        ((bernoulli k).eval ((x : ℚ) / M) - a ^ k * (bernoulli k).eval ((y : ℚ) / M)) := by
-    rw [show (primorial (k + 1) : ℚ) * M ^ k * ((bernoulli k).eval ((x : ℚ) / M) -
-        a ^ k * (bernoulli k).eval ((y : ℚ) / M)) = primorial (k + 1) *
-          (M ^ k * (bernoulli k).eval ((x : ℚ) / M) -
-            a ^ k * (M ^ k * (bernoulli k).eval ((y : ℚ) / M))) by ring,
+        ((Polynomial.bernoulli k).eval ((x : ℚ) / M) -
+          a ^ k * (Polynomial.bernoulli k).eval ((y : ℚ) / M)) := by
+    rw [show (primorial (k + 1) : ℚ) * M ^ k * ((Polynomial.bernoulli k).eval ((x : ℚ) / M) -
+        a ^ k * (Polynomial.bernoulli k).eval ((y : ℚ) / M)) = primorial (k + 1) *
+          (M ^ k * (Polynomial.bernoulli k).eval ((x : ℚ) / M) -
+            a ^ k * (M ^ k * (Polynomial.bernoulli k).eval ((y : ℚ) / M))) by ring,
       hy, pow_mul_bernoulli_eval_div hMq, ← sum_sub_distrib, mul_sum]
     refine sum_congr rfl fun i hi ↦ ?_
     rw [hc' i (mem_range.1 hi)]
@@ -191,15 +194,12 @@ theorem exists_pow_div_mul_bernoulli_eval_sub_eq {k : ℕ} (hk : k ≠ 0) {M : �
     rw [← pow_succ, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.2 hk)]
   rw [hk1] at hzq
   have hzq' : (primorial (k + 1) : ℚ) * M ^ (k - 1) *
-      ((bernoulli k).eval ((x : ℚ) / M) - a ^ k * (bernoulli k).eval ((y : ℚ) / M)) -
+      ((Polynomial.bernoulli k).eval ((x : ℚ) / M) -
+        a ^ k * (Polynomial.bernoulli k).eval ((y : ℚ) / M)) -
       k * x ^ (k - 1) * (primorial (k + 1) * -2⁻¹ * (1 - a) - primorial (k + 1) * J) = M * z :=
     mul_left_cancel₀ hMq (by linear_combination hzq)
   field_simp
   linear_combination 2 * hzq'
-
-end Polynomial
-
-namespace ZMod
 
 /-- **Voronoi's congruence at the residues modulo `M`.** Let `k ≥ 1`, `M ≥ 1`, `a ≥ 0`, and let
 `b'` be a residue modulo `M` and `b = a b'`, with representatives `⟨b⟩, ⟨b'⟩ ∈ [0, M)`. Then for
@@ -219,9 +219,9 @@ theorem exists_pow_div_mul_bernoulli_eval_val_sub_eq {k : ℕ} (hk : k ≠ 0) {M
     rw [ZMod.val_mul, ZMod.val_natCast, Nat.mod_mul_mod]
     exact_mod_cast (Nat.mod_add_div _ _).symm
   push_cast at h
-  obtain ⟨z, hz⟩ := Polynomial.exists_pow_div_mul_bernoulli_eval_sub_eq hk (NeZero.ne M) h
+  obtain ⟨z, hz⟩ := exists_pow_div_mul_bernoulli_eval_sub_eq hk (NeZero.ne M) h
   refine ⟨z, ?_⟩
   simp only [Int.cast_natCast] at hz
   exact hz
 
-end ZMod
+end TauCeti

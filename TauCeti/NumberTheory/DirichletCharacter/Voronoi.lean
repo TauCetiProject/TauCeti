@@ -7,17 +7,21 @@ module
 
 public import Mathlib.NumberTheory.Primorial
 public import TauCeti.NumberTheory.DirichletCharacter.GeneralizedBernoulli
+import TauCeti.Data.Int.DivMod
 import TauCeti.NumberTheory.Bernoulli.Voronoi
+import TauCeti.NumberTheory.MulChar.SumUnits
 
 /-!
 # Voronoi's congruence for generalized Bernoulli numbers
 
 Let `χ` be a Dirichlet character modulo `T` with values in a commutative ring `O`, let `e ≥ 1`
 and let `b` be prime to `T`. For a unit `t` modulo `T` with representative `⟨t⟩ ∈ [0, T)`, put
-`θ_{T,b}(t) = ⌊b⟨t⟩ / T⌋ - ⌊b⟨-t⟩ / T⌋`, the coefficients of the Stickelberger element smoothed by
-`b` (compare `TauCeti.smoothedStickelberger`). Voronoi's congruence compares the twisted
-Stickelberger sum `Θ = ∑_t θ_{T,b}(t) ⟨t⟩ᵉ χ(t)` with the generalized Bernoulli number
-`B_{e+1,χ}` (Tau Ceti's `DirichletCharacter.generalizedBernoulli`, at the modulus `T`):
+`θ_{T,b}(t) = ⌊b⟨t⟩ / T⌋ - ⌊b⟨-t⟩ / T⌋`. The coefficient of the Stickelberger element
+`s_{T,b}` smoothed by `b` (`TauCeti.smoothedStickelberger`) at `c` is `⌊b⟨c⁻¹⟩ / T⌋`, so
+`θ_{T,b}(t)` is the coefficient at `t⁻¹` of its minus part `(1 - [-1]) s_{T,b}`. Voronoi's
+congruence compares the twisted Stickelberger sum `Θ = ∑_t θ_{T,b}(t) ⟨t⟩ᵉ χ(t)` with the
+generalized Bernoulli number `B_{e+1,χ}` (Tau Ceti's `DirichletCharacter.generalizedBernoulli`,
+at the modulus `T`):
 
 `P_{e+2} ((e + 1) bᵉ χ(b) Θ - 2 (χ(b) bᵉ⁺¹ - 1) B_{e+1,χ}) ∈ T O`,
 
@@ -25,7 +29,7 @@ where `P_{e+2} = primorial (e + 2)` is the product of the primes `≤ e + 2`. He
 in a `ℚ`-algebra `R` under `O`, and `T O` means the `O`-multiples of `T` in `R`.
 
 The proof sums Voronoi's congruence for one residue
-(`ZMod.exists_pow_div_mul_bernoulli_eval_val_sub_eq`), twisted by `χ`, over the residues
+(`TauCeti.exists_pow_div_mul_bernoulli_eval_val_sub_eq`), twisted by `χ`, over the residues
 modulo `T`, and uses `θ_{T,b}(t) = 2 ⌊b⟨t⟩ / T⌋ - (b - 1)` for units `t`.
 
 ## Main results
@@ -66,7 +70,7 @@ private theorem exists_two_mul_primorial_mul_sub_eq {e : ℕ} (he : e ≠ 0) (b 
           b ^ (e + 1) * (Polynomial.bernoulli (e + 1)).eval ((s.val : ℚ) / T)) -
       (e + 1) * primorial (e + 2) * b ^ e * (s.val : ℚ) ^ e *
         (b - 1 - 2 * (b * s.val / T : ℕ)) = T * n := by
-  obtain ⟨z, hz⟩ := ZMod.exists_pow_div_mul_bernoulli_eval_val_sub_eq (k := e + 1)
+  obtain ⟨z, hz⟩ := TauCeti.exists_pow_div_mul_bernoulli_eval_val_sub_eq (k := e + 1)
     (Nat.succ_ne_zero e) b s
   simp only [Nat.add_sub_cancel, show e + 1 + 1 = e + 2 from rfl] at hz
   set q := b * s.val / T
@@ -85,44 +89,28 @@ private theorem exists_two_mul_primorial_mul_sub_eq {e : ℕ} (he : e ≠ 0) (b 
   field_simp at hz
   linear_combination hz + (e + 1) * primorial (e + 2) * (b - 1 - 2 * (q : ℚ)) * hwq
 
-/-- For `x ≤ T` with `T ∤ b x`, `⌊b (T - x) / T⌋ = b - 1 - ⌊b x / T⌋`. -/
-private theorem natCast_mul_sub_div {b x : ℕ} (hx : x ≤ T) (h : ¬ T ∣ b * x) :
-    ((b * (T - x) / T : ℕ) : ℤ) = b - 1 - (b * x / T : ℕ) := by
-  have hT : (T : ℤ) ≠ 0 := by exact_mod_cast NeZero.ne T
-  push_cast [Nat.cast_sub hx]
-  rw [show (b : ℤ) * (T - x) = -(b * x) + b * T by ring, Int.add_mul_ediv_right _ _ hT,
-    Int.neg_ediv]
-  simp [show ¬ (T : ℤ) ∣ b * x by exact_mod_cast h, Int.sign_natCast_of_ne_zero (NeZero.ne T)]
-  ring
-
 /-- The twisted Stickelberger sum over the units is the sum over all residues of
 `χ(s) ⟨s⟩ᵉ (2 ⌊b⟨s⟩ / T⌋ - (b - 1))`. -/
 private theorem sum_units_eq_sum {O : Type*} [CommRing O] (χ : DirichletCharacter O T) {e : ℕ}
     (he : e ≠ 0) {b : ℕ} (hb : b.Coprime T) :
     ∑ t : (ZMod T)ˣ, (((b * (t : ZMod T).val / T : ℕ) : ℤ) -
         ((b * (-(t : ZMod T)).val / T : ℕ) : ℤ) : O) * (t : ZMod T).val ^ e * χ t =
-      ∑ s : ZMod T, χ s * s.val ^ e * ((2 * (b * s.val / T : ℕ) - (b - 1) : ℤ) : O) := by
-  -- the character vanishes off the units
-  symm
-  rw [← Finset.sum_subset (Finset.subset_univ (Finset.univ.map ⟨Units.val, Units.val_injective⟩))
-    fun s _ hs ↦ ?_, Finset.sum_map]
-  · refine Finset.sum_congr rfl fun t _ ↦ ?_
-    simp only [Function.Embedding.coeFn_mk]
-    rcases eq_or_ne (t : ZMod T).val 0 with h0 | h0
-    · simp [h0, he]
-    -- for a unit `t ≠ 0`, `⟨-t⟩ = T - ⟨t⟩` and `T ∤ b ⟨t⟩`
-    have hneg : (-(t : ZMod T)).val = T - (t : ZMod T).val := by
-      rw [ZMod.neg_val', Nat.mod_eq_of_lt (by have := ZMod.val_lt (t : ZMod T); omega)]
-    have hdvd : ¬ T ∣ b * (t : ZMod T).val := fun h ↦ by
-      have h1 := Nat.Coprime.eq_one_of_dvd
-        (Nat.Coprime.mul_right hb.symm (ZMod.val_coe_unit_coprime t).symm) h
-      subst h1
-      exact h0 (by rw [ZMod.val_eq_zero]; exact Subsingleton.elim _ _)
-    rw [hneg, natCast_mul_sub_div (ZMod.val_lt _).le hdvd]
-    push_cast
-    ring
-  · have hs' : ¬ IsUnit s := fun ⟨u, hu⟩ ↦ hs (by simp [← hu])
-    simp [χ.map_nonunit hs']
+      ∑ s : ZMod T, χ s * (s.val ^ e * ((2 * (b * s.val / T : ℕ) - (b - 1) : ℤ) : O)) := by
+  rw [χ.sum_mul_eq_sum_units]
+  refine Finset.sum_congr rfl fun t _ ↦ ?_
+  rcases eq_or_ne (t : ZMod T).val 0 with h0 | h0
+  · simp [h0, he]
+  -- for a unit `t ≠ 0`, `⟨-t⟩ = T - ⟨t⟩` and `T ∤ b ⟨t⟩`
+  have hneg : (-(t : ZMod T)).val = T - (t : ZMod T).val := by
+    rw [ZMod.neg_val', Nat.mod_eq_of_lt (by have := ZMod.val_lt (t : ZMod T); omega)]
+  have hdvd : ¬ T ∣ b * (t : ZMod T).val := fun h ↦ by
+    have h1 := Nat.Coprime.eq_one_of_dvd
+      (Nat.Coprime.mul_right hb.symm (ZMod.val_coe_unit_coprime t).symm) h
+    subst h1
+    exact h0 (by rw [ZMod.val_eq_zero]; exact Subsingleton.elim _ _)
+  rw [hneg, TauCeti.natCast_mul_sub_div (ZMod.val_lt _).le hdvd]
+  push_cast
+  ring
 
 variable {O R : Type*} [CommRing O] [CommRing R] [Algebra ℚ R] [Algebra O R]
 

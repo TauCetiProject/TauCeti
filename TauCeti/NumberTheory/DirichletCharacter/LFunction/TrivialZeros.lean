@@ -11,8 +11,10 @@ import Mathlib.Algebra.Algebra.Hom.Rat
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 import Mathlib.FieldTheory.IsAlgClosed.Basic
+import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.RingTheory.Localization.FractionRing
 import TauCeti.NumberTheory.DirichletCharacter.Basic
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
 import TauCeti.NumberTheory.MulChar.GaloisOrbit
 
 /-!
@@ -23,7 +25,8 @@ L-function of a *primitive* Dirichlet character in the closed left half-plane: t
 of its gamma factor. This file removes the primitivity assumption in the open left half-plane.
 Raising the level of a character multiplies its L-function by the Euler factors
 `1 - χ(p) p⁻ˢ` at the new primes, and for `Re s < 0` each of them has a term of absolute value
-`0` or `p^(-Re s) > 1`, so it does not vanish.
+`0` or `p^(-Re s) > 1`, so it does not vanish
+(`DirichletCharacter.prod_one_sub_mul_prime_cpow_ne_zero`).
 
 At the negative integers `-k`, the zero is there exactly when `χ(-1) = (-1)ᵏ`. Through
 `L(χ, 1 - k) = -Bₖ,χ / k` this decides the vanishing of the generalized Bernoulli numbers
@@ -34,15 +37,14 @@ induced by the odd character `χ₀` modulo `3` has `B₁,χ = 0`, because of th
 
 ## Main results
 
-* `DirichletCharacter.prod_one_sub_mul_prime_cpow_ne_zero_of_re_neg`: the deleted Euler factors
-  have no zeros in the open left half-plane.
 * `DirichletCharacter.LFunction_eq_zero_iff_of_re_neg`: for every Dirichlet character `χ` and
   `Re s < 0`, `L(χ, s) = 0` exactly when `s` is a pole of the gamma factor of `χ`.
 * `DirichletCharacter.LFunction_neg_natCast_eq_zero_iff`: for `k ≥ 1`, `L(χ, -k) = 0` exactly
   when `χ(-1) = (-1)ᵏ`.
 * `DirichletCharacter.generalizedBernoulli_ne_zero`: for `k ≥ 2` and a character with values in a
-  domain of characteristic zero with `χ(-1) = (-1)ᵏ`, `Bₖ,χ ≠ 0`; and
-  `DirichletCharacter.generalizedBernoulli_eq_zero_iff` is the resulting characterization.
+  nonzero `ℚ`-algebra with `χ(-1) = (-1)ᵏ`, `Bₖ,χ ≠ 0`; and
+  `DirichletCharacter.generalizedBernoulli_eq_zero_iff` is the resulting characterization for
+  values in a domain of characteristic zero.
 
 ## References
 
@@ -67,33 +69,6 @@ open Complex
 
 namespace DirichletCharacter
 
-/-- Deleted Euler factors have no zeros in the open left half-plane: for `Re s < 0`, the term
-`χ(p) p⁻ˢ` is `0` or has absolute value `p^(-Re s) > 1`. -/
-theorem prod_one_sub_mul_prime_cpow_ne_zero_of_re_neg {M N : ℕ} (χ : DirichletCharacter ℂ M)
-    {s : ℂ} (hs : s.re < 0) :
-    (∏ p ∈ N.primeFactors, (1 - χ p * (p : ℂ) ^ (-s))) ≠ 0 := by
-  refine Finset.prod_ne_zero_iff.2 fun p hp h ↦ ?_
-  have hp := Nat.prime_of_mem_primeFactors hp
-  have h1 : χ p * (p : ℂ) ^ (-s) = 1 := (sub_eq_zero.1 h).symm
-  by_cases hu : IsUnit (p : ZMod M)
-  · have hlt : 1 < ‖χ p * (p : ℂ) ^ (-s)‖ := by
-      rw [norm_mul, norm_natCast_cpow_of_pos hp.pos, ← hu.unit_spec, χ.unit_norm_eq_one, one_mul,
-        neg_re]
-      exact Real.one_lt_rpow (by exact_mod_cast hp.one_lt) (by linarith)
-    rw [h1, norm_one] at hlt
-    exact lt_irrefl _ hlt
-  · rw [χ.map_nonunit hu, zero_mul] at h1
-    exact zero_ne_one h1
-
-/-- A character and its primitive character have the same gamma factor. -/
-private theorem gammaFactor_primitiveCharacter {N : ℕ} (χ : DirichletCharacter ℂ N) (s : ℂ) :
-    χ.primitiveCharacter.gammaFactor s = χ.gammaFactor s := by
-  have h : χ.primitiveCharacter.Even ↔ χ.Even := by
-    rw [DirichletCharacter.Even, DirichletCharacter.Even, primitiveCharacter_apply_neg_one]
-  classical
-  rw [gammaFactor, gammaFactor]
-  exact if_congr h rfl rfl
-
 /-- **Trivial zeros of imprimitive L-functions.** For every Dirichlet character `χ` and every `s`
 with `Re s < 0`, `L(χ, s) = 0` exactly when `s` is a pole of the gamma factor of `χ` (where
 Mathlib's `gammaFactor` takes the value `0`). Primitivity is not needed, in contrast with
@@ -106,7 +81,7 @@ theorem LFunction_eq_zero_iff_of_re_neg {N : ℕ} [NeZero N] (χ : DirichletChar
   have hs0 : s ≠ 0 := fun h ↦ by simp [h] at hs
   conv_lhs => rw [← χ.changeLevel_primitiveCharacter]
   rw [LFunction_changeLevel _ _ (.inr hs1),
-    mul_eq_zero_iff_right (prod_one_sub_mul_prime_cpow_ne_zero_of_re_neg _ hs),
+    mul_eq_zero_iff_right (prod_one_sub_mul_prime_cpow_ne_zero _ hs.ne),
     LFunction_eq_zero_iff_of_re_nonpos χ.primitiveCharacter_isPrimitive hs.le,
     gammaFactor_primitiveCharacter]
   simp [hs0]
@@ -144,15 +119,12 @@ private theorem generalizedBernoulli_ne_zero_complex {N : ℕ} [NeZero N]
   rw [show j + 2 - 1 = j + 1 by omega, pow_succ, pow_succ] at hL
   exact pow_ne_zero j (neg_ne_zero.2 one_ne_zero : (-1 : ℂ) ≠ 0) (by linear_combination hL / 2)
 
-/-- **Non-vanishing of generalized Bernoulli numbers.** Let `χ` be a Dirichlet character, not
-necessarily primitive, with values in a domain of characteristic zero, and let `k ≥ 2` with
-`χ(-1) = (-1)ᵏ`. Then `Bₖ,χ ≠ 0`. For an imprimitive character this needs the deleted Euler
-factors `1 - χ₀(p) pᵏ⁻¹` to be nonzero, which fails for `k = 1`. -/
-theorem generalizedBernoulli_ne_zero {N : ℕ} [NeZero N] {R : Type*} [CommRing R] [IsDomain R]
-    [Algebra ℚ R] {χ : DirichletCharacter R N} {k : ℕ} (hk : 2 ≤ k) (hχ : χ (-1) = (-1) ^ k) :
+/-- `generalizedBernoulli_ne_zero` for a character with values in a domain: pass to the fraction
+field, then to the subfield generated by the values, which embeds into `ℂ`. -/
+private theorem generalizedBernoulli_ne_zero_of_isDomain {N : ℕ} [NeZero N] {R : Type*} [CommRing R]
+    [IsDomain R] [Algebra ℚ R] {χ : DirichletCharacter R N} {k : ℕ} (hk : 2 ≤ k)
+    (hχ : χ (-1) = (-1) ^ k) :
     χ.generalizedBernoulli k ≠ 0 := by
-  -- pass to the fraction field `F` of `R`, then to the subfield `K` generated by the values,
-  -- which embeds into `ℂ`
   let F := FractionRing R
   let f : R →ₐ[ℚ] F := (algebraMap R F).toRatAlgHom
   have hf : Function.Injective f := IsFractionRing.injective R F
@@ -175,6 +147,22 @@ theorem generalizedBernoulli_ne_zero {N : ℕ} [NeZero N] {R : Type*} [CommRing 
   rw [← hχK, ← map_generalizedBernoulli]
   rw [← map_generalizedBernoulli] at hC
   exact fun h ↦ hC (by rw [j.injective (h.trans (map_zero j).symm), map_zero])
+
+/-- **Non-vanishing of generalized Bernoulli numbers.** Let `χ` be a Dirichlet character, not
+necessarily primitive, with values in a nonzero `ℚ`-algebra, and let `k ≥ 2` with
+`χ(-1) = (-1)ᵏ`. Then `Bₖ,χ ≠ 0`. For an imprimitive character this needs the deleted Euler
+factors `1 - χ₀(p) pᵏ⁻¹` to be nonzero, which fails for `k = 1`. -/
+theorem generalizedBernoulli_ne_zero {N : ℕ} [NeZero N] {R : Type*} [CommRing R] [Nontrivial R]
+    [Algebra ℚ R] {χ : DirichletCharacter R N} {k : ℕ} (hk : 2 ≤ k) (hχ : χ (-1) = (-1) ^ k) :
+    χ.generalizedBernoulli k ≠ 0 := by
+  -- map to the field `R ⧸ m` for a maximal ideal `m`
+  obtain ⟨m, hm⟩ := Ideal.exists_maximal R
+  have := hm.isPrime
+  let f : R →ₐ[ℚ] R ⧸ m := Ideal.Quotient.mkₐ ℚ m
+  have h := generalizedBernoulli_ne_zero_of_isDomain (χ := χ.ringHomComp (f : R →+* R ⧸ m)) hk
+    (by simp [MulChar.ringHomComp_apply, hχ])
+  rw [← map_generalizedBernoulli] at h
+  exact fun h0 ↦ h (by rw [h0, map_zero])
 
 /-- **Vanishing of generalized Bernoulli numbers.** For `k ≥ 2` and a Dirichlet character `χ`, not
 necessarily primitive, with values in a domain of characteristic zero, `Bₖ,χ = 0` exactly when the

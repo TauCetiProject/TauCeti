@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.Adjugate
+public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
 public import Mathlib.NumberTheory.Primorial
 public import Mathlib.RingTheory.Adjoin.Basic
@@ -14,32 +14,33 @@ import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.NumberTheory.Bernoulli.Voronoi
+import TauCeti.LinearAlgebra.Matrix.GroupMatrix
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.TrivialZeros
+import TauCeti.NumberTheory.MulChar.SumUnits
 
 /-!
 # Group determinants and a nonzero integer divisible by Bernoulli numbers
 
-For a finite commutative group `G` and a function `g : G → R`, the *group matrix*
-`(g(t / s))_{s,t}` has every homomorphism `χ : G →* R` as an eigenvector, with eigenvalue
-`∑ᵤ χ(u) g(u)`. By the adjugate, each such eigenvalue divides the group determinant. For
-`G = (ZMod N)ˣ` and a domain of characteristic zero with enough roots of unity, the Dirichlet
-characters are orthogonal, so the group determinant is nonzero exactly when no eigenvalue
-`∑ᵤ χ(u) g(u)` vanishes.
+For a finite commutative group `G` and a function `g : G → R`, every homomorphism `χ : G →* R`
+is an eigenvector of the group matrix `(g(t / s))_{s,t}`, with eigenvalue `∑ᵤ χ(u) g(u)`, and
+each such eigenvalue divides the group determinant (`TauCeti.of_div_mulVec`,
+`TauCeti.sum_mul_dvd_det_of_div`). For `G = (ZMod N)ˣ` and a domain of characteristic zero with
+enough roots of unity, the Dirichlet characters are orthogonal, so the group determinant is
+nonzero exactly when no eigenvalue `∑ᵤ χ(u) g(u)` vanishes.
 
 Applied to `g(u) = 2 Pₖ₊₁ Mᵏ Bₖ(⟨u⟩ / M)`, corrected at `u = ±1` so that the eigenvalues of the
 characters of the wrong parity are `±2` instead of `0`, this gives one nonzero integer `D`,
 depending only on `M` and `k ≥ 2`, that is divisible by `Pₖ₊₁ M Bₖ,ψ` in `ℤ[ψ]` for every Dirichlet
 character `ψ` modulo `M` with `ψ(-1) = (-1)ᵏ`, with values in any `ℚ`-algebra. Here
 `Pₖ₊₁ = primorial (k + 1)`, and `Bₖ,ψ` is Tau Ceti's `DirichletCharacter.generalizedBernoulli`
-at the modulus `M`, nonzero by `DirichletCharacter.generalizedBernoulli_ne_zero`.
+at the modulus `M`. That `D ≠ 0` is proved through the complex characters, whose Bernoulli
+numbers `Bₖ,ψ` of the right parity are nonzero by `DirichletCharacter.generalizedBernoulli_ne_zero`.
 
 ## Main results
 
-* `Matrix.of_div_mulVec`: the characters of `G` are eigenvectors of the group matrix.
-* `Matrix.sum_mul_dvd_det_of_div`: each eigenvalue divides the group determinant.
-* `DirichletCharacter.det_of_div_ne_zero_iff`: the group determinant of `(ZMod N)ˣ` is nonzero
+* `TauCeti.det_of_div_ne_zero_iff`: the group determinant of `(ZMod N)ˣ` is nonzero
   exactly when every eigenvalue is.
-* `DirichletCharacter.exists_ne_zero_forall_eq_primorial_mul_generalizedBernoulli_mul`: the
+* `TauCeti.exists_ne_zero_forall_eq_primorial_mul_generalizedBernoulli_mul`: the
   nonzero integer `D`.
 
 ## References
@@ -51,9 +52,8 @@ at the modulus `M`, nonzero by `DirichletCharacter.generalizedBernoulli_ne_zero`
 
 Adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic,
 PBC), file `src/Lib/Cyclotomic/Voronoi.lean`, declarations
-`New.OddPart.mulVec_mulChar_eq_sum_smul`, `New.OddPart.det_ne_zero_of_forall_sum_mul_ne_zero`
-and the determinant step of `New.OddPart.exists_isStickelbergerBound` (including the correction
-at `±1`). Here the eigenvector statement is made for any finite commutative group, the
+`New.OddPart.det_ne_zero_of_forall_sum_mul_ne_zero` and the determinant step of
+`New.OddPart.exists_isStickelbergerBound` (including the correction at `±1`). Here the
 nonvanishing criterion is an equivalence, the Bernoulli values are normalised by the primorial
 and stated through `DirichletCharacter.generalizedBernoulli`, and the size bound on `D` is not
 included.
@@ -63,35 +63,9 @@ public section
 
 open Finset Matrix
 
-namespace Matrix
+namespace TauCeti
 
-variable {G R : Type*} [CommGroup G] [Fintype G] [CommRing R]
-
-/-- **Characters are eigenvectors of group matrices.** For a finite commutative group `G`, a
-function `g : G → R` and a homomorphism `χ : G →* R`, the matrix `(g(t / s))_{s,t}` maps `χ` to
-`(∑ᵤ χ(u) g(u)) χ`. -/
-theorem of_div_mulVec (g : G → R) (χ : G →* R) :
-    (of fun s t : G ↦ g (t / s)) *ᵥ (fun t ↦ χ t) = (∑ u, χ u * g u) • fun t ↦ χ t := by
-  ext s
-  simp only [mulVec, dotProduct, of_apply, Pi.smul_apply, smul_eq_mul, sum_mul]
-  rw [← Equiv.sum_comp (Equiv.mulLeft s)]
-  refine sum_congr rfl fun u _ ↦ ?_
-  simp only [Equiv.coe_mulLeft, mul_div_cancel_left, map_mul]
-  ring
-
-/-- **Eigenvalues divide group determinants.** For a finite commutative group `G`, a function
-`g : G → R` and a homomorphism `χ : G →* R`, the eigenvalue `∑ᵤ χ(u) g(u)` divides the
-determinant of `(g(t / s))_{s,t}`. -/
-theorem sum_mul_dvd_det_of_div [DecidableEq G] (g : G → R) (χ : G →* R) :
-    ∑ u, χ u * g u ∣ (of fun s t : G ↦ g (t / s)).det := by
-  have h := congrArg (fun v ↦ (adjugate (of fun s t : G ↦ g (t / s)) *ᵥ v) 1) (of_div_mulVec g χ)
-  simp only [mulVec_mulVec, adjugate_mul, smul_mulVec, one_mulVec, mulVec_smul, Pi.smul_apply,
-    smul_eq_mul, map_one, mul_one] at h
-  exact ⟨_, h⟩
-
-end Matrix
-
-namespace DirichletCharacter
+open DirichletCharacter
 
 variable {N : ℕ}
 
@@ -102,21 +76,16 @@ theorem det_of_div_ne_zero_iff [NeZero N] {R : Type*} [CommRing R] [IsDomain R] 
     [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod N)ˣ)] (g : (ZMod N)ˣ → R) :
     (of fun s t : (ZMod N)ˣ ↦ g (t / s)).det ≠ 0 ↔
       ∀ χ : DirichletCharacter R N, ∑ u : (ZMod N)ˣ, χ u * g u ≠ 0 := by
-  -- `χ` restricted to the units, as a homomorphism
-  let hom (χ : DirichletCharacter R N) : (ZMod N)ˣ →* R :=
-    (χ : ZMod N →* R).comp (Units.coeHom (ZMod N))
   refine ⟨fun hA χ hχ ↦ hA ?_, fun hg hA ↦ ?_⟩
-  · have := Matrix.sum_mul_dvd_det_of_div g (hom χ)
-    simp only [hom, MonoidHom.coe_comp, Function.comp_apply, Units.coeHom_apply,
-      MonoidHom.coe_ofClass] at this
+  · have := sum_mul_dvd_det_of_div g ((χ : ZMod N →* R).comp (Units.coeHom _))
+    simp only [MulChar.coe_comp_coeHom_apply] at this
     rwa [hχ, zero_dvd_iff] at this
   -- a vector in the left kernel is orthogonal to every character, hence zero
   obtain ⟨w, hw0, hw⟩ := exists_vecMul_eq_zero_iff.2 hA
   have horth (χ : DirichletCharacter R N) : w ⬝ᵥ (fun t ↦ χ t) = 0 := by
-    have h := congrArg (dotProduct w) (Matrix.of_div_mulVec g (hom χ))
+    have h := congrArg (dotProduct w) (of_div_mulVec g ((χ : ZMod N →* R).comp (Units.coeHom _)))
     rw [dotProduct_mulVec, hw, zero_dotProduct, dotProduct_smul, smul_eq_mul] at h
-    simp only [hom, MonoidHom.coe_comp, Function.comp_apply, Units.coeHom_apply,
-      MonoidHom.coe_ofClass] at h
+    simp only [MulChar.coe_comp_coeHom_apply] at h
     exact (mul_eq_zero.1 h.symm).resolve_left (hg χ)
   refine hw0 (funext fun a ↦ ?_)
   have hsum : ∑ χ : DirichletCharacter R N, (w ⬝ᵥ fun t ↦ χ t) * χ (a⁻¹ : (ZMod N)ˣ) = 0 := by
@@ -136,20 +105,15 @@ private theorem sum_units_mul_eq_primorial_mul_generalizedBernoulli {M : ℕ} [N
     (hβ : ∀ t : ZMod M, (β t : ℚ) =
       primorial (k + 1) * M ^ k * (Polynomial.bernoulli k).eval ((t.val : ℚ) / M)) :
     ∑ u : (ZMod M)ˣ, ψ u * (β u : R) = primorial (k + 1) * M * ψ.generalizedBernoulli k := by
-  rw [generalizedBernoulli_eq_pow_mul_sum_bernoulli_eval _ hk, mul_sum, mul_sum]
-  -- the character vanishes off the units
-  symm
-  rw [← Finset.sum_subset (Finset.subset_univ (Finset.univ.map
-    ⟨((↑) : (ZMod M)ˣ → ZMod M), Units.val_injective⟩)) fun a _ ha ↦ ?_, Finset.sum_map]
-  · refine sum_congr rfl fun u _ ↦ ?_
-    have h := congrArg (algebraMap ℚ R) (hβ u)
-    simp only [map_intCast, map_mul, map_pow, map_natCast] at h
-    rw [show (M : R) ^ k = M ^ (k - 1) * M by
-      rw [← pow_succ, Nat.sub_add_cancel (by omega)]] at h
-    simp only [Function.Embedding.coeFn_mk, h]
-    ring
-  · have ha' : ¬ IsUnit a := fun ⟨u, hu⟩ ↦ ha (by simp [← hu])
-    simp [ψ.map_nonunit ha']
+  rw [generalizedBernoulli_eq_pow_mul_sum_bernoulli_eval _ hk, ψ.sum_mul_eq_sum_units, mul_sum,
+    mul_sum]
+  refine sum_congr rfl fun u _ ↦ ?_
+  have h := congrArg (algebraMap ℚ R) (hβ u)
+  simp only [map_intCast, map_mul, map_pow, map_natCast] at h
+  rw [show (M : R) ^ k = M ^ (k - 1) * M by
+    rw [← pow_succ, Nat.sub_add_cancel (by omega)]] at h
+  rw [h]
+  ring
 
 /-- The Bernoulli entries `2 β(u)` of the group matrix, corrected at `u = ±1` so that the
 characters of the wrong parity get the eigenvalue `±2`. -/
@@ -174,7 +138,7 @@ theorem exists_ne_zero_forall_eq_primorial_mul_generalizedBernoulli_mul (M : ℕ
       ψ (-1) = (-1) ^ k → ∃ x ∈ Algebra.adjoin ℤ (Set.range ψ),
         (D : R) = primorial (k + 1) * M * ψ.generalizedBernoulli k * x := by
   choose β hβ using fun t : ZMod M ↦
-    Polynomial.exists_intCast_eq_primorial_mul_pow_mul_bernoulli_eval k (NeZero.ne M) t.val
+    exists_intCast_eq_primorial_mul_pow_mul_bernoulli_eval k (NeZero.ne M) t.val
   -- the group matrix, corrected at `±1` so that the characters of the wrong parity have
   -- eigenvalue `±2`
   let g := correctedEntry k β
@@ -185,20 +149,21 @@ theorem exists_ne_zero_forall_eq_primorial_mul_generalizedBernoulli_mul (M : ℕ
     have hC : (A.map ((↑) : ℤ → ℂ)).det ≠ 0 := by
       refine (det_of_div_ne_zero_iff (fun u ↦ (g u : ℂ))).2 fun χ ↦ ?_
       have h := sum_mul_correctedEntry ((χ : ZMod M →* ℂ).comp (Units.coeHom (ZMod M))) k β
-      simp only [MonoidHom.coe_comp, Function.comp_apply, Units.coeHom_apply,
-        MonoidHom.coe_ofClass, Units.val_neg, Units.val_one] at h
+      simp only [MulChar.coe_comp_coeHom_apply, Units.val_neg, Units.val_one] at h
       rw [h, sum_units_mul_eq_primorial_mul_generalizedBernoulli hk χ β hβ]
-      rcases neg_one_pow_eq_or ℂ k with hk' | hk' <;> rcases χ.even_or_odd with hχ | hχ <;>
-        simp only [DirichletCharacter.Even, DirichletCharacter.Odd] at hχ <;>
-        rw [hχ, hk'] <;> norm_num
-      · exact ⟨⟨primorial_ne_zero _, NeZero.ne M⟩,
-          generalizedBernoulli_ne_zero hk (by rw [hχ, hk'])⟩
-      · rw [(generalizedBernoulli_eq_zero_iff hk).2 (by norm_num [hχ, hk'])]
-        norm_num
-      · rw [(generalizedBernoulli_eq_zero_iff hk).2 (by norm_num [hχ, hk'])]
-        norm_num
-      · exact ⟨⟨primorial_ne_zero _, NeZero.ne M⟩,
-          generalizedBernoulli_ne_zero hk (by rw [hχ, hk'])⟩
+      -- same parity: `Bₖ,χ ≠ 0`; opposite parity: `Bₖ,χ = 0` and the eigenvalue is `-2 (-1)ᵏ`
+      by_cases hχ : χ (-1) = (-1) ^ k
+      · rw [hχ, sub_add_cancel]
+        exact mul_ne_zero two_ne_zero (mul_ne_zero (mul_ne_zero (mod_cast primorial_ne_zero _)
+          (mod_cast NeZero.ne M)) (generalizedBernoulli_ne_zero hk hχ))
+      · have h1 : ((-1 : ℂ) ^ k) * (-1) ^ k = 1 := by rw [← mul_pow]; norm_num
+        have h2 : χ (-1) * χ (-1) = 1 := by rw [← map_mul, neg_one_mul, neg_neg, map_one]
+        have hsq : (χ (-1) - (-1) ^ k) * (χ (-1) + (-1) ^ k) = 0 := by
+          linear_combination h2 - h1
+        have hneg : χ (-1) = -(-1) ^ k :=
+          eq_neg_of_add_eq_zero_left ((mul_eq_zero.1 hsq).resolve_left (sub_ne_zero.2 hχ))
+        rw [(generalizedBernoulli_eq_zero_iff hk).2 hneg, hneg]
+        simp
     intro h0
     have h := (Int.castRingHom ℂ).map_det A
     rw [h0, map_zero] at h
@@ -207,7 +172,7 @@ theorem exists_ne_zero_forall_eq_primorial_mul_generalizedBernoulli_mul (M : ℕ
   set S := Algebra.adjoin ℤ (Set.range ψ)
   let χ : (ZMod M)ˣ →* S := ((ψ : ZMod M →* R).comp (Units.coeHom (ZMod M))).codRestrict
     S.toSubmonoid fun u ↦ Algebra.subset_adjoin ⟨u, rfl⟩
-  obtain ⟨y, hy⟩ := Matrix.sum_mul_dvd_det_of_div (fun u ↦ (g u : S)) χ
+  obtain ⟨y, hy⟩ := sum_mul_dvd_det_of_div (fun u ↦ (g u : S)) χ
   have hdet : (A.det : S) = (of fun s t : (ZMod M)ˣ ↦ (g (t / s) : S)).det := by
     exact (Int.castRingHom S).map_det A
   refine ⟨2 * (y : R), S.mul_mem (S.natCast_mem 2) y.property, ?_⟩
@@ -216,11 +181,10 @@ theorem exists_ne_zero_forall_eq_primorial_mul_generalizedBernoulli_mul (M : ℕ
   rw [map_intCast, map_mul, show ∑ u, χ u * ((g u : ℤ) : S) =
     2 * ∑ u, χ u * (β u : S) - (-1) ^ k + χ (-1) from sum_mul_correctedEntry χ k β] at h
   simp only [map_sum, map_mul, map_sub, map_add, map_pow, map_neg, map_one, map_ofNat,
-    map_intCast, Subalgebra.coe_val, χ, MonoidHom.codRestrict_apply, MonoidHom.coe_comp,
-    Function.comp_apply, Units.coeHom_apply, MonoidHom.coe_ofClass, Units.val_neg,
-    Units.val_one] at h
+    map_intCast, Subalgebra.coe_val, χ, MonoidHom.codRestrict_apply,
+    MulChar.coe_comp_coeHom_apply, Units.val_neg, Units.val_one] at h
   rw [sum_units_mul_eq_primorial_mul_generalizedBernoulli hk ψ β hβ, hψ] at h
   rw [h]
   ring
 
-end DirichletCharacter
+end TauCeti
