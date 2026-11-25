@@ -143,4 +143,13 @@ theorem coe_adicCompletionExtensionEquiv
   exact (congr_fun (ContinuousAlgEquiv.coe_mk _ _ _) x).trans <|
     (AlgEquiv.ofRingEquiv_apply _ x).trans (RingEquiv.ofBijective_apply _ _ x)
 
+/-- The inverse of `adicCompletionExtensionEquiv` sends the image of `x ∈ K_v` under the
+canonical map `K_v → L_w` back to `x`. -/
+@[simp]
+theorem adicCompletionExtensionEquiv_symm_adicCompletionExtension
+    (v : HeightOneSpectrum R) (w : HeightOneSpectrum B) [w.asIdeal.LiesOver v.asIdeal]
+    (h : Module.finrank (v.adicCompletion K) (w.adicCompletion L) = 1) (x : v.adicCompletion K) :
+    (adicCompletionExtensionEquiv v w h).symm (v.adicCompletionExtension K L w x) = x := by
+  rw [← coe_adicCompletionExtensionEquiv v w h, ContinuousAlgEquiv.symm_apply_apply]
+
 end IsDedekindDomain.HeightOneSpectrum
