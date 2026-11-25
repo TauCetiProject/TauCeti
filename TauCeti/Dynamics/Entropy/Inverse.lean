@@ -70,7 +70,7 @@ theorem coverMincard_symm (e : X ≃ X) (F : Set X) (U : SetRel X X) (n : ℕ) :
       (by exact_mod_cast Finset.card_image_le)
     intro y hy
     obtain ⟨x, hx, hxy⟩ := ht (mem_image_of_mem _ hy)
-    refine ⟨e^[n] x, by simpa using ⟨x, hx, rfl⟩, ?_⟩
+    refine ⟨e^[n] x, Finset.mem_image_of_mem _ hx, ?_⟩
     rw [dynEntourage_symm, mem_preimage, Prod.map_apply, hinv]
     exact hxy
   · -- push a cover of `F` for `e.symm` forward by `e.symm^[n]`
@@ -78,7 +78,7 @@ theorem coverMincard_symm (e : X ≃ X) (F : Set X) (U : SetRel X X) (n : ℕ) :
       (s.image (e.symm^[n]))).coverMincard_le_card).trans (by exact_mod_cast Finset.card_image_le)
     rintro _ ⟨y, hy, rfl⟩
     obtain ⟨x, hx, hxy⟩ := hs hy
-    refine ⟨e.symm^[n] x, by simpa using ⟨x, hx, rfl⟩, ?_⟩
+    refine ⟨e.symm^[n] x, Finset.mem_image_of_mem _ hx, ?_⟩
     rwa [dynEntourage_symm] at hxy
 
 end Equiv
