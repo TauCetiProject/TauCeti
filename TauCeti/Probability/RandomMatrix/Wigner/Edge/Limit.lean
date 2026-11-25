@@ -13,6 +13,7 @@ import TauCeti.Probability.RandomMatrix.SpectralMoment.Extremes
 import TauCeti.Probability.RandomMatrix.Wigner.Trace.Integrability
 import TauCeti.Analysis.Matrix.SpectralMeasure.ExtremeEigenvalues
 import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Probability.RandomMatrix.Wigner.Trace.Bound
 
 /-!
@@ -57,8 +58,8 @@ namespace TauCeti
 /-- At truncation radius `(n + 1) ^ (1 / 3)` and orders `⌈B * log (n + 1)⌉₊`, the parameter `γ` of
 the Füredi–Komlós bound eventually lies in `[0, 1]`, and its product with the orders tends to
 zero. -/
-private theorem eventually_sqrt_le_one_and_ceil_mul_sqrt_le {σ B δ : ℝ} (hσ : 0 < σ)
-    (hB : 0 ≤ B) (hδ : 0 < δ) :
+private theorem eventually_sqrt_le_one_and_ceil_mul_sqrt_le {σ δ : ℝ} (hσ : 0 < σ) (B : ℝ)
+    (hδ : 0 < δ) :
     ∀ᶠ n : ℕ in atTop,
       Real.sqrt (2 * ((n + 1 : ℕ) : ℝ) ^ (1 / 3 : ℝ) / (σ * Real.sqrt ((n + 1 : ℕ) : ℝ))) ≤ 1 ∧
       (⌈B * Real.log (n + 1)⌉₊ : ℝ) *
@@ -68,36 +69,32 @@ private theorem eventually_sqrt_le_one_and_ceil_mul_sqrt_le {σ B δ : ℝ} (hσ
   have hγ (x : ℝ) (hx : 0 < x) : Real.sqrt (2 * x ^ (1 / 3 : ℝ) / (σ * Real.sqrt x)) =
       Real.sqrt (2 / σ) / x ^ (1 / 12 : ℝ) := by
     have h₄ : x ^ (1 / 3 : ℝ) = (x ^ (1 / 12 : ℝ)) ^ 4 := by
-      rw [← Real.rpow_natCast, ← Real.rpow_mul hx.le]
+      rw [← Real.rpow_mul_natCast hx.le]
       norm_num
     have h₆ : Real.sqrt x = (x ^ (1 / 12 : ℝ)) ^ 6 := by
-      rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul hx.le]
+      rw [Real.sqrt_eq_rpow, ← Real.rpow_mul_natCast hx.le]
       norm_num
     rw [← Real.sqrt_sq (by positivity : 0 ≤ Real.sqrt (2 / σ) / x ^ (1 / 12 : ℝ)), div_pow,
       Real.sq_sqrt (by positivity), h₄, h₆]
     congr 1
     field_simp
-  -- Both `(n + 1) ^ (-1 / 12)` and `log (n + 1) / (n + 1) ^ (1 / 12)` tend to zero.
+  -- Both `(n + 1) ^ (-1 / 12)` and `⌈B * log (n + 1)⌉₊ / (n + 1) ^ (1 / 12)` tend to zero.
   have hlim : Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)) atTop atTop :=
     tendsto_natCast_atTop_atTop.comp (tendsto_add_atTop_nat 1)
   have h₁ := ((tendsto_rpow_atTop (by norm_num : (0 : ℝ) < 1 / 12)).inv_tendsto_atTop.comp
     hlim).const_mul (Real.sqrt (2 / σ))
-  have h₂ := ((((isLittleO_log_rpow_atTop (by norm_num : (0 : ℝ) < 1 / 12)).tendsto_div_nhds_zero
-    ).comp hlim).const_mul (B * Real.sqrt (2 / σ))).add h₁
+  have h₂ := ((Real.tendsto_natCeil_mul_log_div_rpow_atTop_nhds_zero B
+    (by norm_num : (0 : ℝ) < 1 / 12)).comp hlim).mul_const (Real.sqrt (2 / σ))
   rw [mul_zero] at h₁
-  rw [mul_zero, zero_add, mul_zero] at h₂
+  rw [zero_mul] at h₂
   filter_upwards [h₁.eventually (ge_mem_nhds zero_lt_one), h₂.eventually (ge_mem_nhds hδ)]
     with n hn₁ hn₂
   simp only [Function.comp_apply, Pi.inv_apply] at hn₁ hn₂
-  have hlog : 0 ≤ Real.log (n + 1) := Real.log_nonneg (by linarith [(n.cast_nonneg : (0 : ℝ) ≤ n)])
   rw [hγ _ (Nat.cast_pos.mpr n.succ_pos)]
   refine ⟨by rwa [div_eq_mul_inv], ?_⟩
   calc (⌈B * Real.log (n + 1)⌉₊ : ℝ) * (Real.sqrt (2 / σ) / ((n + 1 : ℕ) : ℝ) ^ (1 / 12 : ℝ))
-      ≤ (B * Real.log (n + 1) + 1) * (Real.sqrt (2 / σ) / ((n + 1 : ℕ) : ℝ) ^ (1 / 12 : ℝ)) :=
-        mul_le_mul_of_nonneg_right (Nat.ceil_lt_add_one (mul_nonneg hB hlog)).le (by positivity)
-    _ = B * Real.sqrt (2 / σ) *
-          (Real.log ((n + 1 : ℕ) : ℝ) / ((n + 1 : ℕ) : ℝ) ^ (1 / 12 : ℝ)) +
-        Real.sqrt (2 / σ) * (((n + 1 : ℕ) : ℝ) ^ (1 / 12 : ℝ))⁻¹ := by
+      = ⌈B * Real.log ((n + 1 : ℕ) : ℝ)⌉₊ / ((n + 1 : ℕ) : ℝ) ^ (1 / 12 : ℝ) *
+          Real.sqrt (2 / σ) := by
         push_cast
         ring
     _ ≤ δ := hn₂
@@ -270,7 +267,7 @@ theorem ae_tendsto_eigenvalues₀_zero_and_card_sub_one_wignerMatrix
   have hX : MemLp X 2 Q :=
     (hid e₀).memLp_snd (((hid e₀).symm.memLp_snd hξ).mono_exponent (by norm_num))
   filter_upwards [eventually_sqrt_le_one_and_ceil_mul_sqrt_le (half_pos ht₁₀)
-    (div_nonneg zero_le_two hlog.le) (sub_pos.mpr ((one_lt_div ht₁₀).mpr ht₁₂))]
+    (2 / Real.log (r / t₂)) (sub_pos.mpr ((one_lt_div ht₁₀).mpr ht₁₂))]
     with n ⟨hγ, hkγ⟩
   refine (hind.integral_re_trace_pow_wignerMatrix_centeredTruncation_le hid hX ht₁₀
     (hvar.trans_le hσ) hγ hkγ).trans_eq ?_

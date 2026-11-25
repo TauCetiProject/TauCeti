@@ -14,8 +14,9 @@ import TauCeti.Analysis.InnerProductSpace.StrictCauchySchwarz
 
 The quarter turn `J = o.rightAngleRotation` of an oriented Euclidean plane carries the first vector
 of every positively oriented orthonormal basis `(e₀, e₁)` to the second, `J e₀ = e₁`, and hence
-`J e₁ = -e₀`. So in any such basis `J` is the standard quarter turn. The area form `ω(x, y)` is
-nonzero exactly when `x` is nonzero and `y` is not a multiple of `x`
+`J e₁ = -e₀`. So in any such basis `J` is the standard quarter turn,
+`J z = ⟪z, e₀⟫ e₁ - ⟪z, e₁⟫ e₀` (`Orientation.rightAngleRotation_eq_inner_smul_sub_inner_smul`).
+The area form `ω(x, y)` is nonzero exactly when `x` is nonzero and `y` is not a multiple of `x`
 (`Orientation.areaForm_ne_zero_iff`).
 
 For unit vectors `a`, `b` the inner product and the area form `ω` are the cosine and the sine of
@@ -65,6 +66,14 @@ orthonormal basis to the negative of the first. -/
 theorem rightAngleRotation_basis_one (hb : b.toBasis.orientation = o) :
     o.rightAngleRotation (b 1) = -b 0 := by
   rw [← o.rightAngleRotation_basis_zero hb, rightAngleRotation_rightAngleRotation]
+
+/-- In a positively oriented orthonormal basis `(e₀, e₁)`, the quarter turn of an oriented plane
+is `z ↦ ⟪z, e₀⟫ e₁ - ⟪z, e₁⟫ e₀`. -/
+theorem rightAngleRotation_eq_inner_smul_sub_inner_smul (hb : b.toBasis.orientation = o)
+    (z : E) : o.rightAngleRotation z = inner ℝ z (b 0) • b 1 - inner ℝ z (b 1) • b 0 := by
+  conv_lhs => rw [← b.sum_repr' z, Fin.sum_univ_two]
+  simp [o.rightAngleRotation_basis_zero hb, o.rightAngleRotation_basis_one hb,
+    real_inner_comm z, sub_eq_add_neg]
 
 /-- In an oriented plane, `o.areaForm a x = 0` implies the scaled identity
 `‖a‖ ^ 2 • x = ⟪a, x⟫ • a`, including when `a = 0`. -/

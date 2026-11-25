@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Manifold.Complex.Analytic
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.DefiningEquation
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.DefiningFunctions
-import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.AlmostComplexStructure
+import TauCeti.Geometry.Manifold.Immersion.NormalSpace.AlmostComplexStructure
 
 /-!
 # Normal line bundles of complex hypersurfaces and the real-hypersurface obstruction
@@ -22,22 +22,23 @@ on each fibre `x : Z` is `ℂ`-linear and injective (`Manifold.IsImmersion.mfder
 that the induced total tangent map `tangentMap 𝓘(ℂ, EZ) 𝓘(ℂ, EM) i` is injective; promoting `i` via
 `SmoothEmbedding.ofNeZero` (`TauCeti.Geometry.Manifold.Complex.Immersion`) and applying
 `TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.TangentSubbundle` realizes
-`x ↦ i.tangentRange x hn` as a holomorphic (`C^∞`, and `C^ω` after regularity promotion) vector
-subbundle of `i* TM` biholomorphic to `TZ`; `SmoothEmbedding.finrank_normalSpace_eq_one`
-(`TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Basic`) shows that the quotient
-`i* TM / TZ` (`i.NormalSpace`) has complex rank one; and `DefiningFunctions.normalBundleDiffeomorph`
+`x ↦ i.isImmersion.tangentRange x hn` as a holomorphic (`C^∞`, and `C^ω` after regularity
+promotion) vector subbundle of `i* TM` biholomorphic to `TZ`;
+`Manifold.IsImmersion.finrank_normalSpace_eq_one`
+(`TauCeti.Geometry.Manifold.Immersion.NormalSpace.Basic`) shows that the quotient `i* TM / TZ`
+(`i.isImmersion.NormalSpace`) has complex rank one; and `DefiningFunctions.normalBundleDiffeomorph`
 (`TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.DefiningFunctions`) identifies
-`i.NormalSpace` biholomorphically with the transition-cocycle model `DefiningFunctions.core` built
-from transverse local defining functions.
+`i.isImmersion.NormalSpace` biholomorphically with the transition-cocycle model
+`DefiningFunctions.core` built from transverse local defining functions.
 
 This file upgrades the transition cocycle `DefiningFunctions.core` of any complex submanifold to
 complex-analytic (`C^ω`) regularity (`DefiningFunctions.contMDiffOn_omega_coordChange`,
 `DefiningFunctions.isContMDiff_omega_core`), characterizes closedness of complex hypersurfaces by
 holomorphic local defining equations (`isClosed_range_iff_forall_exists_mdifferentiableOn_eq_zero`),
 and specializes the pointwise almost-complex obstructions of
-`TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.AlmostComplexStructure` to complex ambient
-manifolds (`not_forall_ofComplexManifold_mem_tangentRange`) and the closed real axis
-`TauCeti.realAxisEmbedding` (`one_mem_and_I_notMem_tangentRange_realAxisEmbedding`,
+`TauCeti.Geometry.Manifold.Immersion.NormalSpace.AlmostComplexStructure` to complex ambient
+manifolds (`Manifold.IsImmersion.not_forall_ofComplexManifold_mem_tangentRange`) and the closed real
+axis `TauCeti.realAxisEmbedding` (`one_mem_and_I_notMem_tangentRange_realAxisEmbedding`,
 `not_forall_ofComplexManifold_mem_tangentRange_realAxisEmbedding`,
 `not_exists_module_complex_isScalarTower_normalSpace_realAxisEmbedding`).
 
@@ -121,25 +122,26 @@ theorem isClosed_range_iff_forall_exists_mdifferentiableOn_eq_zero
 
 end ComplexHypersurface
 
-/-- **A real-smooth hypersurface in a complex manifold never has `J`-invariant tangent spaces.**
-For any `C^n` (`n ≠ 0`) real embedding `f : H → M` of real codimension one
+end SmoothEmbedding
+
+/-- **A real-codimension-one immersion into a complex manifold never has `J`-invariant tangent
+spaces.** For any `C^n` (`n ≠ 0`) real immersion `f : H → M` of real codimension one
 (`finrank ℝ EH + 1 = finrank ℝ EM`) into a complex manifold `M`, at every point `x : H` the tangent
-image `f.tangentRange x hn` is not preserved by the ambient complex structure
+image `hf.tangentRange x hn` is not preserved by the ambient complex structure
 `SmoothAlmostComplexStructure.ofComplexManifold EM M (f x)`; in particular `tangentMap f` cannot
 cut out a complex vector subbundle of `f* TM`. -/
-theorem not_forall_ofComplexManifold_mem_tangentRange {EH EM H M : Type*}
-    [NormedAddCommGroup EH] [NormedSpace ℝ EH] [NormedAddCommGroup EM] [NormedSpace ℂ EM]
-    [TopologicalSpace H] [ChartedSpace EH H]
-    [TopologicalSpace M] [ChartedSpace EM M] [IsManifold 𝓘(ℂ, EM) ∞ M] {n : ℕ∞ω}
-    (f : SmoothEmbedding 𝓘(ℝ, EH) 𝓘(ℝ, EM) n H M) (hn : n ≠ 0)
+theorem _root_.Manifold.IsImmersion.not_forall_ofComplexManifold_mem_tangentRange
+    {EH EM HH H M : Type*} [NormedAddCommGroup EH] [NormedSpace ℝ EH]
+    [NormedAddCommGroup EM] [NormedSpace ℂ EM] [TopologicalSpace HH]
+    {I : ModelWithCorners ℝ EH HH} [TopologicalSpace H] [ChartedSpace HH H]
+    [TopologicalSpace M] [ChartedSpace EM M] [IsManifold 𝓘(ℂ, EM) ∞ M] {n : ℕ∞ω} {f : H → M}
+    (hf : IsImmersion I 𝓘(ℝ, EM) n f) (hn : n ≠ 0)
     (hcodim : Module.finrank ℝ EH + 1 = Module.finrank ℝ EM) (x : H) :
-    ¬ ∀ v ∈ f.tangentRange x hn,
-      SmoothAlmostComplexStructure.ofComplexManifold EM M (f x) v ∈ f.tangentRange x hn :=
-  fun hinv ↦ f.not_forall_almostComplexStructure_mem_tangentRange hn hcodim x
+    ¬ ∀ v ∈ hf.tangentRange x hn,
+      SmoothAlmostComplexStructure.ofComplexManifold EM M (f x) v ∈ hf.tangentRange x hn :=
+  fun hinv ↦ hf.not_forall_almostComplexStructure_mem_tangentRange hn hcodim x
     ((SmoothAlmostComplexStructure.ofComplexManifold EM M).almostComplexStructureAt (f x))
     fun v hv ↦ by rw [SmoothAlmostComplexStructure.almostComplexStructureAt_apply]; exact hinv v hv
-
-end SmoothEmbedding
 
 /-- The inclusion `x ↦ (x : ℂ)` of the real axis into the complex plane as a `C^∞` closed real
 hypersurface embedding. -/
@@ -163,13 +165,13 @@ theorem isClosed_range_realAxisEmbedding : IsClosed (Set.range realAxisEmbedding
   coe_realAxisEmbedding ▸ Complex.isUniformEmbedding_ofReal.isClosedEmbedding.isClosed_range
 
 /-- At every point `x : ℝ`, the unit real tangent vector `1` lies in
-`realAxisEmbedding.tangentRange`, whereas its image `Complex.I` under the complex structure of `ℂ`
-does not. -/
+`realAxisEmbedding.isImmersion.tangentRange`, whereas its image `Complex.I` under the complex
+structure of `ℂ` does not. -/
 theorem one_mem_and_I_notMem_tangentRange_realAxisEmbedding (x : ℝ) :
     (NormedSpace.fromTangentSpace (𝕜 := ℝ) (realAxisEmbedding x)).symm (1 : ℂ) ∈
-        realAxisEmbedding.tangentRange x (by simp) ∧
+        realAxisEmbedding.isImmersion.tangentRange x (by simp) ∧
       (NormedSpace.fromTangentSpace (𝕜 := ℝ) (realAxisEmbedding x)).symm Complex.I ∉
-        realAxisEmbedding.tangentRange x (by simp) := by
+        realAxisEmbedding.isImmersion.tangentRange x (by simp) := by
   have hcoe : (realAxisEmbedding : ℝ → ℂ) = Complex.ofRealCLM :=
     funext fun y ↦ (realAxisEmbedding_apply y).trans (Complex.ofRealCLM_apply y).symm
   have hmf (v : TangentSpace 𝓘(ℝ, ℝ) x) :
@@ -178,12 +180,12 @@ theorem one_mem_and_I_notMem_tangentRange_realAxisEmbedding (x : ℝ) :
       Complex.ofRealCLM (NormedSpace.fromTangentSpace (𝕜 := ℝ) x v) := by
     simp only [hcoe, mfderiv_eq_fderiv, ContinuousLinearMap.fderiv, ContinuousLinearMap.coe_comp,
       Function.comp_apply, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply]
-  refine ⟨(realAxisEmbedding.mem_tangentRange_iff x _ _).2
+  refine ⟨(realAxisEmbedding.isImmersion.mem_tangentRange_iff x _ _).2
     ⟨(NormedSpace.fromTangentSpace (𝕜 := ℝ) x).symm (1 : ℝ),
       (NormedSpace.fromTangentSpace (𝕜 := ℝ) (realAxisEmbedding x)).injective ?_⟩, fun hI ↦ ?_⟩
   · rw [hmf, ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.apply_symm_apply]
     exact Complex.ofReal_one
-  · obtain ⟨v, hv⟩ := (realAxisEmbedding.mem_tangentRange_iff x _ _).1 hI
+  · obtain ⟨v, hv⟩ := (realAxisEmbedding.isImmersion.mem_tangentRange_iff x _ _).1 hI
     have hv' := congrArg (NormedSpace.fromTangentSpace (𝕜 := ℝ) (realAxisEmbedding x)) hv
     rw [hmf, ContinuousLinearEquiv.apply_symm_apply] at hv'
     simpa using congrArg Complex.im hv'
@@ -191,18 +193,18 @@ theorem one_mem_and_I_notMem_tangentRange_realAxisEmbedding (x : ℝ) :
 /-- At every point `x : ℝ`, the tangent range of `realAxisEmbedding : ℝ → ℂ` is not preserved by
 the ambient complex structure of `ℂ`. -/
 theorem not_forall_ofComplexManifold_mem_tangentRange_realAxisEmbedding (x : ℝ) :
-    ¬ ∀ v ∈ realAxisEmbedding.tangentRange x (by simp),
+    ¬ ∀ v ∈ realAxisEmbedding.isImmersion.tangentRange x (by simp),
       SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ (realAxisEmbedding x) v ∈
-        realAxisEmbedding.tangentRange x (by simp) :=
-  realAxisEmbedding.not_forall_ofComplexManifold_mem_tangentRange (by simp)
+        realAxisEmbedding.isImmersion.tangentRange x (by simp) :=
+  realAxisEmbedding.isImmersion.not_forall_ofComplexManifold_mem_tangentRange (by simp)
     (by rw [Module.finrank_self, Complex.finrank_real_complex]) x
 
 /-- At every point `x : ℝ`, the normal space of `realAxisEmbedding : ℝ → ℂ` admits no compatible
 `ℂ`-module structure. -/
 theorem not_exists_module_complex_isScalarTower_normalSpace_realAxisEmbedding (x : ℝ) :
-    ¬ ∃ m : Module ℂ (realAxisEmbedding.NormalSpace x (by simp)),
-      @IsScalarTower ℝ ℂ (realAxisEmbedding.NormalSpace x (by simp)) _ m.toSMul _ :=
-  realAxisEmbedding.not_exists_module_complex_isScalarTower_normalSpace (by simp)
+    ¬ ∃ m : Module ℂ (realAxisEmbedding.isImmersion.NormalSpace x (by simp)),
+      @IsScalarTower ℝ ℂ (realAxisEmbedding.isImmersion.NormalSpace x (by simp)) _ m.toSMul _ :=
+  realAxisEmbedding.isImmersion.not_exists_module_complex_isScalarTower_normalSpace (by simp)
     (by rw [Module.finrank_self, Complex.finrank_real_complex]) x
 
 end TauCeti

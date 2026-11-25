@@ -72,9 +72,10 @@ theorem _root_.MDifferentiable.isImmersion_of_injective_mfderiv {f : M → N}
     (hf : MDifferentiable I J f) (hdf : ∀ x, Injective (mfderiv I J f x)) (n : ℕ∞ω) :
     IsImmersion I J n f := by
   have : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
-  exact (isImmersion_iff_forall_isImmersionAt.mpr fun x ↦
-    (isImmersionAt_iff_injective_mfderiv_of_mdifferentiableOn hf.mdifferentiableOn isOpen_univ
-      (Set.mem_univ x) (le_max_right n 1)).mpr (hdf x)).of_le (le_max_left n 1)
+  have : IsManifold I (max n 1) M := IsManifold.of_ne_zero (max n 1) one_ne_zero inferInstance
+  have : IsManifold J (max n 1) N := IsManifold.of_ne_zero (max n 1) one_ne_zero inferInstance
+  exact ((hf.contMDiff (n := max n 1)).isImmersion_of_injective_mfderiv (le_max_right n 1)
+    hdf).of_le (le_max_left n 1)
 
 /-- A holomorphic topological embedding between `C¹` complex manifolds with injective complex
 differential everywhere is a `C^n` smooth embedding for every `n : ℕ∞ω` (`∞` and `ω` included). -/

@@ -37,6 +37,9 @@ of an `R`-flat module over a ring is the typical case. Over semirings, flatness 
 mono-flatness, as in Mathlib's `Module.Flat`. In particular, for an ideal `J` of `B` with
 `B ⧸ J` flat over `R`, `C ⧸ J C` is flat over `R` for every flat `B`-algebra `C`.
 
+For an injective `f : N →ₗ[R] P`, an element of `M ⊗[R] N` killed by `f.lTensor M` is also killed
+by `ψ.rTensor N` for any map `ψ` from `M` to a flat module.
+
 Two injectivity statements for tensoring with a module `M` over a ring are the diagram-chasing
 steps of the local criterion for flatness. If `f.rTensor M` is injective and `F` is flat, then so
 is `(f.rTensor F).rTensor M`. If `M ⧸ I M` is flat over `R ⧸ I`, then tensoring with `M` preserves
@@ -72,6 +75,9 @@ between modules annihilated by the quotient ideal, as in generic-freeness argume
   `R`, then `C ⧸ J C` is flat over `R`.
 * `Module.Flat.rTensor_rTensor_injective`: tensoring with a flat module preserves injectivity of
   `f.rTensor M`, over any commutative semiring.
+* `Module.Flat.rTensor_apply_eq_zero_of_lTensor_apply_eq_zero`: an element of `M ⊗[R] N` killed
+  by `f.lTensor M` for an injective `f` is killed by `ψ.rTensor N` for every map `ψ` from `M` to a
+  flat module.
 * `Ideal.rTensor_injective_of_isTorsionBySet`: if `M ⧸ I M` is flat over `R ⧸ I`, tensoring
   with `M` preserves injectivity of maps into a module killed by `I`.
 * `Ideal.subtype_rTensor_injective_of_pow_smul_top_le`: if moreover `Tor₁ᴿ(R ⧸ I, M) = 0`, then
@@ -218,6 +224,17 @@ theorem Flat.rTensor_rTensor_injective {N P : Type*} [AddCommMonoid N] [Module R
   refine .of_comp (f := rightComm R P F M) ?_
   rw [← LinearEquiv.coe_coe, ← coe_comp, h]
   exact (Flat.rTensor_preserves_injective_linearMap _ hf).comp (rightComm R N F M).injective
+
+/-- Let `f : N →ₗ[R] P` be injective and `ψ : M →ₗ[R] F` be a map to a flat module. An element of
+`M ⊗[R] N` killed by `f.lTensor M` is killed by `ψ.rTensor N`, since `f.lTensor F` is injective
+and commutes with `ψ`. -/
+theorem Flat.rTensor_apply_eq_zero_of_lTensor_apply_eq_zero {N P F : Type*} [AddCommMonoid N]
+    [Module R N] [AddCommMonoid P] [Module R P] [AddCommMonoid F] [Module R F] [Flat R F]
+    (ψ : M →ₗ[R] F) {f : N →ₗ[R] P} (hf : Function.Injective f) {x : M ⊗[R] N}
+    (hx : f.lTensor M x = 0) : ψ.rTensor N x = 0 :=
+  Flat.lTensor_preserves_injective_linearMap f hf <| by
+    rw [map_zero, ← comp_apply, lTensor_comp_rTensor, ← rTensor_comp_lTensor, comp_apply, hx,
+      map_zero]
 
 end Module
 

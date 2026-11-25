@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Critical
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.FixedPoints.Components
+import TauCeti.Topology.LocallyConstant.ConnectedComponents
 
 /-!
 # Moment maps on the fixed-point set
@@ -116,13 +117,9 @@ same image under a moment map. -/
 theorem apply_eq_of_isPreconnected [SigmaCompactSpace M]
     (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) {C : Set M}
     (hC : IsPreconnected C) (hCG : C ⊆ MulAction.fixedPoints G M) {x y : M} (hx : x ∈ C)
-    (hy : y ∈ C) : μ x = μ y := by
-  have hC' : IsPreconnected (Subtype.val ⁻¹' C : Set (MulAction.fixedPoints G M)) := by
-    rwa [← IsInducing.subtypeVal.isPreconnected_image,
-      image_preimage_eq_of_subset (by rwa [Subtype.range_coe])]
-  exact LinearMap.ext fun ξ ↦
-    (h.isLocallyConstant_domRestrict_fixedPoints_of_compactSpace ξ).apply_eq_of_isPreconnected hC'
-      (x := ⟨x, hCG hx⟩) (y := ⟨y, hCG hy⟩) hx hy
+    (hy : y ∈ C) : μ x = μ y :=
+  LinearMap.ext fun ξ ↦ (h.isLocallyConstant_domRestrict_fixedPoints_of_compactSpace
+    ξ).apply_eq_of_isPreconnected_of_subset hC hCG hx hy
 
 /-- **A moment map of a compact group takes finitely many values on the fixed-point set** of a
 compact manifold: it is constant on each of the finitely many connected components of `M^G`. -/

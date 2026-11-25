@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Sphere
-public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Sublevel
+public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Sublevel.Basic
 
 /-!
 # Smooth closed disc bundles

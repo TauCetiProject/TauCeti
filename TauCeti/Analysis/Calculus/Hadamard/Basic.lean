@@ -20,7 +20,8 @@ smooth manifold with tangent vectors.
 The factor `hadamardFactor f x y`, the averaged derivative of `f` along the segment from `x` to
 `y`, depends smoothly on `x` and `y` jointly. Since `hadamardFactor f x x` is the derivative of `f`
 at `x`, it is invertible for all `x` and `y` near a point where the derivative of `f` is
-invertible (`ContDiff.exists_mem_nhds_isUnit_hadamardFactor`).
+invertible (`ContDiff.exists_mem_nhds_isUnit_hadamardFactor`), and it stays within `C` of a linear
+map `A` when the derivative of `f` does along the segment (`norm_hadamardFactor_sub_le`).
 
 Its higher-order analogue is `TauCeti.taylorRemainderFactor n f x y`, the averaged `(n + 1)`-st
 derivative of `f` along the segment from `x` to `y` with the weight of Taylor's integral remainder.
@@ -114,6 +115,24 @@ theorem hadamardFactor_eq_integral_Icc (f : E → F) (x : E) :
 theorem hadamardFactor_self [CompleteSpace F] (f : E → F) (x : E) :
     hadamardFactor f x x = fderiv ℝ f x := by
   simp [hadamardFactor]
+
+/-- If the derivative of `f` stays within `C` of a fixed linear map `A` along the segment from `x`
+to `y`, then so does its average, the Hadamard factor. -/
+theorem norm_hadamardFactor_sub_le [CompleteSpace F] {f : E → F} {x y : E}
+    (hf : ContinuousOn (fderiv ℝ f) (segment ℝ x y)) {A : E →L[ℝ] F} {C : ℝ}
+    (hC : ∀ z ∈ segment ℝ x y, ‖fderiv ℝ f z - A‖ ≤ C) : ‖hadamardFactor f x y - A‖ ≤ C := by
+  have hseg : ∀ t ∈ Set.Icc (0 : ℝ) 1, x + t • (y - x) ∈ segment ℝ x y := fun t ht ↦ by
+    rw [segment_eq_image']
+    exact Set.mem_image_of_mem _ ht
+  have hcont : ContinuousOn (fun t : ℝ ↦ fderiv ℝ f (x + t • (y - x))) (Set.uIcc 0 1) :=
+    hf.comp (by fun_prop) fun t ht ↦ hseg t (by rwa [Set.uIcc_of_le zero_le_one] at ht)
+  have h : hadamardFactor f x y - A = ∫ t in (0 : ℝ)..1, (fderiv ℝ f (x + t • (y - x)) - A) := by
+    rw [intervalIntegral.integral_sub hcont.intervalIntegrable intervalIntegrable_const]
+    simp [hadamardFactor, segmentAverage]
+  rw [h]
+  refine (intervalIntegral.norm_integral_le_of_norm_le_const (C := C) fun t ht ↦
+    hC _ (hseg t (Set.Ioc_subset_Icc_self ?_))).trans (by simp)
+  rwa [Set.uIoc_of_le zero_le_one] at ht
 
 /-- If `f` is `n + 1` times continuously differentiable, its Hadamard factor is `n` times
 continuously differentiable in the endpoint. -/

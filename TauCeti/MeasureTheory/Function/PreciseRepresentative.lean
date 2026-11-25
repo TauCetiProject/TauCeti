@@ -53,6 +53,8 @@ representative.
 * `TauCeti.MeasureTheory.ae_eq_preciseRepresentative_of_hasBesicovitchCovering`: for any locally
   finite measure on a space with the Besicovitch covering property, a locally integrable function
   agrees almost everywhere with its precise representative.
+* `TauCeti.MeasureTheory.ae_eq_restrict_inter_preciseRepresentative_restrict`: the same on
+  `s ∩ t`, `s` open, for the precise representative with respect to the restriction to `t`.
 * `TauCeti.MeasureTheory.preciseRepresentative_eq_of_continuousAt`: the precise representative at
   `x` of a function equal almost everywhere near `x` to a function `g` continuous at `x` is `g x`.
 * `TauCeti.MeasureTheory.tendsto_setAverage_closedBall_preciseRepresentative`: the averages
@@ -182,6 +184,21 @@ theorem ae_eq_preciseRepresentative_of_hasBesicovitchCovering {Y : Type*} [Metri
     (hf : LocallyIntegrable f ν) : f =ᵐ[ν] preciseRepresentative ν f := by
   filter_upwards [Besicovitch.ae_tendsto_average_closedBall ν hf] with x hx
   exact (preciseRepresentative_eq_of_tendsto hx).symm
+
+/-- **Lebesgue differentiation for the precise representative of a restricted measure.** On a
+space with the Besicovitch covering property, a function locally integrable for the restriction
+of a locally finite measure `ν` to `s ∩ t`, with `s` open, agrees almost everywhere on `s ∩ t`
+with its precise representative for `ν.restrict t`. -/
+theorem ae_eq_restrict_inter_preciseRepresentative_restrict {Y : Type*} [MetricSpace Y]
+    [MeasurableSpace Y] [BorelSpace Y] [SecondCountableTopology Y] [HasBesicovitchCovering Y]
+    {ν : Measure Y} [IsLocallyFiniteMeasure ν] [CompleteSpace E] {f : Y → E} {s t : Set Y}
+    (hs : IsOpen s) (hf : LocallyIntegrable f (ν.restrict (s ∩ t))) :
+    f =ᵐ[ν.restrict (s ∩ t)] preciseRepresentative (ν.restrict t) f := by
+  filter_upwards [ae_eq_preciseRepresentative_of_hasBesicovitchCovering hf,
+    ae_restrict_of_ae_restrict_of_subset inter_subset_left (ae_restrict_mem hs.measurableSet)]
+    with x hx hxs
+  rw [hx, ← Measure.restrict_restrict hs.measurableSet,
+    preciseRepresentative_restrict_of_mem_nhds (hs.mem_nhds hxs)]
 
 section Oscillation
 

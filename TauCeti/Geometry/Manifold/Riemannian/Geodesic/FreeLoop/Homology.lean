@@ -7,7 +7,9 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.CompactApproximation
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.FreeLoop.Approximation
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.FreeLoop.Component
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.VertexSlide
+public import TauCeti.Topology.Category.TopCat.Fiber
 
 /-!
 # The singular homology of the free loop space from broken geodesics
@@ -45,17 +47,36 @@ the approximation with the free loop space.
 
 No topology is put on the colimit of the spaces `𝓛ⁿM`: the statement is about their homology.
 
+The same holds for a union `S` of path components of the free loop space, such as the
+contractible loops `𝓛₀M` or the loops in one free homotopy class. Its approximations are the
+parts `(geoⁿ)⁻¹(S)` of the distance cuts whose broken geodesics lie in `S`, mapped to `S` by the
+restrictions of `geoⁿ` (`CategoryTheory.Limits.Cocone.restrictPreimage`), and
+
+`Hₘ(S; V) = colimₙ Hₘ((geoⁿ)⁻¹(S); V)`
+
+(`TauCeti.Manifold.isColimitMapCoconeSingularHomologyRestrictPreimageCyclicDistanceCutCocone`).
+The two halves of the comparison hold over `S` because homotopies do not leave path components:
+a compact family of loops of `S` is homotopic within `S` to the broken geodesics through its
+samples (`TauCeti.Manifold.exists_restrictPreimage_cyclicDistanceCutBrokenGeodesic_comp_homotopic`),
+and the vertex slide stays in `(geoⁿ⁺ᵏ)⁻¹(S)`
+(`TauCeti.Manifold.exists_comp_homotopic_preimageFunctor_map`).
+
 ## Main definitions
 
 * `TauCeti.Manifold.cyclicDistanceCutCocone`: the broken-geodesic maps `geoⁿ : 𝓛ⁿM → 𝓛M`, as a
   cocone over the sequence of distance cuts.
 * `TauCeti.Manifold.isColimitMapCoconeSingularHomologyCyclicDistanceCutCocone`: the singular
   homology of the free loop space is the colimit of the singular homology of the distance cuts.
+* `TauCeti.Manifold.isColimitMapCoconeSingularHomologyRestrictPreimageCyclicDistanceCutCocone`:
+  the singular homology of a union of path components of the free loop space is the colimit of
+  the singular homology of its parts of the distance cuts.
 
 ## Main results
 
 * `TauCeti.Manifold.exists_comp_homotopic_cyclicDistanceCutFunctor_map`: sampling a compact family
   of free loops containing broken geodesics recovers the tuples of a later stage, up to homotopy.
+* `TauCeti.Manifold.exists_comp_homotopic_preimageFunctor_map`: the same within a union of path
+  components of the free loop space.
 
 ## References
 
@@ -140,16 +161,7 @@ theorem exists_comp_homotopic_cyclicDistanceCutFunctor_map (hpos : 0 < δ 0 0)
   -- distance cut.
   have hmaps := hN (n + (N + 1)) (by omega) (δ (n + (N + 1)))
     fun i ↦ cutoff_le_of_forall_le_succ_of_lt hδ (by omega) 0 i
-  -- Every cut-off of the stage `n` is at most every cut-off of the stage `n + N + 1`.
-  have hm (j : Fin (n + (N + 1) + 1)) :
-      ∑ i, δ n i ≤ ((n + (N + 1) + 1 : ℕ) : ℝ) * δ (n + (N + 1)) j := by
-    have hj : 0 ≤ δ (n + (N + 1)) j :=
-      hpos.le.trans (cutoff_le_of_forall_le_succ_of_lt hδ (by omega) 0 j)
-    calc ∑ i, δ n i ≤ ∑ _ : Fin (n + 1), δ (n + (N + 1)) j :=
-          Finset.sum_le_sum fun i _ ↦ cutoff_le_of_forall_le_succ_of_lt hδ (by omega) i j
-      _ = ((n + 1 : ℕ) : ℝ) * δ (n + (N + 1)) j := by simp
-      _ ≤ ((n + (N + 1) + 1 : ℕ) : ℝ) * δ (n + (N + 1)) j :=
-          mul_le_mul_of_nonneg_right (by exact_mod_cast (by omega)) hj
+  have hm := sum_cutoff_le_mul_cutoff hpos.le hδ (show n < n + (N + 1) by omega)
   let e : C(L, cyclicDistanceCut (X := M) (δ (n + (N + 1)))) :=
     ⟨fun γ ↦ ⟨_, hmaps γ.property⟩, ((MoorePath.continuous_sample _).comp
       (MooreFreeLoopSpace.continuous_toMoorePath.comp continuous_subtypeVal)).subtype_mk _⟩
@@ -191,5 +203,104 @@ def isColimitMapCoconeSingularHomologyCyclicDistanceCutCocone {A : Type u} [Ring
       obtain ⟨k, e, -, he⟩ := exists_comp_homotopic_cyclicDistanceCutFunctor_map hr hpos hlt hδ hL
         hKL'
       exact ⟨n + k, homOfLE (Nat.le_add_right n k), e, he⟩
+
+/-! ### Unions of components of the free loop space -/
+
+section Component
+
+variable {S : Set (MooreFreeLoopSpace M)}
+
+include hr in
+/-- **Sampling recovers the tuples of a later stage over a union of components.** Let `S` be a
+union of path components of the free loop space and let the cut-offs `δ n i < r` grow from each
+stage to the next and start positive. Let `K` be a family of tuples of the part `(geoⁿ)⁻¹(S)` of
+the distance cut `𝓛ⁿM` and `L` a compact family of loops of `S` containing the broken geodesics
+through them. Then for some `k` the samples at `n + k + 1` equally spaced times define a map
+`e : L → (geoⁿ⁺ᵏ)⁻¹(S)`, and on `K` its composite with `geoⁿ` is homotopic to the map
+`(geoⁿ)⁻¹(S) → (geoⁿ⁺ᵏ)⁻¹(S)` of the parts over `S` of the sequence of distance cuts, which
+repeats the first vertex `k` more times. -/
+theorem exists_comp_homotopic_preimageFunctor_map (hS : ∀ γ ∈ S, pathComponent γ ⊆ S)
+    (hpos : 0 < δ 0 0) (hlt : ∀ n i, δ n i < r) (hδ : ∀ n i j, δ n i ≤ δ (n + 1) j) {n : ℕ}
+    {K : Set (cyclicDistanceCutBrokenGeodesic hr (hlt n) ⁻¹' S)} {L : Set S} (hL : IsCompact L)
+    (hKL : MapsTo ((cyclicDistanceCutBrokenGeodesic hr (hlt n)).restrictPreimage S) K L) :
+    ∃ (k : ℕ) (e : C(L, cyclicDistanceCutBrokenGeodesic hr (hlt (n + k)) ⁻¹' S)),
+      (∀ γ, ((e γ : cyclicDistanceCut (X := M) (δ (n + k))) : Fin (n + k + 1) → M) =
+        (γ : MooreFreeLoopSpace M).toMoorePath.sample (n + k + 1)) ∧
+      (e.comp ⟨hKL.restrict, (map_continuous _).restrict hKL⟩).Homotopic
+        ((((cyclicDistanceCutCocone hr hlt hpos.le hδ).preimageFunctor S).map
+          (homOfLE (Nat.le_add_right n k))).hom.comp (ContinuousMap.subtypeVal K)) := by
+  -- Sampling the loops of `L` at a late enough stage lands in the part over `S`.
+  obtain ⟨N, hN⟩ := exists_restrictPreimage_cyclicDistanceCutBrokenGeodesic_comp_homotopic hr
+    hS (hL.image continuous_subtypeVal) (Subtype.coe_image_subset S L) hpos
+  obtain ⟨e, he, -⟩ := hN (n + (N + 1)) (by omega) (δ (n + (N + 1)))
+    (fun i ↦ cutoff_le_of_forall_le_succ_of_lt hδ (by omega) 0 i) (hlt _)
+  let φ : C(L, Subtype.val '' L) :=
+    ⟨(mapsTo_image _ L).restrict, continuous_subtypeVal.restrict _⟩
+  refine ⟨N + 1, e.comp φ, fun γ ↦ he (φ γ), ?_⟩
+  have hδδ' := cutoff_sub_le_of_forall_le_succ hδ n (N + 1)
+  have hm := sum_cutoff_le_mul_cutoff hpos.le hδ (show n < n + (N + 1) by omega)
+  -- On `K`, `e ∘ geoⁿ` samples the broken geodesics, and the map of the diagram repeats the first
+  -- vertex; the vertex slide joins the two within the parts over `S`.
+  have h₁ : (e.comp φ).comp ⟨hKL.restrict, (map_continuous _).restrict hKL⟩ =
+      (⟨(mapsTo_cyclicDistanceCutSampleBrokenGeodesic_preimage hr hS (hlt n) (hlt _) hδδ'
+          hm).restrict, (map_continuous _).restrict _⟩ :
+        C(cyclicDistanceCutBrokenGeodesic hr (hlt n) ⁻¹' S,
+          cyclicDistanceCutBrokenGeodesic hr (hlt (n + (N + 1))) ⁻¹' S)).comp
+        (ContinuousMap.subtypeVal K) :=
+    ContinuousMap.ext fun q ↦ Subtype.ext <| Subtype.ext <| (he _).trans
+      (coe_cyclicDistanceCutSampleBrokenGeodesic_apply hr (hlt n) _ hm _).symm
+  have h₂ : (((cyclicDistanceCutCocone hr hlt hpos.le hδ).preimageFunctor S).map
+        (homOfLE (Nat.le_add_right n (N + 1)))).hom.comp (ContinuousMap.subtypeVal K) =
+      (⟨(mapsTo_cyclicDistanceCutRepeatFirstIterate_preimage hr (hlt n) (hlt _) hδδ'
+          S).restrict, (map_continuous _).restrict _⟩ :
+        C(cyclicDistanceCutBrokenGeodesic hr (hlt n) ⁻¹' S,
+          cyclicDistanceCutBrokenGeodesic hr (hlt (n + (N + 1))) ⁻¹' S)).comp
+        (ContinuousMap.subtypeVal K) := by
+    ext q : 1
+    apply Subtype.ext
+    -- The map of the diagram is the map of the sequence of distance cuts on points.
+    exact (Cocone.coe_preimageFunctor_map_apply (cyclicDistanceCutCocone hr hlt hpos.le hδ) S
+      (homOfLE (Nat.le_add_right n (N + 1))) q.val).trans
+        (congrArg (· q.val.val) (cyclicDistanceCutFunctor_map_homOfLE M hpos.le hδ n (N + 1) hδδ'))
+  have key := (homotopic_mapsToRestrict_cyclicDistanceCutRepeatFirstIterate_sampleBrokenGeodesic
+    hr hS (hlt n) (hlt _) hδδ' hm).symm.comp
+      (ContinuousMap.Homotopic.refl (ContinuousMap.subtypeVal K))
+  rw [← h₁, ← h₂] at key
+  exact key
+
+/-- **The singular homology of a union of components of the free loop space is the colimit of the
+singular homology of its parts of the distance cuts.** Let `S` be a union of path components of
+the free loop space, such as the contractible loops `𝓛₀M` or the loops in one free homotopy class.
+For cut-offs as in
+`TauCeti.Manifold.isColimitMapCoconeSingularHomologyCyclicDistanceCutCocone`, the restrictions of
+the broken-geodesic maps to the parts `(geoⁿ)⁻¹(S)` of the distance cuts whose broken geodesics
+lie in `S` (`CategoryTheory.Limits.Cocone.restrictPreimage`) induce an isomorphism
+`colimₙ Hₘ((geoⁿ)⁻¹(S); V) ≅ Hₘ(S; V)`, with coefficients in any module `V`. -/
+def isColimitMapCoconeSingularHomologyRestrictPreimageCyclicDistanceCutCocone {A : Type u}
+    [Ring A] (V : ModuleCat.{u} A) (m : ℕ) (hS : ∀ γ ∈ S, pathComponent γ ⊆ S)
+    (hpos : 0 < δ 0 0) (hlt : ∀ n i, δ n i < r) (hδ : ∀ n i j, δ n i ≤ δ (n + 1) j) :
+    IsColimit (((singularHomologyFunctor (ModuleCat.{u} A) m).obj V).mapCocone
+      ((cyclicDistanceCutCocone hr hlt hpos.le hδ).restrictPreimage S)) :=
+  isColimitMapCoconeSingularHomologyOfCompactApprox V m _
+    (fun K hK ↦ by
+      -- The loops of `K`, a compact family of free loops in `S`, are homotopic in `S` to broken
+      -- geodesics through their samples.
+      obtain ⟨N, hN⟩ := exists_restrictPreimage_cyclicDistanceCutBrokenGeodesic_comp_homotopic hr
+        hS (hK.image continuous_subtypeVal) (Subtype.coe_image_subset S K) hpos
+      obtain ⟨e, -, he⟩ := hN (N + 1) (by omega) (δ (N + 1))
+        (fun i ↦ cutoff_le_of_forall_le_succ_of_lt hδ N.succ_pos 0 i) (hlt (N + 1))
+      let φ : C(K, Subtype.val '' K) :=
+        ⟨(mapsTo_image _ K).restrict, continuous_subtypeVal.restrict _⟩
+      refine ⟨N + 1, e.comp φ, ?_⟩
+      have hφ : ContinuousMap.subtypeVal K =
+          (ContinuousMap.inclusion (Subtype.coe_image_subset S K)).comp φ :=
+        ContinuousMap.ext fun _ ↦ rfl
+      rw [hφ]
+      exact he.comp (ContinuousMap.Homotopic.refl φ))
+    fun n K L _ hL hKL ↦ by
+      obtain ⟨k, e, -, he⟩ := exists_comp_homotopic_preimageFunctor_map hr hS hpos hlt hδ hL hKL
+      exact ⟨n + k, homOfLE (Nat.le_add_right n k), e, he⟩
+
+end Component
 
 end TauCeti.Manifold
