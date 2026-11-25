@@ -32,7 +32,8 @@ of the frontier (`TauCeti.squareLeftPart S`). For open `S` it is relatively open
 Both negative Checks come from `Set.IsAdmissibleBoundaryPart.exists_mem_nhds_forall_mem_of_mapsTo`:
 along a segment of the frontier near a point, the parameters of the points of an admissible part
 form an interval. The charts have the one-dimensional base `ℝ`, and the interfaces in the base are
-points, modelled on the zero space `Fin 0 → ℝ`.
+points, modelled on any zero space `E'`. The closure of `{0} × S` is `{0} × closure S`
+(`TauCeti.closure_squareLeftPart`).
 -/
 
 public section
@@ -69,6 +70,12 @@ theorem squareLeftPart_eq_image (S : Set ℝ) :
     ?_⟩
   rintro ⟨s, hs, rfl⟩
   exact toLp_zero_prod_mem_squareLeftPart.2 hs
+
+/-- The closure of `{0} × S` is `{0} × closure S`. -/
+theorem closure_squareLeftPart (S : Set ℝ) :
+    closure (squareLeftPart S) = squareLeftPart (closure S) := by
+  rw [squareLeftPart_eq_image, squareLeftPart_eq_image,
+    (WithLp.isometry_toLp_prodMk_left 2 (β := ℝ) (0 : ℝ)).isClosedEmbedding.closure_image_eq]
 
 /-- The path `s ↦ (0, s)` along the left side is continuous. -/
 private theorem continuous_toLp_zero_prod : Continuous fun s : ℝ => WithLp.toLp 2 ((0 : ℝ), s) :=
@@ -277,11 +284,12 @@ private theorem exists_isBoundaryPartChart_corner_one :
   constructor <;> rintro ⟨h1, h2, h3⟩ <;> refine ⟨?_, ?_, ?_⟩ <;> linarith
 
 /-- **`{0} × (0, 1)` is an admissible boundary part of the open unit square**, with base `ℝ` and
-point interfaces. Away from the closed left side the charts see none of the base, along the open
-side all of it, and at the corners `(0, 0)` and `(0, 1)` the rotations by `± π / 4` see the side
-over one side of the base point. -/
-theorem isAdmissibleBoundaryPart_squareLeftPart_Ioo :
-    openUnitSquare.IsAdmissibleBoundaryPart (squareLeftPart (Ioo 0 1)) ℝ (Fin 0 → ℝ) := by
+point interfaces, modelled on any zero space `E'`. Away from the closed left side the charts see
+none of the base, along the open side all of it, and at the corners `(0, 0)` and `(0, 1)` the
+rotations by `± π / 4` see the side over one side of the base point. -/
+theorem isAdmissibleBoundaryPart_squareLeftPart_Ioo {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [Subsingleton E'] :
+    openUnitSquare.IsAdmissibleBoundaryPart (squareLeftPart (Ioo 0 1)) ℝ E' := by
   have hsub := squareLeftPart_subset_frontier (S := Ioo 0 1) Ioo_subset_Icc_self
   refine ⟨hsub, fun x hx => ?_⟩
   obtain ⟨⟨hs0, -⟩, ht0, ht1⟩ := mem_Icc_of_mem_frontier_openUnitSquare hx
