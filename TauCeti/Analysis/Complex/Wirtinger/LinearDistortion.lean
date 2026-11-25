@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.TwoDim
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
-public import TauCeti.Analysis.InnerProductSpace.OrientedJacobian
 public import TauCeti.Analysis.InnerProductSpace.SingularValues.Least
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 
@@ -21,14 +19,15 @@ three quantities of linear distortion of `A` in terms of `a` and `b`:
 
 * the operator norm `‖A‖ = |a| + |b|` (`TauCeti.norm_wirtingerPartsCLM`);
 * the minimal stretch `ℓ(A) = ||a| - |b||` (`TauCeti.minimalStretch_wirtingerPartsCLM`);
-* the Jacobian `J(A) = det A = |a|² - |b|²`, both as `LinearMap.det`
-  (`TauCeti.det_wirtingerPartsCLM`) and as the oriented Jacobian for the orientation of `ℂ` by the
-  basis `(1, i)` (`TauCeti.orientedJacobian_wirtingerPartsCLM`).
+* the Jacobian `J(A) = det A = |a|² - |b|²` (`TauCeti.det_wirtingerPartsCLM`); for the
+  orientation of `ℂ` by the basis `(1, i)`, `Orientation.orientedJacobian_self` identifies the
+  oriented Jacobian of `A` with this determinant.
 
 The extremal directions are explicit. Writing `a = |a| e^{iα}` and `b = |b| e^{iβ}`, the image of
 the unit vector `e^{i((β - α)/2 + t)}` is `(|a| e^{it} + |b| e^{-it}) e^{i(α + β)/2}`
 (`TauCeti.wirtingerPartsCLM_apply_exp`, `TauCeti.norm_wirtingerPartsCLM_apply_exp`); `t = 0`
-stretches by `|a| + |b|` and `t = π/2` by `||a| - |b||`.
+stretches by `|a| + |b|` (`TauCeti.norm_wirtingerPartsCLM_apply_exp_zero`) and `t = π/2` by
+`||a| - |b||` (`TauCeti.norm_wirtingerPartsCLM_apply_exp_pi_div_two`).
 
 These formulas are the linear algebra behind the Beltrami coefficient `b / a` of a planar map:
 the outer distortion `‖A‖² / J(A)` of `A` is `(|a| + |b|) / (|a| - |b|)` when `|b| < |a|`.
@@ -74,13 +73,32 @@ theorem norm_wirtingerPartsCLM_apply_exp (a b : ℂ) (t : ℝ) :
       ‖‖a‖ * exp (t * I) + ‖b‖ * exp (-t * I)‖ := by
   rw [wirtingerPartsCLM_apply_exp, norm_mul, norm_exp_ofReal_mul_I, mul_one]
 
+/-- The stretch of `z ↦ z a + conj z b` in the unit direction `e^{i(β - α)/2}`, where `α = arg a`
+and `β = arg b`, is `|a| + |b|`. -/
+theorem norm_wirtingerPartsCLM_apply_exp_zero (a b : ℂ) :
+    ‖wirtingerPartsCLM a b (exp (↑((arg b - arg a) / 2) * I))‖ = ‖a‖ + ‖b‖ := by
+  have h := norm_wirtingerPartsCLM_apply_exp a b 0
+  rw [add_zero] at h
+  rw [h]
+  simp [← ofReal_add, abs_of_nonneg (add_nonneg (norm_nonneg a) (norm_nonneg b))]
+
+/-- The stretch of `z ↦ z a + conj z b` in the unit direction `e^{i((β - α)/2 + π/2)}`, where
+`α = arg a` and `β = arg b`, is `||a| - |b||`. -/
+theorem norm_wirtingerPartsCLM_apply_exp_pi_div_two (a b : ℂ) :
+    ‖wirtingerPartsCLM a b (exp (↑((arg b - arg a) / 2 + Real.pi / 2) * I))‖ = |‖a‖ - ‖b‖| := by
+  have e1 : exp (↑(Real.pi / 2) * I) = I := by push_cast; exact exp_pi_div_two_mul_I
+  have e2 : exp (-↑(Real.pi / 2) * I) = -I := by
+    push_cast; rw [← neg_div]; exact exp_neg_pi_div_two_mul_I
+  have h : (‖a‖ : ℂ) * I + ‖b‖ * -I = ↑(‖a‖ - ‖b‖) * I := by push_cast; ring
+  rw [norm_wirtingerPartsCLM_apply_exp, e1, e2, h, norm_mul, norm_I, mul_one, norm_real,
+    Real.norm_eq_abs]
+
 /-- The operator norm of `z ↦ z a + conj z b` is `|a| + |b|`. -/
 @[simp]
 theorem norm_wirtingerPartsCLM (a b : ℂ) : ‖wirtingerPartsCLM a b‖ = ‖a‖ + ‖b‖ := by
   refine le_antisymm (norm_wirtingerPartsCLM_le a b) ?_
-  have h := (wirtingerPartsCLM a b).le_opNorm (exp (↑((arg b - arg a) / 2 + 0) * I))
-  rw [norm_wirtingerPartsCLM_apply_exp, norm_exp_ofReal_mul_I, mul_one] at h
-  simpa [← ofReal_add, abs_of_nonneg (add_nonneg (norm_nonneg a) (norm_nonneg b))] using h
+  have h := (wirtingerPartsCLM a b).le_opNorm (exp (↑((arg b - arg a) / 2) * I))
+  rwa [norm_wirtingerPartsCLM_apply_exp_zero, norm_exp_ofReal_mul_I, mul_one] at h
 
 /-- The minimal stretch of `z ↦ z a + conj z b` is `||a| - |b||`. -/
 @[simp]
@@ -89,11 +107,8 @@ theorem minimalStretch_wirtingerPartsCLM (a b : ℂ) :
   refine le_antisymm ?_ ((LinearMap.le_minimalStretch_iff _).mpr fun z ↦ ?_)
   · have h := (wirtingerPartsCLM a b : ℂ →ₗ[ℝ] ℂ).minimalStretch_mul_norm_le_norm_apply
       (exp (↑((arg b - arg a) / 2 + Real.pi / 2) * I))
-    rw [ContinuousLinearMap.coe_coe, norm_wirtingerPartsCLM_apply_exp, norm_exp_ofReal_mul_I,
-      mul_one, ofReal_div, ofReal_ofNat, neg_mul, ← neg_mul, ← neg_div, exp_pi_div_two_mul_I,
-      exp_neg_pi_div_two_mul_I, mul_neg, ← sub_eq_add_neg, ← sub_mul, norm_mul, norm_I, mul_one,
-      ← ofReal_sub, norm_real, Real.norm_eq_abs] at h
-    exact h
+    rwa [ContinuousLinearMap.coe_coe, norm_wirtingerPartsCLM_apply_exp_pi_div_two,
+      norm_exp_ofReal_mul_I, mul_one] at h
   · calc |‖a‖ - ‖b‖| * ‖z‖ = |‖z * a‖ - ‖conj z * b‖| := by
           rw [norm_mul, norm_mul, RCLike.norm_conj, mul_comm ‖z‖, mul_comm ‖z‖, ← sub_mul,
             abs_mul, abs_norm]
@@ -107,16 +122,6 @@ theorem det_wirtingerPartsCLM (a b : ℂ) :
   rw [← LinearMap.det_toMatrix Complex.basisOneI, Matrix.det_fin_two]
   simp [LinearMap.toMatrix_apply, ← normSq_eq_norm_sq, normSq_apply]
   ring
-
-attribute [local instance] Complex.finrank_real_complex_fact
-
-/-- The Jacobian of `z ↦ z a + conj z b`, for the orientation of `ℂ` by the basis `(1, i)`, is
-`|a|² - |b|²`. -/
-@[simp]
-theorem orientedJacobian_wirtingerPartsCLM (a b : ℂ) :
-    Complex.orientation.orientedJacobian Complex.orientation (wirtingerPartsCLM a b) =
-      ‖a‖ ^ 2 - ‖b‖ ^ 2 := by
-  rw [Orientation.orientedJacobian_self, det_wirtingerPartsCLM]
 
 /-! ### Checks -/
 
