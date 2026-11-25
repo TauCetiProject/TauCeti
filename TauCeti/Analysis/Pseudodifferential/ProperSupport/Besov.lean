@@ -41,7 +41,10 @@ For `p = q = ∞` these are the local mapping and regularity theorems on the Hö
 
 (`Distribution.IsLocallyCkHolderAt.of_quantizeDistribution`), which is the local Schauder theorem
 for properly supported elliptic operators of integer order acting on distributions, through the
-local identification `Distribution.isLocallyMemBesovAt_iff_isLocallyCkHolderAt`.
+local identification `Distribution.isLocallyMemBesovAt_iff_isLocallyCkHolderAt`. Conversely,
+`Op(a)` maps `C^{l,α}` locally to `C^{k,α}`: if `T` is `C^{l,α}` near every point of the closed
+`R`-neighbourhood of a neighbourhood of `x`, then `Op(a) T` is `C^{k,α}` near `x`
+(`Distribution.isLocallyCkHolderAt_quantizeDistribution`).
 
 ## The argument
 
@@ -129,6 +132,28 @@ theorem IsLocallyCkHolderAt.of_quantizeDistribution (ha : a.HasNearDiagonalKerne
   have hreg := (h.isLocallyMemBesovAt default).of_quantizeDistribution ha hab ENNReal.one_lt_top
   rw [add_right_comm, hkl] at hreg
   exact hreg.isLocallyCkHolderAt hα0 hα1
+
+/-- **Properly supported operators map `C^{l,α}` locally to `C^{k,α}`.** Let `Op(a)` have order
+`m` and kernel supported within distance `R` of the diagonal, and let `0 < α < 1` and `k + m = l`
+for natural numbers `k` and `l`. If `T` is a `C^{l,α}` function near every point of the closed
+`R`-neighbourhood of a neighbourhood `V` of `x`, then `Op(a) T` is a `C^{k,α}` function near
+`x`. -/
+theorem isLocallyCkHolderAt_quantizeDistribution (ha : a.HasNearDiagonalKernel R) {k l : ℕ}
+    {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1) (hkl : (k : ℝ) + m = l) {x : CoordinateSpace n}
+    {V : Set (CoordinateSpace n)} (hV : V ∈ 𝓝 x)
+    (h : ∀ y ∈ Metric.cthickening R V, T.IsLocallyCkHolderAt l α y) :
+    (quantizeDistribution ha T).IsLocallyCkHolderAt k α x := by
+  -- A cutoff `ψ` equal to one near `x` and supported in `V` has `ψ Op(a) T ∈ 𝒞^{k+α}`.
+  obtain ⟨ψ, hψ1, hψV⟩ := TestFunction.exists_complex_cutoff_tsupport_subset (n := ⊤) (Ω := ⊤)
+    isCompact_singleton isOpen_interior
+    (singleton_subset_iff.2 (mem_interior_iff_mem_nhds.2 hV)) (by simp)
+  rw [nhdsSet_singleton] at hψ1
+  refine IsLocallyMemBesovAt.isLocallyCkHolderAt (φ := default) hα0 hα1
+    (isLocallyMemBesovAt_iff_exists_memBesov_cutoffTempered.2
+      ⟨ψ, hψ1, memBesov_cutoffTempered_quantizeDistribution ha fun y hy ↦ ?_⟩)
+  rw [add_right_comm, hkl]
+  exact (h y (Metric.cthickening_subset_of_subset R (hψV.trans interior_subset) hy)
+    ).isLocallyMemBesovAt default
 
 end Distribution
 

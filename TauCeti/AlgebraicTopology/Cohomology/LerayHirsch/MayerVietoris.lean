@@ -27,10 +27,13 @@ classes (`TopCat.lerayHirschRestrict`), are bijective in degrees `m ≤ n`, then
 Leray–Hirsch map of the restriction of `p` over `U ∪ V`. By induction over a finite cover of `B`
 by open sets over which `p` is trivial, starting from the empty set
 (`TopCat.lerayHirschRestrict_empty_bijective`) and ending with `B`
-(`TopCat.lerayHirschRestrict_univ_bijective_iff`), this step is meant to reduce the bijectivity of
-the Leray–Hirsch map to the trivial case, the projection `U × F ⟶ U` with classes restricting to a
+(`TopCat.lerayHirschRestrict_univ_bijective_iff`), this step reduces the bijectivity of the
+Leray–Hirsch map to the trivial case, the projection `U × F ⟶ U` with classes restricting to a
 basis of the cohomology of every fibre (`TopCat.lerayHirsch_fst_bijective_of_fiberwise_basis`, in
-`TauCeti.AlgebraicTopology.Cohomology.LerayHirsch.FiberwiseBasis`).
+`TauCeti.AlgebraicTopology.Cohomology.LerayHirsch.FiberwiseBasis`). That induction is
+`TopCat.lerayHirsch_bijective_of_finite_cover`, and the resulting Leray–Hirsch theorem for a map
+with a finite trivializing cover is `TopCat.lerayHirsch_bijective_of_trivializations`, both in
+`TauCeti.AlgebraicTopology.Cohomology.LerayHirsch.FiniteCover`.
 
 The proof of the gluing step is the five lemma. The Mayer–Vietoris sequences of the cover
 `{U, V}` of `U ∪ V` (one for each summand of the source) and of the cover `{p⁻¹ U, p⁻¹ V}` of

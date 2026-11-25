@@ -237,8 +237,8 @@ theorem commute_of_take_toWord_pow_eq {u v : FreeGroup α} {L : ℕ}
   have h₁ := mk_take_toWord_pow_add hu (n := n) (j := q) (m := L) (by omega) (by nlinarith)
   have h₂ := mk_take_toWord_pow_add hv (n := n) (j := p) (m := L) (by omega) (by nlinarith)
   rw [htake (by nlinarith), htake (by omega), Nat.mul_comm q p] at h₁
-  rw [← Commute.pow_left_iff hq.ne', ← Commute.pow_right_iff hp.ne',
-    mul_right_cancel (h₁.symm.trans h₂)]
+  rw [← Commute.pow_left_iff hq.ne' (Group.isUnit _),
+    ← Commute.pow_right_iff hp.ne' (Group.isUnit _), mul_right_cancel (h₁.symm.trans h₂)]
   exact Commute.refl _
 
 /-- **Cancellation between large powers** ([IFT], Corollary 13). If `u` and `v` do not commute,

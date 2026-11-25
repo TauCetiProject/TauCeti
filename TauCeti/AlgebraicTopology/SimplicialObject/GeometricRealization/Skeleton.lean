@@ -11,8 +11,8 @@ public import TauCeti.AlgebraicTopology.SimplicialObject.TopCat
 public import TauCeti.AlgebraicTopology.TopologicalSimplex
 public import TauCeti.Topology.Category.TopCat.Compact
 public import TauCeti.Topology.Category.TopCat.Normal
+public import TauCeti.Topology.Compactness.Paracompact
 import TauCeti.Topology.Compactness.Lindelof
-import TauCeti.Topology.Compactness.Paracompact
 
 /-!
 # Normal form, skeletal filtration, and point-set topology of thin geometric realization
@@ -341,8 +341,11 @@ def skeleton.toRealization (n : ℕ) : (skeleton X).obj n ⟶ X.geometricRealiza
     (skeleton X).map f ≫ skeleton.toRealization X n = skeleton.toRealization X m := by
   ext k hk x t; simp
 
-instance (n : ℕ) [∀ k : {k : ℕ // k ≤ n}, LindelofSpace (X _⦋k.val⦌ × toTop.{u}.obj ⦋k.val⦌)] :
-    LindelofSpace ((skeleton X).obj n) := Quot.lindelofSpace
+instance (n : ℕ) [∀ k : {k : ℕ // k ≤ n}, LindelofSpace (X _⦋k.val⦌)] :
+    LindelofSpace ((skeleton X).obj n) :=
+  have : ∀ k : {k : ℕ // k ≤ n}, LindelofSpace (X _⦋k.val⦌ × toTop.{u}.obj ⦋k.val⦌) :=
+    fun _ ↦ inferInstance
+  Quot.lindelofSpace
 
 /-- The canonical cocone exhibiting `X.geometricRealization` above `skeleton X`. -/
 @[expose, simps] def skeletonCocone : Cocone (skeleton X) where
@@ -788,6 +791,35 @@ instance instT4Space [∀ n : ℕ, T4Space (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌)
   have : NormalSpace X.geometricRealization := normalSpace X fun {n} j ↦ X.isClosedEmbedding_σ j
   exact {}
 
+section Levelwise
+
+/-- For any fixed test-space universe `v`, stage `skₙ |X|` of the skeletal filtration satisfies
+`UCompactlyGeneratedSpace.{v}` whenever each level `X _⦋k⦌` (`k ≤ n`) satisfies
+`UCompactlyGeneratedSpace.{v}`. -/
+instance instUCompactlyGeneratedSpaceSkeleton.{v} (n : ℕ)
+    [∀ k : {k : ℕ // k ≤ n}, UCompactlyGeneratedSpace.{v} (X _⦋k.val⦌)] :
+    UCompactlyGeneratedSpace.{v} ((skeleton X).obj n) :=
+  have : ∀ k : {k : ℕ // k ≤ n},
+      UCompactlyGeneratedSpace.{v} (X _⦋k.val⦌ × toTop.{u}.obj ⦋k.val⦌) :=
+    fun _ ↦ inferInstance
+  uCompactlyGeneratedSpace_of_coinduced (skeleton.isQuotientMap_sigma X n).continuous
+    (skeleton.isQuotientMap_sigma X n).eq_coinduced
+
+/-- If each `X _⦋k⦌` (`k ≤ n`) is `T3` and Lindelöf, stage `skₙ |X|` is paracompact. -/
+instance instParacompactSpaceSkeleton (n : ℕ)
+    [hT : ∀ k : {k : ℕ // k ≤ n}, T3Space (X _⦋k.val⦌)]
+    [∀ k : {k : ℕ // k ≤ n}, LindelofSpace (X _⦋k.val⦌)] :
+    ParacompactSpace ((skeleton X).obj n) := by
+  have : ∀ k : {k : ℕ // k ≤ n}, NormalSpace (X _⦋k.val⦌ × toTop.{u}.obj ⦋k.val⦌) :=
+    fun _ ↦ inferInstance
+  have : NormalSpace ((skeleton X).obj n) :=
+    normalSpace_skeleton X n fun {k} hk j ↦
+      have := hT ⟨k + 1, hk⟩
+      X.isClosedEmbedding_σ j
+  have : T1Space ((skeleton X).obj n) := instT1SpaceSkeleton X n
+  have : LindelofSpace ((skeleton X).obj n) := inferInstance
+  exact TauCeti.paracompactSpace_of_regularSpace_lindelofSpace
+
 /-- Every simplicial space whose levels `X _⦋n⦌` are `T3` (regular Hausdorff) and Lindelöf has a
 `T4` (normal Hausdorff, and hence paracompact) thin geometric realization in its colimit
 topology. -/
@@ -798,6 +830,15 @@ instance (priority := 90) instT4Space_of_t3Space_lindelofSpace [h3 : ∀ n : ℕ
     have := hL n
     inferInstance
   inferInstance
+
+/-- If each `X _⦋n⦌` is `T3` and Lindelöf, `|X|` is paracompact in its colimit topology. -/
+instance instParacompactSpace [∀ n : ℕ, T3Space (X _⦋n⦌)] [∀ n : ℕ, LindelofSpace (X _⦋n⦌)] :
+    ParacompactSpace X.geometricRealization :=
+  have : ∀ n : ℕ, NormalSpace (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌) := fun _ ↦ inferInstance
+  have : NormalSpace X.geometricRealization := normalSpace X fun {_} j ↦ X.isClosedEmbedding_σ j
+  TauCeti.paracompactSpace_of_regularSpace_lindelofSpace
+
+end Levelwise
 
 end Topology
 

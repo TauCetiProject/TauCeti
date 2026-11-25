@@ -55,7 +55,7 @@ theorem isUnit_leading_weight_minors_mul_weylWord_mul_iff
       ((((l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod :
         Matrix.GeneralLinearGroup (Fin D.dim) A) : Matrix (Fin D.dim) (Fin D.dim) A)) * U
       ).toSquareBlockProp fun j => r ⟨D.weight j, Set.mem_range_self j⟩ ≤ a).det) ↔
-      t.geckWeylWordProd ht l = 1 := by
+      t.simplyConnectedWeylWordProd ht l = 1 := by
   have hminor (a : β) := Matrix.isUnit_det_toSquareBlockProp_mul_mul_iff
     (M := ((((l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod :
       Matrix.GeneralLinearGroup (Fin D.dim) A) : Matrix (Fin D.dim) (Fin D.dim) A)))
@@ -77,7 +77,7 @@ theorem exists_blockLDU_weylWord_iff
       U.BlockUnitriangular (fun j => r ⟨D.weight j, Set.mem_range_self j⟩) ∧ IsUnit N.det ∧
       ((((l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod :
         Matrix.GeneralLinearGroup (Fin D.dim) A) : Matrix (Fin D.dim) (Fin D.dim) A)) =
-          L * N * U) ↔ t.geckWeylWordProd ht l = 1 := by
+          L * N * U) ↔ t.simplyConnectedWeylWordProd ht l = 1 := by
   rw [← Matrix.exists_blockLDU_iff]
   rw [← D.isUnit_leading_weight_minors_weylWord_iff l A r]
   symm
