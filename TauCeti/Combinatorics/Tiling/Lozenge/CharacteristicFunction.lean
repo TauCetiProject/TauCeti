@@ -84,7 +84,7 @@ equals `0` when `1 / P_w` is not integrable on the torus, and it is a genuine in
 `1 / P_w` is integrable, for instance when `P_w` is bounded away from `0`, as for
 `w = (1, 1, 3)`. The identities making `G_w` an inverse of the Kasteleyn matrix, and the
 integrability of `1 / P_w` for liquid weights, where `P_w` has zeros, are not proved in this
-library. -/
+file. -/
 def lozengeKernel (w₁ w₂ w₃ : ℝ) (d : ℤ × ℤ) : ℂ :=
   ((4 * Real.pi ^ 2)⁻¹ : ℝ) • ∫ p in Ioc 0 (2 * Real.pi) ×ˢ Ioc 0 (2 * Real.pi),
     exp ((d.1 * p.1 + d.2 * p.2 : ℝ) * I) / lozengeCharFun w₁ w₂ w₃ p.1 p.2
