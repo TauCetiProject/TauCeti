@@ -68,12 +68,13 @@ noncomputable def padicIntOpenSubgroup : OpenSubgroup (Multiplicative ℚ_[p]) w
 abbrev PadicQuotient : Type :=
   Multiplicative ℚ_[p] ⧸ (padicIntOpenSubgroup p : Subgroup (Multiplicative ℚ_[p]))
 
-private theorem mem_padicIntOpenSubgroup_iff {x : Multiplicative ℚ_[p]} :
+/-- An element of `ℚ_[p]` lies in `ℤ_[p]` exactly when its norm is at most `1`. -/
+theorem mem_padicIntOpenSubgroup_iff {x : Multiplicative ℚ_[p]} :
     x ∈ padicIntOpenSubgroup p ↔ ‖x.toAdd‖ ≤ 1 :=
   Iff.rfl
 
 /-- The open subgroup `ℤ_[p]` fixes every point of `ℚ_[p] ⧸ ℤ_[p]`. -/
-private theorem smul_eq_of_mem_padicIntOpenSubgroup {g : Multiplicative ℚ_[p]}
+theorem smul_eq_of_mem_padicIntOpenSubgroup {g : Multiplicative ℚ_[p]}
     (hg : g ∈ padicIntOpenSubgroup p) (x : PadicQuotient p) :
     g • x = x := by
   induction x using QuotientGroup.induction_on with | H y =>
@@ -81,7 +82,7 @@ private theorem smul_eq_of_mem_padicIntOpenSubgroup {g : Multiplicative ℚ_[p]}
   simpa [mul_comm] using inv_mem hg
 
 /-- The quotient `ℚ_[p] ⧸ ℤ_[p]` is infinite: the classes of `p⁻ⁿ` are pairwise distinct. -/
-private theorem infinite_quotient_padicIntOpenSubgroup :
+theorem infinite_quotient_padicIntOpenSubgroup :
     Infinite (PadicQuotient p) := by
   have hp : (1 : ℝ) < p := mod_cast (Fact.out : p.Prime).one_lt
   refine Infinite.of_injective
