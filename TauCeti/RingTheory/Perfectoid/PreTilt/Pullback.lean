@@ -118,11 +118,11 @@ theorem toPullback_surjective [IsAdicComplete (span {(p : A)}) A]
     [IsAdicComplete (span {(p : B)}) B] [IsHausdorff (span {(p : T)}) T] :
     Function.Surjective (toPullback p f g) := by
   rintro ⟨⟨u, v⟩, huv⟩
-  have huv' : map p f u = map p g v := huv
+  have huv' : map p f u = map p g v := RingHom.mem_pullback.mp huv
   -- the sharps of the `p ^ n`-th roots of `u` and `v` form a compatible system in the pullback
   let c (n : ℕ) : f.pullback g :=
     ⟨(untilt ((frobeniusEquiv _ p).symm^[n] u), untilt ((frobeniusEquiv _ p).symm^[n] v)),
-      apply_untilt_eq_of_map_eq (by
+      RingHom.mem_pullback.mpr <| apply_untilt_eq_of_map_eq (by
         rw [RingHom.map_iterate_frobeniusEquiv_symm, RingHom.map_iterate_frobeniusEquiv_symm,
           huv'])⟩
   have hc (n : ℕ) : c (n + 1) ^ p = c n :=

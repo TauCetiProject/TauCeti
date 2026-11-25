@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.LocalRing.Pullback
 public import Mathlib.RingTheory.WittVector.Basic
+public import TauCeti.RingTheory.LocalRing.Pullback
 
 /-!
 # Witt vectors of pullbacks
@@ -41,15 +41,13 @@ noncomputable def pullbackEquiv :
     WittVector p (f.pullback g) ≃+* (map (p := p) f).pullback (map g) :=
   RingEquiv.ofBijective
     (((map (f.pullbackFst g)).prod (map (f.pullbackSnd g))).codRestrict _ fun w ↦ by
-      rw [RingHom.mem_eqLocus]
-      refine ext fun n ↦ ?_
-      simp only [RingHom.coe_comp, Function.comp_apply, RingHom.prod_apply, RingHom.coe_fst,
-        RingHom.coe_snd, map_coeff]
-      exact (w.coeff n).property) <| by
+      refine RingHom.mem_pullback.mpr (ext fun n ↦ ?_)
+      simp only [RingHom.prod_apply, map_coeff]
+      exact RingHom.mem_pullback.mp (w.coeff n).property) <| by
     refine ⟨fun x y hxy ↦ ext fun n ↦ Subtype.ext (Prod.ext ?_ ?_), fun y ↦ ?_⟩
     · simpa [map_coeff] using congr((($hxy : WittVector p R × WittVector p S).1).coeff n)
     · simpa [map_coeff] using congr((($hxy : WittVector p R × WittVector p S).2).coeff n)
-    · have hy := RingHom.mem_eqLocus.mp y.property
+    · have hy := RingHom.mem_pullback.mp y.property
       refine ⟨mk p fun n ↦ ⟨((y : WittVector p R × WittVector p S).1.coeff n,
         (y : WittVector p R × WittVector p S).2.coeff n), ?_⟩, Subtype.ext (Prod.ext ?_ ?_)⟩
       · simpa [map_coeff] using congr(($hy).coeff n)

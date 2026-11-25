@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.LocalRing.Pullback
 public import TauCeti.RingTheory.AdicCompletion.Pi
+public import TauCeti.RingTheory.LocalRing.Pullback
 
 /-!
 # Adic completeness of pullbacks of rings
@@ -62,9 +62,10 @@ theorem pullback_natCast_pow_dvd_of_pow_succ_dvd {k : ℕ}
     (htors : ∀ y : T, (n : T) ^ (k + 1) * y = 0 → (n : T) * y = 0) {x : f.pullback g}
     (hx : (n : R × S) ^ (k + 1) ∣ (x : R × S)) : (n : f.pullback g) ^ k ∣ x := by
   obtain ⟨⟨a, b⟩, hab⟩ := hx
-  have hx : f (x : R × S).1 = g (x : R × S).2 := x.property
+  have hx : f (x : R × S).1 = g (x : R × S).2 := mem_pullback.mp x.property
   rw [hab] at hx
   have hmem : ((n : R × S) * (a, b)) ∈ f.pullback g := by
+    rw [mem_pullback]
     have h0 : (n : T) ^ (k + 1) * (f a - g b) = 0 := by
       simpa [mul_sub, sub_eq_zero] using hx
     simpa [mul_sub, sub_eq_zero] using htors _ h0
@@ -122,9 +123,11 @@ theorem IsPrecomplete.pullback_span_natCast [IsPrecomplete (span {(n : R)}) R]
   simp only [TauCeti.sModEq_span_singleton_pow_iff] at ha hb
   -- the limit `(a, b)` lies in the pullback because `T` is separated
   have hab : (a, b) ∈ f.pullback g := by
-    refine (IsHausdorff.eq_iff_smodEq (I := span {(n : T)})).mpr fun k ↦ ?_
+    refine RingHom.mem_pullback.mpr <|
+      (IsHausdorff.eq_iff_smodEq (I := span {(n : T)})).mpr fun k ↦ ?_
     rw [TauCeti.sModEq_span_singleton_pow_iff]
-    have hk : f (φ k : R × S).1 = g (φ k : R × S).2 := (φ k).property
+    have hk : f (φ k : R × S).1 = g (φ k : R × S).2 :=
+      RingHom.mem_pullback.mp (φ k).property
     have hfa := map_dvd f (ha k)
     have hgb := map_dvd g (hb k)
     rw [map_pow, map_natCast, map_sub] at hfa hgb
