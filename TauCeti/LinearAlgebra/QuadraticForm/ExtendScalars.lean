@@ -65,6 +65,8 @@ derived from this characterization. Anisotropy is not preserved in general: the 
   particular the hyperbolic plane `x y` extends to the hyperbolic plane.
 * `QuadraticForm.extendScalars_weightedSumSquares`: the extension of a diagonal form is
   diagonal.
+* `QuadraticMap.IsometryEquiv.toLinearEquiv_extendScalars`: the underlying linear equivalence of
+  the induced isometry.
 * `QuadraticMap.IsometryEquiv.extendScalars_refl`, `QuadraticMap.IsometryEquiv.extendScalars_trans`,
   `QuadraticMap.IsometryEquiv.extendScalars_symm`: functoriality of the induced isometries.
 * `QuadraticMap.Equivalent.extendScalars`: isometric forms have isometric extensions.
@@ -307,6 +309,14 @@ def _root_.QuadraticMap.IsometryEquiv.extendScalars {Q₁ : QuadraticForm K (ι 
         QuadraticMap.IsometryEquiv.coe_toLinearEquiv, e.map_app]
     exact DFunLike.congr_fun h x
 
+/-- The linear equivalence underlying the induced isometry of extensions is the scalar extension
+`LinearEquiv.extendScalarsPi` of the linear equivalence underlying the given isometry. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.toLinearEquiv_extendScalars
+    {Q₁ : QuadraticForm K (ι → K)} {Q₂ : QuadraticForm K (κ → K)} (e : Q₁.IsometryEquiv Q₂) :
+    (e.extendScalars L).toLinearEquiv = e.toLinearEquiv.extendScalarsPi L :=
+  (rfl)
+
 /-- The induced isometry of extensions carries a vector with coordinates in `K` to the image of
 that vector. -/
 @[simp]
@@ -320,21 +330,29 @@ theorem _root_.QuadraticMap.IsometryEquiv.extendScalars_apply_algebraMap_comp
 theorem _root_.QuadraticMap.IsometryEquiv.extendScalars_refl (Q : QuadraticForm K (ι → K)) :
     (QuadraticMap.IsometryEquiv.refl Q).extendScalars L =
       QuadraticMap.IsometryEquiv.refl (extendScalars L Q) :=
-  DFunLike.ext _ _ fun x ↦ DFunLike.congr_fun (LinearEquiv.extendScalarsPi_refl (R := K) L) x
+  DFunLike.ext _ _ fun x ↦ by
+    rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
+      QuadraticMap.IsometryEquiv.toLinearEquiv_extendScalars]
+    exact DFunLike.congr_fun (LinearEquiv.extendScalarsPi_refl (R := K) L) x
 
 /-- A composite of isometries induces the composite of the induced isometries. -/
 theorem _root_.QuadraticMap.IsometryEquiv.extendScalars_trans {μ : Type*} [Fintype μ]
     [DecidableEq μ] {Q₁ : QuadraticForm K (ι → K)} {Q₂ : QuadraticForm K (κ → K)}
     {Q₃ : QuadraticForm K (μ → K)} (e : Q₁.IsometryEquiv Q₂) (f : Q₂.IsometryEquiv Q₃) :
     (e.trans f).extendScalars L = (e.extendScalars L).trans (f.extendScalars L) :=
-  DFunLike.ext _ _ fun x ↦
-    DFunLike.congr_fun (e.toLinearEquiv.extendScalarsPi_trans L f.toLinearEquiv) x
+  DFunLike.ext _ _ fun x ↦ by
+    rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
+      QuadraticMap.IsometryEquiv.toLinearEquiv_extendScalars]
+    exact DFunLike.congr_fun (e.toLinearEquiv.extendScalarsPi_trans L f.toLinearEquiv) x
 
 /-- The inverse of an isometry induces the inverse of the induced isometry. -/
 theorem _root_.QuadraticMap.IsometryEquiv.extendScalars_symm {Q₁ : QuadraticForm K (ι → K)}
     {Q₂ : QuadraticForm K (κ → K)} (e : Q₁.IsometryEquiv Q₂) :
     e.symm.extendScalars L = (e.extendScalars L).symm :=
-  DFunLike.ext _ _ fun x ↦ DFunLike.congr_fun (e.toLinearEquiv.extendScalarsPi_symm L) x
+  DFunLike.ext _ _ fun x ↦ by
+    rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
+      QuadraticMap.IsometryEquiv.toLinearEquiv_extendScalars]
+    exact DFunLike.congr_fun (e.toLinearEquiv.extendScalarsPi_symm L) x
 
 /-- Isometric forms have isometric extensions. -/
 theorem _root_.QuadraticMap.Equivalent.extendScalars {Q₁ : QuadraticForm K (ι → K)}
