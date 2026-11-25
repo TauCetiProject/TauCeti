@@ -11,10 +11,12 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 /-!
 # Checks: spheres are weakly closed in finite dimension
 
-In finite dimension every sphere is weakly closed, and the hypothesis of the counterexample
-`TauCeti.not_isClosed_toWeakSpace_setOf_norm_eq` fails: the common kernel of the coordinate
-functionals of a basis, a basis of the dual, is `{0}`, so no weak neighbourhood of `0` contains a
-line through a nonzero vector.
+In finite dimension every sphere is weakly closed (`TauCeti.isClosed_toWeakSpace_setOf_norm_eq`),
+unlike in infinite dimension (`TauCeti.not_isClosed_toWeakSpace_setOf_norm_eq`). The argument in
+infinite dimension, `TauCeti.exists_ne_zero_forall_toWeakSpace_smul_mem_of_mem_nhds_zero`, finds
+a nonzero vector in the common kernel of finitely many continuous linear functionals. The second
+check records the algebraic fact that defeats this step in finite dimension: the common
+kernel of the coordinate functionals of a basis is `{0}`.
 -/
 
 public section
