@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
+public import TauCeti.Algebra.Star.Basic
 public import TauCeti.NumberTheory.NumberField.ComplexConjugation.CMField
 import Mathlib.Data.Sym.Sym2
 import TauCeti.Algebra.Algebra.Pi
@@ -255,8 +256,7 @@ restricting into `Φ₀`. -/
 def induced (Φ₀ : CMType E₀) (f : E₀ →+* E) : CMType E where
   carrier := {φ | φ.comp f ∈ Φ₀}
   star_mem_iff' φ := by
-    have : (star φ).comp f = star (φ.comp f) := RingHom.ext fun _ ↦ by simp [RingHom.star_apply]
-    simp [this]
+    simp [← RingHom.star_comp_right]
 
 @[simp]
 theorem mem_induced {Φ₀ : CMType E₀} {f : E₀ →+* E} {φ : E →+* ℂ} :

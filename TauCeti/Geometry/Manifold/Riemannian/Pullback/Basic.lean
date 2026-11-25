@@ -361,6 +361,20 @@ theorem pullback_inner_congr_of_eventuallyEq
   -- `EventuallyEq.mfderiv_eq` inserts `tangentSpaceCast`, which is the identity by definition.
   rfl
 
+/-- The induced metrics of a family of immersions agree with `F_{t₀}^* g` outside `K` for `t` near
+`t₀` when `F_t = F_{t₀}` outside a closed set `K` for `t` near `t₀`. -/
+theorem eventually_forall_notMem_pullback_inner_eq
+    (g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)) {Φ : ℝ → M → N}
+    (hΦ : ContMDiff (𝓘(ℝ).prod I) J (n + 1) (Function.uncurry Φ))
+    (hinj : ∀ t x, Function.Injective (mfderiv I J (Φ t) x)) {t₀ : ℝ} {K : Set M}
+    (hK : IsClosed K) (hΦK : ∀ᶠ t in 𝓝 t₀, ∀ x ∉ K, Φ t x = Φ t₀ x) :
+    ∀ᶠ t in 𝓝 t₀, ∀ x ∉ K, (g.pullback (Φ t) (hΦ.curry_right (x := t)) (hinj t)).inner x =
+      (g.pullback (Φ t₀) (hΦ.curry_right (x := t₀)) (hinj t₀)).inner x := by
+  filter_upwards [hΦK] with t ht x hx
+  refine g.pullback_inner_congr_of_eventuallyEq ?_ _ _ _ _
+  filter_upwards [hK.isOpen_compl.mem_nhds hx] with y hy
+  exact ht y hy
+
 /-- Pulling a Riemannian metric back along the identity leaves it unchanged. -/
 @[simp]
 theorem pullback_id

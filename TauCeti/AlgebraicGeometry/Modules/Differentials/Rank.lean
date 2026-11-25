@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 public import TauCeti.AlgebraicGeometry.VectorBundle.FixedRank
 public import TauCeti.AlgebraicGeometry.VectorBundle.Rank
 public import Mathlib.RingTheory.Smooth.StandardSmoothCotangent
+import TauCeti.AlgebraicGeometry.Restrict
 import TauCeti.AlgebraicGeometry.VectorBundle.Stalk
 
 /-!
@@ -141,30 +142,19 @@ theorem smoothOfRelativeDimension_of_forall_rank_relativeDifferentials_eq {X : S
     [X.Over (Spec (.of R))] [Smooth (X ↘ Spec (.of R))] {d : ℕ}
     (h : ∀ x, (FiniteLocallyFreeSheaf.relativeDifferentials R X).rank x = d) :
     SmoothOfRelativeDimension d (X ↘ Spec (.of R)) := by
-  refine ⟨fun x ↦ ?_⟩
-  -- The standard smooth chart around `x` has some relative dimension `m`.
-  obtain ⟨m, U, hU, V, hV, hx, e, hm⟩ :=
-    (X ↘ Spec (.of R)).exists_isStandardSmoothOfRelativeDimension_of_smooth x
-  refine ⟨U, hU, V, hV, hx, e, ?_⟩
-  have : SmoothOfRelativeDimension m (Spec.map ((X ↘ Spec (.of R)).appLE U V e)) := by
-    rw [HasRingHomProperty.Spec_iff (P := @SmoothOfRelativeDimension m)]
-    exact RingHom.locally_of RingHom.isStandardSmoothOfRelativeDimension_respectsIso _ hm
-  -- Regard the chart `Spec Γ(X, V)` as a scheme over `Spec R`; it is smooth of relative
-  -- dimension `m`, so `Ω` has rank `m` on it, and rank `d` because the chart is open in `X`.
-  let : (Spec Γ(X, V)).Over (Spec (.of R)) := ⟨hV.fromSpec ≫ X ↘ Spec (.of R)⟩
-  have : hV.fromSpec.IsOver (Spec (.of R)) := ⟨rfl⟩
-  have : SmoothOfRelativeDimension m (Spec Γ(X, V) ↘ Spec (.of R)) := by
-    -- The structure morphism `Spec Γ(X, V) ↘ Spec R` is the local `Over` instance above, so it is
-    -- `hV.fromSpec ≫ X ↘ Spec R` by definition; unfold it to rewrite with `SpecMap_appLE_fromSpec`.
-    change SmoothOfRelativeDimension m (hV.fromSpec ≫ X ↘ Spec (.of R))
-    rw [← IsAffineOpen.SpecMap_appLE_fromSpec _ hU hV e]
-    exact inferInstanceAs (SmoothOfRelativeDimension (m + 0) _)
-  have := SmoothOfRelativeDimension.smooth m (Spec Γ(X, V) ↘ Spec (.of R))
-  obtain ⟨y, rfl⟩ : x ∈ Set.range hV.fromSpec := by rwa [IsAffineOpen.range_fromSpec]
-  have hy := FiniteLocallyFreeSheaf.rank_relativeDifferentials_apply R m y
-  rw [FiniteLocallyFreeSheaf.rank_relativeDifferentials_of_isOpenImmersion R hV.fromSpec,
-    h] at hy
-  exact hy ▸ hm
+  refine IsZariskiLocalAtSource.of_forall_exists_ι_comp fun x ↦ ?_
+  -- Around `x`, the structure morphism is smooth of some relative dimension `m`.
+  obtain ⟨V, m, hx, hm⟩ := (X ↘ Spec (.of R)).exists_smoothOfRelativeDimension_ι_comp_of_smooth x
+  -- Regard `V` as a scheme over `Spec R`; it is smooth of relative dimension `m`, so `Ω` has rank
+  -- `m` on it, and rank `d` because `V` is open in `X`.
+  let : (V : Scheme).Over (Spec (.of R)) := ⟨V.ι ≫ X ↘ Spec (.of R)⟩
+  have : V.ι.IsOver (Spec (.of R)) := ⟨rfl⟩
+  have : SmoothOfRelativeDimension m ((V : Scheme) ↘ Spec (.of R)) := hm
+  have := SmoothOfRelativeDimension.smooth m ((V : Scheme) ↘ Spec (.of R))
+  have hy := (FiniteLocallyFreeSheaf.rank_relativeDifferentials_of_isOpenImmersion R V.ι
+    ⟨x, hx⟩).symm.trans (FiniteLocallyFreeSheaf.rank_relativeDifferentials_apply R m _)
+  rw [h] at hy
+  exact ⟨V, hx, hy ▸ hm⟩
 
 variable (X)
 

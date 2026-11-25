@@ -23,6 +23,8 @@ uniformly continuous on a neighbourhood of `s`. For uniformly continuous functio
 upgrades the pointwise convergence of Mathlib's
 `ContDiffBump.convolution_tendsto_right_of_continuous` to uniform convergence, and allows
 simultaneous approximation of the derivatives of a compactly supported smooth function.
+Mollifying a locally integrable function by a normalized bump gives a smooth function
+(`ContDiffBump.contDiff_normed_convolution`).
 Normalized-bump convolution also preserves an almost-everywhere bound on a function
 (`ContDiffBump.norm_normed_convolution_le`) and its Lipschitz constant, since it averages the
 differences of translates (`ContDiffBump.dist_normed_convolution_le_of_dist_sub_le`).
@@ -155,6 +157,11 @@ theorem tsupport_normed_convolution_subset [IsLocallyFiniteMeasure μ] [μ.IsOpe
       (Set.add_subset_add (ρ.support_normed_eq.subset.trans ball_subset_closedBall) subset_closure)
   · exact (isClosed_tsupport g).add_left_of_isCompact (isCompact_closedBall _ _)
 
+/-- Mollifying a locally integrable function by a normalized bump gives a smooth function. -/
+theorem contDiff_normed_convolution [μ.IsAddHaarMeasure] (ρ : ContDiffBump (0 : G))
+    (hg : LocallyIntegrable g μ) {n : ℕ∞} : ContDiff ℝ n (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] g) :=
+  ρ.hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ) ρ.contDiff_normed hg
+
 variable [μ.IsAddHaarMeasure] [CompleteSpace F]
 
 /-- Integrating against the normalized bump `ContDiffBump.shrinking hR n` is integrating against
@@ -276,8 +283,8 @@ theorem tendsto_integral_normed_convolution_smul {H : Type*} [NormedAddCommGroup
       (𝓝 (∫ x, g x • w x ∂μ)) :=
   (tendstoUniformly_normed_convolution (μ := μ) hρ hg).tendsto_integral_smul_of_integrable
     (Eventually.of_forall fun i =>
-      ((ρ i).hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ) (ρ i).contDiff_normed
-        hg.continuous.locallyIntegrable (n := ⊤)).continuous.aestronglyMeasurable.smul hw.1)
+      ((ρ i).contDiff_normed_convolution hg.continuous.locallyIntegrable
+        (n := ⊤)).continuous.aestronglyMeasurable.smul hw.1)
     hw hgw
 
 /-- Normalized bumps of radius tending to zero along a filter approximate a function that is
@@ -484,8 +491,7 @@ theorem Continuous.exists_contDiff_norm_le_lintegral_sub_le {E F : Type*}
   let φ : ℕ → ContDiffBump (0 : E) := ContDiffBump.shrinking hδ
   set ψ : ℕ → E → F := fun n => (φ n).normed Measure.addHaar ⋆[lsmul ℝ ℝ, Measure.addHaar] h
   have hψd (n : ℕ) : ContDiff ℝ ∞ (ψ n) :=
-    (φ n).hasCompactSupport_normed.contDiff_convolution_left _ (φ n).contDiff_normed
-      hhc.locallyIntegrable
+    (φ n).contDiff_normed_convolution hhc.locallyIntegrable
   have hψs (n : ℕ) : tsupport (ψ n) ⊆ cthickening δ (tsupport h) := by
     refine (φ n).tsupport_normed_convolution_subset.trans ?_
     rintro _ ⟨a, ha, b, hb, rfl⟩
