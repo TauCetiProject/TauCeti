@@ -56,6 +56,8 @@ closed upper half-plane are read in `ℂ` in
   of one chart, extended by zero.
 * `TauCeti.FiniteBundleAtlas.ofBaseSet`: the charts of an atlas of `V` as an atlas of `V'`.
 * `TauCeti.FiniteBundleAtlas.append`: the union of two finite bundle atlases of `V`.
+* `TauCeti.FiniteBundleAtlas.focus`: the same charts, with a closed set inside the domain of one
+  chart removed from the domains of the others.
 
 ## Main results
 
@@ -495,6 +497,80 @@ theorem coord_append_natAdd (j : Fin B.n) :
   rw [coord_def, coord_def, chart_append_natAdd, triv_append_natAdd]
 
 end Append
+
+open Classical in
+/-- The atlas with the charts of `A` in which a closed set `L` inside the domain of chart `i` is
+removed from the domains of all other charts: chart `i` keeps its domain, and chart `j ≠ i` has
+domain `A.dom j \ L`. A section vanishing off `L` is then zero in every chart other than `i`. -/
+@[expose, simps n center dom]
+def focus (i : Fin A.n) {L : Set M} (hL : IsClosed L) (hLi : L ⊆ A.dom i) :
+    FiniteBundleAtlas E M F V where
+  n := A.n
+  center := A.center
+  dom j := if j = i then A.dom i else A.dom j \ L
+  isOpen_dom j := by
+    split_ifs
+    exacts [A.isOpen_dom i, (A.isOpen_dom j).sdiff hL]
+  isCompact_closure_dom j := by
+    split_ifs with h
+    · exact A.isCompact_closure_dom i
+    · exact (A.isCompact_closure_dom j).of_isClosed_subset isClosed_closure
+        (closure_mono sdiff_subset)
+  closure_dom_subset_source j := by
+    split_ifs with h
+    · exact h ▸ A.closure_dom_subset_source j
+    · exact (closure_mono sdiff_subset).trans (A.closure_dom_subset_source j)
+  closure_dom_subset_baseSet j := by
+    split_ifs with h
+    · exact h ▸ A.closure_dom_subset_baseSet j
+    · exact (closure_mono sdiff_subset).trans (A.closure_dom_subset_baseSet j)
+  iUnion_dom := eq_univ_of_forall fun x ↦ by
+    by_cases hx : x ∈ L
+    · exact mem_iUnion.2 ⟨i, by simpa using hLi hx⟩
+    obtain ⟨j, hj⟩ := A.exists_mem_dom x
+    refine mem_iUnion.2 ⟨j, ?_⟩
+    split_ifs with h
+    · exact h ▸ hj
+    · exact ⟨hj, hx⟩
+
+section Focus
+
+variable {i : Fin A.n} {L : Set M} (hL : IsClosed L) (hLi : L ⊆ A.dom i)
+
+@[simp]
+theorem chart_focus (j : Fin A.n) : (A.focus i hL hLi).chart j = A.chart j :=
+  (rfl)
+
+@[simp]
+theorem triv_focus (j : Fin A.n) : (A.focus i hL hLi).triv j = A.triv j :=
+  (rfl)
+
+/-- The readings of a section in the charts of `A.focus i hL hLi` are its readings in `A`. -/
+@[simp]
+theorem coord_focus (j : Fin A.n) : (A.focus i hL hLi).coord j = A.coord j :=
+  (rfl)
+
+/-- Chart `i` of `A.focus i hL hLi` keeps its domain. -/
+theorem focus_dom_self : (A.focus i hL hLi).dom i = A.dom i := by
+  simp
+
+/-- A chart of `A.focus i hL hLi` other than `i` has the domain of `A` minus `L`. -/
+theorem focus_dom_of_ne {j : Fin A.n} (hj : j ≠ i) : (A.focus i hL hLi).dom j = A.dom j \ L := by
+  simp [hj]
+
+/-- The chart domains of `A.focus i hL hLi` lie in those of `A`. -/
+theorem focus_dom_subset (j : Fin A.n) : (A.focus i hL hLi).dom j ⊆ A.dom j := by
+  by_cases hj : j = i
+  · subst hj
+    rw [focus_dom_self]
+  · rw [A.focus_dom_of_ne hL hLi hj]
+    exact sdiff_subset
+
+/-- The chart domains of `A.focus i hL hLi` other than that of chart `i` do not meet `L`. -/
+theorem focus_dom_inter {j : Fin A.n} (hj : j ≠ i) : (A.focus i hL hLi).dom j ∩ L = ∅ := by
+  rw [A.focus_dom_of_ne hL hLi hj, sdiff_inter_self]
+
+end Focus
 
 end FiniteBundleAtlas
 

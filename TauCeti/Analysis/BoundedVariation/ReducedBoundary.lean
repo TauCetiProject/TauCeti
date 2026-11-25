@@ -57,7 +57,8 @@ proves their basic properties.
   perimeter (`TauCeti.eventually_perimeter_ball_le_variationMeasure_closedBall`,
   `TauCeti.eventually_perimeter_ball_le_variationMeasure_closedBall_of_mem_reducedBoundary`), and,
   when `μ` is an additive Haar measure, the point lies in the topological frontier of `s`
-  (`TauCeti.reducedBoundary_subset_frontier`).
+  (`TauCeti.reducedBoundary_subset_frontier`). Then `|Dχ_s|` vanishes off the frontier
+  (`TauCeti.variationMeasure_indicator_compl_frontier_eq_zero`).
 * The outer normal concentrates at `ν_s x` in mean at every point `x` of the reduced boundary:
   `⨍_{closedBall x r} ‖ν_s - ν_s x‖ d|Dχ_s| → 0`
   (`TauCeti.tendsto_setLIntegral_enorm_outerNormal_sub_div`). The averages of the unit vectors
@@ -283,6 +284,22 @@ theorem reducedBoundary_subset_frontier [μ.IsAddHaarMeasure] :
   · rw [perimeter_congr_ae (t := ∅), perimeter_empty]
     filter_upwards [ae_restrict_mem measurableSet_ball] with y hy
     simpa using h (hrV hy).1
+
+/-- **The perimeter measure lives on the topological frontier.** Against an additive Haar measure,
+`|Dχ_s|` gives no mass to the points of `Ω` outside the frontier of `s`. No measurability of `s`
+is needed. -/
+theorem variationMeasure_indicator_compl_frontier_eq_zero [μ.IsAddHaarMeasure] :
+    variationMeasure μ Ω (s.indicator 1) (((↑) : Ω → E) ⁻¹' (frontier s)ᶜ) = 0 := by
+  by_cases h : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ ∧ ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞
+  · let V : Opens E := ⟨(frontier s)ᶜ ∩ Ω, isClosed_frontier.isOpen_compl.inter Ω.isOpen⟩
+    have hV : ((↑) : Ω → E) ⁻¹' (frontier s)ᶜ = (↑) ⁻¹' (V : Set E) := by
+      ext x
+      simp [V]
+    rw [hV, variationMeasure_preimage_coe h.1 h.2 (show V ≤ Ω from fun _ hx => hx.2),
+      ← perimeter_def]
+    exact perimeter_eq_zero_of_disjoint_frontier (disjoint_left.2 fun _ hx hxV => hxV.1 hx)
+  · simp [variationMeasure_eq_zero_of_not h]
 
 /-- At `|Dχ_s|`-almost every point the polar density has norm one and is the limit of its averages
 over shrinking closed balls. -/

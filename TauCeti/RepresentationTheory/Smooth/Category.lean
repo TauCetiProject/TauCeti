@@ -28,6 +28,7 @@ equivalence.
 
 ## Main definitions
 
+* `TauCeti.SmoothRep.isSmoothProperty A G`: the property "smooth" on `Rep A G`.
 * `TauCeti.SmoothRep A G`: the full subcategory of `Rep A G` on the smooth representations.
 * `TauCeti.SmoothRep.ι`: the fully faithful inclusion `SmoothRep A G ⥤ Rep A G`.
 * `TauCeti.SmoothRep.of ρ`: a smooth representation `ρ`, bundled as an object of `SmoothRep A G`.
@@ -64,11 +65,14 @@ section Semiring
 
 variable [Semiring A]
 
+/-- The property "smooth" on `Rep A G`, the property cutting out `SmoothRep A G`. -/
+abbrev SmoothRep.isSmoothProperty : ObjectProperty (Rep.{w} A G) := fun V ↦ IsSmooth V.ρ
+
 /-- The category of smooth representations of a topological group `G` over a semiring `A`: the full
 subcategory of `Rep A G` on the representations in which every vector has an open stabilizer.
 Its morphisms are all intertwining maps. -/
 abbrev SmoothRep : Type _ :=
-  ObjectProperty.FullSubcategory fun V : Rep.{w} A G ↦ IsSmooth V.ρ
+  (SmoothRep.isSmoothProperty.{w} A G).FullSubcategory
 
 namespace SmoothRep
 

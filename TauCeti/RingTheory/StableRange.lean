@@ -26,12 +26,15 @@ This file develops the ring-theoretic properties of `HasStableRangeLE`:
 * Only subsingleton rings have stable range at most `0`, while every possibly noncommutative local
   ring (in particular every division ring and field) has stable range at most `1`. The ring `ℤ`
   does not have stable range at most `1`, witnessed by the unimodular row `(2, 5)`.
+* **Stable range one in unit form:** `R` has stable range at most `1` exactly when `aR + bR = R`
+  forces `a + b * c` to be a unit for some `c`. Such a ring is Dedekind-finite: a one-sided inverse
+  is two-sided.
 * **Vaserstein's first theorem:** `HasStableRangeLE R s` allows shortening the final coordinate of
   a unimodular row `(a, d)` on `ι ⊕ Unit` into any chosen finite subset of `ι` of cardinality at
   least `s`. Consequently `HasStableRangeLE R s` is monotone in `s` and equivalent to shortening
   all unimodular `(m + 1)`-rows of length `m ≥ s`.
 * Passage along surjective ring homomorphisms, invariance under ring equivalence, and compatibility
-  with finite products of rings.
+  with products of rings, binary and indexed.
 * **Vaserstein's second theorem:** `HasStableRangeLE Rᵐᵒᵖ s ↔ HasStableRangeLE R s`, so left and
   right stable range agree for every ring.
 
@@ -44,6 +47,9 @@ This file develops the ring-theoretic properties of `HasStableRangeLE`:
 * `TauCeti.hasStableRangeLE_zero_iff`: `HasStableRangeLE R 0 ↔ Subsingleton R`.
 * `TauCeti.hasStableRangeLE_one_of_isLocalRing`: a local ring has stable range at most `1`.
 * `TauCeti.not_hasStableRangeLE_one_int`: `ℤ` does not have stable range at most `1`.
+* `TauCeti.HasStableRangeLE.isDedekindFiniteMonoid`: a ring of stable range at most `1` is
+  Dedekind-finite.
+* `TauCeti.hasStableRangeLE_one_iff`: the unit form of stable range at most `1`.
 * `TauCeti.HasStableRangeLE.exists_isUnimodular_add_mul_of_subset`: shortening into any finite
   subset of cardinality at least `s`.
 * `TauCeti.hasStableRangeLE_iff_forall_le`: equivalence with shortening all rows of length at least
@@ -51,7 +57,8 @@ This file develops the ring-theoretic properties of `HasStableRangeLE`:
 * `TauCeti.HasStableRangeLE.mono`: monotonicity in the bound `s`.
 * `TauCeti.HasStableRangeLE.of_surjective` and `RingEquiv.hasStableRangeLE_iff`: quotient
   monotonicity and ring-isomorphism invariance.
-* `TauCeti.hasStableRangeLE_prod_iff`: stable range of a product ring `R × S`.
+* `TauCeti.hasStableRangeLE_prod_iff`, `TauCeti.hasStableRangeLE_pi_iff`: stable range of a
+  product ring `R × S` and of an indexed product `Π i, R i`.
 * `TauCeti.hasStableRangeLE_mop_iff`: `HasStableRangeLE Rᵐᵒᵖ s ↔ HasStableRangeLE R s`
   (Vaserstein).
 
@@ -147,6 +154,47 @@ theorem not_hasStableRangeLE_one_int : ¬ HasStableRangeLE ℤ 1 := fun h ↦ by
     (by simp [Fin.sum_univ_two])
   have h25 : (2 + 5 * c 0) * d 0 = 1 := by simpa using hcd
   rcases Int.eq_one_or_neg_one_of_mul_eq_one h25 with h1 | h1 <;> omega
+
+/-! ## Stable range one -/
+
+/-- A ring of stable range at most `1` is Dedekind-finite: if `x * y = 1` then `y * x = 1`. -/
+theorem HasStableRangeLE.isDedekindFiniteMonoid {R : Type*} [Ring R] (hR : HasStableRangeLE R 1) :
+    IsDedekindFiniteMonoid R := by
+  refine ⟨fun {x y} hxy ↦ ?_⟩
+  -- The row `(y, 1 - y * x)` is unimodular with witness `(x, 1)`, so some `w = y + (1 - y * x) * c`
+  -- has a right inverse `d 0`. Then `x * w = 1` forces `d 0 = x`, and `w = w * (x * y) = y`.
+  obtain ⟨c, d, hcd⟩ := hasStableRangeLE_iff_exists_sum_eq_one.mp hR ![y, 1 - y * x] ![x, 1]
+    (by simp [Fin.sum_univ_two])
+  set w := y + (1 - y * x) * c 0 with hw
+  have hwd : w * d 0 = 1 := by simpa using hcd
+  have hxw : x * w = 1 := by
+    simp [hw, mul_add, mul_sub, ← mul_assoc, hxy]
+  have hdx : d 0 = x := by
+    calc d 0 = x * w * d 0 := by rw [hxw, one_mul]
+      _ = x := by rw [mul_assoc, hwd, mul_one]
+  have hwx : w * x = 1 := hdx ▸ hwd
+  have hwy : w = y := by
+    calc w = w * x * y := by rw [mul_assoc, hxy, mul_one]
+      _ = y := by rw [hwx, one_mul]
+  exact hwy ▸ hwx
+
+/-- **Stable range one in unit form.** A ring `R` has stable range at most `1` exactly when, for
+all `a` and `b` generating `R` as a right ideal, some `a + b * c` is a unit, not merely right
+invertible. -/
+theorem hasStableRangeLE_one_iff {R : Type*} [Ring R] :
+    HasStableRangeLE R 1 ↔ ∀ a b x y : R, a * x + b * y = 1 → ∃ c, IsUnit (a + b * c) := by
+  constructor
+  · intro hR a b x y h
+    -- The shortened row has a right inverse, hence is a unit since `R` is Dedekind-finite.
+    have := hR.isDedekindFiniteMonoid
+    obtain ⟨c, d, hcd⟩ := hasStableRangeLE_iff_exists_sum_eq_one.mp hR ![a, b] ![x, y]
+      (by simpa [Fin.sum_univ_two] using h)
+    exact ⟨c 0, IsUnit.of_mul_eq_one (d 0) (by simpa using hcd)⟩
+  · intro h
+    refine hasStableRangeLE_iff_exists_sum_eq_one.mpr fun a b hab ↦ ?_
+    obtain ⟨c, u, hu⟩ := h (a 0) (a 1) (b 0) (b 1) (by simpa [Fin.sum_univ_two] using hab)
+    refine ⟨fun _ ↦ c, fun _ ↦ ↑u⁻¹, ?_⟩
+    simp [← hu]
 
 /-! ## Subset shortening and longer rows (Vaserstein's first theorem) -/
 
@@ -330,6 +378,19 @@ theorem hasStableRangeLE_prod_iff {R S : Type*} [Ring R] [Ring S] {s : ℕ} :
   refine ⟨fun i ↦ (c₁ i, c₂ i), fun i ↦ (d₁ i, d₂ i), Prod.ext ?_ ?_⟩
   · exact (map_sum (RingHom.fst R S) _ _).trans h₁
   · exact (map_sum (RingHom.snd R S) _ _).trans h₂
+
+/-- Stable range of an indexed product of rings `Π i, R i` is the supremum of the stable ranges of
+the factors: a unimodular row is shortened componentwise. No finiteness of the index type is
+needed. -/
+@[simp]
+theorem hasStableRangeLE_pi_iff {ι : Type*} {R : ι → Type*} [∀ i, Ring (R i)] {s : ℕ} :
+    HasStableRangeLE (Π i, R i) s ↔ ∀ i, HasStableRangeLE (R i) s := by
+  refine ⟨fun h i ↦ h.of_surjective (f := Pi.evalRingHom R i) (Function.surjective_eval i),
+    fun h ↦ hasStableRangeLE_iff_exists_sum_eq_one.mpr fun a b hab ↦ ?_⟩
+  have hab' (i : ι) : ∑ k, a k i * b k i = 1 := by
+    simpa [Finset.sum_apply] using congrFun hab i
+  choose c d hcd using fun i ↦ hasStableRangeLE_iff_exists_sum_eq_one.mp (h i) _ _ (hab' i)
+  exact ⟨fun k i ↦ c i k, fun k i ↦ d i k, funext fun i ↦ by simpa [Finset.sum_apply] using hcd i⟩
 
 /-! ## Opposite ring (Vaserstein's second theorem) -/
 

@@ -9,7 +9,6 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 -- Private: the ordered-product, square and even-relation formulas are used only inside proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
-import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 
@@ -146,13 +145,14 @@ theorem map_ι_apply_eq_sum {S W : Type*} [Semiring S] [SMul ℝ S] [AddCommGrou
 
 section Module
 
-variable {W : Type*} [AddCommGroup W] [Module ℂ W] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W)
+variable {K W : Type*} [Semiring K] [AddCommGroup W] [Module K W] [Algebra ℝ (Module.End K W)]
+  (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End K W)
 
 /-- For `Q v = -‖v‖²`, Clifford multiplication by an orthonormal basis vector squares to `-1`:
 `c(bᵢ) (c(bᵢ) ψ) = -ψ`. -/
 theorem map_ι_apply_map_ι_apply (i : ι) (ψ : W) :
     ρ (CliffordAlgebra.ι Q (b i)) (ρ (CliffordAlgebra.ι Q (b i)) ψ) = -ψ := by
-  rw [CliffordAlgebra.map_ι_apply_map_ι_apply ρ, hQ, b.orthonormal.1 i]
+  rw [← mul_apply_eq_comp, ← map_mul, CliffordAlgebra.ι_sq_scalar, hQ, b.orthonormal.1 i]
   simp
 
 /-- For `Q v = -‖v‖²`, Clifford multiplications by distinct orthonormal basis vectors
