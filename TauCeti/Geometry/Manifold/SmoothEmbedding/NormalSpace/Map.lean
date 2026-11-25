@@ -261,7 +261,7 @@ def normalSpaceEquiv (hn : n ≠ 0) (hm : m ≠ 0) (hv : (mfderiv J J' v (f x)).
   -- `tangentSpaceCast ∘L mfderiv`. It is the one underlying the equivalence below by definition,
   -- since `ContinuousLinearEquiv.ofContinuousLinearMap` applies `mfderiv` (see
   -- `ContinuousLinearEquiv.coe_ofContinuousLinearMap`) and the cast then follows it.
-  f.normalSpaceEquivOfMapTangentRange g x (u x) hn hm
+  f.isImmersion.normalSpaceEquivOfMapTangentRange g.isImmersion x (u x) hn hm
     ((ContinuousLinearEquiv.ofContinuousLinearMap _ _ hv.self_comp_inverse
       hv.inverse_comp_self).trans
       (tangentSpaceCast J' (v (f x)) (g (u x))))
@@ -276,7 +276,8 @@ theorem normalSpaceEquiv_toContinuousLinearMap (hn : n ≠ 0) (hm : m ≠ 0)
   ext z
   obtain ⟨w, rfl⟩ := f.isImmersion.normalClass_surjective x hn z
   rw [ContinuousLinearEquiv.coe_apply, normalMap_normalClass]
-  refine (f.normalSpaceEquivOfMapTangentRange_normalClass g x (u x) hn hm _ _ w).trans ?_
+  refine (f.isImmersion.normalSpaceEquivOfMapTangentRange_normalClass g.isImmersion x (u x) hn hm
+    _ _ w).trans ?_
   rw [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.coe_ofContinuousLinearMap]
 
 /-- On representatives, the normal-fibre equivalence applies the ambient differential. -/

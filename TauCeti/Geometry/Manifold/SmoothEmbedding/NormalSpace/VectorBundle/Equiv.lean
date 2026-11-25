@@ -15,7 +15,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Pullback
 Let `f : M → N` be an embedding between finite-dimensional manifolds and `E₂` a vector bundle
 over `M`. A family of continuous linear maps `g x : T_(f x) N → E₂ x`, each with kernel exactly
 the tangent range `df_x(T_x M)` and with target of the dimension of the normal space, identifies
-each normal space with the fibre `E₂ x` (`TauCeti.SmoothEmbedding.normalSpaceEquivOfKer`).
+each normal space with the fibre `E₂ x` (`Manifold.IsImmersion.normalSpaceEquivOfKer`).
 If `⟨x, v⟩ ↦ ⟨x, g x v⟩` is `C^m` on the pulled-back ambient tangent bundle, these fibrewise
 equivalences are `C^m` on the intrinsic normal bundle
 (`TauCeti.SmoothEmbedding.contMDiff_normalSpaceEquivOfKer`), so they assemble into a
@@ -68,13 +68,14 @@ theorem contMDiff_normalSpaceEquivOfKer (hn : n ≠ 0) (hm : m + 1 ≤ n)
     ContMDiff (I.prod 𝓘(𝕜, P)) (I.prod 𝓘(𝕜, W)) m
       (fun p : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn) ↦
         TotalSpace.mk' W (E := E₂) p.proj
-          (f.normalSpaceEquivOfKer p.proj hn (g p.proj) (hg p.proj) (hgdim p.proj) p.snd)) := by
+          (f.isImmersion.normalSpaceEquivOfKer p.proj hn (g p.proj) (hg p.proj) (hgdim p.proj)
+            p.snd)) := by
   let := f.normalSpaceFiberBundle hn hdim
   rw [f.contMDiff_normalBundle_iff hn hm hdim]
   refine hgs.congr fun ⟨x, v⟩ ↦ ?_
   rw [Function.comp_apply, normalQuotientMap_apply]
   exact congrArg (TotalSpace.mk' W x)
-    (f.normalSpaceEquivOfKer_normalClass x hn (g x) (hg x) (hgdim x) v)
+    (f.isImmersion.normalSpaceEquivOfKer_normalClass x hn (g x) (hg x) (hgdim x) v)
 
 /-- **The normal bundle is diffeomorphic to any bundle it is identified with by a smooth family of
 maps.** For a `C^n` embedding with `m + 1 ≤ n` and a family `g x : T_(f x) N → E₂ x` with kernels
@@ -93,7 +94,8 @@ def normalBundleDiffeomorphOfKer (hn : n ≠ 0) (hm : m + 1 ≤ n)
       TotalSpace W E₂ :=
   letI := f.normalSpaceFiberBundle hn hdim
   letI := f.normalSpaceVectorBundle hn hdim
-  TauCeti.bundleDiffeomorph (fun x ↦ f.normalSpaceEquivOfKer x hn (g x) (hg x) (hgdim x))
+  TauCeti.bundleDiffeomorph
+    (fun x ↦ f.isImmersion.normalSpaceEquivOfKer x hn (g x) (hg x) (hgdim x))
     (f.contMDiff_normalSpaceEquivOfKer hn hm hdim g hg hgdim hgs)
 
 /-- The diffeomorphism sends a normal vector at `x` to the corresponding vector of `E₂ x`. -/
@@ -108,7 +110,9 @@ theorem normalBundleDiffeomorphOfKer_apply (hn : n ≠ 0) (hm : m + 1 ≤ n)
     (p : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn)) :
     letI := f.normalSpaceFiberBundle hn hdim
     f.normalBundleDiffeomorphOfKer hn hm hdim g hg hgdim hgs p =
-      ⟨p.proj, f.normalSpaceEquivOfKer p.proj hn (g p.proj) (hg p.proj) (hgdim p.proj) p.snd⟩ := by
+      ⟨p.proj,
+        f.isImmersion.normalSpaceEquivOfKer p.proj hn (g p.proj) (hg p.proj) (hgdim p.proj)
+          p.snd⟩ := by
   let := f.normalSpaceFiberBundle hn hdim
   let := f.normalSpaceVectorBundle hn hdim
   exact TauCeti.bundleDiffeomorph_apply _ _ p
@@ -127,7 +131,8 @@ theorem normalBundleDiffeomorphOfKer_symm_apply (hn : n ≠ 0) (hm : m + 1 ≤ n
     letI := f.normalSpaceFiberBundle hn hdim
     (f.normalBundleDiffeomorphOfKer hn hm hdim g hg hgdim hgs).symm q =
       ⟨q.proj,
-        (f.normalSpaceEquivOfKer q.proj hn (g q.proj) (hg q.proj) (hgdim q.proj)).symm q.snd⟩ := by
+        (f.isImmersion.normalSpaceEquivOfKer q.proj hn (g q.proj) (hg q.proj)
+          (hgdim q.proj)).symm q.snd⟩ := by
   let := f.normalSpaceFiberBundle hn hdim
   let := f.normalSpaceVectorBundle hn hdim
   exact TauCeti.bundleDiffeomorph_symm_apply _ _ q

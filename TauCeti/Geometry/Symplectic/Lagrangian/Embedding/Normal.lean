@@ -36,7 +36,7 @@ cotangent bundle `T^* M` is `C^m`
 Since a smooth family of fibrewise linear equivalences has a smooth inverse, the normal bundle of a
 Lagrangian embedding is `C^m`-diffeomorphic to `T^* M` over the identity of `M`
 (`TauCeti.SmoothEmbedding.normalBundleDiffeomorphOfIsLagrangianMap`). Both identifications are
-instances of `TauCeti.SmoothEmbedding.normalSpaceEquivOfKer` and
+instances of `Manifold.IsImmersion.normalSpaceEquivOfKer` and
 `TauCeti.SmoothEmbedding.normalBundleDiffeomorphOfKer` for the family of pairing covectors.
 
 Combined with a tubular neighbourhood, this identifies a neighbourhood of a Lagrangian submanifold
@@ -161,8 +161,8 @@ the normal class `[v]` of an ambient tangent vector `v` at `f x` corresponds to 
 `σ_(f x)(df_x ·, v)` at `x`. The source is finite-dimensional since `df_x` is injective. -/
 def normalSpaceEquivOfIsLagrangianMap (hf : hσ.IsLagrangianMap I f) (hn : n ≠ 0) (x : M) :
     f.isImmersion.NormalSpace x hn ≃L[ℝ] (TangentSpace I x →L[ℝ] ℝ) :=
-  haveI := f.finiteDimensional_tangentSpace x hn
-  f.normalSpaceEquivOfKer x hn (f.pairingCovector σ x)
+  haveI := f.isImmersion.finiteDimensional_tangentSpace x hn
+  f.isImmersion.normalSpaceEquivOfKer x hn (f.pairingCovector σ x)
     (f.pairingCovector_eq_zero_iff_mem_tangentRange hf hn x) <| by
     -- The normal space and the cotangent space both have the dimension of `T_x M`.
     have h2 := hf.two_mul_finrank (f.isImmersion.mfderiv_injective hn x)
@@ -177,8 +177,8 @@ theorem normalSpaceEquivOfIsLagrangianMap_normalClass (hf : hσ.IsLagrangianMap 
     (x : M) (v : TangentSpace J (f x)) :
     f.normalSpaceEquivOfIsLagrangianMap hf hn x (f.isImmersion.normalClass x hn v) =
       f.pairingCovector σ x v :=
-  haveI := f.finiteDimensional_tangentSpace x hn
-  f.normalSpaceEquivOfKer_normalClass x hn _ _ _ v
+  haveI := f.isImmersion.finiteDimensional_tangentSpace x hn
+  f.isImmersion.normalSpaceEquivOfKer_normalClass x hn _ _ _ v
 
 /-- The covector `σ_(f x)(df_x ·, v)` corresponds to the normal class `[v]`. -/
 @[simp]
@@ -186,8 +186,8 @@ theorem normalSpaceEquivOfIsLagrangianMap_symm_pairingCovector (hf : hσ.IsLagra
     (hn : n ≠ 0) (x : M) (v : TangentSpace J (f x)) :
     (f.normalSpaceEquivOfIsLagrangianMap hf hn x).symm (f.pairingCovector σ x v) =
       f.isImmersion.normalClass x hn v :=
-  haveI := f.finiteDimensional_tangentSpace x hn
-  f.normalSpaceEquivOfKer_symm_apply x hn _ _ _ v
+  haveI := f.isImmersion.finiteDimensional_tangentSpace x hn
+  f.isImmersion.normalSpaceEquivOfKer_symm_apply x hn _ _ _ v
 
 /-- The codimension of a Lagrangian embedding of a nonempty manifold into a finite-dimensional
 manifold is the dimension of its cotangent model fibre, so `E →L[ℝ] ℝ` is a model fibre for its
@@ -196,7 +196,7 @@ theorem finrank_continuousLinearMap_eq_sub_of_isLagrangianMap [Nonempty M]
     (hf : hσ.IsLagrangianMap I f) (hn : n ≠ 0) :
     finrank ℝ (E →L[ℝ] ℝ) = finrank ℝ F - finrank ℝ E := by
   let x := Classical.arbitrary M
-  have := f.finiteDimensional_tangentSpace x hn
+  have := f.isImmersion.finiteDimensional_tangentSpace x hn
   have : FiniteDimensional ℝ E := (tangentSpaceCastModel I x).toLinearEquiv.finiteDimensional
   have h2 := hf.two_mul_finrank (f.isImmersion.mfderiv_injective hn x)
   rw [← LinearMap.toContinuousLinearMap.finrank_eq, Subspace.dual_finrank_eq]

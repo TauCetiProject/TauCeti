@@ -183,8 +183,8 @@ tangent vector `v` at `f x` corresponds to the pair `(dα_(f x)(df_x ·, v), α_
 def normalSpaceEquivOfIsLegendrianImmersion (hf : IsLegendrianImmersion I α.kerDistribution f)
     (hn : n ≠ 0) (x : M) :
     f.isImmersion.NormalSpace x hn ≃L[ℝ] (TangentSpace I x →L[ℝ] ℝ) × ℝ :=
-  haveI : FiniteDimensional ℝ E := f.finiteDimensional_tangentSpace x hn
-  f.normalSpaceEquivOfKer x hn (f.contactPairing α x)
+  haveI : FiniteDimensional ℝ E := f.isImmersion.finiteDimensional_tangentSpace x hn
+  f.isImmersion.normalSpaceEquivOfKer x hn (f.contactPairing α x)
     (f.contactPairing_eq_zero_iff_mem_tangentRange hf hn x) <| by
     rw [f.isImmersion.finrank_normalSpace x hn, finrank_tangentSpace, finrank_tangentSpace]
     exact (finrank_prod_eq_sub_of_isLegendrianImmersion hf).symm
@@ -197,8 +197,8 @@ theorem normalSpaceEquivOfIsLegendrianImmersion_normalClass
     (v : TangentSpace J (f x)) :
     f.normalSpaceEquivOfIsLegendrianImmersion hf hn x (f.isImmersion.normalClass x hn v) =
       f.contactPairing α x v :=
-  haveI : FiniteDimensional ℝ E := f.finiteDimensional_tangentSpace x hn
-  f.normalSpaceEquivOfKer_normalClass x hn _ _ _ v
+  haveI : FiniteDimensional ℝ E := f.isImmersion.finiteDimensional_tangentSpace x hn
+  f.isImmersion.normalSpaceEquivOfKer_normalClass x hn _ _ _ v
 
 /-- The pair `(dα(df ·, v), α(v))` corresponds to the normal class `[v]`. -/
 @[simp]
@@ -207,8 +207,8 @@ theorem normalSpaceEquivOfIsLegendrianImmersion_symm_contactPairing
     (v : TangentSpace J (f x)) :
     (f.normalSpaceEquivOfIsLegendrianImmersion hf hn x).symm (f.contactPairing α x v) =
       f.isImmersion.normalClass x hn v :=
-  haveI : FiniteDimensional ℝ E := f.finiteDimensional_tangentSpace x hn
-  f.normalSpaceEquivOfKer_symm_apply x hn _ _ _ v
+  haveI : FiniteDimensional ℝ E := f.isImmersion.finiteDimensional_tangentSpace x hn
+  f.isImmersion.normalSpaceEquivOfKer_symm_apply x hn _ _ _ v
 
 /-- **The Reeb direction spans the trivial factor.** The normal class of the Reeb vector field of
 `α` at `f x` corresponds to `(0, 1)`. -/

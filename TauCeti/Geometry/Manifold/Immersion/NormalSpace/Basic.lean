@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Geometry.Manifold.Immersion
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
+public import Mathlib.Topology.Algebra.Module.FiniteDimension
+public import TauCeti.Topology.Algebra.Module.Quotient
 
 /-!
 # Quotient normal spaces of immersions
@@ -25,11 +27,18 @@ ambient tangent vectors represent zero normal vectors, and linear and continuous
 vanishing on the tangent range descend to the normal space (`Manifold.IsImmersion.normalLift`,
 `Manifold.IsImmersion.normalLiftL`), uniquely.
 
+An ambient tangent equivalence carrying one tangent range onto another induces an equivalence of
+normal spaces (`Manifold.IsImmersion.normalSpaceEquivOfMapTangentRange`). A continuous linear
+map out of the ambient tangent space whose kernel is exactly the tangent range identifies the
+normal space with any target of the same dimension
+(`Manifold.IsImmersion.normalSpaceEquivOfKer`).
+
 The normal spaces of a bundled smooth embedding `f` are those of its underlying immersion,
 `f.isImmersion.NormalSpace`.
 
-Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition, the normal-bundle
-construction preceding Theorem 6.24.
+For comparison, J. M. Lee, *Introduction to Smooth Manifolds*, second edition, defines the normal
+bundle of an embedded submanifold of `ℝⁿ` by orthogonal complements, before Theorem 6.24. The
+quotient here is the metric-free analogue of that construction, defined for any immersion.
 -/
 
 public section
@@ -315,5 +324,91 @@ theorem finrank_normalSpace (hf : IsImmersion I J n f) (x : M) (hn : n ≠ 0)
       Module.finrank 𝕜 (TangentSpace J (f x)) - Module.finrank 𝕜 (TangentSpace I x) := by
   have h := hf.finrank_normalSpace_add_finrank x hn
   omega
+
+
+/-- The tangent spaces of a positive-regularity immersion into a manifold with
+finite-dimensional model space are finite-dimensional, since the differential is injective. -/
+theorem finiteDimensional_tangentSpace (hf : IsImmersion I J n f) (x : M) (hn : n ≠ 0)
+    [FiniteDimensional 𝕜 F] : FiniteDimensional 𝕜 (TangentSpace I x) :=
+  .of_injective (mfderiv I J f x).toLinearMap (hf.mfderiv_injective hn x)
+
+section Equiv
+
+variable {E' F' : Type*}
+  [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  {H' G' : Type*} [TopologicalSpace H'] [TopologicalSpace G']
+  {I' : ModelWithCorners 𝕜 E' H'} {J' : ModelWithCorners 𝕜 F' G'}
+  {M' N' : Type*}
+  [TopologicalSpace M'] [ChartedSpace H' M']
+  [TopologicalSpace N'] [ChartedSpace G' N']
+  {m : ℕ∞ω} {f' : M' → N'}
+
+/-- An ambient tangent equivalence carrying one immersion's tangent range onto the other's
+induces an equivalence of their intrinsic normal spaces. -/
+noncomputable def normalSpaceEquivOfMapTangentRange (hf : IsImmersion I J n f)
+    (hf' : IsImmersion I' J' m f') (x : M) (y : M') (hn : n ≠ 0) (hm : m ≠ 0)
+    (e : TangentSpace J (f x) ≃L[𝕜] TangentSpace J' (f' y))
+    (h : (hf.tangentRange x hn).map e.toLinearMap = hf'.tangentRange y hm) :
+    hf.NormalSpace x hn ≃L[𝕜] hf'.NormalSpace y hm :=
+  e.quotientEquiv (hf.tangentRange x hn) (hf'.tangentRange y hm) h
+
+/-- The normal-space equivalence induced by an ambient tangent equivalence applies it to
+representatives. -/
+@[simp]
+theorem normalSpaceEquivOfMapTangentRange_normalClass (hf : IsImmersion I J n f)
+    (hf' : IsImmersion I' J' m f') (x : M) (y : M') (hn : n ≠ 0) (hm : m ≠ 0)
+    (e : TangentSpace J (f x) ≃L[𝕜] TangentSpace J' (f' y))
+    (h : (hf.tangentRange x hn).map e.toLinearMap = hf'.tangentRange y hm)
+    (w : TangentSpace J (f x)) :
+    hf.normalSpaceEquivOfMapTangentRange hf' x y hn hm e h (hf.normalClass x hn w) =
+      hf'.normalClass y hm (e w) := by
+  rw [normalClass_apply, normalClass_apply]
+  exact e.quotientEquiv_mk (hf.tangentRange x hn) (hf'.tangentRange y hm) h w
+
+end Equiv
+
+section KerEquiv
+
+variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] {V : Type*} [AddCommGroup V] [Module 𝕜 V]
+  [FiniteDimensional 𝕜 V] [TopologicalSpace V] [IsTopologicalAddGroup V] [ContinuousSMul 𝕜 V]
+  [T2Space V]
+
+/-- A continuous linear map out of the ambient tangent space whose kernel is exactly the tangent
+range, into a space of the dimension of the normal space, descends to a continuous linear
+equivalence from the normal space: the normal class `[v]` corresponds to `g v`. -/
+noncomputable def normalSpaceEquivOfKer (hf : IsImmersion I J n f) (x : M) (hn : n ≠ 0)
+    (g : TangentSpace J (f x) →L[𝕜] V) (hg : ∀ v, g v = 0 ↔ v ∈ hf.tangentRange x hn)
+    (hdim : Module.finrank 𝕜 (hf.NormalSpace x hn) = Module.finrank 𝕜 V) :
+    hf.NormalSpace x hn ≃L[𝕜] V :=
+  let φ := hf.normalLiftL x hn g fun v ↦ (hg v).2
+  have hinj : Function.Injective φ := by
+    refine (injective_iff_map_eq_zero φ).2 fun w hw ↦ ?_
+    obtain ⟨v, rfl⟩ := hf.normalClass_surjective x hn w
+    rw [normalLiftL_normalClass, hg] at hw
+    exact (hf.normalClass_eq_zero_iff x hn v).2 hw
+  (φ.toLinearMap.linearEquivOfInjective hinj hdim).toContinuousLinearEquiv
+
+/-- The normal class `[v]` corresponds to `g v`. -/
+@[simp]
+theorem normalSpaceEquivOfKer_normalClass (hf : IsImmersion I J n f) (x : M) (hn : n ≠ 0)
+    (g : TangentSpace J (f x) →L[𝕜] V) (hg : ∀ v, g v = 0 ↔ v ∈ hf.tangentRange x hn)
+    (hdim : Module.finrank 𝕜 (hf.NormalSpace x hn) = Module.finrank 𝕜 V)
+    (v : TangentSpace J (f x)) :
+    hf.normalSpaceEquivOfKer x hn g hg hdim (hf.normalClass x hn v) = g v := by
+  rw [normalSpaceEquivOfKer, LinearEquiv.coe_toContinuousLinearEquiv',
+    LinearMap.linearEquivOfInjective_apply, ContinuousLinearMap.coe_coe, normalLiftL_normalClass]
+
+/-- The value `g v` corresponds to the normal class `[v]`. -/
+@[simp]
+theorem normalSpaceEquivOfKer_symm_apply (hf : IsImmersion I J n f) (x : M) (hn : n ≠ 0)
+    (g : TangentSpace J (f x) →L[𝕜] V) (hg : ∀ v, g v = 0 ↔ v ∈ hf.tangentRange x hn)
+    (hdim : Module.finrank 𝕜 (hf.NormalSpace x hn) = Module.finrank 𝕜 V)
+    (v : TangentSpace J (f x)) :
+    (hf.normalSpaceEquivOfKer x hn g hg hdim).symm (g v) = hf.normalClass x hn v :=
+  (ContinuousLinearEquiv.symm_apply_eq _).2
+    (hf.normalSpaceEquivOfKer_normalClass x hn g hg hdim v).symm
+
+end KerEquiv
 
 end Manifold.IsImmersion
