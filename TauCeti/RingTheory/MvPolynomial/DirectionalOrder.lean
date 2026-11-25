@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.MvPolynomial.OrderAt
 public import Mathlib.Algebra.Polynomial.Degree.TrailingDegree
 public import TauCeti.RingTheory.MvPolynomial.LineRestriction
 public import Mathlib.Algebra.MvPolynomial.Funext
+public import TauCeti.Algebra.MvPolynomial.PDeriv
 
 /-!
 # Detecting ambient order along affine lines
@@ -25,6 +26,14 @@ families of constant ambient order, and hence for analytic preparation of discri
 Restricting to lines through the origin also detects homogeneity over an infinite domain:
 `MvPolynomial.isHomogeneous_iff_forall_eval_smul` says that `p` is homogeneous of degree `n`
 exactly when `eval (a • x) p = a ^ n • eval x p` for all `a` and `x`.
+
+Over an infinite domain, a polynomial vanishing on the line through `a` in the direction of a
+coordinate axis has vanishing partial derivative along that axis at `a`
+(`MvPolynomial.eval_pderiv_eq_zero_of_forall_eval_add_smul_single`): its restriction to the line
+is the zero polynomial, and the chain rule identifies the derivative of the restriction. Hence a
+polynomial vanishing on a submodule containing the `i`-th standard basis vector has all its
+iterated partial derivatives in `Xᵢ` vanishing there too
+(`MvPolynomial.eval_iterate_pderiv_eq_zero_of_forall_mem`).
 
 ## References
 
@@ -168,6 +177,42 @@ theorem exists_natTrailingDegree_aeval_C_add_C_mul_X_eq (p : MvPolynomial σ R)
     simpa only [hm] using hv () (Finset.mem_singleton_self ())
   refine ⟨v, Polynomial.trailingDegree_eq_top.not.1 (by simp [hdegree]), ?_⟩
   exact Polynomial.natTrailingDegree_eq_of_trailingDegree_eq_some hdegree
+
+/-- If a polynomial vanishes on the affine line through `a` in the direction of the `i`-th
+coordinate, then so does its partial derivative `∂p/∂Xᵢ` at `a`. -/
+theorem eval_pderiv_eq_zero_of_forall_eval_add_smul_single [DecidableEq σ]
+    {p : MvPolynomial σ R} {a : σ → R} {i : σ}
+    (h : ∀ t : R, eval (a + t • Pi.single i 1) p = 0) : eval a (pderiv i p) = 0 := by
+  -- Restrict `p` to the line `u ↦ a + u eᵢ`, as a polynomial in one variable `u`.
+  let f : σ → MvPolynomial Unit R := fun j ↦ C (a j) + C ((Pi.single i 1 : σ → R) j) * X ()
+  have heval (q : MvPolynomial σ R) (u : Unit → R) :
+      eval u (aeval f q) = eval (a + u () • Pi.single i 1) q := by
+    have hpt : (fun j ↦ eval u (f j)) = a + u () • Pi.single i 1 := by
+      funext j
+      simp [f, mul_comm]
+    rw [← hpt]
+    simpa only [aeval_eq_eval] using comp_aeval_apply (f := f) (aeval u) q
+  have hline : aeval f p = 0 := MvPolynomial.funext fun u ↦ by simp [heval, h]
+  have hderiv : pderiv () (aeval f p) = aeval f (pderiv i p) := by
+    rw [pderiv_aeval_of_vars_subset f () (Finset.subset_insert i p.vars),
+      Finset.sum_eq_single i (fun j _ hj ↦ by simp [f, hj]) (by simp)]
+    simp [f]
+  rw [hline, map_zero] at hderiv
+  have h0 := congrArg (eval fun _ ↦ 0) hderiv
+  rwa [heval, map_zero, zero_smul, add_zero, eq_comm] at h0
+
+/-- If a polynomial vanishes on a submodule `W` containing the `i`-th standard basis vector, then
+so do all its iterated partial derivatives `∂ᵏp/∂Xᵢᵏ`. -/
+theorem eval_iterate_pderiv_eq_zero_of_forall_mem [DecidableEq σ]
+    {W : Submodule R (σ → R)} {i : σ} (hi : Pi.single i 1 ∈ W) {p : MvPolynomial σ R}
+    (hp : ∀ w ∈ W, eval w p = 0) (k : ℕ) : ∀ w ∈ W, eval w ((pderiv i)^[k] p) = 0 := by
+  induction k with
+  | zero => exact hp
+  | succ k ih =>
+    intro w hw
+    rw [Function.iterate_succ_apply']
+    exact eval_pderiv_eq_zero_of_forall_eval_add_smul_single fun t ↦
+      ih _ (W.add_mem hw (W.smul_mem t hi))
 
 /-- Over an infinite domain, a polynomial is homogeneous of degree `n` exactly when scaling the
 point by `a` scales its value by `a ^ n`. The reverse implication needs infinitely many scalars:
