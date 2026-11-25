@@ -5,15 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Order.OrderUnit.State.Basic
+public import TauCeti.Analysis.Normed.Order.StateSpace
 import TauCeti.Analysis.Normed.Module.HahnBanach.Basic
 
 /-!
-# Extension and existence of states on order-unit spaces
+# Extension of states on order-unit spaces
 
-This file proves norm-preserving extension and existence results for states on order-unit spaces:
+This file proves norm-preserving extension results for states on order-unit spaces:
 every state on the domain of a unit-preserving linear isometry (in particular, a unital subspace)
-extends to a state on the codomain, and every order-unit space admits at least one state.
+extends to a state on the codomain.
 
 ## Main results
 
@@ -21,7 +21,6 @@ extends to a state on the codomain, and every order-unit space admits at least o
   unit-preserving linear isometry via Hahn–Banach.
 * `TauCeti.IsOrderUnitNorm.surjOn_pullbackFunctional_subtypeL`: extension of states from a unital
   subspace.
-* `TauCeti.IsOrderUnitNorm.stateSpace_nonempty`: every order-unit space has a state.
 
 ## References
 
@@ -54,9 +53,9 @@ theorem IsOrderUnitNorm.surjOn_pullbackFunctional_stateSpace {E F : Type*}
   have hφnorm : ‖toStrongDual φ‖ = 1 := he.norm_toStrongDual_of_mem_stateSpace hφ
   obtain ⟨g, hg, hgnorm⟩ := T.exists_extension_norm_eq (toStrongDual φ)
   have hgf : g f = 1 := by
-    simpa [hTe, map_unit_of_mem_stateSpace hφ] using DFunLike.congr_fun hg e
+    simpa [hTe, apply_eq_one_of_mem_stateSpace hφ] using DFunLike.congr_fun hg e
   refine ⟨StrongDual.toWeakDual g,
-    hf.mem_stateSpace_iff_norm_eq_one_and_map_unit.mpr ⟨hgnorm.trans hφnorm, hgf⟩, ?_⟩
+    hf.mem_stateSpace_iff_norm_eq_one_and_apply_eq_one.mpr ⟨hgnorm.trans hφnorm, hgf⟩, ?_⟩
   exact DFunLike.ext _ _ fun x => by simpa using DFunLike.congr_fun hg x
 
 /-- **Extension of states from a unital subspace.** Restriction of states from `E` to a unital
@@ -67,18 +66,6 @@ theorem IsOrderUnitNorm.surjOn_pullbackFunctional_subtypeL {E : Type*} [Seminorm
     SurjOn S.subtypeL.pullbackFunctional (stateSpace e) (stateSpace (⟨e, heS⟩ : S)) := by
   simpa [Submodule.subtypeₗᵢ_toContinuousLinearMap] using
     (he.submodule S heS).surjOn_pullbackFunctional_stateSpace he S.subtypeₗᵢ rfl
-
-/-- **Existence of states.** Every order-unit space admits at least one state, obtained by
-extending `r • e ↦ r` with norm `1` via Hahn–Banach. -/
-theorem IsOrderUnitNorm.stateSpace_nonempty {E : Type*} [SeminormedAddCommGroup E]
-    [NormedSpace ℝ E] [PartialOrder E] [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e) :
-    (stateSpace e).Nonempty := by
-  let i : ℝ →ₗᵢ[ℝ] E := LinearIsometry.toSpanSingleton ℝ E he.norm_eq_one
-  have hi : i 1 = e := by simp [i, LinearIsometry.toSpanSingleton_apply]
-  have hid : StrongDual.toWeakDual (ContinuousLinearMap.id ℝ ℝ) ∈ stateSpace (1 : ℝ) :=
-    mem_stateSpace_iff.mpr ⟨fun _ _ h => h, rfl⟩
-  obtain ⟨φ, hφ, _⟩ := isOrderUnitNorm_real_one.surjOn_pullbackFunctional_stateSpace he i hi hid
-  exact ⟨φ, hφ⟩
 
 end Extension
 

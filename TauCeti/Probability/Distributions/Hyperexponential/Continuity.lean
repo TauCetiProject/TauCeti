@@ -39,7 +39,8 @@ theorem continuous_hyperexponentialMeasure :
         (⟨hyperexponentialMeasure q.val.1 q.val.2,
           isProbabilityMeasure_hyperexponentialMeasure q.property⟩ : ProbabilityMeasure ℝ)) := by
   let _ : FirstCountableTopology (Convexity.StdSimplex ℝ≥0 ι) :=
-    (Convexity.StdSimplex.isEmbedding_toFun_comp_weights_nnreal (ι := ι)).firstCountableTopology
+    (Convexity.StdSimplex.isClosedEmbedding_toFun_comp_weights_nnreal
+      (ι := ι)).firstCountableTopology
   apply continuous_iff_seqContinuous.2
   intro q a hq
   have hparam := (continuous_subtypeVal.tendsto a).comp hq

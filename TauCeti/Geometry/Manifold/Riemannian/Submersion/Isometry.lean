@@ -122,8 +122,7 @@ theorem mfderiv_horizontalLift_comp {φ : P → M}
   apply ext_inner_right ℝ
   intro w
   obtain ⟨u, rfl⟩ := hφ.mfderiv_surjective x w
-  rw [hφ.inner_mfderiv, hcomp.horizontalLift_apply, ContinuousLinearMap.adjoint_inner_left,
-    h.horizontalLift_apply, ContinuousLinearMap.adjoint_inner_left,
+  rw [hφ.inner_mfderiv, hcomp.inner_horizontalLift_left, h.inner_horizontalLift_left,
     mfderiv_comp_apply x (h.isSubmersion.contMDiff.mdifferentiableAt (by simp))
       (hφ.mdifferentiableAt x)]
 
@@ -156,8 +155,7 @@ theorem horizontalLift_mfderiv_comp {ψ : N → P}
     hcomp.horizontalLift x (mfderiv J K ψ (f x) v) = h.horizontalLift x v := by
   apply ext_inner_right ℝ
   intro w
-  rw [hcomp.horizontalLift_apply, h.horizontalLift_apply,
-    ContinuousLinearMap.adjoint_inner_left, ContinuousLinearMap.adjoint_inner_left,
+  rw [hcomp.inner_horizontalLift_left, h.inner_horizontalLift_left,
     mfderiv_comp_apply x (hψ.mdifferentiableAt (f x))
       (h.isSubmersion.contMDiff.mdifferentiableAt (by simp)), hψ.inner_mfderiv]
 

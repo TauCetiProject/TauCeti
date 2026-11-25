@@ -290,6 +290,31 @@ def detLinePeriodicTorusOperatorEquiv (hℓ : ℓ ≠ 0) (S : C(AddCircle T, F �
     ((quotientRangePeriodicTorusOperatorEquiv T hℓ S hS).trans
       (quotientRangeLoopOperatorEquiv T S))
 
+/-- `TauCeti.detLinePeriodicTorusOperatorEquiv` is the isomorphism of determinant lines induced by
+the isomorphisms of kernels and cokernels with those of `1 - Ψ(T)`. -/
+theorem detLinePeriodicTorusOperatorEquiv_def (hℓ : ℓ ≠ 0) (S : C(AddCircle T, F →L[ℝ] F))
+    (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
+    detLinePeriodicTorusOperatorEquiv T hℓ S hS =
+      LinearMap.detLineCongrKerCoker
+        ((kerPeriodicTorusOperatorEquiv T hℓ S hS).trans (kerLoopOperatorEquiv T S))
+        ((quotientRangePeriodicTorusOperatorEquiv T hℓ S hS).trans
+          (quotientRangeLoopOperatorEquiv T S)) :=
+  (rfl)
+
+/-- `TauCeti.detLinePeriodicTorusOperatorEquiv` is the transport along the isomorphisms of kernels
+and cokernels with those of `L_S` (`TauCeti.kerPeriodicTorusOperatorEquiv`,
+`TauCeti.quotientRangePeriodicTorusOperatorEquiv`), followed by the identification of the
+determinant line of `L_S` with that of `1 - Ψ(T)`
+(`TauCeti.CircleSobolev.detLineLoopOperatorEquiv`). -/
+theorem detLinePeriodicTorusOperatorEquiv_eq_trans (hℓ : ℓ ≠ 0) (S : C(AddCircle T, F →L[ℝ] F))
+    (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
+    detLinePeriodicTorusOperatorEquiv T hℓ S hS =
+      (LinearMap.detLineCongrKerCoker (kerPeriodicTorusOperatorEquiv T hℓ S hS)
+        (quotientRangePeriodicTorusOperatorEquiv T hℓ S hS)).trans
+        (detLineLoopOperatorEquiv T S) := by
+  rw [detLineLoopOperatorEquiv_def, ← LinearMap.detLineCongrKerCoker_trans]
+  rfl
+
 /-- **The periodic orbit-torus operator is Fredholm.** It is the direct sum of the Fredholm
 operator `J₀ L_S` and an invertible operator. -/
 theorem isFredholm_periodicTorusOperator (hℓ : ℓ ≠ 0) (S : C(AddCircle T, F →L[ℝ] F))

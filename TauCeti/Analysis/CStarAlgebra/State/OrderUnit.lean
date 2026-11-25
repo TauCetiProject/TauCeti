@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.State.Space
 public import TauCeti.Analysis.LocallyConvex.WeakDual.SelfAdjoint
-public import TauCeti.Analysis.Normed.Order.OrderUnit.State.Basic
+public import TauCeti.Analysis.Normed.Order.StateSpace
 
 /-!
 # Correspondence between C⋆-algebra states and order-unit states
@@ -78,7 +78,7 @@ theorem mapsTo_extendFromSelfAdjoint_stateSpace :
     rw [extendFromSelfAdjoint_apply_coe]
     exact Complex.le_def.mpr ⟨map_nonneg_of_mem_stateSpace hψ (Subtype.coe_le_coe.mp ha), rfl⟩
   · rw [← selfAdjoint.val_one (R := A), extendFromSelfAdjoint_apply_coe,
-      map_unit_of_mem_stateSpace hψ, Complex.ofReal_one]
+      apply_eq_one_of_mem_stateSpace hψ, Complex.ofReal_one]
 
 /-- On any C⋆-algebra state `φ`, extending the restriction to `selfAdjoint A` recovers `φ`. -/
 theorem extendFromSelfAdjoint_restrictToSelfAdjoint_of_mem_stateSpace {φ : WeakDual ℂ A}

@@ -59,7 +59,7 @@ private theorem comp_pointConjugation_weylWord (l : List (Fin t.rank))
         (HopfAlgebra.pointConjugationAlgHom
           (t.geckCoordinatePoint ht (t.geckWeylWordPoint ht l ℤ))⁻¹)) =
       toConv ((q.ofConv.comp (MonoidAlgebra.domCongr ℤ ℤ
-        (t.geckWeylCharacterAut ht (t.geckWeylWordProd ht l))).toAlgHom).comp
+        (t.geckWeylCharacterAut ht (t.simplyConnectedWeylWordProd ht l))).toAlgHom).comp
           (t.geckWeightTorusIntegralCoordinateMap ht).hom.toAlgHom) := by
   apply (t.geckCoordinatePointMulEquiv ht A).injective
   let g := t.geckCoordinatePoint ht (t.geckWeylWordPoint ht l ℤ)
@@ -78,7 +78,8 @@ private theorem comp_pointConjugation_weylWord (l : List (Fin t.rank))
     t.geckCoordinatePointMulEquiv_comp_geckWeightTorusIntegralCoordinateMap ht A,
     t.pointsMulEquiv_comp_geckWeylCharacterAut ht]
   have hconj := t.geckWeylWordPoint_conj_geckWeightTorusPoints ht l A
-    (t.geckWeylTorusAction ht A (t.geckWeylWordProd ht l)⁻¹ (SplitTorus.pointsMulEquiv q))
+    (t.geckWeylTorusAction ht A (t.simplyConnectedWeylWordProd ht l)⁻¹
+      (SplitTorus.pointsMulEquiv q))
   rw [geckWeylWordTorusAction_geckWeylTorusAction_inv] at hconj
   rw [← hconj]
   group
@@ -91,7 +92,7 @@ theorem geckWeightTorus_comp_pointConjugation_weylWord (l : List (Fin t.rank)) :
         (HopfAlgebra.pointConjugationAlgHom
           (t.geckCoordinatePoint ht (t.geckWeylWordPoint ht l ℤ))⁻¹) =
       (MonoidAlgebra.domCongr ℤ ℤ
-        (t.geckWeylCharacterAut ht (t.geckWeylWordProd ht l))).toAlgHom.comp
+        (t.geckWeylCharacterAut ht (t.simplyConnectedWeylWordProd ht l))).toAlgHom.comp
           (t.geckWeightTorusIntegralCoordinateMap ht).hom.toAlgHom := by
   have h := t.comp_pointConjugation_weylWord ht l
     (MonoidAlgebra ℤ (Multiplicative (Fin t.rank →₀ ℤ))) (toConv (AlgHom.id ℤ _))
@@ -112,11 +113,11 @@ theorem geckWeylCharacterAut_mem_nontrivialAdjointWeights_iff
     t.geckWeylCharacterAut ht w α ∈
         Derivation.nontrivialAdjointWeights (t.geckWeightTorusIntegralCoordinateMap ht).hom ↔
       α ∈ Derivation.nontrivialAdjointWeights (t.geckWeightTorusIntegralCoordinateMap ht).hom := by
-  obtain ⟨l, rfl⟩ := t.geckWeylWordProd_surjective ht w
+  obtain ⟨l, rfl⟩ := t.simplyConnectedWeylWordProd_surjective ht w
   exact Derivation.mem_nontrivialAdjointWeights_apply_iff
     (t.geckWeightTorusIntegralCoordinateMap ht).hom
     (t.geckCoordinatePoint ht (t.geckWeylWordPoint ht l ℤ))
-    (t.geckWeylCharacterAut ht (t.geckWeylWordProd ht l))
+    (t.geckWeylCharacterAut ht (t.simplyConnectedWeylWordProd ht l))
     (t.geckWeightTorus_comp_pointConjugation_weylWord ht l) α
 
 /-- Every root of the named integral root datum occurs as a nontrivial adjoint weight of the
@@ -126,7 +127,8 @@ theorem root_mem_nontrivialAdjointWeights_geckWeightTorus (k : Fin t.numRoots) :
       Derivation.nontrivialAdjointWeights (t.geckWeightTorusIntegralCoordinateMap ht).hom := by
   obtain ⟨l, i, hli⟩ := t.exists_geckWeylRootIndex_eq ht k
   have h := (t.geckWeylCharacterAut_mem_nontrivialAdjointWeights_iff ht
-    (t.geckWeylWordProd ht l) (SplitTorus.weightCharacter (t.rootGeneratorWeight ht (.inl i)))).mpr
+    (t.simplyConnectedWeylWordProd ht l)
+    (SplitTorus.weightCharacter (t.rootGeneratorWeight ht (.inl i)))).mpr
       (t.rootGeneratorWeight_mem_nontrivialAdjointWeights_geckWeightTorus ht (.inl i))
   rwa [geckWeylCharacterAut_weightCharacter, rootGeneratorWeight_inl_eq_root_simpleIndex,
     ← root_geckWeylRootIndex, hli] at h

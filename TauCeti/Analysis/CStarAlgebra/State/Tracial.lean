@@ -277,8 +277,7 @@ variable {B F : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRi
 homomorphism `A → B` maps `T(B)` to `T(A)`. -/
 theorem mapsTo_pullbackFunctional_tracialStates_of_surjective (f : F)
     (hf : Function.Surjective f) :
-    MapsTo (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional
-      (tracialStates B) (tracialStates A) := by
+    MapsTo (pullbackFunctional A f) (tracialStates B) (tracialStates A) := by
   intro φ hφ
   rw [mem_tracialStates_iff] at hφ ⊢
   exact ⟨mapsTo_pullbackFunctional_stateSpace_of_surjective f hf hφ.1,
@@ -305,8 +304,7 @@ variable {B F : Type*} [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
 /-- **Pullback of tracial states along unital star homomorphisms.** Precomposition with a unital
 star homomorphism `A → B` maps `T(B)` to `T(A)`. -/
 theorem mapsTo_pullbackFunctional_tracialStates (f : F) :
-    MapsTo (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B).pullbackFunctional
-      (tracialStates B) (tracialStates A) := by
+    MapsTo (pullbackFunctional A f) (tracialStates B) (tracialStates A) := by
   intro φ hφ
   rw [mem_tracialStates_iff] at hφ ⊢
   exact ⟨mapsTo_pullbackFunctional_stateSpace f hφ.1, fun a b => by simp [hφ.2 (f a)]⟩

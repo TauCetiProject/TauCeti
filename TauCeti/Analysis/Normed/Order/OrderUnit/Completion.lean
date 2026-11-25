@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Cone.Basic
 public import Mathlib.Analysis.Normed.Module.Completion
-public import TauCeti.Analysis.Normed.Order.OrderUnit.Basic
+public import TauCeti.Analysis.Normed.Order.OrderUnit
 
 /-!
 # Norm completion of an order-unit space

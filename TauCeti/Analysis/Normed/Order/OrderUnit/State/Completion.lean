@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Order.OrderUnit.Completion
-public import TauCeti.Analysis.Normed.Order.OrderUnit.State.Basic
+public import TauCeti.Analysis.Normed.Order.StateSpace
 import TauCeti.Analysis.Normed.Operator.Completion
 
 /-!
@@ -63,11 +63,12 @@ theorem IsOrderUnitNorm.existsUnique_state_extension_completion {φ : WeakDual �
   let ψ : WeakDual ℝ (UniformSpace.Completion E) :=
     StrongDual.toWeakDual ((toStrongDual φ).fromCompletion)
   have hψmem : ψ ∈ stateSpace (e : UniformSpace.Completion E) := by
-    refine he.isOrderUnitNorm_completion.mem_stateSpace_iff_norm_eq_one_and_map_unit.mpr ⟨?_, ?_⟩
+    refine he.isOrderUnitNorm_completion.mem_stateSpace_iff_norm_eq_one_and_apply_eq_one.mpr
+      ⟨?_, ?_⟩
     · simpa [ψ] using
         ((toStrongDual φ).norm_fromCompletion).trans (he.norm_toStrongDual_of_mem_stateSpace hφ)
     · simpa [ψ] using ((toStrongDual φ).fromCompletion_apply_coe e).trans
-        (map_unit_of_mem_stateSpace hφ)
+        (apply_eq_one_of_mem_stateSpace hφ)
   have hψeq : (UniformSpace.Completion.toComplL (S := ℝ) (α := E)).pullbackFunctional ψ = φ := by
     refine DFunLike.ext _ _ fun a => ?_
     simp [ψ, ContinuousLinearMap.pullbackFunctional_apply, UniformSpace.Completion.coe_toComplL]
