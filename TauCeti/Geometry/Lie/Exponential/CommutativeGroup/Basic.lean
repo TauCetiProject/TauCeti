@@ -36,12 +36,15 @@ its Lie algebra by a lattice.
 * `TauCeti.lieExp_surjective_of_preconnectedSpace`: the exponential of a preconnected
   commutative Lie group is surjective.
 * `TauCeti.discreteTopology_ker_lieExpAddMonoidHom`: the kernel of the exponential is discrete.
+* `TauCeti.ker_lieExpAddMonoidHom_eq_bot_of_subsingleton`: in dimension zero the kernel is zero.
 * `TauCeti.isOpenMap_lieExpAddMonoidHom` and `TauCeti.isOpenMap_lieExp`: the exponential of a
   commutative Lie group is an open map.
 * `TauCeti.lieExpAddMonoidHom_surjective_of_preconnectedSpace`: the exponential homomorphism of
   a preconnected commutative Lie group is surjective.
 * `TauCeti.lieExpQuotientKerContinuousAddEquiv`: a preconnected commutative Lie group is the
   quotient of its Lie algebra by the kernel of the exponential, as topological groups.
+* `TauCeti.lieExpQuotientKerContinuousAddEquiv_nsmul`: multiplication by `n` on `𝔤 / ker(exp)`
+  is the `n`-th power map of `G`.
 * `TauCeti.compactSpace_quotient_ker_lieExpAddMonoidHom`: for a compact commutative Lie group
   the quotient of the Lie algebra by the kernel of the exponential is compact.
 * `TauCeti.span_ker_lieExpAddMonoidHom_eq_top`, `TauCeti.isZLattice_ker_lieExpAddMonoidHom` and
@@ -117,6 +120,12 @@ theorem mem_ker_lieExpAddMonoidHom {X : LeftInvariantDerivation I G} :
   -- Not a `simp` lemma: `simp` already proves it from `AddMonoidHom.mem_ker`,
   -- `lieExpAddMonoidHom_apply` and `ofMul_eq_zero`, so the simpNF linter rejects the attribute.
   rw [AddMonoidHom.mem_ker, lieExpAddMonoidHom_apply, ofMul_eq_zero]
+
+/-- **Dimension zero.** If the Lie algebra is zero, so is the kernel of the exponential. -/
+theorem ker_lieExpAddMonoidHom_eq_bot_of_subsingleton
+    [Subsingleton (LeftInvariantDerivation I G)] :
+    (lieExpAddMonoidHom (I := I) (G := G)).ker = ⊥ :=
+  Subsingleton.elim _ _
 
 /-- **The kernel of the exponential of a commutative Lie group is a discrete subgroup** of the
 Lie algebra. -/
@@ -233,6 +242,14 @@ theorem lieExpQuotientKerContinuousAddEquiv_symm_apply (X : LeftInvariantDerivat
     (lieExpQuotientKerContinuousAddEquiv (I := I) (G := G)).symm
       (Additive.ofMul (lieExp (I := I) X)) = QuotientAddGroup.mk X := by
   rw [← lieExpQuotientKerContinuousAddEquiv_apply, ContinuousAddEquiv.symm_apply_apply]
+
+/-- Under the identification `𝔤 / ker(exp) ≃ G` of a preconnected commutative Lie group,
+multiplication by `n` on the quotient, which descends from `X ↦ n X`, is the `n`-th power map. -/
+theorem lieExpQuotientKerContinuousAddEquiv_nsmul (n : ℕ)
+    (q : LeftInvariantDerivation I G ⧸ (lieExpAddMonoidHom (I := I) (G := G)).ker) :
+    lieExpQuotientKerContinuousAddEquiv (I := I) (G := G) (n • q) =
+      Additive.ofMul (Additive.toMul (lieExpQuotientKerContinuousAddEquiv (I := I) q) ^ n) := by
+  rw [map_nsmul, ofMul_pow, ofMul_toMul]
 
 end Preconnected
 
