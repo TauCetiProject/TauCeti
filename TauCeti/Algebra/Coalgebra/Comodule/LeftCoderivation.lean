@@ -51,6 +51,9 @@ bar constructions.
   determined by the coalgebra part of its coaction and its counit component.
 * `TauCeti.Comodule.IsLeftGradedCoderivationOver.square_commutes_coact_of_negOnePow_eq_neg_one`: the
   square of an odd coderivation over a square-zero operator commutes with the coaction.
+* `TauCeti.Comodule.IsLeftGradedCoderivationOver.add_of_comp_eq_map_comp`: adding an odd map of
+  left comodules to a coderivation gives a coderivation over the same operator;
+  `TauCeti.Comodule.IsLeftGradedCoderivationOver.comp_eq_map_comp_of_add` is the converse.
 * `TauCeti.Comodule.IsLeftGradedCoderivationOver.commutator_coact`: the graded commutator
   with coderivations preserves signed left-comodule maps.
 * `TauCeti.Comodule.IsLeftGradedCoderivationOver.comp_eq_comp_of_counit_comp_eq`: coderivations
@@ -58,6 +61,8 @@ bar constructions.
   cofree left comodule.
 * `IsLeftGradedCoderivationOver.comp_square_eq_zero_iff_counit_of_negOnePow_eq_neg_one` (in
   `TauCeti.Comodule`): the square-zero law can be checked on the counit component.
+* `TauCeti.Comodule.comp_comp_eq_map_comp_comp`: if `f` and `g` intertwine left coactions up to
+  maps `τ` and `σ` of the coalgebra factor, then `g ∘ f` intertwines them up to `σ ∘ τ`.
 * `TauCeti.Comodule.leftCofreeCoact_comp_leftCofreeCoact` and
   `TauCeti.Comodule.leftCofreeCoact_comp_leftCoactRTensor_leftCofreeCoact`: the cofree left
   coaction, and its extension to the cofree bicomodule `(C ⊗ P) ⊗ N`, are coassociative.
@@ -145,6 +150,18 @@ theorem leftCoactRTensor_comp_rTensor {X : Type*} [AddCommMonoid X] [Module R X]
       (TensorProduct.assoc R C Y N).toLinearMap ∘ₗ (δ ∘ₗ g).rTensor N := by
   refine TensorProduct.ext' fun x n ↦ ?_
   simp
+
+/-! ### Maps intertwining left coactions up to a twist -/
+
+/-- If `f` intertwines left coactions `δX` and `δY` up to a map `τ` of the coalgebra factor, and
+`g` intertwines `δY` and `δZ` up to `σ`, then `g ∘ f` intertwines `δX` and `δZ` up to `σ ∘ τ`. -/
+theorem comp_comp_eq_map_comp_comp {X Z : Type*} [AddCommMonoid X] [Module R X]
+    [AddCommMonoid Z] [Module R Z] {δX : X →ₗ[R] C ⊗[R] X} {δY : Y →ₗ[R] C ⊗[R] Y}
+    {δZ : Z →ₗ[R] C ⊗[R] Z} {τ σ : C →ₗ[R] C} {f : X →ₗ[R] Y} {g : Y →ₗ[R] Z}
+    (hf : δY ∘ₗ f = TensorProduct.map τ f ∘ₗ δX) (hg : δZ ∘ₗ g = TensorProduct.map σ g ∘ₗ δY) :
+    δZ ∘ₗ g ∘ₗ f = TensorProduct.map (σ ∘ₗ τ) (g ∘ₗ f) ∘ₗ δX := by
+  rw [← LinearMap.comp_assoc, hg, LinearMap.comp_assoc, hf, ← LinearMap.comp_assoc,
+    TensorProduct.map_comp]
 
 section Bicomodule
 
@@ -461,6 +478,27 @@ theorem isLeftGradedCoderivationOver_iff_coact_apply :
       ∀ x : X, δ (D x) = b.rTensor X (δ x) + TensorProduct.map (G.koszulTwist r) D (δ x) :=
   ⟨IsLeftGradedCoderivationOver.coact_apply, fun h ↦ LinearMap.ext fun x ↦ by
     simpa only [LinearMap.comp_apply, LinearMap.add_apply] using h x⟩
+
+/-- Adding an odd map of left comodules, one intertwining `δ` up to the Koszul twist of `G`, to a
+coderivation along `δ` over `b` gives a coderivation over `b`. -/
+theorem IsLeftGradedCoderivationOver.add_of_comp_eq_map_comp
+    (h : IsLeftGradedCoderivationOver δ G r b D)
+    (hE : δ ∘ₗ E = TensorProduct.map (G.koszulTwist r) E ∘ₗ δ) :
+    IsLeftGradedCoderivationOver δ G r b (D + E) := by
+  rw [IsLeftGradedCoderivationOver] at h ⊢
+  rw [LinearMap.comp_add, h, hE, TensorProduct.map_add_right, LinearMap.add_comp]
+  abel
+
+/-- Conversely, if `D` and `D + E` are both coderivations along `δ` over the same `b`, then `E`
+intertwines `δ` up to the Koszul twist of `G`: the co-Leibniz terms of `D` cancel. -/
+theorem IsLeftGradedCoderivationOver.comp_eq_map_comp_of_add
+    (h : IsLeftGradedCoderivationOver δ G r b D)
+    (h' : IsLeftGradedCoderivationOver δ G r b (D + E)) :
+    δ ∘ₗ E = TensorProduct.map (G.koszulTwist r) E ∘ₗ δ := by
+  let _ : AddCommGroup (C ⊗[R] X) := Module.addCommMonoidToAddCommGroup R
+  rw [IsLeftGradedCoderivationOver] at h h'
+  rw [LinearMap.comp_add, h, TensorProduct.map_add_right, LinearMap.add_comp, ← add_assoc] at h'
+  exact add_left_cancel h'
 
 /-- If the coalgebra operator `b` is square-zero and homogeneous of degree `q`, and
 `(-1) ^ (r * q) = -1`, then the square of a degree-`r` coderivation along `δ` over `b` commutes

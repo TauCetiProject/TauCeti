@@ -26,6 +26,9 @@ This holds as soon as every gauge is lower semicontinuous for the operator-norm 
 * `TauCeti.OperatorIdealFamily.comp_left_mem_finiteSubmodule`,
   `TauCeti.OperatorIdealFamily.comp_right_mem_finiteSubmodule`: the ideal is stable under
   composition.
+* `TauCeti.OperatorIdealFamily.mul_left_mem_finiteSubmodule`,
+  `TauCeti.OperatorIdealFamily.mul_right_mem_finiteSubmodule`: on a single Hilbert space, the
+  ideal is a two-sided ideal of the bounded operators.
 * `TauCeti.OperatorIdealFamily.IsComplete`: every carrier of the family is complete.
 * `TauCeti.OperatorIdealFamily.isComplete_of_lowerSemicontinuous`: a family with lower
   semicontinuous gauges is complete.
@@ -81,6 +84,20 @@ theorem comp_right_mem_finiteSubmodule {H : Type v}
     A ∘L R ∈ (Φ.operatorGauge H F).finiteSubmodule := by
   simp only [OperatorGauge.mem_finiteSubmodule, operatorGauge_apply] at hA ⊢
   exact (Φ.gauge_comp_right_le A R).trans_lt (ENNReal.mul_lt_top hA eNorm_lt_top)
+
+/-- The ideal of a family is a left ideal of the bounded operators on a Hilbert space. -/
+theorem mul_left_mem_finiteSubmodule {Φ : OperatorIdealFamily.{u, v, v} 𝕜} {E : Type v}
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    (L : E →L[𝕜] E) {A : E →L[𝕜] E} (hA : A ∈ (Φ.operatorGauge E E).finiteSubmodule) :
+    L * A ∈ (Φ.operatorGauge E E).finiteSubmodule :=
+  comp_left_mem_finiteSubmodule L hA
+
+/-- The ideal of a family is a right ideal of the bounded operators on a Hilbert space. -/
+theorem mul_right_mem_finiteSubmodule {Φ : OperatorIdealFamily.{u, v, v} 𝕜} {E : Type v}
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    {A : E →L[𝕜] E} (hA : A ∈ (Φ.operatorGauge E E).finiteSubmodule) (R : E →L[𝕜] E) :
+    A * R ∈ (Φ.operatorGauge E E).finiteSubmodule :=
+  comp_right_mem_finiteSubmodule hA R
 
 /-! ### Completeness -/
 

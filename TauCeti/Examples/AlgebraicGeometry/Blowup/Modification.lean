@@ -7,6 +7,10 @@ module
 
 public import Mathlib.RingTheory.Polynomial.Basic
 public import TauCeti.AlgebraicGeometry.Blowup.Modification
+public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Stalk
+import Mathlib.RingTheory.MvPolynomial.Ideal
+import TauCeti.RingTheory.KrullDimension.FiniteType
+import TauCeti.RingTheory.MvPolynomial.Ideal
 
 /-!
 # Examples: the blowup of the affine plane at the origin is a modification
@@ -14,6 +18,11 @@ public import TauCeti.AlgebraicGeometry.Blowup.Modification
 On `𝔸²_k = Spec k[x, y]` the ideal `(x, y)` of the origin has support a single closed point, which
 is not the whole plane: the generic point `(0)` does not contain `x`. Since `𝔸²_k` is irreducible
 and Noetherian, the blowup at the origin is a modification, and its centre lies in the origin.
+
+The ideal `(x, y)` is not an effective Cartier divisor on any affine open neighbourhood `U` of the
+origin: its stalk at the origin is the maximal ideal of the local ring `k[x, y]_(x, y)`, which has
+dimension two since `(x, y)` is a maximal ideal of `k[x, y]`, while the stalks of an effective
+Cartier divisor are principal.
 -/
 
 public section
@@ -48,5 +57,64 @@ example : IsModification (originIdealSheaf k).blowupToBase :=
 -- Its centre lies in the origin.
 example : (originIdealSheaf k).blowupToBase.centre ⊆ (originIdealSheaf k).support :=
   Scheme.IdealSheafData.centre_blowupToBase_subset
+
+/-- The origin of the affine plane, the point of the prime `(x, y)`. -/
+noncomputable def origin : Spec (.of (MvPolynomial (Fin 2) k)) :=
+  ⟨Ideal.span {X 0, X 1}, idealOfVars_fin_two k ▸ isPrime_idealOfVars (Fin 2) k⟩
+
+/-- The prime of the origin is `(x, y)`. -/
+@[simp]
+theorem origin_asIdeal : (origin k).asIdeal = Ideal.span {X 0, X 1} := (rfl)
+
+/-- The prime `(x, y)` of the origin is maximal: it is the ideal of all variables. -/
+theorem isMaximal_origin_asIdeal : (origin k).asIdeal.IsMaximal := by
+  rw [origin_asIdeal, ← idealOfVars_fin_two]
+  exact isMaximal_idealOfVars (Fin 2) k
+
+/-- The support of the ideal sheaf of `(x, y)` is the origin. -/
+theorem mem_support_originIdealSheaf_iff (x : Spec (.of (MvPolynomial (Fin 2) k))) :
+    x ∈ (originIdealSheaf k).support ↔ x = origin k := by
+  rw [← SetLike.mem_coe]
+  simp only [originIdealSheaf, Scheme.IdealSheafData.coe_support_ofIdealTop, Spec_zeroLocus]
+  refine (PrimeSpectrum.mem_zeroLocus x _).trans ?_
+  rw [← Ideal.coe_comap, Ideal.comap_map_of_bijective (Scheme.ΓSpecIso _).inv.hom
+    (CategoryTheory.ConcreteCategory.bijective_of_isIso _), SetLike.coe_subset_coe,
+    ← origin_asIdeal]
+  exact ⟨fun h ↦ PrimeSpectrum.ext
+    ((isMaximal_origin_asIdeal k).eq_of_le x.isPrime.ne_top h).symm, fun h ↦ h ▸ le_rfl⟩
+
+/-- The local ring of the plane at the origin has dimension two: the prime `(x, y)` is a maximal
+ideal of `k[x, y]`, so its height is the number of variables. -/
+theorem ringKrullDim_stalk_origin :
+    ringKrullDim ((Spec (.of (MvPolynomial (Fin 2) k))).presheaf.stalk (origin k)) = 2 := by
+  have := isMaximal_origin_asIdeal k
+  rw [ringKrullDim_eq_of_ringEquiv (Spec.stalkIso _ (origin k)).commRingCatIsoToRingEquiv,
+    IsLocalization.AtPrime.ringKrullDim_eq_height (origin k).asIdeal,
+    MvPolynomial.height_eq_natCard_of_isMaximal, Nat.card_fin]
+  norm_cast
+
+/-- The stalk of the ideal sheaf of the origin at the origin is the maximal ideal of the local
+ring there. -/
+theorem stalkIdeal_originIdealSheaf_origin :
+    (originIdealSheaf k).stalkIdeal (origin k) = IsLocalRing.maximalIdeal _ := by
+  have := (origin k).isPrime
+  rw [originIdealSheaf,
+    Scheme.IdealSheafData.stalkIdeal_ofIdealTop_map_ΓSpecIso_inv (R := .of _) _ (origin k),
+    ← origin_asIdeal, Localization.AtPrime.map_eq_maximalIdeal]
+  exact IsLocalRing.map_ringEquiv_maximalIdeal
+    (Spec.stalkIso _ (origin k)).symm.commRingCatIsoToRingEquiv
+
+/-- **The origin is not a Cartier divisor near the origin.** On no affine open neighbourhood `U` of
+the origin of `𝔸²_k` does the ideal `(x, y)` pull back to an effective Cartier divisor on
+`Spec Γ(𝔸²_k, U)`. -/
+theorem not_isEffectiveCartier_comap_fromSpec {U : (Spec (.of (MvPolynomial (Fin 2) k))).Opens}
+    (hU : IsAffineOpen U) (hoU : origin k ∈ U) :
+    ¬ ((originIdealSheaf k).comap hU.fromSpec).IsEffectiveCartier := by
+  intro h
+  obtain ⟨y, hy⟩ : origin k ∈ Set.range hU.fromSpec := hU.range_fromSpec ▸ hoU
+  have hdim := Scheme.IdealSheafData.ringKrullDim_stalk_le_one_of_comap hU.fromSpec h y
+    (Flat.stalkMap _ y) (hy ▸ stalkIdeal_originIdealSheaf_origin k)
+  rw [hy] at hdim
+  exact absurd ((ringKrullDim_stalk_origin k).ge.trans hdim) (by decide)
 
 end TauCeti.BlowupModificationExample
