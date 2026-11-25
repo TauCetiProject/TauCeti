@@ -40,7 +40,8 @@ The transpose, restriction of locally analytic distributions, is in
 
 * `TauCeti.AnalyticStage.restrictResidue_of_le`: on a stage of level `h ≥ n`, restriction is the
   coordinate projection.
-* `TauCeti.AnalyticStage.norm_restrictResidue_le`: restriction does not increase norms.
+* `TauCeti.AnalyticStage.norm_restrictResidue_le`,
+  `TauCeti.AnalyticStage.opNorm_restrictResidue_le_one`: restriction does not increase norms.
 * `TauCeti.LocallyAnalytic.eval_restrictResidue`: restriction evaluates to `1_{a + pⁿℤ_p} f`.
 * `TauCeti.LocallyAnalytic.restrictResidue_comp`, `TauCeti.LocallyAnalytic.sum_restrictResidue`:
   the restrictions at depth `n` are orthogonal idempotents with sum the identity.
@@ -83,6 +84,12 @@ theorem restrictResidue_apply (c : AnalyticStage p h E) :
 /-- The restriction to a residue class does not increase the norm. -/
 theorem norm_restrictResidue_le (c : AnalyticStage p h E) : ‖restrictResidue S n a c‖ ≤ ‖c‖ :=
   (norm_indicatorCLM_apply_le _ _).trans (norm_transitionLE_le S _ c)
+
+/-- The restriction to a residue class has operator norm at most `1`. -/
+theorem opNorm_restrictResidue_le_one {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E]
+    [SMulCommClass ℤ_[p] 𝕜 E] : ‖restrictResidue (p := p) (h := h) (E := E) 𝕜 n a‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun c ↦ by
+    simpa using norm_restrictResidue_le 𝕜 n a c
 
 /-- On a stage of level `h ≥ n`, the restriction to a residue class is the projection onto the
 discs of the classes in it, followed by re-expansion to the level `max h n`. -/

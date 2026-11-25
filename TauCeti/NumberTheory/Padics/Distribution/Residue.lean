@@ -33,10 +33,8 @@ keeps exactly the point masses in the class (`restrictResidue_dirac`).
 
 * `TauCeti.LocallyAnalyticDistribution.stage_restrictResidue_of_le`: on a stage of level `h ≥ n`,
   restriction is the coordinate projection.
-* `TauCeti.LocallyAnalyticDistribution.stageSeminorm_restrictResidue_le`,
-  `TauCeti.LocallyAnalyticDistribution.stageSeminorm_restrictResidue_le_of_le`: restriction
-  bounds the stage seminorm of level `h` by that of level `max h n`, and does not increase the
-  stage seminorms of level `h ≥ n`.
+* `TauCeti.LocallyAnalyticDistribution.stageSeminorm_restrictResidue_le`: restriction bounds the
+  stage seminorm of level `h` by that of level `max h n`.
 * `TauCeti.LocallyAnalyticDistribution.restrictResidue_comp`,
   `TauCeti.LocallyAnalyticDistribution.sum_restrictResidue`: the restrictions at depth `n` are
   orthogonal idempotents with sum the identity.
@@ -99,18 +97,9 @@ theorem stage_restrictResidue_of_le {h : ℕ} (hnh : n ≤ h) (μ : LocallyAnaly
 /-- Restriction to a residue class modulo `pⁿ` bounds the stage seminorm of level `h` by the stage
 seminorm of level `max h n`. -/
 theorem stageSeminorm_restrictResidue_le (h : ℕ) (μ : LocallyAnalyticDistribution p K) :
-    stageSeminorm h (restrictResidue n a μ) ≤ stageSeminorm (max h n) μ := by
-  rw [stageSeminorm_apply, stageSeminorm_apply, stage_restrictResidue]
-  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg (stage (max h n) μ)) fun c ↦ ?_
-  refine ((stage (max h n) μ).le_opNorm _).trans (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
-  exact norm_restrictResidue_le K n a c
-
-/-- Restriction to a residue class modulo `pⁿ` does not increase the stage seminorms of level
-`h ≥ n`. -/
-theorem stageSeminorm_restrictResidue_le_of_le {h : ℕ} (hnh : n ≤ h)
-    (μ : LocallyAnalyticDistribution p K) :
-    stageSeminorm h (restrictResidue n a μ) ≤ stageSeminorm h μ := by
-  simpa only [max_eq_left hnh] using stageSeminorm_restrictResidue_le n a h μ
+    stageSeminorm h (restrictResidue n a μ) ≤ stageSeminorm (max h n) μ :=
+  (stageSeminorm_dualMap_le h μ).trans
+    (mul_le_of_le_one_left (apply_nonneg _ _) (opNorm_restrictResidue_le_one n a))
 
 /-- The restrictions to the residue classes modulo `pⁿ` are orthogonal idempotents. -/
 theorem restrictResidue_comp (b : ZMod (p ^ n)) (μ : LocallyAnalyticDistribution p K) :
@@ -142,13 +131,6 @@ theorem restrictResidue_zero_depth (a : ZMod (p ^ 0)) (μ : LocallyAnalyticDistr
     restrictResidue 0 a μ = μ :=
   Subtype.ext <| LinearMap.ext fun f ↦ by simp
 
-/-- Restriction to a residue class keeps exactly the point masses in the class. -/
-@[simp]
-theorem restrictResidue_dirac (x : ℤ_[p]) :
-    restrictResidue n a (dirac (K := K) x) = if PadicInt.toZModPow n x = a then dirac x else 0 := by
-  refine Subtype.ext <| LinearMap.ext fun f ↦ ?_
-  split_ifs with hx <;> simp [hx]
-
 /-- On the distribution of a measure, restriction to a residue class is the restriction of the
 measure. -/
 @[simp]
@@ -160,6 +142,13 @@ theorem restrictResidue_ofMeasure (μ : AbstractMeasure ℤ_[p] K K) :
   congr 1
   ext x
   simp [ContinuousMap.fiberIndicator_apply]
+
+/-- Restriction to a residue class keeps exactly the point masses in the class. -/
+@[simp]
+theorem restrictResidue_dirac (x : ℤ_[p]) :
+    restrictResidue n a (dirac (K := K) x) = if PadicInt.toZModPow n x = a then dirac x else 0 := by
+  rw [← ofMeasure_dirac, restrictResidue_ofMeasure, AbstractMeasure.restrictResidue_dirac]
+  split_ifs <;> simp
 
 end LocallyAnalyticDistribution
 
