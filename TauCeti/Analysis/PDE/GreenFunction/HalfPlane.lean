@@ -51,6 +51,8 @@ higher-dimensional half-space.
 * `TauCeti.integral_laplacian_mul_planarGreenKernelHalfPlane_of_inner_neg`: `-Δ G(a, ·) = δₐ`.
 * `TauCeti.fderiv_planarGreenKernelHalfPlane_normal`: the outward normal derivative on the
   boundary is minus the Poisson kernel.
+* `TauCeti.halfSpacePoissonKernel_orthonormalBasisOneI_repr`: the two-dimensional half-space
+  Poisson kernel in the coordinates `Complex.orthonormalBasisOneI` is `⟪v, a⟫ / (π ‖z - a‖²)`.
 
 ## References
 
@@ -141,7 +143,7 @@ theorem planarGreenKernelHalfPlane_pos {v : U} {a z : ℂ} (ha : 0 < ⟪(v : ℂ
 theorem planarGreenKernelHalfPlane_nonneg {v : U} {a z : ℂ} (ha : 0 ≤ ⟪(v : ℂ), a⟫_ℝ)
     (hz : 0 ≤ ⟪(v : ℂ), z⟫_ℝ) (hza : z ≠ a) : 0 ≤ planarGreenKernelHalfPlane v a z := by
   rw [planarGreenKernelHalfPlane_eq_mul_log_sub]
-  have hsq := norm_sub_reflection_orthogonal_singleton_sq v.2 a z
+  have hsq := norm_sub_reflection_orthogonal_singleton_sq v.property a z
   have hle : ‖z - a‖ ≤ ‖z - (ℝ ∙ (v : ℂ))ᗮ.reflection a‖ :=
     (sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)).1 (by
       rw [hsq]; nlinarith [mul_nonneg ha hz])
@@ -244,6 +246,21 @@ theorem fderiv_planarGreenKernelHalfPlane_normal_eq_neg_div {v : U} {a z : ℂ}
   field_simp
   ring
 
+/-- The half-space Poisson kernel of dimension two, read in the coordinates
+`Complex.orthonormalBasisOneI` of `EuclideanSpace ℝ (Fin 2)`, is `⟪v, a⟫ / (π ‖z - a‖²)` for a unit
+normal `v`, a pole `a` and a point `z` of `ℂ`. -/
+theorem halfSpacePoissonKernel_orthonormalBasisOneI_repr (v : U) (a z : ℂ) :
+    halfSpacePoissonKernel 2
+        ⟨Complex.orthonormalBasisOneI.repr v, by simpa using v.property⟩
+        (Complex.orthonormalBasisOneI.repr a) (Complex.orthonormalBasisOneI.repr z) =
+      ⟪(v : ℂ), a⟫_ℝ / (Real.pi * ‖z - a‖ ^ 2) := by
+  have hvol : volume.real (ball (0 : EuclideanSpace ℝ (Fin 2)) 1) = Real.pi := by
+    simp [Measure.real, Real.pi_pos.le]
+  rw [halfSpacePoissonKernel_eq_div, LinearIsometryEquiv.inner_map_map, ← map_sub,
+    LinearIsometryEquiv.norm_map, hvol]
+  push_cast
+  ring
+
 /-- **The outward normal derivative of the half-plane Green kernel is minus the Poisson kernel.**
 On the boundary line, the derivative of `G(a, ·)` in the outward normal direction `-v` is minus
 the half-space Poisson kernel of dimension two, read in the coordinates
@@ -252,17 +269,10 @@ theorem fderiv_planarGreenKernelHalfPlane_normal {v : U} {a z : ℂ}
     (hz : ⟪(v : ℂ), z⟫_ℝ = 0) (hza : z ≠ a) :
     fderiv ℝ (planarGreenKernelHalfPlane v a) z (-(v : ℂ)) =
       -halfSpacePoissonKernel 2
-        ⟨Complex.orthonormalBasisOneI.repr v, by simpa using v.2⟩
+        ⟨Complex.orthonormalBasisOneI.repr v, by simpa using v.property⟩
         (Complex.orthonormalBasisOneI.repr a) (Complex.orthonormalBasisOneI.repr z) := by
   rw [fderiv_planarGreenKernelHalfPlane_normal_eq_neg_div hz hza,
-    halfSpacePoissonKernel_eq_div,
-    LinearIsometryEquiv.inner_map_map, ← map_sub, LinearIsometryEquiv.norm_map]
-  have hvol : volume.real (ball (0 : EuclideanSpace ℝ (Fin 2)) 1) = Real.pi := by
-    simp [Measure.real, Real.pi_pos.le]
-  rw [hvol]
-  have hpos : 0 < ‖z - a‖ := norm_pos_iff.2 (sub_ne_zero.2 hza)
-  field_simp
-  norm_num
+    halfSpacePoissonKernel_orthonormalBasisOneI_repr]
 
 end TauCeti
 

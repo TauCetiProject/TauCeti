@@ -61,6 +61,15 @@ diffeomorphisms.
   its orthogonal complement are equal, without a unit-norm assumption.
 * `LinearIsometryEquiv.eq_extendOrthogonalComplement_iff`: a linear isometry equals the
   extension if and only if it agrees with it on the unit vector and its orthogonal complement.
+* `LinearIsometryEquiv.inner_toLinearEquiv_conj_apply`: the matrix entries of an operator
+  conjugated by a linear isometry equivalence.
+* `LinearIsometryEquiv.forall_orthonormal_iff`: a condition holds along all orthonormal families
+  in the target of a linear isometry equivalence exactly when it holds for the images of all
+  orthonormal families in its source.
+* `LinearIsometryEquiv.forall_orthonormal_sum_inner_conj_iff`,
+  `LinearIsometryEquiv.forall_orthonormal_sum_re_inner_conj_iff`: a condition on the diagonal sums
+  `∑ᵢ ⟪T wᵢ, wᵢ⟫` (resp. on their real parts `∑ᵢ re ⟪T wᵢ, wᵢ⟫`) of an operator along all
+  orthonormal families is invariant under conjugation by a linear isometry equivalence.
 * `ContDiff.linearIsometryEquiv_symm_apply`: the inverses along a smooth family of linear
   isometries of a finite-dimensional space form a smooth family.
 -/
@@ -89,7 +98,7 @@ of `v` to the orthogonal complement of its image `w`. -/
 def orthogonalComplementSingletonMap (f : E →ₗᵢ[𝕜] F) {v : E} {w : F} (hw : f v = w) :
     (𝕜 ∙ v)ᗮ →ₗᵢ[𝕜] (𝕜 ∙ w)ᗮ where
   toLinearMap := (f.toLinearMap.domRestrict (𝕜 ∙ v)ᗮ).codRestrict (𝕜 ∙ w)ᗮ fun y ↦
-    f.map_mem_orthogonal_singleton hw y.2
+    f.map_mem_orthogonal_singleton hw y.property
   norm_map' y := f.norm_map y
 
 @[simp]
@@ -220,6 +229,70 @@ theorem eq_extendOrthogonalComplement_iff
   · simpa using hf
 
 end LinearIsometryEquiv
+
+namespace LinearIsometryEquiv
+
+open scoped InnerProductSpace
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+/-- The matrix entries of an operator conjugated by a linear isometry equivalence `U` are the
+matrix entries of the operator at the pulled-back vectors. -/
+theorem inner_toLinearEquiv_conj_apply (U : E ≃ₗᵢ[𝕜] F) (T : E →ₗ[𝕜] E) (a b : F) :
+    ⟪U.toLinearEquiv.conj T a, b⟫_𝕜 = ⟪T (U.symm a), U.symm b⟫_𝕜 := by
+  simp [LinearEquiv.conj_apply_apply, U.inner_map_eq_flip]
+
+/-- A condition `P` holds along all orthonormal families in `F` exactly when it holds for the
+images under a linear isometry equivalence `U : E ≃ₗᵢ[𝕜] F` of all orthonormal families in `E`. -/
+theorem forall_orthonormal_iff (U : E ≃ₗᵢ[𝕜] F) {ι : Type*} (P : (ι → F) → Prop) :
+    (∀ w : ι → F, Orthonormal 𝕜 w → P w) ↔ ∀ w : ι → E, Orthonormal 𝕜 w → P (U ∘ w) := by
+  refine ⟨fun h w hw ↦ h _ (hw.comp_linearIsometryEquiv U), fun h w hw ↦ ?_⟩
+  simpa [Function.comp_def] using h _ (hw.comp_linearIsometryEquiv U.symm)
+
+/-- A condition on the diagonal sums `∑ᵢ ⟪T wᵢ, wᵢ⟫` along all orthonormal families indexed by `ι`
+holds for the conjugate of `T` by a linear isometry equivalence `U` exactly when it holds for
+`T`. -/
+theorem forall_orthonormal_sum_inner_conj_iff (U : E ≃ₗᵢ[𝕜] F) {T : E →ₗ[𝕜] E} {ι : Type*}
+    [Fintype ι] (P : 𝕜 → Prop) :
+    (∀ w : ι → F, Orthonormal 𝕜 w → P (∑ i, ⟪U.toLinearEquiv.conj T (w i), w i⟫_𝕜)) ↔
+      ∀ w : ι → E, Orthonormal 𝕜 w → P (∑ i, ⟪T (w i), w i⟫_𝕜) := by
+  refine (U.forall_orthonormal_iff fun w ↦ P (∑ i, ⟪U.toLinearEquiv.conj T (w i), w i⟫_𝕜)).trans ?_
+  simp
+
+/-- A condition on the real parts `∑ᵢ re ⟪T wᵢ, wᵢ⟫` of the diagonal sums along all orthonormal
+families indexed by `ι` holds for the conjugate of `T` by a linear isometry equivalence `U`
+exactly when it holds for `T`. -/
+theorem forall_orthonormal_sum_re_inner_conj_iff (U : E ≃ₗᵢ[𝕜] F) {T : E →ₗ[𝕜] E} {ι : Type*}
+    [Fintype ι] (P : ℝ → Prop) :
+    (∀ w : ι → F, Orthonormal 𝕜 w →
+        P (∑ i, RCLike.re ⟪U.toLinearEquiv.conj T (w i), w i⟫_𝕜)) ↔
+      ∀ w : ι → E, Orthonormal 𝕜 w → P (∑ i, RCLike.re ⟪T (w i), w i⟫_𝕜) := by
+  simpa only [map_sum] using U.forall_orthonormal_sum_inner_conj_iff fun z ↦ P (RCLike.re z)
+
+end LinearIsometryEquiv
+
+namespace Submodule
+
+open Module
+open scoped InnerProductSpace
+
+variable {𝕜 F : Type*} [RCLike 𝕜] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] {e : F}
+
+/-- The orthogonal projection onto `e^⊥` removes the `e` component. -/
+theorem coe_orthogonalProjectionOnto_orthogonal_singleton (he : ‖e‖ = 1) (y : F) :
+    ((𝕜 ∙ e)ᗮ.orthogonalProjectionOnto y : F) = y - ⟪e, y⟫_𝕜 • e := by
+  rw [Submodule.coe_orthogonalProjectionOnto_apply, Submodule.starProjection_orthogonal_val,
+    Submodule.starProjection_unit_singleton 𝕜 he]
+
+/-- The projection of `k + c e` onto `e^⊥` is `k`, without a unit-norm assumption. -/
+@[simp]
+theorem orthogonalProjectionOnto_add_smul (k : (𝕜 ∙ e)ᗮ) (c : 𝕜) :
+    (𝕜 ∙ e)ᗮ.orthogonalProjectionOnto ((k : F) + c • e) = k := by
+  simp [map_add, map_smul, orthogonalProjectionOnto_mem_subspace_eq_self,
+    orthogonalProjectionOnto_orthogonalComplement_singleton_eq_zero]
+
+end Submodule
 
 namespace TauCeti
 

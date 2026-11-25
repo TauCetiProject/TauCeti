@@ -97,16 +97,6 @@ private theorem ne_of_valued_lt {a b : O_v}
     (h : Valued.v (a : K_v) < Valued.v (b : K_v)) : a ≠ b :=
   fun hab ↦ h.ne (by rw [hab])
 
-private theorem eq_two_of_formalInverseEval_self {t : O_v} (ht : t ∈ m_v) (ht0 : t ≠ 0)
-    (hfix : t = W.formalInverseEval t) :
-    2 = W.a₁ * t + W.a₃ * W.formalWEval t := by
-  have hE : PowerSeries.HasEval t :=
-    (v.isAdic_maximalIdeal_adicCompletionIntegers (K := K)).isTopologicallyNilpotent_of_mem ht
-  have h := WeierstrassCurve.formalInverseEval_mul_formalInverseDenomEval W hE
-  rw [← hfix, WeierstrassCurve.formalInverseDenomEval_eq W hE] at h
-  apply mul_left_cancel₀ ht0
-  linear_combination h
-
 private theorem ne_formalInverseEval_self {t : O_v} (ht : t ∈ m_v) (ht0 : t ≠ 0)
     (h2 : Valued.v (t : K_v) < Valued.v ((2 : O_v) : K_v)) :
     t ≠ W.formalInverseEval t := by
@@ -119,11 +109,13 @@ private theorem ne_formalInverseEval_self {t : O_v} (ht : t ∈ m_v) (ht0 : t �
       _ ≤ Valued.v (t : K_v) * 1 :=
         mul_le_mul' le_rfl (pow_le_one' t.property 2)
       _ = Valued.v (t : K_v) := mul_one _
+  have hE : PowerSeries.HasEval t :=
+    (v.isAdic_maximalIdeal_adicCompletionIntegers (K := K)).isTopologicallyNilpotent_of_mem ht
   have hcoe := congrArg (fun a : O_v ↦ (a : K_v))
-    (eq_two_of_formalInverseEval_self v W ht ht0 hfix)
+    (W.a₁_mul_add_a₃_mul_formalWEval_eq_two_of_formalInverseEval_eq hE ht0 hfix.symm)
   push_cast at hcoe
   have hval : Valued.v ((2 : O_v) : K_v) ≤ Valued.v (t : K_v) := by
-    rw [hcoe]
+    rw [← hcoe]
     refine (Valued.v.map_add _ _).trans (max_le ?_ ?_)
     · rw [map_mul]
       exact (mul_le_mul' W.a₁.property le_rfl).trans_eq (one_mul _)
@@ -143,8 +135,10 @@ private theorem exists_aux_param_of_a₁_ne_zero {t : O_v} (ht : t ∈ m_v) (ht0
   refine ⟨s, hsm, hs0, ne_of_valued_lt v hst,
     ne_of_valued_lt v (valued_formalInverseEval v W ht ▸ hst), ?_⟩
   intro hfix
+  have hE : PowerSeries.HasEval s :=
+    (v.isAdic_maximalIdeal_adicCompletionIntegers (K := K)).isTopologicallyNilpotent_of_mem hsm
   have hcoe := congrArg (fun a : O_v ↦ (a : K_v))
-    (eq_two_of_formalInverseEval_self v W hsm hs0 hfix)
+    (W.a₁_mul_add_a₃_mul_formalWEval_eq_two_of_formalInverseEval_eq hE hs0 hfix.symm)
   push_cast at hcoe
   rw [htwo'] at hcoe
   have hsval0 : Valued.v (s : K_v) ≠ 0 := by
@@ -162,7 +156,7 @@ private theorem exists_aux_param_of_a₁_ne_zero {t : O_v} (ht : t ∈ m_v) (ht0
     rw [map_mul, pow_succ]
     exact mul_lt_mul_of_pos_right hsq (pos_iff_ne_zero.mpr hsval0))
   have heq : (W.a₁ * s : K_v) = -(W.a₃ * W.formalWEval s : K_v) :=
-    eq_neg_of_add_eq_zero_left hcoe.symm
+    eq_neg_of_add_eq_zero_left hcoe
   exact hval.ne (by rw [heq, Valuation.map_neg])
 
 private theorem exists_aux_param [(W.baseChange K_v).IsElliptic] {t : O_v}
@@ -190,15 +184,16 @@ private theorem exists_aux_param [(W.baseChange K_v).IsElliptic] {t : O_v}
       refine ⟨s, hsm, hs0, ne_of_valued_lt v hst,
         ne_of_valued_lt v (valued_formalInverseEval v W ht ▸ hst), ?_⟩
       intro hfix
+      have hE : PowerSeries.HasEval s :=
+        (v.isAdic_maximalIdeal_adicCompletionIntegers (K := K)).isTopologicallyNilpotent_of_mem hsm
       have hcoe := congrArg (fun a : O_v ↦ (a : K_v))
-        (eq_two_of_formalInverseEval_self v W hsm hs0 hfix)
+        (W.a₁_mul_add_a₃_mul_formalWEval_eq_two_of_formalInverseEval_eq hE hs0 hfix.symm)
       push_cast at hcoe
       rw [htwo', ha₁, zero_mul, zero_add] at hcoe
       have hw0 : (W.formalWEval s : K_v) ≠ 0 :=
-        W.algebraMap_formalWEval_ne_zero
-          ((Fact.out : IsAdic m_v).isTopologicallyNilpotent_of_mem hsm)
+        W.algebraMap_formalWEval_ne_zero hE
           ((FaithfulSMul.algebraMap_injective O_v K_v).ne hs0)
-      exact (mul_ne_zero ha₃ hw0) hcoe.symm
+      exact (mul_ne_zero ha₃ hw0) hcoe
     · exact exists_aux_param_of_a₁_ne_zero v W ht ht0 htwo' ha₁
   · -- the same `SubringClass` coercion, read in the other direction
     have htwoO : (2 : O_v) ≠ 0 := fun h ↦ htwo (congrArg (fun a : O_v ↦ (a : K_v)) h)

@@ -59,7 +59,8 @@ extension to `B^I`. Hence the power-bounded elements of `B^I` are exactly its un
 * `TauCeti.WittVector.gaussValuationAway_algHom` : the extended Gauss valuations are preserved by
   `𝕎 O`-algebra homomorphisms between localisations away from `p [ϖ]`.
 * `TauCeti.WittVector.norm_algebraMap_intervalRing` : `‖x‖ = max(λ_{ρ₁}(x), λ_{ρ₂}(x))` for
-  `x ∈ 𝕎 O`.
+  `x ∈ 𝕎 O`; in particular `𝕎 O` lands in the unit ball `B^{I,+}`
+  (`TauCeti.WittVector.algebraMap_mem_powerBoundedSubring_intervalRing`).
 * `TauCeti.WittVector.isPseudoUniformizer_natCast_intervalRing` : `p` is a pseudouniformiser of
   `B^I`.
 * `TauCeti.WittVector.isPseudoUniformizer_teichmuller_intervalRing` : `[ϖ]` is a pseudouniformiser
@@ -340,6 +341,13 @@ theorem norm_algebraMap_intervalRing (x : 𝕎 O) :
       max (gaussValuation p hv ρ₁ hρ₁.2 x : ℝ) (gaussValuation p hv ρ₂ hρ₂.2 x) := by
   rw [Completion.algebraMap_def, Completion.norm_coe, IntervalLocalization.norm_algebraMap]
 
+/-- **`𝕎 O` lands in the unit ball of `B^I`**, since every Gauss valuation is at most `1` on
+`𝕎 O`. -/
+theorem norm_algebraMap_intervalRing_le_one (x : 𝕎 O) :
+    ‖algebraMap (𝕎 O) (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) x‖ ≤ 1 := by
+  rw [norm_algebraMap_intervalRing]
+  exact_mod_cast max_le (gaussValuation_le_one hv hρ₁.2 x) (gaussValuation_le_one hv hρ₂.2 x)
+
 /-- The map `𝕎 O → B^I` is injective. -/
 theorem algebraMap_intervalRing_injective :
     Function.Injective (algebraMap (𝕎 O) (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)) := by
@@ -425,6 +433,13 @@ theorem coe_powerBoundedSubring_intervalRing :
   IsPseudoUniformizer.coe_powerBoundedSubring_eq_closedBall
     (isPseudoUniformizer_natCast_intervalRing p hv hϖ hϖ' hρ₁ hρ₂)
     (isPowMul_norm_intervalRing p hv hϖ hϖ' hρ₁ hρ₂)
+
+/-- **`𝕎 O` lands in `B^{I,+}`**, the power-bounded subring of `B^I`. -/
+theorem algebraMap_mem_powerBoundedSubring_intervalRing (x : 𝕎 O) :
+    algebraMap (𝕎 O) (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) x ∈
+      powerBoundedSubring (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) := by
+  rw [← SetLike.mem_coe, coe_powerBoundedSubring_intervalRing, mem_closedBall_zero_iff]
+  exact norm_algebraMap_intervalRing_le_one p hv hϖ hϖ' hρ₁ hρ₂ x
 
 /-- **`B^I` is uniform**: its power-bounded subring, the unit ball, is bounded. -/
 instance isUniform_intervalRing : IsUniform (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) :=

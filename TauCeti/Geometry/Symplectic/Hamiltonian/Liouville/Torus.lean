@@ -123,7 +123,7 @@ theorem nonempty_homeomorph_unitAddTorus
       (hF.of_le (by simp)) hcomm hreg hK
   set y : W := ⟨x, hxW⟩
   have hσW := hσ.mpullback_subtype_val W
-  have hFW : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ fun z : W ↦ F z := hF.comp contMDiff_subtype_val
+  have hFW : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ fun z : W ↦ F z := hF.comp contMDiff_subtypeVal
   -- On `W` the component is `(ι → ℝ) / Λ` for the full lattice `Λ` of periods of `x`.
   set Λ := hσW.hamiltonianFlowStabilizer hFW hcommW hcW y
   have : DiscreteTopology Λ := hσW.discreteTopology_hamiltonianFlowStabilizer hFW hcommW hcW
