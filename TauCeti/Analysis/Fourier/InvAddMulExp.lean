@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.Analysis.Complex.PowerSeries.FourierCoeff
-import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
@@ -32,13 +31,12 @@ weights in the dimer model: `(2π)⁻¹ ∫₀^{2π} e^{inθ} / (a + r e^{iθ}) 
 
 For `‖c‖ < ‖b‖` the function `z ↦ 1 / (b + c z)` is holomorphic on the closed unit disc, so by
 Cauchy's theorem `∫₀^{2π} e^{imθ} / (b + c e^{iθ}) dθ = 0` for `m ≥ 1`
-(`DiffContOnCl.intervalIntegral_circleMap_zpow_smul_eq_zero`). For `‖c‖ < ‖b‖` and `n = -N ≤ 0`
-the finite geometric expansion
-`1 / (b + c w) = Σ_{k ≤ N} b⁻¹ (-c w / b)^k + (-c w / b)^{N + 1} / (b + c w)` reduces the integral
-to the integrals `∫₀^{2π} e^{ikθ} dθ = 2π [k = 0]` (from `TauCeti.integral_cexp_intCast_mul_mul_I`
-by periodicity) and one vanishing integral of the first kind. The case `‖b‖ < ‖c‖` follows from
-these two by the substitution `θ ↦ -θ`, which exchanges the roles of `b` and `c` and of `n` and
-`1 - n`.
+(`DiffContOnCl.intervalIntegral_circleMap_zpow_smul_eq_zero`). For `n = -N ≤ 0` the integral is
+`2π` times the `N`-th Fourier coefficient of `θ ↦ 1 / (b + c e^{iθ})`, which is the `N`-th Taylor
+coefficient `b⁻¹ (-c / b)^N` of `z ↦ 1 / (b + c z)`, read off from the geometric series
+`1 / (b + c z) = Σ_k b⁻¹ (-c z / b)^k` (`DiffContOnCl.fourierCoeffOn_circleMap_eq_of_hasSum`).
+The case `‖b‖ < ‖c‖` follows from these two by the substitution `θ ↦ -θ`, which exchanges the
+roles of `b` and `c` and of `n` and `1 - n`.
 
 ## Main results
 
@@ -55,13 +53,6 @@ open scoped Real
 
 namespace TauCeti
 
-private theorem periodic_exp_intCast_mul_mul_I (k : ℤ) :
-    Function.Periodic (fun θ : ℝ => exp (k * θ * I)) (2 * π) := fun θ => by
-  simp only
-  rw [← mul_one (exp (k * θ * I)), ← exp_int_mul_two_pi_mul_I k, ← exp_add]
-  push_cast
-  ring_nf
-
 /-- For `‖c‖ < ‖b‖` the denominator `b + c z` does not vanish on the closed unit disc. -/
 private theorem add_mul_ne_zero {b c z : ℂ} (hcb : ‖c‖ < ‖b‖) (hz : ‖z‖ ≤ 1) :
     b + c * z ≠ 0 := by
@@ -72,64 +63,26 @@ private theorem add_mul_ne_zero {b c z : ℂ} (hcb : ‖c‖ < ‖b‖) (hz : �
     exact mul_le_of_le_one_right (norm_nonneg c) hz
   exact this.not_gt hcb
 
-/-- By Cauchy's theorem, `∫₀^{2π} e^{imθ} / (b + c e^{iθ}) dθ = 0` for `‖c‖ < ‖b‖` and `m ≥ 1`. -/
-private theorem integral_zpow_mul_inv_add_eq_zero {b c : ℂ} (hcb : ‖c‖ < ‖b‖) {m : ℤ}
-    (hm : 0 < m) :
-    ∫ θ in (0 : ℝ)..2 * π, exp (θ * I) ^ m * (b + c * exp (θ * I))⁻¹ = 0 := by
-  have hf : DiffContOnCl ℂ (fun z => (b + c * z)⁻¹) (ball (0 : ℂ) 1) := by
-    refine DifferentiableOn.diffContOnCl fun z hz => ?_
-    rw [closure_ball (0 : ℂ) one_ne_zero, mem_closedBall, dist_zero_right] at hz
-    exact (((differentiableAt_const b).add ((differentiableAt_const c).mul
-      differentiableAt_id)).inv (add_mul_ne_zero hcb hz)).differentiableWithinAt
-  simpa [circleMap_zero] using hf.intervalIntegral_circleMap_zpow_smul_eq_zero one_pos hm
+/-- For `‖c‖ < ‖b‖` the function `z ↦ 1 / (b + c z)` is holomorphic on the closed unit disc. -/
+private theorem diffContOnCl_inv_add {b c : ℂ} (hcb : ‖c‖ < ‖b‖) :
+    DiffContOnCl ℂ (fun z => (b + c * z)⁻¹) (ball (0 : ℂ) 1) := by
+  refine DifferentiableOn.diffContOnCl fun z hz => ?_
+  rw [closure_ball (0 : ℂ) one_ne_zero, mem_closedBall, dist_zero_right] at hz
+  exact (((differentiableAt_const b).add ((differentiableAt_const c).mul
+    differentiableAt_id)).inv (add_mul_ne_zero hcb hz)).differentiableWithinAt
+
+/-- On the unit circle, `e^{inθ} / (b + c e^{iθ})` is `w ^ n * (b + c w)⁻¹` at `w = e^{iθ}`. -/
+private theorem exp_div_add_eq (b c : ℂ) (n : ℤ) (θ : ℝ) :
+    exp (n * θ * I) / (b + c * exp (θ * I)) =
+      circleMap 0 1 θ ^ n * (b + c * circleMap 0 1 θ)⁻¹ := by
+  rw [circleMap_zero, ofReal_one, one_mul, div_eq_mul_inv, mul_assoc, exp_intCast_mul]
 
 /-- For `‖c‖ < ‖b‖` and `n ≥ 1`, `∫₀^{2π} e^{inθ} / (b + c e^{iθ}) dθ = 0`. -/
 theorem integral_exp_div_add_of_norm_lt_of_pos {b c : ℂ} (hcb : ‖c‖ < ‖b‖) {n : ℤ}
     (hn : 0 < n) :
     ∫ θ in (0 : ℝ)..2 * π, exp (n * θ * I) / (b + c * exp (θ * I)) = 0 := by
-  rw [← integral_zpow_mul_inv_add_eq_zero hcb hn]
-  congr 1
-  ext θ
-  rw [div_eq_mul_inv, mul_assoc, exp_intCast_mul]
-
-/-- The finite geometric expansion of `w^{-N} / (b + c w)` on the unit circle. -/
-private theorem exp_neg_div_add_eq {b c : ℂ} (hcb : ‖c‖ < ‖b‖) (N : ℕ) (θ : ℝ) :
-    exp (((-N : ℤ) : ℂ) * θ * I) / (b + c * exp (θ * I)) =
-      (∑ k ∈ Finset.range (N + 1),
-        b⁻¹ * (-c / b) ^ k * exp ((k - N : ℤ) * θ * I)) +
-      (-c / b) ^ (N + 1) * (exp (θ * I) * (b + c * exp (θ * I))⁻¹) := by
-  set w := exp (θ * I) with hw
-  have hb : b ≠ 0 := norm_pos_iff.1 ((norm_nonneg c).trans_lt hcb)
-  have hw0 : w ≠ 0 := exp_ne_zero _
-  have hd : b + c * w ≠ 0 := add_mul_ne_zero hcb (norm_exp_ofReal_mul_I θ).le
-  have hexp : ∀ k : ℤ, exp (k * θ * I) = w ^ k := fun k => by
-    rw [hw, ← exp_intCast_mul]
-    ring_nf
-  have hq : -c * w / b ≠ 1 := by
-    intro h
-    apply hd
-    field_simp at h
-    linear_combination -h
-  rw [hexp, Finset.sum_congr rfl fun k _ => by rw [hexp, zpow_sub₀ hw0, zpow_natCast,
-    zpow_natCast]]
-  have hsum : ∑ k ∈ Finset.range (N + 1), b⁻¹ * (-c / b) ^ k * (w ^ k / w ^ N) =
-      b⁻¹ / w ^ N * ∑ k ∈ Finset.range (N + 1), (-c * w / b) ^ k := by
-    rw [Finset.mul_sum]
-    refine Finset.sum_congr rfl fun k _ => ?_
-    rw [div_pow, div_pow, mul_pow]
-    field_simp
-  have hlast : (-c / b) ^ (N + 1) * (w * (b + c * w)⁻¹) =
-      (-c * w / b) ^ (N + 1) / w ^ N / (b * (1 - -c * w / b)) := by
-    rw [show b * (1 - -c * w / b) = b + c * w by field_simp; ring]
-    field_simp
-    ring
-  rw [hsum, hlast, geom_sum_eq hq, zpow_neg, zpow_natCast,
-    show b + c * w = b * (1 - -c * w / b) by field_simp; ring]
-  generalize -c * w / b = q at hq ⊢
-  have h1q : 1 - q ≠ 0 := sub_ne_zero.2 (Ne.symm hq)
-  have hq1 : q - 1 ≠ 0 := sub_ne_zero.2 hq
-  field_simp
-  ring
+  simp_rw [exp_div_add_eq]
+  simpa using (diffContOnCl_inv_add hcb).intervalIntegral_circleMap_zpow_smul_eq_zero one_pos hn
 
 /-- For `‖c‖ < ‖b‖` and `n ≤ 0`, `∫₀^{2π} e^{inθ} / (b + c e^{iθ}) dθ = 2π (-c)^{-n} b^{n-1}`. -/
 theorem integral_exp_div_add_of_norm_lt_of_nonpos {b c : ℂ} (hcb : ‖c‖ < ‖b‖) {n : ℤ}
@@ -138,36 +91,33 @@ theorem integral_exp_div_add_of_norm_lt_of_nonpos {b c : ℂ} (hcb : ‖c‖ < �
       2 * π * (-c) ^ (-n) * b ^ (n - 1) := by
   obtain ⟨N, rfl⟩ : ∃ N : ℕ, n = -N := ⟨(-n).toNat, by omega⟩
   have hb : b ≠ 0 := norm_pos_iff.1 ((norm_nonneg c).trans_lt hcb)
-  have hcont : ∀ k : ℤ, Continuous fun θ : ℝ => exp (k * θ * I) := fun k => by fun_prop
-  have hint : ∀ k : ℤ, ∫ θ in (0 : ℝ)..2 * π, exp (k * θ * I) =
-      if k = 0 then (2 * π : ℂ) else 0 := fun k => by
-    have hp := (periodic_exp_intCast_mul_mul_I k).intervalIntegral_add_eq (-π) 0
-    rw [show -π + 2 * π = π by ring, zero_add] at hp
-    exact hp.symm.trans (integral_cexp_intCast_mul_mul_I k)
-  have hrem : ∫ θ in (0 : ℝ)..2 * π, exp (θ * I) * (b + c * exp (θ * I))⁻¹ = 0 := by
-    simpa using integral_zpow_mul_inv_add_eq_zero hcb (m := 1) one_pos
-  simp_rw [exp_neg_div_add_eq hcb N]
-  rw [intervalIntegral.integral_add, intervalIntegral.integral_const_mul, hrem, mul_zero, add_zero,
-    intervalIntegral.integral_finsetSum]
-  · simp_rw [intervalIntegral.integral_const_mul, hint, sub_eq_zero, Nat.cast_inj, mul_ite,
-      mul_zero]
-    rw [Finset.sum_ite_eq' (Finset.range (N + 1)) N, ite_eq_left (Finset.self_mem_range_succ N),
-      neg_neg, zpow_natCast, show (-(N : ℤ) - 1) = -((N + 1 : ℕ) : ℤ) by push_cast; ring,
-      zpow_neg, zpow_natCast, div_pow, pow_succ]
+  -- The `N`-th Taylor coefficient of `z ↦ (b + c z)⁻¹ = Σ b⁻¹ (-c z / b)ᵏ` is `b⁻¹ (-c / b)ᴺ`.
+  have hcoeff := (diffContOnCl_inv_add hcb).fourierCoeffOn_circleMap_eq_of_hasSum
+    (a := fun k => b⁻¹ * (-c / b) ^ k) (fun z hz => ?_) N
+  · simp_rw [exp_div_add_eq]
+    rw [intervalIntegral_circleMap_zpow_mul (fun w => (b + c * w)⁻¹), neg_neg, hcoeff]
+    have hpow : b ^ (-(N : ℤ) - 1) = (b ^ (N + 1))⁻¹ := by
+      rw [← zpow_natCast, ← zpow_neg]
+      push_cast
+      ring_nf
+    rw [zpow_natCast, hpow, div_pow, pow_succ]
     field_simp
-  · exact fun k _ => (continuous_const.mul (hcont _)).intervalIntegrable _ _
-  · exact (continuous_finsetSum _ fun k _ =>
-      continuous_const.mul (hcont _)).intervalIntegrable _ _
-  · refine (continuous_const.mul ((by fun_prop : Continuous fun θ : ℝ => exp (θ * I)).mul
-      ((by fun_prop : Continuous fun θ : ℝ => b + c * exp (θ * I)).inv₀
-        fun θ => add_mul_ne_zero hcb (norm_exp_ofReal_mul_I θ).le))).intervalIntegrable _ _
+  · have hq : ‖-c * z / b‖ < 1 := by
+      rw [mem_ball_zero_iff] at hz
+      rw [norm_div, div_lt_one (norm_pos_iff.2 hb), norm_mul, norm_neg]
+      exact (mul_le_of_le_one_right (norm_nonneg c) hz.le).trans_lt hcb
+    convert (hasSum_geometric_of_norm_lt_one hq).mul_left b⁻¹ using 1
+    · ext k
+      rw [smul_eq_mul, mul_div_assoc, mul_pow, div_pow, div_pow]
+      ring
+    · have h1q : 1 - -c * z / b = (b + c * z) / b := by field_simp; ring
+      rw [h1q, inv_div, mul_div_assoc', inv_mul_cancel₀ hb, one_div]
 
+/-- The integrand `e^{inθ} / (b + c e^{iθ})` has period `2π`. -/
 private theorem periodic_exp_div_add (b c : ℂ) (n : ℤ) :
     Function.Periodic (fun θ : ℝ => exp (n * θ * I) / (b + c * exp (θ * I))) (2 * π) := by
-  intro θ
-  have h1 := periodic_exp_intCast_mul_mul_I 1 θ
-  simp only [Int.cast_one, one_mul] at h1
-  simp only [periodic_exp_intCast_mul_mul_I n θ, h1]
+  simp_rw [exp_div_add_eq]
+  exact (periodic_circleMap 0 1).comp fun w => w ^ n * (b + c * w)⁻¹
 
 /-- The substitution `θ ↦ -θ` exchanges `b` and `c` and sends `n` to `1 - n`. -/
 private theorem integral_exp_div_add_swap (b c : ℂ) (n : ℤ) :
