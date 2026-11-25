@@ -12,6 +12,8 @@ public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.FinitePresentationDescent
 public import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
 import Mathlib.Algebra.Category.ModuleCat.Presheaf.EpiMono
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
+import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 /-!
 # Exactness and base change of the sheaf associated with a module
@@ -39,6 +41,9 @@ free of finite rank.
 Since `M~` is left adjoint to taking global sections, with unit the map `M → Γ(M~)`, a morphism
 out of `M~` is determined by where it sends the global sections coming from `M`.
 
+The unit `M → Γ(M~, ⊤)` is bijective and `R → Γ(Spec R, ⊤)` is bijective, so `Γ(M~, ⊤)` is the
+base change of `M` along `R → Γ(Spec R, ⊤)`.
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.tilde_map_app_injective`: an injective linear map `M ⟶ N` induces
@@ -59,6 +64,8 @@ out of `M~` is determined by where it sends the global sections coming from `M`.
   on the global sections coming from `M`;
 * `AlgebraicGeometry.Scheme.Modules.moduleSpecΓFunctor_map_bijective`: morphisms of
   quasi-coherent modules on `Spec R` are the `R`-linear maps of their global sections.
+* `AlgebraicGeometry.isBaseChange_tildeToTop`: the `R`-linear map `M → Γ(M~, ⊤)` exhibits
+  `Γ(M~, ⊤)` as the base change of `M` along `R → Γ(Spec R, ⊤)`.
 
 ## References
 
@@ -419,6 +426,25 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.moduleSpecΓFunctor_map_bijectiv
     ⟨fun _ _ hfg ↦ (cancel_epi ε).1 hfg, fun g ↦ ⟨inv ε ≫ g, IsIso.hom_inv_id_assoc ε g⟩⟩
 
 end Extensionality
+
+section GlobalSections
+
+variable {R : CommRingCat.{u}}
+
+/-- The global sections of `M~` as an `R`-linear map `M → Γ(M~, ⊤)`: Mathlib's `tilde.toOpen M ⊤`,
+with codomain the sections `Γ(M~, ⊤)` of `M~` as a sheaf of modules, which are a
+`Γ(Spec R, ⊤)`-module. -/
+noncomputable abbrev _root_.AlgebraicGeometry.tildeToTop (M : ModuleCat.{u} R) :
+    M →ₗ[R] Γ(tilde M, ⊤) :=
+  (tilde.toOpen M ⊤).hom
+
+/-- `M → Γ(M~, ⊤)` exhibits `Γ(M~, ⊤)` as the base change of `M` along `R ≅ Γ(Spec R, ⊤)`. -/
+theorem _root_.AlgebraicGeometry.isBaseChange_tildeToTop (M : ModuleCat.{u} R) :
+    IsBaseChange Γ(Spec R, ⊤) (tildeToTop M) :=
+  IsBaseChange.of_surjective_algebraMap bijective_algebraMap_Spec_top.surjective
+    (ConcreteCategory.bijective_of_isIso (tilde.toOpen M ⊤))
+
+end GlobalSections
 
 end
 

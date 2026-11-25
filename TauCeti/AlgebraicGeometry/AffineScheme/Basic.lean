@@ -52,6 +52,9 @@ be injective. This is the local reason why an affine blowup changes nothing away
 * `AlgebraicGeometry.Scheme.stalkFromSpecTopAlgEquiv`: on an affine scheme `Z`, the canonical
   `Γ(Z, ⊤)`-algebra isomorphism between `Localization.AtPrime M` and the stalk at a prime `M` of
   `Γ(Z, ⊤)`.
+* `AlgebraicGeometry.bijective_algebraMap_Spec_top`,
+  `AlgebraicGeometry.Spec_map_algebraMap_Spec_top`: the structure map `R → Γ(Spec R, ⊤)` is
+  bijective, and `Spec` of it is the inclusion of the affine open `⊤`.
 * `AlgebraicGeometry.IsAffineOpen.fromSpec_comp_eq_SpecMap`: on an affine open `U` of `X`, a
   morphism `X ⟶ Spec R` restricted along `Spec Γ(X, U) ⟶ X` is the spectrum of the ring map
   `R → Γ(X, U)` it induces.
@@ -208,6 +211,26 @@ theorem IsAffineOpen.fromSpec_comp_eq_SpecMap {X : Scheme.{u}} {R : CommRingCat.
     hU.fromSpec ≫ f = Spec.map ((Scheme.ΓSpecIso R).inv ≫ f.appLE ⊤ U le_top) := by
   rw [← IsAffineOpen.SpecMap_appLE_fromSpec f (isAffineOpen_top _) hU le_top,
     IsAffineOpen.fromSpec_top, Scheme.isoSpec_Spec_inv, ← Spec.map_comp]
+
+/-- The structure map `R → Γ(Spec R, ⊤)` is the inverse of `Γ(Spec R, ⊤) ≅ R`. -/
+theorem algebraMap_Spec_top {R : CommRingCat.{u}} :
+    algebraMap R Γ(Spec R, ⊤) = (Scheme.ΓSpecIso R).inv.hom := by
+  simp only [IsAffineOpen.algebraMap_Spec_obj, homOfLE_refl, op_id, CategoryTheory.Functor.map_id,
+    Category.comp_id]
+
+/-- The structure map `R → Γ(Spec R, ⊤)` is bijective. -/
+theorem bijective_algebraMap_Spec_top {R : CommRingCat.{u}} :
+    Function.Bijective (algebraMap R Γ(Spec R, ⊤)) := by
+  rw [algebraMap_Spec_top]
+  exact ConcreteCategory.bijective_of_isIso (Scheme.ΓSpecIso R).inv
+
+/-- `Spec Γ(Spec R, ⊤) ⟶ Spec R` induced by `R → Γ(Spec R, ⊤)` is the inclusion of the affine open
+`⊤`. -/
+theorem Spec_map_algebraMap_Spec_top {R : CommRingCat.{u}} :
+    Spec.map (CommRingCat.ofHom (algebraMap R Γ(Spec R, ⊤))) =
+      (isAffineOpen_top (Spec R)).fromSpec := by
+  rw [IsAffineOpen.fromSpec_top, Scheme.isoSpec_Spec_inv, algebraMap_Spec_top,
+    CommRingCat.ofHom_hom]
 
 /-- Pointwise form of `AlgebraicGeometry.IsAffineOpen.map_fromSpec`: for affine opens `V ≤ U`,
 the point of `Spec Γ(X, U)` induced by restriction from a point `p` of `Spec Γ(X, V)` is the
