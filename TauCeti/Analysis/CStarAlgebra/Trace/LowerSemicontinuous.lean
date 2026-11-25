@@ -12,8 +12,8 @@ public import TauCeti.Analysis.CStarAlgebra.Trace.Basic
 /-!
 # Lower semicontinuity, semifiniteness and density of traces
 
-For a trace `τ : B → ℝ≥0∞` on a C⋆-algebra `B` (`TauCeti.IsTrace`), TracesOnCStarAlgebras Tr1.2
-uses three regularity conditions (README, Conventions):
+For a trace `τ : B → ℝ≥0∞` on a C⋆-algebra `B` (`TauCeti.IsTrace`) we consider three regularity
+conditions:
 
 * `τ` is **lower semicontinuous** when it is `LowerSemicontinuousOn` the positive cone `B₊` for
   the norm topology;
@@ -94,7 +94,7 @@ namespace IsTrace
 /-- For a lower semicontinuous trace and an increasing net `xᵢ → x` of positive elements,
 `τ(x) = sup τ(xᵢ)` (Dixmier 1963, Remarque 2, p. 225). -/
 theorem iSup_eq_of_monotone (hτ : IsTrace τ) (hlsc : LowerSemicontinuousOn τ {x | 0 ≤ x})
-    {ι : Type*} [SemilatticeSup ι] [Nonempty ι] {f : ι → B} (hf : Monotone f)
+    {ι : Type*} [Preorder ι] [IsDirectedOrder ι] [Nonempty ι] {f : ι → B} (hf : Monotone f)
     (hf₀ : ∀ i, 0 ≤ f i) {x : B} (hx : Tendsto f atTop (𝓝 x)) : ⨆ i, τ (f i) = τ x := by
   have hx₀ : 0 ≤ x := ge_of_tendsto' hx hf₀
   refine le_antisymm (iSup_le fun i ↦ hτ.mono (hf₀ i) (hf.ge_of_tendsto hx i)) ?_
@@ -107,7 +107,7 @@ theorem iSup_eq_of_monotone (hτ : IsTrace τ) (hlsc : LowerSemicontinuousOn τ 
 /-- **Continuity along increasing nets.** For a lower semicontinuous trace and an increasing net
 `xᵢ → x` of positive elements, `τ(xᵢ) → τ(x)` (Dixmier 1963, Remarque 2, p. 225). -/
 theorem tendsto_comp_of_monotone (hτ : IsTrace τ) (hlsc : LowerSemicontinuousOn τ {x | 0 ≤ x})
-    {ι : Type*} [SemilatticeSup ι] [Nonempty ι] {f : ι → B} (hf : Monotone f)
+    {ι : Type*} [Preorder ι] [IsDirectedOrder ι] [Nonempty ι] {f : ι → B} (hf : Monotone f)
     (hf₀ : ∀ i, 0 ≤ f i) {x : B} (hx : Tendsto f atTop (𝓝 x)) :
     Tendsto (fun i ↦ τ (f i)) atTop (𝓝 (τ x)) := by
   rw [← hτ.iSup_eq_of_monotone hlsc hf hf₀ hx]

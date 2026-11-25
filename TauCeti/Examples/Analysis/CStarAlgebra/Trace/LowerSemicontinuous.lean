@@ -12,14 +12,14 @@ public import TauCeti.Analysis.CStarAlgebra.Trace.LowerSemicontinuous
 /-!
 # Checks: a lower semicontinuous trace that is not semifinite
 
-TracesOnCStarAlgebras Tr1.2, second Check, on `C(X, ℂ)` for a compact space `X` and a point
-`x₀ ∈ X`: the map `τ` equal to `0` on the positive functions vanishing at `x₀` and to `∞` on the
-other positive functions (`TauCeti.TraceExamples.pointTrace`) is a trace. It is lower
+A lower semicontinuous trace that is not semifinite, on `C(X, ℂ)` for a compact space `X` and a
+point `x₀ ∈ X`: the map `τ` equal to `0` on the positive functions vanishing at `x₀` and to `∞` on
+the other positive functions (`TauCeti.TraceExamples.pointTrace`) is a trace. It is lower
 semicontinuous, since `{f ≥ 0 : f(x₀) ≠ 0}` is open, and it is not semifinite: the constant
 function `1` has `τ(1) = ∞`, while its minorants of finite trace have trace `0`.
 
-The roadmap states the Check for `C₀(X)` with `X` locally compact; the compact case keeps the
-witness `1` and needs no Urysohn function.
+We work on `C(X, ℂ)` with `X` compact so that the constant `1` is a witness; on `C₀(X, ℂ)` for
+`X` locally compact one would use a Urysohn function positive at `x₀`.
 -/
 
 public section
