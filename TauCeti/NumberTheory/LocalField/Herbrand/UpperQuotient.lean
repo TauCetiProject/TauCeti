@@ -103,8 +103,8 @@ theorem map_restrictNormalHom_upperRamificationGroup (v : RamificationIndexDomai
       upperRamificationGroup K L v := by
   have : Module.Finite K M := Module.Finite.trans L M
   let _ := IsScalarTower.to₁₃₄ 𝒪[K] K L M
-  simp only [upperRamificationGroup_eq_isLocalRingUpperRamificationGroup_integralClosure K K M,
-    upperRamificationGroup_eq_isLocalRingUpperRamificationGroup_integralClosure K K L]
+  simp only [upperRamificationGroup_eq_isLocalRing_upperRamificationGroup_integralClosure K K M,
+    upperRamificationGroup_eq_isLocalRing_upperRamificationGroup_integralClosure K K L]
   exact TauCeti.IsLocalRing.map_restrictNormalHom_upperRamificationGroup_integralClosure 𝒪[K] L v
 
 /-- **The upper numbering of a normal subgroup.** For a tower `M/L/K` of Galois extensions, the
@@ -119,8 +119,8 @@ theorem comap_restrictScalarsHom_upperRamificationGroup (v : RamificationIndexDo
   have : Module.Finite K M := Module.Finite.trans L M
   have := IsGalois.tower_top_of_isGalois K L M
   let _ := IsScalarTower.to₁₃₄ 𝒪[K] K L M
-  simp only [upperRamificationGroup_eq_isLocalRingUpperRamificationGroup_integralClosure K K M,
-    upperRamificationGroup_eq_isLocalRingUpperRamificationGroup_integralClosure K L M,
+  simp only [upperRamificationGroup_eq_isLocalRing_upperRamificationGroup_integralClosure K K M,
+    upperRamificationGroup_eq_isLocalRing_upperRamificationGroup_integralClosure K L M,
     coe_inverseHerbrand_eq_inverseHerbrandFun_integralClosure K K L]
   exact TauCeti.IsLocalRing.comap_restrictScalarsHom_upperRamificationGroup_integralClosure
     𝒪[K] L v

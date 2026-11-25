@@ -99,4 +99,10 @@ theorem henselianRing_iff_quotient (hJI : J ≤ I) :
 theorem henselianRing_radical_iff : HenselianRing R I.radical ↔ HenselianRing R I :=
   ⟨fun _ ↦ henselianRing_of_le le_radical, fun _ ↦ inferInstance⟩
 
+/-- Henselianity depends only on the radical: ideals with the same radical are henselian
+together. -/
+theorem henselianRing_iff_of_radical_eq (h : I.radical = J.radical) :
+    HenselianRing R I ↔ HenselianRing R J := by
+  rw [← henselianRing_radical_iff, h, henselianRing_radical_iff]
+
 end Ideal

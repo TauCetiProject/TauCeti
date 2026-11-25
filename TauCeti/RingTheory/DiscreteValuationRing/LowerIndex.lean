@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DiscreteValuationRing.Invariant
-public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
+public import TauCeti.RingTheory.LocalRing.RamificationGroup
 public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 public import TauCeti.RingTheory.Valuation.AddValuation
 import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure

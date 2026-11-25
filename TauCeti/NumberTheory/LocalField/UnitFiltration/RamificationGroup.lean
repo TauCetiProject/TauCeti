@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.IntegralDomain
 public import TauCeti.NumberTheory.LocalField.Teichmuller
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Uniformizer
-public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
+public import TauCeti.RingTheory.LocalRing.RamificationGroup
 import TauCeti.GroupTheory.PGroup
 import TauCeti.NumberTheory.LocalField.UnitFiltration.ProP
 import TauCeti.NumberTheory.LocalField.Units.Decomposition

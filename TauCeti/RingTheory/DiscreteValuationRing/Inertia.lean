@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.IsGaloisGroup.Defs
 public import TauCeti.RingTheory.DiscreteValuationRing.Invariant
-public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
+public import TauCeti.RingTheory.LocalRing.RamificationGroup
 public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
 import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure

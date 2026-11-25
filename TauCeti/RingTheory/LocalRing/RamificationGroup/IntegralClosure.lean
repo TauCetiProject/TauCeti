@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
-public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
+public import TauCeti.RingTheory.LocalRing.RamificationGroup
 
 /-!
 # Integral-closure and fixed-field transport of lower ramification groups

@@ -95,14 +95,16 @@ private theorem herbrandFun_tower_of_natCast_le (m : ℕ) :
         ramificationGroupReal G B t = ramificationGroupReal G B u :=
       ramificationGroupReal_eq_of_mem_Ioc (m := k) ⟨by simpa, by push_cast; linarith⟩
         ⟨by push_cast; linarith, by push_cast; linarith⟩
-    have hsubG := herbrandFun_sub_of_forall_eq G B h₁ fun _ ↦ hG
-    have hsubH := herbrandFun_sub_of_forall_eq H B h₁ (H := ramificationGroupReal H B u)
-      fun t ht₁ ht₂ ↦ by simp only [← subgroupOf_ramificationGroupReal G B H, hG ht₁ ht₂]
-    have hsubQ := herbrandFun_sub_of_forall_eq (G ⧸ H) C ((herbrandFun_le_herbrandFun_iff H B).2 h₁)
+    have hsubG := herbrandFun_sub_herbrandFun_of_forall_eq G B h₁ fun _ ↦ hG
+    have hsubH := herbrandFun_sub_herbrandFun_of_forall_eq H B h₁
+      (H := ramificationGroupReal H B u) fun t ht₁ ht₂ ↦ by
+        simp only [← subgroupOf_ramificationGroupReal G B H, hG ht₁ ht₂]
+    have hsubQ := herbrandFun_sub_herbrandFun_of_forall_eq (G ⧸ H) C
+      ((herbrandFun_le_herbrandFun_iff H B).2 h₁)
       (H := ramificationGroupReal (G ⧸ H) C (herbrandFun H B u)) fun t ht₁ ht₂ ↦ by
         rw [ramificationGroupReal_quotient_eq_map_inverseHerbrandFun,
           ramificationGroupReal_quotient_herbrandFun,
-          hG ((lt_inverseHerbrandFun_iff H B).2 ht₁) ((inverseHerbrandFun_le_iff H B).2 ht₂)]
+          hG (lt_inverseHerbrandFun_iff.2 ht₁) (inverseHerbrandFun_le_iff.2 ht₂)]
     have hslope : (Nat.card (ramificationGroupReal G B u) : ℝ) / Nat.card (ramificationGroup G B 0)
         = (Nat.card (ramificationGroupReal H B u) / Nat.card (ramificationGroup H B 0)) *
           (Nat.card (ramificationGroupReal (G ⧸ H) C (herbrandFun H B u)) /
@@ -131,9 +133,9 @@ theorem herbrandFun_tower (u : ℝ) :
         natCard_ramificationGroup_quotient_zero_mul]
     rw [hslope]; ring
   · rcases le_or_gt u 0 with hu0 | hu0
-    · rw [herbrandFun_eq_self_of_neg_one_le_of_nonpos H B hu.le hu0,
-        herbrandFun_eq_self_of_neg_one_le_of_nonpos (G ⧸ H) C hu.le hu0,
-        herbrandFun_eq_self_of_neg_one_le_of_nonpos G B hu.le hu0]
+    · rw [herbrandFun_eq_self_of_mem_Icc H B ⟨hu.le, hu0⟩,
+        herbrandFun_eq_self_of_mem_Icc (G ⧸ H) C ⟨hu.le, hu0⟩,
+        herbrandFun_eq_self_of_mem_Icc G B ⟨hu.le, hu0⟩]
     · exact herbrandFun_tower_of_natCast_le A B G H ⌊u⌋₊ (Nat.floor_le hu0.le)
         (Nat.lt_floor_add_one u).le
 /-- **Transitivity of the inverse Herbrand function**: `ψ_G(v) = ψ_H(ψ_{G ⧸ H}(v))`. -/
@@ -141,10 +143,10 @@ theorem inverseHerbrandFun_tower (v : ℝ) : inverseHerbrandFun G B v =
     inverseHerbrandFun H B (inverseHerbrandFun (G ⧸ H) (FixedPoints.subalgebra A B H) v) := by
   rw [← herbrandFun_inj G B, herbrandFun_inverseHerbrandFun, herbrandFun_tower A B G H,
     herbrandFun_inverseHerbrandFun, herbrandFun_inverseHerbrandFun]
-/-- **Transitivity of the bundled Herbrand order isomorphisms** on `[-1, ∞)`. -/
+/-- **Transitivity of the bundled Herbrand order isomorphisms** on `ℝ`. -/
 theorem herbrandOrderIso_tower : herbrandOrderIso G B =
     (herbrandOrderIso H B).trans (herbrandOrderIso (G ⧸ H) (FixedPoints.subalgebra A B H)) :=
-  OrderIso.ext <| funext fun u ↦ Subtype.ext <| by simpa using herbrandFun_tower A B G H u
+  OrderIso.ext <| funext fun u ↦ by simp [herbrandFun_tower A B G H u]
 /-- **Transitivity of the integral inverse Herbrand function**: `ψℕ_G = ψℕ_H ∘ ψℕ_{G ⧸ H}`. -/
 theorem psiNat_tower :
     psiNat G B = psiNat H B ∘ psiNat (G ⧸ H) (FixedPoints.subalgebra A B H) :=
@@ -190,12 +192,12 @@ theorem upperJump_iff_upperJump_quotient_or_upperJump_inverseHerbrandFun (v : �
   simp only [upperJump_iff, not_forall] at hQ; obtain ⟨w₀, hvw₀, hlt⟩ := hQ
   have hw₀ := (upperRamificationGroup_antitone (G ⧸ H) C hvw₀.le).eq_of_not_lt hlt
   set w := min w₀ (herbrandFun (G ⧸ H) C x)
-  have hvw : v < w := lt_min hvw₀ ((inverseHerbrandFun_lt_iff (G ⧸ H) C).1 hx)
+  have hvw : v < w := lt_min hvw₀ (inverseHerbrandFun_lt_iff.1 hx)
   have hw : upperRamificationGroup (G ⧸ H) C w = upperRamificationGroup (G ⧸ H) C v :=
     le_antisymm (upperRamificationGroup_antitone (G ⧸ H) C hvw.le)
       (hw₀ ▸ upperRamificationGroup_antitone (G ⧸ H) C (min_le_left _ _))
   refine (upperRamificationGroup_antitone H B
-    ((inverseHerbrandFun_le_iff (G ⧸ H) C).2 (min_le_right w₀ _))).trans_lt ?_
+    ((inverseHerbrandFun_le_iff (G := G ⧸ H) (S := C)).2 (min_le_right w₀ _))).trans_lt ?_
   rw [← subgroupOf_upperRamificationGroup_eq_upperRamificationGroup_inverseHerbrandFun A B G H,
     ← subgroupOf_upperRamificationGroup_eq_upperRamificationGroup_inverseHerbrandFun A B G H]
   refine lt_of_le_of_ne (Subgroup.comap_mono (upperRamificationGroup_antitone G B hvw.le))

@@ -54,7 +54,7 @@ theorem upperJump_iff (u : RamificationIndexDomain) :
 theorem upperJump_iff_isLocalRingUpperJump (u : RamificationIndexDomain) :
     UpperJump K L u ↔ TauCeti.IsLocalRing.UpperJump (L ≃ₐ[K] L) 𝒪[L] u := by
   rw [upperJump_iff, TauCeti.IsLocalRing.upperJump_iff]
-  simp_rw [upperRamificationGroup_eq_isLocalRingUpperRamificationGroup]
+  simp_rw [upperRamificationGroup_eq_isLocalRing_upperRamificationGroup]
   exact ⟨fun hu v huv ↦ hu ⟨v, u.property.trans huv.le⟩ huv, fun hu v huv ↦ hu v huv⟩
 
 /-- For a tower `K₀ ⊆ K ⊆ L` of nonarchimedean local fields, `UpperJump K L` agrees with

@@ -25,7 +25,10 @@ finite-sum formula
 `φ(u) = (#G_1 + ⋯ + #G_m + (u - m) #G_{m+1}) / #G_0`.
 
 The integrand is positive and bounded below by `1 / #G_0`, so `φ` is a strictly increasing
-continuous bijection of `[-1, ∞)` onto itself. This file packages it as an order isomorphism
+continuous bijection of `[-1, ∞)` onto itself. These facts hold for every finite group acting on a
+local ring, and the functions here are the Herbrand functions of `Gal(L/K)` acting on the integer
+ring `𝒪[L]`, `TauCeti.IsLocalRing.herbrandFun` and `TauCeti.IsLocalRing.inverseHerbrandFun`,
+from which their analytic properties are drawn. This file packages them as an order isomorphism
 `herbrandOrderIso K L` of the domain `RamificationIndexDomain = [-1, ∞)`, whose forward map is
 `herbrand K L` and whose inverse is the inverse Herbrand function `inverseHerbrand K L`, usually
 written `ψ_{L/K}`. Keeping the domain in the type means that no statement concerns a value
@@ -59,6 +62,10 @@ classical `φ_{L/K}` is instead defined through a Galois closure.
 
 ## Main results
 
+* `TauCeti.LocalFieldsRamification.coe_herbrand_eq_herbrandFun`,
+  `TauCeti.LocalFieldsRamification.coe_inverseHerbrand_eq_inverseHerbrandFun` and
+  `TauCeti.LocalFieldsRamification.upperRamificationGroup_eq_isLocalRing_upperRamificationGroup`:
+  `φ`, `ψ` and the upper numbering are those of `Gal(L/K)` acting on `𝒪[L]`.
 * `TauCeti.LocalFieldsRamification.coe_herbrand`: the integral formula defining `φ`.
 * `TauCeti.LocalFieldsRamification.coe_herbrand_of_mem_Icc` and
   `TauCeti.LocalFieldsRamification.coe_herbrand_of_coe_eq_natCast`: the finite-sum formula.
@@ -114,15 +121,30 @@ variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
   [Module.Finite K L]
 
-
 /-! ### The Herbrand function and its inverse -/
+
+/-- The Herbrand function of `Gal(L/K)` acting on `𝒪[L]`, as a self-map of `[-1, ∞)`. -/
+private def herbrandSelfMap (u : RamificationIndexDomain) : RamificationIndexDomain :=
+  ⟨TauCeti.IsLocalRing.herbrandFun (L ≃ₐ[K] L) 𝒪[L] u,
+    TauCeti.IsLocalRing.neg_one_le_herbrandFun_iff.2 u.property⟩
+
+private theorem herbrandSelfMap_strictMono : StrictMono (herbrandSelfMap K L) :=
+  fun _ _ h ↦ Subtype.mk_lt_mk.2 (TauCeti.IsLocalRing.herbrandFun_strictMono _ _ h)
+
+private theorem herbrandSelfMap_surjective : Function.Surjective (herbrandSelfMap K L) :=
+  fun v ↦ ⟨⟨TauCeti.IsLocalRing.inverseHerbrandFun (L ≃ₐ[K] L) 𝒪[L] v,
+    TauCeti.IsLocalRing.neg_one_le_inverseHerbrandFun_iff.2 v.property⟩,
+    Subtype.ext (TauCeti.IsLocalRing.herbrandFun_inverseHerbrandFun (L ≃ₐ[K] L) 𝒪[L] v)⟩
 
 /-- The **Herbrand function** `φ_{L/K}(u) = ∫_0^u dt / [G_0 : G_t]` of a finite Galois extension
 of local fields, as an order automorphism of `[-1, ∞)`. Its inverse is the inverse Herbrand function
-`ψ_{L/K}`. The integral formula is `coe_herbrand`. The construction does not use `IsGalois`;
+`ψ_{L/K}`. It is the Herbrand function of `Gal(L/K)` acting on `𝒪[L]`
+(`coe_herbrand_eq_herbrandFun`), and the integral formula is `coe_herbrand`. The construction
+does not use `IsGalois`;
 the hypothesis restricts the Herbrand function to the Galois case, where it is meaningful. -/
 def herbrandOrderIso [_hGal : IsGalois K L] : RamificationIndexDomain ≃o RamificationIndexDomain :=
-  TauCeti.IsLocalRing.herbrandOrderIso (L ≃ₐ[K] L) 𝒪[L]
+  StrictMono.orderIsoOfSurjective (herbrandSelfMap K L) (herbrandSelfMap_strictMono K L)
+    (herbrandSelfMap_surjective K L)
 
 variable [IsGalois K L]
 
@@ -144,14 +166,12 @@ theorem herbrandOrderIso_symm_apply (v : RamificationIndexDomain) :
     (herbrandOrderIso K L).symm v = inverseHerbrand K L v :=
   (rfl)
 
-/-- `herbrand` agrees with `TauCeti.IsLocalRing.herbrandFun` on `𝒪[L]`. -/
+/-- The Herbrand function of `L/K` is the Herbrand function of `Gal(L/K)` acting on the integer
+ring `𝒪[L]`. -/
 theorem coe_herbrand_eq_herbrandFun (u : RamificationIndexDomain) :
-    (herbrand K L u : ℝ) = TauCeti.IsLocalRing.herbrandFun (L ≃ₐ[K] L) 𝒪[L] u :=
-  TauCeti.IsLocalRing.coe_herbrandOrderIso_apply (L ≃ₐ[K] L) 𝒪[L] u
-/-- `inverseHerbrand` agrees with `TauCeti.IsLocalRing.inverseHerbrandFun` on `𝒪[L]`. -/
-theorem coe_inverseHerbrand_eq_inverseHerbrandFun (v : RamificationIndexDomain) :
-    (inverseHerbrand K L v : ℝ) = TauCeti.IsLocalRing.inverseHerbrandFun (L ≃ₐ[K] L) 𝒪[L] v :=
-  TauCeti.IsLocalRing.coe_herbrandOrderIso_symm_apply (L ≃ₐ[K] L) 𝒪[L] v
+    (herbrand K L u : ℝ) = TauCeti.IsLocalRing.herbrandFun (L ≃ₐ[K] L) 𝒪[L] u := by
+  rw [← herbrandOrderIso_apply, herbrandOrderIso, StrictMono.coe_orderIsoOfSurjective]
+  rfl
 
 /-- The integral formula for the Herbrand function:
 `φ_{L/K}(u) = ∫_0^u #G_t / #G_0 dt`. For `t > -1` the group `G_t` is a subgroup of `G_0` and
@@ -160,9 +180,8 @@ theorem coe_herbrand (u : RamificationIndexDomain) :
     (herbrand K L u : ℝ) = ∫ t in (0 : ℝ)..u,
       (Nat.card (lowerRamificationGroupReal K L t) : ℝ) /
         Nat.card (lowerRamificationGroup K L 0) := by
-  simp_rw [coe_herbrand_eq_herbrandFun, lowerRamificationGroupReal_eq_ramificationGroupReal,
-    lowerRamificationGroup_def]
-  exact TauCeti.IsLocalRing.herbrandFun_def (L ≃ₐ[K] L) 𝒪[L] u
+  simp only [coe_herbrand_eq_herbrandFun, TauCeti.IsLocalRing.herbrandFun_def,
+    lowerRamificationGroupReal_eq_ramificationGroupReal, lowerRamificationGroup_def]
 
 /-- The Herbrand function undoes its inverse: `φ(ψ(v)) = v`. -/
 @[simp]
@@ -175,6 +194,17 @@ theorem herbrand_inverseHerbrand (v : RamificationIndexDomain) :
 theorem inverseHerbrand_herbrand (u : RamificationIndexDomain) :
     inverseHerbrand K L (herbrand K L u) = u :=
   (herbrandOrderIso K L).symm_apply_apply u
+
+/-- The inverse Herbrand function of `L/K` is the inverse Herbrand function of `Gal(L/K)` acting
+on the integer ring `𝒪[L]`. -/
+theorem coe_inverseHerbrand_eq_inverseHerbrandFun (v : RamificationIndexDomain) :
+    (inverseHerbrand K L v : ℝ) = TauCeti.IsLocalRing.inverseHerbrandFun (L ≃ₐ[K] L) 𝒪[L] v := by
+  have h : herbrand K L ⟨TauCeti.IsLocalRing.inverseHerbrandFun (L ≃ₐ[K] L) 𝒪[L] v,
+      TauCeti.IsLocalRing.neg_one_le_inverseHerbrandFun_iff.2 v.property⟩ = v := by
+    rw [Subtype.ext_iff, coe_herbrand_eq_herbrandFun,
+      TauCeti.IsLocalRing.herbrandFun_inverseHerbrandFun]
+  conv_lhs => rw [← h]
+  rw [inverseHerbrand_herbrand]
 
 /-- The Herbrand function is strictly increasing. -/
 theorem herbrand_strictMono : StrictMono (herbrand K L) :=
@@ -199,15 +229,16 @@ theorem herbrand_slope_anti_adjacent {u v w : RamificationIndexDomain} (huv : u 
     (hvw : v < w) :
     ((herbrand K L w : ℝ) - herbrand K L v) / ((w : ℝ) - v) ≤
       ((herbrand K L v : ℝ) - herbrand K L u) / ((v : ℝ) - u) := by
-  simp_rw [coe_herbrand_eq_herbrandFun]
-  exact TauCeti.IsLocalRing.herbrandFun_slope_anti_adjacent (L ≃ₐ[K] L) 𝒪[L] huv hvw
+  simp only [coe_herbrand_eq_herbrandFun]
+  exact (TauCeti.IsLocalRing.concaveOn_herbrandFun (L ≃ₐ[K] L) 𝒪[L]).slope_anti_adjacent
+    (mem_univ _) (mem_univ _) huv hvw
 
 /-- The Herbrand function is the identity on `[-1, 0]`. -/
 @[simp]
 theorem herbrand_of_coe_le_zero {u : RamificationIndexDomain} (hu : (u : ℝ) ≤ 0) :
     herbrand K L u = u :=
   Subtype.ext <| (coe_herbrand_eq_herbrandFun K L u).trans <|
-    TauCeti.IsLocalRing.herbrandFun_eq_self_of_neg_one_le_of_nonpos (L ≃ₐ[K] L) 𝒪[L] u.property hu
+    TauCeti.IsLocalRing.herbrandFun_eq_self_of_mem_Icc _ _ ⟨u.property, hu⟩
 
 /-- On an interval `[a, b]` over which the lower ramification filtration is constant, that is
 `G_t = G_b` for every `a < t ≤ b`, the Herbrand function is affine of slope `#G_b / #G_0`:
@@ -218,9 +249,10 @@ theorem coe_herbrand_sub_coe_herbrand_of_forall_eq {a b : RamificationIndexDomai
     (herbrand K L b : ℝ) - herbrand K L a =
       ((b : ℝ) - a) * (Nat.card (lowerRamificationGroupReal K L b) /
         Nat.card (lowerRamificationGroup K L 0)) := by
-  simp_rw [coe_herbrand_eq_herbrandFun, lowerRamificationGroupReal_eq_ramificationGroupReal,
-    lowerRamificationGroup_def] at h ⊢
-  exact TauCeti.IsLocalRing.herbrandFun_sub_of_forall_eq (L ≃ₐ[K] L) 𝒪[L] hab h
+  rw [coe_herbrand_eq_herbrandFun, coe_herbrand_eq_herbrandFun, lowerRamificationGroup_def]
+  refine TauCeti.IsLocalRing.herbrandFun_sub_herbrandFun_of_forall_eq _ _ hab fun t ht₁ ht₂ ↦ ?_
+  rw [← lowerRamificationGroupReal_eq_ramificationGroupReal]
+  exact h t ht₁ ht₂
 
 /-- The Herbrand function is the identity as long as the lower ramification filtration is
 constant from `0` through `u`. For `u ≤ 0` the hypothesis is vacuous and the conclusion is
@@ -229,23 +261,10 @@ theorem herbrand_eq_self_of_forall_eq {u : RamificationIndexDomain}
     (h : ∀ t : ℝ, 0 < t → t ≤ u →
       lowerRamificationGroupReal K L t = lowerRamificationGroup K L 0) :
     herbrand K L u = u := by
-  by_cases hu : (u : ℝ) ≤ 0
-  · exact herbrand_of_coe_le_zero K L hu
-  replace hu : 0 ≤ (u : ℝ) := le_of_not_ge hu
-  apply Subtype.ext
-  rw [coe_herbrand]
-  have hcard : (Nat.card (lowerRamificationGroup K L 0) : ℝ) ≠ 0 := by
-    exact_mod_cast Nat.card_pos.ne'
-  have hfun : (∫ t in (0 : ℝ)..u,
-      (Nat.card (lowerRamificationGroupReal K L t) : ℝ) /
-        Nat.card (lowerRamificationGroup K L 0)) = ∫ _ in (0 : ℝ)..u, (1 : ℝ) := by
-    apply intervalIntegral.integral_congr_ae
-    exact Filter.Eventually.of_forall fun t ht ↦ by
-      obtain ⟨ht0, htu⟩ := Set.uIoc_of_le hu ▸ ht
-      rw [h t ht0 htu]
-      exact div_self hcard
-  rw [hfun]
-  simp
+  refine Subtype.ext <| (coe_herbrand_eq_herbrandFun K L u).trans <|
+    TauCeti.IsLocalRing.herbrandFun_eq_self_of_forall_eq _ _ u.property fun t ht₀ htu ↦ ?_
+  rw [← lowerRamificationGroupReal_eq_ramificationGroupReal, ← lowerRamificationGroup_def]
+  exact h t ht₀ htu
 
 /-- The inverse Herbrand function is the identity on `[-1, 0]`. -/
 @[simp]
@@ -272,8 +291,8 @@ theorem coe_herbrand_of_mem_Icc (m : ℕ) {u : RamificationIndexDomain} (h₁ : 
       (∑ i ∈ Finset.Icc 1 m, (Nat.card (lowerRamificationGroup K L i) : ℝ) +
         (u - m) * Nat.card (lowerRamificationGroup K L (m + 1 : ℕ))) /
         Nat.card (lowerRamificationGroup K L 0) := by
-  simp_rw [coe_herbrand_eq_herbrandFun, lowerRamificationGroup_def]
-  exact TauCeti.IsLocalRing.herbrandFun_of_natCast_le_of_le_add_one (L ≃ₐ[K] L) 𝒪[L] m h₁ h₂
+  rw [coe_herbrand_eq_herbrandFun, TauCeti.IsLocalRing.herbrandFun_of_mem_Icc _ _ m h₁ h₂]
+  simp only [lowerRamificationGroup_def]
 
 /-- The Herbrand function at a natural number `m`: `φ(m) = (#G_1 + ⋯ + #G_m) / #G_0`. -/
 theorem coe_herbrand_of_coe_eq_natCast (m : ℕ) {u : RamificationIndexDomain} (hu : (u : ℝ) = m) :
@@ -294,13 +313,6 @@ theorem upperRamificationGroup_def (v : RamificationIndexDomain) :
     upperRamificationGroup K L v = lowerRamificationGroupReal K L (inverseHerbrand K L v) :=
   (rfl)
 
-/-- `upperRamificationGroup` agrees with `TauCeti.IsLocalRing.upperRamificationGroup` on `𝒪[L]`. -/
-theorem upperRamificationGroup_eq_isLocalRingUpperRamificationGroup (v : RamificationIndexDomain) :
-    upperRamificationGroup K L v =
-      TauCeti.IsLocalRing.upperRamificationGroup (L ≃ₐ[K] L) 𝒪[L] v := by
-  rw [upperRamificationGroup_def, lowerRamificationGroupReal_eq_ramificationGroupReal,
-    coe_inverseHerbrand_eq_inverseHerbrandFun, TauCeti.IsLocalRing.upperRamificationGroup_def]
-
 variable {K L} in
 /-- Membership in the upper ramification groups: `σ ∈ G^v ↔ σ ∈ G_{ψ(v)}`. -/
 @[simp]
@@ -308,6 +320,15 @@ theorem mem_upperRamificationGroup_iff {v : RamificationIndexDomain} {σ : L ≃
     σ ∈ upperRamificationGroup K L v ↔
       σ ∈ lowerRamificationGroupReal K L (inverseHerbrand K L v) := by
   rw [upperRamificationGroup_def]
+
+/-- The upper ramification groups of `L/K` are those of `Gal(L/K)` acting on the integer ring
+`𝒪[L]`. -/
+theorem upperRamificationGroup_eq_isLocalRing_upperRamificationGroup
+    (v : RamificationIndexDomain) :
+    upperRamificationGroup K L v =
+      TauCeti.IsLocalRing.upperRamificationGroup (L ≃ₐ[K] L) 𝒪[L] v := by
+  rw [upperRamificationGroup_def, TauCeti.IsLocalRing.upperRamificationGroup_def,
+    lowerRamificationGroupReal_eq_ramificationGroupReal, coe_inverseHerbrand_eq_inverseHerbrandFun]
 
 /-- The upper and lower numberings are related by `G^{φ(u)} = G_u`. -/
 @[simp]
@@ -446,13 +467,11 @@ theorem upperRamificationGroup_eq_of_herbrand_lt_of_le {i : ℕ}
     (hv₂ : v ≤ herbrand K L ⟨((i + 1 : ℕ) : ℝ),
       Nat.cast_mem_ramificationIndexDomain (i + 1)⟩) :
     upperRamificationGroup K L v = lowerRamificationGroup K L ((i + 1 : ℕ) : ℤ) := by
-  have h₁ := inverseHerbrand_strictMono K L hv₁
-  have h₂ := (inverseHerbrand_strictMono K L).monotone hv₂
-  rw [inverseHerbrand_herbrand] at h₁ h₂
-  rw [upperRamificationGroup_def]
-  exact lowerRamificationGroupReal_eq_of_sub_one_lt_of_le K L (i := ((i + 1 : ℕ) : ℤ))
-    (by have := Subtype.coe_lt_coe.2 h₁; push_cast; linarith)
-    (by exact_mod_cast Subtype.coe_le_coe.2 h₂)
+  rw [← Subtype.coe_lt_coe, coe_herbrand_eq_herbrandFun] at hv₁
+  rw [← Subtype.coe_le_coe, coe_herbrand_eq_herbrandFun] at hv₂
+  rw [upperRamificationGroup_eq_isLocalRing_upperRamificationGroup, lowerRamificationGroup_def]
+  exact TauCeti.IsLocalRing.upperRamificationGroup_eq_of_herbrandFun_lt_of_le _ _
+    (by push_cast; simpa using hv₁) (by exact_mod_cast hv₂)
 
 /-- The upper ramification filtration of a finite Galois extension of local fields is trivial at
 every large enough natural index. -/
@@ -632,7 +651,8 @@ theorem coe_inverseHerbrand_eq_inverseHerbrandFun_integralClosure (K₀ K L : Ty
 open TauCeti.IsLocalRing in
 /-- For a tower `K₀ ⊆ K ⊆ L` of nonarchimedean local fields, `upperRamificationGroup K L` agrees
 with `TauCeti.IsLocalRing.upperRamificationGroup` on `integralClosure 𝒪[K₀] L`. -/
-theorem upperRamificationGroup_eq_isLocalRingUpperRamificationGroup_integralClosure (K₀ K L : Type*)
+theorem upperRamificationGroup_eq_isLocalRing_upperRamificationGroup_integralClosure
+    (K₀ K L : Type*)
     [Field K₀] [ValuativeRel K₀] [TopologicalSpace K₀] [IsNonarchimedeanLocalField K₀]
     [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
     [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
@@ -642,7 +662,7 @@ theorem upperRamificationGroup_eq_isLocalRingUpperRamificationGroup_integralClos
     (v : RamificationIndexDomain) :
     upperRamificationGroup K L v =
       TauCeti.IsLocalRing.upperRamificationGroup (L ≃ₐ[K] L) (integralClosure 𝒪[K₀] L) v := by
-  rw [upperRamificationGroup_eq_isLocalRingUpperRamificationGroup]
+  rw [upperRamificationGroup_eq_isLocalRing_upperRamificationGroup]
   simpa only [Subgroup.comap_id] using
     upperRamificationGroup_eq_comap_of_ramificationGroup_eq_comap
       (φ := MonoidHom.id (L ≃ₐ[K] L)) Function.bijective_id

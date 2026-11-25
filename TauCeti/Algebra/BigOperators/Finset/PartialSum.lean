@@ -7,11 +7,13 @@ module
 
 public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.GroupWithZero.Action.Defs
+public import Mathlib.Algebra.Module.Defs
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Data.Fin.Tuple.Basic
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.BigOperators.Pi
 import Mathlib.Data.Fin.Rev
+import Mathlib.Tactic.Abel
 
 /-!
 # Finite partial sums
@@ -40,6 +42,8 @@ This file contains basic facts about finite partial sums.
   `∑ᵢ cᵢ (eᵢ - eᵢ₊₁)` of consecutive coordinate differences.
 * `TauCeti.map_prefixSum`, `TauCeti.prefixSum_smul`: additive monoid homomorphisms and
   distributive scalar actions commute with prefix sums.
+* `TauCeti.sum_smul_by_parts_prefixSum`: summation by parts, writing `∑ᵢ yᵢ • xᵢ` through the
+  prefix sums of `x`.
 * `TauCeti.prefixSum_le_of_sum_le`: a tuple with smaller total sum and larger tail has smaller
   prefix sums.
 * `TauCeti.eq_zero_of_forall_sum_Iic_eq_zero`: a function on a locally finite order whose sums
@@ -239,6 +243,25 @@ theorem prefixSum_init {k : ℕ} (hk : k ≤ n) (x : Fin (n + 1) → M) :
 theorem prefixSum_append_zero {m : ℕ} (k : ℕ) (x : Fin n → M) :
     prefixSum k (Fin.append x (0 : Fin m → M)) = prefixSum k x := by
   simp [prefixSum, sum_filter, Fin.sum_univ_add]
+
+/-- **Summation by parts** for prefix sums: for coefficients `y : ℕ → R`,
+`∑ᵢ yᵢ xᵢ = ∑ₖ (yₖ - yₖ₊₁) (x₀ + ⋯ + xₖ) + yₙ (x₀ + ⋯ + xₙ₋₁)`. -/
+theorem sum_smul_by_parts_prefixSum {R : Type*} [Ring R] {G : Type*} [AddCommGroup G] [Module R G]
+    (y : ℕ → R) (x : Fin n → G) :
+    ∑ i : Fin n, y i • x i =
+      ∑ k : Fin n, (y k - y (k + 1)) • prefixSum (k + 1) x + y n • ∑ i, x i := by
+  -- Induct on the length `k ≤ n` of the prefix being summed.
+  suffices h : ∀ k ≤ n, prefixSum k (fun i ↦ y i • x i) =
+      prefixSum k (fun j : Fin n ↦ (y j - y (j + 1)) • prefixSum (j + 1) x) + y k • prefixSum k x by
+    simpa only [prefixSum_of_le le_rfl] using h n le_rfl
+  intro k hk
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    have hk' : k < n := hk
+    rw [prefixSum_succ hk', prefixSum_succ hk', ih hk'.le, prefixSum_succ hk' x]
+    simp only [sub_smul, smul_add]
+    abel
 
 end PrefixSum
 

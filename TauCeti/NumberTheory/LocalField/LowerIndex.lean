@@ -9,7 +9,7 @@ public import TauCeti.FieldTheory.Galois.Restriction
 public import TauCeti.NumberTheory.LocalField.GaloisAction
 public import TauCeti.NumberTheory.LocalField.Monogenic
 public import TauCeti.NumberTheory.LocalField.RamificationIndex
-public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
+public import TauCeti.RingTheory.LocalRing.RamificationGroup
 import TauCeti.RingTheory.DiscreteValuationRing.LowerIndex
 
 /-!

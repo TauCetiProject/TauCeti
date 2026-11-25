@@ -72,8 +72,8 @@ private theorem herbrandFun_embeddingSubgroup_integralClosure [IsScalarTower A E
     (TauCeti.algEquivEquivEmbeddingSubgroup K E L).bijective
     (fun _ _ ↦ (TauCeti.algEquivEquivEmbeddingSubgroup_smul_integralClosure _ _).symm) u).symm
 
-private theorem upperJump_embeddingSubgroup_integralClosure_iff
-    [FiniteDimensional K L] [FiniteDimensional E L] [IsScalarTower A E L] (v : ℝ) :
+private theorem upperJump_embeddingSubgroup_integralClosure_iff [IsScalarTower A E L]
+    (v : ℝ) :
     UpperJump (TauCeti.embeddingSubgroup K E L) (integralClosure A L) v ↔
       UpperJump (L ≃ₐ[E] L) (integralClosure A L) v :=
   (upperJump_iff_of_smul_eq (S := integralClosure A L)
@@ -94,8 +94,7 @@ private theorem herbrandFun_quotient_embeddingSubgroup_integralClosure (u : ℝ)
   rw [herbrandFun_fixedPoints_integralClosure A (TauCeti.embeddingSubgroup K E L),
     (TauCeti.equivFixedFieldEmbeddingSubgroup K E L).herbrandFun_integralClosure_eq_of_algEquiv]
 
-private theorem inverseHerbrandFun_quotient_embeddingSubgroup_integralClosure
-    [FiniteDimensional K E] (v : ℝ) :
+private theorem inverseHerbrandFun_quotient_embeddingSubgroup_integralClosure (v : ℝ) :
     inverseHerbrandFun ((L ≃ₐ[K] L) ⧸ TauCeti.embeddingSubgroup K E L)
         (FixedPoints.subalgebra A (integralClosure A L) (TauCeti.embeddingSubgroup K E L)) v =
       inverseHerbrandFun (E ≃ₐ[K] E) (integralClosure A E) v := by
@@ -104,8 +103,7 @@ private theorem inverseHerbrandFun_quotient_embeddingSubgroup_integralClosure
     (TauCeti.equivFixedFieldEmbeddingSubgroup K E
       L).inverseHerbrandFun_integralClosure_eq_of_algEquiv]
 
-private theorem upperJump_quotient_embeddingSubgroup_integralClosure_iff
-    [FiniteDimensional K E] (v : ℝ) :
+private theorem upperJump_quotient_embeddingSubgroup_integralClosure_iff (v : ℝ) :
     UpperJump ((L ≃ₐ[K] L) ⧸ TauCeti.embeddingSubgroup K E L)
         (FixedPoints.subalgebra A (integralClosure A L) (TauCeti.embeddingSubgroup K E L)) v ↔
       UpperJump (E ≃ₐ[K] E) (integralClosure A E) v := by
@@ -130,8 +128,7 @@ variable (A : Type*) {K L : Type*} [CommRing A] [Field K] [Field L] [Algebra A K
 
 /-- **Herbrand's theorem for normal subextensions** in a field tower `L / E / K` (`L / K` finite
 Galois, `E / K` normal): `AlgEquiv.restrictNormalHom E` maps `Gal(L/K)^v` onto `Gal(E/K)^v`. -/
-@[simp] theorem map_restrictNormalHom_upperRamificationGroup_integralClosure
-    [FiniteDimensional K E] (v : ℝ) :
+@[simp] theorem map_restrictNormalHom_upperRamificationGroup_integralClosure (v : ℝ) :
     (upperRamificationGroup (L ≃ₐ[K] L) (integralClosure A L) v).map
         (AlgEquiv.restrictNormalHom E) =
       upperRamificationGroup (E ≃ₐ[K] E) (integralClosure A E) v := by
@@ -195,6 +192,8 @@ theorem map_restrictScalarsHom_upperRamificationGroup_integralClosure (v : ℝ) 
   rw [← comap_restrictScalarsHom_upperRamificationGroup_integralClosure A E v,
     Subgroup.map_comap_eq]
 
+end FiniteIntermediate
+
 /-- **Upper breaks in a field tower `L / E / K`** (`L / K` finite Galois, `E / K` normal):
 `v` is an upper break of `Gal(L/K)` iff it is one of `Gal(E/K)` or `ψ_{E/K}(v)` is one of
 `Gal(L/E)`. -/
@@ -208,8 +207,6 @@ theorem upperJump_integralClosure_tower_iff (v : ℝ) :
     upperJump_quotient_embeddingSubgroup_integralClosure_iff,
     upperJump_embeddingSubgroup_integralClosure_iff,
     inverseHerbrandFun_quotient_embeddingSubgroup_integralClosure]
-
-end FiniteIntermediate
 
 end Tower
 

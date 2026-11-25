@@ -74,6 +74,8 @@ restriction, and conjugation transport properties.
   smaller field.
 * `AlgEquiv.restrictNormalHom_adjoin_simple_eq_one_iff`: restriction to a normal simple
   subextension `F⟮α⟯` is trivial precisely when the automorphism fixes `α`.
+* `IntermediateField.subsingleton_algEquiv_of_eq_bot`: an intermediate field equal to the base
+  field has only the trivial automorphism.
 -/
 
 public section
@@ -523,3 +525,20 @@ theorem AlgEquiv.restrictNormalHom_adjoin_simple_eq_one_iff {α : E} [Normal F F
     exact Subtype.ext ((AlgEquiv.restrictNormalHom_apply _ σ _).trans h)
 
 end AdjoinSimple
+
+/-! ### Automorphisms of the trivial subextension -/
+
+section Bot
+
+variable {F E : Type*} [Field F] [Field E] [Algebra F E]
+
+/-- An intermediate field equal to the base field has only the trivial automorphism, so every
+restriction to it is trivial. -/
+theorem IntermediateField.subsingleton_algEquiv_of_eq_bot {L : IntermediateField F E}
+    (hL : L = ⊥) : Subsingleton Gal(L/F) := by
+  refine ⟨fun σ τ ↦ AlgEquiv.ext fun x ↦ ?_⟩
+  obtain ⟨c, hc⟩ := IntermediateField.mem_bot.1 (hL.le x.property)
+  obtain rfl : algebraMap F L c = x := Subtype.ext hc
+  rw [AlgEquiv.commutes, AlgEquiv.commutes]
+
+end Bot
