@@ -33,6 +33,7 @@ and `H_λ`.
 ## Main results
 
 * `LieEquiv.IsCartanInvolution.killingForm_killingEquivDual_symm`: `B(H_λ, H) = λ(H)`.
+* `LieEquiv.IsCartanInvolution.apply_killingEquivDual_symm_comm`: `ν(H_λ) = λ(H_ν)`.
 * `LieEquiv.IsCartanInvolution.apply_killingEquivDual_symm_pos`: `λ(H_λ) > 0` for `λ ≠ 0`.
 * `LieEquiv.IsCartanInvolution.lie_apply_eq_smul_killingEquivDual_symm`:
   `[E, θE] = B(E, θE) H_λ` for `E ∈ 𝔤_λ`, `𝔞` maximal abelian in `𝔭`.
@@ -74,6 +75,12 @@ theorem killingEquivDual_apply_apply (X H : 𝔞) :
 theorem killingForm_killingEquivDual_symm (μ : Dual K 𝔞) (H : 𝔞) :
     killingForm K L ((hθ.killingEquivDual h𝔞).symm μ) H = μ H := by
   rw [← hθ.killingEquivDual_apply_apply h𝔞, LinearEquiv.apply_symm_apply]
+
+/-- `ν(H_λ) = λ(H_ν)`: both are `B(H_λ, H_ν)`. -/
+theorem apply_killingEquivDual_symm_comm (μ ν : Dual K 𝔞) :
+    ν ((hθ.killingEquivDual h𝔞).symm μ) = μ ((hθ.killingEquivDual h𝔞).symm ν) := by
+  rw [← hθ.killingForm_killingEquivDual_symm h𝔞 ν,
+    ← hθ.killingForm_killingEquivDual_symm h𝔞 μ, traceForm_comm]
 
 /-- `H_λ` is characterized by `B(H_λ, H) = λ(H)` for `H ∈ 𝔞`. -/
 theorem eq_killingEquivDual_symm_iff (μ : Dual K 𝔞) (X : 𝔞) :
