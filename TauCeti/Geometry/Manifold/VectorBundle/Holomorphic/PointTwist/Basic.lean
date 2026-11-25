@@ -565,7 +565,7 @@ theorem signedPointTwistCore_trivializationAt_of_ne {x z : X} {s : Bool} (h : z 
   rw [signedPointTwistCore_trivializationAt, decide_eq_false h]
 
 /-- The preferred chart of the signed point twist at `x` lies over the chart disc of `x`. -/
-theorem mem_chart_source_of_mem_trivializationAt_baseSet {x z : X} {s : Bool}
+theorem mem_chart_source_of_mem_signedPointTwistCore_trivializationAt_baseSet {x z : X} {s : Bool}
     (hz : z ∈ (trivializationAt F (signedPointTwistCore F E x s).Fiber x).baseSet) :
     z ∈ (chartAt ℂ x).source := by
   rw [signedPointTwistCore_trivializationAt_self] at hz

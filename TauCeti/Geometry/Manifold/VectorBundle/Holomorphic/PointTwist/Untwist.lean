@@ -94,6 +94,8 @@ variable (L) in
 weight `f z`, the section which is the constant `c` in the chart of the twist at `x`. -/
 def untwistSection (x : X) (s : Bool) (σ : ∀ z, L z) (f : X → ℝ) (c : ℂ) (z : X) :
     (signedPointTwistCore ℂ L x s).Fiber z :=
+  -- The fibre of a `VectorBundleCore` is its model fibre `ℂ` by definition, so the coordinate of
+  -- `σ z` in the preferred chart of `L` at `z` is a vector of the twist: the twist of `σ`.
   (1 - f z) • (show (signedPointTwistCore ℂ L x s).Fiber z from
       (trivializationAt ℂ L z ⟨z, σ z⟩).2) +
     f z • (trivializationAt ℂ (signedPointTwistCore ℂ L x s).Fiber x).symm z c
@@ -184,6 +186,22 @@ end Smooth
 
 /-! ### Untwisting -/
 
+/-- The reading `a g` of the twist of a section lies in the open disc of radius `μ ‖c‖` about
+`μ c` when `g` lies in the open disc of radius `‖c‖ ‖d‖` about `d c` and `a d = μ > 0`: this is
+`a (g - d c)` rescaled. For the twist `L(-x)` it is used with `a = u⁻¹`, `d = u`, `μ = 1`, and
+for `L(x)` with `a = u`, `d = conj u`, `μ = ‖u‖²`. -/
+private theorem norm_mul_sub_smul_lt {a d g c : ℂ} {μ : ℝ} (hμ : 0 < μ) (had : a * d = μ)
+    (h : ‖g - d * c‖ < ‖c‖ * ‖d‖) : ‖a * g - μ • c‖ < μ * ‖c‖ := by
+  have ha : 0 < ‖a‖ :=
+    norm_pos_iff.2 (left_ne_zero_of_mul (by rw [had]; exact_mod_cast hμ.ne'))
+  have hn : ‖a‖ * ‖d‖ = μ := by
+    rw [← norm_mul, had, Complex.norm_real, Real.norm_of_nonneg hμ.le]
+  have e : a * g - μ • c = a * (g - d * c) := by
+    rw [Complex.real_smul, ← had]
+    ring
+  rw [e, norm_mul, ← hn]
+  exact (mul_lt_mul_of_pos_left h ha).trans_eq (by ring)
+
 section Untwist
 
 /-- **The interpolating section has no zero off `x`.** At a point `z ≠ x` of the chart of the twist
@@ -199,7 +217,7 @@ theorem trivializationAt_untwistSection_ne_zero {x z : X} {s : Bool} {σ : ∀ z
         ‖c‖ * ‖chartAt ℂ x z - chartAt ℂ x x‖) :
     (trivializationAt ℂ (signedPointTwistCore ℂ L x s).Fiber x
       ⟨z, untwistSection L x s σ f c z⟩).2 ≠ 0 := by
-  have hzs := mem_chart_source_of_mem_trivializationAt_baseSet hz
+  have hzs := mem_chart_source_of_mem_signedPointTwistCore_trivializationAt_baseSet hz
   rw [trivializationAt_untwistSection hz]
   rw [signedPointTwistCore_trivializationAt_self] at hz ⊢
   have hu : 0 < ‖chartAt ℂ x z - chartAt ℂ x x‖ := by
@@ -209,27 +227,22 @@ theorem trivializationAt_untwistSection_ne_zero {x z : X} {s : Bool} {σ : ∀ z
     ← negPointTwistChartReading_chartAt ℂ σ hzs]
   set g := negPointTwistChartReading ℂ x σ (chartAt ℂ x z)
   set u := chartAt ℂ x z - chartAt ℂ x x
+  have hu₀ : u ≠ 0 := norm_pos_iff.1 hu
+  -- With weights `1 - f z` and `f z`, the value lies on the segment from the reading to `c`.
+  refine fun h ↦ zero_notMem_segment_of_norm_sub_smul_lt (pow_pos hu (if s then 2 else 0)) ?_
+    ⟨1 - f z, f z, by linarith, hf₀, by ring, h⟩
   cases s
-  · -- In `L(-x)` the twist of `σ` reads `g / u`, which lies in the disc of radius `‖c‖` about `c`.
-    simp only [Bool.false_eq_true, ite_false] at hg
+  · -- In `L(-x)` the twist of `σ` reads `u⁻¹ g`, in the disc of radius `‖c‖` about `c`.
+    simp only [Bool.false_eq_true, ite_false, pow_zero] at hg ⊢
     simp only [signedPointTwistFactor_false, pointTwistFactor_true_false, pointTwistCoord_apply,
       smul_eq_mul]
-    refine fun h ↦ zero_notMem_segment_of_norm_sub_smul_lt (T := u⁻¹ * g) one_pos ?_
-      ⟨1 - f z, f z, by linarith, hf₀, by ring, h⟩
-    have h : u⁻¹ * g - (1 : ℝ) • c = u⁻¹ * (g - u * c) := by
-      rw [one_smul, mul_sub, ← mul_assoc, inv_mul_cancel₀ (norm_pos_iff.1 hu), one_mul]
-    rw [h, norm_mul, norm_inv, one_mul, inv_mul_lt_iff₀ hu, mul_comm ‖u‖]
-    exact hg
+    exact norm_mul_sub_smul_lt one_pos (by rw [inv_mul_cancel₀ hu₀, Complex.ofReal_one]) hg
   · -- In `L(x)` it reads `u g`, which is `‖u‖²` times a point of that disc.
-    simp only [ite_true] at hg
+    simp only [ite_true] at hg ⊢
     simp only [signedPointTwistFactor_true, pointTwistFactor_false_true, pointTwistCoord_apply,
       smul_eq_mul]
-    refine fun h ↦ zero_notMem_segment_of_norm_sub_smul_lt (T := u * g) (pow_pos hu 2) ?_
-      ⟨1 - f z, f z, by linarith, hf₀, by ring, h⟩
-    have h : u * g - (‖u‖ ^ 2 : ℝ) • c = u * (g - conj u * c) := by
-      rw [mul_sub, ← mul_assoc, Complex.mul_conj, Complex.normSq_eq_norm_sq, Complex.real_smul]
-    rw [h, norm_mul]
-    nlinarith
+    exact norm_mul_sub_smul_lt (pow_pos hu 2)
+      (by rw [Complex.mul_conj, Complex.normSq_eq_norm_sq]) (by rwa [Complex.norm_conj])
 
 variable [∀ z, Module ℝ (L z)] [∀ z, IsScalarTower ℝ ℂ (L z)] [T2Space X] [IsManifold 𝓘(ℂ) ∞ X]
   [ContMDiffVectorBundle ∞ ℂ L 𝓘(ℝ, ℂ)]
@@ -282,7 +295,7 @@ theorem exists_untwist_section {x : X} {σ : ∀ z, L z}
       · subst hzx
         rw [trivializationAt_untwistSection hze, f.eq_one] at h0
         simp [hc] at h0
-      · have hzs := mem_chart_source_of_mem_trivializationAt_baseSet hze
+      · have hzs := mem_chart_source_of_mem_signedPointTwistCore_trivializationAt_baseSet hze
         exact trivializationAt_untwistSection_ne_zero hze hzx f.nonneg f.le_one
           (hzg fun h ↦ hzx ((chartAt ℂ x).injOn hzs (mem_chart_source ℂ x) h)) h0
   · have hfz : f z = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ hz (hfS h).1.2
@@ -303,7 +316,9 @@ theorem exists_negPointTwist_section_of_hasFDerivAt {x : X} {σ : ∀ z, L z}
         (∀ z ∈ V, τ z ≠ 0) ∧ ∀ z ∉ V, pointTwistDiv ℂ L x z (τ z) = σ z := by
   refine exists_untwist_section hσ hV hVσ false (c := c) ?_
   filter_upwards [hD.eventually_norm_sub_sub_apply_lt hDc] with w hw
-  simpa [negPointTwistChartReading_chartAt_self ℂ hσx] using hw
+  simpa only [negPointTwistChartReading_chartAt_self ℂ hσx, sub_zero,
+    ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.id_apply, smul_eq_mul,
+    Bool.false_eq_true, ite_false] using hw
 
 /-- **Untwisting a negative zero.** Let `σ` be a smooth section of `L` vanishing at `x`, and `V` a
 neighbourhood of `x` containing no other zero of `σ`. If the real derivative `D` of the chart
@@ -320,7 +335,9 @@ theorem exists_pointTwist_section_of_hasFDerivAt {x : X} {σ : ∀ z, L z}
         (∀ z ∈ V, τ z ≠ 0) ∧ ∀ z ∉ V, pointTwistDiv ℂ L x z (τ z) = σ z := by
   refine exists_untwist_section hσ hV hVσ true (c := c) ?_
   filter_upwards [hD.eventually_norm_sub_sub_apply_lt hDc] with w hw
-  simpa [negPointTwistChartReading_chartAt_self ℂ hσx] using hw
+  simpa only [negPointTwistChartReading_chartAt_self ℂ hσx, sub_zero,
+    ContinuousLinearMap.smulRight_apply, ContinuousLinearEquiv.coe_coe, Complex.conjCLE_apply,
+    smul_eq_mul, ite_true] using hw
 
 end Untwist
 
