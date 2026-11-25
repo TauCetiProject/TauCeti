@@ -82,6 +82,25 @@ theorem isGradedCoderivationOver_iff_coact_apply :
     intro x
     simpa only [IsGradedCoderivationOver, LinearMap.comp_apply, LinearMap.add_apply] using h x
 
+/-- Adding a comodule endomorphism to a coderivation over `b` gives a coderivation over `b`. -/
+theorem IsGradedCoderivationOver.add_of_coact_comp {E : M →ₗ[R] M}
+    (h : IsGradedCoderivationOver G q b D)
+    (hE : coact (R := R) (C := C) (M := M) ∘ₗ E = E.rTensor C ∘ₗ coact (R := R) (C := C) (M := M)) :
+    IsGradedCoderivationOver G q b (D + E) := by
+  rw [IsGradedCoderivationOver] at h ⊢
+  rw [LinearMap.comp_add, h, hE, LinearMap.rTensor_add, LinearMap.add_comp]
+  abel
+
+/-- Conversely, if `D` and `D + E` are both coderivations over the same `b`, then `E` commutes
+with the coaction: the co-Leibniz terms of `D` cancel. -/
+theorem IsGradedCoderivationOver.coact_comp_of_add {E : M →ₗ[R] M}
+    (h : IsGradedCoderivationOver G q b D) (h' : IsGradedCoderivationOver G q b (D + E)) :
+    coact (R := R) (C := C) (M := M) ∘ₗ E = E.rTensor C ∘ₗ coact (R := R) (C := C) (M := M) := by
+  let _ : AddCommGroup (M ⊗[R] C) := Module.addCommMonoidToAddCommGroup R
+  rw [IsGradedCoderivationOver] at h h'
+  rw [LinearMap.comp_add, h, LinearMap.rTensor_add, LinearMap.add_comp] at h'
+  exact add_left_cancel (h'.trans (add_right_comm _ _ _))
+
 /-- If the coalgebra operator squares to zero and `(-1) ^ (q * r) = -1`, the square of a
 degree-`r` comodule coderivation with twist `q` commutes with the coaction. In the bar
 construction this makes

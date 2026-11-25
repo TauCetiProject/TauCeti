@@ -22,6 +22,7 @@ import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.MeasureTheory.Measure.Real
 import Mathlib.RingTheory.Norm.Transitivity
 import TauCeti.MeasureTheory.Measure.OpenPos
+import TauCeti.MeasureTheory.Group.Measure
 import TauCeti.RingTheory.Norm.RCLike
 
 /-!
@@ -132,9 +133,13 @@ gives a set of measure one.
   `‖g‖²_{L^q(t)} |B(0, 1)|^{1 - 2/q} r^{n (1 - 2/q)}` in dimension `n`, `2 ≤ q`.
 * `ContinuousAffineMap.measurePreserving_of_abs_det_eq_one`: a continuous affine self-map whose
   linear part has `|det| = 1` preserves an additive Haar measure.
+* `ContinuousLinearEquiv.quasiMeasurePreserving_restrict`: a continuous linear automorphism mapping
+  `s` into `t` is quasi measure preserving between the restrictions of an additive Haar measure to
+  `s` and to `t`.
 * `LinearIsometryEquiv.measurePreserving_addHaar`, `LinearIsometryEquiv.map_addHaar`: a linear
   isometry self-equivalence of a finite-dimensional real normed space preserves every additive Haar
   measure.
+* `AffineIsometryEquiv.measurePreserving_addHaar`: so does an affine isometry self-equivalence.
 * `ContinuousLinearMap.abs_det_le_opNorm_pow`: `|det f| ≤ ‖f‖ ^ n` in dimension `n`.
 * `ContinuousLinearMap.norm_det_le_opNorm_pow`: `‖det f‖ ≤ ‖f‖ ^ n` in dimension `n` over an
   `RCLike` field.
@@ -144,6 +149,9 @@ gives a set of measure one.
 * `DifferentiableAt.inv_pow_le_norm_det_fderiv_of_comp_eventuallyEq_id`,
   `DifferentiableAt.inv_pow_le_abs_det_fderiv_of_comp_eventuallyEq_id`: the corresponding Jacobian
   lower bound for maps satisfying `g ∘ f =ᶠ[𝓝 x] id`.
+* `MeasureTheory.Measure.finiteDimensional_of_isCompact_measure_ne_zero`: a compact set of
+  nonzero measure for a left-invariant measure finite on compact sets forces a normed space over a
+  complete nontrivially normed field to be finite-dimensional.
 * `TauCeti.integral_comp_rescale_eq`: integrals of functions of the rescaled coordinate are the
   target integrals scaled by `tⁿ / ρ`.
 * `TauCeti.addHaar_inv_measureReal_rpow_smul_eq_one`: rescaling a set `s` of positive finite
@@ -849,6 +857,21 @@ theorem measurePreserving_of_abs_det_eq_one
 
 end ContinuousAffineMap
 
+namespace ContinuousLinearEquiv
+
+/-- A continuous linear automorphism `e` of a finite-dimensional real normed space that maps `s`
+into `t` is quasi measure preserving between the restrictions of an additive Haar measure to `s`
+and to `t`. In particular almost-everywhere statements on `t` pull back along `e` to `e ⁻¹' t`. -/
+theorem quasiMeasurePreserving_restrict
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (e : E ≃L[ℝ] E) (μ : Measure E) [μ.IsAddHaarMeasure]
+    {s t : Set E} (hst : Set.MapsTo e s t) :
+    QuasiMeasurePreserving e (μ.restrict s) (μ.restrict t) :=
+  (Measure.ContinuousLinearMap.quasiMeasurePreserving μ (e : E →L[ℝ] E)
+    (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero).restrict hst
+
+end ContinuousLinearEquiv
+
 namespace LinearIsometryEquiv
 
 /-- Every linear isometry self-equivalence of a finite-dimensional real normed space preserves
@@ -883,6 +906,22 @@ theorem map_addHaar
 
 end LinearIsometryEquiv
 
+namespace AffineIsometryEquiv
+
+/-- Every affine isometry self-equivalence of a finite-dimensional real normed space preserves
+every additive Haar measure on that space. -/
+theorem measurePreserving_addHaar
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (f : E ≃ᵃⁱ[ℝ] E) (μ : Measure E) [μ.IsAddHaarMeasure] :
+    MeasurePreserving f μ μ := by
+  have hf : ⇑f = fun x ↦ f.linearIsometryEquiv x + f 0 := funext fun x ↦ by
+    simpa using f.map_vadd 0 x
+  rw [hf]
+  exact (measurePreserving_add_right μ (f 0)).comp
+    (f.linearIsometryEquiv.measurePreserving_addHaar μ)
+
+end AffineIsometryEquiv
+
 namespace MeasureTheory.Measure
 
 section Fubini
@@ -909,6 +948,18 @@ theorem addHaar_eq_zero_of_prod_mk_preimage_image_eq_zero (μH : Measure H) [IsA
     Set.preimage_image_eq _ e.injective] at this
 
 end Fubini
+
+/-- In a normed vector space over a complete nontrivially normed field `𝕜`, a compact set of
+nonzero measure for a left-invariant measure finite on compact sets forces the space to be
+finite-dimensional over `𝕜`. -/
+theorem finiteDimensional_of_isCompact_measure_ne_zero
+    {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [OpensMeasurableSpace E]
+    [MeasurableAdd E] (μ : Measure E) [μ.IsAddLeftInvariant] [IsFiniteMeasureOnCompacts μ]
+    (𝕜 : Type*) [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [NormedSpace 𝕜 E]
+    {K : Set E} (hK : IsCompact K) (hμ : μ K ≠ 0) :
+    FiniteDimensional 𝕜 E :=
+  have := hK.locallyCompactSpace_of_measure_ne_zero_of_addGroup hμ
+  .of_locallyCompactSpace 𝕜
 
 end MeasureTheory.Measure
 

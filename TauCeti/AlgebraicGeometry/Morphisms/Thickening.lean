@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.TrivSqZeroExt.Basic
 public import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 public import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
 public import TauCeti.AlgebraicGeometry.Morphisms.UniversalHomeomorphism
+import Mathlib.Algebra.TrivSqZeroExt.Ideal
 import Mathlib.RingTheory.Ideal.Quotient.PowTransition
 
 /-!
@@ -43,6 +45,8 @@ module of homomorphisms into `I`.
   `TauCeti.AlgebraicGeometry.IsFirstOrderThickening.exists_iso_quotient`: `Spec (B ⧸ I) ⟶ Spec B`
   is a first-order thickening when `I ^ 2 = ⊥`, and every first-order thickening of an affine
   scheme is of this form up to isomorphism.
+* `TauCeti.AlgebraicGeometry.IsFirstOrderThickening.SpecMap_fstHom`: the closed immersion
+  `Spec R ⟶ Spec (TrivSqZeroExt R M)` given by the projection to `R` is a first-order thickening.
 * `TauCeti.AlgebraicGeometry.IsFirstOrderThickening.SpecMap_quotient_factor_iff` and
   `TauCeti.AlgebraicGeometry.IsFirstOrderThickening.SpecMap_quotient_factor_pow_succ`: for ideals
   `J ≤ I`, `Spec (R ⧸ I) ⟶ Spec (R ⧸ J)` is a first-order thickening if and only if `I ^ 2 ≤ J`,
@@ -60,6 +64,8 @@ module of homomorphisms into `I`.
 * `TauCeti.AlgebraicGeometry.IsFirstOrderThickening.isThickening`: a first-order thickening is a
   thickening, and `TauCeti.AlgebraicGeometry.IsThickening.isUniversalHomeomorphism`: a thickening
   is a universal homeomorphism.
+* `TauCeti.AlgebraicGeometry.IsFirstOrderThickening.isNilpotent_ker`: the ideal sheaf of a
+  first-order thickening is nilpotent.
 
 ## References
 
@@ -185,6 +191,10 @@ instance (priority := 100) isThickening (i : Z ⟶ X) [IsFirstOrderThickening i]
       _ = (i.ker * i.ker).radical := by rw [Scheme.IdealSheafData.radical_mul, inf_idem]
       _ = X.nilradical := by rw [ker_mul_self, Scheme.IdealSheafData.radical_bot]
 
+/-- The ideal sheaf of a first-order thickening is nilpotent. -/
+theorem isNilpotent_ker (i : Z ⟶ X) [IsFirstOrderThickening i] : IsNilpotent i.ker :=
+  ⟨2, by simp [pow_two, ker_mul_self]⟩
+
 /-- An isomorphism is a first-order thickening. -/
 instance (priority := 100) of_isIso (i : Z ⟶ X) [IsIso i] : IsFirstOrderThickening i where
   ker_mul_self := by rw [Scheme.Hom.ker_eq_bot_of_isIso, Scheme.IdealSheafData.bot_mul]
@@ -249,6 +259,16 @@ theorem SpecMap_quotient_mk {B : CommRingCat.{u}} {I : Ideal B}
     IsFirstOrderThickening (Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk I))) :=
   (SpecMap_iff _ Ideal.Quotient.mk_surjective).2 <| by
     rwa [CommRingCat.hom_ofHom, Ideal.mk_ker, ← pow_two]
+
+/-- The closed immersion `Spec R ⟶ Spec (TrivSqZeroExt R M)` given by the projection to `R` is a
+first-order thickening, since its kernel `M` squares to zero. For `M = R` this is the inclusion
+`Spec R ⟶ Spec R[ε]` over `ε ↦ 0`. -/
+instance SpecMap_fstHom {R M : Type u} [CommRing R] [AddCommGroup M] [Module R M]
+    [Module Rᵐᵒᵖ M] [IsCentralScalar R M] :
+    IsFirstOrderThickening
+      (Spec.map (CommRingCat.ofHom (TrivSqZeroExt.fstHom R R M : TrivSqZeroExt R M →+* R))) :=
+  (SpecMap_iff _ TrivSqZeroExt.fst_surjective).2 <|
+    (pow_two _).symm.trans (TrivSqZeroExt.kerIdeal_sq R M)
 
 /-- A first-order thickening `i : T ⟶ T'` with `T'` affine is, up to isomorphisms of source and
 target, the closed immersion `Spec (B ⧸ I) ⟶ Spec B` for `B = Γ(T', ⊤)` and an ideal `I` of `B`

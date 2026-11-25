@@ -17,9 +17,11 @@ them (`GTree.subtree`, on the subgraph induced on the set, which is a tree by
 `SerreGraph.IsTree.induce`). Together they give the action of a subgroup on an invariant subtree,
 the setting of induced splittings.
 
-Stabilizers for the restriction along `f : H →* G` are preimages under `f`, and an element of `H`
-is elliptic exactly when its image is. Stabilizers and distances in an invariant subtree are those
-of the tree.
+Stabilizers for the restriction along `f : H →* G` are preimages under `f`, an element of `H`
+is elliptic exactly when its image is, and its translation length is that of its image. Restricting
+a minimal tree along a surjective homomorphism, for instance precomposing the action with an
+automorphism of `G`, gives a minimal tree; restricting to a subgroup need not. Stabilizers and
+distances in an invariant subtree are those of the tree.
 
 ## Main declarations
 
@@ -93,6 +95,23 @@ which `G` acts. -/
   simp only [isElliptic_iff, comap_smul_vertex]
   -- Both sides say that `f h` fixes a vertex, ranging over `(T.comap f).V` and over `T.V`.
   exact Iff.rfl
+
+/-- The translation length of an element on the restricted tree is that of its image on `T`. -/
+@[simp] theorem translationLength_comap (f : H →* G) (h : H) :
+    (T.comap f).translationLength h = T.translationLength (f h) := by
+  -- The restricted tree has the vertices and distances of `T`, and `h` moves them as `f h` does.
+  obtain ⟨v, hv⟩ := exists_dist_eq_translationLength (T := T.comap f) h
+  obtain ⟨w, hw⟩ := exists_dist_eq_translationLength (T := T) (f h)
+  exact le_antisymm ((translationLength_le (T := T.comap f) h w).trans_eq hw)
+    ((translationLength_le (T := T) (f h) v).trans_eq hv)
+
+variable {T} in
+/-- The restriction of a minimal tree along a surjective homomorphism is minimal. -/
+theorem IsMinimal.comap (hT : T.IsMinimal) {f : H →* G} (hf : Function.Surjective f) :
+    (T.comap f).IsMinimal :=
+  isMinimal_iff.mpr fun S hne hS hinv => isMinimal_iff.mp hT S hne hS fun g v hv => by
+    obtain ⟨h, rfl⟩ := hf g
+    exact hinv h v hv
 
 variable (C : Set T.V)
 

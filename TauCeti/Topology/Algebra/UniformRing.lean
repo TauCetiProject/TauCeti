@@ -141,6 +141,11 @@ section Ext
 variable {R : Type*} [Ring R] [UniformSpace R] [IsTopologicalRing R] [IsUniformAddGroup R]
   {B : Type*} [NonAssocSemiring B] [TopologicalSpace B] [T2Space B]
 
+/-- The ring homomorphism `coeRingHom` is the coercion of `R` into its completion. -/
+@[simp]
+theorem coeRingHom_apply (a : R) : coeRingHom a = (a : Completion R) :=
+  (rfl)
+
 /-- **Maps out of a completion are determined on the image of the coercion.** Two continuous
 ring homomorphisms `R̂ → B` into a non-associative semiring carrying a Hausdorff topology that
 agree after composing with `coeRingHom` are equal.

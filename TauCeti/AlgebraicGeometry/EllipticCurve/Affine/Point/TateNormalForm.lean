@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Pointed
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Pointed.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateNormalForm
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.ZSMul
 
@@ -30,8 +30,8 @@ elliptic curves over `F` with a point of exact order `N` are in bijection with t
 for which the Tate normal form is elliptic and `(0, 0)` has exact order `N`
 (`TauCeti.PointedWeierstrassCurve.exactOrderQuotientEquivTateNormalForm`). Read in the coordinates
 `A = a`, `B = b` of `Spec ℤ[A, B][Δ⁻¹]`, these pairs describe the `F`-points of the fine moduli
-scheme `Y₁(N)` (`TauCeti.AlgebraicGeometry.UniversalTate.yOne`), and the bijection is the
-field-valued form of its universal property; the comparison with the scheme is not made here.
+scheme `Y₁(N)` (`TauCeti.AlgebraicGeometry.UniversalTate.yOnePointsEquiv`), and the bijection is
+the field-valued form of its universal property.
 
 ## Main definitions
 
@@ -242,6 +242,13 @@ def tateNormalFormExactOrder (N : ℕ) : Set (F × F) :=
 theorem mem_tateNormalFormExactOrder_iff {N : ℕ} {p : F × F} :
     p ∈ tateNormalFormExactOrder F N ↔ ∃ hb : p.2 ≠ 0, tateNormalForm p.1 hb ∈ exactOrder F N :=
   Iff.rfl
+
+/-- A Tate normal form of exact order `N` has invertible discriminant. -/
+theorem isUnit_Δ_of_mem_tateNormalFormExactOrder {N : ℕ} {p : F × F}
+    (hp : p ∈ tateNormalFormExactOrder F N) :
+    IsUnit (WeierstrassCurve.tateNormalForm p.1 p.2).Δ := by
+  obtain ⟨_, hX⟩ := mem_tateNormalFormExactOrder_iff.mp hp
+  exact ((mem_exactOrder_iff _).mp hX).1.isUnit
 
 /-- For `N ≥ 4`, a point of exact order `N` is killed neither by `2` nor by `3`. -/
 private theorem nsmul_point_ne_zero_of_mem_exactOrder {N : ℕ} (hN : 4 ≤ N)
