@@ -9,6 +9,7 @@ public import Mathlib.Data.Nat.Factorization.Defs
 public import Mathlib.GroupTheory.Index
 import Mathlib.Data.Nat.Prime.Infinite
 public import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
+public import TauCeti.Algebra.Group.Subgroup.ZPowers
 public import TauCeti.GroupTheory.Index.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
@@ -69,6 +70,9 @@ infrastructure independent of the diamond operators.
 * `CongruenceSubgroup.ker_map_intCast_zmod`, `CongruenceSubgroup.map_eq_one_of_mem_Gamma`,
   `CongruenceSubgroup.mem_Gamma_iff_dvd`: `Γ(N)` is the kernel of reduction modulo `N`, and its
   membership is equivalent to four entrywise integer divisibilities (valid at `N = 0` as well).
+* `CongruenceSubgroup.mk'_comp_map_intCast_zmod_surjective`,
+  `CongruenceSubgroup.ker_mk'_comp_map_intCast_zmod`: the reduction
+  `SL₂(ℤ) → SL₂(ℤ/Nℤ) / ⟨-1⟩` is surjective, with kernel `Γ(N) ⊔ ⟨-1⟩`.
 * `CongruenceSubgroup.mem_Gamma0_iff_dvd`: `Γ₀(N)` membership read as the integer divisibility
   `(N : ℤ) ∣ A 1 0` rather than as a `ZMod N` congruence, for a proof that wants to name the
   quotient. Valid at every level, `N = 0` included.
@@ -244,6 +248,22 @@ theorem index_Gamma (N : ℕ) : (Gamma N).index = Nat.card SL(2, ZMod N) := by
   rw [Gamma, Subgroup.index_ker,
     MonoidHom.range_eq_top.mpr Matrix.SpecialLinearGroup.map_intCast_zmod_surjective,
     Subgroup.card_top]
+
+/-- Reduction `SL₂(ℤ) → SL₂(ℤ/Nℤ) / ⟨-1⟩` is surjective. -/
+theorem mk'_comp_map_intCast_zmod_surjective :
+    Function.Surjective ((QuotientGroup.mk' (Subgroup.zpowers (-1 : SL(2, ZMod N)))).comp
+      (map (Int.castRingHom (ZMod N)))) :=
+  (QuotientGroup.mk'_surjective _).comp map_intCast_zmod_surjective
+
+/-- The kernel of the reduction `SL₂(ℤ) → SL₂(ℤ/Nℤ) / ⟨-1⟩` is `Γ(N) ⊔ ⟨-1⟩`. -/
+theorem ker_mk'_comp_map_intCast_zmod :
+    ((QuotientGroup.mk' (Subgroup.zpowers (-1 : SL(2, ZMod N)))).comp
+      (map (Int.castRingHom (ZMod N)))).ker = Gamma N ⊔ Subgroup.zpowers (-1) := by
+  have hneg : map (Int.castRingHom (ZMod N)) (-1 : SL(2, ℤ)) = -1 := by
+    ext i j
+    simp
+  rw [← MonoidHom.comap_ker, QuotientGroup.ker_mk', ← hneg, ← MonoidHom.map_zpowers,
+    Subgroup.comap_map_eq, ker_map_intCast_zmod, sup_comm]
 
 /-- `Γ(2)` has index `6 = |SL₂(𝔽₂)|` in `SL₂(ℤ)`. -/
 theorem index_Gamma_two : (Gamma 2).index = 6 := by

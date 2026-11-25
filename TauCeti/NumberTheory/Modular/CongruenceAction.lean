@@ -44,9 +44,6 @@ its index `8` divides the order `192` of `Q_8` and the order obstruction is sile
   `TauCeti.ModularGroup.isCongruenceSubgroup_iff_exists_map_T_tPrime`: `Γ ≤ SL(2, ℤ)` is a
   congruence subgroup iff its coset action factors through `SL(2, ℤ/M)`, for `M` a nonzero
   multiple of the strict level of `Γ`.
-* `TauCeti.ModularGroup.mk'_comp_map_intCast_zmod_surjective`,
-  `TauCeti.ModularGroup.ker_mk'_comp_map_intCast_zmod`: the reduction `SL(2, ℤ) → Q_M` is
-  surjective, with kernel `Γ(M) ⊔ ⟨-1⟩`.
 * `TauCeti.ModularGroup.ker_permutationRepresentation_comp_mk'`: the kernel of the coset action of
   `PSL(2, ℤ)` on `PSL(2, ℤ) ⧸ Γ'`, read on `SL(2, ℤ)`, is the normal core of `±Γ'`.
 * `TauCeti.ModularGroup.isCongruenceSubgroup_liftSL_iff_forall_mem_Gamma`,
@@ -146,24 +143,6 @@ theorem isCongruenceSubgroup_liftSL_iff_forall_mem_Gamma (hM : generalLevel Γ' 
       ∀ γ ∈ Gamma M, e.permutationRepresentation (γ : PSL(2, ℤ)) = 1 := by
   rw [isCongruenceSubgroup_liftSL_iff_Gamma_le_of_dvd hM, Gamma_le_liftSL_iff Γ' e]
   simp only [IsConcreteLE.le_iff, MonoidHom.mem_ker, MonoidHom.comp_apply, QuotientGroup.mk'_apply]
-
-omit [NeZero M] in
-/-- Reduction `SL(2, ℤ) → Q_M = SL(2, ℤ/M) / ⟨-1⟩` is surjective. -/
-theorem mk'_comp_map_intCast_zmod_surjective :
-    Function.Surjective ((QuotientGroup.mk' (Subgroup.zpowers (-1 : SL(2, ZMod M)))).comp
-      (map (Int.castRingHom (ZMod M)))) :=
-  (QuotientGroup.mk'_surjective _).comp map_intCast_zmod_surjective
-
-omit [NeZero M] in
-/-- The kernel of the reduction `SL(2, ℤ) → Q_M = SL(2, ℤ/M) / ⟨-1⟩` is `Γ(M) ⊔ ⟨-1⟩`. -/
-theorem ker_mk'_comp_map_intCast_zmod :
-    ((QuotientGroup.mk' (Subgroup.zpowers (-1 : SL(2, ZMod M)))).comp
-      (map (Int.castRingHom (ZMod M)))).ker = Gamma M ⊔ Subgroup.zpowers (-1) := by
-  have hneg : map (Int.castRingHom (ZMod M)) (-1 : SL(2, ℤ)) = -1 := by
-    ext i j
-    simp
-  rw [← MonoidHom.comap_ker, QuotientGroup.ker_mk', ← hneg, ← MonoidHom.map_zpowers,
-    Subgroup.comap_map_eq, ker_map_intCast_zmod, sup_comm]
 
 /-- **Congruence as factorization through `Q_M = SL(2, ℤ/M) / ⟨-1⟩`.** For `M ≠ 0` a multiple of
 the general level of `Γ' ≤ PSL(2, ℤ)`, the full preimage `±Γ'` is a congruence subgroup exactly
