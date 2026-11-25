@@ -867,19 +867,24 @@ private theorem sum_piFinset_pow_div_pow_card_image_le_of_finite [DecidableEq α
       simp only [sum_allowedSymbols_symbolWeight]
       ring
 
-/-- Restricting the vertex type preserves the weighted sum of words with repeated edges
-and an additional condition on the projected word. -/
-private theorem sum_piFinset_traceWord_weight_eq_subtype [DecidableEq α] {L : ℕ} {γ m : ℝ}
-    {A : Fin L → Finset α} {S : Finset α} (hS : ∀ t, A t ⊆ S)
+/-- Restricting to the union of the prescribed vertex sets preserves their cardinalities and
+the weighted sum of words with repeated edges and an additional condition on the projected word. -/
+private theorem exists_sum_piFinset_traceWord_weight_eq_subtype [DecidableEq α] {L : ℕ} {γ m : ℝ}
+    (A : Fin L → Finset α)
     (P : (Fin L → α) → Prop) [DecidablePred P] :
-    (∑ w ∈ Fintype.piFinset A with
-        (∀ t, ∃ s ≠ t, s(w s, w (finRotate L s)) = s(w t, w (finRotate L t))) ∧ P w,
-      γ ^ (2 * (L + 2 - 2 * #(univ.image w))) / m ^ #(univ.image w)) =
-    ∑ w ∈ Fintype.piFinset (fun t ↦ (A t).subtype (· ∈ S)) with
-        (∀ t, ∃ s ≠ t, s(w s, w (finRotate L s)) = s(w t, w (finRotate L t))) ∧
-          P (Subtype.val ∘ w),
-      γ ^ (2 * (L + 2 - 2 * #(univ.image w))) / m ^ #(univ.image w) := by
+    ∃ (S : Finset α) (A' : Fin L → Finset S), (∀ t, #(A' t) = #(A t)) ∧
+      (∑ w ∈ Fintype.piFinset A with
+          (∀ t, ∃ s ≠ t, s(w s, w (finRotate L s)) = s(w t, w (finRotate L t))) ∧ P w,
+        γ ^ (2 * (L + 2 - 2 * #(univ.image w))) / m ^ #(univ.image w)) =
+      ∑ w ∈ Fintype.piFinset A' with
+          (∀ t, ∃ s ≠ t, s(w s, w (finRotate L s)) = s(w t, w (finRotate L t))) ∧
+            P (Subtype.val ∘ w),
+        γ ^ (2 * (L + 2 - 2 * #(univ.image w))) / m ^ #(univ.image w) := by
+  let S := univ.biUnion A
+  have hS (t : Fin L) : A t ⊆ S := fun x hx ↦ mem_biUnion.mpr ⟨t, mem_univ _, hx⟩
   let A' (t : Fin L) : Finset S := (A t).subtype (· ∈ S)
+  refine ⟨S, A', fun t ↦ ?_, ?_⟩
+  · rw [card_subtype, filter_true_of_mem (hS t)]
   have hA : (fun t ↦ (A' t).image Subtype.val) = A := funext fun t ↦ by
     rw [← Function.Embedding.coe_subtype, ← map_eq_image, subtype_map_of_mem (hS t)]
   have hpi : Fintype.piFinset A = (Fintype.piFinset A').image (Subtype.val ∘ ·) := by
@@ -911,13 +916,8 @@ theorem sum_piFinset_pow_div_pow_card_image_le_of_no_singleton_edge [DecidableEq
       γ ^ (2 * (L + 2 - 2 * #(univ.image w))) / m ^ #(univ.image w) ≤
         #(A 0) / m * ∏ t, (#(A (finRotate L t)) / m + 1 + L * γ) := by
   classical
-  -- Restrict the vertices to the finite set `S` of all prescribed vertices.
-  set S := univ.biUnion A
-  have hS (t : Fin L) : A t ⊆ S := fun x hx ↦ mem_biUnion.mpr ⟨t, mem_univ _, hx⟩
-  let A' (t : Fin L) : Finset S := (A t).subtype (· ∈ S)
-  have hcard (t : Fin L) : #(A' t) = #(A t) := by
-    rw [card_subtype, filter_true_of_mem (hS t)]
-  have hsum := sum_piFinset_traceWord_weight_eq_subtype (γ := γ) (m := m) hS (fun _ ↦ True)
+  obtain ⟨S, A', hcard, hsum⟩ :=
+    exists_sum_piFinset_traceWord_weight_eq_subtype (γ := γ) (m := m) A (fun _ ↦ True)
   simp only [and_true] at hsum
   rw [hsum]
   have key := sum_piFinset_pow_div_pow_card_image_le_of_finite hγ₀ hγ₁ hm A'
@@ -1039,14 +1039,11 @@ theorem sum_piFinset_pow_div_pow_card_image_le_of_nonbacktracking [DecidableEq �
       γ ^ (2 * (B * M + 2 - 2 * #(univ.image w))) / m ^ #(univ.image w) ≤
         #(A 0) / m * (((M : ℝ) + 1) * R * (1 + ((M : ℝ) + 1) * R * ((B * M : ℕ) * γ)) ^ M) ^ B := by
   classical
-  let S := univ.biUnion A
-  have hS (t : Fin (B * M)) : A t ⊆ S := fun x hx ↦ mem_biUnion.mpr ⟨t, mem_univ _, hx⟩
-  let A' (t : Fin (B * M)) : Finset S := (A t).subtype (· ∈ S)
-  have hcard (t : Fin (B * M)) : #(A' t) = #(A t) := by
-    rw [card_subtype, filter_true_of_mem (hS t)]
-  rw [sum_piFinset_traceWord_weight_eq_subtype hS (fun w ↦
-    ∀ (b : Fin B) (i j : Fin M), i.val + 1 = j.val →
-      w (finProdFinEquiv (b, i)) ≠ w (finRotate (B * M) (finProdFinEquiv (b, j))))]
+  obtain ⟨S, A', hcard, hsum⟩ :=
+    exists_sum_piFinset_traceWord_weight_eq_subtype (γ := γ) (m := m) A (fun w ↦
+      ∀ (b : Fin B) (i j : Fin M), i.val + 1 = j.val →
+        w (finProdFinEquiv (b, i)) ≠ w (finRotate (B * M) (finProdFinEquiv (b, j))))
+  rw [hsum]
   have key := sum_piFinset_pow_div_pow_card_image_le_of_nonbacktracking_of_finite
     hγ₀ hγ₁ hm A' q hq (by simpa only [hcard] using hA)
   simpa only [hcard, Function.comp_apply, ne_eq, Subtype.val_inj] using key

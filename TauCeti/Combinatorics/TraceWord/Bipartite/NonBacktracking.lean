@@ -306,13 +306,17 @@ theorem sum_pow_card_bipartiteEdge_mul_pow_le_of_nonbacktracking {r : ℕ} (hr :
     rw [hsq, mul_div_cancel_right₀ _ hd.ne']
     exact min_le_left _ _
   have hword (uv : (Fin m → α) × (Fin m → β))
-      (huv : ∀ t, ∃ s ≠ t, bipartiteEdge uv.1 uv.2 s = bipartiteEdge uv.1 uv.2 t) := by
+      (huv : ∀ t, ∃ s ≠ t, bipartiteEdge uv.1 uv.2 s = bipartiteEdge uv.1 uv.2 t) :
+      let e := #(univ.image (bipartiteEdge uv.1 uv.2))
+      let v := #(univ.image uv.1) + #(univ.image uv.2)
+      min c (b ^ 2) ^ e * b ^ (2 * m - 2 * e) ≤
+        d * √(c * d) ^ (2 * m) * (γ ^ (2 * (2 * m + 2 - 2 * v)) / d ^ v) := by
     have hcb : min c (b ^ 2) ≤ |b| ^ 2 := by rw [sq_abs]; exact min_le_right _ _
     have h := pow_mul_pow_sub_le_mul_pow_div_pow (abs_nonneg b) (le_min hc (sq_nonneg _))
       hcb hcs hbc' hd ((card_pos.mpr (univ_nonempty.image uv.1)).trans_le le_self_add)
       (card_image_add_card_image_le_card_image_bipartiteEdge_add_one uv.1 uv.2)
       (Nat.mul_le_mul_left 2 (card_image_bipartiteEdge_le_of_no_singleton_edge huv))
-    rwa [← Nat.mul_sub_left_distrib, pow_abs_two_mul, Nat.mul_sub_left_distrib] at h
+    simpa only [← Nat.mul_sub_left_distrib, pow_abs_two_mul] using h
   have henum := sum_pow_div_sqrt_mul_pow_le_of_nonbacktracking (α := α) (β := β) hr k hγ₀ hγ₁
   dsimp only at henum
   refine (sum_le_sum fun uv huv ↦ hword uv (mem_bipartiteNonbacktrackingWords.mp huv).2).trans ?_
