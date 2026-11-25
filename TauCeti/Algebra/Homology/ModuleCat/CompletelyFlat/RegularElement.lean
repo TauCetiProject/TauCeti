@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Abelian.Projective.Extend
-public import TauCeti.Algebra.Category.ModuleCat.Projective.RegularElementResolution
 public import TauCeti.Algebra.Homology.ModuleCat.CompletelyFlat
+import Mathlib.CategoryTheory.Abelian.Projective.Extend
 import TauCeti.Algebra.Category.ModuleCat.ExtendScalarsQuotient
+import TauCeti.Algebra.Category.ModuleCat.Projective.RegularElementResolution
 import TauCeti.Algebra.Homology.ModuleCat.KFlat.Basic
+import TauCeti.CategoryTheory.Abelian.LeftDerived
 
 /-!
 # The quotient by a nonzerodivisor is not completely flat
@@ -19,11 +20,12 @@ placed in degree zero of `D(A)`, is not `(f)`-completely flat: its derived reduc
 `A ⧸ (f) ⊗^L_A A ⧸ (f)` has nonzero cohomology `A ⧸ (f)` in degree `-1`, whereas a module placed
 in degree zero has none.
 
-The derived reduction is computed on the two-term resolution `A --f--> A` of `A ⧸ (f)`
-(`TauCeti.regularElementProjectiveResolution`): it is K-flat, so the derived reduction is its
-degreewise reduction `A ⧸ (f) --0--> A ⧸ (f)`, whose differential vanishes because `f` maps to
-zero in `A ⧸ (f)`. For `A = ℤ` and `f = p` this shows that `F_p` is not `p`-completely flat over
-`ℤ`.
+The derived reduction is computed on the two-term resolution `A --f--> A` of `A ⧸ (f)`, the
+projective resolution given by the short exact sequence `TauCeti.regularElementShortComplex`
+(`CategoryTheory.ShortComplex.ShortExact.projectiveResolution`): it is K-flat, so the derived
+reduction is its degreewise reduction `A ⧸ (f) --0--> A ⧸ (f)`, whose differential vanishes
+because `f` maps to zero in `A ⧸ (f)`. For `A = ℤ` and `f = p` this shows that `F_p` is not
+`p`-completely flat over `ℤ`.
 
 ## Main results
 
@@ -57,7 +59,8 @@ theorem not_isZero_homology_derivedReduction_quotient (hf : f ∈ nonZeroDivisor
       ((derivedReduction (Ideal.span {f})).obj
         ((singleFunctor (ModuleCat.{u} A) 0).obj (ModuleCat.of A (A ⧸ Ideal.span {f}))))) := by
   intro hz
-  set R := regularElementProjectiveResolution f hf
+  set R := (regularElementShortComplex_shortExact (isRegular_iff_mem_nonZeroDivisors.2 hf).left
+    ).projectiveResolution
   let P := R.cochainComplex
   have : P.IsKFlat :=
     CochainComplex.isKFlat_of_boundedAbove_flat_moduleCat P 0 fun _ ↦ inferInstance
@@ -71,18 +74,24 @@ theorem not_isZero_homology_derivedReduction_quotient (hf : f ∈ nonZeroDivisor
       (homologyFunctor _ (-1)).mapIso
         ((derivedExtendScalarsKFlatIso _ P).symm ≪≫ (derivedReduction _).mapIso e₁.symm)
   -- the differentials into and out of degree `-1` vanish
-  have hX₁ : P.X (-1) ≅ ModuleCat.of A A :=
-    R.cochainComplexXIso (-1) 1 ≪≫ regularElementProjectiveResolutionXIso₁ f hf
   have hin : B.d (-2) (-1) = 0 :=
-    IsZero.eq_of_src (F.map_isZero ((isZero_regularElementProjectiveResolution_complex_X f hf 2
-      le_rfl).of_iso (R.cochainComplexXIso (-2) 2))) _ _
+    IsZero.eq_of_src (F.map_isZero
+      (((regularElementShortComplex f).isZero_resolutionComplex_X_add_two 0).of_iso
+        (R.cochainComplexXIso (-2) 2))) _ _
+  -- `R.complex` is `resolutionComplex` by definition (`projectiveResolution_complex`), whose
+  -- differential `R.complex.d 1 0` is multiplication by `f` (`resolutionComplex_d_one_zero`);
+  -- rewriting along these equations would break the types of the degree identifications of
+  -- `R.cochainComplex`, so the vanishing of the reduced differential is restated instead
+  have hd : F.map (R.complex.d 1 0) = 0 := extendScalars_map_ofHom_mulLeft f
   have hout : B.d (-1) 0 = 0 := by
     simp only [B, Functor.mapHomologicalComplex_obj_d]
-    rw [R.cochainComplex_d (-1) 0 1 0, regularElementProjectiveResolution_complex_d f hf]
-    simp
+    rw [R.cochainComplex_d (-1) 0 1 0, Functor.map_comp, Functor.map_comp, hd, zero_comp,
+      comp_zero]
   have hB : IsZero (B.X (-1)) := hz.of_iso
     ((B.iCyclesIso (-1) 0 (by simp) hout).symm ≪≫ B.isoHomologyπ (-2) (-1) (by simp) hin ≪≫ e₂)
-  exact Ideal.not_isZero_extendScalars_mk_of_ne_top hI (hB.of_iso (F.mapIso hX₁).symm)
+  -- `R.complex.X 1` is the regular module `A` by definition (`resolutionComplex_X_one`)
+  exact Ideal.not_isZero_extendScalars_mk_of_ne_top hI
+    (hB.of_iso (F.mapIso (R.cochainComplexXIso (-1) 1)).symm)
 
 /-- **`A ⧸ (f)` is not `(f)`-completely flat.** For a nonzerodivisor `f` with `(f) ≠ A`, the
 quotient `A ⧸ (f)` placed in degree zero of `D(A)` is not `(f)`-completely flat: its derived
