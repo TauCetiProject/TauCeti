@@ -50,8 +50,8 @@ noncomputable def unipotentParameter (E : Type*) [Field E] :
       exact (Commute.one_left _).add_left (Commute.refl _)
     simp only [MonoidHom.coe_comp, Function.comp_apply, zpowersHom_apply, Units.coeHom_apply,
       MonoidHom.id_apply, toAdd_inv, Nat.cast_one, one_zpow, one_smul]
-    rw [(hc.units_zpow_left _).eq, mul_assoc, ← Units.val_mul, ← zpow_add, add_neg_cancel,
-      zpow_zero, Units.val_one, mul_one]
+    rw [(hc.units_zpow_left _).eq]
+    simp [mul_assoc, ← Units.val_mul]
 
 /-- For `q = 1`, `r(Φ) = 1 + N` with `N ≠ 0`: the parameter is not isomorphic to its rescaling
 by `2`. -/

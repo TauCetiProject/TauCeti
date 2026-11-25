@@ -7,13 +7,15 @@ module
 
 public import TauCeti.RepresentationTheory.WeilDeligne.Special
 
+import TauCeti.LinearAlgebra.Monomial
+
 /-!
 # Rescaling the monodromy of a Weil–Deligne parameter
 
 For a raw Weil–Deligne parameter `(V, r, N)` and a scalar `a`, the pair `(r, a N)` is again a
 raw Weil–Deligne parameter (`TauCeti.WeilDeligneParameter.rescale`): `a N` is nilpotent and
-satisfies the same conjugation relation. Rescaling is functorial in isomorphisms and composes
-multiplicatively.
+satisfies the same conjugation relation. Rescaling is functorial in morphisms and isomorphisms
+and composes multiplicatively.
 
 For `q ≥ 2` and finite inertia image, `(r, N) ≅ (r, a N)` for every `a ≠ 0` (Deligne 1973, proof
 of §8.4.3). This file proves it for the special parameters `Sp(n)`, where the diagonal matrix
@@ -26,6 +28,7 @@ Weil action commutes with `N`, so a nonzero `N` is isomorphic to its rescaling b
 ## Main definitions
 
 * `TauCeti.WeilDeligneParameter.rescale`: the parameter `(r, a N)`.
+* `TauCeti.WeilDeligneParameter.Hom.rescale`: rescaling a morphism.
 * `TauCeti.WeilDeligneParameter.Iso.rescale`: rescaling an isomorphism.
 * `TauCeti.WeilDeligneParameter.specialRescaleIso`: `Sp(n) ≅ Sp(n)` rescaled by a unit `a`.
 
@@ -49,8 +52,8 @@ namespace TauCeti
 
 namespace WeilDeligneParameter
 
-variable {E W V V' : Type*} [Field E] [Group W] [TopologicalSpace W]
-  [AddCommGroup V] [Module E V] [AddCommGroup V'] [Module E V']
+variable {E W V V' V'' : Type*} [Field E] [Group W] [TopologicalSpace W]
+  [AddCommGroup V] [Module E V] [AddCommGroup V'] [Module E V'] [AddCommGroup V''] [Module E V'']
   {deg : W →* Multiplicative ℤ} {q : ℕ}
 
 /-- **Rescaling the monodromy**: the parameter `(r, a N)` with the same Weil action. -/
@@ -74,22 +77,65 @@ theorem rescale_N (D : WeilDeligneParameter E W V deg q) (a : E) : (D.rescale a)
 theorem rescale_one (D : WeilDeligneParameter E W V deg q) : D.rescale 1 = D := by
   ext1 <;> simp
 
+/-- Rescaling twice multiplies the scalars. -/
+@[simp]
 theorem rescale_rescale (D : WeilDeligneParameter E W V deg q) (a b : E) :
     (D.rescale a).rescale b = D.rescale (b * a) := by
   ext1 <;> simp [mul_smul]
 
-/-- An isomorphism of parameters is also an isomorphism of their rescalings. -/
-def Iso.rescale {D : WeilDeligneParameter E W V deg q} {D' : WeilDeligneParameter E W V' deg q}
-    (f : Iso D D') (a : E) : Iso (D.rescale a) (D'.rescale a) where
-  toRepresentationEquiv := f.toRepresentationEquiv
+section Functoriality
+
+variable {D : WeilDeligneParameter E W V deg q} {D' : WeilDeligneParameter E W V' deg q}
+  {D'' : WeilDeligneParameter E W V'' deg q} (a : E)
+
+/-- A morphism of parameters is also a morphism of their rescalings. -/
+def Hom.rescale (f : Hom D D') : Hom (D.rescale a) (D'.rescale a) where
+  toIntertwiningMap := f.toIntertwiningMap
   comp_N := by
     rw [rescale_N, rescale_N, LinearMap.comp_smul, LinearMap.smul_comp]
     exact congrArg (a • ·) f.comp_N
 
 @[simp]
-theorem Iso.coe_rescale {D : WeilDeligneParameter E W V deg q}
-    {D' : WeilDeligneParameter E W V' deg q} (f : Iso D D') (a : E) : ⇑(f.rescale a) = f :=
+theorem Hom.rescale_apply (f : Hom D D') (v : V) : f.rescale a v = f v :=
   (rfl)
+
+@[simp]
+theorem Hom.rescale_id : (Hom.id D).rescale a = Hom.id (D.rescale a) :=
+  Hom.ext (LinearMap.ext fun v ↦ by simp)
+
+@[simp]
+theorem Hom.rescale_comp (f : Hom D' D'') (g : Hom D D') :
+    (f.comp g).rescale a = (f.rescale a).comp (g.rescale a) :=
+  Hom.ext (LinearMap.ext fun v ↦ by simp)
+
+/-- An isomorphism of parameters is also an isomorphism of their rescalings. -/
+def Iso.rescale (f : Iso D D') : Iso (D.rescale a) (D'.rescale a) :=
+  Iso.ofBijective (f.toHom.rescale a) (by
+    rw [show ⇑(f.toHom.rescale a) = f from funext fun v ↦ by simp]
+    exact f.bijective)
+
+@[simp]
+theorem Iso.coe_rescale (f : Iso D D') : ⇑(f.rescale a) = f :=
+  funext fun v ↦ by simp [Iso.rescale]
+
+@[simp]
+theorem Iso.toHom_rescale (f : Iso D D') : (f.rescale a).toHom = f.toHom.rescale a :=
+  Hom.ext (LinearMap.ext fun v ↦ by simp)
+
+@[simp]
+theorem Iso.rescale_refl : (Iso.refl D).rescale a = Iso.refl (D.rescale a) :=
+  Iso.ext (LinearEquiv.ext fun v ↦ by simp)
+
+@[simp]
+theorem Iso.rescale_trans (f : Iso D D') (g : Iso D' D'') :
+    (f.trans g).rescale a = (f.rescale a).trans (g.rescale a) :=
+  Iso.ext (LinearEquiv.ext fun v ↦ by simp)
+
+@[simp]
+theorem Iso.rescale_symm (f : Iso D D') : (f.rescale a).symm = f.symm.rescale a :=
+  Iso.ext (LinearEquiv.ext fun v ↦ (f.rescale a).injective (by simp))
+
+end Functoriality
 
 /-- **Rescaling is not always trivial**: if some `r(w)` is `1 + N` and `N ≠ 0`, then an
 isomorphism `(r, N) ≅ (r, a N)` forces `a = 1`. The isomorphism commutes with `r(w)`, hence with
@@ -101,7 +147,7 @@ theorem eq_one_of_iso_rescale (D : WeilDeligneParameter E W V deg q) {w : W}
     rw [rescale_r, hw] at h
     simpa using h
   have hscale : ∀ v, D.N (f v) = a • D.N (f v) := fun v ↦
-    (hcomm v).symm.trans (f.map_N_apply v)
+    (hcomm v).symm.trans (by rw [f.map_N_apply, rescale_N, LinearMap.smul_apply])
   by_contra ha
   refine hN (LinearMap.ext fun v ↦ ?_)
   obtain ⟨u, rfl⟩ := EquivLike.surjective f v
@@ -113,40 +159,32 @@ theorem eq_one_of_iso_rescale (D : WeilDeligneParameter E W V deg q) {w : W}
 
 variable (hdeg : Continuous deg) (hq : (q : E) ≠ 0)
 
-/-- The diagonal linear equivalence `eᵢ ↦ a ^ i • eᵢ` of `Fin n → E`. -/
-private def diagPow (n : ℕ) (a : Eˣ) : (Fin n → E) ≃ₗ[E] (Fin n → E) :=
-  LinearEquiv.piCongrRight fun i : Fin n ↦ LinearEquiv.smulOfUnit (a ^ (i : ℕ))
-
-private theorem diagPow_apply (n : ℕ) (a : Eˣ) (v : Fin n → E) (i : Fin n) :
-    diagPow n a v i = (a : E) ^ (i : ℕ) * v i := by
-  simp [diagPow, LinearEquiv.smulOfUnit, Units.smul_def]
-
 variable (q) in
 /-- **`Sp(n)` is isomorphic to its rescaling** by any unit `a`, through
 `diag(1, a, …, a^(n-1))`. -/
 def specialRescaleIso (n : ℕ) (a : Eˣ) :
     Iso (special q n hdeg hq) ((special q n hdeg hq).rescale a) where
-  toRepresentationEquiv := .mk (diagPow n a) fun w ↦ by
+  toRepresentationEquiv := .mk (monomialEquiv (fun i : Fin n ↦ a ^ (i : ℕ)) (.refl _)) fun w ↦ by
     refine LinearMap.ext fun v ↦ funext fun i ↦ ?_
-    simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply, diagPow_apply,
-      rescale_r, special_r_apply]
+    simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply, monomialEquiv_apply,
+      Equiv.refl_symm, Equiv.refl_apply, rescale_r, special_r_apply]
     ring
   comp_N := by
     refine LinearMap.ext fun v ↦ funext fun i ↦ ?_
     simp only [LinearMap.comp_apply, Representation.Equiv.toLinearMap_mk', LinearEquiv.coe_coe,
       rescale_N, special_N, LinearMap.smul_apply, Pi.smul_apply, smul_eq_mul]
-    rw [diagPow_apply, finShift_apply, finShift_apply]
+    simp only [monomialEquiv_apply, Equiv.refl_symm, Equiv.refl_apply, Units.val_pow_eq_pow_val,
+      finShift_apply]
     split_ifs with h
     · simp
-    · rw [diagPow_apply, ← mul_assoc, ← pow_succ']
+    · rw [← mul_assoc, ← pow_succ']
       congr 2
-      dsimp only
       omega
 
 @[simp]
 theorem specialRescaleIso_apply (n : ℕ) (a : Eˣ) (v : Fin n → E) (i : Fin n) :
-    specialRescaleIso q hdeg hq n a v i = (a : E) ^ (i : ℕ) * v i :=
-  diagPow_apply n a v i
+    specialRescaleIso q hdeg hq n a v i = (a : E) ^ (i : ℕ) * v i := by
+  simp [specialRescaleIso]
 
 end WeilDeligneParameter
 
