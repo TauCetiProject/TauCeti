@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Dynamics.TwistMap.TwistLift
+public import TauCeti.Topology.Order.IccReflect
 
 /-!
 # Examples of twist lifts of a closed strip
@@ -18,7 +19,7 @@ Checks for `TauCeti.IsTwistLift` on the closed strip `ℝ × [0, 1]` with period
   negative one: it commutes with the deck translation, preserves both boundary lines, and its
   first coordinate decreases in `y`.
 * Conjugating the shear by the reflection `y ↦ 1 - y` of `[0, 1]` gives `(x, y) ↦ (x + 1 - y, y)`,
-  a negative twist lift (`TauCeti.isTwistLift_symm_stripFibreConj_iff`).
+  a negative twist lift (`TauCeti.isTwistLift_symm_stripFiberConj_iff`).
 * The rigid rotation `(x, y) ↦ (x + 1/4, y)` is not a twist lift: its first coordinate does not
   depend on `y`.
 -/
@@ -68,14 +69,14 @@ example :
 /-- Conjugating the shear by the reflection `y ↦ 1 - y` of `[0, 1]` gives
 `(x, y) ↦ (x + 1 - y, y)`. -/
 example (p : ℝ × Icc (0 : ℝ) 1) :
-    stripFibreConj (iccReflect 0 1) shear p = (p.1 + 1 - p.2, p.2) := by
+    stripFiberConj (iccReflect 0 1) shear p = (p.1 + 1 - p.2, p.2) := by
   ext
-  · simp [stripFibreConj_apply]; ring
-  · simp [stripFibreConj_apply]
+  · simp [stripFiberConj_apply]; ring
+  · simp [stripFiberConj_apply]
 
 /-- The conjugate of the shear by the reflection `y ↦ 1 - y` is a negative twist lift. -/
-example : IsTwistLift 1 (stripFibreConj (iccReflect 0 1) shear).symm :=
-  (isTwistLift_symm_stripFibreConj_iff one_ne_zero strictAnti_iccReflect).2 isTwistLift_shear
+example : IsTwistLift 1 (stripFiberConj (iccReflect 0 1) shear).symm :=
+  (isTwistLift_symm_stripFiberConj_iff one_ne_zero strictAnti_iccReflect).2 isTwistLift_shear
 
 /-- The rigid rotation `(x, y) ↦ (x + 1/4, y)` of the closed strip. -/
 def rotation : ℝ × Icc (0 : ℝ) 1 ≃ₜ ℝ × Icc (0 : ℝ) 1 :=
