@@ -128,22 +128,22 @@ theorem isOrtho_topologicalClosure_range_harmonicSpace (hd₀ : Dense (d₀.doma
   exact harmonicSpace_le_ker_adjoint
 
 /-- The harmonic space is orthogonal to the closure of the range of `d₁†`. -/
-theorem isOrtho_harmonicSpace_topologicalClosure_range_adjoint [CompleteSpace F] [CompleteSpace G]
-    (hc₁ : d₁.IsClosed) (hd₁ : Dense (d₁.domain : Set F)) :
+theorem isOrtho_harmonicSpace_topologicalClosure_range_adjoint [CompleteSpace F]
+    (hd₁ : Dense (d₁.domain : Set F)) :
     harmonicSpace d₀ d₁ ⟂ (LinearMap.range d₁†.toFun).topologicalClosure := by
-  rw [Submodule.isOrtho_iff_le, topologicalClosure_range_adjoint_eq_orthogonal_ker hc₁ hd₁]
-  exact harmonicSpace_le_ker.trans (Submodule.le_orthogonal_orthogonal _)
+  rw [Submodule.isOrtho_comm, Submodule.isOrtho_iff_le]
+  exact (Submodule.topologicalClosure_minimal _ (range_adjoint_le_orthogonal_ker hd₁)
+    (Submodule.isClosed_orthogonal _)).trans (Submodule.orthogonal_le harmonicSpace_le_ker)
 
 omit [CompleteSpace E] in
 /-- In a complex, the closures of the ranges of `d₀` and of `d₁†` are orthogonal. -/
 theorem isOrtho_topologicalClosure_range_topologicalClosure_range_adjoint [CompleteSpace F]
-    [CompleteSpace G] (hc₁ : d₁.IsClosed) (hd₁ : Dense (d₁.domain : Set F))
-    (hcomplex : LinearMap.range d₀.toFun ≤ d₁.ker) :
+    (hd₁ : Dense (d₁.domain : Set F)) (hcomplex : LinearMap.range d₀.toFun ≤ d₁.ker) :
     (LinearMap.range d₀.toFun).topologicalClosure ⟂
       (LinearMap.range d₁†.toFun).topologicalClosure := by
-  rw [Submodule.isOrtho_iff_le, topologicalClosure_range_adjoint_eq_orthogonal_ker hc₁ hd₁]
-  exact (topologicalClosure_range_le_ker hc₁ hcomplex).trans
-    (Submodule.le_orthogonal_orthogonal _)
+  rw [Submodule.isOrtho_comm, Submodule.isOrtho_iff_le, Submodule.orthogonal_closure]
+  exact (Submodule.topologicalClosure_minimal _ (range_adjoint_le_orthogonal_ker hd₁)
+    (Submodule.isClosed_orthogonal _)).trans (Submodule.orthogonal_le hcomplex)
 
 /-- **The Hodge decomposition of the closed vectors.** In a complex `range d₀ ≤ ker d₁`, with `d₀`
 densely defined and `d₁` closed, the kernel of `d₁` is the sum of the closure of the range of

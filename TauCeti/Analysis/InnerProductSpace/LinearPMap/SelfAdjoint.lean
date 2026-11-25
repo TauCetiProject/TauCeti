@@ -57,7 +57,8 @@ linear maps used by the semigroup development.
   eigenvector for `conj c`.
 * `LinearPMap.orthogonal_range_eq_ker_adjoint`: for a densely defined `T`,
   `(range T)ᗮ = ker T†`, and `LinearPMap.topologicalClosure_range_eq_orthogonal_ker_adjoint`:
-  `closure (range T) = (ker T†)ᗮ`; for a closed densely defined `T`,
+  `closure (range T) = (ker T†)ᗮ`, and `LinearPMap.range_adjoint_le_orthogonal_ker`:
+  `range T† ≤ (ker T)ᗮ`; for a closed densely defined `T`,
   `LinearPMap.orthogonal_range_adjoint_eq_ker`: `(range T†)ᗮ = ker T` and
   `LinearPMap.topologicalClosure_range_adjoint_eq_orthogonal_ker`: `closure (range T†) = (ker T)ᗮ`.
 * `LinearPMap.IsFormalAdjoint.range_le_orthogonal_ker` and `IsSelfAdjoint.orthogonal_range_eq_ker`:
@@ -216,6 +217,17 @@ complement of the kernel of its adjoint. -/
 theorem topologicalClosure_range_eq_orthogonal_ker_adjoint (hd : Dense (T.domain : Set E)) :
     (LinearMap.range T.toFun).topologicalClosure = T†.kerᗮ := by
   rw [← orthogonal_range_eq_ker_adjoint hd, Submodule.orthogonal_orthogonal_eq_closure]
+
+omit [CompleteSpace F] in
+/-- The range of the adjoint of a densely defined partial linear map `T` is orthogonal to the
+kernel of `T`. -/
+theorem range_adjoint_le_orthogonal_ker (hd : Dense (T.domain : Set E)) :
+    LinearMap.range T†.toFun ≤ T.kerᗮ := by
+  rintro _ ⟨y, rfl⟩
+  refine (Submodule.mem_orthogonal _ _).2 fun x hx ↦ ?_
+  obtain ⟨z, rfl, hz⟩ := mem_ker_iff.1 hx
+  rw [inner_eq_zero_symm]
+  exact (adjoint_isFormalAdjoint hd y z).trans (by rw [hz, inner_zero_right])
 
 /-- The orthogonal complement of the range of the adjoint of a closed densely defined partial
 linear map `T` is the kernel of `T`. -/
