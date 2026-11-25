@@ -35,6 +35,18 @@ open Filter Set Topology
 
 namespace TauCeti
 
+/-- Strictly decreasing tuples on a finite index type form an open subset of the product space. -/
+theorem isOpen_setOf_strictAnti {ι Y : Type*} [Finite ι] [Preorder ι] [LinearOrder Y]
+    [TopologicalSpace Y] [OrderClosedTopology Y] : IsOpen {d : ι → Y | StrictAnti d} := by
+  classical
+  have h : {d : ι → Y | StrictAnti d} = ⋂ ij : {p : ι × ι // p.1 < p.2},
+      {d | d ij.val.2 < d ij.val.1} := by
+    ext d
+    simp only [Set.mem_ofPred_eq, mem_iInter]
+    exact ⟨fun hd ij ↦ hd ij.property, fun hd i j hij ↦ hd ⟨(i, j), hij⟩⟩
+  rw [h]
+  exact isOpen_iInter_of_finite fun _ ↦ isOpen_lt (continuous_apply _) (continuous_apply _)
+
 /-- A finite family converging along a filter `l`, whose members with equal limits eventually
 coincide along `l`, admits a fixed selection of labels whose values eventually enumerate its
 range in strictly increasing order. Only pairs with equal limits need an equality hypothesis.

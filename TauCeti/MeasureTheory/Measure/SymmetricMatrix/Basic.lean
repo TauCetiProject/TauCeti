@@ -68,7 +68,7 @@ section instances
 variable (p : ℕ)
 instance symmetricMatrixNormedAddCommGroup :
     NormedAddCommGroup (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
-  selfAdjointMatrixNormedAddCommGroup p ℝ
+  selfAdjointMatrixNormedAddCommGroup (𝕜 := ℝ) (ι := Fin p)
 instance symmetricMatrixInnerProductSpace :
     InnerProductSpace ℝ (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
   selfAdjointMatrixInnerProductSpace p ℝ

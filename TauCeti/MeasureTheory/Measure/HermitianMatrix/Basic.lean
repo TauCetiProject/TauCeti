@@ -40,7 +40,7 @@ section instances
 variable (p : ℕ)
 instance hermitianMatrixNormedAddCommGroup :
     NormedAddCommGroup (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ)) :=
-  selfAdjointMatrixNormedAddCommGroup p ℂ
+  selfAdjointMatrixNormedAddCommGroup (𝕜 := ℂ) (ι := Fin p)
 instance hermitianMatrixInnerProductSpace :
     InnerProductSpace ℝ (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ)) :=
   selfAdjointMatrixInnerProductSpace p ℂ
