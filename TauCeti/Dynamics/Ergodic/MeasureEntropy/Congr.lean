@@ -74,8 +74,7 @@ theorem countablePartitionEntropy_iteratedPartitionLabel_comp_of_injective (T : 
     countablePartitionEntropy μ (iteratedPartitionLabel T (e ∘ a) n) =
       countablePartitionEntropy μ (iteratedPartitionLabel T a n) := by
   rw [iteratedPartitionLabel_comp]
-  exact countablePartitionEntropy_comp_of_injective _ fun u v huv ↦
-    funext fun k ↦ he (congrFun huv k)
+  exact countablePartitionEntropy_comp_of_injective _ he.comp_left
 
 /-- Relabeling by an injection does not change the entropy rate. -/
 theorem partitionEntropyRate_comp_of_injective (T : X → X) (a : X → ι) {e : ι → ι'}
