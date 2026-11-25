@@ -87,6 +87,10 @@ factor `J²` therefore costs two orders
 
 * M. E. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI*, September 2008,
   Lecture II (the spaces `H^{s,p}` and elliptic regularity on them).
+* M. E. Taylor, *Partial Differential Equations I*, 2nd ed., Springer, 2011, Chapter 4, §1
+  (invariance of `H^s` under diffeomorphisms, and the local Sobolev spaces on manifolds).
+* L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, Springer, 1985,
+  Appendix B.1 (`H^s_loc` is invariant under diffeomorphisms).
 -/
 
 public section
