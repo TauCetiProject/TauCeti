@@ -12,7 +12,6 @@ public import Mathlib.Probability.CDF
 public import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Convex.Topology
-import TauCeti.Analysis.SpecialFunctions.Erf.Basic
 import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.Probability.Distributions.Gaussian.Cdf
 
@@ -89,6 +88,18 @@ private theorem exp_neg_gaussianWeight_smul_unitX (t : ℝ) :
     zero_pow two_ne_zero, zero_div, neg_zero, Real.exp_zero]
   ring
 
+/-- The integral `∫₀¹ φ(0) φ(t) dt` equals `φ(0) (Φ(1) − 1/2)`. -/
+private theorem setLIntegral_Icc_gaussianPDFReal :
+    ∫⁻ t in Icc (0 : ℝ) 1, ENNReal.ofReal (gaussianPDFReal 0 1 0 * gaussianPDFReal 0 1 t) =
+      ENNReal.ofReal (gaussianPDFReal 0 1 0 * (cdf (gaussianReal 0 1) 1 - 1 / 2)) := by
+  have hI : gaussianReal 0 1 (Ioc 0 1) = ENNReal.ofReal (cdf (gaussianReal 0 1) 1 - 1 / 2) := by
+    conv_lhs => rw [← measure_cdf (gaussianReal 0 1)]
+    rw [StieltjesFunction.measure_Ioc, Probability.cdf_gaussianReal_self 0 one_ne_zero]
+  rw [gaussianReal_apply 0 one_ne_zero, gaussianPDF_def] at hI
+  simp_rw [ENNReal.ofReal_mul (gaussianPDFReal_nonneg 0 1 0), ← hI]
+  rw [lintegral_const_mul _ (measurable_gaussianPDFReal 0 1).ennreal_ofReal,
+    setLIntegral_congr Ioc_ae_eq_Icc]
+
 /-- **The Gaussian length of the segment** is `φ(0) (Φ(1) − 1/2)`. -/
 theorem setLIntegral_frontier_closedSeg :
     ∫⁻ x in frontier closedSeg,
@@ -103,15 +114,7 @@ theorem setLIntegral_frontier_closedSeg :
     ← isometry_smul_unitX.map_euclideanHausdorffMeasure_restrict,
     lintegral_map hmeas isometry_smul_unitX.continuous.measurable, hvol]
   simp only [exp_neg_gaussianWeight_smul_unitX]
-  have hpdf : ∀ t, ENNReal.ofReal (gaussianPDFReal 0 1 0 * gaussianPDFReal 0 1 t) =
-      ENNReal.ofReal (gaussianPDFReal 0 1 0) * gaussianPDF 0 1 t := fun t => by
-    rw [gaussianPDF, ENNReal.ofReal_mul (gaussianPDFReal_nonneg _ _ _)]
-  simp_rw [hpdf]
-  have hI : gaussianReal 0 1 (Ioc 0 1) = ENNReal.ofReal (cdf (gaussianReal 0 1) 1 - 1 / 2) := by
-    conv_lhs => rw [← measure_cdf (gaussianReal 0 1)]
-    rw [StieltjesFunction.measure_Ioc, Probability.cdf_gaussianReal_self 0 one_ne_zero]
-  rw [← setLIntegral_congr Ioc_ae_eq_Icc, lintegral_const_mul _ (measurable_gaussianPDF 0 1),
-    ← gaussianReal_apply 0 one_ne_zero, hI, ← ENNReal.ofReal_mul (gaussianPDFReal_nonneg _ _ _)]
+  exact setLIntegral_Icc_gaussianPDFReal
 
 /-- **The frontier bound is strict for the segment.** The Gaussian perimeter `0` of the closed
 segment is strictly smaller than the Gaussian length of its frontier. -/
@@ -121,8 +124,7 @@ theorem gaussianPerimeter_closedSeg_lt :
         ENNReal.ofReal (Real.exp (-gaussianWeight (EuclideanSpace ℝ (Fin 2)) x)) ∂μHE[1] := by
   rw [gaussianPerimeter_closedSeg, setLIntegral_frontier_closedSeg, ENNReal.ofReal_pos]
   refine mul_pos (gaussianPDFReal_pos _ _ _ one_ne_zero) (sub_pos.2 ?_)
-  rw [Probability.cdf_gaussianReal_zero_one]
-  have := Real.erf_pos (x := 1 / √2) (by positivity)
-  linarith
+  simpa [Probability.cdf_gaussianReal_self 0 one_ne_zero] using
+    Probability.strictMono_cdf_gaussianReal 0 one_ne_zero (zero_lt_one' ℝ)
 
 end TauCeti.Examples.GaussianSegment
