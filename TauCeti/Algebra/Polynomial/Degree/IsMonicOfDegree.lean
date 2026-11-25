@@ -42,8 +42,9 @@ theorem IsMonicOfDegree.degree_sub_lt {R : Type*} [Ring R] {p q : R[X]} {n : ℕ
   (degree_lt_iff_coeff_zero _ _).mpr fun _ hm ↦ by rw [coeff_sub, hp.coeff_eq hq hm, sub_self]
 
 /-- The remainder on division by a monic polynomial of degree `n` has degree less than `n`. -/
-theorem IsMonicOfDegree.degree_modByMonic_lt {R : Type*} [Ring R] [Nontrivial R] {q : R[X]}
-    {n : ℕ} (hq : q.IsMonicOfDegree n) (p : R[X]) : (p %ₘ q).degree < n := by
+theorem IsMonicOfDegree.degree_modByMonic_lt {R : Type*} [Ring R] {q : R[X]} {n : ℕ}
+    (hq : q.IsMonicOfDegree n) (p : R[X]) : (p %ₘ q).degree < n := by
+  nontriviality R
   simpa [degree_eq_natDegree hq.ne_zero, hq.natDegree_eq] using
     Polynomial.degree_modByMonic_lt p hq.monic
 
