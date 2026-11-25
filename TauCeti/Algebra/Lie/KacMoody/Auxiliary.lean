@@ -9,10 +9,11 @@ public import TauCeti.Algebra.Lie.KacMoody.Basic
 
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Algebra.Lie.Hom
-import TauCeti.Algebra.Lie.KacMoody.SerreRelations
+import TauCeti.Algebra.Lie.KacMoody.CartanInjective
 import TauCeti.Algebra.Lie.KacMoody.WordRep
 import TauCeti.Algebra.Lie.Subalgebra.LieSpan
 import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Embedding
+import TauCeti.Algebra.Lie.Weights.Eigenvector
 
 /-!
 # The auxiliary Kac–Moody presentation and Kac's representation
@@ -24,7 +25,7 @@ directness of `TauCeti.KacMoody.PresentedLieAlgebra R` when `A` is a generalized
 `TauCeti/Algebra/Lie/KacMoody/WordRep.lean` to prove triangular directness of the auxiliary
 algebra using `FreeAlgebra.equivMonoidAlgebraFreeMonoid` and the PBW embedding of
 `FreeLieAlgebra K I`, and verify `ad fₖ`-invariance of the Serre ideal in the auxiliary algebra
-via `TauCeti.KacMoody.lie_ad_pow_lie_eq_zero`.
+via `TauCeti.KacMoody.lie_ad_pow_lie_eq_zero` (`TauCeti/Algebra/Lie/KacMoody/CartanInjective.lean`).
 
 Passing to the quotient yields `TauCeti.KacMoody.quotientTriangular_eq_zero`, from which
 `TauCeti/Algebra/Lie/KacMoody/Triangular.lean` deduces the triangular equivalence, generator
@@ -68,7 +69,7 @@ private noncomputable def auxMk :
   LieIdeal.mkQ (auxIdeal R)
 
 private noncomputable def auxCartan : H →ₗ[K] AuxLieAlgebra R :=
-  quotientCartan R le_rfl
+  quotientCartanElement R le_rfl
 
 private noncomputable def auxPos (i : I) : AuxLieAlgebra R :=
   auxMk R (FreeLieAlgebra.of K (Generator.positive i))
@@ -79,7 +80,7 @@ private noncomputable def auxNeg (i : I) : AuxLieAlgebra R :=
 @[simp]
 private theorem auxMk_of_cartan (x : H) :
     auxMk R (FreeLieAlgebra.of K (Generator.cartan x)) = auxCartan R x :=
-  (quotientCartan_apply R le_rfl x).symm
+  (quotientCartanElement_apply R le_rfl x).symm
 
 @[simp]
 private theorem auxMk_of_pos (i : I) :
@@ -145,7 +146,7 @@ private noncomputable def auxLift {φ : H →ₗ[K] L} {E F : I → L}
 @[simp]
 private theorem auxLift_auxCartan {φ : H →ₗ[K] L} {E F : I → L}
     (h : SatisfiesAuxRelations R φ E F) (x : H) : auxLift h (auxCartan R x) = φ x := by
-  rw [auxCartan, quotientCartan_apply]
+  rw [auxCartan, quotientCartanElement_apply]
   exact ((LieIdeal.liftQ_apply _ _ _ _).trans (FreeLieAlgebra.lift_of_apply _ _)).trans
     (generatorMap_cartan x)
 
@@ -386,8 +387,11 @@ private theorem lie_auxCartan_auxSerrePosSubmodule (x : H) {y : AuxLieAlgebra R}
   simp only [LieHom.coe_toLinearMap]
   induction hb using serreIdeal_induction with
   | relator i j =>
-    rw [auxPosHom_serreRelator, ← ad_pow_succ_apply,
-      lie_ad_pow_of_lie_eq_smul (lie_auxCartan_auxPos R x i) (lie_auxCartan_auxPos R x j)]
+    rw [auxPosHom_serreRelator, ← ad_pow_succ_apply]
+    have hshift := lie_pow_toEnd_eq_smul (R := K) (L := AuxLieAlgebra R) (M := AuxLieAlgebra R)
+      (lie_auxCartan_auxPos R x j) (lie_auxCartan_auxPos R x i) ((-A i j).toNat + 1)
+    simp only [← ad_eq_toEnd] at hshift
+    rw [hshift]
     refine Submodule.smul_mem _ _ ⟨_, relator_mem_serreIdeal K A i j, ?_⟩
     simp only [LieHom.coe_toLinearMap, auxPosHom_serreRelator, ad_pow_succ_apply]
   | zero => simp
@@ -407,7 +411,11 @@ private theorem lie_auxNeg_auxSerrePosSubmodule (hA : A.IsGeneralizedCartan) (k 
   simp only [LieHom.coe_toLinearMap]
   induction hb using serreIdeal_induction with
   | relator i j =>
-    rw [auxPosHom_serreRelator, lie_ad_pow_lie_eq_zero hA (satisfiesAuxRelations_aux R) i j k]
+    rw [auxPosHom_serreRelator, lie_ad_pow_lie_eq_zero hA.diag hA.offDiag_nonpos
+      (fun a b => (hA.zero_comm a b).mp) (satisfiesAuxRelations_aux R).lie_cartan_positive
+      (satisfiesAuxRelations_aux R).lie_cartan_negative
+      (satisfiesAuxRelations_aux R).lie_positive_negative_self
+      (satisfiesAuxRelations_aux R).lie_positive_negative_of_ne i j k]
     exact zero_mem _
   | zero => simp
   | add _ _ _ _ hu hv => simpa [map_add, lie_add] using add_mem hu hv

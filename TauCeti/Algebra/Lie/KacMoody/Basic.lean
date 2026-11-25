@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.Solvable
 public import TauCeti.Algebra.Lie.Presentation.Serre
 public import TauCeti.Algebra.Lie.Presentation.Serre.Quotient
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.Basic
+import TauCeti.Algebra.Lie.Basic
 
 import TauCeti.Data.Set.Image
 
@@ -61,9 +62,12 @@ relators, so that `TauCeti.KacMoody.cartanElement` is a linear map.
 
 ## Main results
 
-* `TauCeti.KacMoody.lift_cartanElement` and its companions, with `TauCeti.KacMoody.hom_ext`: the
-  universal property of the presentation.
+* `TauCeti.KacMoody.lift_cartanElement` and its companions, with `TauCeti.KacMoody.hom_ext` and
+  `TauCeti.KacMoody.equiv_ext`: the universal property of the presentation.
 * `TauCeti.KacMoody.lieSpan_generators_eq_top`: the generators generate the presented algebra.
+* `TauCeti.KacMoody.cartanElement_mem_center` and `TauCeti.KacMoody.cartanElement_mem_center_iff`:
+  vectors in `R.cartanCenter` map into the center of `𝔤`, and when `cartanElement R` is injective
+  these are the only central Cartan vectors.
 * `TauCeti.KacMoody.range_positiveQuotientHom` and `TauCeti.KacMoody.range_negativeQuotientHom`:
   the ranges of the quotient maps are `positiveSubalgebra` and `negativeSubalgebra`.
 * `TauCeti.KacMoody.range_serreHom_sup_range_cartanElement`: `𝔤 = 𝔤' + H`, where `𝔤'` is the
@@ -238,7 +242,7 @@ theorem quotientMk_eq_zero_of_isAuxRelator (hJ : auxIdeal R ≤ J)
 
 /-- The canonical linear map from `H` into any quotient of the free Lie algebra by an ideal
 containing the auxiliary relators. -/
-noncomputable def quotientCartan (hJ : auxIdeal R ≤ J) :
+noncomputable def quotientCartanElement (hJ : auxIdeal R ≤ J) :
     H →ₗ[K] FreeLieAlgebra K (Generator I H) ⧸ J where
   toFun x := J.mkQ (FreeLieAlgebra.of K (Generator.cartan x))
   map_add' x y := by
@@ -248,28 +252,30 @@ noncomputable def quotientCartan (hJ : auxIdeal R ≤ J) :
     have h := quotientMk_eq_zero_of_isAuxRelator R hJ (.cartan_smul c x)
     rwa [map_sub, map_smul, sub_eq_zero] at h
 
-/-- `TauCeti.KacMoody.quotientCartan` sends `x` to the quotient class of the Cartan generator. -/
+/-- `TauCeti.KacMoody.quotientCartanElement` sends `x` to the quotient class of the Cartan
+generator. -/
 @[simp]
-theorem quotientCartan_apply (hJ : auxIdeal R ≤ J) (x : H) :
-    quotientCartan R hJ x = J.mkQ (FreeLieAlgebra.of K (Generator.cartan x)) :=
+theorem quotientCartanElement_apply (hJ : auxIdeal R ≤ J) (x : H) :
+    quotientCartanElement R hJ x = J.mkQ (FreeLieAlgebra.of K (Generator.cartan x)) :=
   (rfl)
 
 /-- The generator classes in any quotient by an ideal containing `auxIdeal R` satisfy the
 auxiliary relations. -/
 theorem satisfiesAuxRelations_quotient (hJ : auxIdeal R ≤ J) :
-    SatisfiesAuxRelations R (quotientCartan R hJ)
+    SatisfiesAuxRelations R (quotientCartanElement R hJ)
       (fun i => J.mkQ (FreeLieAlgebra.of K (Generator.positive i)))
       (fun i => J.mkQ (FreeLieAlgebra.of K (Generator.negative i))) where
   lie_cartan_cartan x y := by
-    simpa [quotientCartan] using quotientMk_eq_zero_of_isAuxRelator R hJ (.lie_cartan_cartan x y)
+    simpa [quotientCartanElement] using
+      quotientMk_eq_zero_of_isAuxRelator R hJ (.lie_cartan_cartan x y)
   lie_cartan_positive x j := by
-    simpa [quotientCartan, sub_eq_zero] using
+    simpa [quotientCartanElement, sub_eq_zero] using
       quotientMk_eq_zero_of_isAuxRelator R hJ (.lie_cartan_positive x j)
   lie_cartan_negative x j := by
-    simpa [quotientCartan, add_eq_zero_iff_eq_neg] using
+    simpa [quotientCartanElement, add_eq_zero_iff_eq_neg] using
       quotientMk_eq_zero_of_isAuxRelator R hJ (.lie_cartan_negative x j)
   lie_positive_negative_self i := by
-    simpa [quotientCartan, sub_eq_zero] using
+    simpa [quotientCartanElement, sub_eq_zero] using
       quotientMk_eq_zero_of_isAuxRelator R hJ (.lie_positive_negative_self i)
   lie_positive_negative_of_ne i j hij := by
     simpa using quotientMk_eq_zero_of_isAuxRelator R hJ (.lie_positive_negative_of_ne i j hij)
@@ -279,7 +285,7 @@ end QuotientIdeal
 /-- The canonical linear map from the realization `H` into the presented algebra, sending `h` to
 the class of its Cartan generator. No injectivity is claimed for it here. -/
 noncomputable def cartanElement : H →ₗ[K] PresentedLieAlgebra R :=
-  quotientCartan R (auxIdeal_le_presentationIdeal R)
+  quotientCartanElement R (auxIdeal_le_presentationIdeal R)
 
 /-- The raising generator `eᵢ` of the presented algebra. -/
 noncomputable def positiveGenerator (i : I) : PresentedLieAlgebra R :=
@@ -556,6 +562,15 @@ theorem hom_ext {g₁ g₂ : PresentedLieAlgebra R →ₗ⁅K⁆ L}
     | .positive i => hE i
     | .negative i => hF i
 
+/-- Two Lie equivalences out of `TauCeti.KacMoody.PresentedLieAlgebra R` agreeing on the
+generators are equal. -/
+@[ext]
+theorem equiv_ext {e₁ e₂ : PresentedLieAlgebra R ≃ₗ⁅K⁆ L}
+    (hH : ∀ x, e₁ (cartanElement R x) = e₂ (cartanElement R x))
+    (hE : ∀ i, e₁ (positiveGenerator R i) = e₂ (positiveGenerator R i))
+    (hF : ∀ i, e₁ (negativeGenerator R i) = e₂ (negativeGenerator R i)) : e₁ = e₂ :=
+  LieEquiv.ext fun x => DFunLike.congr_fun (hom_ext hH hE hF) x
+
 /-- `TauCeti.KacMoody.lift` is the unique homomorphism with the prescribed values on the
 generators. -/
 theorem eq_lift {h : SatisfiesRelations R φ E F} {g : PresentedLieAlgebra R →ₗ⁅K⁆ L}
@@ -608,6 +623,39 @@ theorem cartanElement_mem_center {z : H} (hz : z ∈ R.cartanCenter) :
     exact fun x => (mem_lieAnnihilator K _).mp (h (LieSubalgebra.mem_top x))
   rintro _ ((⟨x, rfl⟩ | ⟨i, rfl⟩) | ⟨i, rfl⟩) <;>
     rw [← lie_skew] <;> simp [hr]
+
+section CartanInjective
+
+variable {R} (hinj : Function.Injective (cartanElement R))
+include hinj
+
+/-- Whenever `cartanElement R` is injective, every raising generator `eᵢ` is nonzero. -/
+theorem positiveGenerator_ne_zero_of_injective (i : I) : positiveGenerator R i ≠ 0 := fun h0 =>
+  R.coroot_linearIndependent.ne_zero i <| hinj <| by
+    simpa [h0] using (lie_positiveGenerator_negativeGenerator_self R i).symm
+
+/-- Whenever `cartanElement R` is injective, every lowering generator `fᵢ` is nonzero. -/
+theorem negativeGenerator_ne_zero_of_injective (i : I) : negativeGenerator R i ≠ 0 := fun h0 =>
+  R.coroot_linearIndependent.ne_zero i <| hinj <| by
+    simpa [h0] using (lie_positiveGenerator_negativeGenerator_self R i).symm
+
+/-- Whenever `cartanElement R` is injective, the images of the simple coroots in
+`TauCeti.KacMoody.PresentedLieAlgebra R` are linearly independent. -/
+theorem linearIndependent_cartanElement_coroot :
+    LinearIndependent K (fun i => cartanElement R (R.coroot i)) :=
+  R.coroot_linearIndependent.map' (cartanElement R) (LinearMap.ker_eq_bot.2 hinj)
+
+/-- Whenever `cartanElement R` is injective, `cartanElement R x` lies in the center of
+`TauCeti.KacMoody.PresentedLieAlgebra R` if and only if `x` lies in `R.cartanCenter`. -/
+theorem cartanElement_mem_center_iff {x : H} :
+    cartanElement R x ∈ center K (PresentedLieAlgebra R) ↔ x ∈ R.cartanCenter := by
+  refine ⟨fun hx => (R.mem_cartanCenter_iff x).2 fun i => ?_, cartanElement_mem_center R⟩
+  have h0 : ⁅cartanElement R x, positiveGenerator R i⁆ = 0 := by
+    rw [← lie_skew, (LieModule.mem_maxTrivSubmodule K _ _ _).1 hx (positiveGenerator R i), neg_zero]
+  rw [lie_cartanElement_positiveGenerator] at h0
+  exact (smul_eq_zero.1 h0).resolve_right (positiveGenerator_ne_zero_of_injective hinj i)
+
+end CartanInjective
 
 /-! ## The derived algebra and Serre's presentation
 

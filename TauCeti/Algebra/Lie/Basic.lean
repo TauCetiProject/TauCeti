@@ -28,6 +28,8 @@ This file supplies general constructions for Lie modules that are missing from M
   module.
 * `LieHom.lieIdealComap`: a Lie homomorphism restricted to the preimage of a Lie ideal, as a
   Lie homomorphism into that ideal.
+* `LieIdeal.orderIsoMapComap`: an equivalence of Lie algebras as an order isomorphism of the
+  lattices of Lie ideals.
 
 ## Main results
 
@@ -68,6 +70,8 @@ This file supplies general constructions for Lie modules that are missing from M
   algebra commute on every Lie module.
 * `LieSubalgebra.lie_eq_zero_of_mem` and `LieIdeal.lie_eq_zero_of_mem`: two elements of an
   abelian Lie subalgebra, or of an abelian Lie ideal, have zero bracket in the ambient Lie algebra.
+* `LieIdeal.lie_eq_zero_of_disjoint`: the bracket vanishes between Lie ideals with trivial
+  intersection.
 * `LieHom.map_ad_pow`: a Lie homomorphism carries `(ad x) ^ n y` to `(ad (f x)) ^ n (f y)`.
 * `LieEquiv.map_engel`: a Lie algebra isomorphism carries the Engel subalgebra of `x` onto that
   of its image.
@@ -81,7 +85,6 @@ This file supplies general constructions for Lie modules that are missing from M
 * `LieSubmodule.lie_iSup`: bracketing with a Lie ideal distributes over suprema of Lie submodules.
 * `TauCeti.ad_pow_succ_apply` and `TauCeti.ad_pow_succ_apply'`: an additional adjoint action can be
   applied before or outside the preceding powers.
-* `TauCeti.lie_ad_pow_of_lie_eq_smul`: eigenvalue shift for an iterated adjoint bracket.
 * `TauCeti.ad_neg_pow_apply` and `TauCeti.ad_neg_pow_apply_eq_zero`: negating the acting element
   scales the `n`-fold adjoint action by `(-1) ^ n` and preserves adjoint vanishing.
 * `LieSubalgebra.engel_neg`: negating the acting element preserves the Engel subalgebra.
@@ -168,6 +171,37 @@ theorem LieIdeal.lie_eq_zero_of_mem {R L : Type*} [CommRing R] [LieRing L] [LieA
     {I : LieIdeal R L} [IsLieAbelian I] {x y : L} (hx : x ∈ I) (hy : y ∈ I) : ⁅x, y⁆ = 0 :=
   have : IsLieAbelian (I : LieSubalgebra R L) := ‹IsLieAbelian I›
   LieSubalgebra.lie_eq_zero_of_mem (H := (I : LieSubalgebra R L)) hx hy
+
+/-- The bracket of elements of two Lie ideals with trivial intersection vanishes. -/
+theorem LieIdeal.lie_eq_zero_of_disjoint {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    {I J : LieIdeal R L} (h : Disjoint I J) {x y : L} (hx : x ∈ I) (hy : y ∈ J) : ⁅x, y⁆ = 0 :=
+  (LieSubmodule.mem_bot _).mp <| h.le_bot <|
+    (LieSubmodule.mem_inf _ _ _).mpr ⟨lie_mem_left R L I x y hx, lie_mem_right R L J x y hy⟩
+
+/-- An equivalence of Lie algebras induces an order isomorphism of the lattices of Lie ideals,
+acting by `LieIdeal.map` with inverse `LieIdeal.comap`. -/
+noncomputable def LieIdeal.orderIsoMapComap {R L L' : Type*} [CommRing R] [LieRing L]
+    [LieAlgebra R L] [LieRing L'] [LieAlgebra R L'] (e : L ≃ₗ⁅R⁆ L') :
+    LieIdeal R L ≃o LieIdeal R L' where
+  toFun I := I.map e.toLieHom
+  invFun J := J.comap e.toLieHom
+  left_inv I := by ext; simp
+  right_inv J := by ext; simp
+  map_rel_iff' {I J} := by
+    refine ⟨fun h x hx ↦ ?_, fun h ↦ LieIdeal.map_mono h⟩
+    simpa using h (LieIdeal.mem_map (f := e.toLieHom) hx)
+
+@[simp]
+theorem LieIdeal.orderIsoMapComap_apply {R L L' : Type*} [CommRing R] [LieRing L]
+    [LieAlgebra R L] [LieRing L'] [LieAlgebra R L'] (e : L ≃ₗ⁅R⁆ L') (I : LieIdeal R L) :
+    LieIdeal.orderIsoMapComap e I = I.map e.toLieHom :=
+  (rfl)
+
+@[simp]
+theorem LieIdeal.orderIsoMapComap_symm_apply {R L L' : Type*} [CommRing R] [LieRing L]
+    [LieAlgebra R L] [LieRing L'] [LieAlgebra R L'] (e : L ≃ₗ⁅R⁆ L') (J : LieIdeal R L') :
+    (LieIdeal.orderIsoMapComap e).symm J = J.comap e.toLieHom :=
+  (rfl)
 
 section EndSubalgebra
 
@@ -453,17 +487,6 @@ theorem ad_pow_succ_apply (x y : L) (n : ℕ) :
 theorem ad_pow_succ_apply' (x y : L) (n : ℕ) :
     (LieAlgebra.ad R L x ^ (n + 1)) y = ⁅x, (LieAlgebra.ad R L x ^ n) y⁆ := by
   rw [pow_succ', _root_.mul_apply_eq_comp, LieAlgebra.ad_apply]
-
-/-- If `h` acts on `x` and `y` by scalars `a` and `b`, then `h` acts on `(ad x) ^ n y` by
-`n • a + b`. -/
-theorem lie_ad_pow_of_lie_eq_smul {h x y : L} {a b : R} (hx : ⁅h, x⁆ = a • x)
-    (hy : ⁅h, y⁆ = b • y) (n : ℕ) :
-    ⁅h, (LieAlgebra.ad R L x ^ n) y⁆ = (n • a + b) • (LieAlgebra.ad R L x ^ n) y := by
-  induction n with
-  | zero => simpa using hy
-  | succ n ih =>
-    rw [ad_pow_succ_apply', leibniz_lie, hx, ih, smul_lie, lie_smul, succ_nsmul]
-    module
 
 /-- Iterating the adjoint action of `-x` `n` times scales the `n`-fold adjoint action of `x` by
 `(-1) ^ n`. -/

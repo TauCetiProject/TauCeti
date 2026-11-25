@@ -14,6 +14,7 @@ public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.TensorProduct.Lift
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.TensorProduct.Finite
+public import Mathlib.RingTheory.IsTensorProduct
 public import Mathlib.RingTheory.QuotSMulTop
 public import TauCeti.LinearAlgebra.TensorProduct.Submodule
 import TauCeti.LinearAlgebra.Dual.Divisibility
@@ -56,6 +57,8 @@ relations, for instance the rationalisation of a module over an integral group r
 
 ## Main results
 
+* `IsBaseChange.quotient_iff`: scalar change to `R ⧸ I` is equivalent to surjectivity with
+  kernel `I • M`.
 * `TensorProduct.quotientScalarEquiv`: compare tensor products over `R / I` and `R` when
   both factors carry the quotient action, with pure-tensor and naturality laws.
 * `TensorProduct.quotient_tensor_bijective` and `TensorProduct.quotient_map_tensor_bijective`:
@@ -67,6 +70,9 @@ relations, for instance the rationalisation of a module over an integral group r
   `x ↦ 1 ⊗ x` from `M` to `S ⊗[R] M` has kernel `I M`.
 * `TensorProduct.mk_one_bijective_of_ker_le_annihilator`: if `R → S` is surjective and its
   kernel annihilates `M`, then `x ↦ 1 ⊗ x` is a bijection `M → S ⊗[R] M`.
+* `LinearMap.cokernel_baseChange_square` and
+  `LinearMap.liftQ_baseChange_comp_cokernelBaseChangeEquiv_symm`: `cokernelBaseChangeEquiv` is
+  compatible with the quotient maps and with maps induced out of the cokernel.
 * `LinearMap.exact_lTensor_quotient_span_singleton`: if `a : M → N` and `b : N → M` compose in
   both orders to multiplication by `r`, and `r` is regular on `M`, then the reductions of `b` and
   `a` modulo `r` form an exact pair.
@@ -453,6 +459,17 @@ theorem cokernel_baseChange_square (f : M →ₗ[R] N) :
   ext n
   simp
 
+/-- For maps `f : M → N` and `g : N → P` with `g ∘ f = 0`, the base change of the map
+`N ⧸ range f → P` induced by `g`, precomposed with the quotient map of `S ⊗[R] N` and the inverse
+of `cokernelBaseChangeEquiv`, is `g.baseChange S`. -/
+theorem liftQ_baseChange_comp_cokernelBaseChangeEquiv_symm {P : Type*} [AddCommGroup P]
+    [Module R P] {f : M →ₗ[R] N} {g : N →ₗ[R] P} (hfg : g ∘ₗ f = 0) :
+    ((range f).liftQ g (range_le_ker_iff.2 hfg)).baseChange S ∘ₗ
+        (f.cokernelBaseChangeEquiv (S := S)).symm.toLinearMap ∘ₗ (range (f.baseChange S)).mkQ =
+      g.baseChange S := by
+  ext m
+  simp
+
 end LinearMap
 
 namespace Submodule
@@ -634,3 +651,35 @@ theorem quotientScalarEquiv_rTensor (f : M →ₗ[R ⧸ I] M') (t : M ⊗[R ⧸ 
 end QuotientScalars
 
 end TensorProduct
+
+namespace IsBaseChange
+
+variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] (I : Ideal R)
+  [Module (R ⧸ I) N] [IsScalarTower R (R ⧸ I) N] (f : M →ₗ[R] N)
+
+/-- A map exhibits scalar change to a quotient ring exactly when it is surjective and its
+kernel is `I • ⊤`, the submodule of `I`-multiples in the source module. -/
+theorem quotient_iff :
+    IsBaseChange (R ⧸ I) f ↔ Function.Surjective f ∧ LinearMap.ker f = I • ⊤ := by
+  constructor
+  · intro h
+    have he : (h.equiv.restrictScalars R).toLinearMap.comp
+        (TensorProduct.mk R (R ⧸ I) M 1) = f := by
+      ext x
+      simp
+    rw [← he]
+    exact ⟨h.equiv.surjective.comp
+        (TensorProduct.mk_surjective R M (R ⧸ I) Ideal.Quotient.mk_surjective), by
+      rw [LinearEquiv.ker_comp, LinearMap.ker_tensorProductMk]⟩
+  · rintro ⟨hs, hk⟩
+    let e : (M ⧸ (I • ⊤ : Submodule R M)) ≃ₗ[R] N :=
+      (Submodule.quotEquivOfEq _ _ hk.symm).trans (f.quotKerEquivOfSurjective hs)
+    let t : (R ⧸ I) ⊗[R] M ≃ₗ[R] N := (TensorProduct.quotTensorEquivQuotSMul M I).trans e
+    let ts : (R ⧸ I) ⊗[R] M ≃ₗ[R ⧸ I] N :=
+      t.extendScalarsOfSurjective Ideal.Quotient.mk_surjective
+    apply IsBaseChange.of_equiv ts
+    intro x
+    simp [ts, t, e]
+
+end IsBaseChange

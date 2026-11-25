@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.Index
 public import Mathlib.Topology.Algebra.ConstMulAction
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.Sets.Compacts
+public import TauCeti.Topology.Sets.CompactOpens
 import TauCeti.GroupTheory.Coset.Card
 import TauCeti.Topology.Algebra.Group.OpenSubgroup.Compact
 
@@ -32,6 +33,8 @@ locally profinite group are computed.
 
 ## Main results
 
+* `TopologicalSpace.CompactOpens.swap_smul`: exchanging the factors of a translate `x • K` of a
+  compact open set in a product group, `(x • K).swap = x.swap • K.swap`.
 * `TopologicalSpace.CompactOpens.exists_openSubgroup_le_forall_mul_mem`: a compact open set is a
   union of left cosets of an open subgroup contained in a given open subgroup.
 * `OpenSubgroup.forall_mul_mem_toCompactOpens`: a compact open subgroup `U` is a union of left
@@ -70,6 +73,16 @@ theorem coe_smul (g : G) (K : CompactOpens α) :
 
 theorem mem_smul_iff_inv_smul_mem {g : G} {K : CompactOpens α} {x : α} : x ∈ g • K ↔ g⁻¹ • x ∈ K :=
   Set.mem_smul_set_iff_inv_smul_mem
+
+/-- Exchanging the factors of a translate of a compact open set in a product of groups:
+`(x • K).swap = x.swap • K.swap`. -/
+@[simp]
+theorem swap_smul {G H : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G] [Group H]
+    [TopologicalSpace H] [ContinuousMul H] (x : G × H) (K : CompactOpens (G × H)) :
+    (x • K).swap = x.swap • K.swap :=
+  CompactOpens.ext (Set.ext fun y ↦ by
+    simp only [coe_swap, coe_smul, Set.mem_preimage, Set.mem_smul_set_iff_inv_smul_mem,
+      smul_eq_mul, Prod.swap_mul, Prod.swap_inv, Prod.swap_swap])
 
 /-- In a topological group, every compact open set `K` is a union of left cosets of some open
 subgroup contained in a given open subgroup `U₀`, namely of the intersection of `U₀` with the right
