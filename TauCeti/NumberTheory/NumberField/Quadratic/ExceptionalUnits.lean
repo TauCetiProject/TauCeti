@@ -52,7 +52,7 @@ theorem eisensteinUnit_sq_sub_add_one :
   simp [QuadraticAlgebra.omega_pow_two_eq_add]
 
 /-- The Gaussian generator is a primitive fourth root of unity. -/
-theorem gaussianUnit_isPrimitiveRoot :
+theorem isPrimitiveRoot_gaussianUnit :
     IsPrimitiveRoot (gaussianUnit : QuadraticAlgebra ℤ (-1) 0) 4 := by
   have : Fact (¬ IsSquare (QuadraticAlgebra.discr ((-1 : ℤ) : ℚ) (0 : ℤ))) :=
     ⟨not_isSquare_of_neg (by norm_num [QuadraticAlgebra.discr_def])⟩
@@ -66,7 +66,7 @@ theorem gaussianUnit_isPrimitiveRoot :
   simpa only [map_pow, map_neg, map_one] using congrArg f hs
 
 /-- The Eisenstein generator is a primitive sixth root of unity. -/
-theorem eisensteinUnit_isPrimitiveRoot :
+theorem isPrimitiveRoot_eisensteinUnit :
     IsPrimitiveRoot (eisensteinUnit : QuadraticAlgebra ℤ (-1) 1) 6 := by
   have : Fact (¬ IsSquare (QuadraticAlgebra.discr ((-1 : ℤ) : ℚ) (1 : ℤ))) :=
     ⟨not_isSquare_of_neg (by norm_num [QuadraticAlgebra.discr_def])⟩
@@ -115,7 +115,7 @@ theorem card_units_eisenstein : Nat.card (QuadraticAlgebra ℤ (-1) 1)ˣ = 6 := 
 
 /-- The Gaussian generator generates the entire unit group. -/
 theorem gaussianUnit_zpowers_eq_top : Subgroup.zpowers gaussianUnit = ⊤ := by
-  have h := IsPrimitiveRoot.coe_units_iff.mp gaussianUnit_isPrimitiveRoot
+  have h := IsPrimitiveRoot.coe_units_iff.mp isPrimitiveRoot_gaussianUnit
   have : Finite (QuadraticAlgebra ℤ (-1) 0)ˣ :=
     Nat.finite_of_card_ne_zero (by rw [card_units_gaussian]; decide)
   apply Subgroup.eq_top_of_card_eq
@@ -123,7 +123,7 @@ theorem gaussianUnit_zpowers_eq_top : Subgroup.zpowers gaussianUnit = ⊤ := by
 
 /-- The Eisenstein generator generates the entire unit group. -/
 theorem eisensteinUnit_zpowers_eq_top : Subgroup.zpowers eisensteinUnit = ⊤ := by
-  have h := IsPrimitiveRoot.coe_units_iff.mp eisensteinUnit_isPrimitiveRoot
+  have h := IsPrimitiveRoot.coe_units_iff.mp isPrimitiveRoot_eisensteinUnit
   have : Finite (QuadraticAlgebra ℤ (-1) 1)ˣ :=
     Nat.finite_of_card_ne_zero (by rw [card_units_eisenstein]; decide)
   apply Subgroup.eq_top_of_card_eq
