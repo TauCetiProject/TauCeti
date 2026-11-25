@@ -7,6 +7,11 @@ module
 
 public import TauCeti.Geometry.Contact.Pullback
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
+import Mathlib.Geometry.Manifold.IntegralCurve.ExistUnique
+import TauCeti.Geometry.Contact.Flat
+import TauCeti.Geometry.Manifold.Flow.Complete
+import TauCeti.Geometry.Manifold.IntegralCurve.Basic
+import TauCeti.Geometry.Manifold.IntegralCurve.Reparam
 
 /-!
 # Reeb fields of energy hypersurfaces
@@ -30,6 +35,26 @@ This is how Reeb flows on hypersurfaces of contact type are reparametrized Hamil
 the unit cosphere bundle of a Riemannian manifold, with `θ` the Liouville form and `K` the kinetic
 energy, the factor `θ(X_K)` is identically `1`, and the Reeb flow is the cogeodesic flow.
 
+Conversely, on a compact hypersurface every closed characteristic is a closed Reeb orbit. If `S`
+is compact and `ι` is injective, every periodic integral curve `δ` of `X_K` starting on the image
+of `ι` is `ι ∘ γ ∘ ψ` for a periodic integral curve `γ` of the Reeb field and a homeomorphism `ψ`
+of `ℝ` fixing `0`
+(`TauCeti.SmoothTwoForm.IsNondegenerate.exists_isMIntegralCurve_reebVectorField_comp_eq`). The
+Reeb orbit `γ` through the starting point, run with the time change `ψ' = θ(X_K) ∘ ι ∘ γ ∘ ψ`,
+whose factor has a constant sign along `γ` and is bounded on the compact `S`, is carried by `ι`
+to an integral curve of `X_K`; uniqueness of integral curves identifies it with `δ`, and since `δ`
+closes up and `ι` is injective, so does `γ`.
+
+## Main results
+
+* `TauCeti.SmoothTwoForm.IsNondegenerate.apply_hamiltonianVectorField_ne_zero`: on a hypersurface
+  of contact type, `θ(X_K)` does not vanish.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_reebVectorField_mpullback`: the Reeb field of
+  `ι^* θ` is carried to `X_K / θ(X_K)`.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.exists_isMIntegralCurve_reebVectorField_comp_eq`: the
+  closed characteristics of a compact hypersurface of contact type are its closed Reeb orbits, up
+  to a change of time.
+
 ## References
 
 * D. McDuff, D. Salamon, *Introduction to Symplectic Topology*, 3rd ed., Oxford, 2017,
@@ -51,8 +76,11 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [IsManifold I ∞ M]
   {E' H' S : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
   [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S] [ChartedSpace H' S]
-  [IsManifold J 2 S]
   {σ : SmoothTwoForm I M}
+
+section EnergyHypersurface
+
+variable [IsManifold J 2 S]
 
 /-- Exterior-derivative identity: if `dθ = -σ` at `x`, then
 `dθ(a • X_K, u) = -σ(a • X_K, u) = -a dK(u)`. -/
@@ -151,6 +179,67 @@ theorem IsNondegenerate.mfderiv_reebVectorField_mpullback (hσ : σ.IsNondegener
       rw [SmoothForm.mextDeriv_mpullback_apply_two, hv,
         mextDeriv_smul_hamiltonianVectorField hσ hdθ, hdK, mul_zero, neg_zero]⟩).symm
   rw [hR, hv]
+
+end EnergyHypersurface
+
+/-! ### Closed characteristics of a compact hypersurface of contact type -/
+
+section ClosedOrbit
+
+variable [IsManifold J ∞ S]
+
+variable [BoundarylessManifold I M] [T2Space M] [BoundarylessManifold J S] [CompactSpace S]
+
+/-- **Closed characteristics of a compact hypersurface of contact type are closed Reeb orbits.**
+Let `σ` be a nondegenerate two-form, `θ` a one-form with `dθ = -σ` along `ι`, and `ι : S → M` an
+injective smooth map from a compact manifold whose tangent images are the kernels of `dK`, for a
+`C²` function `K`, and along which `ι^* θ` is a contact form. Then every periodic integral curve
+`δ` of `X_K`, of nonzero period, starting on the image of `ι` is a closed Reeb orbit of `ι^* θ`
+run at another speed: `δ = ι ∘ γ ∘ ψ` for a periodic integral curve `γ` of the Reeb field, of
+nonzero period, and a homeomorphism `ψ` of `ℝ` fixing `0`. -/
+theorem IsNondegenerate.exists_isMIntegralCurve_reebVectorField_comp_eq
+    (hσ : σ.IsNondegenerate) {θ : SmoothForm I M ℝ 1} {ι : S → M} (hι : ContMDiff J I ∞ ι)
+    (hιi : Function.Injective ι) (hα : (SmoothForm.mpullback ι hι θ).IsContactForm)
+    {K : M → ℝ} (hKs : ContMDiff I 𝓘(ℝ) 2 K) (hdθ : ∀ s, mextDeriv θ.val (ι s) = -σ.val (ι s))
+    (hK : ∀ s, (mfderiv J I ι s).range = (mvfderiv I K (ι s)).ker) {δ : ℝ → M}
+    (hδ : IsMIntegralCurve δ (σ.hamiltonianVectorField K)) (hδ₀ : δ 0 ∈ Set.range ι) {T : ℝ}
+    (hT : T ≠ 0) (hper : Function.Periodic δ T) :
+    ∃ γ : ℝ → S, IsMIntegralCurve γ (SmoothForm.mpullback ι hι θ).reebVectorField ∧
+      (∃ τ, τ ≠ 0 ∧ Function.Periodic γ τ) ∧ ∃ ψ : ℝ ≃ₜ ℝ, ψ 0 = 0 ∧ δ = ι ∘ γ ∘ ψ := by
+  have : T2Space S := T2Space.of_injective_continuous hιi hι.continuous
+  obtain ⟨s₀, hs₀⟩ := hδ₀
+  have := SmoothForm.finiteDimensional_of_isContactForm_mpullback hι hα s₀
+  set R := (SmoothForm.mpullback ι hι θ).reebVectorField
+  set X := σ.hamiltonianVectorField K
+  -- `dι (R s) = c(s)⁻¹ • X_K (ι s)` with `c(s) = θ(X_K)` at `ι s`, continuous and nonvanishing.
+  set c : S → ℝ := fun s ↦ θ.val (ι s) ![X (ι s)]
+  have hc0 (s : S) : c s ≠ 0 := hσ.apply_hamiltonianVectorField_ne_zero hι hα (hdθ s) (hK s)
+  have hRs : ContMDiff J J.tangent 1 (T% R) := hα.contMDiff_reebVectorField.of_le (by simp)
+  have hXs : ContMDiff I I.tangent 1 (T% X) :=
+    hσ.contMDiff_hamiltonianVectorField (n := 1) (by simp) (by rwa [one_add_one_eq_two])
+  have hcc : Continuous c := (θ.contMDiff_apply_vectorField hXs).continuous.comp hι.continuous
+  -- Change the time of the Reeb orbit through `s₀` by `ψ' = c ∘ γ ∘ ψ`, with `|c|` bounded on the
+  -- compact `S`: this gives an integral curve of `c • R`, which `ι` carries to `X_K`.
+  obtain ⟨C, hC⟩ := isCompact_univ.exists_bound_of_continuousOn hcc.continuousOn
+  obtain ⟨γ, hγ0, hγ⟩ := (isCompleteVectorField_of_compactSpace hRs).exists_isMIntegralCurve hRs s₀
+  obtain ⟨ψ, hψ0, hγψ⟩ := hγ.exists_homeomorph_isMIntegralCurve_comp_of_abs_le
+    (Y := fun s ↦ c s • R s) (hcc.comp hγ.continuous) (fun t ↦ hc0 _)
+    (fun t ↦ by simpa using hC (γ t) trivial) fun t ↦ rfl
+  have hιγψ : IsMIntegralCurve (ι ∘ γ ∘ ψ) X := by
+    rw [isMIntegralCurve_iff_isMIntegralCurveOn] at hγψ ⊢
+    exact hγψ.map_of_mfderiv_eq (fun t _ ↦ (hι _).mdifferentiableAt (by simp)) fun t _ ↦ by
+      rw [map_smul, hσ.mfderiv_reebVectorField_mpullback hι hα (hdθ _) (hK _), smul_smul,
+        mul_inv_cancel₀ (hc0 _), one_smul]
+  -- By uniqueness of integral curves, it is `δ`.
+  have hδeq : δ = ι ∘ γ ∘ ψ := isMIntegralCurve_Ioo_eq_of_contMDiff_boundaryless (t₀ := 0) hXs hδ
+    hιγψ (by simp [hψ0, hγ0, hs₀])
+  -- Since `δ` closes up and `ι` is injective, so does `γ`.
+  have hclose : γ (ψ T) = γ (ψ 0) := hιi <| by
+    simpa [hδeq] using hper 0
+  refine ⟨γ, hγ, ⟨ψ T - ψ 0, sub_ne_zero.2 fun h ↦ hT (by simpa using ψ.injective h),
+    hγ.periodic_of_eq hRs hclose⟩, ψ, hψ0, hδeq⟩
+
+end ClosedOrbit
 
 end SmoothTwoForm
 

@@ -32,6 +32,9 @@ This file provides two parametrizations of circles in Euclidean planes:
   (`Orientation.inner_circleCurve_sub_deriv_eq_zero_iff`). In the complex plane with its standard
   orientation and starting vector `1`, it is Mathlib's `circleMap`
   (`Complex.orientation_circleCurve_one`).
+
+It also records the derivative of a rotating curve `s ↦ o.rotation (θ s) (c s)`
+(`Orientation.hasDerivAt_rotation`).
 -/
 
 public section
@@ -156,6 +159,22 @@ theorem periodic_circleCurve (o : Orientation ℝ E (Fin 2)) (c e : E) (R : ℝ)
   · simp
   · have hdiv : (s + 2 * Real.pi * R) / R = s / R + 2 * Real.pi := by field_simp
     simp only [circleCurve_def, hdiv, Real.cos_add_two_pi, Real.sin_add_two_pi]
+
+/-- **Derivative of a rotating curve.** If `θ` and `c` have derivatives `θ'` and `c'` at `t`, then
+`s ↦ o.rotation (θ s) (c s)` has derivative `θ' J (o.rotation (θ t) (c t)) + o.rotation (θ t) c'`
+at `t`, where `J` is the quarter turn `o.rightAngleRotation`. -/
+theorem hasDerivAt_rotation (o : Orientation ℝ E (Fin 2)) {θ : ℝ → ℝ} {c : ℝ → E} {θ' t : ℝ}
+    {c' : E} (hθ : HasDerivAt θ θ' t) (hc : HasDerivAt c c' t) :
+    HasDerivAt (fun s ↦ o.rotation (θ s) (c s))
+      (θ' • o.rightAngleRotation (o.rotation (θ t) (c t)) + o.rotation (θ t) c') t := by
+  have hJ : HasDerivAt (fun s ↦ o.rightAngleRotation (c s)) (o.rightAngleRotation c') t :=
+    (o.rightAngleRotation : E →L[ℝ] E).hasFDerivAt.comp_hasDerivAt t hc
+  convert (hθ.cos.smul hc).add (hθ.sin.smul hJ) using 1
+  · ext s
+    simp [o.rotation_apply]
+  · simp only [o.rotation_apply, Real.Angle.cos_coe, Real.Angle.sin_coe, map_add, map_smul,
+      rightAngleRotation_rightAngleRotation]
+    module
 
 /-- Derivative of `o.circleCurve c e R` when `R ≠ 0`. -/
 theorem hasDerivAt_circleCurve (o : Orientation ℝ E (Fin 2)) (c e : E) {R : ℝ} (hR : R ≠ 0)

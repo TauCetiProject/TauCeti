@@ -140,6 +140,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 * `Submodule.finrank_orthogonal_eq_finrank_quotient`: `dim Kᗮ = dim (E ⧸ K)`.
 * `Submodule.inner_starProjection_map_apply`: `⟪P_{e K} (e x), e y⟫ = ⟪P_K x, y⟫` for a linear
   isometry equivalence `e`.
+* `Submodule.orthogonalProjectionOnto_orthogonal_span_singleton_eq_iff`: the projection onto
+  `(𝕜 ∙ e)ᗮ` sends `x` to `y` iff `x` lies on the line through `y` parallel to `e`.
 * `Submodule.injOn_starProjection_iff_disjoint`: `P_V` is injective on `U` if and only if
   `U ⊓ Vᗮ = ⊥`.
 * `Submodule.rank_le_of_disjoint_orthogonal`: if `U ⊓ Vᗮ = ⊥`, then `rank U ≤ rank V`.
@@ -489,6 +491,20 @@ theorem inner_starProjection_map_apply {E' : Type*} [NormedAddCommGroup E']
       ⟪K.starProjection x, y⟫_𝕜 := by
   rw [starProjection_map_apply, e.symm_apply_apply, e.inner_map_map]
 
+/-- The orthogonal projection onto `(𝕜 ∙ e)ᗮ` sends `x` to `y` exactly when `x` lies on the line
+through `y` parallel to `e`. -/
+theorem orthogonalProjectionOnto_orthogonal_span_singleton_eq_iff {e : E} (y : (𝕜 ∙ e)ᗮ)
+    (x : E) : (𝕜 ∙ e)ᗮ.orthogonalProjectionOnto x = y ↔ ∃ t : 𝕜, (y : E) + t • e = x := by
+  constructor
+  · intro hx
+    have hmem := (𝕜 ∙ e)ᗮ.sub_starProjection_mem_orthogonal x
+    rw [orthogonal_orthogonal, starProjection_apply, hx] at hmem
+    obtain ⟨t, ht⟩ := mem_span_singleton.1 hmem
+    exact ⟨t, by rw [ht]; abel⟩
+  · rintro ⟨t, rfl⟩
+    rw [map_add, map_smul, orthogonalProjectionOnto_orthogonalComplement_singleton_eq_zero,
+      smul_zero, add_zero, orthogonalProjectionOnto_mem_subspace_eq_self]
+
 section Real
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
@@ -674,6 +690,13 @@ theorem exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank (s : Finset E
   obtain ⟨e, he₀, he⟩ := exists_ne_zero_forall_inner_eq_zero_of_card_lt_finrank s hs
   exact ⟨(‖e‖⁻¹ : 𝕜) • e, norm_smul_inv_norm he₀, fun u hu ↦ by
     rw [inner_smul_right, he u hu, mul_zero]⟩
+
+/-- In dimension at least two, the orthogonal complement of any vector contains a unit vector. -/
+theorem exists_norm_eq_one_mem_orthogonal_singleton (e : E) (hE : 2 ≤ Module.finrank 𝕜 E) :
+    ∃ w : (𝕜 ∙ e)ᗮ, ‖(w : E)‖ = 1 := by
+  obtain ⟨w, hw, horth⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank
+    (𝕜 := 𝕜) ({e} : Finset E) (by simp; omega)
+  exact ⟨⟨w, Submodule.mem_orthogonal_singleton_iff_inner_right.2 (horth e (by simp))⟩, hw⟩
 
 /-- A vector orthogonal to a nonzero vector `b` is not `-b`. -/
 theorem ne_neg_of_inner_eq_zero {a b : E} (hb : b ≠ 0) (hab : ⟪a, b⟫_𝕜 = 0) : a ≠ -b := by
