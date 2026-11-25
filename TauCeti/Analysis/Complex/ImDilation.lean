@@ -330,14 +330,6 @@ theorem _root_.TopologicalSpace.Opens.exists_subset_reflectionCore_and_isCompact
   · exact Or.inl ⟨hKV (Or.inl hz), h⟩
   · exact Or.inr fun c hc => hKV (Or.inr ⟨(c, z), ⟨hc, hz, h⟩, rfl⟩)
 
-/-- The closure of `U ∩ {0 ≤ im}` lies in `Ω ∩ {0 ≤ im}` when the closure of `U` lies in `Ω`,
-since it lies in `closure U ∩ {0 ≤ im}`. -/
-theorem closure_inter_setOf_im_nonneg_subset {Ω U : Set ℂ} (hUΩ : closure U ⊆ Ω) :
-    closure (U ∩ {z | 0 ≤ z.im}) ⊆ Ω ∩ {z | 0 ≤ z.im} :=
-  (closure_minimal (inter_subset_inter_left _ subset_closure)
-    (isClosed_closure.inter (Complex.isClosed_setOfPred_le_im 0))).trans
-    (inter_subset_inter_left _ hUΩ)
-
 /-- The closure of `U ∩ {0 ≤ im}` lies in the reflection core of `Ω` when the closure of `U` lies
 in `Ω`: it lies in `Ω ∩ {0 ≤ im}` (`TauCeti.closure_inter_setOf_im_nonneg_subset`). -/
 theorem _root_.TopologicalSpace.Opens.closure_inter_setOf_im_nonneg_subset_reflectionCore

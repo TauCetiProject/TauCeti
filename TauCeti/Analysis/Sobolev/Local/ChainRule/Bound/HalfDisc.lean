@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Norm
-import TauCeti.Analysis.Complex.ImDilation
+import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.Sobolev.Local.ChainRule.Bound.Higher
 import TauCeti.Analysis.Sobolev.Local.Multiplication.HalfDisc.Bound
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
