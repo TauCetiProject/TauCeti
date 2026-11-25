@@ -8,12 +8,13 @@ module
 public import Mathlib.AlgebraicGeometry.Group.Affine
 public import TauCeti.AlgebraicGeometry.Birational.RationalMap.Basic
 public import TauCeti.AlgebraicGeometry.Birational.TopologicalDegree.Expand
+import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 /-!
 # Regression examples: the topological degree on affine space
 
-These are DynamicalDegreesOfRationalMaps §1.1 Checks, on affine charts:
+Examples of the topological degree on affine space:
 
 * `z ↦ z²` on the affine line over a field has topological degree `2` in every characteristic,
   including characteristic `2`, where `K(z) / K(z²)` is purely inseparable;
@@ -37,39 +38,37 @@ variable (K : Type u) [Field K]
 example : Scheme.RationalMap.topologicalDegree (Spec.map (CommRingCat.ofHom
     (MvPolynomial.expand 2 : MvPolynomial PUnit.{u + 1} K →ₐ[K] _).toRingHom)).toRationalMap =
     2 := by
-  rw [topologicalDegree_SpecMap_expand, Nat.card_unique, pow_one]
+  rw [topologicalDegree_toRationalMap_SpecMap_expand, Nat.card_unique, pow_one]
 
 -- In characteristic `2` as well: over `ZMod 2` the degree is still `2`.
 example : Scheme.RationalMap.topologicalDegree (Spec.map (CommRingCat.ofHom
     (MvPolynomial.expand 2 : MvPolynomial PUnit.{1} (ZMod 2) →ₐ[ZMod 2] _).toRingHom)
     ).toRationalMap = 2 := by
-  rw [topologicalDegree_SpecMap_expand, Nat.card_unique, pow_one]
+  rw [topologicalDegree_toRationalMap_SpecMap_expand, Nat.card_unique, pow_one]
 
 -- The `K`-linear Frobenius of `𝔸^d_K` in characteristic `p` has topological degree `p ^ d`.
 example (p d : ℕ) [Fact p.Prime] [CharP K p] :
     Scheme.RationalMap.topologicalDegree (Spec.map (CommRingCat.ofHom
-      (MvPolynomial.expand p : MvPolynomial (ULift.{u} (Fin d)) K →ₐ[K] _).toRingHom)
+      (MvPolynomial.expand p : MvPolynomial (Fin d) K →ₐ[K] _).toRingHom)
       ).toRationalMap = p ^ d := by
   have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
-  rw [topologicalDegree_SpecMap_expand, Nat.card_ulift, Nat.card_eq_fintype_card,
-    Fintype.card_fin]
+  rw [topologicalDegree_toRationalMap_SpecMap_expand, Nat.card_eq_fintype_card, Fintype.card_fin]
 
 /-- The linear projection `(x, y) ↦ x`, as a `K`-algebra map of coordinate rings
 `K[x] → K[x, y]`. -/
 noncomputable abbrev projectionAlgHom :
-    MvPolynomial (ULift.{u} (Fin 1)) K →ₐ[K] MvPolynomial (ULift.{u} (Fin 2)) K :=
-  MvPolynomial.rename fun i ↦ ULift.up (Fin.castSucc i.down)
+    MvPolynomial (Fin 1) K →ₐ[K] MvPolynomial (Fin 2) K :=
+  MvPolynomial.rename Fin.castSucc
 
 /-- The linear projection `𝔸²_K → 𝔸¹_K`, `(x, y) ↦ x`. -/
 noncomputable abbrev projection :
-    Spec (.of (MvPolynomial (ULift.{u} (Fin 2)) K)) ⟶
-      Spec (.of (MvPolynomial (ULift.{u} (Fin 1)) K)) :=
+    Spec (.of (MvPolynomial (Fin 2) K)) ⟶ Spec (.of (MvPolynomial (Fin 1) K)) :=
   Spec.map (CommRingCat.ofHom (projectionAlgHom K).toRingHom)
 
 /-- The projection is dominant: `K[x] → K[x, y]` is injective. -/
 instance isDominant_projection : IsDominant (projection K) :=
-  ⟨RingHom.denseRange_comap_of_injective _ <| MvPolynomial.rename_injective _ fun _ _ h ↦
-    ULift.down_injective (Fin.castSucc_injective _ (congrArg ULift.down h))⟩
+  ⟨RingHom.denseRange_comap_of_injective _ <|
+    MvPolynomial.rename_injective _ (Fin.castSucc_injective _)⟩
 
 /-- The projection is a morphism over `K`. -/
 instance isOver_projection : (projection K).IsOver (Spec (.of K)) where
@@ -79,18 +78,11 @@ instance isOver_projection : (projection K).IsOver (Spec (.of K)) where
     congr 2
     exact (projectionAlgHom K).comp_algebraMap
 
-/-- `𝔸^n_K` has dimension `n`. -/
-private theorem topologicalKrullDim_spec_mvPolynomial (n : ℕ) :
-    topologicalKrullDim (Spec (.of (MvPolynomial (ULift.{u} (Fin n)) K))) = n := by
-  change topologicalKrullDim (PrimeSpectrum (MvPolynomial (ULift.{u} (Fin n)) K)) = n
-  rw [PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim,
-    MvPolynomial.ringKrullDim_of_isNoetherianRing_of_finite, ringKrullDim_eq_zero_of_field,
-    Nat.card_ulift, Nat.card_eq_fintype_card, Fintype.card_fin, zero_add]
-
 -- The linear projection `𝔸²_K → 𝔸¹_K` has the junk topological degree `0`.
 example : (projection K).toRationalMap.topologicalDegree = 0 := by
   rw [Scheme.RationalMap.topologicalDegree_eq_zero_iff K,
-    topologicalKrullDim_spec_mvPolynomial, topologicalKrullDim_spec_mvPolynomial]
+    TauCeti.AlgebraicGeometry.topologicalKrullDim_Spec_mvPolynomial,
+    TauCeti.AlgebraicGeometry.topologicalKrullDim_Spec_mvPolynomial, ringKrullDim_eq_zero_of_field]
   norm_num
 
 end TauCeti.TopologicalDegreeExamples
