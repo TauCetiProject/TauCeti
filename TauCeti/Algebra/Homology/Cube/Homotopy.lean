@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.Homotopy
 public import TauCeti.Algebra.Homology.Cube.Basic
-
-import TauCeti.Data.Finset.Basic
+public import TauCeti.Data.Finset.Basic
 
 /-!
 # Reverse-edge homotopies between signed cube complexes
@@ -106,6 +105,15 @@ lemma cubeReverseEdgeHom_of_ne {i j : ℤ} (hij : j + 1 ≠ i) :
     cubeReverseEdgeHom F G c h i j = 0 :=
   dite_eq_right hij
 
+/-- Transporting the source degree of `cubeReverseEdgeHom` along `XIsoOfEq` shifts its first
+degree index. -/
+@[reassoc (attr := simp)]
+lemma XIsoOfEq_hom_comp_cubeReverseEdgeHom {i i' : ℤ} (hi : i = i') (j : ℤ) :
+    (F.cubeComplex.XIsoOfEq hi).hom ≫ cubeReverseEdgeHom F G c h i' j =
+      cubeReverseEdgeHom F G c h i j := by
+  subst hi
+  simp
+
 /-- On a vertex avoiding `c`, the reverse-edge map in direction `c` vanishes. -/
 @[reassoc (attr := simp)]
 lemma ι_cubeReverseEdgeHom_of_notMem {i j : ℤ} (U : {U : Finset ι // (#U : ℤ) = i})
@@ -174,12 +182,7 @@ lemma cubeReverseEdgeHom_π_of_notMem {r : ℤ} (S : {S : Finset ι // (#S : ℤ
       rw [G.cubeComplexι_π_self, Category.comp_id, F.cubeComplexι_π_self_assoc]
     · rw [G.cubeComplexι_π_of_ne hVS, comp_zero, smul_zero, F.cubeComplexι_π_of_ne_assoc,
         zero_comp, smul_zero]
-      intro hins
-      apply hVS
-      apply Subtype.ext
-      have hErase := congrArg (fun X ↦ X.val.erase c) hins
-      dsimp only at hErase
-      rwa [erase_insert hcV, erase_insert hc] at hErase
+      exact fun hins ↦ hVS (Subtype.ext ((insert_right_inj hcV hc).mp (congrArg Subtype.val hins)))
   · rw [ι_cubeReverseEdgeHom_of_notMem_assoc F G c h U hcU, zero_comp, Preadditive.comp_zsmul,
       F.cubeComplexι_π_of_ne_assoc, zero_comp, smul_zero]
     intro hins
@@ -237,30 +240,13 @@ omit [Preadditive C] [HasFiniteBiproducts C] [Fintype ι] in
 /-- Compatibility of a reverse-edge family in direction `c` with all other cube directions `a ≠ c`:
 around every mixed square on `S` (`c ∉ S`, `a ∉ insert c S`), reversing `c` and then advancing `a`
 equals advancing `a` and then reversing `c`. -/
+@[expose]
 def IsCubeReverseEdgeCompatible (F G : Finset ι ⥤ C) (c : ι)
     (h : ∀ (S : Finset ι), c ∉ S → (F.obj (insert c S) ⟶ G.obj S)) : Prop :=
   ∀ (S : Finset ι) (hc : c ∉ S) (a : ι) (ha : a ∉ insert c S),
     h S hc ≫ G.map (homOfLE (S.subset_insert a)) =
       F.map (homOfLE (insert_subset_insert c (S.subset_insert a))) ≫
-        h (insert a S) (fun hc' ↦ ha (by
-          rcases mem_insert.mp hc' with rfl | hmem
-          · exact mem_insert_self c S
-          · exact absurd hmem hc))
-
-omit [Preadditive C] [HasFiniteBiproducts C] [Fintype ι] in
-/-- Compatibility with unaffected edges is the commutativity of all mixed squares `c` and
-`a ≠ c`. -/
-lemma isCubeReverseEdgeCompatible_def {F G : Finset ι ⥤ C} {c : ι}
-    {h : ∀ (S : Finset ι), c ∉ S → (F.obj (insert c S) ⟶ G.obj S)} :
-    IsCubeReverseEdgeCompatible F G c h ↔
-      ∀ (S : Finset ι) (hc : c ∉ S) (a : ι) (ha : a ∉ insert c S),
-        h S hc ≫ G.map (homOfLE (S.subset_insert a)) =
-          F.map (homOfLE (insert_subset_insert c (S.subset_insert a))) ≫
-            h (insert a S) (fun hc' ↦ ha (by
-              rcases mem_insert.mp hc' with rfl | hmem
-              · exact mem_insert_self c S
-              · exact absurd hmem hc)) :=
-  Iff.rfl
+        h (insert a S) (notMem_insert_of_notMem_insert_swap hc ha)
 
 /-- On a vertex `S` avoiding `c`, `dNext + prevD` of `cubeReverseEdgeHom` reduces to the single
 forward-then-reverse composite `F(S) ⟶ F(insert c S) ⟶ G(S)`: `prevD` vanishes on `S`, and in
@@ -300,18 +286,12 @@ private lemma map_homOfLE_insert_insert_comp_cubeReverseEdgeHom (F G : Finset ι
         cubeReverseEdgeHom F G c h (r + 1 + 1) (r + 1) =
       ((-1 : ℤ) ^ #{b ∈ insert a S.val | b < c}) •
         (F.map (homOfLE (insert_subset_insert c (S.val.subset_insert a))) ≫
-          h (insert a S.val) (fun hc' ↦ ha (by
-            rcases mem_insert.mp hc' with rfl | hmem
-            · exact mem_insert_self c S.val
-            · exact absurd hmem hc)) ≫
+          h (insert a S.val) (notMem_insert_of_notMem_insert_swap hc ha) ≫
           G.cubeComplexι ⟨insert a S.val, by
             rw [card_insert_of_notMem (fun haS ↦ ha (mem_insert_of_mem haS)), Nat.cast_succ,
               S.property]⟩) := by
   have haS : a ∉ S.val := fun haS ↦ ha (mem_insert_of_mem haS)
-  have hc' : c ∉ insert a S.val := fun hc' ↦ ha (by
-    rcases mem_insert.mp hc' with rfl | hmem
-    · exact mem_insert_self c S.val
-    · exact absurd hmem hc)
+  have hc' : c ∉ insert a S.val := notMem_insert_of_notMem_insert_swap hc ha
   have e : insert a (insert c S.val) = insert c (insert a S.val) := insert_comm a c S.val
   let T : {T : Finset ι // (#T : ℤ) = r + 1} :=
     ⟨insert a S.val, by rw [card_insert_of_notMem haS, Nat.cast_succ, S.property]⟩
@@ -329,6 +309,71 @@ private lemma map_homOfLE_insert_insert_comp_cubeReverseEdgeHom (F G : Finset ι
   rw [hι, ← Category.assoc (F.map _), ← Category.assoc (F.map _), hmap, Category.assoc,
     ι_cubeReverseEdgeHom_insert F G c h T hc', Preadditive.comp_zsmul]
 
+/-- On `insert c S`, applying `d` and then reversing `c` sums over `a ∉ insert c S` and rewrites
+each mixed square `insert c S ⟶ insert a (insert c S) ⟶ insert a S` via `hcomp`. -/
+private lemma ι_cubeComplex_d_comp_cubeReverseEdgeHom_insert (F G : Finset ι ⥤ C) (c : ι)
+    (h : ∀ (S : Finset ι), c ∉ S → (F.obj (insert c S) ⟶ G.obj S))
+    (hcomp : IsCubeReverseEdgeCompatible F G c h) {r : ℤ}
+    (S : {S : Finset ι // (#S : ℤ) = r}) (hc : c ∉ S.val) :
+    F.cubeComplexι ⟨insert c S.val, by rw [card_insert_of_notMem hc, Nat.cast_succ, S.property]⟩ ≫
+        F.cubeComplex.d (r + 1) (r + 1 + 1) ≫
+        cubeReverseEdgeHom F G c h (r + 1 + 1) (r + 1) =
+      ∑ a : ((insert c S.val)ᶜ : Finset ι),
+        ((-1 : ℤ) ^ #{b ∈ insert c S.val | b < a.val} *
+          (-1 : ℤ) ^ #{b ∈ insert a.val S.val | b < c}) •
+          (h S.val hc ≫ G.map (homOfLE (S.val.subset_insert a.val)) ≫
+            G.cubeComplexι ⟨insert a.val S.val, by
+              rw [card_insert_of_notMem
+                  (fun haS ↦ (mem_compl.mp a.property) (mem_insert_of_mem haS)),
+                Nat.cast_succ, S.property]⟩) := by
+  rw [F.ι_cubeComplex_d_assoc, Preadditive.sum_comp]
+  refine Finset.sum_congr rfl fun a _ ↦ ?_
+  have ha : a.val ∉ insert c S.val := mem_compl.mp a.property
+  rw [Preadditive.zsmul_comp, Category.assoc,
+    map_homOfLE_insert_insert_comp_cubeReverseEdgeHom F G c h S hc ha, smul_smul,
+    ← Category.assoc (h S.val hc), hcomp S.val hc a.val ha, Category.assoc]
+
+/-- On `insert c S`, reversing `c` and then applying `d` splits into the `c`-edge round-trip
+`F(insert c S) ⟶ G(S) ⟶ G(insert c S)` (whose two Koszul signs square to `+1`) plus the sum over
+all unaffected directions `a ∉ insert c S`. -/
+private lemma ι_cubeReverseEdgeHom_comp_cubeComplex_d_insert (F G : Finset ι ⥤ C) (c : ι)
+    (h : ∀ (S : Finset ι), c ∉ S → (F.obj (insert c S) ⟶ G.obj S)) {r : ℤ}
+    (S : {S : Finset ι // (#S : ℤ) = r}) (hc : c ∉ S.val) :
+    F.cubeComplexι ⟨insert c S.val, by rw [card_insert_of_notMem hc, Nat.cast_succ, S.property]⟩ ≫
+        cubeReverseEdgeHom F G c h (r + 1) r ≫ G.cubeComplex.d r (r + 1) =
+      h S.val hc ≫ G.map (homOfLE (S.val.subset_insert c)) ≫
+        G.cubeComplexι
+          ⟨insert c S.val, by rw [card_insert_of_notMem hc, Nat.cast_succ, S.property]⟩ +
+      ∑ a : ((insert c S.val)ᶜ : Finset ι),
+        ((-1 : ℤ) ^ #{b ∈ S.val | b < c} * (-1 : ℤ) ^ #{b ∈ S.val | b < a.val}) •
+          (h S.val hc ≫ G.map (homOfLE (S.val.subset_insert a.val)) ≫
+            G.cubeComplexι ⟨insert a.val S.val, by
+              rw [card_insert_of_notMem
+                  (fun haS ↦ (mem_compl.mp a.property) (mem_insert_of_mem haS)),
+                Nat.cast_succ, S.property]⟩) := by
+  rw [ι_cubeReverseEdgeHom_insert_assoc F G c h S hc, Preadditive.zsmul_comp, Category.assoc,
+    G.ι_cubeComplex_d, Preadditive.comp_sum, Finset.smul_sum]
+  let cIdx : (S.valᶜ : Finset ι) := ⟨c, mem_compl.mpr hc⟩
+  rw [← Finset.add_sum_erase _ _ (mem_univ cIdx)]
+  congr 1
+  · simp only [cIdx, Preadditive.comp_zsmul, smul_smul, ← pow_add, ← two_mul, pow_mul,
+      neg_one_sq, one_pow, one_smul]
+  · refine Finset.sum_bij
+      (fun a ha ↦ (⟨a.val, mem_compl.mpr fun hmem ↦ by
+        rcases mem_insert.mp hmem with rfl | haS
+        · exact (mem_erase.mp ha).left (Subtype.ext rfl)
+        · exact mem_compl.mp a.property haS⟩ : ((insert c S.val)ᶜ : Finset ι)))
+      (fun _ _ ↦ mem_univ _)
+      (fun a₁ _ a₂ _ hEq ↦
+        Subtype.ext (congrArg (Subtype.val : ((insert c S.val)ᶜ : Finset ι) → ι) hEq))
+      (fun b _ ↦ ⟨⟨b.val, mem_compl.mpr fun hbS ↦
+          mem_compl.mp b.property (mem_insert_of_mem hbS)⟩,
+        mem_erase.mpr ⟨fun hEq ↦ mem_compl.mp b.property
+          (congrArg (Subtype.val : (S.valᶜ : Finset ι) → ι) hEq ▸ mem_insert_self c S.val),
+          mem_univ _⟩, rfl⟩)
+      fun a _ ↦ ?_
+    simp only [Preadditive.comp_zsmul, smul_smul]
+
 /-- On a vertex `insert c S` (`c ∉ S`), when `h` commutes with all unaffected edges, the
 contributions of all `a ∉ insert c S` to `dNext` and `prevD` cancel with opposite Koszul signs,
 leaving only the reverse-then-forward composite `F(insert c S) ⟶ G(S) ⟶ G(insert c S)`. -/
@@ -345,80 +390,14 @@ lemma ι_dNext_add_prevD_cubeReverseEdgeHom_insert (F G : Finset ι ⥤ C) (c : 
           ⟨insert c S.val, by rw [card_insert_of_notMem hc, Nat.cast_succ, S.property]⟩ := by
   have hrel_next : (ComplexShape.up ℤ).Rel (r + 1) (r + 1 + 1) := rfl
   have hrel_prev : (ComplexShape.up ℤ).Rel r (r + 1) := rfl
-  rw [Preadditive.comp_add, dNext_eq _ hrel_next, prevD_eq _ hrel_prev]
-  have hdNext :
-      F.cubeComplexι
-          ⟨insert c S.val, by rw [card_insert_of_notMem hc, Nat.cast_succ, S.property]⟩ ≫
-          F.cubeComplex.d (r + 1) (r + 1 + 1) ≫
-          cubeReverseEdgeHom F G c h (r + 1 + 1) (r + 1) =
-        ∑ a : ((insert c S.val)ᶜ : Finset ι),
-          ((-1 : ℤ) ^ #{b ∈ insert c S.val | b < a.val} *
-            (-1 : ℤ) ^ #{b ∈ insert a.val S.val | b < c}) •
-            (h S.val hc ≫ G.map (homOfLE (S.val.subset_insert a.val)) ≫
-              G.cubeComplexι ⟨insert a.val S.val, by
-                rw [card_insert_of_notMem
-                    (fun haS ↦ (mem_compl.mp a.property) (mem_insert_of_mem haS)),
-                  Nat.cast_succ, S.property]⟩) := by
-    rw [F.ι_cubeComplex_d_assoc, Preadditive.sum_comp]
-    refine Finset.sum_congr rfl fun a _ ↦ ?_
-    have ha : a.val ∉ insert c S.val := mem_compl.mp a.property
-    rw [Preadditive.zsmul_comp, Category.assoc,
-      map_homOfLE_insert_insert_comp_cubeReverseEdgeHom F G c h S hc ha, smul_smul,
-      ← Category.assoc (h S.val hc), hcomp S.val hc a.val ha, Category.assoc]
-  have hprevD :
-      F.cubeComplexι
-          ⟨insert c S.val, by rw [card_insert_of_notMem hc, Nat.cast_succ, S.property]⟩ ≫
-          cubeReverseEdgeHom F G c h (r + 1) r ≫ G.cubeComplex.d r (r + 1) =
-        h S.val hc ≫ G.map (homOfLE (S.val.subset_insert c)) ≫
-          G.cubeComplexι
-            ⟨insert c S.val, by rw [card_insert_of_notMem hc, Nat.cast_succ, S.property]⟩ +
-        ∑ a : ((insert c S.val)ᶜ : Finset ι),
-          ((-1 : ℤ) ^ #{b ∈ S.val | b < c} * (-1 : ℤ) ^ #{b ∈ S.val | b < a.val}) •
-            (h S.val hc ≫ G.map (homOfLE (S.val.subset_insert a.val)) ≫
-              G.cubeComplexι ⟨insert a.val S.val, by
-                rw [card_insert_of_notMem
-                    (fun haS ↦ (mem_compl.mp a.property) (mem_insert_of_mem haS)),
-                  Nat.cast_succ, S.property]⟩) := by
-    rw [ι_cubeReverseEdgeHom_insert_assoc F G c h S hc, Preadditive.zsmul_comp, Category.assoc,
-      G.ι_cubeComplex_d, Preadditive.comp_sum, Finset.smul_sum]
-    let cIdx : (S.valᶜ : Finset ι) := ⟨c, mem_compl.mpr hc⟩
-    rw [← Finset.add_sum_erase _ _ (mem_univ cIdx)]
-    congr 1
-    · simp only [cIdx, Preadditive.comp_zsmul, smul_smul, ← pow_add, ← two_mul, pow_mul,
-        neg_one_sq, one_pow, one_smul]
-    · refine Finset.sum_bij
-        (fun a ha ↦ (⟨a.val, mem_compl.mpr fun hmem ↦ by
-          rcases mem_insert.mp hmem with rfl | haS
-          · exact (mem_erase.mp ha).left (Subtype.ext rfl)
-          · exact mem_compl.mp a.property haS⟩ : ((insert c S.val)ᶜ : Finset ι)))
-        (fun _ _ ↦ mem_univ _)
-        (fun a₁ _ a₂ _ hEq ↦
-          Subtype.ext (congrArg (Subtype.val : ((insert c S.val)ᶜ : Finset ι) → ι) hEq))
-        (fun b _ ↦ ⟨⟨b.val, mem_compl.mpr fun hbS ↦
-            mem_compl.mp b.property (mem_insert_of_mem hbS)⟩,
-          mem_erase.mpr ⟨fun hEq ↦ mem_compl.mp b.property
-            (congrArg (Subtype.val : (S.valᶜ : Finset ι) → ι) hEq ▸ mem_insert_self c S.val),
-            mem_univ _⟩, rfl⟩)
-        fun a _ ↦ ?_
-      simp only [Preadditive.comp_zsmul, smul_smul]
-  rw [hdNext, hprevD, ← add_assoc, add_comm _ (h S.val hc ≫ _), add_assoc, ← Finset.sum_add_distrib]
-  suffices hzero :
-      (∑ a : ((insert c S.val)ᶜ : Finset ι),
-        (((-1 : ℤ) ^ #{b ∈ insert c S.val | b < a.val} *
-            (-1 : ℤ) ^ #{b ∈ insert a.val S.val | b < c}) •
-          (h S.val hc ≫ G.map (homOfLE (S.val.subset_insert a.val)) ≫
-            G.cubeComplexι ⟨insert a.val S.val, by
-              rw [card_insert_of_notMem
-                  (fun haS ↦ (mem_compl.mp a.property) (mem_insert_of_mem haS)),
-                Nat.cast_succ, S.property]⟩) +
-        ((-1 : ℤ) ^ #{b ∈ S.val | b < c} * (-1 : ℤ) ^ #{b ∈ S.val | b < a.val}) •
-          (h S.val hc ≫ G.map (homOfLE (S.val.subset_insert a.val)) ≫
-            G.cubeComplexι ⟨insert a.val S.val, by
-              rw [card_insert_of_notMem
-                  (fun haS ↦ (mem_compl.mp a.property) (mem_insert_of_mem haS)),
-                Nat.cast_succ, S.property]⟩))) = 0 by
-    rw [hzero, add_zero]
-  refine Finset.sum_eq_zero fun a _ ↦ ?_
+  -- Expand `dNext` and `prevD` (splitting `prevD` into the `c`-round-trip and `a ∉ insert c S`),
+  -- then pair the two sums over `a ∉ insert c S`.
+  rw [Preadditive.comp_add, dNext_eq _ hrel_next, prevD_eq _ hrel_prev,
+    ι_cubeComplex_d_comp_cubeReverseEdgeHom_insert F G c h hcomp S hc,
+    ι_cubeReverseEdgeHom_comp_cubeComplex_d_insert F G c h S hc,
+    ← add_assoc, add_comm _ (h S.val hc ≫ _), add_assoc, ← Finset.sum_add_distrib]
+  -- Each unaffected direction `a ∉ insert c S` cancels by opposite Koszul signs.
+  refine add_eq_left.mpr (Finset.sum_eq_zero fun a _ ↦ ?_)
   have ha : a.val ∉ insert c S.val := mem_compl.mp a.property
   have haS : a.val ∉ S.val := fun haS ↦ ha (mem_insert_of_mem haS)
   have hca : c ≠ a.val := fun hEq ↦ ha (hEq ▸ mem_insert_self c S.val)
@@ -493,8 +472,8 @@ lemma cubeReverseEdgeHomotopyNeg_hom {F G : Finset ι ⥤ C} (c : ι)
       α.app (insert c S) + β.app (insert c S) = h S hc ≫ G.map (homOfLE (S.subset_insert c)))
     (i j : ℤ) :
     (cubeReverseEdgeHomotopyNeg c h hcomp α β h_notMem h_insert).hom i j =
-      cubeReverseEdgeHom F G c h i j :=
-  zero_add _
+      cubeReverseEdgeHom F G c h i j := by
+  simp [cubeReverseEdgeHomotopyNeg, Homotopy.equivSubZero]
 
 end Homotopy
 

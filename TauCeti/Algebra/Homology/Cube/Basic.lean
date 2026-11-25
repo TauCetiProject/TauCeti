@@ -70,6 +70,19 @@ open CategoryTheory Limits Finset
 
 universe w v u
 
+namespace Finset
+
+/-- Any vertex `U` of integer-cast height `r'` containing `c`, where `r + 1 = r'`, is
+`insert c S` for a vertex `S` of height `r` avoiding `c`. -/
+theorem exists_notMem_insert_eq_of_mem {α : Type*} [DecidableEq α] {c : α} {r r' : ℤ}
+    (hr : r + 1 = r') (U : {U : Finset α // (#U : ℤ) = r'}) (hc : c ∈ U.val) :
+    ∃ (S : {S : Finset α // (#S : ℤ) = r}) (hcS : c ∉ S.val),
+      U = ⟨insert c S.val, by rw [card_insert_of_notMem hcS, Nat.cast_succ, S.property, hr]⟩ :=
+  ⟨⟨U.val.erase c, by have := card_erase_add_one hc; have := U.property; omega⟩,
+    notMem_erase c U.val, Subtype.ext (insert_erase hc).symm⟩
+
+end Finset
+
 namespace CategoryTheory
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteBiproducts C]
@@ -202,6 +215,15 @@ lemma cubeComplexι_comp_XIsoOfEq_hom {r r' : ℤ} (h : r = r')
     (S : {S : Finset ι // (#S : ℤ) = r}) :
     F.cubeComplexι S ≫ (F.cubeComplex.XIsoOfEq h).hom =
       F.cubeComplexι ⟨S.val, S.property.trans h⟩ := by
+  subst h
+  simp
+
+/-- Transporting a cube term from an equal height preserves each vertex projection. -/
+@[reassoc (attr := simp)]
+lemma XIsoOfEq_hom_comp_cubeComplexπ {r r' : ℤ} (h : r = r')
+    (S : {S : Finset ι // (#S : ℤ) = r'}) :
+    (F.cubeComplex.XIsoOfEq h).hom ≫ F.cubeComplexπ S =
+      F.cubeComplexπ ⟨S.val, S.property.trans h.symm⟩ := by
   subst h
   simp
 

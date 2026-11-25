@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Homology.Cube.Homotopy
 public import TauCeti.KnotTheory.Khovanov.Homology
 public import TauCeti.KnotTheory.Khovanov.Mark.Basic
 
-import TauCeti.Data.Finset.Basic
 import TauCeti.KnotTheory.Khovanov.Resolution.NeckCutting
 
 /-!
@@ -34,7 +33,8 @@ All mixed squares formed by the reverse saddle at `c` and a forward saddle at an
 `a ≠ c` commute by `TauCeti.PDCode.resolutionEdgeMap_comp_resolutionEdgeMap_comm`, so their signed
 contributions to `d ≫ H + H ≫ d` cancel by `CategoryTheory.Functor.cubeReverseEdgeHomotopyZero`.
 What remains on each state is the round-trip saddle composite at `c` alone
-(`TauCeti.PDCode.resolutionEdgeMap_reverse_resolutionEdgeMap`):
+(`TauCeti.PDCode.resolutionEdgeMap_reverse_resolutionEdgeMap`,
+`TauCeti.PDCode.resolutionEdgeMap_comp_resolutionEdgeMap_eq_circleX_add_circleX`):
 
 * when two circles of the state pass through `c`, the composite is `Δ ∘ m = X ⊗ 1 + 1 ⊗ X` on the
   two circles at `c` (`TauCeti.PDCode.resolutionSplitMap_resolutionMergeMap`), which is `X_p + X_q`;
@@ -46,9 +46,10 @@ Hence `d ≫ H + H ≫ d = X_p + X_q`, so `X_p` is chain homotopic to `-X_q` and
 one crossing negates the induced `X` action on Khovanov cohomology
 (`TauCeti.OrientedPDCode.homologyMap_khovanovComplexMarkX_oppositeCrossingSlot`). Moreover `H`
 satisfies `H² = 0` (since its image is supported on `c ∉ S`) and intertwines the opposite-strand
-actions via `X_p ≫ H = H ≫ X_q` (in operator notation, `H ∘ X_p = X_q ∘ H`): every edge in `H`
-changes `c`, so one of its two endpoints has a single circle at `c` where `p` and `q` coincide,
-whereas the differential `d` also contains edges at `a ≠ c` that need not identify `p` and `q`.
+actions via `X_p ≫ H = H ≫ X_q` (in operator notation, `H ∘ X_p = X_q ∘ H`, from
+`TauCeti.PDCode.resolutionEdgeMap_circleX_oppositeCrossingSlot`): every edge in `H` changes `c`, so
+one of its two endpoints has a single circle at `c` where `p` and `q` coincide, whereas the
+differential `d` also contains edges at `a ≠ c` that need not identify `p` and `q`.
 
 ## Main definitions
 
@@ -62,10 +63,11 @@ whereas the differential `d` also contains edges at `a ≠ c` that need not iden
 
 ## Main results
 
-* `TauCeti.PDCode.resolutionEdgeMap_comp_resolutionEdgeMap_eq_circleX_add_circleX`: composing a
-  saddle at `c` with its reverse equals `X_p + X_q` for opposite arc marks `p` and `q` at `c`.
-* `TauCeti.PDCode.resolutionEdgeMap_circleX_oppositeCrossingSlot`: every saddle at `c` carries `X_p`
-  to `X_q`.
+* `TauCeti.PDCode.isCubeReverseEdgeCompatible_resolutionCubeReverseSaddle`: the reverse saddle at
+  `c` commutes with all unaffected cube edges `a ≠ c`.
+* `TauCeti.PDCode.resolutionCube_map_comp_resolutionCubeReverseSaddle`,
+  `TauCeti.PDCode.resolutionCubeReverseSaddle_comp_resolutionCube_map`: the forward-then-reverse and
+  reverse-then-forward composites along `c` equal `X_p + X_q`.
 * `OrientedPDCode.d_comp_khovanovComplexMarkSlideHom_add_khovanovComplexMarkSlideHom_comp_d`:
   `d ≫ H + H ≫ d = X_p + X_q`.
 * `OrientedPDCode.khovanovComplexMarkSlideHom_comp_khovanovComplexMarkSlideHom`: `H² = 0`.
@@ -93,70 +95,6 @@ universe u
 
 variable {n : ℕ}
 
-/-! ### Opposite-slot `X` actions and saddle identities -/
-
-/-- In any state `s`, the sum of the `X` actions at the two opposite slots `k` and
-`oppositeCrossingSlot k` of `c` equals the sum of the `X` actions on the circles through slots `0`
-and `2` of `c`. -/
-theorem circleX_resolvedCircle_onArc_add_oppositeCrossingSlot (D : PDCode n)
-    (R : Type u) [CommSemiring R] (s : Fin n → Bool) (c : Fin n) (k : Fin 4) :
-    Khovanov.circleX R ((Mark.onArc D (D.crossing c k)).resolvedCircle s) +
-      Khovanov.circleX R
-        ((Mark.onArc D (D.crossing c (oppositeCrossingSlot k))).resolvedCircle s) =
-    Khovanov.circleX R (.inl ⟦D.crossing c 0⟧) +
-      Khovanov.circleX R (.inl ⟦D.crossing c 2⟧) := by
-  rw [Mark.resolvedCircle_onArc, Mark.resolvedCircle_onArc]
-  rcases CrossingCircle.mk_crossing_oppositeCrossingSlot_pair (D := D) (s := s) c k with
-    ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
-  · rw [h₁, h₂]
-  · rw [h₁, h₂, add_comm]
-
-section Saddle
-
-variable (D : PDCode n) {s t : Fin n → Bool} {c : Fin n}
-  (hst : ∀ j, j ≠ c → s j = t j) (hc : s c ≠ t c) (R : Type u) [CommSemiring R]
-
-/-- Composing a saddle map at `c` with its reverse equals `X_p + X_q` for the two opposite arc marks
-at any slot `k` of `c`. -/
-theorem resolutionEdgeMap_comp_resolutionEdgeMap_eq_circleX_add_circleX
-    (h : #(D.circlesAt s c) = 2 ∨ #(D.circlesAt t c) = 2) (k : Fin 4) :
-    D.resolutionEdgeMap (fun j hj ↦ (hst j hj).symm) hc.symm h.symm R ∘ₗ
-        D.resolutionEdgeMap hst hc h R =
-      Khovanov.circleX R ((Mark.onArc D (D.crossing c k)).resolvedCircle s) +
-        Khovanov.circleX R
-          ((Mark.onArc D (D.crossing c (oppositeCrossingSlot k))).resolvedCircle s) := by
-  refine LinearMap.ext fun x ↦ ?_
-  rw [LinearMap.comp_apply, D.resolutionEdgeMap_reverse_resolutionEdgeMap hst hc R h x,
-    ← LinearMap.add_apply, D.circleX_resolvedCircle_onArc_add_oppositeCrossingSlot R s c k]
-
-/-- **Every saddle at `c` intertwines `X` on opposite slots of `c`.** Because one of `s` or `t` has
-a single circle passing through `c` (on which `k` and `oppositeCrossingSlot k` select the same
-circle), applying `X` at slot `k` before the saddle equals applying `X` at `oppositeCrossingSlot k`
-after it. -/
-theorem resolutionEdgeMap_circleX_oppositeCrossingSlot
-    (h : #(D.circlesAt s c) = 2 ∨ #(D.circlesAt t c) = 2) (k : Fin 4)
-    (x : Khovanov.CircleTensor R (D.ResolvedCircle s)) :
-    D.resolutionEdgeMap hst hc h R
-        (Khovanov.circleX R ((Mark.onArc D (D.crossing c k)).resolvedCircle s) x) =
-      Khovanov.circleX R
-        ((Mark.onArc D (D.crossing c (oppositeCrossingSlot k))).resolvedCircle t)
-        (D.resolutionEdgeMap hst hc h R x) := by
-  by_cases hs : #(D.circlesAt s c) = 2
-  · have ht1 : #(D.circlesAt t c) = 1 :=
-      D.card_circlesAt_eq_one_of_card_circlesAt_eq_two hst hc hs
-    rw [← Mark.resolvedCircle_onArc_crossing_eq_oppositeCrossingSlot_of_card_circlesAt_eq_one
-      D ht1 k]
-    exact D.resolutionEdgeMap_circleX (Mark.onArc D (D.crossing c k)) hst hc R h x
-  · have ht : #(D.circlesAt t c) = 2 := h.resolve_left hs
-    have hs1 : #(D.circlesAt s c) = 1 :=
-      D.card_circlesAt_eq_one_of_card_circlesAt_eq_two (fun j hj ↦ (hst j hj).symm) hc.symm ht
-    rw [Mark.resolvedCircle_onArc_crossing_eq_oppositeCrossingSlot_of_card_circlesAt_eq_one
-      D hs1 k]
-    exact D.resolutionEdgeMap_circleX
-      (Mark.onArc D (D.crossing c (oppositeCrossingSlot k))) hst hc R h x
-
-end Saddle
-
 /-! ### Reverse-saddle morphisms on the Khovanov cube of resolutions -/
 
 section Cube
@@ -165,22 +103,20 @@ variable (D : PDCode n) (c : Fin n) (hD : D.IsPlanar) (R : Type u) [CommRing R] 
 
 private theorem reverseSaddle_resolutionCubeι_mem_range (hj : j' = j - 2) {S : Finset (Fin n)}
     (hc : c ∉ S) (x : (D.resolutionCube hD R j).obj (insert c S)) :
-    let hst : ∀ i, i ≠ c → cubeState (insert c S) i = cubeState S i :=
-      fun i hi ↦ (cubeState_eq_of_covBy (covBy_insert hc) hc (mem_insert_self c S) i hi).symm
-    let hc_ne : cubeState (insert c S) c ≠ cubeState S c :=
-      (cubeState_ne_of_notMem_of_mem hc (mem_insert_self c S)).symm
-    D.resolutionEdgeMap hst hc_ne (hD.card_circlesAt_eq_two_or_card_circlesAt_eq_two hst hc_ne) R
+    D.resolutionEdgeMap cubeState_insert_eq_of_ne (cubeState_insert_ne hc)
+        (hD.card_circlesAt_eq_two_or_card_circlesAt_eq_two cubeState_insert_eq_of_ne
+          (cubeState_insert_ne hc)) R
         ((D.resolutionCubeι hD R j (insert c S)).hom x) ∈
       LinearMap.range (D.resolutionCubeι hD R j' S).hom := by
-  intro hst hc_ne
   have hx : (D.resolutionCubeι hD R j (insert c S)).hom x ∈
       (Khovanov.circleQuantumGrading R (D.ResolvedCircle (cubeState (insert c S)))).piece
         (j - #(insert c S)) := by
     rw [← range_resolutionCubeι]
     exact LinearMap.mem_range_self _ x
   rw [range_resolutionCubeι]
-  have hx' := (D.isHomogeneous_resolutionEdgeMap hst hc_ne
-    (hD.card_circlesAt_eq_two_or_card_circlesAt_eq_two hst hc_ne) R).map_mem hx
+  have hx' := (D.isHomogeneous_resolutionEdgeMap cubeState_insert_eq_of_ne (cubeState_insert_ne hc)
+    (hD.card_circlesAt_eq_two_or_card_circlesAt_eq_two cubeState_insert_eq_of_ne
+      (cubeState_insert_ne hc)) R).map_mem hx
   convert hx' using 2
   rw [card_insert_of_notMem hc, Nat.cast_succ]
   omega
@@ -191,14 +127,11 @@ Because removing `c` lowers the cube height by `1` while the saddle map has circ
 degree `-1`, the net shift in `j` is `-2`. -/
 def resolutionCubeReverseSaddle (hj : j' = j - 2) (S : Finset (Fin n)) (hc : c ∉ S) :
     (D.resolutionCube hD R j).obj (insert c S) ⟶ (D.resolutionCube hD R j').obj S :=
-  let hst : ∀ i, i ≠ c → cubeState (insert c S) i = cubeState S i :=
-    fun i hi ↦ (cubeState_eq_of_covBy (covBy_insert hc) hc (mem_insert_self c S) i hi).symm
-  let hc_ne : cubeState (insert c S) c ≠ cubeState S c :=
-    (cubeState_ne_of_notMem_of_mem hc (mem_insert_self c S)).symm
   ModuleCat.ofHom <|
     (LinearEquiv.ofInjective _ (D.resolutionCubeι_injective hD R j' S)).symm.toLinearMap ∘ₗ
-      ((D.resolutionEdgeMap hst hc_ne
-          (hD.card_circlesAt_eq_two_or_card_circlesAt_eq_two hst hc_ne) R) ∘ₗ
+      ((D.resolutionEdgeMap cubeState_insert_eq_of_ne (cubeState_insert_ne hc)
+          (hD.card_circlesAt_eq_two_or_card_circlesAt_eq_two cubeState_insert_eq_of_ne
+            (cubeState_insert_ne hc)) R) ∘ₗ
         (D.resolutionCubeι hD R j (insert c S)).hom).codRestrict _
         (D.reverseSaddle_resolutionCubeι_mem_range c hD R hj hc)
 
@@ -209,13 +142,9 @@ theorem resolutionCubeReverseSaddle_comp_resolutionCubeι (hj : j' = j - 2) (S :
     (hc : c ∉ S) :
     D.resolutionCubeReverseSaddle c hD R hj S hc ≫ D.resolutionCubeι hD R j' S =
       D.resolutionCubeι hD R j (insert c S) ≫
-        ModuleCat.ofHom (D.resolutionEdgeMap
-          (fun i hi ↦ (cubeState_eq_of_covBy (covBy_insert hc) hc (mem_insert_self c S) i hi).symm)
-          (cubeState_ne_of_notMem_of_mem hc (mem_insert_self c S)).symm
-          (hD.card_circlesAt_eq_two_or_card_circlesAt_eq_two
-            (fun i hi ↦
-              (cubeState_eq_of_covBy (covBy_insert hc) hc (mem_insert_self c S) i hi).symm)
-            (cubeState_ne_of_notMem_of_mem hc (mem_insert_self c S)).symm) R) := by
+        ModuleCat.ofHom (D.resolutionEdgeMap cubeState_insert_eq_of_ne (cubeState_insert_ne hc)
+          (hD.card_circlesAt_eq_two_or_card_circlesAt_eq_two cubeState_insert_eq_of_ne
+            (cubeState_insert_ne hc)) R) := by
   ext x
   simp [resolutionCubeReverseSaddle]
 
@@ -225,31 +154,25 @@ consists of four saddle edges between states differing at `c` and `a`, which com
 theorem isCubeReverseEdgeCompatible_resolutionCubeReverseSaddle (hj : j' = j - 2) :
     Functor.IsCubeReverseEdgeCompatible (D.resolutionCube hD R j) (D.resolutionCube hD R j') c
       (D.resolutionCubeReverseSaddle c hD R hj) := by
-  rw [Functor.isCubeReverseEdgeCompatible_def]
   intro S hc a ha
   have haS : a ∉ S := fun haS ↦ ha (mem_insert_of_mem haS)
-  have hc' : c ∉ insert a S := fun hc' ↦ ha (by
-    rcases mem_insert.mp hc' with rfl | hmem
-    · exact mem_insert_self c S
-    · exact absurd hmem hc)
-  have hst₁ : ∀ i, i ≠ c → cubeState (insert c S) i = cubeState S i :=
-    fun i hi ↦ (cubeState_eq_of_covBy (covBy_insert hc) hc (mem_insert_self c S) i hi).symm
-  have hc₁ : cubeState (insert c S) c ≠ cubeState S c :=
-    (cubeState_ne_of_notMem_of_mem hc (mem_insert_self c S)).symm
+  have hc' : c ∉ insert a S := notMem_insert_of_notMem_insert_swap hc ha
+  have hst₁ : ∀ i, i ≠ c → cubeState (insert c S) i = cubeState S i := cubeState_insert_eq_of_ne
+  have hc₁ : cubeState (insert c S) c ≠ cubeState S c := cubeState_insert_ne hc
   have ht₁u : ∀ i, i ≠ a → cubeState S i = cubeState (insert a S) i :=
-    cubeState_eq_of_covBy (covBy_insert haS) haS (mem_insert_self a S)
-  have hc₁' : cubeState S a ≠ cubeState (insert a S) a :=
-    cubeState_ne_of_notMem_of_mem haS (mem_insert_self a S)
+    fun i hi ↦ (cubeState_insert_eq_of_ne i hi).symm
+  have hc₁' : cubeState S a ≠ cubeState (insert a S) a := (cubeState_insert_ne haS).symm
   have hst₂ : ∀ i, i ≠ a → cubeState (insert c S) i = cubeState (insert c (insert a S)) i := by
     intro i hi
-    simp [cubeState_apply, hi]
-  have hc₂ : cubeState (insert c S) a ≠ cubeState (insert c (insert a S)) a :=
-    cubeState_ne_of_notMem_of_mem ha (mem_insert_of_mem (mem_insert_self a S))
+    rw [insert_comm c a S]
+    exact (cubeState_insert_eq_of_ne i hi).symm
+  have hc₂ : cubeState (insert c S) a ≠ cubeState (insert c (insert a S)) a := by
+    rw [insert_comm c a S]
+    exact (cubeState_insert_ne ha).symm
   have ht₂u : ∀ i, i ≠ c → cubeState (insert c (insert a S)) i = cubeState (insert a S) i :=
-    fun i hi ↦ (cubeState_eq_of_covBy (covBy_insert hc') hc'
-      (mem_insert_self c (insert a S)) i hi).symm
+    cubeState_insert_eq_of_ne
   have hc₂' : cubeState (insert c (insert a S)) c ≠ cubeState (insert a S) c :=
-    (cubeState_ne_of_notMem_of_mem hc' (mem_insert_self c (insert a S))).symm
+    cubeState_insert_ne hc'
   rw [← cancel_mono (D.resolutionCubeι hD R j' (insert a S)), Category.assoc, Category.assoc,
     D.resolutionCube_map_homOfLE_insert_comp_resolutionCubeι hD R j' haS,
     D.resolutionCubeReverseSaddle_comp_resolutionCubeι_assoc c hD R hj S hc,
@@ -279,8 +202,9 @@ theorem resolutionCube_map_comp_resolutionCubeReverseSaddle (k : Fin 4) (hj : j'
     D.resolutionCubeReverseSaddle_comp_resolutionCubeι c hD R hj S hc,
     D.resolutionCube_map_homOfLE_insert_comp_resolutionCubeι_assoc hD R j hc,
     D.resolutionCubeMarkX_app_comp_resolutionCubeι, D.resolutionCubeMarkX_app_comp_resolutionCubeι]
-  have hst := cubeState_eq_of_covBy (covBy_insert hc) hc (mem_insert_self c S)
-  have hc_ne := cubeState_ne_of_notMem_of_mem hc (mem_insert_self c S)
+  have hst : ∀ i, i ≠ c → cubeState S i = cubeState (insert c S) i :=
+    fun i hi ↦ (cubeState_insert_eq_of_ne i hi).symm
+  have hc_ne : cubeState S c ≠ cubeState (insert c S) c := (cubeState_insert_ne hc).symm
   have hround := D.resolutionEdgeMap_comp_resolutionEdgeMap_eq_circleX_add_circleX hst hc_ne R
     (hD.card_circlesAt_eq_two_or_card_circlesAt_eq_two hst hc_ne) k
   ext x
@@ -299,10 +223,8 @@ theorem resolutionCubeReverseSaddle_comp_resolutionCube_map (k : Fin 4) (hj : j'
     D.resolutionCube_map_homOfLE_insert_comp_resolutionCubeι hD R j' hc,
     D.resolutionCubeReverseSaddle_comp_resolutionCubeι_assoc c hD R hj S hc,
     D.resolutionCubeMarkX_app_comp_resolutionCubeι, D.resolutionCubeMarkX_app_comp_resolutionCubeι]
-  have hts : ∀ i, i ≠ c → cubeState (insert c S) i = cubeState S i :=
-    fun i hi ↦ (cubeState_eq_of_covBy (covBy_insert hc) hc (mem_insert_self c S) i hi).symm
-  have hc_ne : cubeState (insert c S) c ≠ cubeState S c :=
-    (cubeState_ne_of_notMem_of_mem hc (mem_insert_self c S)).symm
+  have hts : ∀ i, i ≠ c → cubeState (insert c S) i = cubeState S i := cubeState_insert_eq_of_ne
+  have hc_ne : cubeState (insert c S) c ≠ cubeState S c := cubeState_insert_ne hc
   have hround := D.resolutionEdgeMap_comp_resolutionEdgeMap_eq_circleX_add_circleX hts hc_ne R
     (hD.card_circlesAt_eq_two_or_card_circlesAt_eq_two hts hc_ne) k
   ext x
@@ -406,8 +328,6 @@ theorem khovanovComplexι_khovanovComplexMarkSlideHom_insert (hj : j' = j - 2) {
   let G := D.toPDCode.resolutionCube hD R
     (j' - D.positiveCrossingCount + 2 * D.negativeCrossingCount)
   have he : i + 1 + (D.negativeCrossingCount : ℤ) = i + D.negativeCrossingCount + 1 := by omega
-  rw [khovanovComplexι_def, khovanovComplexMarkSlideHom, Category.assoc, eqToHom_trans_assoc,
-    eqToHom_refl, Category.id_comp]
   have hι :
       F.cubeComplexι (r := i + 1 + D.negativeCrossingCount) ⟨insert c S.val, by
           rw [card_insert_of_notMem hc, Nat.cast_succ, S.property]; omega⟩ =
@@ -416,20 +336,9 @@ theorem khovanovComplexι_khovanovComplexMarkSlideHom_insert (hj : j' = j - 2) {
           (F.cubeComplex.XIsoOfEq he.symm).hom :=
     (F.cubeComplexι_comp_XIsoOfEq_hom he.symm
       ⟨insert c S.val, by rw [card_insert_of_notMem hc, Nat.cast_succ, S.property]⟩).symm
-  have hH :
-      (F.cubeComplex.XIsoOfEq he.symm).hom ≫
-          Functor.cubeReverseEdgeHom F G c
-            (D.toPDCode.resolutionCubeReverseSaddle c hD R (by omega))
-            (i + 1 + D.negativeCrossingCount) (i + D.negativeCrossingCount) =
-        Functor.cubeReverseEdgeHom F G c
-          (D.toPDCode.resolutionCubeReverseSaddle c hD R (by omega))
-          (i + D.negativeCrossingCount + 1) (i + D.negativeCrossingCount) := by
-    clear hι
-    revert he
-    generalize i + 1 + (D.negativeCrossingCount : ℤ) = m
-    rintro rfl
-    simp
-  rw [hι, Category.assoc, ← Category.assoc (F.cubeComplex.XIsoOfEq he.symm).hom, hH,
+  rw [khovanovComplexι_def, khovanovComplexMarkSlideHom, Category.assoc, eqToHom_trans_assoc,
+    eqToHom_refl, Category.id_comp, hι, Category.assoc,
+    Functor.XIsoOfEq_hom_comp_cubeReverseEdgeHom_assoc F G c _ he.symm,
     Functor.ι_cubeReverseEdgeHom_insert_assoc F G c _ S hc, Preadditive.zsmul_comp,
     Category.assoc, ← khovanovComplexι_def]
 
@@ -453,27 +362,17 @@ theorem khovanovComplexMarkSlideHom_khovanovComplexπ_of_notMem (hj : j' = j - 2
             rw [card_insert_of_notMem hc, Nat.cast_succ, S.property]
             omega⟩ ≫
           D.toPDCode.resolutionCubeReverseSaddle c hD R (by omega) S.val hc) := by
-  refine D.khovanovComplex_hom_ext hD R j fun U ↦ ?_
-  by_cases hcU : c ∈ U.val
-  · obtain ⟨V, hcV, rfl⟩ :=
-      exists_notMem_insert_eq_of_mem (add_right_comm i (D.negativeCrossingCount : ℤ) 1) U hcU
-    rw [khovanovComplexι_khovanovComplexMarkSlideHom_insert_assoc D c hD R hj V hcV,
-      Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc]
-    by_cases hVS : V = S
-    · subst hVS
-      rw [khovanovComplexι_π_self, Category.comp_id, khovanovComplexι_π_self_assoc]
-    · rw [khovanovComplexι_π_of_ne D hD R j' hVS, comp_zero, smul_zero,
-        khovanovComplexι_π_of_ne_assoc, zero_comp, smul_zero]
-      intro hins
-      apply hVS
-      apply Subtype.ext
-      have hErase := congrArg (fun X ↦ X.val.erase c) hins
-      dsimp only at hErase
-      rwa [erase_insert hcV, erase_insert hc] at hErase
-  · rw [khovanovComplexι_khovanovComplexMarkSlideHom_of_notMem_assoc D c hD R hj U hcU, zero_comp,
-      Preadditive.comp_zsmul, khovanovComplexι_π_of_ne_assoc, zero_comp, smul_zero]
-    intro hins
-    exact hcU (congrArg Subtype.val hins ▸ mem_insert_self c S.val)
+  let F := D.toPDCode.resolutionCube hD R
+    (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)
+  let G := D.toPDCode.resolutionCube hD R
+    (j' - D.positiveCrossingCount + 2 * D.negativeCrossingCount)
+  have he : i + 1 + (D.negativeCrossingCount : ℤ) = i + D.negativeCrossingCount + 1 := by omega
+  rw [khovanovComplexMarkSlideHom, khovanovComplexπ_def, Category.assoc, Category.assoc,
+    eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
+    ← Functor.XIsoOfEq_hom_comp_cubeReverseEdgeHom_assoc F G c _ he,
+    Functor.cubeReverseEdgeHom_π_of_notMem F G c _ S hc, Preadditive.comp_zsmul,
+    Preadditive.comp_zsmul, F.XIsoOfEq_hom_comp_cubeComplexπ_assoc he, ← Category.assoc,
+    ← khovanovComplexπ_def]
 
 /-- **The mark-slide homotopy squares to zero (`H² = 0`).** Its image lies in state summands
 avoiding `c`, on which a second application of `H` vanishes. -/
@@ -485,19 +384,6 @@ theorem khovanovComplexMarkSlideHom_comp_khovanovComplexMarkSlideHom (hj : j' = 
   rw [khovanovComplexMarkSlideHom, khovanovComplexMarkSlideHom, Category.assoc, Category.assoc,
     eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
     Functor.cubeReverseEdgeHom_comp_cubeReverseEdgeHom_assoc, zero_comp, comp_zero]
-
-private theorem khovanovComplexMarkX_f_eq (p : D.toPDCode.Mark) (hj : j' = j - 2) (i : ℤ) :
-    (D.khovanovComplexMarkX p hD R hj).f i =
-      eqToHom (D.khovanovComplex_X hD R j i) ≫
-        (NatTrans.cubeComplexMap (D.toPDCode.resolutionCubeMarkX p hD R
-          (j := j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)
-          (j' := j' - D.positiveCrossingCount + 2 * D.negativeCrossingCount) (by omega))).f
-          (i + D.negativeCrossingCount) ≫
-        eqToHom (D.khovanovComplex_X hD R j' i).symm := by
-  refine D.khovanovComplex_hom_ext hD R j fun S ↦ ?_
-  rw [khovanovComplexι_khovanovComplexMarkX_f, khovanovComplexι_def D hD R j S, Category.assoc,
-    eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, NatTrans.ι_cubeComplexMap_f_assoc,
-    ← khovanovComplexι_def]
 
 /-- **The mark-slide homotopy intertwines opposite-strand `X` actions (`H ∘ X_p = X_q ∘ H`).** In
 categorical composition order, `(X_p).f i ≫ H i l = H i l ≫ (X_q).f l` for `p` at slot `k` of `c`
@@ -512,7 +398,7 @@ theorem khovanovComplexMarkX_f_comp_khovanovComplexMarkSlideHom_oppositeCrossing
         (D.khovanovComplexMarkX
           (PDCode.Mark.onArc D.toPDCode (D.toPDCode.crossing c (PDCode.oppositeCrossingSlot k)))
           hD R hj').f l := by
-  rw [D.khovanovComplexMarkX_f_eq _ _ _ hj, D.khovanovComplexMarkX_f_eq _ _ _ hj',
+  rw [D.khovanovComplexMarkX_f _ hD R hj, D.khovanovComplexMarkX_f _ hD R hj',
     khovanovComplexMarkSlideHom, khovanovComplexMarkSlideHom]
   simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
   rw [Functor.cubeComplexMap_f_comp_cubeReverseEdgeHom_assoc _ _ _ _ _ fun S hc ↦
@@ -528,7 +414,7 @@ theorem khovanovComplexMarkX_f_comp_khovanovComplexMarkSlideHom (r : D.toPDCode.
     (hj : j' = j - 2) (hj' : j'' = j' - 2) (i l : ℤ) :
     (D.khovanovComplexMarkX r hD R hj).f i ≫ D.khovanovComplexMarkSlideHom c hD R hj' i l =
       D.khovanovComplexMarkSlideHom c hD R hj i l ≫ (D.khovanovComplexMarkX r hD R hj').f l := by
-  rw [D.khovanovComplexMarkX_f_eq _ _ _ hj, D.khovanovComplexMarkX_f_eq _ _ _ hj',
+  rw [D.khovanovComplexMarkX_f _ hD R hj, D.khovanovComplexMarkX_f _ hD R hj',
     khovanovComplexMarkSlideHom, khovanovComplexMarkSlideHom]
   simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
   rw [Functor.cubeComplexMap_f_comp_cubeReverseEdgeHom_assoc _ _ _ _ _ fun S hc ↦
@@ -537,6 +423,43 @@ theorem khovanovComplexMarkX_f_comp_khovanovComplexMarkSlideHom (r : D.toPDCode.
       (j' := j' - D.positiveCrossingCount + 2 * D.negativeCrossingCount)
       (j'' := j'' - D.positiveCrossingCount + 2 * D.negativeCrossingCount)
       (by omega) (by omega) S hc]
+
+/-- Transporting `d ≫ H + H ≫ d` on the normalized Khovanov complex across `khovanovComplex_X`
+identifies it with `dNext + prevD` of `Functor.cubeReverseEdgeHom` at height `i + n₋`. -/
+private theorem d_comp_khovanovComplexMarkSlideHom_add_comp_d_eq (hj : j' = j - 2) (i : ℤ) :
+    (D.khovanovComplex hD R j).d i (i + 1) ≫
+        D.khovanovComplexMarkSlideHom c hD R hj (i + 1) i +
+      D.khovanovComplexMarkSlideHom c hD R hj i (i - 1) ≫
+        (D.khovanovComplex hD R j').d (i - 1) i =
+      eqToHom (D.khovanovComplex_X hD R j i) ≫
+        (dNext (i + D.negativeCrossingCount)
+          (Functor.cubeReverseEdgeHom
+            (D.toPDCode.resolutionCube hD R
+              (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount))
+            (D.toPDCode.resolutionCube hD R
+              (j' - D.positiveCrossingCount + 2 * D.negativeCrossingCount))
+            c (D.toPDCode.resolutionCubeReverseSaddle c hD R (by omega))) +
+        prevD (i + D.negativeCrossingCount)
+          (Functor.cubeReverseEdgeHom
+            (D.toPDCode.resolutionCube hD R
+              (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount))
+            (D.toPDCode.resolutionCube hD R
+              (j' - D.positiveCrossingCount + 2 * D.negativeCrossingCount))
+            c (D.toPDCode.resolutionCubeReverseSaddle c hD R (by omega)))) ≫
+        eqToHom (D.khovanovComplex_X hD R j' i).symm := by
+  have hrel_next : (ComplexShape.up ℤ).Rel (i + D.negativeCrossingCount)
+      (i + 1 + D.negativeCrossingCount) := by
+    simp only [ComplexShape.up_Rel]
+    omega
+  have hrel_prev : (ComplexShape.up ℤ).Rel (i - 1 + D.negativeCrossingCount)
+      (i + D.negativeCrossingCount) := by
+    simp only [ComplexShape.up_Rel]
+    omega
+  rw [D.khovanovComplex_d hD R j i (i + 1), D.khovanovComplex_d hD R j' (i - 1) i,
+    khovanovComplexMarkSlideHom, khovanovComplexMarkSlideHom, dNext_eq _ hrel_next,
+    prevD_eq _ hrel_prev]
+  simp only [Preadditive.comp_add, Preadditive.add_comp, Category.assoc, eqToHom_trans_assoc,
+    eqToHom_refl, Category.id_comp]
 
 /-- **The mark-slide chain homotopy equation (`d ≫ H + H ≫ d = X_p + X_q`)** on the normalized
 Khovanov complex, for opposite arc marks `p` and `q` at slot `k` and `oppositeCrossingSlot k` of
@@ -551,67 +474,25 @@ theorem d_comp_khovanovComplexMarkSlideHom_add_khovanovComplexMarkSlideHom_comp_
       (D.khovanovComplexMarkX
         (PDCode.Mark.onArc D.toPDCode (D.toPDCode.crossing c (PDCode.oppositeCrossingSlot k)))
         hD R hj).f i := by
-  let F := D.toPDCode.resolutionCube hD R
-    (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)
-  let G := D.toPDCode.resolutionCube hD R
-    (j' - D.positiveCrossingCount + 2 * D.negativeCrossingCount)
-  let h := D.toPDCode.resolutionCubeReverseSaddle c hD R
-    (j := j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)
-    (j' := j' - D.positiveCrossingCount + 2 * D.negativeCrossingCount) (by omega)
-  let p := PDCode.Mark.onArc D.toPDCode (D.toPDCode.crossing c k)
-  let q := PDCode.Mark.onArc D.toPDCode (D.toPDCode.crossing c (PDCode.oppositeCrossingSlot k))
-  let Hzero := Functor.cubeReverseEdgeHomotopyZero c h
+  have hcube := (Functor.cubeReverseEdgeHomotopyZero c
+    (D.toPDCode.resolutionCubeReverseSaddle c hD R
+      (j := j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)
+      (j' := j' - D.positiveCrossingCount + 2 * D.negativeCrossingCount) (by omega))
     (D.toPDCode.isCubeReverseEdgeCompatible_resolutionCubeReverseSaddle c hD R (by omega))
-    (D.toPDCode.resolutionCubeMarkX p hD R (by omega) +
-      D.toPDCode.resolutionCubeMarkX q hD R (by omega))
+    (D.toPDCode.resolutionCubeMarkX
+        (PDCode.Mark.onArc D.toPDCode (D.toPDCode.crossing c k)) hD R (by omega) +
+      D.toPDCode.resolutionCubeMarkX
+        (PDCode.Mark.onArc D.toPDCode (D.toPDCode.crossing c (PDCode.oppositeCrossingSlot k)))
+        hD R (by omega))
     (fun S hc ↦ (D.toPDCode.resolutionCube_map_comp_resolutionCubeReverseSaddle c hD R k
       (by omega) S hc).symm)
     (fun S hc ↦ (D.toPDCode.resolutionCubeReverseSaddle_comp_resolutionCube_map c hD R k
-      (by omega) S hc).symm)
-  have hcube := Hzero.comm (i + D.negativeCrossingCount)
-  have hhom : Hzero.hom = Functor.cubeReverseEdgeHom F G c h := by
-    funext a b
-    simp [Hzero, F, G, h]
-  rw [hhom, HomologicalComplex.zero_f, add_zero] at hcube
-  have hrel_next : (ComplexShape.up ℤ).Rel (i + D.negativeCrossingCount)
-      (i + 1 + D.negativeCrossingCount) := by
-    simp only [ComplexShape.up_Rel]
-    omega
-  have hrel_prev : (ComplexShape.up ℤ).Rel (i - 1 + D.negativeCrossingCount)
-      (i + D.negativeCrossingCount) := by
-    simp only [ComplexShape.up_Rel]
-    omega
-  rw [dNext_eq _ hrel_next, prevD_eq _ hrel_prev] at hcube
-  refine D.khovanovComplex_hom_ext hD R j fun S ↦ ?_
-  rw [Preadditive.comp_add, Preadditive.comp_add, khovanovComplexι_khovanovComplexMarkX_f,
-    khovanovComplexι_khovanovComplexMarkX_f]
-  have hdNext :
-      D.khovanovComplexι hD R j S ≫
-          (D.khovanovComplex hD R j).d i (i + 1) ≫
-          D.khovanovComplexMarkSlideHom c hD R hj (i + 1) i =
-        F.cubeComplexι S ≫ F.cubeComplex.d (i + D.negativeCrossingCount)
-          (i + 1 + D.negativeCrossingCount) ≫
-          Functor.cubeReverseEdgeHom F G c h
-            (i + 1 + D.negativeCrossingCount) (i + D.negativeCrossingCount) ≫
-          eqToHom (D.khovanovComplex_X hD R j' i).symm := by
-    rw [khovanovComplexι_def, D.khovanovComplex_d hD R j i (i + 1), khovanovComplexMarkSlideHom]
-    simp only [F, G, h, Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-  have hprevD :
-      D.khovanovComplexι hD R j S ≫
-          D.khovanovComplexMarkSlideHom c hD R hj i (i - 1) ≫
-          (D.khovanovComplex hD R j').d (i - 1) i =
-        F.cubeComplexι S ≫ Functor.cubeReverseEdgeHom F G c h
-            (i + D.negativeCrossingCount) (i - 1 + D.negativeCrossingCount) ≫
-          G.cubeComplex.d (i - 1 + D.negativeCrossingCount) (i + D.negativeCrossingCount) ≫
-          eqToHom (D.khovanovComplex_X hD R j' i).symm := by
-    rw [khovanovComplexι_def, khovanovComplexMarkSlideHom, D.khovanovComplex_d hD R j' (i - 1) i]
-    simp only [F, G, h, Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-  rw [hdNext, hprevD]
-  have hsum := congrArg (fun f ↦ F.cubeComplexι S ≫ f ≫
-    eqToHom (D.khovanovComplex_X hD R j' i).symm) hcube.symm
-  simpa only [F, G, h, p, q, Preadditive.add_comp, Preadditive.comp_add, Category.assoc,
-    NatTrans.cubeComplexMap_add, HomologicalComplex.add_f_apply,
-    NatTrans.ι_cubeComplexMap_f_assoc, ← khovanovComplexι_def] using hsum
+      (by omega) S hc).symm)).comm (i + D.negativeCrossingCount)
+  rw [funext₂ (Functor.cubeReverseEdgeHomotopyZero_hom _ _ _ _ _ _),
+    HomologicalComplex.zero_f, add_zero] at hcube
+  rw [D.d_comp_khovanovComplexMarkSlideHom_add_comp_d_eq c hD R hj i, ← hcube,
+    NatTrans.cubeComplexMap_add, HomologicalComplex.add_f_apply, Preadditive.add_comp,
+    Preadditive.comp_add, ← D.khovanovComplexMarkX_f, ← D.khovanovComplexMarkX_f]
 
 /-- **Chain null-homotopy `X_p + X_q ≃ 0`** on the normalized Khovanov complex for opposite arc
 marks `p` and `q` at slot `k` and `oppositeCrossingSlot k` of crossing `c`, witnessed by
@@ -657,8 +538,8 @@ def khovanovComplexMarkSlideHomotopyNeg (k : Fin 4) (hj : j' = j - 2) :
 @[simp]
 theorem khovanovComplexMarkSlideHomotopyNeg_hom (k : Fin 4) (hj : j' = j - 2) (i l : ℤ) :
     (D.khovanovComplexMarkSlideHomotopyNeg c hD R k hj).hom i l =
-      D.khovanovComplexMarkSlideHom c hD R hj i l :=
-  zero_add _
+      D.khovanovComplexMarkSlideHom c hD R hj i l := by
+  simp [khovanovComplexMarkSlideHomotopyNeg, Homotopy.equivSubZero]
 
 /-- **Sliding a mark across one crossing negates the induced `X` map on Khovanov homology.** For
 opposite arc marks `p` and `q` at slot `k` and `oppositeCrossingSlot k` of crossing `c`, the maps
