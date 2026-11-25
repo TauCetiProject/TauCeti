@@ -208,7 +208,6 @@ noncomputable def isColimitRowFiniteIndexGradedPieceHomologyCofan (n : ℤ) :
     IsColimit (Cofan.mk ((rowFiniteIndexGradedPieceComplex ind hM p).homology n)
       fun x : {x // ind x = p} ↦
         HomologicalComplex.homologyMap (rowFiniteIndexGradedPieceSingle hM ind x) n) :=
-  haveI : AB4OfSize.{uP} (ModuleCat.{max uP uM} R) := AB4OfSize_shrink.{uP, uM} _
   isColimitCofanMkObjOfIsColimit (HomologicalComplex.homologyFunctor _ _ n) _ _
     (isColimitRowFiniteIndexGradedPieceCofan hM ind)
 

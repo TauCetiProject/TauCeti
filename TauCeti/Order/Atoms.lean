@@ -32,6 +32,8 @@ arbitrary suprema — lattices of subobjects closed under finite meets and joins
   atoms.
 * `TauCeti.exists_isCompl_finset_sup_of_isAtom`: if a finite family of atoms has supremum `⊤`, every
   element has a complement that is the supremum of a subfamily.
+* `TauCeti.exists_subset_supIndep_sup_eq_of_isAtom`: in a modular lattice, a finite family of atoms
+  has an independent subfamily with the same supremum.
 -/
 
 public section
@@ -93,5 +95,23 @@ theorem exists_isCompl_finset_sup_of_isAtom {ι : Type*} [Fintype ι] {N : ι �
   lia
 
 end Complement
+
+/-- **Independent subfamilies of atoms.** In a modular lattice with a bottom element, a finite
+family of atoms has an independent subfamily with the same supremum. -/
+theorem exists_subset_supIndep_sup_eq_of_isAtom {α ι : Type*} [Lattice α] [OrderBot α]
+    [IsModularLattice α] {N : ι → α} (s : Finset ι) (hN : ∀ i ∈ s, IsAtom (N i)) :
+    ∃ t ⊆ s, t.SupIndep N ∧ t.sup N = s.sup N := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => exact ⟨∅, subset_rfl, Finset.supIndep_empty _, rfl⟩
+  | insert i s _ ih =>
+    obtain ⟨t, hts, hind, hsup⟩ := ih fun j hj ↦ hN j (Finset.mem_insert_of_mem hj)
+    -- Keep the new atom exactly when it does not already lie below the supremum of `t`.
+    rw [Finset.sup_insert, ← hsup]
+    by_cases hle : N i ≤ t.sup N
+    · exact ⟨t, hts.trans (Finset.subset_insert _ _), hind, (sup_eq_right.2 hle).symm⟩
+    · exact ⟨insert i t, Finset.insert_subset_insert _ hts,
+        hind.insert ((hN i (Finset.mem_insert_self _ _)).not_le_iff_disjoint.1 hle),
+        Finset.sup_insert⟩
 
 end TauCeti

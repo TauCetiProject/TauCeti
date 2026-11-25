@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.EnergyForm.InverseCoercive
 public import TauCeti.Analysis.PDE.Regularity.Harnack
 public import TauCeti.Analysis.PDE.Regularity.HolderContinuity
+public import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
 import TauCeti.Analysis.PDE.Regularity.HigherIntegrability
 import TauCeti.MeasureTheory.Measure.Restrict.Chain
 
@@ -20,10 +21,12 @@ every `x` and every `ξ`, `ξ · a(x)ξ ≥ λ‖ξ‖²` and `ξ · a(x)⁻¹ξ
 is the ellipticity hypothesis of the divergence-form theory. This file proves the interior
 regularity theorems under it, in every dimension: the De Giorgi–Nash–Moser estimates for weak
 solutions, subsolutions and supersolutions of `-∂ᵢ(aⁱʲ ∂ⱼu) = 0`, quantitative in a local norm
-of `u`, and Meyers' estimate for weak solutions of `-∂ᵢ(aⁱʲ ∂ⱼu) = ∂ᵢFⁱ`, quantitative in an
-average of `‖∇u‖²` and a datum term in `‖F‖ / λ`. The constants depend only on an upper bound for
-the ellipticity ratio `Λ / λ`, the dimension and the normalization of the Haar measure, and in
-addition on the exponent `s` for the weak Harnack inequality and on `ε` for Meyers' estimate.
+of `u`, Meyers' estimate for weak solutions of `-∂ᵢ(aⁱʲ ∂ⱼu) = ∂ᵢFⁱ`, quantitative in an
+average of `‖∇u‖²` and a datum term in `‖F‖ / λ`, and De Giorgi's estimates for weak solutions
+of `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ`. The constants depend only on an upper bound for the ellipticity
+ratio `Λ / λ`, the dimension and the normalization of the Haar measure, and in addition on the
+exponent `s` for the weak Harnack inequality, on `ε` for Meyers' estimate and on the exponents of
+the data for the equation with a right-hand side.
 
 * **Local boundedness (De Giorgi).** A weak subsolution satisfies, above every level `k`,
   `u ≤ k + D R^(-n/2) ‖(u - k)⁺‖_{L²(B(x₀, R))}` on `B(x₀, R/2)`
@@ -47,24 +50,38 @@ addition on the exponent `s` for the weak Harnack inequality and on `ε` for Mey
   so `∇u ∈ L^{2+ε}_loc` when `F ∈ L^{2+ε}_loc`
   (`TauCeti.PDE.exists_memLp_gradient_ball_divergence_of_isUniformlyEllipticAE`).
 
+For the equation with a right-hand side, `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ` with `f ∈ Lʳ`, `r > 1`,
+`r > n/2`, and `F ∈ L^q`, `q > 2`, `q > n`, the file also proves local boundedness and De
+Giorgi's Hölder estimate on every set whose closed `R`-thickening lies in `Ω`, with constants
+depending only on `Λ / λ`, `n`, `r`, `q` and the normalization of the Haar measure, and with the
+data entering through `‖f‖_{Lʳ} / λ` and `‖F‖_{L^q} / λ` with their Morrey gains `2 - n/r` and
+`1 - n/q`. These are, in the namespace `TauCeti.PDE`,
+`exists_ae_abs_value_le_mul_add_of_memLp_add_divergence_of_isUniformlyEllipticAE` and
+`exists_holderOnWith_preciseRepresentative_of_memLp_add_divergence_of_isUniformlyEllipticAE`.
+Either datum may be zero.
+
 All of them reduce to the theorems for the pointwise operator-bound predicate
 (`TauCeti.PDE.exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral`,
 `TauCeti.PDE.exists_ae_abs_value_le_mul_rpow_mul_sqrt_setIntegral`,
 `TauCeti.PDE.exists_holderOnWith_preciseRepresentative`,
 `TauCeti.PDE.exists_ae_setAverage_rpow_rpow_inv_le_mul_value`,
 `TauCeti.PDE.exists_ae_ae_value_le_mul_value` and
-`TauCeti.PDE.exists_setLAverage_enorm_gradient_rpow_le_divergence`). Dividing `a` by `λ` does not
-change the weak solutions, subsolutions and supersolutions, and normalizes the constants to
-`(1, Λ / λ)`; changing `a` on a null set gives a field satisfying the operator bound with the
-same constants everywhere
+`TauCeti.PDE.exists_setLAverage_enorm_gradient_rpow_le_divergence`, and with a right-hand side
+`TauCeti.PDE.exists_ae_abs_value_le_mul_add_of_memLp_add_divergence` and
+`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_memLp_add_divergence`). Dividing `a` by
+`λ` does not change the weak solutions, subsolutions and supersolutions, and normalizes the
+constants to `(1, Λ / λ)`; changing `a` on a null set gives a field satisfying the operator bound
+with the same constants everywhere
 (`TauCeti.PDE.IsUniformlyEllipticAE.exists_uniformlyEllipticOn_energyFormH1_eq`). For Meyers'
-estimate the divergence datum becomes `F / λ`, which is why `‖F‖ / λ` appears on the right.
-The Hölder estimate is applied with the thickening radius `r / 2`. The Harnack inequality on
-`B(x₀, r)` is assembled from the inequality on balls of radius `ρ = r / (8 √n)` centred in
-`closedBall x₀ r`: finitely many such balls cover `closedBall x₀ r`, and each is joined to
-`B(x₀, ρ)` by a chain of `⌈8 √n⌉ + 2` balls centred on a segment, consecutive balls overlapping
-(`TauCeti.ae_ae_le_pow_mul_of_forall_mem_closedBall`). The number of balls in a chain depends
-only on the dimension, so the constant does too.
+estimate the divergence datum becomes `F / λ`, which is why `‖F‖ / λ` appears on the right;
+with a right-hand side both data are divided by `λ`
+(`TauCeti.PDE.IsUniformlyEllipticAE.exists_uniformlyEllipticOn_energyFormH1_eq_add_divergence`).
+The homogeneous Hölder estimate is applied with the thickening radius `r / 2`. The Harnack
+inequality on `B(x₀, r)` is assembled from the inequality on balls of radius `ρ = r / (8 √n)`
+centred in `closedBall x₀ r`: finitely many such balls cover `closedBall x₀ r`, and each is
+joined to `B(x₀, ρ)` by a chain of `⌈8 √n⌉ + 2` balls centred on a segment, consecutive balls
+overlapping (`TauCeti.ae_ae_le_pow_mul_of_forall_mem_closedBall`). The number of balls in a chain
+depends only on the dimension, so the constant does too.
 
 ## References
 
@@ -342,5 +359,97 @@ theorem exists_memLp_gradient_ball_divergence_of_isUniformlyEllipticAE [Nonempty
     h.exists_uniformlyEllipticOn_energyFormH1_eq_divergence hratio ha hu
   exact hM ε hε hεle h' (le_of_eq (mul_one ratio).symm) ha' (hF.const_smul lam⁻¹) hu' hball
     (hFp.const_smul lam⁻¹)
+
+/-! ### A right-hand side `f + ∂ᵢFⁱ` -/
+
+/-- **Local boundedness with a right-hand side under inverse-coercive ellipticity.** Let `n ≥ 1`
+be the dimension, let `r > 1` with `r > n/2`, let `q > 2` with `q > n`, and fix a bound `ratio`
+for the ellipticity ratio. There is `D > 0`, depending only on `ratio`, `n`, `r`, `q` and the
+normalization of `mu`, such that the following holds. Let `a` be measurable and uniformly elliptic
+on `Ω` in the inverse-coercive sense with constants `λ, Λ`, `Λ ≤ ratio · λ`, not necessarily
+symmetric, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ` with
+`f ∈ Lʳ(B(x₀, R))` and `F ∈ L^q(B(x₀, R); ℝⁿ)`. If `B(x₀, R) ⊆ Ω`, then almost everywhere on
+`B(x₀, R/2)`
+
+`|u| ≤ D (R^(-n/2) ‖u‖_{L²(B(x₀, R))} + (R^(2 - n/r) ‖f‖_{Lʳ(B(x₀, R))} +
+  R^(1 - n/q) ‖F‖_{L^q(B(x₀, R))}) / λ)`. -/
+theorem exists_ae_abs_value_le_mul_add_of_memLp_add_divergence_of_isUniformlyEllipticAE
+    [Nonempty ι] {r q : ℝ≥0} (hr : 1 < r) (hrn : (Fintype.card ι : ℝ) < 2 * r)
+    (hq : 2 < (q : ℝ)) (hqn : (Fintype.card ι : ℝ) < q) (ratio : ℝ) :
+    ∃ D : ℝ, 0 < D ∧ ∀ {lam Lam : ℝ} {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {f : EuclideanSpace ℝ ι → ℝ}
+      {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {u : W1p mu Omega 2}
+      {x₀ : EuclideanSpace ℝ ι} {R : ℝ},
+      IsUniformlyEllipticAE mu (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      Lam ≤ ratio * lam → AEStronglyMeasurable a (mu.restrict Omega) →
+      MemLp f r (mu.restrict (ball x₀ R)) → MemLp F q (mu.restrict (ball x₀ R)) →
+      (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
+        ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu -
+          ∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu) →
+      0 < R → ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      ∀ᵐ x ∂mu.restrict (ball x₀ (R / 2)), |W1p.value u x| ≤
+        D * (R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu) +
+          (R ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm f r (mu.restrict (ball x₀ R))).toReal +
+            R ^ (1 - (Fintype.card ι : ℝ) / q) *
+              (eLpNorm F q (mu.restrict (ball x₀ R))).toReal) / lam) := by
+  obtain ⟨D, hD, hbound⟩ := exists_ae_abs_value_le_mul_add_of_memLp_add_divergence (mu := mu)
+    (lam := 1) (Lam := ratio) hr hrn hq hqn
+  refine ⟨D, hD, fun {lam Lam Omega a f F u x₀ R} h hratio ha hf hF hu hR hball => ?_⟩
+  obtain ⟨a', h', ha', hu'⟩ :=
+    h.exists_uniformlyEllipticOn_energyFormH1_eq_add_divergence hratio ha hu
+  refine (hbound h' ha' (hf.const_smul lam⁻¹) (hF.const_smul lam⁻¹) hu' hR hball).mono
+    fun x hx => hx.trans_eq ?_
+  -- The normalized data `λ⁻¹ f` and `λ⁻¹ F` have norms `‖f‖ / λ` and `‖F‖ / λ`.
+  simp only [eLpNorm_const_smul, ENNReal.toReal_mul, toReal_eNorm, norm_inv,
+    Real.norm_of_nonneg h.pos.le]
+  ring
+
+/-- **De Giorgi's theorem with a right-hand side under inverse-coercive ellipticity.** Let
+`n ≥ 1` be the dimension, let `r > 1` with `r > n/2`, let `q > 2` with `q > n`, and fix a bound
+`ratio` for the ellipticity ratio. There are `α ∈ (0, 1]` and `C > 0`, depending only on `ratio`,
+`n`, `r`, `q` and the normalization of the additive Haar measure `mu`, such that the following
+holds. Let `a` be measurable and uniformly elliptic on `Ω` in the inverse-coercive sense with
+constants `λ, Λ`, `Λ ≤ ratio · λ`, not necessarily symmetric, let `f ∈ Lʳ(Ω)` and
+`F ∈ L^q(Ω; ℝⁿ)`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ`, that is
+`a(u, v) = ∫_Ω f v - ∫_Ω ⟪F, ∇v⟫` for every `v ∈ H¹₀(Ω)`. If the closed `R`-thickening of a set
+`K` lies in `Ω`, then the precise representative of `u` is Hölder continuous on `K` with exponent
+`α` and constant
+
+`C R^(-α) (R^(-n/2) ‖u‖_{L²(Ω)} + (R^(2 - n/r) ‖f‖_{Lʳ(Ω)} + R^(1 - n/q) ‖F‖_{L^q(Ω)}) / λ)`.
+
+The precise representative agrees with `u` almost everywhere on `Ω`
+(`TauCeti.W1p.ae_eq_preciseRepresentative`). The estimate is invariant under `a ↦ t a` together
+with `(f, F) ↦ t (f, F)` for `t > 0`. -/
+theorem exists_holderOnWith_preciseRepresentative_of_memLp_add_divergence_of_isUniformlyEllipticAE
+    [Nonempty ι] {r q : ℝ≥0} (hr : 1 < r) (hrn : (Fintype.card ι : ℝ) < 2 * r)
+    (hq : 2 < (q : ℝ)) (hqn : (Fintype.card ι : ℝ) < q) (ratio : ℝ) :
+    ∃ (α : ℝ≥0) (C : ℝ), 0 < α ∧ α ≤ 1 ∧ 0 < C ∧ ∀ {lam Lam : ℝ}
+      {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+      {f : EuclideanSpace ℝ ι → ℝ} {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+      {u : W1p mu Omega 2} {K : Set (EuclideanSpace ℝ ι)} {R : ℝ},
+      IsUniformlyEllipticAE mu (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      Lam ≤ ratio * lam → AEStronglyMeasurable a (mu.restrict Omega) →
+      MemLp f r (mu.restrict Omega) → MemLp F q (mu.restrict Omega) →
+      (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
+        ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu -
+          ∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu) →
+      0 < R → cthickening R K ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+        HolderOnWith (C * R ^ (-(α : ℝ)) *
+          (R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ y in Omega, W1p.value u y ^ 2 ∂mu) +
+            (R ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm f r (mu.restrict Omega)).toReal +
+              R ^ (1 - (Fintype.card ι : ℝ) / q) *
+                (eLpNorm F q (mu.restrict Omega)).toReal) / lam)).toNNReal α
+          (preciseRepresentative mu (W1p.value u)) K := by
+  obtain ⟨α, C, hα, hα1, hC, hhol⟩ :=
+    exists_holderOnWith_preciseRepresentative_of_memLp_add_divergence (mu := mu) (lam := 1)
+      (Lam := ratio) hr hrn hq hqn
+  refine ⟨α, C, hα, hα1, hC, fun {lam Lam Omega a f F u K R} h hratio ha hf hF hu hR hRK => ?_⟩
+  obtain ⟨a', h', ha', hu'⟩ :=
+    h.exists_uniformlyEllipticOn_energyFormH1_eq_add_divergence hratio ha hu
+  have key := hhol h' ha' (hf.const_smul lam⁻¹) (hF.const_smul lam⁻¹) hu' hR hRK
+  -- The normalized data `λ⁻¹ f` and `λ⁻¹ F` have norms `‖f‖ / λ` and `‖F‖ / λ`.
+  simp only [eLpNorm_const_smul, ENNReal.toReal_mul, toReal_eNorm, norm_inv,
+    Real.norm_of_nonneg h.pos.le, div_one] at key
+  exact key.mono_const (Real.toNNReal_le_toNNReal (le_of_eq (by ring)))
 
 end TauCeti.PDE

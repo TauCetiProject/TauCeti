@@ -142,7 +142,7 @@ theorem three_mul_sq_le_four_mul_sub_of_forall_le {M : Type*} [AddCommGroup M]
     {B : LinearMap.BilinForm ℤ M} (hB : B.IsSymm) {v y : M}
     (hmin : ∀ x, x ≠ 0 → B v v ≤ B x x) (hy : y ∉ ℤ ∙ v) :
     3 * B v v ^ 2 ≤ 4 * (B v v * B y y - B y v * B v y) := by
-  have hne := Submodule.ne_zero_add_zsmul_of_notMem_span hy
+  have hne := Submodule.add_smul_ne_zero_of_notMem_span_singleton hy
   by_cases hμ : 0 < B v v
   swap
   · -- A least norm is nonnegative, so here `B v v = 0`, and then `y` is orthogonal to `v`.

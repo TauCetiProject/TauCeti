@@ -324,7 +324,7 @@ example {α : Type u} (a : α) :
     rw [BlockLevel.equations_level, Level.mem_V_centralizer] at h₁
     simp only [equations_base, mem_V, Set.mem_singleton_iff, forall_eq, map_mul, map_inv,
       eval_inr_of, Function.comp_apply, mul_inv_eq_one] at h₀
-    exact ⟨h₀, FreeGroup.mem_zpowers_of_of_commute (by simpa using h₁.2 .unit _ rfl)⟩
+    exact ⟨h₀, FreeGroup.commute_of_iff.mp (Commute.symm (by simpa using h₁.2 .unit _ rfl))⟩
   · rintro ⟨h, n, hn⟩
     refine mem_fundPoints_cons.2
       ⟨by simpa [mul_inv_eq_one] using h, fun _ ↦ inl (FreeGroup.of a ^ n), ?_, ?_⟩

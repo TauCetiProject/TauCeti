@@ -11,7 +11,7 @@ public import Mathlib.Analysis.Convex.Deriv
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.Topology.Order.MonotoneConvergence
 public import TauCeti.Analysis.Calculus.IteratedDeriv.Within
-import TauCeti.Topology.Order.MonotoneConvergence
+import TauCeti.Topology.Order.Monotone.Convergence
 
 /-!
 # Completely monotone functions

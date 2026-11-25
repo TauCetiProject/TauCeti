@@ -93,6 +93,9 @@ map over a weak homotopy equivalence `g : B ⟶ B'` factors as a map over `B` in
   modulo `P` in degree `k`.
 * `TauCeti.TopCat.prop_singularHomology_of_contractibleSpace`: if moreover the total space is
   contractible, the homology of the base lies in `P` in the positive degrees at most `k`.
+* `TauCeti.TopCat.isIso_singularHomologyMap_preimagePairMap`: a map of Serre fibrations over `B`
+  which is a homology isomorphism on the fibres over the centres of the `n`-cells is one on the
+  pair of preimages of consecutive skeleta `(Xⁿ, Xⁿ⁻¹)`.
 * `TauCeti.TopCat.isIso_singularHomologyMap_of_commSq`: a map of Serre fibrations over a weak
   homotopy equivalence which is a homology isomorphism on every fibre in degrees at most `k` is
   one of the total spaces in degree `k`.
@@ -180,6 +183,28 @@ lemma isoModSerre_singularHomologyMap_preimagePairMap (hQP : Q ≤ P)
     (P.isoModSerre.comp_mem _ _ ⟨hQP _ ?_, hQP _ ?_⟩ (P.isoModSerre_of_isIso _))
   · exact Q.prop_kernel_sigmaMap _ fun j ↦ (hfib j q rfl).1
   · exact Q.prop_cokernel_sigmaMap _ fun j ↦ (hfib j q rfl).2
+
+/-- **A map of Serre fibrations which is a homology isomorphism on the fibres is one on
+consecutive stages of the skeletal filtration.** Let `p` and `p'` be Serre fibrations over `B`,
+`C ⊆ B` a relative CW complex with skeleta `Xⁿ`, and `f` a map over `B` whose maps of fibres over
+the centres of the `n`-cells induce isomorphisms on `Hq(-; R)` for `q + n = m`. Then `f` induces an
+isomorphism `Hₘ(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹); R) ≅ Hₘ(p'⁻¹(Xⁿ), p'⁻¹(Xⁿ⁻¹); R)`. -/
+theorem isIso_singularHomologyMap_preimagePairMap (hf : f ≫ p' = p) (n m : ℕ)
+    (hfib : ∀ j : cell C n, ∀ q, q + n = m →
+      IsIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+        (ModuleCat.of R R)).map (f.preimageMap hf {map n j 0}))) :
+    IsIso (TopPair.singularHomologyMap (TopCat.Hom.preimagePairMap f hf
+      (skeletonLT_subset_skeletonLT_succ C n)) (ModuleCat.of R R) m) := by
+  let sq : CommSq f p p' (𝟙 B) := ⟨hf.trans (Category.comp_id p).symm⟩
+  -- Over the identity of `B`, whose value at `b` is `b`, the map of fibres of the square is the
+  -- restriction of `f` to the fibres over `b`.
+  have hsq (b : B) : sq.fiberMap b = f.preimageMap hf {b} :=
+    _root_.TopCat.ext fun x ↦ Subtype.ext
+      ((sq.fiberMap_apply_coe b x).trans (f.coe_preimageMap_apply hf {b} x).symm)
+  -- This is the case of the Serre class of zero modules.
+  exact (ObjectProperty.isoModSerre_isZero_iff _).1 <|
+    isoModSerre_singularHomologyMap_preimagePairMap hp hp' R IsZero IsZero le_rfl sq n m
+      fun j q hq ↦ (ObjectProperty.isoModSerre_isZero_iff _).2 (by rw [hsq]; exact hfib j q hq)
 
 end Cells
 

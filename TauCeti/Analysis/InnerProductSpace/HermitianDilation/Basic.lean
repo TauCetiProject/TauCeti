@@ -53,33 +53,25 @@ theorem hermitianDilation_apply (A : E →ₗ[𝕜] F) (x : WithLp 2 (E × F)) :
 @[simp]
 theorem hermitianDilation_zero :
     hermitianDilation (0 : E →ₗ[𝕜] F) = 0 := by
-  ext x
-  apply WithLp.ofLp_injective 2
-  ext <;> simp [hermitianDilation_apply]
+  ext x; simp
 
 /-- Hermitian dilation commutes with negation. -/
 @[simp]
 theorem hermitianDilation_neg (A : E →ₗ[𝕜] F) :
     hermitianDilation (-A) = -A.hermitianDilation := by
-  ext x
-  apply WithLp.ofLp_injective 2
-  ext <;> simp [hermitianDilation_apply]
+  ext x; simp [WithLp.ext_iff]
 
 /-- Hermitian dilation is additive. -/
 @[simp]
 theorem hermitianDilation_add (A B : E →ₗ[𝕜] F) :
     hermitianDilation (A + B) = A.hermitianDilation + B.hermitianDilation := by
-  ext x
-  apply WithLp.ofLp_injective 2
-  ext <;> simp [hermitianDilation_apply]
+  ext x; simp [WithLp.ext_iff]
 
 /-- Hermitian dilation commutes with subtraction, as used in perturbation bounds. -/
 @[simp]
 theorem hermitianDilation_sub (A B : E →ₗ[𝕜] F) :
     hermitianDilation (A - B) = A.hermitianDilation - B.hermitianDilation := by
-  ext x
-  apply WithLp.ofLp_injective 2
-  ext <;> simp [hermitianDilation_apply]
+  ext x; simp [WithLp.ext_iff]
 
 /-- The Hermitian dilation of a rectangular linear map is symmetric. -/
 theorem isSymmetric_hermitianDilation (A : E →ₗ[𝕜] F) :
@@ -102,8 +94,6 @@ theorem adjoint_hermitianDilation (A : E →ₗ[𝕜] F) :
 theorem hermitianDilation_comp_self (A : E →ₗ[𝕜] F) :
     A.hermitianDilation ∘ₗ A.hermitianDilation =
       ((A.adjoint ∘ₗ A).prodMap (A ∘ₗ A.adjoint)).withLpMap 2 := by
-  ext x
-  apply WithLp.ofLp_injective 2
-  ext <;> simp [hermitianDilation_apply, WithLp.map, prodMap_apply]
+  ext x; simp
 
 end LinearMap

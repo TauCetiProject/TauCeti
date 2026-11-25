@@ -65,13 +65,13 @@ variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
   (𝒜 : ℤ → Submodule R A) [GradedAlgebra 𝒜]
 
 private theorem isHomogeneous_lidCounitMulLeft [CoalgebraStruct R A] {d p : ℤ}
-    (hε : TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A)) 𝒜
+    (hε : LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A)) 𝒜
       (trivialGrading R R) (-d)) {a : A} (ha : a ∈ 𝒜 p) :
-    TauCeti.LinearMap.IsHomogeneous (lidCounitMulLeft (R := R) a)
+    LinearMap.IsHomogeneous (lidCounitMulLeft (R := R) a)
       ((InternalGrading.ofDecomposition 𝒜).tensorProduct
         (InternalGrading.ofDecomposition 𝒜)).piece 𝒜 (p - d) := by
   let G := InternalGrading.ofDecomposition 𝒜
-  refine TauCeti.LinearMap.isHomogeneous_def.mpr fun m z hz =>
+  refine LinearMap.isHomogeneous_def.mpr fun m z hz =>
     G.tensorProduct_piece_le G (C := (𝒜 (m + (p - d))).comap (lidCounitMulLeft (R := R) a))
       (fun q u hu v hv => ?_) hz
   rw [InternalGrading.ofDecomposition_piece] at hu hv
@@ -87,7 +87,7 @@ private theorem isHomogeneous_lidCounitMulLeft [CoalgebraStruct R A] {d p : ℤ}
 /-- On a `ℤ`-graded Frobenius coalgebra whose counit has degree `-d`, the Casimir tensor
 `comul 1` has total degree `d`. -/
 theorem Coalgebra.IsFrobenius.comul_one_mem_graded [Coalgebra R A] [Coalgebra.IsFrobenius R A]
-    {d : ℤ} (hε : TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A)) 𝒜
+    {d : ℤ} (hε : LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A)) 𝒜
       (trivialGrading R R) (-d)) :
     Coalgebra.comul (R := R) (1 : A) ∈
       ((InternalGrading.ofDecomposition 𝒜).tensorProduct
@@ -117,16 +117,16 @@ theorem Coalgebra.IsFrobenius.comul_one_mem_graded [Coalgebra R A] [Coalgebra.Is
 if the coproduct has degree `d`. -/
 theorem Coalgebra.IsFrobenius.isHomogeneous_counit_iff_isHomogeneous_comul
     [Coalgebra R A] [Coalgebra.IsFrobenius R A] (d : ℤ) :
-    TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A)) 𝒜
+    LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A)) 𝒜
         (trivialGrading R R) (-d) ↔
-      TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A)) 𝒜
+      LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A)) 𝒜
         ((InternalGrading.ofDecomposition 𝒜).tensorProduct
           (InternalGrading.ofDecomposition 𝒜)).piece d := by
   let G := InternalGrading.ofDecomposition 𝒜
-  refine ⟨fun hε => TauCeti.LinearMap.isHomogeneous_def.mpr fun p a ha => ?_, fun hΔ => ?_⟩
+  refine ⟨fun hε => LinearMap.isHomogeneous_def.mpr fun p a ha => ?_, fun hΔ => ?_⟩
   · rw [comul_eq_rTensor_mulLeft_comul_one]
-    have hmulLeft : TauCeti.LinearMap.IsHomogeneous (_root_.LinearMap.mulLeft R a) G.piece G.piece
-        p := TauCeti.LinearMap.isHomogeneous_def.mpr fun q x hx => by
+    have hmulLeft : LinearMap.IsHomogeneous (_root_.LinearMap.mulLeft R a) G.piece G.piece
+        p := LinearMap.isHomogeneous_def.mpr fun q x hx => by
       rw [InternalGrading.ofDecomposition_piece] at hx ⊢
       exact add_comm p q ▸ SetLike.mul_mem_graded ha hx
     simpa [add_comm] using (hmulLeft.rTensor G).map_mem (comul_one_mem_graded 𝒜 hε)
@@ -136,9 +136,9 @@ theorem Coalgebra.IsFrobenius.isHomogeneous_counit_iff_isHomogeneous_comul
 `Coalgebra.IsFrobenius.isHomogeneous_counit_iff_isHomogeneous_comul`. -/
 theorem Coalgebra.IsFrobenius.isHomogeneous_counit_neg_two_mul_iff_isHomogeneous_comul_two_mul
     [Coalgebra R A] [Coalgebra.IsFrobenius R A] (c : ℤ) :
-    TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A)) 𝒜
+    LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A)) 𝒜
         (trivialGrading R R) (-2 * c) ↔
-      TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A)) 𝒜
+      LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A)) 𝒜
         ((InternalGrading.ofDecomposition 𝒜).tensorProduct
           (InternalGrading.ofDecomposition 𝒜)).piece (2 * c) := by
   simpa [neg_mul] using isHomogeneous_counit_iff_isHomogeneous_comul 𝒜 (2 * c)
@@ -153,11 +153,11 @@ theorem Coalgebra.isHomogeneous_handleOp {R A : Type*} [CommSemiring R]
     [NonUnitalNonAssocSemiring A] [Module R A] [SMulCommClass R A A] [IsScalarTower R A A]
     [CoalgebraStruct R A] (𝒜 : ℤ → Submodule R A) [DirectSum.Decomposition 𝒜]
     [SetLike.GradedMul 𝒜] {d : ℤ}
-    (hΔ : TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A)) 𝒜
+    (hΔ : LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A)) 𝒜
       ((InternalGrading.ofDecomposition 𝒜).tensorProduct
         (InternalGrading.ofDecomposition 𝒜)).piece d) :
-    TauCeti.LinearMap.IsHomogeneous (Coalgebra.handleOp R A) 𝒜 𝒜 d :=
-  TauCeti.LinearMap.isHomogeneous_def.mpr fun _ _ ha => by
+    LinearMap.IsHomogeneous (Coalgebra.handleOp R A) 𝒜 𝒜 d :=
+  LinearMap.isHomogeneous_def.mpr fun _ _ ha => by
     simpa [Coalgebra.handleOp_apply] using (TauCeti.isHomogeneous_mul' 𝒜).map_mem (hΔ.map_mem ha)
 
 /-- When the coproduct of a unital internally `ℤ`-graded multiplicative `R`-module `A` is
@@ -166,7 +166,7 @@ theorem Coalgebra.handleElem_mem_graded {R A : Type*} [CommSemiring R] [NonAssoc
     [Module R A] [SMulCommClass R A A] [IsScalarTower R A A] [CoalgebraStruct R A]
     (𝒜 : ℤ → Submodule R A) [DirectSum.Decomposition 𝒜] [SetLike.GradedOne 𝒜]
     [SetLike.GradedMul 𝒜] {d : ℤ}
-    (hΔ : TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A)) 𝒜
+    (hΔ : LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A)) 𝒜
       ((InternalGrading.ofDecomposition 𝒜).tensorProduct
         (InternalGrading.ofDecomposition 𝒜)).piece d) : Coalgebra.handleElem R A ∈ 𝒜 d := by
   simpa [← Coalgebra.handleOp_one] using
@@ -177,7 +177,7 @@ theorem Coalgebra.handleElem_mem_graded {R A : Type*} [CommSemiring R] [NonAssoc
 theorem Coalgebra.IsFrobenius.handleElem_pow_mem_graded {R A : Type*} [CommSemiring R]
     [Semiring A] [Algebra R A] (𝒜 : ℤ → Submodule R A) [GradedAlgebra 𝒜]
     [Coalgebra R A] [Coalgebra.IsFrobenius R A] {d : ℤ}
-    (hε : TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A)) 𝒜
+    (hε : LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A)) 𝒜
       (trivialGrading R R) (-d)) (g : ℕ) : Coalgebra.handleElem R A ^ g ∈ 𝒜 (g • d) :=
   SetLike.pow_mem_graded g
     (Coalgebra.handleElem_mem_graded 𝒜 ((isHomogeneous_counit_iff_isHomogeneous_comul 𝒜 d).mp hε))
@@ -187,9 +187,9 @@ stated directly with `(G.tensorProduct G).piece`. -/
 theorem Coalgebra.IsFrobenius.isHomogeneous_counit_iff_isHomogeneous_comul_piece {R A : Type*}
     [CommSemiring R] [Semiring A] [Algebra R A] (G : InternalGrading R A ℤ) [GradedAlgebra G.piece]
     [Coalgebra R A] [Coalgebra.IsFrobenius R A] (d : ℤ) :
-    TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A)) G.piece
+    LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A)) G.piece
         (trivialGrading R R) (-d) ↔
-      TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A)) G.piece
+      LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A)) G.piece
         (G.tensorProduct G).piece d := by
   convert isHomogeneous_counit_iff_isHomogeneous_comul G.piece d using 3
   congr 2 <;> refine InternalGrading.ext fun p => ?_ <;> rw [InternalGrading.ofDecomposition_piece]
@@ -201,10 +201,10 @@ theorem LinearMap.isHomogeneous_frobeniusCoalgebra_comul_iff {R A : Type*} [Comm
     [CommSemiring A] [Algebra R A] [Module.Finite R A] [Module.Projective R A]
     (𝒜 : ℤ → Submodule R A) [GradedAlgebra 𝒜] (ε : A →ₗ[R] R) [((mul R A).compr₂ ε).IsPerfPair]
     (d : ℤ) :
-    TauCeti.LinearMap.IsHomogeneous (letI := ε.frobeniusCoalgebra; Coalgebra.comul (R := R)) 𝒜
+    LinearMap.IsHomogeneous (letI := ε.frobeniusCoalgebra; Coalgebra.comul (R := R)) 𝒜
         ((InternalGrading.ofDecomposition 𝒜).tensorProduct
           (InternalGrading.ofDecomposition 𝒜)).piece d ↔
-      TauCeti.LinearMap.IsHomogeneous ε 𝒜 (trivialGrading R R) (-d) := by
+      LinearMap.IsHomogeneous ε 𝒜 (trivialGrading R R) (-d) := by
   let := ε.frobeniusCoalgebra; have := ε.frobeniusCoalgebra_isFrobenius
   rw [← Coalgebra.IsFrobenius.isHomogeneous_counit_iff_isHomogeneous_comul,
     ε.frobeniusCoalgebra_counit]
@@ -215,7 +215,7 @@ theorem LinearMap.traceDualBasis_mem_graded {R A ι : Type*} [CommSemiring R] [C
     [Algebra R A] (𝒜 : ℤ → Submodule R A) [GradedAlgebra 𝒜]
     (ε : A →ₗ[R] R) [((mul R A).compr₂ ε).IsPerfPair] [Finite ι]
     (b : Module.Basis ι R A) {deg : ι → ℤ} (hb : ∀ i, b i ∈ 𝒜 (deg i)) {d : ℤ}
-    (hε : TauCeti.LinearMap.IsHomogeneous ε 𝒜 (trivialGrading R R) (-d)) (i : ι) :
+    (hε : LinearMap.IsHomogeneous ε 𝒜 (trivialGrading R R) (-d)) (i : ι) :
     ε.traceDualBasis b i ∈ 𝒜 (d - deg i) := by
   classical
   set w := ε.traceDualBasis b i with hw_def
@@ -251,12 +251,12 @@ theorem AlgEquiv.isHomogeneous_comul_iff {R A B : Type*} [CommSemiring R] [Semir
     [Semiring B] [Algebra R A] [Algebra R B] (𝒜 : ℤ → Submodule R A) (ℬ : ℤ → Submodule R B)
     [DirectSum.Decomposition 𝒜] [DirectSum.Decomposition ℬ] [Coalgebra R A] [Coalgebra R B]
     [Coalgebra.IsFrobenius R A] [Coalgebra.IsFrobenius R B]
-    (e : A ≃ₐ[R] B) (he_hom : TauCeti.LinearMap.IsHomogeneous e.toLinearMap 𝒜 ℬ 0)
+    (e : A ≃ₐ[R] B) (he_hom : LinearMap.IsHomogeneous e.toLinearMap 𝒜 ℬ 0)
     (he_counit : ∀ a, Coalgebra.counit (R := R) (e a) = Coalgebra.counit (R := R) a) (d : ℤ) :
-    TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A)) 𝒜
+    LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A)) 𝒜
         ((InternalGrading.ofDecomposition 𝒜).tensorProduct
           (InternalGrading.ofDecomposition 𝒜)).piece d ↔
-      TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := B)) ℬ
+      LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := B)) ℬ
         ((InternalGrading.ofDecomposition ℬ).tensorProduct
           (InternalGrading.ofDecomposition ℬ)).piece d :=
   (e.toFrobeniusCoalgEquiv he_counit).isHomogeneous_comul_iff 𝒜 ℬ (by simpa using he_hom) d

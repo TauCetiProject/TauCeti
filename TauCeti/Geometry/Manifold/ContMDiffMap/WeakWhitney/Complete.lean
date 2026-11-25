@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.ContMDiffMap.WeakWhitney.Basic
 public import TauCeti.Analysis.Calculus.ContDiff.FTaylorSeries
 public import Mathlib.Topology.UniformSpace.CompactConvergence
 public import Mathlib.Topology.UniformSpace.UniformEmbedding
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Completeness of the weak Whitney topology in one chart
@@ -86,7 +87,7 @@ theorem exists_weakWhitneyJet_eq_of_tendsto
     HasFTaylorSeriesUpTo.of_tendstoLocallyUniformly
       (fun i ↦ (f i).contMDiff.contDiff.ftaylorSeries) hlim fun x ↦ by
         have ht := ((continuousMultilinearCurryFin0 𝕜 E F).continuous.tendsto (p x 0)).comp
-          ((hlim 0 (by simp)).tendstoLocallyUniformlyOn.tendsto_at (mem_univ x))
+          ((hlim 0 (by simp)).tendsto_at x)
         simpa only [h, ftaylorSeries, Function.comp_def, iteratedFDeriv_zero_eq_comp,
           continuousMultilinearCurryFin0_apply, ContinuousMultilinearMap.curry0_apply,
           continuousMultilinearCurryFin0_symm_apply_apply] using ht

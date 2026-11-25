@@ -11,6 +11,7 @@ public import Mathlib.Topology.UniformSpace.UniformConvergence
 import Mathlib.Topology.Instances.Real.Lemmas
 import Mathlib.Analysis.Normed.Group.Bounded
 import Mathlib.Topology.Order.Compact
+import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
 # Boundedness on a strip from uniform convergence at both ends
@@ -23,6 +24,11 @@ on which `f` is bounded.
 
 This is how the coefficients of linearized operators along Floer cylinders, whose loops converge
 uniformly at both ends, are shown to be bounded.
+
+Along a single end, a map `g` continuous on `α × β` is eventually bounded along the graphs
+`x ↦ (x, F i x)` of a family converging uniformly on a compact set `s` to a limit continuous on `s`
+(`IsCompact.exists_eventually_forall_norm_le_of_tendstoUniformlyOn`): the graphs converge uniformly
+to the compact graph of the limit, near which `g` is bounded.
 -/
 
 public section
@@ -59,3 +65,19 @@ theorem exists_forall_norm_le_of_tendstoUniformlyOn {β E : Type*} [TopologicalS
   · linarith [hC (s, t) ⟨⟨hs.le, hs'.le⟩, ht⟩]
 
 end TauCeti
+
+/-- If `F i → f` uniformly on a compact set `s`, with `f` continuous on `s`, then a continuous map
+`g` is eventually bounded along the graphs `x ↦ (x, F i x)` over `s`. -/
+theorem IsCompact.exists_eventually_forall_norm_le_of_tendstoUniformlyOn {ι α β E : Type*}
+    [UniformSpace α] [UniformSpace β] [SeminormedAddCommGroup E] {F : ι → α → β} {f : α → β}
+    {s : Set α} {p : Filter ι} (hs : IsCompact s) (hf : ContinuousOn f s) {g : α × β → E}
+    (hg : Continuous g) (h : TendstoUniformlyOn F f p s) :
+    ∃ C, ∀ᶠ i in p, ∀ x ∈ s, ‖g (x, F i x)‖ ≤ C := by
+  have hK := hs.image_of_continuousOn ((continuousOn_id' s).prodMk hf)
+  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hg.continuousOn
+  refine ⟨C + 1, ?_⟩
+  filter_upwards [Metric.tendstoUniformlyOn_iff.1
+    (hK.comp_tendstoUniformlyOn (fun _ _ ↦ hg.continuousAt) h.graph) 1 one_pos] with i hi x hx
+  have h₁ := hi x hx
+  rw [dist_eq_norm'] at h₁
+  linarith [hC _ (mem_image_of_mem _ hx), norm_le_insert' (g (x, F i x)) (g (x, f x))]

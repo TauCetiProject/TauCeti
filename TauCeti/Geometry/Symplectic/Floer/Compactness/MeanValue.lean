@@ -32,12 +32,23 @@ up to constants (`IsNondegenerate.exists_forall_norm_fderiv_extChartAt_comp_sq_l
 has area `4 r²` (`Real.volume_real_ball_prod`), so a pointwise bound between the densities
 integrates over it (`TauCeti.setIntegral_le_mul_measureReal_add_setIntegral_of_le`).
 
+The threshold and the constant are uniform over a compact window of parameters `p` in a
+finite-dimensional normed space, for families `J_p`, `K_p` read in the chart that are jointly `C²`
+in the parameter
+(`IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_small_energy_parametric`):
+both comparisons of densities hold with constants uniform over the window, and so does the
+coordinate inequality (in the namespace `TauCeti.Floer`,
+`exists_pos_forall_sq_mul_norm_fderiv_sq_le_of_small_energy_of_finiteDimensional_parametric`).
+The inequality for a single datum is the case of a one-point window.
+
 So a disc of radius `r` and small energy has energy density at most `C (1 + ∫ e(u) / r²)` at its
 centre. Contrapositively, a disc on which `r² e(u)` is large at the centre carries at least a fixed
 amount of energy: this is the lower bound for the energy concentrating at a point where the energy
 densities of a sequence of solutions blow up, once the discs about the centres chosen by
 `TauCeti.SmoothTwoForm.exists_rescale_isComplexLinearMap_perturbedMFDeriv` are known to lie in a
-chart. That localization of small discs into charts is not treated here.
+chart. That localization of small discs into charts, and the resulting energy concentration and
+compactness off finitely many bubbling points, are in
+`TauCeti.Geometry.Symplectic.Floer.Compactness.Bubbling`.
 
 ## References
 
@@ -74,6 +85,95 @@ private theorem sq_mul_le_of_le_mul_add {f₀ g₀ r A' B' C κ G I : ℝ} (hA' 
           (mul_le_mul_of_nonneg_left (le_add_of_nonneg_right hI) hB')
     _ = (A' * C * κ + B') * (r ^ 2 + I) := by ring
 
+/-- **The mean-value inequality for Floer solutions in a chart of a manifold, over a compact
+parameter window.** Let `ω` be a nondegenerate two-form on `M` and `α` a point of `M`. Let the
+structures `J_p(z, x)` and the Hamiltonian vector fields of `K_{s,p}` and `K_{t,p}`, read in the
+chart at `α`, depend on a parameter `p` of a finite-dimensional normed space `P` and be jointly
+`C²` on an open set `W ⊆ (P × (ℝ × ℝ)) × E` containing `(C × D) × K`, for compact `C ⊆ P`,
+`D ⊆ ℝ × ℝ` and a compact set `K` of chart coordinates, and let `J_p(z, x)` be tamed by `ω` there.
+There are a threshold `δ > 0` and a constant `C'`, the same for every parameter `p ∈ C`, with the
+following property. Let `u` solve the Floer equation `(du - X_{K_p})^{0,1} = 0` for `J_p(z, u)` on a
+ball `B_r(z₀) ⊆ D` of `ℝ × ℝ`, with values in the chart source and chart coordinates in `K`, let `u`
+be `C³` on the ball, and let `∂ₛ` of its coordinate expression `extChartAt I α ∘ u` be continuous on
+the closed ball. If the Floer energy density `e(u) = ω(∂ₛu - X_{K_{s,p}}, ∂ₜu - X_{K_{t,p}})` is
+integrable on the ball and `r² + ∫_{B_r(z₀)} e(u) < δ`, then
+
+`r² e(u)(z₀) ≤ C' (r² + ∫_{B_r(z₀)} e(u))`.
+
+Balls of `ℝ × ℝ` are squares for its sup norm. -/
+theorem IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_small_energy_parametric
+    {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
+    {J : P → ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
+    {Ks Kt : P → ℝ × ℝ → M → ℝ} (hω : ω.IsNondegenerate) (α : M)
+    {W : Set ((P × (ℝ × ℝ)) × E)} {C : Set P} {D : Set (ℝ × ℝ)} {K : Set E} (hW : IsOpen W)
+    (hJ : ContDiffOn ℝ 2 (Floer.almostComplexInChartAt I α (Function.uncurry J)) W)
+    (hXs : ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α (Function.uncurry Ks)) W)
+    (hXt : ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α (Function.uncurry Kt)) W)
+    (hC : IsCompact C) (hD : IsCompact D) (hK : IsCompact K) (hKα : K ⊆ (extChartAt I α).target)
+    (hCDKW : (C ×ˢ D) ×ˢ K ⊆ W)
+    (hJt : ∀ p ∈ C, ∀ z ∈ D, ∀ y ∈ K, (hω.symplecticFormAt ((extChartAt I α).symm y)).Tames
+      (J p z ((extChartAt I α).symm y))) :
+    ∃ δ > 0, ∃ C' ≥ 0, ∀ ⦃p : P⦄ ⦃u : ℝ × ℝ → M⦄ ⦃z₀ : ℝ × ℝ⦄ ⦃r : ℝ⦄, p ∈ C → 0 ≤ r →
+      ball z₀ r ⊆ D → ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 u (ball z₀ r) →
+      ContinuousOn (fun y ↦ fderiv ℝ (extChartAt I α ∘ u) y stdComplexLineReal)
+        (closedBall z₀ r) →
+      (∀ y ∈ ball z₀ r, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J p y (u y))
+        (ω.perturbedMFDeriv (Ks p) (Kt p) u y).toLinearMap) →
+      MapsTo u (ball z₀ r) ((extChartAt I α).source ∩ extChartAt I α ⁻¹' K) →
+      IntegrableOn (ω.floerEnergyDensity (Ks p) (Kt p) u) (ball z₀ r) →
+      r ^ 2 + ∫ y in ball z₀ r, ω.floerEnergyDensity (Ks p) (Kt p) u y < δ →
+      r ^ 2 * ω.floerEnergyDensity (Ks p) (Kt p) u z₀ ≤
+        C' * (r ^ 2 + ∫ y in ball z₀ r, ω.floerEnergyDensity (Ks p) (Kt p) u y) := by
+  set e := extChartAt I α
+  -- The energy density and `‖∂ₛv‖²` control each other on `(C × D) × K`, for `v = e ∘ u`.
+  obtain ⟨A, hA0, B, hB0, hpt⟩ := hω.exists_forall_norm_fderiv_extChartAt_comp_sq_le (Kt := Kt) α
+    hC hD hK hKα (hJ.continuousOn.mono hCDKW) (hXs.continuousOn.mono hCDKW) hJt
+  obtain ⟨A', hA'0, B', hB'0, hrev⟩ :=
+    ω.exists_forall_floerEnergyDensity_le_norm_fderiv_extChartAt_comp_sq (Kt := Kt) α hC hD hK
+      hKα (hJ.continuousOn.mono hCDKW) (hXs.continuousOn.mono hCDKW)
+  -- The mean-value inequality for the coordinate expressions.
+  obtain ⟨δ, hδ, C, hC0, hmean⟩ :=
+    Floer.exists_pos_forall_sq_mul_norm_fderiv_sq_le_of_small_energy_of_finiteDimensional_parametric
+      hW hJ (contDiffOn_hamiltonianOneFormInChartAt hXs hXt) hC hD hK hCDKW
+      fun p _ z _ y hy v ↦ by
+        rw [Floer.almostComplexInChartAt_uncurry, Floer.almostComplexInChartAt_apply_apply (hKα hy)]
+  set κ := 1 + 4 * (A + B + 1) with hκ
+  have hκ0 : 0 < κ := by positivity
+  refine ⟨δ / κ, div_pos hδ hκ0, A' * C * κ + B', by positivity,
+    fun p u z₀ r hp hr hrD hu hu' hfl huK hint hE ↦ ?_⟩
+  set f := ω.floerEnergyDensity (Ks p) (Kt p) u
+  set g : ℝ × ℝ → ℝ := fun y ↦ ‖fderiv ℝ (e ∘ u) y stdComplexLineReal‖ ^ 2
+  have hus {y : ℝ × ℝ} (hy : y ∈ ball z₀ r) : u y ∈ e.source := (huK hy).1
+  have hdiff {y : ℝ × ℝ} (hy : y ∈ ball z₀ r) : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u y :=
+    (hu.mdifferentiableOn (by norm_num)).mdifferentiableAt (isOpen_ball.mem_nhds hy)
+  obtain ⟨hcd, hcfl⟩ := ω.contDiffOn_extChartAt_comp_and_fderiv_stdComplexLineImag_sub isOpen_ball
+    hu (fun _ hy ↦ hus hy) hfl
+  have hf0 : ∀ y ∈ ball z₀ r, 0 ≤ f y := fun y hy ↦
+    hω.floerEnergyDensity_nonneg_of_tames_inChartAt (hJt p hp) (hrD hy) (hus hy) (huK hy).2
+      (hfl y hy)
+  have hgf : ∀ y ∈ ball z₀ r, g y ≤ A * f y + B := fun y hy ↦
+    hpt hp (hrD hy) (hus hy) (huK hy).2 (hdiff hy) (hfl y hy)
+  have hIf0 : 0 ≤ ∫ y in ball z₀ r, f y := setIntegral_nonneg measurableSet_ball hf0
+  -- The coordinate energy is controlled by the Floer energy and the area `4 r²` of the square.
+  have hIg := setIntegral_le_mul_measureReal_add_setIntegral_of_le measurableSet_ball
+    measure_ball_lt_top.ne hA0 hB0 ((hu'.norm.pow 2).integrableOn_compact
+      (isCompact_closedBall z₀ r) |>.mono_set ball_subset_closedBall) hint hf0 hgf
+  rw [Real.volume_real_ball_prod z₀ hr] at hIg
+  have hIgκ : r ^ 2 + ∫ y in ball z₀ r, g y ≤ κ * (r ^ 2 + ∫ y in ball z₀ r, f y) := by
+    rw [hκ]
+    linear_combination hIg + 4 * hIf0 + 3 * mul_nonneg hA0 hIf0 + 3 * mul_nonneg hB0 hIf0
+  have hmv := hmean hp hr hrD hcd hu'
+    (fun y hy ↦ by simpa using hcfl y hy)
+    (fun y hy ↦ (huK hy).2) (hIgκ.trans_lt <| by
+      calc κ * (r ^ 2 + ∫ y in ball z₀ r, f y) < κ * (δ / κ) := by gcongr
+        _ = δ := mul_div_cancel₀ _ hκ0.ne')
+  -- At the centre, the energy density is controlled by `‖∂ₛv‖²`.
+  rcases hr.eq_or_lt with rfl | hr0
+  · simp
+  have hz₀ : z₀ ∈ ball z₀ r := mem_ball_self hr0
+  exact sq_mul_le_of_le_mul_add hA'0 hB'0 hC0 hIf0 (hrev hp (hrD hz₀) (hus hz₀) (huK hz₀).2
+    (hdiff hz₀) (hfl z₀ hz₀)) hmv hIgκ
+
 /-- **The mean-value inequality for Floer solutions in a chart of a manifold.** Let `ω` be a
 nondegenerate two-form on `M` and `α` a point of `M`. Let the structures `J(z, x)` and the
 Hamiltonian vector fields of `K_s` and `K_t`, read in the chart at `α`, be `C²` on an open set
@@ -89,7 +189,10 @@ coordinates in `K`, let `u` be `C³` on the ball, and let `∂ₛ` of its coordi
 `r² e(u)(z₀) ≤ C (r² + ∫_{B_r(z₀)} e(u))`.
 
 So a small disc of small energy has energy density at its centre at most `C / r²` times the
-energy plus `C`. Balls of `ℝ × ℝ` are squares for its sup norm. -/
+energy plus `C`. Balls of `ℝ × ℝ` are squares for its sup norm. This is the case of a one-point
+parameter window of
+`IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_small_energy_parametric` in the
+namespace `TauCeti.SmoothTwoForm`. -/
 theorem IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_small_energy
     (hω : ω.IsNondegenerate) (α : M) {W : Set ((ℝ × ℝ) × E)} {D : Set (ℝ × ℝ)} {K : Set E}
     (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 (Floer.almostComplexInChartAt I α J) W)
@@ -110,50 +213,17 @@ theorem IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_small_
       r ^ 2 + ∫ y in ball z₀ r, ω.floerEnergyDensity Ks Kt u y < δ →
       r ^ 2 * ω.floerEnergyDensity Ks Kt u z₀ ≤
         C * (r ^ 2 + ∫ y in ball z₀ r, ω.floerEnergyDensity Ks Kt u y) := by
-  set e := extChartAt I α
-  -- The energy density and `‖∂ₛv‖²` control each other on `D × K`, for `v = e ∘ u`.
-  obtain ⟨A, hA0, B, hB0, hpt⟩ := hω.exists_forall_norm_fderiv_extChartAt_comp_sq_le (Kt := Kt) α
-    hD hK hKα (hJ.continuousOn.mono hDKW) (hXs.continuousOn.mono hDKW) hJt
-  obtain ⟨A', hA'0, B', hB'0, hrev⟩ :=
-    ω.exists_forall_floerEnergyDensity_le_norm_fderiv_extChartAt_comp_sq (Kt := Kt) α hD hK hKα
-      (hJ.continuousOn.mono hDKW) (hXs.continuousOn.mono hDKW)
-  -- The mean-value inequality for the coordinate expressions.
-  obtain ⟨δ, hδ, C, hC0, hmean⟩ :=
-    Floer.exists_pos_forall_sq_mul_norm_fderiv_sq_le_of_small_energy_of_finiteDimensional hW hJ
-      (contDiffOn_hamiltonianOneFormInChartAt hXs hXt) hD hK hDKW
-      (fun z _ _ hy ↦ Floer.almostComplexInChartAt_apply_apply (hKα hy) z)
-  set κ := 1 + 4 * (A + B + 1) with hκ
-  have hκ0 : 0 < κ := by positivity
-  refine ⟨δ / κ, div_pos hδ hκ0, A' * C * κ + B', by positivity,
-    fun u z₀ r hr hrD hu hu' hfl huK hint hE ↦ ?_⟩
-  set f := ω.floerEnergyDensity Ks Kt u
-  set g : ℝ × ℝ → ℝ := fun y ↦ ‖fderiv ℝ (e ∘ u) y stdComplexLineReal‖ ^ 2
-  have hus {y : ℝ × ℝ} (hy : y ∈ ball z₀ r) : u y ∈ e.source := (huK hy).1
-  have hdiff {y : ℝ × ℝ} (hy : y ∈ ball z₀ r) : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u y :=
-    (hu.mdifferentiableOn (by norm_num)).mdifferentiableAt (isOpen_ball.mem_nhds hy)
-  obtain ⟨hcd, hcfl⟩ := ω.contDiffOn_extChartAt_comp_and_fderiv_stdComplexLineImag_sub isOpen_ball
-    hu (fun _ hy ↦ hus hy) hfl
-  have hf0 : ∀ y ∈ ball z₀ r, 0 ≤ f y := fun y hy ↦
-    hω.floerEnergyDensity_nonneg_of_tames_inChartAt hJt (hrD hy) (hus hy) (huK hy).2 (hfl y hy)
-  have hgf : ∀ y ∈ ball z₀ r, g y ≤ A * f y + B := fun y hy ↦
-    hpt (hrD hy) (hus hy) (huK hy).2 (hdiff hy) (hfl y hy)
-  have hIf0 : 0 ≤ ∫ y in ball z₀ r, f y := setIntegral_nonneg measurableSet_ball hf0
-  -- The coordinate energy is controlled by the Floer energy and the area `4 r²` of the square.
-  have hIg := setIntegral_le_mul_measureReal_add_setIntegral_of_le measurableSet_ball
-    measure_ball_lt_top.ne hA0 hB0 ((hu'.norm.pow 2).integrableOn_compact
-      (isCompact_closedBall z₀ r) |>.mono_set ball_subset_closedBall) hint hf0 hgf
-  rw [Real.volume_real_ball_prod z₀ hr] at hIg
-  have hIgκ : r ^ 2 + ∫ y in ball z₀ r, g y ≤ κ * (r ^ 2 + ∫ y in ball z₀ r, f y) := by
-    rw [hκ]
-    linear_combination hIg + 4 * hIf0 + 3 * mul_nonneg hA0 hIf0 + 3 * mul_nonneg hB0 hIf0
-  have hmv := hmean hr hrD hcd hu' hcfl (fun y hy ↦ (huK hy).2) (hIgκ.trans_lt <| by
-      calc κ * (r ^ 2 + ∫ y in ball z₀ r, f y) < κ * (δ / κ) := by gcongr
-        _ = δ := mul_div_cancel₀ _ hκ0.ne')
-  -- At the centre, the energy density is controlled by `‖∂ₛv‖²`.
-  rcases hr.eq_or_lt with rfl | hr0
-  · simp
-  have hz₀ : z₀ ∈ ball z₀ r := mem_ball_self hr0
-  exact sq_mul_le_of_le_mul_add hA'0 hB'0 hC0 hIf0 (hrev (hrD hz₀) (hus hz₀) (huK hz₀).2
-    (hdiff hz₀) (hfl z₀ hz₀)) hmv hIgκ
+  -- The constant family over the one-point parameter space `Unit`.
+  set pr := fun q : (Unit × (ℝ × ℝ)) × E ↦ (q.1.2, q.2)
+  have hπ : MapsTo pr (pr ⁻¹' W) W := mapsTo_preimage _ _
+  obtain ⟨δ, hδ, C, hC, h⟩ :=
+    hω.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_small_energy_parametric
+      (J := fun _ ↦ J) (Ks := fun _ ↦ Ks) (Kt := fun _ ↦ Kt) (C := univ) α
+      (hW.preimage (by fun_prop)) (Floer.contDiffOn_almostComplexInChartAt_uncurry_const hJ hπ)
+      (contDiffOn_hamiltonianVectorFieldInChartAt_uncurry_const hXs hπ)
+      (contDiffOn_hamiltonianVectorFieldInChartAt_uncurry_const hXt hπ) isCompact_univ hD hK hKα
+      (fun q hq ↦ hDKW ⟨hq.1.2, hq.2⟩) fun _ _ ↦ hJt
+  exact ⟨δ, hδ, C, hC, fun u z₀ r hr hrD hu hu' hfl huK hint hE ↦
+    h (mem_univ ()) hr hrD hu hu' hfl huK hint hE⟩
 
 end TauCeti.SmoothTwoForm

@@ -35,6 +35,8 @@ one-sided inverse has that inverse on both sides.
 * `MeasureTheory.Lp.compMeasurePreserving_monotone` and
   `MeasureTheory.Lp.compMeasurePreserving_nonneg`: for ordered values, precomposition is monotone
   and hence positive, since the order on `Lp` is almost everywhere pointwise.
+* `MeasureTheory.Lp.ae_compMeasurePreserving_eq_zero_iff`: precomposition by `f` carries the
+  almost-everywhere zero set on `S` to the one on `f⁻¹(S)`.
 * `MeasureTheory.Lp.exists_compMeasurePreservingₗᵢ_eq_of_stronglyMeasurable_comap` factors
   a comap-measurable `Lp` function through any measure-preserving map, for complete value spaces.
 * `MeasureTheory.Lp.mem_range_compMeasurePreservingₗᵢ_iff` characterizes its range by
@@ -101,6 +103,24 @@ classes to nonnegative ones. -/
 theorem compMeasurePreserving_nonneg [PartialOrder E] (hf : MeasurePreserving f μ μb)
     {g : Lp E p μb} (hg : 0 ≤ g) : 0 ≤ compMeasurePreserving f hf g := by
   simpa only [map_zero] using compMeasurePreserving_monotone hf hg
+
+/-- Precomposition by a measure-preserving map `f` transports zero sets: `u ∘ f` vanishes almost
+everywhere on `f⁻¹(S)` if and only if `u` vanishes almost everywhere on `S`. -/
+theorem ae_compMeasurePreserving_eq_zero_iff (hf : MeasurePreserving f μ μb) {S : Set β}
+    (hS : MeasurableSet S) (u : Lp E p μb) :
+    (∀ᵐ x ∂μ, f x ∈ S → compMeasurePreserving f hf u x = 0) ↔ ∀ᵐ y ∂μb, y ∈ S → u y = 0 := by
+  have hmeas : MeasurableSet {y | y ∈ S → u y = 0} := by
+    have h := hS.compl.union
+      ((Lp.stronglyMeasurable u).measurableSet_eq_fun (stronglyMeasurable_const (b := 0)))
+    convert h using 1
+    ext y
+    simp [imp_iff_not_or]
+  have key := ae_map_iff (μ := μ) hf.measurable.aemeasurable hmeas
+  rw [hf.map_eq] at key
+  rw [key]
+  refine Filter.eventually_congr ?_
+  filter_upwards [coeFn_compMeasurePreserving u hf] with x hx
+  rw [hx, Function.comp_apply]
 
 variable (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] [Fact (1 ≤ p)]
 

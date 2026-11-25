@@ -131,4 +131,15 @@ noncomputable def filtrationSpectralSequencePageXIsoGradedOfFinite {a b : ℤ} (
   filtrationSpectralSequencePageXIsoEInftyOfFinite F hF ha hb r hr pq hra hrb ≪≫
     (spectralObject _).EInftyIsoCokernel _ _
 
+/-- The isomorphism `filtrationSpectralSequencePageXIsoGradedOfFinite` is the composite of the
+isomorphism onto `E∞` with `EInftyIsoCokernel`. Its body is not exposed, so other modules need
+this lemma. -/
+lemma filtrationSpectralSequencePageXIsoGradedOfFinite_hom {a b : ℤ} (ha : F a = ⊥)
+    (hb : F b = ⊤) (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (hra : pq.2 - r + 2 ≤ a)
+    (hrb : b ≤ pq.2 + r - 1) :
+    (filtrationSpectralSequencePageXIsoGradedOfFinite F hF ha hb r hr pq hra hrb).hom =
+      (filtrationSpectralSequencePageXIsoEInftyOfFinite F hF ha hb r hr pq hra hrb).hom ≫
+        ((spectralObject _).EInftyIsoCokernel _ _).hom := by
+  simp only [filtrationSpectralSequencePageXIsoGradedOfFinite, Iso.trans_hom]
+
 end CochainComplex

@@ -91,13 +91,7 @@ coprime to its derivative. -/
 theorem Polynomial.Monic.separable_of_separable_map_residue (hg : g.Monic)
     (hsep : (g.map (residue R)).Separable) : g.Separable := by
   -- It suffices that the derivative of `g` is a unit modulo `g`.
-  suffices hunit : IsUnit (AdjoinRoot.mk g (derivative g)) by
-    obtain ⟨v, hv⟩ := hunit.exists_right_inv
-    obtain ⟨b, rfl⟩ := AdjoinRoot.mk_surjective v
-    rw [← map_mul, ← sub_eq_zero, ← map_one (AdjoinRoot.mk g), ← map_sub,
-      AdjoinRoot.mk_eq_zero] at hv
-    obtain ⟨a, ha⟩ := hv
-    exact ⟨-a, b, by linear_combination ha⟩
+  rw [separable_iff_isUnit_mk_derivative]
   -- Otherwise it lies in a maximal ideal `M`, which contains `𝔪`, and a Bézout relation for
   -- the reduction of `g` lifts to one modulo `𝔪`, putting `1` in `M`.
   by_contra hunit

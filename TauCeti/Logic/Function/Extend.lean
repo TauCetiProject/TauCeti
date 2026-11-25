@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Int.Init
 public import Mathlib.Data.Set.Inclusion
+public import Mathlib.Logic.Equiv.Set
 public import Mathlib.Logic.Function.Basic
 public import Mathlib.Logic.Function.DependsOn
 public import Mathlib.Tactic.Coe
@@ -25,6 +26,10 @@ A function `g` on a subset `t` extends to the whole type along `Subtype.val`, fo
 zero. Restricting `g` to a smaller subset `s` before extending does not change the extension at
 the points which lie in `s` as soon as they lie in `t`.
 
+A dependent function on the range of an injection `f` extends to the whole index type, for
+instance by a fallback function, so restriction `g ↦ fun i ↦ g (f i)` of dependent functions
+along `f` is surjective.
+
 ## Main results
 
 * `Function.extend_natCast_of_neg`: the extension of `a` along `ℕ → ℤ` with fallback `e` takes
@@ -40,6 +45,8 @@ the points which lie in `s` as soon as they lie in `t`.
 * `Function.FactorsThrough.apply_extend_eq_apply`: gluing. Functions given on blocks of
   coordinates that agree where the blocks meet glue to one function, at which every functional
   of one block takes its value at that block's function.
+* `Function.Injective.surjective_pi_comp_right`: restriction of dependent functions along an
+  injection is surjective.
 -/
 
 public section
@@ -162,5 +169,18 @@ theorem FactorsThrough.apply_extend_eq_apply {ι κ α β γ : Type*} {p : κ �
     F (extend e (fun k => V (p k) (e k)) f) = F (V i) :=
   hF <| Set.forall_mem_image.2 fun k hk => by
     rw [hV.extend_apply f k, Set.mem_singleton_iff.1 hk]
+
+/-- Restriction `g ↦ fun i ↦ g (f i)` of dependent functions along an injective map `f` is
+surjective: extend by a fallback `g₀` off the range of `f`. This is the dependent version of
+Mathlib's `Function.Injective.surjective_comp_right'`; Mathlib's `Subtype.surjective_restrict` is
+the case of `Subtype.val`. -/
+theorem Injective.surjective_pi_comp_right {σ τ : Type*} {G : τ → Sort*} {f : σ → τ}
+    (hf : Injective f) (g₀ : ∀ j, G j) : Surjective fun (g : ∀ j, G j) i ↦ g (f i) := fun k ↦ by
+  classical
+  let e := Equiv.ofInjective f hf
+  refine ⟨fun j ↦ if hj : j ∈ Set.range f then
+    Equiv.piCongrLeft (fun j : Set.range f ↦ G j) e k ⟨j, hj⟩ else g₀ j, funext fun i ↦ ?_⟩
+  simp only [Set.mem_range_self, ↓reduceDIte]
+  exact Equiv.piCongrLeft_apply_apply (fun j : Set.range f ↦ G j) e k i
 
 end Function
