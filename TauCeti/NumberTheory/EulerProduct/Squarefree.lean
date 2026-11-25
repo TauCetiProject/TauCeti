@@ -15,7 +15,7 @@ import Mathlib.Algebra.Order.Group.Indicator
 Let `g : ℕ → ℝ` be nonnegative and multiplicative on coprime arguments, with `g 1 = 1` and
 `g (p ^ k) = 0` for every prime `p` and `k ≥ 2`. Then the sum of `g` over the `M`-smooth numbers
 is the finite Euler product `∏_{p < M} (1 + g p) ≤ exp (∑_{p < M} g p)`, which bounds every
-partial sum of `g` over `n < M`, so `g` is summable as soon as its values at the primes are.
+partial sum of `g` over `1 ≤ n < M`, so `g` is summable as soon as its values at the primes are.
 
 This is the convergence criterion behind singular series such as
 `∑_q μ(q) c_q(N) / φ(q)³`, whose terms are bounded by such a function.
