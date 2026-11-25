@@ -73,6 +73,11 @@ theorem mem_unitSquareLeftSide {S : Set ℝ} {x : WithLp 2 (ℝ × ℝ)} :
     x ∈ unitSquareLeftSide S ↔ x.fst = 0 ∧ x.snd ∈ S :=
   Iff.rfl
 
+/-- The point `(0, t)` lies in the part `{0} × S` exactly when `t ∈ S`. -/
+theorem toLp_zero_prod_mem_unitSquareLeftSide {S : Set ℝ} {t : ℝ} :
+    WithLp.toLp 2 ((0 : ℝ), t) ∈ unitSquareLeftSide S ↔ t ∈ S := by
+  simp
+
 /-- The part `{0} × S` is the image of `S` under `t ↦ (0, t)`. -/
 theorem unitSquareLeftSide_eq_image (S : Set ℝ) :
     unitSquareLeftSide S = (fun t : ℝ => WithLp.toLp 2 ((0 : ℝ), t)) '' S := by
@@ -80,7 +85,7 @@ theorem unitSquareLeftSide_eq_image (S : Set ℝ) :
   refine ⟨fun hx => ⟨x.snd, hx.2, (WithLp.ext_iff 2).2 (Prod.ext ?_ rfl)⟩, ?_⟩
   · simpa using hx.1.symm
   · rintro ⟨t, ht, rfl⟩
-    simpa using ht
+    exact toLp_zero_prod_mem_unitSquareLeftSide.2 ht
 
 /-- The closure of `{0} × S` is `{0} × closure S`. -/
 theorem closure_unitSquareLeftSide (S : Set ℝ) :
@@ -189,11 +194,7 @@ private theorem exists_ordConnected_of_isAdmissibleBoundaryPart {E' : Type*}
     hΓ.exists_isBoundaryPartChart _ (toLp_zero_prod_mem_frontier_openUnitSquare ht₀)
   have hcont := (WithLp.isometry_toLp_prodMk_left 2 (β := ℝ) (0 : ℝ)).continuous
   have hN : (fun t : ℝ => WithLp.toLp 2 ((0 : ℝ), t)) ⁻¹' (e ⁻¹' normalCylinder h r) ∈ 𝓝 t₀ :=
-    hcont.continuousAt.preimage_mem_nhds
-      (((isOpen_normalCylinder h r).preimage e.continuous).mem_nhds (by
-        rw [mem_preimage, hex]
-        exact zero_mem_normalCylinder hc.isLipschitzChart.height_pos
-          hc.isLipschitzChart.radius_pos))
+    hcont.continuousAt.preimage_mem_nhds (hc.isLipschitzChart.preimage_normalCylinder_mem_nhds hex)
   obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 hN
   refine ⟨ε, hε, hc.ordConnected_inter_preimage hB.ordConnected
     (ordConnected_Ioo.inter ordConnected_Icc) hcont.continuousOn
@@ -229,8 +230,7 @@ theorem not_isAdmissibleBoundaryPart_unitSquareLeftSide_iUnion {E' : Type*}
       rw [div_le_one (by positivity)]
       linarith [(j.cast_nonneg : (0 : ℝ) ≤ j)]
     refine ⟨⟨⟨by linarith [hj.1], by linarith⟩, by linarith [hj.1], by linarith [hj.2]⟩, ?_⟩
-    simp only [mem_preimage, mem_unitSquareLeftSide, WithLp.toLp_fst, WithLp.toLp_snd, true_and,
-      mem_iUnion]
+    rw [mem_preimage, toLp_zero_prod_mem_unitSquareLeftSide, mem_iUnion]
     exact ⟨j, hj⟩
   have hI₁ : (2 / (4 * k + 9) : ℝ) ∈
       Ioo (1 / (2 * ((k + 1 : ℕ) : ℝ) + 3)) (1 / (2 * (k + 1 : ℕ) + 2)) := by
@@ -251,8 +251,7 @@ theorem not_isAdmissibleBoundaryPart_unitSquareLeftSide_iUnion {E' : Type*}
     rw [div_le_div_iff₀ (by positivity) (by positivity)]
     linarith
   have hgap := (hoc.out (hmem _ _ hI₁ hε₁) (hmem _ _ hI₂ hε₂) ⟨hgap₁, hgap₂⟩).2
-  simp only [mem_preimage, mem_unitSquareLeftSide, WithLp.toLp_fst, WithLp.toLp_snd, true_and,
-    mem_iUnion, mem_Ioo] at hgap
+  simp only [mem_preimage, toLp_zero_prod_mem_unitSquareLeftSide, mem_iUnion, mem_Ioo] at hgap
   obtain ⟨j, hj₁, hj₂⟩ := hgap
   rw [one_div_lt_one_div (by positivity) (by positivity)] at hj₁ hj₂
   have hkj : k < j := by exact_mod_cast (show (k : ℝ) < j by linarith)
@@ -287,8 +286,8 @@ theorem not_isAdmissibleBoundaryPart_unitSquareLeftSide_sdiff {E' : Type*}
     intro t hne ht
     rw [abs_le] at ht
     refine ⟨⟨⟨by linarith, by linarith⟩, by linarith, by linarith⟩, ?_⟩
-    simp only [mem_preimage, mem_unitSquareLeftSide, WithLp.toLp_fst, WithLp.toLp_snd, true_and,
-      mem_sdiff, mem_Ioo, mem_singleton_iff]
+    simp only [mem_preimage, toLp_zero_prod_mem_unitSquareLeftSide, mem_sdiff, mem_Ioo,
+      mem_singleton_iff]
     exact ⟨⟨by linarith, by linarith⟩, hne⟩
   have h₁ := hmem (1 / 2 - δ) (by linarith) (by rw [abs_le]; constructor <;> linarith)
   have h₂ := hmem (1 / 2 + δ) (by linarith) (by rw [abs_le]; constructor <;> linarith)

@@ -93,12 +93,14 @@ theorem mem_Icc_of_mem_frontier_openUnitSquare {x : WithLp 2 (ℝ × ℝ)}
 theorem mem_frontier_openUnitSquare {x : WithLp 2 (ℝ × ℝ)} :
     x ∈ frontier openUnitSquare ↔ x.fst ∈ Icc 0 1 ∧ (x.snd = 0 ∨ x.snd = 1) ∨
       (x.fst = 0 ∨ x.fst = 1) ∧ x.snd ∈ Icc 0 1 := by
+  -- `WithLp.homeomorphProd` is `WithLp.ofLp` as a homeomorphism.
+  have hcoe : ⇑(WithLp.homeomorphProd 2 ℝ ℝ) = WithLp.ofLp := rfl
   have h : openUnitSquare = WithLp.homeomorphProd 2 ℝ ℝ ⁻¹' (Ioo 0 1 ×ˢ Ioo 0 1) := by
     ext y
-    simp [WithLp.homeomorphProd]
-  rw [h, ← Homeomorph.preimage_frontier, mem_preimage, frontier_prod_eq,
+    simp [hcoe]
+  rw [h, ← Homeomorph.preimage_frontier, hcoe, mem_preimage, frontier_prod_eq,
     closure_Ioo zero_ne_one, frontier_Ioo zero_lt_one]
-  simp [WithLp.homeomorphProd]
+  simp
 
 /-- A rotation chart of the open unit square, from the description of the square in chart
 coordinates. -/
