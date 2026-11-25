@@ -10,6 +10,7 @@ import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.MFDeriv.Slice
 import TauCeti.Geometry.Manifold.RegularValue.Scalar.Sublevel.Topology
+import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # Vector fields transverse to a map
@@ -36,7 +37,9 @@ A vector field crossing a level of `f` in the direction of increasing `f`, `df(Z
 level a regular level, so the frontier of the sublevel set `{f ≤ c}` is exactly the level `f⁻¹(c)`
 (`TauCeti.frontier_setOf_le_eq_of_mvfderiv_pos`, a case of
 `TauCeti.IsRegularValue.frontier_setOfPred_le`). This identifies the boundary of a domain whose
-boundary is crossed outwards by a vector field, as for Liouville domains.
+boundary is crossed outwards by a vector field, as for Liouville domains. On a preconnected level
+a continuous transverse vector field crosses in a single direction
+(`TauCeti.forall_pos_or_forall_neg_mvfderiv_of_isPreconnected`).
 
 ## Main definitions
 
@@ -52,6 +55,8 @@ boundary is crossed outwards by a vector field, as for Liouville domains.
   the nonvanishing of `df(Z)` on the level.
 * `TauCeti.frontier_setOf_le_eq_of_mvfderiv_pos`: the frontier of a sublevel set whose level is
   crossed outwards by a vector field is the level.
+* `TauCeti.forall_pos_or_forall_neg_mvfderiv_of_isPreconnected`: a continuous vector field
+  transverse to a preconnected level crosses it in one direction.
 
 ## References
 
@@ -164,6 +169,30 @@ theorem mvfderiv_eq_zero_of_comp_eventuallyEq_zero
   simp
 
 /-! ### Vector fields crossing a level outwards -/
+
+/-- **A transverse vector field crosses a preconnected level in one direction.** Let `f` be `C¹`
+at every point of the level `f⁻¹(c)`, and let the continuous vector field `Z` be transverse to the
+level, `df(Z) ≠ 0` there. If the level is preconnected, then `df(Z)` has the same sign at all of
+its points. -/
+theorem forall_pos_or_forall_neg_mvfderiv_of_isPreconnected [IsManifold I 1 M]
+    {Z : (x : M) → TangentSpace I x} {f : M → ℝ} {c : ℝ}
+    (hZ : Continuous (fun y ↦ (⟨y, Z y⟩ : TangentBundle I M)))
+    (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) 1 f x)
+    (htr : ∀ x, f x = c → mvfderiv I f x (Z x) ≠ 0) (hconn : IsPreconnected {x | f x = c}) :
+    (∀ x, f x = c → 0 < mvfderiv I f x (Z x)) ∨ (∀ x, f x = c → mvfderiv I f x (Z x) < 0) := by
+  -- The derivative along `Z` is continuous at the points of the level.
+  have hcont : ContinuousOn (fun x ↦ mvfderiv I f x (Z x)) {x | f x = c} := fun x hx ↦
+    (ContinuousAt.comp (g := fun q : TangentBundle I M ↦ mvfderiv I f q.proj q.snd)
+      (f := fun y : M ↦ (⟨y, Z y⟩ : TangentBundle I M)) (x := x)
+      ((hf x hx).contMDiffAt_mvfderiv_apply (p := ⟨x, Z x⟩) (m := 0) (by simp)).continuousAt
+      hZ.continuousAt).continuousWithinAt
+  by_contra hne
+  simp only [not_or, not_forall, not_lt] at hne
+  obtain ⟨⟨a, ha, hga⟩, ⟨b, hb, hgb⟩⟩ := hne
+  -- A sign change on the level forces a zero by the intermediate value theorem.
+  obtain ⟨x, hx, hx0⟩ := hconn.intermediate_value ha hb hcont ⟨hga, hgb⟩
+  exact htr x hx hx0
+
 
 section Crossing
 
