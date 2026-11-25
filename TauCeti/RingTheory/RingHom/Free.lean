@@ -52,6 +52,7 @@ theorem free_iff (f : R →+* S) : f.Free ↔ letI := f.toAlgebra; Module.Free R
   Iff.rfl
 
 /-- For an `R`-algebra `S`, the structure map is free exactly when `S` is a free `R`-module. -/
+@[simp]
 theorem free_algebraMap_iff [Algebra R S] : (algebraMap R S).Free ↔ Module.Free R S := by
   rw [RingHom.Free, toAlgebra_algebraMap]
 
