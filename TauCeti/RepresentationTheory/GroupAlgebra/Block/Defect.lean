@@ -106,12 +106,6 @@ section Primitive
 variable {R G : Type*} [CommRing R] [IsArtinianRing R] [Group G] [Finite G] {p : ℕ}
   [hp : Fact p.Prime] [CharP R p] {e : conjInvariants R (⊤ : Subgroup G)}
 
-omit [IsArtinianRing R] [Finite G] [hp : Fact p.Prime] [CharP R p] in
-/-- A primitive idempotent of `R[G]^G` has a defect group: it is nonzero. -/
-theorem IsPrimitiveIdempotent.exists_isDefectGroup (p : ℕ) (he : IsPrimitiveIdempotent e) :
-    ∃ D, IsDefectGroup R p (e : MonoidAlgebra R G) D :=
-  TauCeti.exists_isDefectGroup p fun h => he.ne_zero (Subtype.ext h)
-
 /-- **The order of a defect group.** Every defect group `D` of a primitive idempotent `e` of
 `R[G]^G`, with `R` an Artinian ring of characteristic `p`, has order `p ^ blockDefect p e`: the
 defect groups are conjugate (`TauCeti.isDefectGroup_conj`), so all have the order of the one
