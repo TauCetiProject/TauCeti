@@ -247,6 +247,15 @@ theorem mono_order (h : IsAsymptoticallyEuclideanEnd I t R φ) {t' : ℝ} (ht : 
       exact Real.rpow_le_rpow_of_nonpos h.radius_pos hxR.le (sub_nonpos.2 ht)
     _ = |C| * R ^ (t' - t) * ‖x‖ ^ (-t' - k) := (mul_assoc _ _ _).symm
 
+/-- The metric coefficients of an end are differentiable at infinity. -/
+theorem eventually_differentiableAt_pullbackMetricCoeff (h : IsAsymptoticallyEuclideanEnd I t R φ) :
+    ∀ᶠ x in Bornology.cobounded _, ∀ i j,
+      DifferentiableAt ℝ (fun y ↦ pullbackMetricCoeff I φ y i j) x := by
+  filter_upwards [(tendsto_norm_cobounded_atTop.eventually_gt_atTop R)] with x hx i j
+  exact ((h.contDiffOn_pullbackMetricCoeff i j).contDiffAt
+    (isClosed_closedBall.isOpen_compl.mem_nhds (by simpa using hx))).differentiableAt
+      (by norm_num)
+
 /-- The image of an end is nonempty, since the exterior of a ball in positive dimension is. -/
 theorem nonempty_image (h : IsAsymptoticallyEuclideanEnd I t R φ) :
     (φ '' (closedBall 0 R)ᶜ).Nonempty := by
