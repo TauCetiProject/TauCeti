@@ -11,18 +11,19 @@ public import TauCeti.Analysis.ODE.Propagator.Liouville
 /-!
 # Checks for continuous dependence on the coefficient and Liouville's formula
 
-**Continuous dependence (§1.5).** For the scalar constant coefficients `p = 0` and `p′ = 1` on
+**Continuous dependence.** For the scalar constant coefficients `p = 0` and `p′ = 1` on
 `[0, 1]`, the propagators from `0` to `1` are `1` and `e`, and the bound
-`‖N_{p′}(1, 0) − N_p(1, 0)‖ ≤ ‖p′ − p‖_{L¹} exp(‖p′‖_{L¹} + ‖p‖_{L¹})` reads `e − 1 ≤ e`
+`‖N_{p′}(1, 0) − N_p(1, 0)‖ ≤ ‖p′ − p‖_{L¹} exp(‖p′‖_{L¹} + ‖p‖_{L¹})` of
+`TauCeti.norm_propagator_sub_propagator_le` reads `e − 1 ≤ e`
 (`TauCeti.Examples.PropagatorChecks.norm_propagator_one_sub_propagator_zero`). For `P′ = P` the
-bound is `0` (`TauCeti.Examples.PropagatorChecks.norm_propagator_sub_self_le`), and the propagator
+right-hand side of that bound is `0`
+(`TauCeti.Examples.PropagatorChecks.integral_norm_sub_self_mul_exp_eq_zero`), and the propagator
 only depends on the coefficient almost everywhere (`TauCeti.propagator_congr_ae`).
 
-**Liouville's formula (§1.4).** For a diagonal coefficient `P = diag(p₁, p₂)` on `Fin 2 → ℝ` with
-`p₁, p₂` integrable, `det N_P(t, s) = e^{∫_s^t (p₁ + p₂)}`
+**Liouville's formula.** For a diagonal coefficient `P = diag(p₁, p₂)` on `Fin 2 → ℝ` with
+`p₁, p₂` integrable, `TauCeti.det_toMatrix'_propagator` gives
+`det N_P(t, s) = e^{∫_s^t (p₁ + p₂)}`
 (`TauCeti.Examples.PropagatorChecks.det_propagator_diagonal`).
-
-These are Checks of §§1.4 and 1.5 of the DiracScatteringAndNonlinearFourierTransform roadmap.
 -/
 
 public section
@@ -32,7 +33,7 @@ open MeasureTheory Set
 namespace TauCeti.Examples.PropagatorChecks
 
 /-- For the scalar coefficients `0` and `1` on `ℝ`, the propagators from `0` to `1` differ by
-`e − 1`, and the continuity bound of §1.5 is `e`. -/
+`e − 1`, and the right-hand side of `TauCeti.norm_propagator_sub_propagator_le` is `e`. -/
 theorem norm_propagator_one_sub_propagator_zero :
     ‖propagator (fun _ ↦ (1 : ℝ →L[ℝ] ℝ)) 1 0 - propagator (fun _ ↦ (0 : ℝ →L[ℝ] ℝ)) 1 0‖ =
         Real.exp 1 - 1 ∧
@@ -40,22 +41,16 @@ theorem norm_propagator_one_sub_propagator_zero :
         Real.exp (|∫ _ in (0 : ℝ)..1, ‖(1 : ℝ →L[ℝ] ℝ)‖| +
           |∫ _ in (0 : ℝ)..1, ‖(0 : ℝ →L[ℝ] ℝ)‖|) := by
   have h1 : propagator (fun _ ↦ (1 : ℝ →L[ℝ] ℝ)) 1 0 = Real.exp 1 • (1 : ℝ →L[ℝ] ℝ) := by
-    rw [propagator_const, sub_zero, RCLike.ofReal_one, one_smul, Real.exp_eq_exp_ℝ,
-      ← Algebra.algebraMap_eq_smul_one, NormedSpace.algebraMap_exp_comm, map_one]
-  have h0 : propagator (fun _ ↦ (0 : ℝ →L[ℝ] ℝ)) 1 0 = 1 := by
-    rw [propagator_const, smul_zero, NormedSpace.exp_zero]
-  constructor
-  · rw [h1, h0, show Real.exp 1 • (1 : ℝ →L[ℝ] ℝ) - 1 = (Real.exp 1 - 1) • 1 by
-      rw [sub_smul (Real.exp 1) 1 (1 : ℝ →L[ℝ] ℝ), one_smul], norm_smul, norm_one, mul_one,
-      Real.norm_of_nonneg (by linarith [Real.add_one_le_exp (1 : ℝ)])]
-  · simp only [sub_zero, norm_one, norm_zero, intervalIntegral.integral_const, smul_eq_mul,
-      mul_one, mul_zero, abs_one, abs_zero, add_zero, one_mul]
-    linarith
+    simp [Real.exp_eq_exp_ℝ, ← Algebra.algebraMap_eq_smul_one, NormedSpace.algebraMap_exp_comm]
+  have he : 0 ≤ Real.exp 1 - 1 := by linarith [Real.add_one_le_exp (1 : ℝ)]
+  refine ⟨?_, by simp⟩
+  simpa [h1, norm_smul, abs_of_nonneg he] using
+    congrArg norm (sub_smul (Real.exp 1) 1 (1 : ℝ →L[ℝ] ℝ)).symm
 
-/-- For `P′ = P` the continuity bound of §1.5 is `0`. -/
-theorem norm_propagator_sub_self_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (P : ℝ → E →L[ℝ] E) (t s : ℝ) :
-    ‖propagator P t s - propagator P t s‖ ≤ |∫ u in s..t, ‖P u - P u‖| := by
+/-- For `P′ = P` the right-hand side of `TauCeti.norm_propagator_sub_propagator_le` is `0`. -/
+theorem integral_norm_sub_self_mul_exp_eq_zero {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (P : ℝ → E →L[ℝ] E) (t s : ℝ) :
+    |∫ u in s..t, ‖P u - P u‖| * Real.exp (|∫ u in s..t, ‖P u‖| + |∫ u in s..t, ‖P u‖|) = 0 := by
   simp
 
 /-- **Liouville's formula for a diagonal coefficient.** For `p₁, p₂` integrable on `[a, b]` and
