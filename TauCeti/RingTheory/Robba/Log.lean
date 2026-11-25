@@ -9,11 +9,8 @@ public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.NumberTheory.Padics.PadicNumbers
 public import TauCeti.RingTheory.PowerSeries.Log
 public import TauCeti.RingTheory.Robba.OpenDisc
-import Mathlib.Analysis.Normed.Algebra.Ultra
-import Mathlib.Analysis.Normed.Ring.Ultra
 import Mathlib.Analysis.SpecificLimits.Normed
-import TauCeti.NumberTheory.Padics.Basic
-import TauCeti.NumberTheory.Padics.PadicIntegers
+import TauCeti.NumberTheory.Padics.Choose
 
 /-!
 # The logarithm `log (1 + t)` in the Robba ring
@@ -36,7 +33,7 @@ coefficients: it is not in the bounded Robba ring, although it converges on the 
 Over a normed `ℚ_p`-algebra `K`, `log (1 + t)` is the limit of the polynomials
 `((1 + t) ^ (p ^ m) - 1) / p ^ m` in every Gauss norm `|·|_ρ` with `0 ≤ ρ < 1`. The coefficient of
 `t ^ (j + 1)` in `((1 + t) ^ N - 1) / N` is `C(N, j + 1) / N = C(N - 1, j) / (j + 1)`, and the
-binomial estimate `‖C(N - 1, j) - (-1)ʲ‖ ≤ (j + 1) ‖N‖`
+binomial estimate `‖C(N - 1, j) - (-1)ʲ‖ ≤ (j + 1) ‖N‖` of `TauCeti.NumberTheory.Padics.Choose`
 (`TauCeti.norm_natCast_choose_pred_sub_neg_one_pow_le`) bounds its distance to the coefficient
 `(-1)ʲ / (j + 1)` of `log (1 + t)` by `(j + 1)² ‖N‖`.
 
@@ -51,8 +48,8 @@ binomial estimate `‖C(N - 1, j) - (-1)ʲ‖ ≤ (j + 1) ‖N‖`
 * `TauCeti.RobbaRing.log_mem_annulus`: it lies in every annular subalgebra.
 * `TauCeti.RobbaRing.log_notMem_bounded`: it is not in the bounded Robba ring when some positive
   integer has norm less than `1`.
-* `TauCeti.norm_natCast_choose_pred_sub_neg_one_pow_le`: the binomial estimate
-  `‖C(N - 1, j) - (-1)ʲ‖ ≤ (j + 1) ‖N‖` in a normed `ℚ_p`-algebra.
+* `TauCeti.RobbaRing.coe_one_add_monomial_pow_natCast`: the coefficient of `tⁿ` in `(1 + t) ^ N`
+  is `C(N, n)`.
 * `TauCeti.RobbaRing.tendsto_laurentGaussNorm_one_add_pow_sub_log`: over a normed `ℚ_p`-algebra,
   `((1 + t) ^ (p ^ m) - 1) / p ^ m → log (1 + t)` in every Gauss norm `|·|_ρ`, `0 ≤ ρ < 1`.
 
@@ -70,106 +67,6 @@ open scoped PowerSeries
 
 namespace TauCeti
 
-/-! ### A binomial estimate -/
-
-section Binomial
-
-variable {K : Type*} [NormedField K]
-
-/-- In a normed `ℚ_p`-algebra a nonzero natural number is nonzero. -/
-private theorem natCast_ne_zero_of_padic (p : ℕ) [Fact p.Prime] [NormedAlgebra ℚ_[p] K] {n : ℕ}
-    (hn : n ≠ 0) : (n : K) ≠ 0 := by
-  rw [← norm_ne_zero_iff, norm_natCast_eq_norm_padic (p := p), norm_ne_zero_iff]
-  exact_mod_cast hn
-
-/-- In a normed `ℚ_p`-algebra, `‖1 / n‖ ≤ n`. -/
-private theorem norm_inv_natCast_le (p : ℕ) [Fact p.Prime] [NormedAlgebra ℚ_[p] K] (n : ℕ) :
-    ‖(n : K)⁻¹‖ ≤ n := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  rw [norm_inv, norm_natCast_eq_norm_padic (p := p)]
-  exact inv_le_of_inv_le₀ (by positivity) (Padic.inv_natCast_le_norm_natCast n)
-
-/-- **`C(N - 1, j)` is `p`-adically close to `(-1)ʲ`.** In a normed `ℚ_p`-algebra the binomial
-coefficient `C(N - 1, j) = ∏_{1 ≤ i ≤ j} (N - i) / i` satisfies the norm bound
-`‖C(N - 1, j) - (-1)ʲ‖ ≤ (j + 1) ‖N‖`, where the factor `j + 1` is a real number, not a norm. -/
-theorem norm_natCast_choose_pred_sub_neg_one_pow_le (p : ℕ) [Fact p.Prime]
-    [NormedAlgebra ℚ_[p] K] {N : ℕ} (hN : N ≠ 0) (j : ℕ) :
-    ‖((N - 1).choose j : K) - (-1) ^ j‖ ≤ (j + 1) * ‖(N : K)‖ := by
-  have : IsUltrametricDist K := IsUltrametricDist.of_normedAlgebra ℚ_[p]
-  have hsub (a b : K) : ‖a - b‖ ≤ max ‖a‖ ‖b‖ := by
-    simpa [sub_eq_add_neg] using IsUltrametricDist.norm_add_le_max a (-b)
-  induction j with
-  | zero => simp
-  | succ j ih =>
-    have hj : ((j + 1 : ℕ) : K) ≠ 0 := natCast_ne_zero_of_padic p j.succ_ne_zero
-    set x : K := N / (j + 1 : ℕ) with hx_def
-    -- The recursion `C(N - 1, j + 1) = -C(N - 1, j) (1 - N / (j + 1))`.
-    have hrec : ((N - 1).choose (j + 1) : K) = -((N - 1).choose j : K) * (1 - x) := by
-      rcases le_or_gt j (N - 1) with h | h
-      · have h' := congrArg (Nat.cast : ℕ → K) (Nat.choose_succ_right_eq (N - 1) j)
-        push_cast [Nat.cast_sub h, Nat.cast_sub (Nat.one_le_iff_ne_zero.2 hN)] at h'
-        rw [hx_def, eq_comm, ← sub_eq_zero]
-        have : ((N - 1).choose (j + 1) : K) = (N - 1).choose j * (N - 1 - j) / (j + 1 : ℕ) := by
-          rw [eq_div_iff hj, ← h']
-          push_cast
-          ring
-        rw [this]
-        field_simp
-        push_cast
-        ring
-      · simp [Nat.choose_eq_zero_of_lt h, Nat.choose_eq_zero_of_lt (h.trans (Nat.lt_succ_self j))]
-    by_cases hbig : 1 ≤ (j + 1 + 1) * ‖(N : K)‖
-    · -- Both terms are integers, so the difference has norm at most `1`.
-      have h1 : (1 : ℝ) ≤ ((j + 1 : ℕ) + 1) * ‖(N : K)‖ := by push_cast; linarith
-      refine (hsub _ _).trans (max_le ((IsUltrametricDist.norm_natCast_le_one K _).trans h1) ?_)
-      simpa using h1
-    · push Not at hbig
-      have hx : ‖x‖ ≤ (j + 1) * ‖(N : K)‖ := by
-        rw [hx_def, div_eq_mul_inv, norm_mul, mul_comm]
-        gcongr
-        exact_mod_cast norm_inv_natCast_le p (j + 1)
-      have hx1 : ‖1 - x‖ ≤ 1 :=
-        (hsub _ _).trans (max_le norm_one.le (hx.trans (by nlinarith [norm_nonneg (N : K)])))
-      have hsplit : ((N - 1).choose (j + 1) : K) - (-1) ^ (j + 1) =
-          -((((N - 1).choose j : K) - (-1) ^ j) * (1 - x) - (-1) ^ j * x) := by
-        rw [hrec]
-        ring
-      rw [hsplit, norm_neg]
-      refine (hsub _ _).trans (max_le ?_ ?_)
-      · rw [norm_mul]
-        calc _ ≤ ((j + 1) * ‖(N : K)‖) * 1 :=
-              mul_le_mul ih hx1 (norm_nonneg _) (by positivity)
-          _ ≤ _ := by push_cast; nlinarith [norm_nonneg (N : K)]
-      · rw [norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul]
-        refine hx.trans ?_
-        push_cast
-        nlinarith [norm_nonneg (N : K)]
-
-/-- **The coefficients of `((1 + t) ^ N - 1) / N` approximate those of `log (1 + t)`.** In a normed
-`ℚ_p`-algebra, `‖C(N, j + 1) / N - (-1)ʲ / (j + 1)‖ ≤ (j + 1)² ‖N‖`. -/
-theorem norm_natCast_choose_succ_div_sub_le (p : ℕ) [Fact p.Prime] [NormedAlgebra ℚ_[p] K] {N : ℕ}
-    (hN : N ≠ 0) (j : ℕ) :
-    ‖(N.choose (j + 1) : K) / N - (-1) ^ j / (j + 1)‖ ≤ (j + 1) ^ 2 * ‖(N : K)‖ := by
-  have hN' : (N : K) ≠ 0 := natCast_ne_zero_of_padic p hN
-  have hj : ((j + 1 : ℕ) : K) ≠ 0 := natCast_ne_zero_of_padic p j.succ_ne_zero
-  -- `C(N, j + 1) / N = C(N - 1, j) / (j + 1)`.
-  have hsucc := congrArg (Nat.cast : ℕ → K) (Nat.add_one_mul_choose_eq (N - 1) j)
-  rw [Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.2 hN)] at hsucc
-  push_cast at hsucc hj
-  have heq : (N.choose (j + 1) : K) / N - (-1) ^ j / (j + 1) =
-      (((N - 1).choose j : K) - (-1) ^ j) * ((j + 1 : ℕ) : K)⁻¹ := by
-    push_cast
-    field_simp
-    linear_combination -hsucc
-  rw [heq, norm_mul]
-  calc _ ≤ ((j + 1) * ‖(N : K)‖) * (j + 1 : ℕ) :=
-        mul_le_mul (norm_natCast_choose_pred_sub_neg_one_pow_le p hN j)
-          (norm_inv_natCast_le p _) (norm_nonneg _) (by positivity)
-    _ = _ := by push_cast; ring
-
-end Binomial
-
 namespace RobbaRing
 
 open IsConvolutionRing
@@ -181,6 +78,18 @@ coefficients. -/
 private theorem one_add_monomial_pow (N : ℕ) : (1 + monomial 1 1 : RobbaRing K) ^ N =
     ofOnOpenDisc K (PowerSeries.OnOpenDisc.polynomialHom ((1 + Polynomial.X) ^ N)) := by
   simp
+
+/-- **The binomial theorem in the Robba ring**: the coefficient of `tⁿ` in `(1 + t) ^ N` is
+`C(N, n)`. -/
+theorem coe_one_add_monomial_pow_natCast (N n : ℕ) :
+    (((1 + monomial 1 1 : RobbaRing K) ^ N : RobbaRing K) : ℤ → K) n = N.choose n := by
+  rw [one_add_monomial_pow, coe_ofOnOpenDisc_natCast, PowerSeries.OnOpenDisc.coe_polynomialHom,
+    Polynomial.coeff_coe, Polynomial.coeff_one_add_X_pow]
+
+/-- `(1 + t) ^ N` has no terms of negative degree. -/
+theorem coe_one_add_monomial_pow_of_neg (N : ℕ) {n : ℤ} (hn : n < 0) :
+    (((1 + monomial 1 1 : RobbaRing K) ^ N : RobbaRing K) : ℤ → K) n = 0 := by
+  rw [one_add_monomial_pow, coe_ofOnOpenDisc_of_neg K _ hn]
 
 variable [CharZero K]
 
@@ -240,8 +149,7 @@ variable {p : ℕ} [Fact p.Prime] [NormedAlgebra ℚ_[p] K]
 
 /-- **`log (1 + t) = lim ((1 + t) ^ (p ^ m) - 1) / p ^ m`.** Over a complete normed `ℚ_p`-algebra
 `K`, the polynomials `((1 + t) ^ (p ^ m) - 1) / p ^ m` converge to `log (1 + t)` in every Gauss
-norm `|·|_ρ` with `0 ≤ ρ < 1`, the seminorms of the open unit disc. In fact
-`|((1 + t) ^ (p ^ m) - 1) / p ^ m - log (1 + t)|_ρ ≤ C_ρ p⁻ᵐ` with `C_ρ = sup_n n² ρⁿ`. -/
+norm `|·|_ρ` with `0 ≤ ρ < 1`, the seminorms of the open unit disc. -/
 theorem tendsto_laurentGaussNorm_one_add_pow_sub_log {ρ : ℝ} (hρ₀ : 0 ≤ ρ) (hρ₁ : ρ < 1) :
     Tendsto (fun m : ℕ ↦ laurentGaussNorm ρ
       ((((p : K) ^ m)⁻¹ • ((1 + monomial 1 1 : RobbaRing K) ^ p ^ m - 1) - log K :
@@ -267,9 +175,8 @@ theorem tendsto_laurentGaussNorm_one_add_pow_sub_log {ρ : ℝ} (hρ₀ : 0 ≤ 
     obtain ⟨j, rfl⟩ : ∃ j : ℕ, n = (j + 1 : ℕ) := ⟨(n - 1).toNat, by omega⟩
     have hcoeff := norm_natCast_choose_succ_div_sub_le p (K := K)
       (pow_ne_zero m (Fact.out : p.Prime).ne_zero) j
-    rw [one_add_monomial_pow, coe_ofOnOpenDisc_natCast, PowerSeries.OnOpenDisc.coe_polynomialHom,
-      Polynomial.coeff_coe, Polynomial.coeff_one_add_X_pow, coe_log_natCast,
-      Pi.single_eq_of_ne (by omega), sub_zero, zpow_natCast]
+    rw [coe_one_add_monomial_pow_natCast, coe_log_natCast, Pi.single_eq_of_ne (by omega), sub_zero,
+      zpow_natCast]
     calc _ = ‖(((p ^ m).choose (j + 1) : ℕ) : K) / ((p ^ m : ℕ) : K) - (-1) ^ j / (j + 1)‖ *
           ρ ^ (j + 1) := by
           congr 2
@@ -283,13 +190,12 @@ theorem tendsto_laurentGaussNorm_one_add_pow_sub_log {ρ : ℝ} (hρ₀ : 0 ≤ 
       _ ≤ C * ‖(p : K)‖ ^ m := by gcongr; exact hC (j + 1)
   · -- In degrees `n ≤ 0` the coefficient vanishes.
     rcases hn.lt_or_eq with hn | rfl
-    · rw [one_add_monomial_pow, coe_ofOnOpenDisc_of_neg K _ hn, coe_log_of_nonpos K hn.le,
+    · rw [coe_one_add_monomial_pow_of_neg K _ hn, coe_log_of_nonpos K hn.le,
         Pi.single_eq_of_ne hn.ne, sub_self, mul_zero, sub_zero, norm_zero, zero_mul]
       positivity
-    · rw [← Nat.cast_zero, one_add_monomial_pow, coe_ofOnOpenDisc_natCast, coe_log_natCast]
-      simp only [PowerSeries.OnOpenDisc.coe_polynomialHom, Polynomial.coeff_coe,
-        Polynomial.coeff_one_add_X_pow, Nat.choose_zero_right, Nat.cast_one, Nat.cast_zero,
-        Pi.single_eq_same, sub_self, mul_zero, div_zero, norm_zero, zero_mul]
+    · rw [← Nat.cast_zero, coe_one_add_monomial_pow_natCast, coe_log_natCast]
+      simp only [Nat.choose_zero_right, Nat.cast_one, Nat.cast_zero, Pi.single_eq_same, sub_self,
+        mul_zero, div_zero, norm_zero, zero_mul]
       positivity
 
 end RobbaRing

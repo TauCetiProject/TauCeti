@@ -97,10 +97,7 @@ noncomputable def ofOnOpenDisc : PowerSeries.OnOpenDisc.subring R 1 →ₐ[R] Ro
     ext n
     -- The convolution of two families supported in nonnegative degrees is the Cauchy product.
     simp only [Subring.coe_mul]
-    -- The product in the Robba ring is the convolution of the coefficient families
-    -- (`IsConvolutionRing.coe_mul`); `change` restates the unfolded right side in that form.
-    change _ = (((f : R⟦X⟧) : R⸨X⸩).coeff ⋆ᵣ₊ ((g : R⟦X⟧) : R⸨X⸩).coeff) n
-    rw [DiscreteConvolution.addRingConvolution_eq_tsum_sub]
+    rw [coe_mul, DiscreteConvolution.addRingConvolution_eq_tsum_sub]
     simp only [mul_comm (((f : R⟦X⟧) : R⸨X⸩).coeff (n - _))]
     rcases lt_or_ge n 0 with hn | hn
     · rw [DiscreteConvolution.tsum_mul_sub_eq_zero_of_neg (h g) (h f) hn, PowerSeries.coeff_coe,
