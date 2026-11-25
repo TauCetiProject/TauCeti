@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.ModularForms.Norm.Cusps
 import TauCeti.GroupTheory.Coset.Basic
 import TauCeti.GroupTheory.GroupAction.Period
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
-import TauCeti.NumberTheory.Modular.Stabilizer
+public import TauCeti.NumberTheory.Modular.Stabilizer
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 
 /-!
@@ -54,6 +54,8 @@ The passage divides the whole native identity by `δ = [±Γ : Γ]`, which is `1
 
 * `TauCeti.ModularForm.cardStabilizerOnOrbit_eq_card_center_mul_ellipticOrderOnSubgroupOrbit`:
   `|Stab_Γ P| = |Γ ∩ {±I}| · e_P`.
+* `TauCeti.ModularForm.ellipticOrderOnSubgroupOrbit_top_mk`: at level one `e_P` is the elliptic
+  order `TauCeti.ModularGroup.ellipticOrder`.
 * `TauCeti.ModularForm.weightedOrderOfVanishingOnSubgroupOrbit_eq_relIndex_mul_div`: the native
   interior weight is `[±Γ : Γ] · ord_P f / e_P`.
 * `TauCeti.ModularForm.geometricOrderAtCusp_mk`: the geometric order may be read at any
@@ -91,7 +93,9 @@ variable {Γ : Subgroup SL(2, ℤ)} {k : ℤ} {F : Type*} [FunLike F ℍ ℂ]
 any point of the orbit in the image of `Γ` in `PSL(2, ℤ)`, the group acting effectively on `ℍ`.
 It is the order of the matrix stabiliser divided by `|Γ ∩ {±I}|`
 (`cardStabilizerOnOrbit_eq_card_center_mul_ellipticOrderOnSubgroupOrbit`). For `Γ = SL(2, ℤ)` it
-is `2` on the orbit of `i`, `3` on the orbit of `ρ` and `1` elsewhere. -/
+is the level-one elliptic order `TauCeti.ModularGroup.ellipticOrder`
+(`ellipticOrderOnSubgroupOrbit_top_mk`): `2` on the orbit of `i`, `3` on the orbit of `ρ` and `1`
+elsewhere. -/
 noncomputable def ellipticOrderOnSubgroupOrbit
     (o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ) : ℕ :=
   Quotient.liftOn' o
@@ -114,6 +118,20 @@ theorem ellipticOrderOnSubgroupOrbit_mk (p : ℍ) :
         (Quotient.mk'' p : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ) =
       Nat.card (stabilizer (Γ.map (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))) p) :=
   (rfl)
+
+/-- **At level one the effective elliptic order is `TauCeti.ModularGroup.ellipticOrder`**: for
+`Γ = SL(2, ℤ)` the image of `Γ` in `PSL(2, ℤ)` is all of `PSL(2, ℤ)`, so the two orders agree on
+the orbit of every `p`. With `ModularGroup.ellipticOrder_I`, `ModularGroup.ellipticOrder_ρ` and
+`ModularGroup.ellipticOrder_eq_one_of_orbit_ne_I_of_orbit_ne_ρ` this gives the values `2`, `3`
+and `1`. -/
+theorem ellipticOrderOnSubgroupOrbit_top_mk (p : ℍ) :
+    ellipticOrderOnSubgroupOrbit
+        (Quotient.mk'' p :
+          orbitRel.Quotient ((⊤ : Subgroup SL(2, ℤ)) : Subgroup (GL (Fin 2) ℝ)) ℍ) =
+      ModularGroup.ellipticOrder (Quotient.mk'' p) := by
+  rw [ellipticOrderOnSubgroupOrbit_mk, ModularGroup.ellipticOrder_mk,
+    Subgroup.map_top_of_surjective _ (QuotientGroup.mk'_surjective _)]
+  exact (card_stabilizer_congr Subgroup.topEquiv (f := id) p (fun _ ↦ rfl) fun _ h ↦ h).symm
 
 /-- **The matrix stabiliser order is `|Γ ∩ {±I}|` times the effective elliptic order.** -/
 theorem cardStabilizerOnOrbit_eq_card_center_mul_ellipticOrderOnSubgroupOrbit
