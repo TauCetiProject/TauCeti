@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Quasiregular.Euclidean
 public import TauCeti.Analysis.InnerProductSpace.SingularValues.Least
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Inner and outer inequalities of a Euclidean quasiregular map
@@ -47,12 +48,6 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
-/-- The operator norm of a continuous linear map of a finite-dimensional space is that of the
-continuous linear map of its underlying linear map. -/
-private theorem norm_toContinuousLinearMap_coe (A : E →L[ℝ] E) :
-    ‖LinearMap.toContinuousLinearMap (A : E →ₗ[ℝ] E)‖ = ‖A‖ :=
-  rfl
-
 /-- **Outer to inner, pointwise.** If `‖A‖ⁿ ≤ K det A` with `0 ≤ K`, `n = dim E`, then
 `det A ≤ K ^ (n - 1) ℓ(A)ⁿ`. -/
 theorem det_le_pow_mul_minimalStretch_pow_of_norm_pow_le {K : ℝ} (hK : 0 ≤ K) {A : E →L[ℝ] E}
@@ -67,7 +62,7 @@ theorem det_le_pow_mul_minimalStretch_pow_of_norm_pow_le {K : ℝ} (hK : 0 ≤ K
     simp [LinearMap.det_eq_one_of_subsingleton, h0]
   -- `det A ≤ ‖A‖ⁿ⁻¹ ℓ`, from the singular values.
   have hdℓ := (A : E →ₗ[ℝ] E).normDet_le_norm_pow_mul_minimalStretch hpos
-  rw [LinearMap.normDet_eq_abs_det, abs_of_pos hd, norm_toContinuousLinearMap_coe] at hdℓ
+  rw [LinearMap.normDet_eq_abs_det, abs_of_pos hd, LinearMap.toContinuousLinearMap_coe] at hdℓ
   obtain ⟨m, hm⟩ := Nat.exists_eq_add_one_of_ne_zero hpos.ne'
   rw [hm, Nat.add_sub_cancel] at hdℓ ⊢
   rw [hm] at h
@@ -82,9 +77,9 @@ theorem det_le_pow_mul_minimalStretch_pow_of_norm_pow_le {K : ℝ} (hK : 0 ≤ K
       _ = d ^ m * (K ^ m * ℓ ^ (m + 1)) := by ring
   exact le_of_mul_le_mul_left key (pow_pos hd _)
 
-/-- **Inner to outer, pointwise.** If `‖A‖ⁿ ≤ K' det A` with `0 ≤ K'`, and `det A ≤ K ℓ(A)ⁿ` with
-`0 < K`, `n = dim E`, then `‖A‖ⁿ ≤ K ^ (n - 1) det A`. -/
-theorem norm_pow_le_pow_mul_det_of_det_le_mul_minimalStretch_pow {K K' : ℝ} (hK : 0 < K)
+/-- **Inner to outer, pointwise.** If `‖A‖ⁿ ≤ K' det A` with `0 ≤ K'`, and `det A ≤ K ℓ(A)ⁿ`,
+`n = dim E`, then `‖A‖ⁿ ≤ K ^ (n - 1) det A`. -/
+theorem norm_pow_le_pow_mul_det_of_det_le_mul_minimalStretch_pow {K K' : ℝ}
     (hK' : 0 ≤ K') {A : E →L[ℝ] E}
     (hout : ‖A‖ ^ finrank ℝ E ≤ K' * LinearMap.det (A : E →ₗ[ℝ] E))
     (hin : LinearMap.det (A : E →ₗ[ℝ] E) ≤ K * (A : E →ₗ[ℝ] E).minimalStretch ^ finrank ℝ E) :
@@ -104,7 +99,7 @@ theorem norm_pow_le_pow_mul_det_of_det_le_mul_minimalStretch_pow {K K' : ℝ} (h
     exact hA
   -- `‖A‖ ℓⁿ⁻¹ ≤ det A`, from the singular values.
   have hAℓ := (A : E →ₗ[ℝ] E).norm_mul_minimalStretch_pow_le_normDet
-  rw [LinearMap.normDet_eq_abs_det, abs_of_pos hd, norm_toContinuousLinearMap_coe] at hAℓ
+  rw [LinearMap.normDet_eq_abs_det, abs_of_pos hd, LinearMap.toContinuousLinearMap_coe] at hAℓ
   have hℓ := (A : E →ₗ[ℝ] E).minimalStretch_nonneg
   obtain ⟨m, hm⟩ := Nat.exists_eq_add_one_of_ne_zero hpos.ne'
   rw [hm, Nat.add_sub_cancel] at hAℓ ⊢
@@ -112,6 +107,8 @@ theorem norm_pow_le_pow_mul_det_of_det_le_mul_minimalStretch_pow {K K' : ℝ} (h
   set d := LinearMap.det (A : E →ₗ[ℝ] E)
   set ℓ := (A : E →ₗ[ℝ] E).minimalStretch
   set N := ‖A‖ ^ (m + 1)
+  -- `0 < d ≤ K ℓᵐ⁺¹` forces `0 < K`.
+  have hK : 0 < K := pos_of_mul_pos_left (hd.trans_le hin) (pow_nonneg hℓ _)
   -- `N (d / K)ᵐ ≤ N ℓ^((m + 1) m) = (‖A‖ ℓᵐ)ᵐ⁺¹ ≤ dᵐ⁺¹`.
   have hdK : d / K ≤ ℓ ^ (m + 1) := (div_le_iff₀' hK).2 hin
   have key : N * (d / K) ^ m ≤ (K ^ m * d) * (d / K) ^ m := by
@@ -149,7 +146,7 @@ theorem IsQuasiregularOn.of_det_le_mul_minimalStretch_pow (hf : IsQuasiregularOn
   refine (isQuasiregularOn_iff hDu).2 ⟨one_le_pow₀ hK, hf.continuousOn,
     hf.locallyIntegrableOn_norm_pow hDu, ?_⟩
   filter_upwards [hf.ae_norm_pow_le_mul_det hDu, hin] with x hout hx
-  exact norm_pow_le_pow_mul_det_of_det_le_mul_minimalStretch_pow (zero_lt_one.trans_le hK)
-    (zero_le_one.trans hf.one_le) hout hx
+  exact norm_pow_le_pow_mul_det_of_det_le_mul_minimalStretch_pow (zero_le_one.trans hf.one_le)
+    hout hx
 
 end TauCeti
