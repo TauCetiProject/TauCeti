@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.HochschildCohomology.Bimodule
+import TauCeti.Algebra.Homology.ModuleCat.Basic
 import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
@@ -25,10 +26,10 @@ tuple that still contains the entry `1`, and `∂ⱼψ` and `∂ⱼ₊₁ψ` bot
 `TauCeti.hochschildBimoduleNormalizedCochainComplex` of the Hochschild cochain complex, with
 inclusion `TauCeti.hochschildBimoduleNormalizedCochainComplexι`.
 
-In degrees at most two, the lemmas below show at the level of cocycles and coboundaries that the
-inclusion is bijective on `HH⁰`, `HH¹` and `HH²`; the induced map on the homology objects of the
-two complexes is not stated here. Every cochain of degree zero is normalized, and so is every
-cocycle of degree one: a derivation `D` has `D 1 = D (1 * 1) = 2 D 1`. Every `2`-cocycle `ψ` is
+In degrees at most two the inclusion induces isomorphisms on `HH⁰`, `HH¹` and `HH²`
+(`TauCeti.isIso_homologyMap_hochschildBimoduleNormalizedCochainComplexι`). Every cochain of
+degree zero is normalized, and so is every cocycle of degree one: a derivation `D` has
+`D 1 = D (1 * 1) = 2 D 1`. Every `2`-cocycle `ψ` is
 cohomologous to a normalized one: the cocycle identity gives `ψ(1, b) = ψ(1, 1) b` and
 `ψ(a, 1) = a ψ(1, 1)`, so `ψ` minus the coboundary of `a ↦ a ψ(1, 1)` is normalized. A `1`-cochain
 whose coboundary is normalized is normalized, since `(δφ)(1, 1) = φ 1`. Whether the inclusion is a
@@ -64,6 +65,8 @@ quasi-isomorphism in every degree is not addressed here.
 * `hochschildBimoduleCohomology.mk_two_eq_mk_iff_of_mem_hochschildBimoduleNormalizedCochains`: two
   normalized cocycles have the same class in `HH²(A, M)` exactly when they differ by the coboundary
   of a normalized cochain.
+* `TauCeti.isIso_homologyMap_hochschildBimoduleNormalizedCochainComplexι`: the inclusion of the
+  normalized cochains induces isomorphisms in cohomology in degrees `0`, `1` and `2`.
 
 ## References
 
@@ -376,5 +379,103 @@ theorem mk_two_eq_mk_iff_of_mem_hochschildBimoduleNormalizedCochains
   exact sub_mem hψ hφ
 
 end hochschildBimoduleCohomology
+
+/-! ### The normalized inclusion in cohomology, in degrees at most two -/
+
+section Homology
+
+variable {R A M : Type*} [CommRing R] [Semiring A] [Algebra R A] [AddCommGroup M]
+  [Module R M] [Module A M] [Module Aᵐᵒᵖ M] [IsScalarTower R A M] [IsScalarTower R Aᵐᵒᵖ M]
+  [SMulCommClass A Aᵐᵒᵖ M]
+
+open HomologicalComplex
+
+/-- On the class of a normalized cycle, the map induced in cohomology by the normalized inclusion
+is the class of its underlying cocycle. -/
+theorem homologyMap_hochschildBimoduleNormalizedCochainComplexι_homologyπ (n : ℕ)
+    (z : (hochschildBimoduleNormalizedCochainComplex R A M).cycles n)
+    {ψ : (Fin n → A) →ₘₗ[R] M} (hψ : ψ ∈ hochschildBimoduleCocycles R A M n)
+    (hz : ((hochschildBimoduleNormalizedCochainComplexXIso R A M n).hom
+      ((hochschildBimoduleNormalizedCochainComplex R A M).iCycles n z) :
+        (Fin n → A) →ₘₗ[R] M) = ψ) :
+    homologyMap (hochschildBimoduleNormalizedCochainComplexι R A M) n
+        ((hochschildBimoduleNormalizedCochainComplex R A M).homologyπ n z) =
+      hochschildBimoduleCohomology.mk R A M n ⟨ψ, hψ⟩ := by
+  rw [moduleCat_homologyMap_homologyπ]
+  refine (hochschildBimoduleCohomology.mk_eq_homologyπ R A M _ _ ?_).symm
+  rw [moduleCat_iCycles_cyclesMap_apply, hochschildBimoduleNormalizedCochainComplexι_f_apply]
+  exact hz
+
+/-- The class of a normalized cocycle is in the image of the map induced by the normalized
+inclusion. -/
+theorem mk_mem_range_homologyMap_hochschildBimoduleNormalizedCochainComplexι {n : ℕ}
+    {ψ : (Fin n → A) →ₘₗ[R] M} (hψ : ψ ∈ hochschildBimoduleCocycles R A M n)
+    (hψ' : ψ ∈ hochschildBimoduleNormalizedCochains R A M n) :
+    hochschildBimoduleCohomology.mk R A M n ⟨ψ, hψ⟩ ∈
+      Set.range (homologyMap (hochschildBimoduleNormalizedCochainComplexι R A M) n) := by
+  let x := (hochschildBimoduleNormalizedCochainComplexXIso R A M n).inv ⟨ψ, hψ'⟩
+  have hd : (hochschildBimoduleNormalizedCochainComplex R A M).d n (n + 1) x = 0 := by
+    apply (ModuleCat.mono_iff_injective
+      (hochschildBimoduleNormalizedCochainComplexXIso R A M (n + 1)).hom).1 inferInstance
+    rw [hochschildBimoduleNormalizedCochainComplex_d_apply, map_zero]
+    apply Subtype.ext
+    simpa [x] using hψ
+  exact ⟨_, homologyMap_hochschildBimoduleNormalizedCochainComplexι_homologyπ n
+    ((hochschildBimoduleNormalizedCochainComplex R A M).moduleCatCyclesMk x (n + 1) (by simp) hd)
+    hψ (by rw [iCycles_moduleCatCyclesMk, Iso.inv_hom_id_apply])⟩
+
+/-- **The normalized inclusion is an isomorphism on `HH⁰`, `HH¹` and `HH²`.** Every cocycle of
+degree at most two is cohomologous to a normalized one, and a normalized cocycle of degree at most
+two that is a coboundary is the coboundary of a normalized cochain. -/
+theorem isIso_homologyMap_hochschildBimoduleNormalizedCochainComplexι (n : ℕ) (hn : n ≤ 2) :
+    IsIso (homologyMap (hochschildBimoduleNormalizedCochainComplexι R A M) n) := by
+  rw [ConcreteCategory.isIso_iff_bijective]
+  refine ⟨(injective_iff_map_eq_zero _).2 fun y hy ↦ ?_, fun y ↦ ?_⟩
+  · obtain ⟨z, rfl⟩ := moduleCat_homologyπ_surjective _ _ y
+    set x := (hochschildBimoduleNormalizedCochainComplexXIso R A M n).hom
+      ((hochschildBimoduleNormalizedCochainComplex R A M).iCycles n z) with hx
+    have hψ : (x : (Fin n → A) →ₘₗ[R] M) ∈ hochschildBimoduleCocycles R A M n := by
+      have h := congrArg (hochschildBimoduleNormalizedCochainComplexXIso R A M (n + 1)).hom
+        (moduleCat_d_iCycles_apply _ n (n + 1) z)
+      rw [hochschildBimoduleNormalizedCochainComplex_d_apply, map_zero, ← hx] at h
+      exact mem_hochschildBimoduleCocycles_iff.2 (congrArg Subtype.val h)
+    rw [homologyMap_hochschildBimoduleNormalizedCochainComplexι_homologyπ n z hψ rfl,
+      hochschildBimoduleCohomology.mk_eq_zero_iff] at hy
+    obtain _ | k := n
+    · have : x = 0 := Subtype.ext (by simpa using hy)
+      have hz : (hochschildBimoduleNormalizedCochainComplex R A M).iCycles 0 z = 0 :=
+        (ModuleCat.mono_iff_injective
+          (hochschildBimoduleNormalizedCochainComplexXIso R A M 0).hom).1 inferInstance
+          (by rw [← hx, this, map_zero])
+      rw [moduleCat_iCycles_injective _ 0 (hz.trans (map_zero _).symm), map_zero]
+    · obtain ⟨φ, hφ⟩ := mem_hochschildBimoduleCoboundaries_succ_iff.1 hy
+      have hφ' : φ ∈ hochschildBimoduleNormalizedCochains R A M k := by
+        obtain _ | _ | _ := k
+        · simp
+        · exact mem_hochschildBimoduleNormalizedCochains_one_of_hochschildBimoduleCoboundary_mem
+            (hφ ▸ x.property)
+        · lia
+      refine (moduleCat_homologyπ_eq_zero_iff _ (by simp) z).2
+        ⟨(hochschildBimoduleNormalizedCochainComplexXIso R A M k).inv ⟨φ, hφ'⟩, ?_⟩
+      refine moduleCat_iCycles_injective _ _ ?_
+      rw [moduleCat_iCycles_toCycles_apply]
+      apply (ModuleCat.mono_iff_injective
+        (hochschildBimoduleNormalizedCochainComplexXIso R A M (k + 1)).hom).1 inferInstance
+      rw [hochschildBimoduleNormalizedCochainComplex_d_apply, ← hx]
+      exact Subtype.ext (by simpa using hφ)
+  · obtain ⟨ψ, rfl⟩ := hochschildBimoduleCohomology.mk_surjective R A M n y
+    obtain _ | _ | _ | _ := n
+    · exact mk_mem_range_homologyMap_hochschildBimoduleNormalizedCochainComplexι ψ.property
+        (by simp)
+    · exact mk_mem_range_homologyMap_hochschildBimoduleNormalizedCochainComplexι ψ.property
+        (hochschildBimoduleCocycles_one_le_hochschildBimoduleNormalizedCochains R A M ψ.property)
+    · obtain ⟨ψ', hψ', h⟩ :=
+        hochschildBimoduleCohomology.exists_mem_hochschildBimoduleNormalizedCochains_mk_two_eq
+          (hochschildBimoduleCohomology.mk R A M 2 ψ)
+      rw [← h]
+      exact mk_mem_range_homologyMap_hochschildBimoduleNormalizedCochainComplexι ψ'.property hψ'
+    · lia
+
+end Homology
 
 end TauCeti
