@@ -74,6 +74,9 @@ manifold differential of a function to tangent vectors whose base point varies.
   boundaryless model, this differentiability characterizes differentiability of the section.
 * `ContMDiffWithinAt.contDiffWithinAt_mpullbackWithin_extChartAt_symm`: `C^n` regularity of
   these coordinate expressions, over any model with corners.
+* `HasMFDerivAt.hasDerivAt_extChartAt_comp_mpullbackWithin`: a curve moving with the velocity of a
+  vector field, read in an extended chart containing its value, moves with the coordinate velocity
+  of the field.
 * `TauCeti.eventually_hasDerivAt_extChartAt_family`: read in the chart at `y`, the points near `y`
   of a family of maps which is the identity at time `t` move with the coordinate velocity of the
   field.
@@ -711,6 +714,23 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
 
+/-- A curve with velocity `V (γ t)` at time `t`, read in an extended chart whose source contains
+`γ t`, has velocity the coordinate expression of `V` in that chart, the pullback of `V` along the
+inverse chart. For an integral curve of `V` this says that, read in the chart, it solves the
+coordinate equation of the field. -/
+theorem _root_.HasMFDerivAt.hasDerivAt_extChartAt_comp_mpullbackWithin {γ : 𝕜 → M}
+    {V : (x : M) → TangentSpace I x} {t : 𝕜} {x : M}
+    (hγ : HasMFDerivAt 𝓘(𝕜, 𝕜) I γ t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight (V (γ t))))
+    (hsrc : γ t ∈ (extChartAt I x).source) :
+    HasDerivAt (extChartAt I x ∘ γ)
+      (VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (range I)
+        (extChartAt I x (γ t))) t := by
+  refine (hγ.hasDerivAt_extChartAt_comp hsrc).congr_deriv ?_
+  rw [VectorField.mpullbackWithin_extChartAt_symm_apply V hsrc]
+  -- `tangentCoordChange` is by definition this fibre coordinate of the trivialization
+  -- (`TangentBundle.trivializationAt_apply`, `tangentCoordChange_def`).
+  rfl
+
 /-- Read in the chart at `y`, the points near `y` move at time `t` with the coordinate velocity
 of `V`, the pullback of `V` to the chart. -/
 theorem eventually_hasDerivAt_extChartAt_family [I.Boundaryless] {ψ : 𝕜 → M → M}
@@ -731,25 +751,23 @@ theorem eventually_hasDerivAt_extChartAt_family [I.Boundaryless] {ψ : 𝕜 → 
   filter_upwards [extChartAt_target_mem_nhds y, h] with z hz ⟨hzv, hzid⟩
   have hsrc : ψ t ((extChartAt I y).symm z) ∈ (extChartAt I y).source :=
     hzid.symm ▸ (extChartAt I y).map_target hz
-  refine (hzv.hasDerivAt_extChartAt_comp hsrc).congr_deriv ?_
-  conv_rhs => rw [← (extChartAt I y).right_inv hz, ← hzid]
-  rw [VectorField.mpullbackWithin_extChartAt_symm_apply V hsrc]
-  -- `tangentCoordChange` is by definition this fibre coordinate of the trivialization
-  -- (`TangentBundle.trivializationAt_apply`, `tangentCoordChange_def`).
-  rfl
+  refine (HasMFDerivAt.hasDerivAt_extChartAt_comp_mpullbackWithin hzv hsrc).congr_deriv ?_
+  rw [hzid, (extChartAt I y).right_inv hz]
 
 /-- Read in the chart at `y`, a family fixing `y` at time `t`, continuous at `(t, y)` and moving
-the points near `y` with the velocity of `V` at every time near `t`, moves the points near the
-chart centre at every time near `t` with the coordinate velocity of `V`, the pullback of `V` to the
-chart, evaluated at their current position. -/
+the points near `y` at every time `u` near `t` with the velocity of a field `V u`, which may
+depend on the time, moves the points near the chart centre at every time `u` near `t` with the
+coordinate velocity of `V u`, the pullback of `V u` to the chart, evaluated at their current
+position. -/
 theorem eventually_hasDerivAt_extChartAt_family_of_eventually_nhds_prod {ψ : 𝕜 → M → M}
-    {V : (x : M) → TangentSpace I x} {t : 𝕜} {y : M} (hy : ψ t y = y)
+    {V : 𝕜 → (x : M) → TangentSpace I x} {t : 𝕜} {y : M} (hy : ψ t y = y)
     (hψ : ContinuousAt (fun p : 𝕜 × M ↦ ψ p.1 p.2) (t, y))
     (hvel : ∀ᶠ p in 𝓝 (t, y),
-      HasMFDerivAt 𝓘(𝕜, 𝕜) I (fun u ↦ ψ u p.2) p.1 ((1 : 𝕜 →L[𝕜] 𝕜).smulRight (V (ψ p.1 p.2)))) :
+      HasMFDerivAt 𝓘(𝕜, 𝕜) I (fun u ↦ ψ u p.2) p.1
+        ((1 : 𝕜 →L[𝕜] 𝕜).smulRight (V p.1 (ψ p.1 p.2)))) :
     ∀ᶠ p in 𝓝 (t, extChartAt I y y), HasDerivAt
       (fun u ↦ extChartAt I y (ψ u ((extChartAt I y).symm p.2)))
-      (VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I y).symm V (range I)
+      (VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I y).symm (V p.1) (range I)
         (extChartAt I y (ψ p.1 ((extChartAt I y).symm p.2)))) p.1 := by
   -- The inverse chart in the second factor carries `(t, extChartAt I y y)` to `(t, y)`.
   have hc : ContinuousAt (fun p : 𝕜 × E ↦ (p.1, (extChartAt I y).symm p.2))
@@ -765,7 +783,7 @@ theorem eventually_hasDerivAt_extChartAt_family_of_eventually_nhds_prod {ψ : �
       exact extChartAt_source_mem_nhds y)
   filter_upwards [hc.eventually (hpt ▸ hvel), hsrc] with p hpv hps
   exact (hpv.hasDerivAt_extChartAt_comp hps).congr_deriv
-    (VectorField.mpullbackWithin_extChartAt_symm_apply V hps).symm
+    (VectorField.mpullbackWithin_extChartAt_symm_apply (V p.1) hps).symm
 
 end ChartVelocity
 

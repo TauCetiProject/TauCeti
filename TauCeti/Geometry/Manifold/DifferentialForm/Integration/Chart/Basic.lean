@@ -10,8 +10,8 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Chart
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Support
 public import Mathlib.MeasureTheory.Function.Jacobian
+import TauCeti.Geometry.Manifold.ExtChartAt.Integral
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
-import TauCeti.Geometry.Manifold.ExtChartAt.Cover
 
 /-!
 # Signed top-form integrals in preferred charts
@@ -96,18 +96,6 @@ theorem eqOn_signedInChartAt_image {φ ψ : RoughForm I M ℝ k} {s : Set M} (h 
   rw [signedInChartAt_apply_of_mem_source _ _ _ _ (hs hx),
     signedInChartAt_apply_of_mem_source _ _ _ _ (hs hx), hc]
 
-/-- If `x ∈ (extChartAt I α).source` lies outside `tsupport φ`, then
-`φ.signedInChartAt b α σ (extChartAt I α x) = 0`. -/
-theorem signedInChartAt_eq_zero_of_notMem_tsupport (φ : RoughForm I M ℝ k)
-    (b : Module.Basis (Fin k) ℝ E) (α : M) (σ : {x : M // x ∈ (extChartAt I α).source} → ℤˣ)
-    {x : M} (hx : x ∈ (extChartAt I α).source)
-    (hn : x ∉ _root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) :
-    φ.signedInChartAt b α σ (extChartAt I α x) = 0 := by
-  have hφ : φ x = 0 := _root_.image_eq_zero_of_notMem_tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) hn
-  rw [signedInChartAt_apply_of_mem_source _ _ _ _ hx, inChartAt_apply,
-    (extChartAt I α).left_inv hx, hφ]
-  simp
-
 variable [MeasurableSpace E] [BorelSpace E]
 
 /-- Signed preferred-chart integrals and integrability agree on an actual overlap. The
@@ -131,15 +119,13 @@ theorem signedInChartAt_changeChart [IsManifold I 1 M]
       (IntegrableOn (φ.signedInChartAt b α σα) ((extChartAt I α) '' s) μ ↔
         IntegrableOn (φ.signedInChartAt b β σβ) ((extChartAt I β) '' s) μ) := by
   have : FiniteDimensional ℝ E := Module.Finite.of_basis b
-  refine TauCeti.extChartAt_coordChange_setIntegral_and_integrableOn α β hsub hs
-    (φ.signedInChartAt b α σα) (φ.signedInChartAt b β σβ) (fun x hx ↦ ?_) μ
+  refine TauCeti.setIntegral_image_extChartAt_changeChart α β hsub hs (fun x hx ↦ ?_) μ
   rw [signedInChartAt_apply_of_mem_source _ _ _ _ (hsub hx).1,
     signedInChartAt_apply_of_mem_source _ _ _ _ (hsub hx).2]
   have hβ : (extChartAt I α).symm (extChartAt I α x) ∈ (extChartAt I β).source := by
     rw [(extChartAt I α).left_inv (hsub hx).1]
     exact (hsub hx).2
-  have hc := φ.inChartAt_apply_basis_eq_det_mul b
-    ((extChartAt I α).map_source (hsub hx).1) hβ
+  have hc := φ.inChartAt_apply_basis_eq_det_mul b ((extChartAt I α).map_source (hsub hx).1) hβ
   rw [(extChartAt I α).left_inv (hsub hx).1] at hc
   rw [hc, smul_eq_mul, ← mul_assoc, ← mul_assoc, hσ x hx]
 

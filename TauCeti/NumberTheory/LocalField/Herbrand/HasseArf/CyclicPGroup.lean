@@ -11,7 +11,7 @@ import TauCeti.GroupTheory.PGroup
 import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 import TauCeti.NumberTheory.LocalField.Herbrand.UpperQuotient
 import TauCeti.NumberTheory.LocalField.UnitFiltration.GaloisAction
-import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.NumberTheory.LocalField.Units.Decomposition
 import TauCeti.RingTheory.Norm.Equiv
 
 /-!

@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.CompactSupp
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Pullback
 public import Mathlib.Geometry.Manifold.Instances.Icc
-import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Chart.Basis
 import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
 /-!
@@ -48,18 +47,16 @@ theorem IsSmoothForm.integrableTopForm (hφ : IsSmoothForm I n φ)
     (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ))
     (b : Module.Basis (Fin k) ℝ E) : IntegrableTopForm φ := by
   have : FiniteDimensional ℝ E := Module.Finite.of_basis b
-  let : MeasurableSpace E := borel E; have : BorelSpace E := ⟨rfl⟩
+  let : MeasurableSpace E := borel E
+  let : BorelSpace E := ⟨rfl⟩
   let : LocallyCompactSpace H := I.locallyCompactSpace
-  exact (integrableTopForm_iff φ).mpr ⟨hc, ⟨b⟩, fun b' α ↦
-    (φ.integrable_signedInChartAt_basis_iff b b' α (fun _ ↦ 1)).mpr <|
-      integrable_of_continuousOn_extChartAt (I := I) hc
-        (fun γ ↦ φ.signedInChartAt b γ (fun _ ↦ 1)) b.addHaar
-        (fun γ ↦ φ.continuousOn_signedInChartAt b γ (fun _ ↦ 1) continuous_const
-          (hφ.continuousOn_inChartAt γ)) α
-        (φ.support_signedInChartAt_subset b α (fun _ ↦ 1)) fun γ u hu hsource ↦
-        (φ.integrableOn_signedInChartAt_one_changeChart b α γ (s := (extChartAt I α).source ∩ u)
-          (fun _ hx ↦ ⟨hx.1, hsource hx.2⟩)
-          (hu.measurableSet_image_extChartAt_source_inter α) b.addHaar).mpr⟩
+  obtain ⟨m, β, u, B, hu, hcover⟩ := exists_finite_precompact_chart_cover (I := I) hc
+  apply φ.integrableTopForm_of_open_cover hc b β u (fun i ↦ (hu i).1)
+    (fun i ↦ by simpa only [extChartAt_source] using (hu i).2.1) hcover
+  intro i
+  exact (((φ.continuousOn_signedInChartAt b (β i) (fun _ ↦ 1) continuous_const
+    (hφ.continuousOn_inChartAt (β i))).mono (hu i).2.2.2.1).integrableOn_compact
+      (hu i).2.2.1 (μ := b.addHaar)).mono_set (hu i).2.2.2.2
 
 omit [FiniteDimensional ℝ E] in
 /-- Every positive signed preferred-chart coefficient of a compactly supported C0 form is
@@ -151,5 +148,19 @@ theorem integralTopForm_add_of_compactSpace [CompactSpace M] (o : Manifold.Orien
     {ψ : RoughForm I M ℝ k} (hφ : IsSmoothForm I 0 φ) (hψ : IsSmoothForm I 0 ψ) :
     integralTopForm o (φ + ψ) = integralTopForm o φ + integralTopForm o ψ :=
   integralTopForm_add o hφ hψ (isClosed_tsupport _).isCompact (isClosed_tsupport _).isCompact
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- On a compact manifold, the oriented integral against a fixed `C^n` top form `φ` is additive in
+continuous functions: `∫_M (f + g)·φ = ∫_M f·φ + ∫_M g·φ`. -/
+theorem integralTopForm_add_smul_of_compactSpace [CompactSpace M]
+    (o : Manifold.Orientation I M (Fin k)) (hφ : IsSmoothForm I n φ) {f g : M → ℝ}
+    (hf : Continuous f) (hg : Continuous g) :
+    integralTopForm o (fun x ↦ (f x + g x) • φ x) =
+      integralTopForm o (fun x ↦ f x • φ x) + integralTopForm o (fun x ↦ g x • φ x) := by
+  rw [← integralTopForm_add_of_compactSpace o (hφ.fun_smul_of_continuous hf)
+    (hφ.fun_smul_of_continuous hg)]
+  congr 1
+  funext x
+  rw [Pi.add_apply, add_smul]
 
 end TauCeti

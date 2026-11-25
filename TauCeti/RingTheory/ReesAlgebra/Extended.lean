@@ -191,12 +191,12 @@ theorem mem_span_tInv_iff {f : I.extendedReesAlgebra} :
   rw [Ideal.mem_span_singleton']
   refine ⟨?_, fun h ↦ ?_⟩
   · rintro ⟨g, rfl⟩ n
-    rw [MulMemClass.coe_mul, coe_tInv, ← T_mul, coeff_T_mul, sub_neg_eq_add]
+    rw [MulMemClass.coe_mul, coe_tInv, coeff_mul_T, sub_neg_eq_add]
     exact_mod_cast coeff_natCast_mem_pow g.property (n + 1)
   · -- The quotient is `T * f`, whose coefficient of degree `n + 1` is that of `f` in degree `n`.
     have hg : T 1 * (f : R[T;T⁻¹]) ∈ I.extendedReesAlgebra := by
       refine mem_extendedReesAlgebra_iff_forall_natCast.mpr fun n ↦ ?_
-      rw [coeff_T_mul]
+      rw [T_mul, coeff_mul_T]
       rcases n with _ | n
       · simp
       · simpa using h n

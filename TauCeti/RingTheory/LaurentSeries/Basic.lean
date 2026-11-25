@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.LaurentSeries
 public import TauCeti.RingTheory.HahnSeries.Map
+public import TauCeti.RingTheory.HahnSeries.Multiplication
 public import TauCeti.RingTheory.HahnSeries.PowerSeries
 public import TauCeti.RingTheory.PowerSeries.Derivative
 public import TauCeti.RingTheory.PowerSeries.HasseDeriv.Basic
@@ -32,6 +33,11 @@ valuations.
 It also packages the variable `X` as a unit of `R⸨X⸩` over any semiring `R`, whose integer
 powers are the monomials `Xⁿ`.
 
+Over a domain, evaluating a polynomial `Q` at a Laurent series `x` of negative order is dominated
+by the leading term: `Q(x)` has order `deg Q` times that of `x`, and leading coefficient that of
+`Q` times that of `x` to the power `deg Q`. This reads off the leading coefficient of a polynomial
+in a function with a pole, such as a polynomial in the modular invariant `j` at `i∞`.
+
 This file also records the compatibility of Laurent-series differentiation with power-series
 differentiation.
 
@@ -56,6 +62,8 @@ derivative `f' / f` is the order of `f`.
   `R⸨X⸩` are determined by their values on power series.
 * `TauCeti.LaurentSeries.unitX` and `TauCeti.LaurentSeries.val_unitX_zpow`: the variable `X` is a
   unit of `R⸨X⸩`, whose integer powers are the monomials `Xⁿ`.
+* `TauCeti.LaurentSeries.orderTop_eval₂_C` and `TauCeti.LaurentSeries.leadingCoeff_eval₂_C`: the
+  order and leading coefficient of a polynomial evaluated at a series of negative order.
 * `TauCeti.laurentSeries_algebraMap_mul_eq_smul`: the algebra action agrees with the
   coefficientwise scalar action, and `TauCeti.laurentSeries_isScalarTower_algebra` transfers
   scalar towers from the coefficientwise action to the algebra action.
@@ -253,6 +261,66 @@ theorem valuation_mapRingHom {L : Type*} [Field L] (σ : K →+* L) (f : K⸨X�
     mapRingHom_apply, order_map_of_injective f σ.injective]
 
 end Valuation
+
+section Eval
+
+open Polynomial
+
+variable {R : Type*} [CommRing R] [IsDomain R] {x : R⸨X⸩}
+
+/-- **A polynomial evaluated at a Laurent series of negative order.** If `x` has negative order,
+the leading term of a nonzero polynomial `Q` dominates in `Q(x)`: the order of `Q(x)` is
+`deg Q` times that of `x`, and its leading coefficient is the leading coefficient of `Q` times
+that of `x` to the power `deg Q`. -/
+private theorem orderTop_eval₂_C_and_leadingCoeff (hx : x.orderTop < 0) {Q : R[X]} (hQ : Q ≠ 0) :
+    (Q.eval₂ HahnSeries.C x).orderTop = Q.natDegree • x.orderTop ∧
+      (Q.eval₂ HahnSeries.C x).leadingCoeff = Q.leadingCoeff * x.leadingCoeff ^ Q.natDegree := by
+  obtain ⟨o, ho⟩ := WithTop.ne_top_iff_exists.mp hx.ne_top
+  have ho0 : o < 0 := by
+    rw [← ho] at hx
+    exact_mod_cast hx
+  induction hm : Q.natDegree using Nat.strong_induction_on generalizing Q with
+  | _ m ih =>
+  set T := HahnSeries.C Q.leadingCoeff * x ^ m
+  have hc : Q.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr hQ
+  have hTo : T.orderTop = m • x.orderTop := by
+    rw [HahnSeries.orderTop_mul, HahnSeries.C_apply, HahnSeries.orderTop_single hc,
+      HahnSeries.orderTop_pow, WithTop.coe_zero, zero_add]
+  have hTl : T.leadingCoeff = Q.leadingCoeff * x.leadingCoeff ^ m := by
+    rw [HahnSeries.leadingCoeff_mul, HahnSeries.C_apply, HahnSeries.leadingCoeff_of_single,
+      HahnSeries.leadingCoeff_pow]
+  have hQe : Q.eval₂ HahnSeries.C x = Q.eraseLead.eval₂ HahnSeries.C x + T := by
+    conv_lhs => rw [← Q.eraseLead_add_C_mul_X_pow]
+    simp [eval₂_add, hm, T]
+  -- the lower terms have strictly larger order than the leading term
+  have hlow : T.orderTop < (Q.eraseLead.eval₂ HahnSeries.C x).orderTop := by
+    by_cases he : Q.eraseLead = 0
+    · rw [he, eval₂_zero, HahnSeries.orderTop_zero, hTo, ← ho, ← WithTop.coe_nsmul]
+      exact WithTop.coe_lt_top _
+    have hlt : Q.eraseLead.natDegree < m :=
+      hm ▸ (Q.eraseLead_natDegree_lt_or_eraseLead_eq_zero.resolve_right he)
+    rw [(ih _ hlt he rfl).1, hTo, ← ho, ← WithTop.coe_nsmul, ← WithTop.coe_nsmul,
+      WithTop.coe_lt_coe, nsmul_eq_mul, nsmul_eq_mul]
+    have : (Q.eraseLead.natDegree : ℤ) < m := by exact_mod_cast hlt
+    nlinarith
+  rw [hQe, HahnSeries.orderTop_add_eq_right hlow, HahnSeries.leadingCoeff_add_eq_right hlow]
+  exact ⟨hTo, hTl⟩
+
+/-- The order of a nonzero polynomial evaluated at a Laurent series of negative order is the
+degree of the polynomial times the order of the series. -/
+theorem orderTop_eval₂_C (hx : x.orderTop < 0) {Q : R[X]} (hQ : Q ≠ 0) :
+    (Q.eval₂ HahnSeries.C x).orderTop = Q.natDegree • x.orderTop :=
+  (orderTop_eval₂_C_and_leadingCoeff hx hQ).1
+
+/-- The leading coefficient of a polynomial evaluated at a Laurent series of negative order is
+the leading coefficient of the polynomial times that of the series to the power of the degree. -/
+theorem leadingCoeff_eval₂_C (hx : x.orderTop < 0) (Q : R[X]) :
+    (Q.eval₂ HahnSeries.C x).leadingCoeff = Q.leadingCoeff * x.leadingCoeff ^ Q.natDegree := by
+  rcases eq_or_ne Q 0 with rfl | hQ
+  · simp
+  exact (orderTop_eval₂_C_and_leadingCoeff hx hQ).2
+
+end Eval
 
 end TauCeti.LaurentSeries
 

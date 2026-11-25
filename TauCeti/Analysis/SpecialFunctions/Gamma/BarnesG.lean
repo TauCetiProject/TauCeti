@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 public import Mathlib.Data.Nat.Factorial.SuperFactorial
 public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 public import TauCeti.Analysis.Complex.CanonicalProduct.ElementaryFactor
+import TauCeti.Analysis.Complex.Sqrt
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Analysis.PSeries
 import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
@@ -442,7 +443,7 @@ private theorem prod_add_mul_prod_barnesGFactor (w : ℂ) (n : ℕ) :
 
 private theorem two_pi_cpow_one_half : (2 * π : ℂ) ^ (1 / 2 : ℂ) = (√2 : ℂ) * √π := by
   rw [show (√2 : ℂ) * √π = ((√(2 * π) : ℝ) : ℂ) by rw [Real.sqrt_mul zero_le_two]; push_cast; ring,
-    Real.sqrt_eq_rpow, Complex.ofReal_cpow (by positivity)]
+    Complex.ofReal_sqrt_eq_cpow (by positivity)]
   push_cast
   congr 1
 

@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
+public import TauCeti.Geometry.Manifold.ExtChartAt.Integral
 public import TauCeti.Geometry.Manifold.Orientation.TopForm
-import TauCeti.Geometry.Manifold.ExtChartAt.Cover
+import TauCeti.Geometry.Manifold.ExtChartAt
+import Mathlib.Order.Disjointed
 
 /-!
 # Positivity of the integral of top forms
@@ -26,14 +28,14 @@ then vacuous at that point, where the form contributes its value with a negative
 
 ## Main results
 
-* `TauCeti.setIntegral_pos_of_nonneg_of_pos_at_extChartAt_target`: a nonnegative function
-  continuous and integrable on a chart target has positive integral if it is positive at one
-  target point, for any measure positive on nonempty open sets.
 * `TauCeti.integralTopForm_nonneg`: the integral of a nonnegative top form is nonnegative.
 * `TauCeti.integralTopForm_pos`: the integral of a continuous, compactly supported, nonnegative
   top form that is positive somewhere is positive.
 * `TauCeti.integralTopForm_ofTopForm_pos`: on a nonempty compact manifold of positive dimension,
   a nowhere-vanishing continuous top form has positive integral for the orientation it defines.
+* `TauCeti.integralTopForm_smul_nonneg`, `TauCeti.integralTopForm_smul_mono_of_compactSpace`:
+  against a top form that is nonnegative on positively oriented bases, `∫_M f·φ` is nonnegative
+  for `f ≥ 0`, and on a compact manifold it is monotone in continuous `f` when `φ` is `C^n`.
 
 ## Implementation notes
 
@@ -60,30 +62,6 @@ namespace TauCeti
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I 1 M] {k : ℕ}
-
-omit [FiniteDimensional ℝ E] [IsManifold I 1 M] in
-/-- A nonnegative function continuous on a chart target has positive integral on that target
-for any measure positive on nonempty open sets, if it is integrable there and positive at one
-target point. This also applies at boundary points, since the interior of the target is dense
-in the target. -/
-theorem setIntegral_pos_of_nonneg_of_pos_at_extChartAt_target
-    [MeasurableSpace E] {μ : Measure E} [μ.IsOpenPosMeasure] (α : M) {g : E → ℝ}
-    (hnn : ∀ y, 0 ≤ g y) (hint : IntegrableOn g (extChartAt I α).target μ)
-    (hcont : ContinuousOn g (extChartAt I α).target) {y₀ : E}
-    (hy₀ : y₀ ∈ (extChartAt I α).target) (hg₀ : 0 < g y₀) :
-    0 < ∫ y in (extChartAt I α).target, g y ∂μ := by
-  rw [setIntegral_pos_iff_support_of_nonneg_ae (Filter.Eventually.of_forall hnn) hint]
-  -- Positivity reaches an open subset of the interior, including from a boundary point.
-  let V := interior (extChartAt I α).target ∩ g ⁻¹' Ioi 0
-  have hV : IsOpen V :=
-    (hcont.mono interior_subset).isOpen_inter_preimage isOpen_interior isOpen_Ioi
-  obtain ⟨U, hUo, hxU, hUg⟩ := mem_nhdsWithin.mp
-    ((hcont.continuousWithinAt hy₀).eventually (lt_mem_nhds hg₀))
-  obtain ⟨z, hzU, hz⟩ := mem_closure_iff.mp
-    (extChartAt_target_subset_closure_interior hy₀) U hUo hxU
-  have hVne : V.Nonempty := ⟨z, hz, hUg ⟨hzU, interior_subset hz⟩⟩
-  refine (hV.measure_pos μ hVne).trans_le (measure_mono fun y hy ↦ ?_)
-  exact ⟨(ne_of_gt hy.2 : g y ≠ 0), interior_subset hy.1⟩
 
 /-- In a preferred chart, the signed coefficient of a top form at the chart image of `x`, with the
 sign of the model basis, is a positive multiple of the form's value on any positively oriented
@@ -195,12 +173,12 @@ theorem integralTopForm_nonneg [NeZero k] (o : Manifold.Orientation I M (Fin k))
   obtain ⟨l, rfl⟩ := o.exists_lift
   simp only [Manifold.Orientation.orientationAt_mk] at hφ
   let b := Module.finBasisOfFinrankEq ℝ E (by simpa using l.card_eq.symm)
-  let c := ChartCover.choose I hi.isCompact
-  rw [integralTopForm_eq_chartCover_integral l φ hi b c Subset.rfl,
-    ChartCover.integral_eq_sum, Finset.mul_sum]
+  obtain ⟨m, α, u, _, hu, hcover⟩ := exists_finite_precompact_chart_cover (I := I) hi.isCompact
+  rw [integralTopForm_eq_sum_disjointed_chart_integrals l φ hi b α u (fun i ↦ (hu i).1)
+    (fun i ↦ (hu i).2.1) hcover, Finset.mul_sum]
   refine Finset.sum_nonneg fun i _ ↦ ?_
   rw [← integral_const_mul]
-  exact integral_nonneg fun y ↦ signBasis_mul_signedInChartAt_nonneg l hφ b (c.center i) y
+  exact integral_nonneg fun y ↦ signBasis_mul_signedInChartAt_nonneg l hφ b (α i) y
 
 /-- **Positivity of integration** [Lee, Prop. 16.6]. On an oriented manifold of positive
 dimension, a continuous, compactly supported top form that is nonnegative on every positively
@@ -223,15 +201,28 @@ theorem integralTopForm_pos [NeZero k] (o : Manifold.Orientation I M (Fin k))
   have hi := hφ.integrableTopForm hc b
   -- Compute the integral on a chart cover whose first chart is the chart at `x₀`, so that the
   -- first disjointed piece is that chart's whole source.
-  let c := ChartCover.choose I hc
-  rw [integralTopForm_eq_chartCover_integral l φ hi b (c.cons x₀) Subset.rfl,
-    c.integral_cons x₀, mul_add, Finset.mul_sum]
+  obtain ⟨m, α, u, _, hu, hcover⟩ := exists_finite_precompact_chart_cover (I := I) hc
+  let α' : Fin (m + 1) → M := Fin.cons x₀ α
+  let u' : Fin (m + 1) → Set M := Fin.cons (extChartAt I x₀).source u
+  have hu' : ∀ i, IsOpen (u' i) ∧ u' i ⊆ (extChartAt I (α' i)).source := by
+    refine Fin.cases ?_ fun i ↦ ?_
+    · simpa [α', u'] using isOpen_extChartAt_source (I := I) x₀
+    · simpa [α', u'] using And.intro (hu i).1 (hu i).2.1
+  have hcover' : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ ⋃ i, u' i :=
+    hcover.trans (iUnion_subset fun i ↦ by simpa [u'] using subset_iUnion u' i.succ)
+  rw [integralTopForm_eq_sum_disjointed_chart_integrals l φ hi b α' u' (fun i ↦ (hu' i).1)
+    (fun i ↦ (hu' i).2) hcover', Finset.mul_sum, Fin.sum_univ_succ]
   refine add_pos_of_pos_of_nonneg ?_ (Finset.sum_nonneg fun i _ ↦ ?_)
+  swap
   · rw [← integral_const_mul]
-    exact setIntegral_signBasis_mul_signedInChartAt_pos l hφ hi hnn b (mem_extChartAt_source x₀)
-      c₀ hc₀ hφ₀
-  · rw [← integral_const_mul]
-    exact integral_nonneg fun y ↦ signBasis_mul_signedInChartAt_nonneg l hnn b (c.center i) y
+    exact integral_nonneg fun y ↦ signBasis_mul_signedInChartAt_nonneg l hnn b (α' i.succ) y
+  have hpiece : (extChartAt I (α' 0)) '' disjointed u' 0 = (extChartAt I (α' 0)).target := by
+    rw [← bot_eq_zero, disjointed_bot, bot_eq_zero]
+    simp only [α', u', Fin.cons_zero]
+    exact (extChartAt I x₀).image_source_eq_target
+  rw [hpiece, ← integral_const_mul]
+  exact setIntegral_signBasis_mul_signedInChartAt_pos l hφ hi hnn b
+    (by simp [α']) c₀ hc₀ hφ₀
 
 /-- **A nowhere-vanishing top form has positive integral for the orientation it defines**, on a
 nonempty compact manifold of positive dimension. -/
@@ -251,5 +242,33 @@ theorem integralTopForm_ofTopForm_pos [NeZero k] [CompactSpace M] [Nonempty M]
     Module.Basis.orientation_adjustToOrientation (R := ℝ) (M := E) _ _
   exact ⟨x, b, hb,
     (Manifold.Orientation.orientation_eq_orientationAt_ofTopForm_iff hk hφ h0 b).mp hb⟩
+
+/-- **Nonnegativity against a fixed top form.** On an oriented manifold of positive dimension, if a
+top form `φ` is nonnegative on every positively oriented tangent basis, then `∫_M f·φ ≥ 0` for
+every nonnegative function `f`. -/
+theorem integralTopForm_smul_nonneg [NeZero k] (o : Manifold.Orientation I M (Fin k))
+    {φ : RoughForm I M ℝ k}
+    (hφ : ∀ x (c : Module.Basis (Fin k) ℝ (TangentSpace I x)),
+      c.orientation = o.orientationAt x → 0 ≤ φ x c)
+    {f : M → ℝ} (hf : ∀ x, 0 ≤ f x) :
+    0 ≤ integralTopForm o (fun x ↦ f x • φ x) :=
+  integralTopForm_nonneg o fun x c hc ↦ by
+    rw [ContinuousAlternatingMap.smul_apply, smul_eq_mul]
+    exact mul_nonneg (hf x) (hφ x c hc)
+
+/-- **Monotonicity against a fixed top form.** On a compact oriented manifold of positive
+dimension, if a `C^n` top form `φ` is nonnegative on every positively oriented tangent basis,
+then continuous functions with `f ≤ g` satisfy `∫_M f·φ ≤ ∫_M g·φ`. -/
+theorem integralTopForm_smul_mono_of_compactSpace [NeZero k] [CompactSpace M]
+    (o : Manifold.Orientation I M (Fin k)) {n : WithTop ℕ∞} {φ : RoughForm I M ℝ k}
+    (hφs : IsSmoothForm I n φ)
+    (hφ : ∀ x (c : Module.Basis (Fin k) ℝ (TangentSpace I x)),
+      c.orientation = o.orientationAt x → 0 ≤ φ x c)
+    {f g : M → ℝ} (hf : Continuous f) (hg : Continuous g) (hfg : ∀ x, f x ≤ g x) :
+    integralTopForm o (fun x ↦ f x • φ x) ≤ integralTopForm o (fun x ↦ g x • φ x) := by
+  have h := integralTopForm_add_smul_of_compactSpace o hφs hf (hg.sub hf)
+  simp only [Pi.sub_apply, add_sub_cancel] at h
+  rw [h, le_add_iff_nonneg_right]
+  exact integralTopForm_smul_nonneg o hφ fun x ↦ sub_nonneg.2 (hfg x)
 
 end TauCeti

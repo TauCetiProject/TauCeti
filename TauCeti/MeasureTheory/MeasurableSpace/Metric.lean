@@ -9,6 +9,8 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 public import Mathlib.MeasureTheory.Function.SimpleFuncDense
 public import Mathlib.Topology.MetricSpace.HausdorffDistance
 public import Mathlib.Topology.UniformSpace.Cauchy
+public import TauCeti.Topology.MetricSpace.NearestIndex
+public import TauCeti.Topology.MetricSpace.SeparatedBalls
 import Mathlib.Topology.UniformSpace.HeineCantor
 import TauCeti.Algebra.BigOperators.Group.Finset.Indicator
 
@@ -36,6 +38,11 @@ constant in the first variable.
 * `IsCompact.exists_enorm_sub_sum_indicator_le` — a function continuous on a product of compact
   sets and zero outside it is uniformly close to a function that is piecewise constant in the
   first variable on a finite measurable partition, with values the slices at the centres.
+* `TauCeti.measurable_ballIndex` — for points `θ i` with pairwise disjoint balls of radius `s`,
+  the index of the ball containing a point is measurable, for an arbitrary index type.
+* `TauCeti.measurable_nearestIndex` — for finitely many points `θ i` indexed by a nonempty linear
+  order, the least index of a nearest point (`TauCeti.nearestIndex`, in
+  `TauCeti.Topology.MetricSpace.NearestIndex`) is measurable.
 -/
 
 public section
@@ -182,5 +189,38 @@ theorem _root_.IsCompact.exists_enorm_sub_sum_indicator_le {α β E : Type*} [Me
     · simp [hK0 x y fun h ↦ hy h.2, hK0 (c i) y fun h ↦ hy h.2]
   · simp [Finset.sum_eq_zero fun i _ ↦ indicator_of_notMem (fun h ↦ hx (hPs i h).1) _,
       hK0 x y fun h ↦ hx h.1]
+
+open Function in
+/-- When the balls of radius `s` around the `θ i` are pairwise disjoint, `ballIndex θ s i₀` is
+measurable, for every σ-algebra on the index set and with no countability assumption: every
+preimage is the union of an open set and a closed set. -/
+@[fun_prop]
+theorem measurable_ballIndex {ι Y : Type*} [PseudoMetricSpace Y] [MeasurableSpace Y]
+    [OpensMeasurableSpace Y] [MeasurableSpace ι] {θ : ι → Y} {s : ℝ}
+    (hθ : Pairwise (Disjoint on fun i ↦ ball (θ i) s)) (i₀ : ι) :
+    Measurable (ballIndex θ s i₀) := fun A _ ↦ by
+  rw [ballIndex_preimage hθ i₀ A]
+  exact (isOpen_biUnion fun i _ ↦ isOpen_ball).measurableSet.union
+    ((MeasurableSet.const _).inter
+      (isClosed_iInter fun i ↦ isOpen_ball.isClosed_compl).measurableSet)
+
+section NearestIndex
+
+variable {ι Y : Type*} [PseudoMetricSpace Y] [Fintype ι] [Nonempty ι] [LinearOrder ι]
+
+/-- `nearestIndex θ` is measurable, for every σ-algebra on the index set: each fibre is a finite
+Boolean combination of the closed sets `{y | dist y (θ j) ≤ dist y (θ k)}`. -/
+@[fun_prop]
+theorem measurable_nearestIndex [MeasurableSpace Y] [OpensMeasurableSpace Y] [MeasurableSpace ι]
+    (θ : ι → Y) : Measurable (nearestIndex θ) := by
+  have hle (j k : ι) : Measurable fun y ↦ dist y (θ j) ≤ dist y (θ k) :=
+    (continuous_id.dist continuous_const).measurable.le'
+      (continuous_id.dist continuous_const).measurable
+  refine measurable_to_countable' fun i ↦ ?_
+  simp_rw [preimage, mem_singleton_iff, nearestIndex_eq_iff]
+  exact (Measurable.forall fun k ↦ hle i k).and
+    (Measurable.forall fun j ↦ (Measurable.forall fun k ↦ hle j k).imp measurable_const) |>.setOf
+
+end NearestIndex
 
 end TauCeti

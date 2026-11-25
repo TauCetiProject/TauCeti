@@ -275,7 +275,7 @@ private lemma dgCompMap_comp_d (X Y Z : C) (p q n : ℤ) (h : p + q = n) :
           dgCompMap R X Y Z p (q + 1) (n + 1) (by omega)) := by
   rw [dgCompMap, Category.assoc,
     (eComp (CochainComplex (ModuleCat.{v} R) ℤ) X Y Z).comm n (n + 1), ← Category.assoc,
-    ι_tensorObj_d]
+    ιTensorObj_tensor_d]
   simp [dgCompMap]
 
 /-- **The graded Leibniz rule** in a differential graded category: the differential of a

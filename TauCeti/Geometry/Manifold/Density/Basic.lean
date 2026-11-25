@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Density.Orientation
 public import TauCeti.Geometry.Manifold.DifferentialForm.Basic
 public import TauCeti.Geometry.Manifold.Orientation.Basic
+import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!
 # Rough densities on manifolds and the density of an oriented top form
@@ -55,6 +56,14 @@ def toDensity (φ : RoughForm I M ℝ m) (o : Manifold.Orientation I M (Fin m)) 
   haveI := o.fact_finrank_tangentSpace x
   (φ x).toAlternatingMap.toDensity (o.orientationAt x)
 
+/-- The density of a top form on a basis of a tangent space is the value of the form, weighted by
+the sign of the basis relative to the tangent orientation. -/
+theorem toDensity_apply_basis (φ : RoughForm I M ℝ m) (o : Manifold.Orientation I M (Fin m))
+    (x : M) (b : Basis (Fin m) ℝ (TangentSpace I x)) :
+    φ.toDensity o x b = ((o.orientationAt x).signBasis b : ℝ) * φ x b :=
+  have := o.fact_finrank_tangentSpace x
+  AlternatingMap.toDensity_apply_basis (φ x).toAlternatingMap (o.orientationAt x) b
+
 /-- The density of a top form on a basis of a tangent space: the value of the form, negated
 when the basis is negatively oriented. -/
 theorem toDensity_apply (φ : RoughForm I M ℝ m) (o : Manifold.Orientation I M (Fin m)) (x : M)
@@ -62,14 +71,6 @@ theorem toDensity_apply (φ : RoughForm I M ℝ m) (o : Manifold.Orientation I M
     φ.toDensity o x b = if b.orientation = o.orientationAt x then φ x b else -φ x b :=
   have := o.fact_finrank_tangentSpace x
   AlternatingMap.toDensity_apply (φ x).toAlternatingMap (o.orientationAt x) b
-
-/-- Evaluating `φ.toDensity o x` on any tangent basis gives `φ x` on that basis weighted by its
-sign relative to `o.orientationAt x`, including in dimension zero. -/
-theorem toDensity_apply_basis (φ : RoughForm I M ℝ m) (o : Manifold.Orientation I M (Fin m))
-    (x : M) (b : Basis (Fin m) ℝ (TangentSpace I x)) :
-    φ.toDensity o x b = (Orientation.signBasis (o.orientationAt x) b : ℝ) * φ x b :=
-  have := o.fact_finrank_tangentSpace x
-  AlternatingMap.toDensity_apply_basis (φ x).toAlternatingMap (o.orientationAt x) b
 
 /-- On a positively oriented basis of a tangent space, the density of a top form is the form
 itself. -/
@@ -150,19 +151,22 @@ theorem toDensity_injective (o : Manifold.Orientation I M (Fin m)) :
   exact ContinuousAlternatingMap.toAlternatingMap_injective
     ((Orientation.densityEquiv (o.orientationAt x)).injective hx)
 
-/-- Passing from a top form to its density preserves the topological support. -/
-@[simp] theorem tsupport_toDensity (φ : RoughForm I M ℝ m) (o : Manifold.Orientation I M (Fin m)) :
+/-- The density of a top form has the topological support of the form. -/
+@[simp]
+theorem tsupport_toDensity (o : Manifold.Orientation I M (Fin m)) (φ : RoughForm I M ℝ m) :
     _root_.tsupport (α := Density E m) (φ.toDensity o) =
       _root_.tsupport (α := E [⋀^Fin m]→L[ℝ] ℝ) φ := by
-  simp only [_root_.tsupport]; congr 1; ext x
-  -- `TangentSpace I x` is definitionally `E`, bridging the dependent fibres to the fixed codomains.
-  change φ.toDensity o x ≠ 0 ↔ φ x ≠ 0
-  have := o.fact_finrank_tangentSpace x
-  have h0 : (0 : TangentSpace I x [⋀^Fin m]→L[ℝ] ℝ).toAlternatingMap = 0 := by ext; simp
-  refine not_congr ?_
-  rw [toDensity, ← Orientation.densityEquiv_apply,
-    (Orientation.densityEquiv (o.orientationAt x)).map_eq_zero_iff, ← h0,
-    ContinuousAlternatingMap.toAlternatingMap_injective.eq_iff]
+  have h (x : M) : φ.toDensity o x = 0 ↔ φ x = 0 := by
+    let c : Basis (Fin m) ℝ (TangentSpace I x) :=
+      finBasisOfFinrankEq ℝ _ (o.fact_finrank_tangentSpace x).out
+    rw [← Density.apply_basis_eq_zero_iff _ c, φ.toDensity_apply_basis o x c,
+      mul_eq_zero_iff_left (Int.cast_ne_zero.mpr (Units.ne_zero _)),
+      ContinuousAlternatingMap.map_basis_eq_zero_iff]
+  unfold _root_.tsupport
+  congr 1
+  ext x
+  -- Membership in a support is the negated vanishing condition.
+  exact not_congr (h x)
 
 end RoughForm
 
