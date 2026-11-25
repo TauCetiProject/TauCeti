@@ -228,31 +228,32 @@ theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_basis {q : 
     simp only [A, ℓ, ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.id_apply,
       LinearMap.coe_toContinuousLinearMap', Basis.coord_apply]
     exact (b.sum_repr x).symm
-  -- The bounds `K ‖v l‖` of the coordinates are at most `K ∑ ‖v‖`.
-  have hb' (l : ι) (i : ℕ) (hi : i ≤ j) :
-      (∀ z ∈ ball c s, ‖iteratedFDeriv ℝ i (g l) z‖ ≤ K * ∑ l', ‖v l'‖₊) ∧
-        HolderOnWith (K * ∑ l', ‖v l'‖₊) (1 - 2 / q) (iteratedFDeriv ℝ i (g l)) (ball c s) := by
-    have hvl : ‖v l‖₊ ≤ ∑ l', ‖v l'‖₊ :=
-      Finset.single_le_sum (f := fun l' => ‖v l'‖₊) (fun _ _ => zero_le) (Finset.mem_univ l)
-    refine ⟨fun z hz => ((hb l i hi).1 z hz).trans ?_, HolderOnWith.of_dist_le fun x hx y hy =>
-      ((hb l i hi).2.dist_le hx hy).trans ?_⟩
-    · push_cast
-      gcongr
-      simpa using NNReal.coe_le_coe.2 hvl
-    · gcongr ?_ * _
-      exact_mod_cast mul_le_mul' (le_refl K) hvl
+  have hvl (l : ι) : ‖v l‖₊ ≤ ∑ l', ‖v l'‖₊ :=
+    Finset.single_le_sum (f := fun l' => ‖v l'‖₊) (fun _ _ => zero_le) (Finset.mem_univ l)
   have hC : ∑ l, ‖A l‖₊ * (K * ∑ l', ‖v l'‖₊) = (∑ l, ‖A l‖₊) * K * ∑ l, ‖v l‖₊ := by
     rw [← Finset.sum_mul]
     ring
   refine ⟨v, hv, fun z => ∑ l, A l (g l z),
-    ContDiffOn.sum fun l _ => (A l).contDiff.comp_contDiffOn (hg l), ?_, fun i hi => ?_⟩
+    ContDiffOn.sum fun l _ => (A l).contDiff.comp_contDiffOn (hg l), ?_, fun i hi => ⟨?_, ?_⟩⟩
   · filter_upwards [ae_all_iff.2 hug] with z hz
     rw [hsum (u z)]
     exact Finset.sum_congr rfl fun l _ => by rw [hz l]
-  · obtain ⟨h1, h2⟩ := norm_iteratedFDeriv_sum_comp_left_le_and_holderOnWith A isOpen_ball
-      (fun l => (hg l).of_le (by exact_mod_cast hi)) (fun _ => K * ∑ l', ‖v l'‖₊)
-      (fun l => hb' l i hi)
-    rw [hC] at h1 h2
-    exact ⟨fun z hz => by simpa using h1 z hz, h2⟩
+  · intro z hz
+    refine (norm_iteratedFDeriv_sum_comp_left_le A fun l =>
+      ((hg l).contDiffAt (isOpen_ball.mem_nhds hz)).of_le (by exact_mod_cast hi)).trans ?_
+    calc
+      _ ≤ ∑ l, ‖A l‖ * (K * ∑ l', ‖v l'‖) :=
+        Finset.sum_le_sum fun l _ => mul_le_mul_of_nonneg_left
+          (((hb l i hi).1 z hz).trans (by
+            gcongr
+            simpa using NNReal.coe_le_coe.2 (hvl l))) (norm_nonneg _)
+      _ = _ := by
+        rw [← Finset.sum_mul]
+        push_cast
+        ring
+  · rw [← hC]
+    exact holderOnWith_iteratedFDeriv_sum_comp_left A isOpen_ball
+      (fun l => (hg l).of_le (by exact_mod_cast hi))
+      fun l => (hb l i hi).2.mono_const (mul_le_mul' le_rfl (hvl l))
 
 end TauCeti
