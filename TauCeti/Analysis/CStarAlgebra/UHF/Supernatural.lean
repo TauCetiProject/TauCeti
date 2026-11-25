@@ -95,10 +95,8 @@ theorem supernaturalOfSizes_factorial :
   rw [top_apply, iSup_apply]
   -- `p ^ k ∣ (p ^ k)!`, so the exponent of `p` in `(p ^ k)!` is at least `k`.
   refine ENat.forall_natCast_le_iff_le.1 fun k _ ↦ le_iSup_of_le ((p : ℕ+) ^ k : ℕ+) ?_
-  have h : ofNat ((p : ℕ+) ^ k) ≤ ofNat ⟨((p : ℕ+) ^ k : ℕ).factorial, Nat.factorial_pos _⟩ :=
-    ofNat_le_ofNat_iff.2 (PNat.dvd_iff.2 (Nat.dvd_factorial ((p : ℕ+) ^ k).pos le_rfl))
-  rw [ofNat_prime_pow, primePower_le_iff] at h
-  exact h
+  exact (ofNat_prime_pow_le_iff p k _).1
+    (ofNat_le_ofNat_iff.2 (PNat.dvd_iff.2 (Nat.dvd_factorial ((p : ℕ+) ^ k).pos le_rfl)))
 
 end Supernatural
 

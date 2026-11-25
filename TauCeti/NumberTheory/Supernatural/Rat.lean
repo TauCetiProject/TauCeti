@@ -103,10 +103,10 @@ theorem ratSubgroup_le_ratSubgroup_iff : ratSubgroup ν ≤ ratSubgroup μ ↔ �
   -- `μ p = k` is finite and `p ^ (k + 1) ∣ ν`, but `p ^ (k + 1) ∤ μ`.
   obtain ⟨k, hk⟩ := ENat.ne_top_iff_exists.1 (hlt.trans_le le_top).ne
   have hν : ofNat ((p : ℕ+) ^ (k + 1)) ≤ ν := by
-    rw [ofNat_prime_pow, primePower_le_iff, Nat.cast_add, Nat.cast_one, hk]
+    rw [ofNat_prime_pow_le_iff, Nat.cast_add, Nat.cast_one, hk]
     exact Order.add_one_le_of_lt (hk ▸ hlt)
   have hμ := (inv_mem_ratSubgroup_iff _).1 (h ((inv_mem_ratSubgroup_iff _).2 hν))
-  rw [ofNat_prime_pow, primePower_le_iff, ← hk, Nat.cast_le] at hμ
+  rw [ofNat_prime_pow_le_iff, ← hk, Nat.cast_le] at hμ
   omega
 
 /-- `ratSubgroup` is injective: `Q_ν` determines `ν`. -/

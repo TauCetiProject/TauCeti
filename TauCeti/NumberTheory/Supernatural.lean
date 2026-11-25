@@ -363,6 +363,13 @@ theorem ofNat_prime_pow (p : Nat.Primes) (k : ℕ) :
   · have hpq : (p : ℕ) ≠ q := fun h ↦ hq (Subtype.ext h.symm)
     simp [primePower_apply_of_ne hq, hpq]
 
+/-- `p ^ k` is at most a supernatural number exactly when `k` is at most its exponent at `p`.
+
+Not `@[simp]`: the simp lemma `ofNat_prime_pow` already rewrites the left-hand side. -/
+theorem ofNat_prime_pow_le_iff (p : Nat.Primes) (k : ℕ) (ν : Supernatural) :
+    ofNat ((p : ℕ+) ^ k) ≤ ν ↔ (k : ℕ∞) ≤ ν p := by
+  rw [ofNat_prime_pow, primePower_le_iff]
+
 /-- A positive natural number divides `p ^ ∞` exactly when it is a power of `p`. -/
 theorem ofNat_le_primePower_top_iff {p : Nat.Primes} {b : ℕ+} :
     ofNat b ≤ primePower p ⊤ ↔ ∃ k : ℕ, (b : ℕ) = (p : ℕ) ^ k := by
