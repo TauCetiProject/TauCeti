@@ -7,17 +7,17 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Pow.Windows
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
+import TauCeti.Analysis.MellinTransform.Basic
 
 /-!
 # One-sided Mellin bounds on windows
 
 The weighted positive-part integral on `[Y, Y ^ L]` becomes an exponentially weighted
-integral on `[U, L * U]` under `Y = exp U`. A pointwise power bound on arbitrarily far-out
-windows implies a subpower bound for the positive-part integrals on such windows. These
-are the two forms of localization needed to pass from Laplace to Mellin criteria.
+integral on `[U, L * U]` under `Y = exp U`, by `TauCeti.intervalIntegral_mul_exp_comp_exp`. A
+pointwise power bound on arbitrarily far-out windows implies a subpower bound for the
+positive-part integrals on such windows. These are the two forms of localization needed to
+pass from Laplace to Mellin criteria.
 -/
 
 public section
@@ -26,20 +26,6 @@ open Filter MeasureTheory Set
 open scoped Interval
 
 namespace TauCeti
-
-/-- Logarithmic coordinates convert a finite Mellin integral to an exponentially weighted
-integral. The identity holds in either orientation. -/
-theorem intervalIntegral_mul_exp_comp_exp (f : ℝ → ℝ) (a b θ : ℝ) :
-    (∫ u in a..b, f (Real.exp u) * Real.exp (-θ * u)) =
-      ∫ y in Real.exp a..Real.exp b, f y * y ^ (-(θ + 1)) := by
-  refine Eq.trans (intervalIntegral.integral_congr ?_) <|
-    intervalIntegral.integral_deriv_smul_comp_of_deriv_nonneg
-      (g := fun y ↦ f y * y ^ (-(θ + 1))) Real.continuous_exp.continuousOn
-      (fun u _ ↦ Real.hasDerivAt_exp u) (fun u _ ↦ (Real.exp_pos u).le)
-  intro u _
-  simp only [Function.comp_apply, smul_eq_mul, ← Real.exp_mul, mul_left_comm (Real.exp u),
-    ← Real.exp_add]
-  ring_nf
 
 /-- Subpower bounds on arbitrarily far-out Mellin windows are equivalent to subexponential
 bounds on their logarithmic windows. Both integrate only the positive part of the function. -/

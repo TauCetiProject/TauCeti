@@ -6,6 +6,7 @@ Authors: OpenAI Codex, Bastiaan J Braams
 module
 
 public import Mathlib.Analysis.MellinTransform
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 import TauCeti.Topology.Instances.Real.TSupport
 
 /-!
@@ -63,6 +64,10 @@ with their unextended forms this way.
   absolute convergence and value of the Mellin transform in logarithmic coordinates.
 * `TauCeti.mellinConvergent_inv_smul_comp_inv`, `TauCeti.mellin_inv_smul_comp_inv`: the Mellin
   transform of `t⁻¹ f(t⁻¹)` at `s` is that of `f` at `1 - s`.
+* `TauCeti.integrableOn_cpow_smul_iff_rpow_mul_norm`: absolute convergence of an upper Mellin
+  tail is integrability of the norm against a real power.
+* `TauCeti.intervalIntegral_mul_exp_comp_exp`: logarithmic coordinates turn a finite real Mellin
+  integral into an exponentially weighted integral.
 -/
 
 public section
@@ -321,6 +326,34 @@ theorem mellin_inv_smul_comp_inv (f : ℝ → E) (s : ℂ) :
   have h := mellin_cpow_smul (fun t ↦ f t⁻¹) s (-1)
   simp only [cpow_neg_one] at h
   rw [h, mellin_comp_inv, neg_add, neg_neg, ← sub_eq_neg_add]
+
+/-- Absolute convergence of an upper Mellin tail at `s` can be tested by integrating the norm
+of the input against the real power with exponent `-(s.re + 1)`. -/
+theorem integrableOn_cpow_smul_iff_rpow_mul_norm {a : ℝ} (ha : 0 ≤ a) {f : ℝ → E}
+    (hf : AEStronglyMeasurable f (volume.restrict (Ioi a))) (s : ℂ) :
+    IntegrableOn (fun y : ℝ ↦ (y : ℂ) ^ (-(s + 1)) • f y) (Ioi a) ↔
+      IntegrableOn (fun y : ℝ ↦ y ^ (-(s.re + 1)) * ‖f y‖) (Ioi a) := by
+  have hnorm (y : ℝ) (hy : y ∈ Ioi a) :
+      ‖(y : ℂ) ^ (-(s + 1)) • f y‖ = y ^ (-(s.re + 1)) * ‖f y‖ := by
+    simp only [norm_smul, Complex.norm_cpow_eq_rpow_re_of_pos (ha.trans_lt hy),
+      Complex.neg_re, Complex.add_re, Complex.one_re]
+  rw [← integrableOn_congr_fun hnorm measurableSet_Ioi]
+  exact (integrable_norm_iff ((Complex.measurable_ofReal.pow_const _).aestronglyMeasurable.smul
+    hf)).symm
+
+/-- Logarithmic coordinates convert a finite Mellin integral to an exponentially weighted
+integral. The identity holds in either orientation. -/
+theorem intervalIntegral_mul_exp_comp_exp (f : ℝ → ℝ) (a b θ : ℝ) :
+    (∫ u in a..b, f (Real.exp u) * Real.exp (-θ * u)) =
+      ∫ y in Real.exp a..Real.exp b, f y * y ^ (-(θ + 1)) := by
+  refine Eq.trans (intervalIntegral.integral_congr ?_) <|
+    intervalIntegral.integral_deriv_smul_comp_of_deriv_nonneg
+      (g := fun y ↦ f y * y ^ (-(θ + 1))) Real.continuous_exp.continuousOn
+      (fun u _ ↦ Real.hasDerivAt_exp u) (fun u _ ↦ (Real.exp_pos u).le)
+  intro u _
+  simp only [Function.comp_apply, smul_eq_mul, ← Real.exp_mul, mul_left_comm (Real.exp u),
+    ← Real.exp_add]
+  ring_nf
 
 end TauCeti
 
