@@ -30,8 +30,8 @@ theorem `TauCeti.exists_homeomorph_closure_splitGluingPairs`.
 
 ## Main results
 
-* `TauCeti.IsAdaptedPseudoGradient.eq_of_flow_eq_of_mem_splitPassage_source`: an orbit meets the
-  entrance face near the stable plane at most once.
+* `TauCeti.IsAdaptedPseudoGradient.eq_of_flow_eq_of_norm_fst_eq`: an orbit meets the entrance face
+  near the stable plane at most once.
 * `TauCeti.IsAdaptedPseudoGradient.splitPassage_splitEntryTime_eq_splitExitTime`: the passage map
   sends the model entrance point of a trajectory near a broken one to its model exit point.
 
@@ -57,96 +57,100 @@ namespace IsAdaptedPseudoGradient
 variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
   {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
 
-/-- An orbit through the entrance face of a Morse box does not meet the entrance face again
-before it leaves the box. -/
-private theorem flow_ne_of_mem_splitPassage_source (hX : IsAdaptedPseudoGradient f X)
+/-- An orbit through the entrance face of a Morse box near the stable plane does not meet the
+entrance face near the stable plane again at a positive time: while it stays in the box its
+contracting coordinate has norm less than `ε`, and once it has left the box `f` is below `f x`. -/
+private theorem flow_ne_of_norm_fst_eq (hX : IsAdaptedPseudoGradient f X)
     (φ : MorseChart E f x)
     (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
       fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
     {ε : ℝ} (hε : ∀ z, ‖z‖ ≤ ε → φ.coord.symm z ∈ φ.toChart.target)
     {z z' : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
-    (hz : z ∈ (splitPassage ε).source) (hz' : z' ∈ (splitPassage ε).source) {t : ℝ}
-    (ht₀ : 0 < t) (htT : t ≤ splitExitTime ε z) :
+    (hz : ‖z.fst‖ = ε) (hzs : ‖z.snd‖ ≤ ε) (hz' : ‖z'.fst‖ = ε) (hz's : ‖z'.snd‖ ≤ ε)
+    (hzn : Module.finrank ℝ E * ‖z.snd‖ ^ 2 < ε ^ 2)
+    (hzn' : Module.finrank ℝ E * ‖z'.snd‖ ^ 2 < ε ^ 2)
+    (hanti : StrictAnti fun t ↦ f (hX.flow t (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z)))))
+    {t : ℝ} (ht₀ : 0 < t) :
     hX.flow t (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))) ≠
       φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z')) := by
   intro h
-  have hbox : ∀ s ∈ uIcc 0 t,
-      ‖(splitQuadraticFlow s z).fst‖ ≤ ε ∧ ‖(splitQuadraticFlow s z).snd‖ ≤ ε := fun s hs ↦ by
-    rw [uIcc_of_le ht₀.le] at hs
-    exact (norm_fst_le_and_norm_snd_le_iff_of_mem_splitPassage_source hz).2
-      ⟨hs.1, hs.2.trans htT⟩
-  rw [hX.flow_toChart_symm_splitCoord_symm φ hφ hε hbox] at h
-  obtain ⟨h₁, h₂⟩ := hbox t (right_mem_uIcc)
-  have hzz := φ.injOn_toChart_symm_coord_symm_splitCoord_symm
-    (MorseChart.coord_symm_splitCoord_symm_mem_target_of_norm_le hε h₁ h₂)
-    (MorseChart.coord_symm_splitCoord_symm_mem_target_of_norm_le hε
-      (mem_splitPassage_source.1 hz').1.le (mem_splitPassage_source.1 hz').2.2) h
-  have hnorm := congrArg (fun w ↦ ‖w.fst‖) hzz
-  simp only [norm_fst_splitQuadraticFlow, (mem_splitPassage_source.1 hz).1,
-    (mem_splitPassage_source.1 hz').1] at hnorm
-  have hε0 := pos_of_mem_splitPassage_source hz
-  have : Real.exp (-t) < 1 := Real.exp_lt_one_iff.2 (by linarith)
-  nlinarith
+  have hε₀ : 0 < ε := by
+    rcases (hz ▸ norm_nonneg z.fst : 0 ≤ ε).eq_or_lt with h0 | h0
+    · rw [← h0] at hzn'
+      nlinarith [mul_nonneg (Nat.cast_nonneg (α := ℝ) (Module.finrank ℝ E)) (sq_nonneg ‖z'.snd‖)]
+    · exact h0
+  have hmem' : φ.coord.symm (φ.splitCoord.symm z') ∈ φ.toChart.target :=
+    MorseChart.coord_symm_splitCoord_symm_mem_target_of_norm_le hε hz'.le hz's
+  -- While the model orbit of `z` stays in the box, the flow reads it, but at the time `t > 0` its
+  -- contracting coordinate has norm `e^{-t} ε < ε`.
+  have hbox_ne : (∀ s ∈ uIcc 0 t,
+      ‖(splitQuadraticFlow s z).fst‖ ≤ ε ∧ ‖(splitQuadraticFlow s z).snd‖ ≤ ε) → False := by
+    intro hbox
+    rw [hX.flow_toChart_symm_splitCoord_symm φ hφ hε hbox] at h
+    obtain ⟨h₁, h₂⟩ := hbox t right_mem_uIcc
+    have hzz := φ.injOn_toChart_symm_coord_symm_splitCoord_symm
+      (MorseChart.coord_symm_splitCoord_symm_mem_target_of_norm_le hε h₁ h₂) hmem' h
+    have hnorm := congrArg (fun w ↦ ‖w.fst‖) hzz
+    simp only [norm_fst_splitQuadraticFlow, hz, hz'] at hnorm
+    have : Real.exp (-t) < 1 := Real.exp_lt_one_iff.2 (by linarith)
+    nlinarith
+  by_cases hs : z.snd = 0
+  · -- On the stable plane the model orbit stays in the box.
+    refine hbox_ne fun s hs' ↦ norm_fst_le_and_norm_snd_le_splitQuadraticFlow hz.le
+      (by rw [norm_snd_splitQuadraticFlow, hs, norm_zero, mul_zero]; exact hε₀.le)
+      (by rwa [uIcc_of_le ht₀.le] at hs')
+  have hsrc : z ∈ (splitPassage ε).source := mem_splitPassage_source.2 ⟨hz, hs, hzs⟩
+  by_cases htT : t ≤ splitExitTime ε z
+  · refine hbox_ne fun s hs' ↦ ?_
+    rw [uIcc_of_le ht₀.le] at hs'
+    exact (norm_fst_le_and_norm_snd_le_iff_of_mem_splitPassage_source hsrc).2
+      ⟨hs'.1, hs'.2.trans htT⟩
+  · -- After leaving the box the orbit is below `f x`, while `f` exceeds `f x` at `z'`.
+    have htgt := mem_splitPassage_target.1 ((splitPassage ε).map_source hsrc)
+    have hout : f (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm (splitPassage ε z)))) <
+        f x :=
+      MorseChart.apply_lt_of_norm_snd_eq
+        (MorseChart.coord_symm_splitCoord_symm_mem_target_of_norm_le hε htgt.2.2 htgt.1.le)
+        htgt.1 (by rwa [norm_fst_splitPassage hsrc])
+    have hin : f x < f (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z'))) :=
+      MorseChart.lt_apply_of_norm_fst_eq hmem' hz' hzn'
+    have hlt := hanti (not_le.1 htT)
+    simp only [h, hX.flow_splitExitTime φ hφ hε hsrc] at hlt
+    linarith
 
-/-- **An orbit crosses a Morse box at most once near the broken trajectories.** Let `X` be linear
-in the Morse chart `φ` at `x`, whose coordinate cube of radius `ε` lies in the chart. Two points
-`z`, `z'` of the entrance face whose expanding coordinates are small enough that `f` exceeds `f x`
-there and is less than `f x` where their orbits leave the box, and which lie on one orbit along
-which `f` strictly decreases, are equal. -/
-theorem eq_of_flow_eq_of_mem_splitPassage_source (hX : IsAdaptedPseudoGradient f X)
+/-- **An orbit meets the entrance face of a Morse box near the stable plane at most once.** Let
+`X` be linear in the Morse chart `φ` at `x`, whose coordinate cube of radius `ε` lies in the
+chart. Two points `z`, `z'` of the entrance face `‖u‖ = ε, ‖v‖ ≤ ε` whose expanding coordinates
+are small enough that `f` exceeds `f x` there, and which lie on one orbit along which `f` strictly
+decreases, are equal. The points may lie on the stable plane `v = 0`. -/
+theorem eq_of_flow_eq_of_norm_fst_eq (hX : IsAdaptedPseudoGradient f X)
     (φ : MorseChart E f x)
     (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
       fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
     {ε : ℝ} (hε : ∀ z, ‖z‖ ≤ ε → φ.coord.symm z ∈ φ.toChart.target)
     {z z' : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
-    (hz : z ∈ (splitPassage ε).source) (hz' : z' ∈ (splitPassage ε).source)
-    (hzs : Module.finrank ℝ E * ‖z.snd‖ ^ 2 < ε ^ 2)
-    (hzs' : Module.finrank ℝ E * ‖z'.snd‖ ^ 2 < ε ^ 2)
+    (hz : ‖z.fst‖ = ε) (hzs : ‖z.snd‖ ≤ ε) (hz' : ‖z'.fst‖ = ε) (hz's : ‖z'.snd‖ ≤ ε)
+    (hzn : Module.finrank ℝ E * ‖z.snd‖ ^ 2 < ε ^ 2)
+    (hzn' : Module.finrank ℝ E * ‖z'.snd‖ ^ 2 < ε ^ 2)
     (hanti : StrictAnti fun t ↦ f (hX.flow t (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z)))))
     {t : ℝ} (ht : hX.flow t (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))) =
       φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z'))) :
     z = z' := by
-  set Ψ := fun w ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm w))
-  have hmem : ∀ w ∈ (splitPassage ε).source,
-      φ.coord.symm (φ.splitCoord.symm w) ∈ φ.toChart.target := fun w hw ↦
-    MorseChart.coord_symm_splitCoord_symm_mem_target_of_norm_le hε
-      (mem_splitPassage_source.1 hw).1.le (mem_splitPassage_source.1 hw).2.2
-  have hmem' : ∀ w ∈ (splitPassage ε).source,
-      φ.coord.symm (φ.splitCoord.symm (splitPassage ε w)) ∈ φ.toChart.target := fun w hw ↦
-    have h := (splitPassage ε).map_source hw
-    MorseChart.coord_symm_splitCoord_symm_mem_target_of_norm_le hε
-      (mem_splitPassage_target.1 h).2.2 (mem_splitPassage_target.1 h).1.le
-  -- `f` is above `f x` at the entrance points and below it at the exit points.
-  have hin : ∀ w ∈ (splitPassage ε).source, Module.finrank ℝ E * ‖w.snd‖ ^ 2 < ε ^ 2 →
-      f x < f (Ψ w) := fun w hw hws ↦
-    MorseChart.lt_apply_of_norm_fst_eq (hmem w hw) (mem_splitPassage_source.1 hw).1 hws
-  have hout : ∀ w ∈ (splitPassage ε).source, Module.finrank ℝ E * ‖w.snd‖ ^ 2 < ε ^ 2 →
-      f (Ψ (splitPassage ε w)) < f x := fun w hw hws ↦
-    MorseChart.apply_lt_of_norm_snd_eq (hmem' w hw)
-      (mem_splitPassage_target.1 ((splitPassage ε).map_source hw)).1
-      (by rwa [norm_fst_splitPassage hw])
-  have hpass : ∀ w ∈ (splitPassage ε).source,
-      hX.flow (splitExitTime ε w) (Ψ w) = Ψ (splitPassage ε w) := fun w hw ↦
-    hX.flow_splitExitTime φ hφ (fun z hz ↦ hε z hz) hw
-  -- The orbit meets `z'` before it leaves the box through the exit point of `z`, and conversely.
-  have h₁ : t < splitExitTime ε z := by
-    refine hanti.lt_iff_gt.1 ?_
-    rw [ht, hpass z hz]
-    exact (hout z hz hzs).trans (hin z' hz' hzs')
-  have h₂ : -t < splitExitTime ε z' := by
-    have h : hX.flow (splitExitTime ε z' + t) (Ψ z) = Ψ (splitPassage ε z') := by
-      rw [Flow.map_add, ht, hpass z' hz']
-    have : 0 < splitExitTime ε z' + t := by
-      refine hanti.lt_iff_gt.1 ?_
-      rw [h, Flow.map_zero_apply]
-      exact (hout z' hz' hzs').trans (hin z hz hzs)
-    linarith
   rcases lt_trichotomy t 0 with ht₀ | rfl | ht₀
-  · refine absurd ?_ (flow_ne_of_mem_splitPassage_source hX φ hφ hε hz' hz (neg_pos.2 ht₀) h₂.le)
-    rw [← ht, ← Flow.map_add, neg_add_cancel, Flow.map_zero_apply]
+  · -- Run the orbit backwards from `z'`.
+    have ht' : hX.flow (-t) (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z'))) =
+        φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z)) := by
+      rw [← ht, Flow.map_neg_apply_map]
+    have hanti' : StrictAnti fun s ↦
+        f (hX.flow s (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z')))) := fun a b hab ↦ by
+      simpa only [← ht, ← Flow.map_add] using hanti (by linarith : a + t < b + t)
+    exact absurd ht' (flow_ne_of_norm_fst_eq hX φ hφ hε hz' hz's hz hzs hzn' hzn hanti'
+      (neg_pos.2 ht₀))
   · rw [Flow.map_zero_apply] at ht
-    exact φ.injOn_toChart_symm_coord_symm_splitCoord_symm (hmem z hz) (hmem z' hz') ht
-  · exact absurd ht (flow_ne_of_mem_splitPassage_source hX φ hφ hε hz hz' ht₀ h₁.le)
+    exact φ.injOn_toChart_symm_coord_symm_splitCoord_symm
+      (MorseChart.coord_symm_splitCoord_symm_mem_target_of_norm_le hε hz.le hzs)
+      (MorseChart.coord_symm_splitCoord_symm_mem_target_of_norm_le hε hz'.le hz's) ht
+  · exact absurd ht (flow_ne_of_norm_fst_eq hX φ hφ hε hz hzs hz' hz's hzn hzn' hanti ht₀)
 
 
 /-- **A trajectory near a broken one crosses the Morse box once.** Let `X` be linear in the Morse
@@ -226,9 +230,11 @@ theorem splitPassage_splitEntryTime_eq_splitExitTime (hX : IsAdaptedPseudoGradie
     simp only [← Flow.map_add]
     congr 1
     ring
+  have hE' := mem_splitPassage_source.1 ((splitPassage ε).map_target hQ)
   have hEz : E₁ = (splitPassage ε).symm Q :=
-    hX.eq_of_flow_eq_of_mem_splitPassage_source φ hφ hε₁ hE ((splitPassage ε).map_target hQ)
-      (by rwa [hEsnd]) (by rwa [norm_snd_splitPassage_symm hQ, hQfst]) hantiE horb
+    hX.eq_of_flow_eq_of_norm_fst_eq φ hφ hε₁ (mem_splitPassage_source.1 hE).1
+      (mem_splitPassage_source.1 hE).2.2 hE'.1 hE'.2.2 (by rwa [hEsnd])
+      (by rwa [norm_snd_splitPassage_symm hQ, hQfst]) hantiE horb
   exact ⟨hE, by rw [hEz, (splitPassage ε).right_inv hQ]⟩
 
 end IsAdaptedPseudoGradient

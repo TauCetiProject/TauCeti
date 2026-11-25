@@ -92,12 +92,8 @@ private theorem W1p.tendsto_eLpNorm_inv_mul_value_restrictL_ofTestFunctionₗ_su
   have hval : W1p.value w =ᵐ[mu.restrict Omega] ψ :=
     (W1p.value_restrictL_ae le_top _).trans
       (ae_restrict_of_ae_restrict_of_subset hsub (W1p.value_ofTestFunctionₗ_ae ψ))
-  have hgrad : ∀ᵐ x ∂mu.restrict Omega, W1p.gradient w x = ∇ (ψ : E → ℝ) x := by
-    have h := gradientTestFunctionLp_apply_ae (mu := mu) p ψ
-    rw [← W1p.gradient_ofTestFunctionₗ] at h
-    filter_upwards [W1p.gradient_restrictL_ae le_top (W1p.ofTestFunctionₗ mu ⊤ p ψ),
-      ae_restrict_of_ae_restrict_of_subset hsub h] with x h1 h2
-    rw [h1, h2]
+  have hgrad : ∀ᵐ x ∂mu.restrict Omega, W1p.gradient w x = ∇ (ψ : E → ℝ) x :=
+    W1p.gradient_restrictL_ofTestFunctionₗ_ae le_top ψ
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
     (ψ.hasCompactSupport.tendsto_eLpNorm_inv_smul_comp_add_smul_sub_sub_fderiv (p := p) (mu := mu)
       (ψ.contDiff.of_le (by simp)) τ) (fun _ ↦ bot_le) fun t ↦ ?_

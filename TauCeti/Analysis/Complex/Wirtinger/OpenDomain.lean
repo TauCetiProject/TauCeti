@@ -15,7 +15,8 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.Calculus.SmoothSeries
 import TauCeti.Analysis.Complex.MixedDeriv
-import TauCeti.Analysis.Complex.Runge.FiniteRank
+import TauCeti.Analysis.Complex.Runge.Operator
+import TauCeti.Analysis.Complex.Runge.Parameter
 import TauCeti.Analysis.Complex.UniformLimit
 import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import TauCeti.Analysis.Complex.Wirtinger.Potential
@@ -47,12 +48,12 @@ The construction follows the Mittag–Leffler / Runge exhaustion scheme:
    `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_smul_with_holomorphic_param`. Then
    `v j` is jointly smooth on `s ×ˢ univ`, holomorphic in `q`, and for `j ≥ 1` holomorphic in `w`
    off `tsupport (χ j)` (in particular near `C j`).
-3. For `j ≥ 1`, apply the parametric Runge approximation operator
-   (`TauCeti.IsFilledIn.exists_norm_iteratedFDeriv_sub_sum_mul_smul_le`) on `C j ⊆ Ω` to
-   approximate `v j` by a finite linear combination `a j x w = ∑ i, (c i * g i w) • v j x (ζ i)`
-   with `g i` holomorphic on `Ω`. Because the nodes `ζ i`, weights `c i`, and functions `g i` are
-   independent of `(x, F)`, applying the same operator (which factors through `Fin N → F`, and is
-   finite-rank for scalar targets) simultaneously shrinks all parameter derivatives
+3. For `j ≥ 1`, apply the finite-rank Runge approximation operator
+   (`TauCeti.exists_finite_rank_runge_operator`, `TauCeti.norm_iteratedFDeriv_sub_sum_smul_le`) on
+   `C j ⊆ Ω` to approximate `v j` by a finite linear combination
+   `a j x w = ∑ i, (c i * g i w) • v j x (ζ i)` with `g i` holomorphic on `Ω`. Because the nodes
+   `ζ i`, weights `c i`, and functions `g i` are independent of `(x, F)`, applying the same
+   operator simultaneously shrinks all parameter derivatives
    `iteratedFDeriv ℝ k (fun x' ↦ (v j - a j) x' w) x` for `k ≤ j` to at most `2⁻ʲ` on `D j ×ˢ C j`,
    while preserving joint smoothness and `q`-holomorphy and leaving `bar∂_z` unchanged on `Ω`.
 4. Put `u 0 = v 0` (i.e. `a 0 = 0`) and `u j = v j - a j` for `j ≥ 1`, and set
@@ -114,20 +115,19 @@ private theorem exists_runge_corrected_shell {s : Set (P × Q)} {Ω K : Set ℂ}
   obtain ⟨v, hv_cd, hv_dbar, hv_hol, hv_q⟩ :=
     exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_smul_with_holomorphic_param
       (by simp) hs hΩ hχ hχc hχΩ hf hfq
-  obtain ⟨L, hL, hKL, hLχ⟩ := exists_compact_between hK (isClosed_tsupport χ).isOpen_compl hKχ
+  obtain ⟨L, hL, _, hLUΩ, hA⟩ := exists_finite_rank_runge_operator
+    (isRungeCompactPair_iff.mpr ⟨hΩ, hK, hKΩ, hfill⟩) (isClosed_tsupport χ).isOpen_compl hKχ
   obtain ⟨M, hM0, hM⟩ := hv_cd.exists_pos_bound_iteratedFDeriv_partial_prod (hs.prod isOpen_univ)
     hD hL (prod_mono hDs (subset_univ L)) (by simp)
-  obtain ⟨N, ζ, c, g, hζ, hg, happrox⟩ :=
-    hfill.exists_norm_iteratedFDeriv_sub_sum_mul_smul_le hΩ hK hKΩ isOpen_interior hKL
-      (div_pos hε hM0)
+  obtain ⟨N, ζ, c, g, hζ, hg, happrox⟩ := hA (ε / M) (div_pos hε hM0)
   let a : P × Q → ℂ → F := fun x w ↦ ∑ i : Fin N, (c i * g i w) • v x (ζ i)
   let u : P × Q → ℂ → F := fun x w ↦ v x w - a x w
   have ha_hol (x : P × Q) : DifferentiableOn ℂ (a x) Ω :=
     DifferentiableOn.fun_sum fun i _ ↦ ((hg i).const_mul (c i)).smul_const (v x (ζ i))
   refine ⟨u, ?_, ?_, ?_, ?_, ?_⟩
   · have ha_cd : ContDiffOn ℝ ∞ ↿a (s ×ˢ Ω) :=
-      contDiffOn_sum_mul_smul_eval hΩ (fun i ↦ (hζ i).1) c hg
-        (hv_cd.mono (prod_mono Subset.rfl (subset_univ _)))
+      contDiffOn_sum_smul_apply (w := c) (ζ := ζ) (h := ↿v) hΩ hg fun i ↦
+        hv_cd.comp (contDiffOn_id.prodMk contDiffOn_const) fun _ hx ↦ mk_mem_prod hx (mem_univ _)
     exact (hv_cd.mono (prod_mono Subset.rfl (subset_univ Ω))).sub ha_cd
   · intro x hx w _
     exact (hv_q x hx w).sub (DifferentiableAt.fun_sum fun i _ ↦ (hv_q x hx (ζ i)).const_smul _)
@@ -143,10 +143,11 @@ private theorem exists_runge_corrected_shell {s : Set (P × Q)} {Ω K : Set ℂ}
       hv_dbar x hx w] using hsub
   · exact fun x hx ↦ ((hv_hol x hx).mono inter_subset_left).sub ((ha_hol x).mono inter_subset_right)
   · intro k hk x hx w hw
-    have hle := happrox hs v k M
-      ((hv_cd.mono (prod_mono Subset.rfl (subset_univ _))).of_le (by simp))
-      (fun x' hx' ↦ (hv_hol x' hx').mono (interior_subset.trans hLχ))
-      x (hDs hx) (fun z hz ↦ hM k hk x hx z (interior_subset hz)) w hw
+    have hle := norm_iteratedFDeriv_sub_sum_smul_le happrox hs
+      (isClosed_tsupport χ).isOpen_compl (fun i ↦ (hLUΩ (interior_subset (hζ i))).1) hKχ
+      (hv_cd.mono (prod_mono Subset.rfl (subset_univ _)))
+      (fun x' hx' ↦ hv_hol x' hx') (k := k) (by simp) (hDs hx) hM0.le
+      (fun y hy ↦ hM k hk x hx y hy) hw
     rwa [div_mul_cancel₀ _ hM0.ne'] at hle
 
 /-- Assemble the full sequence `u j` of shell solutions along compact exhaustions `D` of `s` and

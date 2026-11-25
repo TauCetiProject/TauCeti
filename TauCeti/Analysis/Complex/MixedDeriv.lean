@@ -10,27 +10,24 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.Complex.Liouville
-import Mathlib.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Calculus.ContDiff.ULift
 import TauCeti.Analysis.Calculus.Deriv.Complex
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
-import TauCeti.Analysis.Normed.Module.Multilinear.Basic
-import TauCeti.Analysis.Normed.Module.Multilinear.Curry
 import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Analysis.Normed.Operator.Prod
 
 /-!
 # Mixed derivatives and Cauchy estimates for holomorphic slices
 
-Let `H : X × ℂ → G` be a map from the product of a real normed space `X` and the complex plane
-into a complex normed space `G`, with finite-order real differentiability (`C²`, `C^(k+1)`, `C^n`
-with `m + 1 ≤ n`, or `C^m`) on an open product `W ×ˢ V` and holomorphic in its complex variable on
-`V` for every `x ∈ W`.
+Let `H : X × ℂ → G` be a map from the product of a real normed space `X` of parameters and the
+complex plane into a complex normed space `G`. Suppose that `H` is jointly `C^n` on an open
+product `W ×ˢ V`, and that `z ↦ H (x, z)` is holomorphic on `V` for every `x ∈ W`.
 
 At any point `(x, z)` where `H` is real differentiable and `w ↦ H (x, w)` is complex
 differentiable, the real Fréchet derivative `fderiv ℝ H (x, z)` evaluates on `(0, w)` to
@@ -40,22 +37,23 @@ its parameter derivative and complex slice derivative
 (`TauCeti.fderiv_eq_comp_fst_add_lsmul_comp_snd`,
 `TauCeti.fderiv_apply_eq_fderiv_slice_left_add_smul_deriv`).
 
-By symmetry of the second real Fréchet derivative, for `C²` maps `H` the total derivative
-`z ↦ fderiv ℝ H (x, z)` is holomorphic on `V` (`TauCeti.differentiableOn_fderiv_comp_prodMk_right`),
-and hence so is the first parameter derivative `z ↦ fderiv ℝ (fun x' ↦ H (x', z)) x`
-(`TauCeti.differentiableOn_fderiv_prod_left`). Inductively, for `C^(k+1)` maps `H`, every iterated
-parameter derivative `z ↦ iteratedFDeriv ℝ k (fun x' ↦ H (x', z)) x` is holomorphic on `V`
-(`TauCeti.differentiableOn_iteratedFDeriv_prod_left`), and complex differentiation in the second
-variable commutes with real differentiation in the first variable
+The first-order holomorphy result (`ContDiffOn.differentiableOn_fderiv_partial`) is the symmetry of
+the second derivative of a `C²` map: the Cauchy–Riemann equation
+`DH(p) (0, I) = I • DH(p) (0, 1)` for the real derivative `DH(p)` of `H` holds at every point `p`
+of `W ×ˢ V`, and differentiating it in a parameter direction gives the Cauchy–Riemann equation for
+the parameter derivative. Higher orders follow by induction
+(`ContDiffOn.differentiableOn_iteratedFDeriv_partial`), since the parameter derivatives are again
+jointly smooth (`ContDiffOn.contDiffOn_iteratedFDeriv_partial`). Complex differentiation in the
+second variable also commutes with real differentiation in the first variable
 (`TauCeti.fderiv_prod_left_deriv_snd`, `TauCeti.iteratedFDeriv_prod_left_deriv_snd`) while shifting
 joint regularity by one order (`TauCeti.contDiffOn_deriv_prod_snd`).
 
 In parametric complex analysis, slicewise holomorphic approximation operators (such as finite-rank
-Runge operators acting in `ℂ`) naturally yield uniform bounds on parameter-only derivatives
-`iteratedFDeriv ℝ k (fun x' ↦ H (x', w)) x` rather than on mixed `(X × ℂ)` derivatives. Combining
-the commutation identity with the first-order Cauchy estimate on circles upgrades those
-parameter-only bounds on a closed disc `closedBall z r ⊆ V` into a zero-loss quantitative bound
-for the total `m`-th real derivative of a `C^m` map `H`:
+Runge operators acting in `ℂ`, `TauCeti.Analysis.Complex.Runge.Parameter`) naturally yield uniform
+bounds on parameter-only derivatives `iteratedFDeriv ℝ k (fun x' ↦ H (x', w)) x` rather than on
+mixed `(X × ℂ)` derivatives. Combining the commutation identity with the first-order Cauchy estimate
+on circles upgrades those parameter-only bounds on a closed disc `closedBall z r ⊆ V` into a
+zero-loss quantitative bound for the total `m`-th real derivative of a `C^m` map `H`:
 
 `‖iteratedFDeriv ℝ m H (x, z)‖ ≤ (1 + 2 ^ m / r) ^ m * B`
 
@@ -63,33 +61,123 @@ for the total `m`-th real derivative of a `C^m` map `H`:
 giving joint `C^m` convergence bounds for series of holomorphic corrections. Neither
 finite-dimensionality of `X` nor completeness of `G` is required.
 
+The approach to parameter-derivative holomorphy follows the mixed-derivative calculus of Tau Ceti
+pull request 43183.
+
 ## Main results
 
+* `ContDiffOn.differentiableOn_fderiv_partial`: the first parameter derivative of a `C²` map `H`
+  is holomorphic in the complex variable.
+* `ContDiffOn.differentiableOn_iteratedFDeriv_partial`: the `k`-th iterated parameter derivative
+  of a `C^n` map `H` (`k + 1 ≤ n`) is holomorphic in the complex variable.
 * `TauCeti.fderiv_apply_mk_zero_eq_smul_deriv` and `TauCeti.fderiv_apply_zero_one_eq_deriv`:
   evaluation of `fderiv ℝ H (x, z)` on `(0, w)` and `(0, 1)` in terms of the complex slice
   derivative.
 * `TauCeti.fderiv_eq_comp_fst_add_lsmul_comp_snd` and
   `TauCeti.fderiv_apply_eq_fderiv_slice_left_add_smul_deriv`: splitting of `fderiv ℝ H (x, z)`
   into its parameter derivative and complex slice derivative along standard projections.
-* `TauCeti.differentiableOn_fderiv_comp_prodMk_right`: the total real derivative of a `C²` map
-  `H` is holomorphic in the complex variable.
-* `TauCeti.differentiableOn_fderiv_prod_left`: the first parameter derivative of a `C²` map `H`
-  is holomorphic in the complex variable.
 * `TauCeti.contDiffOn_deriv_prod_snd`: the complex derivative in the second variable of a `C^n`
   map `H` is `C^m` whenever `m + 1 ≤ n`.
-* `TauCeti.differentiableOn_iteratedFDeriv_prod_left`: the `k`-th iterated parameter derivative
-  of a `C^(k+1)` map `H` is holomorphic in the complex variable.
-* `TauCeti.fderiv_prod_left_deriv_snd`: first-order commutation of the real parameter derivative
-  with complex differentiation in the second variable.
-* `TauCeti.iteratedFDeriv_prod_left_deriv_snd`: higher-order commutation of iterated real
-  parameter derivatives with complex differentiation in the second variable.
+* `TauCeti.fderiv_prod_left_deriv_snd` and `TauCeti.iteratedFDeriv_prod_left_deriv_snd`:
+  commutation of real parameter derivatives with complex differentiation in the second variable.
 * `TauCeti.norm_iteratedFDeriv_le_of_differentiableOn_of_norm_iteratedFDeriv_prod_left_le`: total
   `C^m` Cauchy bound from parameter-only derivative bounds on a closed disc.
 -/
 
 public section
 
-open Complex Filter Metric Set Topology
+open Complex Filter Metric Set Topology TauCeti
+
+namespace ContDiffOn
+
+variable {X G : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup G]
+  [NormedSpace ℂ G] {W : Set X} {V : Set ℂ} {H : X × ℂ → G}
+
+/-- **Holomorphy of the parameter derivative.** If `H : X × ℂ → G` is `C²` on an open product
+`W ×ˢ V` and holomorphic in its complex variable on `V`, then the parameter derivative
+`z ↦ fderiv ℝ (fun x' ↦ H (x', z)) x` is holomorphic on `V` for every `x ∈ W`. -/
+theorem differentiableOn_fderiv_partial (hH : ContDiffOn ℝ 2 H (W ×ˢ V)) (hW : IsOpen W)
+    (hV : IsOpen V) (hhol : ∀ x ∈ W, DifferentiableOn ℂ (fun z ↦ H (x, z)) V) {x : X}
+    (hx : x ∈ W) :
+    DifferentiableOn ℂ (fun z ↦ fderiv ℝ (fun x' ↦ H (x', z)) x) V := by
+  intro z hz
+  have hU : IsOpen (W ×ˢ V) := hW.prod hV
+  have hH2 : ContDiffAt ℝ 2 H (x, z) := hH.contDiffAt (hU.mem_nhds ⟨hx, hz⟩)
+  have hDH : DifferentiableAt ℝ (fderiv ℝ H) (x, z) :=
+    (hH2.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
+  -- Near `z`, the parameter derivative is the total derivative restricted to `X × {0}`.
+  have hloc : (fun z' ↦ fderiv ℝ (fun x' ↦ H (x', z')) x) =ᶠ[𝓝 z]
+      fun z' ↦ (fderiv ℝ H (x, z')).comp (ContinuousLinearMap.inl ℝ X ℂ) := by
+    filter_upwards [hV.mem_nhds hz] with z' hz'
+    exact fderiv_slice_left
+      ((hH.contDiffAt (hU.mem_nhds ⟨hx, hz'⟩)).differentiableAt (by norm_num))
+  have hslice : HasFDerivAt (fun z' ↦ fderiv ℝ H (x, z'))
+      ((fderiv ℝ (fderiv ℝ H) (x, z)).comp (ContinuousLinearMap.inr ℝ X ℂ)) z :=
+    hDH.hasFDerivAt.comp z (hasFDerivAt_prodMk_right x z)
+  have hderiv := (hslice.clm_comp (hasFDerivAt_const (ContinuousLinearMap.inl ℝ X ℂ) z))
+    |>.congr_of_eventuallyEq hloc
+  refine ((differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero
+    hderiv.differentiableAt).2 ?_).differentiableWithinAt
+  -- The Cauchy–Riemann expression `DH(p)(0, 1) + I • DH(p)(0, I)` vanishes near `(x, z)`.
+  have hcr : (fun p : X × ℂ ↦ fderiv ℝ H p (0, 1) + I • fderiv ℝ H p (0, I)) =ᶠ[𝓝 (x, z)]
+      fun _ ↦ (0 : G) := by
+    filter_upwards [hU.mem_nhds ⟨hx, hz⟩] with p hp
+    have hpd : DifferentiableAt ℝ H p :=
+      (hH.contDiffAt (hU.mem_nhds hp)).differentiableAt (by norm_num)
+    have hphol : DifferentiableAt ℂ (fun w ↦ H (p.1, w)) p.2 :=
+      (hhol p.1 hp.1).differentiableAt (hV.mem_nhds hp.2)
+    have hsr (w : ℂ) : fderiv ℝ H p (0, w) = w • deriv (fun w' ↦ H (p.1, w')) p.2 := by
+      have := congrArg (fun L : ℂ →L[ℝ] G ↦ L w) (fderiv_slice_right (a := p.1) (b := p.2) hpd)
+      simp only [ContinuousLinearMap.coe_comp, Function.comp_apply,
+        ContinuousLinearMap.inr_apply] at this
+      rw [← this, (hphol.hasDerivAt.hasFDerivAt.restrictScalars ℝ).fderiv]
+      simp
+    rw [hsr, hsr, smul_smul, I_mul_I, neg_one_smul, one_smul, add_neg_cancel]
+  -- Differentiating it in the direction `(u, 0)` and using symmetry of `D²H` gives the claim.
+  have hDcr := ((ContinuousLinearMap.apply ℝ G ((0 : X), (1 : ℂ))).hasFDerivAt.comp (x, z)
+    hDH.hasFDerivAt).add (((ContinuousLinearMap.apply ℝ G ((0 : X), I)).hasFDerivAt.comp (x, z)
+      hDH.hasFDerivAt).const_smul I)
+  have h0 := (hDcr.congr_of_eventuallyEq hcr.symm).unique (hasFDerivAt_const (0 : G) (x, z))
+  have hsymm := hH2.isSymmSndFDerivAt (by simp)
+  rw [conjWirtingerDeriv_apply, hderiv.fderiv]
+  ext u
+  have hu := congrArg (fun L : X × ℂ →L[ℝ] G ↦ L (u, 0)) h0
+  simp only [add_apply, ContinuousLinearMap.coe_comp, Function.comp_apply,
+    ContinuousLinearMap.apply_apply, smul_apply, zero_apply] at hu
+  simpa [hsymm (0, 1) (u, 0), hsymm (0, I) (u, 0)] using congrArg ((2 : ℂ)⁻¹ • ·) hu
+
+/-- **Holomorphy of iterated parameter derivatives.** If `H : X × ℂ → G` is `C^n` on an open
+product `W ×ˢ V` and holomorphic in its complex variable on `V`, then for `k + 1 ≤ n` the `k`-th
+parameter derivative `z ↦ iteratedFDeriv ℝ k (fun x' ↦ H (x', z)) x` is holomorphic on `V` for
+every `x ∈ W`. -/
+theorem differentiableOn_iteratedFDeriv_partial {n : WithTop ℕ∞}
+    (hH : ContDiffOn ℝ n H (W ×ˢ V)) (hW : IsOpen W) (hV : IsOpen V)
+    (hhol : ∀ x ∈ W, DifferentiableOn ℂ (fun z ↦ H (x, z)) V) {k : ℕ} (hk : k + 1 ≤ n) {x : X}
+    (hx : x ∈ W) :
+    DifferentiableOn ℂ (fun z ↦ iteratedFDeriv ℝ k (fun x' ↦ H (x', z)) x) V := by
+  induction k generalizing x with
+  | zero =>
+    -- The zeroth derivative is `H` itself, read as a multilinear map in no variables.
+    refine (((continuousMultilinearCurryFin0 ℝ X G).symm.toContinuousLinearEquiv : G →L[ℝ] _)
+      |>.comp_differentiableOn_of_map_smul (fun c y ↦ by ext; simp) (hhol x hx)).congr
+      fun z _ ↦ ?_
+    ext
+    simp
+  | succ k ih =>
+    -- The `(k+1)`-th derivative uncurries the parameter derivative of the `k`-th one, which is
+    -- holomorphic since the `k`-th derivative is a `C²` family of holomorphic functions.
+    have hHk := hH.contDiffOn_iteratedFDeriv_partial (hW.prod hV) (k := k) (m := 2)
+      (by push_cast at hk; rwa [add_assoc, one_add_one_eq_two] at hk)
+    have hD := differentiableOn_fderiv_partial hHk hW hV
+      (fun x' hx' ↦ ih (le_trans (by norm_cast; omega) hk) hx') hx
+    refine (((continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (k + 1) ↦ X) G).symm
+      |>.toContinuousLinearEquiv : _ →L[ℝ] _).comp_differentiableOn_of_map_smul
+      (fun c f ↦ by ext; simp) hD).congr fun z _ ↦ ?_
+    rw [iteratedFDeriv_succ_eq_comp_left]
+    simp only [Function.comp_apply, ContinuousLinearEquiv.coe_coe,
+      LinearIsometryEquiv.coe_toContinuousLinearEquiv]
+
+end ContDiffOn
 
 universe u v
 
@@ -97,12 +185,12 @@ namespace TauCeti
 
 variable {X : Type u} [NormedAddCommGroup X] [NormedSpace ℝ X]
 
-/-! ### Holomorphy of derivatives in the complex variable -/
-
 section HolomorphicDerivatives
 
 variable {G : Type v} [NormedAddCommGroup G] [NormedSpace ℂ G]
   {W : Set X} {V : Set ℂ} {H : X × ℂ → G}
+
+/-! ### Splitting of the total derivative and regularity of the slice derivative -/
 
 /-- For a map `H` that is real differentiable at `(x, z)` and complex differentiable in `z`, its
 real derivative applied to `(0, w)` is `w` times its complex derivative in the second variable. -/
@@ -148,66 +236,6 @@ theorem fderiv_apply_eq_fderiv_slice_left_add_smul_deriv {x : X} {z : ℂ}
   simpa using congrArg (fun L : X × ℂ →L[ℝ] G ↦ L v)
     (fderiv_eq_comp_fst_add_lsmul_comp_snd hH hhol)
 
-/-- **Holomorphy of the total derivative in a complex variable.** If `H : X × ℂ → G` is `C²` on an
-open product `W ×ˢ V` and holomorphic in its complex variable on `V`, then `z ↦ fderiv ℝ H (x, z)`
-is holomorphic on `V` for every `x ∈ W`. -/
-theorem differentiableOn_fderiv_comp_prodMk_right (hW : IsOpen W) (hV : IsOpen V)
-    (hH : ContDiffOn ℝ 2 H (W ×ˢ V))
-    (hhol : ∀ x ∈ W, DifferentiableOn ℂ (fun z ↦ H (x, z)) V) {x : X} (hx : x ∈ W) :
-    DifferentiableOn ℂ (fun z ↦ fderiv ℝ H (x, z)) V := by
-  intro z hz
-  have hU : IsOpen (W ×ˢ V) := hW.prod hV
-  have hH2 : ContDiffAt ℝ 2 H (x, z) := hH.contDiffAt (hU.mem_nhds ⟨hx, hz⟩)
-  have hDfd : DifferentiableAt ℝ (fderiv ℝ H) (x, z) :=
-    (hH2.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
-  have hslice : DifferentiableAt ℝ (fun z' ↦ fderiv ℝ H (x, z')) z :=
-    hDfd.comp z (hasFDerivAt_prodMk_right x z).differentiableAt
-  refine ((differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero hslice).2
-    ?_).differentiableWithinAt
-  refine ContinuousLinearMap.ext fun v ↦ ?_
-  -- Differentiate the Cauchy–Riemann identity `p ↦ 2⁻¹ • (DH(p)(0, 1) + I • DH(p)(0, I)) = 0`.
-  have h1 := (ContinuousLinearMap.apply ℝ G ((0 : X), (1 : ℂ))).hasFDerivAt.comp (x, z)
-    hDfd.hasFDerivAt
-  have hI := (ContinuousLinearMap.apply ℝ G ((0 : X), I)).hasFDerivAt.comp (x, z)
-    hDfd.hasFDerivAt
-  have hcr := (h1.add (hI.const_smul I)).const_smul (2 : ℂ)⁻¹
-  have hzero : (fun p : X × ℂ ↦ (2 : ℂ)⁻¹ • (fderiv ℝ H p (0, 1) + I • fderiv ℝ H p (0, I))) =ᶠ[
-      𝓝 (x, z)] fun _ ↦ (0 : G) := by
-    filter_upwards [hU.mem_nhds ⟨hx, hz⟩] with p hp
-    have hpd : DifferentiableAt ℝ H p :=
-      (hH.contDiffAt (hU.mem_nhds hp)).differentiableAt (by norm_num)
-    have hphol : DifferentiableAt ℂ (fun w ↦ H (p.1, w)) p.2 :=
-      (hhol p.1 hp.1).differentiableAt (hV.mem_nhds hp.2)
-    have hsr (w : ℂ) : fderiv ℝ H p (0, w) = fderiv ℝ (fun ζ ↦ H (p.1, ζ)) p.2 w := by
-      rw [fderiv_slice_right hpd]; rfl
-    rw [hsr 1, hsr I]
-    simpa [conjWirtingerDeriv_apply] using
-      congrArg (fun L ↦ L 1) hphol.conjWirtingerDeriv_eq_zero
-  have h0eq := (hasFDerivAt_const (0 : G) (x, z)).unique (hcr.congr_of_eventuallyEq hzero.symm)
-  have hv0 := congrArg (fun L : X × ℂ →L[ℝ] G ↦ L v) h0eq
-  have hsymm := hH2.isSymmSndFDerivAt (by norm_num)
-  have hfs (w : ℂ) : fderiv ℝ (fun z' ↦ fderiv ℝ H (x, z')) z w =
-      fderiv ℝ (fderiv ℝ H) (x, z) (0, w) :=
-    congrArg (fun L ↦ L w) (hDfd.hasFDerivAt.comp z (hasFDerivAt_prodMk_right x z)).fderiv
-  simp only [conjWirtingerDeriv_apply, smul_apply, add_apply, zero_apply, smul_eq_mul, mul_one,
-    hfs, hsymm (0, 1) v, hsymm (0, I) v]
-  simpa using hv0.symm
-
-/-- If `H : X × ℂ → G` is `C²` on an open product `W ×ˢ V` and holomorphic in the second variable
-on `V`, then its parameter derivative `z ↦ fderiv ℝ (fun x' ↦ H (x', z)) x` is holomorphic on `V`
-for every `x ∈ W`. -/
-theorem differentiableOn_fderiv_prod_left (hW : IsOpen W) (hV : IsOpen V)
-    (hH : ContDiffOn ℝ 2 H (W ×ˢ V))
-    (hhol : ∀ x ∈ W, DifferentiableOn ℂ (fun z ↦ H (x, z)) V) {x : X} (hx : x ∈ W) :
-    DifferentiableOn ℂ (fun z ↦ fderiv ℝ (fun x' ↦ H (x', z)) x) V := by
-  have hcomp := ((ContinuousLinearMap.coprodEquivL ℂ).symm.differentiable.comp_differentiableOn
-    (differentiableOn_fderiv_comp_prodMk_right hW hV hH hhol hx)).fst
-  refine hcomp.congr fun z hz ↦ ?_
-  have hHd : DifferentiableAt ℝ H (x, z) :=
-    (hH.contDiffAt ((hW.prod hV).mem_nhds ⟨hx, hz⟩)).differentiableAt (by norm_num)
-  rw [Function.comp_apply, ContinuousLinearMap.coprodEquivL_symm_apply]
-  exact fderiv_slice_left hHd
-
 /-- If `H : X × ℂ → G` is `C^n` on an open product `W ×ˢ V` with `m + 1 ≤ n` and holomorphic in
 its complex variable on `V`, then its complex derivative `(x, z) ↦ deriv (H (x, ·)) z` is `C^m` on
 `W ×ˢ V`. -/
@@ -224,56 +252,6 @@ theorem contDiffOn_deriv_prod_snd {m n : WithTop ℕ∞} (hmn : m + 1 ≤ n) (hW
   have hhd := (hhol q.1 hq.1).differentiableAt (hV.mem_nhds hq.2)
   rw [(hhd.hasDerivAt.hasFDerivAt.restrictScalars ℝ).fderiv]
   simp
-
-private theorem differentiableOn_iteratedFDeriv_prod_left_aux (k : ℕ) :
-    ∀ {G : Type max u v} [NormedAddCommGroup G] [NormedSpace ℂ G] {H : X × ℂ → G},
-      IsOpen W → IsOpen V → ContDiffOn ℝ (k + 1 : ℕ) H (W ×ˢ V) →
-      (∀ x ∈ W, DifferentiableOn ℂ (fun z ↦ H (x, z)) V) →
-      ∀ x ∈ W, DifferentiableOn ℂ (fun z ↦ iteratedFDeriv ℝ k (fun x' ↦ H (x', z)) x) V := by
-  induction k with
-  | zero =>
-    intro G _ _ H _ _ _ hhol x hx
-    have hcomp : DifferentiableOn ℂ
-        ((ContinuousMultilinearMap.curryFin0Mixedₗᵢ ℝ ℂ X G).symm ∘ fun z ↦ H (x, z)) V :=
-      (LinearIsometryEquiv.comp_differentiableOn_iff _).mpr (hhol x hx)
-    exact hcomp.congr fun z _ ↦ by
-      rw [Function.comp_apply, iteratedFDeriv_zero_eq_comp, Function.comp_apply,
-        ContinuousMultilinearMap.curryFin0Mixedₗᵢ_symm_apply]
-      rfl
-  | succ k ih =>
-    intro G _ _ H hW hV hH hhol x hx
-    have hH2 : ContDiffOn ℝ 2 H (W ×ˢ V) := hH.of_le (by norm_cast; omega)
-    have hH1 : ContDiffOn ℝ (k + 1 : ℕ) (fun p : X × ℂ ↦ fderiv ℝ (fun y ↦ H (y, p.2)) p.1)
-        (W ×ˢ V) :=
-      ContDiffOn.fderiv_partial_of_isOpen (m := (k + 1 : ℕ)) (by exact_mod_cast hH) (hW.prod hV)
-    have hH1hol : ∀ x' ∈ W,
-        DifferentiableOn ℂ (fun z ↦ fderiv ℝ (fun y ↦ H (y, z)) x') V :=
-      fun x' hx' ↦ differentiableOn_fderiv_prod_left hW hV hH2 hhol hx'
-    have hrec := ih hW hV hH1 hH1hol x hx
-    have hcomp : DifferentiableOn ℂ
-        ((ContinuousMultilinearMap.curryRightMixedₗᵢ' ℝ ℂ k X G).symm ∘
-          fun z ↦ iteratedFDeriv ℝ k (fun x' ↦ fderiv ℝ (fun y ↦ H (y, z)) x') x) V :=
-      (LinearIsometryEquiv.comp_differentiableOn_iff _).mpr hrec
-    exact hcomp.congr fun z _ ↦ by
-      rw [Function.comp_apply, iteratedFDeriv_succ_eq_comp_right, Function.comp_apply,
-        ContinuousMultilinearMap.curryRightMixedₗᵢ'_symm_apply]
-
-/-- **Holomorphy of iterated parameter derivatives.** If `H : X × ℂ → G` is `C^(k+1)` on an open
-product `W ×ˢ V` and holomorphic in its complex variable on `V`, then
-`z ↦ iteratedFDeriv ℝ k (fun x' ↦ H (x', z)) x` is holomorphic on `V` for every `x ∈ W`. -/
-theorem differentiableOn_iteratedFDeriv_prod_left (k : ℕ) (hW : IsOpen W) (hV : IsOpen V)
-    (hH : ContDiffOn ℝ (k + 1 : ℕ) H (W ×ˢ V))
-    (hhol : ∀ x ∈ W, DifferentiableOn ℂ (fun z ↦ H (x, z)) V) {x : X} (hx : x ∈ W) :
-    DifferentiableOn ℂ (fun z ↦ iteratedFDeriv ℝ k (fun x' ↦ H (x', z)) x) V := by
-  have haux := differentiableOn_iteratedFDeriv_prod_left_aux.{u, v} k hW hV
-    (contDiffOn_ulift_up_iff.mpr hH)
-    (fun x' hx' ↦ differentiableOn_ulift_up_iff.mpr (hhol x' hx')) x hx
-  let post := ContinuousLinearMap.compContinuousMultilinearMapMixedL ℝ ℂ
-    (fun _ : Fin k ↦ X) (ULift.{u} G) G
-    (ContinuousLinearEquiv.ulift : ULift.{u} G ≃L[ℂ] G).toContinuousLinearMap
-  exact (post.differentiable.comp_differentiableOn haux).congr fun z _ ↦ by
-    rw [Function.comp_apply, ContinuousLinearMap.compContinuousMultilinearMapMixedL_apply]
-    exact (compContinuousMultilinearMap_ulift_iteratedFDeriv k (fun x' ↦ H (x', z)) x).symm
 
 /-! ### Commutation of real parameter derivatives with complex differentiation -/
 
@@ -292,7 +270,7 @@ theorem fderiv_prod_left_deriv_snd (hW : IsOpen W) (hV : IsOpen V)
   have hDfd : DifferentiableAt ℝ (fderiv ℝ H) (x, z) :=
     (hH2.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
   have hholD : DifferentiableAt ℂ (fun w ↦ fderiv ℝ (fun y ↦ H (y, w)) x) z :=
-    (differentiableOn_fderiv_prod_left hW hV hH hhol hx).differentiableAt (hV.mem_nhds hz)
+    (hH.differentiableOn_fderiv_partial hW hV hhol hx).differentiableAt (hV.mem_nhds hz)
   refine ContinuousLinearMap.ext fun v ↦ ?_
   have hL_eq : (fun y ↦ deriv (fun w ↦ H (y, w)) z) =ᶠ[𝓝 x]
       fun y ↦ fderiv ℝ H (y, z) (0, 1) := by
@@ -332,64 +310,13 @@ theorem fderiv_prod_left_deriv_snd (hW : IsOpen W) (hV : IsOpen V)
     simpa using congrArg (fun L : ℂ →L[ℝ] G ↦ L 1) h1
   rw [hLHS, hRHS, (hH2.isSymmSndFDerivAt (by norm_num)) (v, 0) (0, 1)]
 
-private theorem iteratedFDeriv_prod_left_deriv_snd_aux (k : ℕ) :
-    ∀ {G : Type max u v} [NormedAddCommGroup G] [NormedSpace ℂ G] {H : X × ℂ → G},
-      IsOpen W → IsOpen V → ContDiffOn ℝ (k + 1 : ℕ) H (W ×ˢ V) →
-      (∀ x ∈ W, DifferentiableOn ℂ (fun z ↦ H (x, z)) V) →
-      ∀ x ∈ W, ∀ z ∈ V,
-        iteratedFDeriv ℝ k (fun x' ↦ deriv (fun w ↦ H (x', w)) z) x =
-          deriv (fun w ↦ iteratedFDeriv ℝ k (fun x' ↦ H (x', w)) x) z := by
-  induction k with
-  | zero =>
-    intro G _ _ H _ hV _ hhol x hx z hz
-    have hhd : HasDerivAt (fun w ↦ H (x, w)) (deriv (fun w ↦ H (x, w)) z) z :=
-      ((hhol x hx).differentiableAt (hV.mem_nhds hz)).hasDerivAt
-    let e0 := (ContinuousMultilinearMap.curryFin0Mixedₗᵢ ℝ ℂ X G).symm
-    have hfun : (fun w ↦ iteratedFDeriv ℝ 0 (fun x' ↦ H (x', w)) x) =
-        e0.toLinearIsometry.toContinuousLinearMap ∘ fun w ↦ H (x, w) := by
-      ext w _
-      simp [e0, iteratedFDeriv_zero_eq_comp]
-    rw [hfun, iteratedFDeriv_zero_eq_comp, Function.comp_apply]
-    have h0 : (continuousMultilinearCurryFin0 ℝ X G).symm (deriv (fun w ↦ H (x, w)) z) =
-        e0.toLinearIsometry.toContinuousLinearMap (deriv (fun w ↦ H (x, w)) z) := by
-      simp [e0]
-    rw [h0]
-    exact (e0.toLinearIsometry.toContinuousLinearMap.hasFDerivAt.comp_hasDerivAt z
-      hhd).deriv.symm
-  | succ k ih =>
-    intro G _ _ H hW hV hH hhol x hx z hz
-    have hH2 : ContDiffOn ℝ 2 H (W ×ˢ V) := hH.of_le (by norm_cast; omega)
-    have hH1 : ContDiffOn ℝ (k + 1 : ℕ) (fun p : X × ℂ ↦ fderiv ℝ (fun y ↦ H (y, p.2)) p.1)
-        (W ×ˢ V) :=
-      ContDiffOn.fderiv_partial_of_isOpen (m := (k + 1 : ℕ)) (by exact_mod_cast hH) (hW.prod hV)
-    have hH1hol : ∀ x' ∈ W,
-        DifferentiableOn ℂ (fun w ↦ fderiv ℝ (fun y ↦ H (y, w)) x') V :=
-      fun x' hx' ↦ differentiableOn_fderiv_prod_left hW hV hH2 hhol hx'
-    have hhd : DifferentiableAt ℂ
-        (fun w ↦ iteratedFDeriv ℝ k (fun x' ↦ fderiv ℝ (fun y ↦ H (y, w)) x') x) z :=
-      (differentiableOn_iteratedFDeriv_prod_left k hW hV hH1 hH1hol hx).differentiableAt
-        (hV.mem_nhds hz)
-    let eR := (ContinuousMultilinearMap.curryRightMixedₗᵢ' ℝ ℂ k X G).symm
-    have hL : iteratedFDeriv ℝ (k + 1) (fun x' ↦ deriv (fun w ↦ H (x', w)) z) x =
-        eR.toLinearIsometry.toContinuousLinearMap
-          (iteratedFDeriv ℝ k (fun x' ↦ deriv (fun w ↦ fderiv ℝ (fun y ↦ H (y, w)) x') z) x) := by
-      rw [iteratedFDeriv_succ_eq_comp_right, Function.comp_apply]
-      have hev : fderiv ℝ (fun x' ↦ deriv (fun w ↦ H (x', w)) z) =ᶠ[𝓝 x]
-          fun x' ↦ deriv (fun w ↦ fderiv ℝ (fun y ↦ H (y, w)) x') z := by
-        filter_upwards [hW.mem_nhds hx] with y hy
-        exact fderiv_prod_left_deriv_snd hW hV hH2 hhol hy hz
-      simpa [eR] using congrArg eR ((hev.iteratedFDeriv ℝ k).self_of_nhds)
-    have hR : deriv (fun w ↦ iteratedFDeriv ℝ (k + 1) (fun x' ↦ H (x', w)) x) z =
-        eR.toLinearIsometry.toContinuousLinearMap
-          (deriv (fun w ↦ iteratedFDeriv ℝ k (fun x' ↦ fderiv ℝ (fun y ↦ H (y, w)) x') x) z) := by
-      have hfun : (fun w ↦ iteratedFDeriv ℝ (k + 1) (fun x' ↦ H (x', w)) x) =
-          eR.toLinearIsometry.toContinuousLinearMap ∘
-            fun w ↦ iteratedFDeriv ℝ k (fun x' ↦ fderiv ℝ (fun y ↦ H (y, w)) x') x := by
-        ext w m; simp [eR, iteratedFDeriv_succ_eq_comp_right]
-      rw [hfun]
-      exact (eR.toLinearIsometry.toContinuousLinearMap.hasFDerivAt.comp_hasDerivAt z
-        hhd.hasDerivAt).deriv
-    rw [hL, hR, ih hW hV hH1 hH1hol x hx z hz]
+private theorem deriv_comp_of_map_smul {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedSpace ℂ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F]
+    (L : E →L[ℝ] F) (hL : ∀ (c : ℂ) (y : E), L (c • y) = c • L y)
+    {f : ℂ → E} {z : ℂ} (hf : DifferentiableAt ℂ f z) :
+    deriv (fun w ↦ L (f w)) z = L (deriv f z) :=
+  ({ toFun := L, map_add' := L.map_add, map_smul' := hL, cont := L.continuous } :
+    E →L[ℂ] F).hasFDerivAt.comp_hasDerivAt z hf.hasDerivAt |>.deriv
 
 /-- **Commutation of parameter derivatives with complex differentiation.** If `H : X × ℂ → G` is
 `C^(k+1)` on an open product `W ×ˢ V` and holomorphic in its complex variable on `V`, then for
@@ -401,41 +328,45 @@ theorem iteratedFDeriv_prod_left_deriv_snd (k : ℕ) (hW : IsOpen W) (hV : IsOpe
     (hz : z ∈ V) :
     iteratedFDeriv ℝ k (fun x' ↦ deriv (fun w ↦ H (x', w)) z) x =
       deriv (fun w ↦ iteratedFDeriv ℝ k (fun x' ↦ H (x', w)) x) z := by
-  have hH' := contDiffOn_ulift_up_iff.mpr hH
-  have hhol' : ∀ x' ∈ W, DifferentiableOn ℂ (fun w ↦ ULift.up.{u} (H (x', w))) V :=
-    fun x' hx' ↦ differentiableOn_ulift_up_iff.mpr (hhol x' hx')
-  have haux := iteratedFDeriv_prod_left_deriv_snd_aux.{u, v} k hW hV hH' hhol' x hx z hz
-  let eC : ULift.{u} G ≃L[ℂ] G := ContinuousLinearEquiv.ulift
-  let post := ContinuousLinearMap.compContinuousMultilinearMapMixedL ℝ ℂ
-    (fun _ : Fin k ↦ X) (ULift.{u} G) G eC.toContinuousLinearMap
-  have hL : post (iteratedFDeriv ℝ k (fun x' ↦ deriv (fun w ↦ ULift.up.{u} (H (x', w))) z) x) =
-      iteratedFDeriv ℝ k (fun x' ↦ deriv (fun w ↦ H (x', w)) z) x := by
-    have heq : (fun x' ↦ deriv (fun w ↦ ULift.up.{u} (H (x', w))) z) =ᶠ[𝓝 x]
-        fun x' ↦ ULift.up.{u} (deriv (fun w ↦ H (x', w)) z) := by
+  induction k generalizing x with
+  | zero =>
+    let e0 : G →L[ℝ] (X [×0]→L[ℝ] G) :=
+      (continuousMultilinearCurryFin0 ℝ X G).symm.toContinuousLinearEquiv
+    have he0 : ∀ (c : ℂ) (y : G), e0 (c • y) = c • e0 y := fun c y ↦ by ext; simp [e0]
+    have hfun : (fun w ↦ iteratedFDeriv ℝ 0 (fun x' ↦ H (x', w)) x) = fun w ↦ e0 (H (x, w)) := by
+      ext w _
+      simp [e0, iteratedFDeriv_zero_eq_comp]
+    rw [hfun, deriv_comp_of_map_smul e0 he0 ((hhol x hx).differentiableAt (hV.mem_nhds hz))]
+    ext _
+    simp [e0, iteratedFDeriv_zero_eq_comp]
+  | succ k ih =>
+    have hHk : ContDiffOn ℝ 2 (fun p : X × ℂ ↦ iteratedFDeriv ℝ k (fun x' ↦ H (x', p.2)) p.1)
+        (W ×ˢ V) :=
+      hH.contDiffOn_iteratedFDeriv_partial (hW.prod hV) (k := k) (m := 2) (by norm_cast)
+    have hHk_hol : ∀ x' ∈ W,
+        DifferentiableOn ℂ (fun w ↦ iteratedFDeriv ℝ k (fun y ↦ H (y, w)) x') V :=
+      fun x' hx' ↦ hH.differentiableOn_iteratedFDeriv_partial hW hV hhol (by norm_cast; omega) hx'
+    let eL : (X →L[ℝ] X [×k]→L[ℝ] G) →L[ℝ] (X [×k + 1]→L[ℝ] G) :=
+      (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (k + 1) ↦ X) G).symm
+        |>.toContinuousLinearEquiv
+    have heL : ∀ (c : ℂ) (L : X →L[ℝ] X [×k]→L[ℝ] G), eL (c • L) = c • eL L :=
+      fun c L ↦ by ext m; rfl
+    have hev : iteratedFDeriv ℝ k (fun x' ↦ deriv (fun w ↦ H (x', w)) z) =ᶠ[𝓝 x]
+        fun x' ↦ deriv (fun w ↦ iteratedFDeriv ℝ k (fun y ↦ H (y, w)) x') z := by
       filter_upwards [hW.mem_nhds hx] with y hy
-      have hhd := (hhol y hy).differentiableAt (hV.mem_nhds hz)
-      have hmap := (eC.symm.hasFDerivAt.comp_hasDerivAt z hhd.hasDerivAt).deriv
-      have hcomp : (eC.symm : G → ULift.{u} G) ∘ (fun w ↦ H (y, w)) =
-          fun w ↦ ULift.up.{u} (H (y, w)) := funext fun _ ↦ rfl
-      rw [hcomp] at hmap
-      exact hmap
-    rw [(heq.iteratedFDeriv ℝ k).self_of_nhds]
-    simp only [post, ContinuousLinearMap.compContinuousMultilinearMapMixedL_apply]
-    exact compContinuousMultilinearMap_ulift_iteratedFDeriv (𝕜 := ℝ) k _ x
-  have hR : post (deriv (fun w ↦ iteratedFDeriv ℝ k (fun x' ↦ ULift.up.{u} (H (x', w))) x) z) =
-      deriv (fun w ↦ iteratedFDeriv ℝ k (fun x' ↦ H (x', w)) x) z := by
-    have hhd := (differentiableOn_iteratedFDeriv_prod_left k hW hV hH' hhol' hx).differentiableAt
-      (hV.mem_nhds hz)
-    have hmap := (post.hasFDerivAt.comp_hasDerivAt z hhd.hasDerivAt).deriv
-    have hcomp : (post : _ → _) ∘
-        (fun w ↦ iteratedFDeriv ℝ k (fun x' ↦ ULift.up.{u} (H (x', w))) x) =
-        fun w ↦ iteratedFDeriv ℝ k (fun x' ↦ H (x', w)) x := funext fun w ↦ by
-      simp only [Function.comp_apply, post,
-        ContinuousLinearMap.compContinuousMultilinearMapMixedL_apply]
-      exact compContinuousMultilinearMap_ulift_iteratedFDeriv (𝕜 := ℝ) k (fun x' ↦ H (x', w)) x
-    rw [hcomp] at hmap
-    exact hmap.symm
-  rw [← hL, ← hR, haux]
+      exact ih (hH.of_le (by norm_cast; omega)) hy
+    have hLHS : iteratedFDeriv ℝ (k + 1) (fun x' ↦ deriv (fun w ↦ H (x', w)) z) x =
+        eL (deriv (fun w ↦ fderiv ℝ (fun x' ↦ iteratedFDeriv ℝ k (fun y ↦ H (y, w)) x') x) z) := by
+      rw [iteratedFDeriv_succ_eq_comp_left, Function.comp_apply, hev.fderiv_eq,
+        fderiv_prod_left_deriv_snd hW hV hHk hHk_hol hx hz]
+      rfl
+    have hfun : (fun w ↦ iteratedFDeriv ℝ (k + 1) (fun x' ↦ H (x', w)) x) =
+        fun w ↦ eL (fderiv ℝ (fun x' ↦ iteratedFDeriv ℝ k (fun y ↦ H (y, w)) x') x) := by
+      ext w : 1
+      rw [iteratedFDeriv_succ_eq_comp_left, Function.comp_apply]
+      rfl
+    rw [hLHS, hfun, deriv_comp_of_map_smul eL heL
+      ((hHk.differentiableOn_fderiv_partial hW hV hHk_hol hx).differentiableAt (hV.mem_nhds hz))]
 
 /-! ### Joint `C^m` Cauchy bound from parameter-only derivatives -/
 
@@ -517,7 +448,7 @@ private theorem norm_iteratedFDeriv_prod_le_step {m : ℕ}
   have hbound₁ : ‖iteratedFDeriv ℝ (m + 1)
       (fun p : X × ℂ ↦ fderiv ℝ (fun y ↦ H (y, p.2)) p.1) (x, z)‖ ≤
       (1 + (2 : ℝ) ^ (m + 1) / (r / 2)) ^ (m + 1) * B := by
-    refine ih hW hV hH₁ (fun x' hx' ↦ differentiableOn_fderiv_prod_left hW hV hH2 hhol hx')
+    refine ih hW hV hH₁ (fun x' hx' ↦ hH2.differentiableOn_fderiv_partial hW hV hhol hx')
       hx (half_pos hr) hhalf fun k hk w hw ↦ ?_
     simpa [norm_iteratedFDeriv_fderiv] using hB (k + 1) (Nat.add_le_add_right hk 1) w
       (closedBall_subset_closedBall (half_le_self hr.le) hw)
@@ -533,7 +464,7 @@ private theorem norm_iteratedFDeriv_prod_le_step {m : ℕ}
     have hsub : closedBall w (r / 2) ⊆ closedBall z r :=
       closedBall_subset_closedBall' (by linarith [mem_closedBall.1 hw])
     have hc := Complex.norm_deriv_le_of_forall_mem_sphere_norm_le (half_pos hr)
-      ((differentiableOn_iteratedFDeriv_prod_left k hW hV hHk hhol hx).mono
+      ((hHk.differentiableOn_iteratedFDeriv_partial hW hV hhol le_rfl hx).mono
         (closure_ball_subset_closedBall.trans (hsub.trans hball))).diffContOnCl
       fun ζ hζ ↦ hB k (by omega) ζ (hsub (sphere_subset_closedBall hζ))
     exact hc.trans_eq (by ring)

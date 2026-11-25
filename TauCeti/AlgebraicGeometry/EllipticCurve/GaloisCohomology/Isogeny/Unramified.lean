@@ -53,7 +53,7 @@ with finite residue field, if both `W₁` and `W₂` have elliptic integral mode
 `deg φ ∉ u`, the local Kummer-cokernel index `[E₂(F_u) : φ(E₁(F_u))]` equals `#E₁(F_u)[φ]`
 (`TauCeti.Isogeny.Hom.index_range_eq_card_ker_of_isElliptic_integralModel`), matching
 `#φ.unramifiedKerCohomology`. Hence the local Kummer condition **coincides** with the unramified
-cohomology (`TauCeti.Isogeny.ker_explicitCoeff1_kerCoeffIncl_eq_unramifiedKerCohomology` and
+cohomology (`TauCeti.Isogeny.localKummerCondition_eq_unramifiedKerCohomology` and
 `TauCeti.Isogeny.range_kummerMap_eq_unramifiedKerCohomology`).
 
 ## Main definitions
@@ -68,7 +68,7 @@ cohomology (`TauCeti.Isogeny.ker_explicitCoeff1_kerCoeffIncl_eq_unramifiedKerCoh
 * `TauCeti.Isogeny.natCard_unramifiedKerCohomology_eq_natCard_ker`: `#H¹_ur(K, E₁[φ]) = #E₁(K)[φ]`.
 * `TauCeti.Isogeny.range_kummerMap_le_unramifiedKerCohomology`: at good reduction of `W₁` prime to
   `deg φ`, every Kummer class is unramified.
-* `TauCeti.Isogeny.ker_explicitCoeff1_kerCoeffIncl_eq_unramifiedKerCohomology`,
+* `TauCeti.Isogeny.localKummerCondition_eq_unramifiedKerCohomology`,
   `TauCeti.Isogeny.range_kummerMap_eq_unramifiedKerCohomology`: over a Dedekind completion `F_u`
   with finite residue field, when both `W₁` and `W₂` have elliptic integral models over `𝒪[F_u]`
   and `deg φ ∉ u`, the local Kummer image equals `H¹_ur(F_u, E₁[φ])`.
@@ -236,9 +236,9 @@ theorem range_kummerMap_le_unramifiedKerCohomology [DecidableEq K]
 /-- **At good reduction of `W₁` prime to `deg φ`, the kernel of `H¹(G_K, E₁[φ]) → H¹(G_K, E₁)` is
 contained in `H¹_ur(K, E₁[φ])`.** Unlike `range_kummerMap_le_unramifiedKerCohomology`, this form
 needs no `DecidableEq K` or explicit separability instance. -/
-theorem ker_explicitCoeff1_kerCoeffIncl_le_unramifiedKerCohomology
+theorem localKummerCondition_le_unramifiedKerCohomology
     (hdeg : (φ.degree : 𝓀[K]) ≠ 0) :
-    (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology).ker ≤
+    φ.localKummerCondition ≤
       φ.unramifiedKerCohomology := by
   classical
   have := (φ.isSeparable_dual_and_self_iff.2
@@ -266,9 +266,9 @@ variable {A : Type*} [CommRing A] [IsDedekindDomain A]
 prime `u` with finite residue field, if both `W₁` and `W₂` have elliptic integral models over
 `𝒪[F_u]` and `deg ψ ∉ u`, then the local Selmer condition
 `ker(H¹(G_{F_u}, E₁[ψ]) → H¹(G_{F_u}, E₁))` equals `ψ.unramifiedKerCohomology`. -/
-theorem ker_explicitCoeff1_kerCoeffIncl_eq_unramifiedKerCohomology
+theorem localKummerCondition_eq_unramifiedKerCohomology
     (hψ : (ψ.degree : A) ∉ u.asIdeal) :
-    (explicitCoeff1 _ _ (ofIsogeny ψ).kerCoeffIncl continuous_of_discreteTopology).ker =
+    ψ.localKummerCondition =
       ψ.unramifiedKerCohomology := by
   classical
   have hdeg : (ψ.degree : 𝓀[u.adicCompletion F]) ≠ 0 := by
@@ -277,7 +277,7 @@ theorem ker_explicitCoeff1_kerCoeffIncl_eq_unramifiedKerCohomology
   have := (ψ.isSeparable_dual_and_self_iff.2
     (natCast_ne_zero_of_residueField_natCast_ne_zero hdeg)).2
   refine AddSubgroup.eq_of_le_of_card_ge
-    (ψ.ker_explicitCoeff1_kerCoeffIncl_le_unramifiedKerCohomology hdeg) ?_
+    (ψ.localKummerCondition_le_unramifiedKerCohomology hdeg) ?_
   rw [ψ.natCard_unramifiedKerCohomology_eq_natCard_ker, ← range_kummerMap, natCard_range_kummerMap,
     Hom.index_range_eq_card_ker_of_isElliptic_integralModel (ofIsogeny ψ)
       (by rwa [Hom.degree_ofIsogeny])]
@@ -291,7 +291,7 @@ theorem range_kummerMap_eq_unramifiedKerCohomology [DecidableEq (u.adicCompletio
     (hψ : (ψ.degree : A) ∉ u.asIdeal) :
     ψ.kummerMap.range = ψ.unramifiedKerCohomology := by
   rw [range_kummerMap]
-  exact ψ.ker_explicitCoeff1_kerCoeffIncl_eq_unramifiedKerCohomology u hψ
+  exact ψ.localKummerCondition_eq_unramifiedKerCohomology u hψ
 
 end AdicCompletion
 

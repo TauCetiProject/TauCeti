@@ -15,6 +15,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.NumberTheory.ModularForms.JacobiTheta.Bounds
 import TauCeti.Analysis.Calculus.IteratedDeriv.Within
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
 # The normalized Mellin continuation
@@ -245,13 +246,8 @@ theorem mellin_iteratedDerivWithin_succ (hf : IsSmoothExpDecay f) (n : ℕ) {s :
   have hinfty : Tendsto (fun t : ℝ ↦ (t : ℂ) ^ s * iteratedDerivWithin n f (Ici 0) t) atTop
       (𝓝 0) := by
     obtain ⟨c, hc, hO⟩ := hf.isBigO_exp n
-    have hpow' : (fun t : ℝ ↦ (t : ℂ) ^ s) =O[atTop] fun t ↦ t ^ s.re := by
-      refine IsBigO.of_bound 1 ?_
-      filter_upwards [eventually_gt_atTop 0] with t ht
-      rw [norm_cpow_eq_rpow_re_of_pos ht, Real.norm_of_nonneg (Real.rpow_nonneg ht.le _),
-        one_mul]
-    have hprod := hpow'.mul_isLittleO (hO.trans_isLittleO
-      (isLittleO_exp_neg_mul_rpow_atTop hc (-s.re)))
+    have hprod := (isBigO_ofReal_cpow_rpow (eventually_gt_atTop 0) s).mul_isLittleO
+      (hO.trans_isLittleO (isLittleO_exp_neg_mul_rpow_atTop hc (-s.re)))
     refine (isLittleO_one_iff ℝ).mp (hprod.congr' EventuallyEq.rfl ?_)
     filter_upwards [eventually_gt_atTop 0] with t ht
     rw [← Real.rpow_add ht, add_neg_cancel, Real.rpow_zero]
